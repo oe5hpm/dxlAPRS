@@ -1,0 +1,236 @@
+(* Xm/FileSBP.def  Nov 11  16:23:52  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/FileSBP.h using H2D v1.18.1 *)
+
+(* $RCSfile: FileSBP.def,v $ $Revision: 5 $ $Date: 28.07.98 23:14 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *>
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+(* Merged headers: Xm/FileSB.h *)
+
+DEFINITION MODULE ["C"] FileSBP;
+
+IMPORT SYSTEM, Xlib, SelectioBP, BulletinBP, Xm:=XmP, Xt:=IntrinsicP;
+(* H2D:  Required IMPORT clause:
+IMPORT FileSBP, Xlib, SelectioBP, BulletinBP, Xm:=XmP, Xt:=IntrinsicP;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992, 1993 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+FROM X IMPORT SET8;
+
+(* --------------------------------------------------- *)
+(*                     Xm/FileSB.h                     *)
+(* --------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2
+ *)
+
+(*  Type definitions for FileSB resources:  *)
+
+TYPE
+  XmQualifyProc = PROCEDURE ( Xt.Widget,
+                              Xt.XtPointer,
+                              Xt.XtPointer );
+
+  XmSearchProc = PROCEDURE ( Xt.Widget,
+                             Xt.XtPointer );
+
+  XmFileSelectionBoxWidgetClass = POINTER TO _XmFileSelectionBoxClassRec;
+
+  XmFileSelectionBoxWidget = POINTER TO _XmFileSelectionBoxRec;
+
+(*  Class record constants  *)
+
+VAR
+  xmFileSelectionBoxWidgetClass: Xt.WidgetClass;
+
+(********    Public Function Declarations    ********)
+
+PROCEDURE XmFileSelectionBoxGetChild ( fs: Xt.Widget;
+                                       which: SHORTCARD ): Xt.Widget;
+
+PROCEDURE XmFileSelectionDoSearch ( fs: Xt.Widget;
+                                    dirmask: Xm.XmString );
+
+PROCEDURE XmCreateFileSelectionBox ( p: Xt.Widget;
+                                     name: ARRAY OF CHAR;
+                                     args: Xt.ArgList;
+                                     n: Xt.Cardinal ): Xt.Widget;
+
+PROCEDURE XmCreateFileSelectionDialog ( ds_p: Xt.Widget;
+                                        name: ARRAY OF CHAR;
+                                        fsb_args: Xt.ArgList;
+                                        fsb_n: Xt.Cardinal ): Xt.Widget;
+
+(********    End Public Function Declarations    ********)
+
+(* --------------------------------------------------- *)
+(*                    Xm/FileSBP.h                     *)
+(* --------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2.3
+ *)
+
+(*  Defines for use in allocation geometry matrix.  *)
+
+CONST
+  XmFSB_MAX_WIDGETS_VERT = 10;
+
+(*  Bit locations for the state_flags bit field.  *)
+
+  XmFS_NO_MATCH = SET8{0};
+  XmFS_IN_FILE_SEARCH = SET8{1};
+  XmFS_DIR_SEARCH_PROC = SET8{2};
+
+(*  Constraint part record for FileSelectionBox widget  *)
+
+TYPE
+  _XmFileSelectionBoxConstraintPart = RECORD
+    unused: CHAR;
+  END;
+
+  XmFileSelectionBoxConstraintPart = _XmFileSelectionBoxConstraintPart;
+
+  XmFileSelectionBoxConstraint = POINTER TO _XmFileSelectionBoxConstraintPart;
+
+(*   New fields for the FileSelectionBox widget class record   *)
+
+  _XmFileSelectionBoxClassPart = RECORD
+    extension: Xt.XtPointer;   (*  Pointer to extension record  *)
+  END;
+
+  XmFileSelectionBoxClassPart = _XmFileSelectionBoxClassPart;
+
+(*  Full class record declaration  *)
+
+  _XmFileSelectionBoxClassRec = RECORD
+    core_class              : Xt.CoreClassPart;
+    composite_class         : Xt.CompositeClassPart;
+    constraint_class        : Xt.ConstraintClassPart;
+    manager_class           : Xm.XmManagerClassPart;
+    bulletin_board_class    : BulletinBP.XmBulletinBoardClassPart;
+    selection_box_class     : SelectioBP.XmSelectionBoxClassPart;
+    file_selection_box_class: XmFileSelectionBoxClassPart;
+  END;
+
+  XmFileSelectionBoxClassRec = _XmFileSelectionBoxClassRec;
+
+(*  New fields for the FileSelectionBox widget record  *)
+
+  _XmFileSelectionBoxPart = RECORD
+    directory            : Xm.XmString; (* directory specification *)
+    pattern              : Xm.XmString; (* file search pattern *)
+    dir_list_label       : Xt.Widget;   (* directory list Label *)
+    dir_list_label_string: Xm.XmString; (* directory list label text *)
+    dir_list             : Xt.Widget;   (* directory List *)
+    dir_list_items       : Xm.XmStringTable;(* items in directory List *)
+    dir_list_item_count  : SYSTEM.int;  (* number of items in directory List *)
+    dir_list_selected_item_position: SYSTEM.int;
+    filter_label         : Xt.Widget;   (* file search filter label *)
+    filter_label_string  : Xm.XmString; (* filter label text *)
+    filter_text          : Xt.Widget;   (* filter text entry field *)
+    dir_mask             : Xm.XmString; (* string in filter text entry field *)
+    no_match_string      : Xm.XmString; (* string in list when no file match *)
+    qualify_search_data_proc:XmQualifyProc;(* directory and mask routine *)
+    dir_search_proc      : XmSearchProc;(* change directory routine *)
+    file_search_proc     : XmSearchProc;(* file search routine *)
+    file_type_mask       : SET8;      (* mask for type of files in file list *)
+    list_updated         : Xt.Boolean;(* flag to indicate file list update *)
+    directory_valid      : Xt.Boolean;(* flag to indicate valid new directory*)
+    state_flags          : SET8;      (* internal flags to indicate state. *)
+  END;
+
+  XmFileSelectionBoxPart = _XmFileSelectionBoxPart;
+
+(****************************************************************
+ *
+ * Full instance record declaration
+ *
+ ****************************************************************)
+
+  _XmFileSelectionBoxRec = RECORD
+    core              : Xt.CorePart;
+    composite         : Xt.CompositePart;
+    constraint        : Xt.ConstraintPart;
+    manager           : Xm.XmManagerPart;
+    bulletin_board    : BulletinBP.XmBulletinBoardPart;
+    selection_box     : SelectioBP.XmSelectionBoxPart;
+    file_selection_box: XmFileSelectionBoxPart;
+  END;
+
+  XmFileSelectionBoxRec = _XmFileSelectionBoxRec;
+
+VAR
+  xmFileSelectionBoxClassRec: XmFileSelectionBoxClassRec;
+
+(*  Access macros  *)
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: these procedures corresponds to macros. *)
+PROCEDURE FS_Directory ( w: Xt.Widget ): Xm.XmString;
+PROCEDURE FS_DirMask ( w: Xt.Widget ): Xm.XmString;
+PROCEDURE FS_DirListLabel ( w: Xt.Widget ): Xt.Widget;
+PROCEDURE FS_DirListLabelString ( w: Xt.Widget ): Xm.XmString;
+PROCEDURE FS_DirList ( w: Xt.Widget ): Xt.Widget;
+PROCEDURE FS_DirListItems ( w: Xt.Widget ): Xm.XmStringTable;
+PROCEDURE FS_DirListItemCount ( w: Xt.Widget ): SYSTEM.int;
+PROCEDURE FS_FilterLabel ( w: Xt.Widget ): Xt.Widget;
+PROCEDURE FS_FilterLabelString ( w: Xt.Widget ): Xm.XmString;
+PROCEDURE FS_FilterText ( w: Xt.Widget ): Xt.Widget;
+PROCEDURE FS_Pattern ( w: Xt.Widget ): Xm.XmString;
+PROCEDURE FS_NoMatchString ( w: Xt.Widget ): Xm.XmString;
+PROCEDURE FS_QualifySearchDataProc ( w: Xt.Widget ): XmQualifyProc;
+PROCEDURE FS_DirSearchProc ( w: Xt.Widget ): XmSearchProc;
+PROCEDURE FS_FileSearchProc ( w: Xt.Widget ): XmSearchProc;
+(* This field (such as real_default_button) doesn`t exists in structure
+   Probably Motif Programmers Team BUG :)
+PROCEDURE FS_RealDefaultButton ( w: Xt.Widget ): Xt.Widget; *)
+PROCEDURE FS_FileTypeMask ( w: Xt.Widget ): SET8;
+PROCEDURE FS_ListUpdated ( w: Xt.Widget ): Xt.Boolean;
+PROCEDURE FS_DirectoryValid ( w: Xt.Widget ): Xt.Boolean;
+PROCEDURE FS_StateFlags ( w: Xt.Widget ): SET8;
+PROCEDURE FS_DirListSelectedItemPosition ( w: Xt.Widget ): SYSTEM.int;
+
+<* ELSE *>
+
+PROCEDURE  / FS_Directory ( w: Xt.Widget ): Xm.XmString;
+PROCEDURE  / FS_DirMask ( w: Xt.Widget ): Xm.XmString;
+PROCEDURE  / FS_DirListLabel ( w: Xt.Widget ): Xt.Widget;
+PROCEDURE  / FS_DirListLabelString ( w: Xt.Widget ): Xm.XmString;
+PROCEDURE  / FS_DirList ( w: Xt.Widget ): Xt.Widget;
+PROCEDURE  / FS_DirListItems ( w: Xt.Widget ): Xm.XmStringTable;
+PROCEDURE  / FS_DirListItemCount ( w: Xt.Widget ): SYSTEM.int;
+PROCEDURE  / FS_FilterLabel ( w: Xt.Widget ): Xt.Widget;
+PROCEDURE  / FS_FilterLabelString ( w: Xt.Widget ): Xm.XmString;
+PROCEDURE  / FS_FilterText ( w: Xt.Widget ): Xt.Widget;
+PROCEDURE  / FS_Pattern ( w: Xt.Widget ): Xm.XmString;
+PROCEDURE  / FS_NoMatchString ( w: Xt.Widget ): Xm.XmString;
+PROCEDURE  / FS_QualifySearchDataProc ( w: Xt.Widget ): XmQualifyProc;
+PROCEDURE  / FS_DirSearchProc ( w: Xt.Widget ): XmSearchProc;
+PROCEDURE  / FS_FileSearchProc ( w: Xt.Widget ): XmSearchProc;
+(* This field (such as real_default_button) doesn`t exists in structure
+   Probably Motif Programmers Team BUG :)
+PROCEDURE  / FS_RealDefaultButton ( w: Xt.Widget ): Xt.Widget; *)
+PROCEDURE  / FS_FileTypeMask ( w: Xt.Widget ): SET8;
+PROCEDURE  / FS_ListUpdated ( w: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / FS_DirectoryValid ( w: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / FS_StateFlags ( w: Xt.Widget ): SET8;
+PROCEDURE  / FS_DirListSelectedItemPosition ( w: Xt.Widget ): Xt.Boolean;
+
+<* END *>
+
+(********    Private Function Declarations    ********)
+(********    End Private Function Declarations    ********)
+
+END FileSBP.

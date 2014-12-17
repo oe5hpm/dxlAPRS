@@ -1,0 +1,300 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 4.01 Transitional//EN">
+<HTML>
+<HEAD>
+<TITLE>Statements</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<P><HR>
+<A NAME="0025">
+<A HREF="o2rep000.html#root" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="o2rep008.html#0024" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0026" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H1>Statements</H1>
+
+<P>Statements denote actions. There are elementary and structured statements. Elementary statements are not composed of any parts that are themselves statements. They are the <B>assignment</B>, the <B>procedure call</B>, the <B>return</B>, and the <B>exit</B> statement. Structured statements are composed of parts that are themselves statements. They are used to express sequencing and conditional, selective, and repetitive execution. A statement may also be empty, in which case it denotes no action. The empty statement is included in order to relax punctuation rules in statement sequences. <FONT SIZE=2>
+<P><PRE>&nbsp;&nbsp;Statement&nbsp;=
+&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;Assignment&nbsp;|&nbsp;ProcedureCall&nbsp;|&nbsp;IfStatement&nbsp;|
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;CaseStatement&nbsp;|&nbsp;WhileStatement&nbsp;|&nbsp;RepeatStatement&nbsp;|
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ForStatement&nbsp;|&nbsp;LoopStatement&nbsp;|&nbsp;WithStatement&nbsp;|
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;EXIT&nbsp;|&nbsp;RETURN&nbsp;[Expression]
+&nbsp;&nbsp;&nbsp;&nbsp;].
+</PRE>
+</FONT>
+<P><UL>
+<LI><A HREF="#0026" TARGET=body>Assignments</A>
+<LI><A HREF="#0027" TARGET=body>Procedure calls</A>
+<LI><A HREF="#0028" TARGET=body>Statement sequences</A>
+<LI><A HREF="#0029" TARGET=body>If statements</A>
+<LI><A HREF="#0030" TARGET=body>Case statements</A>
+<LI><A HREF="#0031" TARGET=body>While statements</A>
+<LI><A HREF="#0032" TARGET=body>Repeat statements</A>
+<LI><A HREF="#0033" TARGET=body>For statements</A>
+<LI><A HREF="#0034" TARGET=body>Loop statements</A>
+<LI><A HREF="#0035" TARGET=body>Return and exit statements</A>
+<LI><A HREF="#0036" TARGET=body>With statements</A>
+</UL>
+<P><HR>
+<A NAME="0026">
+<A HREF="#0025" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0025" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0027" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Assignments</H2>
+
+<P>Assignments replace the current value of a variable by a new value specified by an expression. The expression must be <I>assignment compatible</I> with the variable (see <A HREF="o2rep012.html#0044" TARGET=body>Definition of terms</A>). The assignment operator is written as &quot;:=&quot; and pronounced as becomes. <FONT SIZE=2>
+<P><PRE>&nbsp;&nbsp;Assignment&nbsp;=&nbsp;Designator&nbsp;&quot;:=&quot;&nbsp;Expression.
+</PRE>
+</FONT>
+<P>If an expression e of type Te is assigned to a variable v of type Tv, the following happens: 
+<OL>
+ 
+<LI>if Tv and Te are record types, only those fields of Te are assigned which also belong to Tv (<I>projection</I>); the dynamic type of v must be the <I>same</I> as the static type of v and is not changed by the assignment; </LI>
+<LI>if Tv and Te are pointer types, the dynamic type of v becomes the dynamic type of e; </LI>
+<LI>if Tv is ARRAY n OF CHAR and e is a string of length m &lt; n, v[i] becomes ei for i=0..m-1 and v[m] becomes 0X. </LI>
+</OL>
+
+<P>Examples of assignments (refer to examples in <A HREF="o2rep007.html#0017" TARGET=body>Variable declarations</A>): 
+<P><TABLE CELLSPACING=0>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>i := 0 </TT></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>p := i = j </TT></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>x := i + 1 </TT></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>k := log2(i+j) </TT></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>F := log2 </TT></TD>
+<TD  STYLE="padding:0px 3px;">(* see <A HREF="o2rep010.html#0038" TARGET=body>Formal parameters</A> *) </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>s&nbsp;:=&nbsp;{2,&nbsp;3,&nbsp;5,&nbsp;7,&nbsp;11,&nbsp;13}</TT> </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>a[i] := (x+y) * (x-y) </TT></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>t.key := i </TT></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>w[i+1].name := &quot;John&quot; </TT></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>t := c </TT></TD>
+</TR>
+</TABLE>
+<P><HR>
+<A NAME="0027">
+<A HREF="#0025" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0026" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0028" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Procedure calls</H2>
+
+<P>A procedure call activates a procedure. It may contain a list of actual parameters which replace the corresponding formal parameters defined in the procedure declaration (see section <A HREF="o2rep006.html#0016" TARGET=body>Procedure types</A>). The correspondence is established by the positions of the parameters in the actual and formal parameter lists. There are two kinds of parameters: <I>variable</I> and <I>value parameters</I>. 
+<P>If a formal parameter is a variable parameter, the corresponding actual parameter must be a designator denoting a variable. If it denotes an element of a structured variable, the component selectors are evaluated when the formal/actual parameter substitution takes place, i.e. before the execution of the procedure. If a formal parameter is a value parameter, the corresponding actual parameter must be an expression. This expression is evaluated before the procedure activation, and the resulting value is assigned to the formal parameter (see also <A HREF="o2rep010.html#0038" TARGET=body>Formal parameters</A>). <FONT SIZE=2>
+<P><PRE>&nbsp;&nbsp;ProcedureCall&nbsp;=&nbsp;Designator&nbsp;[ActualParameters].
+</PRE>
+</FONT>
+<P>Examples: 
+<P><TABLE CELLSPACING=0>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>WriteInt(i*2+1)</TT> </TD>
+<TD  STYLE="padding:0px 3px;">(* see <A HREF="o2rep010.html#0038" TARGET=body>Formal parameters</A> *) </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>INC(w[k].count)</TT> </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>t.Insert(&quot;John&quot;)</TT> </TD>
+<TD  STYLE="padding:0px 3px;">(* see <A HREF="o2rep011.html#0043" TARGET=body>Modules</A> *) </TD>
+</TR>
+</TABLE>
+<P><HR>
+<A NAME="0028">
+<A HREF="#0025" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0027" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0029" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Statement sequences</H2>
+
+<P>Statement sequences denote the sequence of actions specified by the component statements which are separated by semicolons. <FONT SIZE=2>
+<P><PRE>&nbsp;&nbsp;StatementSequence&nbsp;=&nbsp;Statement&nbsp;{&quot;;&quot;&nbsp;Statement}.
+</PRE>
+</FONT>
+<P><HR>
+<A NAME="0029">
+<A HREF="#0025" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0028" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0030" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>If statements</H2>
+<FONT SIZE=2>
+<P><PRE>&nbsp;&nbsp;IfStatement&nbsp;=
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;IF&nbsp;Expression&nbsp;THEN&nbsp;StatementSequence
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{&nbsp;ELSIF&nbsp;Expression&nbsp;THEN&nbsp;StatementSequence&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;ELSE&nbsp;StatementSequence&nbsp;]
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;END.
+</PRE>
+</FONT>
+<P>If statements specify the conditional execution of guarded statement sequences. The Boolean expression preceding a statement sequence is called its <I>guard.</I> The guards are evaluated in sequence of occurrence, until one evaluates to TRUE, whereafter its associated statement sequence is executed. If no guard is satisfied, the statement sequence following the symbol ELSE is executed, if there is one. 
+<P>Example: 
+<P><PRE>&nbsp;&nbsp;IF&nbsp;(ch&nbsp;&gt;=&nbsp;&quot;A&quot;)&nbsp;&amp;&nbsp;(ch&nbsp;&lt;=&nbsp;&quot;Z&quot;)&nbsp;THEN&nbsp;ReadIdentifier
+&nbsp;&nbsp;ELSIF&nbsp;(ch&nbsp;&gt;=&nbsp;&quot;0&quot;)&nbsp;&amp;&nbsp;(ch&nbsp;&lt;=&nbsp;&quot;9&quot;)&nbsp;THEN&nbsp;ReadNumber
+&nbsp;&nbsp;ELSIF&nbsp;(ch&nbsp;=&nbsp;&quot;&nbsp;'&nbsp;&quot;)&nbsp;OR&nbsp;(ch&nbsp;=&nbsp;'&quot;')&nbsp;THEN&nbsp;ReadString
+&nbsp;&nbsp;ELSE&nbsp;SpecialCharacter
+&nbsp;&nbsp;END;
+</PRE>
+
+<P><HR>
+<A NAME="0030">
+<A HREF="#0025" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0029" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0031" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Case statements</H2>
+
+<P>Case statements specify the selection and execution of a statement sequence according to the value of an expression. First the case expression is evaluated, then that statement sequence is executed whose case label list contains the obtained value. The case expression must either be of an <I>integer</I> type that <I>includes</I> the types of all case labels, or both the case expression and the case labels must be of type CHAR. Case labels are constants, and no value must occur more than once. If the value of the expression does not occur as a label of any case, the statement sequence following the symbol ELSE is selected, if there is one, otherwise the program is aborted. <FONT SIZE=2>
+<P><PRE>&nbsp;&nbsp;CaseStatement&nbsp;=&nbsp;CASE&nbsp;Expression&nbsp;OF&nbsp;Case&nbsp;{&quot;|&quot;&nbsp;Case}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;ELSE&nbsp;StatementSequence&nbsp;]
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;END.
+&nbsp;&nbsp;Case&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;[CaseLabelList&nbsp;&quot;:&quot;&nbsp;StatementSequence].
+&nbsp;&nbsp;CaseLabelList&nbsp;=&nbsp;CaseLabels&nbsp;{&quot;,&quot;&nbsp;CaseLabels}.
+&nbsp;&nbsp;CaseLabels&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;ConstExpression&nbsp;[&nbsp;&quot;..&quot;&nbsp;ConstExpression].
+</PRE>
+</FONT>
+<P>Example: 
+<P><PRE>&nbsp;&nbsp;CASE&nbsp;ch&nbsp;OF
+&nbsp;&nbsp;&nbsp;&nbsp;&quot;A&quot;&nbsp;..&nbsp;&quot;Z&quot;:&nbsp;ReadIdentifier
+&nbsp;&nbsp;|&nbsp;&quot;0&quot;&nbsp;..&nbsp;&quot;9&quot;:&nbsp;ReadNumber
+&nbsp;&nbsp;|&nbsp;&quot;'&quot;,&nbsp;'&quot;'&nbsp;&nbsp;:&nbsp;ReadString
+&nbsp;&nbsp;ELSE&nbsp;SpecialCharacter
+&nbsp;&nbsp;END
+</PRE>
+
+<P><HR>
+<A NAME="0031">
+<A HREF="#0025" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0030" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0032" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>While statements</H2>
+
+<P>While statements specify the repeated execution of a statement sequence while the Boolean expression (its <I>guard</I>) yields TRUE. The guard is checked before every execution of the statement sequence. <FONT SIZE=2>
+<P><PRE>&nbsp;&nbsp;WhileStatement&nbsp;=&nbsp;WHILE&nbsp;Expression&nbsp;DO&nbsp;StatementSequence&nbsp;END.
+</PRE>
+</FONT>
+<P>Examples: 
+<P><PRE>&nbsp;&nbsp;WHILE&nbsp;i&nbsp;&gt;&nbsp;0&nbsp;DO&nbsp;i&nbsp;:=&nbsp;i&nbsp;DIV&nbsp;2;&nbsp;k&nbsp;:=&nbsp;k&nbsp;+&nbsp;1&nbsp;END
+&nbsp;&nbsp;WHILE&nbsp;(t&nbsp;#&nbsp;NIL)&nbsp;&amp;&nbsp;(t.key&nbsp;#&nbsp;i)&nbsp;DO&nbsp;t&nbsp;:=&nbsp;t.left&nbsp;END
+</PRE>
+
+<P><HR>
+<A NAME="0032">
+<A HREF="#0025" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0031" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0033" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Repeat statements</H2>
+
+<P>A repeat statement specifies the repeated execution of a statement sequence until a condition specified by a Boolean expression is satisfied. The statement sequence is executed at least once. <FONT SIZE=2>
+<P><PRE>&nbsp;&nbsp;RepeatStatement&nbsp;=&nbsp;REPEAT&nbsp;StatementSequence&nbsp;UNTIL&nbsp;Expression.
+</PRE>
+</FONT>
+<P><HR>
+<A NAME="0033">
+<A HREF="#0025" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0032" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0034" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>For statements</H2>
+
+<P>A for statement specifies the repeated execution of a statement sequence for a fixed number of times while a progression of values is assigned to an integer variable called the <I>control variable</I> of the for statement. <FONT SIZE=2>
+<P><PRE>&nbsp;&nbsp;ForStatement&nbsp;=&nbsp;FOR&nbsp;ident&quot;:=&quot;Expression&nbsp;TO&nbsp;Expression
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;BY&nbsp;ConstExpression&nbsp;]&nbsp;DO&nbsp;StatementSequence
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;END.
+</PRE>
+</FONT>
+<P>The statement 
+<P><PRE>&nbsp;&nbsp;FOR&nbsp;v&nbsp;:=&nbsp;beg&nbsp;TO&nbsp;end&nbsp;BY&nbsp;step&nbsp;DO&nbsp;statements&nbsp;END
+</PRE>
+
+<P>is equivalent to 
+<P><PRE>&nbsp;&nbsp;temp&nbsp;:=&nbsp;end;&nbsp;v&nbsp;:=&nbsp;beg;
+&nbsp;&nbsp;IF&nbsp;step&nbsp;&gt;&nbsp;0&nbsp;THEN
+&nbsp;&nbsp;&nbsp;&nbsp;WHILE&nbsp;v&nbsp;&lt;=&nbsp;temp&nbsp;DO&nbsp;statements;&nbsp;v&nbsp;:=&nbsp;v&nbsp;+&nbsp;step&nbsp;END
+&nbsp;&nbsp;ELSE
+&nbsp;&nbsp;&nbsp;&nbsp;WHILE&nbsp;v&nbsp;&gt;=&nbsp;temp&nbsp;DO&nbsp;statements;&nbsp;v&nbsp;:=&nbsp;v&nbsp;+&nbsp;step&nbsp;END
+&nbsp;&nbsp;END;
+</PRE>
+
+<P><TT>temp</TT> has the <I>same</I> type as <TT>v</TT>. <TT>step</TT> must be a non-zero constant expression. If step is not specified, it is assumed to be 1. 
+<P>Examples: 
+<P><PRE>&nbsp;&nbsp;FOR&nbsp;i&nbsp;:=&nbsp;0&nbsp;TO&nbsp;79&nbsp;DO&nbsp;k&nbsp;:=&nbsp;k&nbsp;+&nbsp;a[i]&nbsp;END
+&nbsp;&nbsp;FOR&nbsp;i&nbsp;:=&nbsp;79&nbsp;TO&nbsp;1&nbsp;BY&nbsp;-1&nbsp;DO&nbsp;a[i]&nbsp;:=&nbsp;a[i-1]&nbsp;END
+</PRE>
+
+<P><HR>
+<A NAME="0034">
+<A HREF="#0025" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0033" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0035" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Loop statements</H2>
+
+<P>A loop statement specifies the repeated execution of a statement sequence. It is terminated upon execution of an exit statement within that sequence (see <A HREF="#0035" TARGET=body>Return and exit statements</A>). <FONT SIZE=2>
+<P><PRE>&nbsp;&nbsp;LoopStatement&nbsp;=&nbsp;LOOP&nbsp;StatementSequence&nbsp;END.
+</PRE>
+</FONT>
+<P>Example: 
+<P><PRE>&nbsp;&nbsp;LOOP
+&nbsp;&nbsp;&nbsp;&nbsp;ReadInt(i);
+&nbsp;&nbsp;&nbsp;&nbsp;IF&nbsp;i&nbsp;&lt;&nbsp;0&nbsp;THEN&nbsp;EXIT&nbsp;END;
+&nbsp;&nbsp;&nbsp;&nbsp;WriteInt(i)
+&nbsp;&nbsp;END
+</PRE>
+
+<P>Loop statements are useful to express repetitions with several exit points or cases where the exit condition is in the middle of the repeated statement sequence. 
+<P><HR>
+<A NAME="0035">
+<A HREF="#0025" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0034" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0036" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Return and exit statements</H2>
+
+<P>A return statement indicates the termination of a procedure. It is denoted by the symbol RETURN, followed by an expression if the procedure is a function procedure. The type of the expression must be <I>assignment compatible</I> (see <A HREF="o2rep012.html#0044" TARGET=body>Definition of terms</A>) with the result type specified in the procedure heading (see section <A HREF="o2rep010.html#0037" TARGET=body>Procedure declarations</A>). 
+<P>Function procedures require the presence of a return statement indicating the result value. In proper procedures, a return statement is implied by the end of the procedure body. Any explicit return statement therefore appears as an additional (probably exceptional) termination point. 
+<P>An exit statement is denoted by the symbol EXIT. It specifies termination of the enclosing loop statement and continuation with the statement following that loop statement. Exit statements are contextually, although not syntactically associated with the loop statement which contains them. 
+<P><HR>
+<A NAME="0036">
+<A HREF="#0025" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0035" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="o2rep010.html#0037" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>With statements</H2>
+
+<P>With statements execute a statement sequence depending on the result of a type test and apply a type guard to every occurrence of the tested variable within this statement sequence. <FONT SIZE=2>
+<P><PRE>&nbsp;&nbsp;WithStatement&nbsp;=&nbsp;WITH&nbsp;Guard&nbsp;DO&nbsp;StatementSequence
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{&nbsp;&quot;|&quot;&nbsp;Guard&nbsp;DO&nbsp;StatementSequence&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;ELSE&nbsp;StatementSequence&nbsp;]
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;END.
+&nbsp;&nbsp;Guard&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;Qualident&nbsp;&quot;:&quot;&nbsp;Qualident.
+</PRE>
+</FONT>
+<P>If v is a variable parameter of record type or a pointer variable, and if it is of a static type T0, the statement 
+<P><PRE>&nbsp;&nbsp;WITH&nbsp;v:&nbsp;T1&nbsp;DO&nbsp;S1&nbsp;|v:&nbsp;T2&nbsp;DO&nbsp;S2&nbsp;ELSE&nbsp;S3&nbsp;END
+</PRE>
+
+<P>has the following meaning: if the dynamic type of v is T1, then the statement sequence S1 is executed where v is regarded as if it had the static type T1; else if the dynamic type of v is T2, then S2 is executed where v is regarded as if it had the static type T2; else S3 is executed. T1 and T2 must be extensions of T0. If no type test is satisfied and if an else clause is missing the program is aborted. 
+<P>Example: 
+<P><PRE>&nbsp;&nbsp;WITH&nbsp;t:&nbsp;CenterTree&nbsp;DO&nbsp;i&nbsp;:=&nbsp;t.width;&nbsp;c&nbsp;:=&nbsp;t.subnode&nbsp;END
+</PRE>
+</BODY>
+</HTML>

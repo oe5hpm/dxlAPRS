@@ -1,0 +1,315 @@
+(* Xm/SelectioBP.def  Nov 11  16:8:41  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/SelectioBP.h using H2D v1.18.1 *)
+
+(* $RCSfile: SelectioBP.def,v $ $Revision: 5 $ $Date: 28.07.98 23:14 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+(* Merged headers: Xm/SelectioB.h *)
+
+DEFINITION MODULE ["C"] SelectioBP;
+
+IMPORT SYSTEM, Xlib, BulletinBP, Xm:=XmP, Xt:=IntrinsicP;
+(* H2D:  Required IMPORT clause: 
+IMPORT SelectioBP, Xlib, BulletinBP, XmP, IntrinsicP;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992, 1993 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(* ------------------------------------------------------ *)
+(*                     Xm/SelectioB.h                     *)
+(* ------------------------------------------------------ *)
+
+(*
+ * Motif Release 1.2
+ *)
+
+(*  Class record constants  *)
+
+VAR 
+  xmSelectionBoxWidgetClass: Xt.WidgetClass;
+
+TYPE 
+  XmSelectionBoxWidgetClass = POINTER TO _XmSelectionBoxClassRec;
+
+  XmSelectionBoxWidget = POINTER TO _XmSelectionBoxRec;
+
+(********    Public Function Declarations    ********)
+
+PROCEDURE XmSelectionBoxGetChild ( sb: Xt.Widget;
+                                   which: SHORTCARD ): Xt.Widget;
+
+PROCEDURE XmCreateSelectionBox ( p: Xt.Widget;
+                                 name: ARRAY OF CHAR;
+                                 args: Xt.ArgList;
+                                 n: Xt.Cardinal ): Xt.Widget;
+
+PROCEDURE XmCreateSelectionDialog ( ds_p: Xt.Widget;
+                                    name: ARRAY OF CHAR;
+                                    sb_args: Xt.ArgList;
+                                    sb_n: Xt.Cardinal ): Xt.Widget;
+
+PROCEDURE XmCreatePromptDialog ( ds_p: Xt.Widget;
+                                 name: ARRAY OF CHAR;
+                                 sb_args: Xt.ArgList;
+                                 sb_n: Xt.Cardinal ): Xt.Widget;
+
+(********    End Public Function Declarations    ********)
+
+(* ------------------------------------------------------ *)
+(*                    Xm/SelectioBP.h                     *)
+(* ------------------------------------------------------ *)
+
+(*
+ * Motif Release 1.2.3
+ *)
+
+(*  Defines for use in allocation geometry matrix.  *)
+
+CONST 
+  XmSB_MAX_WIDGETS_VERT = 8;
+  XmUNSPECIFIED = -1;
+
+(*  Constraint part record for SelectionBox widget  *)
+
+TYPE 
+  _XmSelectionBoxConstraintPart = RECORD
+    unused: CHAR;
+  END;
+ 
+  XmSelectionBoxConstraintPart = _XmSelectionBoxConstraintPart;
+
+  XmSelectionBoxConstraint = POINTER TO _XmSelectionBoxConstraintPart;
+
+(*   New fields for the SelectionBox widget class record   *)
+
+  _XmSelectionBoxClassPart = RECORD
+    list_callback: Xt.XtCallbackProc;
+    extension    : Xt.XtPointer;        (*  Pointer to extension record  *)
+  END;
+
+  XmSelectionBoxClassPart = _XmSelectionBoxClassPart;
+
+(*  Full class record declaration  *)
+
+  _XmSelectionBoxClassRec = RECORD
+    core_class          : Xt.CoreClassPart;
+    composite_class     : Xt.CompositeClassPart;
+    constraint_class    : Xt.ConstraintClassPart;
+    manager_class       : Xm.XmManagerClassPart;
+    bulletin_board_class: BulletinBP.XmBulletinBoardClassPart;
+    selection_box_class : XmSelectionBoxClassPart;
+  END;
+
+  XmSelectionBoxClassRec = _XmSelectionBoxClassRec;
+
+(*  New fields for the SelectionBox widget record  *)
+
+  _XmSelectionBoxPart = RECORD
+    list_label                 : Xt.Widget;         (* list Label *)
+    list_label_string          : Xm.XmString;
+    list                       : Xt.Widget;         (* List *)
+    list_items                 : Xm.XmStringTable;
+    list_item_count            : SYSTEM.int;
+    list_visible_item_count    : SYSTEM.int;
+    list_selected_item_position: SYSTEM.int;
+    selection_label            : Xt.Widget;         (* selection Label *)
+    selection_label_string     : Xm.XmString;
+    text                       : Xt.Widget;         (* Text *)
+    text_string                : Xm.XmString;
+    text_columns               : SYSTEM.INT16;
+    work_area                  : Xt.Widget;         (* other widget *)
+    separator                  : Xt.Widget;         (* separator *)
+    ok_button                  : Xt.Widget;         (* enter button *)
+    ok_label_string            : Xm.XmString;
+    apply_button               : Xt.Widget;         (* apply button *)
+    apply_label_string         : Xm.XmString;
+    cancel_label_string        : Xm.XmString;       (* cancel button label *)
+    help_button                : Xt.Widget;         (* help button *)
+    help_label_string          : Xm.XmString;
+    ok_callback                : Xt.XtCallbackList; (* callbacks *)
+    apply_callback             : Xt.XtCallbackList;
+    cancel_callback            : Xt.XtCallbackList;
+    no_match_callback          : Xt.XtCallbackList;
+    text_accelerators          : Xt.XtAccelerators;
+    must_match                 : Xt.Boolean;        (* flags *)
+    adding_sel_widgets         : Xt.Boolean;
+    minimize_buttons           : Xt.Boolean;
+    dialog_type                : SHORTCARD;         (* prompt or selection *)
+    child_placement            : SHORTCARD;
+  END;
+
+  XmSelectionBoxPart = _XmSelectionBoxPart;
+
+(****************************************************************
+ *
+ * Full instance record declaration
+ *
+ ****************************************************************)
+
+  _XmSelectionBoxRec = RECORD
+    core          : Xt.CorePart;
+    composite     : Xt.CompositePart;
+    constraint    : Xt.ConstraintPart;
+    manager       : Xm.XmManagerPart;
+    bulletin_board: BulletinBP.XmBulletinBoardPart;
+    selection_box : XmSelectionBoxPart;
+  END;
+
+  XmSelectionBoxRec = _XmSelectionBoxRec;
+
+VAR 
+  xmSelectionBoxClassRec: XmSelectionBoxClassRec;
+
+(*   access macros   *)
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: these procedures corresponds to macros. *)
+PROCEDURE SB_ListLabel ( w: Xt.Widget ): Xt.Widget;
+PROCEDURE SB_List ( w: Xt.Widget ): Xt.Widget;
+PROCEDURE SB_SelectionLabel ( w: Xt.Widget ): Xt.Widget;
+PROCEDURE SB_Text ( w: Xt.Widget ): Xt.Widget;
+PROCEDURE SB_WorkArea ( w: Xt.Widget ): Xt.Widget;
+PROCEDURE SB_Separator ( w: Xt.Widget ): Xt.Widget;
+PROCEDURE SB_OkButton ( w: Xt.Widget ): Xt.Widget;
+PROCEDURE SB_ApplyButton ( w: Xt.Widget ): Xt.Widget;
+PROCEDURE SB_CancelButton ( w: Xt.Widget ): Xt.Widget;
+PROCEDURE SB_HelpButton ( w: Xt.Widget ): Xt.Widget;
+PROCEDURE SB_DefaultButton ( w: Xt.Widget ): Xt.Widget;
+PROCEDURE SB_MarginHeight ( w: Xt.Widget ): Xt.Dimension;
+PROCEDURE SB_MarginWidth ( w: Xt.Widget ): Xt.Dimension;
+PROCEDURE SB_ButtonFontList ( w: Xt.Widget ): Xm.XmFontList;
+PROCEDURE SB_LabelFontList ( w: Xt.Widget ): Xm.XmFontList;
+PROCEDURE SB_TextFontList ( w: Xt.Widget ): Xm.XmFontList;
+PROCEDURE SB_StringDirection ( w: Xt.Widget ): Xm.XmStringDirection;
+PROCEDURE SB_AddingSelWidgets ( w: Xt.Widget ): Xt.Boolean;
+PROCEDURE SB_TextAccelerators ( w: Xt.Widget ): Xt.XtAccelerators;
+PROCEDURE SB_ListItemCount ( w: Xt.Widget ): SYSTEM.int;
+PROCEDURE SB_ListSelectedItemPosition ( w: Xt.Widget ): SYSTEM.int;
+PROCEDURE SB_ListVisibleItemCount ( w: Xt.Widget ): SYSTEM.int;
+PROCEDURE SB_TextColumns ( w: Xt.Widget ): SYSTEM.INT16;
+PROCEDURE SB_MinimizeButtons ( w: Xt.Widget ): Xt.Boolean;
+PROCEDURE SB_MustMatch ( w: Xt.Widget ): Xt.Boolean;
+
+<* ELSE *>
+
+PROCEDURE  / SB_ListLabel ( w: Xt.Widget ): Xt.Widget;
+PROCEDURE  / SB_List ( w: Xt.Widget ): Xt.Widget;
+PROCEDURE  / SB_SelectionLabel ( w: Xt.Widget ): Xt.Widget;
+PROCEDURE  / SB_Text ( w: Xt.Widget ): Xt.Widget;
+PROCEDURE  / SB_WorkArea ( w: Xt.Widget ): Xt.Widget;
+PROCEDURE  / SB_Separator ( w: Xt.Widget ): Xt.Widget;
+PROCEDURE  / SB_OkButton ( w: Xt.Widget ): Xt.Widget;
+PROCEDURE  / SB_ApplyButton ( w: Xt.Widget ): Xt.Widget;
+PROCEDURE  / SB_CancelButton ( w: Xt.Widget ): Xt.Widget;
+PROCEDURE  / SB_HelpButton ( w: Xt.Widget ): Xt.Widget;
+PROCEDURE  / SB_DefaultButton ( w: Xt.Widget ): Xt.Widget;
+PROCEDURE  / SB_MarginHeight ( w: Xt.Widget ): Xt.Dimension;
+PROCEDURE  / SB_MarginWidth ( w: Xt.Widget ): Xt.Dimension;
+PROCEDURE  / SB_ButtonFontList ( w: Xt.Widget ): Xm.XmFontList;
+PROCEDURE  / SB_LabelFontList ( w: Xt.Widget ): Xm.XmFontList;
+PROCEDURE  / SB_TextFontList ( w: Xt.Widget ): Xm.XmFontList;
+PROCEDURE  / SB_StringDirection ( w: Xt.Widget ): Xm.XmStringDirection;
+PROCEDURE  / SB_AddingSelWidgets ( w: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / SB_TextAccelerators ( w: Xt.Widget ): Xt.XtAccelerators;
+PROCEDURE  / SB_ListItemCount ( w: Xt.Widget ): SYSTEM.int;
+PROCEDURE  / SB_ListSelectedItemPosition ( w: Xt.Widget ): SYSTEM.int;
+PROCEDURE  / SB_ListVisibleItemCount ( w: Xt.Widget ): SYSTEM.int;
+PROCEDURE  / SB_TextColumns ( w: Xt.Widget ): SYSTEM.INT16;
+PROCEDURE  / SB_MinimizeButtons ( w: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / SB_MustMatch ( w: Xt.Widget ): Xt.Boolean;
+
+<* END *>
+
+(********    Private Function Declarations    ********)
+
+PROCEDURE _XmSelectionBoxCreateListLabel ( sel: XmSelectionBoxWidget );
+
+PROCEDURE _XmSelectionBoxCreateSelectionLabel ( sel: XmSelectionBoxWidget );
+
+PROCEDURE _XmSelectionBoxCreateList ( sel: XmSelectionBoxWidget );
+
+PROCEDURE _XmSelectionBoxCreateText ( sel: XmSelectionBoxWidget );
+
+PROCEDURE _XmSelectionBoxCreateSeparator ( sel: XmSelectionBoxWidget );
+
+PROCEDURE _XmSelectionBoxCreateOkButton ( sel: XmSelectionBoxWidget );
+
+PROCEDURE _XmSelectionBoxCreateApplyButton ( sel: XmSelectionBoxWidget );
+
+PROCEDURE _XmSelectionBoxCreateCancelButton ( sel: XmSelectionBoxWidget );
+
+PROCEDURE _XmSelectionBoxCreateHelpButton ( sel: XmSelectionBoxWidget );
+
+PROCEDURE _XmSelectionBoxGeoMatrixCreate ( wid: Xt.Widget;
+                                           instigator: Xt.Widget;
+                                           VAR desired: Xt.XtWidgetGeometry ): Xm.XmGeoMatrix;
+
+PROCEDURE _XmSelectionBoxNoGeoRequest ( geoSpec: Xm.XmGeoMatrix ): Xt.Boolean;
+
+PROCEDURE _XmSelectionBoxGetSelectionLabelString ( wid: Xt.Widget;
+                                                   resource_offset: SYSTEM.int;
+                                                   VAR value: Xt.XtArgVal );
+
+PROCEDURE _XmSelectionBoxGetListLabelString ( wid: Xt.Widget;
+                                              resource_offset: SYSTEM.int;
+                                              VAR value: Xt.XtArgVal );
+
+PROCEDURE _XmSelectionBoxGetTextColumns ( wid: Xt.Widget;
+                                          resource_offset: SYSTEM.int;
+                                          VAR value: Xt.XtArgVal );
+
+PROCEDURE _XmSelectionBoxGetTextString ( wid: Xt.Widget;
+                                         resource_offset: SYSTEM.int;
+                                         VAR value: Xt.XtArgVal );
+
+PROCEDURE _XmSelectionBoxGetListItems ( wid: Xt.Widget;
+                                        resource_offset: SYSTEM.int;
+                                        VAR value: Xt.XtArgVal );
+
+PROCEDURE _XmSelectionBoxGetListItemCount ( wid: Xt.Widget;
+                                            resource_offset: SYSTEM.int;
+                                            VAR value: Xt.XtArgVal );
+
+PROCEDURE _XmSelectionBoxGetListVisibleItemCount ( wid: Xt.Widget;
+                                                   resource_offset: SYSTEM.int;
+                                                   VAR value: Xt.XtArgVal );
+
+PROCEDURE _XmSelectionBoxGetOkLabelString ( wid: Xt.Widget;
+                                            resource_offset: SYSTEM.int;
+                                            VAR value: Xt.XtArgVal );
+
+PROCEDURE _XmSelectionBoxGetApplyLabelString ( wid: Xt.Widget;
+                                               resource_offset: SYSTEM.int;
+                                               VAR value: Xt.XtArgVal );
+
+PROCEDURE _XmSelectionBoxGetCancelLabelString ( wid: Xt.Widget;
+                                                resource_offset: SYSTEM.int;
+                                                VAR value: Xt.XtArgVal );
+
+PROCEDURE _XmSelectionBoxGetHelpLabelString ( wid: Xt.Widget;
+                                              resource_offset: SYSTEM.int;
+                                              VAR value: Xt.XtArgVal );
+
+PROCEDURE _XmSelectionBoxUpOrDown ( wid: Xt.Widget;
+                                    VAR event: Xlib.XEvent;
+                                    VAR argv: Xt.StringList;
+                                    VAR argc: Xt.Cardinal );
+
+PROCEDURE _XmSelectionBoxRestore ( wid: Xt.Widget;
+                                   VAR event: Xlib.XEvent;
+                                   VAR argv: Xt.StringList;
+                                   VAR argc: Xt.Cardinal );
+
+(********    End Private Function Declarations    ********)
+
+END SelectioBP.

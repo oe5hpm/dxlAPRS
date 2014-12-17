@@ -1,0 +1,41 @@
+(* X11/Xlocale.def  Apr 12  15:3:36  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted using H2D v1.00 from X11/Xlocale.h. *)
+
+(* $RCSfile: Xlocale.def,v $ $Revision: 4 $ $Date: 28.07.98 23:13 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *>
+<* IF NOT DEFINED(GENCTYPES) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+<*+ WOFF354 *>
+
+DEFINITION MODULE ["C"] Xlocale;
+
+IMPORT SYSTEM;
+(* H2D: to import this module write following text:
+IMPORT Xlocale;
+*)
+
+FROM Xlib IMPORT PChar;
+
+(*  $XConsortium: Xlocale.h,v 1.10 94/04/17 20:21:51 rws Exp $  *)
+
+CONST 
+  LC_ALL = 0;
+  LC_COLLATE = 1;
+  LC_CTYPE = 2;
+  LC_MONETARY = 3;
+  LC_NUMERIC = 4;
+  LC_TIME = 5;
+
+PROCEDURE _Xsetlocale ( category: SYSTEM.int;
+                        name: ARRAY OF CHAR ): PChar;
+
+CONST 
+  setlocale = _Xsetlocale;
+  NULL = 0;
+
+END Xlocale.

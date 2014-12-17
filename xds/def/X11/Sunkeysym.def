@@ -1,0 +1,82 @@
+(* X11/Sunkeysym.def  Apr 12  12:58:39  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted using H2D v1.00 from X11/Sunkeysym.h. *)
+
+(* $RCSfile: Sunkeysym.def,v $ $Revision: 4 $ $Date: 28.07.98 23:13 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *>
+<* IF NOT DEFINED(GENCTYPES) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+
+DEFINITION MODULE ["C"] Sunkeysym;
+
+IMPORT SYSTEM;
+(* H2D: to import this module write following text:
+IMPORT Sunkeysym;
+*)
+
+(*  $XConsortium: Sunkeysym.h,v 1.5 94/04/17 20:10:47 rws Exp $  *)
+(*  ***********************************************************  *)
+
+(*
+ * Floating Accent
+ *)
+
+CONST 
+  SunXK_FA_Grave = 1005FF00H;
+  SunXK_FA_Circum = 1005FF01H;
+  SunXK_FA_Tilde = 1005FF02H;
+  SunXK_FA_Acute = 1005FF03H;
+  SunXK_FA_Diaeresis = 1005FF04H;
+  SunXK_FA_Cedilla = 1005FF05H;
+
+(*
+ * Miscellaneous Functions
+ *)
+
+  SunXK_F36 = 1005FF10H;               (*  Labeled F11  *)
+  SunXK_F37 = 1005FF11H;               (*  Labeled F12  *)
+  SunXK_Sys_Req = 1005FF60H;
+  SunXK_Print_Screen = 0FF61H;         (*  Same as XK_Print  *)
+
+(*
+ * International & Multi-Key Character Composition
+ *)
+
+  SunXK_Compose = 0FF20H;              (*  Same as XK_Multi_key  *)
+  SunXK_AltGraph = 0FF7EH;             (*  Same as XK_Mode_switch  *)
+
+(*
+ * Cursor Control
+ *)
+
+  SunXK_PageUp = 0FF55H;               (*  Same as XK_Prior  *)
+  SunXK_PageDown = 0FF56H;             (*  Same as XK_Next  *)
+
+(*
+ * Open Look Functions
+ *)
+
+  SunXK_Undo = 0FF65H;                 (*  Same as XK_Undo  *)
+  SunXK_Again = 0FF66H;                (*  Same as XK_Redo  *)
+  SunXK_Find = 0FF68H;                 (*  Same as XK_Find  *)
+  SunXK_Stop = 0FF69H;                 (*  Same as XK_Cancel  *)
+  SunXK_Props = 1005FF70H;
+  SunXK_Front = 1005FF71H;
+  SunXK_Copy = 1005FF72H;
+  SunXK_Open = 1005FF73H;
+  SunXK_Paste = 1005FF74H;
+  SunXK_Cut = 1005FF75H;
+  SunXK_PowerSwitch = 1005FF76H;
+  SunXK_AudioLowerVolume = 1005FF77H;
+  SunXK_AudioMute = 1005FF78H;
+  SunXK_AudioRaiseVolume = 1005FF79H;
+  SunXK_VideoDegauss = 1005FF7AH;
+  SunXK_VideoLowerBrightness = 1005FF7BH;
+  SunXK_VideoRaiseBrightness = 1005FF7CH;
+  SunXK_PowerSwitchShift = 1005FF7DH;
+
+END Sunkeysym.

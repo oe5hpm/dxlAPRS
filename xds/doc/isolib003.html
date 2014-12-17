@@ -1,0 +1,519 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 4.01 Transitional//EN">
+<HTML>
+<HEAD>
+<TITLE>Concurrent Programming</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<P><HR>
+<A NAME="0152">
+<A HREF="isolib000.html#root" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="isolib002.html#0151" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0153" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H1>Concurrent Programming</H1>
+
+<P><UL>
+<LI><A HREF="#0153" TARGET=body>Module Processes</A>
+<LI><A HREF="#0173" TARGET=body>Module Semaphores</A>
+</UL>
+<P><HR>
+<A NAME="0153">
+<A HREF="#0152" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0152" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0154" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Module Processes</H2>
+
+<P>The module <TT>Processes</TT> provides a basic set of facilities for use in concurrent programs. These can be used on their own, or in conjunction with those from the module <TT><A HREF="#0173" TARGET=body>Semaphores</A></TT> which provide for potentially parallel parts of the program to exclude one another from regions of interaction. 
+<P>A concurrent program consists of a number of <I>processes</I>, each of which may potentially run in parallel with the others but is distinguishable from them. At any one time, a process may be in one of four states: It may be <I>ready</I>, that is, eligible to use the processor but not actually doing so. It may be <I>current</I>, that is, actually using the processor. It may be <I>passive</I>, that is, ineligible to use the processor until another process makes it eligible. Lastly, it may be <I>waiting</I>, that is, ineligible to use the processor until the occurrence of one of a set of events for which it is waiting. 
+<P>At all times there must be at least one process using the processor, or, if no process is eligible, there must be at least one process waiting for some external event. 
+<P>Two general styles of use are envisaged, and both may be present in a single program. 
+<P>In the first style (using <TT><A HREF="#0162" TARGET=body>Switch</A></TT>), the model is of a set of closely coupled processes, which explicitly choose which of them is to run next, and which pass information between themselves as part of the choice. The intention is to provide a higher level coroutine-like facility between processes of the same urgency. 
+<P>In the second style (using <TT><A HREF="#0160" TARGET=body>Activate</A></TT> and <TT><A HREF="#0159" TARGET=body>SuspendMe</A></TT>), the processes are written to be less dependent on one another, and the choice of which of them runs is left to an internal scheduler, which is invoked whenever one process is suspended or another one is reactivated. This internal scheduler makes use of the fact that each process has an associated static &lsquo;urgency&rsquo;, specified by an <TT>INTEGER</TT> parameter when it is first created. The scheduler ensures that it cannot be the case that a process eligible to use the processor has an urgency greater than one of the processes currently doing so. The &lsquo;main process&rsquo; (the parent program) is given a default urgency of zero; for other processes, the more positive the value of urgency, the more urgent is the process. 
+<P>Those processes that suspend themselves to wait for external events must first associate themselves with one or more sources of such events. The International Standard does not prescribe how events occur, or what the sources of events must be, other than to require that they be mapped in an implementation-defined way to values of the pervasive type <TT>CARDINAL</TT>, and to require that a source of events cannot be connected to more than one process simultaneously. 
+<P><B>NOTES:</B> 
+<UL>
+ 
+<LI>There is no requirement that pre-emptive scheduling be employed, although an implementation is free to incorporate such scheduling if this is desired. </LI>
+<LI>Although the International Standard applies to single-processor machines, if a pre-emptive (time-sliced) scheduler is present there may conceptually be more than one &lsquo;current&rsquo; process; the description above is phrased so as to emphasize this. </LI>
+<LI>A program that uses the module <TT>Processes</TT> should not make explicit use of coroutines (except, perhaps, in the implementation of <TT>Processes</TT> itself). </LI>
+<LI>This is a partial specification: Various of the procedures in the modules <TT>Processes</TT> and <TT><A HREF="#0173" TARGET=body>Semaphores</A></TT> have semantics expressed in terms of preconditions. Their behaviour in situations where these preconditions are not met is deliberately not specified; in particular, the raising of exceptions is not required. This is a deliberate decision that allows to achieve maximum efficiency in the implementation of these modules. </LI>
+</UL>
+
+<P>The exceptions raised by <TT>Processes</TT> are identified by the values of the enumeration type <TT>ProcessesExceptions</TT>: 
+<P><PRE>TYPE
+&nbsp;&nbsp;ProcessesExceptions&nbsp;=&nbsp;(passiveProgram,&nbsp;processError);
+</PRE>
+
+<P>The detection of the exception <TT>processError</TT> is implementation-defined. 
+<P>After the module is initialized, there is exactly one process, known as the &lsquo;main process&rsquo;. This process have an urgency of <TT>0</TT> and a parameter of <TT>NIL</TT>; initially, it is not associated with any source of events. 
+<P><B>CHANGE:</B> 
+<P>This module is not based on the module <TT>Processes</TT> described in <I>Programming in Modula-2</I>. 
+<P><UL>
+<LI><A HREF="#0154" TARGET=body>Types of Processes</A>
+<LI><A HREF="#0155" TARGET=body>The Procedures of Processes</A>
+<LI><A HREF="#0156" TARGET=body>Create - Create new process</A>
+<LI><A HREF="#0157" TARGET=body>Start - Start new process</A>
+<LI><A HREF="#0158" TARGET=body>StopMe - Terminate calling process</A>
+<LI><A HREF="#0159" TARGET=body>SuspendMe - Suspend calling process</A>
+<LI><A HREF="#0160" TARGET=body>Activate - Activate process</A>
+<LI><A HREF="#0161" TARGET=body>SuspendMeAndActivate - Suspend current process and activate another</A>
+<LI><A HREF="#0162" TARGET=body>Switch - Switch to another process</A>
+<LI><A HREF="#0163" TARGET=body>Wait - Wait for event</A>
+<LI><A HREF="#0164" TARGET=body>Attach - Associate event source</A>
+<LI><A HREF="#0165" TARGET=body>Detach - Dissociate event source</A>
+<LI><A HREF="#0166" TARGET=body>IsAttached - Query event source</A>
+<LI><A HREF="#0167" TARGET=body>Handler - Query event handler</A>
+<LI><A HREF="#0168" TARGET=body>Me - Query current process id</A>
+<LI><A HREF="#0169" TARGET=body>MyParam - Query current process parameter</A>
+<LI><A HREF="#0170" TARGET=body>UrgencyOf - Query process urgency</A>
+<LI><A HREF="#0171" TARGET=body>IsProcessesException - Query exceptional state</A>
+<LI><A HREF="#0172" TARGET=body>ProcessesException - Query exception id</A>
+</UL>
+<P><HR>
+<A NAME="0154">
+<A HREF="#0153" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0153" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0155" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Types of Processes</H3>
+
+<P><PRE>TYPE
+&nbsp;&nbsp;ProcessId;
+&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;Used&nbsp;to&nbsp;identify&nbsp;processes&nbsp;*)
+&nbsp;&nbsp;Parameter&nbsp;=&nbsp;SYSTEM.ADDRESS;
+&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;Used&nbsp;to&nbsp;pass&nbsp;data&nbsp;between&nbsp;processes&nbsp;*)
+&nbsp;&nbsp;Body&nbsp;=&nbsp;PROC;
+&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;Used&nbsp;as&nbsp;the&nbsp;type&nbsp;of&nbsp;a&nbsp;process&nbsp;body&nbsp;*)
+&nbsp;&nbsp;Urgency&nbsp;=&nbsp;INTEGER;
+&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;Used&nbsp;by&nbsp;the&nbsp;internal&nbsp;scheduler&nbsp;*)
+&nbsp;&nbsp;Sources&nbsp;=&nbsp;CARDINAL;
+&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;Used&nbsp;to&nbsp;identify&nbsp;event&nbsp;sources&nbsp;*)
+</PRE>
+
+<P><HR>
+<A NAME="0155"><A NAME="Create">
+<A HREF="#0153" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0154" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0156" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>The Procedures of Processes</H3>
+
+<P>The semantics of certain of the procedures of <TT>Processes</TT> require that a process be selected from the set of processes that are eligible to run, and be scheduled for execution. The selection algorithm shall guarantee that no process eligible to use the processor has an urgency greater than one of the processes currently doing so. 
+<P><B>NOTES:</B> 
+<UL>
+ 
+<LI>The procedures in this category are <TT><A HREF="#0157" TARGET=body>Start</A></TT>, <TT><A HREF="#0158" TARGET=body>StopMe</A></TT>, <TT><A HREF="#0159" TARGET=body>SuspendMe</A></TT>, <TT><A HREF="#0160" TARGET=body>Activate</A></TT>, <TT><A HREF="#0161" TARGET=body>SuspendMeAndActivate</A></TT> and <TT><A HREF="#0163" TARGET=body>Wait</A></TT>. </LI>
+<LI>The urgency of a process is specified, when it is created, by a value of the type <TT>INTEGER</TT>, and cannot be changed dynamically. The more positive the value of urgency, the more urgent the process. </LI>
+</UL>
+
+<P>Certain of the procedures of <TT>Processes</TT> require that a process be associated with a source of external events. There shall be an implementation-defined mapping of values of the type <TT>CARDINAL</TT> to such sources of events. 
+<P>A source of events shall not be associated with more than one process at any instant. 
+<P><B>NOTES:</B> 
+<UL>
+ 
+<LI>The International Standard does not prescribe how events occur, or what the sources of events must be, other than in terms of this implementation-defined mapping. </LI>
+<LI>The International Standard does not specify the consequences if a value (of the type <TT><A HREF="#0154" TARGET=body>Sources</A></TT>) that is not mapped to a source of events is passed as an actual parameter to any of the procedures <TT><A HREF="#0164" TARGET=body>Attach</A></TT>, <TT><A HREF="#0165" TARGET=body>Detach</A></TT>, <TT><A HREF="#0166" TARGET=body>IsAttached</A></TT> or <TT><A HREF="#0167" TARGET=body>Handler</A></TT>. </LI>
+</UL>
+
+<P><HR>
+<A NAME="0156"><A NAME="Start">
+<A HREF="#0153" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0155" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0157" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>Create - Create new process</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;Create&nbsp;(procBody:&nbsp;Body;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;extraSpace:&nbsp;CARDINAL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;procUrg:&nbsp;Urgency;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;procParams:&nbsp;Parameter;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;procId:&nbsp;ProcessId);
+</PRE>
+
+<P>Module <TT><A HREF="#0153" TARGET=body>Processes</A></TT>
+<P>The procedure <TT>Create</TT> creates a new process. An unique value of the type <TT>ProcessId</TT> is assigned to <TT>procId</TT> as an identity for the process. The urgency and parameters for the created process are those given by <TT>procUrg</TT> and <TT>procParams</TT> respectively. <TT>extraSpace</TT> specifies the amount of workspace (in units of <TT>SYSTEM.LOC</TT>) that is required by the process, above any fixed overhead needed by the implementation of <TT><A HREF="#0153" TARGET=body>Processes</A></TT>. 
+<P>The process will be ineligible to run (i.e. it is created in the <I>passive</I> state). When the process is first activated, it will start execution by invoking the procedure that is denoted by <TT>procBody</TT>. 
+<P>The usage made of the workspace is implementation-dependent. 
+<P>If the end of this procedure body is reached, or if a return statement is executed in the procedure body, then the effect will be the same as calling the protection domain exit procedure (if any), followed by an explicit call of <TT><A HREF="#0158" TARGET=body>StopMe</A></TT>. 
+<P><B>NOTES:</B> 
+<UL>
+ 
+<LI>The process will be activated when another process makes it eligible by calling <TT><A HREF="#0162" TARGET=body>Switch</A></TT> or <TT><A HREF="#0160" TARGET=body>Activate</A></TT> or <TT><A HREF="#0161" TARGET=body>SuspendMeAndActivate</A></TT>. </LI>
+<LI>The standard library makes no provision to handle exceptions generated by created processes, which must handle all exceptions themselves if it is wished to avoid exceptional termination of a program. </LI>
+</UL>
+
+<P><HR>
+<A NAME="0157"><A NAME="StopMe">
+<A HREF="#0153" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0156" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0158" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>Start - Start new process</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;Start&nbsp;(procBody:&nbsp;Body;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;extraSpace:&nbsp;CARDINAL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;procUrg:&nbsp;Urgency;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;procParams:&nbsp;Parameter;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;procId:&nbsp;ProcessId);
+</PRE>
+
+<P>Module <TT><A HREF="#0153" TARGET=body>Processes</A></TT>
+<P>The procedure <TT>Start</TT> have an identical effect to the procedure <TT><A HREF="#0156" TARGET=body>Create</A></TT>, except that the created process will be eligible to run immediately (i.e. it is created in the <I>ready</I> state). 
+<P><HR>
+<A NAME="0158"><A NAME="SuspendMe">
+<A HREF="#0153" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0157" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0159" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>StopMe - Terminate calling process</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;StopMe&nbsp;();
+</PRE>
+
+<P>Module <TT><A HREF="#0153" TARGET=body>Processes</A></TT>
+<P>If the calling process is not associated with any source of events, the procedure <TT>StopMe</TT> causes the calling process to be terminated and removed from the system. The procedure does not return; the calling process will not again become eligible to run. If there are no other processes, then normal termination of the program is initiated. If there are other processes eligible to run, then one of them is selected for execution. The exception <TT>passiveProgram</TT> is raised if there are other processes, but none of them is eligible to run and none of them is waiting for an event to occur. 
+<P><B>NOTES:</B> 
+<UL>
+ 
+<LI>If the main process stops, the other processes will continue to run. </LI>
+<LI>The behaviour of <TT>StopMe</TT> in situations where the calling process is associated with a source of events is implementation-dependent. </LI>
+</UL>
+
+<P><HR>
+<A NAME="0159"><A NAME="Activate">
+<A HREF="#0153" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0158" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0160" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>SuspendMe - Suspend calling process</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;SuspendMe&nbsp;();
+</PRE>
+
+<P>Module <TT><A HREF="#0153" TARGET=body>Processes</A></TT>
+<P>The procedure <TT>SuspendMe</TT> causes the calling process to become ineligible to run (i.e. to enter the <I>passive</I> state). If there are other processes eligible to run, then one of them is selected for execution. The exception <TT>passiveProgram</TT> is raised if no other process is eligible to run and no other process is waiting for an event to occur. 
+<P><B>NOTE:</B> 
+<P>The suspended process can be reactivated when another process again makes it eligible by calling <TT><A HREF="#0162" TARGET=body>Switch</A></TT> or <TT><A HREF="#0160" TARGET=body>Activate</A></TT> or <TT><A HREF="#0161" TARGET=body>SuspendMeAndActivate</A></TT>. 
+<P><HR>
+<A NAME="0160"><A NAME="SuspendMeAndActivate">
+<A HREF="#0153" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0159" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0161" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>Activate - Activate process</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;Activate&nbsp;(procId:&nbsp;ProcessId);
+</PRE>
+
+<P>Module <TT><A HREF="#0153" TARGET=body>Processes</A></TT>
+<P>If the process identified by <TT>procId</TT> is passive or waiting, the procedure <TT>Activate</TT> causes that process to become eligible to run (i.e. to enter the <I>ready</I> state); otherwise it have no effect. 
+<P><B>NOTE:</B> 
+<P>If the designated process was suspended by a call of <TT><A HREF="#0163" TARGET=body>Wait</A></TT>, it will become ready in the same way as if the event had occurred. Thus, if the procedure <TT><A HREF="#0160" TARGET=body>Activate</A></TT> (or <TT><A HREF="#0161" TARGET=body>SuspendMeAndActivate</A></TT>) is used to reactivate a waiting process, further checking will usually be required in that process to determine whether or not the event for which it was waiting had actually taken place. 
+<P><HR>
+<A NAME="0161"><A NAME="Switch">
+<A HREF="#0153" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0160" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0162" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>SuspendMeAndActivate - Suspend current process and activate another</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;SuspendMeAndActivate&nbsp;(procId:&nbsp;ProcessId);
+</PRE>
+
+<P>Module <TT><A HREF="#0153" TARGET=body>Processes</A></TT>
+<P>If the process identified by <TT>procId</TT> is passive, waiting, or is the calling process, the procedure <TT>SuspendMeAndActivate</TT> causes the calling process to become ineligible to run (i.e. to enter the <I>passive</I> state), and causes the process identified by <TT>procId</TT> to become eligible to run (i.e. to enter the <I>ready</I> state); otherwise the call have no effect. 
+<P><B>NOTE</B> 
+<P><TT>SuspendMeAndActivate(procId)</TT> effectively performs an <I>atomic</I> (i.e. &lsquo;indivisible&rsquo;) sequence of the calls <TT>SuspendMe()</TT> and <TT>Activate(procId)</TT>. If applied to the identity of the calling process, the effect is to force a scheduling operation. 
+<P><HR>
+<A NAME="0162"><A NAME="Wait">
+<A HREF="#0153" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0161" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0163" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>Switch - Switch to another process</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;Switch&nbsp;(procId:&nbsp;ProcessId;&nbsp;VAR&nbsp;info:&nbsp;Parameter);
+</PRE>
+
+<P>Module <TT><A HREF="#0153" TARGET=body>Processes</A></TT>
+<P>If the calling process has an urgency no greater than that of the process identified by <TT>procId</TT>, the procedure <TT>Switch</TT> causes the calling process to become ineligible to run (i.e. to enter the <I>passive</I> state), and resumes execution of the process identified by <TT>procId</TT>. The exception <TT>processError</TT> occurs (but need not be raised) if this process is already eligible to run. <TT>info</TT> is passed as a parameter to the process identified by <TT>procId</TT>. If the calling process is reactivated as a result of another process calling <TT>Switch</TT>, then <TT>info</TT> is assigned the value passed by that other call. If the calling process is reactivated as a result of another process calling <TT><A HREF="#0160" TARGET=body>Activate</A></TT> or <TT><A HREF="#0161" TARGET=body>SuspendMeAndActivate</A></TT>, then <TT>info</TT> is assigned the value <TT>NIL</TT>. 
+<P><B>NOTE:</B> 
+<P><TT>Switch</TT> is intended to allow a high-level coroutine facility for use within concurrent programs. Several consequences follow: 
+<OL>
+ 
+<LI>The process that is resumed will only be able to retrieve the parameter passed to it as <TT>info</TT> if it was ineligible to run by virtue of itself having called <TT>Switch</TT>. </LI>
+<LI>The behaviour of <TT>Switch</TT> in situations where the urgency of the calling process is greater than the urgency of the process identified by <TT>procId</TT> is implementation-dependent. </LI>
+<LI>While a call of <TT>Switch</TT> may be used instead of <TT><A HREF="#0160" TARGET=body>Activate</A></TT> to activate a process, <TT>p</TT>, of a higher urgency than the caller, <TT>p</TT> will not be able to use <TT>Switch</TT> if it wishes to reactivate that caller; it will be obliged to use <TT><A HREF="#0160" TARGET=body>Activate</A></TT> or <TT><A HREF="#0161" TARGET=body>SuspendMeAndActivate</A></TT>. </LI>
+<LI>If the designated process was suspended by a call of <TT><A HREF="#0163" TARGET=body>Wait</A></TT>, it will become ready in the same way as if the event had occurred. Thus, if the procedure <TT><A HREF="#0162" TARGET=body>Switch</A></TT> (or <TT><A HREF="#0160" TARGET=body>Activate</A></TT> or <TT><A HREF="#0161" TARGET=body>SuspendMeAndActivate</A></TT>) is used to reactivate a waiting process, further checking will usually be required in that process to determine whether or not the event for which it was waiting had actually taken place. </LI>
+</OL>
+
+<P><HR>
+<A NAME="0163"><A NAME="Attach">
+<A HREF="#0153" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0162" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0164" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>Wait - Wait for event</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;Wait&nbsp;();
+</PRE>
+
+<P>Module <TT><A HREF="#0153" TARGET=body>Processes</A></TT>
+<P>The procedure <TT>Wait</TT> causes the calling process to become ineligible to run (i.e. to enter the <I>waiting</I> state) if it is associated with a source of events. If there are other processes eligible to run, then one of them is selected for execution. 
+<P><B>NOTES:</B> 
+<UL>
+ 
+<LI>One of the ready processes is selected for execution to replace the caller of <TT>Wait</TT>. This is on the assumption that, if there are ready processes that are not executing, the scheduler imposes a fixed upper limit on the number of executing processes. </LI>
+<LI>The process will remain ineligible to run until an event occurs from one of the sources to which it is attached, or until it is made eligible by another process calling <TT><A HREF="#0162" TARGET=body>Switch</A></TT> or <TT><A HREF="#0160" TARGET=body>Activate</A></TT> or <TT><A HREF="#0161" TARGET=body>SuspendMeAndActivate</A></TT>. </LI>
+<LI>If a process waiting for an event is reactivated by virtue of a call being made by another process to <TT><A HREF="#0162" TARGET=body>Switch</A></TT> or <TT><A HREF="#0160" TARGET=body>Activate</A></TT> or <TT><A HREF="#0161" TARGET=body>SuspendMeAndActivate</A></TT>, it will become ready in the same way as if the event had occurred. Thus, in such situations, further checking will usually be required to determine whether or not the event for which it was waiting had actually taken place. </LI>
+<LI>The behaviour of <TT>Wait</TT> if the calling process has not been attached to a source of events, or if another process is attached to the event source after the calling process has called <TT>Wait</TT> is implementation-dependent. In such circumstances the calling process may never again become eligible to run, and the system could deadlock. </LI>
+</UL>
+
+<P><HR>
+<A NAME="0164"><A NAME="Detach">
+<A HREF="#0153" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0163" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0165" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>Attach - Associate event source</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;Attach&nbsp;(eventSource:&nbsp;Sources);
+</PRE>
+
+<P>Module <TT><A HREF="#0153" TARGET=body>Processes</A></TT>
+<P>The procedure <TT>Attach</TT> associates the source of events given by <TT>eventSource</TT> with the calling process. If the source of events is already associated with a process, then that association is first broken. 
+<P><HR>
+<A NAME="0165"><A NAME="IsAttached">
+<A HREF="#0153" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0164" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0166" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>Detach - Dissociate event source</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;Detach&nbsp;(eventSource:&nbsp;Sources);
+</PRE>
+
+<P>Module <TT><A HREF="#0153" TARGET=body>Processes</A></TT>
+<P>The procedure <TT>Detach</TT> dissociates the source of events given by <TT>eventSource</TT> from the program. 
+<P><B>NOTE:</B> 
+<P><TT>Detach</TT> has no effect if the program is not associated with <TT>eventSource</TT>. 
+<P><HR>
+<A NAME="0166"><A NAME="Handler">
+<A HREF="#0153" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0165" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0167" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>IsAttached - Query event source</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;IsAttached&nbsp;(eventSource:&nbsp;Sources):&nbsp;BOOLEAN;
+</PRE>
+
+<P>Module <TT><A HREF="#0153" TARGET=body>Processes</A></TT>
+<P>The function procedure <TT>IsAttached</TT> returns <TT>TRUE</TT> if and only if the source of events given by <TT>eventSource</TT> is associated with one of the processes in the program. 
+<P><HR>
+<A NAME="0167"><A NAME="Me">
+<A HREF="#0153" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0166" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0168" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>Handler - Query event handler</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;Handler&nbsp;(eventSource:&nbsp;Sources):&nbsp;ProcessId;
+</PRE>
+
+<P>Module <TT><A HREF="#0153" TARGET=body>Processes</A></TT>
+<P>If the source of events identified by <TT>eventSource</TT> is associated with a process, the function procedure <TT>Handler</TT> is the identity of that process. 
+<P><B>NOTE:</B> 
+<P>The value of the call <TT>Handler(eventSource)</TT> is implementation-dependent in the situation where the value of <TT>eventSource</TT> is not mapped to any real source of events. 
+<P><HR>
+<A NAME="0168"><A NAME="MyParam">
+<A HREF="#0153" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0167" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0169" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>Me - Query current process id</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;Me&nbsp;():&nbsp;ProcessId;
+</PRE>
+
+<P>Module <TT><A HREF="#0153" TARGET=body>Processes</A></TT>
+<P>The function procedure <TT>Me</TT> returns the identity of the calling process. 
+<P><HR>
+<A NAME="0169"><A NAME="UrgencyOf">
+<A HREF="#0153" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0168" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0170" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>MyParam - Query current process parameter</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;MyParam&nbsp;():&nbsp;Parameter;
+</PRE>
+
+<P>Module <TT><A HREF="#0153" TARGET=body>Processes</A></TT>
+<P>The function procedure <TT>MyParam</TT> returns the value of the parameter denoted by <TT>procParams</TT> at the time the process was created. 
+<P><HR>
+<A NAME="0170"><A NAME="IsProcessesException">
+<A HREF="#0153" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0169" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0171" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>UrgencyOf - Query process urgency</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;UrgencyOf&nbsp;(procId:&nbsp;ProcessId):&nbsp;Urgency;
+</PRE>
+
+<P>Module <TT><A HREF="#0153" TARGET=body>Processes</A></TT>
+<P>The function procedure <TT>UrgencyOf</TT> returns the urgency of the process identified by <TT>procId</TT>. 
+<P><B>NOTE:</B> 
+<P>This urgency of a process is statically assigned when the process is created; it is not possible for a process to alter its urgency dynamically. 
+<P><HR>
+<A NAME="0171"><A NAME="ProcessesException">
+<A HREF="#0153" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0170" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0172" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>IsProcessesException - Query exceptional state</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;IsProcessesException&nbsp;():&nbsp;BOOLEAN;
+</PRE>
+
+<P>Module <TT><A HREF="#0153" TARGET=body>Processes</A></TT>
+<P>If the calling coroutine is in the state of exceptional execution because of the raising of a <TT><A HREF="#0153" TARGET=body>Processes</A></TT> exception, the function procedure <TT>IsProcessesException</TT> returns <TT>TRUE</TT>; otherwise it retruns <TT>FALSE</TT>. 
+<P><HR>
+<A NAME="0172">
+<A HREF="#0153" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0171" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0173" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>ProcessesException - Query exception id</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;ProcessesException&nbsp;():&nbsp;ProcessesExceptions;
+</PRE>
+
+<P>Module <TT><A HREF="#0153" TARGET=body>Processes</A></TT>
+<P>If the calling coroutine is in the state of exceptional execution because of the raising of a <TT><A HREF="#0153" TARGET=body>Processes</A></TT> exception, the function procedure <TT>ProcessesException</TT> returns the value that identifies the raised exception; otherwise the language exception <TT>exException</TT> is be raised. 
+<P><HR>
+<A NAME="0173"><A NAME="Create">
+<A HREF="#0152" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0172" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0174" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H2>Module Semaphores</H2>
+
+<P>The module <TT>Semaphores</TT> provides facilities for potentially parallel parts of a program (i.e. <I>processes</I>) to exclude one another from regions of interaction by using the <I>semaphore mechanism</I> first proposed by Dijkstra. The semaphores provided by the module are general or counting semaphores (as opposed to binary semaphores). 
+<P>The hidden type <TT>SEMAPHORE</TT> is used to identify semaphores. 
+<P><PRE>TYPE
+&nbsp;&nbsp;SEMAPHORE;
+</PRE>
+
+<P>Each semaphore have a unique identity. Associated with each semaphore there is a non-negative count, and a set of zero or more processes waiting for it to become free. A semaphore is said to be <I>&lsquo;free&rsquo;</I> if its associated count is non-zero. 
+<P>After the module has been initialized, no semaphores are in existence. 
+<P><B>NOTES:</B> 
+<UL>
+ 
+<LI>For convenience, the semantics of this module are illustrated in terms of the semantics of the <TT><A HREF="#0153" TARGET=body>Processes</A></TT> module. However, there is no requirement that an implementation provide <TT><A HREF="#0153" TARGET=body>Processes</A></TT> in addition to providing <TT>Semaphores</TT>. </LI>
+<LI>The behaviour of the procedures <TT><A HREF="#0175" TARGET=body>Destroy</A></TT>, <TT><A HREF="#0176" TARGET=body>Claim</A></TT>, <TT><A HREF="#0177" TARGET=body>Release</A></TT> and <TT><A HREF="#0178" TARGET=body>CondClaim</A></TT> in situations where the actual parameter passed is not a valid semaphore (i.e. is not the identity of a semaphore allocated by a call to <TT><A HREF="#0174" TARGET=body>Create</A></TT>) is implementation-dependent. </LI>
+</UL>
+
+<P><UL>
+<LI><A HREF="#0174" TARGET=body>Create - Create new semaphore</A>
+<LI><A HREF="#0175" TARGET=body>Destroy - Destroy semaphore</A>
+<LI><A HREF="#0176" TARGET=body>Claim - Claim semaphore</A>
+<LI><A HREF="#0177" TARGET=body>Release - Unclaim semaphore</A>
+<LI><A HREF="#0178" TARGET=body>CondClaim - Claim semaphore safely</A>
+<LI><A HREF="#0179" TARGET=body>IsSemaphoresException - Query exceptional state</A>
+</UL>
+<P><HR>
+<A NAME="0174"><A NAME="Destroy">
+<A HREF="#0173" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0173" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0175" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>Create - Create new semaphore</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;Create&nbsp;(VAR&nbsp;s:&nbsp;SEMAPHORE;&nbsp;initialCount:&nbsp;CARDINAL);
+</PRE>
+
+<P>Module <TT><A HREF="#0173" TARGET=body>Semaphores</A></TT>
+<P>The procedure <TT>Create</TT> creates a new semaphore, if there are sufficient resources to do so, and assigns its identity to <TT>s</TT>; otherwise the <TT><A HREF="#0173" TARGET=body>Semaphores</A></TT> exception is raised. The count associated with the semaphore is initialized to <TT>initialCount</TT>, and there will then be no process waiting for the semaphore to be free. 
+<P><HR>
+<A NAME="0175"><A NAME="Claim">
+<A HREF="#0173" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0174" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0176" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>Destroy - Destroy semaphore</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;Destroy&nbsp;(VAR&nbsp;s:&nbsp;SEMAPHORE);
+</PRE>
+
+<P>Module <TT><A HREF="#0173" TARGET=body>Semaphores</A></TT>
+<P>Provided that no process is waiting for the semaphore identified by the value of <TT>s</TT> to become free, the procedure <TT>Destroy</TT> removes that semaphore and recovers the resources used to implement it. 
+<P>The variable <TT>s</TT> is set to a value that is invalid for semaphore operations. 
+<P><B>NOTE:</B> 
+<P>The behaviour of <TT>Destroy(s)</TT> in situations where there are processes waiting for <TT>s</TT> to become free is implementation-dependent. 
+<P><HR>
+<A NAME="0176"><A NAME="Release">
+<A HREF="#0173" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0175" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0177" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>Claim - Claim semaphore</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;Claim&nbsp;(s:&nbsp;SEMAPHORE);
+</PRE>
+
+<P>Module <TT><A HREF="#0173" TARGET=body>Semaphores</A></TT>
+<P>The procedure <TT>Claim</TT> claims the semaphore identified by <TT>s</TT>. If the count associated with <TT>s</TT> is non-zero, then it is decremented, and the calling process continues execution; otherwise the calling process becomes ineligible to run, and is added to the set waiting for <TT>s</TT> to become free. 
+<P><HR>
+<A NAME="0177"><A NAME="CondClaim">
+<A HREF="#0173" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0176" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0178" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>Release - Unclaim semaphore</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;Release&nbsp;(s:&nbsp;SEMAPHORE);
+</PRE>
+
+<P>Module <TT><A HREF="#0173" TARGET=body>Semaphores</A></TT>
+<P>The procedure <TT>Release</TT> unclaims the semaphore identified by <TT>s</TT>. If no process is waiting on <TT>s</TT>, the count associated with <TT>s</TT> is incremented; otherwise one process is selected from those waiting for <TT>s</TT> to become free; this process is removed from the waiting set, and becomes eligible to run (i.e. enter the ready state). 
+<P><B>NOTES:</B> 
+<UL>
+ 
+<LI>No requirement is imposed about which of the waiting processes is chosen for activation. </LI>
+<LI>Preemption occurs if the newly eligible process has an urgency greater than that of the calling process. </LI>
+</UL>
+
+<P><HR>
+<A NAME="0178"><A NAME="IsSemaphoresException">
+<A HREF="#0173" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0177" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0179" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>CondClaim - Claim semaphore safely</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;CondClaim&nbsp;(s:&nbsp;SEMAPHORE):&nbsp;BOOLEAN;
+</PRE>
+
+<P>Module <TT><A HREF="#0173" TARGET=body>Semaphores</A></TT>
+<P>If the call <TT>Claim(s)</TT> would have caused the calling process to become ineligible to run, the procedure <TT>CondClaim</TT> returns <TT>FALSE</TT>, and the count associated with <TT>s</TT> is unchanged. Otherwise the count associated with <TT>s</TT> is decremented, and the procedure returns <TT>TRUE</TT>. 
+<P><B>NOTE:</B> 
+<P>The calling process is never suspended as a result of calling <TT>CondClaim</TT>. 
+<P><HR>
+<A NAME="0179">
+<A HREF="#0173" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0178" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="isolib004.html#0180" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>IsSemaphoresException - Query exceptional state</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;IsSemaphoresException&nbsp;():&nbsp;BOOLEAN;
+</PRE>
+
+<P>Module <TT><A HREF="#0173" TARGET=body>Semaphores</A></TT>
+<P>If the calling coroutine is in the state of exceptional execution because of the raising of the <TT><A HREF="#0173" TARGET=body>Semaphores</A></TT> exception, the procedure <TT>IsSemaphoresException</TT> returns <TT>TRUE</TT>; otherwise it returns <TT>FALSE</TT>.  
+</BODY>
+</HTML>

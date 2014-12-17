@@ -1,0 +1,7 @@
+<* M2EXTENSIONS+ *>
+<* NOHEADER+ *>
+DEFINITION MODULE ["C"] ctest;
+
+PROCEDURE StrToUpper (x: ARRAY OF CHAR);
+
+END ctest.

@@ -1,0 +1,48 @@
+DEFINITION MODULE LongStr;
+
+IMPORT ConvTypes;
+
+TYPE
+  float = LONGREAL;
+  ConvResults = ConvTypes.ConvResults;
+  (* strAllRight, strOutOfRange, strWrongFormat, strEmpty *)
+
+(* the string form of a signed fixed-point real number is
+   ["+"|"-"]. decimal digit, {decimal digit}, [".", {decimal digit}]
+*)
+
+(* the string form of a signed flating-point real number is
+   signed fixed-point real number, "E", ["+"|"-"], decimal digit, {decimal digit}
+*)
+
+PROCEDURE StrToReal (str: ARRAY OF CHAR; VAR real: float; VAR res: ConvResults);
+(* Ignores any leading spaces in str. If the subsequent characters in str are in the
+   format of a signed real number, assigns a corresponding value to real.
+   Assigns a value indicating the format of str to res.
+*)
+
+PROCEDURE RealToFloat (real: float; sigFigs: CARDINAL; VAR str: ARRAY OF CHAR);
+(* Converts the value of real to floating-point string form, with sigFigs significant
+   figures, and copies the possibly truncated result to str.
+*)
+
+PROCEDURE RealToEng (real: float; sigFigs: CARDINAL; VAR str: ARRAY OF CHAR);
+(* Converts the value of real to floating-point string form, with sigFigs significant
+   digits, and copies the possibly truncated result to str. The number is scaled
+   with one to three digits in the whole number part and with an exponent that is
+   multiple of three.
+*)
+
+PROCEDURE RealToFixed (real: float; place: INTEGER; VAR str: ARRAY OF CHAR);
+(* Converts the value of real to fixed-point string form, rounded to the given place
+   relative to the decimal poin, and copies the possibly truncated result to str.
+*)
+
+PROCEDURE RealToStr (real: float; VAR str: ARRAY OF CHAR);
+(* Convers the value of real as RealToFixed if the sign and magnitute can be shown
+   within the capacity of str, or otherwise as RealToFloat, and copies the possibly
+   truncated result to str. The number of places or significant digits are
+   implementation-defined.
+*)
+
+END LongStr.

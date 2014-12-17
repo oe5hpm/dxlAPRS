@@ -1,0 +1,326 @@
+(* Xm/LabelGP.def  Nov 11  16:4:50  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/LabelGP.h H2D v1.18.1. *)
+
+(* $RCSfile: LabelGP.def,v $ $Revision: 5 $ $Date: 28.07.98 23:14 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+(* Merged headers: Xm/LabelG.h *)
+
+DEFINITION MODULE ["C"] LabelGP;
+
+IMPORT SYSTEM, X, Xlib, Xm:=XmP, Xt:=IntrinsicP;
+(* H2D:  Required IMPORT clause: 
+IMPORT LabelGP, X, Xlib, XmP, IntrinsicP;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(* --------------------------------------------------- *)
+(*                     Xm/LabelG.h                     *)
+(* --------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2
+ *)
+
+(*   Widget class and record definitions   *)
+
+VAR 
+  xmLabelGadgetClass: Xt.WidgetClass;
+
+TYPE 
+  XmLabelGadgetClass = POINTER TO _XmLabelGadgetClassRec;
+
+  XmLabelGadget = POINTER TO _XmLabelGadgetRec;
+
+  XmLabelGCacheObject = POINTER TO _XmLabelGCacheObjRec;
+
+(********    Public Function Declarations    ********)
+
+PROCEDURE XmCreateLabelGadget ( parent: Xt.Widget;
+                                name: ARRAY OF CHAR;
+                                arglist: Xt.ArgList;
+                                argCount: Xt.Cardinal ): Xt.Widget;
+
+(********    End Public Function Declarations    ********)
+
+(* --------------------------------------------------- *)
+(*                    Xm/LabelGP.h                     *)
+(* --------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2.1
+ *)
+
+(**************************************************************)
+(* The Label Gadget Cache Object's class and instance records *)
+(**************************************************************)
+
+TYPE 
+  _XmLabelGCacheObjClassPart = RECORD
+    foo: SYSTEM.int;
+  END;
+
+  XmLabelGCacheObjClassPart = _XmLabelGCacheObjClassPart;
+
+(*  label cache class record  *)
+
+  _XmLabelGCacheObjClassRec = RECORD
+    object_class     : Xt.ObjectClassPart;
+    ext_class        : Xm.XmExtClassPart;
+    label_class_cache: XmLabelGCacheObjClassPart;
+  END;
+
+  XmLabelGCacheObjClassRec = _XmLabelGCacheObjClassRec;
+
+(*   The Label Gadget Cache instance record   *)
+
+  _XmLabelGCacheObjPart = RECORD
+    label_type      : SHORTCARD;
+    alignment       : SHORTCARD;
+    string_direction: SHORTCARD;
+    margin_height   : Xt.Dimension;   (* margin around widget *)
+    margin_width    : Xt.Dimension;
+    margin_left     : Xt.Dimension;   (* additional margins on *)
+    margin_right    : Xt.Dimension;   (* each side of widget *)
+    margin_top      : Xt.Dimension;   (* text (or pixmap) is placed *)
+    margin_bottom   : Xt.Dimension;   (* inside the margins *)
+    recompute_size  : Xt.Boolean;
+    skipCallback    : Xt.Boolean;     (* set by RowColumn when entryCallback
+                                       * is provided. *)
+    menu_type       : SHORTCARD;
+  END;
+
+  XmLabelGCacheObjPart = _XmLabelGCacheObjPart;
+
+  _XmLabelGCacheObjRec = RECORD
+    object     : Xt.ObjectPart;
+    ext        : Xm.XmExtPart;
+    label_cache: XmLabelGCacheObjPart;
+  END;
+
+  XmLabelGCacheObjRec = _XmLabelGCacheObjRec;
+
+(*  The Label Widget Class and instance records  *)
+(*************************************************)
+
+  _XmLabelGadgetClassPart = RECORD
+    setOverrideCallback: Xt.XtWidgetProc;
+    menuProcs          : Xm.XmMenuProc;
+    extension          : Xt.XtPointer;      (*  Pointer to extension record  *)
+  END;
+
+  XmLabelGadgetClassPart = _XmLabelGadgetClassPart;
+
+(*  label class record  *)
+
+  _XmLabelGadgetClassRec = RECORD
+    rect_class  : Xt.RectObjClassPart;
+    gadget_class: Xm.XmGadgetClassPart;
+    label_class : XmLabelGadgetClassPart;
+  END;
+
+  XmLabelGadgetClassRec = _XmLabelGadgetClassRec;
+
+  XmLabelGCache = POINTER TO XmLabelGCacheObjPart;
+
+  _XmLabelGadgetPart = RECORD
+    _label         : Xm._XmString;    (* String sent to this widget *)
+    _acc_text      : Xm._XmString;
+    mnemonic       : X.KeySym;
+    mnemonicCharset: Xm.XmStringCharSet;
+    accelerator    : Xt.String;
+    font           : Xm.XmFontList;
+    pixmap         : X.Pixmap;
+    pixmap_insen   : X.Pixmap;
+    (* PRIVATE members -- values computed by LabelWidgetClass methods *)
+    normal_GC      : Xlib.GC;          (* GC for text *)
+    insensitive_GC : Xlib.GC;
+    TextRect       : Xlib.XRectangle;  (* The bounding box of the text, or clip
+                                        * rectangle of the window; whichever is
+                                        * smaller *)
+    acc_TextRect   : Xlib.XRectangle;  (* The bounding box of the text, or clip
+                                        * rectangle of the window; whichever is
+                                        * smaller *)
+    cache          : XmLabelGCache;
+  END;
+
+  XmLabelGadgetPart = _XmLabelGadgetPart;
+
+  _XmLabelGadgetRec = RECORD
+    object   : Xt.ObjectPart;
+    rectangle: Xt.RectObjPart;
+    gadget   : Xm.XmGadgetPart;
+    label    : XmLabelGadgetPart;
+  END;
+
+  XmLabelGadgetRec = _XmLabelGadgetRec;
+
+VAR 
+  xmLabelGCacheObjClassRec: XmLabelGCacheObjClassRec;
+  xmLabelGadgetClassRec: XmLabelGadgetClassRec;
+
+(*  Inherited  Functions exported by label  *)
+
+CONST
+  XmInheritSetOverrideCallback = Xt._XtInherit;
+  XmInheritResize = Xt._XtInherit;
+
+(*  Padding between label text and accelerator text  *)
+
+  LABELG_ACC_PAD = 15;
+
+(* MACROS *)
+(********
+ * Macros for cached instance fields
+ *)
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: these procedures corresponds to a macros. *)
+PROCEDURE LabG_LabelType ( w: Xt.Widget ): SHORTCARD;
+PROCEDURE LabG_Alignment ( w: Xt.Widget ): SHORTCARD;
+PROCEDURE LabG_StringDirection ( w: Xt.Widget ): Xm.XmStringDirection;
+PROCEDURE LabG_MarginHeight ( w: Xt.Widget ): Xt.Dimension;
+PROCEDURE LabG_MarginWidth ( w: Xt.Widget ): Xt.Dimension;
+PROCEDURE LabG_MarginLeft ( w: Xt.Widget ): Xt.Dimension;
+PROCEDURE LabG_MarginRight ( w: Xt.Widget ): Xt.Dimension;
+PROCEDURE LabG_MarginTop ( w: Xt.Widget ): Xt.Dimension;
+PROCEDURE LabG_MarginBottom ( w: Xt.Widget ): Xt.Dimension;
+PROCEDURE LabG_RecomputeSize ( w: Xt.Widget ): Xt.Boolean;
+PROCEDURE LabG_SkipCallback ( w: Xt.Widget ): Xt.XtCallbackList;
+PROCEDURE LabG_MenuType ( w: Xt.Widget ): SHORTCARD;
+
+<* ELSE *>
+
+PROCEDURE  / LabG_LabelType ( w: Xt.Widget ): SHORTCARD;
+PROCEDURE  / LabG_Alignment ( w: Xt.Widget ): SHORTCARD;
+PROCEDURE  / LabG_StringDirection ( w: Xt.Widget ): Xm.XmStringDirection;
+PROCEDURE  / LabG_MarginHeight ( w: Xt.Widget ): Xt.Dimension;
+PROCEDURE  / LabG_MarginWidth ( w: Xt.Widget ): Xt.Dimension;
+PROCEDURE  / LabG_MarginLeft ( w: Xt.Widget ): Xt.Dimension;
+PROCEDURE  / LabG_MarginRight ( w: Xt.Widget ): Xt.Dimension;
+PROCEDURE  / LabG_MarginTop ( w: Xt.Widget ): Xt.Dimension;
+PROCEDURE  / LabG_MarginBottom ( w: Xt.Widget ): Xt.Dimension;
+PROCEDURE  / LabG_RecomputeSize ( w: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / LabG_SkipCallback ( w: Xt.Widget ): Xt.XtCallbackList;
+PROCEDURE  / LabG_MenuType ( w: Xt.Widget ): SHORTCARD;
+
+<* END *>
+
+(********
+ * Macros for UNcached instance fields
+ *)
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: these procedures corresponds to macros. *)
+PROCEDURE LabG__label ( w: Xt.Widget ): Xm._XmString;
+PROCEDURE LabG__acceleratorText ( w: Xt.Widget ): Xm._XmString;
+PROCEDURE LabG_Font ( w: Xt.Widget ): Xm.XmFontList;
+PROCEDURE LabG_Mnemonic ( w: Xt.Widget ): X.KeySym;
+PROCEDURE LabG_MnemonicCharset ( w: Xt.Widget ): Xm.XmStringCharSet;
+PROCEDURE LabG_Accelerator ( w: Xt.Widget ): Xt.String;
+PROCEDURE LabG_Pixmap ( w: Xt.Widget ): X.Pixmap;
+PROCEDURE LabG_PixmapInsensitive ( w: Xt.Widget ): X.Pixmap;
+PROCEDURE LabG_NormalGC ( w: Xt.Widget ): Xlib.GC;
+PROCEDURE LabG_InsensitiveGC ( w: Xt.Widget ): Xlib.GC;
+PROCEDURE LabG_TextRect ( w: Xt.Widget ): Xlib.XRectangle;
+PROCEDURE LabG_AccTextRect ( w: Xt.Widget ): Xlib.XRectangle;
+
+<* ELSE *>
+
+PROCEDURE  / LabG__label ( w: Xt.Widget ): Xm._XmString;
+PROCEDURE  / LabG__acceleratorText ( w: Xt.Widget ): Xm._XmString;
+PROCEDURE  / LabG_Font ( w: Xt.Widget ): Xm.XmFontList;
+PROCEDURE  / LabG_Mnemonic ( w: Xt.Widget ): X.KeySym;
+PROCEDURE  / LabG_MnemonicCharset ( w: Xt.Widget ): Xm.XmStringCharSet;
+PROCEDURE  / LabG_Accelerator ( w: Xt.Widget ): Xt.String;
+PROCEDURE  / LabG_Pixmap ( w: Xt.Widget ): X.Pixmap;
+PROCEDURE  / LabG_PixmapInsensitive ( w: Xt.Widget ): X.Pixmap;
+PROCEDURE  / LabG_NormalGC ( w: Xt.Widget ): Xlib.GC;
+PROCEDURE  / LabG_InsensitiveGC ( w: Xt.Widget ): Xlib.GC;
+PROCEDURE  / LabG_TextRect ( w: Xt.Widget ): Xlib.XRectangle;
+PROCEDURE  / LabG_AccTextRect ( w: Xt.Widget ): Xlib.XRectangle;
+
+<* END *>
+
+(********
+ * Convenience Macros
+ *)
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: these procedures corresponds to macros. *)
+PROCEDURE LabG_TextRect_x ( w: Xt.Widget ): Xt.Position;
+PROCEDURE LabG_TextRect_y ( w: Xt.Widget ): Xt.Position;
+PROCEDURE LabG_TextRect_width ( w: Xt.Widget ): Xt.Dimension;
+PROCEDURE LabG_TextRect_height ( w: Xt.Widget ): Xt.Dimension;
+PROCEDURE LabG_IsText ( w: Xt.Widget ): Xt.Boolean;
+PROCEDURE LabG_IsPixmap ( w: Xt.Widget ): Xt.Boolean;
+PROCEDURE LabG_Cache ( w: Xt.Widget ): XmLabelGCache;
+PROCEDURE LabG_Shadow ( w: Xt.Widget ): Xt.Dimension;
+PROCEDURE LabG_Highlight ( w: Xt.Widget ): Xt.Dimension;
+PROCEDURE LabG_Baseline ( w: Xt.Widget ): Xt.Dimension;
+PROCEDURE LabG_ClassCachePart ( w: Xt.Widget ): Xm.XmCacheClassPartPtr;
+
+<* ELSE *>
+
+PROCEDURE  / LabG_TextRect_x ( w: Xt.Widget ): Xt.Position;
+PROCEDURE  / LabG_TextRect_y ( w: Xt.Widget ): Xt.Position;
+PROCEDURE  / LabG_TextRect_width ( w: Xt.Widget ): Xt.Dimension;
+PROCEDURE  / LabG_TextRect_height ( w: Xt.Widget ): Xt.Dimension;
+PROCEDURE  / LabG_IsText ( w: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / LabG_IsPixmap ( w: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / LabG_Cache ( w: Xt.Widget ): XmLabelGCache;
+PROCEDURE  / LabG_Shadow ( w: Xt.Widget ): Xt.Dimension;
+PROCEDURE  / LabG_Highlight ( w: Xt.Widget ): Xt.Dimension;
+PROCEDURE  / LabG_Baseline ( w: Xt.Widget ): Xt.Dimension;
+PROCEDURE  / LabG_ClassCachePart ( w: Xt.Widget ): Xm.XmCacheClassPartPtr;
+
+<* END *>
+
+(********    Private Function Declarations    ********)
+
+PROCEDURE _XmLabelCacheCompare ( A: Xt.XtPointer;
+                                 B: Xt.XtPointer ): SYSTEM.int;
+
+PROCEDURE _XmCalcLabelGDimensions ( wid: Xt.Widget );
+
+PROCEDURE _XmReCacheLabG ( wid: Xt.Widget );
+
+PROCEDURE _XmAssignLabG_MarginHeight ( lw: XmLabelGadget;
+                                       value: Xt.Dimension );
+
+PROCEDURE _XmAssignLabG_MarginWidth ( lw: XmLabelGadget;
+                                      value: Xt.Dimension );
+
+PROCEDURE _XmAssignLabG_MarginLeft ( lw: XmLabelGadget;
+                                     value: Xt.Dimension );
+
+PROCEDURE _XmAssignLabG_MarginRight ( lw: XmLabelGadget;
+                                      value: Xt.Dimension );
+
+PROCEDURE _XmAssignLabG_MarginTop ( lw: XmLabelGadget;
+                                    value: Xt.Dimension );
+
+PROCEDURE _XmAssignLabG_MarginBottom ( lw: XmLabelGadget;
+                                       value: Xt.Dimension );
+
+PROCEDURE _XmProcessDrag ( w: Xt.Widget;
+                           VAR event: Xlib.XEvent;
+                           VAR params: Xt.StringList;
+                           VAR num_params: Xt.Cardinal );
+
+(********    End Private Function Declarations    ********)
+
+END LabelGP.

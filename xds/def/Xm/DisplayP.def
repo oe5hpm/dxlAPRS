@@ -1,0 +1,197 @@
+(* Xm/DisplayP.def  Nov 21  0:16:59  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(*Converted from Xm/DisplayP.h using H2D v1.18.6 *)
+
+(* $RCSfile: DisplayP.def,v $ $Revision: 4 $ $Date: 28.07.98 23:14 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *>
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+(* Merged headers: Xm/Display.h *)
+
+DEFINITION MODULE ["C"] DisplayP;
+
+IMPORT SYSTEM, X, Xlib, Xm:=XmP, Xt:=IntrinsicP,
+       ShellP, VendorSEP, DragDropP, VirtKeysP;
+(* H2D:  Required IMPORT clause:
+IMPORT DisplayP, X, Xlib, XmP, IntrinsicP,
+       ShellP, VendorSEP, DragDropP, VirtKeysP;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992, 1993 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(* ---------------------------------------------------- *)
+(*                     Xm/Display.h                     *)
+(* ---------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2.3
+ *)
+
+CONST
+  XmDRAG_NONE = 0;
+  XmDRAG_DROP_ONLY = 1;
+  XmDRAG_PREFER_PREREGISTER = 2;
+  XmDRAG_PREREGISTER = 3;
+  XmDRAG_PREFER_DYNAMIC = 4;
+  XmDRAG_DYNAMIC = 5;
+  XmDRAG_PREFER_RECEIVER = 6;
+
+(*  Class record constants  *)
+
+TYPE
+  XmDisplay = POINTER TO _XmDisplayRec;
+
+  XmDisplayClass = POINTER TO _XmDisplayClassRec;
+
+VAR
+  xmDisplayClass: Xt.WidgetClass;
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: this procedure corresponds to a macro. *)
+PROCEDURE XmGetDisplay ( w: Xt.Widget ): Xt.Boolean;
+
+<* ELSE *>
+
+PROCEDURE  / XmGetDisplay ( w: Xt.Widget ): Xt.Boolean;
+
+<* END *>
+
+(********    Public Function Declarations    ********)
+
+PROCEDURE XmGetDragContext ( w: Xt.Widget;
+                             time: X.Time ): Xt.Widget;
+
+PROCEDURE XmGetXmDisplay ( display: Xlib.PtrDisplay ): Xt.Widget;
+
+(********    End Public Function Declarations    ********)
+
+(* ---------------------------------------------------- *)
+(*                    Xm/DisplayP.h                     *)
+(* ---------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2.3
+ *)
+
+TYPE
+  XmDisplayGetDisplayProc = PROCEDURE ( Xlib.PtrDisplay ): Xt.Widget;
+
+  _XmDisplayClassPart = RECORD
+    GetDisplay: XmDisplayGetDisplayProc;
+    extension : Xt.XtPointer;
+  END;
+
+  XmDisplayClassPart = _XmDisplayClassPart;
+
+(*
+ * we make it a appShell subclass so it can have it's own instance
+ * hierarchy
+ *)
+
+  _XmDisplayClassRec = RECORD
+    core_class             : Xt.CoreClassPart;
+    composite_class        : Xt.CompositeClassPart;
+    shell_class            : ShellP.ShellClassPart;
+    wm_shell_class         : ShellP.WMShellClassPart;
+    vendor_shell_class     : ShellP.VendorShellClassPart;
+    top_level_shell_class  : ShellP.TopLevelShellClassPart;
+    application_shell_class: ShellP.ApplicationShellClassPart;
+    display_class          : XmDisplayClassPart;
+  END;
+
+  XmDisplayClassRec = _XmDisplayClassRec;
+
+  _XmModalDataRec = RECORD
+    wid         : Xt.Widget;
+    ve          : VendorSEP.XmVendorShellExtObject;
+    grabber     : VendorSEP.XmVendorShellExtObject;
+    exclusive   : Xt.Boolean;
+    springLoaded: Xt.Boolean;
+  END;
+
+  XmModalDataRec = _XmModalDataRec;
+
+  XmModalData = POINTER TO _XmModalDataRec;
+
+  _XmKeycodeTag = ARRAY [0..VirtKeysP.XmKEYCODE_TAG_SIZE-1] OF SHORTCARD;
+
+  _XmDisplayPart = RECORD
+    dragInitiatorProtocolStyle: SHORTCARD;
+    dragReceiverProtocolStyle : SHORTCARD;
+    userGrabbed               : SHORTCARD;        (*  flag for menu vs dnd  *)
+    dragContextClass          : Xt.WidgetClass;
+    dropTransferClass         : Xt.WidgetClass;
+    dropSiteManagerClass      : Xt.WidgetClass;
+    activeDC                  : DragDropP.XmDragContext;
+    dsm                       : DragDropP.XmDropSiteManagerObject;
+    lastDragTime              : X.Time;
+    proxyWindow               : X.Window;
+    modals                    : XmModalData;
+    numModals                 : Xt.Cardinal;
+    maxModals                 : Xt.Cardinal;
+    xmim_info                 : Xt.XtPointer;
+    bindingsString            : Xt.String;
+    bindings                  : VirtKeysP.XmKeyBindingsList;
+    lastKeyEvent              : Xlib.PtrXKeyEvent;
+    keycode_tag               : _XmKeycodeTag;
+    shellCount                : SYSTEM.int;
+    displayInfo               : Xt.XtPointer;     (*  extension  *)
+  END;
+
+  XmDisplayPart = _XmDisplayPart;
+
+  XmDisplayPartPtr = POINTER TO XmDisplayPart;
+
+  _XmDisplayInfo = RECORD
+(*  so much for information hiding  *)
+    SashCursor       : X.Cursor;       (*  Sash.c  *)
+    destinationWidget: Xt.Widget;      (*  Dest.c  *)
+    TearOffCursor    : X.Cursor;       (*  TearOff.c  *)
+    UniqueStamp      : Xt.XtPointer;   (*  UniqueEvnt.c  *)
+  END;
+
+  XmDisplayInfo = _XmDisplayInfo;
+
+  _XmDisplayRec = RECORD
+    core       : Xt.CorePart;
+    composite  : Xt.CompositePart;
+    shell      : ShellP.ShellPart;
+    wm         : ShellP.WMShellPart;
+    vendor     : ShellP.VendorShellPart;
+    topLevel   : ShellP.TopLevelShellPart;
+    application: ShellP.ApplicationShellPart;
+    display    : XmDisplayPart;
+  END;
+
+  XmDisplayRec = _XmDisplayRec;
+
+VAR
+  xmDisplayClassRec: XmDisplayClassRec;
+  _Xm_MOTIF_DRAG_AND_DROP_MESSAGE: Xt.String;
+
+(********    Private Function Declarations    ********)
+
+PROCEDURE _XmGetDropSiteManagerObject ( xmDisplay: XmDisplay ): DragDropP.XmDropSiteManagerObject;
+
+PROCEDURE _XmGetDragProtocolStyle ( w: Xt.Widget ): SHORTCARD;
+
+PROCEDURE _XmGetDragTrackingMode ( w: Xt.Widget ): SHORTCARD;
+
+PROCEDURE _XmGetDragContextFromHandle ( w: Xt.Widget;
+                                        iccHandle: X.Atom ): Xt.Widget;
+
+PROCEDURE _XmGetXmDisplayClass (  ): Xt.WidgetClass;
+
+PROCEDURE _XmSetXmDisplayClass ( wc: Xt.WidgetClass ): Xt.WidgetClass;
+
+(********    End Private Function Declarations    ********)
+
+END DisplayP.

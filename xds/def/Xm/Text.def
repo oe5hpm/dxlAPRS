@@ -1,0 +1,231 @@
+(* Xm/Text.def  Oct 15  20:27:20  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/Text.h using H2D v1.16 *)
+
+(* $RCSfile: Text.def,v $ $Revision: 4 $ $Date: 28.07.98 23:14 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+
+DEFINITION MODULE ["C"] Text;
+
+IMPORT SYSTEM, X, Xlib, Xm, Xt:=Intrinsic;
+(* H2D:  Required IMPORT clause: 
+IMPORT Text, X, Xlib, Xm, Intrinsic;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(*
+ * Motif Release 1.2 
+ *)
+
+(* -------------- *
+ *   type defines *
+ * -------------- *)
+
+TYPE 
+  _XmTextSourceRec = RECORD
+    (* Declaration without definition *)
+  END;
+
+  XmTextSource = POINTER TO _XmTextSourceRec;
+
+  _XmTextClassRec = RECORD
+    (* Declaration without definition *)
+  END;
+
+  XmTextWidgetClass = POINTER TO _XmTextClassRec;
+
+  _XmTextRec = RECORD
+    (* Declaration without definition *)
+  END;
+
+  XmTextWidget = POINTER TO _XmTextRec;
+
+(* -------------- *
+ * extern class   *
+ * -------------- *)
+
+VAR 
+  xmTextWidgetClass: Xt.WidgetClass;
+
+(* --------------------------------------- *
+ *  text widget fast subclassing fallback  *
+ * --------------------------------------- *)
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: this procedure corresponds to a macro. *)
+PROCEDURE XmIsText ( w: Xt.Widget ): Xt.Boolean;
+
+<* ELSE *>
+
+PROCEDURE  / XmIsText ( w: Xt.Widget ): Xt.Boolean;
+
+<* END *>
+
+(* ----------------------------------- *
+ *   text widget public functions      *
+ * ----------------------------------- *)
+
+(********    Public Function Declarations    ********)
+
+PROCEDURE XmTextSetHighlight ( w: Xt.Widget;
+                               left: Xm.XmTextPosition;
+                               right: Xm.XmTextPosition;
+                               mode: Xm.XmHighlightMode );
+
+PROCEDURE XmCreateScrolledText ( parent: Xt.Widget;
+                                 name: ARRAY OF CHAR;
+                                 arglist: Xt.ArgList;
+                                 argcount: Xt.Cardinal ): Xt.Widget;
+
+PROCEDURE XmCreateText ( parent: Xt.Widget;
+                         name: ARRAY OF CHAR;
+                         arglist: Xt.ArgList;
+                         argcount: Xt.Cardinal ): Xt.Widget;
+
+PROCEDURE XmTextGetSubstring ( widget: Xt.Widget;
+                               start: Xm.XmTextPosition;
+                               num_chars: SYSTEM.int;
+                               buf_size: SYSTEM.int;
+                               buffer: ARRAY OF CHAR ): SYSTEM.int;
+
+PROCEDURE XmTextGetSubstringWcs ( widget: Xt.Widget;
+                                  start: Xm.XmTextPosition;
+                                  num_chars: SYSTEM.int;
+                                  buf_size: SYSTEM.int;
+                                  buffer: Xlib.Ptrwchar_t ): SYSTEM.int;
+
+PROCEDURE XmTextGetString ( widget: Xt.Widget ): Xlib.PChar;
+
+PROCEDURE XmTextGetStringWcs ( widget: Xt.Widget ): Xlib.Ptrwchar_t;
+
+PROCEDURE XmTextGetLastPosition ( widget: Xt.Widget ): Xm.XmTextPosition;
+
+PROCEDURE XmTextSetString ( widget: Xt.Widget; value: ARRAY OF CHAR );
+
+PROCEDURE XmTextSetStringWcs ( widget: Xt.Widget;
+                               wc_value: Xlib.Ptrwchar_t );
+
+PROCEDURE XmTextReplace ( widget: Xt.Widget;
+                          frompos: Xm.XmTextPosition;
+                          topos: Xm.XmTextPosition;
+                          value: ARRAY OF CHAR );
+
+PROCEDURE XmTextReplaceWcs ( widget: Xt.Widget;
+                             frompos: Xm.XmTextPosition;
+                             topos: Xm.XmTextPosition;
+                             value: Xlib.Ptrwchar_t );
+
+PROCEDURE XmTextInsert ( widget: Xt.Widget;
+                         position: Xm.XmTextPosition;
+                         value: ARRAY OF CHAR );
+
+PROCEDURE XmTextInsertWcs ( widget: Xt.Widget;
+                            position: Xm.XmTextPosition;
+                            wc_value: Xlib.Ptrwchar_t );
+
+PROCEDURE XmTextSetAddMode ( widget: Xt.Widget;
+                             state: SYSTEM.int );
+
+PROCEDURE XmTextGetAddMode ( widget: Xt.Widget ): Xt.Boolean;
+
+PROCEDURE XmTextGetEditable ( widget: Xt.Widget ): Xt.Boolean;
+
+PROCEDURE XmTextSetEditable ( widget: Xt.Widget; editable: SYSTEM.int );
+
+PROCEDURE XmTextGetMaxLength ( widget: Xt.Widget ): SYSTEM.int;
+
+PROCEDURE XmTextSetMaxLength ( widget: Xt.Widget; max_length: SYSTEM.int );
+
+PROCEDURE XmTextGetTopCharacter ( widget: Xt.Widget ): Xm.XmTextPosition;
+
+PROCEDURE XmTextSetTopCharacter ( widget: Xt.Widget;
+                                  top_character: Xm.XmTextPosition );
+
+PROCEDURE XmTextGetCursorPosition ( widget: Xt.Widget ): Xm.XmTextPosition;
+
+PROCEDURE XmTextGetInsertionPosition ( widget: Xt.Widget ): Xm.XmTextPosition;
+
+PROCEDURE XmTextSetInsertionPosition ( widget: Xt.Widget;
+                                       position: Xm.XmTextPosition );
+
+PROCEDURE XmTextSetCursorPosition ( widget: Xt.Widget;
+                                    position: Xm.XmTextPosition );
+
+PROCEDURE XmTextRemove ( widget: Xt.Widget ): Xt.Boolean;
+
+PROCEDURE XmTextCopy ( widget: Xt.Widget;
+                       copy_time: X.Time ): Xt.Boolean;
+
+PROCEDURE XmTextCut ( widget: Xt.Widget;
+                      cut_time: X.Time ): Xt.Boolean;
+
+PROCEDURE XmTextPaste ( widget: Xt.Widget ): Xt.Boolean;
+
+PROCEDURE XmTextGetSelection ( widget: Xt.Widget ): Xlib.PChar;
+
+PROCEDURE XmTextGetSelectionWcs ( widget: Xt.Widget ): Xlib.Ptrwchar_t;
+
+PROCEDURE XmTextSetSelection ( widget: Xt.Widget;
+                               first: Xm.XmTextPosition;
+                               last: Xm.XmTextPosition;
+                               set_time: X.Time );
+
+PROCEDURE XmTextClearSelection ( widget: Xt.Widget;
+                                 clear_time: X.Time );
+
+PROCEDURE XmTextGetSelectionPosition ( widget: Xt.Widget;
+                                       VAR left: Xm.XmTextPosition;
+                                       VAR right: Xm.XmTextPosition ): Xt.Boolean;
+
+PROCEDURE XmTextXYToPos ( widget: Xt.Widget; x: SYSTEM.int;
+                          y: SYSTEM.int ): Xm.XmTextPosition;
+
+PROCEDURE XmTextPosToXY ( widget: Xt.Widget;
+                          position: Xm.XmTextPosition;
+                          VAR x: Xt.Position;
+                          VAR y: Xt.Position ): Xt.Boolean;
+
+PROCEDURE XmTextGetSource ( widget: Xt.Widget ): XmTextSource;
+
+PROCEDURE XmTextSetSource ( widget: Xt.Widget;
+                            source: XmTextSource;
+                            top_character: Xm.XmTextPosition;
+                            cursor_position: Xm.XmTextPosition );
+
+PROCEDURE XmTextShowPosition ( widget: Xt.Widget;
+                               position: Xm.XmTextPosition );
+
+PROCEDURE XmTextScroll ( widget: Xt.Widget; n: SYSTEM.int );
+
+PROCEDURE XmTextGetBaseline ( widget: Xt.Widget ): SYSTEM.int;
+
+PROCEDURE XmTextDisableRedisplay ( widget: Xt.Widget );
+
+PROCEDURE XmTextEnableRedisplay ( widget: Xt.Widget );
+
+PROCEDURE XmTextFindString ( w: Xt.Widget;
+                             start: Xm.XmTextPosition;
+                             search_string: ARRAY OF CHAR;
+                             direction: Xm.XmTextDirection;
+                             VAR position: Xm.XmTextPosition ): Xt.Boolean;
+
+PROCEDURE XmTextFindStringWcs ( w: Xt.Widget;
+                                start: Xm.XmTextPosition;
+                                wc_string: Xlib.Ptrwchar_t;
+                                direction: Xm.XmTextDirection;
+                                VAR position: Xm.XmTextPosition ): Xt.Boolean;
+
+(********    End Public Function Declarations    ********)
+
+END Text.

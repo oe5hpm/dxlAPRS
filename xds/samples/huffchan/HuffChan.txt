@@ -1,0 +1,45 @@
+HUFFCHAN.TXT                          Copyright (c) 1997 XDS Ltd
+----------------------------------------------------------------
+
+			Huffman Channels:
+		An ISO Modula-2 I/O Library Sample
+
+To build this sample, type:
+
+    xc =m huf.mod
+    xc =m unhuf.mod
+
+
+This sample illustrates the concept of device modules introduced
+in the ISO Modula-2 input/output library. This concept allows
+a programmer to provide new device modules in addition to the 
+standard ones to extend the library functionality whuile 
+preserving the interface.
+
+The sample contains a HuffChan device module, which implements
+Huffman encoding and decoding. It provides a procedure which
+creates an alias Huffman channel for a given channel. Issuing 
+the RawWrite operation on the alias channel will cause the data 
+to be encoded and then written to the original channel. 
+Similarly, the RawRead operation decodes the data read from
+the original channel. 
+
+The correspondent section in the manual is:
+
+ISO Modula-2 Library Reference
+    Input/Output
+        Interface to Channels for New Device Modules
+
+The decoding routines do not perform any error checking.Also,
+mixing read and write operations or operations on the alias 
+channel with operations on the original channel is not 
+supported. 
+
+The two programs, "huf" and "unhuf", utilize the HuffChan module
+facilities. The first program encodes a given file and writes 
+it to another file; the second one reverses that operation.
+
+
+
+
+		

@@ -1,0 +1,123 @@
+(* Copyright (C) 2000 Excelsior. *)
+
+<*+M2ADDTYPES   *>
+<*+M2EXTENSIONS *>
+
+(*
+   C compilers on MS-DOS derived systems are used to have <io.h> header file.
+   To avoid coincidence, XDS-C includes module IO_ instead.
+   Before library build, this file shall be copied to IO_.def
+*)
+
+<* IF (BACKEND="C") & ((target_family="WIN32") OR (target_family="OS2")) THEN *>
+DEFINITION MODULE IO_;
+<* ELSIF DEFINED(ESCAPE_IO_H) & ESCAPE_IO_H THEN *>
+DEFINITION MODULE IO_;
+<* ELSE *>
+DEFINITION MODULE IO;
+<* END *>
+
+CONST
+  MaxRdLength = 256;
+  MaxWrLength = 256; (* max len of string obtained by conversion of a number *)
+
+TYPE
+  WrStrType = PROCEDURE ( ARRAY OF CHAR );
+  RdStrType = PROCEDURE ( VAR ARRAY OF CHAR );
+  CHARSET   = SET OF CHAR;
+
+VAR
+  RdStrRedirect    :RdStrType;
+  WrStrRedirect    :WrStrType;
+  InputRedirected  :BOOLEAN;      (* - Is console I/O redirected? *)
+  OutputRedirected :BOOLEAN;      (* /                            *)
+
+
+  RdLnOnWr         :BOOLEAN;      (* Clear buffered input after write *)
+  Prompt           :BOOLEAN;      (* Prompt ('?') on read from empty line *)
+
+  Separators       :CHARSET;
+  OK               :BOOLEAN;
+  ChopOff          :BOOLEAN;
+  Eng              :BOOLEAN;      (* Engineering notation *)
+  PrefixChar       :CHAR;
+  SuffixChar       :CHAR;
+
+
+PROCEDURE RedirectInput (FileName: ARRAY OF CHAR);
+PROCEDURE RedirectOutput(FileName: ARRAY OF CHAR);
+
+
+(* direct KBD read *)
+
+PROCEDURE KeyPressed() :BOOLEAN;
+PROCEDURE RdKey() :CHAR;
+
+CONST
+  RdCharDirect = RdKey;
+
+
+(* /////////////////////////////////////  Input *)
+
+PROCEDURE RdStr(VAR S: ARRAY OF CHAR);
+PROCEDURE EndOfRd(Skip: BOOLEAN) : BOOLEAN;
+PROCEDURE RdLn;
+
+PROCEDURE RdChar()    : CHAR;
+
+PROCEDURE RdBool()    : BOOLEAN;
+
+PROCEDURE RdShtInt()  : SHORTINT;
+PROCEDURE RdInt()     : INTEGER;
+PROCEDURE RdLngInt()  : LONGINT;
+PROCEDURE RdShtCard() : SHORTCARD;
+PROCEDURE RdCard()    : CARDINAL;
+PROCEDURE RdLngCard() : LONGCARD;
+PROCEDURE RdShtHex()  : SHORTCARD;
+PROCEDURE RdHex()     : CARDINAL;
+PROCEDURE RdLngHex()  : LONGCARD;
+
+PROCEDURE RdReal()    : REAL;
+PROCEDURE RdLngReal() : LONGREAL;
+
+PROCEDURE RdItem(VAR V: ARRAY OF CHAR);
+
+
+(* /////////////////////////////////// Output *)
+
+PROCEDURE WrStr    ( S: ARRAY OF CHAR );
+PROCEDURE WrStrAdj ( S: ARRAY OF CHAR; Length: INTEGER );
+PROCEDURE WrLn;
+
+PROCEDURE WrChar   ( V: CHAR );
+
+PROCEDURE WrBool   ( V: BOOLEAN  ; Length: INTEGER );
+
+PROCEDURE WrShtInt ( V: SHORTINT ; Length: INTEGER );
+PROCEDURE WrInt    ( V: INTEGER  ; Length: INTEGER );
+PROCEDURE WrLngInt ( V: LONGINT  ; Length: INTEGER );
+PROCEDURE WrShtCard( V: SHORTCARD; Length: INTEGER );
+PROCEDURE WrCard   ( V: CARDINAL ; Length: INTEGER );
+PROCEDURE WrLngCard( V: LONGCARD ; Length: INTEGER );
+PROCEDURE WrShtHex ( V: SHORTCARD; Length: INTEGER );
+PROCEDURE WrHex    ( V: CARDINAL ; Length: INTEGER );
+PROCEDURE WrLngHex ( V: LONGCARD ; Length: INTEGER );
+
+PROCEDURE WrReal      ( V: REAL     ; Precision: CARDINAL; Length: INTEGER);
+PROCEDURE WrLngReal   ( V: LONGREAL ; Precision: CARDINAL; Length: INTEGER);
+PROCEDURE WrFixReal   ( V: REAL     ; Precision: CARDINAL; Length: INTEGER);
+PROCEDURE WrFixLngReal( V: LONGREAL ; Precision: CARDINAL; Length: INTEGER);
+
+PROCEDURE WrCharRep( V :CHAR ; Count :CARDINAL );
+
+
+PROCEDURE ThreadOK() :BOOLEAN;
+
+<* IF (BACKEND="C") & ((target_family="WIN32") OR (target_family="OS2")) THEN *>
+END IO_
+<* ELSIF DEFINED(ESCAPE_IO_H) & ESCAPE_IO_H THEN *>
+END IO_
+<* ELSE *>
+END IO
+<* END *>
+.

@@ -1,0 +1,45 @@
+(** Oakwood Oberon-2 Math library *)
+(** Copyright (c) xTech 1994. All Rights Reserved. *)
+DEFINITION MathC;
+
+PROCEDURE abs*(z: COMPLEX): REAL;
+
+PROCEDURE conj*(z: COMPLEX): COMPLEX;
+
+PROCEDURE power*(base: COMPLEX; exponent: REAL): COMPLEX;
+
+PROCEDURE sqrt*(z: COMPLEX): COMPLEX;
+
+PROCEDURE exp*(z: COMPLEX): COMPLEX;
+
+PROCEDURE ln*(z: COMPLEX): COMPLEX;
+
+PROCEDURE log*(z: COMPLEX; base: REAL): COMPLEX;
+
+PROCEDURE sin*(z: COMPLEX): COMPLEX;
+
+PROCEDURE cos*(z: COMPLEX): COMPLEX;
+
+PROCEDURE tan*(z: COMPLEX): COMPLEX;
+
+PROCEDURE arcsin*(z: COMPLEX): COMPLEX;
+
+PROCEDURE arccos*(z: COMPLEX): COMPLEX;
+
+PROCEDURE arctan*(z: COMPLEX): COMPLEX;
+
+PROCEDURE arctan2*(zn,zd: COMPLEX): COMPLEX;
+
+PROCEDURE sinh*(z: COMPLEX): COMPLEX;
+
+PROCEDURE cosh*(z: COMPLEX): COMPLEX;
+
+PROCEDURE tanh*(z: COMPLEX): COMPLEX;
+
+PROCEDURE arcsinh*(z: COMPLEX): COMPLEX;
+
+PROCEDURE arccosh*(z: COMPLEX): COMPLEX;
+
+PROCEDURE arctanh*(z: COMPLEX): COMPLEX;
+
+END MathC.

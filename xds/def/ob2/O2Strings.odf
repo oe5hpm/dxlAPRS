@@ -1,0 +1,48 @@
+(** Oakwood Oberon-2 library *)
+(** Copyright (c) xTech 1995. All rights reserved. *)
+DEFINITION O2Strings;
+
+PROCEDURE Length*(stringVal: ARRAY OF CHAR): INTEGER;
+(** Returns the number of characters in s up to and excluding the first 0X *)
+
+PROCEDURE Insert*(s: ARRAY OF CHAR; pos: INTEGER; VAR d: ARRAY OF CHAR);
+(** Inserts the string s into the string d at position pos
+  (0 <= pos <= Length(d)). If pos = Length(d), s is appended to d.
+  If the size of d is not large enough to hold the result of operation,
+  the result is truncated so that d is always terminated with 0X.
+*)
+
+PROCEDURE Append*(s: ARRAY OF CHAR; VAR d: ARRAY OF CHAR);
+(** Has the same effect as Insert(s,Length(d),d) *)
+
+PROCEDURE Delete*(VAR s: ARRAY OF CHAR; pos,n: INTEGER);
+(** Deletes n characters from s starting at position pos
+  (0 <= pos < Length(d)). If n > Length(s)-pos, the new
+  length of s is pos.
+*)
+
+PROCEDURE Replace*(s: ARRAY OF CHAR; pos: INTEGER; VAR d: ARRAY OF CHAR);
+(** Has the same effect as Delete(d,pos,Length(s)) followed by
+  an Insert(s,pos,d).
+*)
+
+PROCEDURE Extract*(s: ARRAY OF CHAR; p,l: INTEGER; VAR d: ARRAY OF CHAR);
+(** Extracts a substring d with n characters from position pos
+  (0 <= pos < Length(s)) in s. If n > Length(s) - pos, d is only
+  the part of s from pos to Length(s)-1.
+  If the size of d is not large enough to hold the result of operation,
+  the result is truncated so that d is always terminated with 0X.
+*)
+
+PROCEDURE Pos*(p,s: ARRAY OF CHAR; start: INTEGER): INTEGER;
+(** Returns the position of the first occurences of the pattern p
+  in s after position pos (inclusive). If p is not found, -1 is
+  returned.
+*)
+
+PROCEDURE Cap*(VAR s: ARRAY OF CHAR);
+(** Replaces each lower case letter within s by its upper case
+  equivalent.
+*)
+
+END O2Strings.

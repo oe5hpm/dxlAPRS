@@ -1,0 +1,126 @@
+(* Xm/ArrowBGP.def  Nov 11  15:51:15  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from from Xm/ArrowBGP.h using H2D v1.18.1. *)
+
+(* $RCSfile: ArrowBGP.def,v $ $Date: 28.07.98 23:14 $ $Revision: 4 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+(* Merged headers: Xm/ArrowBG.h *)
+
+DEFINITION MODULE ["C"] ArrowBGP;
+
+IMPORT SYSTEM, Xlib, Xm:=XmP, Xt:=IntrinsicP;
+(* H2D:  Required IMPORT clause: 
+IMPORT ArrowBGP, Xlib, XmP, IntrinsicP;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(* ---------------------------------------------------- *)
+(*                     Xm/ArrowBG.h                     *)
+(* ---------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2
+ *)
+
+VAR 
+  xmArrowButtonGadgetClass: Xt.WidgetClass;
+
+TYPE 
+  XmArrowButtonGadgetClass = POINTER TO _XmArrowButtonGadgetClassRec;
+
+  XmArrowButtonGadget = POINTER TO _XmArrowButtonGadgetRec;
+
+(******    Public Function Declarations    ******)
+
+PROCEDURE XmCreateArrowButtonGadget ( parent: Xt.Widget;
+                                      name: ARRAY OF CHAR;
+                                      arglist: Xt.ArgList;
+                                      argcount: Xt.Cardinal ): Xt.Widget;
+
+(******    End Public Function Declarations    ******)
+
+(* ---------------------------------------------------- *)
+(*                     Xm/ArrowBGP.h                    *)
+(* ---------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2
+ *)
+
+(*   Arrow class structure   *)
+
+TYPE 
+  _XmArrowButtonGadgetClassPart = RECORD
+    extension: Xt.XtPointer;
+  END;
+
+  XmArrowButtonGadgetClassPart = _XmArrowButtonGadgetClassPart;
+
+(*   Full class record declaration for Arrow class   *)
+
+  _XmArrowButtonGadgetClassRec = RECORD
+    rect_class        : Xt.RectObjClassPart;
+    gadget_class      : Xm.XmGadgetClassPart;
+    arrow_button_class: XmArrowButtonGadgetClassPart;
+  END;
+
+  XmArrowButtonGadgetClassRec = _XmArrowButtonGadgetClassRec;
+
+(* "Gadget caching" is currently under investigation for ArrowBG.  It would
+ * be very desirable to cache the XRectangles, requiring immediate reference
+ * instead of indirectly through pointers.  ArrowBG will be cached by Beta.
+ *)
+
+(*   The Arrow instance record   *)
+
+  _XmArrowButtonGadgetPart = RECORD
+    activate_callback: Xt.XtCallbackList;
+    arm_callback     : Xt.XtCallbackList;
+    disarm_callback  : Xt.XtCallbackList;
+    direction        : SHORTCARD;  (* the direction the arrow is pointing *)
+    selected         : Xt.Boolean;
+    top_count        : SYSTEM.INT16;
+    cent_count       : SYSTEM.INT16;
+    bot_count        : SYSTEM.INT16;
+    top              : Xlib.PtrXRectangle;
+    cent             : Xlib.PtrXRectangle;
+    bot              : Xlib.PtrXRectangle;
+    old_x            : Xt.Position;
+    old_y            : Xt.Position;
+    arrow_GC         : Xlib.GC;    (* graphics context for arrow drawing *)
+    timer            : Xt.XtIntervalId;
+    multiClick       : SHORTCARD;  (* KEEP/DISCARD resource *)
+    click_count      : SYSTEM.int;
+    insensitive_GC   : Xlib.GC;    (* graphics context for insensitive arrow drawing *)
+  END;
+
+  XmArrowButtonGadgetPart = _XmArrowButtonGadgetPart;
+
+(*   Full instance record declaration   *)
+
+  _XmArrowButtonGadgetRec = RECORD
+    object     : Xt.ObjectPart;
+    rectangle  : Xt.RectObjPart;
+    gadget     : Xm.XmGadgetPart;
+    arrowbutton: XmArrowButtonGadgetPart;
+  END;
+
+  XmArrowButtonGadgetRec = _XmArrowButtonGadgetRec;
+
+VAR 
+  xmArrowButtonGadgetClassRec: XmArrowButtonGadgetClassRec;
+
+(******    Private Function Declarations    ******)
+(******    End Private Function Declarations    ******)
+
+END ArrowBGP.

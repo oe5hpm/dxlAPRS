@@ -1,0 +1,118 @@
+(* Xm/ArrowBP.def  Nov 11  14:25:58  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/ArrowBP.h using H2D v1.18.1. *)
+
+(* $RCSfile: ArrowBP.def,v $ $Date: 28.07.98 23:14 $ $Revision: 4 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+(* Merged headers: Xm/ArrowB.h, Xm/PrimitiveP.h *)
+
+DEFINITION MODULE ["C"] ArrowBP;
+
+IMPORT SYSTEM, X, Xlib, Xm:=XmP, Xt:=IntrinsicP;
+(* H2D:  Required IMPORT clause: 
+IMPORT ArrowBP, X, Xlib, XmP, IntrinsicP;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(* --------------------------------------------------- *)
+(*                     Xm/ArrowB.h                     *)
+(* --------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2
+ *)
+
+VAR 
+  xmArrowButtonWidgetClass: Xt.WidgetClass;
+
+TYPE 
+  XmArrowButtonWidgetClass = POINTER TO _XmArrowButtonClassRec;
+
+  XmArrowButtonWidget = POINTER TO _XmArrowButtonRec;
+
+(********    Public Function Declarations    ********)
+
+PROCEDURE XmCreateArrowButton ( parent: Xt.Widget; name: ARRAY OF CHAR;
+                                arglist: Xt.ArgList;
+                                argcount: Xt.Cardinal ): Xt.Widget;
+
+(********    End Public Function Declarations    ********)
+
+(* --------------------------------------------------- *)
+(*                     Xm/ArrowB.h                     *)
+(* --------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2
+ *)
+
+(*   Arrow class structure   *)
+
+TYPE 
+  _XmArrowButtonClassPart = RECORD
+    extension: Xt.XtPointer;
+  END;
+
+  XmArrowButtonClassPart = _XmArrowButtonClassPart;
+
+(*   Full class record declaration for Arrow class   *)
+
+  _XmArrowButtonClassRec = RECORD
+    core_class       : Xt.CoreClassPart;
+    primitive_class  : Xm.XmPrimitiveClassPart;
+    arrowbutton_class: XmArrowButtonClassPart;
+  END;
+
+  XmArrowButtonClassRec = _XmArrowButtonClassRec;
+
+(*   The ArrowButton instance record   *)
+
+  _XmArrowButtonPart = RECORD
+    activate_callback: Xt.XtCallbackList;
+    arm_callback     : Xt.XtCallbackList;
+    disarm_callback  : Xt.XtCallbackList;
+    direction        : SHORTCARD;  (* the direction the arrow is pointing *)
+    selected         : Xt.Boolean;
+    top_count        : SYSTEM.INT16;
+    cent_count       : SYSTEM.INT16;
+    bot_count        : SYSTEM.INT16;
+    top              : Xlib.PtrXRectangle;
+    cent             : Xlib.PtrXRectangle;
+    bot              : Xlib.PtrXRectangle;
+    arrow_GC         : Xlib.GC;    (* graphics context for arrow drawing *)
+    timer            : Xt.XtIntervalId;
+    multiClick       : SHORTCARD;  (* KEEP/DISCARD resource *)
+    click_count      : SYSTEM.int;
+    armTimeStamp     : X.Time;
+    insensitive_GC   : Xlib.GC;    (* graphics context for insensitive arrow drawing *)
+  END;
+
+  XmArrowButtonPart = _XmArrowButtonPart;
+
+(*   Full instance record declaration   *)
+
+  _XmArrowButtonRec = RECORD
+    core       : Xt.CorePart;
+    primitive  : Xm.XmPrimitivePart;
+    arrowbutton: XmArrowButtonPart;
+  END;
+
+  XmArrowButtonRec = _XmArrowButtonRec;
+
+VAR 
+  xmArrowButtonClassRec: XmArrowButtonClassRec;
+
+(********    Private Function Declarations    ********)
+(********    End Private Function Declarations    ********)
+
+END ArrowBP.

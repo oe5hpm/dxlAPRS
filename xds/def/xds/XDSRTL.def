@@ -1,0 +1,46 @@
+(* Copyright (c) XDS Ltd. 1998.  All Rights Reserved *)
+(* 
+   This file is provided on AS IS basis. No warranties applied.
+   Interface to XDS run-rime library can be changed at any moment.
+------------------------------------------------------------------
+   This module defines interface to XDS runtime library 
+   initialization and termination.
+*)
+
+<* M2EXTENSIONS+ *>
+<* IF BACKEND="C" THEN *>
+  <* GENTYPEDEF+ *>
+<* END *>
+DEFINITION MODULE ["C"] XDSRTL;
+
+IMPORT SYSTEM;
+
+TYPE PINT   = POINTER TO SYSTEM.int;
+     PPCHAR = POINTER TO POINTER TO CHAR;
+
+PROCEDURE ["C"] XDSRTL_Init (argc:        PINT;      
+                             argv:        PPCHAR;    
+                             gcauto:      INTEGER;   
+                             gcthreshold: INTEGER;   
+                             heaplimit:   INTEGER);
+(* Initializes the XDS runtime library. Must be called from main() 
+   before calling any Modula/Oberon code,
+   
+   Parameters:
+
+   argc        - the argc argument of main() 
+   argv        - the argv argument of main() 
+   gcauto      - 0/1: disable/enable automatic garbage collection 
+   gcthreshold - garbage collector threshold
+   heaplimit   - heap size in bytes
+           
+   Set gcthreshold and heaplimit to the same large value, e.g. 200,000,000,
+   if there are no Oberon-2 modules in your program.
+*)
+
+PROCEDURE ["C"] XDSRTL_Exit;
+(* Invokes finalization of Modula-2/Oberon-2 modules and 
+   terminates the application.
+*)
+
+END XDSRTL.

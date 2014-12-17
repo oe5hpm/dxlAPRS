@@ -1,0 +1,12 @@
+Filename	Place to be			what it does ...
+================================================================
+favicon.png	where the executeable is	icon for taskbar
+font.png	-----------""-----------	font for all text within aprsmap
+symbols.png	-----------""-----------	symbols within aprsmap
+hints.txt	-----------""-----------	info about a button does hover
+gm.sh		-----------""-----------	shell script for downloading osm-maps
+poi.txt		osm/				point of interest file
+help.txt	where the executeable is	interactive help
+NEW.txt		whereever you want		version-history of aprsmap
+
+

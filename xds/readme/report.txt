@@ -1,0 +1,38 @@
+REPORT.TXT               Copyright (c) 1999-2011 Excelsior, LLC.
+----------------------------------------------------------------
+
+                        Bug Reporting
+                        -------------
+
+If you suspect that you found a bug in an Excelsior product,
+please report it to us. We are grateful indeed for bug reports.
+
+NOTE:
+
+    Before reporting a compiler bug, do the following:
+
+    1. Make sure that you have the latest version of the compiler.
+    2. Ensure that ALL your sources have been recompiled by the
+       latest version of the compiler.
+
+Please provide the following information:
+
+    - Hardware platform (CPU, RAM, etc.)
+    - Operating system name and version number
+    - Product name and version number
+
+For a compiler bug, provide the list of compiler options used
+(using =e and =o options), along with a minimal piece of source code
+and a project file causing the bug to reveal itself.
+
+Send bug reports to:
+
+    support@excelsior-usa.com
+
+
+For latest information about the latest version of the compiler,
+updates, and fixes, please visit our Web page at:
+
+http://www.excelsior-usa.com/
+                        
+                        [end of document]

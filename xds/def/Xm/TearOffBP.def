@@ -1,0 +1,101 @@
+(* Xm/TearOffBP.def  Nov 12  19:50:7  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/TearOffBP.h using H2D v1.18.1 *)
+
+(* $RCSfile: TearOffBP.def,v $ $Revision: 4 $ $Date: 28.07.98 23:14 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+
+DEFINITION MODULE ["C"] TearOffBP;
+
+IMPORT SYSTEM, Xlib, PushBP, Xm:=XmP, Xt:=IntrinsicP, LabelP;
+(* H2D:  Required IMPORT clause: 
+IMPORT TearOffBP, Xlib, PushBP, XmP, IntrinsicP, LabelP;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992, 1993 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(*
+ * Motif Release 1.2.3
+ *)
+
+(*
+ *  TearOffBP.h - Private definitions for TearOffButton widget
+ *  (Used by RowColumn Tear Off Menupanes)
+ *
+ *)
+
+(*****************************************************************************
+ *
+ * TearOffButton Widget Private Data
+ *
+ *****************************************************************************)
+
+(*  New fields for the TearOffButton widget class record  *)
+
+TYPE 
+  _XmTearOffButtonClassPart = RECORD
+    translations: Xt.String;
+  END;
+
+  XmTearOffButtonClassPart = _XmTearOffButtonClassPart;
+
+(*  Full Class record declaration  *)
+
+  _XmTearOffButtonClassRec = RECORD
+    core_class         : Xt.CoreClassPart;
+    primitive_class    : Xm.XmPrimitiveClassPart;
+    label_class        : LabelP.XmLabelClassPart;
+    pushbutton_class   : PushBP.XmPushButtonClassPart;
+    tearoffbutton_class: XmTearOffButtonClassPart;
+  END;
+
+  XmTearOffButtonClassRec = _XmTearOffButtonClassRec;
+
+  XmTearOffButtonWidgetClass = POINTER TO _XmTearOffButtonClassRec;
+
+(*  New fields for the TearOffButton widget record  *)
+
+  XmTearOffButtonPart = RECORD
+    margin        : Xt.Dimension;
+    orientation   : SHORTCARD;
+    separator_type: SHORTCARD;
+    separator_GC  : Xlib.GC;
+  END;
+
+(*****************************************************************************
+ *
+ * Full instance record declaration
+ *
+ *****************************************************************************)
+
+  _XmTearOffButtonRec = RECORD
+    core           : Xt.CorePart;
+    primitive      : Xm.XmPrimitivePart;
+    label          : LabelP.XmLabelPart;
+    pushbutton     : PushBP.XmPushButtonPart;
+    tear_off_button: XmTearOffButtonPart;
+  END;
+
+  XmTearOffButtonRec = _XmTearOffButtonRec;
+
+  XmTearOffButtonWidget = POINTER TO _XmTearOffButtonRec;
+
+(*  Class Record Constant  *)
+
+VAR 
+  xmTearOffButtonClassRec: XmTearOffButtonClassRec;
+  xmTearOffButtonWidgetClass: Xt.WidgetClass;
+
+(********    Private Function Declarations    ********)
+(********    End Private Function Declarations    ********)
+
+END TearOffBP.

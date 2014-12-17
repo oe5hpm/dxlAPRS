@@ -1,0 +1,12 @@
+DEFINITION MODULE HuffChan;
+
+IMPORT IOChan, ChanConsts;
+
+TYPE
+  ChanId = IOChan.ChanId;
+  OpenResults = ChanConsts.OpenResults;
+
+PROCEDURE CreateAlias(VAR cid: ChanId; io: ChanId; VAR res: OpenResults);
+PROCEDURE DeleteAlias(VAR cid: ChanId);
+
+END HuffChan.

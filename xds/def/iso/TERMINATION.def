@@ -1,0 +1,12 @@
+DEFINITION MODULE TERMINATION;
+
+(* Provides facilities for enquiries concerning the occurrence of termination events. *)
+
+PROCEDURE IsTerminating (): BOOLEAN ;
+  (* Returns true if any coroutine has started  program termination and false otherwise. *)
+
+PROCEDURE HasHalted (): BOOLEAN ;
+  (* Returns true if a call to HALT has been made and false otherwise. *)
+
+END TERMINATION.
+

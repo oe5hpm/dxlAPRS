@@ -1,0 +1,64 @@
+(* Copyright (c) 1994,2000 Excelsior, Russia. All Rights Reserved. *)
+DEFINITION MODULE FileName; (* Ned 15-Feb-94. *) (* paul 27-Jan-00 *)
+
+(* File name procedures.
+
+   File name consists of three parts:
+        - path
+        - name
+        - extensions.
+
+   The given procedures allow to parse file name and to construct
+   file name from its parts.
+
+   All the procedures that construct a string value (Get, GetDir,
+   GetName,  GetExt,  Convert, Create), have the property that if
+   the  length  of  the  constructed  string  value  exceeds  the
+   capacity  of  the  variable  parameter,  a  truncated value is
+   assigned,  while if the length of the constructed string value
+   is  less than the capacity of the variable parameter, a string
+   terminator is appended.
+*)
+
+TYPE
+  Format = RECORD
+    ok: BOOLEAN;               (* result *)
+    dirPos, dirLen : CARDINAL; (* directory position and length *)
+    namePos,nameLen: CARDINAL; (* name position and length *)
+    extPos, extLen : CARDINAL; (* extension position and length *)
+  END;
+
+(*----------------------------------------------------------------*)
+
+PROCEDURE GetFormat(str: ARRAY OF CHAR; VAR f: Format);
+(* Returns the format of the string.
+   The values of *Pos, *Len fields are undefined
+   if f.ok=FALSE. *)
+
+(* Get* procedures does not provide conversions
+  (ie. no case chanegs or reductions). *)
+
+PROCEDURE GetDir (fname: ARRAY OF CHAR; VAR dir: ARRAY OF CHAR);
+PROCEDURE GetName(fname: ARRAY OF CHAR; VAR name: ARRAY OF CHAR);
+PROCEDURE GetExt (fname: ARRAY OF CHAR; VAR ext: ARRAY OF CHAR);
+
+PROCEDURE Get(fname: ARRAY OF CHAR; VAR dir,name,ext: ARRAY OF CHAR);
+
+(*----------------------------------------------------------------*)
+
+PROCEDURE Convert(str: ARRAY OF CHAR; VAR fname: ARRAY OF CHAR);
+(* Converts string (dir,name,ext) to file name
+  according to the conventions of the underlying file system. *)
+
+PROCEDURE ConvertExt(VAR ext: ARRAY OF CHAR);
+(* Converts extension according to the conventions of
+  the underlying file system. *)
+
+PROCEDURE Length(dir,name,ext: CARDINAL): CARDINAL;
+(* Returns estimated length, which is greater or equal
+   then generated file name length after Create call. *)
+
+PROCEDURE Create(dir,name,ext: ARRAY OF CHAR;
+                    VAR fname: ARRAY OF CHAR);
+
+END FileName.

@@ -1,0 +1,198 @@
+(* Copyright (C) 2000 Excelsior. *)
+
+<*+M2ADDTYPES   *>
+<*+M2EXTENSIONS *>
+
+DEFINITION MODULE FIO;
+
+IMPORT SYSTEM;
+IMPORT Str, FileSys, IOChan, SysClock;
+
+TYPE
+  File = IOChan.ChanId;
+
+VAR
+  StandardInput,         (* standard handles *)
+  StandardOutput,
+  ErrorOutput,
+  AuxDevice     :File;
+  
+VAR
+  IOcheck     :BOOLEAN;  (* if true, errors raise exeption *)
+
+  EOF         :BOOLEAN;  (* - can be used in single-thread programs only *)
+  OK          :BOOLEAN;  (* /                                            *)
+
+  Separators  :Str.CHARSET;
+  ChopOff     :BOOLEAN;
+  Eng         :BOOLEAN;
+  PrefixChar  :CHAR;
+  SuffixChar  :CHAR;
+
+TYPE
+  SHAREMODE = (ShareCompat, ShareDenyRW, ShareDenyRD, ShareDenyWR, ShareDenyNone);
+
+VAR
+  ShareMode: SHAREMODE;  (* File sharing mode used by Open and OpenRead *)
+
+PROCEDURE Open     (Name :ARRAY OF CHAR) :File;
+PROCEDURE OpenRead (Name :ARRAY OF CHAR) :File;
+PROCEDURE Create   (Name :ARRAY OF CHAR) :File;
+PROCEDURE Append   (Name :ARRAY OF CHAR) :File;
+PROCEDURE Close    (VAR F :File);
+
+PROCEDURE Size     (F :File) :LONGCARD;
+PROCEDURE GetPos   (F :File) :LONGCARD;
+PROCEDURE Seek     (F :File; Pos :LONGCARD);
+PROCEDURE Truncate (F :File);
+PROCEDURE AppendHandle ( fh :LONGCARD; ReadOnly :BOOLEAN ) :File;
+
+
+(*-- file handling *)
+
+TYPE
+  FileStamp = SysClock.DateTime;
+
+(* Implemented in FileSys library
+PROCEDURE Exists (Name :ARRAY OF CHAR) :BOOLEAN;
+*)
+CONST
+  Exists = FileSys.Exists;
+
+PROCEDURE Erase  (Name :ARRAY OF CHAR);
+PROCEDURE Rename( fname, newname :ARRAY OF CHAR);
+
+PROCEDURE GetFileDate  (F :File) :LONGCARD;
+PROCEDURE SetFileDate  (F :File; d :LONGCARD) ;
+PROCEDURE GetFileStamp (F :File ; VAR b :FileStamp) :BOOLEAN;
+
+PROCEDURE GetCurrentDate () :LONGCARD;
+(* Date returned this procedure is compatible with
+   a result of GetFileDate and the field date in DirEntry *)
+
+(*-- file buffering *)
+
+(*
+TYPE
+  BufRec =  RECORD
+              RWPos,
+              EOB,
+              BufSize : CARDINAL;
+              Buffer  : ARRAY[0..0] OF SHORTCARD;
+            END;
+*)
+
+CONST
+  BufferOverhead = 0;
+
+PROCEDURE AssignBuffer (F :File; VAR Buf: ARRAY OF SYSTEM.LOC);
+PROCEDURE Flush        (F :File);
+
+
+PROCEDURE ChDir    (Name :ARRAY OF CHAR);
+PROCEDURE MkDir    (Name :ARRAY OF CHAR);
+PROCEDURE RmDir    (Name :ARRAY OF CHAR);
+PROCEDURE GetDir   (Drive: SHORTCARD; VAR Name: ARRAY OF CHAR);
+PROCEDURE GetDrive () :SHORTCARD ;
+PROCEDURE SetDrive (Drive: SHORTCARD);
+
+
+TYPE
+  Attrib   = (readonly,hidden,system,b3,directory,archive);
+  FileAttr = SET OF Attrib;
+
+  FileName = ARRAY[0..255] OF CHAR;
+
+  DirEntry = RECORD
+               dirHandle :SYSTEM.CARD32; (* directory handle (used in a sequel call to ScanNext) *)
+               attr      :FileAttr;      (* file attributes *)
+               timePkd   :SYSTEM.CARD16; (* packed time in the DOS format *)
+               datePkd   :SYSTEM.CARD16; (* packed date in the DOS format *)
+               sizeH     :SYSTEM.CARD32; (* file length *)
+               sizeL     :SYSTEM.CARD32;
+               name      :FileName;      (* file name   *)
+               ia        :FileAttr;      (* reserved    *)
+             END;
+
+PROCEDURE ReadFirstEntry (DirName :ARRAY OF CHAR;
+                          Attr    :FileAttr;
+                          VAR D   :DirEntry) :BOOLEAN;
+
+PROCEDURE ReadNextEntry  (VAR D :DirEntry) :BOOLEAN;
+
+PROCEDURE ReadClose      (VAR D :DirEntry);
+
+
+(* raw read/write *)
+
+PROCEDURE RdBin (F: File; VAR Buf :ARRAY OF SYSTEM.LOC; Count :LONGCARD) :LONGCARD;
+PROCEDURE WrBin (F: File; Buf :ARRAY OF SYSTEM.LOC; Count :LONGCARD);
+
+
+(* formatted typed read/write *)
+
+PROCEDURE RdChar    (F: File) : CHAR;
+PROCEDURE RdBool    (F: File) : BOOLEAN;
+PROCEDURE RdShtInt  (F: File) : SHORTINT;
+PROCEDURE RdInt     (F: File) : INTEGER;
+PROCEDURE RdLngInt  (F: File) : LONGINT;
+PROCEDURE RdShtCard (F: File) : SHORTCARD;
+PROCEDURE RdCard    (F: File) : CARDINAL;
+PROCEDURE RdLngCard (F: File) : LONGCARD;
+PROCEDURE RdShtHex  (F: File) : SHORTCARD;
+PROCEDURE RdHex     (F: File) : CARDINAL;
+PROCEDURE RdLngHex  (F: File) : LONGCARD;
+
+PROCEDURE RdReal    (F: File) : REAL;
+PROCEDURE RdLngReal (F: File) : LONGREAL;
+
+PROCEDURE RdItem    (F: File; VAR V: ARRAY OF CHAR);
+PROCEDURE RdStr     (F: File; VAR V: ARRAY OF CHAR);
+
+
+PROCEDURE WrChar    (F: File; V: CHAR );
+PROCEDURE WrBool    (F: File; V: BOOLEAN  ; Length: INTEGER);
+PROCEDURE WrShtInt  (F: File; V: SHORTINT ; Length: INTEGER);
+PROCEDURE WrInt     (F: File; V: INTEGER  ; Length: INTEGER);
+PROCEDURE WrLngInt  (F: File; V: LONGINT  ; Length: INTEGER);
+PROCEDURE WrShtCard (F: File; V: SHORTCARD; Length: INTEGER);
+PROCEDURE WrCard    (F: File; V: CARDINAL ; Length: INTEGER);
+PROCEDURE WrLngCard (F: File; V: LONGCARD ; Length: INTEGER);
+PROCEDURE WrShtHex  (F: File; V: SHORTCARD; Length: INTEGER);
+PROCEDURE WrHex     (F: File; V: CARDINAL ; Length: INTEGER);
+PROCEDURE WrLngHex  (F: File; V: LONGCARD ; Length: INTEGER);
+
+PROCEDURE WrReal       (F: File; V: REAL     ; Precision: CARDINAL; Length: INTEGER);
+PROCEDURE WrLngReal    (F: File; V: LONGREAL ; Precision: CARDINAL; Length: INTEGER);
+PROCEDURE WrFixReal    (F: File; V: REAL     ; Precision: CARDINAL; Length: INTEGER);
+PROCEDURE WrFixLngReal (F: File; V: LONGREAL ; Precision: CARDINAL; Length: INTEGER);
+
+PROCEDURE WrCharRep (F :File; V :CHAR; Count :CARDINAL );
+PROCEDURE WrStr     (F :File; V :ARRAY OF CHAR);
+PROCEDURE WrStrAdj  (F :File; S :ARRAY OF CHAR; Length :INTEGER);
+PROCEDURE WrLn      (F :File);
+
+
+PROCEDURE IOresult()  :CARDINAL;
+
+PROCEDURE ThreadEOF() :BOOLEAN;
+PROCEDURE ThreadOK()  :BOOLEAN;
+
+(* ------------------ XDS specific ------------------ *)
+
+CONST 
+  InvalidFile = IOChan.InvalidChan;
+
+PROCEDURE IsFIOException () :BOOLEAN;
+
+END FIO.
+
+
+
+
+
+
+
+
+
+

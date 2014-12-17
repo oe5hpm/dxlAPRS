@@ -1,0 +1,160 @@
+(* Xm/FormP.def  Nov 11  16:26:8  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/FormP.h using H2D v1.18.1 *)
+
+(* $RCSfile: FormP.def,v $ $Revision: 4 $ $Date: 28.07.98 23:14 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+(* Merged headers: Xm/Form.h *)
+
+DEFINITION MODULE ["C"] FormP;
+
+IMPORT SYSTEM, Xlib, Xm:=XmP, Xt:=IntrinsicP, BulletinBP;
+(* H2D:  Required IMPORT clause: 
+IMPORT FormP, Xlib, Xm:=XmP, Xt:=IntrinsicP, BulletinBP;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992, 1993 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(* ------------------------------------------------- *)
+(*                     Xm/Form.h                     *)
+(* ------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2
+ *)
+
+(*   Form Widget   *)
+
+VAR 
+  xmFormWidgetClass: Xt.WidgetClass;
+
+TYPE 
+  XmFormWidgetClass = POINTER TO _XmFormClassRec;
+
+  XmFormWidget = POINTER TO _XmFormRec;
+
+(********    Public Function Declarations    ********)
+
+PROCEDURE XmCreateForm ( parent: Xt.Widget;
+                         name: ARRAY OF CHAR;
+                         arglist: Xt.ArgList;
+                         argcount: Xt.Cardinal ): Xt.Widget;
+
+PROCEDURE XmCreateFormDialog ( parent: Xt.Widget;
+                               name: ARRAY OF CHAR;
+                               arglist: Xt.ArgList;
+                               argcount: Xt.Cardinal ): Xt.Widget;
+
+(********    End Public Function Declarations    ********)
+
+(* ------------------------------------------------- *)
+(*                     Xm/Form.h                     *)
+(* ------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2.3
+ *)
+
+TYPE 
+  _XmFormAttachmentRec = RECORD
+    type     : SHORTCARD;
+    w        : Xt.Widget;
+    percent  : SYSTEM.int;
+    offset   : SYSTEM.int;
+    value    : SYSTEM.int;
+    tempValue: SYSTEM.int;
+  END;
+
+  XmFormAttachmentRec = _XmFormAttachmentRec;
+
+  XmFormAttachment = POINTER TO _XmFormAttachmentRec;
+
+  _XmFormAttachments = ARRAY [0..3] OF XmFormAttachmentRec;
+
+  _XmFormConstraintPart = RECORD
+    att             : _XmFormAttachments;
+    next_sibling    : Xt.Widget;
+    sorted          : Xt.Boolean;
+    resizable       : Xt.Boolean;
+    preferred_width : Xt.Dimension;
+    preferred_height: Xt.Dimension;
+  END;
+
+  XmFormConstraintPart = _XmFormConstraintPart;
+
+  XmFormConstraint = POINTER TO _XmFormConstraintPart;
+
+  _XmFormConstraintRec = RECORD
+    manager: Xm.XmManagerConstraintPart;
+    form   : XmFormConstraintPart;
+  END;
+
+  XmFormConstraintRec = _XmFormConstraintRec;
+
+  XmFormConstraintPtr = POINTER TO _XmFormConstraintRec;
+
+(*   Form class structure   *)
+
+  _XmFormClassPart = RECORD
+    extension: Xt.XtPointer;   (*  Pointer to extension record  *)
+  END;
+
+  XmFormClassPart = _XmFormClassPart;
+
+(*   Full class record declaration for form class   *)
+
+  _XmFormClassRec = RECORD
+    core_class          : Xt.CoreClassPart;
+    composite_class     : Xt.CompositeClassPart;
+    constraint_class    : Xt.ConstraintClassPart;
+    manager_class       : Xm.XmManagerClassPart;
+    bulletin_board_class: BulletinBP.XmBulletinBoardClassPart;
+    form_class          : XmFormClassPart;
+  END;
+
+  XmFormClassRec = _XmFormClassRec;
+
+(*   The Form instance record   *)
+
+  _XmFormPart = RECORD
+    horizontal_spacing    : Xt.Dimension;
+    vertical_spacing      : Xt.Dimension;
+    fraction_base         : SYSTEM.int;
+    rubber_positioning    : Xt.Boolean;
+    first_child           : Xt.Widget;
+    initial_width         : Xt.Boolean;
+    initial_height        : Xt.Boolean;
+    processing_constraints: Xt.Boolean;
+  END;
+
+  XmFormPart = _XmFormPart;
+
+(*   Full instance record declaration   *)
+
+  _XmFormRec = RECORD
+    core          : Xt.CorePart;
+    composite     : Xt.CompositePart;
+    constraint    : Xt.ConstraintPart;
+    manager       : Xm.XmManagerPart;
+    bulletin_board: BulletinBP.XmBulletinBoardPart;
+    form          : XmFormPart;
+  END;
+
+  XmFormRec = _XmFormRec;
+
+VAR 
+  xmFormClassRec: XmFormClassRec;
+
+(********    Private Function Declarations    ********)
+(********    End Private Function Declarations    ********)
+
+END FormP.

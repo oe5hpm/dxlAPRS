@@ -1,0 +1,68 @@
+(* Xm/h2d_VirtKeys.def  Oct 15  3:17:50  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/VirtKeys.h using H2D v1.16. *)
+
+(* $RCSfile: VirtKeys.def,v $ $Revision: 4 $ $Date: 28.07.98 23:15 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+
+DEFINITION MODULE ["C"] VirtKeys;
+
+IMPORT SYSTEM, X, Xlib, Xt:=Intrinsic;
+(* H2D:  Required IMPORT clause: 
+IMPORT VirtKeys, X, Xlib, Intrinsic;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(*
+ * Motif Release 1.2 
+ *)
+
+CONST 
+  osfXK_BackSpace = 1004FF08H;
+  osfXK_Insert = 1004FF63H;
+  osfXK_Delete = 1004FFFFH;
+  osfXK_Copy = 1004FF02H;
+  osfXK_Cut = 1004FF03H;
+  osfXK_Paste = 1004FF04H;
+  osfXK_AddMode = 1004FF31H;
+  osfXK_PrimaryPaste = 1004FF32H;
+  osfXK_QuickPaste = 1004FF33H;
+  osfXK_PageLeft = 1004FF40H;
+  osfXK_PageUp = 1004FF41H;
+  osfXK_PageDown = 1004FF42H;
+  osfXK_PageRight = 1004FF43H;
+  osfXK_EndLine = 1004FF57H;
+  osfXK_BeginLine = 1004FF58H;
+  osfXK_Activate = 1004FF44H;
+  osfXK_MenuBar = 1004FF45H;
+  osfXK_Clear = 1004FF0BH;
+  osfXK_Cancel = 1004FF69H;
+  osfXK_Help = 1004FF6AH;
+  osfXK_Menu = 1004FF67H;
+  osfXK_Select = 1004FF60H;
+  osfXK_Undo = 1004FF65H;
+  osfXK_Left = 1004FF51H;
+  osfXK_Up = 1004FF52H;
+  osfXK_Right = 1004FF53H;
+  osfXK_Down = 1004FF54H;
+
+(********    Public Function Declarations    ********)
+
+PROCEDURE XmTranslateKey ( dpy: Xlib.PtrDisplay; keycode: SYSTEM.unsigned;
+                           modifiers: Xt.Modifiers;
+                           VAR modifiers_return: Xt.Modifiers; 
+                           VAR keysym_return: X.KeySym );
+
+(********    End Public Function Declarations    ********)
+
+END VirtKeys.

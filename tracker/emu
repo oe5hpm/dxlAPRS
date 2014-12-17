@@ -1,0 +1,2 @@
+./tinyemu -C 13 -q 10000000 -B 57600 -s /tmp/rohr -d 2 asm/aprs.bin -b 1 -c 0 -w /tmp/pwm -e /tmp/eeprom
+

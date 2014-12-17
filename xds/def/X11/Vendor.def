@@ -1,0 +1,44 @@
+(* X11/Vendor.def  May 11  15:14:30  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted using H2D v1.00 from X11/Vendor.h. *)
+
+(* $RCSfile: Vendor.def,v $ $Revision: 4 $ $Date: 28.07.98 23:13 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *>
+<* IF NOT DEFINED(GENCTYPES) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+
+DEFINITION MODULE ["C"] Vendor;
+
+IMPORT SYSTEM, Intrinsic;
+(* H2D: to import this module write following text:
+IMPORT Vendor, Intrinsic;
+*)
+
+(*
+ * $XConsortium: Vendor.h,v 1.13 94/04/17 20:15:04 jim Exp $
+ * $oHeader: Vendor.h,v 1.2 88/08/18 15:56:44 asente Exp $
+ *)
+
+(**********************************************************************
+ *
+ * VendorShell Widget
+ *
+ **********************************************************************)
+
+(*  Class record constants  *)
+
+TYPE 
+  _VendorShellClassRec = RECORD
+    (* Declaration without definition *)
+  END;
+
+  VendorShellWidgetClass = POINTER TO _VendorShellClassRec;
+
+VAR 
+  vendorShellWidgetClass: Intrinsic.WidgetClass;
+
+END Vendor.

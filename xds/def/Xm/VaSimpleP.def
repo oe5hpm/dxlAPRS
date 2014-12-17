@@ -1,0 +1,54 @@
+(* Xm/VaSimpleP.def  Nov 21  19:17:43  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/VaSimpleP.h using H2D v1.18.6 *)
+
+(* $RCSfile: VaSimpleP.def,v $ $Revision: 4 $ $Date: 28.07.98 23:15 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *>
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+
+DEFINITION MODULE ["C"] VaSimpleP;
+
+IMPORT SYSTEM, Xt:=IntrinsicP, Xrm:=Xresource;
+(* H2D:  Required IMPORT clause:
+IMPORT VaSimpleP, IntrinsicP;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992, 1993, 1994 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(*
+ * Motif Release 1.2.4
+ *)
+
+TYPE
+  va_list = SYSTEM.ADDRESS;
+
+(*  In R6, Xt.h also defines this type, so           *)
+(*  we need to control its declaration in order to compile   *)
+
+CONST
+  StringToName = Xrm.XrmStringToName;
+
+(********  Private Function Declarations  ********)
+
+PROCEDURE _XmCountVaList ( var: va_list;
+                           VAR button_count: SYSTEM.int;
+                           VAR args_count: SYSTEM.int;
+                           VAR typed_count: SYSTEM.int;
+                           VAR total_count: SYSTEM.int );
+
+PROCEDURE _XmVaToTypedArgList ( var: va_list;
+                                max_count: SYSTEM.int;
+                                VAR args_return: Xt.XtTypedArgList;
+                                VAR num_args_return: Xt.Cardinal );
+
+(********  End Private Function Declarations  ********)
+
+END VaSimpleP.

@@ -1,0 +1,87 @@
+#!/bin/sh
+
+DoCopy(){
+	echo    Copying samples...
+        cp -p -f -r $XDSDIR/samples/* .
+	if test -f $XDSDIR/samples/buildc
+	then
+		chmod a+x `
+		awk '{
+			if ($1 == "cd") 
+				if ($2 == "..") 
+					dir = ""
+				else { 
+					dir = $2
+					print dir "/buildc"
+				}
+			else 
+				if (dir != "") print >dir "/buildc"
+		}' $XDSDIR/samples/buildc `	
+	fi
+	if test -f $XDSDIR/samples/buildx86
+	then
+		chmod a+x `
+		awk '{
+			if ($1 == "cd") 
+				if ($2 == "..") 
+					dir = ""
+				else { 
+					dir = $2
+					print dir "/buildx86"
+				}
+			else 
+				if (dir != "") print >dir "/buildx86"
+		}' $XDSDIR/samples/buildx86 `	
+	fi
+}
+
+Usage(){
+	echo
+	echo "Usage:"
+	echo "  xdssamp [ path_to_XDS_installation_directory ]"
+	echo
+}
+
+echo
+echo "==============================================================="
+echo " Native XDS-x86 2.4 Linux Edition."
+echo " Copyright (c) 1999 Excelsior. All Rights Reserved."
+echo " Copyright (c) 1991-1998 XDS Ltd. All Rights Reserved."
+echo "---------------------------------------------------------------"
+echo " This script copies sample programs to the current directory."
+echo "==============================================================="
+echo
+
+case $# in
+0) XDSDIR=`dirname $0`; XDSDIR=`dirname $XDSDIR` ;;
+1) XDSDIR=$1 ;;
+*) Usage; exit 1 ;;
+esac
+ 
+if test -d $XDSDIR/samples && { test -r $XDSDIR/samples/buildx86 || test -r $XDSDIR/samples/buildc }
+then
+	echo "Are you sure you want to copy XDS sample programs"
+	echo "from $XDSDIR/samples to $PWD? (Y/N)"
+	while :
+	do
+		read YN
+		case $YN in
+		Y|y) DoCopy; exit ;;
+	        N|n) exit ;;
+	        esac
+		echo "Please type Y or N"
+	done
+        exit
+else
+	echo
+	echo    "Unable to locate XDS sample programs."
+	echo	"Please invoke this script as:"
+	echo
+        echo    "  xdssamp path_to_XDS_installation_directory"
+	echo
+	echo    "Example:"
+	echo    "  xdssamp /usr/local/xds"
+	echo
+	echo    "-------------------------------------------------------------"
+
+fi

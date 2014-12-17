@@ -1,0 +1,23 @@
+(* Copyright (c) xTech 1997.  All Rights Reserved *)
+
+(* $RCSfile: stddef.def,v $ $Revision: 1.1.1.1 $ $Date: 1997/10/20 19:32:35 $ *)
+
+<*+ CSTDLIB  *>
+<*+ NOHEADER*>
+<*+ M2EXTENSIONS *>
+
+DEFINITION MODULE [2] stddef;
+
+FROM SYSTEM IMPORT INT16, INT32, CARD32;
+
+TYPE
+  ptrdiff_t = INT32;
+  size_t    = CARD32;
+  wchar_t   = INT16;
+
+CONST
+  NULL = NIL;
+
+(* Macros offsetof couldn`t be implemented using Modula-2 *)
+
+END stddef.

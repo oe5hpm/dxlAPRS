@@ -1,0 +1,81 @@
+(* Xm/TearOffP.def  Nov 11  18:44:13  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/TearOffP.h using H2D v1.18.1 *)
+
+(* $RCSfile: TearOffP.def,v $ $Revision: 4 $ $Date: 28.07.98 23:14 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+
+DEFINITION MODULE ["C"] TearOffP;
+
+IMPORT SYSTEM, Xlib, Xt:=IntrinsicP;
+(* H2D:  Required IMPORT clause: 
+IMPORT TearOffP, Xlib, IntrinsicP;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992, 1993 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(*
+ * Motif Release 1.2.3
+ *)
+
+TYPE 
+  _XmExcludedParentPaneRec = RECORD
+    pane_list_size: SYSTEM.INT16;
+    pane          : Xt.WidgetList;
+    num_panes     : SYSTEM.INT16;
+  END;
+
+  XmExcludedParentPaneRec = _XmExcludedParentPaneRec;
+
+VAR 
+  _XmExcludedParentPane: XmExcludedParentPaneRec;
+
+(********    Private Function Declarations    ********)
+
+PROCEDURE _XmTearOffBtnDownEventHandler ( reportingWidget: Xt.Widget;
+                                          data: Xt.XtPointer;
+                                          VAR event: Xlib.XEvent;
+					  VAR cont: Xt.Boolean );
+
+PROCEDURE _XmTearOffBtnUpEventHandler ( reportingWidget: Xt.Widget;
+                                        data: Xt.XtPointer;
+                                        VAR event: Xlib.XEvent;
+				        VAR cont: Xt.Boolean );
+
+PROCEDURE _XmDestroyTearOffShell ( wid: Xt.Widget );
+
+PROCEDURE _XmDismissTearOff ( shell: Xt.Widget;
+                              closure: Xt.XtPointer;
+                              call_data: Xt.XtPointer );
+
+PROCEDURE _XmTearOffInitiate ( wid: Xt.Widget;
+			       VAR event: Xlib.XEvent );
+
+PROCEDURE _XmAddTearOffEventHandlers ( wid: Xt.Widget );
+
+PROCEDURE _XmIsTearOffShellDescendant ( wid: Xt.Widget ): Xt.Boolean;
+
+PROCEDURE _XmLowerTearOffObscuringPoppingDownPanes ( ancestor: Xt.Widget;
+                                                     tearOff: Xt.Widget );
+
+PROCEDURE _XmRestoreExcludedTearOffToToplevelShell ( wid: Xt.Widget;
+                                                     VAR event: Xlib.XEvent );
+
+PROCEDURE _XmRestoreTearOffToToplevelShell ( wid: Xt.Widget;
+                                             VAR event: Xlib.XEvent );
+
+PROCEDURE _XmRestoreTearOffToMenuShell ( wid: Xt.Widget;
+                                         VAR event: Xlib.XEvent );
+
+(********    End Private Function Declarations    ********)
+
+END TearOffP.

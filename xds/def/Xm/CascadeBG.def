@@ -1,0 +1,79 @@
+(* Xm/CascadeBG.def  Oct 15  16:5:29  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/CascadeBG.h using H2D v1.16. *)
+
+(* $RCSfile: CascadeBG.def,v $ $Revision: 4 $ $Date: 28.07.98 23:14 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+
+DEFINITION MODULE ["C"] CascadeBG;
+
+IMPORT SYSTEM, Xt:=Intrinsic;
+(* H2D:  Required IMPORT clause: 
+IMPORT CascadeBG, Intrinsic;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(*
+ * Motif Release 1.2 
+ *)
+
+VAR 
+  xmCascadeButtonGadgetClass: Xt.WidgetClass;
+
+TYPE 
+  _XmCascadeButtonGadgetClassRec = RECORD
+
+(* Declaration without definition *)
+  END;
+
+  XmCascadeButtonGadgetClass = POINTER TO _XmCascadeButtonGadgetClassRec;
+
+  _XmCascadeButtonGadgetRec = RECORD
+
+(* Declaration without definition *)
+  END;
+
+  XmCascadeButtonGadget = POINTER TO _XmCascadeButtonGadgetRec;
+
+  _XmCascadeButtonGCacheObjRec = RECORD
+
+(* Declaration without definition *)
+  END;
+
+  XmCascadeButtonGCacheObject = POINTER TO _XmCascadeButtonGCacheObjRec;
+
+(* fast subclass define  *)
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: this procedure corresponds to a macro. *)
+PROCEDURE XmIsCascadeButtonGadget ( w: Xt.Widget ): Xt.Boolean;
+
+<* ELSE *>
+
+PROCEDURE  / XmIsCascadeButtonGadget ( w: Xt.Widget ): Xt.Boolean;
+
+<* END *>
+
+(********    Public Function Declarations    ********)
+
+PROCEDURE XmCreateCascadeButtonGadget ( parent: Xt.Widget; name: ARRAY OF CHAR;
+                                        al: Xt.ArgList;
+                                        ac: Xt.Cardinal ): Xt.Widget;
+
+PROCEDURE XmCascadeButtonGadgetHighlight ( wid: Xt.Widget;
+                                           highlight: SYSTEM.int );
+
+(********    End Public Function Declarations    ********)
+
+END CascadeBG.

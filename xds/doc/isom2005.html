@@ -1,0 +1,1057 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 4.01 Transitional//EN">
+<HTML>
+<HEAD>
+<TITLE>Collected Modula-2 Concrete Syntax</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<P><HR>
+<A NAME="0370">
+<A HREF="isom2000.html#root" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="isom2004.html#0369" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0371" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H1>Collected Modula-2 Concrete Syntax</H1>
+
+<P><UL>
+<LI><A HREF="#0371" TARGET=body>Programs, Program Modules, and Separate Modules</A>
+<LI><A HREF="#0380" TARGET=body>Definitions and Declarations</A>
+<LI><A HREF="#0394" TARGET=body>Data Types</A>
+<LI><A HREF="#0410" TARGET=body>Blocks</A>
+<LI><A HREF="#0415" TARGET=body>Statements</A>
+<LI><A HREF="#0431" TARGET=body>Variable Designators</A>
+<LI><A HREF="#0436" TARGET=body>Expressions</A>
+<LI><A HREF="#0451" TARGET=body>Parameter Compatibility and Argument Binding</A>
+</UL>
+<P><HR>
+<A NAME="0371">
+<A HREF="#0370" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0370" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0372" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Programs, Program Modules, and Separate Modules</H2>
+
+<P><UL>
+<LI><A HREF="#0372" TARGET=body>Programs and Compilation Modules</A>
+<LI><A HREF="#0373" TARGET=body>Program Modules</A>
+<LI><A HREF="#0374" TARGET=body>Definition Modules</A>
+<LI><A HREF="#0375" TARGET=body>Implementation Modules</A>
+<LI><A HREF="#0377" TARGET=body>Import Lists</A>
+<LI><A HREF="#0378" TARGET=body>Export Lists</A>
+<LI><A HREF="#0379" TARGET=body>Protected Modules</A>
+</UL>
+<P><HR>
+<A NAME="0372">
+<A HREF="#0371" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0371" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0373" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Programs and Compilation Modules</H3>
+
+<P><B>compilation module</B>= <BR>
+<A HREF="#0373" TARGET=body>program module</A> | <A HREF="#0374" TARGET=body>definition module</A> | <A HREF="#0376" TARGET=body>implementation module</A> ; 
+<P><HR>
+<A NAME="0373">
+<A HREF="#0371" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0372" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0374" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Program Modules</H3>
+
+<P><B>program module</B>= <BR>
+&quot;MODULE&quot;, <A HREF="#0373" TARGET=body>module identifier</A>, [ <A HREF="#0379" TARGET=body>interrupt protection</A> ], &quot;;&quot;, <BR>
+<A HREF="#0377" TARGET=body>import lists</A>, <BR>
+<A HREF="#0413" TARGET=body>module block</A>, <A HREF="#0373" TARGET=body>module identifier</A>, &quot;.&quot; ; 
+<P><B>module identifier</B>= identifier ; 
+<P><HR>
+<A NAME="0374">
+<A HREF="#0371" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0373" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0375" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Definition Modules</H3>
+
+<P><B>definition module</B>= <BR>
+&quot;DEFINITION&quot;, &quot;MODULE&quot;, <A HREF="#0373" TARGET=body>module identifier</A>, &quot;;&quot;, <BR>
+<A HREF="#0377" TARGET=body>import lists</A>, <BR>
+<A HREF="#0382" TARGET=body>definitions</A>, <BR>
+&quot;END&quot;, <A HREF="#0373" TARGET=body>module identifier</A>, &quot;.&quot; ; 
+<P><HR>
+<A NAME="0375">
+<A HREF="#0371" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0374" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0376" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Implementation Modules</H3>
+
+<P><UL>
+<LI><A HREF="#0376" TARGET=body>Sourced Implementation Modules</A>
+</UL>
+<P><HR>
+<A NAME="0376">
+<A HREF="#0375" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0375" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0377" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H4>Sourced Implementation Modules</H4>
+
+<P><B>implementation module</B>= <BR>
+&quot;IMPLEMENTATION&quot;, &quot;MODULE&quot;, <A HREF="#0373" TARGET=body>module identifier</A>, [ <A HREF="#0379" TARGET=body>interrupt protection</A> ], &quot;;&quot;, <BR>
+<A HREF="#0377" TARGET=body>import lists</A>, <BR>
+<A HREF="#0413" TARGET=body>module block</A>, <A HREF="#0373" TARGET=body>module identifier</A>, &quot;.&quot; ; 
+<P><HR>
+<A NAME="0377">
+<A HREF="#0371" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0376" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0378" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Import Lists</H3>
+
+<P><B>import lists</B>= { <A HREF="#0377" TARGET=body>import list</A> } ; 
+<P><B>import list</B>= <A HREF="#0377" TARGET=body>simple import</A> | <A HREF="#0377" TARGET=body>unqualified import</A> ; 
+<P><B>simple import</B>= &quot;IMPORT&quot;, <A HREF="#0398" TARGET=body>identifier list</A>, &quot;;&quot; ; 
+<P><B>unqualified import</B>= &quot;FROM&quot;, <A HREF="#0373" TARGET=body>module identifier</A>, &quot;IMPORT&quot;, <A HREF="#0398" TARGET=body>identifier list</A>, &quot;;&quot; ; 
+<P><HR>
+<A NAME="0378">
+<A HREF="#0371" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0377" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0379" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Export Lists</H3>
+
+<P><B>export list</B>= <A HREF="#0378" TARGET=body>unqualified export</A> | <A HREF="#0378" TARGET=body>qualified export</A> ; 
+<P><B>unqualified export</B>= &quot;EXPORT&quot;, <A HREF="#0398" TARGET=body>identifier list</A>, &quot;;&quot; ; 
+<P><B>qualified export</B>= &quot;EXPORT&quot;, &quot;QUALIFIED&quot;, <A HREF="#0398" TARGET=body>identifier list</A>, &quot;;&quot; ; 
+<P><HR>
+<A NAME="0379">
+<A HREF="#0371" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0378" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0380" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Protected Modules</H3>
+
+<P><B>interrupt protection</B>= &quot;[&quot;, <A HREF="#0379" TARGET=body>protection expression</A>, &quot;]&quot; ; 
+<P><B>protection expression</B>= <A HREF="#0450" TARGET=body>constant expression</A> ; 
+<P><HR>
+<A NAME="0380">
+<A HREF="#0370" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0379" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0381" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Definitions and Declarations</H2>
+
+<P><UL>
+<LI><A HREF="#0381" TARGET=body>Qualified Identifiers</A>
+<LI><A HREF="#0382" TARGET=body>Definitions</A>
+<LI><A HREF="#0383" TARGET=body>Type Definitions</A>
+<LI><A HREF="#0384" TARGET=body>Procedure Headings</A>
+<LI><A HREF="#0388" TARGET=body>Declarations</A>
+<LI><A HREF="#0389" TARGET=body>Constant Declarations</A>
+<LI><A HREF="#0390" TARGET=body>Type Declarations</A>
+<LI><A HREF="#0391" TARGET=body>Variable Declarations</A>
+<LI><A HREF="#0392" TARGET=body>Procedure Declarations</A>
+<LI><A HREF="#0393" TARGET=body>Local Module Declarations</A>
+</UL>
+<P><HR>
+<A NAME="0381">
+<A HREF="#0380" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0380" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0382" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Qualified Identifiers</H3>
+
+<P><B>qualified identifier</B>= { <A HREF="#0381" TARGET=body>qualifying identifier</A>, &quot;.&quot; }, identifier ; 
+<P><B>qualifying identifier</B>= <A HREF="#0373" TARGET=body>module identifier</A> ; 
+<P><HR>
+<A NAME="0382">
+<A HREF="#0380" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0381" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0383" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Definitions</H3>
+
+<P><B>definitions</B>= { <A HREF="#0382" TARGET=body>definition</A> } ; 
+<P><B>definition</B>= <BR>
+&quot;CONST&quot;, { <A HREF="#0389" TARGET=body>constant declaration</A>, &quot;;&quot; } | <BR>
+&quot;TYPE&quot;, { <A HREF="#0383" TARGET=body>type definition</A>, &quot;;&quot; } | <BR>
+&quot;VAR&quot;, { <A HREF="#0391" TARGET=body>variable declaration</A>, &quot;;&quot; } | <BR>
+<A HREF="#0384" TARGET=body>procedure heading</A>, &quot;;&quot; ; 
+<P><HR>
+<A NAME="0383">
+<A HREF="#0380" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0382" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0384" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Type Definitions</H3>
+
+<P><B>type definition</B>= <A HREF="#0390" TARGET=body>type declaration</A> | <A HREF="#0383" TARGET=body>opaque type definition</A> ; 
+<P><B>opaque type definition</B>= identifier ; 
+<P><HR>
+<A NAME="0384">
+<A HREF="#0380" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0383" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0385" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Procedure Headings</H3>
+
+<P><B>procedure heading</B>= <A HREF="#0385" TARGET=body>proper procedure heading</A> | <A HREF="#0386" TARGET=body>function procedure heading</A> ; 
+<P><UL>
+<LI><A HREF="#0385" TARGET=body>Proper Procedure Headings</A>
+<LI><A HREF="#0386" TARGET=body>Function Procedure Headings</A>
+<LI><A HREF="#0387" TARGET=body>Formal Parameters</A>
+</UL>
+<P><HR>
+<A NAME="0385">
+<A HREF="#0384" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0384" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0386" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H4>Proper Procedure Headings</H4>
+
+<P><B>proper procedure heading</B>= <BR>
+&quot;PROCEDURE&quot;, <A HREF="#0392" TARGET=body>procedure identifier</A>, [ <A HREF="#0385" TARGET=body>formal parameters</A> ] ; 
+<P><B>formal parameters</B>= &quot;(&quot;, [ <A HREF="#0385" TARGET=body>formal parameter list</A> ], &quot;)&quot; ; 
+<P><B>formal parameter list</B>= <A HREF="#0387" TARGET=body>formal parameter</A>, { &quot;;&quot;, <A HREF="#0387" TARGET=body>formal parameter</A> } ; 
+<P><HR>
+<A NAME="0386">
+<A HREF="#0384" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0385" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0387" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H4>Function Procedure Headings</H4>
+
+<P><B>function procedure heading</B>= <BR>
+&quot;PROCEDURE&quot;, <A HREF="#0392" TARGET=body>procedure identifier</A>, <A HREF="#0385" TARGET=body>formal parameters</A>, &quot;:&quot;, <A HREF="#0386" TARGET=body>function result type</A> ; 
+<P><B>function result type</B>= <A HREF="#0396" TARGET=body>type identifier</A> ; 
+<P><HR>
+<A NAME="0387">
+<A HREF="#0384" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0386" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0388" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H4>Formal Parameters</H4>
+
+<P><B>formal parameter</B>= <BR>
+<A HREF="#0387" TARGET=body>value parameter specification</A> | <A HREF="#0387" TARGET=body>variable parameter specification</A> ; 
+<P><B>value parameter specification</B>= <A HREF="#0398" TARGET=body>identifier list</A>, &quot;:&quot;, <A HREF="#0405" TARGET=body>formal type</A> ; 
+<P><B>variable parameter specification</B>= &quot;VAR&quot;, <A HREF="#0398" TARGET=body>identifier list</A>, &quot;:&quot;, <A HREF="#0405" TARGET=body>formal type</A> ; 
+<P><HR>
+<A NAME="0388">
+<A HREF="#0380" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0387" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0389" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Declarations</H3>
+
+<P><B>declarations</B>= { <A HREF="#0388" TARGET=body>declaration</A> } ; 
+<P><B>declaration</B>= <BR>
+&quot;CONST&quot;, { <A HREF="#0389" TARGET=body>constant declaration</A>, &quot;;&quot; } | <BR>
+&quot;TYPE&quot;, { <A HREF="#0390" TARGET=body>type declaration</A>, &quot;;&quot; } | <BR>
+&quot;VAR&quot;, { <A HREF="#0391" TARGET=body>variable declaration</A>, &quot;;&quot; } | <BR>
+<A HREF="#0392" TARGET=body>procedure declaration</A>, &quot;;&quot; | <BR>
+<A HREF="#0393" TARGET=body>local module declaration</A>, &quot;;&quot; ; 
+<P><HR>
+<A NAME="0389">
+<A HREF="#0380" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0388" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0390" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Constant Declarations</H3>
+
+<P><B>constant declaration</B>= identifier, &quot;=&quot;, <A HREF="#0450" TARGET=body>constant expression</A> ; 
+<P><HR>
+<A NAME="0390">
+<A HREF="#0380" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0389" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0391" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Type Declarations</H3>
+
+<P><B>type declaration</B>= identifier, &quot;=&quot;, <A HREF="#0395" TARGET=body>type denoter</A> ; 
+<P><HR>
+<A NAME="0391">
+<A HREF="#0380" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0390" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0392" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Variable Declarations</H3>
+
+<P><B>variable declaration</B>= <A HREF="#0391" TARGET=body>variable identifier list</A>, &quot;:&quot;, <A HREF="#0395" TARGET=body>type denoter</A> ; 
+<P><B>variable identifier list</B>= <BR>
+identifier, [ <A HREF="#0391" TARGET=body>machine address</A> ], { &quot;,&quot;, identifier, [ <A HREF="#0391" TARGET=body>machine address</A> ] } ; 
+<P><B>machine address</B>= &quot;[&quot;, <A HREF="#0391" TARGET=body>value of address type</A>, &quot;]&quot; ; 
+<P><B>value of address type</B>= <A HREF="#0450" TARGET=body>constant expression</A> ; 
+<P><HR>
+<A NAME="0392">
+<A HREF="#0380" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0391" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0393" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Procedure Declarations</H3>
+
+<P><B>procedure declaration</B>= <BR>
+<A HREF="#0392" TARGET=body>proper procedure declaration</A> | <A HREF="#0392" TARGET=body>function procedure declaration</A> ; 
+<P><B>proper procedure declaration</B>= <BR>
+<A HREF="#0385" TARGET=body>proper procedure heading</A>, &quot;;&quot;, <BR>
+( <A HREF="#0411" TARGET=body>proper procedure block</A>, <A HREF="#0392" TARGET=body>procedure identifier</A> | &quot;FORWARD&quot; ) ; 
+<P><B>procedure identifier</B>= identifier ; 
+<P><B>function procedure declaration</B>= <BR>
+<A HREF="#0386" TARGET=body>function procedure heading</A>, &quot;;&quot;, <BR>
+( <A HREF="#0412" TARGET=body>function procedure block</A>, <A HREF="#0392" TARGET=body>procedure identifier</A> | &quot;FORWARD&quot; ) ; 
+<P><HR>
+<A NAME="0393">
+<A HREF="#0380" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0392" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0394" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Local Module Declarations</H3>
+
+<P><B>local module declaration</B>= <BR>
+&quot;MODULE&quot;, <A HREF="#0373" TARGET=body>module identifier</A>, [ <A HREF="#0379" TARGET=body>interrupt protection</A> ], &quot;;&quot;, <BR>
+<A HREF="#0377" TARGET=body>import lists</A>, [ <A HREF="#0378" TARGET=body>export list</A> ], <BR>
+<A HREF="#0413" TARGET=body>module block</A>, <A HREF="#0373" TARGET=body>module identifier</A> ; 
+<P><HR>
+<A NAME="0394">
+<A HREF="#0370" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0393" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0395" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Data Types</H2>
+
+<P><UL>
+<LI><A HREF="#0395" TARGET=body>Type Denoters and Ordinal Type Denoters</A>
+<LI><A HREF="#0396" TARGET=body>Type Identifiers</A>
+<LI><A HREF="#0397" TARGET=body>New Types</A>
+<LI><A HREF="#0398" TARGET=body>Enumeration Types</A>
+<LI><A HREF="#0399" TARGET=body>Subrange Types</A>
+<LI><A HREF="#0400" TARGET=body>Set Types</A>
+<LI><A HREF="#0401" TARGET=body>Packedset Types</A>
+<LI><A HREF="#0402" TARGET=body>Pointer Types</A>
+<LI><A HREF="#0403" TARGET=body>Procedure Types</A>
+<LI><A HREF="#0406" TARGET=body>Array Types</A>
+<LI><A HREF="#0407" TARGET=body>Record Types</A>
+</UL>
+<P><HR>
+<A NAME="0395">
+<A HREF="#0394" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0394" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0396" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Type Denoters and Ordinal Type Denoters</H3>
+
+<P><B>type denoter</B>= <A HREF="#0396" TARGET=body>type identifier</A> | <A HREF="#0397" TARGET=body>new type</A> ; 
+<P><B>ordinal type denoter</B>= <A HREF="#0396" TARGET=body>ordinal type identifier</A> | <A HREF="#0397" TARGET=body>new ordinal type</A> ; 
+<P><HR>
+<A NAME="0396">
+<A HREF="#0394" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0395" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0397" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Type Identifiers</H3>
+
+<P><B>type identifier</B>= <A HREF="#0381" TARGET=body>qualified identifier</A> ; 
+<P><B>ordinal type identifier</B>= <A HREF="#0396" TARGET=body>type identifier</A> ; 
+<P><HR>
+<A NAME="0397">
+<A HREF="#0394" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0396" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0398" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>New Types</H3>
+
+<P><B>new type</B>= <BR>
+<A HREF="#0397" TARGET=body>new ordinal type</A> | <A HREF="#0400" TARGET=body>set type</A> | <BR>
+<A HREF="#0401" TARGET=body>packedset type</A> | <A HREF="#0402" TARGET=body>pointer type</A> | <BR>
+<A HREF="#0403" TARGET=body>procedure type</A> | <A HREF="#0406" TARGET=body>array type</A> | <BR>
+<A HREF="#0407" TARGET=body>record type</A> ; 
+<P><B>new ordinal type</B>= <A HREF="#0398" TARGET=body>enumeration type</A> | <A HREF="#0399" TARGET=body>subrange type</A> ; 
+<P><HR>
+<A NAME="0398">
+<A HREF="#0394" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0397" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0399" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Enumeration Types</H3>
+
+<P><B>enumeration type</B>= &quot;(&quot;, <A HREF="#0398" TARGET=body>identifier list</A>, &quot;)&quot; ; 
+<P><B>identifier list</B>= identifier, { &quot;,&quot;, identifier } ; 
+<P><HR>
+<A NAME="0399">
+<A HREF="#0394" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0398" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0400" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Subrange Types</H3>
+
+<P><B>subrange type</B>= <BR>
+[0 pt] [ <A HREF="#0399" TARGET=body>range type</A> ], &quot;[&quot;, <A HREF="#0450" TARGET=body>constant expression</A>, &quot;..&quot;, <A HREF="#0450" TARGET=body>constant expression</A>, &quot;]&quot; ; 
+<P><B>range type</B>= <A HREF="#0396" TARGET=body>ordinal type identifier</A> ; 
+<P><HR>
+<A NAME="0400">
+<A HREF="#0394" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0399" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0401" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Set Types</H3>
+
+<P><B>set type</B>= &quot;SET&quot;, &quot;OF&quot;, <A HREF="#0400" TARGET=body>base type</A> ; 
+<P><B>base type</B>= <A HREF="#0395" TARGET=body>ordinal type denoter</A> ; 
+<P><HR>
+<A NAME="0401">
+<A HREF="#0394" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0400" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0402" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Packedset Types</H3>
+
+<P><B>packedset type</B>= &quot;PACKEDSET&quot;, &quot;OF&quot;, <A HREF="#0400" TARGET=body>base type</A> ; 
+<P><HR>
+<A NAME="0402">
+<A HREF="#0394" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0401" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0403" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Pointer Types</H3>
+
+<P><B>pointer type</B>= &quot;POINTER&quot;, &quot;TO&quot;, <A HREF="#0402" TARGET=body>bound type</A> ; 
+<P><B>bound type</B>= <A HREF="#0395" TARGET=body>type denoter</A> ; 
+<P><HR>
+<A NAME="0403">
+<A HREF="#0394" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0402" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0404" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Procedure Types</H3>
+
+<P><B>procedure type</B>= <A HREF="#0403" TARGET=body>proper procedure type</A> | <A HREF="#0403" TARGET=body>function procedure type</A> ; 
+<P><B>proper procedure type</B>= <BR>
+&quot;PROCEDURE&quot;, [ &quot;(&quot;, [ <A HREF="#0404" TARGET=body>formal parameter type list</A> ], &quot;)&quot; ] ; 
+<P><B>function procedure type</B>= <BR>
+&quot;PROCEDURE&quot;, &quot;(&quot;, [ <A HREF="#0404" TARGET=body>formal parameter type list</A> ], &quot;)&quot;, &quot;:&quot;, <A HREF="#0386" TARGET=body>function result type</A> ; 
+<P><UL>
+<LI><A HREF="#0404" TARGET=body>Formal Parameter Type Lists</A>
+<LI><A HREF="#0405" TARGET=body>Formal Types</A>
+</UL>
+<P><HR>
+<A NAME="0404">
+<A HREF="#0403" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0403" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0405" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H4>Formal Parameter Type Lists</H4>
+
+<P><B>formal parameter type list</B>= <BR>
+<A HREF="#0404" TARGET=body>formal parameter type</A>, { &quot;,&quot;, <A HREF="#0404" TARGET=body>formal parameter type</A> } ; 
+<P><B>formal parameter type</B>= <BR>
+<A HREF="#0404" TARGET=body>variable formal type</A> | <A HREF="#0404" TARGET=body>value formal type</A> ; 
+<P><B>variable formal type</B>= &quot;VAR&quot;, <A HREF="#0405" TARGET=body>formal type</A> ; 
+<P><B>value formal type</B>= <A HREF="#0405" TARGET=body>formal type</A> ; 
+<P><HR>
+<A NAME="0405">
+<A HREF="#0403" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0404" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0406" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H4>Formal Types</H4>
+
+<P><B>formal type</B>= <A HREF="#0396" TARGET=body>type identifier</A> | <A HREF="#0405" TARGET=body>open array formal type</A> ; 
+<P><B>open array formal type</B>= &quot;ARRAY&quot;, &quot;OF&quot;, <A HREF="#0405" TARGET=body>open array component type</A> ; 
+<P><B>open array component type</B>= <A HREF="#0405" TARGET=body>formal type</A> ; 
+<P><HR>
+<A NAME="0406">
+<A HREF="#0394" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0405" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0407" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Array Types</H3>
+
+<P><B>array type</B>= &quot;ARRAY&quot;, <A HREF="#0406" TARGET=body>index type</A>, { &quot;,&quot;, <A HREF="#0406" TARGET=body>index type</A> }, &quot;OF&quot;, <A HREF="#0406" TARGET=body>component type</A> ; 
+<P><B>index type</B>= <A HREF="#0395" TARGET=body>ordinal type denoter</A> ; 
+<P><B>component type</B>= <A HREF="#0395" TARGET=body>type denoter</A> ; 
+<P><HR>
+<A NAME="0407">
+<A HREF="#0394" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0406" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0408" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Record Types</H3>
+
+<P><B>record type</B>= &quot;RECORD&quot;, <A HREF="#0407" TARGET=body>field list</A>, &quot;END&quot; ; 
+<P><B>field list</B>= <A HREF="#0407" TARGET=body>fields</A>, { &quot;;&quot;, <A HREF="#0407" TARGET=body>fields</A> } ; 
+<P><B>fields</B>= [ <A HREF="#0408" TARGET=body>fixed fields</A> | <A HREF="#0409" TARGET=body>variant fields</A> ] ; 
+<P><UL>
+<LI><A HREF="#0408" TARGET=body>Fixed Fields</A>
+<LI><A HREF="#0409" TARGET=body>Variant Fields</A>
+</UL>
+<P><HR>
+<A NAME="0408">
+<A HREF="#0407" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0407" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0409" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H4>Fixed Fields</H4>
+
+<P><B>fixed fields</B>= <A HREF="#0398" TARGET=body>identifier list</A>, &quot;:&quot;, <A HREF="#0408" TARGET=body>field type</A> ; 
+<P><B>field type</B>= <A HREF="#0395" TARGET=body>type denoter</A> ; 
+<P><HR>
+<A NAME="0409">
+<A HREF="#0407" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0408" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0410" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H4>Variant Fields</H4>
+
+<P><B>variant fields</B>= &quot;CASE&quot;, <A HREF="#0409" TARGET=body>tag field</A>, &quot;OF&quot;, <A HREF="#0409" TARGET=body>variant list</A>, &quot;END&quot; ; 
+<P><B>tag field</B>= [ <A HREF="#0409" TARGET=body>tag identifier</A> ], &quot;:&quot;, <A HREF="#0409" TARGET=body>tag type</A> ; 
+<P><B>tag identifier</B>= identifier ; 
+<P><B>tag type</B>= <A HREF="#0396" TARGET=body>ordinal type identifier</A> ; 
+<P><B>variant list</B>= <A HREF="#0409" TARGET=body>variant</A>, { &quot;|&quot;, <A HREF="#0409" TARGET=body>variant</A> }, [ <A HREF="#0409" TARGET=body>variant else part</A> ] ; 
+<P><B>variant else part</B>= &quot;ELSE&quot;, <A HREF="#0407" TARGET=body>field list</A> ; 
+<P><B>variant</B>= [ <A HREF="#0409" TARGET=body>variant label list</A>, &quot;:&quot;, <A HREF="#0407" TARGET=body>field list</A> ] ; 
+<P><B>variant label list</B>= <A HREF="#0409" TARGET=body>variant label</A>, { &quot;,&quot;, <A HREF="#0409" TARGET=body>variant label</A> } ; 
+<P><B>variant label</B>= <A HREF="#0450" TARGET=body>constant expression</A>, [ &quot;..&quot;, <A HREF="#0450" TARGET=body>constant expression</A> ] ; 
+<P><HR>
+<A NAME="0410">
+<A HREF="#0370" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0409" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0411" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Blocks</H2>
+
+<P><UL>
+<LI><A HREF="#0411" TARGET=body>Proper Procedure Blocks</A>
+<LI><A HREF="#0412" TARGET=body>Function Procedure Blocks</A>
+<LI><A HREF="#0413" TARGET=body>Module Blocks</A>
+<LI><A HREF="#0414" TARGET=body>Block Bodies and Exception Handling</A>
+</UL>
+<P><HR>
+<A NAME="0411">
+<A HREF="#0410" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0410" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0412" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Proper Procedure Blocks</H3>
+
+<P><B>proper procedure block</B>= <A HREF="#0388" TARGET=body>declarations</A>, [ <A HREF="#0411" TARGET=body>procedure body</A> ], &quot;END&quot; ; 
+<P><B>procedure body</B>= &quot;BEGIN&quot;, <A HREF="#0414" TARGET=body>block body</A> ; 
+<P><HR>
+<A NAME="0412">
+<A HREF="#0410" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0411" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0413" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Function Procedure Blocks</H3>
+
+<P><B>function procedure block</B>= <A HREF="#0388" TARGET=body>declarations</A>, <A HREF="#0412" TARGET=body>function body</A>, &quot;END&quot; ; 
+<P><B>function body</B>= &quot;BEGIN&quot;, <A HREF="#0414" TARGET=body>block body</A> ; 
+<P><HR>
+<A NAME="0413">
+<A HREF="#0410" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0412" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0414" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Module Blocks</H3>
+
+<P><B>module block</B>= <A HREF="#0388" TARGET=body>declarations</A>, [ <A HREF="#0413" TARGET=body>module body</A> ], &quot;END&quot; ; 
+<P><B>module body</B>= <A HREF="#0413" TARGET=body>initialization body</A>, [ <A HREF="#0413" TARGET=body>finalization body</A> ] ; 
+<P><B>initialization body</B>= &quot;BEGIN&quot;, <A HREF="#0414" TARGET=body>block body</A> ; 
+<P><B>finalization body</B>= &quot;FINALLY&quot;, <A HREF="#0414" TARGET=body>block body</A> ; 
+<P><HR>
+<A NAME="0414">
+<A HREF="#0410" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0413" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0415" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Block Bodies and Exception Handling</H3>
+
+<P><B>block body</B>= <A HREF="#0414" TARGET=body>normal part</A>, [ &quot;EXCEPT&quot;, <A HREF="#0414" TARGET=body>exceptional part</A> ] ; 
+<P><B>normal part</B>= <A HREF="#0416" TARGET=body>statement sequence</A> ; 
+<P><B>exceptional part</B>= <A HREF="#0416" TARGET=body>statement sequence</A> ; 
+<P><HR>
+<A NAME="0415">
+<A HREF="#0370" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0414" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0416" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Statements</H2>
+
+<P><B>statement</B>= <BR>
+<A HREF="#0417" TARGET=body>empty statement</A> | <A HREF="#0418" TARGET=body>assignment statement</A> | <A HREF="#0419" TARGET=body>procedure call</A> | <BR>
+<A HREF="#0420" TARGET=body>return statement</A> | <A HREF="#0421" TARGET=body>retry statement</A> | <A HREF="#0422" TARGET=body>with statement</A> | <BR>
+<A HREF="#0423" TARGET=body>if statement</A> | <A HREF="#0424" TARGET=body>case statement</A> | <A HREF="#0426" TARGET=body>while statement</A> | <BR>
+<A HREF="#0427" TARGET=body>repeat statement</A> | <A HREF="#0428" TARGET=body>loop statement</A> | <A HREF="#0429" TARGET=body>exit statement</A> | <BR>
+<A HREF="#0430" TARGET=body>for statement</A> ; 
+<P><UL>
+<LI><A HREF="#0416" TARGET=body>Statement Sequences</A>
+<LI><A HREF="#0417" TARGET=body>Empty Statements</A>
+<LI><A HREF="#0418" TARGET=body>Assignment Statements</A>
+<LI><A HREF="#0419" TARGET=body>Procedure Calls</A>
+<LI><A HREF="#0420" TARGET=body>Return Statements</A>
+<LI><A HREF="#0421" TARGET=body>Retry Statements</A>
+<LI><A HREF="#0422" TARGET=body>With Statements</A>
+<LI><A HREF="#0423" TARGET=body>If Statements</A>
+<LI><A HREF="#0424" TARGET=body>Case Statements</A>
+<LI><A HREF="#0426" TARGET=body>While Statements</A>
+<LI><A HREF="#0427" TARGET=body>Repeat Statements</A>
+<LI><A HREF="#0428" TARGET=body>Loop Statements</A>
+<LI><A HREF="#0429" TARGET=body>Exit Statements</A>
+<LI><A HREF="#0430" TARGET=body>For Statements</A>
+</UL>
+<P><HR>
+<A NAME="0416">
+<A HREF="#0415" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0415" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0417" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Statement Sequences</H3>
+
+<P><B>statement sequence</B>= <A HREF="#0415" TARGET=body>statement</A>, { &quot;;&quot;, <A HREF="#0415" TARGET=body>statement</A> } ; 
+<P><HR>
+<A NAME="0417">
+<A HREF="#0415" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0416" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0418" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Empty Statements</H3>
+
+<P><B>empty statement</B>= ; 
+<P><HR>
+<A NAME="0418">
+<A HREF="#0415" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0417" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0419" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Assignment Statements</H3>
+
+<P><B>assignment statement</B>= <A HREF="#0431" TARGET=body>variable designator</A>, &quot;:=&quot;, <A HREF="#0436" TARGET=body>expression</A> ; 
+<P><HR>
+<A NAME="0419">
+<A HREF="#0415" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0418" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0420" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Procedure Calls</H3>
+
+<P><B>procedure call</B>= <A HREF="#0419" TARGET=body>procedure designator</A>, [ <A HREF="#0452" TARGET=body>actual parameters</A> ] ; 
+<P><B>procedure designator</B>= <A HREF="#0439" TARGET=body>value designator</A> ; 
+<P><HR>
+<A NAME="0420">
+<A HREF="#0415" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0419" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0421" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Return Statements</H3>
+
+<P><B>return statement</B>= <A HREF="#0420" TARGET=body>simple return statement</A> | <A HREF="#0420" TARGET=body>function return statement</A> ; 
+<P><B>simple return statement</B>= &quot;RETURN&quot; ; 
+<P><B>function return statement</B>= &quot;RETURN&quot;, <A HREF="#0436" TARGET=body>expression</A> ; 
+<P><HR>
+<A NAME="0421">
+<A HREF="#0415" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0420" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0422" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Retry Statements</H3>
+
+<P><B>retry statement</B>= &quot;RETRY&quot; ; 
+<P><HR>
+<A NAME="0422">
+<A HREF="#0415" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0421" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0423" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>With Statements</H3>
+
+<P><B>with statement</B>= &quot;WITH&quot;, <A HREF="#0422" TARGET=body>record designator</A>, &quot;DO&quot;, <A HREF="#0416" TARGET=body>statement sequence</A>, &quot;END&quot; ; 
+<P><B>record designator</B>= <A HREF="#0431" TARGET=body>variable designator</A> | <A HREF="#0439" TARGET=body>value designator</A> ; 
+<P><HR>
+<A NAME="0423">
+<A HREF="#0415" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0422" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0424" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>If Statements</H3>
+
+<P><B>if statement</B>= <A HREF="#0423" TARGET=body>guarded statements</A>, [ <A HREF="#0423" TARGET=body>if else part</A> ], &quot;END&quot; ; 
+<P><B>guarded statements</B>= <BR>
+&quot;IF&quot;, <A HREF="#0423" TARGET=body>boolean expression</A>, &quot;THEN&quot;, <A HREF="#0416" TARGET=body>statement sequence</A>, <BR>
+{ &quot;ELSIF&quot;, <A HREF="#0423" TARGET=body>boolean expression</A>, &quot;THEN&quot;, <A HREF="#0416" TARGET=body>statement sequence</A> } ; 
+<P><B>if else part</B>= &quot;ELSE&quot;, <A HREF="#0416" TARGET=body>statement sequence</A> ; 
+<P><B>boolean expression</B>= <A HREF="#0436" TARGET=body>expression</A> ; 
+<P><HR>
+<A NAME="0424">
+<A HREF="#0415" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0423" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0425" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Case Statements</H3>
+
+<P><B>case statement</B>= &quot;CASE&quot;, <A HREF="#0424" TARGET=body>case selector</A>, &quot;OF&quot;, <A HREF="#0424" TARGET=body>case list</A>, &quot;END&quot; ; 
+<P><B>case selector</B>= <A HREF="#0437" TARGET=body>ordinal expression</A> ; 
+<P><B>case list</B>= <A HREF="#0425" TARGET=body>case alternative</A>, { &quot;|&quot;, <A HREF="#0425" TARGET=body>case alternative</A> }, [ <A HREF="#0424" TARGET=body>case else part</A> ] ; 
+<P><B>case else part</B>= &quot;ELSE&quot;, <A HREF="#0416" TARGET=body>statement sequence</A> ; 
+<P><UL>
+<LI><A HREF="#0425" TARGET=body>Case Alternatives</A>
+</UL>
+<P><HR>
+<A NAME="0425">
+<A HREF="#0424" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0424" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0426" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H4>Case Alternatives</H4>
+
+<P><B>case alternative</B>= [ <A HREF="#0425" TARGET=body>case label list</A>, &quot;:&quot;, <A HREF="#0416" TARGET=body>statement sequence</A> ] ; 
+<P><B>case label list</B>= <A HREF="#0425" TARGET=body>case label</A>, { &quot;,&quot;, <A HREF="#0425" TARGET=body>case label</A> } ; 
+<P><B>case label</B>= <A HREF="#0450" TARGET=body>constant expression</A>, [ &quot;..&quot;, <A HREF="#0450" TARGET=body>constant expression</A> ] ; 
+<P><HR>
+<A NAME="0426">
+<A HREF="#0415" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0425" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0427" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>While Statements</H3>
+
+<P><B>while statement</B>= <BR>
+&quot;WHILE&quot;, <A HREF="#0423" TARGET=body>boolean expression</A>, &quot;DO&quot;, <A HREF="#0416" TARGET=body>statement sequence</A>, &quot;END&quot; ; 
+<P><HR>
+<A NAME="0427">
+<A HREF="#0415" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0426" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0428" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Repeat Statements</H3>
+
+<P><B>repeat statement</B>= <BR>
+&quot;REPEAT&quot;, <A HREF="#0416" TARGET=body>statement sequence</A>, &quot;UNTIL&quot;, <A HREF="#0423" TARGET=body>boolean expression</A> ; 
+<P><HR>
+<A NAME="0428">
+<A HREF="#0415" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0427" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0429" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Loop Statements</H3>
+
+<P><B>loop statement</B>= &quot;LOOP&quot;, <A HREF="#0416" TARGET=body>statement sequence</A>, &quot;END&quot; ; 
+<P><HR>
+<A NAME="0429">
+<A HREF="#0415" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0428" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0430" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Exit Statements</H3>
+
+<P><B>exit statement</B>= &quot;EXIT&quot; ; 
+<P><HR>
+<A NAME="0430">
+<A HREF="#0415" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0429" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0431" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>For Statements</H3>
+
+<P><B>for statement</B>= <BR>
+&quot;FOR&quot;, <A HREF="#0430" TARGET=body>control variable identifier</A>, &quot;:=&quot;, <A HREF="#0430" TARGET=body>initial value</A>, <BR>
+&quot;TO&quot;, <A HREF="#0430" TARGET=body>final value</A>, [ &quot;BY&quot;, <A HREF="#0430" TARGET=body>step size</A> ], &quot;DO&quot;, <BR>
+<A HREF="#0416" TARGET=body>statement sequence</A>, &quot;END&quot; ; 
+<P><B>control variable identifier</B>= identifier ; 
+<P><B>initial value</B>= <A HREF="#0437" TARGET=body>ordinal expression</A> ; 
+<P><B>final value</B>= <A HREF="#0437" TARGET=body>ordinal expression</A> ; 
+<P><B>step size</B>= <A HREF="#0450" TARGET=body>constant expression</A> ; 
+<P><HR>
+<A NAME="0431">
+<A HREF="#0370" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0430" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0432" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Variable Designators</H2>
+
+<P><B>variable designator</B>= <BR>
+<A HREF="#0432" TARGET=body>entire designator</A> | <A HREF="#0433" TARGET=body>indexed designator</A> | <BR>
+<A HREF="#0434" TARGET=body>selected designator</A> | <A HREF="#0435" TARGET=body>dereferenced designator</A> ; 
+<P><UL>
+<LI><A HREF="#0432" TARGET=body>Entire Designators</A>
+<LI><A HREF="#0433" TARGET=body>Indexed Designators</A>
+<LI><A HREF="#0434" TARGET=body>Selected Designators</A>
+<LI><A HREF="#0435" TARGET=body>Dereferenced Designators</A>
+</UL>
+<P><HR>
+<A NAME="0432">
+<A HREF="#0431" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0431" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0433" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Entire Designators</H3>
+
+<P><B>entire designator</B>= <A HREF="#0381" TARGET=body>qualified identifier</A> ; 
+<P><HR>
+<A NAME="0433">
+<A HREF="#0431" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0432" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0434" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Indexed Designators</H3>
+
+<P><B>indexed designator</B>= <BR>
+<A HREF="#0433" TARGET=body>array variable designator</A>, &quot;[&quot;, <A HREF="#0433" TARGET=body>index expression</A>, { &quot;,&quot;, <A HREF="#0433" TARGET=body>index expression</A> }, &quot;]&quot; ; 
+<P><B>array variable designator</B>= <A HREF="#0431" TARGET=body>variable designator</A> ; 
+<P><B>index expression</B>= <A HREF="#0437" TARGET=body>ordinal expression</A> ; 
+<P><HR>
+<A NAME="0434">
+<A HREF="#0431" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0433" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0435" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Selected Designators</H3>
+
+<P><B>selected designator</B>= <A HREF="#0434" TARGET=body>record variable designator</A>, &quot;.&quot;, <A HREF="#0434" TARGET=body>field identifier</A> ; 
+<P><B>record variable designator</B>= <A HREF="#0431" TARGET=body>variable designator</A> ; 
+<P><B>field identifier</B>= identifier ; 
+<P><HR>
+<A NAME="0435">
+<A HREF="#0431" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0434" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0436" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Dereferenced Designators</H3>
+
+<P><B>dereferenced designator</B>= <A HREF="#0435" TARGET=body>pointer variable designator</A>, &quot; &quot; ; 
+<P><B>pointer variable designator</B>= <A HREF="#0431" TARGET=body>variable designator</A> ; 
+<P><HR>
+<A NAME="0436">
+<A HREF="#0370" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0435" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0437" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Expressions</H2>
+
+<P><B>expression</B>= <A HREF="#0436" TARGET=body>simple expression</A>, [ <A HREF="#0438" TARGET=body>relational operator</A>, <A HREF="#0436" TARGET=body>simple expression</A> ] ; 
+<P><B>simple expression</B>= [ sign ], <A HREF="#0436" TARGET=body>term</A>, { <A HREF="#0438" TARGET=body>term operator</A>, <A HREF="#0436" TARGET=body>term</A> } ; 
+<P><B>term</B>= <A HREF="#0436" TARGET=body>factor</A>, { <A HREF="#0438" TARGET=body>factor operator</A>, <A HREF="#0436" TARGET=body>factor</A> } ; 
+<P><B>factor</B>= <BR>
+&quot;(&quot;, <A HREF="#0436" TARGET=body>expression</A>, &quot;)&quot; | <BR>
+logical negation operator, <A HREF="#0436" TARGET=body>factor</A> | <BR>
+<A HREF="#0439" TARGET=body>value designator</A> | <A HREF="#0444" TARGET=body>function call</A> | <BR>
+<A HREF="#0445" TARGET=body>value constructor</A> | <A HREF="#0449" TARGET=body>constant literal</A> ; 
+<P><UL>
+<LI><A HREF="#0437" TARGET=body>Ordinal Expressions</A>
+<LI><A HREF="#0438" TARGET=body>Infix Expressions and Operations</A>
+<LI><A HREF="#0439" TARGET=body>Value Designators</A>
+<LI><A HREF="#0445" TARGET=body>Value Constructors</A>
+<LI><A HREF="#0449" TARGET=body>Constant Literals</A>
+<LI><A HREF="#0450" TARGET=body>Constant Expressions</A>
+</UL>
+<P><HR>
+<A NAME="0437">
+<A HREF="#0436" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0436" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0438" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Ordinal Expressions</H3>
+
+<P><B>ordinal expression</B>= <A HREF="#0436" TARGET=body>expression</A> ; 
+<P><HR>
+<A NAME="0438">
+<A HREF="#0436" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0437" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0439" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Infix Expressions and Operations</H3>
+
+<P><B>relational operator</B>= <BR>
+equals operator | inequality operator | <BR>
+less than operator | greater than operator | <BR>
+less than or equal operator | subset operator | <BR>
+greater than or equal operator | superset operator | <BR>
+set membership operator ; 
+<P><B>term operator</B>= <BR>
+plus operator | set union operator | <BR>
+minus operator | set difference operator | <BR>
+logical disjunction operator | string catenate symbol ; 
+<P><B>factor operator</B>= <BR>
+multiplication operator | set intersection operator | <BR>
+division operator | symmetric set difference operator | <BR>
+rem operator | div operator | <BR>
+mod operator | logical conjunction operator ; 
+<P><HR>
+<A NAME="0439">
+<A HREF="#0436" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0438" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0440" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Value Designators</H3>
+
+<P><B>value designator</B>= <BR>
+<A HREF="#0440" TARGET=body>entire value</A> | <A HREF="#0441" TARGET=body>indexed value</A> | <BR>
+<A HREF="#0442" TARGET=body>selected value</A> | <A HREF="#0443" TARGET=body>dereferenced value</A> ; 
+<P><UL>
+<LI><A HREF="#0440" TARGET=body>Entire Values</A>
+<LI><A HREF="#0441" TARGET=body>Indexed Values</A>
+<LI><A HREF="#0442" TARGET=body>Selected Values</A>
+<LI><A HREF="#0443" TARGET=body>Dereferenced Values</A>
+<LI><A HREF="#0444" TARGET=body>Function Calls</A>
+</UL>
+<P><HR>
+<A NAME="0440">
+<A HREF="#0439" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0439" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0441" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H4>Entire Values</H4>
+
+<P><B>entire value</B>= <A HREF="#0381" TARGET=body>qualified identifier</A> ; 
+<P><HR>
+<A NAME="0441">
+<A HREF="#0439" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0440" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0442" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H4>Indexed Values</H4>
+
+<P><B>indexed value</B>= <A HREF="#0441" TARGET=body>array value</A>, &quot;[&quot;, <A HREF="#0433" TARGET=body>index expression</A>, { &quot;,&quot;, <A HREF="#0433" TARGET=body>index expression</A> }, &quot;]&quot; ; 
+<P><B>array value</B>= <A HREF="#0439" TARGET=body>value designator</A> ; 
+<P><HR>
+<A NAME="0442">
+<A HREF="#0439" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0441" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0443" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H4>Selected Values</H4>
+
+<P><B>selected value</B>= <A HREF="#0442" TARGET=body>record value</A>, &quot;.&quot;, <A HREF="#0434" TARGET=body>field identifier</A> ; 
+<P><B>record value</B>= <A HREF="#0439" TARGET=body>value designator</A> ; 
+<P><HR>
+<A NAME="0443">
+<A HREF="#0439" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0442" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0444" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H4>Dereferenced Values</H4>
+
+<P><B>dereferenced value</B>= <A HREF="#0443" TARGET=body>pointer value</A>, dereferencing operator ; 
+<P><B>pointer value</B>= <A HREF="#0439" TARGET=body>value designator</A> ; 
+<P><HR>
+<A NAME="0444">
+<A HREF="#0439" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0443" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0445" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H4>Function Calls</H4>
+
+<P><B>function call</B>= <A HREF="#0444" TARGET=body>function designator</A>, <A HREF="#0452" TARGET=body>actual parameters</A> ; 
+<P><B>function designator</B>= <A HREF="#0439" TARGET=body>value designator</A> ; 
+<P><HR>
+<A NAME="0445">
+<A HREF="#0436" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0444" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0446" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Value Constructors</H3>
+
+<P><B>value constructor</B>= <A HREF="#0446" TARGET=body>array constructor</A> | <A HREF="#0447" TARGET=body>record constructor</A> | <A HREF="#0448" TARGET=body>set constructor</A> ; 
+<P><UL>
+<LI><A HREF="#0446" TARGET=body>Array Constructors</A>
+<LI><A HREF="#0447" TARGET=body>Record Constructors</A>
+<LI><A HREF="#0448" TARGET=body>Set Constructors</A>
+</UL>
+<P><HR>
+<A NAME="0446">
+<A HREF="#0445" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0445" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0447" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H4>Array Constructors</H4>
+
+<P><B>array constructor</B>= <A HREF="#0446" TARGET=body>array type identifier</A>, <A HREF="#0446" TARGET=body>array constructed value</A> ; 
+<P><B>array type identifier</B>= <A HREF="#0396" TARGET=body>type identifier</A> ; 
+<P><B>array constructed value</B>= <BR>
+&quot;{&quot;, <A HREF="#0446" TARGET=body>repeated structure component</A>, { &quot;,&quot;, <A HREF="#0446" TARGET=body>repeated structure component</A> }, &quot;}&quot; ; 
+<P><B>repeated structure component</B>=<BR>
+<A HREF="#0446" TARGET=body>structure component</A>, [ &quot;BY&quot;, <A HREF="#0446" TARGET=body>repetition factor</A> ] ; 
+<P><B>repetition factor</B>= <A HREF="#0450" TARGET=body>constant expression</A> ; 
+<P><B>structure component</B>= <BR>
+<A HREF="#0436" TARGET=body>expression</A> | <A HREF="#0446" TARGET=body>array constructed value</A> | <BR>
+<A HREF="#0447" TARGET=body>record constructed value</A> | <A HREF="#0448" TARGET=body>set constructed value</A> ; 
+<P><HR>
+<A NAME="0447">
+<A HREF="#0445" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0446" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0448" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H4>Record Constructors</H4>
+
+<P><B>record constructor</B>= <A HREF="#0447" TARGET=body>record type identifier</A>, <A HREF="#0447" TARGET=body>record constructed value</A> ; 
+<P><B>record type identifier</B>= <A HREF="#0396" TARGET=body>type identifier</A> ; 
+<P><B>record constructed value</B>= <BR>
+&quot;{&quot;, [ <A HREF="#0446" TARGET=body>structure component</A>, { &quot;,&quot;, <A HREF="#0446" TARGET=body>structure component</A> } ], &quot;}&quot; ; 
+<P><HR>
+<A NAME="0448">
+<A HREF="#0445" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0447" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0449" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H4>Set Constructors</H4>
+
+<P><B>set constructor</B>= <A HREF="#0448" TARGET=body>set type identifier</A>, <A HREF="#0448" TARGET=body>set constructed value</A> ; 
+<P><B>set type identifier</B>= <A HREF="#0396" TARGET=body>type identifier</A> ; 
+<P><B>set constructed value</B>= &quot;{&quot;, [ <A HREF="#0448" TARGET=body>member</A>, { &quot;,&quot;, <A HREF="#0448" TARGET=body>member</A> } ], &quot;}&quot; ; 
+<P><B>member</B>= <A HREF="#0448" TARGET=body>interval</A> | <A HREF="#0448" TARGET=body>singleton</A> ; 
+<P><B>interval</B>= <A HREF="#0437" TARGET=body>ordinal expression</A>, &quot;..&quot;, <A HREF="#0437" TARGET=body>ordinal expression</A> ; 
+<P><B>singleton</B>= <A HREF="#0437" TARGET=body>ordinal expression</A> ; 
+<P><HR>
+<A NAME="0449">
+<A HREF="#0436" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0448" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0450" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Constant Literals</H3>
+
+<P><B>constant literal</B>= whole number literal | real literal | string literal ; 
+<P><HR>
+<A NAME="0450">
+<A HREF="#0436" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0449" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0451" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Constant Expressions</H3>
+
+<P><B>constant expression</B>= <A HREF="#0436" TARGET=body>expression</A> ; 
+<P><HR>
+<A NAME="0451">
+<A HREF="#0370" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0450" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0452" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Parameter Compatibility and Argument Binding</H2>
+
+<P><UL>
+<LI><A HREF="#0452" TARGET=body>Actual Parameters</A>
+</UL>
+<P><HR>
+<A NAME="0452">
+<A HREF="#0451" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0451" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0453" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Actual Parameters</H3>
+
+<P><B>actual parameters</B>= &quot;(&quot;, [ <A HREF="#0452" TARGET=body>actual parameter list</A> ], &quot;)&quot; ; 
+<P><B>actual parameter list</B>= <A HREF="#0452" TARGET=body>actual parameter</A>, { &quot;,&quot;, <A HREF="#0452" TARGET=body>actual parameter</A> } ; 
+<P><B>actual parameter</B>= <A HREF="#0431" TARGET=body>variable designator</A> | <A HREF="#0436" TARGET=body>expression</A> | <A HREF="#0453" TARGET=body>type parameter</A> ; 
+<P><UL>
+<LI><A HREF="#0453" TARGET=body>Type Parameters</A>
+</UL>
+<P><HR>
+<A NAME="0453">
+<A HREF="#0452" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0452" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<IMG ALT="   " SRC="empty.gif" BORDER=0></A>
+<BR>
+<H4>Type Parameters</H4>
+
+<P><B>type parameter</B>= <A HREF="#0396" TARGET=body>type identifier</A> ; 
+<P>
+<P>
+<P>
+</BODY>
+</HTML>

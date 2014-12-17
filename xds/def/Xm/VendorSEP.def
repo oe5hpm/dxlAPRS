@@ -1,0 +1,209 @@
+(* Xm/VendorSEP.def  Nov 17  20:21:21  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/VendorSEP.h using H2D v1.18.1 *)
+
+(* $RCSfile: VendorSEP.def,v $ $Revision: 4 $ $Date: 28.07.98 23:15 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+(* Merged headers: Xm/ShellEP.h *)
+
+DEFINITION MODULE ["C"] VendorSEP;
+
+IMPORT SYSTEM, Xm:=XmP, Xt:=IntrinsicP, MwmUtil;
+(* H2D:  Required IMPORT clause: 
+IMPORT VendorSEP, XmP, IntrinsicP, MwmUtil;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992, 1993 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED                                                      
+ *)
+
+(* ---------------------------------------------------- *)
+(*                     Xm/ShellEP.h                     *)
+(* ---------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2  
+ *)
+
+CONST 
+  _XmRAW_MAP = 0;
+  _XmPOPUP_MAP = 1;
+  _XmMANAGE_MAP = 2;
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: this procedure corresponds to a macro. *)
+PROCEDURE XmIsShellExt ( w: Xt.Widget ): Xt.Boolean;
+
+<* ELSE *>
+
+PROCEDURE  / XmIsShellExt ( w: Xt.Widget ): Xt.Boolean;
+
+<* END *>
+
+TYPE 
+  XmShellExtObject = POINTER TO XmShellExtRec;
+
+  XmShellExtObjectClass = POINTER TO XmShellExtClassRec;
+
+  _XmShellExtClassPart = RECORD
+    structureNotifyHandler: Xt.XtEventHandler;
+    extension             : Xt.XtPointer;
+  END;
+
+  XmShellExtClassPart = _XmShellExtClassPart;
+
+  XmShellExtClassPartPtr = POINTER TO XmShellExtClassPart;
+
+  _XmShellExtClassRec = RECORD
+    object_class : Xt.ObjectClassPart;
+    ext_class    : Xm.XmExtClassPart;
+    desktop_class: Xm.XmDesktopClassPart;
+    shell_class  : XmShellExtClassPart;
+  END;
+
+  XmShellExtClassRec = _XmShellExtClassRec;
+
+  _XmShellExtPart = RECORD
+    lastConfigureRequest: LONGCARD;
+    useAsyncGeometry    : Xt.Boolean;
+  END;
+  
+  XmShellExtPart = _XmShellExtPart;
+
+  XmShellExtPartPtr = POINTER TO XmShellExtPart;
+
+  _XmShellExtRec = RECORD
+    object : Xt.ObjectPart;
+    ext    : Xm.XmExtPart;
+    desktop: Xm.XmDesktopPart;
+    shell  : XmShellExtPart;
+  END;
+
+  XmShellExtRec = _XmShellExtRec;
+
+VAR 
+  xmShellExtClassRec: XmShellExtClassRec;
+  xmShellExtObjectClass: Xt.WidgetClass;
+
+(********    Private Function Declarations    ********)
+(********    End Private Function Declarations    ********)
+
+(* ---------------------------------------------------- *)
+(*                    Xm/VendorSEP.h                    *)
+(* ---------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2.2
+ *)
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: this procedure corresponds to a macro. *)
+PROCEDURE XmIsVendorShellExt ( w: Xt.Widget ): Xt.Boolean;
+
+<* ELSE *>
+
+PROCEDURE  / XmIsVendorShellExt ( w: Xt.Widget ): Xt.Boolean;
+
+<* END *>
+
+TYPE 
+  XmVendorShellExtObject = POINTER TO XmVendorShellExtRec;
+
+  XmVendorShellExtObjectClass = POINTER TO XmVendorShellExtClassRec;
+
+  _XmVendorShellExtClassPart = RECORD
+    delete_window_handler: Xt.XtCallbackProc;
+    offset_handler       : Xt.XtCallbackProc;
+    extension            : Xt.XtPointer;
+  END;
+
+  XmVendorShellExtClassPart = _XmVendorShellExtClassPart;
+
+  XmVendorShellExtClassPartPtr = POINTER TO XmVendorShellExtClassPart;
+
+  _XmVendorShellExtClassRec = RECORD
+    object_class : Xt.ObjectClassPart;
+    ext_class    : Xm.XmExtClassPart;
+    desktop_class: Xm.XmDesktopClassPart;
+    shell_class  : XmShellExtClassPart;
+    vendor_class : XmVendorShellExtClassPart;
+  END;
+
+  XmVendorShellExtClassRec = _XmVendorShellExtClassRec;
+
+  _XmVendorShellExtPart = RECORD
+    default_font_list   : Xm.XmFontList;
+    focus_policy        : SHORTCARD;
+    focus_data          : Xm.XmFocusData;
+    delete_response     : SHORTCARD;
+    unit_type           : SHORTCARD;
+    mwm_hints           : MwmUtil.MwmHints;
+    mwm_info            : MwmUtil.MwmInfo;
+    mwm_menu            : Xt.String;
+    focus_moved_callback: Xt.XtCallbackList;
+   (*
+    * internal fields
+    *)
+    old_managed         : Xt.Widget;
+    xAtMap              : Xt.Position;
+    yAtMap              : Xt.Position;
+    xOffset             : Xt.Position;
+    yOffset             : Xt.Position;
+    lastOffsetSerial    : LONGCARD;
+    lastMapRequest      : LONGCARD;
+    externalReposition  : Xt.Boolean;
+    mapStyle            : SHORTCARD;
+    realize_callback    : Xt.XtCallbackList;
+    grab_kind           : Xt.XtGrabKind;
+    audible_warning     : Xt.Boolean;
+    button_font_list    : Xm.XmFontList;
+    label_font_list     : Xm.XmFontList;
+    text_font_list      : Xm.XmFontList;
+    input_method_string : Xt.String;
+    preedit_type_string : Xt.String;
+    light_threshold     : CARDINAL;
+    dark_threshold      : CARDINAL;
+    foreground_threshold: CARDINAL;
+    im_height           : CARDINAL;
+    im_info             : Xt.XtPointer;
+    im_vs_height_set    : Xt.Boolean;
+  END;
+
+  XmVendorShellExtPart = _XmVendorShellExtPart;
+
+  XmVendorShellExtPartPtr = POINTER TO XmVendorShellExtPart;
+
+  _XmVendorShellExtRec = RECORD
+    object : Xt.ObjectPart;
+    ext    : Xm.XmExtPart;
+    desktop: Xm.XmDesktopPart;
+    shell  : XmShellExtPart;
+    vendor : XmVendorShellExtPart;
+  END;
+
+  XmVendorShellExtRec = _XmVendorShellExtRec;
+
+VAR 
+  xmVendorShellExtClassRec: XmVendorShellExtClassRec;
+  xmVendorShellExtObjectClass: Xt.WidgetClass;
+
+(********    Private Function Declarations    ********)
+
+PROCEDURE _XmGetAudibleWarning ( w: Xt.Widget ): SHORTCARD;
+
+PROCEDURE _XmGetIconPixmapName (  ): Xt.String;
+
+PROCEDURE _XmClearIconPixmapName (  );
+
+(********    End Private Function Declarations    ********)
+
+END VendorSEP.

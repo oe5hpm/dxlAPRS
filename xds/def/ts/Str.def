@@ -1,0 +1,95 @@
+(* Copyright (C) 1996 XTech LTD *)
+
+<* +M2ADDTYPES *>
+
+DEFINITION MODULE Str;
+IMPORT Strings;
+
+TYPE
+    CHARSET = SET OF CHAR;
+    PosLen  = RECORD
+        Pos,Len: CARDINAL;
+    END;
+    
+(* Implemented in ISO Strings library
+
+PROCEDURE Caps  (VAR S :ARRAY OF CHAR);
+PROCEDURE Length(S :ARRAY OF CHAR) :CARDINAL;
+PROCEDURE Delete(VAR R :ARRAY OF CHAR, P,L :CARDINAL);
+*)
+
+CONST     Caps   = Strings.Capitalize;
+          Length = Strings.Length;
+          Delete = Strings.Delete;
+    
+PROCEDURE Lows(VAR S: ARRAY OF CHAR);
+PROCEDURE Compare(S1,S2: ARRAY OF CHAR) : INTEGER;
+PROCEDURE Concat(VAR R: ARRAY OF CHAR; S1,S2: ARRAY OF CHAR);
+PROCEDURE Append(VAR R: ARRAY OF CHAR; S: ARRAY OF CHAR);
+PROCEDURE Copy  (VAR R: ARRAY OF CHAR; S: ARRAY OF CHAR);
+PROCEDURE Slice (VAR R: ARRAY OF CHAR; S: ARRAY OF CHAR; P,L: CARDINAL);
+PROCEDURE Pos(S,P: ARRAY OF CHAR) : CARDINAL;
+PROCEDURE NextPos(S,P: ARRAY OF CHAR; Place: CARDINAL) : CARDINAL;
+PROCEDURE CharPos(S: ARRAY OF CHAR; C: CHAR) : CARDINAL;
+PROCEDURE RCharPos(S: ARRAY OF CHAR; C: CHAR) : CARDINAL;
+
+PROCEDURE Item (VAR R: ARRAY OF CHAR;
+                    S: ARRAY OF CHAR;
+                    T: CHARSET;
+                    N: CARDINAL);
+
+PROCEDURE ItemS(VAR R: ARRAY OF CHAR;
+                    S: ARRAY OF CHAR;
+                    T: ARRAY OF CHAR;
+                    N: CARDINAL);
+
+PROCEDURE Prepend(VAR S1: ARRAY OF CHAR; S2: ARRAY OF CHAR);
+
+PROCEDURE Insert(VAR R: ARRAY OF CHAR; S: ARRAY OF CHAR; P: CARDINAL);
+
+PROCEDURE Subst(VAR S1: ARRAY OF CHAR; Target: ARRAY OF CHAR; New: ARRAY OF CHAR);
+
+PROCEDURE Match(Source,Pattern: ARRAY OF CHAR) : BOOLEAN;
+
+PROCEDURE FindSubStr(Source,Pattern: ARRAY OF CHAR;VAR pos:ARRAY OF PosLen) : BOOLEAN;
+
+PROCEDURE Same(Source,Pattern: ARRAY OF CHAR) : BOOLEAN;
+
+PROCEDURE Count(S: ARRAY OF CHAR; C: CHAR) : CARDINAL;
+
+PROCEDURE IntToStr (     V: LONGINT;
+                     VAR S: ARRAY OF CHAR;
+                      Base: CARDINAL;
+                    VAR OK: BOOLEAN);
+
+PROCEDURE CardToStr(     V: LONGCARD;
+                     VAR S: ARRAY OF CHAR;
+                      Base: CARDINAL;
+                    VAR OK: BOOLEAN);
+
+PROCEDURE RealToStr(        V: LONGREAL;
+                    Precision: CARDINAL;
+                          Eng: BOOLEAN;
+                        VAR S: ARRAY OF CHAR;
+                      VAR OK : BOOLEAN);
+
+PROCEDURE FixRealToStr(        V: LONGREAL;
+                       Precision: CARDINAL;
+                           VAR S: ARRAY OF CHAR;
+                          VAR OK: BOOLEAN);
+
+PROCEDURE StrToInt (     S: ARRAY OF CHAR;
+                      Base: CARDINAL;
+                    VAR OK: BOOLEAN) : LONGINT;
+
+PROCEDURE StrToCard(     S: ARRAY OF CHAR;
+                      Base: CARDINAL;
+                    VAR OK: BOOLEAN) : LONGCARD;
+
+PROCEDURE StrToReal(S: ARRAY OF CHAR; VAR OK: BOOLEAN ) :LONGREAL;
+
+PROCEDURE StrToC(S: ARRAY OF CHAR; VAR D: ARRAY OF CHAR) :BOOLEAN;
+
+PROCEDURE StrToPas(S: ARRAY OF CHAR; VAR D: ARRAY OF CHAR) :BOOLEAN;
+
+END Str.

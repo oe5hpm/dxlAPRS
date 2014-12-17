@@ -1,0 +1,27 @@
+(* Copyright (C) 1996 xTech Ltd *)
+
+DEFINITION MODULE SysErr;
+
+IMPORT SYSTEM;
+
+VAR
+  allRight,       (* thats all right *)
+  noMoreFiles,    (* results of dir scan: there are no more files with the attr&name specified *)
+  writeProtect,   (* the media on which an operation was performed is write protected *)
+  pathNotFound,   (* the specified path was not found *)
+  invalidDrive,   (* the specified drive is not avaible *)
+
+  tooManyOpen,    (* The system cannot open the file *)
+  fileNotFound,   (* The system cannot find the file specified *)
+  fileExists,     (* The file exists *)
+
+  cannotMake,     (* The directory or file cannot be created *)
+  alreadyExists,  (* Cannot create a file when that file already exists *)
+  dirNotEmpty,    (* The directory is not empty *)
+
+  otherProblem :SYSTEM.CARD32;
+
+END SysErr.
+
+
+

@@ -1,0 +1,138 @@
+(* Xm/FrameP.def  Nov 11  16:27:58  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/FrameP.h using H2D v1.18.1 *)
+
+(* $RCSfile: FrameP.def,v $ $Revision: 4 $ $Date: 28.07.98 23:14 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+(* Merged headers: Xm/Frame.h *)
+
+DEFINITION MODULE ["C"] FrameP;
+
+IMPORT SYSTEM, Xlib, Xm:=XmP, Xt:=IntrinsicP;
+(* H2D:  Required IMPORT clause: 
+IMPORT FrameP, Xlib, Xm:=XmP, Xt:=IntrinsicP;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(* -------------------------------------------------- *)
+(*                     Xm/Frame.h                     *)
+(* -------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2
+ *)
+
+(*  Class record constants  *)
+
+VAR 
+  xmFrameWidgetClass: Xt.WidgetClass;
+
+TYPE 
+  XmFrameWidgetClass = POINTER TO _XmFrameClassRec;
+
+  XmFrameWidget = POINTER TO _XmFrameRec;
+
+(********    Public Function Declarations    ********)
+
+PROCEDURE XmCreateFrame ( parent: Xt.Widget;
+                          name: ARRAY OF CHAR;
+                          arglist: Xt.ArgList;
+                          argcount: Xt.Cardinal ): Xt.Widget;
+
+(********    End Public Function Declarations    ********)
+
+(* -------------------------------------------------- *)
+(*                     Xm/Frame.h                     *)
+(* -------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2
+ *)
+
+(*  Full class records  *)
+
+TYPE 
+  _XmFrameClassPart = RECORD
+    extension: Xt.XtPointer;
+  END;
+
+  XmFrameClassPart = _XmFrameClassPart;
+
+  _XmFrameClassRec = RECORD
+    core_class      : Xt.CoreClassPart;
+    composite_class : Xt.CompositeClassPart;
+    constraint_class: Xt.ConstraintClassPart;
+    manager_class   : Xm.XmManagerClassPart;
+    frame_class     : XmFrameClassPart;
+  END;
+
+  XmFrameClassRec = _XmFrameClassRec;
+
+(*   Frame instance records   *)
+
+  _XmFramePart = RECORD
+    margin_width          : Xt.Dimension;
+    margin_height         : Xt.Dimension;
+    shadow_type           : SHORTCARD;
+    old_width             : Xt.Dimension;
+    old_height            : Xt.Dimension;
+    old_shadow_thickness  : Xt.Dimension;
+    old_shadow_x          : Xt.Position;
+    old_shadow_y          : Xt.Position;
+    work_area             : Xt.Widget;
+    title_area            : Xt.Widget;
+    processing_constraints: Xt.Boolean;
+  END;
+
+  XmFramePart = _XmFramePart;
+
+  _XmFrameRec = RECORD
+    core      : Xt.CorePart;
+    composite : Xt.CompositePart;
+    constraint: Xt.ConstraintPart;
+    manager   : Xm.XmManagerPart;
+    frame     : XmFramePart;
+  END;
+
+  XmFrameRec = _XmFrameRec;
+
+(*   Frame constraint records   *)
+
+  _XmFrameConstraintPart = RECORD
+    unused           : SYSTEM.int;
+    child_type       : SHORTCARD;
+    child_h_alignment: SHORTCARD;
+    child_h_spacing  : Xt.Dimension;
+    child_v_alignment: SHORTCARD;
+  END;
+
+  XmFrameConstraintPart = _XmFrameConstraintPart;
+
+  XmFrameConstraint = POINTER TO _XmFrameConstraintPart;
+
+  _XmFrameConstraintRec = RECORD
+    manager: Xm.XmManagerConstraintPart;
+    frame  : XmFrameConstraintPart;
+  END;
+
+  XmFrameConstraintRec = _XmFrameConstraintRec;
+
+  XmFrameConstraintPtr = POINTER TO _XmFrameConstraintRec;
+
+VAR 
+  xmFrameClassRec: XmFrameClassRec;
+
+(********    Private Function Declarations    ********)
+(********    End Private Function Declarations    ********)
+
+END FrameP.

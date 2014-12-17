@@ -1,0 +1,185 @@
+(* Xm/PanedWP.def  Nov 12  15:55:26  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/PanedWP.h using H2D v1.18.1 *)
+
+(* $RCSfile: PanedWP.def,v $ $Revision: 4 $ $Date: 28.07.98 23:14 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+<*+ WOFF354 *>
+
+(* Merged headers: Xm/PanedW.h *)
+
+DEFINITION MODULE ["C"] PanedWP;
+
+IMPORT SYSTEM, Xlib, Xm:=XmP, Xt:=IntrinsicP;
+(* H2D:  Required IMPORT clause: 
+IMPORT PanedWP, Xlib, Xm:=XmP, Xt:=IntrinsicP;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992, 1993 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(* --------------------------------------------------- *)
+(*                     Xm/PanedW.h                     *)
+(* --------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2
+ *)
+
+(****************************************************************
+ *
+ * Vertical Paned Widget (SubClass of CompositeClass)
+ *
+ ****************************************************************)
+
+(*  Class record constant  *)
+
+VAR 
+  xmPanedWindowWidgetClass: Xt.WidgetClass;
+
+TYPE 
+  XmPanedWindowWidgetClass = POINTER TO _XmPanedWindowClassRec;
+
+  XmPanedWindowWidget = POINTER TO _XmPanedWindowRec;
+
+(********    Public Function Declarations    ********)
+
+PROCEDURE XmCreatePanedWindow ( parent: Xt.Widget;
+                                name: ARRAY OF CHAR;
+                                args: Xt.ArgList;
+                                argCount: Xt.Cardinal ): Xt.Widget;
+
+(********    End Public Function Declarations    ********)
+
+(* --------------------------------------------------- *)
+(*                    Xm/PanedWP.h                     *)
+(* --------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2.2
+ *)
+
+(*********************************************************************
+ *
+ * XmPanedWindowWidget Private Data
+ *
+ *********************************************************************)
+
+(*  New fields for the PanedWindow widget class record  *)
+
+TYPE 
+  _XmPanedWindowClassPart = RECORD
+    extension: Xt.XtPointer;
+  END;
+
+  XmPanedWindowClassPart = _XmPanedWindowClassPart;
+
+(*  Full Class record declaration  *)
+
+  _XmPanedWindowClassRec = RECORD
+    core_class        : Xt.CoreClassPart;
+    composite_class   : Xt.CompositeClassPart;
+    constraint_class  : Xt.ConstraintClassPart;
+    manager_class     : Xm.XmManagerClassPart;
+    paned_window_class: XmPanedWindowClassPart;
+  END;
+
+  XmPanedWindowClassRec = _XmPanedWindowClassRec;
+
+(*  PanedWindow constraint record  *)
+
+  _XmPanedWindowConstraintPart = RECORD
+    position      : SYSTEM.int;   (* position location in PanedWindow *)
+    dheight       : SYSTEM.int;   (* Desired size *)
+    dy            : Xt.Position;  (* Desired Location *)
+    olddy         : Xt.Position;  (* The last value of dy. *)
+    min           : Xt.Dimension; (* Minimum height *)
+    max           : Xt.Dimension; (* Maximum height *)
+    isPane        : Xt.Boolean;   (* true if constraint of pane, false if
+                                   * constraint of sash *)
+    allow_resize  : Xt.Boolean;   (* TRUE iff child resize requests are ok *)
+    skip_adjust   : Xt.Boolean;   (* TRUE iff child's height should not be
+                                   * changed without explicit user action. *)
+    sash          : Xt.Widget;    (* The sash for this child *)
+    separator     : Xt.Widget;    (* The separator for this child *)
+    position_index: SYSTEM.INT16; (* new 1.2 positionIndex resource *)
+  END;
+
+  XmPanedWindowConstraintPart = _XmPanedWindowConstraintPart;
+
+  _XmPanedWindowConstraintRec = RECORD
+    manager: Xm.XmManagerConstraintPart;
+    panedw : XmPanedWindowConstraintPart;
+  END;
+
+  XmPanedWindowConstraintRec = _XmPanedWindowConstraintRec;
+
+  XmPanedWindowConstraintPtr = POINTER TO _XmPanedWindowConstraintRec;
+
+(*  New Fields for the PanedWindow widget record  *)
+
+  _XmPanedWindowPart = RECORD
+    (*  resources  *)
+    refiguremode     : Xt.Boolean;  (* Whether to refigure changes right now *)
+    separator_on     : Xt.Boolean;  (* make separator visible *)
+    margin_width     : Xt.Dimension;(* space between right and left edges of
+                                     * PanedWindow window and it's children *)
+    margin_height    : Xt.Dimension;(* space between top and bottom edges of
+                                     * PanedWindow window and it's children *)
+    spacing          : Xt.Dimension;(* whitespace between panes
+                                     * around window, else leave none *)
+    (* sash modifying resources *)
+    sash_width       : Xt.Dimension;(* Modify sash width *)
+    sash_height      : Xt.Dimension;(* Modify sash height *)
+    sash_shadow_thickness: Xt.Dimension;(* Modify sash shadow_thickness *)
+    sash_indent      : Xt.Position; (* Location of sashs (offset
+                                     * from right margin) *)
+    (*  private  *)
+    starty           : SYSTEM.int;    (* mouse origin when adjusting *)
+    increment_count  : SYSTEM.INT16;  (* Sash increment count *)
+    pane_count       : SYSTEM.INT16;  (* number of managed panes *)
+    num_slots        : SYSTEM.INT16;  (* number of avail. slots for children *)
+    num_managed_children:SYSTEM.INT16;(* holds number of managed children *)
+    recursively_called:Xt.Boolean;    (* For change_managed AND creation of
+                                       * private sash and separator
+                                       * children *)
+    resize_at_realize   : Xt.Boolean; (* For realize if GeometryNo condition *)
+    top_pane   : XmPanedWindowConstraintPtr;(* pane closest to 0 index *)
+    bottom_pane: XmPanedWindowConstraintPtr;(* pane farthest away from 0 index *)
+    flipgc              : Xlib.GC;      (* GC to use when animating borders *)
+    managed_children    : Xt.WidgetList;(* keep track of managed children *)
+  END;
+
+  XmPanedWindowPart = _XmPanedWindowPart;
+
+(**************************************************************************
+ *
+ * Full instance record declaration
+ *
+ **************************************************************************)
+
+  _XmPanedWindowRec = RECORD
+    core        : Xt.CorePart;
+    composite   : Xt.CompositePart;
+    constraint  : Xt.ConstraintPart;
+    manager     : Xm.XmManagerPart;
+    paned_window: XmPanedWindowPart;
+  END;
+
+  XmPanedWindowRec = _XmPanedWindowRec;
+
+VAR 
+  xmPanedWindowClassRec: XmPanedWindowClassRec;
+
+(********    Private Function Declarations    ********)
+(********    End Private Function Declarations    ********)
+
+END PanedWP.

@@ -1,0 +1,327 @@
+samples.txt                   Copyright (c) 1999-2011 Excelsior, LLC.
+----------------------------------------------------------------
+
+                  Excelsior XDS Win32 Edition
+                  ---------------------------
+                            v2.60
+
+                       Sample Programs
+                       ---------------
+
+All sample programs in this distribution are provided for the 
+Linux Edition. You can either work with samples in the xds/samples 
+directory or copy them using the "xdssamp" script.
+
+The `xdssamp' script accepts XDS root directory as a parameter
+and copies all subdirectories containing samples to the current 
+directory:
+
+    mkdir ~/work
+    cd ~/work
+    xdssamp /usr/local/xds
+
+The "samples" directory contains the following subdirectories:
+        modula   - simple samples in Modula-2
+        oberon   - simple samples in Oberon-2
+        bench    - benchmark programs
+        huffchan - Modula-2 device modules and low-level data
+                   manipulations sample.
+        nodes    - an Oberon-2 example, illustrating the using
+                   of Oberon run-time support.
+        X11      - X11/Motif samples
+
+Each sample in directories "modula", "oberon" and "bench" consist
+of one module only. Project files for these samples are not
+provided. Just run for Native XDS-x86
+
+        xc =m <filename>        
+
+or run for XDS-C
+
+        xm =m <filename>        
+
+For example, to build the "hello" sample in the "modula" directory,
+run for Native XDS-x86
+
+        xc =m hello.mod
+
+or run for XDS-C
+
+        xm =m hello.mod
+
+This invocation will build "hello".
+
+
+samples/modula
+--------------
+
+The following tests are provided (in Modula-2):
+
+        hello.mod       Hello, World program
+
+        e.mod           Calculates digits of "e"
+        exp.mod         Another exponent
+
+        sieve.mod       Prime numbers
+
+        fact.mod        Factorial
+        bf.mod          Another factorial
+
+        queens.mod      Solves 8 queens problem
+
+        hisdemo.mod     History demo
+
+        halt.mod        Termination
+        term.mod        Termination
+        except.mod      Exceptions
+
+Tests "halt", "term" and "except" illustrate new ISO Modula-2
+features, namely finalization and exceptions.
+
+Tests "bf" and "hisdemo" are terminated abnormally. Both 
+illustrate postmorten history. The GENHISTORY option must be 
+set ON. If this option is not set ON in your configuration file,
+set it in command line, e.g:
+
+        xc =m hisdemo.mod +genhistory
+or
+        xm =m hisdemo.mod +gendebug
+
+For "bf" test, the COVERFLOW option must be also ON.
+
+
+samples/oberon
+--------------
+
+All tests in this directory do not use specific Oberon-2 features,
+like type extensions (See "samples/nodes"). Some tests (exp, sieve)
+are provided in Modula-2 also (see "samples/modula").
+
+The following tests are provided (in Oberon-2):
+
+        hello.ob2       Hello, World
+        ackermann.ob2   Ackermann function
+        exp.ob2         Calculates digits of "e"
+        self.ob2        Print self text
+        sieve.ob2       Prime numbers
+        gcreport.ob2    Object finalization
+
+The "gcreport" sample shows how to use "object finalization"
+feature, implemented in the XDS run-time system. For each object
+(pointer to record) a finalizing procedure can be defined.
+This procedure is called by garbage collector when there are no more
+references to the object. The procedure may add a reference to the
+object (as it is done in the example). In this case the object will
+not be deleted.
+
+
+samples/bench
+-------------
+
+This directory contains several benchmark programs written in
+Modula-2 and C. You can use them to compare XDS with other Modula-2
+or C compilers.
+
+Note, that the same code generator is used for Modula-2 and
+Oberon-2 and the code quality is the same. However, speed of some
+programs may change significantly when translating from Modula to
+Oberon or vice versa. As a rule it is a result of incorrect
+translation of whole types. For example, "INTEGER" type is 32-bit
+wide in Modula and 16-bit wide in Oberon. If you don't replace
+INTEGER by LONGINT when translating from Modula to Oberon the
+performance of Oberon program will be worse (especially on
+Pentium Pro).
+
+The directory contains:
+        dry.mod         Dhrystone Benchmark (Modula-2)
+        dry.c           Dhrystone Benchmark (C)
+
+        whet.mod        Whetstone Benchmark (Modula-2)
+
+        linnew.mod      LinPack Benchmark   (Modula-2)
+        linnew.c        LinPack Benchmark   (C)
+
+In Modula-2 sources XDS options are set for maximum speed.
+
+
+samples/huffchan
+----------------
+
+This sample illustrates the concept of device modules introduced
+in the ISO Modula-2 input/output library, and low-level data
+manipulation techniques.
+
+        HuffChan.txt   - sample description
+        HuffChan.def   - HuffChan device module
+        HuffChan.mod   
+        huf.mod        - file packing utility
+        unhuf.mod      - file unpacking utility
+
+To build this sample, type:
+
+    xc =m huf.mod
+    xc =m unhuf.mod
+or
+    xm =m huf.mod
+    xm =m unhuf.mod
+
+The sample contains the HuffChan device module, which may be 
+used to perfrom Huffman encoding and decoding on channels opened
+by other device modules, The two programs, "huf" and "unhuf",
+utilize the HuffChan module facilities. The first program 
+encodes a given file and writes it to another file; the
+second one reverses that operation.
+
+
+samples/nodes
+-------------
+
+The "nodes" subdirectory contains the following files, constituting
+the Oberon-2 program:
+
+        Nodes.ob2       - definition of abstract Node class
+        Echo.ob2        - concrete Node extension
+        GenEcho.ob2     - concrete Node extension
+        Commands.ob2    - concrete Node extension
+        Types.ob2       - concrete Node extension
+        runme.ob2       - the top-level module
+        runme.prj       - project file
+
+To build the program on the command line, invoke:
+
+        xc runme.prj =p
+or
+        xm runme.prj =p
+
+The  "Nodes" module defines an abstract object (Node). Objects of
+this  type  are  linked  in  the  list.  The  module "Nodes" also
+implement  the  command  monitor  ("Loop"  procedure). The "Loop"
+procedure  reads an input from keyboard and then passes the input
+to  the  current  node,  or  if  the  input  line starts from "."
+executes some standard action.
+
+The  module  "runme"  imports  modules defining the extensions of
+type  Node  (concrete  classes),  inserts it in the list and then
+call "Nodes.Loop".
+
+Nodes.Node extensions:
+----------------------
+
+"Echo"     - implements a node which prints its input to terminal.
+
+"GenEcho"  - if the number N is specified in the input line
+             creates "N" examples of the "Echo" Node.
+
+"Commands" - provides facilities to call commands (exported
+             parameterless procedures) in the form:
+                ModuleName.ProcedureName
+             Also implements operations to enumerate all modules
+             in the program and all commands in the given module.
+
+"Types"    - provides facilities to allocate an object by the
+             given name in the form:
+                ModuleName.RecordTypeName
+
+
+Modules   "Types"   and   "Commands"  illustrates  the  using  of
+meta-language   facilities,   including  the  command  calls  and
+creating an object by its type name.
+
+It is important to note, that the current version of XDS does not
+support the dynamic loading of the modules. You can use commands
+and types from the modules which are already linked in the program.
+
+
+samples/X11
+-----------
+
+The "X11" subdirectory contains several X11/Motif samples written
+in Modula-2:
+
+        testx.mod
+        Mand.mod
+        Mand2.mod
+        xmform.mod
+        xmfont.mod
+        XmDemos.ad
+
+The "XmDemos.ad" file contains so called application defaults for Motif
+samples. Copy it into your home directory or into your standard
+app-defaults directory, removing the trailing ".ad".
+
+testx.mod
+
+The Modula-2 port of a C program that utilizes basic X11 features, such as
+color selection and allocation, graphic primitives usage, and the message
+loop that handles keyboard and mouse events. The program draws a set of
+rectangles in a simple window. Clicking inside a window causes the
+rectangles to be redrawn starting from the click position. Pressing the
+"Q" key terminates the program.
+
+Build command:
+
+       xc =m testx.mod +xapp
+or
+       xm =m testx.mod +xapp
+
+
+Mand.mod
+
+A simple Mandelbrodt set visualizer. Note: works only with 8bpp color depth.
+Illustrates arbitrary color map allocation and usage. Pressing the "Q" key
+terminates the program.
+
+Build command:
+
+       xc =m Mand.mod +xapp
+or
+       xm =m Mand.mod +xapp
+
+
+Mand2.mod
+
+Mandebrodt Set Explorer. Illustrates arbitrary color set usage with any
+color depth, image creation and drawing, mouse event handling. After launch
+draws the entire set. Left click magnifies the image two times, right click
+magnifies the image four times, middle click resets. The "D" key maps colors
+to value ranges, the "I" key - to number of iterations. The "Q" key
+terminates the program.
+
+Build command:
+
+       xc =m Mand2.mod +xapp
+or
+       xm =m Mand2.mod +xapp
+
+
+xmform.mod
+
+A simple Motif application. Illustartes XmForm widgets alignment technique
+and resources usage. Draws the word "MOTIF" using buttons.
+
+Build command:
+
+       xc =m xmform.mod +xmapp
+or
+       xm =m xmform.mod +xmapp
+
+
+xmfont.mod
+
+A Motif application. Illustrates XmRowColumn widget features, menu creation
+and usage, dialog creation and usage, XmScrolledWindow usage, and different
+fonts handling. Intensively uses resources, including creation of its own
+resources. Being launched, opens MainWindow with a menu and a scrollable
+window, in which draws RowColumn. The dimensions and the orientation
+of RowColumn are taken from resources. The RowColumn contains buttons
+with font names (their lengths are also retrieved from resources). Pressing
+a button displays a dialog that contains text drawn using the respective
+font.
+
+Build command:
+
+       xc =m xmfont.mod +xmapp
+or
+       xm =m xmfont.mod +xmapp
+
+                        [end of document]

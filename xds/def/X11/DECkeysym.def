@@ -1,0 +1,43 @@
+(* X11/DECkeysym.def  Apr 12  15:14:38  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted using H2D v1.00 from X11/DECkeysym.h. *)
+
+(* $RCSfile: DECkeysym.def,v $ $Revision: 4 $ $Date: 28.07.98 23:13 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *>
+<* IF NOT DEFINED(GENCTYPES) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+
+DEFINITION MODULE ["C"] DECkeysym;
+
+IMPORT SYSTEM;
+(* H2D: to import this module write following text:
+IMPORT DECkeysym;
+*)
+
+(*  $XConsortium: DECkeysym.h,v 1.4 94/04/17 20:10:47 rws Exp $  *)
+(*  ***********************************************************  *)
+
+(*
+ * DEC private keysyms
+ * (29th bit set)
+ *)
+
+(*  two-key compose sequence initiators, chosen to map to Latin1 characters  *)
+
+CONST 
+  DXK_ring_accent = 1000FEB0H;
+  DXK_circumflex_accent = 1000FE5EH;
+  DXK_cedilla_accent = 1000FE2CH;
+  DXK_acute_accent = 1000FE27H;
+  DXK_grave_accent = 1000FE60H;
+  DXK_tilde = 1000FE7EH;
+  DXK_diaeresis = 1000FE22H;
+
+(*  special keysym for LK2** "Remove" key on editing keypad  *)
+  DXK_Remove = 1000FF00H;              (*  Remove  *)
+
+END DECkeysym.

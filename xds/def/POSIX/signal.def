@@ -1,0 +1,118 @@
+(* Copyright (c) xTech 1993,95,97.  All Rights Reserved *)
+
+(* $RCSfile: signal.def,v $ $Revision: 1.2 $ $Date: 1998/02/03 04:52:53 $ *)
+
+<*+ CSTDLIB  *>
+<*+ NOHEADER *>
+<*+ M2EXTENSIONS *>
+
+DEFINITION MODULE ["C"] signal;
+
+FROM SYSTEM IMPORT CARD32, MAKEADR;
+FROM types IMPORT pid_t;
+
+TYPE
+  sig_atomic_t = INTEGER;
+
+  sigset_t = CARD32;
+
+<* IF __GEN_C__ THEN *> <*- GENTYPEDEF *> <* END *>
+  sighandler_t = PROCEDURE (INTEGER);
+
+  (* In C should be struct sigaction and function named sigaction - we get
+     type and function identifier conflict. We use typename sigaction_t to
+     decide a conflict *)
+  sigaction_t = RECORD
+    sa_handler: sighandler_t;
+    sa_mask: sigset_t;
+    sa_flags: INTEGER;
+  END;
+
+<* IF __GEN_C__ THEN *>
+(* it is constants indeed but declared as read-only variables *)
+(* to provide portability *)
+VAR
+  SIG_DFL -: sighandler_t;
+  SIG_ERR -: sighandler_t;
+  SIG_IGN -: sighandler_t;
+
+  SIGABRT -: INTEGER;
+  SIGFPE  -: INTEGER;
+  SIGILL  -: INTEGER;
+  SIGINT  -: INTEGER;
+  SIGSEGV -: INTEGER;
+  SIGTERM -: INTEGER;
+
+  SIGALRM -: INTEGER;
+  SIGCHLD -: INTEGER;
+  SIGCONT -: INTEGER;
+  SIGHUP  -: INTEGER;
+  SIGKILL -: INTEGER;
+  SIGPIPE -: INTEGER;
+  SIGQUIT -: INTEGER;
+  SIGSTOP -: INTEGER;
+  SIGTSTP -: INTEGER;
+  SIGTTIN -: INTEGER;
+  SIGTTOU -: INTEGER;
+  SIGUSR1 -: INTEGER;
+  SIGUSR2 -: INTEGER;
+
+  SA_NOCLDSTOP -: INTEGER;
+  SIG_BLOCK    -: INTEGER;
+  SIG_SETMASK  -: INTEGER;
+  SIG_UNBLOCK  -: INTEGER;
+
+<* ELSE *>
+(* Constants got from LiNUX i386 as an XDS native compiler platform *)
+CONST
+  (* default signal handling *)
+  SIG_DFL = sighandler_t (MAKEADR (0));
+  (* ignore signal *)
+  SIG_IGN = sighandler_t (MAKEADR (1));
+  (* error return from signal *)
+  SIG_ERR = sighandler_t (MAKEADR (0FFFFFFFFH (* -1 *)));
+
+  SIGHUP  = 1;
+  SIGINT  = 2;
+  SIGQUIT = 3;
+  SIGILL  = 4;
+  SIGABRT = 6;
+  SIGFPE  = 8;
+  SIGKILL = 9;
+  SIGUSR1 = 10;
+  SIGSEGV = 11;
+  SIGUSR2 = 12;
+  SIGPIPE = 13;
+  SIGALRM = 14;
+  SIGTERM = 15;
+  SIGCHLD = 17;
+  SIGCONT = 18;
+  SIGSTOP = 19;
+  SIGTSTP = 20;
+  SIGTTIN = 21;
+  SIGTTOU = 22;
+
+  SA_NOCLDSTOP = 1;
+
+  SIG_BLOCK    = 0;
+  SIG_UNBLOCK  = 1;
+  SIG_SETMASK  = 2;
+
+<* END *>
+
+PROCEDURE signal (signo: INTEGER; func: sighandler_t): sighandler_t;
+PROCEDURE raise  (signo: INTEGER): INTEGER;
+
+PROCEDURE kill (pid: pid_t; signo: INTEGER): INTEGER;
+PROCEDURE sigaction (sig: INTEGER; VAR act, oact: sigaction_t): INTEGER;
+PROCEDURE sigaddset (VAR set: sigset_t; signo: INTEGER): INTEGER;
+PROCEDURE sigdelset (VAR set: sigset_t; signo: INTEGER): INTEGER;
+PROCEDURE sigemptyset (VAR set: sigset_t): INTEGER;
+PROCEDURE sigfillset (VAR set: sigset_t): INTEGER;
+PROCEDURE sigismember (VAR set: sigset_t; signo: INTEGER): INTEGER;
+PROCEDURE sigpending (VAR set: sigset_t): INTEGER;
+PROCEDURE sigprocmask (how: INTEGER; VAR set, oset: sigset_t): INTEGER;
+PROCEDURE sigsuspend (VAR sigmask: sigset_t): INTEGER;
+
+
+END signal.

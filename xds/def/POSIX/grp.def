@@ -1,0 +1,32 @@
+(* Copyright (c) xTech 1997.  All Rights Reserved *)
+
+(* $RCSfile: grp.def,v $ $Revision: 1.1.1.1 $ $Date: 1997/10/20 19:32:35 $ *)
+
+<*+ CSTDLIB  *>
+<*+ NOHEADER*>
+<*+ M2EXTENSIONS *>
+
+DEFINITION MODULE [2] grp;
+
+FROM SYSTEM IMPORT CARD16;
+FROM xmRTS IMPORT X2C_pCHAR;
+FROM limits IMPORT ULONG_MAX;
+
+<* IF __GEN_C__ THEN *> <*- GENTYPEDEF *> <* END *>
+TYPE
+  gid_t = CARD16;
+  pa_char_ptr = POINTER TO ARRAY [0..10000H] OF X2C_pCHAR;
+
+  group = RECORD
+    gr_name:	X2C_pCHAR;
+    gr_passwd:	X2C_pCHAR;
+    gr_gid:	gid_t;
+    gr_mem:	pa_char_ptr;
+  END;
+
+  group_ptr = POINTER TO group;
+
+PROCEDURE getgrgid ( gid: gid_t): group_ptr;
+PROCEDURE getgrnam ( name: ARRAY OF CHAR ): group_ptr;
+
+END grp.

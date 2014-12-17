@@ -1,0 +1,187 @@
+(* Xm/ScrolledWP.def  Nov 11  16:38:38  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/ScrolledWP.h using H2D v1.18.1 *)
+
+(* $RCSfile: ScrolledWP.def,v $ $Revision: 4 $ $Date: 28.07.98 23:14 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+(* Merged headers: Xm/ScrolledW.h *)
+
+DEFINITION MODULE ["C"] ScrolledWP;
+
+IMPORT SYSTEM, Xlib, Xm:=XmP, Xt:=IntrinsicP, ScrollBarP, DrawingAP;
+(* H2D:  Required IMPORT clause: 
+IMPORT ScrolledWP, Xlib, XmP, IntrinsicP, ScrollBarP, DrawingAP;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992, 1993 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(* ------------------------------------------------------ *)
+(*                     Xm/ScrolledW.h                     *)
+(* ------------------------------------------------------ *)
+
+(*
+ * Motif Release 1.2
+ *)
+
+VAR 
+  xmScrolledWindowWidgetClass: Xt.WidgetClass;
+
+TYPE 
+  XmScrolledWindowWidgetClass = POINTER TO _XmScrolledWindowClassRec;
+
+  XmScrolledWindowWidget = POINTER TO _XmScrolledWindowRec;
+
+(********    Public Function Declarations    ********)
+
+PROCEDURE XmScrolledWindowSetAreas ( w: Xt.Widget;
+                                     hscroll: Xt.Widget;
+                                     vscroll: Xt.Widget;
+                                     wregion: Xt.Widget );
+
+PROCEDURE XmCreateScrolledWindow ( parent: Xt.Widget;
+				   name: ARRAY OF CHAR;
+                                   args: Xt.ArgList;
+                                   argCount: Xt.Cardinal ): Xt.Widget;
+
+PROCEDURE XmScrollVisible ( scrw: Xt.Widget;
+			    wid: Xt.Widget;
+                            hor_margin: Xt.Dimension;
+                            ver_margin: Xt.Dimension );
+
+(********    End Public Function Declarations    ********)
+
+(* ------------------------------------------------------ *)
+(*                    Xm/ScrolledWP.h                     *)
+(* ------------------------------------------------------ *)
+
+(*
+ * Motif Release 1.2.3
+ *)
+
+(*  Constraint part record for ScrolledWindow widget  *)
+
+TYPE 
+  _XmScrolledWindowConstraintPart = RECORD
+    child_type: SHORTCARD;
+  END;
+
+  XmScrolledWindowConstraintPart = _XmScrolledWindowConstraintPart;
+
+  XmScrolledWindowConstraint = POINTER TO _XmScrolledWindowConstraintPart;
+
+(*  New fields for the ScrolledWindow widget class record  *)
+
+  _XmScrolledWindowClassPart = RECORD
+    extension: Xt.XtPointer;   (*  Pointer to extension record  *)
+  END;
+
+  XmScrolledWindowClassPart = _XmScrolledWindowClassPart;
+
+(****************
+ *
+ * Class record declaration
+ *
+ ****************)
+
+  _XmScrolledWindowClassRec = RECORD
+    core_class      : Xt.CoreClassPart;
+    composite_class : Xt.CompositeClassPart;
+    constraint_class: Xt.ConstraintClassPart;
+    manager_class   : Xm.XmManagerClassPart;
+    swindow_class   : XmScrolledWindowClassPart;
+  END;
+
+  XmScrolledWindowClassRec = _XmScrolledWindowClassRec;
+
+(****************
+ *
+ * Scrolled Window instance structure.
+ *
+ ****************)
+
+  _XmScrolledWindowPart = RECORD
+    vmin           : SYSTEM.int;   (*  slider minimum coordiate position  *)
+    vmax           : SYSTEM.int;   (*  slider maximum coordiate position  *)
+    vOrigin        : SYSTEM.int;   (*  slider edge location               *)
+    vExtent        : SYSTEM.int;   (*  slider size                        *)
+    hmin           : SYSTEM.int;   (*  Same as above for horizontal bar.  *)
+    hmax           : SYSTEM.int;
+    hOrigin        : SYSTEM.int;
+    hExtent        : SYSTEM.int;
+    hsbX           : Xt.Position;
+    hsbY           : Xt.Position;
+    hsbWidth       : Xt.Dimension;
+    hsbHeight      : Xt.Dimension;  (*  Dimensions for the horiz bar  *)
+    vsbX           : Xt.Position;
+    vsbY           : Xt.Position;
+    vsbWidth       : Xt.Dimension;
+    vsbHeight      : Xt.Dimension;  (*  Dimensions for the vertical bar  *)
+    GivenHeight    : Xt.Dimension;
+    GivenWidth     : Xt.Dimension;
+    AreaWidth      : Xt.Dimension;
+    AreaHeight     : Xt.Dimension;
+    WidthPad       : Xt.Dimension;
+    HeightPad      : Xt.Dimension;
+    XOffset        : Xt.Position;
+    YOffset        : Xt.Position;
+    pad            : Xt.Dimension;
+    hasHSB         : Xt.Boolean;
+    hasVSB         : Xt.Boolean;
+    InInit         : Xt.Boolean;
+    FromResize     : Xt.Boolean;
+    VisualPolicy   : SHORTCARD;
+    ScrollPolicy   : SHORTCARD;
+    ScrollBarPolicy: SHORTCARD;
+    Placement      : SHORTCARD;
+    hScrollBar     : ScrollBarP.XmScrollBarWidget;
+    vScrollBar     : ScrollBarP.XmScrollBarWidget;
+    ClipWindow     : DrawingAP.XmDrawingAreaWidget;
+    WorkWindow     : Xt.Widget;
+    traverseObscuredCallback: Xt.XtCallbackList;
+  END;
+
+  XmScrolledWindowPart = _XmScrolledWindowPart;
+
+(************************************************************************
+ *									*
+ * Full instance record declaration					*
+ *									*
+ ************************************************************************)
+
+  _XmScrolledWindowRec = RECORD
+    core      : Xt.CorePart;
+    composite : Xt.CompositePart;
+    constraint: Xt.ConstraintPart;
+    manager   : Xm.XmManagerPart;
+    swindow   : XmScrolledWindowPart;
+  END;
+
+  XmScrolledWindowRec = _XmScrolledWindowRec;
+
+VAR 
+  xmScrolledWindowClassRec: XmScrolledWindowClassRec;
+
+CONST 
+  DEFAULT_HEIGHT = 20;
+  DEFAULT_WIDTH = 20;
+
+(********    Private Function Declarations    ********)
+
+PROCEDURE _XmGetRealXlations ( dpy: Xlib.PtrDisplay;
+			       keys: Xm._XmBuildVirtualKeyList;
+                               num_keys: SYSTEM.int ): Xt.String;
+
+PROCEDURE _XmInitializeScrollBars ( w: Xt.Widget );
+
+(********    End Private Function Declarations    ********)
+
+END ScrolledWP.

@@ -1,0 +1,29 @@
+-makefile
+-link=
+-compilerheap=10000000
++changesym
+-lookup = *.def=$!/def/Xm
+-lookup = *.sym=$(sym_place)
+
+!module	ArrowB.def	DrawnBP.def	PanedWP.def	SeparatoGP.def
+!module	ArrowBG.def	FileSB.def	Protocols.def	Separator.def
+!module	ArrowBGP.def	FileSBP.def	ProtocolsP.def	SeparatorP.def
+!module	ArrowBP.def	Form.def	PushB.def	TearOffBP.def
+!module	AtomMgr.def	FormP.def	PushBG.def	TearOffP.def
+!module	BulletinB.def	Frame.def	PushBGP.def	Text.def
+!module	BulletinBP.def	FrameP.def	PushBP.def	TextF.def
+!module	CascadeB.def	Label.def	RCUtilsP.def	TextFP.def
+!module	CascadeBG.def	LabelG.def	RepType.def	TextP.def
+!module	CascadeBGP.def	LabelGP.def	RowColumn.def	ToggleB.def
+!module	CascadeBP.def	LabelP.def	RowColumnP.def	ToggleBG.def
+!module	Command.def	List.def	SashP.def	ToggleBGP.def
+!module	CommandP.def	ListP.def	Scale.def	ToggleBP.def
+!module	CutPaste.def	MainW.def	ScaleP.def	VendorS.def
+!module	CutPasteP.def	MainWP.def	Screen.def	VirtKeys.def
+!module	DialogS.def	MenuShell.def	ScrollBar.def	Xm.def
+!module	DialogSP.def	MenuShellP.def	ScrollBarP.def	XmAll.def
+!module	Display.def	MenuUtilP.def	ScrolledW.def	XmP.def
+!module	DragDrop.def	MessageB.def	ScrolledWP.def	XmStrDefs.def
+!module	DrawingA.def	MessageBP.def	SelectioB.def	XmAllP.def
+!module	DrawingAP.def	MwmUtil.def	SelectioBP.def
+!module	DrawnB.def	PanedW.def	SeparatoG.def

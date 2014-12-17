@@ -1,0 +1,72 @@
+DEFINITION MODULE LowReal;
+
+  (* Access to underlying properties of the type REAL *)
+
+CONST
+  radix =      2;
+  places =     32;
+  expoMin =    -126;
+  expoMax =    127;
+  large =      3.402823E+38;
+  small =      1.175494E-38;
+  IEEE =       TRUE;
+  ISO =        FALSE;
+  rounds =     TRUE;
+  gUnderflow = FALSE;
+  exception =  TRUE;
+  extend =     TRUE;
+  nModes =     6;
+
+TYPE
+  Modes = SET OF [0 .. nModes-1];
+
+PROCEDURE exponent (x: REAL): INTEGER;
+  (* Returns the exponent value of x *)
+
+PROCEDURE fraction (x: REAL): REAL;
+  (* Returns the significand (or significant part) of x *)
+
+PROCEDURE sign (x: REAL): REAL;
+  (* Returns the signum of x *)
+
+PROCEDURE succ (x: REAL): REAL;
+  (* Returns the next value of the type REAL greater than x *)
+
+PROCEDURE ulp (x: REAL): REAL;
+  (* Returns the value of a unit in the last place of x *)
+
+PROCEDURE pred (x: REAL): REAL;
+  (* Returns the previous value of the type REAL less than x *)
+
+PROCEDURE intpart (x: REAL): REAL;
+  (* Returns the integer part of x *)
+
+PROCEDURE fractpart (x: REAL): REAL;
+  (* Returns the fractional part of x *)
+
+PROCEDURE scale (x: REAL; n: INTEGER): REAL;
+  (* Returns the value of x * radix ** n *)
+
+PROCEDURE trunc (x: REAL; n: INTEGER): REAL;
+  (* Returns the value of the first n places of x *)
+
+PROCEDURE round (x: REAL; n: INTEGER): REAL;
+  (* Returns the value of x rounded to the first n places *)
+
+PROCEDURE synthesize (expart: INTEGER; frapart: REAL): REAL;
+  (* Returns a value of the type REAL constructed from the given expart and frapart *)
+
+PROCEDURE setMode (m: Modes);
+  (* Sets status flags appropriate to the underlying implementation of the type REAL *)
+
+PROCEDURE currentMode (): Modes;
+  (* Returns the current status flags in the form set by setMode *)
+
+PROCEDURE IsLowException (): BOOLEAN;
+  (* Returns TRUE if the current coroutine is in the exceptional execution state
+     because of the raising of an exception in a routine from this module; otherwise
+     returns FALSE.
+  *)
+
+END LowReal.
+

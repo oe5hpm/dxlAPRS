@@ -1,0 +1,8 @@
+#!/bin/sh
+
+SYM_PLACE=sym/C
+
+xm =p =a def/POSIX/posix.prj -sym_place:=$SYM_PLACE -decor=rt
+xm =p X11.prj                -sym_place:=$SYM_PLACE -decor=rt
+xm =p Xm.prj                 -sym_place:=$SYM_PLACE -decor=rt
+xm =p XmP.prj                -sym_place:=$SYM_PLACE -decor=rt -compilerheap=8000000

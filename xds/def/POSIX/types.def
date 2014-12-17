@@ -1,0 +1,37 @@
+(* Copyright (c) 2002 Excelsior, LLC.  All Rights Reserved *)
+
+<*+ CSTDLIB  *>
+<*+ NOHEADER*>
+<*+ M2EXTENSIONS *>
+
+DEFINITION MODULE ["C"] types;
+
+FROM SYSTEM IMPORT CARD16, CARD32, INT32, INT64;
+
+TYPE
+
+<* IF __GEN_C__ THEN *>
+  dev_t   = CARD16;
+  gid_t   = CARD16;
+  ino_t   = CARD32;
+  mode_t  = CARD16;
+  nlink_t = CARD16;
+  off_t   = INT32;
+  pid_t   = INTEGER;
+  size_t  = CARD32;
+  ssize_t = INTEGER;
+  uid_t   = CARD16;
+<* ELSIF __GEN_X86__ & (target_os="LINUX") THEN *>
+  dev_t   = INT64;
+  gid_t   = CARD32;
+  ino_t   = CARD32;
+  mode_t  = CARD32;
+  nlink_t = CARD32;
+  off_t   = INT32;
+  pid_t   = INT32;
+  size_t  = CARD32;
+  ssize_t = INT32;
+  uid_t   = CARD32;
+<* END *>
+
+END types.

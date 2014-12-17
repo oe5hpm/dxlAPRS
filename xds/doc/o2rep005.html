@@ -1,0 +1,27 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 4.01 Transitional//EN">
+<HTML>
+<HEAD>
+<TITLE>Constant declarations</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<P><HR>
+<A NAME="0010">
+<A HREF="o2rep000.html#root" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="o2rep004.html#0009" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="o2rep006.html#0011" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H1>Constant declarations</H1>
+
+<P>A constant declaration associates an identifier with a constant value. <FONT SIZE=2>
+<P><PRE>&nbsp;&nbsp;ConstantDeclaration&nbsp;=&nbsp;IdentDef&nbsp;&quot;=&quot;&nbsp;ConstExpression.
+&nbsp;&nbsp;ConstExpression&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;Expression.
+</PRE>
+</FONT>
+<P>A constant expression is an expression that can be evaluated by a mere textual scan without actually executing the program. Its operands are constants (section <A HREF="o2rep008.html#0018" TARGET=body>Expressions</A>) or predeclared functions (section <A HREF="o2rep010.html#0040" TARGET=body>Predeclared procedures</A>) that can be evaluated at compile time. Examples of constant declarations are: 
+<P><PRE>&nbsp;&nbsp;N&nbsp;=&nbsp;100
+&nbsp;&nbsp;limit&nbsp;=&nbsp;2*N&nbsp;-&nbsp;1
+&nbsp;&nbsp;fullSet&nbsp;=&nbsp;{MIN(SET)..MAX(SET)}
+</PRE>
+</BODY>
+</HTML>

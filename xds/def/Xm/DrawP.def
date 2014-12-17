@@ -1,0 +1,110 @@
+(* Xm/DrawP.def  Nov 21  14:31:26  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/DrawP.h using H2D v1.18.6 *)
+
+(* $RCSfile: DrawP.def,v $ $Revision: 4 $ $Date: 28.07.98 23:14 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *>
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+
+DEFINITION MODULE ["C"] DrawP;
+
+IMPORT SYSTEM, X, Xlib, Xm:=XmP, Xt:=IntrinsicP;
+(* H2D:  Required IMPORT clause:
+IMPORT DrawP, X, Xlib, XmP, IntrinsicP;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992, 1993 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(*
+ * Motif Release 1.2.2
+ *)
+
+(********    Private Function Declarations    ********)
+
+PROCEDURE _XmDrawShadows ( display: Xlib.PtrDisplay;
+			   d: X.Drawable;
+                           top_gc: Xlib.GC;
+                           bottom_gc: Xlib.GC;
+                           x: Xt.Position;
+                           y: Xt.Position;
+                           width: Xt.Dimension;
+                           height: Xt.Dimension;
+                           shad_thick: Xt.Dimension;
+                           shad_type: CARDINAL );
+
+PROCEDURE _XmClearBorder ( display: Xlib.PtrDisplay;
+			   w: X.Window;
+                           x: Xt.Position;
+                           y: Xt.Position;
+                           width: Xt.Dimension;
+                           height: Xt.Dimension;
+                           shadow_thick: Xt.Dimension );
+
+PROCEDURE _XmDrawSeparator ( display: Xlib.PtrDisplay;
+			     d: X.Drawable;
+                             top_gc: Xlib.GC;
+                             bottom_gc: Xlib.GC;
+                             separator_gc: Xlib.GC;
+                             x: Xt.Position;
+                             y: Xt.Position;
+                             width: Xt.Dimension;
+                             height: Xt.Dimension;
+                             shadow_thick: Xt.Dimension;
+                             margin: Xt.Dimension;
+                             orientation: SHORTCARD;
+                             separator_type: SHORTCARD );
+
+PROCEDURE _XmDrawDiamond ( display: Xlib.PtrDisplay;
+			   d: X.Drawable;
+                           top_gc: Xlib.GC;
+                           bottom_gc: Xlib.GC;
+                           center_gc: Xlib.GC;
+                           x: Xt.Position;
+                           y: Xt.Position;
+                           width: Xt.Dimension;
+                           height: Xt.Dimension;
+                           shadow_thick: Xt.Dimension;
+                           fill: Xt.Dimension );
+
+PROCEDURE _XmDrawSimpleHighlight ( display: Xlib.PtrDisplay;
+				   d: X.Drawable;
+                                   gc: Xlib.GC;
+                                   x: Xt.Position;
+                                   y: Xt.Position;
+                                   width: Xt.Dimension;
+                                   height: Xt.Dimension;
+                                   highlight_thick: Xt.Dimension );
+
+PROCEDURE _XmDrawHighlight ( display: Xlib.PtrDisplay;
+			     d: X.Drawable;
+                             gc: Xlib.GC;
+                             x: Xt.Position;
+                             y: Xt.Position;
+                             width: Xt.Dimension;
+                             height: Xt.Dimension;
+                             highlight_thick: Xt.Dimension;
+                             line_style: SYSTEM.int );
+
+PROCEDURE _XmDrawArrow ( display: Xlib.PtrDisplay;
+			 d: X.Drawable;
+                         top_gc: Xlib.GC;
+                         bot_gc: Xlib.GC;
+                         cent_gc: Xlib.GC;
+                         x: Xt.Position;
+                         y: Xt.Position;
+                         width: Xt.Dimension;
+                         height: Xt.Dimension;
+                         shadow_thick: Xt.Dimension;
+                         direction: SHORTCARD );
+
+(********    End Private Function Declarations    ********)
+
+END DrawP.

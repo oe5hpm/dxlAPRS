@@ -1,0 +1,201 @@
+(* Copyright (c) xTech 1997.  All Rights Reserved *)
+
+(* $RCSfile: termios.def,v $ $Revision: 1.1.1.1 $ $Date: 1997/10/20 19:32:35 $ *)
+
+<*+ CSTDLIB  *>
+<*+ NOHEADER *>
+<*+ M2EXTENSIONS *>
+
+DEFINITION MODULE [2] termios;
+
+FROM SYSTEM IMPORT CARD8;
+
+TYPE
+  cc_t     = CARD8;
+  speed_t  = CARDINAL;
+  tcflag_t = CARDINAL;
+<* IF __GEN_C__ THEN *> <*- GENTYPEDEF *> <* END *>
+  termios = RECORD
+    c_iflag: tcflag_t;		(* input mode flags *)
+    c_oflag: tcflag_t;		(* output mode flags *)
+    c_cflag: tcflag_t;		(* control mode flags *)
+    c_lflag: tcflag_t;		(* local mode flags *)
+    c_line: cc_t;		(* line discipline *)
+    c_cc: ARRAY [0..18] OF cc_t;(* control characters *)
+  END;
+
+<* IF __GEN_C__ THEN *>
+VAR
+  B0		-: INTEGER;
+  B50		-: INTEGER;
+  B75		-: INTEGER;
+  B110		-: INTEGER;
+  B134		-: INTEGER;
+  B150		-: INTEGER;
+  B200		-: INTEGER;
+  B300		-: INTEGER;
+  B600		-: INTEGER;
+  B1200		-: INTEGER;
+  B1800		-: INTEGER;
+  B2400		-: INTEGER;
+  B4800		-: INTEGER;
+  B9600		-: INTEGER;
+  B19200	-: INTEGER;
+  B38400	-: INTEGER;
+  BRKINT	-: INTEGER;
+  CLOCAL	-: INTEGER;
+  CREAD		-: INTEGER;
+  CS5		-: INTEGER;
+  CS6		-: INTEGER;
+  CS7		-: INTEGER;
+  CS8		-: INTEGER;
+  CSIZE		-: INTEGER;
+  CSTOPB	-: INTEGER;
+  ECHO		-: INTEGER;
+  ECHOE		-: INTEGER;
+  ECHOK		-: INTEGER;
+  ECHONL	-: INTEGER;
+  HUPCL		-: INTEGER;
+  ICANON	-: INTEGER;
+  ICRNL		-: INTEGER;
+  IEXTEN	-: INTEGER;
+  IGNBRK	-: INTEGER;
+  IGNCR		-: INTEGER;
+  IGNPAR	-: INTEGER;
+  IGNLCR	-: INTEGER;
+  INPCK		-: INTEGER;
+  ISIG		-: INTEGER;
+  ISTRIP	-: INTEGER;
+  IXOFF		-: INTEGER;
+  IXON		-: INTEGER;
+  NCCS		-: INTEGER;
+  NOFLASH	-: INTEGER;
+  OPOST		-: INTEGER;
+  PARENB	-: INTEGER;
+  PARMRK	-: INTEGER;
+  PARODD	-: INTEGER;
+  TCIFLUSH	-: INTEGER;
+  TCIOFF	-: INTEGER;
+  TCIOFLUSH	-: INTEGER;
+  TCION		-: INTEGER;
+  TCOFLUSH	-: INTEGER;
+  TCOOFF	-: INTEGER;
+  TCOON		-: INTEGER;
+  TCSADRAIN	-: INTEGER;
+  TCSAFLUSH	-: INTEGER;
+  TCSANOW	-: INTEGER;
+  TOSTOP	-: INTEGER;
+  VEOF		-: INTEGER;
+  VEOL		-: INTEGER;
+  VERASE	-: INTEGER;
+  VINTR		-: INTEGER;
+  VKILL		-: INTEGER;
+  VMIN		-: INTEGER;
+  VQUIT		-: INTEGER;
+  VSTART	-: INTEGER;
+  VSTOP		-: INTEGER;
+  VSUSP		-: INTEGER;
+  VTIME		-: INTEGER;
+<* ELSE *>
+CONST
+  NCCS		= 19;
+
+  (* c_cc characters *)
+  VINTR		= 0;
+  VQUIT		= 1;
+  VERASE	= 2;
+  VKILL		= 3;
+  VEOF		= 4;
+  VTIME		= 5;
+  VMIN		= 6;
+  VSTART	= 8;
+  VSTOP		= 9;
+  VSUSP		= 10;
+  VEOL		= 11;
+
+  (* c_iflag bits *)
+  IGNBRK        =     1B;
+  BRKINT	=     2B;
+  IGNPAR	=     4B;
+  PARMRK	=    10B;
+  INPCK		=    20B;
+  ISTRIP	=    40B;
+  IGNCR		=   200B;
+  ICRNL		=   400B;
+  IGNLCR        =   600B;
+  IXON		=  2000B;
+  IXOFF		= 10000B;
+
+  (* c_oflag bits *)
+  OPOST		= 1;
+
+  (* c_cflags bit meaning *)
+  B0		=    0B;
+  B50		=    1B;
+  B75		=    2B;
+  B110		=    3B;
+  B134		=    4B;
+  B150		=    5B;
+  B200		=    6B;
+  B300		=    7B;
+  B600		=   10B;
+  B1200		=   11B;
+  B1800		=   12B;
+  B2400		=   13B;
+  B4800		=   14B;
+  B9600		=   15B;
+  B19200	=   16B;
+  B38400	=   17B;
+  CSIZE		=   60B;
+  CS5		=    0B;
+  CS6		=   20B;
+  CS7		=   40B;
+  CS8		=   60B;
+  CSTOPB	=  100B;
+  CREAD		=  200B;
+  PARENB	=  400B;
+  PARODD	= 1000B;
+  HUPCL		= 2000B;
+  CLOCAL	= 4000B;
+
+  (* c_lflag bits *)
+  ISIG		=      1B;
+  ICANON	=      2B;
+  ECHO		=     10B;
+  ECHOE		=     20B;
+  ECHOK		=     40B;
+  ECHONL	=    100B;
+  NOFLASH	=    200B;
+  TOSTOP	=    400B;
+  IEXTEN	= 100000B;
+
+  (* tcflow() and TCXONC use these *)
+  TCOOFF	= 0;
+  TCOON		= 1;
+  TCIOFF	= 2;
+  TCION		= 3;
+
+  (* tcflush() and TCFLUSH use these *)
+  TCIFLUSH	= 0;
+  TCOFLUSH	= 1;
+  TCIOFLUSH	= 2;
+
+  (* tcsetattr uses these *)
+  TCSANOW	= 0;
+  TCSADRAIN	= 1;
+  TCSAFLUSH	= 2;
+<* END *>
+
+PROCEDURE cfgetispeed (VAR termios_p: termios): speed_t;
+PROCEDURE cfgetospeed (VAR termios_p: termios): speed_t;
+PROCEDURE cfsetispeed (VAR termios_p: termios; speed: speed_t): INTEGER;
+PROCEDURE cfsetospeed (VAR termios_p: termios; speed: speed_t): INTEGER;
+PROCEDURE tcdrain (fields: INTEGER): INTEGER;
+PROCEDURE tcflow (fields: INTEGER; action: INTEGER): INTEGER;
+PROCEDURE tcflush (fields: INTEGER; queue_selection: INTEGER): INTEGER;
+PROCEDURE tcgetattr (fields: INTEGER; VAR termios_p: termios): INTEGER;
+PROCEDURE tcdsendbreak (fields: INTEGER; duration: INTEGER): INTEGER;
+PROCEDURE tcsetattr (fields: INTEGER; optional_actions: INTEGER;
+                     VAR termios_p: termios): INTEGER;
+
+END termios.

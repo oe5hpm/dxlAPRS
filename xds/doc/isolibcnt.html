@@ -1,0 +1,350 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN"><HTML>
+<HEAD>
+<TITLE>ISO Modula-2 Library Reference</TITLE>
+<SCRIPT TYPE="text/javascript" SRC="head1.js">
+</SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="isolibcnt.js">
+</SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="head2.js">
+</SCRIPT>
+</HEAD><BODY BGCOLOR="#FFFFFF">
+<A NAME="contents"><P ALIGN=CENTER><NOBR>
+<A HREF="isolib000.html#title" TARGET=body>ISO Modula-2 Library Reference</A></A></NOBR></P>
+<NOSCRIPT>
+<P>
+<HR>
+<TABLE BORDER=0 CELLSPACING=3 CELLPADDING=0>
+<TR><TD COLSPAN=4><A NAME="contents"><B><FONT SIZE="+1">Table Of Contents</FONT></B></A></TD></TR>
+<TR>
+<TD WIDTH=32><FONT COLOR="#FFFFFF">00</FONT></TD>
+<TD WIDTH=32><FONT COLOR="#FFFFFF">00</FONT></TD>
+<TD WIDTH=32><FONT COLOR="#FFFFFF">00</FONT></TD>
+<TD><FONT COLOR="#FFFFFF">0000000000000000000000</FONT></TD>
+</TR>
+<TR><TD COLSPAN=4><B><A HREF="isolib001.html#0000" TARGET=body>Input/Output</A></B>
+</TD></TR>
+<TR><TD COLSPAN=1></TD><TD COLSPAN=3><FONT SIZE=2><A HREF="isolib001.html#0001" TARGET=body>Standard and Default Channels</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib001.html#0002" TARGET=body>Module StdChans</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=1></TD><TD COLSPAN=3><FONT SIZE=2><A HREF="isolib001.html#0014" TARGET=body>Reading and Writing of Data</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib001.html#0015" TARGET=body>Modules TextIO and STextIO</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib001.html#0024" TARGET=body>Modules WholeIO and SWholeIO</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib001.html#0029" TARGET=body>Modules RealIO, SRealIO, LongIO, and SLongIO</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib001.html#0035" TARGET=body>Modules RawIO and SRawIO</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib001.html#0038" TARGET=body>Module IOConsts</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib001.html#0040" TARGET=body>Modules IOResult and SIOResult</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=1></TD><TD COLSPAN=3><FONT SIZE=2><A HREF="isolib001.html#0043" TARGET=body>Device-Independent Channel Operations</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib001.html#0044" TARGET=body>Module IOChan</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib001.html#0047" TARGET=body>Module IOChan - Text Operations</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib001.html#0054" TARGET=body>Module IOChan - Raw Operations</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib001.html#0057" TARGET=body>Module IOChan - Common Operations</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib001.html#0061" TARGET=body>Module IOChan - Access to Read Results</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib001.html#0064" TARGET=body>Module IOChan - Channel Enquiries</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib001.html#0066" TARGET=body>Module IOChan - Exceptions and Device Errors</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=1></TD><TD COLSPAN=3><FONT SIZE=2><A HREF="isolib001.html#0072" TARGET=body>Obtaining Channels from Device Modules</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib001.html#0073" TARGET=body>Module ChanConsts</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib001.html#0078" TARGET=body>Module StreamFile</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib001.html#0082" TARGET=body>Module SeqFile</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib001.html#0090" TARGET=body>Module RndFile</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib001.html#0101" TARGET=body>Module TermFile</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib001.html#0105" TARGET=body>Module ProgramArgs</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=1></TD><TD COLSPAN=3><FONT SIZE=2><A HREF="isolib001.html#0109" TARGET=body>Interface to Channels for New Device Modules</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib001.html#0110" TARGET=body>Module IOLink</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=4><B><A HREF="isolib002.html#0119" TARGET=body>Mathematical</A></B>
+</TD></TR>
+<TR><TD COLSPAN=1></TD><TD COLSPAN=3><FONT SIZE=2><A HREF="isolib002.html#0120" TARGET=body>Modules RealMath and LongMath</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib002.html#0121" TARGET=body>Constants - Useful constants</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib002.html#0122" TARGET=body>sqrt - Calculate square root</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib002.html#0123" TARGET=body>exp - Calculate exponent</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib002.html#0124" TARGET=body>ln - Calculate natural logarithm</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib002.html#0125" TARGET=body>sin - Calculate sine</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib002.html#0126" TARGET=body>cos - Calculate cosine</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib002.html#0127" TARGET=body>tan - Calculate tangent</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib002.html#0128" TARGET=body>arcsin - Calculate arcsine</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib002.html#0129" TARGET=body>arccos - Calculate arccosine</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib002.html#0130" TARGET=body>arctan - Calculate arctangent</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib002.html#0131" TARGET=body>power - Calculate power</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib002.html#0132" TARGET=body>round - Round</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib002.html#0133" TARGET=body>IsRMathException - Query exceptional state</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=1></TD><TD COLSPAN=3><FONT SIZE=2><A HREF="isolib002.html#0134" TARGET=body>Modules ComplexMath and LongComplexMath</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib002.html#0135" TARGET=body>Constants - Useful constants</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib002.html#0136" TARGET=body>abs - Calculate modulus</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib002.html#0137" TARGET=body>arg - Calculate argument</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib002.html#0138" TARGET=body>conj - Calculate conjugate</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib002.html#0139" TARGET=body>power - Calculate power</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib002.html#0140" TARGET=body>sqrt - Calculate square root</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib002.html#0141" TARGET=body>exp - Calculate exponent</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib002.html#0142" TARGET=body>ln - Calculate natural logarithm</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib002.html#0143" TARGET=body>sin - Calculate sine</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib002.html#0144" TARGET=body>cos - Calculate cosine</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib002.html#0145" TARGET=body>tan - Calculate tangent</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib002.html#0146" TARGET=body>arcsin - Calculate arcsine</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib002.html#0147" TARGET=body>arccos - Calculate arccosine</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib002.html#0148" TARGET=body>arctan - Calculate arctangent</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib002.html#0149" TARGET=body>polarToComplex - Convert from polar to complex</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib002.html#0150" TARGET=body>scalarMult - Scalar Multiplication</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib002.html#0151" TARGET=body>IsCMathException - Query exceptional state</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=4><B><A HREF="isolib003.html#0152" TARGET=body>Concurrent Programming</A></B>
+</TD></TR>
+<TR><TD COLSPAN=1></TD><TD COLSPAN=3><FONT SIZE=2><A HREF="isolib003.html#0153" TARGET=body>Module Processes</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib003.html#0154" TARGET=body>Types of Processes</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib003.html#0155" TARGET=body>The Procedures of Processes</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib003.html#0156" TARGET=body>Create - Create new process</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib003.html#0157" TARGET=body>Start - Start new process</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib003.html#0158" TARGET=body>StopMe - Terminate calling process</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib003.html#0159" TARGET=body>SuspendMe - Suspend calling process</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib003.html#0160" TARGET=body>Activate - Activate process</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib003.html#0161" TARGET=body>SuspendMeAndActivate - Suspend current process and activate another</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib003.html#0162" TARGET=body>Switch - Switch to another process</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib003.html#0163" TARGET=body>Wait - Wait for event</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib003.html#0164" TARGET=body>Attach - Associate event source</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib003.html#0165" TARGET=body>Detach - Dissociate event source</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib003.html#0166" TARGET=body>IsAttached - Query event source</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib003.html#0167" TARGET=body>Handler - Query event handler</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib003.html#0168" TARGET=body>Me - Query current process id</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib003.html#0169" TARGET=body>MyParam - Query current process parameter</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib003.html#0170" TARGET=body>UrgencyOf - Query process urgency</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib003.html#0171" TARGET=body>IsProcessesException - Query exceptional state</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib003.html#0172" TARGET=body>ProcessesException - Query exception id</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=1></TD><TD COLSPAN=3><FONT SIZE=2><A HREF="isolib003.html#0173" TARGET=body>Module Semaphores</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib003.html#0174" TARGET=body>Create - Create new semaphore</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib003.html#0175" TARGET=body>Destroy - Destroy semaphore</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib003.html#0176" TARGET=body>Claim - Claim semaphore</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib003.html#0177" TARGET=body>Release - Unclaim semaphore</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib003.html#0178" TARGET=body>CondClaim - Claim semaphore safely</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib003.html#0179" TARGET=body>IsSemaphoresException - Query exceptional state</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=4><B><A HREF="isolib004.html#0180" TARGET=body>String Manipulation</A></B>
+</TD></TR>
+<TR><TD COLSPAN=1></TD><TD COLSPAN=3><FONT SIZE=2><A HREF="isolib004.html#0181" TARGET=body>Module Strings</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib004.html#0182" TARGET=body>Length - Query string length</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib004.html#0183" TARGET=body>CanAssignAll - Check whether Assign will succeed</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib004.html#0184" TARGET=body>Assign - Assign string value</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib004.html#0185" TARGET=body>CanExtractAll - Check whether Extract will succeed</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib004.html#0186" TARGET=body>Extract - Extract substring</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib004.html#0187" TARGET=body>CanDeleteAll - Check whether Delete will succeed</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib004.html#0188" TARGET=body>Delete - Delete substring</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib004.html#0189" TARGET=body>CanInsertAll - Check whether Insert will succeed</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib004.html#0190" TARGET=body>Insert - Insert substring</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib004.html#0191" TARGET=body>CanReplaceAll - Check whether Replace will succeed</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib004.html#0192" TARGET=body>Replace - Replace substring</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib004.html#0193" TARGET=body>CanAppendAll - Check whether Append will succeed</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib004.html#0194" TARGET=body>Append - Append string</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib004.html#0195" TARGET=body>CanConcatAll - Check whether Concat will succeed</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib004.html#0196" TARGET=body>Concat - Concatenate strings</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib004.html#0197" TARGET=body>Capitalize - Capitalize string</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib004.html#0198" TARGET=body>Compare - Compare strings</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib004.html#0199" TARGET=body>Equal - Compare strings</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib004.html#0200" TARGET=body>FindNext - Search string forward</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib004.html#0201" TARGET=body>FindPrev - Search string backward</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib004.html#0202" TARGET=body>FindDiff - Find position of string difference</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=4><B><A HREF="isolib005.html#0204" TARGET=body>String Conversions</A></B>
+</TD></TR>
+<TR><TD COLSPAN=1></TD><TD COLSPAN=3><FONT SIZE=2><A HREF="isolib005.html#0205" TARGET=body>Common Data Types</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib005.html#0206" TARGET=body>Module ConvTypes</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=1></TD><TD COLSPAN=3><FONT SIZE=2><A HREF="isolib005.html#0207" TARGET=body>High-Level String Conversion Modules</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib005.html#0208" TARGET=body>EXAMPLE - Conversion of strings read by ReadToken</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib005.html#0209" TARGET=body>Module WholeStr</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib005.html#0214" TARGET=body>Modules RealStr and LongStr</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=1></TD><TD COLSPAN=3><FONT SIZE=2><A HREF="isolib005.html#0220" TARGET=body>Low-Level String Conversion Modules</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib005.html#0221" TARGET=body>EXAMPLE - Use of ScanInt</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib005.html#0222" TARGET=body>Module WholeConv</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib005.html#0232" TARGET=body>Modules RealConv and LongConv</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=4><B><A HREF="isolib006.html#0240" TARGET=body>Miscellaneous</A></B>
+</TD></TR>
+<TR><TD COLSPAN=1></TD><TD COLSPAN=3><FONT SIZE=2><A HREF="isolib006.html#0241" TARGET=body>Module CharClass</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib006.html#0242" TARGET=body>IsNumeric - Test for numeric character</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib006.html#0243" TARGET=body>IsLetter - Test for letter</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib006.html#0244" TARGET=body>IsUpper - Test for upper case letter</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib006.html#0245" TARGET=body>IsLower - Test for lower case letter</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib006.html#0246" TARGET=body>IsControl - Test for control character</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib006.html#0247" TARGET=body>IsWhiteSpace - Test for white space character</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=1></TD><TD COLSPAN=3><FONT SIZE=2><A HREF="isolib006.html#0248" TARGET=body>Modules LowReal and LowLong</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib006.html#0249" TARGET=body>Constants and Types - </A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib006.html#0250" TARGET=body>exponent - Exponent value</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib006.html#0251" TARGET=body>fraction - Significand part</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib006.html#0252" TARGET=body>sign - Signum</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib006.html#0253" TARGET=body>succ - Next greater value</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib006.html#0254" TARGET=body>ulp - Unit in the last place</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib006.html#0255" TARGET=body>pred - Previous less value</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib006.html#0256" TARGET=body>intpart - Integral part</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib006.html#0257" TARGET=body>fractpart - Fractional part</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib006.html#0258" TARGET=body>scale - Scale</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib006.html#0259" TARGET=body>trunc - Truncate</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib006.html#0260" TARGET=body>round - Round</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib006.html#0261" TARGET=body>synthesize - Construct value</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib006.html#0262" TARGET=body>setMode - Set status flags</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib006.html#0263" TARGET=body>currentMode - Current status flags</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib006.html#0264" TARGET=body>IsLowException - Query exceptional state</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=1></TD><TD COLSPAN=3><FONT SIZE=2><A HREF="isolib006.html#0265" TARGET=body>Module Storage</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib006.html#0266" TARGET=body>StorageExceptions - Storage exceptions identities</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib006.html#0267" TARGET=body>ALLOCATE - Allocate storage</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib006.html#0268" TARGET=body>DEALLOCATE - Deallocate storage</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib006.html#0269" TARGET=body>IsStorageException - Query exceptional state</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib006.html#0270" TARGET=body>StorageException - Query exception id</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=1></TD><TD COLSPAN=3><FONT SIZE=2><A HREF="isolib006.html#0271" TARGET=body>Module SysClock</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib006.html#0272" TARGET=body>The Constants and Types of SysClock</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib006.html#0273" TARGET=body>CanGetClock - Query system clock read permission</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib006.html#0274" TARGET=body>CanSetClock - Query system clock write permission</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib006.html#0275" TARGET=body>IsValidDateTime - Verify date and time</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib006.html#0276" TARGET=body>GetClock - Determine current date and time</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="isolib006.html#0277" TARGET=body>SetClock - Set current date and time</A></FONT>
+</TD></TR>
+</TABLE>
+<HR>
+</NOSCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="body.js">
+</SCRIPT>
+</BODY>
+</HTML>

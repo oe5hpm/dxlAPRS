@@ -1,0 +1,44 @@
+(** Oakwood Oberon-2 library *)
+(** Copyright (c) xTech 1994,95. All Rights Reserved. *)
+DEFINITION Out;
+
+(** Formatted output of characters, numbers and strings. *)
+
+PROCEDURE Open*;
+(** Initializes the output stream *)
+
+PROCEDURE Char*(ch: CHAR);
+(** Writes the character ch to the end of the output stream *)
+
+PROCEDURE String*(str: ARRAY OF CHAR);
+(** Writes the null-terminated character sequence s to the
+  end of the output stream (without 0X).
+*)
+
+PROCEDURE Int*(x,n: LONGINT);
+(** Writes the integer number x to the end of the output stream.
+  If the textual representation of i requires m characters,
+  x is right adjusted in a field Max(n,m) characters padded with
+  blanks at the left end. A plus sign is not written.
+*)
+
+PROCEDURE Real*(x: REAL; n: INTEGER);
+(** Writes the real number x to the end of the output stream.
+  If the textual representation of x requires m characters,
+  x is right adjusted in a field Max(n,m) characters padded with
+  blanks at the left end. A plus sign of the mantissa is not
+  written.
+*)
+
+PROCEDURE LongReal*(x: LONGREAL; n: INTEGER);
+(** Writes the long real number x to the end of the output stream.
+  If the textual representation of x requires m characters,
+  x is right adjusted in a field Max(n,m) characters padded with
+  blanks at the left end. A plus sign of the mantissa is not
+  written.
+*)
+
+PROCEDURE Ln*;
+(** Writes an end-of-line symbol to the end of the output stream *)
+
+END Out.

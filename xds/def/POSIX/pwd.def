@@ -1,0 +1,35 @@
+(* Copyright (c) xTech 1997.  All Rights Reserved *)
+
+(* $RCSfile: pwd.def,v $ $Revision: 1.1.1.1 $ $Date: 1997/10/20 19:32:35 $ *)
+
+<*+ CSTDLIB  *>
+<*+ NOHEADER*>
+<*+ M2EXTENSIONS *>
+
+DEFINITION MODULE [2] pwd;
+
+FROM xmRTS IMPORT X2C_pCHAR;
+FROM types IMPORT uid_t, gid_t;
+
+<* IF __GEN_C__ THEN *> <*- GENTYPEDEF *> <* END *>
+TYPE
+  (* The passwd structure.  *)
+  passwd = RECORD
+    pw_name: X2C_pCHAR;		(* Username. *)
+    pw_passwd: X2C_pCHAR;	(* Password. *)
+    pw_uid: uid_t;		(* User ID. *)
+    pw_gid: gid_t;		(* Group ID. *)
+    pw_gecos: X2C_pCHAR;	(* Real name. *)
+    pw_dir: X2C_pCHAR;		(* Home directory. *)
+    pw_shell: X2C_pCHAR;	(* Shell program. *)
+  END;
+
+  passwd_ptr = POINTER TO passwd;
+
+(* Search for an entry with a matching username. *)
+PROCEDURE getpwnam ( name: ARRAY OF CHAR ): passwd_ptr;
+
+(* Search for an entry with a matching user ID. *)
+PROCEDURE getpwuid ( uid: uid_t ): passwd_ptr;
+
+END pwd.

@@ -1,0 +1,7 @@
+% XDS project file
+-lookup = *.ob2 = $!
+
+% let's permit to change sym-file in order to avoid conflict between XDS-x86 and XDS-C
++changesym
+
+!module runme.ob2

@@ -1,0 +1,12 @@
+-makefile
+-link=
++changesym
+-lookup = *.def=$!/def/X11;$!/def/X11/SM;$!/def/X11/ICE
+-lookup = *.sym=$(sym_place)
+
+!module DECkeysym.def   Sunkeysym.def   Xauth.def       Xlocale.def
+!module ap_keysym.def   Intrinsic.def   Vendor.def      Xcms.def
+!module Xmd.def         cursorfont.def  IntrinsicP.def  X.def
+!module Xdmcp.def       keysym.def      Shell.def
+!module X10.def         Xresource.def   keysymdef.def   ShellP.def
+!module Xatom.def       Xlib.def        Xutil.def       xpm.def

@@ -1,0 +1,52 @@
+<* NEW INTRINSIC+ *>
+DEFINITION MODULE RealMath;
+
+  (* Mathematical functions for the type REAL *)
+
+CONST
+  pi   = 3.141592;
+  exp1 = 2.718281;
+
+PROCEDURE sqrt (x: REAL): REAL;
+  (* Returns the positive square root of x *)
+
+PROCEDURE exp (x: REAL): REAL;
+  (* Returns the exponential of x *)
+
+PROCEDURE ln (x: REAL): REAL;
+  (* Returns the natural logarithm of x *)
+
+  (* The angle in all trigonometric functions is measured in radians *)
+
+PROCEDURE sin (x: REAL): REAL;
+  (* Returns the sine of x *)
+
+PROCEDURE cos (x: REAL): REAL;
+  (* Returns the cosine of x *)
+
+PROCEDURE tan (x: REAL): REAL;
+  (* Returns the tangent of x *)
+
+PROCEDURE arcsin (x: REAL): REAL;
+  (* Returns the arcsine of x *)
+
+PROCEDURE arccos (x: REAL): REAL;
+  (* Returns the arccosine of x *)
+
+PROCEDURE arctan (x: REAL): REAL;
+  (* Returns the arctangent of x *)
+
+PROCEDURE power (base, exponent: REAL): REAL;
+  (* Returns the value of the number base raised to the power exponent *)
+
+PROCEDURE round (x: REAL): INTEGER;
+  (* Returns the value of x rounded to the nearest integer *)
+
+PROCEDURE IsRMathException (): BOOLEAN;
+  (* Returns TRUE if the current coroutine is in the exceptional execution state
+     because of the raising of an exception in a routine from this module; otherwise
+     returns FALSE.
+  *)
+
+END RealMath.
+

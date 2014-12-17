@@ -1,0 +1,85 @@
+(* Copyright (C) 1996,99 XDS Ltd. *)
+
+<*+M2ADDTYPES   *>
+<*+M2EXTENSIONS *>
+
+DEFINITION MODULE Lib;
+
+FROM SYSTEM IMPORT ADDRESS, BYTE, WORD, CARD16;
+
+IMPORT ProgEnv;
+
+TYPE
+  CompareProc = PROCEDURE(CARDINAL, CARDINAL) :BOOLEAN;
+  SwapProc    = PROCEDURE(CARDINAL, CARDINAL);
+
+PROCEDURE QSort(N :CARDINAL; Less :CompareProc; Swap :SwapProc);
+PROCEDURE HSort(N :CARDINAL; Less :CompareProc; Swap :SwapProc);
+
+PROCEDURE HashString(S :ARRAY OF CHAR; Range :CARDINAL) :CARDINAL;
+
+PROCEDURE RANDOM (Range :CARDINAL) :CARDINAL;
+PROCEDURE RAND   ():REAL;
+PROCEDURE RANDOMIZE;
+
+
+TYPE
+ ExecEnvPtr = POINTER TO CHAR;
+
+PROCEDURE Exec (command :ARRAY OF CHAR;
+                Params  :ARRAY OF CHAR;
+                Env     :ExecEnvPtr) :CARDINAL;
+
+PROCEDURE ExecCmd ( command :ARRAY OF CHAR ) :CARDINAL;
+
+CONST
+
+PROCEDURE Environment     (N :CARDINAL; VAR result :ARRAY OF CHAR);
+PROCEDURE EnvironmentFind (name :ARRAY OF CHAR; VAR result :ARRAY OF CHAR );
+
+
+PROCEDURE ParamStr (VAR S :ARRAY OF CHAR; N :CARDINAL);
+PROCEDURE ParamCount() :CARDINAL;
+
+PROCEDURE SysErrno() :CARDINAL;
+
+
+PROCEDURE FatalError (S: ARRAY OF CHAR);
+
+PROCEDURE Delay( t :CARDINAL );
+PROCEDURE Speaker( FreqHz, TimeMs :CARDINAL);
+
+TYPE
+  DayType = (Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday) ;
+
+PROCEDURE GetDate ( VAR Year,Month,Day :CARDINAL ;
+                    VAR DayOfWeek :DayType ) ;
+PROCEDURE GetTime ( VAR Hrs,Mins,Secs,Hsecs :CARDINAL ) ;
+PROCEDURE SetDate ( Year,Month,Day :CARDINAL);
+PROCEDURE SetTime ( Hrs,Mins,Secs,Hsecs :CARDINAL );
+
+PROCEDURE MakeAllPath (VAR Path: ARRAY OF CHAR; Drive, Dir, Name, Ext :ARRAY OF CHAR);
+PROCEDURE SplitAllPath(Path: ARRAY OF CHAR; VAR Drive, Dir, Name, Ext :ARRAY OF CHAR);
+
+PROCEDURE AddAddr(A: ADDRESS; increment: CARDINAL) : ADDRESS;
+PROCEDURE SubAddr(A: ADDRESS; decrement: CARDINAL) : ADDRESS;
+PROCEDURE IncAddr(VAR A: ADDRESS; increment: CARDINAL);
+PROCEDURE DecAddr(VAR A: ADDRESS; decrement: CARDINAL);
+
+PROCEDURE Move    (Source,Dest:ADDRESS; Count:CARDINAL);
+PROCEDURE FastMove(Source,Dest:ADDRESS; Count:CARDINAL);
+PROCEDURE WordMove(Source,Dest:ADDRESS; WordCount:CARDINAL);
+
+PROCEDURE Fill(Dest: ADDRESS; Count: CARDINAL; Value: BYTE);
+
+PROCEDURE WordFill(Dest: ADDRESS; WordCount: CARDINAL; Value: CARD16);
+
+PROCEDURE ScanR  (Dest: ADDRESS; Count: CARDINAL; Value: BYTE) : CARDINAL;
+PROCEDURE ScanL  (Dest: ADDRESS; Count: CARDINAL; Value: BYTE) : CARDINAL;
+PROCEDURE ScanNeR(Dest: ADDRESS; Count: CARDINAL; Value: BYTE) : CARDINAL;
+PROCEDURE ScanNeL(Dest: ADDRESS; Count: CARDINAL; Value: BYTE) : CARDINAL;
+
+PROCEDURE Compare(Source,Dest: ADDRESS; Len: CARDINAL) : CARDINAL;
+
+END Lib.
+

@@ -1,0 +1,65 @@
+(* Xm/h2d_VendorS.def  Oct 15  3:17:50  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/VendorS.h using H2D v1.16. *)
+
+(* $RCSfile: VendorS.def,v $ $Revision: 4 $ $Date: 28.07.98 23:15 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+
+DEFINITION MODULE ["C"] VendorS;
+
+IMPORT SYSTEM, Intrinsic;
+(* H2D:  Required IMPORT clause: 
+IMPORT VendorS, Intrinsic;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(*
+ * Motif Release 1.2 
+ *)
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: this procedure corresponds to a macro. *)
+PROCEDURE XmIsVendorShell ( w: Intrinsic.Widget ): Intrinsic.Boolean;
+
+<* ELSE *>
+
+PROCEDURE  / XmIsVendorShell ( w: Intrinsic.Widget ): Intrinsic.Boolean;
+
+<* END *>
+
+TYPE 
+  _XmVendorShellRec = RECORD
+
+(* Declaration without definition *)
+  END;
+
+  XmVendorShellWidget = POINTER TO _XmVendorShellRec;
+
+  _XmVendorShellClassRec = RECORD
+
+(* Declaration without definition *)
+  END;
+
+  XmVendorShellWidgetClass = POINTER TO _XmVendorShellClassRec;
+
+VAR 
+  vendorShellWidgetClass: Intrinsic.WidgetClass;
+
+(********    Public Function Declarations    ********)
+
+PROCEDURE XmIsMotifWMRunning ( shell: Intrinsic.Widget ): Intrinsic.Boolean;
+
+(********    End Public Function Declarations    ********)
+
+END VendorS.

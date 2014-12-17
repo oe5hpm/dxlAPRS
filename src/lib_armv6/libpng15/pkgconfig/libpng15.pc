@@ -1,0 +1,11 @@
+prefix=/home/petermaierh/rpi-tools/arm-bcm2708/arm-bcm2708hardfp-linux-gnueabi
+exec_prefix=${prefix}
+libdir=/home/petermaierh/work/dxlAPRS/src/lib_armv6/libpng15
+includedir=/home/petermaierh/work/dxlAPRS/src/lib_armv6/libpng15/libpng15
+
+Name: libpng
+Description: Loads and saves PNG files
+Version: 1.5.18
+Libs: -L${libdir} -lpng15
+Libs.private: -lm -lz -lm 
+Cflags: -I${includedir}

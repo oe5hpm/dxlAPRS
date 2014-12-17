@@ -1,0 +1,222 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 4.01 Transitional//EN">
+<HTML>
+<HEAD>
+<TITLE>Configuring H2D</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<P><HR>
+<A NAME="0005">
+<A HREF="h2d000.html#root" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="h2d001.html#0004" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0006" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H1>Configuring H2D</H1>
+
+<P><UL>
+<LI><A HREF="#0006" TARGET=body>Setting up system search path</A>
+<LI><A HREF="#0007" TARGET=body>Working configuration</A>
+<LI><A HREF="#0008" TARGET=body>Redirection file</A>
+<LI><A HREF="#0010" TARGET=body>Configuration file</A>
+<LI><A HREF="#0011" TARGET=body>Customizing H2D messages</A>
+</UL>
+<P><HR>
+<A NAME="0006">
+<A HREF="#0005" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0005" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0007" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Setting up system search path</H2>
+
+<P>If you installed H2D as part of an XDS package, no additional setup is required. Otherwise you must tell your operating system where to find the executable before using H2D. Refer to the <TT>h2d.txt</TT> file from the on-line documentation. 
+<P><HR>
+<A NAME="0007">
+<A HREF="#0005" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0006" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0008" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Working configuration</H2>
+
+<P>The H2D working configuration includes an executable file and a set of system files: 
+<P><TABLE CELLSPACING=0>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>h2d.red </TT></TD>
+<TD  STYLE="padding:0px 3px;"><A HREF="#0008" TARGET=body>Search path redirection file</A> </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>h2d.cfg </TT></TD>
+<TD  STYLE="padding:0px 3px;"><A HREF="#0010" TARGET=body>Configuration file</A> </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>h2d.msg </TT></TD>
+<TD  STYLE="padding:0px 3px;"><A HREF="#0011" TARGET=body>Message file</A> </TD>
+</TR>
+</TABLE>
+<P>Upon invocation, H2D tries to locate these files in the current directory and then in the directory where H2D executable resides. If a <I>redirection file</I>, <TT>h2d.red</TT> is found, all other files are searched for/created using paths defined in it, otherwise the current directory is used for all input and output, except files specified with directories. 
+<P>The <I>configuration file</I> contains various H2D settings. If the configuration file is not found, default settings are used. 
+<P>The <I>message file</I> contains texts of error messages. 
+<P><HR>
+<A NAME="0008">
+<A HREF="#0005" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0007" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0009" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Redirection file</H2>
+
+<P>Upon activation, H2D looks for a file called <TT>h2d.red</TT> &mdash; the <I>redirection file</I>. This file defines directories in which all other files are searched for or created. A redirection file has to be placed in the current directory, otherwise the <I>master redirection file</I> from the directory where H2D executable resides is used. 
+<P>A redirection file consists of several <I>redirections</I>: 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;Redirection&nbsp;=&nbsp;Pattern&nbsp;&quot;=&quot;&nbsp;directory&nbsp;{&quot;;&quot;&nbsp;directory}</TT> 
+<P><TT>Pattern</TT> is a regular expression which all file names used by H2D will be compared with. A regular expression is a string containing certain special characters: 
+<P ALIGN=CENTER><TABLE CELLSPACING=0>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><B>Sequence </B></TD>
+<TD  STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><B>Denotes </B></TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;"><TT>*</TT> </TD>
+<TD  STYLE="padding:0px 3px;">an arbitrary sequence of any characters, possibly empty </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;">(equivalent to <TT>{\000-\377}</TT> expression) </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;"><TT>?</TT> </TD>
+<TD  STYLE="padding:0px 3px;">any single character </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;">(equivalent to <TT>[\000-\377]</TT> expression) </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;"><TT>[...]</TT> </TD>
+<TD  STYLE="padding:0px 3px;">one of the listed characters </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;"><TT>{...}</TT> </TD>
+<TD  STYLE="padding:0px 3px;">an arbitrary sequence of the listed characters, possibly empty </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;"><TT>\nnn</TT> </TD>
+<TD  STYLE="padding:0px 3px;">the ASCII character with octal code <TT>nnn</TT>, where n is <TT>[0-7]</TT> </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;"><TT>&amp;</TT> </TD>
+<TD  STYLE="padding:0px 3px;">the logical operation AND </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;"><TT>|</TT> </TD>
+<TD  STYLE="padding:0px 3px;">the logical operation OR </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;"><TT>^</TT> </TD>
+<TD  STYLE="padding:0px 3px;">the logical operation NOT </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;"><TT>(...)</TT> </TD>
+<TD  STYLE="padding:0px 3px;">the priority of operations </TD>
+</TR>
+</TABLE>
+<P>A sequence of the form <TT>a-b</TT> used within either <TT>[]</TT> or <TT>{}</TT> brackets denotes all characters from <TT>a</TT> to <TT>b</TT>. 
+<P>When H2D looks for or intends to create a file, its name is sequentially compared with all patterns from the top of the redirection file. A file is created in the first directory of the list corresponding to the matched pattern. A file is searched for in all directories in the list (from first to last) until it is found or the directory list is exhausted. If a match is not found, the file is created or searched for in the current directory. <B>Note:</B> If a match is found, the current direcory is <I>not</I> searched unless it is explicitly specified in the directory list. 
+<P>It is possible to put comment lines into the redirection file. A comment line should be started with the <TT>%</TT> character. 
+<P><UL>
+<LI><A HREF="#0009" TARGET=body>Example</A>
+</UL>
+<P><HR>
+<A NAME="0009">
+<A HREF="#0008" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0008" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0010" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Example</H3>
+
+<P><PRE>*.h&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;h;&nbsp;.;&nbsp;c:\bc\include
+mac_*.def&nbsp;=&nbsp;macro;
+*.def&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;def;
+mac_*.mod&nbsp;=&nbsp;macro;
+*.h2d&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;h2d;
+</PRE>
+
+<P><HR>
+<A NAME="0010">
+<A HREF="#0005" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0009" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0011" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Configuration file</H2>
+
+<P>The configuration file is used to set options which control various aspects of H2D behaviour: names of generated files, source/target language extensions, mapping of C base types to Modula-2 types etc. It should reside in the current directory or in the directory with H2D executable (the <I>master</I> configuration file). However, it is recommended to use a <A HREF="h2d006.html#0054" TARGET=body>project file</A> instead of a local configuration file to specify options for a particular set of header files. 
+<P>An option is a pair (<I>name</I>, <I>value</I>). Every line in the configuration file may contain only one option setup directive. Arbitrary spaces are permitted. The <TT>%</TT> character starts a one-line comment. Option setup directives have the following syntax: 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;Option&nbsp;=&nbsp;&quot;-&quot;&nbsp;name&nbsp;(&quot;-&quot;&nbsp;|&nbsp;&quot;+&quot;&nbsp;|&nbsp;&quot;=&quot;&nbsp;(string&nbsp;|&nbsp;integer))</TT> 
+<P>The same syntax is used for command line options and in a <A HREF="h2d006.html#0054" TARGET=body>project file</A>. Command-line options have the highest priority. Options specified in a project file override the configuration file settings. 
+<P>Options, their meanings and valid values are described in Chapter <A HREF="h2d007.html#0063" TARGET=body>Options Reference</A>. 
+<P><P ALIGN=CENTER><B><A NAME=figure1>Figure 1. </A></B>Configuration file example
+
+<P><PRE>-DEFEXT&nbsp;&nbsp;=&nbsp;def&nbsp;&nbsp;&nbsp;&nbsp;%&nbsp;file&nbsp;extensions
+-HEADEXT&nbsp;=&nbsp;h
+-MODEXT&nbsp;&nbsp;=&nbsp;d
+-PRJEXT&nbsp;&nbsp;=&nbsp;prj
+-TREEEXT&nbsp;=&nbsp;inc
+-DIREXT&nbsp;&nbsp;=&nbsp;dir
+
+-DEFPFX&nbsp;=&nbsp;h2d_&nbsp;&nbsp;&nbsp;&nbsp;%&nbsp;prefix&nbsp;for&nbsp;output&nbsp;definition&nbsp;modules
+-MACPFX&nbsp;=&nbsp;m_&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;%&nbsp;prefix&nbsp;for&nbsp;macro&nbsp;prototype&nbsp;modules
+
+-BACKEND&nbsp;=&nbsp;COMMON&nbsp;%&nbsp;M2&nbsp;compiler&nbsp;compatibility&nbsp;mode:&nbsp;C,&nbsp;NATIVE,&nbsp;COMMON
+-GENMACRO-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;%&nbsp;do&nbsp;not&nbsp;generate&nbsp;macro&nbsp;prototype&nbsp;modules
+-GENWIDTH&nbsp;=&nbsp;70&nbsp;&nbsp;&nbsp;&nbsp;%&nbsp;maximum&nbsp;string&nbsp;length&nbsp;in&nbsp;output&nbsp;files
+-COMMENTPOS&nbsp;=&nbsp;0&nbsp;&nbsp;&nbsp;%&nbsp;comment&nbsp;position
+-CHANGEDEF+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;%&nbsp;allow&nbsp;to&nbsp;overwrite&nbsp;existing&nbsp;definition&nbsp;modules
+-PROGRESS+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;%&nbsp;enable&nbsp;progress&nbsp;indicator
+-CSTDLIB-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;%&nbsp;do&nbsp;not&nbsp;set&nbsp;C&nbsp;standard&nbsp;library&nbsp;option
+-CPPCOMMENTS+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;%&nbsp;recognize&nbsp;C++&nbsp;comments
+-MERGEALL+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;%&nbsp;merge&nbsp;all&nbsp;#included&nbsp;headers
+-GENSEP-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;%&nbsp;separate&nbsp;merged&nbsp;headers&nbsp;with&nbsp;comments
+-GENLONGNAMES-&nbsp;&nbsp;&nbsp;&nbsp;%&nbsp;prepen&nbsp;module&nbsp;name&nbsp;with&nbsp;directory&nbsp;names
+-GENENUM&nbsp;=&nbsp;CONST&nbsp;&nbsp;%&nbsp;enum&nbsp;transtaltion&nbsp;mode:&nbsp;CONST,&nbsp;ENUM,&nbsp;AUTO
+-GENTREE+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;%&nbsp;create&nbsp;file&nbsp;with&nbsp;include/merge&nbsp;tree
+-GENDIRS+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;%&nbsp;extract&nbsp;non-standrard&nbsp;directives
+-GENROVARS+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;%&nbsp;translate&nbsp;constants&nbsp;to&nbsp;read-only&nbsp;variables
+
+%&nbsp;C&nbsp;BASE&nbsp;TYPES&nbsp;SYNONYMS:
+
+-ctype&nbsp;=&nbsp;signed&nbsp;char&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;&nbsp;1,&nbsp;CHAR
+-ctype&nbsp;=&nbsp;signed&nbsp;int&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;&nbsp;4,&nbsp;SYSTEM.int
+&nbsp;&nbsp;.&nbsp;&nbsp;.&nbsp;&nbsp;.
+-ctype&nbsp;=&nbsp;long&nbsp;float&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;&nbsp;8,&nbsp;UNDEF
+-ctype&nbsp;=&nbsp;long&nbsp;double&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;&nbsp;8,&nbsp;UNDEF
+
+%&nbsp;MODULA-2&nbsp;TYPES:
+
+-m2type&nbsp;=&nbsp;INTEGER&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;4,&nbsp;SIGNED
+-m2type&nbsp;=&nbsp;SHORTINT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;1,&nbsp;SIGNED
+&nbsp;&nbsp;.&nbsp;&nbsp;.&nbsp;&nbsp;.
+-m2type&nbsp;=&nbsp;SYSTEM.SET32&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;4,&nbsp;SET
+-m2type&nbsp;=&nbsp;SYSTEM.int&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;4,&nbsp;SIGNED
+-m2type&nbsp;=&nbsp;SYSTEM.unsigned&nbsp;=&nbsp;4,&nbsp;UNSIGNED
+</PRE>
+
+<P>
+<P><HR>
+<A NAME="0011">
+<A HREF="#0005" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0010" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="h2d003.html#0012" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Customizing H2D messages</H2>
+
+<P>The file <TT>h2d.msg</TT> contains error messages in the form 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;number&nbsp;text</TT> 
+<P>The following is an excerpt from <TT>h2d.msg</TT>: 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;001&nbsp;Can't&nbsp;open&nbsp;file&nbsp;%s
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.&nbsp;&nbsp;.&nbsp;&nbsp;.
+&nbsp;&nbsp;&nbsp;&nbsp;010&nbsp;Invalid&nbsp;use&nbsp;of&nbsp;modifier
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.&nbsp;&nbsp;.&nbsp;&nbsp;.
+</PRE>
+
+<P>Some messages contain format specifiers for additional arguments. In the example above, the message number 001 contains a <TT>%s</TT> specifier which is substituted with a file name when the message is printed. 
+<P>In order to use a language other than English for messages it is necessary to translate message texts, preserving error numbers and the number and <I>order</I> of format specifiers. 
+<P>
+</BODY>
+</HTML>

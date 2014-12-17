@@ -1,0 +1,35 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 4.01 Transitional//EN">
+<HTML>
+<HEAD>
+<TITLE>Variable declarations</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<P><HR>
+<A NAME="0017">
+<A HREF="o2rep000.html#root" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="o2rep006.html#0016" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="o2rep008.html#0018" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H1>Variable declarations</H1>
+
+<P>Variable declarations introduce variables by defining an identifier and a data type for them. <FONT SIZE=2>
+<P><PRE>&nbsp;&nbsp;VariableDeclaration&nbsp;=&nbsp;IdentList&nbsp;&quot;:&quot;&nbsp;Type.
+</PRE>
+</FONT>
+<P>Record and pointer variables have both a <I>static</I> type (the type with which they are declared - simply called their type) and a <I>dynamic</I> type (the type they assume at run time). For pointers and variable parameters of record type the dynamic type may be an extension of their static type. The static type determines which fields of a record are accessible. The dynamic type is used to call type-bound procedures (see <A HREF="o2rep010.html#0039" TARGET=body>Type-bound procedures</A>). 
+<P>Examples of variable declarations (refer to examples in <A HREF="o2rep006.html#0011" TARGET=body>Type declarations</A>): 
+<P><PRE>&nbsp;&nbsp;i,&nbsp;j,&nbsp;k:&nbsp;INTEGER
+&nbsp;&nbsp;x,&nbsp;y:&nbsp;REAL
+&nbsp;&nbsp;p,&nbsp;q:&nbsp;BOOLEAN
+&nbsp;&nbsp;s:&nbsp;SET
+&nbsp;&nbsp;F:&nbsp;Function
+&nbsp;&nbsp;a:&nbsp;ARRAY&nbsp;100&nbsp;OF&nbsp;REAL
+&nbsp;&nbsp;w:&nbsp;ARRAY&nbsp;16&nbsp;OF&nbsp;RECORD
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;name&nbsp;&nbsp;:&nbsp;ARRAY&nbsp;32&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ccount:&nbsp;INTEGER
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;END
+&nbsp;&nbsp;t,&nbsp;c:&nbsp;Tree
+</PRE>
+</BODY>
+</HTML>

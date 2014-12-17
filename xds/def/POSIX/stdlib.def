@@ -1,0 +1,90 @@
+(* Copyright (c) xTech 1992,95,97.  All Rights Reserved *)
+
+(* $RCSfile: stdlib.def,v $ $Revision: 1.1.1.1 $ $Date: 1997/10/20 19:32:35 $ *)
+
+<*+ CSTDLIB  *>
+<*+ NOHEADER *>
+<*+ M2EXTENSIONS *>
+
+DEFINITION MODULE [2] stdlib;
+
+IMPORT types;
+
+FROM SYSTEM IMPORT ADDRESS, INT16, INT32, BOOL32, CARD32;
+FROM xmRTS IMPORT X2C_pVOID, X2C_pCHAR;
+
+TYPE
+  div_t  = RECORD
+	     quot: INTEGER;
+	     rem : INTEGER;
+	   END;
+  ldiv_t = RECORD
+	     quot: INT32;
+	     rem : INT32;
+	   END;
+  size_t = types.size_t;
+  wchar_t = INT16;
+
+<* IF __GEN_C__ THEN *> <*- GENTYPEDEF *> <* END *>
+  compfunc_t = PROCEDURE(ADDRESS, ADDRESS): BOOL32;
+  func_t     = PROCEDURE;
+<* IF __GEN_C__ THEN *> <*+ GENTYPEDEF *> <* END *>
+
+<* IF __GEN_C__ THEN *>
+(* Variables using for compatibolity between the most of platforms *)
+VAR
+  EXIT_FAILURE- : INTEGER;
+  EXIT_SUCCESS- : INTEGER;
+  MB_CHR_MAX-   : INTEGER;
+  RAND_MAX-     : INTEGER;
+<* ELSE *>
+CONST
+  (* Constants got from LiNUX i386 as an XDS native compiler platform *)
+  (* We define these the same for all machines.
+     Changes from this to the outside world should be done in `_exit'. *)
+  EXIT_FAILURE = 0;	(* Failing exit status. *)
+  EXIT_SUCCESS = 1;	(* Successful exit status. *)
+  (* Maximum length of a multibyte character in the current locale.
+     This is just one until the fancy locale support is finished. *)
+  MB_CHR_MAX   = 1;
+  (* The largest number rand will return (same as INT_MAX). *)
+  RAND_MAX     = 2147483647;
+<* END *>
+
+CONST
+  NULL = NIL;
+
+PROCEDURE abort;
+PROCEDURE abs(num: INTEGER): INTEGER;
+
+PROCEDURE atexit(func: func_t): INTEGER;
+PROCEDURE atof(nptr: ARRAY OF CHAR): LONGREAL;
+PROCEDURE atoi(nptr: ARRAY OF CHAR): INTEGER;
+PROCEDURE atol(nptr: ARRAY OF CHAR): INT32;
+PROCEDURE bsearch(key, base: ADDRESS;
+                  num, width: size_t; compare: compfunc_t): ADDRESS;
+PROCEDURE calloc(num, size: size_t): ADDRESS;
+PROCEDURE div(numer, denom: INTEGER): div_t;
+PROCEDURE exit(code: INTEGER);
+PROCEDURE free(block: ADDRESS);
+PROCEDURE getenv(name: ARRAY OF CHAR): X2C_pCHAR;
+PROCEDURE labs(j: INT32): INT32;
+PROCEDURE ldiv(numer, denom: INT32): ldiv_t;
+PROCEDURE malloc(size: size_t): ADDRESS;
+PROCEDURE mblen(s: ARRAY OF CHAR; n: size_t) : INTEGER;
+PROCEDURE mbstowcs(VAR pwcs: ARRAY OF wchar_t;
+                   s: ARRAY OF CHAR; n: size_t) : size_t;
+PROCEDURE mbtowc (VAR pwc: wchar_t; s: ARRAY OF CHAR; n: size_t) : INTEGER;
+PROCEDURE qsort(base: ADDRESS; num, width: size_t; compare: compfunc_t);
+PROCEDURE rand(): INTEGER;
+PROCEDURE realloc(block: ADDRESS; size: INTEGER): ADDRESS;
+PROCEDURE srand(seed: CARDINAL);
+PROCEDURE strtod(s: ARRAY OF CHAR; endptr: ADDRESS): LONGREAL;
+PROCEDURE strtol(s: ARRAY OF CHAR; endptr: ADDRESS; base: INTEGER): INT32;
+PROCEDURE strtoul(s: ARRAY OF CHAR; endptr: ADDRESS; base: INTEGER): CARD32;
+PROCEDURE system(string: ARRAY OF CHAR): INTEGER;
+PROCEDURE wcstombs (VAR s: ARRAY OF CHAR;
+                    pwcs: ARRAY OF wchar_t; n: size_t) : size_t;
+PROCEDURE wctomb (VAR s: ARRAY OF CHAR; wchar: wchar_t) : INTEGER;
+
+END stdlib.

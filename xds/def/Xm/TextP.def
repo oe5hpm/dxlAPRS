@@ -1,0 +1,1163 @@
+(* Xm/TextP.def  Nov 12  19:19:51  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/TextP.h using H2D v1.18.1 *)
+
+(* $RCSfile: TextP.def,v $ $Revision: 5 $ $Date: 28.07.98 23:14 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+(* Merged headers: Xm/TextOutP.h, Xm/Text.h, Xm/TextInP.h, Xm/TextStrSoP.h, 
+Xm/TextSelP.h *)
+
+DEFINITION MODULE ["C"] TextP;
+
+IMPORT SYSTEM, X, Xlib, Xm:=XmP, Xt:=IntrinsicP, stdio;
+(* H2D:  Required IMPORT clause: 
+IMPORT TextP, X, Xlib, XmP, IntrinsicP, stdio;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992, 1993, 1994 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(* ------------------------------------------------- *)
+(*                     Xm/Text.h                     *)
+(* ------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2
+ *)
+
+(* -------------- *
+ *   type defines *
+ * -------------- *)
+
+TYPE
+  XmTextSource = POINTER TO _XmTextSourceRec;
+
+  XmTextWidgetClass = POINTER TO _XmTextClassRec;
+
+  XmTextWidget = POINTER TO _XmTextRec;
+
+(* -------------- *
+ * extern class   *
+ * -------------- *)
+
+VAR
+  xmTextWidgetClass: Xt.WidgetClass;
+
+(* ----------------------------------- *
+ *   text widget public functions      *
+ * ----------------------------------- *)
+
+(********    Public Function Declarations    ********)
+
+PROCEDURE XmTextSetHighlight ( w: Xt.Widget;
+                               left: Xm.XmTextPosition;
+                               right: Xm.XmTextPosition;
+                               mode: Xm.XmHighlightMode );
+
+PROCEDURE XmCreateScrolledText ( parent: Xt.Widget;
+                                 name: ARRAY OF CHAR;
+                                 arglist: Xt.ArgList;
+                                 argcount: Xt.Cardinal ): Xt.Widget;
+
+PROCEDURE XmCreateText ( parent: Xt.Widget;
+                         name: ARRAY OF CHAR;
+                         arglist: Xt.ArgList;
+                         argcount: Xt.Cardinal ): Xt.Widget;
+
+PROCEDURE XmTextGetSubstring ( widget: Xt.Widget;
+                               start: Xm.XmTextPosition;
+                               num_chars: SYSTEM.int;
+                               buf_size: SYSTEM.int;
+                               buffer: Xt.String ): SYSTEM.int;
+
+PROCEDURE XmTextGetSubstringWcs ( widget: Xt.Widget;
+                                  start: Xm.XmTextPosition;
+                                  num_chars: SYSTEM.int;
+                                  buf_size: SYSTEM.int;
+                                  buffer: Xlib.Ptrwchar_t ): SYSTEM.int;
+
+PROCEDURE XmTextGetString ( widget: Xt.Widget ): Xt.String;
+
+PROCEDURE XmTextGetStringWcs ( widget: Xt.Widget ): Xlib.Ptrwchar_t;
+
+PROCEDURE XmTextGetLastPosition ( widget: Xt.Widget ): Xm.XmTextPosition;
+
+PROCEDURE XmTextSetString ( widget: Xt.Widget; value: ARRAY OF CHAR );
+
+PROCEDURE XmTextSetStringWcs ( widget: Xt.Widget;
+                               wc_value: Xlib.Ptrwchar_t );
+
+PROCEDURE XmTextReplace ( widget: Xt.Widget;
+                          frompos: Xm.XmTextPosition;
+                          topos: Xm.XmTextPosition;
+                          value: ARRAY OF CHAR );
+
+PROCEDURE XmTextReplaceWcs ( widget: Xt.Widget;
+                             frompos: Xm.XmTextPosition;
+                             topos: Xm.XmTextPosition;
+                             value: Xlib.Ptrwchar_t );
+
+PROCEDURE XmTextInsert ( widget: Xt.Widget;
+                         position: Xm.XmTextPosition;
+                         value: ARRAY OF CHAR );
+
+PROCEDURE XmTextInsertWcs ( widget: Xt.Widget;
+                            position: Xm.XmTextPosition;
+                            wc_value: Xlib.Ptrwchar_t );
+
+PROCEDURE XmTextSetAddMode ( widget: Xt.Widget;
+                             state: Xt.Boolean );
+
+PROCEDURE XmTextGetAddMode ( widget: Xt.Widget ): Xt.Boolean;
+
+PROCEDURE XmTextGetEditable ( widget: Xt.Widget ): Xt.Boolean;
+
+PROCEDURE XmTextSetEditable ( widget: Xt.Widget;
+                              editable: Xt.Boolean );
+
+PROCEDURE XmTextGetMaxLength ( widget: Xt.Widget ): SYSTEM.int;
+
+PROCEDURE XmTextSetMaxLength ( widget: Xt.Widget;
+                               max_length: SYSTEM.int );
+
+PROCEDURE XmTextGetTopCharacter ( widget: Xt.Widget ): Xm.XmTextPosition;
+
+CONST
+  XmTextGetTopPosition = XmTextGetTopCharacter;
+
+PROCEDURE XmTextSetTopCharacter ( widget: Xt.Widget;
+                                  top_character: Xm.XmTextPosition );
+
+CONST
+  XmTextSetTopPosition = XmTextSetTopCharacter;
+
+PROCEDURE XmTextGetCursorPosition ( widget: Xt.Widget ): Xm.XmTextPosition;
+
+PROCEDURE XmTextGetInsertionPosition ( widget: Xt.Widget ): Xm.XmTextPosition;
+
+PROCEDURE XmTextSetInsertionPosition ( widget: Xt.Widget;
+                                       position: Xm.XmTextPosition );
+
+PROCEDURE XmTextSetCursorPosition ( widget: Xt.Widget;
+                                    position: Xm.XmTextPosition );
+
+PROCEDURE XmTextRemove ( widget: Xt.Widget ): Xt.Boolean;
+
+PROCEDURE XmTextCopy ( widget: Xt.Widget;
+                       copy_time: X.Time ): Xt.Boolean;
+
+PROCEDURE XmTextCut ( widget: Xt.Widget;
+                      cut_time: X.Time ): Xt.Boolean;
+
+PROCEDURE XmTextPaste ( widget: Xt.Widget ): Xt.Boolean;
+
+PROCEDURE XmTextGetSelection ( widget: Xt.Widget ): Xt.String;
+
+PROCEDURE XmTextGetSelectionWcs ( widget: Xt.Widget ): Xlib.Ptrwchar_t;
+
+PROCEDURE XmTextSetSelection ( widget: Xt.Widget;
+                               first: Xm.XmTextPosition;
+                               last: Xm.XmTextPosition;
+                               set_time: X.Time );
+
+PROCEDURE XmTextClearSelection ( widget: Xt.Widget;
+                                 clear_time: X.Time );
+
+PROCEDURE XmTextGetSelectionPosition ( widget: Xt.Widget;
+                                       VAR left: Xm.XmTextPosition;
+                                       VAR right:Xm.XmTextPosition ): Xt.Boolean;
+
+PROCEDURE XmTextXYToPos ( widget: Xt.Widget;
+                          x: Xt.Position;
+                          y: Xt.Position ): Xm.XmTextPosition;
+
+PROCEDURE XmTextPosToXY ( widget: Xt.Widget;
+                          position: Xm.XmTextPosition;
+                          VAR x: SYSTEM.INT16;
+                          VAR y: SYSTEM.INT16 ): Xt.Boolean;
+
+PROCEDURE XmTextGetSource ( widget: Xt.Widget ): XmTextSource;
+
+PROCEDURE XmTextSetSource ( widget: Xt.Widget;
+                            source: XmTextSource;
+                            top_character: Xm.XmTextPosition;
+                            cursor_position: Xm.XmTextPosition );
+
+PROCEDURE XmTextShowPosition ( widget: Xt.Widget;
+                               position: Xm.XmTextPosition );
+
+PROCEDURE XmTextScroll ( widget: Xt.Widget; n: SYSTEM.int );
+
+PROCEDURE XmTextGetBaseline ( widget: Xt.Widget ): SYSTEM.int;
+
+PROCEDURE XmTextDisableRedisplay ( widget: Xt.Widget );
+
+PROCEDURE XmTextEnableRedisplay ( widget: Xt.Widget );
+
+PROCEDURE XmTextFindString ( w: Xt.Widget;
+                             start: Xm.XmTextPosition;
+                             search_string: ARRAY OF CHAR;
+                             direction: Xm.XmTextDirection;
+                             VAR position: Xm.XmTextPosition ): Xt.Boolean;
+
+PROCEDURE XmTextFindStringWcs ( w: Xt.Widget;
+                                start: Xm.XmTextPosition;
+                                wc_string: Xlib.Ptrwchar_t;
+                                direction: Xm.XmTextDirection;
+                                VAR position: Xm.XmTextPosition ): Xt.Boolean;
+
+(********    End Public Function Declarations    ********)
+
+(* ----------------------------------------------------- *)
+(*                     Xm/TextOutP.h                     *)
+(* ----------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2.2
+ *)
+
+(****************************************************************
+ *
+ * Definitions for modules implementing and using text output routines.
+ *
+ ****************************************************************)
+
+TYPE
+  _LineTableExtraRec = RECORD
+    width        : Xt.Dimension;
+    wrappedbychar: Xt.Boolean;
+  END;
+
+  LineTableExtraRec = _LineTableExtraRec;
+
+  LineTableExtra = POINTER TO _LineTableExtraRec;
+
+  LineTableExtrasList = POINTER TO ARRAY [0..X.MAX_STUP_ARR] OF LineTableExtra;
+
+(*
+ * output.c  (part of stext)
+ *)
+
+  LineNum = CARDINAL;
+
+(*  For when Booleans aren't obvious enough.  *)
+
+CONST
+  on = 0;
+  off = 1;
+
+TYPE
+  OnOrOff = SYSTEM.int;
+
+(*
+ * Return the line number containing the given position.  If text currently
+ * knows of no line containing that position, returns NOLINE.
+ *)
+
+CONST
+  NOLINE = 30000;
+
+(*
+ * These next define the types of the routines that output is required
+ * to export for use by text and by input.
+ *)
+
+TYPE
+  _OutputDataRec = RECORD
+    fontlist         : Xm.XmFontList; (* Fontlist for text. *)
+    blinkrate        : CARDINAL;
+    wordwrap         : Xt.Boolean; (* Whether to wordwrap. *)
+    cursor_position_visible: Xt.Boolean;
+    autoshowinsertpoint: Xt.Boolean;
+    hasfocus         : Xt.Boolean;
+    has_rect         : Xt.Boolean;
+    handlingexposures: Xt.Boolean; (* TRUE if in the midst of expose events. *)
+    exposevscroll    : Xt.Boolean; (* Non-zero if we expect expose events to be
+                                    * off vertically. *)
+    exposehscroll    : Xt.Boolean; (* Non-zero if we expect expose events to be
+                                    * off horizontally. *)
+    resizewidth      : Xt.Boolean;
+    resizeheight     : Xt.Boolean;
+    scrollvertical   : Xt.Boolean;
+    scrollhorizontal : Xt.Boolean;
+    scrollleftside   : Xt.Boolean;
+    scrolltopside    : Xt.Boolean;
+    ignorevbar       : Xt.Boolean; (* Whether to ignore callbacks from vbar. *)
+    ignorehbar       : Xt.Boolean; (* Whether to ignore callbacks from hbar. *)
+    cursor_on        :SYSTEM.INT16;(* Whether IBeam cursor is visible. *)
+    refresh_ibeam_off: Xt.Boolean; (* Indicates whether area under IBeam needs
+                                    * to be re-captured *)
+    suspend_hoffset  : Xt.Boolean;(* temporarily suspend horizontal scrolling*)
+    use_fontset      : Xt.Boolean; (* True if font to be used is fontset (and
+                                    * thus need X11R5 Xmb* routines to draw *)
+    have_inverted_image_gc:Xt.Boolean;(* fg/bg of image gc have been swapped;
+                                       * on == True, off == False *)
+    blinkstate       : OnOrOff;
+    insertx          : Xt.Position;
+    inserty          : Xt.Position;
+    number_lines     : SYSTEM.int; (* Number of lines that fit in the window.*)
+    leftmargin       : SYSTEM.int;
+    rightmargin      : SYSTEM.int;
+    topmargin        : SYSTEM.int;
+    bottommargin     : SYSTEM.int;
+    scrollwidth      : SYSTEM.int; (* Total width of text we have to display.*)
+    vsliderSize      : SYSTEM.int; (* How big the thumb is in the vbar. *)
+    hoffset          : SYSTEM.int; (* How much we've scrolled off the left. *)
+    averagecharwidth : SYSTEM.int; (* Number of pixels for an "average" char.*)
+    tabwidth         : SYSTEM.int; (* Number of pixels for a tab. *)
+    columns          : SYSTEM.INT16;
+    rows             : SYSTEM.INT16;
+    lineheight       : Xt.Dimension;(* Number of pixels per line. *)
+    minwidth         : Xt.Dimension;
+    minheight        : Xt.Dimension;
+    prevW            : Xt.Dimension;
+    prevH            : Xt.Dimension;
+    cursorwidth      : Xt.Dimension;
+    cursorheight     : Xt.Dimension;
+    font_ascent      : Xt.Dimension;(* ascent of the font[set] *)
+    font_descent     : Xt.Dimension;(* descent of the font[set] *)
+    timerid          : Xt.XtIntervalId;
+    cursor           : X.Pixmap;   (* Pixmap for IBeam cursor stencil. *)
+    add_mode_cursor  : X.Pixmap;   (* Pixmap to use for add mode cursor. *)
+    ibeam_off        : X.Pixmap;   (* Pixmap for area under the IBeam. *)
+    stipple_tile     : X.Pixmap;   (* stiiple for add mode cursor. *)
+    gc               : Xlib.GC;
+    imagegc          : Xlib.GC;
+    vbar             : Xt.Widget;
+    hbar             : Xt.Widget;
+    font             : Xlib.PtrXFontStruct;(*font used when NULL font is set.*)
+ (* New for 1.2 *)
+    save_gc          : Xlib.GC;    (* GC for saving/resotring under IBeam *)
+    columns_set      : SYSTEM.INT16;
+    rows_set         : SYSTEM.INT16;(* history of previously set dimensions *)
+  END;
+  
+  OutputDataRec = _OutputDataRec;
+
+  OutputData = POINTER TO _OutputDataRec;
+
+(*
+ * Create a new instance of an output object.  This is expected to fill in
+ * info about innerwidget and output in the widget record.
+ *)
+
+  OutputCreateProc = PROCEDURE ( Xt.Widget,
+                                 Xt.ArgList,
+                               	 Xt.Cardinal );
+
+(*
+ * Given an (x,y) coordinate, return the closest corresponding position. (For
+ * use by input; text shouldn't ever need to know.)
+ *)
+  XYToPosProc = PROCEDURE ( XmTextWidget,
+                            Xt.Position,    (* These are relative to the *)
+                            Xt.Position ):
+                            Xm.XmTextPosition; (* innerwindow returned above. *)
+(*
+ * Return the (x,y) coordinate corresponing to the given position.  If this
+ * returns FALSE, then the given position isn't being displayed.
+ *)
+
+  PosToXYProc = PROCEDURE ( XmTextWidget,
+                            Xm.XmTextPosition,
+                            VAR SYSTEM.INT16, (* These are relative to the *)
+                            VAR SYSTEM.INT16 ):
+                            Xt.Boolean;       (* innerwindow returned above. *)
+
+(*
+ * Measures the extent of a line.  Given the line number and starting position
+ * of a line, returns the starting position of the next line.  Also returns
+ * any extra information that the output module may want to associate with
+ * this line for future reference.  (In particular, it will want to associate
+ * a vertical coordinate for this line.)  This routine should return FALSE if
+ * it decides that this line will not fit in the window.  FALSE should never
+ * be returned if the line number is zero.  Output may assume that the line
+ * table for all preceeding lines have already been set.  In particular, when
+ * this routine will return FALSE, then output knows that the entire linetable
+ * has been calculated; that is a good time for it to look over the linetable
+ * and decide if it wants to do something obnoxious like resize the window.
+ *
+ * A possible value to put in nextpos is PASTENDPOS.  This indicates that the
+ * current line contains the end of the text in the source.
+ *
+ * nextpos may be NULL.  If it is, then this indicates that we only want to
+ * know if the line will fit on the window.  The caller already has its own
+ * idea where the next line will start if it does fit.  (If nextpos is NULL,
+ * then no extra information should be generated, and the 'extra' parameter
+ * should be ignored.)
+ *)
+
+CONST
+  PASTENDPOS = 2147483647; (* Biggest number that can fit in long *)
+
+TYPE
+  MeasureLineProc = PROCEDURE ( XmTextWidget,
+                                LineNum,
+                                Xm.XmTextPosition,
+                                VAR Xm.XmTextPosition,
+                                LineTableExtrasList ): Xt.Boolean;
+
+(*
+ * Draw some text within a line.  The output finds out information about the
+ * line by calling the line table routines.
+ *
+ * %%% Document special cases (like lines containing PASTENDPOS).
+ *)
+
+  DrawProc = PROCEDURE ( XmTextWidget,
+                         LineNum,
+                         Xm.XmTextPosition,
+                         Xm.XmTextPosition,
+                         Xm.XmHighlightMode );
+
+(*
+ * Output should draw or erase an insertion point at the given position.
+ *)
+
+  DrawInsertionPointProc = PROCEDURE ( XmTextWidget,
+                                       Xm.XmTextPosition,
+                                       OnOrOff );
+
+(*
+ * Output should ensure that the given position is visible (e.g., not scrolled
+ * off horizontally).
+ *)
+
+  MakePositionVisibleProc = PROCEDURE ( XmTextWidget,
+                                        Xm.XmTextPosition );
+
+(* Text would like to move some lines around on the screen.  It would like to
+ * move lines fromline through toline (inclusive) to now start at line
+ * destline.  If output can perform this move by means of a XCopyArea or
+ * similar simple call, it does so and returns TRUE; otherwise, it will return
+ * FALSE.  If TRUE, output should modify affected values in the
+ * "extra" entries in the linetable, because after returning text will go ahead
+ * and move linetable entries around.
+ *)
+
+  MoveLinesProc = PROCEDURE ( XmTextWidget,
+                              LineNum,
+                              LineNum,
+                              LineNum ): Xt.Boolean;
+
+(*
+ * Inform output of invalidated positions.
+ *)
+
+  InvalidateProc = PROCEDURE ( XmTextWidget,
+                               Xm.XmTextPosition,
+                               Xm.XmTextPosition,
+                               LONGINT );
+(*
+ * Get preferred size of text widget based on the row and column
+ * resources multiplied by font attributes as well as adding the
+ * margin resource values to the computed size.
+ *)
+
+  GetPreferredSizeProc = PROCEDURE ( Xt.Widget,
+                                     VAR Xt.Dimension,
+                                     VAR Xt.Dimension );
+
+(*
+ * Get values out of the output object.
+ *)
+
+  GetValuesProc = PROCEDURE ( Xt.Widget,
+                              Xt.ArgList,
+                              Xt.Cardinal );
+
+(*
+ * Set values in the output object.
+ *)
+
+  SetValuesProc = PROCEDURE ( Xt.Widget,
+                              Xt.Widget,
+                              Xt.Widget,
+                              Xt.ArgList,
+                              VAR Xt.Cardinal ): Xt.Boolean;
+
+  _OutputRec = RECORD
+    data               : OutputData; (* Output-specific data; opaque type. *)
+    XYToPos            : XYToPosProc;
+    PosToXY            : PosToXYProc;
+    MeasureLine        : MeasureLineProc;
+    Draw               : DrawProc;
+    DrawInsertionPoint : DrawInsertionPointProc;
+    MakePositionVisible: MakePositionVisibleProc;
+    MoveLines          : MoveLinesProc;
+    Invalidate         : InvalidateProc;
+    GetPreferredSize   : GetPreferredSizeProc;
+    GetValues          : GetValuesProc;
+    SetValues          : SetValuesProc;
+    realize            : Xm.XmRealizeOutProc;
+    destroy            : Xt.XtWidgetProc;
+    resize             : Xm.XmResizeFlagProc;
+    expose             : Xt.XtExposeProc;
+  END;
+
+  OutputRec = _OutputRec;
+
+(********    Private Function Declarations    ********)
+
+PROCEDURE _XmTextFreeContextData ( w: Xt.Widget;
+                                   clientData: Xt.XtPointer;
+                                   callData: Xt.XtPointer );
+
+PROCEDURE _XmTextResetClipOrigin ( tw: XmTextWidget;
+                                   position: Xm.XmTextPosition;
+                                   clip_mask_reset: Xt.Boolean );
+
+PROCEDURE _XmTextAdjustGC ( tw: XmTextWidget );
+
+PROCEDURE _XmTextShouldWordWrap ( widget: XmTextWidget ): Xt.Boolean;
+
+PROCEDURE _XmTextScrollable ( widget: XmTextWidget ): Xt.Boolean;
+
+PROCEDURE _XmTextFindLineEnd ( widget: XmTextWidget;
+                               position: Xm.XmTextPosition;
+                               VAR extra: LineTableExtra ): Xm.XmTextPosition;
+
+PROCEDURE _XmTextOutputGetSecResData ( VAR secResDataRtn: Xm.XmSecondaryResourceData );
+
+PROCEDURE _XmTextGetNumberLines ( widget: XmTextWidget ): SYSTEM.int;
+
+PROCEDURE _XmTextMovingCursorPosition ( tw: XmTextWidget;
+                                        position: Xm.XmTextPosition );
+
+PROCEDURE _XmTextDrawDestination ( widget: XmTextWidget );
+
+PROCEDURE _XmTextClearDestination ( widget: XmTextWidget;
+                                    ignore_sens: Xt.Boolean );
+
+PROCEDURE _XmTextDestinationVisible ( w: Xt.Widget;
+                                      turn_on: Xt.Boolean );
+
+PROCEDURE _XmTextChangeBlinkBehavior ( widget: XmTextWidget;
+                                       newvalue: Xt.Boolean );
+
+PROCEDURE _XmTextOutputCreate ( wid: Xt.Widget;
+                                args: Xt.ArgList;
+                                num_args: Xt.Cardinal );
+
+PROCEDURE _XmTextGetBaselines ( widget: Xt.Widget;
+                                baselines: Xt.DimensionList;
+                                VAR line_count: SYSTEM.int ): Xt.Boolean;
+
+PROCEDURE _XmTextGetDisplayRect ( w: Xt.Widget;
+                                  VAR display_rect: Xlib.XRectangle ): Xt.Boolean;
+
+PROCEDURE _XmTextMarginsProc ( w: Xt.Widget;
+                               VAR margins_rec: Xm.XmBaselineMargins );
+
+PROCEDURE _XmTextChangeHOffset ( widget: XmTextWidget;
+                                 length: SYSTEM.int );
+
+PROCEDURE _XmTextToggleCursorGC ( widget: Xt.Widget );
+
+(********    End Private Function Declarations    ********)
+
+(* ------------------------------------------------------- *)
+(*                     Xm/TextStrSoP.h                     *)
+(* ------------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2.3
+ *)
+
+(****************************************************************
+ *
+ * Definitions for use by sources and source users.
+ *
+ ****************************************************************)
+
+CONST
+  EditDone = 0;
+  EditError = 1;
+  EditReject = 2;
+
+TYPE
+  XmTextStatus = SYSTEM.int;
+
+CONST
+  XmsdLeft = 0;
+  XmsdRight = 1;
+
+TYPE
+  XmTextScanDirection = SYSTEM.int;
+
+  XmTextWidgetList = POINTER TO ARRAY [0..X.MAX_STUP_ARR] OF XmTextWidget;
+
+  _XmSourceDataRec = RECORD
+    source    : XmTextSource;    (* Backpointer to source record. *)
+    widgets   : XmTextWidgetList;(* Array of widgets displaying this source.*)
+    left      : Xm.XmTextPosition;
+    right     : Xm.XmTextPosition;(*Left and right extents of selection. *)
+    ptr       : Xt.String;       (* Actual string data. *)
+    value     : Xt.String;       (* Value of the string data. *)
+    gap_start : Xt.String;       (* Gapped buffer start pointer *)
+    gap_end   : Xt.String;       (* Gapped buffer end pointer *)
+    PSWC_NWLN : Xt.String;       (* Holder for char*,short*,int* rep of NWLN *)
+    length    : SYSTEM.int;      (* Number of chars of data. *)
+    maxlength : SYSTEM.int;      (* Space allocated. *)
+    old_length: SYSTEM.int;      (* Space allocated for value pointer. *)
+    numwidgets: SYSTEM.int;      (* Number of entries in above. *)
+    maxallowed: SYSTEM.int;      (* The user is not allowed to grow source
+      	      	      	      	  * to a size greater than this. *)
+    prim_time : X.Time;          (* time of primary selection *)
+    hasselection: Xt.Boolean;    (* Whether we own the selection. *)
+    editable  : Xt.Boolean;      (* Whether we allow any edits. *)
+  END;
+
+  XmSourceDataRec = _XmSourceDataRec;
+
+  XmSourceData = POINTER TO _XmSourceDataRec;
+
+  AddWidgetProc = PROCEDURE ( XmTextSource,
+                              XmTextWidget );
+
+  CountLinesProc = PROCEDURE ( XmTextSource,
+                               Xm.XmTextPosition,
+                               LONGCARD ): SYSTEM.int;
+
+  RemoveWidgetProc = PROCEDURE ( XmTextSource,
+                                 XmTextWidget );
+
+  ReadProc = PROCEDURE ( XmTextSource,
+                         Xm.XmTextPosition,(* starting position  *)
+                       	 Xm.XmTextPosition,(* The last position we're
+                              	      	    * interested in. Don't return info
+                                            * about any later positions. *)
+			 Xm.XmTextBlock ): Xm.XmTextPosition;
+
+(*  RETURN: text read in  *)
+
+  ReplaceProc = PROCEDURE ( XmTextWidget,
+                            VAR Xlib.XEvent,
+                            VAR Xm.XmTextPosition,
+                            VAR Xm.XmTextPosition,
+                            Xm.XmTextBlock,
+                            Xt.Boolean ): XmTextStatus;
+
+  ScanProc = PROCEDURE ( XmTextSource,
+                         Xm.XmTextPosition,
+                         Xm.XmTextScanType,
+                       	 XmTextScanDirection,(* Either XmsdLeft or XmsdRight *)
+                       	 SYSTEM.int,
+                         Xt.Boolean ): Xm.XmTextPosition;
+
+  GetSelectionProc = PROCEDURE ( XmTextSource,
+                                 VAR Xm.XmTextPosition,
+                                 VAR Xm.XmTextPosition ): Xt.Boolean;
+
+  SetSelectionProc = PROCEDURE ( XmTextSource,
+                                 Xm.XmTextPosition,
+                                 Xm.XmTextPosition,
+                               	 X.Time );
+
+  _XmTextSourceRec = RECORD
+    data        : XmSourceData;   (*  Source-defined data (opaque type).  *)
+    AddWidget   : AddWidgetProc;
+    CountLines  : CountLinesProc;
+    RemoveWidget: RemoveWidgetProc;
+    ReadSource  : ReadProc;
+    Replace     : ReplaceProc;
+    Scan        : ScanProc;
+    GetSelection: GetSelectionProc;
+    SetSelection: SetSelectionProc;
+  END;
+
+  XmTextSourceRec = _XmTextSourceRec;
+
+(********    Private Function Declarations    ********)
+
+PROCEDURE _XmStringSourceGetString ( tw: XmTextWidget;
+                                     from: Xm.XmTextPosition;
+                                     to: Xm.XmTextPosition;
+                                     want_wchar: Xt.Boolean ): Xt.String;
+
+PROCEDURE _XmTextFindStringBackwards ( w: Xt.Widget;
+                                       start: Xm.XmTextPosition;
+                                       search_string: ARRAY OF CHAR;
+                                       VAR position: Xm.XmTextPosition ): Xt.Boolean;
+
+PROCEDURE _XmTextFindStringForwards ( w: Xt.Widget;
+                                      start: Xm.XmTextPosition;
+                                      search_string: ARRAY OF CHAR;
+                                      VAR position: Xm.XmTextPosition ): Xt.Boolean;
+
+PROCEDURE _XmStringSourceFindString ( w: Xt.Widget;
+                                      start: Xm.XmTextPosition;
+                                      string: ARRAY OF CHAR;
+                                      VAR position: Xm.XmTextPosition ): Xt.Boolean;
+
+PROCEDURE _XmStringSourceSetGappedBuffer ( data: XmSourceData;
+                                           position: Xm.XmTextPosition );
+
+PROCEDURE _XmTextModifyVerify ( initiator: XmTextWidget;
+                                VAR event: Xlib.XEvent;
+                                VAR start: Xm.XmTextPosition;
+                                VAR end: Xm.XmTextPosition;
+                                VAR cursorPos: Xm.XmTextPosition;
+                                block: Xm.XmTextBlock;
+                                newblock: Xm.XmTextBlock;
+                                freeBlock: Xt.String ): Xt.Boolean;
+
+PROCEDURE _XmStringSourceCreate ( value: ARRAY OF CHAR;
+                                  is_wchar: Xt.Boolean ): XmTextSource;
+
+PROCEDURE _XmStringSourceDestroy ( source: XmTextSource );
+
+PROCEDURE _XmStringSourceGetValue ( source: XmTextSource;
+                                    want_wchar: Xt.Boolean ): Xt.String;
+
+PROCEDURE _XmStringSourceSetValue ( widget: XmTextWidget;
+                                    value: ARRAY OF CHAR );
+
+PROCEDURE _XmStringSourceHasSelection ( source: XmTextSource ): Xt.Boolean;
+
+PROCEDURE _XmStringSourceGetEditable ( source: XmTextSource ): Xt.Boolean;
+
+PROCEDURE _XmStringSourceSetEditable ( source: XmTextSource;
+                                       editable: Xt.Boolean );
+
+PROCEDURE _XmStringSourceGetMaxLength ( source: XmTextSource ): SYSTEM.int;
+
+PROCEDURE _XmStringSourceSetMaxLength ( source: XmTextSource;
+                                        max: SYSTEM.int );
+
+PROCEDURE _XmTextValueChanged ( initiator: XmTextWidget;
+                                VAR event: Xlib.XEvent );
+
+(********    End Private Function Declarations    ********)
+
+(* ---------------------------------------------------- *)
+(*                     Xm/TextInP.h                     *)
+(* ---------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2.3
+ *)
+
+(****************************************************************
+ *
+ * Definitions for modules implementing text input modules.
+ *
+ ****************************************************************)
+
+TYPE
+  SelectionHint = RECORD
+    x: SYSTEM.int;
+    y: SYSTEM.int;
+  END;
+
+  _InputDataRec = RECORD
+    widget : XmTextWidget;       (* Back-pointer to widget record. *)
+    sarray:Xm.XmTextScanTypeList;(* Description of what to cycle through on
+      	      	      	      	  * selections. *)
+    sarraycount : SYSTEM.int;    (* Number of elements in above. *)
+    new_sel_length : SYSTEM.int; (* New selection length for selection moves.*)
+    threshold   : SYSTEM.int;    (* number of pixels crossed -> drag *)
+    selectionHint: SelectionHint;(* saved coords of button down *)
+    Sel2Hint    : SelectionHint; (* saved the coords of button down *)
+    select_id   : Xt.XtIntervalId;
+    stype       : Xm.XmTextScanType;(* Current selection type. *)
+    extendDir   : XmTextScanDirection;
+    Sel2ExtendDir:XmTextScanDirection;
+    origLeft    : Xm.XmTextPosition;
+    origRight   : Xm.XmTextPosition;
+    Sel2OrigLeft: Xm.XmTextPosition;
+    Sel2OrigRight:Xm.XmTextPosition;
+    stuffpos    : Xm.XmTextPosition;
+    sel2Left    : Xm.XmTextPosition;
+    sel2Right   : Xm.XmTextPosition;(* secondary selection *)
+    anchor      : Xm.XmTextPosition;(* anchor point of the primary selection *)
+    select_pos_x: Xt.Position;   (* x position for timer-based scrolling *)
+    select_pos_y: Xt.Position;   (* y position for timer-based scrolling *)
+    pendingdelete:Xt.Boolean;    (* TRUE if we're implementing pending delete*)
+    syncing     : Xt.Boolean;    (* If TRUE, then we've multiple keystrokes *)
+    extending   : Xt.Boolean;    (* true if we are extending *)
+    Sel2Extending:Xt.Boolean;    (* true if we are extending *)
+    hasSel2     : Xt.Boolean;    (* has secondary selection *)
+    has_destination:Xt.Boolean;  (* has destination selection *)
+    selectionMove:Xt.Boolean;    (* delete selection after stuff *)
+    cancel      : Xt.Boolean;    (* indicates that cancel was pressed *)
+    overstrike  : Xt.Boolean;    (* overstrike *)
+    sel_start   : Xt.Boolean;    (* indicates that a btn2 was pressed *)
+    dest_time   : X.Time;        (* time of destination selection ownership *)
+    sec_time    : X.Time;        (* time of secondary selection ownership *)
+    lasttime    : X.Time;        (* Time of last event. *)
+  END;
+
+  InputDataRec = _InputDataRec;
+
+  InputData = POINTER TO _InputDataRec;
+
+(*
+ * Create a new instance of an input object.  By the time this is called,
+ * the widget context has been saved.
+ *)
+
+  InputCreateProc = PROCEDURE ( Xt.Widget,
+                                Xt.ArgList,
+                                Xt.Cardinal);
+
+(*
+ * Get values out of the input object.
+ *)
+
+  InputGetValuesProc = PROCEDURE ( Xt.Widget, Xt.ArgList,
+                                 Xt.Cardinal );
+
+(*
+ * Set values in the input object.
+ *)
+
+  InputSetValuesProc = PROCEDURE ( Xt.Widget,
+                                   Xt.Widget,
+                                   Xt.Widget,
+                                   Xt.ArgList,
+                                   Xt.Cardinal );
+
+(*
+ * Inform input of invalidated positions.
+ *)
+
+  InputInvalidateProc = PROCEDURE ( XmTextWidget,
+                                    Xm.XmTextPosition,
+                                    Xm.XmTextPosition,
+                                    LONGINT );
+
+(*
+ * Get secondary resources.
+ *)
+
+  InputGetSecResProc = PROCEDURE ( VAR Xm.XmSecondaryResourceData );
+
+  _InputRec = RECORD
+    data         : InputData; (* Input-specific data; opaque type. *)
+    Invalidate   : InputInvalidateProc;
+    GetValues    : InputGetValuesProc;
+    SetValues    : InputSetValuesProc;
+    destroy      : Xt.XtWidgetProc;
+    GetSecResData: InputGetSecResProc;
+  END;
+
+  InputRec = _InputRec;
+
+VAR
+  _XmdefaultTextActionsTable: Xt.XtPointer;
+  _XmdefaultTextActionsTableSize: Xt.Cardinal;
+
+(********    Private Function Declarations    ********)
+
+PROCEDURE _XmTextGetDropReciever ( w: Xt.Widget ): Xt.Widget;
+
+PROCEDURE _XmTextHasDestination ( w: Xt.Widget ): Xt.Boolean;
+
+PROCEDURE _XmTextSetDestinationSelection ( w: Xt.Widget;
+                                           position: Xm.XmTextPosition;
+                                           disown: Xt.Boolean;
+                                           set_time: X.Time ): Xt.Boolean;
+
+PROCEDURE _XmTextSetSel2 ( tw: XmTextWidget;
+                           left: Xm.XmTextPosition;
+                           right: Xm.XmTextPosition;
+                           set_time: X.Time ): Xt.Boolean;
+
+PROCEDURE _XmTextGetSel2 ( tw: XmTextWidget;
+                           VAR left: Xm.XmTextPosition;
+                           VAR right: Xm.XmTextPosition ): Xt.Boolean;
+
+PROCEDURE _XmTextInputGetSecResData ( VAR secResDataRtn: Xm.XmSecondaryResourceData );
+
+PROCEDURE _XmTextGetAnchor ( tw: XmTextWidget ): Xm.XmTextPosition;
+
+PROCEDURE _XmTextInputCreate ( wid: Xt.Widget;
+                               args: Xt.ArgList;
+                               num_args: Xt.Cardinal );
+
+(********    End Private Function Declarations    ********)
+
+(* ----------------------------------------------------- *)
+(*                     Xm/TextSelP.h                     *)
+(* ----------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2
+ *)
+
+(********    Private Function Declarations    ********)
+
+PROCEDURE _XmTextConvert ( w: Xt.Widget;
+                           VAR selection: X.Atom;
+                           VAR target: X.Atom;
+                           VAR type: X.Atom;
+                           VAR value: Xt.XtPointer;
+                           VAR length: Xt.Cardinal;
+                           VAR format: SYSTEM.int ): Xt.Boolean;
+
+PROCEDURE _XmTextLoseSelection ( w: Xt.Widget;
+                                 VAR selection: X.Atom );
+
+(********    End Private Function Declarations    ********)
+
+(* -------------------------------------------------- *)
+(*                     Xm/TextP.h                     *)
+(* -------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2.4
+ *)
+
+TYPE
+  Output = POINTER TO _OutputRec;
+
+  Input = POINTER TO _InputRec;
+
+CONST
+  TEXTWIDGETCLASS = 'Text';    (*  Resource class for the text widget.  *)
+
+TYPE
+  _XmTextClassPart = RECORD
+    extension: Xt.XtPointer;   (*  Pointer to extension record  *)
+  END;
+
+  XmTextClassPart = _XmTextClassPart;
+
+  _XmTextClassRec = RECORD
+    core_class     : Xt.CoreClassPart;
+    primitive_class: Xm.XmPrimitiveClassPart;
+    text_class     : XmTextClassPart;
+  END;
+
+  XmTextClassRec = _XmTextClassRec;
+
+  _LineRec = RECORD
+    start    : Xm.XmTextPosition; (* First position in this line. *)
+    changed  : Xt.Boolean;     (* TRUE if something in this line changed.  *)
+    changed_position: Xm.XmTextPosition; (* First position within the line that
+                                         has changed, if any. *)
+    past_end : Xt.Boolean;     (* TRUE if this line is past the end of any
+      	      	      	      	  line actually on the screen. *)
+    extra    : LineTableExtra; (* Extra info the output module keeps. *)
+  END;
+
+  LineRec = _LineRec;
+
+  Line = POINTER TO _LineRec;
+
+  _XmTextLineTableRec = RECORD
+<* IF __GEN_C__ THEN *>
+    start_pos: CARDINAL;       (* H2D: bit field. start_pos:31 *)
+    virt_line: CARDINAL;       (* H2D: bit field. virt_line:1 *)
+<* ELSE *>
+    start_pos: PACKEDSET OF [0..31]; (* H2D: bit fields:
+                                               start_pos:31,
+                                               virt_line:1. *)
+<* END *>
+  END;
+
+  XmTextLineTableRec = _XmTextLineTableRec;
+
+  XmTextLineTable = POINTER TO _XmTextLineTableRec;
+
+  _RangeRec = RECORD
+    from: Xm.XmTextPosition;
+    to  : Xm.XmTextPosition;   (*  Information on one range to repaint.  *)
+  END;
+
+  RangeRec = _RangeRec;
+
+  Range = POINTER TO _RangeRec;
+
+  Ranges = RECORD
+    number : Xt.Cardinal;   (* Number of ranges defined. *)
+    maximum: Xt.Cardinal;   (* Number of ranges we have space for. *)
+    range  : Range;   (* Pointer to array of ranges. *)
+  END;
+
+(*
+ * Structure for main text info.
+ *)
+
+  _XmTextPart = RECORD
+    source                : XmTextSource;      (* The source for this widget.*)
+    activate_callback     : Xt.XtCallbackList; (* command activate callback. *)
+    focus_callback        : Xt.XtCallbackList; (* Focus callback. *)
+    losing_focus_callback : Xt.XtCallbackList; (* Losing focus callback. *)
+    value_changed_callback: Xt.XtCallbackList; (* Value changed callback. *)
+    modify_verify_callback: Xt.XtCallbackList; (* Verify value to change callback. *)
+    wcs_modify_verify_callback:Xt.XtCallbackList;(* Verify value to change
+                                                    callback. *)
+    motion_verify_callback: Xt.XtCallbackList; (* Insert cursor position
+                                                * change callback. *)
+    gain_primary_callback : Xt.XtCallbackList; (* Gained ownership of Primary
+                                                * Selection *)
+    lose_primary_callback : Xt.XtCallbackList; (* Lost ownership of Primary
+                                                * Selection *)
+    value           : Xt.String;     (* The sring value in the widget *)
+    wc_value     : Xm.XmKeySymTable; (* Pointer for wchar_t value set by app *)
+    margin_height   : Xt.Dimension;  (* height between text borders and text *)
+    margin_width    : Xt.Dimension;  (* width between text borders and text *)
+    cursor_position_x:Xt.Position;   (* x pixel location of cursor *)
+    output_create  :OutputCreateProc;(* Routine to create the output portion.*)
+    input_create   :InputCreateProc; (* Routine to create the input portion. *)
+ (* The naming incongruity amongst the next three items was introduced
+    due to a collision with top_position as used as a Form constraint;
+    It has no other implications. *)
+    top_character    : Xm.XmTextPosition; (* First position to display.  *)
+    bottom_position  : Xm.XmTextPosition; (* Last position to display.  *)
+    cursor_position  : Xm.XmTextPosition; (* Location of the insertion point.  *)
+    max_length       : SYSTEM.int;     (* Sets the max. length of string  *)
+    edit_mode        : SYSTEM.int;     (* Sets the line editing mode
+                                        * (i.e. sinlge_line,multi_line,...) *)
+    auto_show_cursor_position:Xt.Boolean;(* If true, automatically try to show
+                                            the cursor position whenever it
+                                            changes. *)
+    editable       : Xt.Boolean; (* Determines if text is editable *)
+    verify_bell    : Xt.Boolean; (* Determines if bell is sounded when verify
+                                  * callback returns doit - False *)
+    add_mode       : Xt.Boolean; (* Determines the state of add moder  *)
+    traversed      : Xt.Boolean; (* Flag used with losing focus verification
+                                  * to indicate a traversal key pressed event*)
+    in_redisplay   : Xt.Boolean; (* Whether currently in the redisplay proc. *)
+    needs_redisplay: Xt.Boolean; (* Whether we need to repaint or refigure. *)
+    in_refigure_lines:Xt.Boolean;(* Whether currently in refigurelines proc. *)
+    needs_refigure_lines: Xt.Boolean;(* Whether we need to refigure. *)
+    in_setvalues   : Xt.Boolean; (* Use to reduce unnecessary redisplays and
+                                  * geometry requsets *)
+    in_resize      : Xt.Boolean; (* Make sure there are no geometry requests
+                                  * while we are in resize procedure. *)
+    in_expose      : Xt.Boolean; (* Make sure there are no geometry requests
+                                  * while we are in expose procedure. *)
+    highlight_changed:Xt.Boolean;(* Whether highlighting recently changed. *)
+    pendingoff     : Xt.Boolean; (* TRUE if we shouldn't do pending delete on
+                                  * the current selection. *)
+    char_size      : CHAR;       (* number of bytes for storing a character *)
+    on_or_off      : OnOrOff;    (* used to halt unecessary motion verify
+                                  * callback calls during primary moves. *)
+    output         : Output;     (* The output portion. *)
+    input          : Input;      (* The input portion. *)
+    first_position : Xm.XmTextPosition; (*  First legal position in the source. *)
+    last_position  : Xm.XmTextPosition; (* Last legal position in the source. *)
+    forget_past    : Xm.XmTextPosition; (* Forget all about positions past this.*)
+    force_display  : Xm.XmTextPosition; (* Force this position to be displayed. *)
+    new_top        : Xm.XmTextPosition; (* Desired new top position. *)
+    last_top_char  : Xm.XmTextPosition; (* unused - available. *)
+    dest_position  : Xm.XmTextPosition; (* Location of the destination point. *)
+    disable_depth  : SYSTEM.int; (* How many levels of disable we've done. *)
+    pending_scroll : SYSTEM.int; (* Number of lines we want to scroll. *)
+    total_lines    : SYSTEM.int; (* Total number of lines in the text widget *)
+    top_line       : SYSTEM.int; (* Line number of the top visible line *)
+    vsbar_scrolling: SYSTEM.int; (* scrolling using the vertical scrollbar *)
+    number_lines   : Xt.Cardinal;(* Number of line table entries. *)
+    maximum_lines  : Xt.Cardinal;(* Maximum number of line table entries. *)
+    line           : Line;       (* Pointer to array of line table entries. *)
+    repaint        : Ranges;     (* Info on the repaint ranges. *)
+    highlight     : Xm._XmHighlightData;(* Info on the highlighting regions. *)
+    old_highlight : Xm._XmHighlightData;(* Old value of above. *)
+    inner_widget   : Xt.Widget;  (* Pointer to widget which actually contains
+                                  * text (may be same or different from
+                                  * this record). *)
+    line_table     : XmTextLineTable;
+    table_size     : CARDINAL;
+    table_index    : CARDINAL;
+  END;
+
+  XmTextPart = _XmTextPart;
+
+  _XmTextRec = RECORD
+    core     : Xt.CorePart;
+    primitive: Xm.XmPrimitivePart;
+    text     : XmTextPart;
+  END;
+
+  XmTextRec = _XmTextRec;
+
+VAR
+  xmTextClassRec: XmTextClassRec;
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: these procedures corresponds to macros. *)
+PROCEDURE GetSrc ( widget: Xt.Widget ): XmTextSource;
+PROCEDURE ShouldWordWrap ( data: OutputData; widget: Xt.Widget ): Xt.Boolean;
+
+<* ELSE *>
+
+PROCEDURE / ShouldWordWrap ( data: OutputData; widget: Xt.Widget ): Xt.Boolean;
+PROCEDURE / GetSrc ( widget: Xt.Widget ): XmTextSource;
+
+<* END *>
+
+(********    Private Function Declarations    ********)
+
+PROCEDURE _XmTextFindScroll ( widget: XmTextWidget;
+                              start: Xm.XmTextPosition;
+                              delta: SYSTEM.int ): Xm.XmTextPosition;
+
+PROCEDURE _XmTextGetTotalLines ( widget: Xt.Widget ): SYSTEM.int;
+
+PROCEDURE _XmTextGetLineTable ( widget: Xt.Widget;
+                                VAR total_lines: SYSTEM.int ): XmTextLineTable;
+
+PROCEDURE _XmTextRealignLineTable ( widget: XmTextWidget;
+                                    VAR temp_table: XmTextLineTable;
+                                    VAR temp_table_size: SYSTEM.int;
+                                    cur_index: CARDINAL;
+                                    cur_start: Xm.XmTextPosition;
+                                    cur_end: Xm.XmTextPosition );
+
+PROCEDURE _XmTextGetTableIndex ( widget: XmTextWidget;
+                                 pos: Xm.XmTextPosition ): CARDINAL;
+
+PROCEDURE _XmTextUpdateLineTable ( widget: Xt.Widget;
+                                   start: Xm.XmTextPosition;
+                                   end: Xm.XmTextPosition;
+                                   block: Xm.XmTextBlock;
+                                   update: Xt.Boolean );
+
+PROCEDURE _XmTextMarkRedraw ( widget: XmTextWidget;
+                              left: Xm.XmTextPosition;
+                              right: Xm.XmTextPosition );
+
+PROCEDURE _XmTextNumLines ( widget: XmTextWidget ): LineNum;
+
+PROCEDURE _XmTextLineInfo ( widget: XmTextWidget;
+                            line: LineNum;
+                            VAR startpos: Xm.XmTextPosition;
+                            VAR extra: LineTableExtra );
+
+PROCEDURE _XmTextPosToLine ( widget: XmTextWidget;
+                             position: Xm.XmTextPosition ): LineNum;
+
+PROCEDURE _XmTextInvalidate ( widget: XmTextWidget;
+                              position: Xm.XmTextPosition;
+                              topos: Xm.XmTextPosition;
+                              delta: LONGINT );
+
+PROCEDURE _XmTextSetTopCharacter ( widget: Xt.Widget;
+                                   top_character: Xm.XmTextPosition );
+
+PROCEDURE _XmTextCountCharacters ( str: Xt.String;
+                                   num_count_bytes: SYSTEM.int ): SYSTEM.int;
+
+PROCEDURE _XmTextSetCursorPosition ( widget: Xt.Widget;
+                                     position: Xm.XmTextPosition );
+
+PROCEDURE _XmTextDisableRedisplay ( widget: XmTextWidget;
+                                    losesbackingstore: Xt.Boolean );
+
+PROCEDURE _XmTextEnableRedisplay ( widget: XmTextWidget );
+
+(********    End Private Function Declarations    ********)
+
+END TextP.

@@ -1,0 +1,240 @@
+(* Xm/ProtocolsP.def  Nov 12  16:1:55  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/ProtocolsP.h using H2D v1.18.1 *)
+
+(* $RCSfile: ProtocolsP.def,v $ $Revision: 4 $ $Date: 28.07.98 23:14 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+(* Merged headers: Xm/Protocols.h *)
+
+DEFINITION MODULE ["C"] ProtocolsP;
+
+IMPORT SYSTEM, X, Xm:=XmP, Xt:=IntrinsicP;
+(* H2D:  Required IMPORT clause: 
+IMPORT ProtocolsP, X, Xm:=XmP, Xt:=IntrinsicP;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(* ------------------------------------------------------ *)
+(*                     Xm/Protocols.h                     *)
+(* ------------------------------------------------------ *)
+
+(*
+ * Motif Release 1.2.3
+ *)
+
+(*  should be in Xm.h  *)
+
+CONST 
+  XmCR_WM_PROTOCOLS = 6666;
+
+(*  define the XM_PROTOCOLS atom for use in  routines  *)
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: this procedure corresponds to a macro. *)
+PROCEDURE XM_WM_PROTOCOL_ATOM ( shell: Xt.Widget ): X.Atom;
+PROCEDURE XmAddWMProtocols ( shell: Xt.Widget;
+                             protocols: X.PAAtom;
+                             num_protocols: Xt.Cardinal );
+PROCEDURE XmRemoveWMProtocols ( shell: Xt.Widget;
+                                protocols: X.PAAtom;
+                                num_protocols: Xt.Cardinal );
+PROCEDURE XmAddWMProtocolCallback ( shell: Xt.Widget;
+                                    protocol: X.Atom;
+                                    callback: Xt.XtCallbackProc;
+                                    closure: Xt.XtPointer );
+PROCEDURE XmRemoveWMProtocolCallback ( shell: Xt.Widget;
+                                       protocol: X.Atom;
+                                       callback: Xt.XtCallbackProc;
+                                       closure: Xt.XtPointer );
+PROCEDURE XmActivateWMProtocol ( shell: Xt.Widget;
+                                 protocol: X.Atom );
+PROCEDURE XmDeactivateWMProtocol ( shell: Xt.Widget;
+                                   protocol: X.Atom );
+PROCEDURE XmSetWMProtocolHooks ( shell: Xt.Widget;
+                                 protocol: X.Atom;
+                                 pre_h: Xt.XtCallbackProc;
+                                 pre_c: Xt.XtPointer;
+                                 post_h: Xt.XtCallbackProc;
+                                 post_c: Xt.XtPointer );
+
+<* ELSE *>
+
+PROCEDURE  / XM_WM_PROTOCOL_ATOM ( shell: Xt.Widget ): X.Atom;
+PROCEDURE  / XmAddWMProtocols ( shell: Xt.Widget;
+                                protocols: X.PAAtom;
+                                num_protocols: Xt.Cardinal );
+PROCEDURE  / XmRemoveWMProtocols ( shell: Xt.Widget;
+                                   protocols: X.PAAtom;
+                                   num_protocols: Xt.Cardinal );
+PROCEDURE  / XmAddWMProtocolCallback ( shell: Xt.Widget;
+                                       protocol: X.Atom;
+                                       callback: Xt.XtCallbackProc;
+                                       closure: Xt.XtPointer );
+PROCEDURE  / XmRemoveWMProtocolCallback ( shell: Xt.Widget;
+                                          protocol: X.Atom;
+                                          callback: Xt.XtCallbackProc;
+                                          closure: Xt.XtPointer );
+PROCEDURE  / XmActivateWMProtocol ( shell: Xt.Widget;
+                                    protocol: X.Atom );
+PROCEDURE  / XmDeactivateWMProtocol ( shell: Xt.Widget;
+                                      protocol: X.Atom );
+PROCEDURE  / XmSetWMProtocolHooks ( shell: Xt.Widget;
+                                    protocol: X.Atom;
+                                    pre_h: Xt.XtCallbackProc;
+                                    pre_c: Xt.XtPointer;
+                                    post_h: Xt.XtCallbackProc;
+                                    post_c: Xt.XtPointer );
+
+<* END *>
+
+(********    Public Function Declarations    ********)
+
+PROCEDURE XmAddProtocols ( shell: Xt.Widget;
+                           property: X.Atom;
+                           protocols: X.PAAtom;
+                           num_protocols: Xt.Cardinal );
+
+PROCEDURE XmRemoveProtocols ( shell: Xt.Widget;
+                              property: X.Atom;
+                              protocols: X.PAAtom;
+                              num_protocols: Xt.Cardinal );
+
+PROCEDURE XmAddProtocolCallback ( shell: Xt.Widget;
+                                  property: X.Atom;
+                                  proto_atom: X.Atom;
+                                  callback: Xt.XtCallbackProc;
+                                  closure: Xt.XtPointer );
+
+PROCEDURE XmRemoveProtocolCallback ( shell: Xt.Widget;
+                                     property: X.Atom;
+                                     proto_atom: X.Atom;
+                                     callback: Xt.XtCallbackProc;
+                                     closure: Xt.XtPointer );
+
+PROCEDURE XmActivateProtocol ( shell: Xt.Widget;
+                               property: X.Atom;
+                               proto_atom: X.Atom );
+
+PROCEDURE XmDeactivateProtocol ( shell: Xt.Widget;
+                                 property: X.Atom;
+                                 proto_atom: X.Atom );
+
+PROCEDURE XmSetProtocolHooks ( shell: Xt.Widget;
+                               property: X.Atom;
+                               proto_atom: X.Atom;
+                               pre_hook: Xt.XtCallbackProc;
+                               pre_closure: Xt.XtPointer;
+                               post_hook: Xt.XtCallbackProc;
+                               post_closure: Xt.XtPointer );
+
+(********    End Public Function Declarations    ********)
+
+(* ------------------------------------------------------ *)
+(*                    Xm/ProtocolsP.h                     *)
+(* ------------------------------------------------------ *)
+
+(*
+ * Motif Release 1.2
+ *)
+
+TYPE 
+  _XmProtocolClassPart = RECORD
+    extension: Xt.XtPointer;
+  END;
+
+  XmProtocolClassPart = _XmProtocolClassPart;
+
+  _XmProtocolClassRec = RECORD
+    object_class  : Xt.ObjectClassPart;
+    ext_class     : Xm.XmExtClassPart;
+    protocol_class: XmProtocolClassPart;
+  END;
+
+  XmProtocolClassRec = _XmProtocolClassRec;
+
+  XmProtocolObjectClass = POINTER TO _XmProtocolClassRec;
+
+  _XmProtocolPart = RECORD
+    pre_hook : Xt.XtCallbackRec;
+    post_hook: Xt.XtCallbackRec;
+    callbacks: Xt.XtCallbackList;
+    atom     : X.Atom;
+    active   : Xt.Boolean;
+  END;
+
+  XmProtocolPart = _XmProtocolPart;
+
+  XmProtocolPartPtr = POINTER TO _XmProtocolPart;
+
+  _XmProtocolRec = RECORD
+    object  : Xt.ObjectPart;
+    ext     : Xm.XmExtPart;
+    protocol: XmProtocolPart;
+  END;
+
+  XmProtocolRec = _XmProtocolRec;
+
+  XmProtocol = POINTER TO _XmProtocolRec;
+
+  XmProtocolList = POINTER TO ARRAY [0..X.MAX_STUP_ARR] OF XmProtocol;
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: this procedure corresponds to a macro. *)
+PROCEDURE XmIsProtocol ( w: Xt.Widget ): Xt.Boolean;
+
+<* ELSE *>
+
+PROCEDURE  / XmIsProtocol ( w: Xt.Widget ): Xt.Boolean;
+
+<* END *>
+
+(*  Class record constants  *)
+
+VAR 
+  xmProtocolClassRec: XmProtocolClassRec;
+  xmProtocolObjectClass: Xt.WidgetClass;
+
+TYPE 
+  _XmProtocolMgrRec = RECORD
+    property     : X.Atom;
+    protocols    : XmProtocolList;
+    num_protocols: Xt.Cardinal;
+    max_protocols: Xt.Cardinal;
+  END;
+
+  XmProtocolMgrRec = _XmProtocolMgrRec;
+
+  XmProtocolMgr = POINTER TO _XmProtocolMgrRec;
+
+  XmProtocolMgrList = POINTER TO ARRAY [0..X.MAX_STUP_ARR] OF XmProtocolMgr;
+
+  _XmAllProtocolsMgrRec = RECORD
+    protocol_mgrs    : XmProtocolMgrList;
+    num_protocol_mgrs: Xt.Cardinal;
+    max_protocol_mgrs: Xt.Cardinal;
+    shell            : Xt.Widget;
+  END;
+
+  XmAllProtocolsMgrRec = _XmAllProtocolsMgrRec;
+
+  XmAllProtocolsMgr = POINTER TO _XmAllProtocolsMgrRec;
+
+(********    Private Function Declarations    ********)
+
+PROCEDURE _XmInstallProtocols ( w: Xt.Widget );
+
+(********    End Private Function Declarations    ********)
+
+END ProtocolsP.

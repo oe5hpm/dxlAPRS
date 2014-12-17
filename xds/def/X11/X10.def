@@ -1,0 +1,104 @@
+(* X11/X10.def  Apr 12  15:8:42  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted using H2D v1.00 from X11/X10.h. *)
+
+(* $RCSfile: X10.def,v $ $Revision: 5 $ $Date: 9.11.99 20:45 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *>
+<* IF NOT DEFINED(GENCTYPES) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+
+DEFINITION MODULE ["C"] X10;
+
+IMPORT SYSTEM, X, Xlib;
+(* H2D: to import this module write following text:
+IMPORT X10, X, Xlib;
+*)
+
+FROM X IMPORT MAX_STUP_ARR;
+
+(*  $XConsortium: X10.h,v 11.12 94/04/17 20:11:33 jim Exp $  *)
+
+(*
+ *	X10.h - Header definition and support file for the C subroutine
+ *	interface library for V10 support routines.
+ *)
+
+(*  Used in XDraw and XDrawFilled  *)
+
+TYPE 
+  Vertex = RECORD
+    x    : SYSTEM.INT16;
+    y    : SYSTEM.INT16;
+    flags: SYSTEM.CARD16;
+  END;
+
+(*  The meanings of the flag bits.  If the bit is 1 the predicate is true  *)
+
+CONST 
+  VertexRelative = 1H;                 (*  else absolute  *)
+  VertexDontDraw = 2H;                 (*  else draw  *)
+  VertexCurved = 4H;                   (*  else straight  *)
+  VertexStartClosed = 8H;              (*  else not  *)
+  VertexEndClosed = 10H;               (*  else not  *)
+  VertexDrawLastPoint = 20H;           (*  else don't  *)
+
+(*
+The VertexDrawLastPoint option has not been implemented in XDraw and
+XDrawFilled so it shouldn't be defined.
+*)
+
+(*
+ * XAssoc - Associations used in the XAssocTable data structure. The
+ * associations are used as circular queue entries in the association table
+ * which is contains an array of circular queues (buckets).
+ *)
+
+<*- GENTYPEDEF *>
+
+TYPE 
+  PtrXAssoc = POINTER TO XAssoc;
+  PAXAssoc  = POINTER TO AXAssoc;
+
+  PtrDisplay = Xlib.PtrDisplay;
+
+<*+ GENTYPEDEF *>
+
+  XAssoc = RECORD
+    next   : PtrXAssoc;       (*  Next object in this bucket.  *)
+    prev   : PtrXAssoc;       (*  Previous obejct in this bucket.  *)
+    display: PtrDisplay;      (*  Display which ownes the id.  *)
+    x_id   : X.XID;           (*  X Window System id.  *)
+    data   : SYSTEM.ADDRESS;  (*  Pointer to untyped memory.  *)
+  END;
+
+(*
+ * XAssocTable - X Window System id to data structure pointer association
+ * table.  An XAssocTable is a hash table whose buckets are circular
+ * queues of XAssoc's.  The XAssocTable is constructed from an array of
+ * XAssoc's which are the circular queue headers (bucket headers).
+ * An XAssocTable consists an XAssoc pointer that points to the first
+ * bucket in the bucket array and an integer that indicates the number
+ * of buckets in the array.
+ *)
+
+  XAssocTable = RECORD
+    buckets: PAXAssoc;     (*  Pointer to first bucket in bucket array. *)
+    size   : SYSTEM.int;   (*  Table size (number of buckets).  *)
+  END;
+
+<*- GENTYPEDEF *>
+
+  AXAssoc   = ARRAY [0..MAX_STUP_ARR] OF XAssoc;
+  PtrXAssocTable = POINTER TO XAssocTable;
+
+<*+ GENTYPEDEF *>
+
+PROCEDURE XCreateAssocTable( SEQ arg0: SYSTEM.BYTE ): PtrXAssocTable;
+
+PROCEDURE XLookUpAssoc( SEQ arg0: SYSTEM.BYTE ): Xlib.XPointer;
+
+END X10.

@@ -1,0 +1,98 @@
+(* (c) xTech 1992,93. All Rights Reserved *)
+DEFINITION MODULE TimeConv; 
+
+IMPORT  SysClock;
+
+TYPE DateTime = SysClock.DateTime;
+
+PROCEDURE Compare(dl,dr: DateTime): INTEGER;
+(* if "dl" or "dr" is invalid, returns 0;
+   returns value <0 if "dl" is before than "dr";
+   returns value >0 if "dl" is after  than "dr";
+   returns 0 if "dl" is equal to  "dr";
+*)
+
+PROCEDURE SubDateDays(dl,dr: DateTime): CARDINAL;
+(*
+   returns number of days passed from "dr" to "dr";
+   if one of dates is invalid or if "dl" is before than "dr"
+   returns 0
+*)
+
+PROCEDURE SubDateSecs(dl,dr: DateTime): CARDINAL;
+(*
+   returns number of seconds passed from "dr" to "dr";
+   if one of dates is invalid or if "dl" is before than "dr"
+   returns 0
+*)
+
+PROCEDURE AddDateDays(d: DateTime; days: CARDINAL; VAR res: DateTime);
+(*
+  add "days" days to date "d" and assignes resulting date
+  description to "res";
+  IF "d" is invalid, "res" will be assigned to first valid date
+*)
+
+PROCEDURE AddDateSecs(d: DateTime; secs: CARDINAL; VAR res: DateTime);
+(*
+  add "secs" seconds to date "d" and assignes resulting date
+  description to "res";
+  IF "d" is invalid, "res" will be assigned to first valid date
+*)
+
+PROCEDURE TheDayNumber     (d: DateTime): CARDINAL;
+(*
+  returns the ordinal number of the day for valid date "d";
+  if "d" is invalid, returns 0
+*)
+
+PROCEDURE TheFractionNumber(d: DateTime): CARDINAL;
+(*
+  returns number fractions passed from time 0:00:00.00
+  of the day for valid date "d";
+  if "d" is invalid, returns 0
+*)
+
+PROCEDURE WeekDay(d: DateTime): CARDINAL;
+(*
+  returns week day for valid date "d":
+  0 - sunday, 1 - monday etc.
+  if "d" is invalid, returns 0
+*)
+
+(*
+        Next procedures are system-dependent.
+*)
+
+PROCEDURE millisecs(): CARDINAL;
+(*
+  returns number of miliseconds passed from
+  the time 0:00:00.00 of current date as known to system
+*)
+
+PROCEDURE time(): CARDINAL;
+(*
+  returns number of seconds passed from the time
+  0:00:00.00 at first valid date for the system
+*)
+
+PROCEDURE unpack(VAR d: DateTime;     secs: CARDINAL);
+(*
+  assigns to "d" value corresponding to date/time for "secs"
+  seconds later than starting time/date for the system;
+  This procedure can be used to examine the first system time/date:
+    unpack(firstDateTime,0);
+*)
+
+PROCEDURE pack  (    d: DateTime; VAR secs: CARDINAL);
+(*
+  the effect is opposit to the procedure "unpack"
+*)
+
+PROCEDURE weekday(t: CARDINAL): CARDINAL;
+(*
+  equal to calls
+    unpack(tmpDateTime,t); RETURN WeekDay(tmpDateTime);
+*)
+
+END TimeConv.

@@ -1,0 +1,25 @@
+compiling hints for C-Sources by OE5HPM@OE5XBL.#OE5.AUT.EU
+
+build for X86 with i386 (32-bit) host system
+============================================
+install following packages:
+- libX11-dev   (sudo apt-get install libX11-dev)
+- libXext-dev  (sudo apt-get install libXext-dev)
+- libpng-dev   (sudo apt-get install libpng-dev)
+
+run 'make x86'
+
+Test
+
+build for X86 with i686 (64-bit) host system
+============================================
+install following packages:
+- libX11-dev   (sudo apt-get install libX11-dev:i386)
+- libXext-dev  (sudo apt-get install libXext-dev:i386)
+
+maybe you have also to install:
+- ia32-libs
+- libc6-dev-i386
+
+run 'make x86'
+

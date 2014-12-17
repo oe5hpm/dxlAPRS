@@ -1,0 +1,129 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 4.01 Transitional//EN">
+<HTML>
+<HEAD>
+<TITLE>Limitations and restrictions</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<P><HR>
+<A NAME="0591">
+<A HREF="xm000.html#root" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="xm012.html#0590" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0592" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H1>Limitations and restrictions</H1>
+
+<P>There are some limitations and restrictions in implementation of both Modula-2 and Oberon-2 compilers. 
+<P><UL>
+<LI><A HREF="#0592" TARGET=body>Length of identifiers</A>
+<LI><A HREF="#0593" TARGET=body>Length of literal strings</A>
+<LI><A HREF="#0594" TARGET=body>Record extension hierarchy</A>
+<LI><A HREF="#0595" TARGET=body>Unimplemented ISO libraries</A>
+<LI><A HREF="#0596" TARGET=body>Unimplemented Oakwood libraries</A>
+<LI><A HREF="#0597" TARGET=body>Whole overflow</A>
+<LI><A HREF="#0598" TARGET=body>Coroutines</A>
+<LI><A HREF="#0599" TARGET=body>Dynamic loader</A>
+</UL>
+<P><HR>
+<A NAME="0592">
+<A HREF="#0591" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0591" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0593" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Length of identifiers</H2>
+
+<P>The length of an identifier is at most 127 characters. 
+<P>There may be further limitations imposed by your C compiler and linker. Please check the appropriate reference manuals. 
+<P><HR>
+<A NAME="0593">
+<A HREF="#0591" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0592" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0594" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Length of literal strings</H2>
+
+<P>The length of a literal string is at most 256 characters. Longer strings may be constructed using the string concatenation operator (See <A HREF="xm007.html#0397" TARGET=body>Strings</A>). 
+<P><HR>
+<A NAME="0594">
+<A HREF="#0591" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0593" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0595" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Record extension hierarchy</H2>
+
+<P>The depth of a record extension hierarchy is at most 15 extensions. 
+<P><HR>
+<A NAME="0595">
+<A HREF="#0591" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0594" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0596" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Unimplemented ISO libraries</H2>
+
+<P>The following Modula-2 ISO standard library modules are not available in the current release: 
+<P><TABLE CELLSPACING=0>
+<TR>
+<TD  STYLE="padding:0px 3px;"><B>TermFile </B></TD>
+<TD  STYLE="padding:0px 3px;">Access to an interactive terminal </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><B>LowLong </B></TD>
+<TD  STYLE="padding:0px 3px;">Access to underlying properties of the type <TT>LONGREAL</TT> </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><B>LowReal </B></TD>
+<TD  STYLE="padding:0px 3px;">Access to underlying properties of the type <TT>REAL</TT> </TD>
+</TR>
+</TABLE>
+<P><HR>
+<A NAME="0596">
+<A HREF="#0591" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0595" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0597" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Unimplemented Oakwood libraries</H2>
+
+<P>The following Oberon-2 Oakwood library modules are not available in the current release: 
+<P><TABLE CELLSPACING=0>
+<TR>
+<TD  STYLE="padding:0px 3px;"><B>Input </B></TD>
+<TD  STYLE="padding:0px 3px;">Keyboard and pointer device access </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><B>Files </B></TD>
+<TD  STYLE="padding:0px 3px;">File input/output, riders </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><B>XYPlane </B></TD>
+<TD  STYLE="padding:0px 3px;">Elementary pixel plotting </TD>
+</TR>
+</TABLE>
+<P><HR>
+<A NAME="0597">
+<A HREF="#0591" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0596" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0598" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Whole overflow</H2>
+
+<P>The whole overflow exception is not detected in the current release. 
+<P><HR>
+<A NAME="0598">
+<A HREF="#0591" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0597" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0599" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Coroutines</H2>
+
+<P>The current release provides a restricted implementation of the system module <B>COROUTINES</B>: the interrupt requests are not detected. 
+<P><HR>
+<A NAME="0599">
+<A HREF="#0591" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0598" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="xm014.html#0600" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Dynamic loader</H2>
+
+<P>The Oberon-2 dynamic loading facility is not provided in the current release.  
+</BODY>
+</HTML>

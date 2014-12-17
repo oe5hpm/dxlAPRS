@@ -1,0 +1,20 @@
+% C and C++ key words
+int double case auto asm break default char continue const
+do float enum else extern goto for if struct short
+register long return static sizeof union switch typedef
+unsigned void while signed volatile class delete friend inline new
+operator overload private public protected template this virtual try
+interrupt cdecl
+
+%%%
+pow pow2 free malloc abort div abs min max exit complex remove strcmp strcat
+strcpy read write comp main getchar getc perror raise system ok Create
+time clock inp exp log tan cos sin sinh cosh j0 true false EOF NULL y0
+OVERFLOW EFAULT stdin stdout stderr ungetc puts FILE errno truncate
+
+%% Watcom
+Collect Equation Option Block comment help lock unlock
+
+%% SL1.h
+VPTR RPTR
+

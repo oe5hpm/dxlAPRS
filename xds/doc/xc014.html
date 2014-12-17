@@ -1,0 +1,103 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 4.01 Transitional//EN">
+<HTML>
+<HEAD>
+<TITLE>Limitations and restrictions</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<P><HR>
+<A NAME="0552">
+<A HREF="xc000.html#root" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="xc013.html#0551" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0553" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H1>Limitations and restrictions</H1>
+
+<P>There are some limitations and restrictions in implementation of both Modula-2 and Oberon-2 compilers. 
+<P><UL>
+<LI><A HREF="#0553" TARGET=body>Length of identifiers</A>
+<LI><A HREF="#0554" TARGET=body>Length of literal strings</A>
+<LI><A HREF="#0555" TARGET=body>Record extension hierarchy</A>
+<LI><A HREF="#0556" TARGET=body>Unimplemented ISO libraries</A>
+<LI><A HREF="#0557" TARGET=body>Unimplemented Oakwood libraries</A>
+<LI><A HREF="#0558" TARGET=body>Coroutines</A>
+<LI><A HREF="#0559" TARGET=body>Dynamic loader</A>
+</UL>
+<P><HR>
+<A NAME="0553">
+<A HREF="#0552" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0552" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0554" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Length of identifiers</H2>
+
+<P>The length of an identifier is at most 127 characters. 
+<P><HR>
+<A NAME="0554">
+<A HREF="#0552" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0553" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0555" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Length of literal strings</H2>
+
+<P>The length of a literal string is at most 256 characters. Longer strings may be constructed using the string concatenation operator (See <A HREF="xc007.html#0382" TARGET=body>Strings</A>). 
+<P><HR>
+<A NAME="0555">
+<A HREF="#0552" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0554" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0556" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Record extension hierarchy</H2>
+
+<P>The depth of a record extension hierarchy is at most 15 extensions. 
+<P><HR>
+<A NAME="0556">
+<A HREF="#0552" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0555" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0557" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Unimplemented ISO libraries</H2>
+
+<P><HR>
+<A NAME="0557">
+<A HREF="#0552" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0556" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0558" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Unimplemented Oakwood libraries</H2>
+
+<P>The following Oberon-2 Oakwood library modules are not available in the current release: 
+<P><TABLE CELLSPACING=0>
+<TR>
+<TD  STYLE="padding:0px 3px;"><B>Input </B></TD>
+<TD  STYLE="padding:0px 3px;">Keyboard and pointer device access </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><B>Files </B></TD>
+<TD  STYLE="padding:0px 3px;">File input/output, riders </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><B>XYPlane </B></TD>
+<TD  STYLE="padding:0px 3px;">Elementary pixel plotting </TD>
+</TR>
+</TABLE>
+<P><HR>
+<A NAME="0558">
+<A HREF="#0552" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0557" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0559" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Coroutines</H2>
+
+<P>The current release provides a restricted implementation of the system module <B>COROUTINES</B>: the interrupt requests are not detected. 
+<P><HR>
+<A NAME="0559">
+<A HREF="#0552" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0558" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="xc015.html#0560" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Dynamic loader</H2>
+
+<P>The Oberon-2 dynamic loading facility is not provided in the current release.  
+</BODY>
+</HTML>

@@ -1,0 +1,153 @@
+(* Xm/ToggleBP.def  Nov 12  19:50:54  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/ToggleBP.h using H2D v1.18.1 *)
+
+(* $RCSfile: ToggleBP.def,v $ $Revision: 4 $ $Date: 28.07.98 23:15 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+(* Merged headers: Xm/ToggleB.h *)
+
+DEFINITION MODULE ["C"] ToggleBP;
+
+IMPORT SYSTEM, X, Xlib, Xm:=XmP, Xt:=IntrinsicP, LabelP;
+(* H2D:  Required IMPORT clause: 
+IMPORT ToggleBP, X, Xlib, XmP, IntrinsicP, LabelP;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992, 1993 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(* ---------------------------------------------------- *)
+(*                     Xm/ToggleB.h                     *)
+(* ---------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2
+ *)
+
+(***********************************************************************
+ *
+ * Toggle Widget
+ *
+ ***********************************************************************)
+
+VAR 
+  xmToggleButtonWidgetClass: Xt.WidgetClass;
+
+TYPE 
+  XmToggleButtonWidgetClass = POINTER TO _XmToggleButtonClassRec;
+
+  XmToggleButtonWidget = POINTER TO _XmToggleButtonRec;
+
+(* fast subclass define  *)
+(********    Public Function Declarations    ********)
+
+PROCEDURE XmToggleButtonGetState ( w: Xt.Widget ): Xt.Boolean;
+
+PROCEDURE XmToggleButtonSetState ( w: Xt.Widget;
+                                   newstate: Xt.Boolean;
+                                   notify: Xt.Boolean );
+
+PROCEDURE XmCreateToggleButton ( parent: Xt.Widget;
+                                 name: ARRAY OF CHAR;
+                                 arglist: Xt.ArgList;
+                                 argCount: Xt.Cardinal ): Xt.Widget;
+
+(********    End Public Function Declarations    ********)
+
+(* ---------------------------------------------------- *)
+(*                    Xm/ToggleBP.h                     *)
+(* ---------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2.3
+ *)
+
+(********************************************
+ *
+ *   No new fields need to be defined
+ *   for the Toggle widget class record
+ *
+ ********************************************)
+
+TYPE 
+  _XmToggleButtonClassPart = RECORD
+    extension: Xt.XtPointer;   (*  Pointer to extension record  *)
+  END;
+
+  XmToggleButtonClassPart = _XmToggleButtonClassPart;
+
+(****************************************************
+ *
+ * Full class record declaration for Toggle class
+ *
+ ****************************************************)
+
+  _XmToggleButtonClassRec = RECORD
+    core_class     : Xt.CoreClassPart;
+    primitive_class: Xm.XmPrimitiveClassPart;
+    label_class    : LabelP.XmLabelClassPart;
+    toggle_class   : XmToggleButtonClassPart;
+  END;
+
+  XmToggleButtonClassRec = _XmToggleButtonClassRec;
+
+(********************************************
+ *
+ * No new fields needed for instance record
+ *
+ ********************************************)
+
+  _XmToggleButtonPart = RECORD
+    ind_type        : SHORTCARD;
+    visible         : Xt.Boolean;
+    spacing         : Xt.Dimension;
+    indicator_dim   : Xt.Dimension;
+    indicator_set   : Xt.Boolean;
+    on_pixmap       : X.Pixmap;
+    insen_pixmap    : X.Pixmap;
+    set             : Xt.Boolean;
+    visual_set      : Xt.Boolean; (* used for visuals and does not reflect
+                                   * the true state of the button *)
+    ind_on          : Xt.Boolean;
+    fill_on_select  : Xt.Boolean;
+    select_color    : Xt.Pixel;
+    select_GC       : Xlib.GC;
+    background_gc   : Xlib.GC;
+    value_changed_CB: Xt.XtCallbackList;
+    arm_CB          : Xt.XtCallbackList;
+    disarm_CB       : Xt.XtCallbackList;
+    Armed           : Xt.Boolean;
+  END;
+
+  XmToggleButtonPart = _XmToggleButtonPart;
+
+(****************************************************************
+ *
+ * Full instance record declaration
+ *
+ ****************************************************************)
+
+  _XmToggleButtonRec = RECORD
+    core     : Xt.CorePart;
+    primitive: Xm.XmPrimitivePart;
+    label    : LabelP.XmLabelPart;
+    toggle   : XmToggleButtonPart;
+  END;
+
+  XmToggleButtonRec = _XmToggleButtonRec;
+
+VAR
+  xmToggleButtonClassRec: XmToggleButtonClassRec;
+
+(********    Private Function Declarations    ********)
+(********    End Private Function Declarations    ********)
+
+END ToggleBP.

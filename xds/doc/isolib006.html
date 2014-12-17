@@ -1,0 +1,700 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 4.01 Transitional//EN">
+<HTML>
+<HEAD>
+<TITLE>Miscellaneous</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<P><HR>
+<A NAME="0240">
+<A HREF="isolib000.html#root" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="isolib005.html#0239" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0241" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H1>Miscellaneous</H1>
+
+<P><UL>
+<LI><A HREF="#0241" TARGET=body>Module CharClass</A>
+<LI><A HREF="#0248" TARGET=body>Modules LowReal and LowLong</A>
+<LI><A HREF="#0265" TARGET=body>Module Storage</A>
+<LI><A HREF="#0271" TARGET=body>Module SysClock</A>
+</UL>
+<P><HR>
+<A NAME="0241"><A NAME="IsNumeric">
+<A HREF="#0240" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0240" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0242" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H2>Module CharClass</H2>
+The full set of values of the character type (the elementary type denoted by the pervasive identifier <TT>CHAR</TT>) is implementation-defined. The module <TT>CharClass</TT> allows a program to determine the classification of a given value of the character type of an implementation in a way that does not rely on there being a known literal representation of all members of the character set. 
+<P>The module <TT>CharClass</TT> provides predicates to test if a given value of the character type in an implementation is classified as a numeric, a letter, an upper-case letter, a lower-case letter, a value representing a control function, or as white space. 
+<P><UL>
+<LI><A HREF="#0242" TARGET=body>IsNumeric - Test for numeric character</A>
+<LI><A HREF="#0243" TARGET=body>IsLetter - Test for letter</A>
+<LI><A HREF="#0244" TARGET=body>IsUpper - Test for upper case letter</A>
+<LI><A HREF="#0245" TARGET=body>IsLower - Test for lower case letter</A>
+<LI><A HREF="#0246" TARGET=body>IsControl - Test for control character</A>
+<LI><A HREF="#0247" TARGET=body>IsWhiteSpace - Test for white space character</A>
+</UL>
+<P><HR>
+<A NAME="0242"><A NAME="IsLetter">
+<A HREF="#0241" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0241" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0243" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>IsNumeric - Test for numeric character</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;IsNumeric&nbsp;(ch:&nbsp;CHAR):&nbsp;BOOLEAN;
+</PRE>
+
+<P>Module <TT><A HREF="#0241" TARGET=body>CharClass</A></TT>
+<P>The function procedure <TT>IsNumeric</TT> returns <TT>TRUE</TT> if <TT>ch</TT> is a member of an implementation-defined set of numeric characters that should include the decimal digits, and <TT>FALSE</TT> otherwise. 
+<P><HR>
+<A NAME="0243"><A NAME="IsUpper">
+<A HREF="#0241" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0242" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0244" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>IsLetter - Test for letter</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;IsLetter&nbsp;(ch:&nbsp;CHAR):&nbsp;BOOLEAN;
+</PRE>
+
+<P>Module <TT><A HREF="#0241" TARGET=body>CharClass</A></TT>
+<P>The function procedure <TT>IsLetter</TT> returns <TT>TRUE</TT> if <TT>ch</TT> is a member of an implementation-defined set of letters that should include the required letters, and <TT>FALSE</TT> otherwise. 
+<P><HR>
+<A NAME="0244"><A NAME="IsLower">
+<A HREF="#0241" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0243" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0245" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>IsUpper - Test for upper case letter</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;IsUpper&nbsp;(ch:&nbsp;CHAR):&nbsp;BOOLEAN;
+</PRE>
+
+<P>Module <TT><A HREF="#0241" TARGET=body>CharClass</A></TT>
+<P>The function procedure <TT>IsUpper</TT> returns <TT>TRUE</TT> if <TT>ch</TT> is a member of an implementation-defined set of upper case letters that should include the required upper case letters, and <TT>FALSE</TT> otherwise. 
+<P><HR>
+<A NAME="0245"><A NAME="IsControl">
+<A HREF="#0241" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0244" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0246" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>IsLower - Test for lower case letter</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;IsLower&nbsp;(ch:&nbsp;CHAR):&nbsp;BOOLEAN;
+</PRE>
+
+<P>Module <TT><A HREF="#0241" TARGET=body>CharClass</A></TT>
+<P>The function procedure <TT>IsLower</TT> returns <TT>TRUE</TT> if <TT>ch</TT> is a member of an implementation-defined set of lower case letters that should include the required lower case letters, and <TT>FALSE</TT> otherwise. 
+<P><HR>
+<A NAME="0246"><A NAME="IsWhiteSpace">
+<A HREF="#0241" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0245" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0247" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>IsControl - Test for control character</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;IsControl&nbsp;(ch:&nbsp;CHAR):&nbsp;BOOLEAN;
+</PRE>
+
+<P>Module <TT><A HREF="#0241" TARGET=body>CharClass</A></TT>
+<P>The function procedure <TT>IsControl</TT> returns <TT>TRUE</TT> if <TT>ch</TT> is a member of an implementation-defined set of characters that represent control functions, and <TT>FALSE</TT> otherwise. 
+<P><HR>
+<A NAME="0247">
+<A HREF="#0241" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0246" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0248" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>IsWhiteSpace - Test for white space character</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;IsWhiteSpace&nbsp;(ch:&nbsp;CHAR):&nbsp;BOOLEAN;
+</PRE>
+
+<P>Module <TT><A HREF="#0241" TARGET=body>CharClass</A></TT>
+<P>The function procedure <TT>IsWhiteSpace</TT> returns <TT>TRUE</TT> if <TT>ch</TT> is either a space character or a member of an implementation-defined set of characters that represent format effectors, and <TT>FALSE</TT> otherwise. 
+<P><HR>
+<A NAME="0248"><A NAME="Constants and Types">
+<A HREF="#0240" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0247" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0249" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H2>Modules LowReal and LowLong</H2>
+Two modules are provided to give access to the underlying properties of the types <TT>REAL</TT> and <TT>LONGREAL</TT>. The two modules share common concepts, functions and values, and hence both modules are considered together. 
+<P>The module <TT>LowReal</TT> gives access to the underlying properties of the type <TT>REAL</TT>, while <TT>LowLong</TT> gives access to the same properties for the type <TT>LONGREAL</TT>. 
+<P>For implementations that conform to <I>ISO/IEC 10967-1:199x Information technology - Language independent arithmetic - Part1: Integer and floating point arithmetic</I>, a more precise specification is given in that International Standard. 
+<P>If the implementation of the corresponding real number type conforms to <I>ISO/IEC 10967-1:199x (LIA-1)</I>, procedure functions of a similar name correspond to the operations required by that International Standard. 
+<P><UL>
+<LI><A HREF="#0249" TARGET=body>Constants and Types - </A>
+<LI><A HREF="#0250" TARGET=body>exponent - Exponent value</A>
+<LI><A HREF="#0251" TARGET=body>fraction - Significand part</A>
+<LI><A HREF="#0252" TARGET=body>sign - Signum</A>
+<LI><A HREF="#0253" TARGET=body>succ - Next greater value</A>
+<LI><A HREF="#0254" TARGET=body>ulp - Unit in the last place</A>
+<LI><A HREF="#0255" TARGET=body>pred - Previous less value</A>
+<LI><A HREF="#0256" TARGET=body>intpart - Integral part</A>
+<LI><A HREF="#0257" TARGET=body>fractpart - Fractional part</A>
+<LI><A HREF="#0258" TARGET=body>scale - Scale</A>
+<LI><A HREF="#0259" TARGET=body>trunc - Truncate</A>
+<LI><A HREF="#0260" TARGET=body>round - Round</A>
+<LI><A HREF="#0261" TARGET=body>synthesize - Construct value</A>
+<LI><A HREF="#0262" TARGET=body>setMode - Set status flags</A>
+<LI><A HREF="#0263" TARGET=body>currentMode - Current status flags</A>
+<LI><A HREF="#0264" TARGET=body>IsLowException - Query exceptional state</A>
+</UL>
+<P><HR>
+<A NAME="0249"><A NAME="exponent">
+<A HREF="#0248" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0248" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0250" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>Constants and Types - </H3>
+ 
+<P><PRE>CONST
+&nbsp;&nbsp;radix&nbsp;=&nbsp;&lt;implementation-defined&nbsp;whole&nbsp;number&nbsp;value&gt;;
+&nbsp;&nbsp;places&nbsp;=&nbsp;&lt;implementation-defined&nbsp;whole&nbsp;number&nbsp;value&gt;;
+&nbsp;&nbsp;expoMin&nbsp;=&nbsp;&lt;implementation-defined&nbsp;whole&nbsp;number&nbsp;value&gt;;
+&nbsp;&nbsp;expoMax&nbsp;=&nbsp;&lt;implementation-defined&nbsp;whole&nbsp;number&nbsp;value&gt;;
+&nbsp;&nbsp;large&nbsp;=&nbsp;&lt;implementation-defined&nbsp;real&nbsp;number&nbsp;value&gt;;
+&nbsp;&nbsp;small&nbsp;=&nbsp;&lt;implementation-defined&nbsp;real&nbsp;number&nbsp;value&gt;;
+&nbsp;&nbsp;IEC559&nbsp;=&nbsp;&lt;implementation-defined&nbsp;BOOLEAN&nbsp;value&gt;;
+&nbsp;&nbsp;LIA1&nbsp;=&nbsp;&lt;implementation-defined&nbsp;BOOLEAN&nbsp;value&gt;;
+&nbsp;&nbsp;rounds&nbsp;=&nbsp;&lt;implementation-defined&nbsp;BOOLEAN&nbsp;value&gt;;
+&nbsp;&nbsp;gUnderflow&nbsp;=&nbsp;&lt;implementation-defined&nbsp;BOOLEAN&nbsp;value&gt;;
+&nbsp;&nbsp;exception&nbsp;=&nbsp;&lt;implementation-defined&nbsp;BOOLEAN&nbsp;value&gt;;
+&nbsp;&nbsp;extend&nbsp;=&nbsp;&lt;implementation-defined&nbsp;BOOLEAN&nbsp;value&gt;;
+&nbsp;&nbsp;nModes&nbsp;=&nbsp;&lt;implementation-defined&nbsp;whole&nbsp;number&nbsp;value&gt;;
+TYPE
+&nbsp;&nbsp;Modes&nbsp;=&nbsp;PACKEDSET&nbsp;OF&nbsp;[0&nbsp;..&nbsp;nModes-1];
+</PRE>
+
+<P>Modules: <TT><A HREF="#0248" TARGET=body>LowReal</A></TT>, <TT><A HREF="#0248" TARGET=body>LowLong</A></TT>
+<P>The values denoted by the constant identifiers exported from <TT>LowReal</TT> and <TT>LowLong</TT> are the implementation-defined values specified below. 
+<P>If an implementation provides facilities for dynamically changing the properties of the real number types, the constant values refer to the default properties. 
+<P>The value of <TT>places</TT>, and the other facilities in these modules, refer only to the representation used to store values. 
+<P><B>NOTE:</B> Some implementations may choose to compute expressions to greater precision than that used to store values. 
+<P>If the implementation of the corresponding real number type conforms to <I>ISO/IEC 10967-1:199x (LIA-1)</I>, the following correspondences hold: 
+<P><B>NOTE:</B> The value of the parameter <TT>fmax</TT>, required by <I>ISO/IEC 10967-1:199x</I>, is given by the predefined function <TT>MAX</TT> when applied to the corresponding real number type. 
+<DL>
+ 
+<DT><TT>radix</TT></DT>
+<DD>The whole number value of the radix used to represent the corresponding real number values. </DD>
+<DT><TT>places</TT></DT>
+<DD>The whole number value of the number of <TT>radix</TT> places used to store values of the corresponding real number type. </DD>
+<DT><TT>expoMin</TT></DT>
+<DD>The whole number value of the exponent minimum. </DD>
+<DT><TT>expoMax</TT></DT>
+<DD>The whole number value of the exponent maximum. <B>NOTE:</B> An implementation may choose values such that <TT>expoMin = expoMax</TT> (which will presumably be the case for a fixed point representation). </DD>
+<DT><TT>large</TT></DT>
+<DD>The largest value of the corresponding real number type. <B>NOTE:</B> On some implementations this may be a machine representation of infinity. </DD>
+<DT><TT>small</TT></DT>
+<DD>The smallest positive value of the corresponding real number type, represented to maximal precision. <B>NOTE:</B> If an implementation has stored values strictly between 0.0 and <TT>small</TT>, then presumably the implementation supports gradual underflow. </DD>
+<DT><TT>IEC559</TT></DT>
+<DD>A Boolean value that is true if and only if the implementation of the corresponding real number type conforms to <I>IEC 559:1989 (IEEE 754:1987)</I> in all regards. 
+<P><B>NOTES:</B> 
+<UL>
+ 
+<LI>If <TT>IEC559</TT> is true, the value of radix is <TT>2</TT>. </LI>
+<LI>If <TT>LowReal.IEC559</TT> is true, the 32-bit format of <I>IEC 559:1989</I> is used for the type REAL. </LI>
+<LI>If <TT>LowLong.IEC559</TT> is true, the 64-bit format of <I>IEC 559:1989</I> is used for the type LONGREAL. </LI>
+</UL>
+</DD>
+<DT><TT>LIA1</TT></DT>
+<DD>A Boolean value that is true if and only if the implementation of the corresponding real number type conforms to <I>ISO/IEC 10967-1:199x (LIA-1)</I> in all regards: parameters, arithmetic, exceptions, and notification. 
+<P><B>NOTE:</B> For implementations not conforming to <I>ISO/IEC 10967-1:199x</I>, the corresponding properties are implementation-defined | see 6.8.2.2. </DD>
+<DT><TT>rounds</TT></DT>
+<DD>A Boolean value that is true if and only if each operation produces a result that is one of the values of the corresponding real number type nearest to the mathematical result. 
+<P><B>NOTE:</B> If <TT>rounds</TT> is true, and the mathematical result lies mid-way between two values of the corresponding real number type, then the selection from the two possible values is implementation-dependent. </DD>
+<DT><TT>gUnderflow</TT></DT>
+<DD>A Boolean value that is true if and only if there are values of the corresponding real number type between 0.0 and <TT>small</TT>. </DD>
+<DT><TT>exception</TT></DT>
+<DD>A Boolean value that is true if and only if every operation that attempts to produce a real value out of range raises an exception. </DD>
+<DT><TT>extend</TT></DT>
+<DD>A Boolean value that is true if and only if expressions of the corresponding real number type are computed to higher precision than the stored values. 
+<P><B>NOTE:</B> If <TT>extend</TT> is true, then values greater than <TT>large</TT> can be computed in expressions, but cannot be stored in variables. </DD>
+<DT><TT>nModes</TT></DT>
+<DD>The whole number value giving the number of bit positions needed for the status flags for mode control. </DD>
+</DL>
+
+<P><HR>
+<A NAME="0250"><A NAME="fraction">
+<A HREF="#0248" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0249" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0251" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>exponent - Exponent value</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;exponent&nbsp;(x:&nbsp;REAL):&nbsp;INTEGER;
+PROCEDURE&nbsp;exponent&nbsp;(x:&nbsp;LONGREAL):&nbsp;INTEGER;
+</PRE>
+
+<P>Modules: <TT><A HREF="#0248" TARGET=body>LowReal</A></TT>, <TT><A HREF="#0248" TARGET=body>LowLong</A></TT>
+<P>The function procedure <TT>exponent</TT> returns the exponent value of <TT>x</TT> that lies between <TT>expoMin</TT> and <TT>expoMax</TT>. An exception occurs and may be raised if <TT>x</TT> is equal to 0.0. 
+<P><HR>
+<A NAME="0251"><A NAME="sign">
+<A HREF="#0248" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0250" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0252" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>fraction - Significand part</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;fraction&nbsp;(x:&nbsp;REAL):&nbsp;REAL;
+PROCEDURE&nbsp;fraction&nbsp;(x:&nbsp;LONGREAL):&nbsp;LONGREAL;
+</PRE>
+
+<P>Modules: <TT><A HREF="#0248" TARGET=body>LowReal</A></TT>, <TT><A HREF="#0248" TARGET=body>LowLong</A></TT>
+<P>The function procedure <TT>fraction</TT> returns the significand (or significant) part of <TT>x</TT>. Hence the following relationship shall hold: 
+<P><TT>x = scale(fraction(x), exponent(x))</TT> 
+<P><HR>
+<A NAME="0252"><A NAME="succ">
+<A HREF="#0248" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0251" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0253" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>sign - Signum</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;sign&nbsp;(x:&nbsp;REAL):&nbsp;REAL;
+PROCEDURE&nbsp;sign&nbsp;(x:&nbsp;LONGREAL):&nbsp;LONGREAL;
+</PRE>
+
+<P>Modules: <TT><A HREF="#0248" TARGET=body>LowReal</A></TT>, <TT><A HREF="#0248" TARGET=body>LowLong</A></TT>
+<P>The function procedure <TT>sign</TT> returns 1.0 if <TT>x</TT> is greater than 0.0, -1.0 if <TT>x</TT> is less than 0.0, or either 1.0 or -1.0 if <TT>x</TT> is equal to 0.0. 
+<P><B>NOTE:</B> The uncertainty about the handling of 0.0 is to allow for systems that distinguish between +0.0 and -0.0 (such as IEEE 754 systems). 
+<P><HR>
+<A NAME="0253"><A NAME="ulp">
+<A HREF="#0248" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0252" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0254" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>succ - Next greater value</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;succ&nbsp;(x:&nbsp;REAL):&nbsp;REAL;
+PROCEDURE&nbsp;succ&nbsp;(x:&nbsp;LONGREAL):&nbsp;LONGREAL;
+</PRE>
+
+<P>Modules: <TT><A HREF="#0248" TARGET=body>LowReal</A></TT>, <TT><A HREF="#0248" TARGET=body>LowLong</A></TT>
+<P>The function procedure <TT>succ</TT> returns the next value of the corresponding real number type greater than <TT>x</TT>, if such a value exists; otherwise an exception occurs and may be raised. 
+<P><HR>
+<A NAME="0254"><A NAME="pred">
+<A HREF="#0248" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0253" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0255" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>ulp - Unit in the last place</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;ulp&nbsp;(x:&nbsp;REAL):&nbsp;REAL;
+PROCEDURE&nbsp;ulp&nbsp;(x:&nbsp;LONGREAL):&nbsp;LONGREAL;
+</PRE>
+
+<P>Modules: <TT><A HREF="#0248" TARGET=body>LowReal</A></TT>, <TT><A HREF="#0248" TARGET=body>LowLong</A></TT>
+<P>The function procedure <TT>ulp</TT> returns the value of the corresponding real number type equal to a unit in the last place of <TT>x</TT>, if such a value exists; otherwise an exception occurs and may be raised. 
+<P><B>NOTE:</B> Thus, when the value exists, either <TT>ulp(x) = succ(x)-x</TT> or <TT>ulp(x) = x-pred(x)</TT> or both is true. 
+<P><HR>
+<A NAME="0255"><A NAME="intpart">
+<A HREF="#0248" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0254" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0256" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>pred - Previous less value</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;pred&nbsp;(x:&nbsp;REAL):&nbsp;REAL;
+PROCEDURE&nbsp;pred&nbsp;(x:&nbsp;LONGREAL):&nbsp;LONGREAL;
+</PRE>
+
+<P>Modules: <TT><A HREF="#0248" TARGET=body>LowReal</A></TT>, <TT><A HREF="#0248" TARGET=body>LowLong</A></TT>
+<P>The function procedure <TT>pred</TT> returns the next value of the corresponding real number type less than <TT>x</TT>, if such a value exists; otherwise an exception occurs and may be raised. 
+<P><HR>
+<A NAME="0256"><A NAME="fractpart">
+<A HREF="#0248" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0255" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0257" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>intpart - Integral part</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;intpart&nbsp;(x:&nbsp;REAL):&nbsp;REAL;
+PROCEDURE&nbsp;intpart&nbsp;(x:&nbsp;LONGREAL):&nbsp;LONGREAL;
+</PRE>
+
+<P>Modules: <TT><A HREF="#0248" TARGET=body>LowReal</A></TT>, <TT><A HREF="#0248" TARGET=body>LowLong</A></TT>
+<P>The function procedure <TT>intpart</TT> returns the integral part of <TT>x</TT>. For negative values, this shall be <TT>-intpart(abs(x))</TT>. 
+<P><HR>
+<A NAME="0257"><A NAME="scale">
+<A HREF="#0248" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0256" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0258" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>fractpart - Fractional part</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;fractpart&nbsp;(x:&nbsp;REAL):&nbsp;REAL;
+PROCEDURE&nbsp;fractpart&nbsp;(x:&nbsp;LONGREAL):&nbsp;LONGREAL;
+</PRE>
+
+<P>Modules: <TT><A HREF="#0248" TARGET=body>LowReal</A></TT>, <TT><A HREF="#0248" TARGET=body>LowLong</A></TT>
+<P>The function procedure <TT>fractpart</TT> returns the fractional part of <TT>x</TT>. This satisfies the relationship <TT>fractpart(x)+intpart(x)=x</TT>. 
+<P><HR>
+<A NAME="0258"><A NAME="trunc">
+<A HREF="#0248" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0257" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0259" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>scale - Scale</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;scale&nbsp;(x:&nbsp;REAL;&nbsp;n:&nbsp;INTEGER):&nbsp;REAL;
+PROCEDURE&nbsp;scale&nbsp;(x:&nbsp;LONGREAL;&nbsp;n:&nbsp;INTEGER):&nbsp;LONGREAL;
+</PRE>
+
+<P>Modules: <TT><A HREF="#0248" TARGET=body>LowReal</A></TT>, <TT><A HREF="#0248" TARGET=body>LowLong</A></TT>
+<P>The function procedure <TT>scale</TT> returns the value <TT>x * radix ** n</TT> if such a value exists; otherwise an exception occurs and may be raised. 
+<P><HR>
+<A NAME="0259"><A NAME="round">
+<A HREF="#0248" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0258" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0260" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>trunc - Truncate</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;trunc&nbsp;(x:&nbsp;REAL;&nbsp;n:&nbsp;INTEGER):&nbsp;REAL;
+PROCEDURE&nbsp;trunc&nbsp;(x:&nbsp;LONGREAL;&nbsp;n:&nbsp;INTEGER):&nbsp;LONGREAL;
+</PRE>
+
+<P>Modules: <TT><A HREF="#0248" TARGET=body>LowReal</A></TT>, <TT><A HREF="#0248" TARGET=body>LowLong</A></TT>
+<P>The function procedure <TT>trunc</TT> returns the value of the most significant <TT>n</TT> places of <TT>x</TT>. An exception occurs and may be raised if <TT>n</TT> is less than or equal to zero. 
+<P><HR>
+<A NAME="0260"><A NAME="synthesize">
+<A HREF="#0248" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0259" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0261" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>round - Round</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;round&nbsp;(x:&nbsp;REAL;&nbsp;n:&nbsp;INTEGER):&nbsp;REAL;
+PROCEDURE&nbsp;round&nbsp;(x:&nbsp;LONGREAL;&nbsp;n:&nbsp;INTEGER):&nbsp;LONGREAL;
+</PRE>
+
+<P>
+<P>Modules: <TT><A HREF="#0248" TARGET=body>LowReal</A></TT>, <TT><A HREF="#0248" TARGET=body>LowLong</A></TT>
+<P>The function procedure <TT>round</TT> returns the value of <TT>x</TT> rounded to the most significant <TT>n</TT> places. An exception occurs and may be raised if such a value does not exist, or if <TT>n</TT> is less than or equal to zero. 
+<P><HR>
+<A NAME="0261"><A NAME="setMode">
+<A HREF="#0248" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0260" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0262" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>synthesize - Construct value</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;synthesize&nbsp;(expart&nbsp;:&nbsp;INTEGER;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;frapart:&nbsp;REAL):&nbsp;REAL;
+PROCEDURE&nbsp;synthesize&nbsp;(expart&nbsp;:&nbsp;INTEGER;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;frapart:&nbsp;LONGREAL):&nbsp;LONGREAL;
+</PRE>
+
+<P>Modules: <TT><A HREF="#0248" TARGET=body>LowReal</A></TT>, <TT><A HREF="#0248" TARGET=body>LowLong</A></TT>
+<P>The function procedure <TT>synthesize</TT> returns a value of the corresponding real number type constructed from the values of <TT>expart</TT> and <TT>frapart</TT>. This value shall satisfy the relationship:<BR>
+<TT>synthesize(exponent(x),fraction(x))=x</TT> 
+<P><HR>
+<A NAME="0262"><A NAME="currentMode">
+<A HREF="#0248" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0261" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0263" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>setMode - Set status flags</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;setMode&nbsp;(m:&nbsp;Modes);
+PROCEDURE&nbsp;setMode&nbsp;(m:&nbsp;Modes);
+</PRE>
+
+<P>Modules: <TT><A HREF="#0248" TARGET=body>LowReal</A></TT>, <TT><A HREF="#0248" TARGET=body>LowLong</A></TT>
+<P>The procedure setMode sets status flags from the value of <TT>m</TT>, appropriate to the underlying implementation of the corresponding real number type. <B>NOTES:</B> 
+<UL>
+ 
+<LI>Many implementations of floating point provide options for setting status flags within the system which control details of the handling of the type. Although two procedures are provided, one for each real number type, the effect may be the same. Typical effects that can be obtained by this means are: 
+<UL>
+ 
+<LI>Ensuring that overflow will raise an exception; </LI>
+<LI>Allowing underflow to raise an exception; </LI>
+<LI>Controlling the rounding; </LI>
+<LI>Allowing special values to be produced (e.g. NaNs in implementations conforming to <I>IEC 559:1989 (IEEE 754:1987))</I>; </LI>
+<LI>Ensuring that special value access will raise an exception; </LI>
+</UL>
+Since these effects are so varied, the values of type <TT>Modes</TT> that may be used are not specified by this International Standard. </LI>
+<LI>The effect of <TT>setMode</TT> on operations on values of the corresponding real number type in coroutines other than the calling coroutine is not defined. Implementations are not required to preserve the status flags (if any) with the coroutine state. </LI>
+</UL>
+
+<P><HR>
+<A NAME="0263"><A NAME="IsLowException">
+<A HREF="#0248" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0262" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0264" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>currentMode - Current status flags</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;currentMode&nbsp;():&nbsp;Modes;
+PROCEDURE&nbsp;currentMode&nbsp;():&nbsp;Modes;
+</PRE>
+
+<P>Modules: <TT><A HREF="#0248" TARGET=body>LowReal</A></TT>, <TT><A HREF="#0248" TARGET=body>LowLong</A></TT>
+<P>The function procedure <TT>currentMode</TT> returns the current status flags (in the form set by <TT><A HREF="#0262" TARGET=body>setMode</A></TT>), or the default status flags (if <TT><A HREF="#0262" TARGET=body>setMode</A></TT> is not used). 
+<P><B>NOTE:</B> The returned value is not necessarily the value set by <TT><A HREF="#0262" TARGET=body>setMode</A></TT>, since a call of <TT><A HREF="#0262" TARGET=body>setMode</A></TT> might attempt to set flags that cannot be set by the program. 
+<P><HR>
+<A NAME="0264">
+<A HREF="#0248" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0263" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0265" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>IsLowException - Query exceptional state</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;IsLowException&nbsp;():&nbsp;BOOLEAN;
+PROCEDURE&nbsp;IsLowException&nbsp;():&nbsp;BOOLEAN;
+</PRE>
+
+<P>Modules: <TT><A HREF="#0248" TARGET=body>LowReal</A></TT>, <TT><A HREF="#0248" TARGET=body>LowLong</A></TT>
+<P>If the calling coroutine is in the state of exceptional execution because of the raising of the <TT><A HREF="#0248" TARGET=body>LowReal</A></TT> exception, the function procedure <TT>LowReal.IsLowException</TT> returns <TT>TRUE</TT>; otherwise is returns <TT>FALSE</TT>. 
+<P>If the calling coroutine is in the state of exceptional execution because of the raising of the <TT><A HREF="#0248" TARGET=body>LowLong</A></TT> exception, the function procedure <TT>LowLong.IsLowException</TT> returns <TT>TRUE</TT>; otherwise is returns <TT>FALSE</TT>. 
+<P><HR>
+<A NAME="0265"><A NAME="StorageExceptions">
+<A HREF="#0240" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0264" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0266" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H2>Module Storage</H2>
+The module <TT>Storage</TT> provides facilities for dynamically allocating and deallocating storage for variables that are not declared in variable declarations. Variables with storage allocated in this way are designated by dereferenced variable designators. The facilities are often invoked by using the predefined procedures <TT>NEW</TT> and <TT>DISPOSE</TT>. The facilities can also be used to allocate storage to be used as coroutine workspace. 
+<P>The semantics are described in terms of allocating storage for a variable since the allocator must take account of any address alignment requirements for the storage of variables of the given size. <B>CLARIFICATIONS</B> 
+<UL>
+ 
+<LI><I>Programming in Modula-2</I> adopts two approaches to handling situations where it is not possible to allocate sufficient storage; the procedure <TT>Allocate</TT> of Chapter 25 assigns <TT>NIL</TT> to the first parameter, whereas the procedure <TT>ALLOCATE</TT> of Appendix 2 causes the program to terminate. The International Standard requires the procedure <TT><A HREF="#0267" TARGET=body>ALLOCATE</A></TT> to assign the value <TT>NIL</TT> to its first parameter in this situation. </LI>
+<LI>Although the first parameter of the procedure <TT>DEALLOCATE</TT> given in Appendix 2 of <I>Programming in Modula-2</I> is a variable parameter, it is not stated whether <TT>DEALLOCATE</TT> assigns a value to its parameter. The International Standard requires the procedure <TT><A HREF="#0268" TARGET=body>DEALLOCATE</A></TT> to assign the value <TT>NIL</TT> to its parameter. </LI>
+</UL>
+
+<P><UL>
+<LI><A HREF="#0266" TARGET=body>StorageExceptions - Storage exceptions identities</A>
+<LI><A HREF="#0267" TARGET=body>ALLOCATE - Allocate storage</A>
+<LI><A HREF="#0268" TARGET=body>DEALLOCATE - Deallocate storage</A>
+<LI><A HREF="#0269" TARGET=body>IsStorageException - Query exceptional state</A>
+<LI><A HREF="#0270" TARGET=body>StorageException - Query exception id</A>
+</UL>
+<P><HR>
+<A NAME="0266"><A NAME="ALLOCATE">
+<A HREF="#0265" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0265" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0267" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>StorageExceptions - Storage exceptions identities</H3>
+ 
+<P><PRE>TYPE
+&nbsp;&nbsp;StorageExceptions&nbsp;=&nbsp;(
+&nbsp;&nbsp;&nbsp;&nbsp;nilDeallocation,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;first&nbsp;argument&nbsp;to&nbsp;DEALLOCATE&nbsp;is&nbsp;NIL&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;pointerToUnallocatedStorage,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;storage&nbsp;to&nbsp;deallocate&nbsp;not&nbsp;allocated&nbsp;by&nbsp;ALLOCATE&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;wrongStorageToUnallocate
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;amount&nbsp;to&nbsp;deallocate&nbsp;is&nbsp;not&nbsp;amount&nbsp;allocated&nbsp;*)
+);
+</PRE>
+
+<P>Module <TT><A HREF="#0265" TARGET=body>Storage</A></TT>
+<P>The exceptions raised by <TT>Storage</TT> are identified by the values of the enumeration type <TT>StorageExceptions</TT>. 
+<P>The detection of the exception <TT>wrongStorageToUnallocate</TT> is implementation-defined. 
+<P><HR>
+<A NAME="0267"><A NAME="DEALLOCATE">
+<A HREF="#0265" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0266" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0268" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>ALLOCATE - Allocate storage</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;ALLOCATE&nbsp;(VAR&nbsp;addr:&nbsp;SYSTEM.ADDRESS;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;amount:&nbsp;CARDINAL);
+</PRE>
+
+<P>Module <TT><A HREF="#0265" TARGET=body>Storage</A></TT>
+<P>The procedure <TT>ALLOCATE</TT> allocates storage for a variable of size <TT>amount</TT>, and assigns the address of this variable to <TT>addr</TT>. The allocated locations will not be in use for the storage of any other variable. If it is not possible to allocate this storage, the value <TT>NIL</TT> is assigned to <TT>addr</TT>. 
+<P><B>NOTES:</B> 
+<OL>
+ 
+<LI>If an address passed back by a call of <TT>ALLOCATE</TT> is assigned to a pointer variable <TT>vp</TT> that is to be dereferenced to designate a variable of type <TT>T</TT>, the value for the second parameter to <TT>ALLOCATE</TT> may be obtained from evaluation of the expression <TT>SIZE(T)</TT>. An equivalent effect may be obtained as <TT>NEW(vp)</TT>. </LI>
+<LI>If an address passed back by a call of <TT>ALLOCATE</TT> is to be given directly as the workspace address in a call of <TT>COROUTINES.NEWCOROUTINE</TT>, the value for the second parameter to <TT>ALLOCATE</TT> is the size of workspace required. </LI>
+</OL>
+
+<P><HR>
+<A NAME="0268"><A NAME="IsStorageException">
+<A HREF="#0265" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0267" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0269" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>DEALLOCATE - Deallocate storage</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;DEALLOCATE&nbsp;(VAR&nbsp;addr:&nbsp;SYSTEM.ADDRESS;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;amount:&nbsp;CARDINAL);
+</PRE>
+
+<P>Module <TT><A HREF="#0265" TARGET=body>Storage</A></TT>
+<P>The procedure <TT>DEALLOCATE</TT> deallocates <TT>amount</TT> locations for the storage of the variable addressed by <TT>addr</TT> and assigns the value <TT>NIL</TT> to <TT>addr</TT>. 
+<P>The exception <TT>nilDeallocation</TT> is raised if the given value of <TT>addr</TT> is the nil value. The exception <TT>pointerToUnallocatedStorage</TT> is raised if the given value of <TT>addr</TT> is not the address of a variable whose storage has been allocated by <TT><A HREF="#0267" TARGET=body>ALLOCATE</A></TT>. The exception <TT>wrongStorageToUnallocate</TT> occurs and may be raised if <TT>amount</TT> is not equal to the number of locations allocated for the storage of the variable addressed by <TT>addr</TT>. 
+<P><B>NOTES:</B> 
+<OL>
+ 
+<LI>If an address passed to a call of <TT>DEALLOCATE</TT> is the value of a pointer variable <TT>vp</TT> that is dereferenced to designate a variable of type <TT>T</TT>, the value for the second parameter to <TT>DEALLOCATE</TT> may be obtained from evaluation of the expression <TT>SIZE(T)</TT>. An equivalent effect may be obtained as <TT>DISPOSE(vp)</TT>. </LI>
+<LI>The variable whose storage is deallocated no longer exists and hence an exception occurs, which may be raised, if there is a subsequent attempt to access the variable through a dereferenced designator. </LI>
+<LI>This International Standard gives no meaning for a program that deallocates dynamic storage given as workspace in a call of <TT>COROUTINES.NEWCOROUTINE</TT> since the use made of coroutine workspace is implementation-dependent. </LI>
+<LI>It need not be the case that storage locations deallocated by a call of <TT>DEALLOCATE</TT> are available for re-use by a subsequent call of <TT><A HREF="#0267" TARGET=body>ALLOCATE</A></TT>. </LI>
+</OL>
+
+<P><HR>
+<A NAME="0269"><A NAME="StorageException">
+<A HREF="#0265" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0268" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0270" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>IsStorageException - Query exceptional state</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;IsStorageException&nbsp;():&nbsp;BOOLEAN;
+</PRE>
+
+<P>Module <TT><A HREF="#0265" TARGET=body>Storage</A></TT>
+<P>If the calling coroutine is in the state of exceptional execution because of the raising of a <TT><A HREF="#0265" TARGET=body>Storage</A></TT> exception, the function procedure <TT>IsStorageException</TT> returns <TT>TRUE</TT>; otherwise it returns <TT>FALSE</TT>. 
+<P><HR>
+<A NAME="0270">
+<A HREF="#0265" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0269" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0271" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>StorageException - Query exception id</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;StorageException&nbsp;():&nbsp;StorageExceptions;
+</PRE>
+
+<P>Module <TT><A HREF="#0265" TARGET=body>Storage</A></TT>
+<P>If the calling coroutine is in the state of exceptional execution because of the raising of a <TT><A HREF="#0265" TARGET=body>Storage</A></TT> exception, the function procedure <TT>StorageException</TT> returns the value that identifies the raised exception; otherwise the language exception <TT>exException</TT> is raised. 
+<P><HR>
+<A NAME="0271">
+<A HREF="#0240" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0270" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0272" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Module SysClock</H2>
+The module <TT>SysClock</TT> provides facilities for accessing a system clock that records the date and time of day. <B>NOTES:</B> 
+<UL>
+ 
+<LI>No provision is made for leap seconds. </LI>
+<LI>&lsquo;UTC&rsquo; is &lsquo;Universal Coordinated Time&rsquo;. This is the correct international designation for what was once called &lsquo;GMT&rsquo; (Greenwich Mean Time). </LI>
+<LI>
+<P>The field <TT>summerTimeFlag</TT> is present for information only. UTC can always be obtained by subtracting the <TT>UTCDiff</TT> value from the time data, regardless of the value of the <TT>summerTimeFlag</TT>. However, its presence does allow a program to know whether or not the date and time data represents standard time for that location, or &lsquo;summer time&rsquo;. A program could therefore be written to change the system clock to summer time automatically on a certain date, provided it had not already been changed. </LI>
+</UL>
+
+<P><UL>
+<LI><A HREF="#0272" TARGET=body>The Constants and Types of SysClock</A>
+<LI><A HREF="#0273" TARGET=body>CanGetClock - Query system clock read permission</A>
+<LI><A HREF="#0274" TARGET=body>CanSetClock - Query system clock write permission</A>
+<LI><A HREF="#0275" TARGET=body>IsValidDateTime - Verify date and time</A>
+<LI><A HREF="#0276" TARGET=body>GetClock - Determine current date and time</A>
+<LI><A HREF="#0277" TARGET=body>SetClock - Set current date and time</A>
+</UL>
+<P><HR>
+<A NAME="0272"><A NAME="CanGetClock">
+<A HREF="#0271" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0271" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0273" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>The Constants and Types of SysClock</H3>
+
+<P><PRE>CONST
+&nbsp;&nbsp;maxSecondParts&nbsp;=&nbsp;&lt;implementation-defined&nbsp;integral&nbsp;value&gt;;
+
+TYPE
+&nbsp;&nbsp;Month&nbsp;=&nbsp;[1&nbsp;..&nbsp;12];
+&nbsp;&nbsp;Day&nbsp;=&nbsp;[1&nbsp;..&nbsp;31];
+&nbsp;&nbsp;Hour&nbsp;=&nbsp;[0&nbsp;..&nbsp;23];
+&nbsp;&nbsp;Min&nbsp;=&nbsp;[0&nbsp;..&nbsp;59];
+&nbsp;&nbsp;Sec&nbsp;=&nbsp;[0&nbsp;..&nbsp;59];
+&nbsp;&nbsp;Fraction&nbsp;=&nbsp;[0&nbsp;..&nbsp;maxSecondParts];
+&nbsp;&nbsp;UTCDiff&nbsp;=&nbsp;[-780&nbsp;..&nbsp;720];
+&nbsp;&nbsp;DateTime&nbsp;=
+&nbsp;&nbsp;&nbsp;&nbsp;RECORD
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;year:&nbsp;&nbsp;&nbsp;CARDINAL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;month:&nbsp;&nbsp;Month;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;day:&nbsp;&nbsp;&nbsp;&nbsp;Day;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;hour:&nbsp;&nbsp;&nbsp;Hour;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;minute:&nbsp;Min;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;second:&nbsp;Sec;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fractions:&nbsp;Fraction;&nbsp;(*&nbsp;parts&nbsp;of&nbsp;a&nbsp;second&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;zone:&nbsp;&nbsp;&nbsp;UTCDiff;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;Time&nbsp;zone&nbsp;differential&nbsp;factor&nbsp;which&nbsp;is&nbsp;the&nbsp;number
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;of&nbsp;minutes&nbsp;to&nbsp;add&nbsp;to&nbsp;local&nbsp;time&nbsp;to&nbsp;obtain&nbsp;UTC.&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;summerTimeFlag:&nbsp;BOOLEAN;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;Interpretation&nbsp;of&nbsp;flag&nbsp;depends&nbsp;on&nbsp;local&nbsp;usage.&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;END;
+</PRE>
+
+<P><HR>
+<A NAME="0273"><A NAME="CanSetClock">
+<A HREF="#0271" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0272" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0274" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>CanGetClock - Query system clock read permission</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;CanGetClock&nbsp;():&nbsp;BOOLEAN;
+</PRE>
+
+<P>Module <TT><A HREF="#0271" TARGET=body>SysClock</A></TT>
+<P>The function procedure <TT>CanGetClock</TT> returns an implementation-defined <TT>BOOLEAN</TT> value. If the value <TT>TRUE</TT> is returned, there is a system clock which the program is permitted to read. 
+<P><HR>
+<A NAME="0274"><A NAME="IsValidDateTime">
+<A HREF="#0271" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0273" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0275" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>CanSetClock - Query system clock write permission</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;CanSetClock&nbsp;():&nbsp;BOOLEAN;
+</PRE>
+
+<P>Module <TT><A HREF="#0271" TARGET=body>SysClock</A></TT>
+<P>The function procedure <TT>CanSetClock()</TT> returns an implementation-defined <TT>BOOLEAN</TT> value. If the value <TT>TRUE</TT> is returned, there is a system clock which the program is permitted to set. 
+<P><HR>
+<A NAME="0275"><A NAME="GetClock">
+<A HREF="#0271" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0274" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0276" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>IsValidDateTime - Verify date and time</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;IsValidDateTime&nbsp;(userData:&nbsp;DateTime):&nbsp;BOOLEAN;
+</PRE>
+
+<P>
+<P>Module <TT><A HREF="#0271" TARGET=body>SysClock</A></TT>
+<P>The function procedure <TT>IsValidDateTime</TT> returns <TT>TRUE</TT> if the value of <TT>userData</TT> represents a valid date and time, and is <TT>FALSE</TT> otherwise. <B>NOTE:</B> Only the date components of <TT>userData</TT> need to be validated since all combinations of values of the time components are known to be valid. 
+<P><HR>
+<A NAME="0276"><A NAME="SetClock">
+<A HREF="#0271" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0275" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0277" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>GetClock - Determine current date and time</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;GetClock&nbsp;(VAR&nbsp;userData:&nbsp;DateTime);
+</PRE>
+
+<P>Module <TT><A HREF="#0271" TARGET=body>SysClock</A></TT>
+<P>The function procedure <TT>GetClock</TT> assigns values for each field of the variable <TT>userData</TT> for which information is available. Each of the remaining fields of <TT>userData</TT> are set to zero, where this is a valid value, and otherwise are set to the lower bound of the range of allowed values. 
+<P><HR>
+<A NAME="0277">
+<A HREF="#0271" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0276" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<IMG ALT="   " SRC="empty.gif" BORDER=0></A>
+<BR>
+<H3>SetClock - Set current date and time</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;SetClock&nbsp;(userData:&nbsp;DateTime);
+</PRE>
+
+<P>Module <TT><A HREF="#0271" TARGET=body>SysClock</A></TT>
+<P>The function procedure <TT>SetClock</TT> sets the system clock to the date and time specified by <TT>userData</TT>, provided that the program may set the system clock, and that the value of <TT>userData</TT> represents a valid date and time. If the program cannot set the system clock, a call of <TT>SetClock</TT> have no effect. 
+<P><B>NOTE:</B> The effect of a call of <TT>SetClock</TT> is implementation-dependent if it is permitted to set the system clock, but an invalid date and time is given. 
+<P>
+<P>
+<P>
+</BODY>
+</HTML>

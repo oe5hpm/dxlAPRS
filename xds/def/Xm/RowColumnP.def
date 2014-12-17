@@ -1,0 +1,628 @@
+(* Xm/RowColumnP.def  Nov 12  14:34:37  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/RowColumnP.h using H2D v1.18.1 *)
+
+(* $RCSfile: RowColumnP.def,v $ $Revision: 5 $ $Date: 28.07.98 23:14 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *>
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+<*+ WOFF354 *>
+
+(* Merged headers: Xm/RowColumn.h *)
+
+DEFINITION MODULE ["C"] RowColumnP;
+
+IMPORT SYSTEM, X, Xlib, Xm:=XmP, Xt:=IntrinsicP;
+(* H2D:  Required IMPORT clause:
+IMPORT RowColumnP, X, Xlib, Xm:=XmP, Xt:=IntrinsicP;
+*)
+
+FROM X IMPORT SET8;
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992, 1993 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(* ------------------------------------------------------ *)
+(*                     Xm/RowColumn.h                     *)
+(* ------------------------------------------------------ *)
+
+(*
+ * Motif Release 1.2
+ *)
+
+VAR
+  xmRowColumnWidgetClass: Xt.WidgetClass;
+
+TYPE
+  XmRowColumnWidgetClass = POINTER TO _XmRowColumnClassRec;
+
+  XmRowColumnWidget = POINTER TO _XmRowColumnRec;
+
+(********    Public Function Declarations    ********)
+
+PROCEDURE XmMenuPosition ( p: Xt.Widget;
+                           VAR event: Xlib.XButtonPressedEvent );
+
+PROCEDURE XmCreateRowColumn ( p: Xt.Widget;
+                              name: ARRAY OF CHAR;
+                              al: Xt.ArgList;
+                              ac: Xt.Cardinal ): Xt.Widget;
+
+PROCEDURE XmCreateWorkArea ( p: Xt.Widget;
+                             name: ARRAY OF CHAR;
+                             al: Xt.ArgList;
+                             ac: Xt.Cardinal ): Xt.Widget;
+
+PROCEDURE XmCreateRadioBox ( p: Xt.Widget;
+                             name: ARRAY OF CHAR;
+                             al: Xt.ArgList;
+                             ac: Xt.Cardinal ): Xt.Widget;
+
+PROCEDURE XmCreateOptionMenu ( p: Xt.Widget;
+                               name: ARRAY OF CHAR;
+                               al: Xt.ArgList;
+                               ac: Xt.Cardinal ): Xt.Widget;
+
+PROCEDURE XmOptionLabelGadget ( m: Xt.Widget ): Xt.Widget;
+
+PROCEDURE XmOptionButtonGadget ( m: Xt.Widget ): Xt.Widget;
+
+PROCEDURE XmCreateMenuBar ( p: Xt.Widget;
+                            name: ARRAY OF CHAR;
+                            al: Xt.ArgList;
+                            ac: Xt.Cardinal ): Xt.Widget;
+
+PROCEDURE XmCreatePopupMenu ( p: Xt.Widget;
+                              name: ARRAY OF CHAR;
+                              al: Xt.ArgList;
+                              ac: Xt.Cardinal ): Xt.Widget;
+
+PROCEDURE XmCreatePulldownMenu ( p: Xt.Widget;
+                                 name: ARRAY OF CHAR;
+                                 al: Xt.ArgList;
+                                 ac: Xt.Cardinal ): Xt.Widget;
+
+PROCEDURE XmAddToPostFromList ( menu_wid: Xt.Widget;
+                                widget: Xt.Widget );
+
+PROCEDURE XmRemoveFromPostFromList ( menu_wid: Xt.Widget;
+                                     widget: Xt.Widget );
+
+PROCEDURE XmGetPostedFromWidget ( menu: Xt.Widget ): Xt.Widget;
+
+PROCEDURE XmGetTearOffControl ( menu: Xt.Widget ): Xt.Widget;
+
+(********    End Public Function Declarations    ********)
+
+(* ------------------------------------------------------ *)
+(*                    Xm/RowColumnP.h                     *)
+(* ------------------------------------------------------ *)
+
+(*
+ * Motif Release 1.2.3
+ *)
+
+(*  Button Event Status Record for popup verification at manage time  *)
+
+TYPE
+  _XmButtonEventStatusRec = RECORD
+    time                 : X.Time;
+    verified             : Xt.Boolean;
+    waiting_to_be_managed: Xt.Boolean;
+    event                : Xlib.XButtonEvent;
+  END;
+
+  XmButtonEventStatusRec = _XmButtonEventStatusRec;
+
+(*  replay info rec - last menu that was posted before event replay  *)
+
+  _XmReplayInfoRec = RECORD
+    time         : X.Time;
+    toplevel_menu: Xt.Widget;
+  END;
+
+  XmReplayInfoRec = _XmReplayInfoRec;
+
+  _XmMenuFocusRec = RECORD
+    oldWidget: Xt.Widget;
+    oldFocus : X.Window;
+    oldRevert: SYSTEM.int;
+  END;
+
+  XmMenuFocusRec = _XmMenuFocusRec;
+
+(*  Menu State is per screen  *)
+
+  _XmMenuStateRec = RECORD
+    RC_LastSelectToplevel                           : Xt.Widget;
+    RC_ButtonEventStatus                            : XmButtonEventStatusRec;
+    RC_ReplayInfo                                   : XmReplayInfoRec;
+    (* needed for funky menubar mode so that the traversal can be restored
+     * to the correct highlighted item when we are done.
+     *)
+    RC_activeItem                                   : Xt.Widget;
+    RC_menuFocus                                    : XmMenuFocusRec;
+    (* A workaround is provided to allow applications to get insensitive
+     * menu items.  This is useful for context "sensitive-shared-tear off-
+     * accelerated" menu items.  Accessed via internal (for now) function,
+     * _XmAllowAcceleratedInsensitiveUmanagedMenuItems().
+     *)
+    RC_allowAcceleratedInsensitiveUnmanagedMenuItems: Xt.Boolean;
+    MS_LastManagedMenuTime                          : X.Time;
+    MU_InDragMode                                   : Xt.Boolean;
+    MU_CurrentMenuChild                             : Xt.Widget;
+    MU_InPMMode                                     : Xt.Boolean;
+  END;
+
+  XmMenuStateRec = _XmMenuStateRec;
+
+  XmMenuState = POINTER TO _XmMenuStateRec;
+
+  _XmRCKidGeometryRec = RECORD
+    kid          : Xt.Widget;
+    box          : Xt.XtWidgetGeometry;
+    margin_top   : Xt.Dimension;
+    margin_bottom: Xt.Dimension;
+    baseline     : Xt.Dimension;
+  END;
+
+  XmRCKidGeometryRec = _XmRCKidGeometryRec;
+
+  XmRCKidGeometry = POINTER TO _XmRCKidGeometryRec;
+
+(*  The RowColumn instance record  *)
+
+  _XmRowColumnPart = RECORD
+    margin_height    : Xt.Dimension;     (* margin around inside of widget *)
+    margin_width     : Xt.Dimension;
+    spacing          : Xt.Dimension;     (* pixels between entries *)
+    entry_border     : Xt.Dimension;     (* size of entry borders
+      	      	      	      	      	  * next only used w/ menubars *)
+    help_pushbutton  : Xt.Widget;        (* ptr to help pushbutton widget *)
+    cascadeBtn       : Xt.Widget;        (* if this menu is pulled down by a
+                      	      	      	  * pulldown widget this will point
+                                          * at the pulldown.  needed to go
+                                          * up the cascade
+                                          * next two only used w/ option menus
+                                          * they are really only temporary
+                                          * since the data is passed off to
+                                          * the pulldown widget which is
+                                          * automatically built *)
+    option_label     : Xm.XmString;      (* label for option menu pulldown *)
+    option_submenu   : Xt.Widget;        (* which submenu to pulldown *)
+    boxes            : XmRCKidGeometry;  (* when doing menu layouts is an
+                      	      	      	  * array of geo req's to make it easy
+                                          *)
+    entry_class      : Xt.WidgetClass;   (* if homogeneous, what class *)
+    entry_callback   : Xt.XtCallbackList;(* a child fired off *)
+    map_callback     : Xt.XtCallbackList;(* about to be mapped call back *)
+    unmap_callback   : Xt.XtCallbackList;(* about to be unmapped call back *)
+    memory_subwidget : Xt.Widget;        (* id of last subwidget that
+      	      	      	      	      	  * fired off.  Recorded by the
+                                          * entry_fired proc, can be set too
+                                          * this causes mouse/muscle memory
+                                          * to also be reset *)
+    num_columns      : SYSTEM.INT16;     (* if columnar packing this is how
+      	      	      	      	      	  * many columns to use *)
+    menuPost         : Xt.String;        (* a translation for posting popups *)
+    postButton       : CARDINAL;         (* active mouse button *)
+    postEventType    : SYSTEM.int;       (* active mouse event type *)
+    postModifiers    : CARDINAL;         (* active mouse modifier *)
+    menu_accelerator : Xt.String;
+    mnemonic         : X.KeySym;
+    mnemonicCharSet  : Xm.XmStringCharSet;
+    entry_alignment  : SHORTCARD;        (* type of label alignment
+      	      	      	      	      	  * our children should have
+                                          * next two are layout, Tight is the
+                                          * standard menubar packing.  Columns
+                                          * is radio box style, orientation
+                                          * determines if it is column or row
+                                          * major, Vert = column major *)
+    packing          : SHORTCARD;        (* entry packing (layout) style *)
+    type             : SHORTCARD;        (* temporary: diff between menu/bar *)
+    orientation      : SHORTCARD;        (* horizontal or vertical
+      	      	      	      	      	  * next two indicate how the widget
+                                          * responds to size changes if there
+                                          * is no geo mgr.  If true then the
+                                          * dimension is never changed.  Set
+                                          * to true if dimension is spec'd
+                                          * at create time *)
+    armed            : Xt.Boolean;       (* controls whether pulldowns work
+                                          * or not, button down in any part of
+                                          * the menubar arms it, this is a bit
+                                          * field used for other internal
+                                          * flags, see macros next is only
+                                          * valid for popup menus *)
+    adjust_margin    : Xt.Boolean;       (* T/F, indicating if we should force
+                                          * all subwidgets to have similar
+                                          * margins *)
+    adjust_last      : Xt.Boolean;       (* Indicates whether or not the last
+      	      	      	      	      	  * row or column should be stretched
+                                          * to the edge of the row_column
+                                          * widget. *)
+    do_alignment     : Xt.Boolean;       (* T/F, do we force alignment on all
+                                          * our children *)
+    radio            : Xt.Boolean;       (* T/F, do we do the toggle button
+                                          * 'only-one-down' enforcement *)
+    radio_one        : Xt.Boolean;       (* T/F, must have one radio button
+                                          * set to on *)
+    homogeneous      : Xt.Boolean;       (* T/F, do we only allow a single
+                                          * class of children *)
+    resize_width     : Xt.Boolean;
+    resize_height    : Xt.Boolean;
+    popup_enabled    : Xt.Boolean;
+    old_width        : Xt.Dimension;     (* save the old width, etc to use *)
+    old_height       : Xt.Dimension;     (* at resize time since it now has *)
+    old_shadow_thickness: Xt.Dimension;  (* NW gravity *)
+    postFromList     : Xt.WidgetList;    (* list for sharing menupanes *)
+    postFromCount    : SYSTEM.int;       (* count of the list *)
+    postFromListSize : SYSTEM.int;       (* size of the malloc'ed list *)
+    lastSelectToplevel: Xt.Widget;       (* returned in XmGetPostedFromWidget*)
+    popupPosted      : Xt.Widget;        (* popup submenu currently posted *)
+    oldFocusPolicy   : SHORTCARD;        (* save when menus begin traversal *)
+(***************** 1.2 ***************)
+    TearOffModel     : SHORTCARD;        (* enable/disable flag *)
+    ParentShell      : Xt.Widget;        (* Save the parent shell when torn *)
+    tear_off_control : Xt.Widget;
+    to_state         : Xt.Boolean;       (* tear off state *)
+    (* tear off activate/deactivate callbacks *)
+    tear_off_activated_callback  : Xt.XtCallbackList;
+    tear_off_deactivated_callback: Xt.XtCallbackList;
+    tear_off_lastSelectToplevel  : Xt.Widget;
+    tear_off_focus_item          : Xt.Widget; (* when tear off is inactive *)
+    entry_vertical_alignment     : SHORTCARD;
+    popup_menu_click             : SHORTCARD;
+    popup_timeout_timer          : Xt.XtIntervalId;
+  END;
+
+  XmRowColumnPart = _XmRowColumnPart;
+
+(*  Full instance record declaration  *)
+
+  _XmRowColumnRec = RECORD
+    core      : Xt.CorePart;
+    composite : Xt.CompositePart;
+    constraint: Xt.ConstraintPart;
+    manager   : Xm.XmManagerPart;
+    row_column: XmRowColumnPart;
+  END;
+
+  XmRowColumnRec = _XmRowColumnRec;
+
+(*  OBSOLETE (for compatibility only). *)
+
+  _XmRowColumnWidgetRec = RECORD
+    core      : Xt.CorePart;
+    composite : Xt.CompositePart;
+    constraint: Xt.ConstraintPart;
+    manager   : Xm.XmManagerPart;
+    row_column: XmRowColumnPart;
+  END;
+
+  XmRowColumnWidgetRec = _XmRowColumnWidgetRec;
+
+(*  RowColumn class structure  *)
+
+  _XmRowColumnClassPart = RECORD
+    menuProcedures  : Xm.XmMenuProc;  (* proc to interface with menu widgets *)
+    armAndActivate  : Xt.XtActionProc;(* proc triggered by acclerator *)
+    traversalHandler: Xm.XmMenuTraversalProc;(* proc to handle menu traversal*)
+    extension       : Xt.XtPointer;   (* Pointer to extension record *)
+  END;
+
+  XmRowColumnClassPart = _XmRowColumnClassPart;
+
+  _XmRowColumnClassRec = RECORD
+    core_class      : Xt.CoreClassPart;
+    composite_class : Xt.CompositeClassPart;
+    constraint_class: Xt.ConstraintClassPart;
+    manager_class   : Xm.XmManagerClassPart;
+    row_column_class: XmRowColumnClassPart;
+  END;
+
+  XmRowColumnClassRec = _XmRowColumnClassRec;
+
+(*  Constraint Definition  *)
+(*  No constraint resources  *)
+
+  _XmRowColumnConstraintPart = RECORD
+    was_managed   : Xt.Boolean;
+    margin_top    : Xt.Dimension;
+    margin_bottom : Xt.Dimension;
+    baseline      : Xt.Dimension;
+    position_index: SYSTEM.INT16;
+  END;
+
+  XmRowColumnConstraintPart = _XmRowColumnConstraintPart;
+
+  _XmRowColumnConstraintRec = RECORD
+    manager   : Xm.XmManagerConstraintPart;
+    row_column: XmRowColumnConstraintPart;
+  END;
+
+  XmRowColumnConstraintRec = _XmRowColumnConstraintRec;
+
+VAR
+  xmRowColumnClassRec: XmRowColumnClassRec;
+
+CONST
+  XmRC_ARMED_BIT        = SET8{0};
+  XmRC_BEING_ARMED_BIT  = SET8{1};           (*  bits in menu's armed byte  *)
+  XmRC_EXPOSE_BIT       = SET8{2};           (*  used in both menu and  *)
+  XmRC_WINDOW_MOVED_BIT = SET8{3};           (*  popup menu, careful  *)
+  XmRC_WIDGET_MOVED_BIT = SET8{4};
+  XmRC_POPPING_DOWN_BIT = SET8{5};
+  XmRC_FROM_RESIZE_BIT  = SET8{6};
+
+(*  Access Macros  *)
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: these procedures corresponds to macros. *)
+PROCEDURE RC_IsArmed ( m: Xt.Widget ): Xt.Boolean;
+PROCEDURE RC_BeingArmed ( m: Xt.Widget ): Xt.Boolean;
+PROCEDURE RC_DoExpose ( m: Xt.Widget ): Xt.Boolean;
+PROCEDURE RC_WidgetHasMoved ( m: Xt.Widget ): Xt.Boolean;
+PROCEDURE RC_WindowHasMoved ( m: Xt.Widget ): Xt.Boolean;
+PROCEDURE RC_PoppingDown ( m: Xt.Widget ): Xt.Boolean;
+PROCEDURE RC_FromResize ( m: Xt.Widget ): Xt.Boolean;
+PROCEDURE RC_SetBit ( byte: Xt.Boolean;
+                      bit: SET8;
+                      v: BOOLEAN );
+PROCEDURE RC_SetArmed ( m: Xt.Widget;
+                        v: BOOLEAN );
+PROCEDURE RC_SetBeingArmed ( m: Xt.Widget;
+                             v: BOOLEAN );
+PROCEDURE RC_SetExpose ( m: Xt.Widget;
+                         v: BOOLEAN );
+PROCEDURE RC_SetWidgetMoved ( m: Xt.Widget;
+                              v: BOOLEAN );
+PROCEDURE RC_SetWindowMoved ( m: Xt.Widget;
+                              v: BOOLEAN );
+PROCEDURE RC_SetPoppingDown ( m: Xt.Widget;
+                              v: BOOLEAN );
+PROCEDURE RC_SetFromResize ( m: Xt.Widget;
+                             v: BOOLEAN );
+PROCEDURE RC_MarginW ( m: Xt.Widget ): Xt.Dimension;
+PROCEDURE RC_MarginH ( m: Xt.Widget ): Xt.Dimension;
+PROCEDURE RC_Entry_cb ( m: Xt.Widget ): Xt.XtCallbackList;
+PROCEDURE RC_Map_cb ( m: Xt.Widget ): Xt.XtCallbackList;
+PROCEDURE RC_Unmap_cb ( m: Xt.Widget ): Xt.XtCallbackList;
+PROCEDURE RC_Orientation ( m: Xt.Widget ): SHORTCARD;
+PROCEDURE RC_Spacing ( m: Xt.Widget ): Xt.Dimension;
+PROCEDURE RC_EntryBorder ( m: Xt.Widget ): Xt.Dimension;
+PROCEDURE RC_HelpPb ( m: Xt.Widget ): Xt.Widget;
+PROCEDURE RC_DoMarginAdjust ( m: Xt.Widget ): Xt.Boolean;
+PROCEDURE RC_EntryAlignment ( m: Xt.Widget ): Xt.Boolean;
+PROCEDURE RC_EntryVerticalAlignment ( m: Xt.Widget ): SHORTCARD;
+PROCEDURE RC_Packing ( m: Xt.Widget ): SHORTCARD;
+PROCEDURE RC_NCol ( m: Xt.Widget ): SYSTEM.INT16;
+PROCEDURE RC_AdjLast ( m: Xt.Widget ): Xt.Boolean;
+PROCEDURE RC_AdjMargin ( m: Xt.Widget ): Xt.Boolean;
+PROCEDURE RC_MemWidget ( m: Xt.Widget ): Xt.Widget;
+PROCEDURE RC_CascadeBtn ( m: Xt.Widget ): Xt.Widget;
+PROCEDURE RC_OptionLabel ( m: Xt.Widget ): Xm.XmString;
+PROCEDURE RC_OptionSubMenu ( m: Xt.Widget ): Xt.Widget;
+PROCEDURE RC_RadioBehavior ( m: Xt.Widget ): Xt.Boolean;
+PROCEDURE RC_RadioAlwaysOne ( m: Xt.Widget ): Xt.Boolean;
+PROCEDURE RC_PopupPosted ( m: Xt.Widget ): Xt.Boolean;
+PROCEDURE RC_ResizeHeight ( m: Xt.Widget ): Xt.Boolean;
+PROCEDURE RC_ResizeWidth ( m: Xt.Widget ): Xt.Boolean;
+PROCEDURE RC_Type ( m: Xt.Widget ): SHORTCARD;
+PROCEDURE RC_EntryClass ( m: Xt.Widget ): Xt.WidgetClass;
+PROCEDURE RC_IsHomogeneous ( m: Xt.Widget ): Xt.Boolean;
+PROCEDURE RC_Boxes ( m: Xt.Widget ): XmRCKidGeometry;
+PROCEDURE RC_PopupEnabled ( m: Xt.Widget ): Xt.Boolean;
+PROCEDURE RC_MenuAccelerator ( m: Xt.Widget ): Xt.String;
+PROCEDURE RC_Mnemonic ( m: Xt.Widget ): Xt.String;
+PROCEDURE RC_MnemonicCharSet ( m: Xt.Widget ): Xm.XmStringCharSet;
+PROCEDURE RC_MenuPost ( m: Xt.Widget ): Xt.String;
+PROCEDURE RC_PostButton ( m: Xt.Widget ): CARDINAL;
+PROCEDURE RC_PostModifiers ( m: Xt.Widget ): CARDINAL;
+PROCEDURE RC_PostEventType ( m: Xt.Widget ): SYSTEM.int;
+PROCEDURE RC_OldFocusPolicy ( m: Xt.Widget ): SHORTCARD;
+PROCEDURE RC_ParentShell ( m: Xt.Widget ): Xt.Widget;
+PROCEDURE RC_TearOffControl ( m: Xt.Widget ): Xt.Widget;
+PROCEDURE RC_TearOffModel ( m: Xt.Widget ): SHORTCARD;
+PROCEDURE RC_popupMenuClick ( m: Xt.Widget ): SHORTCARD;
+
+<* ELSE *>
+
+PROCEDURE  / RC_IsArmed ( m: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / RC_BeingArmed ( m: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / RC_DoExpose ( m: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / RC_WidgetHasMoved ( m: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / RC_WindowHasMoved ( m: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / RC_PoppingDown ( m: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / RC_FromResize ( m: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / RC_SetBit ( VAR byte: Xt.Boolean;
+                         bit: SET8;
+                         v: BOOLEAN );
+PROCEDURE  / RC_SetArmed ( m: Xt.Widget;
+                           v: BOOLEAN );
+PROCEDURE  / RC_SetBeingArmed ( m: Xt.Widget;
+                                v: BOOLEAN );
+PROCEDURE  / RC_SetExpose ( m: Xt.Widget;
+                            v: BOOLEAN );
+PROCEDURE  / RC_SetWidgetMoved ( m: Xt.Widget;
+                                 v: BOOLEAN );
+PROCEDURE  / RC_SetWindowMoved ( m: Xt.Widget;
+                                 v: BOOLEAN );
+PROCEDURE  / RC_SetPoppingDown ( m: Xt.Widget;
+                                 v: BOOLEAN );
+PROCEDURE  / RC_SetFromResize ( m: Xt.Widget;
+                                v: BOOLEAN );
+PROCEDURE  / RC_MarginW ( m: Xt.Widget ): Xt.Dimension;
+PROCEDURE  / RC_MarginH ( m: Xt.Widget ): Xt.Dimension;
+PROCEDURE  / RC_Entry_cb ( m: Xt.Widget ): Xt.XtCallbackList;
+PROCEDURE  / RC_Map_cb ( m: Xt.Widget ): Xt.XtCallbackList;
+PROCEDURE  / RC_Unmap_cb ( m: Xt.Widget ): Xt.XtCallbackList;
+PROCEDURE  / RC_Orientation ( m: Xt.Widget ): SHORTCARD;
+PROCEDURE  / RC_Spacing ( m: Xt.Widget ): Xt.Dimension;
+PROCEDURE  / RC_EntryBorder ( m: Xt.Widget ): Xt.Dimension;
+PROCEDURE  / RC_HelpPb ( m: Xt.Widget ): Xt.Widget;
+PROCEDURE  / RC_DoMarginAdjust ( m: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / RC_EntryAlignment ( m: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / RC_EntryVerticalAlignment ( m: Xt.Widget ): SHORTCARD;
+PROCEDURE  / RC_Packing ( m: Xt.Widget ): SHORTCARD;
+PROCEDURE  / RC_NCol ( m: Xt.Widget ): SYSTEM.INT16;
+PROCEDURE  / RC_AdjLast ( m: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / RC_AdjMargin ( m: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / RC_MemWidget ( m: Xt.Widget ): Xt.Widget;
+PROCEDURE  / RC_CascadeBtn ( m: Xt.Widget ): Xt.Widget;
+PROCEDURE  / RC_OptionLabel ( m: Xt.Widget ): Xm.XmString;
+PROCEDURE  / RC_OptionSubMenu ( m: Xt.Widget ): Xt.Widget;
+PROCEDURE  / RC_RadioBehavior ( m: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / RC_RadioAlwaysOne ( m: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / RC_PopupPosted ( m: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / RC_ResizeHeight ( m: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / RC_ResizeWidth ( m: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / RC_Type ( m: Xt.Widget ): SHORTCARD;
+PROCEDURE  / RC_EntryClass ( m: Xt.Widget ): Xt.WidgetClass;
+PROCEDURE  / RC_IsHomogeneous ( m: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / RC_Boxes ( m: Xt.Widget ): XmRCKidGeometry;
+PROCEDURE  / RC_PopupEnabled ( m: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / RC_MenuAccelerator ( m: Xt.Widget ): Xt.String;
+PROCEDURE  / RC_Mnemonic ( m: Xt.Widget ): Xt.String;
+PROCEDURE  / RC_MnemonicCharSet ( m: Xt.Widget ): Xm.XmStringCharSet;
+PROCEDURE  / RC_MenuPost ( m: Xt.Widget ): Xt.String;
+PROCEDURE  / RC_PostButton ( m: Xt.Widget ): CARDINAL;
+PROCEDURE  / RC_PostModifiers ( m: Xt.Widget ): CARDINAL;
+PROCEDURE  / RC_PostEventType ( m: Xt.Widget ): SYSTEM.int;
+PROCEDURE  / RC_OldFocusPolicy ( m: Xt.Widget ): SHORTCARD;
+PROCEDURE  / RC_ParentShell ( m: Xt.Widget ): Xt.Widget;
+PROCEDURE  / RC_TearOffControl ( m: Xt.Widget ): Xt.Widget;
+PROCEDURE  / RC_TearOffModel ( m: Xt.Widget ): SHORTCARD;
+PROCEDURE  / RC_popupMenuClick ( m: Xt.Widget ): SHORTCARD;
+
+<* END *>
+
+(*  Tear Off State  *)
+
+CONST
+  XmTO_TORN_OFF_BIT     = SET8{0};
+  XmTO_FROM_INIT_BIT    = SET8{1};
+  XmTO_VISUAL_DIRTY_BIT = SET8{2};
+  XmTO_ACTIVE_BIT       = SET8{3};
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: these procedures corresponds to macros. *)
+PROCEDURE RC_SetTornOff ( m: Xt.Widget;
+                          v: BOOLEAN );
+PROCEDURE RC_TornOff ( m: Xt.Widget ): Xt.Boolean;
+PROCEDURE RC_SetFromInit ( m: Xt.Widget;
+                           v: BOOLEAN );
+PROCEDURE RC_FromInit ( m: Xt.Widget ): Xt.Boolean;
+PROCEDURE RC_SetTearOffDirty ( m: Xt.Widget;
+                               v: BOOLEAN );
+PROCEDURE RC_TearOffDirty ( m: Xt.Widget ): Xt.Boolean;
+PROCEDURE RC_TearOffActive ( m: Xt.Widget ): Xt.Boolean;
+PROCEDURE RC_SetTearOffActive ( m: Xt.Widget;
+                                v: BOOLEAN );
+
+<* ELSE *>
+
+PROCEDURE  / RC_SetTornOff ( m: Xt.Widget;
+                             v: BOOLEAN );
+PROCEDURE  / RC_TornOff ( m: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / RC_SetFromInit ( m: Xt.Widget;
+                              v: BOOLEAN );
+PROCEDURE  / RC_FromInit ( m: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / RC_SetTearOffDirty ( m: Xt.Widget;
+                                  v: BOOLEAN );
+PROCEDURE  / RC_TearOffDirty ( m: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / RC_TearOffActive ( m: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / RC_SetTearOffActive ( m: Xt.Widget;
+                                   v: BOOLEAN );
+
+<* END *>
+
+CONST
+  initial_value = 0;
+
+(*  Defines used when calling _XmProcessMenuTree()  *)
+  XmADD = 0;
+  XmDELETE = 1;
+  XmREPLACE = 2;
+
+(*  Defines used when calling _XmMenuIsAccessible()  *)
+  XmWEAK_CHECK = 1;
+  XmMEDIUM_CHECK = 2;
+  XmSTRONG_CHECK = 3;
+  XmMENU_BEGIN = 0;
+  XmMENU_MIDDLE = 1;
+  XmMENU_END = 2;
+
+(*  Defines used when calling find_first_managed_child()  *)
+  ANY_CHILD = 0;
+  FIRST_BUTTON = 1;
+
+(********    Private Function Declarations    ********)
+
+PROCEDURE _XmPostPopupMenu ( wid: Xt.Widget;
+			     VAR event: Xlib.XEvent );
+
+PROCEDURE _XmSetPopupMenuClick ( wid: Xt.Widget;
+                                 popupMenuClick: Xt.Boolean );
+
+PROCEDURE _XmGetPopupMenuClick ( wid: Xt.Widget ): Xt.Boolean;
+
+PROCEDURE _XmAllowAcceleratedInsensitiveUnmanagedMenuItems ( wid: Xt.Widget;
+                                                             allowed: Xt.Boolean );
+
+PROCEDURE _XmSetSwallowEventHandler ( widget: Xt.Widget;
+                                      add_handler: Xt.Boolean );
+
+PROCEDURE _XmMenuFocus ( w: Xt.Widget;
+                         operation: SYSTEM.int;
+                         _time: X.Time );
+
+PROCEDURE _XmGetActiveTopLevelMenu ( wid: Xt.Widget;
+				     VAR rwid: Xt.Widget );
+
+PROCEDURE _XmMatchBSelectEvent ( wid: Xt.Widget;
+                                 VAR event: Xlib.XEvent ): Xt.Boolean;
+
+PROCEDURE _XmMatchBDragEvent ( wid: Xt.Widget;
+                               VAR event: Xlib.XEvent ): Xt.Boolean;
+
+PROCEDURE _XmHandleMenuButtonPress ( wid: Xt.Widget;
+				     VAR event: Xlib.XEvent );
+
+PROCEDURE _XmMenuBtnDown ( wid: Xt.Widget;
+			   VAR event: Xlib.XEvent;
+                           params: Xt.StringList;
+			   VAR num_params: Xt.Cardinal );
+
+PROCEDURE _XmMenuBtnUp ( wid: Xt.Widget;
+			 VAR event: Xlib.XEvent;
+                         params: Xt.StringList;
+			 VAR num_params: Xt.Cardinal );
+
+PROCEDURE _XmCallRowColumnMapCallback ( wid: Xt.Widget;
+                                        VAR event: Xlib.XEvent );
+
+PROCEDURE _XmCallRowColumnUnmapCallback ( wid: Xt.Widget;
+                                          VAR event: Xlib.XEvent );
+
+PROCEDURE _XmMenuPopDown ( w: Xt.Widget;
+			   VAR event: Xlib.XEvent;
+                           popped_up: ARRAY OF CHAR );
+
+PROCEDURE _XmIsActiveTearOff ( w: Xt.Widget ): Xt.Boolean;
+
+PROCEDURE _XmMenuHelp ( wid: Xt.Widget;
+		        VAR event: Xlib.XEvent;
+                        params: Xt.StringList;
+		        VAR num_params: Xt.Cardinal );
+
+(********    End Private Function Declarations    ********)
+
+END RowColumnP.

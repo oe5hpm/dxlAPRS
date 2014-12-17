@@ -1,0 +1,88 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 4.01 Transitional//EN">
+<HTML>
+<HEAD>
+<TITLE>Syntax of Oberon-2</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<P><HR>
+<A NAME="0053">
+<A HREF="o2rep000.html#root" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="o2rep012.html#0052" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="o2rep014.html#0054" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H1>Syntax of Oberon-2</H1>
+
+<P>
+<P><PRE>Module&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;MODULE&nbsp;ident&nbsp;&quot;;&quot;&nbsp;[ImportList]&nbsp;DeclSeq
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[BEGIN&nbsp;StatementSeq]&nbsp;END&nbsp;ident&nbsp;&quot;.&quot;.
+ImportList&nbsp;&nbsp;=&nbsp;IMPORT&nbsp;[ident&nbsp;&quot;:=&quot;]&nbsp;ident
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{&quot;,&quot;&nbsp;[ident&nbsp;&quot;:=&quot;]&nbsp;ident}&nbsp;&quot;;&quot;.
+DeclSeq&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;&nbsp;{&nbsp;CONST&nbsp;{ConstDecl&nbsp;&quot;;&quot;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;TYPE&nbsp;{TypeDecl&nbsp;&quot;;&quot;}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;VAR&nbsp;{VarDecl&nbsp;&quot;;&quot;}}&nbsp;{ProcDecl&nbsp;&quot;;&quot;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;ForwardDecl&nbsp;&quot;;&quot;}.
+ConstDecl&nbsp;&nbsp;&nbsp;=&nbsp;IdentDef&nbsp;&quot;=&quot;&nbsp;ConstExpr.
+TypeDecl&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;IdentDef&nbsp;&quot;=&quot;&nbsp;Type.
+VarDecl&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;IdentList&nbsp;&quot;:&quot;&nbsp;Type.
+ProcDecl&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;PROCEDURE&nbsp;[Receiver]&nbsp;IdentDef
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[FormalPars]&nbsp;&quot;;&quot;&nbsp;DeclSeq&nbsp;[BEGIN
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;StatementSeq]&nbsp;END&nbsp;ident.
+ForwardDecl&nbsp;=&nbsp;PROCEDURE&nbsp;&quot;^&quot;&nbsp;[Receiver]&nbsp;IdentDef
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[FormalPars].
+FormalPars&nbsp;&nbsp;=&nbsp;&quot;(&quot;&nbsp;[FPSection&nbsp;{&quot;;&quot;&nbsp;FPSection}]&nbsp;&quot;)&quot;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&quot;:&quot;&nbsp;Qualident].
+FPSection&nbsp;&nbsp;&nbsp;=&nbsp;[VAR]&nbsp;ident&nbsp;{&quot;,&quot;&nbsp;ident}&nbsp;&quot;:&quot;&nbsp;Type.
+Receiver&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;&quot;(&quot;&nbsp;[VAR]&nbsp;ident&nbsp;&quot;:&quot;&nbsp;ident&nbsp;&quot;)&quot;.
+Type&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;Qualident
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;ARRAY&nbsp;[ConstExpr&nbsp;{&quot;,&quot;&nbsp;ConstExpr}]&nbsp;OF&nbsp;Type
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;RECORD&nbsp;[&quot;(&quot;Qualident&quot;)&quot;]&nbsp;FieldList
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{&quot;;&quot;&nbsp;FieldList}&nbsp;END
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;POINTER&nbsp;TO&nbsp;Type
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;PROCEDURE&nbsp;[FormalPars]
+FieldList&nbsp;&nbsp;&nbsp;=&nbsp;[IdentList&nbsp;&quot;:&quot;&nbsp;Type].
+StatementSeq=&nbsp;Statement&nbsp;{&quot;;&quot;&nbsp;Statement}.
+Statement&nbsp;&nbsp;&nbsp;=&nbsp;[Designator&nbsp;&quot;:=&quot;&nbsp;Expr
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;Designator&nbsp;[&quot;(&quot;&nbsp;[ExprList]&nbsp;&quot;)&quot;]
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;IF&nbsp;Expr&nbsp;THEN&nbsp;StatementSeq
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{ELSIF&nbsp;Expr&nbsp;THEN&nbsp;StatementSeq}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[ELSE&nbsp;StatementSeq]&nbsp;END
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;CASE&nbsp;Expr&nbsp;OF&nbsp;Case&nbsp;{&quot;|&quot;&nbsp;Case}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[ELSE&nbsp;StatementSeq]&nbsp;END
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;WHILE&nbsp;Expr&nbsp;DO&nbsp;StatementSeq&nbsp;END
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;REPEAT&nbsp;StatementSeq&nbsp;UNTIL&nbsp;Expr
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;FOR&nbsp;ident&nbsp;&quot;:=&quot;&nbsp;Expr&nbsp;TO&nbsp;Expr
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[BY&nbsp;ConstExpr]&nbsp;DO&nbsp;StatementSeq&nbsp;END
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;LOOP&nbsp;StatementSeq&nbsp;END
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;WITH&nbsp;Guard&nbsp;DO&nbsp;StatementSeq
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{&quot;|&quot;&nbsp;Guard&nbsp;DO&nbsp;StatementSeq}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[ELSE&nbsp;StatementSeq]&nbsp;END
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;EXIT
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;RETURN&nbsp;[Expr]].
+Case&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;[CaseLabels&nbsp;{&quot;,&quot;&nbsp;CaseLabels}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&quot;:&quot;&nbsp;StatementSeq].
+CaseLabels&nbsp;&nbsp;=&nbsp;ConstExpr&nbsp;[&quot;..&quot;&nbsp;ConstExpr].
+Guard&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;Qualident&nbsp;&quot;:&quot;&nbsp;Qualident.
+ConstExpr&nbsp;&nbsp;&nbsp;=&nbsp;Expr.
+Expr&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;SimpleExpr&nbsp;[Relation&nbsp;SimpleExpr].
+SimpleExpr&nbsp;&nbsp;=&nbsp;[&quot;+&quot;&nbsp;|&nbsp;&quot;-&quot;]&nbsp;Term&nbsp;{AddOp&nbsp;Term}.
+Term&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;Factor&nbsp;{MulOp&nbsp;Factor}.
+Factor&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;Designator&nbsp;[&quot;(&quot;&nbsp;[ExprList]&nbsp;&quot;)&quot;]
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;number&nbsp;|&nbsp;character&nbsp;|&nbsp;string&nbsp;|&nbsp;NIL
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;Set&nbsp;|&nbsp;&quot;(&quot;&nbsp;Expr&nbsp;&quot;)&quot;&nbsp;|&nbsp;&quot;&nbsp;~&nbsp;&quot;&nbsp;Factor.
+Set&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;&quot;{&quot;&nbsp;[Element&nbsp;{&quot;,&quot;&nbsp;Element}]&nbsp;&quot;}&quot;.
+Element&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;Expr&nbsp;[&quot;..&quot;&nbsp;Expr].
+Relation&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;&quot;=&quot;&nbsp;|&nbsp;&quot;#&quot;&nbsp;|&nbsp;&quot;&lt;&quot;&nbsp;|&nbsp;&quot;&lt;=&quot;&nbsp;|&nbsp;&quot;&gt;&quot;&nbsp;|&nbsp;&quot;&gt;=&quot;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;IN&nbsp;|&nbsp;IS.
+AddOp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;&quot;+&quot;&nbsp;|&nbsp;&quot;-&quot;&nbsp;|&nbsp;OR.
+MulOp&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;&quot;&nbsp;*&nbsp;&quot;&nbsp;|&nbsp;&quot;/&quot;&nbsp;|&nbsp;DIV&nbsp;|&nbsp;MOD&nbsp;|&nbsp;&quot;&amp;&quot;.
+Designator&nbsp;&nbsp;=&nbsp;Qualident&nbsp;{&quot;.&quot;&nbsp;ident&nbsp;|&nbsp;&quot;[&quot;&nbsp;ExprList&nbsp;&quot;]&quot;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&quot;^&quot;&nbsp;|&nbsp;&quot;(&quot;&nbsp;Qualident&nbsp;&quot;)&quot;}.
+ExprList&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;Expr&nbsp;{&quot;,&quot;&nbsp;Expr}.
+IdentList&nbsp;&nbsp;&nbsp;=&nbsp;IdentDef&nbsp;{&quot;,&quot;&nbsp;IdentDef}.
+Qualident&nbsp;&nbsp;&nbsp;=&nbsp;[ident&nbsp;&quot;.&quot;]&nbsp;ident.
+IdentDef&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;ident&nbsp;[&quot;&nbsp;*&nbsp;&quot;&nbsp;|&nbsp;&quot;-&quot;].
+</PRE>
+
+<P></BODY>
+</HTML>

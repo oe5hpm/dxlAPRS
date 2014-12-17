@@ -1,0 +1,1069 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 4.01 Transitional//EN">
+<HTML>
+<HEAD>
+<TITLE>TopSpeed Compatibility Pack</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<P><HR>
+<A NAME="0600">
+<A HREF="xm000.html#root" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="xm013.html#0599" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0601" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H1>TopSpeed Compatibility Pack</H1>
+
+<P>The TopSpeed Modula-2 compiler for DOS and OS/2 by Jensen and Partners International had been rather popular in late 1980s. There are millions of lines of TS Modula-2 code still used in various environments. Unfortunately, since that time the world has moved to Windows and Linux, and TopSpeed users could only watch this process as their compiler is no longer available as a standalone product, and is not actively developed, marketed, and supported by its new owners. So there is a need for them to simultaneously change the compiler and the target operating system. 
+<P>XDS Modula-2 compilers, available for Windows and Linux, are likely to be considered as a replacement for TopSpeed. But moving from TopSpeed to XDS can be difficult: the JPI implementation of the language is based on PIM, whereas XDS follows the ISO 10514 standard, which is not a superset of PIM. In addition, both compilers provide different sets of language extensions. 
+<P>That&rsquo;s why the TopSpeed Compatibility Pack (TSCP) has been developed by Excelsior. The XDS compiler which is part of TSCP has one additional option &mdash; <A HREF="xm005.html#0118" TARGET=body>TOPSPEED</A>. Setting it ON enables a set of language extensions that makes the compiler more compatible with TopSpeed. These extensions are described in the following sections. 
+<P>TSCP also contains a <A HREF="#0639" TARGET=body>set of TopSpeed-like library modules</A>. 
+<P><UL>
+<LI><A HREF="#0601" TARGET=body>Conditional compilation</A>
+<LI><A HREF="#0602" TARGET=body>Declarations and visibility</A>
+<LI><A HREF="#0604" TARGET=body>Types</A>
+<LI><A HREF="#0609" TARGET=body>Objects and values</A>
+<LI><A HREF="#0612" TARGET=body>Expressions</A>
+<LI><A HREF="#0616" TARGET=body>Statements</A>
+<LI><A HREF="#0620" TARGET=body>Procedures</A>
+<LI><A HREF="#0627" TARGET=body>Modules</A>
+<LI><A HREF="#0632" TARGET=body>Intel x86 16-bit mode specifics</A>
+<LI><A HREF="#0633" TARGET=body>Object oriented extensions</A>
+<LI><A HREF="#0634" TARGET=body>Pragmae</A>
+<LI><A HREF="#0639" TARGET=body>XDS TS-like library</A>
+</UL>
+<P><HR>
+<A NAME="0601">
+<A HREF="#0600" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0600" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0602" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Conditional compilation</H2>
+
+<P>The existing users of your DOS and/or OS/2 software products are not likely to move to Win32 at once as you do it. So it is desirable to be able to compile the same sources with both TopSpeed and XDS. To facilitate this, XDS supports TopSpeed conditional compilation syntax. 
+<P><B>Note:</B> In TopSpeed, an identifier used in a conditional compilation clause must be a boolean constant, either predefined, defined in the project file, or in the source text. In XDS, it has to be an option name. 
+<P>The <TT>__XDS__</TT> option is always set to <TT>TRUE</TT> in XDS Modula-2, so we recommend you to define the <TT>__XDS__</TT> constant in your TopSpeed project file: 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;#pragma&nbsp;define(__XDS__=&gt;off)</TT> 
+<P>and then use the above scheme to isolate TS- and XDS-specific portions of code. See example in section <A HREF="#0635" TARGET=body>Pragma syntax</A>. 
+<P><HR>
+<A NAME="0602">
+<A HREF="#0600" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0601" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0603" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Declarations and visibility</H2>
+
+<P><UL>
+<LI><A HREF="#0603" TARGET=body>Alias declaration</A>
+</UL>
+<P><HR>
+<A NAME="0603">
+<A HREF="#0602" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0602" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0604" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Alias declaration</H3>
+
+<P>TopSpeed alias declaration (<TT>CONST&nbsp;id1&nbsp;::=&nbsp;id2;</TT>) is available in XDS if the option <A HREF="xm005.html#0118" TARGET=body>TOPSPEED</A> is turned ON. 
+<P><HR>
+<A NAME="0604">
+<A HREF="#0600" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0603" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0605" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Types</H2>
+
+<P><UL>
+<LI><A HREF="#0605" TARGET=body>Numeric types</A>
+<LI><A HREF="#0606" TARGET=body>Sizes of base types</A>
+<LI><A HREF="#0607" TARGET=body>Based and virtual pointers</A>
+<LI><A HREF="#0608" TARGET=body>Compatibility with system types </A>
+</UL>
+<P><HR>
+<A NAME="0605">
+<A HREF="#0604" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0604" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0606" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Numeric types</H3>
+
+<P>Types <TT>LONGCARD</TT>, <TT>LONGINT</TT>, <TT>SHORTCARD</TT>, and <TT>SHORTINT</TT> are not part of ISO Modula-2, but they are available in XDS Modula-2 if the <A HREF="xm005.html#0099" TARGET=body>M2ADDTYPES</A> compiler option is switched on. Usage of types <TT>SYSTEM.INT8</TT>, <TT>SYSTEM.INT16</TT>, etc. may also be considered. 
+<P>TopSpeed Modula-2 types <TT>TEMPREAL</TT> and <TT>FIXREAL</TT> have no analogs in XDS. 
+<P><HR>
+<A NAME="0606">
+<A HREF="#0604" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0605" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0607" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Sizes of base types</H3>
+
+<P>XDS compilers generate 32-bit code, so the base Modula-2 types, such as <TT>CARDINAL</TT>, <TT>INTEGER</TT>, and <TT>BITSET</TT>, are 32-bit by default, whereas in TopSpeed Modula-2 these types are 16-bit. To achieve better performance, it is recommended to use 32-bit types anywhere except in declarations that represent externally defined data structures, such as network packet layouts or database records. Unfortunately, this requires a lot of analysis that can only be done manually and requires deep understaning of the program being migrated, and therefore is error prone. This problem resembles the famous Year 2000 problem &mdash; no one can tell where in a million of source lines your program relies on base types being exactly 16 bits wide. 
+<P>You may consider usage of the following techniques that do not require this analysis: 
+<UL>
+ 
+<LI>Turn the <A HREF="xm005.html#0100" TARGET=body>M2BASE16</A> option ON in your project files. This would force base types to be 16-bit. Types <TT>SHORTINT</TT>, <TT>INTEGER</TT>, and <TT>LONGINT</TT>, as well as <TT>SHORTCARD</TT>, <TT>CARDINAL</TT>, and <TT>LONGCARD</TT>, are assignment and parameter compatible. The compiler inserts the required conversions and checks automatically. You may need to modify your code if there are any calls of library procedures that accept or return <TT>BITSET</TT>s. 
+<P>Take into account that the XDS runtime library has been compiled with the <A HREF="xm005.html#0100" TARGET=body>M2BASE16</A> option turned OFF. </LI>
+<LI>Redefine these types in all your modules using fixed size types from the module SYSTEM: 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;(*%T&nbsp;__XDS__&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TYPE&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;INTEGER&nbsp;&nbsp;=&nbsp;SYSTEM.INT16;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;CARDINAL&nbsp;=&nbsp;SYSTEM.CARD16;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;BITSET&nbsp;&nbsp;&nbsp;=&nbsp;SYSTEM.SET16;
+&nbsp;&nbsp;&nbsp;&nbsp;(*%E&nbsp;*)
+</PRE>
+</LI>
+</UL>
+
+<P><HR>
+<A NAME="0607">
+<A HREF="#0604" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0606" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0608" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Based and virtual pointers</H3>
+
+<P>There are no based and virtual pointers in XDS. 
+<P><HR>
+<A NAME="0608">
+<A HREF="#0604" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0607" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0609" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Compatibility with system types </H3>
+
+<P>In TopSpeed Modula-2, types <TT>BYTE</TT>, <TT>WORD</TT>, and <TT>LONGWORD</TT> are assignment compatible with any type of corresponding size (1, 2, or 4 bytes), and allow testing for equality or inequality. Due to a far more complex definition of the <TT>BYTE</TT> and <TT>WORD</TT> types in ISO Modula-2, the only operation directly defined for them is an assignment and there are special rules affecting parameter compatibility (see XDS User Guide, System parameter compatibility for further details). The <TT>LONGWORD</TT> type does not exist in XDS. 
+<P><HR>
+<A NAME="0609">
+<A HREF="#0600" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0608" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0610" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Objects and values</H2>
+
+<P><UL>
+<LI><A HREF="#0610" TARGET=body>Fixed variable placement</A>
+<LI><A HREF="#0611" TARGET=body>Value constructors</A>
+</UL>
+<P><HR>
+<A NAME="0610">
+<A HREF="#0609" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0609" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0611" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Fixed variable placement</H3>
+
+<P>In TopSpeed, a variable can be placed at a fixed physical address which is specified in segment:offset form: 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;Screen&nbsp;[0B800H:0]&nbsp;:&nbsp;ARRAY&nbsp;[1..25][1..80]&nbsp;OF&nbsp;Cell;</TT> 
+<P>In XDS, the <TT>SYSTEM.MAKEADR</TT> function has to be used: 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;MyCardIO&nbsp;[SYSTEM.MAKEADR(0FFFF0000H)]&nbsp;:&nbsp;BITSET;</TT> 
+<P><HR>
+<A NAME="0611">
+<A HREF="#0609" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0610" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0612" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Value constructors</H3>
+
+<P>In ISO Modula-2, constructors of array type and record type value use curly braces (<TT>{}</TT>) rather than parenthesis (<TT>()</TT>). 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;TYPE
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Struct&nbsp;=&nbsp;RECORD
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;date&nbsp;:CARDINAL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;time&nbsp;:CARDINAL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;END;
+
+&nbsp;&nbsp;&nbsp;&nbsp;CONST
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;s&nbsp;=&nbsp;Struct&nbsp;(&nbsp;10,&nbsp;12&nbsp;);&nbsp;&nbsp;&nbsp;TS&nbsp;manner&nbsp;*)
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;s&nbsp;=&nbsp;Struct&nbsp;{&nbsp;10,&nbsp;12&nbsp;};&nbsp;&nbsp;--&nbsp;XDS&nbsp;(ISO)&nbsp;manner
+</PRE>
+
+<P><HR>
+<A NAME="0612">
+<A HREF="#0600" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0611" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0613" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Expressions</H2>
+
+<P><UL>
+<LI><A HREF="#0613" TARGET=body>Function calls in designators</A>
+<LI><A HREF="#0614" TARGET=body>Logical shift operators</A>
+<LI><A HREF="#0615" TARGET=body>Comparison of structured values</A>
+</UL>
+<P><HR>
+<A NAME="0613">
+<A HREF="#0612" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0612" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0614" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Function calls in designators</H3>
+
+<P>If the option <A HREF="xm005.html#0118" TARGET=body>TOPSPEED</A> or the option <A HREF="xm005.html#0102" TARGET=body>M2EXTENSIONS</A> is set ON, XDS recognizes function procedure calls in designators, including predefined, SYSTEM, and type transfer procedures: 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;CurPos(point[i,j])^.x
+&nbsp;&nbsp;&nbsp;&nbsp;GetCurDate().year
+&nbsp;&nbsp;&nbsp;&nbsp;REC_PTR(adr)^.field
+</PRE>
+
+<P><HR>
+<A NAME="0614">
+<A HREF="#0612" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0613" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0615" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Logical shift operators</H3>
+
+<P>The &rsquo;<TT>&lt;&lt;</TT>&rsquo; and &rsquo;<TT>&gt;&gt;</TT>&rsquo; infix operators of logical left/right shift, defined for cardinal types in TS, are available in XDS if the option <A HREF="xm005.html#0118" TARGET=body>TOPSPEED</A> or the option <A HREF="xm005.html#0102" TARGET=body>M2EXTENSIONS</A> is set ON. 
+<P><HR>
+<A NAME="0615">
+<A HREF="#0612" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0614" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0616" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Comparison of structured values</H3>
+
+<P>TopSpeed Modula-2 supports comparison of structured values (arrays and records) as a language extension. In general, alignment and packing rules of the target environment may cause existence of gaps between elements of an array or fields of a record. So comparison of structured values in raw mode (e.g. using <TT>Lib.Compare</TT>) is likely to produce incorrect results. In ISO Modula-2, you have to compare stuctured values element by element or field by field, 
+<P><HR>
+<A NAME="0616">
+<A HREF="#0600" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0615" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0617" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Statements</H2>
+
+<P><UL>
+<LI><A HREF="#0617" TARGET=body>CASE without ELSE</A>
+<LI><A HREF="#0618" TARGET=body>FOR loop control variable</A>
+<LI><A HREF="#0619" TARGET=body>GOTO statement</A>
+</UL>
+<P><HR>
+<A NAME="0617">
+<A HREF="#0616" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0616" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0618" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>CASE without ELSE</H3>
+
+<P>In TopSpeed Modula-2, absence of the <TT>ELSE</TT> clause in a <TT>CASE</TT> statement is equivalent to presense of an empty <TT>ELSE</TT> clause. In XDS Modula-2, according to ISO 10514, if the value of the case selector is not contained in any case label list and the ELSE clause is not present, an exception shall be raised. Therefore, the <TT>CASE</TT> statement in the following code fragment: 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;x&nbsp;:=&nbsp;2;
+&nbsp;&nbsp;&nbsp;&nbsp;CASE&nbsp;x&nbsp;OF
+&nbsp;&nbsp;&nbsp;&nbsp;|0:&nbsp;p0;
+&nbsp;&nbsp;&nbsp;&nbsp;|1:&nbsp;p1;
+&nbsp;&nbsp;&nbsp;&nbsp;END;
+</PRE>
+
+<P>does nothing if compiled by TopSpeed, and raises an exception if compiled by XDS. 
+<P>The recommended solution is to add empty <TT>ELSE</TT> clauses to all your <TT>CASE</TT> statements that lack it, as this would make no difference in TopSpeed. To quickly find all such statements, turn on warning 319: 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;C:\WORK&gt;xc&nbsp;t.mod&nbsp;-woff319-'
+
+&nbsp;&nbsp;&nbsp;&nbsp;XDS&nbsp;Modula-2&nbsp;v2.40&nbsp;[x86,&nbsp;v1.08]&nbsp;-&nbsp;build&nbsp;20.10.1998
+&nbsp;&nbsp;&nbsp;&nbsp;Compiling&nbsp;&quot;t.mod&quot;
+
+&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;[t.mod&nbsp;12.05&nbsp;W319]
+&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;CASE&nbsp;statement&nbsp;without&nbsp;ELSE
+</PRE>
+
+<P><HR>
+<A NAME="0618">
+<A HREF="#0616" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0617" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0619" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>FOR loop control variable</H3>
+
+<P>ISO Modula-2 requires that a <TT>FOR</TT> loop control variable must be declared in the scope to which the loop belongs. TopSpeed does not make this restriction, so you may need to redesign some of your FOR loops. 
+<P><HR>
+<A NAME="0619">
+<A HREF="#0616" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0618" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0620" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>GOTO statement</H3>
+
+<P>There are no <TT>GOTO</TT> and <TT>LABEL</TT> clauses in ISO Modula-2. XDS provides them as an extension if the option <A HREF="xm005.html#0118" TARGET=body>TOPSPEED</A> is turned ON. 
+<P><HR>
+<A NAME="0620">
+<A HREF="#0600" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0619" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0621" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Procedures</H2>
+
+<P><UL>
+<LI><A HREF="#0621" TARGET=body>External procedures</A>
+<LI><A HREF="#0622" TARGET=body>Open arrray parameter compatibility</A>
+<LI><A HREF="#0623" TARGET=body>Procedure types</A>
+<LI><A HREF="#0624" TARGET=body>Predefined procedures</A>
+<LI><A HREF="#0625" TARGET=body>Type conversion vs type cast</A>
+<LI><A HREF="#0626" TARGET=body>Inline and code procedures</A>
+</UL>
+<P><HR>
+<A NAME="0621">
+<A HREF="#0620" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0620" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0622" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>External procedures</H3>
+
+<P>XDS compilers allow only foreign procedures to be declared as external. 
+<P>A declaration of an external procedure consists of a procedure header only, with the procedure name preceded by the symbol &quot;<TT>/</TT>&quot;: 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;[&quot;C&quot;]&nbsp;/&nbsp;putchar(ch:&nbsp;SYSTEM.CARD8):&nbsp;SYSTEM.INT32;</TT> 
+<P><HR>
+<A NAME="0622">
+<A HREF="#0620" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0621" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0623" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Open arrray parameter compatibility</H3>
+
+<P>In TopSpeed Modula-2, an expression of type <TT>T</TT> can be substituted as a parameter whose formal type is <TT>ARRAY&nbsp;OF&nbsp;T</TT>. XDS supports this if on of the <A HREF="xm005.html#0102" TARGET=body>M2EXTENSIONS</A> or <A HREF="xm005.html#0118" TARGET=body>TOPSPEED</A> is turned ON. 
+<P><HR>
+<A NAME="0623">
+<A HREF="#0620" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0622" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0624" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Procedure types</H3>
+
+<P>In ISO Modula-2, a procedure belongs to a particular procedure type if the types of each formal parameter, taken in turn, are exactly the same. In TopSpeed Modula-2, there is one exception: if one of the two types is <TT>SYSTEM.ADDRESS</TT>, another type can be any pointer type, so the following piece of code is legal: 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;TYPE
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SetNameMethod&nbsp;=&nbsp;PROCEDURE(SYSTEM.ADDRESS,ARRAY&nbsp;OF&nbsp;CHAR);
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;NodePtr&nbsp;=&nbsp;POINTER&nbsp;TO&nbsp;Node;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Node&nbsp;=&nbsp;RECORD
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;name&nbsp;&nbsp;&nbsp;:&nbsp;ARRAY&nbsp;[0..63]&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;setname:&nbsp;SetNameMethod;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;END;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;SetNodeName(p:&nbsp;NodePtr;&nbsp;name:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR);
+&nbsp;&nbsp;&nbsp;&nbsp;BEGIN
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Str.Copy(p^.name,&nbsp;name);
+&nbsp;&nbsp;&nbsp;&nbsp;END&nbsp;SetNodeName;
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.&nbsp;&nbsp;.&nbsp;&nbsp;.
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;NEW(node);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;node^.setname&nbsp;:=&nbsp;SetNodeName;
+</PRE>
+
+<P>In TopSpeed Modula-2, a procedure type definition may reference an incomplete type containing that definition, provided that the incomplete type has already been referenced: 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;TYPE
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;P&nbsp;=&nbsp;POINTER&nbsp;TO&nbsp;R;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;R&nbsp;=&nbsp;RECORD
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;data:&nbsp;CARDINAL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;proc:&nbsp;PROCEDURE(R);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;END;
+</PRE>
+
+<P>XDS does not allow this, so you have to define the procedure type separately: 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;TYPE
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;P&nbsp;=&nbsp;POINTER&nbsp;TO&nbsp;R;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;R_proc_type&nbsp;=&nbsp;PROCEDURE(R);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;R&nbsp;=&nbsp;RECORD
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;data:&nbsp;CARDINAL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;proc:&nbsp;R_proc_type;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;END;
+</PRE>
+
+<P>The <TT>NULLPROC</TT> value is absent in XDS; <TT>NIL</TT> should be used instead. You may consider declaring <TT>NULLPROC</TT> under conditional compilation in modules that use it: 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;(*%T&nbsp;__XDS__&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;CONST&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;NULLPROC&nbsp;=&nbsp;NIL;
+&nbsp;&nbsp;&nbsp;&nbsp;(*%E&nbsp;*)
+</PRE>
+
+<P><HR>
+<A NAME="0624">
+<A HREF="#0620" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0623" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0625" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Predefined procedures</H3>
+
+<P>Predefined procedures <TT>FarADR</TT>, <TT>NearADR</TT>, <TT>Ofs</TT>, and <TT>Seg</TT> are specific to the 80x86 16-bit real and protected modes and therefore are not available in XDS. 
+<P>The <TT>FieldOfs</TT> and <TT>VSIZE</TT> procedures are predefined if the option <A HREF="xm005.html#0118" TARGET=body>TOPSPEED</A> is set ON and are available from the module SYSTEM otherwise. 
+<P><HR>
+<A NAME="0625">
+<A HREF="#0620" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0624" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0626" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Type conversion vs type cast</H3>
+
+<P>In TopSpeed Modula-2, the predefined function procedure <TT>VAL(type,&nbsp;expr)</TT> performs <I>type conversion</I> if both <TT>type</TT> and <TT>expr</TT> are numeric or ordinal, and performs <I>type cast</I> otherwise. In ISO Modula-2, <TT>VAL</TT> may only be used in the former case; <TT>SYSTEM.CAST</TT> has to be used for type casting. 
+<P>According to PIM, a <I>type transfer function</I> <TT>type(expr)</TT> shall not affect the bit pattern representaion of the result of <TT>expr</TT>. Unfortunately, TopSpeed does not follow this specification and treats <TT>type(expr)</TT> exactly as <TT>VAL(type,expr)</TT> (see above). Due to introduction of such ambiguities by pre-ISO compiler vendors, this feature was not included in the International Standard. XDS provided it as a language extension (option <A HREF="xm005.html#0102" TARGET=body>M2EXTENSIONS</A> ON), but treated it as <TT>SYSTEM.CAST(type,expr)</TT>. Now, if the <A HREF="xm005.html#0118" TARGET=body>TOPSPEED</A> option is turned ON, XDS will treat this construction exaclty as TopSpeed. This ambiguity may lead to porting problems that are hard to detect, so the compiler issues a warning upon encountering a type transfer function. It is recommended to use the built-in <TT>VAL</TT> and <TT>SYSTEM.CAST</TT> function procedures for type conversion and type cast respectively. 
+<P><HR>
+<A NAME="0626">
+<A HREF="#0620" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0625" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0627" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Inline and code procedures</H3>
+
+<P>In XDS, there is no way to point out an inline procedure explicitly (yet), however native-code compilers can make inline substitutions of some procedures automatically. It is also not possible to define inline procedures in a definition module. You have to move such procedures into implementation modules. 
+<P>As for TopSpeed binary inline procedures, they also have no equivalent in XDS. Since they contain 16-bit mode instructions, they would have to be rewritten anyway. XDS inline assembler may be used to implement machine code routines. 
+<P><HR>
+<A NAME="0627">
+<A HREF="#0600" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0626" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0628" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Modules</H2>
+
+<P><UL>
+<LI><A HREF="#0628" TARGET=body>Import</A>
+<LI><A HREF="#0629" TARGET=body>Hidden pointer base types</A>
+<LI><A HREF="#0630" TARGET=body>Export from local module</A>
+<LI><A HREF="#0631" TARGET=body>The module SYSTEM</A>
+</UL>
+<P><HR>
+<A NAME="0628">
+<A HREF="#0627" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0627" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0629" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Import</H3>
+
+<P>In TopSpeed, any entity imported into a definition module is &quot;automatically&quot; imported into the corresponding implementation module. In ISO Modula-2, all entities required by an implementation module should be explicitly imported into it. 
+<P>TopSpeed Modula-2 supports qualification of entities defined in a definition module in the respecive implementation module. In XDS, this is not possible. 
+<P><HR>
+<A NAME="0629">
+<A HREF="#0627" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0628" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0630" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Hidden pointer base types</H3>
+
+<P>In TopSpeed, if <TT>T</TT> is a type defined in an implementation module, it is still possible to declare a type <TT>POINTER&nbsp;TO&nbsp;T</TT> in a definition module: 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;DEFINITION&nbsp;MODULE&nbsp;T;
+&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;TYPE&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;p1&nbsp;=&nbsp;POINTER&nbsp;TO&nbsp;t1;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;r1&nbsp;=&nbsp;RECORD
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;p2:&nbsp;POINTER&nbsp;TO&nbsp;t2;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;END;
+&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;END&nbsp;T.
+</PRE>
+
+<P>XDS does not allow this, so you have to either 
+<UL>
+ 
+<LI>define such types as opaque </LI>
+<LI>move base types into definition modules </LI>
+</UL>
+
+<P><HR>
+<A NAME="0630">
+<A HREF="#0627" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0629" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0631" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Export from local module</H3>
+
+<P>In TS. the keyword <TT>QUALIFIED</TT> (in local modules) has no effect and a name of an object exported from a local module can be used with or without qualification. In ISO Modula-2, there is a distinction between qualified an unqualified export. You will have to introduce uniformity here: if you mostly use objects exported from local modules with qualification, ensure presence of the <TT>QUALIFIED</TT> keyword, otherwise remove it. Compilation errors will then indicate places where you have to add or remove qualification. 
+<P><HR>
+<A NAME="0631">
+<A HREF="#0627" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0630" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0632" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>The module SYSTEM</H3>
+
+<P>In ISO Modula-2, all objects from the module <TT>SYSTEM</TT>, such as types <TT>ADDRESS</TT>, <TT>WORD</TT>, <TT>BYTE</TT>, and the procedure <TT>ADR</TT> have to be explicitly imported. In TopSpeed Modula-2, they are predefined. 
+<P>Although the XDS module <TT>SYSTEM</TT> contains procedures <TT>NEWPROCESS</TT>, <TT>TRANSFER</TT>, and <TT>IOTRANSFER</TT>, it is recommended to replace them with more powerful mechanisms provided by the ISO system module <TT>COROUTINES</TT>. See also <A HREF="#0648" TARGET=body>Multithreading</A>. 
+<P>The set of platform-specific facilities is almost completely different in TopSpeed and XDS variants of the module <TT>SYSTEM</TT>. 
+<P><HR>
+<A NAME="0632">
+<A HREF="#0600" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0631" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0633" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Intel x86 16-bit mode specifics</H2>
+
+<P>TopSpeed Modula-2 supports Intel x86 16-bit real and protected modes, whereas XDS produces code for the 32-bit flat memory model. Therefore, code that deals with segment:offset addresses has to be rewritten for XDS. 
+<P>In XDS, there is no analog for TopSpeed pointer constructors of the form <TT>[seg:ofs&nbsp;type]</TT>. These constructors are commonly used to directly interface to hardware and to access DOS and BIOS data areas, so routines that utilize this feature have to be redesigned anyway, 
+<P>The following TopSpeed Modula-2 types and procedures, specific to Intel x86 16-bit real and protected modes, are absent in XDS: 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;FarADDRESS&nbsp;&nbsp;&nbsp;FarNIL&nbsp;&nbsp;&nbsp;FarADR</TT> <BR>
+<TT>&nbsp;&nbsp;&nbsp;&nbsp;NearADDRESS&nbsp;&nbsp;NearNIL&nbsp;&nbsp;NearADR</TT> <BR>
+<TT>&nbsp;&nbsp;&nbsp;&nbsp;Ofs&nbsp;Seg</TT> 
+<P>There are so called based pointers in TopSpeed, i.e. pointers belonging to a particular segment. This feature is useless in 32-bit flat mode, so it is not available in XDS. 
+<P><HR>
+<A NAME="0633">
+<A HREF="#0600" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0632" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0634" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Object oriented extensions</H2>
+
+<P>There are no object-oriented extensions in XDS Modula-2. Although XDS features Oberon-2 as well, its OO facilities are dissimilar in many aspects from provided in TopSpeed Modula-2. So, unfortunately, the required porting efforts for a program that makes heavy use of TS OO extensions may be unaffordable. 
+<P><HR>
+<A NAME="0634">
+<A HREF="#0600" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0633" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0635" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Pragmae</H2>
+
+<P><UL>
+<LI><A HREF="#0635" TARGET=body>Pragma syntax</A>
+<LI><A HREF="#0636" TARGET=body>Open array parameters passing</A>
+<LI><A HREF="#0637" TARGET=body>Bitwise operations on cardinals</A>
+<LI><A HREF="#0638" TARGET=body>Other pragmae</A>
+</UL>
+<P><HR>
+<A NAME="0635">
+<A HREF="#0634" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0634" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0636" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Pragma syntax</H3>
+
+<P>XDS pragma syntax is completely different from TS. Most TopSpeed pragmae have no analogs in XDS, and many of them are pretty useless in the 32-bit flat memory model. <A HREF="#0601" TARGET=body>Conditional compilation</A> has to be used to isolate TopSpeed and XDS pragmae: 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;(*%T&nbsp;__XDS__&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;*&nbsp;PUSH&nbsp;*&gt;&nbsp;&lt;*&nbsp;COVERFLOW&nbsp;-&nbsp;*&gt;
+&nbsp;&nbsp;&nbsp;&nbsp;(*%E&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;(*%F&nbsp;__XDS__&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(*#&nbsp;save,&nbsp;check(overflow=&gt;off)&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;(*%E&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;hash&nbsp;:=&nbsp;hash*alpha+ORD(ch);
+&nbsp;&nbsp;&nbsp;&nbsp;(*%T&nbsp;__XDS__&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;*&nbsp;POP&nbsp;*&gt;
+&nbsp;&nbsp;&nbsp;&nbsp;(*%E&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;(*%F&nbsp;__XDS__&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(*#&nbsp;restore&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;(*%E&nbsp;*)
+</PRE>
+
+<P><HR>
+<A NAME="0636">
+<A HREF="#0634" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0635" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0637" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Open array parameters passing</H3>
+
+<P>When an array is passed as a value parameter in TS, it can be either copied onto the stack or passed by reference, depending on the <TT>call(o_a_copy)</TT> pragma setting. In XDS, an array is always copied onto the stack unless the formal parameter is marked as read-only, for instance: 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;PrintStr&nbsp;(s&nbsp;&nbsp;:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR);&nbsp;&nbsp;--&nbsp;pass&nbsp;by&nbsp;value</TT> 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;PrintStr&nbsp;(s-&nbsp;:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR);&nbsp;&nbsp;--&nbsp;pass&nbsp;by&nbsp;reference</TT> 
+<P>Note: the <A HREF="xm005.html#0102" TARGET=body>M2EXTENSIONS</A> option should be turned on. 
+<P>When a procedure parameter has type <TT>ARRAY&nbsp;OF&nbsp;CHAR</TT>, TopSpeed allows an actual parameter of type <TT>CHAR</TT> to be passed. This is not allowed by the ISO standard, and XDS will not accept it. 
+<P><HR>
+<A NAME="0637">
+<A HREF="#0634" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0636" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0638" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Bitwise operations on cardinals</H3>
+
+<P>In TopSpeed Modula-2, the pragma <TT>option(bit_expr=&gt;on}</TT> enables bitwise operations <TT>AND</TT>, <TT>OR</TT>, and <TT>NOT</TT> to be applied to cardinals. In XDS, this feature is enabled if the <A HREF="xm005.html#0102" TARGET=body>M2EXTENSIONS</A> option is set ON. 
+<P><HR>
+<A NAME="0638">
+<A HREF="#0634" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0637" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0639" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Other pragmae</H3>
+
+<P>More information on TS-to-XDS pragmae mapping will be provided in future releases. 
+<P><HR>
+<A NAME="0639">
+<A HREF="#0600" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0638" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0640" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>XDS TS-like library</H2>
+
+<P>Table <A HREF=#table16>16. Module/product availability matrix</A> shows which TopSpeed-like library modules are implemented in which edition of TSCP. 
+<P>In order to preserve the overall level of the XDS libraries portability, a number of modifications was made to the original interface and functionality of the modules. Also, some restrictions were induced by differences between target operating systems. There are also some useful extensions. See the following sections for details. 
+<P><B>Note:</B> The library is compiled with the <A HREF="xm005.html#0100" TARGET=body>M2BASE16</A> compiler option turned OFF, so types <TT>INTEGER</TT>, <TT>CARDINAL</TT>, and <TT>BITSET</TT> are 32-bit. 
+<P><P ALIGN=CENTER><B><A NAME=table16>Table 16. </A></B>Module/product availability matrix
+
+<P ALIGN=CENTER><TABLE CELLSPACING=0>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: solid solid none solid;border-width: 1px 1px 0px 1px"><B>Module </B></TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: solid solid none none;border-width: 1px 1px 0px 0px">XDS-x86 </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: solid solid none none;border-width: 1px 1px 0px 0px">XDS-x86 </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: solid solid none none;border-width: 1px 1px 0px 0px">XDS-C </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid solid solid;border-width: 0px 1px 1px 1px"><B>name </B></TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid solid none;border-width: 0px 1px 1px 0px">(Windows) </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid solid none;border-width: 0px 1px 1px 0px">(Linux) </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid solid none;border-width: 0px 1px 1px 0px">(all platforms) </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none solid;border-width: 0px 1px 0px 1px"><TT>BiosIO </TT></TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">&radic; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">&radic; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">&radic; </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none solid;border-width: 0px 1px 0px 1px"><TT>FIO </TT></TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">&radic; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">&radic;- </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">&radic;- </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none solid;border-width: 0px 1px 0px 1px"><TT>FIOR </TT></TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">&radic; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">&radic; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">&radic; </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none solid;border-width: 0px 1px 0px 1px"><TT>Graph </TT></TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">&radic; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">- </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">- </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none solid;border-width: 0px 1px 0px 1px"><TT>IO </TT></TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">&radic; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">&radic; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">&radic; </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none solid;border-width: 0px 1px 0px 1px"><TT>Lib </TT></TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">&radic; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">&radic; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">&radic; </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none solid;border-width: 0px 1px 0px 1px"><TT>MATHLIB </TT></TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">&radic; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">&radic; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">&radic; </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none solid;border-width: 0px 1px 0px 1px"><TT>MsMouse </TT></TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">&radic; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">&radic; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">- </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none solid;border-width: 0px 1px 0px 1px"><TT>ShtHeap </TT></TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">&radic; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">&radic; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">&radic; </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none solid;border-width: 0px 1px 0px 1px"><TT>Str </TT></TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">&radic; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">&radic; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">&radic; </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid solid solid;border-width: 0px 1px 1px 1px"><TT>Window </TT></TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid solid none;border-width: 0px 1px 1px 0px">&radic; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid solid none;border-width: 0px 1px 1px 0px">&radic; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid solid none;border-width: 0px 1px 1px 0px">- </TD>
+</TR>
+</TABLE> 
+<P>
+<P><UL>
+<LI><A HREF="#0640" TARGET=body>Module FIO</A>
+<LI><A HREF="#0641" TARGET=body>Module Graph</A>
+<LI><A HREF="#0642" TARGET=body>Module IO</A>
+<LI><A HREF="#0643" TARGET=body>Module Lib</A>
+<LI><A HREF="#0644" TARGET=body>Module MATHLIB</A>
+<LI><A HREF="#0645" TARGET=body>Module ShtHeap</A>
+<LI><A HREF="#0646" TARGET=body>Module Str</A>
+<LI><A HREF="#0647" TARGET=body>Module Window</A>
+<LI><A HREF="#0648" TARGET=body>Multithreading</A>
+</UL>
+<P><HR>
+<A NAME="0640">
+<A HREF="#0639" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0639" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0641" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Module FIO</H3>
+
+<P><B>MODIFICATIONS</B> 
+<OL>
+ 
+<LI>Since the module <B>FIO</B> is implemented on top of the ISO standard library, the procedural variable <TT>RunTimeError</TT> has been removed. If <TT>IOCheck</TT> is set to <TT>TRUE</TT>, an I/O error raises an exception, so ISO Modula-2 exception handling facilities can be used. Exceptions raised in <B>FIO</B> can be indentified in an exception handler by means of the procedures <TT>FIO.IsFIOException()</TT> or <TT>IOChan.IsChanException()</TT>. </LI>
+<LI>The constant <TT>MaxOpenFiles</TT> is no longer needed, since the maximum number of open files is limited only by the system resources. If there are too many open files, either an exception will be raised or the error <TT>tooManyOpen</TT> will be returned by the procedure <TT>FIO.IOresult()</TT> (it depends on the state of the variable <TT>IOcheck</TT>). </LI>
+<LI>File share modes are defined as an enumeration type: 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;TYPE
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SHAREMODE&nbsp;=&nbsp;(ShareCompat,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ShareDenyRW,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ShareDenyRD,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ShareDenyWR,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ShareDenyNone);
+</PRE>
+
+<P>Supported target operating systems do not distingiush between subsequent opens of a file done by the same or different process, so <TT>ShareCompat</TT> works as <TT>ShareDenyWR</TT> in <TT>OpenRead</TT> and as <TT>ShareDenyRW</TT> in other file open procedures. </LI>
+<LI>Standard file handles (e.g. <TT>StandardInput</TT>) are predefined variables of the <TT>File</TT> type rather than constants. </LI>
+<LI>Type of the buffer parameter for <TT>RdBin</TT> and <TT>WrBin</TT> has been changed to <TT>ARRAY&nbsp;OF&nbsp;SYSTEM.LOC</TT> which works perfectly the same as <TT>ARRAY&nbsp;OF&nbsp;BYTE</TT>. </LI>
+<LI>When a file opening error occurs, the procedures <TT>Open</TT>, <TT>OpenRead</TT>, <TT>Create</TT>, etc. return a special invalid value instead of MAX(CARDINAL). The procedure <TT>InvalidFile</TT> always returns that value. </LI>
+<LI>A disk label can be obtained by calling <TT>FIO.GetLabel</TT> rather than <TT>FIO.ScanFirst</TT> with the volume attribute set. </LI>
+<LI>After directory scanning (<TT>FIO.ReadFirstEntry</TT>, <TT>FIO.ReadNextEntry</TT>) process is completed, a call to the <TT>FIO.ReadClose</TT> procedure <I>has to be issued</I> with the scan-buffer passed as a parameter. </LI>
+<LI>The procedure <TT>FIO.SetDrive</TT> does not return the total number of drives available on the system. </LI>
+<LI>The <TT>EOF</TT> flag is not set when the current read position <I>reaches</I> end of file, but on attempt to read <I>past it</I>, as in ISO routines. </LI>
+<LI>The <TT>Ctrl-Z</TT> character is <I>not</I> recognized as an end-of-file mark. </LI>
+<LI>For all procedures accepting or returning a drive number, drive numeration starts from 1 (1 is drive A, 2 is drive B and so on). </LI>
+<LI>The <B>SysErr</B> module contains constants defining symbolic names of error codes. Those constants may be used to test a return code obtained from <TT>FIO.IOresult</TT>. The constant <TT>SysErr.allRight</TT> corresponds to a normal procedure termination (it is recommended to use this constant instead of zero value). </LI>
+<LI>32-bit file length is supported. </LI>
+<LI>A file handle obtained from a system call can <B>NOT</B> be directly passed to <B>FIO</B> procedures. It has to be converted to a value of the type <TT>File</TT> using the <TT>AppendHandle</TT> procedure: 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;AppendHandle(fh&nbsp;:&nbsp;LONGCARD
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;ReadOnly&nbsp;:&nbsp;BOOLEAN
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)&nbsp;:&nbsp;File;
+</PRE>
+</LI>
+<LI>The type <TT>FIO.FileStamp</TT> is declared as equal to <TT>SysClock.DateTime</TT>. </LI>
+<LI>The parameter of <TT>FIO.Close</TT> now is a VAR parameter and the procedure shall assign an &quot;invalid&quot; value to it if the close operation succeeds, </LI>
+</OL>
+
+<P><B>RESTRICTIONS</B> 
+<OL>
+ 
+<LI>There is no multithread program support yet. Namely, the <TT>IOresult</TT>, <TT>ThreadEOF</TT> and <TT>ThreadOK</TT> procedures are not implemented yet, Nevertheless, the module can be used in multithread programs with the reservations listed above. </LI>
+<LI>File share modes are only supported by Native XDS-x86 for Windows. </LI>
+<LI>Assinging a buffer to a file is not implemented yet. I/O operations are buffered internally, but there is no way to flush an internal buffer (yet). </LI>
+<LI>The procedures <TT>GetStreamPointer</TT> and <TT>AppendStream</TT> have been excluded, </LI>
+<LI>The predefined variable <TT>PrinterDevice</TT> is not eliminated yet. </LI>
+<LI><TT>RdReal</TT> and <TT>RdLngReal</TT> do not recognize exponent-only zeroes, such as <TT>E+0</TT>. </LI>
+</OL>
+
+<P><B>PRODUCTS</B> 
+<P>Native XDS-x86 for Windows<BR>
+Native XDS-x86 for Linux (with limitations)<BR>
+XDS-C (with limitations) 
+<P><HR>
+<A NAME="0641">
+<A HREF="#0639" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0640" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0642" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Module Graph</H3>
+
+<P><B>MODIFICATIONS</B> 
+<OL>
+ 
+<LI>The major difference between TS original and XDS implementations of the module <B>Graph</B> is a windowed mode: a program, which uses the module, opens the <TT>Graph</TT> window by a call to the <TT>Graph.Init</TT> procedure, invokes the procedures provided by the module to draw in the window and set some parameters (e.g. a clipping region) and calls to the <TT>Graph.Exit</TT> procedure to close the <B>Graph</B> window. It is possible to open only one <B>Graph</B> window at a time. 
+<P>The <TT>Init</TT> procedure has been changed to 
+<P><TT>PROCEDURE&nbsp;Init(xLeft,&nbsp;yTop,&nbsp;xd,&nbsp;yd&nbsp;:&nbsp;LONGCARD)&nbsp;:&nbsp;BOOLEAN;</TT> 
+<P>The position of the left upper corner of the <B>Graph</B> window is passed in the <TT>xLeft</TT> and <TT>yTop</TT> parameters, horizontal and vertical sizes of the window are passed in the <TT>xd</TT> and <TT>yd</TT> parameters. The <B>Graph</B> window is closed automatically upon program termination. The <TT>Exit</TT> procedure can be used to close the <B>Graph</B> window before the program execution is finished: 
+<P><TT>PROCEDURE&nbsp;Exit;</TT> 
+<P>The <TT>Init</TT> procedure returns success indicator (<TT>TRUE</TT> means succesful module initialization) and it is recommended to test the value in the program. </LI>
+<LI>The procedures <TT>GraphMode</TT> and <TT>TextMode</TT> switch focus between the console window and the <TT>Graph</TT> window and appropriately change their z-order. </LI>
+<LI>The procedure <TT>SetGraphWindowTitle</TT>, which sets the title of the <TT>Graph</TT> window, has been added: 
+<P><TT>PROCEDURE&nbsp;SetGraphWindowTitle&nbsp;(text&nbsp;:ARRAY&nbsp;OF&nbsp;CHAR);</TT> </LI>
+<LI>The procedure <TT>GetVideoConfig</TT> has been removed. The fields of the <TT>VideoConfig</TT> record, which were typically used, are exported as variables: 
+<P><TABLE CELLSPACING=0>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid solid none;border-width: 0px 1px 1px 0px"><B>Name </B></TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid solid none;border-width: 0px 1px 1px 0px"><B>Explanation </B></TD>
+<TD  STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><B>VideoConfig field </B></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>Width </TT></TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">width of the Graph window work area </TD>
+<TD  STYLE="padding:0px 3px;"><TT>numxpixels </TT></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>Depth </TT></TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">depth of the Graph window work area </TD>
+<TD  STYLE="padding:0px 3px;"><TT>numypixels </TT></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>NumPColors </TT></TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">number of colors in use </TD>
+<TD  STYLE="padding:0px 3px;"><TT>numcolors </TT></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>Columns </TT></TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">number of text columns available </TD>
+<TD  STYLE="padding:0px 3px;"><TT>numtextcols </TT></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>Rows </TT></TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">number of text rows available </TD>
+<TD  STYLE="padding:0px 3px;"><TT>numtextrows </TT></TD>
+</TR>
+</TABLE>
+<P><B>Note:</B> By &quot;number of text columns&quot; (&quot;text rows&quot;) a maximum number of monospaced font characters which can be placed into the <B>Graph</B> window in one column (row) is meant. </LI>
+<LI>The <TT>Fill</TT> parameter has been added to the procedure <TT>Polygon</TT>: 
+<P><PRE>PROCEDURE&nbsp;Polygon(n&nbsp;:&nbsp;CARDINAL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;px,&nbsp;py&nbsp;:&nbsp;ARRAY&nbsp;OF&nbsp;CARDINAL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FillColor&nbsp;:&nbsp;CARDINAL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Fill&nbsp;:&nbsp;BOOLEAN);
+</PRE>
+
+<P>The variable <TT>FillState</TT>, influencing on <TT>Polygon</TT>&rsquo;s fill mode, has been excluded. </LI>
+<LI>The procedure <TT>Pie_a</TT> has been added: 
+<P><PRE>PROCEDURE&nbsp;Pie_a&nbsp;(x1,&nbsp;y1,&nbsp;x2,&nbsp;y2&nbsp;:&nbsp;LONGCARD;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;startAngle,&nbsp;sweepAngle&nbsp;:&nbsp;LONGREAL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Color&nbsp;:CARDINAL;&nbsp;Fill&nbsp;:&nbsp;BOOLEAN);
+</PRE>
+
+<P>A pie is defined as a part of an ellipse enclosed in the rectangle ( <TT>x1</TT>, <TT>y1</TT>, <TT>x2</TT>, <TT>y2</TT> ), with a start angle passed in the <TT>startAngle</TT> parameter and a sweep angle passed in the <TT>sweepAngle</TT>. Angles are measured in degrees. The pie is drawn counterclockwise. </LI>
+<LI>It is recommended to invoke the <TT>CancelClipRgn</TT> procedure to disable clipping instead of a call to <TT>SetClipRgn</TT> with a whole window position and sizes passed as parameters. </LI>
+<LI>The procedure <TT>RawOutText</TT> draws a text at the position (<TT>x</TT>,<TT>y</TT>) defined in pels rather than in text columns and rows: 
+<P><PRE>PROCEDURE&nbsp;RawOutText&nbsp;(x,&nbsp;y&nbsp;:&nbsp;LONGCARD;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Color&nbsp;:&nbsp;LONGCARD;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Text&nbsp;:ARRAY&nbsp;OF&nbsp;CHAR);
+</PRE>
+</LI>
+<LI>Since Win32 GDI engine keep a bitmap in a system heap, there is no need to allocate memory for a bitmap in a program which uses the module, so the procedure <TT>ImageSize</TT> always returns 0. 
+<P>The following scheme shows the standard order of procedure calls within the program which uses bitmaps: 
+<OL>
+ 
+<LI>Invoke the <TT>GetImage</TT> procedure to create a bitmap: 
+<P><PRE>PROCEDURE&nbsp;GetImage(x1,&nbsp;y1,&nbsp;x2,&nbsp;y2&nbsp;:&nbsp;LONGCARD;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;bmpHandle&nbsp;:&nbsp;HBITMAP&nbsp;);
+</PRE>
+
+<P>The handle of the created bitmap will be returned in the <TT>bmpHandle</TT> parameter (the <TT>HBITMAP</TT> type is exported from the module). </LI>
+<LI>To draw the previously created bitmap, call the <TT>PutImage</TT> procedure, passing the bitmap handle in the <TT>bmpHandle</TT> parameter: 
+<P><PRE>PROCEDURE&nbsp;PutImage(x,&nbsp;y&nbsp;:&nbsp;LONGCARD;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;bmpHandle&nbsp;:&nbsp;HBITMAP;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Action&nbsp;:&nbsp;LONGCARD);
+</PRE>
+</LI>
+<LI>When a bitmap is no longer needed, it is recommended to delete it in order to release system resources by calling the <TT>DelImage</TT> procedure: 
+<P><TT>PROCEDURE&nbsp;DelImage(hbmHandle&nbsp;:HBITMAP);</TT> </LI>
+</OL>
+</LI>
+<LI>Because of an OS/2 GPI restriction, there is no way to set an arbitrary line style (e.g. to draw outline circle ), nevertheless there is a number of the predefined line styles which can be set by means of a call to the <TT>SetLineStyle</TT> procedure. Any of the following constants, exported from the module, can be passed to the <TT>SetLineStyle</TT> procedure: 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;LNSTYLE_DOT
+&nbsp;&nbsp;&nbsp;&nbsp;LNSTYLE_SHORTDASH
+&nbsp;&nbsp;&nbsp;&nbsp;LNSTYLE_DASHDOT
+&nbsp;&nbsp;&nbsp;&nbsp;LNSTYLE_DOUBLEDOT
+&nbsp;&nbsp;&nbsp;&nbsp;LNSTYLE_DASHDOUBLEDOT
+&nbsp;&nbsp;&nbsp;&nbsp;LNSTYLE_SOLID
+</PRE>
+</LI>
+<LI>A program can define its own fill mask (the <TT>SetFillMask</TT> procedure). Also the <B>Graph</B> module provides the <TT>SetStdFillMask</TT> procedure to use several standard fill masks. The following constants, exported from the module, define different fill masks : 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;PATSYM_DENSE1
+&nbsp;&nbsp;&nbsp;&nbsp;PATSYM_DENSE2
+&nbsp;&nbsp;&nbsp;&nbsp;PATSYM_DENSE3
+&nbsp;&nbsp;&nbsp;&nbsp;...
+</PRE>
+</LI>
+<LI>The <TT>SetBkMix</TT> procedure has been added to the original functionality. 
+<P>PROCEDURE SetBkMix (isOpaque : BOOLEAN); 
+<P>The <TT>_TRANSPARENT</TT> and <TT>_OPAQUE</TT> constants can be passed to the <TT>isOpague</TT> parameter. The procedure sets background color mixture mode. Namely, if <TT>_OPAQUE</TT> passed, bits of a fill mask, set in zero, are painted in background color when filling with a non-solid mask is used. If <TT>_TRANSPARENT</TT> passed, screen pixels corresponding to zero bits of a fill mask, are not changed. </LI>
+<LI>The <TT>RemapPalette</TT> and <TT>RemapAllPalette</TT> procedures are provided to set a logical palette. The <TT>InitStdPalette</TT> procedure allows to set the palette to the initial state, in which only 16 colors, corresponding to the colors constants (e.g. <TT>_clrLIGHTBLUE</TT> ), are defined. </LI>
+<LI>The procedures <TT>TrueCircle</TT> and <TT>TrueDisc</TT> are defined as equal to <TT>Circle</TT> and <TT>Disc</TT> respectively, as pixels are square in all commonly used video modes provided by modern display adapters. </LI>
+</OL>
+
+<P><B>RESTRICTIONS</B> 
+<OL>
+ 
+<LI>Device specific constants and routines, such as <TT>CGAWidth</TT>, <TT>InitCGA</TT>, etc., have been removed </LI>
+<LI>The following procedures have been excluded: <TT>SelectPalette</TT> (CGA only), <TT>SetVideoMode</TT>, <TT>SetActivePage</TT>, <TT>SetVisualPage</TT>, </LI>
+<LI>It is possible to set a custom palette by means of a call to the <TT>RemapPalette</TT> or <TT>RemapAllPalette</TT> procedures. However, the palette colors map to the nearest colors of the current physical palette on your device. </LI>
+</OL>
+
+<P><B>PRODUCTS</B> 
+<P>Native XDS-x86 for Windows<BR>
+Native XDS-x86 for Linux (with limitations)<BR>
+
+<P><HR>
+<A NAME="0642">
+<A HREF="#0639" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0641" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0643" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Module IO</H3>
+
+<P><B>RESTRICTIONS</B> 
+<OL>
+ 
+<LI>The <TT>IO.KeyPressed()</TT> and <TT>IO.RdKey()</TT> procedures, providing direct read from keyboard, are available in console applications only. </LI>
+<LI><TT>RdReal</TT> and <TT>RdLngReal</TT> do not recognize exponent-only zeroes, such as <TT>E+0</TT>. </LI>
+</OL>
+
+<P><B>PRODUCTS</B> 
+<P>All XDS products 
+<P><HR>
+<A NAME="0643">
+<A HREF="#0639" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0642" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0644" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Module Lib</H3>
+
+<P><B>MODIFICATIONS</B> 
+<OL>
+ 
+<LI>Although address operations (<TT>SubAddr</TT>, <TT>AddAddr</TT> etc.) and other low-level procedures (such as <TT>Fill</TT>, <TT>Move</TT>) are available, usage of their analogs from the module <TT>SYSTEM</TT> (<TT>ADDADR</TT>, <TT>SUBADR</TT>, <TT>FILL</TT>, etc.) would improve performance. Please consult the User&rsquo;s Guide, Chapter &quot;XDS Modula-2&quot; for more information. </LI>
+<LI>The procedural variable <TT>RunTimeError</TT> has been removed. In ISO Modula-2, exceptions should be used for error handling purposes. The <TT>MathError</TT> procedure has been excluded because of the same reason. See also the description of changes made to the <B>FIO</B> module. </LI>
+<LI>The <TT>Terminate</TT> procedure has been removed because the same effect can be obtained by means of ISO Modula-2 standard mechanisms, such as module finalization and the system module <B>TERMINATION</B> (see XDS User Guide, new language&rsquo;s features) </LI>
+<LI><TT>SetDate</TT> and <TT>SetTime</TT> are now pure procedures. </LI>
+<LI>The <TT>Environment</TT> procedure definition has been changed to 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;Environment&nbsp;(N&nbsp;:CARDINAL;</TT><BR>
+<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;result&nbsp;:ARRAY&nbsp;OF&nbsp;CHAR);</TT> </LI>
+<LI>The <TT>WordFill</TT> procedure definition has been changed to 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;WordFill(Dest:&nbsp;ADDRESS;</TT><BR>
+<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WordCount:&nbsp;CARDINAL;</TT><BR>
+<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Value:&nbsp;SYSTEM.CARD16);</TT> </LI>
+</OL>
+
+<P><B>RESTRICTIONS</B> 
+<OL>
+ 
+<LI>The following platform-specific procedures have been removed: 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;AddressOK&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;CpuId
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;GetInProgramFlag&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Execute
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;NoSound&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ProtectedMode
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SelectorLimit&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SetReturnCode
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SetInProgramFlag&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Sound
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SysErrNo&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;UserBreak
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WrDosError
+</PRE>
+</LI>
+<LI>The <TT>EnableBreakCheck</TT> and <TT>DisableBreakCheck</TT> procedures are not implemented; the <TT>CtrlC</TT> module from the XDS run-time library should be used to handle <TT>Ctrl-C</TT> and <TT>Ctrl-Break</TT> events. </LI>
+</OL>
+
+<P><B>PRODUCTS</B> 
+<P>All XDS products 
+<P><HR>
+<A NAME="0644">
+<A HREF="#0639" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0643" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0645" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Module MATHLIB</H3>
+
+<P><B>RESTRICTIONS</B> 
+<OL>
+ 
+<LI>The following procedures are not implemented: <TT>LongToBcd</TT>, <TT>BcdToLong</TT> </LI>
+<LI>ISO Modula-2 exception handling (see <A HREF="xm007.html#0392" TARGET=body>New language&rsquo;s features</A>) is used to report floating point errors, therefore the procedure variable <TT>MathError</TT> is not provided. </LI>
+</OL>
+
+<P><B>PRODUCTS</B> 
+<P>All XDS products 
+<P><HR>
+<A NAME="0645">
+<A HREF="#0639" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0644" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0646" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Module ShtHeap</H3>
+
+<P><B>MODIFICATIONS</B> 
+<OL>
+ 
+<LI>If a memory allocation failure occurs, <TT>NIL</TT> is returned. </LI>
+<LI>The type <TT>ShtHeap.Pointer</TT> was replaced with the type <TT>SYSTEM.ADDRESS</TT>. </LI>
+<LI>The <TT>ShtHeap.Increase</TT> procedure has been eliminated. </LI>
+<LI>Heap size is not resricted by 64 Kbytes (so <TT>ShtHeap</TT> is a historical name). </LI>
+</OL>
+
+<P><B>PRODUCTS</B> 
+<P>All XDS products 
+<P><HR>
+<A NAME="0646">
+<A HREF="#0639" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0645" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0647" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Module Str</H3>
+
+<P><B>MODIFICATIONS</B> 
+<OL>
+ 
+<LI>The <TT>LowS</TT> procedure (conversion to lower case) has been added to the module. </LI>
+<LI>In TopSpeed, the procedure <TT>FixRealToStr</TT> does not output more than 17 digits, whereas in XDS there is always <TT>Precision</TT> digits after decimal point. 
+<P>As a result, after a call <TT>FixRealToStr(V,5,S,Ok)</TT> variables <TT>S</TT> and <TT>Ok</TT> have the following vaues in TS and XDS respectively: 
+<P><TT>
+<TABLE CELLSPACING=0>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px">V </TT></TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid solid none;border-width: 0px 1px 1px 0px"><TT>SIZE(S) </TT></TD>
+<TD  STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><TT>S </TT></TD>
+<TD  STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><TT>OK </TT></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>0.99E17 </TT></TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>30 </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>99000000000000000.0 </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>TRUE </TT></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;"><TT>99000000000000000.00000 </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>TRUE </TT></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>0.99E18 </TT></TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>30 </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>990000000000000000 </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>TRUE </TT></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;"><TT>990000000000000000.00000 </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>TRUE </TT></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>0.99E18 </TT></TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>18 </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>990000000000000000 </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>TRUE </TT></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;"><TT>? </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>FALSE </TT></TD>
+</TR>
+</TABLE> </LI>
+</OL>
+
+<P><B>PRODUCTS</B> 
+<P>All XDS products 
+<P><HR>
+<A NAME="0647">
+<A HREF="#0639" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0646" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0648" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Module Window</H3>
+
+<P><B>EXTENSIONS</B> 
+<OL>
+ 
+<LI>An arbitrary screen size (number of rows and columns) is supported. The <TT>ScreenWidth</TT> ( = 80 ) and <TT>ScreenDepth</TT> (= 25) constants are remained, but in the case of non-standard screen size, actual values can be obtained from the <TT>CurrentScreenWidth</TT> and <TT>CurrentScreenDepth</TT> variables (the <TT>CurrentScreenWidth</TT> variable has been added to the original TS Window functionality). </LI>
+<LI>Input and output in any window, can be performed not only by means of the XDS TS-like module <B>IO</B>, but also through ISO standard input/output modules, such as STextIO or SRawIO. </LI>
+</OL>
+
+<P><B>RESTRICTIONS</B> 
+<OL>
+ 
+<LI>The <TT>CGASnow</TT> constant has been removed. </LI>
+<LI>It is needed to call the <TT>GetWDescriptor</TT> procedure to obtain pointer to the <TT>WinDescriptor</TT> record, since in the XDS implementation of the <B>Window</B> module, <TT>WinType</TT> is an opaque type rather than pointer to record. The following declarations were added to the definition module: 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;TYPE
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;p2WDescriptor&nbsp;=&nbsp;POINTER&nbsp;TO&nbsp;WinDescriptor;
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;GetWDescriptor&nbsp;(&nbsp;W&nbsp;:WinType&nbsp;)&nbsp;:p2WDescriptor;
+</PRE>
+</LI>
+<LI>The <TT>SetProcessLocks</TT> procedures has been removed (multithread support implemented in such a way, that there is no need to use it). </LI>
+</OL>
+
+<P><B>PRODUCTS</B> 
+<P>Native XDS-x86 for Windows<BR>
+Native XDS-x86 for Linux (with limitations) 
+<P><HR>
+<A NAME="0648">
+<A HREF="#0639" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0647" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<IMG ALT="   " SRC="empty.gif" BORDER=0></A>
+<BR>
+<H3>Multithreading</H3>
+
+<P>The TopSpeed module <TT>Process</TT> implements its own scheduler which does not make use of the underlying operating system multithreading capabilities, in order to enable the development of multithread programs portable between DOS and OS/2. In case of XDS, the ISO <TT>Processes</TT> module should be used. Under Windows, its functionality is mapped onto the corresponding thread control API. 
+<P><B>Note:</B> The <B>MULTITHREAD</B> option should be set on to enable the functionality described above. Otherwise, the module <TT>Processes</TT> will work in coroutines mode. 
+<P>An example of the <TT>Processes</TT> module usage is the <TT>WinDemoM</TT> sample which was ported from TopSpeed Modula-2. 
+<P>The <TT>Processes</TT> module does not provide direct way to start or stop the process scheduler, which is possible in TopSpeed <TT>Process</TT> module, but this problem can be easily solved by writing some extra code (see <TT>WinDemoM.mod</TT>). 
+<P>The ISO standard module <TT>Semaphores</TT> can be used to utilize the underlying operating system semaphore API. 
+<P>
+<P>
+<P>
+</BODY>
+</HTML>

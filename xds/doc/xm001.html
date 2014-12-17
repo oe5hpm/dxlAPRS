@@ -1,0 +1,81 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 4.01 Transitional//EN">
+<HTML>
+<HEAD>
+<TITLE>About XDS</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<P><HR>
+<A NAME="0000">
+<A HREF="xm000.html#root" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<IMG ALT="   " SRC="empty.gif" BORDER=0>
+<A HREF="#0001" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H1>About XDS</H1>
+ 
+<P><UL>
+<LI><A HREF="#0001" TARGET=body>Welcome to XDS</A>
+<LI><A HREF="#0002" TARGET=body>Conventions used in this manual</A>
+</UL>
+<P><HR>
+<A NAME="0001">
+<A HREF="#0000" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0000" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0002" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Welcome to XDS</H2>
+
+<P>XDS is a family name for professional Modula-2/Oberon-2 programming systems for Intel x86-based PCs (Windows and Linux editions are available). XDS-C is a &quot;via C&quot; cross-compiler that allows you to target virtually any system, from embedded to Unix servers. XDS provides an uniform programming environment for the mentioned platforms and allows design and implementation of portable software. 
+<P>The system contains both Modula-2 and Oberon-2 compilers. These languages are often called <B>&ldquo;safe&rdquo;</B> and <B>&ldquo;modular&rdquo;</B>. The principle innovation of the language Modula-2 was the module concept, information hiding and separate compilation. 
+<P>Oberon-2 is an object-oriented programming (OOP) language based on Modula-2. With the introduction of object-oriented facilities, extensible project design became much easier. At the same time, Oberon-2 is quite simple and easy to learn and use, unlike other OOP languages, such as C++ or Smalltalk. 
+<P>The XDS Modula-2 compiler implements ISO 10514 standard of Modula-2. The ISO standard library set is accessible from both Modula-2 and Oberon-2. 
+<P>XDS is based on a platform-independent front-end for both source languages which performs all syntactic and semantic checks on the source program. The compiler builds an internal representation of the compilation unit in memory and performs platform-independent analysis and optimizations. After that the compiler emits output code. It can be either native code for the target platform or text in the ANSI C language. ANSI C code generation allows you to cross compile Modula-2/Oberon-2 for almost any platform. 
+<P>Moving to a new language usually means throwing away or rewriting your existing library set which could have been the work of many years. XDS allows the programmer to mix Modula-2, Oberon-2, C and Assembler modules and libraries in a single project. 
+<P>XDS includes standard ISO and PIM libraries along with a set of utility libraries and an interface to the ANSI C library set. 
+<P>XDS compilers produce optimized ANSI C code which is further compiled by a C compiler. The call of a C compiler can be done transparent for the user. However, XDS can be used as Modula-2/Oberon-2 to C translator, as it produces easy readable and understandable text. It is also possible to preserve your source code comments in their original context. 
+<P><HR>
+<A NAME="0002">
+<A HREF="#0000" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0001" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0003" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Conventions used in this manual</H2>
+
+<P><UL>
+<LI><A HREF="#0003" TARGET=body>Language descriptions</A>
+<LI><A HREF="#0004" TARGET=body>Source code fragments</A>
+</UL>
+<P><HR>
+<A NAME="0003">
+<A HREF="#0002" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0002" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0004" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Language descriptions</H3>
+
+<P>Where formal descriptions for language syntax constructions appear, an extended Backus-Naur Formalism (EBNF) is used. 
+<P>These descriptions are set in the <TT>Courier</TT> font. 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;Text&nbsp;=&nbsp;Text&nbsp;[&nbsp;{&nbsp;Text&nbsp;}&nbsp;]&nbsp;|&nbsp;Text.</TT> 
+<P>In EBNF, brackets &quot;<TT>[</TT>&quot; and &quot;<TT>]</TT>&quot; denote optionality of the enclosed expression, braces &quot;<TT>{</TT>&quot; and &quot;<TT>}</TT>&quot; denote repetition (possibly 0 times), and the vertival line &quot;<TT>|</TT>&quot; separates mutually exclusive variants. 
+<P>Non-terminal symbols start with an upper case letter (<TT>Statement</TT>). Terminal symbols either start with a lower case letter (<TT>ident</TT>), or are written in all upper case letters (<TT>BEGIN</TT>), or are enclosed within quotation marks (e.g. <TT>&quot;:=&quot;</TT>). 
+<P><HR>
+<A NAME="0004">
+<A HREF="#0002" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0003" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="xm002.html#0005" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Source code fragments</H3>
+
+<P>When fragments of a source code are used for examples or appear within a text they are set in the <TT>Courier</TT> font. 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;MODULE&nbsp;Example;
+
+&nbsp;&nbsp;&nbsp;&nbsp;IMPORT&nbsp;InOut;
+
+&nbsp;&nbsp;&nbsp;&nbsp;BEGIN
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;InOut.WriteString(&quot;This&nbsp;is&nbsp;an&nbsp;example&quot;);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;InOut.WriteLn;
+&nbsp;&nbsp;&nbsp;&nbsp;END&nbsp;Example.
+</PRE>
+
+<P></BODY>
+</HTML>

@@ -1,0 +1,92 @@
+(* Xm/WorldP.def  Nov 21  14:31:44  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/WorldP.h using H2D v1.18.6 *)
+
+(* $RCSfile: WorldP.def,v $ $Revision: 4 $ $Date: 28.07.98 23:15 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *>
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+
+DEFINITION MODULE ["C"] WorldP;
+
+IMPORT SYSTEM, Xm:=XmP, Xt:=IntrinsicP;
+(* H2D:  Required IMPORT clause:
+IMPORT WorldP, XmP, IntrinsicP;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(*
+ * Motif Release 1.2
+ *)
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: this procedure corresponds to a macro. *)
+PROCEDURE XmIsWorldObject ( w: Xt.Widget ): Xt.Boolean;
+
+<* ELSE *>
+
+PROCEDURE  / XmIsWorldObject ( w: Xt.Widget ): Xt.Boolean;
+
+<* END *>
+
+TYPE
+  XmWorldObject = POINTER TO _XmWorldRec;
+
+  XmWorldObjectClass = POINTER TO _XmWorldClassRec;
+
+  _XmWorldClassPart = RECORD
+    extension: Xt.XtPointer;
+  END;
+
+  XmWorldClassPart = _XmWorldClassPart;
+
+  XmWorldClassPartPtr = POINTER TO XmWorldClassPart;
+
+  _XmWorldClassRec = RECORD
+    object_class : Xt.ObjectClassPart;
+    ext_class    : Xm.XmExtClassPart;
+    desktop_class: Xm.XmDesktopClassPart;
+    world_class  : XmWorldClassPart;
+  END;
+
+  XmWorldClassRec = _XmWorldClassRec;
+
+  _XmWorldPart = RECORD
+    foo: SYSTEM.int;
+  END;
+
+  XmWorldPart = _XmWorldPart;
+
+  XmWorldPartPtr = POINTER TO XmWorldPart;
+
+  _XmWorldRec = RECORD
+    object : Xt.ObjectPart;
+    ext    : Xm.XmExtPart;
+    desktop: Xm.XmDesktopPart;
+    world  : XmWorldPart;
+  END;
+
+  XmWorldRec = _XmWorldRec;
+
+VAR
+  xmWorldClass: Xt.WidgetClass;
+  xmWorldClassRec: XmWorldClassRec;
+
+(********    Private Function Declarations    ********)
+
+PROCEDURE _XmGetWorldObject ( shell: Xt.Widget;
+                              args: Xt.ArgList;
+                              VAR num_args: Xt.Cardinal ): XmWorldObject;
+
+(********    End Private Function Declarations    ********)
+
+END WorldP.

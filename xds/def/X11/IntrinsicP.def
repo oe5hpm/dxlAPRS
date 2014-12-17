@@ -1,0 +1,3098 @@
+(* X11/IntrinsicP.def  May 22  13:2:57  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted using H2D v1.00 from X11/IntrinsicP.h. *)
+
+(* $RCSfile: IntrinsicP.def,v $ $Revision: 9 $ $Date: 9.11.99 20:45 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *>
+<* IF NOT DEFINED(GENCTYPES) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+<*+ WOFF354 *>
+
+(* Merged headers: X11/Intrinsic.h, X11/Core.h, X11/Composite.h, 
+X11/Constraint.h, X11/Object.h, X11/RectObj.h, X11/CoreP.h, 
+X11/CompositeP.h, X11/ConstrainP.h, X11/ObjectP.h, X11/RectObjP.h *)
+
+DEFINITION MODULE ["C"] IntrinsicP;
+
+IMPORT SYSTEM, X, Xlib, Xutil, Xrm:=Xresource;
+(* To import this module write following text:
+IMPORT IntrinsicP, X, Xlib, Xutil, Xresource;
+*)
+
+FROM X IMPORT MAX_STUP_ARR;
+FROM Xresource IMPORT XrmValue, XrmValuePtr, PAXrmValue;
+FROM Xlib IMPORT PtrDisplay, PtrScreen;
+
+(*  $XConsortium: IntrinsicP.h,v 1.66 94/04/17 20:14:25 converse Exp $  *)
+(*  ******************************************************************  *)
+
+(*------------------------------------------------------------------------*)
+(*                          X11/StringDefs.h                              *)
+(*------------------------------------------------------------------------*)
+
+CONST
+  XtNaccelerators = 'accelerators';
+  XtNallowHoriz = 'allowHoriz';
+  XtNallowVert = 'allowVert';
+  XtNancestorSensitive = 'ancestorSensitive';
+  XtNbackground = 'background';
+  XtNbackgroundPixmap = 'backgroundPixmap';
+  XtNbitmap = 'bitmap';
+  XtNborderColor = 'borderColor';
+  XtNborder = 'borderColor';
+  XtNborderPixmap = 'borderPixmap';
+  XtNborderWidth = 'borderWidth';
+  XtNcallback = 'callback';
+  XtNchildren = 'children';
+  XtNcolormap = 'colormap';
+  XtNdepth = 'depth';
+  XtNdestroyCallback = 'destroyCallback';
+  XtNeditType = 'editType';
+  XtNfile = 'file';
+  XtNfont = 'font';
+  XtNforceBars = 'forceBars';
+  XtNforeground = 'foreground';
+  XtNfunction = 'function';
+  XtNheight = 'height';
+  XtNhighlight = 'highlight';
+  XtNhSpace = 'hSpace';
+  XtNindex = 'index';
+  XtNinitialResourcesPersistent = 'initialResourcesPersistent';
+  XtNinnerHeight = 'innerHeight';
+  XtNinnerWidth = 'innerWidth';
+  XtNinnerWindow = 'innerWindow';
+  XtNinsertPosition = 'insertPosition';
+  XtNinternalHeight = 'internalHeight';
+  XtNinternalWidth = 'internalWidth';
+  XtNjumpProc = 'jumpProc';
+  XtNjustify = 'justify';
+  XtNknobHeight = 'knobHeight';
+  XtNknobIndent = 'knobIndent';
+  XtNknobPixel = 'knobPixel';
+  XtNknobWidth = 'knobWidth';
+  XtNlabel = 'label';
+  XtNlength = 'length';
+  XtNlowerRight = 'lowerRight';
+  XtNmappedWhenManaged = 'mappedWhenManaged';
+  XtNmenuEntry = 'menuEntry';
+  XtNname = 'name';
+  XtNnotify = 'notify';
+  XtNnumChildren = 'numChildren';
+  XtNorientation = 'orientation';
+  XtNparameter = 'parameter';
+  XtNpixmap = 'pixmap';
+  XtNpopupCallback = 'popupCallback';
+  XtNpopdownCallback = 'popdownCallback';
+  XtNresize = 'resize';
+  XtNreverseVideo = 'reverseVideo';
+  XtNscreen = 'screen';
+  XtNscrollProc = 'scrollProc';
+  XtNscrollDCursor = 'scrollDCursor';
+  XtNscrollHCursor = 'scrollHCursor';
+  XtNscrollLCursor = 'scrollLCursor';
+  XtNscrollRCursor = 'scrollRCursor';
+  XtNscrollUCursor = 'scrollUCursor';
+  XtNscrollVCursor = 'scrollVCursor';
+  XtNselection = 'selection';
+  XtNselectionArray = 'selectionArray';
+  XtNsensitive = 'sensitive';
+  XtNshown = 'shown';
+  XtNspace = 'space';
+  XtNstring = 'string';
+  XtNtextOptions = 'textOptions';
+  XtNtextSink = 'textSink';
+  XtNtextSource = 'textSource';
+  XtNthickness = 'thickness';
+  XtNthumb = 'thumb';
+  XtNthumbProc = 'thumbProc';
+  XtNtop = 'top';
+  XtNtranslations = 'translations';
+  XtNunrealizeCallback = 'unrealizeCallback';
+  XtNupdate = 'update';
+  XtNuseBottom = 'useBottom';
+  XtNuseRight = 'useRight';
+  XtNvalue = 'value';
+  XtNvSpace = 'vSpace';
+  XtNwidth = 'width';
+  XtNwindow = 'window';
+  XtNx = 'x';
+  XtNy = 'y';
+  XtCAccelerators = 'Accelerators';
+  XtCBackground = 'Background';
+  XtCBitmap = 'Bitmap';
+  XtCBoolean = 'Boolean';
+  XtCBorderColor = 'BorderColor';
+  XtCBorderWidth = 'BorderWidth';
+  XtCCallback = 'Callback';
+  XtCColormap = 'Colormap';
+  XtCColor = 'Color';
+  XtCCursor = 'Cursor';
+  XtCDepth = 'Depth';
+  XtCEditType = 'EditType';
+  XtCEventBindings = 'EventBindings';
+  XtCFile = 'File';
+  XtCFont = 'Font';
+  XtCForeground = 'Foreground';
+  XtCFraction = 'Fraction';
+  XtCFunction = 'Function';
+  XtCHeight = 'Height';
+  XtCHSpace = 'HSpace';
+  XtCIndex = 'Index';
+  XtCInitialResourcesPersistent = 'InitialResourcesPersistent';
+  XtCInsertPosition = 'InsertPosition';
+  XtCInterval = 'Interval';
+  XtCJustify = 'Justify';
+  XtCKnobIndent = 'KnobIndent';
+  XtCKnobPixel = 'KnobPixel';
+  XtCLabel = 'Label';
+  XtCLength = 'Length';
+  XtCMappedWhenManaged = 'MappedWhenManaged';
+  XtCMargin = 'Margin';
+  XtCMenuEntry = 'MenuEntry';
+  XtCNotify = 'Notify';
+  XtCOrientation = 'Orientation';
+  XtCParameter = 'Parameter';
+  XtCPixmap = 'Pixmap';
+  XtCPosition = 'Position';
+  XtCReadOnly = 'ReadOnly';
+  XtCResize = 'Resize';
+  XtCReverseVideo = 'ReverseVideo';
+  XtCScreen = 'Screen';
+  XtCScrollProc = 'ScrollProc';
+  XtCScrollDCursor = 'ScrollDCursor';
+  XtCScrollHCursor = 'ScrollHCursor';
+  XtCScrollLCursor = 'ScrollLCursor';
+  XtCScrollRCursor = 'ScrollRCursor';
+  XtCScrollUCursor = 'ScrollUCursor';
+  XtCScrollVCursor = 'ScrollVCursor';
+  XtCSelection = 'Selection';
+  XtCSensitive = 'Sensitive';
+  XtCSelectionArray = 'SelectionArray';
+  XtCSpace = 'Space';
+  XtCString = 'String';
+  XtCTextOptions = 'TextOptions';
+  XtCTextPosition = 'TextPosition';
+  XtCTextSink = 'TextSink';
+  XtCTextSource = 'TextSource';
+  XtCThickness = 'Thickness';
+  XtCThumb = 'Thumb';
+  XtCTranslations = 'Translations';
+  XtCValue = 'Value';
+  XtCVSpace = 'VSpace';
+  XtCWidth = 'Width';
+  XtCWindow = 'Window';
+  XtCX = 'X';
+  XtCY = 'Y';
+  XtRAcceleratorTable = 'AcceleratorTable';
+  XtRAtom = 'Atom';
+  XtRBitmap = 'Bitmap';
+  XtRBool = 'Bool';
+  XtRBoolean = 'Boolean';
+  XtRCallback = 'Callback';
+  XtRCallProc = 'CallProc';
+  XtRCardinal = 'Cardinal';
+  XtRColor = 'Color';
+  XtRColormap = 'Colormap';
+  XtRCursor = 'Cursor';
+  XtRDimension = 'Dimension';
+  XtRDisplay = 'Display';
+  XtREditMode = 'EditMode';
+  XtREnum = 'Enum';
+  XtRFile = 'File';
+  XtRFloat = 'Float';
+  XtRFont = 'Font';
+  XtRFontStruct = 'FontStruct';
+  XtRFunction = 'Function';
+  XtRGeometry = 'Geometry';
+  XtRImmediate = 'Immediate';
+  XtRInitialState = 'InitialState';
+  XtRInt = 'Int';
+  XtRJustify = 'Justify';
+  XtRLongBoolean = 'Bool';
+  XtRObject = 'Object';
+  XtROrientation = 'Orientation';
+  XtRPixel = 'Pixel';
+  XtRPixmap = 'Pixmap';
+  XtRPointer = 'Pointer';
+  XtRPosition = 'Position';
+  XtRScreen = 'Screen';
+  XtRShort = 'Short';
+  XtRString = 'String';
+  XtRStringArray = 'StringArray';
+  XtRStringTable = 'StringTable';
+  XtRUnsignedChar = 'UnsignedChar';
+  XtRTranslationTable = 'TranslationTable';
+  XtRVisual = 'Visual';
+  XtRWidget = 'Widget';
+  XtRWidgetClass = 'WidgetClass';
+  XtRWidgetList = 'WidgetList';
+  XtRWindow = 'Window';
+  XtEoff = 'off';
+  XtEfalse = 'false';
+  XtEno = 'no';
+  XtEon = 'on';
+  XtEtrue = 'true';
+  XtEyes = 'yes';
+  XtEvertical = 'vertical';
+  XtEhorizontal = 'horizontal';
+  XtEtextRead = 'read';
+  XtEtextAppend = 'append';
+  XtEtextEdit = 'edit';
+  XtExtdefaultbackground = 'xtdefaultbackground';
+  XtExtdefaultforeground = 'xtdefaultforeground';
+  XtExtdefaultfont = 'xtdefaultfont';
+  XtNfontSet = 'fontSet';
+  XtRFontSet = 'FontSet';
+  XtCFontSet = 'FontSet';
+  XtRGravity = 'Gravity';
+  XtNcreateHook = 'createHook';
+  XtNchangeHook = 'changeHook';
+  XtNconfigureHook = 'configureHook';
+  XtNgeometryHook = 'geometryHook';
+  XtNdestroyHook = 'destroyHook';
+  XtNshells = 'shells';
+  XtNnumShells = 'numShells';
+  XtRCommandArgArray = 'CommandArgArray';
+  XtRDirectoryString = 'DirectoryString';
+  XtREnvironmentArray = 'EnvironmentArray';
+  XtRRestartStyle = 'RestartStyle';
+  XtRSmcConn = 'SmcConn';
+  XtHcreate = 'Xtcreate';
+  XtHsetValues = 'XtsetValues';
+  XtHmanageChildren = 'XtmanageChildren';
+  XtHunmanageChildren = 'XtunmanageChildren';
+  XtHmanageSet = 'XtmanageSet';
+  XtHunmanageSet = 'XtunmanageSet';
+  XtHrealizeWidget = 'XtrealizeWidget';
+  XtHunrealizeWidget = 'XtunrealizeWidget';
+  XtHaddCallback = 'XtaddCallback';
+  XtHaddCallbacks = 'XtaddCallbacks';
+  XtHremoveCallback = 'XtremoveCallback';
+  XtHremoveCallbacks = 'XtremoveCallbacks';
+  XtHremoveAllCallbacks = 'XtremoveAllCallbacks';
+  XtHaugmentTranslations = 'XtaugmentTranslations';
+  XtHoverrideTranslations = 'XtoverrideTranslations';
+  XtHuninstallTranslations = 'XtuninstallTranslations';
+  XtHsetKeyboardFocus = 'XtsetKeyboardFocus';
+  XtHsetWMColormapWindows = 'XtsetWMColormapWindows';
+  XtHsetMappedWhenManaged = 'XtsetMappedWhenManaged';
+  XtHmapWidget = 'XtmapWidget';
+  XtHunmapWidget = 'XtunmapWidget';
+  XtHpopup = 'Xtpopup';
+  XtHpopupSpringLoaded = 'XtpopupSpringLoaded';
+  XtHpopdown = 'Xtpopdown';
+  XtHconfigure = 'Xtconfigure';
+  XtHpreGeometry = 'XtpreGeometry';
+  XtHpostGeometry = 'XtpostGeometry';
+  XtHdestroy = 'Xtdestroy';
+
+(* ------------------------------------------------------- *)
+(*                     X11/Intrinsic.h                     *)
+(* ------------------------------------------------------- *)
+(*  $XConsortium: Intrinsic.h,v 1.200 95/06/08 23:20:39 gildea Exp $  *)
+(*  $XFree86: xc/lib/Xt/Intrinsic.h,v 3.1 1995/06/14 07:12:11 dawes Exp $  *)
+CONST 
+  XtSpecificationRelease = 6;
+
+TYPE 
+  String = Xlib.PChar;
+  StringList = Xlib.PAPChar;
+
+(* We do this in order to get "const" declarations to work right. We
+ * use _XtString instead of String so that C++ applications can
+ * #define String to something else if they choose, to avoid conflicts
+ * with other C++ libraries.
+ *)
+
+  _XtString = POINTER TO ARRAY [0..MAX_STUP_ARR] OF CHAR;
+
+(*  _Xt names are private to Xt implementation, do not use in client code  *)
+
+  _XtBoolean = BOOLEAN;
+  _XtDimension = CARDINAL;
+  _XtKeyCode = CARDINAL;
+  _XtPosition = INTEGER;
+  _XtXtEnum = CARDINAL;
+
+CONST
+  NULL = NIL;
+
+<* IF __GEN_C__ THEN *>
+
+(* This procedure was generated from Macro. *)
+
+PROCEDURE  XtNumber ( SEQ arr: SYSTEM.BYTE ): CARDINAL;
+
+<* ELSE *>
+
+PROCEDURE  / XtNumber * ( arr: ARRAY OF SYSTEM.BYTE );
+
+<* END *>
+
+<* IF __GEN_C__ THEN *> <*+ GENTYPEDEF *> <* END *>
+
+TYPE 
+  Widget         = POINTER TO _WidgetRec;
+  WidgetList     = POINTER TO ARRAY [0..MAX_STUP_ARR] OF Widget;
+  WidgetClass    = POINTER TO _WidgetClassRec;
+  CompositeWidget= POINTER TO _CompositeRec;
+
+  XtActionProc = PROCEDURE ( (* widget *) Widget,
+                             (* event *) Xlib.PtrXEvent,
+                             (* params *) StringList,
+                             (* num_params *) VAR CARDINAL );
+
+  _XtActionsRec = RECORD
+    string: String;
+    proc  : XtActionProc;
+  END;
+
+  XtActionsRec = _XtActionsRec;
+
+  XtActionList   = POINTER TO ARRAY [0..MAX_STUP_ARR] OF XtActionsRec;
+
+  _XtEventRec = RECORD
+    (* Declaration without definition *)
+  END;
+
+  XtEventTable = POINTER TO ARRAY [0..MAX_STUP_ARR] OF _XtEventRec;
+
+  _XtAppStruct = RECORD
+    (* Declaration without definition *)
+  END;
+
+  XtAppContext   = POINTER TO _XtAppStruct;
+  XtValueMask    = LONGCARD;
+  XtIntervalId   = LONGCARD;
+  XtInputId      = LONGCARD;
+  XtWorkProcId   = LONGCARD;
+  XtSignalId     = LONGCARD;
+  XtGeometryMask = BITSET;
+  XtGCMask       = BITSET;   (* Mask of values that are used by widget *)
+  Pixel          = LONGCARD; (* Index into colormap *)
+  XtCacheType    = BITSET;
+
+  XtValueMaskList = POINTER TO ARRAY [0..MAX_STUP_ARR] OF XtValueMask;
+
+CONST 
+  XtCacheNone      = {0};
+  XtCacheAll       = {1};
+  XtCacheByDisplay = {2};
+  XtCacheRefCount  = {8};
+
+(****************************************************************
+ *
+ * System Dependent Definitions; see spec for specific range
+ * requirements.  Do not assume every implementation uses the
+ * same base types!
+ *
+ *
+ * XtArgVal ought to be a union of XtPointer, char *, long, int *, and proc *
+ * but casting to union types is not really supported.
+ *
+ * So the typedef for XtArgVal should be chosen such that
+ *
+ *	sizeof (XtArgVal) >=	sizeof(XtPointer)
+ *				sizeof(char * )
+ *				sizeof(long)
+ *				sizeof(int * )
+ *				sizeof(proc * )
+ *
+ * ArgLists rely heavily on the above typedef.
+ *
+ ****************************************************************)
+
+TYPE 
+  Boolean = SYSTEM.BOOL8;
+  XtArgVal = LONGINT;
+  XtEnum = SHORTCARD;
+
+  Cardinal = CARDINAL;
+  CardinalList = POINTER TO ARRAY [0..MAX_STUP_ARR] OF CARDINAL;
+
+  Dimension = SYSTEM.CARD16; (* Size in pixels *)
+  DimensionList = POINTER TO ARRAY [0..MAX_STUP_ARR] OF Dimension;
+
+  Position = SYSTEM.INT16;   (* Offset from 0 coordinate *)
+  PositionList = POINTER TO ARRAY [0..MAX_STUP_ARR] OF Position;
+
+  XtPointer = SYSTEM.ADDRESS;
+  XtPointerList = POINTER TO ARRAY [0..MAX_STUP_ARR] OF XtPointer;
+
+(*
+ *  The type Opaque is NOT part of the Xt standard, do NOT use it.
+ *  (It remains here only for backward compatibility.)
+ *)
+  Opaque = XtPointer;
+
+(* -------------------------------------------------- *)
+(*                     X11/Core.h                     *)
+(* -------------------------------------------------- *)
+
+(*
+ * $XConsortium: Core.h,v 1.11 94/04/17 20:13:53 swick Exp $
+ * $oHeader: Core.h,v 1.2 88/08/18 15:54:32 asente Exp $
+ *)
+
+TYPE
+  CoreWidgetClass = POINTER TO _WidgetClassRec;
+  CoreWidget = POINTER TO _WidgetRec;
+
+VAR 
+  coreWidgetClass: WidgetClass;
+  widgetClass: WidgetClass;
+
+(* ------------------------------------------------------- *)
+(*                     X11/Composite.h                     *)
+(* ------------------------------------------------------- *)
+
+(*  $XConsortium: Composite.h,v 1.16 94/04/17 20:13:42 converse Exp $  *)
+
+TYPE 
+  CompositeWidgetClass = POINTER TO _CompositeClassRec;
+
+  XtOrderProc = PROCEDURE ( (* child *) Widget ): Cardinal;
+
+PROCEDURE XtManageChildren ( children: WidgetList;
+                             num_children: Cardinal );
+
+PROCEDURE XtManageChild ( child: Widget );
+
+PROCEDURE XtUnmanageChildren ( children: WidgetList;
+                               num_children: Cardinal );
+
+PROCEDURE XtUnmanageChild ( child: Widget );
+
+TYPE 
+  XtDoChangeProc = PROCEDURE ( (* composite_parent *) Widget,
+                               (* unmanage_children *) WidgetList,
+                               (* num_unmanage_children *) VAR Cardinal,
+                               (* manage_children *) WidgetList,
+                               (* num_manage_children *) VAR Cardinal,
+                               (* client_data *) XtPointer );
+
+PROCEDURE XtChangeManagedSet ( unmanage_children: WidgetList;
+                               num_unmanage_children: Cardinal;
+                               do_change_proc: XtDoChangeProc;
+                               client_data: XtPointer;
+                               manage_children: WidgetList;
+                               num_manage_children: Cardinal );
+
+VAR 
+  compositeWidgetClass: WidgetClass;
+
+(* -------------------------------------------------------- *)
+(*                     X11/Constraint.h                     *)
+(* -------------------------------------------------------- *)
+
+(*  $XConsortium: Constraint.h,v 1.10 94/04/17 20:13:46 jim Exp $  *)
+(*  $oHeader: Constraint.h,v 1.2 88/08/18 15:54:18 asente Exp $  *)
+
+TYPE 
+  ConstraintWidgetClass = POINTER TO _ConstraintClassRec;
+
+VAR 
+  constraintWidgetClass: WidgetClass;
+
+(* ---------------------------------------------------- *)
+(*                     X11/Object.h                     *)
+(* ---------------------------------------------------- *)
+
+(*  $XConsortium: Object.h,v 1.9 94/04/17 20:14:31 swick Exp $  *)
+(*  $oHeader: Object.h,v 1.2 88/08/18 15:55:32 asente Exp $  *)
+
+TYPE 
+  Object = POINTER TO _ObjectRec;
+  ObjectClass = POINTER TO _ObjectClassRec;
+
+VAR 
+  objectClass: WidgetClass;
+
+(* ----------------------------------------------------- *)
+(*                     X11/RectObj.h                     *)
+(* ----------------------------------------------------- *)
+
+(*  $XConsortium: RectObj.h,v 1.9 94/04/17 20:14:37 swick Exp $  *)
+(*  $oHeader: RectObj.h,v 1.2 88/08/18 17:39:17 asente Exp $  *)
+
+TYPE 
+  RectObj = POINTER TO _RectObjRec;
+  RectObjClass = POINTER TO _RectObjClassRec;
+
+VAR 
+  rectObjClass: WidgetClass;
+
+(* ------------------------------------------------------- *)
+(*                     X11/Intrinsic.h                     *)
+(* ------------------------------------------------------- *)
+
+TYPE 
+  _TranslationData = RECORD
+    (* Declaration without definition *)
+  END;
+
+  XtTranslations = POINTER TO ARRAY [0..MAX_STUP_ARR] OF _TranslationData;
+  XtAccelerators = POINTER TO ARRAY [0..MAX_STUP_ARR] OF _TranslationData;
+  Modifiers = CARDINAL;
+
+  XtAddressMode = INTEGER;
+
+  XtBoundActions = POINTER TO XtActionProc;
+
+CONST
+(*  address mode	      parameter representation	*)
+(*  ------------	      ------------------------	*)
+  XtAddress          = 0; (*  address			*)
+  XtBaseOffset       = 1; (*  offset			*)
+  XtImmediate        = 2; (*  constant			*)
+  XtResourceString   = 3; (*  resource name string	*)
+  XtResourceQuark    = 4; (*  resource name quark	*)
+  XtWidgetBaseOffset = 5; (*  offset from ancestor	*)
+  XtProcedureArg     = 6; (*  procedure to invoke	*)
+
+TYPE
+  XtConvertArgRec = RECORD
+    address_mode: XtAddressMode;
+    address_id  : XtPointer;
+    size        : Cardinal;
+  END;
+
+  XtConvertArgList = POINTER TO XtConvertArgRec;
+
+  XtConvertArgProc = PROCEDURE ( (* widget *) Widget,
+                                 (* size *) VAR Cardinal,
+                                 (* value *) VAR XrmValue );
+
+  XtWidgetGeometry = RECORD
+    request_mode: XtGeometryMask;
+    x           : Position;
+    y           : Position;
+    width       : Dimension;
+    height      : Dimension;
+    border_width: Dimension;
+    sibling     : Widget;
+    stack_mode  : BITSET;
+    (*  Above, Below, TopIf, BottomIf, Opposite, DontChange  *)
+  END;
+
+CONST 
+(*  Additions to Xlib geometry requests: ask what would happen, don't do it  *)
+  XtCWQueryOnly = {7};
+
+(*  Additions to Xlib stack modes: don't change stack order  *)
+  XtSMDontChange = {0,2};
+
+TYPE 
+  XtConverter = PROCEDURE ( (*  obsolete  *)
+                            (* args *) PAXrmValue,
+                            (* num_args *) VAR Cardinal,
+                            (* from *) VAR XrmValue,
+                            (* to *) VAR XrmValue );
+
+  XtTypeConverter = PROCEDURE ( (* dpy *) Xlib.PtrDisplay,
+                              (* args *) PAXrmValue,
+                              (* num_args *) VAR Cardinal,
+                              (* from *) VAR XrmValue,
+                              (* to *) VAR XrmValue,
+                              (* converter_data *) VAR XtPointer ): Boolean;
+
+  XtDestructor = PROCEDURE ( (* app *) XtAppContext,
+                             (* to *) VAR XrmValue,
+                             (* converter_data *) XtPointer,
+                             (* args *) VAR XrmValuePtr,
+                             (* num_args *) VAR Cardinal );
+
+  XtCacheRef = Opaque;
+
+  XtActionHookId = Opaque;
+
+  XtActionHookProc = PROCEDURE ( (* w *) Widget,
+                                 (* client_data *) XtPointer,
+                                 (* action_name *) ARRAY OF CHAR,
+                                 (* event *) Xlib.PtrXEvent,
+                                 (* params *) StringList,
+                                 (* num_params *) VAR Cardinal );
+
+  XtBlockHookId = LONGCARD;
+
+  XtBlockHookProc = PROCEDURE ( (* client_data *) XtPointer );
+
+  XtKeyProc = PROCEDURE ( (* dpy *) PtrDisplay,
+                          (* keycode *) SYSTEM.unsigned,
+                          (* modifiers *) Modifiers,
+                          (* modifiers_return *) VAR Modifiers,
+                          (* keysym_return *) VAR X.KeySym );
+
+  XtCaseProc = PROCEDURE ( (* display *) PtrDisplay,
+                           (* keysym *) X.KeySym,
+                           (* lower_return *) VAR X.KeySym,
+                           (* upper_return *) VAR X.KeySym );
+
+  XtEventHandler = PROCEDURE ( (* widget *) Widget,
+                               (* closure *) XtPointer,
+                               (* event *) VAR Xlib.XEvent,
+                               (* continue_to_dispatch *) VAR Boolean );
+
+  EventMask = BITSET;
+
+  XtListPosition = INTEGER;
+
+CONST
+  XtListHead = 0;
+  XtListTail = 1;
+
+TYPE
+  XtInputMask = BITSET;
+
+CONST 
+  XtInputNoneMask   = {};
+  XtInputReadMask   = {0};
+  XtInputWriteMask  = {1};
+  XtInputExceptMask = {2};
+
+TYPE 
+  XtTimerCallbackProc = PROCEDURE ( (* closure *) XtPointer,
+                                    (* id *) VAR XtIntervalId );
+
+  XtInputCallbackProc = PROCEDURE ( (* closure *) XtPointer,
+                                    (* source *) Xrm.XrmQuarkList,
+                                    (* id *) VAR XtInputId);
+
+  XtSignalCallbackProc = PROCEDURE ( (* closure *) XtPointer,
+                                     (* id *) VAR XtSignalId );
+
+<* IF __GEN_C__ THEN *> <*+ GENTYPEDEF *> <* END *>
+  Arg = RECORD
+    name : String;
+    value: XtArgVal;
+  END;
+<* IF __GEN_C__ THEN *> <*+ GENTYPEDEF *> <* END *>
+
+  ArgList = POINTER TO ARRAY [0..MAX_STUP_ARR] OF Arg;
+
+  XtVarArgsList = XtPointer;
+
+  XtCallbackProc = PROCEDURE ( (* widget *) Widget,
+                               (* closure *) XtPointer, (* data the application
+                                                         * registered *)
+                               (* call_data *) XtPointer(* callback specific
+                                                         * data *)
+                             ); 
+
+<* IF __GEN_C__ THEN *> <*- GENTYPEDEF *> <* END *>
+  _XtCallbackRec = RECORD
+    callback: XtCallbackProc;
+    closure : XtPointer;
+  END;
+<* IF __GEN_C__ THEN *> <*+ GENTYPEDEF *> <* END *>
+
+  XtCallbackRec = _XtCallbackRec;
+
+  XtCallbackList = POINTER TO ARRAY [0..MAX_STUP_ARR] OF _XtCallbackRec;
+
+  XtCallbackStatus = BITSET;
+
+CONST
+  XtCallbackNoList  = {};
+  XtCallbackHasNone = {0};
+  XtCallbackHasSome = {1};
+
+TYPE
+  XtGeometryResult = BITSET;
+
+CONST
+  XtGeometryYes    = {};    (* Request accepted. *)
+  XtGeometryNo     = {0};   (* Request denied. *)
+  XtGeometryAlmost = {1};   (* Request denied, but willing to take replyBox. *)
+  XtGeometryDone   = {0,1}; (* Request accepted and done. *)
+
+TYPE
+  XtGrabKind = BITSET;
+
+CONST
+  XtGrabNone         = {};
+  XtGrabNonexclusive = {0};
+  XtGrabExclusive    = {1};
+
+TYPE
+  XtPopdownIDRec = RECORD
+    shell_widget : Widget;
+    enable_widget: Widget;
+  END;
+
+  XtPopdownID = POINTER TO XtPopdownIDRec;
+
+<* IF __GEN_C__ THEN *> <*- GENTYPEDEF *> <* END *>
+  _XtResource = RECORD
+    resource_name  : String;    (* Resource name		            *)
+    resource_class : String;    (* Resource class		            *)
+    resource_type  : String;    (* Representation type desired	            *)
+    resource_size  : Cardinal;  (* Size in bytes of representation          *)
+    resource_offset: Cardinal;  (* Offset from base to put resource value   *)
+    default_type   : String;    (* representation type of specified default *)
+    default_addr   : XtPointer; (* Address of default resource		    *)
+  END;
+<* IF __GEN_C__ THEN *> <*+ GENTYPEDEF *> <* END *>
+
+  XtResource = _XtResource;
+
+  XtResourceList = POINTER TO ARRAY [0..MAX_STUP_ARR] OF XtResource;
+
+  XtResourceDefaultProc = PROCEDURE ( (* widget *) Widget,
+                                      (* offset *) INTEGER,
+                                      (* value *) VAR XrmValue );
+
+  XtLanguageProc = PROCEDURE ( (* dpy *) PtrDisplay,
+                               (* xnl *) ARRAY OF CHAR,
+                               (* client_data *) XtPointer ): String;
+
+  XtErrorMsgHandler = PROCEDURE ( (* name *) ARRAY OF CHAR,
+                                  (* type *) ARRAY OF CHAR,
+                                  (* class *) ARRAY OF CHAR,
+                                  (* defaultstr *) ARRAY OF CHAR,
+                                  (* params *) StringList,
+                                  (* num_params *) VAR Cardinal );
+
+  XtErrorHandler = PROCEDURE ( (* msg *) ARRAY OF CHAR );
+
+  XtCreatePopupChildProc = PROCEDURE ( (* shell *) Widget );
+
+  XtWorkProc = PROCEDURE ( (* data the application registered *)
+                           (* closure *) XtPointer ): Boolean;
+
+  SubstitutionRec = RECORD
+    match       : CHAR;
+    substitution: String;
+  END;
+
+  Substitution = POINTER TO SubstitutionRec;
+
+  XtFilePredicate = PROCEDURE ( (* filename *) ARRAY OF CHAR ): Boolean;
+
+  XtRequestId = XtPointer;
+
+  XtConvertSelectionProc = PROCEDURE ( (* widget *) Widget,
+                                       (* selection *) VAR X.Atom,
+                                       (* target *) VAR X.Atom,
+                                       (* type_return *) VAR X.Atom, 
+                                       (* value_return *) VAR XtPointer, 
+                                       (* length_return *) VAR LONGCARD,
+                                       (* format_return *) VAR BITSET
+                                     ): Boolean;
+
+  XtLoseSelectionProc = PROCEDURE ( (* widget *) Widget,
+                                    (* selection *) VAR X.Atom );
+
+  XtSelectionDoneProc = PROCEDURE ( (* widget *) Widget,
+                                    (* selection *) VAR X.Atom,
+                                    (* target *) VAR X.Atom );
+
+  XtSelectionCallbackProc = PROCEDURE ( (* widget *) Widget,
+                                        (* closure *) XtPointer,
+                                        (* selection *) VAR X.Atom,
+                                        (* type *) VAR X.Atom,
+                                        (* value *) XtPointer,
+                                        (* length *) VAR LONGCARD,
+                                        (* format *) VAR BITSET );
+
+  XtLoseSelectionIncrProc = PROCEDURE ( (* widget *) Widget,
+                                        (* selection *) VAR X.Atom,
+                                        (* client_data *) XtPointer );
+
+  XtSelectionDoneIncrProc = PROCEDURE ( (* widget *) Widget,
+                                        (* selection *) VAR X.Atom,
+                                        (* target *) VAR X.Atom,
+                                        (* receiver_id *) VAR XtRequestId,
+                                        (* client_data *) XtPointer );
+
+  XtConvertSelectionIncrProc = PROCEDURE ( (* widget *) Widget,
+                                           (* selection *) VAR X.Atom, 
+                                           (* target *) VAR X.Atom, 
+                                           (* type *) VAR X.Atom, 
+                                           (* value *) VAR XtPointer,
+                                           (* length *) VAR LONGCARD,
+                                           (* format *) VAR BITSET,
+                                           (* max_length *) VAR LONGCARD,
+                                           (* client_data *) XtPointer,
+                                           (* receiver_id *) VAR XtRequestId ): Boolean;
+
+  XtCancelConvertSelectionProc = PROCEDURE ( (* widget *) Widget,
+                                             (* selection *) VAR X.Atom,
+                                             (* target *) VAR X.Atom,
+                                             (* receiver_id *) VAR XtRequestId,
+                                             (* client_data *) XtPointer );
+
+  XtEventDispatchProc = PROCEDURE ( (* event *) VAR Xlib.XEvent ): Boolean;
+
+  XtExtensionSelectProc = PROCEDURE ( (* widget *) Widget,
+                                      (* event_types *) Xlib.PASInt,
+                                      (* select_data *) VAR XtPointer,
+                                      (* count *) INTEGER,
+                                      (* client_data *) XtPointer );
+
+(***************************************************************
+ *
+ * Exported Interfaces
+ *
+ ***************************************************************)
+
+PROCEDURE XtConvertAndStore ( widget: Widget;
+                              from_type: String;
+                              VAR from: XrmValue;
+                              to_type: String;
+                              VAR to_in_out: XrmValue ): Boolean;
+
+PROCEDURE XtCallConverter ( dpy: PtrDisplay;
+                            converter: XtTypeConverter;
+                            args: PAXrmValue;
+                            num_args: Cardinal;
+                            VAR from: XrmValue;
+                            VAR to_in_out: XrmValue;
+                            VAR cache_ref_return: XtPointer ): Boolean;
+
+PROCEDURE XtDispatchEvent ( VAR event: Xlib.XEvent ): Boolean;
+
+PROCEDURE XtCallAcceptFocus ( widget: Widget;
+                              VAR time: X.Time ): Boolean;
+
+PROCEDURE XtPeekEvent ( (* obsolete *)
+                        VAR event_return: Xlib.XEvent ): Boolean;
+
+PROCEDURE XtAppPeekEvent ( app_context: XtAppContext;
+                           VAR event_return: Xlib.XEvent ): Boolean;
+
+PROCEDURE XtIsSubclass ( widget: Widget;
+                         widgetClass: WidgetClass ): Boolean;
+
+PROCEDURE XtIsObject ( object: Widget ): Boolean;
+
+PROCEDURE _XtCheckSubclassFlag ( (*  implementation-private  *)
+                                 object: Widget;
+                                 type_flag: SYSTEM.unsigned ): Boolean;
+
+PROCEDURE _XtIsSubclassOf ( (*  implementation-private  *)
+                            object: Widget;
+                            widget_class: WidgetClass;
+                            flag_class: WidgetClass;
+                            type_flag: SYSTEM.unsigned ): Boolean;
+
+PROCEDURE XtIsManaged ( rectobj: Widget ): Boolean;
+
+PROCEDURE XtIsRealized ( widget: Widget ): Boolean;
+
+PROCEDURE XtIsSensitive ( widget: Widget ): Boolean;
+
+PROCEDURE XtOwnSelection ( widget: Widget; selection: X.Atom;
+                           time: X.Time;
+                           convert: XtConvertSelectionProc;
+                           lose: XtLoseSelectionProc;
+                           done: XtSelectionDoneProc ): Boolean;
+
+PROCEDURE XtOwnSelectionIncremental ( widget: Widget;
+                                      selection: X.Atom;
+                                      time: X.Time;
+                                      convert_callback: XtConvertSelectionIncrProc;
+                                      lose_callback: XtLoseSelectionIncrProc;
+                                      done_callback: XtSelectionDoneIncrProc;
+                                      cancel_callback: XtCancelConvertSelectionProc;
+                                      client_data: XtPointer ): Boolean;
+
+PROCEDURE XtMakeResizeRequest ( widget: Widget;
+                                width: SYSTEM.unsigned;
+                                height: SYSTEM.unsigned;
+                                VAR width_return: Dimension;
+                                VAR height_return: Dimension ): XtGeometryResult;
+
+PROCEDURE XtTranslateCoords ( widget: Widget;
+                              x: INTEGER;
+                              y: INTEGER;
+                              VAR rootx_return: Position;
+                              VAR rooty_return: Position );
+
+PROCEDURE XtGetKeysymTable ( dpy: PtrDisplay;
+                             VAR min_keycode_return: X.KeyCode;
+                             VAR keysyms_per_keycode_return: INTEGER
+                           ): X.PAKeySym;
+
+PROCEDURE XtKeysymToKeycodeList ( dpy: PtrDisplay;
+                                  keysym: X.KeySym;
+                                  VAR keycodes_return: X.PAKeyCode;
+                                  VAR keycount_return: Cardinal );
+
+PROCEDURE XtStringConversionWarning ( (*  obsolete  *)
+                                      from_value: ARRAY OF CHAR;
+                                      to_type: ARRAY OF CHAR );
+
+PROCEDURE XtDisplayStringConversionWarning ( dpy: PtrDisplay;
+                                             from_value: ARRAY OF CHAR;
+                                             to_type: ARRAY OF CHAR );
+
+VAR 
+  colorConvertArgs: XtConvertArgList;
+  screenConvertArg: XtConvertArgList;
+
+PROCEDURE XtAppAddConverter ( (*  obsolete  *)
+                              app_context: XtAppContext;
+                              from_type: ARRAY OF CHAR;
+                              to_type: ARRAY OF CHAR;
+                              converter: XtConverter;
+                              convert_args: XtConvertArgList;
+                              num_args: Cardinal );
+
+PROCEDURE XtAddConverter ( (*  obsolete  *)
+                           from_type: ARRAY OF CHAR;
+                           to_type: ARRAY OF CHAR;
+                           converter: XtConverter;
+                           convert_args: XtConvertArgList;
+                           num_args: Cardinal );
+
+PROCEDURE XtSetTypeConverter ( from_type: ARRAY OF CHAR;
+                               to_type: ARRAY OF CHAR;
+                               converter: XtTypeConverter;
+                               convert_args: XtConvertArgList;
+                               num_args: Cardinal;
+                               cache_type: XtCacheType;
+                               destructor: XtDestructor );
+
+PROCEDURE XtAppSetTypeConverter ( app_context: XtAppContext;
+                                  from_type: ARRAY OF CHAR;
+                                  to_type: ARRAY OF CHAR;
+                                  converter: XtTypeConverter;
+                                  convert_args: XtConvertArgList;
+                                  num_args: Cardinal;
+                                  cache_type: XtCacheType;
+                                  destructor: XtDestructor );
+
+PROCEDURE XtConvert ( (*  obsolete  *)
+                       widget: Widget;
+                      from_type: ARRAY OF CHAR;
+                      VAR from: XrmValue;
+                      to_type: ARRAY OF CHAR;
+                      VAR to_return: XrmValue );
+
+PROCEDURE XtDirectConvert ( (*  obsolete  *) converter: XtConverter;
+                            args: Xrm.XrmValuePtr;
+                            num_args: Cardinal;
+                            from: Xrm.XrmValuePtr;
+                            to_return: Xrm.XrmValuePtr );
+
+(****************************************************************
+ *
+ * Translation Management
+ *
+ ****************************************************************)
+
+PROCEDURE XtParseTranslationTable ( table: ARRAY OF CHAR ): XtTranslations;
+
+PROCEDURE XtParseAcceleratorTable ( source: ARRAY OF CHAR ): XtAccelerators;
+
+PROCEDURE XtOverrideTranslations ( widget: Widget;
+                                   translations: XtTranslations );
+
+PROCEDURE XtAugmentTranslations ( widget: Widget;
+                                  translations: XtTranslations );
+
+PROCEDURE XtInstallAccelerators ( destination: Widget;
+                                  source: Widget );
+
+PROCEDURE XtInstallAllAccelerators ( destination: Widget;
+                                     source: Widget );
+
+PROCEDURE XtUninstallTranslations ( widget: Widget );
+
+PROCEDURE XtAppAddActions ( app_context: XtAppContext;
+                            actions: XtActionList;
+                            num_actions: Cardinal );
+
+PROCEDURE XtAddActions ( (*  obsolete  *)
+                         actions: XtActionList;
+                         num_actions: Cardinal );
+
+PROCEDURE XtAppAddActionHook ( app_context: XtAppContext;
+                               proc: XtActionHookProc;
+                               client_data: XtPointer ): XtActionHookId;
+
+PROCEDURE XtRemoveActionHook ( id: XtActionHookId );
+
+PROCEDURE XtGetActionList ( widget_class: WidgetClass;
+                            VAR actions_return: XtActionList;
+                            VAR num_actions_return: Cardinal );
+
+PROCEDURE XtCallActionProc ( widget: Widget;
+                             action: ARRAY OF CHAR;
+                             event: Xlib.PtrXEvent;
+                             params: StringList;
+                             num_params: Cardinal );
+
+PROCEDURE XtRegisterGrabAction ( action_proc: XtActionProc;
+                                 owner_events: Boolean;
+                                 event_mask: BITSET;
+                                 pointer_mode: BITSET;
+                                 keyboard_mode: BITSET );
+
+PROCEDURE XtSetMultiClickTime ( dpy: PtrDisplay;
+                                milliseconds: INTEGER );
+
+PROCEDURE XtGetMultiClickTime ( dpy: PtrDisplay ): INTEGER;
+
+PROCEDURE XtGetActionKeysym ( VAR event: Xlib.XEvent;
+                              VAR modifiers_return: Modifiers ): X.KeySym;
+
+(***************************************************************
+ *
+ * Keycode and Keysym procedures for translation management
+ *
+ ***************************************************************)
+
+PROCEDURE XtTranslateKeycode ( dpy: PtrDisplay;
+                               keycode: SYSTEM.unsigned;
+                               modifiers: Modifiers;
+                               VAR modifiers_return: Modifiers;
+                               VAR keysym_return: X.KeySym );
+
+PROCEDURE XtTranslateKey ( dpy: PtrDisplay;
+                           keycode: SYSTEM.unsigned;
+                           modifiers: Modifiers;
+                           VAR modifiers_return: Modifiers;
+                           VAR keysym_return: X.KeySym );
+
+PROCEDURE XtSetKeyTranslator ( dpy: PtrDisplay;
+                               proc: XtKeyProc );
+
+PROCEDURE XtRegisterCaseConverter ( dpy: PtrDisplay;
+                                    proc: XtCaseProc;
+                                    start: X.KeySym;
+                                    stop: X.KeySym );
+
+PROCEDURE XtConvertCase ( dpy: PtrDisplay;
+                          keysym: X.KeySym;
+                          VAR lower_return: X.KeySym;
+                          VAR upper_return: X.KeySym );
+
+(****************************************************************
+ *
+ * Event Management
+ *
+ ****************************************************************)
+
+(*
+ * XtAllEvents is valid only for XtRemoveEventHandler and
+ * XtRemoveRawEventHandler; don't use it to select events!
+ *)
+
+CONST 
+  XtAllEvents = {0..31};
+
+PROCEDURE XtAddEventHandler ( widget: Widget;
+                              event_mask: EventMask;
+                              nonmaskable: Boolean;
+                              proc: XtEventHandler;
+                              closure: XtPointer );
+
+PROCEDURE XtRemoveEventHandler ( widget: Widget;
+                                 event_mask: EventMask;
+                                 nonmaskable: Boolean;
+                                 proc: XtEventHandler;
+                                 closure: XtPointer );
+
+PROCEDURE XtAddRawEventHandler ( widget: Widget;
+                                 event_mask: EventMask;
+                                 nonmaskable: Boolean;
+                                 proc: XtEventHandler;
+                                 closure: XtPointer );
+
+PROCEDURE XtRemoveRawEventHandler ( widget: Widget;
+                                    event_mask: EventMask;
+                                    nonmaskable: Boolean;
+                                    proc: XtEventHandler;
+                                    closure: XtPointer );
+
+PROCEDURE XtInsertEventHandler ( widget: Widget;
+                                 event_mask: EventMask;
+                                 nonmaskable: Boolean;
+                                 proc: XtEventHandler;
+                                 closure: XtPointer;
+                                 position: XtListPosition );
+
+PROCEDURE XtInsertRawEventHandler ( widget: Widget;
+                                    event_mask: EventMask;
+                                    nonmaskable: Boolean;
+                                    proc: XtEventHandler;
+                                    closure: XtPointer;
+                                    position: XtListPosition );
+
+PROCEDURE XtSetEventDispatcher ( dpy: PtrDisplay;
+                                 event_type: BITSET;
+                                 proc: XtEventDispatchProc
+                               ): XtEventDispatchProc;
+
+PROCEDURE XtDispatchEventToWidget ( widget: Widget;
+                                    VAR event: Xlib.XEvent ): Boolean;
+
+PROCEDURE XtInsertEventTypeHandler ( widget: Widget;
+                                     type: BITSET;
+                                     select_data: XtPointer;
+                                     proc: XtEventHandler;
+                                     closure: XtPointer;
+                                     position: XtListPosition );
+
+PROCEDURE XtRemoveEventTypeHandler ( widget: Widget;
+                                     type: BITSET;
+                                     select_data: XtPointer;
+                                     proc: XtEventHandler;
+                                     closure: XtPointer );
+
+PROCEDURE XtBuildEventMask ( widget: Widget ): EventMask;
+
+PROCEDURE XtRegisterExtensionSelector ( dpy: PtrDisplay;
+                                        min_event_type: BITSET;
+                                        max_event_type: BITSET;
+                                        proc: XtExtensionSelectProc;
+                                        client_data: XtPointer );
+
+PROCEDURE XtAddGrab ( widget: Widget;
+                      exclusive: Boolean;
+                      spring_loaded: Boolean );
+
+PROCEDURE XtRemoveGrab ( widget: Widget );
+
+PROCEDURE XtProcessEvent ( (*  obsolete  *) mask: XtInputMask );
+
+PROCEDURE XtAppProcessEvent ( app_context: XtAppContext;
+                              mask: XtInputMask );
+
+PROCEDURE XtMainLoop ( (*  obsolete  *) );
+
+PROCEDURE XtAppMainLoop ( app_context: XtAppContext );
+
+PROCEDURE XtAddExposureToRegion ( event: Xlib.PtrXEvent;
+                                  region: Xutil.Region );
+
+PROCEDURE XtSetKeyboardFocus ( subtree: Widget; descendent: Widget );
+
+PROCEDURE XtGetKeyboardFocusWidget ( widget: Widget ): Widget;
+
+PROCEDURE XtLastEventProcessed ( dpy: PtrDisplay ): Xlib.PtrXEvent;
+
+PROCEDURE XtLastTimestampProcessed ( dpy: PtrDisplay ): X.Time;
+
+(****************************************************************
+ *
+ * Event Gathering Routines
+ *
+ ****************************************************************)
+
+PROCEDURE XtAddTimeOut ( (*  obsolete  *)
+		         interval: LONGCARD;
+                         proc: XtTimerCallbackProc;
+                         closure: XtPointer ): XtIntervalId;
+
+PROCEDURE XtAppAddTimeOut ( app_context: XtAppContext;
+                            interval: LONGCARD;
+                            proc: XtTimerCallbackProc;
+                            closure: XtPointer ): XtIntervalId;
+
+PROCEDURE XtRemoveTimeOut ( timer: XtIntervalId );
+
+PROCEDURE XtAddInput ( (*  obsolete  *)
+                       source: INTEGER;
+                       condition: XtPointer;
+                       proc: XtInputCallbackProc;
+                       closure: XtPointer ): XtInputId;
+
+PROCEDURE XtAppAddInput ( app_context: XtAppContext;
+                          source: INTEGER;
+                          condition: XtPointer;
+                          proc: XtInputCallbackProc;
+                          closure: XtPointer ): XtInputId;
+
+PROCEDURE XtRemoveInput ( id: XtInputId );
+
+PROCEDURE XtAppAddSignal ( app_context: XtAppContext;
+                           proc: XtSignalCallbackProc;
+                           closure: XtPointer ): XtInputId;
+
+PROCEDURE XtRemoveSignal ( id: XtSignalId );
+
+PROCEDURE XtNoticeSignal ( id: XtSignalId );
+
+PROCEDURE XtNextEvent ( (*  obsolete  *) VAR event: Xlib.XEvent );
+
+PROCEDURE XtAppNextEvent ( app_context: XtAppContext;
+                           VAR event_return: Xlib.XEvent );
+
+CONST 
+  XtIMXEvent        = {0};
+  XtIMTimer         = {1};
+  XtIMAlternateIput = {2};
+  XtIMSignal        = {3};
+  XtIMAll           = {0..3};
+
+PROCEDURE XtPending ( ): XtInputMask; (* obsolete *)
+
+PROCEDURE XtAppPending ( app_context: XtAppContext ): XtInputMask;
+
+PROCEDURE XtAppAddBlockHook ( app_context: XtAppContext;
+                              proc: XtBlockHookProc;
+                              client_data: XtPointer ): XtBlockHookId;
+
+PROCEDURE XtRemoveBlockHook ( id: XtBlockHookId );
+
+(****************************************************************
+ *
+ * Random utility routines
+ *
+ ****************************************************************)
+
+<* IF __GEN_C__ THEN *>
+
+(* These procedures was generated from Macros. *)
+
+PROCEDURE  XtIsOverrideShell ( widget: Widget ): Boolean;
+PROCEDURE  XtIsVendorShell ( widget: Widget ): Boolean;
+PROCEDURE  XtIsTransientShell ( widget: Widget ): Boolean;
+PROCEDURE  XtIsApplicationShell ( widget: Widget ): Boolean;
+PROCEDURE  XtIsSessionShell ( widget: Widget ): Boolean;
+
+<* ELSE *>
+
+PROCEDURE  / XtIsOverrideShell * ( widget: Widget ): Boolean;
+PROCEDURE  / XtIsVendorShell * ( widget: Widget ): Boolean;
+PROCEDURE  / XtIsTransientShell * ( widget: Widget ): Boolean;
+PROCEDURE  / XtIsApplicationShell * ( widget: Widget ): Boolean;
+PROCEDURE  / XtIsSessionShell * ( widget: Widget ): Boolean;
+
+<* END *>
+
+PROCEDURE XtRealizeWidget ( widget: Widget );
+
+PROCEDURE XtUnrealizeWidget ( widget: Widget );
+
+PROCEDURE XtDestroyWidget ( widget: Widget );
+
+PROCEDURE XtSetSensitive ( widget: Widget; sensitive: Boolean );
+
+PROCEDURE XtSetMappedWhenManaged ( widget: Widget;
+                                   mapped_when_managed: Boolean );
+
+PROCEDURE XtNameToWidget ( reference: Widget; names: ARRAY OF CHAR ): Widget;
+
+PROCEDURE XtWindowToWidget ( display: PtrDisplay;
+                             window: X.Window ): Widget;
+
+PROCEDURE XtGetClassExtension ( object_class: WidgetClass;
+                                byte_offset: Cardinal;
+                                type: Xrm.XrmQuark;
+                                version: LONGINT;
+                                record_size: Cardinal ): XtPointer;
+
+(***************************************************************
+ *
+ * Arg lists
+ *
+ ***************************************************************)
+
+<* IF __GEN_C__ THEN *>
+
+(* This procedure was generated from Macro. *)
+
+PROCEDURE  XtSetArg ( arg: Arg; n: ARRAY OF CHAR; d: XtArgVal );
+
+<* ELSE *>
+
+PROCEDURE  / XtSetArg * ( arg: Arg; n: ARRAY OF CHAR; d: XtArgVal );
+
+<* END *>
+
+
+PROCEDURE XtMergeArgLists ( args1: ArgList; num_args1: Cardinal;
+                            args2: ArgList;
+                            num_args2: Cardinal ): ArgList;
+
+(***************************************************************
+ *
+ * Vararg lists
+ *
+ ***************************************************************)
+
+CONST 
+  XtVaNestedList = 'XtVaNestedList';
+  XtVaTypedArg = 'XtVaTypedArg';
+
+PROCEDURE XtVaCreateArgsList ( unused : XtPointer;
+                               SEQ args: SYSTEM.BYTE ): XtVarArgsList;
+
+(*************************************************************
+ *
+ * Information routines
+ *
+ *************************************************************)
+
+(*  We're not included from the private file, so define these  *)
+
+PROCEDURE XtDisplay ( widget: Widget ): PtrDisplay;
+
+PROCEDURE XtDisplayOfObject ( object: Widget ): PtrDisplay;
+
+PROCEDURE XtScreen ( widget: Widget ): PtrScreen;
+
+PROCEDURE XtScreenOfObject ( object: Widget ): PtrScreen;
+
+PROCEDURE XtWindow ( widget: Widget ): X.Window;
+
+PROCEDURE XtWindowOfObject ( object: Widget ): X.Window;
+
+PROCEDURE XtName ( object: Widget ): String;
+
+PROCEDURE XtSuperclass ( object: Widget ): WidgetClass;
+
+PROCEDURE XtClass ( object: Widget ): WidgetClass;
+
+PROCEDURE XtParent ( widget: Widget ): Widget;
+
+<* IF __GEN_C__ THEN *>
+
+(* These procedures was generated from Macros. *)
+
+PROCEDURE  XtMapWidget ( widget: Widget ): INTEGER;
+PROCEDURE  XtUnmapWidget ( widget: Widget ): INTEGER;
+
+<* ELSE *>
+
+PROCEDURE  / XtMapWidget * ( widget: Widget ): INTEGER;
+PROCEDURE  / XtUnmapWidget * ( widget: Widget ): INTEGER;
+
+<* END *>
+
+PROCEDURE XtAddCallback ( widget: Widget;
+                          callback_name: ARRAY OF CHAR;
+                          callback: XtCallbackProc;
+                          closure: XtPointer );
+
+PROCEDURE XtRemoveCallback ( widget: Widget;
+                             callback_name: ARRAY OF CHAR;
+                             callback: XtCallbackProc;
+                             closure: XtPointer );
+
+PROCEDURE XtAddCallbacks ( widget: Widget;
+                           callback_name: ARRAY OF CHAR;
+                           callbacks: XtCallbackList );
+
+PROCEDURE XtRemoveCallbacks ( widget: Widget;
+                              callback_name: ARRAY OF CHAR;
+                              callbacks: XtCallbackList );
+
+PROCEDURE XtRemoveAllCallbacks ( widget: Widget;
+                                 callback_name: ARRAY OF CHAR );
+
+PROCEDURE XtCallCallbacks ( widget: Widget;
+                            callback_name: ARRAY OF CHAR;
+                            call_data: XtPointer );
+
+PROCEDURE XtCallCallbackList ( widget: Widget;
+                               callbacks: XtCallbackList;
+                               call_data: XtPointer );
+
+PROCEDURE XtHasCallbacks ( widget: Widget;
+                           callback_name: ARRAY OF CHAR ): XtCallbackStatus;
+
+(****************************************************************
+ *
+ * Geometry Management
+ *
+ ****************************************************************)
+
+PROCEDURE XtMakeGeometryRequest ( widget: Widget;
+                                  VAR request: XtWidgetGeometry;
+                                  VAR reply_return: XtWidgetGeometry
+                                ): XtGeometryResult;
+
+PROCEDURE XtQueryGeometry ( widget: Widget;
+                            VAR intended: XtWidgetGeometry;
+                            VAR preferred_return: XtWidgetGeometry
+                          ): XtGeometryResult;
+
+PROCEDURE XtCreatePopupShell ( name: ARRAY OF CHAR;
+                               widgetClass: WidgetClass;
+                               parent: Widget;
+                               args: ArgList;
+                               num_args: Cardinal ): Widget;
+
+PROCEDURE XtVaCreatePopupShell ( name: ARRAY OF CHAR;
+                                 widgetClass: WidgetClass;
+                                 parent: Widget;
+                                 SEQ args: SYSTEM.BYTE ): Widget;
+
+PROCEDURE XtPopup ( popup_shell: Widget; grab_kind: XtGrabKind );
+
+PROCEDURE XtPopupSpringLoaded ( popup_shell: Widget );
+
+PROCEDURE XtCallbackNone ( widget: Widget;
+                           closure: XtPointer;
+                           call_data: XtPointer );
+
+PROCEDURE XtCallbackNonexclusive ( widget: Widget;
+                                   closure: XtPointer;
+                                   call_data: XtPointer );
+
+PROCEDURE XtCallbackExclusive ( widget: Widget;
+                                closure: XtPointer;
+                                call_data: XtPointer );
+
+PROCEDURE XtPopdown ( popup_shell: Widget );
+
+PROCEDURE XtCallbackPopdown ( widget: Widget;
+                              closure: XtPointer;
+                              call_data: XtPointer );
+
+PROCEDURE XtMenuPopupAction ( widget: Widget;
+                              event: Xlib.PtrXEvent;
+                              params: StringList;
+                              VAR num_params: Cardinal );
+
+PROCEDURE XtCreateWidget ( name: ARRAY OF CHAR;
+                           widget_class: WidgetClass;
+                           parent: Widget;
+                           args: ArgList;
+                           num_args: Cardinal ): Widget;
+
+PROCEDURE XtCreateManagedWidget ( name: ARRAY OF CHAR;
+                                  widget_class: WidgetClass;
+                                  parent: Widget; 
+                                  args: ArgList;
+                                  num_args: Cardinal ): Widget;
+
+PROCEDURE XtVaCreateWidget ( name: ARRAY OF CHAR;
+                             widget: WidgetClass;
+                             parent: Widget;
+                             SEQ args: SYSTEM.BYTE ): Widget;
+
+PROCEDURE XtVaCreateManagedWidget ( name: ARRAY OF CHAR;
+                                    widget_class: WidgetClass;
+                                    parent: Widget;
+                                    SEQ args: SYSTEM.BYTE ): Widget;
+
+PROCEDURE XtCreateApplicationShell ( (*  obsolete  *)
+                                     name: ARRAY OF CHAR;
+                                     widget_class: WidgetClass;
+                                     args: ArgList;
+                                     num_args: Cardinal ): Widget;
+
+PROCEDURE XtAppCreateShell ( application_name: ARRAY OF CHAR;
+                             application_class: ARRAY OF CHAR;
+                             widget_class: WidgetClass;
+                             display: PtrDisplay;
+                             args: ArgList;
+                             num_args: Cardinal ): Widget;
+
+PROCEDURE XtVaAppCreateShell ( application_name: ARRAY OF CHAR;
+                               application_class: ARRAY OF CHAR;
+                               widget_class: WidgetClass;
+                               display: PtrDisplay;
+                               SEQ args: SYSTEM.BYTE ): Widget;
+
+(****************************************************************
+ *
+ * Toolkit initialization
+ *
+ ****************************************************************)
+
+PROCEDURE XtToolkitInitialize ( );
+
+PROCEDURE XtSetLanguageProc ( app_context: XtAppContext;
+                              proc: XtLanguageProc;
+                              client_data: XtPointer ): XtLanguageProc;
+
+PROCEDURE XtDisplayInitialize ( app_context: XtAppContext;
+                                dpy: PtrDisplay;
+                                application_name: ARRAY OF CHAR;
+                                application_class: ARRAY OF CHAR;
+                                options: Xrm.XrmOptionDescList;
+                                num_options: Cardinal;
+                                VAR argc: INTEGER;
+                                argv: StringList );
+
+PROCEDURE XtOpenApplication ( app_context_return: Xrm.XrmHashTable;
+                              application_class: String;
+                              options: Xrm.XrmOptionDescList;
+                              num_options: Cardinal;
+                              argc_in_out: Xrm.XrmQuarkList;
+                              argv_in_out: StringList;
+                              fallback_resources: StringList;
+                              widget_class: WidgetClass;
+                              args: ArgList;
+                              num_args: Cardinal ): Widget;
+
+PROCEDURE XtVaOpenApplication ( VAR app_context_return: XtAppContext;
+                                application_class: ARRAY OF CHAR;
+                                options: Xrm.XrmOptionDescList;
+                                num_options: Cardinal;
+                                VAR argc_in_out: INTEGER;
+                                argv_in_out: StringList;
+                                fallback_resources: StringList;
+                                widget_class: WidgetClass;
+                                SEQ args: SYSTEM.BYTE ): Widget;
+
+PROCEDURE XtAppInitialize ( (*  obsolete  *)
+                            VAR app_context_return: XtAppContext;
+                            application_class: ARRAY OF CHAR;
+                            options: Xrm.XrmOptionDescList;
+                            num_options: Cardinal;
+                            VAR argc_in_out: INTEGER;
+                            argv_in_out: StringList;
+                            fallback_resources: StringList;
+                            args: ArgList;
+                            num_args: Cardinal ): Widget;
+
+PROCEDURE XtVaAppInitialize ( (*  obsolete  *)
+                              VAR app_context_return: XtAppContext;
+                              application_class: ARRAY OF CHAR;
+                              options: Xrm.XrmOptionDescList;
+                              num_options: Cardinal;
+                              VAR argc_in_out: INTEGER;
+                              argv_in_out: StringList;
+                              fallback_resources: StringList;
+                              SEQ args: SYSTEM.BYTE ): Widget;
+
+PROCEDURE XtInitialize ( (*  obsolete  *)
+                         shell_name: ARRAY OF CHAR;
+                         application_class: ARRAY OF CHAR;
+                         options: Xrm.XrmOptionDescList;
+                         num_options: Cardinal;
+                         VAR argc: INTEGER;
+                         argv: StringList ): Widget;
+
+PROCEDURE XtOpenDisplay ( app_context: XtAppContext;
+                          display_string: ARRAY OF CHAR;
+                          application_name: ARRAY OF CHAR;
+                          application_class: ARRAY OF CHAR;
+                          options: Xrm.XrmOptionDescList;
+                          num_options: Cardinal;
+                          VAR argc: INTEGER;
+                          argv: StringList ): PtrDisplay;
+
+PROCEDURE XtCreateApplicationContext ( ): XtAppContext;
+
+PROCEDURE XtAppSetFallbackResources ( app_context: XtAppContext;
+                                      specification_list: StringList );
+
+PROCEDURE XtDestroyApplicationContext ( app_context: XtAppContext );
+
+PROCEDURE XtInitializeWidgetClass ( widget_class: WidgetClass );
+
+PROCEDURE XtWidgetToApplicationContext ( widget: Widget ): XtAppContext;
+
+PROCEDURE XtDisplayToApplicationContext ( dpy: PtrDisplay ): XtAppContext;
+
+PROCEDURE XtDatabase ( dpy: PtrDisplay ): Xrm.XrmDatabase;
+
+PROCEDURE XtScreenDatabase ( screen: PtrScreen ): Xrm.XrmDatabase;
+
+PROCEDURE XtCloseDisplay ( dpy: PtrDisplay );
+
+PROCEDURE XtGetApplicationResources ( widget: Widget;
+                                      base: XtPointer;
+                                      resources: XtResourceList;
+                                      num_resources: Cardinal;
+                                      args: ArgList;
+                                      num_args: Cardinal );
+
+PROCEDURE XtVaGetApplicationResources ( widget: Widget;
+                                        base: XtPointer;
+                                        resources: XtResourceList;
+                                        num_resources: Cardinal;
+                                        SEQ args: SYSTEM.BYTE );
+
+PROCEDURE XtGetSubresources ( widget: Widget;
+                              base: XtPointer;
+                              name: ARRAY OF CHAR;
+                              class: ARRAY OF CHAR;
+                              resources: XtResourceList;
+                              num_resources: Cardinal;
+                              args: ArgList;
+                              num_args: Cardinal );
+
+PROCEDURE XtVaGetSubresources ( widget: Widget;
+                                base: XtPointer;
+                                name: ARRAY OF CHAR;
+                                class: ARRAY OF CHAR;
+                                resources: XtResourceList;
+                                num_resources: Cardinal;
+                                SEQ args: SYSTEM.BYTE );
+
+PROCEDURE XtSetValues ( widget: Widget;
+                        args: ArgList;
+                        num_args: Cardinal );
+
+PROCEDURE XtVaSetValues ( widget: Widget;
+                          SEQ args: SYSTEM.BYTE );
+
+PROCEDURE XtGetValues ( widget: Widget;
+                        args: ArgList;
+                        num_args: Cardinal );
+
+PROCEDURE XtVaGetValues ( widget: Widget;
+                          SEQ args: SYSTEM.BYTE );
+
+PROCEDURE XtSetSubvalues ( base: XtPointer;
+                           resources: XtResourceList;
+                           num_resources: Cardinal;
+                           args: ArgList;
+                           num_args: Cardinal );
+
+PROCEDURE XtVaSetSubvalues ( base: XtPointer;
+                             resources: XtResourceList;
+                             num_resources: Cardinal;
+                             SEQ args: SYSTEM.BYTE );
+
+PROCEDURE XtGetSubvalues ( base: XtPointer;
+                           resources: XtResourceList;
+                           num_resources: Cardinal;
+                           args: ArgList;
+                           num_args: Cardinal );
+
+PROCEDURE XtVaGetSubvalues ( base: XtPointer;
+                             resources: XtResourceList;
+                             num_resources: Cardinal;
+                             SEQ args: SYSTEM.BYTE );
+
+PROCEDURE XtGetResourceList ( widget_class: WidgetClass;
+                              VAR resources_return: XtResourceList;
+                              VAR num_resources_return: Cardinal );
+
+PROCEDURE XtGetConstraintResourceList ( widget_class: WidgetClass;
+                                        VAR resources_return: XtResourceList;
+                                        VAR num_resources_return: Cardinal );
+
+CONST 
+  XtUnspecifiedPixmap = 2;
+  XtUnspecifiedShellInt = -1;
+  XtUnspecifiedWindow = 2;
+  XtUnspecifiedWindowGroup = 3;
+  XtCurrentDirectory = 'XtCurrentDirectory';
+  XtDefaultForeground = 'XtDefaultForeground';
+  XtDefaultBackground = 'XtDefaultBackground';
+  XtDefaultFont = 'XtDefaultFont';
+  XtDefaultFontSet = 'XtDefaultFontSet';
+
+<* IF __GEN_C__ THEN *>
+
+(* These procedures was generated from Macros. *)
+
+PROCEDURE  XtOffset ( SEQ args: SYSTEM.BYTE ): Cardinal;
+PROCEDURE  XtOffsetOf ( SEQ args: SYSTEM.BYTE ): Cardinal;
+
+<* END *>
+
+(*************************************************************
+ *
+ * Session Management
+ *
+ *************************************************************)
+
+<* IF __GEN_C__ THEN *> <*- GENTYPEDEF *> <* END *>
+TYPE 
+  _XtCheckpointTokenRec = RECORD
+    save_type           : BITSET;
+    interact_style      : BITSET;
+    shutdown            : Boolean;
+    fast                : Boolean;
+    cancel_shutdown     : Boolean;
+    phase               : INTEGER;
+    interact_dialog_type: BITSET;       (* return *)
+    request_cancel      : Boolean;      (* return *)
+    request_next_phase  : Boolean;      (* return *)
+    save_success        : Boolean;      (* return *)
+    type                : BITSET;       (* implementation private *)
+    widget              : Widget;       (* implementation private *)
+  END;
+<* IF __GEN_C__ THEN *> <*+ GENTYPEDEF *> <* END *>
+
+  XtCheckpointTokenRec = _XtCheckpointTokenRec;
+
+  XtCheckpointToken = POINTER TO _XtCheckpointTokenRec;
+
+PROCEDURE XtSessionGetToken ( widget: Widget ): XtCheckpointToken;
+
+PROCEDURE XtSessionReturnToken ( token: XtCheckpointToken );
+
+(*************************************************************
+ *
+ * Error Handling
+ *
+ *************************************************************)
+
+PROCEDURE XtAppSetErrorMsgHandler ( app_context: XtAppContext;
+                                    handler: XtErrorMsgHandler
+                                  ): XtErrorMsgHandler;
+
+PROCEDURE XtSetErrorMsgHandler ( (* obsolete *)
+                                 handler: XtErrorMsgHandler );
+
+PROCEDURE XtAppSetWarningMsgHandler ( app_context: XtAppContext;
+                                      handler: XtErrorMsgHandler
+                                    ): XtErrorMsgHandler;
+
+PROCEDURE XtSetWarningMsgHandler ( (* obsolete *)
+                                   handler: XtErrorMsgHandler );
+
+PROCEDURE XtAppErrorMsg ( app_context: XtAppContext;
+                          name: ARRAY OF CHAR;
+                          type: ARRAY OF CHAR;
+                          class: ARRAY OF CHAR;
+                          defaultstr: ARRAY OF CHAR;
+                          params: StringList;
+                          VAR num_params: Cardinal );
+
+PROCEDURE XtErrorMsg ( (* obsolete *)
+                       name: ARRAY OF CHAR;
+                       type: ARRAY OF CHAR;
+                       class: ARRAY OF CHAR;
+                       defaultstr: ARRAY OF CHAR;
+                       params: StringList;
+                       VAR num_params: Cardinal );
+
+PROCEDURE XtAppWarningMsg ( app_context: XtAppContext;
+                            name: ARRAY OF CHAR;
+                            type: ARRAY OF CHAR;
+                            class: ARRAY OF CHAR;
+                            defaultstr: ARRAY OF CHAR;
+                            params: StringList;
+                            VAR num_params: Cardinal );
+
+PROCEDURE XtWarningMsg ( (* obsolete *)
+                         name: ARRAY OF CHAR;
+                         type: ARRAY OF CHAR;
+                         class: ARRAY OF CHAR;
+                         defaultstr: ARRAY OF CHAR;
+                         params: StringList;
+                         VAR num_params: Cardinal );
+
+PROCEDURE XtAppSetErrorHandler ( app_context: XtAppContext;
+                                 handler: XtErrorHandler ): XtErrorHandler;
+
+PROCEDURE XtSetErrorHandler ( (* obsolete *)
+                              handler: XtErrorHandler );
+
+PROCEDURE XtAppSetWarningHandler ( app_context: XtAppContext;
+                                   handler: XtErrorHandler ): XtErrorHandler;
+
+PROCEDURE XtSetWarningHandler ( (* obsolete *)
+                                handler: XtErrorHandler );
+
+PROCEDURE XtAppError ( app_context: XtAppContext;
+                       message: ARRAY OF CHAR );
+
+PROCEDURE XtError ( (* obsolete *)
+                    message: ARRAY OF CHAR );
+
+PROCEDURE XtAppWarning ( app_context: XtAppContext;
+                         message: ARRAY OF CHAR );
+
+PROCEDURE XtWarning ( (*  obsolete  *) message: ARRAY OF CHAR );
+
+<* IF __GEN_C__ THEN *> <*- GENTYPEDEF *> <* END *>
+TYPE
+     XrmDatabasePtr = POINTER TO Xrm.XrmDatabase;
+<* IF __GEN_C__ THEN *> <*+ GENTYPEDEF *> <* END *>
+
+PROCEDURE XtAppGetErrorDatabase ( app_context: XtAppContext ): XrmDatabasePtr;
+
+PROCEDURE XtGetErrorDatabase ( ): XrmDatabasePtr; (* obsolete *)
+
+PROCEDURE XtAppGetErrorDatabaseText ( app_context: XtAppContext;
+                                      name: ARRAY OF CHAR;
+                                      type: ARRAY OF CHAR;
+                                      class: ARRAY OF CHAR;
+                                      defaultstr: ARRAY OF CHAR;
+                                      buffer_return: String;
+                                      nbytes: INTEGER;
+                                      database: Xrm.XrmDatabase );
+
+PROCEDURE XtGetErrorDatabaseText ( (*  obsolete  *)
+                                   name: ARRAY OF CHAR;
+                                   type: ARRAY OF CHAR;
+                                   class: ARRAY OF CHAR;
+                                   defaultstr: ARRAY OF CHAR;
+                                   buffer_return: String;
+                                   nbytes: INTEGER );
+
+(****************************************************************
+ *
+ * Memory Management
+ *
+ ****************************************************************)
+
+PROCEDURE XtMalloc ( size: Cardinal ): SYSTEM.ADDRESS;
+
+PROCEDURE XtCalloc ( num: Cardinal; size: Cardinal ): SYSTEM.ADDRESS;
+
+PROCEDURE XtRealloc ( ptr: SYSTEM.ADDRESS; num: Cardinal ): SYSTEM.ADDRESS;
+
+PROCEDURE XtFree ( ptr: SYSTEM.ADDRESS );
+
+<* IF __GEN_C__ THEN *>
+
+(* These procedure was generated from Macros. *)
+
+PROCEDURE  XtNew ( SEQ typename : SYSTEM.BYTE ): SYSTEM.ADDRESS;
+PROCEDURE  XtNewString ( str: ARRAY OF CHAR ): String;
+
+<* ELSE *>
+
+PROCEDURE  / XtNew * ( type_size: CARDINAL ): SYSTEM.ADDRESS;
+PROCEDURE  / XtNewString * ( str: ARRAY OF CHAR ): String;
+
+<* END *>
+
+(*************************************************************
+ *
+ *  Work procs
+ *
+ *************************************************************)
+
+PROCEDURE XtAddWorkProc ( (*  obsolete  *)
+                          proc: XtWorkProc;
+                          closure: XtPointer ): XtWorkProcId;
+
+PROCEDURE XtAppAddWorkProc ( app_context: XtAppContext;
+                             proc: XtWorkProc;
+                             closure: XtPointer ): XtWorkProcId;
+
+PROCEDURE XtRemoveWorkProc ( id: XtWorkProcId );
+
+(****************************************************************
+ *
+ * Graphic Context Management
+ *
+ ****************************************************************)
+
+PROCEDURE XtGetGC ( widget: Widget;
+                    valueMask: XtGCMask;
+                    values: Xlib.PAXGCValues ): Xlib.GC;
+
+PROCEDURE XtAllocateGC ( widget: Widget;
+                         depth: Cardinal;
+                         valueMask: XtGCMask;
+                         values: Xlib.PAXGCValues;
+                         dynamicMask: XtGCMask;
+                         unusedMask: XtGCMask ): Xlib.GC;
+
+(*
+ * This implementation of XtDestroyGC differs from the formal specification
+ * for historic backwards compatibility reasons.  As other implementations
+ * may conform to the spec, use of XtReleaseGC is strongly encouraged.
+ *)
+
+PROCEDURE XtDestroyGC ( (* obsolete *)
+                        gc: Xlib.GC );
+
+PROCEDURE XtReleaseGC ( object: Widget; gc: Xlib.GC );
+
+PROCEDURE XtAppReleaseCacheRefs ( app_context: XtAppContext;
+                                  VAR cache_ref: XtPointer );
+
+PROCEDURE XtCallbackReleaseCacheRef ( widget: Widget;
+                                      closure: XtPointer;
+                     (* XtCacheRef *) call_data: XtPointer );
+
+PROCEDURE XtCallbackReleaseCacheRefList ( widget: Widget;
+                                          closure: XtPointer;
+                      (* XtCacheRefPtr *) call_data: XtPointer );
+
+PROCEDURE XtSetWMColormapWindows ( widget: Widget;
+                                   list: WidgetList;
+                                   count: Cardinal );
+
+PROCEDURE XtFindFile ( path: ARRAY OF CHAR;
+                       substitutions: Substitution;
+                       num_substitutions: Cardinal;
+                       predicate: XtFilePredicate ): String;
+
+PROCEDURE XtResolvePathname ( dpy: PtrDisplay;
+                              type: ARRAY OF CHAR;
+                              filename: ARRAY OF CHAR;
+                              suffix: ARRAY OF CHAR;
+                              path: ARRAY OF CHAR;
+                              substitutions: Substitution;
+                              num_substitutions: Cardinal;
+                              predicate: XtFilePredicate ): String;
+
+(****************************************************************
+ *
+ * Selections
+ *
+ ****************************************************************)
+
+CONST 
+  XT_CONVERT_FAIL = 80000001H;
+
+PROCEDURE XtDisownSelection ( widget: Widget; selection: X.Atom;
+                              time: X.Time );
+
+PROCEDURE XtGetSelectionValue ( widget: Widget; selection: X.Atom;
+                                target: X.Atom;
+                                callback: XtSelectionCallbackProc;
+                                closure: XtPointer;
+                                time: X.Time );
+
+PROCEDURE XtGetSelectionValues ( widget: Widget;
+                                 selection: X.Atom;
+                                 targets: XtValueMaskList;
+                                 count: INTEGER;
+                                 callback: XtSelectionCallbackProc;
+                                 closures: XtPointerList;
+                                 time: X.Time );
+
+PROCEDURE XtAppSetSelectionTimeout ( app_context: XtAppContext;
+                                     timeout: LONGCARD );
+
+PROCEDURE XtSetSelectionTimeout ( (* obsolete *)
+                                  timeout: LONGCARD );
+
+PROCEDURE XtAppGetSelectionTimeout ( app_context: XtAppContext ): LONGCARD;
+
+PROCEDURE XtGetSelectionTimeout ( ): LONGCARD; (* obsolete *)
+
+PROCEDURE XtGetSelectionRequest ( widget: Widget; selection: X.Atom;
+                                  request_id: XtRequestId
+				): Xlib.PtrXSelectionRequestEvent;
+
+PROCEDURE XtGetSelectionValueIncremental ( widget: Widget;
+                                           selection: X.Atom;
+                                           target: X.Atom;
+                                           selection_callback: XtSelectionCallbackProc;
+                                           client_data: XtPointer;
+                                           time: X.Time );
+
+PROCEDURE XtGetSelectionValuesIncremental ( widget: Widget;
+                                            selection: X.Atom;
+                                            targets: XtValueMaskList;
+                                            count: INTEGER;
+                                            callback: XtSelectionCallbackProc;
+                                            VAR client_data: XtPointer;
+                                            time: X.Time );
+
+PROCEDURE XtSetSelectionParameters ( requestor: Widget;
+                                     selection: X.Atom; type: X.Atom;
+                                     value: XtPointer;
+                                     length: LONGCARD;
+                                     format: BITSET );
+
+PROCEDURE XtGetSelectionParameters ( owner: Widget;
+                                     selection: X.Atom;
+                                     request_id: XtRequestId;
+                                     VAR type_return: X.Atom;
+                                     VAR value_return: XtPointer;
+                                     VAR length_return: LONGCARD;
+                                     VAR format_return: BITSET );
+
+PROCEDURE XtCreateSelectionRequest ( requestor: Widget;
+                                     selection: X.Atom );
+
+PROCEDURE XtSendSelectionRequest ( requestor: Widget;
+                                   selection: X.Atom;
+                                   time: X.Time );
+
+PROCEDURE XtCancelSelectionRequest ( requestor: Widget;
+                                     selection: X.Atom );
+
+PROCEDURE XtReservePropertyAtom ( widget: Widget ): X.Atom;
+
+PROCEDURE XtReleasePropertyAtom ( widget: Widget;
+                                  selection: X.Atom );
+
+PROCEDURE XtGrabKey ( widget: Widget;
+                      keycode: SYSTEM.unsigned;
+                      modifiers: Modifiers;
+                      owner_events: Boolean;
+                      pointer_mode: BITSET;
+                      keyboard_mode: BITSET );
+
+PROCEDURE XtUngrabKey ( widget: Widget;
+                        keycode: SYSTEM.unsigned;
+                        modifiers: Modifiers );
+
+PROCEDURE XtGrabKeyboard ( widget: Widget;
+                           owner_events: Boolean;
+                           pointer_mode: BITSET;
+                           keyboard_mode: BITSET;
+                           time: X.Time ): INTEGER;
+
+PROCEDURE XtUngrabKeyboard ( widget: Widget; time: X.Time );
+
+PROCEDURE XtGrabButton ( widget: Widget;
+                         button: INTEGER;
+                         modifiers: Modifiers;
+                         owner_events: Boolean;
+                         event_mask: BITSET;
+                         pointer_mode: BITSET;
+                         keyboard_mode: BITSET;
+                         confine_to: X.Window;
+                         cursor: X.Cursor );
+
+PROCEDURE XtUngrabButton ( widget: Widget; button: SYSTEM.unsigned;
+                           modifiers: Modifiers );
+
+PROCEDURE XtGrabPointer ( widget: Widget;
+                          owner_events: Boolean;
+                          event_mask: BITSET;
+                          pointer_mode: BITSET;
+                          keyboard_mode: BITSET;
+                          confine_to: X.Window;
+                          cursor: X.Cursor;
+                          time: X.Time ): INTEGER;
+
+PROCEDURE XtUngrabPointer ( widget: Widget;
+                            time: X.Time );
+
+PROCEDURE XtGetApplicationNameAndClass ( dpy: PtrDisplay;
+                                         VAR name_return: String;
+                                         VAR class_return: String );
+
+PROCEDURE XtRegisterDrawable ( dpy: PtrDisplay;
+                               drawable: X.Drawable;
+                               widget: Widget );
+
+PROCEDURE XtUnregisterDrawable ( dpy: PtrDisplay;
+                                 drawable: X.Drawable );
+
+PROCEDURE XtHooksOfDisplay ( dpy: PtrDisplay ): Widget;
+
+TYPE 
+  XtCreateHookDataRec = RECORD
+    type    : String;
+    widget  : Widget;
+    args    : ArgList;
+    num_args: Cardinal;
+  END;
+
+  XtCreateHookData = POINTER TO XtCreateHookDataRec;
+
+  XtChangeHookDataRec = RECORD
+    type          : String;
+    widget        : Widget;
+    event_data    : XtPointer;
+    num_event_data: Cardinal;
+  END;
+
+  XtChangeHookData = POINTER TO XtChangeHookDataRec;
+
+  XtChangeHookSetValuesDataRec = RECORD
+    old     : Widget;
+    req     : Widget;
+    args    : ArgList;
+    num_args: Cardinal;
+  END;
+
+  XtChangeHookSetValuesData = POINTER TO XtChangeHookSetValuesDataRec;
+
+  XtConfigureHookDataRec = RECORD
+    type      : String;
+    widget    : Widget;
+    changeMask: XtGeometryMask;
+    changes   : Xlib.XWindowChanges;
+  END;
+
+  XtConfigureHookData = POINTER TO XtConfigureHookDataRec;
+
+<* IF __GEN_C__ THEN *> <*- GENTYPEDEF *> <* END *>
+  XtWidgetGeometryPtr = POINTER TO XtWidgetGeometry;
+<* IF __GEN_C__ THEN *> <*+ GENTYPEDEF *> <* END *>
+
+  XtGeometryHookDataRec = RECORD
+    type   : String;
+    widget : Widget;
+    request: XtWidgetGeometryPtr;
+    reply  : XtWidgetGeometryPtr;
+    result : XtGeometryResult;
+  END;
+
+  XtGeometryHookData = POINTER TO XtGeometryHookDataRec;
+
+  XtDestroyHookDataRec = RECORD
+    type  : String;
+    widget: Widget;
+  END;
+
+  XtDestroyHookData = POINTER TO XtDestroyHookDataRec;
+
+PROCEDURE XtGetDisplays ( app_context: XtAppContext;
+                          VAR dpy_return: Xlib.PAPDisplay;
+                          VAR num_dpy_return: Cardinal );
+
+PROCEDURE XtToolkitThreadInitialize ( ): Boolean;
+
+PROCEDURE XtAppSetExitFlag ( app_context: XtAppContext );
+
+PROCEDURE XtAppGetExitFlag ( app_context: XtAppContext ): Boolean;
+
+PROCEDURE XtAppLock ( app_context: XtAppContext );
+
+PROCEDURE XtAppUnlock ( app_context: XtAppContext );
+
+(*
+ *    Predefined Resource Converters
+ *)
+
+(*  String converters  *)
+
+PROCEDURE XtCvtStringToAcceleratorTable ( dpy: PtrDisplay;
+                                          args: PAXrmValue; (*  none  *) 
+                                          VAR num_args: Cardinal;
+                                          VAR fromVal: XrmValue;
+                                          VAR toVal: XrmValue;
+                                          VAR closure_ret: XtPointer ): Boolean;
+
+PROCEDURE XtCvtStringToAtom ( dpy: PtrDisplay;
+                              args: PAXrmValue; (*  Display  *) 
+                              VAR num_args: Cardinal;
+                              VAR fromVal: XrmValue;
+                              VAR toVal: XrmValue;
+                              VAR closure_ret: XtPointer ): Boolean;
+
+PROCEDURE XtCvtStringToBool ( dpy: PtrDisplay;
+                              args: PAXrmValue; (*  none  *) 
+                              VAR num_args: Cardinal;
+                              VAR fromVal: XrmValue;
+                              VAR toVal: XrmValue;
+                              VAR closure_ret: XtPointer ): Boolean;
+
+PROCEDURE XtCvtStringToBoolean ( dpy: PtrDisplay;
+                                 args: PAXrmValue; (*  none  *)  
+                                 VAR num_args: Cardinal;
+                                 VAR fromVal: XrmValue;
+                                 VAR toVal: XrmValue;
+                                 VAR closure_ret: XtPointer ): Boolean;
+
+PROCEDURE XtCvtStringToCommandArgArray ( dpy: PtrDisplay;
+                                         args: PAXrmValue; (*  none  *) 
+                                         VAR num_args: Cardinal;
+                                         VAR fromVal: XrmValue;
+                                         VAR toVal: XrmValue;
+                                         VAR closure_ret: XtPointer ): Boolean;
+
+PROCEDURE XtCvtStringToCursor ( dpy: PtrDisplay;
+                                args: PAXrmValue; (*  Display  *) 
+                                VAR num_args: Cardinal;
+                                VAR fromVal: XrmValue;
+                                VAR toVal: XrmValue;
+                                VAR closure_ret: XtPointer ): Boolean;
+
+PROCEDURE XtCvtStringToDimension ( dpy: PtrDisplay;
+                                   args: PAXrmValue; (*  none  *) 
+                                   VAR num_args: Cardinal;
+                                   VAR fromVal: XrmValue;
+                                   VAR toVal: XrmValue;
+                                   VAR closure_ret: XtPointer ): Boolean;
+
+PROCEDURE XtCvtStringToDirectoryString ( dpy: PtrDisplay;
+                                         args: PAXrmValue; (*  none  *) 
+                                         VAR num_args: Cardinal;
+                                         VAR fromVal: XrmValue;
+                                         VAR toVal: XrmValue;
+                                         VAR closure_ret: XtPointer ): Boolean;
+
+PROCEDURE XtCvtStringToDisplay ( dpy: PtrDisplay;
+                                 args: PAXrmValue; (*  none  *) 
+                                 VAR num_args: Cardinal;
+                                 VAR fromVal: XrmValue;
+                                 VAR toVal: XrmValue;
+                                 VAR closure_ret: XtPointer ): Boolean;
+
+PROCEDURE XtCvtStringToFile ( dpy: PtrDisplay;
+                              args: PAXrmValue; (*  none  *) 
+                              VAR num_args: Cardinal;
+                              VAR fromVal: XrmValue;
+                              VAR toVal: XrmValue;
+                              VAR closure_ret: XtPointer ): Boolean;
+
+PROCEDURE XtCvtStringToFloat ( dpy: PtrDisplay;
+                               args: PAXrmValue; (*  none  *) 
+                               VAR num_args: Cardinal;
+                               VAR fromVal: XrmValue;
+                               VAR toVal: XrmValue;
+                               VAR closure_ret: XtPointer ): Boolean;
+
+PROCEDURE XtCvtStringToFont ( dpy: PtrDisplay;
+                              args: PAXrmValue; (*  Display  *) 
+                              VAR num_args: Cardinal;
+                              VAR fromVal: XrmValue;
+                              VAR toVal: XrmValue;
+                              VAR closure_ret: XtPointer ): Boolean;
+
+PROCEDURE XtCvtStringToFontSet ( dpy: PtrDisplay;
+                                 args: PAXrmValue; (*  Display, locale  *) 
+                                 VAR num_args: Cardinal;
+                                 VAR fromVal: XrmValue;
+                                 VAR toVal: XrmValue;
+                                 VAR closure_ret: XtPointer ): Boolean;
+
+PROCEDURE XtCvtStringToFontStruct ( dpy: PtrDisplay;
+                                    args: PAXrmValue; (*  Display  *) 
+                                    VAR num_args: Cardinal;
+                                    VAR fromVal: XrmValue;
+                                    VAR toVal: XrmValue;
+                                    VAR closure_ret: XtPointer ): Boolean;
+
+PROCEDURE XtCvtStringToGravity ( dpy: PtrDisplay;
+                                 args: PAXrmValue;
+                                 VAR num_args: Cardinal;
+                                 VAR fromVal: XrmValue;
+                                 VAR toVal: XrmValue;
+                                 VAR closure_ret: XtPointer ): Boolean;
+
+PROCEDURE XtCvtStringToInitialState ( dpy: PtrDisplay;
+                                      args: PAXrmValue; (*  none  *) 
+                                      VAR num_args: Cardinal;
+                                      VAR fromVal: XrmValue;
+                                      VAR toVal: XrmValue;
+                                      VAR closure_ret: XtPointer ): Boolean;
+
+PROCEDURE XtCvtStringToInt ( dpy: PtrDisplay;
+                             args: PAXrmValue; (*  none  *) 
+                             VAR num_args: Cardinal;
+                             VAR fromVal: XrmValue;
+                             VAR toVal: XrmValue;
+                             VAR closure_ret: XtPointer ): Boolean;
+
+PROCEDURE XtCvtStringToPixel ( dpy: PtrDisplay;
+                               args: PAXrmValue; (*  Screen, Colormap  *)
+                               VAR num_args: Cardinal;
+                               VAR fromVal: XrmValue;
+                               VAR toVal: XrmValue;
+                               VAR closure_ret: XtPointer ): Boolean;
+
+PROCEDURE XtCvtStringToRestartStyle ( dpy: PtrDisplay;
+                                      args: PAXrmValue; (*  none  *)
+                                      VAR num_args: Cardinal;
+                                      VAR fromVal: XrmValue;
+                                      VAR toVal: XrmValue;
+                                      VAR closure_ret: XtPointer ): Boolean;
+
+PROCEDURE XtCvtStringToShort ( dpy: PtrDisplay;
+                               args: PAXrmValue; (*  none  *) 
+                               VAR num_args: Cardinal;
+                               VAR fromVal: XrmValue;
+                               VAR toVal: XrmValue;
+                               VAR closure_ret: XtPointer ): Boolean;
+
+CONST 
+  XtCvtStringToPosition = XtCvtStringToShort;
+
+PROCEDURE XtCvtStringToTranslationTable ( dpy: PtrDisplay;
+                                          args: PAXrmValue; (*  none  *) 
+                                          VAR num_args: Cardinal;
+                                          VAR fromVal: XrmValue;
+                                          VAR toVal: XrmValue;
+                                          VAR closure_ret: XtPointer ): Boolean;
+
+PROCEDURE XtCvtStringToUnsignedChar ( dpy: PtrDisplay;
+                                      args: PAXrmValue; (*  none  *) 
+                                      VAR num_args: Cardinal;
+                                      VAR fromVal: XrmValue;
+                                      VAR toVal: XrmValue;
+                                      VAR closure_ret: XtPointer ): Boolean;
+
+PROCEDURE XtCvtStringToVisual ( dpy: PtrDisplay;
+                                args: PAXrmValue; (*  Screen, depth  *) 
+                                VAR num_args: Cardinal;
+                                VAR fromVal: XrmValue;
+                                VAR toVal: XrmValue;
+                                VAR closure_ret: XtPointer ): Boolean;
+
+(*  int converters  *)
+
+PROCEDURE XtCvtIntToBool ( dpy: PtrDisplay;
+                           args: PAXrmValue; (*  none  *) 
+                           VAR num_args: Cardinal;
+                           VAR fromVal: XrmValue;
+                           VAR toVal: XrmValue;
+                           VAR closure_ret: XtPointer ): Boolean;
+
+PROCEDURE XtCvtIntToBoolean ( dpy: PtrDisplay;
+                              args: PAXrmValue; (*  none  *) 
+                              VAR num_args: Cardinal;
+                              VAR fromVal: XrmValue;
+                              VAR toVal: XrmValue;
+                              VAR closure_ret: XtPointer ): Boolean;
+
+PROCEDURE XtCvtIntToColor ( dpy: PtrDisplay;
+                            args: PAXrmValue; (*  Screen, Colormap  *)
+                            VAR num_args: Cardinal;
+                            VAR fromVal: XrmValue;
+                            VAR toVal: XrmValue;
+                            VAR closure_ret: XtPointer ): Boolean;
+
+PROCEDURE XtCvtIntToFloat ( dpy: PtrDisplay;
+                            args: PAXrmValue; (*  none  *) 
+                            VAR num_args: Cardinal;
+                            VAR fromVal: XrmValue;
+                            VAR toVal: XrmValue;
+                            VAR closure_ret: XtPointer ): Boolean;
+
+PROCEDURE XtCvtIntToFont ( dpy: PtrDisplay;
+                           args: PAXrmValue; (*  none  *) 
+                           VAR num_args: Cardinal;
+                           VAR fromVal: XrmValue;
+                           VAR toVal: XrmValue;
+                           VAR closure_ret: XtPointer ): Boolean;
+
+PROCEDURE XtCvtIntToPixel ( dpy: PtrDisplay;
+                            args: PAXrmValue; (*  none  *) 
+                            VAR num_args: Cardinal;
+                            VAR fromVal: XrmValue;
+                            VAR toVal: XrmValue;
+                            VAR closure_ret: XtPointer ): Boolean;
+
+PROCEDURE XtCvtIntToPixmap ( dpy: PtrDisplay;
+                             args: PAXrmValue;(*  none  *) 
+                             VAR num_args: Cardinal;
+                             VAR fromVal: XrmValue;
+                             VAR toVal: XrmValue;
+                             VAR closure_ret: XtPointer ): Boolean;
+
+PROCEDURE XtCvtIntToShort ( dpy: PtrDisplay;
+                            args: PAXrmValue; (*  none  *) 
+                            VAR num_args: Cardinal;
+                            VAR fromVal: XrmValue;
+                            VAR toVal: XrmValue;
+                            VAR closure_ret: XtPointer ): Boolean;
+
+CONST 
+  XtCvtIntToPosition = XtCvtIntToShort;
+  XtCvtIntToDimension = XtCvtIntToShort;
+
+PROCEDURE XtCvtIntToUnsignedChar ( dpy: PtrDisplay;
+                                   args: PAXrmValue; (*  none  *) 
+                                   VAR num_args: Cardinal;
+                                   VAR fromVal: XrmValue;
+                                   VAR toVal: XrmValue;
+                                   VAR closure_ret: XtPointer ): Boolean;
+
+(*  Color converter  *)
+
+PROCEDURE XtCvtColorToPixel ( dpy: PtrDisplay;
+                              args: PAXrmValue; (*  none  *) 
+                              VAR num_args: Cardinal;
+                              VAR fromVal: XrmValue;
+                              VAR toVal: XrmValue;
+                              VAR closure_ret: XtPointer ): Boolean;
+
+(*  Pixel converter  *)
+
+CONST 
+  XtCvtPixelToColor = XtCvtIntToColor;
+
+(* -------------------------------------------------------- *)
+(*                     X11/IntrinsicP.h                     *)
+(* -------------------------------------------------------- *)
+
+(*
+ * Field sizes and offsets of XrmResource must match those of XtResource.
+ * Type long is used instead of XrmQuark here because XrmQuark and String
+ * are not the same size on all systems.
+ *)
+
+TYPE 
+  XrmResource = RECORD
+    xrm_name        : LONGINT;      (*  Resource name quark		    *)
+    xrm_class       : LONGINT;      (*  Resource class quark		    *)
+    xrm_type        : LONGINT;      (*  Resource representation type quark  *)
+    xrm_size        : Cardinal;     (*  Size in bytes of representation	    *)
+    xrm_offset      : INTEGER;   (*  -offset-1			    *)
+    xrm_default_type: LONGINT;      (*  Default representation type quark   *)
+    xrm_default_addr: XtPointer;    (*  Default resource address	    *)
+  END;
+
+  XrmResourceList = POINTER TO ARRAY [0..MAX_STUP_ARR] OF XrmResource;
+
+  XtVersionType = LONGCARD;
+
+CONST 
+  XT_VERSION = 11;
+  XT_REVISION = 6;
+  XtVersion = 11006;
+  XtVersionDontCheck = 0;
+
+TYPE
+  XtProc = PROCEDURE ( );
+
+  XtWidgetClassProc = PROCEDURE ( (* class *) WidgetClass );
+
+  XtWidgetProc = PROCEDURE ( (* widget *) Widget );
+
+  XtAcceptFocusProc = PROCEDURE ( (* widget *) Widget,
+                                  (* time *) VAR XtValueMask ): Boolean;
+
+  XtArgsProc = PROCEDURE ( (* widget *) Widget,
+                           (* args *) ArgList,
+                           (* num_args *) VAR Cardinal );
+
+  XtInitProc = PROCEDURE ( (* request *) Widget,
+                           (* new *) Widget,
+                           (* args *) ArgList,
+                           (* num_args *) VAR Cardinal );
+
+  XtSetValuesFunc = PROCEDURE ( (* old *) Widget,
+                                (* request *) Widget,
+                                (* new *) Widget,
+                                (* args *) ArgList,
+                                (* num_args *) VAR Cardinal ): Boolean;
+
+  XtArgsFunc = PROCEDURE ( (* widget *) Widget,
+                           (* args *) ArgList,
+                           (* num_args *) VAR Cardinal ): Boolean;
+
+  XtAlmostProc = PROCEDURE ( (* old *) Widget,
+                             (* new *) Widget,
+                             (* request *) VAR XtWidgetGeometry,
+                             (* reply *) VAR XtWidgetGeometry );
+
+  XtExposeProc = PROCEDURE ( (* widget *) Widget,
+                             (* event *) Xlib.PtrXEvent,
+                             (* region *) Xutil.Region );
+
+CONST
+(*  compress_exposure options *)
+  XtExposeNoCompress       = {};
+  XtExposeCompressSeries   = {0};
+  XtExposeCompressMultiple = {1};
+  XtExposeCompressMaximal  = {0,1};
+
+(*  modifiers  *)
+  XtExposeGraphicsExpose       = {4};
+  XtExposeGraphicsExposeMerged = {5};
+  XtExposeNoExpose             = {6};
+  XtExposeNoRegion             = {7};
+
+TYPE 
+  XtRealizeProc = PROCEDURE ( (* widget *) Widget,
+                              (* mask *) VAR XtValueMask,
+                              (* attributes *) VAR Xlib.XSetWindowAttributes );
+
+  XtGeometryHandler = PROCEDURE ( (* widget *) Widget,
+                                  (* request *) VAR XtWidgetGeometry,
+                                  (* reply *) VAR XtWidgetGeometry
+                                ): XtGeometryResult;
+
+  XtStringProc = PROCEDURE ( (* widget *) Widget,
+                             (* str *) String );
+
+  XtTypedArg = RECORD
+    name : String;        (* resource name            *)
+    type : String;        (* representation type name *)
+    value: XtArgVal;      (* representation           *)
+    size : INTEGER;    (* size of representation   *)
+  END;
+
+  XtTypedArgList = POINTER TO ARRAY [0..MAX_STUP_ARR] OF XtTypedArg;
+
+  XtAllocateProc = PROCEDURE ( (* widget_class *) WidgetClass,
+                               (* constraint_size *) VAR Cardinal,
+                               (* more_bytes *) VAR Cardinal,
+                               (* args *) ArgList,
+                               (* num_args *) VAR Cardinal,
+                               (* typed_args *) XtTypedArgList,
+                               (* num_typed_args *) VAR Cardinal,
+                               (* widget_return *) VAR Widget,
+                               (* more_bytes_return *) VAR XtPointer );
+
+  XtDeallocateProc = PROCEDURE ( (* widget *) Widget,
+                                 (* more_bytes *) XtPointer );
+
+  _XtStateRec = RECORD
+    (* Declaration without definition *)
+  END;
+
+<* IF __GEN_C__ THEN *> <*- GENTYPEDEF *> <* END *>
+  _XtTMRec = RECORD
+    translations : XtTranslations;   (*  private to Translation Manager     *)
+    proc_table   : XtBoundActions;   (*  procedure bindings for actions     *)
+    current_state: XtEventTable;     (*  Translation Manager state ptr      *)
+    lastEventTime: LONGCARD;
+  END;
+<* IF __GEN_C__ THEN *> <*+ GENTYPEDEF *> <* END *>
+
+  XtTMRec = _XtTMRec;
+
+  XtTM = POINTER TO _XtTMRec;
+
+(* --------------------------------------------------- *)
+(*                     X11/CoreP.h                     *)
+(* --------------------------------------------------- *)
+
+(*
+ * $XConsortium: CoreP.h,v 1.17 94/04/17 20:13:53 swick Exp $
+ * $oHeader: CoreP.h,v 1.2 88/08/18 15:54:37 asente Exp $
+ *)
+
+VAR 
+  _XtInheritTranslations: INTEGER;
+
+  XtInheritTranslations      -: String;
+  XtInheritRealize           -: XtRealizeProc;
+  XtInheritResize            -: XtWidgetProc;
+  XtInheritExpose            -: XtExposeProc;
+  XtInheritSetValuesAlmost   -: XtAlmostProc;
+  XtInheritAcceptFocus       -: XtAcceptFocusProc;
+  XtInheritQueryGeometry     -: XtGeometryHandler;
+  XtInheritDisplayAccelerator-: XtStringProc;
+
+(***************************************************************
+ *
+ * Widget Core Data Structures
+ *
+ ***************************************************************)
+
+<* IF __GEN_C__ THEN *> <*- GENTYPEDEF *> <* END *>
+TYPE 
+  _CorePart = RECORD
+    self             : Widget;         (* pointer to widget itself *)
+    widget_class     : WidgetClass;    (* pointer to Widget's ClassRec *)
+    parent           : Widget;         (* parent widget *)
+    xrm_name         : Xrm.XrmName;    (* widget resource name quarkified *)
+    being_destroyed  : Boolean;        (* marked for destroy *)
+    destroy_callbacks: XtCallbackList; (* who to call when widget destroyed*)
+    constraints      : XtPointer;      (* constraint record *)
+    x                : Position;
+    y                : Position;       (* window position *)
+    width            : Dimension;
+    height           : Dimension;      (* window dimensions *)
+    border_width     : Dimension;      (* window border width *)
+    managed          : Boolean;        (* is widget geometry managed? *)
+    sensitive        : Boolean;        (* is widget sensitive to user events *)
+    ancestor_sensitive:Boolean;        (* are all ancestors sensitive? *)
+    event_table      : XtEventTable;   (* private to event dispatcher *)
+    tm               : XtTMRec;        (* translation management *)
+    accelerators     : XtTranslations; (* accelerator translations *)
+    border_pixel     : Pixel;          (* window border pixel *)
+    border_pixmap    : X.Pixmap;       (* window border pixmap or NULL *)
+    popup_list       : WidgetList;     (* list of popups *)
+    num_popups       : Cardinal;       (* how many popups *)
+    name             : String;         (* widget resource name *)
+    screen           : PtrScreen;      (* window's screen *)
+    colormap         : X.Colormap;     (* colormap *)
+    window           : X.Window;       (* window ID *)
+    depth            : Cardinal;       (* number of planes in window *)
+    background_pixel : Pixel;          (* window background pixel *)
+    background_pixmap: X.Pixmap;       (* window background pixmap or NULL *)
+    visible          : Boolean;        (* is window mapped and not occluded? *)
+    mapped_when_managed:Boolean;       (* map window if it's managed? *)
+  END;
+<* IF __GEN_C__ THEN *> <*+ GENTYPEDEF *> <* END *>
+
+  CorePart = _CorePart;
+  
+<* IF __GEN_C__ THEN *> <*- GENTYPEDEF *> <* END *>
+  _WidgetRec = RECORD
+    core: CorePart;
+  END;
+<* IF __GEN_C__ THEN *> <*+ GENTYPEDEF *> <* END *>
+
+  WidgetRec = _WidgetRec;
+
+  CoreRec = _WidgetRec;
+
+(******************************************************************
+ *
+ * Core Class Structure. Widgets, regardless of their class, will have
+ * these fields.  All widgets of a given class will have the same values
+ * for these fields.  Widgets of a given class may also have additional
+ * common fields.  These additional fields are included in incremental
+ * class structures, such as CommandClass.
+ *
+ * The fields that are specific to this subclass, as opposed to fields that
+ * are part of the superclass, are called "subclass fields" below.  Many
+ * procedures are responsible only for the subclass fields, and not for
+ * any superclass fields.
+ *
+ *******************************************************************)
+
+<* IF __GEN_C__ THEN *> <*- GENTYPEDEF *> <* END *>
+  _CoreClassPart = RECORD
+    superclass         : WidgetClass;    (* pointer to superclass ClassRec   *)
+    class_name         : String;         (* widget resource class name       *)
+    widget_size        : Cardinal;       (* size in bytes of widget record   *)
+    class_initialize   : XtProc;         (* class initialization proc	     *)
+    class_part_initialize: XtWidgetClassProc;(* dynamic initialization	     *)
+    class_inited       : XtEnum;         (* has class been initialized?      *)
+    initialize         : XtInitProc;     (* initialize subclass fields       *)
+    initialize_hook    : XtArgsProc;     (* notify that initialize called    *)
+    realize            : XtRealizeProc;  (* XCreateWindow for widget	     *)
+    actions            : XtActionList;   (* widget semantics name to proc map*)
+    num_actions        : Cardinal;       (* number of entries in actions     *)
+    resources          : XtResourceList; (* resources for subclass fields    *)
+    num_resources      : Cardinal;       (* number of entries in resources   *)
+    xrm_class          : Xrm.XrmClass;   (* resource class quarkified	     *)
+    compress_motion    : Boolean;        (* compress MotionNotify for widget *)
+    compress_exposure  : XtEnum;         (* compress Expose events for widget*)
+    compress_enterleave: Boolean;        (* compress enter and leave events  *)
+    visible_interest   : Boolean;        (* select for VisibilityNotify      *)
+    destroy            : XtWidgetProc;   (* free data for subclass pointers  *)
+    resize             : XtWidgetProc;   (* geom manager changed widget size *)
+    expose             : XtExposeProc;   (* rediplay window		     *)
+    set_values         : XtSetValuesFunc;(* set subclass resource values     *)
+    set_values_hook    : XtArgsFunc;     (* notify that set_values called    *)
+    set_values_almost  : XtAlmostProc;   (* set_values got "Almost" geo reply*)
+    get_values_hook    : XtArgsProc;     (* notify that get_values called    *)
+    accept_focus       : XtAcceptFocusProc;(* assign input focus to widget   *)
+    version            : XtVersionType;  (* version of intrinsics used	     *)
+    callback_private   : XtPointer;      (* list of callback offsets         *)
+    tm_table           : String;         (* state machine                    *)
+    query_geometry     : XtGeometryHandler;(* return preferred geometry      *)
+    display_accelerator: XtStringProc;   (* display your accelerator	     *)
+    extension          : XtPointer;      (* pointer to extension record      *)
+  END;
+<* IF __GEN_C__ THEN *> <*+ GENTYPEDEF *> <* END *>
+
+  CoreClassPart = _CoreClassPart;
+
+<* IF __GEN_C__ THEN *> <*- GENTYPEDEF *> <* END *>
+  _WidgetClassRec = RECORD
+    core_class: CoreClassPart;
+  END;
+<* IF __GEN_C__ THEN *> <*+ GENTYPEDEF *> <* END *>
+
+  WidgetClassRec = _WidgetClassRec;
+
+  CoreClassRec = _WidgetClassRec;
+
+VAR 
+  widgetClassRec: WidgetClassRec;
+  coreClassRec: WidgetClassRec;
+
+(* -------------------------------------------------------- *)
+(*                     X11/CompositeP.h                     *)
+(* -------------------------------------------------------- *)
+
+(*  $XConsortium: CompositeP.h,v 1.17 94/04/17 20:13:43 converse Exp $  *)
+
+(***********************************************************************
+ *
+ * Additional instance fields for widgets of (sub)class 'Composite'
+ *
+ ***********************************************************************)
+
+<* IF __GEN_C__ THEN *> <*- GENTYPEDEF *> <* END *>
+TYPE
+  _CompositePart = RECORD
+    children       : WidgetList;  (* array of ALL widget children      *)
+    num_children   : Cardinal;    (* total number of widget children   *)
+    num_slots      : Cardinal;    (* number of slots in children array *)
+    insert_position: XtOrderProc; (* compute position of new child     *)
+  END;
+<* IF __GEN_C__ THEN *> <*+ GENTYPEDEF *> <* END *>
+
+  CompositePart = _CompositePart;
+
+  CompositePtr = POINTER TO _CompositePart;
+
+<* IF __GEN_C__ THEN *> <*- GENTYPEDEF *> <* END *>
+  _CompositeRec = RECORD
+    core     : CorePart;
+    composite: CompositePart;
+  END;
+<* IF __GEN_C__ THEN *> <*+ GENTYPEDEF *> <* END *>
+
+  CompositeRec = _CompositeRec;
+
+(********************************************************************
+ *
+ *  Additional class fields for widgets of (sub)class 'Composite'
+ *
+ ********************************************************************)
+
+<* IF __GEN_C__ THEN *> <*- GENTYPEDEF *> <* END *>
+  _CompositeClassPart = RECORD
+    geometry_manager: XtGeometryHandler; (* geometry manager for children  *)
+    change_managed  : XtWidgetProc;      (* change managed state of child  *)
+    insert_child    : XtWidgetProc;      (* physically add child to parent *)
+    delete_child    : XtWidgetProc;      (* physically remove child        *)
+    extension       : XtPointer;         (* pointer to extension record    *)
+  END;
+<* IF __GEN_C__ THEN *> <*+ GENTYPEDEF *> <* END *>
+
+  CompositeClassPart = _CompositeClassPart;
+
+  CompositePartPtr = POINTER TO _CompositeClassPart;
+
+<* IF __GEN_C__ THEN *> <*- GENTYPEDEF *> <* END *>
+  CompositeClassExtensionRec = RECORD
+    next_extension : XtPointer;  (* 1st 4 mandated for all extension records *)
+    record_type    :Xrm.XrmQuark;(* NULLQUARK; on CompositeClassPart         *)
+    version        : LONGINT;    (* must be XtCompositeExtensionVersion      *)
+    record_size    : Cardinal;   (* sizeof(CompositeClassExtensionRec)       *)
+    accepts_objects: Boolean;
+    allows_change_managed_set: Boolean;
+  END;
+<* IF __GEN_C__ THEN *> <*+ GENTYPEDEF *> <* END *>
+
+  CompositeClassExtension = POINTER TO CompositeClassExtensionRec;
+
+<* IF __GEN_C__ THEN *> <*- GENTYPEDEF *> <* END *>
+  _CompositeClassRec = RECORD
+    core_class     : CoreClassPart;
+    composite_class: CompositeClassPart;
+  END;
+<* IF __GEN_C__ THEN *> <*+ GENTYPEDEF *> <* END *>
+
+  CompositeClassRec = _CompositeClassRec;
+
+VAR 
+  compositeClassRec: CompositeClassRec;
+
+CONST 
+  XtCompositeExtensionVersion = 2;
+
+VAR
+  XtInheritGeometryManager -: XtGeometryHandler;
+  XtInheritChangeManaged   -: XtWidgetProc;
+  XtInheritInsertChild     -: XtWidgetProc;
+  XtInheritDeleteChild     -: XtWidgetProc;
+
+(* -------------------------------------------------------- *)
+(*                     X11/ConstrainP.h                     *)
+(* -------------------------------------------------------- *)
+
+(*  $XConsortium: ConstrainP.h,v 1.15 94/04/17 20:13:45 swick Exp $  *)
+(*  $oHeader: ConstrainP.h,v 1.2 88/08/18 15:54:15 asente Exp $  *)
+
+TYPE 
+  _ConstraintPart = RECORD
+    mumble: XtPointer;         (*  No new fields, keep C compiler happy  *)
+  END;
+
+  ConstraintPart = _ConstraintPart;
+
+  _ConstraintRec = RECORD
+    core      : CorePart;
+    composite : CompositePart;
+    constraint: ConstraintPart;
+  END;
+
+  ConstraintRec = _ConstraintRec;
+
+  ConstraintWidget = POINTER TO _ConstraintRec;
+
+  ConstraintClassExtensionRec = RECORD
+    next_extension : XtPointer;          (* 1st 4 mandated for all extension records *)
+    record_type    : Xrm.XrmQuark; (* NULLQUARK; on ConstraintClassPart	     *)
+    version        : LONGINT;            (* must be XtConstraintExtensionVersion     *)
+    record_size    : Cardinal;           (* sizeof(ConstraintClassExtensionRec)	     *)
+    get_values_hook: XtArgsProc;
+  END;
+
+  ConstraintClassExtension = POINTER TO ConstraintClassExtensionRec;
+
+  _ConstraintClassPart = RECORD
+    resources      : XtResourceList;  (* constraint resource list      *)
+    num_resources  : Cardinal;        (* number of constraints in list *)
+    constraint_size: Cardinal;        (* size of constraint record     *)
+    initialize     : XtInitProc;      (* constraint initialization     *)
+    destroy        : XtWidgetProc;    (* constraint destroy proc       *)
+    set_values     : XtSetValuesFunc; (* constraint set_values proc    *)
+    extension      : XtPointer;       (* pointer to extension record   *)
+  END;
+
+  ConstraintClassPart = _ConstraintClassPart;
+
+  _ConstraintClassRec = RECORD
+    core_class      : CoreClassPart;
+    composite_class : CompositeClassPart;
+    constraint_class: ConstraintClassPart;
+  END;
+
+  ConstraintClassRec = _ConstraintClassRec;
+
+VAR 
+  constraintClassRec: ConstraintClassRec;
+
+CONST 
+  XtConstraintExtensionVersion = 1;
+
+(* ----------------------------------------------------- *)
+(*                     X11/ObjectP.h                     *)
+(* ----------------------------------------------------- *)
+
+(*  $XConsortium: ObjectP.h,v 1.14 94/04/17 20:14:32 converse Exp $  *)
+
+(*********************************************************
+ *
+ * Object Instance Data Structures
+ *
+ *********************************************************)
+(*  these fields match CorePart and can not be changed  *)
+
+TYPE 
+  _ObjectPart = RECORD
+    self             : Widget;         (* pointer to widget itself          *)
+    widget_class     : WidgetClass;    (* pointer to Widget's ClassRec      *)
+    parent           : Widget;         (* parent widget                     *)
+    xrm_name         : Xrm.XrmName;    (* widget resource name quarkified   *)
+    being_destroyed  : Boolean;        (* marked for destroy                *)
+    destroy_callbacks: XtCallbackList; (* who to call when widget destroyed *)
+    constraints      : XtPointer;      (* constraint record                 *)
+  END;
+
+  ObjectPart = _ObjectPart;
+
+  _ObjectRec = RECORD
+    object: ObjectPart;
+  END;
+
+  ObjectRec = _ObjectRec;
+
+  _ObjectClassPart = RECORD
+    superclass           : WidgetClass;  (* pointer to superclass ClassRec *)
+    class_name           : String;       (* widget resource class name     *)
+    widget_size          : Cardinal;     (* size in bytes of widget record *)
+    class_initialize     : XtProc;       (* class initialization proc      *)
+    class_part_initialize: XtWidgetClassProc;(* dynamic initialization     *)
+    class_inited         : XtEnum;       (* has class been initialized?    *)
+    initialize           : XtInitProc;   (* initialize subclass fields     *)
+    initialize_hook      : XtArgsProc;   (* notify that initialize called  *)
+    obj1                 : XtProc;       (* NULL                           *)
+    obj2                 : XtPointer;    (* NULL                           *)
+    obj3                 : Cardinal;     (* NULL                           *)
+    resources            : XtResourceList;(* resources for subclass fields *)
+    num_resources        : Cardinal;     (* number of entries in resources *)
+    xrm_class            : Xrm.XrmClass; (* resource class quarkified      *)
+    obj4                 : Boolean;      (* NULL                           *)
+    obj5                 : XtEnum;       (* NULL                           *)
+    obj6                 : Boolean;      (* NULL                           *)
+    obj7                 : Boolean;      (* NULL                           *)
+    destroy              : XtWidgetProc; (* free data for subclass pointers*)
+    obj8                 : XtProc;       (* NULL                           *)
+    obj9                 : XtProc;       (* NULL			   *)
+    set_values           : XtSetValuesFunc;(* set subclass resource values *)
+    set_values_hook      : XtArgsFunc;   (* notify that set_values called  *)
+    obj10                : XtProc;       (* NULL                           *)
+    get_values_hook      : XtArgsProc;   (* notify that get_values called  *)
+    obj11                : XtProc;       (* NULL                           *)
+    version              : XtVersionType;(* version of intrinsics used     *)
+    callback_private     : XtPointer;    (* list of callback offsets       *)
+    obj12                : String;       (* NULL                           *)
+    obj13                : XtProc;       (* NULL                           *)
+    obj14                : XtProc;       (* NULL                           *)
+    extension            : XtPointer;    (* pointer to extension record    *)
+  END;
+
+  ObjectClassPart = _ObjectClassPart;
+
+  _ObjectClassRec = RECORD
+    object_class: ObjectClassPart;
+  END;
+
+(*******************************************************
+ *
+ * Object Class Data Structures
+ *
+ *******************************************************)
+
+(*
+ *  these fields match CoreClassPart and can not be changed
+ *  ideally these structures would only contain the fields required;
+ *  but because the CoreClassPart cannot be changed at this late date
+ *  extraneous fields are necessary to make the field offsets match
+ *)
+
+  ObjectClassExtensionRec = RECORD
+    next_extension: XtPointer;          (*  1st 4 required for all extension records  *)
+    record_type   : Xrm.XrmQuark; (*  NULLQUARK; when on ObjectClassPart	      *)
+    version       : LONGINT;            (*  must be XtObjectExtensionVersion	      *)
+    record_size   : Cardinal;           (*  sizeof(ObjectClassExtensionRec)	      *)
+    allocate      : XtAllocateProc;
+    deallocate    : XtDeallocateProc;
+  END;
+
+  ObjectClassExtension = POINTER TO ObjectClassExtensionRec;
+
+  ObjectClassRec = _ObjectClassRec;
+
+VAR 
+  objectClassRec: ObjectClassRec;
+
+CONST 
+  XtObjectExtensionVersion = 1;
+
+(* ------------------------------------------------------ *)
+(*                     X11/RectObjP.h                     *)
+(* ------------------------------------------------------ *)
+
+(*  $XConsortium: RectObjP.h,v 1.13 94/04/17 20:14:38 converse Exp $  *)
+(*  $oHeader: RectObjP.h,v 1.2 88/08/18 15:55:52 asente Exp $  *)
+
+(*********************************************************
+ *
+ * Rectangle Object Instance Data Structures
+ *
+ *********************************************************)
+
+(*  these fields match CorePart and can not be changed  *)
+
+TYPE 
+  _RectObjPart = RECORD
+    x                 : Position;
+    y                 : Position;   (* rectangle position                 *)
+    width             : Dimension;
+    height            : Dimension;  (* rectangle dimensions               *)
+    border_width      : Dimension;  (* rectangle border width             *)
+    managed           : Boolean;    (* is widget geometry managed?        *)
+    sensitive         : Boolean;    (* is widget sensitive to user events *)
+    ancestor_sensitive: Boolean;    (* are all ancestors sensitive?       *)
+  END;
+
+  RectObjPart = _RectObjPart;
+
+  _RectObjRec = RECORD
+    object   : ObjectPart;
+    rectangle: RectObjPart;
+  END;
+
+  RectObjRec = _RectObjRec;
+
+(*******************************************************
+ *
+ * Rectangle Object Class Data Structures
+ *
+ *******************************************************)
+
+(*  these fields match CoreClassPart and can not be changed  *)
+(*  ideally these structures would only contain the fields required;   *)
+(*  but because the CoreClassPart cannot be changed at this late date  *)
+(*  extraneous fields are necessary to make the field offsets match    *)
+
+  _RectObjClassPart = RECORD
+    superclass       : WidgetClass;      (* pointer to superclass ClassRec   *)
+    class_name       : String;           (* widget resource class name       *)
+    widget_size      : Cardinal;         (* size in bytes of widget record   *)
+    class_initialize : XtProc;           (* class initialization proc        *)
+    class_part_initialize:XtWidgetClassProc;(* dynamic initialization        *)
+    class_inited     : XtEnum;           (* has class been initialized?      *)
+    initialize       : XtInitProc;       (* initialize subclass fields       *)
+    initialize_hook  : XtArgsProc;       (* notify that initialize called    *)
+    rect1            : XtProc;           (* NULL                             *)
+    rect2            : XtPointer;        (* NULL                             *)
+    rect3            : Cardinal;         (* NULL                             *)
+    resources        : XtResourceList;   (* resources for subclass fields    *)
+    num_resources    : Cardinal;         (* number of entries in resources   *)
+    xrm_class        : Xrm.XrmClass;     (* resource class quarkified        *)
+    rect4            : Boolean;          (* NULL                             *)
+    rect5            : XtEnum;           (* NULL                             *)
+    rect6            : Boolean;          (* NULL                             *)
+    rect7            : Boolean;          (* NULL                             *)
+    destroy          : XtWidgetProc;     (* free data for subclass pointers  *)
+    resize           : XtWidgetProc;     (* geom manager changed widget size *)
+    expose           : XtExposeProc;     (* rediplay rectangle               *)
+    set_values       : XtSetValuesFunc;  (* set subclass resource values     *)
+    set_values_hook  : XtArgsFunc;       (* notify that set_values called    *)
+    set_values_almost: XtAlmostProc;     (* set values almost for geometry   *)
+    get_values_hook  : XtArgsProc;       (* notify that get_values called    *)
+    rect9            : XtProc;           (* NULL                             *)
+    version          : XtVersionType;    (* version of intrinsics used       *)
+    callback_private : XtPointer;        (* list of callback offsets         *)
+    rect10           : String;           (* NULL                             *)
+    query_geometry   : XtGeometryHandler;(* return preferred geometry        *)
+    rect11           : XtProc;           (* NULL                             *)
+    extension        : XtPointer;        (* pointer to extension record      *)
+  END;
+
+  RectObjClassPart = _RectObjClassPart;
+
+  _RectObjClassRec = RECORD
+    rect_class: RectObjClassPart;
+  END;
+
+  RectObjClassRec = _RectObjClassRec;
+
+VAR 
+  rectObjClassRec: RectObjClassRec;
+
+(* -------------------------------------------------------- *)
+(*                     X11/IntrinsicP.h                     *)
+(* -------------------------------------------------------- *)
+
+<* IF __GEN_C__ THEN *>
+
+(* These procedures was generated from Macros. *)
+
+(* PROCEDURE  XtDisplay ( widget: Widget ): PtrDisplay; *)
+(* PROCEDURE  XtScreen ( widget: Widget ): PtrScreen; *)
+(* PROCEDURE  XtWindow ( widget: Widget ): X.Window; *)
+(* PROCEDURE  XtClass ( widget: Widget ); *)
+(* PROCEDURE  XtSuperclass ( widget: Widget ); *)
+(* PROCEDURE  XtIsRealized ( object: Widget ): Boolean; *)
+(* PROCEDURE  XtParent ( widget: Widget ); *)
+PROCEDURE  XtIsRectObj ( obj: Widget ): Boolean;
+PROCEDURE  XtIsWidget ( obj: Widget ): Boolean;
+PROCEDURE  XtIsComposite ( obj: Widget ): Boolean;
+PROCEDURE  XtIsConstraint ( obj: Widget ): Boolean;
+PROCEDURE  XtIsShell ( obj: Widget ): Boolean;
+PROCEDURE  XtIsWMShell ( obj: Widget ): Boolean;
+PROCEDURE  XtIsTopLevelShell ( obj: Widget ): Boolean;
+PROCEDURE  XtCheckSubclass ( w: Widget;
+                                 widget_class_ptr: WidgetClass;
+                                 message: ARRAY OF CHAR );
+
+
+<* ELSE *>
+
+(* PROCEDURE  / XtDisplay * ( widget: Widget ); *)
+(* PROCEDURE  / XtScreen * ( widget: Widget ); *)
+(* PROCEDURE  / XtWindow * ( widget: Widget ); *)
+(* PROCEDURE  / XtClass * ( widget: Widget ); *)
+(* PROCEDURE  / XtSuperclass * ( widget: Widget ); *)
+(* PROCEDURE  / XtIsRealized * ( object: Widget ): Boolean; *)
+(* PROCEDURE  / XtParent * ( widget: Widget ); *)
+PROCEDURE  / XtIsRectObj * ( obj: Widget ): Boolean;
+PROCEDURE  / XtIsWidget * ( obj: Widget ): Boolean;
+PROCEDURE  / XtIsComposite * ( obj: Widget ): Boolean;
+PROCEDURE  / XtIsConstraint * ( obj: Widget ): Boolean;
+PROCEDURE  / XtIsShell * ( obj: Widget ): Boolean;
+PROCEDURE  / XtIsWMShell * ( obj: Widget ): Boolean;
+PROCEDURE  / XtIsTopLevelShell * ( obj: Widget ): Boolean;
+PROCEDURE  / XtCheckSubclass * ( w: Widget;
+                                 widget_class_ptr: WidgetClass;
+                                 message: ARRAY OF CHAR );
+
+<* END *>
+
+PROCEDURE _XtWindowedAncestor ( (*  internal; implementation-dependent  *)
+                                object: Widget ): Widget;
+
+PROCEDURE _XtInherit ( );
+
+PROCEDURE XtCreateWindow ( widget: Widget;
+                           window_class: SYSTEM.unsigned;
+                           VAR visual: Xlib.Visual;
+                           value_mask: XtValueMask;
+                           VAR attributes: Xlib.XSetWindowAttributes );
+
+PROCEDURE XtResizeWidget ( widget: Widget;
+                           width: SYSTEM.unsigned;
+                           height: SYSTEM.unsigned;
+                           border_width: SYSTEM.unsigned );
+
+PROCEDURE XtMoveWidget ( widget: Widget;
+                         x: INTEGER;
+                         y: INTEGER );
+
+PROCEDURE XtConfigureWidget ( widget: Widget;
+                              x: INTEGER;
+                              y: INTEGER;
+                              width: SYSTEM.unsigned;
+                              height: SYSTEM.unsigned;
+                              border_width: SYSTEM.unsigned );
+
+PROCEDURE XtResizeWindow ( widget: Widget );
+
+PROCEDURE XtProcessLock ( );
+
+PROCEDURE XtProcessUnlock ( );
+
+END IntrinsicP.

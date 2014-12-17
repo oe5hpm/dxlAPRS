@@ -1,0 +1,71 @@
+cd huffchan
+# Option +changesym is used to avoid conflict between XDS-x86 and XDS-C
+if xm =m =a huf.mod +changesym && 
+   xm =m =a unhuf.mod +changesym 
+then 
+   echo "HuffChan OK"
+else
+   echo "Error"
+   exit 1
+fi
+cd ..
+
+cd modula
+if xm =m =a bf.mod &&
+   xm =m =a e.mod &&
+   xm =m =a except.mod &&
+   xm =m =a fact.mod &&
+   xm =m =a halt.mod &&
+   xm =m =a hello.mod &&
+   xm =m =a hisdemo.mod &&
+   xm =m =a queens.mod &&
+   xm =m =a sieve.mod &&
+   xm =m =a term.mod
+then
+   echo "modula OK"
+else
+   echo "Error"
+   exit 1
+fi
+cd ..
+
+cd nodes
+if xm =p =a runme +changesym 
+then
+   echo "nodes OK"
+else 
+   echo "Error"
+   exit 1
+fi
+cd ..
+
+cd oberon
+# Option +changesym is used to avoid conflict between XDS-x86 and XDS-C
+if xm =m =a ackermann.ob2 +changesym &&
+#   xm =m =a exp.ob2 +changesym &&
+   xm =m =a gcreport.ob2 +changesym &&
+   xm =m =a hello.ob2 +changesym &&
+   xm =m =a Random.ob2 +changesym &&
+   xm =m =a self.ob2 +changesym &&
+   xm =m =a sieve.ob2 +changesym 
+then
+   echo "oberon OK"
+else 
+   echo "Error"
+   exit 1
+fi
+cd ..
+
+cd X11
+if xm =m =a Mand.mod +XAPP &&
+   xm =m =a Mand2.mod +XAPP &&
+   xm =m =a testx.mod +XAPP &&
+   xm =m =a xmfonts.mod +XMAPP &&
+   xm =m =a xmform.mod +XMAPP
+then
+   echo "X11 OK"
+else 
+   echo "Error"
+   exit 1
+fi
+cd ..

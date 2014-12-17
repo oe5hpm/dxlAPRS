@@ -1,0 +1,24 @@
+DEFINITION MODULE CharClass;
+
+  (* Classification of values of the type CHAR *)
+
+PROCEDURE IsNumeric (ch: CHAR): BOOLEAN;
+  (* Returns TRUE if and only if ch is classified as a numeric character *)
+
+PROCEDURE IsLetter (ch: CHAR): BOOLEAN;
+  (* Returns TRUE if and only if ch is classified as a letter *)
+
+PROCEDURE IsUpper (ch: CHAR): BOOLEAN;
+  (* Returns TRUE if and only if ch is classified as an upper case letter *)
+
+PROCEDURE IsLower (ch: CHAR): BOOLEAN;
+  (* Returns TRUE if and only if ch is classified as a lower case letter *)
+
+PROCEDURE IsControl (ch: CHAR): BOOLEAN;
+  (* Returns TRUE if and only if ch represents a control function *)
+
+PROCEDURE IsWhiteSpace (ch: CHAR): BOOLEAN;
+  (* Returns TRUE if and only if ch represents a space character or a format effector *)
+
+END CharClass.
+

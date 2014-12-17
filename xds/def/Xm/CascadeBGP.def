@@ -1,0 +1,286 @@
+(* Xm/CascadeBGP.def  Nov 11  16:6:42  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/CascadeBGP.h using H2D v1.18.1. *)
+
+(* $RCSfile: CascadeBGP.def,v $ $Revision: 5 $ $Date: 28.07.98 23:14 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *>
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+(* Merged headers: Xm/CascadeBG.h *)
+
+DEFINITION MODULE ["C"] CascadeBGP;
+
+IMPORT SYSTEM, X, Xlib, Xm:=XmP, Xt:=IntrinsicP, LabelGP;
+(* H2D:  Required IMPORT clause:
+IMPORT CascadeBGP, X, Xlib, XmP, IntrinsicP, LabelGP;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992, 1993, 1994 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+FROM X IMPORT SET8;
+
+(* ------------------------------------------------------ *)
+(*                     Xm/CascadeBG.h                     *)
+(* ------------------------------------------------------ *)
+
+(*
+ * Motif Release 1.2
+ *)
+
+VAR
+  xmCascadeButtonGadgetClass: Xt.WidgetClass;
+
+TYPE
+  XmCascadeButtonGadgetClass = POINTER TO _XmCascadeButtonGadgetClassRec;
+
+  XmCascadeButtonGadget = POINTER TO _XmCascadeButtonGadgetRec;
+
+  XmCascadeButtonGCacheObject = POINTER TO _XmCascadeButtonGCacheObjRec;
+
+(********    Public Function Declarations    ********)
+
+PROCEDURE XmCreateCascadeButtonGadget ( parent: Xt.Widget;
+                                        name: ARRAY OF CHAR;
+                                        al: Xt.ArgList;
+                                        ac: Xt.Cardinal ): Xt.Widget;
+
+PROCEDURE XmCascadeButtonGadgetHighlight ( wid: Xt.Widget;
+                                           highlight: Xt.Boolean );
+
+(********    End Public Function Declarations    ********)
+
+(* ----------------------------------------------- *)
+(*                Xm/CascadeBG.h                   *)
+(* ----------------------------------------------- *)
+
+(*
+ * Motif Release 1.2.4
+ *)
+
+(*********************************************************************
+ * The Arrow Cache record for the menu cascade button
+ *********************************************************************)
+
+TYPE
+  _XmArrowPixmap = RECORD
+    height             : Xt.Dimension;
+    width              : Xt.Dimension;
+    depth              : CARDINAL;
+    top_shadow_color   : Xt.Pixel;
+    bottom_shadow_color: Xt.Pixel;
+    foreground_color   : Xt.Pixel;
+    display            : Xlib.PtrDisplay;
+    screen             : Xlib.PtrScreen;
+    pixmap             : X.Pixmap;
+  END;
+
+  XmArrowPixmap = _XmArrowPixmap;
+
+(**********************************************************************)
+(* The CascadeButton Gadget Cache Object's class and instance records *)
+(**********************************************************************)
+
+  _XmCascadeButtonGCacheObjClassPart = RECORD
+    foo: SYSTEM.int;
+  END;
+
+  XmCascadeButtonGCacheObjClassPart = _XmCascadeButtonGCacheObjClassPart;
+
+  _XmCascadeButtonGCacheObjClassRec = RECORD
+    object_class              : Xt.ObjectClassPart;
+    ext_class                 : Xm.XmExtClassPart;
+    label_class_cache         : LabelGP.XmLabelGCacheObjClassPart;
+    cascade_button_class_cache: XmCascadeButtonGCacheObjClassPart;
+  END;
+
+  XmCascadeButtonGCacheObjClassRec = _XmCascadeButtonGCacheObjClassRec;
+
+  _XmCascadeButtonGCacheObjPart = RECORD
+    cascade_pixmap: X.Pixmap;            (*  pixmap for the cascade  *)
+    map_delay     : SYSTEM.int;          (*  time delay for posting  *)
+    armed_pixmap  : X.Pixmap;
+  END;
+
+  XmCascadeButtonGCacheObjPart = _XmCascadeButtonGCacheObjPart;
+
+  _XmCascadeButtonGCacheObjRec = RECORD
+    object              : Xt.ObjectPart;
+    ext                 : Xm.XmExtPart;
+    label_cache         : LabelGP.XmLabelGCacheObjPart;
+    cascade_button_cache: XmCascadeButtonGCacheObjPart;
+  END;
+
+  XmCascadeButtonGCacheObjRec = _XmCascadeButtonGCacheObjRec;
+
+(*  The CascadeButtonGadget instance record  *)
+
+  XmCascadeButtonGCache = POINTER TO XmCascadeButtonGCacheObjPart;
+
+  _XmCascadeButtonGadgetPart = RECORD
+    (*  resources  *)
+    submenu          : Xt.Widget;             (* the menu to pull down *)
+    activate_callback: Xt.XtCallbackList;     (* widget fired callback *)
+    cascade_callback : Xt.XtCallbackList;     (* optional callback, called
+      	      	      	      	      	       * when the menu is about
+     	      	      	      	      	       * to be pulled down *)
+    (*  internal fields  *)
+    armed            : Xt.Boolean;            (* armed flag *)
+    cascade_rect     : Xlib.XRectangle;       (* location of cascade *)
+    timer            : Xt.XtIntervalId;       (* timeout id *)
+    cache            : XmCascadeButtonGCache;
+  END;
+
+  XmCascadeButtonGadgetPart = _XmCascadeButtonGadgetPart;
+
+(*  Full instance record declaration  *)
+
+  _XmCascadeButtonGadgetRec = RECORD
+    object        : Xt.ObjectPart;
+    rectangle     : Xt.RectObjPart;
+    gadget        : Xm.XmGadgetPart;
+    label         : LabelGP.XmLabelGadgetPart;
+    cascade_button: XmCascadeButtonGadgetPart;
+  END;
+
+  XmCascadeButtonGadgetRec = _XmCascadeButtonGadgetRec;
+
+(*  CascadeButton class structure  *)
+
+  _XmCascadeButtonGadgetClassPart = RECORD
+    extension: Xt.XtPointer;      (*  Pointer to extension record  *)
+  END;
+
+  XmCascadeButtonGadgetClassPart = _XmCascadeButtonGadgetClassPart;
+
+(*  Full class record declaration for CascadeButton class  *)
+
+  _XmCascadeButtonGadgetClassRec = RECORD
+    rect_class          : Xt.RectObjClassPart;
+    gadget_class        : Xm.XmGadgetClassPart;
+    label_class         : LabelGP.XmLabelGadgetClassPart;
+    cascade_button_class: XmCascadeButtonGadgetClassPart;
+  END;
+
+  XmCascadeButtonGadgetClassRec = _XmCascadeButtonGadgetClassRec;
+
+VAR
+  xmCascadeButtonGCacheObjClassRec: XmCascadeButtonGCacheObjClassRec;
+  xmCascadeButtonGadgetClassRec: XmCascadeButtonGadgetClassRec;
+
+(*  Access macro definitions  for UNcached fields *)
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: these procedures corresponds to macros. *)
+PROCEDURE CBG_Submenu ( cb: Xt.Widget ): Xt.Widget;
+PROCEDURE CBG_ActivateCall ( cb: Xt.Widget ): Xt.XtCallbackList;
+PROCEDURE CBG_CascadeCall ( cb: Xt.Widget ): Xt.XtCallbackList;
+PROCEDURE CBG_Armed ( cb: Xt.Widget ): Xt.Boolean;
+PROCEDURE CBG_CascadeRect ( cb: Xt.Widget ): Xlib.XRectangle;
+PROCEDURE CBG_Timer ( cb: Xt.Widget ): Xt.XtIntervalId;
+PROCEDURE CBG_Cascade_x ( cb: Xt.Widget ): Xt.Position;
+PROCEDURE CBG_Cascade_y ( cb: Xt.Widget ): Xt.Position;
+PROCEDURE CBG_Cascade_width ( cb: Xt.Widget ): Xt.Dimension;
+PROCEDURE CBG_Cascade_height ( cb: Xt.Widget ): Xt.Dimension;
+PROCEDURE CBG_HasCascade ( cb: Xt.Widget ): Xt.Boolean;
+
+<* ELSE *>
+
+PROCEDURE  / CBG_Submenu ( cb: Xt.Widget ): Xt.Widget;
+PROCEDURE  / CBG_ActivateCall ( cb: Xt.Widget ): Xt.XtCallbackList;
+PROCEDURE  / CBG_CascadeCall ( cb: Xt.Widget ): Xt.XtCallbackList;
+PROCEDURE  / CBG_Armed ( cb: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / CBG_CascadeRect ( cb: Xt.Widget ): Xlib.XRectangle;
+PROCEDURE  / CBG_Timer ( cb: Xt.Widget ): Xt.XtIntervalId;
+PROCEDURE  / CBG_Cascade_x ( cb: Xt.Widget ): Xt.Position;
+PROCEDURE  / CBG_Cascade_y ( cb: Xt.Widget ): Xt.Position;
+PROCEDURE  / CBG_Cascade_width ( cb: Xt.Widget ): Xt.Dimension;
+PROCEDURE  / CBG_Cascade_height ( cb: Xt.Widget ): Xt.Dimension;
+PROCEDURE  / CBG_HasCascade ( cb: Xt.Widget ): Xt.Boolean;
+
+<* END *>
+
+CONST
+  XmCBG_ARMED_BIT    = SET8{0};
+  XmCBG_TRAVERSE_BIT = SET8{1};
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: these procedures corresponds to macros. *)
+PROCEDURE CBG_IsArmed ( cb: Xt.Widget ): Xt.Boolean;
+PROCEDURE CBG_Traversing ( cb: Xt.Widget ): Xt.Boolean;
+PROCEDURE CBG_SetBit ( byte: Xt.Boolean;
+                       bit: SET8;
+                       v: BOOLEAN );
+PROCEDURE CBG_SetArmed ( cb: Xt.Widget;
+                         v: BOOLEAN );
+PROCEDURE CBG_SetTraverse ( cb: Xt.Widget;
+                            v: BOOLEAN );
+
+<* ELSE *>
+
+PROCEDURE  / CBG_IsArmed ( cb: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / CBG_Traversing ( cb: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / CBG_SetBit ( VAR byte: Xt.Boolean;
+                          bit: SET8;
+                          v: BOOLEAN );
+PROCEDURE  / CBG_SetArmed ( cb: Xt.Widget;
+                            v: BOOLEAN );
+PROCEDURE  / CBG_SetTraverse ( cb: Xt.Widget;
+                               v: BOOLEAN );
+
+<* END *>
+
+(*  Access macro definitions  for Cached fields *)
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: these procedures corresponds to macros. *)
+PROCEDURE CBG_CascadePixmap ( cb: Xt.Widget ): X.Pixmap;
+PROCEDURE CBG_MapDelay ( cb: Xt.Widget ): SYSTEM.int;
+PROCEDURE CBG_ArmedPixmap ( cb: Xt.Widget ): X.Pixmap;
+
+<* ELSE *>
+
+PROCEDURE  / CBG_CascadePixmap ( cb: Xt.Widget ): X.Pixmap;
+PROCEDURE  / CBG_MapDelay ( cb: Xt.Widget ): SYSTEM.int;
+PROCEDURE  / CBG_ArmedPixmap ( cb: Xt.Widget ): X.Pixmap;
+
+<* END *>
+
+(******************************
+ *  Convenience Macros
+ ******************************)
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: these procedures corresponds to macros. *)
+PROCEDURE CBG_Cache ( w: Xt.Widget ): XmCascadeButtonGCache;
+PROCEDURE CBG_ClassCachePart ( w: Xt.Widget ): Xm.XmCacheClassPartPtr;
+
+<* ELSE *>
+
+PROCEDURE  / CBG_Cache ( w: Xt.Widget ): XmCascadeButtonGCache;
+PROCEDURE  / CBG_ClassCachePart ( w: Xt.Widget ): Xm.XmCacheClassPartPtr;
+
+<* END *>
+
+(********    Private Function Declarations    ********)
+
+PROCEDURE _XmArrowPixmapCacheCompare ( A: Xt.XtPointer;
+                                       B: Xt.XtPointer ): SYSTEM.int;
+
+PROCEDURE _XmArrowPixmapCacheDelete ( data: Xt.XtPointer );
+
+PROCEDURE _XmCreateArrowPixmaps ( wid: Xt.Widget );
+
+(********    End Private Function Declarations    ********)
+
+END CascadeBGP.

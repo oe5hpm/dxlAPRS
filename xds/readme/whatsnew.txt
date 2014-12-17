@@ -1,0 +1,299 @@
+WHATSNEW.TXT                  Copyright (c) 1999-2011 Excelsior, LLC.
+---------------------------------------------------------------------
+
+                 Native XDS-x86 Linux Edition
+                 ----------------------------
+                            v2.60
+
+                    Fixes And New Features
+
+
+Version 2.60
+------------
+
+       This is a maintenance release fixing some bugs in the
+       compiler and the runtime library. 
+       
+       The XDS setup package includes three products now:
+         - Native XDS-x86,
+         - XDS-C and
+         - TopSpeed Compatibility Pack.
+
+
+Version 2.51
+------------
+
+        This is a maintenance release fixing some bugs in the
+        compiler and the runtime library. Also, XDS executables
+        (xc and h2d) are now statically linked to
+        maintain compatibility with old Linux distributions.
+
+
+Version 2.50
+------------
+
+Compiler:
+
+        Bug-fixes
+
+Library:
+
+        GC speedup and drastic reducing memory consumption
+
+        Adaptive heaplimit (setting HEAPLIMIT to 0 results in
+        heuristic choice of heaplimit at run-time)
+
+        GCTHRESHOLD does no longer affect memory management
+
+        Bug-fixes
+
+
+
+Version 2.31
+------------
+
+New:
+
+        Inline assembler
+
+        POSIX API definition modules
+
+Improved:
+
+        X Window/Motif API definition modules
+
+        H2D
+
+
+Version 2.21
+------------
+
+This is merely a fixed and slightly improved v2.20. The only
+major addition is the TopSpeed-like library set (Win32 and OS/2 
+editions only).
+
+
+Version 2.20
+------------
+
+This version is the first commercial release which comes with the IDE
+(Win32 and OS/2 editions only). The following changes were made since
+2.10 release and 2.14 pre-release:
+
+Compiler:
+
+        A number of bugs fixed
+
+        SYM-FILE VERSION CHANGED - RECOMPILATION IS NECESSARY
+
+        Pentium instruction scheduling implemented
+
+        A number of floating-point optimizations introduced
+
+        Integer division by constant is now replaced with multiplication
+
+        xc =m <file> now calls linker if <file> is a Modula-2 program
+        module or an Oberon-2 main module (option MAIN is on)
+
+        The SYSTEM.REF procedure was added (the same as ADR, but returns
+        typized pointer.
+
+        Compatibility rules for foreign procedures are relaxed further
+        (see User's Guide->Multilanluage Programming->Relaxation of
+        compatibility rules).
+
+        Much more efficient (but still not ideal) code is generated 
+        for aggregate constants.
+
+        Equations and environment variables may be used in redirections:
+        *.sym = $(XDSDIR)/sym
+
+        Separate exception source for ASSERT added
+
+        Compiler sets new equations:
+                MODULE (name of the current module)
+                FILE (name of the current file)
+
+        Compiler exit code is now either 0 (ok) or 1 (error).
+
+        SYSTEM.FILL is added
+
+        <type>(<const>) is now equivalent to SYSTEM.CAST(<type>,<const>)
+
+        BOOLEAN, SYSTEM.BOOL8 and SYSTEM.BOOL32 are much more compatible
+
+        SYSTEM.M2ADR is available from Oberon-2
+
+        CODENAME and DATANAME equations for segment names
+
+        CPU486 is replaced with CPU and MINCPU
+
+        It is now possible to declare/set equations in source text
+
+        ALIGNMENT is an inlineable equation now (1,2, or 4)
+
+        DEF option is renamed to CHANGESYM to avoid conflicts
+        
+        VAR-parameters can be marked as NIL-compatible
+        
+        SYSTEM.BOOL16 added
+        
+        Default sizes of enumeration and small set (<17 elements) types
+        can be specified inline via ENUMSIZE and SETSIZE equations
+        
+        Options and equations syntax unified
+        
+        Foreign modules (e.g. resource files) are now supported in 
+        project files and templates
+        
+        UNC filenames (\\computer\dir\file) are now accepted.
+
+Linker:
+
+	linker is now able to pass messages to the IDE
+	
+	COFF object files and libraries are supported (but not properly tested
+	yet)
+
+Library:
+
+        Some bugs fixed
+
+	Multithread version of all libraries and implemented
+
+        Added module Printf
+
+        ISO modules LowReal, LowLong are implemented
+
+        ProgEnv.String and ProgEnv.StringLength are implemented
+        
+        ISO I/O library speeded up significantly
+        
+        Raw operations are allowed on standard channels
+
+Run-time support:
+
+        Multithread version of run-time support is implemented
+        
+        History is always written to file now
+        
+        Oberon-2 finalizers are called on program termination
+
+Win32 IDE:
+
+        Plenty of bugs fixed
+        
+        Context help added
+
+        Files are opened using redirections and lookups if typed without
+        path
+
+        IDE maintains a list of source files which are either specified
+        by user or received from the compiler.
+
+        Project file editor:
+                user options/equations
+                module list
+                
+        User-defined tools
+        
+        Window layout and cursor positions are stored for each project
+        
+        Prompt for saving changed files
+        
+        F1 in Message list displays message description topic
+        
+        IDE now has its own redirection file - xds.red
+
+WIN32 API definition modules:
+
+        Some bugs fixed
+
+Doc:
+
+        New manuals:
+	        ISO Modula-2 Library Reference
+        	ISO Modula-2 Lexis and Syntax
+        	XDS Library Guide and Reference
+
+
+        RegComp.Substitute description is corrected
+
+
+Version 2.10
+------------
+
+This is the first product version of Native XDS. After more
+then half a year of extensive testing we are happy to announce this
+product.
+
+For the users of XDS v2.06 we list the differences between v2.06
+and v2.10. Note: there are no product versions such as v2.07,
+v2.08, v2.09. The version v2.07 was used internally and
+distributed as beta and demo version.
+
+What is new in v2.10:
+
+        1) Extended syntax of conditional expressions, e.g:
+
+           <* IF defined cc & (cc = Watcom) THEN *>
+
+           See "Configuring XDS" and "Conditional compilation".
+
+        2) Relaxed compatibility rules are introduced for
+           parameters of "C" procedures. See "Multilanguage
+           programming".
+
+        3) String literal may be used in a direct language
+           specification instead of numeric values:
+              "Oberon"  = 0
+              "Modula"  = 1
+              "C"       = 2
+              "Pascal"  = 5
+              "StdCall" = 7 (Win32 standard calling convention)
+              "SysCall" = 8 (OS/2 system calls)
+
+        4) new equations
+              COMPILERHEAP   - defines compiler heap limit
+              COMPILERTHRES  - defines compiler threshold
+
+        5) New clause in the ERRFMT equation - errno (error
+        number).
+
+        6) new option M2UNPACKTYPES - for Windows interface
+
+        7) new ALIGNMENET option
+
+        8) equation declaration syntax is introduced:
+           -xxx!value
+
+        9) Make does not use dependency on a project file.
+
+
+       10) New directives may be used in configuration, redirection
+           project and template files:
+
+           !if expr then
+           !elsif expr then
+           !else
+           !end
+
+           !message expr
+
+           expr = simple [ ("=" | "#" | "<" | ">") simple ]
+           simple = term { "+" | "OR" term }
+           term = factor { "AND" factor }
+           factor = "(" expr ")"| quoted_string
+                  | "NOT" factor | "DEFINED" ident | ident
+           ident = option | equation
+
+       11) In all system files:
+
+            \ at the end of line - line continuation.
+
+            $! - denotes the directory name of this file:
+               *.sym = $!/sym;
+
+       12) new template syntax (See "Template files").
+
+                         [end of document]

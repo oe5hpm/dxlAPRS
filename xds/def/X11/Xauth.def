@@ -1,0 +1,97 @@
+(* X11/Xauth.def  May 14  15:44:10  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted using H2D v1.00 from X11/Xauth.h. *)
+
+(* $RCSfile: Xauth.def,v $ $Revision: 4 $ $Date: 28.07.98 23:13 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *>
+<* IF NOT DEFINED(GENCTYPES) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+
+DEFINITION MODULE ["C"] Xauth;
+
+IMPORT SYSTEM, X, stdio;
+(* H2D: to import this module write following text:
+IMPORT Xauth, X, stdio;
+*)
+
+FROM Xlib IMPORT PChar, PAPChar, PASInt;
+
+(*  $XConsortium: Xauth.h,v 1.16 94/04/17 20:15:46 gildea Exp $  *)
+
+CONST 
+  FamilyLocal = 256;                   (*  not part of X standard (i.e. X.h)  *)
+  FamilyWild = 65535;
+  FamilyNetname = 254;                 (*  not part of X standard  *)
+  FamilyKrb5Principal = 253;           (*  Kerberos 5 principal name  *)
+  FamilyLocalHost = 252;               (*  for local non-net authentication  *)
+
+TYPE 
+
+  xauth = RECORD
+    family        : SYSTEM.CARD16;
+    address_length: SYSTEM.CARD16;
+    address       : PChar;
+    number_length : SYSTEM.CARD16;
+    number        : PChar;
+    name_length   : SYSTEM.CARD16;
+    name          : PChar;
+    data_length   : SYSTEM.CARD16;
+    data          : PChar;
+  END;
+
+  Xauth = xauth;
+
+PROCEDURE XauFileName ( SEQ arg0: SYSTEM.BYTE ): PChar;
+
+<*- GENTYPEDEF *>
+
+TYPE 
+  PtrXauth = POINTER TO Xauth;
+
+<*+ GENTYPEDEF *>
+
+PROCEDURE XauReadAuth ( VAR auth_file: stdio.FILE ): PtrXauth;
+
+PROCEDURE XauLockAuth ( file_name: ARRAY OF CHAR;
+                        retries: SYSTEM.int;
+                        timeout: SYSTEM.int;
+                        dead: LONGINT ): SYSTEM.int;
+
+PROCEDURE XauUnlockAuth ( file_name: ARRAY OF CHAR ): SYSTEM.int;
+
+PROCEDURE XauWriteAuth ( VAR auth_file: stdio.FILE;
+                         auth: PtrXauth ): SYSTEM.int;
+
+PROCEDURE XauGetAuthByName ( display_name: ARRAY OF CHAR ): PtrXauth;
+
+PROCEDURE XauGetAuthByAddr ( family: SYSTEM.unsigned;
+                             address_length: SYSTEM.unsigned;
+                             address: ARRAY OF CHAR;
+                             number_length: SYSTEM.unsigned;
+                             number: ARRAY OF CHAR;
+                             name_length: SYSTEM.unsigned;
+                             name: ARRAY OF CHAR ): PtrXauth;
+
+PROCEDURE XauGetBestAuthByAddr ( family: SYSTEM.unsigned;
+                                 address_length: SYSTEM.unsigned;
+                                 address: ARRAY OF CHAR;
+                                 number_length: SYSTEM.unsigned;
+                                 number: ARRAY OF CHAR;
+                                 types_length: SYSTEM.int;
+                                 type_names: PAPChar;
+                                 type_lengths: PASInt ): PtrXauth;
+
+PROCEDURE XauDisposeAuth ( auth: PtrXauth );
+
+(*  Return values from XauLockAuth  *)
+
+CONST 
+  LOCK_SUCCESS = 0;                (*  lock succeeded  *)
+  LOCK_ERROR = 1;                  (*  lock unexpectely failed, check errno  *)
+  LOCK_TIMEOUT = 2;                (*  lock failed, timeouts expired  *)
+
+END Xauth.

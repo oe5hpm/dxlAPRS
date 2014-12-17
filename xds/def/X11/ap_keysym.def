@@ -1,0 +1,46 @@
+(* X11/ap_keysym.def  Apr 12  15:0:25  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted using H2D v1.00 from X11/ap_keysym.h. *)
+
+(* $RCSfile: ap_keysym.def,v $ $Revision: 4 $ $Date: 28.07.98 23:13 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *>
+<* IF NOT DEFINED(GENCTYPES) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+
+DEFINITION MODULE ["C"] ap_keysym;
+
+IMPORT SYSTEM;
+(* H2D: to import this module write following text:
+IMPORT ap_keysym;
+*)
+
+CONST 
+  apXK_LineDel = 1000FF00H;
+  apXK_CharDel = 1000FF01H;
+  apXK_Copy = 1000FF02H;
+  apXK_Cut = 1000FF03H;
+  apXK_Paste = 1000FF04H;
+  apXK_Move = 1000FF05H;
+  apXK_Grow = 1000FF06H;
+  apXK_Cmd = 1000FF07H;
+  apXK_Shell = 1000FF08H;
+  apXK_LeftBar = 1000FF09H;
+  apXK_RightBar = 1000FF0AH;
+  apXK_LeftBox = 1000FF0BH;
+  apXK_RightBox = 1000FF0CH;
+  apXK_UpBox = 1000FF0DH;
+  apXK_DownBox = 1000FF0EH;
+  apXK_Pop = 1000FF0FH;
+  apXK_Read = 1000FF10H;
+  apXK_Edit = 1000FF11H;
+  apXK_Save = 1000FF12H;
+  apXK_Exit = 1000FF13H;
+  apXK_Repeat = 1000FF14H;
+  apXK_KP_parenleft = 1000FFA8H;
+  apXK_KP_parenright = 1000FFA9H;
+
+END ap_keysym.

@@ -1,0 +1,26 @@
+(* Copyright (C) 1998 XDS Ltd. *)
+
+<*+M2ADDTYPES   *>
+<*+M2EXTENSIONS *>
+
+DEFINITION MODULE BiosIO;
+
+VAR
+  LastChar     :CHAR;
+  LastScan     :SHORTCARD;
+  EnhancedBIOS :BOOLEAN;
+
+PROCEDURE KeyPressed() : BOOLEAN ;
+(* Check if key pressed *)
+
+PROCEDURE RdKey()    : CHAR ;
+(* Return keys without echo *)
+
+PROCEDURE RdChar()   : CHAR ;
+(* Return keys with echo *)
+
+TYPE KBFlagSet = SET OF ( RShift, LShift, Ctrl, Alt, Scroll, Num, Cap, Ins ) ;
+PROCEDURE KBFlags () : KBFlagSet ;
+(* Returns current 'shift' keys depressed *)
+
+END BiosIO.

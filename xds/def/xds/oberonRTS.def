@@ -1,0 +1,129 @@
+(* Copyright (c) xTech 1992,94. All Rights were Reserved *)
+(* Copyright (c) 2000 Excelsior *)
+(* XDS (ANSI C) v2.0 *)
+
+<* +M2EXTENSIONS *>
+
+DEFINITION MODULE oberonRTS;
+
+IMPORT  SYSTEM;
+
+TYPE
+  Module;
+  Type;
+  Command   = PROC;
+  CARDINAL  = SYSTEM.CARD32;
+  Finalizer = PROCEDURE (SYSTEM.ADDRESS);  
+
+<* IF NOT __GEN_C__ THEN *> -- GCInfo engine uses INT64 
+  GCInfo    = RECORD 
+                -- total allocation/reclamation statistics of Oberon heap, in megabytes.
+                mbAllocated :CARDINAL;
+                mbReclaimed :CARDINAL;
+
+                -- total time spent in GC, in ms.
+                totalGCTime :CARDINAL;
+              END;
+<* END *> -- GCInfo engine uses INT64 
+
+VAR
+  nullModule: Module;
+  nullType: Type;
+
+(* ------------------ Garbage Collector ------------------ *)
+
+PROCEDURE SetHeaplimit (newHeaplimit :CARDINAL);
+(* Set the heaplimit *)
+
+PROCEDURE Collect;
+(* Garbage Collector *)
+
+
+PROCEDURE CompactHeap;
+(* GC invokation with forced heap compaction *)
+
+
+PROCEDURE GetInfo(VAR objects, busymem: CARDINAL);
+(* Returns number of allocated objects and total size
+   of allocated memory.
+*)
+
+PROCEDURE gcAnchorTrace (on :BOOLEAN; weightThreshold := 0 :CARDINAL);
+(* Enables/disables printing "heap weight" of all anchors (global variables,
+   stack and destructors) when garbage collecting.
+*)
+
+PROCEDURE gcHeapTrace (on :BOOLEAN; heapTracingThreshold := 0 :CARDINAL);
+(* Enables/disables printing of heap statistics (amount of live objects
+   of each type) when garbage collecting.
+*)
+
+<* IF NOT __GEN_C__ THEN *> -- GCInfo engine uses INT64 
+PROCEDURE getGCInfo (VAR gcInfo: GCInfo);
+(* Fills fields of GCInfo structure *)
+<* END *> -- GCInfo engine uses INT64 
+
+
+PROCEDURE ReduceGCConservatism (obj: SYSTEM.ADDRESS);
+(* Reduces conservatism of GC with respect to the specified object.
+   All references to this object from the stack are ignored and not scanned,
+   so it is alive iff it is reachable from global variable or from another
+   alive object.
+*)
+
+(* ----------------- Object finalization ----------------- *)
+
+PROCEDURE InstallFinalizer(f: Finalizer; obj: SYSTEM.ADDRESS);
+(* Sets finalizer "f" for object "obj". The finalizer will be
+   called when the object will become unreachable.
+   Notes:
+        - finalizer is called on GC stack (stack size is limited);
+        - finalized object may be became reachable, in this case
+          it will not be deleted;
+*)
+
+(*--------------- Meta-language facilities --------------- *)
+
+PROCEDURE Search(name: ARRAY OF CHAR): Module;
+(* Returns module or "nullModule" *)
+
+PROCEDURE NameOfModule(m: Module; VAR name: ARRAY OF CHAR);
+(* Returns the name of module *)
+
+PROCEDURE ThisCommand(m: Module; name: ARRAY OF CHAR): Command;
+(* Returns the command or NIL *)
+
+PROCEDURE ThisType(m: Module; name: ARRAY OF CHAR): Type;
+(* Returns the type or "nullType" *)
+
+PROCEDURE SizeOf(t: Type): INTEGER;
+PROCEDURE BaseOf(t: Type; level: INTEGER): Type;
+PROCEDURE LevelOf(t: Type): INTEGER;
+PROCEDURE ModuleOf(t: Type): Module;
+PROCEDURE NameOfType(t: Type; VAR name: ARRAY OF CHAR);
+
+PROCEDURE TypeOf(obj: SYSTEM.ADDRESS): Type;
+
+PROCEDURE NewObj(type: Type): SYSTEM.ADDRESS;
+(* Create a new object of the type. *)
+
+(* -------------- Iterators ------------------- *)
+
+TYPE
+  NameIterator = PROCEDURE (SYSTEM.ADDRESS, ARRAY OF CHAR): BOOLEAN;
+  (* Return FALSE to stop iteration *)
+
+PROCEDURE IterModules(session: SYSTEM.ADDRESS; iter: NameIterator);
+(* Iterates all Oberon-2 modules. *)
+
+PROCEDURE IterCommands(mod: Module; session: SYSTEM.ADDRESS; iter: NameIterator);
+(* Iterates all commands in the module *)
+
+PROCEDURE IterTypes(mod: Module; session: SYSTEM.ADDRESS; iter: NameIterator);
+(* Iterates all types in the module *)
+
+(* -------------- Stack managerment ----------- *)
+
+PROCEDURE SetStackSize(newSize: CARDINAL): BOOLEAN;
+
+END oberonRTS.

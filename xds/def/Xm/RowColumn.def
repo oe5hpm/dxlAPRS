@@ -1,0 +1,113 @@
+(* Xm/RowColumn.def  Oct 15  19:19:10  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/RowColumn.h using H2D v1.16 *)
+
+(* $RCSfile: RowColumn.def,v $ $Revision: 4 $ $Date: 28.07.98 23:14 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+
+DEFINITION MODULE ["C"] RowColumn;
+
+IMPORT SYSTEM, Xlib, Xt:=Intrinsic;
+(* H2D:  Required IMPORT clause: 
+IMPORT RowColumn, Xlib, Intrinsic;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(*
+ * Motif Release 1.2 
+ *)
+
+VAR 
+  xmRowColumnWidgetClass: Xt.WidgetClass;
+
+TYPE 
+  _XmRowColumnClassRec = RECORD
+    (* Declaration without definition *)
+  END;
+
+  XmRowColumnWidgetClass = POINTER TO _XmRowColumnClassRec;
+
+  _XmRowColumnRec = RECORD
+    (* Declaration without definition *)
+  END;
+
+  XmRowColumnWidget = POINTER TO _XmRowColumnRec;
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: this procedure corresponds to a macro. *)
+PROCEDURE XmIsRowColumn ( w: Xt.Widget ): Xt.Boolean;
+
+<* ELSE *>
+
+PROCEDURE  / XmIsRowColumn ( w: Xt.Widget ): Xt.Boolean;
+
+<* END *>
+
+(********    Public Function Declarations    ********)
+
+PROCEDURE XmMenuPosition ( p: Xt.Widget;
+                           VAR event: Xlib.XButtonPressedEvent );
+
+PROCEDURE XmCreateRowColumn ( p: Xt.Widget;
+                              name: ARRAY OF CHAR;
+                              al: Xt.ArgList;
+                              ac: Xt.Cardinal ): Xt.Widget;
+
+PROCEDURE XmCreateWorkArea ( p: Xt.Widget;
+                             name: ARRAY OF CHAR;
+                             al: Xt.ArgList;
+                             ac: Xt.Cardinal ): Xt.Widget;
+
+PROCEDURE XmCreateRadioBox ( p: Xt.Widget;
+                             name: ARRAY OF CHAR;
+                             al: Xt.ArgList;
+                             ac: Xt.Cardinal ): Xt.Widget;
+
+PROCEDURE XmCreateOptionMenu ( p: Xt.Widget;
+                               name: ARRAY OF CHAR;
+                               al: Xt.ArgList;
+                               ac: Xt.Cardinal ): Xt.Widget;
+
+PROCEDURE XmOptionLabelGadget ( m: Xt.Widget ): Xt.Widget;
+
+PROCEDURE XmOptionButtonGadget ( m: Xt.Widget ): Xt.Widget;
+
+PROCEDURE XmCreateMenuBar ( p: Xt.Widget;
+                            name: ARRAY OF CHAR;
+                            al: Xt.ArgList;
+                            ac: Xt.Cardinal ): Xt.Widget;
+
+PROCEDURE XmCreatePopupMenu ( p: Xt.Widget;
+                              name: ARRAY OF CHAR;
+                              al: Xt.ArgList;
+                              ac: Xt.Cardinal ): Xt.Widget;
+
+PROCEDURE XmCreatePulldownMenu ( p: Xt.Widget;
+                                 name: ARRAY OF CHAR;
+                                 al: Xt.ArgList;
+                                 ac: Xt.Cardinal ): Xt.Widget;
+
+PROCEDURE XmAddToPostFromList ( menu_wid: Xt.Widget;
+                                widget: Xt.Widget );
+
+PROCEDURE XmRemoveFromPostFromList ( menu_wid: Xt.Widget;
+                                     widget: Xt.Widget );
+
+PROCEDURE XmGetPostedFromWidget ( menu: Xt.Widget ): Xt.Widget;
+
+PROCEDURE XmGetTearOffControl ( menu: Xt.Widget ): Xt.Widget;
+
+(********    End Public Function Declarations    ********)
+
+END RowColumn.

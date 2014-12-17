@@ -1,0 +1,504 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 4.01 Transitional//EN">
+<HTML>
+<HEAD>
+<TITLE>Multilanguage programming</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<P><HR>
+<A NAME="0501">
+<A HREF="xc000.html#root" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="xc009.html#0500" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0502" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H1>Multilanguage programming</H1>
+
+<P>XDS allows you to mix Modula-2, Oberon-2, C, and Assembler modules, libraries, and object files in one project. 
+<P><UL>
+<LI><A HREF="#0502" TARGET=body>Modula-2 and Oberon-2</A>
+<LI><A HREF="#0507" TARGET=body>Direct language specification</A>
+<LI><A HREF="#0508" TARGET=body>Interfacing to C</A>
+<LI><A HREF="#0512" TARGET=body>Relaxation of compatibility rules</A>
+<LI><A HREF="#0517" TARGET=body>Configuring XDS for a C Compiler</A>
+</UL>
+<P><HR>
+<A NAME="0502">
+<A HREF="#0501" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0501" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0503" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Modula-2 and Oberon-2</H2>
+
+<P>It is not necessary to notify the compiler of using Modula-2 objects in Oberon-2 module and vice versa. The compiler will detect the language automatically when processing symbol files on <TT>IMPORT</TT> clause. 
+<P><UL>
+<LI><A HREF="#0503" TARGET=body>Basic types</A>
+<LI><A HREF="#0504" TARGET=body>Data structures</A>
+<LI><A HREF="#0506" TARGET=body>Garbage collection</A>
+</UL>
+<P><HR>
+<A NAME="0503">
+<A HREF="#0502" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0502" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0504" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Basic types</H3>
+
+<P>In Oberon-2 the basic types have the same length on all platforms. In Modula-2 the size of types <TT>INTEGER</TT>, <TT>CARDINAL</TT> and <TT>BITSET</TT> may be different and depends on the value of the <A HREF="xc005.html#0092" TARGET=body>M2BASE16</A> option. The following table summarizes the correspondence between the basic types. 
+<P ALIGN=CENTER><TABLE CELLSPACING=0>
+<TR>
+<TD  STYLE="padding:0px 3px;"><B>Type </B></TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;"><B>Size </B></TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;"><B>Oberon-2 </B></TD>
+<TD ALIGN=CENTER COLSPAN=2 STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><B>Modula-2</B></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px">&nbsp;</TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px">&nbsp;</TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px">&nbsp;</TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><TT>M2BASE16+ </TT></TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><TT>M2BASE16- </TT></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">integer </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">8 </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;"><TT>SHORTINT </TT></TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&mdash; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&mdash; </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">integer </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">16 </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;"><TT>INTEGER </TT></TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;"><TT>INTEGER </TT></TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&mdash; </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">integer </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">32 </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;"><TT>LONGINT </TT></TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&mdash; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;"><TT>INTEGER </TT></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">cardinal </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">8 </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&mdash; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&mdash; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&mdash; </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">cardinal </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">16 </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&mdash; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;"><TT>CARDINAL </TT></TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&mdash; </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">cardinal </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">32 </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&mdash; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&mdash; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;"><TT>CARDINAL </TT></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">bitset </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">16 </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&mdash; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;"><TT>BITSET </TT></TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&mdash; </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">bitset </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">32 </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;"><TT>SET </TT></TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&mdash; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;"><TT>BITSET </TT></TD>
+</TR>
+</TABLE>
+<P>The system types <TT>INT</TT> and <TT>CARD</TT> correspond to Modula-2 <TT>INTEGER</TT> and <TT>CARDINAL</TT> types respectively. We recommend to use <TT>INT</TT> and <TT>CARD</TT> in Oberon-2 when importing Modula-2 modules. For example, if the procedure <TT>Foo</TT> is defined in the Modula-2 definition module <TT>M</TT> as 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;DEFINITION&nbsp;MODULE&nbsp;M;
+
+&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;Foo(VAR&nbsp;x:&nbsp;INTEGER);
+
+&nbsp;&nbsp;&nbsp;&nbsp;END&nbsp;M.
+</PRE>
+
+<P>its portable usage in Oberon-2 is as follows: 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;x:&nbsp;SYSTEM.INT;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.&nbsp;&nbsp;.&nbsp;&nbsp;.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;M.Foo(x);
+</PRE>
+
+<P><HR>
+<A NAME="0504">
+<A HREF="#0502" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0503" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0505" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Data structures</H3>
+
+<P>XDS allows any Modula-2 data structures to be used in Oberon-2 modules, even those that can not be defined in Oberon-2 (e.g. variant records, range types, set types, enumerations, etc). 
+<P>However, usage of Modula-2 types in Oberon-2 and vice versa is restricted. Whenever possible XDS tries to produce the correct code. If a correct translation is impossible, an error is reported: 
+<UL>
+ 
+<LI>a Modula-2 record field type cannot be of an Oberon-2 pointer, record or array type; </LI>
+<LI>a Modula-2 pointer to an Oberon-2 record cannot be used in specific Oberon-2 constructs (type-bound procedures, type guards, etc); </LI>
+<LI>an opaque type can not be defined as an Oberon pointer. </LI>
+</UL>
+
+<P>Standard procedures <TT>NEW</TT> and <TT>DISPOSE</TT> are always applied according to the language of a parameter&rsquo;s type. For example, for the following declarations in an Oberon-2 module: 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;TYPE
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Rec&nbsp;=&nbsp;RECORD&nbsp;END;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;MP&nbsp;&nbsp;=&nbsp;POINTER&nbsp;[&quot;Modula&quot;]&nbsp;TO&nbsp;Rec;&nbsp;(*&nbsp;Modula&nbsp;pointer&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;OP&nbsp;&nbsp;=&nbsp;POINTER&nbsp;TO&nbsp;Rec;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;Oberon&nbsp;pointer&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;VAR
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;m:&nbsp;MP;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;o:&nbsp;OP;
+</PRE>
+
+<P>the call <TT>NEW(m)</TT> will be treated as a call to the Modula-2 default <TT>ALLOCATE</TT>, while <TT>NEW(o)</TT> will be treated as a call of the standard Oberon-2 run-time routine. See also <A HREF="#0507" TARGET=body>Direct language specification</A>. 
+<P>Implicit memory deallocation (garbage collection) is applied to Oberon-2 objects only. If a variable of a Modula-2 pointer type is declared in an Oberon-2 module, it shall be deallocated explicitly. 
+<P><A NAME="0505">
+<A HREF="xc009.html#0500" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0504" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0506" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H5>Example: Using the Modula data type in Oberon</H5>
+
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;Modula-2*)&nbsp;DEFINITION&nbsp;MODULE&nbsp;m2;
+&nbsp;&nbsp;&nbsp;&nbsp;TYPE
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Rec&nbsp;=&nbsp;RECORD&nbsp;&nbsp;(*&nbsp;a&nbsp;record&nbsp;with&nbsp;variant&nbsp;parts&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;CASE&nbsp;tag:&nbsp;BOOLEAN&nbsp;OF
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|TRUE:&nbsp;&nbsp;i:&nbsp;INTEGER;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|FALSE:&nbsp;r:&nbsp;REAL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;END;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;END;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Ptr&nbsp;=&nbsp;POINTER&nbsp;TO&nbsp;Rec;
+
+&nbsp;&nbsp;&nbsp;&nbsp;VAR
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;r:&nbsp;Rec;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;p:&nbsp;Ptr;
+
+&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;Foo(VAR&nbsp;r:&nbsp;Rec);
+
+&nbsp;&nbsp;&nbsp;&nbsp;END&nbsp;m2.
+
+&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;Oberon-2&nbsp;*)&nbsp;MODULE&nbsp;o2;
+
+&nbsp;&nbsp;&nbsp;&nbsp;IMPORT&nbsp;m2;&nbsp;(*&nbsp;import&nbsp;of&nbsp;a&nbsp;Modula-2&nbsp;module&nbsp;*)
+
+&nbsp;&nbsp;&nbsp;&nbsp;VAR
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;r:&nbsp;m2.Rec;&nbsp;&nbsp;(*&nbsp;using&nbsp;the&nbsp;Modula-2&nbsp;record&nbsp;type&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;p:&nbsp;m2.Ptr;&nbsp;&nbsp;(*&nbsp;using&nbsp;the&nbsp;Modula-2&nbsp;pointer&nbsp;type&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;x:&nbsp;POINTER&nbsp;TO&nbsp;m2.Rec;
+
+&nbsp;&nbsp;&nbsp;&nbsp;BEGIN
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;NEW(p);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;Modula-2&nbsp;default&nbsp;ALLOCATE&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;NEW(x);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;Oberon-2&nbsp;NEW&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;m2.Foo(r);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;m2.Foo(p^);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;m2.Foo(x^);
+&nbsp;&nbsp;&nbsp;&nbsp;END&nbsp;o2.
+</PRE>
+
+<P><HR>
+<A NAME="0506">
+<A HREF="#0502" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0505" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0507" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Garbage collection</H3>
+
+<P>It is important to remember that Modula-2 and Oberon-2 have different approaches to memory utilization. When a program contains both Modula-2 and Oberon-2 modules, garbage collection is used. See <A HREF="xc009.html#0473" TARGET=body>Memory management</A> for more information. 
+<P><HR>
+<A NAME="0507">
+<A HREF="#0501" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0506" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0508" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Direct language specification</H2>
+
+<P>The compiler must know the implementation language of a module to take into account different semantics of different languages and to produce correct code. 
+<P>In some cases, it is necessary for a procedure or data type to be implemented according to the rules of a language other than that of the whole module. In XDS, it is possible to explicitly specify the language of a type or object. <I>Direct language specification (DLS)</I> is allowed either if language extensions are enabled or if the module <TT>SYSTEM</TT> is imported. 
+<P>In a record, pointer, or procedure type declaration, or in a procedure declaration, the desired language (or, more precisely, the way in which that declaration is treated by the compiler) can be specified as <TT>&quot;[&quot;&nbsp;language&nbsp;&quot;]&quot;</TT> immediately following the keyword <TT>RECORD</TT>, <TT>POINTER</TT>, or <TT>PROCEDURE</TT>. <TT>language</TT> can be a string or integer constant expression<FONT SIZE=2>&nbsp;/We recommend to use strings, integer values are preserved for backward compatibility./ </FONT>: 
+<P ALIGN=CENTER><TABLE CELLSPACING=0>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><B>Convention </B></TD>
+<TD  STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><B>String </B></TD>
+<TD  STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><B>Integer </B></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">Oberon-2 </TD>
+<TD  STYLE="padding:0px 3px;"><TT>&quot;Oberon&quot; </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>0 </TT></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">Modula-2 </TD>
+<TD  STYLE="padding:0px 3px;"><TT>&quot;Modula&quot; </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>1 </TT></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">C </TD>
+<TD  STYLE="padding:0px 3px;"><TT>&quot;C&quot; </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>2 </TT></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">Pascal </TD>
+<TD  STYLE="padding:0px 3px;"><TT>&quot;Pascal&quot; </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>5 </TT></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">Win32 API </TD>
+<TD  STYLE="padding:0px 3px;"><TT>&quot;StdCall&quot; </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>7 </TT></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">OS/2 API </TD>
+<TD  STYLE="padding:0px 3px;"><TT>&quot;SysCall&quot; </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>8 </TT></TD>
+</TR>
+</TABLE>
+<P>Examples: 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;TYPE</TT><BR>
+<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;UntracedPtr&nbsp;=&nbsp;POINTER&nbsp;[&quot;Modula&quot;]&nbsp;TO&nbsp;Rec;</TT> 
+<P>Here <TT>UntracedPtr</TT> is defined as a Modula-2 pointer, hence all variables of that type will not be traced by garbage collector. 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;[&quot;C&quot;]&nbsp;sig_handler&nbsp;(id&nbsp;:&nbsp;SYSTEM.int);</TT><BR>
+<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.&nbsp;&nbsp;.&nbsp;&nbsp;.</TT><BR>
+<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;signal.signal(signal.SYSSEGV,&nbsp;sig_handler);</TT><BR>
+
+<P>Here <TT>sig_handler</TT> has C calling and naming conventions, so it can be installed as a signal handler into C run-time support. 
+<P>A direct language specification clause placed after a name of a field, constant, type, or variable points out that the name of the object will be treated according to the rules of the specified language. 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;TYPE
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Rec&nbsp;[&quot;C&quot;]&nbsp;=&nbsp;RECORD
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;name&nbsp;[&quot;C&quot;]:&nbsp;INTEGER;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;END;
+
+&nbsp;&nbsp;&nbsp;&nbsp;CONST&nbsp;pi&nbsp;[&quot;C&quot;]&nbsp;=&nbsp;3.14159;
+
+&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;buffer[][&quot;C&quot;]:&nbsp;POINTER&nbsp;TO&nbsp;INTEGER;
+</PRE>
+
+<P><B>Note:</B> In ISO Modula-2, an absolute address may be specified for a variable after its name in square brackets, so the empty brackets are required in the last line. 
+<P>A procedure name is treated according to the language of its declaration, so in the following declaration: 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;[&quot;C&quot;]&nbsp;Foo;</TT> 
+<P>both the procedure type and the procedure name are treated according to the C language rules. <B>Note:</B> If you are using a C++ compiler, the <TT>Foo</TT> function should be declared with C name mangling style. Consult your C++ manuals for further information. 
+<P><HR>
+<A NAME="0508">
+<A HREF="#0501" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0507" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0509" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Interfacing to C</H2>
+
+<P>Special efforts were made in XDS to provide convenient interface to other languages, primarily to the C language. The main goal is to allow direct usage of existing C libraries and APIs in Modula-2/Oberon-2 programs. 
+<P><UL>
+<LI><A HREF="#0509" TARGET=body>Foreign definition module</A>
+<LI><A HREF="#0511" TARGET=body>External procedures specification</A>
+</UL>
+<P><HR>
+<A NAME="0509">
+<A HREF="#0508" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0508" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0510" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Foreign definition module</H3>
+
+<P>A <A HREF="#0507" TARGET=body>direct language specification</A> clause may appear immediately after keywords <TT>DEFINITION</TT> <TT>MODULE</TT>. The effect is that all objects defined in that module are translated according to the specified language rules, thus making unnecessary direct language specifications for each object. 
+<P>Several options are often used in foreign definition modules. 
+<P><A NAME="0510">
+<A HREF="xc009.html#0500" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0509" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0511" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H5>Example</H5>
+
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;&lt;*+&nbsp;M2EXTENSIONS&nbsp;*&gt;
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;*+&nbsp;CSTDLIB&nbsp;*&gt;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;C&nbsp;standard&nbsp;library&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;*+&nbsp;NOHEADER&nbsp;*&gt;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;we&nbsp;already&nbsp;have&nbsp;header&nbsp;file&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;DEFINITION&nbsp;MODULE&nbsp;[&quot;C&quot;]&nbsp;string;
+
+&nbsp;&nbsp;&nbsp;&nbsp;IMPORT&nbsp;SYSTEM;
+
+&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;strlen(s:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR):&nbsp;SYSTEM.size_t;
+&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;strcmp(s1:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;s2:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR):&nbsp;SYSTEM.int;
+&nbsp;&nbsp;&nbsp;&nbsp;END&nbsp;string.
+</PRE>
+
+<P>Take the following considerations into account when designing your own foreign definition module: 
+<UL>
+ 
+<LI>If you are developing an interface to an existing header file, use the <B>NOHEADER</B> option to disable generation of the header file. This option is meaningful for translators only. </LI>
+<LI>If the header file is a standard header file, use the <B>CSTDLIB</B> option. This option is meaningful for the translators only. </LI>
+<LI>Use the special <TT>SYSTEM</TT> types <TT>int</TT>, <TT>unsigned</TT>, <TT>size_t</TT>, and <TT>void</TT> for corresponding C types. </LI>
+<LI>XDS compilers use relaxed type compatibility rules for foreign entities. See <A HREF="#0512" TARGET=body>Relaxation of compatibility rules</A> for more information. </LI>
+</UL>
+
+<P><HR>
+<A NAME="0511">
+<A HREF="#0508" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0510" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0512" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>External procedures specification</H3>
+
+<P>In some cases, it may be desirable not to write a foreign definition module but to use some C or API functions directly. XDS compilers allow a function to be declared as external. 
+<P>The declaration of an external procedure consists of a procedure header only. The procedure name in the header is prefixed by the symbol <TT>&quot;/&quot;</TT>. 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;[&quot;C&quot;]&nbsp;/&nbsp;putchar(ch:&nbsp;SYSTEM.int):&nbsp;SYSTEM.int;</TT> 
+<P><HR>
+<A NAME="0512">
+<A HREF="#0501" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0511" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0513" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Relaxation of compatibility rules</H2>
+
+<P>The compiler performs all semantic checks for an object or type according to its language specification. Any object declared as that of Modula-2 or Oberon-2 is subject to Modula-2 or Oberon-2 compatibility rules respectively. The compiler uses relaxed compatibility rules for objects and types declared as <TT>&quot;C&quot;</TT>, <TT>&quot;Pascal&quot;</TT>, <TT>&quot;StdCall&quot;</TT>, and <TT>&quot;SysCall&quot;</TT>. 
+<P><UL>
+<LI><A HREF="#0513" TARGET=body>Assignment compatibility</A>
+<LI><A HREF="#0514" TARGET=body>Parameter compatibility</A>
+<LI><A HREF="#0516" TARGET=body>Ignoring function result</A>
+</UL>
+<P><HR>
+<A NAME="0513">
+<A HREF="#0512" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0512" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0514" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Assignment compatibility</H3>
+
+<P>Two pointer type objects are considered assignment compatible, if 
+<UL>
+ 
+<LI>they are of the same Modula-2 or Oberon-2 type. </LI>
+<LI>at least one of their types is declared as <TT>&quot;C&quot;</TT>, <TT>&quot;Pascal&quot;</TT>, <TT>&quot;StdCall&quot;</TT>, or <TT>&quot;SysCall&quot;</TT>, and their <I>base types</I> are the same. </LI>
+</UL>
+
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;VAR
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;x:&nbsp;POINTER&nbsp;TO&nbsp;T;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;y:&nbsp;POINTER&nbsp;TO&nbsp;T;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;z:&nbsp;POINTER&nbsp;[&quot;C&quot;]&nbsp;TO&nbsp;T;
+&nbsp;&nbsp;&nbsp;&nbsp;BEGIN
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;x&nbsp;:=&nbsp;y;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;error
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;y&nbsp;:=&nbsp;z;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;ok
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;z&nbsp;:=&nbsp;y;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--&nbsp;ok
+</PRE>
+
+<P><HR>
+<A NAME="0514">
+<A HREF="#0512" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0513" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0515" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Parameter compatibility</H3>
+
+<P>For procedures declared as <TT>&quot;C&quot;</TT>, <TT>&quot;Pascal&quot;</TT>, <TT>&quot;StdCall&quot;</TT>, or <TT>&quot;SysCall&quot;</TT>, the type compatibility rules for parameters are significantly relaxed: 
+<P>If a formal value parameter is of the type declared as <TT>POINTER&nbsp;TO&nbsp;T</TT>, the actual parameter can be of any of the following types: 
+<UL>
+ 
+<LI>the same type (the only case for regular Modula-2/Oberon-2 procedures); </LI>
+<LI>another type declared as <TT>POINTER&nbsp;TO&nbsp;T</TT>. </LI>
+<LI>any array type which elements are of type <TT>T</TT>. In this case the address of the first array element is passed, as it is done in C. </LI>
+<LI>the type <TT>T</TT> itself, if <TT>T</TT> is a record type. In this case the address of the actual parameter is passed. </LI>
+</UL>
+
+<P>If a formal parameter is an open array of type <TT>T</TT>, the actual parameter can be of any of the following types: 
+<UL>
+ 
+<LI>an (open) array of type <TT>T</TT> (the only case for regular Modula-2/Oberon-2 procedures); </LI>
+<LI>type <TT>T</TT> itself (if <A HREF="xc005.html#0094" TARGET=body>M2EXTENSIONS</A>or <A HREF="xc005.html#0111" TARGET=body>TOPSPEED</A>option is set ON); </LI>
+<LI>any type declared as <TT>POINTER&nbsp;TO&nbsp;T</TT>. </LI>
+</UL>
+
+<P>This relaxation, in conjunction with the <A HREF="xc007.html#0415" TARGET=body><TT>SYSTEM.REF</TT> function procedure</A>, simplifies Modula-2/Oberon-2 calls to C libraries and the target operating system API, preserving the advantages of the type checking mechanism provided by that languages. 
+<P><A NAME="0515">
+<A HREF="xc009.html#0500" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0514" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0516" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H5>Example</H5>
+
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;TYPE
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Str&nbsp;=&nbsp;POINTER&nbsp;TO&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Rec&nbsp;=&nbsp;RECORD&nbsp;...&nbsp;END;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Ptr&nbsp;=&nbsp;POINTER&nbsp;TO&nbsp;Rec;
+
+&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;[&quot;C&quot;]&nbsp;Foo(s:&nbsp;Str);&nbsp;...&nbsp;END&nbsp;Foo;
+&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;[&quot;C&quot;]&nbsp;Bar(p:&nbsp;Ptr);&nbsp;&nbsp;...&nbsp;END&nbsp;Bar;
+&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;[&quot;C&quot;]&nbsp;FooBar(a:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR);&nbsp;&nbsp;...&nbsp;END&nbsp;FooBar;
+
+&nbsp;&nbsp;&nbsp;&nbsp;VAR
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;s:&nbsp;Str;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;a:&nbsp;ARRAY&nbsp;[0..5]&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;p:&nbsp;POINTER&nbsp;TO&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;R:&nbsp;Rec;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;A:&nbsp;ARRAY&nbsp;[0..20]&nbsp;OF&nbsp;REC;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;P:&nbsp;POINTER&nbsp;TO&nbsp;REC;
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Foo(s);&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;allowed&nbsp;-&nbsp;the&nbsp;same&nbsp;type&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Foo(a);&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;allowed&nbsp;for&nbsp;the&nbsp;&quot;C&quot;&nbsp;procedure&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Foo(p^);&nbsp;&nbsp;&nbsp;(*&nbsp;allowed&nbsp;for&nbsp;the&nbsp;&quot;C&quot;&nbsp;procedure&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Bar(R);&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;the&nbsp;same&nbsp;as&nbsp;Bar(SYSTEM.REF(R));&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Bar(A);&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;allowed&nbsp;for&nbsp;the&nbsp;&quot;C&quot;&nbsp;procedure&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Bar(P);&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;allowed&nbsp;for&nbsp;the&nbsp;&quot;C&quot;&nbsp;procedure&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FooBar(s);&nbsp;(*&nbsp;allowed&nbsp;for&nbsp;the&nbsp;&quot;C&quot;&nbsp;procedure&nbsp;*)
+</PRE>
+
+<P><HR>
+<A NAME="0516">
+<A HREF="#0512" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0515" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0517" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Ignoring function result</H3>
+
+<P>It is a standard practice in C programming to ignore the result of a function call. Some standard library functions are designed taking that practice into account. E.g. the string copy function accepts the destination string as a variable parameter (in terms of Modula-2) and returns a pointer to it: 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;extern&nbsp;char&nbsp;*strcpy(char&nbsp;*,&nbsp;const&nbsp;char&nbsp;*);</TT> 
+<P>In many cases, the result of the <TT>strcpy</TT> function call is ignored. 
+<P>In XDS, it is possible to ignore results of functions defined as <TT>&quot;C&quot;</TT>, <TT>&quot;Pascal&quot;</TT>, <TT>&quot;StdCall&quot;</TT>, or <TT>&quot;SysCall&quot;</TT>. Thus, the function <TT>strcpy</TT> defined in the <TT>string.def</TT> foreign definition module as 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;[&quot;C&quot;]&nbsp;strcpy(VAR&nbsp;d:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;</TT><BR>
+<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;s:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR):&nbsp;ADDRESS;</TT> 
+<P>can be used as a proper procedure or as function procedure: 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;strcpy(d,s);</TT><BR>
+<TT>&nbsp;&nbsp;&nbsp;&nbsp;ptr:=strcpy(d,s);</TT> 
+<P><HR>
+<A NAME="0517">
+<A HREF="#0501" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0516" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0518" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Configuring XDS for a C Compiler</H2>
+
+<P>Different C compilers have different naming and calling conventions. If you use C functions or libraries in your projects, you have to specify your C compiler using the <A HREF="xc005.html#0127" TARGET=body>CC</A> equation in order to have all C functions to be called in a way compatible with that compiler. The compiler also sets the default values of some other options and equations according to the value of the <A HREF="xc005.html#0127" TARGET=body>CC</A> equation. 
+<P>For Linux XDS supports the GCC (ELF) compiler. Therefore, the <A HREF="xc005.html#0127" TARGET=body>CC</A> equation has to be set to <TT>&quot;GCC&quot;</TT>, written in any case. If the equation value is not set, <TT>&quot;GCC&quot;</TT> is assumed by default. 
+<P>Alignment of data structures is controlled by the <A HREF="xc005.html#0120" TARGET=body>ALIGNMENT</A> equation. 
+<P><B>ATTENTION!</B> Libraries included in XDS distribution are built via GCC. Since GCC usually produces aligned code, the <A HREF="xc005.html#0120" TARGET=body>ALIGNMENT</A> equation has to be set to 4. Setting it to other values may cause unpredictable results. Don&rsquo;t change it unless you exactly know what you are doing! 
+<P>Names in an object file produced by a C compiler may have leading underscore. If you are going to use C modules and libraries, you have to force XDS to use the same naming rules. To do this, turn the <A HREF="xc005.html#0082" TARGET=body>GENCPREF</A> option ON in the foreign definition modules: 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;&lt;*&nbsp;+GENCPREF&nbsp;*&gt;</TT> <BR>
+<TT>&nbsp;&nbsp;&nbsp;&nbsp;DEFINTION&nbsp;MODULE&nbsp;[&quot;C&quot;]&nbsp;stdio;</TT> 
+<P>Since GCC (ELF) produces no underscore prefixes you should not turn this option ON. 
+<P><UL>
+<LI><A HREF="#0518" TARGET=body>Possible problems</A>
+</UL>
+<P><HR>
+<A NAME="0518">
+<A HREF="#0517" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0517" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="xc011.html#0519" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Possible problems</H3>
+
+<P>To use a C function or a data type from Modula-2 or Oberon-2 you have to express its type in one of these languages. Usually it is done in a foreign definition module (See <A HREF="#0508" TARGET=body>Interfacing to C</A>). The current version of XDS does not support all calling conventions, so direct usage of some functions is not possible, namely: 
+<UL>
+ 
+<LI>functions with a parameter of a structured type, passed by value, e.g.: 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;void&nbsp;foo(struct&nbsp;MyStruct&nbsp;s);</TT> </LI>
+<LI>functions that return structured types, e.g.: 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;struct&nbsp;MyStruct&nbsp;foo(void)</TT> </LI>
+<LI>C functions with Pascal calling convention that return a real type. </LI>
+</UL>
+
+<P>Both Modula-2 and C/C++ have exception handling and finalization facilities. Unpredictable results may occur if you try to utilize that facilities from both languages in one program. 
+<P>
+</BODY>
+</HTML>

@@ -1,0 +1,64 @@
+(* Xm/CacheP.def  Nov 21  19:17:41  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/CacheP.h using H2D v1.18.6 *)
+
+(* $RCSfile: CacheP.def,v $ $Revision: 4 $ $Date: 28.07.98 23:14 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *>
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+
+DEFINITION MODULE ["C"] CacheP;
+
+IMPORT Xt:=IntrinsicP, Xm:=XmP;
+(* H2D:  Required IMPORT clause:
+IMPORT CacheP, IntrinsicP, XmP;
+*)
+
+(*
+ * (c) Copyright 1989,1994 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(*
+ * Motif Release 1.2.4
+ *)
+
+(*  a few convenience macros  *)
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: these procedures corresponds to macros. *)
+PROCEDURE ClassCacheHead ( cp: Xm.XmCacheClassPartPtr ): Xm.XmCacheCompareProc;
+PROCEDURE ClassCacheCopy ( cp: Xm.XmCacheClassPartPtr ): Xm.XmCacheCopyProc;
+PROCEDURE ClassCacheCompare ( cp: Xm.XmCacheClassPartPtr ): Xm.XmCacheCompareProc;
+PROCEDURE CacheDataPtr ( p: Xm.XmGadgetCacheRefPtr ): Xt.XtPointer;
+PROCEDURE DataToGadgetCache ( p: Xt.XtPointer ): Xt.XtPointer;
+
+<* ELSE *>
+
+PROCEDURE / ClassCacheHead ( cp: Xm.XmCacheClassPartPtr ): Xm.XmCacheCompareProc;
+PROCEDURE / ClassCacheCopy ( cp: Xm.XmCacheClassPartPtr ): Xm.XmCacheCopyProc;
+PROCEDURE / ClassCacheCompare ( cp: Xm.XmCacheClassPartPtr ): Xm.XmCacheCompareProc;
+PROCEDURE / CacheDataPtr ( p: Xm.XmGadgetCacheRefPtr ): Xt.XtPointer;
+PROCEDURE / DataToGadgetCache ( p: Xt.XtPointer ): Xt.XtPointer;
+
+<* END *>
+
+(********    Private Function Declarations    ********)
+
+PROCEDURE _XmCacheDelete ( data: Xt.XtPointer );
+
+PROCEDURE _XmCacheCopy ( src: Xt.XtPointer;
+                         dest: Xt.XtPointer; size: LONGCARD );
+
+PROCEDURE _XmCachePart ( cp: Xm.XmCacheClassPartPtr;
+                         cpart: Xt.XtPointer;
+                         size: LONGCARD ): Xt.XtPointer;
+
+(********    End Private Function Declarations    ********)
+
+END CacheP.

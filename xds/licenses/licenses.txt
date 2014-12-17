@@ -1,0 +1,100 @@
+Product: Excelsior XDS 2.6 for Linux
+Licenses: 1 (one)
+
+
+Excelsior Freeware License Agreement 
+
+This License Agreement ("Agreement") is a legal agreement between you 
+(either an individual or a single entity) and Excelsior, LLC ("Excelsior") 
+for the Excelsior software product identified above, which includes computer
+software, electronic documentation, and the associated printed materials 
+("Software"). By installing, copying or otherwise using the Software, you 
+agree to be bound by the terms of this Agreement. If you do not agree to 
+the terms of this Agreement, you may not install or use the Software. 
+
+LICENSE GRANT
+
+Excelsior hereby grants to you a non-exclusive, transferable limited license 
+to use the accompanying Software on the following terms: 
+
+You may: a. install and use the Software on any computer in your possession or
+under your control; and b. copy and redistribute the Software provided it is
+not modified in any way and you do not charge for its distribution without 
+explicit prior written permission. 
+
+You may not: a. modify,translate, reverse engineer, decompile, disassemble 
+(except to the extent applicable laws specifically prohibit such restriction), 
+or create derivative works based on the Software; b. sell, rent, lease, or
+charge for access to the Software; c. remove any proprietary notices or 
+labels on the Software. or d. distribute the Software for a fee,whether as 
+a stand-alone product, or as part of a compilation or anthology, without 
+Excelsior's prior written consent;
+
+TITLE
+
+Title, ownership rights, and intellectual property rights in and to the Software, 
+and any copies of the Software shall at all times remain with Excelsior and/or 
+its suppliers. The Software is protected by the copyright laws of the Russian 
+Federation and international copyright treaties.
+
+TECHNICAL SUPPORT AND UPDATES
+
+This Agreement does not entitle you to receive from Excelsior printed manuals,
+technical support, phone support, updates, or enhancements to the Software.
+Excelsior may at its own discretion offer fee-based support, consulting and
+custom engineering services for the Software.
+
+NO FAIL-SAFE USES
+
+The Software has been created using technologies that are not fault tolerant 
+and thus the Software is not designed, manufactured, or intended for use or 
+resale as on-line control equipment in hazardous environments requiring 
+fail-safe performance, including, but without limitation, in the operation 
+of nuclear facilities, aircraft navigation or communication systems, air 
+traffic control, direct life support machines,or weapons systems, in which 
+the failure of the technologies employed in the Software could lead directly 
+to death, personal injury, or severe physical or environmental damage.
+
+DISCLAIMER OF WARRANTY
+
+THE SOFTWARE IS PROVIDED TO YOU "AS IS". TO THE MAXIMUM EXTENT PERMITTED BY 
+APPLICABLE LAW, EXCELSIOR AND ITS SUPPLIERS DISCLAIM ALL WARRANTIES OF ANY 
+NATURE WHATSOEVER, EITHER EXPRESS OR IMPLIED, INCLUDING,BUT NOT LIMITED TO, 
+WARRANTIES OF MERCHANTABILITY AND OF FITNESS FOR A PARTICULAR PURPOSE. 
+EXCELSIOR DOES NOT WARRANT THAT ANY OR ALL FAILURES OR ERRORS IN THE SOFTWARE 
+WILL BE CORRECTED OR WARRANT THAT THE SOFTWARE'S FUNCTIONALITY WILL MEET 
+YOUR REQUIREMENTS OR THAT THE SOFTWARE WILL OPERATE IN COMBINATIONS YOU SELECT.
+
+NO EXCELSIOR DEALER, AGENT, OR EMPLOYEE IS AUTHORIZED TO MAKE ANY MODIFICATIONS, 
+EXTENSIONS, OR ADDITIONS TO THIS DISCLAIMER.
+
+LIMITATION OF LIABILITY
+
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, UNDER NO CIRCUMSTANCES 
+AND UNDER NO LEGAL THEORY, TORT, CONTRACT, OR OTHERWISE, SHALL EXCELSIOR 
+OR ITS SUPPLIERS OR RESELLERS BE LIABLE TO YOU OR TO ANY THIRD PARTY FOR 
+ANY INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES OF ANY CHARACTER 
+INCLUDING, WITHOUT LIMITATION, DAMAGES FOR LOSS OF GOODWILL, WORK STOPPAGE, 
+COMPUTER FAILURE OR MALFUNCTION, OR ANY AND ALL OTHER COMMERCIAL DAMAGES OR 
+LOSSES ARISING OUT OF THE USE OF OR INABILITY TO USE THE SOFTWARE, EVEN IF 
+EXCELSIOR SHALL HAVE BEEN INFORMED OF THE POSSIBILITY OF SUCH DAMAGES.
+
+TERMINATION
+
+You may terminate this license at any time by destroying all copies of the 
+Software you received or made under this Agreement. This Agreement shall 
+terminate automatically if you fail to comply with any of its terms and 
+conditions. On such termination, you must destroy all copies of the Software 
+you received or made under this Agreement. The Disclaimer of Warranty and 
+Limitation of Liability sections above shall survive termination of this Agreement. 
+
+This Agreement is the entire Agreement between us and supersedes any other 
+communications, advertisements, or understandings with respect to the Software.
+
+
+Excelsior, LLC                 Tel:     +7 (383) 330 5508 
+6 Lavrenteva Ave.              Fax:     +1 (509) 271 5205 
+Novosibirsk                    E-mail:  info@excelsior-usa.com 
+630090 RUSSIA                  WWW:     http://www.excelsior-usa.com 
+
+Copyright (c) 2000-2011 Excelsior, LLC. All rights reserved.

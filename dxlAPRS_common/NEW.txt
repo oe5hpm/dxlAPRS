@@ -1,0 +1,229 @@
+
+afskmodem 
+---------
+22.6.2013
+
+ Timeout fuer Frames im Sendepuffer, default auf 60s, sollte aber fuer aprs
+ mit -T <sekunden> bei den Modem Parametern auf 5 bis 15s gestellt werden
+ damit bei Ueberreichweiten oder nach sonstigem Dauer-DCD keine "historischen"
+ Frames abgesetzt werden. Sehr kurze Zeit hilft durch Sendeverzicht dynamisch
+ stark belegten Kanal zu entlasten.
+
+
+
+
+
+
+udpbox
+------
+24.7.2013
+
+ Im Digimodus (-d) werden Messages zu sich selbst (from=to) nicht mehr gesendet.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+udpgate4
+--------
+9.7.2013
+
+ tcp connect zu AprsIs auf NODELAY, also werden nimmer mehrere Zeilen
+ zu einem tcp Frame zusammengfasst. Macht etwas mehr Krach am Netz aber
+ ist paar ms schneller. Laut aprs.fi so gewollt.
+
+ Der (-T) 15s-Verzoegerungs-Check ist nun beim allen outgoing Connects weils
+ zuvor den Check auf den Test-connect (ob ein bevorzugter Server wieder geht)
+ umgschatet hat und der eigentlich laufende Link dann unbeobachtet haengen konnte.
+
+ WWW-Heard Liste nun nach Call, Port, Uhrzeit, Framezahl, und QRB auf
+ und absteigend sortierbar. Anklicken der Spalte in der Kopfzeile schaltet
+ auf das jeweilige Sortierkriterium, nochmal anklicken invertiert.
+ Der Zustand wird wie bei der Reload-Zeit im url gespeichert, es gibt weder
+ cookies noch ip Nummern speicherung. Einschraenkung: die getestenten Brauser
+ verwursteln den sortier-Schalter beim einstellen einer neuen Reload-Zeit
+ also bei Bedarf Zeit vorher eingeben.
+
+11.7.2013
+ 
+ WWW-Link mit Klick auf ein Call in der Heard Liste mittels File "calllink.txt"
+ im www Server root directory (-D). Es gilt nur die 1. Zeile im File.
+ Beispiel fuer findu.com, db0anf oder aprs.fi: 
+
+"http://www.findu.com/cgi-bin/raw.cgi?call=$c" target="_blank"
+
+"http://www.db0anf.de/app/aprs/stations/basic?call=$c" target="_blank"
+
+"http://aprs.fi/?c=raw&call=$c&limit=5&view=decoded" target="_blank"
+
+ $c wird ersetzt durch das angeklickte Call, $$ wird zu $.
+ Es koennen HTML link Optionen angegegen werden, hier zB. target="_blank"
+ fuer oeffnen eines neuen Tab oder Fenster.
+ 
+ Mit diesen URLs zuerst eine kleine www-Seite oeffnen zum Auswaehlen von
+ Servern waere praktisch.
+
+
+
+-------- 
+26.7.2013
+
+ MH-counter Tabelle von 8 auf 16 Bit erweitert. Aufgrund der sortierbaren
+ Liste werden lange Speicherzeiten bevorzugt und bei schnellen Baken liefen
+ die einzelnen (mhzeit/48) Zaehler in die Begrenzung. 
+
+
+30.7.2013
+
+ Eingestellte bit/s fuer Messages net>rf (-R -M) werden auf der www Seite
+ unter "Connects" "UDP" txport "Range Filter" angezeigt.
+
+
+7.10.2013
+
+ Ziffer+Buchstaben ist kein "Call" mehr und daher geht keine Messages von dem
+ Absender in den Speicher. Geht aber in Echtzeit als 3rd-Party-Frame raus, da
+ nicht-Call-Absender wie WHOIS oder WLNK zu direkt gehoerten Usern muessen.
+
+ Logserver: -r <path/file> schreibt 24h rawlog in je ein File mit Datum am
+ Filenamen hinten dran.
+
+
+3. 2. 2014 (v 0.50)
+
+ Gate to Rf, wenn von Rf empfangen zeige (original APRS101.pdf) den via Pfad
+ soweit er durchlaufen is. Wenn via TCPIP, Pfad entfernen (aprs.fi).
+ Gate to Rf >0km sende Messages (ausser an sich selber) wenn das Ziel via
+ gehoert aber nicht direkt gehoert.
+
+src    path      gate to rf  gate to net  msg to rf  msg from net  msg via  msg dir
+------------------------------------------------------------------------------------
+net                   +          +             1)          +
+net    igatecall                               1)
+net    RFONLY                                  1)
+net    NOGATE                    +
+net    TCPXX                     +
+net    TCPIP          +          +             1)          +
+net    qA?            +          +             1)          +
+------------------------------------------------------------------------------------
+rf                               +                                    +       2)
+rf     igatecall
+rf     RFONLY                                                         +
+rf     NOGATE                                                         +
+rf     TCPXX
+rf     TCPIP                                                          +
+rf     qA?                                                            +
+------------------------------------------------------------------------------------
+1) if source is non-call (WINLINK WHO-IS...) and destination heard direct
+2) if source heard direct else to msg via
+
+
+
+8. 7. 2014 (v 0.53)
+
+ Entsorgen von empfangenen UDP frames wenn der letzte Abholvorgang vom Eingangspuffer
+ laenger als 5s her ist.
+
+11. 7. 2014 (v 0.53)
+
+ -j <sekunden> maximale Zeit nach Eintreffen einer Message bis sie nimmer gesenet wird
+ wohl aber gespeichert bleibt, damit sie nicht nochmal neu eintrifft.
+ Sollte die haelfte oder weniger als -P Zeit sein, gegen kreiseln von Messages.  
+
+
+6.8.2014
+
+ "e/entry/..," "d/digi/..." Filter "*" Wildcard korrigiert, beim "d/" Filter "*" im Pfad
+ ignorieren. "[-]p/prefix/...." filter neu.
+
+
+30.11.2014
+
+ Im www directory File "serverlink.txt" macht Server urls anklickbar.
+ File Text Beispiel:  http://$c:14501 target="_blank" 
+
+ Serverfilter t/ bzw -t/ zum addieren oder weg machen von baken typen am downstream.
+ t/t trifft auch auf messages an sich selber zu, die als telemetrie header dienen (sollen)
+  3 = Third party frames
+  p = Position packets
+  o = Objects
+  i = Items
+  m = Message
+  q = Query
+  s = Status
+  t = Telemetry
+  u = User-defined
+  n = NWS Weather & Weather Objects
+  w = Weather
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+gps2aprs:
+---------
+1.11.2013
+
+ Zeit (ddhhmm oder hhmmss) oder File in Kommentar einfuegen
+
+6.7.2014
+
+ ublox: $GP $GL $GN sollte gehn (durch auslassen des tests vom 3. Byte auf "P") 
+
+
+6.8.2014
+
+ default parameter 127.0.0.1:9002 damit es nur noch com/tty baud und mycall braucht
+ zum GPS auf aprsmap zu kriegen
+
+
+
+
+
+
+
+
+udpbox
+------
+21.1.2014
+ \\rm als Macro in einer Bakenzeile loescht das Bakenfile,
+                der Inhalt wird also genau 1x gesendet.
+                Das verschwundene File kann als Handshake zu einem Task
+                dienen, wieder neuen Inhalt zu generieren.
+
+ -P <sekunden> piggyback-beacon, Baken werden maximal um diese Zeit
+               frueher gesendet als der Bakentimer eingestellt ist
+               sofern gerade ein anderer Frame gesendet werden soll.
+               Zweck ist die Bake direkt an den anderen Frame dran
+               ohne extra Txdelay und Kollisionswahrscheinlichkeit
+               zu senden. 
+
+ -S   laesst die (default ausgefilterten) Msg an sich selbst durch. 
+    
+
+
+
+

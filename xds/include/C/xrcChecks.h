@@ -1,0 +1,28 @@
+/* XDS v2.60: Copyright (c) 1999-2011 Excelsior, LLC. All Rights Reserved. */
+#ifndef xrcChecks_H_
+#define xrcChecks_H_
+#include "X2C.h"
+#include "xmRTS.h"
+
+extern X2C_CARD16 X2C_CHKINX_F(X2C_CARD32, X2C_CARD16);
+
+extern X2C_CARD32 X2C_CHKINXL_F(X2C_CARD32, X2C_CARD32);
+
+extern X2C_INT16 X2C_CHKS_F(X2C_INT16);
+
+extern X2C_INT32 X2C_CHKSL_F(X2C_INT32);
+
+extern X2C_INT16 X2C_CHK_F(X2C_INT16, X2C_INT16, X2C_INT16);
+
+extern X2C_INT32 X2C_CHKL_F(X2C_INT32, X2C_INT32, X2C_INT32);
+
+extern X2C_CARD16 X2C_CHKU_F(X2C_CARD16, X2C_CARD16, X2C_CARD16);
+
+extern X2C_CARD32 X2C_CHKUL_F(X2C_CARD32, X2C_CARD32, X2C_CARD32);
+
+extern X2C_pVOID X2C_CHKNIL_F(X2C_pVOID);
+
+extern X2C_PROC X2C_CHKPROC_F(X2C_PROC);
+
+
+#endif /* xrcChecks_H_ */

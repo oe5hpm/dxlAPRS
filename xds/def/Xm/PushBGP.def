@@ -1,0 +1,246 @@
+(* Xm/PushBGP.def  Nov 12  16:8:23  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/PushBGP.h using H2D v1.18.1 *)
+
+(* $RCSfile: PushBGP.def,v $ $Revision: 4 $ $Date: 28.07.98 23:14 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+(* Merged headers: Xm/PushBG.h *)
+
+DEFINITION MODULE ["C"] PushBGP;
+
+IMPORT SYSTEM, X, Xlib, Xm:=XmP, Xt:=IntrinsicP, LabelGP;
+(* H2D:  Required IMPORT clause: 
+IMPORT PushBGP, X, Xlib, Xm:=XmP, Xt:=IntrinsicP, LabelGP;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992, 1993, 1994 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(* --------------------------------------------------- *)
+(*                     Xm/PushBG.h                     *)
+(* --------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2
+ *)
+
+(***********************************************************************
+ *
+ * PushButton Widget
+ *
+ ***********************************************************************)
+
+VAR 
+  xmPushButtonGadgetClass: Xt.WidgetClass;
+
+TYPE 
+  XmPushButtonGadgetClass = POINTER TO _XmPushButtonGadgetClassRec;
+
+  XmPushButtonGadget = POINTER TO _XmPushButtonGadgetRec;
+
+  XmPushButtonGCacheObject = POINTER TO _XmPushButtonGCacheObjRec;
+
+(********    Public Function Declarations    ********)
+
+PROCEDURE XmCreatePushButtonGadget ( parent: Xt.Widget;
+                                     name: ARRAY OF CHAR;
+                                     arglist: Xt.ArgList;
+                                     argcount: Xt.Cardinal ): Xt.Widget;
+
+(********    End Public Function Declarations    ********)
+
+(* --------------------------------------------------- *)
+(*                     Xm/PushBG.h                     *)
+(* --------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2.4
+ *)
+
+(*******************************************************************)
+(* The PushButton Gadget Cache Object's class and instance records *)
+(*******************************************************************)
+
+TYPE 
+  _XmPushButtonGCacheObjClassPart = RECORD
+    foo: SYSTEM.int;
+  END;
+
+  XmPushButtonGCacheObjClassPart = _XmPushButtonGCacheObjClassPart;
+
+  _XmPushButtonGCacheObjClassRec = RECORD
+    object_class          : Xt.ObjectClassPart;
+    ext_class             : Xm.XmExtClassPart;
+    label_class_cache     : LabelGP.XmLabelGCacheObjClassPart;
+    pushbutton_class_cache: XmPushButtonGCacheObjClassPart;
+  END;
+
+  XmPushButtonGCacheObjClassRec = _XmPushButtonGCacheObjClassRec;
+
+  _XmPushButtonGCacheObjPart = RECORD
+    fill_on_arm                    : Xt.Boolean;
+    arm_color                      : Xt.Pixel;
+    arm_pixmap                     : X.Pixmap;
+    unarm_pixmap                   : X.Pixmap;
+    multiClick                     : SHORTCARD; (*  KEEP/DISCARD resource  *)
+    default_button_shadow_thickness: Xt.Dimension;
+    (*  New resource - always add it to gadget's dimension.  *)
+    fill_gc                        : Xlib.GC;
+    background_gc                  : Xlib.GC;
+    timer                          : Xt.XtIntervalId;
+  END;
+
+  XmPushButtonGCacheObjPart = _XmPushButtonGCacheObjPart;
+
+  XmPushButtonGCache = POINTER TO _XmPushButtonGCacheObjPart;
+
+  _XmPushButtonGCacheObjRec = RECORD
+    object          : Xt.ObjectPart;
+    ext             : Xm.XmExtPart;
+    label_cache     : LabelGP.XmLabelGCacheObjPart;
+    pushbutton_cache: XmPushButtonGCacheObjPart;
+  END;
+
+  XmPushButtonGCacheObjRec = _XmPushButtonGCacheObjRec;
+
+(*  PushButton class structure  *)
+
+  _XmPushButtonGadgetClassPart = RECORD
+    extension: Xt.XtPointer;    (*  Pointer to extension record  *)
+  END;
+
+  XmPushButtonGadgetClassPart = _XmPushButtonGadgetClassPart;
+
+(*  Full class record declaration for PushButton class  *)
+
+  _XmPushButtonGadgetClassRec = RECORD
+    rect_class      : Xt.RectObjClassPart;
+    gadget_class    : Xm.XmGadgetClassPart;
+    label_class     : LabelGP.XmLabelGadgetClassPart;
+    pushbutton_class: XmPushButtonGadgetClassPart;
+  END;
+
+  XmPushButtonGadgetClassRec = _XmPushButtonGadgetClassRec;
+
+(*  PushButton instance record  *)
+
+  _XmPushButtonGadgetPart = RECORD
+    activate_callback: Xt.XtCallbackList;
+    arm_callback     : Xt.XtCallbackList;
+    disarm_callback  : Xt.XtCallbackList;
+    show_as_default  : Xt.Dimension;
+    armed            : Xt.Boolean;
+    click_count      : SYSTEM.int;
+    compatible: Xt.Boolean;         (* if false it is Motif 1.1 else Motif 1.0
+      	      	      	      	     * not cached for performance reasons *)
+    cache     : XmPushButtonGCache; (* Replace cache instance fields
+      	      	      	      	     * with a pointer *)
+  END;
+
+  XmPushButtonGadgetPart = _XmPushButtonGadgetPart;
+
+(*  Full instance record declaration  *)
+
+  _XmPushButtonGadgetRec = RECORD
+    object    : Xt.ObjectPart;
+    rectangle : Xt.RectObjPart;
+    gadget    : Xm.XmGadgetPart;
+    label     : LabelGP.XmLabelGadgetPart;
+    pushbutton: XmPushButtonGadgetPart;
+  END;
+
+  XmPushButtonGadgetRec = _XmPushButtonGadgetRec;
+
+VAR 
+  xmPushButtonGCacheObjClassRec: XmPushButtonGCacheObjClassRec;
+  xmPushButtonGadgetClassRec: XmPushButtonGadgetClassRec;
+
+(* MACROS *)
+(**********)
+
+(*  Macros for cached instance fields  *)
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: this procedure corresponds to a macro. *)
+PROCEDURE PBG_FillOnArm ( w: Xt.Widget ): Xt.Boolean;
+PROCEDURE PBG_ArmColor ( w: Xt.Widget ): Xt.Pixel;
+PROCEDURE PBG_FillGc ( w: Xt.Widget ): Xlib.GC;
+PROCEDURE PBG_BackgroundGc ( w: Xt.Widget ): Xlib.GC;
+PROCEDURE PBG_Timer ( w: Xt.Widget ): Xt.XtIntervalId;
+PROCEDURE PBG_ArmPixmap ( w: Xt.Widget ): X.Pixmap;
+PROCEDURE PBG_UnarmPixmap ( w: Xt.Widget ): X.Pixmap;
+PROCEDURE PBG_MultiClick ( w: Xt.Widget ): SHORTCARD;
+PROCEDURE PBG_DefaultButtonShadowThickness ( w: Xt.Widget ): Xt.Dimension;
+
+<* ELSE *>
+
+PROCEDURE  / PBG_FillOnArm ( w: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / PBG_ArmColor ( w: Xt.Widget ): Xt.Pixel;
+PROCEDURE  / PBG_FillGc ( w: Xt.Widget ): Xlib.GC;
+PROCEDURE  / PBG_BackgroundGc ( w: Xt.Widget ): Xlib.GC;
+PROCEDURE  / PBG_Timer ( w: Xt.Widget ): Xt.XtIntervalId;
+PROCEDURE  / PBG_ArmPixmap ( w: Xt.Widget ): X.Pixmap;
+PROCEDURE  / PBG_UnarmPixmap ( w: Xt.Widget ): X.Pixmap;
+PROCEDURE  / PBG_MultiClick ( w: Xt.Widget ): SHORTCARD;
+PROCEDURE  / PBG_DefaultButtonShadowThickness ( w: Xt.Widget ): Xt.Dimension;
+
+<* END *>
+
+(*  Macros for uncached instance fields  *)
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: these procedures corresponds to macros. *)
+PROCEDURE PBG_ActivateCallback ( w: Xt.Widget ): Xt.XtCallbackList;
+PROCEDURE PBG_ArmCallback ( w: Xt.Widget ): Xt.XtCallbackList;
+PROCEDURE PBG_DisarmCallback ( w: Xt.Widget ): Xt.XtCallbackList;
+PROCEDURE PBG_Armed ( w: Xt.Widget ): Xt.Boolean;
+PROCEDURE PBG_ClickCount ( w: Xt.Widget ): SYSTEM.int;
+PROCEDURE PBG_Compatible ( w: Xt.Widget ): Xt.Boolean;
+PROCEDURE PBG_ShowAsDefault ( w: Xt.Widget ): Xt.Dimension;
+
+<* ELSE *>
+
+PROCEDURE  / PBG_ActivateCallback ( w: Xt.Widget ): Xt.XtCallbackList;
+PROCEDURE  / PBG_ArmCallback ( w: Xt.Widget ): Xt.XtCallbackList;
+PROCEDURE  / PBG_DisarmCallback ( w: Xt.Widget ): Xt.XtCallbackList;
+PROCEDURE  / PBG_Armed ( w: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / PBG_ClickCount ( w: Xt.Widget ): SYSTEM.int;
+PROCEDURE  / PBG_Compatible ( w: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / PBG_ShowAsDefault ( w: Xt.Widget ): Xt.Dimension;
+
+<* END *>
+
+(******************************)
+(*  Convenience Macros        *)
+(******************************)
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: these procedures corresponds to macros. *)
+PROCEDURE PBG_Cache ( w: Xt.Widget ): XmPushButtonGCache;
+PROCEDURE PBG_ClassCachePart ( w: Xt.Widget ): Xm.XmCacheClassPartPtr;
+
+<* ELSE *>
+
+PROCEDURE  / PBG_Cache ( w: Xt.Widget ): XmPushButtonGCache;
+PROCEDURE  / PBG_ClassCachePart ( w: Xt.Widget ): Xm.XmCacheClassPartPtr;
+
+<* END *>
+
+(********    Private Function Declarations    ********)
+
+PROCEDURE _XmClearBGCompatibility ( pbg: Xt.Widget );
+
+(********    End Private Function Declarations    ********)
+
+END PushBGP.

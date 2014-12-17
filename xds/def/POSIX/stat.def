@@ -1,0 +1,114 @@
+(* Copyright (c) xTech 1997.  All Rights Reserved *)
+
+(* $RCSfile: stat.def,v $ $Revision: 1.1.1.1 $ $Date: 1997/10/20 19:32:35 $ *)
+
+<*+ CSTDLIB  *>
+<*+ NOHEADER*>
+<*+ M2EXTENSIONS *>
+
+DEFINITION MODULE [2] stat;
+
+FROM SYSTEM IMPORT BOOL32, CARD16, CARD32;
+FROM types IMPORT mode_t, ino_t, dev_t, nlink_t, uid_t, gid_t, off_t;
+FROM time IMPORT time_t;
+
+TYPE
+<* IF __GEN_C__ THEN *>
+<*- GENTYPEDEF *>
+  stat_t = RECORD
+    st_mode:	mode_t;
+    st_ino:	ino_t;
+    st_dev:	dev_t;
+    st_nlink:	nlink_t;
+    st_uid:	uid_t;
+    st_gid:	gid_t;
+    st_size:	off_t;
+    st_atime:	time_t;
+    st_mtime:	time_t;
+    st_ctime:	time_t;
+<* ELSE *>
+  (* Structure got from LiNUX i386 as an XDS native compiler platform *)
+  stat_t = RECORD
+    st_dev:	dev_t;
+    __pad1:	CARD16;
+    st_ino:	ino_t;
+    st_mode:	mode_t;
+    st_nlink:	nlink_t;
+    st_uid:	uid_t;
+    st_gid:	gid_t;
+    st_rdev:	dev_t;
+    __pad2:	CARD16;
+    st_size:	off_t;
+    st_blksize:	CARD32;
+    st_blocks:	CARD32;
+    st_atime:	time_t;
+    __unused1:	CARD32;
+    st_mtime:	time_t;
+    __unused2:	CARD32;
+    st_ctime:	time_t;
+    __unused3:	CARD32;
+    __unused4:	CARD32;
+    __unused5:	CARD32;
+<* END *>
+  END;
+
+<* IF __GEN_C__ THEN *>
+VAR
+  S_IRGRP -: INTEGER;
+  S_IROTH -: INTEGER;
+  S_IRUSR -: INTEGER;
+  S_IRWXG -: INTEGER;
+  S_IRWXO -: INTEGER;
+  S_IRWXU -: INTEGER;
+  S_ISUID -: INTEGER;
+  S_ISGID -: INTEGER;
+  S_IWGRP -: INTEGER;
+  S_IWOTH -: INTEGER;
+  S_IWUSR -: INTEGER;
+  S_IXGRP -: INTEGER;
+  S_IXOTH -: INTEGER;
+  S_IXUSR -: INTEGER;
+
+  PROCEDURE S_ISREG  ( m: INTEGER ): BOOLEAN;
+  PROCEDURE S_ISBLK  ( m: INTEGER ): BOOLEAN;
+  PROCEDURE S_ISDIR  ( m: INTEGER ): BOOLEAN;
+  PROCEDURE S_ISCHR  ( m: INTEGER ): BOOLEAN;
+  PROCEDURE S_ISFIFO ( m: INTEGER ): BOOLEAN;
+
+<* ELSE *>
+CONST
+  S_IRWXU       = 700B;
+  S_IRUSR       = 400B;
+  S_IWUSR       = 200B;
+  S_IXUSR       = 100B;
+
+  S_IRWXG       = 70B;
+  S_IRGRP       = 40B;
+  S_IWGRP       = 20B;
+  S_IXGRP       = 10B;
+
+  S_IRWXO       = 7B;
+  S_IROTH       = 4B;
+  S_IWOTH       = 2B;
+  S_IXOTH       = 1B;
+
+  S_ISUID	= 4000B;
+  S_ISGID	= 2000B;
+
+  PROCEDURE / S_ISREG  * ( m: INTEGER ): BOOLEAN;
+  PROCEDURE / S_ISBLK  * ( m: INTEGER ): BOOLEAN;
+  PROCEDURE / S_ISDIR  * ( m: INTEGER ): BOOLEAN;
+  PROCEDURE / S_ISCHR  * ( m: INTEGER ): BOOLEAN;
+  PROCEDURE / S_ISFIFO * ( m: INTEGER ): BOOLEAN;
+
+<* END *>
+
+PROCEDURE chmod (path: ARRAY OF CHAR; mode: mode_t): INTEGER;
+PROCEDURE fstat (fildes: INTEGER; VAR buf: stat_t);
+PROCEDURE mkdir (path: ARRAY OF CHAR; mode: mode_t): INTEGER;
+PROCEDURE mkfifo (path: ARRAY OF CHAR; mode: mode_t): INTEGER;
+PROCEDURE stat (path: ARRAY OF CHAR; VAR buf: stat_t): INTEGER;
+PROCEDURE umask (cmask: mode_t): mode_t;
+
+
+END stat.

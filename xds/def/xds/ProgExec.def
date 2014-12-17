@@ -1,0 +1,27 @@
+(* Copyright (c) 1999 XDS Ltd. All Rights Reserved. *)
+(* Program Execution *)
+DEFINITION MODULE ProgExec; (* Snowman 28-Jun-99. *)
+
+PROCEDURE Execute(program: ARRAY OF CHAR;
+                     args: ARRAY OF CHAR;
+                 VAR exit: CARDINAL): BOOLEAN;
+(* Executes program, passing args as command-line arguments. If succesful,
+   sets exit to program exit code and returns TRUE, otherwise returns FALSE.
+*)
+
+PROCEDURE ExecuteNoWindow(program: ARRAY OF CHAR;
+                             args: ARRAY OF CHAR;
+                         VAR exit: CARDINAL): BOOLEAN;
+(* Executes program, passing args as command-line arguments. If succesful,
+   sets exit to program exit code and returns TRUE, otherwise returns FALSE.
+   The only difference between this function and Execute is that if current
+   process does not have console, it would not be created for executed program.
+*)
+
+PROCEDURE Command(command: ARRAY OF CHAR;
+                 VAR exit: CARDINAL): BOOLEAN;
+(* Executes a shell command. On success, sets exit to shell exit code
+   and returns TRUE, otherwise returns FALSE.
+*)
+
+END ProgExec.

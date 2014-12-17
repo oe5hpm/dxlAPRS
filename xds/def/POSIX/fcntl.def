@@ -1,0 +1,132 @@
+(* Copyright (c) xTech 1992,95,97.  All Rights Reserved *)
+
+(* $RCSfile: fcntl.def,v $ $Revision: 1.1.1.1 $ $Date: 1997/10/20 19:32:35 $ *)
+
+<*+ CSTDLIB  *>
+<*+ NOHEADER *>
+<*+ M2EXTENSIONS *>
+
+DEFINITION MODULE [2] fcntl;
+
+IMPORT stat;
+
+FROM SYSTEM IMPORT INT32, INT16, CARD32, BYTE;
+
+<* IF __GEN_C__ THEN *> <*- GENTYPEDEF *> <* END *>
+TYPE
+  flock = RECORD
+    l_type:	INT16;
+    l_whence:	INT16;
+    l_start:	INT32;
+    l_len:	INT32;
+    l_pid:	CARD32;
+  END;
+
+<* IF __GEN_C__ THEN *>
+VAR
+  FD_CLOEXEC	-: INTEGER;
+  F_DUPFD	-: INTEGER;
+  F_GETFD	-: INTEGER;
+  F_GETFL	-: INTEGER;
+  F_GETLK	-: INTEGER;
+  F_RDLCK	-: INTEGER;
+  F_SETFD	-: INTEGER;
+  F_SETFL	-: INTEGER;
+  F_SETLK	-: INTEGER;
+  F_SETLKW	-: INTEGER;
+  F_UNLCK	-: INTEGER;
+  F_WRLCK	-: INTEGER;
+
+  O_ACCMODE	-: INTEGER;
+  O_APPEND      -: INTEGER;
+  O_CREAT       -: INTEGER;
+  O_EXCL        -: INTEGER;
+  O_NOCTTY	-: INTEGER;
+  O_NONBLOCK	-: INTEGER;
+  O_RDONLY      -: INTEGER;
+  O_RDWR        -: INTEGER;
+  O_TRUNC       -: INTEGER;
+  O_WRONLY      -: INTEGER;
+
+  SEEK_CUR	-: INTEGER;
+  SEEK_END	-: INTEGER;
+  SEEK_SET	-: INTEGER;
+
+  S_IRGRP       -: INTEGER;
+  S_IROTH       -: INTEGER;
+  S_IRUSR	-: INTEGER;
+  S_ISUID	-: INTEGER;
+  S_ISGID	-: INTEGER;
+  S_IRWXG       -: INTEGER;
+  S_IRWXO       -: INTEGER;
+  S_IRWXU       -: INTEGER;
+  S_IWGRP       -: INTEGER;
+  S_IWOTH       -: INTEGER;
+  S_IWUSR       -: INTEGER;
+  S_IXGRP       -: INTEGER;
+  S_IXOTH       -: INTEGER;
+  S_IXUSR       -: INTEGER;
+
+<* ELSE *>
+(* Constants got from LiNUX *)
+CONST
+  FD_CLOEXEC	= 1; (* actually anything with low bit set goes *)
+  F_DUPFD	= 0; (* dup *)
+  F_GETFD	= 1; (* get f_flags *)
+  F_SETFD	= 2; (* set f_flags *)
+  F_GETFL	= 3; (* more flags (cloexec) *)
+  F_SETFL	= 4;
+  F_GETLK	= 5;
+  F_SETLK	= 6;
+  F_SETLKW	= 7;
+  (* for posix fcntl() and lockf() *)
+  F_RDLCK       = 0;
+  F_WRLCK	= 1;
+  F_UNLCK	= 2;
+
+  O_ACCMODE	= 3;
+  O_RDONLY      = 0;
+  O_WRONLY      = 1;
+  O_RDWR        = 2;
+  O_CREAT       = 100B;  (* not fcntl *)
+  O_EXCL        = 200B;  (* not fcntl *)
+  O_NOCTTY	= 400B;  (* not fcntl *)
+  O_TRUNC       = 1000B; (* not fcntl *)
+  O_APPEND      = 2000B;
+  O_NONBLOCK	= 4000B;
+
+  SEEK_SET	= 0; (* POSIX 1003.1 seek values *)
+  SEEK_CUR	= 1;
+  SEEK_END	= 2;
+
+  S_IRGRP = stat.S_IRGRP;
+  S_IROTH = stat.S_IROTH;
+  S_IRUSR = stat.S_IRUSR;
+  S_IRWXG = stat.S_IRWXG;
+  S_IRWXO = stat.S_IRWXO;
+  S_IRWXU = stat.S_IRWXU;
+  S_IWGRP = stat.S_IWGRP;
+  S_IWOTH = stat.S_IWOTH;
+  S_IWUSR = stat.S_IWUSR;
+  S_IXGRP = stat.S_IXGRP;
+  S_IXOTH = stat.S_IXOTH;
+  S_IXUSR = stat.S_IXUSR;
+<* END *>
+
+CONST
+  S_ISREG  = stat.S_ISREG;
+  S_ISBLK  = stat.S_ISBLK;
+  S_ISDIR  = stat.S_ISDIR;
+  S_ISCHR  = stat.S_ISCHR;
+  S_ISFIFO = stat.S_ISFIFO;
+
+(* Create and open FILE with mode MODE *)
+PROCEDURE creat ( filename: ARRAY OF CHAR; mode: INTEGER ): INTEGER;
+
+(* Do the file control operation described by CMD on FD *)
+PROCEDURE fcntl ( fields: INTEGER; cmd: INTEGER; SEQ args: BYTE ): INTEGER;
+
+(* Open FILE and return a new file descriptor for it, ot -1 on error *)
+PROCEDURE open ( filename: ARRAY OF CHAR; flags: INTEGER; SEQ args: BYTE ): INTEGER;
+
+END fcntl.

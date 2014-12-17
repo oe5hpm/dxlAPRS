@@ -1,0 +1,78 @@
+(* Copyright (c) 1994,95 xTech Ltd, Russia. All Rights Reserved. *)
+
+<* IF __GEN_C__ THEN *>
+
+<*+M2EXTENSIONS *>
+
+DEFINITION MODULE [2] platform; (* Ned 15-Feb-94. *)
+
+     VAR
+       pl_unix -: BOOLEAN;
+       pl_vms  -: BOOLEAN;
+       pl_msdos-: BOOLEAN;
+       pl_amiga-: BOOLEAN;
+       pl_fatfs-: BOOLEAN;
+
+       extSep -: CHAR;
+       pathSep-: CHAR;
+       pathBeg-: CHAR;
+       pathEnd-: CHAR;
+       drvSep -: CHAR;
+       lineSep-: ARRAY [0..7] OF CHAR;
+       textSep-: ARRAY [0..7] OF CHAR;
+
+    CONST (* EndOfLine Separator *)
+      SEP0 = 12C;
+      SEP1 = 0C;
+
+<* ELSE *>
+
+DEFINITION MODULE platform; (* Ned 15-Feb-94. *)
+
+CONST
+  lineSep = 12C+0C;
+  textSep = 12C+0C;
+  drvSep  = ':';
+
+<* IF (TARGET_FAMILY="WIN32") OR (TARGET_FAMILY="OS2") THEN *>
+  pl_unix  = FALSE;
+  pl_vms   = FALSE;
+  pl_msdos = TRUE;
+  pl_amiga = FALSE;
+  pl_fatfs = TRUE;
+
+  extSep  = '.';
+  pathSep = '\';
+  pathBeg = '\';
+  pathEnd = '\';
+
+<* ELSIF TARGET_FAMILY="UNIX" THEN *>
+  pl_unix  = TRUE;
+  pl_vms   = FALSE;
+  pl_msdos = FALSE;
+  pl_amiga = FALSE;
+  pl_fatfs = FALSE;
+
+  extSep  = '.';
+  pathSep = '/';
+  pathBeg = '/';
+  pathEnd = '/';
+<* END *>
+
+
+CONST (* EndOfLine Separator *)
+<* IF (TARGET_FAMILY="WIN32") OR (TARGET_FAMILY="OS2") THEN *>
+  SEP0 = 15C;
+  SEP1 = 12C;
+<* ELSIF TARGET_FAMILY="UNIX" THEN *>
+  SEP0 = 12C;
+  SEP1 = 0C;
+<* ELSE *>
+  !!! Error: target OS not suported !!!
+<* END *>
+
+<* END *>
+
+PROCEDURE IsPathDelim(c: CHAR): BOOLEAN;
+
+END platform.

@@ -1,0 +1,47 @@
+(* Copyright (c) xTech 1995,1997.  All Rights Reserved *)
+
+(* $RCSfile: dirent.def,v $ $Revision: 1.1.1.1 $ $Date: 1997/10/20 19:32:35 $ *)
+
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *>
+<*+ NOCODE *>
+<*+ CSTDLIB *>
+DEFINITION MODULE [2] dirent;
+
+FROM SYSTEM IMPORT ADDRESS, INT32, CARD16;
+FROM limits IMPORT NAME_MAX;
+
+TYPE
+(*
+ * File-system independent directory entry.
+ *)
+<* IF __GEN_C__ THEN *>
+<*- GENTYPEDEF *>
+<* END *>
+  dirent = RECORD
+    d_ino: CARDINAL;			(* "inode number" of entry *)
+    d_off: INT32;			(* offset of disk directory entry *)
+    d_reclen: CARD16;			(* length of this record *)
+<* IF __GEN_C__ THEN *>
+    d_name: ARRAY [0..255] OF CHAR;		(* name of file *)
+<* ELSE *>
+    d_name: ARRAY [0..NAME_MAX] OF CHAR;	(* name of file *)
+<* END *>
+  END;
+
+<* IF __GEN_C__ THEN *>
+<*+ GENTYPEDEF *>
+<* END *>
+  DIR = RECORD
+    d_fd: INTEGER;	(* file descriptor *)
+    d_loc: INTEGER;	(* offset in block *)
+    d_size: INTEGER;	(* amount of valid data *)
+    d_buf: dirent;	(* directory block *)
+  END;
+
+PROCEDURE closedir(VAR d: DIR): INTEGER;
+PROCEDURE opendir(s: ARRAY OF CHAR): ADDRESS (* DIR* *);
+PROCEDURE readdir(VAR d: DIR): ADDRESS (* dirent* *);
+PROCEDURE rewinddir(VAR d: DIR);
+
+END dirent.

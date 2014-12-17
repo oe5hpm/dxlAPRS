@@ -1,0 +1,185 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 4.01 Transitional//EN">
+<HTML>
+<HEAD>
+<TITLE>Type declarations</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<P><HR>
+<A NAME="0011">
+<A HREF="o2rep000.html#root" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="o2rep005.html#0010" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0012" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H1>Type declarations</H1>
+
+<P>A data type determines the set of values which variables of that type may assume, and the operators that are applicable. A type declaration associates an identifier with a type. In the case of structured types (arrays and records) it also defines the structure of variables of this type. <FONT SIZE=2>
+<P><PRE>&nbsp;&nbsp;TypeDeclaration&nbsp;=&nbsp;IdentDef&nbsp;&quot;=&quot;&nbsp;Type.
+&nbsp;&nbsp;Type&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;Qualident&nbsp;|&nbsp;ArrayType&nbsp;|&nbsp;RecordType&nbsp;|
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PointerType&nbsp;|&nbsp;ProcedureType.
+</PRE>
+</FONT>
+<P>Examples: 
+<P><PRE>&nbsp;&nbsp;Table&nbsp;=&nbsp;ARRAY&nbsp;N&nbsp;OF&nbsp;REAL
+&nbsp;&nbsp;Tree&nbsp;=&nbsp;&nbsp;POINTER&nbsp;TO&nbsp;Node
+&nbsp;&nbsp;Node&nbsp;=&nbsp;&nbsp;RECORD
+&nbsp;&nbsp;&nbsp;&nbsp;key:&nbsp;INTEGER;
+&nbsp;&nbsp;&nbsp;&nbsp;left,&nbsp;right:&nbsp;Tree
+&nbsp;&nbsp;END
+&nbsp;&nbsp;CenterTree&nbsp;=&nbsp;POINTER&nbsp;TO&nbsp;CenterNode
+&nbsp;&nbsp;CenterNode&nbsp;=&nbsp;RECORD&nbsp;(Node)
+&nbsp;&nbsp;&nbsp;&nbsp;width:&nbsp;INTEGER;
+&nbsp;&nbsp;&nbsp;&nbsp;subnode:&nbsp;Tree
+&nbsp;&nbsp;END
+&nbsp;&nbsp;Function&nbsp;=&nbsp;PROCEDURE(x:&nbsp;INTEGER):&nbsp;INTEGER
+</PRE>
+
+<P><UL>
+<LI><A HREF="#0012" TARGET=body>Basic types</A>
+<LI><A HREF="#0013" TARGET=body>Array types</A>
+<LI><A HREF="#0014" TARGET=body>Record types</A>
+<LI><A HREF="#0015" TARGET=body>Pointer types</A>
+<LI><A HREF="#0016" TARGET=body>Procedure types</A>
+</UL>
+<P><HR>
+<A NAME="0012">
+<A HREF="#0011" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0011" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0013" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Basic types</H2>
+
+<P>The basic types are denoted by predeclared identifiers. The associated operators are defined in <A HREF="o2rep008.html#0020" TARGET=body>Operators</A> and the predeclared function procedures in <A HREF="o2rep010.html#0040" TARGET=body>Predeclared procedures</A> The values of the given basic types are the following: 
+<P><TABLE CELLSPACING=0>
+<TR>
+<TD  STYLE="padding:0px 3px;">1. </TD>
+<TD  STYLE="padding:0px 3px;"> BOOLEAN </TD>
+<TD  STYLE="padding:0px 3px;">the truth values <TT>TRUE</TT> and <TT>FALSE</TT> </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">2. </TD>
+<TD  STYLE="padding:0px 3px;"> CHAR </TD>
+<TD  STYLE="padding:0px 3px;">the characters of the extended ASCII set <TT>(0X..0FFX)</TT> </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">3. </TD>
+<TD  STYLE="padding:0px 3px;"> SHORTINT </TD>
+<TD  STYLE="padding:0px 3px;">the integers between <TT>MIN(SHORTINT)</TT> and <TT>MAX(SHORTINT)</TT> </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">4. </TD>
+<TD  STYLE="padding:0px 3px;"> INTEGER </TD>
+<TD  STYLE="padding:0px 3px;">the integers between <TT>MIN(INTEGER)</TT> and <TT>MAX(INTEGER)</TT> </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">5. </TD>
+<TD  STYLE="padding:0px 3px;"> LONGINT </TD>
+<TD  STYLE="padding:0px 3px;">the integers between <TT>MIN(LONGINT)</TT> and <TT>MAX(LONGINT)</TT> </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">6. </TD>
+<TD  STYLE="padding:0px 3px;"> REAL </TD>
+<TD  STYLE="padding:0px 3px;">the real numbers between <TT>MIN(REAL)</TT> and <TT>MAX(REAL)</TT> </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">7. </TD>
+<TD  STYLE="padding:0px 3px;"> LONGREAL </TD>
+<TD  STYLE="padding:0px 3px;">the real numbers between <TT>MIN(LONGREAL)</TT> and <TT>MAX(LONGREAL)</TT> </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">8. </TD>
+<TD  STYLE="padding:0px 3px;"> SET </TD>
+<TD  STYLE="padding:0px 3px;">the sets of integers between 0 and <TT>MAX(SET)</TT> </TD>
+</TR>
+</TABLE>
+<P>Types 3 to 5 are <I>integer types</I>, types 6 and 7 are <I>real types</I>, and together they are called <I>numeric types</I>. They form a hierarchy; the larger type <I>includes</I> (the values of) the smaller type:  LONGREAL &supe;REAL &supe;LONGINT &supe;INTEGER &supe;SHORTINT  
+<P><HR>
+<A NAME="0013">
+<A HREF="#0011" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0012" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0014" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Array types</H2>
+
+<P>An array is a structure consisting of a number of elements which are all of the same type, called the <I>element type</I>. The number of elements of an array is called its <I>length</I>. The elements of the array are designated by indices, which are integers between 0 and the length minus 1. <FONT SIZE=2>
+<P><PRE>&nbsp;&nbsp;ArrayType&nbsp;=&nbsp;ARRAY&nbsp;[&nbsp;Length&nbsp;{&nbsp;&quot;,&quot;&nbsp;Length}]&nbsp;OF&nbsp;Type.
+&nbsp;&nbsp;Length&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;ConstExpression.
+</PRE>
+</FONT>
+<P>A type of the form 
+<P><PRE>&nbsp;&nbsp;&nbsp;ARRAY&nbsp;L0,&nbsp;L1,&nbsp;...,&nbsp;Ln&nbsp;OF&nbsp;T
+</PRE>
+
+<P>is understood as an abbreviation of 
+<P><PRE>&nbsp;&nbsp;&nbsp;ARRAY&nbsp;L0&nbsp;OF
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ARRAY&nbsp;L1&nbsp;OF
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ARRAY&nbsp;Ln&nbsp;OF&nbsp;T
+</PRE>
+
+<P>Arrays declared without length are called <I>open arrays</I>. They are restricted to pointer base types (see <A HREF="#0015" TARGET=body>Pointer types</A>), element types of open array types, and formal parameter types (see <A HREF="o2rep010.html#0038" TARGET=body>Formal parameters</A>). Examples: 
+<P><PRE>&nbsp;&nbsp;&nbsp;ARRAY&nbsp;10,&nbsp;N&nbsp;OF&nbsp;INTEGER
+&nbsp;&nbsp;&nbsp;ARRAY&nbsp;OF&nbsp;CHAR
+</PRE>
+
+<P><HR>
+<A NAME="0014">
+<A HREF="#0011" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0013" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0015" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Record types</H2>
+
+<P>A record type is a structure consisting of a fixed number of elements, called <I>fields</I>, with possibly different types. The record type declaration specifies the name and type of each field. The scope of the field identifiers extends from the point of their declaration to the end of the record type, but they are also visible within designators referring to elements of record variables (see <A HREF="o2rep008.html#0019" TARGET=body>Operands</A>). If a record type is exported, field identifiers that are to be visible outside the declaring module must be marked. They are called <I>public fields</I>; unmarked elements are called <I>private fields</I>. <FONT SIZE=2>
+<P><PRE>RecordType&nbsp;=&nbsp;RECORD&nbsp;[&quot;(&quot;BaseType&quot;)&quot;]
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FieldList{&quot;;&quot;&nbsp;FieldList}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;END.
+BaseType&nbsp;&nbsp;&nbsp;=&nbsp;Qualident.
+FieldList&nbsp;&nbsp;=&nbsp;[IdentList&nbsp;&quot;:&quot;&nbsp;Type&nbsp;].
+</PRE>
+</FONT>
+<P>Record types are extensible, i.e. a record type can be declared as an extension of another record type. In the example 
+<P><PRE>&nbsp;&nbsp;&nbsp;T0&nbsp;=&nbsp;RECORD&nbsp;x:&nbsp;INTEGER&nbsp;END
+&nbsp;&nbsp;&nbsp;T1&nbsp;=&nbsp;RECORD&nbsp;(T0)&nbsp;y:&nbsp;REAL&nbsp;END
+</PRE>
+
+<P>T1 is a (direct) <I>extension</I> of T0 and T0 is the (direct) <I>base type</I> of T1 (see section <A HREF="o2rep012.html#0044" TARGET=body>Definition of terms</A>). An extended type T1 consists of the fields of its base type and of the fields which are declared in T1 (see section <A HREF="#0011" TARGET=body>Type declarations</A>). All identifiers declared in the extended record must be different from the identifiers declared in its base type record(s). 
+<P>Examples of record type declarations: 
+<P><PRE>&nbsp;&nbsp;RECORD
+&nbsp;&nbsp;&nbsp;&nbsp;day,&nbsp;month,&nbsp;year:&nbsp;INTEGER
+&nbsp;&nbsp;END
+
+&nbsp;&nbsp;RECORD
+&nbsp;&nbsp;&nbsp;&nbsp;name,&nbsp;firstname:&nbsp;ARRAY&nbsp;32&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;age:&nbsp;INTEGER;
+&nbsp;&nbsp;&nbsp;&nbsp;salary:&nbsp;REAL
+&nbsp;&nbsp;END
+</PRE>
+
+<P><HR>
+<A NAME="0015">
+<A HREF="#0011" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0014" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0016" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Pointer types</H2>
+
+<P>Variables of a pointer type P assume as values pointers to variables of some type T. T is called the pointer base type of P and must be a record or array type. Pointer types adopt the extension relation of their pointer base types: if a type T1 is an extension of T, and P1 is of type <TT>POINTER TO </TT>T1, then P1 is also an extension of P. <FONT SIZE=2>
+<P><PRE>&nbsp;&nbsp;PointerType&nbsp;=&nbsp;POINTER&nbsp;TO&nbsp;Type.
+</PRE>
+</FONT>
+<P>If p is a variable of type P<TT> = POINTER TO </TT>T, a call of the predeclared procedure <TT>NEW(p)</TT> (see <A HREF="o2rep010.html#0040" TARGET=body>Predeclared procedures</A>) allocates a variable of type T in free storage. If T is a record type or an array type with fixed length, the allocation has to be done with <TT>NEW(p)</TT>; if T is an n-dimensional open array type the allocation has to be done with <TT>NEW(</TT>p,e0,...,en-1<TT>)</TT> where T is allocated with lengths given by the expressions e0,...,en-1. In either case a pointer to the allocated variable is assigned to p. p is of type P. The <I>referenced</I> variable p^(pronounced as p<I>-referenced</I>) is of type T. Any pointer variable may assume the value NIL, which points to no variable at all. 
+<P><HR>
+<A NAME="0016">
+<A HREF="#0011" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0015" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="o2rep007.html#0017" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Procedure types</H2>
+
+<P>Variables of a procedure type T have a procedure (or NIL) as value. If a procedure P is assigned to a variable of type T, the formal parameter lists (see section <A HREF="o2rep010.html#0038" TARGET=body>Formal parameters</A>) of P and T must <I>match</I> (see <A HREF="o2rep012.html#0044" TARGET=body>Definition of terms</A>). P must not be a predeclared or type-bound procedure nor may it be local to another procedure. <FONT SIZE=2>
+<P><PRE>&nbsp;&nbsp;ProcedureType&nbsp;&nbsp;=&nbsp;PROCEDURE&nbsp;[FormalParameters].
+</PRE>
+</FONT>
+</BODY>
+</HTML>

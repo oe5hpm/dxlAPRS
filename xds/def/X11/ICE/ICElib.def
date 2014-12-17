@@ -1,0 +1,326 @@
+(* X11/ICE/ICElib.def  May 11  14:40:39  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted using H2D v1.00 from X11/ICE/ICElib.h. *)
+
+(* $RCSfile: ICElib.def,v $ $Revision: 3 $ $Date: 14.02.98 18:04 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *>
+<* IF NOT DEFINED(GENCTYPES) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+
+DEFINITION MODULE ["C"] ICElib;
+
+IMPORT SYSTEM, Xlib;
+(* H2D: to import this module write following text:
+IMPORT ICElib, Xlib;
+*)
+
+FROM X IMPORT MAX_STUP_ARR;
+FROM Xlib IMPORT PChar, PAPChar, Bool;
+
+(*  $XConsortium: ICElib.h,v 1.40 94/06/01 10:48:43 mor Exp $  *)
+
+(* Author: Ralph Mor, X Consortium  *)
+
+TYPE 
+  IcePointer = SYSTEM.ADDRESS;
+
+  IcePoAuthStatus = (
+    IcePoAuthHaveReply  ,
+    IcePoAuthRejected   ,
+    IcePoAuthFailed     ,
+    IcePoAuthDoneCleanup
+  );
+
+  IcePaAuthStatus = (
+    IcePaAuthContinue,
+    IcePaAuthAccepted,
+    IcePaAuthRejected,
+    IcePaAuthFailed  
+  );
+
+  IceConnectStatus = (
+    IceConnectPending ,
+    IceConnectAccepted,
+    IceConnectRejected,
+    IceConnectIOError 
+  );
+
+  IceProtocolSetupStatus = (
+    IceProtocolSetupSuccess ,
+    IceProtocolSetupFailure ,
+    IceProtocolSetupIOError ,
+    IceProtocolAlreadyActive
+  );
+
+  IceAcceptStatus = (
+    IceAcceptSuccess  ,
+    IceAcceptFailure  ,
+    IceAcceptBadMalloc
+  );
+
+  IceCloseStatus = (
+    IceClosedNow                 ,
+    IceClosedASAP                ,
+    IceConnectionInUse           ,
+    IceStartedShutdownNegotiation
+  );
+
+  IceProcessMessagesStatus = (
+    IceProcessMessagesSuccess         ,
+    IceProcessMessagesIOError         ,
+    IceProcessMessagesConnectionClosed
+  );
+
+  IceReplyWaitInfo = RECORD
+    sequence_of_request    : LONGCARD;
+    major_opcode_of_request: SYSTEM.int;
+    minor_opcode_of_request: SYSTEM.int;
+    reply                  : IcePointer;
+  END;
+
+  _IceConn = RECORD
+    (* Declaration without definition *)
+  END;
+
+  IceConn = POINTER TO _IceConn;
+
+  _IceListenObj = RECORD
+    (* Declaration without definition *)
+  END;
+
+  IceListenObj = POINTER TO _IceListenObj;
+
+  IceWatchProc = PROCEDURE ( (*  iceConn  *) IceConn,
+			     (*  clientData  *) IcePointer,
+			     (*  opening  *) Bool,
+			     (*  watchData  *) VAR IcePointer );
+
+  IcePoProcessMsgProc = PROCEDURE ( (*  iceConn  *) IceConn,
+				    (*  clientData  *) IcePointer,
+				    (*  opcode  *) SYSTEM.int,
+				    (*  length  *) LONGCARD,
+				    (*  swap  *) Bool,
+				    (*  replyWait  *) VAR IceReplyWaitInfo, 
+				    (*  replyReadyRet  *) VAR Bool );
+
+  IcePaProcessMsgProc = PROCEDURE ( (*  iceConn  *) IceConn,
+				    (*  clientData  *) IcePointer,
+				    (*  opcode  *) SYSTEM.int,
+				    (*  length  *) LONGCARD,
+				    (*  swap  *) Bool );
+
+  IcePoVersionRec = RECORD
+    major_version   : SYSTEM.int;
+    minor_version   : SYSTEM.int;
+    process_msg_proc: IcePoProcessMsgProc;
+  END;
+
+  IcePaVersionRec = RECORD
+    major_version   : SYSTEM.int;
+    minor_version   : SYSTEM.int;
+    process_msg_proc: IcePaProcessMsgProc;
+  END;
+
+  IcePoAuthProc = PROCEDURE ( (*  iceConn  *) IceConn,
+			      (*  authStatePtr  *) VAR IcePointer,
+			      (*  cleanUp  *) Bool,
+			      (*  swap  *) Bool,
+			      (*  authDataLen  *) SYSTEM.int,
+			      (*  authData  *) IcePointer,
+			      (*  replyDataLenRet  *) VAR Bool,
+			      (*  replyDataRet  *) VAR IcePointer,
+			      (*  errorStringRet  *) VAR PChar
+			    ): IcePoAuthStatus;
+
+  IcePaAuthProc = PROCEDURE ( (*  iceConn  *) IceConn,
+			      (*  authStatePtr  *) VAR IcePointer,
+			      (*  swap  *) Bool,
+			      (*  authDataLen  *) SYSTEM.int,
+			      (*  authData  *) IcePointer,
+			      (*  replyDataLenRet  *) VAR Bool,
+			      (*  replyDataRet  *) VAR IcePointer,
+			      (*  errorStringRet  *) VAR PChar
+			    ): IcePaAuthStatus;
+
+  IceHostBasedAuthProc = PROCEDURE ( (*  hostName  *) ARRAY OF CHAR ): Bool;
+
+  IceProtocolSetupProc = PROCEDURE ( (*  iceConn  *) IceConn,
+				     (*  majorVersion  *) SYSTEM.int,
+				     (*  minorVersion  *) SYSTEM.int,
+				     (*  vendor  *) ARRAY OF CHAR,
+				     (*  release  *) ARRAY OF CHAR,
+				     (*  clientDataRet  *) VAR IcePointer,
+				     (*  failureReasonRet  *) VAR PChar
+				   ): SYSTEM.int;
+
+  IceProtocolActivateProc = PROCEDURE ( (*  iceConn  *) IceConn,
+					(*  clientData  *) IcePointer );
+
+  IceIOErrorProc = PROCEDURE ( (*  iceConn  *) IceConn );
+
+  IcePingReplyProc = PROCEDURE ( (*  iceConn  *) IceConn,
+				 (*  clientData  *) IcePointer );
+
+  IceErrorHandler = PROCEDURE ( (*  iceConn  *) IceConn,
+				(*  swap  *) Bool,
+				(*  offendingMinorOpcode  *) SYSTEM.int,
+				(*  offendingSequence  *) LONGCARD,
+				(*  errorClass  *) SYSTEM.int,
+				(*  severity  *) SYSTEM.int,
+				(*  values  *) IcePointer );
+
+  IceIOErrorHandler = PROCEDURE ( (*  iceConn  *) IceConn );
+
+(*                         *)
+(*  * Function prototypes  *)
+(*                         *)
+
+  PAIcePoVersionRec = POINTER TO ARRAY [0..MAX_STUP_ARR] OF IcePoVersionRec;
+
+  PAIcePoAuthProc = POINTER TO ARRAY [0..MAX_STUP_ARR] OF IcePoAuthProc;
+
+PROCEDURE IceRegisterForProtocolSetup ( protocolName: ARRAY OF CHAR;
+                                        vendor: ARRAY OF CHAR;
+                                        release: ARRAY OF CHAR;
+                                        versionCount: SYSTEM.int;
+                                        versionRecs: PAIcePoVersionRec;
+                                        authCount: SYSTEM.int;
+                                        authNames: PAPChar;
+                                        authProcs: PAIcePoAuthProc;
+                                        IOErrorProc: IceIOErrorProc ): SYSTEM.int;
+
+TYPE 
+  PAIcePaVersionRec = POINTER TO ARRAY [0..MAX_STUP_ARR] OF IcePaVersionRec;
+
+  PAIcePaAuthProc = POINTER TO ARRAY [0..MAX_STUP_ARR] OF IcePaAuthProc;
+
+PROCEDURE IceRegisterForProtocolReply ( protocolName: ARRAY OF CHAR;
+                                        vendor: ARRAY OF CHAR;
+                                        release: ARRAY OF CHAR;
+                                        versionCount: SYSTEM.int;
+                                        versionRecs: PAIcePaVersionRec;
+                                        authCount: SYSTEM.int;
+                                        authNames: PAPChar;
+                                        authProcs: PAIcePaAuthProc;
+                                        hostBasedAuthProc: IceHostBasedAuthProc;
+                                        protocolSetupProc: IceProtocolSetupProc;
+                                        protocolActivateProc: IceProtocolActivateProc;
+                                        IOErrorProc: IceIOErrorProc ): SYSTEM.int;
+
+PROCEDURE IceOpenConnection ( networkIdsList: ARRAY OF CHAR;
+                              context: IcePointer;
+                              mustAuthenticate: Bool;
+                              majorOpcodeCheck: SYSTEM.int;
+                              errorLength: SYSTEM.int;
+                              VAR errorStringRet: ARRAY OF CHAR ): IceConn;
+
+PROCEDURE IceGetConnectionContext ( iceConn: IceConn ): IcePointer;
+
+TYPE 
+  PAIceListenObj = POINTER TO ARRAY [0..MAX_STUP_ARR] OF IceListenObj;
+
+PROCEDURE IceListenForConnections ( VAR countRet: Bool;
+                                    VAR listenObjsRet: PAIceListenObj;
+                                    errorLength: SYSTEM.int;
+                                    VAR errorStringRet: ARRAY OF CHAR ): SYSTEM.int;
+
+PROCEDURE IceGetListenConnectionNumber ( listenObj: IceListenObj ): SYSTEM.int;
+
+PROCEDURE IceGetListenConnectionString ( listenObj: IceListenObj ): PChar;
+
+PROCEDURE IceComposeNetworkIdList ( count: SYSTEM.int;
+                                    listenObjs: PAIceListenObj ): PChar;
+
+PROCEDURE IceFreeListenObjs ( count: SYSTEM.int;
+                              listenObjs: PAIceListenObj );
+
+PROCEDURE IceSetHostBasedAuthProc ( listenObj: IceListenObj;
+                                    hostBasedAuthProc: IceHostBasedAuthProc );
+
+TYPE 
+  PAIceAcceptStatus = POINTER TO ARRAY [0..MAX_STUP_ARR] OF IceAcceptStatus;
+
+PROCEDURE IceAcceptConnection ( listenObj: IceListenObj;
+                                VAR statusRet: IceAcceptStatus ): IceConn;
+
+PROCEDURE IceSetShutdownNegotiation ( iceConn: IceConn;
+                                      negotiate: Bool );
+
+PROCEDURE IceCheckShutdownNegotiation ( iceConn: IceConn ): Bool;
+
+PROCEDURE IceCloseConnection ( iceConn: IceConn ): IceCloseStatus;
+
+PROCEDURE IceAddConnectionWatch ( watchProc: IceWatchProc;
+                                  clientData: IcePointer ): SYSTEM.int;
+
+PROCEDURE IceRemoveConnectionWatch ( watchProc: IceWatchProc;
+                                     clientData: IcePointer );
+
+PROCEDURE IceProtocolSetup ( iceConn: IceConn; myOpcode: SYSTEM.int;
+                             clientData: IcePointer;
+                             mustAuthenticate: Bool;
+                             VAR majorVersionRet: Bool;
+                             VAR minorVersionRet: Bool;
+                             VAR vendorRet: PChar;
+                             VAR releaseRet: PChar;
+                             errorLength: SYSTEM.int;
+                             VAR errorStringRet: ARRAY OF CHAR ): IceProtocolSetupStatus;
+
+PROCEDURE IceProtocolShutdown ( iceConn: IceConn;
+                                majorOpcode: SYSTEM.int ): SYSTEM.int;
+
+PROCEDURE IceProcessMessages ( iceConn: IceConn;
+                               VAR replyWait: IceReplyWaitInfo;
+                               VAR replyReadyRet: Bool ): IceProcessMessagesStatus;
+
+PROCEDURE IcePing ( iceConn: IceConn; pingReplyProc: IcePingReplyProc;
+                    clientData: IcePointer ): SYSTEM.int;
+
+PROCEDURE IceAllocScratch ( iceConn: IceConn;
+                            size: LONGCARD ): PChar;
+
+PROCEDURE IceFlush ( iceConn: IceConn ): SYSTEM.int;
+
+PROCEDURE IceGetOutBufSize ( iceConn: IceConn ): SYSTEM.int;
+
+PROCEDURE IceGetInBufSize ( iceConn: IceConn ): SYSTEM.int;
+
+PROCEDURE IceConnectionStatus ( iceConn: IceConn ): IceConnectStatus;
+
+PROCEDURE IceVendor ( iceConn: IceConn ): PChar;
+
+PROCEDURE IceRelease ( iceConn: IceConn ): PChar;
+
+PROCEDURE IceProtocolVersion ( iceConn: IceConn ): SYSTEM.int;
+
+PROCEDURE IceProtocolRevision ( iceConn: IceConn ): SYSTEM.int;
+
+PROCEDURE IceConnectionNumber ( iceConn: IceConn ): SYSTEM.int;
+
+PROCEDURE IceConnectionString ( iceConn: IceConn ): PChar;
+
+PROCEDURE IceLastSentSequenceNumber ( iceConn: IceConn ): LONGCARD;
+
+PROCEDURE IceLastReceivedSequenceNumber ( iceConn: IceConn ): LONGCARD;
+
+PROCEDURE IceSwapping ( iceConn: IceConn ): Bool;
+
+PROCEDURE IceSetErrorHandler ( handler: IceErrorHandler ): IceErrorHandler;
+
+PROCEDURE IceSetIOErrorHandler ( handler: IceIOErrorHandler ): IceIOErrorHandler;
+
+(*
+ * Multithread Routines
+ *)
+
+PROCEDURE IceInitThreads (  ): SYSTEM.int;
+
+PROCEDURE IceAppLockConn ( iceConn: IceConn );
+
+PROCEDURE IceAppUnlockConn ( iceConn: IceConn );
+
+END ICElib.

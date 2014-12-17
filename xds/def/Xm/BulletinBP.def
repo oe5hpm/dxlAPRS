@@ -1,0 +1,241 @@
+(* Xm/BulletinBP.def  Nov 11  15:52:33  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/BulletinBP.h using H2D v1.18.1. *)
+
+(* $RCSfile: BulletinBP.def,v $ $Date: 28.07.98 23:14 $ $Revision: 5 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+(* Merged headers: Xm/BulletinB.h *)
+
+DEFINITION MODULE ["C"] BulletinBP;
+
+IMPORT SYSTEM, Xlib, Xm:=XmP, Xt:=IntrinsicP;
+(* H2D:  Required IMPORT clause: 
+IMPORT BulletinBP, Xlib, XmP, IntrinsicP;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992, 1993 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(* ------------------------------------------------------ *)
+(*                     Xm/BulletinB.h                     *)
+(* ------------------------------------------------------ *)
+
+(*
+ * Motif Release 1.2
+ *)
+
+(*  Class record constants  *)
+
+VAR 
+  xmBulletinBoardWidgetClass: Xt.WidgetClass;
+
+TYPE 
+  XmBulletinBoardWidgetClass = POINTER TO _XmBulletinBoardClassRec;
+
+  XmBulletinBoardWidget = POINTER TO _XmBulletinBoardRec;
+
+(********    Public Function Declarations    ********)
+
+PROCEDURE XmCreateBulletinBoard ( p: Xt.Widget;
+                                  name: Xt.String;
+                                  args: Xt.ArgList;
+                                  n: Xt.Cardinal ): Xt.Widget;
+
+PROCEDURE XmCreateBulletinBoardDialog ( ds_p: Xt.Widget;
+                                        name: Xt.String;
+                                        bb_args: Xt.ArgList;
+                                        bb_n: Xt.Cardinal ): Xt.Widget;
+
+(********    End Public Function Declarations    ********)
+
+(* ------------------------------------------------------ *)
+(*                    Xm/BulletinBP.h                     *)
+(* ------------------------------------------------------ *)
+
+(*
+ * Motif Release 1.2.3
+ *)
+
+(****************************************************************************
+ * this suffix is added to dialog shells created by Xm convenience routines *
+ * so that, for example, a call to create a form dialog named f generates a *
+ * dialog shell named f_popup in addition to a form named f                 *
+ ****************************************************************************)
+
+CONST 
+  XmDIALOG_SUFFIX = '_popup';
+  XmDIALOG_SUFFIX_SIZE = 6;
+
+(*  Constraint part record for bulletin board  *)
+
+TYPE 
+  _XmBulletinBoardConstraintPart = RECORD
+    unused: CHAR;
+  END;
+
+  XmBulletinBoardConstraintPart = _XmBulletinBoardConstraintPart;
+
+  XmBulletinBoardConstraint = POINTER TO _XmBulletinBoardConstraintPart;
+
+(*  New fields for the BulletinBoard widget class record  *)
+
+  _XmBulletinBoardClassPart = RECORD
+    always_install_accelerators: Xt.Boolean;
+    geo_matrix_create          : Xm.XmGeoCreateProc;
+    focus_moved_proc           : Xm.XmFocusMovedProc;
+    extension                  : Xt.XtPointer;
+  END;
+
+  XmBulletinBoardClassPart = _XmBulletinBoardClassPart;
+
+(*  Full class record declaration   *)
+
+  _XmBulletinBoardClassRec = RECORD
+    core_class          : Xt.CoreClassPart;
+    composite_class     : Xt.CompositeClassPart;
+    constraint_class    : Xt.ConstraintClassPart;
+    manager_class       : Xm.XmManagerClassPart;
+    bulletin_board_class: XmBulletinBoardClassPart;
+  END;
+
+  XmBulletinBoardClassRec = _XmBulletinBoardClassRec;
+
+(*  New fields for the BulletinBoard widget record   *)
+
+  _XmBulletinBoardPart = RECORD
+    margin_width          : Xt.Dimension;       (* margins *)
+    margin_height         : Xt.Dimension;
+    default_button        : Xt.Widget;          (* widgets *)
+    dynamic_default_button: Xt.Widget;          (* widgets *)
+    cancel_button         : Xt.Widget;
+    dynamic_cancel_button : Xt.Widget;
+    focus_callback        : Xt.XtCallbackList;  (* callback lists *)
+    map_callback          : Xt.XtCallbackList;
+    unmap_callback        : Xt.XtCallbackList;
+    text_translations     : Xt.XtTranslations;
+    button_font_list      : Xm.XmFontList;      (* font lists *)
+    label_font_list       : Xm.XmFontList;
+    text_font_list        : Xm.XmFontList;
+    allow_overlap         : Xt.Boolean;         (* policies *)
+    default_position      : Xt.Boolean;
+    auto_unmanage         : Xt.Boolean;
+    resize_policy         : SHORTCARD;
+    old_width             : Xt.Dimension;       (* shadow resources *)
+    old_height            : Xt.Dimension;
+    old_shadow_thickness  : Xt.Dimension;
+    shadow_type           : SHORTCARD;
+    in_set_values         : Xt.Boolean;         (* internal flag *)
+    initial_focus         : Xt.Boolean;
+    no_resize             : Xt.Boolean;         (* dialog resources *)
+    dialog_style          : SHORTCARD;
+    dialog_title          : Xm.XmString;
+    shell                 : Xt.Widget;
+    _UNUSED               : Xt.Widget;
+    geo_cache          : Xm.XmGeoMatrix;  (* Cache for geometry management. *)
+  END;
+
+  XmBulletinBoardPart = _XmBulletinBoardPart;
+
+(****************************************************************
+ *
+ * Full instance record declaration
+ *
+ ****************************************************************)
+
+  _XmBulletinBoardRec = RECORD
+    core          : Xt.CorePart;
+    composite     : Xt.CompositePart;
+    constraint    : Xt.ConstraintPart;
+    manager       : Xm.XmManagerPart;
+    bulletin_board: XmBulletinBoardPart;
+  END;
+
+  XmBulletinBoardRec = _XmBulletinBoardRec;
+
+VAR 
+  xmBulletinBoardClassRec: XmBulletinBoardClassRec;
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: these procedures corresponds to macros. *)
+PROCEDURE BB_CancelButton ( w: Xt.Widget ): Xt.Widget;
+PROCEDURE BB_DynamicCancelButton ( w: Xt.Widget ): Xt.Widget;
+PROCEDURE BB_DefaultButton ( w: Xt.Widget ): Xt.Widget;
+PROCEDURE BB_DynamicDefaultButton ( w: Xt.Widget ): Xt.Widget;
+PROCEDURE BB_MarginHeight ( w: Xt.Widget ): Xt.Dimension;
+PROCEDURE BB_MarginWidth ( w: Xt.Widget ): Xt.Dimension;
+PROCEDURE BB_ButtonFontList ( w: Xt.Widget ): Xm.XmFontList;
+PROCEDURE BB_LabelFontList ( w: Xt.Widget ): Xm.XmFontList;
+PROCEDURE BB_TextFontList ( w: Xt.Widget ): Xm.XmFontList;
+PROCEDURE BB_StringDirection ( w: Xt.Widget ): Xm.XmStringDirection;
+PROCEDURE BB_ResizePolicy ( w: Xt.Widget ): SHORTCARD;
+PROCEDURE BB_InSetValues ( w: Xt.Widget ): Xt.Boolean;
+PROCEDURE BB_InitialFocus ( w: Xt.Widget ): Xt.Boolean;
+
+<* ELSE *>
+
+PROCEDURE  / BB_CancelButton ( w: Xt.Widget ): Xt.Widget;
+PROCEDURE  / BB_DynamicCancelButton ( w: Xt.Widget ): Xt.Widget;
+PROCEDURE  / BB_DefaultButton ( w: Xt.Widget ): Xt.Widget;
+PROCEDURE  / BB_DynamicDefaultButton ( w: Xt.Widget ): Xt.Widget;
+PROCEDURE  / BB_MarginHeight ( w: Xt.Widget ): Xt.Dimension;
+PROCEDURE  / BB_MarginWidth ( w: Xt.Widget ): Xt.Dimension;
+PROCEDURE  / BB_ButtonFontList ( w: Xt.Widget ): Xm.XmFontList;
+PROCEDURE  / BB_LabelFontList ( w: Xt.Widget ): Xm.XmFontList;
+PROCEDURE  / BB_TextFontList ( w: Xt.Widget ): Xm.XmFontList;
+PROCEDURE  / BB_StringDirection ( w: Xt.Widget ): Xm.XmStringDirection;
+PROCEDURE  / BB_ResizePolicy ( w: Xt.Widget ): SHORTCARD;
+PROCEDURE  / BB_InSetValues ( w: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / BB_InitialFocus ( w: Xt.Widget ): Xt.Boolean;
+
+<* END *>
+
+(********    Private Function Declarations    ********)
+
+PROCEDURE _XmBB_CreateButtonG ( bb: Xt.Widget;
+                                l_string: Xm.XmString;
+                                name: ARRAY OF CHAR ): Xt.Widget;
+
+PROCEDURE _XmBB_CreateLabelG ( bb: Xt.Widget;
+                               l_string: Xm.XmString;
+                               name: ARRAY OF CHAR ): Xt.Widget;
+
+PROCEDURE _XmBulletinBoardSizeUpdate ( wid: Xt.Widget );
+
+PROCEDURE _XmBulletinBoardFocusMoved ( wid: Xt.Widget;
+                                       client_data: Xt.XtPointer;
+                                       data: Xt.XtPointer );
+
+PROCEDURE _XmBulletinBoardReturn ( wid: Xt.Widget;
+                                   VAR event: Xlib.XEvent;
+                                   params: Xt.StringList;
+                                   VAR numParams: Xt.Cardinal );
+
+PROCEDURE _XmBulletinBoardCancel ( wid: Xt.Widget;
+                                   VAR event: Xlib.XEvent;
+                                   params: Xt.StringList;
+                                   VAR numParams: Xt.Cardinal );
+
+PROCEDURE _XmBulletinBoardMap ( wid: Xt.Widget;
+                                VAR event: Xlib.XEvent;
+                                params: Xt.StringList;
+                                VAR numParams: Xt.Cardinal );
+
+PROCEDURE _XmBulletinBoardSetDefaultShadow ( button: Xt.Widget );
+
+PROCEDURE _XmBulletinBoardSetDynDefaultButton ( wid: Xt.Widget;
+                                                newDefaultButton: Xt.Widget );
+
+PROCEDURE _XmBBUpdateDynDefaultButton ( bb: Xt.Widget );
+
+(********    End Private Function Declarations    ********)
+
+END BulletinBP.

@@ -1,0 +1,212 @@
+(* Xm/ScreenP.def  Nov 21  0:0:55  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/ScreenP.h using H2D v1.18.6 *)
+
+(* $RCSfile: ScreenP.def,v $ $Revision: 4 $ $Date: 28.07.98 23:14 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *>
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+(* Merged headers: Xm/Screen.h *)
+
+DEFINITION MODULE ["C"] ScreenP;
+
+IMPORT SYSTEM, X, Xlib, Xrm:=Xresource, Xm:=XmP, Xt:=IntrinsicP, DragDropP;
+(* H2D:  Required IMPORT clause:
+IMPORT ScreenP, X, Xlib, Xresource, XmP, IntrinsicP, DragDropP;
+*)
+
+(*
+ * (c) Copyright 1989-1994 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(* --------------------------------------------------- *)
+(*                     Xm/Screen.h                     *)
+(* --------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2.3
+ *)
+
+(*  Class record constants  *)
+
+TYPE
+  XmScreen = POINTER TO _XmScreenRec;
+
+  XmScreenClass = POINTER TO _XmScreenClassRec;
+
+VAR
+  xmScreenClass: Xt.WidgetClass;
+
+(********    Public Function Declarations    ********)
+
+PROCEDURE XmGetXmScreen ( screen: Xlib.PtrScreen ): Xt.Widget;
+
+(********    End Public Function Declarations    ********)
+
+(* ---------------------------------------------------- *)
+(*                     Xm/ScreenP.h                     *)
+(* ---------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2.4
+ *)
+
+TYPE
+  _XmScreenClassPart = RECORD
+    extension: Xt.XtPointer;
+  END;
+
+  XmScreenClassPart = _XmScreenClassPart;
+
+  XmScreenClassPartPtr = POINTER TO _XmScreenClassPart;
+
+  _XmScreenClassRec = RECORD
+    core_class   : Xt.CoreClassPart;
+    desktop_class: Xm.XmDesktopClassPart;
+    screen_class : XmScreenClassPart;
+  END;
+
+  XmScreenClassRec = _XmScreenClassRec;
+
+  XmDragCursorPtr = POINTER TO XmDragCursorRec;
+
+  _XmDragCursorRec = RECORD
+    next      : XmDragCursorPtr;
+    cursor    : X.Cursor;
+    stateIcon : DragDropP.XmDragIconObject;
+    opIcon    : DragDropP.XmDragIconObject;
+    sourceIcon: DragDropP.XmDragIconObject;
+    dirty     : Xt.Boolean;
+  END;
+
+  XmDragCursorRec = _XmDragCursorRec;
+
+  XmDragCursorCache = POINTER TO _XmDragCursorRec;
+
+  XmScratchPixmap = POINTER TO _XmScratchPixmapRec;
+
+  _XmScratchPixmapRec = RECORD
+    next  : XmScratchPixmap;
+    pixmap: X.Pixmap;
+    depth : Xt.Cardinal;
+    width : Xt.Dimension;
+    height: Xt.Dimension;
+    inUse : Xt.Boolean;
+  END;
+
+  XmScratchPixmapRec = _XmScratchPixmapRec;
+
+  _XmScreenPart = RECORD
+    mwmPresent              : Xt.Boolean;
+    numReparented           : SYSTEM.CARD16;
+    darkThreshold           : SYSTEM.int;
+    foregroundThreshold     : SYSTEM.int;
+    lightThreshold          : SYSTEM.int;
+    defaultNoneCursorIcon   : DragDropP.XmDragIconObject;
+    defaultValidCursorIcon  : DragDropP.XmDragIconObject;
+    defaultInvalidCursorIcon: DragDropP.XmDragIconObject;
+    defaultMoveCursorIcon   : DragDropP.XmDragIconObject;
+    defaultCopyCursorIcon   : DragDropP.XmDragIconObject;
+    defaultLinkCursorIcon   : DragDropP.XmDragIconObject;
+    defaultSourceCursorIcon : DragDropP.XmDragIconObject;
+    nullCursor              : X.Cursor;
+    cursorCache             : XmDragCursorCache;
+    maxCursorWidth          : Xt.Cardinal;
+    maxCursorHeight         : Xt.Cardinal;
+    menuCursor              : X.Cursor;
+    unpostBehavior          : SHORTCARD;
+    font_struct             : Xlib.PtrXFontStruct;
+    h_unit                  : SYSTEM.int;
+    v_unit                  : SYSTEM.int;
+    scratchPixmaps          : XmScratchPixmap;
+    moveOpaque              : SHORTCARD;
+(*  to save internally-created XmDragIcons  *)
+    xmStateCursorIcon       : DragDropP.XmDragIconObject;
+    xmMoveCursorIcon        : DragDropP.XmDragIconObject;
+    xmCopyCursorIcon        : DragDropP.XmDragIconObject;
+    xmLinkCursorIcon        : DragDropP.XmDragIconObject;
+    xmSourceCursorIcon      : DragDropP.XmDragIconObject;
+    imageGC                 : Xlib.GC;              (*  ImageCache.c  *)
+    imageGCDepth            : SYSTEM.int;
+    imageForeground         : Xt.Pixel;
+    imageBackground         : Xt.Pixel;
+    screenInfo              : Xt.XtPointer;         (*  extension  *)
+  END;
+
+  XmScreenPart = _XmScreenPart;
+
+  XmScreenPartPtr = POINTER TO XmScreenPart;
+
+  _XmScreenInfo = RECORD
+(*  so much for information hiding  *)
+    menu_state          : Xt.XtPointer;   (*  MenuUtil.c  *)
+    destroyCallbackAdded: Xt.Boolean;     (*  ImageCache.c  *)
+  END;
+
+  XmScreenInfo = _XmScreenInfo;
+
+  _XmScreenRec = RECORD
+    core   : Xt.CorePart;
+    desktop: Xm.XmDesktopPart;
+    screen : XmScreenPart;
+  END;
+
+  XmScreenRec = _XmScreenRec;
+
+VAR
+  xmScreenClassRec: XmScreenClassRec;
+
+  _XmInvalidCursorIconQuark: Xrm.XrmQuark;
+  _XmValidCursorIconQuark: Xrm.XrmQuark;
+  _XmNoneCursorIconQuark: Xrm.XrmQuark;
+  _XmDefaultDragIconQuark: Xrm.XrmQuark;
+  _XmMoveCursorIconQuark: Xrm.XrmQuark;
+  _XmCopyCursorIconQuark: Xrm.XrmQuark;
+  _XmLinkCursorIconQuark: Xrm.XrmQuark;
+
+(********    Private Function Declarations    ********)
+
+PROCEDURE _XmScreenGetOperationIcon ( w: Xt.Widget;
+                                      operation: SHORTCARD ): DragDropP.XmDragIconObject;
+
+PROCEDURE _XmScreenGetStateIcon ( w: Xt.Widget;
+                                  state: SHORTCARD ): DragDropP.XmDragIconObject;
+
+PROCEDURE _XmScreenGetSourceIcon ( w: Xt.Widget ): DragDropP.XmDragIconObject;
+
+PROCEDURE _XmAllocScratchPixmap ( xmScreen: XmScreen; depth: Xt.Cardinal;
+                                  width: Xt.Dimension;
+                                  height: Xt.Dimension ): X.Pixmap;
+
+PROCEDURE _XmFreeScratchPixmap ( xmScreen: XmScreen; pixmap: X.Pixmap );
+
+TYPE
+  XmDragCursorCachePtr = POINTER TO XmDragCursorCache;
+
+PROCEDURE _XmGetDragCursorCachePtr ( xmScreen: XmScreen ): XmDragCursorCachePtr;
+
+PROCEDURE _XmGetMaxCursorSize ( w: Xt.Widget;
+                                VAR width: Xt.Dimension;
+                                VAR height: Xt.Dimension );
+
+PROCEDURE _XmGetNullCursor ( w: Xt.Widget ): X.Cursor;
+
+PROCEDURE _XmGetMenuCursorByScreen ( screen: Xlib.PtrScreen ): X.Cursor;
+
+PROCEDURE _XmGetMoveOpaqueByScreen ( screen: Xlib.PtrScreen ): Xt.Boolean;
+
+PROCEDURE _XmGetUnpostBehavior ( wid: Xt.Widget ): SHORTCARD;
+
+PROCEDURE _XmGetFontUnit ( screen: Xlib.PtrScreen;
+                           dimension: SYSTEM.int ): SYSTEM.int;
+
+PROCEDURE _XmScreenRemoveFromCursorCache ( icon: DragDropP.XmDragIconObject );
+
+(********    End Private Function Declarations    ********)
+
+END ScreenP.

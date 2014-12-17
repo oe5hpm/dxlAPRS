@@ -1,0 +1,4 @@
+#!/bin/sh
+CC=../src/arm-linux-armv7hf-gcc CFLAGS="-march=armv7-a -mfpu=neon -mfloat-abi=hard -mcpu=cortex-a8" ./configure
+CC=../src/arm-linux-armv7hf-gcc CFLAGS="-march=armv7-a -mfpu=neon -mfloat-abi=hard -mcpu=cortex-a8" make
+

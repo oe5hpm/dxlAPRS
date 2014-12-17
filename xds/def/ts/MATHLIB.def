@@ -1,0 +1,72 @@
+(* Copyright (C) 1996 XTech LTD *)
+
+<* +M2ADDTYPES *>
+
+DEFINITION MODULE MATHLIB;
+
+IMPORT LongMath; 
+
+(* Math Constants *)
+
+CONST
+  M_E         =  2.718281828459045240;      (* e *)
+  M_Log2E     =  1.442695040888963410;      (* log2  of e *)
+  M_Log10E    =  0.434294481903251828;      (* log10 of e *)
+  M_Ln2       =  0.693147180559945309;      (* ln    of 2 *)
+  M_Ln10      =  2.302585092994045680;      (* ln    of 10 *)
+  M_Pi        =  3.141592653589793240;      (* Pi *)
+  M_PiBy2     =  1.570796326794896620;      (* Pi/2 *)
+  M_PiBy4     =  0.785398163397448310;      (* Pi/4 *)
+  M_1ByPy     =  0.318309886183790672;      (* 1/Pi *)
+  M_2ByPy     =  0.636619772367581343;      (* 2/Pi *)
+  M_1BySqrtPi =  0.564189583547756287;      (* 1/sqrt(Pi) *)
+  M_2BySqrtPi =  1.128379167095512570;      (* 2/sqrt(Pi) *)
+  M_Sqrt2     =  1.414213562373095050;      (* Sqrt(2) *)
+  M_Sqrt2By2  =  0.707106781186547524;      (* Sqrt(2)/2 *)
+
+
+
+(* Implemented in LongMath Library
+
+PROCEDURE Sin (A : LONGREAL) : LONGREAL;
+PROCEDURE Cos (A : LONGREAL) : LONGREAL;
+PROCEDURE Tan (A : LONGREAL) : LONGREAL;
+PROCEDURE ASin(A : LONGREAL) : LONGREAL;
+PROCEDURE ACos(A : LONGREAL) : LONGREAL;
+PROCEDURE ATan(A : LONGREAL) : LONGREAL;
+
+PROCEDURE Exp  (A : LONGREAL) : LONGREAL;
+PROCEDURE Log  (A : LONGREAL) : LONGREAL;
+PROCEDURE Pow(X,Y : LONGREAL) : LONGREAL;
+
+PROCEDURE Sqrt(A : LONGREAL) : LONGREAL;
+
+*)
+
+CONST
+    Sin    = LongMath.sin;
+    Cos    = LongMath.cos;
+    Tan    = LongMath.tan;
+    ASin   = LongMath.arcsin;
+    ACos   = LongMath.arccos;
+    ATan   = LongMath.arctan;
+    Sqrt   = LongMath.sqrt;
+    Exp    = LongMath.exp;
+    Log    = LongMath.ln;
+
+PROCEDURE Pow(X,Y : LONGREAL): LONGREAL;
+
+PROCEDURE SinH(A : LONGREAL) : LONGREAL;
+PROCEDURE CosH(A : LONGREAL) : LONGREAL;
+PROCEDURE TanH(A : LONGREAL) : LONGREAL;
+PROCEDURE ATan2(X,Y : LONGREAL) : LONGREAL;
+
+PROCEDURE Log10(A : LONGREAL) : LONGREAL;
+
+PROCEDURE Mod(X,Y : LONGREAL) : LONGREAL;
+
+PROCEDURE Rexp(VAR I : INTEGER;A : LONGREAL) : LONGREAL;
+
+PROCEDURE IntPow(X : LONGREAL; K : INTEGER) : LONGREAL;
+
+END MATHLIB.

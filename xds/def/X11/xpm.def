@@ -1,0 +1,513 @@
+(* X11/xpm.def  Apr 8  20:47:16  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted using H2D v1.00 from X11/xpm.h. *)
+
+(* $RCSfile: xpm.def,v $ $Revision: 4 $ $Date: 28.07.98 23:13 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *>
+<* IF NOT DEFINED(GENCTYPES) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+
+DEFINITION MODULE ["C"] xpm;
+
+IMPORT SYSTEM, X, Xlib, Xutil;
+(* H2D: to import this module write following text:
+IMPORT xpm, X, Xlib, Xutil;
+*)
+
+FROM Xlib IMPORT PChar, PAPChar;
+
+(******************************************************************************\
+ * xpm.h:                                                                      *
+ *                                                                             *
+ *  XPM library                                                                *
+ *  Include file                                                               *
+ *                                                                             *
+ *  Developed by Arnaud Le Hors                                                *
+ \******************************************************************************)
+
+(*
+ * first some identification numbers:
+ * the version and revision numbers are determined with the following rule:
+ * SO Major number = LIB minor version number.
+ * SO Minor number = LIB sub-minor version number.
+ * e.g: Xpm version 3.2f
+ *      we forget the 3 which is the format number, 2 gives 2, and f gives 6.
+ *      thus we have XpmVersion = 2 and XpmRevision = 6
+ *      which gives  SOXPMLIBREV = 2.6
+ *
+ * Then the XpmIncludeVersion number is built from these numbers.
+ *)
+
+CONST 
+  XpmFormat = 3;
+  XpmVersion = 4;
+  XpmRevision = 5;
+  XpmIncludeVersion = 30405;
+
+(*  let's define Pixel if it is not done yet  *)
+
+TYPE 
+  Pixel = LONGCARD;                    (*  Index into colormap  *)
+
+(* Return ErrorStatus codes:
+ * null     if full success
+ * positive if partial success
+ * negative if failure
+ *)
+
+CONST 
+  XpmColorError = 1;
+  XpmPixmapColorError = XpmColorError;
+  PixmapColorError = XpmColorError;
+  XpmSuccess = 0;
+  XpmPixmapSuccess = XpmSuccess;
+  PixmapSuccess = XpmSuccess;
+  XpmOpenFailed = -1;
+  XpmPixmapOpenFailed = XpmOpenFailed;
+  PixmapOpenFailed = XpmOpenFailed;
+  XpmFileInvalid = -2;
+  XpmPixmapFileInvalid = XpmFileInvalid;
+  PixmapFileInvalid = XpmFileInvalid;
+  XpmNoMemory = -3;
+  XpmPixmapNoMemory = XpmNoMemory;
+  PixmapNoMemory = XpmNoMemory;
+  XpmColorFailed = -4;
+  XpmPixmapColorFailed = XpmColorFailed;
+  PixmapColorFailed = XpmColorFailed;
+
+(*  the following should help people wanting to use their own functions  *)
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: this procedure was generated from Macro. *)
+PROCEDURE XpmFree ( ptr: SYSTEM.ADDRESS );
+
+<* ELSE *>
+
+PROCEDURE  / XpmFree * ( ptr: SYSTEM.ADDRESS );
+
+<* END *>
+
+TYPE 
+  XpmColorSymbol = RECORD
+    name : PChar;          (*  Symbolic color name  *)
+    value: PChar;          (*  Color value  *)
+    pixel: Pixel;          (*  Color pixel  *)
+  END;
+
+  ColorSymbol = XpmColorSymbol;
+
+  XpmExtension = RECORD
+    name  : Xlib.PChar;          (*  name of the extension  *)
+    nlines: SYSTEM.unsigned;   (*  number of lines in this extension  *)
+    lines : PAPChar;       (*  pointer to the extension array of strings  *)
+  END;
+
+  XpmColor = RECORD
+    string  : PChar;   (*  characters string  *)
+    symbolic: PChar;   (*  symbolic name  *)
+    m_color : PChar;   (*  monochrom default  *)
+    g4_color: PChar;   (*  4 level grayscale default  *)
+    g_color : PChar;   (*  other level grayscale default  *)
+    c_color : PChar;   (*  color default  *)
+  END;
+
+  PAXpmColor = POINTER TO ARRAY [0..X.MAX_STUP_ARR] OF XpmColor;
+  PtrXpmColor = POINTER TO XpmColor;
+
+  PAUInt = POINTER TO ARRAY [0..X.MAX_STUP_ARR] OF SYSTEM.unsigned;
+
+  XpmImage = RECORD
+    width     : SYSTEM.unsigned;   (*  image width  *)
+    height    : SYSTEM.unsigned;   (*  image height  *)
+    cpp       : SYSTEM.unsigned;   (*  number of characters per pixel  *)
+    ncolors   : SYSTEM.unsigned;   (*  number of colors  *)
+    colorTable: PAXpmColor;        (*  list of related colors  *)
+    data      : PAUInt;            (*  image data  *)
+  END;
+
+  PAXpmExtension = POINTER TO ARRAY [0..X.MAX_STUP_ARR] OF XpmExtension;
+  PtrXpmExtension = POINTER TO XpmExtension;
+
+  XpmInfo = RECORD
+    valuemask  : LONGCARD;          (*  Specifies which attributes are defined  *)
+    hints_cmt  : PChar;        (*  Comment of the hints section  *)
+    colors_cmt : PChar;        (*  Comment of the colors section  *)
+    pixels_cmt : PChar;        (*  Comment of the pixels section  *)
+    x_hotspot  : SYSTEM.unsigned;   (*  Returns the x hotspot's coordinate  *)
+    y_hotspot  : SYSTEM.unsigned;   (*  Returns the y hotspot's coordinate  *)
+    nextensions: SYSTEM.unsigned;   (*  number of extensions  *)
+    extensions : PAXpmExtension;    (*  pointer to array of extensions  *)
+  END;
+
+  PtrVisual = Xlib.PtrVisual;
+
+  PAPixel = POINTER TO ARRAY [0..X.MAX_STUP_ARR] OF Pixel;
+  PtrPixel = POINTER TO Pixel;
+
+  PAXpmColorSymbol = POINTER TO ARRAY [0..X.MAX_STUP_ARR] OF XpmColorSymbol;
+  PtrXpmColorSymbol = POINTER TO XpmColorSymbol;
+
+  XpmAttributes = RECORD
+    valuemask      : LONGCARD;            (*  Specifies which attributes are  *)
+                                          (*  defined                         *)
+    visual         : PtrVisual;           (*  Specifies the visual to use  *)
+    colormap       : X.Colormap;          (*  Specifies the colormap to use  *)
+    depth          : SYSTEM.unsigned;     (*  Specifies the depth  *)
+    width          : SYSTEM.unsigned;     (*  Returns the width of the created  *)
+                                          (*  pixmap                            *)
+    height         : SYSTEM.unsigned;     (*  Returns the height of the created  *)
+                                          (*  pixmap                             *)
+    x_hotspot      : SYSTEM.unsigned;     (*  Returns the x hotspot's  *)
+                                          (*  coordinate               *)
+    y_hotspot      : SYSTEM.unsigned;     (*  Returns the y hotspot's  *)
+                                          (*  coordinate               *)
+    cpp            : SYSTEM.unsigned;     (*  Specifies the number of char per  *)
+                                          (*  pixel                             *)
+    pixels         : PAPixel;             (*  List of used color pixels  *)
+    npixels        : SYSTEM.unsigned;     (*  Number of pixels  *)
+    colorsymbols   : PAXpmColorSymbol;    (*  Array of color symbols to  *)
+                                          (*  override                   *)
+    numsymbols     : SYSTEM.unsigned;     (*  Number of symbols  *)
+    rgb_fname      : PChar;               (*  RGB text file name  *)
+    nextensions    : SYSTEM.unsigned;     (*  number of extensions  *)
+    extensions     : PAXpmExtension;      (*  pointer to array of extensions  *)
+    ncolors        : SYSTEM.unsigned;     (*  Number of colors  *)
+    colorTable     : PAXpmColor;          (*  Color table pointer  *)
+    (*  3.2 backward compatibility code  *)
+    hints_cmt      : PChar;          (*  Comment of the hints section  *)
+    colors_cmt     : PChar;          (*  Comment of the colors section  *)
+    pixels_cmt     : PChar;          (*  Comment of the pixels section  *)
+    (*  end 3.2 bc  *)
+    mask_pixel     : SYSTEM.unsigned;     (*  Transparent pixel's color table  *)
+                                          (*  index                            *)
+    (*  Color Allocation Directives  *)
+    exactColors    : SYSTEM.unsigned;     (*  Only use exact colors for visual  *)
+    closeness      : SYSTEM.unsigned;     (*  Allowable RGB deviation  *)
+    red_closeness  : SYSTEM.unsigned;     (*  Allowable red deviation  *)
+    green_closeness: SYSTEM.unsigned;     (*  Allowable green deviation  *)
+    blue_closeness : SYSTEM.unsigned;     (*  Allowable blue deviation  *)
+    color_key      : SYSTEM.int;          (*  Use colors from this color set  *)
+  END;
+
+(*  XpmAttributes value masks bits  *)
+
+CONST 
+  XpmVisual = 1;
+  XpmColormap = 2;
+  XpmDepth = 4;
+  XpmSize = 8;                         (*  width & height  *)
+  XpmHotspot = 16;                     (*  x_hotspot & y_hotspot  *)
+  XpmCharsPerPixel = 32;
+  XpmColorSymbols = 64;
+  XpmRgbFilename = 128;
+
+(*  3.2 backward compatibility code  *)
+  XpmInfos = 256;
+  XpmReturnInfos = XpmInfos;
+  XpmComments = XpmInfos;
+
+(*  end 3.2 bc  *)
+  XpmReturnPixels = 512;
+  XpmExtensions = 1024;
+  XpmReturnExtensions = XpmExtensions;
+  XpmExactColors = 2048;
+  XpmCloseness = 4096;
+  XpmRGBCloseness = 8192;
+  XpmColorKey = 16384;
+  XpmColorTable = 32768;
+  XpmReturnColorTable = XpmColorTable;
+
+(*  XpmInfo value masks bits  *)
+(*  XpmAttributes mask_pixel value when there is no mask  *)
+  XpmUndefPixel = 80000000H;
+
+(*                                                                            *)
+(*  * color keys for visual type, they must fit along with the number key of  *)
+(*  * each related element in xpmColorKeys[] defined in xpmP.h                *)
+(*                                                                            *)
+  XPM_MONO = 2;
+  XPM_GREY4 = 3;
+  XPM_GRAY4 = 3;
+  XPM_GREY = 4;
+  XPM_GRAY = 4;
+  XPM_COLOR = 5;
+
+(*                                                     *)
+(*  * minimal portability layer between ansi and KR C  *)
+(*                                                     *)
+(*  forward declaration of functions with prototypes  *)
+(*                            *)
+(*  * functions declarations  *)
+(*                            *)
+(*  FOR_MSW, all ..Pixmap.. are excluded, only the ..XImage.. are used  *)
+
+TYPE 
+  PtrDisplay = POINTER TO Xlib.PtrDisplay;
+
+  PAXpmAttributes = POINTER TO ARRAY [0..X.MAX_STUP_ARR] OF XpmAttributes;
+  PtrXpmAttributes = POINTER TO XpmAttributes;
+
+PROCEDURE XpmCreatePixmapFromData ( display: PtrDisplay;
+                                    d: X.Drawable; data: PAPChar;
+                                    VAR pixmap_return: X.Pixmap;
+                                    VAR shapemask_return: X.Pixmap;
+                                    attributes: PtrXpmAttributes ): SYSTEM.int;
+
+PROCEDURE XpmCreateDataFromPixmap ( display: PtrDisplay;
+                                    VAR data_return: PAPChar;
+                                    pixmap: X.Pixmap;
+                                    shapemask: X.Pixmap;
+                                    VAR attributes: XpmAttributes ): SYSTEM.int;
+
+PROCEDURE XpmReadFileToPixmap ( display: PtrDisplay; d: X.Drawable;
+                                filename: ARRAY OF CHAR;
+                                VAR pixmap_return: X.Pixmap;
+                                VAR shapemask_return: X.Pixmap;
+                                VAR attributes: XpmAttributes ): SYSTEM.int;
+
+PROCEDURE XpmWriteFileFromPixmap ( display: PtrDisplay;
+                                   filename: ARRAY OF CHAR;
+                                   pixmap: X.Pixmap;
+                                   shapemask: X.Pixmap;
+                                   VAR attributes: XpmAttributes ): SYSTEM.int;
+
+TYPE 
+  PtrXImage = POINTER TO Xlib.PtrXImage;
+
+PROCEDURE XpmCreateImageFromData ( display: PtrDisplay;
+                                   data: PAPChar;
+                                   VAR image_return: PtrXImage;
+                                   VAR shapemask_return: PtrXImage;
+                                   VAR attributes: XpmAttributes ): SYSTEM.int;
+
+PROCEDURE XpmCreateDataFromImage ( display: PtrDisplay;
+                                   VAR data_return: PAPChar;
+                                   image: PtrXImage;
+                                   shapeimage: PtrXImage;
+                                   attributes: PtrXpmAttributes ): SYSTEM.int;
+
+PROCEDURE XpmReadFileToImage ( display: PtrDisplay;
+                               filename: ARRAY OF CHAR;
+                               VAR image_return: PtrXImage;
+                               VAR shapeimage_return: PtrXImage;
+                               VAR attributes: XpmAttributes ): SYSTEM.int;
+
+PROCEDURE XpmWriteFileFromImage ( display: PtrDisplay;
+                                  filename: ARRAY OF CHAR;
+                                  image: PtrXImage;
+                                  shapeimage: PtrXImage;
+                                  VAR attributes: XpmAttributes ): SYSTEM.int;
+
+PROCEDURE XpmCreateImageFromBuffer ( display: PtrDisplay;
+                                     buffer: ARRAY OF CHAR;
+                                     VAR image_return: PtrXImage;
+                                     VAR shapemask_return: PtrXImage;
+                                     VAR attributes: XpmAttributes ): SYSTEM.int;
+
+PROCEDURE XpmCreatePixmapFromBuffer ( display: PtrDisplay;
+                                      d: X.Drawable; buffer: ARRAY OF CHAR;
+                                      VAR pixmap_return: X.Pixmap;
+                                      VAR shapemask_return: X.Pixmap;
+                                      VAR attributes: XpmAttributes ): SYSTEM.int;
+
+PROCEDURE XpmCreateBufferFromImage ( display: PtrDisplay;
+                                     VAR buffer_return: PChar;
+                                     image: PtrXImage;
+                                     shapeimage: PtrXImage;
+                                     VAR attributes: XpmAttributes ): SYSTEM.int;
+
+PROCEDURE XpmCreateBufferFromPixmap ( display: PtrDisplay;
+                                      VAR buffer_return: PChar;
+                                      pixmap: X.Pixmap;
+                                      shapemask: X.Pixmap;
+                                      VAR attributes: XpmAttributes ): SYSTEM.int;
+
+PROCEDURE XpmReadFileToBuffer ( filename: ARRAY OF CHAR;
+                                VAR buffer_return: PChar ): SYSTEM.int;
+
+PROCEDURE XpmWriteFileFromBuffer ( filename: ARRAY OF CHAR;
+                                   buffer: PChar ): SYSTEM.int;
+
+PROCEDURE XpmReadFileToData ( filename: ARRAY OF CHAR;
+                              VAR data_return: PAPChar ): SYSTEM.int;
+
+PROCEDURE XpmWriteFileFromData ( filename: ARRAY OF CHAR;
+                                 data: PAPChar ): SYSTEM.int;
+
+PROCEDURE XpmAttributesSize ( SEQ arg0: SYSTEM.BYTE ): SYSTEM.int;
+
+PROCEDURE XpmFreeAttributes ( attributes: PtrXpmAttributes );
+
+PROCEDURE XpmFreeExtensions ( extensions: PAXpmExtension;
+                              nextensions: SYSTEM.int );
+
+TYPE 
+  PtrXpmImage = POINTER TO XpmImage;
+
+PROCEDURE XpmFreeXpmImage ( VAR image: XpmImage );
+
+TYPE 
+  PtrXpmInfo = POINTER TO XpmInfo;
+
+PROCEDURE XpmFreeXpmInfo ( VAR info: XpmInfo );
+
+PROCEDURE XpmGetErrorString ( errcode: SYSTEM.int ): PChar;
+
+PROCEDURE XpmLibraryVersion ( SEQ arg0: SYSTEM.BYTE ): SYSTEM.int;
+
+(*  XpmImage functions  *)
+
+PROCEDURE XpmReadFileToXpmImage ( filename: ARRAY OF CHAR;
+                                  VAR image: XpmImage;
+                                  VAR info: XpmInfo ): SYSTEM.int;
+
+PROCEDURE XpmWriteFileFromXpmImage ( filename: ARRAY OF CHAR;
+                                     VAR image: XpmImage;
+                                     VAR info: XpmInfo ): SYSTEM.int;
+
+PROCEDURE XpmCreatePixmapFromXpmImage ( display: PtrDisplay;
+                                        d: X.Drawable;
+                                        VAR image: XpmImage;
+                                        VAR pixmap_return: X.Pixmap;
+                                        VAR shapemask_return: X.Pixmap;
+                                        VAR attributes: XpmAttributes ): SYSTEM.int;
+
+PROCEDURE XpmCreateImageFromXpmImage ( display: PtrDisplay;
+                                       VAR image: XpmImage;
+                                       VAR image_return: PtrXImage;
+                                       VAR shapeimage_return: PtrXImage;
+                                       VAR attributes: XpmAttributes ): SYSTEM.int;
+
+PROCEDURE XpmCreateXpmImageFromImage ( display: PtrDisplay;
+                                       image: PtrXImage;
+                                       shapeimage: PtrXImage;
+                                       VAR xpmimage: XpmImage;
+                                       VAR attributes: XpmAttributes ): SYSTEM.int;
+
+PROCEDURE XpmCreateXpmImageFromPixmap ( display: PtrDisplay;
+                                        pixmap: X.Pixmap;
+                                        shapemask: X.Pixmap;
+                                        VAR xpmimage: XpmImage;
+                                        VAR attributes: XpmAttributes ): SYSTEM.int;
+
+PROCEDURE XpmCreateDataFromXpmImage ( VAR data_return: PAPChar;
+                                      VAR image: XpmImage;
+                                      VAR info: XpmInfo ): SYSTEM.int;
+
+PROCEDURE XpmCreateXpmImageFromData ( data: PAPChar;
+                                      VAR image: XpmImage;
+                                      VAR info: XpmInfo ): SYSTEM.int;
+
+PROCEDURE XpmCreateXpmImageFromBuffer ( buffer: PChar;
+                                        VAR image: XpmImage;
+                                        VAR info: XpmInfo ): SYSTEM.int;
+
+PROCEDURE XpmCreateBufferFromXpmImage ( VAR buffer_return: PChar;
+                                        VAR image: XpmImage;
+                                        VAR info: XpmInfo ): SYSTEM.int;
+
+(*  backward compatibility  *)
+(*  for version 3.0c  *)
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: this procedure was generated from Macro. *)
+PROCEDURE XpmReadPixmapFile ( dpy: PtrDisplay;
+			      d: X.Drawable;
+			      file: ARRAY OF CHAR;
+			      VAR pix, mask: X.Pixmap;
+			      att: PtrXpmAttributes ): SYSTEM.int;
+<* ELSE *>
+
+PROCEDURE  / XpmReadPixmapFile * (dpy: PtrDisplay;
+				  d: X.Drawable;
+				  file: ARRAY OF CHAR;
+				  VAR pix, mask: X.Pixmap;
+				  att: PtrXpmAttributes ): SYSTEM.int;
+<* END *>
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: this procedure was generated from Macro. *)
+PROCEDURE XpmWritePixmapFile ( dpy: PtrDisplay;
+			       file: ARRAY OF CHAR; 
+			       pix, mask: X.Pixmap; 
+			       att: PtrXpmAttributes ): SYSTEM.int;
+<* ELSE *>
+
+PROCEDURE  / XpmWritePixmapFile * ( dpy: PtrDisplay;
+				    file: ARRAY OF CHAR; 
+				    pix, mask: X.Pixmap; 
+				    att: PtrXpmAttributes ): SYSTEM.int;
+(*  for version 3.0b  *)
+
+<* END *>
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: this procedure was generated from Macro. *)
+PROCEDURE XReadPixmapFile ( dpy: PtrDisplay;
+			    d: X.Drawable;
+			    file: ARRAY OF CHAR;
+			    VAR pix, mask: X.Pixel;
+			    att: PtrXpmAttributes ): SYSTEM.int;
+<* ELSE *>
+
+PROCEDURE  / XReadPixmapFile * ( dpy: PtrDisplay;
+				 d: X.Drawable;
+				 file: ARRAY OF CHAR;
+				 VAR pix, mask: X.Pixmap;
+				 att: PtrXpmAttributes ): SYSTEM.int;
+<* END *>
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: this procedure was generated from Macro. *)
+PROCEDURE XWritePixmapFile ( dpy: PtrDisplay;
+			     file: ARRAY OF CHAR;
+			     pix, mask: X.Pixmap; 
+			     att: PtrXpmAttributes): SYSTEM.int;
+<* ELSE *>
+
+PROCEDURE  / XWritePixmapFile * ( dpy: PtrDisplay;
+				  file: ARRAY OF CHAR;
+				  pix, mask: X.Pixmap; 
+				  att: PtrXpmAttributes): SYSTEM.int;
+<* END *>
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: this procedure was generated from Macro. *)
+PROCEDURE XCreatePixmapFromData ( dpy: PtrDisplay; d: X.Drawable;
+				  data: PAPChar; 
+				  VAR mask, pix: X.Pixmap;
+				  att: PtrXpmAttributes ): SYSTEM.int;
+<* ELSE *>
+
+PROCEDURE  / XCreatePixmapFromData * ( dpy: PtrDisplay; d: X.Drawable;
+				       data: PAPChar; 
+				       VAR mask, pix: X.Pixmap;
+				       att: PtrXpmAttributes ): SYSTEM.int;
+<* END *>
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: this procedure was generated from Macro. *)
+PROCEDURE XCreateDataFromPixmap ( dpy: PtrDisplay;
+				  VAR data: PAPChar;
+				  pix, mask: X.Pixmap;
+				  att: PtrXpmAttributes ): SYSTEM.int;
+<* ELSE *>
+
+PROCEDURE  / XCreateDataFromPixmap * ( dpy: PtrDisplay;
+				       VAR data: PAPChar;
+				       pix, mask: X.Pixmap;
+				       att: PtrXpmAttributes ): SYSTEM.int;
+<* END *>
+
+END xpm.

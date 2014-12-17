@@ -1,0 +1,16 @@
+(* Copyright (C) 1999 XDS Ltd. *)
+DEFINITION MODULE FIOR;
+
+PROCEDURE AddExtension    ( VAR s : ARRAY OF CHAR; ext: ARRAY OF CHAR ) ;
+PROCEDURE ChangeExtension ( VAR s : ARRAY OF CHAR; ext: ARRAY OF CHAR ) ;
+PROCEDURE RemoveExtension ( VAR s : ARRAY OF CHAR ) ;
+PROCEDURE IsExtension     (     s : ARRAY OF CHAR; ext: ARRAY OF CHAR ) : BOOLEAN;
+
+PROCEDURE ExpandPath( path          : ARRAY OF CHAR; 
+                      VAR fullpath  : ARRAY OF CHAR);
+PROCEDURE MakePath  ( VAR path      : ARRAY OF CHAR ;
+                          head,tail : ARRAY OF CHAR ) ;
+PROCEDURE SplitPath ( 	  path      : ARRAY OF CHAR ;
+                      VAR head,tail : ARRAY OF CHAR ) ;
+
+END FIOR.

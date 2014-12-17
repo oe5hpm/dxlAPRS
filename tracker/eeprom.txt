@@ -1,0 +1,27 @@
+00 ... valid rmnc linex
+01 ... ssid of destination
+02 ... source Call [0]
+03 ... source Call [1]
+04 ... source Call [2]
+05 ... source Call [3]
+06 ... source Call [4]
+07 ... source Call [5]
+08 ... source ssid
+09 ... cmd
+0A ... pid
+0B ... mic-e
+0C ... 0terminierung
+0D ... speed-limit
+0E ... send-intervall high speed
+0F ... symbol [0]
+10 ... symbol [1]
+11 ... symbol 0-terminierung
+12 ... textbytes 
+.
+.
+.
+13 ... textbytes 0-terminierung
+14 ... no-txt frames
+15 ... tx-delay
+
+; ssid of destination, source call+ssid, cmd, pid, mic-e 

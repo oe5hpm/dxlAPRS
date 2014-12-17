@@ -1,0 +1,137 @@
+xdsx86.txt               Copyright (c) 1999-2011 Excelsior, LLC.
+----------------------------------------------------------------
+
+                 Native XDS-x86 Linux edition
+                 ----------------------------
+                            v2.60
+
+                        Read Me First!
+
+
+1. Installation
+---------------
+
+Under Unix, your XDS package is usually installed into the directory
+"/usr/local/xds".  The location is not "hard-wired" into the executables,
+so you are free to move the executables to other directories. These
+notes assume the default setup.
+
+After installation, edit your path environment variable to append path
+to the "/usr/local/xds/bin" directory.
+
+Example bash syntax:
+
+    export XDSDIR=/usr/local/xds
+    export PATH=$PATH:$XDSDIR/bin
+
+
+1.1. Directory Structure
+------------------------
+
+The following directory structure is created during installation:
+
+xds/
+    bin             executable and system files
+    C/
+        C           library source code
+    def/            definition modules:
+        iso             ISO Modula-2 library
+        ob2             Oberon-2 library pseudo-definition modules
+        pim             PIM library
+        POSIX           POSIX API
+        ts              TopSpeed-like library
+        X11             X11 API
+        xds             XDS library
+        Xm              Motif API
+    doc             documentation (HTML)
+    include/         
+        x86         Native XDS-x86 library include files
+    lib/            
+        x86         Native XDS-x86 libraries
+    licenses        license agreements
+    pdf             printable documentation (PDF)
+    readme          useful texts
+    samples         Modula-2/Oberon-2 code samples
+    sym/            
+        x86         Native XDS-x86 symbol files
+
+
+1.2. Building the library
+-------------------------
+
+The Native XDS-x86 runtime library was built on top of glibc 2 and
+thus executables created by this product require glibc 2 shared
+libraries unless you force static linking of C libraries:
+
+    -usestaticclibs:+
+
+The runtime library may have to be rebuilt on Linux systems that
+use C library other than glibc 2.
+
+To build the library, issue the following commands:
+
+    cd /usr/local/xds/lib/x86
+    rm libxds.a libts.a
+    make -f lib.mkf
+    make -f tslib.mkf
+
+
+1.3. Building API symbol files
+------------------------------
+
+Your XDS package contains definition modules for POSIX and X11/Motif
+APIs. To build the respective symbol files, issue the following
+commands:
+
+    cd /usr/local/xds
+    ./apisyms-x86
+     
+
+2. Creating the Working Directory
+---------------------------------
+
+The "xcwork" shell script (/usr/local/xds/bin/xcwork) may
+help you to create the working directory structure for your
+project, for example
+
+    mkdir wrk
+    cd wrk
+    xcwork
+
+
+3. Creating X11/Motif applications
+----------------------------------
+
+If your program is an X11 application, turn the XAPP option ON
+in the project file or in the command line:
+
+    +xapp
+
+If your program is a Motif application, turn the XMAPP option ON
+in the project file or in the command line:
+
+    +xmapp
+
+
+4. Contact information
+----------------------
+
+Send your bug reports, questions, and comments to: 
+
+support@excelsior-usa.com
+
+For latest information about new products, releases, updates, 
+and fixes, please visit our Web page at: 
+
+http://www.excelsior-usa.com/
+
+
+5. See also
+-----------
+
+    report.txt       bug reporting guidelines
+    samples.txt      sample programs description
+    whatsnew.txt     what is new in this release
+    xdsc.txt         XDS-C readme
+
+                         [end of document]

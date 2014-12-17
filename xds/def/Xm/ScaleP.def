@@ -1,0 +1,152 @@
+(* Xm/ScaleP.def  Nov 12  16:19:8  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/ScaleP.h using H2D v1.18.1 *)
+
+(* $RCSfile: ScaleP.def,v $ $Revision: 4 $ $Date: 28.07.98 23:14 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+(* Merged headers: Xm/Scale.h *)
+
+DEFINITION MODULE ["C"] ScaleP;
+
+IMPORT SYSTEM, Xlib, Xm:=XmP, Xt:=IntrinsicP;
+(* H2D:  Required IMPORT clause: 
+IMPORT ScaleP, Xlib, XmP, IntrinsicP;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992, 1993 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(* -------------------------------------------------- *)
+(*                     Xm/Scale.h                     *)
+(* -------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2
+ *)
+
+(*  Class record constants  *)
+
+VAR 
+  xmScaleWidgetClass: Xt.WidgetClass;
+
+TYPE 
+  XmScaleWidgetClass = POINTER TO _XmScaleClassRec;
+
+  XmScaleWidget = POINTER TO _XmScaleRec;
+
+(********    Public Function Declarations    ********)
+
+PROCEDURE XmScaleSetValue ( w: Xt.Widget;
+                            value: SYSTEM.int );
+
+PROCEDURE XmScaleGetValue ( w: Xt.Widget;
+                            VAR value: SYSTEM.int );
+
+PROCEDURE XmCreateScale ( parent: Xt.Widget;
+                          name: ARRAY OF CHAR;
+                          arglist: Xt.ArgList;
+                          argcount: Xt.Cardinal ): Xt.Widget;
+
+(********    End Public Function Declarations    ********)
+
+(* -------------------------------------------------- *)
+(*                     Xm/Scale.h                     *)
+(* -------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2.3
+ *)
+
+(*  Constraint part record for Scale widget  *)
+
+TYPE 
+  _XmScaleConstraintPart = RECORD
+    unused: CHAR;
+  END;
+
+  XmScaleConstraintPart = _XmScaleConstraintPart;
+
+  XmScaleConstraint = POINTER TO _XmScaleConstraintPart;
+
+(*   New fields for the Scale widget class record   *)
+
+  _XmScaleClassPart = RECORD
+    extension: Xt.XtPointer;   (*  Pointer to extension record  *)
+  END;
+
+  XmScaleClassPart = _XmScaleClassPart;
+
+(*  Full class record declaration  *)
+
+  _XmScaleClassRec = RECORD
+    core_class      : Xt.CoreClassPart;
+    composite_class : Xt.CompositeClassPart;
+    constraint_class: Xt.ConstraintClassPart;
+    manager_class   : Xm.XmManagerClassPart;
+    scale_class     : XmScaleClassPart;
+  END;
+
+  XmScaleClassRec = _XmScaleClassRec;
+
+(*  New fields for the Scale widget record  *)
+
+  _XmScalePart = RECORD
+    value                 : SYSTEM.int;
+    maximum               : SYSTEM.int;
+    minimum               : SYSTEM.int;
+    orientation           : SHORTCARD;
+    processing_direction  : SHORTCARD;
+    title                 : Xm.XmString;
+    font_list             : Xm.XmFontList;
+    font_struct           : Xlib.PtrXFontStruct;
+    show_value            : Xt.Boolean;
+    decimal_points        : SYSTEM.INT16;
+    scale_width           : Xt.Dimension;
+    scale_height          : Xt.Dimension;
+    highlight_thickness   : Xt.Dimension;
+    highlight_on_enter    : Xt.Boolean;
+    drag_callback         : Xt.XtCallbackList;
+    value_changed_callback: Xt.XtCallbackList;
+    last_value            : SYSTEM.int;
+    slider_size           : SYSTEM.int;
+    foreground_GC         : Xlib.GC;
+    show_value_x          : SYSTEM.int;
+    show_value_y          : SYSTEM.int;
+    show_value_width      : SYSTEM.int;
+    show_value_height     : SYSTEM.int;
+    scale_multiple        : SYSTEM.int;
+  END;
+
+  XmScalePart = _XmScalePart;
+
+(****************************************************************
+ *
+ * Full instance record declaration
+ *
+ ****************************************************************)
+
+  _XmScaleRec = RECORD
+    core      : Xt.CorePart;
+    composite : Xt.CompositePart;
+    constraint: Xt.ConstraintPart;
+    manager   : Xm.XmManagerPart;
+    scale     : XmScalePart;
+  END;
+
+  XmScaleRec = _XmScaleRec;
+
+VAR 
+  xmScaleClassRec: XmScaleClassRec;
+
+(********    Private Function Declarations    ********)
+(********    End Private Function Declarations    ********)
+
+END ScaleP.

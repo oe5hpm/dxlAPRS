@@ -1,0 +1,112 @@
+# Makefile for dxlAPRS udpflex
+# interfaces serial stuff like TNC2, TNC3, KISS, RMNC to axudp frames
+#
+# ---------------------- common section ---------------------------------------
+INCL    = .
+TARGET	= udpflex
+CDEFS	= -D_unix -D_linux -DX2C_no_spawn -w $(ARCHSPEC)
+CFLAGS	= -O2 -c -g -fno-strength-reduce -I$(INCL) -I$(EXTLIB)
+# ---------------------- armv6 (raspberry) specific ---------------------------
+ifeq ($(PLATTFORM), armv6)
+XDSLIB  = lib_armv6/libxds.a
+EXTLIB  = lib_armv6/
+CC	= ./arm-linux-rpi-gcc
+STRIP	= ./arm-linux-rpi-strip
+ARCHSPEC= -march=armv6zk -mfpu=vfp -mfloat-abi=hard -mcpu=arm1176jzf-s
+LFLAGS	=
+# ---------------------- armv7hf (bur am335x pp) specific ---------------------
+else ifeq ($(PLATTFORM), armv7hf)
+XDSLIB  = lib_armv7hf/libxds.a
+EXTLIB  = lib_armv7hf/
+CC	= ./arm-linux-armv7hf-gcc
+STRIP	= ./arm-linux-armv7hf-strip
+ARCHSPEC= -march=armv7-a -mfpu=neon -mfloat-abi=hard -mcpu=cortex-a8
+LFLAGS	=
+# -------------------------- x86 (default) specific ---------------------------
+else
+XDSLIB  = lib_x86/libxds.a
+EXTLIB  = .
+CC	= gcc
+STRIP	= strip
+ARCHSPEC= -m32
+LFLAGS	= -m32
+endif
+# ------------------ objects enumeration ------------------
+#                    -------------------
+
+OBJ= \
+	Lib.o \
+	Select.o \
+	aprsstr.o \
+	filesize.o \
+	flush.o \
+	osi.o \
+	tcp.o \
+	udp.o \
+	udpflex.o
+# ------------------- target make rules -------------------
+#                     -----------------
+
+$(TARGET) : $(OBJ)
+	$(CC) $(LFLAGS) -o $(TARGET) $(OBJ) $(XDSLIB) -lm
+	$(STRIP) $(TARGET) -s
+clean:
+	rm -f $(OBJ) $(TARGET)
+# ----------------- Dependency information ----------------
+#                   ----------------------
+
+Lib.o                    : Lib.h
+Lib.o                    : ProgEnv.h
+Lib.o                    : RealMath.h
+Lib.o                    : $(M) Lib.c
+	$(CC) $(CDEFS) $(CFLAGS) -o Lib.o Lib.c
+
+Select.o                 : Select.h
+Select.o                 : $(M) Select.c
+	$(CC) $(CDEFS) $(CFLAGS) -o Select.o Select.c
+
+aprsstr.o                : aprsstr.h
+aprsstr.o                : $(M) aprsstr.c
+	$(CC) $(CDEFS) $(CFLAGS) -o aprsstr.o aprsstr.c
+
+filesize.o               : filesize.h
+filesize.o               : $(M) filesize.c
+	$(CC) $(CDEFS) $(CFLAGS) -o filesize.o filesize.c
+
+flush.o                  : flush.h
+flush.o                  : $(M) flush.c
+	$(CC) $(CDEFS) $(CFLAGS) -o flush.o flush.c
+
+osi.o                    : FileSys.h
+osi.o                    : IOChan.h
+osi.o                    : InOut.h
+osi.o                    : Lib.h
+osi.o                    : RealIO.h
+osi.o                    : StdChans.h
+osi.o                    : filesize.h
+osi.o                    : flush.h
+osi.o                    : osi.h
+osi.o                    : tcp.h
+osi.o                    : udp.h
+osi.o                    : $(M) osi.c
+	$(CC) $(CDEFS) $(CFLAGS) -o osi.o osi.c
+
+tcp.o                    : tcp.h
+tcp.o                    : $(M) tcp.c
+	$(CC) $(CDEFS) $(CFLAGS) -o tcp.o tcp.c
+
+udp.o                    : udp.h
+udp.o                    : $(M) udp.c
+	$(CC) $(CDEFS) $(CFLAGS) -o udp.o udp.c
+
+udpflex.o                : Select.h
+udpflex.o                : TimeConv.h
+udpflex.o                : aprsstr.h
+udpflex.o                : mlib.h
+udpflex.o                : osi.h
+udpflex.o                : $(M) udpflex.c
+	$(CC) $(CDEFS) $(CFLAGS) -o udpflex.o udpflex.c
+
+
+# end of makefile
+

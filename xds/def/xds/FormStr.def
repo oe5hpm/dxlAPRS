@@ -1,0 +1,69 @@
+(* Copyright (c) xTech 1992,95. All Rights Reserved *)
+<*+ m2extensions *>
+DEFINITION MODULE FormStr;
+
+IMPORT  SYSTEM;
+
+PROCEDURE print (VAR str: ARRAY OF CHAR;
+                     fmt: ARRAY OF CHAR;
+                 SEQ arg: SYSTEM.BYTE);
+
+PROCEDURE append(VAR str: ARRAY OF CHAR;
+                     fmt: ARRAY OF CHAR;
+                 SEQ arg: SYSTEM.BYTE);
+
+PROCEDURE image (VAR str: ARRAY OF CHAR;
+                 VAR pos: CARDINAL;
+                     fmt: ARRAY OF CHAR;
+                 SEQ arg: SYSTEM.BYTE);
+
+PROCEDURE iscan(VAR num : INTEGER;
+                    str : ARRAY OF CHAR;
+                VAR pos : CARDINAL;
+                VAR done: BOOLEAN);
+
+(***************************************************************
+
+                      FORMATTED OUTPUT TO STRINGS
+
+PROCEDURE print
+---------------
+     Forms the string, defined by (format,args) pair.
+
+PROCEDURE append
+----------------
+     Appends the string, defined by (format,args) to the string -str-,
+starting from LENGTH(str) position.
+
+PROCEDURE image
+---------------
+     Appends the string, defined by (format,args) to the string -str-,
+starting from position -pos-. After call -pos- points to the end of new
+string ( str[pos]=0C OR pos>HIGH(str) )
+
+PROCEDURE iscan(
+----------------
+                VAR num : INTEGER;
+                    str : ARRAY OF CHAR;
+                VAR pos : INTEGER;
+                VAR done: BOOLEAN);
+
+     Reads an integer number from -str- starting from position -pos-.
+Skips spaces if necessary. After call:
+
+        done  -- = TRUE, if number is read successfully;
+        pos   -- index of symbol immediately following the number;
+        num   -- contains the number read, if -done-.
+
+     Number can be represented in any form acceptable in Modula-2:
+
+        123456789
+       -1
+        0ABCDEFh
+        177b
+       -177b
+        377c
+
+***************************************************************)
+
+END FormStr.

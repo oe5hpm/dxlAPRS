@@ -1,0 +1,4 @@
+CC=../src/arm-linux-armv7hf-gcc CFLAGS="-march=armv7-a -mfpu=neon -mfloat-abi=hard -mcpu=cortex-a8" ./configure --host=arm-linux-gnueabihf --prefix=/tmp/libjpeg --libdir=/home/petermaierh/work/dxlAPRS/src/lib_armv7hf --includedir=/home/petermaierh/work/dxlAPRS/src/lib_armv7hf
+CC=../src/arm-linux-armv7hf-gcc CFLAGS="-march=armv7-a -mfpu=neon -mfloat-abi=hard -mcpu=cortex-a8" make
+CC=../src/arm-linux-armv7hf-gcc CFLAGS="-march=armv7-a -mfpu=neon -mfloat-abi=hard -mcpu=cortex-a8" make install
+

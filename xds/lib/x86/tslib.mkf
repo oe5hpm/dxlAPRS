@@ -1,0 +1,264 @@
+
+M	= tslib.mkf
+XDSDIR	= ../..
+TSCPDIR	= ../..
+INCL	= $(XDSDIR)/include/x86
+INCLTS	= $(TSCPDIR)/include/x86
+
+TSLIB	= libts.a
+LIBCMD	= libts.tmp
+
+CDEFS	= -D_unix -D_linux -DX2C_no_spawn -DX2C_strcmp -DX2C_native_library
+#  ! "CF\t= -O2 -fno-strength-reduce -I$(INCL) -c\n"
+CF	= -fno-strength-reduce -I$(INCL) -c
+CC	= gcc
+OBJFF	=
+
+# ------------------ objects enumeration ------------------
+#                    -------------------
+
+OBJ= \
+	../../C/x86/BiosIO.o \
+	../../C/x86/ChanConsts.o \
+	../../C/x86/ConvTypes.o \
+	../../C/x86/EXCEPTIONS.o \
+	../../C/x86/FIO.o \
+	../../C/x86/FIOR.o \
+	../../C/x86/FileName.o \
+	../../C/x86/FileSys.o \
+	../../C/x86/IO.o \
+	../../C/x86/IOChan.o \
+	../../C/x86/IOConsts.o \
+	../../C/x86/Lib.o \
+	../../C/x86/LongConv.o \
+	../../C/x86/LongMath.o \
+	../../C/x86/LongStr.o \
+	../../C/x86/MATHLIB.o \
+	../../C/x86/ProgEnv.o \
+	../../C/x86/ProgExec.o \
+	../../C/x86/RndFile.o \
+	../../C/x86/SeqFile.o \
+	../../C/x86/ShtHeap.o \
+	../../C/x86/StdChans.o \
+	../../C/x86/Storage.o \
+	../../C/x86/Str.o \
+	../../C/x86/Strings.o \
+	../../C/x86/SysClock.o \
+	../../C/x86/SysErr.o \
+	../../C/x86/TextIO.o \
+	../../C/x86/TimeConv.o \
+	../../C/x86/WholeStr.o \
+	../../C/x86/XIOChan.o \
+	../../C/x86/platform.o \
+	../../C/x86/xFilePos.o \
+	../../C/x86/xtsFIO.o \
+	../../C/x86/xtsIO.o \
+	../../C/x86/xtsLib.o
+# ------------------- target make rules -------------------
+#                     -----------------
+
+$(TSLIB) : $(M) $(OBJ)
+	rm -f $(TSLIB)
+	ar q $(TSLIB) $(OBJ)
+	ranlib $(TSLIB)
+
+# ----------------- Dependency information ----------------
+#                   ----------------------
+
+../../C/x86/BiosIO.o     : ../../include/x86/BiosIO.h
+../../C/x86/BiosIO.o     : $(M) ../../C/x86/BiosIO.c
+	$(CC) $(OBJFF) $(CDEFS) $(CF) -o ../../C/x86/BiosIO.o ../../C/x86/BiosIO.c
+
+../../C/x86/ChanConsts.o : ../../include/x86/ChanConsts.h
+../../C/x86/ChanConsts.o : $(M) ../../C/x86/ChanConsts.c
+	$(CC) $(OBJFF) $(CDEFS) $(CF) -o ../../C/x86/ChanConsts.o ../../C/x86/ChanConsts.c
+
+../../C/x86/ConvTypes.o  : ../../include/x86/ConvTypes.h
+../../C/x86/ConvTypes.o  : $(M) ../../C/x86/ConvTypes.c
+	$(CC) $(OBJFF) $(CDEFS) $(CF) -o ../../C/x86/ConvTypes.o ../../C/x86/ConvTypes.c
+
+../../C/x86/EXCEPTIONS.o : ../../include/x86/EXCEPTIONS.h
+../../C/x86/EXCEPTIONS.o : $(M) ../../C/x86/EXCEPTIONS.c
+	$(CC) $(OBJFF) $(CDEFS) $(CF) -o ../../C/x86/EXCEPTIONS.o ../../C/x86/EXCEPTIONS.c
+
+../../C/x86/FIO.o        : ../../include/x86/ChanConsts.h
+../../C/x86/FIO.o        : ../../include/x86/EXCEPTIONS.h
+../../C/x86/FIO.o        : ../../include/x86/FIO.h
+../../C/x86/FIO.o        : ../../include/x86/FileSys.h
+../../C/x86/FIO.o        : ../../include/x86/IOChan.h
+../../C/x86/FIO.o        : ../../include/x86/IOConsts.h
+../../C/x86/FIO.o        : ../../include/x86/RndFile.h
+../../C/x86/FIO.o        : ../../include/x86/SeqFile.h
+../../C/x86/FIO.o        : ../../include/x86/StdChans.h
+../../C/x86/FIO.o        : ../../include/x86/Str.h
+../../C/x86/FIO.o        : ../../include/x86/SysClock.h
+../../C/x86/FIO.o        : ../../include/x86/SysErr.h
+../../C/x86/FIO.o        : ../../include/x86/XIOChan.h
+../../C/x86/FIO.o        : ../../include/x86/xFilePos.h
+../../C/x86/FIO.o        : ../../include/x86/xtsFIO.h
+../../C/x86/FIO.o        : $(M) ../../C/x86/FIO.c
+	$(CC) $(OBJFF) $(CDEFS) $(CF) -o ../../C/x86/FIO.o ../../C/x86/FIO.c
+
+../../C/x86/FIOR.o       : ../../include/x86/FIO.h
+../../C/x86/FIOR.o       : ../../include/x86/FIOR.h
+../../C/x86/FIOR.o       : ../../include/x86/FileName.h
+../../C/x86/FIOR.o       : ../../include/x86/FileSys.h
+../../C/x86/FIOR.o       : ../../include/x86/IOChan.h
+../../C/x86/FIOR.o       : ../../include/x86/Str.h
+../../C/x86/FIOR.o       : ../../include/x86/platform.h
+../../C/x86/FIOR.o       : $(M) ../../C/x86/FIOR.c
+	$(CC) $(OBJFF) $(CDEFS) $(CF) -o ../../C/x86/FIOR.o ../../C/x86/FIOR.c
+
+../../C/x86/FileName.o   : ../../include/x86/FileName.h
+../../C/x86/FileName.o   : $(M) ../../C/x86/FileName.c
+	$(CC) $(OBJFF) $(CDEFS) $(CF) -o ../../C/x86/FileName.o ../../C/x86/FileName.c
+
+../../C/x86/FileSys.o    : ../../include/x86/FileSys.h
+../../C/x86/FileSys.o    : $(M) ../../C/x86/FileSys.c
+	$(CC) $(OBJFF) $(CDEFS) $(CF) -o ../../C/x86/FileSys.o ../../C/x86/FileSys.c
+
+../../C/x86/IO.o         : ../../include/x86/BiosIO.h
+../../C/x86/IO.o         : ../../include/x86/ChanConsts.h
+../../C/x86/IO.o         : ../../include/x86/EXCEPTIONS.h
+../../C/x86/IO.o         : ../../include/x86/IO.h
+../../C/x86/IO.o         : ../../include/x86/IOChan.h
+../../C/x86/IO.o         : ../../include/x86/IOConsts.h
+../../C/x86/IO.o         : ../../include/x86/SeqFile.h
+../../C/x86/IO.o         : ../../include/x86/StdChans.h
+../../C/x86/IO.o         : ../../include/x86/Str.h
+../../C/x86/IO.o         : ../../include/x86/xtsIO.h
+../../C/x86/IO.o         : $(M) ../../C/x86/IO.c
+	$(CC) $(OBJFF) $(CDEFS) $(CF) -o ../../C/x86/IO.o ../../C/x86/IO.c
+
+../../C/x86/IOChan.o     : ../../include/x86/IOChan.h
+../../C/x86/IOChan.o     : $(M) ../../C/x86/IOChan.c
+	$(CC) $(OBJFF) $(CDEFS) $(CF) -o ../../C/x86/IOChan.o ../../C/x86/IOChan.c
+
+../../C/x86/IOConsts.o   : ../../include/x86/IOConsts.h
+../../C/x86/IOConsts.o   : $(M) ../../C/x86/IOConsts.c
+	$(CC) $(OBJFF) $(CDEFS) $(CF) -o ../../C/x86/IOConsts.o ../../C/x86/IOConsts.c
+
+../../C/x86/Lib.o        : ../../include/x86/Lib.h
+../../C/x86/Lib.o        : ../../include/x86/ProgEnv.h
+../../C/x86/Lib.o        : ../../include/x86/ProgExec.h
+../../C/x86/Lib.o        : ../../include/x86/StdChans.h
+../../C/x86/Lib.o        : ../../include/x86/Storage.h
+../../C/x86/Lib.o        : ../../include/x86/Str.h
+../../C/x86/Lib.o        : ../../include/x86/SysClock.h
+../../C/x86/Lib.o        : ../../include/x86/TextIO.h
+../../C/x86/Lib.o        : ../../include/x86/TimeConv.h
+../../C/x86/Lib.o        : ../../include/x86/xtsLib.h
+../../C/x86/Lib.o        : $(M) ../../C/x86/Lib.c
+	$(CC) $(OBJFF) $(CDEFS) $(CF) -o ../../C/x86/Lib.o ../../C/x86/Lib.c
+
+../../C/x86/LongConv.o   : ../../include/x86/LongConv.h
+../../C/x86/LongConv.o   : $(M) ../../C/x86/LongConv.c
+	$(CC) $(OBJFF) $(CDEFS) $(CF) -o ../../C/x86/LongConv.o ../../C/x86/LongConv.c
+
+../../C/x86/LongMath.o   : ../../include/x86/LongMath.h
+../../C/x86/LongMath.o   : $(M) ../../C/x86/LongMath.c
+	$(CC) $(OBJFF) $(CDEFS) $(CF) -o ../../C/x86/LongMath.o ../../C/x86/LongMath.c
+
+../../C/x86/LongStr.o    : ../../include/x86/LongStr.h
+../../C/x86/LongStr.o    : $(M) ../../C/x86/LongStr.c
+	$(CC) $(OBJFF) $(CDEFS) $(CF) -o ../../C/x86/LongStr.o ../../C/x86/LongStr.c
+
+../../C/x86/MATHLIB.o    : ../../include/x86/LongMath.h
+../../C/x86/MATHLIB.o    : ../../include/x86/MATHLIB.h
+../../C/x86/MATHLIB.o    : ../../include/x86/xMath.h
+../../C/x86/MATHLIB.o    : $(M) ../../C/x86/MATHLIB.c
+	$(CC) $(OBJFF) $(CDEFS) $(CF) -o ../../C/x86/MATHLIB.o ../../C/x86/MATHLIB.c
+
+../../C/x86/ProgEnv.o    : ../../include/x86/ProgEnv.h
+../../C/x86/ProgEnv.o    : $(M) ../../C/x86/ProgEnv.c
+	$(CC) $(OBJFF) $(CDEFS) $(CF) -o ../../C/x86/ProgEnv.o ../../C/x86/ProgEnv.c
+
+../../C/x86/ProgExec.o   : ../../include/x86/ProgExec.h
+../../C/x86/ProgExec.o   : $(M) ../../C/x86/ProgExec.c
+	$(CC) $(OBJFF) $(CDEFS) $(CF) -o ../../C/x86/ProgExec.o ../../C/x86/ProgExec.c
+
+../../C/x86/RndFile.o    : ../../include/x86/RndFile.h
+../../C/x86/RndFile.o    : $(M) ../../C/x86/RndFile.c
+	$(CC) $(OBJFF) $(CDEFS) $(CF) -o ../../C/x86/RndFile.o ../../C/x86/RndFile.c
+
+../../C/x86/SeqFile.o    : ../../include/x86/SeqFile.h
+../../C/x86/SeqFile.o    : $(M) ../../C/x86/SeqFile.c
+	$(CC) $(OBJFF) $(CDEFS) $(CF) -o ../../C/x86/SeqFile.o ../../C/x86/SeqFile.c
+
+../../C/x86/ShtHeap.o    : ../../include/x86/EXCEPTIONS.h
+../../C/x86/ShtHeap.o    : ../../include/x86/ShtHeap.h
+../../C/x86/ShtHeap.o    : ../../include/x86/Strings.h
+../../C/x86/ShtHeap.o    : $(M) ../../C/x86/ShtHeap.c
+	$(CC) $(OBJFF) $(CDEFS) $(CF) -o ../../C/x86/ShtHeap.o ../../C/x86/ShtHeap.c
+
+../../C/x86/StdChans.o   : ../../include/x86/StdChans.h
+../../C/x86/StdChans.o   : $(M) ../../C/x86/StdChans.c
+	$(CC) $(OBJFF) $(CDEFS) $(CF) -o ../../C/x86/StdChans.o ../../C/x86/StdChans.c
+
+../../C/x86/Storage.o    : ../../include/x86/Storage.h
+../../C/x86/Storage.o    : $(M) ../../C/x86/Storage.c
+	$(CC) $(OBJFF) $(CDEFS) $(CF) -o ../../C/x86/Storage.o ../../C/x86/Storage.c
+
+../../C/x86/Str.o        : ../../include/x86/ConvTypes.h
+../../C/x86/Str.o        : ../../include/x86/LongConv.h
+../../C/x86/Str.o        : ../../include/x86/LongStr.h
+../../C/x86/Str.o        : ../../include/x86/Str.h
+../../C/x86/Str.o        : ../../include/x86/Strings.h
+../../C/x86/Str.o        : ../../include/x86/WholeStr.h
+../../C/x86/Str.o        : $(M) ../../C/x86/Str.c
+	$(CC) $(OBJFF) $(CDEFS) $(CF) -o ../../C/x86/Str.o ../../C/x86/Str.c
+
+../../C/x86/Strings.o    : ../../include/x86/Strings.h
+../../C/x86/Strings.o    : $(M) ../../C/x86/Strings.c
+	$(CC) $(OBJFF) $(CDEFS) $(CF) -o ../../C/x86/Strings.o ../../C/x86/Strings.c
+
+../../C/x86/SysClock.o   : ../../include/x86/SysClock.h
+../../C/x86/SysClock.o   : $(M) ../../C/x86/SysClock.c
+	$(CC) $(OBJFF) $(CDEFS) $(CF) -o ../../C/x86/SysClock.o ../../C/x86/SysClock.c
+
+../../C/x86/SysErr.o     : ../../include/x86/SysErr.h
+../../C/x86/SysErr.o     : $(M) ../../C/x86/SysErr.c
+	$(CC) $(OBJFF) $(CDEFS) $(CF) -o ../../C/x86/SysErr.o ../../C/x86/SysErr.c
+
+../../C/x86/TextIO.o     : ../../include/x86/TextIO.h
+../../C/x86/TextIO.o     : $(M) ../../C/x86/TextIO.c
+	$(CC) $(OBJFF) $(CDEFS) $(CF) -o ../../C/x86/TextIO.o ../../C/x86/TextIO.c
+
+../../C/x86/TimeConv.o   : ../../include/x86/TimeConv.h
+../../C/x86/TimeConv.o   : $(M) ../../C/x86/TimeConv.c
+	$(CC) $(OBJFF) $(CDEFS) $(CF) -o ../../C/x86/TimeConv.o ../../C/x86/TimeConv.c
+
+../../C/x86/WholeStr.o   : ../../include/x86/WholeStr.h
+../../C/x86/WholeStr.o   : $(M) ../../C/x86/WholeStr.c
+	$(CC) $(OBJFF) $(CDEFS) $(CF) -o ../../C/x86/WholeStr.o ../../C/x86/WholeStr.c
+
+../../C/x86/XIOChan.o    : ../../include/x86/XIOChan.h
+../../C/x86/XIOChan.o    : $(M) ../../C/x86/XIOChan.c
+	$(CC) $(OBJFF) $(CDEFS) $(CF) -o ../../C/x86/XIOChan.o ../../C/x86/XIOChan.c
+
+../../C/x86/platform.o   : ../../include/x86/platform.h
+../../C/x86/platform.o   : $(M) ../../C/x86/platform.c
+	$(CC) $(OBJFF) $(CDEFS) $(CF) -o ../../C/x86/platform.o ../../C/x86/platform.c
+
+../../C/x86/xFilePos.o   : ../../include/x86/xFilePos.h
+../../C/x86/xFilePos.o   : $(M) ../../C/x86/xFilePos.c
+	$(CC) $(OBJFF) $(CDEFS) $(CF) -o ../../C/x86/xFilePos.o ../../C/x86/xFilePos.c
+
+../../C/x86/xtsFIO.o     : ../../include/x86/ChanConsts.h
+../../C/x86/xtsFIO.o     : ../../include/x86/FIO.h
+../../C/x86/xtsFIO.o     : ../../include/x86/IOChan.h
+../../C/x86/xtsFIO.o     : ../../include/x86/SysClock.h
+../../C/x86/xtsFIO.o     : ../../include/x86/xtsFIO.h
+../../C/x86/xtsFIO.o     : $(M) ../../C/x86/xtsFIO.c
+	$(CC) $(OBJFF) $(CDEFS) $(CF) -o ../../C/x86/xtsFIO.o ../../C/x86/xtsFIO.c
+
+../../C/x86/xtsIO.o      : ../../include/x86/xtsIO.h
+../../C/x86/xtsIO.o      : $(M) ../../C/x86/xtsIO.c
+	$(CC) $(OBJFF) $(CDEFS) $(CF) -o ../../C/x86/xtsIO.o ../../C/x86/xtsIO.c
+
+../../C/x86/xtsLib.o     : ../../include/x86/xtsLib.h
+../../C/x86/xtsLib.o     : $(M) ../../C/x86/xtsLib.c
+	$(CC) $(OBJFF) $(CDEFS) $(CF) -o ../../C/x86/xtsLib.o ../../C/x86/xtsLib.c
+
+
+# end of makefile

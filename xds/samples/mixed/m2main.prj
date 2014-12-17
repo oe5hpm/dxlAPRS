@@ -1,0 +1,12 @@
+-lookup = *.mod = $!
+-lookup = *.def = $!
+-lookup = *.c   = .;$!
+-lookup = *.sym = .
+-lookup = *.h   = .
+
+-m2extensions+
+-makefile+
+-mkfname=m2main
+-mkfext=mkf
+
+!module m2main.mod

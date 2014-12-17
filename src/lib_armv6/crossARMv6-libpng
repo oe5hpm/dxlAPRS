@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# architecture prefix
+ARCH="arm-bcm2708hardfp-linux-gnueabi"
+
+# path to the toolchain and kernel base
+TOOL_PATH=/home/petermaierh/rpi-tools/arm-bcm2708/arm-bcm2708hardfp-linux-gnueabi/
+
+# path to the toolchain base
+BASE_PATH=$TOOL_PATH
+
+# cumulative toolchain prefix
+PREFIX=$BASE_PATH/bin/$ARCH
+
+export CC=$PREFIX-gcc
+export CXX=$PREFIX-g++
+export LD=$PREFIX-ld
+export NM="$PREFIX-nm -B"
+export AR=$PREFIX-ar
+export RANLIB=$PREFIX-ranlib
+export STRIP=$PREFIX-strip
+export OBJCOPY=$PREFIX-objcopy
+export LN_S="ln -s"
+
+export CFLAGS="-Wall -O3 -funroll-loops -I$BASE_PATH/include -I../zlib-1.2.8 -march=armv6zk -mfpu=vfp -mfloat-abi=hard -mcpu=arm1176jzf-s"
+export CPPFLAGS="-I$BASE_PATH/include"
+export CXXFLAGS=""
+
+export LDFLAGS="-L$BASE_PATH/lib -L$BASE_PATH/$ARCH/lib -L$BASE_PATH/lib/gcc/arm-bcm2708hardfp-linux-gnueabi/4.7.1 -L../zlib-1.2.8"
+
+./configure --host=$ARCH --prefix=$BASE_PATH --libdir=/home/petermaierh/work/dxlAPRS/src/lib_armv6/
+make
+make install
+

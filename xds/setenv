@@ -1,0 +1,2 @@
+export XDSDIR=`pwd`
+export PATH=$XDSDIR/bin:$PATH

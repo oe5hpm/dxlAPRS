@@ -1,0 +1,108 @@
+(* Xm/MessageB.def  Oct 15  18:37:42  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/MessageB.h using H2D v1.16. *)
+
+(* $RCSfile: MessageB.def,v $ $Revision: 4 $ $Date: 28.07.98 23:14 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+
+DEFINITION MODULE ["C"] MessageB;
+
+IMPORT SYSTEM, Xt:=Intrinsic;
+(* H2D:  Required IMPORT clause: 
+IMPORT MessageB, Intrinsic;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(*
+ * Motif Release 1.2 
+ *)
+
+(*  Class record constants  *)
+
+VAR 
+  xmMessageBoxWidgetClass: Xt.WidgetClass;
+
+TYPE 
+  _XmMessageBoxClassRec = RECORD
+    (* Declaration without definition *)
+  END;
+
+  XmMessageBoxWidgetClass = POINTER TO _XmMessageBoxClassRec;
+
+  _XmMessageBoxRec = RECORD
+    (* Declaration without definition *)
+  END;
+
+  XmMessageBoxWidget = POINTER TO _XmMessageBoxRec;
+
+(*  fast XtIsSubclass define  *)
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: this procedure corresponds to a macro. *)
+PROCEDURE XmIsMessageBox ( w: Xt.Widget ): Xt.Boolean;
+
+<* ELSE *>
+
+PROCEDURE  / XmIsMessageBox ( w: Xt.Widget ): Xt.Boolean;
+
+<* END *>
+
+(********    Public Function Declarations    ********)
+
+PROCEDURE XmCreateMessageBox ( parent: Xt.Widget;
+                               name: ARRAY OF CHAR;
+                               al: Xt.ArgList;
+                               ac: Xt.Cardinal ): Xt.Widget;
+
+PROCEDURE XmCreateMessageDialog ( parent: Xt.Widget;
+                                  name: ARRAY OF CHAR;
+                                  al: Xt.ArgList;
+                                  ac: Xt.Cardinal ): Xt.Widget;
+
+PROCEDURE XmCreateErrorDialog ( parent: Xt.Widget;
+                                name: ARRAY OF CHAR;
+                                al: Xt.ArgList;
+                                ac: Xt.Cardinal ): Xt.Widget;
+
+PROCEDURE XmCreateInformationDialog ( parent: Xt.Widget;
+                                      name: ARRAY OF CHAR;
+                                      al: Xt.ArgList;
+                                      ac: Xt.Cardinal ): Xt.Widget;
+
+PROCEDURE XmCreateQuestionDialog ( parent: Xt.Widget;
+                                   name: ARRAY OF CHAR;
+                                   al: Xt.ArgList;
+                                   ac: Xt.Cardinal ): Xt.Widget;
+
+PROCEDURE XmCreateWarningDialog ( parent: Xt.Widget;
+                                  name: ARRAY OF CHAR;
+                                  al: Xt.ArgList;
+                                  ac: Xt.Cardinal ): Xt.Widget;
+
+PROCEDURE XmCreateWorkingDialog ( parent: Xt.Widget;
+                                  name: ARRAY OF CHAR;
+                                  al: Xt.ArgList;
+                                  ac: Xt.Cardinal ): Xt.Widget;
+
+PROCEDURE XmCreateTemplateDialog ( parent: Xt.Widget;
+                                   name: ARRAY OF CHAR;
+                                   al: Xt.ArgList;
+                                   ac: Xt.Cardinal ): Xt.Widget;
+
+PROCEDURE XmMessageBoxGetChild ( widget: Xt.Widget;
+                                 child: SYSTEM.unsigned ): Xt.Widget;
+
+(********    End Public Function Declarations    ********)
+
+END MessageB.

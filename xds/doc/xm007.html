@@ -1,0 +1,2522 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 4.01 Transitional//EN">
+<HTML>
+<HEAD>
+<TITLE>XDS Modula-2</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<P><HR>
+<A NAME="0388">
+<A HREF="xm000.html#root" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="xm006.html#0387" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0389" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H1>XDS Modula-2</H1>
+
+<P>This chapter covers details of the XDS implementation of the Modula-2 language. In the standard mode<FONT SIZE=2>&nbsp;/When options <A HREF="xm005.html#0102" TARGET=body>M2EXTENSIONS</A> and <A HREF="xm005.html#0099" TARGET=body>M2ADDTYPES</A> are OFF/ </FONT> XDS Modula-2 complies with ISO 10514 (See the statement of compliance and further details in <A HREF="#0389" TARGET=body>ISO Standard compliance</A>). The compatibility rules are described in <A HREF="#0419" TARGET=body>Compatibility</A>. The differences between ISO Modula-2 and the language described in the 4th edition of Wirth&rsquo;s &ldquo;Programming in Modula-2&rdquo; are listed in <A HREF="#0392" TARGET=body>New language&rsquo;s features</A>. Language extensions are described in <A HREF="#0433" TARGET=body>Language extensions</A>. 
+<P><UL>
+<LI><A HREF="#0389" TARGET=body>ISO Standard compliance</A>
+<LI><A HREF="#0392" TARGET=body>New language&rsquo;s features</A>
+<LI><A HREF="#0418" TARGET=body>Standard procedures</A>
+<LI><A HREF="#0419" TARGET=body>Compatibility</A>
+<LI><A HREF="#0425" TARGET=body>The Modula-2 module SYSTEM</A>
+<LI><A HREF="#0433" TARGET=body>Language extensions</A>
+<LI><A HREF="#0456" TARGET=body>Source code directives</A>
+</UL>
+<P><HR>
+<A NAME="0389">
+<A HREF="#0388" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0388" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0390" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>ISO Standard compliance</H2>
+
+<P>XDS Modula-2 partially complies with the requirements of ISO 10514. The details of non-conformities are as follows: 
+<UL>
+ 
+<LI>Not all libraries are available in the current release. </LI>
+<LI>The current release may impose some restrictions on using new language features. </LI>
+</UL>
+See Chapter <A HREF="xm013.html#0591" TARGET=body>Limitations and restrictions</A> for further details. 
+<P><UL>
+<LI><A HREF="#0390" TARGET=body>Ordering of declarations</A>
+</UL>
+<P><HR>
+<A NAME="0390">
+<A HREF="#0389" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0389" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0391" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Ordering of declarations</H3>
+
+<P>XDS Modula-2 is a so-called &lsquo;single-pass&rsquo; implementation. It means that all identifiers must be declared before use. According to the International Standard this <I>declare-before-use</I> approach is perfectly valid. The alternative approach, (<I>declare-before-use-in-declarations</I>), can be used in so-called &lsquo;multi-pass&rsquo; implementations. 
+<P>A forward declaration must be used to allow forward references to a procedure which actual declaration appears later in the source text. 
+<P><A NAME="0391">
+<A HREF="#0390" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0390" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0392" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H5>Example</H5>
+
+<P><PRE>PROCEDURE&nbsp;a(x:&nbsp;INTEGER);&nbsp;FORWARD;
+(*&nbsp;FORWARD&nbsp;declaration&nbsp;*)
+
+PROCEDURE&nbsp;b(x:&nbsp;INTEGER);
+BEGIN
+&nbsp;&nbsp;a(x-1);
+END&nbsp;b;
+
+PROCEDURE&nbsp;a(n:&nbsp;INTEGER);
+(*&nbsp;proper&nbsp;procedure&nbsp;declaration&nbsp;*)
+BEGIN
+&nbsp;&nbsp;b(n-1);
+END&nbsp;a;
+</PRE>
+
+<P>To provide source compatibility between &lsquo;single-pass&rsquo; and &lsquo;multi-pass&rsquo; implementations, the Standard requires that all conforming &lsquo;multi-pass&rsquo; implementations accept and correctly process the <TT>FORWARD</TT> directive. 
+<P><HR>
+<A NAME="0392">
+<A HREF="#0388" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0391" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0393" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>New language&rsquo;s features</H2>
+
+<P>The language described in the International Standard varies in many details from the one described in Wirth&rsquo;s &ldquo;Programming in Modula-2&rdquo;. 
+<P>The most important innovations are 
+<UL>
+ 
+<LI>complex numbers </LI>
+<LI>module finalization </LI>
+<LI>exception handling </LI>
+<LI>array and record constructors </LI>
+<LI>four new system modules </LI>
+<LI>standard library </LI>
+</UL>
+
+<P><B>Note:</B> The system modules (except the module <TT>SYSTEM</TT>) are not embedded in the compiler and are implemented as separate modules. 
+<P><UL>
+<LI><A HREF="#0393" TARGET=body>Lexis</A>
+<LI><A HREF="#0394" TARGET=body>Complex types</A>
+<LI><A HREF="#0396" TARGET=body>Sets and packedsets</A>
+<LI><A HREF="#0397" TARGET=body>Strings</A>
+<LI><A HREF="#0398" TARGET=body>Value constructors</A>
+<LI><A HREF="#0400" TARGET=body>Multi-dimensional open arrays</A>
+<LI><A HREF="#0401" TARGET=body>Procedure type declarations</A>
+<LI><A HREF="#0402" TARGET=body>Procedure constants</A>
+<LI><A HREF="#0404" TARGET=body>Whole number division</A>
+<LI><A HREF="#0405" TARGET=body>Type conversions</A>
+<LI><A HREF="#0406" TARGET=body>NEW and DISPOSE</A>
+<LI><A HREF="#0407" TARGET=body>Finalization</A>
+<LI><A HREF="#0408" TARGET=body>Exceptions</A>
+<LI><A HREF="#0410" TARGET=body>The system module EXCEPTIONS</A>
+<LI><A HREF="#0411" TARGET=body>The system module M2EXCEPTION</A>
+<LI><A HREF="#0413" TARGET=body>Termination</A>
+<LI><A HREF="#0414" TARGET=body>Coroutines</A>
+<LI><A HREF="#0417" TARGET=body>Protection</A>
+</UL>
+<P><HR>
+<A NAME="0393">
+<A HREF="#0392" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0392" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0394" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Lexis</H3>
+
+<P>The ISO Modula-2 has some new keywords  and pervasive identifiers , and provides alternatives for some symbols . It also introduces the syntax for source code directives (or pragmas): 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;Pragma&nbsp;=&nbsp;&quot;&lt;*&quot;&nbsp;pragma_body&nbsp;&quot;*&gt;&quot;</TT> 
+<P>The Standard does not specify a syntax of <TT>pragma_body</TT>. In XDS, source code directives are used for in-line option setting and for conditional compilation. See <A HREF="#0457" TARGET=body>Inline options and equations</A> for further details. 
+<P><P ALIGN=CENTER><B><A NAME=table8>Table 8. </A></B>Modula-2 keywords
+
+<P ALIGN=CENTER><TABLE CELLSPACING=0>
+<TR>
+<TD  STYLE="padding:0px 3px;">AND </TD>
+<TD  STYLE="padding:0px 3px;">ARRAY </TD>
+<TD  STYLE="padding:0px 3px;">BEGIN </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">BY </TD>
+<TD  STYLE="padding:0px 3px;">CASE </TD>
+<TD  STYLE="padding:0px 3px;">CONST </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">DEFINITION </TD>
+<TD  STYLE="padding:0px 3px;">DIV </TD>
+<TD  STYLE="padding:0px 3px;">DO </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">ELSE </TD>
+<TD  STYLE="padding:0px 3px;">ELSIF </TD>
+<TD  STYLE="padding:0px 3px;">END </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">EXIT </TD>
+<TD  STYLE="padding:0px 3px;">EXCEPT (<A HREF="#0408" TARGET=body>Exceptions</A>) </TD>
+<TD  STYLE="padding:0px 3px;">EXPORT </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">FINALLY (<A HREF="#0407" TARGET=body>Finalization</A>) </TD>
+<TD  STYLE="padding:0px 3px;">FOR </TD>
+<TD  STYLE="padding:0px 3px;">FORWARD (<A HREF="#0390" TARGET=body>Ordering of declarations</A>) </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">FROM </TD>
+<TD  STYLE="padding:0px 3px;">IF </TD>
+<TD  STYLE="padding:0px 3px;">IMPLEMENTATION </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">IMPORT </TD>
+<TD  STYLE="padding:0px 3px;">IN </TD>
+<TD  STYLE="padding:0px 3px;">LOOP </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">MOD </TD>
+<TD  STYLE="padding:0px 3px;">MODULE </TD>
+<TD  STYLE="padding:0px 3px;">NOT </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">OF </TD>
+<TD  STYLE="padding:0px 3px;">OR </TD>
+<TD  STYLE="padding:0px 3px;">PACKEDSET (<A HREF="#0396" TARGET=body>Sets and packedsets</A>) </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">POINTER </TD>
+<TD  STYLE="padding:0px 3px;">PROCEDURE </TD>
+<TD  STYLE="padding:0px 3px;">QUALIFIED </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">RECORD </TD>
+<TD  STYLE="padding:0px 3px;">REM (<A HREF="#0404" TARGET=body>Whole number division</A>) </TD>
+<TD  STYLE="padding:0px 3px;">RETRY (<A HREF="#0408" TARGET=body>Exceptions</A>) </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">REPEAT </TD>
+<TD  STYLE="padding:0px 3px;">RETURN </TD>
+<TD  STYLE="padding:0px 3px;">SET </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">THEN </TD>
+<TD  STYLE="padding:0px 3px;">TO </TD>
+<TD  STYLE="padding:0px 3px;">TYPE </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">UNTIL </TD>
+<TD  STYLE="padding:0px 3px;">VAR </TD>
+<TD  STYLE="padding:0px 3px;">WHILE </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">WITH </TD>
+</TR>
+</TABLE>
+<P>
+<P><P ALIGN=CENTER><B><A NAME=table9>Table 9. </A></B>Modula-2 pervasive identifiers
+
+<P ALIGN=CENTER><TABLE CELLSPACING=0>
+<TR>
+<TD  STYLE="padding:0px 3px;">ABS </TD>
+<TD  STYLE="padding:0px 3px;">BITSET </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">BOOLEAN </TD>
+<TD  STYLE="padding:0px 3px;">CARDINAL </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">CAP </TD>
+<TD  STYLE="padding:0px 3px;">CHR </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">CHAR </TD>
+<TD  STYLE="padding:0px 3px;">COMPLEX (<A HREF="#0394" TARGET=body>Complex types</A>) </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">CMPLX (<A HREF="#0394" TARGET=body>Complex types</A>) </TD>
+<TD  STYLE="padding:0px 3px;">DEC </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">DISPOSE </TD>
+<TD  STYLE="padding:0px 3px;">EXCL </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">FALSE </TD>
+<TD  STYLE="padding:0px 3px;">FLOAT </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">HALT </TD>
+<TD  STYLE="padding:0px 3px;">HIGH </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">IM (<A HREF="#0394" TARGET=body>Complex types</A>) </TD>
+<TD  STYLE="padding:0px 3px;">INC </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">INCL </TD>
+<TD  STYLE="padding:0px 3px;">INT (<A HREF="#0405" TARGET=body>Type conversions</A>) </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">INTERRUPTIBLE (<A HREF="#0417" TARGET=body>Protection</A>) </TD>
+<TD  STYLE="padding:0px 3px;">INTEGER </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">LENGTH (<A HREF="#0397" TARGET=body>Strings</A>) </TD>
+<TD  STYLE="padding:0px 3px;">LFLOAT (<A HREF="#0405" TARGET=body>Type conversions</A>) </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">LONGCOMPLEX (<A HREF="#0394" TARGET=body>Complex types</A>) </TD>
+<TD  STYLE="padding:0px 3px;">LONGREAL </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">MAX </TD>
+<TD  STYLE="padding:0px 3px;">MIN </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">NEW </TD>
+<TD  STYLE="padding:0px 3px;">NIL </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">ODD </TD>
+<TD  STYLE="padding:0px 3px;">ORD </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">PROC </TD>
+<TD  STYLE="padding:0px 3px;">PROTECTION (<A HREF="#0417" TARGET=body>Protection</A>) </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">RE (<A HREF="#0394" TARGET=body>Complex types</A>) </TD>
+<TD  STYLE="padding:0px 3px;">REAL </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">SIZE </TD>
+<TD  STYLE="padding:0px 3px;">TRUE </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">TRUNC </TD>
+<TD  STYLE="padding:0px 3px;">UNINTERRUPTIBLE (<A HREF="#0417" TARGET=body>Protection</A>) </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">VAL </TD>
+</TR>
+</TABLE>
+<P>
+<P><P ALIGN=CENTER><B><A NAME=table10>Table 10. </A></B>Modula-2 alternative symbols
+
+<P ALIGN=CENTER><TABLE CELLSPACING=0>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><B>Symbol </B></TD>
+<TD  STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><B>Meaning </B></TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><B>Alternative </B></TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;"><TT>[</TT> </TD>
+<TD  STYLE="padding:0px 3px;">left bracket </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;"><TT>(!</TT> </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;"><TT>]</TT> </TD>
+<TD  STYLE="padding:0px 3px;">right bracket </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;"><TT>!)</TT> </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;"><TT>{</TT> </TD>
+<TD  STYLE="padding:0px 3px;">left brace </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;"><TT>(:</TT> </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;"><TT>}</TT> </TD>
+<TD  STYLE="padding:0px 3px;">right brace </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;"><TT>:)</TT> </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;"><TT>|</TT> </TD>
+<TD  STYLE="padding:0px 3px;">case separator </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;"><TT>!</TT> </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;"><TT>^</TT> </TD>
+<TD  STYLE="padding:0px 3px;">dereference </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;"><TT>@</TT> </TD>
+</TR>
+</TABLE>
+<P>
+<P><HR>
+<A NAME="0394">
+<A HREF="#0392" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0393" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0395" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Complex types</H3>
+
+<P>Types <TT>COMPLEX</TT> and <TT>LONGCOMPLEX</TT> can be used to represent complex numbers. These types differ in a the range and precision. The <TT>COMPLEX</TT> type is defined as a <TT>(REAL,REAL)</TT> pair, while <TT>LONGCOMPLEX</TT> consists of a pair of <TT>LONGREAL</TT> values. 
+<P>There is no notation for a complex literal. A complex value can be obtained by applying the standard function <TT>CMPLX</TT> to two reals. If both <TT>CMPLX</TT> arguments are real constants the result is the complex constant. 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;CONST&nbsp;i&nbsp;=&nbsp;CMPLX(0.0,1.0);</TT> 
+<P>If both expressions are of the <TT>REAL</TT> type, or if one is of the <TT>REAL</TT> type and the other is a real constant, the function returns a <TT>COMPLEX</TT> value. If both expressions are of the <TT>LONGREAL</TT> type, or if one is of the <TT>LONGREAL</TT> type and the other is a real constant the function returns a <TT>LONGCOMPLEX</TT> value. The following table summarizes the permitted types and the result type: 
+<P ALIGN=CENTER><FONT SIZE=2><TT>
+<TABLE CELLSPACING=0>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid solid none;border-width: 0px 1px 1px 0px">&nbsp;</TT></TD>
+<TD  STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><TT>REAL </TT></TD>
+<TD  STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><TT>LONGREAL </TT></TD>
+<TD  STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><TT>real constant </TT></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>REAL </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>REAL </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>error </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>COMPLEX </TT></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>LONGREAL </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>error </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>LONGCOMPLEX </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>LONGCOMPLEX </TT></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>real constant </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>COMPLEX </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>LONGCOMPLEX </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>complex constant </TT></TD>
+</TR>
+</TABLE></FONT>
+<P>Standard functions <TT>RE</TT> and <TT>IM</TT> can be used to obtain a real or imaginary part of a value of a complex type. Both functions have one formal parameter. If the actual parameter is of the <TT>COMPLEX</TT> type, both functions return a <TT>REAL</TT> value; if the parameter is of the <TT>LONGCOMPLEX</TT> type, functions return a <TT>LONGREAL</TT> value; otherwise the parameter should be a complex constant and functions return a real constant. 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;CONST&nbsp;one&nbsp;=&nbsp;IM(CMPLX(0.0,1.0));</TT> 
+<P>There are four arithmetic binary operators for operands of a complex type: addition (<TT>+</TT>), subtraction (<TT>-</TT>), multiplication (<TT>*</TT>), and division (<TT>/</TT>). The following table indicates the result of an operation for permitted combinations: 
+<P ALIGN=CENTER><FONT SIZE=2><TT>
+<TABLE CELLSPACING=0>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid solid none;border-width: 0px 1px 1px 0px">&nbsp;</TT></TD>
+<TD  STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><TT>COMPLEX </TT></TD>
+<TD  STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><TT>LONGCOMPLEX </TT></TD>
+<TD  STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><TT>complex constant </TT></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>COMPLEX </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>COMPLEX </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>error </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>COMPLEX </TT></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>LONGCOMPLEX </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>error </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>LONGCOMPLEX </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>LONGCOMPLEX </TT></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>complex constant </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>COMPLEX </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>LONGCOMPLEX </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>complex constant </TT></TD>
+</TR>
+</TABLE></FONT>
+<P>There are two arithmetic unary operators that can be applied to the values of a complex type: identity (<TT>+</TT>) and negation (<TT>-</TT>). The result is of the operand&rsquo;s type. 
+<P>Two complex comparison operators are provided for operands of complex type: equality (<TT>=</TT>) and inequality (<TT>&lt;&gt;</TT>). 
+<P><A NAME="0395">
+<A HREF="#0394" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0394" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0396" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H5>Example</H5>
+
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;abs(z:&nbsp;COMPLEX):&nbsp;REAL;
+&nbsp;&nbsp;&nbsp;&nbsp;BEGIN
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;RETURN&nbsp;RealMath.sqrt(RE(z)*RE(z)+IM(z)*IM(z))
+&nbsp;&nbsp;&nbsp;&nbsp;END&nbsp;abs;
+</PRE>
+
+<P><HR>
+<A NAME="0396">
+<A HREF="#0392" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0395" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0397" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Sets and packedsets</H3>
+
+<P>A set or packedset<FONT SIZE=2>&nbsp;/Packedset types are innovated in the Standard./ </FONT> type defines a new elementary type whose set of values is the power set of an associated ordinal type called the <I>base type</I> of the set or packedset type. 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;SetType&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;SET&nbsp;OF&nbsp;Type;
+&nbsp;&nbsp;&nbsp;&nbsp;PackedsetType&nbsp;=&nbsp;PACKEDSET&nbsp;OF&nbsp;Type;
+</PRE>
+
+<P>The International Standard does not require a specific representation for set types. Packedset types representation has to be mapped to the individual bits of a particular underlying architecture. The standard type <TT>BITSET</TT> is a predefined packedset type. 
+<P>The current XDS implementation does not distinguish between set and packedset types. A set of at least 256 elements can be defined. 
+<P>All set operators, namely union (<TT>+</TT>), difference (<TT>-</TT>), intersection (<TT>*</TT>), and symmetrical difference (<TT>/</TT>), can be applied to the values of both set and packedset types. 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;TYPE
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;CharSet&nbsp;=&nbsp;SET&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ByteSet&nbsp;=&nbsp;PACKEDSET&nbsp;OF&nbsp;[-127..128];
+
+&nbsp;&nbsp;&nbsp;&nbsp;VAR
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;letters,&nbsp;digits,&nbsp;alphanum:&nbsp;CharSet;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;neg,&nbsp;pos,&nbsp;zero&nbsp;:&nbsp;ByteSet;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.&nbsp;&nbsp;.&nbsp;&nbsp;.
+&nbsp;&nbsp;&nbsp;&nbsp;letters&nbsp;&nbsp;:=&nbsp;CharSet{'a'..'z','A'..'Z'};
+&nbsp;&nbsp;&nbsp;&nbsp;digits&nbsp;&nbsp;&nbsp;:=&nbsp;CharSet{'0'..'9'};
+&nbsp;&nbsp;&nbsp;&nbsp;alphanum&nbsp;:=&nbsp;letters&nbsp;+&nbsp;digits;
+
+&nbsp;&nbsp;&nbsp;&nbsp;neg&nbsp;:=&nbsp;ByteSet{-127..-1};&nbsp;pos&nbsp;:=&nbsp;ByteSet{1..127};
+&nbsp;&nbsp;&nbsp;&nbsp;zero&nbsp;:=&nbsp;ByteSet{-127..128}-neg-pos;
+</PRE>
+
+<P><HR>
+<A NAME="0397">
+<A HREF="#0392" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0396" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0398" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Strings</H3>
+
+<P>For operands of the string literal type, the string concatenation operation is defined, denoted by the symbol <TT>&quot;+&quot;</TT>. <B>Note:</B> a character number literal (e.g. <TT>15C</TT>) denotes a value of a literal string type of length 1. The empty string is compatible with the type <TT>CHAR</TT> and has a value equal to the string terminator (<TT>0C</TT>). 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;CONST
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;CR&nbsp;=&nbsp;15C;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;LF&nbsp;=&nbsp;12C;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;LineEnd&nbsp;=&nbsp;CR&nbsp;+&nbsp;LF;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Greeting&nbsp;=&nbsp;&quot;hello&nbsp;&quot;&nbsp;+&nbsp;&quot;world&quot;&nbsp;+&nbsp;LineEnd;
+</PRE>
+
+<P>The new standard function <TT>LENGTH</TT> can be used to obtain the length of a string value. 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;LENGTH(s:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR):&nbsp;CARDINAL;</TT> 
+<P><HR>
+<A NAME="0398">
+<A HREF="#0392" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0397" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0399" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Value constructors</H3>
+
+<P>A value constructor is an expression denoting a value of an array type, a record type, or a set type. In case of array constructors and record constructors a list of values, known as <I>structure components</I>, is specified to define the values of components of an array value or the fields of a record value. In case of a set constructor, a list of members is specified, whose elements define the elements of the set value. 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;ValueConstructor&nbsp;=&nbsp;ArrayValue
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;RecordValue
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;SetValue.
+&nbsp;&nbsp;&nbsp;&nbsp;ArrayValue&nbsp;&nbsp;=&nbsp;TypeIdentifier&nbsp;&quot;{&quot;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ArrayComponent&nbsp;{&nbsp;&quot;,&quot;&nbsp;ArrayComponent&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&quot;}&quot;.
+&nbsp;&nbsp;&nbsp;&nbsp;ArrayComponent&nbsp;=&nbsp;Component&nbsp;[&nbsp;BY&nbsp;RepeatCount&nbsp;].
+&nbsp;&nbsp;&nbsp;&nbsp;Component&nbsp;&nbsp;&nbsp;=&nbsp;Expression.
+&nbsp;&nbsp;&nbsp;&nbsp;RepeatCount&nbsp;=&nbsp;ConstExpression.
+&nbsp;&nbsp;&nbsp;&nbsp;RecordValue&nbsp;=&nbsp;TypeIdentifier&nbsp;&quot;{&quot;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Component&nbsp;{&nbsp;&quot;,&quot;&nbsp;Component&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&quot;}&quot;.
+</PRE>
+
+<P>Set constructors are described in PIM. 
+<P>The total number of components of an array constructor must be exactly the same as the number of array&rsquo;s elements (taking into account repetition factors). Each component must be assignment compatible with the array base type. 
+<P>The number of components of a record constructor must be exactly the same as the number of fields. Each component must be an assignment compatible with the type of the field. 
+<P>A special case is a record constructor for a record with variant parts. If the n-th field is the tag field the n-th component must be a constant expression. If there is no ELSE variant part associated with the tag field, then the variant associated with the value of expression should exist. If no variant is associated with the value, then the fields of the ELSE variant part should be included in the sequence of components. 
+<P>The constructor&rsquo;s components may themselves contain lists of elements, and such nested constructs need not specify a type identifier. This relaxation is necessary for multi-dimensional arrays, where the types of the inner components may be anonymous. 
+<P><A NAME="0399">
+<A HREF="#0398" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0398" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0400" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H5>Examples</H5>
+
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;TYPE
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;String&nbsp;=&nbsp;ARRAY&nbsp;[0..15]&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Person&nbsp;=&nbsp;RECORD
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;name:&nbsp;String;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;age&nbsp;:&nbsp;CARDINAL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;END;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Vector&nbsp;=&nbsp;ARRAY&nbsp;[0..2]&nbsp;OF&nbsp;INTEGER;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Matrix&nbsp;=&nbsp;ARRAY&nbsp;[0..2]&nbsp;OF&nbsp;Vector;
+
+&nbsp;&nbsp;&nbsp;&nbsp;VAR
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;string:&nbsp;String;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;person:&nbsp;Person;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;vector:&nbsp;Vector;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;matrix:&nbsp;Matrix;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.&nbsp;&nbsp;.&nbsp;&nbsp;.
+&nbsp;&nbsp;&nbsp;&nbsp;BEGIN
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.&nbsp;&nbsp;.&nbsp;&nbsp;.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;string:=String{&quot;&nbsp;&quot;&nbsp;BY&nbsp;16};
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;person:=Person{&quot;Alex&quot;,32};
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;vector:=Vector{1,2,3};
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;matrix:=Matrix{vector,{4,5,6},Vector{7,8,9}};
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;matrix:=Matrix{vector&nbsp;BY&nbsp;3};
+</PRE>
+
+<P><HR>
+<A NAME="0400">
+<A HREF="#0392" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0399" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0401" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Multi-dimensional open arrays</H3>
+
+<P>According to the International Standard, parameters of a multi-dimensional open array type are allowed: 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;Foo(VAR&nbsp;matrix:&nbsp;ARRAY&nbsp;OF&nbsp;ARRAY&nbsp;OF&nbsp;REAL);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;i,j:&nbsp;CARDINAL;
+&nbsp;&nbsp;&nbsp;&nbsp;BEGIN
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FOR&nbsp;i:=0&nbsp;TO&nbsp;HIGH(matrix)&nbsp;DO
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FOR&nbsp;j:=0&nbsp;TO&nbsp;HIGH(matrix[i])&nbsp;DO
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...&nbsp;matrix[i,j]&nbsp;...
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;END;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;END;
+&nbsp;&nbsp;&nbsp;&nbsp;END&nbsp;Foo;
+
+&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;a:&nbsp;ARRAY&nbsp;[0..2],[0..2]&nbsp;OF&nbsp;REAL;
+
+&nbsp;&nbsp;&nbsp;&nbsp;BEGIN
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Foo(a);
+&nbsp;&nbsp;&nbsp;&nbsp;END&nbsp;...
+</PRE>
+
+<P><HR>
+<A NAME="0401">
+<A HREF="#0392" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0400" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0402" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Procedure type declarations</H3>
+
+<P>A procedure type identifier may be used in declaration of the type itself. This feature is used in the Standard Library. See, for example, modules <TT>ConvTypes</TT> and <TT>WholeConv</TT>. 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;TYPE
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Scan&nbsp;=&nbsp;PROCEDURE&nbsp;(CHAR;&nbsp;VAR&nbsp;Scan);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Func&nbsp;=&nbsp;PROCEDURE&nbsp;(INTEGER):&nbsp;Func;
+</PRE>
+
+<P><HR>
+<A NAME="0402">
+<A HREF="#0392" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0401" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0403" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Procedure constants</H3>
+
+<P>A constant expression may contain values of procedure types, or structured values whose components are values of procedure types. Procedure constants may be used as a mechanism for procedure renaming. In a definition module it is possible to export a renamed version of the imported procedure. 
+<P><A NAME="0403">
+<A HREF="#0402" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0402" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0404" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H5>Examples</H5>
+
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;TYPE&nbsp;ProcTable&nbsp;=&nbsp;ARRAY&nbsp;[0..3]&nbsp;OF&nbsp;PROC;
+
+&nbsp;&nbsp;&nbsp;&nbsp;CONST
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WS&nbsp;=&nbsp;STextIO.WriteString;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Table&nbsp;=&nbsp;ProcTable{Up,Down,Left,Right};
+</PRE>
+
+<P><HR>
+<A NAME="0404">
+<A HREF="#0392" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0403" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0405" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Whole number division</H3>
+
+<P>Along with <TT>DIV</TT> and <TT>MOD</TT> the International Standard includes two additional operators for whole number division: &lsquo;<TT>/</TT>&rsquo; and <TT>REM</TT>. 
+<P>Operators <TT>DIV</TT> and <TT>MOD</TT> are defined for positive divisors only, while &lsquo;<TT>/</TT>&rsquo; and <TT>REM</TT> can be used for both negative and positive divisors. 
+<P>The language exception <TT>wholeDivException</TT> (See <A HREF="#0408" TARGET=body>Exceptions</A>) is raised if: 
+<UL>
+ 
+<LI>the second operand is zero (for all four operators) </LI>
+<LI>the second operand of <TT>DIV</TT> or <TT>MOD</TT> is negative. </LI>
+</UL>
+
+<P>For the given <TT>lval</TT> and <TT>rval</TT> 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;quotient&nbsp;&nbsp;:=&nbsp;lval&nbsp;/&nbsp;rval;</TT><BR>
+<TT>&nbsp;&nbsp;&nbsp;&nbsp;remainder&nbsp;:=&nbsp;lval&nbsp;REM&nbsp;rval;</TT> 
+<P>the following is true (for all non-zero values of <TT>rval</TT>): 
+<UL>
+ 
+<LI><TT>lval&nbsp;=&nbsp;rval&nbsp;*&nbsp;quotient&nbsp;+&nbsp;remainder</TT> </LI>
+<LI>the value of <TT>remainder</TT> is either zero, or an integer of the same sign as <TT>lval</TT> and of a smaller absolute value than <TT>rval</TT>. </LI>
+</UL>
+
+<P>For the given <TT>lval</TT> and <TT>rval</TT> 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;quotient&nbsp;:=&nbsp;lval&nbsp;DIV&nbsp;rval;</TT><BR>
+<TT>&nbsp;&nbsp;&nbsp;&nbsp;modulus&nbsp;&nbsp;:=&nbsp;lval&nbsp;MOD&nbsp;rval;</TT> 
+<P>the following is true (for all positive values of <TT>rval</TT>): 
+<UL>
+ 
+<LI><TT>lval&nbsp;=&nbsp;rval&nbsp;*&nbsp;quotient&nbsp;+&nbsp;modules</TT> </LI>
+<LI>the value of <TT>modulus</TT> is a non-negative integer less than <TT>rval</TT>. </LI>
+</UL>
+
+<P>Operations are exemplified in the following table: 
+<P ALIGN=CENTER><TABLE CELLSPACING=0>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid solid none;border-width: 0px 1px 1px 0px"><I>op</I> </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid solid none;border-width: 0px 1px 1px 0px">31 <I>op</I> 10 </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid solid none;border-width: 0px 1px 1px 0px">31 <I>op</I> (-10) </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid solid none;border-width: 0px 1px 1px 0px">(-31) <I>op</I> 10 </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px">(-31) <I>op</I> (-10) </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>/</TT> </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">3 </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">-3 </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">-3 </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">3 </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>REM </TT></TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">1 </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">1 </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">-1 </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">-1 </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>DIV </TT></TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">3 </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">exception </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">-4 </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">exception </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>MOD </TT></TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">1 </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">exception </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">9 </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">exception </TD>
+</TR>
+</TABLE>
+<P><HR>
+<A NAME="0405">
+<A HREF="#0392" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0404" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0406" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Type conversions</H3>
+
+<P>The language includes the following type conversion functions: <TT>CHR</TT>, <TT>FLOAT</TT>, <TT>INT</TT>, <TT>LFLOAT</TT>, <TT>ORD</TT>, <TT>TRUNC</TT> and <TT>VAL</TT>. The functions <TT>INT</TT> and <TT>LFLOAT</TT> are not described in PIM. 
+<P>All the type conversion functions (except <TT>VAL</TT>) have a single parameter and can be expressed in terms of the <TT>VAL</TT> function. 
+<P ALIGN=CENTER><TABLE CELLSPACING=0>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><B>Function </B></TD>
+<TD  STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><B>Parameter </B></TD>
+<TD  STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><B>Equals to </B></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>CHR(x) </TT></TD>
+<TD  STYLE="padding:0px 3px;">whole </TD>
+<TD  STYLE="padding:0px 3px;"><TT>VAL(CHAR,x) </TT></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>FLOAT(x) </TT></TD>
+<TD  STYLE="padding:0px 3px;">real or whole </TD>
+<TD  STYLE="padding:0px 3px;"><TT>VAL(REAL,x) </TT></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>INT(x) </TT></TD>
+<TD  STYLE="padding:0px 3px;">real or ordinal </TD>
+<TD  STYLE="padding:0px 3px;"><TT>VAL(INTEGER,x) </TT></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>LFLOAT(x) </TT></TD>
+<TD  STYLE="padding:0px 3px;">real or whole </TD>
+<TD  STYLE="padding:0px 3px;"><TT>VAL(LONGREAL,x) </TT></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>ORD(x) </TT></TD>
+<TD  STYLE="padding:0px 3px;">ordinal </TD>
+<TD  STYLE="padding:0px 3px;"><TT>VAL(CARDINAL,x) </TT></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>TRUNC(x) </TT></TD>
+<TD  STYLE="padding:0px 3px;">real </TD>
+<TD  STYLE="padding:0px 3px;"><TT>VAL(CARDINAL,x) </TT></TD>
+</TR>
+</TABLE>
+<P>The function <TT>VAL</TT> can be used to obtain a value of the specified scalar type from an expression of a scalar type. The function has two parameters. The first parameter should be a type parameter that denotes a scalar type. If the type is a subrange type, the result of <TT>VAL</TT> has the host type of the subrange type, otherwise it has the type denoted by the type parameter. 
+<P>The second parameter should be an expression of a scalar type and at least one of the restriction shall hold: 
+<UL>
+ 
+<LI>the result type and the type of the expression are identical </LI>
+<LI>both the result type and the type of the expression are whole or real </LI>
+<LI>the result type or the type of the expression is a whole type </LI>
+</UL>
+
+<P>In the following table, &radic; denotes a valid combination of types and &middot; denotes an invalid combination: 
+<P ALIGN=CENTER><TABLE CELLSPACING=0>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: solid solid none none;border-width: 1px 1px 0px 0px">the type of </TD>
+<TD ALIGN=CENTER COLSPAN=5 STYLE="padding:0px 3px;border-style: solid none none none;border-width: 1px 0px 0px 0px">the type denoted by the type parameter</TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid solid none;border-width: 0px 1px 1px 0px">expression </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px">whole </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px">real </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><TT>CHAR </TT></TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><TT>BOOLEAN </TT></TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px">enumeration </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">whole type </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&radic; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&radic; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&radic; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&radic; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&radic; </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">real type </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&radic; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&radic; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&middot; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&middot; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&middot; </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>CHAR </TT></TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&radic; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&middot; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&radic; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&middot; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&middot; </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>BOOLEAN </TT></TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&radic; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&middot; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&middot; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&radic; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&middot; </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">enumeration </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&radic; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&middot; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&middot; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&middot; </TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&radic; </TD>
+</TR>
+</TABLE>
+<P>An exception is raised if the value of <TT>x</TT> is outside the range of the type <TT>T</TT> in the call <TT>VAL(T,x)</TT>. If <TT>x</TT> is of a real type, the calls <TT>VAL(INTEGER,x)</TT> and <TT>VAL(CARDINAL,x)</TT> both truncate the value of <TT>x</TT>. 
+<P><HR>
+<A NAME="0406">
+<A HREF="#0392" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0405" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0407" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>NEW and DISPOSE</H3>
+
+<P>The standard procedures <TT>NEW</TT> and <TT>DISPOSE</TT> are back in the language. Calls of <TT>NEW</TT> and <TT>DISPOSE</TT> are substituted by calls of <TT>ALLOCATE</TT> and <TT>DEALLOCATE</TT> which should be visible at the current scope. The compiler checks compatibility of these substitution procedures with the expected formal type: 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;ALLOCATE(VAR&nbsp;a:&nbsp;ADDRESS;&nbsp;size:&nbsp;CARDINAL);</TT><BR>
+<TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;DEALLOCATE(VAR&nbsp;a:&nbsp;ADDRESS;&nbsp;size:&nbsp;CARDINAL);</TT> 
+<P>As a rule, the procedures <TT>ALLOCATE</TT> and <TT>DEALLOCATE</TT> declared in the module <TT>Storage</TT> are used. These procedures are made visible by including the import list: 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;FROM&nbsp;Storage&nbsp;IMPORT&nbsp;ALLOCATE,&nbsp;DEALLOCATE;</TT> 
+<P>When language extensions are enabled, the procedures <TT>NEW</TT> and <TT>DISPOSE</TT> can be applied to dynamic arrays. See <A HREF="#0453" TARGET=body>NEW and DISPOSE for dynamic arrays</A> for further details. 
+<P>See also the <A HREF="xm005.html#0116" TARGET=body>STORAGE</A> option. 
+<P><HR>
+<A NAME="0407">
+<A HREF="#0392" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0406" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0408" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Finalization</H3>
+
+<P>A special mechanism called <I>finalization</I> is provided to perform certain operations during program termination. 
+<P>A module declaration contains an optional finalization body, which is executed during program termination for static modules (See <A HREF="#0413" TARGET=body>Termination</A>) or dynamic module finalization. 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;ModuleBody&nbsp;=&nbsp;[&nbsp;BEGIN&nbsp;BlockBody
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;FINALLY&nbsp;BlockBody&nbsp;]&nbsp;]&nbsp;END
+&nbsp;&nbsp;&nbsp;&nbsp;BlockBody&nbsp;&nbsp;=&nbsp;NormalPart
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;EXCEPT&nbsp;ExceptionalPart&nbsp;].
+&nbsp;&nbsp;&nbsp;&nbsp;NormalPart&nbsp;=&nbsp;StatementSequence.
+&nbsp;&nbsp;&nbsp;&nbsp;ExceptionalPart&nbsp;=&nbsp;StatementSequence.
+</PRE>
+
+<P><B>Note:</B> the <TT>RETURN</TT> statement can be used in a <TT>BlockBody</TT>. 
+<P>Consider the following example: 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;MODULE&nbsp;Test;
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.&nbsp;&nbsp;.&nbsp;&nbsp;.
+
+&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;cid:&nbsp;StreamFile.ChanId;
+
+&nbsp;&nbsp;&nbsp;&nbsp;BEGIN
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;StreamFile.Open(cid,&quot;tmp&quot;,flags,res);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Process(cid);
+&nbsp;&nbsp;&nbsp;&nbsp;FINALLY
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;StreamFile.Close(cid);
+&nbsp;&nbsp;&nbsp;&nbsp;END&nbsp;Test
+</PRE>
+
+<P>If the <TT>Test</TT> module is declared in a procedure block, then the initialization body will be executed on a call of the procedure, while the finalization body is executed upon return from the procedure. 
+<P>If the <TT>Test</TT> module is a static module, its finalization will be executed during program termination. 
+<P>In any case, finalization bodies are executed in reverse order with respect to their initializations. 
+<P>In the following example, finalization of a local module is used to restore context: 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;state:&nbsp;State;
+
+&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;Foo;
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;MODULE&nbsp;AutoSave;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;IMPORT&nbsp;state,&nbsp;State;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;save:&nbsp;State;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;BEGIN
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;save:=state;&nbsp;(*&nbsp;save&nbsp;state&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;state:=fooState;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FINALLY
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;state:=save;&nbsp;(*&nbsp;restore&nbsp;state&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;END&nbsp;AutoSave;
+
+&nbsp;&nbsp;&nbsp;&nbsp;BEGIN
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...&nbsp;process&nbsp;...
+&nbsp;&nbsp;&nbsp;&nbsp;END&nbsp;Foo;
+</PRE>
+
+<P>The initialization part of the <TT>AutoSave</TT> module will be executed before any statement in the <TT>Foo</TT> body and finalization part will be executed directly before returning from a call of <TT>Foo</TT>. 
+<P><HR>
+<A NAME="0408">
+<A HREF="#0392" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0407" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0409" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Exceptions</H3>
+
+<P>An exception handling mechanism is now included in the language. Both user-defined exceptions and language exceptions can be handled. There is no special exception type; an exception is identified by a pair: exception source value and cardinal value. Two keywords (<TT>EXCEPT</TT> and <TT>RETRY</TT>) are added to the language. The essential part of exception handling is provided in two system modules: <TT>EXCEPTIONS</TT> and <TT>M2EXCEPTION</TT>. 
+<P>The <TT>EXCEPTIONS</TT> module provides facilities for raising and identifying the user-defined exceptions, for reporting their occurrence, and for making enquiries concerning the execution state of the current coroutine. 
+<P>The <TT>M2EXCEPTION</TT> module provides facilities for identifying language exceptions that have been raised. 
+<P>A procedure body, an initialization or finalization part of a module body may contain an exceptional part. 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;BlockBody&nbsp;&nbsp;=&nbsp;NormalPart&nbsp;[&nbsp;EXCEPT&nbsp;ExceptionalPart&nbsp;].
+&nbsp;&nbsp;&nbsp;&nbsp;NormalPart&nbsp;=&nbsp;StatementSequence.
+&nbsp;&nbsp;&nbsp;&nbsp;ExceptionalPart&nbsp;=&nbsp;StatementSequence.
+</PRE>
+
+<P>Example: 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;Div(a,b:&nbsp;INTEGER):&nbsp;INTEGER;
+&nbsp;&nbsp;&nbsp;&nbsp;BEGIN
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;RETURN&nbsp;a&nbsp;DIV&nbsp;b&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;try&nbsp;to&nbsp;divide&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;EXCEPT
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;RETURN&nbsp;MAX(INTEGER)&nbsp;(*&nbsp;if&nbsp;exception&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;END&nbsp;Fly;
+</PRE>
+
+<P>When an exception is raised (explicitly or implicitly) the &lsquo;nearest&rsquo; (in terms of procedure calls) exceptional part in the current coroutine receives control. Each coroutine is executed initially in the normal state. If an exception is raised, the coroutine state switches to the exceptional state. If there is no exceptional part, raising of an exception is a termination event (See <A HREF="#0413" TARGET=body>Termination</A>). 
+<P>A procedure with an exceptional part is executed in the normal state. The state is restored after block execution. A procedure without an exceptional part is executed in the state of the caller. 
+<P>If an exception is raised in the state of exceptional execution it is re-raised in the calling context. In this case finalization of local modules and restoring protection (See <A HREF="#0417" TARGET=body>Protection</A>) will not take place. 
+<P>An additional statement (<TT>RETRY</TT>) can be used in the exceptional part. Execution of the <TT>RETRY</TT> statement causes the normal part to be re-executed in the normal state. 
+<P>Execution of the <TT>RETURN</TT> statement in the exceptional part causes switch to the normal state. 
+<P>If neither <TT>RETURN</TT> nor <TT>RETRY</TT> was executed in the exceptional part, the exceptional completion will occur. In this case after finalization of local modules (if any) and restoring protection state (if necessary), the exception will be re-raised. 
+<P><A NAME="0409">
+<A HREF="#0408" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0408" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0410" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H5>Example</H5>
+
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;Foo;
+&nbsp;&nbsp;&nbsp;&nbsp;BEGIN
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TryFoo(...);
+&nbsp;&nbsp;&nbsp;&nbsp;EXCEPT
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;IF&nbsp;CanBeRepaired()&nbsp;THEN
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Repair;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;RETRY;&nbsp;&nbsp;(*&nbsp;re-execute&nbsp;the&nbsp;normal&nbsp;part&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ELSIF&nbsp;CanBeProcessed()&nbsp;THEN
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Process;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;RETURN;&nbsp;(*&nbsp;exception&nbsp;is&nbsp;handled&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ELSE
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;exception&nbsp;will&nbsp;be&nbsp;automatically&nbsp;re-raised&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;END;
+&nbsp;&nbsp;&nbsp;&nbsp;END&nbsp;Foo;
+</PRE>
+
+<P><HR>
+<A NAME="0410">
+<A HREF="#0392" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0409" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0411" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>The system module EXCEPTIONS</H3>
+
+<P>The module <TT>EXCEPTIONS</TT> provides facilities for raising user&rsquo;s exceptions and for making enquiries concerning the current execution state. 
+<P>User-defined exceptions are identified uniquely by a pair (exception source, number). When the source of a used-defined exception is a separate module, it prevents the defined exceptions of the module from being raised directly by other sources. See e.g. the module <TT>Storage</TT>. 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;TYPE&nbsp;ExceptionSource;</TT> 
+<P>Values of the opaque type <TT>ExceptionSource</TT> are used to identify the source of exceptions raised; they should be allocated before usage. 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;TYPE&nbsp;ExceptionNumber&nbsp;=&nbsp;CARDINAL;</TT> 
+<P>Values of the type <TT>ExceptionNumber</TT> are used to distinguish between different exceptions of one source. 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;AllocateSource(VAR&nbsp;newSource:&nbsp;ExceptionSource);</TT> 
+<P>The procedure allocates an unique value of the type <TT>ExceptionSource</TT>. The procedure is normally called during initialization of a module, and the resulting value is then used in all calls of <TT>RAISE</TT>. If an unique value cannot be allocated the language exception <TT>exException</TT> is raised (See <A HREF="#0411" TARGET=body>The system module M2EXCEPTION</A>). 
+<P><PRE>&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;RAISE(source:&nbsp;ExceptionSource;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;number:&nbsp;ExceptionNumber;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;message:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR);
+</PRE>
+
+<P>A call to <TT>RAISE</TT> associates the given values of exception <TT>source</TT>, <TT>number</TT>, and <TT>message</TT> with the current context and raises an exception. 
+<P>The function <TT>CurrentNumber</TT> can be used to obtain the exception number for the current exception. 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;CurrentNumber
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(source:&nbsp;ExceptionSource):&nbsp;ExceptionNumber;
+</PRE>
+
+<P>If the calling coroutine is in the exceptional execution state because of raising an exception from <TT>source</TT>, the procedure returns the corresponding number, and otherwise raises an exception. 
+<P>The procedure <TT>GetMessage</TT> can be used to obtain the message passed when an exception was raised. This may give further information about the nature of the exception. 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;GetMessage(VAR&nbsp;text:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR);</TT> 
+<P>If the calling coroutine is in the exceptional execution state, the procedure returns the (possibly truncated) string associated with the current context. Otherwise, in the normal execution state, it returns the empty string. 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;IsCurrentSource
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(source:&nbsp;ExceptionSource):&nbsp;BOOLEAN;
+</PRE>
+
+<P>If the current coroutine is in the exceptional execution state because of raising an exception from <TT>source</TT>, the procedure returns <TT>TRUE</TT>, and <TT>FALSE</TT> otherwise. 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;IsExceptionalExecution&nbsp;():&nbsp;BOOLEAN;</TT> 
+<P>If the current coroutine is in the exceptional execution state because of raising an exception, the procedure returns <TT>TRUE</TT>, and <TT>FALSE</TT> otherwise. 
+<P>The following example illustrates the recommended form of a library module and usage of procedures from <TT>EXCEPTIONS</TT>. 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;DEFINITION&nbsp;MODULE&nbsp;FooLib;
+
+&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;Foo;
+&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;Raises&nbsp;Foo&nbsp;exception&nbsp;if&nbsp;necessary&nbsp;*)
+
+&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;IsFooException():&nbsp;BOOLEAN;
+&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;Returns&nbsp;TRUE,&nbsp;if&nbsp;the&nbsp;calling&nbsp;coroutine&nbsp;is&nbsp;in
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;exceptional&nbsp;state&nbsp;because&nbsp;of&nbsp;the&nbsp;raising&nbsp;of
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;an&nbsp;exception&nbsp;from&nbsp;Foo,&nbsp;and&nbsp;otherwise&nbsp;returns&nbsp;FALSE.
+&nbsp;&nbsp;&nbsp;&nbsp;*)
+
+&nbsp;&nbsp;&nbsp;&nbsp;END&nbsp;FooLib.
+
+&nbsp;&nbsp;&nbsp;&nbsp;IMPLEMENTATION&nbsp;MODULE&nbsp;FooLib;
+
+&nbsp;&nbsp;&nbsp;&nbsp;IMPORT&nbsp;EXCEPTIONS;
+
+&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;source:&nbsp;EXCEPTIONS.ExceptionSource;
+
+&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;Foo;
+&nbsp;&nbsp;&nbsp;&nbsp;BEGIN
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TryFoo(...);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;IF&nbsp;NOT&nbsp;done&nbsp;THEN
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;EXCEPTIONS.RAISE(source,0,&quot;Foo&nbsp;exception&quot;);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;END;
+&nbsp;&nbsp;&nbsp;&nbsp;END&nbsp;Foo;
+
+&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;IsFooException():&nbsp;BOOLEAN;
+&nbsp;&nbsp;&nbsp;&nbsp;BEGIN
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;RETURN&nbsp;EXCEPTIONS.IsCurrentSource(source)
+&nbsp;&nbsp;&nbsp;&nbsp;END&nbsp;IsLibException;
+
+&nbsp;&nbsp;&nbsp;&nbsp;BEGIN
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;EXCEPTIONS.AllocateSource(source)
+&nbsp;&nbsp;&nbsp;&nbsp;END&nbsp;FooLib.
+</PRE>
+
+<P>If we want to distinguish the exceptions raised in the <TT>FooLib</TT> we will append an enumeration type and an additional enquiry procedure in the <TT>FooLib</TT> definition: 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;TYPE&nbsp;FooExceptions&nbsp;=&nbsp;(fault,&nbsp;problem);
+
+&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;FooException():&nbsp;FooExceptions;
+</PRE>
+
+<P>The <TT>FooException</TT> procedure can be implemented as follows: 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;FooException():&nbsp;FooExceptions;
+&nbsp;&nbsp;&nbsp;&nbsp;BEGIN
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;RETURN&nbsp;VAL(FooExceptions,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;EXCEPTIONS.CurrentNumber(source))
+&nbsp;&nbsp;&nbsp;&nbsp;END&nbsp;FooException;
+</PRE>
+
+<P>The <TT>Client</TT> module illustrates the usage of the library module <TT>FooLib</TT>: 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;MODULE&nbsp;Client;
+
+&nbsp;&nbsp;&nbsp;&nbsp;IMPORT&nbsp;&nbsp;FooLib,&nbsp;EXCEPTIONS,&nbsp;STextIO;
+
+&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;ReportException;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;s:&nbsp;ARRAY&nbsp;[0..63]&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;BEGIN
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;EXCEPTIONS.GetMessage(s);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;STextIO.WriteString(s);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;STextIO.WriteLn;
+&nbsp;&nbsp;&nbsp;&nbsp;END&nbsp;ReportException;
+
+&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;TryFoo;
+&nbsp;&nbsp;&nbsp;&nbsp;BEGIN
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FooLib.Foo;
+&nbsp;&nbsp;&nbsp;&nbsp;EXCEPT
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;IF&nbsp;FooLib.IsFooException()&nbsp;THEN
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ReportException;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;RETURN;&nbsp;(*&nbsp;exception&nbsp;is&nbsp;handled&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ELSE
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;Exception&nbsp;will&nbsp;be&nbsp;re-raised&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;END
+&nbsp;&nbsp;&nbsp;&nbsp;END&nbsp;TryFoo;
+
+&nbsp;&nbsp;&nbsp;&nbsp;END&nbsp;Client.
+</PRE>
+
+<P><HR>
+<A NAME="0411">
+<A HREF="#0392" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0410" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0412" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>The system module M2EXCEPTION</H3>
+
+<P>The system module <TT>M2EXCEPTION</TT> provides language exceptions identification facilities. The language (which includes the system modules) is regarded as one source of exceptions. 
+<P>The module exports the enumeration type <TT>M2Exceptions</TT>, used to distinguish language exceptions, and two enquiry functions. 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;TYPE
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;M2Exceptions&nbsp;=
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(indexException,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;rangeException,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;caseSelectException,&nbsp;invalidLocation,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;functionException,&nbsp;&nbsp;&nbsp;wholeValueException,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;wholeDivException,&nbsp;&nbsp;&nbsp;realValueException,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;realDivException,&nbsp;&nbsp;&nbsp;&nbsp;complexValueException,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;complexDivException,&nbsp;protException,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sysException,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;coException,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;exException
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;);
+</PRE>
+
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;IsM2Exception():&nbsp;BOOLEAN;</TT> 
+<P>If the current coroutine is in the exceptional execution state because of the raising of a language exception, the procedure returns <TT>TRUE</TT>, and <TT>FALSE</TT> otherwise. 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;M2Exception():&nbsp;M2Exceptions;</TT> 
+<P>If the current coroutine is in the exceptional execution state because of the raising of a language exception, the procedure returns the corresponding enumeration value, and otherwise raises an exception. 
+<P>The following description lists all language exceptions (in alphabetical order) along with the circumstances under which they are detected. <B>Note:</B> Compiler options can be used to control detection of some exceptions (See Chapter <A HREF="xm005.html#0059" TARGET=body>Compiler options and equations</A>). Detection of some exceptions is not required by the Standard, however such exceptions can be detected on some platforms (See Chapter <A HREF="xm013.html#0591" TARGET=body>Limitations and restrictions</A>). 
+<DL>
+ 
+<DT>caseSelectException</DT>
+<DD> 
+<P>Case selector is out of range and the <TT>ELSE</TT> clause does not exist. </DD>
+<DT>coException</DT>
+<DD> 
+<P>The system module <A HREF="#0414" TARGET=body><B>COROUTINES</B></A> exceptions: 
+<UL>
+ 
+<LI>RETURN from a coroutine other than the main coroutine </LI>
+<LI>size of the supplied workspace is smaller than the minimum required (See description of the procedure <A HREF="#0414" TARGET=body><TT>NEWCOROUTINE</TT></A>) </LI>
+<LI>the caller is not attached to the source of interrupts (See description of the procedure <A HREF="#0414" TARGET=body><TT>HANDLER</TT></A>) </LI>
+<LI>coroutine workspace overflow </LI>
+</UL>
+</DD>
+<DT>complexDivException</DT>
+<DD> 
+<P>Divide by zero in a complex number expression. </DD>
+<DT>complexValueException</DT>
+<DD> 
+<P>Overflow in evaluation of a complex number expression. </DD>
+<DT>exException</DT>
+<DD> 
+<P>A system module <A HREF="#0410" TARGET=body><B>EXCEPTIONS</B></A> or <B>M2EXCEPTION</B> exception: 
+<UL>
+ 
+<LI>exception identity is enquired in the normal execution state (See <TT>CurrentNumber</TT>) </LI>
+<LI>exception identity enquiry to a wrong source (See <TT>CurrentNumber</TT>) </LI>
+<LI>no further exception source values can be allocated (See <TT>AllocateSource</TT>) </LI>
+</UL>
+</DD>
+<DT>functionException</DT>
+<DD> 
+<P>No <TT>RETURN</TT> statement before the end of a function. </DD>
+<DT>indexException</DT>
+<DD> 
+<P>Array index out of range. See options <A HREF="xm005.html#0070" TARGET=body>CHECKINDEX</A> and <A HREF="xm005.html#0068" TARGET=body>CHECKDINDEX</A>. </DD>
+<DT>invalidLocation</DT>
+<DD> 
+<P>Attempt to dereference <TT>NIL</TT> or an uninitialized pointer. See the option <A HREF="xm005.html#0071" TARGET=body>CHECKNIL</A>. </DD>
+<DT>protException</DT>
+<DD> 
+<P>The given protection is less restrictive than the current protection. </DD>
+<DT>rangeException</DT>
+<DD> 
+<P>Range exception (See the <A HREF="xm005.html#0073" TARGET=body>CHECKRANGE</A> option): 
+<UL>
+ 
+<LI>assignment value is out of range of the target&rsquo;s type </LI>
+<LI>structure component value is out of range </LI>
+<LI>expression cannot be converted to the new type </LI>
+<LI>value to be included/excluded is not of the base type of the set (See also the <A HREF="xm005.html#0074" TARGET=body>CHECKSET</A> option) </LI>
+<LI>return value is out of range </LI>
+<LI>set value is out of range (See also the <A HREF="xm005.html#0074" TARGET=body>CHECKSET</A> option) </LI>
+<LI>tag value is out of range (in a variant record). </LI>
+</UL>
+</DD>
+<DT>realDivException</DT>
+<DD> 
+<P>Divide by zero in a real number expression. </DD>
+<DT>realValueException</DT>
+<DD> 
+<P>Overflow in evaluation of a real number expression. </DD>
+<DT>sysException</DT>
+<DD> 
+<P>The system module <B>SYSTEM</B> exceptions. <B>Note:</B> All these exceptions are non-mandatory. 
+<UL>
+ 
+<LI>invalid use of <TT>ADDADR</TT>, <TT>SUBADR</TT> or <TT>DIFADR</TT> </LI>
+<LI>the result of <TT>MAKEADR</TT> is out of the address range </LI>
+<LI>alignment problem with <TT>CAST</TT> </LI>
+<LI>the result of <TT>CAST</TT> is not a valid representation for the target type </LI>
+</UL>
+</DD>
+<DT>wholeDivException</DT>
+<DD> 
+<P>Whole division exception: 
+<UL>
+ 
+<LI>divided by zero in evaluation of a whole number expression </LI>
+<LI>the second operand of <TT>DIV</TT> or <TT>MOD</TT> is negative (See the <A HREF="xm005.html#0069" TARGET=body>CHECKDIV</A> option) </LI>
+</UL>
+</DD>
+<DT>wholeValueException</DT>
+<DD> 
+<P>Overflow in evaluation of a whole number expression. </DD>
+</DL>
+
+<P><A NAME="0412">
+<A HREF="#0411" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0411" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0413" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H5>An example of language exception handling</H5>
+
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;Div(a,b:&nbsp;INTEGER):&nbsp;INTEGER;
+&nbsp;&nbsp;&nbsp;&nbsp;BEGIN
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;RETURN&nbsp;a&nbsp;DIV&nbsp;b
+&nbsp;&nbsp;&nbsp;&nbsp;EXCEPT
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;IF&nbsp;IsM2Exception()&nbsp;THEN
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;IF&nbsp;M2Exception()&nbsp;=&nbsp;wholeDivException&nbsp;THEN
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;IF&nbsp;a&nbsp;&lt;&nbsp;0&nbsp;THEN&nbsp;RETURN&nbsp;MIN(INTEGER)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ELSE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;RETURN&nbsp;MAX(INTEGER)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;END;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;END;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;END;
+&nbsp;&nbsp;&nbsp;&nbsp;END&nbsp;Div;
+</PRE>
+
+<P><HR>
+<A NAME="0413">
+<A HREF="#0392" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0412" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0414" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Termination</H3>
+
+<P>During the program termination, finalizations of those static modules that have started initialization are executed in reverse order with respect to their initializations (See also <A HREF="#0407" TARGET=body>Finalization</A>). The static modules are the program module, the implementation modules, and any local modules declared in the module blocks of these modules. 
+<P>Program termination starts from the first occurrence of the following event: 
+<OL>
+ 
+<LI>end of the program module body is reached </LI>
+<LI>a <TT>RETURN</TT> statement is executed in the program module body </LI>
+<LI>the standard procedure <TT>HALT</TT> is called </LI>
+<LI>an exception was raised and is not handled </LI>
+</OL>
+
+<P>The system module <TT>TERMINATION</TT> provides facilities for enquiries concerning the occurrence of termination events. 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;IsTerminating():&nbsp;BOOLEAN;</TT> 
+<P>Returns <TT>TRUE</TT> if any coroutine has inititated program termination and <TT>FALSE</TT> otherwise. 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;HasHalted():&nbsp;BOOLEAN;</TT> 
+<P>Returns <TT>TRUE</TT> if a call of <TT>HALT</TT> has been made and <TT>FALSE</TT> otherwise. 
+<P><HR>
+<A NAME="0414">
+<A HREF="#0392" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0413" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0415" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Coroutines</H3>
+
+<P>The system module <TT>COROUTINES</TT> provides facilities for coroutines creation, explicit control transfer between coroutines, and interrupts handling. <B>Note:</B> Some features can be unavailable in the current release. See Chapter <A HREF="xm013.html#0591" TARGET=body>Limitations and restrictions</A> for details. 
+<P>Values of the type <TT>COROUTINE</TT> are created dynamically by a call of <TT>NEWCOROUTINE</TT> and identify the coroutine in subsequent operations. A particular coroutine is identified by the same value of the coroutine type throughout the lifetime of that coroutine. 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;TYPE&nbsp;COROUTINE;</TT> 
+<P>The correspondent type was called <TT>PROCESS</TT> in PIM. From the third edition of PIM, the <TT>ADDRESS</TT> type was used to identify a coroutine. 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;NEWCOROUTINE(
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;procBody:&nbsp;PROC;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;workspace:&nbsp;SYSTEM.ADDRESS;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;size:&nbsp;CARDINAL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;cr:&nbsp;COROUTINE
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[;&nbsp;initProtection:&nbsp;PROTECTION]);
+</PRE>
+
+<P>Creates a new coroutine whose body is given by <TT>procBody</TT>, and returns the identity of the coroutine in <TT>cr</TT>. <TT>workspace</TT> is a pointer to the work space allocated to the coroutine; <TT>size</TT> specifies the size of that workspace in terms of <TT>SYSTEM.LOC</TT>. <TT>initProtection</TT> is an optional parameter that specifies the initial protection level of the coroutine. 
+<P>An exception is raised (See <TT>coException</TT>) if the value of <TT>size</TT> is less than the minimum workspace size. 
+<P>If the optional parameter is omitted, the initial protection of the coroutine is given by the current protection of the caller. 
+<P>The created coroutine is initialized in such a way that when control is first transferred to that coroutine, the procedure given by <TT>procBody</TT> is called in a normal state. The exception (<TT>coException</TT>) is raised when the <TT>procBody</TT> procedure attempts to return to its caller. Since the caller has no exception handler, raising this exception is a termination event. 
+<P>The procedure <TT>TRANSFER</TT> can be used to transfer control from one coroutine to another. 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;TRANSFER&nbsp;(VAR&nbsp;from:&nbsp;COROUTINE;&nbsp;to:&nbsp;COROUTINE);</TT> 
+<P>Returns the identity of the calling coroutine in <TT>from</TT> and transfers control to the coroutine specified by <TT>to</TT>. 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;CURRENT&nbsp;():&nbsp;COROUTINE;</TT> 
+<P>Returns the identity of the calling coroutine. 
+<P><UL>
+<LI><A HREF="#0415" TARGET=body>Interrupt handling</A>
+<LI><A HREF="#0416" TARGET=body>Protection</A>
+</UL>
+<P><HR>
+<A NAME="0415">
+<A HREF="#0414" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0414" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0416" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H4>Interrupt handling</H4>
+
+<P>The <TT>INTERRUPTSOURCE</TT> type is used to identify interrupts. 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;TYPE&nbsp;INTERRUPTSOURCE&nbsp;=&nbsp;INTEGER;</TT> 
+<P>Programs that use the interrupt handling facilities may be non-portable since the type is implementation-defined. 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;ATTACH(source:&nbsp;INTERRUPTSOURCE);</TT> 
+<P>Associates the specified source of interrupts with the calling coroutine. More than one source of interrupts may be associated with a single coroutine. 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;DETACH(source:&nbsp;INTERRUPTSOURCE);</TT> 
+<P>Dissociates the specified source of interrupts from the calling coroutine. The call has no effect if the coroutine is not associated with source. 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;IsATTACHED(source:&nbsp;INTERRUPTSOURCE):&nbsp;BOOLEAN;</TT> 
+<P>Returns TRUE if and only if the specified source of interrupts is currently associated with a coroutine; otherwise returns FALSE. 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;HANDLER(source:&nbsp;INTERRUPTSOURCE):&nbsp;COROUTINE;</TT> 
+<P>Returns the coroutine, if any, that is associated with the source of interrupts. The result is undefined if there is no coroutine associated with the source. 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;IOTRANSFER(VAR&nbsp;from:&nbsp;COROUTINE;</TT><BR>
+<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;to:&nbsp;COROUTINE);</TT> 
+<P>Returns the identity of the calling coroutine in <TT>from</TT> and transfers control to the coroutine specified by <TT>to</TT>. On occurrence of an interrupt, associated with the caller, control is transferred back to the caller, and <TT>from</TT> returns the identity of the interrupted coroutine. An exception is raised if the calling coroutine is not associated with a source of interrupts. 
+<P><HR>
+<A NAME="0416">
+<A HREF="#0414" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0415" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0417" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H4>Protection</H4>
+
+<P>See section <A HREF="#0417" TARGET=body>Protection</A> for information about the type <TT>PROTECTION</TT>. 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;LISTEN(prot:&nbsp;PROTECTION);</TT> 
+<P>Momentarily changes protection of the calling coroutine to <TT>prot</TT>, usually lowering it so as to allow an interrupt request to be granted. 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;PROT():&nbsp;PROTECTION;</TT> 
+<P>Returns protection of the calling coroutine. 
+<P><HR>
+<A NAME="0417">
+<A HREF="#0392" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0416" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0418" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Protection</H3>
+
+<P>A program module, implementation module or local module may specify, by including protection in its heading, that execution of the enclosed statement sequence is protected. 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;ModuleHeading&nbsp;=&nbsp;MODULE&nbsp;ident&nbsp;[&nbsp;Protection&nbsp;]&nbsp;&quot;;&quot;.
+&nbsp;&nbsp;&nbsp;&nbsp;Protection&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;[&nbsp;ConstExpression&nbsp;].
+</PRE>
+
+<P>A module with protection in its heading is called a directly protected module. A directly protected procedure is an exported procedure declared in a protected module. 
+<P>Protection of a module is provided by surrounding the externally accessible procedures and module body by calls of access control procedures. The value of the protection expression is passed to the call of access control procedures as an actual parameter. 
+<P>The protection expression should be of the <TT>PROTECTION</TT> type. The <TT>PROTECTION</TT> type is an elementary type with at least two values: <TT>INTERRUPTIBLE</TT> and <TT>UNINTERRUPTIBLE</TT>. 
+<P>Operators <TT>&lt;</TT>, <TT>&gt;</TT>, <TT>&lt;=</TT> and <TT>&gt;=</TT> can be used to compare values of the <TT>PROTECTION</TT> type. If x is a value of <TT>PROTECTION</TT> type, then x satisfies the conditions: 
+<P ALIGN=CENTER><TT>UNINTERRUPTIBLE</TT> &le;x&le; <TT>INTERRUPTIBLE</TT> 
+<P><HR>
+<A NAME="0418">
+<A HREF="#0388" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0417" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0419" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Standard procedures</H2>
+
+<P><P ALIGN=CENTER><B><A NAME=table11>Table 11. </A></B>Modula-2 proper procedures
+
+<P ALIGN=CENTER><TABLE CELLSPACING=0>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><B>Procedure </B></TD>
+<TD  STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><B>Meaning </B></TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&radic; </TD>
+<TD  STYLE="padding:0px 3px;"><TT>ASSERT(x[,n]) </TT></TD>
+<TD  STYLE="padding:0px 3px;">Terminates the program if x&ne;<TT>TRUE</TT> (See <A HREF="#0455" TARGET=body>ASSERT</A>) </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&radic; </TD>
+<TD  STYLE="padding:0px 3px;"><TT>COPY(x,v) </TT></TD>
+<TD  STYLE="padding:0px 3px;">Copies a string: <TT>v&nbsp;:=&nbsp;x</TT> </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;"><TT>DEC(v[,n]) </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>v&nbsp;:=&nbsp;v&nbsp;-&nbsp;n</TT>, default n=1 </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;"><TT>DISPOSE(v) </TT></TD>
+<TD  STYLE="padding:0px 3px;">Deallocates v^ (See <A HREF="#0406" TARGET=body>NEW and DISPOSE</A>) </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;"><TT>EXCL(v,n) </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>v&nbsp;:=&nbsp;v&nbsp;-&nbsp;{n}</TT> </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;"><TT>HALT </TT></TD>
+<TD  STYLE="padding:0px 3px;">Terminates program execution (See <A HREF="#0454" TARGET=body>HALT</A>) </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;"><TT>INC(v[,n]) </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>v&nbsp;:=&nbsp;v&nbsp;+&nbsp;n</TT>, default n=1 </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;"><TT>INCL(v,n) </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>v&nbsp;:=&nbsp;v&nbsp;+&nbsp;{n}</TT> </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;"><TT>NEW(v) </TT></TD>
+<TD  STYLE="padding:0px 3px;">Allocates v^ (See <A HREF="#0406" TARGET=body>NEW and DISPOSE</A>) </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&radic; </TD>
+<TD  STYLE="padding:0px 3px;"><TT>NEW(v,</TT>x0<TT>...</TT>xn<TT>) </TT></TD>
+<TD  STYLE="padding:0px 3px;">Allocates v^ of length x0...xn (See <A HREF="#0453" TARGET=body>NEW and DISPOSE for dynamic arrays</A>) </TD>
+</TR>
+</TABLE>
+<P>
+<P><P ALIGN=CENTER><B><A NAME=table12>Table 12. </A></B>Modula-2 function procedures
+
+<P ALIGN=CENTER><TABLE CELLSPACING=0>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><B>Function </B></TD>
+<TD  STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><B>Meaning </B></TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;"><TT>ABS(x) </TT></TD>
+<TD  STYLE="padding:0px 3px;">Absolute value of x </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&radic;</TD>
+<TD  STYLE="padding:0px 3px;"><TT>ASH(x,n) </TT></TD>
+<TD  STYLE="padding:0px 3px;">Arithmetic shift </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;"><TT>CAP(x) </TT></TD>
+<TD  STYLE="padding:0px 3px;">Corresponding capital letter </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;"><TT>CHR(x) </TT></TD>
+<TD  STYLE="padding:0px 3px;">Character with the ordinal number x </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;"><TT>CMPLX(x,y) </TT></TD>
+<TD  STYLE="padding:0px 3px;">Complex number with real part x and imaginary part y </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&radic;</TD>
+<TD  STYLE="padding:0px 3px;"><TT>ENTIER(x) </TT></TD>
+<TD  STYLE="padding:0px 3px;">Largest integer not greater than x </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;"><TT>FLOAT(x) </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>VAL(REAL,x) </TT></TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;"><TT>HIGH(v) </TT></TD>
+<TD  STYLE="padding:0px 3px;">High bound of the index of v </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;"><TT>IM(x) </TT></TD>
+<TD  STYLE="padding:0px 3px;">Imaginary part of a complex x </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;"><TT>INT(x) </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>VAL(INTEGER,x) </TT></TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&radic;</TD>
+<TD  STYLE="padding:0px 3px;"><TT>LEN(v[,n]) </TT></TD>
+<TD  STYLE="padding:0px 3px;">Length of an array in the dimension n (default=0) </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;"><TT>LENGTH(x) </TT></TD>
+<TD  STYLE="padding:0px 3px;">String length </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;"><TT>LFLOAT(x) </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>VAL(LONGREAL,x) </TT></TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;"><TT>MAX(T) </TT></TD>
+<TD  STYLE="padding:0px 3px;">Maximum value of type T </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;"><TT>MIN(T) </TT></TD>
+<TD  STYLE="padding:0px 3px;">Minimum value of type T </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;"><TT>ODD(x) </TT></TD>
+<TD  STYLE="padding:0px 3px;">x MOD 2 = 1 </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;"><TT>ORD(x) </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>VAL(CARDINAL,x) </TT></TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;"><TT>RE(x) </TT></TD>
+<TD  STYLE="padding:0px 3px;">Real part of a complex x </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;"><TT>SIZE(T) </TT></TD>
+<TD  STYLE="padding:0px 3px;">The number of storage units, required by a variable of type T </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;"><TT>TRUNC(x) </TT></TD>
+<TD  STYLE="padding:0px 3px;">Truncation to the integral part </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;"><TT>VAL(T,x) </TT></TD>
+<TD  STYLE="padding:0px 3px;">Type conversion </TD>
+</TR>
+</TABLE>
+<P>
+<P>This section briefly describes the set of standard procedures and functions. Some of them are not defined in the International Standard and are available only if the option <A HREF="xm005.html#0102" TARGET=body>M2EXTENSIONS</A> is set. The procedure <A HREF="#0454" TARGET=body><TT>HALT</TT></A> may have an additional parameter, if the extensions are enabled . 
+<P>In the tables (<A HREF=#table11>11. Modula-2 proper procedures</A> and <A HREF=#table12>12. Modula-2 function procedures</A>) of predefined procedures, v stands for a designator, x, y and n &mdash; for expressions, T &mdash; for a type. Non-standard procedures are marked with &radic;. 
+<P>The procedure <TT>COPY</TT> and the functions <TT>ASH</TT>, <TT>ENTIER</TT> and <TT>LEN</TT> are described in <I>The Oberon-2 Report</I>. 
+<P><HR>
+<A NAME="0419">
+<A HREF="#0388" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0418" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0420" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Compatibility</H2>
+
+<P>This section describes compatibility between entities of different types. There are three forms of compatibility: 
+<UL>
+ 
+<LI>expression compatibility (specifying the types that may be combined in expressions); </LI>
+<LI>assignment compatibility (specifying the type of a value that may be assigned to a variable); </LI>
+<LI>parameter compatibility (specifying the type of an actual parameter that may be passed to a formal parameter). </LI>
+</UL>
+The rules for parameter compatibility are relaxed in the case where a formal parameter is of a system storage type. This variation is known as the system parameter compatibility. 
+<P>In most cases the compatibility rules are the same as described in PIM. However, we suppose to explicitly list all the rules. 
+<P><UL>
+<LI><A HREF="#0420" TARGET=body>Expression compatibility</A>
+<LI><A HREF="#0421" TARGET=body>Assignment compatibility</A>
+<LI><A HREF="#0422" TARGET=body>Value parameter compatibility</A>
+<LI><A HREF="#0423" TARGET=body>Variable parameter compatibility</A>
+<LI><A HREF="#0424" TARGET=body>System parameter compatibility</A>
+</UL>
+<P><HR>
+<A NAME="0420">
+<A HREF="#0419" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0419" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0421" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Expression compatibility</H3>
+
+<P>Two expressions a and b of types Ta and Tb are <I>expression compatible</I> if any of the following statement is true: 
+<OL>
+ 
+<LI>The types Ta and Tb are identical. <B>Note:</B> If a type is a subrange type, then only its host type matters, therefore values of subranges of the same host type are expression compatible with each other and with the host type. </LI>
+<LI>A type of one expression is a complex type, and the other expression is a complex constant. </LI>
+<LI>A type of one expression is a real type, and the other expression is a real constant. </LI>
+<LI>A type of one expression is a whole type, and the other expression is a whole constant. </LI>
+<LI>A type of one expression is character, and the other expression is a string literal of length 0 or 1. See also <A HREF="#0397" TARGET=body>Strings</A>. 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;VAR
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;char:&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WHILE&nbsp;(char&nbsp;#&nbsp;'')&nbsp;&amp;&nbsp;(char&nbsp;#&nbsp;&quot;.&quot;)&nbsp;DO
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...
+</PRE>
+</LI>
+</OL>
+
+<P><HR>
+<A NAME="0421">
+<A HREF="#0419" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0420" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0422" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Assignment compatibility</H3>
+
+<P>An expression e of type Te is <I>assignment compatible</I> with the variable v of type Tv if one of the following conditions holds<FONT SIZE=2>&nbsp;/ For an expression of a subrange type only host type matters. / </FONT>: 
+<OL>
+ 
+<LI>Tv is identical to the type Te, and the type is not an open array type. </LI>
+<LI>Tv is a subrange of the type Te. </LI>
+<LI>Tv is the CARDINAL type or a subrange of the CARDINAL type and Te is the INTEGER type or e is a whole constant. </LI>
+<LI>Tv is the INTEGER type or a subrange of the INTEGER type and Te is the CARDINAL type or e is a whole constant. </LI>
+<LI>Tv is a real type and e is a real constant. </LI>
+<LI>Tv is a complex type and e is a complex constant. </LI>
+<LI>Tv is a pointer type and e is NIL. </LI>
+<LI>Tv is a procedure type and e is the designator of a procedure which has the same structure as the procedure type Tv and which has been declared at level 0. </LI>
+<LI>Tv is the character type or a subrange of the character type and e is a string literal of length 0 or 1. </LI>
+<LI>Tv is an array type having the character type as its component type, and e is a string literal of length less then or equal to the number of components in arrays of type Tv<FONT SIZE=2>&nbsp;/A string literal is not assignment compatible with an array whose component&rsquo;s type is a subrange of the character type./ </FONT>. </LI>
+<LI>Tv is the address type and Te is a pointer type or Te is the address type and Tv is a pointer type. </LI>
+</OL>
+
+<P><HR>
+<A NAME="0422">
+<A HREF="#0419" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0421" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0423" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Value parameter compatibility</H3>
+
+<P>A formal type is <I>value parameter compatible</I> with an actual expression if any of the following statements is true: 
+<OL>
+ 
+<LI>The formal type is constructed from a system storage type and is system parameter compatible with the expression. </LI>
+<LI>The formal parameter is an open array, the actual parameter is an array type and the component type of the formal type is value parameter compatible with the component type of the actual type <FONT SIZE=2>&nbsp;/A formal array parameter with the component&rsquo;s type T is not parameter compatible with the actual parameter of type T./ </FONT>. </LI>
+<LI>The formal type is assignment compatible with the actual parameter. </LI>
+</OL>
+
+<P><HR>
+<A NAME="0423">
+<A HREF="#0419" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0422" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0424" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Variable parameter compatibility</H3>
+
+<P>A formal type is <I>variable parameter compatible</I> with an actual variable if any of the following statements is true: 
+<OL>
+ 
+<LI>The formal type is constructed from a system storage type and is system parameter compatible with the expression. </LI>
+<LI>The formal parameter is an open array, the actual parameter is an array type and the component&rsquo;s type of the formal type is variable parameter compatible with the component&rsquo;s type of the actual parameter type. </LI>
+<LI>The formal type is identical to the actual parameter type. </LI>
+</OL>
+
+<P><HR>
+<A NAME="0424">
+<A HREF="#0419" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0423" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0425" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>System parameter compatibility</H3>
+
+<P>A formal type is <I>system parameter compatible</I> with an actual parameter if any of the following statements is true: 
+<OL>
+ 
+<LI>The formal parameter is of the SYSTEM.LOC type and the actual parameter is of any type T such that <TT>SIZE(T)</TT> is equal to 1. </LI>
+<LI>The formal parameter is of the type 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;ARRAY&nbsp;[0..n-1]&nbsp;OF&nbsp;SYSTEM.LOC</TT> 
+<P>and the actual parameter is of any type T such that <TT>SIZE(T)</TT> is equal to <TT>n</TT>. </LI>
+<LI>The formal parameter is of the open array type 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;ARRAY&nbsp;OF&nbsp;SYSTEM.LOC</TT> 
+<P>and the actual parameter is of any type but not numeric literal. </LI>
+<LI>The formal parameter is of the multi-dimensional open array type 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;ARRAY&nbsp;OF&nbsp;ARRAY&nbsp;[0..n-1]&nbsp;OF&nbsp;SYSTEM.LOC</TT> 
+<P>and the actual parameter is of any type T such that <TT>SIZE(T)</TT> is a multiple of <TT>n</TT>. </LI>
+</OL>
+
+<P><HR>
+<A NAME="0425">
+<A HREF="#0388" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0424" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0426" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>The Modula-2 module SYSTEM</H2>
+
+<P>The module <B>SYSTEM</B> provides the low-level facilities for gaining an access to the address and underlying storage of variables, performing address arithmetic operations and manipulating the representation of values. Program that use these facilities may be non-portable. 
+<P>This module does not exist in the same sense as other libraries but is hard-coded into the compiler itself. To use the facilities provided, however, identifiers must be imported in a usual way. 
+<P>Some of the <B>SYSTEM</B> module procedures are generic procedures that cannot be explicitly declared, i.e. they apply to classes of operand types or have several possible forms of a parameter list . 
+<P>The <B>SYSTEM</B> module is the only module specified in the International Standard that can be extended in the implementation. The XDS <B>SYSTEM</B> module provides additional types and procedures. 
+<P><B>Note:</B> The module <B>SYSTEM</B> is different in Oberon-2. See <A HREF="xm008.html#0483" TARGET=body>The Oberon-2 module SYSTEM</A> for details. 
+<P><FONT SIZE=2>
+<P><PRE>DEFINITION&nbsp;MODULE&nbsp;SYSTEM;
+
+CONST
+&nbsp;&nbsp;BITSPERLOC&nbsp;&nbsp;=&nbsp;8;
+&nbsp;&nbsp;LOCSPERWORD&nbsp;=&nbsp;4;
+&nbsp;&nbsp;LOCSPERBYTE&nbsp;=&nbsp;1;
+
+TYPE
+&nbsp;&nbsp;LOC;
+&nbsp;&nbsp;ADDRESS&nbsp;=&nbsp;POINTER&nbsp;TO&nbsp;LOC;
+&nbsp;&nbsp;WORD&nbsp;=&nbsp;ARRAY&nbsp;[0&nbsp;..&nbsp;LOCSPERWORD-1]&nbsp;OF&nbsp;LOC;
+&nbsp;&nbsp;BYTE&nbsp;=&nbsp;LOC;
+
+PROCEDURE&nbsp;ADDADR(addr:&nbsp;ADDRESS;&nbsp;offset:&nbsp;CARDINAL):&nbsp;ADDRESS;
+PROCEDURE&nbsp;SUBADR(addr:&nbsp;ADDRESS;&nbsp;offset:&nbsp;CARDINAL):&nbsp;ADDRESS;
+PROCEDURE&nbsp;DIFADR(addr1,&nbsp;addr2:&nbsp;ADDRESS):&nbsp;INTEGER;
+
+PROCEDURE&nbsp;MAKEADR(val:&nbsp;&lt;whole&nbsp;type&gt;):&nbsp;ADDRESS;
+
+PROCEDURE&nbsp;ADR(VAR&nbsp;v:&nbsp;&lt;anytype&gt;):&nbsp;ADDRESS;
+
+PROCEDURE&nbsp;REF(VAR&nbsp;v:&nbsp;&lt;anytype&gt;):&nbsp;POINTER&nbsp;TO&nbsp;&lt;type&nbsp;of&nbsp;the&nbsp;parameter&gt;;
+
+PROCEDURE&nbsp;ROTATE(val:&nbsp;&lt;a&nbsp;packedset&nbsp;type&gt;;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;num:&nbsp;INTEGER):&nbsp;&lt;type&nbsp;of&nbsp;the&nbsp;first&nbsp;parameter&gt;;
+
+PROCEDURE&nbsp;SHIFT(val:&nbsp;&lt;a&nbsp;packedset&nbsp;type&gt;;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;num:&nbsp;INTEGER):&nbsp;&lt;type&nbsp;of&nbsp;the&nbsp;first&nbsp;parameter&gt;;
+
+PROCEDURE&nbsp;CAST(&lt;targettype&gt;;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;val:&nbsp;&lt;anytype&gt;):&nbsp;&lt;targettype&gt;;
+
+PROCEDURE&nbsp;TSIZE&nbsp;(&lt;type&gt;;&nbsp;...&nbsp;):&nbsp;CARDINAL;
+
+(*-------------------------------------------------------&nbsp;*)
+(*&nbsp;--------------&nbsp;non-standard&nbsp;features&nbsp;-----------------&nbsp;*)
+
+TYPE
+&nbsp;&nbsp;INT8&nbsp;&nbsp;&nbsp;=&nbsp;&lt;integer&nbsp;8-bits&nbsp;type&gt;;
+&nbsp;&nbsp;INT16&nbsp;&nbsp;=&nbsp;&lt;integer&nbsp;16-bits&nbsp;type&gt;;
+&nbsp;&nbsp;INT32&nbsp;&nbsp;=&nbsp;&lt;integer&nbsp;32-bits&nbsp;type&gt;;
+&nbsp;&nbsp;CARD8&nbsp;&nbsp;=&nbsp;&lt;cardinal&nbsp;8-bits&nbsp;type&gt;;
+&nbsp;&nbsp;CARD16&nbsp;=&nbsp;&lt;cardinal&nbsp;16-bits&nbsp;type&gt;;
+&nbsp;&nbsp;CARD32&nbsp;=&nbsp;&lt;cardinal&nbsp;32-bits&nbsp;type&gt;;
+&nbsp;&nbsp;BOOL8&nbsp;&nbsp;=&nbsp;&lt;boolean&nbsp;8-bits&nbsp;type&gt;;
+&nbsp;&nbsp;BOOL16&nbsp;=&nbsp;&lt;boolean&nbsp;16-bits&nbsp;type&gt;;
+&nbsp;&nbsp;BOOL32&nbsp;=&nbsp;&lt;boolean&nbsp;32-bits&nbsp;type&gt;;
+&nbsp;&nbsp;INDEX&nbsp;&nbsp;=&nbsp;&lt;type&nbsp;of&nbsp;index&gt;
+&nbsp;&nbsp;DIFADR_TYPE&nbsp;=&nbsp;&lt;type&nbsp;that&nbsp;DIFADR&nbsp;function&nbsp;returns&gt;
+
+TYPE&nbsp;(*&nbsp;for&nbsp;use&nbsp;in&nbsp;Oberon&nbsp;*)
+&nbsp;&nbsp;INT&nbsp;&nbsp;=&nbsp;&lt;Modula-2&nbsp;INTEGER&nbsp;type&gt;;
+&nbsp;&nbsp;CARD&nbsp;=&nbsp;&lt;Modula-2&nbsp;CARDINAL&nbsp;type&gt;;
+
+TYPE&nbsp;(*&nbsp;for&nbsp;interfacing&nbsp;to&nbsp;C&nbsp;*)
+&nbsp;&nbsp;int&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;&lt;C&nbsp;int&nbsp;type&gt;;
+&nbsp;&nbsp;unsigned&nbsp;=&nbsp;&lt;C&nbsp;unsigned&nbsp;type&gt;;
+&nbsp;&nbsp;size_t&nbsp;&nbsp;&nbsp;=&nbsp;&lt;C&nbsp;size_t&nbsp;type&gt;;
+&nbsp;&nbsp;void&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;&lt;C&nbsp;void&nbsp;type&gt;;
+
+PROCEDURE&nbsp;MOVE(src,dest:&nbsp;ADDRESS;&nbsp;size:&nbsp;CARDINAL);
+PROCEDURE&nbsp;FILL(adr&nbsp;:&nbsp;ADDRESS;&nbsp;val&nbsp;:&nbsp;BYTE;&nbsp;size&nbsp;:&nbsp;CARDINAL;);
+
+PROCEDURE&nbsp;GET(adr:&nbsp;ADDRESS;&nbsp;VAR&nbsp;var:&nbsp;SimpleType);
+PROCEDURE&nbsp;PUT(adr:&nbsp;ADDRESS;&nbsp;var:&nbsp;SimpleType);
+
+PROCEDURE&nbsp;CC(n:&nbsp;CARDINAL):&nbsp;BOOLEAN;
+
+END&nbsp;SYSTEM.
+</PRE>
+
+<P></FONT> 
+<P><UL>
+<LI><A HREF="#0426" TARGET=body>System types</A>
+<LI><A HREF="#0427" TARGET=body>System functions</A>
+<LI><A HREF="#0431" TARGET=body>System procedures</A>
+</UL>
+<P><HR>
+<A NAME="0426">
+<A HREF="#0425" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0425" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0427" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>System types</H3>
+<DL>
+ 
+<DT>LOC</DT>
+<DD> 
+<P>Values of the <TT>LOC</TT> type are the uninterpreted contents of the smallest addressable unit of a storage in implementation. The value of the call <TT>TSIZE(LOC)</TT> is therefore equal to one. 
+<P>The type <TT>LOC</TT> was introduced as a mechanism to resolve the problems with <TT>BYTE</TT> and <TT>WORD</TT> types. Its introduction allows a consistent handling of both these types, and enables also <TT>WORD</TT>-like types to be further introduced, eg: 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;TYPE&nbsp;WORD16&nbsp;=&nbsp;ARRAY&nbsp;[0..1]&nbsp;OF&nbsp;SYSTEM.LOC;</TT> 
+<P>The only operation directly defined for the <TT>LOC</TT> type is an assignment. There are special rules affecting parameter compatibility for system storage types. See <A HREF="#0424" TARGET=body>System parameter compatibility</A> for further details. </DD>
+<DT>BYTE</DT>
+<DD> 
+<P><TT>BYTE</TT> is defined as <TT>LOC</TT> and has all the properties of the type <TT>LOC</TT>. </DD>
+<DT>WORD</DT>
+<DD> 
+<P>The type <TT>WORD</TT> is defined as 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;CONST&nbsp;LOCSPERWORD&nbsp;=&nbsp;4;</TT><BR>
+<TT>&nbsp;&nbsp;&nbsp;&nbsp;TYPE&nbsp;WORD&nbsp;=&nbsp;ARRAY&nbsp;[0..LOCSPERWORD-1]&nbsp;OF&nbsp;LOC;</TT> 
+<P>and the value of the call <TT>TSIZE(WORD)</TT> is equal to <TT>LOCSPERWORD</TT>. 
+<P>The only operation directly defined for the <TT>WORD</TT> type is an assignment. There are special rules affecting parameter compatibility for system storage types. See <A HREF="#0424" TARGET=body>System parameter compatibility</A> for further details. </DD>
+<DT>ADDRESS</DT>
+<DD> 
+<P>The type <TT>ADDRESS</TT> is defined as 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;TYPE&nbsp;ADDRESS&nbsp;=&nbsp;POINTER&nbsp;TO&nbsp;LOC;</TT> 
+<P>The <TT>ADDRESS</TT> type is an assignment compatible with all pointer types and vice versa (See <A HREF="#0421" TARGET=body>Assignment compatibility</A>). A formal variable parameter of the <TT>ADDRESS</TT> type is a parameter compatible with an actual parameter of any pointer type. 
+<P>Variables of type <TT>ADDRESS</TT> are no longer expression compatible with <TT>CARDINAL</TT> (as it was in PIM) and they cannot directly occur in expressions that include arithmetic operators. Functions <TT>ADDADR</TT>, <TT>SUBADR</TT> and <TT>DIFADR</TT> were introduced for address arithmetic. </DD>
+<DT>Whole system types</DT>
+<DD> 
+<P>Types <TT>INT8</TT>, <TT>CARD8</TT>, <TT>INT16</TT>, <TT>CARD16</TT>, <TT>INT32</TT>, <TT>CARD32</TT> are guaranteed to contain 8, 16, or 32 bits respectively. 
+<P>These types are introduced to simplify constructing the interfaces for foreign libraries (See Chapter <A HREF="xm010.html#0517" TARGET=body>Multilanguage programming</A>). Types <TT>SHORTINT</TT>, <TT>LONGINT</TT>, <TT>SHORTCARD</TT>, <TT>LONGCARD</TT> are synonyms of <TT>INT8</TT>, <TT>INT32</TT>, <TT>CARD8</TT>, <TT>CARD32</TT>, respectively (See also the <A HREF="xm005.html#0099" TARGET=body>M2ADDTYPES</A> option). Types <TT>INTEGER</TT> and <TT>CARDINAL</TT> are synonyms of <TT>INT16</TT>/<TT>INT32</TT>, <TT>CARD16</TT>/<TT>CARD32</TT>, depending on the target platform. See also the <A HREF="xm005.html#0100" TARGET=body>M2BASE16</A> option. 
+<P>These types are not described in the International Standard. </DD>
+<DT>Boolean system types</DT>
+<DD> 
+<P>Types <TT>BOOL8</TT>, <TT>BOOL16</TT>, and <TT>BOOL32</TT> are guaranteed to contain 8,16 and 32 bits respectively. By default the compiler uses <TT>BOOL8</TT> type for BOOLEAN. In some cases (e.g. in the interface to the Windows API) <TT>BOOL16</TT> or <TT>BOOL32</TT> should be used instead. 
+<P>These types are not described in the International Standard. </DD>
+<DT>Bitset system types</DT>
+<DD> 
+<P>Types <TT>SET8</TT>, <TT>SET16</TT>, and <TT>SET32</TT> are guaranteed to contain 8,16 and 32 bits respectively. The predefined type <TT>BITSET</TT> is a synonym for <TT>SYSTEM.SET16</TT> or <TT>SYSTEM.SET32</TT>, depending on the target platform. See also the <A HREF="xm005.html#0100" TARGET=body>M2BASE16</A> option. 
+<P>These types are not described in the International Standard. </DD>
+<DT>Modula-2 whole types</DT>
+<DD> 
+<P>Types <TT>INT</TT> and <TT>CARD</TT> are equal to Modula-2 <TT>INTEGER</TT> and <TT>CARDINAL</TT> types, respectively. These types can be used in Oberon-2 in order to use Modula-2 procedures in a portable way. See <A HREF="xm010.html#0518" TARGET=body>Modula-2 and Oberon-2</A> for further details. 
+<P>These types are not described in the International Standard. </DD>
+<DT>Interface to C</DT>
+<DD> 
+<P>Types <TT>int</TT>, <TT>unsigned</TT>, <TT>size_t</TT> and <TT>void</TT> are introduced to simplify interfacing to C libraries. See <A HREF="xm010.html#0524" TARGET=body>Interfacing to C</A> for further details. </DD>
+</DL>
+
+<P><HR>
+<A NAME="0427">
+<A HREF="#0425" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0426" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0428" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>System functions</H3>
+
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;ADDADR(addr:&nbsp;ADDRESS;</TT><BR>
+<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;offs:&nbsp;CARDINAL):&nbsp;ADDRESS;</TT> 
+<P>Returns an address given by <TT>(addr + offs)</TT>. The subsequent use of the calculated address may raise an exception. 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;SUBADR(addr:&nbsp;ADDRESS;</TT><BR>
+<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;offs:&nbsp;CARDINAL):&nbsp;ADDRESS;</TT> 
+<P>Returns an address given by <TT>(addr - offs)</TT>. The subsequent use of the calculated address may raise an exception. 
+<P>The result of functions <TT>ADDADR</TT> and <TT>SUBADR</TT> is meaningful if <TT>addr</TT> points into some object and the calculated address points into the same object or points to the next byte after the object. 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;DIFADR(addr1,addr2:&nbsp;ADDRESS):&nbsp;INTEGER;</TT> 
+<P>Returns the difference between addresses <TT>(addr1 - addr2)</TT>. 
+<P>The result of this function is meaningful if <TT>addr1</TT> and <TT>addr2</TT> point into the same object or to the next byte after the object. 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;MAKEADR(val:&nbsp;&lt;whole&nbsp;type&gt;):&nbsp;ADDRESS;</TT> 
+<P>The function is used to construct a value of the ADDRESS type from the value of a whole type. 
+<P><B>Note:</B> The International Standard does not define the number and types of the parameters. Programs that use this procedure may be non-portable. 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;ADR(VAR&nbsp;v:&nbsp;&lt;any&nbsp;type&gt;):&nbsp;ADDRESS;</TT> 
+<P>Returns the address of the variable <TT>v</TT>. 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;CAST(&lt;type&gt;;&nbsp;x:&nbsp;&lt;any&nbsp;type&gt;):&nbsp;&lt;type&gt;;</TT> 
+<P>The function <TT>CAST</TT> can be used (as a type transfer function) to interpret a value of any type other than a numeric literal value as a value of another type <FONT SIZE=2>&nbsp;/The International Standard forbids the use of the PIM style type transfer, like <TT>CARDINAL(x)</TT>./ </FONT>. 
+<P>The value of the call <TT>CAST(Type,val)</TT> is an unchecked conversion of <TT>val</TT> to the type <TT>Type</TT>. If <TT>SIZE(val) = TSIZE(Type)</TT>, the bit pattern representation of the result is the same as the bit pattern representation of <TT>val</TT>; otherwise the result and the value of <TT>val</TT> have the same bit pattern representation for a size equal to the smaller of the numbers of storage units. 
+<P>The given implementation may forbid some combinations of parameter types. 
+<P><B>Note:</B> In Oberon-2 module SYSTEM, the respective procedure is called <TT>VAL</TT>. 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;TSIZE(Type;&nbsp;...&nbsp;):&nbsp;CARDINAL;</TT> 
+<P>Returns the number of storage units (<TT>LOC</TT>s) used to store the value of the specified type. The extra parameters, if present, are used to distinguish variants in a variant record and must be constant expressions<FONT SIZE=2>&nbsp;/Those constant expressions are ignored in the current release./ </FONT>. 
+<P><A NAME="0428">
+<A HREF="#0416" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0427" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0429" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H5>Example</H5>
+
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;TYPE
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;R&nbsp;=&nbsp;RECORD
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;CASE&nbsp;i:&nbsp;INTEGER&nbsp;OF
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|1:&nbsp;r:&nbsp;REAL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|2:&nbsp;b:&nbsp;BOOLEAN;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;END;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;END;
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;...&nbsp;TSIZE(R,1)&nbsp;...
+
+</PRE>
+
+<P>The value of <TT>TSIZE(T)</TT> is equal to <TT>SIZE(T)</TT>. 
+<P><HR>
+<A NAME="0429">
+<A HREF="#0427" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0428" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0430" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H4>Packedset functions</H4>
+
+<P>Values of packedset types are represented as sequences of bits<FONT SIZE=2>&nbsp;/The current implementation does not distinguish between set and packedset types./ </FONT>. The bit number 0 is the least significant bit for a given platform. The following is true, where <TT>v</TT> is a variable of the type <TT>CARDINAL</TT>: 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;CAST(CARDINAL,BITSET{0})&nbsp;=&nbsp;VAL(CARDINAL,1)
+&nbsp;&nbsp;&nbsp;&nbsp;SHIFT(CAST(BITSET,v),1)&nbsp;&nbsp;=&nbsp;v&nbsp;*&nbsp;2
+&nbsp;&nbsp;&nbsp;&nbsp;SHIFT(CAST(BITSET,v),-1)&nbsp;=&nbsp;v&nbsp;DIV&nbsp;2
+</PRE>
+
+<P><B>Note:</B> The functions <TT>ROTATE</TT> and <TT>SHIFT</TT> can be applied to a set with size less than or equal to the size of <TT>BITSET</TT>. 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;ROTATE(x:&nbsp;T;&nbsp;n:&nbsp;integer):&nbsp;T;</TT> 
+<P>Returns the value of <TT>x</TT> rotated <TT>n</TT> bits to the left (for positive <TT>n</TT>) or to the right (for negative <TT>n</TT>). 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;SHIFT(x:&nbsp;T;&nbsp;n:&nbsp;integer):&nbsp;T;</TT> 
+<P>Returns the value of <TT>x</TT> logically shifted <TT>n</TT> bits to the left (for positive <TT>n</TT>) or to the right (for negative <TT>n</TT>). 
+<P><B>Warning:</B> The result of <TT>SHIFT(x,n)</TT> , where <TT>n</TT> is greater than the number of elements in <TT>T</TT>, is undefined. 
+<P><HR>
+<A NAME="0430">
+<A HREF="#0427" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0429" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0431" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H4>Non-standard functions</H4>
+
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;CC(n:&nbsp;whole&nbsp;constant):&nbsp;BOOLEAN;</TT> 
+<P>Returns TRUE if the corresponding condition flag is set. The function is not implemented in the current release. 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;REF(VAR&nbsp;v:&nbsp;&lt;anytype&gt;):</TT><BR>
+<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;POINTER&nbsp;TO&nbsp;&lt;type&nbsp;of&nbsp;the&nbsp;parameter&gt;;</TT> 
+<P>Returns the pointer to the variable <TT>v</TT>. See also <A HREF="xm010.html#0530" TARGET=body>Parameter compatibility</A>. 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;BIT(adr:&nbsp;T;&nbsp;bit:&nbsp;INTEGER):&nbsp;BOOLEAN;</TT> 
+<P>Returns bit <TT>n</TT> of <TT>Mem[adr]</TT>. <TT>T</TT> is either ADDRESS or whole type. 
+<P><HR>
+<A NAME="0431">
+<A HREF="#0425" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0430" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0432" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>System procedures</H3>
+
+<P><B>Note:</B> all these procedures are non-standard. 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;MOVE&nbsp;(src,&nbsp;dst:&nbsp;ADDRESS;&nbsp;size:&nbsp;CARDINAL);</TT> 
+<P>Copies <TT>size</TT> bytes from the memory location specified by <TT>src</TT> to the memory location specified by <TT>dst</TT>. 
+<P><B>Warning:</B> No check for area overlap is performed. The behaviour of <TT>SYSTEM.MOVE</TT> in case of overlapping areas is undefined. 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;FILL(adr&nbsp;:&nbsp;ADDRESS;&nbsp;val&nbsp;:&nbsp;BYTE;&nbsp;size&nbsp;:&nbsp;CARDINAL;);</TT> 
+<P>Fills the memory block of size <TT>size</TT> starting from the memory location specified by <TT>adr</TT> with the value of <TT>val</TT> using the <TT>memset</TT> C library function. 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;GET&nbsp;(adr:&nbsp;ADDRESS;&nbsp;VAR&nbsp;v:&nbsp;SimpleType);</TT><BR>
+<TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;PUT&nbsp;(adr:&nbsp;ADDRESS;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;x:&nbsp;SimpleType);</TT> 
+<P>Gets/puts a value from/to address specified by <TT>adr</TT>. The second parameter cannot be of a record or array type. 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;i:&nbsp;INTEGER;
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;GET&nbsp;(128,&nbsp;i);&nbsp;&nbsp;&nbsp;(*&nbsp;get&nbsp;system&nbsp;cell&nbsp;value&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;i&nbsp;:=&nbsp;i+20;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;change&nbsp;it&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PUT&nbsp;(128,&nbsp;i);&nbsp;&nbsp;&nbsp;(*&nbsp;and&nbsp;put&nbsp;back&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*)
+</PRE>
+
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;CODE(...);</TT> 
+<P>The CODE procedure accepts a sequence of strings as its parameter. This procedure inserts a string which is the concatenation of the parameters into the generated C code. 
+<P><A NAME="0432">
+<A HREF="#0430" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0431" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0433" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H5>Example</H5>
+
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;disable;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;disable&nbsp;interrupts&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;BEGIN
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SYSTEM.CODE&nbsp;(&quot;asm&nbsp;di;&quot;);
+&nbsp;&nbsp;&nbsp;&nbsp;END&nbsp;disable;
+</PRE>
+
+<P>will produce 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;asm&nbsp;di;</TT> 
+<P><HR>
+<A NAME="0433">
+<A HREF="#0388" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0432" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0434" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Language extensions</H2>
+
+<P><B>Warning:</B> Using extensions may cause problems with software portability to other compilers. 
+<P>In the standard mode the XDS Modula-2 compiler is ISO compliant (See <A HREF="#0389" TARGET=body>ISO Standard compliance</A>). A set of language extensions may be enabled using the <A HREF="xm005.html#0102" TARGET=body>M2EXTENSIONS</A> and <A HREF="xm005.html#0099" TARGET=body>M2ADDTYPES</A> options. 
+<P>The main purposes of supporting the language extensions are: 
+<UL>
+ 
+<LI>to improve interfacing with other languages (See Chapter <A HREF="xm010.html#0517" TARGET=body>Multilanguage programming</A>) </LI>
+<LI>to simplify migration from Modula-2 to Oberon-2 </LI>
+<LI>to implement some useful features not found in ISO Modula-2 </LI>
+<LI>to provide backward compatibility with previous releases </LI>
+</UL>
+
+<P><UL>
+<LI><A HREF="#0434" TARGET=body>Lexical extensions</A>
+<LI><A HREF="#0438" TARGET=body>Additional numeric types</A>
+<LI><A HREF="#0440" TARGET=body>Type casting</A>
+<LI><A HREF="#0441" TARGET=body>Assignment compatibility with BYTE</A>
+<LI><A HREF="#0442" TARGET=body>Dynamic arrays</A>
+<LI><A HREF="#0444" TARGET=body>Constant array constructors</A>
+<LI><A HREF="#0445" TARGET=body>Set complement</A>
+<LI><A HREF="#0446" TARGET=body>Read-only parameters</A>
+<LI><A HREF="#0448" TARGET=body>Variable number of parameters</A>
+<LI><A HREF="#0449" TARGET=body>Read-only export</A>
+<LI><A HREF="#0451" TARGET=body>Renaming of imported modules</A>
+<LI><A HREF="#0453" TARGET=body>NEW and DISPOSE for dynamic arrays</A>
+<LI><A HREF="#0454" TARGET=body>HALT</A>
+<LI><A HREF="#0455" TARGET=body>ASSERT</A>
+</UL>
+<P><HR>
+<A NAME="0434">
+<A HREF="#0433" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0433" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0435" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Lexical extensions</H3>
+
+<P><UL>
+<LI><A HREF="#0435" TARGET=body>Comments</A>
+<LI><A HREF="#0436" TARGET=body>Numeric constants</A>
+</UL>
+<P><HR>
+<A NAME="0435">
+<A HREF="#0434" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0434" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0436" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H4>Comments</H4>
+
+<P><FONT SIZE=2>NOTE: Only valid when option <A HREF="xm005.html#0102" TARGET=body>M2EXTENSIONS</A> is set.
+<P></FONT> 
+<P>As well as <TT>(**)</TT>, there is another valid format for comments in the source texts. The portion of a line from &ldquo;<TT>--</TT>&rdquo; to the end is considered as a comment. 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;i:&nbsp;INTEGER;&nbsp;--&nbsp;this&nbsp;is&nbsp;a&nbsp;comment
+&nbsp;&nbsp;&nbsp;&nbsp;--(*
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;i:=0;&nbsp;(*&nbsp;this&nbsp;line&nbsp;will&nbsp;be&nbsp;compiled&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;--*)
+</PRE>
+
+<P><HR>
+<A NAME="0436">
+<A HREF="#0434" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0435" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0437" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H4>Numeric constants</H4>
+
+<P><FONT SIZE=2>NOTE: Only valid when option <A HREF="xm005.html#0102" TARGET=body>M2EXTENSIONS</A> is set.
+<P></FONT> 
+<P>Both Modula-2 and Oberon-2 syntax rules for the numeric and character representations may be used. 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;Number&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;[&nbsp;&quot;+&quot;&nbsp;|&nbsp;&quot;-&quot;&nbsp;]&nbsp;Integer&nbsp;|&nbsp;Real.
+&nbsp;&nbsp;&nbsp;&nbsp;Integer&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;digit&nbsp;{&nbsp;digit&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;octalDigit&nbsp;{&nbsp;octalDigit&nbsp;}&nbsp;&quot;B&quot;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;digit&nbsp;{&nbsp;hexDigit&nbsp;}&nbsp;&quot;X&quot;.
+&nbsp;&nbsp;&nbsp;&nbsp;Real&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;digit&nbsp;{&nbsp;digit&nbsp;}&nbsp;&quot;.&quot;&nbsp;{&nbsp;digit&nbsp;}&nbsp;[&nbsp;ScaleFactor&nbsp;].
+&nbsp;&nbsp;&nbsp;&nbsp;ScaleFactor&nbsp;=&nbsp;(&nbsp;&quot;E&quot;&nbsp;|&nbsp;&quot;D&quot;&nbsp;)&nbsp;[&nbsp;&quot;+&quot;&nbsp;|&nbsp;&quot;-&quot;&nbsp;]&nbsp;digit&nbsp;{digit}.
+
+&nbsp;&nbsp;&nbsp;&nbsp;Character&nbsp;&nbsp;&nbsp;=&nbsp;'&quot;'&nbsp;char&nbsp;'&quot;'&nbsp;|&nbsp;&quot;'&quot;&nbsp;char&nbsp;&quot;'&quot;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;digit&nbsp;{hexDigit}&nbsp;&quot;H&quot;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;octalDigit&nbsp;{octalDigit}&nbsp;&quot;C&quot;.
+</PRE>
+
+<P><A NAME="0437">
+<A HREF="#0436" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0436" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0438" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H5>Examples</H5>
+
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;1991&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1991&nbsp;(decimal)
+&nbsp;&nbsp;&nbsp;&nbsp;0DH&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;13&nbsp;&nbsp;&nbsp;(decimal)
+&nbsp;&nbsp;&nbsp;&nbsp;15B&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;13&nbsp;&nbsp;&nbsp;(decimal)
+&nbsp;&nbsp;&nbsp;&nbsp;41X&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&quot;A&quot;
+&nbsp;&nbsp;&nbsp;&nbsp;101C&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&quot;A&quot;
+</PRE>
+
+<P><B>Note:</B> the symbol &quot;<TT>D</TT>&quot; in a <TT>ScaleFactor</TT> denotes a <TT>LONGREAL</TT> value. 
+<P><HR>
+<A NAME="0438">
+<A HREF="#0433" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0437" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0439" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Additional numeric types</H3>
+
+<P><FONT SIZE=2>NOTE: Only valid when option <A HREF="xm005.html#0099" TARGET=body>M2ADDTYPES</A> is set.
+<P></FONT> 
+<P>The compiler option <A HREF="xm005.html#0099" TARGET=body>M2ADDTYPES</A> introduces the following additional numeric types: 
+<P><TABLE CELLSPACING=0>
+<TR>
+<TD  STYLE="padding:0px 3px;">1. </TD>
+<TD  STYLE="padding:0px 3px;"><B>SHORTINT </B></TD>
+<TD  STYLE="padding:0px 3px;">integers between -128 and 127 </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">2. </TD>
+<TD  STYLE="padding:0px 3px;"><B>LONGINT </B></TD>
+<TD  STYLE="padding:0px 3px;">integers between -2**31 and 2**31-1 </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">3. </TD>
+<TD  STYLE="padding:0px 3px;"><B>SHORTCARD </B></TD>
+<TD  STYLE="padding:0px 3px;">unsigned integers between 0 and 255 </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">4. </TD>
+<TD  STYLE="padding:0px 3px;"><B>LONGCARD </B></TD>
+<TD  STYLE="padding:0px 3px;">unsigned integers between 0 and 2**32-1 </TD>
+</TR>
+</TABLE>
+<P>The following terms for groups of types will be used: 
+<P><I>Real types </I> for (<TT>REAL</TT>, <TT>LONGREAL</TT>) <BR>
+<I>Integer types </I> for (<TT>SHORTINT</TT>, <TT>INTEGER</TT>, <TT>LONGINT</TT>) <BR>
+<I>Cardinal types </I> for (<TT>SHORTCARD</TT>, <TT>CARDINAL</TT>, <TT>LONGCARD</TT>) <BR>
+<I>Whole types </I> for <I>integer </I> and <I>cardinal types</I> <BR>
+<I>Numeric types </I> for <I>whole </I> and <I>real types</I> <BR>
+
+<P>All integer types are implemented as subranges of internal compiler integer types. Therefore, according to the compatibility rules (See <A HREF="#0419" TARGET=body>Compatibility</A>), the values of different integer types can be mixed in the expressions. The same holds for cardinal types. A mixture of integer and cardinal types is not allowed in expressions. As in Oberon-2, the numeric types form a hierarchy, and larger types include (i.e. can accept the values of) smaller types:  <TT>LONGREAL</TT> &sube;<TT>REAL</TT> &sub;<I>whole types</I>  
+<P>Type compatibility in expressions is extended according to the following rules (See <A HREF="#0420" TARGET=body>Expression compatibility</A>): 
+<UL>
+ 
+<LI>The type of the result of an arithmetic or relation operation is the smallest type which includes the types of both operands. </LI>
+<LI>Before the operation, the values of both operands are converted to the result&rsquo;s type. </LI>
+</UL>
+
+<P>For instance, if the following variables are defined: 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;s:&nbsp;SHORTCARD;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;c:&nbsp;CARDINAL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;i:&nbsp;INTEGER;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;l:&nbsp;LONGINT;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;r:&nbsp;REAL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;lr:&nbsp;LONGREAL;
+</PRE>
+
+<P>then 
+<P ALIGN=CENTER><TABLE CELLSPACING=0>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><B>Expression </B></TD>
+<TD  STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><B>Meaning </B></TD>
+<TD  STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><B>Result type </B></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>s + c </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>VAL(CARDINAL,s) + c </TT></TD>
+<TD  STYLE="padding:0px 3px;">CARDINAL </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>l * i </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>l * VAL(LONGINT,i) </TT></TD>
+<TD  STYLE="padding:0px 3px;">LONGINT </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>r + 1 </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>r + VAL(REAL,1) </TT></TD>
+<TD  STYLE="padding:0px 3px;">REAL </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>r = s </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>r = VAL(REAL,s) </TT></TD>
+<TD  STYLE="padding:0px 3px;">BOOLEAN </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>r + lr </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>VAL(LONGREAL,r) + lr </TT></TD>
+<TD  STYLE="padding:0px 3px;">LONGREAL </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>c + i </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>not allowed </TT></TD>
+<TD  STYLE="padding:0px 3px;">&nbsp;</TD>
+</TR>
+</TABLE>
+<P>The assignment compatibility rules are also extended (See <A HREF="#0421" TARGET=body>Assignment compatibility</A>), so an expression e of type Te is assignment compatible with a variable v of type Tv if Te and Tv are of numeric types and Tv includes Te. Cardinal types and integer types are assignment compatible. The compiler generates the range checks whenever necessary. 
+<P><A NAME="0439">
+<A HREF="#0436" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0438" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0440" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H5>Examples (see declarations above):</H5>
+
+<P ALIGN=CENTER><TABLE CELLSPACING=0>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><B>Statement </B></TD>
+<TD  STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><B>Comment </B></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>i:=c; </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>INTEGER</TT> and <TT>CARDINAL</TT> are assignment compatible </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>i:=s; </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>INTEGER</TT> and <TT>SHORTCARD</TT> are assignment compatible </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>l:=i; </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>LONGINT</TT> and <TT>INTEGER</TT> are subranges of the same host type </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>r:=i; </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>REAL</TT>&sub; <TT>INTEGER</TT> </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>r:=c; </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>REAL</TT>&sub; <TT>CARDINAL</TT> </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>lr:=r; </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>LONGREAL</TT>&sube; <TT>REAL</TT> </TD>
+</TR>
+</TABLE>
+<P><HR>
+<A NAME="0440">
+<A HREF="#0433" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0439" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0441" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Type casting</H3>
+
+<P><FONT SIZE=2>NOTE: Only valid when option <A HREF="xm005.html#0102" TARGET=body>M2EXTENSIONS</A> is set.
+<P></FONT> 
+<P>In ISO Modula-2, the second parameter of the <TT>SYSTEM.CAST</TT> procedure can not be a numeric literal. XDS provides numeric literal casting as an extension: 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;VAR
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;c:&nbsp;CARDINAL;
+&nbsp;&nbsp;&nbsp;&nbsp;BEGIN
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;Ok&nbsp;if&nbsp;M2EXTENSIONS&nbsp;is&nbsp;ON&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;c&nbsp;:=&nbsp;SYSTEM.CAST(CARDINAL,-1);&nbsp;
+</PRE>
+
+<P><HR>
+<A NAME="0441">
+<A HREF="#0433" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0440" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0442" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Assignment compatibility with BYTE</H3>
+
+<P><FONT SIZE=2>NOTE: Only valid when option <A HREF="xm005.html#0102" TARGET=body>M2EXTENSIONS</A> is set.
+<P></FONT> 
+<P>An expression of type <TT>CHAR</TT>, <TT>BOOLEAN</TT>, <TT>SHORTCARD</TT>, <TT>SHORTINT</TT>, <TT>SYSTEM.INT8</TT>, or <TT>SYSTEM.CARD8</TT> can be assigned to a variable of type <TT>BYTE</TT> or passed as an actual parameters to a formal parameter of type <TT>BYTE</TT>. 
+<P><HR>
+<A NAME="0442">
+<A HREF="#0433" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0441" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0443" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Dynamic arrays</H3>
+
+<P><FONT SIZE=2>NOTE: Only valid when option <A HREF="xm005.html#0102" TARGET=body>M2EXTENSIONS</A> is set.
+<P></FONT> 
+<P>XDS allows Oberon-2 style dynamic arrays to be used according to the Oberon-2 rules. 
+<P>An open array is an array type with no lower and upper bound specified, i.e. ARRAY OF SomeType. Open arrays may be used only in procedure parameter lists or as a pointer base type. 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;TYPE&nbsp;String&nbsp;=&nbsp;POINTER&nbsp;TO&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;</TT> 
+<P>Neither variables nor record fields may be of open array type. 
+<P>If the designator type is formally an open array, then the only operations allowed with it are indexing and passing it to a procedure. 
+<P>The extended versions of standard procedures <TT>NEW</TT> and <TT>DISPOSE</TT> can be used to create and delete the dynamic arrays (See <A HREF="#0453" TARGET=body>NEW and DISPOSE for dynamic arrays</A>). 
+<P><A NAME="0443">
+<A HREF="#0436" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0442" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0444" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H5>Example</H5>
+
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;TYPE
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VECTOR&nbsp;=&nbsp;ARRAY&nbsp;OF&nbsp;REAL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;1-dim&nbsp;open&nbsp;array&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Vector&nbsp;=&nbsp;POINTER&nbsp;TO&nbsp;VECTOR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;pointer&nbsp;to&nbsp;open&nbsp;array&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;MATRIX&nbsp;=&nbsp;ARRAY&nbsp;OF&nbsp;VECTOR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;2-dim&nbsp;open&nbsp;array&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Matrix&nbsp;=&nbsp;POINTER&nbsp;TO&nbsp;MATRIX;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;pointer&nbsp;to&nbsp;this&nbsp;*)
+
+&nbsp;&nbsp;&nbsp;&nbsp;VAR
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;v:&nbsp;Vector;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;m:&nbsp;Matrix;
+
+&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;ClearVector(VAR&nbsp;v:&nbsp;VECTOR);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;i:&nbsp;CARDINAL;
+&nbsp;&nbsp;&nbsp;&nbsp;BEGIN
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FOR&nbsp;i&nbsp;:=&nbsp;0&nbsp;TO&nbsp;HIGH&nbsp;(v)&nbsp;DO&nbsp;v[i]&nbsp;:=&nbsp;0&nbsp;END;
+&nbsp;&nbsp;&nbsp;&nbsp;END&nbsp;ClearVector;
+
+&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;ClearMatrix(VAR&nbsp;m:&nbsp;Matrix);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;i:&nbsp;CARDINAL;
+&nbsp;&nbsp;&nbsp;&nbsp;BEGIN
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FOR&nbsp;i&nbsp;:=&nbsp;0&nbsp;TO&nbsp;HIGH&nbsp;(m)&nbsp;DO&nbsp;ClearVector(m[i])&nbsp;END;
+&nbsp;&nbsp;&nbsp;&nbsp;END&nbsp;ClearMatrix;
+
+&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;Test;
+&nbsp;&nbsp;&nbsp;&nbsp;BEGIN
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;NEW(v,&nbsp;10);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;NEW(m,&nbsp;10,&nbsp;20);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ClearVector(v^);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ClearMatrix(m^);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;v^[0]&nbsp;:=&nbsp;1;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;m^[1][1]&nbsp;:=&nbsp;2;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;m^[2,2]&nbsp;:=&nbsp;1000;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;DISPOSE(v);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;DISPOSE(m);
+&nbsp;&nbsp;&nbsp;&nbsp;END&nbsp;Test;
+</PRE>
+
+<P><HR>
+<A NAME="0444">
+<A HREF="#0433" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0443" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0445" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Constant array constructors</H3>
+<FONT SIZE=2>NOTE: Only valid when option <A HREF="xm005.html#0102" TARGET=body>M2EXTENSIONS</A> is set.
+<P></FONT> 
+<P>XDS allows the declaration of constant arrays in the form 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;ARRAY&nbsp;OF&nbsp;QualIdent&nbsp;&quot;{&quot;&nbsp;ExprList&nbsp;&quot;}&quot;</TT> 
+<P><TT>QualIdent</TT> should refer to a basic type, range or enumeration type, and all expressions within <TT>ExprList</TT> should be of that type. 
+<P><B>Note:</B> structured types and non-constant expressions are not allowed. 
+<P>The actual type of such a constant is <TT>ARRAY&nbsp;[0..n]&nbsp;OF&nbsp;QualIdent</TT>, where <TT>n+1</TT> is the number of expressions in <TT>ExprList</TT>. 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;CONST&nbsp;table&nbsp;=&nbsp;ARRAY&nbsp;OF&nbsp;INTEGER&nbsp;{1,&nbsp;2+3,&nbsp;3};</TT> 
+<P>Constant arrays are subject to the same rules as all other constants, and may be read as a normal array. 
+<P>In some cases constructors of this form are more convenient than ISO standard value constructors (See <A HREF="#0398" TARGET=body>Value constructors</A>), because you do not need to declare a type and to calculate manually the number of expressions. However, to make your programs more portable, we recommend to use the standard features. 
+<P><HR>
+<A NAME="0445">
+<A HREF="#0433" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0444" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0446" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Set complement</H3>
+
+<P><FONT SIZE=2>NOTE: Only valid when option <A HREF="xm005.html#0102" TARGET=body>M2EXTENSIONS</A> is set.
+<P></FONT> 
+<P>As in Oberon-2, an unary minus applied to a set denotes the complement of that set, i.e. -x is the set of all values which are not the elements of x. 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;TYPE&nbsp;SmallSet&nbsp;=&nbsp;SET&nbsp;OF&nbsp;[0..5];
+&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;x,&nbsp;y:&nbsp;SmallSet;
+&nbsp;&nbsp;&nbsp;&nbsp;BEGIN
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;x&nbsp;:=&nbsp;SmallSet{1,3,5};
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;y&nbsp;:=&nbsp;-x;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;y&nbsp;=&nbsp;{0,&nbsp;2,&nbsp;4}&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;y&nbsp;:=&nbsp;SmallSet{0..5}&nbsp;-&nbsp;x;&nbsp;&nbsp;(*&nbsp;y&nbsp;=&nbsp;{0,&nbsp;2,&nbsp;4}&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;END;
+</PRE>
+
+<P><HR>
+<A NAME="0446">
+<A HREF="#0433" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0445" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0447" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Read-only parameters</H3>
+
+<P><FONT SIZE=2>NOTE: Only valid when option <A HREF="xm005.html#0102" TARGET=body>M2EXTENSIONS</A> is set.
+<P></FONT> 
+<P>In a formal parameter section, the symbol <TT>&quot;-&quot;</TT> may be placed after the name of a value parameter. Such a parameter is called <I>read-only</I>; its value can not be changed in the procedure body. Read-only parameters do not need to be copied before procedure activation; this enables procedures with structured parameters to be more effective. 
+<P>For <TT>ARRAY</TT> and <TT>RECORD</TT> read-only parameters, the array elements and record fields are protected. Read-only parameters cannot be used in definition modules. 
+<P>We recommend to use read-only parameters with care. The compiler does not check that the read-only parameter is not modified via another parameter or a global variable. 
+<P><A NAME="0447">
+<A HREF="#0436" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0446" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0448" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H5>Example</H5>
+
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;Foo(VAR&nbsp;dest:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;source-:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR);
+&nbsp;&nbsp;&nbsp;&nbsp;BEGIN
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;dest[0]:='a';
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;dest[1]:=source[0];
+&nbsp;&nbsp;&nbsp;&nbsp;END&nbsp;Foo;
+</PRE>
+
+<P>The call <TT>Foo(x,x)</TT> would produce a wrong result, because the first <TT>Foo</TT> statement changes the value of <TT>source[0]</TT> (<TT>source</TT> is not copied and points to the same location as <TT>dest</TT>). 
+<P><HR>
+<A NAME="0448">
+<A HREF="#0433" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0447" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0449" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Variable number of parameters</H3>
+
+<P><FONT SIZE=2>NOTE: Only valid when option <A HREF="xm005.html#0102" TARGET=body>M2EXTENSIONS</A> is set.
+<P></FONT> 
+<P>The last formal parameter of a procedure may be declared as a &ldquo;sequence of bytes&rdquo; (SEQ-parameter). In a procedure call, any (possibly empty) sequence of actual parameters of any types may be substituted in place of that parameter. Only the declaration 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;SEQ&nbsp;name:&nbsp;SYSTEM.BYTE</TT> 
+<P>is allowed. A procedure may have only one SEQ parameter, and it must be the last element of the formal parameters list. 
+<P>Within the procedure, sequence parameters are very similar to open array parameters. This means that : 
+<UL>
+ 
+<LI>the <TT>HIGH</TT> function can be applied to the parameter; </LI>
+<LI>a <TT>SEQ</TT> actual parameter may be subsequently passed to another procedure </LI>
+<LI>the <TT>i</TT>-th byte of the sequence <TT>s</TT> can be accessed as <TT>s[i]</TT>, like an array element. </LI>
+</UL>
+
+<P>An array of bytes, which is passed to a procedure as a formal SEQ-parameter, is formed as follows: 
+<UL>
+ 
+<LI>values of all actual parameters forming the sequence are represented as described below and concatenated into an array in their textual order </LI>
+<LI>integer values are converted to <TT>LONGINT</TT> </LI>
+<LI><TT>BOOLEAN</TT>, <TT>CHAR</TT>, cardinal and enumeration values are converted to <TT>LONGCARD</TT> </LI>
+<LI>values of range types are converted according to their base types </LI>
+<LI>real values are converted to <TT>LONGREAL</TT> </LI>
+<LI>values of pointer, opaque and procedure types are converted to <TT>ADDRESS</TT> </LI>
+<LI>a structured value (record or array) is interpreted as an array of bytes and passed as a sequence of: 
+<UL>
+ 
+<LI>the address of the structure </LI>
+<LI>a zero 32-bit word (reserved for future extensions) </LI>
+<LI>size of the structure (in LOCs) minus one </LI>
+</UL>
+</LI>
+</UL>
+
+<P>See <A HREF="xm011.html#0550" TARGET=body>Sequence parameters</A> for further information. 
+<P><HR>
+<A NAME="0449">
+<A HREF="#0433" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0448" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0450" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Read-only export</H3>
+
+<P><FONT SIZE=2>NOTE: Only valid when option <A HREF="xm005.html#0102" TARGET=body>M2EXTENSIONS</A> is set.
+<P></FONT> 
+<P>The Oberon-2 read-only export symbol &quot;-&quot;, being specified after a variable or field identifier in a definition module will define the identifier as read-only for any client. Only the module in which a read-only variable or field is declared may change its value. 
+<P>The compiler will not allow the value of a read-only exported object to be changed explicitly (by an assignment) or implicitly (by passing it as a VAR parameter). 
+<P>For read-only variables of an array or record type, both array elements and record fields are also read-only. 
+<P><A NAME="0450">
+<A HREF="#0436" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0449" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0451" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H5>Example (an excerpt from a definition module):</H5>
+
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;TYPE&nbsp;Rec&nbsp;=&nbsp;RECORD
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;n-:&nbsp;INTEGER;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;m&nbsp;:&nbsp;INTEGER;
+&nbsp;&nbsp;&nbsp;&nbsp;END;
+
+&nbsp;&nbsp;&nbsp;&nbsp;VAR
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;in-:&nbsp;FILE;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;x-:&nbsp;Rec;
+</PRE>
+
+<P><HR>
+<A NAME="0451">
+<A HREF="#0433" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0450" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0452" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Renaming of imported modules</H3>
+<FONT SIZE=2>NOTE: Only valid when option <A HREF="xm005.html#0102" TARGET=body>M2EXTENSIONS</A> is set.
+<P></FONT> 
+<P>An imported module can be renamed inside the importing module. The real name of the module becomes invisible. 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;Import&nbsp;=&nbsp;IMPORT&nbsp;[&nbsp;Ident&nbsp;&quot;:=&quot;&nbsp;]&nbsp;Ident
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{&nbsp;&quot;,&quot;&nbsp;[&nbsp;Ident&nbsp;&quot;:=&quot;&nbsp;]&nbsp;ident&nbsp;}&nbsp;&quot;;&quot;.
+</PRE>
+
+<P><A NAME="0452">
+<A HREF="#0436" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0451" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0453" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H5>Example</H5>
+
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;MODULE&nbsp;test;
+&nbsp;&nbsp;&nbsp;&nbsp;IMPORT&nbsp;vw&nbsp;:=&nbsp;VirtualWorkstation;
+
+&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;ws:&nbsp;vw.Station;
+
+&nbsp;&nbsp;&nbsp;&nbsp;BEGIN
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ws&nbsp;:=&nbsp;vw.open();
+&nbsp;&nbsp;&nbsp;&nbsp;END&nbsp;test.
+</PRE>
+
+<P><HR>
+<A NAME="0453">
+<A HREF="#0433" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0452" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0454" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>NEW and DISPOSE for dynamic arrays</H3>
+
+<P>Standard procedures <TT>NEW</TT> and <TT>DISPOSE</TT> can be applied to variables of a dynamic array type (See <A HREF="#0442" TARGET=body>Dynamic arrays</A>). Procedures <TT>DYNALLOCATE</TT> and <TT>DYNDEALLOCATE</TT> have to be visible in the calling context. Their headers and semantics are described below. 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;DYNALLOCATE(VAR&nbsp;a:&nbsp;ADDRESS;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;size:&nbsp;CARDINAL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;len:&nbsp;ARRAY&nbsp;OF&nbsp;CARDINAL);
+</PRE>
+
+<P>The procedure must allocate a dynamic array and return its address in <TT>a</TT>. <TT>size</TT> is the size of the array base type (the size of an element) and <TT>len[i]</TT> is the length of the array in i-th dimension. 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;DYNDEALLOCATE(VAR&nbsp;a:&nbsp;ADDRESS;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;size,dim:&nbsp;CARDINAL);
+</PRE>
+
+<P>The procedure must deallocate a dynamic array, where <TT>size</TT> is the size of an element and <TT>dim</TT> is the number of dimensions. 
+<P><B>Note:</B> In most cases, default implementation of these procedures may be used. The <A HREF="xm005.html#0116" TARGET=body>STORAGE</A> option controls whether the default memory management should be enabled. 
+<P>A dynamic array is represented as a pointer to a so-called <I>array descriptor</I> (See <A HREF="xm011.html#0544" TARGET=body>Dynamic arrays</A>). 
+<P><HR>
+<A NAME="0454">
+<A HREF="#0433" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0453" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0455" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>HALT</H3>
+<FONT SIZE=2>NOTE: Only valid when option <A HREF="xm005.html#0102" TARGET=body>M2EXTENSIONS</A> is set.
+<P></FONT> 
+<P>An optional integer parameter is allowed for the <TT>HALT</TT> procedure. 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;HALT&nbsp;([code:&nbsp;INTEGER]);</TT> 
+<P><TT>HALT</TT> terminates the program execution with an optional return code. Consult your operating system/environment documentation for more details. 
+<P><HR>
+<A NAME="0455">
+<A HREF="#0433" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0454" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0456" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>ASSERT</H3>
+<FONT SIZE=2>NOTE: Only valid when option <A HREF="xm005.html#0102" TARGET=body>M2EXTENSIONS</A> is set.
+<P></FONT> 
+<P>The procedure <TT>ASSERT</TT> checks its boolean parameter and terminates the program if it is not <TT>TRUE</TT>. The second optional parameter denotes <I>task termination code</I>. If it is omitted, a standard value is assumed. 
+<P><TT>PROCEDURE&nbsp;ASSERT(cond:&nbsp;BOOLEAN&nbsp;[;&nbsp;code:&nbsp;INTEGER]);</TT> 
+<P>A call <TT>ASSERT(expr,code)</TT> is equivalent to 
+<P><TT>IF&nbsp;NOT&nbsp;expr&nbsp;THEN&nbsp;HALT(code)&nbsp;END;</TT> 
+<P><HR>
+<A NAME="0456">
+<A HREF="#0388" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0455" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0457" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Source code directives</H2>
+
+<P>Source code directives (or pragmas) are used to set compilation options in the source text and to select specific pieces of the source text to be compiled (conditional compilation). The ISO Modula-2 standard does not describe pragma syntax. XDS supports source code directives in both Modula-2 and Oberon-2. The syntax described in <I>The Oakwood Guidelines for the Oberon-2 Compiler Developers</I> is used. 
+<P><UL>
+<LI><A HREF="#0457" TARGET=body>Inline options and equations</A>
+<LI><A HREF="#0459" TARGET=body>Conditional compilation</A>
+</UL>
+<P><HR>
+<A NAME="0457">
+<A HREF="#0456" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0456" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0458" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Inline options and equations</H3>
+
+<P>In some cases it is more desirable to set a compiler option or equation within the source text. Some compiler options, such as <A HREF="xm005.html#0103" TARGET=body>MAIN</A>, are more meaningful in the source file before the module header, and some, such as run-time checks, even between statements. 
+<P>XDS allows options to be changed in the source text by using standard ISO pseudo comments <TT>&lt;*&nbsp;...&nbsp;*&gt;</TT><FONT SIZE=2>&nbsp;/The old pragma style <TT>(*$..*)</TT> is supported to provide backward compatibility, but the compiler reports the &ldquo;obsolete syntax&rdquo; warning./ </FONT> Some options can only be placed in the source text before the module header (i.e. before keywords <TT>IMPLEMENTATION</TT>, <TT>DEFINITION</TT>, and <TT>MODULE</TT>). These options will be ignored if found elsewhere in the source text. See <A HREF="xm005.html#0061" TARGET=body>Options reference</A> for more details. 
+<P>The format of an inline option or equation setting is described by the following syntax: 
+<P><PRE>Pragma&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;&quot;&lt;*&quot;&nbsp;PragmaBody&nbsp;&quot;*&gt;&quot;
+PragmaBody&nbsp;=&nbsp;PUSH&nbsp;|&nbsp;POP&nbsp;|&nbsp;NewStyle&nbsp;|&nbsp;OldStyle
+NewStyle&nbsp;&nbsp;&nbsp;=&nbsp;[&nbsp;NEW&nbsp;]&nbsp;name&nbsp;[&nbsp;&quot;+&quot;&nbsp;|&nbsp;&quot;-&quot;&nbsp;|&nbsp;&quot;=&quot;&nbsp;string&nbsp;]
+OldStyle&nbsp;&nbsp;&nbsp;=&nbsp;(&quot;+&quot;&nbsp;|&nbsp;&quot;-&quot;)&nbsp;name
+</PRE>
+
+<P><TT>NewStyle</TT> is proposed as the Oakwood standard for Oberon-2, <TT>OldStyle</TT> is the style used in the previous XDS releases. All option names are case-independent. If <TT>OldStyle</TT> is used, there should be no space between <TT>&lt;*</TT> and <TT>+</TT> or <TT>-</TT> <TT>OldStyle</TT> does not allow to declare a new option or equation and to change an equation value. 
+<P>In all cases, the symbol <TT>+</TT> sets the corresponding option ON, and the symbol <TT>-</TT> sets it OFF. 
+<P><TT>PUSH</TT> and <TT>POP</TT> keywords may be used to save and restore the whole state of options and equations. 
+<P><A NAME="0458">
+<A HREF="#0436" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0457" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0459" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H5>Examples</H5>
+
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;Length(VAR&nbsp;a:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR):&nbsp;CARDINAL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;i:&nbsp;CARDINAL;
+&nbsp;&nbsp;&nbsp;&nbsp;BEGIN
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;*&nbsp;PUSH&nbsp;*&gt;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;save&nbsp;state&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;*&nbsp;CHECKINDEX&nbsp;-&nbsp;*&gt;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;turn&nbsp;CHECKINDEX&nbsp;off&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;i&nbsp;:=&nbsp;0;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WHILE&nbsp;(i&lt;=HIGH(a))&nbsp;&amp;&nbsp;(a[i]#0C)&nbsp;DO&nbsp;INC(i)&nbsp;END;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;*&nbsp;POP&nbsp;*&gt;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;restore&nbsp;state&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;RETURN&nbsp;i;
+&nbsp;&nbsp;&nbsp;&nbsp;END&nbsp;Length;
+</PRE>
+
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;&lt;*&nbsp;ALIGNMENT&nbsp;=&nbsp;&quot;2&quot;&nbsp;*&gt;
+&nbsp;&nbsp;&nbsp;&nbsp;TYPE
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;R&nbsp;=&nbsp;RECORD&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;This&nbsp;record&nbsp;is&nbsp;6&nbsp;bytes&nbsp;long&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;f1:&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;f2:&nbsp;CARDINAL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;END;
+</PRE>
+
+<P><HR>
+<A NAME="0459">
+<A HREF="#0456" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0458" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0460" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Conditional compilation</H3>
+
+<P>It is possible to use conditional compilation with Modula-2 and Oberon-2<FONT SIZE=2>&nbsp;/only if the <B>O2ISOPRAGMA</B> option is set ON/ </FONT> compilers via the standard ISO pragma notation <TT>&lt;*&nbsp;*&gt;</TT>. Conditional compilation statements can be placed anywhere in the source code. The syntax of the conditional compilation <TT>IF</TT> statement follows: 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;IfStatement&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;&lt;*&nbsp;IF&nbsp;Expression&nbsp;THEN&nbsp;*&gt;&nbsp;text
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{&nbsp;&lt;*&nbsp;ELSIF&nbsp;Expression&nbsp;THEN&nbsp;*&gt;&nbsp;text&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;&lt;*&nbsp;ELSE&nbsp;*&gt;&nbsp;text&nbsp;]
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;*&nbsp;END&nbsp;*&gt;
+&nbsp;&nbsp;&nbsp;&nbsp;Expression&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;SimpleExpression
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;(&quot;=&quot;&nbsp;|&nbsp;&quot;#&quot;)&nbsp;SimpleExpression].
+&nbsp;&nbsp;&nbsp;&nbsp;SimpleExpression&nbsp;=&nbsp;Term&nbsp;{&nbsp;&quot;OR&quot;&nbsp;Term}.
+&nbsp;&nbsp;&nbsp;&nbsp;Term&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;Factor&nbsp;{&nbsp;&quot;&amp;&quot;&nbsp;Factor}.
+&nbsp;&nbsp;&nbsp;&nbsp;Factor&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;Ident&nbsp;|&nbsp;string&nbsp;|
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&quot;DEFINED&quot;&nbsp;&quot;(&quot;&nbsp;Ident&nbsp;&quot;)&quot;&nbsp;|
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&quot;(&quot;&nbsp;Expression&nbsp;&quot;)&quot;&nbsp;|
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&quot;~&quot;&nbsp;Factor&nbsp;|&nbsp;&quot;NOT&quot;&nbsp;Factor.
+&nbsp;&nbsp;&nbsp;&nbsp;Ident&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;option&nbsp;|&nbsp;equation.
+</PRE>
+
+<P>An operand in an expression is either a name of an option or equation or a string literal. An option has the string value <TT>&quot;TRUE&quot;</TT>, if it is currently set ON and <TT>&quot;FALSE&quot;</TT>, if it is currently set off or was not defined at all. The compiler will report a warning if an undeclared option or equation is used as a conditional compilation identifier. 
+<P>The comparison operators &quot;<TT>=</TT>&quot; and &quot;<TT>#</TT>&quot; are not case sensitive. 
+<P>See also the section <A HREF="xm005.html#0168" TARGET=body>The system module COMPILER</A>. 
+<P><A NAME="0460">
+<A HREF="#0436" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0459" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="xm008.html#0461" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H5>Examples</H5>
+
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;IMPORT&nbsp;lib&nbsp;:=
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;*&nbsp;IF&nbsp;&nbsp;__GEN_X86__&nbsp;THEN&nbsp;*&gt;&nbsp;MyX86Lib;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;*&nbsp;ELSIF&nbsp;__GEN_C__&nbsp;THEN&nbsp;*&gt;&nbsp;MyCLib;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;*&nbsp;ELSE&nbsp;*&gt;&nbsp;***&nbsp;Unknown&nbsp;***
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;*&nbsp;END&nbsp;*&gt;
+</PRE>
+
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;CONST&nbsp;Win&nbsp;=&nbsp;&lt;*&nbsp;IF&nbsp;Windows&nbsp;THEN&nbsp;*&gt;&nbsp;TRUE
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;*&nbsp;ELSE&nbsp;*&gt;&nbsp;FALSE
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;*&nbsp;END&nbsp;*&gt;;
+</PRE>
+
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;&lt;*&nbsp;IF&nbsp;DEFINED(Debug)&nbsp;&amp;&nbsp;(DebugLevel&nbsp;=&nbsp;&quot;2&quot;)&nbsp;THEN&nbsp;*&gt;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PrintDebugInformation;
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;*&nbsp;END&nbsp;*&gt;;
+</PRE>
+
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;&lt;*&nbsp;IF&nbsp;target_os&nbsp;=&nbsp;&quot;OS2&quot;&nbsp;THEN&nbsp;*&gt;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Strings.Capitalize(filename);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;*&nbsp;IF&nbsp;NOT&nbsp;HPFS&nbsp;THEN&nbsp;*&gt;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TruncateFileName(filename);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;*&nbsp;END&nbsp;*&gt;
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;*&nbsp;END&nbsp;*&gt;
+</PRE>
+
+<P></BODY>
+</HTML>

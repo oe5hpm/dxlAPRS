@@ -1,0 +1,69 @@
+DEFINITION MODULE StdChans;
+
+  (* Access to standard and default channels *)
+
+IMPORT IOChan;
+
+TYPE
+  ChanId = IOChan.ChanId;
+    (* Values of this type are used to identify channels *)
+
+  (* The following functions return the standard channel values.
+     These channels cannot be closed.
+  *)
+
+PROCEDURE StdInChan (): ChanId;
+  (* Returns the identity of the implementation-defined standard source for
+program
+     input.
+  *)
+
+PROCEDURE StdOutChan (): ChanId;
+  (* Returns the identity of the implementation-defined standard source for program
+     output.
+  *)
+
+PROCEDURE StdErrChan (): ChanId;
+  (* Returns the identity of the implementation-defined standard destination for program
+     error messages.
+  *)
+
+PROCEDURE NullChan (): ChanId;
+  (* Returns the identity of a channel open to the null device. *)
+
+  (* The following functions return the default channel values *)
+
+PROCEDURE InChan (): ChanId;
+  (* Returns the identity of the current default input channel. *)
+
+PROCEDURE OutChan (): ChanId;
+  (* Returns the identity of the current default output channel. *)
+
+PROCEDURE ErrChan (): ChanId;
+  (* Returns the identity of the current default error message channel. *)
+
+  (* The following procedures allow for redirection of the default channels *)
+
+PROCEDURE SetInChan (cid: ChanId);
+  (* Sets the current default input channel to that identified by cid. *)
+
+PROCEDURE SetOutChan (cid: ChanId);
+  (* Sets the current default output channel to that identified by cid. *)
+
+PROCEDURE SetErrChan (cid: ChanId);
+  (* Sets the current default error channel to that identified by cid. *)
+
+
+(* Sets current position of stdout/stderr channels according to the real 
+   position in the stdout/stderr channels.
+   Returns true on success or false on errors.
+
+   This usage scenario is the following:
+   1) one calls Flush on the stdout/stderr objects
+   2) executes several processes that may write something to stdout/stderr streams
+   3) call to Synchronize ()
+*)
+PROCEDURE Synchronize (): BOOLEAN;
+
+END StdChans.
+

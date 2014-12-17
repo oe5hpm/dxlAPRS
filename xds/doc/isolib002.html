@@ -1,0 +1,525 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 4.01 Transitional//EN">
+<HTML>
+<HEAD>
+<TITLE>Mathematical</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<P><HR>
+<A NAME="0119">
+<A HREF="isolib000.html#root" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="isolib001.html#0118" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0120" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H1>Mathematical</H1>
+The mathematical libraries provide the common mathematical functions and some constants. 
+<P>The module <TT><A HREF="#0120" TARGET=body>RealMath</A></TT> provides the constants and functions for the type <TT>REAL</TT>, while the module <TT><A HREF="#0120" TARGET=body>LongMath</A></TT> provides similar constants and functions for the type <TT>LONGREAL</TT>. 
+<P>The module <TT><A HREF="#0134" TARGET=body>ComplexMath</A></TT> provides the constants and functions for the type <TT>COMPLEX</TT>, while the module <TT><A HREF="#0134" TARGET=body>LongComplexMath</A></TT> provides similar functions for the type <TT>LONGCOMPLEX</TT>. 
+<UL>
+<LI><A HREF="#0120" TARGET=body>Modules RealMath and LongMath</A>
+<LI><A HREF="#0134" TARGET=body>Modules ComplexMath and LongComplexMath</A>
+</UL>
+<P><HR>
+<A NAME="0120"><A NAME="Constants">
+<A HREF="#0119" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0119" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0121" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H2>Modules RealMath and LongMath</H2>
+The semantics of the two modules is the same, except that where the module <TT>RealMath</TT> refers to the pervasive type <TT>REAL</TT>, the corresponding function in <TT>LongMath</TT> refers to the pervasive type <TT>LONGREAL</TT>. 
+<P><B>NOTE:</B> 
+<P>The above statement is merely to avoid needless repetition of the semantics for <TT>LongMath</TT>. 
+<P>The units used for angular quantities are radians. 
+<P><UL>
+<LI><A HREF="#0121" TARGET=body>Constants - Useful constants</A>
+<LI><A HREF="#0122" TARGET=body>sqrt - Calculate square root</A>
+<LI><A HREF="#0123" TARGET=body>exp - Calculate exponent</A>
+<LI><A HREF="#0124" TARGET=body>ln - Calculate natural logarithm</A>
+<LI><A HREF="#0125" TARGET=body>sin - Calculate sine</A>
+<LI><A HREF="#0126" TARGET=body>cos - Calculate cosine</A>
+<LI><A HREF="#0127" TARGET=body>tan - Calculate tangent</A>
+<LI><A HREF="#0128" TARGET=body>arcsin - Calculate arcsine</A>
+<LI><A HREF="#0129" TARGET=body>arccos - Calculate arccosine</A>
+<LI><A HREF="#0130" TARGET=body>arctan - Calculate arctangent</A>
+<LI><A HREF="#0131" TARGET=body>power - Calculate power</A>
+<LI><A HREF="#0132" TARGET=body>round - Round</A>
+<LI><A HREF="#0133" TARGET=body>IsRMathException - Query exceptional state</A>
+</UL>
+<P><HR>
+<A NAME="0121"><A NAME="sqrt">
+<A HREF="#0120" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0120" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0122" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>Constants - Useful constants</H3>
+ 
+<P><PRE>CONST
+&nbsp;&nbsp;pi&nbsp;&nbsp;&nbsp;=&nbsp;3.1415926535897932384626433832795028841972;
+&nbsp;&nbsp;exp1&nbsp;=&nbsp;2.7182818284590452353602874713526624977572;
+</PRE>
+
+<P>Modules: <TT><A HREF="#0120" TARGET=body>RealMath</A></TT>, <TT><A HREF="#0120" TARGET=body>LongMath</A></TT>
+<P>The constant <TT>pi</TT> provides an implementation-defined approximation to the mathematical constant &pi;. The constant exp1 provides an implementation-defined approximation to the mathematical constant e. 
+<P><B>NOTE:</B> 
+<P>Due to the approximations involved, <TT>sin(pi)</TT> might not equal zero exactly; similarly, <TT>exp1</TT> might not equal <TT>exp(1)</TT> exactly. 
+<P><HR>
+<A NAME="0122"><A NAME="exp">
+<A HREF="#0120" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0121" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0123" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>sqrt - Calculate square root</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;sqrt&nbsp;(x:&nbsp;REAL):&nbsp;REAL;
+PROCEDURE&nbsp;sqrt&nbsp;(x:&nbsp;LONGREAL):&nbsp;LONGREAL;
+</PRE>
+
+<P>
+<P>Modules: <TT><A HREF="#0120" TARGET=body>RealMath</A></TT>, <TT><A HREF="#0120" TARGET=body>LongMath</A></TT>
+<P>The function procedure <TT>sqrt</TT> returns an implementation-defined approximation to the positive signed square root of <TT>x</TT>. An exception is raised if <TT>x</TT> is negative. 
+<P><HR>
+<A NAME="0123"><A NAME="ln">
+<A HREF="#0120" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0122" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0124" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>exp - Calculate exponent</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;exp&nbsp;(x:&nbsp;REAL):&nbsp;REAL;
+PROCEDURE&nbsp;exp&nbsp;(x:&nbsp;LONGREAL):&nbsp;LONGREAL;
+</PRE>
+
+<P>
+<P>Modules: <TT><A HREF="#0120" TARGET=body>RealMath</A></TT>, <TT><A HREF="#0120" TARGET=body>LongMath</A></TT>
+<P>The function procedure <TT>exp</TT> returns an implementation-defined approximation to the mathematical constant e raised to the power of <TT>x</TT>. 
+<P><HR>
+<A NAME="0124"><A NAME="sin">
+<A HREF="#0120" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0123" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0125" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>ln - Calculate natural logarithm</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;ln&nbsp;(x:&nbsp;REAL):&nbsp;REAL;
+PROCEDURE&nbsp;ln&nbsp;(x:&nbsp;LONGREAL):&nbsp;LONGREAL;
+</PRE>
+
+<P>
+<P>Modules: <TT><A HREF="#0120" TARGET=body>RealMath</A></TT>, <TT><A HREF="#0120" TARGET=body>LongMath</A></TT>
+<P>The function procedure <TT>ln</TT> returns an implementation-defined approximation to the natural logarithm of <TT>x</TT>. An exception is raised if <TT>x</TT> is zero or negative. 
+<P><HR>
+<A NAME="0125"><A NAME="cos">
+<A HREF="#0120" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0124" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0126" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>sin - Calculate sine</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;sin&nbsp;(x:&nbsp;REAL):&nbsp;REAL;
+PROCEDURE&nbsp;sin&nbsp;(x:&nbsp;LONGREAL):&nbsp;LONGREAL;
+</PRE>
+
+<P>
+<P>Modules: <TT><A HREF="#0120" TARGET=body>RealMath</A></TT>, <TT><A HREF="#0120" TARGET=body>LongMath</A></TT>
+<P>The function procedure <TT>sin</TT> returns an implementation-defined approximation to the sine of <TT>x</TT>. 
+<P><HR>
+<A NAME="0126"><A NAME="tan">
+<A HREF="#0120" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0125" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0127" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>cos - Calculate cosine</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;cos&nbsp;(x:&nbsp;REAL):&nbsp;REAL;
+PROCEDURE&nbsp;cos&nbsp;(x:&nbsp;LONGREAL):&nbsp;LONGREAL;
+</PRE>
+
+<P>Modules: <TT><A HREF="#0120" TARGET=body>RealMath</A></TT>, <TT><A HREF="#0120" TARGET=body>LongMath</A></TT>
+<P>The function procedure <TT>cos</TT> returns an implementation-defined approximation to the cosine of <TT>x</TT>. 
+<P><HR>
+<A NAME="0127"><A NAME="arcsin">
+<A HREF="#0120" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0126" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0128" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>tan - Calculate tangent</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;tan&nbsp;(x:&nbsp;REAL):&nbsp;REAL;
+PROCEDURE&nbsp;tan&nbsp;(x:&nbsp;LONGREAL):&nbsp;LONGREAL;
+</PRE>
+
+<P>Modules: <TT><A HREF="#0120" TARGET=body>RealMath</A></TT>, <TT><A HREF="#0120" TARGET=body>LongMath</A></TT>
+<P>The function procedure <TT>tan</TT> returns an implementation-defined approximation to the tangent of <TT>x</TT>. An exception is raised if <TT>x</TT> is an odd multiple of &pi;/2. 
+<P><HR>
+<A NAME="0128"><A NAME="arccos">
+<A HREF="#0120" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0127" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0129" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>arcsin - Calculate arcsine</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;arcsin&nbsp;(x:&nbsp;REAL):&nbsp;REAL;
+PROCEDURE&nbsp;arcsin&nbsp;(x:&nbsp;LONGREAL):&nbsp;LONGREAL;
+</PRE>
+
+<P>
+<P>Modules: <TT><A HREF="#0120" TARGET=body>RealMath</A></TT>, <TT><A HREF="#0120" TARGET=body>LongMath</A></TT>
+<P>The function procedure <TT>arcsin</TT> returns an implementation-defined approximation to the arcsine of <TT>x</TT>. An exception is raised if the absolute value of <TT>x</TT> is greater than one. 
+<P><HR>
+<A NAME="0129"><A NAME="arctan">
+<A HREF="#0120" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0128" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0130" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>arccos - Calculate arccosine</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;arccos&nbsp;(x:&nbsp;REAL):&nbsp;REAL;
+PROCEDURE&nbsp;arccos&nbsp;(x:&nbsp;LONGREAL):&nbsp;LONGREAL;
+</PRE>
+
+<P>Modules: <TT><A HREF="#0120" TARGET=body>RealMath</A></TT>, <TT><A HREF="#0120" TARGET=body>LongMath</A></TT>
+<P>The function procedure <TT>arccos</TT> returns an implementation-defined approximation to the arccosine of <TT>x</TT>. An exception is raised if the absolute value of <TT>x</TT> is greater than one. 
+<P><HR>
+<A NAME="0130"><A NAME="power">
+<A HREF="#0120" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0129" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0131" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>arctan - Calculate arctangent</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;arctan&nbsp;(x:&nbsp;REAL):&nbsp;REAL;
+PROCEDURE&nbsp;arctan&nbsp;(x:&nbsp;LONGREAL):&nbsp;LONGREAL;
+</PRE>
+
+<P>Modules: <TT><A HREF="#0120" TARGET=body>RealMath</A></TT>, <TT><A HREF="#0120" TARGET=body>LongMath</A></TT>
+<P>The function procedure <TT>arctan</TT> returns an implementation-defined approximation to the arctangent of <TT>x</TT>. 
+<P><HR>
+<A NAME="0131"><A NAME="round">
+<A HREF="#0120" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0130" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0132" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>power - Calculate power</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;power&nbsp;(base,&nbsp;exponent:&nbsp;REAL):&nbsp;REAL;
+PROCEDURE&nbsp;power&nbsp;(base,&nbsp;exponent:&nbsp;LONGREAL):&nbsp;LONGREAL;
+</PRE>
+
+<P>Modules: <TT><A HREF="#0120" TARGET=body>RealMath</A></TT>, <TT><A HREF="#0120" TARGET=body>LongMath</A></TT>
+<P>The function procedure <TT>power</TT> returns an implementation-defined approximation to the result obtained by raising <TT>base</TT> to the power of <TT>exponent</TT>. An exception is raised if the value of base is zero or negative. 
+<P>This function is mathematically equivalent to exp (y ln (x)) but may be computed differently. 
+<P><HR>
+<A NAME="0132"><A NAME="IsRMathException">
+<A HREF="#0120" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0131" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0133" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>round - Round</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;round&nbsp;(x:&nbsp;REAL):&nbsp;INTEGER;
+PROCEDURE&nbsp;round&nbsp;(x:&nbsp;LONGREAL):&nbsp;INTEGER;
+</PRE>
+
+<P>Modules: <TT><A HREF="#0120" TARGET=body>RealMath</A></TT>, <TT><A HREF="#0120" TARGET=body>LongMath</A></TT>
+<P>The function procedure <TT>round</TT> returns the nearest integer to the value of <TT>x</TT>. The result is an implementation-defined selection of the two possible values if the value of <TT>x</TT> is midway between two integer values. An exception occurs and may be raised if the mathematical result is not within the range of the type <TT>INTEGER</TT>. 
+<P><HR>
+<A NAME="0133">
+<A HREF="#0120" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0132" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0134" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>IsRMathException - Query exceptional state</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;IsRMathException&nbsp;():&nbsp;BOOLEAN;
+PROCEDURE&nbsp;IsRMathException&nbsp;():&nbsp;BOOLEAN;
+</PRE>
+
+<P>Modules: <TT><A HREF="#0120" TARGET=body>RealMath</A></TT>, <TT><A HREF="#0120" TARGET=body>LongMath</A></TT>
+<P>If the calling coroutine is in the state of exceptional execution because of the raising of the <TT><A HREF="#0120" TARGET=body>RealMath</A></TT> exception, the function procedure <TT>RealMath.IsRMathException</TT> returns <TT>TRUE</TT>; otherwise the value is <TT>FALSE</TT>. 
+<P>If the calling coroutine is in the state of exceptional execution because of the raising of the <TT><A HREF="#0120" TARGET=body>LongMath</A></TT> exception, the function procedure <TT>LongMath.IsRMathException</TT> returns <TT>TRUE</TT>; otherwise the value is <TT>FALSE</TT>. 
+<P><HR>
+<A NAME="0134"><A NAME="Constants">
+<A HREF="#0119" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0133" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0135" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H2>Modules ComplexMath and LongComplexMath</H2>
+The semantics of the two modules are the same, except that where the module <TT>ComplexMath</TT> refers to the pervasive type <TT>COMPLEX</TT>, the corresponding function in <TT>LongComplexMath</TT> refers to the pervasive type <TT>LONGCOMPLEX</TT>. 
+<P><B>NOTE:</B> 
+<P>The above statement is merely to avoid needless repetition of the semantics for <TT>LongComplexMath</TT>. 
+<P><UL>
+<LI><A HREF="#0135" TARGET=body>Constants - Useful constants</A>
+<LI><A HREF="#0136" TARGET=body>abs - Calculate modulus</A>
+<LI><A HREF="#0137" TARGET=body>arg - Calculate argument</A>
+<LI><A HREF="#0138" TARGET=body>conj - Calculate conjugate</A>
+<LI><A HREF="#0139" TARGET=body>power - Calculate power</A>
+<LI><A HREF="#0140" TARGET=body>sqrt - Calculate square root</A>
+<LI><A HREF="#0141" TARGET=body>exp - Calculate exponent</A>
+<LI><A HREF="#0142" TARGET=body>ln - Calculate natural logarithm</A>
+<LI><A HREF="#0143" TARGET=body>sin - Calculate sine</A>
+<LI><A HREF="#0144" TARGET=body>cos - Calculate cosine</A>
+<LI><A HREF="#0145" TARGET=body>tan - Calculate tangent</A>
+<LI><A HREF="#0146" TARGET=body>arcsin - Calculate arcsine</A>
+<LI><A HREF="#0147" TARGET=body>arccos - Calculate arccosine</A>
+<LI><A HREF="#0148" TARGET=body>arctan - Calculate arctangent</A>
+<LI><A HREF="#0149" TARGET=body>polarToComplex - Convert from polar to complex</A>
+<LI><A HREF="#0150" TARGET=body>scalarMult - Scalar Multiplication</A>
+<LI><A HREF="#0151" TARGET=body>IsCMathException - Query exceptional state</A>
+</UL>
+<P><HR>
+<A NAME="0135"><A NAME="abs">
+<A HREF="#0134" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0134" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0136" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>Constants - Useful constants</H3>
+ 
+<P><PRE>CONST
+&nbsp;&nbsp;i&nbsp;=&nbsp;CMPLX&nbsp;(0.0,&nbsp;1.0);
+&nbsp;&nbsp;one&nbsp;=&nbsp;CMPLX&nbsp;(1.0,&nbsp;0.0);
+&nbsp;&nbsp;zero&nbsp;=&nbsp;CMPLX&nbsp;(0.0,&nbsp;0.0);
+</PRE>
+
+<P>Modules: <TT><A HREF="#0134" TARGET=body>ComplexMath</A></TT>, <TT><A HREF="#0134" TARGET=body>LongComplexMath</A></TT>
+<P>The constants <TT>i</TT>, <TT>one</TT>, and <TT>zero</TT> are the implementation-defined approximations to the specified values. 
+<P><B>NOTE:</B> 
+<P>These constants are provided for convenience. 
+<P><HR>
+<A NAME="0136"><A NAME="arg">
+<A HREF="#0134" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0135" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0137" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>abs - Calculate modulus</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;abs&nbsp;(z:&nbsp;COMPLEX):&nbsp;REAL;
+PROCEDURE&nbsp;abs&nbsp;(z:&nbsp;LONGCOMPLEX):&nbsp;LONGREAL;
+</PRE>
+
+<P>Modules: <TT><A HREF="#0134" TARGET=body>ComplexMath</A></TT>, <TT><A HREF="#0134" TARGET=body>LongComplexMath</A></TT>
+<P>The function procedure <TT>abs</TT> returns an implementation-defined approximation to the modulus (otherwise known as the length, or absolute value) of <TT>z</TT>. 
+<P><B>NOTE:</B> 
+<P>An overflow exception may be raised in this computation, even when the complex number is itself well defined. 
+<P><HR>
+<A NAME="0137"><A NAME="conj">
+<A HREF="#0134" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0136" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0138" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>arg - Calculate argument</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;arg&nbsp;(z:&nbsp;COMPLEX):&nbsp;REAL;
+PROCEDURE&nbsp;arg&nbsp;(z:&nbsp;LONGCOMPLEX):&nbsp;LONGREAL;
+</PRE>
+
+<P>Modules: <TT><A HREF="#0134" TARGET=body>ComplexMath</A></TT>, <TT><A HREF="#0134" TARGET=body>LongComplexMath</A></TT>
+<P>The function procedure <TT>arg</TT> returns an implementation-defined approximation to the angle that <TT>z</TT> subtends to the positive real axis in the complex plane. An exception is raised if the modulus of <TT>z</TT> is zero. 
+<P><HR>
+<A NAME="0138"><A NAME="power">
+<A HREF="#0134" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0137" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0139" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>conj - Calculate conjugate</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;conj&nbsp;(z:&nbsp;COMPLEX):&nbsp;COMPLEX;
+PROCEDURE&nbsp;conj&nbsp;(z:&nbsp;LONGCOMPLEX):&nbsp;LONGCOMPLEX;
+</PRE>
+
+<P>Modules: <TT><A HREF="#0134" TARGET=body>ComplexMath</A></TT>, <TT><A HREF="#0134" TARGET=body>LongComplexMath</A></TT>
+<P>The function procedure <TT>conj</TT> returns an implementation-defined approximation to the complex conjugate of <TT>z</TT>. 
+<P><HR>
+<A NAME="0139"><A NAME="sqrt">
+<A HREF="#0134" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0138" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0140" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>power - Calculate power</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;power&nbsp;(base:&nbsp;COMPLEX;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;exponent:&nbsp;REAL
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;):&nbsp;COMPLEX;
+PROCEDURE&nbsp;power&nbsp;(base:&nbsp;LONGCOMPLEX;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;exponent:&nbsp;LONGREAL
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;):&nbsp;LONGCOMPLEX;
+</PRE>
+
+<P>Modules: <TT><A HREF="#0134" TARGET=body>ComplexMath</A></TT>, <TT><A HREF="#0134" TARGET=body>LongComplexMath</A></TT>
+<P>The function procedure <TT>power</TT> returns an implementation-defined approximation to the result obtained by raising <TT>base</TT> to the power of <TT>exponent</TT>. 
+<P><HR>
+<A NAME="0140"><A NAME="exp">
+<A HREF="#0134" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0139" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0141" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>sqrt - Calculate square root</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;sqrt&nbsp;(z:&nbsp;COMPLEX):&nbsp;COMPLEX;
+PROCEDURE&nbsp;sqrt&nbsp;(z:&nbsp;LONGCOMPLEX):&nbsp;LONGCOMPLEX;
+</PRE>
+
+<P>Modules: <TT><A HREF="#0134" TARGET=body>ComplexMath</A></TT>, <TT><A HREF="#0134" TARGET=body>LongComplexMath</A></TT>
+<P>The function procedure <TT>sqrt</TT> returns an implementation-defined approximation to the principal square root of <TT>z</TT>. 
+<P><B>NOTE:</B> 
+<P>That is, the result is the complex number with an argument of half the value of the argument of <TT>z</TT>, and whose modulus has the value of the positive square root of the modulus of <TT>z</TT>. 
+<P><HR>
+<A NAME="0141"><A NAME="ln">
+<A HREF="#0134" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0140" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0142" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>exp - Calculate exponent</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;exp&nbsp;(z:&nbsp;COMPLEX):&nbsp;COMPLEX;
+PROCEDURE&nbsp;exp&nbsp;(z:&nbsp;LONGCOMPLEX):&nbsp;LONGCOMPLEX;
+</PRE>
+
+<P>Modules: <TT><A HREF="#0134" TARGET=body>ComplexMath</A></TT>, <TT><A HREF="#0134" TARGET=body>LongComplexMath</A></TT>
+<P>The function procedure <TT>exp</TT> returns an implementation-defined approximation to the mathematical constant e raised to the power of <TT>z</TT>. 
+<P><HR>
+<A NAME="0142"><A NAME="sin">
+<A HREF="#0134" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0141" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0143" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>ln - Calculate natural logarithm</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;ln&nbsp;(z:&nbsp;COMPLEX):&nbsp;COMPLEX;
+PROCEDURE&nbsp;ln&nbsp;(z:&nbsp;LONGCOMPLEX):&nbsp;LONGCOMPLEX;
+</PRE>
+
+<P>Modules: <TT><A HREF="#0134" TARGET=body>ComplexMath</A></TT>, <TT><A HREF="#0134" TARGET=body>LongComplexMath</A></TT>
+<P>The function procedure <TT>ln</TT> returns an implementation-defined approximation to the principal value of the natural logarithm of <TT>z</TT>. 
+<P><HR>
+<A NAME="0143"><A NAME="cos">
+<A HREF="#0134" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0142" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0144" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>sin - Calculate sine</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;sin&nbsp;(z:&nbsp;COMPLEX):&nbsp;COMPLEX;
+PROCEDURE&nbsp;sin&nbsp;(z:&nbsp;LONGCOMPLEX):&nbsp;LONGCOMPLEX;
+</PRE>
+
+<P>Modules: <TT><A HREF="#0134" TARGET=body>ComplexMath</A></TT>, <TT><A HREF="#0134" TARGET=body>LongComplexMath</A></TT>
+<P>The function procedure <TT>sin</TT> returns an implementation-defined approximation to the complex sine of <TT>z</TT>. 
+<P><HR>
+<A NAME="0144"><A NAME="tan">
+<A HREF="#0134" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0143" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0145" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>cos - Calculate cosine</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;cos&nbsp;(z:&nbsp;COMPLEX):&nbsp;COMPLEX;
+PROCEDURE&nbsp;cos&nbsp;(z:&nbsp;LONGCOMPLEX):&nbsp;LONGCOMPLEX;
+</PRE>
+
+<P>Modules: <TT><A HREF="#0134" TARGET=body>ComplexMath</A></TT>, <TT><A HREF="#0134" TARGET=body>LongComplexMath</A></TT>
+<P>The function procedure <TT>cos</TT> returns an implementation-defined approximation to the complex cosine of <TT>z</TT>. 
+<P><HR>
+<A NAME="0145"><A NAME="arcsin">
+<A HREF="#0134" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0144" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0146" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>tan - Calculate tangent</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;tan&nbsp;(z:&nbsp;COMPLEX):&nbsp;COMPLEX;
+PROCEDURE&nbsp;tan&nbsp;(z:&nbsp;LONGCOMPLEX):&nbsp;LONGCOMPLEX;
+</PRE>
+
+<P>Modules: <TT><A HREF="#0134" TARGET=body>ComplexMath</A></TT>, <TT><A HREF="#0134" TARGET=body>LongComplexMath</A></TT>
+<P>The function procedure <TT>tan</TT> returns an implementation-defined approximation to the complex tangent of <TT>z</TT>. An exception is raised if <TT>z</TT> is an odd multiple of &pi;/2. 
+<P><HR>
+<A NAME="0146"><A NAME="arccos">
+<A HREF="#0134" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0145" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0147" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>arcsin - Calculate arcsine</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;arcsin&nbsp;(z:&nbsp;LONGCOMPLEX):&nbsp;LONGCOMPLEX;
+PROCEDURE&nbsp;arcsin&nbsp;(z:&nbsp;COMPLEX):&nbsp;COMPLEX;
+</PRE>
+
+<P>Modules: <TT><A HREF="#0134" TARGET=body>ComplexMath</A></TT>, <TT><A HREF="#0134" TARGET=body>LongComplexMath</A></TT>
+<P>The function procedure <TT>arcsin</TT> returns an implementation-defined approximation to the principal value of the complex arcsine of <TT>z</TT>. 
+<P><HR>
+<A NAME="0147"><A NAME="arctan">
+<A HREF="#0134" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0146" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0148" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>arccos - Calculate arccosine</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;arccos&nbsp;(z:&nbsp;COMPLEX):&nbsp;COMPLEX;
+PROCEDURE&nbsp;arccos&nbsp;(z:&nbsp;LONGCOMPLEX):&nbsp;LONGCOMPLEX;
+</PRE>
+
+<P>Modules: <TT><A HREF="#0134" TARGET=body>ComplexMath</A></TT>, <TT><A HREF="#0134" TARGET=body>LongComplexMath</A></TT>
+<P>The function procedure <TT>arccos</TT> returns an implementation-defined approximation to the complex arccosine of <TT>z</TT>. 
+<P><HR>
+<A NAME="0148"><A NAME="polarToComplex">
+<A HREF="#0134" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0147" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0149" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>arctan - Calculate arctangent</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;arctan&nbsp;(z:&nbsp;COMPLEX):&nbsp;COMPLEX;
+PROCEDURE&nbsp;arctan&nbsp;(z:&nbsp;LONGCOMPLEX):&nbsp;LONGCOMPLEX;
+</PRE>
+
+<P>Modules: <TT><A HREF="#0134" TARGET=body>ComplexMath</A></TT>, <TT><A HREF="#0134" TARGET=body>LongComplexMath</A></TT>
+<P>The function procedure <TT>arctan</TT> returns an implementation-defined approximation to the complex arctangent of <TT>z</TT>. 
+<P><HR>
+<A NAME="0149"><A NAME="scalarMult">
+<A HREF="#0134" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0148" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0150" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>polarToComplex - Convert from polar to complex</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;polarToComplex&nbsp;(abs,&nbsp;arg:&nbsp;REAL):&nbsp;COMPLEX;
+PROCEDURE&nbsp;polarToComplex&nbsp;(abs,&nbsp;arg:&nbsp;LONGREAL):&nbsp;LONGCOMPLEX;
+</PRE>
+
+<P>Modules: <TT><A HREF="#0134" TARGET=body>ComplexMath</A></TT>, <TT><A HREF="#0134" TARGET=body>LongComplexMath</A></TT>
+<P>The function procedure <TT>polarToComplex</TT> returns an implementation-defined approximation to the complex number that has a modulus given by <TT>abs</TT> and an argument given by <TT>arg</TT>. 
+<P><HR>
+<A NAME="0150"><A NAME="IsCMathException">
+<A HREF="#0134" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0149" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0151" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>scalarMult - Scalar Multiplication</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;scalarMult&nbsp;(scalar:&nbsp;REAL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;z:&nbsp;COMPLEX
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;):&nbsp;COMPLEX;
+PROCEDURE&nbsp;scalarMult&nbsp;(scalar:&nbsp;LONGREAL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;z:&nbsp;LONGCOMPLEX
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;):&nbsp;LONGCOMPLEX;
+</PRE>
+
+<P>Modules: <TT><A HREF="#0134" TARGET=body>ComplexMath</A></TT>, <TT><A HREF="#0134" TARGET=body>LongComplexMath</A></TT>
+<P>The function procedure <TT>scalarMult</TT> returns an implementation-defined approximation to the scalar product of the real value <TT>scalar</TT> with the complex value <TT>z</TT>. 
+<P><HR>
+<A NAME="0151">
+<A HREF="#0134" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0150" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="isolib003.html#0152" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>IsCMathException - Query exceptional state</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;IsCMathException&nbsp;():&nbsp;BOOLEAN;
+PROCEDURE&nbsp;IsCMathException&nbsp;():&nbsp;BOOLEAN;
+</PRE>
+
+<P>Modules: <TT><A HREF="#0134" TARGET=body>ComplexMath</A></TT>, <TT><A HREF="#0134" TARGET=body>LongComplexMath</A></TT>
+<P>If the calling coroutine is in the state of exceptional execution because of the raising of a <TT><A HREF="#0134" TARGET=body>ComplexMath</A></TT> exception, the function procedure <TT>ComplexMath.IsCMathException</TT> returns <TT>TRUE</TT>; otherwise it returns <TT>FALSE</TT>. 
+<P>If the calling coroutine is in the state of exceptional execution because of the raising of a <TT><A HREF="#0134" TARGET=body>LongComplexMath</A></TT> exception, the function procedure <TT>LongComplexMath.IsCMathException</TT> returns <TT>TRUE</TT>; otherwise it returns <TT>FALSE</TT>.  
+</BODY>
+</HTML>

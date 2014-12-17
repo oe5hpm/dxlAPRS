@@ -1,0 +1,90 @@
+(* Copyright (c) xTech 1997.  All Rights Reserved *)
+
+(* $RCSfile: locale.def,v $ $Revision: 1.1.1.1 $ $Date: 1997/10/20 19:32:35 $ *)
+
+<*+ CSTDLIB  *>
+<*+ NOHEADER*>
+<*+ M2EXTENSIONS *>
+
+DEFINITION MODULE [2] locale;
+
+FROM xmRTS IMPORT X2C_pCHAR;
+FROM SYSTEM IMPORT INT8, BOOL8;
+
+<* IF __GEN_C__ THEN *> <*- GENTYPEDEF *> <* END *>
+TYPE
+  (* Structure giving information about numeric and monetary notation. *)
+  lconv = RECORD  (* Numeric (non-monetary) information. *)
+    decimal_point: X2C_pCHAR;	(* Decimal point character. *)
+    thousands_sep: X2C_pCHAR;	(* Thousands separator. *)
+    (* Each element is the number of digits in each group;
+       elements with higher indices are farther left.
+       An element with value CHAR_MAX means that no further grouping is done.
+       An element with value 0 means that the previous element is used
+       for all groups farther left. *)
+    grouping: X2C_pCHAR;
+
+    (* Monetary information. *)
+
+    (* First three chars are a currency symbol from ISO 4217.
+       Fourth char is the separator. Fifth char is '\0'. *)
+    int_curr_symbol: X2C_pCHAR;
+    currency_symbol: X2C_pCHAR;		(* Local currency symbol. *)
+    mon_decimal_point: X2C_pCHAR;	(* Decimal point character. *)
+    mon_thousands_sep: X2C_pCHAR;	(* Thousands separator. *)
+    mon_grouping: X2C_pCHAR;		(* Like `grouping' element (above). *)
+    positive_sign: X2C_pCHAR;		(* Sign for positive values. *)
+    negative_sign: X2C_pCHAR;		(* Sign for negative values. *)
+    int_frac_digits: INT8;		(* Int'l fractional digits. *)
+    frac_digits: INT8;			(* Local fractional digits. *)
+    (* 1 if currency_symbol precedes a positive value, 0 if succeeds. *)
+    p_cs_precedes: BOOL8;
+    (* 1 if a space separates currency_symbol from a positive value. *)
+    p_sep_by_space: BOOL8;
+    (* 1 if currency_symbol precedes a negative value, 0 if succeeds. *)
+    n_cs_precedes: BOOL8;
+    (* 1 iff a space separates currency_symbol from a negative value. *)
+    n_sep_by_space: BOOL8;
+    (* Positive and negative sign positions:
+       0 Parentheses surround the quantity and currency_symbol.
+       1 The sign string precedes the quantity and currency_symbol.
+       2 The sign string succedes the quantity and currency_symbol.
+       3 The sign string immediately precedes the currency_symbol.
+       4 The sign string immediately succedes the currency_symbol. *)
+    p_sign_posn: INT8;
+    n_sign_posn: INT8;
+  END;
+
+  lconv_ptr = POINTER TO lconv;
+
+<* IF __GEN_C__ THEN *>
+VAR
+  LC_ALL	-: INTEGER;
+  LC_COLLATE	-: INTEGER;
+  LC_CTYPE	-: INTEGER;
+  LC_MONETARY	-: INTEGER;
+  LC_NUMERIC	-: INTEGER;
+  LC_TIME	-: INTEGER;
+<* ELSE *>
+  (* Constants got from LiNUX i386 as an XDS native plaform *)
+CONST
+  (* These are the possibilities for the first argument to setlocale.
+     The code assumes that LC_ALL is the highest value, and zero the lowest. *)
+  LC_CTYPE	= 0;
+  LC_NUMERIC	= 1;
+  LC_TIME	= 2;
+  LC_COLLATE    = 3;
+  LC_MONETARY	= 4;
+  LC_ALL	= 6;
+<* END *>
+  
+CONST
+  NULL = NIL;
+
+  (* Set and/or return the current locale. *)
+  PROCEDURE setlocale ( category: INTEGER; locale: ARRAY OF CHAR ): X2C_pCHAR;
+
+  (* Return the numeric/monetary information for the current locale. *)
+  PROCEDURE localeconv (): lconv_ptr;
+
+END locale.

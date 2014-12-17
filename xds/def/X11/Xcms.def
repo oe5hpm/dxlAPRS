@@ -1,0 +1,684 @@
+(* X11/Xcms.def  Apr 12  15:22:35  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted using H2D v1.00 from X11/Xcms.h. *)
+
+(* $RCSfile: Xcms.def,v $ $Revision: 4 $ $Date: 28.07.98 23:13 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *>
+<* IF NOT DEFINED(GENCTYPES) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+
+DEFINITION MODULE ["C"] Xcms;
+
+IMPORT SYSTEM, X, Xlib;
+(* H2D: to import this module write following text:
+IMPORT Xcms, X, Xlib;
+*)
+
+FROM Xlib IMPORT PChar, Bool;
+FROM X IMPORT MAX_STUP_ARR;
+
+(*  $XConsortium: Xcms.h,v 1.15 92/11/19 16:43:04 rws Exp $  *)
+
+(*	DESCRIPTION
+ *		Public include file for X Color Management System
+ *)
+
+CONST 
+
+(*
+ * XCMS Status Values 
+ *)
+  XcmsFailure = 0;
+  XcmsSuccess = 1;
+  XcmsSuccessWithCompression = 2;
+
+(*
+ * Color Space Format ID's
+ *    Color Space ID's are of XcmsColorFormat type.
+ *
+ *    bit 31:
+ *	    0 == Device-Independent
+ *	    1 == Device-Dependent
+ *
+ *    bit 30:
+ *	    0 == Registered with X Consortium
+ *	    1 == Unregistered
+ *)
+
+(*
+ * State of XcmsPerScrnInfo 
+ *)
+  XcmsInitNone = 0H;                   (*  no initialization attempted  *)
+  XcmsInitSuccess = 1H;                (*  initialization successful  *)
+  XcmsInitFailure = 0FFH;              (*  failure, use defaults  *)
+
+TYPE 
+  XcmsColorFormat = LONGCARD;          (*  Color Space Format ID  *)
+
+  XcmsFloat = LONGREAL;
+
+(*
+ * Device RGB 
+ *)
+
+  XcmsRGB = RECORD
+    red  : SYSTEM.CARD16;   (*  scaled from 0x0000 to 0xffff  *)
+    green: SYSTEM.CARD16;   (*  scaled from 0x0000 to 0xffff  *)
+    blue : SYSTEM.CARD16;   (*  scaled from 0x0000 to 0xffff  *)
+  END;
+
+(*
+ * RGB Intensity 
+ *)
+
+  XcmsRGBi = RECORD
+    red  : XcmsFloat;   (*  0.0 - 1.0  *)
+    green: XcmsFloat;   (*  0.0 - 1.0  *)
+    blue : XcmsFloat;   (*  0.0 - 1.0  *)
+  END;
+
+(*
+ * CIE XYZ 
+ *)
+
+  XcmsCIEXYZ = RECORD
+    X: XcmsFloat;
+    Y: XcmsFloat;
+    Z: XcmsFloat;
+  END;
+
+(*
+ * CIE u'v'Y 
+ *)
+
+  XcmsCIEuvY = RECORD
+    u_prime: XcmsFloat;   (*  0.0 - 1.0  *)
+    v_prime: XcmsFloat;   (*  0.0 - 1.0  *)
+    Y      : XcmsFloat;   (*  0.0 - 1.0  *)
+  END;
+
+(*
+ * CIE xyY 
+ *)
+
+  XcmsCIExyY = RECORD
+    x: XcmsFloat;         (*  0.0 - 1.0  *)
+    y: XcmsFloat;         (*  0.0 - 1.0  *)
+    Y: XcmsFloat;         (*  0.0 - 1.0  *)
+  END;
+
+(*
+ * CIE L*a*b* 
+ *)
+
+  XcmsCIELab = RECORD
+    L_star: XcmsFloat;    (*  0.0 - 100.0  *)
+    a_star: XcmsFloat;
+    b_star: XcmsFloat;
+  END;
+
+(*
+ * CIE L*u*v* 
+ *)
+
+  XcmsCIELuv = RECORD
+    L_star: XcmsFloat;    (*  0.0 - 100.0  *)
+    u_star: XcmsFloat;
+    v_star: XcmsFloat;
+  END;
+
+(*
+ * TekHVC 
+ *)
+
+  XcmsTekHVC = RECORD
+    H: XcmsFloat;         (*  0.0 - 360.0  *)
+    V: XcmsFloat;         (*  0.0 - 100.0  *)
+    C: XcmsFloat;         (*  0.0 - 100.0  *)
+  END;
+
+(*
+ * PAD 
+ *)
+
+  XcmsPad = RECORD
+    pad0: XcmsFloat;
+    pad1: XcmsFloat;
+    pad2: XcmsFloat;
+    pad3: XcmsFloat;
+  END;
+
+(*
+ * XCMS Color Structure 
+ *)
+
+<*- GENTYPEDEF *>
+
+  ColorSpec = RECORD
+    CASE : INTEGER OF
+       0: RGB   : XcmsRGB;
+      |1: RGBi  : XcmsRGBi;
+      |2: CIEXYZ: XcmsCIEXYZ;
+      |3: CIEuvY: XcmsCIEuvY;
+      |4: CIExyY: XcmsCIExyY;
+      |5: CIELab: XcmsCIELab;
+      |6: CIELuv: XcmsCIELuv;
+      |7: TekHVC: XcmsTekHVC;
+      |8: Pad   : XcmsPad;
+    END;
+  END;
+
+<*+ GENTYPEDEF *>
+
+  XcmsColor = RECORD
+    spec  : ColorSpec;         (*  the color specification	 *)
+    pixel : LONGCARD;          (*  pixel value (as needed)	 *)
+    format: XcmsColorFormat;   (*  the specification format	 *)
+  END;
+
+<*- GENTYPEDEF *>
+  AXcmsColor = ARRAY [0..MAX_STUP_ARR] OF XcmsColor;
+  PAXcmsColor = POINTER TO AXcmsColor;
+<*+ GENTYPEDEF *>
+
+(*
+ * XCMS Per Screen related data 
+ *)
+
+  XcmsPerScrnInfo = RECORD
+    screenWhitePt: XcmsColor;      (*  Screen White point  *)
+    functionSet  : Xlib.XPointer;  (*  pointer to Screen Color Characterization  *)
+    (*       Function Set structure		 *)
+    screenData   : Xlib.XPointer;  (*  pointer to corresponding Screen Color *)
+    (* 	Characterization Data		 *)
+    state        : SHORTCARD;      (*  XcmsInitNone, XcmsInitSuccess, XcmsInitFailure  *)
+    pad          : ARRAY [0..2] OF CHAR;
+  END;
+
+<*- GENTYPEDEF *>
+
+  PtrDisplay = Xlib.PtrDisplay;
+
+  PtrVisual = Xlib.PtrVisual;
+
+<*+ GENTYPEDEF *>
+
+  XcmsCCC = POINTER TO XcmsCCCRec;
+
+<*- GENTYPEDEF *>
+
+  PtrXcmsColor = POINTER TO XcmsColor;
+
+<*+ GENTYPEDEF *>
+
+  XcmsCompressionProc = PROCEDURE ( (*  Gamut Compression Proc  *) 
+                                    (*  ccc  *) XcmsCCC,
+				    (*  colors_in_out  *) VAR XcmsColor,
+				    (*  ncolors  *) SYSTEM.unsigned,
+				    (*  index  *) SYSTEM.unsigned,
+				    (*  compression_flags_return  *) VAR Bool ): SYSTEM.int;
+
+  XcmsWhiteAdjustProc = PROCEDURE ( (*  White Point Adjust Proc  *) 
+                                    (*  ccc  *) XcmsCCC,
+				    (*  initial_white_point *) VAR XcmsColor,
+				    (*  target_white_point *) VAR XcmsColor,
+				    (*  target_format  *) XcmsColorFormat,
+				    (*  colors_in_out  *) VAR XcmsColor,
+				    (*  ncolors  *) SYSTEM.unsigned,
+				    (*  compression_flags_return  *) VAR Bool ): SYSTEM.int;
+
+<*- GENTYPEDEF *>
+
+  PtrXcmsPerScrnInfo = POINTER TO XcmsPerScrnInfo;
+
+<*+ GENTYPEDEF *>
+
+  XcmsCCCRec = RECORD
+    dpy                 : PtrDisplay;            (*  X Display  *)
+    screenNumber        : SYSTEM.int;            (*  X screen number  *)
+    visual              : PtrVisual;             (*  X Visual  *)
+    clientWhitePt       : XcmsColor;             (*  Client White Point  *)
+    gamutCompProc       : XcmsCompressionProc;   (*  Gamut Compression Function  *)
+    gamutCompClientData : Xlib.XPointer;         (*  Gamut Comp Func Client Data  *)
+    whitePtAdjProc      : XcmsWhiteAdjustProc;   (*  White Point Adjustment Function  *)
+    whitePtAdjClientData: Xlib.XPointer;         (*  White Pt Adj Func Client Data  *)
+    pPerScrnInfo        : PtrXcmsPerScrnInfo;    (*  pointer to per screen information  *)
+    (*   associated with the above display  *)
+    (*   screenNumber  *)
+  END;
+
+(*
+ * XCMS Color Conversion Context 
+ *)
+
+  XcmsScreenInitProc = PROCEDURE ( (*  Screen Initialization Proc  *) 
+                                   (*  dpy  *) PtrDisplay,
+				   (*  screen_number  *) SYSTEM.int,
+				   (*  screen_info  *) VAR XcmsPerScrnInfo ): SYSTEM.int;
+
+  XcmsScreenFreeProc = PROCEDURE ( (*  screenData  *) Xlib.XPointer );
+
+(*
+ * Function List Pointer -- pointer to an array of function pointers.
+ *    The end of list is indicated by a NULL pointer.
+ *)
+
+  XcmsConversionProc = PROCEDURE ( SEQ SYSTEM.BYTE ): SYSTEM.int;
+
+  XcmsFuncListPtr = POINTER TO XcmsConversionProc;
+
+  XcmsParseStringProc = PROCEDURE ( (*  Color String Parsing Proc  *) 
+                                    (*  color_string  *) ARRAY OF CHAR,
+				    (*  color_return  *) VAR XcmsColor ): SYSTEM.int;
+
+(*
+ * Color Space -- per Color Space related data (Device-Independent
+ *    or Device-Dependent)
+ *)
+
+  XcmsColorSpace = RECORD
+    prefix      : PChar;               (* Prefix of string format.	     *)
+    id          : XcmsColorFormat;     (* Format ID number.		     *)
+    parseString : XcmsParseStringProc; (* String format parsing function     *)
+    to_CIEXYZ   : XcmsFuncListPtr;     (* Pointer to an array of function    *)
+				       (* pointers such that when the	     *)
+				       (* functions are executed in sequence *)
+				       (* will convert a XcmsColor structure *)
+				       (* from this color space to CIEXYZ    *)
+				       (* space.			     *)
+    from_CIEXYZ : XcmsFuncListPtr;     (* Pointer to an array of function    *)
+				       (* pointers such that when the	     *)
+				       (* functions are executed in sequence *)
+				       (* will convert a XcmsColor structure *)
+				       (* from CIEXYZ space to this color    *)
+				       (* space.			     *)
+    inverse_flag: Bool;               (* If 1, indicates that for 0 <= i < n*)
+				       (* where n is the number of function  *)
+				       (* pointers in the lists to_CIEXYZ    *)
+				       (* and from_CIEXYZ; for each function *)
+				       (* to_CIEXYZ[i] its inverse function  *)
+				       (* is from_CIEXYZ[n - i].	     *)
+  END;
+
+(*
+ * Screen Color Characterization Function Set -- per device class
+ *    color space conversion functions.
+ *)
+
+<*- GENTYPEDEF *>
+
+  PtrXcmsColorSpace = POINTER TO XcmsColorSpace;
+
+  PAPXcmsColorSpace = POINTER TO ARRAY [0..MAX_STUP_ARR] OF PtrXcmsColorSpace;
+
+<*+ GENTYPEDEF *>
+
+  XcmsFunctionSet = RECORD
+    DDColorSpaces : PAPXcmsColorSpace; (*  Pointer to an array of pointers to*)
+				       (*  Device-DEPENDENT color spaces     *)
+				       (*  understood by this SCCFuncSet.    *)
+    screenInitProc: XcmsScreenInitProc;(* Screen initialization function that*)
+				       (* reads Screen Color Characterization*)
+				       (* Data off properties on the screen's*)
+				       (* root window.			     *)
+    screenFreeProc: XcmsScreenFreeProc;(* Function that frees the SCCData    *)
+				       (* structures.		             *)
+  END;
+
+<*- GENTYPEDEF *>
+
+PROCEDURE XcmsAddColorSpace ( VAR pColorSpace: XcmsColorSpace ): SYSTEM.int;
+
+TYPE 
+  PtrXcmsFunctionSet = POINTER TO XcmsFunctionSet;
+
+PROCEDURE XcmsAddFunctionSet ( VAR functionSet: XcmsFunctionSet ): SYSTEM.int;
+
+PROCEDURE XcmsAllocColor ( dpy: PtrDisplay;
+                           colormap: X.Colormap;
+                           VAR color_in_out: XcmsColor;
+                           result_format: XcmsColorFormat ): SYSTEM.int;
+
+PROCEDURE XcmsAllocNamedColor ( dpy: PtrDisplay;
+                                colormap: X.Colormap;
+                                color_string: ARRAY OF CHAR;
+                                VAR color_scrn_return: XcmsColor;
+                                VAR color_exact_return: XcmsColor;
+                                result_format: XcmsColorFormat ): SYSTEM.int;
+
+PROCEDURE XcmsCCCOfColormap ( dpy: PtrDisplay;
+                              colormap: X.Colormap ): XcmsCCC;
+
+PROCEDURE XcmsCIELabClipab ( ccc: XcmsCCC;
+                             VAR colors_in_out: XcmsColor;
+                             ncolors: SYSTEM.unsigned;
+                             index: SYSTEM.unsigned;
+                             VAR compression_flags_return: Bool ): SYSTEM.int;
+
+PROCEDURE XcmsCIELabClipL ( ccc: XcmsCCC;
+                            VAR colors_in_out: XcmsColor;
+                            ncolors: SYSTEM.unsigned;
+                            index: SYSTEM.unsigned;
+                            VAR compression_flags_return: Bool ): SYSTEM.int;
+
+PROCEDURE XcmsCIELabClipLab ( ccc: XcmsCCC;
+                              VAR colors_in_out: PtrXcmsColor;
+                              ncolors: SYSTEM.unsigned;
+                              index: SYSTEM.unsigned;
+                              VAR compression_flags_return: Bool ): SYSTEM.int;
+
+PROCEDURE XcmsCIELabQueryMaxC ( ccc: XcmsCCC;
+                                hue_angle: XcmsFloat;
+                                L_star: XcmsFloat;
+                                VAR color_return: XcmsColor ): SYSTEM.int;
+
+PROCEDURE XcmsCIELabQueryMaxL ( ccc: XcmsCCC;
+                                hue_angle: XcmsFloat;
+                                chroma: XcmsFloat;
+                                VAR color_return: XcmsColor ): SYSTEM.int;
+
+PROCEDURE XcmsCIELabQueryMaxLC ( ccc: XcmsCCC;
+                                 hue_angle: XcmsFloat;
+                                 VAR color_return: XcmsColor ): SYSTEM.int;
+
+PROCEDURE XcmsCIELabQueryMinL ( ccc: XcmsCCC;
+                                hue_angle: XcmsFloat;
+                                chroma: XcmsFloat;
+                                VAR color_return: XcmsColor ): SYSTEM.int;
+
+PROCEDURE XcmsCIELabToCIEXYZ ( ccc: XcmsCCC;
+                               VAR white_point: XcmsColor;
+                               colors: PAXcmsColor;
+                               ncolors: SYSTEM.unsigned ): SYSTEM.int;
+
+PROCEDURE XcmsCIELabWhiteShiftColors ( ccc: XcmsCCC;
+                                       VAR initial_white_point: XcmsColor;
+                                       VAR target_white_point: XcmsColor;
+                                       target_format: XcmsColorFormat;
+                                       VAR colors_in_out: XcmsColor;
+                                       ncolors: SYSTEM.unsigned;
+                                       VAR compression_flags_return: Bool ): SYSTEM.int;
+
+PROCEDURE XcmsCIELuvClipL ( ccc: XcmsCCC;
+                            VAR colors_in_out: XcmsColor;
+                            ncolors: SYSTEM.unsigned;
+                            index: SYSTEM.unsigned;
+                            VAR compression_flags_return: Bool ): SYSTEM.int;
+
+PROCEDURE XcmsCIELuvClipLuv ( ccc: XcmsCCC;
+                              VAR colors_in_out: XcmsColor;
+                              ncolors: SYSTEM.unsigned;
+                              index: SYSTEM.unsigned;
+                              VAR compression_flags_return: Bool ): SYSTEM.int;
+
+PROCEDURE XcmsCIELuvClipuv ( ccc: XcmsCCC;
+                             VAR colors_in_out: XcmsColor;
+                             ncolors: SYSTEM.unsigned;
+                             index: SYSTEM.unsigned;
+                             VAR compression_flags_return: Bool ): SYSTEM.int;
+
+PROCEDURE XcmsCIELuvQueryMaxC ( ccc: XcmsCCC;
+                                hue_angle: XcmsFloat;
+                                L_star: XcmsFloat;
+                                VAR color_return: XcmsColor ): SYSTEM.int;
+
+PROCEDURE XcmsCIELuvQueryMaxL ( ccc: XcmsCCC;
+                                hue_angle: XcmsFloat;
+                                chroma: XcmsFloat;
+                                VAR color_return: XcmsColor ): SYSTEM.int;
+
+PROCEDURE XcmsCIELuvQueryMaxLC ( ccc: XcmsCCC;
+                                 hue_angle: XcmsFloat;
+                                 VAR color_return: XcmsColor ): SYSTEM.int;
+
+PROCEDURE XcmsCIELuvQueryMinL ( ccc: XcmsCCC;
+                                hue_angle: XcmsFloat;
+                                chroma: XcmsFloat;
+                                VAR color_return: XcmsColor ): SYSTEM.int;
+
+PROCEDURE XcmsCIELuvToCIEuvY ( ccc: XcmsCCC;
+                               VAR white_point: XcmsColor;
+                               colors: PAXcmsColor;
+                               ncolors: SYSTEM.unsigned ): SYSTEM.int;
+
+PROCEDURE XcmsCIELuvWhiteShiftColors ( ccc: XcmsCCC;
+                                       VAR initial_white_point: XcmsColor;
+                                       VAR target_white_point: XcmsColor;
+                                       target_format: XcmsColorFormat;
+                                       VAR colors_in_out: XcmsColor;
+                                       ncolors: SYSTEM.unsigned;
+                                       VAR compression_flags_return: Bool ): SYSTEM.int;
+
+PROCEDURE XcmsCIEXYZToCIELab ( ccc: XcmsCCC;
+                               VAR white_point: XcmsColor;
+                               colors: PAXcmsColor;
+                               ncolors: SYSTEM.unsigned ): SYSTEM.int;
+
+PROCEDURE XcmsCIEXYZToCIEuvY ( ccc: XcmsCCC;
+                               VAR white_point: XcmsColor;
+                               colors: PAXcmsColor;
+                               ncolors: SYSTEM.unsigned ): SYSTEM.int;
+
+PROCEDURE XcmsCIEXYZToCIExyY ( ccc: XcmsCCC;
+                               VAR white_point: XcmsColor;
+                               colors: PAXcmsColor;
+                               ncolors: SYSTEM.unsigned ): SYSTEM.int;
+
+PROCEDURE XcmsCIEXYZToRGBi ( ccc: XcmsCCC;
+                             colors: PAXcmsColor;
+                             ncolors: SYSTEM.unsigned;
+                             VAR compression_flags_return: Bool ): SYSTEM.int;
+
+PROCEDURE XcmsCIEuvYToCIELuv ( ccc: XcmsCCC;
+                               VAR white_point: XcmsColor;
+                               colors: PAXcmsColor;
+                               ncolors: SYSTEM.unsigned ): SYSTEM.int;
+
+PROCEDURE XcmsCIEuvYToCIEXYZ ( ccc: XcmsCCC;
+                               VAR white_point: XcmsColor;
+                               colors: PAXcmsColor;
+                               ncolors: SYSTEM.unsigned ): SYSTEM.int;
+
+PROCEDURE XcmsCIEuvYToTekHVC ( ccc: XcmsCCC;
+                               VAR white_point: XcmsColor;
+                               colors: PAXcmsColor;
+                               ncolors: SYSTEM.unsigned ): SYSTEM.int;
+
+PROCEDURE XcmsCIExyYToCIEXYZ ( ccc: XcmsCCC;
+                               VAR white_point: XcmsColor;
+                               colors: PAXcmsColor;
+                               ncolors: SYSTEM.unsigned ): SYSTEM.int;
+
+PROCEDURE XcmsClientWhitePointOfCCC ( ccc: XcmsCCC ): PtrXcmsColor;
+
+PROCEDURE XcmsConvertColors ( ccc: XcmsCCC;
+                              colorArry_in_out: PtrXcmsColor;
+                              nColors: SYSTEM.unsigned;
+                              targetFormat: XcmsColorFormat;
+                              VAR compArry_return: Bool ): SYSTEM.int;
+
+PROCEDURE XcmsCreateCCC ( dpy: PtrDisplay;
+                          screenNumber: SYSTEM.int;
+                          visual: PtrVisual;
+                          VAR clientWhitePt: XcmsColor;
+                          gamutCompProc: XcmsCompressionProc;
+                          gamutCompClientData: Xlib.XPointer;
+                          whitePtAdjProc: XcmsWhiteAdjustProc;
+                          whitePtAdjClientData: Xlib.XPointer ): XcmsCCC;
+
+PROCEDURE XcmsDefaultCCC ( dpy: PtrDisplay;
+                           screenNumber: SYSTEM.int ): XcmsCCC;
+
+PROCEDURE XcmsDisplayOfCCC ( ccc: XcmsCCC ): PtrDisplay;
+
+PROCEDURE XcmsFormatOfPrefix ( prefix: ARRAY OF CHAR ): XcmsColorFormat;
+
+PROCEDURE XcmsFreeCCC ( ccc: XcmsCCC );
+
+PROCEDURE XcmsLookupColor ( dpy: PtrDisplay;
+                            colormap: X.Colormap;
+                            color_string: ARRAY OF CHAR;
+                            pColor_exact_in_out: PtrXcmsColor;
+                            pColor_scrn_in_out: PtrXcmsColor;
+                            result_format: XcmsColorFormat ): SYSTEM.int;
+
+PROCEDURE XcmsPrefixOfFormat ( id: XcmsColorFormat ): PChar;
+
+PROCEDURE XcmsQueryBlack ( ccc: XcmsCCC;
+                           target_format: XcmsColorFormat;
+                           VAR color_return: XcmsColor ): SYSTEM.int;
+
+PROCEDURE XcmsQueryBlue ( ccc: XcmsCCC;
+                          target_format: XcmsColorFormat;
+                          VAR color_return: XcmsColor ): SYSTEM.int;
+
+PROCEDURE XcmsQueryColor ( dpy: PtrDisplay;
+                           colormap: X.Colormap;
+                           pColor_in_out: PtrXcmsColor;
+                           result_format: XcmsColorFormat ): SYSTEM.int;
+
+PROCEDURE XcmsQueryColors ( dpy: PtrDisplay;
+                            colormap: X.Colormap;
+                            colorArry_in_out: PtrXcmsColor;
+                            nColors: SYSTEM.unsigned;
+                            result_format: XcmsColorFormat ): SYSTEM.int;
+
+PROCEDURE XcmsQueryGreen ( ccc: XcmsCCC;
+                           target_format: XcmsColorFormat;
+                           VAR color_return: XcmsColor ): SYSTEM.int;
+
+PROCEDURE XcmsQueryRed ( ccc: XcmsCCC;
+                         target_format: XcmsColorFormat;
+                         VAR color_return: XcmsColor ): SYSTEM.int;
+
+PROCEDURE XcmsQueryWhite ( ccc: XcmsCCC;
+                           target_format: XcmsColorFormat;
+                           VAR color_return: XcmsColor ): SYSTEM.int;
+
+PROCEDURE XcmsRGBiToCIEXYZ ( ccc: XcmsCCC;
+                             colors: PtrXcmsColor;
+                             ncolors: SYSTEM.unsigned;
+                             VAR compression_flags_return: Bool ): SYSTEM.int;
+
+PROCEDURE XcmsRGBiToRGB ( ccc: XcmsCCC;
+                          colors: PtrXcmsColor;
+                          ncolors: SYSTEM.unsigned;
+                          VAR compression_flags_return: Bool ): SYSTEM.int;
+
+PROCEDURE XcmsRGBToRGBi ( ccc: XcmsCCC;
+                          colors: PtrXcmsColor;
+                          ncolors: SYSTEM.unsigned;
+                          VAR compression_flags_return: Bool ): SYSTEM.int;
+
+PROCEDURE XcmsScreenNumberOfCCC ( ccc: XcmsCCC ): SYSTEM.int;
+
+PROCEDURE XcmsScreenWhitePointOfCCC ( ccc: XcmsCCC ): PtrXcmsColor;
+
+PROCEDURE XcmsSetCCCOfColormap ( dpy: PtrDisplay;
+                                 colormap: X.Colormap;
+                                 ccc: XcmsCCC ): XcmsCCC;
+
+PROCEDURE XcmsSetCompressionProc ( ccc: XcmsCCC;
+                                   compression_proc: XcmsCompressionProc;
+                                   client_data: Xlib.XPointer ): XcmsCompressionProc;
+
+PROCEDURE XcmsSetWhiteAdjustProc ( ccc: XcmsCCC;
+                                   white_adjust_proc: XcmsWhiteAdjustProc;
+                                   client_data: Xlib.XPointer ): XcmsWhiteAdjustProc;
+
+PROCEDURE XcmsSetWhitePoint ( ccc: XcmsCCC;
+                              VAR color: XcmsColor ): SYSTEM.int;
+
+PROCEDURE XcmsStoreColor ( dpy: PtrDisplay;
+                           colormap: X.Colormap;
+                           pColor_in: PtrXcmsColor ): SYSTEM.int;
+
+PROCEDURE XcmsStoreColors ( dpy: PtrDisplay;
+                            colormap: X.Colormap;
+                            colorArry_in: PtrXcmsColor;
+                            nColors: SYSTEM.unsigned;
+                            VAR compArry_return: Bool ): SYSTEM.int;
+
+PROCEDURE XcmsTekHVCClipC ( ccc: XcmsCCC;
+                            VAR colors_in_out: XcmsColor;
+                            ncolors: SYSTEM.unsigned;
+                            index: SYSTEM.unsigned;
+                            VAR compression_flags_return: Bool ): SYSTEM.int;
+
+PROCEDURE XcmsTekHVCClipV ( ccc: XcmsCCC;
+                            colors_in_out: PtrXcmsColor;
+                            ncolors: SYSTEM.unsigned;
+                            index: SYSTEM.unsigned;
+                            VAR compression_flags_return: Bool ): SYSTEM.int;
+
+PROCEDURE XcmsTekHVCClipVC ( ccc: XcmsCCC;
+                             VAR colors_in_out: XcmsColor;
+                             ncolors: SYSTEM.unsigned;
+                             index: SYSTEM.unsigned;
+                             VAR compression_flags_return: Bool ): SYSTEM.int;
+
+PROCEDURE XcmsTekHVCQueryMaxC ( ccc: XcmsCCC;
+                                hue: XcmsFloat;
+                                value: XcmsFloat;
+                                VAR color_return: XcmsColor ): SYSTEM.int;
+
+PROCEDURE XcmsTekHVCQueryMaxV ( ccc: XcmsCCC;
+                                hue: XcmsFloat;
+                                chroma: XcmsFloat;
+                                VAR color_return: XcmsColor ): SYSTEM.int;
+
+PROCEDURE XcmsTekHVCQueryMaxVC ( ccc: XcmsCCC;
+                                 hue: XcmsFloat;
+                                 VAR color_return: XcmsColor ): SYSTEM.int;
+
+PROCEDURE XcmsTekHVCQueryMaxVSamples ( ccc: XcmsCCC;
+                                       hue: XcmsFloat;
+                                       VAR colors_return: XcmsColor;
+                                       nsamples: SYSTEM.unsigned ): SYSTEM.int;
+
+PROCEDURE XcmsTekHVCQueryMinV ( ccc: XcmsCCC;
+                                hue: XcmsFloat;
+                                chroma: XcmsFloat;
+                                VAR color_return: XcmsColor ): SYSTEM.int;
+
+PROCEDURE XcmsTekHVCToCIEuvY ( ccc: XcmsCCC;
+                               white_point: PtrXcmsColor;
+                               colors: PtrXcmsColor;
+                               ncolors: SYSTEM.unsigned ): SYSTEM.int;
+
+PROCEDURE XcmsTekHVCWhiteShiftColors ( ccc: XcmsCCC;
+                                       VAR initial_white_point: XcmsColor;
+                                       VAR target_white_point: XcmsColor;
+                                       target_format: XcmsColorFormat;
+                                       VAR colors_in_out: XcmsColor;
+                                       ncolors: SYSTEM.unsigned;
+                                       VAR compression_flags_return: Bool ): SYSTEM.int;
+
+PROCEDURE XcmsVisualOfCCC ( ccc: XcmsCCC ): PtrVisual;
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: this procedure was generated from Macro. *)
+PROCEDURE DisplayOfCCC ( ccc: XcmsCCC ): PtrDisplay;
+PROCEDURE ScreenNumberOfCCC ( ccc: XcmsCCC ): SYSTEM.int;
+PROCEDURE VisualOfCCC ( ccc: XcmsCCC ): PtrVisual;
+PROCEDURE ClientWhitePointOfCCC ( ccc: XcmsCCC ): PtrXcmsColor;
+PROCEDURE ScreenWhitePointOfCCC ( ccc: XcmsCCC ): PtrXcmsColor;
+PROCEDURE FunctionSetOfCCC ( ccc: XcmsCCC ): Xlib.XPointer;
+
+<* ELSE *>
+
+PROCEDURE  / DisplayOfCCC * ( ccc: XcmsCCC ): PtrDisplay;
+PROCEDURE  / ScreenNumberOfCCC * ( ccc: XcmsCCC ): SYSTEM.int;
+PROCEDURE  / VisualOfCCC * ( ccc: XcmsCCC ): PtrVisual;
+PROCEDURE  / ClientWhitePointOfCCC * ( ccc: XcmsCCC ): PtrXcmsColor;
+PROCEDURE  / ScreenWhitePointOfCCC * ( ccc: XcmsCCC ): PtrXcmsColor;
+PROCEDURE  / FunctionSetOfCCC * ( ccc: XcmsCCC ): Xlib.XPointer;
+
+<* END *>
+
+END Xcms.

@@ -1,0 +1,180 @@
+# Makefile for dxlAPRS sondemod 
+# RS92 wx-ballon decoder (takes data from sondeudp and generates aprs-beacons)
+#
+# ---------------------- common section ---------------------------------------
+INCL    = .
+TARGET	= sondemod
+CDEFS	= -D_unix -D_linux -DX2C_no_spawn -w $(ARCHSPEC)
+CFLAGS	= -O2 -c -g -fno-strength-reduce -I$(INCL) -I$(EXTLIB)
+# ---------------------- armv6 (raspberry) specific ---------------------------
+ifeq ($(PLATTFORM), armv6)
+XDSLIB  = lib_armv6/libxds.a
+EXTLIB  = lib_armv6/
+CC	= ./arm-linux-rpi-gcc
+STRIP	= ./arm-linux-rpi-strip
+ARCHSPEC= -march=armv6zk -mfpu=vfp -mfloat-abi=hard -mcpu=arm1176jzf-s
+LFLAGS	=
+# ---------------------- armv7hf (bur am335x pp) specific ---------------------
+else ifeq ($(PLATTFORM), armv7hf)
+XDSLIB  = lib_armv7hf/libxds.a
+EXTLIB  = lib_armv7hf/
+CC	= ./arm-linux-armv7hf-gcc
+STRIP	= ./arm-linux-armv7hf-strip
+ARCHSPEC= -march=armv7-a -mfpu=neon -mfloat-abi=hard -mcpu=cortex-a8
+LFLAGS	=
+# -------------------------- x86 (default) specific ---------------------------
+else
+XDSLIB  = lib_x86/libxds.a
+EXTLIB  = .
+CC	= gcc
+STRIP	= strip
+ARCHSPEC= -m32
+LFLAGS	= -m32
+endif
+# ------------------ objects enumeration ------------------
+#                  -------------------
+
+OBJ= \
+	Lib.o \
+	Select.o \
+	aprsstr.o \
+	filesize.o \
+	flush.o \
+	geodesy.o \
+	gps.o \
+	gpspos.o \
+	navigation.o \
+	osi.o \
+	rinex.o \
+	sem.o \
+	sondeaprs.o \
+	sondemod.o \
+	soundctl.o \
+	tcp.o \
+	time_conversion.o \
+	udp.o \
+	yuma.o
+# ------------------- target make rules -------------------
+#                     -----------------
+
+$(TARGET) : $(OBJ)
+	$(CC) $(LFLAGS) -o $(TARGET) $(OBJ) $(XDSLIB) -lm
+	$(STRIP) $(TARGET) -s
+clean:
+	rm -f $(OBJ) $(TARGET)
+# ----------------- Dependency information ----------------
+#                   ----------------------
+
+Lib.o                    : Lib.h
+Lib.o                    : ProgEnv.h
+Lib.o                    : RealMath.h
+Lib.o                    : $(M) Lib.c
+	$(CC) $(CDEFS) $(CFLAGS) -o Lib.o Lib.c
+
+Select.o                 : Select.h
+Select.o                 : $(M) Select.c
+	$(CC) $(CDEFS) $(CFLAGS) -o Select.o Select.c
+
+aprsstr.o                : aprsstr.h
+aprsstr.o                : $(M) aprsstr.c
+	$(CC) $(CDEFS) $(CFLAGS) -o aprsstr.o aprsstr.c
+
+filesize.o               : filesize.h
+filesize.o               : $(M) filesize.c
+	$(CC) $(CDEFS) $(CFLAGS) -o filesize.o filesize.c
+
+flush.o                  : flush.h
+flush.o                  : $(M) flush.c
+	$(CC) $(CDEFS) $(CFLAGS) -o flush.o flush.c
+
+geodesy.o                : geodesy.h
+geodesy.o                : $(M) geodesy.c
+	$(CC) $(CDEFS) $(CFLAGS) -o geodesy.o geodesy.c
+
+gps.o                    : gps.h
+gps.o                    : $(M) gps.c
+	$(CC) $(CDEFS) $(CFLAGS) -o gps.o gps.c
+
+gpspos.o                 : TimeConv.h
+gpspos.o                 : geodesy.h
+gpspos.o                 : gps.h
+gpspos.o                 : gpspos.h
+gpspos.o                 : navigation.h
+gpspos.o                 : osi.h
+gpspos.o                 : rinex.h
+gpspos.o                 : sem.h
+gpspos.o                 : yuma.h
+gpspos.o                 : $(M) gpspos.c
+	$(CC) $(CDEFS) $(CFLAGS) -o gpspos.o gpspos.c
+
+navigation.o             : navigation.h
+navigation.o             : $(M) navigation.c
+	$(CC) $(CDEFS) $(CFLAGS) -o navigation.o navigation.c
+
+osi.o                    : FileSys.h
+osi.o                    : IOChan.h
+osi.o                    : InOut.h
+osi.o                    : Lib.h
+osi.o                    : RealIO.h
+osi.o                    : StdChans.h
+osi.o                    : filesize.h
+osi.o                    : flush.h
+osi.o                    : osi.h
+osi.o                    : tcp.h
+osi.o                    : udp.h
+osi.o                    : $(M) osi.c
+	$(CC) $(CDEFS) $(CFLAGS) -o osi.o osi.c
+
+rinex.o                  : rinex.h
+rinex.o                  : time_conversion.h
+rinex.o                  : $(M) rinex.c
+	$(CC) $(CDEFS) $(CFLAGS) -o rinex.o rinex.c
+
+sem.o                    : sem.h
+sem.o                    : $(M) sem.c
+	$(CC) $(CDEFS) $(CFLAGS) -o sem.o sem.c
+
+sondeaprs.o              : RealMath.h
+sondeaprs.o              : TimeConv.h
+sondeaprs.o              : aprsstr.h
+sondeaprs.o              : osi.h
+sondeaprs.o              : sondeaprs.h
+sondeaprs.o              : $(M) sondeaprs.c
+	$(CC) $(CDEFS) $(CFLAGS) -o sondeaprs.o sondeaprs.c
+
+sondemod.o               : Lib.h
+sondemod.o               : RealMath.h
+sondemod.o               : Select.h
+sondemod.o               : TimeConv.h
+sondemod.o               : aprsstr.h
+sondemod.o               : gpspos.h
+sondemod.o               : osi.h
+sondemod.o               : sondeaprs.h
+sondemod.o               : soundctl.h
+sondemod.o               : udp.h
+sondemod.o               : $(M) sondemod.c
+	$(CC) $(CDEFS) $(CFLAGS) -o sondemod.o sondemod.c
+
+soundctl.o               : soundctl.h
+soundctl.o               : $(M) soundctl.c
+	$(CC) $(CDEFS) $(CFLAGS) -o soundctl.o soundctl.c
+
+tcp.o                    : tcp.h
+tcp.o                    : $(M) tcp.c
+	$(CC) $(CDEFS) $(CFLAGS)  -o tcp.o tcp.c
+
+time_conversion.o        : time_conversion.h
+time_conversion.o        : $(M) time_conversion.c
+	$(CC) $(CDEFS) $(CFLAGS) -o time_conversion.o time_conversion.c
+
+udp.o                    : udp.h
+udp.o                    : $(M) udp.c
+	$(CC) $(CDEFS) $(CFLAGS) -o udp.o udp.c
+
+yuma.o                   : yuma.h
+yuma.o                   : $(M) yuma.c
+	$(CC) $(CDEFS) $(CFLAGS) -o yuma.o yuma.c
+
+
+# end of makefile
+

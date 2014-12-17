@@ -1,0 +1,76 @@
+(* Copyright (c) xTech 1992,95,97.  All Rights Reserved *)
+
+(* $RCSfile: time.def,v $ $Revision: 1.1.1.1 $ $Date: 1997/10/20 19:32:35 $ *)
+
+<*+ CSTDLIB  *>
+<*+ NOHEADER *>
+<*+ M2EXTENSIONS *>
+
+DEFINITION MODULE [2] time;
+
+IMPORT types;
+
+FROM SYSTEM IMPORT INT32;
+FROM xmRTS IMPORT X2C_pCHAR;
+
+TYPE
+  clock_t = INT32;
+  time_t = INT32;
+  size_t = types.size_t;
+<* IF __GEN_C__ THEN *> <*- GENTYPEDEF *> <* END *>
+  tm = RECORD
+    tm_sec   : INTEGER;
+    tm_min   : INTEGER;
+    tm_hour  : INTEGER;
+    tm_mday  : INTEGER;
+    tm_mon   : INTEGER;
+    tm_year  : INTEGER;
+    tm_wday  : INTEGER;
+    tm_yday  : INTEGER;
+    tm_isdst : INTEGER;
+  END;
+  tm_ptr = POINTER TO tm;
+
+<* IF __GEN_C__ THEN *>
+VAR
+  CLOCKS_PER_SEC -: INTEGER;
+  CLK_TCK        -: INTEGER;
+<* ELSE *>
+CONST
+  (* Constants from LiNUX *)
+  CLOCKS_PER_SEC = 100;
+  CLK_TCK        = 100;	(* That must be the same as HZ ???? *)
+<* END *>
+
+CONST
+  NULL = NIL;
+
+PROCEDURE asctime(VAR t: tm): X2C_pCHAR;
+(* returns pointer to string Tue Aug 12:00:00 1999 \n 0c *)
+
+PROCEDURE clock(): clock_t;
+(* no of clock after start process *)
+
+PROCEDURE ctime(VAR t: time_t): X2C_pCHAR;
+(* returns pointer to string Tue Aug 12:00:00 1999 \n 0c *)
+
+PROCEDURE difftime(time2, time1: time_t): LONGREAL;
+
+PROCEDURE gmtime(VAR t: time_t): tm_ptr;
+(* any t converts to pointer to tm *)
+
+PROCEDURE localtime(VAR t: time_t): tm_ptr;
+(* t (time() ) converts to pointer to tm *)
+
+PROCEDURE mktime(VAR t: tm): time_t;
+(* converts tm to time *)
+
+PROCEDURE strftime(VAR s: ARRAY OF CHAR; maxsize: size_t;
+		  format: ARRAY OF CHAR; VAR t: tm): size_t;
+
+PROCEDURE time(VAR t: time_t): time_t;
+(* returns time in second *)
+
+PROCEDURE tzset ();
+
+END time.

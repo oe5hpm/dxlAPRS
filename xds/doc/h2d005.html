@@ -1,0 +1,373 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 4.01 Transitional//EN">
+<HTML>
+<HEAD>
+<TITLE>Using H2D</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<P><HR>
+<A NAME="0040">
+<A HREF="h2d000.html#root" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="h2d004.html#0039" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0041" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H1>Using H2D</H1>
+
+<P><UL>
+<LI><A HREF="#0041" TARGET=body>Headers merging</A>
+<LI><A HREF="#0043" TARGET=body>Fitting a Modula-2 compiler</A>
+<LI><A HREF="#0048" TARGET=body>Modifying translation rules</A>
+</UL>
+<P><HR>
+<A NAME="0041">
+<A HREF="#0040" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0040" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0042" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Headers merging</H2>
+
+<P>A C header file may contain one or more <TT>#include</TT> directives. H2D offer the following translation variants for included headers: 
+<UL>
+ 
+<LI>All headers are merged and translated into a single definition module (the <A HREF="h2d007.html#0079" TARGET=body>MERGEALL</A> option is set ON). </LI>
+<LI>Each included header is translated into a separate definition module which name is added to the import list (the <A HREF="h2d007.html#0079" TARGET=body>MERGEALL</A> option is set OFF). </LI>
+<LI>The headers which have to be merged are explicitly specified using the <TT>#merge</TT> directive (the <A HREF="h2d007.html#0079" TARGET=body>MERGEALL</A> option must be OFF). </LI>
+</UL>
+
+<P>If the <A HREF="h2d007.html#0076" TARGET=body>GENSEP</A> option is set ON, H2D separates pieces of Modula-2 text, which correspond to different merged headers, with comments containing header file names. 
+<P>The <TT><A HREF="h2d004.html#0037" TARGET=body>#merge directive</A></TT> provides more flexible method of merging control than the <A HREF="h2d007.html#0079" TARGET=body>MERGEALL</A> option. The example illustrates situation in which this directive is very helpful. 
+<P><UL>
+<LI><A HREF="#0042" TARGET=body>Example</A>
+</UL>
+<P><HR>
+<A NAME="0042">
+<A HREF="#0041" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0041" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0043" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Example</H3>
+
+<P><PRE>/*&nbsp;m1.h&nbsp;*/&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/*&nbsp;m2.h&nbsp;*/
+typedef&nbsp;int&nbsp;INTEGER;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;struct&nbsp;descriptor{
+#include&nbsp;&lt;m2.h&gt;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;INTEGER&nbsp;handl;
+#include&nbsp;&lt;m3.h&gt;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;};
+#include&nbsp;&lt;m4.h&gt;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;typedef&nbsp;int&nbsp;far&nbsp;*&nbsp;RETVAL;
+RETVAL&nbsp;handler();&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/*&nbsp;end&nbsp;m2.h&nbsp;*/
+/*&nbsp;end&nbsp;m1.h&nbsp;*/
+</PRE>
+
+<P>In this example, the <TT>RETVAL</TT> declaration from <TT>m2.h</TT> is used in <TT>m1.h</TT>. On the other hand, <TT>m2.h</TT> uses the declaration from <TT>m1.h</TT> (<TT>INTEGER</TT>). Setting the <A HREF="h2d007.html#0079" TARGET=body>MERGEALL</A> option ON results in all headers (<TT>m1.h</TT>, <TT>m2.h</TT>, <TT>m3.h</TT>, and <TT>m4.h</TT>) being merged and translated into the single definition module <TT>m1</TT>. If this is not a desired behaviour, the <TT><A HREF="h2d004.html#0037" TARGET=body>#merge directive</A></TT> should be used instead. If the <A HREF="h2d007.html#0079" TARGET=body>MERGEALL</A> option is OFF and the line 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;#merge&nbsp;&lt;m2.h&gt;</TT> 
+<P>is added to either <TT>m1.h</TT> or the corresponding <TT>#header</TT> directive in a <A HREF="h2d006.html#0054" TARGET=body>project file</A>, H2D produces <I>three</I> definition modules <TT>m1</TT>, <TT>m3</TT> and <TT>m4</TT>, where <TT>m1</TT> is a result of translation of two merged headers <TT>m1.h</TT> and <TT>m2.h</TT>. 
+<P><HR>
+<A NAME="0043">
+<A HREF="#0040" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0042" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0044" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Fitting a Modula-2 compiler</H2>
+
+<P>Some of H2D translation rules depend on the target Modula-2 compiler; even XDS-C and Native XDS require different definition modules. The <A HREF="h2d007.html#0066" TARGET=body>BACKEND</A> option is used to reflect the major difference: whether the target Modula-2 compiler is a native code compiler (<TT>-BACKEND&nbsp;=&nbsp;Native</TT>) or a convertor to C (<TT>-BACKEND&nbsp;=&nbsp;C</TT>). It is also possible to produce definition modules suitable for both XDS-C and Native XDS (<TT>-BACKEND&nbsp;=&nbsp;Common</TT>). In this case H2D encloses target-dependent parts with XDS conditional compilation directives. 
+<P><UL>
+<LI><A HREF="#0044" TARGET=body>Native code</A>
+<LI><A HREF="#0046" TARGET=body>Convertor to C</A>
+</UL>
+<P><HR>
+<A NAME="0044">
+<A HREF="#0043" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0043" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0045" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Native code</H3>
+
+<P>C headers often contain a number of useful function-like macros. These macros are translated into procedure declarations with parameters having type <TT>ARRAY&nbsp;OF&nbsp;SYSTEM.BYTE</TT>, which is assignment compatible with any other type. But C macros exist only at compile-time and are not present in object files. Therefore, a Modula-2 compiler is unable to handle them properly unless it is implemented as a convertor to C. Nevertheless, H2D provides a technique which allows to use C function-like macros even with a native code Modula-2 compiler. 
+<P>If the <A HREF="h2d007.html#0066" TARGET=body>BACKEND</A> option is set to either <TT>Native</TT> or <TT>Common</TT> and the <A HREF="h2d007.html#0074" TARGET=body>GENMACRO</A> option is set ON, H2D produces an additional module containing macro <I>prototypes</I> &mdash; procedures corresponding to function-like macros, which bodies consist of a comment with C macro definition and are expected to be written by a programmer. These procedures are then declared as external in the main definition module. Thus, a macro prototype module need not to be imported, it should be just <I>linked</I> into an executable which uses the generated definition module. 
+<P>A macro prototype module name is constructed from a header module name and a prefix specified by the <A HREF="h2d007.html#0064" TARGET=body>MACPFX</A> option. 
+<P><UL>
+<LI><A HREF="#0045" TARGET=body>Example</A>
+</UL>
+<P><HR>
+<A NAME="0045">
+<A HREF="#0044" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0044" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0046" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H4>Example</H4>
+
+<P><PRE>/*&nbsp;macro.h&nbsp;*/
+&nbsp;&nbsp;&nbsp;&nbsp;...
+#define&nbsp;cube(x)&nbsp;(x*x*x)
+&nbsp;&nbsp;&nbsp;&nbsp;...
+</PRE>
+
+<P><PRE>(*&nbsp;macro.def&nbsp;&nbsp;Sep&nbsp;20&nbsp;&nbsp;2:38:9&nbsp;&nbsp;1996&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;...
+DEFINITION&nbsp;MODULE&nbsp;[&quot;C&quot;]&nbsp;macro;
+&nbsp;&nbsp;&nbsp;&nbsp;...
+PROCEDURE&nbsp;&nbsp;/&nbsp;cube&nbsp;(&nbsp;x:&nbsp;ARRAY&nbsp;OF&nbsp;SYSTEM.BYTE&nbsp;);
+&nbsp;&nbsp;&nbsp;&nbsp;...
+END&nbsp;macro.
+</PRE>
+
+<P><PRE>(*&nbsp;m_macro.def&nbsp;&nbsp;Sep&nbsp;20&nbsp;&nbsp;2:38:9&nbsp;&nbsp;1996&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;...
+DEFINITION&nbsp;MODULE&nbsp;m_macro;
+
+IMPORT&nbsp;SYSTEM;
+&nbsp;&nbsp;&nbsp;&nbsp;...
+PROCEDURE&nbsp;[&quot;C&quot;]&nbsp;cube&nbsp;(&nbsp;x:&nbsp;ARRAY&nbsp;OF&nbsp;SYSTEM.BYTE&nbsp;);
+&nbsp;&nbsp;&nbsp;&nbsp;...
+END&nbsp;m_macro.
+</PRE>
+
+<P><PRE>(*&nbsp;m_macro.mod&nbsp;&nbsp;Sep&nbsp;20&nbsp;&nbsp;2:38:9&nbsp;&nbsp;1996&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;...
+IMPLEMENTATION&nbsp;MODULE&nbsp;m_macro;
+
+IMPORT&nbsp;SYSTEM;
+&nbsp;&nbsp;&nbsp;&nbsp;...
+PROCEDURE&nbsp;[&quot;C&quot;]&nbsp;cube&nbsp;(&nbsp;x:&nbsp;ARRAY&nbsp;OF&nbsp;SYSTEM.BYTE&nbsp;);
+(*
+#define&nbsp;cube(x)&nbsp;(x*x*x)
+*)
+BEGIN
+END&nbsp;cube;
+&nbsp;&nbsp;&nbsp;&nbsp;...
+END&nbsp;m_macro.
+</PRE>
+
+<P>
+<P><HR>
+<A NAME="0046">
+<A HREF="#0043" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0045" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0047" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Convertor to C</H3>
+
+<P>A Modula-2 compiler implemented as a convertor to C (e.g. XDS-C) converts definition modules written by a programmer to C headers. But headers corresponding to definition modules generated by H2D already exist. To prevent them from being overridden, H2D inserts the <B>NOHEADER</B> XDS option, which disables header file generation, at the beginning of each definition module. 
+<P>For all included header files, which are not merged (see <A HREF="#0041" TARGET=body>Headers merging</A>), H2D also sets the <B>CSTDLIB</B> XDS option according to the parenthesis used in the <TT>#include</TT> directive &ndash; double quotes or angle brackets. For top-level header files, this option is set equal to the value of the <A HREF="h2d007.html#0070" TARGET=body>CSTDLIB</A> option. 
+<P>H2D usually has to introduce a number of additional types in the definition module (see <A HREF="h2d004.html#0027" TARGET=body>Function prototypes</A> and <A HREF="h2d004.html#0021" TARGET=body>Types</A>). These types are absent in the original header file, and their usage would cause C compilation to fail. To solve this problem, H2D constructs a resulting definition module name from a header file name and a prefix specified by the <A HREF="h2d007.html#0064" TARGET=body>DEFPFX</A> option. Then, it produces a <I>&quot;wrapper&quot; header file</I>, which name corresponds to the name of a <I>definition module</I>, containing an <TT>#include</TT> directive with original header name, followed by required type declarations. Type declarations from a <A HREF="h2d006.html#0054" TARGET=body>project file</A> are copied to a wrapper file as well. 
+<P><UL>
+<LI><A HREF="#0047" TARGET=body>Example</A>
+</UL>
+<P><HR>
+<A NAME="0047">
+<A HREF="#0046" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0046" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0048" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H4>Example</H4>
+
+<P><PRE>/*&nbsp;type.h&nbsp;*/
+
+struct&nbsp;Node&nbsp;{
+&nbsp;&nbsp;struct&nbsp;Node&nbsp;*next;
+&nbsp;&nbsp;struct&nbsp;Node&nbsp;*prev;
+&nbsp;&nbsp;int&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;hash;
+};
+
+int&nbsp;Hash(char&nbsp;*&nbsp;str);
+</PRE>
+
+<P><PRE>(*&nbsp;h2d_type.def&nbsp;&nbsp;Sep&nbsp;20&nbsp;&nbsp;2:51:7&nbsp;&nbsp;1996&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;...
+DEFINITION&nbsp;MODULE&nbsp;[&quot;C&quot;]&nbsp;h2d_type;
+
+IMPORT&nbsp;SYSTEM;
+&nbsp;&nbsp;&nbsp;&nbsp;...
+&lt;*-&nbsp;GENTYPEDEF&nbsp;*&gt;
+
+TYPE
+&nbsp;&nbsp;PtrNode&nbsp;=&nbsp;POINTER&nbsp;TO&nbsp;Node;
+
+&lt;*+&nbsp;GENTYPEDEF&nbsp;*&gt;
+
+&nbsp;&nbsp;Node&nbsp;=&nbsp;RECORD
+&nbsp;&nbsp;&nbsp;&nbsp;next:&nbsp;PtrNode;
+&nbsp;&nbsp;&nbsp;&nbsp;prev:&nbsp;PtrNode;
+&nbsp;&nbsp;&nbsp;&nbsp;hash:&nbsp;SYSTEM.int;
+&nbsp;&nbsp;END;
+
+&lt;*-&nbsp;GENTYPEDEF&nbsp;*&gt;
+
+&nbsp;&nbsp;PtrSChar&nbsp;=&nbsp;POINTER&nbsp;TO&nbsp;CHAR;
+
+PROCEDURE&nbsp;Hash&nbsp;(&nbsp;str:&nbsp;PtrSChar&nbsp;):&nbsp;SYSTEM.int;
+
+END&nbsp;h2d_type.
+</PRE>
+
+<P><PRE>/*&nbsp;h2d_type.h&nbsp;&nbsp;Sep&nbsp;20&nbsp;&nbsp;2:51:7&nbsp;&nbsp;1996&nbsp;*/
+&nbsp;&nbsp;&nbsp;&nbsp;...
+#include&nbsp;&quot;type.h&quot;
+
+#ifndef&nbsp;h2d_type_H_
+#define&nbsp;h2d_type_H_
+
+typedef&nbsp;struct&nbsp;Node&nbsp;*&nbsp;PtrNode;
+typedef&nbsp;signed&nbsp;char&nbsp;*&nbsp;PtrSChar;
+
+#endif&nbsp;&nbsp;/*&nbsp;h2d_type_H_&nbsp;*/
+</PRE>
+
+<P>
+<P><HR>
+<A NAME="0048">
+<A HREF="#0040" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0047" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0049" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Modifying translation rules</H2>
+
+<P><UL>
+<LI><A HREF="#0049" TARGET=body>Base types mapping</A>
+<LI><A HREF="#0051" TARGET=body>Pointer type function parameters</A>
+<LI><A HREF="#0053" TARGET=body>Preserving constant names</A>
+</UL>
+<P><HR>
+<A NAME="0049">
+<A HREF="#0048" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0048" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0050" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Base types mapping</H3>
+
+<P>The <A HREF="h2d007.html#0082" TARGET=body>CTYPE</A> and <A HREF="h2d007.html#0083" TARGET=body>M2TYPE</A> options in conjunction with the <TT><A HREF="h2d004.html#0038" TARGET=body>#variant directive</A></TT> provide complete control over mapping of C base types to Modula-2 types. 
+<P>The <A HREF="h2d007.html#0082" TARGET=body>CTYPE</A> option specifies sizes (in bytes) of C base types, and their default mapping to Modula-2: 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;-CTYPE&nbsp;=&nbsp;float&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;4,&nbsp;REAL</TT> <BR>
+<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.&nbsp;.&nbsp;.</TT> <BR>
+<TT>&nbsp;&nbsp;&nbsp;&nbsp;-CTYPE&nbsp;=&nbsp;unsigned&nbsp;short&nbsp;int&nbsp;=&nbsp;2,&nbsp;SYSTEM.CARD16</TT> 
+<P>The <A HREF="h2d007.html#0083" TARGET=body>M2TYPE</A> option specifies Modula-2 types supported by a particular compiler, with their sizes and families to which they belong: 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;-M2TYPE&nbsp;=&nbsp;CARDINAL&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;4,&nbsp;UNSIGNED</TT> <BR>
+<TT>&nbsp;&nbsp;&nbsp;&nbsp;-M2TYPE&nbsp;=&nbsp;CHAR&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;1,&nbsp;CHAR</TT> <BR>
+<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.&nbsp;.&nbsp;.</TT> <BR>
+<TT>&nbsp;&nbsp;&nbsp;&nbsp;-M2TYPE&nbsp;=&nbsp;SYSTEM.SET16&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;2,&nbsp;SET</TT> 
+<P>Finally, the <TT><A HREF="h2d004.html#0038" TARGET=body>#variant directive</A></TT> allows to explicitly specify a Modula-2 type for a particular object: 
+<P><FONT SIZE=2><TT>&nbsp;&nbsp;&nbsp;&nbsp;void&nbsp;f(unsigned&nbsp;short&nbsp;mask)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;f(mask&nbsp;:&nbsp;SYSTEM.SET16);</TT> <BR>
+<TT>&nbsp;&nbsp;&nbsp;&nbsp;#variant&nbsp;f(0)&nbsp;:&nbsp;SYSTEM.SET16</TT> </FONT> 
+<P><B>Note:</B> In order to keep original headers intact, <TT>#variant</TT> directives may be placed into the <A HREF="h2d006.html#0054" TARGET=body>project file</A> inside the corresponding <TT><A HREF="h2d006.html#0058" TARGET=body>!header directive</A></TT>. 
+<P>H2D checks type mappings for correctness using the following rules: 
+<UL>
+ 
+<LI>type sizes must match </LI>
+<LI>floating point C types may only be mapped to Modula-2 types defined as REAL by <A HREF="h2d007.html#0083" TARGET=body>M2TYPE</A> option. </LI>
+<LI>signed integer C types may be mapped to any Modula-2 type except REAL and UNSIGNED. </LI>
+<LI>unsigned integer C types may be mapped to any Modula-2 type except REAL and SIGNED. </LI>
+</UL>
+
+<P>One of the most advanced features of this mechanism is the ability to use Modula-2 set types for C objects. The C programming language, as well as C++, has no built-in set type. The common practice is to treat unsigned integer types as bit scales and to use bitwise logical operators to manipulate them. Since Modula-2 provides set types (and no bitwise operators), it would be more convenient to translate individual integer constants and types to set constants and types. 
+<P><UL>
+<LI><A HREF="#0050" TARGET=body>Example</A>
+</UL>
+<P><HR>
+<A NAME="0050">
+<A HREF="#0049" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0049" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0051" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H4>Example</H4>
+
+<P><PRE>struct&nbsp;s{
+&nbsp;&nbsp;unsigned&nbsp;int&nbsp;field;
+};
+typedef&nbsp;unsigned&nbsp;long&nbsp;BITSCALE;
+int&nbsp;variable;
+void&nbsp;long&nbsp;function(unsigned&nbsp;argument);
+char&nbsp;bitarray[10];
+#define&nbsp;constant&nbsp;0x0011
+
+#variant&nbsp;s.field&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;BITSET
+#variant&nbsp;BITSCALE&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;BITSET
+#variant&nbsp;variable&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;BITSET
+#variant&nbsp;function(0)&nbsp;:&nbsp;BITSET
+#variant&nbsp;bitarray[]&nbsp;&nbsp;:&nbsp;SYSTEM.SET8
+#variant&nbsp;constant&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;SYSTEM.SET16
+</PRE>
+
+<P><PRE>TYPE
+&nbsp;&nbsp;s&nbsp;=&nbsp;RECORD
+&nbsp;&nbsp;&nbsp;&nbsp;field:&nbsp;BITSET;
+&nbsp;&nbsp;END;
+
+&nbsp;&nbsp;BITSCALE&nbsp;=&nbsp;BITSET;
+
+VAR
+&nbsp;&nbsp;variable:&nbsp;BITSET;
+
+PROCEDURE&nbsp;function&nbsp;(&nbsp;argument:&nbsp;BITSET&nbsp;);
+
+VAR
+&nbsp;&nbsp;bitarray:&nbsp;ARRAY&nbsp;[0..9]&nbsp;OF&nbsp;SYSTEM.SET8;
+
+CONST
+&nbsp;&nbsp;constant&nbsp;=&nbsp;SYSTEM.SET16{0,&nbsp;4};
+</PRE>
+
+<P>
+<P><HR>
+<A NAME="0051">
+<A HREF="#0048" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0050" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0052" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Pointer type function parameters</H3>
+
+<P>In C, the actual semantics of a pointer type function parameter depends on that function and cannot be determined automatically. A function may interpret its parameter of type <TT>T*</TT> as either: 
+<UL>
+ 
+<LI>pointer to T (type defined as <TT>POINTER TO T</TT>) </LI>
+<LI>single value passed by reference (<TT>VAR T</TT>) </LI>
+<LI>array (<TT>ARRAY OF T</TT>) </LI>
+<LI>array passed by reference (<TT>VAR ARRAY OF T</TT>) </LI>
+</UL>
+
+<P>where the corresponding Modula-2 formal types are given in parenthesis. 
+<P>The <TT><A HREF="h2d004.html#0038" TARGET=body>#variant directive</A></TT> may be used to explicitly point out the semantics of each pointer type parameter. 
+<P><B>Note:</B> In order to keep original headers intact, <TT>#variant</TT> directives may be placed into the <A HREF="h2d006.html#0054" TARGET=body>project file</A> inside the corresponding <TT><A HREF="h2d006.html#0058" TARGET=body>!header directive</A></TT>. 
+<P><UL>
+<LI><A HREF="#0052" TARGET=body>Example</A>
+</UL>
+<P><HR>
+<A NAME="0052">
+<A HREF="#0051" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0051" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0053" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H4>Example</H4>
+
+<P><PRE>#variant&nbsp;function(0)&nbsp;:&nbsp;VAR
+#variant&nbsp;function(1)&nbsp;:&nbsp;ARRAY
+#variant&nbsp;function(2)&nbsp;:&nbsp;VAR&nbsp;ARRAY
+
+void&nbsp;function(int*,&nbsp;int*,&nbsp;int*,&nbsp;int*);
+</PRE>
+
+<P>is translated to: 
+<P><PRE>TYPE
+&nbsp;&nbsp;PtrSInt&nbsp;=&nbsp;POINTER&nbsp;TO&nbsp;SYSTEM.int;
+
+PROCEDURE&nbsp;function&nbsp;(&nbsp;VAR&nbsp;arg0:&nbsp;SYSTEM.int;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;arg1:&nbsp;ARRAY&nbsp;OF&nbsp;SYSTEM.int;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;arg2:&nbsp;ARRAY&nbsp;OF&nbsp;SYSTEM.int;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;arg3:&nbsp;PtrSInt&nbsp;);
+</PRE>
+
+<P><HR>
+<A NAME="0053">
+<A HREF="#0048" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0052" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="h2d006.html#0054" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Preserving constant names</H3>
+
+<P>By default, a <TT>#define</TT> directive introducing a constant is translated to a constant declaration: 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;#define&nbsp;ENOTEXIST&nbsp;10&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;CONST&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT> <BR>
+<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ENOTEXIST&nbsp;=&nbsp;10;</TT> 
+<P>This is the only way in case of a native code Modula-2 compiler, since such constants are substituted by a C preprocessor and do not appear in object files. But in case of a convertor to C, the original C headers will be used after conversion and it would be useful to refer to their names in the generated C text. Setting the <A HREF="h2d007.html#0075" TARGET=body>GENROVARS</A> option ON forces constants to be translated to read-only variables (<B>Note:</B> this is an XDS language extension). This option has no effect on generation for a native-code Modula-2 compiler. 
+<P>The <TT><A HREF="h2d004.html#0038" TARGET=body>#variant directive</A></TT> may be used to specify a type for a variable: 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;#define&nbsp;&nbsp;ENOTEXIST&nbsp;10&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR</TT> <BR>
+<TT>&nbsp;&nbsp;&nbsp;&nbsp;#variant&nbsp;ENOTEXIST&nbsp;:&nbsp;CARDINAL&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ENOTEXIST-:&nbsp;CARDINAL;</TT> 
+<P>
+</BODY>
+</HTML>

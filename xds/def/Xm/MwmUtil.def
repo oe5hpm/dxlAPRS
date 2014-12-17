@@ -1,0 +1,177 @@
+(* Xm/MwmUtil.def  Oct 15  20:27:35  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/MwmUtil.h using H2D v1.16. *)
+
+(* $RCSfile: MwmUtil.def,v $ $Revision: 5 $ $Date: 28.07.98 23:14 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *>
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+
+DEFINITION MODULE ["C"] MwmUtil;
+
+IMPORT SYSTEM, X;
+(* H2D:  Required IMPORT clause:
+IMPORT MwmUtil, X;
+*)
+
+(*
+ * (c) Copyright 1989-1994 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(*
+ * Motif Release 1.2.4
+ *)
+
+(*
+ * Contents of the _MWM_HINTS property.
+ *)
+
+TYPE
+  MotifWmHints = RECORD
+(*  These correspond to XmRInt resources. (VendorSE.c)  *)
+    flags      : BITSET;
+    functions  : BITSET;
+    decorations: BITSET;
+    input_mode : BITSET;
+    status     : BITSET;
+  END;
+
+  MwmHints = MotifWmHints;
+
+(*  bit definitions for MwmHints.flags  *)
+
+CONST
+  MWM_HINTS_FUNCTIONS = {0};
+  MWM_HINTS_DECORATIONS = {1};
+  MWM_HINTS_INPUT_MODE = {2};
+  MWM_HINTS_STATUS = {3};
+
+(*  bit definitions for MwmHints.functions  *)
+  MWM_FUNC_ALL = {0};
+  MWM_FUNC_RESIZE = {1};
+  MWM_FUNC_MOVE = {2};
+  MWM_FUNC_MINIMIZE = {3};
+  MWM_FUNC_MAXIMIZE = {4};
+  MWM_FUNC_CLOSE = {5};
+
+(*  bit definitions for MwmHints.decorations  *)
+  MWM_DECOR_ALL = {0};
+  MWM_DECOR_BORDER = {1};
+  MWM_DECOR_RESIZEH = {2};
+  MWM_DECOR_TITLE = {3};
+  MWM_DECOR_MENU = {4};
+  MWM_DECOR_MINIMIZE = {5};
+  MWM_DECOR_MAXIMIZE = {6};
+
+(*  values for MwmHints.input_mode  *)
+  MWM_INPUT_MODELESS = {};
+  MWM_INPUT_PRIMARY_APPLICATION_MODAL = {0};
+  MWM_INPUT_APPLICATION_MODAL = MWM_INPUT_PRIMARY_APPLICATION_MODAL;
+  MWM_INPUT_SYSTEM_MODAL = {1};
+  MWM_INPUT_FULL_APPLICATION_MODAL = {0,1};
+
+(*  bit definitions for MwmHints.status  *)
+  MWM_TEAROFF_WINDOW = 1;
+
+(*
+ * The following is for compatibility only. It use is deprecated.
+ *)
+(*
+ * Contents of the _MWM_INFO property.
+ *)
+
+TYPE
+  MotifWmInfo = RECORD
+    flags    : BITSET;
+    wm_window: X.Window;
+  END;
+
+  MwmInfo = MotifWmInfo;
+
+(*  bit definitions for MotifWmInfo .flags  *)
+
+CONST
+  MWM_INFO_STARTUP_STANDARD = {0};
+  MWM_INFO_STARTUP_CUSTOM = {1};
+
+(*
+ * Definitions for the _MWM_HINTS property.
+ *)
+
+TYPE
+  PropMotifWmHints = RECORD
+ (* 32-bit property items are stored as long on the client (whether
+  * that means 32 bits or 64).  XChangeProperty handles the conversion
+  * to the actual 32-bit quantities sent to the server.
+  *)
+    flags      : BITSET;
+    functions  : BITSET;
+    decorations: BITSET;
+    inputMode  : BITSET;
+    status     : BITSET;
+  END;
+
+  PropMwmHints = PropMotifWmHints;
+
+(*  number of elements of size 32 in _MWM_HINTS  *)
+
+CONST
+  PROP_MOTIF_WM_HINTS_ELEMENTS = {0,2};
+  PROP_MWM_HINTS_ELEMENTS = PROP_MOTIF_WM_HINTS_ELEMENTS;
+
+(*  atom name for _MWM_HINTS property  *)
+  _XA_MOTIF_WM_HINTS = '_MOTIF_WM_HINTS';
+  _XA_MWM_HINTS = _XA_MOTIF_WM_HINTS;
+
+(*
+ * Definitions for the _MWM_MESSAGES property.
+ *)
+  _XA_MOTIF_WM_MESSAGES = '_MOTIF_WM_MESSAGES';
+  _XA_MWM_MESSAGES = _XA_MOTIF_WM_MESSAGES;
+
+(*  atom that enables client frame offset messages  *)
+  _XA_MOTIF_WM_OFFSET = '_MOTIF_WM_OFFSET';
+
+(*
+ * Definitions for the _MWM_MENU property.
+ *)
+
+(*  atom name for _MWM_MENU property  *)
+  _XA_MOTIF_WM_MENU = '_MOTIF_WM_MENU';
+  _XA_MWM_MENU = _XA_MOTIF_WM_MENU;
+
+(*
+ * Definitions for the _MWM_INFO property.
+ *)
+
+TYPE
+  PropMotifWmInfo = RECORD
+    flags   : BITSET;
+    wmWindow: X.Window;
+  END;
+
+  PropMwmInfo = PropMotifWmInfo;
+
+(*  number of elements of size 32 in _MWM_INFO  *)
+
+CONST
+  PROP_MOTIF_WM_INFO_ELEMENTS = 2;
+  PROP_MWM_INFO_ELEMENTS = PROP_MOTIF_WM_INFO_ELEMENTS;
+
+(*  atom name for _MWM_INFO property  *)
+  _XA_MOTIF_WM_INFO = '_MOTIF_WM_INFO';
+  _XA_MWM_INFO = _XA_MOTIF_WM_INFO;
+
+(*
+ * Miscellaneous atom definitions
+ *)
+
+(*  atom for motif input bindings  *)
+  _XA_MOTIF_BINDINGS = '_MOTIF_BINDINGS';
+
+END MwmUtil.

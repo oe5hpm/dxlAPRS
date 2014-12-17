@@ -1,0 +1,43 @@
+(* Copyright (c) xTech 1997.  All Rights Reserved *)
+
+(* $RCSfile: wait.def,v $ $Revision: 1.1.1.1 $ $Date: 1997/10/20 19:32:35 $ *)
+
+<*+ CSTDLIB  *>
+<*+ NOHEADER *>
+<*+ M2EXTENSIONS *>
+
+DEFINITION MODULE [2] wait;
+
+FROM types IMPORT pid_t;
+FROM SYSTEM IMPORT BOOL32;
+
+<* IF __GEN_C__ THEN *>
+VAR
+  WNOHANG	-: INTEGER;
+  WUNTRACED	-: INTEGER;
+
+  PROCEDURE WEXITSTATUS (status: INTEGER): INTEGER;
+  PROCEDURE WTERMSIG    (status: INTEGER): INTEGER;
+  PROCEDURE WIFEXITED   (status: INTEGER): BOOL32;
+  PROCEDURE WIFSIGNELED (status: INTEGER): BOOL32;
+  PROCEDURE WIFSTOPPED  (status: INTEGER): BOOL32;
+<* ELSE *>
+CONST
+  (* Bits in the third argument to `waitpid'. *)
+  WNOHANG	= 1;	(* Don't block waiting. *)
+  WUNTRACED	= 2;	(* Report status of stopped children. *)
+
+  PROCEDURE / WEXITSTATUS * (status: INTEGER): INTEGER;
+  PROCEDURE / WTERMSIG    * (status: INTEGER): INTEGER;
+  PROCEDURE / WIFEXITED   * (status: INTEGER): BOOLEAN;
+  PROCEDURE / WIFSIGNELED * (status: INTEGER): BOOLEAN;
+  PROCEDURE / WIFSTOPPED  * (status: INTEGER): BOOLEAN;
+<* END *>
+
+CONST
+  WSTOPSIG = WEXITSTATUS;
+
+PROCEDURE wait (VAR statloc: INTEGER): pid_t;
+PROCEDURE waitpid (pid: pid_t; VAR statloc: INTEGER; option: INTEGER): pid_t;
+
+END wait.

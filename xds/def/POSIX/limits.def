@@ -1,0 +1,137 @@
+(* Copyright (c) xTech 1993,95,97.  All Rights Reserved *)
+
+(* $RCSfile: limits.def,v $ $Revision: 1.1.1.1 $ $Date: 1997/10/20 19:32:35 $ *)
+
+<*+ CSTDLIB  *>
+<*+ NOHEADER*>
+<*+ M2EXTENSIONS*>
+
+DEFINITION MODULE [2] limits;
+
+FROM SYSTEM IMPORT INT32, CARD32;
+
+<* IF __GEN_C__ THEN *>
+
+VAR
+  (* the following constants are declared as read-only variables *)
+  (* to improve portability. *)
+
+  CHAR_BIT     -: INTEGER;
+
+  UCHAR_MAX    -: CARDINAL;
+  USHRT_MAX    -: CARDINAL;
+  UINT_MAX     -: CARDINAL;
+  ULONG_MAX    -: CARD32;
+
+  CHAR_MAX     -: INTEGER;
+  SCHAR_MAX    -: INTEGER;
+  SHRT_MAX     -: INTEGER;
+  INT_MAX      -: INTEGER;
+  LONG_MAX     -: INT32;
+
+  CHAR_MIN     -: INTEGER;
+  SCHAR_MIN    -: INTEGER;
+  SHRT_MIN     -: INTEGER;
+  INT_MIN      -: INTEGER;
+  LONG_MIN     -: INT32;
+
+  ARG_MAX	-: INTEGER;
+  CHILD_MAX	-: INTEGER;
+  LINK_MAX	-: INTEGER;
+  MAX_CANON	-: INTEGER;
+  MAX_INPUT	-: INTEGER;
+  NAME_MAX	-: INTEGER;
+  NGROUPS_MAX	-: INTEGER;
+  OPEN_MAX	-: INTEGER;
+  PATH_MAX	-: INTEGER;
+  PIPE_MAX	-: INTEGER;
+  SSIZE_MAX	-: INTEGER;
+  STREAM_MAX	-: INTEGER;
+  TZNAME_MAX	-: INTEGER;
+
+  _POSIX_ARG_MAX	-: INTEGER;
+  _POSIX_CHILD_MAX	-: INTEGER;
+  _POSIX_LINK_MAX	-: INTEGER;
+  _POSIX_MAX_CANON	-: INTEGER;
+  _POSIX_MAX_INPUT	-: INTEGER;
+  _POSIX_NAME_MAX	-: INTEGER;
+  _POSIX_NGROUPS_MAX	-: INTEGER;
+  _POSIX_OPEN_MAX	-: INTEGER;
+  _POSIX_PATH_MAX	-: INTEGER;
+  _POSIX_PIPE_MAX	-: INTEGER;
+  _POSIX_SSIZE_MAX	-: INTEGER;
+  _POSIX_STREAM_MAX	-: INTEGER;
+  _POSIX_TZNAME_MAX	-: INTEGER;
+
+<* ELSIF __GEN_X86__ THEN *> (* LiNUX i386 architecture native compiler *)
+CONST
+  CHAR_BIT     = 8;
+
+  UCHAR_MAX    = 255;
+  USHRT_MAX    = 10000H;
+  ULONG_MAX    = 80000000H;
+  UINT_MAX     = ULONG_MAX;
+
+  CHAR_MAX     = 255; (* depends on whether char is signed or not *)
+  SCHAR_MAX    = 127;
+  SHRT_MAX     = 7FFFH;
+  LONG_MAX     = 7FFFFFFFH;
+  INT_MAX      = LONG_MAX;
+
+  CHAR_MIN     = 0;
+  SCHAR_MIN    = - SCHAR_MAX -1;
+  SHRT_MIN     = - SHRT_MAX -1;
+  INT_MIN      = - LONG_MAX -1;
+  LONG_MIN     = - LONG_MAX -1;
+
+  (* These are the standard-mandated minimum values. *)
+
+  (* Maximum length of arguments to `execve', including environment. *)
+  _POSIX_ARG_MAX = 4096;
+  (* Maximum simultaneous processes per real user ID. *)
+  _POSIX_CHILD_MAX = 6;
+  (* Maximum link count of a file. *)
+  _POSIX_LINK_MAX = 8;
+  (* Number of bytes in a terminal canonical input queue. *)
+  _POSIX_MAX_CANON = 255;
+  (* Number of bytes for which space will be available in a
+     terminal input queue. *)
+  _POSIX_MAX_INPUT = 255;
+  (* Number of bytes in a filename. *)
+  _POSIX_NAME_MAX = 14;
+  (* Number of simultaneous supplementary group IDs per process. *)
+  _POSIX_NGROUPS_MAX = 0;
+  (* Number of files one process can have open at once. *)
+  _POSIX_OPEN_MAX = 16;
+  (* Number of bytes in a pathname. *)
+  _POSIX_PATH_MAX = 255;
+  (* Number of bytes than can be written atomically to a pipe. *)
+  _POSIX_PIPE_MAX = 512;
+  (* Largest value of a `ssize_t'. *)
+  _POSIX_SSIZE_MAX = 32676;
+  (* Number of streams a process can have open at once. *)
+  _POSIX_STREAM_MAX = 8;
+  (* Number of bytes in `tzname'. *)
+  _POSIX_TZNAME_MAX = 3;
+
+  (* Get the implementation-specific values for the above. *)
+  ARG_MAX	= 131072;	(* # bytes of args + environ for exec() *)
+  CHILD_MAX	= 999;		(* no limit :-) *)
+  LINK_MAX	= 127;		(* # links a file may have *)
+  MAX_CANON	= 255;		(* size of the canonical input queue *)
+  MAX_INPUT	= 255;		(* size of the type-ahead buffer *)
+  NAME_MAX	= 255;		(* # chars in a file name *)
+  NGROUPS_MAX	= 32;		(* supplemental group IDs are available *)
+  OPEN_MAX	= 256;		(* # open files a process may have *)
+  PATH_MAX	= 1024;		(* # chars in a path name *)
+  PIPE_MAX	= 4096;		(* # bytes in atomic write to a pipe *)
+  SSIZE_MAX	= INT_MAX;
+  STREAM_MAX	= OPEN_MAX;
+  TZNAME_MAX	= 50;
+
+<* ELSE *>
+        (*** not implemented yet***)
+<* END *>
+
+
+END limits.

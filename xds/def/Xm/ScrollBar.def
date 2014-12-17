@@ -1,0 +1,83 @@
+(* Xm/ScrollBar.def  Oct 15  19:21:21  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/ScrollBar.h using H2D v1.16 *)
+
+(* $RCSfile: ScrollBar.def,v $ $Revision: 4 $ $Date: 28.07.98 23:14 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+
+DEFINITION MODULE ["C"] ScrollBar;
+
+IMPORT SYSTEM, Xt:=Intrinsic;
+(* H2D:  Required IMPORT clause: 
+IMPORT ScrollBar, Intrinsic;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(*
+ * Motif Release 1.2 
+ *)
+
+(*   ScrollBar Widget   *)
+
+VAR 
+  xmScrollBarWidgetClass: Xt.WidgetClass;
+
+TYPE 
+  _XmScrollBarClassRec = RECORD
+    (* Declaration without definition *)
+  END;
+
+  XmScrollBarWidgetClass = POINTER TO _XmScrollBarClassRec;
+
+  _XmScrollBarRec = RECORD
+    (* Declaration without definition *)
+  END;
+
+  XmScrollBarWidget = POINTER TO _XmScrollBarRec;
+
+(*  ifndef for Fast Subclassing   *)
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: this procedure corresponds to a macro. *)
+PROCEDURE XmIsScrollBar ( w: Xt.Widget ): Xt.Boolean;
+
+<* ELSE *>
+
+PROCEDURE  / XmIsScrollBar ( w: Xt.Widget ): Xt.Boolean;
+
+<* END *>
+
+(********    Public Function Declarations    ********)
+
+PROCEDURE XmCreateScrollBar ( parent: Xt.Widget;
+                              name: ARRAY OF CHAR;
+                              arglist: Xt.ArgList;
+                              argcount: Xt.Cardinal ): Xt.Widget;
+
+PROCEDURE XmScrollBarGetValues ( w: Xt.Widget;
+                                 VAR value: SYSTEM.int;
+                                 VAR slider_size: SYSTEM.int;
+                                 VAR increment: SYSTEM.int;
+                                 VAR page_increment: SYSTEM.int );
+
+PROCEDURE XmScrollBarSetValues ( w: Xt.Widget;
+                                 value: SYSTEM.int;
+                                 slider_size: SYSTEM.int;
+                                 increment: SYSTEM.int;
+                                 page_increment: SYSTEM.int;
+                                 notify: SYSTEM.int );
+
+(********    End Public Function Declarations    ********)
+
+END ScrollBar.

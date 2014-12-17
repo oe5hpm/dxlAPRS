@@ -1,0 +1,155 @@
+(* Copyright (c) xTech 1997.  All Rights Reserved *)
+
+(* $RCSfile: unistd.def,v $ $Revision: 1.1.1.1 $ $Date: 1997/10/20 19:32:35 $ *)
+
+<*+ CSTDLIB  *>
+<*+ NOHEADER*>
+<*+ M2EXTENSIONS *>
+
+DEFINITION MODULE [2] unistd;
+
+FROM SYSTEM IMPORT ADDRESS, BYTE, INT32, BOOL32;
+FROM xmRTS IMPORT X2C_pCHAR;
+FROM types IMPORT pid_t, gid_t, uid_t, off_t, size_t;
+
+<* IF __GEN_C__ THEN *>
+VAR
+  F_OK		-: INTEGER;
+  R_OK		-: INTEGER;
+  SEEK_CUR	-: INTEGER;
+  SEEK_END	-: INTEGER;
+  SEEK_SET	-: INTEGER;
+  STDERR_FILENO	-: INTEGER;
+  STDIN_FILENO	-: INTEGER;
+  STDOUT_FILENO	-: INTEGER;
+  W_OK		-: INTEGER;
+  X_OK		-: INTEGER;
+
+  _PC_CHOWN_RESTRICTED	  -: INTEGER;
+  _PC_MAX_CANNON	  -: INTEGER;
+  _PC_MAX_INPUT		  -: INTEGER;
+  _PC_NAME_MAX		  -: INTEGER;
+  _PC_NO_TRUNC		  -: INTEGER;
+  _PC_PATH_MAX		  -: INTEGER;
+  _PC_PIPE_BUF		  -: INTEGER;
+  _PC_VDISABLE		  -: INTEGER;
+  _POSIX_CHOWN_RESTRICTED -: INTEGER;
+  _POSIX_JOB_CONTROL	  -: INTEGER;
+  _POSIX_NO_TRUNC	  -: INTEGER;
+  _POSIX_SAVED_IDS	  -: INTEGER;
+  _POSIX_VDISABLE	  -: INTEGER;
+  _POSIX_VERSION	  -: INTEGER;
+
+  _SC_ARG_MAX	  -: INTEGER;
+  _SC_CHILD_MAX	  -: INTEGER;
+  _SC_CLK_TCK	  -: INTEGER;
+  _SC_JOB_CONTROL -: INTEGER;
+  _SC_NGROUPS_MAX -: INTEGER;
+  _SC_OPEN_MAX	  -: INTEGER;
+  _SC_SAVED_IDS	  -: INTEGER;
+  _SC_STREAM_MAX  -: INTEGER;
+  _SC_TZNAME_MAX  -: INTEGER;
+  _SC_VERSION	  -: INTEGER;
+<* ELSE *>
+CONST	(* Constants from LiNUX *)
+  (* POSIX Standard approved as IEEE Std 1003.1b as of September 15, 1993. *)
+  _POSIX_VERSION = 199309;
+
+  _POSIX_CHOWN_RESTRICTED = 1;	(* only root can do a chown (I think..) *)
+  _POSIX_NO_TRUNC = 1;		(* no pathname truncation (but see in kernel)*)
+  _POSIX_VDISABLE = 0C;		(* character to disable things like ^C *)
+  _POSIX_JOB_CONTROL = 1;
+  _POSIX_SAVED_IDS = 1;		(* Implemented, for whatever good it is *)
+
+  (* Standard file descriptors. *)
+  STDIN_FILENO = 0;	(* Standard input. *)
+  STDOUT_FILENO = 1;	(* Standard output. *)
+  STDERR_FILENO = 2;	(* Standard error output. *)
+
+  (* Values for the second argument to access.
+   These may be OR'd together.  *)
+  R_OK = 4;	(* Test for read permission.  *)
+  W_OK = 2;	(* Test for write permission. *)
+  X_OK = 1;	(* Test for execute permission. *)
+  F_OK = 0;	(* Test for existence. *)
+
+  (* Values for the WHENCE argument to lseek. *)
+  SEEK_SET = 0;	(* Seek from beginning of file. *)
+  SEEK_CUR = 1;	(* Seek from current position. *)
+  SEEK_END = 2;	(* Seek from end of file. *)
+
+  (* Values for the NAME argument to `pathconf' and `fpathconf'. *)
+  _PC_MAX_CANON		= 1;
+  _PC_MAX_INPUT		= 2;
+  _PC_NAME_MAX		= 3;
+  _PC_PATH_MAX		= 4;
+  _PC_PIPE_BUF		= 5;
+  _PC_CHOWN_RESTRICTED	= 6;
+  _PC_NO_TRUNC		= 7;
+  _PC_VDISABLE		= 8;
+
+  (* Values for the argument to `sysconf'. *)
+  _SC_ARG_MAX		= 0;
+  _SC_CHILD_MAX		= 1;
+  _SC_CLK_TCK		= 2;
+  _SC_NGROUPS_MAX	= 3;
+  _SC_OPEN_MAX		= 4;
+  _SC_STREAM_MAX	= 5;
+  _SC_TZNAME_MAX	= 6;
+  _SC_JOB_CONTROL	= 7;
+  _SC_SAVED_IDS		= 8;
+  _SC_VERSION		= 9;
+<* END *>
+
+<* IF __GEN_C__ THEN *><*- GENTYPEDEF *><* END *>
+TYPE
+  argv_t = ARRAY [0..800000H] OF X2C_pCHAR;
+  pipe_t = ARRAY [0..1] OF INTEGER;
+
+PROCEDURE _exit (status: INTEGER);
+PROCEDURE access (path: ARRAY OF CHAR; amode: INTEGER): INTEGER;
+PROCEDURE alarm (seconds: CARDINAL): CARDINAL;
+PROCEDURE chdir (path: ARRAY OF CHAR): INTEGER;
+PROCEDURE close (fildes: INTEGER): INTEGER;
+PROCEDURE dup (fildes: INTEGER): INTEGER;
+PROCEDURE dup2 (fildes, fildes2: INTEGER): INTEGER;
+PROCEDURE execl (path, arg: ARRAY OF CHAR; SEQ args: BYTE): INTEGER;
+PROCEDURE execle (path, arg: ARRAY OF CHAR; SEQ args: BYTE): INTEGER;
+PROCEDURE execlp (path, arg: ARRAY OF CHAR; SEQ args: BYTE): INTEGER;
+PROCEDURE execv (path: ARRAY OF CHAR; argv: argv_t; SEQ args: BYTE): INTEGER;
+PROCEDURE execve (path: ARRAY OF CHAR; argv, envp: argv_t): INTEGER;
+PROCEDURE execvp (path: ARRAY OF CHAR; argv: argv_t): INTEGER;
+PROCEDURE fork (): pid_t;
+PROCEDURE fpathconf (fildes, name: INTEGER): INT32;
+PROCEDURE getcwd (VAR buf: ARRAY OF CHAR; size: size_t): ADDRESS;
+PROCEDURE getegid (): gid_t;
+PROCEDURE geteuid (): uid_t;
+PROCEDURE getgid (): gid_t;
+PROCEDURE getuid (): uid_t;
+PROCEDURE getgroups (gidsetsize: INTEGER; grouplist: ARRAY OF gid_t): INTEGER;
+PROCEDURE getlogin (): X2C_pCHAR;
+PROCEDURE getpid (): pid_t;
+PROCEDURE getppid (): pid_t;
+PROCEDURE isatty (fildes: INTEGER): BOOL32;
+PROCEDURE link (existing, new: ARRAY OF CHAR): INTEGER;
+PROCEDURE lseek (fildes: INTEGER; offset: off_t; whence: INTEGER): off_t;
+PROCEDURE pathconf (path: ARRAY OF CHAR; name: INTEGER): INT32;
+PROCEDURE pause (): INTEGER;
+PROCEDURE pipe (VAR fildes: pipe_t): INTEGER;
+PROCEDURE read (fildes: INTEGER; buf: ADDRESS; nbyte: CARDINAL): INTEGER;
+PROCEDURE rmdir (path: ARRAY OF CHAR): INTEGER;
+PROCEDURE setgid (gid: gid_t): INTEGER;
+PROCEDURE setpgid (pid, pgid: pid_t): INTEGER;
+PROCEDURE setsid (): pid_t;
+PROCEDURE setuid (uid: uid_t): INTEGER;
+PROCEDURE sleep (seconds: CARDINAL): CARDINAL;
+PROCEDURE sysconf (name: INTEGER): INT32;
+PROCEDURE tcgetpgrp (fildes: INTEGER): pid_t;
+PROCEDURE tcsetpgrp (fildes: INTEGER; pgrpid: pid_t): INTEGER;
+PROCEDURE ttyname (fildes: INTEGER): X2C_pCHAR;
+PROCEDURE unlink (path: ARRAY OF CHAR): INTEGER;
+PROCEDURE write (fildes: INTEGER; buf: ADDRESS; nbyte: CARDINAL): INTEGER;
+PROCEDURE cuserid (VAR s: ARRAY OF CHAR): X2C_pCHAR;
+
+
+END unistd.

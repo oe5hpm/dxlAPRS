@@ -1,0 +1,29 @@
+(* Copyright (c) 1994 xTech Ltd, Russia. All Rights Reserved. *)
+(* Program Environment *)
+DEFINITION MODULE ProgEnv; (* Ned 12-Feb-94. *)
+
+PROCEDURE ArgNumber(): CARDINAL;
+(* Returns number of argument (0 if no arguments). *)
+
+PROCEDURE GetArg(n: CARDINAL; VAR arg: ARRAY OF CHAR);
+(* Copies n-th argument to "arg", or empty string
+  if n>=ArgNumber().
+*)
+
+PROCEDURE ArgLength(n: CARDINAL): CARDINAL;
+(* Returns lenght of n-th argument (0 if n>=ArgNumber()). *)
+
+PROCEDURE ProgramName(VAR name: ARRAY OF CHAR);
+(* Copies a program name to "name". *)
+
+PROCEDURE ProgramNameLength(): CARDINAL;
+(* Returns length of program name. *)
+
+PROCEDURE String(name: ARRAY OF CHAR;
+              VAR str: ARRAY OF CHAR);
+(* Copies a value of environment variable "name" to "str". *)
+
+PROCEDURE StringLength(name: ARRAY OF CHAR): CARDINAL;
+(* Returns length of environment variable "name". *)
+
+END ProgEnv.

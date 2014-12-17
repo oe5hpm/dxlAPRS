@@ -1,0 +1,22 @@
+(* Copyright (c) XDS Ltd 1996,99. All Rights Reserved. *)
+
+<*+ M2EXTENSIONS *>
+
+DEFINITION MODULE LocalHeap;
+
+IMPORT SYSTEM;
+
+TYPE
+  heapID;
+
+PROCEDURE Create (VAR h: heapID);
+
+PROCEDURE Destroy (h :heapID);
+
+PROCEDURE ALLOCATE (h :heapID; VAR p: SYSTEM.ADDRESS; n: INTEGER);
+
+PROCEDURE DEALLOCATE (h :heapID; VAR p: SYSTEM.ADDRESS; n: INTEGER);
+
+PROCEDURE DEALLOCATE_ALL (h :heapID);
+
+END LocalHeap.

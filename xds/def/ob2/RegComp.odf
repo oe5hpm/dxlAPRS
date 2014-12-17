@@ -1,0 +1,42 @@
+(** Copyright (c) 1993 xTech Ltd, Russia. All Rights Reserved. *)
+(** Utility library: regular expressions *)
+DEFINITION RegComp;
+
+TYPE
+  Expr*     = POINTER TO ExprDesc;
+  char_set* = POINTER TO ARRAY [0..7] OF SET;
+  RESULT*   = RECORD 
+  END;
+  ExprDesc* = RECORD 
+  END;
+
+PROCEDURE Compile*(expr: ARRAY OF CHAR; VAR reg: Expr; VAR res: LONGINT);
+(** res <= 0 -- error in position ABS(res);
+    res >  0 -- done.
+*)
+
+PROCEDURE Const*(re: Expr): BOOLEAN;
+(** Returns TRUE, if expression does not contain wildcards *)
+
+PROCEDURE Match*(re: Expr; s: ARRAY OF CHAR; pos: LONGINT): BOOLEAN;
+(** Returns TRUE, iff expression matches with string "s" starting
+  from position "pos".
+*)
+
+PROCEDURE Substitute*(re: Expr; s,m: ARRAY OF CHAR; VAR d: ARRAY OF CHAR);
+(** Substitutes  the substrings of "s" matched with "re" instead
+  of "$digit" in the "m" and copies the resulting string into "d".
+*)
+
+PROCEDURE Len*(re: Expr; n: INTEGER): LONGINT;
+(** Returns the length of  the  substring matched to "$n"
+  at last call of match procedure with parameter "re".
+*)
+
+PROCEDURE Pos*(re: Expr; n: INTEGER): LONGINT;
+(** Returns the position of the  beginning  of  the  substring
+  matched to "$n" at last call of match procedure with
+  parameter "re".
+*)
+
+END RegComp.

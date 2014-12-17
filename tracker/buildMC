@@ -1,0 +1,5 @@
+#!/bin/bash
+gavrasm -S $1.asm
+if test -e $1.hex ; then
+hex2bin $1.hex
+fi

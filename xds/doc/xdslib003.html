@@ -1,0 +1,1594 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 4.01 Transitional//EN">
+<HTML>
+<HEAD>
+<TITLE>Utility libraries</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<P><HR>
+<A NAME="0012">
+<A HREF="xdslib000.html#root" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="xdslib002.html#0011" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0013" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H1>Utility libraries</H1>
+
+<P>Starting from XDS v2.0 the general purpose modules used in XDS compilers and utilities, which are portable between all versions of XDS on all platforms, are included in the utility library. If you use the ISO library only, your program may be portable to any ISO compliant Modula-2 compiler. However, there are some essential features which are omitted in the ISO library. The utility library covers some of those omissions. 
+<P><B>Note:</B> Some library modules are written in Oberon-2, others in Modula-2. In general, any library can be used from both languages. However, do not forget that Oberon modules use implicit memory deallocation scheme and require garbage collection. Refer to the <I>Multilangauge programming</I> Chapter of the <I>XDS User&rsquo;s Guide</I>. 
+<P>The following modules are provided in the utility library (implementation language is pointed out in parentheses): 
+<P><TABLE CELLSPACING=0>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT><A HREF="#0013" TARGET=body>FileName</A></TT> </TD>
+<TD  STYLE="padding:0px 3px;">(M2) </TD>
+<TD  STYLE="padding:0px 3px;">Creating and parsing file names </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT><A HREF="#0022" TARGET=body>FileSys</A></TT> </TD>
+<TD  STYLE="padding:0px 3px;">(M2) </TD>
+<TD  STYLE="padding:0px 3px;">Common file operations </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT><A HREF="#0027" TARGET=body>FormOut</A></TT> </TD>
+<TD  STYLE="padding:0px 3px;">(M2) </TD>
+<TD  STYLE="padding:0px 3px;">Generic module for formatting output </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT><A HREF="#0034" TARGET=body>FormStr</A></TT> </TD>
+<TD  STYLE="padding:0px 3px;">(M2) </TD>
+<TD  STYLE="padding:0px 3px;">Formatting output to strings </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT><A HREF="#0039" TARGET=body>Printf</A></TT> </TD>
+<TD  STYLE="padding:0px 3px;">(M2) </TD>
+<TD  STYLE="padding:0px 3px;">C style formatting output precedures </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT><A HREF="#0044" TARGET=body>ProgEnv</A></TT> </TD>
+<TD  STYLE="padding:0px 3px;">(M2) </TD>
+<TD  STYLE="padding:0px 3px;">Access to program environment </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT><A HREF="#0053" TARGET=body>TimeConv</A></TT> </TD>
+<TD  STYLE="padding:0px 3px;">(M2) </TD>
+<TD  STYLE="padding:0px 3px;">Operations on time and date values </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT><A HREF="#0068" TARGET=body>DStrings</A></TT> </TD>
+<TD  STYLE="padding:0px 3px;">(O2) </TD>
+<TD  STYLE="padding:0px 3px;">Dynamic strings </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT><A HREF="#0072" TARGET=body>FilePath</A></TT> </TD>
+<TD  STYLE="padding:0px 3px;">(O2) </TD>
+<TD  STYLE="padding:0px 3px;">File search operations </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT><A HREF="#0076" TARGET=body>RegComp</A></TT> </TD>
+<TD  STYLE="padding:0px 3px;">(O2) </TD>
+<TD  STYLE="padding:0px 3px;">Regular expressions </TD>
+</TR>
+</TABLE>
+<P><UL>
+<LI><A HREF="#0013" TARGET=body>FileName module</A>
+<LI><A HREF="#0022" TARGET=body>FileSys module</A>
+<LI><A HREF="#0027" TARGET=body>FormOut module</A>
+<LI><A HREF="#0034" TARGET=body>FormStr module</A>
+<LI><A HREF="#0039" TARGET=body>Printf module</A>
+<LI><A HREF="#0044" TARGET=body>ProgEnv module</A>
+<LI><A HREF="#0053" TARGET=body>TimeConv module</A>
+<LI><A HREF="#0068" TARGET=body>DStrings module</A>
+<LI><A HREF="#0072" TARGET=body>FilePath module</A>
+<LI><A HREF="#0076" TARGET=body>RegComp module</A>
+</UL>
+<P><HR>
+<A NAME="0013"><A NAME="Format">
+<A HREF="#0012" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0012" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0014" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H2>FileName module</H2>
+
+<P>The module provides operations for parsing and constructing file names. A file name consists of three parts: the directory, name and extension. 
+<P>All the procedures that construct a string value (<TT>Get</TT>, <TT>GetDir</TT>, <TT>GetName</TT>, <TT>GetExt</TT>, <TT>Convert</TT>, <TT>Create</TT>), have the common behaviour: if the length of a constructed string value exceeds capacity of a variable parameter, a truncated value is assigned. If the length of a constructed string value is less than the capacity of a variable parameter, a string terminator is appended. 
+<P><UL>
+<LI><A HREF="#0014" TARGET=body>Format - File name format record</A>
+<LI><A HREF="#0015" TARGET=body>GetFormat - Get file name format</A>
+<LI><A HREF="#0016" TARGET=body>Get* - Get file name parts</A>
+<LI><A HREF="#0017" TARGET=body>Convert - Convert String to File Name</A>
+<LI><A HREF="#0018" TARGET=body>ConvertExt - Convert File Name Extension</A>
+<LI><A HREF="#0019" TARGET=body>Length - Calculate File Name Length</A>
+<LI><A HREF="#0020" TARGET=body>Create - Create File Name</A>
+<LI><A HREF="#0021" TARGET=body>Example</A>
+</UL>
+<P><HR>
+<A NAME="0014"><A NAME="GetFormat">
+<A HREF="#0013" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0013" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0015" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>Format - File name format record</H3>
+ 
+<P><PRE>TYPE
+&nbsp;&nbsp;Format&nbsp;=&nbsp;RECORD
+&nbsp;&nbsp;&nbsp;&nbsp;ok:&nbsp;BOOLEAN;
+&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;directory&nbsp;position&nbsp;and&nbsp;length:&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;dirPos,&nbsp;dirLen&nbsp;:&nbsp;CARDINAL;
+&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;name&nbsp;position&nbsp;and&nbsp;length:&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;namePos,nameLen:&nbsp;CARDINAL;
+&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;extension&nbsp;position&nbsp;and&nbsp;length:&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;extPos,&nbsp;extLen&nbsp;:&nbsp;CARDINAL;
+&nbsp;&nbsp;END;
+</PRE>
+
+<P>Module <TT><A HREF="#0013" TARGET=body>FileName</A></TT>
+<P><HR>
+<A NAME="0015"><A NAME="Get*">
+<A HREF="#0013" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0014" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0016" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>GetFormat - Get file name format</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;GetFormat(str:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;&nbsp;VAR&nbsp;f:&nbsp;Format);
+</PRE>
+
+<P>Module <TT><A HREF="#0013" TARGET=body>FileName</A></TT>
+<P>The <TT>GetFormat</TT> procedure writes the position and length of file name parts to a <TT><A HREF="#0014" TARGET=body>Format</A></TT> type record passed in <TT>f</TT>. If <TT>f.ok&nbsp;=&nbsp;FALSE</TT>, vaues of all other fields are undefined. 
+<P><HR>
+<A NAME="0016"><A NAME="Convert">
+<A HREF="#0013" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0015" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0017" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>Get* - Get file name parts</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;GetDir&nbsp;(fname:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;dir:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR);
+PROCEDURE&nbsp;GetName(fname:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;name:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR);
+PROCEDURE&nbsp;GetExt&nbsp;(fname:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;ext:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR);
+PROCEDURE&nbsp;Get(fname:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;VAR&nbsp;dir,name,ext:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR);
+</PRE>
+
+<P>Module <TT><A HREF="#0013" TARGET=body>FileName</A></TT>
+<P>These procedures return corresponding file name parts. 
+<P><HR>
+<A NAME="0017"><A NAME="ConvertExt">
+<A HREF="#0013" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0016" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0018" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>Convert - Convert String to File Name</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;Convert(str:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;fname:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR);
+</PRE>
+
+<P>Module <TT><A HREF="#0013" TARGET=body>FileName</A></TT>
+<P>Converts a string to a file name according to the conventions of the underlying file system. 
+<P><HR>
+<A NAME="0018"><A NAME="Length">
+<A HREF="#0013" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0017" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0019" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>ConvertExt - Convert File Name Extension</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;ConvertExt(VAR&nbsp;ext:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR);
+</PRE>
+
+<P>Module <TT><A HREF="#0013" TARGET=body>FileName</A></TT>
+<P>Converts an extension according to the conventions of the underlying file system. 
+<P><HR>
+<A NAME="0019"><A NAME="Create">
+<A HREF="#0013" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0018" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0020" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>Length - Calculate File Name Length</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;Length(dir,name,ext:&nbsp;CARDINAL):&nbsp;CARDINAL;
+</PRE>
+
+<P>Module <TT><A HREF="#0013" TARGET=body>FileName</A></TT>
+<P>Using the lengths of the directory, name and extension returns an estimated file name length which is greater than or equal to the length of the name generated by the <TT>Create</TT> procedure call. 
+<P><HR>
+<A NAME="0020">
+<A HREF="#0013" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0019" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0021" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Create - Create File Name</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;Create(dir,name,ext:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;fname:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR);
+</PRE>
+
+<P>Module <TT><A HREF="#0013" TARGET=body>FileName</A></TT>
+<P>Creates a file name from its parts. 
+<P><HR>
+<A NAME="0021">
+<A HREF="#0013" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0020" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0022" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Example</H3>
+
+<P>The following procedure can be used to change file name extension: 
+<P><PRE>PROCEDURE&nbsp;ChangeExt(VAR&nbsp;fname:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;newext:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR);
+&nbsp;&nbsp;CONST&nbsp;Len&nbsp;=&nbsp;64;
+&nbsp;&nbsp;VAR
+&nbsp;&nbsp;&nbsp;&nbsp;dir,name:&nbsp;ARRAY&nbsp;[0..Len-1]&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;f:&nbsp;FileName.Format;
+&nbsp;&nbsp;&nbsp;&nbsp;len:&nbsp;CARDINAL;
+BEGIN
+&nbsp;&nbsp;FileName.GetFormat(fname,f);
+&nbsp;&nbsp;IF&nbsp;NOT&nbsp;f.ok&nbsp;THEN&nbsp;Error(&quot;wrong&nbsp;format&quot;)
+&nbsp;&nbsp;ELSIF&nbsp;(f.dirLen&nbsp;&gt;&nbsp;Len)&nbsp;OR&nbsp;(f.nameLen&nbsp;&gt;&nbsp;Len)&nbsp;THEN
+&nbsp;&nbsp;&nbsp;&nbsp;Error(&quot;too&nbsp;long&nbsp;part&quot;);
+&nbsp;&nbsp;ELSE
+&nbsp;&nbsp;&nbsp;&nbsp;len:=FileName.Length(f.dirLen,f.nameLen,LENGTH(newext));
+&nbsp;&nbsp;&nbsp;&nbsp;IF&nbsp;len-1&nbsp;&gt;&nbsp;HIGH(fname)&nbsp;THEN
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Error(&quot;cannot&nbsp;create&nbsp;file&nbsp;name&quot;)
+&nbsp;&nbsp;&nbsp;&nbsp;ELSE
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FileName.Create(dir,name,newext,fname);
+&nbsp;&nbsp;&nbsp;&nbsp;END;
+&nbsp;&nbsp;END;
+END&nbsp;ChangeExt;
+</PRE>
+
+<P>When programming in Oberon-2 dynamic strings can be used to create strings of a required length: 
+<P><PRE>PROCEDURE&nbsp;ChangeExt(VAR&nbsp;fname:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;newext:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR);
+&nbsp;&nbsp;VAR
+&nbsp;&nbsp;&nbsp;&nbsp;dir,name:&nbsp;DStrings.String;
+&nbsp;&nbsp;&nbsp;&nbsp;f:&nbsp;FileName.Format;
+BEGIN
+&nbsp;&nbsp;FileName.GetFormat(fname,f);
+&nbsp;&nbsp;IF&nbsp;NOT&nbsp;f.ok&nbsp;THEN&nbsp;Error(&quot;wrong&nbsp;format&quot;)
+&nbsp;&nbsp;ELSE
+&nbsp;&nbsp;&nbsp;&nbsp;NEW(dir,f.dirLen+1);
+&nbsp;&nbsp;&nbsp;&nbsp;NEW(name,f.nameLen+1);
+&nbsp;&nbsp;&nbsp;&nbsp;...
+&nbsp;&nbsp;&nbsp;&nbsp;END;
+&nbsp;&nbsp;END;
+END&nbsp;ChangeExt;
+</PRE>
+
+<P><HR>
+<A NAME="0022"><A NAME="Exists">
+<A HREF="#0012" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0021" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0023" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H2>FileSys module</H2>
+
+<P>The module provides file common operations. 
+<P><UL>
+<LI><A HREF="#0023" TARGET=body>Exists - Is File Exist</A>
+<LI><A HREF="#0024" TARGET=body>ModifyTime - Return Modify Time</A>
+<LI><A HREF="#0025" TARGET=body>Rename - Rename File</A>
+<LI><A HREF="#0026" TARGET=body>Remove - Remove File</A>
+</UL>
+<P><HR>
+<A NAME="0023"><A NAME="ModifyTime">
+<A HREF="#0022" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0022" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0024" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>Exists - Is File Exist</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;Exists(fname:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR):&nbsp;BOOLEAN;
+</PRE>
+
+<P>Module <TT><A HREF="#0022" TARGET=body>FileSys</A></TT>
+<P>Returns <TT>TRUE</TT>, if file <TT>fname</TT> exists. 
+<P><HR>
+<A NAME="0024"><A NAME="Rename">
+<A HREF="#0022" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0023" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0025" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>ModifyTime - Return Modify Time</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;ModifyTime(fname:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;time:&nbsp;LONGCARD;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;exists:&nbsp;BOOLEAN);
+</PRE>
+
+<P>Module <TT><A HREF="#0022" TARGET=body>FileSys</A></TT>
+<P>Returns a file modification time; <TT>time</TT> is valid only if <TT>exists=TRUE</TT>. 
+<P><HR>
+<A NAME="0025"><A NAME="Remove">
+<A HREF="#0022" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0024" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0026" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>Rename - Rename File</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;Rename(fname,newname:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;done:&nbsp;BOOLEAN);
+</PRE>
+
+<P>Module <TT><A HREF="#0022" TARGET=body>FileSys</A></TT>
+<P>Renames the file <TT>fname</TT> to <TT>newname</TT>. 
+<P><HR>
+<A NAME="0026">
+<A HREF="#0022" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0025" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0027" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Remove - Remove File</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;Remove(fname:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;done:&nbsp;BOOLEAN);
+</PRE>
+
+<P>Module <TT><A HREF="#0022" TARGET=body>FileSys</A></TT>
+<P>Removes a file. 
+<P><HR>
+<A NAME="0027"><A NAME="writeProc">
+<A HREF="#0012" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0026" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0028" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H2>FormOut module</H2>
+
+<P>The <TT>FormOut</TT> module implements a generic formatted output procedure which outputs its arguments according to the format parameter. The syntax of a format string is similar to one used by the <TT>printf</TT> family of C functions; some useful extensions are provided as well. 
+<P><PRE>&nbsp;&nbsp;Format&nbsp;=&nbsp;{&nbsp;character&nbsp;|&nbsp;Specifier&nbsp;}.
+&nbsp;&nbsp;Specifier&nbsp;=&nbsp;&quot;%&quot;&nbsp;Modifier&nbsp;Width
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;&quot;.&quot;&nbsp;Precision&nbsp;[&nbsp;&quot;.&quot;&nbsp;Start&nbsp;]&nbsp;]&nbsp;Base.
+&nbsp;&nbsp;Modifier&nbsp;=&nbsp;&quot;+&quot;&nbsp;|&nbsp;&quot;-&quot;&nbsp;|&nbsp;&quot;|&quot;&nbsp;|&nbsp;&quot;0&quot;&nbsp;|&nbsp;&quot;$&quot;&nbsp;|&nbsp;&quot;#&quot;.
+&nbsp;&nbsp;Width&nbsp;=&nbsp;[&nbsp;unsigned&nbsp;number&nbsp;|&nbsp;&quot;*&quot;&nbsp;].
+&nbsp;&nbsp;Precision&nbsp;=&nbsp;[&nbsp;unsigned&nbsp;number&nbsp;|&nbsp;&quot;*&quot;&nbsp;].
+&nbsp;&nbsp;Start&nbsp;=&nbsp;[&nbsp;unsigned&nbsp;number&nbsp;|&nbsp;&quot;*&quot;&nbsp;].
+&nbsp;&nbsp;Base&nbsp;=&nbsp;&quot;c&quot;&nbsp;|&nbsp;&quot;d&quot;&nbsp;|&nbsp;&quot;i&quot;&nbsp;|&nbsp;&quot;u&quot;&nbsp;|&nbsp;&quot;o&quot;&nbsp;|&nbsp;&quot;x&quot;&nbsp;|&nbsp;&quot;X&quot;&nbsp;|
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&quot;e&quot;&nbsp;|&nbsp;&quot;f&quot;&nbsp;|&nbsp;&quot;g&quot;&nbsp;|
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&quot;s&quot;&nbsp;|&nbsp;&quot;{}&quot;
+</PRE>
+
+<P>The following pairs of symbols starting from the backslash are recognized in <TT>Format</TT> string (but <I>not</I> in strings printed using &quot;<TT>%s</TT>&quot; specifier): 
+<P><TABLE CELLSPACING=0>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid solid none;border-width: 0px 1px 1px 0px"><B>Input </B></TD>
+<TD  STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><B>Output </B></TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>\n</TT> </TD>
+<TD  STYLE="padding:0px 3px;">the line separator </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>\r</TT> </TD>
+<TD  STYLE="padding:0px 3px;">CR (15C) </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>\f</TT> </TD>
+<TD  STYLE="padding:0px 3px;">FF (14C) </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>\t</TT> </TD>
+<TD  STYLE="padding:0px 3px;">TAB (11C) </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>\\</TT> </TD>
+<TD  STYLE="padding:0px 3px;">backslash </TD>
+</TR>
+</TABLE>
+<P><TT>Base</TT> characters and their meanings are listed in the following table: 
+<P><TABLE CELLSPACING=0>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid solid none;border-width: 0px 1px 1px 0px"><B>Base </B></TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid solid none;border-width: 0px 1px 1px 0px"><B>Argument </B></TD>
+<TD  STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><B>Output format </B></TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>c</TT> </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">CHAR </TD>
+<TD  STYLE="padding:0px 3px;">single character </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>d</TT>, <TT>i</TT> </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">integer </TD>
+<TD  STYLE="padding:0px 3px;">signed decimal integer </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>u</TT> </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">integer </TD>
+<TD  STYLE="padding:0px 3px;">unsigned decimal integer </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>o</TT> </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">integer </TD>
+<TD  STYLE="padding:0px 3px;">unsigned octal integer </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>X</TT>, <TT>x</TT> </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">integer </TD>
+<TD  STYLE="padding:0px 3px;">unsigned hexadecimal integer </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>E</TT>, <TT>e</TT> </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">real </TD>
+<TD  STYLE="padding:0px 3px;">floating-point real </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>f</TT>, </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">real </TD>
+<TD  STYLE="padding:0px 3px;">fixed-point real </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>G</TT>, <TT>g</TT> </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">real </TD>
+<TD  STYLE="padding:0px 3px;">either as &quot;f&quot; or &quot;e&quot; </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>s</TT> </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">string </TD>
+<TD  STYLE="padding:0px 3px;">string </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>{}</TT> </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">BITSET </TD>
+<TD  STYLE="padding:0px 3px;">bitset, e.g. <TT>{1,3..5}</TT> </TD>
+</TR>
+</TABLE>
+<P><TT>Modifier</TT> meanings are as follows: 
+<P><TABLE CELLSPACING=0>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid solid none;border-width: 0px 1px 1px 0px"><B>Modifier </B></TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid solid none;border-width: 0px 1px 1px 0px"><B>Meaning </B></TD>
+<TD  STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><B>Default </B></TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>&quot;+&quot;</TT> </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">always print a sign for numbers </TD>
+<TD  STYLE="padding:0px 3px;">only for negative </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>&quot;-&quot;</TT> </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">justify the result to the left </TD>
+<TD  STYLE="padding:0px 3px;">right-justify </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>&quot;|&quot;</TT> </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">center the result </TD>
+<TD  STYLE="padding:0px 3px;">&nbsp;</TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>&quot;0&quot;</TT> </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">print leading zeroes for numbers </TD>
+<TD  STYLE="padding:0px 3px;">spaces </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>&quot;$&quot;</TT> </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">the same as &quot;0&quot; </TD>
+<TD  STYLE="padding:0px 3px;">&nbsp;</TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>&quot;#&quot;</TT> </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">print a base character (&quot;H&quot; or &quot;B&quot;) </TD>
+<TD  STYLE="padding:0px 3px;">no base character </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">for &quot;o&quot;, &quot;x&quot; and &quot;X&quot; bases only </TD>
+<TD  STYLE="padding:0px 3px;">&nbsp;</TD>
+</TR>
+</TABLE>
+<P><TT>Width</TT> is used to specify the minimum number of characters in the output value. Shorter values are padded with blanks or zeroes to the left and/or to the right, depending on whether a <TT>&quot;-&quot;</TT>, <TT>&quot;|&quot;</TT>, <TT>&quot;0&quot;</TT>, or <TT>&quot;$&quot;</TT> modifier is present. Specifying <TT>Width</TT> never causes longer values to be truncated; if it is not given or is less than the number of characters in the output value, all characters will be output. In some cases, <TT>Precision</TT> may be used for truncation. 
+<P>If <TT>Width</TT> is set to an asterisk (<TT>&quot;*&quot;</TT>), its actual value will be retrieved from the argument list. It has to be specified before the value being formatted. 
+<P><TT>Precision</TT> specifies the number of characters to output or the number of decimal places. Unlike <TT>Width</TT>, it may cause the output value to be truncated or rounded. 
+<P>If <TT>Precision</TT> is set to an asterisk (<TT>&quot;*&quot;</TT>), its actual value will be taken from the argument list. It has to be specified before the value being formatted, but after the actual value for <TT>Width</TT>, if the latter is also set to &quot;*&quot;. 
+<P><TT>Precision</TT> value is interpreted depending upon the <TT>Base</TT>, and specifies: 
+<DL>
+ 
+<DT><B>i d u o x X</B></DT>
+<DD> <BR>
+The minimum number of digits to output. Shorter values are padded on the left with blanks; longer values are not truncated. Default is 1. </DD>
+<DT><B>f F e E</B></DT>
+<DD> <BR>
+The number of positions after the decimal point. The last digit output is rounded. If <TT>Precision</TT> is 0, decimal point is not printed. Default is 6. </DD>
+<DT><B>g G</B></DT>
+<DD> <BR>
+The maximum number of significant digits to output. By default, all significant digits are printed. </DD>
+<DT><B>c</B></DT>
+<DD> <BR>
+The number of times the character is to output, default is 1. </DD>
+<DT><B>s</B></DT>
+<DD> <BR>
+The maximum number of characters to output. By default, characters are output until <TT>0C</TT> is reached. </DD>
+<DT><B>{}</B></DT>
+<DD> <BR>
+Has no effect. </DD>
+</DL>
+
+<P><TT>Start</TT> may be used with the <TT>&quot;s&quot;</TT> (string) base only and specifies an initial offset in the string being formatted. If <TT>Start</TT> is set to an asterisk (<TT>&quot;*&quot;</TT>), the actual value will be taken from the argument list. It has to be specified before the value being formatted, but after the actual values for <TT>Width</TT> and/or <TT>Precision</TT>, if either of them is also set to &quot;*&quot;. 
+<P><B>Notes:</B> 
+<UL>
+ 
+<LI>neither the compiler nor the library checks the correctness of actual arguments against format specifications. However, all specifiers, for which no arguments are passed, are ignored, while C <TT>printf</TT>-like functions may produce unpredictable results in such case. </LI>
+<LI>the ISO conversion library (See <A HREF="xdslib002.html#0007" TARGET=body>String conversions</A>) is used to convert numbers to strings, therefore the results may differ from produced by C functions. </LI>
+</UL>
+
+<P><UL>
+<LI><A HREF="#0028" TARGET=body>writeProc - Write Procedure Type</A>
+<LI><A HREF="#0029" TARGET=body>format - Generic Formatting Procedure</A>
+<LI><A HREF="#0030" TARGET=body>LineSeparator - Set Line Separator</A>
+<LI><A HREF="#0031" TARGET=body>TextSeparator - Set Line Separator</A>
+<LI><A HREF="#0032" TARGET=body>Examples</A>
+</UL>
+<P><HR>
+<A NAME="0028"><A NAME="format">
+<A HREF="#0027" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0027" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0029" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>writeProc - Write Procedure Type</H3>
+ 
+<P><PRE>TYPE
+&nbsp;&nbsp;writeProc&nbsp;=&nbsp;PROCEDURE(
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(*handle:*)&nbsp;SYSTEM.ADDRESS,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(*string:*)&nbsp;ARRAY&nbsp;OF&nbsp;CHAR,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(*length:*)&nbsp;INTEGER
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;);
+</PRE>
+
+<P>Module <TT><A HREF="#0027" TARGET=body>FormOut</A></TT>
+<P>A procedure of this type is passed to the <TT><A HREF="#0029" TARGET=body>format</A></TT> procedure which uses that procedure to perform output. 
+<P><HR>
+<A NAME="0029"><A NAME="LineSeparator">
+<A HREF="#0027" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0028" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0030" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>format - Generic Formatting Procedure</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;format(handle&nbsp;:&nbsp;SYSTEM.ADDRESS;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;write&nbsp;&nbsp;:&nbsp;writeProc;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fmt&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;linesep:&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;args&nbsp;&nbsp;&nbsp;:&nbsp;SYSTEM.ADDRESS;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;size&nbsp;&nbsp;&nbsp;:&nbsp;CARDINAL);
+</PRE>
+
+<P>Module <TT><A HREF="#0027" TARGET=body>FormOut</A></TT>
+<P>The <TT>format</TT> procedure forms a string and outputs it via the <TT>write</TT> procedure parameter. The <TT>handle</TT> parameter is passed to the procedure <TT>write</TT> and provides a useful method to pass any information between the caller and the <TT>write</TT> procedure (e.g. output channel or something like it). The (<TT>args</TT>, <TT>size</TT>) pair denotes the address and size of the parameter block. The <TT>linesep</TT> parameter determines the line separator character sequence corresponding to &quot;<TT>\n</TT>&quot;. Several standard values of the parameter are defined in the definition module: 
+<P><TABLE CELLSPACING=0>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>default</TT> </TD>
+<TD  STYLE="padding:0px 3px;">default line separator for binary files </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>text</TT> </TD>
+<TD  STYLE="padding:0px 3px;">default line separator for text files </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>crlf</TT> </TD>
+<TD  STYLE="padding:0px 3px;">CR LF character sequence </TD>
+</TR>
+</TABLE>
+<P>If the <TT>linesep</TT> is not equal to any of the values above, its value will be used as a line separator. 
+<P><HR>
+<A NAME="0030"><A NAME="TextSeparator">
+<A HREF="#0027" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0029" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0031" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>LineSeparator - Set Line Separator</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;LineSeparator(nl:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR);
+</PRE>
+
+<P>Module <TT><A HREF="#0027" TARGET=body>FormOut</A></TT>
+<P>Sets the default line separator for binary files. The correct value for the given platform is set in the module initializaion. 
+<P><HR>
+<A NAME="0031">
+<A HREF="#0027" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0030" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0032" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>TextSeparator - Set Line Separator</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;TextSeparator(nl:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR);
+</PRE>
+
+<P>Module <TT><A HREF="#0027" TARGET=body>FormOut</A></TT>
+<P>Sets the default line separator for text files. The correct value for the given platform is set in the module initializaion. 
+<P><HR>
+<A NAME="0032">
+<A HREF="#0027" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0031" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0033" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Examples</H3>
+
+<P>The following example shows the implementation of a procedure which produces a format output to an ISO channel. 
+<P><PRE>PROCEDURE&nbsp;ChanWrite(handle:&nbsp;SYSTEM.ADDRESS;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;str:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;len:&nbsp;INTEGER);
+&nbsp;&nbsp;VAR&nbsp;chan:&nbsp;IOChan.ChanId;&nbsp;pos:&nbsp;INTEGER;
+BEGIN
+&nbsp;&nbsp;chan:=SYSTEM.CAST(IOChan.ChanId,handle);
+&nbsp;&nbsp;pos:=0;
+&nbsp;&nbsp;WHILE&nbsp;len&nbsp;&gt;&nbsp;0&nbsp;DO
+&nbsp;&nbsp;&nbsp;&nbsp;IF&nbsp;str[pos]&nbsp;=&nbsp;ASCII.LF&nbsp;THEN&nbsp;IOChan.WriteLn
+&nbsp;&nbsp;&nbsp;&nbsp;ELSE&nbsp;IOChan.TextWrite(chan,SYSTEM.ADR(str[pos]),1)
+&nbsp;&nbsp;&nbsp;&nbsp;END;
+&nbsp;&nbsp;&nbsp;&nbsp;INC(pos);&nbsp;DEC(len);
+&nbsp;&nbsp;END;
+END&nbsp;ChanWrite;
+
+PROCEDURE&nbsp;Print(chan:&nbsp;IOChan.ChanId;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;format:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SEQ&nbsp;args:&nbsp;SYSTEM.BYTE);
+BEGIN
+&nbsp;&nbsp;FormOut.format(chan,ChanWrite,format,FormOut.text,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SYSTEM.ADR(args),SIZE(args));
+END&nbsp;Print;
+</PRE>
+
+<P>The procedure <TT>printf</TT> prints to the standard output channel: 
+<P><PRE>PROCEDURE&nbsp;printf(f:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;&nbsp;SEQ&nbsp;x:&nbsp;SYSTEM.BYTE);
+BEGIN
+&nbsp;&nbsp;Print(StdChans.StdOutChan(),f,x);
+END&nbsp;printf;
+</PRE>
+
+<P>The procedure <TT>printf</TT> can be used in the conventional for C programmers way, e.g. the call 
+<P><PRE>&nbsp;&nbsp;printf(&quot;%d!&nbsp;=&nbsp;%d\n&quot;,5,Factorial(5));
+</PRE>
+
+<P>will produce the line <FONT SIZE=2>&nbsp;/Provided that the implementation of the procedure <TT>Factorial</TT> corresponds to its name./ </FONT> 
+<P><PRE>&nbsp;&nbsp;5!&nbsp;=&nbsp;120
+</PRE>
+
+<P>The <TT><A HREF="#0039" TARGET=body>Printf</A></TT> module implements C-like procedures <TT>printf</TT>, <TT>sprintf</TT>, and <TT>fprintf</TT>. 
+<P><UL>
+<LI><A HREF="#0033" TARGET=body>Examples:</A>
+</UL>
+<P><HR>
+<A NAME="0033">
+<A HREF="#0032" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0032" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0034" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H4>Examples:</H4>
+
+<P ALIGN=CENTER><TABLE CELLSPACING=0>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid solid none;border-width: 0px 1px 1px 0px"><B>Call </B></TD>
+<TD  STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><B>Output </B></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>printf(&quot;%5.3s&quot;,&quot;abcdef&quot;)</TT> </TD>
+<TD  STYLE="padding:0px 3px;"><TT>&nbsp;&nbsp;abc</TT> </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>printf(&quot;%-5.3s&quot;,&quot;abcdef&quot;)</TT> </TD>
+<TD  STYLE="padding:0px 3px;"><TT>abc&nbsp;&nbsp;</TT> </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>printf(&quot;%|5.3s&quot;,&quot;abcdef&quot;)</TT> </TD>
+<TD  STYLE="padding:0px 3px;"><TT>&nbsp;abc&nbsp;</TT> </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>printf(&quot;%..3s&quot;,&quot;abcdef&quot;)</TT> </TD>
+<TD  STYLE="padding:0px 3px;"><TT>def</TT> </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>printf(&quot;pos=%3d&quot;,13)</TT> </TD>
+<TD  STYLE="padding:0px 3px;"><TT>pos=&nbsp;13</TT> </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>printf(&quot;%$3o&quot;,13)</TT> </TD>
+<TD  STYLE="padding:0px 3px;"><TT>015</TT> </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>printf(&quot;%04X&quot;,33C)</TT> </TD>
+<TD  STYLE="padding:0px 3px;"><TT>001B</TT> </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>printf(&quot;%{}&quot;,13)</TT> </TD>
+<TD  STYLE="padding:0px 3px;"><TT>{0,2..3}</TT> </TD>
+</TR>
+</TABLE>
+<P><HR>
+<A NAME="0034"><A NAME="print">
+<A HREF="#0012" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0033" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0035" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H2>FormStr module</H2>
+
+<P ALIGN=CENTER><FONT SIZE=2>WARNING: 
+<P ALIGN=CENTER>Language extensions are used in the interface of this module. <BR>
+All your modules importing this one may be non-portable to other compilers. </FONT>
+<P>
+<P>A string is an array of characters of an arbitrary length. The procedures <TT><A HREF="#0035" TARGET=body>print</A></TT>, <TT><A HREF="#0036" TARGET=body>append</A></TT> and <TT><A HREF="#0037" TARGET=body>image</A></TT> guarantee the presence of the string terminator (<TT>0C</TT>) in the resulting string. See the <TT><A HREF="#0027" TARGET=body>FormOut</A></TT> module overview for the format string syntax. 
+<P><UL>
+<LI><A HREF="#0035" TARGET=body>print - Print to string</A>
+<LI><A HREF="#0036" TARGET=body>append - Append to the end of string</A>
+<LI><A HREF="#0037" TARGET=body>image - Print from the given position</A>
+<LI><A HREF="#0038" TARGET=body>iscan - Read integer in Modula-2 format</A>
+</UL>
+<P><HR>
+<A NAME="0035"><A NAME="append">
+<A HREF="#0034" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0034" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0036" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>print - Print to string</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;print(VAR&nbsp;str:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;format:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SEQ&nbsp;args:&nbsp;SYSTEM.BYTE);
+</PRE>
+
+<P>Module <TT><A HREF="#0034" TARGET=body>FormStr</A></TT>
+<P>Constructs a string specified by the pair (<TT>format</TT>,<TT>args</TT>) and places it into <TT>str</TT>. 
+<P><HR>
+<A NAME="0036"><A NAME="image">
+<A HREF="#0034" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0035" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0037" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>append - Append to the end of string</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;append(&nbsp;VAR&nbsp;str:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;format:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SEQ&nbsp;args:&nbsp;SYSTEM.BYTE);
+</PRE>
+
+<P>Module <TT><A HREF="#0034" TARGET=body>FormStr</A></TT>
+<P>Appends a string specified by the pair (<TT>format</TT>,<TT>args</TT>) to the end of the string <TT>str</TT>. 
+<P><HR>
+<A NAME="0037"><A NAME="iscan">
+<A HREF="#0034" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0036" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0038" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>image - Print from the given position</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;image(&nbsp;VAR&nbsp;str:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;pos:&nbsp;LONGINT;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;format:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SEQ&nbsp;args:&nbsp;SYSTEM.BYTE);
+</PRE>
+
+<P>Module <TT><A HREF="#0034" TARGET=body>FormStr</A></TT>
+<P>Places a string specified by the pair (<TT>format</TT>,<TT>args</TT>) in the string <TT>str</TT> starting from the position <TT>pos</TT>. After the procedure call, <TT>pos</TT> points to the <TT>0C</TT> or to the position next to the end of the string. 
+<P><HR>
+<A NAME="0038">
+<A HREF="#0034" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0037" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0039" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>iscan - Read integer in Modula-2 format</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;iscan(&nbsp;VAR&nbsp;num:&nbsp;INTEGER;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;str:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;pos:&nbsp;CARDINAL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;done:&nbsp;BOOLEAN);
+</PRE>
+
+<P>Module <TT><A HREF="#0034" TARGET=body>FormStr</A></TT>
+<P>Reads an integer value from the string <TT>str</TT> starting from the position <TT>pos</TT>. After the procedure call: 
+<DL>
+ 
+<DT><TT>done</TT></DT>
+<DD>becomes TRUE, if the attempt was successful; </DD>
+<DT><TT>pos </TT></DT>
+<DD>is the index of the first not scanned character; </DD>
+<DT><TT>num </TT></DT>
+<DD>is the read value when <TT>done=TRUE</TT>. </DD>
+</DL>
+
+<P>The number may be represented in any form permitted in Modula-2. In case of an integer overflow <TT>done=FALSE</TT>. 
+<P><HR>
+<A NAME="0039"><A NAME="ChanId">
+<A HREF="#0012" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0038" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0040" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H2>Printf module</H2>
+
+<P>The <TT>Printf</TT> module provides C-like formatted output procedures <TT><A HREF="#0041" TARGET=body>fprintf</A></TT>, <TT><A HREF="#0042" TARGET=body>printf</A></TT>, and <TT><A HREF="#0043" TARGET=body>sprintf</A></TT>, 
+<P>This module is based on the <TT><A HREF="#0027" TARGET=body>FormOut</A></TT> module and is provided for convenience. 
+<P><UL>
+<LI><A HREF="#0040" TARGET=body>ChanId - I/O channel identity</A>
+<LI><A HREF="#0041" TARGET=body>fprintf - Write formatted data to channel</A>
+<LI><A HREF="#0042" TARGET=body>printf - Print formatted data</A>
+<LI><A HREF="#0043" TARGET=body>sprintf - Put formatted data to buffer</A>
+</UL>
+<P><HR>
+<A NAME="0040"><A NAME="fprintf">
+<A HREF="#0039" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0039" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0041" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>ChanId - I/O channel identity</H3>
+ 
+<P><PRE>TYPE&nbsp;ChanId&nbsp;=&nbsp;IOChan.ChanId;
+</PRE>
+
+<P>The type <TT>IOChan.ChanId</TT>, which is used in ISO Modula-2 library to identify I/O channels, is reexported. 
+<P><HR>
+<A NAME="0041"><A NAME="printf">
+<A HREF="#0039" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0040" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0042" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>fprintf - Write formatted data to channel</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;fprintf(file&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;ChanId;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;format&nbsp;&nbsp;&nbsp;:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SEQ&nbsp;args&nbsp;:&nbsp;SYSTEM.BYTE);
+</PRE>
+
+<P>Module <TT><A HREF="#0039" TARGET=body>Printf</A></TT>
+<P>The procedure <TT>fprintf</TT> formats and outputs a series of characters and values to the channel identified by <TT>file</TT>. Each argument in <TT>args</TT> is converted and written to <TT>file</TT> according to the corresponding format specification in <TT>format</TT>. 
+<P>See <A HREF="#0027" TARGET=body>FormOut module</A> for a description of the format specification and the argument list. 
+<P><HR>
+<A NAME="0042"><A NAME="sprintf">
+<A HREF="#0039" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0041" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0043" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>printf - Print formatted data</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;printf(format&nbsp;&nbsp;&nbsp;:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SEQ&nbsp;args&nbsp;:&nbsp;SYSTEM.BYTE);
+</PRE>
+
+<P>Module <TT><A HREF="#0039" TARGET=body>Printf</A></TT>
+<P>The procedure <TT>printf</TT> formats and outputs a series of characters and values to the current standard output channel. Each argument in <TT>args</TT> is converted and written to the standard output according to the corresponding format specification in <TT>format</TT>. 
+<P>See <A HREF="#0027" TARGET=body>FormOut module</A> for a description of the format specification and the argument list. 
+<P><HR>
+<A NAME="0043">
+<A HREF="#0039" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0042" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0044" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>sprintf - Put formatted data to buffer</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;sprintf(VAR&nbsp;buf&nbsp;&nbsp;:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;format&nbsp;&nbsp;&nbsp;:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SEQ&nbsp;args&nbsp;:&nbsp;SYSTEM.BYTE);
+</PRE>
+
+<P>Module <TT><A HREF="#0039" TARGET=body>Printf</A></TT>
+<P>The procedure <TT>sprintf</TT> formats and stores a series of characters and values in the array <TT>buf</TT>. Each argument in <TT>args</TT> is converted and put out according to the corresponding format specification in <TT>format</TT>. 
+<P>See <A HREF="#0027" TARGET=body>FormOut module</A> for a description of the format specification and the argument list. 
+<P><HR>
+<A NAME="0044"><A NAME="ArgNumber">
+<A HREF="#0012" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0043" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0045" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H2>ProgEnv module</H2>
+
+<P>The <TT>ProgEnv</TT> module provides access to the program name, arguments, and environment strings. 
+<P><UL>
+<LI><A HREF="#0045" TARGET=body>ArgNumber - Return the number of arguments</A>
+<LI><A HREF="#0046" TARGET=body>GetArg - Get argument</A>
+<LI><A HREF="#0047" TARGET=body>ArgLength - Return length of argument</A>
+<LI><A HREF="#0048" TARGET=body>ProgramName - Get program name</A>
+<LI><A HREF="#0049" TARGET=body>ProgramNameLength - Length of program name</A>
+<LI><A HREF="#0050" TARGET=body>String - Get environment string</A>
+<LI><A HREF="#0051" TARGET=body>StringLength - Return environment string length</A>
+<LI><A HREF="#0052" TARGET=body>Example</A>
+</UL>
+<P><HR>
+<A NAME="0045"><A NAME="GetArg">
+<A HREF="#0044" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0044" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0046" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>ArgNumber - Return the number of arguments</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;ArgNumber():&nbsp;CARDINAL;
+</PRE>
+
+<P>Module <TT><A HREF="#0044" TARGET=body>ProgEnv</A></TT>
+<P>Returns the number of arguments (0 if there is no arguments). 
+<P><HR>
+<A NAME="0046"><A NAME="ArgLength">
+<A HREF="#0044" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0045" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0047" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>GetArg - Get argument</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;GetArg(n:&nbsp;CARDINAL;&nbsp;VAR&nbsp;arg:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR);
+</PRE>
+
+<P>Module <TT><A HREF="#0044" TARGET=body>ProgEnv</A></TT>
+<P>Copies <TT>n</TT>-th argument (<TT>n&nbsp;&gt;=&nbsp;0</TT>) to <TT>arg</TT>, or empties it if <TT>n&nbsp;&gt;=&nbsp;ArgNumber()</TT>. 
+<P><HR>
+<A NAME="0047"><A NAME="ProgramName">
+<A HREF="#0044" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0046" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0048" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>ArgLength - Return length of argument</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;ArgLength(n:&nbsp;CARDINAL):&nbsp;CARDINAL;
+</PRE>
+
+<P>Module <TT><A HREF="#0044" TARGET=body>ProgEnv</A></TT>
+<P>Returns the length of the <TT>n</TT>-th argument, or 0 if <TT>n&gt;=ArgNumber()</TT>. 
+<P><HR>
+<A NAME="0048"><A NAME="ProgramNameLength">
+<A HREF="#0044" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0047" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0049" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>ProgramName - Get program name</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;ProgramName(VAR&nbsp;name:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR);
+</PRE>
+
+<P>Module <TT><A HREF="#0044" TARGET=body>ProgEnv</A></TT>
+<P>Copies a program name to <TT>name</TT>. 
+<P><HR>
+<A NAME="0049"><A NAME="String">
+<A HREF="#0044" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0048" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0050" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>ProgramNameLength - Length of program name</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;ProgramNameLength():&nbsp;CARDINAL;
+</PRE>
+
+<P>Module <TT><A HREF="#0044" TARGET=body>ProgEnv</A></TT>
+<P>Returns the length of the program name. 
+<P><HR>
+<A NAME="0050"><A NAME="StringLength">
+<A HREF="#0044" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0049" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0051" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>String - Get environment string</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;String(name:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;str:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR);
+</PRE>
+
+<P>Module <TT><A HREF="#0044" TARGET=body>ProgEnv</A></TT>
+<P>Copies a value of the environment variable <TT>name</TT> to <TT>str</TT> (empty string if the variable is undefined). 
+<P><HR>
+<A NAME="0051">
+<A HREF="#0044" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0050" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0052" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>StringLength - Return environment string length</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;StringLength(name:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR):&nbsp;CARDINAL;
+</PRE>
+
+<P>Module <TT><A HREF="#0044" TARGET=body>ProgEnv</A></TT>
+<P>Returns the length of the environment variable <TT>name</TT> (0 if the variable is undefined). 
+<P><HR>
+<A NAME="0052">
+<A HREF="#0044" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0051" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0053" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Example</H3>
+
+<P>The following procedure (in Oberon-2) prints all program arguments: 
+<P><PRE>PROCEDURE&nbsp;ShowArgs;
+&nbsp;&nbsp;VAR
+&nbsp;&nbsp;&nbsp;&nbsp;str:&nbsp;POINTER&nbsp;TO&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;i,args:&nbsp;LONGINT;
+BEGIN
+&nbsp;&nbsp;i:=0;
+&nbsp;&nbsp;args:=ProgEnv.ArgNumber();
+&nbsp;&nbsp;FOR&nbsp;i:=0&nbsp;TO&nbsp;args-1&nbsp;DO
+&nbsp;&nbsp;&nbsp;&nbsp;NEW(str,ProgEnv.ArgLength(i)+1);
+&nbsp;&nbsp;&nbsp;&nbsp;ProgEnv.GetArg(i,str^);
+&nbsp;&nbsp;&nbsp;&nbsp;STextIO.WriteString(str^);&nbsp;STextIO.WriteLn;
+&nbsp;&nbsp;END;
+END&nbsp;ShowArgs;
+</PRE>
+
+<P><HR>
+<A NAME="0053"><A NAME="DateTime">
+<A HREF="#0012" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0052" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0054" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H2>TimeConv module</H2>
+
+<P>The Modula-2 module <B>TimeConv</B> provides operations on values of type <TT>SysClock.DateTime</TT>. 
+<P><UL>
+<LI><A HREF="#0054" TARGET=body>DateTime - Date and Time Type</A>
+<LI><A HREF="#0055" TARGET=body>Compare - Compare two clock values</A>
+<LI><A HREF="#0056" TARGET=body>SubDateDays - Date difference in days</A>
+<LI><A HREF="#0057" TARGET=body>SubDateSecs - Time difference in seconds</A>
+<LI><A HREF="#0058" TARGET=body>AddDateDays - Add whole number of days to date</A>
+<LI><A HREF="#0059" TARGET=body>AddDateSecs - Add seconds to date</A>
+<LI><A HREF="#0060" TARGET=body>TheDayNumber - Ordinal day number</A>
+<LI><A HREF="#0061" TARGET=body>TheFractionNumber - Number of fractions passed from midnight</A>
+<LI><A HREF="#0062" TARGET=body>WeekDay - Determine day of the week</A>
+<LI><A HREF="#0063" TARGET=body>millisecs - Milliseconds passed from midnight</A>
+<LI><A HREF="#0064" TARGET=body>time - System time in seconds</A>
+<LI><A HREF="#0065" TARGET=body>unpack - Unpack system time</A>
+<LI><A HREF="#0066" TARGET=body>pack - Pack system time</A>
+<LI><A HREF="#0067" TARGET=body>weekday - Determine day of the week for system time</A>
+</UL>
+<P><HR>
+<A NAME="0054"><A NAME="Compare">
+<A HREF="#0053" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0053" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0055" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>DateTime - Date and Time Type</H3>
+ 
+<P><PRE>TYPE&nbsp;DateTime&nbsp;=&nbsp;SysClock.DateTime;
+</PRE>
+
+<P>Module <TT><A HREF="#0053" TARGET=body>TimeConv</A></TT>
+<P>The <TT>SysClock.DateTime</TT> type is re-exported for convenience. 
+<P><HR>
+<A NAME="0055"><A NAME="SubDateDays">
+<A HREF="#0053" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0054" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0056" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>Compare - Compare two clock values</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;Compare(dl,dr:&nbsp;DateTime):&nbsp;INTEGER;
+</PRE>
+
+<P>Module <TT><A HREF="#0053" TARGET=body>TimeConv</A></TT>
+<P>The function procedure <TT>Compare</TT> returns: 
+<UL>
+ 
+<LI>zero, if <TT>dl</TT> represents the same moment as <TT>dr</TT> </LI>
+<LI>value less than zero, if <TT>dl</TT> is before <TT>dr</TT> </LI>
+<LI>value greater than zero, if <TT>dl</TT> is after <TT>dr</TT> </LI>
+</UL>
+
+<P><B>Note:</B> If either <TT>dl</TT> or <TT>dr</TT> is invalid, zero is returned. 
+<P><HR>
+<A NAME="0056"><A NAME="SubDateSecs">
+<A HREF="#0053" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0055" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0057" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>SubDateDays - Date difference in days</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;SubDateDays(dl,dr:&nbsp;DateTime):&nbsp;CARDINAL;
+</PRE>
+
+<P>Module <TT><A HREF="#0053" TARGET=body>TimeConv</A></TT>
+<P>The function procedure <TT>SubDateDays</TT> returns the number of days passed from <TT>dr</TT> to <TT>dl</TT>. 
+<P><B>Note:</B> If one of the parameters is invalid or if <TT>dl</TT> is before <TT>dr</TT>, zero is returned. 
+<P><HR>
+<A NAME="0057"><A NAME="AddDateDays">
+<A HREF="#0053" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0056" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0058" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>SubDateSecs - Time difference in seconds</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;SubDateSecs(dl,dr:&nbsp;DateTime):&nbsp;CARDINAL;
+</PRE>
+
+<P>Module <TT><A HREF="#0053" TARGET=body>TimeConv</A></TT>
+<P>The function procedure <TT>SubDateSecs</TT> returns the number of seconds passed from <TT>dr</TT> to <TT>dl</TT>. 
+<P><B>Note:</B> If one of the parameters is invalid or if <TT>dl</TT> is before <TT>dr</TT>, zero is returned. 
+<P><HR>
+<A NAME="0058"><A NAME="AddDateSecs">
+<A HREF="#0053" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0057" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0059" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>AddDateDays - Add whole number of days to date</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;AddDateDays(d:&nbsp;DateTime;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;days:&nbsp;CARDINAL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;res:&nbsp;DateTime);
+</PRE>
+
+<P>Module <TT><A HREF="#0053" TARGET=body>TimeConv</A></TT>
+<P>The procedure <TT>AddDateDays</TT> adds <TT>days</TT> days to date <TT>d</TT> and assigns the resulting date to <TT>res</TT>. 
+<P><B>Note:</B> If &quot;d&quot; is invalid, &quot;res&quot; is assigned the first valid date. 
+<P><HR>
+<A NAME="0059"><A NAME="TheDayNumber">
+<A HREF="#0053" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0058" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0060" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>AddDateSecs - Add seconds to date</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;AddDateSecs(d:&nbsp;DateTime;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;secs:&nbsp;CARDINAL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;res:&nbsp;DateTime);
+</PRE>
+
+<P>Module <TT><A HREF="#0053" TARGET=body>TimeConv</A></TT>
+<P>The procedure <TT>AddDateSecs</TT> adds <TT>secs</TT> seconds to date <TT>d</TT> and assigns the resulting date to <TT>res</TT>. 
+<P><B>Note:</B> If &quot;d&quot; is invalid, &quot;res&quot; is assigned the first valid date. 
+<P><HR>
+<A NAME="0060"><A NAME="TheFractionNumber">
+<A HREF="#0053" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0059" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0061" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>TheDayNumber - Ordinal day number</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;TheDayNumber(d:&nbsp;DateTime):&nbsp;CARDINAL;
+</PRE>
+
+<P>Module <TT><A HREF="#0053" TARGET=body>TimeConv</A></TT>
+<P>The function procedure <TT>TheDayNumber</TT> returns the ordinal number of the day for the date <TT>d</TT>. 
+<P><B>Note:</B> If <TT>d</TT> is invalid, zero is returned. 
+<P><HR>
+<A NAME="0061"><A NAME="WeekDay">
+<A HREF="#0053" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0060" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0062" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>TheFractionNumber - Number of fractions passed from midnight</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;TheFractionNumber(d:&nbsp;DateTime):&nbsp;CARDINAL;
+</PRE>
+
+<P>Module <TT><A HREF="#0053" TARGET=body>TimeConv</A></TT>
+<P>The function procedure <TT>TheFractionNumber</TT> returns the number of fractions passed from time 0:00:00.00 of the day for the date <TT>d</TT>. 
+<P><B>Note:</B> If <TT>d</TT> is invalid, zero is returned. 
+<P><HR>
+<A NAME="0062"><A NAME="millisecs">
+<A HREF="#0053" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0061" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0063" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>WeekDay - Determine day of the week</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;WeekDay(d:&nbsp;DateTime):&nbsp;CARDINAL;
+</PRE>
+
+<P>Module <TT><A HREF="#0053" TARGET=body>TimeConv</A></TT>
+<P>The function procedure <TT>WeekDay</TT> returns day of the week for the date <TT>d</TT>. 0 represents Sunday, 1 - Monday, etc. 
+<P><B>Note:</B> If <TT>d</TT> is invalid, zero is returned. 
+<P><HR>
+<A NAME="0063"><A NAME="time">
+<A HREF="#0053" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0062" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0064" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>millisecs - Milliseconds passed from midnight</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;millisecs():&nbsp;CARDINAL;
+</PRE>
+
+<P>Module <TT><A HREF="#0053" TARGET=body>TimeConv</A></TT>
+<P>The function procedure <TT>millisecs</TT> returns the number of milliseconds passed from the time 0:00:00.00 of current date as known to the system. 
+<P><B>Note:</B> This procedure is system-dependent. 
+<P><HR>
+<A NAME="0064"><A NAME="unpack">
+<A HREF="#0053" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0063" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0065" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>time - System time in seconds</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;time():&nbsp;CARDINAL;
+</PRE>
+
+<P>Module <TT><A HREF="#0053" TARGET=body>TimeConv</A></TT>
+<P>The function procedure <TT>time</TT> returns the number of seconds passed from the time 0:00:00.00 at first valid date for the system. 
+<P><B>Note:</B> This procedure is system-dependent. 
+<P><HR>
+<A NAME="0065"><A NAME="pack">
+<A HREF="#0053" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0064" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0066" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>unpack - Unpack system time</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;unpack(VAR&nbsp;d:&nbsp;DateTime;&nbsp;secs:&nbsp;CARDINAL);
+</PRE>
+
+<P>Module <TT><A HREF="#0053" TARGET=body>TimeConv</A></TT>
+<P>The procedure <TT>unpack</TT> assigns to <TT>d</TT> the value corresponding to date/time which is <TT>secs</TT> seconds later than the first valid time/date for the system. 
+<P>This procedure can be used to examine the first system time/date as follows: 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;unpack(firstDateTime,0);</TT> 
+<P><B>Note:</B> This procedure is system-dependent. 
+<P><HR>
+<A NAME="0066"><A NAME="weekday">
+<A HREF="#0053" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0065" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0067" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>pack - Pack system time</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;pack(d:&nbsp;DateTime;&nbsp;VAR&nbsp;secs:&nbsp;CARDINAL);
+</PRE>
+
+<P>Module <TT><A HREF="#0053" TARGET=body>TimeConv</A></TT>
+<P>The procedure <TT>pack</TT> assigns to <TT>secs</TT> the number of seconds passed from a first valid system date/time to <TT>d</TT>. Its effect is opposite to the <TT>pack</TT> procedure. 
+<P><B>Note:</B> This procedure is system-dependent. 
+<P><HR>
+<A NAME="0067">
+<A HREF="#0053" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0066" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0068" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>weekday - Determine day of the week for system time</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;weekday(t:&nbsp;CARDINAL):&nbsp;CARDINAL;
+</PRE>
+
+<P>Module <TT><A HREF="#0053" TARGET=body>TimeConv</A></TT>
+<P>The function procedure <TT>weekday</TT> behaves exactly the same as if it contains the following code: 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;unpack(tmpDateTime,t);&nbsp;RETURN&nbsp;WeekDay(tmpDateTime);</TT> 
+<P><B>Note:</B> This procedure is system-dependent. 
+<P><HR>
+<A NAME="0068"><A NAME="String">
+<A HREF="#0012" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0067" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0069" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H2>DStrings module</H2>
+
+<P>The module <B>DStrings</B> (written in Oberon-2) defines a dynamic string type and provides some conventional operations. 
+<P><UL>
+<LI><A HREF="#0069" TARGET=body>String - Dynamic String Type</A>
+<LI><A HREF="#0070" TARGET=body>Assign - Create and Initialize String</A>
+<LI><A HREF="#0071" TARGET=body>Append - Append to Dynamic String</A>
+</UL>
+<P><HR>
+<A NAME="0069"><A NAME="Assign">
+<A HREF="#0068" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0068" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0070" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>String - Dynamic String Type</H3>
+ 
+<P><PRE>TYPE&nbsp;String*&nbsp;=&nbsp;POINTER&nbsp;TO&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;
+</PRE>
+
+<P>Module <TT><A HREF="#0068" TARGET=body>DStrings</A></TT>
+<P><HR>
+<A NAME="0070"><A NAME="Append">
+<A HREF="#0068" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0069" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0071" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>Assign - Create and Initialize String</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;Assign*(s:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;&nbsp;VAR&nbsp;d:&nbsp;String);
+</PRE>
+
+<P>Module <TT><A HREF="#0068" TARGET=body>DStrings</A></TT>
+<P>Allocates a new dynamic string and copies string <TT>s</TT> to it. The resulting string always contains a terminator character (0C). 
+<P><HR>
+<A NAME="0071">
+<A HREF="#0068" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0070" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0072" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Append - Append to Dynamic String</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;Append*(s:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;&nbsp;VAR&nbsp;d:&nbsp;String);
+</PRE>
+
+<P>Module <TT><A HREF="#0068" TARGET=body>DStrings</A></TT>
+<P>Appends the string <TT>s</TT> to <TT>d</TT>. <TT>d</TT> is extended if necessary. The resulting string always contains the string terminator (0C). 
+<P><HR>
+<A NAME="0072"><A NAME="IsSimpleName">
+<A HREF="#0012" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0071" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0073" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H2>FilePath module</H2>
+
+<P>The <TT>FilePath</TT> module (written in Oberon-2) provides directory search facilities. In the following procedures <TT>path</TT> is a list of directories separated by semicolons, e.g. 
+<P><PRE>&nbsp;&nbsp;.\SYM;C:\LIB\SYM;C:\XDS\LIB\SYM;.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(Windows)
+&nbsp;&nbsp;./sym;~/lib/sym;/usr/bin/xds/sym;.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(Unix)
+</PRE>
+
+<P><UL>
+<LI><A HREF="#0073" TARGET=body>IsSimpleName - Is just a File Name</A>
+<LI><A HREF="#0074" TARGET=body>Lookup - Look up File</A>
+<LI><A HREF="#0075" TARGET=body>UseFirst - Use First Directory</A>
+</UL>
+<P><HR>
+<A NAME="0073"><A NAME="Lookup">
+<A HREF="#0072" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0072" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0074" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>IsSimpleName - Is just a File Name</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;IsSimpleName*(name:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR):&nbsp;BOOLEAN;
+</PRE>
+
+<P>Module <TT><A HREF="#0072" TARGET=body>FilePath</A></TT>
+<P>Returns <TT>TRUE</TT>, if <TT>name</TT> contains a file name only (without directories). 
+<P><HR>
+<A NAME="0074"><A NAME="UseFirst">
+<A HREF="#0072" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0073" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0075" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>Lookup - Look up File</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;Lookup*(path,name:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;fname:&nbsp;DStrings.String;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;n:&nbsp;INTEGER);
+</PRE>
+
+<P>Module <TT><A HREF="#0072" TARGET=body>FilePath</A></TT>
+<P>Builds a filename using the search path. After a call: 
+<P ALIGN=CENTER><TABLE CELLSPACING=0>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>n = -1 </TT></TD>
+<TD  STYLE="padding:0px 3px;">if <TT>name</TT> is not simple (<TT>fname = name</TT>) </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>n = 0 </TT></TD>
+<TD  STYLE="padding:0px 3px;">file is not found (the first directory is used) </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>n &gt; 0 </TT></TD>
+<TD  STYLE="padding:0px 3px;">file is found in the <TT>n</TT>-th directory </TD>
+</TR>
+</TABLE>
+<P><HR>
+<A NAME="0075">
+<A HREF="#0072" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0074" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0076" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>UseFirst - Use First Directory</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;UseFirst*(path,name:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;fname:&nbsp;DStrings.String);
+</PRE>
+
+<P>Module <TT><A HREF="#0072" TARGET=body>FilePath</A></TT>
+<P>Builds a filename using the first directory from the search path. 
+<P><HR>
+<A NAME="0076">
+<A HREF="#0012" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0075" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0077" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>RegComp module</H2>
+
+<P>This module (written in Oberon-2) implements a comparison of a string with regular expression. 
+<P><UL>
+<LI><A HREF="#0077" TARGET=body>Regular expressions</A>
+<LI><A HREF="#0078" TARGET=body>Examples of regular expressions</A>
+<LI><A HREF="#0079" TARGET=body>Expr - Regular expression</A>
+<LI><A HREF="#0080" TARGET=body>Compile - Compile regular expression</A>
+<LI><A HREF="#0081" TARGET=body>Const - Is constant expression</A>
+<LI><A HREF="#0082" TARGET=body>Match - Compare string with expression</A>
+<LI><A HREF="#0083" TARGET=body>Len - Length of substring</A>
+<LI><A HREF="#0084" TARGET=body>Pos - Position of substring</A>
+<LI><A HREF="#0085" TARGET=body>Substitute - Substitute substrings</A>
+</UL>
+<P><HR>
+<A NAME="0077">
+<A HREF="#0076" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0076" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0078" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Regular expressions</H3>
+
+<P>A regular expression is a string which may contain certain special symbols: 
+<P ALIGN=CENTER><TABLE CELLSPACING=0>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><B>Sequence </B></TD>
+<TD  STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><B>Denotes </B></TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;"><TT>*</TT> </TD>
+<TD  STYLE="padding:0px 3px;">an arbitrary sequence of any characters, possibly empty </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;">(equivalent to <TT>{\000-\377}</TT> expression) </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;"><TT>?</TT> </TD>
+<TD  STYLE="padding:0px 3px;">any single character </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;">(equivalent to <TT>[\000-\377]</TT> expression) </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;"><TT>[...]</TT> </TD>
+<TD  STYLE="padding:0px 3px;">one of the listed characters </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;"><TT>{...}</TT> </TD>
+<TD  STYLE="padding:0px 3px;">an arbitrary sequence of the listed characters, possibly empty </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;"><TT>\nnn</TT> </TD>
+<TD  STYLE="padding:0px 3px;">the ASCII character with octal code <TT>nnn</TT>, where n is <TT>[0-7]</TT> </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;"><TT>&amp;</TT> </TD>
+<TD  STYLE="padding:0px 3px;">the logical operation AND </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;"><TT>|</TT> </TD>
+<TD  STYLE="padding:0px 3px;">the logical operation OR </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;"><TT>^</TT> </TD>
+<TD  STYLE="padding:0px 3px;">the logical operation NOT </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;"><TT>(...)</TT> </TD>
+<TD  STYLE="padding:0px 3px;">the priority of operations </TD>
+</TR>
+<TR>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;"><TT>$digit</TT> </TD>
+<TD  STYLE="padding:0px 3px;">subexpression number (see below) </TD>
+</TR>
+</TABLE>
+<P>A sequence of the form <TT>a-b</TT> used within either <TT>[]</TT> or <TT>{}</TT> brackets denotes all characters from <TT>a</TT> to <TT>b</TT>. 
+<P><TT>$digit</TT> may follow <TT>*</TT>, <TT>?</TT>, <TT>[]</TT>, <TT>{}</TT>, or <TT>()</TT> subexpression. For a string matching a regular expression, it represents the corresponding substring. 
+<P>If you need to use any special symbol as an ordinary symbol, you should precede it with a backslash (<TT>\</TT>), which suppresses interpretation of the following symbol. 
+<P><HR>
+<A NAME="0078"><A NAME="Expr">
+<A HREF="#0076" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0077" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0079" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>Examples of regular expressions</H3>
+
+<P><TT>{0-9A-F}</TT> defines set of hexadecimal numbers 
+<P><TT>[a-zA-z_]</TT> defines a single small or capital letter or an underscore character. 
+<P><TT>(({0-9A-Fa-f})$1|({a-zA-Z_})$2))$3</TT> matches both hexadecimal numbers and Modula-2 identifiers. After a successful match, a program may access the hexadecimal number by the <TT>$1</TT> reference, the identifier by the <TT>$2</TT> reference and either of them by the <TT>$3</TT> reference. 
+<P><TT>\\\$\{\}\[\]\*\?</TT> represents the string <TT>\${}[]*?</TT>. 
+<P><HR>
+<A NAME="0079"><A NAME="Compile">
+<A HREF="#0076" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0078" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0080" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>Expr - Regular expression</H3>
+ 
+<P><PRE>TYPE
+&nbsp;&nbsp;Expr*&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;POINTER&nbsp;TO&nbsp;ExprDesc;
+&nbsp;&nbsp;ExprDesc&nbsp;=&nbsp;RECORD&nbsp;END;
+</PRE>
+
+<P>Module <TT><A HREF="#0076" TARGET=body>RegComp</A></TT>
+<P><HR>
+<A NAME="0080"><A NAME="Const">
+<A HREF="#0076" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0079" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0081" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>Compile - Compile regular expression</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;Compile*(expr:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;reg:&nbsp;Expr;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;res:&nbsp;LONGINT);
+</PRE>
+
+<P>Module <TT><A HREF="#0076" TARGET=body>RegComp</A></TT>
+<P>Compiles a regular expression to an internal form. 
+<P><TABLE CELLSPACING=0>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid solid none;border-width: 0px 1px 1px 0px">Value of <TT>res</TT> </TD>
+<TD  STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px">Meaning </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>res</TT>&le;0 </TD>
+<TD  STYLE="padding:0px 3px;">error in position ABS(res) </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><TT>res</TT> &gt; 0 </TD>
+<TD  STYLE="padding:0px 3px;">done </TD>
+</TR>
+</TABLE>
+<P><HR>
+<A NAME="0081"><A NAME="Match">
+<A HREF="#0076" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0080" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0082" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>Const - Is constant expression</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;Const*(re:&nbsp;Expr):&nbsp;BOOLEAN;
+</PRE>
+
+<P>Module <TT><A HREF="#0076" TARGET=body>RegComp</A></TT>
+<P>Returns <TT>TRUE</TT>, if the expression does not contain wildcards. 
+<P><HR>
+<A NAME="0082"><A NAME="Len">
+<A HREF="#0076" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0081" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0083" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>Match - Compare string with expression</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;Match*(re:&nbsp;Expr;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;s:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;pos:&nbsp;LONGINT):&nbsp;BOOLEAN;
+</PRE>
+
+<P>Module <TT><A HREF="#0076" TARGET=body>RegComp</A></TT>
+<P>Returns <TT>TRUE</TT>, if the expression matches the string <TT>s</TT> starting from the position <TT>pos</TT>. 
+<P><HR>
+<A NAME="0083"><A NAME="Pos">
+<A HREF="#0076" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0082" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0084" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>Len - Length of substring</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;Len*(re:&nbsp;Expr;&nbsp;n:&nbsp;INTEGER):&nbsp;LONGINT;
+</PRE>
+
+<P>Module <TT><A HREF="#0076" TARGET=body>RegComp</A></TT>
+<P>Returns the length of the substring which corresponds to <TT>$n</TT> in the last call of the <TT>Match</TT> procedure with the parameter <TT>re</TT>. 
+<P><HR>
+<A NAME="0084"><A NAME="Substitute">
+<A HREF="#0076" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0083" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0085" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>Pos - Position of substring</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;Pos*(re:&nbsp;Expr;&nbsp;n:&nbsp;INTEGER):&nbsp;LONGINT;
+</PRE>
+
+<P>Module <TT><A HREF="#0076" TARGET=body>RegComp</A></TT>
+<P>Returns the position of the substring which corresponds to <TT>$n</TT> in the last call of the <TT>Match</TT> procedure with the parameter <TT>re</TT>. 
+<P><HR>
+<A NAME="0085">
+<A HREF="#0076" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0084" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0086" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Substitute - Substitute substrings</H3>
+ 
+<P><PRE>PROCEDURE&nbsp;Substitute*(re:&nbsp;Expr;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;s,m:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;d:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR);
+</PRE>
+
+<P>Module <TT><A HREF="#0076" TARGET=body>RegComp</A></TT>
+<P>The substrings of <TT>s</TT> which matched <TT>re</TT> are substituted instead of <TT>$digit</TT> into <TT>m</TT> and the result string is copied into <TT>d</TT>. 
+<P><B>Note:</B> The <TT>Match(re,s,0)</TT> call should be issued and tested for success prior to a call to <TT>Substitute</TT>. 
+<P><UL>
+<LI><A HREF="#0086" TARGET=body>Example</A>
+</UL>
+<P><HR>
+<A NAME="0086">
+<A HREF="#0085" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0085" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="xdslib004.html#0087" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H4>Example</H4>
+
+<P>After the following sequence of calls 
+<P><PRE>&nbsp;&nbsp;Compile(&quot;{a-z}$1{0-9}$2&quot;,re,res);
+&nbsp;&nbsp;IF&nbsp;Match(re,&quot;abcdef153&quot;,0)&nbsp;THEN
+&nbsp;&nbsp;&nbsp;&nbsp;Substitute(re,&quot;abcdef153&quot;,&quot;tail:&nbsp;$2&nbsp;head:&nbsp;$1&quot;,dest);
+&nbsp;&nbsp;END;
+</PRE>
+
+<P>the <TT>dest</TT> string will contain 
+<P><PRE>&nbsp;&nbsp;&quot;tail:&nbsp;153&nbsp;head:&nbsp;abcdef&quot;
+</PRE>
+
+<P></BODY>
+</HTML>

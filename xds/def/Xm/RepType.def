@@ -1,0 +1,88 @@
+(* Xm/RepType.def  Oct 15  19:19:7  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/RepType.h using H2D v1.16 *)
+
+(* $RCSfile: RepType.def,v $ $Revision: 5 $ $Date: 28.07.98 23:14 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+
+DEFINITION MODULE ["C"] RepType;
+
+IMPORT SYSTEM, X, Xt:=Intrinsic;
+(* H2D:  Required IMPORT clause: 
+IMPORT RepType, Intrinsic;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(*
+ * Motif Release 1.2 
+ *)
+
+CONST 
+  XmREP_TYPE_INVALID = 1FFFH;
+
+TYPE 
+  XmRepTypeId = SYSTEM.CARD16;
+
+  _XmRepTypeEntryValue = SHORTCARD;
+
+  _XmRepTypeEntryValueList = POINTER TO ARRAY [0..X.MAX_STUP_ARR] OF SHORTCARD;
+
+  XmRepTypeEntryRec = RECORD
+    rep_type_name    : Xt.String;
+    value_names      : Xt.StringList;
+    values           : _XmRepTypeEntryValueList;
+    num_values       : SHORTCARD;
+    reverse_installed: Xt.Boolean;
+    rep_type_id      : XmRepTypeId;
+  END;
+
+  XmRepTypeEntry = POINTER TO XmRepTypeEntryRec;
+
+  XmRepTypeListRec = RECORD
+    rep_type_name    : Xt.String;
+    value_names      : Xt.StringList;
+    values           : _XmRepTypeEntryValueList;
+    num_values       : SHORTCARD;
+    reverse_installed: Xt.Boolean;
+    rep_type_id      : XmRepTypeId;
+  END;
+
+  XmRepTypeList = POINTER TO ARRAY OF XmRepTypeEntryRec;
+
+(********    Public Function Declarations    ********)
+
+PROCEDURE XmRepTypeRegister ( rep_type: Xt.String;
+                              value_names: Xt.StringList;
+                              values: _XmRepTypeEntryValueList;
+                              num_values: SYSTEM.unsigned ): XmRepTypeId;
+
+PROCEDURE XmRepTypeAddReverse ( rep_type_id: SYSTEM.int );
+
+PROCEDURE XmRepTypeValidValue ( rep_type_id: SYSTEM.int;
+                                test_value: _XmRepTypeEntryValue;
+                                enable_default_warning: Xt.Widget ): Xt.Boolean;
+
+PROCEDURE XmRepTypeGetRegistered (  ): XmRepTypeList;
+
+PROCEDURE XmRepTypeGetRecord ( rep_type_id: SYSTEM.int ): XmRepTypeEntry;
+
+PROCEDURE XmRepTypeGetId ( rep_type: Xt.String ): XmRepTypeId;
+
+PROCEDURE XmRepTypeGetNameList ( rep_type_id: SYSTEM.int;
+                                 use_uppercase_format: SYSTEM.int ): Xt.StringList;
+
+PROCEDURE XmRepTypeInstallTearOffModelConverter (  );
+
+(********    End Public Function Declarations    ********)
+
+END RepType.

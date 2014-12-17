@@ -1,0 +1,134 @@
+(* Xm/PushBP.def  Nov 12  19:48:48  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/PushBP.h using H2D v1.18.1 *)
+
+(* $RCSfile: PushBP.def,v $ $Revision: 4 $ $Date: 28.07.98 23:14 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+(* Merged headers: Xm/PushB.h *)
+
+DEFINITION MODULE ["C"] PushBP;
+
+IMPORT SYSTEM, X, Xlib, Xm:=XmP, Xt:=IntrinsicP, LabelP;
+(* H2D:  Required IMPORT clause: 
+IMPORT PushBP, X, Xlib, Xm:=XmP, Xt:=IntrinsicP, LabelP;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992, 1993 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(* -------------------------------------------------- *)
+(*                     Xm/PushB.h                     *)
+(* -------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2
+ *)
+
+(***********************************************************************
+ *
+ * PushButton Widget
+ *
+ ***********************************************************************)
+
+(*  PushButton Widget  *)
+
+VAR 
+  xmPushButtonWidgetClass: Xt.WidgetClass;
+
+TYPE 
+  XmPushButtonWidgetClass = POINTER TO _XmPushButtonClassRec;
+
+  XmPushButtonWidget = POINTER TO _XmPushButtonRec;
+
+(********    Public Function Declarations    ********)
+
+PROCEDURE XmCreatePushButton ( parent: Xt.Widget;
+                               name: ARRAY OF CHAR;
+                               arglist: Xt.ArgList;
+                               argcount: Xt.Cardinal ): Xt.Widget;
+
+(********    End Public Function Declarations    ********)
+
+(* -------------------------------------------------- *)
+(*                    Xm/PushBP.h                     *)
+(* -------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2.3
+ *)
+
+(*  PushButton class structure  *)
+
+TYPE 
+  _XmPushButtonClassPart = RECORD
+    extension: Xt.XtPointer;   (*  Pointer to extension record  *)
+  END;
+
+  XmPushButtonClassPart = _XmPushButtonClassPart;
+
+(*  Full class record declaration for PushButton class  *)
+
+  _XmPushButtonClassRec = RECORD
+    core_class      : Xt.CoreClassPart;
+    primitive_class : Xm.XmPrimitiveClassPart;
+    label_class     : LabelP.XmLabelClassPart;
+    pushbutton_class: XmPushButtonClassPart;
+  END;
+
+  XmPushButtonClassRec = _XmPushButtonClassRec;
+
+(*  PushButton instance record  *)
+
+  _XmPushButtonPart = RECORD
+    fill_on_arm      : Xt.Boolean;
+    show_as_default  : Xt.Dimension;
+    arm_color        : Xt.Pixel;
+    arm_pixmap       : X.Pixmap;
+    activate_callback: Xt.XtCallbackList;
+    arm_callback     : Xt.XtCallbackList;
+    disarm_callback  : Xt.XtCallbackList;
+    armed            : Xt.Boolean;
+    unarm_pixmap     : X.Pixmap;
+    fill_gc          : Xlib.GC;
+    background_gc    : Xlib.GC;
+    timer            : Xt.XtIntervalId;
+    multiClick       : SHORTCARD; (* KEEP/DISCARD resource *)
+    click_count      : SYSTEM.int;
+    armTimeStamp     : X.Time;
+    compatible       : Xt.Boolean;(* if false it is Motif 1.1 else Motif 1.0 *)
+    default_button_shadow_thickness: Xt.Dimension;
+    (*  New resource - always add it  *)
+    (*  to widgets dimension.  *)
+  END;
+
+  XmPushButtonPart = _XmPushButtonPart;
+
+(*  Full instance record declaration  *)
+
+  _XmPushButtonRec = RECORD
+    core      : Xt.CorePart;
+    primitive : Xm.XmPrimitivePart;
+    label     : LabelP.XmLabelPart;
+    pushbutton: XmPushButtonPart;
+  END;
+
+  XmPushButtonRec = _XmPushButtonRec;
+
+VAR 
+  xmPushButtonClassRec: XmPushButtonClassRec;
+
+(********    Private Function Declarations    ********)
+
+PROCEDURE _XmClearBCompatibility ( pb: Xt.Widget );
+
+(********    End Private Function Declarations    ********)
+
+END PushBP.

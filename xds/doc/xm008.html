@@ -1,0 +1,513 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 4.01 Transitional//EN">
+<HTML>
+<HEAD>
+<TITLE>XDS Oberon-2</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<P><HR>
+<A NAME="0461">
+<A HREF="xm000.html#root" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="xm007.html#0460" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0462" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H1>XDS Oberon-2</H1>
+
+<P>This chapter includes the details of the Oberon-2 language which are specific for this implementation. In the standard mode<FONT SIZE=2>&nbsp;/When the options <A HREF="xm005.html#0111" TARGET=body>O2EXTENSIONS</A> and <A HREF="xm005.html#0113" TARGET=body>O2NUMEXT</A> are OFF./ </FONT> XDS Oberon-2 is fully compatible with ETH compilers (See <I>The Oberon-2 Report</I>). The last changes to the language are described in <A HREF="#0465" TARGET=body>Last changes to the language</A>. 
+<P>To provide a smooth path from Modula-2 to Oberon-2 XDS allows all Modula-2 data types to be used in Oberon-2 modules (See <A HREF="#0472" TARGET=body>Using Modula-2 features</A>). 
+<P>Several language extensions are implemented in the language according to <I>The Oakwood Guidelines for the Oberon-2 Compiler Developers</I><FONT SIZE=2>&nbsp;/These guidelines have been produced by a group of Oberon-2 compiler developers, including ETH developers, after a meeting at the Oakwood Hotel in Croydon, UK in June 1993./ </FONT> (See <A HREF="#0469" TARGET=body>Oakwood numeric extensions</A>). Other language extensions are described in <A HREF="#0475" TARGET=body>Language extensions</A>. As XDS is a truly multi-lingual system, special features were introduced to provide interfacing to foreign languages (See Chapter <A HREF="xm010.html#0517" TARGET=body>Multilanguage programming</A>). 
+<P><UL>
+<LI><A HREF="#0462" TARGET=body>The Oberon environment</A>
+<LI><A HREF="#0465" TARGET=body>Last changes to the language</A>
+<LI><A HREF="#0469" TARGET=body>Oakwood numeric extensions</A>
+<LI><A HREF="#0472" TARGET=body>Using Modula-2 features</A>
+<LI><A HREF="#0475" TARGET=body>Language extensions</A>
+<LI><A HREF="#0483" TARGET=body>The Oberon-2 module SYSTEM</A>
+</UL>
+<P><HR>
+<A NAME="0462">
+<A HREF="#0461" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0461" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0463" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>The Oberon environment</H2>
+
+<P>The Oberon-2 language was originally designed for use in an environment that provides <I>command activation, garbage collection,</I> and <I>dynamic loading</I> of the modules. Not being a part of the language, these features still contribute to the power of Oberon-2. 
+<P>The garbage collector and command activation are implemented in the Oberon Run-Time Support and can be used in any program. The dynamic loader is not provided in the current release. See <A HREF="xm009.html#0491" TARGET=body>The oberonRTS module</A> for further information. 
+<P><UL>
+<LI><A HREF="#0463" TARGET=body>Program structure</A>
+<LI><A HREF="#0464" TARGET=body>Creating a definition</A>
+</UL>
+<P><HR>
+<A NAME="0463">
+<A HREF="#0462" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0462" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0464" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Program structure</H3>
+
+<P>In an Oberon-2 environment, any declared parameterless procedure can be considered as a main procedure and can be called by its name (a qualified identifier of the form <TT>ModuleName.ProcName</TT>). 
+<P>Due to the nature of XDS, and its freedom from the Oberon system, a different approach had to be found to declare the &lsquo;top level&rsquo; or program modules. 
+<P>The module which contains the top level of your program must be compiled it with the <A HREF="xm005.html#0103" TARGET=body>MAIN</A> option set. This will generate an entry point to your program. Only one module per program shall be compiled with the option set. It is recommended to set it in the module header: 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;&lt;*+&nbsp;MAIN&nbsp;*&gt;
+&nbsp;&nbsp;&nbsp;&nbsp;MODULE&nbsp;hello;
+
+&nbsp;&nbsp;&nbsp;&nbsp;IMPORT&nbsp;InOut;
+
+&nbsp;&nbsp;&nbsp;&nbsp;BEGIN
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;InOut.WriteString&nbsp;(&quot;Hello&nbsp;World!&quot;);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;InOut.WriteLn;
+&nbsp;&nbsp;&nbsp;&nbsp;END&nbsp;hello.
+</PRE>
+
+<P><HR>
+<A NAME="0464">
+<A HREF="#0462" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0463" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0465" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Creating a definition</H3>
+
+<P>XDS provides two different ways to create a definition for an Oberon-2 module: 
+<UL>
+ 
+<LI>the <A HREF="xm004.html#0041" TARGET=body><B>BROWSE</B> operation mode</A> creates a definition module from a symbol file </LI>
+<LI>the <A HREF="xm005.html#0104" TARGET=body>MAKEDEF</A> option forces the Oberon-2 compiler to generate a (pseudo) definition module after successful compilation of an Oberon-2 module. </LI>
+</UL>
+
+<P>The <A HREF="xm005.html#0104" TARGET=body>MAKEDEF</A> option provides additional services: the compiler will preserve the so-called <I>exported</I> comments (i.e. comments which start with &lsquo;(**&rsquo;) if the <A HREF="xm005.html#0123" TARGET=body>XCOMMENTS</A> option is ON. 
+<P>The generated pseudo-definition module contains all exported declarations in the order of their appearance in the source text. All exported comments are placed at the appropriate positions. 
+<P>A definition can be generated in three <I>styles</I>.The <A HREF="xm005.html#0132" TARGET=body>BSTYLE</A> equation can be used to choose one of the styles: <B>DEF</B> (default), <B>DOC</B> or <B>MOD</B>. 
+<DL>
+ 
+<DT>The DEF style</DT>
+<DD> 
+<P>This produces an ETH-style definition module. All <I>type-bound procedures</I> (<I>methods</I>) and relative comments are shown as parts of the corresponding record types. 
+<P>This is the only style for which the <A HREF="xm005.html#0066" TARGET=body>BSREDEFINE</A> and <A HREF="xm005.html#0065" TARGET=body>BSCLOSURE</A> options are applicable. </DD>
+<DT>The DOC style</DT>
+<DD> 
+<P>This produces a pseudo-definition module in which methods are shown as parts of the appropriate record types (ignoring comments) and at the positions at which they occur in the source text. </DD>
+<DT>The MOD style</DT>
+<DD> 
+<P>This attempts to produce a file which can be compiled as an Oberon-2 module after slight modification (i.e. the file will contain &quot;<TT>END&nbsp;procname</TT>&quot;, etc.) </DD>
+</DL>
+
+<P><HR>
+<A NAME="0465">
+<A HREF="#0461" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0464" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0466" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Last changes to the language</H2>
+
+<P><UL>
+<LI><A HREF="#0466" TARGET=body>ASSERT</A>
+<LI><A HREF="#0467" TARGET=body>Underscores in identifiers</A>
+<LI><A HREF="#0468" TARGET=body>Source code directives</A>
+</UL>
+<P><HR>
+<A NAME="0466">
+<A HREF="#0465" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0465" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0467" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>ASSERT</H3>
+
+<P>The procedure <TT>ASSERT</TT> checks its boolean parameter and terminates the program if it is not <TT>TRUE</TT>. The second optional parameter denotes a <I>task termination code</I>. If omitted, a standard value is assumed. 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;ASSERT(cond:&nbsp;BOOLEAN&nbsp;[;&nbsp;code:&nbsp;INTEGER]);</TT> 
+<P>A call <TT>ASSERT(expr,code)</TT> is equivalent to 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;IF&nbsp;NOT&nbsp;expr&nbsp;THEN&nbsp;HALT(code)&nbsp;END;</TT> 
+<P><HR>
+<A NAME="0467">
+<A HREF="#0465" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0466" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0468" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Underscores in identifiers</H3>
+
+<P>According to the <I>Oakwood Guidelines</I> an underscore (&quot;<TT>_</TT>&quot;) may be used in identifiers (as a letter). 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;ident&nbsp;=&nbsp;(&nbsp;letter&nbsp;|&nbsp;&quot;_&quot;&nbsp;)&nbsp;{&nbsp;letter&nbsp;|&nbsp;digit&nbsp;|&nbsp;&quot;_&quot;&nbsp;}</TT> 
+<P>We recommend to use underscores with care, as it may cause problems with software portability to other compilers. This feature may be important for interfacing to foreign languages (See Chapter <A HREF="xm010.html#0517" TARGET=body>Multilanguage programming</A>). 
+<P><HR>
+<A NAME="0468">
+<A HREF="#0465" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0467" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0469" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Source code directives</H3>
+
+<P>Source code directives (or pragmas) are used to set compilation options in the source text and to select specific pieces of the source text to be compiled (conditional compilation). According to the <I>Oakwood Guidelines</I> all directives are contained in ISO Modula-2 style pseudo comments using angled brackets <TT>&lt;*&nbsp;...&nbsp;*&gt;</TT>. 
+<P>The additional language constructs should not be considered to be part of the Oberon-2 language. They define a separate compiler control language that coexist with Oberon-2. The option <A HREF="xm005.html#0112" TARGET=body>O2ISOPRAGMA</A> allows pragmas to be used. 
+<P>The syntax of the directives is the same for Modula-2 and Oberon-2. See <A HREF="xm007.html#0456" TARGET=body>Source code directives</A> for further details. 
+<P><HR>
+<A NAME="0469">
+<A HREF="#0461" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0468" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0470" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Oakwood numeric extensions</H2>
+
+<P>XDS Oberon-2 supports two extensions which are of importance for scientific programming, namely 
+<UL>
+ 
+<LI>complex numbers </LI>
+<LI>in-line exponentiation operator </LI>
+</UL>
+The <A HREF="xm005.html#0113" TARGET=body>O2NUMEXT</A> option should be set to use these extensions. 
+<P><UL>
+<LI><A HREF="#0470" TARGET=body>Complex numbers</A>
+<LI><A HREF="#0471" TARGET=body>In-line exponentiation</A>
+</UL>
+<P><HR>
+<A NAME="0470">
+<A HREF="#0469" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0469" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0471" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Complex numbers</H3>
+
+<P><FONT SIZE=2>NOTE: Only valid when option <A HREF="xm005.html#0113" TARGET=body>O2NUMEXT</A> is set.
+<P></FONT>  
+<P>Two additional types are included in the type hierarchy if the <A HREF="xm005.html#0113" TARGET=body>O2NUMEXT</A> option is set: 
+<P ALIGN=CENTER><TABLE CELLSPACING=0>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>COMPLEX </TT></TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">defined as </TD>
+<TD  STYLE="padding:0px 3px;"><TT>(REAL,REAL) </TT></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>LONGCOMPLEX </TT></TD>
+<TD ALIGN=CENTER STYLE="padding:0px 3px;">defined as </TD>
+<TD  STYLE="padding:0px 3px;"><TT>(LONGREAL,LONGREAL) </TT></TD>
+</TR>
+</TABLE>
+<P>All numeric types form a (partial) hierarchy  <I>whole types</I> &sub;REAL &sube;l COMPLEX <BR>
+LONGREAL <BR>
+&sube;LONGCOMPLEX  A common mathematical notation is used for complex number literals: 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;number&nbsp;=&nbsp;integer&nbsp;|&nbsp;real&nbsp;|&nbsp;complex</TT><BR>
+<TT>&nbsp;&nbsp;&nbsp;&nbsp;complex&nbsp;=&nbsp;real&nbsp;&quot;i&quot;</TT> 
+<P>A literal of the form <TT>5.0i</TT> denotes a complex number with real part equal to zero and an imaginary part equal to 5.0. Complex constants with a non-zero real part can be described using arithmetic operators. 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;CONST
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;i&nbsp;=&nbsp;1.i;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;x&nbsp;=&nbsp;1.&nbsp;+&nbsp;1.i;
+</PRE>
+
+<P>For the declarations 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;VAR
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;c:&nbsp;COMPLEX;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;l:&nbsp;LONGCOMPLEX;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;r:&nbsp;REAL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;x:&nbsp;INTEGER;
+</PRE>
+
+<P>the following statements are valid: 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;c:=i+r;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;l:=c;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;l:=c*r;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;l:=l*c;
+</PRE>
+
+<P>New conversion functions <TT>RE</TT> and <TT>IM</TT> can be used to obtain a real or imaginary part of a value of a complex type. Both functions have one parameter. If the parameter is of the <TT>COMPLEX</TT> type, both functions return a <TT>REAL</TT> value; if the parameter is of the <TT>LONGCOMPLEX</TT> type, functions return a <TT>LONGREAL</TT> value; otherwise the parameter should be a complex constant and functions return a real constant. 
+<P>A complex value can be formed by applying the standard function <TT>CMPLX</TT> to two reals. If both <TT>CMPLX</TT> arguments are real constants, the result is a complex constant. 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;CONST&nbsp;i&nbsp;=&nbsp;CMPLX(0.0,1.0);</TT> 
+<P>If both expressions are of the <TT>REAL</TT> type, the function returns a <TT>COMPLEX</TT> value, otherwise it returns a <TT>LONGCOMPLEX</TT> value. 
+<P><HR>
+<A NAME="0471">
+<A HREF="#0469" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0470" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0472" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>In-line exponentiation</H3>
+
+<P><FONT SIZE=2>NOTE: Only valid when option <A HREF="xm005.html#0113" TARGET=body>O2NUMEXT</A> is set.
+<P></FONT>  
+<P>The exponentiation operator <TT>**</TT> provides a convenient notation for arithmetic expressions, which does not involve function calls. It is an arithmetic operator which has a higher precedence than multiplication operators. 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;Term&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;&nbsp;Exponent&nbsp;{&nbsp;MulOp&nbsp;Exponent&nbsp;}.
+&nbsp;&nbsp;&nbsp;&nbsp;Exponent&nbsp;=&nbsp;&nbsp;Factor&nbsp;{&nbsp;&quot;**&quot;&nbsp;Factor&nbsp;}.
+</PRE>
+
+<P><B>Note:</B> the operator is right-associated:  a**b**c  is evaluated as  a**(b**c)  
+<P>The left operand of the exponentiation (<TT>a**b</TT>) should be any numeric value (including complex), while the right operand should be of a real or integer type. The result type does not depend of the type of right operand and is defined by the table: 
+<P ALIGN=CENTER><TABLE CELLSPACING=0>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><B>Left operand type </B></TD>
+<TD  STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><B>Result type </B></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">an integer type </TD>
+<TD  STYLE="padding:0px 3px;"><TT>REAL </TT></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>REAL </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>REAL </TT></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>LONGREAL </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>LONGREAL </TT></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>COMPLEX </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>COMPLEX </TT></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>LONGCOMPLEX </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>LONGCOMPLEX </TT></TD>
+</TR>
+</TABLE>
+<P><HR>
+<A NAME="0472">
+<A HREF="#0461" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0471" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0473" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Using Modula-2 features</H2>
+
+<P>All Modula-2 types and corresponding operations can be used in Oberon-2, including enumeration types, range types, records with variant parts, sets, etc. 
+<P><A NAME="0473">
+<A HREF="xm007.html#0436" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0472" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0474" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H5>Important Notes:</H5>
+<UL>
+ 
+<LI>It is not allowed to declare Modula-2 types in an Oberon-2 module. </LI>
+<LI>A module using Modula-2 features is likely to be non-portable to other compilers. </LI>
+</UL>
+
+<P><A NAME="0474">
+<A HREF="xm007.html#0436" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0473" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0475" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H5>Example</H5>
+
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;(*MODULA-2*)&nbsp;DEFINITION&nbsp;MODULE&nbsp;UsefulTypes;
+
+&nbsp;&nbsp;&nbsp;&nbsp;TYPE
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TranslationTable&nbsp;=&nbsp;ARRAY&nbsp;CHAR&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Color&nbsp;&nbsp;=&nbsp;(red,green,blue);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Colors&nbsp;=&nbsp;SET&nbsp;OF&nbsp;Color;
+
+&nbsp;&nbsp;&nbsp;&nbsp;END&nbsp;UsefulTypes.
+
+&nbsp;&nbsp;&nbsp;&nbsp;(*OBERON-2*)&nbsp;MODULE&nbsp;UsingM2;
+
+&nbsp;&nbsp;&nbsp;&nbsp;IMPORT&nbsp;UsefulTypes;
+
+&nbsp;&nbsp;&nbsp;&nbsp;TYPE
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TranslationTable*&nbsp;=&nbsp;UsefulTypes.TranslationTable;
+
+&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;colors*:&nbsp;UsefulTypes.Color;
+
+&nbsp;&nbsp;&nbsp;&nbsp;BEGIN
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;colors:=UsefulTypes.Colors{UsefulTypes.red};
+&nbsp;&nbsp;&nbsp;&nbsp;END&nbsp;UsingM2.
+</PRE>
+
+<P><HR>
+<A NAME="0475">
+<A HREF="#0461" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0474" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0476" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Language extensions</H2>
+
+<P><B>Warning:</B> Using extensions may cause problems with the software portability to other compilers. 
+<P>In the standard mode, the XDS Oberon-2 compiler is fully compatible with ETH compilers (See also <A HREF="#0465" TARGET=body>Last changes to the language</A>). The <A HREF="xm005.html#0111" TARGET=body>O2EXTENSIONS</A> option enables some language extensions. The main purposes of language extensions are 
+<UL>
+ 
+<LI>to improve interfacing to other languages (See Chapter <A HREF="xm010.html#0517" TARGET=body>Multilanguage programming</A>). </LI>
+<LI>to provide backward compatibility with the previous versions of XDS. </LI>
+</UL>
+
+<P><B>See also </B>
+<UL>
+ 
+<LI>Source language directives (<A HREF="#0468" TARGET=body>Source code directives</A>) </LI>
+<LI>Oakwood numeric extensions (<A HREF="#0469" TARGET=body>Oakwood numeric extensions</A>). </LI>
+</UL>
+
+<P><UL>
+<LI><A HREF="#0476" TARGET=body>Comments</A>
+<LI><A HREF="#0477" TARGET=body>String concatenation</A>
+<LI><A HREF="#0478" TARGET=body>VAL function</A>
+<LI><A HREF="#0479" TARGET=body>Read-only parameters</A>
+<LI><A HREF="#0481" TARGET=body>Variable number of parameters</A>
+<LI><A HREF="#0482" TARGET=body>Value constructors</A>
+</UL>
+<P><HR>
+<A NAME="0476">
+<A HREF="#0475" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0475" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0477" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Comments</H3>
+
+<P><FONT SIZE=2>NOTE: Only valid when option <A HREF="xm005.html#0111" TARGET=body>O2EXTENSIONS</A> is set.
+<P></FONT> 
+<P>As well as &quot;<TT>(**)</TT>&quot;, there is another valid format for comments in source texts. The portion of a line from &quot;<TT>--</TT>&quot; to the end of line is considered a comment. 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;j:&nbsp;INTEGER;&nbsp;--&nbsp;this&nbsp;is&nbsp;a&nbsp;comment</TT> 
+<P><HR>
+<A NAME="0477">
+<A HREF="#0475" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0476" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0478" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>String concatenation</H3>
+
+<P><FONT SIZE=2>NOTE: Only valid when option <A HREF="xm005.html#0111" TARGET=body>O2EXTENSIONS</A> is set.
+<P></FONT> 
+<P>The symbol &quot;+&quot; can be used for constant string and characters concatenation. See <A HREF="xm007.html#0397" TARGET=body>Strings</A> for more details. 
+<P><HR>
+<A NAME="0478">
+<A HREF="#0475" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0477" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0479" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>VAL function</H3>
+
+<P><FONT SIZE=2>NOTE: Only valid when option <A HREF="xm005.html#0111" TARGET=body>O2EXTENSIONS</A> is set.
+<P></FONT> 
+<P>The function <TT>VAL</TT> can be used to obtain a value of the specified scalar type from an expression of a scalar type. See <A HREF="xm007.html#0405" TARGET=body>Type conversions</A> for more details. 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;VAL(Type;&nbsp;expr:&nbsp;ScalarType):&nbsp;Type;</TT> 
+<P>The function can be applied to any scalar types, including system fixed size types (See <A HREF="#0485" TARGET=body>Whole system types</A>). 
+<P><HR>
+<A NAME="0479">
+<A HREF="#0475" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0478" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0480" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Read-only parameters</H3>
+
+<P><FONT SIZE=2>NOTE: Only valid when option <A HREF="xm005.html#0111" TARGET=body>O2EXTENSIONS</A> is set.
+<P></FONT> 
+<P>In a formal parameter section, the symbol <TT>&quot;-&quot;</TT> may appear after a name of a value parameter. That parameter is called <I>read-only</I>; its value can not be changed in the procedure&rsquo;s body. Read-only parameters need not to be copied before the procedure activation; this enables procedures with structured parameters to be more effective. Read-only parameters can not be used in a procedure type declaration. 
+<P>We recommend to use read-only parameters with care. The compiler does not check that the read-only parameter is not modified via another parameter or a global variable. 
+<P><A NAME="0480">
+<A HREF="xm007.html#0436" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0479" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0481" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H5>Example</H5>
+
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;Foo(VAR&nbsp;dest:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;source-:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR);
+&nbsp;&nbsp;&nbsp;&nbsp;BEGIN
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;dest[0]:='a';
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;dest[1]:=source[0];
+&nbsp;&nbsp;&nbsp;&nbsp;END&nbsp;Foo;
+</PRE>
+
+<P>The call <TT>Foo(x,x)</TT> would produce a wrong result, because the first statement changes the value of <TT>source[0]</TT> (<TT>source</TT> is not copied and points to the same location as <TT>dest</TT>). 
+<P><HR>
+<A NAME="0481">
+<A HREF="#0475" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0480" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0482" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Variable number of parameters</H3>
+
+<P><FONT SIZE=2>NOTE: Only valid when option <A HREF="xm005.html#0111" TARGET=body>O2EXTENSIONS</A> is set.
+<P></FONT> 
+<P>Everything contained in the section <A HREF="xm007.html#0448" TARGET=body>Variable number of parameters</A> is applicable to Oberon-2. 
+<P><HR>
+<A NAME="0482">
+<A HREF="#0475" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0481" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0483" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Value constructors</H3>
+
+<P><FONT SIZE=2>NOTE: Only valid when option <A HREF="xm005.html#0111" TARGET=body>O2EXTENSIONS</A> is set.
+<P></FONT> 
+<P>Everything contained in the section <A HREF="xm007.html#0398" TARGET=body>Value constructors</A> is applicable to Oberon-2. 
+<P><HR>
+<A NAME="0483">
+<A HREF="#0461" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0482" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0484" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>The Oberon-2 module SYSTEM</H2>
+
+<P>Low-level facilities are provided by the module <TT>SYSTEM</TT>. This module does not exist in the same sense as other library modules; it is hard-coded into the compiler itself. However, to use the provided facilities, it must be imported in the usual way. 
+<P>Some procedures in the module <TT>SYSTEM</TT> are generic procedures that cannot be explicitly declared, i.e. they apply to classes of operand types. 
+<P>XDS Oberon-2 compiler implements all system features described in <I>The Oberon-2 Report</I> (except <TT>GETREG</TT>, <TT>PUTREG</TT>, and <TT>CC</TT>) and allows one to access all features, described in the Modula-2 International Standard Modula-2 (See <A HREF="xm007.html#0425" TARGET=body>The Modula-2 module SYSTEM</A>). In this section we describe only features specific for this implementation. 
+<P><UL>
+<LI><A HREF="#0484" TARGET=body>Compatibility with BYTE</A>
+<LI><A HREF="#0485" TARGET=body>Whole system types</A>
+<LI><A HREF="#0486" TARGET=body>NEW and DISPOSE</A>
+<LI><A HREF="#0487" TARGET=body>M2ADR</A>
+</UL>
+<P><HR>
+<A NAME="0484">
+<A HREF="#0483" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0483" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0485" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Compatibility with BYTE</H3>
+
+<P>Expressions of types <TT>CHAR</TT>, <TT>BOOLEAN</TT>, <TT>SHORTINT</TT> and <TT>SYSTEM.CARD8</TT> can be assigned to variables of type <TT>BYTE</TT> or passed as actual parameters to formal parameters of type <TT>BYTE</TT>. 
+<P>If a formal procedure parameter has type <TT>ARRAY&nbsp;OF&nbsp;BYTE</TT>, then the corresponding actual parameter may be of any type, except numeric literals. 
+<P><HR>
+<A NAME="0485">
+<A HREF="#0483" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0484" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0486" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Whole system types</H3>
+
+<P>Module <TT>SYSTEM</TT> contains the signed types <TT>INT8</TT>, <TT>INT16</TT>, <TT>INT32</TT>, and unsigned types <TT>CARD8</TT>, <TT>CARD16</TT>, <TT>CARD32</TT>, which are guaranteed to contain exactly 8, 16, or 32 bits respectively. These types were introduced to simplify consstructing the interfaces to foreign libraries (See Chapter <A HREF="xm010.html#0517" TARGET=body>Multilanguage programming</A>). The basic types <TT>SHORTINT</TT>, <TT>INTEGER</TT>, <TT>LONGINT</TT> are synonyms of <TT>INT8</TT>, <TT>INT16</TT>, and <TT>INT32</TT> respectively. 
+<P>The unsigned types form a hierarchy whereby larger types include (the values of) smaller types.  <TT>SYSTEM.CARD32</TT> &supe;<TT>SYSTEM.CARD16</TT> &supe;<TT>SYSTEM.CARD8</TT>  The whole hierarchy of numeric types (See also <A HREF="#0470" TARGET=body>Complex numbers</A>):  <TT>LONGREAL</TT> &supe;<TT>REAL</TT> &supe;{ l signed types <BR>
+unsigned types <BR>
+.  
+<P><HR>
+<A NAME="0486">
+<A HREF="#0483" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0485" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0487" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>NEW and DISPOSE</H3>
+
+<P>The procedure <TT>SYSTEM.NEW</TT> can be used to allocate the system memory, i.e. memory which is not the subject of garbage collection. <TT>SYSTEM.NEW</TT> is a generic procedure, which is applied to pointer types and can be used in several ways, depending on pointer&rsquo;s base type. 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;NEW(VAR&nbsp;p:&nbsp;AnyPointer&nbsp;[;&nbsp;x0,..xn:&nbsp;integer]);</TT> 
+<P>Let type <TT>P</TT> be defined as <TT>POINTER TO</TT> T and p is of type <TT>P</TT>. 
+<P ALIGN=CENTER><TABLE CELLSPACING=0>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>NEW(</TT>p<TT>) </TT></TD>
+<TD  STYLE="padding:0px 3px;">T is a record or fixed length array type. The procedure allocates a storage block of <TT>SIZE(</TT>T<TT>)</TT> bytes and assigns its address to p. </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>NEW(</TT>p<TT>,</TT>n<TT>) </TT></TD>
+<TD  STYLE="padding:0px 3px;">T is a record or fixed length array type. The procedure allocates a storage block of n bytes and assigns its address to p. </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>NEW(</TT>p<TT>,</TT>x0<TT>,..</TT>xn-1<TT>) </TT></TD>
+<TD  STYLE="padding:0px 3px;">T is an n-dimensional open array. The procedure allocates an open array of lengths given by the expressions x0,..xn-1 </TD>
+</TR>
+</TABLE>
+<P>The procedure <TT>SYSTEM.DISPOSE</TT> can be used to free a block previously allocated by a call to <TT>SYSTEM.NEW</TT>. It does <I>not</I> immediately deallocate the block, but marks it as a free block. The block will be deallocated by the next call of the garbage collector. 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;DISPOSE(VAR&nbsp;p:&nbsp;AnyPointer;&nbsp;[size:&nbsp;integer]);</TT> 
+<P ALIGN=CENTER><TABLE CELLSPACING=0>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>DISPOSE(</TT>p<TT>) </TT></TD>
+<TD  STYLE="padding:0px 3px;">T is a record or array type. The procedure deallocates the storage block p points to. </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>DISPOSE(</TT>p<TT>,</TT>n<TT>) </TT></TD>
+<TD  STYLE="padding:0px 3px;">T is a record or fixed length array type. The procedure deallocates the storage block of n bytes p points to. </TD>
+</TR>
+</TABLE>
+<P><HR>
+<A NAME="0487">
+<A HREF="#0483" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0486" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="xm009.html#0488" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>M2ADR</H3>
+
+<P>In Oberon-2, the <TT>SYSTEM.ADR</TT> procedure returns <TT>LONGINT</TT>, which is not always very convenient. The <TT>SYSTEM.M2ADR</TT> procedure behaves as Modula-2 <TT>SYSTEM.ADR</TT>, returning <TT>SYSTEM.ADDRESS</TT>: 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;M2ADR(VAR&nbsp;x:&nbsp;any&nbsp;type):&nbsp;ADDRESS;</TT> 
+<P>
+</BODY>
+</HTML>

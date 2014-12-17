@@ -1,0 +1,35 @@
+(* Copyright (C) 1996 XTech LTD *)
+
+(* Heap management. NHA 25/6/96 *)
+
+<*+M2ADDTYPES   *>
+<*+M2EXTENSIONS *>
+
+DEFINITION MODULE ShtHeap ;
+
+FROM SYSTEM IMPORT ADDRESS;
+
+TYPE
+  Size = LONGCARD;
+
+VAR
+  Clear: BOOLEAN;    (* Clear allocated storage *)
+  Check: BOOLEAN;    (* Stop if Allocate fails *)
+  Debug: BOOLEAN;    (* Test heap consistency at every call *)
+
+CONST
+  Align = 4;             (* Pointer alignment *)
+
+  PROCEDURE Initialize ( H :ADDRESS; Z: Size );
+
+  PROCEDURE Allocate ( H :ADDRESS; VAR P: ADDRESS; Z: Size );
+  PROCEDURE Free     ( H :ADDRESS; VAR P: ADDRESS; Z: Size );
+
+  PROCEDURE Largest  ( H :ADDRESS ): Size;
+  PROCEDURE Total    ( H :ADDRESS ): Size;
+
+  PROCEDURE Test     ( H :ADDRESS );
+
+  PROCEDURE IsShtHeapException (): BOOLEAN;
+
+END ShtHeap.

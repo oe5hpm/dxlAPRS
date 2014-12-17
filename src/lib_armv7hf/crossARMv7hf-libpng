@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# architecture prefix
+ARCH="arm-linux-gnueabihf"
+
+# path to the toolchain and kernel base
+TOOL_PATH=/home/petermaierh/gcc-linaro-arm-linux-gnueabihf-4.8-2014-07-1
+
+# path to the toolchain base
+BASE_PATH=$TOOL_PATH
+
+# cumulative toolchain prefix
+PREFIX=$BASE_PATH/bin/$ARCH
+
+export CC=$PREFIX-gcc
+export CXX=$PREFIX-g++
+export LD=$PREFIX-ld
+export NM="$PREFIX-nm -B"
+export AR=$PREFIX-ar
+export RANLIB=$PREFIX-ranlib
+export STRIP=$PREFIX-strip
+export OBJCOPY=$PREFIX-objcopy
+export LN_S="ln -s"
+
+export CFLAGS="-Wall -O3 -funroll-loops -march=armv7-a -mfpu=neon -mfloat-abi=hard -mcpu=cortex-a8 -I$BASE_PATH/include -I../zlib-1.2.8"
+export CPPFLAGS="-I$BASE_PATH/include"
+export CXXFLAGS=""
+
+export LDFLAGS="-L$BASE_PATH/lib -L$BASE_PATH/$ARCH/lib -L$BASE_PATH/lib/gcc/arm-linux-gnueabihf/4.8.2 -L../zlib-1.2.8"
+
+./configure --host=$ARCH --prefix=/tmp/libpng --libdir=/home/petermaierh/work/dxlAPRS/src/lib_armv7hf --includedir=/home/petermaierh/work/dxlAPRS/src/lib_armv7hf
+make
+make install

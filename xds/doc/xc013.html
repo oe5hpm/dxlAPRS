@@ -1,0 +1,156 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 4.01 Transitional//EN">
+<HTML>
+<HEAD>
+<TITLE>Inline assembler</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<P><HR>
+<A NAME="0545">
+<A HREF="xc000.html#root" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="xc012.html#0544" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0546" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H1>Inline assembler</H1>
+
+<P>This chapter contains a very brief description of the inline x86 assembler. 
+<P><UL>
+<LI><A HREF="#0546" TARGET=body>Implemented features</A>
+<LI><A HREF="#0547" TARGET=body>Basic syntax</A>
+<LI><A HREF="#0548" TARGET=body>Labels</A>
+<LI><A HREF="#0549" TARGET=body>Accessing Modula-2/Oberon-2 objects</A>
+<LI><A HREF="#0550" TARGET=body>Known problems</A>
+<LI><A HREF="#0551" TARGET=body>Potential problems</A>
+</UL>
+<P><HR>
+<A NAME="0546">
+<A HREF="#0545" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0545" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0547" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Implemented features</H2>
+
+<P>The following features are implemented in the current version: 
+<UL>
+ 
+<LI>Base instruction set up to and including Pentium Pro (see <A HREF="#0550" TARGET=body>Known problems</A>). </LI>
+<LI>Floating point instructions up to and including Pentium Pro. </LI>
+<LI>Pentium MMX instructions. </LI>
+<LI>Labels and their usage in branch and call instructions. </LI>
+<LI>Modula-2/Oberon-2 procedure calls and variable access (see <A HREF="#0549" TARGET=body>Accessing Modula-2/Oberon-2 objects</A>). </LI>
+</UL>
+
+<P><HR>
+<A NAME="0547">
+<A HREF="#0545" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0546" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0548" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Basic syntax</H2>
+
+<P>The assembler uses the same scanner as the Modula-2/Oberon-2 front-end, so it is possible to use <A HREF="xc007.html#0443" TARGET=body>conditional compilation</A> and comments. 
+<P>Language extensions have to be enabled using the <A HREF="xc005.html#0094" TARGET=body>M2EXTENSIONS</A> and <A HREF="xc005.html#0103" TARGET=body>O2EXTENSIONS</A> options in order to use inline assembly facilities. 
+<P>The keyword <TT>ASM</TT> denotes the beginning of inline assembly code; the keyword <TT>END</TT> denotes its end. 
+<P>Each line in a piece of the assembly code may contain not more than one instruction. It is not possible to continue an instruction on the next string. 
+<P>Keywords and names of instructions and registers are not case sensitive. 
+<P>There are instructions one of which arguments is fixed (<TT>DIV</TT>, <TT>FCOMI</TT>). These instructions are differently denoted in different assemblers. We use the syntax described in Intel&rsquo;s documentation. 
+<P>If size or an operand may not be determined based on instruction semantics and/or size of another operand, it is necessary to explicitly specify it. The following size specifiers are recognized: 
+<P ALIGN=CENTER><TABLE CELLSPACING=0>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><B>Specifier </B></TD>
+<TD  STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><B>Size </B></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>BYTE&nbsp;PTR</TT> </TD>
+<TD  STYLE="padding:0px 3px;">1 </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>WORD&nbsp;PTR</TT> </TD>
+<TD  STYLE="padding:0px 3px;">2 </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>DWORD&nbsp;PTR</TT> </TD>
+<TD  STYLE="padding:0px 3px;">4 </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>FWORD&nbsp;PTR</TT> </TD>
+<TD  STYLE="padding:0px 3px;">6 </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>QWORD&nbsp;PTR</TT> </TD>
+<TD  STYLE="padding:0px 3px;">8 </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>TBYTE&nbsp;PTR</TT> </TD>
+<TD  STYLE="padding:0px 3px;">10 </TD>
+</TR>
+</TABLE>
+<P><B>Examples:</B> 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;MOV&nbsp;WORD&nbsp;PTR&nbsp;[EBX],1&nbsp;&nbsp;</TT> here size specifier is obligatory 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;MOV&nbsp;[EBX],AX&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TT> here size is determined automatically 
+<P><HR>
+<A NAME="0548">
+<A HREF="#0545" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0547" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0549" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Labels</H2>
+
+<P>An instruction may be prepended with a label, delimited with a colon character: 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;Save:&nbsp;PUSH&nbsp;EAX</TT> 
+<P>Labels may not match instruction names. It is also not recommended to use assembly keywords (<TT>DWORD</TT>, <TT>EAX</TT>) as labels. 
+<P>In the current version, labels may only be used in branch and call instructions. 
+<P><HR>
+<A NAME="0549">
+<A HREF="#0545" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0548" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0550" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Accessing Modula-2/Oberon-2 objects</H2>
+
+<P>It is possible to reference Modula-2/Oberon-2 entities from within the inline assembly code, namely whole constants, variables, and procedures (in <TT>JMP</TT> and <TT>CALL</TT> instructions only). 
+<P>Example: 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;MOV&nbsp;j,10</TT> 
+<P>In this example, the type of <TT>j</TT> is used to choose between byte, word, and doubleword <TT>MOV</TT> instructions. 
+<P><B>Note:</B> In the first pre-release versions which included inline assembler, it was necessary to specify the base register <TT>EBP</TT> to access local variables: 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;MOV&nbsp;j[EBP],10</TT> 
+<P>It is <I>no longer required</I>. 
+<P>In case of nested procedures, code to access a variable from an outer procedure scope has to be written by hand. 
+<P>Record field access is not supported yet. There are also no operators to denote attributes of Modula-2/Oberon-2 entities. 
+<P>The <TT>OFFSET</TT> operator returns the offset of its operand, which has to be a variable: 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;MOV&nbsp;EAX,&nbsp;OFFSET&nbsp;j</TT> 
+<P><HR>
+<A NAME="0550">
+<A HREF="#0545" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0549" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0551" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Known problems</H2>
+<OL>
+ 
+<LI>Instruction prefixes (<TT>REP</TT>, <TT>LOCK</TT>, etc.) are not supported yet. </LI>
+<LI>Segment overriding (<TT>DS:</TT>, etc.) is not supported yet. </LI>
+<LI>Error position precision is +/- 1-2 tokens. </LI>
+<LI>Error 3029 incorrectly positioned. </LI>
+<LI>16-bit addressing modes (e.g. <TT>[BX+SI]</TT>) are not supported and unlikely to be supported in the future. </LI>
+<LI>Modula-2/Oberon-2 entities access facilities are limited. </LI>
+<LI>It is possible to use commands like <TT>MOVSB</TT>, <TT>MOVSW</TT>, <TT>MOVSD</TT>, but not as in <TT>MOVS&nbsp;DWORD&nbsp;PTR&nbsp;[ESI]</TT>. </LI>
+<LI>Modula-2/Oberon-2 variables usage is poorly checked for correctness. </LI>
+<LI>It is possible to use only one <TT>OFFSET</TT> operator in a constant expression. </LI>
+</OL>
+
+<P><HR>
+<A NAME="0551">
+<A HREF="#0545" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0550" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="xc014.html#0552" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Potential problems</H2>
+<OL>
+ 
+<LI>Not all instructions were tested with all addressing modes. </LI>
+<LI>Error diagnostics and recovery were not tested. </LI>
+</OL>
+
+<P></BODY>
+</HTML>

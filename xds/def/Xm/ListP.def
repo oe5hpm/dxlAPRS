@@ -1,0 +1,348 @@
+(* Xm/ListP.def  Nov 11  16:36:37  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/ListP.h using H2D v1.18.1 *)
+
+(* $RCSfile: ListP.def,v $ $Revision: 4 $ $Date: 28.07.98 23:14 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+(* Merged headers: Xm/List.h *)
+
+DEFINITION MODULE ["C"] ListP;
+
+IMPORT SYSTEM, X, Xlib, Xm:=XmP, Xt:=IntrinsicP, ScrollBarP, ScrolledWP;
+(* H2D:  Required IMPORT clause: 
+IMPORT ListP, X, Xlib, Xm:=XmP, Xt:=IntrinsicP, ScrollBarP, ScrolledWP;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992, 1993 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(* ------------------------------------------------- *)
+(*                     Xm/List.h                     *)
+(* ------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2.2
+ *)
+
+VAR 
+  xmListWidgetClass: Xt.WidgetClass;
+
+CONST 
+  XmINITIAL = 0;
+  XmADDITION = 1;
+  XmMODIFICATION = 2;
+
+TYPE 
+  XmListWidgetClass = POINTER TO _XmListClassRec;
+
+  XmListWidget = POINTER TO _XmListRec;
+
+(********    Public Function Declarations    ********)
+
+PROCEDURE XmListAddItem ( w: Xt.Widget;
+		          item: Xm.XmString;
+                          pos: SYSTEM.int );
+
+PROCEDURE XmListAddItems ( w: Xt.Widget;
+			   items: Xm.XmStringTable;
+                           item_count: SYSTEM.int;
+			   pos: SYSTEM.int );
+
+PROCEDURE XmListAddItemsUnselected ( w: Xt.Widget;
+				     items: Xm.XmStringTable;
+                                     item_count: SYSTEM.int;
+				     pos: SYSTEM.int );
+
+PROCEDURE XmListAddItemUnselected ( w: Xt.Widget;
+				    item: Xm.XmString;
+                                    pos: SYSTEM.int );
+
+PROCEDURE XmListDeleteItem ( w: Xt.Widget;
+			     item: Xm.XmString );
+
+PROCEDURE XmListDeleteItems ( w: Xt.Widget;
+			      items: Xm.XmStringTable;
+                              item_count: SYSTEM.int );
+
+PROCEDURE XmListDeletePositions ( w: Xt.Widget;
+			          position_list: Xlib.PASInt;
+                                  position_count: SYSTEM.int );
+
+PROCEDURE XmListDeletePos ( w: Xt.Widget;
+			    pos: SYSTEM.int );
+
+PROCEDURE XmListDeleteItemsPos ( w: Xt.Widget;
+			         item_count: SYSTEM.int;
+                                 pos: SYSTEM.int );
+
+PROCEDURE XmListDeleteAllItems ( w: Xt.Widget );
+
+PROCEDURE XmListReplaceItems ( w: Xt.Widget;
+			       old_items: Xm.XmStringTable;
+                               item_count: SYSTEM.int;
+			       new_items: Xm.XmStringTable );
+
+PROCEDURE XmListReplaceItemsPos ( w: Xt.Widget;
+			          new_items: Xm.XmStringTable;
+                                  item_count: SYSTEM.int;
+			          position: SYSTEM.int );
+
+PROCEDURE XmListReplaceItemsUnselected ( w: Xt.Widget;
+                                         old_items: Xm.XmStringTable;
+                                         item_count: SYSTEM.int;
+                                         new_items: Xm.XmStringTable );
+
+PROCEDURE XmListReplaceItemsPosUnselected ( w: Xt.Widget;
+                                            new_items: Xm.XmStringTable;
+                                            item_count: SYSTEM.int;
+                                            position: SYSTEM.int );
+
+PROCEDURE XmListReplacePositions ( w: Xt.Widget;
+				   position_list: Xlib.PASInt;
+                                   item_list: Xm.XmStringTable;
+				   item_count: SYSTEM.int );
+
+PROCEDURE XmListSelectItem ( w: Xt.Widget;
+			     item: Xm.XmString;
+                             notify: Xt.Boolean );
+
+PROCEDURE XmListSelectPos ( w: Xt.Widget;
+			    pos: SYSTEM.int;
+                            notify: Xt.Boolean );
+
+PROCEDURE XmListDeselectItem ( w: Xt.Widget;
+			       item: Xm.XmString );
+
+PROCEDURE XmListDeselectPos ( w: Xt.Widget;
+			      pos: SYSTEM.int );
+
+PROCEDURE XmListDeselectAllItems ( w: Xt.Widget );
+
+PROCEDURE XmListSetPos ( w: Xt.Widget;
+		         pos: SYSTEM.int );
+
+PROCEDURE XmListSetBottomPos ( w: Xt.Widget;
+			       pos: SYSTEM.int );
+
+PROCEDURE XmListSetItem ( w: Xt.Widget;
+		          item: Xm.XmString );
+
+PROCEDURE XmListSetBottomItem ( w: Xt.Widget;
+			        item: Xm.XmString );
+
+PROCEDURE XmListSetAddMode ( w: Xt.Widget;
+                             add_mode: Xt.Boolean );
+
+PROCEDURE XmListItemExists ( w: Xt.Widget;
+                             item: Xm.XmString ): Xt.Boolean;
+
+PROCEDURE XmListItemPos ( w: Xt.Widget;
+                          item: Xm.XmString ): SYSTEM.int;
+
+PROCEDURE XmListGetKbdItemPos ( w: Xt.Widget ): SYSTEM.int;
+
+PROCEDURE XmListSetKbdItemPos ( w: Xt.Widget;
+                                pos: SYSTEM.int ): Xt.Boolean;
+
+PROCEDURE XmListYToPos ( w: Xt.Widget;
+                         y: Xt.Position ): SYSTEM.int;
+
+(*  NeedWidePrototypes ?????  Ego: Yeah! :) *)
+
+PROCEDURE XmListPosToBounds ( w: Xt.Widget;
+			      position: SYSTEM.int;
+                              VAR x: Xt.Position;
+			      VAR y: Xt.Position;
+			      VAR width: Xt.Dimension;
+                              VAR height: Xt.Dimension ): Xt.Boolean;
+
+PROCEDURE XmListGetMatchPos ( w: Xt.Widget;
+			      item: Xm.XmString;
+                              VAR pos_list: Xlib.PASInt;
+                              VAR pos_count: SYSTEM.int ): Xt.Boolean;
+
+PROCEDURE XmListGetSelectedPos ( w: Xt.Widget;
+				 VAR pos_list: Xlib.PASInt;
+                                 VAR pos_count: SYSTEM.int ): Xt.Boolean;
+
+PROCEDURE XmListSetHorizPos ( w: Xt.Widget;
+			      position: SYSTEM.int );
+
+PROCEDURE XmListUpdateSelectedList ( w: Xt.Widget );
+
+PROCEDURE XmListPosSelected ( w: Xt.Widget;
+                              pos: SYSTEM.int ): Xt.Boolean;
+
+PROCEDURE XmCreateList ( parent: Xt.Widget;
+		         name: ARRAY OF CHAR;
+                         args: Xt.ArgList;
+                         argCount: Xt.Cardinal ): Xt.Widget;
+
+PROCEDURE XmCreateScrolledList ( parent: Xt.Widget;
+			         name: ARRAY OF CHAR;
+                                 args: Xt.ArgList;
+                                 argCount: Xt.Cardinal ): Xt.Widget;
+
+(********    End Public Function Declarations    ********)
+
+(* -------------------------------------------------- *)
+(*                     Xm/ListP.h                     *)
+(* -------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2.3
+ *)
+
+(*   List struct passed to Convert proc for drag and drop  *)
+
+TYPE 
+  _XmListDragConvertStruct = RECORD
+    w          : Xt.Widget;
+    strings    : Xm.XmStringTable;
+    num_strings: SYSTEM.int;
+  END;
+
+  XmListDragConvertStruct = _XmListDragConvertStruct;
+
+(*   List class structure   *)
+
+  _XmListClassPart = RECORD
+    extension: Xt.XtPointer;   (*  Pointer to extension record  *)
+  END;
+
+  XmListClassPart = _XmListClassPart;
+
+(*   Full class record declaration for List class   *)
+
+  _XmListClassRec = RECORD
+    core_class     : Xt.CoreClassPart;
+    primitive_class: Xm.XmPrimitiveClassPart;
+    list_class     : XmListClassPart;
+  END;
+
+  XmListClassRec = _XmListClassRec;
+
+(****************
+ *
+ * Internal form of the list elements.
+ *
+ ****************)
+
+  Element = RECORD
+    name         : Xm._XmString;
+    height       : Xt.Dimension;
+    width        : Xt.Dimension;
+    CumHeight    : Xt.Dimension;
+    selected     : Xt.Boolean;
+    last_selected: Xt.Boolean;
+    LastTimeDrawn: Xt.Boolean;
+    NumLines     : SYSTEM.CARD16;
+    length       : SYSTEM.int;
+  END;
+
+  ElementPtr = POINTER TO Element;
+
+  ElementList = POINTER TO ARRAY [0..X.MAX_STUP_ARR] OF ElementPtr;
+
+(*   The List instance record   *)
+
+  _XmListPart = RECORD
+    spacing               : Xt.Dimension;
+    ItemSpacing           : SYSTEM.INT16;
+    margin_width          : Xt.Dimension;
+    margin_height         : Xt.Dimension;
+    font                  : Xm.XmFontList;
+    items                 : Xm.XmStringTable;
+    itemCount             : SYSTEM.int;
+    selectedItems         : Xm.XmStringTable;
+    selectedIndices       : Xlib.PASInt;
+    selectedItemCount     : SYSTEM.int;
+    visibleItemCount      : SYSTEM.int;
+    LastSetVizCount       : SYSTEM.int;
+    SelectionPolicy       : SHORTCARD;
+    ScrollBarDisplayPolicy: SHORTCARD;
+    SizePolicy            : SHORTCARD;
+    StrDir                : Xm.XmStringDirection;
+    AutoSelect            : Xt.Boolean;
+    DidSelection          : Xt.Boolean;
+    FromSetSB             : Xt.Boolean;
+    FromSetNewSize        : Xt.Boolean;
+    AddMode               : Xt.Boolean;
+    LeaveDir              : SHORTCARD;
+    HighlightThickness    : SHORTCARD;
+    ClickInterval         : SYSTEM.int;
+    DragID                : Xt.XtIntervalId;
+    SingleCallback        : Xt.XtCallbackList;
+    MultipleCallback      : Xt.XtCallbackList;
+    ExtendCallback        : Xt.XtCallbackList;
+    BrowseCallback        : Xt.XtCallbackList;
+    DefaultCallback       : Xt.XtCallbackList;
+    NormalGC              : Xlib.GC;
+    InverseGC             : Xlib.GC;
+    HighlightGC           : Xlib.GC;
+    DashTile              : X.Pixmap;
+    InternalList          : ElementList;
+    LastItem              : SYSTEM.int;
+    FontHeight            : SYSTEM.int;
+    top_position          : SYSTEM.int;
+    Event                 : CHAR;
+    LastHLItem            : SYSTEM.int;
+    StartItem             : SYSTEM.int;
+    OldStartItem          : SYSTEM.int;
+    EndItem               : SYSTEM.int;
+    OldEndItem            : SYSTEM.int;
+    BaseX                 : Xt.Position;
+    BaseY                 : Xt.Position;
+    MouseMoved            : Xt.Boolean;
+    AppendInProgress      : Xt.Boolean;
+    Traversing            : Xt.Boolean;
+    KbdSelection          : Xt.Boolean;
+    DownCount             : SYSTEM.INT16;
+    DownTime              : X.Time;
+    CurrentKbdItem        : SYSTEM.int;
+    SelectionType         : SHORTCARD;
+    InsensitiveGC         : Xlib.GC;
+    vmin                  : SYSTEM.int; (* slider minimum coordiate position *)
+    vmax                  : SYSTEM.int; (* slider maximum coordiate position *)
+    vOrigin               : SYSTEM.int; (* slider edge location              *)
+    vExtent               : SYSTEM.int; (* slider size                       *)
+    hmin                  : SYSTEM.int; (* Same as above for horizontal bar. *)
+    hmax                  : SYSTEM.int;
+    hOrigin               : SYSTEM.int;
+    hExtent               : SYSTEM.int;
+    MaxWidth              : Xt.Dimension;
+    CharWidth             : Xt.Dimension;
+    XOrigin               : Xt.Position;
+    hScrollBar            : ScrollBarP.XmScrollBarWidget;
+    vScrollBar            : ScrollBarP.XmScrollBarWidget;
+    Mom                   : ScrolledWP.XmScrolledWindowWidget;
+    MaxItemHeight         : Xt.Dimension;
+  END;
+
+  XmListPart = _XmListPart;
+
+(*   Full instance record declaration   *)
+
+  _XmListRec = RECORD
+    core     : Xt.CorePart;
+    primitive: Xm.XmPrimitivePart;
+    list     : XmListPart;
+  END;
+
+  XmListRec = _XmListRec;
+
+VAR 
+  xmListClassRec: XmListClassRec;
+
+(********    Private Function Declarations    ********)
+(********    End Private Function Declarations    ********)
+
+END ListP.

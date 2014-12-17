@@ -1,0 +1,15 @@
+(** Copyright (c) 1994 xTech Ltd, Russia. All Rights Reserved. *)
+DEFINITION DStrings;
+
+TYPE
+  String* = POINTER TO ARRAY OF CHAR;
+
+PROCEDURE Assign*(s: ARRAY OF CHAR; VAR d: String);
+(** Allocates a new string and copies from "s".
+  Resulting string always contains string terminator (0X).
+*)
+
+PROCEDURE Append*(s: ARRAY OF CHAR; VAR d: String);
+(** Append string "s", resizing "d" if necessary. *)
+
+END DStrings.

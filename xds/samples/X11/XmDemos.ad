@@ -1,0 +1,201 @@
+!
+!	XMdemos app-defaults file for Motif demo programs
+!
+!	general appearance and behavior defaults
+!
+*allowShellResize:		true
+*borderWidth:			0
+*highlightThickness:		2
+*traversalOn:			true
+*keyboardFocusPolicy:		explicit
+!
+!	specific defaults for example programs
+!
+xmdialogs*XmBulletinBoard*autoUnmanage:		true
+xmdialogs*XmFileSelectionBox*autoUnmanage:	false
+xmdialogs*XmForm.width:				275
+xmdialogs*XmRowColumn*XmPushButtonGadget.marginLeft:	5
+xmdialogs*XmRowColumn*XmPushButtonGadget.marginRight:	5
+xmdialogs*menu_bar*background:		#58f
+!
+xmlist*XmList.listMarginHeight:		5
+xmlist*XmList.listMarginWidth:		5
+xmlist*XmList.selectionPolicy:  	browse_select
+xmlist*XmList.ScrollBarDisplayPolicy:	as_needed
+xmlist*XmScrolledWindow.ScrolledWindowMarginHeight:	10
+xmlist*XmScrolledWindow.ScrolledWindowMarginWidth:	10
+! uncomment the next two lines for a horizontal scroll bar
+!xmlist*XmList.listSizePolicy:		constant
+!xmlist*XmList.width:			150
+!
+xmfonts*XmScrolledWindow.height:	432
+xmfonts*XmScrolledWindow.width:		390
+xmfonts*row_column.numColumns:	5
+xmfonts*row_column.packing:		XmPACK_COLUMN
+xmfonts.fontPattern:   			*
+xmfonts.maxFont:     			1000
+xmfonts.maxLen:				10
+xmfonts.useGadget:			True
+!
+xmter.speed:				75
+xmter.foreground:			brown
+xmter.background:			turquoise
+!
+! periodic resources
+!
+periodic*highlightThickness:		1
+!
+xmform*highlightThickness:0
+xmform*XmPushButton.background:cadetblue
+xmform*XmArrowButton.foreground:cadetblue
+xmform*XmArrowButton.background:lightgrey
+xmform*XmArrowButton.shadowThickness:0
+xmform*XmForm.background:lightgrey
+xmform.XmForm.shadowThickness:3
+xmform*topShadowColor:white
+xmform*bottomShadowColor:black
+
+!!! XMFORC
+
+!labelStrings
+xmforc*rowcol_layout.labelString:RowColumn Layout Controls
+xmforc*pack_tight.labelString:PACK_TIGHT
+xmforc*pack_column.labelString:PACK_COLUMN
+xmforc*pack_none.labelString:PACK_NONE
+xmforc*packing_option.labelString:packing:
+xmforc*vertical.labelString:VERTICAL
+xmforc*horizontal.labelString:HORIZONTAL
+xmforc*orientation_option.labelString:orientation
+xmforc*num_column_label.labelString:numColumns
+xmforc*num_children_label.labelString:numChildren
+xmforc*resize_width_toggle.labelString:resizeWidth
+xmforc*resize_height_toggle.labelString:resizeHeight
+xmforc*adjust_last_toggle.labelString:adjustLast
+xmforc*adjust_margin_toggle.labelString:adjustMargin
+xmforc*is_aligned_toggle.labelString:isAligned
+xmforc*entry_alignment.labelString:entryAlignment:
+xmforc*align_beginning.labelString:ALIGNMENT_BEGINNING
+xmforc*align_center.labelString:ALIGNMENT_CENTER
+xmforc*align_end.labelString:ALIGNMENT_END
+xmforc*margin_width.labelString:marginWidth:
+xmforc*margin_height.labelString:marginHeight:
+xmforc*spacing.labelString:spacing:
+xmforc*entry_border.labelString:entryBorder:
+xmforc*l_x.labelString:X:
+xmforc*l_y.labelString:Y:
+xmforc*l_width.labelString:Width:
+xmforc*l_height.labelString:Height:
+xmforc*l_recomp_size.labelString:RecomputeSize:
+
+
+! general presentation
+
+xmforc*rowcol_layout.alignment:XmALIGNMENT_CENTER
+xmforc*separator.margin: 90
+
+! colors
+
+xmforc*background:lightgrey
+xmforc*topShadowColor:white
+
+! fonts
+xmforc*rowcol_layout.fontList:-b&h-lucida-bold-i-normal-sans-25*-iso8859-1
+xmforc*XmScale.fontList:fixed
+
+! other layout & offset stuff
+
+xmforc*XmScale.scaleWidth:140
+xmforc*resize_width.maximum: 1000
+xmforc*resize_height.maximum: 1000
+
+xmforc*form2*alignment:XmALIGNMENT_END
+
+xmforc*packing_option.topOffset:20
+xmforc*num_columns.topOffset:20
+xmforc*form1.topOffset:15
+xmforc*XmScale.leftOffset:10
+
+xmforc*allowShellResize:True
+
+!!! END XMFORC
+
+!!! XMMAP
+
+! data
+xmmap.lines: 77_97, 73_123, 152_177, 171_243, 158_335, 117_399, 270_455, 314_408, 357_385, 382_382, 421_388, 436_396, 445_400, 477_378, 513_357, 467_241, 447_262, 483_144, 481_95, 359_8, 334_4, 292_4, 259_34, 211_63, 180_40, 156_49, 172_92, 77_97
+xmmap.towns: Paris, Marseille, Nice, Perigueux, Grenoble, ATLANTIC, MEDITERRANEE
+xmmap*Paris.x: 292
+xmmap*Paris.y: 114
+xmmap*Marseille.x: 391
+xmmap*Marseille.y: 386
+xmmap*Nice.x: 497
+xmmap*Nice.y: 349
+xmmap*Perigueux.x: 216
+xmmap*Perigueux.y: 293
+xmmap*Grenoble.x: 436
+xmmap*Grenoble.y: 296
+xmmap*ATLANTIC.x: 24
+xmmap*ATLANTIC.y: 242
+xmmap*ATLANTIC.background: blue
+xmmap*MEDITERRANEE.background: blue
+xmmap*MEDITERRANEE.x: 442
+xmmap*MEDITERRANEE.y: 466
+
+! numeral
+xmmap*work_area.width:1000
+xmmap*work_area.height:1000
+xmmap.width: 600
+xmmap.height:500
+xmmap*XmScale.minimum: 100
+xmmap*XmScale.maximum: 16000
+
+!labels
+
+xmmap*scale_w.titleString: Width
+xmmap*scale_h.titleString: Height
+
+! color and font stuff
+xmmap*topShadowColor:	white
+xmmap*background:	lightgrey
+xmmap*work_area.background: wheat2
+xmmap*XmScale.background: wheat2
+xmmap*comw.spacing:0
+xmmap*fontList:-adobe-helvetica-bold-r-normal-*-14-*-*-*-*-*-*-*
+xmmap*highlightColor:Black
+xmmap*autoUnmanage: True
+
+!!! END XMMAP
+!!! XMAPDEF
+
+xmapdef*main_window.width: 600
+xmapdef*main_window.height: 600
+
+! colors
+
+xmapdef*background: darkslategrey
+xmapdef*textf.background: lightgrey
+xmapdef*XmScrollBar.background: lightgrey
+xmapdef*topShadowColor: white
+xmapdef*bottomShadowColor: black
+xmapdef*font:-adobe-courier-bold-r-normal--14-140-75-75-m-90-iso8859-1
+
+! misc
+
+xmapdef*XmScrollBar.width:20
+xmapdef*autoUnmanage: True
+
+!!! END XMAPDEF
+
+!!! XMGETRES
+
+xmgetres*XmText.marginWidth:10
+xmgetres*XmText.marginHeight:10
+xmgetres*XmText.editable:False
+xmgetres*XmText.cursorPositionVisible:False
+
+!xmgetres*XmScrolledWindow.height: 300
+xmgetres*XmText.scrollHorizontal:False
+
+!!! END XMGETRES
+
+

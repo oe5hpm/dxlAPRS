@@ -1,0 +1,168 @@
+(* Xm/CommandP.def  Nov 11  16:11:39  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/CommandP.h using H2D v1.18.1 *)
+
+(* $RCSfile: CommandP.def,v $ $Revision: 5 $ $Date: 28.07.98 23:14 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+(* Merged headers: Xm/Command.h *)
+
+DEFINITION MODULE ["C"] CommandP;
+
+IMPORT SYSTEM, Xlib, SelectioBP, BulletinBP, Xm:=XmP, Xt:=IntrinsicP;
+(* H2D:  Required IMPORT clause: 
+IMPORT CommandP, Xlib, SelectioBP, BulletinBP, Xm:=XmP, Xt:=IntrinsicP;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992, 1993 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(* ---------------------------------------------------- *)
+(*                     Xm/Command.h                     *)
+(* ---------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2.1
+ *)
+
+(*  Class record constants  *)
+
+VAR 
+  xmCommandWidgetClass: Xt.WidgetClass;
+
+TYPE 
+  XmCommandWidgetClass = POINTER TO _XmCommandClassRec;
+
+  XmCommandWidget = POINTER TO _XmCommandRec;
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: this procedure corresponds to a macro. *)
+PROCEDURE XmIsCommand ( w: Xt.Widget ): Xt.Boolean;
+
+<* ELSE *>
+
+PROCEDURE  / XmIsCommand ( w: Xt.Widget ): Xt.Boolean;
+
+<* END *>
+
+(********    Public Function Declarations    ********)
+
+PROCEDURE XmCreateCommand ( parent: Xt.Widget;
+                            name: ARRAY OF CHAR; al: Xt.ArgList;
+                            ac: Xt.Cardinal ): Xt.Widget;
+
+PROCEDURE XmCommandGetChild ( widget: Xt.Widget;
+                              child: SHORTCARD ): Xt.Widget;
+
+PROCEDURE XmCommandSetValue ( widget: Xt.Widget;
+                              value: Xm.XmString );
+
+PROCEDURE XmCommandAppendValue ( widget: Xt.Widget;
+                                 value: Xm.XmString );
+
+PROCEDURE XmCommandError ( widget: Xt.Widget;
+                           error: Xm.XmString );
+
+PROCEDURE XmCreateCommandDialog ( ds_p: Xt.Widget;
+                                  name: ARRAY OF CHAR;
+                                  fsb_args: Xt.ArgList;
+                                  fsb_n: Xt.Cardinal ): Xt.Widget;
+
+(********    End Public Function Declarations    ********)
+
+(* ---------------------------------------------------- *)
+(*                    Xm/CommandP.h                     *)
+(* ---------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2.3
+ *)
+
+(*  Constraint part record for Command widget  *)
+
+TYPE 
+  _XmCommandConstraintPart = RECORD
+    unused: CHAR;
+  END;
+
+  XmCommandConstraintPart = _XmCommandConstraintPart;
+
+  XmCommandConstraint = POINTER TO _XmCommandConstraintPart;
+
+(*   New fields for the Command widget class record   *)
+
+  _XmCommandClassPart = RECORD
+    extension: Xt.XtPointer;   (*  Pointer to extension record  *)
+  END;
+
+  XmCommandClassPart = _XmCommandClassPart;
+
+(*  Full class record declaration  *)
+
+  _XmCommandClassRec = RECORD
+    core_class          : Xt.CoreClassPart;
+    composite_class     : Xt.CompositeClassPart;
+    constraint_class    : Xt.ConstraintClassPart;
+    manager_class       : Xm.XmManagerClassPart;
+    bulletin_board_class: BulletinBP.XmBulletinBoardClassPart;
+    selection_box_class : SelectioBP.XmSelectionBoxClassPart;
+    command_class       : XmCommandClassPart;
+  END;
+
+  XmCommandClassRec = _XmCommandClassRec;
+
+(*  New fields for the Command widget record  *)
+
+  _XmCommandPart = RECORD
+    callback              : Xt.XtCallbackList;
+    value_changed_callback: Xt.XtCallbackList;
+    history_max_items     : SYSTEM.int;
+    error                 : Xt.Boolean;   (*  error has been made visible in list  *)
+  END;
+
+  XmCommandPart = _XmCommandPart;
+
+(****************************************************************
+ *
+ * Full instance record declaration
+ *
+ ****************************************************************)
+
+  _XmCommandRec = RECORD
+    core          : Xt.CorePart;
+    composite     : Xt.CompositePart;
+    constraint    : Xt.ConstraintPart;
+    manager       : Xm.XmManagerPart;
+    bulletin_board: BulletinBP.XmBulletinBoardPart;
+    selection_box : SelectioBP.XmSelectionBoxPart;
+    command       : XmCommandPart;
+  END;
+
+  XmCommandRec = _XmCommandRec;
+
+VAR 
+  xmCommandClassRec: XmCommandClassRec;
+
+(********    Private Function Declarations    ********)
+
+PROCEDURE _XmCommandReturn ( wid: Xt.Widget;
+                             VAR event: Xlib.XEvent;
+                             params: Xt.StringList;
+                             VAR numParams: Xt.Cardinal );
+
+PROCEDURE _XmCommandUpOrDown ( wid: Xt.Widget;
+                               VAR event: Xlib.XEvent;
+                               argv: Xt.StringList;
+                               VAR argc: Xt.Cardinal );
+
+(********    End Private Function Declarations    ********)
+
+END CommandP.

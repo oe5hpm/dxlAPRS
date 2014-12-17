@@ -1,0 +1,24 @@
+(* Copyright (c) 1997 XDS Ltd, Russia. All Rights Reserved. *)
+<* +M2EXTENSIONS *>
+
+DEFINITION MODULE CtrlC;
+
+TYPE
+  BreakHandler = PROCEDURE ["C"] (): BOOLEAN;
+
+(* handle registered via SetBreakHandler may carry out some actions
+   after that continue program execution if returns TRUE or stop it
+   if returns FALSE
+*)
+
+
+PROCEDURE SetBreakHandler( new :BreakHandler): BreakHandler;
+
+(* registers break handler; the previous registered one will be
+   returned ( if no handler was registered - returns NIL )
+*)
+
+PROCEDURE IsCtrlCException() :BOOLEAN;
+(* allows to determine if Ctrl-C hitted was the cause of M2 exception  *)
+
+END CtrlC.

@@ -1,0 +1,39 @@
+(* Copyright (c) xTech 1993,95,97.  All Rights Reserved *)
+
+(* $RCSfile: setjmp.def,v $ $Revision: 1.1.1.1 $ $Date: 1997/10/20 19:32:35 $ *)
+
+<*+ CSTDLIB  *>
+<*+ NOHEADER *>
+<*+ M2EXTENSIONS *>
+
+DEFINITION MODULE [2] setjmp;
+
+IMPORT SYSTEM;
+
+<* IF __GEN_X86__ THEN *>
+TYPE
+  jmp_buf = RECORD
+    ebx,ecx,edx,esi,edi,ebp,eip,esp: CARDINAL;
+    es,ds,cs,fs,gs,ss: SYSTEM.CARD16;
+  END;
+
+PROCEDURE setjmp(VAR point: jmp_buf): INTEGER;
+PROCEDURE longjmp(VAR point: jmp_buf; n: INTEGER);
+
+<* ELSIF __GEN_C__ THEN *>
+
+TYPE jmp_buf;
+
+PROCEDURE setjmp  (point: jmp_buf): INTEGER;
+PROCEDURE longjmp (point: jmp_buf; n: INTEGER);
+
+<* ELSE *>
+	(*** not implemented ***)
+<* END *>
+
+TYPE sigjmp_buf;
+
+PROCEDURE sigsetjmp (env: sigjmp_buf; savemask: INTEGER);
+PROCEDURE siglongjmp (env: sigjmp_buf; savemask: INTEGER);
+
+END setjmp.

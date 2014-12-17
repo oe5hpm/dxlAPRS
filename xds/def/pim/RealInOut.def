@@ -1,0 +1,10 @@
+(* Original module: N. Wirth, PIM-3, 1985 *)
+DEFINITION MODULE RealInOut;
+
+VAR Done: BOOLEAN;
+
+PROCEDURE ReadReal(VAR r: REAL);
+
+PROCEDURE WriteReal(r: REAL; w: CARDINAL);
+
+END RealInOut.

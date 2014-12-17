@@ -1,0 +1,26 @@
+(** Copyright (c) 1994 xTech Ltd, Russia. All Rights Reserved. *)
+(** Utility library *)
+DEFINITION FilePath;
+
+IMPORT DStrings;
+
+PROCEDURE IsSimpleName*(name: ARRAY OF CHAR): BOOLEAN;
+(** Returns TRUE, if the filename does not contain directories. *)
+
+PROCEDURE Lookup*(path,name: ARRAY OF CHAR; 
+                  VAR fname: DStrings.String; 
+                  VAR n: INTEGER);
+(** Builds a filename using search path.
+  Returns:
+    n = -1  -- name is not simple (fname := name)
+    n =  0  -- file not found (first directory is used)
+    n >  0  -- file is found in the n-th directory
+*)
+
+PROCEDURE UseFirst*(path,name: ARRAY OF CHAR; 
+                    VAR fname: DStrings.String);
+(** Builds a filename using the first directory from
+  the search path.
+*)
+
+END FilePath.

@@ -1,0 +1,24 @@
+(* Copyright (c) xTech 1992,95,97.  All Rights Reserved *)
+
+(* $RCSfile: utsname.def,v $ $Revision: 1.1.1.1 $ $Date: 1997/10/20 19:32:35 $ *)
+
+<*+ CSTDLIB  *>
+<*+ NOHEADER *>
+<*+ M2EXTENSIONS *>
+
+DEFINITION MODULE [2] utsname;
+
+TYPE
+<* IF __GEN_C__ THEN *> <*- GENTYPEDEF *> <* END *>
+  utsname = RECORD
+    sysname:    ARRAY [0..256] OF CHAR;
+    nodename:   ARRAY [0..256] OF CHAR;
+    release:    ARRAY [0..256] OF CHAR;
+    version:    ARRAY [0..256] OF CHAR;
+    machine:    ARRAY [0..256] OF CHAR;
+    domainname: ARRAY [0..256] OF CHAR;
+  END;
+
+PROCEDURE uname (VAR utsbuf: utsname): INTEGER;
+
+END utsname.

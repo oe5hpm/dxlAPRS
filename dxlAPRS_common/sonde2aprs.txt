@@ -1,0 +1,93 @@
+Info Wettersonden RS92 Empfang:
+
+
+Projekt 1 (sonde2aprs) ist ein Tool auf Win und Linux, womit die Logfiles des
+(laufzeitbegrenzten oder kostenpflichtigen) Win/Linux+Wine-Programms "Sondemonitor"
+ausgelesen und davon AXUDP Aprs Baken erzeugt werden.
+Es unterscheidet sich von aehnlichen Programmen dadurch, dass es
+
+ 1. "Objekte" erzeugt
+   wie es im APRS System vorgesehen ist fuer Dinge, die nicht an jenem Ort selbst
+   senden, also von wo/wem anders dort hingesetzt werden.
+   Das macht Sinn, man kann mehrere Sonden zugleich empfangen und beim Empfang
+   mehrerer Sonden hintereinander werden die Tracks nicht zu Einem verbunden
+   oder wegen zu grosser Spruenge entfernt.
+
+ 2. ein Fehlerfilter versucht die falschen Positions- und Messwerte im Log zu ueberspringen
+   und erst wieder eine Bake zu generieren, wenn eine Reihe konsistente Daten vorliegen. 
+
+Es gibt dazu (nur auf Win) noch ein Tool zum Auswaehlen des gewuenschten Logfiles da sonst
+manuell eine lange Kommandozeile pro Sonde benoetigt wird.
+
+
+Projekt 2 hat die Eigenschaften von Projekt 1 (ausser dass es nur auf Linux laeuft)
+kommt aber vollstaendig ohne fremde oder nicht offenen Programme aus.
+Es galt bisweilen als unmoeglich, die RS92-Sonden ohne Herstellerinfos zu dekodieren
+aber durch Analyse der empfangenen Daten ist es gelungen, alle Messwerte zu
+extrahieren. Die GPS Daten werden auch an der Bodenstation aus Rohdaten errechnet
+und das scheint, wie aus Vergleichen mit geborgenen Sonden ermittelt, wesentlich
+genauer zu sein als beim kostenpflichtigen Programm.
+Zumdem stehen Positionsdaten ab der 1. Sekunde bereit und ab der 2. Sekunde mit voller
+Genauigkeit. (das kann noch 3. oder 4. Sekunde werden wenn noch ein Kalman-Filter
+zur weiteren Erhoehung der Dekodiersicherheit dazugebaut wird)
+
+Das Progamm besteht aus 2 Teilen, dem Audio-Demodulator (sondeudp) und dem
+Dekoder (sondemod).
+Der Audio-Demodulator nimmt Nf von einem (oder 2) Rx an einer (Mono oder Stereo)
+Soundkarte im OSS-Format oder einer Pipe von einem Sdr-Demodulator.
+Es gibt einen Equalizer zum Linearisieren vom Kopfhoerer-Ausgang.
+Der Demodulator liefert Rohdaten (240 Byte Pro Sekunde) als UDP-Frames,
+die auch von mehreren entfernten Empfangsstellen zugleich per Netzwerk an das
+Dekodierprogramm geliefert werden koennen, das dann AXUDP Aprs-Baken erzeugt.
+Dabei sucht das Dekodierprogramm aus allen empfangenen Daten die fehlerfreien
+Bytefolgen heraus. 
+
+Bewegliche Aprs-Objekte keonnen zwar von mehreren Stationen zugleich eingespeist
+werden, das hat aber dann seltsame Baken-Intervalle und bei unterschiedlich altem
+GPS-Almanach wackelige Tracks zur Folge. Daher sollten mehrere Rohdaten eher an
+einer Stelle (pro Sonde) zusammen verarbeitet werden.
+
+
+Die Programme sind Opensource auf Linux Intel und ARM Compiliert zur Verfuegung
+derzeit aber noch ohne Doku da noch ein Teil in Bau ist.
+
+To Do:
+
+1. Es ist vollautomatischer Betrieb vorgesehen wobei noch eine Script-Umgebung zu bauen
+ ist, die zuverlassig den GPS-Almanach von einem Server oder einem GPS-Rx holt
+ (etwa alle 3h).
+ Da (zumindest mir) keine Systematik der an sonsten eindeutigen Sonden-Nummern bekannt
+ ist, und auch die Tx-Frequenzen gern gewechselt werden, brauchts ein Script,
+ das die Rx Frequenz sucht per (fern)steuerbarem Rx und dabei gewuenschte Sonden an
+ der Start-Position erkennt und dann weiter trackt sofern man nicht mit SDR einfach
+ alle Sonden parallel dekodieren will. Da im 20kHz-Raster gefunkt wird, muessen entweder
+ 300 moegliche kanaele abgeklappert werden oder nur per Tabelle die ueblichen.
+
+(fertig) 2. Fuer Sondensucher braucht die mobile Version, die die Prosition auf aprsmap schickt
+ noch switches zum Abschalten der Plausibilitaetspruefungen da hier die letzten
+ empfangnen Positionen wichtiger sind als ein zitterfreier Track
+
+3. die Implementiertung der "High-Resolution-Track" Erweiterung fuer AprsIs,
+ wobei (kompatibel zu vorhandenen Visualisierungsprogrammen) auf "aprsmap" bei
+ herkoemmlicher Bakenzeit Tracks unabhaengig von der Durchlaufzeit sekundengenau
+ und bis zu 30facher Aufloesung dargestellt werden.
+ Dabei bieten sich Wettersonden mit ihren Piruetten als nette Datenquelle an wobei
+ sich ein wackiger Track beim zoomen als Schaukeln und Rotieren an der 30m Leine zeigt,
+ siehe "wettersonde/graz.png" auf diesem Server.
+
+4. Mehrere Sonden zugleich mit einem "sondemod" das im prinzip jetzt auch geht aber mit
+ 1 Bakenzeit fuer alle. Ergibt sich aber zusammen mit "High-Resolution-Track".
+  
+5. Wollen mehrere User auf die dekodierten Rohdaten zugreifen, brauchs einen UDP-Verteiler
+   und Management wer Frequenz/Antennen umstellt.
+
+
+Meine Rx: 
+  2 ca. 1m lange Yagis nach ost und west
+  1 ft50, 2 ft8100 mit 2 c-netz breitband vv (nf 3.5db, gain ca 30db)
+  1 nooelec dab-stift, 2mhz, schmalband fm-demod software braucht neu programmierung
+    cpu-verbrauch noch ungewiss
+  reichweite fehlerfreie dekodierung 750km, praktisch 600km durch horizont
+
+
+ 

@@ -1,0 +1,166 @@
+(* Xm/CutPaste.def  Oct 15  16:5:37  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/CutPaste.h using H2D v1.16. *)
+
+(* $RCSfile: CutPaste.def,v $ $Revision: 4 $ $Date: 28.07.98 23:14 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+
+DEFINITION MODULE ["C"] CutPaste;
+
+IMPORT SYSTEM, X, Xlib, Xm, Xt:=Intrinsic;
+(* H2D:  Required IMPORT clause: 
+IMPORT CutPaste, X, Xlib, Xm, Intrinsic;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992, 1993 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(*
+ * Motif Release 1.2.2 
+ *)
+
+(*  XmClipboard return status definitions  *)
+
+CONST 
+  XmClipboardFail = 0;
+  XmClipboardSuccess = 1;
+  XmClipboardTruncate = 2;
+  XmClipboardLocked = 4;
+  XmClipboardBadFormat = 5;
+  XmClipboardNoData = 6;
+
+(*  XmClipboard pre-1.2 definitions  *)
+
+  ClipboardFail = 0;
+  ClipboardSuccess = 1;
+  ClipboardTruncate = 2;
+  ClipboardLocked = 4;
+  ClipboardBadFormat = 5;
+  ClipboardNoData = 6;
+
+TYPE 
+  XmClipboardPendingRec = RECORD
+    DataId   : LONGINT;
+    PrivateId: LONGINT;
+  END;
+
+  XmClipboardPendingList = POINTER TO ARRAY OF XmClipboardPendingRec;
+
+  XmCutPasteProc = PROCEDURE ( (* w *) Xt.Widget,
+                               (* data_id *) VAR LONGINT, 
+                               (* private_id *) VAR SYSTEM.int,
+     	       	    	       (* reason *) VAR SYSTEM.int );
+
+  VoidProc = PROCEDURE ( (* w *) Xt.Widget, 
+                         (* data_id *) VAR SYSTEM.int,
+                         (* private_id *) VAR SYSTEM.int,
+                         (* reason *) VAR SYSTEM.int );
+
+(********    Public Function Declarations    ********)
+
+PROCEDURE XmClipboardBeginCopy ( display: Xlib.PtrDisplay;
+                                 window: X.Window;
+                                 label: Xm.XmString;
+                                 widget: Xt.Widget;
+                                 callback: VoidProc;
+                                 VAR itemid: LONGINT ): SYSTEM.int;
+
+PROCEDURE XmClipboardStartCopy ( display: Xlib.PtrDisplay;
+                                 window: X.Window;
+                                 label: Xm.XmString;
+                                 timestamp: X.Time;
+                                 widget: Xt.Widget;
+                                 callback: XmCutPasteProc;
+                                 VAR itemid: LONGINT ): SYSTEM.int;
+
+PROCEDURE XmClipboardCopy ( display: Xlib.PtrDisplay;
+                            window: X.Window;
+                            itemid: LONGINT;
+                            format: ARRAY OF CHAR;
+                            buffer: Xt.String;
+                            length: LONGCARD;
+                            private_id: LONGINT;
+                            VAR dataid: LONGINT ): SYSTEM.int;
+
+PROCEDURE XmClipboardEndCopy ( display: Xlib.PtrDisplay;
+                               window: X.Window;
+                               itemid: LONGINT ): SYSTEM.int;
+
+PROCEDURE XmClipboardCancelCopy ( display: Xlib.PtrDisplay;
+                                  window: X.Window;
+                                  itemid: LONGINT ): SYSTEM.int;
+
+PROCEDURE XmClipboardWithdrawFormat ( display: Xlib.PtrDisplay;
+                                      window: X.Window;
+                                      data: LONGINT ): SYSTEM.int;
+
+PROCEDURE XmClipboardCopyByName ( display: Xlib.PtrDisplay;
+                                  window: X.Window;
+                                  data: LONGINT;
+                                  buffer: Xt.XtPointer;
+                                  length: LONGCARD;
+                                  private_id: LONGINT ): SYSTEM.int;
+
+PROCEDURE XmClipboardUndoCopy ( display: Xlib.PtrDisplay;
+                                window: X.Window ): SYSTEM.int;
+
+PROCEDURE XmClipboardLock ( display: Xlib.PtrDisplay;
+                            window: X.Window ): SYSTEM.int;
+
+PROCEDURE XmClipboardUnlock ( display: Xlib.PtrDisplay;
+                              window: X.Window;
+                              all_levels: SYSTEM.int ): SYSTEM.int;
+
+PROCEDURE XmClipboardStartRetrieve ( display: Xlib.PtrDisplay;
+                                     window: X.Window;
+                                     timestamp: X.Time ): SYSTEM.int;
+
+PROCEDURE XmClipboardEndRetrieve ( display: Xlib.PtrDisplay;
+                                   window: X.Window ): SYSTEM.int;
+
+PROCEDURE XmClipboardRetrieve ( display: Xlib.PtrDisplay;
+                                window: X.Window;
+                                format: ARRAY OF CHAR;
+                                buffer: Xt.String;
+                                length: LONGCARD;
+                                VAR outlength: LONGCARD;
+                                VAR private_id: LONGINT ): SYSTEM.int;
+
+PROCEDURE XmClipboardInquireCount ( display: Xlib.PtrDisplay;
+                                    window: X.Window;
+                                    VAR count: SYSTEM.int;
+     	       	    	      	    VAR maxlength: LONGCARD ): SYSTEM.int;
+
+PROCEDURE XmClipboardInquireFormat ( display: Xlib.PtrDisplay;
+                                     window: X.Window;
+                                     n: SYSTEM.int;
+                                     buffer: Xt.String;
+                                     bufferlength: LONGCARD;
+                                     VAR outlength: LONGCARD ): SYSTEM.int;
+
+PROCEDURE XmClipboardInquireLength ( display: Xlib.PtrDisplay;
+                                     window: X.Window;
+                                     format: ARRAY OF CHAR; 
+                                     VAR length: LONGCARD ): SYSTEM.int;
+
+PROCEDURE XmClipboardInquirePendingItems ( display: Xlib.PtrDisplay;
+                                           window: X.Window;
+                                           format: ARRAY OF CHAR;
+                                           VAR list: XmClipboardPendingList;
+                                           VAR count: LONGCARD ): SYSTEM.int;
+
+PROCEDURE XmClipboardRegisterFormat ( display: Xlib.PtrDisplay;
+                                      format_name: ARRAY OF CHAR;
+                                      format_length: SYSTEM.int ): SYSTEM.int;
+
+(********    End Public Function Declarations    ********)
+
+END CutPaste.

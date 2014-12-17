@@ -1,0 +1,65 @@
+(* Xm/Screen.def  Oct 15  19:21:38  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/Screen.h using H2D v1.16 *)
+
+(* $RCSfile: Screen.def,v $ $Revision: 4 $ $Date: 28.07.98 23:14 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+
+DEFINITION MODULE ["C"] Screen;
+
+IMPORT SYSTEM, Xlib, Xt:=Intrinsic;
+(* H2D:  Required IMPORT clause: 
+IMPORT Screen, Xlib, Intrinsic;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992, 1993 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(*
+ * Motif Release 1.2.3 
+ *)
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: this procedure corresponds to a macro. *)
+PROCEDURE XmIsScreen ( w: Xt.Widget ): Xt.Boolean;
+
+<* ELSE *>
+
+PROCEDURE  / XmIsScreen ( w: Xt.Widget ): Xt.Boolean;
+
+<* END *>
+
+(*  Class record constants  *)
+
+TYPE 
+  _XmScreenRec = RECORD
+    (* Declaration without definition *)
+  END;
+
+  XmScreen = POINTER TO _XmScreenRec;
+
+  _XmScreenClassRec = RECORD
+    (* Declaration without definition *)
+  END;
+
+  XmScreenClass = POINTER TO _XmScreenClassRec;
+
+VAR 
+  xmScreenClass: Xt.WidgetClass;
+
+(********    Public Function Declarations    ********)
+
+PROCEDURE XmGetXmScreen ( screen: Xlib.PtrScreen ): Xt.Widget;
+
+(********    End Public Function Declarations    ********)
+
+END Screen.

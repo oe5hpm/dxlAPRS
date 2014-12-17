@@ -1,0 +1,573 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 4.01 Transitional//EN">
+<HTML>
+<HEAD>
+<TITLE>Translation Rules</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<P><HR>
+<A NAME="0017">
+<A HREF="h2d000.html#root" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="h2d003.html#0016" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0018" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H1>Translation Rules</H1>
+
+<P><UL>
+<LI><A HREF="#0018" TARGET=body>Comments</A>
+<LI><A HREF="#0019" TARGET=body>Identifiers</A>
+<LI><A HREF="#0021" TARGET=body>Types</A>
+<LI><A HREF="#0025" TARGET=body>Type synonyms</A>
+<LI><A HREF="#0026" TARGET=body>Variables</A>
+<LI><A HREF="#0027" TARGET=body>Function prototypes</A>
+<LI><A HREF="#0029" TARGET=body>Non-standard qualifiers</A>
+<LI><A HREF="#0030" TARGET=body>Preprocessor directives</A>
+<LI><A HREF="#0036" TARGET=body>Non-standard preprocessor directives</A>
+<LI><A HREF="#0039" TARGET=body>Module names</A>
+</UL>
+<P><HR>
+<A NAME="0018">
+<A HREF="#0017" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0017" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0019" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Comments</H2>
+
+<P>All comments from the original C text are copied to generated definition modules. Their placement, however, is not preserved in some cases. The <A HREF="h2d007.html#0068" TARGET=body>COMMENTPOS</A> option may be used to align comments which are placed next to declarations. 
+<P>C++ compilers are usually able to recognize C++-style comments (beginning with &rsquo;<TT>//</TT>&rsquo;) even while operating in C mode. The <A HREF="h2d007.html#0069" TARGET=body>CPPCOMMENTS</A> option controls whether H2D recognizes such comments as well. 
+<P><HR>
+<A NAME="0019">
+<A HREF="#0017" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0018" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0020" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Identifiers</H2>
+
+<P>In most cases, H2D preserves original C identifiers. Exceptions are structure, union, and enumeration tags, which constitute a separate name space in C. If there is a constant, type, variable, or function identifier which coincides with a tag, H2D appends &quot;<TT>_struct</TT>&quot;, &quot;<TT>_union</TT>&quot; or &quot;<TT>_enum</TT>&quot; to that tag. 
+<P>In some situations, H2D itself generates additional identifiers, e.g. for <A HREF="#0027" TARGET=body>unnamed function arguments</A>, <A HREF="#0023" TARGET=body>derived types</A>, and <A HREF="#0027" TARGET=body>formal types</A>. 
+<P>H2D may append digits to generated identifiers to avoid conflicts with existent ones. 
+<P>Identifiers matching Modula-2 <I>keywords</I> are not allowed in source files. However, Modula-2 <I>pervasive identifiers</I> (e.g. <TT>INTEGER</TT> or <TT>HALT</TT>) are permitted. 
+<P><UL>
+<LI><A HREF="#0020" TARGET=body>Example</A>
+</UL>
+<P><HR>
+<A NAME="0020">
+<A HREF="#0019" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0019" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0021" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Example</H3>
+
+<P>The following C declarations were taken from the <TT>sys/stat.h</TT> file: 
+<P><PRE>struct&nbsp;stat&nbsp;{&nbsp;...&nbsp;};
+int&nbsp;stat(&nbsp;const&nbsp;char&nbsp;*,&nbsp;struct&nbsp;stat&nbsp;*&nbsp;);
+
+TYPE&nbsp;stat_struct&nbsp;=&nbsp;RECORD&nbsp;...&nbsp;END;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PtrChar&nbsp;=&nbsp;POINTER&nbsp;TO&nbsp;CHAR;
+PROCEDURE&nbsp;stat(arg0:&nbsp;PtrChar;&nbsp;arg1:&nbsp;stat_struct):&nbsp;SYSTEM.int;
+</PRE>
+
+<P>
+<P><HR>
+<A NAME="0021">
+<A HREF="#0017" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0020" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0022" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Types</H2>
+
+<P>C types are translated to Modula-2 types according to the following table: 
+<P ALIGN=CENTER><TABLE CELLSPACING=0>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><B>C type </B></TD>
+<TD  STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><B>Modula-2 type </B></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">base (<TT>int</TT>, <TT>char</TT>, etc.) </TD>
+<TD  STYLE="padding:0px 3px;">(see <A HREF="h2d005.html#0049" TARGET=body>Base types mapping</A>) </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>void* </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>SYSTEM.ADDRESS </TT></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">pointer </TD>
+<TD  STYLE="padding:0px 3px;">pointer </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">array </TD>
+<TD  STYLE="padding:0px 3px;">array </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">enumeration </TD>
+<TD  STYLE="padding:0px 3px;">(see <A HREF="#0024" TARGET=body>Enumeration</A>) </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">structure </TD>
+<TD  STYLE="padding:0px 3px;">record </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">union </TD>
+<TD  STYLE="padding:0px 3px;">variant record </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">pointer to function </TD>
+<TD  STYLE="padding:0px 3px;">procedure type </TD>
+</TR>
+</TABLE>
+<P><B>Notes:</B> 
+<UL>
+ 
+<LI>Structure, union, and enumeration <I>tags</I> are not preserved in cases of collision. It may cause problems with Modula-2 to C convertors (e.g. XDS-C). See <A HREF="#0019" TARGET=body>Identifiers</A>. </LI>
+</UL>
+
+<P><UL>
+<LI><A HREF="#0022" TARGET=body>Examples</A>
+<LI><A HREF="#0023" TARGET=body>Derived types</A>
+<LI><A HREF="#0024" TARGET=body>Enumeration</A>
+</UL>
+<P><HR>
+<A NAME="0022">
+<A HREF="#0021" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0021" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0023" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Examples</H3>
+
+<P><PRE>struct&nbsp;STRUCTURE{&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TYPE&nbsp;STRUCTURE&nbsp;=&nbsp;RECORD
+&nbsp;&nbsp;int&nbsp;&nbsp;&nbsp;&nbsp;field1;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;field1:&nbsp;SYSTEM.int;
+&nbsp;&nbsp;char&nbsp;&nbsp;&nbsp;field2;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;field2:&nbsp;CHAR;
+&nbsp;&nbsp;double&nbsp;field3;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;field3:&nbsp;LONGREAL;
+};&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;END;
+
+union&nbsp;&nbsp;UNION&nbsp;{&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TYPE&nbsp;UNION&nbsp;=&nbsp;RECORD
+&nbsp;&nbsp;int&nbsp;&nbsp;&nbsp;&nbsp;field1;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;CASE&nbsp;:&nbsp;INTEGER&nbsp;OF
+&nbsp;&nbsp;char&nbsp;&nbsp;&nbsp;field2;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0:&nbsp;field1:&nbsp;SYSTEM.int;
+&nbsp;&nbsp;double&nbsp;field3;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|1:&nbsp;field2:&nbsp;CHAR;
+};&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|2:&nbsp;field3:&nbsp;LONGREAL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;END;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;END;
+
+</PRE>
+
+<P>
+<P><HR>
+<A NAME="0023">
+<A HREF="#0021" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0022" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0024" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Derived types</H3>
+
+<P>For objects declared as having derived types (pointer or array) either a new Modula-2 type is introduced or a previously declared type synonym is used to improve readability. For pointers to base types, a new type is always declared. 
+<P>In particular, a C structure may contain fields which type is defined as pointer to that structure. In this case H2D also automatically inserts a necessary forward pointer type declaration. 
+<P>This may cause type compatibility problems. Fortunately, in <A HREF="h2d008.html#0084" TARGET=body>XDS</A>, compatibility rules for foreign objects are relaxed, e.g. two &quot;C&quot; pointer types are compatible if their <I>base types</I> are the same. Additional setup or postprocessing may be required when H2D is used with third-party Modula-2 compilers. 
+<P><PRE>char&nbsp;*str1;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TYPE
+char&nbsp;*str1;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;H2D_PtrSChar&nbsp;=&nbsp;POINTER&nbsp;TO&nbsp;CHAR;
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;str1:&nbsp;H2D_PtrSChar;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;str2:&nbsp;H2D_PtrSChar;
+</PRE>
+
+<P>
+<P><PRE>struct&nbsp;s&nbsp;{&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TYPE
+&nbsp;&nbsp;int&nbsp;i;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;s&nbsp;=&nbsp;RECORD
+};&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;i:&nbsp;SYSTEM.int;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;END;
+struct&nbsp;s&nbsp;*p;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;H2D_Ptrs&nbsp;=&nbsp;POINTER&nbsp;TO&nbsp;s;
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;p:&nbsp;H2D_Ptrs;
+</PRE>
+
+<P>
+<P><PRE>struct&nbsp;s&nbsp;{&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TYPE
+&nbsp;&nbsp;int&nbsp;i;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;s&nbsp;=&nbsp;RECORD
+};&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;i:&nbsp;SYSTEM.int;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;END;
+
+typedef&nbsp;struct&nbsp;s&nbsp;*ps;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ps&nbsp;=&nbsp;POINTER&nbsp;TO&nbsp;s;
+
+struct&nbsp;s&nbsp;*p;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;p:&nbsp;ps;
+</PRE>
+
+<P>
+<P><PRE>struct&nbsp;Node&nbsp;{&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TYPE
+&nbsp;&nbsp;&nbsp;int&nbsp;i;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PtrNode&nbsp;=&nbsp;POINTER&nbsp;TO&nbsp;Node;
+&nbsp;&nbsp;&nbsp;struct&nbsp;Node&nbsp;*next;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Node&nbsp;=&nbsp;RECORD
+};&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;i:&nbsp;SYSTEM.int;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;next:&nbsp;PtrNode;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;END;
+</PRE>
+
+<P>
+<P><HR>
+<A NAME="0024">
+<A HREF="#0021" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0023" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0025" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Enumeration</H3>
+
+<P>An enumeration (<TT>enum</TT>) is not actually a distinct type in C &mdash; it is just a convenient way to declare integer constants (but in C++ enumeration <I>is</I> a distinct type). Moreover, since it is possible in C to explicitly specify enumeration constant value, translation to Modula-2 enumeration type may be incorrect. H2D may translate C enumerations into either Modula-2 enumeration types or Modula-2 constant declarations, depending on the <A HREF="h2d007.html#0072" TARGET=body>GENENUM</A> option setting. For instance, if <A HREF="h2d007.html#0072" TARGET=body>GENENUM</A> is set to <TT>&quot;Const&quot;</TT> or <TT>&quot;Mixed&quot;</TT>, the following C type synonym declaration: 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;typedef&nbsp;enum{&nbsp;one=1,&nbsp;two&nbsp;}&nbsp;Number;</TT> 
+<P>will be translated to 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;H2D:&nbsp;enumerated&nbsp;type:&nbsp;Number&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;CONST
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;one&nbsp;=&nbsp;1;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;two&nbsp;=&nbsp;2;
+&nbsp;&nbsp;&nbsp;&nbsp;TYPE
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Number&nbsp;=&nbsp;SYSTEM.int;
+&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;H2D:&nbsp;End&nbsp;of&nbsp;enumerated&nbsp;type:&nbsp;Number&nbsp;*)
+</PRE>
+
+<P>
+<P>If <A HREF="h2d007.html#0072" TARGET=body>GENENUM</A> is set to <TT>&quot;Enum&quot;</TT>, the same declaration will be translated unsafely (a warning comment will be added): 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;TYPE
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Number&nbsp;=&nbsp;(
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;one,&nbsp;(*&nbsp;H2D:&nbsp;integer&nbsp;value&nbsp;was&nbsp;1&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;two
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;);
+</PRE>
+
+<P><HR>
+<A NAME="0025">
+<A HREF="#0017" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0024" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0026" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Type synonyms</H2>
+
+<P>C declarations of type synonyms (<TT>typedef</TT>) are translated to Modula-2 type declarations. If there are multiple synonyms declared for a type, their equivalence is preserved: 
+<P><PRE>typedef&nbsp;char&nbsp;String[256];&nbsp;&nbsp;TYPE&nbsp;String&nbsp;=&nbsp;ARRAY&nbsp;[0..255]&nbsp;OF&nbsp;CHAR;
+typedef&nbsp;String&nbsp;*PString;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PString&nbsp;=&nbsp;POINTER&nbsp;TO&nbsp;String;
+typedef&nbsp;String&nbsp;*Buffer;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Buffer&nbsp;=&nbsp;PString;
+</PRE>
+
+<P><B>Note:</B> In C, function type synonyms may be used in function declarations. These synonyms are processed in a way they are processed by a C compiler and do not appear in output files (see <A HREF="#0027" TARGET=body>Function prototypes</A>). 
+<P><HR>
+<A NAME="0026">
+<A HREF="#0017" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0025" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0027" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Variables</H2>
+
+<P>Variables are translated to variables. Variables declared with the <TT>const</TT> qualifier are translated to read-only variables (XDS extension). The <TT>volatile</TT> qualifier is currently ignored. 
+<P><PRE>extern&nbsp;int&nbsp;i;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;i&nbsp;&nbsp;:&nbsp;SYSTEM.int;
+extern&nbsp;const&nbsp;int&nbsp;j;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;j-&nbsp;:&nbsp;SYSTEM.int;
+</PRE>
+
+<P><HR>
+<A NAME="0027">
+<A HREF="#0017" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0026" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0028" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Function prototypes</H2>
+
+<P>C function prototypes declared as <TT>void</TT> are translated to proper procedure declarations; other are translated to function procedure declarations. If there is no name specified for a function parameter, <TT>arg</TT><I>x</I> is substituted, where <I>x</I> is a number unique for each unnamed parameter. 
+<P>In C, a derived type (more precisely, pointer or array) may be specified for a function parameter. In Modula-2, the <I>formal type</I> of a procedure parameter have to be either type name or open array type. H2D translates parameters of array type to open array value parameters. 
+<P>The translation procedure for pointers is more complicated. By default, H2D searches for a type synonym, previously declared via <TT>typedef</TT>. The synonym, if found, is used as formal type; otherwise H2D automatically declares one. If automatic declaration is undesirable, required synonyms may be declared in the <A HREF="h2d006.html#0054" TARGET=body>project file</A>. Other variants of translation may be explicitly specified by means of the <TT><A HREF="#0038" TARGET=body>#variant directive</A></TT>. 
+<P>See also <A HREF="#0029" TARGET=body>Non-standard qualifiers</A>. 
+<P><UL>
+<LI><A HREF="#0028" TARGET=body>Examples</A>
+</UL>
+<P><HR>
+<A NAME="0028">
+<A HREF="#0027" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0027" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0029" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Examples</H3>
+
+<P><PRE>void&nbsp;p(int,int);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;p&nbsp;(&nbsp;arg0&nbsp;:&nbsp;SYSTEM.int;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;arg1&nbsp;:&nbsp;SYSTEM.int&nbsp;);
+
+int&nbsp;f(char&nbsp;c);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;f&nbsp;(&nbsp;c&nbsp;:&nbsp;CHAR&nbsp;):&nbsp;SYSTEM.int;
+
+void&nbsp;P(T&nbsp;*t);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TYPE&nbsp;PtrT&nbsp;=&nbsp;POINTER&nbsp;TO&nbsp;T;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;P&nbsp;(&nbsp;t&nbsp;:&nbsp;PtrT&nbsp;);
+
+void&nbsp;Q(T&nbsp;t[])&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;Q&nbsp;(&nbsp;t&nbsp;:&nbsp;ARRAY&nbsp;OF&nbsp;T&nbsp;);
+
+int&nbsp;strlen(char&nbsp;*);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;strlen&nbsp;(&nbsp;arg0&nbsp;:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR&nbsp;)
+#variant&nbsp;strlen(0)&nbsp;:&nbsp;ARRAY&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:&nbsp;SYSTEM.int;
+
+</PRE>
+
+<P>
+<P><HR>
+<A NAME="0029">
+<A HREF="#0017" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0028" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0030" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Non-standard qualifiers</H2>
+
+<P>In practice, header files are not &quot;pure&quot; ANSI C. The most common extension is a set of additional keywords (qualifiers) which may be used to specify calling/naming conventions used in a particular library or API. 
+<P>Since XDS provides the similar mechanism called <I>direct language specification (DLS)</I>, H2D recognizes a number of such keywords, which are translated to the following DLS strings: 
+<P ALIGN=CENTER><TABLE CELLSPACING=0>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><B>C keyword </B></TD>
+<TD  STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><B>DLS String </B></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>cdecl </TT></TD>
+<TD  STYLE="padding:0px 3px;">none </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>fortran </TT></TD>
+<TD  STYLE="padding:0px 3px;">none </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>interrupt </TT></TD>
+<TD  STYLE="padding:0px 3px;">none </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>pascal </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>&quot;Pascal&quot;</TT> for types and variables </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;"><TT>&quot;StdCall&quot;</TT> for functions </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>syscall </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>&quot;Syscall&quot; </TT></TD>
+</TR>
+</TABLE>
+<P><TT>near</TT>, <TT>far</TT>, and <TT>huge</TT> qualifiers are recognized but ignored. 
+<P><HR>
+<A NAME="0030">
+<A HREF="#0017" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0029" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0031" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Preprocessor directives</H2>
+
+<P><UL>
+<LI><A HREF="#0031" TARGET=body>Macro definitions</A>
+<LI><A HREF="#0033" TARGET=body>File inclusion</A>
+<LI><A HREF="#0034" TARGET=body>Conditional compilation</A>
+<LI><A HREF="#0035" TARGET=body>Other directives</A>
+</UL>
+<P><HR>
+<A NAME="0031">
+<A HREF="#0030" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0030" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0032" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Macro definitions</H3>
+
+<P>A <TT>#define</TT> C preprocessor directive may contain an <I>object-like</I> definition or a <I>function-like</I> definition which are translated differently. 
+<P><TT>#define&nbsp;identifier&nbsp;Text</TT> 
+<P>If <TT>Text</TT> is a constant expression, the directive is translated to a constant declaration or a read-only variable declararion (see <A HREF="h2d005.html#0053" TARGET=body>Preserving constant names</A>). If <TT>Text</TT> is a type identifier, the directive is translated to a type declaration. If <TT>Text</TT> is an identifier of a function, a macro definition, or a constant, the directive is translated to a constant declaration. In all other cases, it is interpreted in a C preprocessor manner. 
+<P><TT>#define&nbsp;identifier&quot;(&quot;&nbsp;idenifier,&nbsp;{&nbsp;identifier&nbsp;}&nbsp;&quot;)&quot;&nbsp;Text</TT> 
+<P>Translated to a proper procedure declaration with all parameters having type <TT>ARRAY OF SYSTEM.BYTE</TT>. These declarations are marked with a special comment and may be corrected after translation to reflect the actual semantics of a macro by changing parameter types and/or adding return types. See also <A HREF="h2d005.html#0044" TARGET=body>Native code</A> for information about macro prototype modules. 
+<P><TT>#undef&nbsp;identifier</TT> 
+<P>Undefines <TT>identifier</TT> as it is done by a C preprocessor. 
+<P><UL>
+<LI><A HREF="#0032" TARGET=body>Example</A>
+</UL>
+<P><HR>
+<A NAME="0032">
+<A HREF="#0031" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0031" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0033" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H4>Example</H4>
+
+<P><PRE>#define&nbsp;str_constant&nbsp;&quot;Hello&nbsp;World!\n&quot;
+
+#define&nbsp;constant&nbsp;0x10
+#define&nbsp;constant_synonym&nbsp;constant
+
+#define&nbsp;macro_with_params(p1,p2,p3)&nbsp;p1+p2+p3
+#define&nbsp;macro_with_params_synonym&nbsp;macro_with_params
+
+int&nbsp;function(int);
+#define&nbsp;function_synonym&nbsp;function
+
+typedef&nbsp;int&nbsp;INT;
+#define&nbsp;INTEGER&nbsp;INT
+</PRE>
+
+<P><PRE>CONST
+&nbsp;&nbsp;str_constant&nbsp;=&nbsp;'Hello&nbsp;World!'&nbsp;+&nbsp;12C;
+&nbsp;&nbsp;constant&nbsp;=&nbsp;10H;
+&nbsp;&nbsp;constant_synonym&nbsp;=&nbsp;constant;
+
+&lt;*&nbsp;IF&nbsp;__GEN_C__&nbsp;THEN&nbsp;*&gt;
+
+(*&nbsp;H2D:&nbsp;this&nbsp;procedure&nbsp;was&nbsp;generated&nbsp;from&nbsp;Macro.&nbsp;*)
+PROCEDURE&nbsp;macro_with_params&nbsp;(&nbsp;p1,&nbsp;p2,&nbsp;p3:&nbsp;ARRAY&nbsp;OF&nbsp;SYSTEM.BYTE&nbsp;);
+
+&lt;*&nbsp;ELSE&nbsp;*&gt;
+
+PROCEDURE&nbsp;&nbsp;/&nbsp;macro_with_params&nbsp;(&nbsp;p1,&nbsp;p2,&nbsp;p3:&nbsp;ARRAY&nbsp;OF&nbsp;SYSTEM.BYTE&nbsp;);
+
+&lt;*&nbsp;END&nbsp;*&gt;
+
+&lt;*&nbsp;IF&nbsp;__GEN_C__&nbsp;THEN&nbsp;*&gt;
+
+CONST
+&nbsp;&nbsp;macro_with_params_synonym&nbsp;=&nbsp;macro_with_params;
+
+&lt;*&nbsp;END&nbsp;*&gt;
+
+PROCEDURE&nbsp;function&nbsp;(&nbsp;arg0:&nbsp;SYSTEM.int&nbsp;):&nbsp;SYSTEM.int;
+
+CONST
+&nbsp;&nbsp;function_synonym&nbsp;=&nbsp;function;
+
+TYPE
+&nbsp;&nbsp;INT&nbsp;=&nbsp;SYSTEM.int;
+
+&nbsp;&nbsp;INTEGER&nbsp;=&nbsp;SYSTEM.int;
+</PRE>
+
+<P>
+<P><HR>
+<A NAME="0033">
+<A HREF="#0030" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0032" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0034" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>File inclusion</H3>
+
+<P><PRE>#include&nbsp;&lt;file_name&gt;
+#include&nbsp;&quot;file_name&quot;
+</PRE>
+
+<P>If the file specified by <TT>file_name</TT> has to be merged with the current file (see <A HREF="h2d005.html#0041" TARGET=body>Headers merging</A>), H2D treats this directive exactly as a C preprocessor, i.e. replaces it with contents of a specified file. Otherwise, <TT>file_name</TT> is added to the import list and the file specified by it is translated into a separate definition module. If <TT>file_name</TT> contains directories, the output files are placed to the same subdirectory. 
+<P>The <A HREF="h2d007.html#0073" TARGET=body>GENLONGNAMES</A> option controls conversion of included header file names which contain path: 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;#include&nbsp;&lt;sys/stat.h&gt;</TT> 
+<P>is translated to 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;IMPORT&nbsp;stat;&nbsp;&nbsp;&nbsp;&nbsp;</TT> 
+<P>if <A HREF="h2d007.html#0073" TARGET=body>GENLONGNAMES</A> is OFF and to 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;IMPORT&nbsp;sys_stat;</TT> 
+<P>if <A HREF="h2d007.html#0073" TARGET=body>GENLONGNAMES</A> is ON. 
+<P>See also <A HREF="#0039" TARGET=body>Module names</A>. 
+<P><HR>
+<A NAME="0034">
+<A HREF="#0030" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0033" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0035" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Conditional compilation</H3>
+
+<P>H2D handles conditional compilation directives <TT>#if</TT>, <TT>#ifdef</TT>, <TT>#ifndef</TT>, <TT>#else</TT>, and <TT>#endif</TT> the same way as a C preprocessor does. A <A HREF="h2d006.html#0054" TARGET=body>project file</A> may be used to define constants which are used in arguments of these directives. 
+<P><HR>
+<A NAME="0035">
+<A HREF="#0030" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0034" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0036" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Other directives</H3>
+
+<P>H2D recognizes and ignores <TT>#line</TT>, <TT>#error</TT>, and <TT>#pragma</TT> C preprocessor directives. 
+<P><HR>
+<A NAME="0036">
+<A HREF="#0017" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0035" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0037" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Non-standard preprocessor directives</H2>
+
+<P>H2D recognizes two non-standard preprocessor directives: <TT>#merge</TT> and <TT>#variant</TT>. These directives are related to definiton module generation only and do not affect the C text, so they may be placed arbitrarily in a header file. Typically they are collected in project files inside a corresponding <TT><A HREF="h2d006.html#0058" TARGET=body>!header directive</A></TT>. 
+<P>The advanced technique is to put these directives right into working copies of header files, next to the corresponding declarations. Then, after successful translation of all headers, these directives may be extracted with the help of <A HREF="h2d007.html#0071" TARGET=body>GENDIRS</A> option and moved to the project file. Now original headers may be used for translation. 
+<P><UL>
+<LI><A HREF="#0037" TARGET=body>#merge</A>
+<LI><A HREF="#0038" TARGET=body>#variant</A>
+</UL>
+<P><HR>
+<A NAME="0037">
+<A HREF="#0036" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0036" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0038" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>#merge</H3>
+
+<P><PRE>#merge&nbsp;(&nbsp;&lt;file_name&gt;&nbsp;|&nbsp;&quot;file_name&quot;&nbsp;)
+</PRE>
+
+<P>This directive lists included header files which should be merged even if the <A HREF="h2d007.html#0079" TARGET=body>MERGEALL</A> option is OFF. This feature may be useful in some cases (see <A HREF="h2d005.html#0041" TARGET=body>Headers merging</A>). 
+<P>When placed in a header file, this directive has effect only in this file. When placed in a <A HREF="h2d006.html#0054" TARGET=body>project file</A>, it has effect in all headers matching the surrounding <TT><A HREF="h2d006.html#0058" TARGET=body>!header directive</A></TT>. 
+<P><HR>
+<A NAME="0038">
+<A HREF="#0036" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0037" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0039" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>#variant</H3>
+
+<P><PRE>#variant&nbsp;Designator&nbsp;&quot;:&quot;&nbsp;Type
+Designator&nbsp;=&nbsp;identifier&nbsp;{&nbsp;&quot;^&quot;&nbsp;|&nbsp;&quot;[&nbsp;]&quot;&nbsp;|&nbsp;&quot;.&quot;&nbsp;identifier&nbsp;}&nbsp;|
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Parameter
+Parameter&nbsp;&nbsp;=&nbsp;identifier&nbsp;&quot;(&quot;&nbsp;number&nbsp;&quot;)&quot;
+Type&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;qualident
+</PRE>
+
+<P>This form of the <TT>#variant</TT> directive allows to explicitly specify a Modula-2 <TT>Type</TT> for an object denoted by <TT>Designator</TT>. See <A HREF="h2d005.html#0049" TARGET=body>Base types mapping</A> for more information. 
+<P><TT>Designator</TT> specifies a named object or its element which is subject to the <TT>#variant</TT> directive: 
+<P><TABLE CELLSPACING=0>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>&quot;^&quot; </TT></TD>
+<TD  STYLE="padding:0px 3px;">pointer dereference </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>&quot;[ ]&quot; </TT></TD>
+<TD  STYLE="padding:0px 3px;">array indexing </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>&quot;.&quot; identifier </TT></TD>
+<TD  STYLE="padding:0px 3px;">structure or union field selection </TD>
+</TR>
+</TABLE>
+<P><TT>Parameter</TT> specifies a function <TT>identifier</TT> and its parameter <TT>number</TT> (zero-based). 
+<P><PRE>#variant&nbsp;Parameter&nbsp;&nbsp;&quot;:&quot;&nbsp;(&nbsp;&quot;VAR&quot;&nbsp;|&nbsp;&quot;ARRAY&quot;&nbsp;|&nbsp;&quot;VAR&nbsp;ARRAY&quot;&nbsp;)
+</PRE>
+
+<P>This form is used to control translation of a function <TT>Parameter</TT>, which has a pointer type. 
+<P>By default, pointer type function parameters are translated to pointer type procedure parameters (see <A HREF="#0027" TARGET=body>Function prototypes</A>). The <TT>#variant</TT> directive allows to specify one of the following alternative rules for a particular parameter: 
+<P ALIGN=CENTER><TABLE CELLSPACING=0>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><TT>Modifier </TT></TD>
+<TD  STYLE="padding:0px 3px;border-style: none none solid none;border-width: 0px 0px 1px 0px"><TT>T *p</TT> is translated to </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>VAR </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>VAR p: T </TT></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>ARRAY </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>p: ARRAY OF T </TT></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;"><TT>VAR ARRAY </TT></TD>
+<TD  STYLE="padding:0px 3px;"><TT>VAR p: ARRAY OF T </TT></TD>
+</TR>
+</TABLE>
+<P>See also <A HREF="h2d005.html#0051" TARGET=body>Pointer type function parameters</A>. 
+<P><PRE>#variant&nbsp;f(0)&nbsp;:&nbsp;VAR&nbsp;ARRAY
+void&nbsp;f(char*);
+</PRE>
+
+<P><PRE>PROCEDURE&nbsp;f&nbsp;(&nbsp;VAR&nbsp;arg0:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR&nbsp;);
+</PRE>
+
+<P>A <TT>#variant</TT> directive has effect only in the file where it is located, or, if specified in a project file, in all files matching the surrounding <TT>!header</TT> directive. Therefore, <TT>Designator</TT> should specify an object declared in this file or in one of the files which it includes. If an object specified by <TT>Designator</TT> is not present, an error message is displayed. 
+<P><HR>
+<A NAME="0039">
+<A HREF="#0017" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0038" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="h2d005.html#0040" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Module names</H2>
+By default, H2D uses a header file name without &quot;<TT>.h</TT>&quot; extension as a definition module name. If a file name contains characters which are not allowed in identifiers, the <TT><A HREF="h2d006.html#0061" TARGET=body>!name directive</A></TT> must be used in a <A HREF="h2d006.html#0054" TARGET=body>project file</A> to specify a proper identifier. 
+<P>
+</BODY>
+</HTML>

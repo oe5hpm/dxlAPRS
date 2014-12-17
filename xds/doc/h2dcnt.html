@@ -1,0 +1,174 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN"><HTML>
+<HEAD>
+<TITLE>H2D User&rsquo;s Guide</TITLE>
+<SCRIPT TYPE="text/javascript" SRC="head1.js">
+</SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="h2dcnt.js">
+</SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="head2.js">
+</SCRIPT>
+</HEAD><BODY BGCOLOR="#FFFFFF">
+<A NAME="contents"><P ALIGN=CENTER><NOBR>
+<A HREF="h2d000.html#title" TARGET=body>H2D User&rsquo;s Guide</A></A></NOBR></P>
+<NOSCRIPT>
+<P>
+<HR>
+<TABLE BORDER=0 CELLSPACING=3 CELLPADDING=0>
+<TR><TD COLSPAN=4><A NAME="contents"><B><FONT SIZE="+1">Table Of Contents</FONT></B></A></TD></TR>
+<TR>
+<TD WIDTH=32><FONT COLOR="#FFFFFF">00</FONT></TD>
+<TD WIDTH=32><FONT COLOR="#FFFFFF">00</FONT></TD>
+<TD WIDTH=32><FONT COLOR="#FFFFFF">00</FONT></TD>
+<TD><FONT COLOR="#FFFFFF">0000000000000000000000</FONT></TD>
+</TR>
+<TR><TD COLSPAN=4><B><A HREF="h2d001.html#0000" TARGET=body>Introduction</A></B>
+</TD></TR>
+<TR><TD COLSPAN=1></TD><TD COLSPAN=3><FONT SIZE=2><A HREF="h2d001.html#0001" TARGET=body>New in version 1.30</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=1></TD><TD COLSPAN=3><FONT SIZE=2><A HREF="h2d001.html#0002" TARGET=body>Typographic conventions</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="h2d001.html#0003" TARGET=body>Language descriptions</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="h2d001.html#0004" TARGET=body>Source code fragments</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=4><B><A HREF="h2d002.html#0005" TARGET=body>Configuring H2D</A></B>
+</TD></TR>
+<TR><TD COLSPAN=1></TD><TD COLSPAN=3><FONT SIZE=2><A HREF="h2d002.html#0006" TARGET=body>Setting up system search path</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=1></TD><TD COLSPAN=3><FONT SIZE=2><A HREF="h2d002.html#0007" TARGET=body>Working configuration</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=1></TD><TD COLSPAN=3><FONT SIZE=2><A HREF="h2d002.html#0008" TARGET=body>Redirection file</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=1></TD><TD COLSPAN=3><FONT SIZE=2><A HREF="h2d002.html#0010" TARGET=body>Configuration file</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=1></TD><TD COLSPAN=3><FONT SIZE=2><A HREF="h2d002.html#0011" TARGET=body>Customizing H2D messages</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=4><B><A HREF="h2d003.html#0012" TARGET=body>Getting Started</A></B>
+</TD></TR>
+<TR><TD COLSPAN=1></TD><TD COLSPAN=3><FONT SIZE=2><A HREF="h2d003.html#0013" TARGET=body>Creating a working directory</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=1></TD><TD COLSPAN=3><FONT SIZE=2><A HREF="h2d003.html#0014" TARGET=body>Invoking H2D</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=1></TD><TD COLSPAN=3><FONT SIZE=2><A HREF="h2d003.html#0015" TARGET=body>H2D usage example</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=1></TD><TD COLSPAN=3><FONT SIZE=2><A HREF="h2d003.html#0016" TARGET=body>Error reporting</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=4><B><A HREF="h2d004.html#0017" TARGET=body>Translation Rules</A></B>
+</TD></TR>
+<TR><TD COLSPAN=1></TD><TD COLSPAN=3><FONT SIZE=2><A HREF="h2d004.html#0018" TARGET=body>Comments</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=1></TD><TD COLSPAN=3><FONT SIZE=2><A HREF="h2d004.html#0019" TARGET=body>Identifiers</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=1></TD><TD COLSPAN=3><FONT SIZE=2><A HREF="h2d004.html#0021" TARGET=body>Types</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="h2d004.html#0023" TARGET=body>Derived types</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="h2d004.html#0024" TARGET=body>Enumeration</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=1></TD><TD COLSPAN=3><FONT SIZE=2><A HREF="h2d004.html#0025" TARGET=body>Type synonyms</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=1></TD><TD COLSPAN=3><FONT SIZE=2><A HREF="h2d004.html#0026" TARGET=body>Variables</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=1></TD><TD COLSPAN=3><FONT SIZE=2><A HREF="h2d004.html#0027" TARGET=body>Function prototypes</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=1></TD><TD COLSPAN=3><FONT SIZE=2><A HREF="h2d004.html#0029" TARGET=body>Non-standard qualifiers</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=1></TD><TD COLSPAN=3><FONT SIZE=2><A HREF="h2d004.html#0030" TARGET=body>Preprocessor directives</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="h2d004.html#0031" TARGET=body>Macro definitions</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="h2d004.html#0033" TARGET=body>File inclusion</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="h2d004.html#0034" TARGET=body>Conditional compilation</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="h2d004.html#0035" TARGET=body>Other directives</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=1></TD><TD COLSPAN=3><FONT SIZE=2><A HREF="h2d004.html#0036" TARGET=body>Non-standard preprocessor directives</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="h2d004.html#0037" TARGET=body>#merge</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="h2d004.html#0038" TARGET=body>#variant</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=1></TD><TD COLSPAN=3><FONT SIZE=2><A HREF="h2d004.html#0039" TARGET=body>Module names</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=4><B><A HREF="h2d005.html#0040" TARGET=body>Using H2D</A></B>
+</TD></TR>
+<TR><TD COLSPAN=1></TD><TD COLSPAN=3><FONT SIZE=2><A HREF="h2d005.html#0041" TARGET=body>Headers merging</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=1></TD><TD COLSPAN=3><FONT SIZE=2><A HREF="h2d005.html#0043" TARGET=body>Fitting a Modula-2 compiler</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="h2d005.html#0044" TARGET=body>Native code</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="h2d005.html#0046" TARGET=body>Convertor to C</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=1></TD><TD COLSPAN=3><FONT SIZE=2><A HREF="h2d005.html#0048" TARGET=body>Modifying translation rules</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="h2d005.html#0049" TARGET=body>Base types mapping</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="h2d005.html#0051" TARGET=body>Pointer type function parameters</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="h2d005.html#0053" TARGET=body>Preserving constant names</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=4><B><A HREF="h2d006.html#0054" TARGET=body>Project files</A></B>
+</TD></TR>
+<TR><TD COLSPAN=1></TD><TD COLSPAN=3><FONT SIZE=2><A HREF="h2d006.html#0055" TARGET=body>Overview</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=1></TD><TD COLSPAN=3><FONT SIZE=2><A HREF="h2d006.html#0057" TARGET=body>Project file contents</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="h2d006.html#0058" TARGET=body>!header</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="h2d006.html#0059" TARGET=body>!module</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="h2d006.html#0061" TARGET=body>!name</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=4><B><A HREF="h2d007.html#0063" TARGET=body>Options Reference</A></B>
+</TD></TR>
+<TR><TD COLSPAN=1></TD><TD COLSPAN=3><FONT SIZE=2><A HREF="h2d007.html#0064" TARGET=body>File extensions and prefixes</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=1></TD><TD COLSPAN=3><FONT SIZE=2><A HREF="h2d007.html#0065" TARGET=body>Translation options</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="h2d007.html#0066" TARGET=body>BACKEND - target compiler back-end</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="h2d007.html#0067" TARGET=body>CHANGEDEF - enable retranslation</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="h2d007.html#0068" TARGET=body>COMMENTPOS - preserved comments position</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="h2d007.html#0069" TARGET=body>CPPCOMMENTS - recognize C++ comments</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="h2d007.html#0070" TARGET=body>CSTDLIB - set CSTDLIB value</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="h2d007.html#0071" TARGET=body>GENDIRS - extract non-standard directives</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="h2d007.html#0072" TARGET=body>GENENUM - enum translation mode</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="h2d007.html#0073" TARGET=body>GENLONGNAMES - keep directory names</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="h2d007.html#0074" TARGET=body>GENMACRO - produce macro prototype modules</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="h2d007.html#0075" TARGET=body>GENROVARS - translate constants to read-only variables</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="h2d007.html#0076" TARGET=body>GENSEP - insert merged headers separators</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="h2d007.html#0077" TARGET=body>GENTREE - generate inclusion tree</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="h2d007.html#0078" TARGET=body>GENWIDTH - limit output line length</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="h2d007.html#0079" TARGET=body>MERGEALL - merge all headers</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="h2d007.html#0080" TARGET=body>PROGRESS - enable progress indicator</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=1></TD><TD COLSPAN=3><FONT SIZE=2><A HREF="h2d007.html#0081" TARGET=body>Base types definition</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="h2d007.html#0082" TARGET=body>CTYPE - define a C base type</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=2></TD><TD COLSPAN=2><FONT SIZE=2><A HREF="h2d007.html#0083" TARGET=body>M2TYPE - define a Modula-2 type</A></FONT>
+</TD></TR>
+<TR><TD COLSPAN=4><B><A HREF="h2d008.html#0084" TARGET=body>XDS</A></B>
+</TD></TR>
+</TABLE>
+<HR>
+</NOSCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="body.js">
+</SCRIPT>
+</BODY>
+</HTML>

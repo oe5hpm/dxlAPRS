@@ -1,0 +1,33 @@
+(* Copyright (c) xTech 1992,94. All Rights Reserved *)
+DEFINITION MODULE FormOut;
+
+IMPORT  SYSTEM;
+
+CONST (* line separators *)
+  default = "0";  (* default line separator will be used *)
+  text    = "2";  (* default text file line separator will be used *)
+  cr      = 15C;
+  lf      = 12C;
+  crlf    = "1";  (* CR LF separator *)
+
+TYPE write_proc = PROCEDURE (SYSTEM.ADDRESS,ARRAY OF CHAR,INTEGER);
+(* "write_proc" arguments:
+  	parameter (first argument of "format")
+        string (without terminating 0C)
+        string length
+*)
+
+PROCEDURE format(parameter: SYSTEM.ADDRESS;
+                 write    : write_proc;
+		 format   : ARRAY OF CHAR;
+                 linesep  : CHAR;
+		 args     : SYSTEM.ADDRESS;
+		 size     : CARDINAL);
+
+PROCEDURE LineSeparator(nl: ARRAY OF CHAR);
+(* Sets default line separator *)
+
+PROCEDURE TextSeparator(nl: ARRAY OF CHAR);
+(* Sets default text file line separator *)
+
+END FormOut.

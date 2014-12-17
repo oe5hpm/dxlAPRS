@@ -1,0 +1,48 @@
+(** Oakwood Oberon-2 Math library *)
+(** Mathematical functions for the type REAL *)
+(** Copyright (c) xTech 1994,95. All Rights Reserved. *)
+DEFINITION MathR;
+
+CONST
+  pi* = 3.1415926535898;
+  e*  = 2.718281828459;
+
+PROCEDURE sqrt*(x: REAL): REAL;
+
+PROCEDURE exp*(x: REAL): REAL;
+
+PROCEDURE ln*(x: REAL): REAL;
+
+PROCEDURE sin*(x: REAL): REAL;
+
+PROCEDURE cos*(x: REAL): REAL;
+
+PROCEDURE tan*(x: REAL): REAL;
+
+PROCEDURE arcsin*(x: REAL): REAL;
+
+PROCEDURE arccos*(x: REAL): REAL;
+
+PROCEDURE arctan*(x: REAL): REAL;
+
+PROCEDURE power*(base,exponent: REAL): REAL;
+
+PROCEDURE round*(x: REAL): REAL;
+
+PROCEDURE log*(x,base: REAL): REAL;
+
+PROCEDURE arctan2*(x,y: REAL): REAL;
+
+PROCEDURE sinh*(x: REAL): REAL;
+
+PROCEDURE cosh*(x: REAL): REAL;
+
+PROCEDURE tanh*(x: REAL): REAL;
+
+PROCEDURE arcsinh*(x: REAL): REAL;
+
+PROCEDURE arccosh*(x: REAL): REAL;
+
+PROCEDURE arctanh*(x: REAL): REAL;
+
+END MathR.

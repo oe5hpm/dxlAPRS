@@ -1,0 +1,107 @@
+(* Xm/SashP.def  Nov 12  16:18:1  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/SashP.h using H2D v1.18.1 *)
+
+(* $RCSfile: SashP.def,v $ $Revision: 5 $ $Date: 28.07.98 23:14 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+
+DEFINITION MODULE ["C"] SashP;
+
+IMPORT SYSTEM, Xlib, Xm:=XmP, Xt:=IntrinsicP;
+(* H2D:  Required IMPORT clause: 
+IMPORT SashP, Xlib, XmP, IntrinsicP;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992, 1993 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(*
+ * Motif Release 1.2.3
+ *)
+
+(*
+ *  SashP.h - Private definitions for Sash widget (Used by VPane Widget)
+ *
+ *)
+
+(*****************************************************************************
+ *
+ * Sash Widget Private Data
+ *
+ *****************************************************************************)
+
+(*  New fields for the Sash widget class record  *)
+
+TYPE 
+  _XmSashClassPart = RECORD
+    extension: Xt.XtPointer;   (*  Pointer to extension record  *)
+  END;
+
+  XmSashClassPart = _XmSashClassPart;
+
+(*  Full Class record declaration  *)
+
+  _XmSashClassRec = RECORD
+    core_class     : Xt.CoreClassPart;
+    primitive_class: Xm.XmPrimitiveClassPart;
+    sash_class     : XmSashClassPart;
+  END;
+
+  XmSashClassRec = _XmSashClassRec;
+
+  XmSashWidgetClass = POINTER TO _XmSashClassRec;
+
+VAR 
+  xmSashClassRec: XmSashClassRec;
+
+(*  New fields for the Sash widget record  *)
+
+TYPE 
+  _XmSashPart = RECORD
+    sash_action: Xt.XtCallbackList;
+    has_focus  : Xt.Boolean;
+  END;
+
+  XmSashPart = _XmSashPart;
+
+(*****************************************************************************
+ *
+ * Full instance record declaration
+ *
+ *****************************************************************************)
+
+  _XmSashRec = RECORD
+    core     : Xt.CorePart;
+    primitive: Xm.XmPrimitivePart;
+    sash     : XmSashPart;
+  END;
+
+  XmSashRec = _XmSashRec;
+
+  XmSashWidget = POINTER TO _XmSashRec;
+
+  SashCallDataRec = RECORD
+    event     : Xlib.PtrXEvent; (*  the event causing the SashAction  *)
+    params    : Xt.StringList;    (*  the TranslationTable params  *)
+    num_params: Xt.Cardinal;    (*  count of params  *)
+  END;
+
+  SashCallData = POINTER TO SashCallDataRec;
+
+(*  Class Record Constant  *)
+
+VAR 
+  xmSashWidgetClass: Xt.WidgetClass;
+
+(********    Private Function Declarations    ********)
+(********    End Private Function Declarations    ********)
+
+END SashP.

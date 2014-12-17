@@ -1,0 +1,137 @@
+(* Xm/DrawingAP.def  Nov 11  16:20:41  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/DrawingAP.h using H2D v1.18.1 *)
+
+(* $RCSfile: DrawingAP.def,v $ $Revision: 5 $ $Date: 28.07.98 23:14 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+(* Merged headers: Xm/DrawingA.h *)
+
+DEFINITION MODULE ["C"] DrawingAP;
+
+IMPORT SYSTEM, X, Xlib, Xm:=XmP, Xt:=IntrinsicP;
+(* H2D:  Required IMPORT clause: 
+IMPORT DrawingAP, X, Xlib, Xm:=XmP, Xt:=IntrinsicP;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992, 1993 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(* ----------------------------------------------------- *)
+(*                     Xm/DrawingA.h                     *)
+(* ----------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2
+ *)
+
+(*  Class record constants  *)
+
+VAR 
+  xmDrawingAreaWidgetClass: Xt.WidgetClass;
+
+TYPE 
+  XmDrawingAreaWidgetClass = POINTER TO _XmDrawingAreaClassRec;
+
+  XmDrawingAreaWidget = POINTER TO _XmDrawingAreaRec;
+
+(********    Public Function Declarations    ********)
+
+PROCEDURE XmCreateDrawingArea ( p: Xt.Widget;
+                                name: ARRAY OF CHAR;
+                                args: Xt.ArgList;
+                                n: Xt.Cardinal ): Xt.Widget;
+
+(********    End Public Function Declarations    ********)
+
+(* ----------------------------------------------------- *)
+(*                    Xm/DrawingAP.h                     *)
+(* ----------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2.3
+ *)
+
+CONST 
+  XmRESIZE_SWINDOW = 10;
+
+(*  Constraint part record for DrawingArea widget  *)
+
+TYPE 
+  _XmDrawingAreaConstraintPart = RECORD
+    unused: CHAR;
+  END;
+
+  XmDrawingAreaConstraintPart = _XmDrawingAreaConstraintPart;
+
+  XmDrawingAreaConstraint = POINTER TO _XmDrawingAreaConstraintPart;
+
+(*   New fields for the DrawingArea widget class record   *)
+
+  _XmDrawingAreaClassPart = RECORD
+    extension: Xt.XtPointer;   (*  Pointer to extension record  *)
+  END;
+
+  XmDrawingAreaClassPart = _XmDrawingAreaClassPart;
+
+(*  Full class record declaration  *)
+
+  _XmDrawingAreaClassRec = RECORD
+    core_class        : Xt.CoreClassPart;
+    composite_class   : Xt.CompositeClassPart;
+    constraint_class  : Xt.ConstraintClassPart;
+    manager_class     : Xm.XmManagerClassPart;
+    drawing_area_class: XmDrawingAreaClassPart;
+  END;
+
+  XmDrawingAreaClassRec = _XmDrawingAreaClassRec;
+
+(*  New fields for the DrawingArea widget record  *)
+
+  _XmDrawingAreaPart = RECORD
+    margin_width   : Xt.Dimension;
+    margin_height  : Xt.Dimension;
+    resize_callback: Xt.XtCallbackList;
+    expose_callback: Xt.XtCallbackList;
+    input_callback : Xt.XtCallbackList;
+    resize_policy  : SHORTCARD;
+  END;
+
+  XmDrawingAreaPart = _XmDrawingAreaPart;
+
+(****************************************************************
+ *
+ * Full instance record declaration
+ *
+ ****************************************************************)
+
+  _XmDrawingAreaRec = RECORD
+    core        : Xt.CorePart;
+    composite   : Xt.CompositePart;
+    constraint  : Xt.ConstraintPart;
+    manager     : Xm.XmManagerPart;
+    drawing_area: XmDrawingAreaPart;
+  END;
+
+  XmDrawingAreaRec = _XmDrawingAreaRec;
+
+VAR 
+  xmDrawingAreaClassRec: XmDrawingAreaClassRec;
+
+(********    Private Function Declarations    ********)
+
+PROCEDURE _XmDrawingAreaInput ( wid: Xt.Widget;
+                                VAR event: Xlib.XEvent;
+                                params: Xt.StringList;
+                                VAR num_params: Xt.Cardinal );
+
+(********    End Private Function Declarations    ********)
+
+END DrawingAP.

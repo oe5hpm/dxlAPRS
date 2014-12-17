@@ -1,0 +1,123 @@
+(* Copyright (c) xTech 1993,95,97.  All Rights Reserved *)
+
+(* $RCSfile: float.def,v $ $Revision: 1.1.1.1 $ $Date: 1997/10/20 19:32:35 $ *)
+
+<*+ CSTDLIB  *>
+<*+ NOHEADER*>
+<*+ M2EXTENSIONS*>
+
+DEFINITION MODULE [2] float;
+
+FROM SYSTEM IMPORT CAST;
+
+<* IF __GEN_C__ THEN *>
+(* it is constants indeed but declared as read-only variables *)
+(* to provide portability *)
+VAR
+  FLT_ROUNDS      -: INTEGER;
+  FLT_RADIX       -: INTEGER;
+
+  FLT_DIG         -: INTEGER;
+  FLT_EPSILON     -: LONGREAL;
+  FLT_MANT_DIG    -: INTEGER;
+  FLT_MAX         -: LONGREAL;
+  FLT_MAX_10_EXP  -: INTEGER;
+  FLT_MAX_EXP     -: INTEGER;
+  FLT_MIN         -: LONGREAL;
+  FLT_MIN_10_EXP  -: INTEGER;
+  FLT_MIN_EXP     -: INTEGER;
+
+  DBL_DIG         -: INTEGER;
+  DBL_EPSILON     -: LONGREAL;
+  DBL_MANT_DIG    -: INTEGER;
+  DBL_MAX         -: LONGREAL;
+  DBL_MAX_10_EXP  -: INTEGER;
+  DBL_MAX_EXP     -: INTEGER;
+  DBL_MIN         -: LONGREAL;
+  DBL_MIN_10_EXP  -: INTEGER;
+  DBL_MIN_EXP     -: INTEGER;
+
+  LDBL_DIG        -: INTEGER;
+  LDBL_EPSILON    -: LONGREAL;
+  LDBL_MANT_DIG   -: INTEGER;
+  LDBL_MAX        -: LONGREAL;
+  LDBL_MAX_10_EXP -: INTEGER;
+  LDBL_MAX_EXP    -: INTEGER;
+  LDBL_MIN        -: LONGREAL;
+  LDBL_MIN_10_EXP -: INTEGER;
+  LDBL_MIN_EXP    -: INTEGER;
+
+<* ELSE *>
+CONST
+  (* Constants got from LiNUX-i386 as an XDS-native POSIX-based system. *)
+
+  (* Addition rounds to 0: zero, 1: nearest, 2: +inf, 3: -inf, -1: unknown *)
+  FLT_ROUNDS = 1;
+  (* Radix of exponent representation *)
+  FLT_RADIX  = 2;
+
+  (* Number of decimal digits of precision in a float *)
+  FLT_DIG = 6;
+  (* Difference between 1.0 and minimum float greater then 1.0 *)
+  FLT_EPSILON = VAL (REAL, 1.19209290E-07);
+  (* Number of base-FLT_RADIX digits in the significand of a float *)
+  FLT_MANT_DIG = 24;
+  (* Maximum float *)
+  (* FLT_MAX = VAL (REAL, 3.40282347E+38); *)
+  FLT_MAX = 3.40282347E+38; --- Couldn`t be contaned by REAL (out of bound)
+  (* Maximum int x such that 10**x is a representable float *)
+  FLT_MAX_10_EXP = 38;
+  (* Maximum int x such that FLT_RADIX**(x-1) is a representable float *)
+  FLT_MAX_EXP = 128;
+  (* Minimum normalised float *)
+  FLT_MIN = VAL (REAL, 1.17549435E-38);
+  (* Minimum int x such that 10**x is a normalised float *)
+  FLT_MIN_10_EXP = -37;
+  (* Minimum int x such that FLT_RADIX**(x-1) is a normalised float *)
+  FLT_MIN_EXP = -125;
+
+  (* Number of decimal digits of precision in a double *)
+  DBL_DIG = 15;
+  (* Difference between 1.0 and minimum double greater then 1.0 *)
+  DBL_EPSILON = VAL (LONGREAL, 2.2204460492503131E-16);
+  (* Number of base-FLT_RADIX digits in the significand of a double *)
+  DBL_MANT_DIG = 53;
+  (* Maximum double *)
+  --- real overflow BUG !!!!
+  --- DBL_MAX = VAL (LONGREAL, 1.7976931348623157E+308);
+  DBL_MAX = 1.7976931348623157E+307;
+  (* Maximum int x such that 10**x is a representable double *)
+  DBL_MAX_10_EXP = 308;
+  (* Maximum int x such that FLT_RADIX**(x-1) is a representable double *)
+  DBL_MAX_EXP = 1024;
+  (* Minimum normalised double *)
+  DBL_MIN = VAL (LONGREAL, 2.2250738585072014E-308);
+  (* Minimum int x such that 10**x is a normalised double *)
+  DBL_MIN_10_EXP = -307;
+  (* Minimum int x such that FLT_RADIX**(x-1) is a normalised double *)
+  DBL_MIN_EXP = -1021;
+
+  (* Number of decimal digits of precision in a long double *)
+  LDBL_DIG = 18;
+  (* Difference between 1.0 and minimum long double greater then 1.0 *)
+  LDBL_EPSILON = VAL (LONGLONGREAL, 1.0842021724855044340075E-19);
+  (* Number of base-FLT_RADIX digits in the significand of a long double *)
+  LDBL_MANT_DIG = 64;
+  (* Maximum long double *)
+  --- real overflow BUG!!!!
+  --- LDBL_MAX = VAL (LONGLONGREAL, 1.1897314953572317650213E+4932);
+  (* Maximum int x such that 10**x is a representable long double *)
+  LDBL_MAX_10_EXP = 4932;
+  (* Maximum int x such that FLT_RADIX**(x-1) is a representable long double *)
+  LDBL_MAX_EXP = 16348;
+  (* Minimum normalised long double *)
+  --- real overflow BUG!!!!
+  --- LDBL_MIN = VAL (LONGLONGREAL, 3.3621031431120935062627E-4932);
+  (* Minimum int x such that 10**x is a normalised long double *)
+  LDBL_MIN_10_EXP = -4931;
+  (* Minimum int x such that FLT_RADIX**(x-1) is a normalised long double *)
+  LDBL_MIN_EXP = -16381;
+
+<* END *>
+  
+END float.

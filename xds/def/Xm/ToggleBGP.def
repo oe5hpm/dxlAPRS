@@ -1,0 +1,270 @@
+(* Xm/ToggleBGP.def  Nov 12  21:56:33  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/ToggleBGP.h using H2D v1.18.1 *)
+
+(* $RCSfile: ToggleBGP.def,v $ $Revision: 4 $ $Date: 28.07.98 23:15 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+(* Merged headers: Xm/ToggleBG.h *)
+
+DEFINITION MODULE ["C"] ToggleBGP;
+
+IMPORT SYSTEM, X, Xlib, Xm:=XmP, Xt:=IntrinsicP, LabelGP;
+(* H2D:  Required IMPORT clause: 
+IMPORT ToggleBGP, X, Xlib, XmP, IntrinsicP, LabelGP;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(* ----------------------------------------------------- *)
+(*                     Xm/ToggleBG.h                     *)
+(* ----------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2
+ *)
+
+(***********************************************************************
+ *
+ * Toggle Gadget
+ *
+ ***********************************************************************)
+
+VAR 
+  xmToggleButtonGadgetClass: Xt.WidgetClass;
+
+TYPE 
+  XmToggleButtonGadgetClass = POINTER TO _XmToggleButtonGadgetClassRec;
+
+  XmToggleButtonGadget = POINTER TO _XmToggleButtonGadgetRec;
+
+  XmToggleButtonGCacheObject = POINTER TO _XmToggleButtonGCacheObjRec;
+
+(********    Public Function Declarations    ********)
+
+PROCEDURE XmToggleButtonGadgetGetState ( w: Xt.Widget ): Xt.Boolean;
+
+PROCEDURE XmToggleButtonGadgetSetState ( w: Xt.Widget;
+                                         newstate: Xt.Boolean;
+                                         notify: Xt.Boolean );
+
+PROCEDURE XmCreateToggleButtonGadget ( parent: Xt.Widget;
+                                       name: ARRAY OF CHAR;
+                                       arglist: Xt.ArgList;
+                                       argCount: Xt.Cardinal ): Xt.Widget;
+
+(********    End Public Function Declarations    ********)
+
+(* ----------------------------------------------------- *)
+(*                    Xm/ToggleBGP.h                     *)
+(* ----------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2.1
+ *)
+
+(********************************************
+ *
+ *   No new fields need to be defined
+ *   for the Toggle widget class record
+ *
+ ********************************************)
+
+(*********************************************************************)
+(* The ToggleButton Gadget Cache Object's class and instance records *)
+(*********************************************************************)
+
+TYPE 
+  _XmToggleButtonGCacheObjClassPart = RECORD
+    foo: SYSTEM.int;
+  END;
+
+  XmToggleButtonGCacheObjClassPart = _XmToggleButtonGCacheObjClassPart;
+
+  _XmToggleButtonGCacheObjClassRec = RECORD
+    object_class      : Xt.ObjectClassPart;
+    ext_class         : Xm.XmExtClassPart;
+    label_class_cache : LabelGP.XmLabelGCacheObjClassPart;
+    toggle_class_cache: XmToggleButtonGCacheObjClassPart;
+  END;
+
+  XmToggleButtonGCacheObjClassRec = _XmToggleButtonGCacheObjClassRec;
+
+  _XmToggleButtonGCacheObjPart = RECORD
+    ind_type      : SHORTCARD;
+    visible       : Xt.Boolean;
+    spacing       : Xt.Dimension;
+    indicator_dim : Xt.Dimension;
+    on_pixmap     : X.Pixmap;
+    insen_pixmap  : X.Pixmap;
+    ind_on        : Xt.Boolean;
+    fill_on_select: Xt.Boolean;
+    select_color  : Xt.Pixel;
+    select_GC     : Xlib.GC;
+    background_gc : Xlib.GC;
+  END;
+
+  XmToggleButtonGCacheObjPart = _XmToggleButtonGCacheObjPart;
+
+  XmToggleButtonGCache = POINTER TO XmToggleButtonGCacheObjPart;
+
+  _XmToggleButtonGCacheObjRec = RECORD
+    object      : Xt.ObjectPart;
+    ext         : Xm.XmExtPart;
+    label_cache : LabelGP.XmLabelGCacheObjPart;
+    toggle_cache: XmToggleButtonGCacheObjPart;
+  END;
+
+  XmToggleButtonGCacheObjRec = _XmToggleButtonGCacheObjRec;
+
+(****************************************************
+ *
+ * Full class record declaration for Toggle class
+ *
+ ****************************************************)
+
+  _XmToggleButtonGadgetClassPart = RECORD
+    extension: Xt.XtPointer;
+  END;
+
+  XmToggleButtonGadgetClassPart = _XmToggleButtonGadgetClassPart;
+
+  _XmToggleButtonGadgetClassRec = RECORD
+    rect_class  : Xt.RectObjClassPart;
+    gadget_class: Xm.XmGadgetClassPart;
+    label_class : LabelGP.XmLabelGadgetClassPart;
+    toggle_class: XmToggleButtonGadgetClassPart;
+  END;
+
+  XmToggleButtonGadgetClassRec = _XmToggleButtonGadgetClassRec;
+
+  _XmToggleButtonGadgetPart = RECORD
+    indicator_set   : Xt.Boolean;
+    set             : Xt.Boolean;
+    visual_set      : Xt.Boolean;   (* used for visuals and does not reflect
+                                     * the true state of the button *)
+    Armed           : Xt.Boolean;
+    value_changed_CB: Xt.XtCallbackList;
+    arm_CB          : Xt.XtCallbackList;
+    disarm_CB       : Xt.XtCallbackList;
+    cache: XmToggleButtonGCache; (* Replace cache instance fields
+      	      	      	      	      	    * with a pointer  *)
+  END;
+
+  XmToggleButtonGadgetPart = _XmToggleButtonGadgetPart;
+
+(****************************************************************
+ *
+ * Full instance record declaration
+ *
+ ****************************************************************)
+
+  _XmToggleButtonGadgetRec = RECORD
+    object   : Xt.ObjectPart;
+    rectangle: Xt.RectObjPart;
+    gadget   : Xm.XmGadgetPart;
+    label    : LabelGP.XmLabelGadgetPart;
+    toggle   : XmToggleButtonGadgetPart;
+  END;
+
+  XmToggleButtonGadgetRec = _XmToggleButtonGadgetRec;
+
+VAR 
+  xmToggleButtonGCacheObjClassRec: XmToggleButtonGCacheObjClassRec;
+  xmToggleButtonGadgetClassRec: XmToggleButtonGadgetClassRec;
+
+(* MACROS *)
+(**********)
+
+(*  Macros for cached instance fields  *)
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: these procedures corresponds to macros. *)
+PROCEDURE TBG_IndType ( w: Xt.Widget ): SHORTCARD;
+PROCEDURE TBG_Visible ( w: Xt.Widget ): Xt.Boolean;
+PROCEDURE TBG_Spacing ( w: Xt.Widget ): Xt.Dimension;
+PROCEDURE TBG_IndicatorDim ( w: Xt.Widget ): Xt.Dimension;
+PROCEDURE TBG_OnPixmap ( w: Xt.Widget ): X.Pixmap;
+PROCEDURE TBG_InsenPixmap ( w: Xt.Widget ): X.Pixmap;
+PROCEDURE TBG_IndOn ( w: Xt.Widget ): Xt.Boolean;
+PROCEDURE TBG_FillOnSelect ( w: Xt.Widget ): Xt.Boolean;
+PROCEDURE TBG_SelectColor ( w: Xt.Widget ): Xt.Pixel;
+PROCEDURE TBG_SelectGC ( w: Xt.Widget ): Xlib.GC;
+PROCEDURE TBG_BackgroundGC ( w: Xt.Widget ): Xlib.GC;
+
+<* ELSE *>
+
+PROCEDURE  / TBG_IndType ( w: Xt.Widget ): SHORTCARD;
+PROCEDURE  / TBG_Visible ( w: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / TBG_Spacing ( w: Xt.Widget ): Xt.Dimension;
+PROCEDURE  / TBG_IndicatorDim ( w: Xt.Widget ): Xt.Dimension;
+PROCEDURE  / TBG_OnPixmap ( w: Xt.Widget ): X.Pixmap;
+PROCEDURE  / TBG_InsenPixmap ( w: Xt.Widget ): X.Pixmap;
+PROCEDURE  / TBG_IndOn ( w: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / TBG_FillOnSelect ( w: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / TBG_SelectColor ( w: Xt.Widget ): Xt.Pixel;
+PROCEDURE  / TBG_SelectGC ( w: Xt.Widget ): Xlib.GC;
+PROCEDURE  / TBG_BackgroundGC ( w: Xt.Widget ): Xlib.GC;
+
+<* END *>
+
+(***************************************)
+(*  Macros for uncached instance fields  *)
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: these procedures corresponds to macros. *)
+PROCEDURE TBG_IndicatorSet ( w: Xt.Widget ): Xt.Boolean;
+PROCEDURE TBG_Set ( w: Xt.Widget ): Xt.Boolean;
+PROCEDURE TBG_VisualSet ( w: Xt.Widget ): Xt.Boolean;
+PROCEDURE TBG_ValueChangedCB ( w: Xt.Widget ): Xt.XtCallbackList;
+PROCEDURE TBG_ArmCB ( w: Xt.Widget ): Xt.XtCallbackList;
+PROCEDURE TBG_DisarmCB ( w: Xt.Widget ): Xt.XtCallbackList;
+PROCEDURE TBG_Armed ( w: Xt.Widget ): Xt.Boolean;
+
+<* ELSE *>
+
+PROCEDURE  / TBG_IndicatorSet ( w: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / TBG_Set ( w: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / TBG_VisualSet ( w: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / TBG_ValueChangedCB ( w: Xt.Widget ): Xt.XtCallbackList;
+PROCEDURE  / TBG_ArmCB ( w: Xt.Widget ): Xt.XtCallbackList;
+PROCEDURE  / TBG_DisarmCB ( w: Xt.Widget ): Xt.XtCallbackList;
+PROCEDURE  / TBG_Armed ( w: Xt.Widget ): Xt.Boolean;
+
+<* END *>
+
+(******************************)
+(*  Convenience Macros        *)
+(******************************)
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: these procedures corresponds to macros. *)
+PROCEDURE TBG_Cache ( w: Xt.Widget ): XmToggleButtonGCache;
+PROCEDURE TBG_ClassCachePart ( w: Xt.WidgetClass ): Xm.XmCacheClassPartPtr;
+
+<* ELSE *>
+
+PROCEDURE  / TBG_Cache ( w: Xt.Widget ): XmToggleButtonGCache;
+PROCEDURE  / TBG_ClassCachePart ( w: Xt.WidgetClass ): Xm.XmCacheClassPartPtr;
+
+<* END *>
+
+(********    Private Function Declarations    ********)
+
+PROCEDURE _XmToggleBCacheCompare ( A: Xt.XtPointer;
+                                   B: Xt.XtPointer ): SYSTEM.int;
+
+(********    End Private Function Declarations    ********)
+
+END ToggleBGP.

@@ -1,0 +1,78 @@
+(* Xm/LabelG.def  Oct 15  18:36:7  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/LabelG.h using H2D v1.16. *)
+
+(* $RCSfile: LabelG.def,v $ $Revision: 4 $ $Date: 28.07.98 23:14 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+
+DEFINITION MODULE ["C"] LabelG;
+
+IMPORT SYSTEM, Xt:=Intrinsic;
+(* H2D:  Required IMPORT clause: 
+IMPORT LabelG, Intrinsic;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(*
+ * Motif Release 1.2 
+ *)
+
+(*   Widget class and record definitions   *)
+
+VAR 
+  xmLabelGadgetClass: Xt.WidgetClass;
+
+TYPE 
+  _XmLabelGadgetClassRec = RECORD
+
+(* Declaration without definition *)
+  END;
+
+  XmLabelGadgetClass = POINTER TO _XmLabelGadgetClassRec;
+
+  _XmLabelGadgetRec = RECORD
+
+(* Declaration without definition *)
+  END;
+
+  XmLabelGadget = POINTER TO _XmLabelGadgetRec;
+
+  _XmLabelGCacheObjRec = RECORD
+
+(* Declaration without definition *)
+  END;
+
+  XmLabelGCacheObject = POINTER TO _XmLabelGCacheObjRec;
+
+(* fast subclass define  *)
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: this procedure corresponds to a macro. *)
+PROCEDURE XmIsLabelGadget ( w: Xt.Widget ): Xt.Boolean;
+
+<* ELSE *>
+
+PROCEDURE  / XmIsLabelGadget ( w: Xt.Widget ): Xt.Boolean;
+
+<* END *>
+
+(********    Public Function Declarations    ********)
+
+PROCEDURE XmCreateLabelGadget ( parent: Xt.Widget; name: ARRAY OF CHAR;
+                                arglist: Xt.ArgList;
+                                argCount: Xt.Cardinal ): Xt.Widget;
+
+(********    End Public Function Declarations    ********)
+
+END LabelG.

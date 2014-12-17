@@ -1,0 +1,15 @@
+(* Copyright (c) 1996 xTech Ltd, Russia. All Rights Reserved. *)
+<* +M2EXTENSIONS *>
+DEFINITION MODULE Printf;
+
+IMPORT SYSTEM, IOChan;
+
+TYPE ChanId = IOChan.ChanId;
+
+PROCEDURE fprintf(file: ChanId; format: ARRAY OF CHAR; SEQ args: SYSTEM.BYTE);
+
+PROCEDURE printf(format: ARRAY OF CHAR; SEQ args: SYSTEM.BYTE);
+
+PROCEDURE sprintf(VAR buf: ARRAY OF CHAR; format: ARRAY OF CHAR; SEQ args: SYSTEM.BYTE);
+
+END Printf.

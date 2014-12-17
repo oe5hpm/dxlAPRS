@@ -1,0 +1,2350 @@
+(* Xm/Xm.def  Oct 19  19:29:52  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/Xm.h using H2D v1.16 *)
+
+(* $RCSfile: Xm.def,v $ $Revision: 5 $ $Date: 28.07.98 23:15 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+(* Merged headers: Xm/XmStrDefs.h, Xm/VendorS.h *)
+
+DEFINITION MODULE ["C"] Xm;
+
+IMPORT SYSTEM, X, Xlib, Xt:=Intrinsic, Xrm:=Xresource;
+(* H2D:  Required IMPORT clause: 
+IMPORT Xm, X, Xlib, Intrinsic, Xresource;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992, 1993, 1994 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(*
+ * Motif Release 1.2.4 
+ *)
+
+(* ------------------------------------------------------ *)
+(*                     Xm/XmStrDefs.h                     *)
+(* ------------------------------------------------------ *)
+
+(*
+ * Motif Release 1.2.4  
+ *)
+
+CONST 
+  XmS = '';
+  XmSTRING_DEFAULT_CHARSET = XmS;
+  XmCAccelerator = 'Accelerator';
+  XmCAcceleratorText = 'AcceleratorText';
+  XmCAdjustLast = 'AdjustLast';
+  XmCAdjustMargin = 'AdjustMargin';
+  XmCAlignment = 'Alignment';
+  XmCAllowOverlap = 'AllowOverlap';
+  XmCAnimationMask = 'AnimationMask';
+  XmCAnimationPixmap = 'AnimationPixmap';
+  XmCAnimationPixmapDepth = 'AnimationPixmapDepth';
+  XmCAnimationStyle = 'AnimationStyle';
+  XmCApplyLabelString = 'ApplyLabelString';
+  XmCArmCallback = 'ArmCallback';
+  XmCArmColor = 'ArmColor';
+  XmCArmPixmap = 'ArmPixmap';
+  XmCArrowDirection = 'ArrowDirection';
+  XmCAttachment = 'Attachment';
+  XmCAudibleWarning = 'AudibleWarning';
+  XmCAutoShowCursorPosition = 'AutoShowCursorPosition';
+  XmCAutoUnmanage = 'AutoUnmanage';
+  XmCAutomaticSelection = 'AutomaticSelection';
+  XmCAvailability = 'Availability';
+  XmCBackgroundPixmap = 'BackgroundPixmap';
+  XmCBlendModel = 'BlendModel';
+  XmCBlinkRate = 'BlinkRate';
+  XmCBottomShadowColor = 'BottomShadowColor';
+  XmCBottomShadowPixmap = 'BottomShadowPixmap';
+  XmCButtonAcceleratorText = 'ButtonAcceleratorText';
+  XmCButtonAccelerators = 'ButtonAccelerators';
+  XmCButtonCount = 'ButtonCount';
+  XmCButtonFontList = 'ButtonFontList';
+  XmCButtonMnemonicCharSets = 'ButtonMnemonicCharSets';
+  XmCButtonMnemonics = 'ButtonMnemonics';
+  XmCButtonSet = 'ButtonSet';
+  XmCButtonType = 'ButtonType';
+  XmCButtons = 'Buttons';
+  XmCCancelLabelString = 'CancelLabelString';
+  XmCChildHorizontalAlignment = 'ChildHorizontalAlignment';
+  XmCChildHorizontalSpacing = 'ChildHorizontalSpacing';
+  XmCChildPlacement = 'ChildPlacement';
+  XmCChildType = 'ChildType';
+  XmCChildVerticalAlignment = 'ChildVerticalAlignment';
+  XmCChildren = 'Children';
+  XmCClientData = 'ClientData';
+  XmCClipWindow = 'ClipWindow';
+  XmCColumns = 'Columns';
+  XmCCommandWindow = 'CommandWindow';
+  XmCCommandWindowLocation = 'CommandWindowLocation';
+  XmCConvertProc = 'ConvertProc';
+  XmCCursorBackground = 'CursorBackground';
+  XmCCursorForeground = 'CursorForeground';
+  XmCCursorPosition = 'CursorPosition';
+  XmCCursorPositionVisible = 'CursorPositionVisible';
+  XmCDarkThreshold = 'DarkThreshold';
+  XmCDecimalPoints = 'DecimalPoints';
+  XmCDefaultButtonShadowThickness = 'DefaultButtonShadowThickness';
+  XmCDefaultButtonType = 'DefaultButtonType';
+  XmCDefaultCopyCursorIcon = 'DefaultCopyCursorIcon';
+  XmCDefaultFontList = 'DefaultFontList';
+  XmCDefaultInvalidCursorIcon = 'DefaultInvalidCursorIcon';
+  XmCDefaultLinkCursorIcon = 'DefaultLinkCursorIcon';
+  XmCDefaultMoveCursorIcon = 'DefaultMoveCursorIcon';
+  XmCDefaultNoneCursorIcon = 'DefaultNoneCursorIcon';
+  XmCDefaultPosition = 'DefaultPosition';
+  XmCDefaultSourceCursorIcon = 'DefaultSourceCursorIcon';
+  XmCDefaultValidCursorIcon = 'DefaultValidCursorIcon';
+  XmCDeleteResponse = 'DeleteResponse';
+  XmCDesktopParent = 'DesktopParent';
+  XmCDialogStyle = 'DialogStyle';
+  XmCDialogTitle = 'DialogTitle';
+  XmCDialogType = 'DialogType';
+  XmCDirListItemCount = 'DirListItemCount';
+  XmCDirListItems = 'DirListItems';
+  XmCDirListLabelString = 'DirListLabelString';
+  XmCDirMask = 'DirMask';
+  XmCDirSearchProc = 'DirSearchProc';
+  XmCDirSpec = 'DirSpec';
+  XmCDirectory = 'Directory';
+  XmCDirectoryValid = 'DirectoryValid';
+  XmCDisarmCallback = 'DisarmCallback';
+  XmCDoubleClickInterval = 'DoubleClickInterval';
+  XmCDragContextClass = 'DragContextClass';
+  XmCDragDropFinishCallback = 'DragDropFinishCallback';
+  XmCDragIconClass = 'DragIconClass';
+  XmCDragInitiatorProtocolStyle = 'DragInitiatorProtocolStyle';
+  XmCDragMotionCallback = 'DragMotionCallback';
+  XmCDragOperations = 'DragOperations';
+  XmCDragOverMode = 'DragOverMode';
+  XmCDragProc = 'DragProc';
+  XmCDragReceiverProtocolStyle = 'DragReceiverProtocolStyle';
+  XmCDropProc = 'DropProc';
+  XmCDropRectangles = 'DropRectangles';
+  XmCDropSiteActivity = 'DropSiteActivity';
+  XmCDropSiteEnterCallback = 'DropSiteEnterCallback';
+  XmCDropSiteLeaveCallback = 'DropSiteLeaveCallback';
+  XmCDropSiteManagerClass = 'DropSiteManagerClass';
+  XmCDropSiteOperations = 'DropSiteOperations';
+  XmCDropSiteType = 'DropSiteType';
+  XmCDropStartCallback = 'DropStartCallback';
+  XmCDropTransferClass = 'DropTransferClass';
+  XmCDropTransfers = 'DropTransfers';
+  XmCEditable = 'Editable';
+  XmCEntryBorder = 'EntryBorder';
+  XmCEntryClass = 'EntryClass';
+  XmCExportTargets = 'ExportTargets';
+  XmCExposeCallback = 'ExposeCallback';
+  XmCExtensionType = 'ExtensionType';
+  XmCFileListItemCount = 'FileListItemCount';
+  XmCFileListItems = 'FileListItems';
+  XmCFileListLabelString = 'FileListLabelString';
+  XmCFileSearchProc = 'FileSearchProc';
+  XmCFileTypeMask = 'FileTypeMask';
+  XmCFillOnArm = 'FillOnArm';
+  XmCFillOnSelect = 'FillOnSelect';
+  XmCFilterLabelString = 'FilterLabelString';
+  XmCFontList = 'FontList';
+  XmCForegroundThreshold = 'ForegroundThreshold';
+  XmCHelpLabelString = 'HelpLabelString';
+  XmCHighlightColor = 'HighlightColor';
+  XmCHighlightOnEnter = 'HighlightOnEnter';
+  XmCHighlightPixmap = 'HighlightPixmap';
+  XmCHighlightThickness = 'HighlightThickness';
+  XmCHorizontalFontUnit = 'HorizontalFontUnit';
+  XmCHorizontalScrollBar = 'HorizontalScrollBar';
+  XmCHot = 'Hot';
+  XmCICCHandle = 'ICCHandle';
+  XmCImportTargets = 'ImportTargets';
+  XmCIncrement = 'Increment';
+  XmCIncremental = 'Incremental';
+  XmCIndicatorOn = 'IndicatorOn';
+  XmCIndicatorSize = 'IndicatorSize';
+  XmCIndicatorType = 'IndicatorType';
+  XmCInitialDelay = 'InitialDelay';
+  XmCInitialFocus = 'InitialFocus';
+  XmCInputCreate = 'InputCreate';
+  XmCInputMethod = 'InputMethod';
+  XmCInvalidCursorForeground = 'InvalidCursorForeground';
+  XmCIsAligned = 'IsAligned';
+  XmCIsHomogeneous = 'IsHomogeneous';
+  XmCItemCount = 'ItemCount';
+  XmCItems = 'Items';
+  XmCKeyboardFocusPolicy = 'KeyboardFocusPolicy';
+  XtCKeyboardFocusPolicy = XmCKeyboardFocusPolicy;
+  XmCLabelFontList = 'LabelFontList';
+  XmCLabelInsensitivePixmap = 'LabelInsensitivePixmap';
+  XmCLabelPixmap = 'LabelPixmap';
+  XmCLabelString = 'LabelString';
+  XmCLabelType = 'LabelType';
+  XmCLightThreshold = 'LightThreshold';
+  XmCListLabelString = 'ListLabelString';
+  XmCListMarginHeight = 'ListMarginHeight';
+  XmCListMarginWidth = 'ListMarginWidth';
+  XmCListSizePolicy = 'ListSizePolicy';
+  XmCListSpacing = 'ListSpacing';
+  XmCListUpdated = 'ListUpdated';
+  XmCLogicalParent = 'LogicalParent';
+  XmCMainWindowMarginHeight = 'MainWindowMarginHeight';
+  XmCMainWindowMarginWidth = 'MainWindowMarginWidth';
+  XmCMappingDelay = 'MappingDelay';
+  XmCMarginBottom = 'MarginBottom';
+  XmCMarginHeight = 'MarginHeight';
+  XmCMarginLeft = 'MarginLeft';
+  XmCMarginRight = 'MarginRight';
+  XmCMarginTop = 'MarginTop';
+  XmCMarginWidth = 'MarginWidth';
+  XmCMask = 'Mask';
+  XmCMaxItems = 'MaxItems';
+  XmCMaxLength = 'MaxLength';
+  XmCMaxValue = 'MaxValue';
+  XmCMaximum = 'Maximum';
+  XmCMenuBar = 'MenuBar';
+  XmCMenuPost = 'MenuPost';
+  XmCMenuWidget = 'MenuWidget';
+  XmCMessageProc = 'MessageProc';
+  XmCMessageWindow = 'MessageWindow';
+  XmCMinimizeButtons = 'MinimizeButtons';
+  XmCMinimum = 'Minimum';
+  XmCMnemonic = 'Mnemonic';
+  XmCMnemonicCharSet = 'MnemonicCharSet';
+  XmCMoveOpaque = 'MoveOpaque';
+  XmCMultiClick = 'MultiClick';
+  XmCMustMatch = 'MustMatch';
+  XmCMwmDecorations = 'MwmDecorations';
+  XmCMwmFunctions = 'MwmFunctions';
+  XmCMwmInputMode = 'MwmInputMode';
+  XmCMwmMenu = 'MwmMenu';
+  XmCMwmMessages = 'MwmMessages';
+  XmCNavigationType = 'NavigationType';
+  XmCNeedsMotion = 'NeedsMotion';
+  XmCNoMatchString = 'NoMatchString';
+  XmCNoResize = 'NoResize';
+  XmCNoneCursorForeground = 'NoneCursorForeground';
+  XmCNotifyProc = 'NotifyProc';
+  XmCNumChildren = 'NumChildren';
+  XmCNumColumns = 'NumColumns';
+  XmCNumDropRectangles = 'NumDropRectangles';
+  XmCNumDropTransfers = 'NumDropTransfers';
+  XmCNumExportTargets = 'NumExportTargets';
+  XmCNumImportTargets = 'NumImportTargets';
+  XmCOffset = 'Offset';
+  XmCOkLabelString = 'OkLabelString';
+  XmCOperationChangedCallback = 'OperationChangedCallback';
+  XmCOperationCursorIcon = 'OperationCursorIcon';
+  XmCOptionLabel = 'OptionLabel';
+  XmCOptionMnemonic = 'OptionMnemonic';
+  XmCOutputCreate = 'OutputCreate';
+  XmCPacking = 'Packing';
+  XmCPageIncrement = 'PageIncrement';
+  XmCPaneMaximum = 'PaneMaximum';
+  XmCPaneMinimum = 'PaneMinimum';
+  XmCPattern = 'Pattern';
+  XmCPendingDelete = 'PendingDelete';
+  XmCPopupEnabled = 'PopupEnabled';
+  XmCPositionIndex = 'PositionIndex';
+  XmCPostFromButton = 'PostFromButton';
+  XmCPostFromCount = 'PostFromCount';
+  XmCPostFromList = 'PostFromList';
+  XmCPreeditType = 'PreeditType';
+  XmCProcessingDirection = 'ProcessingDirection';
+  XmCPromptString = 'PromptString';
+  XmCProtocolCallback = 'ProtocolCallback';
+  XmCPushButtonEnabled = 'PushButtonEnabled';
+  XmCQualifySearchDataProc = 'QualifySearchDataProc';
+  XmCRadioAlwaysOne = 'RadioAlwaysOne';
+  XmCRadioBehavior = 'RadioBehavior';
+  XmCRecomputeSize = 'RecomputeSize';
+  XmCRectangles = 'Rectangles';
+  XmCRepeatDelay = 'RepeatDelay';
+  XmCResizeCallback = 'ResizeCallback';
+  XmCResizeHeight = 'ResizeHeight';
+  XmCResizePolicy = 'ResizePolicy';
+  XmCResizeWidth = 'ResizeWidth';
+  XmCRowColumnType = 'RowColumnType';
+  XmCRows = 'Rows';
+  XmCRubberPositioning = 'RubberPositioning';
+  XmCSashHeight = 'SashHeight';
+  XmCSashIndent = 'SashIndent';
+  XmCSashWidth = 'SashWidth';
+  XmCScaleHeight = 'ScaleHeight';
+  XmCScaleMultiple = 'ScaleMultiple';
+  XmCScaleWidth = 'ScaleWidth';
+  XmCScroll = 'Scroll';
+  XmCScrollBarDisplayPolicy = 'ScrollBarDisplayPolicy';
+  XmCScrollBarPlacement = 'ScrollBarPlacement';
+  XmCScrollSide = 'ScrollSide';
+  XmCScrolledWindowMarginHeight = 'ScrolledWindowMarginHeight';
+  XmCScrolledWindowMarginWidth = 'ScrolledWindowMarginWidth';
+  XmCScrollingPolicy = 'ScrollingPolicy';
+  XmCSelectColor = 'SelectColor';
+  XmCSelectInsensitivePixmap = 'SelectInsensitivePixmap';
+  XmCSelectPixmap = 'SelectPixmap';
+  XmCSelectThreshold = 'SelectThreshold';
+  XmCSelectedItemCount = 'SelectedItemCount';
+  XmCSelectedItems = 'SelectedItems';
+  XmCSelectionArrayCount = 'SelectionArrayCount';
+  XmCSelectionLabelString = 'SelectionLabelString';
+  XmCSelectionPolicy = 'SelectionPolicy';
+  XmCSeparatorOn = 'SeparatorOn';
+  XmCSeparatorType = 'SeparatorType';
+  XmCSet = 'Set';
+  XmCShadowThickness = 'ShadowThickness';
+  XmCShadowType = 'ShadowType';
+  XmCShellUnitType = 'ShellUnitType';
+  XtCShellUnitType = XmCShellUnitType;
+  XmCShowArrows = 'ShowArrows';
+  XmCShowAsDefault = 'ShowAsDefault';
+  XmCShowSeparator = 'ShowSeparator';
+  XmCShowValue = 'ShowValue';
+  XmCSimpleCheckBox = 'SimpleCheckBox';
+  XmCSimpleMenuBar = 'SimpleMenuBar';
+  XmCSimpleOptionMenu = 'SimpleOptionMenu';
+  XmCSimplePopupMenu = 'SimplePopupMenu';
+  XmCSimplePulldownMenu = 'SimplePulldownMenu';
+  XmCSimpleRadioBox = 'SimpleRadioBox';
+  XmCSizePolicy = 'SizePolicy';
+  XmCSliderSize = 'SliderSize';
+  XmCSource = 'Source';
+  XmCSourceCursorIcon = 'SourceCursorIcon';
+  XmCSourceIsExternal = 'SourceIsExternal';
+  XmCSourcePixmapIcon = 'SourcePixmapIcon';
+  XmCSourceWidget = 'SourceWidget';
+  XmCSourceWindow = 'SourceWindow';
+  XmCSpacing = 'Spacing';
+  XmCStartTime = 'StartTime';
+  XmCStateCursorIcon = 'StateCursorIcon';
+  XmCStringDirection = 'StringDirection';
+  XmCTearOffModel = 'TearOffModel';
+  XmCTextFontList = 'TextFontList';
+  XmCTextString = 'TextString';
+  XmCTextValue = 'TextValue';
+  XmCTitleString = 'TitleString';
+  XmCTopCharacter = 'TopCharacter';
+  XmCTopItemPosition = 'TopItemPosition';
+  XmCTopLevelEnterCallback = 'TopLevelEnterCallback';
+  XmCTopLevelLeaveCallback = 'TopLevelLeaveCallback';
+  XmCTopShadowColor = 'TopShadowColor';
+  XmCTopShadowPixmap = 'TopShadowPixmap';
+  XmCTransferProc = 'TransferProc';
+  XmCTransferStatus = 'TransferStatus';
+  XmCTraversalOn = 'TraversalOn';
+  XmCTraversalType = 'TraversalType';
+  XmCTreeUpdateProc = 'TreeUpdateProc';
+  XmCTroughColor = 'TroughColor';
+  XmCUnitType = 'UnitType';
+  XmCUnpostBehavior = 'UnpostBehavior';
+  XmCUnselectPixmap = 'UnselectPixmap';
+  XmCUpdateSliderSize = 'UpdateSliderSize';
+  XmCUseAsyncGeometry = 'UseAsyncGeometry';
+  XmCUserData = 'UserData';
+  XmCValidCursorForeground = 'ValidCursorForeground';
+  XmCValueChangedCallback = 'ValueChangedCallback';
+  XmCValueWcs = 'ValueWcs';
+  XmCVerifyBell = 'VerifyBell';
+  XmCVerticalAlignment = 'VerticalAlignment';
+  XmCVerticalFontUnit = 'VerticalFontUnit';
+  XmCVerticalScrollBar = 'VerticalScrollBar';
+  XmCVisibleItemCount = 'VisibleItemCount';
+  XmCVisibleWhenOff = 'VisibleWhenOff';
+  XmCVisualPolicy = 'VisualPolicy';
+  XmCWhichButton = 'WhichButton';
+  XmCWordWrap = 'WordWrap';
+  XmCWorkWindow = 'WorkWindow';
+  XmCXmString = 'XmString';
+  XmNaccelerator = 'accelerator';
+  XmNacceleratorText = 'acceleratorText';
+  XmNactivateCallback = 'activateCallback';
+  XmNadjustLast = 'adjustLast';
+  XmNadjustMargin = 'adjustMargin';
+  XmNalignment = 'alignment';
+  XmNallowOverlap = 'allowOverlap';
+  XmNallowResize = 'allowResize';
+  XmNanimationMask = 'animationMask';
+  XmNanimationPixmap = 'animationPixmap';
+  XmNanimationPixmapDepth = 'animationPixmapDepth';
+  XmNanimationStyle = 'animationStyle';
+  XmNapplyCallback = 'applyCallback';
+  XmNapplyLabelString = 'applyLabelString';
+  XmNarmCallback = 'armCallback';
+  XmNarmColor = 'armColor';
+  XmNarmPixmap = 'armPixmap';
+  XmNarrowDirection = 'arrowDirection';
+  XmNattachment = 'attachment';
+  XmNaudibleWarning = 'audibleWarning';
+  XmNautoShowCursorPosition = 'autoShowCursorPosition';
+  XmNautoUnmanage = 'autoUnmanage';
+  XmNautomaticSelection = 'automaticSelection';
+  XmNavailability = 'availability';
+  XmNblendModel = 'blendModel';
+  XmNblinkRate = 'blinkRate';
+  XmNbottomAttachment = 'bottomAttachment';
+  XmNbottomOffset = 'bottomOffset';
+  XmNbottomPosition = 'bottomPosition';
+  XmNbottomShadowColor = 'bottomShadowColor';
+  XmNbottomShadowPixmap = 'bottomShadowPixmap';
+  XmNbottomWidget = 'bottomWidget';
+  XmNbrowseSelectionCallback = 'browseSelectionCallback';
+  XmNbuttonAcceleratorText = 'buttonAcceleratorText';
+  XmNbuttonAccelerators = 'buttonAccelerators';
+  XmNbuttonCount = 'buttonCount';
+  XmNbuttonFontList = 'buttonFontList';
+  XmNbuttonMnemonicCharSets = 'buttonMnemonicCharSets';
+  XmNbuttonMnemonics = 'buttonMnemonics';
+  XmNbuttonSet = 'buttonSet';
+  XmNbuttonType = 'buttonType';
+  XmNbuttons = 'buttons';
+  XmNcancelButton = 'cancelButton';
+  XmNcancelCallback = 'cancelCallback';
+  XmNcancelLabelString = 'cancelLabelString';
+  XmNcascadePixmap = 'cascadePixmap';
+  XmNcascadingCallback = 'cascadingCallback';
+  XmNchildHorizontalAlignment = 'childHorizontalAlignment';
+  XmNchildHorizontalSpacing = 'childHorizontalSpacing';
+  XmNchildPlacement = 'childPlacement';
+  XmNchildPosition = 'childPosition';
+  XmNchildType = 'childType';
+  XmNchildVerticalAlignment = 'childVerticalAlignment';
+  XmNclientData = 'clientData';
+  XmNclipWindow = 'clipWindow';
+  XmNcolumns = 'columns';
+  XmNcommand = 'command';
+  XmNcommandChangedCallback = 'commandChangedCallback';
+  XmNcommandEnteredCallback = 'commandEnteredCallback';
+  XmNcommandWindow = 'commandWindow';
+  XmNcommandWindowLocation = 'commandWindowLocation';
+  XmNconvertProc = 'convertProc';
+  XmNcursorBackground = 'cursorBackground';
+  XmNcursorForeground = 'cursorForeground';
+  XmNcursorPosition = 'cursorPosition';
+  XmNcursorPositionVisible = 'cursorPositionVisible';
+  XmNdarkThreshold = 'darkThreshold';
+  XmNdecimalPoints = 'decimalPoints';
+  XmNdecrementCallback = 'decrementCallback';
+  XmNdefaultActionCallback = 'defaultActionCallback';
+  XmNdefaultButton = 'defaultButton';
+  XmNdefaultButtonShadowThickness = 'defaultButtonShadowThickness';
+  XmNdefaultButtonType = 'defaultButtonType';
+  XmNdefaultCopyCursorIcon = 'defaultCopyCursorIcon';
+  XmNdefaultFontList = 'defaultFontList';
+  XmNdefaultInvalidCursorIcon = 'defaultInvalidCursorIcon';
+  XmNdefaultLinkCursorIcon = 'defaultLinkCursorIcon';
+  XmNdefaultMoveCursorIcon = 'defaultMoveCursorIcon';
+  XmNdefaultNoneCursorIcon = 'defaultNoneCursorIcon';
+  XmNdefaultPosition = 'defaultPosition';
+  XmNdefaultSourceCursorIcon = 'defaultSourceCursorIcon';
+  XmNdefaultValidCursorIcon = 'defaultValidCursorIcon';
+  XmNdeleteResponse = 'deleteResponse';
+  XmNdesktopParent = 'desktopParent';
+  XmNdialogStyle = 'dialogStyle';
+  XmNdialogTitle = 'dialogTitle';
+  XmNdialogType = 'dialogType';
+  XmNdirListItemCount = 'dirListItemCount';
+  XmNdirListItems = 'dirListItems';
+  XmNdirListLabelString = 'dirListLabelString';
+  XmNdirMask = 'dirMask';
+  XmNdirSearchProc = 'dirSearchProc';
+  XmNdirSpec = 'dirSpec';
+  XmNdirectory = 'directory';
+  XmNdirectoryValid = 'directoryValid';
+  XmNdisarmCallback = 'disarmCallback';
+  XmNdoubleClickInterval = 'doubleClickInterval';
+  XmNdragCallback = 'dragCallback';
+  XmNdragContextClass = 'dragContextClass';
+  XmNdragDropFinishCallback = 'dragDropFinishCallback';
+  XmNdragIconClass = 'dragIconClass';
+  XmNdragInitiatorProtocolStyle = 'dragInitiatorProtocolStyle';
+  XmNdragMotionCallback = 'dragMotionCallback';
+  XmNdragOperations = 'dragOperations';
+  XmNdragOverMode = 'dragOverMode';
+  XmNdragProc = 'dragProc';
+  XmNdragReceiverProtocolStyle = 'dragReceiverProtocolStyle';
+  XmNdropFinishCallback = 'dropFinishCallback';
+  XmNdropProc = 'dropProc';
+  XmNdropRectangles = 'dropRectangles';
+  XmNdropSiteActivity = 'dropSiteActivity';
+  XmNdropSiteEnterCallback = 'dropSiteEnterCallback';
+  XmNdropSiteLeaveCallback = 'dropSiteLeaveCallback';
+  XmNdropSiteManagerClass = 'dropSiteManagerClass';
+  XmNdropSiteOperations = 'dropSiteOperations';
+  XmNdropSiteType = 'dropSiteType';
+  XmNdropStartCallback = 'dropStartCallback';
+  XmNdropTransferClass = 'dropTransferClass';
+  XmNdropTransfers = 'dropTransfers';
+  XmNeditMode = 'editMode';
+  XmNeditable = 'editable';
+  XmNentryAlignment = 'entryAlignment';
+  XmNentryBorder = 'entryBorder';
+  XmNentryCallback = 'entryCallback';
+  XmNentryClass = 'entryClass';
+  XmNentryVerticalAlignment = 'entryVerticalAlignment';
+  XmNexportTargets = 'exportTargets';
+  XmNexposeCallback = 'exposeCallback';
+  XmNextendedSelectionCallback = 'extendedSelectionCallback';
+  XmNextensionType = 'extensionType';
+  XmNfileListItemCount = 'fileListItemCount';
+  XmNfileListItems = 'fileListItems';
+  XmNfileListLabelString = 'fileListLabelString';
+  XmNfileSearchProc = 'fileSearchProc';
+  XmNfileTypeMask = 'fileTypeMask';
+  XmNfillOnArm = 'fillOnArm';
+  XmNfillOnSelect = 'fillOnSelect';
+  XmNfilterLabelString = 'filterLabelString';
+  XmNfocusCallback = 'focusCallback';
+  XmNfocusMovedCallback = 'focusMovedCallback';
+  XmNfocusPolicyChanged = 'focusPolicyChanged';
+  XmNfontList = 'fontList';
+  XmNforegroundThreshold = 'foregroundThreshold';
+  XmNfractionBase = 'fractionBase';
+  XmNgainPrimaryCallback = 'gainPrimaryCallback';
+  XmNhelpCallback = 'helpCallback';
+  XmNhelpLabelString = 'helpLabelString';
+  XmNhighlightColor = 'highlightColor';
+  XmNhighlightOnEnter = 'highlightOnEnter';
+  XmNhighlightPixmap = 'highlightPixmap';
+  XmNhighlightThickness = 'highlightThickness';
+  XmNhistoryItemCount = 'historyItemCount';
+  XmNhistoryItems = 'historyItems';
+  XmNhistoryMaxItems = 'historyMaxItems';
+  XmNhistoryVisibleItemCount = 'historyVisibleItemCount';
+  XmNhorizontalFontUnit = 'horizontalFontUnit';
+  XmNhorizontalScrollBar = 'horizontalScrollBar';
+  XmNhorizontalSpacing = 'horizontalSpacing';
+  XmNhotX = 'hotX';
+  XmNhotY = 'hotY';
+  XmNiccHandle = 'iccHandle';
+  XmNimportTargets = 'importTargets';
+  XmNincrement = 'increment';
+  XmNincrementCallback = 'incrementCallback';
+  XmNincremental = 'incremental';
+  XmNindicatorOn = 'indicatorOn';
+  XmNindicatorSize = 'indicatorSize';
+  XmNindicatorType = 'indicatorType';
+  XmNinitialDelay = 'initialDelay';
+  XmNinitialFocus = 'initialFocus';
+  XmNinputCallback = 'inputCallback';
+  XmNinputCreate = 'inputCreate';
+  XmNinputMethod = 'inputMethod';
+  XmNinvalidCursorForeground = 'invalidCursorForeground';
+  XmNisAligned = 'isAligned';
+  XmNisHomogeneous = 'isHomogeneous';
+  XmNitemCount = 'itemCount';
+  XmNitems = 'items';
+  XmNkeyboardFocusPolicy = 'keyboardFocusPolicy';
+  XtNkeyboardFocusPolicy = XmNkeyboardFocusPolicy;
+  XmNlabelFontList = 'labelFontList';
+  XmNlabelInsensitivePixmap = 'labelInsensitivePixmap';
+  XmNlabelPixmap = 'labelPixmap';
+  XmNlabelString = 'labelString';
+  XmNlabelType = 'labelType';
+  XmNleftAttachment = 'leftAttachment';
+  XmNleftOffset = 'leftOffset';
+  XmNleftPosition = 'leftPosition';
+  XmNleftWidget = 'leftWidget';
+  XmNlightThreshold = 'lightThreshold';
+  XmNlineSpace = 'lineSpace';
+  XmNlistItemCount = 'listItemCount';
+  XmNlistItems = 'listItems';
+  XmNlistLabelString = 'listLabelString';
+  XmNlistMarginHeight = 'listMarginHeight';
+  XmNlistMarginWidth = 'listMarginWidth';
+  XmNlistSizePolicy = 'listSizePolicy';
+  XmNlistSpacing = 'listSpacing';
+  XmNlistUpdated = 'listUpdated';
+  XmNlistVisibleItemCount = 'listVisibleItemCount';
+  XmNlogicalParent = 'logicalParent';
+  XmNlosePrimaryCallback = 'losePrimaryCallback';
+  XmNlosingFocusCallback = 'losingFocusCallback';
+  XmNmainWindowMarginHeight = 'mainWindowMarginHeight';
+  XmNmainWindowMarginWidth = 'mainWindowMarginWidth';
+  XmNmapCallback = 'mapCallback';
+  XmNmappingDelay = 'mappingDelay';
+  XmNmargin = 'margin';
+  XmNmarginBottom = 'marginBottom';
+  XmNmarginHeight = 'marginHeight';
+  XmNmarginLeft = 'marginLeft';
+  XmNmarginRight = 'marginRight';
+  XmNmarginTop = 'marginTop';
+  XmNmarginWidth = 'marginWidth';
+  XmNmask = 'mask';
+  XmNmaxLength = 'maxLength';
+  XmNmaximum = 'maximum';
+  XmNmenuAccelerator = 'menuAccelerator';
+  XmNmenuBar = 'menuBar';
+  XmNmenuCursor = 'menuCursor';
+  XmNmenuHelpWidget = 'menuHelpWidget';
+  XmNmenuHistory = 'menuHistory';
+  XmNmenuPost = 'menuPost';
+  XmNmessageAlignment = 'messageAlignment';
+  XmNmessageProc = 'messageProc';
+  XmNmessageString = 'messageString';
+  XmNmessageWindow = 'messageWindow';
+  XmNminimizeButtons = 'minimizeButtons';
+  XmNminimum = 'minimum';
+  XmNmnemonic = 'mnemonic';
+  XmNmnemonicCharSet = 'mnemonicCharSet';
+  XmNmodifyVerifyCallback = 'modifyVerifyCallback';
+  XmNmodifyVerifyCallbackWcs = 'modifyVerifyCallbackWcs';
+  XmNmotionVerifyCallback = 'motionVerifyCallback';
+  XmNmoveOpaque = 'moveOpaque';
+  XmNmultiClick = 'multiClick';
+  XmNmultipleSelectionCallback = 'multipleSelectionCallback';
+  XmNmustMatch = 'mustMatch';
+  XmNmwmDecorations = 'mwmDecorations';
+  XmNmwmFunctions = 'mwmFunctions';
+  XmNmwmInputMode = 'mwmInputMode';
+  XmNmwmMenu = 'mwmMenu';
+  XmNmwmMessages = 'mwmMessages';
+  XmNnavigationType = 'navigationType';
+  XmNneedsMotion = 'needsMotion';
+  XmNnoMatchCallback = 'noMatchCallback';
+  XmNnoMatchString = 'noMatchString';
+  XmNnoResize = 'noResize';
+  XmNnoneCursorForeground = 'noneCursorForeground';
+  XmNnotifyProc = 'notifyProc';
+  XmNnumColumns = 'numColumns';
+  XmNnumDropRectangles = 'numDropRectangles';
+  XmNnumDropTransfers = 'numDropTransfers';
+  XmNnumExportTargets = 'numExportTargets';
+  XmNnumImportTargets = 'numImportTargets';
+  XmNnumRectangles = 'numRectangles';
+  XmNoffsetX = 'offsetX';
+  XmNoffsetY = 'offsetY';
+  XmNokCallback = 'okCallback';
+  XmNokLabelString = 'okLabelString';
+  XmNoperationChangedCallback = 'operationChangedCallback';
+  XmNoperationCursorIcon = 'operationCursorIcon';
+  XmNoptionLabel = 'optionLabel';
+  XmNoptionMnemonic = 'optionMnemonic';
+  XmNoutputCreate = 'outputCreate';
+  XmNpacking = 'packing';
+  XmNpageDecrementCallback = 'pageDecrementCallback';
+  XmNpageIncrement = 'pageIncrement';
+  XmNpageIncrementCallback = 'pageIncrementCallback';
+  XmNpaneMaximum = 'paneMaximum';
+  XmNpaneMinimum = 'paneMinimum';
+  XmNpattern = 'pattern';
+  XmNpendingDelete = 'pendingDelete';
+  XmNpopupEnabled = 'popupEnabled';
+  XmNpositionIndex = 'positionIndex';
+  XmNpostFromButton = 'postFromButton';
+  XmNpostFromCount = 'postFromCount';
+  XmNpostFromList = 'postFromList';
+  XmNpreeditType = 'preeditType';
+  XmNprocessingDirection = 'processingDirection';
+  XmNpromptString = 'promptString';
+  XmNprotocolCallback = 'protocolCallback';
+  XmNpushButtonEnabled = 'pushButtonEnabled';
+  XmNqualifySearchDataProc = 'qualifySearchDataProc';
+  XmNradioAlwaysOne = 'radioAlwaysOne';
+  XmNradioBehavior = 'radioBehavior';
+  XmNrealizeCallback = 'realizeCallback';
+  XmNrecomputeSize = 'recomputeSize';
+  XmNrectangles = 'rectangles';
+  XmNrefigureMode = 'refigureMode';
+  XmNrepeatDelay = 'repeatDelay';
+  XmNresizable = 'resizable';
+  XmNresizeCallback = 'resizeCallback';
+  XmNresizeHeight = 'resizeHeight';
+  XmNresizePolicy = 'resizePolicy';
+  XmNresizeWidth = 'resizeWidth';
+  XmNrightAttachment = 'rightAttachment';
+  XmNrightOffset = 'rightOffset';
+  XmNrightPosition = 'rightPosition';
+  XmNrightWidget = 'rightWidget';
+  XmNrowColumnType = 'rowColumnType';
+  XmNrows = 'rows';
+  XmNrubberPositioning = 'rubberPositioning';
+  XmNsashHeight = 'sashHeight';
+  XmNsashIndent = 'sashIndent';
+  XmNsashShadowThickness = 'sashShadowThickness';
+  XmNsashWidth = 'sashWidth';
+  XmNscaleHeight = 'scaleHeight';
+  XmNscaleMultiple = 'scaleMultiple';
+  XmNscaleWidth = 'scaleWidth';
+  XmNscrollBarDisplayPolicy = 'scrollBarDisplayPolicy';
+  XmNscrollBarPlacement = 'scrollBarPlacement';
+  XmNscrollHorizontal = 'scrollHorizontal';
+  XmNscrollLeftSide = 'scrollLeftSide';
+  XmNscrollTopSide = 'scrollTopSide';
+  XmNscrollVertical = 'scrollVertical';
+  XmNscrolledWindowMarginHeight = 'scrolledWindowMarginHeight';
+  XmNscrolledWindowMarginWidth = 'scrolledWindowMarginWidth';
+  XmNscrollingPolicy = 'scrollingPolicy';
+  XmNselectColor = 'selectColor';
+  XmNselectInsensitivePixmap = 'selectInsensitivePixmap';
+  XmNselectPixmap = 'selectPixmap';
+  XmNselectThreshold = 'selectThreshold';
+  XmNselectedItemCount = 'selectedItemCount';
+  XmNselectedItems = 'selectedItems';
+  XmNselectionArrayCount = 'selectionArrayCount';
+  XmNselectionLabelString = 'selectionLabelString';
+  XmNselectionPolicy = 'selectionPolicy';
+  XmNseparatorOn = 'separatorOn';
+  XmNseparatorType = 'separatorType';
+  XmNset = 'set';
+  XmNshadow = 'shadow';
+  XmNshadowThickness = 'shadowThickness';
+  XmNshadowType = 'shadowType';
+  XmNshellUnitType = 'shellUnitType';
+  XtNshellUnitType = XmNshellUnitType;
+  XmNshowArrows = 'showArrows';
+  XmNshowAsDefault = 'showAsDefault';
+  XmNshowSeparator = 'showSeparator';
+  XmNshowValue = 'showValue';
+  XmNsimpleCallback = 'simpleCallback';
+  XmNsingleSelectionCallback = 'singleSelectionCallback';
+  XmNsizePolicy = 'sizePolicy';
+  XmNskipAdjust = 'skipAdjust';
+  XmNsliderSize = 'sliderSize';
+  XmNsource = 'source';
+  XmNsourceCursorIcon = 'sourceCursorIcon';
+  XmNsourceIsExternal = 'sourceIsExternal';
+  XmNsourcePixmapIcon = 'sourcePixmapIcon';
+  XmNsourceWidget = 'sourceWidget';
+  XmNsourceWindow = 'sourceWindow';
+  XmNspacing = 'spacing';
+  XmNspotLocation = 'spotLocation';
+  XmNstartTime = 'startTime';
+  XmNstateCursorIcon = 'stateCursorIcon';
+  XmNstringDirection = 'stringDirection';
+  XmNsubMenuId = 'subMenuId';
+  XmNsymbolPixmap = 'symbolPixmap';
+  XmNtearOffMenuActivateCallback = 'tearOffMenuActivateCallback';
+  XmNtearOffMenuDeactivateCallback = 'tearOffMenuDeactivateCallback';
+  XmNtearOffModel = 'tearOffModel';
+  XmNtextAccelerators = 'textAccelerators';
+  XmNtextColumns = 'textColumns';
+  XmNtextFontList = 'textFontList';
+  XmNtextString = 'textString';
+  XmNtextTranslations = 'textTranslations';
+  XmNtextValue = 'textValue';
+  XmNtitleString = 'titleString';
+  XmNtoBottomCallback = 'toBottomCallback';
+  XmNtoPositionCallback = 'toPositionCallback';
+  XmNtoTopCallback = 'toTopCallback';
+  XmNtopAttachment = 'topAttachment';
+  XmNtopCharacter = 'topCharacter';
+  XmNtopItemPosition = 'topItemPosition';
+  XmNtopLevelEnterCallback = 'topLevelEnterCallback';
+  XmNtopLevelLeaveCallback = 'topLevelLeaveCallback';
+  XmNtopOffset = 'topOffset';
+  XmNtopPosition = 'topPosition';
+  XmNtopShadowColor = 'topShadowColor';
+  XmNtopShadowPixmap = 'topShadowPixmap';
+  XmNtopWidget = 'topWidget';
+  XmNtransferProc = 'transferProc';
+  XmNtransferStatus = 'transferStatus';
+  XmNtraversalCallback = 'traversalCallback';
+  XmNtraversalOn = 'traversalOn';
+  XmNtraversalType = 'traversalType';
+  XmNtraverseObscuredCallback = 'traverseObscuredCallback';
+  XmNtreeUpdateProc = 'treeUpdateProc';
+  XmNtroughColor = 'troughColor';
+  XmNunitType = 'unitType';
+  XmNunmapCallback = 'unmapCallback';
+  XmNunpostBehavior = 'unpostBehavior';
+  XmNunselectPixmap = 'unselectPixmap';
+  XmNupdateSliderSize = 'updateSliderSize';
+  XmNuseAsyncGeometry = 'useAsyncGeometry';
+  XmNuserData = 'userData';
+  XmNvalidCursorForeground = 'validCursorForeground';
+  XmNvalueChangedCallback = 'valueChangedCallback';
+  XmNvalueWcs = 'valueWcs';
+  XmNverifyBell = 'verifyBell';
+  XmNverticalFontUnit = 'verticalFontUnit';
+  XmNverticalScrollBar = 'verticalScrollBar';
+  XmNverticalSpacing = 'verticalSpacing';
+  XmNvisibleItemCount = 'visibleItemCount';
+  XmNvisibleWhenOff = 'visibleWhenOff';
+  XmNvisualPolicy = 'visualPolicy';
+  XmNwhichButton = 'whichButton';
+  XmNwordWrap = 'wordWrap';
+  XmNworkWindow = 'workWindow';
+  XmRAlignment = 'Alignment';
+  XmRAnimationMask = 'AnimationMask';
+  XmRAnimationPixmap = 'AnimationPixmap';
+  XmRAnimationStyle = 'AnimationStyle';
+  XmRArrowDirection = 'ArrowDirection';
+  XmRAtomList = 'AtomList';
+  XmRAttachment = 'Attachment';
+  XmRAudibleWarning = 'AudibleWarning';
+  XmRAvailability = 'Availability';
+  XmRBackgroundPixmap = 'BackgroundPixmap';
+  XmRBlendModel = 'BlendModel';
+  XmRBooleanDimension = 'BooleanDimension';
+  XmRBottomShadowPixmap = 'BottomShadowPixmap';
+  XmRPrimBottomShadowPixmap = XmRBottomShadowPixmap;
+  XmRButtonType = 'ButtonType';
+  XmRCallbackProc = 'CallbackProc';
+  XmRChar = 'Char';
+  XmRCharSetTable = 'CharSetTable';
+  XmRChildHorizontalAlignment = 'ChildHorizontalAlignment';
+  XmRChildPlacement = 'ChildPlacement';
+  XmRChildType = 'ChildType';
+  XmRChildVerticalAlignment = 'ChildVerticalAlignment';
+  XmRCommandWindowLocation = 'CommandWindowLocation';
+  XmRCompoundText = 'CompoundText';
+  XmRDefaultButtonType = 'DefaultButtonType';
+  XmRDeleteResponse = 'DeleteResponse';
+  XmRDialogStyle = 'DialogStyle';
+  XmRDialogType = 'DialogType';
+  XmRDoubleClickInterval = 'DoubleClickInterval';
+  XmRDragInitiatorProtocolStyle = 'DragInitiatorProtocolStyle';
+  XmRDragReceiverProtocolStyle = 'DragReceiverProtocolStyle';
+  XmRDropSiteActivity = 'DropSiteActivity';
+  XmRDropSiteOperations = 'DropSiteOperations';
+  XmRDropSiteType = 'DropSiteType';
+  XmRDropTransfers = 'DropTransfers';
+  XmRExtensionType = 'ExtensionType';
+  XmRFileTypeMask = 'FileTypeMask';
+  XmRFontList = 'FontList';
+  XmRGadgetPixmap = 'GadgetPixmap';
+  XmRHighlightPixmap = 'HighlightPixmap';
+  XmRPrimHighlightPixmap = XmRHighlightPixmap;
+  XmRHorizontalDimension = 'HorizontalDimension';
+  XmRHorizontalInt = 'HorizontalInt';
+  XmRHorizontalPosition = 'HorizontalPosition';
+  XmRIconAttachment = 'IconAttachment';
+  XmRImportTargets = 'ImportTargets';
+  XmRIndicatorType = 'IndicatorType';
+  XmRItemCount = 'ItemCount';
+  XmRItems = 'Items';
+  XmRKeySym = 'KeySym';
+  XmRKeySymTable = 'KeySymTable';
+  XmRKeyboardFocusPolicy = 'KeyboardFocusPolicy';
+  XtRKeyboardFocusPolicy = XmRKeyboardFocusPolicy;
+  XmRLabelType = 'LabelType';
+  XmRListMarginHeight = 'ListMarginHeight';
+  XmRListMarginWidth = 'ListMarginWidth';
+  XmRListSizePolicy = 'ListSizePolicy';
+  XmRListSpacing = 'ListSpacing';
+  XmRManBottomShadowPixmap = 'ManBottomShadowPixmap';
+  XmRManForegroundPixmap = 'ManForegroundPixmap';
+  XmRManHighlightPixmap = 'ManHighlightPixmap';
+  XmRManTopShadowPixmap = 'ManTopShadowPixmap';
+  XmRMenuWidget = 'MenuWidget';
+  XmRMnemonic = 'Mnemonic';
+  XmRMultiClick = 'MultiClick';
+  XmRNavigationType = 'NavigationType';
+  XmRPacking = 'Packing';
+  XmRPrimForegroundPixmap = 'PrimForegroundPixmap';
+  XmRProc = 'Proc';
+  XmRProcessingDirection = 'ProcessingDirection';
+  XmRRectangleList = 'RectangleList';
+  XmRResizePolicy = 'ResizePolicy';
+  XmRRowColumnType = 'RowColumnType';
+  XmRScrollBarDisplayPolicy = 'ScrollBarDisplayPolicy';
+  XmRScrollBarPlacement = 'ScrollBarPlacement';
+  XmRScrollingPolicy = 'ScrollingPolicy';
+  XmRSelectedItemCount = 'SelectedItemCount';
+  XmRSelectedItems = 'SelectedItems';
+  XmRSelectionPolicy = 'SelectionPolicy';
+  XmRSelectionType = 'SelectionType';
+  XmRSeparatorType = 'SeparatorType';
+  XmRShadowType = 'ShadowType';
+  XmRShellHorizDim = 'ShellHorizDim';
+  XmRShellHorizPos = 'ShellHorizPos';
+  XmRShellUnitType = 'ShellUnitType';
+  XmRShellVertDim = 'ShellVertDim';
+  XmRShellVertPos = 'ShellVertPos';
+  XmRSizePolicy = 'SizePolicy';
+  XmRStringDirection = 'StringDirection';
+  XmRTearOffModel = 'TearOffModel';
+  XmRTopItemPosition = 'TopItemPosition';
+  XmRTopShadowPixmap = 'TopShadowPixmap';
+  XmRPrimTopShadowPixmap = XmRTopShadowPixmap;
+  XmRTransferStatus = 'TransferStatus';
+  XmRTraversalType = 'TraversalType';
+  XmRUnitType = 'UnitType';
+  XmRUnpostBehavior = 'UnpostBehavior';
+  XmRValueWcs = 'ValueWcs';
+  XmRVerticalAlignment = 'VerticalAlignment';
+  XmRVerticalDimension = 'VerticalDimension';
+  XmRVerticalInt = 'VerticalInt';
+  XmRVerticalPosition = 'VerticalPosition';
+  XmRVirtualBinding = 'VirtualBinding';
+  XmRVisibleItemCount = 'VisibleItemCount';
+  XmRVisualPolicy = 'VisualPolicy';
+  XmRWhichButton = 'WhichButton';
+  XmRXmBackgroundPixmap = 'XmBackgroundPixmap';
+  XmRXmString = 'XmString';
+  XmRXmStringCharSet = 'XmStringCharSet';
+  XmRXmStringTable = 'XmStringTable';
+  XmVosfActivate = 'osfActivate';
+  XmVosfAddMode = 'osfAddMode';
+  XmVosfBackSpace = 'osfBackSpace';
+  XmVosfBeginLine = 'osfBeginLine';
+  XmVosfCancel = 'osfCancel';
+  XmVosfClear = 'osfClear';
+  XmVosfCopy = 'osfCopy';
+  XmVosfCut = 'osfCut';
+  XmVosfDelete = 'osfDelete';
+  XmVosfDown = 'osfDown';
+  XmVosfEndLine = 'osfEndLine';
+  XmVosfHelp = 'osfHelp';
+  XmVosfInsert = 'osfInsert';
+  XmVosfLeft = 'osfLeft';
+  XmVosfMenu = 'osfMenu';
+  XmVosfMenuBar = 'osfMenuBar';
+  XmVosfPageDown = 'osfPageDown';
+  XmVosfPageLeft = 'osfPageLeft';
+  XmVosfPageRight = 'osfPageRight';
+  XmVosfPageUp = 'osfPageUp';
+  XmVosfPaste = 'osfPaste';
+  XmVosfPrimaryPaste = 'osfPrimaryPaste';
+  XmVosfQuickPaste = 'osfQuickPaste';
+  XmVosfRight = 'osfRight';
+  XmVosfSelect = 'osfSelect';
+  XmVosfUndo = 'osfUndo';
+  XmVosfUp = 'osfUp';
+  XmSFONTLIST_DEFAULT_TAG_STRING = 'FONTLIST_DEFAULT_TAG_STRING';
+  XmFONTLIST_DEFAULT_TAG = XmSFONTLIST_DEFAULT_TAG_STRING;
+  XmSXmFONTLIST_DEFAULT_TAG_STRING = 'XmFONTLIST_DEFAULT_TAG_STRING';
+  XmFONTLIST_DEFAULT_TAG_STRING = XmSXmFONTLIST_DEFAULT_TAG_STRING;
+  XmSTRING_ISO8859_1 = 'ISO8859-1';
+  XmSTRING_OS_CHARSET = XmSTRING_ISO8859_1;
+  XmFALLBACK_CHARSET = XmSTRING_ISO8859_1;
+  XmVaCASCADEBUTTON = 'cascadeButton';
+  XmVaCHECKBUTTON = 'checkButton';
+  XmVaDOUBLE_SEPARATOR = 'doubleSeparator';
+  XmVaPUSHBUTTON = 'pushButton';
+  XmVaRADIOBUTTON = 'radioButton';
+  XmVaSEPARATOR = 'separator';
+  XmVaSINGLE_SEPARATOR = 'singleSeparator';
+  XmVaTOGGLEBUTTON = 'checkButton';
+
+(* ---------------------------------------------------- *)
+(*                     Xm/VendorS.h                     *)
+(* ---------------------------------------------------- *)
+  XmVERSION = 1;
+  XmREVISION = 2;
+  XmUPDATE_LEVEL = 4;
+  XmVersion = (XmVERSION*1000)+XmREVISION;
+  XmVERSION_STRING = '@(#)OSF/Motif Version 1.2.4';
+
+VAR 
+  xmUseVersion: SYSTEM.int;
+
+(*  define used to denote an unspecified pixmap   *)
+
+CONST 
+  XmUNSPECIFIED_PIXMAP = 2;
+
+(*******************
+ *
+ * Defines for resources to be defaulted by vendors.
+ * String are initialized in Xmos.c
+ *
+ ****************)
+  XmDEFAULT_DARK_THRESHOLD = 15;
+  XmDEFAULT_LIGHT_THRESHOLD = 77;
+  XmDEFAULT_FOREGROUND_THRESHOLD = 35;
+
+VAR 
+  _XmSDEFAULT_FONT: Xt.String;         (*  In Xmos.c  *)
+  _XmSDEFAULT_BACKGROUND: Xt.String;   (*  In Xmos.c  *)
+
+(****************
+ *
+ * XmString structure defines. These must be here (at the start of the file)
+ * becaused they are used later on.
+ *
+ ****************)
+
+<*+ GENTYPEDEF *>
+
+TYPE 
+  XmFontType = (
+    XmFONT_IS_FONT   ,
+    XmFONT_IS_FONTSET
+  );
+
+CONST 
+  XmSTRING_DIRECTION_L_TO_R = 0;
+  XmSTRING_DIRECTION_R_TO_L = 1;
+  XmSTRING_DIRECTION_DEFAULT = 255;
+
+TYPE 
+  _XmStringDirection = SYSTEM.int;
+
+  XmStringDirection = SHORTCARD;
+
+  XmString = POINTER TO ARRAY OF SHORTCARD;     (*  opaque to outside  *)
+
+  XmStringTable = POINTER TO ARRAY OF XmString; (*  opaque to outside  *)
+
+  XmStringCharSet = POINTER TO ARRAY OF CHAR;   (*  Null term string  *)
+
+  XmStringComponentType = SHORTCARD;   (*  component tags  *)
+
+  _XmFontListRec = RECORD
+    (* Declaration without definition *)
+  END;
+
+  XmFontListEntry = POINTER TO _XmFontListRec;   (*  opaque to outside  *)
+
+  XmFontList = POINTER TO ARRAY OF _XmFontListRec;   (*  opaque to outside  *)
+
+  __XmStringContextRec = RECORD
+    (* Declaration without definition *)
+  END;
+
+  _XmStringContext = POINTER TO __XmStringContextRec;   (*  opaque to outside  *)
+
+  __XmStringRec = RECORD
+    (* Declaration without definition *)
+  END;
+
+  _XmString = POINTER TO __XmStringRec;(*  opaque to outside  *)
+
+  _XmtStringContextRec = RECORD
+    (* Declaration without definition *)
+  END;
+
+  XmStringContext = POINTER TO _XmtStringContextRec;   (*  opaque to outside  *)
+
+  _XmFontListContextRec = RECORD
+    (* Declaration without definition *)
+  END;
+
+  XmFontContext = POINTER TO _XmFontListContextRec;   (*  opaque to outside  *)
+
+  _XmStringComponent = SYSTEM.int;
+
+CONST
+  XmSTRING_COMPONENT_UNKNOWN    = 0;
+  XmSTRING_COMPONENT_CHARSET    = 1;
+  XmSTRING_COMPONENT_TEXT       = 2;
+  XmSTRING_COMPONENT_DIRECTION  = 3;
+  XmSTRING_COMPONENT_SEPARATOR  = 4;
+  XmSTRING_COMPONENT_LOCALE_TEXT= 5;
+  (*  6-125 reserved  *)
+  XmSTRING_COMPONENT_END = 126;
+  XmSTRING_COMPONENT_USER_BEGIN = 128;
+  (*  128-255 are user tags  *)
+  XmSTRING_COMPONENT_USER_END = 255;
+
+(************************************************************************
+ *
+ *  Base widget class and record definitions.
+ *	Included are the definitions for XmPrimitive, XmManager,
+ *      and XmGadget.
+ *
+ ************************************************************************)
+
+(*   Primitive widget class and record definitions   *)
+
+VAR 
+  xmPrimitiveWidgetClass: Xt.WidgetClass;
+
+TYPE 
+  _XmPrimitiveClassRec = RECORD
+    (* Declaration without definition *)
+  END;
+
+  XmPrimitiveWidgetClass = POINTER TO _XmPrimitiveClassRec;
+
+  _XmPrimitiveRec = RECORD
+    (* Declaration without definition *)
+  END;
+
+  XmPrimitiveWidget = POINTER TO _XmPrimitiveRec;
+
+(*   Gadget widget class and record definitions   *)
+
+VAR 
+  xmGadgetClass: Xt.WidgetClass;
+
+TYPE 
+  _XmGadgetClassRec = RECORD
+    (* Declaration without definition *)
+  END;
+
+  XmGadgetClass = POINTER TO _XmGadgetClassRec;
+
+  _XmGadgetRec = RECORD
+    (* Declaration without definition *)
+  END;
+
+  XmGadget = POINTER TO _XmGadgetRec;
+
+(*   Manager widger class and record definitions   *)
+
+VAR 
+  xmManagerWidgetClass: Xt.WidgetClass;
+
+TYPE 
+  _XmManagerClassRec = RECORD
+    (* Declaration without definition *)
+  END;
+
+  XmManagerWidgetClass = POINTER TO _XmManagerClassRec;
+
+  _XmManagerRec = RECORD
+    (* Declaration without definition *)
+  END;
+
+  XmManagerWidget = POINTER TO _XmManagerRec;
+
+(************************************************************************
+ *  Class Test Macros (fast subclassing is in XmP.h)
+ ************************************************************************)
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: this procedure corresponds to a macro. *)
+PROCEDURE XmIsPrimitive ( w: Xt.Widget ): Xt.Boolean;
+PROCEDURE XmIsGadget ( w: Xt.Widget ): Xt.Boolean;
+PROCEDURE XmIsManager ( w: Xt.Widget ): Xt.Boolean;
+
+<* ELSE *>
+
+PROCEDURE  / XmIsPrimitive ( w: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / XmIsGadget ( w: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / XmIsManager ( w: Xt.Widget ): Xt.Boolean;
+
+<* END *>
+
+(************************************************************************
+ *  Primitive Resources and define values
+ ************************************************************************)
+ 
+(*  size policy values   *)
+
+TYPE 
+  _XmSizePolicy = SYSTEM.int;
+
+CONST
+  XmCHANGE_ALL    = 0;
+  XmCHANGE_NONE   = 1;
+  XmCHANGE_WIDTH  = 2;
+  XmCHANGE_HEIGHT = 3;
+
+(*   unit type values   *)
+
+TYPE
+  _XmUnitType = SYSTEM.int;
+
+CONST
+  XmPIXELS           = 0;
+  Xm100TH_MILLIMETERS= 1;
+  Xm1000TH_INCHES    = 2;
+  Xm100TH_POINTS     = 3;
+  Xm100TH_FONT_UNITS = 4;
+
+(*  DeleteResponse values  *)
+
+TYPE
+  _XmDeleteResponse = SYSTEM.int;
+
+CONST
+  XmDESTROY   = 0;
+  XmUNMAP     = 1;
+  XmDO_NOTHING= 2;
+
+TYPE
+  _XmExplicitOrPointer = SYSTEM.int;
+
+CONST
+  XmEXPLICIT = 0;
+  XmPOINTER  = 1;
+
+(************************************************************************
+ *  Navigation defines
+ ************************************************************************)
+
+TYPE
+  _XmNavigationDefines = SYSTEM.int;
+
+CONST
+  XmNONE                      = 0;
+  XmTAB_GROUP                 = 1;
+  XmSTICKY_TAB_GROUP          = 2;
+  XmEXCLUSIVE_TAB_GROUP       = 3;
+  XmDYNAMIC_DEFAULT_TAB_GROUP = 255;
+
+(************************************************************************
+ * Audible warning
+ ************************************************************************)
+(*  XmNONE=0  *)
+  XmBELL = 1;
+
+(************************************************************************
+ *  Menu defines
+ ************************************************************************)
+
+TYPE 
+  _XmMenuDefines = SYSTEM.int;
+
+CONST 
+  XmNO_ORIENTATION= 0;
+  XmVERTICAL      = 1;
+  XmHORIZONTAL    = 2;
+
+TYPE
+  _XmMenuGeomtry = SYSTEM.int;
+
+CONST 
+  XmWORK_AREA    = 0;
+  XmMENU_BAR     = 1;
+  XmMENU_PULLDOWN= 2;
+  XmMENU_POPUP   = 3;
+  XmMENU_OPTION  = 4;
+
+TYPE
+  _XmMenuPacking = SYSTEM.int;
+
+CONST 
+  XmNO_PACKING = 0;
+  XmPACK_TIGHT = 1;
+  XmPACK_COLUMN= 2;
+  XmPACK_NONE  = 3;
+
+(*  XmALIGNMENT_BASELINE_TOP=0,  XmALIGNMENT_CENTER=1,  *)
+(*  XmALIGNMENT_BASELINE_BOTTOM=2,                      *)
+  XmALIGNMENT_CONTENTS_TOP = 3;
+  XmALIGNMENT_CONTENTS_BOTTOM = 4;
+
+TYPE 
+  _XmMenuTearOffPolicy = SYSTEM.int;
+
+CONST 
+  XmTEAR_OFF_ENABLED = 0;
+  XmTEAR_OFF_DISABLED= 1;
+
+TYPE
+  _XmMenuPostPolicy = SYSTEM.int;
+
+CONST 
+  XmUNPOST           = 0;
+  XmUNPOST_AND_REPLAY= 1;
+
+CONST 
+  XmLAST_POSITION = -1;
+  XmFIRST_POSITION = 0;
+
+(************************************************************************
+ *  Label/Frame defines
+ ************************************************************************)
+
+TYPE 
+  _XmLabelAlignment = SYSTEM.int;
+
+CONST 
+  XmALIGNMENT_BEGINNING= 0;
+  XmALIGNMENT_CENTER   = 1;
+  XmALIGNMENT_END      = 3;
+
+CONST 
+  XmALIGNMENT_BASELINE_TOP = 0;
+(*  XmALIGNMENT_CENTER = 1  *)
+  XmALIGNMENT_BASELINE_BOTTOM = 2;
+  XmALIGNMENT_WIDGET_TOP = 3;
+  XmALIGNMENT_WIDGET_BOTTOM = 4;
+
+(************************************************************************
+ *  Frame defines
+ ************************************************************************)
+
+TYPE 
+  _XmFrameDefs = SYSTEM.int;
+
+CONST 
+  XmFRAME_GENERIC_CHILD = 0;
+  XmFRAME_WORKAREA_CHILD= 1;
+  XmFRAME_TITLE_CHILD   = 2;
+
+(************************************************************************
+ *  ToggleButton  defines
+ ************************************************************************)
+
+CONST 
+  XmN_OF_MANY = 1;
+  XmONE_OF_MANY = 2;
+
+(************************************************************************
+ *  Form defines
+ ************************************************************************)
+
+TYPE 
+  _XmFormAttachment = SYSTEM.int;
+
+CONST 
+  XmATTACH_NONE           = 0;
+  XmATTACH_FORM           = 1;
+  XmATTACH_OPPOSITE_FORM  = 2;
+  XmATTACH_WIDGET         = 3;
+  XmATTACH_OPPOSITE_WIDGET= 4;
+  XmATTACH_POSITION       = 5;
+  XmATTACH_SELF           = 6;
+
+TYPE
+  _XmFormResizing = SYSTEM.int;
+
+CONST 
+  XmRESIZE_NONE = 0;
+  XmRESIZE_GROW = 1;
+  XmRESIZE_ANY  = 2;
+
+(****************************************************************************
+ *  Callback reasons
+ ****************************************************************************)
+
+CONST 
+  XmCR_NONE = 0;
+  XmCR_HELP = 1;
+  XmCR_VALUE_CHANGED = 2;
+  XmCR_INCREMENT = 3;
+  XmCR_DECREMENT = 4;
+  XmCR_PAGE_INCREMENT = 5;
+  XmCR_PAGE_DECREMENT = 6;
+  XmCR_TO_TOP = 7;
+  XmCR_TO_BOTTOM = 8;
+  XmCR_DRAG = 9;
+  XmCR_ACTIVATE = 10;
+  XmCR_ARM = 11;
+  XmCR_DISARM = 12;
+  XmCR_MAP = 16;
+  XmCR_UNMAP = 17;
+  XmCR_FOCUS = 18;
+  XmCR_LOSING_FOCUS = 19;
+  XmCR_MODIFYING_TEXT_VALUE = 20;
+  XmCR_MOVING_INSERT_CURSOR = 21;
+  XmCR_EXECUTE = 22;
+  XmCR_SINGLE_SELECT = 23;
+  XmCR_MULTIPLE_SELECT = 24;
+  XmCR_EXTENDED_SELECT = 25;
+  XmCR_BROWSE_SELECT = 26;
+  XmCR_DEFAULT_ACTION = 27;
+  XmCR_CLIPBOARD_DATA_REQUEST = 28;
+  XmCR_CLIPBOARD_DATA_DELETE = 29;
+  XmCR_CASCADING = 30;
+  XmCR_OK = 31;
+  XmCR_CANCEL = 32;
+  XmCR_APPLY = 34;
+  XmCR_NO_MATCH = 35;
+  XmCR_COMMAND_ENTERED = 36;
+  XmCR_COMMAND_CHANGED = 37;
+  XmCR_EXPOSE = 38;
+  XmCR_RESIZE = 39;
+  XmCR_INPUT = 40;
+  XmCR_GAIN_PRIMARY = 41;
+  XmCR_LOSE_PRIMARY = 42;
+  XmCR_CREATE = 43;
+  XmCR_TEAR_OFF_ACTIVATE = 44;
+  XmCR_TEAR_OFF_DEACTIVATE = 45;
+  XmCR_OBSCURED_TRAVERSAL = 46;
+  XmCR_PROTOCOLS = 47;
+(*  XmCR_FOCUS_MOVED = 48  *)
+
+(************************************************************************
+ *  Callback structures
+ ************************************************************************)
+
+TYPE 
+  XmAnyCallbackStruct = RECORD
+    reason: SYSTEM.int;
+    event : Xlib.PtrXEvent;
+  END;
+
+  XmArrowButtonCallbackStruct = RECORD
+    reason     : SYSTEM.int;
+    event      : Xlib.PtrXEvent;
+    click_count: SYSTEM.int;
+  END;
+
+  XmDrawingAreaCallbackStruct = RECORD
+    reason: SYSTEM.int;
+    event : Xlib.PtrXEvent;
+    window: X.Window;
+  END;
+
+  XmDrawnButtonCallbackStruct = RECORD
+    reason     : SYSTEM.int;
+    event      : Xlib.PtrXEvent;
+    window     : X.Window;
+    click_count: SYSTEM.int;
+  END;
+
+  XmPushButtonCallbackStruct = RECORD
+    reason     : SYSTEM.int;
+    event      : Xlib.PtrXEvent;
+    click_count: SYSTEM.int;
+  END;
+
+  XmRowColumnCallbackStruct = RECORD
+    reason        : SYSTEM.int;
+    event         : Xlib.PtrXEvent;
+    widget        : Xt.Widget;
+    data          : Xt.XtPointer;
+    callbackstruct: Xt.XtPointer;
+  END;
+
+  XmScrollBarCallbackStruct = RECORD
+    reason: SYSTEM.int;
+    event : Xlib.PtrXEvent;
+    value : SYSTEM.int;
+    pixel : SYSTEM.int;
+  END;
+
+  XmToggleButtonCallbackStruct = RECORD
+    reason: SYSTEM.int;
+    event : Xlib.PtrXEvent;
+    set   : SYSTEM.int;
+  END;
+
+  XmListCallbackStruct = RECORD
+    reason                 : SYSTEM.int;
+    event                  : Xlib.PtrXEvent;
+    item                   : XmString;
+    item_length            : SYSTEM.int;
+    item_position          : SYSTEM.int;
+    selected_items         : XmStringTable;
+    selected_item_count    : SYSTEM.int;
+    selected_item_positions: Xlib.PASInt;
+    selection_type         : CHAR;
+  END;
+
+  XmSelectionBoxCallbackStruct = RECORD
+    reason: SYSTEM.int;
+    event : Xlib.PtrXEvent;
+    value : XmString;
+    length: SYSTEM.int;
+  END;
+
+  XmCommandCallbackStruct = RECORD
+    reason: SYSTEM.int;
+    event : Xlib.PtrXEvent;
+    value : XmString;
+    length: SYSTEM.int;
+  END;
+
+  XmFileSelectionBoxCallbackStruct = RECORD
+    reason        : SYSTEM.int;
+    event         : Xlib.PtrXEvent;
+    value         : XmString;
+    length        : SYSTEM.int;
+    mask          : XmString;
+    mask_length   : SYSTEM.int;
+    dir           : XmString;
+    dir_length    : SYSTEM.int;
+    pattern       : XmString;
+    pattern_length: SYSTEM.int;
+  END;
+
+  XmScaleCallbackStruct = RECORD
+    reason: SYSTEM.int;
+    event : Xlib.PtrXEvent;
+    value : SYSTEM.int;
+  END;
+
+(************************************************************************
+ *  PushButton defines
+ ************************************************************************)
+
+TYPE
+  _XmPButtonDefs = SYSTEM.int;
+
+CONST 
+  XmMULTICLICK_DISCARD = 0;
+  XmMULTICLICK_KEEP    = 1;
+
+(************************************************************************
+ *  DrawnButton defines
+ ************************************************************************)
+CONST 
+  XmSHADOW_IN = 7;
+  XmSHADOW_OUT = 8;
+
+(************************************************************************
+ *  Arrow defines
+ ************************************************************************)
+
+TYPE
+  _XmArrowDefs = SYSTEM.int;
+
+CONST 
+  XmARROW_UP   = 0;
+  XmARROW_DOWN = 1;
+  XmARROW_LEFT = 3;
+  XmARROW_RIGHT= 4;
+
+(************************************************************************
+ *  Separator defines
+ *  Note: XmINVALID_SEPARATOR_TYPE marks the last+1 separator type
+ ************************************************************************)
+
+TYPE
+  _XmSeparatorDefs = SYSTEM.int;
+
+CONST 
+  XmNO_LINE               = 0;
+  XmSINGLE_LINE           = 1;
+  XmDOUBLE_LINE           = 2;
+  XmSINGLE_DASHED_LINE    = 3;
+  XmDOUBLE_DASHED_LINE    = 4;
+  XmSHADOW_ETCHED_IN      = 5;
+  XmSHADOW_ETCHED_OUT     = 6;
+  XmSHADOW_ETCHED_IN_DASH = 7;
+  XmSHADOW_ETCHED_OUT_DASH= 8;
+  XmINVALID_SEPARATOR_TYPE= 9;
+
+CONST 
+  XmPIXMAP = 1;
+  XmSTRING = 2;
+
+(************************************************************************
+ *  Drag and Drop #defines
+ ************************************************************************)
+
+CONST 
+  XmWINDOW = 0;                        (*  XmPIXMAP,  *)
+  XmCURSOR = 2;
+
+(************************************************************************
+ *  ScrollBar #defines
+ ************************************************************************)
+
+TYPE
+  _XmScrollBarDefs = SYSTEM.int;
+
+CONST 
+  XmMAX_ON_TOP   = 0;
+  XmMAX_ON_BOTTOM= 1;
+  XmMAX_ON_LEFT  = 2;
+  XmMAX_ON_RIGHT = 3;
+
+(************************************************************************
+ *									*
+ * List Widget defines							*
+ *									*
+ ************************************************************************)
+
+TYPE
+  _XmListSelectionPolicy = SYSTEM.int;
+
+CONST 
+  XmSINGLE_SELECT  = 0;
+  XmMULTIPLE_SELECT= 1;
+  XmEXTENDED_SELECT= 2;
+  XmBROWSE_SELECT  = 3;
+
+TYPE
+  _XmListType = SYSTEM.int;
+
+CONST 
+  XmSTATIC = 0;
+  XmDYNAMIC= 1;
+
+(************************************************************************
+ *									*
+ * Scrolled Window defines.						*
+ *									*
+ ************************************************************************)
+
+TYPE
+  _XmSWindowDefs = SYSTEM.int;
+
+CONST 
+  XmVARIABLE          = 0;
+  XmCONSTANT          = 1;
+  XmRESIZE_IF_POSSIBLE= 2;
+
+TYPE
+  _XmSWindowSize = SYSTEM.int;
+
+CONST 
+  XmAUTOMATIC          = 0;
+  XmAPPLICATION_DEFINED= 1;
+
+(*  XmSTATIC = 0 *)
+  XmAS_NEEDED = 1;
+
+  SW_TOP = 1;
+  SW_BOTTOM = 0;
+  SW_LEFT = 2;
+  SW_RIGHT = 0;
+  XmTOP_LEFT = 3;
+  XmBOTTOM_LEFT = 2;
+  XmTOP_RIGHT = 1;
+  XmBOTTOM_RIGHT = 0;
+
+(************************************************************************
+ *									*
+ * MainWindow Resources                                                 *
+ *									*
+ ************************************************************************)
+
+TYPE 
+  _XmMWindowDefs = SYSTEM.int;
+
+CONST 
+  XmCOMMAND_ABOVE_WORKSPACE = 0;
+  XmCOMMAND_BELOW_WORKSPACE = 1;
+
+(************************************************************************
+ *									*
+ * Text Widget defines							*
+ *									*
+ ************************************************************************)
+
+TYPE
+  _XmTextLineNumber = SYSTEM.int;
+
+CONST 
+  XmMULTI_LINE_EDIT  = 0;
+  XmSINGLE_LINE_EDIT = 1;
+
+TYPE
+  XmTextDirection = SYSTEM.int;
+
+CONST 
+  XmTEXT_FORWARD  = 0;
+  XmTEXT_BACKWARD = 1;
+
+TYPE
+  XmTextPosition = LONGINT;
+
+  XmTextFormat = X.Atom;
+
+CONST 
+  XmFMT_8_BIT = 31;                    (*  8-bit text.  *)
+  FMT8BIT = XmFMT_8_BIT;               (*  For backwards compatibility only. *)
+  XmFMT_16_BIT = 2;                    (*  16-bit text.  *)
+  FMT16BIT = XmFMT_16_BIT;             (*  For backwards compatibility only. *)
+
+TYPE 
+  XmTextScanType = SYSTEM.int;
+
+  XmTextScanTypeList = POINTER TO ARRAY [0..X.MAX_STUP_ARR] OF XmTextScanType;
+
+CONST 
+  XmSELECT_POSITION  = 0;
+  XmSELECT_WHITESPACE= 1;
+  XmSELECT_WORD      = 2;
+  XmSELECT_LINE      = 3;
+  XmSELECT_ALL       = 4;
+  XmSELECT_PARAGRAPH = 5;
+
+TYPE
+  XmHighlightMode = SYSTEM.int;
+
+CONST 
+  XmHIGHLIGHT_NORMAL            = 0;
+  XmHIGHLIGHT_SELECTED          = 1;
+  XmHIGHLIGHT_SECONDARY_SELECTED= 2;
+
+(*  XmTextBlock's are used to pass text around.  *)
+
+TYPE
+  XmTextBlockRec = RECORD
+    ptr   : Xt.XtPointer;     (*  Pointer to data.  *)
+    length: SYSTEM.int;       (*  Number of bytes of data.  *)
+    format: XmTextFormat;     (*  Representations format  *)
+  END;
+
+  XmTextBlock = POINTER TO XmTextBlockRec;
+
+  XmTextVerifyCallbackStruct = RECORD
+    reason    : SYSTEM.int;
+    event     : Xlib.PtrXEvent;
+    doit      : Xt.Boolean;
+    currInsert: LONGINT;
+    newInsert : LONGINT;
+    startPos  : LONGINT;
+    endPos    : LONGINT;
+    text      : XmTextBlock;
+  END;
+
+  XmTextVerifyPtr = POINTER TO XmTextVerifyCallbackStruct;
+
+(*
+ * XmTextBlockWcs's are used in 1.2 modifyVerifyWcs callbacks for Text[Field]
+ * widgets.
+ *)
+
+  XmTextBlockRecWcs = RECORD
+    wcsptr: Xlib.Ptrwchar_t;     (*  Pointer to data.  *)
+    length: SYSTEM.int;          (*  Number of characters (not bytes) of data.  *)
+  END;
+
+  XmTextBlockWcs = POINTER TO XmTextBlockRecWcs;
+
+  XmTextVerifyCallbackStructWcs = RECORD
+    reason    : SYSTEM.int;
+    event     : Xlib.PtrXEvent;
+    doit      : Xt.Boolean;
+    currInsert: LONGINT;
+    newInsert : LONGINT;
+    startPos  : LONGINT;
+    endPos    : LONGINT;
+    text      : XmTextBlockWcs;
+  END;
+
+  XmTextVerifyPtrWcs = POINTER TO XmTextVerifyCallbackStructWcs;
+
+(*  functions renamed after 1.0 release due to resource name overlap  *)
+
+CONST 
+  XmCOPY_FAILED = 0;
+  XmCOPY_SUCCEEDED = 1;
+  XmCOPY_TRUNCATED = 2;
+
+(************************************************************************
+ *									*
+ *  DIALOG defines..  BulletinBoard and things common to its subclasses *
+ *          CommandBox    MessageBox    Selection    FileSelection      *
+ *									*
+ ************************************************************************)
+ 
+(*  child type defines for Xm...GetChild()  *)
+
+TYPE 
+  _XmDialogType = SYSTEM.int;
+
+CONST 
+  XmDIALOG_NONE           = 0;
+  XmDIALOG_APPLY_BUTTON   = 1;
+  XmDIALOG_CANCEL_BUTTON  = 2;
+  XmDIALOG_DEFAULT_BUTTON = 3;
+  XmDIALOG_OK_BUTTON      = 4;
+  XmDIALOG_FILTER_LABEL   = 5;
+  XmDIALOG_FILTER_TEXT    = 6;
+  XmDIALOG_HELP_BUTTON    = 7;
+  XmDIALOG_LIST           = 8;
+  XmDIALOG_LIST_LABEL     = 9;
+  XmDIALOG_MESSAGE_LABEL  = 10;
+  XmDIALOG_SELECTION_LABEL= 11;
+  XmDIALOG_SYMBOL_LABEL   = 12;
+  XmDIALOG_TEXT           = 13;
+  XmDIALOG_SEPARATOR      = 14;
+  XmDIALOG_DIR_LIST       = 15;
+  XmDIALOG_DIR_LIST_LABEL = 16;
+
+  XmDIALOG_VALUE_TEXT = XmDIALOG_TEXT;
+  XmDIALOG_PROMPT_LABEL = XmDIALOG_SELECTION_LABEL;
+  XmDIALOG_HISTORY_LIST = XmDIALOG_LIST;
+  XmDIALOG_FILE_LIST_LABEL = XmDIALOG_LIST_LABEL;
+  XmDIALOG_FILE_LIST = XmDIALOG_LIST;
+  XmDIALOG_COMMAND_TEXT = XmDIALOG_TEXT;
+
+(*   dialog style defines   *)
+
+TYPE 
+  _XmDialogStyle = SYSTEM.int;
+
+CONST 
+  XmDIALOG_MODELESS                 = 0;
+  XmDIALOG_PRIMARY_APPLICATION_MODAL= 1;
+  XmDIALOG_FULL_APPLICATION_MODAL   = 2;
+  XmDIALOG_SYSTEM_MODAL             = 3;
+
+  XmDIALOG_APPLICATION_MODAL = XmDIALOG_PRIMARY_APPLICATION_MODAL;
+
+(*  The following is for compatibility only. Its use is deprecated.  *)
+
+(************************************************************************
+ * XmSelectionBox, XmFileSelectionBox and XmCommand - misc. stuff       *
+ ************************************************************************)
+
+(*  Defines for Selection child placement  *)
+
+TYPE 
+  _XmSelectionChildPlacement = SYSTEM.int;
+
+CONST 
+  XmPLACE_TOP             = 0;
+  XmPLACE_ABOVE_SELECTION = 1;
+  XmPLACE_BELOW_SELECTION = 2;
+
+(*  Defines for file type mask:  *)
+
+  XmFILE_DIRECTORY = 1;
+  XmFILE_REGULAR = 2;
+  XmFILE_ANY_TYPE = 3;
+
+(*  Defines for selection dialog type:  *)
+
+TYPE 
+  _XmMainDialogTypes = SYSTEM.int;
+
+CONST 
+  XmDIALOG_WORK_AREA      = 0;
+  XmDIALOG_PROMPT         = 1;
+  XmDIALOG_SELECTION      = 2;
+  XmDIALOG_COMMAND        = 3;
+  XmDIALOG_FILE_SELECTION = 4;
+
+(************************************************************************
+ *  XmMessageBox           stuff not common to other dialogs            *
+ ************************************************************************)
+
+(*  defines for dialog type  *)
+
+TYPE
+  _XmMBoxType = SYSTEM.int;
+
+CONST 
+  XmDIALOG_TEMPLATE   = 0;
+  XmDIALOG_ERROR      = 1;
+  XmDIALOG_INFORMATION= 2;
+  XmDIALOG_MESSAGE    = 3;
+  XmDIALOG_QUESTION   = 4;
+  XmDIALOG_WARNING    = 5;
+  XmDIALOG_WORKING    = 6;
+
+(*   Traversal types   *)
+
+TYPE
+  XmVisibility = SYSTEM.int;
+
+CONST 
+  XmVISIBILITY_UNOBSCURED         = 0;
+  XmVISIBILITY_PARTIALLY_OBSCURED = 1;
+  XmVISIBILITY_FULLY_OBSCURED     = 2;
+
+TYPE
+  XmTraversalDirection = SYSTEM.int;
+
+CONST 
+  XmTRAVERSE_CURRENT       = 0;
+  XmTRAVERSE_NEXT          = 1;
+  XmTRAVERSE_PREV          = 2;
+  XmTRAVERSE_HOME          = 3;
+  XmTRAVERSE_NEXT_TAB_GROUP= 4;
+  XmTRAVERSE_PREV_TAB_GROUP= 5;
+  XmTRAVERSE_UP            = 6;
+  XmTRAVERSE_DOWN          = 7;
+  XmTRAVERSE_LEFT          = 8;
+  XmTRAVERSE_RIGHT         = 9;
+
+TYPE
+  _XmTraverseObscuredCallbackStruct = RECORD
+    reason               : SYSTEM.int;
+    event                : Xlib.PtrXEvent;
+    traversal_destination: Xt.Widget;
+    direction            : XmTraversalDirection;
+  END;
+
+  XmTraverseObscuredCallbackStruct = _XmTraverseObscuredCallbackStruct;
+
+  XmNavigationType = SHORTCARD;
+
+(***********************************************************************
+ *
+ * SimpleMenu declarations and definitions.
+ *
+ ***********************************************************************)
+
+  XmButtonType = SHORTCARD;
+
+  XmButtonTypeTable = POINTER TO ARRAY OF XmButtonType;
+
+  XmKeySymTable = POINTER TO ARRAY OF X.KeySym;
+
+  XmStringCharSetTable = POINTER TO ARRAY OF XmStringCharSet;
+
+CONST 
+  XmPUSHBUTTON = 1;
+  XmTOGGLEBUTTON = 2;
+  XmRADIOBUTTON = 3;
+  XmCASCADEBUTTON = 4;
+  XmSEPARATOR = 5;
+  XmDOUBLE_SEPARATOR = 6;
+  XmTITLE = 7;
+
+  XmCHECKBUTTON = XmTOGGLEBUTTON;
+
+(********    BaseClass.c    ********)
+
+TYPE 
+  XmResourceBaseProc = PROCEDURE ( Xt.Widget, Xt.XtPointer ): 
+                                 Xt.XtPointer;
+
+  _XmSecondaryResourceDataRec = RECORD
+    base_proc    : XmResourceBaseProc;
+    client_data  : Xt.XtPointer;
+    name         : Xt.String;
+    res_class    : Xt.String;
+    resources    : Xt.XtResourceList;
+    num_resources: Xt.Cardinal;
+  END;
+
+  XmSecondaryResourceDataRec = _XmSecondaryResourceDataRec;
+
+  XmSecondaryResourceData = POINTER TO _XmSecondaryResourceDataRec;
+
+(********    Public Function Declarations for BaseClass.c    ********)
+
+  PAXmSecondaryResourceData = POINTER TO ARRAY OF XmSecondaryResourceData;
+
+PROCEDURE XmGetSecondaryResourceData ( w_class: Xt.WidgetClass;
+                                       VAR secondaryDataRtn: PAXmSecondaryResourceData 
+				     ) : Xt.Cardinal;
+
+(********    End Public Function Declarations    ********)
+(********    Public Function Declarations for ImageCache.c    ********)
+
+PROCEDURE XmInstallImage ( image: Xlib.PtrXImage;
+                           image_name: ARRAY OF CHAR ): Xt.Boolean;
+
+PROCEDURE XmUninstallImage ( image: Xlib.PtrXImage ): Xt.Boolean;
+
+PROCEDURE XmGetPixmap ( screen: Xlib.PtrScreen; image_name: ARRAY OF CHAR;
+                        foreground: Xt.Pixel;
+                        background: Xt.Pixel ): X.Pixmap;
+
+PROCEDURE XmGetPixmapByDepth ( screen: Xlib.PtrScreen; image_name: ARRAY OF CHAR;
+                               foreground: Xt.Pixel;
+                               background: Xt.Pixel;
+                               depth: SYSTEM.int ): X.Pixmap;
+
+PROCEDURE XmDestroyPixmap ( screen: Xlib.PtrScreen;
+                            pixmap: X.Pixmap ): Xt.Boolean;
+
+(********    End Public Function Declarations    ********)
+(********    Public Function Declarations for Manager.c    ********)
+
+PROCEDURE XmUpdateDisplay ( w: Xt.Widget );
+
+(********    End Public Function Declarations    ********)
+(********    Primitive.c    ********)
+
+TYPE 
+  XmOffset = LONGINT;
+
+  XmOffsetPtr = POINTER TO XmOffset;
+
+(********    Public Function Declarations for Primitive.c    ********)
+
+PROCEDURE XmResolvePartOffsets ( w_class: Xt.WidgetClass;
+                                 VAR offset: XmOffsetPtr );
+
+PROCEDURE XmResolveAllPartOffsets ( w_class: Xt.WidgetClass;
+                                    VAR offset: XmOffsetPtr;
+                                    VAR constraint_offset: XmOffsetPtr );
+
+PROCEDURE XmWidgetGetBaselines ( wid: Xt.Widget;
+                                 VAR baselines: Xt.DimensionList;
+                                 VAR line_count: SYSTEM.int ): Xt.Boolean;
+
+PROCEDURE XmWidgetGetDisplayRect ( wid: Xt.Widget;
+                                   VAR displayrect: Xlib.XRectangle ): Xt.Boolean;
+
+(********    End Public Function Declarations    ********)
+(********    Public Function Declarations for ResConvert.c    ********)
+
+PROCEDURE XmRegisterConverters (  );
+
+PROCEDURE XmCvtStringToUnitType ( args: Xrm.XrmValuePtr;
+                                  VAR num_args: Xt.Cardinal; VAR from_val: Xrm.XrmValue;
+                                  VAR to_val: Xrm.XrmValue );
+
+PROCEDURE XmRegisterSegmentEncoding ( fontlist_tag: ARRAY OF CHAR;
+                                      ct_encoding: ARRAY OF CHAR ): Xt.String;
+
+PROCEDURE XmMapSegmentEncoding ( fontlist_tag: ARRAY OF CHAR ): Xt.String;
+
+PROCEDURE XmCvtCTToXmString ( text: ARRAY OF CHAR ): XmString;
+
+PROCEDURE XmCvtTextToXmString ( display: Xlib.PtrDisplay; args: Xrm.XrmValuePtr;
+                                VAR num_args: Xt.Cardinal; VAR from_val: Xrm.XrmValue;
+                                VAR to_val: Xrm.XrmValue;
+                                VAR converter_data: Xt.XtPointer ): Xt.Boolean;
+
+PROCEDURE XmCvtXmStringToCT ( string: XmString ): Xt.String;
+
+PROCEDURE XmCvtXmStringToText ( display: Xlib.PtrDisplay; args: Xrm.XrmValuePtr;
+                                VAR num_args: Xt.Cardinal; VAR from_val: Xrm.XrmValue;
+                                VAR to_val: Xrm.XrmValue;
+                                VAR converter_data: Xt.XtPointer ): Xt.Boolean;
+
+(********    End Public Function Declarations    ********)
+(********    Public Function Declarations for ResInd.c    ********)
+
+PROCEDURE XmConvertUnits ( widget: Xt.Widget; dimension: SYSTEM.int;
+                           from_type: SYSTEM.int; from_val: SYSTEM.int;
+                           to_type: SYSTEM.int ): SYSTEM.int;
+
+PROCEDURE XmCvtToHorizontalPixels ( screen: Xlib.PtrScreen; from_val: SYSTEM.int;
+                                    from_type: SYSTEM.int ): SYSTEM.int;
+
+PROCEDURE XmCvtToVerticalPixels ( screen: Xlib.PtrScreen; from_val: SYSTEM.int;
+                                  from_type: SYSTEM.int ): SYSTEM.int;
+
+PROCEDURE XmCvtFromHorizontalPixels ( screen: Xlib.PtrScreen; from_val: SYSTEM.int;
+                                      to_type: SYSTEM.int ): SYSTEM.int;
+
+PROCEDURE XmCvtFromVerticalPixels ( screen: Xlib.PtrScreen; from_val: SYSTEM.int;
+                                    to_type: SYSTEM.int ): SYSTEM.int;
+
+PROCEDURE XmSetFontUnits ( display: Xlib.PtrDisplay; h_value: SYSTEM.int;
+                           v_value: SYSTEM.int );
+
+PROCEDURE XmSetFontUnit ( display: Xlib.PtrDisplay; value: SYSTEM.int );
+
+(********    End Public Function Declarations    ********)
+(********    Public Function Declarations for MenuUtil.c    ********)
+
+PROCEDURE XmSetMenuCursor ( display: Xlib.PtrDisplay; cursorId: X.Cursor );
+
+PROCEDURE XmGetMenuCursor ( display: Xlib.PtrDisplay ): X.Cursor;
+
+(********    End Public Function Declarations    ********)
+(********    Public Function Declarations for Simple.c    ********)
+
+PROCEDURE XmCreateSimpleMenuBar ( parent: Xt.Widget;
+                                  name: ARRAY OF CHAR;
+                                  args: Xt.ArgList;
+                                  arg_count: Xt.Cardinal ): Xt.Widget;
+
+PROCEDURE XmCreateSimplePopupMenu ( parent: Xt.Widget;
+                                    name: ARRAY OF CHAR;
+                                    args: Xt.ArgList;
+                                    arg_count: Xt.Cardinal ): Xt.Widget;
+
+PROCEDURE XmCreateSimplePulldownMenu ( parent: Xt.Widget;
+                                       name: ARRAY OF CHAR;
+                                       args: Xt.ArgList;
+                                       arg_count: Xt.Cardinal ): Xt.Widget;
+
+PROCEDURE XmCreateSimpleOptionMenu ( parent: Xt.Widget;
+                                     name: ARRAY OF CHAR;
+                                     args: Xt.ArgList;
+                                     arg_count: Xt.Cardinal ): Xt.Widget;
+
+PROCEDURE XmCreateSimpleRadioBox ( parent: Xt.Widget;
+                                   name: ARRAY OF CHAR;
+                                   args: Xt.ArgList;
+                                   arg_count: Xt.Cardinal ): Xt.Widget;
+
+PROCEDURE XmCreateSimpleCheckBox ( parent: Xt.Widget;
+                                   name: ARRAY OF CHAR;
+                                   args: Xt.ArgList;
+                                   arg_count: Xt.Cardinal ): Xt.Widget;
+
+(********    End Public Function Declarations    ********)
+(********    Public Function Declarations for VaSimple.c   ********)
+
+PROCEDURE XmVaCreateSimpleMenuBar ( parent: Xt.Widget;
+                                    name: ARRAY OF CHAR;
+                                    SEQ arg0: SYSTEM.BYTE ): Xt.Widget;
+
+PROCEDURE XmVaCreateSimplePopupMenu ( parent: Xt.Widget;
+                                      name: ARRAY OF CHAR;
+                                      callback: Xt.XtCallbackProc;
+                                      SEQ arg0: SYSTEM.BYTE ): Xt.Widget;
+
+PROCEDURE XmVaCreateSimplePulldownMenu ( parent: Xt.Widget;
+                                         name: ARRAY OF CHAR;
+                                         post_from_button: SYSTEM.int;
+                                         callback: Xt.XtCallbackProc;
+                                         SEQ arg0: SYSTEM.BYTE ): Xt.Widget;
+
+PROCEDURE XmVaCreateSimpleOptionMenu ( parent: Xt.Widget;
+                                       name: ARRAY OF CHAR;
+                                       option_label: XmString;
+                                       option_mnemonic: X.KeySym;
+                                       button_set: SYSTEM.int;
+                                       callback: Xt.XtCallbackProc;
+                                       SEQ arg0: SYSTEM.BYTE ): Xt.Widget;
+
+PROCEDURE XmVaCreateSimpleRadioBox ( parent: Xt.Widget;
+                                     name: ARRAY OF CHAR;
+                                     button_set: SYSTEM.int;
+                                     callback: Xt.XtCallbackProc;
+                                     SEQ arg0: SYSTEM.BYTE ): Xt.Widget;
+
+PROCEDURE XmVaCreateSimpleCheckBox ( parent: Xt.Widget;
+                                     name: ARRAY OF CHAR;
+                                     callback: Xt.XtCallbackProc;
+                                     SEQ arg0: SYSTEM.BYTE ): Xt.Widget;
+
+(********    End Public Function Declarations    ********)
+(********    Public Function Declarations for TrackLoc.c    ********)
+
+PROCEDURE XmTrackingEvent ( widget: Xt.Widget; cursor: X.Cursor;
+                            confineTo: SYSTEM.int;
+                            VAR pev: Xlib.XEvent ): Xt.Widget;
+
+PROCEDURE XmTrackingLocate ( widget: Xt.Widget; cursor: X.Cursor;
+                             confineTo: SYSTEM.int ): Xt.Widget;
+
+(********    End Public Function Declarations    ********)
+(********    Visual.c    ********)
+
+<*+ GENTYPEDEF *>
+
+TYPE 
+  XmColorProc = PROCEDURE ( (* bg_color *)  VAR Xlib.XColor,
+      	      	      	    (* fg_color *)  VAR Xlib.XColor,
+			    (* sel_color *) VAR Xlib.XColor,
+			    (* ts_color *)  VAR Xlib.XColor,
+			    (* bs_color *)  VAR Xlib.XColor );
+
+(********    Public Function Declarations for Visual.c    ********)
+
+PROCEDURE XmSetColorCalculation ( proc: XmColorProc ): XmColorProc;
+
+PROCEDURE XmGetColorCalculation (  ): XmColorProc;
+
+PROCEDURE XmGetColors ( screen: Xlib.PtrScreen; color_map: X.Colormap;
+                        background: Xt.Pixel;
+			VAR foreground_ret: Xt.Pixel;
+			VAR top_shadow_ret: Xt.Pixel;
+			VAR bottom_shadow_ret: Xt.Pixel;
+			VAR select_ret: Xt.Pixel );
+
+PROCEDURE XmChangeColor ( widget: Xt.Widget;
+                          background: Xt.Pixel );
+
+(********    End Public Function Declarations    ********)
+(********    Public Function Declarations for XmString.c    ********)
+
+PROCEDURE XmStringCreate ( text: ARRAY OF CHAR; charset: ARRAY OF CHAR ): XmString;
+
+PROCEDURE XmStringCreateSimple ( text: ARRAY OF CHAR ): XmString;
+
+PROCEDURE XmStringCreateLocalized ( text: Xt.String ): XmString;
+
+PROCEDURE XmStringDirectionCreate ( direction: SYSTEM.int ): XmString;
+
+PROCEDURE XmStringSeparatorCreate (  ): XmString;
+
+PROCEDURE XmStringSegmentCreate ( text: ARRAY OF CHAR; charset: ARRAY OF CHAR;
+                                  direction: SYSTEM.int;
+                                  separator: SYSTEM.int ): XmString;
+
+PROCEDURE XmStringLtoRCreate ( text: ARRAY OF CHAR; charset: ARRAY OF CHAR ): XmString;
+
+PROCEDURE XmStringCreateLtoR ( text: ARRAY OF CHAR; charset: ARRAY OF CHAR ): XmString;
+
+PROCEDURE XmStringInitContext ( VAR context: XmStringContext;
+                                string: XmString ): Xt.Boolean;
+
+PROCEDURE XmStringFreeContext ( context: XmStringContext );
+
+PROCEDURE XmStringGetNextComponent ( context: XmStringContext; VAR text: Xt.String;
+                                     VAR charset: ARRAY OF CHAR;
+                                     VAR direction: XmStringDirection;
+                                     VAR unknown_tag: XmStringDirection;
+                                     VAR unknown_length: Xt.Dimension;
+                                     VAR unknown_value: XmString ): XmStringComponentType;
+
+PROCEDURE XmStringPeekNextComponent ( context: XmStringContext ): XmStringComponentType;
+
+PROCEDURE XmStringGetNextSegment ( context: XmStringContext;
+                                   VAR text: Xt.String;
+                                   VAR charset: ARRAY OF CHAR;
+                                   VAR direction: XmStringDirection;
+                                   VAR separator: Xt.Boolean ): Xt.Boolean;
+
+PROCEDURE XmStringGetLtoR ( string: XmString;
+                            charset: ARRAY OF CHAR;
+                            VAR text: Xt.String ): Xt.Boolean;
+
+PROCEDURE XmFontListEntryCreate ( tag: ARRAY OF CHAR;
+                                  type: XmFontType;
+                                  font: Xt.XtPointer ): XmFontListEntry;
+
+PROCEDURE XmFontListEntryFree ( VAR entry: XmStringContext );
+
+PROCEDURE XmFontListEntryGetFont ( entry: XmFontListEntry;
+                                   VAR typeReturn: XmFontType ): Xt.XtPointer;
+
+PROCEDURE XmFontListEntryGetTag ( entry: XmFontListEntry ): Xt.String;
+
+PROCEDURE XmFontListAppendEntry ( old: XmFontList;
+                                  entry: XmFontListEntry ): XmFontList;
+
+PROCEDURE XmFontListNextEntry ( context: XmFontContext ): XmFontListEntry;
+
+PROCEDURE XmFontListRemoveEntry ( old: XmFontList;
+                                  entry: XmFontListEntry ): XmFontList;
+
+PROCEDURE XmFontListEntryLoad ( display: Xlib.PtrDisplay; fontName: ARRAY OF CHAR;
+                                type: XmFontType; tag: ARRAY OF CHAR ): XmFontListEntry;
+
+PROCEDURE XmFontListCreate ( VAR font: Xlib.XFontStruct;
+                             charset: ARRAY OF CHAR ): XmFontList;
+
+PROCEDURE XmStringCreateFontList ( VAR font: Xlib.XFontStruct;
+                                   charset: ARRAY OF CHAR ): XmFontList;
+
+PROCEDURE XmFontListFree ( fontlist: XmFontList );
+
+PROCEDURE XmFontListAdd ( old: XmFontList; VAR font: Xlib.PtrXFontStruct;
+                          charset: ARRAY OF CHAR ): XmFontList;
+
+PROCEDURE XmFontListCopy ( fontlist: XmFontList ): XmFontList;
+
+PROCEDURE XmFontListInitFontContext ( VAR context: XmStringContext;
+                                      fontlist: XmFontList ): Xt.Boolean;
+
+PROCEDURE XmFontListGetNextFont ( context: XmFontContext; VAR charset: ARRAY OF CHAR;
+                                  font: Xlib.PAPXFontStruct ): Xt.Boolean;
+
+PROCEDURE XmFontListFreeFontContext ( context: XmFontContext );
+
+PROCEDURE XmStringConcat ( a: XmString; b: XmString ): XmString;
+
+PROCEDURE XmStringNConcat ( first: XmString; second: XmString;
+                            n: SYSTEM.int ): XmString;
+
+PROCEDURE XmStringCopy ( string: XmString ): XmString;
+
+PROCEDURE XmStringNCopy ( str: XmString; n: SYSTEM.int ): XmString;
+
+PROCEDURE XmStringByteCompare ( a1: XmString; b1: XmString ): Xt.Boolean;
+
+PROCEDURE XmStringCompare ( a: XmString; b: XmString ): Xt.Boolean;
+
+PROCEDURE XmStringLength ( string: XmString ): SYSTEM.int;
+
+PROCEDURE XmStringEmpty ( string: XmString ): Xt.Boolean;
+
+PROCEDURE XmStringHasSubstring ( string: XmString;
+                                 substring: XmString ): Xt.Boolean;
+
+PROCEDURE XmStringFree ( string: XmString );
+
+PROCEDURE XmStringBaseline ( fontlist: XmFontList;
+                             string: XmString ): Xt.Dimension;
+
+PROCEDURE XmStringWidth ( fontlist: XmFontList;
+                          string: XmString ): Xt.Dimension;
+
+PROCEDURE XmStringHeight ( fontlist: XmFontList;
+                           string: XmString ): Xt.Dimension;
+
+PROCEDURE XmStringExtent ( fontlist: XmFontList; string: XmString;
+                           VAR width: Xt.Dimension; VAR height: Xt.Dimension );
+
+PROCEDURE XmStringLineCount ( string: XmString ): SYSTEM.int;
+
+PROCEDURE XmStringDraw ( d: Xlib.PtrDisplay; w: X.Window; fontlist: XmFontList;
+                         string: XmString; gc: Xlib.GC; x: SYSTEM.int;
+                         y: SYSTEM.int; width: SYSTEM.int; align: SYSTEM.unsigned;
+                         lay_dir: SYSTEM.unsigned; VAR clip: Xlib.XRectangle );
+
+PROCEDURE XmStringDrawImage ( d: Xlib.PtrDisplay; w: X.Window; fontlist: XmFontList;
+                              string: XmString; gc: Xlib.GC; x: SYSTEM.int;
+                              y: SYSTEM.int; width: SYSTEM.int;
+                              align: SYSTEM.unsigned; lay_dir: SYSTEM.unsigned;
+                              VAR clip: Xlib.XRectangle );
+
+PROCEDURE XmStringDrawUnderline ( d: Xlib.PtrDisplay; w: X.Window; fntlst: XmFontList;
+                                  str: XmString; gc: Xlib.GC; x: SYSTEM.int;
+                                  y: SYSTEM.int; width: SYSTEM.int;
+                                  align: SYSTEM.unsigned; lay_dir: SYSTEM.unsigned;
+                                  VAR clip: Xlib.XRectangle; under: XmString );
+
+(********    End Public Function Declarations    ********)
+(********    Public Function Declarations for Dest.c    ********)
+
+PROCEDURE XmGetDestination ( display: Xlib.PtrDisplay ): Xt.Widget;
+
+(********    End Public Function Declarations    ********)
+(********    Public Function Declarations for Traversal.c    ********)
+
+PROCEDURE XmIsTraversable ( wid: Xt.Widget ): Xt.Boolean;
+
+PROCEDURE XmGetVisibility ( wid: Xt.Widget ): XmVisibility;
+
+PROCEDURE XmGetTabGroup ( wid: Xt.Widget ): Xt.Widget;
+
+PROCEDURE XmGetFocusWidget ( wid: Xt.Widget ): Xt.Widget;
+
+PROCEDURE XmProcessTraversal ( w: Xt.Widget;
+                               dir: XmTraversalDirection ): Xt.Boolean;
+
+PROCEDURE XmAddTabGroup ( tabGroup: Xt.Widget );
+
+PROCEDURE XmRemoveTabGroup ( w: Xt.Widget );
+
+(********    End Public Function Declarations    ********)
+(********    Public Function Declarations for XmIm.c    ********)
+
+PROCEDURE XmImRegister ( w: Xt.Widget; reserved: SYSTEM.unsigned );
+
+PROCEDURE XmImUnregister ( w: Xt.Widget );
+
+PROCEDURE XmImSetFocusValues ( w: Xt.Widget; args: Xt.ArgList;
+                               num_args: Xt.Cardinal );
+
+PROCEDURE XmImSetValues ( w: Xt.Widget; args: Xt.ArgList;
+                          num_args: Xt.Cardinal );
+
+PROCEDURE XmImUnsetFocus ( w: Xt.Widget );
+
+PROCEDURE XmImGetXIM ( w: Xt.Widget ): Xlib.XIM;
+
+PROCEDURE XmImMbLookupString ( w: Xt.Widget; VAR event: Xlib.XKeyPressedEvent;
+                               buf: ARRAY OF CHAR; nbytes: SYSTEM.int;
+			       keysym: Xlib.Ptrwchar_t;
+                               VAR status: SYSTEM.int ): SYSTEM.int;
+
+PROCEDURE XmImVaSetFocusValues ( w: Xt.Widget; SEQ arg0: SYSTEM.BYTE );
+
+PROCEDURE XmImVaSetValues ( w: Xt.Widget; SEQ arg0: SYSTEM.BYTE );
+
+(********    End Public Function Declarations    ********)
+
+(*    The following includes are for source compatibility.  They might be
+ *    removed at some future time.
+ *)
+
+(* ---------------------------------------------------- *)
+(*                     Xm/VendorS.h                     *)
+(* ---------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2 
+ *)
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: this procedure corresponds to a macro. *)
+PROCEDURE XmIsVendorShell ( w: Xt.Widget ): Xt.Boolean;
+
+<* ELSE *>
+
+PROCEDURE  / XmIsVendorShell ( w: Xt.Widget ): Xt.Boolean;
+
+<* END *>
+
+<*+ GENTYPEDEF *>
+
+TYPE 
+  _XmVendorShellRec = RECORD
+    (* Declaration without definition *)
+  END;
+
+  XmVendorShellWidget = POINTER TO _XmVendorShellRec;
+
+  _XmVendorShellClassRec = RECORD
+    (* Declaration without definition *)
+  END;
+
+  XmVendorShellWidgetClass = POINTER TO _XmVendorShellClassRec;
+
+VAR 
+  vendorShellWidgetClass: Xt.WidgetClass;
+
+(********    Public Function Declarations    ********)
+
+PROCEDURE XmIsMotifWMRunning ( shell: Xt.Widget ): Xt.Boolean;
+
+(********    End Public Function Declarations    ********)
+
+END Xm.

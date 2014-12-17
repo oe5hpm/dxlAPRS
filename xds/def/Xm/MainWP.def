@@ -1,0 +1,160 @@
+(* Xm/MainWP.def  Nov 11  16:39:49  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/MainWP.h using H2D v1.18.1 *)
+
+(* $RCSfile: MainWP.def,v $ $Revision: 4 $ $Date: 28.07.98 23:14 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+(* Merged headers: Xm/MainW.h *)
+
+DEFINITION MODULE ["C"] MainWP;
+
+IMPORT SYSTEM, Xm:=XmP, Xt:=IntrinsicP, ScrolledWP, SeparatoGP;
+(* H2D:  Required IMPORT clause: 
+IMPORT MainWP, Xm:=XmP, Xt:=IntrinsicP, ScrolledWP, SeparatoGP;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992, 1993 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(* -------------------------------------------------- *)
+(*                     Xm/MainW.h                     *)
+(* -------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2.2
+ *)
+
+VAR 
+  xmMainWindowWidgetClass: Xt.WidgetClass;
+
+TYPE 
+  XmMainWindowWidgetClass = POINTER TO _XmMainWindowClassRec;
+
+  XmMainWindowWidget = POINTER TO _XmMainWindowRec;
+
+(********    Public Function Declarations    ********)
+
+PROCEDURE XmMainWindowSetAreas ( w: Xt.Widget;
+                                 menu: Xt.Widget;
+                                 command: Xt.Widget;
+                                 hscroll: Xt.Widget;
+                                 vscroll: Xt.Widget;
+                                 wregion: Xt.Widget );
+
+PROCEDURE XmMainWindowSep1 ( w: Xt.Widget ): Xt.Widget;
+
+PROCEDURE XmMainWindowSep2 ( w: Xt.Widget ): Xt.Widget;
+
+PROCEDURE XmMainWindowSep3 ( w: Xt.Widget ): Xt.Widget;
+
+PROCEDURE XmCreateMainWindow ( parent: Xt.Widget;
+                               name: ARRAY OF CHAR;
+                               args: Xt.ArgList;
+                               argCount: Xt.Cardinal ): Xt.Widget;
+
+(********    End Public Function Declarations    ********)
+
+(* -------------------------------------------------- *)
+(*                    Xm/MainWP.h                     *)
+(* -------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2.3
+ *)
+
+CONST 
+  DEFAULT_HEIGHT = 20;
+  DEFAULT_WIDTH = 20;
+
+(*  Constraint part record for MainWindow widget  *)
+
+TYPE 
+  _XmMainWindowConstraintPart = RECORD
+    unused: CHAR;
+  END;
+
+  XmMainWindowConstraintPart = _XmMainWindowConstraintPart;
+
+  XmMainWindowConstraint = POINTER TO _XmMainWindowConstraintPart;
+
+(*  New fields for the MainWindow widget class record  *)
+
+  _XmMainWindowClassPart = RECORD
+    extension: Xt.XtPointer;   (*  Pointer to extension record  *)
+  END;
+
+  XmMainWindowClassPart = _XmMainWindowClassPart;
+
+(****************
+ *
+ * Class record declaration
+ *
+ ****************)
+
+  _XmMainWindowClassRec = RECORD
+    core_class      : Xt.CoreClassPart;
+    composite_class : Xt.CompositeClassPart;
+    constraint_class: Xt.ConstraintClassPart;
+    manager_class   : Xm.XmManagerClassPart;
+    swindow_class   : ScrolledWP.XmScrolledWindowClassPart;
+    mwindow_class   : XmMainWindowClassPart;
+  END;
+
+  XmMainWindowClassRec = _XmMainWindowClassRec;
+
+(****************
+ *
+ * Main Window instance structure.
+ *
+ ****************)
+
+  _XmMainWindowPart = RECORD
+    AreaWidth    : Xt.Dimension;
+    AreaHeight   : Xt.Dimension;
+    margin_width : Xt.Dimension;
+    margin_height: Xt.Dimension;
+    CommandWindow: Xt.Widget;
+    MenuBar      : Xt.Widget;
+    Message      : Xt.Widget;
+    CommandLoc   : SHORTCARD;
+    Sep1         : SeparatoGP.XmSeparatorGadget;
+    Sep2         : SeparatoGP.XmSeparatorGadget;
+    Sep3         : SeparatoGP.XmSeparatorGadget;
+    ManagingSep  : Xt.Boolean;
+    ShowSep      : Xt.Boolean;
+  END;
+
+  XmMainWindowPart = _XmMainWindowPart;
+
+(************************************************************************
+ *									*
+ * Full instance record declaration					*
+ *									*
+ ************************************************************************)
+
+  _XmMainWindowRec = RECORD
+    core      : Xt.CorePart;
+    composite : Xt.CompositePart;
+    constraint: Xt.ConstraintPart;
+    manager   : Xm.XmManagerPart;
+    swindow   : ScrolledWP.XmScrolledWindowPart;
+    mwindow   : XmMainWindowPart;
+  END;
+
+  XmMainWindowRec = _XmMainWindowRec;
+
+VAR 
+  xmMainWindowClassRec: XmMainWindowClassRec;
+
+(********    Private Function Declarations    ********)
+(********    End Private Function Declarations    ********)
+
+END MainWP.

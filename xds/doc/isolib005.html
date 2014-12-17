@@ -1,0 +1,997 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 4.01 Transitional//EN">
+<HTML>
+<HEAD>
+<TITLE>String Conversions</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<P><HR>
+<A NAME="0204">
+<A HREF="isolib000.html#root" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="isolib004.html#0203" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0205" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H1>String Conversions</H1>
+
+<P>The string conversions library allows the conversion of the values of numeric data types to and from character string representations. The modules <TT><A HREF="#0209" TARGET=body>WholeStr</A></TT>, <TT><A HREF="#0214" TARGET=body>RealStr</A></TT>, and <TT><A HREF="#0214" TARGET=body>LongStr</A></TT> provide simple high-level facilities for converting to and from strings and whole number and real number data types. Low-level facilities are provided by the corresponding modules <TT><A HREF="#0222" TARGET=body>WholeConv</A></TT>, <TT><A HREF="#0232" TARGET=body>RealConv</A></TT>, and <TT><A HREF="#0232" TARGET=body>LongConv</A></TT>. Common data types and values that are used in the definition modules are defined by the module <TT><A HREF="#0206" TARGET=body>ConvTypes</A></TT>. 
+<P>The formats for string conversions correspond to those for numeric input and output, except that the numeric output routines provide for (right) alignment in a specified field width | see 9.2.2.2 and 9.2.2.3. 
+<P><UL>
+<LI><A HREF="#0205" TARGET=body>Common Data Types</A>
+<LI><A HREF="#0207" TARGET=body>High-Level String Conversion Modules</A>
+<LI><A HREF="#0220" TARGET=body>Low-Level String Conversion Modules</A>
+</UL>
+<P><HR>
+<A NAME="0205">
+<A HREF="#0204" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0204" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0206" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Common Data Types</H2>
+
+<P>The module <TT><A HREF="#0206" TARGET=body>ConvTypes</A></TT> defines types and values that are used in the high-level and low-level string conversion definition modules. Where appropriate, the conversion modules define types in terms of those defined in <TT><A HREF="#0206" TARGET=body>ConvTypes</A></TT>. Direct import from this module is not normally necessary in modules that are clients of the high-level conversion modules. 
+<P><UL>
+<LI><A HREF="#0206" TARGET=body>Module ConvTypes</A>
+</UL>
+<P><HR>
+<A NAME="0206">
+<A HREF="#0205" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0205" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0207" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Module ConvTypes</H3>
+
+<P>The module <TT>ConvTypes</TT> defines the enumeration type <TT>ConvResults</TT> with values for expressing the format of strings that are interpreted as representing values of numeric data types. The module also defines the types <TT>ScanClass</TT> and <TT>ScanState</TT>, which the low-level conversion modules use in the definition of procedures that control lexical scanning. 
+<P><PRE>TYPE
+&nbsp;&nbsp;ConvResults&nbsp;=&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;Values&nbsp;of&nbsp;this&nbsp;type&nbsp;are&nbsp;used
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;to&nbsp;express&nbsp;the&nbsp;format&nbsp;of&nbsp;a&nbsp;string:&nbsp;*)
+&nbsp;&nbsp;(
+&nbsp;&nbsp;&nbsp;&nbsp;strAllRight,&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;the&nbsp;string&nbsp;format&nbsp;is&nbsp;correct
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;the&nbsp;corresponding&nbsp;conversion&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;strOutOfRange,&nbsp;&nbsp;(*&nbsp;the&nbsp;string&nbsp;is&nbsp;well-formed&nbsp;but&nbsp;the&nbsp;value
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cannot&nbsp;be&nbsp;represented&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;strWrongFormat,&nbsp;(*&nbsp;the&nbsp;string&nbsp;is&nbsp;in&nbsp;the&nbsp;wrong&nbsp;format
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;the&nbsp;conversion&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;strEmpty&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;the&nbsp;given&nbsp;string&nbsp;is&nbsp;empty&nbsp;*)
+&nbsp;&nbsp;);
+
+&nbsp;&nbsp;ScanClass&nbsp;=&nbsp;&nbsp;(*&nbsp;Values&nbsp;of&nbsp;this&nbsp;type&nbsp;are&nbsp;used&nbsp;to&nbsp;classify&nbsp;input
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;to&nbsp;finite&nbsp;state&nbsp;scanners:&nbsp;*)
+&nbsp;&nbsp;(
+&nbsp;&nbsp;&nbsp;&nbsp;padding,&nbsp;&nbsp;&nbsp;(*&nbsp;a&nbsp;leading&nbsp;or&nbsp;padding&nbsp;character&nbsp;at&nbsp;this&nbsp;point
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;in&nbsp;the&nbsp;scan&nbsp;-&nbsp;ignore&nbsp;it&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;valid,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;a&nbsp;valid&nbsp;character&nbsp;at&nbsp;this&nbsp;point
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;in&nbsp;the&nbsp;scan&nbsp;-&nbsp;accept&nbsp;it&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;invalid,&nbsp;&nbsp;&nbsp;(*&nbsp;an&nbsp;invalid&nbsp;character&nbsp;at&nbsp;this&nbsp;point
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;in&nbsp;the&nbsp;scan&nbsp;-&nbsp;reject&nbsp;it&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;terminator&nbsp;(*&nbsp;a&nbsp;terminating&nbsp;character&nbsp;at&nbsp;this&nbsp;point
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;in&nbsp;the&nbsp;scan&nbsp;(not&nbsp;part&nbsp;of&nbsp;token)&nbsp;*)
+&nbsp;&nbsp;);
+
+&nbsp;&nbsp;ScanState&nbsp;=&nbsp;(*&nbsp;The&nbsp;type&nbsp;of&nbsp;lexical&nbsp;scanning
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;control&nbsp;procedures&nbsp;*)
+&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;(CHAR,&nbsp;VAR&nbsp;ScanClass,&nbsp;VAR&nbsp;ScanState);
+</PRE>
+
+<P><HR>
+<A NAME="0207">
+<A HREF="#0204" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0206" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0208" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>High-Level String Conversion Modules</H2>
+
+<P>Separate high-level string conversion modules are defined for the whole number types (<TT>INTEGER</TT> and <TT>CARDINAL</TT>), and for the real number types (<TT>REAL</TT> and <TT>LONGREAL</TT>). These all use decimal notation. 
+<P>In calls of procedures converting from strings, the source parameter <TT>str</TT> is assumed to contain a string value (which is terminated by the string terminator character if the length of the string is less than the capacity of the array). While leading spaces are ignored, the entire remainder of the string has to be in the correct format for the conversion to take place. 
+<P>In calls of procedures converting to strings, the destination parameter <TT>str</TT> is assigned a string value (which is terminated by the string terminator character if the length of the string is less than the capacity of the array). If the destination parameter is of insufficient capacity, the string is truncated. Users may determine whether truncation will occur by using procedures such as <TT>LengthCard</TT> from the low-level string conversion modules | see 9.5.3.1.2. 
+<P><B>NOTE:</B> 
+<P>The string conversion procedures may be used with strings read by <TT>STextIO.ReadToken</TT> or <TT>TextIO.ReadToken</TT>, if it is required that entire space-character delimited tokens are in the correct format | see 9.2.2.1.2. 
+<P><UL>
+<LI><A HREF="#0208" TARGET=body>EXAMPLE - Conversion of strings read by ReadToken</A>
+<LI><A HREF="#0209" TARGET=body>Module WholeStr</A>
+<LI><A HREF="#0214" TARGET=body>Modules RealStr and LongStr</A>
+</UL>
+<P><HR>
+<A NAME="0208">
+<A HREF="#0207" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0207" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0209" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>EXAMPLE - Conversion of strings read by ReadToken</H3>
+
+<P>This example shows how space-character delimited tokens that cannot be converted to values of type <TT>CARDINAL</TT> can be replaced by descriptive text: 
+<P><PRE>firstOnLine&nbsp;:=&nbsp;TRUE;
+STextIO.ReadToken(inStr);
+WHILE&nbsp;SIOResult.ReadResult()&nbsp;&lt;&gt;&nbsp;SIOResult.endOfInput&nbsp;DO
+&nbsp;&nbsp;WholeStr.StrToCard(inStr,&nbsp;inCard,&nbsp;inRes);
+&nbsp;&nbsp;CASE&nbsp;inRes&nbsp;OF
+&nbsp;&nbsp;|&nbsp;ConvTypes.strAllRight&nbsp;..&nbsp;ConvTypes.strWrongFormat:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;IF&nbsp;firstOnLine&nbsp;THEN
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;firstOnLine&nbsp;:=&nbsp;FALSE
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ELSE
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;STextIO.WriteString(&quot;&nbsp;&quot;)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;END
+&nbsp;&nbsp;|&nbsp;ConvTypes.strEmpty:
+&nbsp;&nbsp;firstOnLine&nbsp;:=&nbsp;TRUE;
+&nbsp;&nbsp;STextIO.SkipLine
+&nbsp;&nbsp;END;
+&nbsp;&nbsp;CASE&nbsp;inRes&nbsp;OF
+&nbsp;&nbsp;|&nbsp;ConvTypes.strAllRight:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;STextIO.WriteString(inStr)
+&nbsp;&nbsp;|&nbsp;ConvTypes.strOutOfRange:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;STextIO.WriteString(&quot;out-of-range&quot;)
+&nbsp;&nbsp;|&nbsp;ConvTypes.strWrongFormat:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;STextIO.WriteString(&quot;wrong-format&quot;)
+&nbsp;&nbsp;|&nbsp;ConvTypes.strEmpty:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;STextIO.WriteLn
+&nbsp;&nbsp;END;
+&nbsp;&nbsp;STextIO.ReadToken(inStr)
+END;
+</PRE>
+
+<P>It is assumed here that the capacity of the character array variable <TT>inStr</TT> is sufficient to accommodate the longest token in the input stream. 
+<P><HR>
+<A NAME="0209"><A NAME="StrToInt">
+<A HREF="#0207" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0208" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0210" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>Module WholeStr</H3>
+
+<P>The module <TT>WholeStr</TT> provides procedures for the conversion of values of the type <TT>INTEGER</TT> and the type <TT>CARDINAL</TT> to and from strings. 
+<P>The string form of a signed whole number is 
+<P><PRE>[&quot;+&quot;&nbsp;|&nbsp;&quot;-&quot;],&nbsp;decimal&nbsp;digit,&nbsp;{decimal&nbsp;digit}
+</PRE>
+
+<P>The string form of an unsigned whole number is 
+<P><PRE>decimal&nbsp;digit,&nbsp;{decimal&nbsp;digit}
+</PRE>
+
+<P><UL>
+<LI><A HREF="#0210" TARGET=body>StrToInt - Convert string to INTEGER</A>
+<LI><A HREF="#0211" TARGET=body>IntToStr - Convert INTEGER to string</A>
+<LI><A HREF="#0212" TARGET=body>StrToCard - Convert string to CARDINAL</A>
+<LI><A HREF="#0213" TARGET=body>CardToStr - Convert CARDINAL to string</A>
+</UL>
+<P><HR>
+<A NAME="0210"><A NAME="IntToStr">
+<A HREF="#0209" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0209" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0211" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H4>StrToInt - Convert string to INTEGER</H4>
+ 
+<P><PRE>PROCEDURE&nbsp;StrToInt&nbsp;(str:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;int:&nbsp;INTEGER;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;res:&nbsp;ConvResults);
+</PRE>
+
+<P>Module <TT><A HREF="#0209" TARGET=body>WholeStr</A></TT>
+<P>The procedure <TT>StrToInt</TT> ignores leading spaces in <TT>str</TT> and assigns values to <TT>int</TT> and <TT>res</TT> as follows: 
+<DL>
+ 
+<DT><TT>strAllRight</TT></DT>
+<DD>if the remainder of <TT>str</TT> represents a complete signed whole number in the range of the type <TT>INTEGER</TT>; the value of this number is assigned to <TT>int</TT>; </DD>
+<DT><TT>strOutOfRange</TT></DT>
+<DD>if the remainder of <TT>str</TT> represents a complete signed whole number but its value is out of the range of the type <TT>INTEGER</TT>; the value <TT>MAX(INTEGER)</TT> or <TT>MIN(INTEGER)</TT> is assigned to <TT>int</TT> according to the sign of the number; </DD>
+<DT><TT>strWrongFormat</TT></DT>
+<DD>if there are remaining characters in <TT>str</TT> but these are not in the form of a complete signed whole number; the value of <TT>int</TT> is not defined; </DD>
+<DT><TT>strEmpty</TT></DT>
+<DD>if there are no remaining characters in <TT>str</TT> | the value of <TT>int</TT> is not defined. </DD>
+</DL>
+
+<P><HR>
+<A NAME="0211"><A NAME="StrToCard">
+<A HREF="#0209" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0210" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0212" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H4>IntToStr - Convert INTEGER to string</H4>
+ 
+<P><PRE>PROCEDURE&nbsp;IntToStr&nbsp;(int:&nbsp;INTEGER;&nbsp;VAR&nbsp;str:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR);
+</PRE>
+
+<P>Module <TT><A HREF="#0209" TARGET=body>WholeStr</A></TT>
+<P>The procedure <TT>IntToStr</TT> assigns to <TT>str</TT> the possibly truncated string corresponding to the value of <TT>int</TT>. A sign is included only for negative values. 
+<P><HR>
+<A NAME="0212"><A NAME="CardToStr">
+<A HREF="#0209" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0211" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0213" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H4>StrToCard - Convert string to CARDINAL</H4>
+ 
+<P><PRE>PROCEDURE&nbsp;StrToCard&nbsp;(str:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;card:&nbsp;CARDINAL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;res:&nbsp;ConvResults);
+</PRE>
+
+<P>Module <TT><A HREF="#0209" TARGET=body>WholeStr</A></TT>
+<P>The procedure <TT>StrToCard</TT> ignores leading spaces in <TT>str</TT> and assigns values to <TT>card</TT> and <TT>res</TT> as follows: 
+<DL>
+ 
+<DT><TT>strAllRight</TT></DT>
+<DD>if the remainder of <TT>str</TT> represents a complete unsigned whole number in the range of the type <TT>CARDINAL</TT>; the value of this number is assigned to <TT>card</TT>; </DD>
+<DT><TT>strOutOfRange</TT></DT>
+<DD>if the remainder of <TT>str</TT> represents a complete unsigned whole number but its value is out of the range of the type <TT>CARDINAL</TT>; the value <TT>MAX(CARDINAL)</TT> is assigned to <TT>card</TT>; </DD>
+<DT><TT>strWrongFormat</TT></DT>
+<DD>if there are remaining characters in <TT>str</TT> but these are not in the form of a complete unsigned whole number; the value of <TT>card</TT> is not defined; </DD>
+<DT><TT>strEmpty</TT></DT>
+<DD>if there are no remaining characters in <TT>str</TT>; the value of <TT>card</TT> is not defined. </DD>
+</DL>
+
+<P><HR>
+<A NAME="0213">
+<A HREF="#0209" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0212" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0214" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H4>CardToStr - Convert CARDINAL to string</H4>
+ 
+<P><PRE>PROCEDURE&nbsp;CardToStr&nbsp;(card:&nbsp;CARDINAL;&nbsp;VAR&nbsp;str:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR);
+</PRE>
+
+<P>Module <TT><A HREF="#0209" TARGET=body>WholeStr</A></TT>
+<P>The procedure <TT>CardToStr</TT> assigns to <TT>str</TT> the possibly truncated string corresponding to the value of <TT>card</TT>. 
+<P><HR>
+<A NAME="0214"><A NAME="StrToReal">
+<A HREF="#0207" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0213" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0215" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>Modules RealStr and LongStr</H3>
+
+<P>The modules <TT>RealStr</TT> and <TT>LongStr</TT> provide procedures for the conversion of real numbers to and from strings. In the case of <TT>RealStr</TT>, real number parameters are of the type <TT>REAL</TT>. In the case of <TT>LongStr</TT>, real number parameters are of the type <TT>LONGREAL</TT>. 
+<P>The semantics of the two modules is the same, except that when module <TT>RealStr</TT> refers to the pervasive type <TT>REAL</TT>, the corresponding procedure in <TT>LongStr</TT> refers to the pervasive type <TT>LONGREAL</TT>. 
+<P><B>NOTE:</B> 
+<P>The above statement is merely to avoid needless repetition of the semantics for <TT>LongStr</TT>. 
+<P>The string form of a signed fixed-point real number is 
+<P><PRE>[&quot;+&quot;&nbsp;|&nbsp;&quot;-&quot;],&nbsp;decimal&nbsp;digit,&nbsp;{decimal&nbsp;digit},
+[&quot;.&quot;,&nbsp;{decimal&nbsp;digit}]
+</PRE>
+
+<P>The string form of a signed floating-point real number is 
+<P><PRE>signed&nbsp;fixed-point&nbsp;real&nbsp;number,
+&quot;E&quot;|&quot;e&quot;,&nbsp;[&quot;+&quot;&nbsp;|&nbsp;&quot;-&quot;],&nbsp;decimal&nbsp;digit,&nbsp;{decimal&nbsp;digit}
+</PRE>
+
+<P><UL>
+<LI><A HREF="#0215" TARGET=body>StrToReal - Convert string to real</A>
+<LI><A HREF="#0216" TARGET=body>RealToFloat - Convert real to string (float notation)</A>
+<LI><A HREF="#0217" TARGET=body>RealToEng - Convert real to string (eng. notation)</A>
+<LI><A HREF="#0218" TARGET=body>RealToFixed - Convert real to string (fixed notation)</A>
+<LI><A HREF="#0219" TARGET=body>RealToStr - Convert real to string (auto notation)</A>
+</UL>
+<P><HR>
+<A NAME="0215"><A NAME="RealToFloat">
+<A HREF="#0214" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0214" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0216" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H4>StrToReal - Convert string to real</H4>
+ 
+<P><PRE>PROCEDURE&nbsp;StrToReal&nbsp;(str:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;real:&nbsp;REAL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;res:&nbsp;ConvResults);
+PROCEDURE&nbsp;StrToReal&nbsp;(str:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;real:&nbsp;LONGREAL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;res:&nbsp;ConvResults);
+</PRE>
+
+<P>Modules: <TT><A HREF="#0214" TARGET=body>RealStr</A></TT>, <TT><A HREF="#0214" TARGET=body>LongStr</A></TT>
+<P>The procedure <TT>StrToReal</TT> ignores leading spaces in <TT>str</TT> and assigns values to <TT>res</TT> and <TT>real</TT> as follows: 
+<DL>
+ 
+<DT><TT>strAllRight</TT></DT>
+<DD>if the remainder of <TT>str</TT> represents a complete signed real number in the range of the type of <TT>real</TT>; the value of this number is assigned to real; </DD>
+<DT><TT>strOutOfRange</TT></DT>
+<DD>if the remainder of <TT>str</TT> represents a complete signed real number but its value is out of the range of the type of <TT>real</TT>; the maximum or minimum value of the type of <TT>real</TT> is assigned to <TT>real</TT> according to the sign of the number; </DD>
+<DT><TT>strWrongFormat</TT></DT>
+<DD>if there are remaining characters in <TT>str</TT> but these are not in the form of a complete signed real number; the value of <TT>real</TT> is not defined; </DD>
+<DT><TT>strEmpty</TT></DT>
+<DD>if there are no remaining characters in <TT>str</TT>; the value of <TT>real</TT> is not defined. </DD>
+</DL>
+
+<P><HR>
+<A NAME="0216"><A NAME="RealToEng">
+<A HREF="#0214" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0215" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0217" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H4>RealToFloat - Convert real to string (float notation)</H4>
+ 
+<P><PRE>PROCEDURE&nbsp;RealToFloat&nbsp;(real:&nbsp;REAL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sigFigs:&nbsp;CARDINAL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;str:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR);
+PROCEDURE&nbsp;RealToFloat&nbsp;(real:&nbsp;LONGREAL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sigFigs:&nbsp;CARDINAL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;str:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR);
+</PRE>
+
+<P>Modules: <TT><A HREF="#0214" TARGET=body>RealStr</A></TT>, <TT><A HREF="#0214" TARGET=body>LongStr</A></TT>
+<P>The procedure <TT>RealToFloat</TT> assigns to <TT>str</TT> the possibly truncated string corresponding to the value of <TT>real</TT> in floating-point form. A sign is included only for negative values. One significant digit is included in the whole number part. The signed exponent part is included only if the exponent value is not 0. If the value of <TT>sigFigs</TT> is greater than 0, that number of significant digits is included, otherwise an implementation-defined number of significant digits is included. The decimal point is not included if there are no significant digits in the fractional part. 
+<P><HR>
+<A NAME="0217"><A NAME="RealToFixed">
+<A HREF="#0214" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0216" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0218" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H4>RealToEng - Convert real to string (eng. notation)</H4>
+ 
+<P><PRE>PROCEDURE&nbsp;RealToEng&nbsp;(real:&nbsp;REAL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sigFigs:&nbsp;CARDINAL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;str:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR);
+PROCEDURE&nbsp;RealToEng&nbsp;(real:&nbsp;LONGREAL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sigFigs:&nbsp;CARDINAL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;str:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR);
+</PRE>
+
+<P>Modules: <TT><A HREF="#0214" TARGET=body>RealStr</A></TT>, <TT><A HREF="#0214" TARGET=body>LongStr</A></TT>
+<P>The procedure <TT>RealToEng</TT> behaves like the procedure <TT><A HREF="#0216" TARGET=body>RealToFloat</A></TT> except that the number is scaled with one to three digits in the whole number part and with an exponent that is a multiple of three. 
+<P><HR>
+<A NAME="0218"><A NAME="RealToStr">
+<A HREF="#0214" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0217" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0219" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H4>RealToFixed - Convert real to string (fixed notation)</H4>
+ 
+<P><PRE>PROCEDURE&nbsp;RealToFixed&nbsp;(real:&nbsp;REAL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;place:&nbsp;INTEGER;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;str:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR);
+PROCEDURE&nbsp;RealToFixed&nbsp;(real:&nbsp;LONGREAL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;place:&nbsp;INTEGER;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;str:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR);
+</PRE>
+
+<P>Modules: <TT><A HREF="#0214" TARGET=body>RealStr</A></TT>, <TT><A HREF="#0214" TARGET=body>LongStr</A></TT>
+<P>The procedure <TT>RealToFixed</TT> assigns to <TT>str</TT> the possibly truncated string corresponding to the value of <TT>real</TT> in fixed-point form. A sign is included only for negative values. At least one digit is included in the whole number part. The value is rounded to the given value of <TT>place</TT> relative to the decimal point. The decimal point is suppressed if <TT>place</TT> is less than 0. 
+<P><HR>
+<A NAME="0219">
+<A HREF="#0214" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0218" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0220" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H4>RealToStr - Convert real to string (auto notation)</H4>
+ 
+<P><PRE>PROCEDURE&nbsp;RealToStr&nbsp;(real:&nbsp;REAL;&nbsp;VAR&nbsp;str:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR);
+PROCEDURE&nbsp;RealToStr&nbsp;(real:&nbsp;LONGREAL;&nbsp;VAR&nbsp;str:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR);
+</PRE>
+
+<P>Modules: <TT><A HREF="#0214" TARGET=body>RealStr</A></TT>, <TT><A HREF="#0214" TARGET=body>LongStr</A></TT>
+<P>If the sign and magnitude of <TT>real</TT> can be shown within the capacity of <TT>str</TT>, the call <TT>RealToStr(real,str)</TT> behaves like the call <TT>RealToFixed(real,place,str)</TT>, with a value of <TT>place</TT> chosen to fill exactly the remainder of <TT>str</TT>. Otherwise, the call behaves as the call <TT>RealToFloat(real,sigFigs,str)</TT>, with a value of <TT>sigFigs</TT> of at least one, but otherwise limited to the number of significant digits that can be included together with the sign and exponent part in <TT>str</TT>. 
+<P><HR>
+<A NAME="0220">
+<A HREF="#0204" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0219" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0221" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Low-Level String Conversion Modules</H2>
+
+<P>Separate low-level string conversion modules are defined for the whole number types (<TT>INTEGER</TT> and <TT>CARDINAL</TT>), and for the real number types (<TT>REAL</TT> and <TT>LONGREAL</TT>). These all use decimal notation. 
+<P>Procedures are defined to return the length of the string that is required to represent a given value, to return the format of a given string, to return the value of a string known to be in the correct format for conversion, and to allow control of lexical scanning of character sequences. 
+<P><B>NOTE:</B> 
+<P>The types designated by <TT>ConvTypes.ScanClass</TT> and <TT>ConvTypes.ScanState</TT> are not given aliases in the low-level conversion modules. This is because clients of a separate finite state interpreter module need to refer only to procedures such as <TT>WholeConv.ScanInt</TT>, which represent the start state, and not to the types themselves. 
+<P><UL>
+<LI><A HREF="#0221" TARGET=body>EXAMPLE - Use of ScanInt</A>
+<LI><A HREF="#0222" TARGET=body>Module WholeConv</A>
+<LI><A HREF="#0232" TARGET=body>Modules RealConv and LongConv</A>
+</UL>
+<P><HR>
+<A NAME="0221">
+<A HREF="#0220" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0220" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0222" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>EXAMPLE - Use of ScanInt</H3>
+
+<P>The following procedure uses <TT>WholeConv.ScanInt</TT> to locate the position of the first character in a string that follows any leading spaces and to locate the position of the first character that is not part of an integer. These positions will coincide if the string does not contain an integer after any leading spaces, and will be equal to the string length if no such character is contained in the string. 
+<P><PRE>PROCEDURE&nbsp;FindInt(str:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;&nbsp;VAR&nbsp;first,&nbsp;next:&nbsp;CARDINAL);
+VAR
+&nbsp;&nbsp;ch:&nbsp;CHAR;
+&nbsp;&nbsp;len,&nbsp;index:&nbsp;CARDINAL;
+&nbsp;&nbsp;state:&nbsp;ConvTypes.ConvState;
+&nbsp;&nbsp;class:&nbsp;ConvTypes.ConvClass;
+BEGIN
+&nbsp;&nbsp;len&nbsp;:=&nbsp;LENGTH(str);
+&nbsp;&nbsp;index&nbsp;:=&nbsp;0;
+&nbsp;&nbsp;first&nbsp;:=&nbsp;len;
+&nbsp;&nbsp;state&nbsp;:=&nbsp;WholeConv.ScanInt;
+&nbsp;&nbsp;LOOP
+&nbsp;&nbsp;&nbsp;&nbsp;IF&nbsp;index&nbsp;=&nbsp;len&nbsp;THEN&nbsp;EXIT&nbsp;END;
+&nbsp;&nbsp;&nbsp;&nbsp;state(str[index],&nbsp;class,&nbsp;state);
+&nbsp;&nbsp;&nbsp;&nbsp;CASE&nbsp;class&nbsp;OF
+&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;ConvTypes.padding:
+&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;ConvTypes.valid:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;IF&nbsp;index&nbsp;&lt;&nbsp;first&nbsp;THEN&nbsp;first&nbsp;:=&nbsp;index&nbsp;END;
+&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;ConvTypes.invalid,&nbsp;ConvTypes.terminator:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;EXIT
+&nbsp;&nbsp;&nbsp;&nbsp;END;
+&nbsp;&nbsp;&nbsp;&nbsp;INC(index)
+&nbsp;&nbsp;END;
+&nbsp;&nbsp;next&nbsp;:=&nbsp;index
+END&nbsp;FindInt;
+</PRE>
+
+<P><HR>
+<A NAME="0222"><A NAME="ScanInt">
+<A HREF="#0220" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0221" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0223" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>Module WholeConv</H3>
+
+<P>The module <TT>WholeConv</TT> provides low-level string conversion procedures for values of the type <TT>INTEGER</TT> and values of the type <TT>CARDINAL</TT>. 
+<P><UL>
+<LI><A HREF="#0223" TARGET=body>ScanInt - Scan one character of INTEGER</A>
+<LI><A HREF="#0224" TARGET=body>FormatInt - Query INTEGER format</A>
+<LI><A HREF="#0225" TARGET=body>ValueInt - Query INTEGER value</A>
+<LI><A HREF="#0226" TARGET=body>LengthInt - Query INTEGER length</A>
+<LI><A HREF="#0227" TARGET=body>ScanCard - Scan one character of CARDINAL</A>
+<LI><A HREF="#0228" TARGET=body>FormatCard - Query CARDINAL format</A>
+<LI><A HREF="#0229" TARGET=body>ValueCard - Query CARDINAL value</A>
+<LI><A HREF="#0230" TARGET=body>LengthCard - Query CARDINAL length</A>
+<LI><A HREF="#0231" TARGET=body>IsWholeConvException - Query exceptional state</A>
+</UL>
+<P><HR>
+<A NAME="0223"><A NAME="FormatInt">
+<A HREF="#0222" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0222" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0224" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H4>ScanInt - Scan one character of INTEGER</H4>
+ 
+<P><PRE>PROCEDURE&nbsp;ScanInt&nbsp;(inputCh:&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;chClass:&nbsp;ConvTypes.ScanClass;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;nextState:&nbsp;ConvTypes.ScanState);
+</PRE>
+
+<P>Module <TT><A HREF="#0222" TARGET=body>WholeConv</A></TT>
+<P>The procedure <TT>ScanInt</TT> assigns values to <TT>chClass</TT> and <TT>nextState</TT> depending upon the value of <TT>inputCh</TT> as shown in the following table: 
+<P ALIGN=CENTER><TABLE CELLSPACING=0>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: solid solid none solid;border-width: 1px 1px 0px 1px">Procedure </TD>
+<TD  STYLE="padding:0px 3px;border-style: solid solid none none;border-width: 1px 1px 0px 0px">inputCh </TD>
+<TD  STYLE="padding:0px 3px;border-style: solid solid none none;border-width: 1px 1px 0px 0px">chClass </TD>
+<TD  STYLE="padding:0px 3px;border-style: solid solid none none;border-width: 1px 1px 0px 0px">nextState </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none solid;border-width: 0px 1px 0px 1px">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">a procedure with </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid solid solid;border-width: 0px 1px 1px 1px">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid solid none;border-width: 0px 1px 1px 0px">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid solid none;border-width: 0px 1px 1px 0px">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid solid none;border-width: 0px 1px 1px 0px">behaviour of </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none solid;border-width: 0px 1px 0px 1px">ScanInt </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">space </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">padding </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">ScanInt </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none solid;border-width: 0px 1px 0px 1px">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">sign </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">valid </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><I>S </I></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none solid;border-width: 0px 1px 0px 1px">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">decimal digit </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">valid </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><I>W </I></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none solid;border-width: 0px 1px 0px 1px">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">other </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">invalid </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">ScanInt </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none solid;border-width: 0px 1px 0px 1px"><I>S </I></TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">decimal digit </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">valid </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><I>W </I></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none solid;border-width: 0px 1px 0px 1px">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">other </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">invalid </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><I>S </I></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none solid;border-width: 0px 1px 0px 1px"><I>W </I></TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">decimal digit </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">valid </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><I>W </I></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid solid solid;border-width: 0px 1px 1px 1px">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid solid none;border-width: 0px 1px 1px 0px">other </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid solid none;border-width: 0px 1px 1px 0px">terminator </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid solid none;border-width: 0px 1px 1px 0px">| </TD>
+</TR>
+</TABLE>
+<P><B>NOTE:</B> 
+<P>The procedure <TT>ScanInt</TT> corresponds to the start state of a finite state machine to scan for a character sequence that forms a signed whole number. Like <TT><A HREF="#0227" TARGET=body>ScanCard</A></TT> and the corresponding procedures in the other low-level string conversion modules, it may be used to control the actions of a finite state interpreter. As long as the value of <TT>chClass</TT> is other than <TT>terminator</TT> or <TT>invalid</TT>, the interpreter should call the procedure whose value is assigned to <TT>nextState</TT> by the previous call, supplying the next character from the sequence to be scanned. It may be appropriate for the interpreter to ignore characters classified as <TT>invalid</TT>, and proceed with the scan. This would be the case, for example, with interactive input, if only valid characters are being echoed in order to give interactive users an immediate indication of badly-formed data. If the character sequence ends before one is classified as <TT>terminator</TT>, the string-terminator character should be supplied as input to the finite state scanner. If the preceding character sequence formed a complete number, the string-terminator is classified as <TT>terminator</TT>, otherwise it is classified as <TT>invalid</TT>. 
+<P><HR>
+<A NAME="0224"><A NAME="ValueInt">
+<A HREF="#0222" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0223" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0225" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H4>FormatInt - Query INTEGER format</H4>
+ 
+<P><PRE>PROCEDURE&nbsp;FormatInt&nbsp;(str:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR):&nbsp;ConvResults;
+</PRE>
+
+<P>Module <TT><A HREF="#0222" TARGET=body>WholeConv</A></TT>
+<P>The function procedure <TT>FormatInt</TT> queries the format of <TT>str</TT> and returns: 
+<DL>
+ 
+<DT><TT>strAllRight</TT></DT>
+<DD>if <TT>str</TT> has a value representing a complete signed whole number that is in the range of the type <TT>INTEGER</TT>; </DD>
+<DT><TT>strOutOfRange</TT></DT>
+<DD>if <TT>str</TT> has a value representing a complete signed whole number that is not in the range of <TT>INTEGER</TT>; </DD>
+<DT><TT>strWrongFormat</TT></DT>
+<DD>if <TT>str</TT> has a value with remaining characters that do not form a complete signed whole number; </DD>
+<DT><TT>strEmpty</TT></DT>
+<DD>if <TT>str</TT> has a value with no remaining characters; </DD>
+</DL>
+
+<P><TT>FormatInt</TT> ignores any leading space characters in <TT>str</TT>. 
+<P><HR>
+<A NAME="0225"><A NAME="LengthInt">
+<A HREF="#0222" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0224" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0226" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H4>ValueInt - Query INTEGER value</H4>
+ 
+<P><PRE>PROCEDURE&nbsp;ValueInt&nbsp;(str:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR):&nbsp;INTEGER;
+</PRE>
+
+<P>Module <TT><A HREF="#0222" TARGET=body>WholeConv</A></TT>
+<P>If <TT>str</TT> has a value representing a signed whole number, the function procedure <TT>ValueInt</TT> returns the <TT>INTEGER</TT> value that corresponds to that number. Otherwise, the <TT>WholeConv</TT> exception is raised. 
+<P><HR>
+<A NAME="0226"><A NAME="ScanCard">
+<A HREF="#0222" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0225" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0227" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H4>LengthInt - Query INTEGER length</H4>
+ 
+<P><PRE>PROCEDURE&nbsp;LengthInt&nbsp;(int:&nbsp;INTEGER):&nbsp;CARDINAL;
+</PRE>
+
+<P>Module <TT><A HREF="#0222" TARGET=body>WholeConv</A></TT>
+<P>The function procedure <TT>LengthInt</TT> returns the number of characters in the string representation of the value of <TT>int</TT>. 
+<P><B>NOTE:</B> 
+<P>This value corresponds to the capacity of an array <TT>str</TT> which is of the minimum capacity needed to avoid truncation of the result in the call <TT>WholeStr.IntToStr(int,str)</TT>. 
+<P><HR>
+<A NAME="0227"><A NAME="FormatCard">
+<A HREF="#0222" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0226" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0228" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H4>ScanCard - Scan one character of CARDINAL</H4>
+ 
+<P><PRE>PROCEDURE&nbsp;ScanCard&nbsp;(inputCh:&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;chClass:&nbsp;ConvTypes.ScanClass;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;nextState:&nbsp;ConvTypes.ScanState);
+</PRE>
+
+<P>Module <TT><A HREF="#0222" TARGET=body>WholeConv</A></TT>
+<P>The procedure <TT>ScanCard</TT> assigns values to <TT>chClass</TT> and <TT>nextState</TT> depending upon the value of <TT>inputCh</TT> as shown in the following table: 
+<P ALIGN=CENTER><TABLE CELLSPACING=0>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: solid solid none solid;border-width: 1px 1px 0px 1px">Procedure </TD>
+<TD  STYLE="padding:0px 3px;border-style: solid solid none none;border-width: 1px 1px 0px 0px">inputCh </TD>
+<TD  STYLE="padding:0px 3px;border-style: solid solid none none;border-width: 1px 1px 0px 0px">chClass </TD>
+<TD  STYLE="padding:0px 3px;border-style: solid solid none none;border-width: 1px 1px 0px 0px">nextState </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none solid;border-width: 0px 1px 0px 1px">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">a procedure with </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid solid solid;border-width: 0px 1px 1px 1px">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid solid none;border-width: 0px 1px 1px 0px">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid solid none;border-width: 0px 1px 1px 0px">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid solid none;border-width: 0px 1px 1px 0px">behaviour of </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none solid;border-width: 0px 1px 0px 1px">ScanCard </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">space </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">padding </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">ScanCard </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none solid;border-width: 0px 1px 0px 1px">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">decimal digit </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">valid </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><I>W </I></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none solid;border-width: 0px 1px 0px 1px">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">other </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">invalid </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">ScanCard </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none solid;border-width: 0px 1px 0px 1px"><I>W </I></TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">decimal digit </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">valid </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><I>W </I></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid solid solid;border-width: 0px 1px 1px 1px">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid solid none;border-width: 0px 1px 1px 0px">other </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid solid none;border-width: 0px 1px 1px 0px">terminator </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid solid none;border-width: 0px 1px 1px 0px">| </TD>
+</TR>
+</TABLE>
+<P><HR>
+<A NAME="0228"><A NAME="ValueCard">
+<A HREF="#0222" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0227" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0229" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H4>FormatCard - Query CARDINAL format</H4>
+ 
+<P><PRE>PROCEDURE&nbsp;FormatCard&nbsp;(str:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR):&nbsp;ConvResults;
+</PRE>
+
+<P>Module <TT><A HREF="#0222" TARGET=body>WholeConv</A></TT>
+<P>The function procedure <TT>FormatCard</TT> queries the format of <TT>str</TT> and returns: 
+<DL>
+ 
+<DT><TT>strAllRight</TT></DT>
+<DD>if <TT>str</TT> has a value representing a complete unsigned whole number that is in the range of the type <TT>CARDINAL</TT>; </DD>
+<DT><TT>strOutOfRange</TT></DT>
+<DD>if <TT>str</TT> has a value representing a complete unsigned whole number that is not in the range of <TT>CARDINAL</TT>; </DD>
+<DT><TT>strWrongFormat</TT></DT>
+<DD>if <TT>str</TT> has a value with remaining characters that do not form a complete unsigned whole number; </DD>
+<DT><TT>strEmpty</TT></DT>
+<DD>if <TT>str</TT> has a value with no remaining characters; </DD>
+</DL>
+
+<P><TT>FormatCard</TT> ignores any leading space characters in <TT>str</TT>. 
+<P><HR>
+<A NAME="0229"><A NAME="LengthCard">
+<A HREF="#0222" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0228" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0230" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H4>ValueCard - Query CARDINAL value</H4>
+ 
+<P><PRE>PROCEDURE&nbsp;ValueCard&nbsp;(str:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR):&nbsp;CARDINAL;
+</PRE>
+
+<P>Module <TT><A HREF="#0222" TARGET=body>WholeConv</A></TT>
+<P>If <TT>str</TT> has a value representing an unsigned whole number, the function procedure <TT>ValueCard</TT> returns the <TT>CARDINAL</TT> value that corresponds to that number. Otherwise, the <TT><A HREF="#0222" TARGET=body>WholeConv</A></TT> exception is raised. 
+<P><HR>
+<A NAME="0230"><A NAME="IsWholeConvException">
+<A HREF="#0222" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0229" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0231" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H4>LengthCard - Query CARDINAL length</H4>
+ 
+<P><PRE>PROCEDURE&nbsp;LengthCard&nbsp;(card:&nbsp;CARDINAL):&nbsp;CARDINAL;
+</PRE>
+
+<P>Module <TT><A HREF="#0222" TARGET=body>WholeConv</A></TT>
+<P>The function procedure <TT>LengthCard</TT> returns the number of characters in the string representation of the value of <TT>card</TT>. 
+<P><B>NOTE:</B> 
+<P>This value corresponds to the capacity of an array <TT>str</TT> which is of the minimum capacity needed to avoid truncation of the result in the call <TT>WholeStr.CardToStr(card,str)</TT>. 
+<P><HR>
+<A NAME="0231">
+<A HREF="#0222" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0230" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0232" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H4>IsWholeConvException - Query exceptional state</H4>
+ 
+<P><PRE>PROCEDURE&nbsp;IsWholeConvException&nbsp;():&nbsp;BOOLEAN;
+</PRE>
+
+<P>Module <TT><A HREF="#0222" TARGET=body>WholeConv</A></TT>
+<P>The function procedure <TT>IsWholeConvException</TT> returns <TT>TRUE</TT> if the calling coroutine is in the state of exceptional execution because of the raising of the <TT><A HREF="#0222" TARGET=body>WholeConv</A></TT> exception, and <TT>FALSE</TT> otherwise. 
+<P><HR>
+<A NAME="0232"><A NAME="ScanReal">
+<A HREF="#0220" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0231" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0233" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>Modules RealConv and LongConv</H3>
+
+<P>The modules <TT>RealConv</TT> and <TT>LongConv</TT> provide low-level string conversion procedures for values of the type <TT>REAL</TT> and values of the type <TT>LONGREAL</TT>. In the case of <TT>RealConv</TT>, real number parameters are of the type <TT>REAL</TT>. In the case of <TT>LongConv</TT>, real number parameters are of the type <TT>LONGREAL</TT>. 
+<P>The semantics of the two modules are the same, except that when module <TT>RealConv</TT> refers to the pervasive type <TT>REAL</TT>, the corresponding procedure in <TT>LongConv</TT> refers to the pervasive type <TT>LONGREAL</TT>. 
+<P><B>NOTE:</B> 
+<P>The above statement is merely to avoid needless repetition of the semantics for <TT>LongConv</TT>. 
+<P><UL>
+<LI><A HREF="#0233" TARGET=body>ScanReal - Scan one character of real</A>
+<LI><A HREF="#0234" TARGET=body>FormatReal - Query real format</A>
+<LI><A HREF="#0235" TARGET=body>ValueReal - Query real value</A>
+<LI><A HREF="#0236" TARGET=body>LengthFloatReal - Query float length</A>
+<LI><A HREF="#0237" TARGET=body>LengthEngReal - Query engineering length</A>
+<LI><A HREF="#0238" TARGET=body>LengthFixedReal - Query fixed length</A>
+<LI><A HREF="#0239" TARGET=body>IsRConvException - Query exceptional state</A>
+</UL>
+<P><HR>
+<A NAME="0233"><A NAME="FormatReal">
+<A HREF="#0232" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0232" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0234" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H4>ScanReal - Scan one character of real</H4>
+ 
+<P><PRE>PROCEDURE&nbsp;ScanReal&nbsp;(inputCh:&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;chClass:&nbsp;ConvTypes.ScanClass;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;nextState:&nbsp;ConvTypes.ScanState);
+PROCEDURE&nbsp;ScanReal&nbsp;(inputCh:&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;chClass:&nbsp;ConvTypes.ScanClass;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;nextState:&nbsp;ConvTypes.ScanState);
+</PRE>
+
+<P>Modules: <TT><A HREF="#0232" TARGET=body>RealConv</A></TT>, <TT><A HREF="#0232" TARGET=body>LongConv</A></TT>
+<P>The procedure <TT>ScanReal</TT> assigns values to <TT>chClass</TT> and <TT>nextState</TT> depending upon the value of <TT>inputCh</TT> as shown in the following table: 
+<P ALIGN=CENTER><TABLE CELLSPACING=0>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: solid solid none solid;border-width: 1px 1px 0px 1px">Procedure </TD>
+<TD  STYLE="padding:0px 3px;border-style: solid solid none none;border-width: 1px 1px 0px 0px">inputCh </TD>
+<TD  STYLE="padding:0px 3px;border-style: solid solid none none;border-width: 1px 1px 0px 0px">chClass </TD>
+<TD  STYLE="padding:0px 3px;border-style: solid solid none none;border-width: 1px 1px 0px 0px">nextState </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none solid;border-width: 0px 1px 0px 1px">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">a procedure with </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid solid solid;border-width: 0px 1px 1px 1px">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid solid none;border-width: 0px 1px 1px 0px">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid solid none;border-width: 0px 1px 1px 0px">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid solid none;border-width: 0px 1px 1px 0px">behaviour of </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none solid;border-width: 0px 1px 0px 1px">ScanReal </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">space </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">padding </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">ScanReal </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none solid;border-width: 0px 1px 0px 1px">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">sign </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">valid </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><I>RS </I></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none solid;border-width: 0px 1px 0px 1px">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">decimal digit </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">valid </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><I>P </I></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none solid;border-width: 0px 1px 0px 1px">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">other </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">invalid </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">ScanReal </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none solid;border-width: 0px 1px 0px 1px"><I>RS </I></TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">decimal digit </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">valid </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><I>P </I></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none solid;border-width: 0px 1px 0px 1px">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">other </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">invalid </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><I>RS </I></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none solid;border-width: 0px 1px 0px 1px"><I>P </I></TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">decimal digit </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">valid </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><I>P </I></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none solid;border-width: 0px 1px 0px 1px">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">&quot;.&quot; </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">valid </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><I>F </I></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none solid;border-width: 0px 1px 0px 1px">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">&quot;E&quot; </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">valid </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><I>E </I></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none solid;border-width: 0px 1px 0px 1px">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">other </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">terminator </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">| </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none solid;border-width: 0px 1px 0px 1px"><I>F </I></TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">decimal digit </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">valid </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><I>F </I></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none solid;border-width: 0px 1px 0px 1px">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">&quot;E&quot; </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">valid </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><I>E </I></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none solid;border-width: 0px 1px 0px 1px">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">other </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">terminator </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">| </TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none solid;border-width: 0px 1px 0px 1px"><I>E </I></TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">sign </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">valid </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><I>SE </I></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none solid;border-width: 0px 1px 0px 1px">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">decimal digit </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">valid </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><I>WE </I></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none solid;border-width: 0px 1px 0px 1px">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">other </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">invalid </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><I>E </I></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none solid;border-width: 0px 1px 0px 1px"><I>SE </I></TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">decimal digit </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">valid </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><I>WE </I></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none solid;border-width: 0px 1px 0px 1px">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">other </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">invalid </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><I>SE </I></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid none solid;border-width: 0px 1px 0px 1px"><I>WE </I></TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">decimal digit </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px">valid </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid none none;border-width: 0px 1px 0px 0px"><I>WE </I></TD>
+</TR>
+<TR>
+<TD  STYLE="padding:0px 3px;border-style: none solid solid solid;border-width: 0px 1px 1px 1px">&nbsp;</TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid solid none;border-width: 0px 1px 1px 0px">other </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid solid none;border-width: 0px 1px 1px 0px">terminator </TD>
+<TD  STYLE="padding:0px 3px;border-style: none solid solid none;border-width: 0px 1px 1px 0px">| </TD>
+</TR>
+</TABLE>
+<P><HR>
+<A NAME="0234"><A NAME="ValueReal">
+<A HREF="#0232" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0233" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0235" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H4>FormatReal - Query real format</H4>
+ 
+<P><PRE>PROCEDURE&nbsp;FormatReal&nbsp;(str:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR):&nbsp;ConvResults;
+PROCEDURE&nbsp;FormatReal&nbsp;(str:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR):&nbsp;ConvResults;
+</PRE>
+
+<P>Modules: <TT><A HREF="#0232" TARGET=body>RealConv</A></TT>, <TT><A HREF="#0232" TARGET=body>LongConv</A></TT>
+<P>The function procedure <TT>FormatReal</TT> queries the format of <TT>str</TT> and returns: 
+<DL>
+ 
+<DT><TT>strAllRight</TT></DT>
+<DD>if <TT>str</TT> has a value representing a complete signed real number that is in the range of the real number type corresponding to the module; </DD>
+<DT><TT>strOutOfRange</TT></DT>
+<DD>if <TT>str</TT> has a value representing a complete signed real number that is not in the range of the real number type corresponding to the module; </DD>
+<DT><TT>strWrongFormat</TT></DT>
+<DD>if <TT>str</TT> has a value with remaining characters that do not form a complete signed real number; </DD>
+<DT><TT>strEmpty</TT></DT>
+<DD>if <TT>str</TT> has a value with no remaining characters; </DD>
+</DL>
+
+<P><TT>FormatReal</TT> ignores any leading space characters in <TT>str</TT>. 
+<P><HR>
+<A NAME="0235"><A NAME="LengthFloatReal">
+<A HREF="#0232" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0234" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0236" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H4>ValueReal - Query real value</H4>
+ 
+<P><PRE>PROCEDURE&nbsp;ValueReal&nbsp;(str:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR):&nbsp;REAL;
+PROCEDURE&nbsp;ValueReal&nbsp;(str:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR):&nbsp;LONGREAL;
+</PRE>
+
+<P>Modules: <TT><A HREF="#0232" TARGET=body>RealConv</A></TT>, <TT><A HREF="#0232" TARGET=body>LongConv</A></TT>
+<P>If <TT>str</TT> has a value representing a real number, the function procedure <TT>ValueReal(str)</TT> returns the <TT>REAL</TT> (or <TT>LONGREAL</TT>) value that corresponds most closely to that number. Otherwise, an exception is raised. 
+<P><HR>
+<A NAME="0236"><A NAME="LengthEngReal">
+<A HREF="#0232" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0235" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0237" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H4>LengthFloatReal - Query float length</H4>
+ 
+<P><PRE>PROCEDURE&nbsp;LengthFloatReal&nbsp;(real:&nbsp;REAL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sigFigs:&nbsp;CARDINAL):&nbsp;CARDINAL;
+PROCEDURE&nbsp;LengthFloatReal&nbsp;(real:&nbsp;LONGREAL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sigFigs:&nbsp;CARDINAL):&nbsp;CARDINAL;
+</PRE>
+
+<P>Modules: <TT><A HREF="#0232" TARGET=body>RealConv</A></TT>, <TT><A HREF="#0232" TARGET=body>LongConv</A></TT>
+<P>The function procedure <TT>LengthFloatReal</TT> returns the number of characters in the floating-point string representation of the value of <TT>real</TT> when using <TT>sigFigs</TT> significant figures. 
+<P><B>NOTE:</B> 
+<P>This value corresponds to the capacity of an array <TT>str</TT> which is of the minimum capacity needed to avoid truncation of the result in the call <TT>RealStr.RealToFloat(real,sigFigs,str)</TT> (in the case of <TT>RealConv.LengthFloatReal)</TT> or the call <TT>LongStr.RealToFloat(real,sigFigs,str)</TT> (in the case of <TT>LongConv.LengthFloatReal)</TT>. 
+<P><HR>
+<A NAME="0237"><A NAME="LengthFixedReal">
+<A HREF="#0232" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0236" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0238" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H4>LengthEngReal - Query engineering length</H4>
+ 
+<P><PRE>PROCEDURE&nbsp;LengthEngReal&nbsp;(real:&nbsp;REAL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sigFigs:&nbsp;CARDINAL):&nbsp;CARDINAL;
+PROCEDURE&nbsp;LengthEngReal&nbsp;(real:&nbsp;LONGREAL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sigFigs:&nbsp;CARDINAL):&nbsp;CARDINAL;
+</PRE>
+
+<P>Modules: <TT><A HREF="#0232" TARGET=body>RealConv</A></TT>, <TT><A HREF="#0232" TARGET=body>LongConv</A></TT>
+<P>The function procedure <TT>LengthEngReal</TT> returns the number of characters in the floating-point engineering string representation of the value of <TT>real</TT> when using <TT>sigFigs</TT> significant figures. 
+<P><B>NOTE:</B> 
+<P>This value corresponds to the capacity of an array <TT>str</TT> which is of the minimum capacity needed to avoid truncation of the result in the call <TT>RealStr.RealToEng(real,sigFigs,str)</TT> (in the case of <TT>RealConv.LengthEngReal</TT>) or the call <TT>LongStr.RealToEng(real,sigFigs,str)</TT> (in the case of <TT>LongConv.LengthEngReal</TT>). 
+<P><HR>
+<A NAME="0238"><A NAME="IsRConvException">
+<A HREF="#0232" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0237" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0239" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H4>LengthFixedReal - Query fixed length</H4>
+ 
+<P><PRE>PROCEDURE&nbsp;LengthFixedReal&nbsp;(real:&nbsp;REAL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;place:&nbsp;INTEGER):&nbsp;CARDINAL;
+PROCEDURE&nbsp;LengthFixedReal&nbsp;(real:&nbsp;LONGREAL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;place:&nbsp;INTEGER):&nbsp;CARDINAL;
+</PRE>
+
+<P>Modules: <TT><A HREF="#0232" TARGET=body>RealConv</A></TT>, <TT><A HREF="#0232" TARGET=body>LongConv</A></TT>
+<P>The function procedure <TT>LengthFixedReal</TT> returns the number of characters in the fixed-point string representation of the value of <TT>real</TT> when rounded to the place relative to the decimal point given by the value of <TT>place</TT>. 
+<P><B>NOTE:</B> 
+<P>This value corresponds to the capacity of an array <TT>str</TT> which is of the minimum capacity needed to avoid truncation of the result in the call <TT>RealStr.RealToFixed(real,place,str)</TT> (in the case of <TT>RealConv.LengthFixedReal)</TT> or the call <TT>LongStr.RealToFixed(real,place,str)</TT> (in the case of <TT>LongConv.LengthFixedReal</TT>). 
+<P><HR>
+<A NAME="0239">
+<A HREF="#0232" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0238" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="isolib006.html#0240" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H4>IsRConvException - Query exceptional state</H4>
+ 
+<P><PRE>PROCEDURE&nbsp;IsRConvException&nbsp;():&nbsp;BOOLEAN;
+PROCEDURE&nbsp;IsRConvException&nbsp;():&nbsp;BOOLEAN;
+</PRE>
+
+<P>Modules: <TT><A HREF="#0232" TARGET=body>RealConv</A></TT>, <TT><A HREF="#0232" TARGET=body>LongConv</A></TT>
+<P>If the calling coroutine is in the state of exceptional execution because of the raising of the <TT><A HREF="#0232" TARGET=body>RealConv</A></TT> exception, the function procedure <TT>RealConv.IsRConvException</TT> returns <TT>TRUE</TT>; otherwise it returns <TT>FALSE</TT>. 
+<P>If the calling coroutine is in the state of exceptional execution because of the raising of the <TT><A HREF="#0232" TARGET=body>LongConv</A></TT> exception, the function procedure <TT>LongConv.IsRConvException</TT> returns <TT>TRUE</TT>; otherwise it returns <TT>FALSE</TT>. 
+<P>
+</BODY>
+</HTML>

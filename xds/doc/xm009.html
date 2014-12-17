@@ -1,0 +1,456 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 4.01 Transitional//EN">
+<HTML>
+<HEAD>
+<TITLE>Run-time support</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<P><HR>
+<A NAME="0488">
+<A HREF="xm000.html#root" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="xm008.html#0487" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0489" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H1>Run-time support</H1>
+
+<P>Some language features are implemented in the run-time library, including: 
+<UL>
+ 
+<LI>run-time checks </LI>
+<LI>exceptions and finalization </LI>
+<LI>coroutines </LI>
+<LI>memory management </LI>
+<LI>garbage collection </LI>
+<LI>postmortem history </LI>
+</UL>
+XDS provides an integrated Modula-2 and Oberon-2 run-time library, taking into account the possibility that modules written in both languages are used in one project. As a rule, if you do not use a particular feature, the part of RTS that implements that feature will not be added to your executable program. For example, if your program is written entirely in Modula-2, the Oberon-2 part of RTS (garbage collector, meta-language facilities) will not included. 
+<P>The integrated memory manager is described in <A HREF="#0489" TARGET=body>Memory management</A>. The section <A HREF="#0491" TARGET=body>The oberonRTS module</A> describes an interface to the Oberon-2 run-time support. 
+<P><UL>
+<LI><A HREF="#0489" TARGET=body>Memory management</A>
+<LI><A HREF="#0490" TARGET=body>Postmortem history</A>
+<LI><A HREF="#0491" TARGET=body>The oberonRTS module</A>
+</UL>
+<P><HR>
+<A NAME="0489">
+<A HREF="#0488" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0488" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0490" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Memory management</H2>
+
+<P>The XDS integrated memory manager implements 
+<UL>
+ 
+<LI>default memory allocation and deallocation procedures for Modula-2 (See the option <A HREF="xm005.html#0116" TARGET=body>STORAGE</A>); </LI>
+<LI>memory allocation procedures for Oberon-2; </LI>
+<LI>system memory allocation procedures for Oberon-2 (See <A HREF="xm008.html#0486" TARGET=body>NEW and DISPOSE</A>); </LI>
+<LI>the garbage collector. </LI>
+</UL>
+
+<P>The compiler provides the option <A HREF="xm005.html#0081" TARGET=body>GCAUTO</A> and the equation <A HREF="xm005.html#0150" TARGET=body>HEAPLIMIT</A> to control the memory management. They should be set when the top-level module of the program is compiled<FONT SIZE=2>&nbsp;/ We recommend to set them in the configuration file or a project file./ </FONT>. The compiler uses their values when generating the RTS initialization call. 
+<P>The equation <A HREF="xm005.html#0150" TARGET=body>HEAPLIMIT</A> specifies the maximum size of the heap in bytes. If that equation is set to zero, the run-time system automatically determines heap size at startup and dynamically adjusts it according to application&rsquo;s memory use and system load. 
+<P>The option <A HREF="xm005.html#0081" TARGET=body>GCAUTO</A> allows the garbage collector to be called implicitly. If the option is not set the garbage collector must be called explicitly (See <A HREF="#0491" TARGET=body>The oberonRTS module</A>). The garbage collector is called implicitly by the memory allocation procedure in the following cases: 
+<UL>
+ 
+<LI>a memory block of the requested length cannot be allocated; </LI>
+<LI>the amount of busy memory exceeds the limit specified by the <A HREF="xm005.html#0150" TARGET=body>HEAPLIMIT</A> equation (or the limit chosen by the run-ime system if <A HREF="xm005.html#0150" TARGET=body>HEAPLIMIT</A> was set to zero during compilation); </LI>
+<LI>the amount of busy memory exceeds some limit set internally by the memory manager for optimum performance. </LI>
+</UL>
+If the memory block still cannot be allocated after the call to the garbage collector, the exception <TT>XEXCEPTIONS.noMemoryException</TT> will be raised by the Oberon-2 memory allocation procedure<FONT SIZE=2>&nbsp;/In Modula-2 it has to return <TT>NIL</TT> if failed to allocate a memory block./ </FONT>. 
+<P><B>Note:</B> In a pure Modula-2 program, the garbage collector is never invoked, so you may set the <A HREF="xm005.html#0150" TARGET=body>HEAPLIMIT</A> equation to a very large value. 
+<P><HR>
+<A NAME="0490">
+<A HREF="#0488" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0489" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0491" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>Postmortem history</H2>
+
+<P>If the option <A HREF="xm005.html#0089" TARGET=body>GENHISTORY</A> was set ON when your program was compiled, the run-time system prints a stack of procedure calls on abnormal termination of your program, including 
+<UL>
+ 
+<LI>a file name </LI>
+<LI>a line number </LI>
+<LI>a program counter value </LI>
+<LI>a procedure name (sometimes) </LI>
+</UL>
+<B>Note:</B> all modules constituting your program should be compiled with the option <A HREF="xm005.html#0096" TARGET=body>LINENO</A> set ON. 
+<P><B>Note:</B> Turning the <A HREF="xm005.html#0089" TARGET=body>GENHISTORY</A> option ON slows down your code, cause the translator inserts extra RTS calls into every generated function. It should be done when you compile the main module of your program, in its header, compiler command line, or project (we recommend the last approach). 
+<P>The following example shows a sketch of a program and the procedure stack: 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;P1;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;uninitialized&nbsp;variable:&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;x:&nbsp;ARRAY&nbsp;[0..50]&nbsp;OF&nbsp;INTEGER;
+&nbsp;&nbsp;&nbsp;&nbsp;BEGIN
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;i:=i&nbsp;DIV&nbsp;j;&nbsp;&nbsp;&nbsp;(*&nbsp;line&nbsp;50&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;END&nbsp;P1;
+
+&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;P2;
+&nbsp;&nbsp;&nbsp;&nbsp;BEGIN
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;i:=i&nbsp;DIV&nbsp;j;&nbsp;&nbsp;&nbsp;(*&nbsp;line&nbsp;100&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;END&nbsp;P2;
+
+&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;P3;
+&nbsp;&nbsp;&nbsp;&nbsp;BEGIN
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;P1;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;line&nbsp;150&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;END&nbsp;P3;
+</PRE>
+
+<P><PRE>#RTS:&nbsp;No&nbsp;exception&nbsp;handler&nbsp;#6:&nbsp;zero&nbsp;or&nbsp;negative&nbsp;divisor
+------------------------------------------------------------
+Source&nbsp;file&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;LINE&nbsp;&nbsp;OFFSET&nbsp;&nbsp;PROCEDURE
+------------------------------------------------------------
+&quot;test.mod&quot;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;50&nbsp;000000DE
+&quot;test.mod&quot;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;100&nbsp;0000024C
+&quot;test.mod&quot;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;150&nbsp;0000051D
+</PRE>
+
+<P>It is obvious from the source text that the procedure <TT>P1</TT> cannot be called from <TT>P2</TT>. The second line is superfluous. 
+<P><HR>
+<A NAME="0491">
+<A HREF="#0488" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0490" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0492" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H2>The oberonRTS module</H2>
+
+<P>The run-time support (RTS) is an integral part of the Oberon-2 language implementation. It includes command activation, memory allocation, garbage collection and meta-language facilities. The module <B>oberonRTS</B> (written in Modula-2) provides an interface to these features. 
+<P><UL>
+<LI><A HREF="#0492" TARGET=body>Types and variables</A>
+<LI><A HREF="#0493" TARGET=body>Garbage collection</A>
+<LI><A HREF="#0496" TARGET=body>Object finalization</A>
+<LI><A HREF="#0500" TARGET=body>Meta-language facilities</A>
+<LI><A HREF="#0512" TARGET=body>Module iterators</A>
+</UL>
+<P><HR>
+<A NAME="0492">
+<A HREF="#0491" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0491" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0493" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H3>Types and variables</H3>
+
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;TYPE
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Module;&nbsp;&nbsp;(*&nbsp;run-time&nbsp;data&nbsp;structure&nbsp;for&nbsp;a&nbsp;module&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Type;&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;run-time&nbsp;data&nbsp;structure&nbsp;for&nbsp;a&nbsp;data&nbsp;type&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Command&nbsp;=&nbsp;PROC;&nbsp;(*&nbsp;parameterless&nbsp;procedure&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;CARDINAL&nbsp;=&nbsp;SYSTEM.CARD32;
+</PRE>
+
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;VAR
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;nullModule:&nbsp;Module;&nbsp;(*&nbsp;Null&nbsp;value&nbsp;of&nbsp;type&nbsp;Module&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;nullType:&nbsp;Type;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(*&nbsp;Null&nbsp;value&nbsp;of&nbsp;type&nbsp;Type&nbsp;*)
+</PRE>
+
+<P><HR>
+<A NAME="0493"><A NAME="Collect">
+<A HREF="#0491" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0492" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0494" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>Garbage collection</H3>
+
+<P><UL>
+<LI><A HREF="#0494" TARGET=body>Collect - Garbage Collector</A>
+<LI><A HREF="#0495" TARGET=body>GetInfo - Get Memory Information</A>
+</UL>
+<P><HR>
+<A NAME="0494"><A NAME="GetInfo">
+<A HREF="#0493" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0493" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0495" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H4>Collect - Garbage Collector</H4>
+ 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;Collect;</TT> 
+<P>Invokes the garbage collector. 
+<P><HR>
+<A NAME="0495">
+<A HREF="#0493" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0494" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0496" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H4>GetInfo - Get Memory Information</H4>
+ 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;GetInfo(VAR&nbsp;objects,&nbsp;busymem:&nbsp;CARDINAL);</TT> 
+<P>Returns the number of allocated objects and the total size of the allocated memory. 
+<P><HR>
+<A NAME="0496"><A NAME="Finalizer">
+<A HREF="#0491" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0495" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0497" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>Object finalization</H3>
+
+<P>A system with garbage collection has some specific features. Its main difference from systems without garbage collection is that deallocation of any system resource must be postponed until garbage collection. For example, let some data structure contain descriptors of open files. To close a file (i.e. to destroy its descriptor), one needs to know that there are no references to that file. This information becomes known only in the course of garbage collection. The same argument also holds for other kinds of resources. 
+<P>One immediate implication is that there must be some <I>finalization</I> mechanism: the ability to perform certain operations with an object when there are no more references to it. 
+<P>XDS allows a finalization procedure to be attached to any dynamically allocated object. 
+<P><UL>
+<LI><A HREF="#0497" TARGET=body>Finalizer - Type of a finalization procedure</A>
+<LI><A HREF="#0498" TARGET=body>InstallFinalizer - Set a finalizer to an object</A>
+</UL>
+<P><HR>
+<A NAME="0497"><A NAME="InstallFinalizer">
+<A HREF="#0496" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0496" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0498" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H4>Finalizer - Type of a finalization procedure</H4>
+ 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;TYPE&nbsp;Finalizer&nbsp;=&nbsp;PROCEDURE&nbsp;(SYSTEM.ADDRESS);</TT> 
+<P><HR>
+<A NAME="0498">
+<A HREF="#0496" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0497" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0499" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H4>InstallFinalizer - Set a finalizer to an object</H4>
+ 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;InstallFinalizer(f:&nbsp;Finalizer;</TT><BR>
+<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;obj:&nbsp;SYSTEM.ADDRESS);</TT> 
+<P>The procedure sets the finalization procedure <TT>f</TT> for the object <TT>obj</TT>. That procedure will be called when the object becomes unreachable. 
+<P><B>Note</B>: a finalizer is called on the GC stack (stack size is limited). 
+<P><A NAME="0499">
+<A HREF="#0498" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0498" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0500" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H5>Example</H5>
+
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;TYPE
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Obj&nbsp;=&nbsp;POINTER&nbsp;TO&nbsp;ObjDesc;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ObjDesc&nbsp;=&nbsp;RECORD
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;file:&nbsp;File;&nbsp;(*&nbsp;file&nbsp;handler&nbsp;*)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;END;
+
+&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;Final(x:&nbsp;SYSTEM.ADDRESS);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;o:&nbsp;Obj;
+&nbsp;&nbsp;&nbsp;&nbsp;BEGIN
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;o:=SYSTEM.CAST(Obj,x);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;IF&nbsp;o.file&nbsp;#&nbsp;NIL&nbsp;THEN&nbsp;Close(file)&nbsp;END;
+&nbsp;&nbsp;&nbsp;&nbsp;END&nbsp;Final;
+
+&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;Create():&nbsp;Obj;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;o:&nbsp;Obj;
+&nbsp;&nbsp;&nbsp;&nbsp;BEGIN
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;NEW(o);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;o.file:=NIL;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;oberonRTS.InstallFinalizer(Final,o);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TryOpen(o.file);
+&nbsp;&nbsp;&nbsp;&nbsp;END&nbsp;Create;
+</PRE>
+
+<P><HR>
+<A NAME="0500"><A NAME="Search">
+<A HREF="#0491" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0499" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0501" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>Meta-language facilities</H3>
+
+<P>The meta-programming operations can be used to retrieve the type of an object, to create an object of the given type, to get the name of a type and a type by its name, etc. 
+<P><UL>
+<LI><A HREF="#0501" TARGET=body>Search - Search a Module by its Name</A>
+<LI><A HREF="#0502" TARGET=body>NameOfModule - Name of Module</A>
+<LI><A HREF="#0503" TARGET=body>ThisCommand - Get Command by its Name</A>
+<LI><A HREF="#0504" TARGET=body>ThisType - Get Type by its Name</A>
+<LI><A HREF="#0505" TARGET=body>SizeOf - Size of Type</A>
+<LI><A HREF="#0506" TARGET=body>BaseOf - Base of Type</A>
+<LI><A HREF="#0507" TARGET=body>LevelOf - Level of Type Extension</A>
+<LI><A HREF="#0508" TARGET=body>ModuleOf - Module of Type</A>
+<LI><A HREF="#0509" TARGET=body>NameOfType - Name of Type</A>
+<LI><A HREF="#0510" TARGET=body>TypeOf - Type of Object</A>
+<LI><A HREF="#0511" TARGET=body>NewObj - Create Object</A>
+</UL>
+<P><HR>
+<A NAME="0501"><A NAME="NameOfModule">
+<A HREF="#0500" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0500" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0502" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H4>Search - Search a Module by its Name</H4>
+ 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;Search(name:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR):&nbsp;Module;</TT> 
+<P>Returns a module by its <TT>name</TT> or <TT>nullModule</TT>. 
+<P><HR>
+<A NAME="0502"><A NAME="ThisCommand">
+<A HREF="#0500" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0501" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0503" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H4>NameOfModule - Name of Module</H4>
+ 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;NameOfModule(m:&nbsp;Module;</TT><BR>
+<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;VAR&nbsp;name:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR);</TT> 
+<P>Returns the <TT>name</TT> of the <TT>Module</TT>. 
+<P><HR>
+<A NAME="0503"><A NAME="ThisType">
+<A HREF="#0500" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0502" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0504" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H4>ThisCommand - Get Command by its Name</H4>
+ 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;ThisCommand(m:&nbsp;Module;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;name:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;):&nbsp;Command;
+</PRE>
+
+<P>Returns the command (parameterless procedure) named &quot;<TT>name</TT>&quot; in the module <TT>m</TT> or <TT>NIL</TT>, if the command does not exist. 
+<P><HR>
+<A NAME="0504"><A NAME="SizeOf">
+<A HREF="#0500" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0503" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0505" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H4>ThisType - Get Type by its Name</H4>
+ 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;ThisType(m:&nbsp;Module;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;name:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR):&nbsp;Type;
+</PRE>
+
+<P>Returns the type named &quot;<TT>name</TT>&quot; declared in the module <TT>m</TT> or <TT>nullType</TT>, if there is no such type. 
+<P><HR>
+<A NAME="0505"><A NAME="BaseOf">
+<A HREF="#0500" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0504" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0506" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H4>SizeOf - Size of Type</H4>
+ 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;SizeOf(t:&nbsp;Type):&nbsp;INTEGER;</TT> 
+<P>Returns the size (in bytes) of an object of the type <TT>t</TT>. 
+<P><HR>
+<A NAME="0506"><A NAME="LevelOf">
+<A HREF="#0500" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0505" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0507" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H4>BaseOf - Base of Type</H4>
+ 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;BaseOf(t:&nbsp;Type;&nbsp;level:&nbsp;INTEGER):&nbsp;Type;</TT> 
+<P>Returns the <I>level</I>-th base type of <TT>t</TT>. 
+<P><HR>
+<A NAME="0507"><A NAME="ModuleOf">
+<A HREF="#0500" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0506" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0508" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H4>LevelOf - Level of Type Extension</H4>
+ 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;LevelOf(t:&nbsp;Type):&nbsp;INTEGER;</TT> 
+<P>Returns a level of the type extension. 
+<P><HR>
+<A NAME="0508"><A NAME="NameOfType">
+<A HREF="#0500" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0507" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0509" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H4>ModuleOf - Module of Type</H4>
+ 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;ModuleOf(t:&nbsp;Type):&nbsp;Module;</TT> 
+<P>Returns the module in which the type <TT>t</TT> was declared. 
+<P><HR>
+<A NAME="0509"><A NAME="TypeOf">
+<A HREF="#0500" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0508" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0510" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H4>NameOfType - Name of Type</H4>
+ 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;NameOfType(t:&nbsp;Type;&nbsp;VAR&nbsp;name:&nbsp;ARRAY&nbsp;OF&nbsp;CHAR);</TT> 
+<P>Returns the <TT>name</TT> of the record type <TT>t</TT>. 
+<P><HR>
+<A NAME="0510"><A NAME="NewObj">
+<A HREF="#0500" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0509" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0511" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H4>TypeOf - Type of Object</H4>
+ 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;TypeOf(obj:&nbsp;SYSTEM.ADDRESS):&nbsp;Type;</TT> 
+<P>Returns the type of the object <TT>obj</TT>. 
+<P><HR>
+<A NAME="0511">
+<A HREF="#0500" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0510" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0512" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H4>NewObj - Create Object</H4>
+ 
+<P><TT>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;NewObj(type:&nbsp;Type):&nbsp;SYSTEM.ADDRESS;</TT> 
+<P>Creates a new object of the type <TT>type</TT>. 
+<P><HR>
+<A NAME="0512"><A NAME="NameIterator">
+<A HREF="#0491" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0511" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0513" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H3>Module iterators</H3>
+
+<P>The module <TT>oberonRTS</TT> provides procedures which can be used to iterate all loaded modules, all commands, and all object types (i.e., exported record types). 
+<P><UL>
+<LI><A HREF="#0513" TARGET=body>NameIterator - Iterator Type</A>
+<LI><A HREF="#0514" TARGET=body>IterModules - Iterate all Modules</A>
+<LI><A HREF="#0515" TARGET=body>IterCommands - Iterate Commands</A>
+<LI><A HREF="#0516" TARGET=body>IterTypes - Iterate Record Types</A>
+</UL>
+<P><HR>
+<A NAME="0513"><A NAME="IterModules">
+<A HREF="#0512" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0512" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0514" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H4>NameIterator - Iterator Type</H4>
+ 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;TYPE
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;NameIterator&nbsp;=&nbsp;PROCEDURE&nbsp;(
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(*context:*)&nbsp;SYSTEM.ADDRESS,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(*name:*)&nbsp;ARRAY&nbsp;OF&nbsp;CHAR
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;):&nbsp;BOOLEAN;
+</PRE>
+
+<P>A procedure of type <TT>NameIterator</TT> is called by an iterator on each iterated item. An iterator passes the name of the item along with the so-called <I>context</I> word. This allows some context information to be passed to the user-defined procedure (e.g., a file handler). If the procedure returns FALSE, the iteration is terminated. 
+<P><HR>
+<A NAME="0514"><A NAME="IterCommands">
+<A HREF="#0512" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0513" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0515" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H4>IterModules - Iterate all Modules</H4>
+ 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;IterModules(context:&nbsp;SYSTEM.ADDRESS;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;iter:&nbsp;NameIterator);
+</PRE>
+
+<P>The procedure iterates all Oberon-2 modules. 
+<P><HR>
+<A NAME="0515"><A NAME="IterTypes">
+<A HREF="#0512" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0514" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="#0516" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A></A>
+<BR>
+<H4>IterCommands - Iterate Commands</H4>
+ 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;IterCommands(mod:&nbsp;Module;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;context:&nbsp;SYSTEM.ADDRESS;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;iter:&nbsp;NameIterator);
+</PRE>
+
+<P>Iterates all commands implemented in the module <TT>mod</TT>. 
+<P><HR>
+<A NAME="0516">
+<A HREF="#0512" TARGET=body><IMG ALT="Super" SRC="super.gif" BORDER=0></A>
+<A HREF="#0515" TARGET=body><IMG ALT="Prev" SRC="prev.gif" BORDER=0></A>
+<A HREF="xm010.html#0517" TARGET=body><IMG ALT="Next" SRC="next.gif" BORDER=0></A></A>
+<BR>
+<H4>IterTypes - Iterate Record Types</H4>
+ 
+<P><PRE>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PROCEDURE&nbsp;IterTypes(mod:&nbsp;Module;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;context:&nbsp;SYSTEM.WORD;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;iter:&nbsp;NameIterator);
+</PRE>
+
+<P>Iterates all record types declared in the module <TT>mod</TT>. 
+<P>
+</BODY>
+</HTML>

@@ -1,0 +1,88 @@
+(* Xm/Display.def  Oct 15  22:36:14  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/Display.h using H2D v1.16 *)
+
+(* $RCSfile: Display.def,v $ $Revision: 4 $ $Date: 28.07.98 23:14 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+
+DEFINITION MODULE ["C"] Display;
+
+IMPORT SYSTEM, X, Xlib, Xt:=Intrinsic;
+(* H2D:  Required IMPORT clause: 
+IMPORT Display, X, Xlib, Intrinsic;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992, 1993 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+ 
+(*
+ * Motif Release 1.2.3  
+ *)
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: this procedure corresponds to a macro. *)
+PROCEDURE XmIsDisplay ( w: Xt.Widget ): Xt.Boolean;
+
+<* ELSE *>
+
+PROCEDURE  / XmIsDisplay ( w: Xt.Widget ): Xt.Boolean;
+
+<* END *>
+
+CONST 
+  XmDRAG_NONE = 0;
+  XmDRAG_DROP_ONLY = 1;
+  XmDRAG_PREFER_PREREGISTER = 2;
+  XmDRAG_PREREGISTER = 3;
+  XmDRAG_PREFER_DYNAMIC = 4;
+  XmDRAG_DYNAMIC = 5;
+  XmDRAG_PREFER_RECEIVER = 6;
+
+(*  Class record constants  *)
+
+TYPE 
+  _XmDisplayRec = RECORD
+    (* Declaration without definition *)
+  END;
+
+  XmDisplay = POINTER TO _XmDisplayRec;
+
+  _XmDisplayClassRec = RECORD
+    (* Declaration without definition *)
+  END;
+
+  XmDisplayClass = POINTER TO _XmDisplayClassRec;
+
+VAR 
+  xmDisplayClass: Xt.WidgetClass;
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: this procedure corresponds to a macro. *)
+PROCEDURE XmGetDisplay ( w: Xt.Widget ): Xlib.PtrDisplay;
+
+<* ELSE *>
+
+PROCEDURE  / XmGetDisplay ( w: Xt.Widget ): Xlib.PtrDisplay;
+
+<* END *>
+
+(********    Public Function Declarations    ********)
+
+PROCEDURE XmGetDragContext ( w: Xt.Widget;
+                             time: X.Time ): Xt.Widget;
+
+PROCEDURE XmGetXmDisplay ( display: Xlib.PtrDisplay ): Xt.Widget;
+
+(********    End Public Function Declarations    ********)
+
+END Display.

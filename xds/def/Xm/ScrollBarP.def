@@ -1,0 +1,195 @@
+(* Xm/ScrollBarP.def  Nov 12  16:20:22  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/ScrollBarP.h using H2D v1.18.1 *)
+
+(* $RCSfile: ScrollBarP.def,v $ $Revision: 4 $ $Date: 28.07.98 23:14 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+(* Merged headers: Xm/ScrollBar.h *)
+
+DEFINITION MODULE ["C"] ScrollBarP;
+
+IMPORT SYSTEM, X, Xlib, Xm:=XmP, Xt:=IntrinsicP;
+(* H2D:  Required IMPORT clause: 
+IMPORT ScrollBarP, X, Xlib, XmP, IntrinsicP;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992, 1993 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(* ------------------------------------------------------ *)
+(*                     Xm/ScrollBar.h                     *)
+(* ------------------------------------------------------ *)
+
+(*
+ * Motif Release 1.2
+ *)
+
+(*   ScrollBar Widget   *)
+
+VAR 
+  xmScrollBarWidgetClass: Xt.WidgetClass;
+
+TYPE 
+  XmScrollBarWidgetClass = POINTER TO _XmScrollBarClassRec;
+
+  XmScrollBarWidget = POINTER TO _XmScrollBarRec;
+
+(********    Public Function Declarations    ********)
+
+PROCEDURE XmCreateScrollBar ( parent: Xt.Widget;
+			      name: ARRAY OF CHAR;
+                              arglist: Xt.ArgList;
+                              argcount: Xt.Cardinal ): Xt.Widget;
+
+PROCEDURE XmScrollBarGetValues ( w: Xt.Widget;
+				 VAR value: SYSTEM.int;
+                                 VAR slider_size: SYSTEM.int;
+				 VAR increment: SYSTEM.int;
+                                 VAR page_increment: SYSTEM.int );
+
+PROCEDURE XmScrollBarSetValues ( w: Xt.Widget;
+			         value: SYSTEM.int;
+                                 slider_size: SYSTEM.int;
+			         increment: SYSTEM.int;
+                                 page_increment: SYSTEM.int;
+                                 notify: Xt.Boolean );
+
+(********    End Public Function Declarations    ********)
+
+(* ------------------------------------------------------ *)
+(*                    Xm/ScrollBarP.h                     *)
+(* ------------------------------------------------------ *)
+
+(*
+ * Motif Release 1.2.3
+ *)
+
+(*   Minimum slider width or height   *)
+
+CONST 
+  MIN_SLIDER_THICKNESS = 1;
+  MIN_SLIDER_LENGTH = 6;
+
+(*   ScrollBar class structure   *)
+
+TYPE 
+  _XmScrollBarClassPart = RECORD
+    extension: Xt.XtPointer;   (*  Pointer to extension record  *)
+  END;
+
+  XmScrollBarClassPart = _XmScrollBarClassPart;
+
+(*   Full class record declaration for CheckBox class   *)
+
+  _XmScrollBarClassRec = RECORD
+    core_class     : Xt.CoreClassPart;
+    primitive_class: Xm.XmPrimitiveClassPart;
+    scrollBar_class: XmScrollBarClassPart;
+  END;
+
+  XmScrollBarClassRec = _XmScrollBarClassRec;
+
+(*   The ScrollBar instance record   *)
+
+  _XmScrollBarPart = RECORD
+    value                  : SYSTEM.int;
+    minimum                : SYSTEM.int;
+    maximum                : SYSTEM.int;
+    slider_size            : SYSTEM.int;
+    orientation            : SHORTCARD;
+    processing_direction   : SHORTCARD;
+    show_arrows            : Xt.Boolean;
+    increment              : SYSTEM.int;
+    page_increment         : SYSTEM.int;
+    initial_delay          : SYSTEM.int;
+    repeat_delay           : SYSTEM.int;
+    value_changed_callback : Xt.XtCallbackList;
+    increment_callback     : Xt.XtCallbackList;
+    decrement_callback     : Xt.XtCallbackList;
+    page_increment_callback: Xt.XtCallbackList;
+    page_decrement_callback: Xt.XtCallbackList;
+    to_top_callback        : Xt.XtCallbackList;
+    to_bottom_callback     : Xt.XtCallbackList;
+    drag_callback          : Xt.XtCallbackList;
+    (*  obsolete  *)
+    unhighlight_GC         : Xlib.GC;
+    (***********)
+    foreground_GC          : Xlib.GC;
+    trough_color           : Xt.Pixel;
+    pixmap                 : X.Drawable;
+    sliding_on             : Xt.Boolean;
+    etched_slider          : Xt.Boolean;
+    saved_value            : SYSTEM.int;
+    flags                  : SHORTCARD;
+    change_type            : SHORTCARD;
+    timer                  : Xt.XtIntervalId;
+    initial_x              : SYSTEM.INT16;
+    initial_y              : SYSTEM.INT16;
+    separation_x           : SYSTEM.INT16;
+    separation_y           : SYSTEM.INT16;
+    slider_x               : SYSTEM.INT16;
+    slider_y               : SYSTEM.INT16;
+    slider_width           : SYSTEM.INT16;
+    slider_height          : SYSTEM.INT16;
+    slider_area_x          : SYSTEM.INT16;
+    slider_area_y          : SYSTEM.INT16;
+    slider_area_width      : SYSTEM.INT16;
+    slider_area_height     : SYSTEM.INT16;
+    arrow1_x               : SYSTEM.INT16;
+    arrow1_y               : SYSTEM.INT16;
+    arrow1_orientation     : SHORTCARD;
+    arrow1_selected        : Xt.Boolean;
+    arrow2_x               : SYSTEM.INT16;
+    arrow2_y               : SYSTEM.INT16;
+    arrow2_orientation     : SHORTCARD;
+    arrow2_selected        : Xt.Boolean;
+    arrow_width            : SYSTEM.INT16;
+    arrow_height           : SYSTEM.INT16;
+    (* Obsolete fields *)
+    arrow1_top_count       : SYSTEM.INT16;
+    arrow1_cent_count      : SYSTEM.INT16;
+    arrow1_bot_count       : SYSTEM.INT16;
+    arrow1_top             : Xlib.PtrXRectangle;
+    arrow1_cent            : Xlib.PtrXRectangle;
+    arrow1_bot             : Xlib.PtrXRectangle;
+    arrow2_top_count       : SYSTEM.INT16;
+    arrow2_cent_count      : SYSTEM.INT16;
+    arrow2_bot_count       : SYSTEM.INT16;
+    arrow2_top             : Xlib.PtrXRectangle;
+    arrow2_cent            : Xlib.PtrXRectangle;
+    arrow2_bot             : Xlib.PtrXRectangle;
+    (***************)
+    (* new for 1.2 *)
+    unavailable_GC         : Xlib.GC;
+  END;
+
+  XmScrollBarPart = _XmScrollBarPart;
+
+(*   Full instance record declaration   *)
+
+  _XmScrollBarRec = RECORD
+    core     : Xt.CorePart;
+    primitive: Xm.XmPrimitivePart;
+    scrollBar: XmScrollBarPart;
+  END;
+
+  XmScrollBarRec = _XmScrollBarRec;
+
+VAR 
+  xmScrollBarClassRec: XmScrollBarClassRec;
+
+(********    Private Function Declarations    ********)
+
+PROCEDURE _XmSetEtchedSlider ( sbw: XmScrollBarWidget );
+
+(********    End Private Function Declarations    ********)
+
+END ScrollBarP.

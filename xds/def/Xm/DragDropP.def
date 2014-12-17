@@ -1,0 +1,1269 @@
+(* Xm/DragDropP.def  Nov 20  23:23:10  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/DragDropP.h using H2D v1.18.6 *)
+
+(* $RCSfile: DragDropP.def,v $ $Revision: 4 $ $Date: 28.07.98 23:14 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *>
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+(* Merged headers: Xm/DragCP.h, Xm/DragC.h, Xm/DragIconP.h, Xm/DragIcon.h,
+Xm/DragOverSP.h, Xm/DragOverS.h, Xm/DropSMgrP.h, Xm/DropSMgr.h, Xm/DropTransP.h,
+Xm/DropTrans.h *)
+
+DEFINITION MODULE ["C"] DragDropP;
+
+IMPORT SYSTEM, X, Xlib, Xutil, Xm:=XmP, Xt:=IntrinsicP, ShellP;
+(* H2D:  Required IMPORT clause:
+IMPORT DragDropP, X, Xlib, Xutil, XmP, IntrinsicP, ShellP;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(*
+ * Motif Release 1.2.4 (Invited by Ego)
+ *)
+(* -------------------------------------------------- *)
+(*                     Xm/DragC.h                     *)
+(* -------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2.3
+ *)
+
+(*  defines for the dragFinish completionStatus field  *)
+
+CONST
+  XmHELP = 2;
+
+(*
+ * Some global stuff that will go into Xm.h
+ *)
+
+TYPE
+  XmID = CARDINAL;
+
+(***********************************************************************
+ *
+ * DragContext
+ *
+ ***********************************************************************)
+
+CONST
+  _XA_MOTIF_DROP = '_MOTIF_DROP';
+  _XA_DRAG_FAILURE = '_MOTIF_DRAG_FAILURE';
+  _XA_DRAG_SUCCESS = '_MOTIF_DRAG_SUCCESS';
+
+  XmTOP_LEVEL_ENTER = 0;
+  XmTOP_LEVEL_LEAVE = 1;
+  XmDRAG_MOTION = 2;
+  XmDROP_SITE_ENTER = 3;
+  XmDROP_SITE_LEAVE = 4;
+  XmDROP_START = 5;
+  XmDROP_FINISH = 6;
+  XmDRAG_DROP_FINISH = 7;
+  XmOPERATION_CHANGED = 8;
+
+  XmDROP = 0;
+  XmDROP_HELP = 1;
+  XmDROP_CANCEL = 2;
+  XmDROP_INTERRUPT = 3;
+
+(*  values for operation  *)
+  XmDROP_NOOP = 0;
+  XmDROP_MOVE = 1;
+  XmDROP_COPY = 2;
+  XmDROP_LINK = 4;
+  XmBLEND_ALL = 0;
+  XmBLEND_STATE_SOURCE = 1;
+  XmBLEND_JUST_SOURCE = 2;
+  XmBLEND_NONE = 3;
+
+  XmDROP_FAILURE = 0;
+  XmDROP_SUCCESS = 1;
+
+  XmCR_TOP_LEVEL_ENTER = 0;
+  XmCR_TOP_LEVEL_LEAVE = 1;
+  XmCR_DRAG_MOTION = 2;
+  XmCR_DROP_SITE_ENTER = 3;
+  XmCR_DROP_SITE_LEAVE = 4;
+  XmCR_DROP_START = 5;
+  XmCR_DROP_FINISH = 6;
+  XmCR_DRAG_DROP_FINISH = 7;
+  XmCR_OPERATION_CHANGED = 8;
+  _XmNUMBER_DND_CB_REASONS = 9;
+
+(*  Class record constants  *)
+
+TYPE
+  XmDragContextClass = POINTER TO _XmDragContextClassRec;
+
+  XmDragContext = POINTER TO _XmDragContextRec;
+
+  _XmAnyICCCallbackStruct = RECORD
+    reason   : SYSTEM.int;
+    event    : Xlib.PtrXEvent;
+    timeStamp: X.Time;
+  END;
+
+  XmAnyICCCallbackStruct = _XmAnyICCCallbackStruct;
+
+  XmAnyICCCallback = POINTER TO _XmAnyICCCallbackStruct;
+
+  _XmTopLevelEnterCallbackStruct = RECORD
+    reason           : SYSTEM.int;
+    event            : Xlib.PtrXEvent;
+    timeStamp        : X.Time;
+    screen           : Xlib.PtrScreen;
+   (*
+    * the window field is different if this is an outbound or inbound
+    * callback. Outbound == reciever, Inbound == initiator.
+    *)
+    window           : X.Window;
+    x                : Xt.Position;
+    y                : Xt.Position;
+    dragProtocolStyle: SHORTCARD;
+    iccHandle        : X.Atom;
+  END;
+
+  XmTopLevelEnterCallbackStruct = _XmTopLevelEnterCallbackStruct;
+
+  XmTopLevelEnterCallback = POINTER TO _XmTopLevelEnterCallbackStruct;
+
+  _XmTopLevelLeaveCallbackStruct = RECORD
+    reason   : SYSTEM.int;
+    event    : Xlib.PtrXEvent;
+    timeStamp: X.Time;
+    screen   : Xlib.PtrScreen;
+    window   : X.Window;
+  END;
+
+  XmTopLevelLeaveCallbackStruct = _XmTopLevelLeaveCallbackStruct;
+
+  XmTopLevelLeaveCallback = POINTER TO _XmTopLevelLeaveCallbackStruct;
+
+(*
+ * this message is sent from the receiver to the initiator to
+ * indicate that the motion message with the associated timestamp has
+ * caused a drop-site to be entered
+ *)
+
+  _XmDropSiteEnterCallbackStruct = RECORD
+    reason        : SYSTEM.int;
+    event         : Xlib.PtrXEvent;
+    timeStamp     : X.Time;
+    operation     : SHORTCARD;
+    operations    : SHORTCARD;
+    dropSiteStatus: SHORTCARD;
+    x             : Xt.Position;
+    y             : Xt.Position;
+  END;
+
+  XmDropSiteEnterCallbackStruct = _XmDropSiteEnterCallbackStruct;
+
+  XmDropSiteEnterCallback = POINTER TO _XmDropSiteEnterCallbackStruct;
+
+(*
+ * this message is sent from the receiver to the initiator to
+ * indicate that the motion message with the associated timestamp has
+ * caused a drop-site to be left
+ *)
+
+  _XmDropSiteLeaveCallbackStruct = RECORD
+    reason   : SYSTEM.int;
+    event    : Xlib.PtrXEvent;
+    timeStamp: X.Time;
+  END;
+
+  XmDropSiteLeaveCallbackStruct = _XmDropSiteLeaveCallbackStruct;
+
+  XmDropSiteLeaveCallback = POINTER TO _XmDropSiteLeaveCallbackStruct;
+
+  _XmDragMotionCallbackStruct = RECORD
+    reason        : SYSTEM.int;
+    event         : Xlib.PtrXEvent;
+    timeStamp     : X.Time;
+    operation     : SHORTCARD;
+    operations    : SHORTCARD;
+    dropSiteStatus: SHORTCARD;
+    x             : Xt.Position;
+    y             : Xt.Position;
+  END;
+
+  XmDragMotionCallbackStruct = _XmDragMotionCallbackStruct;
+
+  XmDragMotionCallback = POINTER TO _XmDragMotionCallbackStruct;
+
+  _XmOperationChangedCallbackStruct = RECORD
+    reason        : SYSTEM.int;
+    event         : Xlib.PtrXEvent;
+    timeStamp     : X.Time;
+    operation     : SHORTCARD;
+    operations    : SHORTCARD;
+    dropSiteStatus: SHORTCARD;
+  END;
+
+  XmOperationChangedCallbackStruct = _XmOperationChangedCallbackStruct;
+
+  XmOperationChangedCallback = POINTER TO _XmOperationChangedCallbackStruct;
+
+  _XmDropStartCallbackStruct = RECORD
+    reason        : SYSTEM.int;
+    event         : Xlib.PtrXEvent;
+    timeStamp     : X.Time;
+    operation     : SHORTCARD;
+    operations    : SHORTCARD;
+    dropSiteStatus: SHORTCARD;
+    dropAction    : SHORTCARD;
+    x             : Xt.Position;
+    y             : Xt.Position;
+    window        : X.Window;
+    iccHandle     : X.Atom;
+  END;
+
+  XmDropStartCallbackStruct = _XmDropStartCallbackStruct;
+
+  XmDropStartCallback = POINTER TO _XmDropStartCallbackStruct;
+
+  _XmDropFinishCallbackStruct = RECORD
+    reason          : SYSTEM.int;
+    event           : Xlib.PtrXEvent;
+    timeStamp       : X.Time;
+    operation       : SHORTCARD;
+    operations      : SHORTCARD;
+    dropSiteStatus  : SHORTCARD;
+    dropAction      : SHORTCARD;
+    completionStatus: SHORTCARD;
+  END;
+
+  XmDropFinishCallbackStruct = _XmDropFinishCallbackStruct;
+
+  XmDropFinishCallback = POINTER TO _XmDropFinishCallbackStruct;
+
+  _XmDragDropFinishCallbackStruct = RECORD
+    reason   : SYSTEM.int;
+    event    : Xlib.PtrXEvent;
+    timeStamp: X.Time;
+  END;
+
+  XmDragDropFinishCallbackStruct = _XmDragDropFinishCallbackStruct;
+
+  XmDragDropFinishCallback = POINTER TO _XmDragDropFinishCallbackStruct;
+
+VAR
+  xmDragContextClass: Xt.WidgetClass;
+
+(********    Public Function Declarations    ********)
+
+PROCEDURE XmDragStart ( w: Xt.Widget;
+                        VAR event: Xlib.XEvent;
+                        args: Xt.ArgList;
+                        numArgs: Xt.Cardinal ): Xt.Widget;
+
+PROCEDURE XmDragCancel ( dragContext: Xt.Widget );
+
+PROCEDURE XmTargetsAreCompatible ( dpy: Xlib.PtrDisplay;
+                                   exportTargets: X.PAAtom;
+                                   numExportTargets: Xt.Cardinal;
+                                   importTargets: X.PAAtom;
+                                   numImportTargets: Xt.Cardinal ): Xt.Boolean;
+
+(********    End Public Function Declarations    ********)
+
+(* ----------------------------------------------------- *)
+(*                     Xm/DragIcon.h                     *)
+(* ----------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2
+ *)
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: this procedure corresponds to a macro. *)
+PROCEDURE XmIsDragIconObjectClass ( w: Xt.Widget ): Xt.Boolean;
+
+<* ELSE *>
+
+PROCEDURE  / XmIsDragIconObjectClass ( w: Xt.Widget ): Xt.Boolean;
+
+<* END *>
+
+CONST
+  XmATTACH_NORTH_WEST = 0;
+  XmATTACH_NORTH = 1;
+  XmATTACH_NORTH_EAST = 2;
+  XmATTACH_EAST = 3;
+  XmATTACH_SOUTH_EAST = 4;
+  XmATTACH_SOUTH = 5;
+  XmATTACH_SOUTH_WEST = 6;
+  XmATTACH_WEST = 7;
+  XmATTACH_CENTER = 8;
+  XmATTACH_HOT = 9;
+
+TYPE
+  XmDragIconObject = POINTER TO _XmDragIconRec;
+
+  XmDragIconObjectClass = POINTER TO _XmDragIconClassRec;
+
+VAR
+  xmDragIconObjectClass: Xt.WidgetClass;
+
+(********    Public Function Declarations    ********)
+
+PROCEDURE XmCreateDragIcon ( parent: Xt.Widget;
+                             name: ARRAY OF CHAR;
+                             argList: Xt.ArgList;
+                             argCount: Xt.Cardinal ): Xt.Widget;
+
+(********    End Public Function Declarations    ********)
+
+(* ------------------------------------------------------ *)
+(*                     Xm/DragIconP.h                     *)
+(* ------------------------------------------------------ *)
+
+(*
+ * Motif Release 1.2.3
+ *)
+
+TYPE
+  XmCloneVisualProc = PROCEDURE ( XmDragIconObject,
+                                  Xt.Widget,
+                                  Xt.Widget );
+
+  XmMovePixmapProc = PROCEDURE ( XmDragIconObject,
+                                 XmDragIconObject,
+                               	 XmDragIconObject,
+                                 Xt.Position,
+                               	 Xt.Position );
+
+  _XmDragIconClassPart = RECORD
+    extension: Xt.XtPointer;
+  END;
+
+  XmDragIconClassPart = _XmDragIconClassPart;
+
+  _XmDragIconClassRec = RECORD
+    rectangle_class: Xt.RectObjClassPart;
+    dragIcon_class : XmDragIconClassPart;
+  END;
+
+  XmDragIconClassRec = _XmDragIconClassRec;
+
+  _XmDragIconPart = RECORD
+    depth         : Xt.Cardinal;
+    pixmap        : X.Pixmap;
+    width         : Xt.Dimension;
+    height        : Xt.Dimension;
+    mask          : X.Pixmap;
+    hot_x         : Xt.Position;
+    hot_y         : Xt.Position;
+    offset_x      : Xt.Position;
+    offset_y      : Xt.Position;
+    attachment    : SHORTCARD;
+    isDirty       : Xt.Boolean;
+    region        : Xutil.Region;
+    restore_region: Xutil.Region;
+    x_offset      : Xt.Position;
+    y_offset      : Xt.Position;
+  END;
+
+  XmDragIconPart = _XmDragIconPart;
+
+  XmDragIconPartPtr = POINTER TO _XmDragIconPart;
+
+  _XmDragIconRec = RECORD
+    object   : Xt.ObjectPart;
+    rectangle: Xt.RectObjPart;
+    drag     : XmDragIconPart;
+  END;
+
+  XmDragIconRec = _XmDragIconRec;
+
+VAR
+  xmDragIconClassRec: XmDragIconClassRec;
+
+(********    Private Function Declarations    ********)
+
+PROCEDURE _XmDestroyDefaultDragIcon ( icon: XmDragIconObject );
+
+PROCEDURE _XmDragIconIsDirty ( icon: XmDragIconObject ): Xt.Boolean;
+
+PROCEDURE _XmDragIconClean ( icon1: XmDragIconObject; icon2: XmDragIconObject;
+                             icon3: XmDragIconObject );
+
+PROCEDURE _XmGetTextualDragIcon ( w: Xt.Widget ): Xt.Widget;
+
+(********    End Private Function Declarations    ********)
+
+(* ------------------------------------------------------ *)
+(*                     Xm/DragOverS.h                     *)
+(* ------------------------------------------------------ *)
+
+(*
+ * Motif Release 1.2.3
+ *)
+
+(***********************************************************************
+ *
+ * DragOverShell Widget
+ *
+ ***********************************************************************)
+
+(*  Class record constants  *)
+
+TYPE
+  XmDragOverShellWidget = POINTER TO _XmDragOverShellRec;
+
+  XmDragOverShellWidgetClass = POINTER TO _XmDragOverShellClassRec;
+
+VAR
+  xmDragOverShellWidgetClass: Xt.WidgetClass;
+
+(*  DON'T ADD STUFF AFTER THIS #endif  *)
+
+(* ------------------------------------------------------- *)
+(*                     Xm/DragOverSP.h                     *)
+(* ------------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2
+ *)
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: this procedure corresponds to a macro. *)
+PROCEDURE DOExpose ( do: Xt.Widget );
+
+<* ELSE *>
+
+PROCEDURE / DOExpose ( do: Xt.Widget );
+
+<* END *>
+
+(*
+ * DRAGOVER SHELL
+ *)
+
+TYPE
+  _XmDragOverShellClassPart = RECORD
+    extension: Xt.XtPointer;
+  END;
+
+  XmDragOverShellClassPart = _XmDragOverShellClassPart;
+
+(*  Full class record declaration  *)
+
+  _XmDragOverShellClassRec = RECORD
+    core_class          : Xt.CoreClassPart;
+    composite_class     : Xt.CompositeClassPart;
+    shell_class         : ShellP.ShellClassPart;
+    wm_shell_class      : ShellP.WMShellClassPart;
+    vendor_shell_class  : ShellP.VendorShellClassPart;
+    dragOver_shell_class: XmDragOverShellClassPart;
+  END;
+
+  XmDragOverShellClassRec = _XmDragOverShellClassRec;
+
+  _XmBackingRec = RECORD
+    x     : Xt.Position;
+    y     : Xt.Position;
+    pixmap: X.Pixmap;
+  END;
+
+  XmBackingRec = _XmBackingRec;
+
+  XmBacking = POINTER TO _XmBackingRec;
+
+  _XmDragOverBlendRec = RECORD
+    sourceIcon: XmDragIconObject; (*  source icon  *)
+    sourceX   : Xt.Position;      (*  source location in blend  *)
+    sourceY   : Xt.Position;      (*  source location in blend  *)
+    mixedIcon : XmDragIconObject; (*  blended icon  *)
+    gc        : Xlib.GC;          (*  appropriate depth  *)
+  END;
+
+  XmDragOverBlendRec = _XmDragOverBlendRec;
+
+  XmDragOverBlend = POINTER TO _XmDragOverBlendRec;
+
+  _XmDragOverShellPart = RECORD
+    hotX            : Xt.Position;        (*  current hotX  *)
+    hotY            : Xt.Position;        (*  current hotY  *)
+    cursorState     : SHORTCARD;          (*  current cursor state  *)
+    mode            : SHORTCARD;
+    activeMode      : SHORTCARD;
+    initialX        : Xt.Position;        (*  initial hotX  *)
+    initialY        : Xt.Position;        (*  initial hotY  *)
+    stateIcon       : XmDragIconObject;   (*  current state icon  *)
+    opIcon          : XmDragIconObject;   (*  current operation icon  *)
+    cursorBlend     : XmDragOverBlendRec; (*  cursor blending  *)
+    rootBlend       : XmDragOverBlendRec; (*  pixmap or window blending  *)
+    cursorForeground: Xt.Pixel;
+    cursorBackground: Xt.Pixel;
+    ncCursor        : X.Cursor;           (*  noncached cursor  *)
+    activeCursor    : X.Cursor;           (*  the current cursor  *)
+    backing         : XmBackingRec;       (*  backing store for pixdrag  *)
+    tmpPix          : X.Pixmap;           (*  temp storage for pixdrag  *)
+    tmpBit          : X.Pixmap;           (*  temp storage for pixdrag  *)
+    isVisible       : Xt.Boolean;         (*  shell is visible  *)
+  END;
+
+  XmDragOverShellPart = _XmDragOverShellPart;
+
+  _XmDragOverShellRec = RECORD
+    core     : Xt.CorePart;
+    composite: Xt.CompositePart;
+    shell    : ShellP.ShellPart;
+    wm       : ShellP.WMShellPart;
+    vendor   : ShellP.VendorShellPart;
+    drag     : XmDragOverShellPart;
+  END;
+
+  XmDragOverShellRec = _XmDragOverShellRec;
+
+VAR
+  xmDragOverShellClassRec: XmDragOverShellClassRec;
+
+(* ----------------------------------------------------- *)
+(*                     Xm/DropSMgr.h                     *)
+(* ----------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2.3
+ *)
+
+CONST
+  XmCR_DROP_SITE_LEAVE_MESSAGE = 1;
+  XmCR_DROP_SITE_ENTER_MESSAGE = 2;
+  XmCR_DROP_SITE_MOTION_MESSAGE = 3;
+  XmCR_DROP_MESSAGE = 4;
+  XmNO_DROP_SITE = 1;
+  XmINVALID_DROP_SITE = 2;
+  XmDROP_SITE_INVALID = XmINVALID_DROP_SITE;
+  XmVALID_DROP_SITE = 3;
+  XmDROP_SITE_VALID = XmVALID_DROP_SITE;
+
+(*  begin fix for CR 5754  *)
+(*  documented values are XmDROP_SITE_VALID and XmDROP_SITE_INVALID.
+    However, we can't just throw out the incorrect Xm[IN]VALID_DROP_SITE
+    now since people have probably started using them. Instead, we just
+    define the correct values using the incorrect ones.
+*)
+  XmDRAG_UNDER_NONE = 0;
+  XmDRAG_UNDER_PIXMAP = 1;
+  XmDRAG_UNDER_SHADOW_IN = 2;
+  XmDRAG_UNDER_SHADOW_OUT = 3;
+  XmDRAG_UNDER_HIGHLIGHT = 4;
+
+  XmDROP_SITE_SIMPLE = 0;
+  XmDROP_SITE_COMPOSITE = 1;
+  XmDROP_SITE_SIMPLE_CLIP_ONLY = 128;
+  XmDROP_SITE_COMPOSITE_CLIP_ONLY = 129;
+
+  XmABOVE = 0;
+  XmBELOW = 1;
+
+  XmDROP_SITE_ACTIVE = 0;
+  XmDROP_SITE_INACTIVE = 1;
+
+TYPE
+  _XmDragProcCallbackStruct = RECORD
+    reason        : SYSTEM.int;
+    event         : Xlib.PtrXEvent;
+    timeStamp     : X.Time;
+    dragContext   : Xt.Widget;
+    x             : Xt.Position;
+    y             : Xt.Position;
+    dropSiteStatus: SHORTCARD;
+    operation     : SHORTCARD;
+    operations    : SHORTCARD;
+    animate       : Xt.Boolean;
+  END;
+
+  XmDragProcCallbackStruct = _XmDragProcCallbackStruct;
+
+  XmDragProcCallback = POINTER TO _XmDragProcCallbackStruct;
+
+  _XmDropProcCallbackStruct = RECORD
+    reason        : SYSTEM.int;
+    event         : Xlib.PtrXEvent;
+    timeStamp     : X.Time;
+    dragContext   : Xt.Widget;
+    x             : Xt.Position;
+    y             : Xt.Position;
+    dropSiteStatus: SHORTCARD;
+    operation     : SHORTCARD;
+    operations    : SHORTCARD;
+    dropAction    : SHORTCARD;
+  END;
+
+  XmDropProcCallbackStruct = _XmDropProcCallbackStruct;
+
+  XmDropProcCallback = POINTER TO _XmDropProcCallbackStruct;
+
+  _XmDropSiteVisualsRec = RECORD
+    background        : Xt.Pixel;
+    foreground        : Xt.Pixel;
+    topShadowColor    : Xt.Pixel;
+    topShadowPixmap   : X.Pixmap;
+    bottomShadowColor : Xt.Pixel;
+    bottomShadowPixmap: X.Pixmap;
+    shadowThickness   : Xt.Dimension;
+    highlightColor    : Xt.Pixel;
+    highlightPixmap   : X.Pixmap;
+    highlightThickness: Xt.Dimension;
+    borderWidth       : Xt.Dimension;
+  END;
+
+  XmDropSiteVisualsRec = _XmDropSiteVisualsRec;
+
+  XmDropSiteVisuals = POINTER TO _XmDropSiteVisualsRec;
+
+(*  DropSite Widget  *)
+
+  XmDropSiteManagerObjectClass = POINTER TO _XmDropSiteManagerClassRec;
+
+  XmDropSiteManagerObject = POINTER TO _XmDropSiteManagerRec;
+
+VAR
+  xmDropSiteManagerObjectClass: Xt.WidgetClass;
+
+(********    Public Function Declarations    ********)
+
+PROCEDURE XmDropSiteRegister ( widget: Xt.Widget;
+                               args: Xt.ArgList;
+                               argCount: Xt.Cardinal );
+
+PROCEDURE XmDropSiteUnregister ( widget: Xt.Widget );
+
+PROCEDURE XmDropSiteStartUpdate ( refWidget: Xt.Widget );
+
+PROCEDURE XmDropSiteUpdate ( enclosingWidget: Xt.Widget;
+                             args: Xt.ArgList;
+                             argCount: Xt.Cardinal );
+
+PROCEDURE XmDropSiteEndUpdate ( refWidget: Xt.Widget );
+
+PROCEDURE XmDropSiteRetrieve ( enclosingWidget: Xt.Widget;
+                               args: Xt.ArgList;
+                               argCount: Xt.Cardinal );
+
+PROCEDURE XmDropSiteQueryStackingOrder ( widget: Xt.Widget;
+                                         VAR parent_rtn: Xt.Widget;
+                                         VAR children_rtn: Xt.WidgetList;
+                                         VAR num_children_rtn: Xt.Cardinal ): SYSTEM.int;
+
+PROCEDURE XmDropSiteConfigureStackingOrder ( widget: Xt.Widget;
+                                             sibling: Xt.Widget;
+                                             stack_mode: Xt.Cardinal );
+
+PROCEDURE XmDropSiteGetActiveVisuals ( widget: Xt.Widget ): XmDropSiteVisuals;
+
+(********    End Public Function Declarations    ********)
+
+(* ------------------------------------------------------ *)
+(*                     Xm/DropSMgrP.h                     *)
+(* ------------------------------------------------------ *)
+
+(*
+ * Motif Release 1.2.4
+ *)
+
+TYPE
+  XmDSMCreateInfoProc = PROCEDURE ( XmDropSiteManagerObject,
+                                    Xt.Widget,
+                                    Xt.ArgList,
+                                    Xt.Cardinal );
+
+  XmDSMDestroyInfoProc = PROCEDURE ( XmDropSiteManagerObject,
+                                     Xt.Widget );
+
+  XmDSMStartUpdateProc = PROCEDURE ( XmDropSiteManagerObject,
+                                     Xt.Widget );
+
+  XmDSMRetrieveInfoProc = PROCEDURE ( XmDropSiteManagerObject,
+                                      Xt.Widget,
+                                      Xt.ArgList,
+                                      Xt.Cardinal );
+
+  XmDSMUpdateInfoProc = PROCEDURE ( XmDropSiteManagerObject,
+                                    Xt.Widget,
+                                    Xt.ArgList,
+                                    Xt.Cardinal );
+
+  XmDSMEndUpdateProc = PROCEDURE ( XmDropSiteManagerObject,
+                                   Xt.Widget );
+
+  XmDSMUpdateProc = PROCEDURE ( XmDropSiteManagerObject,
+                                Xt.XtPointer,
+                              	Xt.XtPointer );
+
+  XmDSMProcessMotionProc = PROCEDURE ( XmDropSiteManagerObject,
+                                       Xt.XtPointer,
+                                       Xt.XtPointer );
+
+  XmDSMProcessDropProc = PROCEDURE ( XmDropSiteManagerObject,
+                                     Xt.XtPointer,
+                                     Xt.XtPointer );
+
+  XmDSMOperationChangedProc = PROCEDURE ( XmDropSiteManagerObject,
+                                          Xt.XtPointer,
+                                          Xt.XtPointer );
+
+  XmDSMChangeRootProc = PROCEDURE ( XmDropSiteManagerObject,
+                                    Xt.XtPointer,
+                                    Xt.XtPointer );
+
+  XmDSMInsertInfoProc = PROCEDURE ( XmDropSiteManagerObject,
+                                    Xt.XtPointer,
+                                    Xt.XtPointer );
+
+  XmDSMRemoveInfoProc = PROCEDURE ( XmDropSiteManagerObject,
+                                    Xt.XtPointer );
+
+  XmDSMSyncTreeProc = PROCEDURE ( XmDropSiteManagerObject,
+                                  Xt.Widget );
+
+  XmDSMGetTreeFromDSMProc = PROCEDURE ( XmDropSiteManagerObject,
+                                      	Xt.Widget,
+                                        Xt.XtPointer ): SYSTEM.int;
+
+  XmDSMCreateDSInfoTable = PROCEDURE ( XmDropSiteManagerObject );
+
+  XmDSMDestroyDSInfoTable = PROCEDURE ( XmDropSiteManagerObject );
+
+  XmDSMRegisterInfoProc = PROCEDURE ( XmDropSiteManagerObject,
+                                      Xt.Widget,
+                                      Xt.XtPointer );
+
+  XmDSMWidgetToInfoProc = PROCEDURE ( XmDropSiteManagerObject,
+                                      Xt.Widget ): Xt.XtPointer;
+
+  XmDSMUnregisterInfoProc = PROCEDURE ( XmDropSiteManagerObject,
+                                      	Xt.XtPointer );
+
+  XmDropSiteManagerClassPart = RECORD
+    createInfo      : XmDSMCreateInfoProc;
+    destroyInfo     : XmDSMDestroyInfoProc;
+    startUpdate     : XmDSMStartUpdateProc;
+    retrieveInfo    : XmDSMRetrieveInfoProc;
+    updateInfo      : XmDSMUpdateInfoProc;
+    endUpdate       : XmDSMEndUpdateProc;
+(*  Used by DragController Object  *)
+    updateDSM       : XmDSMUpdateProc;
+(*  Used by update proc  *)
+    processMotion   : XmDSMProcessMotionProc;
+    processDrop     : XmDSMProcessDropProc;
+    operationChanged: XmDSMOperationChangedProc;
+    changeRoot      : XmDSMChangeRootProc;
+(*  Used to manage DropSites  *)
+    insertInfo      : XmDSMInsertInfoProc;
+(*  Need a get and a put function for update?  *)
+    removeInfo      : XmDSMRemoveInfoProc;
+(*  Used to manage the pre-register information  *)
+    syncTree        : XmDSMSyncTreeProc;
+    getTreeFromDSM  : XmDSMGetTreeFromDSMProc;
+(*  Used to hash between widgets and info  *)
+    createTable     : XmDSMCreateDSInfoTable;
+    destroyTable    : XmDSMDestroyDSInfoTable;
+    registerInfo    : XmDSMRegisterInfoProc;
+    widgetToInfo    : XmDSMWidgetToInfoProc;
+    unregisterInfo  : XmDSMUnregisterInfoProc;
+    extension       : Xt.XtPointer;
+  END;
+
+(*   Full class record declaration for dropSite class   *)
+
+  _XmDropSiteManagerClassRec = RECORD
+    object_class     : Xt.ObjectClassPart;
+    dropManager_class: XmDropSiteManagerClassPart;
+  END;
+
+  XmDropSiteManagerClassRec = _XmDropSiteManagerClassRec;
+
+VAR
+  xmDropSiteManagerClassRec: XmDropSiteManagerClassRec;
+
+(*  Macros for calling methods  *)
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: this procedure corresponds to a macro. *)
+PROCEDURE DSMCreateInfo ( dsm, widget: Xt.Widget;
+                          args: Xt.ArgList;
+                          numArgs: Xt.Cardinal; );
+PROCEDURE DSMDestroyInfo ( dsm, widget: Xt.Widget );
+PROCEDURE DSMStartUpdate ( dsm, widget: Xt.Widget );
+PROCEDURE DSMRetrieveInfo ( dsm, widget: Xt.Widget;
+                            args: Xt.ArgList;
+                            numArgs: Xt.Cardinal; );
+PROCEDURE DSMUpdateInfo ( dsm, widget: Xt.Widget;
+                          args: Xt.ArgList;
+                          numArgs: Xt.Cardinal; );
+PROCEDURE DSMEndUpdate ( dsm, widget: Xt.Widget ): Xt.Boolean;
+PROCEDURE DSMUpdate ( dsm: Xt.Widget;
+                      clientData, callData: Xt.XtPointer );
+PROCEDURE DSMProcessMotion ( dsm: Xt.Widget;
+                             clientData, callData: Xt.XtPointer );
+PROCEDURE DSMProcessDrop ( dsm: Xt.Widget;
+                           clientData, callData: Xt.XtPointer );
+PROCEDURE DSMOperationChanged ( dsm: Xt.Widget;
+                                clientData, callData: Xt.XtPointer );
+PROCEDURE DSMChangeRoot ( dsm: Xt.Widget;
+                          clientData, callData: Xt.XtPointer );
+PROCEDURE DSMInsertInfo ( dsm: Xt.Widget;
+                          info, call_data: Xt.XtPointer );
+PROCEDURE DSMRemoveInfo ( dsm: Xt.Widget;
+                          info: Xt.XtPointer );
+PROCEDURE DSMSyncTree ( dsm, shell: Xt.Widget );
+PROCEDURE DSMGetTreeFromDSM ( dsm, shell: Xt.Widget;
+                              dataPtr: Xt.XtPointer );
+PROCEDURE DSMCreateTable ( dsm: Xt.Widget );
+PROCEDURE DSMDestroyTable ( dsm: Xt.Widget );
+PROCEDURE DSMRegisterInfo ( dsm, widget: Xt.Widget;
+                            info: Xt.XtPointer );
+PROCEDURE DSMWidgetToInfo ( dsm, widget: Xt.Widget );
+PROCEDURE DSMUnregisterInfo ( dsm: Xt.Widget;
+                              info: Xt.XtPointer );
+
+<* ELSE *>
+
+PROCEDURE  / DSMCreateInfo ( dsm, widget: Xt.Widget;
+                             args: Xt.ArgList;
+                             numArgs: Xt.Cardinal );
+PROCEDURE  / DSMDestroyInfo ( dsm, widget: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / DSMStartUpdate ( dsm, widget: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / DSMRetrieveInfo ( dsm, widget: Xt.Widget;
+                               args: Xt.ArgList;
+                               numArgs: Xt.Cardinal );
+PROCEDURE  / DSMUpdateInfo ( dsm, widget: Xt.Widget;
+                             args: Xt.ArgList;
+                             numArgs: Xt.Cardinal );
+PROCEDURE  / DSMEndUpdate ( dsm, widget: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / DSMUpdate ( dsm: Xt.Widget;
+                         clientData, callData: Xt.XtPointer );
+PROCEDURE  / DSMProcessMotion ( dsm: Xt.Widget;
+                                clientData, callData: Xt.XtPointer );
+PROCEDURE  / DSMProcessDrop ( dsm: Xt.Widget;
+                              clientData, callData: Xt.XtPointer );
+PROCEDURE  / DSMOperationChanged ( dsm: Xt.Widget;
+                                   clientData, callData: Xt.XtPointer );
+PROCEDURE  / DSMChangeRoot ( dsm: Xt.Widget;
+                             clientData, callData: Xt.XtPointer );
+PROCEDURE  / DSMInsertInfo ( dsm: Xt.Widget;
+                             info, call_data: Xt.XtPointer );
+PROCEDURE  / DSMRemoveInfo ( dsm: Xt.Widget;
+                             info: Xt.XtPointer );
+PROCEDURE  / DSMSyncTree ( dsm, shell: Xt.Widget );
+PROCEDURE  / DSMGetTreeFromDSM ( dsm, shell: Xt.Widget;
+                                 dataPtr: Xt.XtPointer );
+PROCEDURE  / DSMCreateTable ( dsm: Xt.Widget );
+PROCEDURE  / DSMDestroyTable ( dsm: Xt.Widget );
+PROCEDURE  / DSMRegisterInfo ( dsm, widget: Xt.Widget;
+                               info: Xt.XtPointer );
+PROCEDURE  / DSMWidgetToInfo ( dsm, widget: Xt.Widget );
+PROCEDURE  / DSMUnregisterInfo ( dsm: Xt.Widget;
+                                 info: Xt.XtPointer );
+
+<* END *>
+
+(*  Internal update struct  *)
+
+TYPE
+  _XmDropSiteUpdateInfo = POINTER TO __XmDropSiteUpdateInfoRec;
+
+  __XmDropSiteUpdateInfoRec = RECORD
+    dsm      : XmDropSiteManagerObject;
+    refWidget: Xt.Widget;
+    next     : _XmDropSiteUpdateInfo;
+  END;
+
+  _XmDropSiteUpdateInfoRec = __XmDropSiteUpdateInfoRec;
+
+(*  DropSiteManager instance record  *)
+
+  _XmDropSiteManagerPart = RECORD
+    notifyProc           : Xt.XtCallbackProc;
+    treeUpdateProc       : Xt.XtCallbackProc;
+    client_data          : Xt.XtPointer;
+    dragUnderData        : Xt.XtPointer;
+    curInfo              : Xt.XtPointer;
+    curTime              : X.Time;
+    curX                 : Xt.Position;
+    curY                 : Xt.Position;
+    oldX                 : Xt.Position;
+    oldY                 : Xt.Position;
+    curDropSiteStatus    : SHORTCARD;
+    curDragContext       : Xt.Widget;
+    curAnimate           : Xt.Boolean;
+    curOperations        : SHORTCARD;
+    curOperation         : SHORTCARD;
+    curAncestorClipRegion: Xm.XmRegion;
+    newAncestorClipRegion: Xm.XmRegion;
+    dsTable              : Xt.XtPointer;
+    dsRoot               : Xt.XtPointer;
+    rootX                : Xt.Position;
+    rootY                : Xt.Position;
+    rootW                : Xt.Dimension;
+    rootH                : Xt.Dimension;
+    clipperList          : Xt.XtPointer;
+    updateInfo           : _XmDropSiteUpdateInfo;
+  END;
+
+  XmDropSiteManagerPart = _XmDropSiteManagerPart;
+
+  XmDropSiteManagerPartPtr = POINTER TO _XmDropSiteManagerPart;
+
+(*  Full instance record declaration  *)
+
+  _XmDropSiteManagerRec = RECORD
+    object     : Xt.ObjectPart;
+    dropManager: XmDropSiteManagerPart;
+  END;
+
+  XmDropSiteManagerRec = _XmDropSiteManagerRec;
+
+(********    Private Function Declarations    ********)
+
+PROCEDURE _XmDSMUpdate ( dsm: XmDropSiteManagerObject;
+                         clientData: Xt.XtPointer;
+                         callData: Xt.XtPointer );
+
+PROCEDURE _XmDSMGetTreeFromDSM ( dsm: XmDropSiteManagerObject;
+                                 shell: Xt.Widget;
+                                 dataPtr: Xt.XtPointer ): SYSTEM.int;
+
+PROCEDURE _XmDropSiteShell ( widget: Xt.Widget ): Xt.Boolean;
+
+PROCEDURE _XmDropSiteWrapperCandidate ( widget: Xt.Widget ): Xt.Boolean;
+
+PROCEDURE _XmGetActiveDropSite ( widget: Xt.Widget ): Xt.Widget;
+
+PROCEDURE _XmSyncDropSiteTree ( shell: Xt.Widget );
+
+PROCEDURE _XmIEndUpdate ( client_data: Xt.XtPointer;
+                          VAR interval_id: Xt.XtIntervalId );
+
+(********    End Private Function Declarations    ********)
+
+(* --------------------------------------------------- *)
+(*                     Xm/DragCP.h                     *)
+(* --------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2.4
+ *)
+
+(***********************************************************************
+ *
+ * DragContext (RootWrapper) Widget Private Data
+ *
+ ***********************************************************************)
+
+TYPE
+  XmDragStartProc = PROCEDURE ( XmDragContext, Xt.Widget, Xlib.PtrXEvent );
+
+  XmDragCancelProc = PROCEDURE ( XmDragContext );
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: these procedures corresponds to macros. *)
+PROCEDURE _XmDragStart ( dc, srcW: Xt.Widget;
+                         event: Xlib.PtrXEvent);
+PROCEDURE _XmDragCancel ( dc: Xt.Widget );
+
+<* ELSE *>
+
+PROCEDURE / _XmDragStart ( dc, srcW: Xt.Widget;
+                         event: Xlib.PtrXEvent);
+PROCEDURE / _XmDragCancel ( dc: Xt.Widget );
+
+<* END *>
+
+TYPE
+  _XmDragContextClassPart = RECORD
+    start    : XmDragStartProc;
+    cancel   : XmDragCancelProc;
+    extension: Xt.XtPointer;
+  END;
+
+  XmDragContextClassPart = _XmDragContextClassPart;
+
+  _XmDragContextClassRec = RECORD
+    core_class: Xt.CoreClassPart;
+    drag_class: XmDragContextClassPart;
+  END;
+
+  XmDragContextClassRec = _XmDragContextClassRec;
+
+VAR
+  xmDragContextClassRec: XmDragContextClassRec;
+
+CONST
+  XtDragByPoll = 0;
+  XtDragByEvent = 1;
+
+TYPE
+  XmDragReceiverInfoStruct = RECORD
+    frame            : X.Window;
+    window           : X.Window;
+    shell            : Xt.Widget;
+    flags            : SHORTCARD;
+    dragProtocolStyle: SHORTCARD;
+    xOrigin          : SYSTEM.int;
+    yOrigin          : SYSTEM.int;
+    width            : CARDINAL;
+    height           : CARDINAL;
+    depth            : CARDINAL;
+    iccInfo          : Xt.XtPointer;
+  END;
+
+  XmDragReceiverInfo = POINTER TO XmDragReceiverInfoStruct;
+
+  _XmConvertSelectionRec = RECORD
+    CASE : INTEGER OF
+       0: sel_incr: Xt.XtConvertSelectionIncrProc;
+      |1: sel     : Xt.XtConvertSelectionProc;
+    END;
+  END;
+
+  XmConvertSelectionRec = _XmConvertSelectionRec;
+
+  XmDragReceiverInfoPtr = POINTER TO XmDragReceiverInfoStruct;
+
+  XmDragReceiverInfoStructList = POINTER TO ARRAY [0..X.MAX_STUP_ARR] OF XmDragReceiverInfoStruct;
+
+  _XmDragContextPart = RECORD
+(****  resources ****)
+    exportTargets           : Xm.XmKeySymTable;
+    numExportTargets        : Xt.Cardinal;
+    convertProc             : XmConvertSelectionRec;
+    clientData              : Xt.XtPointer;
+    sourceCursorIcon        : XmDragIconObject;
+    stateCursorIcon         : XmDragIconObject;
+    operationCursorIcon     : XmDragIconObject;
+    sourcePixmapIcon        : XmDragIconObject;
+    cursorBackground        : Xt.Pixel;
+    cursorForeground        : Xt.Pixel;
+    validCursorForeground   : Xt.Pixel;
+    invalidCursorForeground : Xt.Pixel;
+    noneCursorForeground    : Xt.Pixel;
+    dragMotionCallback      : Xt.XtCallbackList;
+    operationChangedCallback: Xt.XtCallbackList;
+    siteEnterCallback       : Xt.XtCallbackList;
+    siteLeaveCallback       : Xt.XtCallbackList;
+    topLevelEnterCallback   : Xt.XtCallbackList;
+    topLevelLeaveCallback   : Xt.XtCallbackList;
+    dropStartCallback       : Xt.XtCallbackList;
+    dropFinishCallback      : Xt.XtCallbackList;
+    dragDropFinishCallback  : Xt.XtCallbackList;
+    dragOperations          : SHORTCARD;
+    incremental             : Xt.Boolean;
+    blendModel              : SHORTCARD;
+(*  private resources  *)
+    srcWindow               : X.Window;
+    dragStartTime           : X.Time;
+    iccHandle               : X.Atom;
+    sourceWidget            : Xt.Widget;
+    sourceIsExternal        : Xt.Boolean;
+(**** instance data ****)
+    topWindowsFetched       : Xt.Boolean;
+    commType                : SHORTCARD;
+    animationType           : SHORTCARD;
+    operation               : SHORTCARD;
+    operations              : SHORTCARD;
+    lastEventState          : CARDINAL;
+    dragCompletionStatus    : SHORTCARD;
+    dragDropCompletionStatus: SHORTCARD;
+    forceIPC                : Xt.Boolean;
+    serverGrabbed           : Xt.Boolean;
+    useLocal                : Xt.Boolean;
+    inDropSite              : Xt.Boolean;
+    dragTimerId             : Xt.XtIntervalId;
+    roundOffTime            : X.Time;
+    lastChangeTime          : X.Time;
+    crossingTime            : X.Time;
+    dragFinishTime          : X.Time;
+    dropFinishTime          : X.Time;
+    dropSelection           : X.Atom;
+    srcShell                : Xt.Widget;
+    startX                  : Xt.Position;
+    startY                  : Xt.Position;
+    siteID                  : XmID;
+    currScreen              : Xlib.PtrScreen;
+    currWmRoot              : X.Window;
+    curDragOver             : XmDragOverShellWidget;
+    origDragOver            : XmDragOverShellWidget;
+    currReceiverInfo        : XmDragReceiverInfoPtr;
+    rootReceiverInfo        : XmDragReceiverInfoPtr;
+    receiverInfos           : XmDragReceiverInfoStructList;
+    numReceiverInfos        : Xt.Cardinal;
+    maxReceiverInfos        : Xt.Cardinal;
+    trackingMode            : SHORTCARD;
+    activeProtocolStyle     : SHORTCARD;
+    activeBlendModel        : SHORTCARD;
+    dragDropCancelEffect    : Xt.Boolean;
+  END;
+
+  XmDragContextPart = _XmDragContextPart;
+
+  _XmDragContextRec = RECORD
+    core: Xt.CorePart;
+    drag: XmDragContextPart;
+  END;
+
+  XmDragContextRec = _XmDragContextRec;
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: this procedure corresponds to a macro. *)
+PROCEDURE _XmDCtoDD ( dc: Xt.Widget ): Xt.Boolean;
+
+<* ELSE *>
+
+PROCEDURE  / _XmDCtoDD ( dc: Xt.Widget ): Xt.Boolean;
+
+<* END *>
+
+(********    Private Function Declarations    ********)
+
+PROCEDURE _XmAllocReceiverInfo ( dc: XmDragContext ): XmDragReceiverInfo;
+
+PROCEDURE _XmGetActiveProtocolStyle ( w: Xt.Widget ): SHORTCARD;
+
+(********    End Private Function Declarations    ********)
+
+(* ------------------------------------------------------ *)
+(*                     Xm/DropTrans.h                     *)
+(* ------------------------------------------------------ *)
+
+(*
+ * Motif Release 1.2
+ *)
+
+CONST
+  XmTRANSFER_FAILURE = 0;
+  XmTRANSFER_SUCCESS = 1;
+
+VAR
+  xmDropTransferObjectClass: Xt.WidgetClass;
+
+TYPE
+  XmDropTransferObjectClass = POINTER TO _XmDropTransferClassRec;
+
+  XmDropTransferObject = POINTER TO _XmDropTransferRec;
+
+  _XmDropTransferEntryRec = RECORD
+    client_data: Xt.XtPointer;
+    target     : X.Atom;
+  END;
+
+  XmDropTransferEntryRec = _XmDropTransferEntryRec;
+
+  XmDropTransferEntry = POINTER TO _XmDropTransferEntryRec;
+
+(********    Public Function Declarations    ********)
+
+PROCEDURE XmDropTransferStart ( refWidget: Xt.Widget;
+                                args: Xt.ArgList;
+                                argCount: Xt.Cardinal ): Xt.Widget;
+
+PROCEDURE XmDropTransferAdd ( widget: Xt.Widget;
+                              transfers: XmDropTransferEntry;
+                              num_transfers: Xt.Cardinal );
+
+(********    End Public Function Declarations    ********)
+
+(* ------------------------------------------------------- *)
+(*                     Xm/DropTransP.h                     *)
+(* ------------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2.3
+ *)
+
+(*   DropTransfer class structure   *)
+
+TYPE
+  XmDropTransferStartTransferProc = PROCEDURE ( Xt.Widget,
+                                              	Xt.ArgList,
+                                              	Xt.Cardinal ):
+                                              	Xt.Widget;
+
+  XmDropTransferAddTransferProc = PROCEDURE ( Xt.Widget,
+                                              XmDropTransferEntry,
+                                              Xt.Cardinal );
+
+  _XmDropTransferClassPart = RECORD
+    start_drop_transfer: XmDropTransferStartTransferProc;
+    add_drop_transfer  : XmDropTransferAddTransferProc;
+    extension          : Xt.XtPointer;
+  END;
+
+  XmDropTransferClassPart = _XmDropTransferClassPart;
+
+(*   Full class record declaration  *)
+
+  _XmDropTransferClassRec = RECORD
+    object_class      : Xt.ObjectClassPart;
+    dropTransfer_class: XmDropTransferClassPart;
+  END;
+
+  XmDropTransferClassRec = _XmDropTransferClassRec;
+
+  _XmDropTransferListRec = RECORD
+    transfer_list: XmDropTransferEntry;
+    num_transfers: Xt.Cardinal;
+  END;
+
+  XmDropTransferListRec = _XmDropTransferListRec;
+
+  XmDropTransferList = POINTER TO ARRAY [0..X.MAX_STUP_ARR] OF _XmDropTransferListRec;
+
+(*   The DropTransfer instance record   *)
+
+  _XmDropTransferPart = RECORD
+    drop_transfers         : XmDropTransferEntry;
+    num_drop_transfers     : Xt.Cardinal;
+    selection              : X.Atom;
+    dragContext            : Xt.Widget;
+    timestamp              : X.Time;
+    incremental            : Xt.Boolean;
+    source_window          : X.Window;
+    tag                    : CARDINAL;
+    transfer_callback      : Xt.XtSelectionCallbackProc;
+    transfer_status        : SHORTCARD;
+    motif_drop_atom        : X.Atom;
+    drop_transfer_lists    : XmDropTransferList;
+    num_drop_transfer_lists: Xt.Cardinal;
+    cur_drop_transfer_list : Xt.Cardinal;
+    cur_xfer               : Xt.Cardinal;
+    cur_targets            : X.PAAtom;
+    cur_client_data        : Xt.PAXtPointer;
+  END;
+
+  XmDropTransferPart = _XmDropTransferPart;
+
+(*   Full instance record declaration   *)
+
+  _XmDropTransferRec = RECORD
+    object      : Xt.ObjectPart;
+    dropTransfer: XmDropTransferPart;
+  END;
+
+  XmDropTransferRec = _XmDropTransferRec;
+
+VAR
+  xmDropTransferClassRec: XmDropTransferClassRec;
+
+(********    Private Function Declarations    ********)
+(********    End Private Function Declarations    ********)
+
+END DragDropP.

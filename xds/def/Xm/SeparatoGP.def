@@ -1,0 +1,185 @@
+(* Xm/SeparatoGP.def  Nov 12  16:22:34  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/SeparatoGP.h using H2D v1.18.1 *)
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+(* Merged headers: Xm/SeparatoG.h *)
+
+DEFINITION MODULE ["C"] SeparatoGP;
+
+IMPORT SYSTEM, Xlib, Xm:=XmP, Xt:=IntrinsicP;
+(* H2D:  Required IMPORT clause: 
+IMPORT SeparatoGP, Xlib, XmP, IntrinsicP;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(* ------------------------------------------------------ *)
+(*                     Xm/SeparatoG.h                     *)
+(* ------------------------------------------------------ *)
+
+(*
+ * Motif Release 1.2
+ *)
+
+(*   Separator Gadget   *)
+
+VAR 
+  xmSeparatorGadgetClass: Xt.WidgetClass;
+
+TYPE 
+  XmSeparatorGadgetClass = POINTER TO _XmSeparatorGadgetClassRec;
+
+  XmSeparatorGadget = POINTER TO _XmSeparatorGadgetRec;
+
+  XmSeparatorGCacheObject = POINTER TO _XmSeparatorGCacheObjRec;
+
+(********    Public Function Declarations    ********)
+
+PROCEDURE XmCreateSeparatorGadget ( parent: Xt.Widget;
+                                    name: ARRAY OF CHAR;
+                                    arglist: Xt.ArgList;
+                                    argcount: Xt.Cardinal ): Xt.Widget;
+
+(********    End Public Function Declarations    ********)
+
+(* ------------------------------------------------------ *)
+(*                    Xm/SeparatoGP.h                     *)
+(* ------------------------------------------------------ *)
+
+(*
+ * Motif Release 1.2.1
+ *)
+
+(******************************************************************)
+(* The Separator Gadget Cache Object's class and instance records *)
+(******************************************************************)
+
+TYPE 
+  _XmSeparatorGCacheObjClassPart = RECORD
+    foo: SYSTEM.int;
+  END;
+
+  XmSeparatorGCacheObjClassPart = _XmSeparatorGCacheObjClassPart;
+
+(*  separator cache class record  *)
+
+  _XmSeparatorGCacheObjClassRec = RECORD
+    object_class         : Xt.ObjectClassPart;
+    ext_class            : Xm.XmExtClassPart;
+    separator_class_cache: XmSeparatorGCacheObjClassPart;
+  END;
+
+  XmSeparatorGCacheObjClassRec = _XmSeparatorGCacheObjClassRec;
+
+(*   The Separator Gadget Cache instance record   *)
+
+  _XmSeparatorGCacheObjPart = RECORD
+    margin        : Xt.Dimension;
+    orientation   : SHORTCARD;
+    separator_type: SHORTCARD;
+    separator_GC  : Xlib.GC;
+  END;
+
+  XmSeparatorGCacheObjPart = _XmSeparatorGCacheObjPart;
+
+  _XmSeparatorGCacheObjRec = RECORD
+    object         : Xt.ObjectPart;
+    ext            : Xm.XmExtPart;
+    separator_cache: XmSeparatorGCacheObjPart;
+  END;
+
+  XmSeparatorGCacheObjRec = _XmSeparatorGCacheObjRec;
+
+(*****************************************************)
+(* The Separator Widget Class and instance records   *)
+(*****************************************************)
+
+  _XmSeparatorGadgetClassPart = RECORD
+    extension: Xt.XtPointer;
+  END;
+
+  XmSeparatorGadgetClassPart = _XmSeparatorGadgetClassPart;
+
+(*   Full class record declaration for Separator class   *)
+
+  _XmSeparatorGadgetClassRec = RECORD
+    rect_class     : Xt.RectObjClassPart;
+    gadget_class   : Xm.XmGadgetClassPart;
+    separator_class: XmSeparatorGadgetClassPart;
+  END;
+
+  XmSeparatorGadgetClassRec = _XmSeparatorGadgetClassRec;
+
+  XmSeparatorGCache = POINTER TO XmSeparatorGCacheObjPart;
+
+  _XmSeparatorGadgetPart = RECORD
+    cache: XmSeparatorGCache;
+  END;
+
+  XmSeparatorGadgetPart = _XmSeparatorGadgetPart;
+
+(*   Full instance record declaration   *)
+
+  _XmSeparatorGadgetRec = RECORD
+    object   : Xt.ObjectPart;
+    rectangle: Xt.RectObjPart;
+    gadget   : Xm.XmGadgetPart;
+    separator: XmSeparatorGadgetPart;
+  END;
+
+  XmSeparatorGadgetRec = _XmSeparatorGadgetRec;
+
+VAR 
+  xmSeparatorGCacheObjClassRec: XmSeparatorGCacheObjClassRec;
+  xmSeparatorGadgetClassRec: XmSeparatorGadgetClassRec;
+
+(*  MACROS for accessing instance fields *)
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: these procedures corresponds to macros. *)
+PROCEDURE SEPG_Margin ( w: Xt.Widget ): Xt.Dimension;
+PROCEDURE SEPG_Orientation ( w: Xt.Widget ): SHORTCARD;
+PROCEDURE SEPG_SeparatorType ( w: Xt.Widget ): SHORTCARD;
+PROCEDURE SEPG_SeparatorGC ( w: Xt.Widget ): Xlib.GC;
+
+<* ELSE *>
+
+PROCEDURE  / SEPG_Margin ( w: Xt.Widget ): Xt.Dimension;
+PROCEDURE  / SEPG_Orientation ( w: Xt.Widget ): SHORTCARD;
+PROCEDURE  / SEPG_SeparatorType ( w: Xt.Widget ): SHORTCARD;
+PROCEDURE  / SEPG_SeparatorGC ( w: Xt.Widget ): Xlib.GC;
+
+<* END *>
+
+(*  Convenience Macros  *)
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: these procedures corresponds to macros. *)
+PROCEDURE SEPG_Cache ( w: Xt.Widget ): XmSeparatorGCache;
+PROCEDURE SEPG_ClassCachePart ( w: Xt.WidgetClass ): Xm.XmCacheClassPartPtr;
+
+<* ELSE *>
+
+PROCEDURE  / SEPG_Cache ( w: Xt.Widget ): XmSeparatorGCache;
+PROCEDURE  / SEPG_ClassCachePart ( w: Xt.WidgetClass ): Xm.XmCacheClassPartPtr;
+
+<* END *>
+
+(********    Private Function Declarations    ********)
+
+PROCEDURE _XmSeparatorCacheCompare ( A: Xt.XtPointer;
+                                     B: Xt.XtPointer ): SYSTEM.int;
+
+(********    End Private Function Declarations    ********)
+
+END SeparatoGP.

@@ -1,0 +1,150 @@
+(* Xm/DialogSP.def  Nov 11  16:13:27  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/DialogSP.h using H2D v1.18.1 *)
+
+(* $RCSfile: DialogSP.def,v $ $Revision: 4 $ $Date: 28.07.98 23:14 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+(* Merged headers: Xm/DialogS.h *)
+
+DEFINITION MODULE ["C"] DialogSP;
+
+IMPORT SYSTEM, Xlib, Xm:=XmP, Xt:=IntrinsicP, ShellP;
+(* H2D:  Required IMPORT clause: 
+IMPORT DialogSP, Xlib, Xm:=XmP, Xt:=IntrinsicP, ShellP;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(* ---------------------------------------------------- *)
+(*                     Xm/DialogS.h                     *)
+(* ---------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2
+ *)
+
+VAR 
+  xmDialogShellWidgetClass: Xt.WidgetClass;
+
+TYPE 
+  XmDialogShellWidgetClass = POINTER TO _XmDialogShellClassRec;
+
+  XmDialogShellWidget = POINTER TO _XmDialogShellRec;
+
+(********    Public Function Declarations    ********)
+
+PROCEDURE XmCreateDialogShell ( p: Xt.Widget;
+                                name: ARRAY OF CHAR;
+                                al: Xt.ArgList;
+                                ac: Xt.Cardinal ): Xt.Widget;
+
+(********    End Public Function Declarations    ********)
+
+(* ---------------------------------------------------- *)
+(*                    Xm/DialogSP.h                     *)
+(* ---------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2
+ *)
+
+(*  macros: THESE BELONG IN Xm.h  *)
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: these procedures corresponds to macros. *)
+PROCEDURE XtX ( w: Xt.Widget ): Xt.Position;
+PROCEDURE XtY ( w: Xt.Widget ): Xt.Position;
+PROCEDURE XtWidth ( w: Xt.Widget ): Xt.Dimension;
+PROCEDURE XtHeight ( w: Xt.Widget ): Xt.Dimension;
+PROCEDURE XtBorderWidth ( w: Xt.Widget ): Xt.Dimension;
+PROCEDURE XtBackground ( w: Xt.Widget ): Xt.Pixel;
+PROCEDURE XtSensitive ( w: Xt.Widget ): Xt.Boolean;
+
+<* ELSE *>
+
+PROCEDURE  / XtX ( w: Xt.Widget ): Xt.Position;
+PROCEDURE  / XtY ( w: Xt.Widget ): Xt.Position;
+PROCEDURE  / XtWidth ( w: Xt.Widget ): Xt.Dimension;
+PROCEDURE  / XtHeight ( w: Xt.Widget ): Xt.Dimension;
+PROCEDURE  / XtBorderWidth ( w: Xt.Widget ): Xt.Dimension;
+PROCEDURE  / XtBackground ( w: Xt.Widget ): Xt.Pixel;
+PROCEDURE  / XtSensitive ( w: Xt.Widget ): Xt.Boolean;
+
+<* END *>
+
+(*  The DialogShell instance record  *)
+TYPE 
+  XmDialogShellPart = RECORD
+(*  internal fields  *)
+    grab_kind: Xt.XtGrabKind;
+    old_x    : Xt.Position;
+    old_y    : Xt.Position;
+  END;
+
+(*  Full instance record declaration  *)
+
+  _XmDialogShellRec = RECORD
+    core     : Xt.CorePart;
+    composite: Xt.CompositePart;
+    shell    : ShellP.ShellPart;
+    wm       : ShellP.WMShellPart;
+    vendor   : ShellP.VendorShellPart;
+    transient: ShellP.TransientShellPart;
+    dialog   : XmDialogShellPart;
+  END;
+
+  XmDialogShellRec = _XmDialogShellRec;
+
+(*  OBSOLETE (for compatibility only). *)
+
+  _XmDialogShellWidgetRec = RECORD
+    core     : Xt.CorePart;
+    composite: Xt.CompositePart;
+    shell    : ShellP.ShellPart;
+    wm       : ShellP.WMShellPart;
+    vendor   : ShellP.VendorShellPart;
+    transient: ShellP.TransientShellPart;
+    dialog   : XmDialogShellPart;
+  END;
+
+  XmDialogShellWidgetRec = _XmDialogShellWidgetRec;
+
+(*  DialogShell class structure  *)
+
+  _XmDialogShellClassPart = RECORD
+    extension: Xt.XtPointer;   (*  Pointer to extension record  *)
+  END;
+
+  XmDialogShellClassPart = _XmDialogShellClassPart;
+
+(*  Full class record declaration  *)
+
+  _XmDialogShellClassRec = RECORD
+    core_class           : Xt.CoreClassPart;
+    composite_class      : Xt.CompositeClassPart;
+    shell_class          : ShellP.ShellClassPart;
+    wm_shell_class       : ShellP.WMShellClassPart;
+    vendor_shell_class   : ShellP.VendorShellClassPart;
+    transient_shell_class: ShellP.TransientShellClassPart;
+    dialog_shell_part    : XmDialogShellClassPart;
+  END;
+
+  XmDialogShellClassRec = _XmDialogShellClassRec;
+
+VAR
+  xmDialogShellClassRec: XmDialogShellClassRec;
+
+(********    Private Function Declarations    ********)
+(********    End Private Function Declarations    ********)
+
+END DialogSP.

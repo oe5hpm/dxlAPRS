@@ -1,0 +1,58 @@
+(* Copyright (c) 1994 xTech Ltd, Russia. All Rights Reserved. *)
+<*+ M2ADDTYPES *>
+DEFINITION MODULE FileSys; (* Ned 13-Feb-94. *)
+
+IMPORT SysClock;
+
+PROCEDURE Exists(fname: ARRAY OF CHAR): BOOLEAN;
+(* Returns TRUE, if file "fname" exists. *)
+
+PROCEDURE ModifyTime(fname: ARRAY OF CHAR;
+                  VAR time: LONGCARD;
+                VAR exists: BOOLEAN);
+(* Returns file modification time *)
+
+PROCEDURE SetFileTime(fname: ARRAY OF CHAR;
+                      time: LONGCARD);
+(* Sets file modification time *)
+
+PROCEDURE Rename(fname,newname: ARRAY OF CHAR; VAR done: BOOLEAN);
+(* Renames file "fname" to "newname" *)
+
+PROCEDURE Remove(fname: ARRAY OF CHAR; VAR done: BOOLEAN);
+(* Removes file "fname" *)
+
+PROCEDURE FullName(VAR full: ARRAY OF CHAR; name: ARRAY OF CHAR);
+
+PROCEDURE GetCDNameLength(): CARDINAL;
+PROCEDURE GetCDName(VAR s: ARRAY OF CHAR);
+PROCEDURE SetCD(name: ARRAY OF CHAR): BOOLEAN;
+
+TYPE
+  Directory;
+  Entry = RECORD
+    fileSize: CARDINAL;
+    creaTime: SysClock.DateTime;
+    modfTime: SysClock.DateTime;
+    nameSize: CARDINAL;
+    isDir   : BOOLEAN;
+    done    : BOOLEAN;
+  END;
+
+PROCEDURE OpenDir(VAR dir: Directory; name: ARRAY OF CHAR; VAR entry: Entry);
+PROCEDURE NextDirEntry(dir: Directory; VAR entry: Entry);
+PROCEDURE CloseDir(VAR dir: Directory);
+PROCEDURE GetName(dir: Directory; VAR name: ARRAY OF CHAR);
+
+PROCEDURE CreateDirectory(name: ARRAY OF CHAR): BOOLEAN;
+PROCEDURE RemoveDirectory(name: ARRAY OF CHAR): BOOLEAN;
+
+(* FAT/UNC specific *)
+
+PROCEDURE GetDrive(VAR drive: CHAR): BOOLEAN;
+PROCEDURE SetDrive(drive: CHAR): BOOLEAN;
+PROCEDURE GetDriveCDNameLength(drive: CHAR; VAR len: CARDINAL): BOOLEAN;
+PROCEDURE GetDriveCDName(drive: CHAR; VAR dir: ARRAY OF CHAR): BOOLEAN;
+PROCEDURE GetLabel(drive: CHAR; VAR label: ARRAY OF CHAR): BOOLEAN;
+
+END FileSys.

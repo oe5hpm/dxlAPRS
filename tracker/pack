@@ -1,0 +1,2 @@
+#!/bin/sh
+zip dxl-aprsTracker-tiny13-10MHz-4800Bd.zip aprs.asm aprs.bin aprs.hex

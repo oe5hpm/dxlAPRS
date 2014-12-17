@@ -1,0 +1,68 @@
+(* Xm/ArrowBG.def  Oct 15  10:35:49  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/ArrowBG.h using H2D v1.16. *)
+
+(* $RCSfile: ArrowBG.def,v $ $Revision: 4 $ $Date: 28.07.98 23:14 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+
+DEFINITION MODULE ["C"] ArrowBG;
+
+IMPORT SYSTEM, Xt:=Intrinsic;
+(* H2D:  Required IMPORT clause: 
+IMPORT ArrowBG, Intrinsic;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(*
+ * Motif Release 1.2 
+ *)
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: this procedure corresponds to a macro. *)
+PROCEDURE XmIsArrowButtonGadget ( w: Xt.Widget ): Xt.Boolean;
+
+<* ELSE *>
+
+PROCEDURE  / XmIsArrowButtonGadget ( w: Xt.Widget ): Xt.Boolean;
+
+<* END *>
+
+VAR 
+  xmArrowButtonGadgetClass: Xt.WidgetClass;
+
+TYPE 
+  _XmArrowButtonGadgetClassRec = RECORD
+
+(* Declaration without definition *)
+  END;
+
+  XmArrowButtonGadgetClass = POINTER TO _XmArrowButtonGadgetClassRec;
+
+  _XmArrowButtonGadgetRec = RECORD
+
+(* Declaration without definition *)
+  END;
+
+  XmArrowButtonGadget = POINTER TO _XmArrowButtonGadgetRec;
+
+(********    Public Function Declarations    ********)
+
+PROCEDURE XmCreateArrowButtonGadget ( parent: Xt.Widget;
+                                      name: ARRAY OF CHAR;
+                                      arglist: Xt.ArgList;
+                                      argcount: Xt.Cardinal ): Xt.Widget;
+
+(********    End Public Function Declarations    ********)
+
+END ArrowBG.

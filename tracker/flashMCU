@@ -1,0 +1,5 @@
+#!/bin/sh
+avrdude -c usbasp -p t13 -U flash:w:aprs.hex
+avrdude -c usbasp -p t13 -U lfuse:w:0x30:m
+avrdude -c usbasp -p t13 -U hfuse:w:0xFB:m
+

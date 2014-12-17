@@ -1,0 +1,133 @@
+(* Xm/MenuUtilP.def  Nov 12  15:54:43  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/MenuUtilP.h using H2D v1.18.1 *)
+
+(* $RCSfile: MenuUtilP.def,v $ $Revision: 5 $ $Date: 28.07.98 23:14 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+
+DEFINITION MODULE ["C"] MenuUtilP;
+
+IMPORT SYSTEM, X, Xlib, Xm:=XmP, Xt:=IntrinsicP, RowColumnP;
+(* H2D:  Required IMPORT clause: 
+IMPORT MenuUtilP, X, Xlib, Xm:=XmP, Xt:=IntrinsicP, RowColumnP;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(*
+ * Motif Release 1.2.1
+ *)
+
+TYPE 
+  _PtrXmTranslRec = POINTER TO _XmTranslRec;
+
+  _XmTranslRec = RECORD
+    translations: Xt.XtTranslations;
+    next        : _PtrXmTranslRec;
+  END;
+
+(********    Private Function Declarations    ********)
+
+(* PROCEDURE _XmIsActiveTearOff ( w: Xt.Widget ): Xt.Boolean; *)
+
+PROCEDURE _XmGetRC_PopupPosted ( wid: Xt.Widget ): Xt.Widget;
+
+PROCEDURE _XmGetInDragMode ( widget: Xt.Widget ): Xt.Boolean;
+
+PROCEDURE _XmSetInDragMode ( widget: Xt.Widget;
+                             mode: Xt.Boolean );
+
+PROCEDURE _XmSaveMenuProcContext ( address: Xt.XtPointer );
+
+PROCEDURE _XmGetMenuProcContext (  ): Xt.XtPointer;
+
+PROCEDURE _XmGrabPointer ( widget: Xt.Widget;
+			   owner_events: SYSTEM.int;
+                           event_mask: CARDINAL;
+			   pointer_mode: SYSTEM.int;
+                           keyboard_mode: SYSTEM.int;
+			   confine_to: X.Window;
+                           cursor: X.Cursor;
+			   time: X.Time ): SYSTEM.int;
+
+PROCEDURE _XmGrabKeyboard ( widget: Xt.Widget;
+			    owner_events: SYSTEM.int;
+                            pointer_mode: SYSTEM.int;
+			    keyboard_mode: SYSTEM.int;
+                            time: X.Time ): SYSTEM.int;
+
+PROCEDURE _XmMenuSetInPMMode ( wid: Xt.Widget;
+                               flag: Xt.Boolean );
+
+PROCEDURE _XmSetMenuTraversal ( wid: Xt.Widget;
+                                traversalOn: Xt.Boolean );
+
+PROCEDURE _XmLeafPaneFocusOut ( wid: Xt.Widget );
+
+PROCEDURE _XmMenuTraverseLeft ( wid: Xt.Widget;
+			       	VAR event: Xlib.XEvent;
+                                param: Xt.StringList;
+			       	VAR num_param: Xt.Cardinal );
+
+PROCEDURE _XmMenuTraverseRight ( wid: Xt.Widget;
+				 VAR event: Xlib.XEvent;
+                                 param: Xt.StringList;
+				 VAR num_param: Xt.Cardinal );
+
+PROCEDURE _XmMenuTraverseUp ( wid: Xt.Widget;
+			      VAR event: Xlib.XEvent;
+                              param: Xt.StringList;
+			      VAR num_param: Xt.Cardinal );
+
+PROCEDURE _XmMenuTraverseDown ( wid: Xt.Widget;
+			       	VAR event: Xlib.XEvent;
+                                param: Xt.StringList;
+			       	VAR num_param: Xt.Cardinal );
+
+PROCEDURE _XmMenuEscape ( w: Xt.Widget;
+			  VAR event: Xlib.XEvent;
+                          params: Xt.StringList;
+			  VAR num_params: Xt.Cardinal );
+
+PROCEDURE _XmRC_GadgetTraverseDown ( wid: Xt.Widget;
+				     VAR event: Xlib.XEvent;
+                                     param: Xt.StringList;
+				     VAR num_param: Xt.Cardinal );
+
+PROCEDURE _XmRC_GadgetTraverseUp ( wid: Xt.Widget;
+				   VAR event: Xlib.XEvent;
+                                   param: Xt.StringList;
+				   VAR num_param: Xt.Cardinal );
+
+PROCEDURE _XmRC_GadgetTraverseLeft ( wid: Xt.Widget;
+				     VAR event: Xlib.XEvent;
+                                     param: Xt.StringList;
+				     VAR num_param: Xt.Cardinal );
+
+PROCEDURE _XmRC_GadgetTraverseRight ( wid: Xt.Widget;
+				      VAR event: Xlib.XEvent;
+                                      param: Xt.StringList;
+				      VAR num_param: Xt.Cardinal );
+
+PROCEDURE _XmMenuTraversalHandler ( w: Xt.Widget;
+                                    pw: Xt.Widget;
+                                    direction: Xm.XmTraversalDirection );
+
+PROCEDURE _XmSaveCoreClassTranslations ( widget: Xt.Widget );
+
+PROCEDURE _XmRestoreCoreClassTranslations ( widget: Xt.Widget );
+
+PROCEDURE _XmGetMenuState ( widget: Xt.Widget ): RowColumnP.XmMenuState;
+
+(********    End Private Function Declarations    ********)
+
+END MenuUtilP.

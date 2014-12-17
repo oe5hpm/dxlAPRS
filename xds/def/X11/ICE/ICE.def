@@ -1,0 +1,84 @@
+(* X11/ICE/ICE.def  May 11  12:13:1  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted by H2D v1.00 from X11/ICE/ICE.h. *)
+
+(* $RCSfile: ICE.def,v $ $Revision: 3 $ $Date: 14.02.98 18:04 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *>
+<* IF NOT DEFINED(GENCTYPES) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+
+DEFINITION MODULE ["C"] ICE;
+
+IMPORT SYSTEM;
+(* H2D: to import this module write following text:
+IMPORT ICE;
+*)
+
+(*  $XConsortium: ICE.h,v 1.6 94/04/17 20:15:23 mor Exp $  *)
+
+(* Author: Ralph Mor, X Consortium  *)
+
+CONST 
+
+(*
+ * Protocol Version
+ *)
+  IceProtoMajor = 1;
+  IceProtoMinor = 0;
+
+(*
+ * Byte Order
+ *)
+  IceLSBfirst = 0;
+  IceMSBfirst = 1;
+
+(*
+ * ICE minor opcodes
+ *)
+  ICE_Error = 0;
+  ICE_ByteOrder = 1;
+  ICE_ConnectionSetup = 2;
+  ICE_AuthRequired = 3;
+  ICE_AuthReply = 4;
+  ICE_AuthNextPhase = 5;
+  ICE_ConnectionReply = 6;
+  ICE_ProtocolSetup = 7;
+  ICE_ProtocolReply = 8;
+  ICE_Ping = 9;
+  ICE_PingReply = 10;
+  ICE_WantToClose = 11;
+  ICE_NoClose = 12;
+
+(*
+ * Error severity 
+ *)
+  IceCanContinue = 0;
+  IceFatalToProtocol = 1;
+  IceFatalToConnection = 2;
+
+(*
+ * ICE error classes that are common to all protocols 
+ *)
+  IceBadMinor = 8000H;
+  IceBadState = 8001H;
+  IceBadLength = 8002H;
+  IceBadValue = 8003H;
+
+(*
+ * ICE error classes that are specific to the ICE protocol 
+ *)
+  IceBadMajor = 0;
+  IceNoAuth = 1;
+  IceNoVersion = 2;
+  IceSetupFailed = 3;
+  IceAuthRejected = 4;
+  IceAuthFailed = 5;
+  IceProtocolDuplicate = 6;
+  IceMajorOpcodeDuplicate = 7;
+  IceUnknownProtocol = 8;
+
+END ICE.

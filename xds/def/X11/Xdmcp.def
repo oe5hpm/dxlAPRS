@@ -1,0 +1,193 @@
+(* X11/Xdmcp.def  Apr 12  15:39:8  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted using H2D v1.00 from X11/Xdmcp.h. *)
+
+(* $RCSfile: Xdmcp.def,v $ $Revision: 4 $ $Date: 28.07.98 23:13 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *>
+<* IF NOT DEFINED(GENCTYPES) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+
+DEFINITION MODULE ["C"] Xdmcp;
+
+IMPORT SYSTEM;
+(* H2D: to import this module write following text:
+IMPORT Xdmcp;
+*)
+
+(*  $XConsortium: Xdmcp.h,v 1.8 91/07/23 22:28:07 keith Exp $  *)
+(*  $XFree86: xc/lib/Xdmcp/Xdmcp.h,v 3.0 1995/07/07 15:32:22 dawes Exp $  *)
+
+CONST 
+  XDM_PROTOCOL_VERSION = 1;
+  XDM_UDP_PORT = 177;
+  XDM_MAX_MSGLEN = 8192;
+  XDM_MIN_RTX = 2;
+  XDM_MAX_RTX = 32;
+  XDM_RTX_LIMIT = 7;
+  XDM_KA_RTX_LIMIT = 4;
+  XDM_DEF_DORMANCY = 180;              (*  3 minutes  *)
+  XDM_MAX_DORMANCY = 86400;            (*  24 hours  *)
+
+TYPE 
+  xdmOpCode = (
+    BROADCAST_QUERY,   (* H2D: integer value was 1 *)
+    QUERY          ,
+    INDIRECT_QUERY ,
+    FORWARD_QUERY  ,
+    WILLING        ,
+    UNWILLING      ,
+    REQUEST        ,
+    ACCEPT         ,
+    DECLINE        ,
+    MANAGE         ,
+    REFUSE         ,
+    FAILED         ,
+    KEEPALIVE      ,
+    ALIVE          
+  );
+
+  xdmcp_states = (
+    XDM_QUERY                  ,
+    XDM_BROADCAST              ,
+    XDM_INDIRECT               ,
+    XDM_COLLECT_QUERY          ,
+    XDM_COLLECT_BROADCAST_QUERY,
+    XDM_COLLECT_INDIRECT_QUERY ,
+    XDM_START_CONNECTION       ,
+    XDM_AWAIT_REQUEST_RESPONSE ,
+    XDM_AWAIT_MANAGE_RESPONSE  ,
+    XDM_MANAGE                 ,
+    XDM_RUN_SESSION            ,
+    XDM_OFF                    ,
+    XDM_AWAIT_USER_INPUT       ,
+    XDM_KEEPALIVE              ,
+    XDM_AWAIT_ALIVE_RESPONSE   
+  );
+
+  CARD8Ptr = POINTER TO SYSTEM.CARD8;
+
+  CARD16Ptr = POINTER TO SYSTEM.CARD16;
+
+  CARD32Ptr = POINTER TO SYSTEM.CARD32;
+
+  ARRAY8 = RECORD
+    length: SYSTEM.CARD16;
+    data  : CARD8Ptr;
+  END;
+
+  ARRAY8Ptr = POINTER TO ARRAY8;
+
+  ARRAY16 = RECORD
+    length: SYSTEM.CARD8;
+    data  : CARD16Ptr;
+  END;
+
+  ARRAY16Ptr = POINTER TO ARRAY16;
+
+  ARRAY32 = RECORD
+    length: SYSTEM.CARD8;
+    data  : CARD32Ptr;
+  END;
+
+  ARRAY32Ptr = POINTER TO ARRAY32;
+
+  ARRAYofARRAY8 = RECORD
+    length: SYSTEM.CARD8;
+    data  : ARRAY8Ptr;
+  END;
+
+  ARRAYofARRAY8Ptr = POINTER TO ARRAYofARRAY8;
+
+  XdmcpHeader = RECORD
+    version: SYSTEM.CARD16;
+    opcode : SYSTEM.CARD16;
+    length : SYSTEM.CARD16;
+  END;
+
+  XdmcpHeaderPtr = POINTER TO XdmcpHeader;
+
+  XdmcpBuffer = RECORD
+    data   : CARD8Ptr;
+    size   : SYSTEM.int;    (*  size of buffer pointed by to data  *)
+    pointer: SYSTEM.int;    (*  current index into data  *)
+    count  : SYSTEM.int;    (*  bytes read from network into data  *)
+  END;
+
+  XdmcpBufferPtr = POINTER TO XdmcpBuffer;
+
+  XdmAuthKey = RECORD
+    data: ARRAY [0..7] OF SYSTEM.BYTE;
+  END;
+
+  XdmAuthKeyPtr = POINTER TO XdmAuthKey;
+
+(*  implementation-independent network address structure.     *)
+(*  Equiv to sockaddr* for sockets and netbuf* for STREAMS.   *)
+
+  XdmcpNetaddr = POINTER TO ARRAY OF CHAR;
+
+PROCEDURE XdmcpWriteCARD8 ( SEQ args: SYSTEM.BYTE ): SYSTEM.int;
+
+PROCEDURE XdmcpWriteCARD16 ( SEQ args: SYSTEM.BYTE ): SYSTEM.int;
+
+PROCEDURE XdmcpWriteCARD32 ( SEQ args: SYSTEM.BYTE ): SYSTEM.int;
+
+PROCEDURE XdmcpWriteARRAY8 ( SEQ args: SYSTEM.BYTE ): SYSTEM.int;
+
+PROCEDURE XdmcpWriteARRAY16 ( SEQ args: SYSTEM.BYTE ): SYSTEM.int;
+
+PROCEDURE XdmcpWriteARRAY32 ( SEQ args: SYSTEM.BYTE ): SYSTEM.int;
+
+PROCEDURE XdmcpWriteARRAYofARRAY8 ( SEQ args: SYSTEM.BYTE ): SYSTEM.int;
+
+PROCEDURE XdmcpWriteHeader ( SEQ args: SYSTEM.BYTE ): SYSTEM.int;
+
+PROCEDURE XdmcpFlush ( SEQ args: SYSTEM.BYTE ): SYSTEM.int;
+
+PROCEDURE XdmcpReadCARD8 ( SEQ args: SYSTEM.BYTE ): SYSTEM.int;
+
+PROCEDURE XdmcpReadCARD16 ( SEQ args: SYSTEM.BYTE ): SYSTEM.int;
+
+PROCEDURE XdmcpReadCARD32 ( SEQ args: SYSTEM.BYTE ): SYSTEM.int;
+
+PROCEDURE XdmcpReadARRAY8 ( SEQ args: SYSTEM.BYTE ): SYSTEM.int;
+
+PROCEDURE XdmcpReadARRAY16 ( SEQ args: SYSTEM.BYTE ): SYSTEM.int;
+
+PROCEDURE XdmcpReadARRAY32 ( SEQ args: SYSTEM.BYTE ): SYSTEM.int;
+
+PROCEDURE XdmcpReadARRAYofARRAY8 ( SEQ args: SYSTEM.BYTE ): SYSTEM.int;
+
+PROCEDURE XdmcpReadHeader ( SEQ args: SYSTEM.BYTE ): SYSTEM.int;
+
+PROCEDURE XdmcpFill ( SEQ args: SYSTEM.BYTE ): SYSTEM.int;
+
+PROCEDURE XdmcpReadRemaining ( SEQ args: SYSTEM.BYTE ): SYSTEM.int;
+
+PROCEDURE XdmcpDisposeARRAY8 ( SEQ args: SYSTEM.BYTE );
+
+PROCEDURE XdmcpDisposeARRAY16 ( SEQ args: SYSTEM.BYTE );
+
+PROCEDURE XdmcpDisposeARRAY32 ( SEQ args: SYSTEM.BYTE );
+
+PROCEDURE XdmcpDisposeARRAYofARRAY8 ( SEQ args: SYSTEM.BYTE );
+
+PROCEDURE XdmcpCopyARRAY8 ( SEQ args: SYSTEM.BYTE ): SYSTEM.int;
+
+PROCEDURE XdmcpARRAY8Equal ( SEQ args: SYSTEM.BYTE ): SYSTEM.int;
+
+CONST 
+  TRUE = TRUE;
+  FALSE = FALSE;
+
+PROCEDURE Xalloc ( SEQ args: SYSTEM.BYTE ): CARD32Ptr;
+
+PROCEDURE Xrealloc ( SEQ args: SYSTEM.BYTE ): CARD32Ptr;
+
+PROCEDURE Xfree ( SEQ args: SYSTEM.BYTE );
+
+END Xdmcp.

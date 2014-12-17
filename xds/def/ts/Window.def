@@ -1,0 +1,372 @@
+(* Copyrigth (C) 1996 xTech Ltd *)
+ 
+<* +M2EXTENSIONS *>
+<* +M2ADDTYPES   *>
+
+DEFINITION MODULE Window;
+(* Window Management *)
+
+FROM SYSTEM IMPORT ADDRESS;
+
+
+CONST
+  ScreenWidth   = 80;
+  ScreenDepth   = 25;
+  ScreenDepth43 = 43;
+  ScreenDepth50 = 50;
+
+  PaletteSize   = 10;
+  PaletteMax    = PaletteSize-1;
+
+
+TYPE
+  WinType;
+  RelCoord = CARDINAL;
+  AbsCoord = CARDINAL;
+
+  Color    = ( Black,     Blue,         Green,      Cyan,
+               Red,       Magenta,      Brown,      LightGray,
+               DarkGray,  LightBlue,    LightGreen, LightCyan,
+               LightRed,  LightMagenta, Yellow,     White );
+
+  TitleStr     = ARRAY [0..ScreenWidth-1] OF CHAR;
+
+  FrameStr     = ARRAY [0..7] OF CHAR;  (* Chars for frame *)
+                                        (*  0     1     2  *)
+                                        (*  3           4  *)
+                                        (*  5     6     7  *)
+
+  WinDef    = RECORD
+                X1,Y1,
+                X2,Y2          :AbsCoord;       (* outer co-ordinates of
+                                                 opposite corners *)
+                Foreground     :Color;
+                Background     :Color;          (* not used if Palette *)
+                CursorOn       :BOOLEAN;        (* if cursor active    *)
+                WrapOn         :BOOLEAN;        (* if EOL wrap enabled *)
+                Hidden         :BOOLEAN;        (* if window on view   *)
+                FrameOn        :BOOLEAN;        (* if frame            *)
+                FrameDef       :FrameStr;       (* only used if frame  *)
+                FrameFore      :Color;
+                FrameBack      :Color;          (* only used if frame and
+                                                   not Palette Window  *)
+              END;
+
+  TitleMode = ( NoTitle,
+                LeftUpperTitle,CenterUpperTitle,RightUpperTitle,
+                LeftLowerTitle,CenterLowerTitle,RightLowerTitle );
+
+
+
+CONST
+  SingleFrame   = FrameStr {"ÚÄ¿³³ÀÄÙ"};
+  DoubleFrame   = FrameStr {"ÉÍ»ººÈÍ¼"};
+  FullScreenDef = WinDef   { 0,0, ScreenWidth-1,ScreenDepth-1,
+                             White, Black, TRUE,TRUE,TRUE,FALSE,
+                             '',Black, Black };
+VAR
+  FullScreen          :WinType;
+  CurrentScreenWidth,
+  CurrentScreenDepth  :AbsCoord;
+
+
+PROCEDURE Open ( WD :WinDef ) :WinType;
+(*
+  creates a new window, clears the window, and puts it on view
+  on top of any existing windows
+*)
+
+
+PROCEDURE Close( VAR W :WinType );
+(*
+     Removes the specified window from the screen,
+     deletes window descriptor and
+     de-allocates any buffers previously allocated.
+     Also sets W to an invalid handle to prevent further use of window.
+*)
+
+
+PROCEDURE Hide ( W :WinType );
+(*
+    Removes window from the Window stack and also the screen,
+    placing the windows contents in a buffer for possible re-display later.
+    Uncovers obscured windows.
+*)
+
+
+PROCEDURE Show ( W :WinType );
+(*
+   Makes hidden window visible again
+*)
+
+
+PROCEDURE PutOnTop ( W :WinType );
+(*
+   Puts the specified window on the top of the window stack,
+   ensuring that it is fully visible.
+   If this results in other windows becoming obscured then a buffer
+   is allocated for each of these windows.
+   All otherwise undirected output (i.e. with no Use) will appear
+   within this window.
+*)
+
+
+
+PROCEDURE PutBeneath ( W:WinType; WA :WinType );
+(*
+    Puts window W beneath window WA
+*)
+
+
+
+PROCEDURE Use ( W :WinType );
+(*
+   Causes all subsequent output (by the current process)
+   to appear in the specified Window
+   NB does not have to be Top Window (or in fact on the screen at all)
+*)
+
+
+PROCEDURE Used() :WinType;
+(*
+    Returns the current window being used for output for this process.
+    If no window assigned by Use then returns Top.
+*)
+
+
+PROCEDURE Top() :WinType;
+(*
+    Returns the current top Window.
+*)
+
+PROCEDURE Info ( W :WinType; VAR WD :WinDef );
+(* gets information for the specified window *)
+
+
+PROCEDURE SetTitle( W     :WinType;
+                    Title :ARRAY OF CHAR;
+                    Mode  :TitleMode);
+(*
+  updates the window title within the window frame,
+  positioning it in the position defined by the title mode
+*)
+
+PROCEDURE SetFrame( W     : WinType;
+                    Frame : FrameStr;
+                    Fore, Back : Color);
+(*
+   Changes the frame around the specified window,
+   redisplaying title if required
+*)
+
+
+PROCEDURE TextColor ( c :Color );
+(*
+   Sets the text foreground color of the current window
+*)
+
+PROCEDURE TextBackground ( c :Color );
+(*
+   Sets the text background color of the current window
+*)
+
+
+
+PROCEDURE ObscuredAt(W : WinType; X,Y :RelCoord ) : BOOLEAN;
+(*
+    Returns if the specified window is obscured at the specified position.
+*)
+
+PROCEDURE At ( X,Y :AbsCoord) :WinType;
+(*
+    Returns the window displayed at the absolute position X,Y
+*)
+
+
+
+
+PROCEDURE GotoXY ( X,Y :RelCoord);
+(*
+    Sets the current X Y position of the window currently being used
+*)
+
+PROCEDURE WhereX() :RelCoord;
+(*
+    Returns the current X position of the window currently being used
+*)
+
+
+PROCEDURE WhereY() :RelCoord;
+(*
+    Returns the current Y position of the window currently being used
+*)
+
+PROCEDURE ConvertCoords ( W :WinType;
+                          X,Y       :RelCoord;
+                          VAR X0,Y0 :AbsCoord );
+(*
+    Converts window relative co-ordinates to absolute screen co-ordinates
+*)
+
+
+PROCEDURE Clear;
+(*
+    clears the current window
+*)
+
+PROCEDURE CursorOn;
+(*
+    Turns the cursor on in the current window.
+    NB cursor is only visible when turned on AND window is on top.
+*)
+
+PROCEDURE CursorOff;
+(*
+   Turns the cursor off in the current window.
+*)
+
+
+PROCEDURE SetWrap ( on :BOOLEAN );
+(*
+   Enables/disables automatic wrap when writing beyond the right end of
+   the current window
+*)
+
+
+
+PROCEDURE DelLine;
+(*
+   Deletes the line at the cursor position
+   scrolling the screen up below
+*)
+
+
+PROCEDURE InsLine;
+(*
+   Inserts a blank line at the cursor position
+   scrolling the screen down beneath
+*)
+
+
+
+PROCEDURE ClrEol;
+(*
+   Clears from the cursor to the end of line
+*)
+
+
+PROCEDURE DirectWrite (X,Y : RelCoord;      (* start coords *)
+                       A   : ADDRESS;       (* address of char array *)
+                       Len : CARDINAL);     (* length to be written *)
+(*
+   Writes directly to current window at the specified X,Y coordinates
+   with no check for special (i.e. control) chars or eol wrap.
+*)
+
+
+PROCEDURE Change ( W :WinType; X1, Y1, X2, Y2 :AbsCoord );
+(*
+   Changes the size and/or position of the specified window.
+   The contents of the window will be moved with it.
+*)
+
+
+PROCEDURE SnapShot;
+(*
+   Updates the current window buffer from the screen
+   only works with non-palette windows
+   To capture the screen,
+      first Open should be used with Hidden set in WinDef,
+      then SnapShot can be called to capture the screen contents
+      then PutOnTop can be used to 'unhide' the window.
+*)
+
+
+
+
+(*                   Palette Windows                                *)
+(*                   ----------------                               *)
+
+TYPE
+  PaletteColorDef = RECORD Fore,Back :Color END;
+  PaletteRange    = SHORTCARD [ 0..PaletteMax ];
+  PaletteDef      = ARRAY PaletteRange OF PaletteColorDef;
+
+CONST
+  NormalPaletteColor = 0;
+  FramePaletteColor  = 1;
+
+
+PROCEDURE PaletteOpen ( WD :WinDef; Pal :PaletteDef ) :WinType;
+(*
+  Creates a new palette window, clears the window to NormalPaletteColor,
+  draws the frame in FramePaletteColor and puts it on view on top of
+  any existing windows,
+
+*)
+
+
+PROCEDURE SetPalette ( W :WinType; Pal: PaletteDef );
+(*
+   Changes the Palette of the specified window,
+   redisplaying the changed colors
+*)
+
+
+PROCEDURE PaletteColor() :PaletteRange;
+(*
+   Returns the palette color being in use
+*)
+
+
+PROCEDURE SetPaletteColor ( pc :PaletteRange );
+(*
+   Sets curent palette color
+*)
+
+
+PROCEDURE PaletteColorUsed ( W :WinType; pc :PaletteRange ) :BOOLEAN;
+(*
+   Returns if color in use anywhere in the window W.
+   Returns false if W not a palette window.
+*)
+
+
+(* Low level routines to read from and write to the window buffer direct
+
+   a single line at a time *)
+
+PROCEDURE RdBufferLn ( W    :WinType;     (* Source window     *)
+                       X,Y  :RelCoord;    (* start co-ords     *)
+                       Dest :ADDRESS;     (* address of buffer *)
+                       Len  :CARDINAL );  (* length in WORDs   *)
+
+PROCEDURE WrBufferLn ( W   :WinType;      (* Dest window       *)
+                       X,Y :RelCoord;     (* start co-ords     *)
+                       Src :ADDRESS;      (* address of buffer *)
+                       Len :CARDINAL );   (* length in WORDs   *)
+
+
+PROCEDURE InputStr ( VAR S : ARRAY OF CHAR ) ;
+
+TYPE
+  WinDescriptor = RECORD (* Internal *)
+                    WDef               :WinDef;
+                    XA,YA,XB,YB        :AbsCoord;            (* inner window pane *)
+                    OWidth,ODepth      :CARDINAL;            (* outer window *)
+                    Width, Depth       :CARDINAL;            (* inner pane *)
+                    Title              :POINTER TO TitleStr;
+                    TMode              :TitleMode;
+                    CurrentX, CurrentY :RelCoord;
+                    IsPalette          :BOOLEAN;
+                    PalAttr            :PaletteDef;
+                    CurPalColor        :PaletteRange;
+                    UserRecord         :ADDRESS;
+                  END;
+
+  p2WDescriptor = POINTER TO WinDescriptor;
+
+PROCEDURE GetWDescriptor ( W :WinType ) :p2WDescriptor;
+
+
+END Window.

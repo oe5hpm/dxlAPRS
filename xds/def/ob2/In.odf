@@ -1,0 +1,87 @@
+(** Oakwood Oberon-2 library *)
+(** Copyright (c) xTech 1994,95. All Rights Reserved. *)
+DEFINITION In;
+
+(** Formatted input of characters, numbers and strings.
+
+  All operations except Open require Done = TRUE and guarantee
+  (Done = TRUE and the result is valid) or (Done = FALSE).
+
+  All operations except Char skip leanding blanks, tabs or
+  end-of-line characters.
+
+*)
+
+(** Example:
+
+  VAR i: INTEGER; ch: CHAR; r: REAL; s,n: ARRAY 32 OF CHAR;
+  ...
+  In.Open;
+  In.Int(i); In.Char(ch); In.Real(r); In.String(s); In.Name(n);
+
+Input stream:
+
+  123*1.5       "abc"   Mod.Proc
+
+Results:
+
+  i = 123
+  ch = "*"
+  r = 1.5E0
+  s = "abc"
+  n = "Mod.Proc"
+*)
+
+VAR
+  Done*: BOOLEAN;
+
+PROCEDURE Open*;
+(** Sets the standard input stream as input source.
+  Sets Done to TRUE.
+*)
+
+PROCEDURE Char*(VAR ch: CHAR);
+(** Returns the character ch at the current position
+  (LF for the end-of-line character).
+*)
+
+PROCEDURE String*(VAR str: ARRAY OF CHAR);
+(** Returns the string at the current position:
+        string = '"' char {char} '"'.
+  The string must not contain characters less than blank,
+  such as EOL or TAB.
+*)
+
+PROCEDURE Name*(VAR name: ARRAY OF CHAR);
+(** Returns the name at the current position according to the
+  file name format of the underlying operating system (e.g.
+  "lib/MyMod" under Unix).
+
+  In the current implementation the procedure copies 
+  to "name" characters before next blank, tab or
+  end-of-line character.
+*)
+
+PROCEDURE Int*(VAR n: INTEGER);
+(** Returns the integer constant at the current position:
+        IntConst = digit {digit} | digit {hexDigit} "H".
+*)
+
+PROCEDURE LongInt*(VAR n: LONGINT);
+(** Returns the long integer constant n at the current position:
+        IntConst = digit {digit} | digit {hexDigit} "H".
+*)
+
+PROCEDURE Real*(VAR x: REAL);
+(** Returns the real constant at the current position:
+        RealConst = digit {digit}
+            [ "." {digit} [ "E" ["+"|"-"] digit {digit} ]]
+*)
+
+PROCEDURE LongReal*(VAR x: LONGREAL);
+(** Returns the long real constant at the current position:
+        LongRealConst = digit {digit}
+            [ "." {digit} [ ("D"|"E") ["+"|"-"] digit {digit} ]]
+*)
+
+END In.

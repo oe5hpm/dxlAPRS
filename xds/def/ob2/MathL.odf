@@ -1,0 +1,48 @@
+(** Oakwood Oberon-2 Math library *)
+(** Mathematical functions for the type LONGREAL *)
+(** Copyright (c) xTech 1994,95. All Rights Reserved. *)
+DEFINITION MathL;
+
+CONST
+  pi* = 3.1415926535898;
+  e*  = 2.718281828459;
+
+PROCEDURE sqrt*(x: LONGREAL): LONGREAL;
+
+PROCEDURE exp*(x: LONGREAL): LONGREAL;
+
+PROCEDURE ln*(x: LONGREAL): LONGREAL;
+
+PROCEDURE sin*(x: LONGREAL): LONGREAL;
+
+PROCEDURE cos*(x: LONGREAL): LONGREAL;
+
+PROCEDURE tan*(x: LONGREAL): LONGREAL;
+
+PROCEDURE arcsin*(x: LONGREAL): LONGREAL;
+
+PROCEDURE arccos*(x: LONGREAL): LONGREAL;
+
+PROCEDURE arctan*(x: LONGREAL): LONGREAL;
+
+PROCEDURE power*(base,exponent: LONGREAL): LONGREAL;
+
+PROCEDURE round*(x: LONGREAL): LONGREAL;
+
+PROCEDURE log*(x,base: LONGREAL): LONGREAL;
+
+PROCEDURE arctan2*(x,y: LONGREAL): LONGREAL;
+
+PROCEDURE sinh*(x: LONGREAL): LONGREAL;
+
+PROCEDURE cosh*(x: LONGREAL): LONGREAL;
+
+PROCEDURE tanh*(x: LONGREAL): LONGREAL;
+
+PROCEDURE arcsinh*(x: LONGREAL): LONGREAL;
+
+PROCEDURE arccosh*(x: LONGREAL): LONGREAL;
+
+PROCEDURE arctanh*(x: LONGREAL): LONGREAL;
+
+END MathL.

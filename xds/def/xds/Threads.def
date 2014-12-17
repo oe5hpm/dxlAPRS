@@ -1,0 +1,70 @@
+(* Copyright (c) XDS 1999.  All Rights Reserved *)
+(*
+ * XDS library.
+ * Interface to multithreading features of the underlying OS.
+ *)
+
+<* M2EXTENSIONS+ *>
+
+DEFINITION MODULE Threads; (* Snowman 25.06.99 *)
+
+IMPORT  SYSTEM;
+
+TYPE
+  Thread;          
+
+PROCEDURE CurrentThread(): Thread;
+PROCEDURE CreateThread(VAR t: Thread;
+                        proc: PROC;
+                       stack: CARDINAL;
+                       param: SYSTEM.ADDRESS;
+                        prio: INTEGER;
+                     suspend: BOOLEAN);
+PROCEDURE DeleteThread(VAR t: Thread);
+PROCEDURE SuspendThread(t: Thread);
+PROCEDURE ResumeThread (t: Thread);
+PROCEDURE ExitThread();
+PROCEDURE GetThreadPriority(t: Thread): INTEGER;
+PROCEDURE SetThreadPriority(t: Thread; prio: INTEGER);
+
+TYPE
+  Mutex;
+
+PROCEDURE CreateMutex(VAR m: Mutex);
+PROCEDURE DeleteMutex(VAR m: Mutex);
+PROCEDURE LockMutex(m: Mutex);
+PROCEDURE UnlockMutex(m: Mutex);
+
+TYPE
+  Event;           
+
+PROCEDURE CreateEvent (VAR e: Event);
+PROCEDURE DeleteEvent (VAR e: Event);
+PROCEDURE WaitEvent (e: Event);
+PROCEDURE ResetEvent (e: Event); (* block *) 
+PROCEDURE SetEvent (e: Event);   (* release *) 
+
+TYPE
+  Semaphore;   
+
+PROCEDURE CreateSemaphore(VAR s: Semaphore; init, max: CARDINAL);
+PROCEDURE DeleteSemaphore(VAR s: Semaphore);
+PROCEDURE WaitSemaphore(s: Semaphore);
+PROCEDURE TryWaitSemaphore(s: Semaphore) : BOOLEAN; (* TRUE if signaled *)
+PROCEDURE ReleaseSemaphore(s: Semaphore);
+
+TYPE
+  Key;         
+
+PROCEDURE CreateKey(): Key;
+PROCEDURE DeleteKey(VAR key: Key);
+PROCEDURE SetKeyValue(key: Key; value: SYSTEM.ADDRESS);
+PROCEDURE GetKeyValue(key: Key): SYSTEM.ADDRESS;
+
+(*
+PROCEDURE X2C_WaitEvents(s: ARRAY OF X2C_EventSource; no: CARDINAL): SYSTEM.INT32;
+*)
+
+PROCEDURE IsThreadsException () : BOOLEAN;
+
+END Threads.

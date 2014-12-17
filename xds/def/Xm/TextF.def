@@ -1,0 +1,196 @@
+(* Xm/TextF.def  Oct 15  20:27:26  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/TextF.h using H2D v1.16 *)
+
+(* $RCSfile: TextF.def,v $ $Revision: 4 $ $Date: 28.07.98 23:14 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+
+DEFINITION MODULE ["C"] TextF;
+
+IMPORT SYSTEM, X, Xlib, Xm, Xt:=Intrinsic;
+(* H2D:  Required IMPORT clause: 
+IMPORT TextF, X, Xlib, Xm, Intrinsic;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(*
+ * Motif Release 1.2 
+ *)
+
+(******************
+ * type defines   *
+ ******************)
+
+TYPE 
+  _XmTextFieldClassRec = RECORD
+    (* Declaration without definition *)
+  END;
+
+  XmTextFieldWidgetClass = POINTER TO _XmTextFieldClassRec;
+
+  _XmTextFieldRec = RECORD
+    (* Declaration without definition *)
+  END;
+
+  XmTextFieldWidget = POINTER TO _XmTextFieldRec;
+
+(******************
+ * extern class   *
+ ******************)
+
+VAR 
+  xmTextFieldWidgetClass: Xt.WidgetClass;
+
+(************************
+ * fast subclass define *
+ ************************)
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: this procedure corresponds to a macro. *)
+PROCEDURE XmIsTextField ( w: Xt.Widget ): Xt.Boolean;
+
+<* ELSE *>
+
+PROCEDURE  / XmIsTextField ( w: Xt.Widget ): Xt.Boolean;
+
+<* END *>
+
+(********************
+ * public functions *
+ ********************)
+ 
+(********    Public Function Declarations    ********)
+
+PROCEDURE ToggleCursorGC ( widget: Xt.Widget;
+                           state: SYSTEM.int );
+
+PROCEDURE XmTextFieldGetString ( w: Xt.Widget ): Xt.String;
+
+PROCEDURE XmTextFieldGetSubstring ( widget: Xt.Widget;
+                                    start: Xm.XmTextPosition;
+                                    num_chars: SYSTEM.int;
+                                    buf_size: SYSTEM.int;
+                                    buffer: Xlib.PChar ): SYSTEM.int;
+
+PROCEDURE XmTextFieldGetStringWcs ( w: Xt.Widget ): Xlib.Ptrwchar_t;
+
+PROCEDURE XmTextFieldGetSubstringWcs ( widget: Xt.Widget;
+                                       start: Xm.XmTextPosition;
+                                       num_chars: SYSTEM.int;
+                                       buf_size: SYSTEM.int;
+                                       buffer: Xlib.Ptrwchar_t ): SYSTEM.int;
+
+PROCEDURE XmTextFieldGetLastPosition ( w: Xt.Widget ): Xm.XmTextPosition;
+
+PROCEDURE XmTextFieldSetString ( w: Xt.Widget;
+                                 value: ARRAY OF CHAR );
+
+PROCEDURE XmTextFieldSetStringWcs ( w: Xt.Widget;
+                                    wc_value: Xlib.Ptrwchar_t );
+
+PROCEDURE XmTextFieldReplace ( w: Xt.Widget;
+                               from_pos: Xm.XmTextPosition;
+                               to_pos: Xm.XmTextPosition;
+                               value: ARRAY OF CHAR );
+
+PROCEDURE XmTextFieldReplaceWcs ( w: Xt.Widget;
+                                  from_pos: Xm.XmTextPosition;
+                                  to_pos: Xm.XmTextPosition;
+                                  wc_value: Xlib.Ptrwchar_t );
+
+PROCEDURE XmTextFieldInsert ( w: Xt.Widget;
+                              position: Xm.XmTextPosition;
+                              value: ARRAY OF CHAR );
+
+PROCEDURE XmTextFieldInsertWcs ( w: Xt.Widget;
+                                 position: Xm.XmTextPosition;
+                                 wcstring: Xlib.Ptrwchar_t );
+
+PROCEDURE XmTextFieldSetAddMode ( w: Xt.Widget;
+                                  state: SYSTEM.int );
+
+PROCEDURE XmTextFieldGetAddMode ( w: Xt.Widget ): Xt.Boolean;
+
+PROCEDURE XmTextFieldGetEditable ( w: Xt.Widget ): Xt.Boolean;
+
+PROCEDURE XmTextFieldSetEditable ( w: Xt.Widget;
+                                   editable: SYSTEM.int );
+
+PROCEDURE XmTextFieldGetMaxLength ( w: Xt.Widget ): SYSTEM.int;
+
+PROCEDURE XmTextFieldSetMaxLength ( w: Xt.Widget;
+                                    max_length: SYSTEM.int );
+
+PROCEDURE XmTextFieldGetCursorPosition ( w: Xt.Widget ): Xm.XmTextPosition;
+
+PROCEDURE XmTextFieldGetInsertionPosition ( w: Xt.Widget ): Xm.XmTextPosition;
+
+PROCEDURE XmTextFieldSetCursorPosition ( w: Xt.Widget;
+                                         position: Xm.XmTextPosition );
+
+PROCEDURE XmTextFieldSetInsertionPosition ( w: Xt.Widget;
+                                            position: Xm.XmTextPosition );
+
+PROCEDURE XmTextFieldGetSelectionPosition ( w: Xt.Widget;
+                                            VAR left: Xm.XmTextPosition;
+                                            VAR right: Xm.XmTextPosition ): Xt.Boolean;
+
+PROCEDURE XmTextFieldGetSelection ( w: Xt.Widget ): Xt.String;
+
+PROCEDURE XmTextFieldGetSelectionWcs ( w: Xt.Widget ): Xlib.Ptrwchar_t;
+
+PROCEDURE XmTextFieldRemove ( w: Xt.Widget ): Xt.Boolean;
+
+PROCEDURE XmTextFieldCopy ( w: Xt.Widget;
+                            clip_time: X.Time ): Xt.Boolean;
+
+PROCEDURE XmTextFieldCut ( w: Xt.Widget;
+                           clip_time: X.Time ): Xt.Boolean;
+
+PROCEDURE XmTextFieldPaste ( w: Xt.Widget ): Xt.Boolean;
+
+PROCEDURE XmTextFieldClearSelection ( w: Xt.Widget;
+                                      sel_time: X.Time );
+
+PROCEDURE XmTextFieldSetSelection ( w: Xt.Widget;
+                                    first: Xm.XmTextPosition;
+                                    last: Xm.XmTextPosition;
+                                    sel_time: X.Time );
+
+PROCEDURE XmTextFieldXYToPos ( w: Xt.Widget; x: SYSTEM.int;
+                               y: SYSTEM.int ): Xm.XmTextPosition;
+
+PROCEDURE XmTextFieldPosToXY ( w: Xt.Widget;
+                               position: Xm.XmTextPosition;
+                               VAR x: Xt.Position;
+                               VAR y: Xt.Position ): Xt.Boolean;
+
+PROCEDURE XmTextFieldShowPosition ( w: Xt.Widget;
+                                    position: Xm.XmTextPosition );
+
+PROCEDURE XmTextFieldSetHighlight ( w: Xt.Widget;
+                                    left: Xm.XmTextPosition;
+                                    right: Xm.XmTextPosition;
+                                    mode: Xm.XmHighlightMode );
+
+PROCEDURE XmTextFieldGetBaseline ( w: Xt.Widget ): SYSTEM.int;
+
+PROCEDURE XmCreateTextField ( parent: Xt.Widget;
+                              name: ARRAY OF CHAR;
+                              arglist: Xt.ArgList;
+                              argcount: Xt.Cardinal ): Xt.Widget;
+
+(********    End Public Function Declarations    ********)
+
+END TextF.

@@ -1,0 +1,45 @@
+(* (c) xTech 1992,93. All Rights Reserved *)
+DEFINITION MODULE SysClock;
+
+CONST
+  maxSecondParts = 99;
+  (* The value here implies the clock can deliver hundreth's second accuracy *)
+
+TYPE
+  Month    = [1..12];
+  Day      = [1..31];
+  Hour     = [0..23];
+  Min      = [0..59];
+  Sec      = [0..59];
+  Fraction = [0..maxSecondParts]; (* part of the second *)
+  UTCDiff  = [-780..720]; (* Time zone Differential Factor *)
+  (* the number of minutes that must be added to local time to obtain UTC. *)
+  DateTime = RECORD
+    year           : CARDINAL;
+    month          : Month;
+    day            : Day;
+    hour           : Hour;
+    minute         : Min;
+    second         : Sec;
+    fractions      : Fraction;
+    zone           : UTCDiff;
+    SummerTimeFlag : BOOLEAN; (* interpretation: local usage *)
+  END;
+
+PROCEDURE CanGetClock(): BOOLEAN;
+(* Tests if the clock can be read *)
+
+PROCEDURE CanSetClock(): BOOLEAN;
+(* Tests if the clock can be set *)
+
+PROCEDURE IsValidDateTime(userData: DateTime): BOOLEAN;
+(* Tests if the value of userData is a valid *)
+
+PROCEDURE GetClock(VAR userData: DateTime);
+(* Assigns local date and time of the day to userData *)
+
+PROCEDURE SetClock(uderData: DateTime);
+(* Sets the system time clock to the given local date and time *)
+
+END SysClock.
+

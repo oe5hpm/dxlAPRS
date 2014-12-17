@@ -1,0 +1,27 @@
+(* Copyright (c) xTech 1992,95,97.  All Rights Reserved *)
+
+(* $RCSfile: ctype.def,v $ $Revision: 1.1.1.1 $ $Date: 1997/10/20 19:32:35 $ *)
+
+<*+ CSTDLIB  *>
+<*+ NOHEADER*>
+<*+ M2EXTENSIONS *>
+
+DEFINITION MODULE [2] ctype;
+
+FROM SYSTEM IMPORT BOOL32;
+
+PROCEDURE isalnum (c: INTEGER): BOOL32;
+PROCEDURE isalpha (c: INTEGER): BOOL32;
+PROCEDURE iscntrl (c: INTEGER): BOOL32;
+PROCEDURE isdigit (c: INTEGER): BOOL32;
+PROCEDURE isgraph (c: INTEGER): BOOL32;
+PROCEDURE islower (c: INTEGER): BOOL32;
+PROCEDURE isprint (c: INTEGER): BOOL32;
+PROCEDURE ispunct (c: INTEGER): BOOL32;
+PROCEDURE isspace (c: INTEGER): BOOL32;
+PROCEDURE isupper (c: INTEGER): BOOL32;
+PROCEDURE isxdigit(c: INTEGER): BOOL32;
+PROCEDURE tolower (c: INTEGER): INTEGER;
+PROCEDURE toupper (c: INTEGER): INTEGER;
+
+END ctype.

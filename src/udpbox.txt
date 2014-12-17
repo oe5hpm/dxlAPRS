@@ -1,0 +1,219 @@
+Beispiele:
+
+die lokalen Stationen nach aussen bringen (-p 0) 
+  also direkt gehoert repeaten und rest vom Pfad weg lassen
+  macht den geringstmoeglichen laerm
+
+die lokalen Stationen nach aussen bringen und dort weiter (0,1,2,5,6,7,8,9) 
+  also direkt gehoert repeaten und rest vom Pfad dran lassen
+  der eigene Digi hoert die Sachen dann mehrfach wieder und ist taub fuers lokale
+
+Stationen nach lokal bringen (-p 0,3,4) 
+  alles repeaten aber rest vom Pfad weg lassen
+  macht viel Laerm, waere genial wenn man das auf 70cm umgesetzt machen wurde
+
+Stationen nach lokal bringen und weiter verteilen (-p 0,1,2,3,4,5,6,7,8,9)
+  alles repeaten und und rest vom Pfad dran lassen
+  macht maximalen Laerm
+
+==========================================================================================
+-p 0..2 ergeben, als Bit 0 bis 2 einer Binaerzahl interpretiert, die maximal zulaessige
+SSID am Destination "Call". Ansonsten wird die Zahl auf eben diesen Wert limitiert
+und dann wie sonst auch um 1 reduziert wieder gesendet.
+
+-p 15 Setzt das nur mehr von manchen Digis verstandene SSID-Routing in ein entsprechendes
+WIDEn-n um. Die kritische 1. Funkstrecke vom Fahrzeug ist dann schon ueberstanden
+und der nun um 7 Byte laengere Frame wird meist nur mehr zwischen Feststationen
+weitergegeben.
+
+              
+udpbox Parameter      Input                 Output
+------------------------------------------------------------------------------
+-d OE5DXL-2           OE5DXL>TEST-7:>test 
+-d OE5DXL-2 -p 0      OE5DXL>TEST-7:>test   OE5DXL>TEST,OE5DXL-2*:>test
+-d OE5DXL-2 -p 1      OE5DXL>TEST-7:>test   OE5DXL>TEST-1,OE5DXL-2*:>test
+-d OE5DXL-2 -p 2      OE5DXL>TEST-7:>test   OE5DXL>TEST-3,OE5DXL-2*:>test
+-d OE5DXL-2 -p 0,2    OE5DXL>TEST-7:>test   OE5DXL>TEST-4,OE5DXL-2*:>test
+-d OE5DXL-2 -p 0,1,2  OE5DXL>TEST-7:>test   OE5DXL>TEST-6,OE5DXL-2*:>test
+-d OE5DXL-2 -p 0,1,2  OE5DXL>TEST-6:>test   OE5DXL>TEST-5,OE5DXL-2*:>test
+-d OE5DXL-2 -p 0,1,2  OE5DXL>TEST-1:>test   OE5DXL>TEST,OE5DXL-2*:>test
+-d OE5DXL-2 -p 0,1,15 OE5DXL>TEST-5:>test   OE5DXL>TEST,OE5DXL-2*,WIDE2-2:>test
+-d OE5DXL-2 -p 0,1,15 OE5DXL>TEST-4:>test   OE5DXL>TEST,OE5DXL-2*,WIDE2-2:>test
+-d OE5DXL-2 -p 0,1,15 OE5DXL>TEST-3:>test   OE5DXL>TEST,OE5DXL-2*,WIDE2-2:>test
+-d OE5DXL-2 -p 0,1,15 OE5DXL>TEST-2:>test   OE5DXL>TEST,OE5DXL-2*,WIDE1-1:>test
+-d OE5DXL-2 -p 0,1,15 OE5DXL>TEST-1:>test   OE5DXL>TEST,OE5DXL-2*:>test
+-d OE5DXL-2 -p 0,1,15 OE5DXL>TEST:>test
+
+==========================================================================================
+
+-p 3 repeate auch was schon vorher durch einen digi gelaufen ist
+
+-d OE5DXL-2 -p 3      OE5DXL>TEST,OE5XBL*,WIDE2-2:>test  OE5DXL>TEST,OE5XBL,OE5DXL-2*:>test
+-d OE5DXL-2           OE5DXL>TEST,OE5XBL*,WIDE2-2:>test 
+
+==========================================================================================
+
+
+-p 4 repeate auch was bei ueblicher Parameter Einstellung nicht nach "direkt gehoert"
+     aussieht, also kein * im Pfad und beim 1. WIDE oder TRACE gleiche Ziffern hat
+
+-d OE5DXL-2 -p 4      OE5DXL>TEST,WIDE2-2:>test   OE5DXL>TEST,OE5DXL-2*:>test
+-d OE5DXL-2 -p 4      OE5DXL>TEST,WIDE2-1:>test   OE5DXL>TEST,OE5DXL-2*:>test          
+-d OE5DXL-2           OE5DXL>TEST,WIDE2-2:>test   OE5DXL>TEST,OE5DXL-2*:>test
+-d OE5DXL-2           OE5DXL>TEST,WIDE2-1:>test
+
+==========================================================================================
+
+-p 5 sende TRACEn-N mit um 1 vermindertem N ansonsten tu es ganz weg
+
+-d OE5DXL-2 -p 5      OE5DXL>TEST,WIDE2-2:>test          OE5DXL>TEST,OE5DXL-2*:>test
+-d OE5DXL-2 -p 5      OE5DXL>TEST,TRACE2-2:>test         OE5DXL>TEST,OE5DXL-2*,TRACE2-1:>test
+
+==========================================================================================
+
+-p 6 sende WIDEn-N mit um 1 vermindertem N ansonsten tu es ganz weg
+
+-d OE5DXL-2 -p 6      OE5DXL>TEST,WIDE2-2:>test          OE5DXL>TEST,OE5DXL-2*,WIDE2-1:>test
+-d OE5DXL-2 -p 6      OE5DXL>TEST,TRACE2-2:>test         OE5DXL>TEST,OE5DXL-2*:>test
+
+
+==========================================================================================
+WIDE und TRACE
+
+-d OE5DXL-2 -p 5,6    OE5DXL>TEST,TRACE2-2:>test         OE5DXL>TEST,OE5DXL-2*,TRACE2-1:>test
+-d OE5DXL-2 -p 5,6    OE5DXL>TEST,WIDE2-2:>test          OE5DXL>TEST,OE5DXL-2*,WIDE2-1:>test
+
+
+==========================================================================================
+
+-p 7 Sende den Rest vom Pfad mit bei via digicall
+-p 8 Sende den Rest vom Pfad mit bei via RELAY
+-p 9 Sende den Rest vom Pfad mit bei via TRACE oder WIDE
+
+-d OE5DXL-2 -p 7      OE5DXL>TEST,OE5DXL-2,WIDE2-2:>test  OE5DXL>TEST,OE5DXL-2*,WIDE2-2:>test
+-d OE5DXL-2 -p 7      OE5DXL>TEST,RELAY,WIDE2-2:>test     OE5DXL>TEST,OE5DXL-2*:>test
+-d OE5DXL-2 -p 7      OE5DXL>TEST,TRACE1-1,WIDE2-2:>test  OE5DXL>TEST,OE5DXL-2*:>test
+-d OE5DXL-2 -p 7      OE5DXL>TEST,WIDE1-1,WIDE2-2:>test   OE5DXL>TEST,OE5DXL-2*:>test
+
+-d OE5DXL-2 -p 8      OE5DXL>TEST,OE5DXL-2,WIDE2-2:>test  OE5DXL>TEST,OE5DXL-2*:>test
+-d OE5DXL-2 -p 8      OE5DXL>TEST,RELAY,WIDE2-2:>test     OE5DXL>TEST,OE5DXL-2*,WIDE2-2:>test
+-d OE5DXL-2 -p 8      OE5DXL>TEST,TRACE1-1,WIDE2-2:>test  OE5DXL>TEST,OE5DXL-2*:>test
+-d OE5DXL-2 -p 8      OE5DXL>TEST,WIDE1-1,WIDE2-2:>test   OE5DXL>TEST,OE5DXL-2*:>test
+
+-d OE5DXL-2 -p 9      OE5DXL>TEST,OE5DXL-2,WIDE2-2:>test  OE5DXL>TEST,OE5DXL-2*:>test
+-d OE5DXL-2 -p 9      OE5DXL>TEST,RELAY,WIDE2-2:>test     OE5DXL>TEST,OE5DXL-2*:>test
+-d OE5DXL-2 -p 9      OE5DXL>TEST,TRACE1-1,WIDE2-2:>test  OE5DXL>TEST,OE5DXL-2*,WIDE2-2:>test
+-d OE5DXL-2 -p 9      OE5DXL>TEST,WIDE1-1,WIDE2-2:>test   OE5DXL>TEST,OE5DXL-2*,WIDE2-2:>test
+
+
+==========================================================================================
+
+-p 10  via digicall aus
+-p 11  via RELAY aus
+-p 12  via TRACEn-N aus
+-p 13  via WIDEn-N aus
+
+-d OE5DXL-2 -p 10     OE5DXL>TEST,OE5DXL-2:>test
+-d OE5DXL-2 -p 10     OE5DXL>TEST,RELAY:>test             OE5DXL>TEST,OE5DXL-2*:>test
+-d OE5DXL-2 -p 10     OE5DXL>TEST,TRACE1-1:>test          OE5DXL>TEST,OE5DXL-2*:>test
+-d OE5DXL-2 -p 10     OE5DXL>TEST,WIDE1-1:>test           OE5DXL>TEST,OE5DXL-2*:>test
+
+
+-d OE5DXL-2 -p 11     OE5DXL>TEST,OE5DXL-2:>test          OE5DXL>TEST,OE5DXL-2*:>test
+-d OE5DXL-2 -p 11     OE5DXL>TEST,RELAY:>test
+-d OE5DXL-2 -p 11     OE5DXL>TEST,TRACE1-1:>test          OE5DXL>TEST,OE5DXL-2*:>test
+-d OE5DXL-2 -p 11     OE5DXL>TEST,WIDE1-1:>test           OE5DXL>TEST,OE5DXL-2*:>test
+
+
+-d OE5DXL-2 -p 12     OE5DXL>TEST,OE5DXL-2:>test          OE5DXL>TEST,OE5DXL-2*:>test
+-d OE5DXL-2 -p 12     OE5DXL>TEST,RELAY:>test             OE5DXL>TEST,OE5DXL-2*:>test
+-d OE5DXL-2 -p 12     OE5DXL>TEST,TRACE1-1:>test
+-d OE5DXL-2 -p 12     OE5DXL>TEST,WIDE1-1:>test           OE5DXL>TEST,OE5DXL-2*:>test
+
+
+-d OE5DXL-2 -p 13     OE5DXL>TEST,OE5DXL-2:>test          OE5DXL>TEST,OE5DXL-2*:>test
+-d OE5DXL-2 -p 13     OE5DXL>TEST,RELAY:>test             OE5DXL>TEST,OE5DXL-2*:>test
+-d OE5DXL-2 -p 13     OE5DXL>TEST,TRACE1-1:>test          OE5DXL>TEST,OE5DXL-2*:>test
+-d OE5DXL-2 -p 13     OE5DXL>TEST,WIDE1-1:>test
+
+
+
+==========================================================================================
+
+-p 14 tu das eigene digicall NICHT dazu (nicht empfohlen)
+ 
+-d OE5DXL-2 -p 5,6    OE5DXL>TEST,WIDE2-2:>test  OE5DXL>TEST,OE5DXL-2*,WIDE2-1:>test
+-d OE5DXL-2 -p 5,6,14 OE5DXL>TEST,WIDE2-2:>test  OE5DXL>TEST,WIDE2-1:>test
+
+
+
+==========================================================================================
+
+-p 16 aus WIDE1-1 wird WIDE1 (also meistens dann noch mal repeatet)
+
+-d OE5DXL-2 -p 5,6    OE5DXL>TEST,WIDE1-1:>test  OE5DXL>TEST,OE5DXL-2*:>test
+-d OE5DXL-2 -p 5,6,16 OE5DXL>TEST,WIDE1-1:>test  OE5DXL>TEST,OE5DXL-2*,WIDE1:>test
+
+
+==========================================================================================
+
+-p 17 entferne alle WIDE vom Rest des Pfades
+
+-p 5,6,7,8,9    OE5DXL>TEST,WIDE1-1,RELAY,WIDE3-3:>test   OE5DXL>TEST,OE5DXL-2*,RELAY,WIDE3-3:>test
+-p 5,6,7,8,9,17 OE5DXL>TEST,WIDE1-1,RELAY,WIDE3-3:>test   OE5DXL>TEST,OE5DXL-2*,RELAY:>test
+
+
+==========================================================================================
+
+-p 18 repeate via GATE (fuer Crossband von kw auf ukw) 
+
+-p 5,6,7,8,9       OE5DXL>TEST,GATE,WIDE1-1,WIDE3-3:>test
+-p 5,6,7,8,9,18    OE5DXL>TEST,GATE,WIDE1-1,WIDE3-3:>test OE5DXL>TEST,OE5DXL-2*,WIDE1-1,WIDE3-3:>test
+-p 5,6,7,8,9,17,18 OE5DXL>TEST,GATE,WIDE1-1,WIDE3-3:>test OE5DXL>TEST,OE5DXL-2*:>test
+
+==========================================================================================
+
+-p 19 repeate via ECHO (auf kw anstatt RELAY warum auch immer)
+
+-p 5,6,7,8,9       OE5DXL>TEST,ECHO,WIDE3-3:>test
+-p 5,6,7,8,9,19    OE5DXL>TEST,ECHO,WIDE3-3:>test         OE5DXL>TEST,OE5DXL-2*,WIDE3-3:>test
+-p 5,6,7,8,9,17,19 OE5DXL>TEST,ECHO,WIDE3-3:>test         OE5DXL>TEST,OE5DXL-2*:>test
+
+==========================================================================================
+
+Filter APRS Frame Types, die werden durch das 1. Datenbyte nach dem Adressfeld bestimmt
+
+zB. "_" = Wetter
+    ":" = Message
+    "$" = GPS 
+
+Siehe APRS101.PDF (Papier)Seite 17    
+p positiv Liste, lass nur alles aufgezaehlte durch
+d negativ Liste, lass alles durch ausser dem aufgezaehlten
+
+-f p65-67    OE5DXL>TEST:A  OE5DXL>TEST:A
+             OE5DXL>TEST:B  OE5DXL>TEST:B
+             OE5DXL>TEST:C  OE5DXL>TEST:C
+             OE5DXL>TEST:D
+
+-f d66-67    OE5DXL>TEST:A  OE5DXL>TEST:A
+             OE5DXL>TEST:B
+             OE5DXL>TEST:C
+             OE5DXL>TEST:D  OE5DXL>TEST:D
+             OE5DXL>TEST:E  OE5DXL>TEST:E
+
+-f p65-66,68 OE5DXL>TEST:A  OE5DXL>TEST:A
+             OE5DXL>TEST:B  OE5DXL>TEST:B
+             OE5DXL>TEST:C
+             OE5DXL>TEST:D  OE5DXL>TEST:D
+             OE5DXL>TEST:E
+
+
+==========================================================================================
+
+-s zum durchleiten vom pr-frames (sabm disc, daten....) normal geht nur UI durch
+
+==========================================================================================
+  
+
+

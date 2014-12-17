@@ -1,0 +1,673 @@
+(* X11/Xutil.def  Apr 7  18:38:9  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted using H2D v1.00 from X11/Xutil.h. *)
+
+(* $RCSfile: Xutil.def,v $ $Revision: 5 $ $Date: 28.07.98 23:13 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *>
+<* IF NOT DEFINED(GENCTYPES) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+<*+ WOFF354 *>
+
+DEFINITION MODULE ["C"] Xutil;
+
+IMPORT SYSTEM, X, Xlib;
+(* H2D: to import this module write following text:
+IMPORT Xutil, X, Xlib;
+*)
+
+FROM Xlib IMPORT PChar, PAPChar, PAUChar, PAwchar_t, Bool;
+FROM X IMPORT MAX_STUP_ARR;
+
+(*  $XConsortium: Xutil.h,v 11.78 94/04/17 20:21:56 rws Exp $  *)
+
+(*
+ * Bitmask returned by XParseGeometry().  Each bit tells if the corresponding
+ * value (x, y, width, height) was found in the parsed string.
+ *)
+
+CONST 
+  NoValue = {};
+  XValue = {0};
+  YValue = {1};
+  WidthValue = {2};
+  HeightValue = {3};
+  AllValues = {0,1,2,3};
+  XNegative = {4};
+  YNegative = {5};
+
+(*
+ * new version containing base_width, base_height, and win_gravity fields;
+ * used with WM_NORMAL_HINTS.
+ *)
+
+TYPE 
+<* IF __GEN_C__ THEN *> <*- GENTYPEDEF *> <* END *>
+  AspectRec = RECORD
+    x: INTEGER;        (* numerator *)
+    y: INTEGER;        (* denominator *)
+  END;
+<* IF __GEN_C__ THEN *> <*+ GENTYPEDEF *> <* END *>
+
+  XSizeHints = RECORD
+    flags      : BITSET;  (* marks which fields in this structure are defined*)
+    x          : INTEGER;
+    y          : INTEGER; (* obsolete for new window mgrs, but clients *)
+    width      : INTEGER;
+    height     : INTEGER; (* should set so old wm's don't mess up *)
+    min_width  : INTEGER;
+    min_height : INTEGER;
+    max_width  : INTEGER;
+    max_height : INTEGER;
+    width_inc  : INTEGER;
+    height_inc : INTEGER;
+    min_aspect : AspectRec;
+    max_aspect : AspectRec;
+    base_width : INTEGER;
+    base_height: INTEGER; (* added by ICCCM version 1 *)
+    win_gravity: INTEGER; (* added by ICCCM version 1 *)
+  END;
+
+(*
+ * The next block of definitions are for window manager properties that
+ * clients and applications use for communication.
+ *)
+
+(* flags argument in size hints *)
+
+CONST 
+  USPosition = {0};      (* user specified x, y *)
+  USSize = {1};          (* user specified width, height *)
+  PPosition = {2};       (* program specified position *)
+  PSize = {3};           (* program specified size *)
+  PMinSize = {4};        (* program specified minimum size *)
+  PMaxSize = {5};        (* program specified maximum size *)
+  PResizeInc = {6};      (* program specified resize increments *)
+  PAspect = {7};         (* program specified min and max aspect ratios *)
+  PBaseSize = {8};       (* program specified base for incrementing *)
+  PWinGravity = {9};     (* program specified window gravity *)
+
+(* obsolete *)
+  PAllHints = {2,3,4,5,6,7};
+
+TYPE 
+  XWMHints = RECORD
+    flags: BITSET;  (* marks which fields in this structure are defined *)
+    input: Bool;    (* does this application rely on the window manager to
+                     * get keyboard input? *)
+    initial_state: BITSET;     (* see below *)
+    icon_pixmap  : X.Pixmap;   (* pixmap to be used as icon *)
+    icon_window  : X.Window;   (* window to be used as icon *)
+    icon_x       : INTEGER;
+    icon_y       : INTEGER;    (* initial position of icon *)
+    icon_mask    : X.Pixmap;   (* icon mask bitmap *)
+    window_group : X.XID;      (* id of related window group *)
+    (* this structure may be extended in the future *)
+  END;
+
+(* definition for flags of XWMHints *)
+
+CONST 
+  InputHint = {0};
+  StateHint = {1};
+  IconPixmapHint = {2};
+  IconWindowHint = {3};
+  IconPositionHint = {4};
+  IconMaskHint = {5};
+  WindowGroupHint = {6};
+  AllHints = {0,1,2,3,4,5,6};
+  XUrgencyHint = {8};
+
+(* definitions for initial window state *)
+  WithdrawnState = {};	(* for windows that are not mapped *)
+  NormalState = {0};	(* most applications want to start this way *)
+  IconicState = {0,1};	(* application wants to start as an icon *)
+
+(*
+ * Obsolete states no longer defined by ICCCM 
+ *)
+  DontCareState = {};	(* don't know or care *)
+  ZoomState = {1};	(* application wants to start zoomed *)
+  InactiveState = {2};	(* application believes it is seldom used; *)
+
+(* some wm's may put it on inactive menu
+ * new structure for manipulating TEXT properties; used with WM_NAME,
+ * WM_ICON_NAME, WM_CLIENT_MACHINE, and WM_COMMAND.
+ *)
+
+TYPE
+  XTextProperty = RECORD
+    value   : PAUChar;	(* same as Property routines *)
+    encoding: X.Atom;	(* prop type *)
+    format  : INTEGER;	(* prop data format: 8, 16, or 32 *)
+    nitems  : LONGCARD;	(* number of data items in value *)
+  END;
+
+CONST 
+  XNoMemory = -1;
+  XLocaleNotSupported = -2;
+  XConverterNotFound = -3;
+
+TYPE 
+  XICCEncodingStyle = BITSET; -- enum
+
+CONST
+  XStringStyle       = {};	(* STRING *)
+  XCompoundTextStyle = {1};	(* COMPOUND_TEXT *)
+  XTextStyle         = {0,1};	(* text in owner's encoding (current locale) *)
+  XStdICCTextStyle   = {2};	(* STRING, else COMPOUND_TEXT *)
+
+TYPE
+  XIconSize = RECORD
+    min_width : INTEGER;
+    min_height: INTEGER;
+    max_width : INTEGER;
+    max_height: INTEGER;
+    width_inc : INTEGER;
+    height_inc: INTEGER;
+  END;
+
+  XClassHint = RECORD
+    res_name : PChar;
+    res_class: PChar;
+  END;
+
+(*
+ * These macros are used to give some sugar to the image routines so that
+ * naive people are more comfortable with them.
+ *)
+
+<* IF __GEN_C__ THEN *>
+(* H2D: these procedures was generated from Macros. *)
+PROCEDURE XDestroyImage ( VAR ximage: Xlib.XImage ): INTEGER;
+PROCEDURE XGetPixel ( VAR ximage: Xlib.XImage; x, y: INTEGER ): LONGCARD;
+PROCEDURE XPutPixel ( VAR ximage: Xlib.XImage; x, y: INTEGER;
+                      pixel: LONGCARD ): INTEGER;
+PROCEDURE XSubImage ( VAR ximage: Xlib.XImage; x, y: INTEGER;
+		      width, height: SYSTEM.unsigned ): Xlib.PtrXImage;
+PROCEDURE XAddPixel ( VAR ximage: Xlib.XImage; value: LONGINT ): INTEGER;
+<* ELSE *>
+PROCEDURE  / XDestroyImage * ( VAR ximage: Xlib.XImage ): INTEGER;
+PROCEDURE  / XGetPixel * ( VAR ximage: Xlib.XImage; x, y: INTEGER ): LONGCARD;
+PROCEDURE  / XPutPixel * ( VAR ximage: Xlib.XImage; x, y: INTEGER;
+                           pixel: LONGCARD ): INTEGER;
+PROCEDURE  / XSubImage * ( VAR ximage: Xlib.XImage; x, y: INTEGER;
+			   width, height: SYSTEM.unsigned ): Xlib.PtrXImage;
+PROCEDURE  / XAddPixel * ( VAR ximage: Xlib.XImage; value: LONGINT ): INTEGER;
+<* END *>
+
+(*
+ * Compose sequence status structure, used in calling XLookupString. 
+ *)
+
+TYPE 
+<* IF __GEN_C__ THEN *> <*- GENTYPEDEF *> <* END *>
+  _XComposeStatus = RECORD
+    compose_ptr  : Xlib.XPointer;   (* state table pointer *)
+    chars_matched: INTEGER;      (* match state *)
+  END;
+<* IF __GEN_C__ THEN *> <*+ GENTYPEDEF *> <* END *>
+
+  XComposeStatus = _XComposeStatus;
+
+(*
+ * Keysym macros, used on Keysyms to test for classes of symbols 
+ *)
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: these procedures was generated from Macros. *)
+PROCEDURE IsKeypadKey ( keysym: X.KeySym ): Bool;
+PROCEDURE IsPrivateKeypadKey ( keysym: X.KeySym ): Bool;
+PROCEDURE IsCursorKey ( keysym: X.KeySym ): Bool;
+PROCEDURE IsPFKey ( keysym: X.KeySym ): Bool;
+PROCEDURE IsFunctionKey ( keysym: X.KeySym ): Bool;
+PROCEDURE IsMiscFunctionKey ( keysym: X.KeySym ): Bool;
+PROCEDURE IsModifierKey ( keysym: X.KeySym ): Bool;
+
+<* ELSE *>
+
+PROCEDURE  / IsKeypadKey * ( keysym: X.KeySym ): Bool;
+PROCEDURE  / IsPrivateKeypadKey * ( keysym: X.KeySym ): Bool;
+PROCEDURE  / IsCursorKey * ( keysym: X.KeySym ): Bool;
+PROCEDURE  / IsPFKey * ( keysym: X.KeySym ): Bool;
+PROCEDURE  / IsFunctionKey * ( keysym: X.KeySym ): Bool;
+PROCEDURE  / IsMiscFunctionKey * ( keysym: X.KeySym ): Bool;
+PROCEDURE  / IsModifierKey * ( keysym: X.KeySym ): Bool;
+
+<* END *>
+
+(*
+ * opaque reference to Region data type
+ *)
+
+TYPE 
+<* IF __GEN_C__ THEN *> <*- GENTYPEDEF *> <* END *>
+  _XRegion = RECORD END;
+<* IF __GEN_C__ THEN *> <*+ GENTYPEDEF *> <* END *>
+
+  Region = POINTER TO _XRegion;
+
+(* Return values from XRectInRegion() *)
+
+CONST 
+  RectangleOut = 0;
+  RectangleIn = 1;
+  RectanglePart = 2;
+
+(*
+ * Information used by the visual utility routines to find desired visual
+ * type from the many visuals a display may support.
+ *)
+
+TYPE 
+  XVisualInfo = RECORD
+    visual       : Xlib.PtrVisual;
+    visualid     : X.VisualID;
+    screen       : INTEGER;
+    depth        : INTEGER;
+    class        : INTEGER;
+    red_mask     : BITSET;
+    green_mask   : BITSET;
+    blue_mask    : BITSET;
+    colormap_size: INTEGER;
+    bits_per_rgb : INTEGER;
+  END;
+
+CONST 
+  VisualNoMask		= {};
+  VisualIDMask		= {0};
+  VisualScreenMask	= {1};
+  VisualDepthMask	= {2};
+  VisualClassMask	= {3};
+  VisualRedMaskMask	= {4};
+  VisualGreenMaskMask	= {5};
+  VisualBlueMaskMask	= {6};
+  VisualColormapSizeMask= {7};
+  VisualBitsPerRGBMask	= {8};
+  VisualAllMask		= {0,1,2,3,4,5,6,7,8};
+
+(*
+ * This defines a window manager property that clients may use to
+ * share standard color maps of type RGB_COLOR_MAP:
+ *)
+
+TYPE 
+  XStandardColormap = RECORD
+    colormap  : X.Colormap;
+    red_max   : LONGCARD;
+    red_mult  : LONGCARD;
+    green_max : LONGCARD;
+    green_mult: LONGCARD;
+    blue_max  : LONGCARD;
+    blue_mult : LONGCARD;
+    base_pixel: LONGCARD;
+    visualid  : X.VisualID;      (* added by ICCCM version 1 *)
+    killid    : X.XID;           (* added by ICCCM version 1 *)
+  END;
+
+CONST 
+  ReleaseByFreeingColormap = 1;        (* for killid field above *)
+
+(*
+ * return codes for XReadBitmapFile and XWriteBitmapFile 
+ *)
+  BitmapSuccess     = 0;
+  BitmapOpenFailed  = 1;
+  BitmapFileInvalid = 2;
+  BitmapNoMemory    = 3;
+
+(****************************************************************
+ *
+ * Context Management
+ *
+ ****************************************************************)
+
+(* Associative lookup table return codes *)
+  XCSUCCESS = 0;                       (* No error. *)
+  XCNOMEM   = 1;                       (* Out of memory *)
+  XCNOENT   = 2;                       (* No entry in table *)
+
+TYPE 
+  XContext = INTEGER;
+
+<* IF __GEN_C__ THEN *>
+(* H2D: these procedures was generated from Macros. *)
+PROCEDURE XUniqueContext ( ): INTEGER;
+PROCEDURE XStringToContext ( string: ARRAY OF CHAR ): INTEGER;
+<* ELSE *>
+PROCEDURE  / XUniqueContext * ( ): INTEGER;
+PROCEDURE  / XStringToContext * ( string: ARRAY OF CHAR ): INTEGER;
+<* END *>
+
+TYPE
+<* IF __GEN_C__ THEN *> <*- GENTYPEDEF *> <* END *>
+  PtrXSizeHints        = POINTER TO XSizeHints;
+  PAXSizeHints         = POINTER TO ARRAY [0..MAX_STUP_ARR] OF XSizeHints;
+  PtrXWMHints          = POINTER TO XWMHints;
+  PAXWMHints           = POINTER TO ARRAY [0..MAX_STUP_ARR] OF XWMHints;
+  PtrXIconSize         = POINTER TO XIconSize;
+  PAXIconSize          = POINTER TO ARRAY [0..MAX_STUP_ARR] OF XIconSize;
+  PtrXTextProperty     = POINTER TO XTextProperty;
+  PAXTextProperty      = POINTER TO ARRAY [0..MAX_STUP_ARR] OF XTextProperty;
+  PtrXClassHint        = POINTER TO XClassHint;
+  PAXClassHint         = POINTER TO ARRAY [0..MAX_STUP_ARR] OF XClassHint;
+  PtrXComposeStatus    = POINTER TO XComposeStatus;
+  PAXComposeStatus     = POINTER TO ARRAY [0..MAX_STUP_ARR] OF XComposeStatus;
+  PtrXVisualInfo       = POINTER TO XVisualInfo;
+  PAXVisualInfo        = POINTER TO ARRAY [0..MAX_STUP_ARR] OF XVisualInfo;
+  PtrXStandardColormap = POINTER TO XStandardColormap;
+  PAXStandardColormap  = POINTER TO ARRAY [0..MAX_STUP_ARR]
+                                 OF XStandardColormap;
+<* IF __GEN_C__ THEN *> <*+ GENTYPEDEF *> <* END *>
+
+(* The following declarations are alphabetized. *)
+
+PROCEDURE XAllocClassHint (): PtrXClassHint;
+PROCEDURE XAllocIconSize (): PtrXIconSize;
+PROCEDURE XAllocSizeHints (): PtrXSizeHints;
+PROCEDURE XAllocStandardColormap (): PtrXStandardColormap;
+PROCEDURE XAllocWMHints (): PtrXWMHints;
+
+PROCEDURE XClipBox ( r: Region;
+                     VAR rect_return: Xlib.XRectangle ): INTEGER;
+
+PROCEDURE XCreateRegion (): Region;
+
+PROCEDURE XDefaultString (): PChar;
+
+PROCEDURE XDeleteContext ( display: Xlib.PtrDisplay;
+                           rid: X.XID;
+                           context: XContext ): INTEGER;
+
+PROCEDURE XDestroyRegion ( r: Region ): INTEGER;
+
+PROCEDURE XEmptyRegion ( r: Region ): INTEGER;
+
+PROCEDURE XEqualRegion ( r1: Region;
+                         r2: Region ): INTEGER;
+
+PROCEDURE XFindContext ( display: Xlib.PtrDisplay;
+                         rid: X.XID;
+                         context: XContext;
+                         VAR data_return: Xlib.XPointer ): INTEGER;
+
+PROCEDURE XGetClassHint ( display: Xlib.PtrDisplay;
+                          w: X.Window;
+                          VAR class_hints_return: XClassHint ): INTEGER;
+
+PROCEDURE XGetIconSizes ( display: Xlib.PtrDisplay;
+                          w: X.Window;
+                          VAR size_list_return: PAXIconSize;
+                          VAR count_return: INTEGER ): INTEGER;
+
+PROCEDURE XGetNormalHints ( display: Xlib.PtrDisplay;
+                            w: X.Window;
+                            VAR hints_return: XSizeHints ): INTEGER;
+
+PROCEDURE XGetRGBColormaps ( display: Xlib.PtrDisplay;
+                             w: X.Window;
+                             VAR stdcmap_return: PAXStandardColormap;
+                             VAR count_return: INTEGER;
+                             property: X.Atom ): INTEGER;
+
+PROCEDURE XGetSizeHints ( display: Xlib.PtrDisplay;
+                          w: X.Window;
+                          VAR hints_return: XSizeHints;
+                          property: X.Atom ): INTEGER;
+
+PROCEDURE XGetStandardColormap ( display: Xlib.PtrDisplay;
+                                 w: X.Window;
+                                 VAR colormap_return: XStandardColormap;
+                                 property: X.Atom ): INTEGER;
+
+PROCEDURE XGetTextProperty ( display: Xlib.PtrDisplay;
+                             window: X.Window;
+                             VAR text_prop_return: XTextProperty;
+                             property: X.Atom ): INTEGER;
+
+PROCEDURE XGetVisualInfo ( display: Xlib.PtrDisplay;
+                           vinfo_mask: BITSET;
+                           VAR vinfo_template: XVisualInfo;
+                           VAR nitems_return: INTEGER ): PAXVisualInfo;
+
+PROCEDURE XGetWMClientMachine ( display: Xlib.PtrDisplay;
+                                w: X.Window;
+                                VAR text_prop_return: XTextProperty ): INTEGER;
+
+PROCEDURE XGetWMHints ( display: Xlib.PtrDisplay;
+                        w: X.Window ): PtrXWMHints;
+
+PROCEDURE XGetWMIconName ( display: Xlib.PtrDisplay;
+                           w: X.Window;
+                           VAR text_prop_return: XTextProperty ): INTEGER;
+
+PROCEDURE XGetWMName ( display: Xlib.PtrDisplay;
+                       w: X.Window;
+                       VAR text_prop_return: XTextProperty ): INTEGER;
+
+PROCEDURE XGetWMNormalHints ( display: Xlib.PtrDisplay;
+                              w: X.Window;
+                              VAR hints_return: XSizeHints;
+                              VAR supplied_return: LONGINT ): INTEGER;
+
+PROCEDURE XGetWMSizeHints ( display: Xlib.PtrDisplay;
+                            w: X.Window;
+                            VAR hints_return: XSizeHints;
+                            VAR supplied_return: LONGINT;
+                            property: X.Atom ): INTEGER;
+
+PROCEDURE XGetZoomHints ( display: Xlib.PtrDisplay;
+                          w: X.Window;
+                          VAR zhints_return: XSizeHints ): INTEGER;
+
+PROCEDURE XIntersectRegion ( sra: Region;
+                             srb: Region;
+                             dr_return: Region ): INTEGER;
+
+PROCEDURE XConvertCase ( sym: X.KeySym;
+                         VAR lower: X.KeySym;
+                         VAR upper: X.KeySym );
+
+PROCEDURE XLookupString ( VAR event_struct: Xlib.XKeyEvent;
+                          buffer_return: PChar;
+                          bytes_buffer: INTEGER;
+                          VAR keysym_return: X.KeySym;
+                          VAR status_in_out: XComposeStatus ): INTEGER;
+
+PROCEDURE XMatchVisualInfo ( display: Xlib.PtrDisplay;
+                             screen: INTEGER;
+                             depth: INTEGER;
+                             class: INTEGER;
+                             vinfo_return: PtrXVisualInfo ): INTEGER;
+
+PROCEDURE XOffsetRegion ( r: Region;
+                          dx: INTEGER;
+                          dy: INTEGER ): INTEGER;
+
+PROCEDURE XPointInRegion ( r: Region;
+                           x: INTEGER;
+                           y: INTEGER ): Bool;
+
+PROCEDURE XPolygonRegion ( points: Xlib.PAXPoint;
+                           n: INTEGER;
+                           fill_rule: INTEGER ): Region;
+
+PROCEDURE XRectInRegion ( r: Region;
+                          x: INTEGER;
+                          y: INTEGER;
+                          width: SYSTEM.unsigned;
+                          height: SYSTEM.unsigned ): INTEGER;
+
+PROCEDURE XSaveContext ( display: Xlib.PtrDisplay;
+                         rid: X.XID;
+                         context: XContext;
+                         data: Xlib.XPointer ): INTEGER;
+
+PROCEDURE XSetClassHint ( display: Xlib.PtrDisplay;
+                          w: X.Window;
+                          class_hints: PtrXClassHint ): INTEGER;
+
+PROCEDURE XSetIconSizes ( display: Xlib.PtrDisplay;
+                          w: X.Window;
+                          size_list: PAXIconSize;
+                          count: INTEGER ): INTEGER;
+
+PROCEDURE XSetNormalHints ( display: Xlib.PtrDisplay;
+                            w: X.Window;
+                            hints: PtrXSizeHints ): INTEGER;
+
+PROCEDURE XSetRGBColormaps ( display: Xlib.PtrDisplay;
+                             w: X.Window;
+                             stdcmaps: PAXStandardColormap;
+                             count: INTEGER;
+                             property: X.Atom );
+
+PROCEDURE XSetSizeHints ( display: Xlib.PtrDisplay;
+                          w: X.Window;
+                          hints: PAXSizeHints;
+                          property: X.Atom ): INTEGER;
+
+PROCEDURE XSetStandardProperties ( display: Xlib.PtrDisplay;
+                                   w: X.Window;
+                                   window_name: ARRAY OF CHAR;
+                                   icon_name: ARRAY OF CHAR;
+                                   icon_pixmap: X.Pixmap;
+                                   argv: PAPChar;
+                                   argc: INTEGER;
+                                   hints: PtrXSizeHints ): INTEGER;
+
+PROCEDURE XSetTextProperty ( display: Xlib.PtrDisplay;
+                             w: X.Window;
+                             text_prop: PtrXTextProperty;
+                             property: X.Atom );
+
+PROCEDURE XSetWMClientMachine ( display: Xlib.PtrDisplay;
+                                w: X.Window;
+                                text_prop: PtrXTextProperty );
+
+PROCEDURE XSetWMHints ( display: Xlib.PtrDisplay;
+                        w: X.Window;
+                        wm_hints: PtrXWMHints ): INTEGER;
+
+PROCEDURE XSetWMIconName ( display: Xlib.PtrDisplay;
+                           w: X.Window;
+                           text_prop: PtrXTextProperty );
+
+PROCEDURE XSetWMName ( display: Xlib.PtrDisplay;
+                       w: X.Window;
+                       text_prop: PtrXTextProperty );
+
+PROCEDURE XSetWMNormalHints ( display: Xlib.PtrDisplay;
+                              w: X.Window;
+                              hints: PtrXSizeHints );
+
+PROCEDURE XSetWMProperties ( display: Xlib.PtrDisplay;
+                             w: X.Window;
+                             window_name: PtrXTextProperty;
+                             icon_name: PtrXTextProperty;
+                             argv: PAPChar;
+                             argc: INTEGER;
+                             normal_hints: PtrXSizeHints;
+                             wm_hints: PtrXWMHints;
+                             class_hints: PtrXClassHint );
+
+PROCEDURE XmbSetWMProperties ( display: Xlib.PtrDisplay;
+                               w: X.Window;
+                               window_name: PChar;
+                               icon_name: PChar;
+                               argv: PAPChar;
+                               argc: INTEGER;
+                               normal_hints: PtrXSizeHints;
+                               wm_hints: PtrXWMHints;
+                               class_hints: PtrXClassHint );
+
+PROCEDURE XSetWMSizeHints ( display: Xlib.PtrDisplay;
+                            w: X.Window;
+                            hints: PtrXSizeHints;
+                            property: X.Atom );
+
+PROCEDURE XSetRegion ( display: Xlib.PtrDisplay;
+                       gc: Xlib.GC;
+                       r: Region ): INTEGER;
+
+PROCEDURE XSetStandardColormap ( display: Xlib.PtrDisplay;
+                                 w: X.Window;
+                                 colormap: PtrXStandardColormap;
+                                 property: X.Atom );
+
+PROCEDURE XSetZoomHints ( display: Xlib.PtrDisplay;
+                          w: X.Window;
+                          zhints: PtrXSizeHints ): INTEGER;
+
+PROCEDURE XShrinkRegion ( r: Region;
+                          dx: INTEGER;
+                          dy: INTEGER ): INTEGER;
+
+PROCEDURE XStringListToTextProperty ( list: PAPChar;
+                                      count: INTEGER;
+                                      VAR text_prop_return: XTextProperty
+                                    ): INTEGER;
+
+PROCEDURE XSubtractRegion ( sra: Region;
+                            srb: Region;
+                            dr_return: Region ): INTEGER;
+
+PROCEDURE XmbTextListToTextProperty ( display: Xlib.PtrDisplay;
+                                      list: PAPChar;
+                                      count: INTEGER;
+                                      style: XICCEncodingStyle;
+                                      VAR text_prop_return: XTextProperty
+                                    ): INTEGER;
+
+PROCEDURE XwcTextListToTextProperty ( display: Xlib.PtrDisplay;
+                                      VAR list: PAwchar_t;
+                                      count: INTEGER;
+                                      style: XICCEncodingStyle;
+                                      VAR text_prop_return: XTextProperty
+                                    ): INTEGER;
+
+PROCEDURE XwcFreeStringList ( VAR list: PAwchar_t );
+
+PROCEDURE XTextPropertyToStringList ( text_prop: PtrXTextProperty;
+                                      VAR list_return: PAPChar;
+                                      VAR count_return: INTEGER ): INTEGER;
+
+PROCEDURE XmbTextPropertyToTextList ( display: Xlib.PtrDisplay;
+                                      text_prop: PtrXTextProperty;
+                                      VAR list_return: PAPChar;
+                                      VAR count_return: INTEGER ): INTEGER;
+
+PROCEDURE XwcTextPropertyToTextList ( display: Xlib.PtrDisplay;
+                                      text_prop: PtrXTextProperty;
+                                      VAR list_return: Xlib.PAPwchar_t;
+                                      VAR count_return: INTEGER ): INTEGER;
+
+PROCEDURE XUnionRectWithRegion ( rectangle: Xlib.PtrXRectangle;
+                                 src_region: Region;
+                                 dest_region_return: Region ): INTEGER;
+
+PROCEDURE XUnionRegion ( sra: Region;
+                         srb: Region;
+                         dr_return: Region ): INTEGER;
+
+PROCEDURE XWMGeometry ( display: Xlib.PtrDisplay;
+                        screen_number: INTEGER;
+                        user_geometry: ARRAY OF CHAR;
+                        default_geometry: ARRAY OF CHAR;
+                        border_width: SYSTEM.unsigned;
+                        hints: PtrXSizeHints;
+                        VAR x_return: INTEGER;
+                        VAR y_return: INTEGER;
+                        VAR width_return: INTEGER;
+                        VAR height_return: INTEGER;
+                        VAR gravity_return: INTEGER ): INTEGER;
+
+PROCEDURE XXorRegion ( sra: Region;
+                       srb: Region;
+                       dr_return: Region ): INTEGER;
+
+END Xutil.

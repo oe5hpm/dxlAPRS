@@ -1,0 +1,90 @@
+(* Xm/TransltnsP.def  Nov 21  14:31:29  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/TransltnsP.h using H2D v1.18.6 *)
+
+(* $RCSfile: TransltnsP.def,v $ $Revision: 4 $ $Date: 28.07.98 23:15 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *>
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+
+DEFINITION MODULE ["C"] TransltnsP;
+
+IMPORT Xt:=IntrinsicP;
+(* H2D:  Required IMPORT clause:
+IMPORT TransltnsP, IntrinsicP;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992, 1993 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(*
+ * Motif Release 1.2.3
+ *)
+
+VAR
+  _XmArrowB_defaultTranslations: Xt.String;
+  _XmBulletinB_defaultTranslations: Xt.String;
+  _XmCascadeB_menubar_events: Xt.String;
+  _XmCascadeB_p_events: Xt.String;
+  _XmDrawingA_defaultTranslations: Xt.String;
+  _XmDrawingA_traversalTranslations: Xt.String;
+  _XmDrawnB_defaultTranslations: Xt.String;
+  _XmFrame_defaultTranslations: Xt.String;
+  _XmLabel_defaultTranslations: Xt.String;
+  _XmLabel_menuTranslations: Xt.String;
+  _XmLabel_menu_traversal_events: Xt.String;
+  _XmList_ListXlations1: Xt.String;
+  _XmList_ListXlations2: Xt.String;
+  _XmManager_managerTraversalTranslations: Xt.String;
+  _XmManager_defaultTranslations: Xt.String;
+  _XmMenuShell_translations: Xt.String;
+  _XmPrimitive_defaultTranslations: Xt.String;
+  _XmPushB_defaultTranslations: Xt.String;
+  _XmPushB_menuTranslations: Xt.String;
+  _XmRowColumn_menu_traversal_table: Xt.String;
+  _XmRowColumn_bar_table: Xt.String;
+  _XmRowColumn_option_table: Xt.String;
+  _XmRowColumn_menu_table: Xt.String;
+  _XmSash_defTranslations: Xt.String;
+  _XmScrollBar_defaultTranslations: Xt.String;
+  _XmScrolledW_ScrolledWindowXlations: Xt.String;
+  _XmScrolledW_ClipWindowTranslationTable: Xt.String;
+  _XmScrolledW_WorkWindowTranslationTable: Xt.String;
+  _XmSelectioB_defaultTextAccelerators: Xt.String;
+  _XmTearOffB_overrideTranslations: Xt.String;
+  _XmTextF_EventBindings1: Xt.String;
+  _XmTextF_EventBindings2: Xt.String;
+  _XmTextF_EventBindings3: Xt.String;
+  _XmTextIn_XmTextEventBindings1: Xt.String;
+  _XmTextIn_XmTextEventBindings2: Xt.String;
+  _XmTextIn_XmTextEventBindings3: Xt.String;
+  _XmToggleB_defaultTranslations: Xt.String;
+  _XmToggleB_menuTranslations: Xt.String;
+  _XmVirtKeys_fallbackBindingString: Xt.String;
+
+(*  The following keybindings have been "grandfathered"   *)
+(*  for backward compatablility.                          *)
+(*                                                        *)
+  _XmVirtKeys_acornFallbackBindingString: Xt.String;
+  _XmVirtKeys_apolloFallbackBindingString: Xt.String;
+  _XmVirtKeys_dgFallbackBindingString: Xt.String;
+  _XmVirtKeys_decFallbackBindingString: Xt.String;
+  _XmVirtKeys_dblclkFallbackBindingString: Xt.String;
+  _XmVirtKeys_hpFallbackBindingString: Xt.String;
+  _XmVirtKeys_ibmFallbackBindingString: Xt.String;
+  _XmVirtKeys_ingrFallbackBindingString: Xt.String;
+  _XmVirtKeys_megatekFallbackBindingString: Xt.String;
+  _XmVirtKeys_motorolaFallbackBindingString: Xt.String;
+  _XmVirtKeys_sgiFallbackBindingString: Xt.String;
+  _XmVirtKeys_siemensWx200FallbackBindingString: Xt.String;
+  _XmVirtKeys_siemens9733FallbackBindingString: Xt.String;
+  _XmVirtKeys_sunFallbackBindingString: Xt.String;
+  _XmVirtKeys_tekFallbackBindingString: Xt.String;
+
+END TransltnsP.

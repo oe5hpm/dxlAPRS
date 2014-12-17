@@ -1,0 +1,452 @@
+(* X11/SM/SMlib.def  May 11  12:54:5  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted using H2D v1.00 from X11/SM/SMlib.h. *)
+
+(* $RCSfile: SMlib.def,v $ $Revision: 4 $ $Date: 28.07.98 23:13 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *>
+<* IF NOT DEFINED(GENCTYPES) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+
+DEFINITION MODULE ["C"] SMlib;
+
+IMPORT SYSTEM, ICElib;
+(* H2D: to import this module write following text:
+IMPORT ICElib;
+*)
+
+FROM Xlib IMPORT PChar, PAPChar;
+FROM X IMPORT MAX_STUP_ARR;
+
+(*  $XConsortium: SMlib.h,v 1.23 94/06/01 10:49:13 mor Exp $  *)
+
+(*
+ * Author: Ralph Mor, X Consortium 
+ *)
+
+(*
+ * Generic SM pointer 
+ *)
+
+TYPE 
+  SmPointer = ICElib.IcePointer;
+
+(*
+ * Connection objects.  Defined in SMlibint.h 
+ *)
+
+  _SmcConn = RECORD
+    (* Declaration without definition *)
+  END;
+
+  SmcConn = POINTER TO _SmcConn;
+
+  _SmsConn = RECORD
+    (* Declaration without definition *)
+  END;
+
+  SmsConn = POINTER TO _SmsConn;
+
+(*
+ * Session Management property 
+ *)
+
+  SmPropValue = RECORD
+    length: SYSTEM.int;    (*  length (in bytes) of the value  *)
+    value : SmPointer;     (*  the value  *)
+  END;
+
+<*- GENTYPEDEF *>
+
+  PASmPropValue  = POINTER TO ARRAY [0..MAX_STUP_ARR] OF SmPropValue;
+
+<*+ GENTYPEDEF *>
+
+  SmProp = RECORD
+    name    : PChar;            (*  name of property  *)
+    type    : PChar;            (*  type of property  *)
+    num_vals: SYSTEM.int;       (*  number of values in property  *)
+    vals    : PASmPropValue;    (*  the values  *)
+  END;
+
+(*
+ * SmcCloseConnection status return 
+ *)
+
+  SmcCloseStatus = (
+    SmcClosedNow      ,
+    SmcClosedASAP     ,
+    SmcConnectionInUse
+  );
+
+(*
+ * Client callbacks 
+ *)
+
+  SmcSaveYourselfProc = PROCEDURE ( (*  smcConn  *) SmcConn,
+				    (*  clientData  *) SmPointer,
+				    (*  saveType  *) SYSTEM.int,
+				    (*  shutdown  *) SYSTEM.int,
+				    (*  interactStyle  *) SYSTEM.int,
+				    (*  fast  *) SYSTEM.int );
+
+  SmcSaveYourselfPhase2Proc = PROCEDURE ( (*  smcConn  *) SmcConn, 
+                                        (*  clientData  *) SmPointer 
+                                        );
+
+  SmcInteractProc = PROCEDURE ( (*  smcConn  *) SmcConn,
+				(*  clientData  *) SmPointer );
+
+  SmcDieProc = PROCEDURE ( (*  smcConn  *) SmcConn,
+			   (*  clientData  *) SmPointer );
+
+  SmcShutdownCancelledProc = PROCEDURE ( (*  smcConn  *) SmcConn,
+					 (*  clientData  *) SmPointer );
+
+  SmcSaveCompleteProc = PROCEDURE ( (*  smcConn  *) SmcConn,
+				    (*  clientData  *) SmPointer );
+<*- GENTYPEDEF *>
+
+  PASmProp  = POINTER TO ARRAY [0..MAX_STUP_ARR] OF SmProp;
+
+<*+ GENTYPEDEF *>
+
+  SmcPropReplyProc = PROCEDURE ( (*  smcConn  *) SmcConn,
+				 (*  clientData  *) SmPointer,
+				 (*  numProps  *) SYSTEM.int,
+				 (*  props  *) VAR PASmProp );
+
+(*
+ * Callbacks set up at SmcOpenConnection time 
+ *)
+
+<*- GENTYPEDEF *>
+
+  SaveYourselfStruct = RECORD
+    callback   : SmcSaveYourselfProc;
+    client_data: SmPointer;
+  END;
+
+  DieStruct = RECORD
+    callback   : SmcDieProc;
+    client_data: SmPointer;
+  END;
+
+  SaveCompleteStruct = RECORD
+    callback   : SmcSaveCompleteProc;
+    client_data: SmPointer;
+  END;
+
+  ShutdownCancelledStruct = RECORD
+    callback   : SmcShutdownCancelledProc;
+    client_data: SmPointer;
+  END;
+
+  SmcCallbacks = RECORD
+    save_yourself     : SaveYourselfStruct;
+    die               : DieStruct;
+    save_complete     : SaveCompleteStruct;
+    shutdown_cancelled: ShutdownCancelledStruct;
+  END;
+
+<*+ GENTYPEDEF *>
+
+CONST 
+  SmcSaveYourselfProcMask = 1;
+  SmcDieProcMask = 2;
+  SmcSaveCompleteProcMask = 4;
+  SmcShutdownCancelledProcMask = 8;
+
+(*
+ * Session manager callbacks 
+ *)
+
+TYPE 
+  SmsRegisterClientProc = PROCEDURE ( (*  smsConn  *) SmsConn,
+				      (*  managerData  *) SmPointer,
+				      (*  previousId  *) ARRAY OF CHAR ): SYSTEM.int;
+
+  SmsInteractRequestProc = PROCEDURE ( (*  smsConn  *) SmsConn,
+				       (*  managerData  *) SmPointer,
+				       (*  dialogType  *) SYSTEM.int );
+
+  SmsInteractDoneProc = PROCEDURE ( (*  smsConn  *) SmsConn,
+				    (*  managerData  *) SmPointer,
+				    (*  cancelShutdown  *) SYSTEM.int );
+
+  SmsSaveYourselfRequestProc = PROCEDURE ( (*  smsConn  *) SmsConn, 
+                                         (*  managerData  *) SmPointer,
+					 (*  saveType  *) SYSTEM.int,
+					 (*  shutdown  *) SYSTEM.int,
+					 (*  interactStyle  *) SYSTEM.int,
+					 (*  fast  *) SYSTEM.int,
+					 (*  global  *) SYSTEM.int );
+
+  SmsSaveYourselfPhase2RequestProc = PROCEDURE ( (*  smsConn  *) SmsConn,
+						 (*  managerData  *) SmPointer );
+
+  SmsSaveYourselfDoneProc = PROCEDURE ( (*  smsConn  *) SmsConn,
+					(*  managerData  *) SmPointer,
+					(*  success  *) SYSTEM.int );
+
+  SmsCloseConnectionProc = PROCEDURE ( (*  smsConn  *) SmsConn,
+				       (*  managerData  *) SmPointer,
+				       (*  count  *) SYSTEM.int,
+				       (*  reasonMsgs  *) PAPChar );
+
+  SmsSetPropertiesProc = PROCEDURE ( (*  smsConn  *) SmsConn,
+				     (*  managerData  *) SmPointer,
+				     (*  numProps  *) SYSTEM.int,
+				     (*  props  *) VAR PASmProp );
+
+  SmsDeletePropertiesProc = PROCEDURE ( (*  smsConn  *) SmsConn,
+					(*  managerData  *) SmPointer,
+					(*  numProps  *) SYSTEM.int,
+					(*  propNames  *) PAPChar );
+
+  SmsGetPropertiesProc = PROCEDURE ( (*  smsConn  *) SmsConn,
+				     (*  managerData  *) SmPointer );
+
+(*
+ * Callbacks set up by a session manager when a new client connects. 
+ *)
+
+<*- GENTYPEDEF *>
+
+  RegisterClientStruct = RECORD
+    callback    : SmsRegisterClientProc;
+    manager_data: SmPointer;
+  END;
+
+  InteractRequestStruct = RECORD
+    callback    : SmsInteractRequestProc;
+    manager_data: SmPointer;
+  END;
+
+  InteractDoneStruct = RECORD
+    callback    : SmsInteractDoneProc;
+    manager_data: SmPointer;
+  END;
+
+  SaveYourselfRequestStruct = RECORD
+    callback    : SmsSaveYourselfRequestProc;
+    manager_data: SmPointer;
+  END;
+
+  SaveYourselfPhase2RequestStruct = RECORD
+    callback    : SmsSaveYourselfPhase2RequestProc;
+    manager_data: SmPointer;
+  END;
+
+  SaveYourselfDoneStruct = RECORD
+    callback    : SmsSaveYourselfDoneProc;
+    manager_data: SmPointer;
+  END;
+
+  CloseConnectionStruct = RECORD
+    callback    : SmsCloseConnectionProc;
+    manager_data: SmPointer;
+  END;
+
+  SetPropertiesStruct = RECORD
+    callback    : SmsSetPropertiesProc;
+    manager_data: SmPointer;
+  END;
+
+  DeletePropertiesStruct = RECORD
+    callback    : SmsDeletePropertiesProc;
+    manager_data: SmPointer;
+  END;
+
+  GetPropertiesStruct = RECORD
+    callback    : SmsGetPropertiesProc;
+    manager_data: SmPointer;
+  END;
+
+<*+ GENTYPEDEF *>
+
+  SmsCallbacks = RECORD
+    register_client             : RegisterClientStruct;
+    interact_request            : InteractRequestStruct;
+    interact_done               : InteractDoneStruct;
+    save_yourself_request       : SaveYourselfRequestStruct;
+    save_yourself_phase2_request: SaveYourselfPhase2RequestStruct;
+    save_yourself_done          : SaveYourselfDoneStruct;
+    close_connection            : CloseConnectionStruct;
+    set_properties              : SetPropertiesStruct;
+    delete_properties           : DeletePropertiesStruct;
+    get_properties              : GetPropertiesStruct;
+  END;
+
+CONST 
+  SmsRegisterClientProcMask = 1;
+  SmsInteractRequestProcMask = 2;
+  SmsInteractDoneProcMask = 4;
+  SmsSaveYourselfRequestProcMask = 8;
+  SmsSaveYourselfP2RequestProcMask = 16;
+  SmsSaveYourselfDoneProcMask = 32;
+  SmsCloseConnectionProcMask = 64;
+  SmsSetPropertiesProcMask = 128;
+  SmsDeletePropertiesProcMask = 256;
+  SmsGetPropertiesProcMask = 512;
+
+TYPE
+
+  SmsNewClientProc = PROCEDURE ( (*  smsConn  *) SmsConn,
+				 (*  managerData  *) SmPointer,
+				 (*  maskRet  *) VAR LONGCARD,
+				 (*  callbacksRet  *) VAR SmsCallbacks,
+				 (*  failureReasonRet  *) VAR PChar
+				): SYSTEM.int;
+
+(*
+ * Error handlers 
+ *)
+
+  SmcErrorHandler = PROCEDURE ( (*  smcConn  *) SmcConn,
+				(*  swap  *) SYSTEM.int,
+				(*  offendingMinorOpcode  *) SYSTEM.int,
+				(*  offendingSequence  *) LONGCARD,
+				(*  errorClass  *) SYSTEM.int,
+				(*  severity  *) SYSTEM.int,
+				(*  values  *) SmPointer );
+
+  SmsErrorHandler = PROCEDURE ( (*  smsConn  *) SmsConn,
+				(*  swap  *) SYSTEM.int,
+				(*  offendingMinorOpcode  *) SYSTEM.int,
+				(*  offendingSequence  *) LONGCARD,
+				(*  errorClass  *) SYSTEM.int,
+				(*  severity  *) SYSTEM.int,
+				(*  values  *) SmPointer );
+
+(*
+ * Function Prototypes 
+ *)
+
+<*- GENTYPEDEF *>
+
+
+  PASmcCallbacks  = POINTER TO ARRAY [0..MAX_STUP_ARR] OF SmcCallbacks;
+
+<*+ GENTYPEDEF *>
+
+PROCEDURE SmcOpenConnection ( networkIdsList: ARRAY OF CHAR;
+                              context: SmPointer;
+                              xsmpMajorRev: SYSTEM.int;
+                              xsmpMinorRev: SYSTEM.int;
+                              mask: LONGCARD;
+                              callbacks: PASmcCallbacks;
+                              previousId: ARRAY OF CHAR;
+                              VAR clientIdRet: ARRAY OF CHAR;
+                              errorLength: SYSTEM.int;
+                              VAR errorStringRet: ARRAY OF CHAR ): SmcConn;
+
+PROCEDURE SmcCloseConnection ( smcConn: SmcConn; count: SYSTEM.int;
+                               reasonMsgs: PAPChar ): SmcCloseStatus;
+
+PROCEDURE SmcModifyCallbacks ( smcConn: SmcConn; mask: LONGCARD;
+                               callbacks: PASmcCallbacks );
+
+PROCEDURE SmcSetProperties ( smcConn: SmcConn; numProps: SYSTEM.int;
+                             VAR props: PASmProp );
+
+PROCEDURE SmcDeleteProperties ( smcConn: SmcConn;
+                                numProps: SYSTEM.int;
+                                propNames: PAPChar );
+
+PROCEDURE SmcGetProperties ( smcConn: SmcConn;
+                             propReplyProc: SmcPropReplyProc;
+                             clientData: SmPointer ): SYSTEM.int;
+
+PROCEDURE SmcInteractRequest ( smcConn: SmcConn;
+                               dialogType: SYSTEM.int;
+                               interactProc: SmcInteractProc;
+                               clientData: SmPointer ): SYSTEM.int;
+
+PROCEDURE SmcInteractDone ( smcConn: SmcConn;
+                            cancelShutdown: SYSTEM.int );
+
+PROCEDURE SmcRequestSaveYourself ( smcConn: SmcConn;
+                                   saveType: SYSTEM.int;
+                                   shutdown: SYSTEM.int;
+                                   interactStyle: SYSTEM.int;
+                                   fast: SYSTEM.int;
+                                   global: SYSTEM.int );
+
+PROCEDURE SmcRequestSaveYourselfPhase2 ( smcConn: SmcConn;
+                                         saveYourselfPhase2Proc: SmcSaveYourselfPhase2Proc;
+                                         clientData: SmPointer ): SYSTEM.int;
+
+PROCEDURE SmcSaveYourselfDone ( smcConn: SmcConn;
+                                success: SYSTEM.int );
+
+PROCEDURE SmcProtocolVersion ( smcConn: SmcConn ): SYSTEM.int;
+
+PROCEDURE SmcProtocolRevision ( smcConn: SmcConn ): SYSTEM.int;
+
+PROCEDURE SmcVendor ( smcConn: SmcConn ): PChar;
+
+PROCEDURE SmcRelease ( smcConn: SmcConn ): PChar;
+
+PROCEDURE SmcClientID ( smcConn: SmcConn ): PChar;
+
+PROCEDURE SmcGetIceConnection ( smcConn: SmcConn ): ICElib.IceConn;
+
+PROCEDURE SmsInitialize ( vendor: ARRAY OF CHAR;
+		          release: ARRAY OF CHAR;
+                          newClientProc: SmsNewClientProc;
+                          managerData: SmPointer;
+                          hostBasedAuthProc: ICElib.IceHostBasedAuthProc;
+                          errorLength: SYSTEM.int;
+                          VAR errorStringRet: ARRAY OF CHAR ): SYSTEM.int;
+
+PROCEDURE SmsClientHostName ( smsConn: SmsConn ): PChar;
+
+PROCEDURE SmsGenerateClientID ( smsConn: SmsConn ): PChar;
+
+PROCEDURE SmsRegisterClientReply ( smsConn: SmsConn;
+                                   clientId: ARRAY OF CHAR ): SYSTEM.int;
+
+PROCEDURE SmsSaveYourself ( smsConn: SmsConn;
+			    saveType: SYSTEM.int;
+                            shutdown: SYSTEM.int;
+                            interactStyle: SYSTEM.int;
+                            fast: SYSTEM.int );
+
+PROCEDURE SmsSaveYourselfPhase2 ( smsConn: SmsConn );
+
+PROCEDURE SmsInteract ( smsConn: SmsConn );
+
+PROCEDURE SmsDie ( smsConn: SmsConn );
+
+PROCEDURE SmsSaveComplete ( smsConn: SmsConn );
+
+PROCEDURE SmsShutdownCancelled ( smsConn: SmsConn );
+
+PROCEDURE SmsReturnProperties ( smsConn: SmsConn;
+                                numProps: SYSTEM.int;
+                                VAR props: PASmProp );
+
+PROCEDURE SmsCleanUp ( smsConn: SmsConn );
+
+PROCEDURE SmsProtocolVersion ( smsConn: SmsConn ): SYSTEM.int;
+
+PROCEDURE SmsProtocolRevision ( smsConn: SmsConn ): SYSTEM.int;
+
+PROCEDURE SmsClientID ( smsConn: SmsConn ): PChar;
+
+PROCEDURE SmsGetIceConnection ( smsConn: SmsConn ): ICElib.IceConn;
+
+PROCEDURE SmcSetErrorHandler ( handler: SmcErrorHandler ): SmcErrorHandler;
+
+PROCEDURE SmsSetErrorHandler ( handler: SmsErrorHandler ): SmsErrorHandler;
+
+PROCEDURE SmFreeProperty ( VAR prop: SmProp );
+
+PROCEDURE SmFreeReasons ( count: SYSTEM.int;
+                          reasonMsgs: PAPChar );
+
+END SMlib.

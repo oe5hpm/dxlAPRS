@@ -1,0 +1,38 @@
+DEFINITION MODULE Storage;
+
+  (* Facilities for dynamically allocating and deallocating storage *)
+
+IMPORT SYSTEM;
+
+PROCEDURE ALLOCATE (VAR addr: SYSTEM.ADDRESS; amount: CARDINAL);
+  (* Allocates storage for a variable of size amount and assigns the address of this
+     variable to addr. If there is insufficient unallocated storage to do this, the
+     value NIL is assigned to addr.
+  *)
+
+PROCEDURE DEALLOCATE (VAR addr: SYSTEM.ADDRESS; amount: CARDINAL);
+  (* Deallocates amount locations allocated by ALLOCATE for the storage of the variable
+     addressed by addr and assigns the value NIL to addr.
+  *)
+
+TYPE
+  StorageExceptions = (
+    nilDeallocation,             (* first argument to DEALLOCATE is NIL *)
+    pointerToUnallocatedStorage, (* storage to deallocate not allocated by ALLOCATE *)
+    wrongStorageToUnallocate     (* amount to deallocate is not amount allocated *)
+  );
+
+PROCEDURE IsStorageException (): BOOLEAN;
+  (* Returns TRUE if the current coroutine is in the exceptional execution state
+     because of the raising of an exception from StorageExceptions;
+     otherwise returns FALSE.
+  *)
+
+PROCEDURE StorageException (): StorageExceptions;
+  (* If the current coroutine is in the exceptional execution state because of the
+     raising of an exception from StorageExceptions, returns the corresponding
+     enumeration value, and otherwise raises an exception.
+  *)
+
+END Storage.
+

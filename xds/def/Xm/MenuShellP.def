@@ -1,0 +1,153 @@
+(* Xm/MenuShellP.def  Nov 11  16:41:13  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/MenuShellP.h using H2D v1.18.1 *)
+
+(* $RCSfile: MenuShellP.def,v $ $Revision: 5 $ $Date: 28.07.98 23:14 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+(* Merged headers: Xm/MenuShell.h *)
+
+DEFINITION MODULE ["C"] MenuShellP;
+
+IMPORT SYSTEM, X, Xlib, Xm:=XmP, Xt:=IntrinsicP, ShellP;
+(* H2D:  Required IMPORT clause: 
+IMPORT MenuShellP, X, Xlib, Xm:=XmP, Xt:=IntrinsicP, ShellP;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(* ------------------------------------------------------ *)
+(*                     Xm/MenuShell.h                     *)
+(* ------------------------------------------------------ *)
+
+(*
+ * Motif Release 1.2
+ *)
+
+VAR 
+  xmMenuShellWidgetClass: Xt.WidgetClass;
+
+TYPE 
+  XmMenuShellWidgetClass = POINTER TO _XmMenuShellClassRec;
+
+  XmMenuShellWidget = POINTER TO _XmMenuShellWidgetRec;
+
+(********    Public Function Declarations    ********)
+
+PROCEDURE XmCreateMenuShell ( parent: Xt.Widget; name: ARRAY OF CHAR;
+                              al: Xt.ArgList;
+                              ac: Xt.Cardinal ): Xt.Widget;
+
+(********    End Public Function Declarations    ********)
+
+(* ------------------------------------------------------- *)
+(*                     Xm/MenuShellP.h                     *)
+(* ------------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2
+ *)
+
+(*  The MenuShell instance record  *)
+
+TYPE 
+  _XmMenuShellPart = RECORD
+    focus_policy     : SHORTCARD;
+    focus_data       : Xm.XmFocusData;
+    private_shell    : Xt.Boolean;
+    default_font_list: Xm.XmFontList;
+    button_font_list : Xm.XmFontList;
+    label_font_list  : Xm.XmFontList;
+  END;
+
+  XmMenuShellPart = _XmMenuShellPart;
+
+(*  Full instance record declaration  *)
+
+  _XmMenuShellRec = RECORD
+    core      : Xt.CorePart;
+    composite : Xt.CompositePart;
+    shell     : ShellP.ShellPart;
+    override  : ShellP.OverrideShellPart;
+    menu_shell: XmMenuShellPart;
+  END;
+
+  XmMenuShellRec = _XmMenuShellRec;
+
+(*  OBSOLETE (for compatibility only). *)
+
+  _XmMenuShellWidgetRec = RECORD
+    core      : Xt.CorePart;
+    composite : Xt.CompositePart;
+    shell     : ShellP.ShellPart;
+    override  : ShellP.OverrideShellPart;
+    menu_shell: XmMenuShellPart;
+  END;
+
+  XmMenuShellWidgetRec = _XmMenuShellWidgetRec;
+
+(*  MenuShell class structure  *)
+
+  _XmMenuShellClassPart = RECORD
+    popdownOne     : Xt.XtActionProc;(* fnct to unpost portion or all of menu*)
+    popdownEveryone: Xt.XtActionProc;(* fnct to unpost portion of menu *)
+    popdownDone    : Xt.XtActionProc;(* fnct to unpost all menus *)
+    popupSharedMenupane: Xm.XmMenuPopupProc;(* fnct to post shared menus *)
+    (* Really should be popupSharedMenuShell *)
+    extension      : Xt.XtPointer;   (* Pointer to extension record *)
+  END;
+
+  XmMenuShellClassPart = _XmMenuShellClassPart;
+
+(*  Full class record declaration  *)
+
+  _XmMenuShellClassRec = RECORD
+    core_class          : Xt.CoreClassPart;
+    composite_class     : Xt.CompositeClassPart;
+    shell_class         : ShellP.ShellClassPart;
+    override_shell_class: ShellP.OverrideShellClassPart;
+    menu_shell_class    : XmMenuShellClassPart;
+  END;
+
+  XmMenuShellClassRec = _XmMenuShellClassRec;
+
+VAR 
+  xmMenuShellClassRec: XmMenuShellClassRec;
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: this procedure corresponds to a macro. *)
+PROCEDURE MS_FocusPolicy ( m: Xt.Widget ): Xt.Boolean;
+
+<* ELSE *>
+
+PROCEDURE  / MS_FocusPolicy ( m: Xt.Widget ): Xt.Boolean;
+
+<* END *>
+
+(********    Private Function Declarations    ********)
+
+PROCEDURE _XmEnterRowColumn ( widget: Xt.Widget;
+                              closure: Xt.XtPointer;
+			      VAR event: Xlib.XEvent;
+                              VAR cont: Xt.Boolean );
+
+PROCEDURE _XmClearTraversal ( wid: Xt.Widget;
+			      VAR event: Xlib.XEvent;
+                              params: Xt.StringList;
+			      VAR num_params: Xt.Cardinal );
+
+PROCEDURE _XmSetLastManagedMenuTime ( wid: Xt.Widget;
+                                      newTime: X.Time );
+
+(********    End Private Function Declarations    ********)
+
+END MenuShellP.

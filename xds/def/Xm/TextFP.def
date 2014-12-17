@@ -1,0 +1,496 @@
+(* Xm/TextFP.def  Nov 12  19:45:9  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted from Xm/TextFP.h using H2D v1.18.1 *)
+
+(* $RCSfile: TextFP.def,v $ $Revision: 4 $ $Date: 28.07.98 23:14 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *> 
+<* IF NOT DEFINED(GENTYPEDEF) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+(* Merged headers: Xm/TextF.h, Xm/TextFSelP.h *)
+
+DEFINITION MODULE ["C"] TextFP;
+
+IMPORT SYSTEM, X, Xlib, Xm:=XmP, Xt:=IntrinsicP;
+(* H2D:  Required IMPORT clause: 
+IMPORT TextFP, X, Xlib, XmP, IntrinsicP;
+*)
+
+(*
+ * (c) Copyright 1989, 1990, 1991, 1992 OPEN SOFTWARE FOUNDATION, INC.
+ * ALL RIGHTS RESERVED
+ *)
+
+(* -------------------------------------------------- *)
+(*                     Xm/TextF.h                     *)
+(* -------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2
+ *)
+
+(******************
+ * type defines   *
+ ******************)
+
+TYPE 
+  XmTextFieldWidgetClass = POINTER TO _XmTextFieldClassRec;
+
+  XmTextFieldWidget = POINTER TO _XmTextFieldRec;
+
+(******************
+ * extern class   *
+ ******************)
+
+VAR 
+  xmTextFieldWidgetClass: Xt.WidgetClass;
+
+(********************
+ * public functions *
+ ********************)
+
+(********    Public Function Declarations    ********)
+
+PROCEDURE ToggleCursorGC ( widget: Xt.Widget;
+                           state: Xt.Boolean );
+
+PROCEDURE XmTextFieldGetString ( w: Xt.Widget ): Xt.String;
+
+PROCEDURE XmTextFieldGetSubstring ( widget: Xt.Widget;
+                                    start: Xm.XmTextPosition;
+                                    num_chars: SYSTEM.int;
+                                    buf_size: SYSTEM.int;
+                                    buffer: ARRAY OF CHAR ): SYSTEM.int;
+
+PROCEDURE XmTextFieldGetStringWcs ( w: Xt.Widget ): Xlib.Ptrwchar_t;
+
+PROCEDURE XmTextFieldGetSubstringWcs ( widget: Xt.Widget;
+                                       start: Xm.XmTextPosition;
+                                       num_chars: SYSTEM.int;
+                                       buf_size: SYSTEM.int;
+                                       buffer: Xlib.Ptrwchar_t ): SYSTEM.int;
+
+PROCEDURE XmTextFieldGetLastPosition ( w: Xt.Widget ): Xm.XmTextPosition;
+
+PROCEDURE XmTextFieldSetString ( w: Xt.Widget;
+                                 value: ARRAY OF CHAR );
+
+PROCEDURE XmTextFieldSetStringWcs ( w: Xt.Widget;
+                                    wc_value: Xlib.Ptrwchar_t );
+
+PROCEDURE XmTextFieldReplace ( w: Xt.Widget;
+                               from_pos: Xm.XmTextPosition;
+                               to_pos: Xm.XmTextPosition;
+                               value: ARRAY OF CHAR );
+
+PROCEDURE XmTextFieldReplaceWcs ( w: Xt.Widget;
+                                  from_pos: Xm.XmTextPosition;
+                                  to_pos: Xm.XmTextPosition;
+                                  wc_value: Xlib.Ptrwchar_t );
+
+PROCEDURE XmTextFieldInsert ( w: Xt.Widget;
+                              position: Xm.XmTextPosition;
+                              value: ARRAY OF CHAR );
+
+PROCEDURE XmTextFieldInsertWcs ( w: Xt.Widget;
+                                 position: Xm.XmTextPosition;
+                                 wcstring: Xlib.Ptrwchar_t );
+
+PROCEDURE XmTextFieldSetAddMode ( w: Xt.Widget;
+                                  state: Xt.Boolean );
+
+PROCEDURE XmTextFieldGetAddMode ( w: Xt.Widget ): Xt.Boolean;
+
+PROCEDURE XmTextFieldGetEditable ( w: Xt.Widget ): Xt.Boolean;
+
+PROCEDURE XmTextFieldSetEditable ( w: Xt.Widget;
+                                   editable: Xt.Boolean );
+
+PROCEDURE XmTextFieldGetMaxLength ( w: Xt.Widget ): SYSTEM.int;
+
+PROCEDURE XmTextFieldSetMaxLength ( w: Xt.Widget;
+                                    max_length: SYSTEM.int );
+
+PROCEDURE XmTextFieldGetCursorPosition ( w: Xt.Widget ): Xm.XmTextPosition;
+
+PROCEDURE XmTextFieldGetInsertionPosition ( w: Xt.Widget ): Xm.XmTextPosition;
+
+PROCEDURE XmTextFieldSetCursorPosition ( w: Xt.Widget;
+                                         position: Xm.XmTextPosition );
+
+PROCEDURE XmTextFieldSetInsertionPosition ( w: Xt.Widget;
+                                            position: Xm.XmTextPosition );
+
+PROCEDURE XmTextFieldGetSelectionPosition ( w: Xt.Widget;
+                                            VAR left: Xm.XmTextPosition;
+                                            VAR right: Xm.XmTextPosition ): Xt.Boolean;
+
+PROCEDURE XmTextFieldGetSelection ( w: Xt.Widget ): Xt.String;
+
+PROCEDURE XmTextFieldGetSelectionWcs ( w: Xt.Widget ): Xlib.Ptrwchar_t;
+
+PROCEDURE XmTextFieldRemove ( w: Xt.Widget ): Xt.Boolean;
+
+PROCEDURE XmTextFieldCopy ( w: Xt.Widget;
+                            clip_time: X.Time ): Xt.Boolean;
+
+PROCEDURE XmTextFieldCut ( w: Xt.Widget;
+                           clip_time: X.Time ): Xt.Boolean;
+
+PROCEDURE XmTextFieldPaste ( w: Xt.Widget ): Xt.Boolean;
+
+PROCEDURE XmTextFieldClearSelection ( w: Xt.Widget;
+                                      sel_time: X.Time );
+
+PROCEDURE XmTextFieldSetSelection ( w: Xt.Widget;
+                                    first: Xm.XmTextPosition;
+                                    last: Xm.XmTextPosition;
+                                    sel_time: X.Time );
+
+PROCEDURE XmTextFieldXYToPos ( w: Xt.Widget;
+                               x: Xt.Position;
+                               y: Xt.Position ): Xm.XmTextPosition;
+
+PROCEDURE XmTextFieldPosToXY ( w: Xt.Widget;
+                               position: Xm.XmTextPosition;
+			       VAR x: Xt.Position;
+                               VAR y: Xt.Position ): Xt.Boolean;
+
+PROCEDURE XmTextFieldShowPosition ( w: Xt.Widget;
+                                    position: Xm.XmTextPosition );
+
+PROCEDURE XmTextFieldSetHighlight ( w: Xt.Widget;
+                                    left: Xm.XmTextPosition;
+                                    right: Xm.XmTextPosition;
+                                    mode: Xm.XmHighlightMode );
+
+PROCEDURE XmTextFieldGetBaseline ( w: Xt.Widget ): SYSTEM.int;
+
+PROCEDURE XmCreateTextField ( parent: Xt.Widget;
+			      name: ARRAY OF CHAR;
+                              arglist: Xt.ArgList;
+                              argcount: Xt.Cardinal ): Xt.Widget;
+
+(********    End Public Function Declarations    ********)
+
+(* ------------------------------------------------------ *)
+(*                     Xm/TextFSelP.h                     *)
+(* ------------------------------------------------------ *)
+
+(*
+ * Motif Release 1.2
+ *)
+
+(********    Private Function Declarations    ********)
+
+PROCEDURE _XmTextFieldConvert ( w: Xt.Widget;
+			        selection: Xlib.Ptrwchar_t;
+                                target: Xlib.Ptrwchar_t;
+			        type: Xlib.Ptrwchar_t;
+                                VAR value: Xt.XtPointer;
+			        VAR length: SYSTEM.INT16;
+                                VAR format: SYSTEM.int ): Xt.Boolean;
+
+PROCEDURE _XmTextFieldLoseSelection ( w: Xt.Widget;
+                                      selection: Xlib.Ptrwchar_t );
+
+(********    End Private Function Declarations    ********)
+
+(* -------------------------------------------------- *)
+(*                    Xm/TextFP.h                     *)
+(* -------------------------------------------------- *)
+
+(*
+ * Motif Release 1.2
+ *)
+
+(*
+ * Defines for different cursors
+ *)
+
+CONST 
+  IBEAM_WIDTH = 3;
+  CARET_WIDTH = 9;
+  CARET_HEIGHT = 5;
+
+(*
+ * Here is the Text Field Widget class structure.
+ *)
+
+TYPE 
+  _XmTextFieldClassPart = RECORD
+    extension: Xt.XtPointer;   (*  Pointer to extension record.  *)
+  END;
+
+  XmTextFieldClassPart = _XmTextFieldClassPart;
+
+  _XmTextFieldClassRec = RECORD
+    core_class : Xt.CoreClassPart; (* Not RectObjClassPart so I can reference
+                                    * core_class s *)
+    primitive_class: Xm.XmPrimitiveClassPart;
+    text_class     : XmTextFieldClassPart;
+  END;
+
+  XmTextFieldClassRec = _XmTextFieldClassRec;
+
+(*
+ * Here is the Text Field Widget instance structures.
+ *)
+
+  _XmTextFieldPart = RECORD
+    activate_callback    : Xt.XtCallbackList;(* Command activate callback *)
+    focus_callback       : Xt.XtCallbackList;(* Verify losing focus callback *)
+    losing_focus_callback: Xt.XtCallbackList;(* Verify losing focus callback *)
+    modify_verify_callback:Xt.XtCallbackList;(* Verify value to change callback *)
+    wcs_modify_verify_callback: Xt.XtCallbackList; (* Verify value to change
+                                                    * callback *)
+    motion_verify_callback:Xt.XtCallbackList;(*Verify insert cursor position to
+                                              * change callback *)
+    gain_primary_callback: Xt.XtCallbackList;(* Gained ownership of Primary
+      	      	      	      	      	      * Selection *)
+    lose_primary_callback: Xt.XtCallbackList; (* Lost ownership of Primary
+                                               * Selection *)
+    value_changed_callback:Xt.XtCallbackList; (* Notify that value has change
+      	      	      	      	      	       * callback *)
+    value   : Xt.String;       (* pointer to widget value stored as char* *)
+    wc_value: Xlib.Ptrwchar_t; (* pointer to widget value stored as wchar_t* *)
+    font_list     : Xm.XmFontList;(* Uses only the font portion of fontlist *)
+    font          : Xlib.PtrXFontStruct;(* font retrieved from the fontlist  *)
+    selection_array:Xlib.PASInt; (* Description of what to cycle
+                                  * through on selections *)
+    highlight     : Xm._XmHighlightData;(* Info on the highlighting regions. *)
+    gc            : Xlib.GC;     (* Normal GC for drawing text and cursor *)
+    image_gc      : Xlib.GC;     (* Image GC for drawing text cursor *)
+    save_gc       : Xlib.GC;     (* GC for saving/restoring under IBeam *)
+    ibeam_off     : X.Pixmap;    (* pixmap for area under the IBeam *)
+    add_mode_cursor:X.Pixmap;    (* The add mode cursor pixmap *)
+    cursor        : X.Pixmap;    (* The ibeam cursor stencil *)
+    putback       : X.Pixmap;    (* AVAILABLE: was in 1.1 but not really used*)
+    stipple_tile  : X.Pixmap;    (* The tile pattern for the stippled I-beam *)
+    image_clip    : X.Pixmap;    (* The clip rect needed for image gc *)
+    cursor_position:Xm.XmTextPosition;(* Character location of the insert cursor *)
+    new_h_offset:Xm.XmTextPosition; (* Used in setvaluesalmost proc *)
+    h_offset: Xm.XmTextPosition; (* The x position of the first character
+                                  * (relative to left edge of the widget) *)
+    orig_left :Xm.XmTextPosition;(* Left primary selection prior to extend *)
+    orig_right:Xm.XmTextPosition;(* Right primary selection prior to extend *)
+    prim_pos_left : Xm.XmTextPosition;(* Left primary selection position *)
+    prim_pos_right: Xm.XmTextPosition;(* Right primary selection position *)
+    prim_anchor   : Xm.XmTextPosition;(* Primary selection pivot point *)
+    sec_pos_left  : Xm.XmTextPosition;(* Left secondary selection position *)
+    sec_pos_right : Xm.XmTextPosition;(* Right secondary selection position *)
+    sec_anchor    : Xm.XmTextPosition;(* Secondary selection pivot point *)
+    stuff_pos: Xm.XmTextPosition;(* Position to stuff the primary selection *)
+    select_pos_x  : Xt.Position; (* x position for timer-based scrolling *)
+    prim_time     : X.Time;      (* Timestamp of primary selection *)
+    dest_time     : X.Time;      (* Timestamp of destination selection *)
+    sec_time      : X.Time;      (* Timestamp of secondary selection *)
+    last_time     : X.Time;      (* Time of last selection event *)
+    timer_id      : Xt.XtIntervalId;(* Blinking cursor timer *)
+    select_id     : Xt.XtIntervalId;(* Timer based scrolling identifier *)
+    blink_rate    : SYSTEM.int;  (* Rate of blinking text cursor in msec *)
+    selection_array_count:SYSTEM.int;(* Selection array count *)
+    threshold     : SYSTEM.int;  (* Selection threshold *)
+    size_allocd   : SYSTEM.int;  (* Size allocated for value string *)
+    string_length : SYSTEM.int;  (* The number of characters in the string
+                                  * (including the trailing NULL) *)
+    cursor_height : SYSTEM.int;  (* Save cursor dimensions *)
+    cursor_width  : SYSTEM.int;  (* Save cursor dimensions *)
+    sarray_index  : SYSTEM.int;  (* Index into selection array *)
+    max_length    : SYSTEM.int;  (* Maximum number of character that can be
+                                  * inserted into the text field widget *)
+    max_char_size : SYSTEM.int;  (* Max bytes per character in cur locale *)
+    columns       : SYSTEM.INT16;(* The number of characters in the width *)
+    margin_width  : Xt.Dimension;(* Height between text borders and text *)
+    margin_height : Xt.Dimension;(* Width between text borders and text *)
+    average_char_width:Xt.Dimension;(* Average character width based on font *)
+    margin_top    : Xt.Dimension;(* Height between text borders and top of text *)
+    margin_bottom : Xt.Dimension;(* Height between text borders and bottom of text *)
+    font_ascent   : Xt.Dimension;(* Ascent of font or fontset used by widget *)
+    font_descent  : Xt.Dimension;(* Descent of font or fontset used by widget*)
+    resize_width  : Xt.Boolean;  (* Allows the widget to grow horizontally
+                                  * when borders are reached *)
+    pending_delete: Xt.Boolean;  (* Delete primary selection on insert when
+                                  * set to True *)
+    editable      : Xt.Boolean;  (* Sets editablility of text *)
+    verify_bell   : Xt.Boolean;  (* Determines if bell is sounded when verify
+                                  * callback returns doit - False *)
+    cursor_position_visible : Xt.Boolean;(* Sets visibility of insert cursor *)
+    traversed     : Xt.Boolean;  (* Flag used with losing focus verification to
+                                  * indicate a traversal key pressed event *)
+    add_mode      : Xt.Boolean;  (* Add mode for cursor movement *)
+    has_focus     : Xt.Boolean;  (* Flag that indicates whether the widget
+                                  * has input focus *)
+    blink_on      : Xt.Boolean;  (* State of Blinking insert cursor *)
+    cursor_on     : SYSTEM.INT16;(* Indicates whether the cursor is visible *)
+    refresh_ibeam_off:Xt.Boolean;(*Indicates whether the area under IBeam needs
+                                  * to be re-captured *)
+    have_inverted_image_gc:Xt.Boolean;(* fg/bg of image gc have been swapped *)
+    has_primary   : Xt.Boolean;  (* Indicates that is has the
+                                  * primary selection *)
+    has_secondary : Xt.Boolean;  (* Indicates that is has the
+      	      	      	      	  * secondary selection *)
+    has_destination:Xt.Boolean;  (* Indicates that is has the
+                                  * destination selection *)
+    sec_drag      : Xt.Boolean;  (* Indicates a secondary drag was made *)
+    selection_move: Xt.Boolean;  (* Indicates that the action requires a
+                                  * secondary move (i.e. copy & cut) *)
+    pending_off   : Xt.Boolean;  (* indicates pending delete state *)
+    fontlist_created: Xt.Boolean;(*Indicates that the text field widget created
+                                  * it's own fontlist *)
+    has_rect      : Xt.Boolean;  (* currently has clipping rectangle *)
+    do_drop       : Xt.Boolean;  (* Indicates that the widget the recieved the
+                                  * button release, did not have a previous
+                                  * button press, so it is o.k. to request
+                                  * the MOTIF_DROP selection. *)
+    cancel        : Xt.Boolean;  (* Cancels selection actions when true *)
+    extending     : Xt.Boolean;  (* Indicates extending primary selection *)
+    sec_extending : Xt.Boolean;  (* Indicates extending secondary selection *)
+    changed_visible:Xt.Boolean;  (* Indicates whether the dest_visible flag
+                                  * is in a temporary changed state *)
+    have_fontset  : Xt.Boolean;  (* The widgets font is a fontset, not a
+          			  * fontstruct... use R5 draw routines *)
+    in_setvalues  : Xt.Boolean;  (* used to disable unnecessary redisplays *)
+    do_resize     : Xt.Boolean;  (* used to prevent inappropriate resizes *)
+    redisplay     : Xt.Boolean;  (* used to set redisplay flag in setvalues *)
+    overstrike    : Xt.Boolean;  (* overstrike mode for character input *)
+    sel_start     : Xt.Boolean;  (* overstrike mode for character input *)
+    extension     : Xt.XtPointer;(* Pointer to extension record. *)
+  END;
+
+  XmTextFieldPart = _XmTextFieldPart;
+
+  _XmTextFieldRec = RECORD
+    core     : Xt.CorePart;
+    primitive: Xm.XmPrimitivePart;
+    text     : XmTextFieldPart;
+  END;
+
+  XmTextFieldRec = _XmTextFieldRec;
+
+VAR 
+  xmTextFieldClassRec: XmTextFieldClassRec;
+
+(****************
+ *
+ * Macros for the uncached data
+ *
+ ****************)
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: this procedure corresponds to a macro. *)
+PROCEDURE TextF_ActivateCallback ( tfg: Xt.Widget ): Xt.XtCallbackList;
+PROCEDURE TextF_LosingFocusCallback ( tfg: Xt.Widget ): Xt.XtCallbackList;
+PROCEDURE TextF_FocusCallback ( tfg: Xt.Widget ): Xt.XtCallbackList;
+PROCEDURE TextF_ModifyVerifyCallback ( tfg: Xt.Widget ): Xt.XtCallbackList;
+PROCEDURE TextF_ModifyVerifyCallbackWcs ( tfg: Xt.Widget ): Xt.XtCallbackList;
+PROCEDURE TextF_MotionVerifyCallback ( tfg: Xt.Widget ): Xt.XtCallbackList;
+PROCEDURE TextF_ValueChangedCallback ( tfg: Xt.Widget ): Xt.XtCallbackList;
+PROCEDURE TextF_Value ( tfg: Xt.Widget ): Xt.String;
+PROCEDURE TextF_WcValue ( tfg: Xt.Widget ): Xlib.Ptrwchar_t;
+PROCEDURE TextF_MarginHeight ( tfg: Xt.Widget ): Xt.Dimension;
+PROCEDURE TextF_MarginWidth ( tfg: Xt.Widget ): Xt.Dimension;
+PROCEDURE TextF_CursorPosition ( tfg: Xt.Widget ): Xm.XmTextPosition;
+PROCEDURE TextF_Columns ( tfg: Xt.Widget ): SYSTEM.INT16;
+PROCEDURE TextF_MaxLength ( tfg: Xt.Widget ): SYSTEM.int;
+PROCEDURE TextF_BlinkRate ( tfg: Xt.Widget ): SYSTEM.int;
+PROCEDURE TextF_FontList ( tfg: Xt.Widget ): Xm.XmFontList;
+PROCEDURE TextF_Font ( tfg: Xt.Widget ): Xlib.PtrXFontStruct;
+PROCEDURE TextF_FontAscent ( tfg: Xt.Widget ): Xt.Dimension;
+PROCEDURE TextF_FontDescent ( tfg: Xt.Widget ): Xt.Dimension;
+PROCEDURE TextF_SelectionArray ( tfg: Xt.Widget ): Xm.XmTextScanTypeList;
+PROCEDURE TextF_SelectionArrayCount ( tfg: Xt.Widget ): SYSTEM.int;
+PROCEDURE TextF_ResizeWidth ( tfg: Xt.Widget ): Xt.Boolean;
+PROCEDURE TextF_PendingDelete ( tfg: Xt.Widget ): Xt.Boolean;
+PROCEDURE TextF_Editable ( tfg: Xt.Widget ): Xt.Boolean;
+PROCEDURE TextF_CursorPositionVisible ( tfg: Xt.Widget ): Xt.Boolean;
+PROCEDURE TextF_Threshold ( tfg: Xt.Widget ): SYSTEM.int;
+PROCEDURE TextF_UseFontSet ( tfg: Xt.Widget ): Xt.Boolean;
+
+<* ELSE *>
+
+PROCEDURE  / TextF_ActivateCallback ( tfg: Xt.Widget ): Xt.XtCallbackList;
+PROCEDURE  / TextF_LosingFocusCallback ( tfg: Xt.Widget ): Xt.XtCallbackList;
+PROCEDURE  / TextF_FocusCallback ( tfg: Xt.Widget ): Xt.XtCallbackList;
+PROCEDURE  / TextF_ModifyVerifyCallback ( tfg: Xt.Widget ): Xt.XtCallbackList;
+PROCEDURE  / TextF_ModifyVerifyCallbackWcs ( tfg: Xt.Widget ): Xt.XtCallbackList;
+PROCEDURE  / TextF_MotionVerifyCallback ( tfg: Xt.Widget ): Xt.XtCallbackList;
+PROCEDURE  / TextF_ValueChangedCallback ( tfg: Xt.Widget ): Xt.XtCallbackList;
+PROCEDURE  / TextF_Value ( tfg: Xt.Widget ): Xt.String;
+PROCEDURE  / TextF_WcValue ( tfg: Xt.Widget ): Xlib.Ptrwchar_t;
+PROCEDURE  / TextF_MarginHeight ( tfg: Xt.Widget ): Xt.Dimension;
+PROCEDURE  / TextF_MarginWidth ( tfg: Xt.Widget ): Xt.Dimension;
+PROCEDURE  / TextF_CursorPosition ( tfg: Xt.Widget ): Xm.XmTextPosition;
+PROCEDURE  / TextF_Columns ( tfg: Xt.Widget ): SYSTEM.INT16;
+PROCEDURE  / TextF_MaxLength ( tfg: Xt.Widget ): SYSTEM.int;
+PROCEDURE  / TextF_BlinkRate ( tfg: Xt.Widget ): SYSTEM.int;
+PROCEDURE  / TextF_FontList ( tfg: Xt.Widget ): Xm.XmFontList;
+PROCEDURE  / TextF_Font ( tfg: Xt.Widget ): Xlib.PtrXFontStruct;
+PROCEDURE  / TextF_FontAscent ( tfg: Xt.Widget ): Xt.Dimension;
+PROCEDURE  / TextF_FontDescent ( tfg: Xt.Widget ): Xt.Dimension;
+PROCEDURE  / TextF_SelectionArray ( tfg: Xt.Widget ): Xm.XmTextScanTypeList;
+PROCEDURE  / TextF_SelectionArrayCount ( tfg: Xt.Widget ): SYSTEM.int;
+PROCEDURE  / TextF_ResizeWidth ( tfg: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / TextF_PendingDelete ( tfg: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / TextF_Editable ( tfg: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / TextF_CursorPositionVisible ( tfg: Xt.Widget ): Xt.Boolean;
+PROCEDURE  / TextF_Threshold ( tfg: Xt.Widget ): SYSTEM.int;
+PROCEDURE  / TextF_UseFontSet ( tfg: Xt.Widget ): Xt.Boolean;
+
+<* END *>
+
+(********    Private Function Declarations    ********)
+
+PROCEDURE _XmTextFieldCountBytes ( tf: XmTextFieldWidget;
+				   wc_value: ARRAY OF Xlib.wchar_t;
+                                   num_chars: SYSTEM.int ): SYSTEM.int;
+
+PROCEDURE _XmTextFieldGetDropReciever ( w: Xt.Widget ): Xt.Widget;
+
+PROCEDURE _XmTextFToggleCursorGC ( widget: Xt.Widget );
+
+PROCEDURE _XmTextFieldDrawInsertionPoint ( tf: XmTextFieldWidget;
+                                           turn_on: Xt.Boolean );
+
+PROCEDURE _XmTextFieldSetClipRect ( tf: XmTextFieldWidget );
+
+PROCEDURE _XmTextFieldSetCursorPosition ( tf: XmTextFieldWidget;
+					  VAR event: Xlib.XEvent;
+                                          position: Xm.XmTextPosition;
+                                          adjust_flag: Xt.Boolean;
+                                          call_cb: Xt.Boolean );
+
+PROCEDURE _XmTextFieldReplaceText ( tf: XmTextFieldWidget;
+				    VAR event: Xlib.XEvent;
+                                    replace_prev: Xm.XmTextPosition;
+                                    replace_next: Xm.XmTextPosition;
+                                    insert: ARRAY OF CHAR;
+				    insert_length: SYSTEM.int;
+                                    move_cursor: Xt.Boolean ): Xt.Boolean;
+
+PROCEDURE _XmTextFieldDeselectSelection ( w: Xt.Widget;
+                                          disown: Xt.Boolean;
+                                          sel_time: X.Time );
+
+PROCEDURE _XmTextFieldSetDestination ( w: Xt.Widget;
+                                       position: Xm.XmTextPosition;
+                                       set_time: X.Time ): Xt.Boolean;
+
+PROCEDURE _XmTextFieldStartSelection ( tf: XmTextFieldWidget;
+                                       left: Xm.XmTextPosition;
+                                       right: Xm.XmTextPosition;
+                                       sel_time: X.Time );
+
+PROCEDURE _XmTextFieldSetSel2 ( w: Xt.Widget;
+                                left: Xm.XmTextPosition;
+                                right: Xm.XmTextPosition;
+                                disown: Xt.Boolean;
+                                sel_time: X.Time );
+
+(********    End Private Function Declarations    ********)
+
+END TextFP.

@@ -1,0 +1,302 @@
+(* X11/Xresource.def  Apr 7  20:5:4  1996 *)
+(* Copyright (c) 1996,1997 XDS Ltd, Russia. All rights reserved. *)
+
+(* Converted using H2D v1.00 from X11/Xresource.h. *)
+
+(* $RCSfile: Xresource.def,v $ $Revision: 4 $ $Date: 28.07.98 23:13 $ *)
+
+<*+ M2ADDTYPES *>
+<*+ M2EXTENSIONS *>
+<*+ NOHEADER *>
+<* IF NOT DEFINED(GENCTYPES) THEN *> <* NEW GENTYPEDEF+ *> <* END *>
+<*+ CSTDLIB *>
+
+DEFINITION MODULE ["C"] Xresource;
+
+IMPORT SYSTEM, X, Xlib;
+(* H2D: to import this module write following text:
+IMPORT Xresource, X, Xlib;
+*)
+
+FROM Xlib IMPORT PChar, PAPChar, Bool;
+FROM X IMPORT MAX_STUP_ARR;
+
+(*  $XConsortium: Xresource.h,v 1.37 94/04/17 20:21:52 rws Exp $  *)
+
+(****************************************************************
+ ****************************************************************
+ ***                                                          ***
+ ***                                                          ***
+ ***          X Resource Manager Intrinsics                   ***
+ ***                                                          ***
+ ***                                                          ***
+ ****************************************************************
+ ****************************************************************)
+
+(***************************************************************
+ *
+ * Memory Management
+ *
+ ***************************************************************)
+
+TYPE 
+  XrmString = POINTER TO ARRAY [0..MAX_STUP_ARR] OF CHAR;
+
+PROCEDURE Xpermalloc ( size: SYSTEM.unsigned ): XrmString;
+
+(****************************************************************
+ *
+ * Quark Management
+ *
+ ****************************************************************)
+
+TYPE 
+  XrmQuark = SYSTEM.int;
+
+  XrmQuarkList = POINTER TO ARRAY [0..MAX_STUP_ARR] OF SYSTEM.int;
+  PtrXrmQuarkList = POINTER TO XrmQuarkList;
+
+CONST 
+  NULLQUARK = 0;
+
+(*  find quark for string, create new quark if none already exists  *)
+
+PROCEDURE XrmStringToQuark ( string: ARRAY OF CHAR ): XrmQuark;
+
+PROCEDURE XrmPermStringToQuark ( string: ARRAY OF CHAR ): XrmQuark;
+
+(*  find string for quark  *)
+
+PROCEDURE XrmQuarkToString ( quark: XrmQuark ): XrmString;
+
+PROCEDURE XrmUniqueQuark (  ): XrmQuark;
+
+(****************************************************************
+ *
+ * Conversion of Strings to Lists
+ *
+ ****************************************************************)
+
+TYPE 
+  XrmBinding = (
+    XrmBindTightly,
+    XrmBindLoosely
+  );
+
+  XrmBindingList = POINTER TO ARRAY [0..MAX_STUP_ARR] OF XrmBinding;
+
+PROCEDURE XrmStringToQuarkList ( string: ARRAY OF CHAR;
+                                 quarks_return: XrmQuarkList );
+
+PROCEDURE XrmStringToBindingQuarkList ( string: ARRAY OF CHAR;
+                                        bindings_return: XrmBindingList;
+                                        quarks_return: XrmQuarkList );
+
+(****************************************************************
+ *
+ * Name and Class lists.
+ *
+ ****************************************************************)
+
+TYPE 
+  XrmName = XrmQuark;
+
+  XrmNameList = XrmQuarkList;
+
+  XrmClass = XrmQuark;
+
+  XrmClassList = XrmQuarkList;
+
+(****************************************************************
+ *
+ * Resource Representation Types and Values
+ *
+ ****************************************************************)
+
+TYPE 
+  XrmRepresentation = XrmQuark;
+
+  XrmValue = RECORD
+    size: SYSTEM.unsigned;
+    addr: Xlib.XPointer;
+  END;
+
+  XrmValuePtr = POINTER TO XrmValue;
+  PAXrmValue = POINTER TO ARRAY [0..MAX_STUP_ARR] OF XrmValue;
+
+(****************************************************************
+ *
+ * Resource Manager Functions
+ *
+ ****************************************************************)
+
+  XrmHashBucket = POINTER TO Xlib._XrmHashBucketRec;
+
+  XrmHashTable = POINTER TO ARRAY [0..MAX_STUP_ARR] OF XrmHashBucket;
+
+  XrmSearchList = POINTER TO ARRAY [0..MAX_STUP_ARR] OF XrmHashTable;
+
+  XrmDatabase = POINTER TO Xlib._XrmHashBucketRec;
+
+PROCEDURE XrmDestroyDatabase ( database: XrmDatabase );
+
+PROCEDURE XrmQPutResource ( database: XrmHashTable;
+                            bindings: XrmBindingList;
+                            quarks: XrmQuarkList;
+                            type: XrmRepresentation;
+                            value: XrmValuePtr );
+
+PROCEDURE XrmPutResource ( database: XrmHashTable;
+                           specifier: XrmString;
+                           type: XrmString;
+                           value: XrmValuePtr );
+
+PROCEDURE XrmQPutStringResource ( database: XrmHashTable;
+                                  bindings: XrmBindingList;
+                                  quarks: XrmQuarkList;
+                                  value: ARRAY OF CHAR );
+
+PROCEDURE XrmPutStringResource ( database: XrmHashTable;
+                                 specifier: ARRAY OF CHAR;
+                                 value: ARRAY OF CHAR );
+
+PROCEDURE XrmPutLineResource ( database: XrmHashTable;
+                               line: ARRAY OF CHAR );
+
+PROCEDURE XrmQGetResource ( database: XrmDatabase;
+                            quark_name: XrmNameList;
+                            quark_class: XrmClassList;
+                            VAR quark_type_return: XrmQuarkList;
+                            VAR value_return: XrmValue ): Bool;
+
+PROCEDURE XrmGetResource ( database: XrmDatabase;
+                           str_name: ARRAY OF CHAR;
+                           str_class: ARRAY OF CHAR;
+                           VAR str_type_return: XrmString;
+                           VAR value_return: XrmValue ): Bool;
+
+PROCEDURE XrmQGetSearchList ( database: XrmDatabase;
+                              names: XrmNameList;
+                              classes: XrmClassList;
+                              list_return: XrmSearchList;
+                              list_length: SYSTEM.int ): Bool;
+
+PROCEDURE XrmQGetSearchResource ( list: XrmSearchList;
+                                  name: XrmName;
+                                  class: XrmClass;
+                                  type_return: XrmQuarkList;
+                                  value_return: XrmValuePtr ): Bool;
+
+(****************************************************************
+ *
+ * Resource Database Management
+ *
+ ****************************************************************)
+
+PROCEDURE XrmSetDatabase ( display: Xlib.PtrDisplay;
+                           database: XrmDatabase );
+
+PROCEDURE XrmGetDatabase ( display: Xlib.PtrDisplay ): XrmDatabase;
+
+PROCEDURE XrmGetFileDatabase ( filename: ARRAY OF CHAR ): XrmDatabase;
+
+PROCEDURE XrmCombineFileDatabase ( filename: ARRAY OF CHAR;
+                                   target: XrmHashTable;
+                                   override: Bool ): SYSTEM.int;
+
+PROCEDURE XrmGetStringDatabase ( data (* null terminated string *): XrmString ): XrmDatabase;
+
+PROCEDURE XrmPutFileDatabase ( database: XrmDatabase;
+                               filename: ARRAY OF CHAR );
+
+PROCEDURE XrmMergeDatabases ( source_db: XrmDatabase;
+                              target_db: XrmHashTable );
+
+PROCEDURE XrmCombineDatabase ( source_db: XrmDatabase;
+                               target_db: XrmHashTable;
+                               override: Bool );
+
+CONST 
+  XrmEnumAllLevels = 0;
+  XrmEnumOneLevel = 1;
+
+TYPE 
+  PtrProc = PROCEDURE ( (* db       *) XrmHashTable,
+			(* bindings *) XrmBindingList,
+			(* quarks   *) XrmQuarkList,
+			(* type     *) XrmQuarkList,
+			(* value    *) XrmValuePtr,
+			(* closure  *) Xlib.XPointer ): Bool;
+
+PROCEDURE XrmEnumerateDatabase ( db: XrmDatabase;
+                                 name_prefix: XrmNameList;
+                                 class_prefix: XrmClassList;
+                                 mode: SYSTEM.int;
+                                 proc: PtrProc;
+                                 closure: Xlib.XPointer ): Bool;
+
+PROCEDURE XrmLocaleOfDatabase ( database: XrmDatabase ): Xlib.PChar;
+
+(****************************************************************
+ *
+ * Command line option mapping to resource entries
+ *
+ ****************************************************************)
+
+TYPE 
+  XrmOptionKind = (
+    XrmoptionNoArg    ,   (*  Value is specified in OptionDescRec.value	     *)
+    XrmoptionIsArg    ,   (*  Value is the option string itself		     *)
+    XrmoptionStickyArg,   (*  Value is characters immediately following option  *)
+    XrmoptionSepArg   ,   (*  Value is next argument in argv		     *)
+    XrmoptionResArg   ,   (*  Resource and value in next argument in argv       *)
+    XrmoptionSkipArg  ,   (*  Ignore this option and the next argument in argv  *)
+    XrmoptionSkipLine ,   (*  Ignore this option and the rest of argv	     *)
+    XrmoptionSkipNArgs    (*  Ignore this option and the next   *)
+                          (*  OptionDescRes.value arguments in  argv  *)
+  );
+
+  XrmOptionDescRec = RECORD
+    option   : XrmString;       (*  Option abbreviation in argv	     *)
+    specifier: XrmString;       (*  Resource specifier		     *)
+    argKind  : XrmOptionKind;   (*  Which style of option it is	     *)
+    value    : Xlib.XPointer;   (*  Value to provide if XrmoptionNoArg    *)
+  END;
+
+  XrmOptionDescList = POINTER TO ARRAY [0..MAX_STUP_ARR] OF XrmOptionDescRec;
+
+PROCEDURE XrmParseCommand ( database: XrmHashTable;
+                            table: XrmOptionDescList;
+                            table_count: SYSTEM.int;
+                            name: ARRAY OF CHAR;
+                            VAR argc_in_out: SYSTEM.int;
+                            argv_in_out: PAPChar );
+
+<* IF __GEN_C__ THEN *>
+
+(* H2D: these procedures was generated from Macros. *)
+PROCEDURE XrmStringsEqual ( a1, a2: ARRAY OF CHAR ): Bool;
+PROCEDURE XrmNameToString ( name: XrmName ): XrmString;
+PROCEDURE XrmStringToName ( string: ARRAY OF CHAR ): XrmName;
+PROCEDURE XrmStringToNameList ( str: ARRAY OF CHAR; name: XrmNameList);
+PROCEDURE XrmClassToString ( c_class: XrmClass ): XrmString;
+PROCEDURE XrmStringToClass ( c_class: ARRAY OF CHAR ): XrmClass;
+PROCEDURE XrmStringToClassList ( str: ARRAY OF CHAR; name: XrmClassList);
+PROCEDURE XrmStringToRepresentation ( string: ARRAY OF CHAR ): XrmRepresentation;
+PROCEDURE XrmRepresentationToString ( type: XrmRepresentation ): XrmString;
+
+<* ELSE *>
+
+PROCEDURE  / XrmStringsEqual * ( a1, a2: ARRAY OF CHAR ): Bool;
+PROCEDURE  / XrmNameToString * ( name: XrmName ): XrmString;
+PROCEDURE  / XrmStringToName * ( string: ARRAY OF CHAR ): XrmName;
+PROCEDURE  / XrmStringToNameList * ( str: ARRAY OF CHAR; name: XrmNameList);
+PROCEDURE  / XrmClassToString * ( c_class: XrmClass ): XrmString;
+PROCEDURE  / XrmStringToClass * ( c_class: ARRAY OF CHAR ): XrmClass;
+PROCEDURE  / XrmStringToClassList * ( str: ARRAY OF CHAR; name: XrmClassList);
+PROCEDURE  / XrmStringToRepresentation * ( string: ARRAY OF CHAR ): XrmRepresentation;
+PROCEDURE  / XrmRepresentationToString * ( type: XrmRepresentation ): XrmString;
+
+<* END *>
+
+END Xresource.

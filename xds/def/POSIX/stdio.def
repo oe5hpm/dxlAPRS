@@ -1,0 +1,165 @@
+(* Copyright (c) xTech 1992,95,97.  All Rights Reserved *)
+
+(* $RCSfile: stdio.def,v $ $Revision: 6 $ $Date: 14.11.01 19:47 $ *)
+<*+ CSTDLIB  *>
+<*+ NOHEADER *>
+<*+ M2EXTENSIONS *>
+<*+ M2ADDTYPES *>
+<* IF __GEN_C__ THEN *>
+<*+ GENTYPEDEF *>
+<* END *>
+
+<* IF NOT DEFINED(_POSIX_SOURCE) THEN *> <* NEW _POSIX_SOURCE+ *> <* END *>
+
+DEFINITION MODULE [2] stdio;
+
+IMPORT types;
+
+FROM SYSTEM IMPORT ADDRESS, BYTE, INT32;
+FROM xmRTS IMPORT X2C_pCHAR;
+
+<* IF __GEN_C__ THEN *>
+VAR
+  BUFSIZ-      : INTEGER;
+  EOF-         : INTEGER;
+  FILENAME_MAX-: INTEGER;
+  FOPEN_MAX-   : INTEGER;
+  L_tmpnam-    : INTEGER;
+  SEEK_CUR-    : INTEGER;
+  SEEK_END-    : INTEGER;
+  SEEK_SET-    : INTEGER;
+  TMP_MAX-     : INTEGER;
+  _IOFBF-      : INTEGER; (* Fully buffered. *)
+  _IOLBF-      : INTEGER; (* Line buffered. *)
+  _IONBF-      : INTEGER; (* No buffering. *)
+  <* IF _POSIX_SOURCE THEN *>
+  L_ctermid-   : INTEGER;
+  L_cuserid-   : INTEGER;
+  STREAM_MAX-  : INTEGER;
+  <* END *>
+<* ELSE *>
+CONST
+  BUFSIZ       = 1024;
+  _IOFBF       = 0;	(* Fully buffered. *)
+  _IOLBF       = 1;	(* Line buffered. *)
+  _IONBF       = 2;	(* No buffering. *)
+  SEEK_SET     = 0;
+  SEEK_CUR     = 1;
+  SEEK_END     = 2;
+  EOF          =-1;
+  FOPEN_MAX    = 20;	(* As in FreeBSD *)
+  FILENAME_MAX = 1024;	(* As in FreeBSD *)
+  TMP_MAX      = 238328;(* As in LiNUX *)
+  <* IF _POSIX_SOURCE THEN *>
+  L_ctermid    = 9;
+  L_cuserid    = 9;
+  STREAM_MAX   = 8;
+  <* END *>
+  L_tmpnam     = 1024;	(* As in FreeBSD *)
+<* END *>
+
+TYPE
+  size_t = types.size_t;
+  fpost_t = INT32;
+  FILE = RECORD END;
+<* IF __GEN_C__ THEN *> <*- GENTYPEDEF *> <* END *>
+  FILE_ptr = POINTER TO FILE;
+<* IF __GEN_C__ THEN *> <*+ GENTYPEDEF *> <* END *>
+  
+
+VAR (* Standard I/O predefined streams (POINTER TO FILE) *)
+  stdin- : POINTER TO FILE;
+  stdout-: POINTER TO FILE;
+  stderr-: POINTER TO FILE;
+
+CONST
+  NULL = NIL;
+  
+(* POSIX IEE 1003.1 Formatted output directives are:
+
+   DIRECTIVE  MEANING
+   =========================================================================
+   %c	      Convert the int argument to unsigned char and write the
+	      resulting byte in the output file.
+   %d	      Convert int argument to a decimal string of the form [-]ddddd.
+   %e	      Convert the double argument to sceintific notation in the
+	      style [-]d.ddd edd.
+   %E	      Convert the double argument to sceintific notation in the
+	      style [-]d.ddd Edd.
+   %f	      Convert the double argument to a string in the style [-]ddd.dddd.
+   %g or %G   Same as %f for small numbers and %e (or %E) for large numbers.
+   %i	      Same as %d.
+   %n	      The argument is a pointer to an integer into which is written
+	      number of character output so far. Nothing is written to the
+              output stream by the %n directive.
+   %o	      Convert the unsignes int to the octal.
+   %p	      Convert the arument (assumed to be a pointer) to characters.
+   %s	      Write the argument assumed to be a pointer to a null-terminated
+              string) to output stream.
+   %u	      Convert the unsigned int argument to decimal.
+   %x or %X   Convert the unsigned int argument to hex. %x uses the letters
+	      'abcdef' while %X uses the letters 'ABCDEF'.
+   %%	      Outputs a %.
+ *)   
+
+PROCEDURE clearerr(VAR f: FILE);
+
+PROCEDURE fclose(VAR f: FILE): INTEGER;
+PROCEDURE feof(VAR f: FILE): INTEGER;
+PROCEDURE ferror(VAR f: FILE): INTEGER;
+PROCEDURE fflush(VAR f: FILE): INTEGER;
+PROCEDURE fgetc(VAR f: FILE): INTEGER;
+PROCEDURE fgetpos(VAR f: FILE; VAR fp: INT32): INTEGER;
+PROCEDURE fgets(VAR s: ARRAY OF CHAR; n: INTEGER; VAR f: FILE): ADDRESS;
+PROCEDURE fopen(path,mode: ARRAY OF CHAR): ADDRESS;
+          (* returns POINTER TO FILE *)
+PROCEDURE fprintf(VAR f: FILE; format: ARRAY OF CHAR; SEQ x: BYTE): INTEGER;
+PROCEDURE fputc(c: INTEGER; VAR f: FILE): INTEGER;
+PROCEDURE fputs(s: ARRAY OF CHAR; VAR f: FILE): INTEGER;
+PROCEDURE fread(ptr: ADDRESS; size, n: size_t; VAR f: FILE): size_t;
+PROCEDURE freopen(path,mode: ARRAY OF CHAR; VAR oldfile: FILE): ADDRESS;
+          (* returns POINTER TO FILE *)
+PROCEDURE fscanf(VAR f: FILE; format: ARRAY OF CHAR; SEQ x: BYTE): INTEGER;
+PROCEDURE fseek(VAR f: FILE; offset: INT32; whence: INTEGER): INTEGER;
+PROCEDURE fsetpos(VAR f: FILE; VAR fp: INT32): INTEGER;
+PROCEDURE ftell(VAR f: FILE): INT32;
+PROCEDURE fwrite(ptr: ADDRESS; size, n: size_t; VAR f: FILE): size_t;
+
+PROCEDURE getc(VAR f: FILE): INTEGER;
+PROCEDURE getchar(): INTEGER;
+PROCEDURE gets(VAR s: ARRAY OF CHAR): ADDRESS;
+
+PROCEDURE perror(s: ARRAY OF CHAR);
+PROCEDURE printf(format: ARRAY OF CHAR; SEQ x: BYTE): INTEGER;
+PROCEDURE putc(c: INTEGER; VAR f: FILE): INTEGER;
+PROCEDURE putchar(c: INTEGER): INTEGER;
+PROCEDURE puts(s: ARRAY OF CHAR): INTEGER;
+
+PROCEDURE remove(path: ARRAY OF CHAR): INTEGER;
+PROCEDURE rename(oldnam, newname: ARRAY OF CHAR): INTEGER;
+PROCEDURE rewind(VAR f: FILE);
+
+PROCEDURE scanf(format: ARRAY OF CHAR; SEQ x: BYTE): INTEGER;
+PROCEDURE setbuf(VAR f: FILE; buf: ADDRESS);
+PROCEDURE setvbuf(VAR f: FILE; buf: ADDRESS; type: INTEGER; size: size_t): INTEGER;
+PROCEDURE sprintf(VAR s: ARRAY OF CHAR;format: ARRAY OF CHAR;SEQ x: BYTE): INTEGER;
+PROCEDURE sscanf(s,format: ARRAY OF CHAR; SEQ x: BYTE): INTEGER;
+
+PROCEDURE tmpfile(): ADDRESS;
+          (* returns POINTER TO FILE *)
+PROCEDURE tmpnam(VAR s: ARRAY OF CHAR): ADDRESS;
+          (* returns POINTER TO FILENAME *)
+
+PROCEDURE ungetc(c: INTEGER; VAR f: FILE): INTEGER;
+
+PROCEDURE vfprintf(VAR f: FILE; format: ARRAY OF CHAR; args: ADDRESS): INTEGER;
+PROCEDURE vprintf(format: ARRAY OF CHAR; args: ADDRESS): INTEGER;
+PROCEDURE vsprintf(VAR s: ARRAY OF CHAR; format: ARRAY OF CHAR; args: ADDRESS): INTEGER;
+
+<* IF _POSIX_SOURCE THEN *>
+PROCEDURE fdopen(handle: INTEGER; type: ARRAY OF CHAR): ADDRESS;
+          (* returns POINTER TO FILE *)
+PROCEDURE fileno(f: FILE_ptr): INTEGER;
+<* END *>
+
+END stdio.

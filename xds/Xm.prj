@@ -1,0 +1,17 @@
+-makefile
+-link=
++changesym
+-lookup = *.def=$!/def/Xm
+-lookup = *.sym=$(sym_place)
+
+!module	ArrowB.def     DrawingA.def   PanedW.def     SeparatoG.def
+!module	ArrowBG.def    DrawnB.def     Protocols.def  Separator.def
+!module	AtomMgr.def    FileSB.def     PushB.def	     Text.def
+!module	BulletinB.def  Frame.def      PushBG.def     TextF.def
+!module	CascadeB.def   Label.def      RepType.def    ToggleB.def
+!module	CascadeBG.def  LabelG.def     RowColumn.def  ToggleBG.def
+!module	Command.def    List.def	      Scale.def	     VendorS.def
+!module	CutPaste.def   MainW.def      Screen.def     VirtKeys.def
+!module	DialogS.def    MenuShell.def  ScrollBar.def  Xm.def
+!module	Display.def    MessageB.def   ScrolledW.def  XmStrDefs.def
+!module	DragDrop.def   MwmUtil.def    SelectioB.def  Form.def
