@@ -1289,7 +1289,7 @@ static void SendNetBeacon(aprsdecode_pTCPSOCK cp,
    long ret;
    struct aprsdecode_DAT dat;
    if (b[0UL]==0 || aprsdecode_Decode(b, 512ul, &dat)<0L) {
-      aprsstr_Assign(errtxt, errtxt_len, "Net Message not Decodable", 26ul);
+      aprsstr_Assign(errtxt, errtxt_len, "Net Beacon not Decodable", 25ul);
       return;
    }
    if (!Sendtcp(cp, b)) {

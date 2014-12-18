@@ -82,6 +82,8 @@
 
 #define useri_CMDRADIORANGE "\022"
 
+#define useri_CMDCLICKWATCH "\322"
+
 #define useri_SP1 "\360"
 /* micospaces for menu text */
 
@@ -153,6 +155,7 @@ enum useri_CONFSET {useri_fFIND, useri_fLOGWFN, useri_fLOGFN, useri_fLOGDATE,
    useri_fGEOPROFIL, useri_fGEOBRIGHTNESS, useri_fGEOCONTRAST,
                 useri_fFRESNELL, useri_fANT1, useri_fANT2, useri_fANT3, 
    useri_fSRTMCACHE, 
+   useri_fPANOSIZE, useri_fPANOPOS, 
    useri_fBEEPPROX, useri_fBEEPWATCH, useri_fBEEPMSG, 
    useri_fMSGTO, useri_fMSGTEXT, useri_fMSGPORT, useri_fAUTOSAVE,
                 useri_fWATCH, useri_fAPPROXY, 
@@ -202,6 +205,8 @@ extern char useri_maximized;
 extern char useri_isblown;
 
 extern long useri_nextmsg;
+
+extern maptool_pIMAGE useri_panoimage;
 
 extern void useri_mainpop(void);
 
@@ -331,12 +336,14 @@ extern void useri_ColConfset(struct aprsdecode_COLTYP *, unsigned char);
 
 extern char useri_gpsalt(unsigned char);
 
-extern void useri_textbubble(struct aprspos_POSITION, char [],
-                unsigned long);
+extern void useri_textbubble(struct aprspos_POSITION, char [], unsigned long,
+                 char);
 
 extern void useri_killbubble(void);
 
 extern void useri_popwatchcall(char [], unsigned long);
+
+extern void useri_allocimage(maptool_pIMAGE *, long, long, char);
 
 
 extern void useri_BEGIN(void);

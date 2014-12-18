@@ -958,7 +958,9 @@ extern void aprstext_degtopos(char s[], unsigned long s_len,
    if (pos->long0>=3.1415926535898f) err = 1;
    if (X2C_CAP(s[17UL])=='W') pos->long0 = -pos->long0;
    else if (X2C_CAP(s[17UL])!='E') err = 1;
-   if (err) aprsdecode_posinval(pos);
+   if (((unsigned char)s[2UL]>='6' || (unsigned char)s[12UL]>='6') || err) {
+      aprsdecode_posinval(pos);
+   }
    X2C_PFREE(s);
 } /* end degtopos() */
 
@@ -983,7 +985,7 @@ static char c0(unsigned long * d, unsigned long * i, char s[],
 
 extern void aprstext_deghtopos(char s[], unsigned long s_len,
                 struct aprspos_POSITION * pos)
-/* DDMM.MMMNDDMM.MMME */
+/* DDMM.MMMNDDDMM.MMME */
 {
    char e;
    char err;
@@ -1013,7 +1015,9 @@ extern void aprstext_deghtopos(char s[], unsigned long s_len,
    if (pos->long0>=3.1415926535898f) err = 1;
    if (s[i]=='W') pos->long0 = -pos->long0;
    else if (s[i]!='E') err = 1;
-   if (err) aprsdecode_posinval(pos);
+   if (((unsigned char)s[2UL]>='6' || (unsigned char)s[13UL]>='6') || err) {
+      aprsdecode_posinval(pos);
+   }
    X2C_PFREE(s);
 } /* end deghtopos() */
 
@@ -1314,8 +1318,22 @@ extern void aprstext_encbeacon(char s[], unsigned long s_len,
       if ((unsigned char)h[0U]<=' ') useri_encerr("no beacon call?", 16ul);
       aprsstr_Append(s, s_len, h, 201ul);
       useri_confstr(useri_fMYPOS, h, 201ul);
-      aprstext_deghtopos(h, 201ul, &pos);
-      if (!aprspos_posvalid(pos)) useri_confstr(useri_fRBPOS, h, 201ul);
+      aprstext_degtopos(h, 201ul, &pos);
+      if (h[0U]) {
+         aprstext_degtopos(h, 201ul, &pos); /* netbeacon pos */
+         if (!aprspos_posvalid(pos)) {
+            useri_encerr("net beacon position wrong", 26ul);
+            err = 1;
+         }
+      }
+      else {
+         useri_confstr(useri_fRBPOS, h, 201ul);
+         aprstext_deghtopos(h, 201ul, &pos); /* rfbeacon pos */
+         if (!aprspos_posvalid(pos)) {
+            useri_encerr("rf beacon position wrong", 25ul);
+            err = 1;
+         }
+      }
    }
    else {
       useri_confstr(useri_fMYCALL, h, 201ul);
@@ -1324,11 +1342,11 @@ extern void aprstext_encbeacon(char s[], unsigned long s_len,
       }
       aprsstr_Append(s, s_len, h, 201ul);
       useri_confstr(useri_fRBPOS, h, 201ul);
-   }
-   aprstext_deghtopos(h, 201ul, &pos);
-   if (!aprspos_posvalid(pos)) {
-      useri_encerr("position wrong", 15ul);
-      err = 1;
+      aprstext_deghtopos(h, 201ul, &pos);
+      if (!aprspos_posvalid(pos)) {
+         useri_encerr("object/item position wrong", 27ul);
+         err = 1;
+      }
    }
    lat = (long)aprsdecode_trunc((float)fabs(pos.lat)*3.4377467707849E+7f);
    long0 = (long)aprsdecode_trunc((float)fabs(pos.long0)*3.4377467707849E+7f)
@@ -1346,7 +1364,9 @@ extern void aprstext_encbeacon(char s[], unsigned long s_len,
       long0 = X2C_DIV(long0,100L);
    }
    if (pos.lat<0.0f) lat = -lat;
-   if (pos.long0<0.0f) long0 = -long0;
+   if (pos.long0<0.0f) {
+      long0 = -long0;
+   }
    aprsstr_Append(s, s_len, ">", 2ul);
    if (X2C_CAP(postyp)=='M') micedest(lat, long0, h, 201ul);
    else {
@@ -1358,9 +1378,7 @@ extern void aprstext_encbeacon(char s[], unsigned long s_len,
    aprsstr_Append(s, s_len, h, 201ul);
    useri_confstr(useri_fRBPATH, h, 201ul);
    if ((unsigned char)h[0U]>' ') {
-      if (h[0U]!='-') {
-         aprsstr_Append(s, s_len, ",", 2ul);
-      }
+      if (h[0U]!='-') aprsstr_Append(s, s_len, ",", 2ul);
       aprsstr_Append(s, s_len, h, 201ul); /* dest ssid + via path */
       i = 0L;
       while (s[i]) {

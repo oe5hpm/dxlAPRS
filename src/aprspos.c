@@ -506,6 +506,7 @@ extern void aprspos_GetPos(struct aprspos_POSITION * pos,
                if (!dig(&pos->lat, buf[i], 1.7453292519444E-2f)) ok0 = 0;
                ++i;
                if (!dig(&pos->lat, buf[i], 2.9088820865741E-3f)) ok0 = 0;
+               if ((unsigned char)buf[i]>='6') ok0 = 0;
                ++i;
                if (!dig(&pos->lat, buf[i], 2.9088820865741E-4f)) ok0 = 0;
                i += 2UL;
@@ -514,7 +515,9 @@ extern void aprspos_GetPos(struct aprspos_POSITION * pos,
                if (!dig(&pos->lat, buf[i], 2.9088820865741E-6f)) ok0 = 0;
                ++i;
                if (X2C_CAP(buf[i])=='S') pos->lat = -pos->lat;
-               else if (X2C_CAP(buf[i])!='N') ok0 = 0;
+               else if (X2C_CAP(buf[i])!='N') {
+                  ok0 = 0;
+               }
                ++i;
                *symbt = buf[i];
                ++i;
@@ -525,6 +528,7 @@ extern void aprspos_GetPos(struct aprspos_POSITION * pos,
                if (!dig(&pos->long0, buf[i], 1.7453292519444E-2f)) ok0 = 0;
                ++i;
                if (!dig(&pos->long0, buf[i], 2.9088820865741E-3f)) ok0 = 0;
+               if ((unsigned char)buf[i]>='6') ok0 = 0;
                ++i;
                if (!dig(&pos->long0, buf[i], 2.9088820865741E-4f)) ok0 = 0;
                i += 2UL;
@@ -669,9 +673,7 @@ extern void aprspos_GetPos(struct aprspos_POSITION * pos,
    if (ok0 && !nornd) {
       /* rounding */
       if (pos->lat<0.0f) pos->lat = pos->lat-1.454441043287E-6f;
-      else if (pos->lat>0.0f) {
-         pos->lat = pos->lat+1.454441043287E-6f;
-      }
+      else if (pos->lat>0.0f) pos->lat = pos->lat+1.454441043287E-6f;
       if (pos->long0<0.0f) pos->long0 = pos->long0-1.454441043287E-6f;
       else if (pos->long0>0.0f) pos->long0 = pos->long0+1.454441043287E-6f;
    }

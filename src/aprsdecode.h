@@ -407,6 +407,7 @@ struct aprsdecode__D0 {
    char withradio;
    char panorama;
    char watchmhop;
+   char lastpoi;
    char watchlast;
    long x;
    long y;

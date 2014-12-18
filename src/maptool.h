@@ -129,8 +129,6 @@ extern char maptool_IsMapLoaded(void);
 
 extern void maptool_addmap(maptool_pIMAGE, maptool_pIMAGE);
 
-extern void maptool_allocimage(maptool_pIMAGE *, long, long);
-
 extern void maptool_mercator(float, float, long, long *, long *, float *,
                 float *);
 

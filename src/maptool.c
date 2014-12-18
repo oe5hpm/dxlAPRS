@@ -1738,6 +1738,7 @@ static void raytrace(float minqual, float reldist, float x0, float y00,
       if (*h<30000.0f) {
          if (*h<alt) {
             qual = (alt-*h)*0.25f;
+            /*        IF dist>1.0 THEN qual:=qual*dist END; */
             if (qual<minqual) qual = minqual;
          }
          else {
@@ -1823,6 +1824,7 @@ extern void maptool_Panorama(maptool_pIMAGE image,
    float h;
    float d;
    struct aprspos_POSITION pos;
+   char heaven;
    unsigned long startt;
    struct maptool_PIX * anonym;
    unsigned long tmp;
@@ -1862,45 +1864,18 @@ extern void maptool_Panorama(maptool_pIMAGE image,
       d = 0.0f;
       dlum = 0.0f;
       lastlum = 0.0f;
+      heaven = 0;
       do {
-         /*
-               IF NOT heaven THEN
-                 pos.lat :=txpos.lat - sin(azi)*ZOOMX1;
-                 pos.long:=txpos.long + cos(azi)/cos(txpos.lat)*ZOOMX1;
-                 wgs84s(pos.lat, pos.long, alt*0.001, x1,y1,z1);
-                 dx:=x1-x0;
-                 dy:=y1-y0;
-                 dz:=z1-z0;
-                 qual:=FLOAT(resoltx); 
-                 REPEAT
-                   wgs84r(x0 + dx*d, y0 + dy*d, z0 + dz*d, pos1.lat,
-                pos1.long, alt1); alt1:=alt1*1000.0;
-                   h:=getsrtm(pos1, trunc(qual), resol);
-                      (* ground over NN in m *)
-                   IF h<30000.0 THEN
-                     IF h<alt1 THEN
-                       qual:=(alt-h)*0.5;
-                       IF qual<resol THEN qual:=resol END;
-                     ELSE qual:=0.0 END;
-                   ELSE qual:=resoltx END;
-                   d:=d + qual*(1.0/IMGDIST);
-                   IF d>reldist THEN heaven:=TRUE END;
-         
-                 UNTIL heaven OR (qual=0.0);
-         
-               END;
-               IF heaven THEN d:=reldist*4.0*(1.25-FLOAT(yi)
-                /FLOAT(HIGH(image^[0]))) END;
-         */
-         if (d<reldist) {
+         if (!heaven) {
             pos.lat = txpos.lat-RealMath_sin(azi)*7.853989487964E-4f;
             pos.long0 = txpos.long0+(X2C_DIVR(RealMath_cos(azi),
                 RealMath_cos(txpos.lat)))*7.853989487964E-4f;
             wgs84s(pos.lat, pos.long0, alt*0.001f, &x1, &y1, &z1);
             raytrace(5.0f, reldist, x0, y00, z0, x1, y1, z1, &d, &light, &h);
+            if (d>reldist) heaven = 1;
          }
          else light = 1.0f;
-         if (d>reldist) {
+         if (heaven) {
             d = reldist*4.0f*(1.25f-X2C_DIVR((float)yi,
                 (float)(image->Len0-1)));
          }
@@ -1909,43 +1884,41 @@ extern void maptool_Panorama(maptool_pIMAGE image,
          if (llum>0.08f*reldist) llum = 0.08f*reldist;
          if (llum>dlum) dlum = llum;
          lastlum = lum;
-         /*      lum:=lum*(light*3.0-1.0)+dlum; */
-         /*      IF lum>reldist THEN lum:=reldist END;       */
-         /*      dlum:=dlum*0.9; */
-         /*      lum:=lum*lummul; */
-         tree = 1600.0f-h;
-         if (tree<0.0f) tree = 0.0f;
-         else if (tree>600.0f) tree = 600.0f;
-         tree = tree*1.5833333333333E-3f*(1.0f-X2C_DIVR(d,reldist));
-         /*WrFixed(light, 5,2); WrStr(" "); */
-         light = light-0.65f;
-         if (light<0.0f) {
-            light = light*(-2.0f);
-            if (light>1.0f) light = 1.0f;
-            light = 1.0f+light; /**(1.0-d/reldist)*/
-            light = light*1.7f;
-            lr = lum*light*1.4f+dlum;
-            lg = lum*light*1.1f+dlum;
-            lb = lum*light*0.8f+dlum;
+         if (!heaven) {
+            tree = 1600.0f-h;
+            if (tree<0.0f) tree = 0.0f;
+            else if (tree>600.0f) tree = 600.0f;
+            tree = tree*1.5833333333333E-3f*(1.0f-X2C_DIVR(d,reldist));
+            /*WrFixed(light, 5,2); WrStr(" "); */
+            light = light-0.65f;
+            if (light<0.0f) {
+               light = light*(-2.0f);
+               if (light>1.0f) light = 1.0f;
+               light = 1.0f+light; /**(1.0-d/reldist)*/
+               light = light*1.7f;
+               lr = lum*light*1.4f+dlum;
+               lg = lum*light*1.1f+dlum;
+               lb = lum*light*0.8f+dlum;
+            }
+            else {
+               lr = lum*(1.7f-tree*1.3f)+dlum;
+               lg = lum*(1.7f-tree*0.8f)+dlum;
+               lb = lum*(1.7f-tree*1.7f)+dlum;
+            }
+            if (lr>reldist) lr = reldist;
+            if (lg>reldist) lg = reldist;
+            if (lb>reldist) lb = reldist;
+            lr = lr*lummul;
+            lg = lg*lummul;
+            lb = lb*lummul;
          }
-         else {
-            lr = lum*(1.7f-tree*1.3f)+dlum;
-            lg = lum*(1.7f-tree*0.8f)+dlum;
-            lb = lum*(1.7f-tree*1.7f)+dlum;
-         }
-         if (lr>reldist) lr = reldist;
-         if (lg>reldist) lg = reldist;
-         if (lb>reldist) lb = reldist;
-         lr = lr*lummul;
-         lg = lg*lummul;
-         lb = lb*lummul;
          lum = lum+dlum;
          if (lum>reldist) lum = reldist;
          lum = lum*lummul;
          dlum = dlum*0.84f;
          { /* with */
             struct maptool_PIX * anonym = &image->Adr[(xi)*image->Len0+yi];
-            if (d>reldist) {
+            if (heaven) {
                /* heaven */
                hc = X2C_DIVR(((float)yi+X2C_DIVR(altshift,altd))*2.0f,
                 (float)(image->Len0-1)+X2C_DIVR(altshift,altd))-1.0f;
@@ -1980,6 +1953,11 @@ extern void maptool_Panorama(maptool_pIMAGE image,
 find exact earth point with cross point of trace and earth line
 yzoom xzoom(deg) ypan xpan(deg) maxdist ant mousepos show-marker2 sun-xy snow-alt heaven-col
 cursor ^ v < > + -
+
+no interpolate in search mode
+antialiasing measure scanline to peack distance
+start rescan next y with same d
+soft change wood-rock
 */
 
 /*Panorama */
@@ -2121,6 +2099,7 @@ static void POIfindfrom(struct aprspos_POSITION * mpos, char s[],
       *mpos = pmax->pos;
       aprsdecode_click.bubblpos = pmax->pos;
       aprsstr_Assign(aprsdecode_click.bubblstr, 50ul, pmax->name, 32ul);
+      aprsdecode_click.lastpoi = lastpoinum==0UL;
       lastpoinum = cnt+1UL; /* next time goon from this entry */
    }
    else aprsdecode_posinval(mpos);
@@ -2943,6 +2922,7 @@ extern void maptool_drawstr(maptool_pIMAGE image, char s[],
       maptool_drawchar(image, s[i], xr, yr, &inc0, bri, contrast, col0,
                 dryrun);
       xr = xr+(float)inc0;
+      /*    xr:=xr + CHARWIDTH; */
       ++i;
    }
 } /* end drawstr() */
@@ -3057,7 +3037,8 @@ extern void maptool_cc(maptool_pIMAGE img, unsigned long from,
    }
    else s[0] = 0;
    if (img->Len1-1>=399UL || aprsdecode_lums.map==0L) {
-      aprsstr_Append(s, 1024ul, " Date:", 7ul);
+      /*    Append(s, " Time:"); */
+      aprsstr_Append(s, 1024ul, " ", 2ul);
       aprstext_DateLocToStr(from, h, 1024ul);
       aprsstr_Append(s, 1024ul, h, 1024ul);
       if (to) {
@@ -4342,7 +4323,8 @@ extern void maptool_loadfont(void)
          y = 0UL;
          if (y<=tmp) for (;; y++) {
             for (x = 0UL; x<=7UL; x++) {
-               if (anonym->char0[y][x]>=128U) {
+               if (anonym->char0[y][x]>=90U) {
+                  /* 128 */
                   if (c) {
                      m = X2C_LSH(0x1FU,16,(long)x-1L)&0xFEU;
                      anonym->mask[y] = anonym->mask[y]|m;
@@ -4540,28 +4522,6 @@ extern long maptool_saveppm(char fn[], unsigned long fn_len,
    X2C_PFREE(fn);
    return maptool_saveppm_ret;
 } /* end saveppm() */
-
-
-extern void maptool_allocimage(maptool_pIMAGE * image, long x, long y)
-{
-   size_t tmp[2];
-   /*WrInt(x, 6); WrInt(y, 6); WrStrLn(" allocimage"); */
-   if (*image) {
-      useri_debugmem.screens -= (*image)->Len1*(*image)->Size1;
-      X2C_DYNDEALLOCATE((char **)image);
-   }
-   X2C_DYNALLOCATE((char **)image,sizeof(struct maptool_PIX),
-                (tmp[0] = (size_t)x,tmp[1] = (size_t)y,tmp),2u);
-   useri_debugmem.req = (unsigned long)((long)sizeof(struct maptool_PIX)*x*y)
-                ;
-   useri_debugmem.screens += useri_debugmem.req;
-   if (*image==0) {
-      osi_WrStrLn("image out of memory", 20ul);
-      useri_wrheap();
-      X2C_ABORT();
-   }
-   if (aprsdecode_verb) useri_wrheap();
-} /* end allocimage() */
 
 
 static void allocpngbuf(void)
