@@ -11,4 +11,5 @@ rm intel-debug.tgz
 git checkout -- keysym.h
 git checkout -- pngread.c
 cd ..
+./license-add.sh
 git status
