@@ -1704,40 +1704,38 @@ extern void maptool_Radiorange(maptool_pIMAGE image,
 } /* end Radiorange() */
 
 /*Panorama */
-#define maptool_IMGDIST 5000.0
-/* raytrace virtual screen from eyepoint meters */
-
 #define maptool_TESTDIST 30.0
 
 
-static void raytrace(float minqual, float reldist, float x0, float y00,
-                float z0, float x1, float y1, float z1, float * dist,
-                float * lum, float * h)
+static void raytrace(maptool_pIMAGE testimg, float minqual, float x0,
+                float y00, float z0, float dx, float dy, float dz,
+                float maxdist, float * dist, float * lum, float * h)
 {
    float h2;
    float h1;
    float resol;
    float qual;
    float alt;
-   float dz;
-   float dy;
-   float dx;
    struct aprspos_POSITION pos1;
    struct aprspos_POSITION pos;
-   dx = x1-x0;
-   dy = y1-y00;
-   dz = z1-z0;
    *lum = 1.0f;
    qual = minqual;
    do {
       wgs84r(x0+dx* *dist, y00+dy* *dist, z0+dz* *dist, &pos.lat, &pos.long0,
                  &alt);
       alt = alt*1000.0f;
+      /*
+      IF mapxy(pos, xtt, ytt)>=-1 THEN
+      waypoint(testimg, xtt,ytt,1.0, 255,255,100); END;
+      */
       *h = maptool_getsrtm(pos, aprsdecode_trunc(qual), &resol);
                 /* ground over NN in m */
+      /*WrFixed(dist, 1,15); WrFixed(alt, 1,15); WrFixed(h, 1,15);
+                WrStr(" =d alt h"); */
       if (*h<30000.0f) {
          if (*h<alt) {
             qual = (alt-*h)*0.25f;
+            if (qual>250.0f) qual = 250.0f;
             /*        IF dist>1.0 THEN qual:=qual*dist END; */
             if (qual<minqual) qual = minqual;
          }
@@ -1765,13 +1763,22 @@ static void raytrace(float minqual, float reldist, float x0, float y00,
          }
       }
       else qual = resol;
-      *dist = *dist+qual*0.0002f;
-   } while (*dist<=reldist);
+      *dist = *dist+qual;
+   } while (*dist<=maxdist);
 /* we are in dust or heaven */
 } /* end raytrace() */
 /* antialiasing: search for peaks and set highest pixel smooth */
 
-#define maptool_ZOOMX1 7.853989487964E-4
+
+static void rotvector(float * a, float * b, float cw, float sw)
+{
+   float h;
+   h =  *a*cw+ *b*sw;
+   *b =  *b*cw- *a*sw;
+   *a = h;
+} /* end rotvector() */
+
+#define maptool_ERRALT0 30000
 
 #define maptool_FULLUM0 1000.0
 /* full bright in image */
@@ -1780,23 +1787,27 @@ static void raytrace(float minqual, float reldist, float x0, float y00,
 /* vertical spatial luminance highpass */
 
 
-extern void maptool_Panorama(maptool_pIMAGE image,
-                struct aprspos_POSITION txpos, long ant,
-                struct aprsdecode_COLTYP col0, char * abort0)
+extern void maptool_Panorama(maptool_pIMAGE testimg, maptool_pIMAGE image,
+                struct aprspos_POSITION eypos,
+                struct aprspos_POSITION endpos, float angle,
+                float elevation0, float yzoom, long eyalt, char * abort0)
 {
    unsigned long maxcache;
    unsigned long yi;
    unsigned long xi;
    long nn;
-   float altshift;
-   float azid;
    float azi;
-   float altd;
-   float alt0;
-   float alt;
+   float cazi;
+   float sazi;
+   float zn;
+   float yn;
+   float xn;
+   float clong;
+   float slong;
+   float ele0;
+   float eled;
+   float azid;
    float resoltx;
-   float zoomx;
-   float reldist;
    float maxdist;
    float hc1;
    float hc;
@@ -1806,13 +1817,14 @@ extern void maptool_Panorama(maptool_pIMAGE image,
    float hb;
    float hg;
    float hr;
-   float z1;
-   float y1;
-   float x1;
    float z0;
    float y00;
    float x0;
    float azi0;
+   float clat;
+   float slat;
+   float wy;
+   float wx;
    float tree;
    float light;
    float llum;
@@ -1823,43 +1835,61 @@ extern void maptool_Panorama(maptool_pIMAGE image,
    float atx;
    float h;
    float d;
-   struct aprspos_POSITION pos;
    char heaven;
    unsigned long startt;
+   struct aprsdecode_COLTYP col0;
    struct maptool_PIX * anonym;
    unsigned long tmp;
    startt = TimeConv_time();
    maxcache = (unsigned long)(useri_conf2int(useri_fSRTMCACHE, 0UL, 0L,
                 2000L, 100L)*1000000L);
-   azi0 = useri_conf2real(useri_fANT2, 0UL, (-360.0f), 360.0f, 0.0f)-90.0f;
-   maxdist = (float)useri_conf2int(useri_fANT2, 1UL, 1L, 150L, 20L)*1000.0f;
-   zoomx = X2C_DIVR(useri_conf2real(useri_fANT2, 2UL, 0.01f, 400.0f, 50.0f),
-                (float)(image->Len1-1));
-   /*WrFixed(zoomx, 4,8); WrFixed(maxdist, 4,8); WrStrLn("zx dist"); */
+   if ((!aprspos_posvalid(eypos) || !aprspos_posvalid(endpos))
+                || maptool_getsrtm(endpos, 0UL, &resoltx)>=30000.0f) return;
+   /* no alt at horizon */
+   maxdist = aprspos_distance(eypos, endpos)*1000.0f;
+   if (maxdist<100.0f) return;
+   /* horizon too near */
+   /*azi0:=conf2real(fANT2, 0, -360.0, 360.0, 0.0)-90; */
+   /*maxdist:=FLOAT(conf2int(fANT2, 1, 1, 150, 20))*1000.0; */
+   /*WrFixed(yzoom, 4,15); WrFixed(maxdist, 4,15); WrStrLn("yzoom dist"); */
+   col0.r = (unsigned long)useri_conf2int(useri_fCOLMARK1, 0UL, 0L, 100L,
+                0L);
+   col0.g = (unsigned long)useri_conf2int(useri_fCOLMARK1, 1UL, 0L, 100L,
+                0L);
+   col0.b = (unsigned long)useri_conf2int(useri_fCOLMARK1, 2UL, 0L, 100L,
+                100L);
    hr = (float)col0.r*0.01f;
    hg = (float)col0.g*0.01f;
    hb = (float)col0.b*0.01f;
-   nn = (long)X2C_TRUNCI(maptool_getsrtm(txpos, 0UL, &resoltx),
+   nn = (long)X2C_TRUNCI(maptool_getsrtm(eypos, 0UL, &resoltx),
                 X2C_min_longint,X2C_max_longint);
                 /* altitude of tx an map resolution in m here */
    if (nn>=30000L) {
       maptool_closesrtmfile();
       return;
    }
-   reldist = X2C_DIVR(maxdist,5000.0f);
-   atx = (float)(nn+ant); /* ant1 over NN */
-   wgs84s(txpos.lat, txpos.long0, atx*0.001f, &x0, &y00, &z0);
-   altd = (X2C_DIVR(useri_conf2real(useri_fANT3, 0UL, 0.01f, 5000.0f,
-                500.0f),180.0f))*3.1415926535898f;
-   altshift = useri_conf2real(useri_fANT3, 1UL, (-1.E+4f), 10000.0f, 0.0f);
-   alt0 = (altshift+atx)-altd*0.5f*(float)(image->Len0-1);
-   azid = (X2C_DIVR(zoomx,180.0f))*3.1415926535898f;
-   azi = (X2C_DIVR(azi0,180.0f))*3.1415926535898f-azid*0.5f*(float)(image->Len1-1);
-   lummul = X2C_DIVR(1000.0f,reldist);
+   atx = (float)(nn+eyalt); /* ant1 over NN */
+   wgs84s(eypos.lat, eypos.long0, atx*0.001f, &x0, &y00, &z0);
+   azi = aprspos_azimuth(eypos, endpos)*1.7453292519444E-2f;
+   azi0 = -(angle*0.5f)*1.7453292519444E-2f;
+   azid = X2C_DIVR(angle*1.7453292519444E-2f,(float)((image->Len1-1)+1UL));
+   eled = X2C_DIVR(azid,yzoom);
+   ele0 = (elevation0-X2C_DIVR((X2C_DIVR(angle*0.5f,
+                yzoom))*(float)((image->Len0-1)+1UL),
+                (float)((image->Len1-1)+1UL)))*1.7453292519444E-2f;
+   slat = RealMath_sin(-eypos.lat);
+   clat = RealMath_cos(-eypos.lat);
+   slong = RealMath_sin(-eypos.long0);
+   clong = RealMath_cos(-eypos.long0);
+   sazi = RealMath_sin(azi);
+   cazi = RealMath_cos(azi);
+   /*WrFixed(azi0/RAD, 4, 10); WrFixed(azid/RAD, 4, 10);
+                WrStrLn(" adi0 azid"); */
+   lummul = X2C_DIVR(1000.0f,maxdist);
    tmp = image->Len1-1;
    xi = 0UL;
    if (xi<=tmp) for (;; xi++) {
-      alt = alt0;
+      wx = azi0+azid*(float)xi;
       yi = 0UL;
       d = 0.0f;
       dlum = 0.0f;
@@ -1867,34 +1897,45 @@ extern void maptool_Panorama(maptool_pIMAGE image,
       heaven = 0;
       do {
          if (!heaven) {
-            pos.lat = txpos.lat-RealMath_sin(azi)*7.853989487964E-4f;
-            pos.long0 = txpos.long0+(X2C_DIVR(RealMath_cos(azi),
-                RealMath_cos(txpos.lat)))*7.853989487964E-4f;
-            wgs84s(pos.lat, pos.long0, alt*0.001f, &x1, &y1, &z1);
-            raytrace(5.0f, reldist, x0, y00, z0, x1, y1, z1, &d, &light, &h);
-            if (d>reldist) heaven = 1;
+            wy = ele0+eled*(float)yi;
+            /*IF xi=0 THEN WrFixed(wx/RAD, 2, 8); WrFixed(wy/RAD, 2, 8);
+                WrStr(" wx wy"); END; */
+            zn = RealMath_cos(wx)*RealMath_cos(wy);
+            yn = RealMath_sin(wx);
+            xn = RealMath_sin(wy);
+            rotvector(&yn, &zn, cazi, sazi);
+            /*IF xi=0 THEN WrFixed(xn, 2, 7); WrFixed(yn, 2, 7);
+                WrFixed(zn, 2, 7); END; */
+            rotvector(&xn, &zn, clat, slat);
+            rotvector(&xn, &yn, clong, slong);
+            if ((float)fabs(wy)>0.5f && d>maxdist*0.1f) {
+               d = d-maxdist*0.1f; /* jump back if sight from above */
+            }
+            raytrace(testimg, 5.0f, x0, y00, z0, xn*0.001f, yn*0.001f,
+                zn*0.001f, maxdist, &d, &light, &h);
+            if (d>maxdist) heaven = 1;
          }
          else light = 1.0f;
          if (heaven) {
-            d = reldist*4.0f*(1.25f-X2C_DIVR((float)yi,
+            d = maxdist*4.0f*(1.25f-X2C_DIVR((float)yi,
                 (float)(image->Len0-1)));
          }
          lum = d*0.2f;
          llum = (lum-lastlum)*20.0f;
-         if (llum>0.08f*reldist) llum = 0.08f*reldist;
+         if (llum>0.08f*maxdist) llum = 0.08f*maxdist;
          if (llum>dlum) dlum = llum;
          lastlum = lum;
          if (!heaven) {
             tree = 1600.0f-h;
             if (tree<0.0f) tree = 0.0f;
             else if (tree>600.0f) tree = 600.0f;
-            tree = tree*1.5833333333333E-3f*(1.0f-X2C_DIVR(d,reldist));
+            tree = tree*1.5833333333333E-3f*(1.0f-X2C_DIVR(d,maxdist));
             /*WrFixed(light, 5,2); WrStr(" "); */
             light = light-0.65f;
             if (light<0.0f) {
                light = light*(-2.0f);
                if (light>1.0f) light = 1.0f;
-               light = 1.0f+light; /**(1.0-d/reldist)*/
+               light = 1.0f+light; /**(1.0-d/maxdist)*/
                light = light*1.7f;
                lr = lum*light*1.4f+dlum;
                lg = lum*light*1.1f+dlum;
@@ -1905,23 +1946,24 @@ extern void maptool_Panorama(maptool_pIMAGE image,
                lg = lum*(1.7f-tree*0.8f)+dlum;
                lb = lum*(1.7f-tree*1.7f)+dlum;
             }
-            if (lr>reldist) lr = reldist;
-            if (lg>reldist) lg = reldist;
-            if (lb>reldist) lb = reldist;
+            if (lr>maxdist) lr = maxdist;
+            if (lg>maxdist) lg = maxdist;
+            if (lb>maxdist) lb = maxdist;
             lr = lr*lummul;
             lg = lg*lummul;
             lb = lb*lummul;
          }
          lum = lum+dlum;
-         if (lum>reldist) lum = reldist;
+         if (lum>maxdist) lum = maxdist;
          lum = lum*lummul;
          dlum = dlum*0.84f;
          { /* with */
             struct maptool_PIX * anonym = &image->Adr[(xi)*image->Len0+yi];
             if (heaven) {
                /* heaven */
-               hc = X2C_DIVR(((float)yi+X2C_DIVR(altshift,altd))*2.0f,
-                (float)(image->Len0-1)+X2C_DIVR(altshift,altd))-1.0f;
+               /*          hc:=VAL(REAL, 2*yi)/VAL(REAL,
+                HIGH(image^[0]))-1.0; */
+               hc = 6.0f*(ele0+eled*(float)yi);
                if (hc<0.0f) hc = 0.0f;
                else if (hc>1.0f) hc = 1.0f;
                hc1 = 1.0f-hc;
@@ -1939,16 +1981,24 @@ extern void maptool_Panorama(maptool_pIMAGE image,
             }
          }
          ++yi;
-         alt = alt+altd;
       } while (yi<=image->Len0-1);
-      /*WrInt(xi, 5); WrFixed(azi, 2,5); WrFixed(pos.lat*180.0/pi, 4,8);
-                WrFixed(pos.long*180.0/pi, 4,8); WrStrLn(" xi lat long az");
-                */
-      azi = azi+azid;
       if (xi==tmp) break;
    } /* end for */
+   /*WrInt(xi, 5); WrFixed(pos.lat*180.0/pi, 4,8);
+                WrFixed(pos.long*180.0/pi, 4,8); WrStrLn(" xi lat long az");
+                */
    useri_killmenuid(5UL);
 } /* end Panorama() */
+
+
+extern void maptool_findpanopos(long x, long y, long imgx, long imgy,
+                struct aprspos_POSITION eye, struct aprspos_POSITION horizon,
+                 float angle, float elevation0, float yzoom, long eyealt,
+                struct aprspos_POSITION pos)
+{
+   aprsdecode_posinval(&pos);
+} /* end findpanopos() */
+
 /*
 find exact earth point with cross point of trace and earth line
 yzoom xzoom(deg) ypan xpan(deg) maxdist ant mousepos show-marker2 sun-xy snow-alt heaven-col
@@ -1959,33 +2009,31 @@ antialiasing measure scanline to peack distance
 start rescan next y with same d
 soft change wood-rock
 */
-
 /*Panorama */
 
-extern void maptool_xytoloc(long x, long y, struct aprspos_POSITION * mpos,
-                char s[], unsigned long s_len)
-/* lat/long + locator of pointer pixel */
+extern void maptool_xytoloc(struct aprspos_POSITION mpos, char s[],
+                unsigned long s_len)
+/* lat/long + locator string of pos */
 {
    char h[101];
    long nn;
    float resol;
-   maptool_xytodeg((float)x, (float)y, mpos);
-   aprstext_postostr(*mpos, '3', s, s_len);
+   /*  xytodeg(VAL(REAL,x), VAL(REAL,y), mpos); */
+   aprstext_postostr(mpos, '3', s, s_len);
    aprsstr_Append(s, s_len, " \373", 3ul);
-   aprstext_postostr(*mpos, '1', h, 101ul);
+   aprstext_postostr(mpos, '1', h, 101ul);
    aprsstr_Append(s, s_len, h, 101ul);
    aprsstr_Append(s, s_len, " \376", 3ul);
-   aprsstr_FixToStr(X2C_DIVR(mpos->lat,1.7453292519444E-2f), 6UL, h, 101ul);
+   aprsstr_FixToStr(X2C_DIVR(mpos.lat,1.7453292519444E-2f), 6UL, h, 101ul);
    aprsstr_Append(s, s_len, h, 101ul);
    aprsstr_Append(s, s_len, " ", 2ul);
-   aprsstr_FixToStr(X2C_DIVR(mpos->long0,1.7453292519444E-2f), 6UL, h,
-                101ul);
+   aprsstr_FixToStr(X2C_DIVR(mpos.long0,1.7453292519444E-2f), 6UL, h, 101ul);
    aprsstr_Append(s, s_len, h, 101ul);
    aprsstr_Append(s, s_len, " \373", 3ul);
-   maptool_postoloc(h, 101ul, *mpos);
+   maptool_postoloc(h, 101ul, mpos);
    aprsstr_Append(s, s_len, h, 101ul);
    aprsstr_Append(s, s_len, "\376", 2ul);
-   nn = (long)X2C_TRUNCI(maptool_getsrtm(*mpos, 0UL, &resol)+0.5f,
+   nn = (long)X2C_TRUNCI(maptool_getsrtm(mpos, 0UL, &resol)+0.5f,
                 X2C_min_longint,X2C_max_longint);
    if (nn<30000L) {
       aprsstr_IntToStr(nn, 0UL, h, 101ul);
@@ -1995,13 +2043,13 @@ extern void maptool_xytoloc(long x, long y, struct aprspos_POSITION * mpos,
    }
    if (aprspos_posvalid(aprsdecode_click.markpos)) {
       /*(click.marktime=0) &*/
-      aprsstr_FixToStr(aprspos_distance(aprsdecode_click.markpos, *mpos),
-                4UL, h, 101ul);
+      aprsstr_FixToStr(aprspos_distance(aprsdecode_click.markpos, mpos), 4UL,
+                 h, 101ul);
       aprsstr_Append(s, s_len, " \373", 3ul);
       aprsstr_Append(s, s_len, h, 101ul);
       aprsstr_Append(s, s_len, "km ", 4ul);
-      aprsstr_FixToStr(aprspos_azimuth(aprsdecode_click.markpos, *mpos), 2UL,
-                 h, 101ul);
+      aprsstr_FixToStr(aprspos_azimuth(aprsdecode_click.markpos, mpos), 2UL,
+                h, 101ul);
       aprsstr_Append(s, s_len, h, 101ul);
       aprsstr_Append(s, s_len, "\177\376", 3ul);
    }

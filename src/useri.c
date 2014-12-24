@@ -537,11 +537,22 @@ struct PANOWIN;
 
 struct PANOWIN {
    char isicon;
+   char empty;
+   char hover;
    char on;
    struct aprspos_POSITION eye;
+   struct aprspos_POSITION horizon;
    long eyealt;
-   struct aprsdecode_COLTYP col;
+   float angle;
+   float elevation;
+   float yzoom;
    unsigned long actx;
+   long hx; /* mouse pos on panwin and fullwin */
+   long hy;
+   long mx;
+   long my;
+   long ximg;
+   long yimg;
 };
 
 static char leftbutton;
@@ -3304,6 +3315,7 @@ static void refrmenu(pMENU * menu, unsigned long linex, unsigned long liney,
                 char saveimg)
 /* refresh/resize menu */
 {
+   unsigned long ys;
    if (*menu) {
       if (saveimg) {
          if ((*menu)->image==0) {
@@ -3317,11 +3329,15 @@ static void refrmenu(pMENU * menu, unsigned long linex, unsigned long liney,
       WrInt(liney, 6); WrInt(menu^.yknob, 6);
       WrStrLn("");
       */
-      if (((*menu)->image==0 || linex!=(*menu)->xsize) || liney!=(*menu)
-                ->yknob) {
+      ys = menuimgy(liney, entries);
+      /*IF menu^.image<>NIL THEN WrInt(ys, 10);
+                WrInt(HIGH(menu^.image^[0])+1, 10); WrStrLn(" ys ysize") END;
+                 */
+      if ((((*menu)->image==0 || linex!=(*menu)->xsize) || liney!=(*menu)
+                ->yknob) || ys!=((*menu)->image->Len0-1)+1UL) {
          disposeimg(&(*menu)->image);
-         useri_allocimage(&(*menu)->image, (long)linex, (long)menuimgy(liney,
-                 entries), (*menu)->saveimage);
+         useri_allocimage(&(*menu)->image, (long)linex, (long)ys,
+                (*menu)->saveimage);
          if ((*menu)->image==0) {
             osi_WrStrLn("menuimage out of memory", 24ul);
             useri_wrheap();
@@ -6952,6 +6968,8 @@ static char WhatPull(pMENU m, unsigned long x, unsigned long y)
    }
    else if (m->wid==202UL) {
       /*    RETURN 0C; */
+      if (y+aprsdecode_lums.fontysize>m->ysize && x+aprsdecode_lums.fontysize>m->xsize)
+                 return 'B';
       if (x+aprsdecode_lums.fontysize>m->xsize) return 'E';
       if (y+aprsdecode_lums.fontysize>m->ysize) return 'S';
       if (x<aprsdecode_lums.fontysize && y<aprsdecode_lums.fontysize) {
@@ -7163,12 +7181,10 @@ static void makepanwin(void)
    unsigned long ys;
    unsigned long xs;
    unsigned long xw;
-   char new0;
    char abo;
    unsigned long ohs;
    unsigned long hks;
    unsigned long oks;
-   maptool_pIMAGE anonym;
    if (panowin.isicon) {
       xw = 64UL;
       ys = aprsdecode_lums.fontysize;
@@ -7186,7 +7202,6 @@ static void makepanwin(void)
    /*WrInt(xw, 10);WrInt(ys, 10); WrStrLn("x y"); */
    m = findmenuid(202UL);
    refrmenu(&m, xw, ys, 1UL, useri_bCOLOR, 1);
-   new0 = useri_panoimage==0;
    /*WrInt(ORD(new), 2); WrStrLn("imgnew"); */
    oks = m->oldknob;
    hks = m->hiknob;
@@ -7194,6 +7209,8 @@ static void makepanwin(void)
    /*  m^.minnormmax:=; */
    ys = (m->image->Len0-1)+1UL;
    xs = (m->image->Len1-1)+1UL;
+   panowin.ximg = (long)xs;
+   panowin.yimg = (long)ys;
    m->sizeconf = useri_fPANOSIZE;
    m->pullconf = useri_fPANOPOS;
    m->oldknob = 0UL;
@@ -7201,9 +7218,11 @@ static void makepanwin(void)
    m->ysize = ys;
    m->oldknob = oks;
    m->wid = 202UL;
-   if ((anonym = m->image,anonym->Adr[(0UL)*anonym->Len0+0UL]).g==0U) {
-      maptool_Panorama(m->image, panowin.eye, panowin.eyealt, panowin.col,
-                &abo);
+   if (panowin.empty) {
+      maptool_Panorama(redrawimg, m->image, panowin.eye, panowin.horizon,
+                panowin.angle, panowin.elevation, panowin.yzoom,
+                panowin.eyealt, &abo);
+      panowin.empty = 0;
    }
    m->pullyknob = 2147483647UL;
    if (xw<(unsigned long)maptool_xsize) {
@@ -7222,24 +7241,27 @@ static void startpano(void)
    /*WrStrLn("startpan"); */
    if (!panowin.on) {
       useri_killmenuid(202UL);
-      if (aprspos_posvalid(aprsdecode_click.markpos)) {
+      if (aprspos_posvalid(aprsdecode_click.markpos)
+                && aprspos_posvalid(aprsdecode_click.measurepos)) {
          panowin.eyealt = useri_conf2int(useri_fANT1, 0UL, -1000000L,
-                100000L, -1000000L);
+                1000000L, -1000000L);
          if (panowin.eyealt>-1000000L) {
             panowin.eye = aprsdecode_click.markpos;
-            panowin.col.r = (unsigned long)useri_conf2int(useri_fCOLMARK1,
-                0UL, 0L, 100L, 0L);
-            panowin.col.g = (unsigned long)useri_conf2int(useri_fCOLMARK1,
-                1UL, 0L, 100L, 0L);
-            panowin.col.b = (unsigned long)useri_conf2int(useri_fCOLMARK1,
-                2UL, 0L, 100L, 100L);
+            panowin.horizon = aprsdecode_click.measurepos;
+            panowin.angle = useri_conf2real(useri_fANT2, 1UL, 0.01f, 360.0f,
+                65.0f);
+            panowin.elevation = useri_conf2real(useri_fANT2, 2UL, (-180.0f),
+                180.0f, 0.0f);
+            panowin.yzoom = useri_conf2real(useri_fANT2, 3UL, 0.01f, 100.0f,
+                1.0f);
             panowin.isicon = 0;
             panowin.on = 1;
+            panowin.empty = 1;
             useri_refresh = 1;
          }
          else useri_xerrmsg("Panorama: need altitude at Marker 1", 36ul);
       }
-      else useri_xerrmsg("Panorama: need Marker 1", 24ul);
+      else useri_xerrmsg("Panorama: need Marker 1 and 2", 30ul);
    }
 } /* end startpano() */
 
@@ -7259,9 +7281,7 @@ static void dopano(pMENU m, unsigned long xcl, unsigned long ycl)
    unsigned long xl;
    unsigned long x0;
    unsigned long xdiv;
-   InOut_WriteInt((long)xcl, 10UL);
-   InOut_WriteInt((long)ycl, 10UL);
-   osi_WrStrLn(" dopano", 8ul);
+   /*WrInt(xcl, 10); WrInt(ycl, 10); WrStrLn(" dopano"); */
    limscrbars(m);
    /*  confstr(m^.minnormmax, isicon); */
    isicon = 0;
@@ -9293,19 +9313,33 @@ static void mouseshow(unsigned long x, unsigned long y)
 {
    char s[151];
    struct aprspos_POSITION pos;
-   maptool_xytoloc((long)x, (long)(mainys()-y), &pos, s, 151ul);
-   useri_textautosize(0L, 0L, 19UL, 10UL, 'g', s, 151ul);
-   if (!poioff && aprsdecode_initzoom>=useri_conf2int(useri_fMOUSELOC, 0UL,
-                1L, 18L, 9L)) {
-      /* no pois on mouse over menu */
-      maptool_POIname(&pos, s, 151ul);
-      if (s[0U]) {
-         aprsdecode_click.bubblpos = pos;
-         aprsdecode_click.lastpoi = 0;
-         aprsstr_Assign(aprsdecode_click.bubblstr, 50ul, s, 151ul);
+   /*WrInt(panowin.hx,10); WrInt(panowin.hy,10); WrStrLn(" pan"); */
+   struct PANOWIN * anonym;
+   if (panowin.hover) {
+      { /* with */
+         struct PANOWIN * anonym = &panowin;
+         maptool_findpanopos(anonym->hx, anonym->hy, anonym->ximg,
+                anonym->yimg, anonym->eye, anonym->horizon, anonym->angle,
+                anonym->elevation, anonym->yzoom, anonym->eyealt, pos);
+         anonym->hover = 0;
       }
    }
-/*      textbubble(pos, s, FALSE); */
+   else {
+      maptool_xytodeg((float)x, (float)(mainys()-y), &pos);
+      maptool_xytoloc(pos, s, 151ul);
+      useri_textautosize(0L, 0L, 19UL, 10UL, 'g', s, 151ul);
+      if (!poioff && aprsdecode_initzoom>=useri_conf2int(useri_fMOUSELOC,
+                0UL, 1L, 18L, 9L)) {
+         /* no pois on mouse over menu */
+         maptool_POIname(&pos, s, 151ul);
+         if (s[0U]) {
+            aprsdecode_click.bubblpos = pos;
+            aprsdecode_click.lastpoi = 0;
+            aprsstr_Assign(aprsdecode_click.bubblstr, 50ul, s, 151ul);
+         }
+      }
+   }
+/*       textbubble(pos, s, FALSE); */
 } /* end mouseshow() */
 
 
@@ -9343,7 +9377,20 @@ static void appbar(void)
 
 static void resizecursors(pMENU m, unsigned long px, unsigned long py)
 {
+   struct PANOWIN * anonym;
    if (m->wid==225UL) listwincursors(m, px, py);
+   else if (m->wid==202UL) {
+      listwincursors(m, px, py);
+      { /* with */
+         struct PANOWIN * anonym = &panowin;
+         anonym->hover = 1;
+         anonym->hx = (long)px;
+         anonym->hy = (long)py;
+         anonym->mx = useri_xmouse.x;
+         anonym->my = useri_xmouse.y;
+      }
+   }
+/*WrInt(px,10); WrInt(py,10); WrStrLn(" pan"); */
 } /* end resizecursors() */
 
 

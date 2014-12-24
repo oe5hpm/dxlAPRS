@@ -3805,51 +3805,6 @@ static char callfilt(unsigned char v, const char str[],
 } /* end callfilt() */
 
 
-static char isacall(const char s[], unsigned long s_len)
-{
-   unsigned long p;
-   unsigned long lit;
-   unsigned long num1;
-   char c;
-   /*  IF configon(fMUSTBECALL) THEN */
-   p = 0UL;
-   num1 = 0UL;
-   lit = 0UL;
-   for (;;) {
-      c = s[p];
-      if ((unsigned char)c>='0' && (unsigned char)c<='9') ++num1;
-      else if ((unsigned char)c>='A' && (unsigned char)c<='Z') ++lit;
-      else break;
-      ++p;
-      if (p>5UL) break;
-   }
-   if ((lit<2UL || num1==0UL) || num1>2UL) return 0;
-   if (s[p]=='-') {
-      ++p;
-      if (s[p]=='1') {
-         ++p;
-         if ((unsigned char)s[p]>='0' && (unsigned char)s[p]<='5') ++p;
-      }
-      else {
-         if ((unsigned char)s[p]<'1' || (unsigned char)s[p]>'9') return 0;
-         ++p;
-      }
-   }
-   return p>s_len-1 || s[p]==0;
-/*  END; */
-/*  RETURN TRUE */
-} /* end isacall() */
-
-/*
-PROCEDURE framestat(c-:MONCALL; isigate:BOOLEAN);
-BEGIN
-  IF iscall(c) THEN 
---    WrStr(c);
---    WrInt(ORD(isigate), 2);
-  END;
-END framestat;
-*/
-
 static void inserthrt(const struct aprsdecode_DAT dat,
                 aprsdecode_pOPHIST * op, unsigned char errs)
 {
@@ -4023,12 +3978,12 @@ extern long aprsdecode_Stoframe(aprsdecode_pOPHIST * optab, char rawbuf[],
    }
    if (useri_configon(useri_fMUSTBECALL)) {
       if (dat.type==aprsdecode_OBJ || dat.type==aprsdecode_ITEM) {
-         if (!isacall(dat.objectfrom, 9ul)) {
+         if (!aprstext_isacall(dat.objectfrom, 9ul)) {
             aprsdecode_Stoframe_ret = -1L;
             goto label;
          }
       }
-      else if (!isacall(dat.srccall, 9ul)) {
+      else if (!aprstext_isacall(dat.srccall, 9ul)) {
          aprsdecode_Stoframe_ret = -1L;
          goto label;
       }
@@ -5542,7 +5497,7 @@ static void digi(const aprsdecode_FRAMEBUF b, unsigned long udpch,
    /* bad src call */
    if (useri_configon(useri_fMUSTBECALL)) {
       tb[tp] = 0;
-      if (!isacall(tb, 512ul)) return;
+      if (!aprstext_isacall(tb, 512ul)) return;
    }
    n = p+1UL;
    while ((p<len && b[p]!='-') && b[p]!=',') {

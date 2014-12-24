@@ -168,8 +168,7 @@ extern void maptool_ruler(maptool_pIMAGE);
 
 extern void maptool_clr(maptool_pIMAGE);
 
-extern void maptool_xytoloc(long, long, struct aprspos_POSITION *, char [],
-                unsigned long);
+extern void maptool_xytoloc(struct aprspos_POSITION, char [], unsigned long);
 
 extern void maptool_POIname(struct aprspos_POSITION *, char [],
                 unsigned long);
@@ -202,10 +201,15 @@ extern float maptool_getsrtm(struct aprspos_POSITION, unsigned long,
 extern void maptool_Radiorange(maptool_pIMAGE, struct aprspos_POSITION, long,
                  long, unsigned long, unsigned long, unsigned long, char *);
 
-extern void maptool_Panorama(maptool_pIMAGE, struct aprspos_POSITION, long,
-                struct aprsdecode_COLTYP, char *);
+extern void maptool_Panorama(maptool_pIMAGE, maptool_pIMAGE,
+                struct aprspos_POSITION, struct aprspos_POSITION, float,
+                float, float, long, char *);
 
 extern void maptool_closesrtmfile(void);
+
+extern void maptool_findpanopos(long, long, long, long,
+                struct aprspos_POSITION, struct aprspos_POSITION, float,
+                float, float, long, struct aprspos_POSITION);
 
 
 extern void maptool_BEGIN(void);

@@ -2103,24 +2103,23 @@ static long geocontr(void)
    return useri_conf2int(useri_fGEOCONTRAST, 0UL, 0L, 10000L, 0L);
 } /* end geocontr() */
 
+/*
+PROCEDURE panorama(img:pIMAGE; pos:POSITION; col:COLTYP; VAR abo:BOOLEAN);
+
+CONST ALTINVAL=-10000;
+
+VAR ant:INTEGER;
+BEGIN
+  IF posvalid(pos) THEN
+    ant:=getant(fANT1);
+    IF ant>ALTINVAL THEN
+      Panorama(img, pos, ant, col, abo);
+
+    ELSE textautosize(0, 0, 3, 2, "r", "Panorama: need Antenna higth") END
+  END;
+END panorama;
+*/
 #define aprsmap_ALTINVAL (-10000)
-
-
-static void panorama(maptool_pIMAGE img, struct aprspos_POSITION pos,
-                struct aprsdecode_COLTYP col, char * abo)
-{
-   long ant;
-   if (aprspos_posvalid(pos)) {
-      ant = getant(useri_fANT1);
-      if (ant>-10000L) maptool_Panorama(img, pos, ant, col, abo);
-      else {
-         useri_textautosize(0L, 0L, 3UL, 2UL, 'r', "Panorama: need Antenna hi\
-gth", 29ul);
-      }
-   }
-} /* end panorama() */
-
-#define aprsmap_ALTINVAL0 (-10000)
 
 
 static void radioimage(maptool_pIMAGE img, struct aprspos_POSITION pos,
@@ -2805,7 +2804,8 @@ static void zoomtomarks(struct aprspos_POSITION mpos,
                 struct aprspos_POSITION clickpos)
 {
    float h;
-   if (aprspos_posvalid(mpos) && aprspos_posvalid(clickpos)) {
+   if (aprspos_posvalid(mpos)) {
+      if (!aprspos_posvalid(clickpos)) clickpos = mpos;
       if (mpos.lat<clickpos.lat) {
          h = mpos.lat;
          mpos.lat = clickpos.lat;
@@ -3345,25 +3345,28 @@ static void addradio(void)
    char abort0;
    struct aprsdecode_COLTYP c2;
    struct aprsdecode_COLTYP c1;
-   if (aprsdecode_click.panorama) {
-      if (aprspos_posvalid(aprsdecode_click.markpos)) {
-         aprsdecode_lums.rf = 0L;
-         abort0 = 0;
-         maptool_clr(rfimg);
-         getgeocol(useri_fCOLMARK1, geobri(), 100UL, 100UL, 100UL, &c1);
-         panorama(rfimg, aprsdecode_click.markpos, c1, &abort0);
-         radio.wasradio = 1;
-         if (abort0) {
-            useri_textautosize(0L, 0L, 5UL, 2UL, 'r', "panorama aborted",
-                17ul);
-            closeradio();
-            radio.wasradio = 0;
-            useri_sayonoff("Panorama", 9ul, aprsdecode_click.withradio);
-         }
-      }
-      if (radio.wasradio) maptool_addmap(image, rfimg);
-   }
-   else if (aprspos_posvalid(aprsdecode_click.markpos)
+   /*
+     IF click.panorama THEN
+       IF posvalid(click.markpos) THEN
+         lums.rf:=0;
+         abort:=FALSE;
+         clr(rfimg);
+         getgeocol(fCOLMARK1, geobri(), 100,100,100, c1);
+         panorama(rfimg, click.markpos, c1, abort);
+         radio.wasradio:=TRUE;
+   
+         IF abort THEN
+           textautosize(0, 0, 5, 2, "r", "panorama aborted");
+           closeradio;
+           radio.wasradio:=FALSE;
+           sayonoff("Panorama", click.withradio);
+         END;
+       END;
+       IF radio.wasradio THEN addmap(image, rfimg) END;
+   
+     ELS
+   */
+   if (aprspos_posvalid(aprsdecode_click.markpos)
                 || aprspos_posvalid(aprsdecode_click.measurepos)) {
       aprsdecode_lums.rf = 0L;
       getgeocol(useri_fCOLMARK1, geobri(), 100UL, 0UL, 0UL, &c1);

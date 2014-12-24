@@ -83,6 +83,39 @@ extern float aprstext_FtoC(float tempf)
 } /* end FtoC() */
 
 
+extern char aprstext_isacall(char s[], unsigned long s_len)
+{
+   unsigned long p;
+   unsigned long lit;
+   unsigned long num0;
+   char c1;
+   p = 0UL;
+   num0 = 0UL;
+   lit = 0UL;
+   for (;;) {
+      c1 = s[p];
+      if ((unsigned char)c1>='0' && (unsigned char)c1<='9') ++num0;
+      else if ((unsigned char)c1>='A' && (unsigned char)c1<='Z') ++lit;
+      else break;
+      ++p;
+      if (p>5UL) break;
+   }
+   if ((lit<2UL || num0==0UL) || num0>2UL) return 0;
+   if (s[p]=='-') {
+      ++p;
+      if (s[p]=='1') {
+         ++p;
+         if ((unsigned char)s[p]>='0' && (unsigned char)s[p]<='5') ++p;
+      }
+      else {
+         if ((unsigned char)s[p]<'1' || (unsigned char)s[p]>'9') return 0;
+         ++p;
+      }
+   }
+   return p>s_len-1 || s[p]==0;
+} /* end isacall() */
+
+
 static void Errtxt(char s[], unsigned long s_len, aprsdecode_pFRAMEHIST pf,
                 aprsdecode_pFRAMEHIST frame)
 {
@@ -1316,6 +1349,9 @@ extern void aprstext_encbeacon(char s[], unsigned long s_len,
    if (bkn) {
       useri_confstr(useri_fRBNAME, h, 201ul);
       if ((unsigned char)h[0U]<=' ') useri_encerr("no beacon call?", 16ul);
+      if (useri_configon(useri_fMUSTBECALL) && !aprstext_isacall(h, 201ul)) {
+         useri_encerr("not valid callsign as beacon sender?", 37ul);
+      }
       aprsstr_Append(s, s_len, h, 201ul);
       useri_confstr(useri_fMYPOS, h, 201ul);
       aprstext_degtopos(h, 201ul, &pos);
@@ -1364,9 +1400,7 @@ extern void aprstext_encbeacon(char s[], unsigned long s_len,
       long0 = X2C_DIV(long0,100L);
    }
    if (pos.lat<0.0f) lat = -lat;
-   if (pos.long0<0.0f) {
-      long0 = -long0;
-   }
+   if (pos.long0<0.0f) long0 = -long0;
    aprsstr_Append(s, s_len, ">", 2ul);
    if (X2C_CAP(postyp)=='M') micedest(lat, long0, h, 201ul);
    else {
