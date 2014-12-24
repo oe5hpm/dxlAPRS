@@ -38,7 +38,11 @@ Lines, the more Beacons took this way
 |111 Compose a Message to this User
 or a Query to a Machine
 
-|112 Go to normal Mode and Show all Users
+|112 Move Map to hold selected Object in View.
+In Config > Map Moveing > Center Watchcall
+you define how near to Center of Window.
+
+|113 Go to normal Mode and Show all Users
 
 |120 Zoom to fit Marker 1 and 2 to Imagesize
 same as "/"
@@ -357,7 +361,7 @@ so get a Popup Window with a Message
 if the User is active and (if not in
 Single User Mode) the Map is shifted
 to fit last position into sight.
-In Config, Map Moveing, Center Watchcall
+In Config > Map Moveing > Center Watchcall
 you define how near to Center of Window. 
 Next Hit to this Button will switch off
 watching this Call.
@@ -784,8 +788,10 @@ example (win) Your GPS to Map: (see more options gps2aprs -h)
 
 |7530 If enabled, all frames with not a valid
 "callsign" as sender will be discarded
+Also used as not-call-Beacon Send warning.
 |7531 If enabled, all frames with not a valid
 "callsign" as sender will be discarded
+Also used as not-call-Beacon Send warning.
 
 |7535 Switch On/Off showing a Ticker Headline
 of received and sent Callsigns 
@@ -1021,7 +1027,8 @@ You do enter overlay Symbols here.
 
 |8136 Destination "Call" is generated automatic
 in Mic-e Mode else is used as hint to which
-hard/software is used.
+hard/software is used. If desired, Append a
+SSID in "Via Path" like "-1".
 
 |8138 Click at a Symbol in the Thumbnail Picture
 
