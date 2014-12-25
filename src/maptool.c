@@ -1963,7 +1963,8 @@ extern void maptool_Panorama(maptool_pIMAGE testimg, maptool_pIMAGE image,
                /* heaven */
                /*          hc:=VAL(REAL, 2*yi)/VAL(REAL,
                 HIGH(image^[0]))-1.0; */
-               hc = 6.0f*(ele0+eled*(float)yi);
+               /*          hc:=(ele0 + eled*FLOAT(yi))*6.0; */
+               hc = X2C_DIVR((float)yi*2.0f,(float)(image->Len0-1))-1.0f;
                if (hc<0.0f) hc = 0.0f;
                else if (hc>1.0f) hc = 1.0f;
                hc1 = 1.0f-hc;

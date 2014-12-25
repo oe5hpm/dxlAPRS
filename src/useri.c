@@ -3345,10 +3345,10 @@ static void refrmenu(pMENU * menu, unsigned long linex, unsigned long liney,
          }
          (*menu)->yknob = liney;
          (*menu)->xsize = linex;
+         if (saveimg) maptool_clr((*menu)->image);
       }
    }
    else {
-      /*    ELSIF NOT saveimg THEN clr(menu^.image) END; */
       allocmenu(menu, linex, menuimgy(liney, entries), saveimg);
       setmenu(*menu, liney, entries, background);
    }
