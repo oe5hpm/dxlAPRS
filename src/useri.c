@@ -1995,7 +1995,7 @@ static unsigned long mainxs(void)
 } /* end mainxs() */
 
 
-static unsigned long mainys(void)
+extern unsigned long useri_mainys(void)
 {
    if (redrawimg==0) return 0UL;
    else return (redrawimg->Len0-1)+1UL;
@@ -2392,7 +2392,7 @@ static void images(aprsdecode_pOPHIST op, char cmd, unsigned short wxset)
                menu->x0 = (unsigned long)aprsdecode_click.x+20UL;
             }
             else menu->x0 = (unsigned long)aprsdecode_click.x-(xm+10UL);
-            menu->y00 = mainys()-(unsigned long)aprsdecode_click.y;
+            menu->y00 = useri_mainys()-(unsigned long)aprsdecode_click.y;
             menu->xsize = xm+1UL;
             menu->ysize = ym+1UL;
             menu->wid = 20UL+(unsigned long)wi;
@@ -3289,7 +3289,7 @@ static void setmenu(pMENU menu, unsigned long liney, unsigned long entries,
       menu->x0 = (unsigned long)aprsdecode_click.x+20UL;
    }
    else menu->x0 = (unsigned long)aprsdecode_click.x-(xm+10UL);
-   menu->y00 = mainys()-(unsigned long)aprsdecode_click.y;
+   menu->y00 = useri_mainys()-(unsigned long)aprsdecode_click.y;
    menu->yknob = liney;
    menu->xsize = xm+1UL;
    menu->background = background;
@@ -3449,12 +3449,12 @@ extern void useri_mainpop(void)
       /* set popup mainmenue to not hide symbol and ist texts */
       if ((unsigned long)aprsdecode_click.x<menu->xsize+16UL) {
          menu->x0 = (unsigned long)aprsdecode_click.x+16UL;
-         menu->y00 = (mainys()-(unsigned long)aprsdecode_click.y)+10UL;
-                /* under the sybol */
+         menu->y00 = (useri_mainys()-(unsigned long)aprsdecode_click.y)+10UL;
+                 /* under the sybol */
       }
       else {
          menu->x0 = (unsigned long)aprsdecode_click.x-(menu->xsize+16UL);
-         menu->y00 = (mainys()-(unsigned long)aprsdecode_click.y)-10UL;
+         menu->y00 = (useri_mainys()-(unsigned long)aprsdecode_click.y)-10UL;
       }
    }
    else setunderbar(menu, 17L);
@@ -4742,7 +4742,7 @@ static void sendmsg(void)
       pm = pm->next;
    }
    cnt = cntm;
-   i = mainys()/20UL;
+   i = useri_mainys()/20UL;
    if (i<7UL) i = 1UL;
    else i -= 6UL;
    if (cnt>i) cnt = i;
@@ -5002,7 +5002,7 @@ static void beaconeditor(void)
       ++cntm;
    }
    cnt = cntm;
-   i = mainys()/(aprsdecode_lums.fontysize+5UL);
+   i = useri_mainys()/(aprsdecode_lums.fontysize+5UL);
    if (i<16UL) i = 1UL;
    else if (useri_beaconed) i -= 15UL;
    if (cnt>i) cnt = i;
@@ -6107,7 +6107,7 @@ static void makelistwin(struct LISTBUFFER * b)
    useri_confstr(b->isicon, (char *) &isicon, 1u/1u);
    if (isicon=='M') {
       xw = mainxs();
-      ys = mainys()-linehi;
+      ys = useri_mainys()-linehi;
    }
    else if (isicon=='I') {
       xw = linehi*3UL+4UL+aprsstr_Length(b->listwintitle, 31ul)*6UL;
@@ -6117,7 +6117,7 @@ static void makelistwin(struct LISTBUFFER * b)
       xw = (unsigned long)useri_conf2int(b->size, 0UL,
                 (long)(linehi*6UL+4UL), (long)mainxs(), 200L);
       ys = (unsigned long)useri_conf2int(b->size, 1UL,
-                (long)(linehi*5UL+4UL), (long)(mainys()-linehi), 200L);
+                (long)(linehi*5UL+4UL), (long)(useri_mainys()-linehi), 200L);
    }
    /*WrInt(xw, 10);WrInt(ys, 10); WrStrLn(" size"); */
    if (xw>(unsigned long)maptool_xsize) xw = (unsigned long)maptool_xsize;
@@ -7034,7 +7034,8 @@ static char Scrollbars(pMENU m, long dx, long dy)
       if (isicon!='I' && isicon!='M') {
          /* was normal size */
          sx = useri_conf2int(m->sizeconf, 0UL, 40L, (long)mainxs(), 200L);
-         sy = useri_conf2int(m->sizeconf, 1UL, 50L, (long)mainys(), 200L);
+         sy = useri_conf2int(m->sizeconf, 1UL, 50L, (long)useri_mainys(),
+                200L);
       }
       else {
          sx = (long)m->xsize;
@@ -7195,7 +7196,7 @@ static void makepanwin(void)
                 200L);
       ys = (unsigned long)useri_conf2int(useri_fPANOSIZE, 1UL,
                 (long)(aprsdecode_lums.fontysize*5UL+4UL),
-                (long)(mainys()-aprsdecode_lums.fontysize), 100L);
+                (long)(useri_mainys()-aprsdecode_lums.fontysize), 100L);
    }
    if (xw>(unsigned long)maptool_xsize) xw = (unsigned long)maptool_xsize;
    if (ys>(unsigned long)maptool_ysize) ys = (unsigned long)maptool_ysize;
@@ -8599,7 +8600,7 @@ static void configeditor(void)
       ++cnt;
       ph = ph->next;
    }
-   i = mainys()/(aprsdecode_lums.fontysize+5UL);
+   i = useri_mainys()/(aprsdecode_lums.fontysize+5UL);
    if (i<3UL) i = 1UL;
    else i -= 2UL;
    if (cnt>i) cnt = i;
@@ -9241,7 +9242,7 @@ extern void useri_textbubble(struct aprspos_POSITION pos, char s[],
    xp = (long)X2C_TRUNCI(xpoi,X2C_min_longint,X2C_max_longint)-1L;
    yp = ((long)X2C_TRUNCI(ypoi,X2C_min_longint,X2C_max_longint)+(long)yw)-1L;
    if (((xp<=0L || xp+(long)xw>(long)mainxs()) || yp<=0L) || yp+(long)
-                yw>(long)mainys()) return;
+                yw>(long)useri_mainys()) return;
    allocmenu(&menu, xw, yw, 0);
    xm = menu->image->Len1-1;
    ym = menu->image->Len0-1;
@@ -9250,7 +9251,7 @@ extern void useri_textbubble(struct aprspos_POSITION pos, char s[],
    menu->wid = 201UL;
    menu->background = useri_bTRANSP;
    menu->x0 = (unsigned long)xp;
-   menu->y00 = mainys()-(unsigned long)yp;
+   menu->y00 = useri_mainys()-(unsigned long)yp;
    menu->nohilite = 0x7FFFFFFFUL;
    tmp = menu->ysize-1UL;
    y = 0UL;
@@ -9325,7 +9326,7 @@ static void mouseshow(unsigned long x, unsigned long y)
       }
    }
    else {
-      maptool_xytodeg((float)x, (float)(mainys()-y), &pos);
+      maptool_xytodeg((float)x, (float)(useri_mainys()-y), &pos);
       maptool_xytoloc(pos, s, 151ul);
       useri_textautosize(0L, 0L, 19UL, 10UL, 'g', s, 151ul);
       if (!poioff && aprsdecode_initzoom>=useri_conf2int(useri_fMOUSELOC,
@@ -10163,7 +10164,7 @@ static void mouseleft(long mousx, long mousy)
                 WrInt(poty, 10);WrStrLn(" pxy"); */
    if (menu==0) {
       aprsdecode_click.x = mousx;
-      aprsdecode_click.y = (long)(mainys()-(unsigned long)mousy);
+      aprsdecode_click.y = (long)(useri_mainys()-(unsigned long)mousy);
       /*    click.xclicked:=click.x; */
       /*    click.yclicked:=click.y; */
       aprsdecode_click.selected = 0UL;
@@ -10180,7 +10181,7 @@ static void mouseleft(long mousx, long mousy)
       else if (aprsdecode_click.x>(long)(mainxs()-5UL)) {
          aprsdecode_click.cmd = '\004';
       }
-      else if (aprsdecode_click.y>(long)(mainys()-5UL)) {
+      else if (aprsdecode_click.y>(long)(useri_mainys()-5UL)) {
          aprsdecode_click.cmd = '\005';
       }
       else {
@@ -10885,7 +10886,7 @@ extern void useri_resizewin(long newx, long newy, char f11)
       }
       else useri_maximized = 1;
    }
-   if (redrawimg==0 || ((long)mainxs()!=newx || (long)mainys()!=newy)) {
+   if (redrawimg==0 || ((long)mainxs()!=newx || (long)useri_mainys()!=newy)) {
       useri_newxsize = (unsigned long)newx;
       useri_newysize = (unsigned long)newy;
       if (useri_newxsize<100UL) useri_newxsize = 100UL;
@@ -10993,7 +10994,7 @@ static void limmouse(long * x, long * y)
    if (*x<0L) *x = 0L;
    else if (*x>(long)mainxs()) *x = (long)mainxs();
    if (*y<0L) *y = 0L;
-   else if (*y>(long)mainys()) *y = (long)mainys();
+   else if (*y>(long)useri_mainys()) *y = (long)useri_mainys();
 } /* end limmouse() */
 
 
@@ -11017,7 +11018,7 @@ static void startpull(long x, long y, char middlbutt)
    }
    /*  findpullmenu(x, y); */
    if (pm==0 || middlbutt && pullmenuwid==0L) {
-      maptool_pullmap(x, (long)mainys()-y, 1); /* start pulling */
+      maptool_pullmap(x, (long)useri_mainys()-y, 1); /* start pulling */
    }
    else if (pullmenuwid) {
       /*sethand(cPULL4);*/
@@ -11039,7 +11040,7 @@ extern void useri_mouseleftdown(long x, long y)
 {
    limmouse(&x, &y);
    aprsdecode_click.x = x;
-   aprsdecode_click.y = (long)mainys()-y;
+   aprsdecode_click.y = (long)useri_mainys()-y;
    if (xosi_pulling) useri_pulloff();
    leftbutton = 1;
    xosi_zooming = 0;
@@ -11083,21 +11084,21 @@ extern void useri_mousemove(long x, long y)
          pullmenuy = y;
       }
       else {
-         maptool_pullmap(x, (long)mainys()-y, 0);
+         maptool_pullmap(x, (long)useri_mainys()-y, 0);
          aprsdecode_click.cmd = ' '; /* start makeimage */
       }
    }
-   else if (xosi_zooming) setzoom(x, (long)mainys()-y);
+   else if (xosi_zooming) setzoom(x, (long)useri_mainys()-y);
    else if (leftbutton) {
       if (xosi_Shift) mvd = 5L;
       else mvd = 2L;
-      if (labs(x-aprsdecode_click.x)>mvd || labs(((long)mainys()-y)
+      if (labs(x-aprsdecode_click.x)>mvd || labs(((long)useri_mainys()-y)
                 -aprsdecode_click.y)>mvd) {
          /* moved a little */
-         if (xosi_Shift) setzoom(x, (long)mainys()-y);
+         if (xosi_Shift) setzoom(x, (long)useri_mainys()-y);
          else {
-            startpull(aprsdecode_click.x, (long)mainys()-aprsdecode_click.y,
-                0);
+            startpull(aprsdecode_click.x,
+                (long)useri_mainys()-aprsdecode_click.y, 0);
          }
       }
    }
@@ -11122,7 +11123,7 @@ extern void useri_mouserelease(void)
    if (xosi_pulling) useri_pulloff();
    else if (xosi_zooming) aprsdecode_click.cmd = '\307';
    else if (leftbutton) {
-      mouseleft(aprsdecode_click.x, (long)mainys()-aprsdecode_click.y);
+      mouseleft(aprsdecode_click.x, (long)useri_mainys()-aprsdecode_click.y);
    }
    leftbutton = 0;
    xosi_zooming = 0;

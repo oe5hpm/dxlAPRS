@@ -345,6 +345,8 @@ extern void useri_popwatchcall(char [], unsigned long);
 
 extern void useri_allocimage(maptool_pIMAGE *, long, long, char);
 
+extern unsigned long useri_mainys(void);
+
 
 extern void useri_BEGIN(void);
 

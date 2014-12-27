@@ -3430,12 +3430,22 @@ static void addradio(void)
 static void xytomark(void)
 {
    struct aprspos_POSITION pos;
-   maptool_xytodeg((float)aprsdecode_click.x, (float)aprsdecode_click.y,
-                &pos);
+   /*  xytodeg(VAL(REAL,click.x), VAL(REAL,click.y), pos); */
+   maptool_xytodeg((float)useri_xmouse.x,
+                (float)((long)useri_mainys()-useri_xmouse.y), &pos);
    aprstext_setmark1(pos, 1, X2C_max_longint, 0UL);
    useri_postoconfig(pos);
    aprsdecode_click.waysum = 0.0f;
 } /* end xytomark() */
+
+
+static void xytomark2(void)
+{
+   struct aprspos_POSITION pos;
+   maptool_xytodeg((float)useri_xmouse.x,
+                (float)((long)useri_mainys()-useri_xmouse.y), &pos);
+   if (aprspos_posvalid(pos)) aprsdecode_click.measurepos = pos;
+} /* end xytomark2() */
 
 /*
 PROCEDURE clicktomark;
@@ -4482,8 +4492,12 @@ static void MainEvent(void)
 to Defaults", 34ul);
       }
       else if (aprsdecode_click.cmd=='Y') {
-         aprsdecode_click.measurepos = aprsdecode_click.clickpos;
-         copypastepos(aprsdecode_click.clickpos);
+         /*          click.measurepos:=click.clickpos; */
+         /*          copypastepos(click.clickpos); */
+         xytomark2();
+         if (aprspos_posvalid(aprsdecode_click.clickpos)) {
+            copypastepos(aprsdecode_click.clickpos);
+         }
       }
       else if (aprsdecode_click.cmd=='~') {
          changecolor(aprsdecode_click.table[aprsdecode_click.selected].opf);
