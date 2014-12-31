@@ -532,29 +532,6 @@ struct LISTBUFFER {
 };
 /*       winid:CARDINAL; */
 
-struct PANOWIN;
-
-
-struct PANOWIN {
-   char isicon;
-   char empty;
-   char hover;
-   char on;
-   struct aprspos_POSITION eye;
-   struct aprspos_POSITION horizon;
-   long eyealt;
-   float angle;
-   float elevation;
-   float yzoom;
-   unsigned long actx;
-   long hx; /* mouse pos on panwin and fullwin */
-   long hy;
-   long mx;
-   long my;
-   long ximg;
-   long yimg;
-};
-
 static char leftbutton;
 
 static char overtype;
@@ -613,7 +590,7 @@ static struct LISTBUFFER listbuffer;
 
 static struct LISTBUFFER monbuffer;
 
-static struct PANOWIN panowin;
+static struct maptool_PANOWIN panowin;
 
 static char digiedline[201];
 
@@ -7212,6 +7189,7 @@ static void makepanwin(void)
    xs = (m->image->Len1-1)+1UL;
    panowin.ximg = (long)xs;
    panowin.yimg = (long)ys;
+   panowin.image = m->image;
    m->sizeconf = useri_fPANOSIZE;
    m->pullconf = useri_fPANOPOS;
    m->oldknob = 0UL;
@@ -7220,9 +7198,7 @@ static void makepanwin(void)
    m->oldknob = oks;
    m->wid = 202UL;
    if (panowin.empty) {
-      maptool_Panorama(redrawimg, m->image, panowin.eye, panowin.horizon,
-                panowin.angle, panowin.elevation, panowin.yzoom,
-                panowin.eyealt, &abo);
+      maptool_Panorama(redrawimg, panowin, &abo);
       panowin.empty = 0;
    }
    m->pullyknob = 2147483647UL;
@@ -7250,7 +7226,7 @@ static void startpano(void)
             panowin.eye = aprsdecode_click.markpos;
             panowin.horizon = aprsdecode_click.measurepos;
             panowin.angle = useri_conf2real(useri_fANT2, 1UL, 0.01f, 360.0f,
-                65.0f);
+                45.0f);
             panowin.elevation = useri_conf2real(useri_fANT2, 2UL, (-180.0f),
                 180.0f, 0.0f);
             panowin.yzoom = useri_conf2real(useri_fANT2, 3UL, 0.01f, 100.0f,
@@ -9313,34 +9289,53 @@ extern void useri_textbubble(struct aprspos_POSITION pos, char s[],
 static void mouseshow(unsigned long x, unsigned long y)
 {
    char s[151];
+   char h[21];
+   struct aprspos_POSITION pos1;
    struct aprspos_POSITION pos;
+   float dist;
+   long alt;
    /*WrInt(panowin.hx,10); WrInt(panowin.hy,10); WrStrLn(" pan"); */
-   struct PANOWIN * anonym;
+   struct maptool_PANOWIN * anonym;
+   aprsdecode_posinval(&pos);
+   dist = 0.0f;
+   alt = -30000L;
    if (panowin.hover) {
       { /* with */
-         struct PANOWIN * anonym = &panowin;
-         maptool_findpanopos(anonym->hx, anonym->hy, anonym->ximg,
-                anonym->yimg, anonym->eye, anonym->horizon, anonym->angle,
-                anonym->elevation, anonym->yzoom, anonym->eyealt, pos);
+         struct maptool_PANOWIN * anonym = &panowin;
+         maptool_findpanopos(panowin, &pos, &dist, &alt);
          anonym->hover = 0;
+         if (!aprspos_posvalid(pos)) useri_killmenuid(19UL);
       }
    }
-   else {
-      maptool_xytodeg((float)x, (float)(useri_mainys()-y), &pos);
+   else maptool_xytodeg((float)x, (float)(useri_mainys()-y), &pos);
+   if (aprspos_posvalid(pos)) {
       maptool_xytoloc(pos, s, 151ul);
       useri_textautosize(0L, 0L, 19UL, 10UL, 'g', s, 151ul);
-      if (!poioff && aprsdecode_initzoom>=useri_conf2int(useri_fMOUSELOC,
-                0UL, 1L, 18L, 9L)) {
-         /* no pois on mouse over menu */
-         maptool_POIname(&pos, s, 151ul);
-         if (s[0U]) {
-            aprsdecode_click.bubblpos = pos;
-            aprsdecode_click.lastpoi = 0;
-            aprsstr_Assign(aprsdecode_click.bubblstr, 50ul, s, 151ul);
-         }
+      s[0U] = 0;
+      pos1 = pos;
+      if (dist!=0.0f || !poioff && aprsdecode_initzoom>=useri_conf2int(useri_fMOUSELOC,
+                 0UL, 1L, 18L, 9L)) maptool_POIname(&pos, s, 151ul);
+      if (dist!=0.0f) {
+         /* pos from panorama */
+         pos = pos1; /* not lock to POI on panorama */
+         aprsstr_FixToStr(dist, 4UL, h, 21ul);
+         aprsstr_Append(h, 21ul, "km", 3ul);
+         if (s[0U]) aprsstr_Append(s, 151ul, " ", 2ul);
+         aprsstr_Append(s, 151ul, h, 21ul);
+      }
+      if (alt>-20000L) {
+         aprsstr_IntToStr(alt, 0UL, h, 21ul);
+         aprsstr_Append(h, 21ul, "m NN", 5ul);
+         if (s[0U]) aprsstr_Append(s, 151ul, " ", 2ul);
+         aprsstr_Append(s, 151ul, h, 21ul);
+      }
+      if (s[0U]) {
+         aprsdecode_click.bubblpos = pos;
+         aprsdecode_click.lastpoi = 0;
+         aprsstr_Assign(aprsdecode_click.bubblstr, 50ul, s, 151ul);
       }
    }
-/*       textbubble(pos, s, FALSE); */
+/*    textbubble(pos, s, FALSE); */
 } /* end mouseshow() */
 
 
@@ -9378,12 +9373,12 @@ static void appbar(void)
 
 static void resizecursors(pMENU m, unsigned long px, unsigned long py)
 {
-   struct PANOWIN * anonym;
+   struct maptool_PANOWIN * anonym;
    if (m->wid==225UL) listwincursors(m, px, py);
    else if (m->wid==202UL) {
       listwincursors(m, px, py);
       { /* with */
-         struct PANOWIN * anonym = &panowin;
+         struct maptool_PANOWIN * anonym = &panowin;
          anonym->hover = 1;
          anonym->hx = (long)px;
          anonym->hy = (long)py;

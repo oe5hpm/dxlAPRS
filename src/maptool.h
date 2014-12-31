@@ -62,6 +62,30 @@ struct maptool_IMAGE {
 
 typedef struct maptool_IMAGE * maptool_pIMAGE;
 
+struct maptool_PANOWIN;
+
+
+struct maptool_PANOWIN {
+   char isicon;
+   char empty;
+   char hover;
+   char on;
+   struct aprspos_POSITION eye;
+   struct aprspos_POSITION horizon;
+   long eyealt;
+   float angle;
+   float elevation;
+   float yzoom;
+   unsigned long actx;
+   long hx; /* mouse pos on panwin and fullwin */
+   long hy;
+   long mx;
+   long my;
+   long ximg;
+   long yimg;
+   maptool_pIMAGE image;
+};
+
 extern long maptool_xsize;
 
 extern long maptool_ysize;
@@ -201,15 +225,12 @@ extern float maptool_getsrtm(struct aprspos_POSITION, unsigned long,
 extern void maptool_Radiorange(maptool_pIMAGE, struct aprspos_POSITION, long,
                  long, unsigned long, unsigned long, unsigned long, char *);
 
-extern void maptool_Panorama(maptool_pIMAGE, maptool_pIMAGE,
-                struct aprspos_POSITION, struct aprspos_POSITION, float,
-                float, float, long, char *);
+extern void maptool_Panorama(maptool_pIMAGE, struct maptool_PANOWIN, char *);
+
+extern void maptool_findpanopos(struct maptool_PANOWIN,
+                struct aprspos_POSITION *, float *, long *);
 
 extern void maptool_closesrtmfile(void);
-
-extern void maptool_findpanopos(long, long, long, long,
-                struct aprspos_POSITION, struct aprspos_POSITION, float,
-                float, float, long, struct aprspos_POSITION);
 
 
 extern void maptool_BEGIN(void);

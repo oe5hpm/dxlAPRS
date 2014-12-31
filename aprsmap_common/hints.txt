@@ -797,11 +797,15 @@ Also used as not-call-Beacon Send warning.
 of received and sent Callsigns 
 
 |7536 Number of shown Callsigns in Window Title
+Do not enable on some Linux Windowmakers
+waisting Memory on changeing Window Titles
+
+|7537 Configure Rf to Rf Digipeating
 
 |7540 Beacon/Object editor 
 
 |7545 If two Beacons (especially with same Text) are
-sent in the Time, the Igate delete dupes, You
+sent in that Time Igate delete dupes (57s), You
 will never see the Beacon in AprsIs Network
 even if sent on different Frequecys.
 To avoid this, the Shift Time is used
@@ -895,7 +899,7 @@ or shorter "km" to save place on map
 |7820 if data avaliable and above this
 value, show higth in m
 
-|7815 Brightness of notmovers if dimm notmovers is on
+|7815 Brightness of notmovers if dimm notmovers (m) is on
 
 
 |7945 Zoom steps for Shift-Click to +- or mouse-wheel

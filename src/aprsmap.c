@@ -3447,6 +3447,33 @@ static void xytomark2(void)
    if (aprspos_posvalid(pos)) aprsdecode_click.measurepos = pos;
 } /* end xytomark2() */
 
+
+static void centermouse(void)
+{
+   struct aprspos_POSITION pos;
+   float y1;
+   float y00;
+   float x1;
+   float x0;
+   maptool_xytodeg((float)useri_xmouse.x,
+                (float)((long)useri_mainys()-useri_xmouse.y), &pos);
+   if ((((aprspos_posvalid(aprsdecode_click.bubblpos)
+                && maptool_mapxy(aprsdecode_click.bubblpos, &x0,
+                &y00)>=-1L) && aprspos_posvalid(pos)) && maptool_mapxy(pos,
+                &x1, &y1)>=-1L) && X2C_EXPRI(x0-x1,2L)+X2C_EXPRI(y00-y1,
+                2L)<25.0f) {
+      pos = aprsdecode_click.bubblpos;
+                /* POI is near mouse so use POI position to center */
+   }
+   if (aprspos_posvalid(pos)) {
+      push(aprsdecode_mappos, maptool_realzoom(aprsdecode_initzoom,
+                aprsdecode_finezoom));
+      maptool_center(maptool_xsize, maptool_ysize,
+                maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom),
+                pos, &aprsdecode_mappos);
+   }
+} /* end centermouse() */
+
 /*
 PROCEDURE clicktomark;
 VAR pos:POSITION;
@@ -4376,25 +4403,21 @@ static void MainEvent(void)
          aprsdecode_click.mhop[0UL] = 0;
          closeradio();
       }
-      else if (aprsdecode_click.cmd=='C') {
-         if (aprspos_posvalid(aprsdecode_click.clickpos)) {
-            push(aprsdecode_mappos, maptool_realzoom(aprsdecode_initzoom,
-                aprsdecode_finezoom));
-            maptool_center(maptool_xsize, maptool_ysize,
-                maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom),
-                aprsdecode_click.clickpos, &aprsdecode_mappos);
-            aprsdecode_posinval(&aprsdecode_click.clickpos);
-         }
-         else if (aprspos_posvalid(aprsdecode_click.bubblpos)) {
-            push(aprsdecode_mappos, maptool_realzoom(aprsdecode_initzoom,
-                aprsdecode_finezoom));
-            maptool_center(maptool_xsize, maptool_ysize,
-                maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom),
-                aprsdecode_click.bubblpos, &aprsdecode_mappos);
-         }
-      }
+      else if (aprsdecode_click.cmd=='C') centermouse();
       else if (aprsdecode_click.cmd=='t'
                 && aprspos_posvalid(aprsdecode_click.markpos)) {
+         /*
+                   IF posvalid(click.clickpos) THEN
+                     push(mappos, realzoom(initzoom, finezoom));
+                     center(xsize, ysize, realzoom(initzoom, finezoom),
+                click.clickpos, mappos);
+                     posinval(click.clickpos);
+                   ELSIF posvalid(click.bubblpos) THEN
+                     push(mappos, realzoom(initzoom, finezoom));
+                     center(xsize, ysize, realzoom(initzoom, finezoom),
+                click.bubblpos, mappos);
+                   END;
+         */
          /* click to listwin line */
          maptool_center(maptool_xsize, maptool_ysize,
                 maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom),
