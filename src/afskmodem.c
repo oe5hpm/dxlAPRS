@@ -26,6 +26,9 @@
 #ifndef osi_H_
 #include "osi.h"
 #endif
+#ifndef RealMath_H_
+#include "RealMath.h"
+#endif
 #ifndef Lib_H_
 #include "Lib.h"
 #endif
@@ -35,9 +38,6 @@
 #include <stdio.h>
 #ifndef aprsstr_H_
 #include "aprsstr.h"
-#endif
-#ifndef RealMath_H_
-#include "RealMath.h"
 #endif
 #ifndef symlink_H_
 #include "symlink.h"
@@ -848,6 +848,7 @@ static void Parms(void)
    FILENAME mixfn;
    FILENAME h1;
    FILENAME h;
+   char ptth[4096];
    unsigned long right;
    unsigned long left;
    unsigned long cnum;
@@ -1225,8 +1226,8 @@ m load but slower reaction", 76ul);
                osi_WrStrLn("repeat for each channel -C ... :", 33ul);
                osi_WrStrLn("  -C <num>              (0..1) channel parameters\
  follow (repeat for each channel)", 83ul);
-               pttHelp((char *)h1, 1024UL);
-               osi_WrStrLn(h1, 1024ul);
+               pttHelp((char *)ptth, 4096UL);
+               osi_WrStrLn(ptth, 4096ul);
                osi_WrStrLn("  -f <num>              fullduplex  (0) (0=halfdu\
 plex, 1=master fullduplex, 2=all fullduplex)", 94ul);
                osi_WrStrLn("  -g <ms>               GM900 audio quiet time af\

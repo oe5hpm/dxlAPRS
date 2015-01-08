@@ -482,7 +482,7 @@ void pttHelp(char *str, unsigned int maxsize)
 	"                         choose value for <pttbit>:\n" \
 	"                         * tty: 0=RTS, 1=DTR\n" \
 	"                         * parport: 0...7 / -0...-7 (inverted)\n" \
-	"                         * pp065/gpio: 0...7 / -0...-7 (inverted)";
+	"                         * pp065/gpio: 0...7 / -0...-7 (inverted)\n"\
 	"  -u                    close ptt-tty file between switch actions, " \
 				"may not work on USB tty";
 
