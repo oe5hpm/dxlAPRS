@@ -1139,6 +1139,20 @@
 
 
 
+30. 12. 2014 (Ver 0.46)
+
++ Marker 1 und 2 setzen ("x" "y") geht ohne vorher auf die Karte klicken
+  gleiches bei Zentrieren "c" mit dem Unterschied wenn ein POI maximal
+  5 Pixel entfernt angezeigt wird, exakt auf diesen zentriert wird.
+
+
+
+
+
+
+
+
+
 
 
 
