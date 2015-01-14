@@ -5,7 +5,7 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
-/* "@(#)sondemod.c Oct 20 13:38:23 2014" */
+/* "@(#)sondemod.c Jan 12 21:19:36 2015" */
 
 
 #define X2C_int32
@@ -24,6 +24,9 @@
 #ifndef osi_H_
 #include "osi.h"
 #endif
+#ifndef RealMath_H_
+#include "RealMath.h"
+#endif
 #ifndef Lib_H_
 #include "Lib.h"
 #endif
@@ -32,9 +35,6 @@
 #endif
 #ifndef aprsstr_H_
 #include "aprsstr.h"
-#endif
-#ifndef RealMath_H_
-#include "RealMath.h"
 #endif
 #ifndef Select_H_
 #include "Select.h"

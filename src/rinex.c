@@ -1265,12 +1265,14 @@ BOOL RINEX_GetHeader(
   if( fgets( line_buffer, 1024, fid ) == NULL )
   {
     GNSS_ERROR_MSG( "fgets failed" );
+    fclose(fid);
     return FALSE;
   }
   strptr = strstr( line_buffer, "RINEX VERSION / TYPE" );
   if( strptr == NULL )
   {
     GNSS_ERROR_MSG( "strstr failed." );
+    fclose(fid);
     return FALSE;
   }
 
@@ -1279,6 +1281,7 @@ BOOL RINEX_GetHeader(
   if( scount+line_length >= buffer_max_size )    
   {
     GNSS_ERROR_MSG( "if( scount+line_length >= buffer_max_size )" );
+    fclose(fid);
     return FALSE;    
   }
   scount += sprintf( buffer+scount, "%s", line_buffer );
@@ -1287,6 +1290,7 @@ BOOL RINEX_GetHeader(
   if( sscanf( line_buffer, "%lf %c", version, &type_char ) != 2 )
   {
     GNSS_ERROR_MSG( "sscanf failed" );
+    fclose(fid);
     return FALSE;
   }
   *file_type = (RINEX_enumFileType)type_char;
@@ -1306,6 +1310,7 @@ BOOL RINEX_GetHeader(
     if( scount+line_length >= buffer_max_size )   
     {
       GNSS_ERROR_MSG( "if( scount+line_length >= buffer_max_size )" );
+      fclose(fid);
       return FALSE;    
     }
     scount += sprintf( buffer+scount, "%s", line_buffer );
@@ -1315,11 +1320,13 @@ BOOL RINEX_GetHeader(
   if( end_of_header_found )
   {
     *buffer_size = scount;
+    fclose(fid);
     return TRUE;
   }
   else
   {
     GNSS_ERROR_MSG( "End of RINEX header not found." );
+    fclose(fid);
     return FALSE;
   }
 }
@@ -2983,11 +2990,13 @@ BOOL RINEX_DecodeGPSNavigationFile(
     {
       if( feof(fid) )
       {      
+        fclose(fid);
         return TRUE;
       }
       else
       {
         GNSS_ERROR_MSG( "unexpected" );
+        fclose(fid);
         return FALSE;
       }
     }
@@ -3007,6 +3016,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
       else
       {
         GNSS_ERROR_MSG( "unexpected" );
+        fclose(fid);
         return FALSE;
       }
     }
@@ -3024,6 +3034,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
     if( result == FALSE )
     {
       GNSS_ERROR_MSG( "RINEX_ReplaceDwithE returned FALSE." );
+      fclose(fid);
       return FALSE;
     }
 
@@ -3044,6 +3055,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
     if( count != 10 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );    
+      fclose(fid);
       return FALSE; // bad record
     }
 
@@ -3051,6 +3063,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
     if( sscanf( str[i], "%d", &itmp ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );    
+      fclose(fid);
       return FALSE;
     }
     eph.prn = (unsigned short)itmp;
@@ -3058,6 +3071,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
     if( sscanf( str[i], "%d", &itmp  ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );    
+      fclose(fid);
       return FALSE;
     }
     epoch.year = (unsigned short)itmp;
@@ -3065,6 +3079,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
     if( sscanf( str[i], "%d", &itmp  ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );    
+      fclose(fid);
       return FALSE;
     }
     epoch.month = (unsigned char)itmp;
@@ -3072,6 +3087,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
     if( sscanf( str[i], "%d", &itmp  ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );    
+      fclose(fid);
       return FALSE;
     }
     epoch.day = (unsigned char)itmp;
@@ -3079,6 +3095,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
     if( sscanf( str[i], "%d", &itmp  ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );    
+      fclose(fid);
       return FALSE;
     }
     epoch.hour = (unsigned char)itmp;
@@ -3086,6 +3103,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
     if( sscanf( str[i], "%d", &itmp ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );    
+      fclose(fid);
       return FALSE;
     }
     epoch.minute = (unsigned char)itmp;
@@ -3093,24 +3111,28 @@ BOOL RINEX_DecodeGPSNavigationFile(
     if( sscanf( str[i], "%f", &epoch.seconds ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );    
+      fclose(fid);
       return FALSE;
     }
     i++;
     if( sscanf( str[i], "%lf", &eph.af0 ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );    
+      fclose(fid);
       return FALSE;
     }
     i++;
     if( sscanf( str[i], "%lf", &eph.af1 ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );    
+      fclose(fid);
       return FALSE;
     }
     i++;
     if( sscanf( str[i], "%lf", &eph.af2 ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );    
+      fclose(fid);
       return FALSE;
     }
 
@@ -3125,6 +3147,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
     else
     {
       GNSS_ERROR_MSG( "unexpected." );    
+      fclose(fid);
       return FALSE;
     }
     result = TIMECONV_GetGPSTimeFromRinexTime(
@@ -3140,6 +3163,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
     if( result == FALSE )
     {
       GNSS_ERROR_MSG( "TIMECONV_GetGPSTimeFromRinexTime returned FALSE." );    
+      fclose(fid);
       return FALSE;
     }
     eph.toc = (unsigned)tow;
@@ -3158,6 +3182,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
       else
       {
         GNSS_ERROR_MSG( "unexpected." );
+        fclose(fid);
         return FALSE;
       }
     }
@@ -3165,6 +3190,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
     if( result == FALSE )
     {
       GNSS_ERROR_MSG( "RINEX_ReplaceDwithE returned FALSE." );
+      fclose(fid);
       return FALSE;
     }
 
@@ -3178,6 +3204,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
     if( count != 4 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
+      fclose(fid);
       return FALSE;
     }
 
@@ -3185,6 +3212,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
     if( sscanf( str[i], "%lf", &dtmp ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
+      fclose(fid);
       return FALSE;
     }
     eph.iode = (unsigned char)dtmp;
@@ -3192,18 +3220,21 @@ BOOL RINEX_DecodeGPSNavigationFile(
     if( sscanf( str[i], "%lf", &eph.crs ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
+      fclose(fid);
       return FALSE;
     }
     i++;
     if( sscanf( str[i], "%lf", &eph.delta_n ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
+      fclose(fid);
       return FALSE;
     }
     i++;
     if( sscanf( str[i], "%lf", &eph.m0 ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
+      fclose(fid);
       return FALSE;
     }
     i++;
@@ -3221,6 +3252,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
       else
       {
         GNSS_ERROR_MSG( "unexpected." );
+        fclose(fid);
         return FALSE;
       }
     }
@@ -3228,6 +3260,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
     if( result == FALSE )
     {
       GNSS_ERROR_MSG( "RINEX_ReplaceDwithE returned FALSE." );
+      fclose(fid);
       return FALSE;
     }
 
@@ -3241,6 +3274,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
     if( count != 4 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );      
+      fclose(fid);
       return FALSE;
     }
 
@@ -3248,24 +3282,28 @@ BOOL RINEX_DecodeGPSNavigationFile(
     if( sscanf( str[i], "%lf", &eph.cuc ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );      
+      fclose(fid);
       return FALSE;    
     }
     i++;
     if( sscanf( str[i], "%lf", &eph.ecc ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );      
+      fclose(fid);
       return FALSE;
     }
     i++;
     if( sscanf( str[i], "%lf", &eph.cus ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );      
+      fclose(fid);
       return FALSE;
     }
     i++;
     if( sscanf( str[i], "%lf", &eph.sqrta ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );      
+      fclose(fid);
       return FALSE;
     }
     i++;
@@ -3284,6 +3322,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
       else
       {
         GNSS_ERROR_MSG( "unexpected." );      
+        fclose(fid);
         return FALSE;
       }
     }
@@ -3291,6 +3330,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
     if( result == FALSE )
     {
       GNSS_ERROR_MSG( "RINEX_ReplaceDwithE returned FALSE." );      
+      fclose(fid);
       return FALSE;
     }
 
@@ -3304,6 +3344,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
     if( count != 4 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
+      fclose(fid);
       return FALSE;
     }
 
@@ -3311,6 +3352,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
     if( sscanf( str[i], "%lf", &dtmp ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
+      fclose(fid);
       return FALSE;    
     }
     eph.toe = (unsigned)dtmp;
@@ -3318,18 +3360,21 @@ BOOL RINEX_DecodeGPSNavigationFile(
     if( sscanf( str[i], "%lf", &eph.cic ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
+      fclose(fid);
       return FALSE;
     }
     i++;
     if( sscanf( str[i], "%lf", &eph.omega0 ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
+      fclose(fid);
       return FALSE;
     }
     i++;
     if( sscanf( str[i], "%lf", &eph.cis ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
+      fclose(fid);
       return FALSE;
     }
     i++;
@@ -3348,6 +3393,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
       else
       {
         GNSS_ERROR_MSG( "unexpected." );
+        fclose(fid);
         return FALSE;
       }
     }
@@ -3355,6 +3401,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
     if( result == FALSE )
     {
       GNSS_ERROR_MSG( "RINEX_ReplaceDwithE returned FALSE." );
+      fclose(fid);
       return FALSE;
     }
 
@@ -3368,6 +3415,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
     if( count != 4 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
+      fclose(fid);
       return FALSE;
     }
 
@@ -3375,24 +3423,28 @@ BOOL RINEX_DecodeGPSNavigationFile(
     if( sscanf( str[i], "%lf", &eph.i0 ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
+      fclose(fid);
       return FALSE;    
     }
     i++;
     if( sscanf( str[i], "%lf", &eph.crc ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
+      fclose(fid);
       return FALSE;
     }
     i++;
     if( sscanf( str[i], "%lf", &eph.w ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
+      fclose(fid);
       return FALSE;
     }
     i++;
     if( sscanf( str[i], "%lf", &eph.omegadot ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
+      fclose(fid);
       return FALSE;
     }
     i++;
@@ -3411,6 +3463,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
       else
       {
         GNSS_ERROR_MSG( "unexpected." );
+        fclose(fid);
         return FALSE;
       }
     }
@@ -3418,6 +3471,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
     if( result == FALSE )
     {
       GNSS_ERROR_MSG( "RINEX_ReplaceDwithE returned FALSE." );
+      fclose(fid);
       return FALSE;
     }
 
@@ -3431,6 +3485,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
     if( count != 4 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
+      fclose(fid);
       return FALSE;
     }
 
@@ -3438,12 +3493,14 @@ BOOL RINEX_DecodeGPSNavigationFile(
     if( sscanf( str[i], "%lf", &eph.idot ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
+      fclose(fid);
       return FALSE;
     }
     i++;
     if( sscanf( str[i], "%lf", &dtmp ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
+      fclose(fid);
       return FALSE;
     }
     eph.code_on_L2 = (unsigned char)dtmp;
@@ -3451,6 +3508,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
     if( sscanf( str[i], "%lf", &dtmp ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
+      fclose(fid);
       return FALSE;
     }
     eph.week = (unsigned short)dtmp;
@@ -3458,6 +3516,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
     if( sscanf( str[i], "%lf", &dtmp ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
+      fclose(fid);
       return FALSE;
     }
     eph.L2_P_data_flag = (unsigned char)dtmp;
@@ -3476,6 +3535,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
       else
       {
         GNSS_ERROR_MSG( "unexpected" );
+        fclose(fid);
         return FALSE;
       }
     }
@@ -3483,6 +3543,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
     if( result == FALSE )
     {
       GNSS_ERROR_MSG( "RINEX_ReplaceDwithE returned FALSE." );
+      fclose(fid);
       return FALSE;
     }
 
@@ -3496,6 +3557,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
     if( count != 4 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
+      fclose(fid);
       return FALSE;
     }
 
@@ -3503,6 +3565,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
     if( sscanf( str[i], "%lf", &dtmp ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
+      fclose(fid);
       return FALSE;
     }
     i++;
@@ -3511,12 +3574,14 @@ BOOL RINEX_DecodeGPSNavigationFile(
     if( result == FALSE )
     {
       GNSS_ERROR_MSG( "RINEX_ConvertURA_meters_to_URA_index returned FALSE." );
+      fclose(fid);
       return FALSE;
     }
 
     if( sscanf( str[i], "%lf", &dtmp ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
+      fclose(fid);
       return FALSE;
     }
     eph.health = (unsigned char)dtmp;
@@ -3524,12 +3589,14 @@ BOOL RINEX_DecodeGPSNavigationFile(
     if( sscanf( str[i], "%lf", &eph.tgd ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
+      fclose(fid);
       return FALSE;
     }
     i++;
     if( sscanf( str[i], "%lf", &dtmp ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf failed." );
+      fclose(fid);
       return FALSE;
     }
     eph.iodc = (unsigned short)dtmp;
@@ -3548,6 +3615,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
       else
       {
         GNSS_ERROR_MSG( "unexpected" );
+        fclose(fid);
         return FALSE;
       }
     }
@@ -3555,6 +3623,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
     if( result == FALSE )
     {
       GNSS_ERROR_MSG( "RINEX_ReplaceDwithE returned FALSE." );
+      fclose(fid);
       return FALSE;
     }
 
@@ -3566,6 +3635,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
     if( count != 2 )
     {
       GNSS_ERROR_MSG( "sscanf returned FALSE." );
+      fclose(fid);
       return FALSE;
     }
 
@@ -3573,6 +3643,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
     if( sscanf( str[i], "%lf", &dtmp ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf returned FALSE." );
+      fclose(fid);
       return FALSE;    
     }
     
@@ -3592,6 +3663,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
     if( sscanf( str[i], "%lf", &dtmp ) != 1 )
     {
       GNSS_ERROR_MSG( "sscanf returned FALSE." );
+      fclose(fid);
       return FALSE;    
     }
     itmp = (int)dtmp;
@@ -3613,7 +3685,7 @@ BOOL RINEX_DecodeGPSNavigationFile(
   }
 
   *length_ephemeris_array = ephemeris_array_index;
-
+  fclose(fid);
   return TRUE;
 }
 

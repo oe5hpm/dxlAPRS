@@ -5,7 +5,7 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
-/* "@(#)sondeaprs.c May  2  6:18:52 2014" */
+/* "@(#)sondeaprs.c Jan 12 21:19:37 2015" */
 
 
 #define X2C_int32
@@ -20,6 +20,9 @@
 #ifndef osi_H_
 #include "osi.h"
 #endif
+#ifndef RealMath_H_
+#include "RealMath.h"
+#endif
 #ifndef InOut_H_
 #include "InOut.h"
 #endif
@@ -28,9 +31,6 @@
 #endif
 #ifndef TimeConv_H_
 #include "TimeConv.h"
-#endif
-#ifndef RealMath_H_
-#include "RealMath.h"
 #endif
 
 char sondeaprs_mycall[100];
@@ -936,7 +936,8 @@ extern void sondeaprs_senddata(double lat, double long0, double alt,
             case sondeaprs_eMISS:
                InOut_WriteString("s", 2ul);
                break;
-            case sondeaprs_eRMS:
+            case sondeaprs_eRMS: /*WrFixed(vrms, 1,5); WrStr(" ");
+                WrFixed(hrms, 1,5);*/
                InOut_WriteString("r", 2ul);
                break;
             default:
