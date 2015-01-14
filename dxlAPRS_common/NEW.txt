@@ -10,6 +10,27 @@ afskmodem
  stark belegten Kanal zu entlasten.
 
 
+12.1.2015
+  
+ -B Schaltet auf Dauersenden und sollte bei Stereo (mit Senden) oder vollduplex
+  verwendet werden. Die mittlerweilen recht schlampigen Linux Soundtreiber verlieren
+  Sampels bei Senden-anfang und -ende im Empfangsstream und Frames am anderen Stereokanal
+  (oder auch am selben bei Vollduplex) werden undekodierbar. 
+  Nachteil: etwas mehr CPU und um die Sound-Durchlaufzeit verzoegerte Reaktionszeit.
+
+ -C 0 -f 3 bzw -C 1 -f 3 sperrt PTT wenn am anderen stereo Kanal gesendet wird so als
+  ob DCD waere. Sinn: verwendung von 2-Band TRX der 2x rx aber nur 1x tx zugleich kann.
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -19,6 +40,24 @@ udpbox
 24.7.2013
 
  Im Digimodus (-d) werden Messages zu sich selbst (from=to) nicht mehr gesendet.
+
+
+12.1.2015
+
++ Daten Input im Monitor-Format von stdin mit und ohne Programm terminieren nach 1 Zeile
++ Frame Typ Filter -f auf Typ Telemetrie (-f -d84) Filtert auch Telemetrie Header
+  also Messages an sich selber.  (-S gibts daher nimmer)
+
+
+
+13.1.2015
+  -d digi: rest vom Pfad wieder aussenden:
+    -p 7 nach via digicall
+    -p 8 nach via RELAY/GATE/TRACE
+    -p 9 nach via WIDE
+
+
+
 
 
 

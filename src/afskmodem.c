@@ -218,7 +218,8 @@ enum TXSTATE {afskmodem_receiv, afskmodem_slotwait, afskmodem_sendtxdel,
                 afskmodem_senddata, afskmodem_sendtxtail};
 
 
-enum DUPLEX {afskmodem_simplex, afskmodem_shiftdigi, afskmodem_fullduplex};
+enum DUPLEX {afskmodem_simplex, afskmodem_shiftdigi, afskmodem_fullduplex,
+                afskmodem_onetx};
 
 
 struct CHAN;
@@ -259,6 +260,8 @@ static long debfd;
 static char esc;
 
 static char abortonsounderr;
+
+static char badsounddriver;
 
 static unsigned long getst;
 
@@ -869,6 +872,7 @@ static void Parms(void)
    maxchannels = afskmodem_LEFT;
    extraaudiodelay = 1UL;
    debfd = -1L;
+   badsounddriver = 0;
    for (cnum = 0UL; cnum<=32767UL; cnum++) {
       SIN[cnum] = RealMath_cos(X2C_DIVR((float)cnum*2.0f*3.141592f,
                 32768.0f));
@@ -950,12 +954,15 @@ static void Parms(void)
             }
          }
          else if (h[1U]=='B') {
-            Lib_NextArg(h, 1024ul);
-            if (!aprsstr_StrToInt(h, 1024ul, &inum)) {
-               err = 1;
+            if (modem<0L && channel<0L) {
+               badsounddriver = 1;
             }
-            if (modem>=0L) modpar[modem].bert = inum*8000L;
-            else Error("need modem number -M before -B", 31ul);
+            else {
+               Lib_NextArg(h, 1024ul);
+               if (!aprsstr_StrToInt(h, 1024ul, &inum)) err = 1;
+               if (modem>=0L) modpar[modem].bert = inum*8000L;
+               else Error("need modem number -M before -B", 31ul);
+            }
          }
          else if (h[1U]=='C') {
             Lib_NextArg(h, 1024ul);
@@ -1008,7 +1015,7 @@ static void Parms(void)
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
             if (modem>=0L) modpar[modem].configafskmid = cnum;
             else if (channel>=0L) {
-               if (cnum>2UL) Error("duplex 0..2", 12ul);
+               if (cnum>3UL) Error("duplex 0..3", 12ul);
                chan[channel].duplex = (unsigned char)cnum;
             }
             else {
@@ -1032,9 +1039,7 @@ static void Parms(void)
          else if (h[1U]=='H') {
             Lib_NextArg(h, 1024ul);
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
-            if (modem>=0L) {
-               modpar[modem].afskhighpass = (float)cnum*0.01f;
-            }
+            if (modem>=0L) modpar[modem].afskhighpass = (float)cnum*0.01f;
             else Error("need modem number -M before -H", 31ul);
          }
          else if (h[1U]=='i') {
@@ -1104,7 +1109,9 @@ static void Parms(void)
                Lib_NextArg(h, 1024ul);
                if (!aprsstr_StrToInt(h, 1024ul, &inum)) err = 1;
                inum = labs(inum)+1L;
-               if (h[0U]=='-') inum = -inum;
+               if (h[0U]=='-') {
+                  inum = -inum;
+               }
                chan[channel].hptt = pttinit((char *)h1, inum);
             }
          }
@@ -1188,9 +1195,7 @@ static void Parms(void)
          }
          else if (h[1U]=='z') {
             Lib_NextArg(h, 1024ul);
-            if (!aprsstr_StrToCard(h, 1024ul, &cnum)) {
-               err = 1;
-            }
+            if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
             if (modem>=0L) {
                modpar[modem].clamp = X2C_DIVR((float)cnum,1000.0f);
             }
@@ -1203,6 +1208,10 @@ static void Parms(void)
 etry to open", 62ul);
                osi_WrStrLn(" -b <num>       tx dacbuffers (10) (more to avoid\
  underruns)", 61ul);
+               osi_WrStrLn(" -B             bad sound driver repair, sending \
+continuous quietness to avoid receive", 87ul);
+               osi_WrStrLn("                sample loss on start/stop of soun\
+d output. Use for stereo or fullduplex)", 89ul);
                osi_WrStrLn(" -c <num>       maxchannels (1) (1=mono, 2=stereo\
 )", 51ul);
                osi_WrStrLn(" -D <filename>  (debug) write raw soundcard input\
@@ -1228,8 +1237,10 @@ m load but slower reaction", 76ul);
  follow (repeat for each channel)", 83ul);
                pttHelp((char *)ptth, 4096UL);
                osi_WrStrLn(ptth, 4096ul);
-               osi_WrStrLn("  -f <num>              fullduplex  (0) (0=halfdu\
-plex, 1=master fullduplex, 2=all fullduplex)", 94ul);
+               osi_WrStrLn("  -f <num>              (0) (0=halfduplex, 1=mast\
+er fullduplex, 2=all fullduplex,", 82ul);
+               osi_WrStrLn("                        3=simplex \'stereo never \
+both tx same time\')", 68ul);
                osi_WrStrLn("  -g <ms>               GM900 audio quiet time af\
 ter ptt on (0)", 64ul);
                osi_WrStrLn("  -r <num>              max random wait time afte\
@@ -2238,7 +2249,8 @@ static void getadc(void)
             struct MPAR * anonym = &modpar[m];
             if ((anonym->configured && chan[anonym->ch]
                 .adcmax>=anonym->leveldcd)
-                && (!chan[anonym->ch].pttstate || chan[anonym->ch].duplex)) {
+                && (!chan[anonym->ch].pttstate || chan[anonym->ch]
+                .duplex && chan[anonym->ch].duplex!=afskmodem_onetx)) {
                /* save cpu and echo reception */
                if (anonym->afsk) Afsk(m);
                else Fsk(m);
@@ -2375,8 +2387,9 @@ static void sendmodem(void)
                clk = anonym->dcdclock;
                 /* use dcd of latest heard modulation */
             }
-            if (anonym->duplex==afskmodem_fullduplex || clock0-clk>anonym->addrandom)
-                 {
+            if (anonym->duplex==afskmodem_fullduplex || clock0-clk>anonym->addrandom && (anonym->duplex!=afskmodem_onetx || !chan[(unsigned long)
+                maxchannels-(unsigned long)c].pttstate)) {
+               /* onetx: tx locks tx of other channel */
                if (frames2tx(anonym->actmodem)) {
                   txmon(modpar[anonym->actmodem].txbufin);
                   chan[c].pttstate = 1; /*WrInt(ORD(c),1); WrStrLn(" ptton");
@@ -2394,9 +2407,11 @@ static void sendmodem(void)
       }
       if (c==tmp) break;
    } /* end for */
-   while (soundbufs<maxsoundbufs && (chan[afskmodem_LEFT]
-                .state>=afskmodem_sendtxdel || chan[afskmodem_RIGHT]
-                .state>=afskmodem_sendtxdel)) {
+   /*  WHILE (soundbufs<maxsoundbufs) & ((chan[LEFT].state>=sendtxdel)
+                OR (chan[RIGHT].state>=sendtxdel)) DO */
+   while (soundbufs<maxsoundbufs && ((badsounddriver || chan[afskmodem_LEFT]
+                .state>=afskmodem_sendtxdel)
+                || chan[afskmodem_RIGHT].state>=afskmodem_sendtxdel)) {
       tmp0 = (long)(adcbuflen-1UL);
       i0 = 0L;
       if (i0<=tmp0) for (;; i0++) {
