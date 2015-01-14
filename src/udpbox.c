@@ -63,7 +63,7 @@
 
 #define udpbox_DOWNPATHRELAY 8
 
-#define udpbox_DOWNPATHALL 9
+#define udpbox_DOWNPATHWIDE 9
 
 #define udpbox_NOVIADIGICALL 10
 
@@ -84,6 +84,10 @@
 #define udpbox_VIAGATE 18
 
 #define udpbox_RELAYECHO 19
+
+#define udpbox_STDIN 0
+
+#define udpbox_STDINIP 0x0FFFFFFFF
 
 typedef unsigned long SET256[8];
 
@@ -142,7 +146,6 @@ struct OUTPORT {
    char rawwrite;
    char crlfwrite;
    char passnoUI;
-   char passwix;
    SET256 aprspass;
    pDIGIPARMS digiparm;
    struct BEACON beacon0;
@@ -227,9 +230,8 @@ static unsigned long udpbox_POLYNOM = 0x8408UL;
 
 #define udpbox_cUSERMSG ":"
 
-/*
- CRCL, CRCH            : ARRAY[0..255] OF SET8;
-*/
+#define udpbox_cTELEMETRY "T"
+
 static char show;
 
 static pINSOCK insocks;
@@ -242,6 +244,10 @@ static pMSGHASH msgusers;
 
 static char ackpath[64];
 
+static unsigned long stdinpos;
+
+static char stdinbuf[256];
+
 
 static void Err(const char text[], unsigned long text_len)
 {
@@ -251,85 +257,6 @@ static void Err(const char text[], unsigned long text_len)
    X2C_ABORT();
 } /* end Err() */
 
-/*
-PROCEDURE Gencrctab;
-CONST POLINOM=08408H;
-VAR i,crc,c:CARDINAL;
-BEGIN
-  FOR c:=0 TO 255 DO
-    crc:=255-c;
-    FOR i:=0 TO 7 DO
-      IF ODD(crc) THEN crc:=CAST(CARDINAL, CAST(BITSET, ASH(crc,
-                -1))/CAST(BITSET,POLINOM))
-      ELSE crc:=ASH(crc, -1) END;
-    END;
-    CRCL[c]:=CAST(SET8, crc);
-    CRCH[c]:=CAST(SET8, 255 - ASH(crc, -8));
-  END;
-END Gencrctab;
-*/
-/*
-PROCEDURE AppCRC(VAR frame:ARRAY OF CHAR; size:INTEGER);
-VAR l,h:SET8;
-    b:CARD8;
-    i:INTEGER;
-BEGIN
-  l:=SET8{};
-  h:=SET8{};
-  FOR i:=0 TO size-1 DO
-    b:=CAST(CARD8, CAST(SET8, frame[i]) / l);
-    l:=CRCL[b] / h;
-    h:=CRCH[b];
-  END;
-  frame[size  ]:=CAST(CHAR, l);
-  frame[size+1]:=CAST(CHAR, h);
-END AppCRC;
-*/
-/*
-PROCEDURE Hash(frame-:ARRAY OF CHAR; start, end:INTEGER):CARDINAL;
-VAR l,h:SET8;
-    b:CARD8;
-    i:INTEGER;
-    c:CHAR;
-BEGIN
-  l:=SET8{};
-  h:=SET8{};
-  FOR i:=start TO end-1 DO
-    c:=frame[i];
-    IF c<>" " THEN
-      b:=CAST(CARD8, CAST(SET8, c) / l);
-      l:=CRCL[b] / h;
-      h:=CRCH[b];
-    END;
-  END;
-  RETURN (ORD(CAST(CHAR, l)) + ORD(CAST(CHAR, h))*256) MOD HASHSIZE;
-END Hash;
-*/
-/*
-PROCEDURE Call2Str(r-:ARRAY OF CHAR; VAR t:ARRAY OF CHAR; pos:CARDINAL;
-                VAR len:CARDINAL):BOOLEAN;
-VAR i,e,ssid:CARDINAL;
-    c:CHAR;
-BEGIN
-  e:=pos;
-  FOR i:=pos TO pos+5 DO 
-    IF r[i]<>100C THEN e:=i END;
-  END; 
-  FOR i:=pos TO e DO 
-    c:=CHR(ASH(ORD(r[i]), -1));
-    IF c<=" " THEN t[len]:=0C; len:=0; RETURN FALSE END;
-    t[len]:=c;
-    INC(len);
-  END;
-  ssid:=ASH(ORD(r[pos+6]), -1) MOD 16;
-  IF ssid>0 THEN 
-    t[len]:="-"; INC(len); 
-    IF ssid>9 THEN t[len]:="1"; INC(len); END;
-    t[len]:=CHR(ssid MOD 10 + ORD("0")); INC(len);
-  END;
-  RETURN TRUE
-END Call2Str;
-*/
 
 static void Stomsg(pMSGHASH user, const char from[], unsigned long from_len,
                 const char to[], unsigned long to_len, const char msg[],
@@ -411,7 +338,7 @@ static void Stomsg(pMSGHASH user, const char from[], unsigned long from_len,
 
 
 static char Usermsg(const char b[], unsigned long b_len, long len, long p,
-                pINSOCK fromsock, char passself)
+                pINSOCK fromsock, char * selfmsg)
 {
    long pf;
    unsigned long j;
@@ -421,6 +348,7 @@ static char Usermsg(const char b[], unsigned long b_len, long len, long p,
    char ack[6];
    char msg[69];
    char ok0;
+   *selfmsg = 0;
    pf = 0L; /* from whom */
    while (b[p]=='}') {
       /* remove third party header */
@@ -451,9 +379,10 @@ static char Usermsg(const char b[], unsigned long b_len, long len, long p,
          if (to[j]!=from[j]) ok0 = 1;
       } /* end for */
       if (!ok0) {
-         /* msk from to same call */
+         /* msg from to same call */
          if (show) InOut_WriteString(" msg to it self ", 17ul);
-         return !passself;
+         *selfmsg = 1;
+         return 0;
       }
       /*WrStr("<"); WrStr(from); WrStr(">"); WrStr("<"); WrStr(to);
                 WrStrLn(">"); */
@@ -605,6 +534,7 @@ static char Filter(const char b[], unsigned long b_len, long len,
 {
    long i;
    long km;
+   char selfmsg;
    len -= 2L; /* crc */
    i = 13L;
    while (i<len && !((unsigned long)(unsigned char)b[i]&1)) i += 7L;
@@ -616,12 +546,14 @@ static char Filter(const char b[], unsigned long b_len, long len,
    /* not UI frame */
    /* first payload byte */
    /* is UI frame */
-   if (Usermsg(b, b_len, len, i, fromsock, parm->passwix)) return 0;
+   if (Usermsg(b, b_len, len, i, fromsock, &selfmsg)) return 0;
    if (parm->filtercalls && CallFilt(parm->filtercalls, b, b_len, len)) {
       if (show) InOut_WriteString(" callfilter match", 18ul);
       return 0;
    }
-   if (!X2C_INL((unsigned char)b[i],256,parm->aprspass)) {
+   if (!X2C_INL((unsigned char)b[i],256,
+                parm->aprspass) || selfmsg && !X2C_INL((long)84,256,
+                parm->aprspass)) {
       if (show) InOut_WriteString(" message type filter", 21ul);
       return 0;
    }
@@ -645,6 +577,25 @@ static char Filter(const char b[], unsigned long b_len, long len,
    }
    return 1;
 } /* end Filter() */
+
+
+static long getstdin(char buf[], unsigned long buf_len)
+{
+   char c;
+   while (osi_RdBin(0L, (char *) &c, 1u/1u, 1UL)==1L) {
+      if (c=='\012') c = 0;
+      if (stdinpos<255UL) {
+         stdinbuf[stdinpos] = c;
+         ++stdinpos;
+      }
+      if (c==0) {
+         aprsstr_Assign(buf, buf_len, stdinbuf, 256ul);
+         stdinpos = 0UL;
+         return (long)aprsstr_Length(buf, buf_len);
+      }
+   }
+   return -1L;
+} /* end getstdin() */
 
 
 static long getudp(long fd, char buf[], unsigned long buf_len,
@@ -1154,7 +1105,7 @@ static void Digi(char raw[], unsigned long raw_len, char send[],
          /* not looping thru own digi */
          startpath = actdigi+7L;
          nodigicall = 0;
-         if ((0x200UL & parm->pathcheck)) downpath = pathlen;
+         if ((0x80UL & parm->pathcheck)) downpath = pathlen;
          /* test for ssid routing*/
          ssid = (unsigned long)(long)(parm->pathcheck&0x7UL);
                 /* limit ssid routing hopps */
@@ -1241,7 +1192,7 @@ static void Digi(char raw[], unsigned long raw_len, char send[],
                 /* dec(N) of WIDEn-N */
                         startpath = actdigi;
                      }
-                     if ((0x200UL & parm->pathcheck)==0) {
+                     if ((0x100UL & parm->pathcheck)==0) {
                         downpath = actdigi+7L;
                      }
                   }
@@ -1516,7 +1467,6 @@ static void parms(void)
 {
    char h[4096];
    char actpassui;
-   char actpasswix;
    char actecho;
    char err;
    char lasth;
@@ -1548,7 +1498,6 @@ static void parms(void)
    Ackpath("WIDE2-2", 8ul);
    actkm = 0.0f;
    actpassui = 0;
-   actpasswix = 0;
    for (;;) {
       Lib_NextArg(h, 4096ul);
       if (h[0U]==0) break;
@@ -1567,7 +1516,6 @@ static void parms(void)
             actcall = 0;
             actkm = 0.0f;
             actpassui = 0;
-            actpasswix = 0;
             actbeacon.bintervall = 0UL;
             actbeacon.piggytime = 0UL;
             actbeacon.piggyback = 0;
@@ -1576,11 +1524,12 @@ static void parms(void)
             if (actsock0==0) Err("out of memory", 14ul);
             { /* with */
                struct INSOCK * anonym = actsock0;
+               anonym->outchain = 0;
+               anonym->rflinkname[0U] = 0;
                if (GetIp(h, 4096ul, &i, &anonym->fromip,
                 &anonym->bindport)<0L) Err("cannot open udp socket", 23ul);
                anonym->fd = openudp();
                anonym->rawread = lasth=='R';
-               anonym->rflinkname[0U] = 0;
                if (lasth=='L') {
                   n = 0UL;
                   if (h[i-1UL]==':') {
@@ -1594,9 +1543,10 @@ static void parms(void)
                   }
                   if (n==0UL) Err("-L ip:port:name", 16ul);
                }
-               anonym->outchain = 0;
-               if (anonym->fd>=0L && bindudp(anonym->fd,
-                anonym->bindport)<0L) Err("cannot bind inport", 19ul);
+               if ((anonym->fd>=0L && anonym->fromip!=X2C_max_longcard)
+                && bindudp(anonym->fd, anonym->bindport)<0L) {
+                  Err("cannot bind inport", 19ul);
+               }
                anonym->next = 0;
             }
             if (insocks) actsock0->next = insocks;
@@ -1625,7 +1575,9 @@ static void parms(void)
                   }
                   nold = 256UL;
                   if (h[i]=='-') nold = n;
-                  else if (h[i]!=',') break;
+                  else if (h[i]!=',') {
+                     break;
+                  }
                   n = 0UL;
                }
                ++i;
@@ -1702,7 +1654,9 @@ static void parms(void)
             { /* with */
                struct OUTPORT * anonym2 = outsock0;
                if (GetIp(h, 4096ul, &i, &anonym2->toip,
-                &anonym2->toport)<0L) Err("wrong udp:port", 15ul);
+                &anonym2->toport)<0L) {
+                  Err("wrong udp:port", 15ul);
+               }
                memcpy(anonym2->aprspass,actpass,32u);
                anonym2->echo = actecho;
                anonym2->digiparm = actdigi;
@@ -1711,7 +1665,6 @@ static void parms(void)
                anonym2->beacon0 = actbeacon;
                actbeacon.bintervall = 0UL;
                anonym2->passnoUI = actpassui;
-               anonym2->passwix = actpasswix;
                anonym2->next = 0;
                anonym2->filtercalls = actcall;
                anonym2->mypos.lat = actpos.lat*1.7453292519444E-2f;
@@ -1721,7 +1674,6 @@ static void parms(void)
             }
             actdigi = 0;
             actpassui = 0;
-            actpasswix = 0;
             onext = actsock0->outchain;
             if (onext==0) actsock0->outchain = outsock0;
             else {
@@ -1756,6 +1708,8 @@ tion", 54ul);
 with first char (-f p58,110)", 76ul);
                osi_WrStrLn("                  \'d<x>,<x>...\' pass UI frames \
 with not first char (-f d32,65-79)", 82ul);
+               osi_WrStrLn("                  Messages to itself are treated \
+as Telemetry  (-f d84)", 72ul);
                osi_WrStrLn(" -h             this", 21ul);
                osi_WrStrLn(" -k <deg>/<deg>/<km> distance filter, center/radi\
 us -k 48.2/13.5/100", 69ul);
@@ -1765,6 +1719,10 @@ us -k 48.2/13.5/100", 69ul);
 eader with netname", 68ul);
                osi_WrStrLn(" -M <ip>:<port> read text monitor udp frame",
                 44ul);
+               osi_WrStrLn("                ip=255.255.255.255:0 read text mo\
+nitor from stdin", 66ul);
+               osi_WrStrLn("                ip=255.255.255.255:1 read text mo\
+nitor from stdin and terminate", 80ul);
                osi_WrStrLn(" -m <ip>:<port> send text monitor udp frame 0 ter\
 minated", 57ul);
                osi_WrStrLn(" -p <n>,<...>   -p 7,8 igate friendly digi relayi\
@@ -1787,8 +1745,12 @@ le)", 53ul);
 IDEn-(N-1)", 60ul);
                osi_WrStrLn("                  so frames may be relayed again \
 by loss of downlink trace", 75ul);
-               osi_WrStrLn("                7,8,9 append remaining digi path \
-after via digicall, RELAY/GATE, WIDE", 86ul);
+               osi_WrStrLn("                7 append remaining digi path afte\
+r via digicall", 64ul);
+               osi_WrStrLn("                8 append remaining digi path afte\
+r RELAY/GATE/TRACE", 68ul);
+               osi_WrStrLn("                9 append remaining digi path afte\
+r WIDE", 56ul);
                osi_WrStrLn("                  so frames may be relayed again \
 by loss of downlink trace", 75ul);
                osi_WrStrLn("                10, 11, 12, 13 switch off via dig\
@@ -1813,10 +1775,9 @@ lier if sent anything now", 75ul);
 rom all (-R 0.0.0.0:2000)", 75ul);
                osi_WrStrLn(" -r <ip>:<port> send raw axudp frame", 37ul);
                osi_WrStrLn(" -s             pass not-UI-frames too (all PR-Fr\
-ames, SABM, RR..) (raw mode only)", 83ul);
-               osi_WrStrLn(" -S             pass messages to itself", 40ul);
+ames, SABM, RR..) (raw axudp only)", 84ul);
                osi_WrStrLn(" -t <s>,<s>     dupe filter time in seconds (all \
-types , user messages)", 72ul);
+types, user messages)", 71ul);
                osi_WrStrLn("                -t 1740,28 29min not same beacon,\
  28s for retrying user message)", 81ul);
                osi_WrStrLn(" -u <call>:<file> global option, receive & ack us\
@@ -1833,7 +1794,6 @@ t 1800,28 -r 192.168.1.24:9400", 80ul);
                X2C_ABORT();
             }
             if (lasth=='s') actpassui = 1;
-            else if (lasth=='S') actpasswix = 1;
             else if (lasth=='t') {
                if (actdigi==0) Err("need -d before -t", 18ul);
                Lib_NextArg(h, 4096ul);
@@ -1906,9 +1866,7 @@ t 1800,28 -r 192.168.1.24:9400", 80ul);
                for (;;) {
                   Storage_ALLOCATE((X2C_ADDRESS *) &callnext,
                 sizeof(struct CALLS));
-                  if (callnext==0) {
-                     Err("out of memory", 14ul);
-                  }
+                  if (callnext==0) Err("out of memory", 14ul);
                   MakeRawCall(callnext->call, h, 4096ul, i);
                   callnext->next = actcall;
                   actcall = callnext;
@@ -2377,34 +2335,13 @@ extern int main(int argc, char **argv)
    Lib_BEGIN();
    Storage_BEGIN();
    osi_BEGIN();
+   stdinpos = 0UL;
    insocks = 0;
-   /*
-     Gencrctab;
-   */
    parms();
-   /*
-     FD_ZERO(inset);
-     maxsock:=0;
-     actsock:=insocks;
-     WHILE actsock<>NIL DO
-       WITH actsock^ DO  
-         IF fd>=0 THEN 
-           FD_SET(fd, inset);
-           IF fd>maxsock THEN maxsock:=fd END; 
-         END;
-         actsock:=next;
-       END;
-     END;
-   */
    for (;;) {
-      /*
-          rset:=inset;
-          tv.tv_usec:=0;
-          tv.tv_sec:=1;
-          IF select(maxsock+1, ADR(rset), NIL, NIL, ADR(tv))>=0 THEN
-      */
       fdclr();
       actsock = insocks;
+      if (insocks && insocks->fromip==X2C_max_longcard) fdsetr(0UL);
       while (actsock) {
          { /* with */
             struct INSOCK * anonym = actsock;
@@ -2421,6 +2358,9 @@ extern int main(int argc, char **argv)
                if (actsock->fd>=0L && issetr((unsigned long)actsock->fd)) {
                   inlen = getudp(actsock->fd, ibuf, 338ul, actsock->fromip,
                 actsock->rawread);
+               }
+               else if (issetr(0UL) && actsock->fromip==X2C_max_longcard) {
+                  inlen = getstdin(ibuf, 338ul);
                }
                hamup[0U] = 0;
                if (inlen>0L) {
@@ -2523,12 +2463,17 @@ extern int main(int argc, char **argv)
                      else if (show) osi_WrStrLn(" deleted", 9ul);
                      outsock = outsock->next;
                   }
+                  if ((insocks && insocks->fromip==X2C_max_longcard)
+                && insocks->bindport==1UL) {
+                     goto loop_exit; /* single stdin line mode */
+                  }
                }
             } while (piggy);
             actsock = actsock->next;
          }
       }
    }
+   loop_exit:;
    X2C_EXIT();
    return 0;
 }
