@@ -86,6 +86,8 @@ extern void aprstext_Apphex(char [], unsigned long, char [], unsigned long);
 
 extern char aprstext_isacall(char [], unsigned long);
 
+extern void aprstext_logfndate(unsigned long, char [], unsigned long);
+
 
 extern void aprstext_BEGIN(void);
 

@@ -85,6 +85,8 @@
 
 #define aprsmap_POIFILENAME "poi.txt"
 
+#define aprsmap_MYPOIFILENAME "mypoi.txt"
+
 enum MHOPS {aprsmap_OPHEARD, aprsmap_OPSENT, aprsmap_OPOBJ};
 
 
@@ -116,11 +118,9 @@ static unsigned long lastxupdate;
 
 static unsigned long maptime;
 
-static unsigned long logstarttime;
-
 static unsigned long laststatref;
 
-static unsigned long logredcnt;
+static unsigned long realday;
 
 static unsigned long cycleorder;
 
@@ -358,7 +358,6 @@ static char cmpcall(const char a[], unsigned long a_len, unsigned long i,
 #define aprsmap_RETR 200
 /* if unsort file break binary search */
 
-/*-hhh:ARRAY[0..50] OF CHAR; */
 
 static void binseek(unsigned long * i, long fc, unsigned long * wp,
                 unsigned long time0, char bof, unsigned long * first,
@@ -408,7 +407,6 @@ static void binseek(unsigned long * i, long fc, unsigned long * wp,
       }
       if (lfc>=2UL && rdlogdate(mbuf, 512ul, &ftime, i)) {
          /* we are in file */
-         /*DateToStr(ftime, hhh); WrStr(hhh); ; WrStrLn(" =ftime "); */
          if (*first==0UL) {
             *first = ftime;
             if (time0<*first) {
@@ -435,9 +433,10 @@ ear search", 37ul);
 } /* end binseek() */
 
 
-static char rdlog(aprsdecode_pOPHIST * optab, char fn[],
-                unsigned long fn_len, unsigned long * from, long span,
-                char find0[], unsigned long find_len)
+static void rdlonglog(aprsdecode_pOPHIST * optab, char fn[],
+                unsigned long fn_len, unsigned long from, unsigned long to,
+                unsigned long * firstread, unsigned long * lastread,
+                long * lines)
 {
    long fc;
    long ret;
@@ -453,60 +452,25 @@ static char rdlog(aprsdecode_pOPHIST * optab, char fn[],
    aprsdecode_pOPHIST op;
    struct aprsdecode_DAT dat;
    unsigned long lfc;
-   char rdlog_ret;
    X2C_PCOPY((void **)&fn,fn_len);
-   X2C_PCOPY((void **)&find0,find_len);
+   *lines = 0L;
    aprsstr_cleanfilename(fn, fn_len);
-   if (fn[0UL]==0) {
-      rdlog_ret = 0;
-      goto label;
-   }
-   logredcnt = 0UL;
+   if (fn[0UL]==0) goto label;
    fc = osi_OpenRead(fn, fn_len);
-   if (!osi_FdValid(fc)) {
-      rdlog_ret = 0;
-      goto label;
-   }
-   find0[find_len-1] = 0;
-   logstarttime = 0UL;
-   /*DateToStr(from, hhh); WrStr(hhh); WrInt(span, 10); WrStrLn(" =from ");
-                */
+   if (!osi_FdValid(fc)) goto label;
+   *firstread = 0UL;
+   *lastread = 0UL;
    end = 0UL;
-   if (*from>0UL) {
-      if (span<0L) {
-         if (*from>(unsigned long) -span) *from += (unsigned long)span;
-         else *from = 0UL;
-      }
-      binseek(&i, fc, &wp, *from, 1, &start, &end);
-      logstarttime = start;
-      /*DateToStr(logstarttime, hhh); WrStr(hhh);
-                WrStrLn(" =logstarttime1 "); */
-      /*DateToStr(from, hhh); WrStr(hhh); WrStrLn(" =from2 "); */
-      /*DateToStr(start, hhh); WrStr(hhh); WrStrLn(" =start2 "); */
-      /*DateToStr(end, hhh); WrStr(hhh); WrStrLn(" =end2 "); */
-      aprsdecode_systime = end;
-      /*
-          IF from>end THEN
-            IF span>0 THEN
-              from:=end-VAL(CARDINAL, span);
-              binseek(from, v1, v2);
-            ELSE from:=end END;
-          END;
-      */
-      if (*from>end) *from = end;
-      if (*from<start) *from = 0UL;
-      else if (find0[0UL]==0 || span<0L) {
-         end = *from+(unsigned long)labs(span);
-      }
+   if (from>0UL) {
+      binseek(&i, fc, &wp, from, 1, &start, &end);
+      if (from>end) from = end;
+      if (from<start) from = 0UL;
       else end = 0UL;
    }
-   /*binseek(from, v1, v2); */
-   /*DateToStr(from, hhh); WrStr(hhh); WrStrLn(" =from3 "); */
-   /*DateToStr(end, hhh); WrStr(hhh); WrStrLn(" =end3 "); */
    len = 0L;
    rp = 0L;
    wp = 0UL;
-   if (*from==0UL) lfc = 2UL;
+   if (from==0UL) lfc = 2UL;
    else lfc = 0UL;
    for (;;) {
       if (rp>=len) {
@@ -518,23 +482,118 @@ static char rdlog(aprsdecode_pOPHIST * optab, char fn[],
       if (mbuf[wp]=='\012') {
          ++lfc;
          mbuf[wp] = 0;
-         /*WrStrLn(mbuf); */
          if ((lfc>=2UL && rdlogdate(mbuf, 512ul, &start,
-                &i)) && start>=*from) {
-            if (logstarttime==0UL) logstarttime = start;
+                &i)) && start>=from) {
+            if (*firstread==0UL) *firstread = start;
+            if (from<start) from = start;
+            if (start>=to) break;
+            /*        systime:=start; */
+            ++i;
+            j = 0UL;
+            do {
+               mbuf[j] = mbuf[i];
+               ++j;
+               ++i;
+            } while (!(i>=511UL || mbuf[i]==0));
+            mbuf[j] = 0;
+            if (aprsdecode_Decode(mbuf, 512ul, &dat)>=0L) {
+               aprsdecode_systime = *lastread;
+               ret = aprsdecode_Stoframe(optab, mbuf, 512ul, start, 1, dat);
+               ++*lines;
+               if (*firstread==0UL) *firstread = start;
+               *lastread = start;
+            }
+         }
+         wp = 0UL;
+      }
+      else if (wp<510UL) ++wp;
+      ++rp;
+   }
+   if (end>0UL) from = end;
+   osi_Close(fc);
+   op = *optab;
+   while (op) {
+      aprsdecode_Checktrack(op, 0);
+      op = op->next;
+   }
+   label:;
+   X2C_PFREE(fn);
+} /* end rdlonglog() */
+
+
+static void rdlog(aprsdecode_pOPHIST * optab, char fn[],
+                unsigned long fn_len, unsigned long from, unsigned long to,
+                char find0[], unsigned long find_len,
+                unsigned long * firstread, unsigned long * lastread,
+                long * lines)
+{
+   long fc;
+   long ret;
+   long len;
+   long rp;
+   char ib[32768];
+   unsigned long j;
+   unsigned long i;
+   unsigned long wp;
+   aprsdecode_FRAMEBUF mbuf;
+   aprsdecode_pOPHIST op;
+   struct aprsdecode_DAT dat;
+   unsigned long start;
+   unsigned long t;
+   aprsdecode_FILENAME fnd;
+   aprsdecode_FILENAME fnn;
+   char fo;
+   X2C_PCOPY((void **)&fn,fn_len);
+   X2C_PCOPY((void **)&find0,find_len);
+   *firstread = 0UL;
+   *lastread = 0UL;
+   *lines = -1L; /* file not found */
+   aprsstr_cleanfilename(fn, fn_len);
+   if (fn[0UL]==0) goto label;
+   aprsstr_Assign(fnn, 1024ul, fn, fn_len); /* check if dayly log */
+   memcpy(fnd,fnn,1024u);
+   aprstext_logfndate(from, fnd, 1024ul);
+   if (X2C_STRCMP(fnd,1024u,fnn,1024u)==0) {
+      if (find0[0UL]) {
+         useri_textautosize(0L, 0L, 5UL, 6UL, 'e', "Call search only in dayly\
+-Log Mode", 35ul);
+      }
+      rdlonglog(optab, fn, fn_len, from, to, firstread, lastread, lines);
+                /* single log file mode */
+      goto label;
+   }
+   /*WrInt(to-from, 10); WrStrLn(fnd); */
+   find0[find_len-1] = 0;
+   len = 0L;
+   rp = 0L;
+   wp = 0UL;
+   t = from;
+   aprsstr_Assign(fnn, 1024ul, fn, fn_len);
+   fo = 0;
+   for (;;) {
+      while (rp>=len) {
+         if (len<32768L) {
+            do {
+               if (t>to) goto loop_exit;
+               memcpy(fnd,fnn,1024u);
+               aprstext_logfndate(t, fnd, 1024ul);
+               t = (t/86400UL+1UL)*86400UL;
+               if (fo) osi_Close(fc);
+               fc = osi_OpenRead(fnd, 1024ul);
+            } while (!osi_FdValid(fc));
+            fo = 1;
+            if (*lines<0L) *lines = 0L;
+         }
+         len = osi_RdBin(fc, (char *)ib, 32768u/1u, 32768UL);
+         rp = 0L;
+      }
+      mbuf[wp] = ib[rp];
+      if (mbuf[wp]=='\012') {
+         mbuf[wp] = 0;
+         if (rdlogdate(mbuf, 512ul, &start, &i) && start>=from) {
             if (find0[0UL]==0 || cmpcall(mbuf, 512ul, i+1UL, find0,
                 find_len)) {
-               if (*from<start) *from = start;
-               if (end==0UL) end = *from+(unsigned long)labs(span);
-               if (start>=end) break;
-               /*
-                         IF start<logstarttime THEN 
-                           WrStrLn(mbuf);
-                           WrStrLn("unsort logfile, end search");
-                           EXIT
-                         END; 
-               */
-               aprsdecode_systime = start;
+               if (start>=to) break;
                ++i;
                j = 0UL;
                do {
@@ -544,9 +603,12 @@ static char rdlog(aprsdecode_pOPHIST * optab, char fn[],
                } while (!(i>=511UL || mbuf[i]==0));
                mbuf[j] = 0;
                if (aprsdecode_Decode(mbuf, 512ul, &dat)>=0L) {
+                  aprsdecode_systime = *lastread;
                   ret = aprsdecode_Stoframe(optab, mbuf, 512ul, start, 1,
                 dat);
-                  ++logredcnt;
+                  ++*lines;
+                  if (*firstread==0UL) *firstread = start;
+                  *lastread = start;
                }
             }
          }
@@ -555,20 +617,154 @@ static char rdlog(aprsdecode_pOPHIST * optab, char fn[],
       else if (wp<510UL) ++wp;
       ++rp;
    }
-   if (end>0UL) *from = end;
-   osi_Close(fc);
+   loop_exit:;
+   if (fo) osi_Close(fc);
    op = *optab;
    while (op) {
       aprsdecode_Checktrack(op, 0);
       op = op->next;
    }
-   rdlog_ret = 1;
    label:;
    X2C_PFREE(fn);
    X2C_PFREE(find0);
-   return rdlog_ret;
 } /* end rdlog() */
 
+/*
+PROCEDURE rdlog(VAR optab:pOPHIST; fn:ARRAY OF CHAR; from:TIME; span:INTEGER;
+                 find:ARRAY OF CHAR):BOOLEAN;
+CONST MINSTEP=5000;                       (* stop binary search *)
+      SEEKBUF=1024;                       (* buffer size while binary search *)
+      RETR=200;                           (* if unsort file break binary search *)
+
+VAR fc:File;
+    rp, len, ret:INTEGER;
+    ib:ARRAY[0..32767] OF CHAR;
+    wp, i, j:CARDINAL;
+    mbuf:FRAMEBUF;
+    start, end:TIME; 
+    op:pOPHIST;
+    dat:DAT;
+    lfc:CARDINAL;
+    t:TIME;
+    fnn, fnd:FILENAME;
+
+BEGIN
+  cleanfilename(fn);
+WrStrLn(fn);
+  IF fn[0]=0C THEN RETURN FALSE END;
+
+  Assign(fnn, fn);
+
+  IF span<0 THEN
+    IF from>VAL(TIME,-span*2) THEN INC(from, span*2) ELSE from:=0 END;
+  END;
+
+  t:=from;
+  IF t<1388534400 THEN t:=1388534400 END;
+  to:=t;
+  LOOP
+    fnd:=fnn; 
+    logfndate(t, fnd);
+ WrStr(fnd); WrStrLn("<open");
+    fc:=OpenRead(fnd);
+    from:=t;
+    IF FdValid(fc) THEN EXIT END;
+
+    IF span<0 THEN
+      DEC(t, 3600*24);
+      IF t<1388534400 THEN 
+        span:=ABS(span);
+        t:=(from DIV (3600*24))*(3600*24);
+      END;
+
+    ELSE
+      INC(t, 3600*24);
+      IF t>realtime THEN EXIT END;
+ 
+    END; 
+  END; 
+
+  logredcnt:=0;
+  IF NOT FdValid(fc) THEN RETURN FALSE END;
+
+  find[HIGH(find)]:=0C;
+  logstarttime:=0;
+  end:=0;
+  IF (find[0]=0C) OR (span<0) THEN end:=from+VAL(CARDINAL,
+                ABS(span)) ELSE end:=0 END;
+
+  len:=0;
+  rp:=0; 
+  wp:=0; 
+  IF from=0 THEN lfc:=2 ELSE lfc:=0 END;
+                (* take first line if file is on start *) 
+
+  LOOP
+    IF rp>=len THEN
+
+      len:=RdBin(fc,ib,SIZE(ib));
+      IF len<=0 THEN
+        Close(fc);
+        REPEAT 
+          t:=(t DIV (3600*24)+1)*(3600*24);       (* next day start *)
+          IF t>realtime THEN EXIT END;
+
+          fnd:=fnn;
+          logfndate(t, fnd);
+          fc:=OpenRead(fnd);
+        UNTIL FdValid(fc);
+        len:=RdBin(fc,ib,SIZE(ib));
+        IF len<=0 THEN EXIT END;
+
+      END;
+      rp:=0;
+    END;
+
+    mbuf[wp]:=ib[rp];
+    IF mbuf[wp]=LF THEN
+      INC(lfc);
+      mbuf[wp]:=0C;
+      IF (lfc>=2) & rdlogdate(mbuf, start, i) & (start>=from) THEN
+        IF logstarttime=0 THEN logstarttime:=start END;
+        IF (find[0]=0C) OR cmpcall(mbuf, i+1, find) THEN 
+          IF from<start THEN from:=start END; 
+
+          IF end=0 THEN end:=from+VAL(TIME, ABS(span)) END;
+          IF start>=end THEN EXIT END;
+
+          to:=start;
+          INC(i);
+          j:=0;  
+          REPEAT 
+            mbuf[j]:=mbuf[i];
+            INC(j);
+            INC(i);
+          UNTIL (i>=HIGH(mbuf)) OR (mbuf[i]=0C);
+          mbuf[j]:=0C;
+
+          IF Decode(mbuf, dat)>=0 THEN
+            ret:=Stoframe(optab, mbuf, start, TRUE, dat);
+            INC(logredcnt);
+          END;
+        END;
+      END;
+      wp:=0;
+    ELSIF wp<HIGH(mbuf)-1 THEN INC(wp) END;
+    INC(rp)
+  END;
+  IF end>0 THEN from:=end END;
+  IF logstarttime>0 THEN from:=logstarttime END;
+  
+  Close(fc);
+
+  op:=optab;
+  WHILE op<>NIL DO
+    Checktrack(op, NIL);
+    op:=op^.next;
+  END;
+  RETURN TRUE
+END rdlog;
+*/
 
 static char moving(aprsdecode_pOPHIST op)
 {
@@ -1345,46 +1541,153 @@ static void revert(void)
    aprsdecode_ophist0 = oo;
 } /* end revert() */
 
-#define aprsmap_TODATE ""
+#define aprsmap_DAY 86400
+
+
+static char deletelogfile(char all)
+{
+   aprsdecode_FILENAME fn;
+   aprsdecode_FILENAME fnd;
+   unsigned long days;
+   unsigned long t;
+   unsigned long cnt;
+   char ok0;
+   char s[101];
+   t = aprsdecode_realtime;
+   if (!all) {
+      days = (unsigned long)useri_conf2int(useri_fLOGDAYS, 0UL, 0L, 1000000L,
+                 31L);
+      if (days==0UL) return 0;
+      /* keep files forever */
+      if (t>days*86400UL) t -= days*86400UL;
+      else t = 0UL;
+      if (t<1388534400UL) return 1;
+   }
+   useri_confstr(useri_fLOGWFN, fn, 1024ul);
+   aprsstr_Assign(fnd, 1024ul, fn, 1024ul);
+   cnt = 0UL;
+   do {
+      memcpy(fnd,fn,1024u);
+      aprstext_logfndate(t, fnd, 1024ul);
+      if (X2C_STRCMP(fnd,1024u,fn,1024u)==0) return 0;
+      /* not dayly log */
+      FileSys_Remove(fnd, 1024ul, &ok0);
+      if (ok0) ++cnt;
+      t -= 86400UL;
+   } while (t>=1388534400UL);
+   /* oldest possible file */
+   if (cnt>0UL) {
+      aprsstr_IntToStr((long)cnt, 1UL, s, 101ul);
+      aprsstr_Append(s, 101ul, " Rawlog(s) Deleted", 19ul);
+      useri_textautosize(0L, 0L, 5UL, 6UL, 'b', s, 101ul);
+   }
+   return 1;
+} /* end deletelogfile() */
+
+#define aprsmap_TODATE "\003"
 
 #define aprsmap_TOSTART "\001"
 
 #define aprsmap_BACK "\002"
 
-#define aprsmap_FORW "\003"
+#define aprsmap_FORW "\004"
 
-#define aprsmap_TOEND "\004"
+#define aprsmap_TOEND "\005"
 
-#define aprsmap_TONOW "\005"
+#define aprsmap_TONOW "\006"
 
-#define aprsmap_RDWLOG "\006"
+#define aprsmap_RDWLOG "\007"
 
-#define aprsmap_ASKDELLOG "\007"
+#define aprsmap_ASKDELLOG "\010"
 
-#define aprsmap_NODELLOG "\010"
+#define aprsmap_NODELLOG "\011"
 
-#define aprsmap_DELLOG "\011"
+#define aprsmap_DELLOG "\012"
+
+#define aprsmap_DAY0 86400
+
+
+static void toend(long * logredcnt, unsigned long * lastread,
+                unsigned long * logstarttime, char find0[13], char fn[1025],
+                unsigned long * fromto)
+{
+   *fromto = aprsdecode_realtime;
+   do {
+      *fromto -= aprsdecode_lums.firstdim;
+      rdlog(&aprsdecode_ophist0, fn, 1025ul, *fromto,
+                *fromto+aprsdecode_lums.firstdim, find0, 13ul, logstarttime,
+                lastread, logredcnt);
+      if (*logredcnt<0L) *fromto = ( *fromto/86400UL)*86400UL;
+   } while (!(*logredcnt>0L || *fromto<1388534400UL));
+} /* end toend() */
+
+
+static void tobegin(long * logredcnt, unsigned long * lastread,
+                unsigned long * logstarttime, char find0[13], char fn[1025],
+                unsigned long * fromto)
+{
+   *fromto = 1388534400UL;
+   for (;;) {
+      rdlog(&aprsdecode_ophist0, fn, 1025ul, *fromto,
+                *fromto+aprsdecode_lums.firstdim, find0, 13ul, logstarttime,
+                lastread, logredcnt);
+      if (*logredcnt>0L || *fromto>aprsdecode_realtime) break;
+      if (find0[0U] && *logredcnt>=0L) {
+         /* look for call so read whole day */
+         *fromto += aprsdecode_lums.firstdim;
+      }
+      else *fromto = ( *fromto/86400UL+1UL)*86400UL;
+   }
+} /* end tobegin() */
 
 
 static void importlog(char cmd)
+/*
+  PROCEDURE deldaylylog(fname-:ARRAY OF CHAR):BOOLEAN;
+  VAR fnd,fn:FILENAME;
+    t:TIME;
+    ok:BOOLEAN;
+  BEGIN
+    Assign(fn, fname);
+    t:=realtime;
+    REPEAT
+      fnd:=fn;
+      logfndate(t, fnd);
+      IF fnd=fn THEN RETURN FALSE END;                 (* not dayly log *)
+
+      Erase(fnd, ok);
+      DEC(t, 3600*24);
+    UNTIL t<1388534400;                                (* oldest possible file *)
+    RETURN TRUE
+  END deldaylylog;
+*/
 {
+   unsigned long th;
+   unsigned long logstarttime;
+   unsigned long lastread;
    unsigned long fromto;
-   long span;
    char h1[1025];
    char h[1025];
    char fn[1025];
+   char find0[13];
    char color;
    char ok0;
+   long logredcnt;
+   char tmp;
    h[0U] = 0;
+   find0[0U] = 0;
    fn[0U] = 0;
    color = 'e';
-   logredcnt = 0UL;
+   logredcnt = 0L;
    logstarttime = 0UL;
    /*WrInt(ORD(cmd), 1); WrStrLn(" cmd"); */
-   if (cmd=='\011') {
+   if (cmd=='\012') {
       useri_confstr(useri_fLOGWFN, fn, 1025ul);
       ok0 = 0;
-      if (fn[0U]) FileSys_Remove(fn, 1025ul, &ok0);
+      if (fn[0U]) {
+         if (deletelogfile(1)) ok0 = 1;
+         else FileSys_Remove(fn, 1025ul, &ok0);
+      }
       if (ok0) {
          strncpy(h,"[",1025u);
          aprsstr_Append(h, 1025ul, fn, 1025ul);
@@ -1396,18 +1699,11 @@ static void importlog(char cmd)
          aprsstr_Append(h, 1025ul, "]", 2ul);
       }
    }
-   else if (cmd=='\007') {
+   else if (cmd=='\010') {
       useri_confstr(useri_fLOGWFN, fn, 1025ul);
       if (fn[0U]==0) strncpy(h,"no logfile defined",1025u);
       else {
          if (useri_guesssize(fn, 1025ul, h, 1025ul)>=0L) {
-            /*
-                  h1:="kB"; 
-                  IF flen>4000 THEN flen:=flen DIV 1000; h1:="MB" END;
-                  IF flen>4000 THEN flen:=flen DIV 1000; h1:="GB" END;
-                  IntToStr(flen, 0, h);
-                  Append(h, h1);
-            */
             aprsstr_Append(fn, 1025ul, "] ", 3ul);
             aprsstr_Append(fn, 1025ul, " ", 2ul);
             aprsstr_Append(fn, 1025ul, h, 1025ul);
@@ -1418,9 +1714,14 @@ static void importlog(char cmd)
          color = 'r';
       }
    }
-   else if (cmd!='\010') {
-      if (cmd=='\005' || cmd=='\006') {
+   else if (cmd!='\011') {
+      useri_confstr(useri_fLOGDATE, h, 1025ul);
+      if (!aprsstr_StrToTime(h, 1025ul, &fromto)) fromto = 0UL;
+      else if (fromto>useri_localtime()) fromto -= useri_localtime();
+      lastread = fromto;
+      if (cmd=='\006' || cmd=='\007') {
          if (aprsdecode_lums.logmode) {
+            /* exit logmode */
             stkpo = 0UL;
             stktop = 0UL;
             aprsdecode_click.mhop[0UL] = 0;
@@ -1432,7 +1733,7 @@ static void importlog(char cmd)
             aprsdecode_lums.logmode = 0;
             aprsdecode_systime = aprsdecode_realtime;
          }
-         if (cmd=='\006') {
+         if (cmd=='\007') {
             useri_confstr(useri_fLOGWFN, fn, 1025ul);
             stkpo = 0UL;
             stktop = 0UL;
@@ -1442,19 +1743,15 @@ static void importlog(char cmd)
                 X2C_max_longcard);
             aprsdecode_systime = TimeConv_time();
             if (fn[0U]) {
-               fromto = aprsdecode_systime-aprsdecode_lums.purgetime;
-               if (!rdlog(&aprsdecode_ophist0, fn, 1025ul, &fromto,
-                (long)aprsdecode_lums.purgetime, "", 1ul)) {
-                  revert();
-                  aprsdecode_purge(&aprsdecode_ophist0,
+               rdlog(&aprsdecode_ophist0, fn, 1025ul,
+                aprsdecode_systime-aprsdecode_lums.purgetime,
+                aprsdecode_systime, "", 1ul, &logstarttime, &lastread,
+                &logredcnt);
+               revert();
+               aprsdecode_purge(&aprsdecode_ophist0,
                 aprsdecode_systime-aprsdecode_lums.purgetime,
                 aprsdecode_systime-aprsdecode_lums.purgetimeobj);
-                  aprsdecode_tracenew.winevent = 0UL;
-               }
-               else {
-                  fn[0U] = 0;
-                  strncpy(h,"file not found",1025u);
-               }
+               aprsdecode_tracenew.winevent = 0UL;
             }
             else strncpy(h,"need filename",1025u);
          }
@@ -1478,48 +1775,79 @@ static void importlog(char cmd)
          useri_confstr(useri_fLOGDATE, h, 1025ul);
          if (!aprsstr_StrToTime(h, 1025ul, &fromto)) fromto = 0UL;
          else if (fromto>useri_localtime()) fromto -= useri_localtime();
-         span = (long)aprsdecode_lums.firstdim;
-         if (cmd=='\001') fromto = 0UL;
-         else if (cmd=='\002') {
-            span = -span;
-            if (fromto>aprsdecode_lums.firstdim) {
-               fromto -= aprsdecode_lums.firstdim;
-            }
-            else fromto = 0UL;
+         logredcnt = 0L;
+         if (fromto>aprsdecode_realtime) fromto = aprsdecode_realtime;
+         else if (fromto<1388534400UL) fromto = 1388534400UL;
+         useri_confstr(useri_fLOGFIND, find0, 13ul); /* find call in log */
+         if (cmd=='\001') {
+            tobegin(&logredcnt, &lastread, &logstarttime, find0, fn,
+                &fromto);
          }
-         else if (cmd=='\004') fromto = TimeConv_time();
-         if (fn[0U]) {
-            useri_confstr(useri_fLOGFIND, h, 1025ul);
-            if (rdlog(&aprsdecode_ophist0, fn, 1025ul, &fromto, span, h,
-                1025ul)) {
-               revert();
-               aprsdecode_purge(&aprsdecode_ophist0,
+         else if (cmd=='\002') {
+            do {
+               fromto -= aprsdecode_lums.firstdim;
+               rdlog(&aprsdecode_ophist0, fn, 1025ul, fromto,
+                fromto+aprsdecode_lums.firstdim, find0, 13ul, &logstarttime,
+                &lastread, &logredcnt);
+               if (logredcnt<0L) fromto = (fromto/86400UL)*86400UL;
+            } while (!(logredcnt>0L || fromto<1388534400UL));
+            if (logredcnt<=0L) {
+               tobegin(&logredcnt, &lastread, &logstarttime, find0, fn,
+                &fromto);
+            }
+         }
+         else if (cmd=='\005') {
+            toend(&logredcnt, &lastread, &logstarttime, find0, fn, &fromto);
+         }
+         else if (cmd=='\004') {
+            do {
+               fromto += aprsdecode_lums.firstdim;
+               rdlog(&aprsdecode_ophist0, fn, 1025ul, fromto,
+                fromto+aprsdecode_lums.firstdim, find0, 13ul, &logstarttime,
+                &lastread, &logredcnt);
+            } while (!(logredcnt>0L || fromto>aprsdecode_realtime));
+            if (logredcnt<=0L) {
+               toend(&logredcnt, &lastread, &logstarttime, find0, fn,
+                &fromto);
+            }
+         }
+         else if (cmd=='\003') {
+            rdlog(&aprsdecode_ophist0, fn, 1025ul, fromto,
+                fromto+aprsdecode_lums.firstdim, find0, 13ul, &logstarttime,
+                &lastread, &logredcnt);
+         }
+         if (logredcnt>0L) {
+            aprsdecode_systime = lastread;
+            revert();
+            aprsdecode_purge(&aprsdecode_ophist0,
                 aprsdecode_systime-aprsdecode_lums.purgetime,
                 aprsdecode_systime-aprsdecode_lums.purgetime);
-            }
-            else {
-               /*      purge(ophist, systime-lums.purgetime,
-                systime-lums.purgetimeobj); */
-               /*      IF logstarttime+lums.firstdim<systime THEN logstarttime:=systime-lums.firstdim END;
-                 */
-               fn[0U] = 0;
-               strncpy(h,"file not found",1025u);
-            }
-            aprsdecode_tracenew.winevent = 0UL;
+            lastread = fromto;
          }
-         else strncpy(h,"need filename",1025u);
+         aprsdecode_tracenew.winevent = 0UL;
       }
-      aprsstr_DateToStr(fromto+useri_localtime(), h, 1025ul);
+      aprsstr_DateToStr(lastread+useri_localtime(), h, 1025ul);
       h[16U] = 0;
       useri_AddConfLine(useri_fLOGDATE, 0U, h, 1025ul);
-      if (logredcnt>0UL) {
-         aprsstr_IntToStr((long)logredcnt, 1UL, h, 1025ul);
-         aprsstr_Append(h, 1025ul, " Lines from ", 13ul);
+      if (logredcnt>0L) {
+         aprsstr_IntToStr(logredcnt, 1UL, h, 1025ul);
+         aprsstr_Append(h, 1025ul, " Lines ", 8ul);
+         th = (aprsdecode_systime-logstarttime)/60UL;
+         aprsstr_IntToStr((long)(th/60UL), 1UL, h1, 1025ul);
+         aprsstr_Append(h, 1025ul, h1, 1025ul);
+         aprsstr_Append(h, 1025ul, "h", 2ul);
+         th = th%60UL;
+         aprsstr_Append(h, 1025ul, (char *)(tmp = (char)(th/10UL+48UL),&tmp),
+                 1u/1u);
+         aprsstr_Append(h, 1025ul, (char *)(tmp = (char)(th%10UL+48UL),&tmp),
+                 1u/1u);
+         aprsstr_Append(h, 1025ul, "m from\012", 8ul);
          aprstext_DateLocToStr(logstarttime, h1, 1025ul);
          aprsstr_Append(h, 1025ul, h1, 1025ul);
-         aprsstr_Append(h, 1025ul, " to ", 5ul);
-         aprstext_DateLocToStr(aprsdecode_systime, h1, 1025ul);
-         aprsstr_Append(h, 1025ul, h1, 1025ul);
+         /*
+               Append(h, LF+"to ");
+               DateLocToStr(systime, h1); Append(h, h1);
+         */
          color = 'b';
       }
       else if (logstarttime>0UL) {
@@ -1539,8 +1867,8 @@ static void importlog(char cmd)
             aprsstr_Append(h, 1025ul, ")", 2ul);
          }
       }
-      else if (fn[0U]) strncpy(h,"file not found",1025u);
-      if (cmd=='\005') strncpy(h,"back to realtime",1025u);
+      else if (fn[0U]) strncpy(h,"no Data found",1025u);
+      if (cmd=='\006') strncpy(h,"back to Realtime",1025u);
    }
    useri_textautosize(0L, 0L, 4UL, 0UL, color, h, 1025ul);
    useri_refrlog();
@@ -1551,32 +1879,36 @@ static void bootreadlog(void)
 {
    char fn[1000];
    char s[1000];
+   unsigned long lastt;
    unsigned long logt;
+   long logredcnt;
    useri_confstr(useri_fLOGWFN, fn, 1000ul);
    if (!useri_configon(useri_fLOGWFN) || fn[0U]==0) {
-      useri_textautosize(0L, 0L, 4UL, 5UL, 'b', "No Log Data", 12ul);
+      useri_textautosize(0L, 0L, 4UL, 5UL, 'b', "No Log File Enabled", 20ul);
       useri_redraw(image);
    }
    else {
       useri_textautosize(0L, 0L, 4UL, 0UL, 'b', "Read Log", 9ul);
       useri_redraw(image);
-      logt = TimeConv_time()-aprsdecode_lums.purgetime;
-      if (!rdlog(&aprsdecode_ophist0, fn, 1000ul, &logt,
-                (long)aprsdecode_lums.purgetime, "", 1ul)) {
-         aprsdecode_realtime = TimeConv_time();
-         strncpy(s,"logile \'",1000u);
-         aprsstr_Append(s, 1000ul, fn, 1000ul);
-         aprsstr_Append(s, 1000ul, "\' not found", 12ul);
-         useri_textautosize(0L, 0L, 4UL, 5UL, 'r', s, 1000ul);
-         useri_redraw(image);
-      }
-      else {
-         aprsdecode_realtime = TimeConv_time();
-         aprsstr_IntToStr((long)logredcnt, 1UL, s, 1000ul);
+      aprsdecode_realtime = TimeConv_time();
+      logt = aprsdecode_realtime-aprsdecode_lums.purgetime;
+                /* start from now - data in ram */
+      logredcnt = 0L;
+      rdlog(&aprsdecode_ophist0, fn, 1000ul, logt, aprsdecode_realtime, "",
+                1ul, &logt, &lastt, &logredcnt);
+      if (logredcnt>0L) {
+         aprsstr_IntToStr(logredcnt, 1UL, s, 1000ul);
          aprsstr_Append(s, 1000ul, " lines \'", 9ul);
          aprsstr_Append(s, 1000ul, fn, 1000ul);
          aprsstr_Append(s, 1000ul, "\' imported", 11ul);
-         useri_textautosize(0L, 0L, 4UL, 2UL, 'b', s, 1000ul);
+         useri_textautosize(0L, 0L, 4UL, 4UL, 'b', s, 1000ul);
+         useri_redraw(image);
+      }
+      else {
+         strncpy(s,"logile \'",1000u);
+         aprsstr_Append(s, 1000ul, fn, 1000ul);
+         aprsstr_Append(s, 1000ul, "\' not found", 12ul);
+         useri_textautosize(0L, 0L, 4UL, 6UL, 'r', s, 1000ul);
          useri_redraw(image);
       }
    }
@@ -4028,6 +4360,7 @@ static void MainEvent(void)
 {
    char ch;
    char cfgs[21];
+   char void0;
    char menu;
    char raw;
    menu = 0;
@@ -4547,7 +4880,7 @@ to Defaults", 34ul);
       else if (aprsdecode_click.cmd=='9') useri_Setmap(2UL);
       else if (aprsdecode_click.cmd=='Q') quit = 1;
       else if (aprsdecode_click.cmd=='e') aprsdecode_click.dryrun = 0;
-      else if (aprsdecode_click.cmd=='\216') {
+      else if (aprsdecode_click.cmd=='\216' && aprsdecode_click.cmdatt) {
          importlog(aprsdecode_click.cmdatt);
          aprsdecode_click.cmdatt = 0;
       }
@@ -4626,6 +4959,10 @@ to Defaults", 34ul);
       bootreadlog();
       ++aprsdecode_tracenew.winevent;
    }
+   if (realday!=aprsdecode_realtime/86400UL) {
+      realday = aprsdecode_realtime/86400UL;
+      void0 = deletelogfile(0);
+   }
 } /* end MainEvent() */
 
 
@@ -4696,9 +5033,9 @@ static long getword(long * p, long * len, long fd, char b[4096], char s[],
 } /* end getword() */
 
 
-static void rdmountains(void)
+static void rdmountains(char fn[], unsigned long fn_len)
+/* import csv file with mountain name, pos, altitude */
 {
-   /* import csv file with mountain name, pos, altitude */
    long r;
    long len;
    long p;
@@ -4712,13 +5049,14 @@ static void rdmountains(void)
    char long0[100];
    char lat[100];
    char com[100];
-   aprsdecode_mountains = 0;
+   X2C_PCOPY((void **)&fn,fn_len);
    b[0U] = 0;
    useri_confstr(useri_fOSMDIR, s, 1024ul);
    aprsstr_Append(b, 4096ul, s, 1024ul);
-   aprsstr_Append(b, 4096ul, "/poi.txt", 9ul);
+   aprsstr_Append(b, 4096ul, "/", 2ul);
+   aprsstr_Append(b, 4096ul, fn, fn_len);
    fd = osi_OpenRead(b, 4096ul);
-   if (!osi_FdValid(fd)) return;
+   if (!osi_FdValid(fd)) goto label;
    p = 0L;
    len = 0L;
    for (;;) {
@@ -4761,6 +5099,8 @@ static void rdmountains(void)
    }
    /*WrInt(pm^.alt, 10); WrStrLn(pm^.name); */
    osi_Close(fd);
+   label:;
+   X2C_PFREE(fn);
 } /* end rdmountains() */
 
 
@@ -4786,7 +5126,9 @@ extern int main(int argc, char **argv)
    maptool_loadfont();
    useri_maximized = 0;
    useri_getstartxysize(&maptool_xsize, &maptool_ysize);
-   rdmountains();
+   aprsdecode_mountains = 0;
+   rdmountains("poi.txt", 8ul);
+   rdmountains("mypoi.txt", 10ul);
    if (aprsdecode_initxsize>0L) maptool_xsize = aprsdecode_initxsize;
    /*  IF xsize<MINXSIZE THEN xsize:=MINXSIZE ELSIF xsize>MAXXSIZE THEN xsize:=MAXXSIZE END;
                  */
@@ -4838,6 +5180,7 @@ extern int main(int argc, char **argv)
    useri_newxsize = 0UL;
    useri_newysize = 0UL;
    cycleorder = 0UL;
+   realday = 0UL;
    onetipp = 0;
    logdone = 0;
    uptime = TimeConv_time();

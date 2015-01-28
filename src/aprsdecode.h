@@ -52,7 +52,10 @@
 #define aprsdecode_IGATEMAXDELAY 5
 /* seconds to discard igate frames if mainloop is too slow */
 
-#define aprsdecode_VERS "aprsmap(cu) 0.46"
+#define aprsdecode_BEGINOFTIME 1388534400
+/* oldest possible log date */
+
+#define aprsdecode_VERS "aprsmap(cu) 0.47"
 
 typedef char aprsdecode_MONCALL[9];
 

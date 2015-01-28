@@ -77,6 +77,36 @@ extern void aprstext_DateLocToStr(unsigned long time0, char s[],
 } /* end DateLocToStr() */
 
 
+extern void aprstext_logfndate(unsigned long time0, char fn[],
+                unsigned long fn_len)
+/* replace %d by date */
+{
+   long p;
+   char s[16];
+   p = aprsstr_InStr(fn, fn_len, "%d", 3ul);
+   if (p>=0L && p+2L==(long)aprsstr_Length(fn, fn_len)) {
+      aprsstr_DateToStr(time0, s, 16ul);
+      fn[p] = s[0U];
+      ++p;
+      fn[p] = s[1U];
+      ++p;
+      fn[p] = s[2U];
+      ++p;
+      fn[p] = s[3U];
+      ++p;
+      fn[p] = s[5U];
+      ++p;
+      fn[p] = s[6U];
+      ++p;
+      fn[p] = s[8U];
+      ++p;
+      fn[p] = s[9U];
+      ++p;
+      fn[p] = 0;
+   }
+} /* end logfndate() */
+
+
 extern float aprstext_FtoC(float tempf)
 {
    return X2C_DIVR(tempf-32.0f,1.8f);
@@ -746,48 +776,83 @@ extern void aprstext_listtyps(char typ, char decod, char oneop[],
             }
          }
       }
-      else if ((typ=='M' || typ=='B') && (oneop[0UL]==0 || X2C_STRCMP(oneop,
+      else if (typ=='M' || typ=='B' && (oneop[0UL]==0 || X2C_STRCMP(oneop,
                 oneop_len,op->call,9u)==0)) {
          /* bulletins messages */
          lastto[0U] = 0;
          lasttext[0U] = 0;
          while (pf) {
-            if (pf->vardat->lastref==pf && aprsdecode_Decode(pf->vardat->raw,
-                 500ul, &dat)>=0L) {
-               if (typ=='M' || typ=='B') {
-                  if ((dat.type==aprsdecode_MSG && X2C_STRCMP(dat.srccall,9u,
-                dat.msgto,9u)) && dat.msgtext[0UL]) {
-                     if ((typ=='B')==aprsdecode_IsBulletin(dat)) {
-                        if (!(aprsstr_StrCmp(lastto, 101ul, dat.msgto,
+            if (((((((pf->vardat->lastref==pf && aprsdecode_Decode(pf->vardat->raw,
+                 500ul, &dat)>=0L) && (typ=='M' || typ=='B')) && dat.type==aprsdecode_MSG) && X2C_STRCMP(dat.srccall,
+                9u,dat.msgto,9u)) && dat.msgtext[0UL]) && (typ=='B')==aprsdecode_IsBulletin(dat)) && ((oneop[0UL]==0 || X2C_STRCMP(oneop,
+                oneop_len,op->call,9u)==0) || X2C_STRCMP(oneop,oneop_len,
+                dat.msgto,9u)==0)) {
+               if (!(aprsstr_StrCmp(lastto, 101ul, dat.msgto,
                 9ul) && aprsstr_StrCmp(lasttext, 101ul, dat.msgtext, 67ul))) {
-                           aprstext_DateLocToStr(pf->time0, s, 1000ul);
-                           aprsstr_Append(s, 1000ul, " ", 2ul);
-                           aprsstr_Append(s, 1000ul, dat.srccall, 9ul);
-                           aprsstr_Append(s, 1000ul, ">", 2ul);
-                           aprsstr_Append(s, 1000ul, dat.msgto, 9ul);
-                           aprsstr_Append(s, 1000ul, ":[", 3ul);
-                           aprstext_Apphex(s, 1000ul, dat.msgtext, 67ul);
-                           aprsstr_Append(s, 1000ul, "]", 2ul);
-                           if (dat.acktext[0UL]) {
-                              aprstext_Apphex(s, 1000ul, " Ack[", 6ul);
-                              aprsstr_Append(s, 1000ul, dat.acktext, 5ul);
-                              aprsstr_Append(s, 1000ul, "]", 2ul);
-                           }
-                           aprsstr_Append(s, 1000ul, "\012", 2ul);
-                           useri_wrstrlist(s, 1000ul, dat.srccall,
-                pf->vardat->pos, pf->time0);
-                           aprsstr_Assign(lastto, 101ul, dat.msgto, 9ul);
-                           aprsstr_Assign(lasttext, 101ul, dat.msgtext,
-                67ul);
-                        }
-                     }
+                  aprstext_DateLocToStr(pf->time0, s, 1000ul);
+                  aprsstr_Append(s, 1000ul, " ", 2ul);
+                  aprsstr_Append(s, 1000ul, dat.srccall, 9ul);
+                  aprsstr_Append(s, 1000ul, ">", 2ul);
+                  aprsstr_Append(s, 1000ul, dat.msgto, 9ul);
+                  aprsstr_Append(s, 1000ul, ":[", 3ul);
+                  aprstext_Apphex(s, 1000ul, dat.msgtext, 67ul);
+                  aprsstr_Append(s, 1000ul, "]", 2ul);
+                  if (dat.acktext[0UL]) {
+                     aprstext_Apphex(s, 1000ul, " Ack[", 6ul);
+                     aprsstr_Append(s, 1000ul, dat.acktext, 5ul);
+                     aprsstr_Append(s, 1000ul, "]", 2ul);
                   }
+                  aprsstr_Append(s, 1000ul, "\012", 2ul);
+                  useri_wrstrlist(s, 1000ul, dat.srccall, pf->vardat->pos,
+                pf->time0);
+                  aprsstr_Assign(lastto, 101ul, dat.msgto, 9ul);
+                  aprsstr_Assign(lasttext, 101ul, dat.msgtext, 67ul);
                }
             }
             pf = pf->next;
          }
       }
       else if (typ=='O') {
+         /*
+             ELSIF ((typ="M") OR (typ="B")) & ((oneop[0]=0C)
+                OR (oneop=op^.call)) THEN (* bulletins messages *)
+               lastto[0]:=0C;
+               lasttext[0]:=0C;
+         
+               WHILE pf<>NIL DO
+                 IF (pf^.vardat^.lastref=pf) & (Decode(pf^.vardat^.raw,
+                dat)>=0) THEN
+                   IF (typ="M") OR (typ="B") THEN
+                     IF (dat.type=MSG) & (dat.srccall<>dat.msgto)
+                & (dat.msgtext[0]<>0C) THEN
+                       IF (typ="B")=IsBulletin(dat) THEN 
+                         IF NOT (StrCmp(lastto, dat.msgto) & StrCmp(lasttext,
+                 dat.msgtext)) THEN 
+                           DateLocToStr(pf^.time, s); Append(s, " ");
+                           Append(s, dat.srccall); Append(s, ">");
+                           Append(s, dat.msgto); Append(s, ":[");
+                           Apphex(s, dat.msgtext); Append(s, "]");
+                           IF dat.acktext[0]<>0C THEN 
+                             Apphex(s, " Ack[");Append(s, dat.acktext);
+                Append(s, "]");
+                           END;
+                           Append(s, LF);
+                           wrstrlist(s, dat.srccall, pf^.vardat^.pos,
+                pf^.time);
+         
+         <* IF WITHSTDOUT THEN *>
+                           WrStr(s);
+         <* END *>
+                           Assign(lastto, dat.msgto);
+                           Assign(lasttext, dat.msgtext);
+                         END;
+                       END;
+                     END;
+                   END;  
+                 END;
+                 pf:=pf^.next;
+               END;
+         */
          if (pf) {
             while (pf->next) pf = pf->next;
             aprstext_decode(s, 1000ul, 0, pf, 0, 0UL, decod, &dat);
@@ -1292,6 +1357,45 @@ static void deg2str(long lat, long long0, char s[], unsigned long s_len)
    s[18UL] = 0;
 } /* end deg2str() */
 
+
+static void getbeaconpos(struct aprspos_POSITION * pos, char * err)
+{
+   long fd;
+   long len;
+   char s[1001];
+   useri_confstr(useri_fRBPOS, s, 1001ul);
+   if (s[0U]==':') {
+      /* get beacon position from file */
+      aprsstr_Delstr(s, 1001ul, 0UL, 1UL);
+      fd = osi_OpenRead(s, 1001ul);
+      s[0U] = 0;
+      if (osi_FdValid(fd)) {
+         len = osi_RdBin(fd, (char *)s, 1001u/1u, 1000UL);
+         if (len<1L) {
+            len = 0L;
+            useri_encerr("beacon position file not readable", 34ul);
+         }
+         else if (len>1000L) len = 1000L;
+         s[len] = 0;
+         osi_Close(fd);
+      }
+      else useri_encerr("beacon position file not found", 31ul);
+   }
+   if (s[0U]) {
+      aprstext_degtopos(s, 1001ul, pos); /* DDMM.MMNDDDMM.MME */
+      if (!aprspos_posvalid(*pos)) aprstext_deghtopos(s, 1001ul, pos);
+      if (!aprspos_posvalid(*pos)) aprstext_degdeztopos(s, 1001ul, pos);
+      if (!aprspos_posvalid(*pos)) {
+         useri_encerr("object/item position wrong", 27ul);
+         *err = 1;
+      }
+   }
+   else {
+      *err = 1;
+      aprsdecode_posinval(pos);
+   }
+} /* end getbeaconpos() */
+
 #define aprstext_RAD 3.4377467707849E+7
 
 
@@ -1362,14 +1466,7 @@ extern void aprstext_encbeacon(char s[], unsigned long s_len,
             err = 1;
          }
       }
-      else {
-         useri_confstr(useri_fRBPOS, h, 201ul);
-         aprstext_deghtopos(h, 201ul, &pos); /* rfbeacon pos */
-         if (!aprspos_posvalid(pos)) {
-            useri_encerr("rf beacon position wrong", 25ul);
-            err = 1;
-         }
-      }
+      else getbeaconpos(&pos, &err);
    }
    else {
       useri_confstr(useri_fMYCALL, h, 201ul);
@@ -1377,12 +1474,7 @@ extern void aprstext_encbeacon(char s[], unsigned long s_len,
          useri_encerr("object/item needs a Config/Online/My Call", 42ul);
       }
       aprsstr_Append(s, s_len, h, 201ul);
-      useri_confstr(useri_fRBPOS, h, 201ul);
-      aprstext_deghtopos(h, 201ul, &pos);
-      if (!aprspos_posvalid(pos)) {
-         useri_encerr("object/item position wrong", 27ul);
-         err = 1;
-      }
+      getbeaconpos(&pos, &err);
    }
    lat = (long)aprsdecode_trunc((float)fabs(pos.lat)*3.4377467707849E+7f);
    long0 = (long)aprsdecode_trunc((float)fabs(pos.long0)*3.4377467707849E+7f)
@@ -1407,7 +1499,9 @@ extern void aprstext_encbeacon(char s[], unsigned long s_len,
       useri_confstr(useri_fRBDEST, h, 201ul);
       if (h[0U]==0) strncpy(h,"APLM01",201u);
       i = aprsstr_InStr(h, 201ul, "-", 2ul);
-      if (i>0L) aprsstr_Delstr(h, 201ul, (unsigned long)i, 201UL);
+      if (i>0L) {
+         aprsstr_Delstr(h, 201ul, (unsigned long)i, 201UL); /* delete ssid */
+      }
    }
    aprsstr_Append(s, s_len, h, 201ul);
    useri_confstr(useri_fRBPATH, h, 201ul);
@@ -1496,7 +1590,9 @@ extern void aprstext_encbeacon(char s[], unsigned long s_len,
    }
    useri_confappend(useri_fRBCOMMENT, s, s_len);
    *len += aprsstr_Length(s, s_len)-datastart;
-   if (err) s[0UL] = 0;
+   if (err) {
+      s[0UL] = 0;
+   }
 } /* end encbeacon() */
 
 

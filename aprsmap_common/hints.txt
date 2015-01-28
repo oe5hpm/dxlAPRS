@@ -47,11 +47,11 @@ you define how near to Center of Window.
 |120 Zoom to fit Marker 1 and 2 to Imagesize
 same as "/"
 
-|115 Set Marker 1 to before Clicked Map Position
+|115 Set Marker 1 to last Clicked Map Position
 same as "x"
 |116 Delete Marker 1 and QTH Locator Area
 |117 Delete Marker 2
-|118 Set Marker 1 to before Clicked Map Position
+|118 Set Marker 2 to last Clicked Map Position
 same as "y"
 
 |123 Config what to do when Click
@@ -111,6 +111,7 @@ be viewed with VLC, Mplayer or packt by x264
 eg. x264 -o film.mp4 --muxer mp4 --crf 22 map.y4m
 
 |302 Save screen Image (without menues) to File
+format .png so use filename with .png 
 %t insert date-time in filename
 %n insert counter
 
@@ -118,6 +119,22 @@ eg. x264 -o film.mp4 --muxer mp4 --crf 22 map.y4m
 
 |304 Load/Edit/Save Program Parameters
 
+
+|307 Enable/Disable Appending Data to Logfile
+
+|308 Click and enter a Filename for received
+and sent Data. On next Programm start Data
+will be read to RAM and have same state as
+at programm termination. The logfile may be
+deleted, renamed, changed any time even if it
+is write enabled. A given File Path is used for
+the Call Logs too.
+
+|309 Days Keep (dayly) Rawdata Logfiles. Purge
+starts on Program start and Midnight.
+0 Days is forever. Make dayly files
+with %d at end of Logfilename like
+"logs/rawlog%d"
 
 |400 List Objects/Items 
 for highlighting keywords
@@ -510,13 +527,13 @@ does not work with Wildcards
 
 |5806 Remove this Call from Watchlist
 
-|6700 Importing log until this date/time.Start time
-is at "Time Fullbright" + "Time Fade Out" earlier.
-Received actual Data is stored to memory and
-writelog and is displayed again on "Exit Logview"
+|6700 Importing a "Time Fullbright"-Intervall Logfile
+beginning with this Date/Time. Received actual
+Data is stored to memory and writelog and is
+displayed again on "Exit Logview"
 
 |6705 Find Call in Logfile, exact match,
-and import it.
+and import it. Works only with dayly Log
 
 |6710 Read data from this path/filename.
 The format is Timestamp in Seconds since 1.1.1970
@@ -532,8 +549,9 @@ images and stored in compressed form in RAM
 
 |6730 Go to Start of Logfile
 |6731 Go "Time Fullbright" back in Logfile
-|6732 Go "Time Fullbright" forward in Logfile
-|6733 Go to End of Logfile
+|6732 Load beginning from Start Date a "Time Fullbright" Intervall 
+|6733 Go "Time Fullbright" forward in Logfile
+|6734 Go to End of Logfile
 
 
 |6800 Send Message with Acknowledge, If
@@ -697,8 +715,9 @@ Name, QRV on 145.500Mhz
 \\h \\z \\v \\<file> for inserting time,
 program version or a file eg. with Wx-Data
 
-|7420 Enter a valid Passcode and enable if You
-want to send Data to AprsIs Network
+|7420 Enter a valid Passcode and enable
+"Allow Tx to Net" if You want
+to send Data to AprsIs Network
 (beacons/objects/messages/acks)
 
 |7425 enter AprsIs-Server-URLs like
@@ -713,7 +732,7 @@ one is working.
 |7430 Enter a filter for receive data from AprsIs Network
 m/200 or center/radius or a lot of call filters are possible
 
-|7435 Enable or Disable Connection
+|7435 Enable or Disable Connection to AprsIs Network
 
 |7440 Sending Net Beacons or Send and Ack Messages
 makes only sense with a valid passcode.
@@ -731,16 +750,8 @@ send the timed out Data, known as "sending data into
 a hole in wall problem". This would draw disrupted-
 and ghost-tracks on Maps.
 
-
-|7450 Enable/Disable Appending Data to Logfile
-
-|7451 Click and enter a Filename for received
-and sent Data. On next Programm start Data
-will be read to RAM and have same state as
-at programm termination. The logfile may be
-deleted, renamed, changed any time even if it
-is write enabled. A given File Path is used for
-the Call Logs too.
+|7446 Choose Rf-Ports to be gated to
+Internet if gateing is Enabled
 
 |7500 Enable/Disable Rf Port 1
 
@@ -987,15 +998,17 @@ seen by the Symbol on Map. This need not
 be a Callsign.
 
 |8120 Position for Items and Objects in DDMM.MMM
-or simply hold SHIFT Key and click on the Map.
+or D.DDDDD or :File containing Position or
+simply hold SHIFT Key and click on the Map.
 To quick reposit Objects: "B" to open Beacon
-Edit, Click to Symbol on Map, "DEL" to remove,
+Editor, Click to Symbol on Map, "DEL" to remove,
 SHIFT-Click to new position, "Draw" or "Send"
 
 |8122 Text with Macros
 \\z insert day of month and time DDHHMMz
 \\h insert time HHMMSSz
 \\<filename> insert file (with Weather Data)
+\\[filename] insert file and delete after tx
 \\v insert program version
 \\l insert position 
 \\\ insert \\

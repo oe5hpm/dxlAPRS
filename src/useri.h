@@ -117,8 +117,9 @@ struct useri_MOUSEPOS {
    long y;
 };
 
-enum useri_CONFSET {useri_fFIND, useri_fLOGWFN, useri_fLOGFN, useri_fLOGDATE,
-                 useri_fLOGFIND, useri_fFOTOFN, useri_fXYSIZE, 
+enum useri_CONFSET {useri_fFIND, useri_fLOGWFN, useri_fLOGDAYS, useri_fLOGFN,
+                 useri_fLOGDATE, useri_fLOGFIND, useri_fFOTOFN,
+                useri_fXYSIZE, 
    useri_fMYCALL, useri_fMYPOS, 
    useri_fNBTEXT, useri_fMYSYM, useri_fNETBTIME, useri_fRFBTSHIFT, 
    useri_fRBTEXT, useri_fRBTYP, useri_fRBNAME, useri_fRBSYMB, useri_fRBPOS,
@@ -176,6 +177,8 @@ extern unsigned long useri_newysize;
 extern struct useri_MOUSEPOS useri_xmouse;
 
 extern aprsdecode_MONCALL useri_beaconimported;
+
+extern unsigned long useri_beaconimporttime;
 
 extern char useri_listwin;
 

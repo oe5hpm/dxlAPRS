@@ -1706,25 +1706,55 @@ extern void maptool_Radiorange(maptool_pIMAGE image,
 } /* end Radiorange() */
 
 /*Panorama */
+/*
+PROCEDURE normvector(var nx,ny,nz:real;face:facepo);
+var cx,cy,cz:real;
+begin
+  with face^ do begin
+    with edge3^ do begin
+      cx:=x;
+      cy:=y;
+      cz:=z;
+    end;
+    nx:=(edge1^.y-cy)*(edge2^.z-cz) - (edge1^.z-cz)*(edge2^.y-cy);
+    ny:=(edge1^.z-cz)*(edge2^.x-cx) - (edge1^.x-cx)*(edge2^.z-cz);
+    nz:=(edge1^.x-cx)*(edge2^.y-cy) - (edge1^.y-cy)*(edge2^.x-cx);
+  end;
+END normvector;
+*/
 #define maptool_TESTDIST 30.0
 
 
 static void raytrace(float minqual, float x0, float y00, float z0, float dx,
                 float dy, float dz, float maxdist, float * dist, float * lum,
-                 float * h, struct aprspos_POSITION * pos)
+                 float * h, float * alt, float * subpix,
+                struct aprspos_POSITION * pos)
 {
+   float deltah;
+   float minsp;
+   float sp;
+   float lastsp;
    float h2;
    float h1;
    float resol;
    float qual;
-   float alt;
    struct aprspos_POSITION pos1;
    *lum = 1.0f;
    qual = minqual;
+   minsp = 0.0f;
+   if (*dist==0.0f) lastsp = 0.0f;
+   else lastsp = X2C_max_real;
+   deltah = *alt;
+   wgs84r(x0+dx* *dist, y00+dy* *dist, z0+dz* *dist, &pos->lat, &pos->long0,
+                alt);
+   *alt =  *alt*1000.0f;
+   deltah = *alt-deltah;
+   /*WrStr("next:"); WrFixed(deltah, 2, 12); */
+   *subpix = 0.0f;
    do {
       wgs84r(x0+dx* *dist, y00+dy* *dist, z0+dz* *dist, &pos->lat,
-                &pos->long0, &alt);
-      alt = alt*1000.0f;
+                &pos->long0, alt);
+      *alt =  *alt*1000.0f;
       /*
       IF mapxy(pos, xtt, ytt)>=-1 THEN
       waypoint(testimg, xtt,ytt,1.0, 255,255,100); END;
@@ -1734,11 +1764,14 @@ static void raytrace(float minqual, float x0, float y00, float z0, float dx,
       /*WrFixed(dist, 1,15); WrFixed(alt, 1,15); WrFixed(h, 1,15);
                 WrStr(" =d alt h"); */
       if (*h<30000.0f) {
-         if (*h<alt) {
-            qual = (alt-*h)*0.25f;
+         sp = *alt-*h;
+         if (sp>0.0f) {
+            qual = sp*0.25f;
             if (qual>250.0f) qual = 250.0f;
             /*        IF dist>1.0 THEN qual:=qual*dist END; */
             if (qual<minqual) qual = minqual;
+            if (sp<lastsp) lastsp = sp;
+            else if (minsp==0.0f) minsp = lastsp;
          }
          else {
             /* hit earth */
@@ -1760,13 +1793,22 @@ static void raytrace(float minqual, float x0, float y00, float z0, float dx,
                     lum:=cos(arctan(ABS(h1-h)*(1.0/TESTDIST)))
                 *cos(arctan(ABS(h2-h)*(1.0/TESTDIST)));
             */
+            if (deltah!=0.0f) {
+               *subpix = X2C_DIVR(minsp,deltah);
+               if (*subpix>1.0f) *subpix = 1.0f;
+            }
+            /*WrStr("subpix:"); WrFixed(subpix, 3, 7); */
             return;
          }
       }
       else qual = resol;
       *dist = *dist+qual;
    } while (*dist<=maxdist);
-/* we are in dust or heaven */
+   /* we are in dust or heaven */
+   if (deltah!=0.0f) {
+      *subpix = X2C_DIVR(minsp,deltah);
+      if (*subpix>1.0f) *subpix = 1.0f;
+   }
 } /* end raytrace() */
 /* antialiasing: search for peaks and set highest pixel smooth */
 
@@ -1807,6 +1849,8 @@ static void Panofind(char find, const struct maptool_PANOWIN panpar,
    float eled;
    float azid;
    float resoltx;
+   float space;
+   float lasth;
    float maxdist;
    float hc1;
    float hc;
@@ -1832,8 +1876,14 @@ static void Panofind(char find, const struct maptool_PANOWIN panpar,
    float dlum;
    float lummul;
    float atx;
-   float h;
+   float oldh;
    float d;
+   float oob;
+   float oog;
+   float oor;
+   float ob;
+   float og;
+   float or;
    char heaven;
    unsigned long startt;
    struct aprsdecode_COLTYP col0;
@@ -1889,6 +1939,7 @@ static void Panofind(char find, const struct maptool_PANOWIN panpar,
    cazi = RealMath_cos(azi);
    /*WrFixed(azi0/RAD, 4, 10); WrFixed(azid/RAD, 4, 10);
                 WrStrLn(" adi0 azid"); */
+   /*WrFixed(panpar.elevation*RAD/azid, 4, 12); WrStrLn(" adi0 azid"); */
    xi = 0UL;
    if (find) xi = (unsigned long)panpar.hx;
    do {
@@ -1914,11 +1965,10 @@ static void Panofind(char find, const struct maptool_PANOWIN panpar,
                 WrFixed(zn, 2, 7); END; */
             rotvector(&xn, &zn, clat, slat);
             rotvector(&xn, &yn, clong, slong);
-            if ((float)fabs(wy)>0.5f && d>maxdist*0.1f) {
-               d = d-maxdist*0.1f; /* jump back if sight from above */
-            }
+            /*IF (ABS(wy)>0.5) & (d>maxdist*0.1) THEN d:=d-maxdist*0.1 END;
+                (* jump back if sight from above *) */
             raytrace(5.0f, x0, y00, z0, xn*0.001f, yn*0.001f, zn*0.001f,
-                maxdist, &d, &light, &h, pos);
+                maxdist, &d, &light, &oldh, &lasth, &space, pos);
             if (d>maxdist) heaven = 1;
             if (find) {
                if (heaven) aprsdecode_posinval(pos);
@@ -1936,17 +1986,18 @@ static void Panofind(char find, const struct maptool_PANOWIN panpar,
          if (llum>dlum) dlum = llum;
          lastlum = lum;
          if (!heaven) {
-            tree = 1600.0f-h;
+            tree = 1600.0f-oldh;
             if (tree<0.0f) tree = 0.0f;
             else if (tree>600.0f) tree = 600.0f;
             tree = tree*1.5833333333333E-3f*(1.0f-X2C_DIVR(d,maxdist));
+            /*      tree:=tree*(0.95/600.0); */
             /*WrFixed(light, 5,2); WrStr(" "); */
             light = light-0.65f;
             if (light<0.0f) {
                light = light*(-2.0f);
                if (light>1.0f) light = 1.0f;
                light = 1.0f+light; /**(1.0-d/maxdist)*/
-               light = light*1.7f;
+               light = light*(1.7f-tree);
                lr = lum*light*1.4f+dlum;
                lg = lum*light*1.1f+dlum;
                lb = lum*light*0.8f+dlum;
@@ -1975,7 +2026,8 @@ static void Panofind(char find, const struct maptool_PANOWIN panpar,
                /*          hc:=VAL(REAL, 2*yi)/VAL(REAL,
                 HIGH(panpar.image^[0]))-1.0; */
                /*          hc:=(ele0 + eled*FLOAT(yi))*6.0; */
-               hc = X2C_DIVR((float)yi*2.0f,
+               hc = X2C_DIVR(((float)
+                yi+X2C_DIVR(panpar.elevation*1.7453292519444E-2f,azid))*2.0f,
                 (float)(panpar.image->Len0-1))-1.0f;
                if (hc<0.0f) hc = 0.0f;
                else if (hc>1.0f) hc = 1.0f;
@@ -1992,6 +2044,20 @@ static void Panofind(char find, const struct maptool_PANOWIN panpar,
                anonym->g = (unsigned short)aprsdecode_trunc(lg);
                anonym->b = (unsigned short)aprsdecode_trunc(lb);
             }
+            or = (float)anonym->r;
+            og = (float)anonym->g;
+            ob = (float)anonym->b;
+            if (yi>1UL) {
+               anonym->r = (unsigned short)
+                aprsdecode_trunc(or*space+oor*(1.0f-space));
+               anonym->g = (unsigned short)
+                aprsdecode_trunc(og*space+oog*(1.0f-space));
+               anonym->b = (unsigned short)
+                aprsdecode_trunc(ob*space+oob*(1.0f-space));
+            }
+            oor = or;
+            oog = og;
+            oob = ob;
          }
          ++yi;
       } while (yi<=panpar.image->Len0-1);

@@ -1125,6 +1125,18 @@ extern char aprsdecode_getmypos(struct aprspos_POSITION * pos)
 
 #define aprsdecode_MSYM "\\"
 
+#define aprsdecode_INSOPEN "<"
+
+#define aprsdecode_INSCLOSE ">"
+
+#define aprsdecode_DELOPEN "["
+
+#define aprsdecode_DELCLOSE "]"
+
+#define aprsdecode_WROPEN ">"
+
+#define aprsdecode_WRCLOSE "<"
+
 
 static void beaconmacros(char s[], unsigned long s_len, const char path[],
                 unsigned long path_len, char wdata[],
@@ -1137,6 +1149,7 @@ static void beaconmacros(char s[], unsigned long s_len, const char path[],
    char ds[256];
    char fn[1024];
    long f;
+   char ok0;
    char rw;
    X2C_PCOPY((void **)&wdata,wdata_len);
    i = 0UL;
@@ -1169,21 +1182,23 @@ static void beaconmacros(char s[], unsigned long s_len, const char path[],
             aprsstr_Append(ns, 256ul, ds, 256ul);
          }
          else if (all) {
-            if (s[i]=='<' || s[i]=='>') {
-               /* insert or write file */
+            if ((s[i]=='<' || s[i]=='>') || s[i]=='[') {
+               /* insert or write file or insert and delete */
                rw = s[i];
                fn[0U] = 0;
                ++i;
-               while (((i<s_len-1 && s[i]) && s[i]!='<') && s[i]!='>') {
+               while ((((i<s_len-1 && s[i]) && s[i]!='>') && s[i]!='<')
+                && s[i]!=']') {
                   aprsstr_Append(fn, 1024ul, (char *) &s[i], 1u/1u);
                   ++i;
                }
-               if (rw=='<') {
+               if (rw=='<' || rw=='[') {
                   /* read file */
                   f = osi_OpenRead(fn, 1024ul);
                   if (osi_FdValid(f)) {
                      len = osi_RdBin(f, (char *)ds, 256u/1u, 255UL);
                      osi_Close(f);
+                     if (rw=='[') FileSys_Remove(fn, 1024ul, &ok0);
                      j = 0L;
                      while (((j<len && ds[j]!='\015') && ds[j]!='\012')
                 && ds[j]) {
@@ -1212,13 +1227,15 @@ static void beaconmacros(char s[], unsigned long s_len, const char path[],
             }
             else if (s[i]=='\\') aprsstr_Append(ns, 256ul, "\\\\", 3ul);
             else if (s[i]=='v') {
-               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.46", 17ul);
+               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.47", 17ul);
             }
             else if (s[i]=='l') {
                useri_confstr(useri_fMYPOS, ds, 256ul);
                aprsstr_Append(ns, 256ul, ds, 256ul);
             }
-            else if (s[i]=='p') aprsstr_Append(ns, 256ul, path, path_len);
+            else if (s[i]=='p') {
+               aprsstr_Append(ns, 256ul, path, path_len);
+            }
             else {
                aprsstr_Assign(s, s_len, "bad beacon macro ", 18ul);
                aprsstr_Append(s, s_len, ns, 256ul);
@@ -2376,12 +2393,16 @@ extern void aprsdecode_importbeacon(aprsdecode_pOPHIST op)
       }
       if ((pl && pl->vardat) && aprsdecode_Decode(pl->vardat->raw, 500ul,
                 &dat)==0L) {
-         if (X2C_STRCMP(useri_beaconimported,9u,dat.srccall,9u)==0) {
+         if (X2C_STRCMP(useri_beaconimported,9u,dat.srccall,
+                9u)==0 && useri_beaconimporttime+2UL>TimeConv_time()) {
             aprsdecode_extractbeacon(pl->vardat->raw, 500ul, 0, 0);
             useri_beaconed = 1;
             useri_beaconimported[0UL] = '\012';
          }
-         else memcpy(useri_beaconimported,dat.srccall,9u);
+         else {
+            memcpy(useri_beaconimported,dat.srccall,9u);
+            useri_beaconimporttime = TimeConv_time();
+         }
       }
    }
 } /* end importbeacon() */
@@ -2407,6 +2428,21 @@ static void popupmessage(const char from[], unsigned long from_len,
    aprsdecode_pMSGFIFO pl;
    aprsdecode_pMSGFIFO pm;
    long cnt;
+   pm = aprsdecode_msgfifo0;
+   while (pm) {
+      /* delete older same messages */
+      if (((aprsstr_StrCmp(pm->from, 9ul, from,
+                from_len) && aprsstr_StrCmp(pm->to, 9ul, to,
+                to_len)) && aprsstr_StrCmp(pm->txt, 67ul, txt,
+                txt_len)) && aprsstr_StrCmp(pm->ack, 5ul, ack, ack_len)) {
+         pl = pm;
+         pm = pm->next;
+         if (aprsdecode_msgfifo0==pl) aprsdecode_msgfifo0 = pm;
+         Storage_DEALLOCATE((X2C_ADDRESS *) &pl,
+                sizeof(struct aprsdecode_MSGFIFO));
+      }
+      else pm = pm->next;
+   }
    Storage_ALLOCATE((X2C_ADDRESS *) &pm, sizeof(struct aprsdecode_MSGFIFO));
    if (pm==0) {
       osi_WrStrLn("msg out of memory", 18ul);
@@ -2550,7 +2586,7 @@ static char sendtxmsg(unsigned long acknum, const aprsdecode_MONCALL to,
    aprsstr_Append(rfs, 512ul, s, 512ul);
    for (i = 0UL; i<=3UL; i++) {
       /* try the rf ports */
-      if ((useri_configon((unsigned char)(35UL+i))
+      if ((useri_configon((unsigned char)(36UL+i))
                 && (port=='A' || port==(char)(i+49UL))) && Sendudp(rfs,
                 512ul, i)) {
          memcpy(h,am,51u);
@@ -4736,7 +4772,7 @@ extern void aprsdecode_udpconnstat(unsigned long port, char s[],
             aprsstr_Append(s, s_len, ":", 2ul);
             i = 1UL;
             for (;;) {
-               useri_conf2str((unsigned char)(35UL+port), i, h, 51ul);
+               useri_conf2str((unsigned char)(36UL+port), i, h, 51ul);
                if (h[0U]==0) break;
                if (i>1UL) aprsstr_Append(s, s_len, " ", 2ul);
                aprsstr_Append(s, s_len, h, 51ul);
@@ -4892,7 +4928,7 @@ static char tcpconn(aprsdecode_pTCPSOCK * sockchain, long f)
          aprsstr_Append(h, 512ul, s, 100ul);
       }
       aprsstr_Append(h, 512ul, " vers ", 7ul);
-      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.46", 17ul);
+      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.47", 17ul);
       appfilter(h, 512ul);
       /*    IF filter[0]<>0C THEN Append(h, " filter ");
                 Append(h, filter) END; */
@@ -5107,7 +5143,7 @@ static void rfbeacons(void)
                   else if ((unsigned char)port>='1') {
                      if (s[0UL]) {
                         i = (unsigned long)(unsigned char)port-49UL;
-                        if (i<4UL && useri_configon((unsigned char)(35UL+i)))
+                        if (i<4UL && useri_configon((unsigned char)(36UL+i)))
                  {
                            if (!Sendudp(s, 512ul, i)) {
                               strncpy(say,"beacon: Rfport ",101u);
@@ -5205,11 +5241,11 @@ extern void aprsdecode_tcpjobs(void)
    for (i = 0L; i<=3L; i++) {
       { /* with */
          struct aprsdecode_UDPSOCK * anonym0 = &aprsdecode_udpsocks0[i];
-         if (useri_configon((unsigned char)(35UL+(unsigned long)i))
-                && !useri_isupdated((unsigned char)(35UL+(unsigned long)i))) {
+         if (useri_configon((unsigned char)(36UL+(unsigned long)i))
+                && !useri_isupdated((unsigned char)(36UL+(unsigned long)i))) {
             if ((long)anonym0->fd<0L) {
                ok0 = 0;
-               useri_confstr((unsigned char)(35UL+(unsigned long)i), s,
+               useri_confstr((unsigned char)(36UL+(unsigned long)i), s,
                 1000ul);
                if (s[0U]) {
                   memset((char *) &aprsdecode_udpsocks0[i],(char)0,
@@ -5250,7 +5286,7 @@ Rx)Port or in Use", 44ul);
                   useri_textautosize(0L, 5L, 6UL, 10UL, 'e', s, 1000ul);
                }
                if (!ok0) {
-                  useri_configbool((unsigned char)(35UL+(unsigned long)i),
+                  useri_configbool((unsigned char)(36UL+(unsigned long)i),
                 0);
                }
             }
@@ -5797,6 +5833,7 @@ static void storedata(aprsdecode_FRAMEBUF mb, aprsdecode_pTCPSOCK cp,
       if (!local) {
          if (useri_configon(useri_fLOGWFN)) {
             useri_confstr(useri_fLOGWFN, fn, 1000ul);
+            aprstext_logfndate(aprsdecode_realtime, fn, 1000ul);
             if (!wrlog(mb, 512ul, aprsdecode_realtime, fn, 1000ul, res)) {
                poplogerr(fn, 1000ul);
             }

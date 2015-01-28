@@ -1148,6 +1148,45 @@
 
 
 
+26. 1. 2015 (Ver 0.47)
+
++ nebst "poi.txt" wird noch "mypoi.txt" gelesen damit beim Update bei Bedarf
+  die selber angelegten Punkte erhalten bleiben.
+  nun auch viele SOTA-Standorte im poi.txt
+
++ Log File (rawlog) durch Anhaengen von %d zB. "logs/rawlog%d" auf tageweise
+  1 File mit Datum umstellbar. Ist auch kompatibel zu den Logs am www-Server.
+  (Log Filename jetzt im "File" Menue)
+
++ Bei tageweisem Log einstellbar nach wieviel Tagen automatisch (beim Start
+  oder Mitternacht) Logs geloescht werden sollen.
+
++ im Log suchen nach Datum und/oder Call sollte auch dank "Load" (fuer ab
+  eingegebenen Datum) deutlich zuverlaessiger gehen.
+
++ mehrfach eingetroffene selbe Message wird nur 1x Angezeigt.
+
++ Baken (Netzbake, Objekte) koennen Position aus File (auch in Grad mit Komma)
+  lesen fuer bewegliche Objekte oder Mobilbetrieb.
+
++ Baken koennen Text-Macro-File loeschen nach 1 mal Senden zum Zweck des 
+  automatischen verstummens der Bake wenn zB das Wetterhaeuschen nimmer Updatet.  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1209,5 +1248,8 @@ files/dirs:
   udpflex           axudp<->kiss/smack/flexkiss interface fuer TNC, TMx7xx ...
   kisson.txt        kiss initialisierung fuer TMD72 mit udpflex 
   getosm.exe        Win: Schneller Maplader von OE5KRN
+  poi.txt           globales/privates
+  mypoi.txt         Points-Of-Interest-File mit aktiviertem "p" zum zeigen bei
+                    Mauszeigernaehe oder Suchen mit "F"
 
 oe5dxl
