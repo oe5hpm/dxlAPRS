@@ -1009,8 +1009,8 @@ extern void aprstat_althist(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
 
 #define aprstat_INVAL (-1.E+4)
 
-#define aprstat_MAXJOIN 60
-/* maximum interpolated span */
+#define aprstat_MAXJOIN 65
+/* maximum interpolated span min */
 
 struct WX;
 
@@ -1024,31 +1024,6 @@ struct WX {
    float lumi;
 };
 
-/*
-  PROCEDURE join(VAR v:ARRAY OF REAL);
-  VAR i,io:CARDINAL;
-      yo,k:REAL;
-  BEGIN
-    yo:=INVAL;
-    io:=0;
-    i:=0;
-    REPEAT
-      IF v[i]<>INVAL THEN
-        IF (yo<>INVAL) & (i>io) & (io+MAXJOIN>=i) THEN 
-          k:=(v[i]-yo)/FLOAT(i-io+1);
-          WHILE io<i DO
-            yo:=yo+k;
-            v[io]:=yo;
-            INC(io);
-          END;
-        END;
-        yo:=v[i];
-        io:=i+1; 
-      END;
-      INC(i);
-    UNTIL i>HIGH(v);
-  END join;
-*/
 #define aprstat_F 0.9
 
 
@@ -1147,7 +1122,7 @@ static void dots(float XStep, maptool_pIMAGE * img, float v[],
          maptool_waypoint(*img, (float)i*XStep+8.0f+0.5f, v[i]+8.0f, 2.0f,
                 (long)r, (long)g, (long)b);
          if (((join && yo!=(-1.E+4f)) && i>aprsdecode_trunc(io))
-                && aprsdecode_trunc(io)+60UL>=i) {
+                && aprsdecode_trunc(io)+65UL>=i) {
             k = X2C_DIVR(v[i]-yo,((float)i-io)+1.0f);
             if ((float)fabs(k)>2.0f) {
                dx = X2C_DIVR(2.0f,(float)fabs(k));

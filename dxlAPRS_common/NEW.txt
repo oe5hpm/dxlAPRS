@@ -24,6 +24,13 @@ afskmodem
 
 
 
+2. 2. 2015
+
+  -L wie -U aber sendet in AXUDP-Erweiterung DCD, TxPuffer-Leer, Audio-Level,
+     received-Txdelay, Quality
+  -P wie -L aber erzeugt AXUDP ohne Info bei DCD-Aenderung oder TxPuffer leer
+
+
 
 
 
@@ -55,6 +62,13 @@ udpbox
     -p 7 nach via digicall
     -p 8 nach via RELAY/GATE/TRACE
     -p 9 nach via WIDE
+
+
+2. 2. 2015
+
+  -l statt -r reicht AXUDP-Erweiterung durch (ohne DCD und TxPuffer-Leer Meldungen)
+  -l mit -s (alle PR frames) reicht auch die DCD und Txpuffer-Leer Meldungen durch
+
 
 
 
@@ -203,6 +217,12 @@ rf     qA?                                                            +
   u = User-defined
   n = NWS Weather & Weather Objects
   w = Weather
+
+
+2. 2. 2015
+
+  Versteht AXUDP-Erweiterung, Audio-Level, received-Txdelay, Quality und zeigt die
+  Werte in der MH-Liste
 
 
 

@@ -989,6 +989,32 @@ extern void aprsstr_raw2mon(char raw[], unsigned long raw_len, char mon[],
 } /* end raw2mon() */
 
 
+extern void aprsstr_extrudp2(char ib[], unsigned long ib_len, char ud[],
+                unsigned long ud_len, long * len)
+/* extract axudp2 header */
+{
+   long j;
+   long i;
+   i = 0L;
+   j = 0L;
+   do {
+      ud[i] = ib[i];
+      ++i;
+   } while (!((i>=(long)(ud_len-1) || i>=*len) || ib[i]==0));
+   ud[i] = 0;
+   ++i;
+   if (i>=*len) *len = 0L;
+   else {
+      *len -= i;
+      while (j<*len) {
+         ib[j] = ib[i];
+         ++j;
+         ++i;
+      }
+   }
+} /* end extrudp2() */
+
+
 extern void aprsstr_cleanfilename(char s[], unsigned long s_len)
 {
    unsigned long j;

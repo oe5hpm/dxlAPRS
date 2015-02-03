@@ -177,6 +177,14 @@ struct MPAR {
    char plld;
    char scramb;
    char data1;
+   char axudp2; /* axudp2 */
+   char dcdmsgs;
+   char haddcd;
+   char hadtxdata;
+   char flagbeg;
+   unsigned long flagc; /* for statistic */
+   unsigned long flags;
+   unsigned long flage;
    unsigned long rxstuffc;
    unsigned long rxbyte;
    unsigned long rxbitc;
@@ -1148,8 +1156,11 @@ static void Parms(void)
          else if (h[1U]=='u') {
             if (channel>=0L) pttSetclaim(chan[channel].hptt, 1L);
          }
-         else if (h[1U]=='U') {
+         else if ((h[1U]=='U' || h[1U]=='L') || h[1U]=='P') {
             if (modem>=0L) {
+               modpar[modem].axudp2 = h[1U]!='U'; /* switch on axudp2 */
+               modpar[modem].dcdmsgs = h[1U]=='P';
+                /* send dcd change & txbuffer empty messages*/
                Lib_NextArg(h, 1024ul);
                { /* with */
                   struct MPAR * anonym1 = &modpar[modem];
@@ -1183,7 +1194,9 @@ static void Parms(void)
                if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
                modpar[modem].txdelpattern = cnum;
             }
-            else Error("need modem number -M before -w", 31ul);
+            else {
+               Error("need modem number -M before -w", 31ul);
+            }
          }
          else if (h[1U]=='x') {
             if (modem>=0L) {
@@ -1274,6 +1287,8 @@ f)", 52ul);
 3=passall)", 60ul);
                osi_WrStrLn("   -n <num> nyquist filter baseband -6db point in\
  % of baudrate (65) (0..100)", 78ul);
+               osi_WrStrLn("   -P same as -U but use AXUDP v2, send dcd and t\
+xbuffer empty messages", 72ul);
                osi_WrStrLn("   -p <num> receive clock pll aquisition speed (1\
 6) (num/256 of bit time)", 74ul);
                osi_WrStrLn("   -q <num> quiet adc level to save cpu or avoid \
@@ -1291,6 +1306,8 @@ h) (1000) (hz)", 64ul);
                */
                osi_WrStrLn("   -U <[x.x.x.x]:destport:listenport> use axudp i\
 nstead of kiss /listenport check ip", 85ul);
+               osi_WrStrLn("   -L same as -U but use AXUDP v2 (no dcd and txb\
+uffer empty messages)", 71ul);
                osi_WrStrLn("   -v <num> tx loudness (100)", 30ul);
                osi_WrStrLn("   -w <num> txdelay pattern before 1 flag (126) (\
 0..255)", 57ul);
@@ -1468,6 +1485,27 @@ static void getkiss(void)
 } /* end getkiss() */
 
 
+static float dB(unsigned long v)
+{
+   if (v>0UL) return RealMath_ln((float)v)*8.685889638f-96.0f;
+   else return 0.0f;
+   return 0;
+} /* end dB() */
+
+
+static float noiselevel(unsigned long m)
+/* 0.0 perfect, ~0.25 noise only*/
+{
+   struct MPAR * anonym;
+   { /* with */
+      struct MPAR * anonym = &modpar[m];
+      if (anonym->sqmed[1]==anonym->sqmed[0]) return 0.0f;
+      else return X2C_DIVR(anonym->noise,anonym->sqmed[1]-anonym->sqmed[0]);
+   }
+   return 0;
+} /* end noiselevel() */
+
+
 static void getudp(void)
 {
    pKISSNEXT p;
@@ -1477,6 +1515,7 @@ static void getudp(void)
    unsigned long fromip;
    char crc2;
    char crc1;
+   char udp2[100];
    struct MPAR * anonym;
    for (i0 = 0UL; i0<=7UL; i0++) {
       { /* with */
@@ -1491,12 +1530,18 @@ static void getudp(void)
                AppCRC(pTxFree->data, 341ul, ulen-2L);
                if (crc1==pTxFree->data[ulen-2L]
                 && crc2==pTxFree->data[ulen-1L]) {
-                  p = pTxFree;
-                  pTxFree = pTxFree->next;
-                  p->port = (char)i0;
-                  p->len = (unsigned long)(ulen-2L);
-                  p->time0 = systime+anonym->timeout;
-                  StoBuf((long)i0, p);
+                  if (pTxFree->data[0U]=='\001') {
+                     aprsstr_extrudp2(pTxFree->data, 341ul, udp2, 100ul,
+                &ulen); /* axudp2 */
+                  }
+                  if (ulen>2L) {
+                     p = pTxFree;
+                     pTxFree = pTxFree->next;
+                     p->port = (char)i0;
+                     p->len = (unsigned long)(ulen-2L);
+                     p->time0 = systime+anonym->timeout;
+                     StoBuf((long)i0, p);
+                  }
                }
             }
          }
@@ -1505,6 +1550,77 @@ static void getudp(void)
 /* else crc error */
 /* else wrong len or source ip */
 } /* end getudp() */
+
+
+static void app(unsigned long * i0, unsigned long * p, char b[501], char c,
+                long v)
+{
+   char s[51];
+   b[*p] = c;
+   ++*p;
+   aprsstr_IntToStr(v, 0UL, s, 51ul);
+   *i0 = 0UL;
+   while (s[*i0]) {
+      b[*p] = s[*i0];
+      ++*p;
+      ++*i0;
+   }
+   b[*p] = ' ';
+   ++*p;
+} /* end app() */
+
+
+static void sendaxudp2(unsigned long modem, unsigned long datalen,
+                char data[], unsigned long data_len)
+{
+   char b[501];
+   long ret;
+   unsigned long ff;
+   unsigned long i0;
+   unsigned long p;
+   float q;
+   struct MPAR * anonym;
+   X2C_PCOPY((void **)&data,data_len);
+   { /* with */
+      struct MPAR * anonym = &modpar[modem];
+      if (anonym->udpsocket>=0L) {
+         b[0U] = '\001';
+         b[1U] = (char)(48UL+(unsigned long)
+                anonym->haddcd*2UL+(unsigned long)anonym->hadtxdata*4UL);
+         p = 2UL;
+         if (datalen>0UL) {
+            /* with data */
+            ff = (anonym->flags*1000UL)/anonym->configbaud;
+            if (ff>0UL) app(&i0, &p, b, 'T', (long)ff);
+            app(&i0, &p, b, 'V', (long)X2C_TRUNCI(dB((unsigned long)chan[anonym->ch].adcmax),
+                X2C_min_longint,X2C_max_longint)); /* volume in dB */
+            q = noiselevel(modem);
+            if (q>0.0f) {
+               q = 100.5f-q*200.0f;
+               if (q<1.0f) q = 1.0f;
+               app(&i0, &p, b, 'Q', (long)X2C_TRUNCI(q,X2C_min_longint,
+                X2C_max_longint)); /* quality in % */
+            }
+            b[p] = 0; /* end of axudp2 header */
+            ++p;
+            i0 = 0UL;
+            do {
+               b[p] = data[i0];
+               ++p;
+               ++i0;
+            } while (i0<datalen);
+         }
+         else {
+            b[2U] = 0;
+            ++p;
+         }
+         AppCRC(b, 501ul, (long)p);
+         ret = udpsend(anonym->udpsocket, b, (long)(p+2UL), anonym->udpport,
+                anonym->udpip);
+      }
+   }
+   X2C_PFREE(data);
+} /* end sendaxudp2() */
 
 
 static void sendkiss(char data[], unsigned long data_len, long len,
@@ -1524,8 +1640,14 @@ static void sendkiss(char data[], unsigned long data_len, long len,
    if (po<=7UL && modpar[po].udpsocket>=0L) {
       { /* with */
          struct MPAR * anonym = &modpar[po];
-         i0 = udpsend(anonym->udpsocket, data, len+2L, anonym->udpport,
+         if (anonym->axudp2) {
+            sendaxudp2(po, (unsigned long)len, data, data_len);
+                /* makes new crc */
+         }
+         else {
+            i0 = udpsend(anonym->udpsocket, data, len+2L, anonym->udpport,
                 anonym->udpip);
+         }
       }
    }
    else if (pipefd>=0L) {
@@ -1572,10 +1694,18 @@ static void WrQuali(float q)
 static void WrdB(long volt)
 {
    if (volt>0L) {
-      osi_WrFixed(RealMath_ln((float)volt)*8.685889638f-96.4f, 1L, 6UL);
+      osi_WrFixed(dB((unsigned long)volt), 1L, 6UL);
       InOut_WriteString("dB", 3ul);
    }
 } /* end WrdB() */
+
+
+static void WrTXD(unsigned long ms)
+{
+   InOut_WriteString(" txd:", 6ul);
+   InOut_WriteInt((long)ms, 1UL);
+   InOut_WriteString("ms", 3ul);
+} /* end WrTXD() */
 
 
 static void WCh(char c)
@@ -1675,8 +1805,9 @@ static void Showctl(unsigned long com, unsigned long cmd)
 
 
 static void ShowFrame(char f[], unsigned long f_len, unsigned long len,
-                unsigned long port, float q, long volt, char noinfo)
+                long modem, long volt, char noinfo)
 {
+   unsigned long ff;
    unsigned long i0;
    char d;
    char v;
@@ -1689,7 +1820,7 @@ static void ShowFrame(char f[], unsigned long f_len, unsigned long len,
    /* no address end mark found */
    if (i0%7UL!=6UL) return;
    /* address end not modulo 7 error */
-   InOut_WriteString((char *)(tmp = (char)((port&7UL)+48UL),&tmp), 1u/1u);
+   InOut_WriteString((char *)(tmp = (char)((modem&7L)+48L),&tmp), 1u/1u);
    InOut_WriteString(":fm ", 5ul);
    ShowCall(f, f_len, 7UL);
    InOut_WriteString(" to ", 5ul);
@@ -1720,8 +1851,12 @@ static void ShowFrame(char f[], unsigned long f_len, unsigned long len,
       osi_WrHex((unsigned long)(unsigned char)f[i0], 1UL);
    }
    ++i0;
-   WrQuali(q);
-   WrdB(volt);
+   if (volt>0L) {
+      WrQuali(noiselevel((unsigned long)modem));
+      WrdB(volt);
+      ff = (modpar[modem].flags*1000UL)/modpar[modem].configbaud;
+      if (ff>0UL) WrTXD(ff);
+   }
    /*
    IO.WrCard(bufree(), 3);
    */
@@ -1789,19 +1924,6 @@ static float Fir(unsigned long in, unsigned long sub, unsigned long step,
 } /* end Fir() */
 
 
-static float noiselevel(unsigned long m)
-/* 0.0 perfect, ~0.25 noise only*/
-{
-   struct MPAR * anonym;
-   { /* with */
-      struct MPAR * anonym = &modpar[m];
-      if (anonym->sqmed[1]==anonym->sqmed[0]) return 0.0f;
-      else return X2C_DIVR(anonym->noise,anonym->sqmed[1]-anonym->sqmed[0]);
-   }
-   return 0;
-} /* end noiselevel() */
-
-
 static void demodbit(long m, char d)
 {
    char xor;
@@ -1861,15 +1983,21 @@ static void demodbit(long m, char d)
          if (xor) anonym->rxcrc = anonym->rxcrc^0x8408UL;
          /*byte to frame*/
          if (anonym->rxbitc>=8UL) {
-            /*
-            IO.WrStr(" <");IO.WrHex(rxbyte, 1);IO.WrStr("> ");
-            */
             if (anonym->rxp<339UL) {
                anonym->rxbuf[anonym->rxp] = (char)anonym->rxbyte;
                ++anonym->rxp;
             }
             /*else frame too long error*/
             anonym->rxbitc = 0UL;
+            if (anonym->flagbeg) {
+               /* start of data */
+               if (anonym->flage>2UL) anonym->flagc = 0UL;
+               anonym->flags = anonym->flagc;
+               anonym->flagbeg = 0;
+            }
+            else if (anonym->rxbyte && anonym->flagc>64UL) {
+               ++anonym->flage; /* looks like data not txdel patterns */
+            }
          }
       }
       else if (anonym->rxstuffc>5UL) {
@@ -1885,18 +2013,18 @@ static void demodbit(long m, char d)
             }
             if (anonym->monitor==afskmodem_passall || anonym->rxcrc==0x9F0BUL && anonym->monitor)
                  {
-               ShowFrame(anonym->rxbuf, 339ul, anonym->rxp-2UL,
-                anonym->port16>>4, noiselevel((unsigned long)m),
+               ShowFrame(anonym->rxbuf, 339ul, anonym->rxp-2UL, m,
                 chan[anonym->ch].adcmax, anonym->monitor==afskmodem_noinfo);
+               anonym->flagc = 0UL;
+               anonym->flage = 0UL;
             }
          }
          anonym->rxp = 0UL;
          anonym->rxbitc = 0UL;
          anonym->rxcrc = 0xFFFFUL; /*init crc register*/
+         anonym->flagbeg = 1;
       }
-      if (d) {
-         ++anonym->rxstuffc;
-      }
+      if (d) ++anonym->rxstuffc;
       else anonym->rxstuffc = 0UL;
    }
 /*destuffing*/
@@ -1917,15 +2045,19 @@ static void demod(float u, long m)
             else anonym->baudfine -= anonym->pllshift;
             anonym->oldd = d;
          }
+         else if (d!=anonym->plld) {
+            anonym->flagc = 0UL;
+            anonym->flage = 0UL;
+            anonym->flagbeg = 0;
+         }
          /*squelch*/
          anonym->sqmed[d] = anonym->sqmed[d]+(u-anonym->sqmed[d])*0.05f;
          anonym->noise = anonym->noise+((float)fabs(u-anonym->sqmed[d])
                 -anonym->noise)*0.05f;
-      }
-      else {
          /*squelch*/
-         anonym->plld = d;
+         ++anonym->flagc;
       }
+      else anonym->plld = d;
       anonym->cbit = !anonym->cbit;
    }
 } /* end demod() */
@@ -2207,6 +2339,7 @@ static void getadc(void)
    long l;
    unsigned char c;
    struct MPAR * anonym;
+   struct MPAR * anonym0;
    l = read(soundfd, (char *)buf, adcbuflen*adcbytes);
    for (m = 0L; m<=7L; m++) {
       modpar[m].noise = modpar[m].noise*0.99f; /* clear dcd on silence */
@@ -2264,11 +2397,29 @@ static void getadc(void)
                 /* modem wise dcd for shift digi*/
                }
             }
-            else anonym->rxp = 0UL;
+            else {
+               /*
+                           IF axudp2 & NOT haddcd THEN haddcd:=TRUE;
+                sendaxudp2(m, 0, "") END;    (* say have dcd now *)
+                         ELSIF axudp2 & haddcd THEN haddcd:=FALSE;
+                sendaxudp2(m, 0, "") END;      (* say have not dcd now *)
+               */
+               anonym->rxp = 0UL; /* delete frame for savety */
+            }
          }
       } /* end for */
       i0 += (long)((unsigned long)maxchannels+1UL);
    }
+   for (m = 0L; m<=7L; m++) {
+      { /* with */
+         struct MPAR * anonym0 = &modpar[m];
+         if ((anonym0->configured && anonym0->dcdmsgs)
+                && (anonym0->dcdclockm==clock0)!=anonym0->haddcd) {
+            anonym0->haddcd = !anonym0->haddcd;
+            sendaxudp2((unsigned long)m, 0UL, "", 1ul);
+         }
+      }
+   } /* end for */
 } /* end getadc() */
 
 
@@ -2276,7 +2427,7 @@ static void txmon(pKISSNEXT pf)
 {
    if (pf && modpar[(unsigned char)pf->port].monitor) {
       ShowFrame(pf->data, 341ul, pf->len,
-                (unsigned long)(unsigned char)pf->port, 0.0f, 0L,
+                (long)(unsigned long)(unsigned char)pf->port, 0L,
                 modpar[(unsigned char)pf->port].monitor==afskmodem_noinfo);
    }
 } /* end txmon() */
@@ -2305,10 +2456,25 @@ static void Free(pKISSNEXT * tb)
 
 static char frames2tx(long modem)
 {
-   if (modpar[modem].txbufin==0) return 0;
-   if (modpar[modem].txbufin->time0>systime) return 1;
-   Free(&modpar[modem].txbufin); /* frame too old */
-   return 0;
+   char txo;
+   char tx;
+   tx = 0;
+   if (modpar[modem].txbufin) {
+      if (modpar[modem].txbufin->time0<=systime) {
+         Free(&modpar[modem].txbufin); /* frame too old */
+      }
+      else tx = 1;
+   }
+   if (modpar[modem].dcdmsgs) {
+      /* axudp2 check if txbuffer run empty*/
+      txo = modpar[modem].hadtxdata;
+      modpar[modem].hadtxdata = tx;
+      if (txo && !tx) {
+         sendaxudp2((unsigned long)modem, 0UL, "", 1ul);
+                /* send tx ready msg */
+      }
+   }
+   return tx;
 } /* end frames2tx() */
 
 
@@ -2582,6 +2748,7 @@ extern int main(int argc, char **argv)
    osi_BEGIN();
    signal(SIGTERM, afskmodemcleanup);
    signal(SIGINT, afskmodemcleanup);
+   memset((char *)modpar,(char)0,sizeof(struct MPAR [8]));
    Parms();
    Gencrctab();
    initTFIR();

@@ -146,6 +146,7 @@ struct OUTPORT {
    char rawwrite;
    char crlfwrite;
    char passnoUI;
+   char axudp2;
    SET256 aprspass;
    pDIGIPARMS digiparm;
    struct BEACON beacon0;
@@ -536,6 +537,13 @@ static char Filter(const char b[], unsigned long b_len, long len,
    long km;
    char selfmsg;
    len -= 2L; /* crc */
+   if (len<=0L) {
+      if (parm->passnoUI) {
+         if (show) osi_WrStrLn(" pass axudp2", 13ul);
+         return 1;
+      }
+      else return 0;
+   }
    i = 13L;
    while (i<len && !((unsigned long)(unsigned char)b[i]&1)) i += 7L;
    i += 3L;
@@ -544,7 +552,6 @@ static char Filter(const char b[], unsigned long b_len, long len,
       return parm->passnoUI;
    }
    /* not UI frame */
-   /* first payload byte */
    /* is UI frame */
    if (Usermsg(b, b_len, len, i, fromsock, &selfmsg)) return 0;
    if (parm->filtercalls && CallFilt(parm->filtercalls, b, b_len, len)) {
@@ -615,7 +622,7 @@ static long getudp(long fd, char buf[], unsigned long buf_len,
       crc2 = buf[len-1L];
       aprsstr_AppCRC(buf, buf_len, len-2L);
       if (crc1==buf[len-2L] && crc2==buf[len-1L]) return len;
-      if (show) InOut_WriteString(" raw crc error ", 16ul);
+      if (show) osi_WrStrLn(" raw crc error ", 16ul);
    }
    /*
          IO.WrHex(ORD(crc1)+ORD(crc2)*256, 1);
@@ -1643,7 +1650,7 @@ static void parms(void)
             }
          }
          else if (lasth=='e') actecho = 1;
-         else if ((lasth=='r' || lasth=='m') || lasth=='c') {
+         else if (((lasth=='r' || lasth=='m') || lasth=='c') || lasth=='l') {
             if (actsock0==0) {
                Err("need input -M or -R before -r or -m or -c", 42ul);
             }
@@ -1660,7 +1667,8 @@ static void parms(void)
                memcpy(anonym2->aprspass,actpass,32u);
                anonym2->echo = actecho;
                anonym2->digiparm = actdigi;
-               anonym2->rawwrite = lasth=='r';
+               anonym2->axudp2 = lasth=='l';
+               anonym2->rawwrite = lasth=='r' || anonym2->axudp2;
                anonym2->crlfwrite = lasth=='c';
                anonym2->beacon0 = actbeacon;
                actbeacon.bintervall = 0UL;
@@ -1717,6 +1725,8 @@ us -k 48.2/13.5/100", 69ul);
  msg) with no position data", 77ul);
                osi_WrStrLn(" -L <ip>:<port>:<netname>   read monitor rflink h\
 eader with netname", 68ul);
+               osi_WrStrLn(" -l <ip>:<port> send raw axudp frame and pass thr\
+u axudp2 header", 65ul);
                osi_WrStrLn(" -M <ip>:<port> read text monitor udp frame",
                 44ul);
                osi_WrStrLn("                ip=255.255.255.255:0 read text mo\
@@ -1775,7 +1785,9 @@ lier if sent anything now", 75ul);
 rom all (-R 0.0.0.0:2000)", 75ul);
                osi_WrStrLn(" -r <ip>:<port> send raw axudp frame", 37ul);
                osi_WrStrLn(" -s             pass not-UI-frames too (all PR-Fr\
-ames, SABM, RR..) (raw axudp only)", 84ul);
+ames, SABM, RR..)", 67ul);
+               osi_WrStrLn("                (raw axudp only) and axudp2 modem\
+ to layer2 message frames", 75ul);
                osi_WrStrLn(" -t <s>,<s>     dupe filter time in seconds (all \
 types, user messages)", 71ul);
                osi_WrStrLn("                -t 1740,28 29min not same beacon,\
@@ -1996,6 +2008,8 @@ static void cpraw(char in[], unsigned long in_len, char out[],
       if (e==0L && ((unsigned long)(unsigned char)c&1)) e = i+1L;
       if (i==tmp) break;
    } /* end for */
+   if (*len==2L) return;
+   /* crc only, maybe there is a axudp2 head*/
    if (((unsigned long)e%7UL || e<14L) || e>70L) {
       showhex(&n, e, in, in_len, len,
                 " bad raw format, no address end found", 38ul);
@@ -2290,6 +2304,34 @@ static void sendack(char buf[], unsigned long buf_len, long * len,
    }
 } /* end sendack() */
 
+
+static void appudp2(char ob[], unsigned long ob_len, unsigned long * olen,
+                const char ud[], unsigned long ud_len, const char ib[],
+                unsigned long ib_len, long len)
+/* append axudp2 header */
+{
+   long j;
+   long i;
+   i = 0L;
+   j = 0L;
+   while (ud[i]) {
+      ob[i] = ud[i];
+      ++i;
+   }
+   if (i>0L) {
+      ob[i] = 0;
+      ++i;
+   }
+   len -= 2L;
+   while (j<len) {
+      ob[i] = ib[j];
+      ++i;
+      ++j;
+   }
+   *olen = (unsigned long)(i+2L);
+   aprsstr_AppCRC(ob, ob_len, i);
+} /* end appudp2() */
+
 static char ibuf[338];
 
 static char rawbuf[338];
@@ -2297,6 +2339,8 @@ static char rawbuf[338];
 static char rawout[338];
 
 static char workraw[338];
+
+static char udp2[64]; /* axudp2 header */
 
 static char mbuf[512];
 
@@ -2362,6 +2406,11 @@ extern int main(int argc, char **argv)
                else if (issetr(0UL) && actsock->fromip==X2C_max_longcard) {
                   inlen = getstdin(ibuf, 338ul);
                }
+               udp2[0U] = 0;
+               if (inlen>0L && ibuf[0U]=='\001') {
+                  aprsstr_extrudp2(ibuf, 338ul, udp2, 64ul, &inlen);
+                /* axudp2 */
+               }
                hamup[0U] = 0;
                if (inlen>0L) {
                   nobeacon = 1;
@@ -2390,7 +2439,7 @@ extern int main(int argc, char **argv)
                   if (isbeacon==0) sendack(rawbuf, 338ul, &inlen, actsock);
                }
                if (inlen>=2L) {
-                  if (show) {
+                  if (show && inlen>2L) {
                      aprsstr_raw2mon(rawbuf, 338ul, mbuf, 512ul,
                 (unsigned long)(inlen-2L), &monlen);
                      osi_WrLn();
@@ -2408,7 +2457,7 @@ extern int main(int argc, char **argv)
                   outsock = actsock->outchain;
                   outlen = 0L;
                   while (outsock) {
-                     if (show) {
+                     if (show && inlen>2L) {
                         InOut_WriteString(" tx: ", 6ul);
                         showpip(outsock->toip, outsock->toport);
                      }
@@ -2419,7 +2468,7 @@ extern int main(int argc, char **argv)
                         if (outsock->digiparm) {
                            Digi(workraw, 338ul, rawout, 338ul, inlen,
                 &outlen, hamup, outsock->digiparm, !nobeacon);
-                           if (show && outlen>0L) {
+                           if (show && outlen>2L) {
                               InOut_WriteString(" digi", 6ul);
                            }
                         }
@@ -2432,9 +2481,18 @@ extern int main(int argc, char **argv)
                            outsock->beacon0.piggyback = 1;
                            piggy = 1;
                            if (outsock->rawwrite) {
-                              res = udpsend(actsock->fd, rawout, outlen,
+                              if (outsock->axudp2) {
+                                 appudp2(mbuf, 512ul, &monlen, udp2, 64ul,
+                rawout, 338ul, outlen);
+                                 res = udpsend(actsock->fd, mbuf,
+                (long)monlen, outsock->toport, outsock->toip);
+                              }
+                              else {
+                                 aprsstr_AppCRC(rawout, 338ul, outlen-2L);
+                                 res = udpsend(actsock->fd, rawout, outlen,
                 outsock->toport, outsock->toip);
-                              if (show) {
+                              }
+                              if (show && outlen>2L) {
                                  osi_WrStrLn(" raw", 5ul);
                               }
                            }
@@ -2460,7 +2518,9 @@ extern int main(int argc, char **argv)
                         }
                         else if (show) osi_WrStrLn(" no tx", 7ul);
                      }
-                     else if (show) osi_WrStrLn(" deleted", 9ul);
+                     else if (show && outlen>2L) {
+                        osi_WrStrLn(" deleted", 9ul);
+                     }
                      outsock = outsock->next;
                   }
                   if ((insocks && insocks->fromip==X2C_max_longcard)

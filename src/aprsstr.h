@@ -13,6 +13,7 @@
 #include "X2C.h"
 #endif
 
+/* string lib by oe5dxl */
 typedef unsigned long aprsstr_TIME;
 
 typedef unsigned long aprsstr_IPNUM;
@@ -75,6 +76,9 @@ extern void aprsstr_mon2raw(char [], unsigned long, char [], unsigned long,
 
 extern void aprsstr_raw2mon(char [], unsigned long, char [], unsigned long,
                 unsigned long, unsigned long *);
+
+extern void aprsstr_extrudp2(char [], unsigned long, char [], unsigned long,
+                long *);
 
 extern void aprsstr_AppCRC(char [], unsigned long, long);
 
