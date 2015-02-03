@@ -123,12 +123,12 @@ format .png so use filename with .png
 |307 Enable/Disable Appending Data to Logfile
 
 |308 Click and enter a Filename for received
-and sent Data. On next Programm start Data
+and sent Data. On next program start Data
 will be read to RAM and have same state as
-at programm termination. The logfile may be
+at program termination. The logfile may be
 deleted, renamed, changed any time even if it
 is write enabled. A given File Path is used for
-the Call Logs too.
+the Call Logs too. Append %d for Dayly Logsfile.
 
 |309 Days Keep (dayly) Rawdata Logfiles. Purge
 starts on Program start and Midnight.
@@ -1348,7 +1348,7 @@ there may be a diffraction edge
 
 |10005 Tipp: Move and Zoom Map to Your Home Area
 then open "Zoom" and SHIFT+Leftclick to "P1"
-to Store View for next Programm Start
+to Store View for next Program Start
   
 |10006 Tipp: To get Data from Internet Configure "Config>Online>"
 
