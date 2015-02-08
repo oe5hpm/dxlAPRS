@@ -32,6 +32,11 @@ afskmodem
 
 
 
+5. 2. 2015
+
+  AXUDP2 Poll Modem fuer DCD & TxPuffer-Leer Status und damit auch obs da ist.
+
+
 
 
 

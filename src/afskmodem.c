@@ -1506,52 +1506,6 @@ static float noiselevel(unsigned long m)
 } /* end noiselevel() */
 
 
-static void getudp(void)
-{
-   pKISSNEXT p;
-   unsigned long i0;
-   long ulen;
-   unsigned long fromport;
-   unsigned long fromip;
-   char crc2;
-   char crc1;
-   char udp2[100];
-   struct MPAR * anonym;
-   for (i0 = 0UL; i0<=7UL; i0++) {
-      { /* with */
-         struct MPAR * anonym = &modpar[i0];
-         if (anonym->udpsocket>=0L && pTxFree) {
-            ulen = udpreceive(anonym->udpsocket, pTxFree->data, 341L,
-                &fromport, &fromip);
-            if ((ulen>2L && ulen<341L)
-                && (!anonym->checkip || fromip==anonym->udpip)) {
-               crc1 = pTxFree->data[ulen-2L];
-               crc2 = pTxFree->data[ulen-1L];
-               AppCRC(pTxFree->data, 341ul, ulen-2L);
-               if (crc1==pTxFree->data[ulen-2L]
-                && crc2==pTxFree->data[ulen-1L]) {
-                  if (pTxFree->data[0U]=='\001') {
-                     aprsstr_extrudp2(pTxFree->data, 341ul, udp2, 100ul,
-                &ulen); /* axudp2 */
-                  }
-                  if (ulen>2L) {
-                     p = pTxFree;
-                     pTxFree = pTxFree->next;
-                     p->port = (char)i0;
-                     p->len = (unsigned long)(ulen-2L);
-                     p->time0 = systime+anonym->timeout;
-                     StoBuf((long)i0, p);
-                  }
-               }
-            }
-         }
-      }
-   } /* end for */
-/* else crc error */
-/* else wrong len or source ip */
-} /* end getudp() */
-
-
 static void app(unsigned long * i0, unsigned long * p, char b[501], char c,
                 long v)
 {
@@ -1621,6 +1575,56 @@ static void sendaxudp2(unsigned long modem, unsigned long datalen,
    }
    X2C_PFREE(data);
 } /* end sendaxudp2() */
+
+
+static void getudp(void)
+{
+   pKISSNEXT p;
+   unsigned long i0;
+   long ulen;
+   unsigned long fromport;
+   unsigned long fromip;
+   char crc2;
+   char crc1;
+   char udp2[100];
+   struct MPAR * anonym;
+   for (i0 = 0UL; i0<=7UL; i0++) {
+      { /* with */
+         struct MPAR * anonym = &modpar[i0];
+         if (anonym->udpsocket>=0L && pTxFree) {
+            ulen = udpreceive(anonym->udpsocket, pTxFree->data, 341L,
+                &fromport, &fromip);
+            if ((ulen>2L && ulen<341L)
+                && (!anonym->checkip || fromip==anonym->udpip)) {
+               crc1 = pTxFree->data[ulen-2L];
+               crc2 = pTxFree->data[ulen-1L];
+               AppCRC(pTxFree->data, 341ul, ulen-2L);
+               if (crc1==pTxFree->data[ulen-2L]
+                && crc2==pTxFree->data[ulen-1L]) {
+                  if (pTxFree->data[0U]=='\001') {
+                     aprsstr_extrudp2(pTxFree->data, 341ul, udp2, 100ul,
+                &ulen); /* axudp2 */
+                  }
+                  if (ulen>2L) {
+                     p = pTxFree;
+                     pTxFree = pTxFree->next;
+                     p->port = (char)i0;
+                     p->len = (unsigned long)(ulen-2L);
+                     p->time0 = systime+anonym->timeout;
+                     StoBuf((long)i0, p);
+                  }
+                  else if (udp2[1U]=='?' && udp2[2U]==0) {
+                     sendaxudp2(i0, 0UL, "", 1ul);
+                /* on axudp2 header only send dcd & txbuf status */
+                  }
+               }
+            }
+         }
+      }
+   } /* end for */
+/* else crc error */
+/* else wrong len or source ip */
+} /* end getudp() */
 
 
 static void sendkiss(char data[], unsigned long data_len, long len,
@@ -2338,6 +2342,7 @@ static void getadc(void)
    long i0;
    long l;
    unsigned char c;
+   char ndcd;
    struct MPAR * anonym;
    struct MPAR * anonym0;
    l = read(soundfd, (char *)buf, adcbuflen*adcbytes);
@@ -2397,26 +2402,39 @@ static void getadc(void)
                 /* modem wise dcd for shift digi*/
                }
             }
-            else {
-               /*
-                           IF axudp2 & NOT haddcd THEN haddcd:=TRUE;
-                sendaxudp2(m, 0, "") END;    (* say have dcd now *)
-                         ELSIF axudp2 & haddcd THEN haddcd:=FALSE;
-                sendaxudp2(m, 0, "") END;      (* say have not dcd now *)
-               */
-               anonym->rxp = 0UL; /* delete frame for savety */
-            }
+            else anonym->rxp = 0UL;
          }
       } /* end for */
       i0 += (long)((unsigned long)maxchannels+1UL);
    }
+   /*
+   WrFixed(noiselevel(0), 2, 10); WrStrLn(" nl");
+     FOR m:=0 TO HIGH(modpar) DO
+       WITH modpar[m] DO
+         IF configured & dcdmsgs & ((dcdclockm=clock)<>haddcd) THEN
+           haddcd:=NOT haddcd;
+           sendaxudp2(m, 0, "");
+         END;
+       END;
+     END;
+   */
    for (m = 0L; m<=7L; m++) {
       { /* with */
          struct MPAR * anonym0 = &modpar[m];
-         if ((anonym0->configured && anonym0->dcdmsgs)
-                && (anonym0->dcdclockm==clock0)!=anonym0->haddcd) {
-            anonym0->haddcd = !anonym0->haddcd;
-            sendaxudp2((unsigned long)m, 0UL, "", 1ul);
+         if (anonym0->configured) {
+            ndcd = chan[anonym0->ch]
+                .adcmax>=anonym0->leveldcd && noiselevel((unsigned long)m)
+                <anonym0->squelchdcd;
+            if (ndcd) {
+               chan[anonym0->ch].dcdclock = clock0; /* tx wise dcd */
+               anonym0->dcdclockm = clock0;
+                /* modem wise dcd for shift digi*/
+            }
+            if (ndcd!=anonym0->haddcd) {
+               anonym0->haddcd = ndcd;
+               sendaxudp2((unsigned long)m, 0UL, "", 1ul);
+            }
+            anonym0->haddcd = ndcd;
          }
       }
    } /* end for */
