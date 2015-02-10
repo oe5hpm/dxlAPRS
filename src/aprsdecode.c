@@ -2429,19 +2429,24 @@ static void popupmessage(const char from[], unsigned long from_len,
    aprsdecode_pMSGFIFO pm;
    long cnt;
    pm = aprsdecode_msgfifo0;
+   pl = 0;
    while (pm) {
       /* delete older same messages */
       if (((aprsstr_StrCmp(pm->from, 9ul, from,
                 from_len) && aprsstr_StrCmp(pm->to, 9ul, to,
                 to_len)) && aprsstr_StrCmp(pm->txt, 67ul, txt,
                 txt_len)) && aprsstr_StrCmp(pm->ack, 5ul, ack, ack_len)) {
+         if (pl==0) aprsdecode_msgfifo0 = pm->next;
+         else pl->next = pm->next;
+         Storage_DEALLOCATE((X2C_ADDRESS *) &pm,
+                sizeof(struct aprsdecode_MSGFIFO));
+         pm = aprsdecode_msgfifo0;
+         pl = 0;
+      }
+      else {
          pl = pm;
          pm = pm->next;
-         if (aprsdecode_msgfifo0==pl) aprsdecode_msgfifo0 = pm;
-         Storage_DEALLOCATE((X2C_ADDRESS *) &pl,
-                sizeof(struct aprsdecode_MSGFIFO));
       }
-      else pm = pm->next;
    }
    Storage_ALLOCATE((X2C_ADDRESS *) &pm, sizeof(struct aprsdecode_MSGFIFO));
    if (pm==0) {
