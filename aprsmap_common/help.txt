@@ -85,6 +85,9 @@ erkennbar sein sollten und die bewegten so verdeutlichen.
 gegen 1 die Durchsichtigkeit der Menues ein. Mit 0 kommt
 ein aufgehellter Hintergrund.
 |de-trackcolor:Track Farben:
+|de-qth:QTH Finden:
+|de-poi:POI Finden:
+
 
 |de-trackcolor
 Die Farbe eines neuen Tracks wird so generiert, dass
@@ -726,18 +729,32 @@ Darstellungen.
 Marker 1, das grosse gelbe "+" zeigt eine markierte
 Stelle auf der Karte oder einen |de-waypoint:Wegpunkt:.
 Alle weiteren Klicks zeigen dann Entfernung und 
-Winkel zum Marker.
-Ein Marker auf der Karte kann durch klicken mit
-gehaltener Shift-Taste oder einfaches klicken 
-und dann x-Taste gesetzt werden.
-der zweite Marker mit y-Taste erzeugt eine gruene
-Linie auf der Karte zB zum verfolgen von Funkstrecken.
-Weiters kann mit /-Taste oder "Zoom / Zoom to Marker"
-auf den Karten-Ausschnitt gezoomt werden den die
-beiden Marker aufspannen. "klick-x-klick-y/" 
-Nervige Marker werden mit "Clear Markers" in 
-diversen Menues oder der :-Taste entfernt
-|de-qth:QTH-Lokator finden:
+Winkel zum Marker, oder bei eingeschaltener "Show
+Location of Mouse" ("p"-Taste) schon bei Maus Bewegung.
+Einen Marker auf der Karte setzt man an der Maus Position
+mit "x" (Marker 1), y (Marker 2) oder auf die Karte
+klicken und im Zoom-Menue "1" oder "2" anklicken.
+Ein auf ein Objekt eingerasteter Marker entsteht durch
+Anklicken eines Symbols (und im siech oeffnenden Menue
+gegebenenfalls Auswahl des gewuenschten Objekts) und
+anklicken von "Marker 1" oder "Marker 2". Loeschen vom
+beiden Markern mit ":" oder einzeln im Zoom Menue "Clr".
+Ist noch kein fixer (gelber) Marker 1 gesetzt, reicht
+Anklicken eines Objekts oder Wegpunktes zum setzen eines
+beweglichen (blauen) Markers, der sich mit der Position
+des Objekts mit bewegt und zB bei eigeschaltetem
+"Tools/Radiolink" einen aktuellen Gelaendeschnitt
+zum Marker 2 zeigt (Hoehendaten Files muessen vorhanden
+sein). Steht bei "Tools/Radiolink/Antenna 1" nach der
+Hoehe der Antenne noch "A" also zB "10 A", wird nicht 
+die Bodenhoehe verwendet sondern die Hoehenangabe des
+Objekts aus dessen Bake (+- die Antennehoehe). Das 
+macht nur bei Fliegegenden Objekten Sinn zumal die 
+GPS-Hoehen meist ungenauer sind als die aus den
+srtm-Files.
+Sind 2 Marker gesetzt, kann mit "Zoom/Zoom to Markers"
+oder "/" die Karte ausgerichtet werden sodass beide
+Maker und ein Gelaendeschnitt genau im Bild sind.
 
 
 |de-qth
@@ -754,7 +771,28 @@ dran * als Wildcard |de-1:zoomt: zum gefundenen
 Objekt oder liefert ein Auswahlmenue wenn es mehrere
 gibt die zum Suchbegriff passen. Davon kann dann
 eins ausgewaehlt werden.
-  
+Ist ein "poi.txt" und/oder "mypoi.txt" File vorhanden
+kann auch nach |de-poi:Points of Interest: gesucht werden.
+Gibts mehrere zum Suchbegriff passende Namen kann
+durch Klick auf die Such-Eingabe der jeweils naechste
+Punkt angesteuert werden.
+Weiters kann nach "Laenge Breite" in DDMM.MM oder 
+D.DDD Format gesucht werden. zB. "4812.34N 1243.21E"
+"43.9876 -13.8765"
+
+
+|de-poi
+Ist ein "poi.txt" und/oder "mypoi.txt" File im Karten
+Verzeichnis vorhanden, kann nach "Points of Interest"
+|de-qth:gesucht: werden oder bei eingeschaltener "Show Location
+of Mouse" ("p"-Taste) und ab dem dort einzugebenden 
+Zoom Faktor werden die POIs beim Bewegen der Maus 
+in deren Naehe angezeigt. Setzt man die Maus dann
+nahe zum angezeigten Punkt, kann mit "c" auf den Punkt
+Zentriert, und sodann mit "+" gezoomt werden. 
+Derzeit in den Files, Bergnamen der Alpen und SOTA-Punkte.
+
+
 
 |de-waypoint
 Ein Wegpunkt entspricht einer empfangenen Positionsbake
@@ -952,8 +990,8 @@ TALK:\\>filename<Message Sayd     schreibt ein File
 : Marker loeschen
 @ reset <On Next Click> auf Menu Mode
 a Animate
-b oder <Backspace> zurueck in Position History
-c Zentriere den zuletzt angeklickten Punkt
+b oder <Backspace> zurueck in Zoom/Pan History
+c Zentriere auf Maus Position
 d fehlende Landkarten laden ein/aus
 e Nur Errors/Alle Wegpunkte zeigen bei <>
 f Track Filter ein/aus
@@ -969,8 +1007,8 @@ s Screenshot ppm/bpm
 u Tx/Rx-Monitor Fenster ein/aus
 w WX-Stationen (mit l nur Tempertur ohne Calls) 
 ww grafische Temperaturverteilung
-x setze Marker 1 wo gerade hingeklickt
-y setze Marker 2 und Linie zu Marker 1
+x setze Marker 1 auf Mausposition
+y setze Marker 2 und Linie/Gelaendeschnitt zu Marker 1
 B Baken Editor oeffnen
 F Finde Call (mit Wildcards * ?), Lokator, Breite/Laenge
 M Message Schreiben
@@ -1000,7 +1038,7 @@ ctrl-V Paste
 a Animate
 b or <Backspace> go back in position history
 c Center (to last clicked Pixel)
-d toggle missing map download
+d toggle (missing) map download
 e toggle Errors only/All for stepping along a track with <>
 f Junk Filter toggle on/off
 h Heard (click symbol or text of igate before)
@@ -1013,7 +1051,7 @@ r toggle Radio tracks on/off
 s Screenshot ppm/bpm
 u toggle tx/rx-Monitor window on/off
 w toggle WX stations and Temperature
-x set Marker 1 to clicked position
+x set Marker 1 to mouse position
 y set Marker 2 and Line to Marker 1
 B Open Beacon editor
 F Find Call (with wildcards * ?), Locator, Latitude/Longitude
