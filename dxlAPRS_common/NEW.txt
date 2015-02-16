@@ -231,6 +231,11 @@ rf     qA?                                                            +
 
 
 
+14. 2. 2015
+
+  Zaehler fuer verlorene tcp Frames wegen vollem tcp-Sendepuffer, ablesbar auf der
+  www-Userliste im Feld "TxFr" als negative Zahl unter den gesendeten Frames.
+
 
 
 

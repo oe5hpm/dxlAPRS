@@ -173,6 +173,7 @@ struct TCPSOCK {
    unsigned long rxframes;
    unsigned long rxbytes;
    unsigned long rxbytesh;
+   unsigned long losttxframes;
    struct FILTERS filters;
    long rpos;
    long tlen;
@@ -2085,7 +2086,10 @@ static void Sendtcp(pTCPSOCK to, const FRAMEBUF buf)
          anonym->txbytes += (unsigned long)len; /* 32 bit overflow */
          if (anonym->txbytes<(unsigned long)len) ++anonym->txbytesh;
       }
-      else if (verb) osi_WrStrLn("tx buf overflow", 16ul);
+      else {
+         ++anonym->losttxframes;
+         if (verb) osi_WrStrLn("tx buf overflow", 16ul);
+      }
    }
 } /* end Sendtcp() */
 
@@ -3914,6 +3918,46 @@ static void MHtoFile(void)
    Rename(fn, 1024ul, mhfilename, 1024ul);
 } /* end MHtoFile() */
 
+/*
+PROCEDURE finddupe(s-:DUPESTRING):BOOLEAN;
+VAR i, sum:CARDINAL;
+    t:TIME;  
+BEGIN
+  i:=0;
+  sum:=0;  
+  WHILE (i<=HIGH(s)) & (s[i]<>0C) DO INC(sum, ORD(s[i]); INC(i) END;
+                (* make simple hash *)
+
+  sum:=sum MOD (HIGH(dupehashs)+1);
+  t:=dupehashs[sum].time;
+  IF systime>=t+dupetime THEN
+    WITH dupestrings[dupewrite] DO
+      str:=s;
+      time:=systime;
+      next:=dupewrite;
+    END;
+    dupehashs[sum].hash:=dupewrite;
+    dupehashs[sum].time:=systime;
+    dupewrite:=(dupewrite+1) MOD (HIGH(dupestrings)+1);
+  ELSE
+    DEC(i);
+    LOOP
+      IF dupestrings[i]=s THEN RETURN TRUE END;
+
+
+
+
+
+
+
+
+
+
+
+
+END finddupe;
+
+*/
 
 static long callchk(unsigned long * qpos, unsigned char * unset, char buf[],
                 unsigned long buf_len, unsigned long * p,
@@ -4798,6 +4842,19 @@ static void wint(WWWB wbuf, pTCPSOCK * wsock, long n)
 } /* end wint() */
 
 
+static void wintint(WWWB wbuf, pTCPSOCK * wsock, long n, long k)
+{
+   char h1[16];
+   aprsstr_IntToStr(n, 1UL, h1, 16ul);
+   Appwww(wsock, wbuf, "<TD style=\"text-align:right\">", 30ul);
+   Appwww(wsock, wbuf, h1, 16ul);
+   Appwww(wsock, wbuf, "<BR>", 5ul);
+   aprsstr_IntToStr(k, 1UL, h1, 16ul);
+   Appwww(wsock, wbuf, h1, 16ul);
+   Appwww(wsock, wbuf, "</TD>", 6ul);
+} /* end wintint() */
+
+
 static char openfile(char fn[], unsigned long fn_len, long * fd,
                 long * flen)
 {
@@ -5631,7 +5688,11 @@ ign:center\" BGCOLOR=\"#D0C0C0\"><TD>out", 74ul);
                Appwww(&wsock, wbuf, h1, 256ul);
                Appwww(&wsock, wbuf, "</TD>", 6ul);
                wcard64(wbuf, &wsock, anonym2->txbytesh, anonym2->txbytes);
-               wint(wbuf, &wsock, (long)anonym2->txframes);
+               if (anonym2->losttxframes>0UL) {
+                  wintint(wbuf, &wsock, (long)anonym2->txframes,
+                -(long)anonym2->losttxframes);
+               }
+               else wint(wbuf, &wsock, (long)anonym2->txframes);
                wint(wbuf, &wsock, (long)bitsec64(anonym2->txbytesh,
                 anonym2->txbytes, tt));
                wcard64(wbuf, &wsock, anonym2->rxbytesh, anonym2->rxbytes);
