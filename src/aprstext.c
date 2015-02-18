@@ -77,6 +77,13 @@ extern void aprstext_DateLocToStr(unsigned long time0, char s[],
 } /* end DateLocToStr() */
 
 
+static char IsBulletin(const struct aprsdecode_DAT dat)
+{
+   return ((dat.type==aprsdecode_MSG && dat.msgto[0UL]=='B')
+                && dat.msgto[1UL]=='L') && dat.msgto[2UL]=='N';
+} /* end IsBulletin() */
+
+
 extern void aprstext_logfndate(unsigned long time0, char fn[],
                 unsigned long fn_len)
 /* replace %d by date */
@@ -784,7 +791,7 @@ extern void aprstext_listtyps(char typ, char decod, char oneop[],
          while (pf) {
             if (((((((pf->vardat->lastref==pf && aprsdecode_Decode(pf->vardat->raw,
                  500ul, &dat)>=0L) && (typ=='M' || typ=='B')) && dat.type==aprsdecode_MSG) && X2C_STRCMP(dat.srccall,
-                9u,dat.msgto,9u)) && dat.msgtext[0UL]) && (typ=='B')==aprsdecode_IsBulletin(dat)) && ((oneop[0UL]==0 || X2C_STRCMP(oneop,
+                9u,dat.msgto,9u)) && dat.msgtext[0UL]) && (typ=='B')==IsBulletin(dat)) && ((oneop[0UL]==0 || X2C_STRCMP(oneop,
                 oneop_len,op->call,9u)==0) || X2C_STRCMP(oneop,oneop_len,
                 dat.msgto,9u)==0)) {
                if (!(aprsstr_StrCmp(lastto, 101ul, dat.msgto,

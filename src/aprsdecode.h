@@ -636,8 +636,6 @@ extern void aprsdecode_getbeaconname(char [], unsigned long, char [],
 
 extern void aprsdecode_drawbeacon(char [], unsigned long);
 
-extern char aprsdecode_IsBulletin(struct aprsdecode_DAT);
-
 extern char aprsdecode_getmypos(struct aprspos_POSITION *);
 
 extern void aprsdecode_makelogfn(char [], unsigned long);

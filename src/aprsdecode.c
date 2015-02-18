@@ -5403,13 +5403,6 @@ static void approxywarn(struct aprspos_POSITION pos, const char call[],
    }
 } /* end approxywarn() */
 
-
-extern char aprsdecode_IsBulletin(struct aprsdecode_DAT dat)
-{
-   return ((dat.type==aprsdecode_MSG && dat.msgto[0UL]=='B')
-                && dat.msgto[1UL]=='L') && dat.msgto[2UL]=='N';
-} /* end IsBulletin() */
-
 #define aprsdecode_DUPTIME 27
 
 #define aprsdecode_NN "n"
@@ -5667,7 +5660,10 @@ static void digi(const aprsdecode_FRAMEBUF b, unsigned long udpch,
    }
    n = (unsigned long)(unsigned char)(char)hashl+(unsigned long)
                 (unsigned char)(char)hashh*256UL&65535UL;
-   if (dat.type==aprsdecode_MSG && !aprsdecode_IsBulletin(dat)) dt = 27UL;
+   if (dat.type==aprsdecode_MSG && aprstext_isacall(dat.msgto, 9ul)) {
+      /*NOT IsBulletin(dat)*/
+      dt = 27UL; /* real messages fast dupetime */
+   }
    else dt = nomovetime;
    if (outport>0UL && outport-1UL<=3UL) {
       { /* with */
