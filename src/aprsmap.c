@@ -4238,26 +4238,20 @@ static void makeimage(char dryrun)
       aprsdecode_click.pf0 = 0;
    }
    else if (aprsdecode_lums.map>0L) {
-      /*
-          FILL(image, 0C, SIZE(PIX)*xsize*ysize);
-          IF lums.map>0 THEN
-      
-            loadmap(map, FALSE);
-            addmap(image, map);
-            loadmap(image, FALSE);
-          END;
-      */
       maptool_loadmap(image, aprsdecode_inittilex, aprsdecode_inittiley,
                 aprsdecode_initzoom, aprsdecode_finezoom, maptool_shiftx,
                 maptool_shifty, &mapok, &useri_isblown,
                 useri_configon(useri_fALLOWEXP), 0);
-      if (!mapok) tooltips('B');
-      /*IF isblown THEN WrStrLn("loadmapblown")
-                ELSE WrStrLn("loadmapNOTblown") END; */
-      if (!mapok && useri_configon(useri_fGETMAPS)) maptrys = 30UL;
+      if (!mapok) {
+         tooltips('B');
+         maptrys = 30UL;
+      }
       else maptrys = 0UL;
    }
    else {
+      /*    IF NOT mapok & configon(fGETMAPS)
+                THEN maptrys:=30 ELSE maptrys:=0 END;
+                (* start map load timeout *) */
       /*      IF isblown THEN textautosize(0, 0, 10, "g",
                 "Expanded Tiles!") ELSE killmenuid(10) END; */
       maptool_clr(image);
@@ -4291,9 +4285,7 @@ static void makeimage(char dryrun)
          tracks(image, aprsdecode_ophist0, 0, X2C_max_longcard);
       }
       symbols(aprsdecode_ophist0, 1, 0);
-      if (aprsdecode_lums.sym>0L) {
-         symbols(aprsdecode_ophist0, 0, 0);
-      }
+      if (aprsdecode_lums.sym>0L) symbols(aprsdecode_ophist0, 0, 0);
       text(aprsdecode_ophist0, 1, 0, 0, 0);
    }
    else {
