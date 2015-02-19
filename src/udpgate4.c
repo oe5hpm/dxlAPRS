@@ -5032,7 +5032,7 @@ static char iconf(char sym, char symt, char fn[], unsigned long fn_len,
 
 
 static void sortindex(pHEARD ph, unsigned long maxtime, const char sortby[],
-                unsigned long sortby_len)
+                unsigned long sortby_len, char * withqual)
 /* make LONGREAL of sort key */
 {
    char homevalid;
@@ -5040,6 +5040,7 @@ static void sortindex(pHEARD ph, unsigned long maxtime, const char sortby[],
    char c;
    char s;
    double xs;
+   *withqual = 0;
    xs = 0.0;
    homevalid = aprspos_posvalid(home);
    s = sortby[0UL];
@@ -5070,6 +5071,7 @@ static void sortindex(pHEARD ph, unsigned long maxtime, const char sortby[],
       } /* end switch */
       if (sortby[1UL]=='d') ph->sortval = -xs;
       else ph->sortval = xs;
+      if ((ph->txd || ph->level) || ph->quali) *withqual = 1;
       ph = ph->next;
    }
 } /* end sortindex() */
@@ -5098,6 +5100,7 @@ static void showmh(WWWB wbuf, pTCPSOCK * wsock, char h1[256], pHEARD ph0,
                 unsigned long title_len, const char sortby[],
                 unsigned long sortby_len)
 {
+   char withqual;
    char withicon;
    char withport;
    unsigned long ci;
@@ -5108,6 +5111,7 @@ static void showmh(WWWB wbuf, pTCPSOCK * wsock, char h1[256], pHEARD ph0,
    char callink[1024];
    X2C_PCOPY((void **)&title0,title_len);
    getlinkfile(callink, 1024ul, "calllink.txt", 13ul);
+   sortindex(ph0, maxtime, sortby, sortby_len, &withqual);
    withport = udpsocks && udpsocks->next;
    aprsstr_Assign(h1, 256ul, wwwdir, 1024ul);
    aprsstr_Append(h1, 256ul, "icon", 5ul);
@@ -5115,9 +5119,11 @@ static void showmh(WWWB wbuf, pTCPSOCK * wsock, char h1[256], pHEARD ph0,
    Appwww(wsock, wbuf, "<table id=mheard border=0 align=center CELLPADDING=3 \
 CELLSPACING=1 BGCOLOR=#FFFFFF><tr class=tab-mh-titel BGCOLOR=#A9EEFF><th cols\
 pan=", 135ul);
-   /*    Appwww(CHR(ORD("6")+ORD(withicon)+ORD(withport)+ORD(dir)*3)); */
+   /*    Appwww(CHR(ORD("6")+ORD(withicon)+ORD(withport)+ORD(dir&withqual)*3)
+                ); */
    aprsstr_IntToStr((long)(6UL+(unsigned long)withicon+(unsigned long)
-                withport+(unsigned long)dir*3UL), 1UL, h1, 256ul);
+                withport+(unsigned long)(dir && withqual)*3UL), 1UL, h1,
+                256ul);
    Appwww(wsock, wbuf, h1, 256ul);
    Appwww(wsock, wbuf, ">", 2ul);
    Appwww(wsock, wbuf, title0, title_len);
@@ -5147,7 +5153,7 @@ pan=", 135ul);
                 ); */
    Appwww(wsock, wbuf, "<th>", 5ul);
    klick(wbuf, wsock, "mh", 3ul, "Last Heard", 11ul, 't');
-   if (dir) {
+   if (dir && withqual) {
       Appwww(wsock, wbuf, "</th><th>Txd</th><th>Lev</th><th>q&#37;", 40ul);
    }
    Appwww(wsock, wbuf, "</th><th>", 10ul);
@@ -5155,7 +5161,6 @@ pan=", 135ul);
    Appwww(wsock, wbuf, "</th><th>", 10ul);
    klick(wbuf, wsock, "mh", 3ul, "QRB km", 7ul, 'd');
    Appwww(wsock, wbuf, "</th><th>Data</th><th>Path</th></tr>", 37ul);
-   sortindex(ph0, maxtime, sortby, sortby_len);
    for (;;) {
       phs = ph0;
       xs = X2C_max_longreal;
@@ -5211,30 +5216,38 @@ n:right\">", 56ul);
          /*
                  Appwww('<td>'); 
          */
-         if (dir) {
+         if (dir && withqual) {
             /* txdel */
             Appwww(wsock, wbuf, "<td style=\"background-color:#", 30ul);
             strncpy(h1,"80FF80",256u);
             redgreen(h1, (long)ph->txd-50L);
             Appwww(wsock, wbuf, h1, 256ul);
             Appwww(wsock, wbuf, "\">", 3ul);
-            aprsstr_IntToStr((long)ph->txd, 1UL, h1, 256ul);
-            Appwww(wsock, wbuf, h1, 256ul);
+            if (ph->txd) {
+               aprsstr_IntToStr((long)ph->txd, 1UL, h1, 256ul);
+               Appwww(wsock, wbuf, h1, 256ul);
+            }
             Appwww(wsock, wbuf, "</td>", 6ul);
             /* level */
             Appwww(wsock, wbuf, "<td style=\"background-color:#", 30ul);
             strncpy(h1,"80FF80",256u);
-            redgreen(h1, ((long)Min((unsigned long)(unsigned char)abs(ph->level+15),
+            if (ph->level) {
+               redgreen(h1, ((long)Min((unsigned long)(unsigned char)abs(ph->level+15),
                  15UL)-5L)*10L);
+            }
             Appwww(wsock, wbuf, h1, 256ul);
             Appwww(wsock, wbuf, "\">", 3ul);
-            aprsstr_IntToStr((long)ph->level, 1UL, h1, 256ul);
-            Appwww(wsock, wbuf, h1, 256ul);
+            if (ph->level) {
+               aprsstr_IntToStr((long)ph->level, 1UL, h1, 256ul);
+               Appwww(wsock, wbuf, h1, 256ul);
+            }
             Appwww(wsock, wbuf, "</td>", 6ul);
             /*quality */
             Appwww(wsock, wbuf, "<td>", 5ul);
-            aprsstr_IntToStr((long)ph->quali, 1UL, h1, 256ul);
-            Appwww(wsock, wbuf, h1, 256ul);
+            if (ph->quali) {
+               aprsstr_IntToStr((long)ph->quali, 1UL, h1, 256ul);
+               Appwww(wsock, wbuf, h1, 256ul);
+            }
             Appwww(wsock, wbuf, "</td>", 6ul);
          }
          Appwww(wsock, wbuf, "<td style=\"background-color:#", 30ul);

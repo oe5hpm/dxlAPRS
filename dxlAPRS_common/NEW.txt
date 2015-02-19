@@ -238,7 +238,9 @@ rf     qA?                                                            +
 
 
 
+17. 2. 2015
 
+  WWW-MH-Seite: Nur mehr Modem Messwert Felder wenn auch Messwert vorhanden ist. 
 
 
 
