@@ -19,6 +19,7 @@ armv6:
 	PLATTFORM=armv6 make -f udphub.mkf
 	PLATTFORM=armv6 make -f gps2aprs.mkf
 	PLATTFORM=armv6 make -f aprsmap.mkf
+	PLATTFORM=armv6tce make -f aprsmap.mkf cleanobj
 	PLATTFORM=armv6tce make -f aprsmap.mkf
 	PLATTFORM=armv6 make -f sondemod.mkf
 	PLATTFORM=armv6 make -f gps2digipos.mkf
