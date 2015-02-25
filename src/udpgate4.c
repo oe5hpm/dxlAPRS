@@ -178,7 +178,7 @@ struct TCPSOCK {
    long rpos;
    long tlen;
    FRAMEBUF rbuf;
-   FRAMEBUF tbuf;
+   char tbuf[1024];
    char get[256];
    pWWWBUF txbuf;
 };
@@ -2065,6 +2065,28 @@ static char Filter(pTCPSOCK to, struct POSCALL posc, const char dat[],
 } /* end Filter() */
 
 
+static void sendtcpbuf(pTCPSOCK to)
+{
+   long i0;
+   long res0;
+   struct TCPSOCK * anonym;
+   long tmp;
+   { /* with */
+      struct TCPSOCK * anonym = to;
+      res0 = sendsock(anonym->fd, anonym->tbuf, anonym->tlen);
+      if (res0>0L) {
+         tmp = anonym->tlen-1L;
+         i0 = res0;
+         if (i0<=tmp) for (;; i0++) {
+            anonym->tbuf[i0-res0] = anonym->tbuf[i0];
+            if (i0==tmp) break;
+         } /* end for */
+         anonym->tlen -= res0;
+      }
+   }
+} /* end sendtcpbuf() */
+
+
 static void Sendtcp(pTCPSOCK to, const FRAMEBUF buf)
 {
    long i0;
@@ -2074,7 +2096,8 @@ static void Sendtcp(pTCPSOCK to, const FRAMEBUF buf)
    len = (long)aprsstr_Length(buf, 512ul);
    { /* with */
       struct TCPSOCK * anonym = to;
-      if (anonym->tlen+len<512L) {
+      if (anonym->tlen+len>=1024L) sendtcpbuf(to);
+      if (anonym->tlen+len<1024L) {
          tmp = len-1L;
          i0 = 0L;
          if (i0<=tmp) for (;; i0++) {
@@ -2692,7 +2715,7 @@ static void IncHeard(pHEARD ph, char up, unsigned long livetime)
    if (livetime>0UL) {
       { /* with */
          struct HEARD * anonym = ph;
-         t = systime/(livetime/48UL);
+         t = systime/(livetime/48UL)+49UL;
          /*WrInt(t, 10); WrInt(cntt, 10); WrInt(ORD(up), 10); WrLn; */
          if (anonym->cntt+49UL<t) anonym->cntt = t-49UL;
          while (anonym->cntt<t) {
@@ -6171,7 +6194,6 @@ static void addsock(long fd, char wtoo)
 X2C_STACK_LIMIT(100000l)
 extern int main(int argc, char **argv)
 {
-   long tmp;
    X2C_BEGIN(&argc,argv,1,4000000l,8000000l);
    if (sizeof(MONCALL)!=10) X2C_ASSERT(0);
    if (sizeof(FILENAME)!=1024) X2C_ASSERT(0);
@@ -6392,18 +6414,8 @@ extern int main(int argc, char **argv)
                struct TCPSOCK * anonym0 = acttcp;
                if (anonym0->service=='W') Wwwtx(&acttcp);
                else {
-                  res = sendsock(anonym0->fd, anonym0->tbuf, anonym0->tlen);
-                  if (res>0L) {
-                     tmp = anonym0->tlen-1L;
-                     i = res;
-                     if (i<=tmp) for (;; i++) {
-                        anonym0->tbuf[i-res] = anonym0->tbuf[i];
-                        if (i==tmp) break;
-                     } /* end for */
-                     anonym0->tlen -= res;
-                     if (anonym0->connt==0UL) anonym0->connt = systime;
-                  }
-                  else anonym0->tlen = 0L;
+                  sendtcpbuf(acttcp);
+                  if (anonym0->connt==0UL) anonym0->connt = systime;
                }
             }
          }
@@ -6437,9 +6449,7 @@ extern int main(int argc, char **argv)
                 && aprsstr_StrCmp(poscall.call, 10ul, acttcp->user.call,
                 10ul)) acttcp->user.pos = poscall.pos;
                      if (acttcp->valid) {
-                        if (res>=0L) {
-                           Sendall(mbuf, acttcp->fd, poscall);
-                        }
+                        if (res>=0L) Sendall(mbuf, acttcp->fd, poscall);
                         if (verb || logframes>1L) {
                            showframe(res, acttcp, 0, mbuf, 512ul,
                 poscall.pos);
@@ -6453,7 +6463,9 @@ extern int main(int argc, char **argv)
             /* connection lost */
             if (acttcp->connt && acttcp->service!='W') showlogout(acttcp);
             closetcp(&acttcp, 1); /* free www buffers */
-            if (acttcp==tcpsocks) tcpsocks = tcpsocks->next;
+            if (acttcp==tcpsocks) {
+               tcpsocks = tcpsocks->next;
+            }
             else {
                acttmp = tcpsocks;
                while (acttmp->next!=acttcp) acttmp = acttmp->next;
