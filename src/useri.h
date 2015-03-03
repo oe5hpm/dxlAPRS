@@ -141,6 +141,7 @@ enum useri_CONFSET {useri_fFIND, useri_fLOGWFN, useri_fLOGDAYS, useri_fLOGFN,
    useri_fTRACKFILT, useri_fDUPDEL, useri_fARROW, useri_fINVMOV, useri_fKMH,
                 useri_fKMHTIME, useri_fTEMP, useri_fWINDSYM, useri_fRULER, 
    useri_fALTMIN, 
+   useri_fONESYMB, 
    useri_fDEFZOOM, useri_fANIMSPEED, useri_fVIDEOFAST, 
    useri_fVIEW, useri_fMAXZOOM, useri_fDOWNLOADZOOM, useri_fGETMAPS,
                 useri_fFONTSIZE, useri_fMARKPOS, 
@@ -349,6 +350,8 @@ extern void useri_popwatchcall(char [], unsigned long);
 extern void useri_allocimage(maptool_pIMAGE *, long, long, char);
 
 extern unsigned long useri_mainys(void);
+
+extern void useri_rdonesymb(char);
 
 
 extern void useri_BEGIN(void);

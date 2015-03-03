@@ -775,6 +775,7 @@ static char getudp(unsigned long usock, aprsdecode_FRAMEBUF buf)
    long len;
    unsigned long mlen;
    aprsdecode_FRAMEBUF mbuf;
+   char udp2[100];
    if ((long)aprsdecode_udpsocks0[usock].fd<0L) return 0;
    len = udpreceive(aprsdecode_udpsocks0[usock].fd, buf, 512L, &fromport,
                 &ipn);
@@ -784,16 +785,20 @@ static char getudp(unsigned long usock, aprsdecode_FRAMEBUF buf)
                 WrStrLn(" us"); */
       buf[len] = 0;
       if (aprsdecode_udpsocks0[usock].rawread) {
-         crc1 = buf[len-2L];
-         crc2 = buf[len-1L];
-         aprsstr_AppCRC(buf, 512ul, len-2L);
-         if (crc1!=buf[len-2L] || crc2!=buf[len-1L]) {
+         len -= 2L;
+         crc1 = buf[len];
+         crc2 = buf[len+1L];
+         aprsstr_AppCRC(buf, 512ul, len);
+         if (crc1!=buf[len] || crc2!=buf[len+1L]) {
             if (aprsdecode_verb) osi_WrStrLn(" axudp crc error", 17ul);
             buf[0UL] = 0;
          }
          else {
-            aprsstr_raw2mon(buf, 512ul, mbuf, 512ul, (unsigned long)(len-2L),
-                 &mlen);
+            if (buf[0UL]=='\001') {
+               aprsstr_extrudp2(buf, 512ul, udp2, 100ul, &len);
+            }
+            aprsstr_raw2mon(buf, 512ul, mbuf, 512ul, (unsigned long)len,
+                &mlen);
             memcpy(buf,mbuf,512u);
          }
       }
@@ -1227,7 +1232,7 @@ static void beaconmacros(char s[], unsigned long s_len, const char path[],
             }
             else if (s[i]=='\\') aprsstr_Append(ns, 256ul, "\\\\", 3ul);
             else if (s[i]=='v') {
-               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.47", 17ul);
+               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.48", 17ul);
             }
             else if (s[i]=='l') {
                useri_confstr(useri_fMYPOS, ds, 256ul);
@@ -4933,7 +4938,7 @@ static char tcpconn(aprsdecode_pTCPSOCK * sockchain, long f)
          aprsstr_Append(h, 512ul, s, 100ul);
       }
       aprsstr_Append(h, 512ul, " vers ", 7ul);
-      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.47", 17ul);
+      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.48", 17ul);
       appfilter(h, 512ul);
       /*    IF filter[0]<>0C THEN Append(h, " filter ");
                 Append(h, filter) END; */

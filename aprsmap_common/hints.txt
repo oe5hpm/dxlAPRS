@@ -210,22 +210,8 @@ sight, green fresnelzone is touched, yellow
 half fresnelzone till red for whole fresnelzone
 shaped.
 
-
-|520 Show Stations with last Beacon has Wx-Data
-(Shortcut w)
-Off with "Show All" "0" oder ESC
-   
-|525 Make a Colour Image out of Temperatures
-of WX Stations, Map is converted to B/W,
-Topo-Maps are nice here (Shortcut 2 times w).
-Off with "Show All" "0" oder ESC
-
-|526 Make a Colour Image out of Rain
-in 24h (blue) and last hour (red)
-(Shortcut W) Map is converted to B/W.
-Off with "Show All" "0" oder ESC
-
-|530 To see moving stations (Shortcut m)
+|522 Show Maps with selected Data like Wx-Maps or
+choose a Symbol and show Stations with this.
 
 |535 Manage Sent Messages (Shortcut M)
 
@@ -432,31 +418,39 @@ received (green), change to red.
 Configure in Config, Online
 
 |1701 UDP Port 1 Status
-Switch AXUDP Interface to TNC or Soundmodem on/off
+Switch AXUDP Interface to
+TNC or Soundmodem on/off.
 Shift-Leftclick to Config.
-If no data sent (yellow) or
-received (green), change to red.
+Data sent: yellow
+Data received: green
+Idle: red
 Configure in Config, Rf-Ports
 
 |1702 UDP Port 2 Status
-Switch AXUDP Interface to TNC or Soundmodem on/off
+Switch AXUDP Interface to
+TNC or Soundmodem on/off
 Shift-Leftclick to Config.
-If no data sent (yellow) or
-received (green), change to red.
+Data sent: yellow
+Data received: green
+Idle: red
 Configure in Config, Rf-Ports
 
 |1703 UDP Port 3 Status
-Switch AXUDP Interface to TNC or Soundmodem on/off
+Switch AXUDP Interface to
+TNC or Soundmodem on/off
 Shift-Leftclick to Config.
-If no data sent (yellow) or
-received (green), change to red.
+Data sent: yellow
+Data received: green
+Idle: red
 Configure in Config, Rf-Ports
 
 |1704 UDP Port 4 Status
-Switch AXUDP Interface to TNC or Soundmodem on/off
+Switch AXUDP Interface to
+TNC or Soundmodem on/off
 Shift-Leftclick to Config.
-If no data sent (yellow) or
-received (green), change to red.
+Data sent: yellow
+Data received: green
+Idle: red
 Configure in Config, Rf-Ports
 
 |1705 (End) Viewing data from logfile
@@ -971,6 +965,9 @@ second pair for acknowledged a sent Message
 
 |8100 Append edited Beacon to the Schedule Table.
 Objects/Items with same Name will be deleted.
+To start Beaconing by timer, enable the line
+with On/Off-button.
+
 |8101 Draw on local Map for testing. Hold Shift
 and click to Map to change Position. Delete
 on Map with click to symbol and DEL-Key.
@@ -1364,4 +1361,30 @@ set "Config>Map Moving>Expand Map" as wantet
 
 |10015 Tipp: Zoom to Objects even if Maps are not downloaded
 yet, switch off "Config>Mapmoving>Zoom as have Maps"
+
+|8600 Switch off all Selections and show all
+(Shortcut "0" or ESC)
+ 
+|8605 Show Stations with last Beacon has Wx-Data
+(Shortcut w)
+Off with "Show All" "0" oder ESC
+   
+|8610 Make a Colour Image out of Temperatures
+of WX Stations, Map is converted to B/W,
+Topo-Maps are nice here (Shortcut 2 times w).
+Off with "Show All" "0" oder ESC
+
+|8615 Make a Colour Image out of Rain
+in 24h (blue) and last hour (red)
+(Shortcut W) Map is converted to B/W.
+Off with "Show All" "0" oder ESC
+
+|8620 To see moving stations (Shortcut m)
+
+|8625 Only Stations with the selected Symbol will
+be shown. This may be toggled on/off here or 
+with "s"-Key
+
+|8626 Select a Symbol, for Overlay Symbols click and
+edit the Overlay Character
  

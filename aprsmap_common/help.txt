@@ -1003,7 +1003,7 @@ o Zeige Objects/Items ein/aus
 p Zeige Geodaten der Mausposition ein/aus
 q Quit
 r Zeig weisse Funkstrecken Linien von angeklickter Station
-s Screenshot ppm/bpm
+s toggle show stations with a selected symbol
 u Tx/Rx-Monitor Fenster ein/aus
 w WX-Stationen (mit l nur Tempertur ohne Calls) 
 ww grafische Temperaturverteilung
@@ -1013,6 +1013,7 @@ B Baken Editor oeffnen
 F Finde Call (mit Wildcards * ?), Lokator, Breite/Laenge
 M Message Schreiben
 R Funkreichweiten Karte ein/aus
+S Bildschirmfoto bpm (win), png (linux)
 W grafische Regenkarte rot: letzte Stunde, blau: 24h
 < > Liste gespeicherte Baken/Wegpunkte der angeklickten Station
 / Zoom auf das von Marker 1-2 aufgespannte Rechteck 
@@ -1048,7 +1049,7 @@ m toggle dimm not moving since 10min
 o toggle Objects/Items on/off
 q Quit Program
 r toggle Radio tracks on/off
-s Screenshot ppm/bpm
+s toggle show stations with a selected symbol
 u toggle tx/rx-Monitor window on/off
 w toggle WX stations and Temperature
 x set Marker 1 to mouse position
@@ -1057,6 +1058,7 @@ B Open Beacon editor
 F Find Call (with wildcards * ?), Locator, Latitude/Longitude
 M Compose Message
 R toggle Radiorange Map on/off
+S Screenshot bpm (win), png (linux)
 W Rain map (use topo or dark map)
 < > Step along Beacons/Waypoints of a selected User
 / zoom to Marker 1-2 Square

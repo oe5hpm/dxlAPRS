@@ -1175,7 +1175,11 @@
 
 
 
+2. 3. 2015 (Ver 0.48)
 
++ Nur Stationen mit einem bestimmten Symbol aufs Bild, Symbol-Wahl in
+  Tools / Select Data / Symbol>. On/Off mit "Symbol" oder "s"-Taste.
+  Achtung: Screenshot Taste ist jetzt "S".
 
 
 

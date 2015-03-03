@@ -55,7 +55,7 @@
 #define aprsdecode_BEGINOFTIME 1388534400
 /* oldest possible log date */
 
-#define aprsdecode_VERS "aprsmap(cu) 0.47"
+#define aprsdecode_VERS "aprsmap(cu) 0.48"
 
 typedef char aprsdecode_MONCALL[9];
 
@@ -416,6 +416,7 @@ struct aprsdecode__D0 {
    long y;
    long min0;
    aprsdecode_MONCALL mhop;
+   struct aprsdecode_SYMBOL onesymbol;
    aprsdecode_pOPHIST ops;
    aprsdecode_pFRAMEHIST pf;
    aprsdecode_pFRAMEHIST pf0;

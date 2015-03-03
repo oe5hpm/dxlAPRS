@@ -53,7 +53,9 @@
 #ifndef aprstext_H_
 #include "aprstext.h"
 #endif
-#include <signal.h>
+#ifndef signal_H_
+#include "signal.h"
+#endif
 
 /* aprs tracks on osm map by oe5dxl */
 #define aprsmap_MINLIG 60
@@ -97,6 +99,7 @@ struct VIEW {
    struct aprspos_POSITION pos;
    float zoom;
    aprsdecode_MONCALL mhop;
+   struct aprsdecode_SYMBOL onesymbol;
    long rf;
    unsigned char mhtx0;
    char wxcol;
@@ -971,13 +974,13 @@ static void symbols(aprsdecode_pOPHIST op, char objects, char highlight0)
       else aprsdecode_click.typ = aprsdecode_tSYMBOL;
    }
    while (aprsdecode_click.ops) {
-      if ((((((0x8U & aprsdecode_click.ops->drawhints)
-                && ((0x2U & aprsdecode_click.ops->drawhints)!=0)==objects)
+      if (((((0x8U & aprsdecode_click.ops->drawhints)
                 && aprsdecode_click.ops->sym.tab!='\001')
                 && maptool_mapxy(aprsdecode_click.ops->lastpos, &x,
                 &y)>=0L) && maptool_vistime(aprsdecode_click.ops->lasttime))
                 && (aprsdecode_click.ops->lastinftyp>=100U || aprsdecode_lums.wxcol==0)
                 ) {
+         /*& ((ISOBJECT IN click.ops^.drawhints)=objects)*/
          /*
                symt:=click.ops^.sym.tab;
                symb:=click.ops^.sym.pic; 
@@ -1725,6 +1728,7 @@ static void importlog(char cmd)
             stkpo = 0UL;
             stktop = 0UL;
             aprsdecode_click.mhop[0UL] = 0;
+            aprsdecode_click.onesymbol.tab = 0;
             aprsdecode_click.entries = 0UL;
             aprsdecode_purge(&aprsdecode_ophist0, X2C_max_longcard,
                 X2C_max_longcard);
@@ -1738,6 +1742,7 @@ static void importlog(char cmd)
             stkpo = 0UL;
             stktop = 0UL;
             aprsdecode_click.mhop[0UL] = 0;
+            aprsdecode_click.onesymbol.tab = 0;
             aprsdecode_click.entries = 0UL;
             aprsdecode_purge(&aprsdecode_ophist0, X2C_max_longcard,
                 X2C_max_longcard);
@@ -1763,6 +1768,7 @@ static void importlog(char cmd)
             stkpo = 0UL;
             stktop = 0UL;
             aprsdecode_click.mhop[0UL] = 0;
+            aprsdecode_click.onesymbol.tab = 0;
             aprsdecode_click.entries = 0UL;
             aprsdecode_purge(&aprsdecode_ophist0, X2C_max_longcard,
                 X2C_max_longcard);
@@ -1934,12 +1940,13 @@ static void markvisable(const aprsdecode_MONCALL singlecall)
          struct aprsdecode_OPHIST * anonym = op;
          if (((aprspos_posvalid(anonym->lastpos)
                 && maptool_vistime(anonym->lasttime))
-                && (op==singleop || (((singleop==0 && anonym->margin0.long0<=rightdown.long0)
+                && (op==singleop || ((((singleop==0 && anonym->margin0.long0<=rightdown.long0)
                  && anonym->margin0.lat>=rightdown.lat)
                 && anonym->margin1.long0>=aprsdecode_mappos.long0)
-                && anonym->margin1.lat<=aprsdecode_mappos.lat))
-                && (aprsdecode_lums.obj>0L || (0x2U & anonym->drawhints)==0))
-                 anonym->drawhints |= 0x8U;
+                && anonym->margin1.lat<=aprsdecode_mappos.lat)
+                && (aprsdecode_click.onesymbol.tab==0 || anonym->sym.pic==aprsdecode_click.onesymbol.pic && anonym->sym.tab==aprsdecode_click.onesymbol.tab)
+                )) && ((op==singleop || aprsdecode_lums.obj>0L)
+                || (0x2U & anonym->drawhints)==0)) anonym->drawhints |= 0x8U;
          else anonym->drawhints = anonym->drawhints&~0x18U;
          op = anonym->next;
       }
@@ -2218,6 +2225,7 @@ static void toggview(void)
    alttabview.zoom = maptool_realzoom(aprsdecode_initzoom,
                 aprsdecode_finezoom);
    memcpy(alttabview.mhop,aprsdecode_click.mhop,9u);
+   alttabview.onesymbol = aprsdecode_click.onesymbol;
    alttabview.rf = aprsdecode_lums.rf;
    alttabview.mhtx0 = mhtx;
    alttabview.wxcol = aprsdecode_lums.wxcol;
@@ -2228,6 +2236,7 @@ static void toggview(void)
       aprsdecode_initzoom = (long)aprsdecode_trunc(v.zoom);
       aprsdecode_finezoom = (v.zoom-(float)aprsdecode_initzoom)+1.0f;
       memcpy(aprsdecode_click.mhop,v.mhop,9u);
+      aprsdecode_click.onesymbol = v.onesymbol;
       aprsdecode_lums.rf = v.rf;
       mhtx = v.mhtx0;
       aprsdecode_lums.wxcol = v.wxcol;
@@ -2256,6 +2265,7 @@ static void push(struct aprspos_POSITION pos, float zoom)
       posstk[stkpo].zoom = zoom;
       /*WrFixed(zoom, 10,2); WrStrLn("pu"); */
       memcpy(posstk[stkpo].mhop,aprsdecode_click.mhop,9u);
+      posstk[stkpo].onesymbol = aprsdecode_click.onesymbol;
       posstk[stkpo].rf = aprsdecode_lums.rf;
       posstk[stkpo].mhtx0 = mhtx;
       if (stkpo<19UL) ++stkpo;
@@ -2296,6 +2306,7 @@ static void pop(struct aprspos_POSITION * pos, long * iz, float * fz)
       *fz = (*fz-(float)*iz)+1.0f;
       /*WrFixed(fz, 10,2); WrInt(iz,5); WrStrLn("po"); */
       memcpy(aprsdecode_click.mhop,posstk[stkpo].mhop,9u);
+      aprsdecode_click.onesymbol = posstk[stkpo].onesymbol;
       aprsdecode_lums.rf = posstk[stkpo].rf;
       mhtx = posstk[stkpo].mhtx0;
    }
@@ -2842,6 +2853,7 @@ static void find(void)
       if (aprspos_posvalid(pos)) {
          /* lat / long */
          aprsdecode_click.mhop[0UL] = 0;
+         aprsdecode_click.onesymbol.tab = 0;
          aprstext_setmark1(pos, 1, X2C_max_longint, 0UL);
          /*    click.markpos:=pos;  click.marktime:=0;
                 click.markalti:=MAX(INTEGER);     */
@@ -2856,6 +2868,7 @@ static void find(void)
          op = findop(h, 201ul, 1);
          if (op) {
             aprsdecode_click.mhop[0UL] = 0;
+            aprsdecode_click.onesymbol.tab = 0;
             useri_mainpop();
             push(aprsdecode_mappos, maptool_realzoom(aprsdecode_initzoom,
                 aprsdecode_finezoom));
@@ -3000,11 +3013,26 @@ static void internstat(void)
 static void setshowall(void)
 {
    aprsdecode_click.mhop[0UL] = 0;
+   aprsdecode_click.onesymbol.tab = 0;
    aprsdecode_click.watchmhop = 0;
    aprsdecode_lums.wxcol = 0;
    useri_textautosize(0L, 0L, 4UL, 2UL, 'g', "Show All", 9ul);
 } /* end setshowall() */
 
+/*
+PROCEDURE toggonesym;                                 (* toggle onsymbol *)
+VAR s:ARRAY[0..30] OF CHAR;
+BEGIN
+  IF click.onesymbol.tab=0C THEN
+    confstr(fONESYMB, s);
+    IF s[0]>" " THEN
+      click.onesymbol.tab:=s[0];
+      click.onesymbol.pic:=s[1];
+    END;
+  ELSE click.onesymbol.tab:=0C END;
+  sayonoff("Show One Symbol", click.onesymbol.tab<>0C);
+END toggonesym;
+*/
 
 static void View(unsigned long n)
 {
@@ -4577,6 +4605,8 @@ static void MainEvent(void)
          aprsdecode_objsender(aprsdecode_click.table[aprsdecode_click.selected]
                 .opf, aprsdecode_click.mhop, 9ul);
          mhtx = aprsmap_OPOBJ;
+         aprsdecode_lums.obj = 10L*useri_conf2int(useri_fLOBJ, 0UL, 0L, 100L,
+                 100L); /* switch on objects */
          pandone = 0;
       }
       else if (aprsdecode_click.cmd=='H') {
@@ -4659,6 +4689,10 @@ static void MainEvent(void)
       else if (aprsdecode_click.cmd=='\311') zoominout(0, 1);
       else if (aprsdecode_click.cmd=='\237') MapPackage();
       else if (aprsdecode_click.cmd=='S') screenshot();
+      else if (aprsdecode_click.cmd=='s') {
+         useri_rdonesymb(aprsdecode_click.onesymbol.tab==0);
+                /* toggle onesymbol */
+      }
       else if (aprsdecode_click.cmd=='E') {
          aprsdecode_lums.errorstep = !aprsdecode_lums.errorstep;
          useri_sayonoff("Show errors", 12ul, aprsdecode_lums.errorstep);
@@ -4726,6 +4760,7 @@ static void MainEvent(void)
          else if (aprsdecode_lums.wxcol!='R') aprsdecode_lums.wxcol = 'R';
          else aprsdecode_lums.wxcol = 0;
          aprsdecode_click.mhop[0UL] = 0;
+         aprsdecode_click.onesymbol.tab = 0;
          closeradio();
       }
       else if (aprsdecode_click.cmd=='C') centermouse();
@@ -5163,6 +5198,7 @@ extern int main(int argc, char **argv)
    memset((char *) &aprsdecode_serialpid2,(char)0,
                 sizeof(struct xosi_PROCESSHANDLE));
    aprsdecode_click.mhop[0UL] = 0;
+   aprsdecode_click.onesymbol.tab = 0;
    aprsdecode_click.zoomtox = -1L;
    aprsdecode_posinval(&aprsdecode_click.squerpos0);
    aprsdecode_posinval(&aprsdecode_click.measurepos);
