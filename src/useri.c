@@ -268,6 +268,9 @@ maptool_pIMAGE useri_panoimage;
 
 #define useri_PANOWINID 202
 
+#define useri_OVERLAYID 203
+/* overlay symbol chooser id */
+
 #define useri_CMDFPS "\006"
 /*      ZOOMTO=7C;  */
 
@@ -4696,10 +4699,13 @@ static void movewin(pMENU pm, long dx, long dy)
 
 #define useri_SYMS 17
 
+#define useri_YS 12
+
 #define useri_S "\370\367|"
 
 
 static void symchoose(char myorbeacon)
+/* draw symbol chart to select one */
 {
    pMENU menu;
    unsigned long y;
@@ -4747,6 +4753,30 @@ static void symchoose(char myorbeacon)
    menu->ysize = menu->oldknob*menu->yknob;
    menu->oldknob = 0UL;
 } /* end symchoose() */
+
+#define useri_SYMS0 17
+
+#define useri_S0 "\370\367|"
+
+
+static void overlaychoose(char myorbeacon)
+{
+   pMENU menu;
+   newmenu(&menu, 156UL, aprsdecode_lums.fontysize+5UL, 3UL, useri_bCOLOR);
+   addline(menu, "0 |1 |2 |3 |4 |5 |6 |7 |8 |9 |", 31ul,
+                (char *) &myorbeacon, 1u/1u, 4100UL);
+   addline(menu, "N |O |P |Q |R |S |T |U |V |W |X |Y |Z |", 40ul,
+                (char *) &myorbeacon, 1u/1u, 2140UL);
+   addline(menu, "A |B |C |D |E |F |G |H |I |J |K |L |M |", 40ul,
+                (char *) &myorbeacon, 1u/1u, 2140UL);
+   menu->ysize = menu->oldknob*menu->yknob;
+   menu->oldknob = 0UL;
+   /*  setmenupos(menu, xmouse.x, xmouse.y); */
+   menu->x0 = (unsigned long)useri_xmouse.x;
+   if (useri_xmouse.y>8L) menu->y00 = (unsigned long)(useri_xmouse.y-8L);
+   else menu->y00 = 0UL;
+   menu->wid = 203UL;
+} /* end overlaychoose() */
 
 
 static void AppBlueButton(char s[], unsigned long s_len, char text[],
@@ -5157,7 +5187,7 @@ static void beaconeditor(void)
       AddEditLine(m, "\223", 2ul, "", 1ul, useri_fRBALT, 8128UL);
       AddEditLine(m, "\223", 2ul, "", 1ul, useri_fRBSPEED, 8130UL);
       AddEditLine(m, "\223", 2ul, "", 1ul, useri_fRBDIR, 8132UL);
-      AddEditLine(m, "\223", 2ul, "", 1ul, useri_fRBSYMB, 8134UL);
+      /*    AddEditLine(m, CMDADDBEACON, "", fRBSYMB,    MINH*81+34); */
       if (bkn && (postyp=='m' || postyp=='M')) {
          strncpy(s,"\346\356\351 ",201u);
          aprsstr_Append(s, 201ul, configs[useri_fRBDEST].title, 31ul);
@@ -5166,9 +5196,12 @@ static void beaconeditor(void)
       }
       else s[0] = 0;
       AddEditLine(m, "\223", 2ul, s, 201ul, useri_fRBDEST, 8136UL);
-      addline(m, " Choose Symbol", 15ul, "\223>", 3ul, 8138UL);
-      ++m->scroll;
+      strncpy(h," Choose Symbol  [",201u);
       useri_confstr(useri_fRBSYMB, s, 201ul);
+      aprsstr_Append(h, 201ul, s, 201ul);
+      aprsstr_Append(h, 201ul, "]", 2ul);
+      addline(m, h, 201ul, "\223>", 3ul, 8138UL);
+      ++m->scroll;
       drawsymsquare(m->image, s[0U], s[1U], (long)(m->xsize-25UL),
                 (long)((m->oldknob-1UL)*m->yknob+m->yknob/2UL));
       strncpy(s,"\355",201u);
@@ -5367,7 +5400,7 @@ static void managebeacon(unsigned long scroll, unsigned long knob,
          useri_killmenuid(226UL);
       }
    }
-   else if (!useri_beaconed || knob>15UL) {
+   else if (!useri_beaconed || knob>14UL) {
       if (folded) {
          newmenu(&menu, 55UL, aprsdecode_lums.fontysize+5UL, 8UL,
                 useri_bTRANSP);
@@ -5387,10 +5420,10 @@ static void managebeacon(unsigned long scroll, unsigned long knob,
          useri_textautosize(0L, 0L, 4UL, 4UL, 'b', h, 1000ul);
       }
    }
-   else if (knob==12UL) {
+   else if (knob==11UL) {
       if (folded) symchoose('\244');
    }
-   else if (knob==13UL) {
+   else if (knob==12UL) {
       if (subknob==1UL) ch = 'O';
       else if (subknob==2UL) ch = 'H';
       else if (subknob==3UL) ch = 'I';
@@ -5410,7 +5443,7 @@ Compressed\'", 33ul);
          }
       }
    }
-   else if (knob==14UL) {
+   else if (knob==13UL) {
       if (subknob==1UL) ch = 'm';
       else if (subknob==2UL) ch = 'c';
       else if (subknob==3UL) ch = 'G';
@@ -5428,7 +5461,7 @@ Compressed\'", 33ul);
       }
       useri_AddConfLine(useri_fRBPOSTYP, 1U, (char *) &ch, 1u/1u);
    }
-   else if (knob==15UL) {
+   else if (knob==14UL) {
       if (subknob==0UL) ch = 'N';
       else ch = (char)(subknob+48UL);
       useri_AddConfLine(useri_fRBPORT, 1U, (char *) &ch, 1u/1u);
@@ -7781,7 +7814,7 @@ static void normcol(unsigned long m, unsigned long * r, unsigned long * g,
 
 #define useri_CMUL 1000
 
-#define useri_S0 100
+#define useri_S1 100
 
 #define useri_PI0 3.1415926536
 
@@ -8026,7 +8059,7 @@ static void netmenu(pMENU m)
    addline(m, " Netbeacontext", 15ul, "\270", 2ul, 7415UL);
    addline(m, " My Position", 13ul, "\270", 2ul, 7410UL);
    useri_confstr(useri_fMYSYM, s, 4ul);
-   strncpy(h," My Symbol |",100u);
+   strncpy(h," My Symbol ",100u);
    aprsstr_Append(h, 100ul, s, 4ul);
    addline(m, h, 100ul, "\270>", 3ul, 7405UL);
    drawsymsquare(m->image, s[0U], s[1U], (long)(m->xsize-20UL),
@@ -8545,20 +8578,21 @@ static void watchcallsetup(void)
    useri_refresh = 1;
 } /* end watchcallsetup() */
 
-
-static void editonesymbol(void)
-{
-   strncpy(configs[useri_fEDITLINE].title,"Symbol Tab+Picture",31u);
-   configs[useri_fEDITLINE].width = 3U;
-   configedit = 79UL;
-   copytoed();
-   updatemenus();
-   useri_rdonesymb(1);
-} /* end editonesymbol() */
-
+/*
+PROCEDURE editonesymbol;
+BEGIN
+  configs[fEDITLINE].title:="Symbol Tab+Picture";
+  configs[fEDITLINE].width:=3;
+  configedit:=ORD(fONESYMB);
+  copytoed;
+  updatemenus;
+  rdonesymb(TRUE);
+END editonesymbol;
+*/
 
 static void onlinesetup(unsigned long knob, unsigned long sub)
 {
+   configedit = 0UL;
    configs[useri_fEDITLINE].width = 200U;
    if (knob==1UL) {
       if (sub==0UL) configtogg(useri_fALLOWGATE);
@@ -8567,6 +8601,7 @@ static void onlinesetup(unsigned long knob, unsigned long sub)
          configs[useri_fEDITLINE].width = 4U;
          configedit = 35UL;
       }
+      copytoed();
    }
    else if (knob==2UL) configtogg(useri_fALLOWNETTX);
    else if (knob==3UL) configtogg(useri_fCONNECT);
@@ -8574,36 +8609,43 @@ static void onlinesetup(unsigned long knob, unsigned long sub)
       strncpy(configs[useri_fEDITLINE].title,"Server Filter",31u);
       configs[useri_fEDITLINE].width = 99U;
       configedit = 31UL;
+      copytoed();
    }
    else if (knob==5UL) {
       strncpy(configs[useri_fEDITLINE].title,"Server URL",31u);
       configs[useri_fEDITLINE].width = 99U;
       configedit = 30UL;
+      copytoed();
    }
    else if (knob==6UL) {
       strncpy(configs[useri_fEDITLINE].title,"Passcode",31u);
       configs[useri_fEDITLINE].width = 99U;
       configedit = 32UL;
+      copytoed();
    }
    else if (knob==7UL) {
       strncpy(configs[useri_fEDITLINE].title,"Netbeacon Text",31u);
       configs[useri_fEDITLINE].width = 99U;
       configedit = 10UL;
+      copytoed();
    }
    else if (knob==8UL) {
       strncpy(configs[useri_fEDITLINE].title,"My Position",31u);
       configs[useri_fEDITLINE].width = 20U;
       configedit = 9UL;
-   }
-   else if (knob==9UL) {
-      strncpy(configs[useri_fEDITLINE].title,"Symbol",31u);
-      configs[useri_fEDITLINE].width = 2U;
-      configedit = 11UL;
+      copytoed();
    }
    else if (knob==10UL) {
+      /*
+        ELSIF knob=9 THEN
+          configs[fEDITLINE].title:="Symbol";
+          configs[fEDITLINE].width:=2;
+          configedit:=ORD(fMYSYM);
+      */
       strncpy(configs[useri_fEDITLINE].title,"My Call",31u);
       configs[useri_fEDITLINE].width = 9U;
       configedit = 8UL;
+      copytoed();
    }
    if (knob==1UL || knob>3UL) copytoed();
    else configedit = 0UL;
@@ -9336,14 +9378,29 @@ static void statusbar(void)
 
 
 static void setsym(unsigned long knob, unsigned long subknob,
-                unsigned char set)
+                unsigned char set, pMENU pm, char dest)
 {
    char s[3];
-   if (knob>6UL) s[0U] = '/';
-   else s[0U] = '\\';
-   s[1U] = (char)(32UL+((12UL-knob)%6UL)*16UL+subknob);
-   s[2U] = 0;
-   useri_AddConfLine(set, 0U, s, 3ul);
+   if (findmenuid(203UL)==pm) {
+      useri_confstr(set, s, 3ul);
+      if (knob>=2UL && knob<=3UL) {
+         if (subknob<=12UL) s[0U] = (char)(65UL+subknob+(3UL-knob)*13UL);
+      }
+      else if (knob==1UL && subknob<=9UL) s[0U] = (char)(48UL+subknob);
+      useri_AddConfLine(set, 0U, s, 3ul);
+   }
+   else {
+      useri_killmenuid(203UL);
+      if (knob>6UL) s[0U] = '/';
+      else s[0U] = '\\';
+      s[1U] = (char)(32UL+((12UL-knob)%6UL)*16UL+subknob);
+      s[2U] = 0;
+      useri_AddConfLine(set, 0U, s, 3ul);
+      if (s[0U]=='\\' && !aprsdecode_checksymb('A', s[1U])) {
+         updatemenus();
+         overlaychoose(dest);
+      }
+   }
    updatemenus();
 } /* end setsym() */
 
@@ -9720,19 +9777,17 @@ static char hilitemenu(unsigned long px, unsigned long py, char kbdch,
             else if (c=='\314') dodigi(pm->scroll, knob, subknob, 2U);
             else if (c=='\264') maincfg(knob, 0);
             else if (c=='\266') configdel(knob);
-            else if (c=='\270') {
-               if (subknob>0UL) symchoose('\234');
-            }
+            else if (c=='\270') symchoose('\234');
             else if (c=='\325') {
                if (subknob>0UL) symchoose('\326');
             }
             else if (c=='\275') {
                if (knob==5UL) configbeep();
             }
-            else if (c=='\271') {
-               msgmenu();
+            else if (c=='\271') msgmenu();
+            else if (c=='\316') {
+               colourchoose(knob);
             }
-            else if (c=='\316') colourchoose(knob);
             else if (c=='\313') geoprofil();
             else if (c=='\321') colourchoosegeo(knob);
          }
@@ -10743,10 +10798,10 @@ static void mouseleft(long mousx, long mousy)
          helpmenu();
          useri_refresh = 1;
       }
-      else if (c=='\234') setsym(knob, subknob, useri_fMYSYM);
-      else if (c=='\244') setsym(knob, subknob, useri_fRBSYMB);
+      else if (c=='\234') setsym(knob, subknob, useri_fMYSYM, menu, c);
+      else if (c=='\244') setsym(knob, subknob, useri_fRBSYMB, menu, c);
       else if (c=='\326') {
-         setsym(knob, subknob, useri_fONESYMB);
+         setsym(knob, subknob, useri_fONESYMB, menu, c);
          useri_rdonesymb(1);
          /*      click.onesymbol.tab:=0C;
                       (* redraw *) */
@@ -10755,7 +10810,6 @@ static void mouseleft(long mousx, long mousy)
       }
       else if (c=='\325') {
          if (subknob==0UL) aprsdecode_click.cmd = 's';
-         else editonesymbol();
       }
       else if (c=='\236') {
          useri_reloadmap = 1;

@@ -1181,6 +1181,8 @@
   Tools / Select Data / Symbol>. On/Off mit "Symbol" oder "s"-Taste.
   Achtung: Screenshot Taste ist jetzt "S".
 
++ Overlay Symbole mit Mausklick eingebbar
+
 
 
 
