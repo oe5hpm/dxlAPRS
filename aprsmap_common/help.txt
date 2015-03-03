@@ -1003,7 +1003,7 @@ o Zeige Objects/Items ein/aus
 p Zeige Geodaten der Mausposition ein/aus
 q Quit
 r Zeig weisse Funkstrecken Linien von angeklickter Station
-s toggle show stations with a selected symbol
+s ein/aus nur Stationen mit einem ausgewaehlten Symbol
 u Tx/Rx-Monitor Fenster ein/aus
 w WX-Stationen (mit l nur Tempertur ohne Calls) 
 ww grafische Temperaturverteilung
@@ -1049,7 +1049,7 @@ m toggle dimm not moving since 10min
 o toggle Objects/Items on/off
 q Quit Program
 r toggle Radio tracks on/off
-s toggle show stations with a selected symbol
+s toggle show only stations with a selected symbol
 u toggle tx/rx-Monitor window on/off
 w toggle WX stations and Temperature
 x set Marker 1 to mouse position
