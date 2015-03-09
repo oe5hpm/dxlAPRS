@@ -1186,7 +1186,10 @@
 
 
 
+6. 3. 2015 (Ver 0.48)
 
++ Zoom-Lupe aufziehen mit rechter Maustaste halten. Ohne Maus bewegen wie bisher
+  Backspace in der Zoom/Pan History oder (Copy/)Paste in Texteingaben. 
 
 
 

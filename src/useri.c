@@ -549,6 +549,8 @@ struct LISTBUFFER {
 
 static char leftbutton;
 
+static char rightbutton;
+
 static char overtype;
 
 static char sndmsg;
@@ -8245,6 +8247,17 @@ static void maploadtogg(void)
    useri_textautosize(0L, 0L, 6UL, 4UL, 'b', s, 51ul);
 } /* end maploadtogg() */
 
+
+static void expandtogg(void)
+{
+   char s[51];
+   configtogg(useri_fALLOWEXP);
+   strncpy(s,"Allow Expand Maps ",51u);
+   if (useri_configon(useri_fALLOWEXP)) aprsstr_Append(s, 51ul, "On", 3ul);
+   else aprsstr_Append(s, 51ul, "Off", 4ul);
+   useri_textautosize(0L, 0L, 6UL, 4UL, 'b', s, 51ul);
+} /* end expandtogg() */
+
 static void timercfg(pMENU);
 
 #define useri_OX4 7
@@ -10891,8 +10904,12 @@ static void mouseleft(long mousx, long mousy)
             aprsdecode_click.cmd = ' ';
          }
          else if (subknob==7UL) {
-            configtogg(useri_fALLOWEXP);
-            aprsdecode_click.cmd = ' ';
+            if (useri_configon(useri_fGETMAPS)
+                ==useri_configon(useri_fALLOWEXP)) {
+               expandtogg();
+               aprsdecode_click.cmd = ' ';
+            }
+            else maploadtogg();
          }
          else if (subknob==8UL) {
             configtogg(useri_fTRACKFILT);
@@ -10909,9 +10926,7 @@ static void mouseleft(long mousx, long mousy)
       else if (c=='\255') {
          if (knob==1UL) {
             if (subknob==0UL) aprsdecode_makemsg(1);
-            else if (subknob==1UL) {
-               aprsdecode_makemsg(0);
-            }
+            else if (subknob==1UL) aprsdecode_makemsg(0);
             else sndmsg = 0;
             useri_killmenuid(228UL);
          }
@@ -10995,7 +11010,9 @@ static void mouseleft(long mousx, long mousy)
          }
          else if (knob==4UL) {
             if (subknob>=5UL) startmon(1);
-            else monconfig(subknob);
+            else {
+               monconfig(subknob);
+            }
          }
          else if (knob==3UL) {
             startlist("Messages", 9ul, aprsdecode_click.mhop, 9ul);
@@ -11311,11 +11328,17 @@ static void setzoom(long x1, long y1)
 } /* end setzoom() */
 
 
-extern void useri_mouseleftdown(long x, long y)
+static void setclick(long x, long y)
 {
    limmouse(&x, &y);
    aprsdecode_click.x = x;
    aprsdecode_click.y = (long)useri_mainys()-y;
+} /* end setclick() */
+
+
+extern void useri_mouseleftdown(long x, long y)
+{
+   setclick(x, y);
    if (xosi_pulling) useri_pulloff();
    leftbutton = 1;
    xosi_zooming = 0;
@@ -11333,13 +11356,14 @@ extern void useri_mousemiddle(long x, long y)
 } /* end mousemiddle() */
 
 
-extern void useri_mouserightdown(long mousx, long mousy)
+extern void useri_mouserightdown(long x, long y)
 {
-   useri_killbubble();
-   clampedline = 0UL;
+   setclick(x, y);
+   if (xosi_pulling) useri_pulloff();
+   rightbutton = 1;
+   /*  clampedline:=0; */
    /*  IF sndmsg OR (configedit<>0) THEN paste ELSE click.cmd:=CURSBS END; */
-   if (FindClampMenu()) xosi_paste();
-   else aprsdecode_click.cmd = '\010';
+   /*  IF FindClampMenu()<>NIL THEN paste ELSE click.cmd:=CURSBS END; */
    /*  redrawpop(redrawimg); */
    useri_refresh = 1;
 } /* end mouserightdown() */
@@ -11348,7 +11372,6 @@ extern void useri_mouserightdown(long mousx, long mousy)
 extern void useri_mousemove(long x, long y)
 {
    long mvd;
-   /*  killbubble; */
    limmouse(&x, &y);
    if (!xosi_pulling) xosi_sethand(xosi_cOFF);
    if (xosi_pulling) {
@@ -11364,14 +11387,14 @@ extern void useri_mousemove(long x, long y)
       }
    }
    else if (xosi_zooming) setzoom(x, (long)useri_mainys()-y);
-   else if (leftbutton) {
-      if (xosi_Shift) mvd = 5L;
-      else mvd = 2L;
+   else if (leftbutton || rightbutton) {
+      if (xosi_Shift || rightbutton) mvd = 5L;
+      else if (leftbutton) mvd = 2L;
       if (labs(x-aprsdecode_click.x)>mvd || labs(((long)useri_mainys()-y)
                 -aprsdecode_click.y)>mvd) {
          /* moved a little */
-         if (xosi_Shift) setzoom(x, (long)useri_mainys()-y);
-         else {
+         if (xosi_Shift || rightbutton) setzoom(x, (long)useri_mainys()-y);
+         else if (leftbutton) {
             startpull(aprsdecode_click.x,
                 (long)useri_mainys()-aprsdecode_click.y, 0);
          }
@@ -11400,7 +11423,14 @@ extern void useri_mouserelease(void)
    else if (leftbutton) {
       mouseleft(aprsdecode_click.x, (long)useri_mainys()-aprsdecode_click.y);
    }
+   else if (rightbutton) {
+      useri_killbubble();
+      if (FindClampMenu()) xosi_paste();
+      else aprsdecode_click.cmd = '\010';
+   }
+   useri_killbubble();
    leftbutton = 0;
+   rightbutton = 0;
    xosi_zooming = 0;
    pullmenuwid = 0L;
 } /* end mouserelease() */
@@ -11508,6 +11538,7 @@ extern void useri_initmenus(void)
    xosi_pulling = 0;
    xosi_zooming = 0;
    leftbutton = 0;
+   rightbutton = 0;
    sndmsg = 0;
    panowin.on = 0;
    useri_beaconed = 0;
