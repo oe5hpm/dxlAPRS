@@ -3019,20 +3019,6 @@ static void setshowall(void)
    useri_textautosize(0L, 0L, 4UL, 2UL, 'g', "Show All", 9ul);
 } /* end setshowall() */
 
-/*
-PROCEDURE toggonesym;                                 (* toggle onsymbol *)
-VAR s:ARRAY[0..30] OF CHAR;
-BEGIN
-  IF click.onesymbol.tab=0C THEN
-    confstr(fONESYMB, s);
-    IF s[0]>" " THEN
-      click.onesymbol.tab:=s[0];
-      click.onesymbol.pic:=s[1];
-    END;
-  ELSE click.onesymbol.tab:=0C END;
-  sayonoff("Show One Symbol", click.onesymbol.tab<>0C);
-END toggonesym;
-*/
 
 static void View(unsigned long n)
 {
@@ -3075,6 +3061,7 @@ static void View(unsigned long n)
       }
       pandone = 0;
       if (aprsdecode_click.mhop[0UL]) setshowall();
+      useri_rdonesymb(0); /* show all symbols */
    }
 } /* end View() */
 
