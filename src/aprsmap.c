@@ -4270,28 +4270,20 @@ static void makeimage(char dryrun)
                 aprsdecode_initzoom, aprsdecode_finezoom, maptool_shiftx,
                 maptool_shifty, &mapok, &useri_isblown,
                 useri_configon(useri_fALLOWEXP), 0);
-      if (!mapok) {
+      /*    IF maploadpid.runs & NOT mapok THEN */
+      if (!mapok && useri_configon(useri_fGETMAPS)) {
          tooltips('B');
          maptrys = 30UL;
       }
       else maptrys = 0UL;
    }
-   else {
-      /*    IF NOT mapok & configon(fGETMAPS)
-                THEN maptrys:=30 ELSE maptrys:=0 END;
-                (* start map load timeout *) */
-      /*      IF isblown THEN textautosize(0, 0, 10, "g",
-                "Expanded Tiles!") ELSE killmenuid(10) END; */
-      maptool_clr(image);
-   }
-   /*  IF lums.wxcol<>0C THEN */
+   else maptool_clr(image);
    if (aprsdecode_lums.wxcol=='R' || aprsdecode_lums.wxcol=='W') {
       /* "w" is show wx stations only */
       if (!dryrun) {
          closeradio();
          if (aprsdecode_lums.map>0L) maptool_makebw(image);
          maptool_clr(rfimg);
-         /*      metercolor; */
          if (aprsdecode_lums.wxcol=='R') {
             metercolor('R');
             maptool_addmap(image, rfimg);
@@ -4340,14 +4332,6 @@ static void makeimage(char dryrun)
          measureline(image, aprsdecode_click.markpos,
                 aprsdecode_click.measurepos, aprsdecode_click.markalti);
       }
-      /*WrFixed(click.markpos.long, 10, 4);
-                WrFixed(click.markpos.lat, 10, 4); */
-      /*WrFixed(click.measurepos.long, 10, 4);
-                WrFixed(click.measurepos.lat, 10, 4); */
-      /*WrLn; */
-      /*
-          IF xmouse.x>0 THEN mouseshow END;
-      */
       maptool_cc(image, TimeConv_time(), 0UL);
       if (useri_configon(useri_fRULER)) maptool_ruler(image);
       drawzoomsquer(image);
@@ -4568,7 +4552,6 @@ static void MainEvent(void)
          useri_textautosize(0L, 0L, 6UL, 10UL, 'b', mestxt, 201ul);
       }
    }
-   /*WrInt(ORD(click.cmd), 10); WrStrLn(" cmd1"); */
    if (raw || aprsdecode_click.cmd) {
       maptool_startmapdelay();
       if (aprsdecode_click.cmd=='\030') {
@@ -4817,25 +4800,7 @@ static void MainEvent(void)
       }
       else if (aprsdecode_click.cmd=='X') xytomark();
       else if (aprsdecode_click.cmd=='x') {
-         /*
-                   xytodeg(VAL(REAL,click.x), VAL(REAL,click.y),
-                click.markpos);
-                   click.marktime:=0;
-                   click.markalti:=MAX(INTEGER);
-                   postoconfig(click.markpos);
-                   click.waysum:=0.0;
-         */
          /* set marker 1 to object lastpos */
-         /*
-                   IF (click.entries>0)
-                & (click.table[click.selected].opf<>NIL)
-                   & posvalid(click.table[click.selected].opf^.lastpos)
-                   THEN click.markpos:=click.table[click.selected]
-                .opf^.lastpos; click.markalti:=MAX(INTEGER);
-                   ELSE xytodeg(VAL(REAL,click.x), VAL(REAL,click.y),
-                click.markpos) END;
-                   click.marktime:=realtime;
-         */
          clicktomark();
          useri_mainpop();
       }
@@ -4894,7 +4859,9 @@ to Defaults", 34ul);
          animate(aprsdecode_click.mhop,
                 (unsigned long)aprsdecode_lums.actfps, "map.y4m", 8ul);
       }
-      else if (aprsdecode_click.cmd=='I') internstat();
+      else if (aprsdecode_click.cmd=='I') {
+         internstat();
+      }
       else if (aprsdecode_click.cmd=='\245') {
          aprsdecode_click.dryrun = 0;
          find();
@@ -4937,10 +4904,6 @@ to Defaults", 34ul);
    }
    else if (useri_newxsize>0UL) {
       /* window resize request */
-      /*      IF newxsize<MINXSIZE THEN newxsize:=MINXSIZE */
-      /*      ELSIF newxsize>MAXXSIZE THEN newxsize:=MAXXSIZE END; */
-      /*      IF newysize<MINYSIZE THEN newysize:=MINYSIZE */
-      /*      ELSIF newysize>MAXYSIZE THEN newysize:=MAXYSIZE END; */
       if ((useri_newxsize&1)) --useri_newxsize;
       if ((useri_newysize&1)) --useri_newysize;
       xosi_allocxbuf(useri_newxsize, useri_newysize);
@@ -4961,10 +4924,6 @@ to Defaults", 34ul);
    }
    else if ((aprsdecode_lasttcprx+60UL>aprsdecode_realtime || aprsdecode_lastanyudprx+60UL>aprsdecode_realtime)
                  && laststatref+5UL<aprsdecode_realtime) {
-      /*
-            ELSIF xmouse.x>0 THEN                                      (* mouse move *)
-              makeimage(FALSE);
-      */
       if (aprsdecode_lasttcprx+50UL<aprsdecode_realtime) tooltips('n');
       useri_refresh = 1;
       laststatref = aprsdecode_realtime;
