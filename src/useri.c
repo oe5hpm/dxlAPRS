@@ -7327,7 +7327,6 @@ static void makepanwin(void)
    unsigned long xw;
    char abo;
    unsigned long ohs;
-   unsigned long hks;
    unsigned long oks;
    if (panowin.isicon) {
       xw = 64UL;
@@ -7348,7 +7347,6 @@ static void makepanwin(void)
    refrmenu(&m, xw, ys, 1UL, useri_bCOLOR, 1);
    /*WrInt(ORD(new), 2); WrStrLn("imgnew"); */
    oks = m->oldknob;
-   hks = m->hiknob;
    ohs = m->oldsub;
    /*  m^.minnormmax:=; */
    ys = (m->image->Len0-1)+1UL;
@@ -9469,9 +9467,7 @@ extern void useri_textbubble(struct aprspos_POSITION pos, char s[],
    float xpoi;
    struct aprsdecode_COLTYP col;
    struct maptool_PIX * anonym;
-   struct maptool_PIX * anonym0;
-   maptool_pIMAGE anonym1;
-   maptool_pIMAGE anonym2;
+   maptool_pIMAGE anonym0;
    unsigned long tmp;
    unsigned long tmp0;
    if (!aprspos_posvalid(pos) || maptool_mapxy(pos, &xpoi, &ypoi)<0L) return;
@@ -9507,33 +9503,29 @@ extern void useri_textbubble(struct aprspos_POSITION pos, char s[],
       x = 0UL;
       if (x<=tmp0) for (;; x++) {
          { /* with */
-            struct maptool_PIX * anonym = (anonym1 = menu->image,
-                &anonym1->Adr[(x)*anonym1->Len0+y]);
-            { /* with */
-               struct maptool_PIX * anonym0 = (anonym2 = menu->image,
-                &anonym2->Adr[(x)*anonym2->Len0+y]);
-               if ((y==8UL && x>=8UL || x<8UL && x==y) || x<3UL && y<3UL) {
-                  anonym0->r = 50U;
-                  anonym0->g = 300U;
-                  anonym0->b = 800U;
-               }
+            struct maptool_PIX * anonym = (anonym0 = menu->image,
+                &anonym0->Adr[(x)*anonym0->Len0+y]);
+            if ((y==8UL && x>=8UL || x<8UL && x==y) || x<3UL && y<3UL) {
+               anonym->r = 50U;
+               anonym->g = 300U;
+               anonym->b = 800U;
+            }
+            else {
+               anonym->r = 0U;
+               anonym->g = 0U;
+               if (x<20UL || y<=8UL) anonym->b = 65535U;
                else {
-                  anonym0->r = 0U;
-                  anonym0->g = 0U;
-                  if (x<20UL || y<=8UL) anonym0->b = 65535U;
-                  else {
-                     anonym0->r = 2U;
-                     anonym0->g = 2U;
-                     anonym0->b = 2U;
-                     if (!aprsdecode_lums.menutransp) {
-                        /* user disabled transparency */
-                        anonym0->r = (unsigned short)
+                  anonym->r = 2U;
+                  anonym->g = 2U;
+                  anonym->b = 2U;
+                  if (!aprsdecode_lums.menutransp) {
+                     /* user disabled transparency */
+                     anonym->r = (unsigned short)
                 aprsdecode_lums.menubackcol.r;
-                        anonym0->g = (unsigned short)
+                     anonym->g = (unsigned short)
                 aprsdecode_lums.menubackcol.g;
-                        anonym0->b = (unsigned short)
+                     anonym->b = (unsigned short)
                 aprsdecode_lums.menubackcol.b;
-                     }
                   }
                }
             }
@@ -10433,8 +10425,6 @@ static void mouseleft(long mousx, long mousy)
    if (menu==0) {
       aprsdecode_click.x = mousx;
       aprsdecode_click.y = (long)(useri_mainys()-(unsigned long)mousy);
-      /*    click.xclicked:=click.x; */
-      /*    click.yclicked:=click.y; */
       aprsdecode_click.selected = 0UL;
       /*WrInt(click.entries, 10);WrStrLn(" ent"); */
       if (((aprsdecode_click.cmd=='A' || aprsdecode_click.cmd=='a')
@@ -10527,7 +10517,7 @@ static void mouseleft(long mousx, long mousy)
       }
       else if (c=='\023') {
          if (subknob==0UL) aprsdecode_click.cmd = '\023';
-         else if (subknob==1UL) aprsdecode_click.cmd = 'C';
+         else if (subknob==1UL) aprsdecode_click.cmd = 'c';
          else aprsdecode_click.cmd = '\004';
          if (useri_configon(useri_fINVMOV)) {
             if (aprsdecode_click.cmd=='\023') aprsdecode_click.cmd = '\004';
@@ -10592,10 +10582,10 @@ static void mouseleft(long mousx, long mousy)
       else if (c=='X') aprsdecode_click.cmd = c;
       else if (c=='Y') aprsdecode_click.cmd = c;
       else if (c=='~') aprsdecode_click.cmd = c;
-      else if (c=='/') {
+      else if (c=='/') aprsdecode_click.cmd = c;
+      else if (c==':') {
          aprsdecode_click.cmd = c;
       }
-      else if (c==':') aprsdecode_click.cmd = c;
       else if (c=='\003') {
          aprsdecode_click.cmd = c;
          useri_killallmenus();
@@ -10637,8 +10627,8 @@ static void mouseleft(long mousx, long mousy)
          aprsdecode_click.withradio = 0;
       }
       else if (c=='S') aprsdecode_click.cmd = c;
-      else if (c=='s') aprsdecode_click.cmd = c;
       else if (c=='\022') {
+         /*    ELSIF c="s" THEN click.cmd:=c; */
          if (subknob==0UL) {
             configs[useri_fSRTMCACHE].on = (configs[useri_fSRTMCACHE].on+1U)
                 %3U;
@@ -10686,9 +10676,7 @@ static void mouseleft(long mousx, long mousy)
          aprsdecode_click.cmd = '\311';
       }
       else if (c=='\310') aprsdecode_click.cmd = '\310';
-      else if (c=='\237') {
-         aprsdecode_click.cmd = '\237';
-      }
+      else if (c=='\237') aprsdecode_click.cmd = '\237';
       else if (c=='\201') {
          if (knob==1UL) icfg(useri_fCLICKMAP, "C", 2ul);
          else if (knob==2UL) icfg(useri_fCLICKMAP, "X", 2ul);
@@ -10741,10 +10729,10 @@ static void mouseleft(long mousx, long mousy)
          else if (knob==7UL) toggwx(aprsdecode_wLUMI);
          else if (knob==8UL) toggwx(aprsdecode_wRAIN);
          else if (knob==9UL) toggwx(aprsdecode_wWINDDIR);
-         else if (knob==10UL) {
-            toggwx(aprsdecode_wWIND);
+         else if (knob==10UL) toggwx(aprsdecode_wWIND);
+         else if (knob==11UL) {
+            toggwx(aprsdecode_wHYG);
          }
-         else if (knob==11UL) toggwx(aprsdecode_wHYG);
          else if (knob==12UL) toggwx(aprsdecode_wBARO);
          else if (knob==13UL) toggwx(aprsdecode_wTEMP);
          else if (knob==14UL) icfg(useri_fCLICKWXSYM, "", 1ul);
@@ -10829,10 +10817,10 @@ static void mouseleft(long mousx, long mousy)
          aprsdecode_click.cmd = ' ';
       }
       else if (c=='\302') {
-         if (knob==1UL) {
-            aprsdecode_click.cmd = '7';
+         if (knob==1UL) aprsdecode_click.cmd = '7';
+         else if (knob==2UL) {
+            aprsdecode_click.cmd = '8';
          }
-         else if (knob==2UL) aprsdecode_click.cmd = '8';
          else if (knob==3UL) aprsdecode_click.cmd = '9';
          else {
             useri_Setmap(knob-1UL);
@@ -10925,7 +10913,9 @@ static void mouseleft(long mousx, long mousy)
       }
       else if (c=='\255') {
          if (knob==1UL) {
-            if (subknob==0UL) aprsdecode_makemsg(1);
+            if (subknob==0UL) {
+               aprsdecode_makemsg(1);
+            }
             else if (subknob==1UL) aprsdecode_makemsg(0);
             else sndmsg = 0;
             useri_killmenuid(228UL);
@@ -11010,9 +11000,7 @@ static void mouseleft(long mousx, long mousy)
          }
          else if (knob==4UL) {
             if (subknob>=5UL) startmon(1);
-            else {
-               monconfig(subknob);
-            }
+            else monconfig(subknob);
          }
          else if (knob==3UL) {
             startlist("Messages", 9ul, aprsdecode_click.mhop, 9ul);
@@ -11108,7 +11096,6 @@ extern void useri_keychar(char ch, char ispasted, char movecmd)
    if (ispasted) ch = 0;
    /*WrInt(ORD(ch), 1); WrStrLn("kbd"); */
    if (ch=='R') aprsdecode_click.cmd = '\022';
-   else if (ch=='R') ch = ch;
    else if (ch=='\022') ch = 0;
    else if (ch=='\320') configman(0UL, &aprsdecode_click.cmd);
    else if ((((((ch!='b' && ch!='m') && ch!='f') && ch!='u') && ch!='d')

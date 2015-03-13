@@ -468,7 +468,6 @@ static void rdlonglog(aprsdecode_pOPHIST * optab, char fn[],
       binseek(&i, fc, &wp, from, 1, &start, &end);
       if (from>end) from = end;
       if (from<start) from = 0UL;
-      else end = 0UL;
    }
    len = 0L;
    rp = 0L;
@@ -512,7 +511,6 @@ static void rdlonglog(aprsdecode_pOPHIST * optab, char fn[],
       else if (wp<510UL) ++wp;
       ++rp;
    }
-   if (end>0UL) from = end;
    osi_Close(fc);
    op = *optab;
    while (op) {
@@ -1866,7 +1864,7 @@ static void importlog(char cmd)
             aprsstr_Append(h, 1025ul, h1, 1025ul);
             aprsstr_Append(h, 1025ul, ")", 2ul);
          }
-         else if (logstarttime>0UL) {
+         else if (logstarttime>=1UL) {
             aprsstr_Append(h, 1025ul, " (log start ", 13ul);
             aprstext_DateLocToStr(logstarttime, h1, 1025ul);
             aprsstr_Append(h, 1025ul, h1, 1025ul);
@@ -3794,23 +3792,52 @@ static void xytomark2(void)
    if (aprspos_posvalid(pos)) aprsdecode_click.measurepos = pos;
 } /* end xytomark2() */
 
+/*
+PROCEDURE centermouse;
+VAR pos         :POSITION;
+    x0,x1,y0,y1 :REAL;
+BEGIN
+  xytodeg(VAL(REAL, xmouse.x), VAL(REAL, VAL(INTEGER, mainys())-xmouse.y),
+                pos);
+--  xytodeg(VAL(REAL, click.mapclickx), VAL(REAL, click.mapclicky), pos);
+  IF posvalid(click.bubblpos) & (mapxy(click.bubblpos, x0, y0)>=-1)
+  & posvalid(pos) & (mapxy(pos, x1,
+                y1)>=-1) & ((x0-x1)**2 + (y0-y1)**2<25.0) 
+  THEN pos:=click.bubblpos END;             (* POI is near mouse so use POI position to center *)
+  IF posvalid(pos) THEN
+    push(mappos, realzoom(initzoom, finezoom));
+    center(xsize, ysize, realzoom(initzoom, finezoom), pos, mappos);
+  END;
+END centermouse;
+*/
 
-static void centermouse(void)
+static void centermouse(char shortcut)
 {
    struct aprspos_POSITION pos;
    float y1;
    float y00;
    float x1;
    float x0;
-   maptool_xytodeg((float)useri_xmouse.x,
+   aprsdecode_posinval(&pos);
+   if (shortcut) {
+      maptool_xytodeg((float)useri_xmouse.x,
                 (float)((long)useri_mainys()-useri_xmouse.y), &pos);
-   if ((((aprspos_posvalid(aprsdecode_click.bubblpos)
+      if ((((aprspos_posvalid(aprsdecode_click.bubblpos)
                 && maptool_mapxy(aprsdecode_click.bubblpos, &x0,
                 &y00)>=-1L) && aprspos_posvalid(pos)) && maptool_mapxy(pos,
                 &x1, &y1)>=-1L) && X2C_EXPRI(x0-x1,2L)+X2C_EXPRI(y00-y1,
                 2L)<25.0f) {
-      pos = aprsdecode_click.bubblpos;
+         pos = aprsdecode_click.bubblpos;
                 /* POI is near mouse so use POI position to center */
+      }
+   }
+   else if ((aprsdecode_click.entries>0UL && aprsdecode_click.table[aprsdecode_click.selected]
+                .opf) && aprspos_posvalid(aprsdecode_click.table[aprsdecode_click.selected].opf->lastpos)
+                ) {
+      pos = aprsdecode_click.table[aprsdecode_click.selected].opf->lastpos;
+   }
+   else if (aprspos_posvalid(aprsdecode_click.clickpos)) {
+      pos = aprsdecode_click.clickpos;
    }
    if (aprspos_posvalid(pos)) {
       push(aprsdecode_mappos, maptool_realzoom(aprsdecode_initzoom,
@@ -4733,7 +4760,7 @@ static void MainEvent(void)
          aprsdecode_click.onesymbol.tab = 0;
          closeradio();
       }
-      else if (aprsdecode_click.cmd=='C') centermouse();
+      else if (aprsdecode_click.cmd=='C') centermouse(1);
       else if (aprsdecode_click.cmd=='t'
                 && aprspos_posvalid(aprsdecode_click.markpos)) {
          /*
@@ -4765,27 +4792,23 @@ static void MainEvent(void)
          aprsdecode_click.marktime = aprsdecode_realtime;
          if (aprsdecode_click.mhop[0UL]) setshowall();
       }
-      else if (aprsdecode_click.cmd=='c') {
-         /* center */
-         if ((aprsdecode_click.entries>0UL && aprsdecode_click.table[aprsdecode_click.selected]
-                .opf) && aprspos_posvalid(aprsdecode_click.table[aprsdecode_click.selected].opf->lastpos)
-                ) {
-            push(aprsdecode_mappos, maptool_realzoom(aprsdecode_initzoom,
-                aprsdecode_finezoom));
-            maptool_center(maptool_xsize, maptool_ysize,
-                maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom),
-                aprsdecode_click.table[aprsdecode_click.selected]
-                .opf->lastpos, &aprsdecode_mappos);
-         }
-         else if (aprspos_posvalid(aprsdecode_click.clickpos)) {
-            push(aprsdecode_mappos, maptool_realzoom(aprsdecode_initzoom,
-                aprsdecode_finezoom));
-            maptool_center(maptool_xsize, maptool_ysize,
-                maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom),
-                aprsdecode_click.clickpos, &aprsdecode_mappos);
-         }
+      else if (aprsdecode_click.cmd=='c') centermouse(0);
+      else if (aprsdecode_click.cmd=='X') {
+         /*
+                   IF (click.entries>0)
+                & (click.table[click.selected].opf<>NIL)
+                   & posvalid(click.table[click.selected].opf^.lastpos) THEN
+                     push(mappos, realzoom(initzoom, finezoom));
+                     center(xsize, ysize, realzoom(initzoom, finezoom),
+                click.table[click.selected].opf^.lastpos, mappos);
+                   ELSIF posvalid(click.clickpos) THEN
+                     push(mappos, realzoom(initzoom, finezoom));
+                     center(xsize, ysize, realzoom(initzoom, finezoom),
+                click.clickpos, mappos);
+                   END;
+         */
+         xytomark(); /* set marker 1 to map pos */
       }
-      else if (aprsdecode_click.cmd=='X') xytomark();
       else if (aprsdecode_click.cmd=='x') {
          /* set marker 1 to object lastpos */
          clicktomark();
@@ -4846,9 +4869,7 @@ to Defaults", 34ul);
          animate(aprsdecode_click.mhop,
                 (unsigned long)aprsdecode_lums.actfps, "map.y4m", 8ul);
       }
-      else if (aprsdecode_click.cmd=='I') {
-         internstat();
-      }
+      else if (aprsdecode_click.cmd=='I') internstat();
       else if (aprsdecode_click.cmd=='\245') {
          aprsdecode_click.dryrun = 0;
          find();
@@ -4856,7 +4877,9 @@ to Defaults", 34ul);
       else if (aprsdecode_click.cmd=='\\') {
          useri_helptext(0UL, 0UL, 0UL, 0UL, "en-shortcuts", 13ul);
       }
-      else if (aprsdecode_click.cmd=='7') useri_Setmap(0UL);
+      else if (aprsdecode_click.cmd=='7') {
+         useri_Setmap(0UL);
+      }
       else if (aprsdecode_click.cmd=='8') useri_Setmap(1UL);
       else if (aprsdecode_click.cmd=='9') useri_Setmap(2UL);
       else if (aprsdecode_click.cmd=='Q') quit = 1;
