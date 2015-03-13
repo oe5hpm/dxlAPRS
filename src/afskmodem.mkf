@@ -30,6 +30,7 @@ CC	= gcc
 STRIP	= strip
 ARCHSPEC= -m32
 LFLAGS	= -m32
+CFLAGS += -m32
 endif
 # ------------------ objects enumeration ------------------
 #                    -------------------
