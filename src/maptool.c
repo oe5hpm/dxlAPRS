@@ -1833,7 +1833,6 @@ static void rotvector(float * a, float * b, float cw, float sw)
 static void Panofind(char find, const struct maptool_PANOWIN panpar,
                 float * res, struct aprspos_POSITION * pos)
 {
-   unsigned long maxcache;
    unsigned long yi;
    unsigned long xi;
    long nn;
@@ -1889,8 +1888,6 @@ static void Panofind(char find, const struct maptool_PANOWIN panpar,
    struct aprsdecode_COLTYP col0;
    struct maptool_PIX * anonym;
    startt = TimeConv_time();
-   maxcache = (unsigned long)(useri_conf2int(useri_fSRTMCACHE, 0UL, 0L,
-                2000L, 100L)*1000000L);
    if ((!aprspos_posvalid(panpar.eye) || !aprspos_posvalid(panpar.horizon))
                 || maptool_getsrtm(panpar.horizon, 0UL, &resoltx)>=30000.0f) {
       return;
@@ -2978,17 +2975,11 @@ static void OptTextPlace(maptool_pIMAGE img, char s[], unsigned long s_len,
       ++i;
    }
    min0 = X2C_max_longint;
-   /*
-     max:=0;
-   */
    n = 0L;
    tmp = 3L*fonty-1L;
    y = 0L;
    if (y<=tmp) for (;; y++) {
       yh = (*yt+y)-fonty;
-      /*  IF (yh>=MARGIN) & (yh<VAL(INTEGER,
-                HIGH(img^[0])+1-lums.fontysize)-MARGIN)
-                THEN (* never place text outside drawable *) */
       if (yh>=2L && yh<(long)((img->Len0-1)+1UL)-2L) {
          /* never place text outside drawable */
          cont = 0L;
@@ -3024,9 +3015,6 @@ static void OptTextPlace(maptool_pIMAGE img, char s[], unsigned long s_len,
       }
       if (y==tmp) break;
    } /* end for */
-   /*
-         IF n>max THEN max:=n END;
-   */
    *yt += ymin-fonty*2L;
    label:;
    X2C_PFREE(s);
@@ -3904,9 +3892,6 @@ static char loadtile(maptool_pIMAGE map, char * done, char dryrun,
    long xx;
    long y;
    long x;
-   long maxxbyte;
-   long maxy;
-   long maxx;
    struct maptool_PIX * anonym;
    struct maptool_PIX * anonym0;
    /*          IF add THEN */
@@ -3920,16 +3905,11 @@ static char loadtile(maptool_pIMAGE map, char * done, char dryrun,
       }
    }
    if (map==0) return 0;
-   maxx = 256L;
-   maxy = 256L;
-   maxxbyte = 768L;
    if (aprsdecode_verb) {
       InOut_WriteString("open>", 6ul);
       InOut_WriteString(h, h_len);
       osi_WrStrLn("<", 2ul);
    }
-   /*    IF (pngread.readpng(h, pngbuf, maxx, maxy,
-                maxxbyte)<0) OR reloadmap THEN */
    if (!decodetile(h, h_len, (pPNGBUF)pngbuf, 256L, 256L,
                 768L) || useri_reloadmap) {
       if (wfn[0]) {
@@ -4138,15 +4118,8 @@ static char inc(long * x, long * y, long * z)
 
 static char checktile(char fn[], unsigned long fn_len)
 {
-   long maxxbyte;
-   long maxy;
-   long maxx;
    char checktile_ret;
    X2C_PCOPY((void **)&fn,fn_len);
-   maxx = 256L;
-   maxy = 256L;
-   maxxbyte = 768L;
-   /*    RETURN pngread.readpng(fn, pngbuf, maxx, maxy, maxxbyte)>=0 */
    checktile_ret = decodetile(fn, fn_len, (pPNGBUF)pngbuf, 256L, 256L, 768L);
                 
    X2C_PFREE(fn);
