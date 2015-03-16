@@ -291,6 +291,7 @@ as fit into Your Window
 "Zoom to" does good job
 "Raw+Decoded" for debug
 
+|905 What to do on Mouse Over middle of Symbol
 
 |1001 Center Clicked Point of Map 
 
@@ -311,6 +312,31 @@ do radio link calculations. To set marker
 
 |1026 On click to (empty) map clear menues
 (shortcut Esc)
+
+|1152 Show Decoded and Raw Data
+on Mouse Over Wx Symbol
+
+|1153 Show Luminosity over Time
+on Mouse Over Wx Symbol
+
+|1154 Show Rain over Time
+on Mouse Over Wx Symbol
+
+|1155 Show Wind Direction over Time
+on Mouse Over Wx Symbol
+
+|1156 Show Wind Speed over Time
+on Mouse Over Wx Symbol
+
+|1157 Show Humidity over Time
+on Mouse Over Wx Symbol
+
+|1158 Show Pressure over Time
+on Mouse Over Wx Symbol
+
+|1159 Show Temperature over Time
+on Mouse Over Wx Symbol
+|1160 Swith off Mouse Over 
 
 
 
@@ -672,6 +698,9 @@ Radio-Range and Reliefmap Colours
 
 |7300 Filter out Destination Call often
 used as sender software identifier 
+
+|7303 Filter out frames with Keyword
+anywhere in the raw frame
 
 |7305 Filter out data with keyword in Comment
 from polluteing the Map. Data is stored

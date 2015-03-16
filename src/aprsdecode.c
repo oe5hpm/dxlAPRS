@@ -87,6 +87,8 @@
 
 
 
+
+
 unsigned long aprsdecode_systime;
 unsigned long aprsdecode_realtime;
 unsigned long aprsdecode_lastlooped;
@@ -95,8 +97,6 @@ char aprsdecode_verb;
 
 
 struct aprsdecode__D0 aprsdecode_click;
-
-
 struct aprspos_POSITION aprsdecode_mappos;
 long aprsdecode_inittilex;
 long aprsdecode_inittiley;
@@ -110,10 +110,10 @@ char aprsdecode_mapdir[1025];
 aprsdecode_pMOUNTAIN aprsdecode_mountains;
 
 
-struct aprsdecode__D2 aprsdecode_lums;
+struct aprsdecode__D1 aprsdecode_lums;
 
 
-struct aprsdecode__D3 aprsdecode_tracenew;
+struct aprsdecode__D2 aprsdecode_tracenew;
 aprsdecode_pTXMESSAGE aprsdecode_txmessages;
 aprsdecode_pMSGFIFO aprsdecode_msgfifo0;
 float aprsdecode_spikesens;
@@ -122,7 +122,7 @@ aprsdecode_pOPHIST aprsdecode_ophist2;
 aprsdecode_pOPHIST aprsdecode_ophist0;
 
 
-struct aprsdecode__D4 aprsdecode_gateways[10];
+struct aprsdecode__D3 aprsdecode_gateways[10];
 aprsdecode_pTCPSOCK aprsdecode_tcpsocks;
 struct aprsdecode_UDPSOCK aprsdecode_udpsocks0[4];
 unsigned long aprsdecode_lasttcptx;
@@ -1232,7 +1232,7 @@ static void beaconmacros(char s[], unsigned long s_len, const char path[],
             }
             else if (s[i]=='\\') aprsstr_Append(ns, 256ul, "\\\\", 3ul);
             else if (s[i]=='v') {
-               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.48", 17ul);
+               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.49", 17ul);
             }
             else if (s[i]=='l') {
                useri_confstr(useri_fMYPOS, ds, 256ul);
@@ -4938,7 +4938,7 @@ static char tcpconn(aprsdecode_pTCPSOCK * sockchain, long f)
          aprsstr_Append(h, 512ul, s, 100ul);
       }
       aprsstr_Append(h, 512ul, " vers ", 7ul);
-      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.48", 17ul);
+      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.49", 17ul);
       appfilter(h, 512ul);
       /*    IF filter[0]<>0C THEN Append(h, " filter ");
                 Append(h, filter) END; */
@@ -5964,10 +5964,10 @@ extern void aprsdecode_tcpin(aprsdecode_pTCPSOCK acttcp)
 extern void aprsdecode_initparms(void)
 {
    unsigned long i;
-   struct aprsdecode__D2 * anonym;
+   struct aprsdecode__D1 * anonym;
    initcrc12();
    memset((char *)aprsdecode_gateways,(char)0,
-                sizeof(struct aprsdecode__D4 [10]));
+                sizeof(struct aprsdecode__D3 [10]));
    memset((char *)aprsdecode_udpsocks0,(char)0,
                 sizeof(struct aprsdecode_UDPSOCK [4]));
    for (i = 0UL; i<=3UL; i++) {
@@ -5996,7 +5996,7 @@ extern void aprsdecode_initparms(void)
    maxspeed = 1000.0f;
    nextbeep = 0UL;
    { /* with */
-      struct aprsdecode__D2 * anonym = &aprsdecode_lums;
+      struct aprsdecode__D1 * anonym = &aprsdecode_lums;
       anonym->map = 350L;
       anonym->rfbri = 350L;
       anonym->track = 1000L;

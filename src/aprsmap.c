@@ -182,6 +182,8 @@ static struct _0 radio;
 
 static struct aprspos_POSITION clickwatchpos;
 
+static struct aprsdecode_CLICKOBJECT hoverobj;
+
 
 static void Error(char text0[], unsigned long text_len)
 {
@@ -958,9 +960,15 @@ static void tracks(maptool_pIMAGE img, aprsdecode_pOPHIST op,
    }
 } /* end tracks() */
 
+#define aprsmap_HOVERDIST 64
+
 
 static void symbols(aprsdecode_pOPHIST op, char objects, char highlight0)
 {
+   float hovery;
+   float hoverx;
+   float hdmin;
+   float hd;
    float y;
    float x;
    unsigned long lig;
@@ -971,20 +979,41 @@ static void symbols(aprsdecode_pOPHIST op, char objects, char highlight0)
       if (objects) aprsdecode_click.typ = aprsdecode_tOBJECT;
       else aprsdecode_click.typ = aprsdecode_tSYMBOL;
    }
+   hdmin = X2C_max_real;
+   hoverx = (float)useri_xmouse.x;
+   hovery = (float)useri_mainys()-(float)useri_xmouse.y;
    while (aprsdecode_click.ops) {
-      if (((((0x8U & aprsdecode_click.ops->drawhints)
+      if ((((((0x8U & aprsdecode_click.ops->drawhints)
+                && ((0x2U & aprsdecode_click.ops->drawhints)!=0)==objects)
                 && aprsdecode_click.ops->sym.tab!='\001')
                 && maptool_mapxy(aprsdecode_click.ops->lastpos, &x,
                 &y)>=0L) && maptool_vistime(aprsdecode_click.ops->lasttime))
                 && (aprsdecode_click.ops->lastinftyp>=100U || aprsdecode_lums.wxcol==0)
                 ) {
-         /*& ((ISOBJECT IN click.ops^.drawhints)=objects)*/
          /*
                symt:=click.ops^.sym.tab;
                symb:=click.ops^.sym.pic; 
                IF symt<" " THEN symt:=NOSYMT; symb:=NOSYMB END;
                 (* set default symbol *)    
          */
+         hd = (x-hoverx)*(x-hoverx)+(y-hovery)*(y-hovery);
+                /* dist mouse to symbol */
+         if (hd<hdmin) {
+            hdmin = hd;
+            if (hd<64.0f) {
+               /*
+                       & (distance(click.ops^.lastpos, click.measurepos)>1.0)
+                       & (distance(click.ops^.lastpos, click.markpos)>1.0)
+                       & ((click.entries=0)
+                          OR (distance(click.ops^.lastpos,
+                click.table[click.selected].opf^.lastpos)>1.0))
+               *)*/
+               /* nearest to mouse op */
+               hoverobj.opf = aprsdecode_click.ops;
+               hoverobj.pff = 0;
+               hoverobj.pff0 = 0;
+            }
+         }
          if (highlight0) lig = 1000UL;
          else {
             lig = fade(aprsdecode_click.ops->lasttime, aprsdecode_click.ops);
@@ -3462,10 +3491,10 @@ static void nearwaypoint(void)
 static void clickdelwaypoint(void)
 {
    char s[101];
-   struct aprsdecode__D1 * anonym;
+   struct aprsdecode_CLICKOBJECT * anonym;
    nearwaypoint();
    { /* with */
-      struct aprsdecode__D1 * anonym = &aprsdecode_click.table[0UL];
+      struct aprsdecode_CLICKOBJECT * anonym = &aprsdecode_click.table[0UL];
       aprsdecode_delwaypoint(anonym->opf, &anonym->pff0);
       aprsstr_Assign(s, 101ul, anonym->opf->call, 9ul);
       aprsstr_Append(s, 101ul, " waypoint Deleted", 18ul);
@@ -4253,6 +4282,7 @@ static void animate(const aprsdecode_MONCALL singlecall, unsigned long step,
 static void makeimage(char dryrun)
 {
    char mapok;
+   struct aprspos_POSITION mpos;
    markvisable(aprsdecode_click.mhop);
    if (aprsdecode_click.mhop[0UL] && mhtx==aprsmap_OPHEARD) {
       findsize(&newpos0, &newpos1, aprsdecode_click.mhop, 'H');
@@ -4343,8 +4373,13 @@ static void makeimage(char dryrun)
       }
       drawsquer(image);
       if (!aprsdecode_click.withradio) {
-         measureline(image, aprsdecode_click.markpos,
-                aprsdecode_click.measurepos, aprsdecode_click.markalti);
+         mpos = aprsdecode_click.measurepos;
+         if ((!aprspos_posvalid(mpos) && hoverobj.opf)
+                && useri_configon(useri_fGEOPROFIL)) {
+            mpos = hoverobj.opf->lastpos;
+         }
+         measureline(image, aprsdecode_click.markpos, mpos,
+                aprsdecode_click.markalti);
       }
       maptool_cc(image, TimeConv_time(), 0UL);
       if (useri_configon(useri_fRULER)) maptool_ruler(image);
@@ -4911,6 +4946,10 @@ to Defaults", 34ul);
          maptool_closesrtmfile();
       }
       makeimage(0);
+      if (hoverobj.opf) {
+         useri_hoverinfo(hoverobj);
+         hoverobj.opf = 0;
+      }
    }
    else if (useri_newxsize>0UL) {
       /* window resize request */
@@ -4950,7 +4989,9 @@ to Defaults", 34ul);
                 50ul, aprsdecode_click.lastpoi);
       aprsdecode_click.bubblstr[0UL] = 0;
    }
-   if (useri_refresh) useri_redraw(image);
+   if (useri_refresh) {
+      useri_redraw(image);
+   }
    if (!logdone) {
       bootreadlog();
       ++aprsdecode_tracenew.winevent;
@@ -5172,7 +5213,7 @@ extern int main(int argc, char **argv)
    aprsdecode_posinval(&aprsdecode_click.squerpos0);
    aprsdecode_posinval(&aprsdecode_click.measurepos);
    memset((char *) &aprsdecode_tracenew,(char)0,
-                sizeof(struct aprsdecode__D3));
+                sizeof(struct aprsdecode__D2));
    pandone = 1;
    useri_newxsize = 0UL;
    useri_newysize = 0UL;
@@ -5194,6 +5235,7 @@ extern int main(int argc, char **argv)
    aprsdecode_tracenew.winevent = 1UL;
    aprsdecode_posinval(&newpos0);
    aprsdecode_posinval(&newpos1);
+   hoverobj.opf = 0;
    signal(SIGTERM, killsave);
    signal(SIGINT, killsave);
    signal(SIGPIPE, killsave);

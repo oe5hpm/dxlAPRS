@@ -540,7 +540,8 @@ extern void aprstext_setmarkalti(aprsdecode_pFRAMEHIST pf,
 } /* end setmarkalti() */
 
 
-extern void aprstext_optext(unsigned long typ, char * last, char s[],
+extern void aprstext_optext(unsigned long typ,
+                struct aprsdecode_CLICKOBJECT * obj, char * last, char s[],
                 unsigned long s_len)
 {
    aprsdecode_pOPHIST op;
@@ -552,30 +553,29 @@ extern void aprstext_optext(unsigned long typ, char * last, char s[],
    char ss[1000];
    struct aprsdecode_DAT dat;
    /*    islast:BOOLEAN; */
-   op = aprsdecode_click.table[aprsdecode_click.selected].opf;
-   pf = aprsdecode_click.table[aprsdecode_click.selected].pff0;
+   op = obj->opf;
+   pf = obj->pff0;
    if (pf==0 && op) pf = op->frames;
    s[0UL] = 0;
    /*  islast:=last; */
    *last = 0;
    if (op && pf) {
-      if (typ==3UL) aprstext_setmarkalti(pf, op, 0);
+      if (typ==3UL) {
+      }
       else if (typ==2UL) {
+         /*      setmarkalti(pf, op, FALSE); */
          /*      click.marktime:=realtime; */
          /* find last raw frame */
          pf = op->frames;
          if (pf) {
             while (pf->next) pf = pf->next;
-            aprsdecode_click.table[aprsdecode_click.selected].pff0 = pf;
-            /*      IF islast THEN   */
-            aprstext_setmarkalti(0, op, 0);
-                /* not use last frame for marker because marker should be at symbol position but sympol is on last ERROR-FREE position */
+            obj->pff0 = pf;
          }
       }
       else if (typ==1UL) {
-         /*WrStrLn("mt2"); */
-         /*      click.marktime:=realtime; */
-         /*      END; */
+         /*        IF obj.typf<>tHOVER THEN setmarkalti(NIL, op, FALSE) END;
+                   (* not use last frame for marker because marker should be at symbol position but symbol is on last ERROR-FREE position *)
+                 */
          /* next frame */
          pf1 = pf;
          do {
@@ -585,14 +585,13 @@ extern void aprstext_optext(unsigned long typ, char * last, char s[],
          /*      IF pf^.next<>NIL THEN pf:=pf^.next ELSE pf:=op^.frames END;
                 */
          if (pf) {
-            aprsdecode_click.table[aprsdecode_click.selected].pff0 = pf;
-            aprsdecode_click.table[aprsdecode_click.selected].pff = pf;
-            aprsdecode_click.table[aprsdecode_click.selected]
-                .typf = aprsdecode_tTRACK; /* set "track found" */
-            aprstext_setmarkalti(pf, op, 0);
+            obj->pff0 = pf;
+            obj->pff = pf;
+            obj->typf = aprsdecode_tTRACK; /* set "track found" */
          }
       }
       else if (typ==0UL) {
+         /*        setmarkalti(pf, op, FALSE); */
          /*        click.marktime:=realtime; */
          /* back to last frame */
          pf1 = pf;
@@ -609,12 +608,11 @@ extern void aprstext_optext(unsigned long typ, char * last, char s[],
                IF pf=pf1 THEN pf1:=NIL END; 
                WHILE (pf<>NIL) & (pf^.next<>pf1) DO pf:=pf^.next END;
          */
-         aprsdecode_click.table[aprsdecode_click.selected].pff0 = pf;
-         aprsdecode_click.table[aprsdecode_click.selected].pff = pf;
-         aprsdecode_click.table[aprsdecode_click.selected]
-                .typf = aprsdecode_tTRACK; /* set "track found" */
-         aprstext_setmarkalti(pf, op, 0);
+         obj->pff0 = pf;
+         obj->pff = pf;
+         obj->typf = aprsdecode_tTRACK; /* set "track found" */
       }
+      /*      setmarkalti(pf, op, FALSE); */
       /*      click.marktime:=realtime;  */
       /*    IF ((typ=1) OR (typ=0)) & lums.errorstep & (pf=pf1)
                 THEN Assign(s, "no more errors found"); */
@@ -630,9 +628,7 @@ extern void aprstext_optext(unsigned long typ, char * last, char s[],
          while (pf1) {
             ++cn;
             if (pf1==pf) cx = cn;
-            if (pf1->next==pf) {
-               pfe = pf1;
-            }
+            if (pf1->next==pf) pfe = pf1;
             pf1 = pf1->next;
          }
          aprsstr_IntToStr((long)cx, 0UL, s, s_len);
