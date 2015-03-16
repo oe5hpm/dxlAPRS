@@ -114,6 +114,14 @@ maptool_pIMAGE useri_panoimage;
 #define useri_TOGGMOUSESHOW 10
 /* menu line */
 
+#define useri_TEXTINFOWINID 2
+/* raw + decoded text window id */
+
+#define useri_HOVERINFOWINID 3
+
+#define useri_WXWINID 20
+/* set of wx graphics windows ids */
+
 #define useri_MOUSESHOWID 19
 /* win d mouseshow */
 
@@ -437,6 +445,8 @@ maptool_pIMAGE useri_panoimage;
 
 #define useri_CHOOSEONESYM "\326"
 
+#define useri_HOVERCLICK "\327"
+
 struct CONFLINE;
 
 typedef struct CONFLINE * pCONFLINE;
@@ -559,6 +569,8 @@ static char digied;
 
 static char hinton;
 
+static char hoveropen;
+
 static char poioff;
 
 static maptool_pIMAGE redrawimg;
@@ -582,13 +594,13 @@ static pMENU menus;
 static unsigned long hinttime;
 
 static struct useri_MOUSEPOS hintmouse;
-                /* store mouse to close hint if moved a radius away */
+                /* store mouse to close hover hints if moved a radius away */
 
 static unsigned long hintnum;
 
 static char helpscroll[11][41];
 
-static struct CONFIG configs[150];
+static struct CONFIG configs[151];
 
 static char pullmenuwhat;
 
@@ -803,7 +815,7 @@ static void icfg(unsigned char v, const char s[], unsigned long s_len)
 
 extern void useri_clrconfig(void)
 {
-   memset((char *)configs,(char)0,sizeof(struct CONFIG [150]));
+   memset((char *)configs,(char)0,sizeof(struct CONFIG [151]));
 } /* end clrconfig() */
 
 
@@ -1028,6 +1040,8 @@ extern void useri_initconfig(void)
                 350UL);
    initc(useri_fCLICKTRACK, "Click Track", 12ul, useri_cLINE, ".u", 3ul, 0,
                 355UL);
+   initc(useri_fHOVERSET, "Hover Set", 10ul, useri_cLINE, "u", 2ul, 0,
+                356UL);
    initc(useri_fMSGRFDEST, "MsgRfdestcall", 14ul, useri_cLINE, "NOGATE", 7ul,
                  0, 360UL);
    configs[useri_fMSGRFDEST].width = 9U;
@@ -2585,6 +2599,11 @@ static void textwin(unsigned long xw, unsigned long lines, unsigned long xpo,
       gg = 210L;
       bb = 0L;
       break;
+   case 'm':
+      rr = 130L;
+      gg = 190L;
+      bb = 100L;
+      break;
    default:;
       rr = 250L;
       gg = 250L;
@@ -3156,11 +3175,11 @@ static void delmsgfifo(void)
 } /* end delmsgfifo() */
 
 
-static void getwxset(char * ch, unsigned short * wset)
+static void getwxset(unsigned char set, char * ch, unsigned short * wset)
 {
    unsigned long i;
    char s[100];
-   useri_confstr(useri_fCLICKWXSYM, s, 100ul);
+   useri_confstr(set, s, 100ul);
    *wset = 0U;
    *ch = s[0U];
    if (*ch=='0') {
@@ -3174,7 +3193,7 @@ static void getwxset(char * ch, unsigned short * wset)
       }
       if (s[i+1UL]=='u') *ch = 'u';
    }
-   icfg(useri_fCLICKWXSYM, s, 100ul);
+   icfg(set, s, 100ul);
 } /* end getwxset() */
 
 
@@ -3182,8 +3201,21 @@ static void textinfo(unsigned long typ)
 {
    char s[1001];
    char col;
+   struct aprsdecode_CLICKOBJECT * anonym;
    /*WrInt(typ, 5);WrStrLn("ti"); */
-   aprstext_optext(typ, &aprsdecode_click.watchlast, s, 1001ul);
+   aprstext_optext(typ, &aprsdecode_click.table[aprsdecode_click.selected],
+                &aprsdecode_click.watchlast, s, 1001ul);
+   { /* with */
+      struct aprsdecode_CLICKOBJECT * anonym = &aprsdecode_click.table[aprsdecode_click.selected]
+                ;
+      if (anonym->opf && anonym->pff0) {
+         if (typ==2UL) {
+            aprstext_setmarkalti(0, anonym->opf, 0);
+                /* not use last frame for marker because marker should be at symbol position but symbol is on last ERROR-FREE position */
+         }
+         else aprstext_setmarkalti(anonym->pff0, anonym->opf, 0);
+      }
+   }
    col = 'b';
    if (aprsdecode_click.watchlast) col = 'r';
    if (s[0U]) useri_textautosize(0L, 0L, 2UL, 0UL, col, s, 1001ul);
@@ -3200,6 +3232,26 @@ extern void useri_refrinfo(void)
 } /* end refrinfo() */
 
 
+extern void useri_hoverinfo(struct aprsdecode_CLICKOBJECT obj)
+{
+   char hh;
+   unsigned short graphset;
+   char s[1001];
+   char col;
+   char void0;
+   hintmouse = useri_xmouse;
+   getwxset(useri_fHOVERSET, &hh, &graphset);
+                /* what wx images are enabled */
+   hoveropen = 1;
+   if (hh=='u') {
+      aprstext_optext(2UL, &obj, &void0, s, 1001ul);
+      col = 'm';
+      if (s[0U]) useri_textautosize(0L, 0L, 3UL, 0UL, 'm', s, 1001ul);
+   }
+   images(obj.opf, 0, graphset);
+} /* end hoverinfo() */
+
+
 static void oneclickinfo(void)
 {
    unsigned long i;
@@ -3214,9 +3266,8 @@ static void oneclickinfo(void)
    aprsdecode_click.graphset = 0U;
    if (aprsdecode_click.table[i].typf==aprsdecode_tSYMBOL || aprsdecode_click.table[i]
                 .typf==aprsdecode_tOBJECT) {
-      /*    IF click.table[i].opf^.lastinftyp>=100 THEN getwxset(hh,
-                click.graphset);  (* wx click *) */
-      getwxset(&hh, &aprsdecode_click.graphset);
+      /*OR (click.table[i].typf=tHOVER)*/
+      getwxset(useri_fCLICKWXSYM, &hh, &aprsdecode_click.graphset);
                 /* what wx images are enabled */
       wset = 0U;
       img = 0;
@@ -3224,8 +3275,6 @@ static void oneclickinfo(void)
                 &lastval); /* what do we have */
       if ((wset&aprsdecode_click.graphset)==0U) {
          /* no wx to show */
-         /*    ELSE                                                                        (* symbol click *)
-                   */
          useri_confstr(useri_fCLICKSYM, s, 100ul);
          if (aprsstr_InStr(s, 100ul, "s", 2ul)>=0L) {
             aprsdecode_click.graphset |= 0x80U;
@@ -3241,7 +3290,6 @@ static void oneclickinfo(void)
       }
    }
    else if (aprsdecode_click.table[i].typf==aprsdecode_tTEXT) {
-      /*    setmarkalti(click.table[i].pff, click.table[i].opf, FALSE); */
       /* text click */
       useri_confstr(useri_fCLICKTEXT, s, 100ul);
       if (aprsstr_InStr(s, 100ul, "s", 2ul)>=0L) {
@@ -3799,7 +3847,7 @@ static void helpmenu(void)
    newmenu(&menu, 150UL, aprsdecode_lums.fontysize+7UL, 3UL, useri_bTRANSP);
    /*  addline(menu, "Shortcuts", CMDSHORTCUTLIST, MINH*6); */
    addline(menu, "Helptext", 9ul, "\305", 2ul, 610UL);
-   addline(menu, "aprsmap(cu) 0.48 by OE5DXL ", 28ul, " ", 2ul, 605UL);
+   addline(menu, "aprsmap(cu) 0.49 by OE5DXL ", 28ul, " ", 2ul, 605UL);
    setunderbar(menu, 37L);
    menu->ysize = menu->oldknob*menu->yknob;
    menu->oldknob = 0UL;
@@ -3847,6 +3895,7 @@ static void nextclick(void)
 {
    pMENU menu;
    newmenu(&menu, 80UL, aprsdecode_lums.fontysize+7UL, 10UL, useri_bTRANSP);
+   addline(menu, "Symbol Hover", 13ul, "\276>", 3ul, 905UL);
    addline(menu, "To Map", 7ul, "\276>", 3ul, 900UL);
    addline(menu, "To Text", 8ul, "\276>", 3ul, 901UL);
    addline(menu, "To Symbol", 10ul, "\276>", 3ul, 902UL);
@@ -3887,7 +3936,7 @@ static void wxonoff(pMENU menu)
 {
    char ch;
    unsigned short wset;
-   getwxset(&ch, &wset);
+   getwxset(useri_fCLICKWXSYM, &ch, &wset);
    menu->oldknob = 0UL;
    addonoff(menu, "\365\365|Center", 10ul, "\232", 2ul, 1100UL, 6L, ch=='C');
    addonoff(menu, "\365\365|Zoom To", 11ul, "\232", 2ul, 1101UL, 6L,
@@ -3926,6 +3975,45 @@ static void wxclick(void)
    wxonoff(menu);
 } /* end wxclick() */
 
+#define useri_OX0 6
+/*      OY=8; */
+
+
+static void hoveronoff(pMENU menu)
+{
+   char ch;
+   unsigned short wset;
+   getwxset(useri_fHOVERSET, &ch, &wset);
+   menu->oldknob = 0UL;
+   addonoff(menu, "\365\365|Raw+Decoded", 15ul, "\327", 2ul, 1151UL, 6L,
+                ch=='u');
+   addonoff(menu, "\365\365|Luminosity", 14ul, "\327", 2ul, 1152UL, 6L,
+                (0x40U & wset)!=0);
+   addonoff(menu, "\365\365|Rain", 8ul, "\327", 2ul, 1153UL, 6L,
+                (0x20U & wset)!=0);
+   addonoff(menu, "\365\365|Wind Dir", 12ul, "\327", 2ul, 1154UL, 6L,
+                (0x10U & wset)!=0);
+   addonoff(menu, "\365\365|Wind", 8ul, "\327", 2ul, 1155UL, 6L,
+                (0x8U & wset)!=0);
+   addonoff(menu, "\365\365|Hygro", 9ul, "\327", 2ul, 1156UL, 6L,
+                (0x4U & wset)!=0);
+   addonoff(menu, "\365\365|Barometer", 13ul, "\327", 2ul, 1157UL, 6L,
+                (0x2U & wset)!=0);
+   addonoff(menu, "\365\365|Temp", 8ul, "\327", 2ul, 1158UL, 6L,
+                (0x1U & wset)!=0);
+   addline(menu, "\365\365|Hover OFf", 13ul, "\327", 2ul, 1159UL);
+   menu->ysize = menu->oldknob*menu->yknob;
+   menu->oldknob = 0UL;
+} /* end hoveronoff() */
+
+
+static void hoverclick(void)
+{
+   pMENU menu;
+   newmenu(&menu, 100UL, aprsdecode_lums.fontysize+3UL, 20UL, useri_bTRANSP);
+   hoveronoff(menu);
+} /* end hoverclick() */
+
 
 static void trackonoff(pMENU menu, char on, unsigned char v)
 {
@@ -3961,7 +4049,7 @@ static void trackclick(void)
    trackonoff(menu, '\204', useri_fCLICKTRACK);
 } /* end trackclick() */
 
-#define useri_OX0 6
+#define useri_OX1 6
 /*      OY=8; */
 
 
@@ -4006,18 +4094,18 @@ static void symbolclick(char on, unsigned char v)
 } /* end symbolclick() */
 
 
-static void toggwx(unsigned char w)
+static void toggwx(unsigned char set, unsigned char w)
 {
    unsigned long n;
    char s[100];
    n = (unsigned long)w+1UL;
-   useri_confstr(useri_fCLICKWXSYM, s, 100ul);
+   useri_confstr(set, s, 100ul);
    if (s[0U]!='0') s[0U] = 0;
    while (aprsstr_Length(s, 100ul)<n) aprsstr_Append(s, 100ul, "0", 2ul);
    if (s[n]==0) aprsstr_Append(s, 100ul, "1", 2ul);
    else if (s[n]=='1') s[n] = '0';
    else s[n] = '1';
-   icfg(useri_fCLICKWXSYM, s, 100ul);
+   icfg(set, s, 100ul);
 } /* end toggwx() */
 
 
@@ -4040,11 +4128,11 @@ static char testdelwaypoint(void)
 /* check if delete a waypoint or whole op */
 {
    aprsdecode_pOPHIST op;
-   struct aprsdecode__D1 * anonym;
+   struct aprsdecode_CLICKOBJECT * anonym;
    op = aprsdecode_selop();
    if (op) {
       { /* with */
-         struct aprsdecode__D1 * anonym = &aprsdecode_click.table[aprsdecode_click.selected]
+         struct aprsdecode_CLICKOBJECT * anonym = &aprsdecode_click.table[aprsdecode_click.selected]
                 ;
          if ((anonym->pff0 && anonym->typf!=aprsdecode_tOBJECT)
                 && anonym->typf!=aprsdecode_tSYMBOL) return 1;
@@ -4910,12 +4998,12 @@ ose", 66ul, "\255", 2ul, 6800UL);
    addline(m, "", 1ul, "\255", 2ul, 6810UL);
    ++m->scroll;
    m->clampkb |= 0x4UL;
-   m->confidx[2U] = 127U;
+   m->confidx[2U] = 128U;
    keybknob(m, 2UL, 0, 0UL);
    addline(m, "", 1ul, "\255", 2ul, 6815UL);
    ++m->scroll;
    m->clampkb |= 0x8UL;
-   m->confidx[3U] = 126U;
+   m->confidx[3U] = 127U;
    keybknob(m, 3UL, 0, 0UL);
    useri_confstr(useri_fMSGPORT, s, 201ul);
    po = X2C_CAP(s[0U]);
@@ -5038,7 +5126,7 @@ static void configdelman(unsigned char cfg, unsigned long num,
    pCONFLINE po;
    pCONFLINE pl;
    pl = 0;
-   if ((unsigned long)cfg<=149UL) pl = configs[cfg].lines;
+   if ((unsigned long)cfg<=150UL) pl = configs[cfg].lines;
    po = 0;
    while (n>1UL && pl) {
       po = pl;
@@ -7227,7 +7315,7 @@ static char Scrollbars(pMENU m, long dx, long dy)
          if ((unsigned long)m->sizeconf>0UL) {
             useri_saveXYtocfg(m->sizeconf, sx, sy);
          }
-         icfg(m->minnormmax, "", 1ul); /* set normal size */
+         if ((unsigned long)m->minnormmax>0UL) icfg(m->minnormmax, "", 1ul);
          useri_refresh = 1;
       }
       return 1;
@@ -7455,7 +7543,9 @@ static void dopano(pMENU m, unsigned long xcl, unsigned long ycl)
          else {
             xcl<=aprsdecode_lums.fontysize+24UL && xcl>aprsdecode_lums.fontysize;
          }
-         icfg(m->minnormmax, (char *) &isicon, 1u/1u);
+         if ((unsigned long)m->minnormmax>0UL) {
+            icfg(m->minnormmax, (char *) &isicon, 1u/1u);
+         }
       }
    }
    else if (xcl+aprsdecode_lums.fontysize>m->xsize) {
@@ -7570,8 +7660,8 @@ static void knobcol(maptool_pIMAGE img, long x0, long y00, long xs, long ys,
 
 typedef unsigned long sCONFSET[5];
 
-static sCONFSET _cnst = {0x00000000UL,0x00000000UL,0x00807E80UL,0x00F00000UL,
-                0x00078000UL};
+static sCONFSET _cnst = {0x00000000UL,0x00000000UL,0x00807E80UL,0x01E00000UL,
+                0x000F0000UL};
 
 static void configman(unsigned long button, char * keycmd)
 {
@@ -7591,7 +7681,7 @@ static void configman(unsigned long button, char * keycmd)
                 fKMHTIME,fTEMP,fWINDSYM,fRULER,fALTMIN,fCOLMAPTEXT,
                 fCOLOBJTEXT, fCOLMENUTEXT, fCOLMENUBACK, fCOLMARK1,
                 fCOLMARK2} */
-      if (X2C_INL((long)configedit,150,_cnst)) *keycmd = ' ';
+      if (X2C_INL((long)configedit,151,_cnst)) *keycmd = ' ';
       if (configs[configedit].typ<useri_cLIST) configedit = 0UL;
    }
    useri_killmenuid(229UL);
@@ -7715,15 +7805,15 @@ static void geoprofil(void)
 static void coloureditgeo(unsigned long knob, unsigned long sub)
 {
    configs[useri_fEDITLINE].width = 200U;
-   if (knob==1UL) configedit = 148UL;
-   else if (knob==2UL) configedit = 147UL;
-   else if (knob==3UL) configedit = 120UL;
-   else if (knob==4UL) configedit = 114UL;
-   else if (knob==5UL) configedit = 115UL;
-   else if (knob==6UL) configedit = 116UL;
-   else if (knob==7UL) configedit = 119UL;
-   else if (knob==8UL) configedit = 118UL;
-   else configedit = 117UL;
+   if (knob==1UL) configedit = 149UL;
+   else if (knob==2UL) configedit = 148UL;
+   else if (knob==3UL) configedit = 121UL;
+   else if (knob==4UL) configedit = 115UL;
+   else if (knob==5UL) configedit = 116UL;
+   else if (knob==6UL) configedit = 117UL;
+   else if (knob==7UL) configedit = 120UL;
+   else if (knob==8UL) configedit = 119UL;
+   else configedit = 118UL;
    memcpy(configs[useri_fEDITLINE].title,configs[configedit].title,31u);
    copytoed();
    useri_rdlums();
@@ -7772,7 +7862,7 @@ static void colouredit(unsigned long knob, unsigned long sub)
       else configedit = 54UL;
    }
    else if (knob==5UL) configedit = 61UL;
-   else configedit = (143UL+knob)-1UL;
+   else configedit = (144UL+knob)-1UL;
    memcpy(configs[useri_fEDITLINE].title,configs[configedit].title,31u);
    copytoed();
    useri_rdlums();
@@ -7893,11 +7983,11 @@ static void docolourchoose(pMENU menu)
    unsigned long tmp0;
    menu->oldknob = 0UL;
    addline(menu, "", 1ul, "\317", 2ul, 8450UL);
-   ro = (unsigned long)useri_conf2int((unsigned char)((143UL+menu->scroll)
+   ro = (unsigned long)useri_conf2int((unsigned char)((144UL+menu->scroll)
                 -1UL), 0UL, 0L, 100L, 0L);
-   go = (unsigned long)useri_conf2int((unsigned char)((143UL+menu->scroll)
+   go = (unsigned long)useri_conf2int((unsigned char)((144UL+menu->scroll)
                 -1UL), 1UL, 0L, 100L, 0L);
-   bo = (unsigned long)useri_conf2int((unsigned char)((143UL+menu->scroll)
+   bo = (unsigned long)useri_conf2int((unsigned char)((144UL+menu->scroll)
                 -1UL), 2UL, 0L, 100L, 0L);
    normcol(1000UL, &ro, &go, &bo);
    xo = 0UL;
@@ -7967,7 +8057,7 @@ static void docolourchoose(pMENU menu)
       if (y==tmp) break;
    } /* end for */
    maptool_Colset(&col, 'W');
-   maptool_drawstri(menu->image, configs[(menu->scroll-1UL)+143UL].title,
+   maptool_drawstri(menu->image, configs[(menu->scroll-1UL)+144UL].title,
                 31ul, 3L, (long)(((menu->image->Len0-1)-5UL)-aprsdecode_lums.fontysize),
                  1000UL, 1UL, col, 0, 0);
    menu->redrawproc = docolourchoose;
@@ -8030,7 +8120,7 @@ static void setcolour(unsigned long knob, unsigned long cx,
       aprsstr_Append(s, 101ul, " ", 2ul);
       aprsstr_CardToStr(b, 0UL, h, 101ul);
       aprsstr_Append(s, 101ul, h, 101ul);
-      icfg((unsigned char)((143UL+knob)-1UL), s, 101ul);
+      icfg((unsigned char)((144UL+knob)-1UL), s, 101ul);
    }
    useri_rdlums();
    updatemenus();
@@ -8039,7 +8129,7 @@ static void setcolour(unsigned long knob, unsigned long cx,
 /* colour chooser */
 static void netmenu(pMENU);
 
-#define useri_OX1 8
+#define useri_OX2 8
 
 
 static void netmenu(pMENU m)
@@ -8073,7 +8163,7 @@ static void netmenu(pMENU m)
 
 static void rfmenu(pMENU);
 
-#define useri_OX2 9
+#define useri_OX3 9
 
 
 static void rfmenu(pMENU m)
@@ -8129,7 +8219,7 @@ static void dorfcfg(unsigned long knob, unsigned long sub)
       if (sub==0UL) configtogg(useri_fWRTICKER);
       else {
          strncpy(configs[useri_fEDITLINE].title,"Calls in Headline",31u);
-         configedit = 103UL;
+         configedit = 104UL;
       }
    }
    else if (knob==6UL) configtogg(useri_fMUSTBECALL);
@@ -8181,7 +8271,7 @@ static void dorfcfg(unsigned long knob, unsigned long sub)
 
 static void domsgmenu(pMENU);
 
-#define useri_OX3 9
+#define useri_OX4 9
 
 
 static void domsgmenu(pMENU m)
@@ -8206,16 +8296,16 @@ static void domsgcfg(unsigned long knob)
    configs[useri_fEDITLINE].width = 200U;
    if (knob==1UL) {
       strncpy(configs[useri_fEDITLINE].title,"Query:Action",31u);
-      configedit = 105UL;
+      configedit = 106UL;
    }
    else if (knob==2UL) {
       strncpy(configs[useri_fEDITLINE].title,"Msg Path",31u);
-      configedit = 96UL;
+      configedit = 97UL;
       configs[useri_fEDITLINE].width = 9U;
    }
    else if (knob==3UL) {
       strncpy(configs[useri_fEDITLINE].title,"Msg Path",31u);
-      configedit = 98UL;
+      configedit = 99UL;
    }
    else if (knob==4UL) configtogg(useri_fPOPUPMSG);
    else if (knob==5UL) configtogg(useri_fMSGALLSSID);
@@ -8258,7 +8348,7 @@ static void expandtogg(void)
 
 static void timercfg(pMENU);
 
-#define useri_OX4 7
+#define useri_OX5 7
 
 
 static void timercfg(pMENU m)
@@ -8325,7 +8415,7 @@ static void dotimers(unsigned long knob)
    }
    else if (knob==1UL) {
       strncpy(configs[useri_fEDITLINE].title,"Local time (+-h)",31u);
-      configedit = 104UL;
+      configedit = 105UL;
    }
    copytoed();
    updatemenus();
@@ -8333,7 +8423,7 @@ static void dotimers(unsigned long knob)
 
 static void mapcfg(pMENU);
 
-#define useri_OX5 7
+#define useri_OX6 7
 
 
 static void mapcfg(pMENU m)
@@ -8428,7 +8518,7 @@ static void domap(unsigned long knob, unsigned long sub)
 
 static void mapmove(pMENU);
 
-#define useri_OX6 7
+#define useri_OX7 7
 
 
 static void mapmove(pMENU m)
@@ -8461,7 +8551,7 @@ static void domapmove(unsigned long knob, unsigned long sub)
       if (sub==0UL) configtogg(useri_fAPPROXY);
       else {
          strncpy(configs[useri_fEDITLINE].title,"Approximation Warn km",31u);
-         configedit = 131UL;
+         configedit = 132UL;
       }
    }
    else if (knob==2UL) configtogg(useri_fZOOMMISS);
@@ -8547,32 +8637,32 @@ static void callfiltsetup(unsigned long knob)
    if (knob==1UL) {
       strncpy(configs[useri_fEDITLINE].title,"Raw Frame",31u);
       configs[useri_fEDITLINE].width = 50U;
-      configedit = 111UL;
+      configedit = 112UL;
    }
    else if (knob==2UL) {
       strncpy(configs[useri_fEDITLINE].title,"Destination Call",31u);
       configs[useri_fEDITLINE].width = 9U;
-      configedit = 110UL;
+      configedit = 111UL;
    }
    else if (knob==3UL) {
       strncpy(configs[useri_fEDITLINE].title,"Word in Comment",31u);
       configs[useri_fEDITLINE].width = 50U;
-      configedit = 106UL;
+      configedit = 107UL;
    }
    else if (knob==4UL) {
       strncpy(configs[useri_fEDITLINE].title,"Sender of Object",31u);
       configs[useri_fEDITLINE].width = 9U;
-      configedit = 107UL;
+      configedit = 108UL;
    }
    else if (knob==5UL) {
       strncpy(configs[useri_fEDITLINE].title,"Via Igate Call",31u);
       configs[useri_fEDITLINE].width = 9U;
-      configedit = 108UL;
+      configedit = 109UL;
    }
    else if (knob==6UL) {
       strncpy(configs[useri_fEDITLINE].title,"Call of Symbol",31u);
       configs[useri_fEDITLINE].width = 9U;
-      configedit = 109UL;
+      configedit = 110UL;
    }
    clreditline();
    useri_refresh = 1;
@@ -8583,7 +8673,7 @@ static void watchcallsetup(void)
 {
    strncpy(configs[useri_fEDITLINE].title,"Watch Call",31u);
    configs[useri_fEDITLINE].width = 10U;
-   configedit = 130UL;
+   configedit = 131UL;
    configs[useri_fEDITLINE].curspos = 0U;
    clreditline();
    useri_refresh = 1;
@@ -8695,7 +8785,7 @@ static void docfgbeep(unsigned long knob, unsigned long sub)
       else {
          strncpy(configs[useri_fEDITLINE].title,"Beep far/near Hz ms Hz ms",
                 31u);
-         configedit = 123UL;
+         configedit = 124UL;
       }
       testbeep(useri_fBEEPPROX);
    }
@@ -8703,7 +8793,7 @@ static void docfgbeep(unsigned long knob, unsigned long sub)
       if (sub==0UL) configtogg(useri_fBEEPWATCH);
       else {
          strncpy(configs[useri_fEDITLINE].title,"Watchcall Beep Hz ms",31u);
-         configedit = 124UL;
+         configedit = 125UL;
       }
       testbeep(useri_fBEEPWATCH);
    }
@@ -8712,7 +8802,7 @@ static void docfgbeep(unsigned long knob, unsigned long sub)
       else {
          strncpy(configs[useri_fEDITLINE].title,"Message Beep rx/ack Hz ms Hz\
  ms",31u);
-         configedit = 125UL;
+         configedit = 126UL;
       }
       testbeep(useri_fBEEPMSG);
    }
@@ -8722,7 +8812,7 @@ static void docfgbeep(unsigned long knob, unsigned long sub)
 
 static void cfgbeep(pMENU);
 
-#define useri_OX7 7
+#define useri_OX8 7
 
 
 static void cfgbeep(pMENU m)
@@ -8777,7 +8867,7 @@ static void configeditor(void)
    unsigned long oks;
    cnt = 0UL;
    pl = 0;
-   if (configedit<=149UL) pl = configs[configedit].lines;
+   if (configedit<=150UL) pl = configs[configedit].lines;
    ph = pl;
    while (ph) {
       ++cnt;
@@ -8807,7 +8897,7 @@ static void configeditor(void)
    /*    addline(m, 0C, " ", MINH*72); */
    addline(m, "", 1ul, "\320", 2ul, 7200UL);
    m->clampkb |= 0x4UL;
-   m->confidx[2U] = 149U;
+   m->confidx[2U] = 150U;
    keybknob(m, 2UL, 0, 0UL);
    m->oldknob = 2UL;
    more = configs[configedit].typ>=useri_cLIST;
@@ -8821,7 +8911,7 @@ static void configeditor(void)
       else strncpy(s,"\346 ",201u);
       m->scroll = cnt;
       aprsstr_Append(s, 201ul, pl->line, 201ul);
-      if (configedit==130UL) {
+      if (configedit==131UL) {
          aprsstr_Append(s, 201ul, "           ", 12ul);
          s[12U] = 0;
          strncpy(cmd,"\253",2u);
@@ -8937,7 +9027,7 @@ static void watchdo(unsigned long knob, unsigned long sub)
 
 static void configmain(pMENU);
 
-#define useri_OX8 8
+#define useri_OX9 8
 
 
 static void configmain(pMENU m)
@@ -9760,11 +9850,12 @@ static char hilitemenu(unsigned long px, unsigned long py, char kbdch,
                else nextclick();
             }
             else if (c=='\276') {
-               if (knob==1UL) mapclick();
-               else if (knob==2UL) symbolclick('\203', useri_fCLICKTEXT);
-               else if (knob==3UL) symbolclick('\202', useri_fCLICKSYM);
-               else if (knob==4UL) wxclick();
-               else if (knob==5UL) trackclick();
+               if (knob==1UL) hoverclick();
+               else if (knob==2UL) mapclick();
+               else if (knob==3UL) symbolclick('\203', useri_fCLICKTEXT);
+               else if (knob==4UL) symbolclick('\202', useri_fCLICKSYM);
+               else if (knob==5UL) wxclick();
+               else if (knob==6UL) trackclick();
             }
             else if (c=='\220') toolsmenu();
             else if (c=='\217') filemenu();
@@ -9789,10 +9880,10 @@ static char hilitemenu(unsigned long px, unsigned long py, char kbdch,
             else if (c=='\275') {
                if (knob==5UL) configbeep();
             }
-            else if (c=='\271') msgmenu();
-            else if (c=='\316') {
-               colourchoose(knob);
+            else if (c=='\271') {
+               msgmenu();
             }
+            else if (c=='\316') colourchoose(knob);
             else if (c=='\313') geoprofil();
             else if (c=='\321') colourchoosegeo(knob);
          }
@@ -9919,6 +10010,16 @@ static void printhint(void)
 } /* end printhint() */
 
 
+static void closewxwins(void)
+{
+   unsigned char wi;
+   for (wi = aprsdecode_wTEMP;; wi++) {
+      useri_killmenuid(20UL+(unsigned long)wi);
+      if (wi==aprsdecode_wAHIST) break;
+   } /* end for */
+} /* end closewxwins() */
+
+
 static void closehint(void)
 {
    if (hinton) {
@@ -9927,6 +10028,12 @@ static void closehint(void)
       useri_refresh = 1;
    }
    useri_starthint(0UL, 0);
+   if (hoveropen) {
+      useri_killmenuid(3UL);
+      closewxwins();
+      hoveropen = 0;
+      useri_refresh = 1;
+   }
 } /* end closehint() */
 
 /*
@@ -9987,7 +10094,7 @@ static void kbtomenu(char * ch)
    while ((unsigned char)uml[0U]>0) {
       *ch = uml[0U];
       idx = (unsigned long)pm->confidx[pm->oldknob];
-      if (idx<=149UL) {
+      if (idx<=150UL) {
          { /* with */
             struct CONFIG * anonym = &configs[idx];
             if (anonym->lines==0) icfg((unsigned char)idx, "", 1ul);
@@ -10108,10 +10215,10 @@ static void op2watch(char add)
 static void deletop(void)
 {
    char s[100];
-   struct aprsdecode__D1 * anonym;
+   struct aprsdecode_CLICKOBJECT * anonym;
    if (aprsdecode_click.entries>0UL) {
       { /* with */
-         struct aprsdecode__D1 * anonym = &aprsdecode_click.table[aprsdecode_click.selected]
+         struct aprsdecode_CLICKOBJECT * anonym = &aprsdecode_click.table[aprsdecode_click.selected]
                 ;
          if (anonym->opf) {
             aprsstr_Assign(s, 100ul, anonym->opf->call, 9ul);
@@ -10350,15 +10457,15 @@ static void Pullmenu(unsigned long wid, long dx, long dy)
 } /* end Pullmenu() */
 
 
-static void wxraw(void)
+static void wxraw(unsigned char set)
 {
    char s[100];
    long r;
-   useri_confstr(useri_fCLICKWXSYM, s, 100ul);
+   useri_confstr(set, s, 100ul);
    r = aprsstr_InStr(s, 100ul, "u", 2ul);
    if (r<0L) aprsstr_Append(s, 100ul, "u", 2ul);
    else aprsstr_Delstr(s, 100ul, (unsigned long)r, 1UL);
-   icfg(useri_fCLICKWXSYM, s, 100ul);
+   icfg(set, s, 100ul);
 } /* end wxraw() */
 
 
@@ -10725,18 +10832,31 @@ static void mouseleft(long mousx, long mousy)
          else if (knob==3UL) icfg(useri_fCLICKWXSYM, "=", 2ul);
          else if (knob==4UL) icfg(useri_fCLICKWXSYM, "H", 2ul);
          else if (knob==5UL) icfg(useri_fCLICKWXSYM, "b", 2ul);
-         else if (knob==6UL) wxraw();
-         else if (knob==7UL) toggwx(aprsdecode_wLUMI);
-         else if (knob==8UL) toggwx(aprsdecode_wRAIN);
-         else if (knob==9UL) toggwx(aprsdecode_wWINDDIR);
-         else if (knob==10UL) toggwx(aprsdecode_wWIND);
-         else if (knob==11UL) {
-            toggwx(aprsdecode_wHYG);
+         else if (knob==6UL) wxraw(useri_fCLICKWXSYM);
+         else if (knob==7UL) toggwx(useri_fCLICKWXSYM, aprsdecode_wLUMI);
+         else if (knob==8UL) toggwx(useri_fCLICKWXSYM, aprsdecode_wRAIN);
+         else if (knob==9UL) {
+            toggwx(useri_fCLICKWXSYM, aprsdecode_wWINDDIR);
          }
-         else if (knob==12UL) toggwx(aprsdecode_wBARO);
-         else if (knob==13UL) toggwx(aprsdecode_wTEMP);
+         else if (knob==10UL) toggwx(useri_fCLICKWXSYM, aprsdecode_wWIND);
+         else if (knob==11UL) toggwx(useri_fCLICKWXSYM, aprsdecode_wHYG);
+         else if (knob==12UL) toggwx(useri_fCLICKWXSYM, aprsdecode_wBARO);
+         else if (knob==13UL) toggwx(useri_fCLICKWXSYM, aprsdecode_wTEMP);
          else if (knob==14UL) icfg(useri_fCLICKWXSYM, "", 1ul);
          wxonoff(menu);
+         useri_refresh = 1;
+      }
+      else if (c=='\327') {
+         if (knob==1UL) wxraw(useri_fHOVERSET);
+         else if (knob==2UL) toggwx(useri_fHOVERSET, aprsdecode_wLUMI);
+         else if (knob==3UL) toggwx(useri_fHOVERSET, aprsdecode_wRAIN);
+         else if (knob==4UL) toggwx(useri_fHOVERSET, aprsdecode_wWINDDIR);
+         else if (knob==5UL) toggwx(useri_fHOVERSET, aprsdecode_wWIND);
+         else if (knob==6UL) toggwx(useri_fHOVERSET, aprsdecode_wHYG);
+         else if (knob==7UL) toggwx(useri_fHOVERSET, aprsdecode_wBARO);
+         else if (knob==8UL) toggwx(useri_fHOVERSET, aprsdecode_wTEMP);
+         else if (knob==9UL) icfg(useri_fHOVERSET, "", 1ul);
+         hoveronoff(menu);
          useri_refresh = 1;
       }
       else if (c=='\204') {
@@ -10818,9 +10938,7 @@ static void mouseleft(long mousx, long mousy)
       }
       else if (c=='\302') {
          if (knob==1UL) aprsdecode_click.cmd = '7';
-         else if (knob==2UL) {
-            aprsdecode_click.cmd = '8';
-         }
+         else if (knob==2UL) aprsdecode_click.cmd = '8';
          else if (knob==3UL) aprsdecode_click.cmd = '9';
          else {
             useri_Setmap(knob-1UL);
@@ -10913,9 +11031,7 @@ static void mouseleft(long mousx, long mousy)
       }
       else if (c=='\255') {
          if (knob==1UL) {
-            if (subknob==0UL) {
-               aprsdecode_makemsg(1);
-            }
+            if (subknob==0UL) aprsdecode_makemsg(1);
             else if (subknob==1UL) aprsdecode_makemsg(0);
             else sndmsg = 0;
             useri_killmenuid(228UL);
@@ -11055,7 +11171,9 @@ static void mouseleft(long mousx, long mousy)
       else if (c=='\305') useri_helptext(0UL, 0UL, 0UL, 0UL, "index", 6ul);
       else if (c=='\306') useri_helptext(knob, subknob, potx, poty, "", 1ul);
       else if (c=='\223') managebeacon(menu->scroll, knob, subknob, 0);
-      else if (c=='\213') dobeacon(menu->scroll, knob);
+      else if (c=='\213') {
+         dobeacon(menu->scroll, knob);
+      }
       else if (c=='\314') dodigi(menu->scroll, knob, subknob, 0U);
       else if (c=='\315') dodigi(menu->scroll, knob, subknob, 1U);
       else if (c=='\253') watchdo(knob, subknob);
@@ -11399,6 +11517,7 @@ extern void useri_mousemove(long x, long y)
       if (hinttime!=aprsdecode_realtime && useri_configon(useri_fMOUSELOC)) {
          mouseshowcnt = 1UL;
       }
+      aprsdecode_tracenew.winevent = 1UL;
    }
 } /* end mousemove() */
 
@@ -11536,6 +11655,7 @@ extern void useri_initmenus(void)
    dellog = 0UL;
    pullmenuwid = 0L;
    clampedline = 0UL;
+   hoveropen = 0;
    /*  clampedline:=0; */
    /*  FILL(ADR(menupullpos), 0C, SIZE(menupullpos)); */
    useri_Setmap(0UL);

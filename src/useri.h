@@ -147,7 +147,7 @@ enum useri_CONFSET {useri_fFIND, useri_fLOGWFN, useri_fLOGDAYS, useri_fLOGFN,
                 useri_fFONTSIZE, useri_fMARKPOS, 
    useri_fMOVESTEP, useri_fZOOMSTEP, useri_fCLICKMAP, useri_fCLICKSYM,
                 useri_fCLICKWXSYM, 
-   useri_fCLICKTEXT, useri_fCLICKTRACK, 
+   useri_fCLICKTEXT, useri_fCLICKTRACK, useri_fHOVERSET, 
    useri_fMSGRFDEST, useri_fMSGNETDEST, useri_fMSGPATH, useri_fPOPUPMSG,
                 useri_fMSGALLSSID, useri_fPASSSELFMSG, 
    useri_fWRINCOM, useri_fWRTICKER, 
@@ -352,6 +352,8 @@ extern void useri_allocimage(maptool_pIMAGE *, long, long, char);
 extern unsigned long useri_mainys(void);
 
 extern void useri_rdonesymb(char);
+
+extern void useri_hoverinfo(struct aprsdecode_CLICKOBJECT);
 
 
 extern void useri_BEGIN(void);
