@@ -182,8 +182,6 @@ static struct _0 radio;
 
 static struct aprspos_POSITION clickwatchpos;
 
-static struct aprsdecode_CLICKOBJECT hoverobj;
-
 
 static void Error(char text0[], unsigned long text_len)
 {
@@ -963,7 +961,8 @@ static void tracks(maptool_pIMAGE img, aprsdecode_pOPHIST op,
 #define aprsmap_HOVERDIST 64
 
 
-static void symbols(aprsdecode_pOPHIST op, char objects, char highlight0)
+static void symbols(aprsdecode_pOPHIST op, char objects, char highlight0,
+                struct aprsdecode_CLICKOBJECT * hoverobj)
 {
    float hovery;
    float hoverx;
@@ -1009,9 +1008,9 @@ static void symbols(aprsdecode_pOPHIST op, char objects, char highlight0)
                 click.table[click.selected].opf^.lastpos)>1.0))
                *)*/
                /* nearest to mouse op */
-               hoverobj.opf = aprsdecode_click.ops;
-               hoverobj.pff = 0;
-               hoverobj.pff0 = 0;
+               hoverobj->opf = aprsdecode_click.ops;
+               hoverobj->pff = 0;
+               hoverobj->pff0 = 0;
             }
          }
          if (highlight0) lig = 1000UL;
@@ -3221,6 +3220,7 @@ static void highlight(void)
 {
    unsigned long entc;
    long texth;
+   struct aprsdecode_CLICKOBJECT hoverobj;
    struct aprsdecode_OPHIST * anonym;
    entc = aprsdecode_click.entries;
    if (entc>0UL) {
@@ -3245,14 +3245,14 @@ static void highlight(void)
                 .typf==aprsdecode_tSYMBOL || aprsdecode_click.table[entc]
                 .typf==aprsdecode_tTEXT)
                 || aprsdecode_click.table[entc].typf==aprsdecode_tDEGREE) {
-            symbols(aprsdecode_click.table[entc].opf, 0, 1);
+            symbols(aprsdecode_click.table[entc].opf, 0, 1, &hoverobj);
             text(aprsdecode_click.table[entc].opf, 0, 1, 1, 1);
          }
          else if ((aprsdecode_click.table[entc]
                 .typf==aprsdecode_tOBJECT || aprsdecode_click.table[entc]
                 .typf==aprsdecode_tOBJECTTEXT)
                 || aprsdecode_click.table[entc].typf==aprsdecode_tDEGREEOBJ) {
-            symbols(aprsdecode_click.table[entc].opf, 1, 1);
+            symbols(aprsdecode_click.table[entc].opf, 1, 1, &hoverobj);
             text(aprsdecode_click.table[entc].opf, 1, 1, 1, 1);
          }
          else if ((aprsdecode_click.table[entc]
@@ -3261,7 +3261,7 @@ static void highlight(void)
                 || aprsdecode_click.table[entc].typf==aprsdecode_tKMH) {
             tracks(image, aprsdecode_click.table[entc].opf, 1,
                 X2C_max_longcard);
-            symbols(aprsdecode_click.table[entc].opf, 0, 1);
+            symbols(aprsdecode_click.table[entc].opf, 0, 1, &hoverobj);
             text(aprsdecode_click.table[entc].opf, 0, 1, 1, 1);
          }
       }
@@ -3975,6 +3975,7 @@ static void animate(const aprsdecode_MONCALL singlecall, unsigned long step,
    char s[41];
    long minalt;
    struct aprsdecode_DAT dat;
+   struct aprsdecode_CLICKOBJECT hoverobj;
    struct aprsdecode_OPHIST * anonym;
    struct aprsdecode_VARDAT * anonym0;
    aprsdecode_MONCALL tmp;
@@ -4078,7 +4079,7 @@ static void animate(const aprsdecode_MONCALL singlecall, unsigned long step,
        text(ophist, TRUE, FALSE, FALSE);
      END;
    */
-   if (aprsdecode_lums.sym>0L) symbols(aprsdecode_ophist0, 0, 0);
+   if (aprsdecode_lums.sym>0L) symbols(aprsdecode_ophist0, 0, 0, &hoverobj);
    if (aprsdecode_lums.text>0L) {
       text(aprsdecode_ophist0, 0, 0, 0, 1); /* first draw dimmed */
       text(aprsdecode_ophist0, 1, 0, 0, 1); /* overdraw dimmed */
@@ -4283,6 +4284,8 @@ static void makeimage(char dryrun)
 {
    char mapok;
    struct aprspos_POSITION mpos;
+   struct aprsdecode_CLICKOBJECT hoverobj;
+   hoverobj.opf = 0;
    markvisable(aprsdecode_click.mhop);
    if (aprsdecode_click.mhop[0UL] && mhtx==aprsmap_OPHEARD) {
       findsize(&newpos0, &newpos1, aprsdecode_click.mhop, 'H');
@@ -4348,8 +4351,10 @@ static void makeimage(char dryrun)
       if (aprsdecode_lums.track>1L) {
          tracks(image, aprsdecode_ophist0, 0, X2C_max_longcard);
       }
-      symbols(aprsdecode_ophist0, 1, 0);
-      if (aprsdecode_lums.sym>0L) symbols(aprsdecode_ophist0, 0, 0);
+      symbols(aprsdecode_ophist0, 1, 0, &hoverobj);
+      if (aprsdecode_lums.sym>0L) {
+         symbols(aprsdecode_ophist0, 0, 0, &hoverobj);
+      }
       text(aprsdecode_ophist0, 1, 0, 0, 0);
    }
    else {
@@ -4357,10 +4362,12 @@ static void makeimage(char dryrun)
          tracks(image, aprsdecode_ophist0, 0, X2C_max_longcard);
       }
       if (aprsdecode_lums.obj>0L) {
-         symbols(aprsdecode_ophist0, 1, 0);
+         symbols(aprsdecode_ophist0, 1, 0, &hoverobj);
          text(aprsdecode_ophist0, 1, 1, 0, 1);
       }
-      if (aprsdecode_lums.sym>0L) symbols(aprsdecode_ophist0, 0, 0);
+      if (aprsdecode_lums.sym>0L) {
+         symbols(aprsdecode_ophist0, 0, 0, &hoverobj);
+      }
       if (aprsdecode_lums.text>0L || aprsdecode_lums.wxcol) {
          text(aprsdecode_ophist0, 0, 1, 0, 1);
       }
@@ -4403,6 +4410,10 @@ C)", 31ul);
    else if (aprsdecode_lums.wxcol=='R') {
       useri_textautosize(0L, 0L, 4UL, 5UL, 'g', "Rain Map (exit with ESC)",
                 25ul);
+   }
+   if (hoverobj.opf) {
+      useri_hoverinfo(hoverobj);
+      hoverobj.opf = 0;
    }
    useri_refresh = 1;
    lastxupdate = aprsdecode_realtime;
@@ -4946,10 +4957,6 @@ to Defaults", 34ul);
          maptool_closesrtmfile();
       }
       makeimage(0);
-      if (hoverobj.opf) {
-         useri_hoverinfo(hoverobj);
-         hoverobj.opf = 0;
-      }
    }
    else if (useri_newxsize>0UL) {
       /* window resize request */
@@ -4989,9 +4996,7 @@ to Defaults", 34ul);
                 50ul, aprsdecode_click.lastpoi);
       aprsdecode_click.bubblstr[0UL] = 0;
    }
-   if (useri_refresh) {
-      useri_redraw(image);
-   }
+   if (useri_refresh) useri_redraw(image);
    if (!logdone) {
       bootreadlog();
       ++aprsdecode_tracenew.winevent;
@@ -5235,7 +5240,6 @@ extern int main(int argc, char **argv)
    aprsdecode_tracenew.winevent = 1UL;
    aprsdecode_posinval(&newpos0);
    aprsdecode_posinval(&newpos1);
-   hoverobj.opf = 0;
    signal(SIGTERM, killsave);
    signal(SIGINT, killsave);
    signal(SIGPIPE, killsave);

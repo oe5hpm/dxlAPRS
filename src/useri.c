@@ -117,7 +117,7 @@ maptool_pIMAGE useri_panoimage;
 #define useri_TEXTINFOWINID 2
 /* raw + decoded text window id */
 
-#define useri_HOVERINFOWINID 3
+#define useri_HOVERINFOWINID 7
 
 #define useri_WXWINID 20
 /* set of wx graphics windows ids */
@@ -3239,16 +3239,18 @@ extern void useri_hoverinfo(struct aprsdecode_CLICKOBJECT obj)
    char s[1001];
    char col;
    char void0;
-   hintmouse = useri_xmouse;
-   getwxset(useri_fHOVERSET, &hh, &graphset);
+   if (findmenuid(2UL)==0) {
+      hintmouse = useri_xmouse;
+      getwxset(useri_fHOVERSET, &hh, &graphset);
                 /* what wx images are enabled */
-   hoveropen = 1;
-   if (hh=='u') {
-      aprstext_optext(2UL, &obj, &void0, s, 1001ul);
-      col = 'm';
-      if (s[0U]) useri_textautosize(0L, 0L, 3UL, 0UL, 'm', s, 1001ul);
+      hoveropen = 1;
+      if (hh=='u') {
+         aprstext_optext(2UL, &obj, &void0, s, 1001ul);
+         col = 'm';
+         if (s[0U]) useri_textautosize(0L, 0L, 7UL, 0UL, 'm', s, 1001ul);
+      }
+      images(obj.opf, 0, graphset);
    }
-   images(obj.opf, 0, graphset);
 } /* end hoverinfo() */
 
 
@@ -10029,7 +10031,7 @@ static void closehint(void)
    }
    useri_starthint(0UL, 0);
    if (hoveropen) {
-      useri_killmenuid(3UL);
+      useri_killmenuid(7UL);
       closewxwins();
       hoveropen = 0;
       useri_refresh = 1;
