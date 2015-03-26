@@ -1,0 +1,4 @@
+"http://www.findu.com/cgi-bin/raw.cgi?call=$c" target="_blank"
+"http://www.db0anf.de/app/aprs/stations/basic?call=$c" target="_blank"
+"http://aprs.fi/?c=raw&call=$c&limit=50&view=normal" target="_blank"
+"http://aprs.fi/?c=raw&call=$c&limit=5&view=decoded" target="_blank"
