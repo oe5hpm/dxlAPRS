@@ -298,3 +298,21 @@ udpbox
 
 
 
+
+
+udphub
+------
+26.3.2015
+
+  "Via Digi(s) gehoert" wird nicht mehr gespeichert.
+  Via Digis senden routet auch mit via Calls wenn diese ohne h-bit sind
+  -a peer-to-peer routing ein (geht auch ohne -u host)
+  -L Timer fuer Routing zu allen anderen ssid vom User.
+  Wenn der User via mehreren ip/port bekannt ist, gehts zu allen seinen
+  ip/ports bis eine Anwort von genau dem ssid kommt zu dem die Daten gehen.
+  Nach dieser Zeit (seit zuletzt irgend ein ssid gehoert) routets nur zu
+  den bekannten ssid, -L 0 ist off 
+
+
+
+
