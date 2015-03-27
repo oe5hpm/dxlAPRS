@@ -58,7 +58,9 @@ FROM stat IMPORT fstat, stat_t;
 
 #define udpgate4_HASHSIZE 65536
 
-#define udpgate4_VERS "udpgate(c) 0.58"
+#define udpgate4_VERS "udpgate(c) 0.59"
+
+#define udpgate4_FEATURE " $IX^[V1]"
 
 #define udpgate4_TOCALL "APNL51"
 
@@ -216,6 +218,7 @@ struct UDPSOCK {
    unsigned long lasttxbytes; /* for tx byte/s limit */
    unsigned long txframes;
    unsigned long txbytes;
+   char allpathkey[10]; /* keyword on comment for allpath */
    char portname[10];
    struct _0 stat[16];
 };
@@ -333,8 +336,11 @@ static unsigned long udpgate4_CRCRESULT = 0x9F0BUL;
 
 #define udpgate4_cTELEMETRY "T"
 
+static char mhperport;
+
 static char verb;
 
+/* mh line for same call but different port */
 static char callsrc;
 
 static pTCPSOCK tcpsocks;
@@ -350,6 +356,8 @@ static unsigned long keeptime;
 static char ungates[6][11];
 
 static unsigned long timehash[65536];
+
+static unsigned long realtime;
 
 static unsigned long udpdonetime;
 
@@ -483,6 +491,18 @@ static unsigned long mhfilelines;
 static FILENAME mhfilename;
 
 static char udp2[100];
+
+
+static void spintime(void)
+{
+   /* make monotonic systime out of jumping realtime */
+   unsigned long dt;
+   unsigned long t;
+   t = TimeConv_time();
+   dt = t-realtime;
+   realtime = t;
+   if (dt<60UL) systime += dt;
+} /* end spintime() */
 
 
 static void Rename(char fname[], unsigned long fname_len, char newname[],
@@ -700,6 +720,7 @@ static void parms(void)
    pUDPSOCK ush;
    pUDPSOCK usock;
    long ii;
+   char allkey[10];
    struct UDPSOCK * anonym;
    unsigned long tmp;
    err = 0;
@@ -707,6 +728,7 @@ static void parms(void)
    gatecnt = 0UL;
    trusth = 0;
    keeptime = 0UL; /*600*/ /* default keep connected to gateway time */
+   allkey[0U] = 0;
    for (;;) {
       Lib_NextArg(h, 4096ul);
       if (h[0U]==0) break;
@@ -752,6 +774,7 @@ static void parms(void)
                   }
                }
                anonym->trustHbit = trusth;
+               aprsstr_Assign(anonym->allpathkey, 10ul, allkey, 10ul);
                anonym->next = 0;
             }
             if (udpsocks==0) udpsocks = usock;
@@ -782,9 +805,7 @@ static void parms(void)
             }
             else {
                fd = osi_OpenRead(h, 4096ul);
-               if (fd<0L) {
-                  Err("-p passcode or passwordfile", 28ul);
-               }
+               if (fd<0L) Err("-p passcode or passwordfile", 28ul);
                len = osi_RdBin(fd, (char *)passwd, 6u/1u, 5UL);
                if (len>=0L) passwd[len] = 0;
                else Err("-p error with password file", 28ul);
@@ -836,6 +857,11 @@ static void parms(void)
             i0 = 0UL;
             if (GetSec(h, 4096ul, &i0, &n)>=0L) heardtimevia = n*60UL;
             else Err("-I minutes", 11ul);
+         }
+         else if (lasth=='i') {
+            Lib_NextArg(h, 4096ul);
+            if (h[0U]=='-') h[0U] = 0;
+            aprsstr_Assign(allkey, 10ul, h, 4096ul);
          }
          else if (lasth=='L') {
             Lib_NextArg(h, 4096ul);
@@ -955,9 +981,7 @@ static void parms(void)
                   ++ii;
                }
             }
-            else {
-               Lib_NextArg(h, 4096ul);
-            }
+            else Lib_NextArg(h, 4096ul);
             h[4095U] = 0;
             ii = aprsstr_InStr(h, 4096ul, "#", 2ul);
             if (ii>=0L) h[ii] = 0;
@@ -1014,6 +1038,8 @@ ilter is used", 63ul);
 in) (-H 1440)", 63ul);
                osi_WrStrLn(" -I <time>      indirect heard keep time minutes \
 (Min) (-I 30)", 63ul);
+               osi_WrStrLn(" -i <word>      keyword in rf-frame-comment to en\
+able multipath, * for all frames", 82ul);
                osi_WrStrLn(" -j <time>      maximum time to (re)send messages\
  (s) (-j 43200)", 65ul);
                osi_WrStrLn(" -k <time>      0 always connect to gateway else \
@@ -1058,6 +1084,8 @@ filename: insert file, \\\\\\ is \\\\", 76ul);
 .00E&igate mars", 65ul);
                osi_WrStrLn("                beacon file used by udpgate itsel\
 f to find out own position", 76ul);
+               osi_WrStrLn(" -O             make MH entry for same calls but \
+different port", 64ul);
                osi_WrStrLn(" -P <time[:time]> purge unacked (:acked) messages\
  after seconds (-P 86400:300)", 79ul);
                osi_WrStrLn(" -p <password>  login passwort for aprs-is server\
@@ -1108,7 +1136,8 @@ set before each -R or -M", 74ul);
                     IF GetIp(h, rfgateip,
                 rfgateport)<0 THEN Err("-u wrong ip:port") END;
             */
-            if (lasth=='j') {
+            if (lasth=='O') mhperport = 1;
+            else if (lasth=='j') {
                Lib_NextArg(h, 4096ul);
                i0 = 0UL;
                if (GetSec(h, 4096ul, &i0, &n)>=0L) msgsendtime = n;
@@ -1139,7 +1168,9 @@ set before each -R or -M", 74ul);
             else if (lasth=='Q') {
                Lib_NextArg(h, 4096ul);
                i0 = 0UL;
-               if (GetSec(h, 4096ul, &i0, &n)>=0L) qas = n;
+               if (GetSec(h, 4096ul, &i0, &n)>=0L) {
+                  qas = n;
+               }
                else Err("-Q number", 10ul);
             }
             else if (lasth=='q') {
@@ -1221,54 +1252,6 @@ static pUDPSOCK porttosock(unsigned long p)
    return s;
 } /* end porttosock() */
 
-/*
-PROCEDURE udpstat(usock:pUDPSOCK; len:INTEGER; fromport:UDPPORT; ipn:IPNUM);
-VAR i, oldi : INTEGER;
-    oldt    : TIME;
-    
-BEGIN
-  i:=0;
-  oldt:=systime;
-  oldi:=0;
-  LOOP
-    IF (usock^.stat[i].uip=ipn) & (usock^.stat[i].uport=fromport) THEN
-      oldi:=i;
-      i:=HIGH(usock^.stat);
-    END;
-    IF i>=HIGH(usock^.stat) THEN
-      WITH usock^.stat[oldi] DO
-        uport:=fromport;
-        uip:=ipn;        
-        IF ((dtime+utime) DIV 2>systime)
-                (* allow clock back step till 1/2 uptime *) 
-        OR (utime+UDPSHOWTIME<systime) THEN          (* reset statistic *)
-          dtime:=systime;
-          rxframes:=0;
-          rxbytes:=0;
-(*
-          IF usock^.lasttxtime+UDPSHOWTIME<systime THEN          (* reset tx statistic *)
-
-          usock^.txframes:=0;
-          usock^.txbytes:=0;
-*)
-        END;
-        IF len>0 THEN INC(rxframes) END;
-        INC(rxbytes, len);
-        utime:=systime;
-        usock^.laststat:=oldi;
-      END;
-      EXIT
-    END;
-
-    IF usock^.stat[i].utime<oldt THEN
-      oldt:=usock^.stat[i].utime;
-      oldi:=i;
-    END;
- 
-    INC(i);
-  END;
-END udpstat; 
-*/
 
 static void Sendudp(const FRAMEBUF s, unsigned long totx, char unlimit)
 {
@@ -1388,8 +1371,8 @@ static char getudp(pUDPSOCK usock, FRAMEBUF buf)
                   struct _0 * anonym = &usock->stat[oldi];
                   anonym->uport = fromport;
                   anonym->uip = ipn;
-                  if ((anonym->dtime+anonym->utime)
-                /2UL>systime || anonym->utime+600UL<systime) {
+                  if (anonym->dtime/2UL+anonym->utime/2UL>systime || anonym->utime+600UL<systime)
+                 {
                      /* allow clock back step till 1/2 uptime */
                      /* reset statistic */
                      anonym->dtime = systime;
@@ -1532,7 +1515,7 @@ static void logline(long r, char s[], unsigned long s_len)
       fd = osi_OpenAppend(logframename, 1024ul);
       if (fd<0L) fd = osi_OpenWrite(logframename, 1024ul);
       if (fd>=0L) {
-         aprsstr_DateToStr(systime, h, 512ul);
+         aprsstr_DateToStr(TimeConv_time(), h, 512ul);
          aprsstr_Append(h, 512ul, " ", 2ul);
          aprsstr_Append(h, 512ul, s, s_len);
          aprsstr_Append(h, 512ul, "\012", 2ul);
@@ -1566,7 +1549,7 @@ static void writerawlog(const FRAMEBUF b)
    l = aprsstr_Length(b, 512ul);
    while (l>0UL && (unsigned char)b[l-1UL]<='\015') --l;
    if (l>0UL) {
-      aprsstr_DateToStr(systime, h, 512ul);
+      aprsstr_DateToStr(TimeConv_time(), h, 512ul);
       h[4U] = h[5U];
       h[5U] = h[6U];
       h[6U] = h[8U];
@@ -2858,9 +2841,18 @@ static void AddHeard(pHEARD * table, unsigned long maxtime,
    struct HEARD * anonym0;
    po = 0;
    ph = *table;
-   while (ph && !aprsstr_StrCmp(ph->call, 10ul, from, 10ul)) {
-      po = ph;
-      ph = ph->next;
+   if (mhperport) {
+      while (ph && (ph->fromrx!=fromport || !aprsstr_StrCmp(ph->call, 10ul,
+                from, 10ul))) {
+         po = ph;
+         ph = ph->next;
+      }
+   }
+   else {
+      while (ph && !aprsstr_StrCmp(ph->call, 10ul, from, 10ul)) {
+         po = ph;
+         ph = ph->next;
+      }
    }
    if (ph) {
       /* entry found */
@@ -3611,12 +3603,12 @@ static void Query(MONCALL fromcall, char msg[], unsigned long msg_len,
                  1, path);
    }
    else if (cmd=='S') {
-      Stomsg(servercall, fromcall, *(MSGTEXT *)memcpy(&tmp1,"udpgate(c) 0.58 \
+      Stomsg(servercall, fromcall, *(MSGTEXT *)memcpy(&tmp1,"udpgate(c) 0.59 \
 Msg S&F Relay",30u), *(ACKTEXT *)memcpy(&tmp0,"",1u), 0, 0, 1, path);
    }
    else if (cmd=='v') {
       Stomsg(servercall, fromcall, *(MSGTEXT *)memcpy(&tmp1,
-                "udpgate(c) 0.58",16u), *(ACKTEXT *)memcpy(&tmp0,"",1u), 0,
+                "udpgate(c) 0.59",16u), *(ACKTEXT *)memcpy(&tmp0,"",1u), 0,
                 0, 1, path);
    }
    else if (cmd=='h') {
@@ -4318,9 +4310,10 @@ static void gettyps(char s[], unsigned long s_len, unsigned long * p,
 
 
 static void GetFilters(struct FILTERS * filters, const char s[],
-                unsigned long s_len, unsigned long p)
+                unsigned long s_len, unsigned long p, pTCPSOCK pongto)
 {
    char not;
+   FRAMEBUF pongstr;
    skipblank(s, s_len, &p);
    if (cmpfrom(s, s_len, p, "filter ", 8ul)) {
       p += 7UL;
@@ -4387,6 +4380,15 @@ static void GetFilters(struct FILTERS * filters, const char s[],
          else return;
       }
    }
+   else if (pongto && cmpfrom(s, s_len, p, "ping ", 6ul)) {
+      aprsstr_Assign(pongstr, 512ul, s, s_len);
+      pongstr[p+1UL] = 'o'; /* ping -> pong */
+      while (p<513UL && (unsigned char)pongstr[p]>=' ') ++p;
+      pongstr[p] = '\015';
+      pongstr[p+1UL] = '\012';
+      pongstr[p+2UL] = 0;
+      Sendtcp(pongto, pongstr);
+   }
 } /* end GetFilters() */
 
 
@@ -4402,7 +4404,7 @@ static char Auth(const char mbuf0[], unsigned long mbuf_len, pTCPSOCK pu)
       i0 = 0UL;
       while ((unsigned char)mbuf0[i0]<=' ') ++i0;
       if (mbuf0[i0]=='#') {
-         GetFilters(&anonym->filters, mbuf0, mbuf_len, 1UL);
+         GetFilters(&anonym->filters, mbuf0, mbuf_len, 1UL, 0);
          return 1;
       }
       if (mbuf0[i0]!='u') return 0;
@@ -4446,7 +4448,7 @@ static char Auth(const char mbuf0[], unsigned long mbuf_len, pTCPSOCK pu)
             while (j>0UL && anonym->vers[j-1UL]==' ') --j;
             anonym->vers[j] = 0;
          }
-         GetFilters(&anonym->filters, mbuf0, mbuf_len, i0);
+         GetFilters(&anonym->filters, mbuf0, mbuf_len, i0, 0);
          aprsstr_Assign(h, 512ul, "# logresp ", 11ul);
          aprsstr_Append(h, 512ul, anonym->user.call, 10ul);
          if (anonym->valid) aprsstr_Append(h, 512ul, " verified", 10ul);
@@ -5442,7 +5444,7 @@ enter\"><H3>\015\012", 131ul);
       Appwww(wsock, wbuf, " MsgCall ", 10ul);
       Appwww(wsock, wbuf, viacall, 10ul);
    }
-   Appwww(wsock, wbuf, " [udpgate(c) 0.58] http#", 25ul);
+   Appwww(wsock, wbuf, " [udpgate(c) 0.59] http#", 25ul);
    aprsstr_IntToStr((long)*cnt, 1UL, h, 32ul);
    Appwww(wsock, wbuf, h, 32ul);
    Appwww(wsock, wbuf, " Uptime ", 9ul);
@@ -5532,7 +5534,7 @@ gn:center\"><H3>\015\012", 131ul);
          Appwww(&wsock, wbuf, "  Port ", 8ul);
          Appwww(&wsock, wbuf, tcpbindport, 6ul);
       }
-      Appwww(&wsock, wbuf, " [udpgate(c) 0.58] Maxusers ", 29ul);
+      Appwww(&wsock, wbuf, " [udpgate(c) 0.59] Maxusers ", 29ul);
       aprsstr_IntToStr((long)maxusers, 1UL, h1, 256ul);
       Appwww(&wsock, wbuf, h1, 256ul);
       Appwww(&wsock, wbuf, " http#", 7ul);
@@ -5557,33 +5559,6 @@ tab-con-head BGCOLOR=\"#CCCCFF\">\015\012<TH>Dir</TH><TH>IPnum</TH><TH>Port</\
 TH><TH>Call/Port</TH><TH>V</TH> <TH>Software</TH> <TH NOWRAP>Range Filter</TH\
 ><TH>TxByte</TH> <TH>TxFr</TH><TH NOWRAP>bit/s</TH><TH>RxByte</TH> <TH>RxFr</\
 TH><TH NOWRAP>bit/s</TH><TH>Up</TH></TR>", 524ul);
-      /*
-          us:=udpsocks;
-          WHILE us<>NIL DO
-            FOR i:=0 TO HIGH(us^.stat) DO
-              WITH us^.stat[i] DO  
-                IF utime+UDPSHOWTIME>systime THEN
-                  showpip(uip, 0, h1);
-                  Appwww('<TR class=tab-con-udp BGCOLOR=#E0E0F0 style="
-                text-align:center">'+CR+LF+'<TD>udp</TD><TD>');
-                  Appwww(h1); Appwww("</TD>");
-                  wint(uport); 
-                  Appwww("<TD></TD><TD></TD><TD></TD><TD></TD>");
-                  wint(us^.txbytes);
-                  wint(us^.txframes);
-                  IF dtime<systime THEN ut:=systime-dtime ELSE ut:=1 END;
-                  wint(us^.txbytes*8 DIV ut);
-                  wint(rxbytes);
-                  wint(rxframes);
-                  wint(rxbytes*8 DIV ut); Appwww("<TD>");
-                  TimeToStr(ut, h1); Appwww(h1);
-                  Appwww("</TD></TR>");  
-                END;
-              END;
-            END; 
-            us:=us^.next;
-          END;
-      */
       us = udpsocks;
       while (us) {
          if (us->txbytes>0UL) {
@@ -5709,7 +5684,9 @@ ign:center\" BGCOLOR=\"#D0C0C0\"><TD>out", 74ul);
                }
                Appwww(&wsock, wbuf, "</TD><TD>", 10ul);
                if (anonym2->connt>0UL) {
-                  if (anonym2->valid) Appwww(&wsock, wbuf, "v", 2ul);
+                  if (anonym2->valid) {
+                     Appwww(&wsock, wbuf, "v", 2ul);
+                  }
                   if (aprspos_posvalid(anonym2->user.pos)) {
                      Appwww(&wsock, wbuf, "p", 2ul);
                   }
@@ -5977,7 +5954,7 @@ static char tcpconn(pTCPSOCK * sockchain, long f, char cservice)
             aprsstr_Append(h, 512ul, passwd, 6ul);
          }
          aprsstr_Append(h, 512ul, " vers ", 7ul);
-         aprsstr_Append(h, 512ul, "udpgate(c) 0.58", 16ul);
+         aprsstr_Append(h, 512ul, "udpgate(c) 0.59", 16ul);
          if (actfilter[0U]) {
             aprsstr_Append(h, 512ul, " filter ", 9ul);
             aprsstr_Append(h, 512ul, actfilter, 256ul);
@@ -6008,7 +5985,7 @@ static char tcpconn(pTCPSOCK * sockchain, long f, char cservice)
          aprsstr_Append(h1, 512ul, h2, 512ul);
          logline(1L, h1, 512ul);
       }
-      aprsstr_Assign(h, 512ul, "# udpgate(c) 0.58\015\012", 20ul);
+      aprsstr_Assign(h, 512ul, "# udpgate(c) 0.59\015\012", 20ul);
       Sendtcp(cp, h);
    }
    return 1;
@@ -6064,10 +6041,12 @@ static void Gateconn(pTCPSOCK * cp)
             struct _1 * anonym = &gateways[trygate];
             if (anonym->url[0U]) {
                /*check dns time  */
-               lastdnstime = TimeConv_time();
+               spintime();
+               lastdnstime = systime;
                /*WrStrLn("start resolve"); */
                fd = connectto(anonym->url, anonym->port);
-               anonym->resolvtime = TimeConv_time()-lastdnstime;
+               spintime();
+               anonym->resolvtime = systime-lastdnstime;
                if (anonym->resolvtime>5UL) {
                   strncpy(h,"T:slow DNS ",512u);
                   aprsstr_IntToStr((long)anonym->resolvtime, 1UL, hh, 21ul);
@@ -6231,6 +6210,8 @@ extern int main(int argc, char **argv)
    sendnetmsg = 1;
    mhfilelines = 0UL;
    memset((char *)gateways,(char)0,sizeof(struct _1 [21]));
+   realtime = 0UL;
+   systime = 946728000UL; /* start of systime about 1.1.2000 */
    qmaxtime = 15L;
    ungates[udpgate4_gUNGATE][0] = 0;
    strncpy(ungates[udpgate4_gRFONLY],"RFONLY",11u);
@@ -6256,6 +6237,7 @@ extern int main(int argc, char **argv)
    wwwsizelimit = 1048576L;
    udpsocks = 0;
    callsrc = 0;
+   mhperport = 0;
    qas = 0UL;
    qasc = 0UL;
    parms();
@@ -6266,7 +6248,6 @@ extern int main(int argc, char **argv)
    netmhout = 0UL;
    netmhin = 0UL;
    aprsstr_Assign(ungates[udpgate4_gUNGATE], 11ul, servercall, 10ul);
-   systime = TimeConv_time();
    uptime = systime;
    udpdonetime = systime;
    keepconn = 0UL;
@@ -6283,7 +6264,7 @@ extern int main(int argc, char **argv)
    wwwsock = -1L;
    tcpsocks = 0;
    for (;;) {
-      systime = TimeConv_time();
+      spintime();
       if (systime!=lasttime) {
          if (listensock<0L && tcpbindport[0U]) {
             /* open listensocket tcp connects */
@@ -6373,7 +6354,7 @@ extern int main(int argc, char **argv)
             }
          }
       }
-      systime = TimeConv_time();
+      spintime();
       actudp = udpsocks;
       i = 1L;
       while (actudp) {
@@ -6405,8 +6386,8 @@ extern int main(int argc, char **argv)
          ++i;
          actudp = actudp->next;
       }
-      udpdonetime = TimeConv_time();
-                /* store realtime of last all read input */
+      spintime();
+      udpdonetime = systime; /* store fresh time of last all read input */
       acttcp = tcpsocks;
       while (acttcp) {
          if (acttcp->fd>=0L && issetw((unsigned long)acttcp->fd)) {
@@ -6438,7 +6419,8 @@ extern int main(int argc, char **argv)
                   if ((acttcp->valid || acttcp->service=='G') || !Auth(mbuf,
                 512ul, acttcp)) {
                      if (mbuf[0U]=='#') {
-                        GetFilters(&acttcp->filters, mbuf, 512ul, 1UL);
+                        GetFilters(&acttcp->filters, mbuf, 512ul, 1UL,
+                acttcp);
                         res = -7L;
                      }
                      else {
@@ -6461,11 +6443,11 @@ extern int main(int argc, char **argv)
          }
          if (acttcp->fd<0L) {
             /* connection lost */
-            if (acttcp->connt && acttcp->service!='W') showlogout(acttcp);
-            closetcp(&acttcp, 1); /* free www buffers */
-            if (acttcp==tcpsocks) {
-               tcpsocks = tcpsocks->next;
+            if (acttcp->connt && acttcp->service!='W') {
+               showlogout(acttcp);
             }
+            closetcp(&acttcp, 1); /* free www buffers */
+            if (acttcp==tcpsocks) tcpsocks = tcpsocks->next;
             else {
                acttmp = tcpsocks;
                while (acttmp->next!=acttcp) acttmp = acttmp->next;

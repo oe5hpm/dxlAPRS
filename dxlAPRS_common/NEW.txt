@@ -244,7 +244,15 @@ rf     qA?                                                            +
 
 
 
+26. 3. 2015
 
+  -O switch, die MH-Liste zeigt das selbe Call mehrmals wenn auf verschiedenen Ports
+  empfangen.
+  
+  Spruenge in der Systemzeit sollten sich nicht mehr auf die Statistiken auswirken
+  zB. bei Betrieb ohne RTC/Batterie und/oder Netzwerk Zeit holen.
+ 
+  
 
 
 
