@@ -1344,6 +1344,11 @@ The zone is calculated 3-dimensional
 to see obstacles under and beside of
 Radiation
 
+|8518 Refraction Factor of Atmosphere
+0.00 in Vacuum
+1.00 Vacuum on Flat Earth or refraction equals earthradius
+0.25 Median Value in Atmosphere
+
 |8515 0 is hard shaped area. More realistic
 Image will make values around 5 to 10
 (meters) for soft fading away sight.
@@ -1414,6 +1419,6 @@ Off with "Show All" "0" oder ESC
 be shown. This may be toggled on/off here or 
 with "s"-Key
 
-|8626 Select a Symbol, for Overlay Symbols click and
-edit the Overlay Character
+|8626 Select a Symbol, for Overlay Symbols an
+additional Character or Number may be choosed
  

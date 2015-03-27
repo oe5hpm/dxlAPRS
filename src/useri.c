@@ -600,7 +600,7 @@ static unsigned long hintnum;
 
 static char helpscroll[11][41];
 
-static struct CONFIG configs[151];
+static struct CONFIG configs[152];
 
 static char pullmenuwhat;
 
@@ -815,7 +815,7 @@ static void icfg(unsigned char v, const char s[], unsigned long s_len)
 
 extern void useri_clrconfig(void)
 {
-   memset((char *)configs,(char)0,sizeof(struct CONFIG [151]));
+   memset((char *)configs,(char)0,sizeof(struct CONFIG [152]));
 } /* end clrconfig() */
 
 
@@ -1083,10 +1083,12 @@ extern void useri_initconfig(void)
                  422UL);
    initc(useri_fGEOCONTRAST, "Contrast", 9ul, useri_cLINE, "5", 2ul, 0,
                 423UL);
-   initc(useri_fFRESNELL, "MHz", 4ul, useri_cLINE, "2425.0", 7ul, 0, 424UL);
-   initc(useri_fANT1, "Antenna 1 m", 12ul, useri_cLINE, "10", 3ul, 0, 425UL);
-   initc(useri_fANT2, "Antenna 2 m", 12ul, useri_cLINE, "10", 3ul, 0, 426UL);
-   initc(useri_fANT3, "Antenna 3 m", 12ul, useri_cLINE, "10", 3ul, 0, 427UL);
+   initc(useri_fREFRACT, "Refraction Factor", 18ul, useri_cLINE, "0.25", 5ul,
+                 0, 424UL);
+   initc(useri_fFRESNELL, "MHz", 4ul, useri_cLINE, "2425.0", 7ul, 0, 425UL);
+   initc(useri_fANT1, "Antenna 1 m", 12ul, useri_cLINE, "10", 3ul, 0, 426UL);
+   initc(useri_fANT2, "Antenna 2 m", 12ul, useri_cLINE, "10", 3ul, 0, 427UL);
+   initc(useri_fANT3, "Antenna 3 m", 12ul, useri_cLINE, "10", 3ul, 0, 428UL);
    initc(useri_fPANOSIZE, "Panorama x y", 13ul, useri_cLINE, "", 1ul, 0,
                 460UL);
    initc(useri_fPANOPOS, "Panopos x y", 12ul, useri_cLINE, "", 1ul, 0,
@@ -2590,8 +2592,8 @@ static void textwin(unsigned long xw, unsigned long lines, unsigned long xpo,
       bb = 400L;
       break;
    case 'r':
-      rr = 230L;
-      gg = 160L;
+      rr = 220L;
+      gg = 150L;
       bb = 30L;
       break;
    case 'h':
@@ -5000,12 +5002,12 @@ ose", 66ul, "\255", 2ul, 6800UL);
    addline(m, "", 1ul, "\255", 2ul, 6810UL);
    ++m->scroll;
    m->clampkb |= 0x4UL;
-   m->confidx[2U] = 128U;
+   m->confidx[2U] = 129U;
    keybknob(m, 2UL, 0, 0UL);
    addline(m, "", 1ul, "\255", 2ul, 6815UL);
    ++m->scroll;
    m->clampkb |= 0x8UL;
-   m->confidx[3U] = 127U;
+   m->confidx[3U] = 128U;
    keybknob(m, 3UL, 0, 0UL);
    useri_confstr(useri_fMSGPORT, s, 201ul);
    po = X2C_CAP(s[0U]);
@@ -5128,7 +5130,7 @@ static void configdelman(unsigned char cfg, unsigned long num,
    pCONFLINE po;
    pCONFLINE pl;
    pl = 0;
-   if ((unsigned long)cfg<=150UL) pl = configs[cfg].lines;
+   if ((unsigned long)cfg<=151UL) pl = configs[cfg].lines;
    po = 0;
    while (n>1UL && pl) {
       po = pl;
@@ -7662,8 +7664,8 @@ static void knobcol(maptool_pIMAGE img, long x0, long y00, long xs, long ys,
 
 typedef unsigned long sCONFSET[5];
 
-static sCONFSET _cnst = {0x00000000UL,0x00000000UL,0x00807E80UL,0x01E00000UL,
-                0x000F0000UL};
+static sCONFSET _cnst = {0x00000000UL,0x00000000UL,0x00807E80UL,0x03C00000UL,
+                0x001E0000UL};
 
 static void configman(unsigned long button, char * keycmd)
 {
@@ -7683,7 +7685,7 @@ static void configman(unsigned long button, char * keycmd)
                 fKMHTIME,fTEMP,fWINDSYM,fRULER,fALTMIN,fCOLMAPTEXT,
                 fCOLOBJTEXT, fCOLMENUTEXT, fCOLMENUBACK, fCOLMARK1,
                 fCOLMARK2} */
-      if (X2C_INL((long)configedit,151,_cnst)) *keycmd = ' ';
+      if (X2C_INL((long)configedit,152,_cnst)) *keycmd = ' ';
       if (configs[configedit].typ<useri_cLIST) configedit = 0UL;
    }
    useri_killmenuid(229UL);
@@ -7709,7 +7711,7 @@ static void dogeoprofil(pMENU m)
    char h[100];
    char s[100];
    long nn;
-   float mhz;
+   float rv;
    struct maptool_PIX c;
    m->oldknob = 0UL;
    addline(m, "Colour Marker 2", 16ul, "\321>", 3ul, 8500UL);
@@ -7732,10 +7734,16 @@ static void dogeoprofil(pMENU m)
    aprsstr_Append(s, 100ul, h, 100ul);
    aprsstr_Append(s, 100ul, "]", 2ul);
    addline(m, s, 100ul, "\321", 2ul, 8515UL);
+   strncpy(s,"Refraction  [",100u);
+   rv = useri_conf2real(useri_fREFRACT, 0UL, (-10.0f), 10.0f, 0.0f);
+   aprsstr_FixToStr(rv, 3UL, h, 100ul);
+   aprsstr_Append(s, 100ul, h, 100ul);
+   aprsstr_Append(s, 100ul, "]", 2ul);
+   addline(m, s, 100ul, "\321", 2ul, 8518UL);
    strncpy(s,"Frequency   [",100u);
-   mhz = useri_conf2real(useri_fFRESNELL, 0UL, 0.0f, X2C_max_real, 0.0f);
-   if (mhz>=0.1f) {
-      aprsstr_FixToStr(mhz+0.0005f, 4UL, h, 100ul);
+   rv = useri_conf2real(useri_fFRESNELL, 0UL, 0.0f, X2C_max_real, 0.0f);
+   if (rv>=0.1f) {
+      aprsstr_FixToStr(rv+0.0005f, 4UL, h, 100ul);
       aprsstr_Append(s, 100ul, h, 100ul);
    }
    aprsstr_Append(s, 100ul, "] MHz", 6ul);
@@ -7764,7 +7772,6 @@ static void dogeoprofil(pMENU m)
    }
    if (useri_gpsalt(useri_fANT1)) aprsstr_Append(s, 100ul, " +ALT", 6ul);
    aprsstr_Append(s, 100ul, "] m", 4ul);
-   /*  addonoff(m, s, CMDCOLOURSGEO, MINH*85+30, 8, configon(fANT1)); */
    addline(m, s, 100ul, "\321", 2ul, 8529UL);
    strncpy(s,"   | Redraw |  Map On/Off",100u);
    nn = (long)configs[useri_fSRTMCACHE].on;
@@ -7791,13 +7798,13 @@ static void dogeoprofil(pMENU m)
    m->hiknob = 0UL;
 } /* end dogeoprofil() */
 
-#define useri_MAXBUTT0 10
+#define useri_MAXBUTT0 11
 
 
 static void geoprofil(void)
 {
    pMENU m;
-   newmenu(&m, 145UL, aprsdecode_lums.fontysize+7UL, 10UL, useri_bTRANSP);
+   newmenu(&m, 145UL, aprsdecode_lums.fontysize+7UL, 11UL, useri_bTRANSP);
    dogeoprofil(m);
    m->ysize = m->oldknob*m->yknob;
    m->oldknob = 0UL;
@@ -7807,15 +7814,16 @@ static void geoprofil(void)
 static void coloureditgeo(unsigned long knob, unsigned long sub)
 {
    configs[useri_fEDITLINE].width = 200U;
-   if (knob==1UL) configedit = 149UL;
-   else if (knob==2UL) configedit = 148UL;
-   else if (knob==3UL) configedit = 121UL;
+   if (knob==1UL) configedit = 150UL;
+   else if (knob==2UL) configedit = 149UL;
+   else if (knob==3UL) configedit = 122UL;
    else if (knob==4UL) configedit = 115UL;
    else if (knob==5UL) configedit = 116UL;
    else if (knob==6UL) configedit = 117UL;
-   else if (knob==7UL) configedit = 120UL;
-   else if (knob==8UL) configedit = 119UL;
-   else configedit = 118UL;
+   else if (knob==7UL) configedit = 118UL;
+   else if (knob==8UL) configedit = 121UL;
+   else if (knob==9UL) configedit = 120UL;
+   else configedit = 119UL;
    memcpy(configs[useri_fEDITLINE].title,configs[configedit].title,31u);
    copytoed();
    useri_rdlums();
@@ -7864,7 +7872,7 @@ static void colouredit(unsigned long knob, unsigned long sub)
       else configedit = 54UL;
    }
    else if (knob==5UL) configedit = 61UL;
-   else configedit = (144UL+knob)-1UL;
+   else configedit = (145UL+knob)-1UL;
    memcpy(configs[useri_fEDITLINE].title,configs[configedit].title,31u);
    copytoed();
    useri_rdlums();
@@ -7985,11 +7993,11 @@ static void docolourchoose(pMENU menu)
    unsigned long tmp0;
    menu->oldknob = 0UL;
    addline(menu, "", 1ul, "\317", 2ul, 8450UL);
-   ro = (unsigned long)useri_conf2int((unsigned char)((144UL+menu->scroll)
+   ro = (unsigned long)useri_conf2int((unsigned char)((145UL+menu->scroll)
                 -1UL), 0UL, 0L, 100L, 0L);
-   go = (unsigned long)useri_conf2int((unsigned char)((144UL+menu->scroll)
+   go = (unsigned long)useri_conf2int((unsigned char)((145UL+menu->scroll)
                 -1UL), 1UL, 0L, 100L, 0L);
-   bo = (unsigned long)useri_conf2int((unsigned char)((144UL+menu->scroll)
+   bo = (unsigned long)useri_conf2int((unsigned char)((145UL+menu->scroll)
                 -1UL), 2UL, 0L, 100L, 0L);
    normcol(1000UL, &ro, &go, &bo);
    xo = 0UL;
@@ -8059,7 +8067,7 @@ static void docolourchoose(pMENU menu)
       if (y==tmp) break;
    } /* end for */
    maptool_Colset(&col, 'W');
-   maptool_drawstri(menu->image, configs[(menu->scroll-1UL)+144UL].title,
+   maptool_drawstri(menu->image, configs[(menu->scroll-1UL)+145UL].title,
                 31ul, 3L, (long)(((menu->image->Len0-1)-5UL)-aprsdecode_lums.fontysize),
                  1000UL, 1UL, col, 0, 0);
    menu->redrawproc = docolourchoose;
@@ -8122,7 +8130,7 @@ static void setcolour(unsigned long knob, unsigned long cx,
       aprsstr_Append(s, 101ul, " ", 2ul);
       aprsstr_CardToStr(b, 0UL, h, 101ul);
       aprsstr_Append(s, 101ul, h, 101ul);
-      icfg((unsigned char)((144UL+knob)-1UL), s, 101ul);
+      icfg((unsigned char)((145UL+knob)-1UL), s, 101ul);
    }
    useri_rdlums();
    updatemenus();
@@ -8553,7 +8561,7 @@ static void domapmove(unsigned long knob, unsigned long sub)
       if (sub==0UL) configtogg(useri_fAPPROXY);
       else {
          strncpy(configs[useri_fEDITLINE].title,"Approximation Warn km",31u);
-         configedit = 132UL;
+         configedit = 133UL;
       }
    }
    else if (knob==2UL) configtogg(useri_fZOOMMISS);
@@ -8675,7 +8683,7 @@ static void watchcallsetup(void)
 {
    strncpy(configs[useri_fEDITLINE].title,"Watch Call",31u);
    configs[useri_fEDITLINE].width = 10U;
-   configedit = 131UL;
+   configedit = 132UL;
    configs[useri_fEDITLINE].curspos = 0U;
    clreditline();
    useri_refresh = 1;
@@ -8787,7 +8795,7 @@ static void docfgbeep(unsigned long knob, unsigned long sub)
       else {
          strncpy(configs[useri_fEDITLINE].title,"Beep far/near Hz ms Hz ms",
                 31u);
-         configedit = 124UL;
+         configedit = 125UL;
       }
       testbeep(useri_fBEEPPROX);
    }
@@ -8795,7 +8803,7 @@ static void docfgbeep(unsigned long knob, unsigned long sub)
       if (sub==0UL) configtogg(useri_fBEEPWATCH);
       else {
          strncpy(configs[useri_fEDITLINE].title,"Watchcall Beep Hz ms",31u);
-         configedit = 125UL;
+         configedit = 126UL;
       }
       testbeep(useri_fBEEPWATCH);
    }
@@ -8804,7 +8812,7 @@ static void docfgbeep(unsigned long knob, unsigned long sub)
       else {
          strncpy(configs[useri_fEDITLINE].title,"Message Beep rx/ack Hz ms Hz\
  ms",31u);
-         configedit = 126UL;
+         configedit = 127UL;
       }
       testbeep(useri_fBEEPMSG);
    }
@@ -8869,7 +8877,7 @@ static void configeditor(void)
    unsigned long oks;
    cnt = 0UL;
    pl = 0;
-   if (configedit<=150UL) pl = configs[configedit].lines;
+   if (configedit<=151UL) pl = configs[configedit].lines;
    ph = pl;
    while (ph) {
       ++cnt;
@@ -8899,7 +8907,7 @@ static void configeditor(void)
    /*    addline(m, 0C, " ", MINH*72); */
    addline(m, "", 1ul, "\320", 2ul, 7200UL);
    m->clampkb |= 0x4UL;
-   m->confidx[2U] = 150U;
+   m->confidx[2U] = 151U;
    keybknob(m, 2UL, 0, 0UL);
    m->oldknob = 2UL;
    more = configs[configedit].typ>=useri_cLIST;
@@ -8913,7 +8921,7 @@ static void configeditor(void)
       else strncpy(s,"\346 ",201u);
       m->scroll = cnt;
       aprsstr_Append(s, 201ul, pl->line, 201ul);
-      if (configedit==131UL) {
+      if (configedit==132UL) {
          aprsstr_Append(s, 201ul, "           ", 12ul);
          s[12U] = 0;
          strncpy(cmd,"\253",2u);
@@ -10096,7 +10104,7 @@ static void kbtomenu(char * ch)
    while ((unsigned char)uml[0U]>0) {
       *ch = uml[0U];
       idx = (unsigned long)pm->confidx[pm->oldknob];
-      if (idx<=150UL) {
+      if (idx<=151UL) {
          { /* with */
             struct CONFIG * anonym = &configs[idx];
             if (anonym->lines==0) icfg((unsigned char)idx, "", 1ul);

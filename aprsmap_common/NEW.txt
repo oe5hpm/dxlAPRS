@@ -1197,7 +1197,9 @@
 + Hover Info Popup (Tools/On Next Click/Hover) auf den Symbolen und Glaendeschnitt
   zu Marker 1 wenn Tools/Radiolink enabled.
 
+24.3. 2015 (Ver 0.49)
 
++ Linkstreckenberechnung mit einstellbarer Beugung (refraktion) der Hf in der Atmosphaere.
 
 
 

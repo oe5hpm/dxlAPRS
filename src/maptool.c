@@ -1058,6 +1058,8 @@ static void ruler(maptool_pIMAGE image, float m, float x, float y, char over,
 
 #define maptool_HERR (-2.E+4)
 
+#define maptool_ER 6.37E+6
+
 struct HTAB;
 
 typedef struct HTAB * pHTAB;
@@ -1094,6 +1096,7 @@ extern long maptool_geoprofile(maptool_pIMAGE image,
    float fullsum;
    float fresmin;
    float fressum;
+   float refrac;
    float odist;
    float nv;
    float kf;
@@ -1159,6 +1162,10 @@ extern long maptool_geoprofile(maptool_pIMAGE image,
       maptool_closesrtmfile();
       return -2L;
    }
+   refrac = (6.37E+6f-RealMath_sqrt(4.05769E+13f+ *dist* *dist*0.25f))
+                *useri_conf2real(useri_fREFRACT, 0UL, (-10.0f), 10.0f,
+                0.0f)*4.0f;
+   /*WrFixed(refrac,3, 10); WrStrLn(" refra"); */
    odist = X2C_DIVR(0.7071f,*dist); /* step 1/sqrt(2) of map resolution */
    d = 0.0f;
    maxfres = fresnel( *dist*0.5f,  *dist*0.5f, lambda);
@@ -1175,7 +1182,7 @@ extern long maptool_geoprofile(maptool_pIMAGE image,
       dz = z0+z1*d;
       wgs84r(dx, dy, dz, &pos.lat, &pos.long0, &hmid);
       if (maptool_mapxy(pos, &x, &y)>=0L) {
-         hmid = hmid*1000.0f;
+         hmid = hmid*1000.0f-(d-d*d)*refrac;
          fressum = 0.0f;
          fullsum = 0.0f;
          fstep = (long)aprsdecode_trunc(X2C_DIVR(fres*0.5f,resol));
