@@ -1,25 +1,57 @@
 compiling hints for C-Sources by OE5HPM@OE5XBL.#OE5.AUT.EU
 
 build for X86 with i386 (32-bit) host system
-============================================
+================================================================================
 install following packages:
-- libX11-dev   (sudo apt-get install libX11-dev)
-- libXext-dev  (sudo apt-get install libXext-dev)
-- libpng-dev   (sudo apt-get install libpng-dev)
+- build-essential  (sudo apt-get install build-essential)
+- libX11-dev       (sudo apt-get install libX11-dev)
+- libXext-dev      (sudo apt-get install libXext-dev)
+- libpng-dev       (sudo apt-get install libpng-dev)
 
 run 'make x86'
 
 Test
 
 build for X86 with i686 (64-bit) host system
-============================================
+================================================================================
 install following packages:
-- libX11-dev   (sudo apt-get install libX11-dev:i386)
-- libXext-dev  (sudo apt-get install libXext-dev:i386)
+- build-essential  (sudo apt-get install build-essential)
+- libc-i386        (sudo apt-get install libc6-dev-i386)
+- libX11-dev       (sudo apt-get install libX11-dev:i386)
+- libXext-dev      (sudo apt-get install libXext-dev:i386)
 
 maybe you have also to install:
 - ia32-libs
 - libc6-dev-i386
 
 run 'make x86'
+
+
+build for ARMV6 (raspberry pi) on x86 host system
+================================================================================
+install following packages:
+- build-essential	(sudo apt-get install build-essential)
+- lib32z1			(sudo apt-get install lib32z1)
+- rpi-tools			(git clone https://github.com/raspberrypi/tools.git ~/rpi-tools)
+
+create symlinks to rpi-compiler in dxlAPRS/src:
+- ln -s ~/rpi-tools/arm-bcm2708/arm-bcm2708hardfp-linux-gnueabi/bin/arm-bcm2708hardfp-linux-gnueabi-gcc arm-linux-rpi-gcc
+- ln -s ~/rpi-tools/arm-bcm2708/arm-bcm2708hardfp-linux-gnueabi/bin/arm-bcm2708hardfp-linux-gnueabi-strip arm-linux-rpi-strip
+
+run 'make armv6'
+
+build for ARMV7hf (bur am335x pp, bananapi, beaglebone) on x86 host system
+================================================================================
+install following packages:
+- build-essential   (sudo apt-get install build-essential)
+- linaro-toolchain
+	cd ~/
+	wget http://releases.linaro.org/14.11/components/toolchain/binaries/arm-linux-gnueabihf/gcc-linaro-4.9-2014.11-x86_64_arm-linux-gnueabihf.tar.xz
+	tar -xf gcc-linaro-4.9-2014.11-x86_64_arm-linux-gnueabihf.tar.xz
+
+create symlinks to linaro-compiler in dxlAPRS/src:
+- ln -s ~/gcc-linaro-4.9-2014.11-x86_64_arm-linux-gnueabihf/bin/arm-linux-gnueabihf-gcc arm-linux-armv7hf-gcc
+- ln -s ~/gcc-linaro-4.9-2014.11-x86_64_arm-linux-gnueabihf/bin/arm-linux-gnueabihf-strip arm-linux-armv7hf-strip
+
+run 'make armv7hf'
 
