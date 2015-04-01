@@ -5,7 +5,7 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
-/* "@(#)gpspos.c Jan 12 21:19:37 2015" */
+/* "@(#)gpspos.c Mar 30  3:20:44 2015" */
 
 
 #define X2C_int32
@@ -30,6 +30,9 @@
 #ifndef TimeConv_H_
 #include "TimeConv.h"
 #endif
+#ifndef aprsstr_H_
+#include "aprsstr.h"
+#endif
 
 
 
@@ -39,12 +42,6 @@
 /*YUMA_structAlmanac,*/
 /*GPS_structEphemeris,*/
 /*FROM gnss_types IMPORT GNSS_structKlobuchar; */
-/*FROM ionosphere IMPORT IONOSPHERE_GetL1KlobucharCorrection; */
-/*FROM time_conversion IMPORT TIMECONV_GetGPSTimeFromRinexTime; */
-/*FROM troposphere IMPORT TROPOSPHERE_DetermineZenithDelayValues_WAAS_Model,
-                */
-/*                        TROPOSPHERE_GetDryAndWetDelay_UsingThe_UNBabc_MappingFunction;
-                 */
 #define gpspos_LIGHT 2.99792458E+8
 
 #define gpspos_FREQ 1.57542E+9
@@ -327,6 +324,7 @@ static void degtostr(float d, char lat, char form, char s[],
    s[i] = 0;
 } /* end degtostr() */
 
+/*      A=6378217;  */
 #define gpspos_A 6378137
 /*      B=6356752; */
 
@@ -1214,6 +1212,14 @@ extern long gpspos_getposit(unsigned long weekms, unsigned long * systime,
    return ret;
 } /* end getposit() */
 
+
+static void wrdate(unsigned long t)
+{
+   char s[31];
+   aprsstr_DateToStr(t, s, 31ul);
+   InOut_WriteString(s, 31ul);
+} /* end wrdate() */
+
 struct SEM_structAlmanac;
 
 
@@ -1266,7 +1272,8 @@ struct YUMA_structAlmanac {
 
 extern char gpspos_readalmanach(char fnsem[], unsigned long fnsem_len,
                 char fnyuma[], unsigned long fnyuma_len, char fnrinex[],
-                unsigned long fnrinex_len, unsigned long secondinweek)
+                unsigned long fnrinex_len, unsigned long secondinweek,
+                unsigned long * tilltime)
 {
    unsigned char cnt;
    unsigned long ti;
@@ -1310,23 +1317,10 @@ extern char gpspos_readalmanach(char fnsem[], unsigned long fnsem_len,
       tmp = ri-1UL;
       j = 0UL;
       if (j<=tmp) for (;; j++) {
-         /*WrInt(VAL(CARDINAL,rinexalm[j].toe) + VAL(CARDINAL,
-                rinexalm[j].week)*604800, 18); WrStrLn("=toe"); */
-         /*WrInt(VAL(CARDINAL, rinexalm[j].week), 18);
-                WrInt(time() DIV 604800, 18);  WrStrLn("=week"); */
-         /*WrInt(VAL(CARDINAL, rinexalm[j].tow), 18); WrStrLn("=tow"); */
          i = (unsigned long)rinexalm[j].prn;
-         /*IF i>0 THEN WrInt(rinexalm[j].toe, 8); WrStrLn("=toe"); END; */
-         /*      IF (i>0) & (i<=HIGH(min)) & (rinexalm[j].toe>=ti)
-                & (min[i]>rinexalm[j].toe) THEN */
-         /*      IF (i>0) & (i<=HIGH(min)+1) & (rinexalm[j].toe<ti)
-                & (min[i-1]<rinexalm[j].toe) THEN */
          ti = ((rinexalm[j].tow+604800UL)-secondinweek)%604800UL;
-         /*      IF (i>0) & (i<=HIGH(min)+1) & (rinexalm[j].tow<secondinweek)
-                 & (min[i-1]<rinexalm[j].tow) THEN */
          if (((i>0UL && i<=32UL) && ti>302400UL) && min0[i-1UL]<ti) {
             --i;
-            /*        min[i]:=rinexalm[j].tow; */
             min0[i] = ti;
             /*WrInt(min[i], 8); WrStrLn("=min"); */
             calm[i].week = rinexalm[j].week;
@@ -1358,8 +1352,15 @@ extern char gpspos_readalmanach(char fnsem[], unsigned long fnsem_len,
          }
          if (j==tmp) break;
       } /* end for */
+      *tilltime = 0UL;
       for (i = 0UL; i<=31UL; i++) {
-         InOut_WriteInt((long)calm[i].tow, 8UL);
+         /* WrInt(calm[i].tow, 12); WrInt(calm[i].week, 10); */
+         ti = calm[i].tow+(unsigned long)calm[i].week*604800UL+315964800UL;
+         if (ti>*tilltime) {
+            *tilltime = ti; /* newest entry as hint for alm timeout */
+         }
+         wrdate(ti);
+         osi_WrStrLn("", 1ul);
       } /* end for */
       osi_WrStrLn("=used tow", 10ul);
    }
@@ -1446,6 +1447,7 @@ extern void gpspos_BEGIN(void)
    static int gpspos_init = 0;
    if (gpspos_init) return;
    gpspos_init = 1;
+   aprsstr_BEGIN();
    TimeConv_BEGIN();
    osi_BEGIN();
 }

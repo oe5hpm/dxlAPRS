@@ -37,7 +37,8 @@ extern long gpspos_getposit(unsigned long, unsigned long *, gpspos_SATS,
                 double *, double *, double *, float *, float *);
 
 extern char gpspos_readalmanach(char [], unsigned long, char [],
-                unsigned long, char [], unsigned long, unsigned long);
+                unsigned long, char [], unsigned long, unsigned long,
+                unsigned long *);
 
 
 extern void gpspos_BEGIN(void);

@@ -5,7 +5,7 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
-/* "@(#)sondemod.c Jan 12 21:19:36 2015" */
+/* "@(#)sondemod.c Mar 30 19:34:47 2015" */
 
 
 #define X2C_int32
@@ -82,6 +82,8 @@ static char sondemod_DATAFRAME = 'i';
 /* only for show sat elevations if no pos decode */
 
 #define sondemod_MYLONG 2.2755602787502E-1
+
+#define sondemod_NEWALMAGE 60
 
 typedef char FILENAME[1024];
 
@@ -181,7 +183,9 @@ static unsigned long fragmentsize;
 
 static unsigned long clock0;
 
-static char almread;
+static unsigned long almread; /* time last almanach read */
+
+static unsigned long almage;
 
 static unsigned long systime;
 
@@ -208,6 +212,8 @@ static float mhz;
 static OBJNAME objname;
 
 static long rxsock;
+
+static unsigned long maxalmage;
 
 
 static void Error(char text[], unsigned long text_len)
@@ -399,6 +405,7 @@ static void Config(void)
 static void Parms(void)
 {
    char err;
+   char lowbeacon;
    FILENAME mixfn;
    FILENAME h1;
    FILENAME h;
@@ -419,6 +426,10 @@ static void Parms(void)
    debfd = -1L;
    rxsock = -1L;
    sondeaprs_dao = 0;
+   lowbeacon = 0;
+   maxalmage = 21600UL;
+   sondeaprs_verb = 0;
+   sondeaprs_verb2 = 0;
    for (channel = sondemod_LEFT;; channel++) {
       { /* with */
          struct CHAN * anonym = &chan[channel];
@@ -483,7 +494,14 @@ static void Parms(void)
                }
             }
          }
-         else if (h[1U]=='t') Lib_NextArg(sondeaprs_commentfn, 1025ul);
+         else if (h[1U]=='T') {
+            Lib_NextArg(h, 1024ul);
+            if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
+            maxalmage = cnum*60UL;
+         }
+         else if (h[1U]=='t') {
+            Lib_NextArg(sondeaprs_commentfn, 1025ul);
+         }
          else if (h[1U]=='m' || h[1U]=='r') {
             sondeaprs_sendmon = h[1U]!='r';
             Lib_NextArg(h, 1024ul);
@@ -506,6 +524,21 @@ static void Parms(void)
             i = 0UL;
             if (!GetNum(h, 1024ul, 0, &i, &sondeaprs_beacontime)) {
                Error("-b <s>", 7ul);
+            }
+         }
+         else if (h[1U]=='B') {
+            Lib_NextArg(h, 1024ul);
+            i = 0UL;
+            if (!GetNum(h, 1024ul, 0, &i, &sondeaprs_lowaltbeacontime)) {
+               Error("-B <s>", 7ul);
+            }
+            lowbeacon = 1;
+         }
+         else if (h[1U]=='A') {
+            Lib_NextArg(h, 1024ul);
+            i = 0UL;
+            if (!GetNum(h, 1024ul, 0, &i, &sondeaprs_lowalt)) {
+               Error("-A <s>", 7ul);
             }
          }
          else if (h[1U]=='I') {
@@ -531,9 +564,18 @@ static void Parms(void)
             }
          }
          else if (h[1U]=='v') sondeaprs_verb = 1;
+         else if (h[1U]=='V') {
+            sondeaprs_verb = 1;
+            sondeaprs_verb2 = 1;
+         }
          else {
             if (h[1U]=='h') {
+               osi_WrStrLn("sondemod(c) 0.2", 16ul);
+               osi_WrStrLn(" -A <meter>     low altitude (useing -B beacon ti\
+me) limit meter -A 1000", 73ul);
                osi_WrStrLn(" -a             abort on sound error", 37ul);
+               osi_WrStrLn(" -B <seconds>   low altitude send intervall -B 10\
+", 50ul);
                osi_WrStrLn(" -b <seconds>   minimum send intervall -b 20",
                 45ul);
                osi_WrStrLn(" -c <num>       maxchannels (1) (1=mono, 2=stereo\
@@ -556,8 +598,11 @@ raw file", 58ul);
                 46ul);
                osi_WrStrLn(" -s <filename>  gps almanach sem format (not exac\
 t)", 52ul);
+               osi_WrStrLn(" -T <minutes>   stop sending data after almanach \
+age (-T 360)", 62ul);
                osi_WrStrLn(" -t <filename>  append comment lines from this fi\
 le", 52ul);
+               osi_WrStrLn(" -V             more verbous", 29ul);
                osi_WrStrLn(" -v             verbous", 24ul);
                osi_WrStrLn(" -x <filename>  gps almanach rinexnavigation form\
 at (prefered)", 63ul);
@@ -579,6 +624,7 @@ ct)", 53ul);
       osi_WrStrLn("< use -h", 9ul);
       X2C_ABORT();
    }
+   if (!lowbeacon) sondeaprs_lowaltbeacontime = sondeaprs_beacontime;
    Config();
    if (soundfn[0U]) OpenSound();
 } /* end Parms() */
@@ -740,12 +786,14 @@ static void dogps(const char sf[], unsigned long sf_len,
                 (unsigned char)sf[1UL]*256UL+(unsigned long)(unsigned char)
                 sf[2UL]*65536UL+(unsigned long)(unsigned char)
                 sf[3UL]*16777216UL;
-   aprsstr_TimeToStr(( *timems/1000UL)%86400UL, h, 100ul);
-   InOut_WriteString("time ms day: ", 14ul);
-   InOut_WriteString(h, 100ul);
-   InOut_WriteInt((long)( *timems%1000UL), 4UL);
-   InOut_WriteInt((long)( *timems/86400000UL), 2UL);
-   osi_WrStrLn("", 1ul);
+   if (sondeaprs_verb2) {
+      aprsstr_TimeToStr(( *timems/1000UL)%86400UL, h, 100ul);
+      InOut_WriteString("time ms day: ", 14ul);
+      InOut_WriteString(h, 100ul);
+      InOut_WriteInt((long)( *timems%1000UL), 4UL);
+      InOut_WriteInt((long)( *timems/86400000UL), 2UL);
+      osi_WrStrLn("", 1ul);
+   }
    /*  WrInt(ORD(sf[4]), 4); WrInt(ORD(sf[5]), 4); WrStrLn(""); */
    /*  FILL(ADR(sats), 0C, SIZE(sats)); */
    for (i0 = 0UL; i0<=3UL; i0++) {
@@ -756,17 +804,19 @@ static void dogps(const char sf[], unsigned long sf_len,
       sats[i0*3UL+2UL].prn = (unsigned long)(unsigned char)
                 sf[i0*2UL+7UL]/4UL&31UL;
    } /* end for */
-   InOut_WriteString("prn:", 5ul);
-   for (i0 = 0UL; i0<=11UL; i0++) {
-      InOut_WriteInt((long)sats[i0].prn, 3UL);
-   } /* end for */
-   osi_WrStrLn("", 1ul);
-   InOut_WriteString("sig: ", 6ul);
-   for (i0 = 0UL; i0<=11UL; i0++) {
-      osi_WrHex((unsigned long)(unsigned char)sf[i0+14UL], 3UL);
-   } /* end for */
-   osi_WrStrLn("", 1ul);
-   osi_WrStrLn("rang:", 6ul);
+   if (sondeaprs_verb2) {
+      InOut_WriteString("prn:", 5ul);
+      for (i0 = 0UL; i0<=11UL; i0++) {
+         InOut_WriteInt((long)sats[i0].prn, 3UL);
+      } /* end for */
+      osi_WrStrLn("", 1ul);
+      InOut_WriteString("sig: ", 6ul);
+      for (i0 = 0UL; i0<=11UL; i0++) {
+         osi_WrHex((unsigned long)(unsigned char)sf[i0+14UL], 3UL);
+      } /* end for */
+      osi_WrStrLn("", 1ul);
+      osi_WrStrLn("rang:", 6ul);
+   }
    for (i0 = 0UL; i0<=11UL; i0++) {
       if (sats[i0].prn>0UL) {
          sats[i0].rang = (long)((unsigned long)(unsigned char)
@@ -779,25 +829,18 @@ static void dogps(const char sf[], unsigned long sf_len,
                 sf[i0*8UL+31UL]*256UL+(unsigned long)(unsigned char)
                 sf[i0*8UL+32UL]*65536UL);
          sats[i0].rang1 = sats[i0].rang1&8388607L;
-         /*WrHex(ORD(sf[i*8+30]),2); WrHex(ORD(sf[i*8+31]),2);
-                WrHex(ORD(sf[i*8+32]),2); WrStrLn("=hex"); */
-         /*      IF sats[i].rang1>=200000H THEN DEC(sats[i].rang1,
-                400000H) END; */
          sats[i0].rang3 = (long)(signed char)(unsigned char)sf[i0*8UL+33UL];
-         /*    FOR j:=0 TO 7 DO WrHex(ORD(sf[i*8+26+j]), 4) END; WrStr("  ");
-                  */
-         /*    d:=VAL(INTEGER, (sats[i].rang-lastsat[i].rang)*65536) */
-         /*       +VAL(INTEGER,VAL(INT16, sats[i].rang1-lastsat[i].rang1));
-                */
          d = sats[i0].rang-lastsat[i0].rang;
          d1 = sats[i0].rang1-lastsat[i0].rang1;
-         InOut_WriteInt((long)sats[i0].prn, 3UL);
-         InOut_WriteInt(sats[i0].rang, 12UL);
-         InOut_WriteInt(sats[i0].rang1, 12UL);
-         InOut_WriteInt(sats[i0].rang3, 5UL);
-         InOut_WriteInt(d, 12UL);
-         InOut_WriteInt(d-lastsat[i0].lastd, 12UL);
-         osi_WrStrLn("", 1ul);
+         if (sondeaprs_verb2) {
+            InOut_WriteInt((long)sats[i0].prn, 3UL);
+            InOut_WriteInt(sats[i0].rang, 12UL);
+            InOut_WriteInt(sats[i0].rang1, 12UL);
+            InOut_WriteInt(sats[i0].rang3, 5UL);
+            InOut_WriteInt(d, 12UL);
+            InOut_WriteInt(d-lastsat[i0].lastd, 12UL);
+            osi_WrStrLn("", 1ul);
+         }
          sats[i0].lastd = d;
          sats[i0].lastd1 = d1;
       }
@@ -805,8 +848,10 @@ static void dogps(const char sf[], unsigned long sf_len,
    memcpy(lastsat,sats,sizeof(gpspos_SATS));
    { /* with */
       struct CONTEXT * anonym = cont;
-      if (almread) {
-         *gpstime = TimeConv_time();
+      systime = TimeConv_time();
+      if (almread>systime) almread = 0UL;
+      if (almread+120UL>systime) {
+         *gpstime = systime;
          res = gpspos_getposit(anonym->timems, gpstime, sats,
                 anonym->lastlat, anonym->laslong, anonym->lastalt,
                 &anonym->lat, &anonym->long0, &anonym->heig, &anonym->speed,
@@ -822,6 +867,7 @@ static void dogps(const char sf[], unsigned long sf_len,
          anonym->lastdir = anonym->dir;
          anonym->lastclb = anonym->climb;
       }
+      else *gpstime = 0UL;
    }
    if (sondeaprs_verb && res>=0L) {
       degtostr((float)cont->lat, 1, '3', h, 100ul);
@@ -842,8 +888,8 @@ static void dogps(const char sf[], unsigned long sf_len,
       osi_WrFixed(cont->hrmsc, 1L, 0UL);
       InOut_WriteString(" ", 2ul);
       osi_WrFixed(cont->vrmsc, 1L, 0UL);
-      osi_WrStrLn("", 1ul);
    }
+/*WrStrLn(""); */
 } /* end dogps() */
 
 
@@ -1039,10 +1085,12 @@ static void domes(const char md[], unsigned long md_len, double * hp,
    */
    if (sondeaprs_verb) {
       InOut_WriteString("mes:", 5ul);
-      for (i0 = 0UL; i0<=7UL; i0++) {
-         InOut_WriteInt(m[i0], 7UL);
-         InOut_WriteString(" ", 2ul);
-      } /* end for */
+      if (sondeaprs_verb2) {
+         for (i0 = 0UL; i0<=7UL; i0++) {
+            InOut_WriteInt(m[i0], 7UL);
+            InOut_WriteString(" ", 2ul);
+         } /* end for */
+      }
       osi_WrFixed((float)*temp, 3L, 7UL);
       InOut_WriteString(" ", 2ul);
       osi_WrFixed(hr1, 3L, 7UL);
@@ -1067,7 +1115,8 @@ static void calibfn(char obj[], unsigned long obj_len, char fn[],
 
 static void docalib(const char sf[], unsigned long sf_len, char objname0[],
                 unsigned long objname_len, struct CONTEXT * cont,
-                float * mhz0, char * sameid, unsigned long * frameno)
+                float * mhz0, unsigned long * frameno)
+/*; VAR sameid:BOOLEAN*/
 {
    unsigned long idx;
    unsigned long j;
@@ -1089,7 +1138,7 @@ static void docalib(const char sf[], unsigned long sf_len, char objname0[],
    } /* end for */
    if (i0<=objname_len-1) objname0[i0] = 0;
    if (new0) {
-      *sameid = 0;
+      /*    sameid:=FALSE; */
       initcontext(cont);
       calibfn(objname0, objname_len, fn, 1024ul);
       fd = osi_OpenRead(fn, 1024ul);
@@ -1198,6 +1247,7 @@ static void decodeframe(unsigned char m)
    unsigned long p;
    unsigned long j;
    unsigned long i0;
+   unsigned long almanachage;
    unsigned short crc;
    char typ;
    char sf[256];
@@ -1358,8 +1408,7 @@ static void decodeframe(unsigned char m)
       }
       else {
          if (typ=='e') {
-            docalib(sf, 256ul, objname, 9ul, &context, &mhz, &almread,
-                &frameno);
+            docalib(sf, 256ul, objname, 9ul, &context, &mhz, &frameno);
             if (frameno>context.framenum) {
                /* new frame number */
                context.mesok = 0;
@@ -1386,17 +1435,31 @@ static void decodeframe(unsigned char m)
                { /* with */
                   struct CONTEXT * anonym0 = &context;
                   dogps(sf, 256ul, &context, &anonym0->timems, &gpstime);
-                  if (!almread) {
+                  if (almread+60UL<=systime) {
                      if (gpspos_readalmanach(semfile, 1024ul, yumafile,
-                1024ul, rinexfile, 1024ul, anonym0->timems/1000UL)) {
-                        almread = 1;
-                        dogps(sf, 256ul, &context, &anonym0->timems,
+                1024ul, rinexfile, 1024ul, anonym0->timems/1000UL, &almage)) {
+                        if (almread+120UL<=systime) {
+                           dogps(sf, 256ul, &context, &anonym0->timems,
                 &gpstime);
+                        }
+                        almread = systime;
                         WrRinexfn(gpstime);
                      }
                      else osi_WrStrLn("almanach read error", 20ul);
                   }
-                  anonym0->posok = 1;
+                  /*WrInt(gpstime-systime, 15); WrInt(systime, 15);
+                WrStrLn(" almage"); */
+                  if (gpstime>0UL && gpstime>=almage) {
+                     almanachage = gpstime-almage;
+                  }
+                  else {
+                     almanachage = 0UL;
+                  }
+                  if (almage+maxalmage>gpstime) anonym0->posok = 1;
+                  else if (almanachage>0UL) {
+                     InOut_WriteInt((long)(almanachage/60UL), 10UL);
+                     osi_WrStrLn(" Min (almanach too old)", 24ul);
+                  }
                }
             }
          }
@@ -1416,7 +1479,7 @@ static void decodeframe(unsigned char m)
       }
    }
    loop_exit:;
-   if (((((context.posok && calok) && almread)
+   if (((((context.posok && calok) && almread+120UL>systime)
                 && (context.mesok && context.calibok==0xFFFFFFFFUL || sondeaprs_nofilter)
                 ) && context.lat!=0.0) && context.long0!=0.0) {
       { /* with */
@@ -1431,7 +1494,8 @@ static void decodeframe(unsigned char m)
                 anonym1->speed, anonym1->dir, anonym1->climb, anonym1->hp,
                 anonym1->hyg, anonym1->temp, (double)mhz,
                 (double)anonym1->hrmsc, (double)anonym1->vrmsc,
-                (anonym1->timems/1000UL)%86400UL, frameno, objname, 9ul);
+                (anonym1->timems/1000UL)%86400UL, frameno, objname, 9ul,
+                almanachage);
          anonym1->framesent = 1;
       }
    }
@@ -1662,7 +1726,9 @@ extern int main(int argc, char **argv)
    soundbufs = 0UL;
    initcontext(&context);
    objname[0] = 0;
-   almread = 0;
+   almread = 0UL;
+   almage = 0UL;
+   systime = TimeConv_time();
    for (;;) {
       if (soundfn[0U]) getadc();
       else if (rxsock>=0L) udprx();

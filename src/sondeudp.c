@@ -5,7 +5,7 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
-/* "@(#)sondeudp.c May 16  6:00:34 2014" */
+/* "@(#)sondeudp.c Mar 30  3:26:16 2015" */
 
 
 #define X2C_int32
@@ -24,6 +24,9 @@
 #ifndef osi_H_
 #include "osi.h"
 #endif
+#ifndef RealMath_H_
+#include "RealMath.h"
+#endif
 #ifndef Lib_H_
 #include "Lib.h"
 #endif
@@ -33,11 +36,11 @@
 #ifndef aprsstr_H_
 #include "aprsstr.h"
 #endif
-#ifndef RealMath_H_
-#include "RealMath.h"
-#endif
 #ifndef Select_H_
 #include "Select.h"
+#endif
+#ifndef Storage_H_
+#include "Storage.h"
 #endif
 
 /* demodulate RS92 sonde (2400bit/s manchester)
@@ -70,6 +73,18 @@ enum CHANNELS {sondeudp_LEFT, sondeudp_RIGHT};
 
 typedef float AFIRTAB[8192];
 
+struct UDPTX;
+
+typedef struct UDPTX * pUDPTX;
+
+
+struct UDPTX {
+   pUDPTX next;
+   unsigned long ip;
+   unsigned long destport;
+   long udpfd;
+};
+
 struct CHAN;
 
 
@@ -96,9 +111,10 @@ struct CHAN {
    char rxbuf[256];
    AFIRTAB afirtab;
    long asynst[10];
-   unsigned long ip;
-   unsigned long destport;
-   long udpfd;
+   /*       ip                                   : IPNUM; */
+   /*       destport                             : UDPPORT; */
+   /*       udpfd                                : INTEGER */
+   pUDPTX udptx;
 };
 
 static long soundfd;
@@ -360,6 +376,7 @@ static void Parms(void)
    unsigned long cnum;
    long inum;
    unsigned char channel;
+   pUDPTX utx;
    struct CHAN * anonym;
    struct CHAN * anonym0;
    err = 0;
@@ -375,7 +392,7 @@ static void Parms(void)
          struct CHAN * anonym = &chan[channel];
          anonym->configequalizer = 0L;
          anonym->pllshift = 1024L;
-         anonym->udpfd = -1L;
+         anonym->udptx = 0;
       }
       if (channel==sondeudp_RIGHT) break;
    } /* end for */
@@ -432,9 +449,12 @@ static void Parms(void)
             Lib_NextArg(h, 1024ul);
             { /* with */
                struct CHAN * anonym0 = &chan[channel];
-               anonym0->udpfd = GetIp(h, 1024ul, &anonym0->ip,
-                &anonym0->destport);
-               if (anonym0->udpfd<0L) Error("cannot open udp socket", 23ul);
+               Storage_ALLOCATE((X2C_ADDRESS *) &utx, sizeof(struct UDPTX));
+               if (utx==0) Error("udp socket out of memory", 25ul);
+               utx->udpfd = GetIp(h, 1024ul, &utx->ip, &utx->destport);
+               if (utx->udpfd<0L) Error("cannot open udp socket", 23ul);
+               utx->next = anonym0->udptx;
+               anonym0->udptx = utx;
             }
          }
          else if (h[1U]=='v') verb = 1;
@@ -465,8 +485,10 @@ ber", 53ul);
                osi_WrStrLn(" -l <num>       adcbuflen (256)", 32ul);
                osi_WrStrLn(" -o <filename>  oss devicename (/dev/dsp) or raw/\
 wav audio file", 64ul);
-               osi_WrStrLn(" -u <x.x.x.x:destport> send udp, -C <n> before se\
-nds channels to extra ip", 74ul);
+               osi_WrStrLn(" -u <x.x.x.x:destport> send rx data in udp (to so\
+ndemod), -C <n> before sets", 77ul);
+               osi_WrStrLn("                channel number, maybe repeated fo\
+r more destinations", 69ul);
                osi_WrStrLn(" -h             help", 21ul);
                osi_WrStrLn(" -v             verbous, (CRC-checked Sondename)",
                  49ul);
@@ -551,17 +573,22 @@ static void decodeframe(unsigned char m)
    unsigned long j;
    unsigned short crc;
    unsigned char channel;
+   pUDPTX utx;
    struct CHAN * anonym;
    channel = m;
-   if (chan[channel].udpfd<0L) {
+   if (chan[channel].udptx==0) {
       if (channel==sondeudp_LEFT) channel = sondeudp_RIGHT;
       else channel = sondeudp_LEFT;
    }
    { /* with */
       struct CHAN * anonym = &chan[channel];
-      if (anonym->udpfd>=0L) {
-         sendudp(chan[m].rxbuf, 256ul, 240L, anonym->ip, anonym->destport,
-                anonym->udpfd);
+      utx = anonym->udptx;
+      while (utx) {
+         if (utx->udpfd>=0L) {
+            sendudp(chan[m].rxbuf, 256ul, 240L, utx->ip, utx->destport,
+                utx->udpfd);
+         }
+         utx = utx->next;
       }
    }
    if (verb) {
@@ -800,6 +827,7 @@ extern int main(int argc, char **argv)
 {
    X2C_BEGIN(&argc,argv,1,4000000l,8000000l);
    if (sizeof(FILENAME)!=1024) X2C_ASSERT(0);
+   Storage_BEGIN();
    Lib_BEGIN();
    RealMath_BEGIN();
    aprsstr_BEGIN();
