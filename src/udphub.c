@@ -59,6 +59,14 @@ static unsigned long udphub_CRCINIT = 0xFFFFUL;
 
 #define udphub_MAXFD 31
 
+#define udphub_COM "#"
+
+#define udphub_SPOOF "p"
+
+#define udphub_LF "\012"
+
+#define udphub_TICKER 15
+
 typedef char RAWCALL[7];
 
 
@@ -77,12 +85,16 @@ struct USER {
    RAWCALL call;
    unsigned long uip;
    unsigned long dport;
+   char nopurge; /* entry from file no purge */
+   char nospoof; /* not overwrite ip:port */
    unsigned long htime;
 };
 
 static unsigned char CRCL[256];
 
 static unsigned char CRCH[256];
+
+static char modified;
 
 static char peertopeer;
 
@@ -110,6 +122,10 @@ static long digisock;
 static long usersock;
 
 static unsigned long maxentries;
+
+static char initfn[1025];
+
+static char wrfn[1025];
 
 /*
 PROCEDURE ["C"] / select(n: INTEGER; readfds: ADDRESS; writefds: ADDRESS;
@@ -165,6 +181,103 @@ static char testCRC(char frame[], unsigned long frame_len, long size)
    } /* end for */
    return frame[size-2L]==(char)l && frame[size-1L]==(char)h;
 } /* end testCRC() */
+
+/*
+PROCEDURE GetIp1(h:ARRAY OF CHAR; VAR ip:IPNUM; VAR dp:UDPPORT):INTEGER;
+CONST PORTSEP=":";
+      DEFAULTIP=7F000001H;
+
+VAR i, p, n:CARDINAL;
+    ok:BOOLEAN;
+BEGIN
+  p:=0;
+  h[HIGH(h)]:=0C;
+  ip:=0;
+  FOR i:=0 TO 4 DO
+    IF (i>=3) OR (h[0]<>PORTSEP) THEN
+      n:=0;
+      ok:=FALSE;
+      WHILE (h[p]>="0") & (h[p]<="9") DO
+        ok:=TRUE;
+        n:=n*10+ORD(h[p])-ORD("0");
+        INC(p);
+      END;
+      IF NOT ok THEN RETURN -1 END;
+
+    END;
+    IF i<3 THEN
+      IF h[0]<>PORTSEP THEN
+        IF (h[p]<>".") OR (n>255) THEN RETURN -1 END;
+
+        ip:=ip*256+n;
+      END;
+
+    ELSIF i=3 THEN
+      IF h[0]<>PORTSEP THEN
+        ip:=ip*256+n;
+        IF (h[p]<>PORTSEP) OR (n>255) THEN RETURN -1 END;
+
+      ELSE p:=0; ip:=DEFAULTIP END;
+
+    ELSIF n>65535 THEN RETURN -1 END;
+
+    dp:=n;
+    INC(p);
+  END;
+  RETURN 0
+END GetIp1;
+*/
+
+static long GetIp1(char h[], unsigned long h_len, unsigned long * ip,
+                unsigned long * port)
+{
+   unsigned long p;
+   unsigned long n;
+   unsigned long i;
+   char ok0;
+   long GetIp1_ret;
+   X2C_PCOPY((void **)&h,h_len);
+   p = 0UL;
+   h[h_len-1] = 0;
+   *ip = 0UL;
+   for (i = 0UL; i<=4UL; i++) {
+      n = 0UL;
+      ok0 = 0;
+      while ((unsigned char)h[p]>='0' && (unsigned char)h[p]<='9') {
+         ok0 = 1;
+         n = (n*10UL+(unsigned long)(unsigned char)h[p])-48UL;
+         ++p;
+      }
+      if (!ok0) {
+         GetIp1_ret = -1L;
+         goto label;
+      }
+      if (i<3UL) {
+         if (h[p]!='.' || n>255UL) {
+            GetIp1_ret = -1L;
+            goto label;
+         }
+         *ip =  *ip*256UL+n;
+      }
+      else if (i==3UL) {
+         *ip =  *ip*256UL+n;
+         if (h[p]!=':' || n>255UL) {
+            GetIp1_ret = -1L;
+            goto label;
+         }
+      }
+      else if (n>65535UL) {
+         GetIp1_ret = -1L;
+         goto label;
+      }
+      *port = n;
+      ++p;
+   } /* end for */
+   GetIp1_ret = 0L;
+   label:;
+   X2C_PFREE(h);
+   return GetIp1_ret;
+} /* end GetIp1() */
 
 
 static long getudp(long fd, char buf[], unsigned long buf_len,
@@ -262,25 +375,14 @@ static char GetNum(const char h[], unsigned long h_len, unsigned long * n)
    return h[i]==0;
 } /* end GetNum() */
 
-/*
-PROCEDURE Inittable(fn:ARRAY OF CHAR);
-VAR fd:INTEGER;
-BEGIN
-  fd:=OpenRead(fn);
-  IF fd<0 THEN Err("-f: file not found") END;  
-
-    
-
-END Inittable;
-*/
 
 static void parms(void)
 {
-   char err;
+   char err0;
    char h[1024];
    unsigned long i;
    unsigned long fromdigiport;
-   err = 0;
+   err0 = 0;
    for (;;) {
       Lib_NextArg(h, 1024ul);
       if (h[0U]==0) break;
@@ -296,12 +398,15 @@ static void parms(void)
             alllifetime = i*60UL;
          }
          else if (h[1U]=='a') peertopeer = 1;
+         else if (h[1U]=='i') {
+            /* init filename */
+            Lib_NextArg(initfn, 1025ul);
+         }
+         else if (h[1U]=='w') {
+            /* write table filename */
+            Lib_NextArg(wrfn, 1025ul);
+         }
          else if (h[1U]=='m') {
-            /*
-                  ELSIF h[1]="f" THEN                                       (* init filename *)
-                    NextArg(h);
-                    Inittable(h);
-            */
             Lib_NextArg(h, 1024ul);
             if (!GetNum(h, 1024ul, &maxentries)) Err("-m number", 10ul);
          }
@@ -322,6 +427,9 @@ static void parms(void)
                osi_WrLn();
                osi_WrStrLn(" -a                                route user-to-\
 host and user-to-user", 71ul);
+               osi_WrStrLn(" -h                                this", 40ul);
+               osi_WrStrLn(" -i <file>                         init routes fr\
+om file", 57ul);
                osi_WrStrLn(" -L <time>                         minutes route \
 to all ssid\'s (default 10 min)", 80ul);
                osi_WrStrLn("                                   0 no all ssid \
@@ -336,22 +444,27 @@ sers", 54ul);
 /listenport check ip", 70ul);
                osi_WrStrLn(" -v                                verbous",
                 43ul);
-               osi_WrStrLn(" -h                                this", 40ul);
+               osi_WrStrLn(" -w <file>                         write user tab\
+le to file if new entries", 75ul);
                osi_WrLn();
+               osi_WrStrLn("Initfile:", 10ul);
+               osi_WrStrLn("NOCALL-15 192.168.0.1:4711 #comment", 36ul);
+               osi_WrStrLn("NOCALL-15p192.168.0.1:4711", 27ul);
+               osi_WrStrLn("#comment", 9ul);
                X2C_ABORT();
             }
-            err = 1;
+            err0 = 1;
          }
       }
       else {
          /*
                h[0]:=0C;
          */
-         err = 1;
+         err0 = 1;
       }
-      if (err) break;
+      if (err0) break;
    }
-   if (err) {
+   if (err0) {
       InOut_WriteString(">", 2ul);
       InOut_WriteString(h, 1024ul);
       osi_WrStrLn("< use -h", 9ul);
@@ -360,17 +473,33 @@ sers", 54ul);
 } /* end parms() */
 
 
+static void ip2str(unsigned long ip, unsigned long port, char s[],
+                unsigned long s_len)
+{
+   char h[21];
+   s[0UL] = 0;
+   aprsstr_IntToStr((long)(ip/16777216UL), 1UL, h, 21ul);
+   aprsstr_Append(s, s_len, h, 21ul);
+   aprsstr_Append(s, s_len, ".", 2ul);
+   aprsstr_IntToStr((long)(ip/65536UL&255UL), 1UL, h, 21ul);
+   aprsstr_Append(s, s_len, h, 21ul);
+   aprsstr_Append(s, s_len, ".", 2ul);
+   aprsstr_IntToStr((long)(ip/256UL&255UL), 1UL, h, 21ul);
+   aprsstr_Append(s, s_len, h, 21ul);
+   aprsstr_Append(s, s_len, ".", 2ul);
+   aprsstr_IntToStr((long)(ip&255UL), 1UL, h, 21ul);
+   aprsstr_Append(s, s_len, h, 21ul);
+   aprsstr_Append(s, s_len, ":", 2ul);
+   aprsstr_IntToStr((long)port, 1UL, h, 21ul);
+   aprsstr_Append(s, s_len, h, 21ul);
+} /* end ip2str() */
+
+
 static void showpip(unsigned long ip, unsigned long port)
 {
-   InOut_WriteInt((long)(ip/16777216UL), 1UL);
-   InOut_WriteString(".", 2ul);
-   InOut_WriteInt((long)(ip/65536UL&255UL), 1UL);
-   InOut_WriteString(".", 2ul);
-   InOut_WriteInt((long)(ip/256UL&255UL), 1UL);
-   InOut_WriteString(".", 2ul);
-   InOut_WriteInt((long)(ip&255UL), 1UL);
-   InOut_WriteString(":", 2ul);
-   InOut_WriteInt((long)port, 1UL);
+   char h[51];
+   ip2str(ip, port, h, 51ul);
+   InOut_WriteString(h, 51ul);
 } /* end showpip() */
 
 
@@ -385,6 +514,53 @@ static void showcall(const char b[], unsigned long b_len,
       InOut_WriteString(h, 16ul);
    }
 } /* end showcall() */
+
+
+static void listtab(char fn[], unsigned long fn_len)
+{
+   long fd;
+   pUSER u;
+   char s[201];
+   char h[201];
+   unsigned long i;
+   X2C_PCOPY((void **)&fn,fn_len);
+   fd = osi_OpenWrite(fn, fn_len);
+   if (osi_FdValid(fd)) {
+      u = users;
+      while (u) {
+         i = 0UL;
+         if (Call2Str(u->call, 7ul, h, 201ul, 0UL, &i)) {
+            while (i<10UL) {
+               h[i] = ' ';
+               ++i;
+            }
+            h[i] = 0;
+         }
+         else h[0U] = 0;
+         if (u->nospoof) aprsstr_Append(h, 201ul, "p ", 3ul);
+         else if (u->nopurge) aprsstr_Append(h, 201ul, "f ", 3ul);
+         else aprsstr_Append(h, 201ul, "  ", 3ul);
+         ip2str(u->uip, u->dport, s, 201ul);
+         aprsstr_Append(h, 201ul, s, 201ul);
+         if (u->htime>0UL) {
+            i = aprsstr_Length(h, 201ul);
+            while (i<34UL) {
+               h[i] = ' ';
+               ++i;
+            }
+            h[i] = 0;
+            aprsstr_DateToStr(u->htime, s, 201ul);
+            aprsstr_Append(h, 201ul, s, 201ul);
+         }
+         aprsstr_Append(h, 201ul, "\012", 2ul);
+         osi_WrBin(fd, (char *)h, 201u/1u, aprsstr_Length(h, 201ul));
+         u = u->next;
+      }
+      osi_Close(fd);
+   }
+   else Err("-w File Create", 15ul);
+   X2C_PFREE(fn);
+} /* end listtab() */
 
 
 static void showframe(const char s[], unsigned long s_len, const char b[],
@@ -410,7 +586,7 @@ static char cmpcall(const RAWCALL c, const char b[], unsigned long b_len,
 } /* end cmpcall() */
 
 
-static pUSER Realloc(void)
+static pUSER Realloc(char alloc)
 {
    unsigned long cnt;
    pUSER new0;
@@ -420,45 +596,41 @@ static pUSER Realloc(void)
    last = 0;
    new0 = 0;
    u = users;
-   for (;;) {
-      if (u==0) break;
-      if (u->htime+lifetime<systime || cnt>=maxentries) {
-         /* old oder too much entries */
-         if (last==0) users = 0;
-         else last->next = 0;
-         do {
-            /* free rest of chain */
-            last = u;
-            u = u->next;
-            if (new0==0) new0 = last;
-            else {
-               Storage_DEALLOCATE((X2C_ADDRESS *) &last,
-                sizeof(struct USER));
-            }
-         } while (u);
-         break;
+   while (u) {
+      if (!u->nopurge && (u->htime+lifetime<systime || cnt>=maxentries)) {
+         /* old or too much entries */
+         if (last==0) users = u->next;
+         else last->next = u->next;
+         if (show) {
+            InOut_WriteString("Purge User ", 12ul);
+            showcall(u->call, 7ul, 0UL);
+            osi_WrLn();
+         }
+         if (alloc && new0==0) new0 = u;
+         else Storage_DEALLOCATE((X2C_ADDRESS *) &u, sizeof(struct USER));
+         if (last==0) u = users;
+         else u = last->next;
+         modified = 1;
       }
-      last = u;
-      u = u->next;
-      ++cnt;
+      else {
+         last = u;
+         u = u->next;
+         ++cnt;
+      }
    }
    if (new0==0) Storage_ALLOCATE((X2C_ADDRESS *) &new0, sizeof(struct USER));
-   if (show) {
-      InOut_WriteString(" Table entries=", 16ul);
-      InOut_WriteInt((long)cnt, 1UL);
-      osi_WrLn();
-   }
+   /*  IF show THEN WrStr(" Table entries="); WrInt(cnt, 1); WrLn; END; */
    return new0;
 } /* end Realloc() */
 
 
-static void AddIp(unsigned long ip, unsigned long dp, const char buf[],
-                unsigned long buf_len)
+static void AddIp(unsigned long ip, unsigned long dp, char fix, char nspoof,
+                const char buf[], unsigned long buf_len)
 {
    pUSER last;
    pUSER u;
    unsigned long i;
-   /* for fast find, rechain to first position*/
+   /* for fast find, rechain to first position */
    struct USER * anonym;
    struct USER * anonym0;
    if (!((unsigned long)(unsigned char)buf[13UL]&1) && (unsigned char)
@@ -476,12 +648,15 @@ static void AddIp(unsigned long ip, unsigned long dp, const char buf[],
          { /* with */
             struct USER * anonym = u;
             anonym->htime = systime;
-            anonym->uip = ip; /* store if ip changed */
-            anonym->dport = dp;
+            if (!anonym->nospoof) {
+               anonym->uip = ip; /* store if ip changed */
+               anonym->dport = dp;
+            }
          }
          if (show) {
             InOut_WriteString("Found User ", 12ul);
             showcall(buf, buf_len, 7UL);
+            if (u->nospoof) InOut_WriteString(" writeprotected", 16ul);
             InOut_WriteString(" IP:", 5ul);
             showpip(u->uip, dp);
             osi_WrLn();
@@ -495,11 +670,12 @@ static void AddIp(unsigned long ip, unsigned long dp, const char buf[],
       if (show) {
          InOut_WriteString("Add User ", 10ul);
          showcall(buf, buf_len, 7UL);
+         if (nspoof) InOut_WriteString(" writeprotected", 16ul);
          InOut_WriteString(" IP:", 5ul);
          showpip(ip, dp);
          osi_WrLn();
       }
-      u = Realloc();
+      u = Realloc(1);
       if (u==0) {
          if (show) osi_WrStrLn(" user add out of memory", 24ul);
       }
@@ -514,6 +690,8 @@ static void AddIp(unsigned long ip, unsigned long dp, const char buf[],
             anonym0->uip = ip;
             anonym0->dport = dp;
             anonym0->htime = systime;
+            anonym0->nospoof = nspoof;
+            anonym0->nopurge = fix;
          }
          u->next = users;
          users = u;
@@ -615,6 +793,102 @@ static char sendtouser(char ubuf0[], unsigned long ubuf_len, long blen0)
    return ok0;
 } /* end sendtouser() */
 
+
+static void err(char h[], unsigned long h_len, char fn[],
+                unsigned long fn_len, unsigned long lc)
+{
+   char s[4001];
+   X2C_PCOPY((void **)&h,h_len);
+   X2C_PCOPY((void **)&fn,fn_len);
+   aprsstr_IntToStr((long)lc, 1UL, s, 4001ul);
+   aprsstr_Append(s, 4001ul, ":[", 3ul);
+   aprsstr_Append(s, 4001ul, fn, fn_len);
+   aprsstr_Append(s, 4001ul, "] ", 3ul);
+   aprsstr_Append(s, 4001ul, h, h_len);
+   Err(s, 4001ul);
+   X2C_PFREE(h);
+   X2C_PFREE(fn);
+} /* end err() */
+
+#define udphub_SSID "-"
+
+
+static void initroutes(char fn[], unsigned long fn_len)
+{
+   long fd;
+   char call[201];
+   char b[201];
+   unsigned long lc;
+   unsigned long j;
+   unsigned long i;
+   char spoof;
+   unsigned long ip;
+   unsigned long dp;
+   X2C_PCOPY((void **)&fn,fn_len);
+   fd = osi_OpenRead(fn, fn_len);
+   if (osi_FdValid(fd)) {
+      lc = 1UL;
+      for (;;) {
+         i = 0UL;
+         do {
+            if (osi_RdBin(fd, (char *) &b[i], 1u/1u, 1UL)<1L) goto loop_exit;
+            ++i;
+         } while (!(i>=200UL || b[i-1UL]=='\012'));
+         b[i] = 0;
+         if (b[0U]!='#') {
+            i = 0UL;
+            j = 7UL;
+            while (((unsigned char)b[i]>' ' && b[i]!='-') && b[i]!='p') {
+               if (j<13UL) {
+                  call[j] = (char)((unsigned long)(unsigned char)b[i]*2UL);
+                  ++j;
+               }
+               ++i;
+            }
+            while (j<13UL) {
+               call[j] = '@';
+               ++j;
+            }
+            j = 0UL;
+            if (b[i]=='-') {
+               ++i;
+               j = 16UL;
+               if ((unsigned char)b[i]>='0' && (unsigned char)b[i]<='9') {
+                  j = (unsigned long)(unsigned char)b[i]-48UL;
+                  ++i;
+               }
+               if ((unsigned char)b[i]>='0' && (unsigned char)b[i]<='9') {
+                  j = (j*10UL+(unsigned long)(unsigned char)b[i])-48UL;
+                  ++i;
+               }
+            }
+            if (j>15UL) err("wrong SSID in Init File", 24ul, fn, fn_len, lc);
+            call[13U] = (char)(j*2UL); /* ssid */
+            while (b[i]==' ') ++i;
+            spoof = b[i]=='p';
+            if (spoof) ++i;
+            while (b[i]==' ') ++i;
+            j = 0UL;
+            while ((unsigned char)b[i]>' ' && b[i]!='#') {
+               b[j] = b[i];
+               ++j;
+               ++i;
+            }
+            b[j] = 0;
+            if (GetIp1(b, 201ul, &ip, &dp)<0L) {
+               err("wrong IP:PORT in Init File", 27ul, fn, fn_len, lc);
+            }
+            AddIp(ip, dp, 1, spoof, call, 201ul);
+         }
+         ++lc;
+      }
+      loop_exit:;
+      osi_Close(fd);
+   }
+   else Err("-i File not found", 18ul);
+   X2C_PFREE(fn);
+} /* end initroutes() */
+
 static char ubuf[338];
 
 static long blen;
@@ -624,6 +898,10 @@ static long res;
 static unsigned long fromip;
 
 static unsigned long userdport;
+
+static unsigned long lastlist;
+
+static pUSER pu;
 
 
 X2C_STACK_LIMIT(100000l)
@@ -645,7 +923,11 @@ extern int main(int argc, char **argv)
    lifetime = 604800UL;
    alllifetime = 600UL;
    users = 0;
+   initfn[0U] = 0;
+   wrfn[0U] = 0;
    parms();
+   if (initfn[0U]) initroutes(initfn, 1025ul);
+   modified = 1;
    if (!peertopeer && digisock<0L) Err("need -u parameter", 18ul);
    usersock = openudp();
    if ((touserport==0UL || usersock<0L) || bindudp(usersock, touserport)<0L) {
@@ -656,7 +938,7 @@ extern int main(int argc, char **argv)
       fdclr();
       if (digisock>=0L) fdsetr((unsigned long)digisock);
       fdsetr((unsigned long)usersock);
-      if (selectrw(10UL, 0UL)>0L) {
+      if (selectrw(15UL, 0UL)>0L) {
          if (digisock>=0L && issetr((unsigned long)digisock)) {
             /* data from digi */
             fromip = digiip;
@@ -678,7 +960,8 @@ extern int main(int argc, char **argv)
                   showpip(fromip, touserport);
                   showframe(" from user ", 12ul, ubuf, 338ul);
                }
-               AddIp(fromip, userdport, ubuf, 338ul);
+               AddIp(fromip, userdport, 0, 0, ubuf, 338ul);
+               modified = 1;
                if (digisock>=0L) {
                   res = udpsend(digisock, ubuf, blen, todigiport, digiip);
                }
@@ -688,7 +971,15 @@ extern int main(int argc, char **argv)
             }
          }
       }
-      else systime = TimeConv_time();
+      systime = TimeConv_time();
+      if (lastlist+15UL<systime || lastlist>systime) {
+         pu = Realloc(0); /* cyclic purge */
+         if (modified) {
+            listtab(wrfn, 1025ul);
+            modified = 0;
+         }
+         lastlist = systime;
+      }
    }
    X2C_EXIT();
    return 0;
