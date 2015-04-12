@@ -5,7 +5,7 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
-/* "@(#)sondemod.c Mar 30 19:34:47 2015" */
+/* "@(#)sondemod.c Apr 12  6:20:08 2015" */
 
 
 #define X2C_int32
@@ -83,7 +83,7 @@ static char sondemod_DATAFRAME = 'i';
 
 #define sondemod_MYLONG 2.2755602787502E-1
 
-#define sondemod_NEWALMAGE 60
+#define sondemod_NEWALMAGE 30
 
 typedef char FILENAME[1024];
 
@@ -183,8 +183,12 @@ static unsigned long fragmentsize;
 
 static unsigned long clock0;
 
-static unsigned long almread; /* time last almanach read */
+static unsigned long almread;
 
+/* time last almanach read */
+static unsigned long almrequest;
+
+/* seconds rinex age to request new */
 static unsigned long almage;
 
 static unsigned long systime;
@@ -214,6 +218,10 @@ static OBJNAME objname;
 static long rxsock;
 
 static unsigned long maxalmage;
+
+static unsigned long lastip;
+
+static unsigned long lastport;
 
 
 static void Error(char text[], unsigned long text_len)
@@ -428,6 +436,7 @@ static void Parms(void)
    sondeaprs_dao = 0;
    lowbeacon = 0;
    maxalmage = 21600UL;
+   almrequest = 14400UL;
    sondeaprs_verb = 0;
    sondeaprs_verb2 = 0;
    for (channel = sondemod_LEFT;; channel++) {
@@ -499,9 +508,12 @@ static void Parms(void)
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
             maxalmage = cnum*60UL;
          }
-         else if (h[1U]=='t') {
-            Lib_NextArg(sondeaprs_commentfn, 1025ul);
+         else if (h[1U]=='R') {
+            Lib_NextArg(h, 1024ul);
+            if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
+            almrequest = cnum*60UL;
          }
+         else if (h[1U]=='t') Lib_NextArg(sondeaprs_commentfn, 1025ul);
          else if (h[1U]=='m' || h[1U]=='r') {
             sondeaprs_sendmon = h[1U]!='r';
             Lib_NextArg(h, 1024ul);
@@ -594,6 +606,8 @@ AA", 52ul);
 raw file", 58ul);
                osi_WrStrLn(" -o <UDPport>   receive demodulated data via UDP",
                  49ul);
+               osi_WrStrLn(" -R <minutes>   request new rinex almanach after \
+minutes if receiving gps (-T 240)", 83ul);
                osi_WrStrLn(" -r <ip>:<port> send AXUDP  -r 127.0.0.1:4000",
                 46ul);
                osi_WrStrLn(" -s <filename>  gps almanach sem format (not exac\
@@ -850,7 +864,7 @@ static void dogps(const char sf[], unsigned long sf_len,
       struct CONTEXT * anonym = cont;
       systime = TimeConv_time();
       if (almread>systime) almread = 0UL;
-      if (almread+120UL>systime) {
+      if (almread+60UL>systime) {
          *gpstime = systime;
          res = gpspos_getposit(anonym->timems, gpstime, sats,
                 anonym->lastlat, anonym->laslong, anonym->lastalt,
@@ -1257,10 +1271,6 @@ static void decodeframe(unsigned char m)
    struct CONTEXT * anonym0;
    struct CONTEXT * anonym1;
    unsigned long tmp;
-   if (sondeaprs_verb) {
-      osi_WrStrLn("", 1ul);
-      osi_WrStrLn("---------------", 16ul);
-   }
    /*
    FOR try:=0 TO 21*0 DO
      FOR i:=0 TO HIGH(b) DO b[i]:=CHR(0) END;
@@ -1367,7 +1377,9 @@ static void decodeframe(unsigned char m)
       }
       else if (typ=='i') {
          /*IF verb THEN WrStr("unkn ") END;*/
-         if (sondeaprs_verb) InOut_WriteString("data ", 6ul);
+         if (sondeaprs_verb) {
+            InOut_WriteString("data ", 6ul);
+         }
       }
       else if (typ=='\377') {
          /*IF verb THEN WrStr("end ") END;*/
@@ -1420,6 +1432,13 @@ static void decodeframe(unsigned char m)
             else if (context.framenum==frameno && !context.framesent) {
                calok = 1;
             }
+            else if (frameno<context.framenum && sondeaprs_verb) {
+               osi_WrStrLn("", 1ul);
+               InOut_WriteString("got out of order frame number ", 31ul);
+               InOut_WriteInt((long)frameno, 1UL);
+               InOut_WriteString(" expecting ", 12ul);
+               InOut_WriteInt((long)context.framenum, 1UL);
+            }
          }
          else if (typ=='i') {
             { /* with */
@@ -1435,26 +1454,32 @@ static void decodeframe(unsigned char m)
                { /* with */
                   struct CONTEXT * anonym0 = &context;
                   dogps(sf, 256ul, &context, &anonym0->timems, &gpstime);
-                  if (almread+60UL<=systime) {
+                  if (almread+30UL<=systime) {
                      if (gpspos_readalmanach(semfile, 1024ul, yumafile,
-                1024ul, rinexfile, 1024ul, anonym0->timems/1000UL, &almage)) {
-                        if (almread+120UL<=systime) {
+                1024ul, rinexfile, 1024ul, anonym0->timems/1000UL, &almage,
+                sondeaprs_verb)) {
+                        if (almread+60UL<=systime) {
                            dogps(sf, 256ul, &context, &anonym0->timems,
                 &gpstime);
                         }
                         almread = systime;
-                        WrRinexfn(gpstime);
                      }
-                     else osi_WrStrLn("almanach read error", 20ul);
+                     else {
+                        almread = 0UL;
+                        almage = 0UL;
+                        osi_WrStrLn("almanach read error", 20ul);
+                     }
+                     if ((rinexfile[0U] && gpstime>almage)
+                && gpstime-almage>almrequest) {
+                        WrRinexfn(gpstime); /* request a new almanach */
+                     }
                   }
                   /*WrInt(gpstime-systime, 15); WrInt(systime, 15);
                 WrStrLn(" almage"); */
                   if (gpstime>0UL && gpstime>=almage) {
                      almanachage = gpstime-almage;
                   }
-                  else {
-                     almanachage = 0UL;
-                  }
+                  else almanachage = 0UL;
                   if (almage+maxalmage>gpstime) anonym0->posok = 1;
                   else if (almanachage>0UL) {
                      InOut_WriteInt((long)(almanachage/60UL), 10UL);
@@ -1479,7 +1504,7 @@ static void decodeframe(unsigned char m)
       }
    }
    loop_exit:;
-   if (((((context.posok && calok) && almread+120UL>systime)
+   if (((((context.posok && calok) && almread+60UL>systime)
                 && (context.mesok && context.calibok==0xFFFFFFFFUL || sondeaprs_nofilter)
                 ) && context.lat!=0.0) && context.long0!=0.0) {
       { /* with */
@@ -1498,6 +1523,10 @@ static void decodeframe(unsigned char m)
                 almanachage);
          anonym1->framesent = 1;
       }
+   }
+   if (sondeaprs_verb) {
+      osi_WrStrLn("", 1ul);
+      osi_WrStrLn("---------------", 16ul);
    }
 } /* end decodeframe() */
 
@@ -1701,8 +1730,20 @@ static void udprx(void)
    unsigned long fromport;
    unsigned long ip;
    long len;
+   char s[100];
    len = udpreceive(rxsock, chan[sondemod_LEFT].rxbuf, 256L, &fromport, &ip);
-   if (len==240L) decodeframe(sondemod_LEFT);
+   if (len==240L) {
+      if (sondeaprs_verb && (ip!=lastip || fromport!=lastport)) {
+         aprsstr_ipv4tostr(ip, s, 100ul);
+         InOut_WriteString(s, 100ul);
+         InOut_WriteString(":", 2ul);
+         InOut_WriteInt((long)fromport, 1UL);
+         osi_WrStrLn("", 1ul);
+         lastip = ip;
+         lastport = fromport;
+      }
+      decodeframe(sondemod_LEFT);
+   }
    else Usleep(100000UL);
 } /* end udprx() */
 
@@ -1728,6 +1769,8 @@ extern int main(int argc, char **argv)
    objname[0] = 0;
    almread = 0UL;
    almage = 0UL;
+   lastip = 0UL;
+   lastport = 0UL;
    systime = TimeConv_time();
    for (;;) {
       if (soundfn[0U]) getadc();
