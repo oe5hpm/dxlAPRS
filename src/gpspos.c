@@ -5,7 +5,7 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
-/* "@(#)gpspos.c Mar 30  3:20:44 2015" */
+/* "@(#)gpspos.c Apr 12  6:20:09 2015" */
 
 
 #define X2C_int32
@@ -1115,7 +1115,7 @@ extern long gpspos_getposit(unsigned long weekms, unsigned long * systime,
    InOut_WriteInt((long)satcnt, 2UL);
    InOut_WriteString("=sats", 6ul);
    InOut_WriteInt((long)tries, 5UL);
-   osi_WrStrLn("=tries", 7ul);
+   InOut_WriteString("=tries ", 8ul);
    if (tries>0UL) {
       killdop(stats, 500ul, tries);
       killexo(stats, 500ul, tries, hrms, vrms);
@@ -1273,7 +1273,7 @@ struct YUMA_structAlmanac {
 extern char gpspos_readalmanach(char fnsem[], unsigned long fnsem_len,
                 char fnyuma[], unsigned long fnyuma_len, char fnrinex[],
                 unsigned long fnrinex_len, unsigned long secondinweek,
-                unsigned long * tilltime)
+                unsigned long * tilltime, char verb)
 {
    unsigned char cnt;
    unsigned long ti;
@@ -1305,15 +1305,19 @@ extern char gpspos_readalmanach(char fnsem[], unsigned long fnsem_len,
    rinexok = fnrinex[0UL] && RINEX_DecodeGPSNavigationFile(fnrinex,
                 (char *) &rinexklobuchar, (char *)rinexalm, 3071UL, &ri);
    if (rinexok && ri>0UL) {
-      InOut_WriteInt((long)ri, 1UL);
-      osi_WrStrLn("=rec", 5ul);
+      if (verb) {
+         InOut_WriteInt((long)ri, 1UL);
+         osi_WrStrLn("=rec", 5ul);
+      }
       for (i = 0UL; i<=31UL; i++) {
          min0[i] = 0UL;
       } /* end for */
       ti = ((TimeConv_time()-7200UL)+345600UL)%604800UL;
-      InOut_WriteInt((long)ti, 12UL);
-      InOut_WriteInt((long)secondinweek, 12UL);
-      osi_WrStrLn("=ti secondinweek", 17ul);
+      if (verb) {
+         InOut_WriteInt((long)ti, 12UL);
+         InOut_WriteInt((long)secondinweek, 12UL);
+         osi_WrStrLn("=ti secondinweek", 17ul);
+      }
       tmp = ri-1UL;
       j = 0UL;
       if (j<=tmp) for (;; j++) {
@@ -1356,13 +1360,13 @@ extern char gpspos_readalmanach(char fnsem[], unsigned long fnsem_len,
       for (i = 0UL; i<=31UL; i++) {
          /* WrInt(calm[i].tow, 12); WrInt(calm[i].week, 10); */
          ti = calm[i].tow+(unsigned long)calm[i].week*604800UL+315964800UL;
-         if (ti>*tilltime) {
-            *tilltime = ti; /* newest entry as hint for alm timeout */
+         if (ti>*tilltime) *tilltime = ti;
+         if (verb) {
+            wrdate(ti);
+            if ((i&3UL)==3UL) osi_WrStrLn("", 1ul);
+            else InOut_WriteString(" ", 2ul);
          }
-         wrdate(ti);
-         osi_WrStrLn("", 1ul);
       } /* end for */
-      osi_WrStrLn("=used tow", 10ul);
    }
    else if (semok) {
       for (i = 0UL; i<=31UL; i++) {
