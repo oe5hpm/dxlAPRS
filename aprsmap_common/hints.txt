@@ -811,7 +811,7 @@ dire-wolf soundmodem:
  udpflex.exe -U :9002:9001 -T :
 
 example (unix):
- afskmodem -t /dev/ttyS0 -M 0 -U 127.0.0.1:9002:9001 -m 0
+ afskmodem -f 22050 -C 0 -p /dev/ttyS0 0 -M 0 -U 127.0.0.1:9002:9001 -m 0
 
 try the line before in a dos-terminal with -h or -v option
 
