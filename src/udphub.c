@@ -127,10 +127,12 @@ static char initfn[1025];
 
 static char wrfn[1025];
 
+static RAWCALL broadcastdest;
 /*
 PROCEDURE ["C"] / select(n: INTEGER; readfds: ADDRESS; writefds: ADDRESS;
                          exceptfds: ADDRESS; timeout: ADDRESS) : INTEGER;
 */
+
 
 static void Err(const char text[], unsigned long text_len)
 {
@@ -339,6 +341,46 @@ static char Call2Str(const char r[], unsigned long r_len, char t[],
    return 1;
 } /* end Call2Str() */
 
+#define udphub_SSID "-"
+
+
+static char Str2Call(char s[], unsigned long s_len, unsigned long * i,
+                unsigned long p, char cb[], unsigned long cb_len)
+{
+   unsigned long j;
+   char Str2Call_ret;
+   X2C_PCOPY((void **)&s,s_len);
+   j = p;
+   while ((*i<=s_len-1 && (unsigned char)s[*i]>' ') && s[*i]!='-') {
+      if (j<p+6UL) {
+         cb[j] = (char)((unsigned long)(unsigned char)s[*i]*2UL);
+         ++j;
+      }
+      ++*i;
+   }
+   while (j<p+6UL) {
+      cb[j] = '@';
+      ++j;
+   }
+   j = 0UL;
+   if (s[*i]=='-') {
+      ++*i;
+      j = 16UL;
+      if ((unsigned char)s[*i]>='0' && (unsigned char)s[*i]<='9') {
+         j = (unsigned long)(unsigned char)s[*i]-48UL;
+         ++*i;
+      }
+      if ((unsigned char)s[*i]>='0' && (unsigned char)s[*i]<='9') {
+         j = (j*10UL+(unsigned long)(unsigned char)s[*i])-48UL;
+         ++*i;
+      }
+   }
+   cb[p+6UL] = (char)(j*2UL+1UL); /* ssid */
+   Str2Call_ret = j<=15UL;
+   X2C_PFREE(s);
+   return Str2Call_ret;
+} /* end Str2Call() */
+
 
 static long GetIp(char h[], unsigned long h_len, unsigned long * ip,
                 unsigned long * dp, unsigned long * lp, long * fd,
@@ -398,6 +440,14 @@ static void parms(void)
             alllifetime = i*60UL;
          }
          else if (h[1U]=='a') peertopeer = 1;
+         else if (h[1U]=='b') {
+            Lib_NextArg(h, 1024ul);
+            if (h[0U]==0) Err("-b call", 8ul);
+            i = 0UL;
+            if (!Str2Call(h, 1024ul, &i, 0UL, broadcastdest, 7ul)) {
+               Err("-b wrong SSID", 14ul);
+            }
+         }
          else if (h[1U]=='i') {
             /* init filename */
             Lib_NextArg(initfn, 1025ul);
@@ -427,6 +477,8 @@ static void parms(void)
                osi_WrLn();
                osi_WrStrLn(" -a                                route user-to-\
 host and user-to-user", 71ul);
+               osi_WrStrLn(" -b <call>                         broadcast dest\
+ination call", 62ul);
                osi_WrStrLn(" -h                                this", 40ul);
                osi_WrStrLn(" -i <file>                         init routes fr\
 om file", 57ul);
@@ -449,8 +501,32 @@ le to file if new entries", 75ul);
                osi_WrLn();
                osi_WrStrLn("Initfile:", 10ul);
                osi_WrStrLn("NOCALL-15 192.168.0.1:4711 #comment", 36ul);
-               osi_WrStrLn("NOCALL-15p192.168.0.1:4711", 27ul);
+               osi_WrStrLn("NOCALL-15 p 192.168.0.1:4711 #protected entry",
+                46ul);
                osi_WrStrLn("#comment", 9ul);
+               osi_WrStrLn("NOCALL-15 p 0.0.0.0:0 no user-to-user routing",
+                46ul);
+               osi_WrLn();
+               osi_WrStrLn("Routing:", 9ul);
+               osi_WrStrLn("Source: AX.25 Source Call makes table entry with \
+call/ip/sourceport/date", 73ul);
+               osi_WrStrLn("        Exception: Protected entry updates Date o\
+nly", 53ul);
+               osi_WrLn();
+               osi_WrStrLn("Destination:", 13ul);
+               osi_WrStrLn("Uses first Digi with no H-bit, if not present, de\
+stination call is used", 72ul);
+               osi_WrStrLn("If call (with matching ssid) not found, a copy to\
+ (max. -L time old)", 69ul);
+               osi_WrStrLn("same calls with any ssid will be sent.", 39ul);
+               osi_WrStrLn("All user data is sent to (-u ...) host, user to (\
+found) user with -a", 69ul);
+               osi_WrStrLn("If destination matches (-b) broadcast call, a cop\
+y will be sent to", 67ul);
+               osi_WrStrLn("all (max. -L time old) users", 29ul);
+               osi_WrLn();
+               osi_WrStrLn("(-l) time old table entries will be purged except\
+ those from init file", 71ul);
                X2C_ABORT();
             }
             err0 = 1;
@@ -720,13 +796,14 @@ static char FindIp(unsigned long * toip, unsigned long * toport,
 
 static char FindNextSsid(pUSER * u, unsigned long * toip,
                 unsigned long * toport, const char buf[],
-                unsigned long buf_len, unsigned long callpos)
+                unsigned long buf_len, unsigned long callpos,
+                char broadcast)
 {
    if (*u==0) *u = users;
    else *u = (*u)->next;
    while (*u) {
-      if ((*u)->htime+alllifetime>=systime && cmpcall((*u)->call, buf,
-                buf_len, callpos, 0)) {
+      if ((*u)->htime+alllifetime>=systime && (broadcast || cmpcall((*u)
+                ->call, buf, buf_len, callpos, 0))) {
          *toip = (*u)->uip;
          *toport = (*u)->dport;
          return 1;
@@ -760,36 +837,47 @@ static char sendtouser(char ubuf0[], unsigned long ubuf_len, long blen0)
    long ci;
    long res0;
    char ok0;
-   ok0 = 0;
-   ci = 0L;
-   do {
-      /*WrInt(ci, 5); WrInt(ORD(ubuf[ci]), 5);
-                WrInt(ORD(ubuf[ci+(CALLLEN-1)]), 5); WrStrLn("<<<"); */
-      if (ci==0L || (unsigned char)ubuf0[ci+6L]<(unsigned char)'\200') {
-         /* dest or via call with no h-bit */
-         if (FindIp(&toip, &userdport0, ubuf0, ubuf_len, (unsigned long)ci)) {
-            /* user and ssid fits */
-            res0 = udpsend(usersock, ubuf0, blen0, userdport0, toip);
-            ok0 = 1;
-         }
-         else if (alllifetime>0UL) {
-            /* look for fitting user with any ssid */
-            u = 0;
-            while (FindNextSsid(&u, &toip, &userdport0, ubuf0, ubuf_len,
-                (unsigned long)ci)) {
-               if (!(ok0 && FindsameIP(u, toip, userdport0, ubuf0, ubuf_len,
-                (unsigned long)ci))) {
-                  /* have not sent to same ip:port before */
-                  res0 = udpsend(usersock, ubuf0, blen0, userdport0, toip);
-                  ok0 = 1;
-               }
-            }
+   char broadcast;
+   broadcast = broadcastdest[0U] && cmpcall(broadcastdest, ubuf0, ubuf_len,
+                0UL, 1);
+   ci = 7L;
+   if (((unsigned long)(unsigned char)ubuf0[13UL]&1)) ci = 0L;
+   else {
+      for (;;) {
+         ci += 7L;
+         if (ci>63L || ci+7L>=blen0) return 0;
+         /* no valid frame */
+         if ((unsigned char)ubuf0[ci+6L]<(unsigned char)'\200') break;
+         if (((unsigned long)(unsigned char)ubuf0[ci+6L]&1)) {
+            ci = 0L; /* all h-bits set */
+            break;
          }
       }
-      if (ci==0L) ci = 14L;
-      else ci += 7L;
-   } while (!((ci>63L || ci+7L>=blen0) || ((unsigned long)(unsigned char)ubuf0[ci-1L]&1)));
-   /* address field end */
+   }
+   ok0 = 0;
+   if (!broadcast && FindIp(&toip, &userdport0, ubuf0, ubuf_len,
+                (unsigned long)ci)) {
+      /* user and ssid fits */
+      if (userdport0>0UL) {
+         res0 = udpsend(usersock, ubuf0, blen0, userdport0, toip);
+      }
+      ok0 = 1;
+   }
+   else if (alllifetime>0UL) {
+      /* look for fitting user with any ssid */
+      u = 0;
+      while (FindNextSsid(&u, &toip, &userdport0, ubuf0, ubuf_len,
+                (unsigned long)ci, broadcast)) {
+         if (!(ok0 && FindsameIP(u, toip, userdport0, ubuf0, ubuf_len,
+                (unsigned long)ci))) {
+            /* have not sent to same ip:port before */
+            if (userdport0>0UL) {
+               res0 = udpsend(usersock, ubuf0, blen0, userdport0, toip);
+            }
+            ok0 = 1;
+         }
+      }
+   }
    return ok0;
 } /* end sendtouser() */
 
@@ -805,12 +893,10 @@ static void err(char h[], unsigned long h_len, char fn[],
    aprsstr_Append(s, 4001ul, fn, fn_len);
    aprsstr_Append(s, 4001ul, "] ", 3ul);
    aprsstr_Append(s, 4001ul, h, h_len);
-   Err(s, 4001ul);
+   osi_WrStrLn(s, 4001ul);
    X2C_PFREE(h);
    X2C_PFREE(fn);
 } /* end err() */
-
-#define udphub_SSID "-"
 
 
 static void initroutes(char fn[], unsigned long fn_len)
@@ -837,33 +923,9 @@ static void initroutes(char fn[], unsigned long fn_len)
          b[i] = 0;
          if (b[0U]!='#') {
             i = 0UL;
-            j = 7UL;
-            while (((unsigned char)b[i]>' ' && b[i]!='-') && b[i]!='p') {
-               if (j<13UL) {
-                  call[j] = (char)((unsigned long)(unsigned char)b[i]*2UL);
-                  ++j;
-               }
-               ++i;
+            if (!Str2Call(b, 201ul, &i, 7UL, call, 201ul)) {
+               err("wrong SSID in Init File", 24ul, fn, fn_len, lc);
             }
-            while (j<13UL) {
-               call[j] = '@';
-               ++j;
-            }
-            j = 0UL;
-            if (b[i]=='-') {
-               ++i;
-               j = 16UL;
-               if ((unsigned char)b[i]>='0' && (unsigned char)b[i]<='9') {
-                  j = (unsigned long)(unsigned char)b[i]-48UL;
-                  ++i;
-               }
-               if ((unsigned char)b[i]>='0' && (unsigned char)b[i]<='9') {
-                  j = (j*10UL+(unsigned long)(unsigned char)b[i])-48UL;
-                  ++i;
-               }
-            }
-            if (j>15UL) err("wrong SSID in Init File", 24ul, fn, fn_len, lc);
-            call[13U] = (char)(j*2UL); /* ssid */
             while (b[i]==' ') ++i;
             spoof = b[i]=='p';
             if (spoof) ++i;
@@ -878,7 +940,7 @@ static void initroutes(char fn[], unsigned long fn_len)
             if (GetIp1(b, 201ul, &ip, &dp)<0L) {
                err("wrong IP:PORT in Init File", 27ul, fn, fn_len, lc);
             }
-            AddIp(ip, dp, 1, spoof, call, 201ul);
+            else AddIp(ip, dp, 1, spoof, call, 201ul);
          }
          ++lc;
       }
@@ -925,6 +987,7 @@ extern int main(int argc, char **argv)
    users = 0;
    initfn[0U] = 0;
    wrfn[0U] = 0;
+   broadcastdest[0U] = 0;
    parms();
    if (initfn[0U]) initroutes(initfn, 1025ul);
    modified = 1;

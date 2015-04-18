@@ -322,5 +322,12 @@ udphub
   den bekannten ssid, -L 0 ist off 
 
 
+13.4.2015
+
+  Routingtabelle wird (wenn Aktivitaet war und Filename gegeben) alle 15s in ein
+  Textfile geschrieben.
+  Fixe Routen aus Textfile mit Zielport 0 sperrt senden zu dem Call (zum Host gehts immer),
+  damit durch falsche dynamische Routen kein doppelter Weg zu den Calls, die via Host
+  gehen, entstehen kann.
 
 
