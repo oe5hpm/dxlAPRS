@@ -43,7 +43,9 @@ OBJ= \
 	osi.o \
 	tcp.o \
 	udp.o \
-	udpflex.o
+	udpflex.o \
+        cfileio.o
+
 # ------------------- target make rules -------------------
 #                     -----------------
 

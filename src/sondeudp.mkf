@@ -45,7 +45,9 @@ OBJ= \
 	sondeudp.o \
 	soundctl.o \
 	tcp.o \
-	udp.o
+	udp.o \
+        cfileio.o
+
 # ------------------- target make rules -------------------
 #                     -----------------
 

@@ -85,6 +85,8 @@ OBJ= \
 	udp.o \
 	useri.o \
 	xosi.o \
+        cfileio.o
+
 
 
 # ------------------- target make rules -------------------

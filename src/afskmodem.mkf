@@ -48,7 +48,9 @@ OBJ= \
 	soundctl.o \
 	symlink.o \
 	tcp.o \
-	udp.o
+	udp.o \
+        cfileio.o
+
 # ------------------- target make rules -------------------
 #                     -----------------
 

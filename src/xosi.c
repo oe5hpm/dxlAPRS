@@ -18,7 +18,9 @@
 #ifndef xmRTS_H_
 #include "xmRTS.h"
 #endif
-#include <signal.h>
+#ifndef signal_H_
+#include "signal.h"
+#endif
 #include <wait.h>
 #ifndef beep_H_
 #include "beep.h"
@@ -39,7 +41,9 @@
 #ifndef osi_H_
 #include "osi.h"
 #endif
-#include <math.h>
+#ifndef RealMath_H_
+#include "RealMath.h"
+#endif
 #ifndef aprsstr_H_
 #include "aprsstr.h"
 #endif
@@ -67,22 +71,6 @@ char xosi_pulling;
 char xosi_Shift;
 char xosi_headmh[251];
 struct xosi_CUTBUF xosi_cutbuffer;
-/*
- * APRSmap APRS-Client Copyright (c) 2014 OE5DXL
- * <oe5dxl@oe5xbl.#oe5.aut.eu, oe5dxl@oevsv.at>
- *     This program is free software: you can redistribute it and/or modify
- *     it under the terms of the GNU General Public License as published by
- *     the Free Software Foundation, either version 3 of the License, or
- *     (at your option) any later version.
- *
- *     This program is distributed in the hope that it will be useful,
- *     but WITHOUT ANY WARRANTY; without even the implied warranty of
- *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *     GNU General Public License for more details.
- *
- *     You should have received a copy of the GNU General Public License
- *     along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
 /* graphical os interface linux/win32 */
 /*FROM InOut IMPORT WriteLn, WriteString; */
 /*FROM fcntl IMPORT creat, open; */
@@ -157,9 +145,9 @@ static unsigned long Gamma(unsigned long c, float g)
          goto label;
       }
       if (c<1024UL) {
-         Gamma_ret = (unsigned long)X2C_TRUNCC(exp(X2C_DIVL(log((double)
-                (X2C_DIVR((float)c,1024.0f))),(double)g))*255.5,0UL,
-                X2C_max_longcard);
+         Gamma_ret = (unsigned long)
+                X2C_TRUNCC(RealMath_exp(X2C_DIVR(RealMath_ln(X2C_DIVR((float)
+                c,1024.0f)),g))*255.5f,0UL,X2C_max_longcard);
          goto label;
       }
       Gamma_ret = 255UL;

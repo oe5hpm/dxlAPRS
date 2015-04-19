@@ -5,7 +5,7 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
-/* "@(#)sondemod.c Apr 12  6:20:08 2015" */
+/* "@(#)sondemod.c Apr 19 13:36:16 2015" */
 
 
 #define X2C_int32
@@ -344,7 +344,7 @@ static void OpenSound(void)
 {
    long s;
    long i0;
-   soundfd = open(soundfn, 2L);
+   soundfd = osi_OpenRW(soundfn, 1024ul);
    if (soundfd>=0L) {
       i0 = samplesize(soundfd, 16UL); /* 8, 16 */
       i0 = channels(soundfd, (unsigned long)maxchannels+1UL); /* 1, 2  */

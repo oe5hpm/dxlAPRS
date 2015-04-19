@@ -44,7 +44,9 @@ OBJ= \
 	osi.o \
 	tcp.o \
 	udp.o \
-	udpgate4.o
+	udpgate4.o \
+        cfileio.o
+
 # ------------------- target make rules -------------------
 #                     -----------------
 

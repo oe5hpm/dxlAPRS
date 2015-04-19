@@ -459,7 +459,7 @@ static void rdlonglog(aprsdecode_pOPHIST * optab, char fn[],
    *lines = 0L;
    aprsstr_cleanfilename(fn, fn_len);
    if (fn[0UL]==0) goto label;
-   fc = osi_OpenRead(fn, fn_len);
+   fc = osi_OpenReadLong(fn, fn_len);
    if (!osi_FdValid(fc)) goto label;
    *firstread = 0UL;
    *lastread = 0UL;
@@ -630,142 +630,6 @@ static void rdlog(aprsdecode_pOPHIST * optab, char fn[],
    X2C_PFREE(find0);
 } /* end rdlog() */
 
-/*
-PROCEDURE rdlog(VAR optab:pOPHIST; fn:ARRAY OF CHAR; from:TIME; span:INTEGER;
-                 find:ARRAY OF CHAR):BOOLEAN;
-CONST MINSTEP=5000;                       (* stop binary search *)
-      SEEKBUF=1024;                       (* buffer size while binary search *)
-      RETR=200;                           (* if unsort file break binary search *)
-
-VAR fc:File;
-    rp, len, ret:INTEGER;
-    ib:ARRAY[0..32767] OF CHAR;
-    wp, i, j:CARDINAL;
-    mbuf:FRAMEBUF;
-    start, end:TIME; 
-    op:pOPHIST;
-    dat:DAT;
-    lfc:CARDINAL;
-    t:TIME;
-    fnn, fnd:FILENAME;
-
-BEGIN
-  cleanfilename(fn);
-WrStrLn(fn);
-  IF fn[0]=0C THEN RETURN FALSE END;
-
-  Assign(fnn, fn);
-
-  IF span<0 THEN
-    IF from>VAL(TIME,-span*2) THEN INC(from, span*2) ELSE from:=0 END;
-  END;
-
-  t:=from;
-  IF t<1388534400 THEN t:=1388534400 END;
-  to:=t;
-  LOOP
-    fnd:=fnn; 
-    logfndate(t, fnd);
- WrStr(fnd); WrStrLn("<open");
-    fc:=OpenRead(fnd);
-    from:=t;
-    IF FdValid(fc) THEN EXIT END;
-
-    IF span<0 THEN
-      DEC(t, 3600*24);
-      IF t<1388534400 THEN 
-        span:=ABS(span);
-        t:=(from DIV (3600*24))*(3600*24);
-      END;
-
-    ELSE
-      INC(t, 3600*24);
-      IF t>realtime THEN EXIT END;
- 
-    END; 
-  END; 
-
-  logredcnt:=0;
-  IF NOT FdValid(fc) THEN RETURN FALSE END;
-
-  find[HIGH(find)]:=0C;
-  logstarttime:=0;
-  end:=0;
-  IF (find[0]=0C) OR (span<0) THEN end:=from+VAL(CARDINAL,
-                ABS(span)) ELSE end:=0 END;
-
-  len:=0;
-  rp:=0; 
-  wp:=0; 
-  IF from=0 THEN lfc:=2 ELSE lfc:=0 END;
-                (* take first line if file is on start *) 
-
-  LOOP
-    IF rp>=len THEN
-
-      len:=RdBin(fc,ib,SIZE(ib));
-      IF len<=0 THEN
-        Close(fc);
-        REPEAT 
-          t:=(t DIV (3600*24)+1)*(3600*24);       (* next day start *)
-          IF t>realtime THEN EXIT END;
-
-          fnd:=fnn;
-          logfndate(t, fnd);
-          fc:=OpenRead(fnd);
-        UNTIL FdValid(fc);
-        len:=RdBin(fc,ib,SIZE(ib));
-        IF len<=0 THEN EXIT END;
-
-      END;
-      rp:=0;
-    END;
-
-    mbuf[wp]:=ib[rp];
-    IF mbuf[wp]=LF THEN
-      INC(lfc);
-      mbuf[wp]:=0C;
-      IF (lfc>=2) & rdlogdate(mbuf, start, i) & (start>=from) THEN
-        IF logstarttime=0 THEN logstarttime:=start END;
-        IF (find[0]=0C) OR cmpcall(mbuf, i+1, find) THEN 
-          IF from<start THEN from:=start END; 
-
-          IF end=0 THEN end:=from+VAL(TIME, ABS(span)) END;
-          IF start>=end THEN EXIT END;
-
-          to:=start;
-          INC(i);
-          j:=0;  
-          REPEAT 
-            mbuf[j]:=mbuf[i];
-            INC(j);
-            INC(i);
-          UNTIL (i>=HIGH(mbuf)) OR (mbuf[i]=0C);
-          mbuf[j]:=0C;
-
-          IF Decode(mbuf, dat)>=0 THEN
-            ret:=Stoframe(optab, mbuf, start, TRUE, dat);
-            INC(logredcnt);
-          END;
-        END;
-      END;
-      wp:=0;
-    ELSIF wp<HIGH(mbuf)-1 THEN INC(wp) END;
-    INC(rp)
-  END;
-  IF end>0 THEN from:=end END;
-  IF logstarttime>0 THEN from:=logstarttime END;
-  
-  Close(fc);
-
-  op:=optab;
-  WHILE op<>NIL DO
-    Checktrack(op, NIL);
-    op:=op^.next;
-  END;
-  RETURN TRUE
-END rdlog;
-*/
 
 static char moving(aprsdecode_pOPHIST op)
 {
@@ -4708,7 +4572,9 @@ static void MainEvent(void)
 ", 1ul);
       }
       else if (aprsdecode_click.cmd=='0') setshowall();
-      else if (aprsdecode_click.cmd=='1') View(0UL);
+      else if (aprsdecode_click.cmd=='1' || aprsdecode_click.cmd=='\001') {
+         View(0UL);
+      }
       else if (aprsdecode_click.cmd=='2') View(1UL);
       else if (aprsdecode_click.cmd=='3') View(2UL);
       else if (aprsdecode_click.cmd=='4') View(3UL);

@@ -50,11 +50,37 @@
 #include "RealIO.h"
 #endif
 #include <unistd.h>
+#ifndef cfileio_H_
+#include "cfileio.h"
+#endif
 
 /* os interface linux/win32 */
 /*FROM Storage IMPORT ALLOCATE, DEALLOCATE; */
 /*FROM Select IMPORT fdsetr, fdsetw; */
 /*FROM aprsstr IMPORT IntToStr, Append, Length; */
+#define osi_oTRUNC 512
+/* open with truncation */
+
+#define osi_oAPPEND 1024
+/* append, i.e writes at the end */
+
+#define osi_oNONBLOCK 2048
+/* open and accesses never block */
+
+#define osi_oRDWR 2
+/* open for reading and writing */
+
+#define osi_oWRONLY 1
+/* open for writing only */
+
+#define osi_oRDONLY 0
+/* open for reading only */
+
+#define osi_oCREAT 64
+/* create if not exists */
+
+#define osi_oLARGEFILE 32768
+
 static IOChan_ChanId cid;
 
 
@@ -98,35 +124,22 @@ extern void osi_WrHex(unsigned long n, unsigned long f)
    }
 } /* end WrHex() */
 
-/*
-PROCEDURE OpenMode(name:ARRAY OF CHAR; mode:INTEGER):File;
-BEGIN
-  IF (name[0] = '-') AND ((HIGH(name) = 0) OR (name[1] = CHR(0)))
-                THEN RETURN 0 END;
-  RETURN open(name, mode)
-END OpenMode;
 
---PROCEDURE Create(name:ARRAY OF CHAR):File;
---BEGIN RETURN creat(name, 644B) END Create;
+extern long osi_OpenAppendLong(char fn[], unsigned long fn_len)
+{
+   long osi_OpenAppendLong_ret;
+   X2C_PCOPY((void **)&fn,fn_len);
+   osi_OpenAppendLong_ret = cOpenAppendLong(fn);
+   X2C_PFREE(fn);
+   return osi_OpenAppendLong_ret;
+} /* end OpenAppendLong() */
 
-PROCEDURE OpenAppend(fn:ARRAY OF CHAR):File;
-BEGIN RETURN OpenMode(fn, oWRONLY+oAPPEND+oLARGEFILE) END OpenAppend;
-
-PROCEDURE OpenWrite(fn:ARRAY OF CHAR):File;
-BEGIN RETURN creat(fn, 644B) END OpenWrite;
-
-PROCEDURE OpenRead(fn:ARRAY OF CHAR):File;
-BEGIN RETURN OpenMode(fn, oRDONLY+oLARGEFILE) END OpenRead;
-
-PROCEDURE OpenRW(fn:ARRAY OF CHAR):File;
-BEGIN RETURN OpenMode(fn, oRDWR) END OpenRW;
-*/
 
 extern long osi_OpenAppend(char fn[], unsigned long fn_len)
 {
    long osi_OpenAppend_ret;
    X2C_PCOPY((void **)&fn,fn_len);
-   osi_OpenAppend_ret = open(fn, 33793L);
+   osi_OpenAppend_ret = cOpenAppend(fn);
    X2C_PFREE(fn);
    return osi_OpenAppend_ret;
 } /* end OpenAppend() */
@@ -136,17 +149,27 @@ extern long osi_OpenWrite(char fn[], unsigned long fn_len)
 {
    long osi_OpenWrite_ret;
    X2C_PCOPY((void **)&fn,fn_len);
-   osi_OpenWrite_ret = creat(fn, 420L);
+   osi_OpenWrite_ret = cOpenWrite(fn);
    X2C_PFREE(fn);
    return osi_OpenWrite_ret;
 } /* end OpenWrite() */
+
+
+extern long osi_OpenReadLong(char fn[], unsigned long fn_len)
+{
+   long osi_OpenReadLong_ret;
+   X2C_PCOPY((void **)&fn,fn_len);
+   osi_OpenReadLong_ret = cOpenReadLong(fn);
+   X2C_PFREE(fn);
+   return osi_OpenReadLong_ret;
+} /* end OpenReadLong() */
 
 
 extern long osi_OpenRead(char fn[], unsigned long fn_len)
 {
    long osi_OpenRead_ret;
    X2C_PCOPY((void **)&fn,fn_len);
-   osi_OpenRead_ret = open(fn, 32768L);
+   osi_OpenRead_ret = cOpenRead(fn);
    X2C_PFREE(fn);
    return osi_OpenRead_ret;
 } /* end OpenRead() */
@@ -156,10 +179,20 @@ extern long osi_OpenRW(char fn[], unsigned long fn_len)
 {
    long osi_OpenRW_ret;
    X2C_PCOPY((void **)&fn,fn_len);
-   osi_OpenRW_ret = open(fn, 2L);
+   osi_OpenRW_ret = cOpenRW(fn);
    X2C_PFREE(fn);
    return osi_OpenRW_ret;
 } /* end OpenRW() */
+
+
+extern long osi_OpenNONBLOCK(char fn[], unsigned long fn_len)
+{
+   long osi_OpenNONBLOCK_ret;
+   X2C_PCOPY((void **)&fn,fn_len);
+   osi_OpenNONBLOCK_ret = cOpenNONBLOCK(fn);
+   X2C_PFREE(fn);
+   return osi_OpenNONBLOCK_ret;
+} /* end OpenNONBLOCK() */
 
 
 extern char osi_FdValid(long fd)

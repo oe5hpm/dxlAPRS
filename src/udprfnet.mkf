@@ -42,7 +42,9 @@ OBJ= \
 	osi.o \
 	tcp.o \
 	udp.o \
-	udprfnet.o
+	udprfnet.o \
+        cfileio.o
+
 # ------------------- target make rules -------------------
 #                     -----------------
 

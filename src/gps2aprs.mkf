@@ -45,7 +45,9 @@ OBJ= \
 	gps2aprs.o \
 	osi.o \
 	tcp.o \
-	udp.o
+	udp.o \
+        cfileio.o
+
 # ------------------- target make rules -------------------
 #                     -----------------
 

@@ -5,7 +5,7 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
-/* "@(#)gps2digipos.c Mar 18  4:03:15 2014" */
+/* "@(#)gps2digipos.c Apr 19 13:43:58 2015" */
 
 
 #define X2C_int32
@@ -23,7 +23,9 @@
 #ifndef InOut_H_
 #include "InOut.h"
 #endif
-#include <mlib.h>
+#ifndef mlib_H_
+#include "mlib.h"
+#endif
 #ifndef aprsstr_H_
 #include "aprsstr.h"
 #endif
@@ -38,70 +40,66 @@
 
 #define gps2digipos_PI 3.1415926535898
 
-static X2C_CHAR tbuf[1024];
+static char tbuf[1024];
 
-static X2C_CHAR ttynamee[1024];
+static char ttynamee[1024];
 
-static X2C_CHAR basefilename[1024];
+static char basefilename[1024];
 
-static X2C_CHAR symt;
+static unsigned long baud;
 
-static X2C_CHAR symb;
+static long tty;
 
-static X2C_CARD32 baud;
+static char verb;
 
-static X2C_INT32 tty;
+static char usbrobust;
 
-static X2C_BOOLEAN verb;
+static char junk;
 
-static X2C_BOOLEAN usbrobust;
+static char sumoff;
 
-static X2C_BOOLEAN junk;
+static char withalti;
 
-static X2C_BOOLEAN sumoff;
+static unsigned long comptyp;
 
-static X2C_BOOLEAN withalti;
+static unsigned long comintval;
 
-static X2C_CARD32 comptyp;
+static unsigned long comcnt;
 
-static X2C_CARD32 comintval;
+static unsigned long mediantime;
 
-static X2C_CARD32 comcnt;
-
-static X2C_CARD32 mediantime;
-
-static X2C_CARD32 medians;
+static unsigned long medians;
 
 static struct termios saved;
 
-static X2C_LONGREAL speed;
+static double speed;
 
-static X2C_LONGREAL course;
+static double course;
 
-static X2C_LONGREAL lat;
+static double lat;
 
-static X2C_LONGREAL long0;
+static double long0;
 
-static X2C_LONGREAL alt;
+static double alt;
 
-static X2C_BOOLEAN altok;
+static char altok;
 
-static X2C_BOOLEAN posok;
+static char posok;
 
 struct _0;
 
 
 struct _0 {
-   X2C_LONGREAL mlat;
-   X2C_LONGREAL mlong;
-   X2C_LONGREAL malt;
-   X2C_BOOLEAN ok0;
+   double mlat;
+   double mlong;
+   double malt;
+   char ok0;
 };
 
 static struct _0 median[500];
 
 
-static void Error(X2C_CHAR text[], X2C_CARD32 text_len)
+static void Error(char text[], unsigned long text_len)
 {
    X2C_PCOPY((void **)&text,text_len);
    InOut_WriteString("agps2digipos: ", 15ul);
@@ -112,20 +110,36 @@ static void Error(X2C_CHAR text[], X2C_CARD32 text_len)
 } /* end Error() */
 
 
-static X2C_CARD32 truncc(X2C_LONGREAL r)
+static unsigned long truncc(double r)
 {
    if (r<=0.0) return 0UL;
    else if (r>=2.147483647E+9) return 2147483647UL;
-   else return (X2C_CARD32)X2C_TRUNCC(r,0UL,X2C_max_longcard);
+   else return (unsigned long)X2C_TRUNCC(r,0UL,X2C_max_longcard);
    return 0;
 } /* end truncc() */
 
 
-static void SetComMode(X2C_INT32 fd, X2C_CARD32 baud0)
+static char SetStatLine(long fd, char rts, char dtr)
+{
+   unsigned long arg[256];
+   long r;
+   arg[0U] = 4UL;
+   if (rts) r = ioctl(fd, 21526L, (char *)arg);
+   else r = ioctl(fd, 21527L, (char *)arg);
+   if (r>=0L) {
+      arg[0U] = 2UL;
+      if (dtr) r = ioctl(fd, 21526L, (char *)arg);
+      else r = ioctl(fd, 21527L, (char *)arg);
+   }
+   return r>=0L;
+} /* end SetStatLine() */
+
+
+static void SetComMode(long fd, unsigned long baud0)
 {
    struct termios term;
-   X2C_INT32 res;
-   X2C_CARD32 bd;
+   long res;
+   unsigned long bd;
    struct termios * anonym;
    if (baud0==1200UL) bd = 9UL;
    else if (baud0==2400UL) bd = 11UL;
@@ -162,15 +176,16 @@ static void opentty(void)
       if (!usbrobust) Error("tty open", 9ul);
       usleep(1000000UL);
    }
+   SetStatLine(tty, 0, 0);
 } /* end opentty() */
 
 
-static X2C_BOOLEAN GetNum(const X2C_CHAR h[], X2C_CARD32 h_len, X2C_CHAR eot,
-                 X2C_CARD32 * p, X2C_CARD32 * n)
+static char GetNum(const char h[], unsigned long h_len, char eot,
+                unsigned long * p, unsigned long * n)
 {
    *n = 0UL;
-   while ((X2C_CARD8)h[*p]>='0' && (X2C_CARD8)h[*p]<='9') {
-      *n = ( *n*10UL+(X2C_CARD32)(X2C_CARD8)h[*p])-48UL;
+   while ((unsigned char)h[*p]>='0' && (unsigned char)h[*p]<='9') {
+      *n = ( *n*10UL+(unsigned long)(unsigned char)h[*p])-48UL;
       ++*p;
    }
    return h[*p]==eot;
@@ -179,9 +194,9 @@ static X2C_BOOLEAN GetNum(const X2C_CHAR h[], X2C_CARD32 h_len, X2C_CHAR eot,
 
 static void Parms(void)
 {
-   X2C_BOOLEAN err;
-   X2C_CHAR h[1024];
-   X2C_CARD32 i;
+   char err;
+   char h[1024];
+   unsigned long i;
    err = 0;
    for (;;) {
       Lib_NextArg(h, 1024ul);
@@ -190,15 +205,6 @@ static void Parms(void)
          if (h[1U]=='u') usbrobust = 0;
          else if (h[1U]=='s') sumoff = 1;
          else if (h[1U]=='a') withalti = 1;
-         else if (h[1U]=='i') {
-            Lib_NextArg(h, 1024ul);
-            if ((X2C_CARD8)h[0U]>' ') {
-               symt = h[0U];
-               if ((X2C_CARD8)h[1U]>' ') symb = h[1U];
-               else symb = 0;
-            }
-            else Error("-i <icon> (house /-)", 21ul);
-         }
          else if (h[1U]=='f') {
             Lib_NextArg(basefilename, 1024ul);
             if (basefilename[0U]==0) Error("-f filename", 12ul);
@@ -245,11 +251,9 @@ static void Parms(void)
 t into APRS-beacon", 68ul);
                osi_WrStrLn(" -a                                altitude on",
                 47ul);
-               osi_WrStrLn(" -f                                writes <filena\
-me.pos> and <filename.alt>", 76ul);
+               osi_WrStrLn(" -f <filename>                     writes <fn.lat\
+> <fn.long> and <filename.alt>", 80ul);
                osi_WrStrLn(" -h                                this", 40ul);
-               osi_WrStrLn(" -i <icon>                         2 Icon chars \\
-"/-\" (House), \"/>\" (Car)...", 76ul);
                osi_WrStrLn(" -m <seconds>                      time to read g\
 ps to make median position", 76ul);
                osi_WrStrLn(" -s                                GPS Checksum c\
@@ -280,19 +284,19 @@ l open removable USB tty", 74ul);
 } /* end Parms() */
 
 
-static void skip(const X2C_CHAR b[], X2C_CARD32 b_len, X2C_CARD32 * p,
-                X2C_CARD32 len0)
+static void skip(const char b[], unsigned long b_len, unsigned long * p,
+                unsigned long len0)
 {
    while (*p<len0 && b[*p]!=',') ++*p;
    if (*p<len0) ++*p;
 } /* end skip() */
 
 
-static X2C_BOOLEAN getnum(const X2C_CHAR b[], X2C_CARD32 b_len,
-                X2C_CARD32 * p, X2C_CARD32 len0, X2C_CARD32 * n)
+static char getnum(const char b[], unsigned long b_len, unsigned long * p,
+                unsigned long len0, unsigned long * n)
 {
-   if ((*p<len0 && (X2C_CARD8)b[*p]>='0') && (X2C_CARD8)b[*p]<='9') {
-      *n = (X2C_CARD32)(X2C_CARD8)b[*p]-48UL;
+   if ((*p<len0 && (unsigned char)b[*p]>='0') && (unsigned char)b[*p]<='9') {
+      *n = (unsigned long)(unsigned char)b[*p]-48UL;
       ++*p;
       return 1;
    }
@@ -301,90 +305,84 @@ static X2C_BOOLEAN getnum(const X2C_CHAR b[], X2C_CARD32 b_len,
 } /* end getnum() */
 
 
-static void decodeline(const X2C_CHAR b[], X2C_CARD32 b_len,
-                X2C_CARD32 len0)
+static void decodeline(const char b[], unsigned long b_len,
+                unsigned long len0)
 {
-   X2C_CARD32 n;
-   X2C_CARD32 i;
-   X2C_LONGREAL div0;
-   X2C_BOOLEAN sign;
+   unsigned long n;
+   unsigned long i;
+   double div0;
+   char sign;
    if ((b[0UL]=='$' && b[1UL]=='G') && b[2UL]=='P') {
       if ((b[3UL]=='R' && b[4UL]=='M') && b[5UL]=='C') {
          i = 7UL;
          skip(b, b_len, &i, len0);
          if (b[i]!='A') return;
          skip(b, b_len, &i, len0);
+         if (getnum(b, b_len, &i, len0, &n)) lat = (double)(float)(n*10UL);
+         else return;
+         if (getnum(b, b_len, &i, len0, &n)) lat = lat+(double)(float)n;
+         else return;
          if (getnum(b, b_len, &i, len0, &n)) {
-            lat = (X2C_LONGREAL)(X2C_REAL)(n*10UL);
+            lat = lat+(double)(X2C_DIVR((float)n,6.0f));
          }
          else return;
          if (getnum(b, b_len, &i, len0, &n)) {
-            lat = lat+(X2C_LONGREAL)(X2C_REAL)n;
-         }
-         else return;
-         if (getnum(b, b_len, &i, len0, &n)) {
-            lat = lat+(X2C_LONGREAL)(X2C_DIVR((X2C_REAL)n,6.0f));
-         }
-         else return;
-         if (getnum(b, b_len, &i, len0, &n)) {
-            lat = lat+(X2C_LONGREAL)(X2C_DIVR((X2C_REAL)n,60.0f));
+            lat = lat+(double)(X2C_DIVR((float)n,60.0f));
          }
          else return;
          if (b[i]=='.') ++i;
          else return;
          if (getnum(b, b_len, &i, len0, &n)) {
-            lat = lat+(X2C_LONGREAL)(X2C_DIVR((X2C_REAL)n,600.0f));
+            lat = lat+(double)(X2C_DIVR((float)n,600.0f));
          }
          else return;
          if (getnum(b, b_len, &i, len0, &n)) {
-            lat = lat+(X2C_LONGREAL)(X2C_DIVR((X2C_REAL)n,6000.0f));
+            lat = lat+(double)(X2C_DIVR((float)n,6000.0f));
          }
          else return;
          if (getnum(b, b_len, &i, len0, &n)) {
-            lat = lat+(X2C_LONGREAL)(X2C_DIVR((X2C_REAL)n,60000.0f));
+            lat = lat+(double)(X2C_DIVR((float)n,60000.0f));
          }
          if (getnum(b, b_len, &i, len0, &n)) {
-            lat = lat+(X2C_LONGREAL)(X2C_DIVR((X2C_REAL)n,6.E+5f));
+            lat = lat+(double)(X2C_DIVR((float)n,6.E+5f));
          }
          skip(b, b_len, &i, len0);
          if (b[i]=='S') lat = -lat;
          else if (b[i]!='N') return;
          skip(b, b_len, &i, len0);
          if (getnum(b, b_len, &i, len0, &n)) {
-            long0 = (X2C_LONGREAL)(X2C_REAL)(n*100UL);
+            long0 = (double)(float)(n*100UL);
          }
          else return;
          if (getnum(b, b_len, &i, len0, &n)) {
-            long0 = long0+(X2C_LONGREAL)(X2C_REAL)(n*10UL);
+            long0 = long0+(double)(float)(n*10UL);
+         }
+         else return;
+         if (getnum(b, b_len, &i, len0, &n)) long0 = long0+(double)(float)n;
+         else return;
+         if (getnum(b, b_len, &i, len0, &n)) {
+            long0 = long0+(double)(X2C_DIVR((float)n,6.0f));
          }
          else return;
          if (getnum(b, b_len, &i, len0, &n)) {
-            long0 = long0+(X2C_LONGREAL)(X2C_REAL)n;
-         }
-         else return;
-         if (getnum(b, b_len, &i, len0, &n)) {
-            long0 = long0+(X2C_LONGREAL)(X2C_DIVR((X2C_REAL)n,6.0f));
-         }
-         else return;
-         if (getnum(b, b_len, &i, len0, &n)) {
-            long0 = long0+(X2C_LONGREAL)(X2C_DIVR((X2C_REAL)n,60.0f));
+            long0 = long0+(double)(X2C_DIVR((float)n,60.0f));
          }
          else return;
          if (b[i]=='.') ++i;
          else return;
          if (getnum(b, b_len, &i, len0, &n)) {
-            long0 = long0+(X2C_LONGREAL)(X2C_DIVR((X2C_REAL)n,600.0f));
+            long0 = long0+(double)(X2C_DIVR((float)n,600.0f));
          }
          else return;
          if (getnum(b, b_len, &i, len0, &n)) {
-            long0 = long0+(X2C_LONGREAL)(X2C_DIVR((X2C_REAL)n,6000.0f));
+            long0 = long0+(double)(X2C_DIVR((float)n,6000.0f));
          }
          else return;
          if (getnum(b, b_len, &i, len0, &n)) {
-            long0 = long0+(X2C_LONGREAL)(X2C_DIVR((X2C_REAL)n,60000.0f));
+            long0 = long0+(double)(X2C_DIVR((float)n,60000.0f));
          }
          if (getnum(b, b_len, &i, len0, &n)) {
-            long0 = long0+(X2C_LONGREAL)(X2C_DIVR((X2C_REAL)n,6.E+5f));
+            long0 = long0+(double)(X2C_DIVR((float)n,6.E+5f));
          }
          skip(b, b_len, &i, len0);
          if (b[i]=='W') long0 = -long0;
@@ -392,13 +390,13 @@ static void decodeline(const X2C_CHAR b[], X2C_CARD32 b_len,
          skip(b, b_len, &i, len0);
          speed = 0.0;
          while (getnum(b, b_len, &i, len0, &n)) {
-            speed = speed*10.0+(X2C_LONGREAL)(X2C_REAL)n;
+            speed = speed*10.0+(double)(float)n;
          }
          if (b[i]=='.') {
             ++i;
             div0 = 0.1;
             while (getnum(b, b_len, &i, len0, &n)) {
-               speed = speed+(X2C_LONGREAL)(X2C_REAL)n*div0;
+               speed = speed+(double)(float)n*div0;
                div0 = div0*0.1;
             }
          }
@@ -406,13 +404,13 @@ static void decodeline(const X2C_CHAR b[], X2C_CARD32 b_len,
          skip(b, b_len, &i, len0);
          course = 0.0;
          while (getnum(b, b_len, &i, len0, &n)) {
-            course = course*10.0+(X2C_LONGREAL)(X2C_REAL)n;
+            course = course*10.0+(double)(float)n;
          }
          if (b[i]=='.') {
             ++i;
             div0 = 0.1;
             while (getnum(b, b_len, &i, len0, &n)) {
-               course = course+(X2C_LONGREAL)(X2C_REAL)n*div0;
+               course = course+(double)(float)n*div0;
                div0 = div0*0.1;
             }
          }
@@ -436,13 +434,13 @@ static void decodeline(const X2C_CHAR b[], X2C_CARD32 b_len,
          else sign = 0;
          while (getnum(b, b_len, &i, len0, &n)) {
             altok = 1;
-            alt = alt*10.0+(X2C_LONGREAL)(X2C_REAL)n;
+            alt = alt*10.0+(double)(float)n;
          }
          if (b[i]=='.') {
             ++i;
             div0 = 0.1;
             while (getnum(b, b_len, &i, len0, &n)) {
-               alt = alt+(X2C_LONGREAL)(X2C_REAL)n*div0;
+               alt = alt+(double)(float)n*div0;
                div0 = div0*0.1;
             }
          }
@@ -452,65 +450,66 @@ static void decodeline(const X2C_CHAR b[], X2C_CARD32 b_len,
 } /* end decodeline() */
 
 
-static X2C_CHAR Hex(X2C_CARD32 d)
+static char Hex(unsigned long d)
 {
    d = d&15UL;
    if (d>9UL) d += 7UL;
-   return (X2C_CHAR)(d+48UL);
+   return (char)(d+48UL);
 } /* end Hex() */
 
 
-static X2C_BOOLEAN checksum(const X2C_CHAR b[], X2C_CARD32 b_len,
-                X2C_CARD32 len0)
+static char checksum(const char b[], unsigned long b_len,
+                unsigned long len0)
 {
-   X2C_CARD32 i;
-   X2C_CARD8 cs;
-   X2C_BOOLEAN ok0;
+   unsigned long i;
+   unsigned char cs;
+   char ok0;
    ok0 = 1;
    i = 1UL;
    cs = 0U;
    while (i<len0 && b[i]!='*') {
-      cs = cs^(X2C_CARD8)(X2C_CARD8)b[i];
+      cs = cs^(unsigned char)(unsigned char)b[i];
       ++i;
    }
    if (i+2UL>=len0) ok0 = 0;
    if (ok0) {
-      if (b[i+1UL]!=Hex((X2C_CARD32)cs/16UL) || b[i+2UL]!=Hex((X2C_CARD32)
-                cs&15UL)) ok0 = 0;
+      if (b[i+1UL]!=Hex((unsigned long)cs/16UL)
+                || b[i+2UL]!=Hex((unsigned long)cs&15UL)) ok0 = 0;
    }
    if (verb && !ok0) osi_WrStrLn("GPS Checksum Error", 19ul);
    return ok0;
 } /* end checksum() */
 
 
-static void showline(const X2C_CHAR b[], X2C_CARD32 b_len, X2C_CARD32 len0)
+static void showline(const char b[], unsigned long b_len,
+                unsigned long len0)
 {
-   X2C_CARD32 i;
+   unsigned long i;
    i = 0UL;
    while (i<len0) {
-      if ((X2C_CARD8)b[i]<' ') {
+      if ((unsigned char)b[i]<' ') {
          if (b[i]=='\012') osi_WrLn();
          else InOut_WriteString(".", 2ul);
       }
-      else InOut_WriteString((X2C_CHAR *) &b[i], 1u/1u);
+      else InOut_WriteString((char *) &b[i], 1u/1u);
       ++i;
    }
    osi_WrLn();
 } /* end showline() */
 
 
-static void wrfile(X2C_CHAR b[], X2C_CARD32 b_len, X2C_CARD32 len0,
-                X2C_CHAR ext[], X2C_CARD32 ext_len)
+static void wrfile(char b[], unsigned long b_len, unsigned long len0,
+                char ext[], unsigned long ext_len)
 {
-   X2C_CHAR s[2001];
-   X2C_INT32 f;
+   char s[2001];
+   long f;
    X2C_PCOPY((void **)&b,b_len);
    X2C_PCOPY((void **)&ext,ext_len);
    aprsstr_Assign(s, 2001ul, basefilename, 1024ul);
    aprsstr_Append(s, 2001ul, ext, ext_len);
    f = osi_OpenWrite(s, 2001ul);
    if (f>=0L) {
-      if (len0>0UL) osi_WrBin(f, (X2C_LOC *)b, (b_len)/1u, len0);
+      if (len0>0UL) osi_WrBin(f, (char *)b, (b_len)/1u, len0);
       osi_Close(f);
    }
    X2C_PFREE(b);
@@ -518,19 +517,18 @@ static void wrfile(X2C_CHAR b[], X2C_CARD32 b_len, X2C_CARD32 len0,
 } /* end wrfile() */
 
 
-static X2C_CHAR num(X2C_CARD32 n)
+static char num(unsigned long n)
 {
-   return (X2C_CHAR)(n%10UL+48UL);
+   return (char)(n%10UL+48UL);
 } /* end num() */
 
 
-static void wrpos(X2C_LONGREAL lat0, X2C_LONGREAL long1, X2C_LONGREAL alt0,
-                X2C_BOOLEAN withalt)
+static void wrpos(double lat0, double long1, double alt0, char withalt)
 {
-   X2C_CHAR b[201];
-   X2C_CARD32 n;
-   X2C_CARD32 i;
-   X2C_LONGREAL a;
+   char b[201];
+   unsigned long n;
+   unsigned long i;
+   double a;
    i = 0UL;
    a = fabs(lat0);
    n = truncc(a);
@@ -538,7 +536,7 @@ static void wrpos(X2C_LONGREAL lat0, X2C_LONGREAL long1, X2C_LONGREAL alt0,
    ++i;
    b[1U] = num(n);
    ++i;
-   n = truncc((a-(X2C_LONGREAL)(X2C_REAL)n)*6000.0);
+   n = truncc((a-(double)(float)n)*6000.0);
    b[2U] = num(n/1000UL);
    ++i;
    b[3U] = num(n/100UL);
@@ -552,35 +550,31 @@ static void wrpos(X2C_LONGREAL lat0, X2C_LONGREAL long1, X2C_LONGREAL alt0,
    if (lat0>=0.0) b[7U] = 'N';
    else b[7U] = 'S';
    ++i;
-   b[8U] = symt;
-   ++i;
+   wrfile(b, 201ul, 8UL, ".lat", 5ul);
+   i = 0UL;
    a = fabs(long1);
    n = truncc(a);
-   b[9U] = num(n/100UL);
+   b[0U] = num(n/100UL);
    ++i;
-   b[10U] = num(n/10UL);
+   b[1U] = num(n/10UL);
    ++i;
-   b[11U] = num(n);
+   b[2U] = num(n);
    ++i;
-   n = truncc((a-(X2C_LONGREAL)(X2C_REAL)n)*6000.0);
-   b[12U] = num(n/1000UL);
+   n = truncc((a-(double)(float)n)*6000.0);
+   b[3U] = num(n/1000UL);
    ++i;
-   b[13U] = num(n/100UL);
+   b[4U] = num(n/100UL);
    ++i;
-   b[14U] = '.';
+   b[5U] = '.';
    ++i;
-   b[15U] = num(n/10UL);
+   b[6U] = num(n/10UL);
    ++i;
-   b[16U] = num(n);
+   b[7U] = num(n);
    ++i;
-   if (lat0>=0.0) b[17U] = 'E';
-   else b[17U] = 'W';
+   if (lat0>=0.0) b[8U] = 'E';
+   else b[8U] = 'W';
    ++i;
-   if ((X2C_CARD8)symb>' ') {
-      b[18U] = symb;
-      ++i;
-   }
-   wrfile(b, 201ul, i, ".pos", 5ul);
+   wrfile(b, 201ul, 9UL, ".long", 6ul);
    if (withalt) {
       i = 0UL;
       if (alt0>0.0) {
@@ -610,8 +604,7 @@ static void wrpos(X2C_LONGREAL lat0, X2C_LONGREAL long1, X2C_LONGREAL alt0,
 } /* end wrpos() */
 
 
-static void medianpos(X2C_LONGREAL lat0, X2C_LONGREAL long1,
-                X2C_LONGREAL alt0)
+static void medianpos(double lat0, double long1, double alt0)
 {
    struct _0 * anonym;
    if (medians<=499UL) {
@@ -626,23 +619,22 @@ static void medianpos(X2C_LONGREAL lat0, X2C_LONGREAL long1,
 } /* end medianpos() */
 
 
-static void getmedian(X2C_LONGREAL * lat0, X2C_LONGREAL * long1,
-                X2C_LONGREAL * alt0)
+static void getmedian(double * lat0, double * long1, double * alt0)
 {
-   X2C_CARD32 by;
-   X2C_CARD32 ay;
-   X2C_CARD32 bx;
-   X2C_CARD32 ax;
-   X2C_CARD32 j;
-   X2C_CARD32 i;
-   X2C_LONGREAL maxy;
-   X2C_LONGREAL miny;
-   X2C_LONGREAL maxx;
-   X2C_LONGREAL minx;
+   unsigned long by;
+   unsigned long ay;
+   unsigned long bx;
+   unsigned long ax;
+   unsigned long j;
+   unsigned long i;
+   double maxy;
+   double miny;
+   double maxx;
+   double minx;
    struct _0 * anonym;
    struct _0 * anonym0;
    struct _0 * anonym1;
-   X2C_CARD32 tmp;
+   unsigned long tmp;
    if (medians==0UL) Error("no positions got", 17ul);
    j = medians/10UL;
    tmp = medians-1UL;
@@ -652,12 +644,12 @@ static void getmedian(X2C_LONGREAL * lat0, X2C_LONGREAL * long1,
       if (i==tmp) break;
    } /* end for */
    for (;;) {
-      minx = (X2C_LONGREAL)X2C_max_real;
-      maxx = (X2C_LONGREAL)X2C_min_real;
+      minx = (double)X2C_max_real;
+      maxx = (double)X2C_min_real;
       ax = 0UL;
       bx = 0UL;
-      miny = (X2C_LONGREAL)X2C_max_real;
-      maxy = (X2C_LONGREAL)X2C_min_real;
+      miny = (double)X2C_max_real;
+      maxy = (double)X2C_min_real;
       ay = 0UL;
       by = 0UL;
       j = 0UL;
@@ -716,36 +708,36 @@ static void getmedian(X2C_LONGREAL * lat0, X2C_LONGREAL * long1,
       if (verb) {
          { /* with */
             struct _0 * anonym1 = &median[i];
-            osi_WrFixed((X2C_REAL)anonym1->mlat, 8L, 14UL);
-            osi_WrFixed((X2C_REAL)anonym1->mlong, 8L, 14UL);
-            osi_WrFixed((X2C_REAL)anonym1->malt, 1L, 14UL);
-            InOut_WriteInt((X2C_INT32)(X2C_CARD32)anonym1->ok0, 2UL);
+            osi_WrFixed((float)anonym1->mlat, 8L, 14UL);
+            osi_WrFixed((float)anonym1->mlong, 8L, 14UL);
+            osi_WrFixed((float)anonym1->malt, 1L, 14UL);
+            InOut_WriteInt((long)(unsigned long)anonym1->ok0, 2UL);
             osi_WrStrLn("", 1ul);
          }
       }
       if (i==tmp) break;
    } /* end for */
    if (j==0UL) Error("no positions got", 17ul);
-   *lat0 = X2C_DIVL(*lat0,(X2C_LONGREAL)j);
-   *long1 = X2C_DIVL(*long1,(X2C_LONGREAL)j);
-   *alt0 = X2C_DIVL(*alt0,(X2C_LONGREAL)j);
+   *lat0 = X2C_DIVL(*lat0,(double)j);
+   *long1 = X2C_DIVL(*long1,(double)j);
+   *alt0 = X2C_DIVL(*alt0,(double)j);
 } /* end getmedian() */
 
-static X2C_CHAR c;
+static char c;
 
-static X2C_INT32 len;
+static long len;
 
-static X2C_INT32 rp;
+static long rp;
 
-static X2C_CARD32 gpsp;
+static unsigned long gpsp;
 
-static X2C_CHAR gpsb[100];
+static char gpsb[100];
 
 
 X2C_STACK_LIMIT(100000l)
 extern int main(int argc, char **argv)
 {
-   X2C_INT32 tmp;
+   long tmp;
    X2C_BEGIN(&argc,argv,1,4000000l,8000000l);
    aprsstr_BEGIN();
    Lib_BEGIN();
@@ -762,8 +754,6 @@ extern int main(int argc, char **argv)
    strncpy(ttynamee,"/dev/ttyS0",1024u);
    strncpy(basefilename,"gpspos",1024u);
    gpsp = 0UL;
-   symt = '/';
-   symb = 'U';
    comptyp = 0UL;
    withalti = 0;
    comintval = 5UL;
@@ -771,7 +761,7 @@ extern int main(int argc, char **argv)
    Parms();
    opentty();
    for (;;) {
-      len = osi_RdBin(tty, (X2C_LOC *)tbuf, 1024u/1u, 1024UL);
+      len = osi_RdBin(tty, (char *)tbuf, 1024u/1u, 1024UL);
       if (len<=0L) {
          osi_Close(tty);
          usleep(1000000UL);
@@ -798,7 +788,7 @@ extern int main(int argc, char **argv)
                      if (mediantime>0UL) {
                         --mediantime;
                         if (verb) {
-                           InOut_WriteInt((X2C_INT32)mediantime, 4UL);
+                           InOut_WriteInt((long)mediantime, 4UL);
                            osi_WrStrLn(" mediantime", 12ul);
                         }
                      }
@@ -813,7 +803,7 @@ extern int main(int argc, char **argv)
                }
                gpsp = 0UL;
             }
-            else if ((X2C_CARD8)c>' ' && gpsp<99UL) {
+            else if ((unsigned char)c>' ' && gpsp<99UL) {
                gpsb[gpsp] = c;
                ++gpsp;
             }

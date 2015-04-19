@@ -53,7 +53,9 @@ OBJ= \
 	tcp.o \
 	time_conversion.o \
 	udp.o \
-	yuma.o
+	yuma.o \
+        cfileio.o
+
 # ------------------- target make rules -------------------
 #                     -----------------
 

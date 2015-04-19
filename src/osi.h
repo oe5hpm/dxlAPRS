@@ -76,6 +76,20 @@ CONST sin=   math.sin;
 
 #define osi_floor floor
 
+/*
+<* IF __GEN_C__ THEN *>
+VAR
+      O_TRUNC     -: INTEGER;    (* open with truncation *)
+      O_APPEND    -: INTEGER;    (* append, i.e writes at the end *)
+      O_NONBLOCK  -: INTEGER;    (* open and accesses never block *)
+      O_RDWR      -: INTEGER;    (* open for reading and writing *)
+      O_WRONLY    -: INTEGER;    (* open for writing only *)
+      O_RDONLY    -: INTEGER;    (* open for reading only *)
+      O_CREAT     -: INTEGER;    (* create if not exists *)
+      O_LARGEFILE -: INTEGER;
+<* ELSE *>
+<* END *>
+*/
 #define osi_pi 3.1415926535898
 
 #define osi_DIRSEP "/"
@@ -83,29 +97,6 @@ CONST sin=   math.sin;
 #define osi_DIRSEP2 "/"
 
 #define osi_InvalidFd (-1)
-
-#define osi_oTRUNC 512
-/* open with truncation */
-
-#define osi_oAPPEND 1024
-/* append, i.e writes at the end */
-
-#define osi_oNONBLOCK 2048
-/* open and accesses never block */
-
-#define osi_oRDWR 2
-/* open for reading and writing */
-
-#define osi_oWRONLY 1
-/* open for writing only */
-
-#define osi_oRDONLY 0
-/* open for reading only */
-
-#define osi_oCREAT 64
-/* create if not exists */
-
-#define osi_oLARGEFILE 32768
 
 #define osi_Flush Flush
 
@@ -145,13 +136,19 @@ CONST sin=   math.sin;
 
 #define osi_Size Size
 
+extern long osi_OpenAppendLong(char [], unsigned long);
+
 extern long osi_OpenAppend(char [], unsigned long);
 
 extern long osi_OpenWrite(char [], unsigned long);
 
+extern long osi_OpenReadLong(char [], unsigned long);
+
 extern long osi_OpenRead(char [], unsigned long);
 
 extern long osi_OpenRW(char [], unsigned long);
+
+extern long osi_OpenNONBLOCK(char [], unsigned long);
 
 extern void osi_Close(long);
 
