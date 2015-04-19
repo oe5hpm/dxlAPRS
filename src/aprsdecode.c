@@ -160,6 +160,12 @@ struct xosi_PROCESSHANDLE aprsdecode_maploadpid;
 
 #define aprsdecode_DUPHASHSIZE 65536
 
+#define aprsdecode_PINGTIMEOUT 10
+/* ping-pong ping timeout */
+
+#define aprsdecode_PINGINTERVALL 20
+/* ping-pong ping intervall */
+
 typedef unsigned long SET256[8];
 
 typedef unsigned long CHSET[4];
@@ -902,7 +908,7 @@ static void saylinkbad(long s)
    aprsstr_IntToStr(s, 1UL, hh, 101ul);
    aprsstr_Append(h, 101ul, hh, 101ul);
    aprsstr_Append(h, 101ul, "s", 2ul);
-   useri_textautosize(0L, 5L, 6UL, 5UL, 'r', h, 101ul);
+   useri_textautosize(0L, 5L, 4UL, 10UL, 'r', h, 101ul);
 } /* end saylinkbad() */
 
 
@@ -917,11 +923,18 @@ static void WatchTXQ(aprsdecode_pTCPSOCK sock)
    char rest;
    long tmp;
    qb = getunack(sock->fd); /* tcp unack sendqueue in byte */
-   if (qb==-1L) {
-      useri_configbool(useri_fALLOWGATE, 0);
-      useri_textautosize(0L, 5L, 6UL, 5UL, 'r', "TCP-Stack on this OS not usa\
-ble for Igate, gateing switched off", 64ul);
+   if (sock->lastping==0UL && qb==-1L) {
+      /* windoof */
+      sock->lastping = 1UL; /* switch on ping-pong mode */
+      return;
    }
+   /*
+       configbool(fALLOWGATE, FALSE);
+       textautosize(0, 5, 6, 5, "r",
+                "TCP-Stack on this OS not usable for Igate,
+                gateing switched off");
+     END; 
+   */
    sent = (long)(sock->txbytes-sock->qwatch.lasttb);
                 /* last second sent bytes */
    if (qb<=0L || sent<0L) sock->qwatch.qsize = 0L;
@@ -951,10 +964,11 @@ ble for Igate, gateing switched off", 64ul);
          if (sock->qwatch.qsize>15L) {
             stoptxrx(sock->fd, 2L); /* delete unsent data */
             saybusy(&sock->fd, "\015\012", 3ul); /* close tcp immediately */
-            sock->slowlink = 1; /* for log message */
          }
       }
    }
+   /*        sock^.slowlink:=TRUE;
+                (* for log message *) */
    sock->qwatch.lastqb = qb;
    sock->qwatch.lasttb = sock->txbytes;
 } /* end WatchTXQ() */
@@ -1373,30 +1387,86 @@ static void SendNet(aprsdecode_pTCPSOCK cp, const char data[],
    SendNetBeacon(cp, s, manual, errtxt, errtxt_len);
 } /* end SendNet() */
 
+/*
+PROCEDURE Timebeacon(cp:pTCPSOCK);
+VAR h:FRAMEBUF;
+    bt:TIME;
+    err:ARRAY[0..99] OF CHAR;
+BEGIN
+--WrInt(ORD(configon(fALLOWNETTX)), 5); WrInt(ORD(configon(fCONNECT)), 5);
+                WrStrLn(" tb1");
+  bt:=conf2int(fNETBTIME, 0, 0, MAX(INTEGER), 0);
+  IF configon(fALLOWNETTX) & configon(fCONNECT)
+  & ((bt>=1) OR (cp^.beacont=0)) & Watchclock(cp^.beacont, bt) THEN
+    IF (bt<60) & (bt>0) & (cp^.connt>0) THEN xerrmsg("Netbeacon: too fast")
+                END;
+
+    BuildNetBeacon(h);
+    SendNet(cp, h, FALSE, err);
+    xerrmsg(err);
+  END;
+END Timebeacon;
+*/
+
+static void makeping(unsigned long t, char pong, char b[],
+                unsigned long b_len)
+{
+   char s[21];
+   if (pong) aprsstr_Assign(b, b_len, "pong ", 6ul);
+   else aprsstr_Assign(b, b_len, "ping ", 6ul);
+   aprsstr_IntToStr((long)(t%86400UL), 0UL, s, 21ul);
+   aprsstr_Append(b, b_len, s, 21ul);
+} /* end makeping() */
+
+
+static void sendping(aprsdecode_pTCPSOCK tp)
+{
+   char h[21];
+   aprsdecode_FRAMEBUF s;
+   char ok0;
+   if (aprsdecode_realtime<tp->lastping) tp->lastping = aprsdecode_realtime;
+   if (aprsdecode_realtime>=tp->lastping+20UL) {
+      tp->lastping = aprsdecode_realtime;
+      if (tp->waitpong<=1U) ++tp->waitpong;
+      strncpy(s,"#",512u);
+      makeping(tp->lastping, 0, h, 21ul);
+      aprsstr_Append(s, 512ul, h, 21ul);
+      aprsstr_Append(s, 512ul, "\015\012", 3ul);
+      ok0 = Sendtcp(tp, s);
+   }
+} /* end sendping() */
+
+
+static void getpong(aprsdecode_pTCPSOCK tp, const char mb[],
+                unsigned long mb_len)
+{
+   char s[21];
+   makeping(tp->lastping, 1, s, 21ul);
+   if (aprsdecode_realtime<=tp->lastping+10UL && aprsstr_InStr(mb, mb_len, s,
+                 21ul)>=1L) {
+      tp->lastpong = aprsdecode_realtime;
+      tp->waitpong = 0U;
+   }
+} /* end getpong() */
+
 
 static void Timebeacon(aprsdecode_pTCPSOCK cp)
 {
    aprsdecode_FRAMEBUF h;
    unsigned long bt;
    char err[100];
-   /*WrInt(ORD(configon(fALLOWNETTX)), 5); WrInt(ORD(configon(fCONNECT)), 5);
-                WrStrLn(" tb1"); */
-   bt = (unsigned long)useri_conf2int(useri_fNETBTIME, 0UL, 0L,
+   if (useri_configon(useri_fALLOWNETTX) && useri_configon(useri_fCONNECT)) {
+      bt = (unsigned long)useri_conf2int(useri_fNETBTIME, 0UL, 0L,
                 X2C_max_longint, 0L);
-   if (((useri_configon(useri_fALLOWNETTX) && useri_configon(useri_fCONNECT))
-                 && (bt>=1UL || cp->beacont==0UL))
-                && Watchclock(&cp->beacont, bt)) {
-      if ((bt<60UL && bt>0UL) && cp->connt>0UL) {
-         useri_xerrmsg("Netbeacon: too fast", 20ul);
+      if ((bt>=1UL || cp->beacont==0UL) && Watchclock(&cp->beacont, bt)) {
+         if ((bt<60UL && bt>0UL) && cp->connt>0UL) {
+            useri_xerrmsg("Netbeacon: too fast", 20ul);
+         }
+         BuildNetBeacon(h, 512ul);
+         SendNet(cp, h, 512ul, 0, err, 100ul);
+         useri_xerrmsg(err, 100ul);
       }
-      /*
-          qai:=TRUE; 
-          IF (qas=1) OR (qas>qasc+1) THEN qai:=FALSE;
-                INC(qasc) ELSE qasc:=0 END;
-      */
-      BuildNetBeacon(h, 512ul);
-      SendNet(cp, h, 512ul, 0, err, 100ul);
-      useri_xerrmsg(err, 100ul);
+      if (cp->lastping>0UL && useri_configon(useri_fALLOWGATE)) sendping(cp);
    }
 } /* end Timebeacon() */
 
@@ -1550,7 +1620,7 @@ static char wrlog(const char b[], unsigned long b_len, unsigned long time0,
    while (l>0UL && (unsigned char)b[l-1UL]<='\015') --l;
    if (l>0UL) {
       aprsstr_cleanfilename(wfn, wfn_len);
-      f = osi_OpenAppend(wfn, wfn_len);
+      f = osi_OpenAppendLong(wfn, wfn_len);
       if (!osi_FdValid(f)) f = osi_OpenWrite(wfn, wfn_len);
       if (!osi_FdValid(f)) {
          wrlog_ret = 0;
@@ -5226,7 +5296,6 @@ extern void aprsdecode_tcpjobs(void)
    char ok0;
    char s[1000];
    struct aprsdecode_TCPSOCK * anonym;
-   /*        IF beacont<realtime THEN Timebeacon(acttcp) END; */
    struct aprsdecode_UDPSOCK * anonym0;
    if (qwatchtime!=aprsdecode_realtime) {
       acttcp = aprsdecode_tcpsocks;
@@ -5244,7 +5313,6 @@ extern void aprsdecode_tcpjobs(void)
       }
       qwatchtime = aprsdecode_realtime;
       Gateconn(&aprsdecode_tcpsocks);
-      /*  IF configon(fRFBTSHIFT) THEN rfbeacons END; */
       rfbeacons();
    }
    /*UDP */
@@ -5756,8 +5824,6 @@ static void digipeat(const aprsdecode_FRAMEBUF b, unsigned long udpch)
    }
 } /* end digipeat() */
 
-static char rfhered;
-
 #define aprsdecode_PURGEINTERVALL 10
 /* seconds+1 with no purge */
 
@@ -5805,7 +5871,15 @@ static void storedata(aprsdecode_FRAMEBUF mb, aprsdecode_pTCPSOCK cp,
                 1u/1u)>=0L) {
             tp = aprsdecode_tcpsocks;
             while (tp) {
-               ok0 = Sendtcp(tp, mb);
+               if (tp->lastping>0UL && (tp->waitpong==1U && tp->lastping+10UL<aprsdecode_realtime || tp->waitpong>1U)
+                ) {
+                  if (tp->lastpong>0UL) {
+                     saylinkbad((long)(aprsdecode_realtime-tp->lastpong));
+                  }
+                  useri_xerrmsg("Ping-Timeout, Rf to AprsIs transfer stopped \
+temporarily", 56ul);
+               }
+               else ok0 = Sendtcp(tp, mb);
                tp = tp->next;
             }
          }
@@ -5954,6 +6028,7 @@ extern void aprsdecode_tcpin(aprsdecode_pTCPSOCK acttcp)
          acttcp->rxbytes += aprsstr_Length(mbuf, 512ul);
          acttcp->watchtime = aprsdecode_realtime;
          /*    WrMon(mbuf); */
+         if (mbuf[0UL]=='#') getpong(acttcp, mbuf, 512ul);
          storedata(mbuf, acttcp, 0UL, 1, 0);
          aprsdecode_lasttcprx = aprsdecode_realtime;
       }
@@ -5980,7 +6055,6 @@ extern void aprsdecode_initparms(void)
    aprsdecode_testbeaconbuf[0UL] = 0;
    /*  servercall[0]:=0C;  */
    /*  passwd[0]:=0C; */
-   rfhered = 0;
    callsrc = 0;
    /*  igatedelay:=TRUE; */
    rfbeacont = 0UL;

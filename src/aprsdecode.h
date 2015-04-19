@@ -120,7 +120,9 @@ struct aprsdecode_TCPSOCK {
    aprsdecode_FRAMEBUF rbuf;
    aprsdecode_FRAMEBUF tbuf;
    struct aprsdecode_QWatch qwatch;
-   char slowlink;
+   unsigned char waitpong;
+   unsigned long lastpong;
+   unsigned long lastping;
    unsigned long windoofwatch;
 };
 

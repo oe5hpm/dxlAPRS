@@ -80,6 +80,9 @@ FROM stat IMPORT fstat, stat_t;
 #define udpgate4_MAXINTERNALDELAY 5
 /* max seconds between udp ports read to not discard data */
 
+#define udpgate4_DEFAULTPONGTIME 30
+/* s after last #ping stop datatransfer */
+
 typedef char MONCALL[10];
 
 typedef char FILENAME[1024];
@@ -157,8 +160,10 @@ struct TCPSOCK {
    long fd;
    unsigned long beacont;
    unsigned long connt;
+   unsigned long pongtime;
    char slowlink;
    char valid;
+   char pingout; /* ping timeout state */
    char service;
    unsigned long gatepri;
    char ipnum[64];
@@ -176,6 +181,7 @@ struct TCPSOCK {
    unsigned long rxbytes;
    unsigned long rxbytesh;
    unsigned long losttxframes;
+   unsigned long lostrxframes;
    struct FILTERS filters;
    long rpos;
    long tlen;
@@ -360,6 +366,8 @@ static unsigned long timehash[65536];
 static unsigned long realtime;
 
 static unsigned long udpdonetime;
+
+static unsigned long maxpongtime;
 
 static unsigned long dupetime;
 
@@ -1086,6 +1094,10 @@ filename: insert file, \\\\\\ is \\\\", 76ul);
 f to find out own position", 76ul);
                osi_WrStrLn(" -O             make MH entry for same calls but \
 different port", 64ul);
+               osi_WrStrLn(" -o <seconds>   ping-pong: time to stop data forw\
+arding after last ping", 72ul);
+               osi_WrStrLn("                use double time of igate ping int\
+ervall", 56ul);
                osi_WrStrLn(" -P <time[:time]> purge unacked (:acked) messages\
  after seconds (-P 86400:300)", 79ul);
                osi_WrStrLn(" -p <password>  login passwort for aprs-is server\
@@ -1161,16 +1173,16 @@ set before each -R or -M", 74ul);
                else Err("-U seconds", 11ul);
                if (h[i0]==':') {
                   ++i0;
-                  if (GetSec(h, 4096ul, &i0, &n)>=0L) purgeunacksent = n;
+                  if (GetSec(h, 4096ul, &i0, &n)>=0L) {
+                     purgeunacksent = n;
+                  }
                   else Err("-U seconds:seconds", 19ul);
                }
             }
             else if (lasth=='Q') {
                Lib_NextArg(h, 4096ul);
                i0 = 0UL;
-               if (GetSec(h, 4096ul, &i0, &n)>=0L) {
-                  qas = n;
-               }
+               if (GetSec(h, 4096ul, &i0, &n)>=0L) qas = n;
                else Err("-Q number", 10ul);
             }
             else if (lasth=='q') {
@@ -1199,6 +1211,12 @@ set before each -R or -M", 74ul);
                if (GetSec(h, 4096ul, &i0, &n)>=0L) qmaxtime = (long)n;
                else Err("-T seconds", 11ul);
                if (qmaxtime>59L) qmaxtime = 59L;
+            }
+            else if (lasth=='o') {
+               Lib_NextArg(h, 4096ul);
+               i0 = 0UL;
+               if (GetSec(h, 4096ul, &i0, &n)>=0L) maxpongtime = n;
+               else Err("-o seconds", 11ul);
             }
             else if (lasth=='x') {
                Lib_NextArg(h, 4096ul);
@@ -4388,8 +4406,25 @@ static void GetFilters(struct FILTERS * filters, const char s[],
       pongstr[p+1UL] = '\012';
       pongstr[p+2UL] = 0;
       Sendtcp(pongto, pongstr);
+      if (maxpongtime>0UL) {
+         if (pongto->pongtime+maxpongtime>systime) pongto->pingout = 0;
+         pongto->pongtime = systime+maxpongtime;
+      }
    }
 } /* end GetFilters() */
+
+
+static void saypongout(pTCPSOCK pt)
+{
+   FRAMEBUF h;
+   FRAMEBUF s;
+   strncpy(s,"# ping timeout ",512u);
+   aprsstr_IntToStr((long)((systime+maxpongtime)-pt->pongtime), 0UL, h,
+                512ul);
+   aprsstr_Append(s, 512ul, h, 512ul);
+   aprsstr_Append(s, 512ul, "s - data forwarding stopped\015\012", 30ul);
+   Sendtcp(pt, s);
+} /* end saypongout() */
 
 
 static char Auth(const char mbuf0[], unsigned long mbuf_len, pTCPSOCK pu)
@@ -5709,7 +5744,11 @@ ign:center\" BGCOLOR=\"#D0C0C0\"><TD>out", 74ul);
                wint(wbuf, &wsock, (long)bitsec64(anonym2->txbytesh,
                 anonym2->txbytes, tt));
                wcard64(wbuf, &wsock, anonym2->rxbytesh, anonym2->rxbytes);
-               wint(wbuf, &wsock, (long)anonym2->rxframes);
+               if (anonym2->lostrxframes>0UL) {
+                  wintint(wbuf, &wsock, (long)anonym2->rxframes,
+                -(long)anonym2->lostrxframes);
+               }
+               else wint(wbuf, &wsock, (long)anonym2->rxframes);
                wint(wbuf, &wsock, (long)bitsec64(anonym2->rxbytesh,
                 anonym2->rxbytes, tt));
                Appwww(&wsock, wbuf, "<TD>", 5ul);
@@ -5751,7 +5790,9 @@ G=3 CELLSPACING=1 BGCOLOR=\"#FFFFFF\">", 83ul);
             else if (tp==udpgate4_INDIR) {
                strncpy(h1,"Via Digi Heard Messages (tx off)",256u);
             }
-            else strncpy(h1,"Via Net Heard Messages (tx off)",256u);
+            else {
+               strncpy(h1,"Via Net Heard Messages (tx off)",256u);
+            }
          }
          else if (tp==udpgate4_DIR) {
             strncpy(h1,"Direct Heard Messages (Relayed to direct heard and Ne\
@@ -6240,6 +6281,7 @@ extern int main(int argc, char **argv)
    mhperport = 0;
    qas = 0UL;
    qasc = 0UL;
+   maxpongtime = 30UL;
    parms();
    if (aprsstr_StrCmp(viacall, 10ul, "-", 2ul)) viacall[0U] = 0;
    else if (viacall[0U]==0) memcpy(viacall,servercall,10u);
@@ -6416,6 +6458,15 @@ extern int main(int argc, char **argv)
                   lenh = aprsstr_Length(mbuf, 512ul);
                   acttcp->rxbytes += lenh;
                   if (acttcp->rxbytes<lenh) ++acttcp->rxbytesh;
+                  if (acttcp->pongtime>0UL && acttcp->service=='S') {
+                     /* pingpong active */
+                     if (acttcp->pongtime<systime) {
+                        /* pinpong enabled - stop transfer */
+                        saypongout(acttcp);
+                        acttcp->pingout = 1;
+                        ++acttcp->lostrxframes;
+                     }
+                  }
                   if ((acttcp->valid || acttcp->service=='G') || !Auth(mbuf,
                 512ul, acttcp)) {
                      if (mbuf[0U]=='#') {
@@ -6430,8 +6481,10 @@ extern int main(int argc, char **argv)
                      if (aprspos_posvalid(poscall.pos)
                 && aprsstr_StrCmp(poscall.call, 10ul, acttcp->user.call,
                 10ul)) acttcp->user.pos = poscall.pos;
-                     if (acttcp->valid) {
-                        if (res>=0L) Sendall(mbuf, acttcp->fd, poscall);
+                     if (acttcp->valid && !acttcp->pingout) {
+                        if (res>=0L) {
+                           Sendall(mbuf, acttcp->fd, poscall);
+                        }
                         if (verb || logframes>1L) {
                            showframe(res, acttcp, 0, mbuf, 512ul,
                 poscall.pos);
@@ -6443,9 +6496,7 @@ extern int main(int argc, char **argv)
          }
          if (acttcp->fd<0L) {
             /* connection lost */
-            if (acttcp->connt && acttcp->service!='W') {
-               showlogout(acttcp);
-            }
+            if (acttcp->connt && acttcp->service!='W') showlogout(acttcp);
             closetcp(&acttcp, 1); /* free www buffers */
             if (acttcp==tcpsocks) tcpsocks = tcpsocks->next;
             else {
