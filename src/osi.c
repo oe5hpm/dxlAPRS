@@ -5,7 +5,6 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
-/* "@(#)osi.c Apr 19 19:11:17 2015" */
 
 
 #define X2C_int32
@@ -55,6 +54,10 @@
 #include "cfileio.h"
 #endif
 
+/* os interface linux/win32 */
+/*FROM Storage IMPORT ALLOCATE, DEALLOCATE; */
+/*FROM Select IMPORT fdsetr, fdsetw; */
+/*FROM aprsstr IMPORT IntToStr, Append, Length; */
 static IOChan_ChanId cid;
 
 
@@ -83,14 +86,8 @@ extern void osi_WrFixed(float x, long place, unsigned long witdh)
 static void h(unsigned long n)
 {
    char tmp;
-   if (n<10UL) {
-      InOut_WriteString((char *)(tmp = (char)X2C_CHKUL(n+48UL,0UL,255UL),
-                &tmp), 1u/1u);
-   }
-   else {
-      InOut_WriteString((char *)(tmp = (char)X2C_CHKUL((n-10UL)+65UL,0UL,
-                255UL),&tmp), 1u/1u);
-   }
+   if (n<10UL) InOut_WriteString((char *)(tmp = (char)(n+48UL),&tmp), 1u/1u);
+   else InOut_WriteString((char *)(tmp = (char)((n-10UL)+65UL),&tmp), 1u/1u);
 } /* end h() */
 
 
@@ -100,7 +97,7 @@ extern void osi_WrHex(unsigned long n, unsigned long f)
    h(n&15UL);
    while (f>=3UL) {
       InOut_WriteString(" ", 2ul);
-      X2C_DECU(&f,1UL,0UL,X2C_max_longcard);
+      --f;
    }
 } /* end WrHex() */
 
@@ -211,18 +208,25 @@ extern void osi_WrBin(long fd, char buf[], unsigned long buf_len,
    res = write(fd, (char *)buf, size);
 } /* end WrBin() */
 
+/*
+PROCEDURE Size(fd:File):CARDINAL;
+VAR st:stat.stat_t;
+BEGIN
+  stat.fstat(fd, st);
+  RETURN st.st_size
+END Size;
+*/
 
 extern void osi_Seek(long fd, unsigned long pos)
 {
    long res;
-   res = lseek(fd, (long)X2C_CHKUL(pos,0UL,2147483647UL), SEEK_SET);
+   res = lseek(fd, (long)pos, SEEK_SET);
 } /* end Seek() */
 
 
 extern void osi_Seekcur(long fd, long rel)
 {
-   if (LSeek(fd, rel, (unsigned long)X2C_CHKL(SEEK_CUR,0L,
-                X2C_max_longint))<0L) lseek(fd, 0L, SEEK_SET);
+   if (LSeek(fd, rel, (unsigned long)SEEK_CUR)<0L) lseek(fd, 0L, SEEK_SET);
 } /* end Seekcur() */
 
 
