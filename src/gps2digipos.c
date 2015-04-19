@@ -5,7 +5,6 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
-/* "@(#)gps2digipos.c Apr 19 13:43:58 2015" */
 
 
 #define X2C_int32
@@ -30,6 +29,7 @@
 #include "aprsstr.h"
 #endif
 
+/* read serial gps and make "3704.04N/00805.14W" string to file */
 #define gps2digipos_CR "\015"
 
 #define gps2digipos_LF "\012"
@@ -45,6 +45,7 @@ static char tbuf[1024];
 static char ttynamee[1024];
 
 static char basefilename[1024];
+/*    symt, symb:CHAR; */
 
 static unsigned long baud;
 
@@ -159,7 +160,8 @@ static void SetComMode(long fd, unsigned long baud0)
       anonym->c_lflag = 0UL;
       anonym->c_oflag = 0UL;
       anonym->c_iflag = 0UL;
-      anonym->c_cflag = 2224UL+bd;
+      /*  cfmakeraw(&termios);*/
+      anonym->c_cflag = 2224UL+bd; /*+CRTSCTS*/ /*0800018B2H*/
    }
    res = tcsetattr(fd, 2L, &term);
 } /* end SetComMode() */
@@ -206,6 +208,14 @@ static void Parms(void)
          else if (h[1U]=='s') sumoff = 1;
          else if (h[1U]=='a') withalti = 1;
          else if (h[1U]=='f') {
+            /*
+                  ELSIF h[1]="i" THEN 
+                    NextArg(h);
+                    IF h[0]>" " THEN
+                      symt:=h[0];
+                      IF h[1]>" " THEN symb:=h[1] ELSE symb:=0C END;
+                    ELSE Error("-i <icon> (house /-)") END;
+            */
             Lib_NextArg(basefilename, 1024ul);
             if (basefilename[0U]==0) Error("-f filename", 12ul);
          }
@@ -254,6 +264,9 @@ t into APRS-beacon", 68ul);
                osi_WrStrLn(" -f <filename>                     writes <fn.lat\
 > <fn.long> and <filename.alt>", 80ul);
                osi_WrStrLn(" -h                                this", 40ul);
+               /*        WrStrLn('
+                -i <icon>                         2 Icon chars "/-" (House),
+                "/>" (Car)...'); */
                osi_WrStrLn(" -m <seconds>                      time to read g\
 ps to make median position", 76ul);
                osi_WrStrLn(" -s                                GPS Checksum c\
@@ -272,7 +285,12 @@ l open removable USB tty", 74ul);
             err = 1;
          }
       }
-      else err = 1;
+      else {
+         /*
+               h[0]:=0C;
+         */
+         err = 1;
+      }
       if (err) break;
    }
    if (err) {
@@ -314,6 +332,10 @@ static void decodeline(const char b[], unsigned long b_len,
    char sign;
    if ((b[0UL]=='$' && b[1UL]=='G') && b[2UL]=='P') {
       if ((b[3UL]=='R' && b[4UL]=='M') && b[5UL]=='C') {
+         /* $GPRMC,141333.593,A,8915.1000,N,01300.2000,E,0.00,00.00,140410,0,
+                ,A*7C */
+         /* $GPRMC,112430.00,A,8912.41130,N,01300.61995,E,0.039,,200513,,,
+                A*77 */
          i = 7UL;
          skip(b, b_len, &i, len0);
          if (b[i]!='A') return;
@@ -400,7 +422,7 @@ static void decodeline(const char b[], unsigned long b_len,
                div0 = div0*0.1;
             }
          }
-         speed = speed*1.851984;
+         speed = speed*1.851984; /* knots to km/h */
          skip(b, b_len, &i, len0);
          course = 0.0;
          while (getnum(b, b_len, &i, len0, &n)) {
@@ -417,6 +439,10 @@ static void decodeline(const char b[], unsigned long b_len,
          posok = 1;
       }
       else if ((b[3UL]=='G' && b[4UL]=='G') && b[5UL]=='A') {
+         /* $GPGGA,152554,3938.5665,N,10346.2039,W,1,08,1.7,12382.7,M,-22.3,
+                M,,*7B */
+         /* $GPGGA,112435.00,4812.41112,N,01305.61998,E,1,08,1.04,398.3,M,
+                44.9,M,,*59 */
          i = 7UL;
          skip(b, b_len, &i, len0);
          skip(b, b_len, &i, len0);
@@ -529,6 +555,7 @@ static void wrpos(double lat0, double long1, double alt0, char withalt)
    unsigned long n;
    unsigned long i;
    double a;
+   /* "4805.44N" "01333.64E" "/A=000000"*/
    i = 0UL;
    a = fabs(lat0);
    n = truncc(a);
@@ -550,6 +577,7 @@ static void wrpos(double lat0, double long1, double alt0, char withalt)
    if (lat0>=0.0) b[7U] = 'N';
    else b[7U] = 'S';
    ++i;
+   /*  b[i]:=symt; INC(i); */
    wrfile(b, 201ul, 8UL, ".lat", 5ul);
    i = 0UL;
    a = fabs(long1);
@@ -574,6 +602,7 @@ static void wrpos(double lat0, double long1, double alt0, char withalt)
    if (lat0>=0.0) b[8U] = 'E';
    else b[8U] = 'W';
    ++i;
+   /*  IF symb>" " THEN b[i]:=symb; INC(i) END; */
    wrfile(b, 201ul, 9UL, ".long", 6ul);
    if (withalt) {
       i = 0UL;
@@ -644,6 +673,7 @@ static void getmedian(double * lat0, double * long1, double * alt0)
       if (i==tmp) break;
    } /* end for */
    for (;;) {
+      /* kill extrem values */
       minx = (double)X2C_max_real;
       maxx = (double)X2C_min_real;
       ax = 0UL;
@@ -696,6 +726,7 @@ static void getmedian(double * lat0, double * long1, double * alt0)
    tmp = medians-1UL;
    i = 0UL;
    if (i<=tmp) for (;; i++) {
+      /* make mean valus */
       if (median[i].ok0) {
          { /* with */
             struct _0 * anonym0 = &median[i];
@@ -754,6 +785,8 @@ extern int main(int argc, char **argv)
    strncpy(ttynamee,"/dev/ttyS0",1024u);
    strncpy(basefilename,"gpspos",1024u);
    gpsp = 0UL;
+   /*  symt:="/"; */
+   /*  symb:="U"; */
    comptyp = 0UL;
    withalti = 0;
    comintval = 5UL;
