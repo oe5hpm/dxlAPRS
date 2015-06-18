@@ -633,151 +633,6 @@ static long getudp(long fd, char buf[], unsigned long buf_len,
    return -1L;
 } /* end getudp() */
 
-/*
-PROCEDURE mon2raw(VAR mon, raw:ARRAY OF CHAR; VAR p:INTEGER);
-CONST CTRL=CHR(3);
-      PID=CHR(0F0H);
-      cTO=">"; 
-      cVIA=",";
-      cLASTCALL=":";
-      cSSID="-";
-      cREPEATED="*";
-      MAXVIAS=8;
-      MAXSSID=15;
-      SSIDBASE=16*3;
-      CALLFILL=" ";
-      
-VAR i,n,r:CARDINAL;
-    
-
-PROCEDURE call(sep1, sep2, sep3:CHAR; sbase:CARDINAL):BOOLEAN;
-VAR l,s:CARDINAL; 
-BEGIN
-  l:=0;
-  WHILE (mon[i]<>0C) & (mon[i]<>sep1) & (mon[i]<>sep2) & (mon[i]<>sep3)
-                & (mon[i]<>cSSID) DO
-    s:=ORD(mon[i])*2 MOD 256;
-    IF s<=ORD(" ")*2 THEN RETURN FALSE END;
-    raw[p]:=CHR(s);
-    INC(p);
-    INC(i);
-    INC(l);
-    IF l>=CALLLEN THEN RETURN FALSE END;
-  END;
-  WHILE l<CALLLEN-1 DO
-    raw[p]:=CHR(ORD(CALLFILL)*2);
-    INC(p);
-    INC(l);
-  END;
-  s:=0;
-  IF mon[i]=cSSID THEN
-    INC(i);
-    WHILE (mon[i]>="0") & (mon[i]<="9") DO s:=s*10 + ORD(mon[i])-ORD("0");
-                INC(i) END;
-    IF s>MAXSSID THEN RETURN FALSE END;    
-  END;
-  raw[p]:=CHR((s+sbase)*2);
-  INC(p);
-  RETURN TRUE
-END call;
-
-BEGIN
-  p:=CALLLEN;
-  i:=0;
-  IF NOT call(cTO, 0C, 0C, SSIDBASE) THEN p:=0; RETURN END;
-                (* from call *)
-
-  p:=0;
-  IF mon[i]<>cTO THEN RETURN END;
-                (* ">" *)
-
-  INC(i);
-  IF NOT call(cLASTCALL, cVIA, 0C, SSIDBASE+64) THEN p:=0; RETURN END;
-                (* dest call bit 7 for UI v2 command *)
-
-  p:=CALLLEN*2;
-  n:=0;
-  WHILE mon[i]=cVIA DO
-    INC(i);
-    IF NOT call(cLASTCALL, cVIA, cREPEATED, SSIDBASE) THEN p:=0; RETURN END; 
-
-    INC(n);
-    IF n>MAXVIAS THEN p:=0; RETURN END;
-
-    IF mon[i]=cREPEATED THEN                                           (* "*" has repeatet sign *)
-      INC(i);
-      FOR r:=p TO CALLLEN*3 BY -CALLLEN DO raw[r-1]:=CHR(ORD(raw[r-1])+HBIT)
-                END; (* set "has repeated" flags *)
-    END;
-  END;
-  IF (p=0) OR (mon[i]<>cLASTCALL) THEN p:=0; RETURN END;
-                (* ":" start of info sign *)
-
-  raw[p-1]:=CHR(ORD(raw[p-1]) + 1);
-                (* end address field mark *)
-  raw[p]:=CTRL;
-  INC(p);
-  raw[p]:=PID;
-  INC(p);
-  INC(i);
-  WHILE (mon[i]<>0C) & (i<=HIGH(mon))
-                DO                               (* copy info part *)
-    IF p>=VAL(INTEGER, HIGH(raw))-2 THEN p:=0; RETURN END;
-                (* spare 2 bytes for crc *)
-
-    raw[p]:=mon[i];
-    INC(p);
-    INC(i);
-  END;
-  AppCRC(raw,p); 
-  INC(p, 2);
-END mon2raw;
-*/
-/*
-PROCEDURE raw2mon(VAR raw, mon:ARRAY OF CHAR; len:INTEGER; VAR p:CARDINAL);
-VAR i:INTEGER;
-BEGIN
-  p:=0;
-  mon[p]:=0C;
-  i:=0;
-  WHILE NOT ODD(ORD(raw[i])) DO 
-    INC(i);
-    IF i>len THEN RETURN END;                         (* no address end mark found *)
-  END;
-  IF i MOD 7 <> 6 THEN RETURN END;
-                (* address end not modulo 7 error *)
-
-  IF NOT Call2Str(raw,mon,7,p) THEN RETURN END; 
-  mon[p]:=">"; INC(p);
-  IF NOT Call2Str(raw,mon,0,p) THEN RETURN END;
-
-  i:=14;
-  WHILE (i+6<len) & NOT ODD(ORD(raw[i-1])) DO
-    mon[p]:=","; INC(p);
-    IF NOT Call2Str(raw,mon,i,p) THEN RETURN END;
-
-    IF (ORD(raw[i+6])>=128) & (ODD(ORD(raw[i+6])) OR (ORD(raw[i+13])<128)) 
-    THEN mon[p]:="*"; INC(p); END;
-    INC(i,7);
-  END;  
-  INC(i,2);  (* ctrl, pid *)
-
-  mon[p]:=":"; INC(p);
-
-  WHILE (i<len) & (p<HIGH(mon)-1) DO 
-    IF raw[i]<>0C THEN mon[p]:=raw[i]; INC(p); END; 
-    INC(i);
-  END;
-(*
-  mon[p]:=15C; INC(p);
-  mon[p]:=12C; INC(p);
-*)
-  mon[p]:=0C; INC(p);
-
-  mon[p]:=0C;
-
-END raw2mon;
-*/
 
 static void checkhamnet(char b[], unsigned long b_len, long * len,
                 const char rflinkname[], unsigned long rflinkname_len,
@@ -1697,11 +1552,11 @@ static void parms(void)
                osi_WrStrLn(" -b <s>:<file>  enable beacon every s(econds) pat\
 h and text from <file>", 72ul);
                osi_WrStrLn("                cycles thru lines in file, empty \
-lines = no tx (size max 8kb)", 78ul);
+lines = no tx (size max 32kb)", 79ul);
                osi_WrStrLn("                \\\\z ddhhmm, \\\\h hhmmss, \\\\:\
-filename: insert file, \\\\\\ is \\\\", 76ul);
-               osi_WrStrLn("                \\\\rm delete beacon file",
-                40ul);
+filename: insert file, \\\\[filename]", 79ul);
+               osi_WrStrLn("                insert file and delete after, \\\\
+\\\ is \\\\, \\\\rm delete beacon file", 81ul);
                osi_WrStrLn("                file may be modified any time eg.\
  by telemetry program", 71ul);
                osi_WrStrLn(" -c <ip>:<port> send text monitor udp frame with \
@@ -2038,6 +1893,14 @@ static void cpraw(char in[], unsigned long in_len, char out[],
 
 #define udpbox_MSYM "\\"
 
+#define udpbox_INSFN ":"
+
+#define udpbox_INSFNEND ":"
+
+#define udpbox_DELFN "["
+
+#define udpbox_DELFNEND "]"
+
 
 static void beaconmacros(char s[], unsigned long s_len, char * del)
 {
@@ -2048,6 +1911,8 @@ static void beaconmacros(char s[], unsigned long s_len, char * del)
    char ds[256];
    char fn[1024];
    long f;
+   char fnend;
+   char voidok;
    *del = 0;
    i = 0UL;
    ns[0U] = 0;
@@ -2078,11 +1943,13 @@ static void beaconmacros(char s[], unsigned long s_len, char * del)
             ds[6U] = 0;
             aprsstr_Append(ns, 256ul, ds, 256ul);
          }
-         else if (s[i]==':') {
+         else if (s[i]==':' || s[i]=='[') {
             /* insert file */
+            if (s[i]==':') fnend = ':';
+            else fnend = ']';
             fn[0U] = 0;
             ++i;
-            while ((i<s_len-1 && s[i]) && s[i]!=':') {
+            while ((i<s_len-1 && s[i]) && s[i]!=fnend) {
                aprsstr_Append(fn, 1024ul, (char *) &s[i], 1u/1u);
                ++i;
             }
@@ -2090,6 +1957,10 @@ static void beaconmacros(char s[], unsigned long s_len, char * del)
             if (f>=0L) {
                len = osi_RdBin(f, (char *)ds, 256u/1u, 255UL);
                osi_Close(f);
+               if (fnend==']') {
+                  FileSys_Remove(fn, 1024ul, &voidok);
+                /* delete insert file after inserting */
+               }
                j = 0L;
                while (((j<len && ds[j]!='\015') && ds[j]!='\012') && ds[j]) {
                   aprsstr_Append(ns, 256ul, (char *) &ds[j], 1u/1u);
