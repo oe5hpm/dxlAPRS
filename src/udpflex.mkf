@@ -2,6 +2,8 @@
 # interfaces serial stuff like TNC2, TNC3, KISS, RMNC to axudp frames
 #
 # ---------------------- common section ---------------------------------------
+CC		= $(CROSS_COMPILE)gcc
+STRIP	= $(CROSS_COMPILE)strip
 INCL    = .
 TARGET	= udpflex
 CDEFS	= -D_unix -D_linux -DX2C_no_spawn -w $(ARCHSPEC)
@@ -10,24 +12,18 @@ CFLAGS	= -O2 -c -g -fno-strength-reduce -I$(INCL) -I$(EXTLIB)
 ifeq ($(PLATFORM), armv6)
 XDSLIB  = lib_armv6/libxds.a
 EXTLIB  = lib_armv6/
-CC	= ./arm-linux-rpi-gcc
-STRIP	= ./arm-linux-rpi-strip
 ARCHSPEC= -march=armv6zk -mfpu=vfp -mfloat-abi=hard -mcpu=arm1176jzf-s
 LFLAGS	=
 # ---------------------- armv7hf (bur am335x pp) specific ---------------------
 else ifeq ($(PLATFORM), armv7hf)
 XDSLIB  = lib_armv7hf/libxds.a
 EXTLIB  = lib_armv7hf/
-CC	= ./arm-linux-armv7hf-gcc
-STRIP	= ./arm-linux-armv7hf-strip
 ARCHSPEC= -march=armv7-a -mfpu=neon -mfloat-abi=hard -mcpu=cortex-a8
 LFLAGS	=
 # -------------------------- x86 (default) specific ---------------------------
 else
 XDSLIB  = lib_x86/libxds.a
 EXTLIB  = .
-CC	= gcc
-STRIP	= strip
 ARCHSPEC= -m32
 LFLAGS	= -m32
 endif
@@ -44,7 +40,7 @@ OBJ= \
 	tcp.o \
 	udp.o \
 	udpflex.o \
-        cfileio.o
+	cfileio.o
 
 # ------------------- target make rules -------------------
 #                     -----------------

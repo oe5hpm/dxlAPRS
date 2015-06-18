@@ -2,6 +2,8 @@
 # powerful APRS viewer based on Openstreetmap
 #
 # ---------------------- common section ---------------------------------------
+CC		= $(CROSS_COMPILE)gcc
+STRIP	= $(CROSS_COMPILE)strip
 INCL    = .
 TARGET	= aprsmap
 CDEFS	= -D_unix -D_linux -DX2C_no_spawn -w $(ARCHSPEC)
@@ -14,8 +16,6 @@ CFLAGS += -I lib_armv6/ -Ilib_armv6/libpng16/
 ADDLIBS = lib_armv6/libpng16/libpng.a \
 	  lib_armv6/libz.a \
 	  lib_armv6/libjpeg.a
-CC	= ./arm-linux-rpi-gcc
-STRIP	= ./arm-linux-rpi-strip
 ARCHSPEC= -march=armv6zk -mfpu=vfp -mfloat-abi=hard -mcpu=arm1176jzf-s
 LFLAGS	=
 XLIBS	= $(EXTLIB)libxcb.so.1 $(EXTLIB)libXdmcp.so.6 $(EXTLIB)libXau.so.6 -L$(EXTLIB) -lXext -lX11
@@ -28,8 +28,6 @@ CFLAGS += -I lib_armv6/ -Ilib_armv6/libpng15/
 ADDLIBS = lib_armv6/libpng15/libpng.a \
 	  lib_armv6/libz.a \
 	  lib_armv6/libjpeg.a
-CC	= ./arm-linux-rpi-gcc
-STRIP	= ./arm-linux-rpi-strip
 ARCHSPEC= -march=armv6zk -mfpu=vfp -mfloat-abi=hard -mcpu=arm1176jzf-s
 LFLAGS	=
 XLIBS	= $(EXTLIB)libxcb.so.1 $(EXTLIB)libXdmcp.so.6 $(EXTLIB)libXau.so.6 -L$(EXTLIB) -lXext -lX11
@@ -41,8 +39,6 @@ CFLAGS += -I lib_armv7/ -Ilib_armv7hf/libpng16/
 ADDLIBS = lib_armv7hf/libpng.a \
 	  lib_armv7hf/libz.a \
 	  lib_armv7hf/libjpeg.a
-CC	= ./arm-linux-armv7hf-gcc
-STRIP	= ./arm-linux-armv7hf-strip
 ARCHSPEC= -march=armv7-a -mfpu=neon -mfloat-abi=hard -mcpu=cortex-a8
 LFLAGS	=
 XLIBS	= $(EXTLIB)libxcb.so $(EXTLIB)libXdmcp.so $(EXTLIB)libXau.so -L$(EXTLIB) -lXext -lX11
@@ -53,8 +49,6 @@ EXTLIB  = .
 ADDLIBS = lib_x86/libpng.a \
 	  lib_x86/libz.a \
 	  lib_x86/libjpeg.a
-CC	= gcc
-STRIP	= strip
 ARCHSPEC= -m32
 LFLAGS	= -m32
 XLIBS	= -L/usr/X11R6/lib -lXext -lX11
@@ -85,9 +79,7 @@ OBJ= \
 	udp.o \
 	useri.o \
 	xosi.o \
-        cfileio.o
-
-
+	cfileio.o
 
 # ------------------- target make rules -------------------
 #                     -----------------
