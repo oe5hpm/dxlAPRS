@@ -7,7 +7,7 @@ TARGET	= aprsmap
 CDEFS	= -D_unix -D_linux -DX2C_no_spawn -w $(ARCHSPEC)
 CFLAGS	= -O2 -c -g -fno-strength-reduce -I$(INCL)
 # ---------------------- armv6 (raspberry) specific ---------------------------
-ifeq ($(PLATTFORM), armv6)
+ifeq ($(PLATFORM), armv6)
 XDSLIB  = lib_armv6/libxds.a
 EXTLIB  = lib_armv6/
 CFLAGS += -I lib_armv6/ -Ilib_armv6/libpng16/
@@ -20,7 +20,7 @@ ARCHSPEC= -march=armv6zk -mfpu=vfp -mfloat-abi=hard -mcpu=arm1176jzf-s
 LFLAGS	=
 XLIBS	= $(EXTLIB)libxcb.so.1 $(EXTLIB)libXdmcp.so.6 $(EXTLIB)libXau.so.6 -L$(EXTLIB) -lXext -lX11
 # ---------------------- armv6 (raspberry-tce) specific -----------------------
-else ifeq ($(PLATTFORM), armv6tce)
+else ifeq ($(PLATFORM), armv6tce)
 TARGET	= aprsmap-tce
 XDSLIB  = lib_armv6/libxds.a
 EXTLIB  = lib_armv6/
@@ -34,7 +34,7 @@ ARCHSPEC= -march=armv6zk -mfpu=vfp -mfloat-abi=hard -mcpu=arm1176jzf-s
 LFLAGS	=
 XLIBS	= $(EXTLIB)libxcb.so.1 $(EXTLIB)libXdmcp.so.6 $(EXTLIB)libXau.so.6 -L$(EXTLIB) -lXext -lX11
 # ---------------------- armv7hf (bur am335x pp) specific ---------------------
-else ifeq ($(PLATTFORM), armv7hf)
+else ifeq ($(PLATFORM), armv7hf)
 XDSLIB  = lib_armv7hf/libxds.a
 EXTLIB  = lib_armv7hf/
 CFLAGS += -I lib_armv7/ -Ilib_armv7hf/libpng16/

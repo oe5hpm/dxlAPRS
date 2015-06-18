@@ -7,7 +7,7 @@ TARGET	= udpbox
 CDEFS	= -D_unix -D_linux -DX2C_no_spawn -w $(ARCHSPEC)
 CFLAGS	= -O2 -c -g -fno-strength-reduce -I$(INCL) -I$(EXTLIB)
 # ---------------------- armv6 (raspberry) specific ---------------------------
-ifeq ($(PLATTFORM), armv6)
+ifeq ($(PLATFORM), armv6)
 XDSLIB  = lib_armv6/libxds.a
 EXTLIB  = lib_armv6/
 CC	= ./arm-linux-rpi-gcc
@@ -15,7 +15,7 @@ STRIP	= ./arm-linux-rpi-strip
 ARCHSPEC= -march=armv6zk -mfpu=vfp -mfloat-abi=hard -mcpu=arm1176jzf-s
 LFLAGS	=
 # ---------------------- armv7hf (bur am335x pp) specific ---------------------
-else ifeq ($(PLATTFORM), armv7hf)
+else ifeq ($(PLATFORM), armv7hf)
 XDSLIB  = lib_armv7hf/libxds.a
 EXTLIB  = lib_armv7hf/
 CC	= ./arm-linux-armv7hf-gcc

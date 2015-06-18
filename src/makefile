@@ -12,32 +12,32 @@ x86:
 	make -f udprfnet.mkf
 
 armv6:
-	PLATTFORM=armv6 make -f afskmodem.mkf
-	PLATTFORM=armv6 make -f udpbox.mkf
-	PLATTFORM=armv6 make -f udpgate4.mkf
-	PLATTFORM=armv6 make -f udpflex.mkf
-	PLATTFORM=armv6 make -f udphub.mkf
-	PLATTFORM=armv6 make -f gps2aprs.mkf
-	PLATTFORM=armv6 make -f aprsmap.mkf
-	PLATTFORM=armv6tce make -f aprsmap.mkf cleanobj
-	PLATTFORM=armv6tce make -f aprsmap.mkf
-	PLATTFORM=armv6 make -f sondemod.mkf
-	PLATTFORM=armv6 make -f gps2digipos.mkf
-	PLATTFORM=armv6 make -f sondeudp.mkf
-	PLATTFORM=armv6 make -f udprfnet.mkf
+	PLATFORM=armv6 make -f afskmodem.mkf
+	PLATFORM=armv6 make -f udpbox.mkf
+	PLATFORM=armv6 make -f udpgate4.mkf
+	PLATFORM=armv6 make -f udpflex.mkf
+	PLATFORM=armv6 make -f udphub.mkf
+	PLATFORM=armv6 make -f gps2aprs.mkf
+	PLATFORM=armv6 make -f aprsmap.mkf
+	PLATFORM=armv6tce make -f aprsmap.mkf cleanobj
+	PLATFORM=armv6tce make -f aprsmap.mkf
+	PLATFORM=armv6 make -f sondemod.mkf
+	PLATFORM=armv6 make -f gps2digipos.mkf
+	PLATFORM=armv6 make -f sondeudp.mkf
+	PLATFORM=armv6 make -f udprfnet.mkf
 
 armv7hf:
-	PLATTFORM=armv7hf make -f afskmodem.mkf
-	PLATTFORM=armv7hf make -f udpbox.mkf
-	PLATTFORM=armv7hf make -f udpgate4.mkf
-	PLATTFORM=armv7hf make -f udpflex.mkf
-	PLATTFORM=armv7hf make -f udphub.mkf
-	PLATTFORM=armv7hf make -f gps2aprs.mkf
-	PLATTFORM=armv7hf make -f aprsmap.mkf
-	PLATTFORM=armv7hf make -f sondemod.mkf
-	PLATTFORM=armv7hf make -f gps2digipos.mkf
-	PLATTFORM=armv7hf make -f sondeudp.mkf
-	PLATTFORM=armv7hf make -f udprfnet.mkf
+	PLATFORM=armv7hf make -f afskmodem.mkf
+	PLATFORM=armv7hf make -f udpbox.mkf
+	PLATFORM=armv7hf make -f udpgate4.mkf
+	PLATFORM=armv7hf make -f udpflex.mkf
+	PLATFORM=armv7hf make -f udphub.mkf
+	PLATFORM=armv7hf make -f gps2aprs.mkf
+	PLATFORM=armv7hf make -f aprsmap.mkf
+	PLATFORM=armv7hf make -f sondemod.mkf
+	PLATFORM=armv7hf make -f gps2digipos.mkf
+	PLATFORM=armv7hf make -f sondeudp.mkf
+	PLATFORM=armv7hf make -f udprfnet.mkf
 
 clean:
 	make -f afskmodem.mkf clean
@@ -47,7 +47,7 @@ clean:
 	make -f udphub.mkf clean
 	make -f gps2aprs.mkf clean
 	make -f aprsmap.mkf clean
-	PLATTFORM=armv6tce make -f aprsmap.mkf clean
+	PLATFORM=armv6tce make -f aprsmap.mkf clean
 	make -f sondemod.mkf clean
 	make -f gps2digipos.mkf clean
 	make -f sondeudp.mkf clean
