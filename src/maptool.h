@@ -227,10 +227,14 @@ extern void maptool_Radiorange(maptool_pIMAGE, struct aprspos_POSITION, long,
 
 extern void maptool_Panorama(maptool_pIMAGE, struct maptool_PANOWIN, char *);
 
+extern char maptool_SimpleRelief(maptool_pIMAGE);
+
 extern void maptool_findpanopos(struct maptool_PANOWIN,
                 struct aprspos_POSITION *, float *, long *);
 
 extern void maptool_closesrtmfile(void);
+
+extern void maptool_rdmountains(char [], unsigned long, char);
 
 
 extern void maptool_BEGIN(void);

@@ -1203,8 +1203,13 @@
 
 
 
+15.6. 2015 (Ver 0.49)
 
-
++ "H" fuer Hoehendaten Farbdarstellung.
++ Cache auch fuer nicht vorhandensein von Hoehendaten damits schneller mit Loechern im
+  Datenmaterial zurecht kommt. 
++ poi.txt ohne Neustart einlesen mit "Reload Config".
++ Wx Radioaktivitaet dekodieren und (vorerst) als Text ausgeben.
 
 
 

@@ -80,6 +80,10 @@ maptool_pIMAGE useri_panoimage;
 
 #define useri_SHOTFORMATS "(.ppm/.png)"
 
+#define useri_POIFILENAME "poi.txt"
+
+#define useri_MYPOIFILENAME "mypoi.txt"
+
 #define useri_MAXXSIZE 32000
 
 #define useri_MAXYSIZE 32000
@@ -244,6 +248,8 @@ maptool_pIMAGE useri_panoimage;
 
 #define useri_iICON "I"
 
+#define useri_STATUSHINT 17
+
 /*      OVERSHOOT=WHITELEVEL*3;            (* fast white level limiter via table *) */
 #define useri_TRANSPARENCE 65535
 
@@ -278,8 +284,6 @@ maptool_pIMAGE useri_panoimage;
 
 #define useri_OVERLAYID 203
 /* overlay symbol chooser id */
-
-#define useri_CMDFPS "\006"
 /*      ZOOMTO=7C;  */
 
 /*      BLOWOK=11C; */
@@ -303,8 +307,6 @@ maptool_pIMAGE useri_panoimage;
 
 #define useri_NOTYET "\212"
 
-#define useri_CMDDOBEACON "\213"
-
 #define useri_TOOLOFF "\214"
 
 #define useri_TOOLON "\215"
@@ -317,8 +319,6 @@ maptool_pIMAGE useri_panoimage;
 #define useri_HELPMENU "\221"
 
 #define useri_LISTMENU "\222"
-
-#define useri_CMDADDBEACON "\223"
 
 #define useri_CURSDOWNM "\224"
 
@@ -339,8 +339,6 @@ maptool_pIMAGE useri_panoimage;
 #define useri_CONFSYM "\234"
 
 #define useri_FILERDLOG "\235"
-
-#define useri_CMDRELOADMAP "\236"
 /*    CMDDOWNLOAD=237C;          (* in def *) */
 
 #define useri_STOPDOWNLOAD "\240"
@@ -362,6 +360,14 @@ maptool_pIMAGE useri_panoimage;
 #define useri_SETMARKERS "\251"
 
 #define useri_SETMARKERSMAP "\252"
+
+#define useri_CMDRELOADMAP "\236"
+
+#define useri_CMDADDBEACON "\223"
+
+#define useri_CMDDOBEACON "\213"
+
+#define useri_CMDFPS "\006"
 
 #define useri_CMDWATCHDO "\253"
 
@@ -446,6 +452,8 @@ maptool_pIMAGE useri_panoimage;
 #define useri_CHOOSEONESYM "\326"
 
 #define useri_HOVERCLICK "\327"
+
+#define useri_CMDHEARD "\330"
 
 struct CONFLINE;
 
@@ -991,7 +999,7 @@ extern void useri_initconfig(void)
    initc(useri_fZOOMMISS, "Autozoom up to having Tiles", 28ul, useri_cBOOL, "\
 ", 1ul, 0, 235UL);
    initc(useri_fMOUSELOC, "Mouse-Over function", 20ul, useri_cBLINE, "9",
-                2ul, 0, 240UL);
+                2ul, 1, 240UL);
    initc(useri_fTRACKFILT, "Trackfilter", 12ul, useri_cBOOL, "", 1ul, 1,
                 245UL);
    initc(useri_fDUPDEL, "Filter delayed Waypoints Min", 29ul, useri_cLINE, "1\
@@ -1416,6 +1424,10 @@ extern void useri_loadconfig(char verb)
    }
    useri_confstr(useri_fMARKPOS, s, 1000ul);
    aprstext_deghtopos(s, 1000ul, &aprsdecode_click.markpos);
+   maptool_closesrtmfile(); /* to reread possibly updated files */
+   maptool_rdmountains("poi.txt", 8ul, 0);
+                /* to reread possibly updated file */
+   maptool_rdmountains("mypoi.txt", 10ul, 1);
 } /* end loadconfig() */
 
 
@@ -1539,7 +1551,7 @@ extern void useri_postoconfig(struct aprspos_POSITION pos)
    char s[100];
    aprstext_postostr(pos, '3', s, 100ul);
    useri_AddConfLine(useri_fRBPOS, 1U, s, 100ul);
-   aprstext_postostr(pos, '2', s, 100ul);
+   aprstext_postostr(pos, '3', s, 100ul);
    useri_AddConfLine(useri_fEDITLINE, 1U, s, 100ul);
    if (s[0U]) useri_copypaste(s, 100ul);
 } /* end postoconfig() */
@@ -3518,7 +3530,7 @@ static void domainpop(pMENU m)
       /*  ELSE  */
       addline(m, " Show 1|+ Rfpath", 17ul, ".", 2ul, 106UL);
       /*  END; */
-      addline(m, " Heard | Message", 17ul, "H", 2ul, 110UL);
+      addline(m, " Heard | Message", 17ul, "\330", 2ul, 110UL);
    }
    if (aprsdecode_click.mhop[0UL]) {
       addline(m, " Focus | Show All", 18ul, "0", 2ul, 112UL);
@@ -3947,7 +3959,7 @@ static void wxonoff(pMENU menu)
                 ch=='.');
    addonoff(menu, "\365\365|Show Rf", 11ul, "\232", 2ul, 1102UL, 6L,
                 ch=='=');
-   addonoff(menu, "\365\365|Heard", 9ul, "\232", 2ul, 1103UL, 6L, ch=='H');
+   addonoff(menu, "\365\365|Heard", 9ul, "\232", 2ul, 1103UL, 6L, ch=='h');
    addonoff(menu, "\365\365|Beacon Hist", 15ul, "\232", 2ul, 1104UL, 6L,
                 ch=='b');
    addonoff(menu, "\365\365|Raw+Decoded", 15ul, "\232", 2ul, 1105UL, 6L,
@@ -4077,7 +4089,7 @@ static void symbolonoff(pMENU menu, char on, unsigned char v)
    addonoff(menu, "\365\365|Show Rf", 11ul, (char *) &on, 1u/1u, 1306UL, 6L,
                 aprsstr_InStr(w, 31ul, "=", 2ul)>=0L);
    addonoff(menu, "\365\365|Heard", 9ul, (char *) &on, 1u/1u, 1307UL, 6L,
-                aprsstr_InStr(w, 31ul, "H", 2ul)>=0L);
+                aprsstr_InStr(w, 31ul, "h", 2ul)>=0L);
    addonoff(menu, "\365\365|Beacon Hist", 15ul, (char *) &on, 1u/1u, 1308UL,
                 6L, aprsstr_InStr(w, 31ul, "b", 2ul)>=0L);
    addonoff(menu, "\365\365|Speed Hist", 14ul, (char *) &on, 1u/1u, 1309UL,
@@ -5267,7 +5279,7 @@ static void beaconeditor(void)
       bkn = (((typ!='O' && typ!='H') && typ!='P') && typ!='I') && typ!='J';
       useri_confstr(useri_fRBPOSTYP, (char *) &postyp, 1u/1u);
       AddEditLine(m, "\223", 2ul, "", 1ul, useri_fRBNAME, 8115UL);
-      if (bkn && aprsdecode_getmypos(&mypos)) {
+      if (bkn && aprstext_getmypos(&mypos)) {
          strncpy(s,"\346\356\351 ",201u);
          aprsstr_Append(s, 201ul, configs[useri_fRBPOS].title, 31ul);
          aprsstr_Append(s, 201ul, " (Config/Online) ", 18ul);
@@ -8517,7 +8529,7 @@ static void domap(unsigned long knob, unsigned long sub)
          else mouseshowcnt = 1UL;
       }
       else {
-         strncpy(configs[useri_fEDITLINE].title,"show POI upper zoomlevel",
+         strncpy(configs[useri_fEDITLINE].title,"show POIs from zoomlevel",
                 31u);
          configedit = 67UL;
       }
@@ -8742,7 +8754,7 @@ static void onlinesetup(unsigned long knob, unsigned long sub)
    }
    else if (knob==8UL) {
       strncpy(configs[useri_fEDITLINE].title,"My Position",31u);
-      configs[useri_fEDITLINE].width = 20U;
+      configs[useri_fEDITLINE].width = 22U;
       configedit = 9UL;
       copytoed();
    }
@@ -9359,7 +9371,8 @@ static void statusbar(void)
    else if (aprsdecode_lums.wxcol=='w') strncpy(e,"Wx Stations",100u);
    else if (aprsdecode_click.withradio) {
       /*    IF click.panorama THEN e:="Panorama" ELSE */
-      strncpy(e,"Radio Map",100u);
+      if (aprsdecode_click.altimap) strncpy(e,"Geo Map",100u);
+      else strncpy(e,"Radio Map",100u);
    }
    else if (aprsdecode_click.onesymbol.tab) {
       /*    END; */
@@ -9438,10 +9451,10 @@ static void statusbar(void)
    c.r = 0U;
    c.g = 0U;
    c.b = 0U;
-   if (useri_isblown) c.r = 400U;
-   else if (useri_configon(useri_fALLOWEXP)) {
-      c.g = 300U;
+   if (useri_isblown) {
+      c.r = 400U;
    }
+   else if (useri_configon(useri_fALLOWEXP)) c.g = 300U;
    statuscol(menu->image, (long)(6UL+13UL*kx), 5L, c);
    ++kx;
    if (useri_configon(useri_fTRACKFILT)) {
@@ -10679,9 +10692,9 @@ static void mouseleft(long mousx, long mousy)
          aprsdecode_click.cmd = 'a';
          useri_killallmenus();
       }
-      else if (c=='H') {
+      else if (c=='\330') {
          if (subknob==0UL) {
-            aprsdecode_click.cmd = c;
+            aprsdecode_click.cmd = 'h';
             useri_killallmenus();
          }
          else {
@@ -10812,7 +10825,7 @@ static void mouseleft(long mousx, long mousy)
          else if (knob==5UL) toggcfg(useri_fCLICKSYM, 'A', "", 1ul);
          else if (knob==6UL) toggcfg(useri_fCLICKSYM, '.', "ACHXY=", 7ul);
          else if (knob==7UL) toggcfg(useri_fCLICKSYM, '=', "uACHXY.", 8ul);
-         else if (knob==8UL) toggcfg(useri_fCLICKSYM, 'H', "uACHXY.=", 9ul);
+         else if (knob==8UL) toggcfg(useri_fCLICKSYM, 'h', "uACHXY.=", 9ul);
          else if (knob==9UL) toggcfg(useri_fCLICKSYM, 'b', "ACHXY.=", 8ul);
          else if (knob==10UL) toggcfg(useri_fCLICKSYM, 's', "ACHXY.=", 8ul);
          else if (knob==11UL) toggcfg(useri_fCLICKSYM, 'n', "ACHXY.=", 8ul);
@@ -10828,7 +10841,7 @@ static void mouseleft(long mousx, long mousy)
          else if (knob==5UL) toggcfg(useri_fCLICKTEXT, 'A', "", 1ul);
          else if (knob==6UL) toggcfg(useri_fCLICKTEXT, '.', "ACHXY=", 7ul);
          else if (knob==7UL) toggcfg(useri_fCLICKTEXT, '=', "uACHXY.", 8ul);
-         else if (knob==8UL) toggcfg(useri_fCLICKTEXT, 'H', "uACHXY.=", 9ul);
+         else if (knob==8UL) toggcfg(useri_fCLICKTEXT, 'h', "uACHXY.=", 9ul);
          else if (knob==9UL) toggcfg(useri_fCLICKTEXT, 'b', "ACHXY.=", 8ul);
          else if (knob==10UL) toggcfg(useri_fCLICKTEXT, 's', "ACHXY.=", 8ul);
          else if (knob==11UL) toggcfg(useri_fCLICKTEXT, 'n', "ACHXY.=", 8ul);
@@ -10840,7 +10853,7 @@ static void mouseleft(long mousx, long mousy)
          if (knob==1UL) icfg(useri_fCLICKWXSYM, "C", 2ul);
          else if (knob==2UL) icfg(useri_fCLICKWXSYM, ".", 2ul);
          else if (knob==3UL) icfg(useri_fCLICKWXSYM, "=", 2ul);
-         else if (knob==4UL) icfg(useri_fCLICKWXSYM, "H", 2ul);
+         else if (knob==4UL) icfg(useri_fCLICKWXSYM, "h", 2ul);
          else if (knob==5UL) icfg(useri_fCLICKWXSYM, "b", 2ul);
          else if (knob==6UL) wxraw(useri_fCLICKWXSYM);
          else if (knob==7UL) toggwx(useri_fCLICKWXSYM, aprsdecode_wLUMI);
@@ -11224,10 +11237,16 @@ extern void useri_keychar(char ch, char ispasted, char movecmd)
    if (ispasted) ch = 0;
    /*WrInt(ORD(ch), 1); WrStrLn("kbd"); */
    if (ch=='R') aprsdecode_click.cmd = '\022';
-   else if (ch=='\022') ch = 0;
+   else if (ch=='\022') {
+      /*ELSIF ch=CURSPAGEUP THEN WrStrLn("cup"); */
+      /*ELSIF ch=CURSPAGEDOWN THEN WrStrLn("cdown"); */
+      ch = 0;
+   }
    else if (ch=='\320') configman(0UL, &aprsdecode_click.cmd);
-   else if ((((((ch!='b' && ch!='m') && ch!='f') && ch!='u') && ch!='d')
-                && ch!='p') && ch!='s') aprsdecode_click.cmd = X2C_CAP(ch);
+   else if (((((((ch!='b' && ch!='m') && ch!='f') && ch!='u') && ch!='d')
+                && ch!='p') && ch!='s') && ch!='h') {
+      aprsdecode_click.cmd = X2C_CAP(ch);
+   }
    else aprsdecode_click.cmd = ch;
    if (aprsdecode_click.cmd=='>' || aprsdecode_click.cmd=='<') {
       if (aprsdecode_click.entries>0UL) {

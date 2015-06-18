@@ -241,6 +241,7 @@ struct aprsdecode_WX {
    float rain24;
    float raintoday;
    float lum;
+   float sievert;
 };
 
 enum aprsdecode_TYPES {aprsdecode_UNKNOWN, aprsdecode_MICE, aprsdecode_POS,
@@ -411,6 +412,7 @@ struct aprsdecode__D0 {
    char dryrun;
    char withradio;
    char panorama;
+   char altimap;
    char watchmhop;
    char lastpoi;
    char watchlast;
@@ -638,8 +640,6 @@ extern void aprsdecode_getbeaconname(char [], unsigned long, char [],
                 char *);
 
 extern void aprsdecode_drawbeacon(char [], unsigned long);
-
-extern char aprsdecode_getmypos(struct aprspos_POSITION *);
 
 extern void aprsdecode_makelogfn(char [], unsigned long);
 

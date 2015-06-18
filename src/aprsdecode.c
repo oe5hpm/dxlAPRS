@@ -542,6 +542,7 @@ static void parms(void)
             aprsdecode_mappos.long0 = aprspos_rad0(aprsdecode_mappos.long0);
             aprsdecode_mappos.lat = aprspos_rad0(aprsdecode_mappos.lat);
          }
+         else if (lasth=='c') Lib_NextArg(aprsdecode_lums.configfn, 257ul);
          else if (lasth=='g') {
             Lib_NextArg(h, 4096ul);
             if (gatecnt>9UL) Err("-g gateway table full", 22ul);
@@ -602,6 +603,7 @@ static void parms(void)
          }
          else {
             if (lasth=='h') {
+               osi_WrStrLn(" -c <configfilename>", 21ul);
                osi_WrStrLn(" -g <url>:<port>#<filters> connect to APRS-IS gat\
 eway, repeat -g to other", 74ul);
                osi_WrStrLn("                gateways write favorites first fo\
@@ -709,9 +711,7 @@ ut", 52ul);
                if (GetNum(h, 4096ul, &i, &n)>=0L && n>0UL) {
                   aprsdecode_lums.firstdim = n*60UL;
                }
-               else {
-                  Err("-F fadetime (min)", 18ul);
-               }
+               else Err("-F fadetime (min)", 18ul);
             }
             else if (lasth=='V') {
                Lib_NextArg(h, 4096ul);
@@ -1133,15 +1133,6 @@ static char Sendudp(const char s[], unsigned long s_len,
    return ok0;
 } /* end Sendudp() */
 
-
-extern char aprsdecode_getmypos(struct aprspos_POSITION * pos)
-{
-   char s[21];
-   useri_confstr(useri_fMYPOS, s, 21ul);
-   aprstext_deghtopos(s, 21ul, pos);
-   return aprspos_posvalid(*pos);
-} /* end getmypos() */
-
 #define aprsdecode_MSYM "\\"
 
 #define aprsdecode_INSOPEN "<"
@@ -1170,6 +1161,7 @@ static void beaconmacros(char s[], unsigned long s_len, const char path[],
    long f;
    char ok0;
    char rw;
+   struct aprspos_POSITION pos;
    X2C_PCOPY((void **)&wdata,wdata_len);
    i = 0UL;
    ns[0U] = 0;
@@ -1249,12 +1241,12 @@ static void beaconmacros(char s[], unsigned long s_len, const char path[],
                aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.49", 17ul);
             }
             else if (s[i]=='l') {
-               useri_confstr(useri_fMYPOS, ds, 256ul);
-               aprsstr_Append(ns, 256ul, ds, 256ul);
+               if (aprstext_getmypos(&pos)) {
+                  aprstext_postostr(pos, '2', ds, 256ul);
+                  aprsstr_Append(ns, 256ul, ds, 256ul);
+               }
             }
-            else if (s[i]=='p') {
-               aprsstr_Append(ns, 256ul, path, path_len);
-            }
+            else if (s[i]=='p') aprsstr_Append(ns, 256ul, path, path_len);
             else {
                aprsstr_Assign(s, s_len, "bad beacon macro ", 18ul);
                aprsstr_Append(s, s_len, ns, 256ul);
@@ -1285,11 +1277,9 @@ static void BuildNetBeacon(char h[], unsigned long h_len)
    char h3[301];
    char h2[301];
    char h1[301];
-   useri_confstr(useri_fMYPOS, h1, 301ul);
    useri_confstr(useri_fMYSYM, h3, 301ul);
    useri_confstr(useri_fNBTEXT, h2, 301ul);
-   aprstext_degtopos(h1, 301ul, &mypos);
-   if (!aprspos_posvalid(mypos)) {
+   if (!aprstext_getmypos(&mypos)) {
       useri_xerrmsg("netbeacon: wrong my position", 29ul);
       h[0UL] = 0;
       return;
@@ -1299,6 +1289,7 @@ static void BuildNetBeacon(char h[], unsigned long h_len)
       h[0UL] = 0;
       return;
    }
+   aprstext_postostr(mypos, '2', h1, 301ul);
    aprsstr_Assign(h, h_len, "!", 2ul);
    h1[8U] = h3[0U];
    h1[18U] = h3[1U];
@@ -1387,26 +1378,6 @@ static void SendNet(aprsdecode_pTCPSOCK cp, const char data[],
    SendNetBeacon(cp, s, manual, errtxt, errtxt_len);
 } /* end SendNet() */
 
-/*
-PROCEDURE Timebeacon(cp:pTCPSOCK);
-VAR h:FRAMEBUF;
-    bt:TIME;
-    err:ARRAY[0..99] OF CHAR;
-BEGIN
---WrInt(ORD(configon(fALLOWNETTX)), 5); WrInt(ORD(configon(fCONNECT)), 5);
-                WrStrLn(" tb1");
-  bt:=conf2int(fNETBTIME, 0, 0, MAX(INTEGER), 0);
-  IF configon(fALLOWNETTX) & configon(fCONNECT)
-  & ((bt>=1) OR (cp^.beacont=0)) & Watchclock(cp^.beacont, bt) THEN
-    IF (bt<60) & (bt>0) & (cp^.connt>0) THEN xerrmsg("Netbeacon: too fast")
-                END;
-
-    BuildNetBeacon(h);
-    SendNet(cp, h, FALSE, err);
-    xerrmsg(err);
-  END;
-END Timebeacon;
-*/
 
 static void makeping(unsigned long t, char pong, char b[],
                 unsigned long b_len)
@@ -1496,6 +1467,7 @@ static void NoWX(struct aprsdecode_WX * wx)
    wx->hygro = 1.E+6f;
    wx->baro = 1.E+6f;
    wx->lum = 1.E+6f;
+   wx->sievert = 1.E+6f;
 } /* end NoWX() */
 
 
@@ -1538,6 +1510,36 @@ static void wpar(unsigned long * p, char buf[], unsigned long buf_len,
    }
    if (!empty) *v = x*div0;
 } /* end wpar() */
+
+
+static void wexp(char buf[], unsigned long buf_len, unsigned long * p,
+                float * v, float mul)
+{
+   unsigned long n;
+   float x;
+   x = 0.0f;
+   ++*p;
+   if ((unsigned char)buf[*p]>='0' && (unsigned char)buf[*p]<='9') {
+      x = 10.0f*(float)((unsigned long)(unsigned char)buf[*p]-48UL);
+   }
+   else return;
+   ++*p;
+   if ((unsigned char)buf[*p]>='0' && (unsigned char)buf[*p]<='9') {
+      x = x+(float)((unsigned long)(unsigned char)buf[*p]-48UL);
+   }
+   else return;
+   ++*p;
+   if ((unsigned char)buf[*p]>='0' && (unsigned char)buf[*p]<='9') {
+      n = (unsigned long)(unsigned char)buf[*p]-48UL;
+      while (n>0UL) {
+         x = x*10.0f; /* exponent */
+         --n;
+      }
+      ++*p;
+   }
+   else return;
+   *v = x*mul;
+} /* end wexp() */
 
 
 static void GetWX(struct aprsdecode_WX * wx, unsigned long * course,
@@ -1586,6 +1588,9 @@ static void GetWX(struct aprsdecode_WX * wx, unsigned long * course,
       case 's':
          wpar(p, buf, buf_len, &wwind);
          break;
+      case 'X':
+         wexp(buf, buf_len, p, &wx->sievert, 1.E-9f);
+         break;
       default:;
          goto loop_exit;
       } /* end switch */
@@ -1593,6 +1598,7 @@ static void GetWX(struct aprsdecode_WX * wx, unsigned long * course,
    loop_exit:;
    if (wdir>=0.0f && wdir<360.0f) *course = aprsdecode_trunc(wdir);
    if (wwind>=0.0f && wwind<1000.0f) *speed = aprsdecode_trunc(wwind);
+/* X123 is 12 * 10^3 nanosieverts/hr*/
 } /* end GetWX() */
 
 #define aprsdecode_DATELEN 15
@@ -5421,7 +5427,7 @@ static void approxywarn(struct aprspos_POSITION pos, const char call[],
    long fd;
    km = useri_conf2real(useri_fAPPROXY, 0UL, 0.0f, 30000.0f, 0.0f);
    if (km!=0.0f) {
-      if (aprsdecode_getmypos(&mypos)) {
+      if (aprstext_getmypos(&mypos)) {
          d = aprspos_distance(pos, mypos);
          if (d<=km) {
             /* quick check if it is in radius */
@@ -5693,7 +5699,7 @@ static void digi(const aprsdecode_FRAMEBUF b, unsigned long udpch,
    if (aprsdecode_Decode(tb, 512ul, &dat)<0L) return;
    /*radius */
    if (dat.type!=aprsdecode_MSG && radius>0UL) {
-      if (!aprsdecode_getmypos(&mypos)) {
+      if (!aprstext_getmypos(&mypos)) {
          useri_xerrmsg("Digi with Radius needs MY Position", 35ul);
          return;
       }

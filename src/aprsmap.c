@@ -82,12 +82,12 @@
 
 #define aprsmap_NOSYMT "/"
 /* show this symbol if user has none */
+/*
+      POIFILENAME="poi.txt";
+      MYPOIFILENAME="mypoi.txt";
+*/
 
 #define aprsmap_NOSYMB "/"
-
-#define aprsmap_POIFILENAME "poi.txt"
-
-#define aprsmap_MYPOIFILENAME "mypoi.txt"
 
 enum MHOPS {aprsmap_OPHEARD, aprsmap_OPSENT, aprsmap_OPOBJ};
 
@@ -162,6 +162,7 @@ struct _0;
 
 
 struct _0 {
+   char wasaltimap;
    char wasradio;
    struct aprspos_POSITION markpos;
    struct aprspos_POSITION measurepos;
@@ -232,10 +233,8 @@ static void tooltips(char typ)
    }
    else if (typ=='n') {
       if (useri_configon(useri_fCONNECT) && uptime+60UL>aprsdecode_realtime) {
-         useri_confstr(useri_fMYPOS, s, 21ul);
-         aprstext_degtopos(s, 21ul, &pos);
          useri_confstr(useri_fSERVERFILT, s, 21ul);
-         if (X2C_CAP(s[0U])=='M' && !(aprsdecode_getmypos(&pos)
+         if (X2C_CAP(s[0U])=='M' && !(aprstext_getmypos(&pos)
                 && useri_configon(useri_fALLOWNETTX))) {
             useri_starthint(10007UL, 1);
          }
@@ -2249,7 +2248,7 @@ static void measureline(maptool_pIMAGE img, struct aprspos_POSITION pos0,
       vec = 1;
       ok0 = 0;
       altok = 0;
-      if (!aprsdecode_click.withradio) {
+      if (!aprsdecode_click.withradio || aprsdecode_click.altimap) {
          ant1 = getant(useri_fANT1);
          ant2 = getant(useri_fANT2);
          mhz = useri_conf2real(useri_fFRESNELL, 0UL, 0.0f, X2C_max_real,
@@ -2522,7 +2521,7 @@ static void mapzoom(struct aprspos_POSITION pos0,
                 &aprsdecode_inittiley, &maptool_shiftx, &maptool_shifty);
       if (aprsdecode_initzoom<=1L) break;
       /* test if map is complete */
-      if (useri_configon(useri_fZOOMMISS)) {
+      if (useri_configon(useri_fZOOMMISS) && aprsdecode_lums.map>0L) {
          maptool_center(maptool_xsize, maptool_ysize,
                 maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom),
                 mid, &testpos);
@@ -2565,7 +2564,9 @@ static void mapzoom(struct aprspos_POSITION pos0,
    maptool_center(maptool_xsize, maptool_ysize,
                 maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom),
                 mid, &aprsdecode_mappos);
-   if (aprsdecode_mappos.lat<mo.lat) aprsdecode_mappos.lat = mo.lat;
+   if (aprsdecode_mappos.lat<mo.lat) {
+      aprsdecode_mappos.lat = mo.lat;
+   }
 } /* end mapzoom() */
 
 
@@ -2736,9 +2737,7 @@ static void find(void)
    useri_confstr(useri_fFIND, h, 201ul);
    if (!qth(h, 201ul)) {
       /* not a locator */
-      aprstext_degtopos(h, 201ul, &pos); /* DDMM.MMNDDDMM.MME */
-      if (!aprspos_posvalid(pos)) aprstext_deghtopos(h, 201ul, &pos);
-      if (!aprspos_posvalid(pos)) aprstext_degdeztopos(h, 201ul, &pos);
+      aprstext_deganytopos(h, 201ul, &pos);
       if (!aprspos_posvalid(pos)) maptool_POIfind(&pos, h, 201ul);
       if (aprspos_posvalid(pos)) {
          /* lat / long */
@@ -3583,34 +3582,14 @@ static void addradio(void)
    char abort0;
    struct aprsdecode_COLTYP c2;
    struct aprsdecode_COLTYP c1;
-   /*
-     IF click.panorama THEN
-       IF posvalid(click.markpos) THEN
-         lums.rf:=0;
-         abort:=FALSE;
-         clr(rfimg);
-         getgeocol(fCOLMARK1, geobri(), 100,100,100, c1);
-         panorama(rfimg, click.markpos, c1, abort);
-         radio.wasradio:=TRUE;
-   
-         IF abort THEN
-           textautosize(0, 0, 5, 2, "r", "panorama aborted");
-           closeradio;
-           radio.wasradio:=FALSE;
-           sayonoff("Panorama", click.withradio);
-         END;
-       END;
-       IF radio.wasradio THEN addmap(image, rfimg) END;
-   
-     ELS
-   */
    if (aprspos_posvalid(aprsdecode_click.markpos)
                 || aprspos_posvalid(aprsdecode_click.measurepos)) {
       aprsdecode_lums.rf = 0L;
       getgeocol(useri_fCOLMARK1, geobri(), 100UL, 0UL, 0UL, &c1);
       getgeocol(useri_fCOLMARK2, geobri(), 0UL, 100UL, 0UL, &c2);
-      if ((((((((((((((((!radio.wasradio || radio.markpos.lat!=aprsdecode_click.markpos.lat)
-                 || radio.markpos.long0!=aprsdecode_click.markpos.long0)
+      if (((((((((((((((((!radio.wasradio || radio.wasaltimap)
+                || radio.markpos.lat!=aprsdecode_click.markpos.lat)
+                || radio.markpos.long0!=aprsdecode_click.markpos.long0)
                 || radio.measurepos.lat!=aprsdecode_click.measurepos.lat)
                 || radio.measurepos.long0!=aprsdecode_click.measurepos.long0)
                  || radio.mappos.lat!=aprsdecode_mappos.lat)
@@ -3637,6 +3616,7 @@ static void addradio(void)
          /*      IF (lums.map>0) & posvalid(click.measurepos)
                 & posvalid(click.markpos) THEN makebw(image) END; */
          radio.wasradio = 1;
+         radio.wasaltimap = 0;
          radio.markpos = aprsdecode_click.markpos;
          radio.measurepos = aprsdecode_click.measurepos;
          radio.mappos = aprsdecode_mappos;
@@ -3663,6 +3643,34 @@ static void addradio(void)
       if (radio.wasradio) maptool_addmap(image, rfimg);
    }
 } /* end addradio() */
+
+/* simple relieaf map layer */
+
+static void altitudemap(void)
+{
+   aprsdecode_lums.rf = 0L;
+   if ((((((!radio.wasradio || !radio.wasaltimap)
+                || radio.mappos.lat!=aprsdecode_mappos.lat)
+                || radio.mappos.long0!=aprsdecode_mappos.long0)
+                || radio.initzoom!=aprsdecode_initzoom)
+                || radio.finezoom!=aprsdecode_finezoom)
+                || radio.bri!=geobri()) {
+      maptool_clr(rfimg);
+      if (maptool_SimpleRelief(rfimg)) {
+         radio.wasaltimap = 1;
+         radio.wasradio = 1;
+         radio.mappos = aprsdecode_mappos;
+         radio.initzoom = aprsdecode_initzoom;
+         radio.finezoom = aprsdecode_finezoom;
+         radio.bri = geobri();
+      }
+      else {
+         useri_textautosize(0L, 0L, 3UL, 2UL, 'r', "no altitude data found",
+                23ul);
+      }
+   }
+   if (radio.wasradio) maptool_addmap(image, rfimg);
+} /* end altitudemap() */
 
 
 static void xytomark(void)
@@ -4211,7 +4219,7 @@ static void makeimage(char dryrun)
       addrftracks(dryrun, 1);
    }
    if (aprsdecode_lums.moving) {
-      text(aprsdecode_ophist0, 0, 0, 0, 0);
+      text(aprsdecode_ophist0, 0, 0, 0, 1);
       if (aprsdecode_lums.track>1L) {
          tracks(image, aprsdecode_ophist0, 0, X2C_max_longcard);
       }
@@ -4219,7 +4227,7 @@ static void makeimage(char dryrun)
       if (aprsdecode_lums.sym>0L) {
          symbols(aprsdecode_ophist0, 0, 0, &hoverobj);
       }
-      text(aprsdecode_ophist0, 1, 0, 0, 0);
+      text(aprsdecode_ophist0, 1, 0, 0, 1);
    }
    else {
       if (aprsdecode_lums.track>1L) {
@@ -4243,7 +4251,7 @@ static void makeimage(char dryrun)
                 aprsdecode_click.marktime==0UL);
       }
       drawsquer(image);
-      if (!aprsdecode_click.withradio) {
+      if (!aprsdecode_click.withradio || aprsdecode_click.altimap) {
          mpos = aprsdecode_click.measurepos;
          if ((!aprspos_posvalid(mpos) && hoverobj.opf)
                 && useri_configon(useri_fGEOPROFIL)) {
@@ -4255,7 +4263,10 @@ static void makeimage(char dryrun)
       maptool_cc(image, TimeConv_time(), 0UL);
       if (useri_configon(useri_fRULER)) maptool_ruler(image);
       drawzoomsquer(image);
-      if (aprsdecode_click.withradio) addradio();
+      if (aprsdecode_click.withradio) {
+         if (aprsdecode_click.altimap) altitudemap();
+         else addradio();
+      }
       else radio.wasradio = 0;
    }
    else {
@@ -4326,7 +4337,7 @@ static void MainEvent(void)
                   aprsdecode_click.cmd = '=';
                }
                else if (aprsstr_InStr(cfgs, 21ul, "H", 2ul)>=0L) {
-                  aprsdecode_click.cmd = 'H';
+                  aprsdecode_click.cmd = 'h';
                }
                else if (aprsstr_InStr(cfgs, 21ul, "C", 2ul)>=0L) {
                   aprsdecode_click.cmd = 'c';
@@ -4342,7 +4353,7 @@ static void MainEvent(void)
                   aprsdecode_click.cmd = '=';
                }
                else if (aprsstr_InStr(cfgs, 21ul, "H", 2ul)>=0L) {
-                  aprsdecode_click.cmd = 'H';
+                  aprsdecode_click.cmd = 'h';
                }
                else if (aprsstr_InStr(cfgs, 21ul, "C", 2ul)>=0L) {
                   aprsdecode_click.cmd = 'c';
@@ -4367,7 +4378,7 @@ static void MainEvent(void)
                aprsdecode_click.cmd = '=';
             }
             else if (aprsstr_InStr(cfgs, 21ul, "H", 2ul)>=0L) {
-               aprsdecode_click.cmd = 'H';
+               aprsdecode_click.cmd = 'h';
             }
             else if (aprsstr_InStr(cfgs, 21ul, "C", 2ul)>=0L) {
                aprsdecode_click.cmd = 'c';
@@ -4477,6 +4488,8 @@ static void MainEvent(void)
       }
    }
    if (raw || aprsdecode_click.cmd) {
+      /*WrStrLn(click.cmd); */
+      /*WrInt(ORD(click.cmd), 1); WrStrLn(click.cmd); */
       maptool_startmapdelay();
       if (aprsdecode_click.cmd=='\030') {
          aprsdecode_mappos.lat = aprsdecode_mappos.lat-movest((unsigned long)
@@ -4516,7 +4529,7 @@ static void MainEvent(void)
                  100L); /* switch on objects */
          pandone = 0;
       }
-      else if (aprsdecode_click.cmd=='H') {
+      else if (aprsdecode_click.cmd=='h') {
          aprsdecode_click.dryrun = 0;
          if (aprsdecode_click.entries>0UL) {
             push(aprsdecode_mappos, maptool_realzoom(aprsdecode_initzoom,
@@ -4621,10 +4634,26 @@ static void MainEvent(void)
          else aprsdecode_lums.rf = 0L;
       }
       else if (aprsdecode_click.cmd=='\022') {
-         if (aprsdecode_click.withradio) closeradio();
-         else aprsdecode_click.withradio = 1;
+         if (aprsdecode_click.withradio && !aprsdecode_click.altimap) {
+            closeradio();
+         }
+         else {
+            aprsdecode_click.withradio = 1;
+            aprsdecode_click.altimap = 0;
+         }
          aprsdecode_lums.wxcol = 0;
          useri_sayonoff("Radiorange Map", 15ul, aprsdecode_click.withradio);
+      }
+      else if (aprsdecode_click.cmd=='H') {
+         if (aprsdecode_click.withradio && aprsdecode_click.altimap) {
+            closeradio();
+         }
+         else {
+            aprsdecode_click.withradio = 1;
+            aprsdecode_click.altimap = 1;
+         }
+         aprsdecode_lums.wxcol = 0;
+         useri_sayonoff("Altitude Map", 13ul, aprsdecode_click.withradio);
       }
       else if (aprsdecode_click.cmd=='O') {
          /*
@@ -4675,18 +4704,6 @@ static void MainEvent(void)
       else if (aprsdecode_click.cmd=='C') centermouse(1);
       else if (aprsdecode_click.cmd=='t'
                 && aprspos_posvalid(aprsdecode_click.markpos)) {
-         /*
-                   IF posvalid(click.clickpos) THEN
-                     push(mappos, realzoom(initzoom, finezoom));
-                     center(xsize, ysize, realzoom(initzoom, finezoom),
-                click.clickpos, mappos);
-                     posinval(click.clickpos);
-                   ELSIF posvalid(click.bubblpos) THEN
-                     push(mappos, realzoom(initzoom, finezoom));
-                     center(xsize, ysize, realzoom(initzoom, finezoom),
-                click.bubblpos, mappos);
-                   END;
-         */
          /* click to listwin line */
          maptool_center(maptool_xsize, maptool_ysize,
                 maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom),
@@ -4698,6 +4715,8 @@ static void MainEvent(void)
                 && aprspos_posvalid(clickwatchpos)) {
          /* click to watchcall popup */
          aprsdecode_click.markpos = clickwatchpos;
+         push(aprsdecode_mappos, maptool_realzoom(aprsdecode_initzoom,
+                aprsdecode_finezoom));
          maptool_center(maptool_xsize, maptool_ysize,
                 maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom),
                 aprsdecode_click.markpos, &aprsdecode_mappos);
@@ -4705,22 +4724,7 @@ static void MainEvent(void)
          if (aprsdecode_click.mhop[0UL]) setshowall();
       }
       else if (aprsdecode_click.cmd=='c') centermouse(0);
-      else if (aprsdecode_click.cmd=='X') {
-         /*
-                   IF (click.entries>0)
-                & (click.table[click.selected].opf<>NIL)
-                   & posvalid(click.table[click.selected].opf^.lastpos) THEN
-                     push(mappos, realzoom(initzoom, finezoom));
-                     center(xsize, ysize, realzoom(initzoom, finezoom),
-                click.table[click.selected].opf^.lastpos, mappos);
-                   ELSIF posvalid(click.clickpos) THEN
-                     push(mappos, realzoom(initzoom, finezoom));
-                     center(xsize, ysize, realzoom(initzoom, finezoom),
-                click.clickpos, mappos);
-                   END;
-         */
-         xytomark(); /* set marker 1 to map pos */
-      }
+      else if (aprsdecode_click.cmd=='X') xytomark();
       else if (aprsdecode_click.cmd=='x') {
          /* set marker 1 to object lastpos */
          clicktomark();
@@ -4789,9 +4793,7 @@ to Defaults", 34ul);
       else if (aprsdecode_click.cmd=='\\') {
          useri_helptext(0UL, 0UL, 0UL, 0UL, "en-shortcuts", 13ul);
       }
-      else if (aprsdecode_click.cmd=='7') {
-         useri_Setmap(0UL);
-      }
+      else if (aprsdecode_click.cmd=='7') useri_Setmap(0UL);
       else if (aprsdecode_click.cmd=='8') useri_Setmap(1UL);
       else if (aprsdecode_click.cmd=='9') useri_Setmap(2UL);
       else if (aprsdecode_click.cmd=='Q') quit = 1;
@@ -4906,111 +4908,96 @@ static void killsave(long signum)
    X2C_HALT((unsigned long)signum);
 } /* end killsave() */
 
-
-static char getch(char b[4096], long fd, long * len, long * p)
-{
-   if (*p>=*len) {
-      *len = osi_RdBin(fd, (char *)b, 4096u/1u, 4096UL);
-      if (*len<=0L) return 0;
-      *p = 0L;
-   }
-   ++*p;
-   return b[*p-1L];
-} /* end getch() */
-
-
-static long getword(long * p, long * len, long fd, char b[4096], char s[],
-                unsigned long s_len)
-{
-   unsigned long i;
-   i = 0UL;
-   for (;;) {
-      s[i] = getch(b, fd, len, p);
-      if (s[i]==0) return -1L;
-      if (s[i]=='\012') {
-         s[i] = 0;
-         return 0L;
-      }
-      if (s[i]==',') {
-         s[i] = 0;
-         return 1L;
-      }
-      if (i<s_len-1 && (unsigned char)s[i]>=' ') ++i;
-   }
-   return 0;
-} /* end getword() */
+/*
+PROCEDURE rdmountains(fn:ARRAY OF CHAR);
+                (* import csv file with mountain name, pos, altitude *)
+VAR p,len,r:INTEGER;
+    fd:File;
+    pm:pMOUNTAIN;
+    pos:POSITION;
+    alt:REAL;
+    b:ARRAY[0..4095] OF CHAR;
+    s:ARRAY[0..1023] OF CHAR;
+    com, lat, long, name:ARRAY[0..99] OF CHAR;
 
 
-static void rdmountains(char fn[], unsigned long fn_len)
-/* import csv file with mountain name, pos, altitude */
-{
-   long r;
-   long len;
-   long p;
-   long fd;
-   aprsdecode_pMOUNTAIN pm;
-   struct aprspos_POSITION pos;
-   float alt;
-   char b[4096];
-   char s[1024];
-   char name[100];
-   char long0[100];
-   char lat[100];
-   char com[100];
-   X2C_PCOPY((void **)&fn,fn_len);
-   b[0U] = 0;
-   useri_confstr(useri_fOSMDIR, s, 1024ul);
-   aprsstr_Append(b, 4096ul, s, 1024ul);
-   aprsstr_Append(b, 4096ul, "/", 2ul);
-   aprsstr_Append(b, 4096ul, fn, fn_len);
-   fd = osi_OpenRead(b, 4096ul);
-   if (!osi_FdValid(fd)) goto label;
-   p = 0L;
-   len = 0L;
-   for (;;) {
-      r = getword(&p, &len, fd, b, com, 100ul);
-      if (r>0L) {
-         r = getword(&p, &len, fd, b, name, 100ul);
-         if (r>0L) {
-            r = getword(&p, &len, fd, b, s, 1024ul);
-            if (r>0L) {
-               r = getword(&p, &len, fd, b, lat, 100ul);
-               if (r>0L) {
-                  r = getword(&p, &len, fd, b, long0, 100ul);
-                  if (r>0L) {
-                     r = getword(&p, &len, fd, b, s, 1024ul);
-                     if (r<0L || !aprsstr_StrToFix(&alt, s, 1024ul)) {
-                        alt = 0.0f;
-                     }
-                     while (r>0L) r = getword(&p, &len, fd, b, s, 1024ul);
-                  }
-               }
-            }
-         }
-      }
-      if (r<0L) break;
-      if ((((com[0U]!='#' && name[0U]) && aprsstr_StrToFix(&pos.lat, lat,
-                100ul)) && aprsstr_StrToFix(&pos.long0, long0,
-                100ul)) && aprspos_posvalid(pos)) {
-         Storage_ALLOCATE((X2C_ADDRESS *) &pm,
-                sizeof(struct aprsdecode_MOUNTAIN));
-         if (pm==0) break;
-         useri_debugmem.srtm += sizeof(struct aprsdecode_MOUNTAIN);
-         aprsstr_Assign(pm->name, 32ul, name, 100ul);
-         pm->pos.lat = pos.lat*1.7453292519444E-2f;
-         pm->pos.long0 = pos.long0*1.7453292519444E-2f;
-         if (alt<0.0f || alt>9999.0f) alt = 0.0f;
-         pm->alt = (short)aprsdecode_trunc(alt);
-         pm->next = aprsdecode_mountains;
-         aprsdecode_mountains = pm;
-      }
-   }
-   /*WrInt(pm^.alt, 10); WrStrLn(pm^.name); */
-   osi_Close(fd);
-   label:;
-   X2C_PFREE(fn);
-} /* end rdmountains() */
+  PROCEDURE getch():CHAR;
+  BEGIN
+    IF p>=len THEN
+      len:=RdBin(fd, b, SIZE(b));
+      IF len<=0 THEN RETURN 0C END;
 
+      p:=0; 
+    END;
+    INC(p);
+    RETURN b[p-1]
+  END getch;
+
+  PROCEDURE getword(VAR s:ARRAY OF CHAR):INTEGER;
+  VAR i:CARDINAL;
+  BEGIN
+    i:=0;
+    LOOP
+      s[i]:=getch();
+      IF s[i]=0C THEN RETURN -1 END;
+      IF s[i]=LF THEN s[i]:=0C; RETURN 0 END;
+      IF s[i]="," THEN s[i]:=0C; RETURN 1 END;
+      IF (i<HIGH(s)) & (s[i]>=" ") THEN INC(i) END;
+    END;
+  END getword; 
+
+BEGIN
+  b[0]:=0C;
+  confstr(fOSMDIR, s);
+  Append(b, s);
+  Append(b, DIRSEP);
+  Append(b, fn);
+
+  fd:=OpenRead(b);
+  IF NOT FdValid(fd) THEN RETURN END;
+
+  p:=0;
+  len:=0;
+  LOOP          
+    r:=getword(com);
+    IF r>0 THEN
+      r:=getword(name);
+      IF r>0 THEN
+        r:=getword(s);
+        IF r>0 THEN
+          r:=getword(lat);
+          IF r>0 THEN
+            r:=getword(long);
+            IF r>0 THEN
+              r:=getword(s);
+              IF (r<0) OR NOT StrToFix(alt, s) THEN alt:=0.0 END;  
+              WHILE r>0 DO r:=getword(s) END;
+            END;
+          END;
+        END;
+      END;
+    END;
+    IF r<0 THEN EXIT END;
+
+    IF (com[0]<>"#") & (name[0]<>0C) & StrToFix(pos.lat, lat)
+    & StrToFix(pos.long, long) & posvalid(pos) THEN
+      ALLOCATE(pm, SIZE(pm^));
+      IF pm=NIL THEN EXIT END;
+
+      INC(debugmem.srtm, SIZE(pm^));
+      Assign(pm^.name, name);
+      pm^.pos.lat:= pos.lat * RAD;
+      pm^.pos.long:=pos.long* RAD;
+      IF (alt<0.0) OR (alt>9999.0) THEN alt:=0.0 END;
+      pm^.alt:=trunc(alt);
+      pm^.next:=mountains;
+      mountains:=pm;
+--WrInt(pm^.alt, 10); WrStrLn(pm^.name);
+    END;
+  END;
+  Close(fd);
+END rdmountains;
+*/
 
 X2C_STACK_LIMIT(100000l)
 extern int main(int argc, char **argv)
@@ -5030,13 +5017,15 @@ extern int main(int argc, char **argv)
    useri_clrconfig();
    aprsdecode_initparms();
    aprsdecode_posinval(&aprsdecode_click.markpos);
+   aprsdecode_mountains = 0;
    useri_loadconfig(0);
    maptool_loadfont();
    useri_maximized = 0;
    useri_getstartxysize(&maptool_xsize, &maptool_ysize);
-   aprsdecode_mountains = 0;
-   rdmountains("poi.txt", 8ul);
-   rdmountains("mypoi.txt", 10ul);
+   /*
+     rdmountains(POIFILENAME);
+     rdmountains(MYPOIFILENAME);
+   */
    if (aprsdecode_initxsize>0L) maptool_xsize = aprsdecode_initxsize;
    /*  IF xsize<MINXSIZE THEN xsize:=MINXSIZE ELSIF xsize>MAXXSIZE THEN xsize:=MAXXSIZE END;
                  */

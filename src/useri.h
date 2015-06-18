@@ -68,6 +68,8 @@
 
 #define useri_CMDINTERNSTAT "I"
 
+#define useri_CMDMH "h"
+
 #define useri_CMDFIND "\245"
 
 #define useri_CMDZOOMSQUARE "\307"

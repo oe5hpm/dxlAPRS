@@ -212,6 +212,7 @@ shaped.
 
 |522 Show Maps with selected Data like Wx-Maps or
 choose a Symbol and show Stations with this.
+Use TAB-Key to toggle 2 Map Views.
 
 |535 Manage Sent Messages (Shortcut M)
 
@@ -667,7 +668,8 @@ Program Quit
 
 |7001 Save Config now 
 
-|7005 Loosing all Entries not Saved before
+|7005 Import aprsmap.cfg (Loosing all Entries not Saved before)
+empty srtm-cache and reimport poi.txt and mypoi.txt Data
 
 |7010 Enter Calls You want to be told if
 they are active. If new Data arrive
@@ -766,7 +768,8 @@ Position. Without a valid Passcode the
 Data will not go to the World 
 
 |7445 Enable Igate
-Function disabled in Win-Version due to TCP-System
+In Win version works only with Servers with ping-pong
+protocoll extension (udpgate) due to TCP-System
 is not able to report DELAY time on transmission
 and can not stop a delaying link without trying to
 send the timed out Data, known as "sending data into
@@ -895,6 +898,14 @@ Map moving way.
 Mouse Position, Distance and Direction to
 Marker 1 and if File "poi.txt" in osm-directory
 contains info to this position, it will be shown
+Toggle with "p"
+
+|7861 On Mouse-Over, from this Zoomlevel or higher,
+show Point-of-Interest Content from files
+poi.txt and mypoi.txt. On/off with "p".
+Hint: "Config > Reload Config" (re)reads
+this files after changes.
+Press "Save Config" before.
 
 |7855 Enable Trackfilter to remove possibly wrong waypoints
 of tracks. This does not affect stored data.
@@ -1347,12 +1358,12 @@ Radiation
 |8518 Refraction Factor of Atmosphere
 0.00 in Vacuum
 1.00 Vacuum on Flat Earth or refraction equals earthradius
-0.25 Median Value in Atmosphere
+0.25 Typical Value in Atmosphere
 
 |8515 0 is hard shaped area. More realistic
 Image will make values around 5 to 10
 (meters) for soft fading away sight.
-Values von 20 to more hundred meters
+Values from 20 to more hundred meters
 (in high mountain areas) are usefull
 for calculating relief-Maps as overlay
 to OSM Maps or with zero-brigthness Map.
@@ -1364,6 +1375,10 @@ press "R"
 
 |8510 Brightness in % of Radiation Map
 
+|8508 Cache for altitude data in RAM in Megabytes
+Set to more for faster work with altitude Maps
+or long distance radiation sight graphs
+
 |8505 Colour of Radiation Area from Antenna 1
 
 |8500 Colour of Radiation Area from Antenna 2
@@ -1374,7 +1389,7 @@ there may be a diffraction edge
 
 |8535 Select Quality
 |8536 Redraw if quality changed
-|8537 Toggle on/off Relief/Radiation Map
+|8537 Toggle on/off Relief/Radiation Map (or use "R"-key)
 
 
 |10005 Tipp: Move and Zoom Map to Your Home Area
@@ -1417,7 +1432,8 @@ Off with "Show All" "0" oder ESC
 
 |8625 Only Stations with the selected Symbol will
 be shown. This may be toggled on/off here or 
-with "s"-Key
+with "s"-Key. Use TAB-Key to toggle between
+2 Map configurations.
 
 |8626 Select a Symbol, for Overlay Symbols an
 additional Character or Number may be choosed

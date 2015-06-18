@@ -454,6 +454,13 @@ extern void aprstext_decode(char s[], unsigned long s_len,
             aprsstr_Append(s, s_len, h, 512ul);
             aprsstr_Append(s, s_len, "W", 2ul);
          }
+         if (dat->wx.sievert!=1.E+6f) {
+            if (nl) aprsstr_Append(s, s_len, "\012 ", 3ul);
+            aprsstr_Append(s, s_len, " Radiation:", 12ul);
+            aprsstr_FixToStr(dat->wx.sievert*1.E+9f+0.5f, 0UL, h, 512ul);
+            aprsstr_Append(s, s_len, h, 512ul);
+            aprsstr_Append(s, s_len, "nSv/h", 6ul);
+         }
       }
       else if (dat->type==aprsdecode_MSG) {
          aprsstr_Append(s, s_len, "\012 ", 3ul);
@@ -498,7 +505,9 @@ extern void aprstext_decode(char s[], unsigned long s_len,
    aprsstr_Append(s, s_len, "[", 2ul);
    aprstext_Apphex(s, s_len, pf->vardat->raw, 500ul);
    aprsstr_Append(s, s_len, "]", 2ul);
-   if (!decoded) Errtxt(s, s_len, pf0, pf);
+   if (!decoded) {
+      Errtxt(s, s_len, pf0, pf);
+   }
 } /* end decode() */
 
 
@@ -1158,6 +1167,27 @@ extern void aprstext_degdeztopos(char s[], unsigned long s_len,
 } /* end degdeztopos() */
 
 
+extern void aprstext_deganytopos(char s[], unsigned long s_len,
+                struct aprspos_POSITION * pos)
+/* lat long any format in float deg */
+{
+   X2C_PCOPY((void **)&s,s_len);
+   aprstext_degtopos(s, s_len, pos); /* DDMM.MMNDDDMM.MME */
+   if (!aprspos_posvalid(*pos)) aprstext_deghtopos(s, s_len, pos);
+   if (!aprspos_posvalid(*pos)) aprstext_degdeztopos(s, s_len, pos);
+   X2C_PFREE(s);
+} /* end deganytopos() */
+
+
+extern char aprstext_getmypos(struct aprspos_POSITION * pos)
+{
+   char s[51];
+   useri_confstr(useri_fMYPOS, s, 51ul);
+   aprstext_deganytopos(s, 51ul, pos);
+   return aprspos_posvalid(*pos);
+} /* end getmypos() */
+
+
 static char num(long n)
 {
    return (char)(X2C_MOD(labs(n),10L)+48L);
@@ -1385,9 +1415,7 @@ static void getbeaconpos(struct aprspos_POSITION * pos, char * err)
       else useri_encerr("beacon position file not found", 31ul);
    }
    if (s[0U]) {
-      aprstext_degtopos(s, 1001ul, pos); /* DDMM.MMNDDDMM.MME */
-      if (!aprspos_posvalid(*pos)) aprstext_deghtopos(s, 1001ul, pos);
-      if (!aprspos_posvalid(*pos)) aprstext_degdeztopos(s, 1001ul, pos);
+      aprstext_deganytopos(s, 1001ul, pos);
       if (!aprspos_posvalid(*pos)) {
          useri_encerr("object/item position wrong", 27ul);
          *err = 1;
@@ -1460,10 +1488,7 @@ extern void aprstext_encbeacon(char s[], unsigned long s_len,
          useri_encerr("not valid callsign as beacon sender?", 37ul);
       }
       aprsstr_Append(s, s_len, h, 201ul);
-      useri_confstr(useri_fMYPOS, h, 201ul);
-      aprstext_degtopos(h, 201ul, &pos);
-      if (h[0U]) {
-         aprstext_degtopos(h, 201ul, &pos); /* netbeacon pos */
+      if (aprstext_getmypos(&pos)) {
          if (!aprspos_posvalid(pos)) {
             useri_encerr("net beacon position wrong", 26ul);
             err = 1;
@@ -1502,9 +1527,7 @@ extern void aprstext_encbeacon(char s[], unsigned long s_len,
       useri_confstr(useri_fRBDEST, h, 201ul);
       if (h[0U]==0) strncpy(h,"APLM01",201u);
       i = aprsstr_InStr(h, 201ul, "-", 2ul);
-      if (i>0L) {
-         aprsstr_Delstr(h, 201ul, (unsigned long)i, 201UL); /* delete ssid */
-      }
+      if (i>0L) aprsstr_Delstr(h, 201ul, (unsigned long)i, 201UL);
    }
    aprsstr_Append(s, s_len, h, 201ul);
    useri_confstr(useri_fRBPATH, h, 201ul);
@@ -1593,9 +1616,7 @@ extern void aprstext_encbeacon(char s[], unsigned long s_len,
    }
    useri_confappend(useri_fRBCOMMENT, s, s_len);
    *len += aprsstr_Length(s, s_len)-datastart;
-   if (err) {
-      s[0UL] = 0;
-   }
+   if (err) s[0UL] = 0;
 } /* end encbeacon() */
 
 

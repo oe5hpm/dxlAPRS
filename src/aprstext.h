@@ -61,6 +61,11 @@ extern void aprstext_deghtopos(char [], unsigned long,
 extern void aprstext_degdeztopos(char [], unsigned long,
                 struct aprspos_POSITION *);
 
+extern void aprstext_deganytopos(char [], unsigned long,
+                struct aprspos_POSITION *);
+
+extern char aprstext_getmypos(struct aprspos_POSITION *);
+
 extern void aprstext_listop(char);
 
 extern void aprstext_listtyps(char, char, char [], unsigned long);
