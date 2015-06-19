@@ -1556,7 +1556,9 @@ lines = no tx (size max 32kb)", 79ul);
                osi_WrStrLn("                \\\\z ddhhmm, \\\\h hhmmss, \\\\:\
 filename: insert file, \\\\[filename]", 79ul);
                osi_WrStrLn("                insert file and delete after, \\\\
-\\\ is \\\\, \\\\rm delete beacon file", 81ul);
+\(filename) if exists insert", 76ul);
+               osi_WrStrLn("                and delete,\\\\\\ is \\\\, \\\\rm\
+ delete beacon file", 62ul);
                osi_WrStrLn("                file may be modified any time eg.\
  by telemetry program", 71ul);
                osi_WrStrLn(" -c <ip>:<port> send text monitor udp frame with \
@@ -1894,12 +1896,19 @@ static void cpraw(char in[], unsigned long in_len, char out[],
 #define udpbox_MSYM "\\"
 
 #define udpbox_INSFN ":"
+/* insert file and send no beacon if missing */
 
 #define udpbox_INSFNEND ":"
 
 #define udpbox_DELFN "["
+/* insert file, delete and send no beacon if missing */
 
 #define udpbox_DELFNEND "]"
+
+#define udpbox_DELFNN "("
+/* insert file, delete and insert nothing if missing */
+
+#define udpbox_DELFNNEND ")"
 
 
 static void beaconmacros(char s[], unsigned long s_len, char * del)
@@ -1943,9 +1952,10 @@ static void beaconmacros(char s[], unsigned long s_len, char * del)
             ds[6U] = 0;
             aprsstr_Append(ns, 256ul, ds, 256ul);
          }
-         else if (s[i]==':' || s[i]=='[') {
+         else if ((s[i]==':' || s[i]=='[') || s[i]=='(') {
             /* insert file */
             if (s[i]==':') fnend = ':';
+            else if (s[i]=='(') fnend = ')';
             else fnend = ']';
             fn[0U] = 0;
             ++i;
@@ -1957,7 +1967,7 @@ static void beaconmacros(char s[], unsigned long s_len, char * del)
             if (f>=0L) {
                len = osi_RdBin(f, (char *)ds, 256u/1u, 255UL);
                osi_Close(f);
-               if (fnend==']') {
+               if (fnend==']' || fnend==')') {
                   FileSys_Remove(fn, 1024ul, &voidok);
                 /* delete insert file after inserting */
                }
@@ -1967,7 +1977,8 @@ static void beaconmacros(char s[], unsigned long s_len, char * del)
                   ++j;
                }
             }
-            else {
+            else if (fnend!=')') {
+               /* skip whole beacon line */
                if (show) {
                   osi_WrLn();
                   osi_WrStrLn("beacon macro file not readable ", 32ul);
