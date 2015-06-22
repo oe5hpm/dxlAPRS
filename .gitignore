@@ -24,4 +24,5 @@ cpy
 dxlAPRS_*.tgz
 *.patch
 src/arm-linux-*
+buildAll.sh
 
