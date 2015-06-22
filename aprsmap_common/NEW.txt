@@ -1213,6 +1213,16 @@
 
 
 
+21 6. 2015 (Ver 0.50)
+
+
++ Maidenhead Locator Ausgabe langes Format, Eingabe "Find" 6 8 oder 10 stellig.
++ Treiber Aufruf fuer Soundmodems und (USB-)serielle kiss/smack TNC/Funkgeraete
+  betriebssystemspezifisch voreingestellt (sofern noch kein aprsmap.cfg vorhanden ist).
++ Popup Fenster Ueberlappungen etwas seltener.
++ Radioaktivitaet (Sievert) Dekodierung in den Wx-Baken (vorerst ohne Grafik)
++ Getrennte Backspace/Rechte-Maus History fuer beide TABs
+
 
 
 

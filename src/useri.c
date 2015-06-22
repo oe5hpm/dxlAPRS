@@ -80,6 +80,15 @@ maptool_pIMAGE useri_panoimage;
 
 #define useri_SHOTFORMATS "(.ppm/.png)"
 
+#define useri_SERIAL1 "udpflex -U :9002:9001 -i kiss.txt -u -t /dev/ttyUSB0:9\
+600"
+
+#define useri_SERIAL2 "afskmodem -f 22050 -C 0 -p /dev/ttyS0 0 -M 0 -U 127.0.\
+0.1:9002:9001 -m 0"
+
+static char useri_TICKERHEADLINE = 0;
+                /* some window managers do not free window headline mem */
+
 #define useri_POIFILENAME "poi.txt"
 
 #define useri_MYPOIFILENAME "mypoi.txt"
@@ -943,9 +952,10 @@ extern void useri_initconfig(void)
                  135UL);
    initc(useri_fUDP4, "UDP4(ip:send:listen)", 21ul, useri_cBLINE, "", 1ul, 0,
                  140UL);
-   initc(useri_fSERIALTASK, "Serial Task", 12ul, useri_cBLINE, "", 1ul, 0,
-                137UL);
-   initc(useri_fSERIALTASK2, "Serial Task2", 13ul, useri_cBLINE, "", 1ul, 0,
+   initc(useri_fSERIALTASK, "Serial Task", 12ul, useri_cBLINE, "udpflex -U :9\
+002:9001 -i kiss.txt -u -t /dev/ttyUSB0:9600", 58ul, 0, 137UL);
+   initc(useri_fSERIALTASK2, "Serial Task2", 13ul, useri_cBLINE, "afskmodem -\
+f 22050 -C 0 -p /dev/ttyS0 0 -M 0 -U 127.0.0.1:9002:9001 -m 0", 73ul, 0,
                 137UL);
    initc(useri_fDIGI, "Digipeater", 11ul, useri_cBLIST, "", 1ul, 0, 139UL);
    initc(useri_fDIGITIME, "block same Content [s]", 23ul, useri_cLINE, "890",
@@ -1042,8 +1052,8 @@ extern void useri_initconfig(void)
                 335UL);
    initc(useri_fCLICKSYM, "Click Sym", 10ul, useri_cLINE, "u", 2ul, 0,
                 340UL);
-   initc(useri_fCLICKWXSYM, "Click Wxsym", 12ul, useri_cLINE, "0110100", 8ul,
-                 0, 345UL);
+   initc(useri_fCLICKWXSYM, "Click Wxsym", 12ul, useri_cLINE, "0111111u",
+                9ul, 0, 345UL);
    initc(useri_fCLICKTEXT, "Click Text", 11ul, useri_cLINE, "H", 2ul, 0,
                 350UL);
    initc(useri_fCLICKTRACK, "Click Track", 12ul, useri_cLINE, ".u", 3ul, 0,
@@ -1066,7 +1076,7 @@ extern void useri_initconfig(void)
    initc(useri_fKMH, "Km/h Text", 10ul, useri_cBLINE, "km/h", 5ul, 1, 385UL);
    initc(useri_fWRINCOM, "Monitor InOut", 14ul, useri_cLINE, "", 1ul, 0,
                 388UL);
-   initc(useri_fWRTICKER, "Show Headline", 14ul, useri_cBLINE, "1", 2ul, 1,
+   initc(useri_fWRTICKER, "Show Headline", 14ul, useri_cBLINE, "1", 2ul, 0,
                 390UL);
    initc(useri_fLOCALTIME, "Local Time h", 13ul, useri_cLINE, "0", 2ul, 0,
                 395UL);
@@ -1973,18 +1983,27 @@ static void allocmenu(pMENU * m, unsigned long xsize, unsigned long ysize,
 } /* end allocmenu() */
 
 
-static void lastmenuxy(unsigned long w, long * x, long * y)
+static long popxbase(void)
+/* find right end of docked windows */
 {
    pMENU m;
-   m = menus;
-   while (m) {
-      if (w==m->wid) {
-         *x = (long)m->nowx;
-         *y = (long)m->nowy;
+   unsigned long xm;
+   unsigned long x;
+   x = 0UL;
+   if (aprsdecode_lums.headmenuy) {
+      m = menus;
+      while (m) {
+         if (m->wid==0UL) {
+            xm = m->x0;
+            if (m->nowx>=xm) xm = m->nowx;
+            xm += m->xsize;
+            if (xm>x) x = xm;
+         }
+         m = m->next;
       }
-      m = m->next;
    }
-} /* end lastmenuxy() */
+   return (long)x;
+} /* end popxbase() */
 
 
 extern void useri_starthint(unsigned long num, char center)
@@ -2096,32 +2115,42 @@ extern unsigned long useri_mainys(void)
 } /* end mainys() */
 
 
+static pMENU lastmenu(void)
+{
+   pMENU m;
+   m = menus;
+   if (m) while (m->next) m = m->next;
+   return m;
+} /* end lastmenu() */
+
+
+static void joinmenux(pMENU m, pMENU menu)
+{
+   unsigned long xm;
+   if (m && menu->wid==0UL) {
+      xm = menu->image->Len1-1; /* find x position */
+      menu->x0 = (m->nowx+m->xsize)-2UL;
+      if (menu->x0+xm>mainxs() && menu->x0>xm) {
+         if (m->nowx+2UL>=xm) menu->x0 = (m->nowx+2UL)-xm;
+         else menu->x0 = 0UL;
+      }
+   }
+} /* end joinmenux() */
+
+
 static void appendmenu(pMENU menu)
 {
    pMENU mh;
    pMENU m;
    unsigned long ys;
    unsigned long y;
-   unsigned long xm;
-   unsigned long x;
    if (menu->wid>0UL) useri_killmenuid(menu->wid);
    menu->next = 0;
    menu->oldknob = 0UL;
-   m = menus;
-   if (m) {
-      while (m->next) m = m->next;
-      m->next = menu;
-   }
+   m = lastmenu();
+   if (m) m->next = menu;
    else menus = menu;
-   if (m && menu->wid==0UL) {
-      xm = menu->image->Len1-1; /* find x position */
-      x = (m->nowx+m->xsize)-2UL;
-      if (x+xm>mainxs() && x>xm) {
-         if (m->nowx+2UL>=xm) x = (m->nowx+2UL)-xm;
-         else x = 0UL;
-      }
-      menu->x0 = x;
-   }
+   joinmenux(m, menu);
    m = menus;
    while (m) {
       if (m->wid>0UL && m->wid<200UL) m->y00 = 0UL;
@@ -2466,7 +2495,7 @@ static void images(aprsdecode_pOPHIST op, char cmd, unsigned short wxset)
       break;
    } /* end switch */
    for (wi = aprsdecode_wTEMP;; wi++) {
-      if (X2C_IN((long)wi,10,wset)) {
+      if (X2C_IN((long)wi,11,wset)) {
          test = 0;
          ws = 1U<<wi;
          img1 = 0;
@@ -2481,21 +2510,20 @@ static void images(aprsdecode_pOPHIST op, char cmd, unsigned short wxset)
             menu->image = img1;
             xm = menu->image->Len1-1;
             ym = menu->image->Len0-1;
-            if ((unsigned long)aprsdecode_click.x<xm+10UL) {
-               menu->x0 = (unsigned long)aprsdecode_click.x+20UL;
-            }
-            else menu->x0 = (unsigned long)aprsdecode_click.x-(xm+10UL);
-            menu->y00 = useri_mainys()-(unsigned long)aprsdecode_click.y;
+            /*        IF imagesx0<xm THEN menu^.x0:=imagesx1 */
+            /*        ELSIF imagesx0>=xm THEN menu^.x0:=imagesx0-xm ELSE menu^.x0:=0 END;
+                 */
+            menu->x0 = (unsigned long)popxbase();
+            /*        menu^.y0:=mainys()-VAL(CARDINAL,click.y); */
             menu->xsize = xm+1UL;
             menu->ysize = ym+1UL;
             menu->wid = 20UL+(unsigned long)wi;
-            if (aprsdecode_lums.headmenuy) menu->x0 = 112UL;
-            else menu->x0 = 0UL;
+            /*        IF lums.headmenuy THEN joinmenux(menu) END; */
             menu->y00 = 0UL;
             appendmenu(menu);
          }
       }
-      if (wi==aprsdecode_wAHIST) break;
+      if (wi==aprsdecode_wSIEV) break;
    } /* end for */
 } /* end images() */
 
@@ -2708,6 +2736,7 @@ static void textwin(unsigned long xw, unsigned long lines, unsigned long xpo,
       menu->nohilite &= ~0x1UL;
    }
    appendmenu(menu);
+   if (ypo) menu->y00 = ypo;
    useri_refresh = 1;
    if (time0>0UL) menu->timeout = aprsdecode_realtime+time0;
    label:;
@@ -2754,9 +2783,14 @@ extern void useri_textautomenu(long x0, long y00, unsigned long id,
          ++i;
       }
       if (x>xmax) xmax = x;
-      if (x0==-2L) lastmenuxy(0UL, &x0, &y00);
+      if (x0==-3L) x0 = popxbase();
       else if (x0<0L) {
-         /*WrInt(x0, 10); WrInt(y0, 10); WrLn; */
+         /*
+             ELSIF x0=-2 THEN
+               x0:=0; 
+               lastmenuxy(0, x0, y0);
+         --WrInt(x0, 10); WrInt(y0, 10); WrLn;
+         */
          x0 = X2C_DIV(maptool_xsize-(long)xmax,2L);
       }
       if (y00<0L) y00 = X2C_DIV(maptool_ysize,2L)-28L;
@@ -2783,7 +2817,7 @@ extern void useri_popwatchcall(char s[], unsigned long s_len)
    strncpy(h,"\352\355Watch:",41u);
    aprsstr_Append(h, 41ul, s, s_len);
    /*  textautosize(0, 0, 3, 0, "b", h); */
-   useri_textautomenu(0L, 0L, 3UL, 0UL, 'b', "", 1ul, h, 41ul, "\322", 2ul);
+   useri_textautomenu(-3L, 0L, 3UL, 0UL, 'b', "", 1ul, h, 41ul, "\322", 2ul);
 } /* end popwatchcall() */
 
 #define useri_HELPFILENAME "help.txt"
@@ -3030,7 +3064,7 @@ extern void useri_downloadprogress(void)
       else aprsstr_IntToStr((long)anonym->retrysum, 1UL, s1, 1000ul);
       aprsstr_Append(s, 1000ul, s1, 1000ul);
       if (!anonym->run) aprsstr_Append(s, 1000ul, " Ready", 7ul);
-      useri_textautosize(0L, 0L, 6UL, 0UL, 'b', s, 1000ul);
+      useri_textautosize(-3L, 0L, 6UL, 0UL, 'b', s, 1000ul);
    }
 } /* end downloadprogress() */
 
@@ -3232,7 +3266,7 @@ static void textinfo(unsigned long typ)
    }
    col = 'b';
    if (aprsdecode_click.watchlast) col = 'r';
-   if (s[0U]) useri_textautosize(0L, 0L, 2UL, 0UL, col, s, 1001ul);
+   if (s[0U]) useri_textautosize(-3L, 0L, 2UL, 0UL, col, s, 1001ul);
 } /* end textinfo() */
 
 
@@ -3258,10 +3292,12 @@ extern void useri_hoverinfo(struct aprsdecode_CLICKOBJECT obj)
       getwxset(useri_fHOVERSET, &hh, &graphset);
                 /* what wx images are enabled */
       hoveropen = 1;
+      /*  IF xmouse.x>20 THEN imagesx0:=xmouse.x-20 ELSE imagesx0:=0 END; */
+      /*  imagesx1:=xmouse.x+20; */
       if (hh=='u') {
          aprstext_optext(2UL, &obj, &void0, s, 1001ul);
          col = 'm';
-         if (s[0U]) useri_textautosize(0L, 0L, 7UL, 0UL, 'm', s, 1001ul);
+         if (s[0U]) useri_textautosize(-3L, 0L, 7UL, 0UL, 'm', s, 1001ul);
       }
       images(obj.opf, 0, graphset);
    }
@@ -3563,6 +3599,7 @@ static void domainpop(pMENU m)
    m->hiknob = 0UL;
    m->oldknob = oldk;
    m->oldsub = olds;
+   /*  popxbase:=m^.x0+m^.xsize-2; */
    if (aprsdecode_click.entries>0UL) oneclickinfo();
 } /* end domainpop() */
 
@@ -3586,7 +3623,7 @@ extern void useri_mainpop(void)
          menu->y00 = (useri_mainys()-(unsigned long)aprsdecode_click.y)-10UL;
       }
    }
-   else setunderbar(menu, 17L);
+   else setunderbar(menu, 0L);
    domainpop(menu);
    menu->oldknob = 0UL;
 } /* end mainpop() */
@@ -3863,7 +3900,7 @@ static void helpmenu(void)
    newmenu(&menu, 150UL, aprsdecode_lums.fontysize+7UL, 3UL, useri_bTRANSP);
    /*  addline(menu, "Shortcuts", CMDSHORTCUTLIST, MINH*6); */
    addline(menu, "Helptext", 9ul, "\305", 2ul, 610UL);
-   addline(menu, "aprsmap(cu) 0.49 by OE5DXL ", 28ul, " ", 2ul, 605UL);
+   addline(menu, "aprsmap(cu) 0.50 by OE5DXL ", 28ul, " ", 2ul, 605UL);
    setunderbar(menu, 37L);
    menu->ysize = menu->oldknob*menu->yknob;
    menu->oldknob = 0UL;
@@ -4299,18 +4336,25 @@ static void infosdo(pMENU menu)
       aprsstr_Append(h, 101ul, "W/m2", 5ul);
       addline(menu, h, 101ul, "l", 2ul, 1468UL);
    }
+   if ((0x400U & what)) {
+      strncpy(h,"Radiation  |",101u);
+      aprstext_sievert2str(lastval.siev, s, 101ul);
+      aprsstr_Append(h, 101ul, s, 101ul);
+      addline(menu, h, 101ul, "g", 2ul, 1470UL);
+   }
    menu->redrawproc = infosdo;
    menu->hiknob = 0UL;
    menu->ysize = menu->oldknob*menu->yknob;
    menu->oldknob = oldk;
    menu->oldsub = olds;
+/*  popxbase:=menu^.x0+menu^.xsize-2; */
 } /* end infosdo() */
 
 
 static void infos(void)
 {
    pMENU menu;
-   newmenu(&menu, 125UL, aprsdecode_lums.fontysize+5UL, 21UL, useri_bTRANSP);
+   newmenu(&menu, 125UL, aprsdecode_lums.fontysize+5UL, 22UL, useri_bTRANSP);
    infosdo(menu);
    /*  menu^.ysize:=menu^.oldknob*menu^.yknob; */
    menu->oldknob = 0UL;
@@ -9686,7 +9730,7 @@ static void mouseshow(unsigned long x, unsigned long y)
    else maptool_xytodeg((float)x, (float)(useri_mainys()-y), &pos);
    if (aprspos_posvalid(pos)) {
       maptool_xytoloc(pos, s, 151ul);
-      useri_textautosize(0L, 0L, 19UL, 10UL, 'g', s, 151ul);
+      useri_textautosize(-3L, 0L, 19UL, 10UL, 'g', s, 151ul);
       s[0U] = 0;
       pos1 = pos;
       if (dist!=0.0f || !poioff && aprsdecode_initzoom>=useri_conf2int(useri_fMOUSELOC,
@@ -10038,7 +10082,7 @@ static void closewxwins(void)
    unsigned char wi;
    for (wi = aprsdecode_wTEMP;; wi++) {
       useri_killmenuid(20UL+(unsigned long)wi);
-      if (wi==aprsdecode_wAHIST) break;
+      if (wi==aprsdecode_wSIEV) break;
    } /* end for */
 } /* end closewxwins() */
 
@@ -11251,17 +11295,6 @@ extern void useri_keychar(char ch, char ispasted, char movecmd)
    if (aprsdecode_click.cmd=='>' || aprsdecode_click.cmd=='<') {
       if (aprsdecode_click.entries>0UL) {
          useri_killallmenus();
-         /*
-           IF click.entries>0 THEN
-         
-             wset:=sWXSET{};
-             confstr(fCLICKTRACK, s);
-             IF InStr(s, "s")>=0 THEN INCL(wset, wSHIST) END;
-             IF InStr(s, "b")>=0 THEN INCL(wset, wBHIST) END;
-             IF InStr(s, "n")>=0 THEN INCL(wset, wAHIST) END;
-             images(click.table[click.selected].opf, 0C, wset);
-           END;
-         */
          textinfo((unsigned long)(aprsdecode_click.cmd=='<'));
          aprsdecode_click.dryrun = 0;
          images(aprsdecode_click.table[aprsdecode_click.selected].opf, 0,
@@ -11662,6 +11695,7 @@ extern void useri_initmenus(void)
    /*  actmenu:=NIL; */
    hinttime = 0UL;
    mouseshowcnt = 0UL;
+   /*  popxbase:=0; */
    /*  locpop:=NIL; */
    /*  hintcnt:=0; */
    /*  keybfocus:=NIL; */

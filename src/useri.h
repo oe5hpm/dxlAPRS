@@ -111,6 +111,8 @@
 
 #define useri_ALTINVAL (-1000000)
 
+#define useri_DOCKX (-3)
+
 struct useri_MOUSEPOS;
 
 

@@ -94,6 +94,8 @@ extern char aprstext_isacall(char [], unsigned long);
 
 extern void aprstext_logfndate(unsigned long, char [], unsigned long);
 
+extern void aprstext_sievert2str(float, char [], unsigned long);
+
 
 extern void aprstext_BEGIN(void);
 

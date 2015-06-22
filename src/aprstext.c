@@ -153,6 +153,24 @@ extern char aprstext_isacall(char s[], unsigned long s_len)
 } /* end isacall() */
 
 
+extern void aprstext_sievert2str(float v, char s[], unsigned long s_len)
+{
+   if (v<1.E-6f) {
+      aprsstr_FixToStr(v*1.E+9f+0.5f, 0UL, s, s_len);
+      aprsstr_Append(s, s_len, "n", 2ul);
+   }
+   else if (v<0.001f) {
+      aprsstr_FixToStr(v*1.E+6f+0.005f, 2UL, s, s_len);
+      aprsstr_Append(s, s_len, "u", 2ul);
+   }
+   else {
+      aprsstr_FixToStr(v*1000.0f+0.005f, 2UL, s, s_len);
+      aprsstr_Append(s, s_len, "m", 2ul);
+   }
+   aprsstr_Append(s, s_len, "Sv/h", 5ul);
+} /* end sievert2str() */
+
+
 static void Errtxt(char s[], unsigned long s_len, aprsdecode_pFRAMEHIST pf,
                 aprsdecode_pFRAMEHIST frame)
 {
@@ -457,9 +475,8 @@ extern void aprstext_decode(char s[], unsigned long s_len,
          if (dat->wx.sievert!=1.E+6f) {
             if (nl) aprsstr_Append(s, s_len, "\012 ", 3ul);
             aprsstr_Append(s, s_len, " Radiation:", 12ul);
-            aprsstr_FixToStr(dat->wx.sievert*1.E+9f+0.5f, 0UL, h, 512ul);
+            aprstext_sievert2str(dat->wx.sievert, h, 512ul);
             aprsstr_Append(s, s_len, h, 512ul);
-            aprsstr_Append(s, s_len, "nSv/h", 6ul);
          }
       }
       else if (dat->type==aprsdecode_MSG) {
@@ -505,9 +522,7 @@ extern void aprstext_decode(char s[], unsigned long s_len,
    aprsstr_Append(s, s_len, "[", 2ul);
    aprstext_Apphex(s, s_len, pf->vardat->raw, 500ul);
    aprsstr_Append(s, s_len, "]", 2ul);
-   if (!decoded) {
-      Errtxt(s, s_len, pf0, pf);
-   }
+   if (!decoded) Errtxt(s, s_len, pf0, pf);
 } /* end decode() */
 
 

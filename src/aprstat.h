@@ -31,6 +31,7 @@ struct aprstat_LASTVAL {
    float rain;
    float rain24;
    float lumi;
+   float siev;
 };
 
 extern void aprstat_kmhist(maptool_pIMAGE *, aprsdecode_pOPHIST, char *);

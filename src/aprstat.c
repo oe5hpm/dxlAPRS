@@ -1022,6 +1022,7 @@ struct WX {
    float wind;
    float rain;
    float lumi;
+   float siev;
 };
 
 #define aprstat_F 0.9
@@ -1202,6 +1203,7 @@ extern void aprstat_wxgraph(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
       anonym->wind = (-1.E+4f);
       anonym->rain = (-1.E+4f);
       anonym->lumi = (-1.E+4f);
+      anonym->siev = (-1.E+4f);
    }
    min0.temp = X2C_max_real;
    min0.baro = X2C_max_real;
@@ -1254,6 +1256,11 @@ extern void aprstat_wxgraph(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
             lumi[xt] = dat.wx.lum;
             if (dat.wx.lum>max0.lumi) max0.lumi = dat.wx.lum;
             lastval->lumi = dat.wx.lum;
+         }
+         if (dat.wx.sievert>=0.0f && dat.wx.sievert<1000.0f) {
+            /*        siev[xt]:=dat.wx.sievert; */
+            if (dat.wx.sievert>max0.siev) max0.siev = dat.wx.sievert;
+            lastval->siev = dat.wx.sievert;
          }
          if (dat.course<360UL) {
             windd[xt] = (float)dat.course;
@@ -1337,7 +1344,9 @@ extern void aprstat_wxgraph(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
    if (max0.hyg!=(-1.E+4f)) {
       have |= 0x4U;
       if ((0x4U & *what)) {
-         if (!newimg(Maxx, img)) return;
+         if (!newimg(Maxx, img)) {
+            return;
+         }
          scale(hyg, 1440ul, (-1.E+4f), 100.0f, 120.0f, 101.0f, &yax0, &yax1,
                 &step);
          aprsstr_FixToStr(lastval->hyg, 0UL, s, 256ul);
@@ -1382,6 +1391,7 @@ extern void aprstat_wxgraph(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
          dots(XStep, img, rain0, 1440ul, 1, 100UL, 100UL, 700UL);
       }
    }
+   if (max0.siev>0.0f) have |= 0x400U;
    *what = have;
 /*
   IF img<>NIL THEN DISPOSE(img) END;

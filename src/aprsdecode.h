@@ -55,7 +55,7 @@
 #define aprsdecode_BEGINOFTIME 1388534400
 /* oldest possible log date */
 
-#define aprsdecode_VERS "aprsmap(cu) 0.49"
+#define aprsdecode_VERS "aprsmap(cu) 0.50"
 
 typedef char aprsdecode_MONCALL[9];
 
@@ -308,7 +308,7 @@ struct aprsdecode_DAT {
 enum aprsdecode_WXSET {aprsdecode_wTEMP, aprsdecode_wBARO, aprsdecode_wHYG,
                 aprsdecode_wWIND, aprsdecode_wWINDDIR, aprsdecode_wRAIN,
                 aprsdecode_wLUMI, aprsdecode_wSHIST, aprsdecode_wBHIST,
-                aprsdecode_wAHIST};
+                aprsdecode_wAHIST, aprsdecode_wSIEV};
 
 
 typedef unsigned short aprsdecode_sWXSET;
