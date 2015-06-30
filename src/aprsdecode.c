@@ -6147,6 +6147,7 @@ extern void aprsdecode_BEGIN(void)
    if (sizeof(unsigned char)!=1) X2C_ASSERT(0);
    if (sizeof(unsigned short)!=2) X2C_ASSERT(0);
    if (sizeof(unsigned short)!=2) X2C_ASSERT(0);
+   if (sizeof(aprsdecode_MAPNAME)!=41) X2C_ASSERT(0);
    if (sizeof(SET256)!=32) X2C_ASSERT(0);
    if (sizeof(CHSET)!=16) X2C_ASSERT(0);
    if (sizeof(TICKERCALL)!=31) X2C_ASSERT(0);

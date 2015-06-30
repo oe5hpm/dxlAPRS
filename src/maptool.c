@@ -3380,6 +3380,9 @@ extern void maptool_drawstri(maptool_pIMAGE image, char s[],
 #define maptool_WS 20
 /* wind fethers per kmh */
 
+#define maptool_MAXWIND 250
+/* limit to nonsense windspeed */
+
 #define maptool_LW 8
 
 #define maptool_WW 4
@@ -3429,6 +3432,7 @@ extern void maptool_drawarrow(maptool_pIMAGE image, float x0, float y00,
       c1 = RealMath_cos(ang+(-1.25f));
       wi = (long)wind;
       if (wi<20L) wi = 20L;
+      else if (wi>250L) wi = 250L;
       do {
          x1 = x0-len*s; /*-s1*/
          y1 = y00+len*c; /*+c1*/

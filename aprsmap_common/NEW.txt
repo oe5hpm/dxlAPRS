@@ -1213,7 +1213,7 @@
 
 
 
-21 6. 2015 (Ver 0.50)
+21.6. 2015 (Ver 0.50)
 
 
 + Maidenhead Locator Ausgabe langes Format, Eingabe "Find" 6 8 oder 10 stellig.
@@ -1222,6 +1222,21 @@
 + Popup Fenster Ueberlappungen etwas seltener.
 + Radioaktivitaet (Sievert) Dekodierung in den Wx-Baken (vorerst ohne Grafik)
 + Getrennte Backspace/Rechte-Maus History fuer beide TABs
+
+
+27.6. 2015 (Ver 0.50)
+
++ etwas verbesserte popup Fenster Platzierung.
++ Config > Map Parameter > Reset to Default oder kurz "D" stellt die meisten
+  Bildparameter und Klickverhalten auf Default. Die alten Werte gehen zuvor in die
+  Backspace/rechte Maus-History zwecks Undo der Funktion.
++ History/TAB speichert die wichtigsten Bildparameter + Kartentyp.
+
+
+
+
+
+
 
 
 

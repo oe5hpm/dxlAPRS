@@ -140,28 +140,28 @@ with %d at end of Logfilename like
 for highlighting keywords
 enter word in Tools / Find
 |401 List Objects/Items decoded
-entries may be sortet by Call or Time
+entries may be sorted by Call or Time
 click on a Line shows position on map
 
 |405 List Weather Stations
 for highlighting keyword
 enter word in Tools / Find
 |406 List Weather Stations decoded
-entries may be sortet by Call or Time
+entries may be sorted by Call or Time
 click on a Line shows position on map
 
 |410 List Moveing Beacons
 for highlighting keyword
 enter word in Tools / Find
 |411 List Moveing Beacons decoded
-entries may be sortet by Call or Time
+entries may be sorted by Call or Time
 click on a Line shows position on map
 
 |415 List Stations sending no Position
 for highlighting keyword
 enter word in Tools / Find
 |416 List Stations sending no Position decoded
-entries may be sortet by Call or Time
+entries may be sorted by Call or Time
 
 |420 Toggle Net Data off/raw/decoded
 |421 Toggle Rf Port1 Data off/raw/decoded
@@ -204,7 +204,7 @@ Line and QTH Locator Area
 
 |518 Enter antenna 1 and 2 over ground in meters and
 frequency and if altitude datafile (srtm) is
-avaliable, a radio link will be calculatet
+avaliable, a radio link will be calculated
 between marker 1 and marker 2. Blue is free
 sight, green fresnelzone is touched, yellow
 half fresnelzone till red for whole fresnelzone
@@ -227,7 +227,7 @@ the optional value is a brightness correction
 (range -255 to 255), darker with - values. 
 The names use subdirectories in "map directory"
 and are passed to the map downloader where URLs
-to the names are associatet. First entry is used
+to the names are associated. First entry is used
 at program start. Sort entries by "Edit" and "Add".
 Use first 3 lines by shortcut "7" "8" "9" else
 "Tools > Choose Map"
@@ -946,6 +946,9 @@ value, show higth in m
 
 |7815 Brightness of notmovers if dimm notmovers (m) is on
 
+|7810 Use only if You have missconfigured
+Image Parameters and dont find way back
+IF cannot read this :-) use shortcut "D"
 
 |7945 Zoom steps for Shift-Click to +- or mouse-wheel
 
@@ -1052,7 +1055,7 @@ SHIFT-Click to new position, "Draw" or "Send"
 
 
 |8124 Time between 2 beacons in Seconds. 
-Additional each Beacon in scheduler is shiftet
+Additional each Beacon in scheduler is shifted
 from each other by
 Config > Rf-Ports > Beacon Shift Time
 because same beacons will be deleted by Igates
@@ -1219,7 +1222,7 @@ clicked "Edit" before (dimmed Line).
 digipeated if in source/destination
 or via-Field like "NOCALL". <mycall>"
 in the "done" via path is always
-filtert out because it was repeatet
+filtert out because it was repeated
 by You just before.
 "i" excludes <mycall> from digipeating
 in the active path.
@@ -1311,7 +1314,7 @@ Inactive Lines may be preserved for later use
 In this Time Beacons with always same content will 
 be digipeated only once.
 
-|8356 Radius in km around You will be digipeatet
+|8356 Radius in km around You will be digipeated
 
 |8360 Copy this Line to editor Field for viewing
 or modify and Restore or Add for a New digi Line.
@@ -1406,7 +1409,7 @@ check network and map download program
 
 |10016 Tipp: Don't like black or expanded Maps?
 switch on "Config>Map Moving>Zoom as have Maps"
-set "Config>Map Moving>Expand Map" as wantet
+set "Config>Map Moving>Expand Map" as wanted
 
 |10015 Tipp: Zoom to Objects even if Maps are not downloaded
 yet, switch off "Config>Mapmoving>Zoom as have Maps"

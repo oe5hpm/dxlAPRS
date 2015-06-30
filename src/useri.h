@@ -86,6 +86,8 @@
 
 #define useri_CMDCLICKWATCH "\322"
 
+#define useri_CMDRESETIMGPARMS "D"
+
 #define useri_SP1 "\360"
 /* micospaces for menu text */
 
@@ -112,6 +114,9 @@
 #define useri_ALTINVAL (-1000000)
 
 #define useri_DOCKX (-3)
+
+#define useri_BRIMUL 10
+/* lums percent to 0..1000 */
 
 struct useri_MOUSEPOS;
 
@@ -230,8 +235,7 @@ extern void useri_killallmenus(void);
 extern void useri_killmenuid(unsigned long);
 /*PROCEDURE WrMon(s:ARRAY OF CHAR);*/
 
-extern void useri_initconfig(void);
-
+/*PROCEDURE initconfig;*/
 extern void useri_loadconfig(char);
 
 extern void useri_saveconfig(void);
@@ -358,6 +362,10 @@ extern unsigned long useri_mainys(void);
 extern void useri_rdonesymb(char);
 
 extern void useri_hoverinfo(struct aprsdecode_CLICKOBJECT);
+
+extern void useri_int2cfg(unsigned char, long);
+
+extern void useri_resetimgparms(void);
 
 
 extern void useri_BEGIN(void);

@@ -395,6 +395,8 @@ struct aprsdecode_CLICKOBJECT {
    unsigned char typf;
 };
 
+typedef char aprsdecode_MAPNAME[41];
+
 extern unsigned long aprsdecode_systime;
 
 extern unsigned long aprsdecode_realtime;
@@ -481,7 +483,7 @@ struct aprsdecode__D1 {
    char errorstep;
    char logmode;
    char headmenuy;
-   char mapname[41];
+   aprsdecode_MAPNAME mapname;
    char configfn[257];
    long maplumcorr;
    long map;

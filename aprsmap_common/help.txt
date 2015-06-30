@@ -989,7 +989,7 @@ TALK:\\>filename<Message Sayd     schreibt ein File
 |de-shortcuts
 : Marker loeschen
 @ reset <On Next Click> auf Menu Mode
-a Animate
+a Animate (auf Karte klicken zum Werte einstellen)
 b oder <Backspace> zurueck in Zoom/Pan History
 c Zentriere auf Maus Position
 d fehlende Landkarten laden ein/aus
@@ -1010,6 +1010,7 @@ ww grafische Temperaturverteilung
 x setze Marker 1 auf Mausposition
 y setze Marker 2 und Linie/Gelaendeschnitt zu Marker 1
 B Baken Editor oeffnen
+D Setze Bildwerte und Mausverhalten auf Standard
 F Finde Call (mit Wildcards * ?), Lokator, Breite/Laenge
 H Farbdarstellung der Hoehendaten (sofern vorhanden)
 M Message Schreiben
@@ -1020,8 +1021,7 @@ W grafische Regenkarte rot: letzte Stunde, blau: 24h
 / Zoom auf das von Marker 1-2 aufgespannte Rechteck 
 \ Shortcut Liste
 ~ Aendere Track Farbe
-+ hineinzoomen
-- herauszoomen
++ hineinzoomen  - herauszoomen
 . zoomen auf angeklickte Station
 = wie . aber mit Funkstrecken
 0 Zeige alle Stationen
@@ -1037,7 +1037,7 @@ ctrl-V Paste
 |en-shortcuts
 : delete markers
 @ reset <On Next Click> to menu mode
-a Animate
+a Animate (Click to Map to set Parameters)
 b or <Backspace> go back in position history
 c Center (to last clicked Pixel)
 d toggle (missing) map download
@@ -1048,6 +1048,7 @@ i Internal Status Listing
 l toggle Labels on/off
 m toggle dimm not moving since 10min
 o toggle Objects/Items on/off
+p toggle mouse-over Hints
 q Quit Program
 r toggle Radio tracks on/off
 s toggle show only stations with a selected symbol
@@ -1056,6 +1057,7 @@ w toggle WX stations and Temperature
 x set Marker 1 to mouse position
 y set Marker 2 and Line to Marker 1
 B Open Beacon editor
+D Reset Image and Mouse parameters to default
 F Find Call (with wildcards * ?), Locator, Latitude/Longitude
 H Altitude Colour Map (if srtm-Data avaliable)
 M Compose Message
@@ -1066,8 +1068,7 @@ W Rain map (use topo or dark map)
 / zoom to Marker 1-2 Square
 \ shortcut list
 ~ change track colour
-+ Zoom in
-- Zoom out
++ Zoom in  - Zoom out
 . zoom to track and show only this (clicked before)
 = same as . but with radio tracks
 0 show all (and radio tracks off)
@@ -1076,7 +1077,7 @@ W Rain map (use topo or dark map)
 ESC close menus
 Cursor up/down/left/right move map, same as click near margin
 SHIFT with up/down/left/right/[zoom+]/[zoom-] in smaller steps
-DEL delete selected
+DEL delete selected (Symbol, Waypoint)
 TAB switch between two Views
 ctrl-V Paste
 

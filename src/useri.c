@@ -124,7 +124,7 @@ static char useri_TICKERHEADLINE = 0;
 #define useri_MAPMOVLINE 6
 /* menu line */
 
-#define useri_TOGGMOUSESHOW 10
+#define useri_TOGGMOUSESHOW 11
 /* menu line */
 
 #define useri_TEXTINFOWINID 2
@@ -526,6 +526,7 @@ struct MENU {
    long scry;
    void ( *redrawproc)(pMENU);
    unsigned long timeout;
+   char notoverdraw;
    char drawn;
    char hidden;
    char fullclamp; /* clamp win for cursor scrolling */
@@ -830,6 +831,14 @@ static void icfg(unsigned char v, const char s[], unsigned long s_len)
 } /* end icfg() */
 
 
+extern void useri_int2cfg(unsigned char cfg, long v)
+{
+   char s[31];
+   aprsstr_IntToStr(v, 0UL, s, 31ul);
+   icfg(cfg, s, 31ul);
+} /* end int2cfg() */
+
+
 extern void useri_clrconfig(void)
 {
    memset((char *)configs,(char)0,sizeof(struct CONFIG [152]));
@@ -852,7 +861,92 @@ static void initc(unsigned char v, const char tit[], unsigned long tit_len,
 } /* end initc() */
 
 
-extern void useri_initconfig(void)
+static void initconfig1(void)
+{
+   initc(useri_fTFADE, "Time Fade Out Min", 18ul, useri_cLINE, "30", 3ul, 0,
+                155UL);
+   initc(useri_fTFULL, "Time Full Bright Min", 21ul, useri_cLINE, "360", 4ul,
+                 0, 160UL);
+   initc(useri_fTPURGE, "Keep Data in Memory Min", 24ul, useri_cLINE, "1500",
+                 5ul, 0, 165UL);
+   initc(useri_fTPURGEOBJ, "Keep Objects in Memory Min", 27ul, useri_cLINE, "\
+180", 4ul, 0, 170UL);
+   initc(useri_fLWAY, "Brightness Waypoint", 20ul, useri_cLINE, "75", 3ul, 0,
+                 175UL);
+   initc(useri_fTRANSP, "Menu Background", 16ul, useri_cBLINE, "60", 3ul, 1,
+                180UL);
+   initc(useri_fLTEXT, "Brightness Text", 16ul, useri_cLINE, "70", 3ul, 0,
+                185UL);
+   initc(useri_fLSYM, "Brightness Symbol", 18ul, useri_cLINE, "80", 3ul, 0,
+                190UL);
+   initc(useri_fLTRACK, "Brightness Track", 17ul, useri_cLINE, "65", 3ul, 0,
+                195UL);
+   initc(useri_fLOBJ, "Brightness Object", 18ul, useri_cLINE, "70", 3ul, 0,
+                200UL);
+   initc(useri_fLMAP, "Brightness Map", 15ul, useri_cLINE, "30", 3ul, 0,
+                205UL);
+   initc(useri_fLRF, "Brightness Heard Path", 22ul, useri_cLINE, "35", 3ul,
+                0, 210UL);
+   initc(useri_fNOMOV, "Brightness Nomover", 19ul, useri_cLINE, "9", 2ul, 0,
+                215UL);
+   initc(useri_fGAMMA, "Screen Gamma", 13ul, useri_cLINE, "2.2", 4ul, 0,
+                225UL);
+   initc(useri_fMOUSELOC, "Mouse-Over function", 20ul, useri_cBLINE, "9",
+                2ul, 1, 240UL);
+   initc(useri_fTRACKFILT, "Trackfilter", 12ul, useri_cBOOL, "", 1ul, 1,
+                245UL);
+   initc(useri_fDUPDEL, "Filter delayed Waypoints Min", 29ul, useri_cLINE, "1\
+80", 4ul, 0, 250UL);
+   initc(useri_fARROW, "Show Coursearrow", 17ul, useri_cBOOL, "", 1ul, 1,
+                255UL);
+   initc(useri_fINVMOV, "Swap Left/Right Up/Down", 24ul, useri_cBOOL, "",
+                1ul, 0, 260UL);
+   initc(useri_fRULER, "Show Scale", 11ul, useri_cBOOL, "", 1ul, 1, 265UL);
+   initc(useri_fKMHTIME, "Km/h Show Time", 15ul, useri_cLINE, "600", 4ul, 0,
+                270UL);
+   initc(useri_fTEMP, "Show Temperature", 17ul, useri_cBOOL, "", 1ul, 1,
+                275UL);
+   initc(useri_fWINDSYM, "Show Wind Vane", 15ul, useri_cBOOL, "", 1ul, 1,
+                280UL);
+   initc(useri_fALTMIN, "Altitude Show min m", 20ul, useri_cBLINE, "-10000",
+                7ul, 0, 285UL);
+   initc(useri_fMOVESTEP, "Map Move Stepwidth", 19ul, useri_cLINE, "10", 3ul,
+                 0, 325UL);
+   initc(useri_fZOOMSTEP, "Finezoom Stepwidth", 19ul, useri_cLINE, "0.1",
+                4ul, 0, 330UL);
+   initc(useri_fCLICKMAP, "Click Map", 10ul, useri_cLINE, "m", 2ul, 0,
+                335UL);
+   initc(useri_fCLICKSYM, "Click Sym", 10ul, useri_cLINE, "u", 2ul, 0,
+                340UL);
+   initc(useri_fCLICKWXSYM, "Click Wxsym", 12ul, useri_cLINE, "0111111u",
+                9ul, 0, 345UL);
+   initc(useri_fCLICKTEXT, "Click Text", 11ul, useri_cLINE, "H", 2ul, 0,
+                350UL);
+   initc(useri_fCLICKTRACK, "Click Track", 12ul, useri_cLINE, ".u", 3ul, 0,
+                355UL);
+   initc(useri_fHOVERSET, "Hover Set", 10ul, useri_cLINE, "u", 2ul, 0,
+                356UL);
+   initc(useri_fMARKPOS, "Marker1", 8ul, useri_cLINE, "", 1ul, 0, 420UL);
+   initc(useri_fGEOPROFIL, "Geoprofile", 11ul, useri_cBOOL, "", 1ul, 0,
+                421UL);
+   /* do not change order */
+   initc(useri_fCOLMAPTEXT, "Colour Maptext", 15ul, useri_cLINE, "100 100 100\
+", 12ul, 0, 491UL);
+   initc(useri_fCOLOBJTEXT, "Colour Objecttext", 18ul, useri_cLINE, "60 100 1\
+00", 11ul, 0, 491UL);
+   initc(useri_fCOLMENUTEXT, "Colour Menutext", 16ul, useri_cLINE, "100 100 1\
+00", 12ul, 0, 491UL);
+   initc(useri_fCOLMENUBACK, "Colour Background", 18ul, useri_cLINE, "100 100\
+ 100", 12ul, 0, 491UL);
+   initc(useri_fCOLMARK1, "Colour Rf Marker1", 18ul, useri_cLINE, "100 20 0",
+                 9ul, 0, 491UL);
+   initc(useri_fCOLMARK2, "Colour Rf Marker2", 18ul, useri_cLINE,
+                "0 100 100", 10ul, 0, 491UL);
+/* do not change order */
+} /* end initconfig1() */
+
+
+static void initconfig(void)
 {
    unsigned char i;
    char s[100];
@@ -972,61 +1066,14 @@ f 22050 -C 0 -p /dev/ttyS0 0 -M 0 -U 127.0.0.1:9002:9001 -m 0", 73ul, 0,
                  145UL);
    initc(useri_fOSMDIR, "Map Directory Path", 19ul, useri_cLINE, "osm", 4ul,
                 0, 150UL);
-   initc(useri_fTFADE, "Time Fade Out Min", 18ul, useri_cLINE, "30", 3ul, 0,
-                155UL);
-   initc(useri_fTFULL, "Time Full Bright Min", 21ul, useri_cLINE, "360", 4ul,
-                 0, 160UL);
-   initc(useri_fTPURGE, "Keep Data in Memory Min", 24ul, useri_cLINE, "1500",
-                 5ul, 0, 165UL);
-   initc(useri_fTPURGEOBJ, "Keep Objects in Memory Min", 27ul, useri_cLINE, "\
-180", 4ul, 0, 170UL);
    initc(useri_fDELAYGETMAP, "Delay Start Loadmap s", 22ul, useri_cLINE, "0",
                  2ul, 0, 172UL);
-   initc(useri_fLWAY, "Brightness Waypoint", 20ul, useri_cLINE, "75", 3ul, 0,
-                 175UL);
-   initc(useri_fTRANSP, "Menu Background", 16ul, useri_cBLINE, "60", 3ul, 1,
-                180UL);
-   initc(useri_fLTEXT, "Brightness Text", 16ul, useri_cLINE, "70", 3ul, 0,
-                185UL);
-   initc(useri_fLSYM, "Brightness Symbol", 18ul, useri_cLINE, "80", 3ul, 0,
-                190UL);
-   initc(useri_fLTRACK, "Brightness Track", 17ul, useri_cLINE, "65", 3ul, 0,
-                195UL);
-   initc(useri_fLOBJ, "Brightness Object", 18ul, useri_cLINE, "70", 3ul, 0,
-                200UL);
-   initc(useri_fLMAP, "Brightness Map", 15ul, useri_cLINE, "30", 3ul, 0,
-                205UL);
-   initc(useri_fLRF, "Brightness Heard Path", 22ul, useri_cLINE, "35", 3ul,
-                0, 210UL);
-   initc(useri_fNOMOV, "Brightness Nomover", 19ul, useri_cLINE, "9", 2ul, 0,
-                215UL);
    initc(useri_fCENTER, "Center Watch Object", 20ul, useri_cLINE, "40", 3ul,
                 0, 220UL);
-   initc(useri_fGAMMA, "Screen Gamma", 13ul, useri_cLINE, "2.2", 4ul, 0,
-                225UL);
    initc(useri_fALLOWEXP, "Allow Expand Tile", 18ul, useri_cBOOL, "", 1ul, 1,
                  230UL);
    initc(useri_fZOOMMISS, "Autozoom up to having Tiles", 28ul, useri_cBOOL, "\
 ", 1ul, 0, 235UL);
-   initc(useri_fMOUSELOC, "Mouse-Over function", 20ul, useri_cBLINE, "9",
-                2ul, 1, 240UL);
-   initc(useri_fTRACKFILT, "Trackfilter", 12ul, useri_cBOOL, "", 1ul, 1,
-                245UL);
-   initc(useri_fDUPDEL, "Filter delayed Waypoints Min", 29ul, useri_cLINE, "1\
-80", 4ul, 0, 250UL);
-   initc(useri_fARROW, "Show Coursearrow", 17ul, useri_cBOOL, "", 1ul, 1,
-                255UL);
-   initc(useri_fINVMOV, "Swap Left/Right Up/Down", 24ul, useri_cBOOL, "",
-                1ul, 0, 260UL);
-   initc(useri_fRULER, "Show Scale", 11ul, useri_cBOOL, "", 1ul, 1, 265UL);
-   initc(useri_fKMHTIME, "Km/h Show Time", 15ul, useri_cLINE, "600", 4ul, 0,
-                270UL);
-   initc(useri_fTEMP, "Show Temperature", 17ul, useri_cBOOL, "", 1ul, 1,
-                275UL);
-   initc(useri_fWINDSYM, "Show Wind Vane", 15ul, useri_cBOOL, "", 1ul, 1,
-                280UL);
-   initc(useri_fALTMIN, "Altitude Show min m", 20ul, useri_cBLINE, "-10000",
-                7ul, 0, 285UL);
    initc(useri_fONESYMB, "Show One Symbol", 16ul, useri_cLINE, "", 1ul, 0,
                 271UL);
    initc(useri_fDEFZOOM, "Default Zoom", 13ul, useri_cLINE, "14", 3ul, 0,
@@ -1044,22 +1091,6 @@ f 22050 -C 0 -p /dev/ttyS0 0 -M 0 -U 127.0.0.1:9002:9001 -m 0", 73ul, 0,
                  1, 320UL);
    initc(useri_fMAPNAMES, "Map Names", 10ul, useri_cBLIST, "", 1ul, 0,
                 322UL);
-   initc(useri_fMOVESTEP, "Map Move Stepwidth", 19ul, useri_cLINE, "10", 3ul,
-                 0, 325UL);
-   initc(useri_fZOOMSTEP, "Finezoom Stepwidth", 19ul, useri_cLINE, "0.1",
-                4ul, 0, 330UL);
-   initc(useri_fCLICKMAP, "Click Map", 10ul, useri_cLINE, "m", 2ul, 0,
-                335UL);
-   initc(useri_fCLICKSYM, "Click Sym", 10ul, useri_cLINE, "u", 2ul, 0,
-                340UL);
-   initc(useri_fCLICKWXSYM, "Click Wxsym", 12ul, useri_cLINE, "0111111u",
-                9ul, 0, 345UL);
-   initc(useri_fCLICKTEXT, "Click Text", 11ul, useri_cLINE, "H", 2ul, 0,
-                350UL);
-   initc(useri_fCLICKTRACK, "Click Track", 12ul, useri_cLINE, ".u", 3ul, 0,
-                355UL);
-   initc(useri_fHOVERSET, "Hover Set", 10ul, useri_cLINE, "u", 2ul, 0,
-                356UL);
    initc(useri_fMSGRFDEST, "MsgRfdestcall", 14ul, useri_cLINE, "NOGATE", 7ul,
                  0, 360UL);
    configs[useri_fMSGRFDEST].width = 9U;
@@ -1094,9 +1125,6 @@ f 22050 -C 0 -p /dev/ttyS0 0 -M 0 -U 127.0.0.1:9002:9001 -m 0", 73ul, 0,
                 418UL);
    initc(useri_fMUSTBECALL, "Callcheck", 10ul, useri_cBOOL, "", 1ul, 1,
                 420UL);
-   initc(useri_fMARKPOS, "Marker1", 8ul, useri_cLINE, "", 1ul, 0, 420UL);
-   initc(useri_fGEOPROFIL, "Geoprofile", 11ul, useri_cBOOL, "", 1ul, 0,
-                421UL);
    initc(useri_fGEOBRIGHTNESS, "Brightness", 11ul, useri_cLINE, "30", 3ul, 0,
                  422UL);
    initc(useri_fGEOCONTRAST, "Contrast", 9ul, useri_cLINE, "5", 2ul, 0,
@@ -1149,23 +1177,10 @@ f 22050 -C 0 -p /dev/ttyS0 0 -M 0 -U 127.0.0.1:9002:9001 -m 0", 73ul, 0,
                 485UL);
    initc(useri_fMENUSIZEMON, "Monwindow size", 15ul, useri_cLINE, "300 100",
                 8ul, 0, 490UL);
-   /* do not change order */
-   initc(useri_fCOLMAPTEXT, "Colour Maptext", 15ul, useri_cLINE, "100 100 100\
-", 12ul, 0, 491UL);
-   initc(useri_fCOLOBJTEXT, "Colour Objecttext", 18ul, useri_cLINE, "60 100 1\
-00", 11ul, 0, 491UL);
-   initc(useri_fCOLMENUTEXT, "Colour Menutext", 16ul, useri_cLINE, "100 100 1\
-00", 12ul, 0, 491UL);
-   initc(useri_fCOLMENUBACK, "Colour Background", 18ul, useri_cLINE, "100 100\
- 100", 12ul, 0, 491UL);
-   initc(useri_fCOLMARK1, "Colour Rf Marker1", 18ul, useri_cLINE, "100 20 0",
-                 9ul, 0, 491UL);
-   initc(useri_fCOLMARK2, "Colour Rf Marker2", 18ul, useri_cLINE,
-                "0 100 100", 10ul, 0, 491UL);
-   /* do not change order */
    initc(useri_fAUTOSAVE, "Save Config On Quit", 20ul, useri_cBOOL, "", 1ul,
                 1, 495UL);
    initc(useri_fEDITLINE, "", 1ul, useri_cLINE, " ", 2ul, 0, 499UL);
+   initconfig1();
 } /* end initconfig() */
 
 
@@ -1338,7 +1353,7 @@ extern void useri_loadconfig(char verb)
    unsigned long j;
    unsigned long titmod;
    unsigned char on;
-   useri_initconfig();
+   initconfig();
    titmod = 0UL;
    aprsstr_cleanfilename(aprsdecode_lums.configfn, 257ul);
    fd = osi_OpenRead(aprsdecode_lums.configfn, 257ul);
@@ -1983,7 +1998,7 @@ static void allocmenu(pMENU * m, unsigned long xsize, unsigned long ysize,
 } /* end allocmenu() */
 
 
-static long popxbase(void)
+static long popxbase(unsigned long y1)
 /* find right end of docked windows */
 {
    pMENU m;
@@ -1993,7 +2008,8 @@ static long popxbase(void)
    if (aprsdecode_lums.headmenuy) {
       m = menus;
       while (m) {
-         if (m->wid==0UL) {
+         if (m->notoverdraw && m->nowy<y1) {
+            /* should fit above this win */
             xm = m->x0;
             if (m->nowx>=xm) xm = m->nowx;
             xm += m->xsize;
@@ -2513,7 +2529,7 @@ static void images(aprsdecode_pOPHIST op, char cmd, unsigned short wxset)
             /*        IF imagesx0<xm THEN menu^.x0:=imagesx1 */
             /*        ELSIF imagesx0>=xm THEN menu^.x0:=imagesx0-xm ELSE menu^.x0:=0 END;
                  */
-            menu->x0 = (unsigned long)popxbase();
+            menu->x0 = (unsigned long)popxbase(2147483647UL);
             /*        menu^.y0:=mainys()-VAL(CARDINAL,click.y); */
             menu->xsize = xm+1UL;
             menu->ysize = ym+1UL;
@@ -2783,7 +2799,10 @@ extern void useri_textautomenu(long x0, long y00, unsigned long id,
          ++i;
       }
       if (x>xmax) xmax = x;
-      if (x0==-3L) x0 = popxbase();
+      if (x0==-3L) {
+         x0 = popxbase((unsigned long)(y00+(long)
+                menuimgy(aprsdecode_lums.fontysize, n+1UL)));
+      }
       else if (x0<0L) {
          /*
              ELSIF x0=-2 THEN
@@ -3599,7 +3618,7 @@ static void domainpop(pMENU m)
    m->hiknob = 0UL;
    m->oldknob = oldk;
    m->oldsub = olds;
-   /*  popxbase:=m^.x0+m^.xsize-2; */
+   m->notoverdraw = 1;
    if (aprsdecode_click.entries>0UL) oneclickinfo();
 } /* end domainpop() */
 
@@ -3609,19 +3628,22 @@ static void domainpop(pMENU m)
 extern void useri_mainpop(void)
 {
    pMENU menu;
+   long yh;
    useri_killallmenus();
    newmenu(&menu, 94UL, aprsdecode_lums.fontysize+7UL, 30UL, useri_bTRANSP);
    if (!aprsdecode_lums.headmenuy) {
-      /* set popup mainmenue to not hide symbol and ist texts */
+      /* set popup mainmenue to not hide symbol and its texts */
+      yh = (long)useri_mainys()-aprsdecode_click.y;
       if ((unsigned long)aprsdecode_click.x<menu->xsize+16UL) {
          menu->x0 = (unsigned long)aprsdecode_click.x+16UL;
-         menu->y00 = (useri_mainys()-(unsigned long)aprsdecode_click.y)+10UL;
-                 /* under the sybol */
+         yh += 10L; /* under the sybol */
       }
       else {
          menu->x0 = (unsigned long)aprsdecode_click.x-(menu->xsize+16UL);
-         menu->y00 = (useri_mainys()-(unsigned long)aprsdecode_click.y)-10UL;
+         yh -= 10L;
       }
+      if (yh<0L) yh = 0L;
+      menu->y00 = (unsigned long)yh;
    }
    else setunderbar(menu, 0L);
    domainpop(menu);
@@ -3669,6 +3691,7 @@ static void filemenu(void)
    menu->ysize = menu->oldknob*menu->yknob;
    menu->oldknob = 0UL;
    menu->wid = 249UL;
+   menu->notoverdraw = 1;
 } /* end filemenu() */
 
 static void listmenu(pMENU);
@@ -3703,6 +3726,7 @@ static void listmenu(pMENU m)
    addline(m, " Objects/Items | decode", 24ul, "\247", 2ul, 400UL);
    m->redrawproc = listmenu;
    m->hiknob = 0UL;
+   m->notoverdraw = 1;
 } /* end listmenu() */
 
 
@@ -3715,6 +3739,7 @@ static void listmen(void)
    menu->oldknob = 0UL;
    /*  setunderbar(menu, 0); */
    menu->wid = 249UL;
+   menu->notoverdraw = 1;
 } /* end listmen() */
 
 
@@ -3795,6 +3820,7 @@ static void dotoolsmenu(pMENU menu)
    menu->ysize = menu->oldknob*menu->yknob;
    menu->hiknob = 0UL;
    menu->wid = 249UL;
+   menu->notoverdraw = 1;
 } /* end dotoolsmenu() */
 
 
@@ -3891,6 +3917,7 @@ static void specialmap(void)
    menu->ysize = menu->oldknob*menu->yknob;
    menu->oldknob = 0UL;
    menu->wid = 249UL;
+   menu->notoverdraw = 1;
 } /* end specialmap() */
 
 
@@ -3905,6 +3932,7 @@ static void helpmenu(void)
    menu->ysize = menu->oldknob*menu->yknob;
    menu->oldknob = 0UL;
    menu->wid = 249UL;
+   menu->notoverdraw = 1;
 } /* end helpmenu() */
 
 #define useri_MAXBUTT 20
@@ -3941,6 +3969,7 @@ static void mapchoose(void)
    addline(menu, "Reload", 7ul, "\236", 2ul, 701UL);
    menu->ysize = menu->oldknob*menu->yknob;
    menu->oldknob = 0UL;
+   menu->notoverdraw = 1;
 } /* end mapchoose() */
 
 
@@ -3956,6 +3985,7 @@ static void nextclick(void)
    addline(menu, "To Track", 9ul, "\276>", 3ul, 904UL);
    menu->ysize = menu->oldknob*menu->yknob;
    menu->oldknob = 0UL;
+   menu->notoverdraw = 1;
 } /* end nextclick() */
 
 
@@ -4018,6 +4048,7 @@ static void wxonoff(pMENU menu)
    addline(menu, "\365\365|Menu", 8ul, "\232", 2ul, 1113UL);
    menu->ysize = menu->oldknob*menu->yknob;
    menu->oldknob = 0UL;
+   menu->notoverdraw = 1;
 } /* end wxonoff() */
 
 
@@ -4057,6 +4088,7 @@ static void hoveronoff(pMENU menu)
    addline(menu, "\365\365|Hover OFf", 13ul, "\327", 2ul, 1159UL);
    menu->ysize = menu->oldknob*menu->yknob;
    menu->oldknob = 0UL;
+   menu->notoverdraw = 1;
 } /* end hoveronoff() */
 
 
@@ -4092,6 +4124,7 @@ static void trackonoff(pMENU menu, char on, unsigned char v)
    addline(menu, "\365\365|Menu", 8ul, (char *) &on, 1u/1u, 1206UL);
    menu->ysize = menu->oldknob*menu->yknob;
    menu->oldknob = 0UL;
+   menu->notoverdraw = 1;
 } /* end trackonoff() */
 
 
@@ -4136,6 +4169,7 @@ static void symbolonoff(pMENU menu, char on, unsigned char v)
    addline(menu, "\365\365|Menue", 9ul, (char *) &on, 1u/1u, 1311UL);
    menu->ysize = menu->oldknob*menu->yknob;
    menu->oldknob = 0UL;
+   menu->notoverdraw = 1;
 } /* end symbolonoff() */
 
 
@@ -4347,7 +4381,7 @@ static void infosdo(pMENU menu)
    menu->ysize = menu->oldknob*menu->yknob;
    menu->oldknob = oldk;
    menu->oldsub = olds;
-/*  popxbase:=menu^.x0+menu^.xsize-2; */
+   menu->notoverdraw = 1;
 } /* end infosdo() */
 
 
@@ -4380,8 +4414,8 @@ static void perc(unsigned long * vd, char h[100], char s[100],
       *lum = (long)vw;
    }
    aprsstr_Assign(s, 100ul, configs[cfg].title, 31ul);
+   useri_int2cfg(cfg, (long)v);
    aprsstr_IntToStr((long)v, 0UL, h, 100ul);
-   icfg(cfg, h, 100ul);
    aprsstr_Append(h, 100ul, "%", 2ul);
    *vd = (v*220UL)/100UL;
 } /* end perc() */
@@ -4446,8 +4480,7 @@ static void potimove(pMENU m, unsigned long potx, unsigned long knob)
          aprsdecode_lums.firstdim = v;
       }
       strncpy(s,"Time full Bright",100u);
-      aprsstr_IntToStr((long)(v/60UL), 0UL, h, 100ul);
-      icfg(useri_fTFULL, h, 100ul);
+      useri_int2cfg(useri_fTFULL, (long)(v/60UL));
       aprsstr_IntToStr((long)(v/3600UL), 0UL, h, 100ul);
       aprsstr_Append(h, 100ul, "h", 2ul);
       vd = (v*220UL)/maxbright;
@@ -4485,6 +4518,7 @@ static void potimove(pMENU m, unsigned long potx, unsigned long knob)
       knob = 1UL;
    }
    potival(m, knob, vd, 11UL, tx1, s, 100ul, h, 100ul);
+   m->notoverdraw = 1;
 } /* end potimove() */
 
 
@@ -5892,10 +5926,8 @@ static void dodigi(unsigned long scroll, unsigned long knob,
          icfg(useri_fDIGIX, vx, 200ul);
          icfg(useri_fDIGINN, vn, 200ul);
          icfg(useri_fDIGIVIA, vv, 200ul);
-         aprsstr_IntToStr((long)radius, 0UL, h, 200ul);
-         icfg(useri_fDIGIRADIUS, h, 200ul);
-         aprsstr_IntToStr((long)duptime, 0UL, h, 200ul);
-         icfg(useri_fDIGITIME, h, 200ul);
+         useri_int2cfg(useri_fDIGIRADIUS, (long)radius);
+         useri_int2cfg(useri_fDIGITIME, (long)duptime);
       }
       else if (knob==2UL) {
          /* Delete */
@@ -7633,6 +7665,25 @@ static void dopano(pMENU m, unsigned long xcl, unsigned long ycl)
 
 /* === panorama === */
 
+static void escmenus(void)
+{
+   useri_killallmenus();
+   closelist();
+   useri_refresh = 1;
+   configedit = 0UL;
+   useri_nextmsg = 0L;
+   sndmsg = 0;
+   useri_beaconediting = 0;
+   digied = 0;
+   aprsdecode_lums.wxcol = 0;
+   aprsdecode_lums.text = 10L*useri_conf2int(useri_fLTEXT, 0UL, 0L, 100L,
+                100L);
+   aprsdecode_click.withradio = 0;
+   aprsdecode_click.onesymbol.tab = 0;
+   if (panowin.on) closepano();
+} /* end escmenus() */
+
+
 static void copytoed(void)
 {
    char s[1000];
@@ -7852,6 +7903,7 @@ static void dogeoprofil(pMENU m)
                 (long)(m->yknob-1UL), c);
    m->redrawproc = dogeoprofil;
    m->hiknob = 0UL;
+   m->notoverdraw = 1;
 } /* end dogeoprofil() */
 
 #define useri_MAXBUTT0 11
@@ -7906,6 +7958,7 @@ static void docolours(pMENU m)
    addline(m, " Font Size", 11ul, "\316", 2ul, 8440UL);
    m->redrawproc = docolours;
    m->hiknob = 0UL;
+   m->notoverdraw = 1;
 } /* end docolours() */
 
 /*
@@ -8225,6 +8278,7 @@ static void netmenu(pMENU m)
    addline(m, h, 100ul, "\270", 2ul, 7400UL);
    m->redrawproc = netmenu;
    m->hiknob = 0UL;
+   m->notoverdraw = 1;
 } /* end netmenu() */
 
 static void rfmenu(pMENU);
@@ -8262,6 +8316,7 @@ static void rfmenu(pMENU m)
                 useri_configon(useri_fUDP1));
    m->redrawproc = rfmenu;
    m->hiknob = 0UL;
+   m->notoverdraw = 1;
 } /* end rfmenu() */
 
 
@@ -8433,6 +8488,7 @@ static void timercfg(pMENU m)
    addline(m, " Net Beacon time", 17ul, "\273", 2ul, 7706UL);
    m->redrawproc = timercfg;
    m->hiknob = 0UL;
+   m->notoverdraw = 1;
 } /* end timercfg() */
 
 
@@ -8499,6 +8555,7 @@ static void mapcfg(pMENU m)
    /*  addline(m, " Menu transparency", CMDDOMAP, MINH*78+5); */
    /*  addline(m, " Font Size", CMDDOMAP, MINH*78+7); */
    /*  addline(m, " Brightness Rfpath", CMDDOMAP, MINH*78+10); */
+   addline(m, " Reset to Default", 18ul, "D", 2ul, 7810UL);
    addline(m, " Brightness notmover", 21ul, "\274", 2ul, 7815UL);
    addline(m, " Show Altitude min m", 21ul, "\274", 2ul, 7820UL);
    addonoff(m, "   |km/h text", 14ul, "\274", 2ul, 7825UL, 7L,
@@ -8519,14 +8576,33 @@ static void mapcfg(pMENU m)
                 useri_configon(useri_fMOUSELOC));
    m->redrawproc = mapcfg;
    m->hiknob = 0UL;
+   m->notoverdraw = 1;
 } /* end mapcfg() */
+
+
+extern void useri_resetimgparms(void)
+{
+   initconfig1();
+   useri_rdlums();
+   useri_Setmap(0UL);
+   escmenus();
+   aprsdecode_lums.headmenuy = 1;
+   aprsdecode_lums.errorstep = 0;
+   aprsdecode_lums.moving = 0;
+   aprsdecode_posinval(&aprsdecode_click.markpos);
+   aprsdecode_posinval(&aprsdecode_click.measurepos);
+   aprsdecode_posinval(&aprsdecode_click.squerpos0);
+   aprsdecode_click.waysum = 0.0f;
+   useri_textautosize(0L, 0L, 4UL, 4UL, 'b', "Reset most Image/Mouse Paramete\
+rs to Default", 45ul);
+} /* end resetimgparms() */
 
 
 static void domap(unsigned long knob, unsigned long sub)
 {
    configs[useri_fEDITLINE].width = 200U;
    /*
-     IF knob=2 THEN
+     IF knob=RESETTODEFAULT THEN
        configs[fEDITLINE].title:="Menu transparency";
        configedit:=ORD(fTRANSP);
      ELSIF knob=3 THEN
@@ -8536,34 +8612,51 @@ static void domap(unsigned long knob, unsigned long sub)
        configs[fEDITLINE].title:="Brightness Rfpath";
        configedit:=ORD(fLRF);
    */
-   if (knob==1UL) {
+   /*
+     IF knob=RESETTODEFAULT THEN
+       initconfig1;
+       rdlums;
+       Setmap(0);
+       escmenus;
+       lums.headmenuy:=TRUE;
+       lums.errorstep:=FALSE;
+       lums.moving:=FALSE;
+       posinval(click.markpos);
+       posinval(click.measurepos);
+       posinval(click.squerpos0);
+       click.waysum:=0.0;
+       textautosize(0, 0, 4, 4, "b",
+                "Reset most Image/Mouse Parameters to Default");
+   
+     ELS*/
+   if (knob==2UL) {
       strncpy(configs[useri_fEDITLINE].title,"Brightness notmover",31u);
       configedit = 62UL;
    }
-   else if (knob==2UL) {
+   else if (knob==3UL) {
       strncpy(configs[useri_fEDITLINE].title,"Show Altitude min m",31u);
       configedit = 78UL;
    }
-   else if (knob==3UL) {
+   else if (knob==4UL) {
       if (sub==0UL) configtogg(useri_fKMH);
       else {
          strncpy(configs[useri_fEDITLINE].title,"km/h text",31u);
          configedit = 73UL;
       }
    }
-   else if (knob==4UL) {
+   else if (knob==5UL) {
       if (sub==0UL) maploadtogg();
       else {
          strncpy(configs[useri_fEDITLINE].title,"Start Maploader",31u);
          configedit = 86UL;
       }
    }
-   else if (knob==5UL) configtogg(useri_fTEMP);
-   else if (knob==6UL) configtogg(useri_fWINDSYM);
-   else if (knob==7UL) configtogg(useri_fARROW);
-   else if (knob==8UL) configtogg(useri_fRULER);
-   else if (knob==9UL) configtogg(useri_fTRACKFILT);
-   else if (knob==10UL) {
+   else if (knob==6UL) configtogg(useri_fTEMP);
+   else if (knob==7UL) configtogg(useri_fWINDSYM);
+   else if (knob==8UL) configtogg(useri_fARROW);
+   else if (knob==9UL) configtogg(useri_fRULER);
+   else if (knob==10UL) configtogg(useri_fTRACKFILT);
+   else if (knob==11UL) {
       if (sub==0UL) {
          configtogg(useri_fMOUSELOC);
          if (!useri_configon(useri_fMOUSELOC)) {
@@ -8607,6 +8700,7 @@ static void mapmove(pMENU m)
    addline(m, " Fine Zoom Step", 16ul, "\275", 2ul, 7945UL);
    m->redrawproc = mapmove;
    m->hiknob = 0UL;
+   m->notoverdraw = 1;
 } /* end mapmove() */
 
 
@@ -8694,6 +8788,7 @@ static void maincfg(unsigned long knob, char fromstatus)
       else if (knob==10UL) netmenu(menu);
       menu->ysize = menu->oldknob*menu->yknob;
       menu->oldknob = 0UL;
+      menu->notoverdraw = 1;
    }
 } /* end maincfg() */
 
@@ -9125,6 +9220,7 @@ static void configmenu2(void)
    menu->oldknob = 0UL;
    setunderbar(menu, 0L);
    menu->wid = 249UL;
+   menu->notoverdraw = 1;
 } /* end configmenu2() */
 
 
@@ -9156,6 +9252,7 @@ static void fotofn(void)
    menu->clampkb |= 0x2UL;
    menu->confidx[1U] = 6U;
    keybknob(menu, 1UL, 0, 0UL);
+   menu->notoverdraw = 1;
    menu->ysize = menu->oldknob*menu->yknob;
    menu->oldknob = 0UL;
 } /* end fotofn() */
@@ -9251,6 +9348,7 @@ static void importlog(pMENU menu)
    }
    menu->hiknob = 0UL;
    menu->wid = 227UL;
+   menu->notoverdraw = 1;
    if (!redraw) {
       menu->ysize = menu->oldknob*menu->yknob;
       menu->oldknob = 0UL;
@@ -10764,6 +10862,7 @@ static void mouseleft(long mousx, long mousy)
          aprsdecode_click.cmd = c;
          useri_killallmenus();
       }
+      else if (c=='D') aprsdecode_click.cmd = c;
       else if (c=='1') {
          if (subknob==0UL) aprsdecode_click.cmd = '1';
          else if (subknob==1UL) aprsdecode_click.cmd = '2';
@@ -10850,7 +10949,9 @@ static void mouseleft(long mousx, long mousy)
          aprsdecode_click.cmd = '\311';
       }
       else if (c=='\310') aprsdecode_click.cmd = '\310';
-      else if (c=='\237') aprsdecode_click.cmd = '\237';
+      else if (c=='\237') {
+         aprsdecode_click.cmd = '\237';
+      }
       else if (c=='\201') {
          if (knob==1UL) icfg(useri_fCLICKMAP, "C", 2ul);
          else if (knob==2UL) icfg(useri_fCLICKMAP, "X", 2ul);
@@ -11260,22 +11361,7 @@ extern void useri_keychar(char ch, char ispasted, char movecmd)
    useri_killbubble();
    closehint();
    useri_beaconimported[0UL] = 0;
-   if (ch=='\033') {
-      useri_killallmenus();
-      closelist();
-      useri_refresh = 1;
-      configedit = 0UL;
-      useri_nextmsg = 0L;
-      sndmsg = 0;
-      useri_beaconediting = 0;
-      digied = 0;
-      aprsdecode_lums.wxcol = 0;
-      aprsdecode_lums.text = 10L*useri_conf2int(useri_fLTEXT, 0UL, 0L, 100L,
-                100L);
-      aprsdecode_click.withradio = 0;
-      aprsdecode_click.onesymbol.tab = 0;
-      if (panowin.on) closepano();
-   }
+   if (ch=='\033') escmenus();
    kbtomenu(&ch);
    if (ch) clampedline = 0UL;
    if (ispasted) ch = 0;
@@ -11308,9 +11394,19 @@ extern void useri_keychar(char ch, char ispasted, char movecmd)
       aprsdecode_click.cmd = ' ';
       useri_refresh = 1;
    }
-   else if (aprsdecode_click.cmd=='B') dorfcfg(3UL, 0UL);
+   else if (aprsdecode_click.cmd=='B') {
+      if (useri_beaconediting) {
+         useri_beaconediting = 0; /* Close beacon */
+         useri_killmenuid(226UL);
+      }
+      else dorfcfg(3UL, 0UL);
+   }
    else if (aprsdecode_click.cmd=='M') {
-      sndmsg = 1;
+      if (sndmsg) {
+         sndmsg = 0;
+         useri_killmenuid(228UL);
+      }
+      else sndmsg = 1;
       useri_refresh = 1;
       aprsdecode_click.cmd = ' ';
    }
@@ -11324,7 +11420,8 @@ extern void useri_keychar(char ch, char ispasted, char movecmd)
       else startpano();
    }
    else if (aprsdecode_click.cmd=='d') maploadtogg();
-   else if (aprsdecode_click.cmd=='p') domap(10UL, 0UL);
+   else if (aprsdecode_click.cmd=='p') domap(11UL, 0UL);
+/*  ELSIF click.cmd="D" THEN domap(RESETTODEFAULT, 0); */
 /*  IF refresh THEN redrawpop(redrawimg) END; */
 } /* end keychar() */
 
@@ -11695,7 +11792,6 @@ extern void useri_initmenus(void)
    /*  actmenu:=NIL; */
    hinttime = 0UL;
    mouseshowcnt = 0UL;
-   /*  popxbase:=0; */
    /*  locpop:=NIL; */
    /*  hintcnt:=0; */
    /*  keybfocus:=NIL; */
