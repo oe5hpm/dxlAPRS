@@ -1771,28 +1771,6 @@ extern void maptool_Radiorange(maptool_pIMAGE image,
          break;
       } /* end switch */
       progr += 100UL;
-      /*
-          rt:=time();
-          IF rt<>realtime THEN
-            realtime:=rt;
-      
-            IF startt+4<rt THEN
-      
-              click.cmd:=0C;
-              refresh:=TRUE;
-              ss:="radiorange";
-              IF colnr<>0 THEN Append(ss, " 2") END;
-              IntToStr(frame*25, 3, ss1); Append(ss, ss1);
-                Append(ss, "% ESC to abort");
-              textautosize(0, 0, 5, 0, "g", ss);
-      
-              pos:=mappos;
-              Eventloop(1);
-            END;
-      
-      --WrInt(progr, 6); WrStrLn("prog");
-          END;
-      */
       strncpy(ss,"Radiorange",101u);
       if (colnr) aprsstr_Append(ss, 101ul, " 2", 3ul);
       progress(startt, ss, 101ul,

@@ -4026,7 +4026,7 @@ static void wxonoff(pMENU menu)
                 ch=='.');
    addonoff(menu, "\365\365|Show Rf", 11ul, "\232", 2ul, 1102UL, 6L,
                 ch=='=');
-   addonoff(menu, "\365\365|Heard", 9ul, "\232", 2ul, 1103UL, 6L, ch=='h');
+   addonoff(menu, "\365\365|Heard", 9ul, "\232", 2ul, 1103UL, 6L, ch=='H');
    addonoff(menu, "\365\365|Beacon Hist", 15ul, "\232", 2ul, 1104UL, 6L,
                 ch=='b');
    addonoff(menu, "\365\365|Raw+Decoded", 15ul, "\232", 2ul, 1105UL, 6L,
@@ -4159,7 +4159,7 @@ static void symbolonoff(pMENU menu, char on, unsigned char v)
    addonoff(menu, "\365\365|Show Rf", 11ul, (char *) &on, 1u/1u, 1306UL, 6L,
                 aprsstr_InStr(w, 31ul, "=", 2ul)>=0L);
    addonoff(menu, "\365\365|Heard", 9ul, (char *) &on, 1u/1u, 1307UL, 6L,
-                aprsstr_InStr(w, 31ul, "h", 2ul)>=0L);
+                aprsstr_InStr(w, 31ul, "H", 2ul)>=0L);
    addonoff(menu, "\365\365|Beacon Hist", 15ul, (char *) &on, 1u/1u, 1308UL,
                 6L, aprsstr_InStr(w, 31ul, "b", 2ul)>=0L);
    addonoff(menu, "\365\365|Speed Hist", 14ul, (char *) &on, 1u/1u, 1309UL,
@@ -10963,17 +10963,35 @@ static void mouseleft(long mousx, long mousy)
          useri_refresh = 1;
       }
       else if (c=='\202') {
-         if (knob==1UL) toggcfg(useri_fCLICKSYM, 'Y', "ACHX.=", 7ul);
-         else if (knob==2UL) toggcfg(useri_fCLICKSYM, 'X', "ACHY.=", 7ul);
-         else if (knob==3UL) toggcfg(useri_fCLICKSYM, 'C', "uAHXY.=", 8ul);
+         if (knob==1UL) {
+            toggcfg(useri_fCLICKSYM, 'Y', "AC+CFGHEARD+X.=", 16ul);
+         }
+         else if (knob==2UL) {
+            toggcfg(useri_fCLICKSYM, 'X', "AC+CFGHEARD+Y.=", 16ul);
+         }
+         else if (knob==3UL) {
+            toggcfg(useri_fCLICKSYM, 'C', "uA+CFGHEARD+XY.=", 17ul);
+         }
          else if (knob==4UL) toggcfg(useri_fCLICKSYM, 'u', "AC", 3ul);
          else if (knob==5UL) toggcfg(useri_fCLICKSYM, 'A', "", 1ul);
-         else if (knob==6UL) toggcfg(useri_fCLICKSYM, '.', "ACHXY=", 7ul);
-         else if (knob==7UL) toggcfg(useri_fCLICKSYM, '=', "uACHXY.", 8ul);
-         else if (knob==8UL) toggcfg(useri_fCLICKSYM, 'h', "uACHXY.=", 9ul);
-         else if (knob==9UL) toggcfg(useri_fCLICKSYM, 'b', "ACHXY.=", 8ul);
-         else if (knob==10UL) toggcfg(useri_fCLICKSYM, 's', "ACHXY.=", 8ul);
-         else if (knob==11UL) toggcfg(useri_fCLICKSYM, 'n', "ACHXY.=", 8ul);
+         else if (knob==6UL) {
+            toggcfg(useri_fCLICKSYM, '.', "AC+CFGHEARD+XY=", 16ul);
+         }
+         else if (knob==7UL) {
+            toggcfg(useri_fCLICKSYM, '=', "uAC+CFGHEARD+XY.", 17ul);
+         }
+         else if (knob==8UL) {
+            toggcfg(useri_fCLICKSYM, 'H', "uAC+CFGHEARD+XY.=", 18ul);
+         }
+         else if (knob==9UL) {
+            toggcfg(useri_fCLICKSYM, 'b', "AC+CFGHEARD+XY.=", 17ul);
+         }
+         else if (knob==10UL) {
+            toggcfg(useri_fCLICKSYM, 's', "AC+CFGHEARD+XY.=", 17ul);
+         }
+         else if (knob==11UL) {
+            toggcfg(useri_fCLICKSYM, 'n', "AC+CFGHEARD+XY.=", 17ul);
+         }
          else if (knob==12UL) icfg(useri_fCLICKSYM, "", 1ul);
          symbolonoff(menu, '\202', useri_fCLICKSYM);
          useri_refresh = 1;
@@ -10986,7 +11004,7 @@ static void mouseleft(long mousx, long mousy)
          else if (knob==5UL) toggcfg(useri_fCLICKTEXT, 'A', "", 1ul);
          else if (knob==6UL) toggcfg(useri_fCLICKTEXT, '.', "ACHXY=", 7ul);
          else if (knob==7UL) toggcfg(useri_fCLICKTEXT, '=', "uACHXY.", 8ul);
-         else if (knob==8UL) toggcfg(useri_fCLICKTEXT, 'h', "uACHXY.=", 9ul);
+         else if (knob==8UL) toggcfg(useri_fCLICKTEXT, 'H', "uACHXY.=", 9ul);
          else if (knob==9UL) toggcfg(useri_fCLICKTEXT, 'b', "ACHXY.=", 8ul);
          else if (knob==10UL) toggcfg(useri_fCLICKTEXT, 's', "ACHXY.=", 8ul);
          else if (knob==11UL) toggcfg(useri_fCLICKTEXT, 'n', "ACHXY.=", 8ul);
@@ -10998,14 +11016,14 @@ static void mouseleft(long mousx, long mousy)
          if (knob==1UL) icfg(useri_fCLICKWXSYM, "C", 2ul);
          else if (knob==2UL) icfg(useri_fCLICKWXSYM, ".", 2ul);
          else if (knob==3UL) icfg(useri_fCLICKWXSYM, "=", 2ul);
-         else if (knob==4UL) icfg(useri_fCLICKWXSYM, "h", 2ul);
+         else if (knob==4UL) {
+            icfg(useri_fCLICKWXSYM, "H", 2ul);
+         }
          else if (knob==5UL) icfg(useri_fCLICKWXSYM, "b", 2ul);
          else if (knob==6UL) wxraw(useri_fCLICKWXSYM);
          else if (knob==7UL) toggwx(useri_fCLICKWXSYM, aprsdecode_wLUMI);
          else if (knob==8UL) toggwx(useri_fCLICKWXSYM, aprsdecode_wRAIN);
-         else if (knob==9UL) {
-            toggwx(useri_fCLICKWXSYM, aprsdecode_wWINDDIR);
-         }
+         else if (knob==9UL) toggwx(useri_fCLICKWXSYM, aprsdecode_wWINDDIR);
          else if (knob==10UL) toggwx(useri_fCLICKWXSYM, aprsdecode_wWIND);
          else if (knob==11UL) toggwx(useri_fCLICKWXSYM, aprsdecode_wHYG);
          else if (knob==12UL) toggwx(useri_fCLICKWXSYM, aprsdecode_wBARO);
@@ -11165,7 +11183,9 @@ static void mouseleft(long mousx, long mousy)
             configtogg(useri_fCONNECT);
             updatemenus();
          }
-         else if (subknob==1UL) configtogg(useri_fUDP1);
+         else if (subknob==1UL) {
+            configtogg(useri_fUDP1);
+         }
          else if (subknob==2UL) configtogg(useri_fUDP2);
          else if (subknob==3UL) configtogg(useri_fUDP3);
          else if (subknob==4UL) configtogg(useri_fUDP4);
@@ -11254,7 +11274,9 @@ static void mouseleft(long mousx, long mousy)
          useri_refresh = 1;
       }
       else if (c=='\270') onlinesetup(knob, subknob);
-      else if (c=='\323') filesetup(knob, subknob);
+      else if (c=='\323') {
+         filesetup(knob, subknob);
+      }
       else if (c=='\262') {
          configedit = knob;
          useri_refresh = 1;
@@ -11339,9 +11361,7 @@ static void mouseleft(long mousx, long mousy)
       else if (c=='\305') useri_helptext(0UL, 0UL, 0UL, 0UL, "index", 6ul);
       else if (c=='\306') useri_helptext(knob, subknob, potx, poty, "", 1ul);
       else if (c=='\223') managebeacon(menu->scroll, knob, subknob, 0);
-      else if (c=='\213') {
-         dobeacon(menu->scroll, knob);
-      }
+      else if (c=='\213') dobeacon(menu->scroll, knob);
       else if (c=='\314') dodigi(menu->scroll, knob, subknob, 0U);
       else if (c=='\315') dodigi(menu->scroll, knob, subknob, 1U);
       else if (c=='\253') watchdo(knob, subknob);

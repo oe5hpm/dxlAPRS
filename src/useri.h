@@ -88,6 +88,8 @@
 
 #define useri_CMDRESETIMGPARMS "D"
 
+#define useri_CFGHEARD "H"
+
 #define useri_SP1 "\360"
 /* micospaces for menu text */
 
