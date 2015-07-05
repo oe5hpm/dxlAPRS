@@ -5,7 +5,7 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
-/* "@(#)sondemod.c Apr 19 13:36:16 2015" */
+/* "@(#)sondemod.c Jul  5  6:38:18 2015" */
 
 
 #define X2C_int32
@@ -149,6 +149,7 @@ struct CONTEXT {
    double hp;
    double hyg;
    double temp;
+   unsigned long goodsats;
    unsigned long timems;
    unsigned long framenum;
 };
@@ -582,7 +583,7 @@ static void Parms(void)
          }
          else {
             if (h[1U]=='h') {
-               osi_WrStrLn("sondemod(c) 0.2", 16ul);
+               osi_WrStrLn("sondemod(c) 0.3", 16ul);
                osi_WrStrLn(" -A <meter>     low altitude (useing -B beacon ti\
 me) limit meter -A 1000", 73ul);
                osi_WrStrLn(" -a             abort on sound error", 37ul);
@@ -869,8 +870,8 @@ static void dogps(const char sf[], unsigned long sf_len,
          res = gpspos_getposit(anonym->timems, gpstime, sats,
                 anonym->lastlat, anonym->laslong, anonym->lastalt,
                 &anonym->lat, &anonym->long0, &anonym->heig, &anonym->speed,
-                &anonym->dir, &anonym->climb, &anonym->hrmsc,
-                &anonym->vrmsc);
+                &anonym->dir, &anonym->climb, &anonym->hrmsc, &anonym->vrmsc,
+                 &anonym->goodsats);
       }
       else res = -2L;
       if (res>=0L) {
@@ -1520,7 +1521,7 @@ static void decodeframe(unsigned char m)
                 anonym1->hyg, anonym1->temp, (double)mhz,
                 (double)anonym1->hrmsc, (double)anonym1->vrmsc,
                 (anonym1->timems/1000UL)%86400UL, frameno, objname, 9ul,
-                almanachage);
+                almanachage, anonym1->goodsats);
          anonym1->framesent = 1;
       }
    }

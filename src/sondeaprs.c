@@ -5,7 +5,7 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
-/* "@(#)sondeaprs.c Mar 30 19:34:48 2015" */
+/* "@(#)sondeaprs.c Jul  5  6:38:19 2015" */
 
 
 #define X2C_int32
@@ -69,7 +69,7 @@ char sondeaprs_dao;
 
 #define sondeaprs_PI 3.1415926535898
 
-#define sondeaprs_GPSTIMECORR 14
+#define sondeaprs_GPSTIMECORR 15
 
 #define sondeaprs_DAYSEC 86400
 
@@ -215,7 +215,7 @@ extern long sondeaprs_GetIp(char h[], unsigned long h_len, unsigned long * p,
 
 
 static void comment0(char buf[], unsigned long buf_len, unsigned long uptime,
-                 unsigned long * linec)
+                 unsigned long sats, double hrms, unsigned long * linec)
 {
    long len;
    long lc;
@@ -270,7 +270,26 @@ static void comment0(char buf[], unsigned long buf_len, unsigned long uptime,
             }
             else if (fb[bol+1L]=='v') {
                /* insert version */
-               strncpy(fb," sondemod(c) 0.2",32768u);
+               strncpy(fb," sondemod(c) 0.3",32768u);
+            }
+            else if (fb[bol+1L]=='s') {
+               /* insert sat count */
+               if (sats>0UL) {
+                  strncpy(fb," Sats ",32768u);
+                  aprsstr_IntToStr((long)sats, 1UL, h, 100ul);
+                  aprsstr_Append(fb, 32768ul, h, 100ul);
+               }
+               else fb[0] = 0;
+            }
+            else if (fb[bol+1L]=='r') {
+               /* hrms +3m from tropomodel */
+               if (sats>4UL) {
+                  strncpy(fb," hdil=",32768u);
+                  aprsstr_FixToStr((float)(hrms+3.0), 2UL, h, 100ul);
+                  aprsstr_Append(fb, 32768ul, h, 100ul);
+                  aprsstr_Append(fb, 32768ul, "m", 2ul);
+               }
+               else fb[0] = 0;
             }
             bol = 0L;
             eol = (long)aprsstr_Length(fb, 32768ul);
@@ -333,7 +352,8 @@ static void sendaprs(unsigned long comp0, unsigned long micessid, char dao,
                 unsigned long destcall_len, char via[],
                 unsigned long via_len, char sym[], unsigned long sym_len,
                 char obj[], unsigned long obj_len, double lat, double long0,
-                double alt, double course, double speed, char comm[],
+                double alt, double course, double speed,
+                unsigned long goodsats, double hrms, char comm[],
                 unsigned long comm_len, unsigned long * commentcnt)
 {
    char ds[201];
@@ -629,7 +649,7 @@ static void sendaprs(unsigned long comp0, unsigned long micessid, char dao,
    }
    b[i] = 0;
    aprsstr_Append(b, 201ul, comm, comm_len);
-   comment0(h, 201ul, uptime, commentcnt);
+   comment0(h, 201ul, uptime, goodsats, hrms, commentcnt);
    aprsstr_Append(b, 201ul, h, 201ul);
    /*  Append(b, CR+LF); */
    if (aprsstr_Length(mycall, mycall_len)>=3UL) {
@@ -943,7 +963,8 @@ extern void sondeaprs_senddata(double lat, double long0, double alt,
                 double speed, double dir, double clb, double hp, double hyg,
                 double temp, double mhz, double hrms, double vrms,
                 unsigned long sattime, unsigned long uptime, char objname[],
-                unsigned long objname_len, unsigned long almanachage)
+                unsigned long objname_len, unsigned long almanachage,
+                unsigned long goodsats)
 {
    unsigned char e;
    pCONTEXT ct;
@@ -978,8 +999,8 @@ extern void sondeaprs_senddata(double lat, double long0, double alt,
          anonym->dat[0U].dir = dir;
          anonym->dat[0U].lat = X2C_DIVL(lat,1.7453292519943E-2);
          anonym->dat[0U].long0 = X2C_DIVL(long0,1.7453292519943E-2);
-         anonym->dat[0U].time0 = ((sattime+86400UL)-14UL)%86400UL;
-         anonym->dat[0U].uptime = (((sattime+86400UL)-14UL)-uptime)%86400UL;
+         anonym->dat[0U].time0 = ((sattime+86400UL)-15UL)%86400UL;
+         anonym->dat[0U].uptime = (((sattime+86400UL)-15UL)-uptime)%86400UL;
          anonym->dat[0U].clb = clb;
          climb(anonym->dat);
          Checkvals(anonym->dat, &chk);
@@ -1071,7 +1092,8 @@ extern void sondeaprs_senddata(double lat, double long0, double alt,
                 objname_len, anonym->dat[0U].lat, anonym->dat[0U].long0,
                 anonym->dat[0U].alt,
                 (double)(float)(truncc(anonym->dat[0U].dir)%360UL),
-                anonym->dat[0U].speed*3.6, s, 101ul, &anonym->commentline);
+                anonym->dat[0U].speed*3.6, goodsats, hrms, s, 101ul,
+                &anonym->commentline);
             anonym->lastbeacon = systime;
             anonym->speedcnt = 0UL;
             anonym->speedsum = 0.0;

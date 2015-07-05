@@ -34,7 +34,8 @@ typedef struct gpspos_SAT gpspos_SATS[12];
 
 extern long gpspos_getposit(unsigned long, unsigned long *, gpspos_SATS,
                 double, double, double, double *, double *, double *,
-                double *, double *, double *, float *, float *);
+                double *, double *, double *, float *, float *,
+                unsigned long *);
 
 extern char gpspos_readalmanach(char [], unsigned long, char [],
                 unsigned long, char [], unsigned long, unsigned long,

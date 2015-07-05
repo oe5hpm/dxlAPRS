@@ -5,7 +5,7 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
-/* "@(#)gpspos.c Apr 19 13:30:54 2015" */
+/* "@(#)gpspos.c Jul  5  6:38:19 2015" */
 
 
 #define X2C_int32
@@ -988,7 +988,8 @@ END ionomodel;
 extern long gpspos_getposit(unsigned long weekms, unsigned long * systime,
                 gpspos_SATS sats, double mylat, double mylong, double myhigh,
                  double * lat, double * long0, double * heig, double * speed,
-                 double * dir, double * climb, float * hrms, float * vrms)
+                 double * dir, double * climb, float * hrms, float * vrms,
+                unsigned long * goodsats)
 {
    double aa;
    double vheig;
@@ -1124,6 +1125,7 @@ extern long gpspos_getposit(unsigned long weekms, unsigned long * systime,
       showstats(stats, 500ul, tries, *hrms, *vrms, restcnt, 0);
       ret = 0L;
    }
+   *goodsats = 0UL;
    if (ret>=0L) {
       /*---speed */
       if (*lat==0.0 && *long0==0.0) {
@@ -1188,7 +1190,7 @@ extern long gpspos_getposit(unsigned long weekms, unsigned long * systime,
       if (i<=tmp0) for (;; i++) {
          j = sats[i-1UL].almidx;
          if (j<=31UL) {
-            /*& (satspos[j].elevation>-10.0)*/
+            if (!sats[i-1UL].badspeed) ++*goodsats;
             InOut_WriteInt((long)sats[i-1UL].prn, 2UL);
             osi_WrFixed((float)(X2C_DIVL(satspos[j].azimuth0,
                 1.7453292519943E-2)), 1L, 7UL);
