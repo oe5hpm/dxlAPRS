@@ -867,10 +867,6 @@ static void initconfig1(void)
                 155UL);
    initc(useri_fTFULL, "Time Full Bright Min", 21ul, useri_cLINE, "360", 4ul,
                  0, 160UL);
-   initc(useri_fTPURGE, "Keep Data in Memory Min", 24ul, useri_cLINE, "1500",
-                 5ul, 0, 165UL);
-   initc(useri_fTPURGEOBJ, "Keep Objects in Memory Min", 27ul, useri_cLINE, "\
-180", 4ul, 0, 170UL);
    initc(useri_fLWAY, "Brightness Waypoint", 20ul, useri_cLINE, "75", 3ul, 0,
                  175UL);
    initc(useri_fTRANSP, "Menu Background", 16ul, useri_cBLINE, "60", 3ul, 1,
@@ -893,8 +889,6 @@ static void initconfig1(void)
                 225UL);
    initc(useri_fMOUSELOC, "Mouse-Over function", 20ul, useri_cBLINE, "9",
                 2ul, 1, 240UL);
-   initc(useri_fTRACKFILT, "Trackfilter", 12ul, useri_cBOOL, "", 1ul, 1,
-                245UL);
    initc(useri_fDUPDEL, "Filter delayed Waypoints Min", 29ul, useri_cLINE, "1\
 80", 4ul, 0, 250UL);
    initc(useri_fARROW, "Show Coursearrow", 17ul, useri_cBOOL, "", 1ul, 1,
@@ -966,6 +960,12 @@ static void initconfig(void)
       configs[i].width = 201U;
       if (i==useri_fEDITLINE) break;
    } /* end for */
+   initc(useri_fTPURGE, "Keep Data in Memory Min", 24ul, useri_cLINE, "1500",
+                 5ul, 0, 165UL);
+   initc(useri_fTPURGEOBJ, "Keep Objects in Memory Min", 27ul, useri_cLINE, "\
+180", 4ul, 0, 170UL);
+   initc(useri_fTRACKFILT, "Trackfilter", 12ul, useri_cBOOL, "", 1ul, 1,
+                245UL);
    initc(useri_fWATCH, "Watch Calls", 12ul, useri_cLIST, "", 1ul, 0, 5UL);
    initc(useri_fAPPROXY, "Approxy Warn (km)", 18ul, useri_cBLINE, "", 1ul, 0,
                  5UL);
@@ -3291,8 +3291,24 @@ static void textinfo(unsigned long typ)
 
 extern void useri_refrinfo(void)
 {
-   textinfo(2UL);
+   char s[100];
+   unsigned char t;
+   /*
+     textinfo(2);
+     IF click.entries>0 THEN images(click.table[click.selected].opf, 0C,
+                click.graphset) END;
+   */
    if (aprsdecode_click.entries>0UL) {
+      t = aprsdecode_click.table[aprsdecode_click.selected].typf;
+      s[0] = 0;
+      if (t==aprsdecode_tTEXT || t==aprsdecode_tOBJECTTEXT) {
+         useri_confstr(useri_fCLICKTEXT, s, 100ul);
+      }
+      else if (t==aprsdecode_tSYMBOL || t==aprsdecode_tOBJECT) {
+         useri_confstr(useri_fCLICKSYM, s, 100ul);
+      }
+      /*WrStr(s); WrStrLn(" cfgset"); */
+      if (aprsstr_InStr(s, 100ul, "u", 2ul)>=0L) textinfo(2UL);
       images(aprsdecode_click.table[aprsdecode_click.selected].opf, 0,
                 aprsdecode_click.graphset);
    }
@@ -3331,13 +3347,13 @@ static void oneclickinfo(void)
    struct aprstat_LASTVAL lastval;
    char hh;
    char s[100];
+   unsigned char ct;
    if (aprsdecode_click.entries==0UL) return;
    i = aprsdecode_click.selected;
    hh = 0;
    aprsdecode_click.graphset = 0U;
-   if (aprsdecode_click.table[i].typf==aprsdecode_tSYMBOL || aprsdecode_click.table[i]
-                .typf==aprsdecode_tOBJECT) {
-      /*OR (click.table[i].typf=tHOVER)*/
+   ct = aprsdecode_click.table[i].typf;
+   if (ct==aprsdecode_tSYMBOL || ct==aprsdecode_tOBJECT) {
       getwxset(useri_fCLICKWXSYM, &hh, &aprsdecode_click.graphset);
                 /* what wx images are enabled */
       wset = 0U;
@@ -3357,10 +3373,11 @@ static void oneclickinfo(void)
             aprsdecode_click.graphset |= 0x200U;
          }
          if (aprsstr_InStr(s, 100ul, "u", 2ul)>=0L) hh = 'u';
+         else hh = 0;
          if (aprsdecode_click.graphset==0U) hh = s[0U];
       }
    }
-   else if (aprsdecode_click.table[i].typf==aprsdecode_tTEXT) {
+   else if (ct==aprsdecode_tTEXT || ct==aprsdecode_tOBJECTTEXT) {
       /* text click */
       useri_confstr(useri_fCLICKTEXT, s, 100ul);
       if (aprsstr_InStr(s, 100ul, "s", 2ul)>=0L) {
@@ -3373,9 +3390,11 @@ static void oneclickinfo(void)
          aprsdecode_click.graphset |= 0x200U;
       }
       if (aprsstr_InStr(s, 100ul, "u", 2ul)>=0L) hh = 'u';
-      if (aprsdecode_click.graphset==0U) hh = s[0U];
    }
-   else if (aprsdecode_click.table[i].typf==aprsdecode_tTRACK) {
+   else if (ct==aprsdecode_tTRACK) {
+      /*    IF (click.graphset=sWXSET{}
+                ) & (InStr(s, CFGRAWDECODED)>=0 THEN hh:=CFGRAWDECODED END;
+                */
       /* track click */
       useri_confstr(useri_fCLICKTRACK, s, 100ul);
       if (aprsdecode_click.mhop[0UL] || aprsstr_InStr(s, 100ul, ".",
@@ -3390,18 +3409,19 @@ static void oneclickinfo(void)
          if (aprsstr_InStr(s, 100ul, "n", 2ul)>=0L) {
             aprsdecode_click.graphset |= 0x200U;
          }
-         if (aprsstr_InStr(s, 100ul, "u", 2ul)>=0L) hh = 'u';
       }
+      if (aprsstr_InStr(s, 100ul, "u", 2ul)>=0L) hh = 'u';
    }
-   /*      IF click.graphset=sWXSET{} THEN hh:=s[0] END; */
    if (hh=='u') {
-      if (aprsdecode_click.table[i].typf==aprsdecode_tTRACK) {
+      /*WrStr(hh); WrStrLn(" texti"); */
+      if (ct==aprsdecode_tTRACK) {
          textinfo(3UL); /* click.cmd:=">";*/ /* refresh:=TRUE;*/
       }
       else textinfo(2UL);
-      aprsdecode_click.cmd = ' '; /*refresh:=TRUE;*/
+      aprsdecode_click.cmd = ' ';
    }
-   images(aprsdecode_click.table[i].opf, hh, aprsdecode_click.graphset);
+   images(aprsdecode_click.table[aprsdecode_click.selected].opf, hh,
+                aprsdecode_click.graphset);
    useri_refresh = 1;
 } /* end oneclickinfo() */
 
@@ -3927,7 +3947,7 @@ static void helpmenu(void)
    newmenu(&menu, 150UL, aprsdecode_lums.fontysize+7UL, 3UL, useri_bTRANSP);
    /*  addline(menu, "Shortcuts", CMDSHORTCUTLIST, MINH*6); */
    addline(menu, "Helptext", 9ul, "\305", 2ul, 610UL);
-   addline(menu, "aprsmap(cu) 0.50 by OE5DXL ", 28ul, " ", 2ul, 605UL);
+   addline(menu, "aprsmap(cu) 0.51 by OE5DXL ", 28ul, " ", 2ul, 605UL);
    setunderbar(menu, 37L);
    menu->ysize = menu->oldknob*menu->yknob;
    menu->oldknob = 0UL;
@@ -8555,7 +8575,7 @@ static void mapcfg(pMENU m)
    /*  addline(m, " Menu transparency", CMDDOMAP, MINH*78+5); */
    /*  addline(m, " Font Size", CMDDOMAP, MINH*78+7); */
    /*  addline(m, " Brightness Rfpath", CMDDOMAP, MINH*78+10); */
-   addline(m, " Reset to Default", 18ul, "D", 2ul, 7810UL);
+   addline(m, " Reset to Default", 18ul, "\014", 2ul, 7810UL);
    addline(m, " Brightness notmover", 21ul, "\274", 2ul, 7815UL);
    addline(m, " Show Altitude min m", 21ul, "\274", 2ul, 7820UL);
    addonoff(m, "   |km/h text", 14ul, "\274", 2ul, 7825UL, 7L,
@@ -10862,7 +10882,7 @@ static void mouseleft(long mousx, long mousy)
          aprsdecode_click.cmd = c;
          useri_killallmenus();
       }
-      else if (c=='D') aprsdecode_click.cmd = c;
+      else if (c=='\014') aprsdecode_click.cmd = c;
       else if (c=='1') {
          if (subknob==0UL) aprsdecode_click.cmd = '1';
          else if (subknob==1UL) aprsdecode_click.cmd = '2';

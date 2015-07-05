@@ -4643,7 +4643,7 @@ static void MainEvent(void)
       else if (aprsdecode_click.cmd=='b' || aprsdecode_click.cmd=='\010') {
          pop();
       }
-      else if (aprsdecode_click.cmd=='D') {
+      else if (aprsdecode_click.cmd=='\014') {
          /*          mercator(mappos.long, mappos.lat, initzoom, inittilex,
                 inittiley, shiftx, shifty); */
          push(maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom));

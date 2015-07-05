@@ -247,10 +247,8 @@ extern void aprstext_Apphex(char s[], unsigned long s_len, char h[],
    s[j] = 0;
 } /* end Apphex() */
 
-/*
-  PROCEDURE radtostr(r:REAL; VAR s:ARRAY OF CHAR);
-  BEGIN FixToStr(r*180.0/PI+0.000005, 6, s); END radtostr;
-*/
+#define aprstext_TAB "\012 "
+
 
 static void rfdist(aprsdecode_pVARDAT v, char h[], unsigned long h_len)
 {
@@ -281,7 +279,23 @@ postostr(ig^.lastpos, s); WrStr(s); WrStr(" "); postostr(pos, s); WrStrLn(s);
 */
 } /* end rfdist() */
 
-#define aprstext_TAB "\012 "
+
+static void objitem(char s[], unsigned long s_len,
+                struct aprsdecode_DAT * dat)
+{
+   if (dat->type==aprsdecode_OBJ) {
+      aprsstr_Append(s, s_len, "\012 ", 3ul);
+      if (dat->objkill=='1') aprsstr_Append(s, s_len, "Killed ", 8ul);
+      aprsstr_Append(s, s_len, "Object from:", 13ul);
+      aprstext_Apphex(s, s_len, dat->objectfrom, 9ul);
+   }
+   else if (dat->type==aprsdecode_ITEM) {
+      aprsstr_Append(s, s_len, "\012 ", 3ul);
+      if (dat->objkill=='1') aprsstr_Append(s, s_len, "Killed ", 8ul);
+      aprsstr_Append(s, s_len, "Item from:", 11ul);
+      aprstext_Apphex(s, s_len, dat->objectfrom, 9ul);
+   }
+} /* end objitem() */
 
 
 extern void aprstext_decode(char s[], unsigned long s_len,
@@ -396,6 +410,9 @@ extern void aprstext_decode(char s[], unsigned long s_len,
       if (dat->type!=aprsdecode_MSG) Errtxt(s, s_len, pf0, pf);
       nl = 1;
       if (dat->sym=='_') {
+         if (dat->type==aprsdecode_OBJ || dat->type==aprsdecode_ITEM) {
+            objitem(s, s_len, dat);
+         }
          if (dat->wx.gust!=1.E+6f) {
             aprsstr_Append(s, s_len, "\012 ", 3ul);
             nl = 0;
@@ -497,17 +514,8 @@ extern void aprstext_decode(char s[], unsigned long s_len,
             aprsstr_Append(s, s_len, " Reject", 8ul);
          }
       }
-      else if (dat->type==aprsdecode_OBJ) {
-         aprsstr_Append(s, s_len, "\012 ", 3ul);
-         if (dat->objkill=='1') aprsstr_Append(s, s_len, "Killed ", 8ul);
-         aprsstr_Append(s, s_len, "Object from:", 13ul);
-         aprstext_Apphex(s, s_len, dat->objectfrom, 9ul);
-      }
-      else if (dat->type==aprsdecode_ITEM) {
-         aprsstr_Append(s, s_len, "\012 ", 3ul);
-         if (dat->objkill=='1') aprsstr_Append(s, s_len, "Killed ", 8ul);
-         aprsstr_Append(s, s_len, "Item from:", 11ul);
-         aprstext_Apphex(s, s_len, dat->objectfrom, 9ul);
+      else if (dat->type==aprsdecode_OBJ || dat->type==aprsdecode_ITEM) {
+         objitem(s, s_len, dat);
       }
       if (dat->type!=aprsdecode_MSG && dat->comment0[0UL]) {
          if (dat->type==aprsdecode_TELE) {

@@ -1238,7 +1238,7 @@ static void beaconmacros(char s[], unsigned long s_len, const char path[],
             }
             else if (s[i]=='\\') aprsstr_Append(ns, 256ul, "\\\\", 3ul);
             else if (s[i]=='v') {
-               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.50", 17ul);
+               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.51", 17ul);
             }
             else if (s[i]=='l') {
                if (aprstext_getmypos(&pos)) {
@@ -2301,7 +2301,7 @@ extern long aprsdecode_Decode(char buf[], unsigned long buf_len,
                 dat->hrtposes, 32ul, &dat->hrtlen, &dat->hrttime);
    }
    if (X2C_IN((long)dat->type,12,
-                0x4CU) && dat->sym=='_' || dat->type==aprsdecode_PWETH) {
+                0xCCU) && dat->sym=='_' || dat->type==aprsdecode_PWETH) {
       GetWX(&dat->wx, &dat->course, &dat->speed, buf, buf_len, &compos);
    }
    i = 0UL;
@@ -5014,7 +5014,7 @@ static char tcpconn(aprsdecode_pTCPSOCK * sockchain, long f)
          aprsstr_Append(h, 512ul, s, 100ul);
       }
       aprsstr_Append(h, 512ul, " vers ", 7ul);
-      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.50", 17ul);
+      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.51", 17ul);
       appfilter(h, 512ul);
       /*    IF filter[0]<>0C THEN Append(h, " filter ");
                 Append(h, filter) END; */
