@@ -55,7 +55,7 @@
 #define aprsdecode_BEGINOFTIME 1388534400
 /* oldest possible log date */
 
-#define aprsdecode_VERS "aprsmap(cu) 0.51"
+#define aprsdecode_VERS "aprsmap(cu) 0.52"
 
 typedef char aprsdecode_MONCALL[9];
 
@@ -177,6 +177,15 @@ struct aprsdecode_SYMBOL {
    char pic;
 };
 
+struct aprsdecode_AREASYMB;
+
+
+struct aprsdecode_AREASYMB {
+   char typ;
+   unsigned char color;
+   struct aprspos_POSITION dpos;
+};
+
 struct aprsdecode_FRAMEHIST;
 
 typedef struct aprsdecode_FRAMEHIST * aprsdecode_pFRAMEHIST;
@@ -227,6 +236,8 @@ struct aprsdecode_OPHIST {
    signed char textpos;
    signed char valuepos;
    unsigned char lastinftyp; /*0 no inf, 10..99 drive dir, 100 wx no dir 110..199 wind dir*/
+   struct aprsdecode_AREASYMB areasymb; /* area object data */
+   char poligon;
 };
 
 struct aprsdecode_WX;
@@ -267,6 +278,16 @@ struct aprsdecode_HRTPOS {
    char notinterpolated;
 };
 
+struct aprsdecode_MULTILINE;
+
+
+struct aprsdecode_MULTILINE {
+   unsigned long size;
+   char linetyp;
+   char polygon;
+   struct aprspos_POSITION vec[23];
+};
+
 struct aprsdecode_DAT;
 
 
@@ -282,6 +303,7 @@ struct aprsdecode_DAT {
    unsigned long igatep;
    char postyp;
    char typc;
+   struct aprsdecode_AREASYMB areasymb;
    struct aprspos_POSITION pos;
    unsigned long speed;
    unsigned long course;
@@ -302,6 +324,7 @@ struct aprsdecode_DAT {
    struct aprsdecode_HRTPOS hrtposes[32];
    unsigned long hrtlen;
    unsigned long hrttime; /* if non zero is hrt defined */
+   struct aprsdecode_MULTILINE multiline;
    char comment0[256];
 };
 

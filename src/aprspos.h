@@ -34,7 +34,15 @@
 
 #define aprspos_ENCODEMICEDAO "M"
 
+#define aprspos_ENCODEAREA "A"
+
 #define aprspos_EARTH 6370.0
+
+#define aprspos_AREASYMT "\\"
+/* area object symbol table */
+
+#define aprspos_AREASYM "l"
+/* area object symbol */
 
 struct aprspos_POSITION;
 

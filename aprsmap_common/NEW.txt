@@ -1235,6 +1235,20 @@
 
 
 
+6. 7. 2015 (Ver 0.52)
+
++ Parameter Reset "ctrl-L" statt "D"
+
++ dekodieren und darstellen vom Area-Objects, Kreis, Ellypse, Rechteck, Dreieck, Linie
+  (ohne Corridor) gefuellt oder leer in 8 Farben nach APRS101.pdf.
+
++ Baken Editor erstmal fuer numerische Eingabe der Area Objects.
+
++ dekodieren und darstellen von Multiline-Objects mit 3 Linientypen und 4 Farben nach AE5PL
+  1-23 Linien pro Bake geschlossen oder offen.
+ 
++ Anklicken aller Linien und Flaechen am Rand und Verhalten wie normale Objekte aber ohne
+  Track bei Bewegung.
 
 
 

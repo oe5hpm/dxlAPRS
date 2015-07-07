@@ -1010,7 +1010,6 @@ ww grafische Temperaturverteilung
 x setze Marker 1 auf Mausposition
 y setze Marker 2 und Linie/Gelaendeschnitt zu Marker 1
 B Baken Editor oeffnen
-D Setze Bildwerte und Mausverhalten auf Standard
 F Finde Call (mit Wildcards * ?), Lokator, Breite/Laenge
 H Farbdarstellung der Hoehendaten (sofern vorhanden)
 M Message Schreiben
@@ -1032,6 +1031,7 @@ Cursor up/down/left/right Karte bewegen
 SHIFT mit up/down/left/right/[zoom+]/[zoom-] kleine Schritte
 DEL loesche angeklickte Station oder Wegpunkt
 TAB zwischen 2 Zoom/Pan/Focus/Wx Einstellungen hin und her
+ctrl-L Setze Bildwerte und Mausverhalten auf Standard
 ctrl-V Paste
 
 |en-shortcuts
@@ -1057,7 +1057,6 @@ w toggle WX stations and Temperature
 x set Marker 1 to mouse position
 y set Marker 2 and Line to Marker 1
 B Open Beacon editor
-D Reset Image and Mouse parameters to default
 F Find Call (with wildcards * ?), Locator, Latitude/Longitude
 H Altitude Colour Map (if srtm-Data avaliable)
 M Compose Message
@@ -1079,6 +1078,7 @@ Cursor up/down/left/right move map, same as click near margin
 SHIFT with up/down/left/right/[zoom+]/[zoom-] in smaller steps
 DEL delete selected (Symbol, Waypoint)
 TAB switch between two Views
+ctrl-L Reset Image and Mouse parameters to default
 ctrl-V Paste
 
 |en-map

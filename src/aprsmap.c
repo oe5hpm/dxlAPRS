@@ -769,10 +769,12 @@ static void tracks(maptool_pIMAGE img, aprsdecode_pOPHIST op,
    aprsdecode_click.ops = op;
    if (!highlight0) aprsdecode_click.typ = aprsdecode_tTRACK;
    while (aprsdecode_click.ops) {
-      if ((((aprsdecode_click.ops->drawhints&0x18U)
+      if ((((((aprsdecode_click.ops->drawhints&0x18U)
                 !=0U && (aprsdecode_click.ops->lastinftyp>=100U || aprsdecode_lums.wxcol==0)
                 ) && aprsdecode_click.ops->trackcol<58)
-                && aprsdecode_click.ops->sym.tab!='\001') {
+                && aprsdecode_click.ops->sym.tab!='\001')
+                && aprsdecode_click.ops->areasymb.typ==0)
+                && !aprsdecode_click.ops->poligon) {
          /* make a random track color */
          coln = (signed char)findfreecol(aprsdecode_click.ops);
          maptool_Colset(&col, (char)coln);
@@ -843,6 +845,7 @@ static void symbols(aprsdecode_pOPHIST op, char objects, char highlight0,
    float x;
    unsigned long lig;
    struct aprsdecode_COLTYP col;
+   struct aprsdecode_DAT dat;
    /*  symt, symb:CHAR; */
    aprsdecode_click.ops = op;
    if (!highlight0) {
@@ -860,24 +863,11 @@ static void symbols(aprsdecode_pOPHIST op, char objects, char highlight0,
                 &y)>=0L) && maptool_vistime(aprsdecode_click.ops->lasttime))
                 && (aprsdecode_click.ops->lastinftyp>=100U || aprsdecode_lums.wxcol==0)
                 ) {
-         /*
-               symt:=click.ops^.sym.tab;
-               symb:=click.ops^.sym.pic; 
-               IF symt<" " THEN symt:=NOSYMT; symb:=NOSYMB END;
-                (* set default symbol *)    
-         */
          hd = (x-hoverx)*(x-hoverx)+(y-hovery)*(y-hovery);
                 /* dist mouse to symbol */
          if (hd<hdmin) {
             hdmin = hd;
             if (hd<64.0f) {
-               /*
-                       & (distance(click.ops^.lastpos, click.measurepos)>1.0)
-                       & (distance(click.ops^.lastpos, click.markpos)>1.0)
-                       & ((click.entries=0)
-                          OR (distance(click.ops^.lastpos,
-                click.table[click.selected].opf^.lastpos)>1.0))
-               *)*/
                /* nearest to mouse op */
                hoverobj->opf = aprsdecode_click.ops;
                hoverobj->pff = 0;
@@ -890,9 +880,25 @@ static void symbols(aprsdecode_pOPHIST op, char objects, char highlight0,
          }
          if (objects) lig = (lig*(unsigned long)aprsdecode_lums.obj)/1024UL;
          else lig = (lig*(unsigned long)aprsdecode_lums.sym)/1024UL;
-         maptool_drawsym(image, aprsdecode_click.ops->sym.tab,
+         if (aprsdecode_click.ops->areasymb.typ) {
+            maptool_drawareasym(image, aprsdecode_click.ops->lastpos,
+                aprsdecode_click.ops->areasymb, lig);
+         }
+         else if (aprsdecode_click.ops->poligon) {
+            aprsdecode_click.pf = aprsdecode_click.ops->frames;
+            while (aprsdecode_click.pf->next) {
+               aprsdecode_click.pf = aprsdecode_click.pf->next;
+            }
+            if (aprsdecode_Decode(aprsdecode_click.pf->vardat->raw, 500ul,
+                &dat)>=0L) {
+               maptool_drawpoligon(image, dat.pos, dat.multiline, lig);
+            }
+         }
+         else {
+            maptool_drawsym(image, aprsdecode_click.ops->sym.tab,
                 aprsdecode_click.ops->sym.pic,
                 (0x1U & aprsdecode_click.ops->drawhints)!=0, x, y, lig);
+         }
          if (aprsdecode_click.ops->lastkmh>0) {
             if (aprsdecode_click.ops->lastinftyp>=10U && aprsdecode_click.ops->lastinftyp<100U)
                  {

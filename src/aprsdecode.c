@@ -22,6 +22,9 @@
 #ifndef osi_H_
 #include "osi.h"
 #endif
+#ifndef RealMath_H_
+#include "RealMath.h"
+#endif
 #ifndef Lib_H_
 #include "Lib.h"
 #endif
@@ -52,6 +55,10 @@
 #ifndef aprstext_H_
 #include "aprstext.h"
 #endif
+
+
+
+
 
 
 
@@ -281,6 +288,12 @@ extern float aprsdecode_floor(float r)
    if (f>r) f = f-1.0f;
    return f;
 } /* end floor() */
+
+
+static float sqr(float x)
+{
+   return x*x;
+} /* end sqr() */
 
 
 extern void aprsdecode_posinval(struct aprspos_POSITION * pos)
@@ -1238,7 +1251,7 @@ static void beaconmacros(char s[], unsigned long s_len, const char path[],
             }
             else if (s[i]=='\\') aprsstr_Append(ns, 256ul, "\\\\", 3ul);
             else if (s[i]=='v') {
-               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.51", 17ul);
+               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.52", 17ul);
             }
             else if (s[i]=='l') {
                if (aprstext_getmypos(&pos)) {
@@ -2051,6 +2064,104 @@ static void GetHRT(struct aprspos_POSITION * pos, long * altitude,
 } /* end GetHRT() */
 
 
+static void GetMultiline(const char buf[], unsigned long buf_len,
+                unsigned long compos, struct aprsdecode_MULTILINE * md)
+{
+   unsigned long idx;
+   unsigned long s;
+   unsigned long i;
+   char c;
+   float v;
+   float scale;
+   i = compos;
+   s = 0UL;
+   while (i<buf_len-1 && buf[i]) {
+      c = buf[i];
+      if (s==0UL) {
+         if (c==' ') s = 1UL;
+      }
+      else if (s==1UL) {
+         if (c=='}') s = 2UL;
+         else s = 0UL;
+      }
+      else if (s==2UL) {
+         if ((unsigned char)c>='a' && (unsigned char)c<='l') {
+            md->linetyp = c;
+            s = 3UL;
+         }
+         else s = 0UL;
+      }
+      else if (s==3UL) {
+         if (c=='0') {
+            md->polygon = 1;
+            s = 4UL;
+         }
+         else if (c=='1') {
+            md->polygon = 0;
+            s = 4UL;
+         }
+         else s = 0UL;
+      }
+      else if (s==4UL) {
+         if ((unsigned char)c>='!' && (unsigned char)c<='q') {
+            scale = RealMath_exp((float)((unsigned long)(unsigned char)
+                c-33UL)*1.15129255E-1f)*1.7453292519444E-6f;
+                /* 10^(x/20)*0.0001 deg */
+            s = 5UL;
+            idx = 0UL;
+         }
+         else s = 0UL;
+      }
+      else if (s==5UL || s==6UL) {
+         if ((unsigned char)c>='!' && (unsigned char)c<='z') {
+            if (idx<=22UL) {
+               v = ((float)(unsigned long)(unsigned char)c-78.0f)*scale;
+               /*WrFixed(v/RAD, 5, 10); WrStrLn(" deg"); */
+               if (s==5UL) {
+                  md->vec[idx].lat = v;
+                  s = 6UL;
+               }
+               else {
+                  md->vec[idx].long0 = v;
+                  s = 5UL;
+                  ++idx;
+               }
+            }
+            else s = 0UL;
+         }
+         else if (s==5UL && c=='{') s = 7UL;
+         else s = 0UL;
+      }
+      else if (s==7UL) {
+         if (c=='Q') s = 8UL;
+         else s = 0UL;
+      }
+      else if (s==8UL) {
+         if (c=='F') s = 9UL;
+         else s = 0UL;
+      }
+      else if (s==9UL) {
+         if (c=='S') s = 10UL;
+         else s = 0UL;
+      }
+      else if (s==10UL) {
+         if (c=='A') s = 11UL;
+         else s = 0UL;
+      }
+      else if (s==11UL) {
+         if (c=='A') {
+            /*WrInt(idx, 10); WrStrLn(" size"); */
+            md->size = idx; /* protocol done */
+            return;
+         }
+         s = 0UL;
+      }
+      else s = 0UL;
+      ++i;
+   }
+} /* end GetMultiline() */
+
+
 extern char aprsdecode_checksymb(char symt, char symb)
 /* true for bad symbol */
 {
@@ -2296,7 +2407,28 @@ extern long aprsdecode_Decode(char buf[], unsigned long buf_len,
          dat->symt = 0; /* wrong symbol */
          dat->sym = 0;
       }
+      if (dat->postyp=='A' && dat->type==aprsdecode_OBJ) {
+         /* area object */
+         dat->areasymb.typ = (char)((dat->course/100UL)%10UL+48UL);
+         dat->areasymb.color = (unsigned char)(dat->speed/100UL);
+         dat->areasymb.dpos.lat = sqr((float)(dat->course%100UL))
+                *1.454441043287E-6f;
+         dat->areasymb.dpos.long0 = sqr((float)(dat->speed%100UL))
+                *1.454441043287E-6f;
+         if (dat->areasymb.typ=='6') {
+            dat->areasymb.dpos.long0 = -dat->areasymb.dpos.long0;
+                /* line to left down */
+         }
+         dat->pos.lat = dat->pos.lat-dat->areasymb.dpos.lat;
+         dat->pos.long0 = dat->pos.long0+dat->areasymb.dpos.long0;
+                /* shift pos to middle of area */
+         dat->speed = 0UL;
+         dat->course = 0UL;
+      }
       if (compos==0UL) compos = payload;
+      if (dat->type==aprsdecode_OBJ) {
+         GetMultiline(buf, buf_len, compos, &dat->multiline);
+      }
       GetHRT(&dat->pos, &dat->altitude, &dat->speed, buf, buf_len, &compos,
                 dat->hrtposes, 32ul, &dat->hrtlen, &dat->hrttime);
    }
@@ -2403,7 +2535,20 @@ extern void aprsdecode_extractbeacon(char raw[], unsigned long raw_len,
       useri_AddConfLine(useri_fRBSYMB, 1U, s, 1000ul);
       useri_AddConfLine(useri_fRBSPEED, 1U, "", 1ul);
       useri_AddConfLine(useri_fRBDIR, 1U, "", 1ul);
-      if (dat.speed>0UL && dat.speed<2147483647UL) {
+      if ((unsigned char)dat.areasymb.typ>='0') {
+         /*      IntToStr(dat.areasymb.color*100+trunc(sqrt(dat.areasymb.dpos.long/(RAD/200.0/60.0)
+                )), 1, s); */
+         aprsstr_IntToStr((long)((unsigned long)
+                dat.areasymb.color*100UL+aprsdecode_trunc(RealMath_sqrt(X2C_DIVR(dat.areasymb.dpos.long0,
+                1.454441043287E-6f)))), 1UL, s, 1000ul);
+         useri_AddConfLine(useri_fRBSPEED, 1U, s, 1000ul);
+         aprsstr_IntToStr((long)(((unsigned long)(unsigned char)
+                dat.areasymb.typ-48UL)
+                *100UL+aprsdecode_trunc(RealMath_sqrt(X2C_DIVR(dat.areasymb.dpos.lat,
+                1.454441043287E-6f)))), 1UL, s, 1000ul);
+         useri_AddConfLine(useri_fRBDIR, 1U, s, 1000ul);
+      }
+      else if (dat.speed>0UL && dat.speed<2147483647UL) {
          aprsstr_IntToStr((long)aprsdecode_trunc((float)dat.speed*1.852f),
                 1UL, s, 1000ul);
          useri_AddConfLine(useri_fRBSPEED, 1U, s, 1000ul);
@@ -2451,9 +2596,7 @@ extern void aprsdecode_extractbeacon(char raw[], unsigned long raw_len,
          }
          useri_AddConfLine(useri_fRBPATH, 1U, s, 1000ul);
       }
-      else {
-         useri_AddConfLine(useri_fRBDEST, 1U, "APLM01", 7ul);
-      }
+      else useri_AddConfLine(useri_fRBDEST, 1U, "APLM01", 7ul);
    }
    X2C_PFREE(raw);
 } /* end extractbeacon() */
@@ -4280,6 +4423,8 @@ extern long aprsdecode_Stoframe(aprsdecode_pOPHIST * optab, char rawbuf[],
          op->sym.pic = 0;
       }
    }
+   op->areasymb = dat.areasymb;
+   op->poligon = dat.multiline.size>0UL;
    if (lastf==0) {
       frame->next = op->frames;
       op->frames = frame; /* new track */
@@ -5014,7 +5159,7 @@ static char tcpconn(aprsdecode_pTCPSOCK * sockchain, long f)
          aprsstr_Append(h, 512ul, s, 100ul);
       }
       aprsstr_Append(h, 512ul, " vers ", 7ul);
-      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.51", 17ul);
+      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.52", 17ul);
       appfilter(h, 512ul);
       /*    IF filter[0]<>0C THEN Append(h, " filter ");
                 Append(h, filter) END; */

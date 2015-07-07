@@ -948,7 +948,7 @@ value, show higth in m
 
 |7810 Use only if You have missconfigured
 Image Parameters and dont find way back
-IF cannot read this :-) use shortcut "D"
+IF cannot read this :-) use shortcut ctrl-L
 
 |7945 Zoom steps for Shift-Click to +- or mouse-wheel
 

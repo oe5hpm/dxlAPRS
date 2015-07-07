@@ -286,6 +286,33 @@ static void objitem(char s[], unsigned long s_len,
    if (dat->type==aprsdecode_OBJ) {
       aprsstr_Append(s, s_len, "\012 ", 3ul);
       if (dat->objkill=='1') aprsstr_Append(s, s_len, "Killed ", 8ul);
+      if ((unsigned char)dat->areasymb.typ>='0') {
+         if ((unsigned char)dat->areasymb.typ>='5') {
+            aprsstr_Append(s, s_len, "filled ", 8ul);
+         }
+         switch (((unsigned long)(unsigned char)dat->areasymb.typ-48UL)%5UL)
+                {
+         case 0UL:
+            aprsstr_Append(s, s_len, "Circle", 7ul);
+            break;
+         case 1UL:
+            aprsstr_Append(s, s_len, "Line", 5ul);
+            break;
+         case 2UL:
+            aprsstr_Append(s, s_len, "Ellipse", 8ul);
+            break;
+         case 3UL:
+            aprsstr_Append(s, s_len, "Triangle", 9ul);
+            break;
+         case 4UL:
+            aprsstr_Append(s, s_len, "Box", 4ul);
+            break;
+         } /* end switch */
+         aprsstr_Append(s, s_len, " Area ", 7ul);
+      }
+      if (dat->multiline.size>0UL) {
+         aprsstr_Append(s, s_len, "Multiline ", 11ul);
+      }
       aprsstr_Append(s, s_len, "Object from:", 13ul);
       aprstext_Apphex(s, s_len, dat->objectfrom, 9ul);
    }
@@ -1303,10 +1330,10 @@ static void alt2str(long feet, char s[], unsigned long s_len)
 } /* end alt2str() */
 
 
-static void speeddir2str(long knots, long dir, char s[],
+static void speeddir2str(long knots, long dir, char areaobj, char s[],
                 unsigned long s_len)
 {
-   if (dir>=0L && dir<360L) {
+   if (areaobj || dir>=0L && dir<360L) {
       if (dir==0L) dir = 360L;
       s[0UL] = num(X2C_DIV(dir,100L));
       s[1UL] = num(X2C_DIV(dir,10L));
@@ -1461,6 +1488,7 @@ extern void aprstext_encbeacon(char s[], unsigned long s_len,
    char symb[2];
    char postyp;
    char typ;
+   char areaobj;
    char err;
    char dao;
    char bkn;
@@ -1482,15 +1510,18 @@ extern void aprstext_encbeacon(char s[], unsigned long s_len,
    bkn = (((typ!='O' && typ!='H') && typ!='P') && typ!='I') && typ!='J';
    useri_confstr(useri_fRBPOSTYP, (char *) &postyp, 1u/1u);
    useri_confstr(useri_fRBSYMB, symb, 2ul);
+   areaobj = (typ=='O' && symb[0U]=='\\') && symb[1U]=='l';
    if (aprsstr_Length(symb, 2ul)!=2UL) {
       useri_encerr("no symbol", 10ul);
       err = 1;
    }
    dao = postyp=='G' || postyp=='M';
-   knots = (long)aprsdecode_trunc((float)useri_conf2int(useri_fRBSPEED, 0UL,
-                0L, 32767L, 0L)*5.3995680345572E-1f+0.5f);
-   dir = useri_conf2int(useri_fRBDIR, 0UL, 0L, 360L, 360L);
-   if (dir>360L) useri_encerr("direction <=360", 16ul);
+   knots = useri_conf2int(useri_fRBSPEED, 0UL, 0L, 32767L, 0L);
+   if (!areaobj) {
+      knots = (long)aprsdecode_trunc((float)knots*5.3995680345572E-1f+0.5f);
+   }
+   dir = useri_conf2int(useri_fRBDIR, 0UL, 0L, 999L, 360L);
+   if (!areaobj && dir>360L) useri_encerr("Direction <=360", 16ul);
    else if (knots==0L && dir!=360L) {
       useri_encerr("direction needs speed>0", 24ul);
    }
@@ -1550,7 +1581,9 @@ extern void aprstext_encbeacon(char s[], unsigned long s_len,
       useri_confstr(useri_fRBDEST, h, 201ul);
       if (h[0U]==0) strncpy(h,"APLM01",201u);
       i = aprsstr_InStr(h, 201ul, "-", 2ul);
-      if (i>0L) aprsstr_Delstr(h, 201ul, (unsigned long)i, 201UL);
+      if (i>0L) {
+         aprsstr_Delstr(h, 201ul, (unsigned long)i, 201UL); /* delete ssid */
+      }
    }
    aprsstr_Append(s, s_len, h, 201ul);
    useri_confstr(useri_fRBPATH, h, 201ul);
@@ -1618,7 +1651,7 @@ extern void aprstext_encbeacon(char s[], unsigned long s_len,
       aprsstr_Append(s, s_len, h, 201ul);
       if (knots>0L) {
          /* dir, speed */
-         speeddir2str(knots, dir, h, 201ul);
+         speeddir2str(knots, dir, areaobj, h, 201ul);
          aprsstr_Append(s, s_len, h, 201ul);
       }
       if (alt>-10000L) {

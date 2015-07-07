@@ -3200,6 +3200,392 @@ extern void maptool_drawsym(maptool_pIMAGE image, char tab, char sym,
    }
 } /* end drawsym() */
 
+#define maptool_FILLLUM 30
+
+
+static unsigned long lim(float x, unsigned long m)
+{
+   unsigned long r;
+   if (x<=0.0f) return 0UL;
+   r = aprsdecode_trunc(x);
+   if (r>m) return m;
+   return r;
+} /* end lim() */
+
+
+static void arc(unsigned long b, unsigned long g, unsigned long r,
+                maptool_pIMAGE image, char fill, float xh, float * y1,
+                float yh, float * y00, unsigned long yi0, float * x0,
+                float * x1, unsigned long i, char oct, float * xhh)
+{
+   unsigned long lum;
+   if (*xhh>(-1.0f)) {
+      if (oct) {
+         *xhh = 1.0f-sqr(X2C_DIVR((float)i-*x1,*x1-*x0));
+         if (*xhh<=0.0f) *xhh = 0.0f;
+         *xhh = (float)fabs(((float)yi0-*y00)-yh)-(*y1-*y00)
+                *0.5f*RealMath_sqrt(*xhh);
+      }
+      else *xhh = (float)fabs(*x1-(float)i)-xh;
+      *xhh = (1.5f-(float)fabs(*xhh+1.5f))*1.7066666666667E+2f;
+   }
+   if (*xhh>0.0f) {
+      if (aprsdecode_click.dryrun) findinfo((long)i, (long)yi0);
+      lum = aprsdecode_trunc(*xhh);
+   }
+   else if (fill) lum = 30UL;
+   else lum = 0UL;
+   addcol(&image->Adr[(i)*image->Len0+yi0], (long)r, (long)g, (long)b,
+                (long)lum);
+} /* end arc() */
+
+
+extern void maptool_drawareasym(maptool_pIMAGE image,
+                struct aprspos_POSITION pm, struct aprsdecode_AREASYMB area,
+                unsigned long bri)
+{
+   long ret;
+   struct aprspos_POSITION p1;
+   struct aprspos_POSITION p0;
+   float xho;
+   float yh;
+   float xhh;
+   float xh;
+   float y1;
+   float x1;
+   float y00;
+   float x0;
+   unsigned long xm;
+   unsigned long i;
+   unsigned long yi1;
+   unsigned long xi1;
+   unsigned long yi0;
+   unsigned long xi0;
+   char oct;
+   char fill;
+   unsigned long b;
+   unsigned long g;
+   unsigned long r;
+   unsigned long tmp;
+   switch ((unsigned)(area.color&7U)) {
+   case 0U: /* we have no black sso make gray */
+      r = 128UL;
+      g = 128UL;
+      b = 128UL;
+      break;
+   case 1U:
+      r = 0UL;
+      g = 0UL;
+      b = 255UL;
+      break;
+   case 2U:
+      r = 0UL;
+      g = 255UL;
+      b = 0UL;
+      break;
+   case 3U:
+      r = 0UL;
+      g = 255UL;
+      b = 255UL;
+      break;
+   case 4U:
+      r = 255UL;
+      g = 0UL;
+      b = 0UL;
+      break;
+   case 5U:
+      r = 255UL;
+      g = 0UL;
+      b = 255UL;
+      break;
+   case 6U:
+      r = 255UL;
+      g = 255UL;
+      b = 0UL;
+      break;
+   case 7U:
+      r = 255UL;
+      g = 255UL;
+      b = 255UL;
+      break;
+   default:
+      X2C_TRAP(X2C_CASE_TRAP);
+   } /* end switch */
+   if (area.color>=8U) {
+      r = r/2UL;
+      g = g/2UL;
+      b = b/2UL;
+   }
+   r = (r*bri)/64UL;
+   g = (g*bri)/64UL;
+   b = (b*bri)/64UL;
+   if (area.typ=='1' || area.typ=='6') {
+      /* line */
+      p0.lat = pm.lat+area.dpos.lat;
+      p0.long0 = pm.long0-area.dpos.long0;
+      p1.lat = pm.lat-area.dpos.lat;
+      p1.long0 = pm.long0+area.dpos.long0;
+      ret = maptool_mapxy(p0, &x0, &y00);
+      ret = maptool_mapxy(p1, &x1, &y1);
+      maptool_vector(image, x0, y00, x1, y1, (long)r, (long)g, (long)b,
+                300UL, 0.0f);
+   }
+   else if (area.typ=='4' || area.typ=='9') {
+      /* box */
+      p0.lat = pm.lat+area.dpos.lat;
+      p0.long0 = pm.long0-area.dpos.long0;
+      p1.lat = p0.lat;
+      p1.long0 = pm.long0+area.dpos.long0;
+      ret = maptool_mapxy(p0, &x0, &y00);
+      ret = maptool_mapxy(p1, &x1, &y1);
+      maptool_vector(image, x0, y00, x1, y1, (long)r, (long)g, (long)b,
+                200UL, 0.0f);
+      p0.lat = pm.lat-area.dpos.lat;
+      p0.long0 = pm.long0+area.dpos.long0;
+      ret = maptool_mapxy(p0, &x0, &y00);
+      maptool_vector(image, x0, y00, x1, y1, (long)r, (long)g, (long)b,
+                200UL, 0.0f);
+      p1.lat = pm.lat-area.dpos.lat;
+      p1.long0 = pm.long0-area.dpos.long0;
+      ret = maptool_mapxy(p1, &x1, &y1);
+      maptool_vector(image, x0, y00, x1, y1, (long)r, (long)g, (long)b,
+                200UL, 0.0f);
+      p0.lat = pm.lat+area.dpos.lat;
+      p0.long0 = pm.long0-area.dpos.long0;
+      ret = maptool_mapxy(p0, &x0, &y00);
+      maptool_vector(image, x0, y00, x1, y1, (long)r, (long)g, (long)b,
+                200UL, 0.0f);
+      if (area.typ=='9') {
+         /* fill */
+         p0.lat = pm.lat-area.dpos.lat;
+         p0.long0 = pm.long0-area.dpos.long0;
+         p1.lat = pm.lat+area.dpos.lat;
+         p1.long0 = pm.long0+area.dpos.long0;
+         ret = maptool_mapxy(p0, &x0, &y00);
+         ret = maptool_mapxy(p1, &x1, &y1);
+         xi0 = lim(x0, image->Len1-1);
+         xi1 = lim(x1, image->Len1-1);
+         yi0 = lim(y00, image->Len0-1);
+         yi1 = lim(y1, image->Len0-1);
+         while (yi0<yi1) {
+            tmp = xi1;
+            i = xi0;
+            if (i<=tmp) for (;; i++) {
+               addcol(&image->Adr[(i)*image->Len0+yi0], (long)r, (long)g,
+                (long)b, 30L);
+               if (i==tmp) break;
+            } /* end for */
+            ++yi0;
+         }
+      }
+   }
+   else if (area.typ=='3' || area.typ=='8') {
+      /* triangle */
+      p0.lat = pm.lat+area.dpos.lat;
+      p0.long0 = pm.long0;
+      p1.lat = pm.lat-area.dpos.lat;
+      p1.long0 = pm.long0-area.dpos.long0;
+      ret = maptool_mapxy(p0, &x0, &y00);
+      ret = maptool_mapxy(p1, &x1, &y1);
+      maptool_vector(image, x0, y00, x1, y1, (long)r, (long)g, (long)b,
+                200UL, 0.0f);
+      p1.long0 = pm.long0+area.dpos.long0;
+      ret = maptool_mapxy(p1, &x1, &y1);
+      maptool_vector(image, x0, y00, x1, y1, (long)r, (long)g, (long)b,
+                200UL, 0.0f);
+      p0.lat = pm.lat-area.dpos.lat;
+      p0.long0 = pm.long0-area.dpos.long0;
+      ret = maptool_mapxy(p0, &x0, &y00);
+      maptool_vector(image, x0, y00, x1, y1, (long)r, (long)g, (long)b,
+                200UL, 0.0f);
+      if (area.typ=='8') {
+         /* fill */
+         p0.lat = pm.lat-area.dpos.lat;
+         p0.long0 = pm.long0-area.dpos.long0;
+         p1.lat = pm.lat+area.dpos.lat;
+         p1.long0 = pm.long0;
+         ret = maptool_mapxy(p0, &x0, &y00);
+         ret = maptool_mapxy(p1, &x1, &y1);
+         xhh = y1-y00;
+         if (xhh!=0.0f) {
+            yi0 = lim(y00, image->Len0-1);
+            yi1 = lim(y1, image->Len0-1);
+            xhh = X2C_DIVR(x1-x0,xhh);
+            while (yi0<yi1) {
+               xh = xhh*(y1-(float)yi0);
+               tmp = lim(x1+xh, image->Len1-1);
+               i = lim(x1-xh, image->Len1-1);
+               if (i<=tmp) for (;; i++) {
+                  addcol(&image->Adr[(i)*image->Len0+yi0], (long)r, (long)g,
+                (long)b, 30L);
+                  if (i==tmp) break;
+               } /* end for */
+               ++yi0;
+            }
+         }
+      }
+   }
+   else if (((area.typ=='0' || area.typ=='2') || area.typ=='5')
+                || area.typ=='7') {
+      /* circle ellipse */
+      p0.lat = pm.lat-area.dpos.lat;
+      p0.long0 = pm.long0-area.dpos.long0;
+      p1.lat = pm.lat+area.dpos.lat;
+      p1.long0 = pm.long0;
+      ret = maptool_mapxy(p0, &x0, &y00);
+      ret = maptool_mapxy(p1, &x1, &y1);
+      if (area.typ=='0' || area.typ=='5') x0 = x1-(y1-y00)*0.5f;
+      yi0 = lim(y00+0.5f, image->Len0-1);
+      yi1 = lim(y1+0.5f, image->Len0-1);
+      yh = (y1-y00)*0.5f;
+      xho = 0.0f;
+      fill = area.typ=='5' || area.typ=='7';
+      if (yh!=0.0f && x0!=x1) {
+         while (yi0<yi1) {
+            xh = 1.0f-sqr(X2C_DIVR((y00+yh)-(float)yi0,yh));
+            if (xh<=0.0f) xh = 0.0f;
+            xh = (x1-x0)*RealMath_sqrt(xh);
+            oct = (float)fabs(xh-xho)>=1.0f;
+            xho = xh;
+            xm = lim(x1+0.5f, image->Len1-1);
+            xhh = 0.0f;
+            tmp = xm;
+            i = lim((x1-xh)+0.5f, image->Len1-1)+1UL;
+            if (i<=tmp) for (;; i++) {
+               arc(b, g, r, image, fill, xh, &y1, yh, &y00, yi0, &x0, &x1, i,
+                 oct, &xhh);
+               if (i==tmp) break;
+            } /* end for */
+            xhh = 0.0f;
+            tmp = xm+1UL;
+            i = lim(x1+xh+0.5f, image->Len1-1)-1UL;
+            if (i>=tmp) for (;; i--) {
+               arc(b, g, r, image, fill, xh, &y1, yh, &y00, yi0, &x0, &x1, i,
+                 oct, &xhh);
+               if (i==tmp) break;
+            } /* end for */
+            ++yi0;
+         }
+      }
+   }
+} /* end drawareasym() */
+
+
+static void dashvec(maptool_pIMAGE image, float x0, float y00, float x1,
+                float y1, unsigned long r, unsigned long g, unsigned long b,
+                float double0, unsigned long len, unsigned long wid)
+{
+   float dy;
+   float dx;
+   float l;
+   float m1;
+   float m0;
+   float k;
+   float y;
+   float x;
+   unsigned long d;
+   unsigned long i;
+   unsigned long tmp;
+   x = x1-x0;
+   y = y1-y00;
+   k = x*x+y*y;
+   if (k==0.0f) return;
+   k = RealMath_sqrt(k);
+   dx = X2C_DIVR(double0*y,k);
+   dy = -(X2C_DIVR(double0*x,k)); /* rotate vector 90 deg für double dash */
+   l = (float)len;
+   if (k<100.0f) l = l*0.8f;
+   else if (k<50.0f) l = l*0.5f;
+   d = 1UL+(aprsdecode_trunc(X2C_DIVR(k,l))/2UL)*2UL;
+   k = X2C_DIVR(1.0f,(float)d);
+   tmp = d-1UL;
+   i = 0UL;
+   if (i<=tmp) for (tmp = (unsigned long)(tmp-i)/2UL;;) {
+      m0 = k*(float)i;
+      m1 = k*(float)(i+1UL);
+      maptool_vector(image, x0+x*m0, y00+y*m0, x0+x*m1, y00+y*m1, (long)r,
+                (long)g, (long)b, wid, 0.0f);
+      if (double0!=0.0f) {
+         maptool_vector(image, x0+x*m0+dx, y00+y*m0+dy, x0+x*m1+dx,
+                y00+y*m1+dy, (long)r, (long)g, (long)b, wid, 0.0f);
+      }
+      if (!tmp) break;
+      --tmp;
+      i += 2UL;
+   } /* end for */
+} /* end dashvec() */
+
+
+extern void maptool_drawpoligon(maptool_pIMAGE image,
+                struct aprspos_POSITION pm, struct aprsdecode_MULTILINE md,
+                unsigned long bri)
+{
+   unsigned long col0;
+   struct aprspos_POSITION p;
+   float y1;
+   float x1;
+   float y00;
+   float x0;
+   unsigned long j;
+   unsigned long i;
+   unsigned long b;
+   unsigned long g;
+   unsigned long r;
+   if (md.size==0UL) return;
+   col0 = (unsigned long)(unsigned char)md.linetyp-97UL;
+   switch (col0/3UL) {
+   case 0UL:
+      r = 255UL;
+      g = 0UL;
+      b = 0UL;
+      break;
+   case 1UL:
+      r = 255UL;
+      g = 255UL;
+      b = 0UL;
+      break;
+   case 2UL:
+      r = 0UL;
+      g = 0UL;
+      b = 255UL;
+      break;
+   case 3UL:
+      r = 0UL;
+      g = 255UL;
+      b = 0UL;
+      break;
+   } /* end switch */
+   r = (r*bri)/64UL;
+   g = (g*bri)/64UL;
+   b = (b*bri)/64UL;
+   i = 0UL;
+   while (i<md.size+(unsigned long)md.polygon) {
+      j = i%md.size;
+      p.lat = pm.lat+md.vec[j].lat;
+      p.long0 = pm.long0-md.vec[j].long0;
+      if (maptool_mapxy(p, &x1, &y1)<0L) return;
+      if (i>0UL) {
+         switch (col0%3UL) {
+         case 0UL:
+            maptool_vector(image, x0, y00, x1, y1, (long)r, (long)g, (long)b,
+                 300UL, 0.0f);
+            break;
+         case 1UL:
+            dashvec(image, x0, y00, x1, y1, r, g, b, 0.0f, 8UL, 300UL);
+            break;
+         case 2UL:
+            dashvec(image, x0, y00, x1, y1, r, g, b, 2.5f, 6UL, 200UL);
+            break;
+         default:
+            X2C_TRAP(X2C_CASE_TRAP);
+         } /* end switch */
+      }
+      x0 = x1;
+      y00 = y1;
+      ++i;
+   }
+} /* end drawpoligon() */
+
 #define maptool_HY 18
 
 #define maptool_MARGIN 2
