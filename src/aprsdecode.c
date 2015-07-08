@@ -6099,6 +6099,7 @@ extern void aprsdecode_drawbeacon(char raw[], unsigned long raw_len)
       }
    }
    else useri_xerrmsg("decode error", 13ul);
+   aprsdecode_tracenew.winevent = 1UL;
 } /* end drawbeacon() */
 
 

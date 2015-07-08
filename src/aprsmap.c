@@ -3881,7 +3881,6 @@ static void animate(const aprsdecode_MONCALL singlecall, unsigned long step,
    aprsdecode_pFRAMEHIST pf;
    unsigned char efil;
    unsigned long fractime;
-   /*    icnt, */
    unsigned long showt;
    unsigned long stime;
    unsigned long endtime;
@@ -3889,6 +3888,7 @@ static void animate(const aprsdecode_MONCALL singlecall, unsigned long step,
    unsigned long nextmov;
    long fastdelay;
    long fast;
+   unsigned long ii;
    unsigned long skip;
    float nomove;
    float y;
@@ -3900,15 +3900,20 @@ static void animate(const aprsdecode_MONCALL singlecall, unsigned long step,
    char mapok;
    char dir;
    struct aprspos_POSITION ipos;
+   float iitime;
    float itime;
    float bytew;
    char s1[41];
    char s[41];
    long minalt;
+   struct aprsdecode_DAT dat1;
    struct aprsdecode_DAT dat;
    struct aprsdecode_CLICKOBJECT hoverobj;
    struct aprsdecode_OPHIST * anonym;
    struct aprsdecode_VARDAT * anonym0;
+   struct aprspos_POSITION * anonym1;
+   /* interpolate areasymbol form */
+   struct aprspos_POSITION * anonym2;
    aprsdecode_MONCALL tmp;
    X2C_PCOPY((void **)&tofile,tofile_len);
    closeradio();
@@ -4055,14 +4060,11 @@ static void animate(const aprsdecode_MONCALL singlecall, unsigned long step,
                   /* interpolate waypoints */
                   itime = X2C_DIVR((float)(vtime-pf->time0)+(float)
                 fractime*0.04f,(float)(pf1->time0-pf->time0));
-                  /*
-                              IF itime>1.0 THEN itime:=1.0 ELSIF itime<0.0 THEN itime:=0.0 END;
-                  
-                  */
-                  ipos.long0 = pf->vardat->pos.long0*(1.0f-itime)
-                +pf1->vardat->pos.long0*itime;
-                  ipos.lat = pf->vardat->pos.lat*(1.0f-itime)
-                +pf1->vardat->pos.lat*itime;
+                  /*          IF itime>1.0 THEN itime:=1.0 ELSIF itime<0.0 THEN itime:=0.0 END;
+                   */
+                  iitime = 1.0f-itime;
+                  ipos.long0 = pf->vardat->pos.long0*iitime+pf1->vardat->pos.long0*itime;
+                  ipos.lat = pf->vardat->pos.lat*iitime+pf1->vardat->pos.lat*itime;
                   dir = pf->vardat->pos.long0>pf1->vardat->pos.long0;
                 /* mirror symbol on long deg */
                }
@@ -4070,18 +4072,44 @@ static void animate(const aprsdecode_MONCALL singlecall, unsigned long step,
                   /* end of track */
                   ipos = pf->vardat->pos;
                   dir = (0x1U & op->drawhints)!=0;
+                  itime = (-1.0f);
                }
                if (maptool_mapxy(ipos, &x,
                 &y)>=0L && maptool_vistime(pf->time0)) {
                   if (skip==0UL) {
                      if (op->poligon && aprsdecode_Decode(pf->vardat->raw,
                 500ul, &dat)>=0L) {
+                        if ((itime>0.0f && aprsdecode_Decode(pf1->vardat->raw,
+                 500ul, &dat1)>=0L) && dat.multiline.size==dat1.multiline.size) {
+                           /* interpolate poligon form */
+                           ii = 0UL;
+                           while (ii<dat.multiline.size) {
+                              { /* with */
+                                 struct aprspos_POSITION * anonym1 = &dat.multiline.vec[ii]
+                ;
+                                 anonym1->lat = anonym1->lat*iitime+dat1.multiline.vec[ii]
+                .lat*itime;
+                                 anonym1->long0 = anonym1->long0*iitime+dat1.multiline.vec[ii]
+                .long0*itime;
+                              }
+                              ++ii;
+                           }
+                        }
                         maptool_drawpoligon(rfimg, ipos, dat.multiline,
                 (unsigned long)X2C_DIV(aprsdecode_lums.sym,4L));
                      }
                      else if (op->areasymb.typ && aprsdecode_Decode(pf->vardat->raw,
                  500ul, &dat)>=0L) {
                         /* decode each frame if form changed */
+                        if (itime>0.0f && aprsdecode_Decode(pf1->vardat->raw,
+                 500ul, &dat1)>=0L) {
+                           { /* with */
+                              struct aprspos_POSITION * anonym2 = &dat.areasymb.dpos;
+                
+                              anonym2->lat = anonym2->lat*iitime+dat1.areasymb.dpos.lat*itime;
+                              anonym2->long0 = anonym2->long0*iitime+dat1.areasymb.dpos.long0*itime;
+                           }
+                        }
                         maptool_drawareasym(rfimg, ipos, dat.areasymb,
                 (unsigned long)X2C_DIV(aprsdecode_lums.obj,4L));
                      }
@@ -4175,7 +4203,9 @@ static void animate(const aprsdecode_MONCALL singlecall, unsigned long step,
             useri_refresh = 1;
             for (;;) {
                /* while stop pressed */
-               if (useri_refresh) useri_redraw(rfimg);
+               if (useri_refresh) {
+                  useri_redraw(rfimg);
+               }
                aprsdecode_lums.actfps = (long)step;
                 /* for faster/slower button */
                xosi_Eventloop(1000UL);
