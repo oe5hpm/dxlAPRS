@@ -4074,8 +4074,21 @@ static void animate(const aprsdecode_MONCALL singlecall, unsigned long step,
                if (maptool_mapxy(ipos, &x,
                 &y)>=0L && maptool_vistime(pf->time0)) {
                   if (skip==0UL) {
-                     maptool_drawsym(rfimg, op->sym.tab, op->sym.pic, dir, x,
-                 y, (unsigned long)aprsdecode_lums.sym);
+                     if (op->poligon && aprsdecode_Decode(pf->vardat->raw,
+                500ul, &dat)>=0L) {
+                        maptool_drawpoligon(rfimg, ipos, dat.multiline,
+                (unsigned long)X2C_DIV(aprsdecode_lums.sym,4L));
+                     }
+                     else if (op->areasymb.typ && aprsdecode_Decode(pf->vardat->raw,
+                 500ul, &dat)>=0L) {
+                        /* decode each frame if form changed */
+                        maptool_drawareasym(rfimg, ipos, dat.areasymb,
+                (unsigned long)X2C_DIV(aprsdecode_lums.obj,4L));
+                     }
+                     else {
+                        maptool_drawsym(rfimg, op->sym.tab, op->sym.pic, dir,
+                 x, y, (unsigned long)X2C_DIV(aprsdecode_lums.sym,4L));
+                     }
                      /*
                                    IF configon(fARROW)
                 & (Decode(pf^.vardat^.raw)>=0) & (dat.course<360) THEN

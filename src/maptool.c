@@ -3520,6 +3520,7 @@ extern void maptool_drawpoligon(maptool_pIMAGE image,
                 struct aprspos_POSITION pm, struct aprsdecode_MULTILINE md,
                 unsigned long bri)
 {
+   long ret;
    unsigned long col0;
    struct aprspos_POSITION p;
    float y1;
@@ -3563,7 +3564,7 @@ extern void maptool_drawpoligon(maptool_pIMAGE image,
       j = i%md.size;
       p.lat = pm.lat+md.vec[j].lat;
       p.long0 = pm.long0-md.vec[j].long0;
-      if (maptool_mapxy(p, &x1, &y1)<0L) return;
+      ret = maptool_mapxy(p, &x1, &y1);
       if (i>0UL) {
          switch (col0%3UL) {
          case 0UL:
