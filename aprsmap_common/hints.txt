@@ -868,7 +868,7 @@ except with WX-Data to have fulltime WX-Graphs
 |7700 Minutes hold any Data in RAM then Purge
 This is the maximum "Show Fullbright" Time too
  
-|7705 Minutes Show Symbols an Tracks on Screen
+|7705 Minutes Show Symbols and Tracks on Screen
 
 |7704 Minutes Fading out Symbols and Tracks
 after Full Bright Time on Screen
