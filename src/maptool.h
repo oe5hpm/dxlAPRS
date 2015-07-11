@@ -242,6 +242,11 @@ extern void maptool_drawareasym(maptool_pIMAGE, struct aprspos_POSITION,
 extern void maptool_drawpoligon(maptool_pIMAGE, struct aprspos_POSITION,
                 struct aprsdecode_MULTILINE, unsigned long);
 
+extern void maptool_drawpoliobj(maptool_pIMAGE);
+
+extern char maptool_findmultiline(struct aprspos_POSITION,
+                struct aprspos_POSITION *);
+
 
 extern void maptool_BEGIN(void);
 

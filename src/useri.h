@@ -371,6 +371,8 @@ extern void useri_int2cfg(unsigned char, long);
 
 extern void useri_resetimgparms(void);
 
+extern void useri_poligonmenu(void);
+
 
 extern void useri_BEGIN(void);
 

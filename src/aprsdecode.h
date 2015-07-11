@@ -55,6 +55,9 @@
 #define aprsdecode_BEGINOFTIME 1388534400
 /* oldest possible log date */
 
+#define aprsdecode_MAXMULTILINES 40
+/* AE5PL limits to 23 multiline elements */
+
 #define aprsdecode_VERS "aprsmap(cu) 0.52"
 
 typedef char aprsdecode_MONCALL[9];
@@ -285,7 +288,7 @@ struct aprsdecode_MULTILINE {
    unsigned long size;
    char linetyp;
    char polygon;
-   struct aprspos_POSITION vec[23];
+   struct aprspos_POSITION vec[41];
 };
 
 struct aprsdecode_DAT;
@@ -440,6 +443,7 @@ struct aprsdecode__D0 {
    char altimap;
    char watchmhop;
    char lastpoi;
+   char insreplaceline;
    char watchlast;
    long x;
    long y;
@@ -471,6 +475,7 @@ struct aprsdecode__D0 {
    struct aprspos_POSITION bubblpos; /* found position of POI */
    char bubblstr[50]; /* found text of POI */
    struct aprsdecode_CLICKOBJECT table[10];
+   unsigned long polilinecursor; /* edit which edge of polinine object */
 };
 
 extern struct aprsdecode__D0 aprsdecode_click;
@@ -670,6 +675,15 @@ extern void aprsdecode_makelogfn(char [], unsigned long);
 
 extern char aprsdecode_checksymb(char, char);
 /* true for bad symbol */
+
+extern void aprsdecode_appendmultiline(struct aprspos_POSITION);
+
+extern void aprsdecode_GetMultiline(char [], unsigned long, unsigned long,
+                unsigned long *, struct aprsdecode_MULTILINE *);
+
+extern char aprsdecode_ismultiline(void);
+
+extern void aprsdecode_modmultiline(unsigned long);
 
 
 extern void aprsdecode_BEGIN(void);

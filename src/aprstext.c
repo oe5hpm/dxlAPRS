@@ -283,10 +283,11 @@ postostr(ig^.lastpos, s); WrStr(s); WrStr(" "); postostr(pos, s); WrStrLn(s);
 static void objitem(char s[], unsigned long s_len,
                 struct aprsdecode_DAT * dat)
 {
-   if (dat->type==aprsdecode_OBJ) {
+   if (dat->type==aprsdecode_OBJ || dat->type==aprsdecode_ITEM) {
       aprsstr_Append(s, s_len, "\012 ", 3ul);
       if (dat->objkill=='1') aprsstr_Append(s, s_len, "Killed ", 8ul);
-      if ((unsigned char)dat->areasymb.typ>='0') {
+      if (dat->type==aprsdecode_OBJ && (unsigned char)dat->areasymb.typ>='0')
+                 {
          if ((unsigned char)dat->areasymb.typ>='5') {
             aprsstr_Append(s, s_len, "filled ", 8ul);
          }
@@ -313,13 +314,10 @@ static void objitem(char s[], unsigned long s_len,
       if (dat->multiline.size>0UL) {
          aprsstr_Append(s, s_len, "Multiline ", 11ul);
       }
-      aprsstr_Append(s, s_len, "Object from:", 13ul);
-      aprstext_Apphex(s, s_len, dat->objectfrom, 9ul);
-   }
-   else if (dat->type==aprsdecode_ITEM) {
-      aprsstr_Append(s, s_len, "\012 ", 3ul);
-      if (dat->objkill=='1') aprsstr_Append(s, s_len, "Killed ", 8ul);
-      aprsstr_Append(s, s_len, "Item from:", 11ul);
+      if (dat->type==aprsdecode_OBJ) {
+         aprsstr_Append(s, s_len, "Object from:", 13ul);
+      }
+      else aprsstr_Append(s, s_len, "Item from:", 11ul);
       aprstext_Apphex(s, s_len, dat->objectfrom, 9ul);
    }
 } /* end objitem() */
@@ -1344,7 +1342,8 @@ static void speeddir2str(long knots, long dir, char areaobj, char s[],
       s[1UL] = '.';
       s[2UL] = '.';
    }
-   s[3UL] = '/';
+   if (areaobj && knots>=1000L) s[3UL] = num(X2C_DIV(knots,1000L));
+   else s[3UL] = '/';
    s[4UL] = num(X2C_DIV(knots,100L));
    s[5UL] = num(X2C_DIV(knots,10L));
    s[6UL] = num(knots);

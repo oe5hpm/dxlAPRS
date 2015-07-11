@@ -464,6 +464,8 @@ static char useri_TICKERHEADLINE = 0;
 
 #define useri_CMDHEARD "\330"
 
+#define useri_CMDPOLIGON "\331"
+
 struct CONFLINE;
 
 typedef struct CONFLINE * pCONFLINE;
@@ -1574,11 +1576,19 @@ extern void useri_postoconfig(struct aprspos_POSITION pos)
 /* copy position to editline */
 {
    char s[100];
-   aprstext_postostr(pos, '3', s, 100ul);
-   useri_AddConfLine(useri_fRBPOS, 1U, s, 100ul);
+   /*  postostr(pos, "3", s); */
+   /*  AddConfLine(fRBPOS, 1, s); */
    aprstext_postostr(pos, '3', s, 100ul);
    useri_AddConfLine(useri_fEDITLINE, 1U, s, 100ul);
    if (s[0U]) useri_copypaste(s, 100ul);
+   if (useri_beaconediting) {
+      useri_confstr(useri_fRBPOSTYP, s, 100ul);
+      if (X2C_STRCMP(s,100u,"A",2u)==0) aprsdecode_appendmultiline(pos);
+      else {
+         aprstext_postostr(pos, '3', s, 100ul);
+         useri_AddConfLine(useri_fRBPOS, 1U, s, 100ul);
+      }
+   }
 } /* end postoconfig() */
 
 
@@ -2835,9 +2845,20 @@ extern void useri_popwatchcall(char s[], unsigned long s_len)
    char h[41];
    strncpy(h,"\352\355Watch:",41u);
    aprsstr_Append(h, 41ul, s, s_len);
-   /*  textautosize(0, 0, 3, 0, "b", h); */
    useri_textautomenu(-3L, 0L, 3UL, 0UL, 'b', "", 1ul, h, 41ul, "\322", 2ul);
 } /* end popwatchcall() */
+
+
+extern void useri_poligonmenu(void)
+{
+   char h[141];
+   if (aprsdecode_click.insreplaceline) strncpy(h," Insert",141u);
+   else strncpy(h," Replace",141u);
+   aprsstr_Append(h, 141ul, " Line| Del Line| Colour| Line Type| Closed/Open \
+   ", 52ul);
+   useri_textautomenu(-3L, 0L, 3UL, 0UL, 'b', "", 1ul, h, 141ul, "\331",
+                2ul);
+} /* end poligonmenu() */
 
 #define useri_HELPFILENAME "help.txt"
 
@@ -5420,7 +5441,8 @@ static void beaconeditor(void)
       strncpy(s,"\355",201u);
       AppBlueButton(s, 201ul, " Lat/Long |", 12ul, postyp=='g');
       if (bkn) AppBlueButton(s, 201ul, "    Mic-e |", 12ul, postyp=='m');
-      else AppBlueButton(s, 201ul, "          |", 12ul, 0);
+      else AppBlueButton(s, 201ul, " Multiline|", 12ul, postyp=='A');
+      /*      ELSE AppBlueButton(s, "          |", FALSE) END;  */
       AppBlueButton(s, 201ul, "Compressed|", 12ul, postyp=='c');
       AppBlueButton(s, 201ul, " Lat/Long+|", 12ul, postyp=='G');
       if (bkn) AppBlueButton(s, 201ul, "   Mic-e+ |", 12ul, postyp=='M');
@@ -5648,12 +5670,17 @@ Compressed\'", 33ul);
       }
    }
    else if (knob==13UL) {
-      if (subknob==1UL) ch = 'm';
+      useri_confstr(useri_fRBTYP, (char *) &typ, 1u/1u);
+      if (subknob==1UL) {
+         if ((((typ=='O' || typ=='H') || typ=='P') || typ=='I') || typ=='J') {
+            ch = 'A';
+         }
+         else ch = 'm';
+      }
       else if (subknob==2UL) ch = 'c';
       else if (subknob==3UL) ch = 'G';
       else if (subknob==4UL) ch = 'M';
       else ch = 'g';
-      useri_confstr(useri_fRBTYP, (char *) &typ, 1u/1u);
       if ((((typ=='O' || typ=='H') || typ=='P') || typ=='I') || typ=='J') {
          /* obj item */
          if (ch=='m' || ch=='M') {
@@ -11391,6 +11418,13 @@ static void mouseleft(long mousx, long mousy)
       }
       else if (c=='\316') colouredit(knob, subknob);
       else if (c=='\321') coloureditgeo(knob, subknob);
+      else if (c=='\331') {
+         if (subknob==0UL) {
+            aprsdecode_click.insreplaceline = !aprsdecode_click.insreplaceline;
+            useri_poligonmenu();
+         }
+         else aprsdecode_modmultiline(subknob);
+      }
    }
 } /* end mouseleft() */
 

@@ -3532,7 +3532,7 @@ extern void maptool_drawpoligon(maptool_pIMAGE image,
    unsigned long b;
    unsigned long g;
    unsigned long r;
-   if (md.size==0UL) return;
+   if (md.size<=1UL) return;
    col0 = (unsigned long)(unsigned char)md.linetyp-97UL;
    switch (col0/3UL) {
    case 0UL:
@@ -3541,13 +3541,13 @@ extern void maptool_drawpoligon(maptool_pIMAGE image,
       b = 0UL;
       break;
    case 1UL:
-      r = 255UL;
-      g = 255UL;
+      r = 200UL;
+      g = 200UL;
       b = 0UL;
       break;
    case 2UL:
       r = 0UL;
-      g = 0UL;
+      g = 50UL;
       b = 255UL;
       break;
    case 3UL:
@@ -3563,7 +3563,7 @@ extern void maptool_drawpoligon(maptool_pIMAGE image,
    while (i<md.size+(unsigned long)md.polygon) {
       j = i%md.size;
       p.lat = pm.lat+md.vec[j].lat;
-      p.long0 = pm.long0-md.vec[j].long0;
+      p.long0 = pm.long0+md.vec[j].long0;
       ret = maptool_mapxy(p, &x1, &y1);
       if (i>0UL) {
          switch (col0%3UL) {
@@ -3586,6 +3586,58 @@ extern void maptool_drawpoligon(maptool_pIMAGE image,
       ++i;
    }
 } /* end drawpoligon() */
+
+
+extern void maptool_drawpoliobj(maptool_pIMAGE image)
+{
+   char cs[251];
+   struct aprsdecode_MULTILINE ml;
+   struct aprspos_POSITION center;
+   unsigned long i;
+   useri_confstr(useri_fRBPOS, cs, 251ul);
+   aprstext_deganytopos(cs, 251ul, &center);
+   if (!aprspos_posvalid(center)) return;
+   useri_confstr(useri_fRBCOMMENT, cs, 251ul);
+   aprsdecode_GetMultiline(cs, 251ul, 0UL, &i, &ml);
+   maptool_drawpoligon(image, center, ml, 250UL);
+} /* end drawpoliobj() */
+
+
+extern char maptool_findmultiline(struct aprspos_POSITION pos,
+                struct aprspos_POSITION * foundpos)
+{
+   char cs[251];
+   struct aprsdecode_MULTILINE ml;
+   struct aprspos_POSITION center;
+   unsigned long mini;
+   unsigned long i;
+   float d;
+   float mind;
+   useri_confstr(useri_fRBPOS, cs, 251ul);
+   aprstext_deganytopos(cs, 251ul, &center);
+   if (!aprspos_posvalid(center)) return 0;
+   useri_confstr(useri_fRBCOMMENT, cs, 251ul);
+   aprsdecode_GetMultiline(cs, 251ul, 0UL, &i, &ml);
+   mind = X2C_max_real;
+   mini = ml.size;
+   i = 0UL;
+   while (i<ml.size) {
+      d = (float)fabs((ml.vec[i].lat+center.lat)-pos.lat)+(float)
+                fabs((ml.vec[i].long0+center.long0)-pos.long0);
+      if (d<mind) {
+         mind = d;
+         mini = i;
+      }
+      ++i;
+   }
+   if (mini<ml.size) {
+      foundpos->lat = ml.vec[mini].lat+center.lat;
+      foundpos->long0 = ml.vec[mini].long0+center.long0;
+      aprsdecode_click.polilinecursor = mini;
+      return 1;
+   }
+   return 0;
+} /* end findmultiline() */
 
 #define maptool_HY 18
 

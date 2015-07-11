@@ -2063,9 +2063,11 @@ static void GetHRT(struct aprspos_POSITION * pos, long * altitude,
 /*WrInt(compos, 10);WrStrLn(" composret"); */
 } /* end GetHRT() */
 
+/* === multiline */
 
-static void GetMultiline(const char buf[], unsigned long buf_len,
-                unsigned long compos, struct aprsdecode_MULTILINE * md)
+extern void aprsdecode_GetMultiline(char buf[], unsigned long buf_len,
+                unsigned long compos, unsigned long * delfrom,
+                struct aprsdecode_MULTILINE * md)
 {
    unsigned long idx;
    unsigned long s;
@@ -2073,12 +2075,19 @@ static void GetMultiline(const char buf[], unsigned long buf_len,
    char c;
    float v;
    float scale;
+   md->size = 0UL;
+   md->linetyp = 'a';
+   md->polygon = 0;
    i = compos;
    s = 0UL;
+   *delfrom = (buf_len-1)+1UL;
    while (i<buf_len-1 && buf[i]) {
       c = buf[i];
       if (s==0UL) {
-         if (c==' ') s = 1UL;
+         if (c==' ') {
+            s = 1UL;
+            *delfrom = i;
+         }
       }
       else if (s==1UL) {
          if (c=='}') s = 2UL;
@@ -2114,7 +2123,7 @@ static void GetMultiline(const char buf[], unsigned long buf_len,
       }
       else if (s==5UL || s==6UL) {
          if ((unsigned char)c>='!' && (unsigned char)c<='z') {
-            if (idx<=22UL) {
+            if (idx<=40UL) {
                v = ((float)(unsigned long)(unsigned char)c-78.0f)*scale;
                /*WrFixed(v/RAD, 5, 10); WrStrLn(" deg"); */
                if (s==5UL) {
@@ -2122,7 +2131,7 @@ static void GetMultiline(const char buf[], unsigned long buf_len,
                   s = 6UL;
                }
                else {
-                  md->vec[idx].long0 = v;
+                  md->vec[idx].long0 = -v;
                   s = 5UL;
                   ++idx;
                }
@@ -2151,16 +2160,230 @@ static void GetMultiline(const char buf[], unsigned long buf_len,
       else if (s==11UL) {
          if (c=='A') {
             /*WrInt(idx, 10); WrStrLn(" size"); */
-            md->size = idx; /* protocol done */
+            md->size = idx;
             return;
          }
-         s = 0UL;
+         s = 0UL; /* protocol done */
       }
       else s = 0UL;
       ++i;
    }
 } /* end GetMultiline() */
 
+
+extern char aprsdecode_ismultiline(void)
+{
+   char s[251];
+   struct aprsdecode_MULTILINE ml;
+   unsigned long i;
+   useri_confstr(useri_fRBPOSTYP, s, 251ul);
+   if (s[0U]!='A') return 0;
+   useri_confstr(useri_fRBCOMMENT, s, 251ul);
+   aprsdecode_GetMultiline(s, 251ul, 0UL, &i, &ml);
+   return ml.size>=2UL;
+} /* end ismultiline() */
+
+#define aprsdecode_GRIDSIZE 88
+
+
+static void app(char buf[], unsigned long buf_len, float d)
+{
+   char tmp;
+   /*WrFixed(d, 5, 8); WrStr(" "); */
+   d = d+78.5f;
+   if (d>=33.0f && d<=209.0f) {
+      aprsstr_Append(buf, buf_len, (char *)(tmp = (char)aprsdecode_trunc(d),
+                &tmp), 1u/1u);
+   }
+} /* end app() */
+
+
+static void EncMultiline(char buf[], unsigned long buf_len,
+                struct aprspos_POSITION * center,
+                struct aprsdecode_MULTILINE md)
+{
+   unsigned long i;
+   unsigned long scaler;
+   float scale;
+   struct aprspos_POSITION max0;
+   struct aprspos_POSITION min0;
+   /* find size */
+   struct aprspos_POSITION * anonym;
+   char tmp;
+   min0.lat = 6.283185307f;
+   min0.long0 = 6.283185307f;
+   max0.lat = (-6.283185307f);
+   max0.long0 = (-6.283185307f);
+   i = 0UL;
+   while (i<md.size) {
+      { /* with */
+         struct aprspos_POSITION * anonym = &md.vec[i];
+         if (anonym->lat<min0.lat) min0.lat = anonym->lat;
+         if (anonym->lat>max0.lat) max0.lat = anonym->lat;
+         if (anonym->long0<min0.long0) min0.long0 = anonym->long0;
+         if (anonym->long0>max0.long0) max0.long0 = anonym->long0;
+      }
+      ++i;
+   }
+   center->lat = (max0.lat+min0.lat)*0.5f;
+   center->long0 = (max0.long0+min0.long0)*0.5f;
+   scale = max0.lat-min0.lat;
+   if (max0.long0-min0.long0>scale) scale = max0.long0-min0.long0;
+   /*WrFixed(scale, 10, 15); WrStrLn(" scaleo"); */
+   if (scale<1.57079632675f) {
+      if (scale>0.0f) {
+         scaler = aprsdecode_trunc(X2C_DIVR(RealMath_ln(X2C_DIVR(scale,
+                1.5358897417111E-4f)),1.15129255E-1f)+1.0f);
+         /*WrInt(scaler, 10);WrStrLn(" scaler"); */
+         scale = RealMath_exp((float)scaler*1.15129255E-1f)
+                *1.5358897417111E-4f; /* 10^(x/20)*0.0001 deg */
+         /*WrFixed(scale, 10, 15); WrStrLn(" scale"); */
+         scale = X2C_DIVR(88.0f,scale);
+      }
+      else {
+         scaler = 0UL;
+         scale = 0.0f;
+      }
+      aprsstr_Assign(buf, buf_len, " }", 3ul);
+      aprsstr_Append(buf, buf_len, (char *) &md.linetyp, 1u/1u);
+      if (md.polygon) aprsstr_Append(buf, buf_len, "0", 2ul);
+      else aprsstr_Append(buf, buf_len, "1", 2ul);
+      aprsstr_Append(buf, buf_len, (char *)(tmp = (char)(33UL+scaler),&tmp),
+                1u/1u);
+      i = 0UL;
+      while (i<md.size) {
+         app(buf, buf_len, (md.vec[i].lat-center->lat)*scale);
+         app(buf, buf_len, (center->long0-md.vec[i].long0)*scale);
+         ++i;
+      }
+      /*    scale:=ln(scale/(0.0001*RAD))/(2.3025851/20.0); */
+      aprsstr_Append(buf, buf_len, "{QFSAA", 7ul);
+   }
+   else {
+      /*WrStrLn(" <-appended"); */
+      buf[0UL] = 0;
+   }
+} /* end EncMultiline() */
+
+
+extern void aprsdecode_appendmultiline(struct aprspos_POSITION pos)
+{
+   char h[251];
+   char cso[251];
+   char cs[251];
+   struct aprsdecode_MULTILINE ml;
+   struct aprspos_POSITION center;
+   unsigned long i;
+   char msgc;
+   /* make absolute */
+   struct aprspos_POSITION * anonym;
+   useri_confstr(useri_fRBPOS, cs, 251ul);
+   if (cs[0U]) aprstext_deganytopos(cs, 251ul, &center);
+   else aprsdecode_posinval(&center);
+   useri_confstr(useri_fRBCOMMENT, cso, 251ul);
+   aprsdecode_GetMultiline(cso, 251ul, 0UL, &i, &ml);
+   if (i<=250UL) cso[i] = 0;
+   if (ml.size<2UL) aprsdecode_click.insreplaceline = 1;
+   /*WrStr("<<<");WrStr(cso);WrStrLn(">>> csodel"); */
+   i = 0UL;
+   while (i<ml.size) {
+      { /* with */
+         struct aprspos_POSITION * anonym = &ml.vec[i];
+         anonym->lat = anonym->lat+center.lat;
+         anonym->long0 = anonym->long0+center.long0;
+      }
+      ++i;
+   }
+   if (ml.size>40UL) ml.size = 41UL;
+   if (aprsdecode_click.polilinecursor>=ml.size) {
+      aprsdecode_click.polilinecursor = ml.size;
+   }
+   if (aprspos_posvalid(pos)) {
+      if (aprsdecode_click.insreplaceline) {
+         if (ml.size<40UL) {
+            /* insert line */
+            i = 40UL;
+            while (i>0UL && i>aprsdecode_click.polilinecursor) {
+               ml.vec[i] = ml.vec[i-1UL];
+               --i;
+            }
+            ml.vec[aprsdecode_click.polilinecursor] = pos;
+            ++ml.size;
+         }
+      }
+      else ml.vec[aprsdecode_click.polilinecursor] = pos;
+   }
+   else {
+      /* delete line */
+      i = aprsdecode_click.polilinecursor;
+      while (i<40UL) {
+         ml.vec[i] = ml.vec[i+1UL];
+         ++i;
+      }
+      if (ml.size>0UL) --ml.size;
+   }
+   if (ml.size<=33UL) msgc = 'b';
+   else if (ml.size<40UL) msgc = 'r';
+   else msgc = 'e';
+   aprsstr_IntToStr((long)ml.size, 0UL, h, 251ul);
+   aprsstr_Append(h, 251ul, " elements", 10ul);
+   useri_textautosize(0L, 0L, 6UL, 2UL, msgc, h, 251ul);
+   EncMultiline(cs, 251ul, &center, ml);
+   aprsstr_Append(cso, 251ul, cs, 251ul);
+   useri_AddConfLine(useri_fRBCOMMENT, 1U, cso, 251ul);
+   /*WrInt(ml.size, 10); WrStr("<<<");WrStr(cso);WrStrLn(">>> csoapp"); */
+   aprstext_postostr(center, '3', cs, 251ul);
+   useri_AddConfLine(useri_fRBPOS, 1U, cs, 251ul); /* update new center */
+   aprsdecode_tracenew.winevent = 2000UL;
+} /* end appendmultiline() */
+
+
+extern void aprsdecode_modmultiline(unsigned long n)
+{
+   struct aprspos_POSITION pos;
+   struct aprsdecode_MULTILINE ml;
+   unsigned long i;
+   char s[251];
+   unsigned long v;
+   if (n==1UL) {
+      /* del line */
+      aprsdecode_posinval(&pos);
+      aprsdecode_appendmultiline(pos);
+   }
+   else {
+      useri_confstr(useri_fRBCOMMENT, s, 251ul);
+      aprsdecode_GetMultiline(s, 251ul, 0UL, &i, &ml);
+      if (n==2UL) {
+         /* colour */
+         if (ml.size>0UL) {
+            v = (unsigned long)(unsigned char)s[i+2UL];
+            v += 3UL;
+            if (v>108UL) v -= 12UL;
+            s[i+2UL] = (char)v;
+         }
+      }
+      else if (n==3UL) {
+         /* colour */
+         if (ml.size>0UL) {
+            v = (unsigned long)(unsigned char)s[i+2UL];
+            ++v;
+            if (v%3UL==1UL) v -= 3UL;
+            s[i+2UL] = (char)v;
+         }
+      }
+      else if (n==4UL) {
+         /* poliline/poligone */
+         if (ml.size>0UL) {
+            if (s[i+3UL]=='0') s[i+3UL] = '1';
+            else s[i+3UL] = '0';
+         }
+      }
+      useri_AddConfLine(useri_fRBCOMMENT, 1U, s, 251ul);
+   }
+   aprsdecode_tracenew.winevent = 2000UL;
+} /* end modmultiline() */
+
+/* === multiline */
 
 extern char aprsdecode_checksymb(char symt, char symb)
 /* true for bad symbol */
@@ -2426,8 +2649,8 @@ extern long aprsdecode_Decode(char buf[], unsigned long buf_len,
          dat->course = 0UL;
       }
       if (compos==0UL) compos = payload;
-      if (dat->type==aprsdecode_OBJ) {
-         GetMultiline(buf, buf_len, compos, &dat->multiline);
+      if (dat->type==aprsdecode_OBJ || dat->type==aprsdecode_ITEM) {
+         aprsdecode_GetMultiline(buf, buf_len, compos, &i, &dat->multiline);
       }
       GetHRT(&dat->pos, &dat->altitude, &dat->speed, buf, buf_len, &compos,
                 dat->hrtposes, 32ul, &dat->hrtlen, &dat->hrttime);
@@ -4424,7 +4647,8 @@ extern long aprsdecode_Stoframe(aprsdecode_pOPHIST * optab, char rawbuf[],
       }
    }
    op->areasymb = dat.areasymb;
-   op->poligon = dat.multiline.size>0UL;
+   op->poligon = dat.multiline.size>1UL+(unsigned long)dat.multiline.polygon;
+                 /* 2 points line 3 points box */
    if (lastf==0) {
       frame->next = op->frames;
       op->frames = frame; /* new track */
@@ -5636,7 +5860,7 @@ static void approxywarn(struct aprspos_POSITION pos, const char call[],
 #define aprsdecode_VIA "v"
 
 
-static void app(unsigned long * viac, aprsdecode_FRAMEBUF tb,
+static void app0(unsigned long * viac, aprsdecode_FRAMEBUF tb,
                 unsigned long * tp, char c)
 {
    if (*tp<511UL) {
@@ -5684,7 +5908,7 @@ static char scanpath(char words[], unsigned long words_len,
    unsigned long hp;
    hp = *p;
    while (*p<to) {
-      if (store) app(viac, tb, tp, b[*p]);
+      if (store) app0(viac, tb, tp, b[*p]);
       if (*p+1UL>=to || b[*p]==',') {
          if (via(words, words_len, b, 'x', hp+1UL,
                 *p+(unsigned long)(*p+1UL>=to))) return 0;
@@ -5748,7 +5972,7 @@ static void digi(const aprsdecode_FRAMEBUF b, unsigned long udpch,
    aprsstr_Append(words, words_len, " ", 2ul);
    while ((len<511UL && b[len]) && b[len]!=':') ++len;
    while (p<len && b[p]!='>') {
-      app(&viac, tb, &tp, b[p]); /* end of src call */
+      app0(&viac, tb, &tp, b[p]); /* end of src call */
       ++p;
    }
    if (via(words, words_len, b, 'x', 0UL, p)) return;
@@ -5759,7 +5983,7 @@ static void digi(const aprsdecode_FRAMEBUF b, unsigned long udpch,
    }
    n = p+1UL;
    while ((p<len && b[p]!='-') && b[p]!=',') {
-      app(&viac, tb, &tp, b[p]); /* ssid or end of dst call */
+      app0(&viac, tb, &tp, b[p]); /* ssid or end of dst call */
       ++p;
    }
    if (via(words, words_len, b, 'x', n, p)) return;
@@ -5780,9 +6004,9 @@ static void digi(const aprsdecode_FRAMEBUF b, unsigned long udpch,
    if (!norout) --ssid;
    if (ssid>0UL) {
       /* write old or new ssid */
-      app(&viac, tb, &tp, '-');
-      if (ssid>=10UL) app(&viac, tb, &tp, '1');
-      app(&viac, tb, &tp, (char)(ssid%10UL+48UL));
+      app0(&viac, tb, &tp, '-');
+      if (ssid>=10UL) app0(&viac, tb, &tp, '1');
+      app0(&viac, tb, &tp, (char)(ssid%10UL+48UL));
    }
    n = p;
    while (n<len && b[n]!='*') ++n;
@@ -5793,13 +6017,13 @@ static void digi(const aprsdecode_FRAMEBUF b, unsigned long udpch,
       /* append path till * and find badwords */
       ++p;
    }
-   app(&viac, tb, &tp, ',');
+   app0(&viac, tb, &tp, ',');
    n = 0UL;
    while (mycall[n]) {
-      app(&viac, tb, &tp, mycall[n]); /* append mycall */
+      app0(&viac, tb, &tp, mycall[n]); /* append mycall */
       ++n;
    }
-   app(&viac, tb, &tp, '*');
+   app0(&viac, tb, &tp, '*');
    if (p<len) {
       /* look for via routing */
       norout = 1;
@@ -5813,15 +6037,15 @@ static void digi(const aprsdecode_FRAMEBUF b, unsigned long udpch,
          /* not direct heard */
          if (appendrest && n2>1UL) {
             /* append not n-0 */
-            app(&viac, tb, &tp, ',');
+            app0(&viac, tb, &tp, ',');
             pn = n;
             while (pn+3UL<p) {
-               app(&viac, tb, &tp, b[pn]); /* append via word */
+               app0(&viac, tb, &tp, b[pn]); /* append via word */
                ++pn;
             }
-            app(&viac, tb, &tp, (char)(n1+48UL)); /* append n-n */
-            app(&viac, tb, &tp, '-');
-            app(&viac, tb, &tp, (char)(n2+47UL));
+            app0(&viac, tb, &tp, (char)(n1+48UL)); /* append n-n */
+            app0(&viac, tb, &tp, '-');
+            app0(&viac, tb, &tp, (char)(n2+47UL));
          }
          norout = 0; /* append rest path later*/
       }
@@ -5837,10 +6061,10 @@ static void digi(const aprsdecode_FRAMEBUF b, unsigned long udpch,
    /* too much via */
    p = len;
    while (p<511UL && b[p]) {
-      app(&viac, tb, &tp, b[p]);
+      app0(&viac, tb, &tp, b[p]);
       ++p;
    }
-   app(&viac, tb, &tp, 0);
+   app0(&viac, tb, &tp, 0);
    if (aprsdecode_Decode(tb, 512ul, &dat)<0L) return;
    /*radius */
    if (dat.type!=aprsdecode_MSG && radius>0UL) {
@@ -6099,7 +6323,7 @@ extern void aprsdecode_drawbeacon(char raw[], unsigned long raw_len)
       }
    }
    else useri_xerrmsg("decode error", 13ul);
-   aprsdecode_tracenew.winevent = 1UL;
+   aprsdecode_tracenew.winevent = 2000UL;
 } /* end drawbeacon() */
 
 

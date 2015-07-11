@@ -1127,6 +1127,11 @@ contain not-printable characters so be
 carefull by copy/edit raw data. May be
 extendet with DAO to 20cm resolution
 with "Mic-e+" and 5 Bytes more.
+For Objects and Items enable Multiline Editing
+Shift + Leftclick to Map to Add Lines. When
+first Line is entered a "fine configure"
+Submenue will Open.
+
 
 |8152 Send "Compressed" format, this is fixed size
 and may contain speed/course OR (positive)

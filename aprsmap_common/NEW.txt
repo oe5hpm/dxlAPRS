@@ -1251,8 +1251,9 @@
   Track bei Bewegung.
 
 
+8. 7. 2015 (Ver 0.52)
 
-
++ Multiline-Objekt Editor 
 
 
 

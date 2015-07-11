@@ -4392,6 +4392,7 @@ C)", 31ul);
       useri_hoverinfo(hoverobj);
       hoverobj.opf = 0;
    }
+   if (useri_beaconediting) maptool_drawpoliobj(image);
    useri_refresh = 1;
    lastxupdate = aprsdecode_realtime;
 } /* end makeimage() */
@@ -4574,6 +4575,13 @@ static void MainEvent(void)
       }
       if (!xosi_Shift) {
          /* not close menus on shift click to map */
+         if (useri_beaconediting) {
+            if (maptool_findmultiline(aprsdecode_click.clickpos,
+                &aprsdecode_click.markpos)) {
+               aprsdecode_click.marktime = 0UL;
+               aprsdecode_click.cmd = ' ';
+            }
+         }
          if (!aprsdecode_lums.headmenuy && ((aprsdecode_click.entries==0UL || menu)
                  || aprsdecode_click.mhop[0UL])
                 || (aprsdecode_lums.headmenuy && aprsdecode_click.entries>0UL)
@@ -4687,7 +4695,9 @@ static void MainEvent(void)
          View(0UL);
       }
       else if (aprsdecode_click.cmd=='2') View(1UL);
-      else if (aprsdecode_click.cmd=='3') View(2UL);
+      else if (aprsdecode_click.cmd=='3') {
+         View(2UL);
+      }
       else if (aprsdecode_click.cmd=='4') View(3UL);
       else if (aprsdecode_click.cmd=='b' || aprsdecode_click.cmd=='\010') {
          pop();
@@ -4760,7 +4770,9 @@ static void MainEvent(void)
             aprsdecode_lums.obj = 10L*useri_conf2int(useri_fLOBJ, 0UL, 0L,
                 100L, 100L);
          }
-         else aprsdecode_lums.obj = 0L;
+         else {
+            aprsdecode_lums.obj = 0L;
+         }
          useri_sayonoff("Show Items/Objects", 19ul, aprsdecode_lums.obj!=0L);
       }
       else if (aprsdecode_click.cmd=='L') {
@@ -4768,9 +4780,7 @@ static void MainEvent(void)
             aprsdecode_lums.text = 10L*useri_conf2int(useri_fLTEXT, 0UL, 0L,
                 100L, 100L);
          }
-         else {
-            aprsdecode_lums.text = 0L;
-         }
+         else aprsdecode_lums.text = 0L;
          useri_sayonoff("Labels", 7ul, aprsdecode_lums.text!=0L);
       }
       else if (X2C_CAP(aprsdecode_click.cmd)=='W') {
@@ -4899,6 +4909,9 @@ to Defaults", 34ul);
       else if (aprsdecode_click.cmd=='\011') toggview();
       makeimage(0);
       aprsdecode_click.cmd = 0;
+      if (useri_beaconediting && aprsdecode_ismultiline()) {
+         useri_poligonmenu();
+      }
    }
    else if ((aprsdecode_tracenew.call[0UL] && lastxupdate+2UL+slowupdate()
                 <=aprsdecode_realtime)
@@ -4906,13 +4919,11 @@ to Defaults", 34ul);
                  || aprspos_posvalid(aprsdecode_click.measurepos)))) {
       follow();
       if (maptrys>0UL) {
-         if (aprsdecode_click.watchlast) {
-            useri_refrinfo();
-         }
+         if (aprsdecode_click.watchlast) useri_refrinfo();
          makeimage(0);
       }
    }
-   else if (aprsdecode_tracenew.winevent>0UL && lastxupdate+5UL+slowupdate()
+   else if (aprsdecode_tracenew.winevent>1000UL || aprsdecode_tracenew.winevent>0UL && lastxupdate+5UL+slowupdate()
                 <=aprsdecode_realtime) {
       aprsdecode_tracenew.winevent = 0UL;
       if (aprsdecode_click.watchlast) useri_refrinfo();
