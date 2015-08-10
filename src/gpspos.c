@@ -5,7 +5,7 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
-/* "@(#)gpspos.c Jul  5  6:38:19 2015" */
+/* "@(#)gpspos.c Aug 10  3:17:50 2015" */
 
 
 #define X2C_int32
@@ -1222,6 +1222,11 @@ static void wrdate(unsigned long t)
    InOut_WriteString(s, 31ul);
 } /* end wrdate() */
 
+#define gpspos_MAXTRUST 21600
+/* seconds from oldest to newest entry */
+
+#define gpspos_MINDATE 1261440000
+
 struct SEM_structAlmanac;
 
 
@@ -1278,6 +1283,7 @@ extern char gpspos_readalmanach(char fnsem[], unsigned long fnsem_len,
                 unsigned long * tilltime, char verb)
 {
    unsigned char cnt;
+   unsigned long minti;
    unsigned long ti;
    unsigned long ri;
    unsigned long j;
@@ -1326,9 +1332,14 @@ extern char gpspos_readalmanach(char fnsem[], unsigned long fnsem_len,
          i = (unsigned long)rinexalm[j].prn;
          ti = ((rinexalm[j].tow+604800UL)-secondinweek)%604800UL;
          if (((i>0UL && i<=32UL) && ti>302400UL) && min0[i-1UL]<ti) {
+            /* & (rinexalm[j].tow<SECONDSINWEEK) */
             --i;
             min0[i] = ti;
-            /*WrInt(min[i], 8); WrStrLn("=min"); */
+            /*WrInt(i, 8); WrInt(rinexalm[j].week, 8);
+                WrInt(rinexalm[j].tow_week, 8); WrInt(rinexalm[j].tow, 8); */
+            /*wrdate(VAL(CARDINAL,rinexalm[j].tow)+VAL(CARDINAL,
+                rinexalm[j].week)*(7*3600*24)+315964800); */
+            /*WrStrLn(" ---prn tow  week"); */
             calm[i].week = rinexalm[j].week;
             calm[i].prn = rinexalm[j].prn;
             calm[i].health = rinexalm[j].health;
@@ -1358,11 +1369,18 @@ extern char gpspos_readalmanach(char fnsem[], unsigned long fnsem_len,
          }
          if (j==tmp) break;
       } /* end for */
+      minti = X2C_max_longcard; /* find oldest entry for difference to newest */
+      for (i = 0UL; i<=31UL; i++) {
+         ti = calm[i].tow+(unsigned long)calm[i].week*604800UL+315964800UL;
+         if (ti>1261440000UL && ti<minti) minti = ti;
+      } /* end for */
       *tilltime = 0UL;
       for (i = 0UL; i<=31UL; i++) {
          /* WrInt(calm[i].tow, 12); WrInt(calm[i].week, 10); */
          ti = calm[i].tow+(unsigned long)calm[i].week*604800UL+315964800UL;
-         if (ti>*tilltime) *tilltime = ti;
+         if (ti<minti+21600UL && ti>*tilltime) {
+            *tilltime = ti; /* newest trusted entry as hint for alm timeout */
+         }
          if (verb) {
             wrdate(ti);
             if ((i&3UL)==3UL) osi_WrStrLn("", 1ul);

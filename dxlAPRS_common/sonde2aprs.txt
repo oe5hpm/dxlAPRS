@@ -55,7 +55,8 @@ To Do:
 
 1. Es ist vollautomatischer Betrieb vorgesehen wobei noch eine Script-Umgebung zu bauen
  ist, die zuverlassig den GPS-Almanach von einem Server oder einem GPS-Rx holt
- (etwa alle 3h).
+ (etwa alle 3h). (fertig "getalmd")
+
  Da (zumindest mir) keine Systematik der an sonsten eindeutigen Sonden-Nummern bekannt
  ist, und auch die Tx-Frequenzen gern gewechselt werden, brauchts ein Script,
  das die Rx Frequenz sucht per (fern)steuerbarem Rx und dabei gewuenschte Sonden an
@@ -75,7 +76,7 @@ To Do:
  sich ein wackiger Track beim zoomen als Schaukeln und Rotieren an der 30m Leine zeigt,
  siehe "wettersonde/graz.png" auf diesem Server.
 
-4. Mehrere Sonden zugleich mit einem "sondemod" das im prinzip jetzt auch geht aber mit
+(fertig) 4. Mehrere Sonden zugleich mit einem "sondemod" das im prinzip jetzt auch geht aber mit
  1 Bakenzeit fuer alle. Ergibt sich aber zusammen mit "High-Resolution-Track".
   
 5. Wollen mehrere User auf die dekodierten Rohdaten zugreifen, brauchs einen UDP-Verteiler
@@ -83,11 +84,12 @@ To Do:
 
 
 Meine Rx: 
-  2 ca. 1m lange Yagis nach ost und west
+  2 ca. 1m lange Yagis nach ost und west, 1 lambdaviertel rundstrahler mit 2 radials
   1 ft50, 2 ft8100 mit 2 c-netz breitband vv (nf 3.5db, gain ca 30db)
   1 nooelec dab-stift, 2mhz, schmalband fm-demod software braucht neu programmierung
     cpu-verbrauch noch ungewiss
-  reichweite fehlerfreie dekodierung 750km, praktisch 600km durch horizont
+  Reichweite fehlerfreie dekodierung 750km, praktisch 600km durch horizont.
+  Mittlerweilen brauchts steile Filter gegen die starken Tetra-Signale ein paar Mhz tiefer.
 
 
  

@@ -5,7 +5,7 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
-/* "@(#)sondemod.c Jul  5  6:38:18 2015" */
+/* "@(#)sondemod.c Aug  9 23:50:09 2015" */
 
 
 #define X2C_int32
@@ -1475,8 +1475,6 @@ static void decodeframe(unsigned char m)
                         WrRinexfn(gpstime); /* request a new almanach */
                      }
                   }
-                  /*WrInt(gpstime-systime, 15); WrInt(systime, 15);
-                WrStrLn(" almage"); */
                   if (gpstime>0UL && gpstime>=almage) {
                      almanachage = gpstime-almage;
                   }
@@ -1773,6 +1771,7 @@ extern int main(int argc, char **argv)
    lastip = 0UL;
    lastport = 0UL;
    systime = TimeConv_time();
+   /*testalm; */
    for (;;) {
       if (soundfn[0U]) getadc();
       else if (rxsock>=0L) udprx();
