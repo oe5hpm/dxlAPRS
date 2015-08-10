@@ -58,7 +58,9 @@
 #ifndef afskmodemptt_H_
 #include "afskmodemptt.h"
 #endif
-#include <signal.h>
+#ifndef signal_H_
+#include "signal.h"
+#endif
 
 /* (a)fsk -  kiss/axudp stereo soundcard afsk/fsk multimodem by OE5DXL */
 /*FROM setsighandler IMPORT SIGTERM, SIGINT, setsignalproc, SIGPROC; */
@@ -550,7 +552,7 @@ static void SetMixer(char mixfn[], unsigned long mixfn_len,
 {
    long fd;
    X2C_PCOPY((void **)&mixfn,mixfn_len);
-   fd = open(mixfn, 2L);
+   fd = osi_OpenRW(mixfn, mixfn_len);
    if (fd>=0L) {
       if (chan0==255UL) chan0 = recnum();
       setmixer(fd, chan0, (right<<8)+left);
@@ -567,7 +569,7 @@ static void OpenSound(void)
 {
    long s;
    long i0;
-   soundfd = open(soundfn, 2L);
+   soundfd = osi_OpenRW(soundfn, 1024ul);
    if (soundfd>=0L) {
       i0 = samplesize(soundfd, 16UL); /* 8, 16 */
       i0 = channels(soundfd, (unsigned long)maxchannels+1UL); /* 1, 2  */
@@ -601,7 +603,7 @@ static void ttypar(char fn[], unsigned long fn_len)
    long fd;
    long res;
    X2C_PCOPY((void **)&fn,fn_len);
-   fd = open(fn, 2048L);
+   fd = osi_OpenNONBLOCK(fn, fn_len);
    if (fd>=0L) {
       res = tcgetattr(fd, &term);
       /*
@@ -625,7 +627,7 @@ static long Opentty(char linkname[], unsigned long linkname_len)
    char ptsname[4096];
    long Opentty_ret;
    X2C_PCOPY((void **)&linkname,linkname_len);
-   fd = open("/dev/ptmx", 2050L);
+   fd = osi_OpenNONBLOCK("/dev/ptmx", 10ul);
    if (fd<0L) Error("/dev/ptmx open", 15ul);
    if (getptsname(fd, (char *)ptsname, 4096UL)) Error("no ttyname", 11ul);
    /*
@@ -1268,7 +1270,8 @@ t for each modem)", 67ul);
 only)", 55ul);
                osi_WrStrLn("   -c <num> use stereo channel 0=left (or mono), \
 1=right", 57ul);
-               osi_WrStrLn("   -d <num> dcdlevel (56) (0..100)", 35ul);
+               osi_WrStrLn("   -d <num> dcdlevel, 0 no dcd (56) (0..100)",
+                45ul);
                osi_WrStrLn("   -e <num> demod equalizer (0) 100=6db/oct highp\
 ass   (-999..999)", 67ul);
                osi_WrStrLn("   -f <num> afsk mid frequency, tx and rx (hz) (1\
@@ -2252,9 +2255,6 @@ BEGIN
                 WrStrLn("=ptts");
 (*tty*)
   IF ttyfn[0]<>0C THEN
-(*
-    IF ttyfd<0 THEN ttyfd:=FIO.OpenMode(ttyfn, FIO.oRDWR+FIO.oNONBLOCK) END;
-*)
     IF ttyfd<0 THEN ttyfd:=open(ttyfn, 0) END;
     IF ttyfd>=0 THEN
 
@@ -2279,7 +2279,7 @@ BEGIN
       END;
     END; 
       IF mask<>SET8{} THEN
-      lptfd:=open(lptfn, oRDWR);
+      lptfd:=OpenRW(lptfn);
       IF (lptfd<0) OR (lpt.ppclaim(lptfd)<0)
                 THEN WrStrLn("lpt port open error");
       ELSE 
@@ -2292,7 +2292,7 @@ BEGIN
 
   ELSIF parporttyp=2 THEN
 (*pp065*)
-    lptfd:=open(lptfn, oRDWR);
+    lptfd:=OpenRW(lptfn);
     IF lptfd>=0 THEN 
       ppmask:=SET32{};
       FOR c:=LEFT TO RIGHT DO
@@ -2432,9 +2432,10 @@ static void getadc(void)
             }
             if (ndcd!=anonym0->haddcd) {
                anonym0->haddcd = ndcd;
-               sendaxudp2((unsigned long)m, 0UL, "", 1ul);
+               if (anonym0->dcdmsgs) {
+                  sendaxudp2((unsigned long)m, 0UL, "", 1ul);
+               }
             }
-            anonym0->haddcd = ndcd;
          }
       }
    } /* end for */
