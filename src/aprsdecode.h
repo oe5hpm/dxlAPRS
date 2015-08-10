@@ -58,7 +58,7 @@
 #define aprsdecode_MAXMULTILINES 40
 /* AE5PL limits to 23 multiline elements */
 
-#define aprsdecode_VERS "aprsmap(cu) 0.52"
+#define aprsdecode_VERS "aprsmap(cu) 0.54"
 
 typedef char aprsdecode_MONCALL[9];
 
@@ -287,7 +287,7 @@ struct aprsdecode_MULTILINE;
 struct aprsdecode_MULTILINE {
    unsigned long size;
    char linetyp;
-   char polygon;
+   char filltyp;
    struct aprspos_POSITION vec[41];
 };
 
@@ -661,7 +661,7 @@ extern void aprsdecode_udpconnstat(unsigned long, char [], unsigned long);
 
 extern void aprsdecode_beeplim(long, unsigned long, unsigned long);
 
-extern void aprsdecode_importbeacon(aprsdecode_pOPHIST);
+extern void aprsdecode_importbeacon(void);
 
 extern void aprsdecode_extractbeacon(char [], unsigned long, char, char);
 

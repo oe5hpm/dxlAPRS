@@ -22,6 +22,8 @@ typedef unsigned long aprsstr_UDPPORT;
 
 typedef unsigned char aprsstr_SET8;
 
+typedef unsigned long aprsstr_GHOSTSET[9];
+
 #define aprsstr_CALLLEN 7
 
 #define aprsstr_HBIT 128
@@ -75,7 +77,7 @@ extern void aprsstr_mon2raw(char [], unsigned long, char [], unsigned long,
                 long *);
 
 extern void aprsstr_raw2mon(char [], unsigned long, char [], unsigned long,
-                unsigned long, unsigned long *);
+                unsigned long, unsigned long *, aprsstr_GHOSTSET);
 
 extern void aprsstr_extrudp2(char [], unsigned long, char [], unsigned long,
                 long *);

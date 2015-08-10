@@ -92,6 +92,9 @@
 
 #define useri_CFGRAWDECODED "u"
 
+#define useri_MULTILINEDEL 1
+/* subknob */
+
 #define useri_SP1 "\360"
 /* micospaces for menu text */
 
@@ -166,7 +169,8 @@ enum useri_CONFSET {useri_fFIND, useri_fLOGWFN, useri_fLOGDAYS, useri_fLOGFN,
    useri_fWRINCOM, useri_fWRTICKER, 
    useri_fLOCALTIME, useri_fQUERYS, 
    useri_fSTRFILT, useri_fOBJSRCFILT, useri_fIGATEFILT, useri_fOPFILT,
-                useri_fDESTFILT, useri_fRAWFILT, useri_fMUSTBECALL, 
+                useri_fDESTFILT, useri_fRAWFILT, useri_fFINGERPRINT, 
+   useri_fMUSTBECALL, 
    useri_fGEOPROFIL, useri_fGEOBRIGHTNESS, useri_fGEOCONTRAST, 
    useri_fREFRACT, useri_fFRESNELL, useri_fANT1, useri_fANT2, useri_fANT3, 
    useri_fSRTMCACHE, 
@@ -190,17 +194,7 @@ extern unsigned long useri_newysize;
 
 extern struct useri_MOUSEPOS useri_xmouse;
 
-extern aprsdecode_MONCALL useri_beaconimported;
-
-extern unsigned long useri_beaconimporttime;
-
 extern char useri_listwin;
-
-extern char useri_beaconediting;
-
-extern char useri_reloadmap;
-
-extern char useri_refresh;
 
 struct useri__D0;
 
@@ -214,6 +208,12 @@ struct useri__D0 {
 };
 
 extern struct useri__D0 useri_debugmem;
+
+extern char useri_beaconediting;
+
+extern char useri_reloadmap;
+
+extern char useri_refresh;
 
 extern char useri_beaconed;
 
@@ -234,12 +234,12 @@ extern void useri_textautomenu(long, long, unsigned long, unsigned long,
 extern void useri_textautosize(long, long, unsigned long, unsigned long,
                 char, char [], unsigned long);
 
+extern void useri_say(char [], unsigned long, unsigned long, char);
+
 extern void useri_killallmenus(void);
 
 extern void useri_killmenuid(unsigned long);
-/*PROCEDURE WrMon(s:ARRAY OF CHAR);*/
 
-/*PROCEDURE initconfig;*/
 extern void useri_loadconfig(char);
 
 extern void useri_saveconfig(void);
@@ -323,8 +323,6 @@ extern void useri_Setmap(unsigned long);
 
 extern void useri_helptext(unsigned long, unsigned long, unsigned long,
                 unsigned long, char [], unsigned long);
-
-extern void useri_encerr(char [], unsigned long);
 
 extern void useri_pulloff(void);
 

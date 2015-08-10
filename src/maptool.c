@@ -2207,7 +2207,10 @@ static void Panofind(char find, const struct maptool_PANOWIN panpar,
    xi = 0UL;
    if (find) xi = (unsigned long)panpar.hx;
    do {
+      /*    wx:=panpar.angle*RAD*(FLOAT(xi)-FLOAT(HIGH(panpar.image^)+1)*0.5)
+                /FLOAT(HIGH(panpar.image^)+1); */
       wx = azi0+azid*(float)xi;
+      if (panpar.flatscreen) wx = RealMath_arctan(wx);
       yi = 0UL;
       if (find) {
          yi = (unsigned long)((long)((panpar.image->Len0-1)+1UL)-panpar.hy);
@@ -3492,7 +3495,7 @@ static void dashvec(maptool_pIMAGE image, float x0, float y00, float x1,
    if (k==0.0f) return;
    k = RealMath_sqrt(k);
    dx = X2C_DIVR(double0*y,k);
-   dy = -(X2C_DIVR(double0*x,k)); /* rotate vector 90 deg für double dash */
+   dy = -(X2C_DIVR(double0*x,k)); /* rotate vector 90 deg for double dash */
    l = (float)len;
    if (k<100.0f) l = l*0.8f;
    else if (k<50.0f) l = l*0.5f;
@@ -3516,12 +3519,183 @@ static void dashvec(maptool_pIMAGE image, float x0, float y00, float x1,
 } /* end dashvec() */
 
 
+static void policolor(unsigned long c, unsigned long bri, unsigned long * r,
+                unsigned long * g, unsigned long * b)
+/* colour for poliline object */
+{
+   c = c&3UL;
+   *r = 0UL;
+   *g = 0UL;
+   *b = 0UL;
+   switch (c) {
+   case 0UL:
+      *r = 255UL;
+      break;
+   case 1UL:
+      *r = 170UL;
+      *g = 180UL;
+      break;
+   case 2UL:
+      *g = 50UL;
+      *b = 400UL;
+      break;
+   case 3UL:
+      *g = 230UL;
+      break;
+   } /* end switch */
+   *r = ( *r*bri)/64UL;
+   *g = ( *g*bri)/64UL;
+   *b = ( *b*bri)/64UL;
+} /* end policolor() */
+
+struct _2;
+
+
+struct _2 {
+   long xi;
+   long yi;
+};
+
+
+static void fillpoligon(maptool_pIMAGE image, struct aprspos_POSITION pm,
+                const struct aprsdecode_MULTILINE md, unsigned long bri)
+{
+   unsigned long hachuresize;
+   unsigned long nc;
+   unsigned long nv;
+   unsigned long j;
+   unsigned long i;
+   unsigned long bf;
+   unsigned long gf;
+   unsigned long rf;
+   long miny;
+   long maxy;
+   long minx;
+   long maxx;
+   long x;
+   long ret;
+   struct _2 vert[41];
+   long cross[41];
+   struct aprspos_POSITION p;
+   float yr;
+   float xr;
+   char done;
+   struct _2 * anonym;
+   struct maptool_PIX * anonym0;
+   long tmp;
+   if ((unsigned char)md.filltyp<'2' || (unsigned char)md.filltyp>'9') {
+      return;
+   }
+   i = (unsigned long)(unsigned char)md.filltyp-50UL;
+   if (i<4UL) {
+      hachuresize = 0UL;
+      bri = bri/6UL;
+   }
+   else {
+      hachuresize = 3UL;
+      bri = bri/2UL;
+   }
+   policolor(i, bri, &rf, &gf, &bf);
+   maxx = X2C_min_longint;
+   maxy = X2C_min_longint;
+   minx = X2C_max_longint;
+   miny = X2C_max_longint;
+   nv = md.size+1UL; /* always a poligon */
+   if (nv<4UL || nv>40UL) return;
+   i = 0UL;
+   while (i<nv) {
+      j = i%md.size;
+      p.lat = pm.lat+md.vec[j].lat;
+      p.long0 = pm.long0+md.vec[j].long0;
+      { /* with */
+         struct _2 * anonym = &vert[i];
+         ret = maptool_mapxy(p, &xr, &yr);
+         anonym->xi = (long)X2C_TRUNCI(xr,X2C_min_longint,X2C_max_longint);
+         anonym->yi = (long)X2C_TRUNCI(yr,X2C_min_longint,X2C_max_longint);
+         if (anonym->xi>maxx) maxx = anonym->xi;
+         if (anonym->xi<minx) minx = anonym->xi;
+         if (anonym->yi>maxy) maxy = anonym->yi;
+         if (anonym->yi<miny) miny = anonym->yi;
+      }
+      ++i;
+   }
+   if (miny<0L) miny = 0L;
+   if (maxy>(long)(image->Len0-1)) maxy = (long)(image->Len0-1);
+   if (minx<0L) minx = 0L;
+   if (maxx>(long)(image->Len1-1)) maxx = (long)(image->Len1-1);
+   if (hachuresize>0UL) {
+      /* modify hachure with image size */
+      x = ((maxx-minx)+maxy)-miny;
+      if (x>0L) {
+         hachuresize += aprsdecode_trunc(0.35f*RealMath_sqrt((float)x));
+      }
+   }
+   while (maxy>miny) {
+      nc = 0UL;
+      i = 0UL;
+      while (i<nv-1UL) {
+         /* find all crossings to scanline */
+         if (vert[i].yi>maxy!=vert[i+1UL].yi>maxy) {
+            /* vector crosses scanline */
+            x = vert[i].xi+(long)X2C_TRUNCI(X2C_DIVR((float)
+                (vert[i+1UL].xi-vert[i].xi)*(float)(vert[i].yi-maxy),
+                (float)(vert[i].yi-vert[i+1UL].yi)),X2C_min_longint,
+                X2C_max_longint);
+            if (x<minx) x = minx;
+            else if (x>maxx) x = maxx;
+            cross[nc] = x;
+            ++nc;
+         }
+         ++i;
+      }
+      if (nc>=2UL && !(nc&1)) {
+         /* should always be even */
+         do {
+            /* sort crossings from left to right */
+            i = 0UL;
+            done = 1;
+            while (i<nc-1UL) {
+               if (cross[i]>cross[i+1UL]) {
+                  x = cross[i];
+                  cross[i] = cross[i+1UL];
+                  cross[i+1UL] = x;
+                  done = 0;
+               }
+               ++i;
+            }
+         } while (!done);
+         /*      done:=TRUE; */
+         j = 1UL;
+         tmp = cross[nc-1UL];
+         x = cross[0U];
+         if (x<=tmp) for (;; x++) {
+            while (x==cross[j]) {
+               done = !done;
+               ++j;
+            }
+            if (done && (hachuresize==0UL || (unsigned long)(maxy+x)
+                %hachuresize==0UL)) {
+               { /* with */
+                  struct maptool_PIX * anonym0 = &image->Adr[(x)
+                *image->Len0+maxy];
+                  anonym0->r += (unsigned short)rf;
+                  anonym0->g += (unsigned short)gf;
+                  anonym0->b += (unsigned short)bf;
+               }
+            }
+            if (x==tmp) break;
+         } /* end for */
+      }
+      --maxy;
+   }
+} /* end fillpoligon() */
+
+
 extern void maptool_drawpoligon(maptool_pIMAGE image,
                 struct aprspos_POSITION pm, struct aprsdecode_MULTILINE md,
-                unsigned long bri)
+                char tab, char sym, unsigned long bri)
 {
    long ret;
-   unsigned long col0;
    struct aprspos_POSITION p;
    float y1;
    float x1;
@@ -3529,38 +3703,20 @@ extern void maptool_drawpoligon(maptool_pIMAGE image,
    float x0;
    unsigned long j;
    unsigned long i;
+   unsigned long sz;
+   unsigned long widt;
+   unsigned long col0;
    unsigned long b;
    unsigned long g;
    unsigned long r;
-   if (md.size<=1UL) return;
+   if ((unsigned char)md.linetyp<'a' || md.size<=1UL) return;
    col0 = (unsigned long)(unsigned char)md.linetyp-97UL;
-   switch (col0/3UL) {
-   case 0UL:
-      r = 255UL;
-      g = 0UL;
-      b = 0UL;
-      break;
-   case 1UL:
-      r = 200UL;
-      g = 200UL;
-      b = 0UL;
-      break;
-   case 2UL:
-      r = 0UL;
-      g = 50UL;
-      b = 255UL;
-      break;
-   case 3UL:
-      r = 0UL;
-      g = 255UL;
-      b = 0UL;
-      break;
-   } /* end switch */
-   r = (r*bri)/64UL;
-   g = (g*bri)/64UL;
-   b = (b*bri)/64UL;
+   policolor(col0/3UL&3UL, bri, &r, &g, &b);
    i = 0UL;
-   while (i<md.size+(unsigned long)md.polygon) {
+   widt = 300UL;
+   if ((unsigned char)md.filltyp>'1') widt = 160UL;
+   sz = md.size+(unsigned long)(md.filltyp!='1'); /* closed poligon */
+   while (i<sz) {
       j = i%md.size;
       p.lat = pm.lat+md.vec[j].lat;
       p.long0 = pm.long0+md.vec[j].long0;
@@ -3569,10 +3725,10 @@ extern void maptool_drawpoligon(maptool_pIMAGE image,
          switch (col0%3UL) {
          case 0UL:
             maptool_vector(image, x0, y00, x1, y1, (long)r, (long)g, (long)b,
-                 300UL, 0.0f);
+                 widt, 0.0f);
             break;
          case 1UL:
-            dashvec(image, x0, y00, x1, y1, r, g, b, 0.0f, 8UL, 300UL);
+            dashvec(image, x0, y00, x1, y1, r, g, b, 0.0f, 8UL, widt);
             break;
          case 2UL:
             dashvec(image, x0, y00, x1, y1, r, g, b, 2.5f, 6UL, 200UL);
@@ -3585,6 +3741,10 @@ extern void maptool_drawpoligon(maptool_pIMAGE image,
       y00 = y1;
       ++i;
    }
+   if (i>0UL && md.filltyp=='1') {
+      maptool_drawsym(image, tab, sym, 0, x0, y00, bri);
+   }
+   fillpoligon(image, pm, md, bri);
 } /* end drawpoligon() */
 
 
@@ -3599,7 +3759,8 @@ extern void maptool_drawpoliobj(maptool_pIMAGE image)
    if (!aprspos_posvalid(center)) return;
    useri_confstr(useri_fRBCOMMENT, cs, 251ul);
    aprsdecode_GetMultiline(cs, 251ul, 0UL, &i, &ml);
-   maptool_drawpoligon(image, center, ml, 250UL);
+   useri_confstr(useri_fRBSYMB, cs, 251ul);
+   maptool_drawpoligon(image, center, ml, cs[0U], cs[1U], 250UL);
 } /* end drawpoliobj() */
 
 
@@ -4457,8 +4618,7 @@ wnloader", 27ul);
                      xosi_StartProg(s, 1000ul, &aprsdecode_maploadpid);
                      if (aprsdecode_maploadpid.runs) {
                         maploadstart = aprsdecode_realtime;
-                        useri_textautosize(0L, 0L, 4UL, 3UL, 'g', "Start Mapd\
-ownload", 18ul);
+                        useri_say("Start Mapdownload", 18ul, 3UL, 'g');
                      }
                      else {
                         strncpy(h,"can not start ",1000u);

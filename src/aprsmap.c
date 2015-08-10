@@ -22,14 +22,14 @@
 #ifndef useri_H_
 #include "useri.h"
 #endif
-#ifndef aprsdecode_H_
-#include "aprsdecode.h"
-#endif
 #ifndef maptool_H_
 #include "maptool.h"
 #endif
 #ifndef aprspos_H_
 #include "aprspos.h"
+#endif
+#ifndef aprsdecode_H_
+#include "aprsdecode.h"
 #endif
 #ifndef xosi_H_
 #include "xosi.h"
@@ -263,6 +263,23 @@ static void tooltips(char typ)
 } /* end tooltips() */
 
 
+static void mapbri(long v)
+{
+   char h[100];
+   char s[100];
+   v += X2C_QUO(aprsdecode_lums.map,10L);
+   if (v<0L) v = 0L;
+   else if (v>100L) v = 100L;
+   aprsdecode_lums.map = v*10L;
+   useri_int2cfg(useri_fLMAP, v);
+   strncpy(s,"Brightness Map ",100u);
+   aprsstr_IntToStr(v, 1UL, h, 100ul);
+   aprsstr_Append(s, 100ul, h, 100ul);
+   aprsstr_Append(s, 100ul, "%", 2ul);
+   useri_say(s, 100ul, 4UL, 'b');
+} /* end mapbri() */
+
+
 static float movest(unsigned long width)
 {
    return RealMath_power(2.0f, -maptool_realzoom(aprsdecode_initzoom,
@@ -273,9 +290,11 @@ static float movest(unsigned long width)
 
 static float shiftfine(void)
 {
-   if (xosi_Shift) return 0.1f;
-   else return 1.0f;
-   return 0;
+   float s;
+   if (xosi_Shift) s = 0.1f;
+   else s = 1.0f;
+   if (useri_configon(useri_fINVMOV)) s = -s;
+   return s;
 } /* end shiftfine() */
 
 static unsigned long aprsmap_MON[13] = {0UL,0UL,31UL,59UL,90UL,120UL,151UL,
@@ -435,11 +454,12 @@ static void binseek(unsigned long * i, long fc, unsigned long * wp,
    if (time0<=*first) osi_Seek(fc, 0UL);
    else if (retry>=200UL) {
       osi_Seek(fc, 0UL);
-      useri_textautosize(0L, 0L, 4UL, 180UL, 'r', "unsort logfile, trying lin\
-ear search", 37ul);
-      osi_WrStrLn("unsort logfile, trying linear search", 37ul);
+      useri_say("unsort logfile, trying linear search", 37ul, 180UL, 'r');
    }
-   else osi_Seekcur(fc, -6024L);
+   else {
+      /*      WrStrLn("unsort logfile, trying linear search"); */
+      osi_Seekcur(fc, -6024L); /* set back for safety */
+   }
 } /* end binseek() */
 
 
@@ -846,7 +866,7 @@ static void symbols(aprsdecode_pOPHIST op, char objects, char highlight0,
    unsigned long lig;
    struct aprsdecode_COLTYP col;
    struct aprsdecode_DAT dat;
-   /*  symt, symb:CHAR; */
+   aprsdecode_pFRAMEHIST pfm;
    aprsdecode_click.ops = op;
    if (!highlight0) {
       if (objects) aprsdecode_click.typ = aprsdecode_tOBJECT;
@@ -855,6 +875,11 @@ static void symbols(aprsdecode_pOPHIST op, char objects, char highlight0,
    hdmin = X2C_max_real;
    hoverx = (float)useri_xmouse.x;
    hovery = (float)useri_mainys()-(float)useri_xmouse.y;
+   if (aprsdecode_click.entries>0UL) {
+      pfm = aprsdecode_click.table[aprsdecode_click.selected].pff0;
+                /* to step thru multiline path */
+   }
+   else pfm = 0;
    while (aprsdecode_click.ops) {
       if ((((((0x8U & aprsdecode_click.ops->drawhints)
                 && ((0x2U & aprsdecode_click.ops->drawhints)!=0)==objects)
@@ -886,12 +911,13 @@ static void symbols(aprsdecode_pOPHIST op, char objects, char highlight0,
          }
          else if (aprsdecode_click.ops->poligon) {
             aprsdecode_click.pf = aprsdecode_click.ops->frames;
-            while (aprsdecode_click.pf->next) {
+            while (aprsdecode_click.pf!=pfm && aprsdecode_click.pf->next) {
                aprsdecode_click.pf = aprsdecode_click.pf->next;
             }
             if (aprsdecode_Decode(aprsdecode_click.pf->vardat->raw, 500ul,
                 &dat)>=0L) {
-               maptool_drawpoligon(image, dat.pos, dat.multiline, lig);
+               maptool_drawpoligon(image, dat.pos, dat.multiline, dat.symt,
+                dat.sym, lig);
             }
          }
          else {
@@ -1777,7 +1803,7 @@ static void importlog(char cmd)
       else if (fn[0U]) strncpy(h,"no Data found",1025u);
       if (cmd=='\006') strncpy(h,"back to Realtime",1025u);
    }
-   useri_textautosize(0L, 0L, 4UL, 0UL, color, h, 1025ul);
+   useri_say(h, 1025ul, 0UL, color);
    useri_refrlog();
 } /* end importlog() */
 
@@ -1791,11 +1817,11 @@ static void bootreadlog(void)
    long logredcnt;
    useri_confstr(useri_fLOGWFN, fn, 1000ul);
    if (!useri_configon(useri_fLOGWFN) || fn[0U]==0) {
-      useri_textautosize(0L, 0L, 4UL, 5UL, 'b', "No Log File Enabled", 20ul);
+      useri_say("No Log File Enabled", 20ul, 5UL, 'b');
       useri_redraw(image);
    }
    else {
-      useri_textautosize(0L, 0L, 4UL, 0UL, 'b', "Read Log", 9ul);
+      useri_say("Read Log", 9ul, 0UL, 'b');
       useri_redraw(image);
       aprsdecode_realtime = TimeConv_time();
       logt = aprsdecode_realtime-aprsdecode_lums.purgetime;
@@ -1808,14 +1834,14 @@ static void bootreadlog(void)
          aprsstr_Append(s, 1000ul, " lines \'", 9ul);
          aprsstr_Append(s, 1000ul, fn, 1000ul);
          aprsstr_Append(s, 1000ul, "\' imported", 11ul);
-         useri_textautosize(0L, 0L, 4UL, 4UL, 'b', s, 1000ul);
+         useri_say(s, 1000ul, 4UL, 'b');
          useri_redraw(image);
       }
       else {
          strncpy(s,"logile \'",1000u);
          aprsstr_Append(s, 1000ul, fn, 1000ul);
          aprsstr_Append(s, 1000ul, "\' not found", 12ul);
-         useri_textautosize(0L, 0L, 4UL, 6UL, 'r', s, 1000ul);
+         useri_say(s, 1000ul, 6UL, 'r');
          useri_redraw(image);
       }
    }
@@ -2753,7 +2779,7 @@ static void midscreenpos(struct aprspos_POSITION * pos)
 } /* end midscreenpos() */
 
 
-static void zoominout(char in, char fine)
+static void zoominout(char in, char fine, char allowrev)
 {
    float fz;
    float z;
@@ -2763,7 +2789,8 @@ static void zoominout(char in, char fine)
    midscreenpos(&mid);
    mid.lat = mid.lat+(-6.E-7f);
    if (fine) {
-      fz = useri_conf2real(useri_fZOOMSTEP, 0UL, 0.0f, 1.0f, 0.1f);
+      fz = useri_conf2real(useri_fZOOMSTEP, 0UL, (-1.0f), 1.0f, 0.1f);
+      if (!allowrev) fz = (float)fabs(fz);
       if (in) aprsdecode_finezoom = aprsdecode_finezoom+fz;
       else aprsdecode_finezoom = aprsdecode_finezoom-fz;
       if (aprsdecode_finezoom<1.0f && aprsdecode_finezoom>1.0f-fz*0.5f) {
@@ -2974,7 +3001,7 @@ static void internstat(void)
    for (i = 0UL; i<=3UL; i++) {
       aprsdecode_udpconnstat(i, s, 10001ul);
    } /* end for */
-   useri_textautosize(0L, 0L, 4UL, 0UL, 'b', s, 10001ul);
+   useri_say(s, 10001ul, 0UL, 'b');
 } /* end internstat() */
 
 
@@ -2984,7 +3011,7 @@ static void setshowall(void)
    aprsdecode_click.onesymbol.tab = 0;
    aprsdecode_click.watchmhop = 0;
    aprsdecode_lums.wxcol = 0;
-   useri_textautosize(0L, 0L, 4UL, 2UL, 'g', "Show All", 9ul);
+   useri_say("Show All", 9ul, 2UL, 'g');
 } /* end setshowall() */
 
 
@@ -3004,7 +3031,7 @@ static void View(unsigned long n)
       aprsstr_Append(s, 101ul, h, 101ul);
       useri_setview((long)n, s, 101ul);
       useri_killallmenus();
-      useri_textautosize(0L, 0L, 4UL, 4UL, 'r', "View stored!", 13ul);
+      useri_say("View stored!", 13ul, 4UL, 'r');
    }
    else {
       z = 0.0f;
@@ -3439,7 +3466,7 @@ static void clickdelwaypoint(void)
       aprsdecode_delwaypoint(anonym->opf, &anonym->pff0);
       aprsstr_Assign(s, 101ul, anonym->opf->call, 9ul);
       aprsstr_Append(s, 101ul, " waypoint Deleted", 18ul);
-      useri_textautosize(0L, 0L, 4UL, 4UL, 'r', s, 101ul);
+      useri_say(s, 101ul, 4UL, 'r');
    }
 } /* end clickdelwaypoint() */
 
@@ -3628,7 +3655,7 @@ static void wrvidsize(float b)
    char s[101];
    aprsstr_FixToStr(X2C_DIVR(b,1.E+6f), 2UL, s, 101ul);
    aprsstr_Append(s, 101ul, " MBytes written", 16ul);
-   useri_textautosize(0L, 0L, 4UL, 0UL, 'b', s, 101ul);
+   useri_say(s, 101ul, 0UL, 'b');
 } /* end wrvidsize() */
 
 
@@ -4096,6 +4123,7 @@ static void animate(const aprsdecode_MONCALL singlecall, unsigned long step,
                            }
                         }
                         maptool_drawpoligon(rfimg, ipos, dat.multiline,
+                dat.symt, dat.sym,
                 (unsigned long)X2C_DIV(aprsdecode_lums.sym,4L));
                      }
                      else if (op->areasymb.typ && aprsdecode_Decode(pf->vardat->raw,
@@ -4241,7 +4269,7 @@ static void animate(const aprsdecode_MONCALL singlecall, unsigned long step,
    } while (!((vtime>endtime+(step*10UL)/25UL || (aprsdecode_click.cmd!='A' && aprsdecode_click.cmd!='a') && aprsdecode_click.cmd!='\312') || useri_newxsize>0UL));
    if (osi_FdValid(videofd)) {
       osi_Close(videofd);
-      useri_textautosize(0L, 0L, 4UL, 0UL, 'b', "map.y4m Saved", 14ul);
+      useri_say("map.y4m Saved", 14ul, 0UL, 'b');
    }
    if (vidbuf) {
       useri_debugmem.screens -= (unsigned long)
@@ -4377,22 +4405,19 @@ static void makeimage(char dryrun)
       if (aprsdecode_click.mhop[0UL]==0) highlight();
    }
    if (aprsdecode_lums.wxcol=='w') {
-      useri_textautosize(0L, 0L, 4UL, 10UL, 'g', "Wx Stations (exit with ESC)\
-", 28ul);
+      useri_say("Wx Stations (exit with ESC)", 28ul, 10UL, 'g');
    }
    else if (aprsdecode_lums.wxcol=='W') {
-      useri_textautosize(0L, 0L, 4UL, 5UL, 'g', "Temperatue Map (exit with ES\
-C)", 31ul);
+      useri_say("Temperatue Map (exit with ESC)", 31ul, 5UL, 'g');
    }
    else if (aprsdecode_lums.wxcol=='R') {
-      useri_textautosize(0L, 0L, 4UL, 5UL, 'g', "Rain Map (exit with ESC)",
-                25ul);
+      useri_say("Rain Map (exit with ESC)", 25ul, 5UL, 'g');
    }
    if (hoverobj.opf) {
       useri_hoverinfo(hoverobj);
       hoverobj.opf = 0;
    }
-   if (useri_beaconediting) maptool_drawpoliobj(image);
+   if (useri_beaconediting && useri_beaconed) maptool_drawpoliobj(image);
    useri_refresh = 1;
    lastxupdate = aprsdecode_realtime;
 } /* end makeimage() */
@@ -4540,10 +4565,10 @@ static void MainEvent(void)
             aprstext_measure(aprsdecode_click.markpos,
                 aprsdecode_click.measurepos, mestxt, 201ul, 0);
          }
-         aprsdecode_importbeacon(aprsdecode_click.table[aprsdecode_click.selected]
-                .opf); /* copy to beacon editor */
       }
       else {
+         /*            importbeacon(click.table[click.selected].opf);
+                (* copy to beacon editor *) */
          /* clicked empty map */
          if (aprsdecode_click.marktime==0UL || aprsdecode_click.marktime+10UL>=aprsdecode_realtime)
                  {
@@ -4551,7 +4576,6 @@ static void MainEvent(void)
                 aprsdecode_click.clickpos, mestxt, 201ul, 1);
          }
          menu = 1;
-         useri_beaconimported[0UL] = 0;
       }
       useri_confstr(useri_fCLICKMAP, (char *) &ch, 1u/1u);
       if (!xosi_Shift && ch=='2') {
@@ -4575,7 +4599,7 @@ static void MainEvent(void)
       }
       if (!xosi_Shift) {
          /* not close menus on shift click to map */
-         if (useri_beaconediting) {
+         if (useri_beaconediting && useri_beaconed) {
             if (maptool_findmultiline(aprsdecode_click.clickpos,
                 &aprsdecode_click.markpos)) {
                aprsdecode_click.marktime = 0UL;
@@ -4695,10 +4719,10 @@ static void MainEvent(void)
          View(0UL);
       }
       else if (aprsdecode_click.cmd=='2') View(1UL);
-      else if (aprsdecode_click.cmd=='3') {
-         View(2UL);
+      else if (aprsdecode_click.cmd=='3') View(2UL);
+      else if (aprsdecode_click.cmd=='4') {
+         View(3UL);
       }
-      else if (aprsdecode_click.cmd=='4') View(3UL);
       else if (aprsdecode_click.cmd=='b' || aprsdecode_click.cmd=='\010') {
          pop();
       }
@@ -4708,10 +4732,10 @@ static void MainEvent(void)
          push(maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom));
          useri_resetimgparms();
       }
-      else if (aprsdecode_click.cmd=='+') zoominout(1, xosi_Shift);
-      else if (aprsdecode_click.cmd=='-') zoominout(0, xosi_Shift);
-      else if (aprsdecode_click.cmd=='\310') zoominout(1, 1);
-      else if (aprsdecode_click.cmd=='\311') zoominout(0, 1);
+      else if (aprsdecode_click.cmd=='+') zoominout(1, xosi_Shift, 0);
+      else if (aprsdecode_click.cmd=='-') zoominout(0, xosi_Shift, 0);
+      else if (aprsdecode_click.cmd=='\310') zoominout(1, 1, 1);
+      else if (aprsdecode_click.cmd=='\311') zoominout(0, 1, 1);
       else if (aprsdecode_click.cmd=='\237') MapPackage();
       else if (aprsdecode_click.cmd=='S') screenshot();
       else if (aprsdecode_click.cmd=='s') {
@@ -4745,7 +4769,15 @@ static void MainEvent(void)
             aprsdecode_click.altimap = 0;
          }
          aprsdecode_lums.wxcol = 0;
-         useri_sayonoff("Radiorange Map", 15ul, aprsdecode_click.withradio);
+         if (aprsdecode_click.withradio && !(aprspos_posvalid(aprsdecode_click.markpos)
+                 || aprspos_posvalid(aprsdecode_click.measurepos))) {
+            useri_say("Radiorange Map On, Set 1 oder 2 Markers", 40ul, 4UL,
+                'b');
+         }
+         else {
+            useri_sayonoff("Radiorange Map", 15ul,
+                aprsdecode_click.withradio);
+         }
       }
       else if (aprsdecode_click.cmd=='H') {
          if (aprsdecode_click.withradio && aprsdecode_click.altimap) {
@@ -4770,9 +4802,7 @@ static void MainEvent(void)
             aprsdecode_lums.obj = 10L*useri_conf2int(useri_fLOBJ, 0UL, 0L,
                 100L, 100L);
          }
-         else {
-            aprsdecode_lums.obj = 0L;
-         }
+         else aprsdecode_lums.obj = 0L;
          useri_sayonoff("Show Items/Objects", 19ul, aprsdecode_lums.obj!=0L);
       }
       else if (aprsdecode_click.cmd=='L') {
@@ -4854,20 +4884,17 @@ static void MainEvent(void)
          aprsdecode_posinval(&aprsdecode_click.measurepos);
          aprsdecode_click.waysum = 0.0f;
          aprsdecode_posinval(&aprsdecode_click.squerpos0);
-         /*        mainpop; */
          useri_killallmenus();
          useri_sayonoff("Markers", 8ul, 0);
       }
       else if (aprsdecode_click.cmd=='@') {
-         /*        textautosize(0, 0, 4, 2, "b", "Markers Off"); */
          useri_AddConfLine(useri_fCLICKMAP, 0U, "", 1ul);
          useri_AddConfLine(useri_fCLICKSYM, 0U, "", 1ul);
          useri_AddConfLine(useri_fCLICKTRACK, 0U, "", 1ul);
          useri_AddConfLine(useri_fCLICKTEXT, 0U, "", 1ul);
          useri_AddConfLine(useri_fCLICKWXSYM, 0U, "", 1ul);
          useri_killallmenus();
-         useri_textautosize(0L, 0L, 4UL, 10UL, 'b', "\'ON Next Click\' Reset \
-to Defaults", 34ul);
+         useri_say("\'ON Next Click\' Reset to Defaults", 34ul, 10UL, 'b');
       }
       else if (aprsdecode_click.cmd=='Y') {
          /*          click.measurepos:=click.clickpos; */
@@ -4885,7 +4912,7 @@ to Defaults", 34ul);
 ", 1ul);
       }
       else if (aprsdecode_click.cmd=='\312') {
-         useri_textautosize(0L, 0L, 4UL, 0UL, 'b', "Saving map.y4m", 15ul);
+         useri_say("Saving map.y4m", 15ul, 0UL, 'b');
          animate(aprsdecode_click.mhop,
                 (unsigned long)aprsdecode_lums.actfps, "map.y4m", 8ul);
       }
@@ -4907,11 +4934,14 @@ to Defaults", 34ul);
          aprsdecode_click.cmdatt = 0;
       }
       else if (aprsdecode_click.cmd=='\011') toggview();
+      else if (aprsdecode_click.cmd=='(') {
+         mapbri(-5L);
+      }
+      else if (aprsdecode_click.cmd==')') mapbri(5L);
       makeimage(0);
       aprsdecode_click.cmd = 0;
-      if (useri_beaconediting && aprsdecode_ismultiline()) {
-         useri_poligonmenu();
-      }
+      if ((useri_beaconediting && useri_beaconed) && aprsdecode_ismultiline()
+                ) useri_poligonmenu();
    }
    else if ((aprsdecode_tracenew.call[0UL] && lastxupdate+2UL+slowupdate()
                 <=aprsdecode_realtime)

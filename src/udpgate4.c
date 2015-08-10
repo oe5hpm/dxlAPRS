@@ -58,7 +58,7 @@ FROM stat IMPORT fstat, stat_t;
 
 #define udpgate4_HASHSIZE 65536
 
-#define udpgate4_VERS "udpgate(c) 0.59"
+#define udpgate4_VERS "udpgate(c) 0.60"
 
 #define udpgate4_FEATURE " $IX^[V1]"
 
@@ -91,6 +91,8 @@ typedef char FRAMEBUF[512];
 /*
       FRAMEBUF=ARRAY[0..256+3+11*10] OF CHAR;
 */
+
+typedef unsigned long CHSET[4];
 
 
 struct BEACON {
@@ -211,7 +213,7 @@ struct _0 {
 struct UDPSOCK {
    pUDPSOCK next;
    long fd;
-   char trustHbit;
+   aprsstr_GHOSTSET ghosts;
    char rawread;
    char checkip;
    unsigned long ip;
@@ -713,12 +715,15 @@ static char callok(const char h[], unsigned long h_len)
    return h[i0]==0;
 } /* end callok() */
 
+static aprsstr_GHOSTSET _cnst = {0x00000000UL,0x00000000UL,0x00000000UL,
+                0x00000000UL,0x00000000UL,0x00000000UL,0x00000000UL,
+                0x00000000UL,0x00000000UL};
 
 static void parms(void)
 {
    char h[4096];
+   aprsstr_GHOSTSET ghost;
    char err;
-   char trusth;
    char lasth;
    unsigned long n;
    unsigned long i0;
@@ -734,7 +739,7 @@ static void parms(void)
    err = 0;
    verb = 0;
    gatecnt = 0UL;
-   trusth = 0;
+   memcpy(ghost,_cnst,36u);
    keeptime = 0UL; /*600*/ /* default keep connected to gateway time */
    allkey[0U] = 0;
    for (;;) {
@@ -781,7 +786,7 @@ static void parms(void)
                      ++ii;
                   }
                }
-               anonym->trustHbit = trusth;
+               memcpy(anonym->ghosts,ghost,36u);
                aprsstr_Assign(anonym->allpathkey, 10ul, allkey, 10ul);
                anonym->next = 0;
             }
@@ -791,7 +796,7 @@ static void parms(void)
                while (ush->next) ush = ush->next;
                ush->next = usock;
             }
-            trusth = 0;
+            memcpy(ghost,_cnst,36u);
          }
          else if (lasth=='c') callsrc = 1;
          else if (lasth=='s' || lasth=='S') {
@@ -1135,8 +1140,9 @@ ut", 52ul);
                osi_WrStrLn(" -x <call>      via <call> send messages to rf (-\
 x OE0AAA-10) tx off: -x -", 75ul);
                osi_WrStrLn("                default is server call", 39ul);
-               osi_WrStrLn(" -Y             trust in H bit for direct heard, \
-set before each -R or -M", 74ul);
+               osi_WrStrLn(" -Y [num][,num]... bad digis fingerprints to inse\
+rt GHOST* in otherwise false", 78ul);
+               osi_WrStrLn("                direct heard path", 34ul);
                osi_WrStrLn("udpgate -v -R 127.0.0.1:9200:9201 -s MYCALL-10 -l\
  7:aprs.log -n 10:beacon.txt -t 14580 -g www.server.org:14580#m/30 -p 12345",
                  125ul);
@@ -1231,7 +1237,15 @@ set before each -R or -M", 74ul);
                }
                else Err("-W kbytes", 10ul);
             }
-            else if (lasth=='Y') trusth = 1;
+            else if (lasth=='Y') {
+               Lib_NextArg(h, 4096ul);
+               i0 = 0UL;
+               while (i0<4095UL && h[i0]) {
+                  if (GetSec(h, 4096ul, &i0, &n)>=0L) X2C_INCL(ghost,n,257);
+                  else Err("-Y <num>", 9ul);
+                  if (h[i0]==',') ++i0;
+               }
+            }
             else err = 1;
          }
       }
@@ -1301,7 +1315,7 @@ static void Sendudp(const FRAMEBUF s, unsigned long totx, char unlimit)
 } /* end Sendudp() */
 
 
-static char getudp(pUDPSOCK usock, FRAMEBUF buf)
+static char getudp(pUDPSOCK usock, FRAMEBUF buf, aprsstr_GHOSTSET ghost)
 {
    unsigned long fromport;
    unsigned long ipn;
@@ -1315,8 +1329,10 @@ static char getudp(pUDPSOCK usock, FRAMEBUF buf)
    FRAMEBUF mbuf0;
    unsigned long oldt;
    struct _0 * anonym;
-   long tmp;
-   char tmp0;
+   aprsstr_GHOSTSET tmp;
+   long tmp0;
+   char tmp1;
+   ghost = (unsigned long *)memcpy(tmp,ghost,36u);
    for (;;) {
       len = udpreceive(usock->fd, buf, 512L, &fromport, &ipn);
       if ((len<=2L || len>=512L) || usock->checkip && usock->ip!=ipn) {
@@ -1338,14 +1354,14 @@ static char getudp(pUDPSOCK usock, FRAMEBUF buf)
             }
             if (len>2L) {
                aprsstr_raw2mon(buf, 512ul, mbuf0, 512ul,
-                (unsigned long)(len-2L), &mlen);
+                (unsigned long)(len-2L), &mlen, ghost);
                if (mbuf0[0U]==0 && verb) {
                   osi_WrStrLn(" axudp frame decode error", 26ul);
-                  tmp = len-3L;
+                  tmp0 = len-3L;
                   i0 = 0L;
-                  if (i0<=tmp) for (;; i0++) {
+                  if (i0<=tmp0) for (;; i0++) {
                      osi_WrHex((unsigned long)(unsigned char)buf[i0], 3UL);
-                     if (i0==tmp) break;
+                     if (i0==tmp0) break;
                   } /* end for */
                   osi_WrLn();
                   i0 = 0L;
@@ -1358,8 +1374,8 @@ static char getudp(pUDPSOCK usock, FRAMEBUF buf)
                         InOut_WriteString(">", 2ul);
                      }
                      else {
-                        InOut_WriteString((char *)(tmp0 = (char)
-                ((unsigned long)(unsigned char)buf[i0]/2UL),&tmp0), 1u/1u);
+                        InOut_WriteString((char *)(tmp1 = (char)
+                ((unsigned long)(unsigned char)buf[i0]/2UL),&tmp1), 1u/1u);
                      }
                      if (((unsigned long)(unsigned char)buf[i0]&1)) break;
                      if (X2C_MOD(i0,7L)==6L) InOut_WriteString(",", 2ul);
@@ -2636,7 +2652,7 @@ static unsigned long FindHeard(pHEARD ph, MONCALL c, unsigned long * rfport)
 
 
 static char Heard(const char b[], unsigned long b_len, MONCALL from,
-                char * trust, char trusthbit)
+                char * trust)
 {
    unsigned long len;
    unsigned long i0;
@@ -2674,29 +2690,20 @@ static char Heard(const char b[], unsigned long b_len, MONCALL from,
       while (p<len && b[p]!=',') ++p;
       if (b[p-1UL]=='*') return 0;
       /* is repeated */
-      if (trusthbit) {
-         /* any via without h-bit is accepted */
-         /*    IF (b[i]="W") & (b[i+1]="I") & (b[i+2]="D") & (b[i+3]="E")
-                & */
-         /*    (i+4<>p) & (b[i+4]<>b[i+6]) THEN RETURN FALSE END;
-                (* WIDEn-x with n<>x *) */
-         if (((((b[p-2UL]=='-' && (unsigned char)b[p-1UL]>='1')
-                && (unsigned char)b[p-1UL]<='9') && (unsigned char)
-                b[p-3UL]>='1') && (unsigned char)b[p-3UL]<='9')
+      if (((unsigned char)b[p-1UL]>='0' && (unsigned char)b[p-1UL]<='9')
                 && b[p-1UL]!=b[p-3UL]) return 0;
-      }
-      else if (((((((p-i0<=3UL || b[p-2UL]!='-') || b[p-1UL]!=b[p-3UL])
-                || (unsigned char)b[p-1UL]<'1') || (unsigned char)
-                b[p-1UL]>'7') && ((((p-i0!=4UL || b[i0]!='E')
-                || b[i0+1UL]!='C') || b[i0+2UL]!='H') || b[i0+3UL]!='O'))
-                && ((((p-i0!=4UL || b[i0]!='G') || b[i0+1UL]!='A')
-                || b[i0+2UL]!='T') || b[i0+3UL]!='E'))
-                && (((((p-i0!=5UL || b[i0]!='R') || b[i0+1UL]!='E')
-                || b[i0+2UL]!='L') || b[i0+3UL]!='A') || b[i0+4UL]!='Y')) {
-         /* WIDEn-x with n<>x */
-         return 0;
-      }
-      /* strict direct heard via n-M or GATE or ECHO or RELAY */
+      /* WIDEn-x with n<>x */
+      /*
+          ELSIF ((p-i<=3) OR (b[p-2]<>"-") OR (b[p-1]<>b[p-3])
+                OR (b[p-1]<"1") OR (b[p-1]>"7"))
+            & ((p-i<>4) OR (b[i]<>"E") OR (b[i+1]<>"C") OR (b[i+2]<>"H")
+                OR (b[i+3]<>"O"))
+            & ((p-i<>4) OR (b[i]<>"G") OR (b[i+1]<>"A") OR (b[i+2]<>"T")
+                OR (b[i+3]<>"E"))
+            & ((p-i<>5) OR (b[i]<>"R") OR (b[i+1]<>"E") OR (b[i+2]<>"L")
+                OR (b[i+3]<>"A") OR (b[i+4]<>"Y"))
+          THEN RETURN FALSE END; (* strict direct heard via n-M or GATE or ECHO or RELAY *)
+      */
       while (p<len) {
          /* more vias */
          ++p;
@@ -3621,12 +3628,12 @@ static void Query(MONCALL fromcall, char msg[], unsigned long msg_len,
                  1, path);
    }
    else if (cmd=='S') {
-      Stomsg(servercall, fromcall, *(MSGTEXT *)memcpy(&tmp1,"udpgate(c) 0.59 \
+      Stomsg(servercall, fromcall, *(MSGTEXT *)memcpy(&tmp1,"udpgate(c) 0.60 \
 Msg S&F Relay",30u), *(ACKTEXT *)memcpy(&tmp0,"",1u), 0, 0, 1, path);
    }
    else if (cmd=='v') {
       Stomsg(servercall, fromcall, *(MSGTEXT *)memcpy(&tmp1,
-                "udpgate(c) 0.59",16u), *(ACKTEXT *)memcpy(&tmp0,"",1u), 0,
+                "udpgate(c) 0.60",16u), *(ACKTEXT *)memcpy(&tmp0,"",1u), 0,
                 0, 1, path);
    }
    else if (cmd=='h') {
@@ -3707,7 +3714,7 @@ static void getack(const char s[], unsigned long s_len, unsigned long p,
 
 
 static void Getmsg(const char b[], unsigned long b_len, unsigned long rxport,
-                 char goodpath, char * ungate, char * trusthbit)
+                 char goodpath, char * ungate)
 /* get user msg and ack out of aprsis stream */
 {
    unsigned long po;
@@ -3731,7 +3738,7 @@ static void Getmsg(const char b[], unsigned long b_len, unsigned long rxport,
    *ungate = 0;
    if ((b[0UL]==0 || rxport && !iscall(b, b_len, 0UL)) || aprsstr_InStr(b,
                 b_len, "!x!", 4ul)>=0L) return;
-   dir = Heard(b, b_len, hfrom, &trust, *trusthbit);
+   dir = Heard(b, b_len, hfrom, &trust);
    if (rxport && hfrom[0U]) {
       if ((heardtime>0UL && dir) && trust) {
          AddHeard(&hearddir, Max(heardtime, heardtimew), hfrom, rxport, b,
@@ -4063,8 +4070,7 @@ static long callchk(unsigned long * qpos, unsigned char * unset, char buf[],
       }
    }
    if (*pssid==0UL) *pssid = *p;
-   if (withstar && buf[*p]=='*') ++*p;
-   /*WrStrLn("chk=0"); */
+   if (buf[*p]=='*' && withstar) ++*p;
    return 0L;
 } /* end callchk() */
 
@@ -4116,7 +4122,7 @@ OE0AAA-9>T8SV40,WIDE1-1,qAR,DB0WGS:test
 static long AprsIs(char buf[], unsigned long buf_len, unsigned char datafilt,
                  unsigned char msgfilt, const char logcall[],
                 unsigned long logcall_len, unsigned long udpchan, char valid,
-                 struct POSCALL * poscall0, char trusthbit)
+                 struct POSCALL * poscall0)
 {
    unsigned long qpos;
    unsigned long micedest;
@@ -4143,6 +4149,8 @@ static long AprsIs(char buf[], unsigned long buf_len, unsigned char datafilt,
    pins = 0UL;
    pssid = 0UL; /* for savety */
    len = 0UL;
+   poscall0->pos.lat = 0.0f;
+   poscall0->pos.long0 = 0.0f;
    while ((len<buf_len-1 && buf[len]) && buf[len]!='\015') ++len;
    if (len==0UL || len+35UL>buf_len-1) return -2L;
    unset = 0U;
@@ -4185,12 +4193,12 @@ static long AprsIs(char buf[], unsigned long buf_len, unsigned char datafilt,
       if (X2C_CAP(buf[qpos])=='Z') return -3L;
       /* qAZ */
       if (X2C_CAP(buf[qpos])=='I') {
-         strncpy(qtext,",",32u); /* qAI */
+         aprsstr_Append(qtext, 32ul, ",", 2ul); /* qAI */
          aprsstr_Append(qtext, 32ul, servercall, 10ul);
       }
    }
    else if (udpchan) {
-      strncpy(qtext,",qAU,",32u);
+      aprsstr_Append(qtext, 32ul, ",qAU,", 6ul);
       aprsstr_Append(qtext, 32ul, servercall, 10ul);
    }
    else if (logcall[0UL]) {
@@ -4209,7 +4217,7 @@ static long AprsIs(char buf[], unsigned long buf_len, unsigned char datafilt,
    poscall0->typ0 = buf[p];
    if (buf[p]=='?') return -4L;
    if (udpchan || valid) {
-      Getmsg(buf, buf_len, udpchan, (unset&msgfilt)==0U, &ungat, &trusthbit);
+      Getmsg(buf, buf_len, udpchan, (unset&msgfilt)==0U, &ungat);
       if (ungat) return -6L;
    }
    if ((unset&datafilt)!=0U) return -3L;
@@ -4300,9 +4308,10 @@ static void getcalls(char s[], unsigned long s_len, unsigned long * p,
    }
 } /* end getcalls() */
 
-typedef unsigned long CHSET[4];
+typedef unsigned long CHSET0[4];
 
-static CHSET _cnst = {0x00000000UL,0x00080000UL,0x00000000UL,0x00BBE200UL};
+static CHSET0 _cnst0 = {0x00000000UL,0x00080000UL,0x00000000UL,0x00BBE200UL}
+                ;
 
 static void gettyps(char s[], unsigned long s_len, unsigned long * p,
                 char t[], unsigned long t_len)
@@ -4315,7 +4324,7 @@ static void gettyps(char s[], unsigned long s_len, unsigned long * p,
       ++*p;
       while ((j<t_len-1 && *p<=s_len-1) && (unsigned char)s[*p]>' ') {
          if (X2C_INL((long)(unsigned char)s[*p],128,
-                _cnst) && aprsstr_InStr(t, t_len, (char *) &s[*p],
+                _cnst0) && aprsstr_InStr(t, t_len, (char *) &s[*p],
                 1u/1u)<0L) {
             t[j] = s[*p];
             t[j+1UL] = 0;
@@ -5479,7 +5488,7 @@ enter\"><H3>\015\012", 131ul);
       Appwww(wsock, wbuf, " MsgCall ", 10ul);
       Appwww(wsock, wbuf, viacall, 10ul);
    }
-   Appwww(wsock, wbuf, " [udpgate(c) 0.59] http#", 25ul);
+   Appwww(wsock, wbuf, " [udpgate(c) 0.60] http#", 25ul);
    aprsstr_IntToStr((long)*cnt, 1UL, h, 32ul);
    Appwww(wsock, wbuf, h, 32ul);
    Appwww(wsock, wbuf, " Uptime ", 9ul);
@@ -5569,7 +5578,7 @@ gn:center\"><H3>\015\012", 131ul);
          Appwww(&wsock, wbuf, "  Port ", 8ul);
          Appwww(&wsock, wbuf, tcpbindport, 6ul);
       }
-      Appwww(&wsock, wbuf, " [udpgate(c) 0.59] Maxusers ", 29ul);
+      Appwww(&wsock, wbuf, " [udpgate(c) 0.60] Maxusers ", 29ul);
       aprsstr_IntToStr((long)maxusers, 1UL, h1, 256ul);
       Appwww(&wsock, wbuf, h1, 256ul);
       Appwww(&wsock, wbuf, " http#", 7ul);
@@ -5768,8 +5777,8 @@ ign:center\" BGCOLOR=\"#D0C0C0\"><TD>out", 74ul);
       title(wbuf, &wsock, &mhhttpcount);
       klicks(wbuf, &wsock);
       if (heardtimew>0UL) {
-         showmh(wbuf, &wsock, h1, hearddir, 1, heardtimew, "Direct Heard Stat\
-ions Since Last ", 34ul, wsock->sortby, 2ul);
+         showmh(wbuf, &wsock, h1, hearddir, 1, heardtimew, "Heard Stations Si\
+nce Last ", 27ul, wsock->sortby, 2ul);
       }
       if (heardtimevia>0UL) {
          showmh(wbuf, &wsock, h1, heardvia, 0, heardtimevia, "Via RF Heard St\
@@ -5784,19 +5793,15 @@ ations Since Last ", 34ul, wsock->sortby, 2ul);
          Appwww(&wsock, wbuf, "<table id=msg border=0 align=center CELLPADDIN\
 G=3 CELLSPACING=1 BGCOLOR=\"#FFFFFF\">", 83ul);
          if (viacall[0U]==0) {
-            if (tp==udpgate4_DIR) {
-               strncpy(h1,"Direct Heard Messages (tx off)",256u);
-            }
+            if (tp==udpgate4_DIR) strncpy(h1,"Heard Messages (tx off)",256u);
             else if (tp==udpgate4_INDIR) {
                strncpy(h1,"Via Digi Heard Messages (tx off)",256u);
             }
-            else {
-               strncpy(h1,"Via Net Heard Messages (tx off)",256u);
-            }
+            else strncpy(h1,"Via Net Heard Messages (tx off)",256u);
          }
          else if (tp==udpgate4_DIR) {
-            strncpy(h1,"Direct Heard Messages (Relayed to direct heard and Ne\
-t)",256u);
+            strncpy(h1,"Heard Messages (Relayed to direct heard and Net)",
+                256u);
          }
          else if (tp==udpgate4_INDIR) {
             strncpy(h1,"Via Digi Heard Messages (Relayed to direct heard)",
@@ -5995,7 +6000,7 @@ static char tcpconn(pTCPSOCK * sockchain, long f, char cservice)
             aprsstr_Append(h, 512ul, passwd, 6ul);
          }
          aprsstr_Append(h, 512ul, " vers ", 7ul);
-         aprsstr_Append(h, 512ul, "udpgate(c) 0.59", 16ul);
+         aprsstr_Append(h, 512ul, "udpgate(c) 0.60", 16ul);
          if (actfilter[0U]) {
             aprsstr_Append(h, 512ul, " filter ", 9ul);
             aprsstr_Append(h, 512ul, actfilter, 256ul);
@@ -6026,7 +6031,7 @@ static char tcpconn(pTCPSOCK * sockchain, long f, char cservice)
          aprsstr_Append(h1, 512ul, h2, 512ul);
          logline(1L, h1, 512ul);
       }
-      aprsstr_Assign(h, 512ul, "# udpgate(c) 0.59\015\012", 20ul);
+      aprsstr_Assign(h, 512ul, "# udpgate(c) 0.60\015\012", 20ul);
       Sendtcp(cp, h);
    }
    return 1;
@@ -6210,6 +6215,7 @@ static void addsock(long fd, char wtoo)
    }
 } /* end addsock() */
 
+static CHSET _cnst1 = {0x30000000UL,0x20008092UL,0x80000001UL,0x00000001UL};
 
 X2C_STACK_LIMIT(100000l)
 extern int main(int argc, char **argv)
@@ -6401,11 +6407,11 @@ extern int main(int argc, char **argv)
       i = 1L;
       while (actudp) {
          if (issetr((unsigned long)actudp->fd)) {
-            while (getudp(actudp, mbuf)) {
+            while (getudp(actudp, mbuf, actudp->ghosts)) {
                if (systime<udpdonetime+5UL) {
                   /* last time all data read is no too long */
                   res = AprsIs(mbuf, 512ul, 0x3FU, 0x3FU, "", 1ul,
-                (unsigned long)i, 0, &poscall, actudp->trustHbit);
+                (unsigned long)i, 0, &poscall);
                   if (res>=0L) {
                      Sendall(mbuf, 0L, poscall);
                      keepconn = systime+keeptime; /* connect to gateway */
@@ -6476,15 +6482,16 @@ extern int main(int argc, char **argv)
                      }
                      else {
                         res = AprsIs(mbuf, 512ul, 0x3U, 0x17U,
-                acttcp->user.call, 10ul, 0UL, acttcp->valid, &poscall, 1);
+                acttcp->user.call, 10ul, 0UL, acttcp->valid, &poscall);
                      }
-                     if (aprspos_posvalid(poscall.pos)
+                     if ((aprspos_posvalid(poscall.pos)
                 && aprsstr_StrCmp(poscall.call, 10ul, acttcp->user.call,
-                10ul)) acttcp->user.pos = poscall.pos;
+                10ul)) && X2C_INL((long)(unsigned char)poscall.typ0,128,
+                _cnst1)) {
+                        acttcp->user.pos = poscall.pos;
+                     }
                      if (acttcp->valid && !acttcp->pingout) {
-                        if (res>=0L) {
-                           Sendall(mbuf, acttcp->fd, poscall);
-                        }
+                        if (res>=0L) Sendall(mbuf, acttcp->fd, poscall);
                         if (verb || logframes>1L) {
                            showframe(res, acttcp, 0, mbuf, 512ul,
                 poscall.pos);

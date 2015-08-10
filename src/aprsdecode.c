@@ -785,7 +785,8 @@ ut", 52ul);
 } /* end parms() */
 
 
-static char getudp(unsigned long usock, aprsdecode_FRAMEBUF buf)
+static char getudp(unsigned long usock, aprsdecode_FRAMEBUF buf,
+                aprsstr_GHOSTSET ghostset)
 {
    unsigned long fromport;
    unsigned long ipn;
@@ -795,6 +796,8 @@ static char getudp(unsigned long usock, aprsdecode_FRAMEBUF buf)
    unsigned long mlen;
    aprsdecode_FRAMEBUF mbuf;
    char udp2[100];
+   aprsstr_GHOSTSET tmp;
+   ghostset = (unsigned long *)memcpy(tmp,ghostset,36u);
    if ((long)aprsdecode_udpsocks0[usock].fd<0L) return 0;
    len = udpreceive(aprsdecode_udpsocks0[usock].fd, buf, 512L, &fromport,
                 &ipn);
@@ -817,7 +820,7 @@ static char getudp(unsigned long usock, aprsdecode_FRAMEBUF buf)
                aprsstr_extrudp2(buf, 512ul, udp2, 100ul, &len);
             }
             aprsstr_raw2mon(buf, 512ul, mbuf, 512ul, (unsigned long)len,
-                &mlen);
+                &mlen, ghostset);
             memcpy(buf,mbuf,512u);
          }
       }
@@ -1251,7 +1254,7 @@ static void beaconmacros(char s[], unsigned long s_len, const char path[],
             }
             else if (s[i]=='\\') aprsstr_Append(ns, 256ul, "\\\\", 3ul);
             else if (s[i]=='v') {
-               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.52", 17ul);
+               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.54", 17ul);
             }
             else if (s[i]=='l') {
                if (aprstext_getmypos(&pos)) {
@@ -1303,7 +1306,7 @@ static void BuildNetBeacon(char h[], unsigned long h_len)
       return;
    }
    aprstext_postostr(mypos, '2', h1, 301ul);
-   aprsstr_Assign(h, h_len, "!", 2ul);
+   aprsstr_Assign(h, h_len, "=", 2ul);
    h1[8U] = h3[0U];
    h1[18U] = h3[1U];
    h1[19U] = 0;
@@ -1733,7 +1736,7 @@ extern void aprsdecode_savetrack(void)
          if (ap) strncpy(h,"Append to logfile ",101u);
          else strncpy(h,"Write logfile ",101u);
          aprsstr_Append(h, 101ul, fn, 1001ul);
-         useri_textautosize(0L, 5L, 6UL, 4UL, 'b', h, 101ul);
+         useri_say(h, 101ul, 4UL, 'b');
       }
    }
 } /* end savetrack() */
@@ -1778,21 +1781,39 @@ static char iscall(const aprsdecode_MONCALL b)
 
 
 static char viaghost(const char b[], unsigned long b_len)
-/* ECHO GATE RELAY n=n ELSE ghost */
+/* n<>N */
 {
    unsigned long i;
-   if ((((b[0UL]=='E' && b[1UL]=='C') && b[2UL]=='H') && b[3UL]=='O')
-                && b[4UL]==0) return 0;
-   if ((((b[0UL]=='G' && b[1UL]=='A') && b[2UL]=='T') && b[3UL]=='E')
-                && b[4UL]==0) return 0;
-   if (((((b[0UL]=='R' && b[1UL]=='E') && b[2UL]=='L') && b[3UL]=='A')
-                && b[4UL]=='Y') && b[5UL]==0) return 0;
+   char c;
    i = aprsstr_Length(b, b_len);
-   if ((((i>3UL && b[i-2UL]=='-') && b[i-1UL]==b[i-3UL]) && (unsigned char)
-                b[i-1UL]>='1') && (unsigned char)b[i-1UL]<='7') return 0;
-   return 1;
+   if (i>3UL) {
+      c = b[i-1UL];
+      if (((unsigned char)c>='0' && (unsigned char)c<='9') && c!=b[i-3UL]) {
+         return 1;
+      }
+   }
+   return 0;
 } /* end viaghost() */
 
+/*
+PROCEDURE viaghost(b-:ARRAY OF CHAR):BOOLEAN;
+                (* ECHO GATE RELAY n=n ELSE ghost *)
+VAR i:CARDINAL;
+    c:CHAR;
+BEGIN
+  IF (b[0]="E") & (b[1]="C") & (b[2]="H") & (b[3]="O") & (b[4]=0C)
+                THEN RETURN FALSE END;
+  IF (b[0]="G") & (b[1]="A") & (b[2]="T") & (b[3]="E") & (b[4]=0C)
+                THEN RETURN FALSE END;
+  IF (b[0]="R") & (b[1]="E") & (b[2]="L") & (b[3]="A") & (b[4]="Y")
+                & (b[5]=0C) THEN RETURN FALSE E
+  i:=Length(b);
+  c:=b[i-1];
+  IF (i>3) & (b[i-2]="-") & (c=b[i-3]) & (c>="1") & (c<="7")
+                THEN RETURN FALSE END;
+  RETURN TRUE
+END viaghost;
+*/
 
 static float num(char buf[], unsigned long buf_len, unsigned long * p)
 {
@@ -2077,7 +2098,7 @@ extern void aprsdecode_GetMultiline(char buf[], unsigned long buf_len,
    float scale;
    md->size = 0UL;
    md->linetyp = 'a';
-   md->polygon = 0;
+   md->filltyp = '0';
    i = compos;
    s = 0UL;
    *delfrom = (buf_len-1)+1UL;
@@ -2101,12 +2122,8 @@ extern void aprsdecode_GetMultiline(char buf[], unsigned long buf_len,
          else s = 0UL;
       }
       else if (s==3UL) {
-         if (c=='0') {
-            md->polygon = 1;
-            s = 4UL;
-         }
-         else if (c=='1') {
-            md->polygon = 0;
+         if ((unsigned char)c>='0' && (unsigned char)c<='9') {
+            md->filltyp = c;
             s = 4UL;
          }
          else s = 0UL;
@@ -2140,32 +2157,24 @@ extern void aprsdecode_GetMultiline(char buf[], unsigned long buf_len,
          }
          else if (s==5UL && c=='{') s = 7UL;
          else s = 0UL;
-      }
-      else if (s==7UL) {
-         if (c=='Q') s = 8UL;
-         else s = 0UL;
-      }
-      else if (s==8UL) {
-         if (c=='F') s = 9UL;
-         else s = 0UL;
-      }
-      else if (s==9UL) {
-         if (c=='S') s = 10UL;
-         else s = 0UL;
-      }
-      else if (s==10UL) {
-         if (c=='A') s = 11UL;
-         else s = 0UL;
-      }
-      else if (s==11UL) {
-         if (c=='A') {
-            /*WrInt(idx, 10); WrStrLn(" size"); */
+         /*
+             ELSIF (s>=7) & (s<=11) THEN
+               IF c>" " THEN INC(s) ELSE s:=0 END;
+               IF s=12 THEN
+                 md.size:=idx;
+                 RETURN                                                         (* protocol done *)
+         
+               END;
+         */
+         if (s==7UL) {
             md->size = idx;
             return;
          }
-         s = 0UL; /* protocol done */
       }
-      else s = 0UL;
+      else {
+         /* protocol done */
+         s = 0UL;
+      }
       ++i;
    }
 } /* end GetMultiline() */
@@ -2176,14 +2185,18 @@ extern char aprsdecode_ismultiline(void)
    char s[251];
    struct aprsdecode_MULTILINE ml;
    unsigned long i;
-   useri_confstr(useri_fRBPOSTYP, s, 251ul);
-   if (s[0U]!='A') return 0;
+   /*
+     confstr(fRBPOSTYP, s);
+     IF s[0]<>ENCODEAREA THEN RETURN FALSE END;
+   */
    useri_confstr(useri_fRBCOMMENT, s, 251ul);
    aprsdecode_GetMultiline(s, 251ul, 0UL, &i, &ml);
    return ml.size>=2UL;
 } /* end ismultiline() */
 
 #define aprsdecode_GRIDSIZE 88
+
+#define aprsdecode_RA 3.4377467707849E+7
 
 
 static void app(char buf[], unsigned long buf_len, float d)
@@ -2246,8 +2259,7 @@ static void EncMultiline(char buf[], unsigned long buf_len,
       }
       aprsstr_Assign(buf, buf_len, " }", 3ul);
       aprsstr_Append(buf, buf_len, (char *) &md.linetyp, 1u/1u);
-      if (md.polygon) aprsstr_Append(buf, buf_len, "0", 2ul);
-      else aprsstr_Append(buf, buf_len, "1", 2ul);
+      aprsstr_Append(buf, buf_len, (char *) &md.filltyp, 1u/1u);
       aprsstr_Append(buf, buf_len, (char *)(tmp = (char)(33UL+scaler),&tmp),
                 1u/1u);
       i = 0UL;
@@ -2257,9 +2269,19 @@ static void EncMultiline(char buf[], unsigned long buf_len,
          ++i;
       }
       /*    scale:=ln(scale/(0.0001*RAD))/(2.3025851/20.0); */
-      aprsstr_Append(buf, buf_len, "{QFSAA", 7ul);
+      aprsstr_Append(buf, buf_len, "{", 2ul);
    }
    else {
+      /*
+        lati :=trunc(ABS(center.lat) *RA);
+        longi:=trunc(ABS(center.long)*RA);
+        latd :=VAL(CARDINAL, lati ) MOD 100;
+        longd:=VAL(CARDINAL, longi) MOD 100;
+        lati :=lati -latd;
+        longi:=longi-longd;
+       
+      WrInt(latd,0); WrStrLn(" latd");
+      */
       /*WrStrLn(" <-appended"); */
       buf[0UL] = 0;
    }
@@ -2308,6 +2330,9 @@ extern void aprsdecode_appendmultiline(struct aprspos_POSITION pos)
                --i;
             }
             ml.vec[aprsdecode_click.polilinecursor] = pos;
+            if (aprsdecode_click.polilinecursor>=ml.size) {
+               ++aprsdecode_click.polilinecursor;
+            }
             ++ml.size;
          }
       }
@@ -2374,8 +2399,10 @@ extern void aprsdecode_modmultiline(unsigned long n)
       else if (n==4UL) {
          /* poliline/poligone */
          if (ml.size>0UL) {
-            if (s[i+3UL]=='0') s[i+3UL] = '1';
-            else s[i+3UL] = '0';
+            s[i+3UL] = (char)((unsigned long)(unsigned char)s[i+3UL]+1UL);
+            if ((unsigned char)s[i+3UL]<'0' || (unsigned char)s[i+3UL]>'9') {
+               s[i+3UL] = '0';
+            }
          }
       }
       useri_AddConfLine(useri_fRBCOMMENT, 1U, s, 251ul);
@@ -2739,7 +2766,7 @@ extern void aprsdecode_extractbeacon(char raw[], unsigned long raw_len,
          useri_AddConfLine(useri_fRBTIME, 1U, s, 1000ul);
          useri_AddConfLine(useri_fRBPORT, 1U, (char *) &port, 1u/1u);
       }
-      else useri_encerr("beacon syntax wrong, delete line!", 34ul);
+      else useri_say("beacon syntax wrong, delete line!", 34ul, 4UL, 'e');
    }
    if (aprsdecode_Decode(raw, raw_len, &dat)==0L) {
       if (dat.type==aprsdecode_OBJ || dat.type==aprsdecode_ITEM) {
@@ -2825,30 +2852,33 @@ extern void aprsdecode_extractbeacon(char raw[], unsigned long raw_len,
 } /* end extractbeacon() */
 
 
-extern void aprsdecode_importbeacon(aprsdecode_pOPHIST op)
-/* op last pos frame to beacon config */
+extern void aprsdecode_importbeacon(void)
 {
+   /* op last pos frame to beacon config */
+   aprsdecode_pOPHIST opf;
+   aprsdecode_pOPHIST op;
    aprsdecode_pFRAMEHIST pl;
    aprsdecode_pFRAMEHIST pf;
    struct aprsdecode_DAT dat;
-   if (useri_beaconediting && op) {
-      pl = 0;
-      pf = op->frames;
-      while (pf) {
-         if (aprspos_posvalid(pf->vardat->pos)) pl = pf;
-         pf = pf->next;
-      }
-      if ((pl && pl->vardat) && aprsdecode_Decode(pl->vardat->raw, 500ul,
-                &dat)==0L) {
-         if (X2C_STRCMP(useri_beaconimported,9u,dat.srccall,
-                9u)==0 && useri_beaconimporttime+2UL>TimeConv_time()) {
-            aprsdecode_extractbeacon(pl->vardat->raw, 500ul, 0, 0);
-            useri_beaconed = 1;
-            useri_beaconimported[0UL] = '\012';
-         }
-         else {
-            memcpy(useri_beaconimported,dat.srccall,9u);
-            useri_beaconimporttime = TimeConv_time();
+   if (useri_beaconediting && aprsdecode_click.entries>0UL) {
+      opf = aprsdecode_click.table[aprsdecode_click.selected].opf;
+      if (opf) {
+         op = aprsdecode_ophist0;
+         while (op && X2C_STRCMP(opf->call,9u,op->call,9u)) op = op->next;
+         if (op) {
+            pl = 0;
+            pf = op->frames;
+            while (pf) {
+               if (aprspos_posvalid(pf->vardat->pos)) pl = pf;
+               pf = pf->next;
+            }
+            if ((pl && pl->vardat) && aprsdecode_Decode(pl->vardat->raw,
+                500ul, &dat)==0L) {
+               aprsdecode_extractbeacon(pl->vardat->raw, 500ul, 0, 0);
+               useri_beaconed = 1;
+               useri_textautosize(0L, 0L, 5UL, 5UL, 'b', "Object Cloned to Be\
+acon Editor!", 32ul);
+            }
          }
       }
    }
@@ -3053,7 +3083,7 @@ static char sendtxmsg(unsigned long acknum, const aprsdecode_MONCALL to,
          aprsstr_Append(h, 51ul, to, 9ul);
          aprsstr_Append(h, 51ul, " on Port ", 10ul);
          aprsstr_Append(h, 51ul, (char *)(tmp = (char)(i+49UL),&tmp), 1u/1u);
-         useri_textautosize(0L, 0L, 4UL, 2UL, 'b', h, 51ul);
+         useri_say(h, 51ul, 2UL, 'b');
          return 1;
       }
    } /* end for */
@@ -3086,7 +3116,7 @@ static char sendtxmsg(unsigned long acknum, const aprsdecode_MONCALL to,
          aprsstr_Append(h, 51ul, "(re)sent to ", 13ul);
          aprsstr_Append(h, 51ul, to, 9ul);
          aprsstr_Append(h, 51ul, " on Net", 8ul);
-         useri_textautosize(0L, 0L, 4UL, 2UL, 'b', h, 51ul);
+         useri_say(h, 51ul, 2UL, 'b');
       }
       return 1;
    }
@@ -4282,7 +4312,7 @@ static char callfilt(unsigned char v, const char str[],
                if (str[j]==0) return 1;
             }
             ++j;
-            if (j>str_len-1) break;
+            if (j>str_len-1) return 1;
          }
       }
       else if (aprsstr_InStr(str, str_len, s, 31ul)>=0L) return 1;
@@ -4414,6 +4444,14 @@ static void settempspeed(aprsdecode_pOPHIST op,
    }
 } /* end settempspeed() */
 
+
+static char widefilt(void)
+{
+   char s[101];
+   useri_confstr(useri_fFINGERPRINT, s, 101ul);
+   return aprsstr_InStr(s, 101ul, "0:2", 4ul)>=0L;
+} /* end widefilt() */
+
 #define aprsdecode_SAMETIME 27
 /* max time diff for merged in frames */
 
@@ -4431,6 +4469,7 @@ extern long aprsdecode_Stoframe(aprsdecode_pOPHIST * optab, char rawbuf[],
    aprsdecode_pFRAMEHIST frame;
    aprsdecode_pVARDAT same;
    aprsdecode_MONCALL igate;
+   unsigned long cnt;
    unsigned long len;
    unsigned long i;
    unsigned short ch0;
@@ -4477,8 +4516,15 @@ extern long aprsdecode_Stoframe(aprsdecode_pOPHIST * optab, char rawbuf[],
       }
    }
    /*  END; */
-   /*  IF NOT logmode & (dat.type=MSG) THEN getmessage END; */
-   /*  IF dat.hbitp<>0 THEN igate[0]:=0C END; */
+   cnt = 0UL; /* check for 2 WIDE chunk */
+   if (widefilt()) {
+      i = 0UL;
+      while (((cnt<2UL && i<=9UL) && dat.viacalls[i][0UL])
+                && (dat.igatep==0UL || i<dat.igatep)) {
+         if (aprsstr_InStr(dat.viacalls[i], 9ul, "WIDE", 5ul)==0L) ++cnt;
+         ++i;
+      }
+   }
    opo = 0;
    op = *optab;
    while (op && X2C_STRCMP(dat.srccall,9u,op->call,9u)) {
@@ -4486,7 +4532,6 @@ extern long aprsdecode_Stoframe(aprsdecode_pOPHIST * optab, char rawbuf[],
       op = op->next;
    }
    if (op==0) {
-      /* new user */
       Storage_ALLOCATE((X2C_ADDRESS *) &op,
                 sizeof(struct aprsdecode_OPHIST));
       useri_debugmem.req = sizeof(struct aprsdecode_OPHIST);
@@ -4634,21 +4679,20 @@ extern long aprsdecode_Stoframe(aprsdecode_pOPHIST * optab, char rawbuf[],
    frame->vardat = same;
    frame->time0 = stime;
    if (X2C_INL((long)(unsigned char)dat.typc,128,_cnst)) {
-      if ((X2C_INL((unsigned char)dat.symt,256,
+      if (((X2C_INL((unsigned char)dat.symt,256,
                 _cnst0) && (unsigned char)dat.sym>' ') && (unsigned char)
-                dat.sym<'\177') {
+                dat.sym<'\177') && op->sym.tab!='\001') {
          op->sym.tab = dat.symt;
          op->sym.pic = dat.sym;
       }
       else frame->nodraw |= 0x4U;
-      if (dat.objkill=='1') {
+      if (cnt>=2UL || dat.objkill=='1') {
          op->sym.tab = '\001';
          op->sym.pic = 0;
       }
    }
    op->areasymb = dat.areasymb;
-   op->poligon = dat.multiline.size>1UL+(unsigned long)dat.multiline.polygon;
-                 /* 2 points line 3 points box */
+   op->poligon = dat.multiline.size>2UL;
    if (lastf==0) {
       frame->next = op->frames;
       op->frames = frame; /* new track */
@@ -4981,7 +5025,7 @@ static char callchk(unsigned long * qpos, char * tablechk, char buf[],
       }
    }
    if (*pssid==0UL) *pssid = *p;
-   if (withstar && buf[*p]=='*') ++*p;
+   if (buf[*p]=='*' && withstar) ++*p;
    return 1;
 } /* end callchk() */
 
@@ -5085,12 +5129,12 @@ static long AprsIs(char buf[], unsigned long buf_len, unsigned long tablen,
       /* qA */
       if (X2C_CAP(buf[qpos])=='Z') return -3L;
       if (X2C_CAP(buf[qpos])=='I') {
-         strncpy(qtext,",",32u); /* qAI */
+         aprsstr_Append(qtext, 32ul, ",", 2ul); /* qAI */
          useri_confappend(useri_fMYCALL, qtext, 32ul);
       }
    }
    else if (udpchan) {
-      strncpy(qtext,",qAU,",32u);
+      aprsstr_Append(qtext, 32ul, ",qAU,", 6ul);
       useri_confappend(useri_fMYCALL, qtext, 32ul);
    }
    else if (logcall[0UL]) {
@@ -5383,7 +5427,7 @@ static char tcpconn(aprsdecode_pTCPSOCK * sockchain, long f)
          aprsstr_Append(h, 512ul, s, 100ul);
       }
       aprsstr_Append(h, 512ul, " vers ", 7ul);
-      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.52", 17ul);
+      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.54", 17ul);
       appfilter(h, 512ul);
       /*    IF filter[0]<>0C THEN Append(h, " filter ");
                 Append(h, filter) END; */
@@ -5537,7 +5581,7 @@ static void rfbeacons(void)
    unsigned long bt;
    aprsdecode_FRAMEBUF s;
    char h[101];
-   char say[101];
+   char says[101];
    char port;
    struct aprsdecode_DAT dat;
    char tmp;
@@ -5553,8 +5597,8 @@ static void rfbeacons(void)
          /* manual sent beacon */
          aprsstr_Assign(s, 512ul, aprsdecode_testbeaconbuf, 512ul);
          aprsdecode_testbeaconbuf[0UL] = 0;
-         strncpy(say,"Sent: ",101u);
-         aprsstr_Append(say, 101ul, s, 512ul);
+         strncpy(says,"Sent: ",101u);
+         aprsstr_Append(says, 101ul, s, 512ul);
          if (getbeaconparm(s, 512ul, &bt, &port)) bt = 1UL;
          else bt = 0UL;
       }
@@ -5562,7 +5606,7 @@ static void rfbeacons(void)
          useri_confstrings(useri_fRBTEXT, nb, 0, s, 512ul);
          if (s[0UL]==0) break;
          if (!getbeaconparm(s, 512ul, &bt, &port)) bt = 0UL;
-         say[0U] = 0;
+         says[0U] = 0;
       }
       if (bt>0UL) {
          /* valid time */
@@ -5588,12 +5632,12 @@ static void rfbeacons(void)
                            SendNet(aprsdecode_tcpsocks, s, 512ul, 1, h,
                 101ul);
                            if (h[0U]) {
-                              strncpy(say,"beacon: not sent ",101u);
-                              aprsstr_Append(say, 101ul, h, 101ul);
+                              strncpy(says,"beacon: not sent ",101u);
+                              aprsstr_Append(says, 101ul, h, 101ul);
                            }
                         }
                      }
-                     else strncpy(say,"beacon: not sent mic-e to Net",101u);
+                     else strncpy(says,"beacon: not sent mic-e to Net",101u);
                   }
                   else if ((unsigned char)port>='1') {
                      if (s[0UL]) {
@@ -5601,24 +5645,22 @@ static void rfbeacons(void)
                         if (i<4UL && useri_configon((unsigned char)(36UL+i)))
                  {
                            if (!Sendudp(s, 512ul, i)) {
-                              strncpy(say,"beacon: Rfport ",101u);
-                              aprsstr_Append(say, 101ul,
+                              strncpy(says,"beacon: Rfport ",101u);
+                              aprsstr_Append(says, 101ul,
                 (char *)(tmp = (char)(i+49UL),&tmp), 1u/1u);
-                              aprsstr_Append(say, 101ul, " not configured to \
-send", 24ul);
+                              aprsstr_Append(says, 101ul, " not configured to\
+ send", 24ul);
                            }
                         }
                         else {
-                           strncpy(say,"beacon: Rfport ",101u);
-                           aprsstr_Append(say, 101ul,
+                           strncpy(says,"beacon: Rfport ",101u);
+                           aprsstr_Append(says, 101ul,
                 (char *)(tmp = (char)(i+49UL),&tmp), 1u/1u);
-                           aprsstr_Append(say, 101ul, " not enabled", 13ul);
+                           aprsstr_Append(says, 101ul, " not enabled", 13ul);
                         }
                      }
                   }
-                  if (say[0U]) {
-                     useri_textautosize(0L, 0L, 4UL, 2UL, 'b', say, 101ul);
-                  }
+                  if (says[0U]) useri_say(says, 101ul, 2UL, 'b');
                }
                else {
                   strncpy(h,"rfbeacon not decodeable: ",101u);
@@ -5646,8 +5688,7 @@ static void startserial(struct xosi_PROCESSHANDLE * pid, unsigned char cfg)
             xosi_StartProg(s, 1001ul, pid);
             pid->started = 1;
             if (pid->runs) {
-               useri_textautosize(0L, 0L, 4UL, 3UL, 'g', "Start Serial Interf\
-ace", 23ul);
+               useri_say("Start Serial Interface", 23ul, 3UL, 'g');
             }
             else {
                strncpy(h,"can not start ",1001u);
@@ -6318,20 +6359,57 @@ extern void aprsdecode_drawbeacon(char raw[], unsigned long raw_len)
       beaconmacros(b, 512ul, "", 1ul, "", 1ul, 1);
       storedata(b, 0, 0UL, 0, 1);
       if (aprsdecode_click.mhop[0UL]) {
-         useri_textautosize(0L, 0L, 4UL, 5UL, 'r', "switch to \"show all\" to\
- see new object", 39ul);
+         useri_say("switch to \"show all\" to see new object", 39ul, 5UL,
+                'r');
       }
    }
    else useri_xerrmsg("decode error", 13ul);
    aprsdecode_tracenew.winevent = 2000UL;
 } /* end drawbeacon() */
 
+static aprsstr_GHOSTSET _cnst2 = {0xFFFFFFFFUL,0xFFFFFFFFUL,0xFFFFFFFFUL,
+                0xFFFFFFFFUL,0xFFFFFFFFUL,0xFFFFFFFFUL,0xFFFFFFFFUL,
+                0xFFFFFFFFUL,0x00000001UL};
+static aprsstr_GHOSTSET _cnst1 = {0x00000000UL,0x00000000UL,0x00000000UL,
+                0x00000000UL,0x00000000UL,0x00000000UL,0x00000000UL,
+                0x00000000UL,0x00000000UL};
+
+static unsigned long * getghostset(aprsstr_GHOSTSET getghostset_ret,
+                unsigned long port)
+{
+   unsigned long n;
+   unsigned long i;
+   char s[11];
+   aprsstr_GHOSTSET g;
+   char p;
+   p = (char)(port+49UL);
+   memcpy(g,_cnst1,36u);
+   i = 0UL;
+   for (;;) {
+      useri_conf2str(useri_fFINGERPRINT, i, s, 11ul);
+      if (s[0U]==0) break;
+      if (s[0U]==p) {
+         if (s[1U]==':') {
+            aprsstr_Delstr(s, 11ul, 0UL, 2UL);
+            if (aprsstr_StrToCard(s, 11ul, &n) && n<=256UL) {
+               X2C_INCL(g,n,257);
+            }
+         }
+         else if (s[1U]==0) memcpy(g,_cnst2,36u);
+      }
+      ++i;
+   }
+   memcpy(getghostset_ret,g,36u);
+   return getghostset_ret;
+} /* end getghostset() */
+
 
 extern void aprsdecode_udpin(unsigned long port)
 {
    aprsdecode_FRAMEBUF mbuf;
    struct aprsdecode_UDPSOCK * anonym;
-   while (getudp(port, mbuf)) {
+   aprsstr_GHOSTSET tmp;
+   while (getudp(port, mbuf, getghostset(tmp, port))) {
       if (mbuf[0UL]) {
          { /* with */
             struct aprsdecode_UDPSOCK * anonym = &aprsdecode_udpsocks0[port];

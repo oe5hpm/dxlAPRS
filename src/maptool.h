@@ -70,6 +70,7 @@ struct maptool_PANOWIN {
    char empty;
    char hover;
    char on;
+   char flatscreen;
    struct aprspos_POSITION eye;
    struct aprspos_POSITION horizon;
    long eyealt;
@@ -240,7 +241,7 @@ extern void maptool_drawareasym(maptool_pIMAGE, struct aprspos_POSITION,
                 struct aprsdecode_AREASYMB, unsigned long);
 
 extern void maptool_drawpoligon(maptool_pIMAGE, struct aprspos_POSITION,
-                struct aprsdecode_MULTILINE, unsigned long);
+                struct aprsdecode_MULTILINE, char, char, unsigned long);
 
 extern void maptool_drawpoliobj(maptool_pIMAGE);
 

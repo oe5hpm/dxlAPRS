@@ -16,24 +16,19 @@ preselected top position
 into the Window (shortcut .)
 
 |107 Zoom the Map to fit this User with Track
-and the Igates which heared it direct
-to the Window. If info avaliable, white
-Lines show the Radio Paths of each Beacon 
+and the Igates which heared it to the Window.
 
 |108 Move Map to hold selected moving Object
 as near to Center of Screen as configured in
 Config > Map Moving > Center Watchcall    
 
 |109 Zoom the Map to fit this User with Track
-and the Igates which heared it direct
-to the Window. If info avaliable, white
-Lines show the Radio Paths of each Beacon
-
+and the Igates which heared it to the Window.
 
 |110 If Call is Igate, Zoom Map to fit the
-Stations and Tracks heared direct to
-the Window. The thicker the white
-Lines, the more Beacons took this way
+Stations and Tracks heared to the Window.
+The thicker the white Lines, the more Beacons
+took this way
 
 |111 Compose a Message to this User
 or a Query to a Machine
@@ -516,6 +511,190 @@ In File "poi.txt" (in osm-directory) Repeat Find
 to step through matches "g?iss*"
 
 
+|2101 Police, Sheriff
+|2102 Reserved (Had Been Rain)
+|2103 DIGI (White Center)
+|2104 Phone
+|2105 DX Cluster
+|2106 HF Gateway
+|2107 Aircraft (Small)
+|2108 Cloudy
+|2109 Available (Was Mic-Rptr Moved to /M)
+|2110 Snowmobile
+|2111 Red Cross
+|2112 Reverse L Shape
+|2113 House QTH (VHF)
+|2114 X
+|2115 Dot
+|2116 0 Numbered Circle
+|2117 1 Numbered Circle
+|2118 2 Numbered Circle
+|2119 3 Numbered Circle
+|2120 4 Numbered Circle
+|2121 5 Numbered Circle
+|2122 6 Numbered Circle
+|2123 7 Numbered Circle
+|2124 8 Numbered Circle
+|2125 9 Numbered Circle
+|2126 Fire
+|2127 Campground
+|2128 Motorcycle
+|2129 Railroad Engine
+|2130 Car
+|2131 Server For Files
+|2132 HC Future Predict
+|2133 Aid Station
+|2134 BBS
+|2135 Canoe
+|2137 Eyeball
+|2139 Grid Square (6 Digits)
+|2140 Hotel (Blue Bed Symbol)
+|2141 TCP-IP
+|2143 School
+|2144 Available
+|2145 MacAPRS
+|2146 NTS Station
+|2147 Balloon
+|2148 Police
+|2149 T.B.D.
+|2150 Recreational Vehicle
+|2151 Shuttle
+|2152 SSTV
+|2153 Bus
+|2154 ATV
+|2155 National Weather Service Site
+|2156 Helicopter
+|2157 Yacht (Sail)
+|2158 WinAPRS
+|2159 Jogger
+|2160 Triangle (DF)
+|2161 PBBS
+|2162 Large Aircraft
+|2163 Weather Station (Blue)
+|2164 Dish Antenna
+|2165 Ambulance
+|2166 Bike
+|2167 T.B.D.
+|2168 Dual Garage (Fire Department)
+|2169 Horse (Equestrian)
+|2170 Firetruck
+|2171 Glider
+|2172 Hospital
+|2173 IOTA (Islands On The Air)
+|2174 Jeep
+|2175 Truck
+|2176 Available
+|2177 Mic-Repeater
+|2178 Node
+|2179 EOC
+|2180 Rover (Puppy)
+|2181 Grid SQ Shown Above 128 Miles
+|2182 Antenna
+|2183 Ship (Power Boat)
+|2184 Truck Stop
+|2185 Truck (18 Wheeler)
+|2186 Van
+|2187 Water Station
+|2188 xAPRS (UNIX)
+|2189 Yagi At QTH
+
+|2197 Emergency (!)
+|2198 Rain
+|2199 Numbered Star (Green)
+|2200 Bank or ATM (Green Box)
+
+|2202 Numbered Diamond
+|2203 Crash Site
+|2204 Cloudy
+
+|2206 Snow
+|2207 Church
+
+
+
+
+|2212 Numbered Circle
+
+
+
+
+
+
+
+
+|2221 Gas Station (Blue Pump)
+|2222 Hail
+|2223 Park/Picnic
+|2224 Advisory
+
+|2226 Numbered Car
+|2227 Info Kiosk (Blue Box With ? In It)
+|2228 Hurricane
+|2229 Numbered Box
+|2230 Blowing Snow
+|2231 Coast Guard
+|2232 Drizzle
+|2233 Smoke
+|2234 Freezing Rain
+|2235 Snow Shower
+|2236 Haze
+|2237 Rain Shower
+|2238 Lightening
+
+|2240 Lighthouse
+
+|2242 Navigation Buoy
+
+|2244 Parking
+|2245 Quake
+|2246 Restaurant
+|2247 Satellite/Pacsat
+|2248 Thunderstorm
+|2249 Sunny
+|2250 Vortac Nav Aid
+|2251 Nws Site And W-R DIGI (Green)
+|2252 Pharmacy Rx
+
+
+|2255 Wall Cloud
+
+
+|2258 Numbered Aircraft
+|2259 WX And W-R DIGI (Green)
+|2260 Rain
+
+|2262 Blowing Dust/Sand
+
+|2264 DX Spot By Callsign
+|2265 Sleet
+|2266 Funnel Cloud
+|2267 Gale Flags
+|2268 Ham Store
+
+|2270 Construction (Steam Shovel)
+
+|2272 Area Locations (Box,Circles,Etc)
+|2273 Digit Display
+|2274 Numbered Triangle
+|2275 Small Circle
+|2276 Partly Cloudy
+
+|2278 Restrooms
+|2279 Numbered Ship/Boat (Top View)
+|2280 Tornado
+|2281 Numbered Truck
+|2282 Numbered Van
+|2283 Flooding
+
+
+
+|2287 Fog
+
+|2289 Diamond (Open With Dot In Center)
+
+
+
+
 
 |2300 Stop map download, download may be continued
 later
@@ -951,6 +1130,7 @@ Image Parameters and dont find way back
 IF cannot read this :-) use shortcut ctrl-L
 
 |7945 Zoom steps for Shift-Click to +- or mouse-wheel
+negative value inverts mouse-wheel or multitouch zoom
 
 |7940 Map move step width
 
@@ -1127,10 +1307,12 @@ contain not-printable characters so be
 carefull by copy/edit raw data. May be
 extendet with DAO to 20cm resolution
 with "Mic-e+" and 5 Bytes more.
+
 For Objects and Items enable Multiline Editing
-Shift + Leftclick to Map to Add Lines. When
-first Line is entered a "fine configure"
-Submenue will Open.
+Shift + Leftclick or "x" on Map to Add Lines.
+When first Line is entered a "fine configure"
+Submenue will Open. Switch to "Lat/Long" to
+reposit whole Object with Shift Click or "x"
 
 
 |8152 Send "Compressed" format, this is fixed size
@@ -1293,10 +1475,11 @@ com-port use only with SMACK CRC.
 
 |8337 Cycle through possible output (tx) "Rf-Ports"
 
-|8338 If enabled only "direct heard" (First digi in chain)
-Beacons will be digipeated. This will dramatically
-reduce traffic and makes a high efficient, low-noise
-(home) Digi.
+|8338 If enabled, only "direct heard" (First digi in chain)
+Beacons will be digipeated. Since most digi-paths are
+discarded or destroyed by other digis, this does not
+work any more. It would dramatically reduce traffic
+and make a high efficient, low-noise (home) Digi.
 
 |8339 If enabled the still not active rest of via-path
 will be cut off at retransmission. This reduces
@@ -1312,7 +1495,7 @@ if no (eg) 70cm Port is avaliable to do this better.
 Inactive Lines may be preserved for later use
 |8351 Input (Rx) Rf-Port
 |8352 Output (Tx) Rf-Port
-|8353 Use Direct Heard only
+|8353 Use Direct Heard only (direct heard is not detectable any longer) 
 |8354 Cut off rest of via path
 
 |8355 Dupe Time in seconds, 840s (14Min) is good value

@@ -15,6 +15,7 @@
 #define aprsstr_C_
 
 /* string lib by oe5dxl */
+/*FROM osi IMPORT WrInt, WrStrLn; */
 static unsigned char CRCL[256];
 
 static unsigned char CRCH[256];
@@ -818,6 +819,8 @@ extern void aprsstr_mon2raw(char mon[], unsigned long mon_len, char raw[],
       *p = 0L; /* dest call bit 7 for UI v2 command */
       return;
    }
+   /*  IF NOT call(cLASTCALL, cVIA, 0C, SSIDBASE) THEN p:=0; RETURN END;
+                (* dest call bit 7 for UI v2 command *) */
    *p = 14L;
    n = 0UL;
    while (mon[i]==',') {
@@ -913,11 +916,99 @@ extern char aprsstr_Call2Str(char r[], unsigned long r_len, char t[],
 } /* end Call2Str() */
 
 
-extern void aprsstr_raw2mon(char raw[], unsigned long raw_len, char mon[],
-                unsigned long mon_len, unsigned long len, unsigned long * p)
+static void brandghost(char b[], unsigned long b_len, unsigned long brand)
 {
+   unsigned long l;
+   unsigned long j;
+   unsigned long i;
+   char s1[21];
+   char s[21];
+   unsigned long tmp;
+   i = 0UL;
+   for (;;) {
+      if (i>=b_len-1 || b[i]==0) return;
+      if (b[i]==',' || b[i]==':') break;
+      ++i;
+   }
+   /*
+     IF NOT v1 & (b[i]=",") THEN
+       IF ((b[i+1]<>"W") OR (b[i+2]<>"I") OR (b[i+3]<>"D") OR (b[i+4]<>"E")
+       OR (b[i+5]<>"1") OR (b[i+6]<>"-") OR (b[i+7]<>"1")
+       OR (b[i+8]<>",")
+       OR (b[i+9]<>"W") OR (b[i+10]<>"I") OR (b[i+11]<>"D") OR (b[i+12]<>"E")
+                 OR (b[i+13]<>"2")
+       OR (b[i+14]<>"-") OR (b[i+15]<>"1") & (b[i+15]<>"2") OR (b[i+16]<>":")
+                )
+       & ((b[i+1]<>"R") OR (b[i+2]<>"E") OR (b[i+3]<>"L") OR (b[i+4]<>"A")
+                OR (b[i+5]<>"Y")
+       OR (b[i+6]<>":")) THEN v1:=TRUE END;
+     END;
+   */
+   if (b[i]==',') {
+      j = i+1UL;
+      for (;;) {
+         /* goto end of first via */
+         if (j>=b_len-1 || b[j]==0) return;
+         if (b[j]==':' || b[j]==',') break;
+         ++j;
+      }
+      if (brand<256UL && ((((j<=3UL || (unsigned char)b[j-1UL]<'0')
+                || (unsigned char)b[j-1UL]>'9') || b[j-2UL]!='-')
+                || b[j-1UL]!=b[j-3UL])) return;
+      /* frame has n<>N so known as not direct */
+      j = i+1UL;
+      for (;;) {
+         /* look for h-bit */
+         if (j>=b_len-1 || b[j]==0) return;
+         if (b[j]==':') break;
+         if (b[j]=='*') return;
+         /* frame has h bit so known as not direct */
+         ++j;
+      }
+   }
+   strncpy(s,",GHOST",21u);
+   aprsstr_IntToStr((long)brand, 0UL, s1, 21ul);
+   aprsstr_Append(s, 21ul, s1, 21ul);
+   aprsstr_Append(s, 21ul, "*", 2ul);
+   l = aprsstr_Length(s, 21ul);
+   i = 0UL;
+   while ((i<=b_len-1 && b[i]) && b[i]!=':') ++i;
+   if (b[i]==':') {
+      j = i;
+      while (j<=b_len-1 && b[j]) ++j;
+      if (b[j]==0 && j+l<b_len-1) {
+         /* insert ,GHOSTnnn* */
+         while (j>=i) {
+            b[j+l] = b[j];
+            --j;
+         }
+         tmp = l-1UL;
+         i = 0UL;
+         if (i<=tmp) for (;; i++) {
+            ++j;
+            b[j] = s[i];
+            if (i==tmp) break;
+         } /* end for */
+      }
+   }
+} /* end brandghost() */
+
+
+extern void aprsstr_raw2mon(char raw[], unsigned long raw_len, char mon[],
+                unsigned long mon_len, unsigned long len, unsigned long * p,
+                aprsstr_GHOSTSET ghostset)
+{
+   unsigned long brand;
    unsigned long i;
    char hcheck;
+   if ((((((len>21UL && !((unsigned long)(unsigned char)raw[13UL]&1))
+                && raw[14UL]=='\202') && raw[15UL]=='\240')
+                && raw[16UL]=='\244') && raw[17UL]=='\246')
+                && raw[18UL]=='@') brand = 256UL;
+   else {
+      brand = (unsigned long)(unsigned char)raw[6UL]/32UL+((unsigned long)
+                (unsigned char)raw[13UL]/32UL)*8UL;
+   }
    *p = 0UL;
    mon[0UL] = 0;
    i = 0UL;
@@ -969,6 +1060,8 @@ extern void aprsstr_raw2mon(char raw[], unsigned long raw_len, char mon[],
       mon[0UL] = 0; /* not UI frame */
       return;
    }
+   if (raw[i]=='\023') brand += 64UL;
+   if (raw[i+1UL]!='\360') brand += 128UL;
    i += 2UL; /* ctrl, pid */
    mon[*p] = ':';
    ++*p;
@@ -986,6 +1079,9 @@ extern void aprsstr_raw2mon(char raw[], unsigned long raw_len, char mon[],
    mon[*p] = 0;
    ++*p;
    mon[*p] = 0;
+   if (X2C_INL((long)256,257,ghostset) && brand>255UL || X2C_INL(brand,257,
+                ghostset)) brandghost(mon, mon_len, brand);
+/*WrInt(ORD(raw[6]) DIV 32,1); WrInt(ORD(raw[13]) DIV 32,1);WrStrLn(mon); */
 } /* end raw2mon() */
 
 
@@ -1061,6 +1157,7 @@ extern void aprsstr_BEGIN(void)
    if (aprsstr_init) return;
    aprsstr_init = 1;
    if (sizeof(unsigned char)!=1) X2C_ASSERT(0);
+   if (sizeof(aprsstr_GHOSTSET)!=36) X2C_ASSERT(0);
    Gencrctab();
 }
 
