@@ -155,7 +155,11 @@ static char bit5(char c)
 
 static void komma(char buf[], unsigned long buf_len, unsigned long * p)
 {
-   while ((*p<buf_len-1 && buf[*p]) && buf[*p]!=',') ++*p;
+   for (;;) {
+      if (*p+20UL>=buf_len-1 || (unsigned char)buf[*p]<' ') return;
+      if (buf[*p]==',') break;
+      ++*p;
+   }
    ++*p;
 } /* end komma() */
 
@@ -364,7 +368,7 @@ extern void aprspos_GetPos(struct aprspos_POSITION * pos,
       }
       *postyp = 'm';
    }
-   else if (c=='$') {
+   else if (c=='$' && payload+30UL<buf_len-1) {
       /* gps 4806.9409,N,01134.6219,E */
       ok0 = 0;
       if (buf[payload+1UL]=='G' && buf[payload+2UL]=='P') {
@@ -394,11 +398,9 @@ extern void aprspos_GetPos(struct aprspos_POSITION * pos,
          if (!dig(&pos->lat, buf[i], 2.9088820865741E-5f)) ok0 = 0;
          ++i;
          if (!dig(&pos->lat, buf[i], 2.9088820865741E-6f)) ok0 = 0;
-         if (dig(&pos->lat, buf[i+1UL], 2.9088820865741E-7f)) {
-            ++i;
-            nornd = 1;
-         }
-         if (dig(&pos->lat, buf[i+1UL], 2.9088820865741E-8f)) {
+         sc = 2.9088820865741E-7f;
+         while (i<len && dig(&pos->lat, buf[i+1UL], sc)) {
+            sc = sc*0.1f;
             ++i;
             nornd = 1;
          }
@@ -419,11 +421,9 @@ extern void aprspos_GetPos(struct aprspos_POSITION * pos,
          if (!dig(&pos->long0, buf[i], 2.9088820865741E-5f)) ok0 = 0;
          ++i;
          if (!dig(&pos->long0, buf[i], 2.9088820865741E-6f)) ok0 = 0;
-         if (dig(&pos->long0, buf[i+1UL], 2.9088820865741E-7f)) {
-            ++i;
-            nornd = 1;
-         }
-         if (dig(&pos->long0, buf[i+1UL], 2.9088820865741E-8f)) {
+         sc = 2.9088820865741E-7f;
+         while (i<len && dig(&pos->long0, buf[i+1UL], sc)) {
+            sc = sc*0.1f;
             ++i;
             nornd = 1;
          }
@@ -435,7 +435,9 @@ extern void aprspos_GetPos(struct aprspos_POSITION * pos,
             sc = 0.0f;
             for (;;) {
                sc = sc*10.0f;
-               if ((i>=len || sc>1.E+6f) || !dig(&sc, buf[i], 0.1f)) break;
+               if ((i>=len || sc>1.E+6f) || !dig(&sc, buf[i], 0.1f)) {
+                  break;
+               }
                ++i;
             }
             *speed = (unsigned long)X2C_TRUNCC(X2C_DIVR(sc,1.852f)+0.5f,0UL,
@@ -449,6 +451,7 @@ extern void aprspos_GetPos(struct aprspos_POSITION * pos,
             }
             *course = (unsigned long)X2C_TRUNCC(sc,0UL,
                 X2C_max_longcard)%360UL;
+            if (i>len) ok0 = 0;
          }
          else if (gpst=='A') {
             /* altitude */
@@ -515,9 +518,7 @@ extern void aprspos_GetPos(struct aprspos_POSITION * pos,
                if (!dig(&pos->lat, buf[i], 2.9088820865741E-6f)) ok0 = 0;
                ++i;
                if (X2C_CAP(buf[i])=='S') pos->lat = -pos->lat;
-               else if (X2C_CAP(buf[i])!='N') {
-                  ok0 = 0;
-               }
+               else if (X2C_CAP(buf[i])!='N') ok0 = 0;
                ++i;
                *symbt = buf[i];
                ++i;
@@ -671,10 +672,10 @@ extern void aprspos_GetPos(struct aprspos_POSITION * pos,
                 && dig(&sc, buf[i+2UL], 2.9088820865741E-7f)) && dig(&scl,
                 buf[i+3UL], 2.9088820865741E-7f)) {
                   if (pos->lat<0.0f) pos->lat = pos->lat-sc;
-                  else {
-                     pos->lat = pos->lat+sc;
+                  else pos->lat = pos->lat+sc;
+                  if (pos->long0<0.0f) {
+                     pos->long0 = pos->long0-scl;
                   }
-                  if (pos->long0<0.0f) pos->long0 = pos->long0-scl;
                   else pos->long0 = pos->long0+scl;
                   if (i==*compos) *compos += 5UL;
                   nornd = 1;

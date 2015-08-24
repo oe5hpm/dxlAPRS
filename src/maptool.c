@@ -2222,6 +2222,7 @@ static void Panofind(char find, const struct maptool_PANOWIN panpar,
       do {
          if (!heaven) {
             wy = ele0+eled*(float)yi;
+            if (panpar.flatscreen) wy = RealMath_arctan(wy);
             /*IF xi=0 THEN WrFixed(wx/RAD, 2, 8); WrFixed(wy/RAD, 2, 8);
                 WrStr(" wx wy"); END; */
             zn = RealMath_cos(wx)*RealMath_cos(wy);
