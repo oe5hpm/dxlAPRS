@@ -504,10 +504,10 @@ static long DistFilt(struct aprspos_POSITION mypos, char b[],
                 unsigned long b_len, unsigned long payload,
                 unsigned long len)
 {
-   unsigned long commentpos;
    unsigned long course;
    unsigned long speed;
    unsigned long i;
+   char comment0[501];
    long alt;
    char postyp;
    char symt;
@@ -521,7 +521,7 @@ static long DistFilt(struct aprspos_POSITION mypos, char b[],
    } /* end for */
    b[len] = 0;
    aprspos_GetPos(&pos, &speed, &course, &alt, &sym, &symt, b, b_len, 1UL,
-                payload, &commentpos, &postyp);
+                payload, comment0, 501ul, &postyp);
    if (aprspos_posvalid(pos)) {
       DistFilt_ret = (long)(unsigned long)X2C_TRUNCC(aprspos_distance(mypos,
                 pos),0UL,X2C_max_longcard);

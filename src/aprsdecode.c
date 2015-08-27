@@ -1559,53 +1559,54 @@ static void wexp(char buf[], unsigned long buf_len, unsigned long * p,
 
 
 static void GetWX(struct aprsdecode_WX * wx, unsigned long * course,
-                unsigned long * speed, const char buf[],
-                unsigned long buf_len, unsigned long * p)
+                unsigned long * speed, char buf[], unsigned long buf_len)
 {
    float wdir;
    float wwind;
+   unsigned long p;
+   p = 0UL;
    NoWX(wx);
    wwind = 1.E+6f;
    wdir = 1.E+6f;
-   if (buf[*p]=='_') *p += 9UL;
+   /*  IF buf[p]="_" THEN INC(p, 9) END;     (* positionless wx *) */
    for (;;) {
-      switch ((unsigned)buf[*p]) {
+      switch ((unsigned)buf[p]) {
       case 'g':
-         wpar(p, buf, buf_len, &wx->gust);
+         wpar(&p, buf, buf_len, &wx->gust);
          break;
       case 't':
-         wpar(p, buf, buf_len, &wx->temp);
+         wpar(&p, buf, buf_len, &wx->temp);
          break;
       case 'r':
-         wpar(p, buf, buf_len, &wx->rain1);
+         wpar(&p, buf, buf_len, &wx->rain1);
          break;
       case 'p':
-         wpar(p, buf, buf_len, &wx->rain24);
+         wpar(&p, buf, buf_len, &wx->rain24);
          break;
       case 'P':
-         wpar(p, buf, buf_len, &wx->raintoday);
+         wpar(&p, buf, buf_len, &wx->raintoday);
          break;
       case 'h':
-         wpar(p, buf, buf_len, &wx->hygro);
+         wpar(&p, buf, buf_len, &wx->hygro);
          break;
       case 'b':
-         wpar(p, buf, buf_len, &wx->baro);
+         wpar(&p, buf, buf_len, &wx->baro);
          break;
       case 'L':
-         wpar(p, buf, buf_len, &wx->lum);
+         wpar(&p, buf, buf_len, &wx->lum);
          break;
       case 'l':
-         wpar(p, buf, buf_len, &wx->lum);
+         wpar(&p, buf, buf_len, &wx->lum);
          wx->lum = wx->lum+1000.0f;
          break;
       case 'c':
-         wpar(p, buf, buf_len, &wdir);
+         wpar(&p, buf, buf_len, &wdir);
          break;
       case 's':
-         wpar(p, buf, buf_len, &wwind);
+         wpar(&p, buf, buf_len, &wwind);
          break;
       case 'X':
-         wexp(buf, buf_len, p, &wx->sievert, 1.E-9f);
+         wexp(buf, buf_len, &p, &wx->sievert, 1.E-9f);
          break;
       default:;
          goto loop_exit;
@@ -1614,6 +1615,7 @@ static void GetWX(struct aprsdecode_WX * wx, unsigned long * course,
    loop_exit:;
    if (wdir>=0.0f && wdir<360.0f) *course = aprsdecode_trunc(wdir);
    if (wwind>=0.0f && wwind<1000.0f) *speed = aprsdecode_trunc(wwind);
+   aprsstr_Delstr(buf, buf_len, 0UL, p);
 /* X123 is 12 * 10^3 nanosieverts/hr*/
 } /* end GetWX() */
 
@@ -1876,8 +1878,7 @@ static unsigned long corrtime(unsigned long syst, unsigned long mt,
 
 static void GetHRT(struct aprspos_POSITION * pos, long * altitude,
                 unsigned long * speed, const char buf[],
-                unsigned long buf_len, unsigned long * compos,
-                struct aprsdecode_HRTPOS hrtposes[],
+                unsigned long buf_len, struct aprsdecode_HRTPOS hrtposes[],
                 unsigned long hrtposes_len, unsigned long * hrtlen,
                 unsigned long * hrttime)
 {
@@ -1913,7 +1914,7 @@ static void GetHRT(struct aprspos_POSITION * pos, long * altitude,
    /*WrStrLn(buf); */
    *hrtlen = 0UL;
    *hrttime = 0UL;
-   p = *compos;
+   p = 0UL;
    newcompos = 1;
    /*WrInt(p, 10);WrStrLn(" compos"); */
    for (;;) {
@@ -2080,15 +2081,61 @@ static void GetHRT(struct aprspos_POSITION * pos, long * altitude,
                 WrInt(VAL(INTEGER, hrtposes[i].dalt), 6);WrStrLn(""); */
       *hrtlen = wcnt;
    }
-   if (newcompos) *compos = p;
+/*  IF newcompos THEN compos:=p END; */
 /*WrInt(compos, 10);WrStrLn(" composret"); */
 } /* end GetHRT() */
+
+
+static char r91(unsigned short * n, char c)
+{
+   if ((unsigned char)c<'!' || (unsigned char)c>'|') return 0;
+   *n = (unsigned short)((unsigned long)( *n*91U)+((unsigned long)
+                (unsigned char)c-33UL));
+   return 1;
+} /* end r91() */
+
+
+static void GetTLM(aprsdecode_TELEMETRY v, char b[], unsigned long b_len)
+{
+   unsigned long ib;
+   unsigned long ia;
+   unsigned long j;
+   unsigned long i;
+   aprsdecode_TELEMETRY t;
+   unsigned long tmp;
+   ia = 0UL;
+   ib = 0UL;
+   i = 0UL;
+   while (i<b_len-1 && b[i]) {
+      if (b[i]=='|') {
+         ib = ia;
+         ia = i+1UL;
+      }
+      ++i;
+   }
+   if ((((ib>0UL && b[ia]==0) && (ia-ib&1)) && ia-ib>=5UL) && ia-ib<=15UL) {
+      i = 0UL;
+      j = ib;
+      do {
+         t[i] = 0U;
+         if (!r91(&t[i], b[j]) || !r91(&t[i], b[j+1UL])) return;
+         ++i;
+         j += 2UL;
+      } while (j+1UL<ia);
+      tmp = i-1UL;
+      ia = 0UL;
+      if (ia<=tmp) for (;; ia++) {
+         v[ia] = t[ia]+1U;
+         if (ia==tmp) break;
+      } /* end for */
+      b[ib-1UL] = 0;
+   }
+} /* end GetTLM() */
 
 /* === multiline */
 
 extern void aprsdecode_GetMultiline(char buf[], unsigned long buf_len,
-                unsigned long compos, unsigned long * delfrom,
-                struct aprsdecode_MULTILINE * md)
+                unsigned long * delfrom, struct aprsdecode_MULTILINE * md)
 {
    unsigned long idx;
    unsigned long s;
@@ -2099,7 +2146,7 @@ extern void aprsdecode_GetMultiline(char buf[], unsigned long buf_len,
    md->size = 0UL;
    md->linetyp = 'a';
    md->filltyp = '0';
-   i = compos;
+   i = 0UL;
    s = 0UL;
    *delfrom = (buf_len-1)+1UL;
    while (i<buf_len-1 && buf[i]) {
@@ -2180,17 +2227,17 @@ extern void aprsdecode_GetMultiline(char buf[], unsigned long buf_len,
 } /* end GetMultiline() */
 
 
-extern char aprsdecode_ismultiline(void)
+extern char aprsdecode_ismultiline(char editing)
 {
    char s[251];
-   struct aprsdecode_MULTILINE ml;
    unsigned long i;
-   /*
-     confstr(fRBPOSTYP, s);
-     IF s[0]<>ENCODEAREA THEN RETURN FALSE END;
-   */
+   struct aprsdecode_MULTILINE ml;
+   if (editing) {
+      useri_confstr(useri_fRBPOSTYP, s, 251ul);
+      if (s[0U]!='A') return 0;
+   }
    useri_confstr(useri_fRBCOMMENT, s, 251ul);
-   aprsdecode_GetMultiline(s, 251ul, 0UL, &i, &ml);
+   aprsdecode_GetMultiline(s, 251ul, &i, &ml);
    return ml.size>=2UL;
 } /* end ismultiline() */
 
@@ -2303,7 +2350,7 @@ extern void aprsdecode_appendmultiline(struct aprspos_POSITION pos)
    if (cs[0U]) aprstext_deganytopos(cs, 251ul, &center);
    else aprsdecode_posinval(&center);
    useri_confstr(useri_fRBCOMMENT, cso, 251ul);
-   aprsdecode_GetMultiline(cso, 251ul, 0UL, &i, &ml);
+   aprsdecode_GetMultiline(cso, 251ul, &i, &ml);
    if (i<=250UL) cso[i] = 0;
    if (ml.size<2UL) aprsdecode_click.insreplaceline = 1;
    /*WrStr("<<<");WrStr(cso);WrStrLn(">>> csodel"); */
@@ -2377,7 +2424,7 @@ extern void aprsdecode_modmultiline(unsigned long n)
    }
    else {
       useri_confstr(useri_fRBCOMMENT, s, 251ul);
-      aprsdecode_GetMultiline(s, 251ul, 0UL, &i, &ml);
+      aprsdecode_GetMultiline(s, 251ul, &i, &ml);
       if (n==2UL) {
          /* colour */
          if (ml.size>0UL) {
@@ -2426,7 +2473,6 @@ extern char aprsdecode_checksymb(char symt, char symb)
 extern long aprsdecode_Decode(char buf[], unsigned long buf_len,
                 struct aprsdecode_DAT * dat)
 {
-   unsigned long compos;
    unsigned long payload;
    unsigned long iv;
    unsigned long micedest;
@@ -2437,7 +2483,6 @@ extern long aprsdecode_Decode(char buf[], unsigned long buf_len,
    dat->speed = X2C_max_longcard;
    dat->altitude = X2C_max_longint;
    NoWX(&dat->wx);
-   compos = 0UL;
    len = 0UL;
    while ((len<buf_len-1 && buf[len]) && buf[len]!='\015') ++len;
    if (len==0UL || buf[0UL]=='#') return -1L;
@@ -2527,8 +2572,7 @@ extern long aprsdecode_Decode(char buf[], unsigned long buf_len,
       break;
    case '_':
       dat->type = aprsdecode_PWETH;
-      compos = p; /* positionless wx */
-      dat->sym = '_';
+      dat->sym = '_'; /* positionless wx */
       dat->symt = '/';
       break;
    case ':':
@@ -2651,7 +2695,7 @@ extern long aprsdecode_Decode(char buf[], unsigned long buf_len,
    if (X2C_IN((long)dat->type,12,0xCEU)) {
       aprspos_GetPos(&dat->pos, &dat->speed, &dat->course, &dat->altitude,
                 &dat->sym, &dat->symt, buf, buf_len, micedest, payload,
-                &compos, &dat->postyp);
+                dat->comment0, 256ul, &dat->postyp);
       aprspos_GetSym(dat->dstcall, 9ul, &dat->sym, &dat->symt);
       if (aprsdecode_checksymb(dat->symt, dat->sym)) {
          dat->symt = 0; /* wrong symbol */
@@ -2675,25 +2719,38 @@ extern long aprsdecode_Decode(char buf[], unsigned long buf_len,
          dat->speed = 0UL;
          dat->course = 0UL;
       }
-      if (compos==0UL) compos = payload;
       if (dat->type==aprsdecode_OBJ || dat->type==aprsdecode_ITEM) {
-         aprsdecode_GetMultiline(buf, buf_len, compos, &i, &dat->multiline);
+         aprsdecode_GetMultiline(dat->comment0, 256ul, &i, &dat->multiline);
       }
-      GetHRT(&dat->pos, &dat->altitude, &dat->speed, buf, buf_len, &compos,
+      GetHRT(&dat->pos, &dat->altitude, &dat->speed, dat->comment0, 256ul,
                 dat->hrtposes, 32ul, &dat->hrtlen, &dat->hrttime);
+      GetTLM(dat->tlmvalues, dat->comment0, 256ul);
+   }
+   else {
+      i = 0UL;
+      p = payload+(unsigned long)(dat->type!=aprsdecode_UNKNOWN);
+      while (p<len && i<=255UL) {
+         dat->comment0[i] = buf[p];
+         ++p;
+         ++i;
+      }
    }
    if (X2C_IN((long)dat->type,12,
                 0xCCU) && dat->sym=='_' || dat->type==aprsdecode_PWETH) {
-      GetWX(&dat->wx, &dat->course, &dat->speed, buf, buf_len, &compos);
+      if (dat->type==aprsdecode_PWETH) {
+         aprsstr_Delstr(dat->comment0, 256ul, 0UL, 8UL);
+      }
+      GetWX(&dat->wx, &dat->course, &dat->speed, dat->comment0, 256ul);
    }
-   i = 0UL;
-   if (compos) p = compos;
-   else p = payload+(unsigned long)(dat->type!=aprsdecode_UNKNOWN);
-   while (p<len && i<=255UL) {
-      dat->comment0[i] = buf[p];
-      ++p;
-      ++i;
-   }
+   /*
+     i:=0;
+     IF compos<>0 THEN p:=compos ELSE p:=payload+ORD(dat.type<>UNKNOWN) END;
+     WHILE (p<len) & (i<=HIGH(dat.comment)) DO 
+       dat.comment[i]:=buf[p];
+       INC(p);
+       INC(i);
+     END;
+   */
    return 0L;
 } /* end Decode() */
 
@@ -6594,6 +6651,7 @@ extern void aprsdecode_BEGIN(void)
    if (sizeof(unsigned char)!=1) X2C_ASSERT(0);
    if (sizeof(unsigned char)!=1) X2C_ASSERT(0);
    if (sizeof(unsigned short)!=2) X2C_ASSERT(0);
+   if (sizeof(aprsdecode_TELEMETRY)!=14) X2C_ASSERT(0);
    if (sizeof(unsigned short)!=2) X2C_ASSERT(0);
    if (sizeof(aprsdecode_MAPNAME)!=41) X2C_ASSERT(0);
    if (sizeof(SET256)!=32) X2C_ASSERT(0);

@@ -200,14 +200,14 @@ static char dig3(char buf[], unsigned long buf_len, unsigned long * s,
 } /* end dig3() */
 
 
-static char dig6(char buf[], unsigned long buf_len, float * s,
+static char dig6(const char b[], unsigned long b_len, float * s,
                 unsigned long p)
 {
    unsigned long i;
    char c;
    char sig;
    *s = 0.0f;
-   if (buf[p]=='-') {
+   if (b[p]=='-') {
       sig = 1;
       i = 1UL;
    }
@@ -216,7 +216,7 @@ static char dig6(char buf[], unsigned long buf_len, float * s,
       i = 0UL;
    }
    do {
-      c = buf[p+i];
+      c = b[p+i];
       if ((unsigned char)c<'0' || (unsigned char)c>'9') return 0;
       *s =  *s*10.0f+(float)((unsigned long)(unsigned char)c-48UL);
       ++i;
@@ -234,6 +234,8 @@ static char Mapsym(char c)
    return c;
 } /* end Mapsym() */
 
+typedef unsigned long CHSET[4];
+
 #define aprspos_DAO10 2.9088820865741E-7
 /* additional digit in lat/log */
 
@@ -242,19 +244,25 @@ static char Mapsym(char c)
 
 #define aprspos_RND 1.454441043287E-6
 
+static CHSET _cnst1 = {0x00000000UL,0x00000080UL,0x00000000UL,0x00000001UL};
+static CHSET _cnst0 = {0x00000000UL,0x40000000UL,0x20000000UL,0x00000000UL};
+static CHSET _cnst = {0x20000000UL,0x40000080UL,0x20100000UL,0x00000001UL};
 
 extern void aprspos_GetPos(struct aprspos_POSITION * pos,
                 unsigned long * speed, unsigned long * course,
                 long * altitude, char * symb, char * symbt, char buf[],
                 unsigned long buf_len, unsigned long micedest,
-                unsigned long payload, unsigned long * compos,
-                char * postyp)
+                unsigned long payload, char coment[],
+                unsigned long coment_len, char * postyp)
 {
+   unsigned long compos;
+   unsigned long clen;
    unsigned long na;
    unsigned long nc;
    unsigned long n;
    unsigned long len;
    unsigned long i;
+   char manucode;
    char gpst;
    char c;
    char nornd;
@@ -263,17 +271,10 @@ extern void aprspos_GetPos(struct aprspos_POSITION * pos,
    float sc;
    len = payload;
    nornd = 0;
-   /*
-   IO.WrStr(" index="); IO.WrCard(len, 1); IO.WrLn;
-   */
    while (len<buf_len-1 && (unsigned char)buf[len]>'\015') ++len;
-   /*
-     speed:=0;
-     course:=0;
-     symb:=0C;
-     symbt:=0C;
-   */
-   *compos = 0UL;
+   coment[0UL] = 0;
+   manucode = 0;
+   compos = payload;
    c = buf[payload];
    if ((payload+8UL<len && micedest>0UL) && (((c=='\034' || c=='\035')
                 || c=='\'') || c=='`')) {
@@ -345,24 +346,21 @@ extern void aprspos_GetPos(struct aprspos_POSITION * pos,
          *symb = buf[payload+7UL];
          *symbt = Mapsym(buf[payload+8UL]);
       }
-      *compos = payload+9UL;
+      compos = payload+9UL;
       i = payload+9UL;
-      if (buf[i+4UL]=='}') {
-         /* kenwood ... */
-         if (buf[i]==']') {
-            ++i; /* TMD700 singularity */
-         }
-         if (buf[i]=='>') ++i;
-      }
-      if ((buf[i]=='\035' || buf[i]=='`') || buf[i]=='\'') ++i;
-      if (buf[i+3UL]=='}') {
+      manucode = buf[i];
+      if (!X2C_INL((long)(unsigned char)manucode,128,_cnst)) manucode = 0;
+      if (buf[i+3UL]=='}' || manucode && buf[i+4UL]=='}') {
          /* altitude in meters +10000 */
+         if (buf[i+3UL]!='}' && manucode) {
+            ++i; /* skip manufacturer code */
+         }
          sc = 0.0f;
          if ((r91(&sc, buf[i], 8281.0f) && r91(&sc, buf[i+1UL],
                 91.0f)) && r91(&sc, buf[i+2UL], 1.0f)) {
             *altitude = (long)(unsigned long)X2C_TRUNCC(sc,0UL,
                 X2C_max_longcard)-10000L;
-            *compos = i+4UL;
+            compos = i+4UL;
          }
          else ok0 = 0;
       }
@@ -435,9 +433,7 @@ extern void aprspos_GetPos(struct aprspos_POSITION * pos,
             sc = 0.0f;
             for (;;) {
                sc = sc*10.0f;
-               if ((i>=len || sc>1.E+6f) || !dig(&sc, buf[i], 0.1f)) {
-                  break;
-               }
+               if ((i>=len || sc>1.E+6f) || !dig(&sc, buf[i], 0.1f)) break;
                ++i;
             }
             *speed = (unsigned long)X2C_TRUNCC(X2C_DIVR(sc,1.852f)+0.5f,0UL,
@@ -475,8 +471,8 @@ extern void aprspos_GetPos(struct aprspos_POSITION * pos,
             }
          }
          while (i<len && buf[i]!='*') ++i;
-         if (i+3UL<len) *compos = i+3UL;
-         else *compos = len;
+         if (i+3UL<len) compos = i+3UL;
+         else compos = len;
          *postyp = 'g';
       }
    }
@@ -524,7 +520,9 @@ extern void aprspos_GetPos(struct aprspos_POSITION * pos,
                ++i;
                if (!dig(&pos->long0, buf[i], 1.7453292519444f)) ok0 = 0;
                ++i;
-               if (!dig(&pos->long0, buf[i], 1.7453292519444E-1f)) ok0 = 0;
+               if (!dig(&pos->long0, buf[i], 1.7453292519444E-1f)) {
+                  ok0 = 0;
+               }
                ++i;
                if (!dig(&pos->long0, buf[i], 1.7453292519444E-2f)) ok0 = 0;
                ++i;
@@ -542,7 +540,7 @@ extern void aprspos_GetPos(struct aprspos_POSITION * pos,
                ++i;
                *symb = buf[i];
                ++i;
-               *compos = i;
+               compos = i;
                *postyp = 'g';
                if (i+7UL<=len && dig3(buf, buf_len, &nc, &i)) {
                   /* area obj */
@@ -559,7 +557,7 @@ extern void aprspos_GetPos(struct aprspos_POSITION * pos,
                               /* Tyy15xx max 5 */
                               *speed = n;
                               *course = nc;
-                              *compos = i;
+                              compos = i;
                               *postyp = 'A';
                            }
                         }
@@ -572,7 +570,7 @@ extern void aprspos_GetPos(struct aprspos_POSITION * pos,
                      if (dig3(buf, buf_len, &n, &i)) {
                         *speed = n;
                         if (nc>0UL && nc<=360UL) *course = nc%360UL;
-                        *compos = i;
+                        compos = i;
                      }
                   }
                }
@@ -596,9 +594,7 @@ extern void aprspos_GetPos(struct aprspos_POSITION * pos,
             ++i;
             if (!r91(&pos->long0, buf[i], 8281.0f)) ok0 = 0;
             ++i;
-            if (!r91(&pos->long0, buf[i], 91.0f)) {
-               ok0 = 0;
-            }
+            if (!r91(&pos->long0, buf[i], 91.0f)) ok0 = 0;
             ++i;
             if (!r91(&pos->long0, buf[i], 1.0f)) ok0 = 0;
             pos->long0 = pos->long0*9.1636131529192E-8f-3.1415926535f;
@@ -635,59 +631,76 @@ extern void aprspos_GetPos(struct aprspos_POSITION * pos,
                      }
                   }
                }
-               *compos = i+5UL;
+               compos = i+5UL;
                nornd = 1;
             }
             *postyp = 'c';
          }
       }
    }
-   if (*compos>0UL) {
-      i = *compos; /* look for altitude in comment /A= */
+   i = compos;
+   clen = 0UL;
+   while (clen<coment_len-1 && i<len) {
+      coment[clen] = buf[i];
+      ++i;
+      ++clen;
+   }
+   if ((clen>0UL && X2C_INL((long)(unsigned char)manucode,128,
+                _cnst0)) && coment[clen-1UL]=='=') --clen;
+   else if (clen>1UL && X2C_INL((long)(unsigned char)manucode,128,_cnst1)) {
+      clen -= 2UL; /* remove maufacturer code */
+   }
+   coment[clen] = 0;
+   if (clen>0UL) {
+      i = 0UL; /* look for altitude in comment /A= */
       for (;;) {
-         if (i+9UL>len) break;
-         /*      n:=i+3;   */
-         /*      IF (buf[i]="/") & (buf[i+1]="A") & (buf[i+2]="=") & dig3(na,
-                 n) & dig3(nc, n) THEN */
-         if (((buf[i]=='/' && buf[i+1UL]=='A') && buf[i+2UL]=='=')
-                && dig6(buf, buf_len, &sc, i+3UL)) {
-            /*      sc:=FEET*FLOAT(na*1000 + nc);  */
-            /*      IF sc<10000000.0 THEN altitude:=TRUNC(sc) END; */
+         if (i+9UL>clen) break;
+         if (((coment[i]=='/' && coment[i+1UL]=='A') && coment[i+2UL]=='=')
+                && dig6(coment, coment_len, &sc, i+3UL)) {
             *altitude = (long)X2C_TRUNCI(sc*0.3048f,X2C_min_longint,
                 X2C_max_longint);
-            if (i==*compos) *compos += 9UL;
+            while (i+9UL<=clen) {
+               coment[i] = coment[i+9UL]; /* delete altitude */
+               ++i;
+            }
             break;
          }
          ++i;
       }
       if (pos->long0!=0.0f || pos->lat!=0.0f) {
-         i = *compos; /* look for !DAO! precision extension */
+         i = 0UL; /* look for !DAO! precision extension */
          for (;;) {
-            if (i+5UL>len) break;
-            if (buf[i]=='!' && buf[i+4UL]=='!') {
-               c = buf[i+1UL];
+            if (i+5UL>clen) break;
+            if (coment[i]=='!' && coment[i+4UL]=='!') {
+               c = coment[i+1UL];
                sc = 0.0f;
                scl = 0.0f;
                if ((((unsigned char)c>='A' && (unsigned char)c<='Z')
-                && dig(&sc, buf[i+2UL], 2.9088820865741E-7f)) && dig(&scl,
-                buf[i+3UL], 2.9088820865741E-7f)) {
+                && dig(&sc, coment[i+2UL], 2.9088820865741E-7f)) && dig(&scl,
+                 coment[i+3UL], 2.9088820865741E-7f)) {
                   if (pos->lat<0.0f) pos->lat = pos->lat-sc;
-                  else pos->lat = pos->lat+sc;
-                  if (pos->long0<0.0f) {
-                     pos->long0 = pos->long0-scl;
+                  else {
+                     pos->lat = pos->lat+sc;
                   }
+                  if (pos->long0<0.0f) pos->long0 = pos->long0-scl;
                   else pos->long0 = pos->long0+scl;
-                  if (i==*compos) *compos += 5UL;
+                  while (i+5UL<=clen) {
+                     coment[i] = coment[i+5UL]; /* delete DAO */
+                     ++i;
+                  }
                   nornd = 1;
                }
                else if ((((unsigned char)c>='a' && (unsigned char)c<='z')
-                && r91(&sc, buf[i+2UL], 3.1997702952315E-8f)) && r91(&scl,
-                buf[i+3UL], 3.1997702952315E-8f)) {
+                && r91(&sc, coment[i+2UL], 3.1997702952315E-8f)) && r91(&scl,
+                 coment[i+3UL], 3.1997702952315E-8f)) {
                   if (pos->lat<0.0f) pos->lat = pos->lat-sc;
                   else pos->lat = pos->lat+sc;
                   if (pos->long0<0.0f) pos->long0 = pos->long0-scl;
                   else pos->long0 = pos->long0+scl;
-                  if (i==*compos) *compos += 5UL;
+                  while (i+5UL<=clen) {
+                     coment[i] = coment[i+5UL]; /* delete DAO */
+                     ++i;
+                  }
                   nornd = 1;
                }
                if ((unsigned char)*postyp>0) *postyp = X2C_CAP(*postyp);

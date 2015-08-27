@@ -391,8 +391,6 @@ static unsigned long vcourse;
 
 static unsigned long vspeed;
 
-static unsigned long compos;
-
 static unsigned long qas;
 
 static unsigned long qasc;
@@ -2374,7 +2372,6 @@ static void Netbeacon(char h[], unsigned long h_len, char qai,
    FRAMEBUF h1;
    char del;
    unsigned long j;
-   unsigned long compos0;
    unsigned long vspeed0;
    unsigned long vcourse0;
    char vsymt0;
@@ -2404,7 +2401,7 @@ static void Netbeacon(char h[], unsigned long h_len, char qai,
          j = 0UL;
          while (j<(h_len-1)-1UL && h[j]!=':') ++j;
          aprspos_GetPos(&home, &vspeed0, &vcourse0, &valt0, &vsym0, &vsymt0,
-                h, h_len, 0UL, j+1UL, &compos0, &postyp);
+                h, h_len, 0UL, j+1UL, h1, 512ul, &postyp);
                 /* find server position */
       }
       else if (verb) osi_WrStrLn("netbeacon file not found", 25ul);
@@ -2781,6 +2778,7 @@ static void DirectPos(const char b[], unsigned long b_len,
    char sym1;
    char postyp;
    MONCALL dc;
+   FRAMEBUF com;
    /* OE0AAA>ABCDEF-2,....:...*/
    /*        ^mice         ^payload*/
    p = 0UL;
@@ -2792,7 +2790,7 @@ static void DirectPos(const char b[], unsigned long b_len,
       /* objects say wrong pos */
       vspeed = X2C_max_longcard;
       aprspos_GetPos(&posn, &vspeed, &vcourse, &valt, &sym1, &symt1, b,
-                b_len, m, p, &compos, &postyp);
+                b_len, m, p, com, 512ul, &postyp);
       dc[0U] = b[m];
       dc[1U] = b[m+1UL];
       dc[2U] = b[m+2UL];
@@ -4142,6 +4140,7 @@ static long AprsIs(char buf[], unsigned long buf_len, unsigned char datafilt,
    char ungat;
    char postyp;
    unsigned char unset;
+   FRAMEBUF com;
    unsigned long tmp;
    hashl = 0U;
    hashh = 0U;
@@ -4237,7 +4236,7 @@ static long AprsIs(char buf[], unsigned long buf_len, unsigned char datafilt,
    /* a duplicate */
    if (udpchan || valid) timehash[ha] = systime;
    aprspos_GetPos(&poscall0->pos, &vspeed, &vcourse, &valt, &vsym, &vsymt,
-                buf, buf_len, micedest, payload, &compos, &postyp);
+                buf, buf_len, micedest, payload, com, 512ul, &postyp);
    if (udpchan==0UL && !valid) return -1L;
    buf[p] = '\015';
    ++p;
@@ -6302,12 +6301,6 @@ extern int main(int argc, char **argv)
    trygate = 0UL;
    httpcount = 0UL;
    Netbeacon(mbuf, 512ul, 0, 1);
-   /*
-     i:=0; WHILE (i<HIGH(mbuf)-1) & (mbuf[i]<>":") DO INC(i) END; 
-     IF verb THEN WrLn; WrStrLn(mbuf) END;;
-     GetPos(home, vspeed, vcourse, valt, vsym, vsymt, mbuf, 0, i+1, compos,
-                postyp); (* find server position *) 
-   */
    listensock = -1L;
    wwwsock = -1L;
    tcpsocks = 0;
@@ -6487,9 +6480,7 @@ extern int main(int argc, char **argv)
                      if ((aprspos_posvalid(poscall.pos)
                 && aprsstr_StrCmp(poscall.call, 10ul, acttcp->user.call,
                 10ul)) && X2C_INL((long)(unsigned char)poscall.typ0,128,
-                _cnst1)) {
-                        acttcp->user.pos = poscall.pos;
-                     }
+                _cnst1)) acttcp->user.pos = poscall.pos;
                      if (acttcp->valid && !acttcp->pingout) {
                         if (res>=0L) Sendall(mbuf, acttcp->fd, poscall);
                         if (verb || logframes>1L) {

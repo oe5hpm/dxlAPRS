@@ -291,6 +291,8 @@ struct aprsdecode_MULTILINE {
    struct aprspos_POSITION vec[41];
 };
 
+typedef unsigned short aprsdecode_TELEMETRY[7];
+
 struct aprsdecode_DAT;
 
 
@@ -328,6 +330,9 @@ struct aprsdecode_DAT {
    unsigned long hrtlen;
    unsigned long hrttime; /* if non zero is hrt defined */
    struct aprsdecode_MULTILINE multiline;
+   aprsdecode_TELEMETRY tlmvalues;
+                /* 5 analog and if all 5 valid the sixth is bitset, 0 undef,
+                incremented by 1 */
    char comment0[256];
 };
 
@@ -678,10 +683,10 @@ extern char aprsdecode_checksymb(char, char);
 
 extern void aprsdecode_appendmultiline(struct aprspos_POSITION);
 
-extern void aprsdecode_GetMultiline(char [], unsigned long, unsigned long,
-                unsigned long *, struct aprsdecode_MULTILINE *);
+extern void aprsdecode_GetMultiline(char [], unsigned long, unsigned long *,
+                struct aprsdecode_MULTILINE *);
 
-extern char aprsdecode_ismultiline(void);
+extern char aprsdecode_ismultiline(char);
 
 extern void aprsdecode_modmultiline(unsigned long);
 

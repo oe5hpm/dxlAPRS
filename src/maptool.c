@@ -3759,7 +3759,7 @@ extern void maptool_drawpoliobj(maptool_pIMAGE image)
    aprstext_deganytopos(cs, 251ul, &center);
    if (!aprspos_posvalid(center)) return;
    useri_confstr(useri_fRBCOMMENT, cs, 251ul);
-   aprsdecode_GetMultiline(cs, 251ul, 0UL, &i, &ml);
+   aprsdecode_GetMultiline(cs, 251ul, &i, &ml);
    useri_confstr(useri_fRBSYMB, cs, 251ul);
    maptool_drawpoligon(image, center, ml, cs[0U], cs[1U], 250UL);
 } /* end drawpoliobj() */
@@ -3779,7 +3779,7 @@ extern char maptool_findmultiline(struct aprspos_POSITION pos,
    aprstext_deganytopos(cs, 251ul, &center);
    if (!aprspos_posvalid(center)) return 0;
    useri_confstr(useri_fRBCOMMENT, cs, 251ul);
-   aprsdecode_GetMultiline(cs, 251ul, 0UL, &i, &ml);
+   aprsdecode_GetMultiline(cs, 251ul, &i, &ml);
    mind = X2C_max_real;
    mini = ml.size;
    i = 0UL;

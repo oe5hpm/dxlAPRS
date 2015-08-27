@@ -107,6 +107,7 @@ eg. x264 -o film.mp4 --muxer mp4 --crf 22 map.y4m
 
 |302 Save screen Image (without menues) to File
 format .png so use filename with .png 
+win: use .bmp
 %t insert date-time in filename
 %n insert counter
 
@@ -518,7 +519,6 @@ to step through matches "g?iss*"
 |2105 DX Cluster
 |2106 HF Gateway
 |2107 Aircraft (Small)
-|2108 Cloudy
 |2109 Available (Was Mic-Rptr Moved to /M)
 |2110 Snowmobile
 |2111 Red Cross

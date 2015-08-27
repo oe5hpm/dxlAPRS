@@ -4940,8 +4940,8 @@ static void MainEvent(void)
       else if (aprsdecode_click.cmd==')') mapbri(5L);
       makeimage(0);
       aprsdecode_click.cmd = 0;
-      if ((useri_beaconediting && useri_beaconed) && aprsdecode_ismultiline()
-                ) useri_poligonmenu();
+      if ((useri_beaconediting && useri_beaconed)
+                && aprsdecode_ismultiline(1)) useri_poligonmenu();
    }
    else if ((aprsdecode_tracenew.call[0UL] && lastxupdate+2UL+slowupdate()
                 <=aprsdecode_realtime)

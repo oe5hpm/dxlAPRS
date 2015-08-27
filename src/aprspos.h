@@ -64,8 +64,8 @@ extern float aprspos_azimuth(struct aprspos_POSITION,
 
 extern void aprspos_GetPos(struct aprspos_POSITION *, unsigned long *,
                 unsigned long *, long *, char *, char *, char [],
-                unsigned long, unsigned long, unsigned long, unsigned long *,
-                 char *);
+                unsigned long, unsigned long, unsigned long, char [],
+                unsigned long, char *);
 
 extern void aprspos_GetSym(char [], unsigned long, char *, char *);
 /* symbol out of destination call */

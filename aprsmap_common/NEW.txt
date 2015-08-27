@@ -1256,7 +1256,10 @@
 + Multiline-Objekt Editor 
 
 
+25. 8. 015 (Ver 0.54)
 
++ Mic-e-Telemetrie Dekoder, die Herstellercodes aus den Mic-e Frames werden dazu vorher
+  entfernt (soweits geht) was auch sauberere Kommentarzeilen ergibt.
 
 
 

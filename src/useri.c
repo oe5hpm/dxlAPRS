@@ -1573,6 +1573,11 @@ extern void useri_copypaste(char s[], unsigned long s_len)
    }
 } /* end copypaste() */
 
+/*
+PROCEDURE ismultiline():BOOLEAN;
+VAR c:CHAR;
+BEGIN confstr(fRBPOSTYP, c); RETURN c=ENCODEAREA END ismultiline;
+*/
 
 extern void useri_postoconfig(struct aprspos_POSITION pos)
 /* copy position to editline */
@@ -1657,14 +1662,6 @@ static unsigned long cntconfigs(unsigned char v)
    return n;
 } /* end cntconfigs() */
 
-/*
-PROCEDURE inconoff(v:CONFSET; max:CARDINAL);
-VAR pl:pCONFLINE;
-BEGIN
-  conflineno(v, 0, TRUE, pl);
-  IF pl<>NIL THEN pl^.active:=(pl^.active+1) MOD max END;
-END inconoff;
-*/
 
 static void clreditline(void)
 {
@@ -11457,9 +11454,8 @@ extern void useri_keychar(char ch, char ispasted, char movecmd)
       }
    }
    else if (aprsdecode_click.cmd=='\177') {
-      if (useri_beaconediting && useri_beaconed) {
-         aprsdecode_modmultiline(1UL);
-      }
+      if ((useri_beaconediting && useri_beaconed)
+                && aprsdecode_ismultiline(1)) aprsdecode_modmultiline(1UL);
       else deletop();
       aprsdecode_click.cmd = ' ';
       useri_refresh = 1;

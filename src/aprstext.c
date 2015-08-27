@@ -334,7 +334,9 @@ extern void aprstext_decode(char s[], unsigned long s_len,
    char nl;
    long ret;
    long og;
+   unsigned long tn;
    float resol;
+   char tmp;
    if (pf->time0>0UL) {
       s[0UL] = '\367';
       s[1UL] = 0;
@@ -440,9 +442,8 @@ extern void aprstext_decode(char s[], unsigned long s_len,
             objitem(s, s_len, dat);
          }
          if (dat->wx.gust!=1.E+6f) {
-            aprsstr_Append(s, s_len, "\012 ", 3ul);
             nl = 0;
-            aprsstr_Append(s, s_len, "Gust:", 6ul);
+            aprsstr_Append(s, s_len, "\012 Gust:", 8ul);
             aprsstr_FixToStr(dat->wx.gust*1.609f, 0UL, h, 512ul);
             aprsstr_Append(s, s_len, h, 512ul);
             aprsstr_Append(s, s_len, "km/h", 5ul);
@@ -523,8 +524,7 @@ extern void aprstext_decode(char s[], unsigned long s_len,
          }
       }
       else if (dat->type==aprsdecode_MSG) {
-         aprsstr_Append(s, s_len, "\012 ", 3ul);
-         aprsstr_Append(s, s_len, " Msg To:", 9ul);
+         aprsstr_Append(s, s_len, "\012  Msg To:", 11ul);
          aprstext_Apphex(s, s_len, dat->msgto, 9ul);
          if (dat->msgtext[0UL]) {
             aprsstr_Append(s, s_len, " Text:[", 8ul);
@@ -550,6 +550,33 @@ extern void aprstext_decode(char s[], unsigned long s_len,
          else aprsstr_Append(s, s_len, "\012 Comment: [", 13ul);
          aprstext_Apphex(s, s_len, dat->comment0, 256ul);
          aprsstr_Append(s, s_len, "]", 2ul);
+      }
+      if (dat->tlmvalues[0UL]) {
+         aprsstr_Append(s, s_len, "\012  Mic-e Telemetry Seq:", 24ul);
+         ret = 0L;
+         for (;;) {
+            if (dat->tlmvalues[ret]) {
+               if (ret!=6L) {
+                  aprsstr_IntToStr((long)(dat->tlmvalues[ret]-1U), 1UL, h,
+                512ul);
+                  aprsstr_Append(s, s_len, h, 512ul);
+               }
+               else {
+                  tn = (unsigned long)(dat->tlmvalues[ret]-1U);
+                  if (tn>=256UL) tn = (tn&8191UL)+8192UL;
+                  else tn = (tn&255UL)+256UL;
+                  while (tn>1UL) {
+                     aprsstr_Append(s, s_len,
+                (char *)(tmp = (char)((unsigned long)(char)(tn&1)+48UL),
+                &tmp), 1u/1u);
+                     tn = tn/2UL;
+                  }
+               }
+            }
+            ++ret;
+            if (ret>6L) break;
+            aprsstr_Append(s, s_len, ",", 2ul);
+         }
       }
       aprsstr_Append(s, s_len, "\012 ", 3ul);
    }
@@ -1672,14 +1699,16 @@ extern void aprstext_encbeacon(char s[], unsigned long s_len,
       }
       break;
    } /* end switch */
-   mull = aprsdecode_ismultiline();
-   if (mull) useri_confappend(useri_fRBCOMMENT, s, s_len);
+   mull = aprsdecode_ismultiline(0);
+   /*  IF mull THEN confappend(fRBCOMMENT, s) END;
+                (* multiline: append dao at end *) */
+   useri_confappend(useri_fRBCOMMENT, s, s_len);
    if (X2C_CAP(postyp)!='C' && (dao || mull)) {
       /* DAO */
       daostr(latd, longd, h, 201ul);
       aprsstr_Append(s, s_len, h, 201ul);
    }
-   if (!mull) useri_confappend(useri_fRBCOMMENT, s, s_len);
+   /*  IF NOT mull THEN confappend(fRBCOMMENT, s) END; */
    *len += aprsstr_Length(s, s_len)-datastart;
    if (err) s[0UL] = 0;
 } /* end encbeacon() */
