@@ -5,6 +5,7 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
+/* "@(#)afskmodem.c Aug 29 18:39:18 2015" */
 
 
 #define X2C_int32
@@ -1606,8 +1607,10 @@ static void getudp(void)
                 && crc2==pTxFree->data[ulen-1L]) {
                   if (pTxFree->data[0U]=='\001') {
                      aprsstr_extrudp2(pTxFree->data, 341ul, udp2, 100ul,
-                &ulen); /* axudp2 */
+                &ulen);
+                     AppCRC(pTxFree->data, 341ul, ulen-2L);
                   }
+                  /* axudp2 */
                   if (ulen>2L) {
                      p = pTxFree;
                      pTxFree = pTxFree->next;
@@ -2170,7 +2173,7 @@ static void Afsk(long m)
          if (anonym->baudfine<65536L) {
             /* normal alway true */
             ff = Fir(anonym->dfin,
-                (unsigned long)(16L-X2C_DIV(anonym->baudfine,4096L)), 16UL,
+                (unsigned long)(16L-anonym->baudfine/4096L), 16UL,
                 anonym->dfir, 64ul, anonym->dfirtab, 1024ul);
             demod(ff, m);
          }
@@ -2190,9 +2193,8 @@ static void Fsk(long m)
       for (;;) {
          if (anonym->baudfine>=65536L) {
             anonym->baudfine -= 65536L;
-            ff = Fir(afin, (unsigned long)X2C_DIV(anonym->baudfine&65535L,
-                4096L), 16UL, chan[anonym->ch].afir, 32ul, anonym->afirtab,
-                512ul);
+            ff = Fir(afin, (unsigned long)((anonym->baudfine&65535L)/4096L),
+                16UL, chan[anonym->ch].afir, 32ul, anonym->afirtab, 512ul);
             demod(ff-(anonym->left+anonym->freq)*0.5f, m);
             /*clamp*/
             if (!anonym->cbit) {
