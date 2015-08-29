@@ -84,8 +84,7 @@
 #define udpbox_VIAGATE 18
 
 #define udpbox_RELAYECHO 19
-
-#define udpbox_FINGERPRINT 20
+/*      FINGERPRINT=20; */
 
 #define udpbox_STDIN 0
 
@@ -149,6 +148,7 @@ struct OUTPORT {
    char crlfwrite;
    char passnoUI;
    char axudp2;
+   char satgate;
    SET256 aprspass;
    pDIGIPARMS digiparm;
    struct BEACON beacon0;
@@ -557,13 +557,13 @@ static char Filter(const char b[], unsigned long b_len, long len,
    /* is UI frame */
    if (Usermsg(b, b_len, len, i, fromsock, &selfmsg)) return 0;
    if (parm->filtercalls && CallFilt(parm->filtercalls, b, b_len, len)) {
-      if (show) InOut_WriteString(" callfilter match", 18ul);
+      if (show) osi_WrStrLn(" callfilter match", 18ul);
       return 0;
    }
    if (!X2C_INL((unsigned char)b[i],256,
                 parm->aprspass) || selfmsg && !X2C_INL((long)84,256,
                 parm->aprspass)) {
-      if (show) InOut_WriteString(" message type filter", 21ul);
+      if (show) osi_WrStrLn(" message type filter", 21ul);
       return 0;
    }
    if (parm->maxkm>0L && (b[i]!=':' || b[i+10L]!=':')) {
@@ -571,18 +571,24 @@ static char Filter(const char b[], unsigned long b_len, long len,
       km = DistFilt(parm->mypos, b, b_len, (unsigned long)i,
                 (unsigned long)len);
       if (km<0L) {
-         if (show) InOut_WriteString(" no pos", 8ul);
+         if (show) osi_WrStrLn(" no pos", 8ul);
          return 0;
       }
       if (show) {
-         InOut_WriteString(" ", 2ul);
+         osi_WrStrLn(" ", 2ul);
          InOut_WriteInt(km, 1UL);
          InOut_WriteString("km", 3ul);
       }
       if (km>=parm->maxkm) {
-         if (show) InOut_WriteString(" too far", 9ul);
+         if (show) osi_WrStrLn(" too far", 9ul);
          return 0;
       }
+   }
+   if ((parm->satgate && !((unsigned long)(unsigned char)b[13UL]&1))
+                && (unsigned char)b[20UL]<(unsigned char)'\200') {
+      /* has >=1 vias and first via no h-bit */
+      if (show) osi_WrStrLn(" sat gate and direct heard", 27ul);
+      return 0;
    }
    return 1;
 } /* end Filter() */
@@ -947,180 +953,158 @@ static void Digi(char raw[], unsigned long raw_len, char send[],
    ok0 = 0;
    downpath = 0L;
    if (!duponly) {
-      if ((0x100000UL & parm->pathcheck) || (unsigned char)
-                raw[6UL]>=(unsigned char)'\200'!=(unsigned char)
-                raw[13UL]>=(unsigned char)'\200') {
-         actdigi = 14L;
-         noloop = 1;
-         if ((0x8UL & parm->pathcheck)) {
-            /* need not be first repeater */
-            while (actdigi<pathlen && (unsigned char)
+      /*  IF (FINGERPRINT IN parm^.pathcheck) OR ((raw[6]>=200C)
+                <>(raw[13]>=200C)) THEN */
+      actdigi = 14L;
+      noloop = 1;
+      if ((0x8UL & parm->pathcheck)) {
+         /* need not be first repeater */
+         while (actdigi<pathlen && (unsigned char)
                 raw[actdigi+6L]>=(unsigned char)'\200') {
-               /* test if own digicall in path */
-               ok0 = 0;
-               for (i = 0L; i<=5L; i++) {
-                  if (raw[i+actdigi]!=parm->digicall[i]) ok0 = 1;
-               } /* end for */
-               if (getSSID(raw[(actdigi+7L)-1L])!=getSSID(parm->digicall[6U])
-                ) ok0 = 1;
-               if (!ok0) noloop = 0;
-               actdigi += 7L;
+            /* test if own digicall in path */
+            ok0 = 0;
+            for (i = 0L; i<=5L; i++) {
+               if (raw[i+actdigi]!=parm->digicall[i]) ok0 = 1;
+            } /* end for */
+            if (getSSID(raw[(actdigi+7L)-1L])!=getSSID(parm->digicall[6U])) {
+               ok0 = 1;
             }
+            if (!ok0) noloop = 0;
+            actdigi += 7L;
          }
-         if (noloop) {
-            /* not looping thru own digi */
-            startpath = actdigi+7L;
-            nodigicall = 0;
-            if ((0x80UL & parm->pathcheck)) downpath = pathlen;
-            /* test for ssid routing*/
-            ssid = (unsigned long)(long)(parm->pathcheck&0x7UL);
+      }
+      if (noloop) {
+         /* not looping thru own digi */
+         startpath = actdigi+7L;
+         nodigicall = 0;
+         if ((0x80UL & parm->pathcheck)) downpath = pathlen;
+         /* test for ssid routing*/
+         ssid = (unsigned long)(long)(parm->pathcheck&0x7UL);
                 /* limit ssid routing hopps */
-            ssidroute = getSSID(raw[6UL]); /* destination call ssid */
-            goodpath = 14L;
-            while ((goodpath<pathlen && (unsigned char)
+         ssidroute = getSSID(raw[6UL]); /* destination call ssid */
+         goodpath = 14L;
+         while ((goodpath<pathlen && (unsigned char)
                 raw[goodpath+6L]>=(unsigned char)'\200') && IsCall(raw,
-                raw_len, (unsigned long)goodpath, 2UL)) {
-               goodpath += 7L; /* repeated via callsigns */
-            }
-            if ((((ssidroute>0UL && ssid>0UL) && goodpath==pathlen)
+                raw_len, (unsigned long)goodpath, 2UL)) goodpath += 7L;
+         if ((((ssidroute>0UL && ssid>0UL) && goodpath==pathlen)
                 && pathlen<49L) && ((0x8UL & parm->pathcheck)
                 || goodpath==14L)) {
-               ok0 = 1;
-               if (ssidroute>7UL) ssidroute = 1UL;
-               if (ssidroute>ssid) ssidroute = ssid;
-               if (ssidroute==1UL || (0x8000UL & parm->pathcheck)==0) {
-                  /* use decrement dest ssid routing */
-                  setSSID(&raw[6UL], ssidroute-1UL);
+            ok0 = 1;
+            if (ssidroute>7UL) ssidroute = 1UL;
+            if (ssidroute>ssid) ssidroute = ssid;
+            if (ssidroute==1UL || (0x8000UL & parm->pathcheck)==0) {
+               /* use decrement dest ssid routing */
+               setSSID(&raw[6UL], ssidroute-1UL);
                 /* chain by dec dest ssid */
-                  ssidroute = 0UL;
-               }
-               else {
-                  /* expand to digicall + wideN-N */
-                  --ssidroute;
-                  setSSID(&raw[6UL], 0UL); /* switch to via routing */
-               }
-               downpath = 0L; /* delete rest of path */
-               if (show) InOut_WriteString(" via ssid routing ", 19ul);
+               ssidroute = 0UL;
             }
             else {
-               ssidroute = 0UL;
-               if (goodpath<=14L) goodpath = 0L;
-               if ((0x10UL & parm->pathcheck)) goodpath = actdigi;
-               ok0 = pathlen>actdigi && (unsigned char)
+               /* expand to digicall + wideN-N */
+               --ssidroute;
+               setSSID(&raw[6UL], 0UL); /* switch to via routing */
+            }
+            downpath = 0L; /* delete rest of path */
+            if (show) InOut_WriteString(" via ssid routing ", 19ul);
+         }
+         else {
+            ssidroute = 0UL;
+            if (goodpath<=14L) goodpath = 0L;
+            if ((0x10UL & parm->pathcheck)) goodpath = actdigi;
+            ok0 = pathlen>actdigi && (unsigned char)
                 raw[actdigi+6L]<(unsigned char)'\200';
                 /* there are via calls & is not digipeated */
+            if (ok0) {
+               ssid = getSSID(raw[actdigi+6L]);
+               if ((0x400UL & parm->pathcheck)) ok0 = 0;
+               else {
+                  for (i = 0L; i<=5L; i++) {
+                     if (raw[i+actdigi]!=parm->digicall[i]) {
+                        ok0 = 0;
+                     }
+                  } /* end for */
+                  if (ssid!=getSSID(parm->digicall[6U])) ok0 = 0;
+               }
                if (ok0) {
-                  ssid = getSSID(raw[actdigi+6L]);
-                  if ((0x400UL & parm->pathcheck)) ok0 = 0;
-                  else {
-                     for (i = 0L; i<=5L; i++) {
-                        if (raw[i+actdigi]!=parm->digicall[i]) ok0 = 0;
-                     } /* end for */
-                     if (ssid!=getSSID(parm->digicall[6U])) ok0 = 0;
+                  if ((0x80UL & parm->pathcheck)) downpath = pathlen;
+                  if (show) InOut_WriteString(" via digicall ", 15ul);
+               }
+               else if ((0x800UL & parm->pathcheck)==0) {
+                  ok0 = Cmp(raw, raw_len, (unsigned long)actdigi, "RELAY ",
+                7ul);
+                  if (!ok0 && (0x80000UL & parm->pathcheck)) {
+                     ok0 = Cmp(raw, raw_len, (unsigned long)actdigi,
+                "ECHO  ", 7ul);
                   }
                   if (ok0) {
-                     if ((0x80UL & parm->pathcheck)) downpath = pathlen;
-                     if (show) InOut_WriteString(" via digicall ", 15ul);
+                     if ((0x100UL & parm->pathcheck)) downpath = pathlen;
+                     if (show) InOut_WriteString(" via RELAY ", 12ul);
                   }
-                  else if ((0x800UL & parm->pathcheck)==0) {
+               }
+               if (!ok0) {
+                  if ((0x40000UL & parm->pathcheck)) {
                      ok0 = Cmp(raw, raw_len, (unsigned long)actdigi,
-                "RELAY ", 7ul);
-                     if (!ok0 && (0x80000UL & parm->pathcheck)) {
-                        ok0 = Cmp(raw, raw_len, (unsigned long)actdigi, "ECHO\
-  ", 7ul);
-                     }
+                "GATE  ", 7ul);
                      if (ok0) {
                         if ((0x100UL & parm->pathcheck)) {
                            downpath = pathlen;
                         }
-                        if (show) {
-                           InOut_WriteString(" via RELAY ", 12ul);
-                        }
+                        if (show) InOut_WriteString(" via GATE ", 11ul);
                      }
                   }
-                  if (!ok0) {
-                     if ((0x40000UL & parm->pathcheck)) {
-                        ok0 = Cmp(raw, raw_len, (unsigned long)actdigi, "GATE\
-  ", 7ul);
-                        if (ok0) {
-                           if ((0x100UL & parm->pathcheck)) {
-                              downpath = pathlen;
-                           }
-                           if (show) {
-                              InOut_WriteString(" via GATE ", 11ul);
-                           }
-                        }
-                     }
-                  }
-                  if (!ok0) {
-                     if ((((0x1000UL & parm->pathcheck)==0 && Cmp(raw,
-                raw_len, (unsigned long)actdigi, "TRACE",
-                6ul)) && ChkNN(ssid,
+               }
+               if (!ok0) {
+                  if ((((0x1000UL & parm->pathcheck)==0 && Cmp(raw, raw_len,
+                (unsigned long)actdigi, "TRACE", 6ul)) && ChkNN(ssid,
                 raw[actdigi+5L])) && (goodpath==actdigi || NeqN(ssid,
                 raw[actdigi+5L], actdigi))) {
-                        ok0 = 1;
-                        if (ssid>(unsigned long)
-                ((0x10000UL & parm->pathcheck)==0)
-                && (0x20UL & parm->pathcheck)) {
-                           setSSID(&raw[actdigi+6L], ssid-1UL);
+                     ok0 = 1;
+                     if (ssid>(unsigned long)((0x10000UL & parm->pathcheck)
+                ==0) && (0x20UL & parm->pathcheck)) {
+                        setSSID(&raw[actdigi+6L], ssid-1UL);
                 /* dec(N) of WIDEn-N */
-                           startpath = actdigi;
-                        }
-                        if ((0x100UL & parm->pathcheck)==0) {
-                           downpath = actdigi+7L;
-                        }
+                        startpath = actdigi;
                      }
-                     if (show && ok0) {
-                        InOut_WriteString(" via TRACEn-n ", 15ul);
+                     if ((0x100UL & parm->pathcheck)==0) {
+                        downpath = actdigi+7L;
                      }
                   }
-                  if (!ok0) {
-                     if (((((0x2000UL & parm->pathcheck)==0 && Cmp(raw,
-                raw_len, (unsigned long)actdigi, "WIDE",
+                  if (show && ok0) InOut_WriteString(" via TRACEn-n ", 15ul);
+               }
+               if (!ok0) {
+                  if (((((0x2000UL & parm->pathcheck)==0 && Cmp(raw, raw_len,
+                 (unsigned long)actdigi, "WIDE",
                 5ul)) && raw[actdigi+5L]=='@') && ChkNN(ssid,
                 raw[actdigi+4L])) && (goodpath==actdigi || NeqN(ssid,
                 raw[actdigi+4L], actdigi))) {
-                        ok0 = 1;
-                        if (raw[actdigi+4L]
-                !='@' && (0x40UL & parm->pathcheck)) {
-                           if ((0x4000UL & parm->pathcheck)
+                     ok0 = 1;
+                     if (raw[actdigi+4L]!='@' && (0x40UL & parm->pathcheck)) {
+                        if ((0x4000UL & parm->pathcheck)
                 || goodpath!=actdigi && !NeqN(ssid, raw[actdigi+4L],
-                actdigi)) {
-                              nodigicall = 1; /* maybe repeatet before */
-                           }
-                           if (ssid>(unsigned long)
+                actdigi)) nodigicall = 1;
+                        if (ssid>(unsigned long)
                 ((0x10000UL & parm->pathcheck)==0)) {
-                              setSSID(&raw[actdigi+6L], ssid-1UL);
-                              startpath = actdigi;
-                           }
-                           else if (nodigicall) {
-                              raw[actdigi+6L] = '\340'; /* WIDE* */
-                           }
-                           if (nodigicall) startpath = actdigi;
+                           setSSID(&raw[actdigi+6L], ssid-1UL);
+                           startpath = actdigi;
                         }
-                        if ((0x200UL & parm->pathcheck)==0) {
-                           downpath = actdigi+7L;
+                        else if (nodigicall) {
+                           raw[actdigi+6L] = '\340'; /* WIDE* */
                         }
+                        if (nodigicall) startpath = actdigi;
                      }
-                     if (show && ok0) {
-                        InOut_WriteString(" via WIDEn-n ", 14ul);
+                     if ((0x200UL & parm->pathcheck)==0) {
+                        downpath = actdigi+7L;
                      }
                   }
-                  if (show && !ok0) {
-                     InOut_WriteString(" no source path ", 17ul);
-                  }
+                  if (show && ok0) InOut_WriteString(" via WIDEn-n ", 14ul);
                }
-               else if (show) {
-                  InOut_WriteString(" already digipeated ", 21ul);
-               }
+               if (show && !ok0) InOut_WriteString(" no source path ", 17ul);
             }
-         }
-         else if (show) {
-            InOut_WriteString(" we have already digipeated ", 29ul);
+            else if (show) InOut_WriteString(" already digipeated ", 21ul);
          }
       }
-      else if (show) InOut_WriteString(" fingerprint filtered ", 23ul);
+      else if (show) InOut_WriteString(" we have already digipeated ", 29ul);
    }
+   /*    ELSIF show THEN WrStr(" fingerprint filtered " ) END; */
    if (duponly || ok0) {
       /*
       IO.WrLn; IO.WrStr("<<<");IO.WrHex(ORD(raw[pathlen+2]),1);
@@ -1356,6 +1340,7 @@ static void parms(void)
 {
    char h[4096];
    char actpassui;
+   char actsat;
    char actecho;
    char err;
    char lasth;
@@ -1387,6 +1372,7 @@ static void parms(void)
    Ackpath("WIDE2-2", 8ul);
    actkm = 0.0f;
    actpassui = 0;
+   actsat = 0;
    for (;;) {
       Lib_NextArg(h, 4096ul);
       if (h[0U]==0) break;
@@ -1405,6 +1391,7 @@ static void parms(void)
             actcall = 0;
             actkm = 0.0f;
             actpassui = 0;
+            actsat = 0;
             actbeacon.bintervall = 0UL;
             actbeacon.piggytime = 0UL;
             actbeacon.piggyback = 0;
@@ -1463,10 +1450,10 @@ static void parms(void)
                      --n;
                   }
                   nold = 256UL;
-                  if (h[i]=='-') nold = n;
-                  else if (h[i]!=',') {
-                     break;
+                  if (h[i]=='-') {
+                     nold = n;
                   }
+                  else if (h[i]!=',') break;
                   n = 0UL;
                }
                ++i;
@@ -1555,6 +1542,7 @@ static void parms(void)
                anonym2->beacon0 = actbeacon;
                actbeacon.bintervall = 0UL;
                anonym2->passnoUI = actpassui;
+               anonym2->satgate = actsat;
                anonym2->next = 0;
                anonym2->filtercalls = actcall;
                anonym2->mypos.lat = actpos.lat*1.7453292519444E-2f;
@@ -1663,13 +1651,13 @@ path", 54ul);
 disable via all other)", 72ul);
                osi_WrStrLn("                19 allow ECHO as alias to RELAY",
                  48ul);
-               osi_WrStrLn("                20 switch off bad digi fingerprin\
-t filter", 58ul);
                osi_WrStrLn(" -P <s>         piggyback time sending beacon ear\
 lier if sent anything now", 75ul);
                osi_WrStrLn(" -R <ip>:<port> read raw axudp frame, 0 ip read f\
 rom all (-R 0.0.0.0:2000)", 75ul);
                osi_WrStrLn(" -r <ip>:<port> send raw axudp frame", 37ul);
+               osi_WrStrLn(" -S             Satgate, filter out uplink (has v\
+ia with no h-bit", 66ul);
                osi_WrStrLn(" -s             pass not-UI-frames too (all PR-Fr\
 ames, SABM, RR..)", 67ul);
                osi_WrStrLn("                (raw axudp only) and axudp2 modem\
@@ -1692,6 +1680,7 @@ t 1800,28 -r 192.168.1.24:9400", 80ul);
                X2C_ABORT();
             }
             if (lasth=='s') actpassui = 1;
+            else if (lasth=='S') actsat = 1;
             else if (lasth=='t') {
                if (actdigi==0) Err("need -d before -t", 18ul);
                Lib_NextArg(h, 4096ul);
