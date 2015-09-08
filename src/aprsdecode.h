@@ -58,7 +58,7 @@
 #define aprsdecode_MAXMULTILINES 40
 /* AE5PL limits to 23 multiline elements */
 
-#define aprsdecode_VERS "aprsmap(cu) 0.54"
+#define aprsdecode_VERS "aprsmap(cu) 0.55"
 
 typedef char aprsdecode_MONCALL[9];
 
@@ -239,6 +239,7 @@ struct aprsdecode_OPHIST {
    signed char textpos;
    signed char valuepos;
    unsigned char lastinftyp; /*0 no inf, 10..99 drive dir, 100 wx no dir 110..199 wind dir*/
+   char lastrxport; /* for msg routing, in future remove if port is seen in rawframes */
    struct aprsdecode_AREASYMB areasymb; /* area object data */
    char poligon;
 };
@@ -317,6 +318,7 @@ struct aprsdecode_DAT {
    char symt;
    char timestamp;
    char objkill;
+   char lastrxport;
    struct aprsdecode_WX wx;
    unsigned char type;
    float moved;

@@ -1254,7 +1254,7 @@ static void beaconmacros(char s[], unsigned long s_len, const char path[],
             }
             else if (s[i]=='\\') aprsstr_Append(ns, 256ul, "\\\\", 3ul);
             else if (s[i]=='v') {
-               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.54", 17ul);
+               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.55", 17ul);
             }
             else if (s[i]=='l') {
                if (aprstext_getmypos(&pos)) {
@@ -4750,6 +4750,7 @@ extern long aprsdecode_Stoframe(aprsdecode_pOPHIST * optab, char rawbuf[],
    }
    op->areasymb = dat.areasymb;
    op->poligon = dat.multiline.size>2UL;
+   op->lastrxport = dat.lastrxport;
    if (lastf==0) {
       frame->next = op->frames;
       op->frames = frame; /* new track */
@@ -5484,7 +5485,7 @@ static char tcpconn(aprsdecode_pTCPSOCK * sockchain, long f)
          aprsstr_Append(h, 512ul, s, 100ul);
       }
       aprsstr_Append(h, 512ul, " vers ", 7ul);
-      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.54", 17ul);
+      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.55", 17ul);
       appfilter(h, 512ul);
       /*    IF filter[0]<>0C THEN Append(h, " filter ");
                 Append(h, filter) END; */
@@ -6371,6 +6372,8 @@ temporarily", 56ul);
       osi_WrStrLn(mb, 512ul);
    }
    if (res>=0L && aprsdecode_Decode(mb, 512ul, &dat)>=0L) {
+      if (udpch>0UL) dat.lastrxport = (char)(udpch+48UL);
+      else dat.lastrxport = 'N';
       if (dat.type==aprsdecode_MSG) {
          if (udpch>0UL) getmessage(0, udpch, dat);
          else getmessage(cp, 0UL, dat);

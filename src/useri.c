@@ -973,8 +973,8 @@ static void initconfig(void)
                  5UL);
    initc(useri_fFIND, "Find Call or Locator", 21ul, useri_cLINE, "", 1ul, 0,
                 10UL);
-   initc(useri_fLOGWFN, "WriteLogfilename", 17ul, useri_cBLINE, "rawlog%d",
-                9ul, 1, 15UL);
+   initc(useri_fLOGWFN, "WriteLogfilename", 17ul, useri_cBLINE, "logs/rawlog%\
+d", 14ul, 1, 15UL);
    initc(useri_fLOGDAYS, "Delete Log Days", 16ul, useri_cLINE, "31", 3ul, 0,
                 17UL);
    initc(useri_fLOGFN, "ImportLogfilename", 18ul, useri_cLINE, "", 1ul, 0,
@@ -1435,8 +1435,10 @@ extern void useri_loadconfig(char verb)
    useri_confstr(useri_fMAPNAMES, s, 1000ul);
    if (s[0U]==0) {
       useri_AddConfLine(useri_fMAPNAMES, 1U, "tiles -128", 11ul);
-      useri_AddConfLine(useri_fMAPNAMES, 1U, "tiles_cyclemap 0", 17ul);
       useri_AddConfLine(useri_fMAPNAMES, 1U, "tiles_topo -128", 16ul);
+      useri_AddConfLine(useri_fMAPNAMES, 1U, "tiles_quest -128", 17ul);
+      useri_AddConfLine(useri_fMAPNAMES, 1U, "tiles_cyclemap 0", 17ul);
+      useri_AddConfLine(useri_fMAPNAMES, 1U, "tiles_sat 0", 12ul);
    }
    /*  confstr(fDIGI, s); */
    /*  IF s[0]=0C THEN AddConfLine(fDIGI, 0,
@@ -3234,6 +3236,9 @@ static void msgtoobj(void)
    if (op) {
       useri_clrmsgtext(op->call, 9ul);
       icfg(useri_fMSGTO, op->call, 9ul);
+      if (op->lastrxport) {
+         icfg(useri_fMSGPORT, (char *) &op->lastrxport, 1u/1u);
+      }
       sndmsg = 1;
    }
 } /* end msgtoobj() */
@@ -3968,7 +3973,7 @@ static void helpmenu(void)
    newmenu(&menu, 150UL, aprsdecode_lums.fontysize+7UL, 3UL, useri_bTRANSP);
    /*  addline(menu, "Shortcuts", CMDSHORTCUTLIST, MINH*6); */
    addline(menu, "Helptext", 9ul, "\305", 2ul, 610UL);
-   addline(menu, "aprsmap(cu) 0.54 by OE5DXL ", 28ul, " ", 2ul, 605UL);
+   addline(menu, "aprsmap(cu) 0.55 by OE5DXL ", 28ul, " ", 2ul, 605UL);
    setunderbar(menu, 37L);
    menu->ysize = menu->oldknob*menu->yknob;
    menu->oldknob = 0UL;

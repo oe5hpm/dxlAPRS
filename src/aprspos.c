@@ -663,50 +663,44 @@ extern void aprspos_GetPos(struct aprspos_POSITION * pos,
                coment[i] = coment[i+9UL]; /* delete altitude */
                ++i;
             }
+            clen -= 9UL;
             break;
          }
          ++i;
       }
-      if (pos->long0!=0.0f || pos->lat!=0.0f) {
-         i = 0UL; /* look for !DAO! precision extension */
+      if (clen>=5UL && pos->long0!=0.0f || pos->lat!=0.0f) {
+         i = clen-5UL; /* look for !DAO! precision extension backward */
+         n = 0UL; /* count "|" to know if inside mice-telemetry */
          for (;;) {
-            if (i+5UL>clen) break;
             if (coment[i]=='!' && coment[i+4UL]=='!') {
                c = coment[i+1UL];
                sc = 0.0f;
                scl = 0.0f;
                if ((((unsigned char)c>='A' && (unsigned char)c<='Z')
                 && dig(&sc, coment[i+2UL], 2.9088820865741E-7f)) && dig(&scl,
-                 coment[i+3UL], 2.9088820865741E-7f)) {
-                  if (pos->lat<0.0f) pos->lat = pos->lat-sc;
-                  else {
-                     pos->lat = pos->lat+sc;
-                  }
-                  if (pos->long0<0.0f) pos->long0 = pos->long0-scl;
-                  else pos->long0 = pos->long0+scl;
-                  while (i+5UL<=clen) {
-                     coment[i] = coment[i+5UL]; /* delete DAO */
-                     ++i;
-                  }
-                  nornd = 1;
-               }
-               else if ((((unsigned char)c>='a' && (unsigned char)c<='z')
-                && r91(&sc, coment[i+2UL], 3.1997702952315E-8f)) && r91(&scl,
-                 coment[i+3UL], 3.1997702952315E-8f)) {
+                 coment[i+3UL], 2.9088820865741E-7f) || (((unsigned char)c>='a' && (unsigned char)c<='z') && r91(&sc,
+                 coment[i+2UL], 3.1997702952315E-8f)) && r91(&scl,
+                coment[i+3UL], 3.1997702952315E-8f)) {
                   if (pos->lat<0.0f) pos->lat = pos->lat-sc;
                   else pos->lat = pos->lat+sc;
                   if (pos->long0<0.0f) pos->long0 = pos->long0-scl;
                   else pos->long0 = pos->long0+scl;
-                  while (i+5UL<=clen) {
-                     coment[i] = coment[i+5UL]; /* delete DAO */
-                     ++i;
-                  }
                   nornd = 1;
+                  if (!(n&1)) {
+                     /* if not possibly inside mice-telemetrty del DAO */
+                     while (i+5UL<=clen) {
+                        coment[i] = coment[i+5UL]; /* delete DAO */
+                        ++i;
+                     }
+                     clen -= 5UL;
+                  }
                }
                if ((unsigned char)*postyp>0) *postyp = X2C_CAP(*postyp);
                break;
             }
-            ++i;
+            if (coment[i+4UL]=='|') ++n;
+            if (i==0UL) break;
+            --i;
          }
       }
    }
