@@ -1,15 +1,10 @@
 afskmodemptt.c
 afskmodemptt.h
 pp065mb.h
-ConvTypes.h
 FileSys.h
-IOChan.c
 IOChan.h
-IOConsts.h
-IOLink.h
 RealMath.h
 basictypes.h
-ChanConsts.h
 constants.h
 cursorfont.h
 geodesy.c
@@ -19,8 +14,6 @@ gnss_error.h
 gps.c
 gps.h
 InOut.h
-InOut.c
-LongMath.h
 jmorecfg.h
 jconfig.h
 jpeglib.h
@@ -37,14 +30,11 @@ rinex.c
 rinex.h
 sem.c
 sem.h
-SIOResult.h
 stat.h
 Stdchans.h
 STextIO.h
 Storage.h
-StreamFile.h
 Strings.h
-SWholeIO.h
 symlink.c
 symlink.h
 SysClock.h
@@ -54,7 +44,6 @@ TimeConv.h
 timehires.c
 timehires.h
 types.h
-WholeStr.h
 X2C.h
 X.h
 XLib.h

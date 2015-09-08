@@ -6,9 +6,6 @@
 #ifndef X2C_H_
 #include "X2C.h"
 #endif
-#ifndef IOConsts_H_
-#include "IOConsts.h"
-#endif
 
 typedef void *IOChan_ChanId;
 
