@@ -128,7 +128,7 @@ nicht einen Fahrtrichtungspfeil am Symbol
 eine Windfahne an Symbolen mit Wind Info
 
 "Config / Map Parameter / Show Temp" zeigt/zeigt nicht
-Tempertur bei Symbolen mit Temperatur Info
+Temperatur bei Symbolen mit Temperatur Info
 
 "Config / Map Parameter / km/h text" ist der Text nach
 dem km/h-Wert der hier auch ein/ausgeschaltet werden kann.
@@ -1005,7 +1005,7 @@ q Quit
 r Zeig weisse Funkstrecken Linien von angeklickter Station
 s ein/aus nur Stationen mit einem ausgewaehlten Symbol
 u Tx/Rx-Monitor Fenster ein/aus
-w WX-Stationen (mit l nur Tempertur ohne Calls) 
+w WX-Stationen (mit l nur Temperatur ohne Calls) 
 ww grafische Temperaturverteilung
 x setze Marker 1 auf Mausposition
 y setze Marker 2 und Linie/Gelaendeschnitt zu Marker 1
