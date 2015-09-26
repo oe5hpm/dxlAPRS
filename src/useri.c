@@ -78,8 +78,8 @@ maptool_pIMAGE useri_panoimage;
 
 #define useri_SHOTFORMATS "(.ppm/.png)"
 
-#define useri_SERIAL1 "udpflex -U :9002:9001 -i kiss.txt -u -t /dev/ttyUSB0:9\
-600"
+#define useri_SERIAL1 "udpflex -t /dev/ttyUSB0:9600 -i kiss.txt -u -U :9002:9\
+001"
 
 #define useri_SERIAL2 "afskmodem -f 22050 -C 0 -p /dev/ttyS0 0 -M 0 -U 127.0.\
 0.1:9002:9001 -m 0"
@@ -1048,8 +1048,8 @@ d", 14ul, 1, 15UL);
                  135UL);
    initc(useri_fUDP4, "UDP4(ip:send:listen)", 21ul, useri_cBLINE, "", 1ul, 0,
                  140UL);
-   initc(useri_fSERIALTASK, "Serial Task", 12ul, useri_cBLINE, "udpflex -U :9\
-002:9001 -i kiss.txt -u -t /dev/ttyUSB0:9600", 58ul, 0, 137UL);
+   initc(useri_fSERIALTASK, "Serial Task", 12ul, useri_cBLINE, "udpflex -t /d\
+ev/ttyUSB0:9600 -i kiss.txt -u -U :9002:9001", 58ul, 0, 137UL);
    initc(useri_fSERIALTASK2, "Serial Task2", 13ul, useri_cBLINE, "afskmodem -\
 f 22050 -C 0 -p /dev/ttyS0 0 -M 0 -U 127.0.0.1:9002:9001 -m 0", 73ul, 0,
                 137UL);
