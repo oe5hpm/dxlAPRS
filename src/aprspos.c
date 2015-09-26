@@ -668,7 +668,7 @@ extern void aprspos_GetPos(struct aprspos_POSITION * pos,
          }
          ++i;
       }
-      if (clen>=5UL && pos->long0!=0.0f || pos->lat!=0.0f) {
+      if (clen>=5UL && (pos->long0!=0.0f || pos->lat!=0.0f)) {
          i = clen-5UL; /* look for !DAO! precision extension backward */
          n = 0UL; /* count "|" to know if inside mice-telemetry */
          for (;;) {
