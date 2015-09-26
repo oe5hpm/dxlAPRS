@@ -5,7 +5,7 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
-/* "@(#)gpspos.c Aug 10  3:17:50 2015" */
+/* "@(#)gpspos.c Sep 26 14:44:02 2015" */
 
 
 #define X2C_int32
@@ -103,6 +103,7 @@ struct COMMONALMANACH;
 
 
 struct COMMONALMANACH {
+   unsigned long treal;
    unsigned long toa; /* almanac time of applicability (reference time [s]*/
    unsigned short week; /* 10 bit gps week 0-1023 (user must account for week rollover) [week]*/
    unsigned short prn; /* GPS prn number */
@@ -1283,7 +1284,6 @@ extern char gpspos_readalmanach(char fnsem[], unsigned long fnsem_len,
                 unsigned long * tilltime, char verb)
 {
    unsigned char cnt;
-   unsigned long minti;
    unsigned long ti;
    unsigned long ri;
    unsigned long j;
@@ -1332,7 +1332,6 @@ extern char gpspos_readalmanach(char fnsem[], unsigned long fnsem_len,
          i = (unsigned long)rinexalm[j].prn;
          ti = ((rinexalm[j].tow+604800UL)-secondinweek)%604800UL;
          if (((i>0UL && i<=32UL) && ti>302400UL) && min0[i-1UL]<ti) {
-            /* & (rinexalm[j].tow<SECONDSINWEEK) */
             --i;
             min0[i] = ti;
             /*WrInt(i, 8); WrInt(rinexalm[j].week, 8);
@@ -1366,29 +1365,59 @@ extern char gpspos_readalmanach(char fnsem[], unsigned long fnsem_len,
             calm[i].crs = rinexalm[j].crs;
             calm[i].cic = rinexalm[j].cic;
             calm[i].cis = rinexalm[j].cis;
+            calm[i].treal = calm[i].tow+(unsigned long)
+                calm[i].week*604800UL+315964800UL;
          }
          if (j==tmp) break;
       } /* end for */
-      minti = X2C_max_longcard; /* find oldest entry for difference to newest */
-      for (i = 0UL; i<=31UL; i++) {
-         ti = calm[i].tow+(unsigned long)calm[i].week*604800UL+315964800UL;
-         if (ti>1261440000UL && ti<minti) minti = ti;
-      } /* end for */
-      *tilltime = 0UL;
-      for (i = 0UL; i<=31UL; i++) {
-         /* WrInt(calm[i].tow, 12); WrInt(calm[i].week, 10); */
-         ti = calm[i].tow+(unsigned long)calm[i].week*604800UL+315964800UL;
-         if (ti<minti+21600UL && ti>*tilltime) {
-            *tilltime = ti; /* newest trusted entry as hint for alm timeout */
-         }
-         if (verb) {
-            wrdate(ti);
-            if ((i&3UL)==3UL) osi_WrStrLn("", 1ul);
-            else InOut_WriteString(" ", 2ul);
-         }
-      } /* end for */
+      j = 0UL;
+      do {
+         /* dinf median time */
+         ti = 0UL;
+         *tilltime = calm[j].treal;
+         for (i = 0UL; i<=31UL; i++) {
+            if (*tilltime<calm[i].treal) ++ti;
+         } /* end for */
+         ++j;
+      } while (!(ti==15UL || j>31UL));
+      if (verb) {
+         InOut_WriteString("median last almanach time:", 27ul);
+         wrdate(*tilltime);
+         InOut_WriteString(" ", 2ul);
+      }
    }
    else if (semok) {
+      /*
+          minti:=MAX(CARDINAL);                     (* find oldest entry for difference to newest *)
+          FOR i:=0 TO 31 DO
+            ti:=VAL(CARDINAL,calm[i].tow)+VAL(CARDINAL,
+                calm[i].week)*(7*3600*24)+315964800;
+            IF (ti>MINDATE) & (ti<minti) THEN minti:=ti END;
+                (* oldest entry *)
+          END;
+      
+          minti2:=MAX(CARDINAL);                     (* find second oldest entry for difference to newest *)
+          FOR i:=0 TO 31 DO
+            ti:=VAL(CARDINAL,calm[i].tow)+VAL(CARDINAL,
+                calm[i].week)*(7*3600*24)+315964800;
+            IF (ti>minti) & (ti<minti2) THEN minti2:=ti END;
+                (* second oldest entry *)
+          END;
+          minti:=minti2;
+      
+          tilltime:=0;
+          FOR i:=0 TO HIGH(calm) DO
+      -- WrInt(calm[i].tow, 12); WrInt(calm[i].week, 10);
+            ti:=VAL(CARDINAL,calm[i].tow)+VAL(CARDINAL,
+                calm[i].week)*(7*3600*24)+315964800;   
+            IF (ti<minti+MAXTRUST) & (ti>tilltime) THEN tilltime:=ti END;
+                (* newest trusted entry as hint for alm timeout *)
+            IF verb THEN 
+              wrdate(ti);
+              IF i MOD 4=3 THEN WrStrLn("") ELSE WrStr(" ") END;
+            END;
+          END;
+      */
       for (i = 0UL; i<=31UL; i++) {
          calm[i].toa = alm[i].toa;
          calm[i].week = alm[i].week;
