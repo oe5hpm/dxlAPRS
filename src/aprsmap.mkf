@@ -89,6 +89,8 @@ $(TARGET) : $(OBJ)
 	$(STRIP) $(TARGET) -s
 clean:
 	rm -f $(OBJ) $(TARGET)
+cleanobj:
+	rm -f $(OBJ)
 %.o: %.c
 	$(CC) $(CDEFS) $(CFLAGS) -o $@ $<
 
