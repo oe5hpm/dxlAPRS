@@ -2403,6 +2403,9 @@ static void Netbeacon(char h[], unsigned long h_len, char qai,
          aprspos_GetPos(&home, &vspeed0, &vcourse0, &valt0, &vsym0, &vsymt0,
                 h, h_len, 0UL, j+1UL, h1, 512ul, &postyp);
                 /* find server position */
+         if (verb && !aprspos_posvalid(home)) {
+            osi_WrStrLn("netbeacon has no valid position", 32ul);
+         }
       }
       else if (verb) osi_WrStrLn("netbeacon file not found", 25ul);
    }
@@ -5487,6 +5490,16 @@ enter\"><H3>\015\012", 131ul);
       Appwww(wsock, wbuf, " MsgCall ", 10ul);
       Appwww(wsock, wbuf, viacall, 10ul);
    }
+   if (aprspos_posvalid(home)) {
+      aprsstr_FixToStr(X2C_DIVR(home.lat,1.7453292519444E-2f), 5UL, h, 32ul);
+      Appwww(wsock, wbuf, " ", 2ul);
+      Appwww(wsock, wbuf, h, 32ul);
+      aprsstr_FixToStr(X2C_DIVR(home.long0,1.7453292519444E-2f), 5UL, h,
+                32ul);
+      Appwww(wsock, wbuf, "/", 2ul);
+      Appwww(wsock, wbuf, h, 32ul);
+   }
+   else Appwww(wsock, wbuf, " (NoPos)", 9ul);
    Appwww(wsock, wbuf, " [udpgate(c) 0.60] http#", 25ul);
    aprsstr_IntToStr((long)*cnt, 1UL, h, 32ul);
    Appwww(wsock, wbuf, h, 32ul);
