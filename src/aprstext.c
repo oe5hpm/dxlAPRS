@@ -121,6 +121,12 @@ extern float aprstext_FtoC(float tempf)
 } /* end FtoC() */
 
 
+extern float aprstext_CtoF(float tempc)
+{
+   return tempc*1.8f+32.0f;
+} /* end CtoF() */
+
+
 extern char aprstext_isacall(char s[], unsigned long s_len)
 {
    unsigned long p;
@@ -1390,9 +1396,10 @@ static void speeddir2str(long knots, long dir, char areaobj, char s[],
 } /* end speeddir2str() */
 
 
-static void compressdata(struct aprspos_POSITION pos, unsigned long knots,
-                unsigned long dir, long feet, char sym[],
-                unsigned long sym_len, char s[], unsigned long s_len)
+extern void aprstext_compressdata(struct aprspos_POSITION pos,
+                unsigned long knots, unsigned long dir, long feet,
+                char sym[], unsigned long sym_len, char s[],
+                unsigned long s_len)
 {
    long n;
    char h[201];
@@ -1678,8 +1685,8 @@ extern void aprstext_encbeacon(char s[], unsigned long s_len,
                 'e');
          err = 1;
       }
-      compressdata(pos, (unsigned long)knots, (unsigned long)dir, feet, symb,
-                 2ul, h, 201ul);
+      aprstext_compressdata(pos, (unsigned long)knots, (unsigned long)dir,
+                feet, symb, 2ul, h, 201ul);
       aprsstr_Append(s, s_len, h, 201ul);
       break;
    default:;

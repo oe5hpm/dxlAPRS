@@ -40,6 +40,9 @@
 #ifndef udp_H_
 #include "udp.h"
 #endif
+#ifndef filesize_H_
+#include "filesize.h"
+#endif
 #ifndef aprsstr_H_
 #include "aprsstr.h"
 #endif
@@ -1149,6 +1152,269 @@ static char Sendudp(const char s[], unsigned long s_len,
    return ok0;
 } /* end Sendudp() */
 
+#define aprsdecode_RAININCH 3.9370078740157
+
+#define aprsdecode_SEP ","
+
+
+static char csvget(char w[], unsigned long w_len, const char s[],
+                unsigned long s_len, unsigned long n)
+{
+   unsigned long j;
+   unsigned long i;
+   w[0UL] = 0;
+   i = 0UL;
+   while (n>0UL) {
+      if (i>s_len-1 || s[i]==0) return 0;
+      if (s[i]==',') --n;
+      ++i;
+   }
+   j = 0UL;
+   while (((j<=w_len-1 && i<s_len-1) && s[i]) && s[i]!=',') {
+      w[j] = s[i];
+      ++i;
+      ++j;
+   }
+   if (j<=w_len-1) w[j] = 0;
+   return 1;
+} /* end csvget() */
+
+
+static char getreal(float * x, const char s[], unsigned long s_len)
+{
+   char val;
+   char dot;
+   float div0;
+   unsigned long i;
+   dot = 0;
+   val = 0;
+   *x = 0.0f;
+   div0 = 1.0f;
+   i = 0UL;
+   for (;;) {
+      if (div0>=0.0f && s[i]=='-') div0 = -div0;
+      else if ((unsigned char)s[i]>='0' && (unsigned char)s[i]<='9') {
+         *x =  *x*10.0f+(float)((unsigned long)(unsigned char)s[i]-48UL);
+         if (*x>1.E+6f) {
+            val = 0;
+            break;
+         }
+         if (dot) div0 = div0*0.1f;
+         val = 1;
+      }
+      else if (!dot && s[i]=='.') dot = 1;
+      else break;
+      ++i;
+      if (i>s_len-1) break;
+   }
+   *x =  *x*div0;
+   return val;
+} /* end getreal() */
+
+
+static void apd(char ws[], unsigned long ws_len, char c, float v,
+                unsigned long f)
+{
+   long d;
+   long n;
+   char tmp;
+   if (c) aprsstr_Append(ws, ws_len, (char *) &c, 1u/1u);
+   n = (long)X2C_TRUNCI(v+0.5f,X2C_min_longint,X2C_max_longint);
+   if (n<0L) {
+      aprsstr_Append(ws, ws_len, "-", 2ul);
+      n = -n;
+      --f;
+   }
+   d = 1L;
+   while (f>1UL) {
+      d = d*10L;
+      --f;
+   }
+   do {
+      aprsstr_Append(ws, ws_len, (char *)(tmp = (char)(X2C_MOD(X2C_DIV(n,d),
+                10L)+48L),&tmp), 1u/1u);
+      d = X2C_DIV(d,10L);
+   } while (d);
+} /* end apd() */
+
+
+static void wxmacro(char ws[], unsigned long ws_len, char wms[],
+                unsigned long wms_len)
+/* \\!wx.txt,,t,,h,b,,w3.6,d! */
+{
+   struct aprsdecode_WX w;
+   unsigned long n;
+   long payload;
+   long len;
+   long f;
+   float mul;
+   float v;
+   float winddir;
+   float wind;
+   char cb[1024];
+   char ns[1024];
+   char fn[1024];
+   char cn[21];
+   char c;
+   struct aprsdecode_DAT d;
+   X2C_PCOPY((void **)&wms,wms_len);
+   if (csvget(fn, 1024ul, wms, wms_len, 0UL)) {
+      /* csv filename */
+      len = 0L;
+      if (fn[0U]) {
+         f = osi_OpenRead(fn, 1024ul);
+         if (osi_FdValid(f)) {
+            n = Size(f);
+            if (n>1024UL) osi_Seek(f, n-1024UL);
+            len = osi_RdBin(f, (char *)cb, 1024u/1u, 1024UL);
+         }
+         if (len>0L) {
+            while (len>0L && (unsigned char)cb[len-1L]<=' ') {
+               --len; /* find first visable char from end */
+            }
+            if (len<=1023L) cb[len] = 0;
+            while (len>0L && (unsigned char)cb[len-1L]>=' ') {
+               --len; /* find begin of last csv line */
+            }
+            aprsstr_Delstr(cb, 1024ul, 0UL, (unsigned long)len);
+         }
+         else cb[0U] = 0;
+         if (cb[0U]==0) {
+            aprsstr_Assign(ns, 1024ul, "wx csv file not readable ", 26ul);
+            aprsstr_Append(ns, 1024ul, fn, 1024ul);
+            useri_xerrmsg(ns, 1024ul);
+            wms[0UL] = 0;
+            goto label;
+         }
+         w.temp = 1.E+6f;
+         winddir = 1.E+6f;
+         wind = 1.E+6f;
+         w.gust = 1.E+6f;
+         w.hygro = 1.E+6f;
+         w.baro = 1.E+6f;
+         w.lum = 1.E+6f;
+         w.rain1 = 1.E+6f;
+         w.rain24 = 1.E+6f;
+         w.raintoday = 1.E+6f;
+         n = 1UL;
+         while (csvget(cn, 21ul, wms, wms_len, n)) {
+            c = cn[0U]; /* w3.6 */
+            if (c) {
+               aprsstr_Delstr(cn, 21ul, 0UL, 1UL); /* 3.6 */
+               if (!getreal(&mul, cn, 21ul)) mul = 1.0f;
+               if (csvget(ns, 1024ul, cb, 1024ul, n-1UL) && getreal(&v, ns,
+                1024ul)) {
+                  v = v*mul;
+                  switch ((unsigned)c) {
+                  case 't':
+                     if (v>=(-60.0f) && v<=79.0f) w.temp = v;
+                     break;
+                  case 'g':
+                     if (v>=0.0f && v<=500.0f) w.gust = v;
+                     break;
+                  case 'w':
+                     if (v>=0.0f && v<=500.0f) wind = v;
+                     break;
+                  case 'd':
+                     if (v>=0.0f && v<360.0f) winddir = v;
+                     break;
+                  case 'b':
+                     if (v>=900.0f && v<=1100.0f) w.baro = v;
+                     break;
+                  case 'h':
+                     if (v>=0.0f && v<=100.0f) w.hygro = v;
+                     break;
+                  case 'L':
+                     if (v>=0.0f && v<=1500.0f) w.lum = v;
+                     break;
+                  case 'r':
+                     if (v>=0.0f && v<=500.0f) w.rain1 = v;
+                     break;
+                  case 'P':
+                     if (v>=0.0f && v<=500.0f) w.rain24 = v;
+                     break;
+                  case 'p':
+                     if (v>=0.0f && v<=500.0f) w.raintoday = v;
+                     break;
+                  } /* end switch */
+               }
+            }
+            ++n;
+         }
+         d.postyp = 'g';
+         payload = aprsstr_InStr(ws, ws_len, ":", 2ul);
+         if (payload>0L) {
+            aprspos_GetPos(&d.pos, &d.speed, &d.course, &d.altitude, &d.sym,
+                &d.symt, ws, ws_len, 0UL, (unsigned long)(payload+1L),
+                d.comment0, 256ul, &d.postyp);
+            /* exchange spd/dir */
+            if (d.postyp=='c') {
+               aprsstr_Delstr(ws, ws_len, (unsigned long)(payload+2L),
+                ws_len);
+               d.speed = aprsdecode_trunc(X2C_DIVR(wind,1.609f));
+               d.course = aprsdecode_trunc(winddir);
+               cb[0U] = d.symt;
+               cb[1U] = d.sym;
+               cb[2U] = 0;
+               aprstext_compressdata(d.pos, d.speed, d.course, 0L, cb,
+                1024ul, cb, 1024ul);
+               aprsstr_Append(ws, ws_len, cb, 1024ul);
+            }
+            else if (d.postyp!='g') {
+               aprsstr_Assign(ns, 1024ul, "wx beacon not MICE encodable",
+                29ul);
+               useri_xerrmsg(ns, 1024ul);
+            }
+         }
+         if (d.postyp!='c') {
+            if (winddir!=1.E+6f) apd(ws, ws_len, 0, winddir+1.0f, 3UL);
+            else aprsstr_Append(ws, ws_len, "...", 4ul);
+            if (wind!=1.E+6f) {
+               apd(ws, ws_len, '/', X2C_DIVR(wind,1.609f), 3UL);
+            }
+            else aprsstr_Append(ws, ws_len, "/...", 5ul);
+         }
+         if (w.gust!=1.E+6f) {
+            apd(ws, ws_len, 'g', X2C_DIVR(w.gust,1.609f), 3UL);
+         }
+         else aprsstr_Append(ws, ws_len, "g...", 5ul);
+         if (w.temp!=1.E+6f) {
+            apd(ws, ws_len, 't', aprstext_CtoF(w.temp), 3UL);
+         }
+         else aprsstr_Append(ws, ws_len, "t...", 5ul);
+         if (w.rain1!=1.E+6f) {
+            apd(ws, ws_len, 'r', w.rain1*3.9370078740157f, 3UL);
+         }
+         if (w.rain24!=1.E+6f) {
+            apd(ws, ws_len, 'P', w.rain24*3.9370078740157f, 3UL);
+         }
+         if (w.raintoday!=1.E+6f) {
+            apd(ws, ws_len, 'p', w.raintoday*3.9370078740157f, 3UL);
+         }
+         if (w.hygro!=1.E+6f) apd(ws, ws_len, 'h', w.hygro, 2UL);
+         if (w.baro!=1.E+6f) apd(ws, ws_len, 'b', w.baro*10.0f, 5UL);
+         if (w.lum!=1.E+6f) {
+            if (w.lum>=1000.0f) apd(ws, ws_len, 'l', w.lum-1000.0f, 3UL);
+            else apd(ws, ws_len, 'L', w.lum, 3UL);
+         }
+      }
+      else {
+         aprsstr_Assign(ns, 1024ul, "wx beacon macro needs valid filename ",
+                38ul);
+         useri_xerrmsg(ns, 1024ul);
+         ws[0UL] = 0;
+      }
+   }
+   else {
+      aprsstr_Assign(ns, 1024ul, "wx beacon macro \\\\!filename,...! ",
+                34ul);
+      useri_xerrmsg(ns, 1024ul);
+      ws[0UL] = 0;
+   }
+   label:;
+   X2C_PFREE(wms);
+} /* end wxmacro() */
+
 #define aprsdecode_MSYM "\\"
 
 #define aprsdecode_INSOPEN "<"
@@ -1163,6 +1429,10 @@ static char Sendudp(const char s[], unsigned long s_len,
 
 #define aprsdecode_WRCLOSE "<"
 
+#define aprsdecode_WXOPEN "!"
+
+#define aprsdecode_WXCLOSE "!"
+
 
 static void beaconmacros(char s[], unsigned long s_len, const char path[],
                 unsigned long path_len, char wdata[],
@@ -1176,6 +1446,7 @@ static void beaconmacros(char s[], unsigned long s_len, const char path[],
    char fn[1024];
    long f;
    char ok0;
+   char rwc;
    char rw;
    struct aprspos_POSITION pos;
    X2C_PCOPY((void **)&wdata,wdata_len);
@@ -1209,13 +1480,17 @@ static void beaconmacros(char s[], unsigned long s_len, const char path[],
             aprsstr_Append(ns, 256ul, ds, 256ul);
          }
          else if (all) {
-            if ((s[i]=='<' || s[i]=='>') || s[i]=='[') {
+            rw = s[i];
+            if (rw=='<') rwc = '>';
+            else if (rw=='>') rwc = '<';
+            else if (rw=='[') rwc = ']';
+            else if (rw=='!') rwc = '!';
+            else rwc = 0;
+            if (rwc) {
                /* insert or write file or insert and delete */
-               rw = s[i];
                fn[0U] = 0;
                ++i;
-               while ((((i<s_len-1 && s[i]) && s[i]!='>') && s[i]!='<')
-                && s[i]!=']') {
+               while ((i<s_len-1 && s[i]) && s[i]!=rwc) {
                   aprsstr_Append(fn, 1024ul, (char *) &s[i], 1u/1u);
                   ++i;
                }
@@ -1242,19 +1517,22 @@ static void beaconmacros(char s[], unsigned long s_len, const char path[],
                      goto label;
                   }
                }
-               else if (wdata[0UL]) {
-                  /* write file */
-                  f = osi_OpenWrite(fn, 1024ul);
-                  if (osi_FdValid(f)) {
-                     osi_WrBin(f, (char *)wdata, (wdata_len)/1u,
+               else if (rw=='>') {
+                  if (wdata[0UL]) {
+                     /* write file */
+                     f = osi_OpenWrite(fn, 1024ul);
+                     if (osi_FdValid(f)) {
+                        osi_WrBin(f, (char *)wdata, (wdata_len)/1u,
                 aprsstr_Length(wdata, wdata_len));
-                     osi_Close(f);
+                        osi_Close(f);
+                     }
                   }
                }
+               else if (rw=='!') wxmacro(ns, 256ul, fn, 1024ul);
             }
             else if (s[i]=='\\') aprsstr_Append(ns, 256ul, "\\\\", 3ul);
             else if (s[i]=='v') {
-               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.55", 17ul);
+               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.56", 17ul);
             }
             else if (s[i]=='l') {
                if (aprstext_getmypos(&pos)) {
@@ -1613,7 +1891,7 @@ static void GetWX(struct aprsdecode_WX * wx, unsigned long * course,
       } /* end switch */
    }
    loop_exit:;
-   if (wdir>=0.0f && wdir<360.0f) *course = aprsdecode_trunc(wdir);
+   if (wdir>=1.0f && wdir<=360.0f) *course = aprsdecode_trunc(wdir);
    if (wwind>=0.0f && wwind<1000.0f) *speed = aprsdecode_trunc(wwind);
    aprsstr_Delstr(buf, buf_len, 0UL, p);
 /* X123 is 12 * 10^3 nanosieverts/hr*/
@@ -2741,6 +3019,8 @@ extern long aprsdecode_Decode(char buf[], unsigned long buf_len,
          aprsstr_Delstr(dat->comment0, 256ul, 0UL, 8UL);
       }
       GetWX(&dat->wx, &dat->course, &dat->speed, dat->comment0, 256ul);
+      if (dat->course>0UL && dat->course<=360UL) --dat->course;
+      else dat->course = X2C_max_longcard;
    }
    /*
      i:=0;
@@ -3380,12 +3660,13 @@ static void getmessage(aprsdecode_pTCPSOCK cp, unsigned long up,
    char void0;
    char query;
    char fit;
+   char my[100];
    char h[100];
    char port;
+   /*    my:MONCALL; */
    char ch0;
-   aprsdecode_MONCALL my;
-   useri_confstr(useri_fMYCALL, my, 9ul);
-   if (aprsstr_Length(my, 9ul)<3UL) return;
+   useri_confstr(useri_fMYCALL, my, 100ul);
+   if (aprsstr_Length(my, 100ul)<3UL) return;
    aprsstr_Assign(h, 100ul, dat.msgto, 9ul);
    fit = 0;
    i = 0UL;
@@ -3399,7 +3680,7 @@ static void getmessage(aprsdecode_pTCPSOCK cp, unsigned long up,
    if (cp) port = 'N';
    else port = (char)(up+48UL);
    if (ch0==0 && h[i]==0) {
-      /*    WrStr("my message "); */
+      /*  WrStr("my message "); */
       if (dat.ackrej==aprsdecode_MSGMSG) {
          /*FOR i:=0 TO HIGH(dat.acktext) DO WrInt(ORD(dat.acktext[i]), 4);
                 END; WrStrLn("=ack"); */
@@ -5485,7 +5766,7 @@ static char tcpconn(aprsdecode_pTCPSOCK * sockchain, long f)
          aprsstr_Append(h, 512ul, s, 100ul);
       }
       aprsstr_Append(h, 512ul, " vers ", 7ul);
-      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.55", 17ul);
+      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.56", 17ul);
       appfilter(h, 512ul);
       /*    IF filter[0]<>0C THEN Append(h, " filter ");
                 Append(h, filter) END; */
@@ -6417,10 +6698,12 @@ extern void aprsdecode_drawbeacon(char raw[], unsigned long raw_len)
    aprsstr_Assign(b, 512ul, raw, raw_len);
    if (getbeaconparm(b, 512ul, &time0, &port)) {
       beaconmacros(b, 512ul, "", 1ul, "", 1ul, 1);
-      storedata(b, 0, 0UL, 0, 1);
-      if (aprsdecode_click.mhop[0UL]) {
-         useri_say("switch to \"show all\" to see new object", 39ul, 5UL,
+      if (b[0UL]) {
+         storedata(b, 0, 0UL, 0, 1);
+         if (aprsdecode_click.mhop[0UL]) {
+            useri_say("switch to \"show all\" to see new object", 39ul, 5UL,
                 'r');
+         }
       }
    }
    else useri_xerrmsg("decode error", 13ul);

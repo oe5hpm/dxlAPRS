@@ -5,7 +5,7 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
-/* "@(#)sondemod.c Aug  9 23:50:09 2015" */
+/* "@(#)sondemod.c Oct 19 18:03:31 2015" */
 
 
 #define X2C_int32
@@ -608,7 +608,7 @@ raw file", 58ul);
                osi_WrStrLn(" -o <UDPport>   receive demodulated data via UDP",
                  49ul);
                osi_WrStrLn(" -R <minutes>   request new rinex almanach after \
-minutes if receiving gps (-T 240)", 83ul);
+minutes if receiving gps (-R 240)", 83ul);
                osi_WrStrLn(" -r <ip>:<port> send AXUDP  -r 127.0.0.1:4000",
                 46ul);
                osi_WrStrLn(" -s <filename>  gps almanach sem format (not exac\

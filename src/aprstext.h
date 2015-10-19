@@ -80,6 +80,8 @@ extern void aprstext_encbeacon(char [], unsigned long, unsigned long *);
 extern float aprstext_FtoC(float);
 /* fahrenheit to celsius */
 
+extern float aprstext_CtoF(float);
+
 extern aprsdecode_pOPHIST aprstext_oppo(aprsdecode_MONCALL);
 
 extern void aprstext_setmarkalti(aprsdecode_pFRAMEHIST, aprsdecode_pOPHIST,
@@ -95,6 +97,10 @@ extern char aprstext_isacall(char [], unsigned long);
 extern void aprstext_logfndate(unsigned long, char [], unsigned long);
 
 extern void aprstext_sievert2str(float, char [], unsigned long);
+
+extern void aprstext_compressdata(struct aprspos_POSITION, unsigned long,
+                unsigned long, long, char [], unsigned long, char [],
+                unsigned long);
 
 
 extern void aprstext_BEGIN(void);

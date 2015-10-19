@@ -291,24 +291,31 @@ as fit into Your Window
 |905 What to do on Mouse Over middle of Symbol
 
 |1001 Center Clicked Point of Map 
+Disables click to Symbols, Text and Tracks
 
 |1006 On click to (empty) map set marker 1
 with pressed SHIFT set marker 2 and 
 if enabled do radio link calculations
+Disables click to Symbols, Text and Tracks
 
 |1011 On click to (empty) map set marker 2
 and if enabled do radio link calculations.
 With pressed SHIFT set marker 1
+Disables click to Symbols, Text and Tracks
 
 |1016 On first click to (empty) map set marker 1
 next clicks set marker 2 and if enabled
 do radio link calculations. To set marker
 1 again clear markers (shortcut ":")
+Disables click to Symbols, Text and Tracks
 
 |1021 On click to (empty) map Open Tools Menu
 
+|1025 Enable click to Symbols, Text and Tracks
+
 |1026 On click to (empty) map clear menues
 (shortcut Esc)
+Enable click to Symbols, Text and Tracks
 
 |1152 Show Decoded and Raw Data
 on Mouse Over Wx Symbol
@@ -916,8 +923,16 @@ Do not move delete or add characters.
 
 |7415 Net Beacon needs only the Comment like
 Name, QRV on 145.500Mhz
+
 \\h \\z \\v \\<file> for inserting time,
-program version or a file eg. with Wx-Data
+program version or a file
+\\!wx.csv,,,t,,,,,h,b,r,w,d,,,,,g!
+ insert wx values from csv file
+ filename t=temp h=hygro b=baro g=gust(km/h)
+ w=wind(km/h) d=winddir L=lum r=rain1h(mm)
+ P=rain24h(mm) p=raintoday(mm)
+ use ,w3.6, multiplier if given in m/s
+
 
 |7420 Enter a valid Passcode and enable
 "Allow Tx to Net" if You want
@@ -1229,6 +1244,12 @@ SHIFT-Click to new position, "Draw" or "Send"
 \\h insert time HHMMSSz
 \\<filename> insert file (with Weather Data)
 \\[filename] insert file and delete after tx
+\\!wx.csv,,,t,,,,,h,b,r,w,d,,,,,g!
+ insert wx values from csv file
+ filename t=temp h=hygro b=baro g=gust(km/h)
+ w=wind(km/h) d=winddir L=lum r=rain1h(mm)
+ P=rain24h(mm) p=raintoday(mm)
+ use ,w3.6, multiplier if given in m/s
 \\v insert program version
 \\l insert position 
 \\\ insert \\

@@ -1256,10 +1256,25 @@
 + Multiline-Objekt Editor 
 
 
-25. 8. 015 (Ver 0.54)
+25. 8. 2015 (Ver 0.54)
 
 + Mic-e-Telemetrie Dekoder, die Herstellercodes aus den Mic-e Frames werden dazu vorher
   entfernt (soweits geht) was auch sauberere Kommentarzeilen ergibt.
+
+
+
+16.10. 2015 (Ver 0.56)
+
++ Wetterbake (Netbeacon, Rf Beacon, Query) aus .csv File
+  \\!wx.csv,,,t,,,,,h,b,r,w,d,,,,,g! im comment extrahiert die Werte aus der letzten Zeile
+  im File wx.csv. Es kann noch ein Multiplikator angegeben werden zb. ,w3.6, statt ,w, zum
+  Umrechnen von m/s auf km/h. Werte siehe Hints. Wx Symbol auswaehlen.
+
++ Messages/Queries bei 9-stelligem Mycall sollten nun bestaetigt/beantwortet werden.
+ 
+
+
+
 
 
 

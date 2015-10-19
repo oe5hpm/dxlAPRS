@@ -93,6 +93,6 @@ cleanobj:
 	rm -f $(OBJ)
 %.o: %.c
 	$(CC) $(CDEFS) $(CFLAGS) -o $@ $<
-
 # end of makefile
+
 
