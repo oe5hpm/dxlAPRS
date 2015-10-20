@@ -3354,6 +3354,33 @@ static void Stomsg(MONCALL fromcall, MONCALL tocall, MSGTEXT msg,
 } /* end Stomsg() */
 
 
+static void postoloc(char loc[], unsigned long loc_len,
+                struct aprspos_POSITION pos)
+{
+   unsigned long bc;
+   unsigned long lc;
+   float br;
+   float lr;
+   lr = (pos.long0*5.7295779513082E+1f+180.0f)*2880.0f;
+   if (lr<=0.0f) lr = 0.0f;
+   lc = (unsigned long)X2C_TRUNCC(lr,0UL,X2C_max_longcard);
+   br = (pos.lat*5.7295779513082E+1f+90.0f)*5760.0f;
+   if (br<=0.0f) br = 0.0f;
+   bc = (unsigned long)X2C_TRUNCC(br,0UL,X2C_max_longcard);
+   loc[0UL] = (char)(65UL+lc/57600UL);
+   loc[1UL] = (char)(65UL+bc/57600UL);
+   loc[2UL] = (char)(48UL+(lc/5760UL)%10UL);
+   loc[3UL] = (char)(48UL+(bc/5760UL)%10UL);
+   loc[4UL] = (char)(65UL+(lc/240UL)%24UL);
+   loc[5UL] = (char)(65UL+(bc/240UL)%24UL);
+   loc[6UL] = (char)(48UL+(lc/24UL)%10UL);
+   loc[7UL] = (char)(48UL+(bc/24UL)%10UL);
+   loc[8UL] = (char)(65UL+lc%24UL);
+   loc[9UL] = (char)(65UL+bc%24UL);
+   loc[10UL] = 0;
+} /* end postoloc() */
+
+
 static void degtostr(char s[], unsigned long s_len, float d, char posc,
                 char negc)
 {
@@ -5497,6 +5524,9 @@ enter\"><H3>\015\012", 131ul);
       aprsstr_FixToStr(X2C_DIVR(home.long0,1.7453292519444E-2f), 5UL, h,
                 32ul);
       Appwww(wsock, wbuf, "/", 2ul);
+      Appwww(wsock, wbuf, h, 32ul);
+      postoloc(h, 32ul, home);
+      Appwww(wsock, wbuf, " ", 2ul);
       Appwww(wsock, wbuf, h, 32ul);
    }
    else Appwww(wsock, wbuf, " (NoPos)", 9ul);
