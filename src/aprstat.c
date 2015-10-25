@@ -1161,6 +1161,7 @@ extern void aprstat_wxgraph(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
    float vh;
    struct WX min0;
    struct WX max0;
+   char hh[256];
    char h[256];
    char s[256];
    struct aprsdecode_DAT dat;
@@ -1175,6 +1176,7 @@ extern void aprstat_wxgraph(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
    float rain0[1440];
    float lumi[1440];
    unsigned short have;
+   char dirvalid;
    struct WX * anonym;
    if (op==0 || op->frames==0) {
       /*OR (op^.lastinftyp<100)*/
@@ -1205,6 +1207,7 @@ extern void aprstat_wxgraph(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
       anonym->lumi = (-1.E+4f);
       anonym->siev = (-1.E+4f);
    }
+   dirvalid = 0;
    min0.temp = X2C_max_real;
    min0.baro = X2C_max_real;
    memset((char *)lastval,(char)0,sizeof(struct aprstat_LASTVAL));
@@ -1265,16 +1268,18 @@ extern void aprstat_wxgraph(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
          if (dat.course<360UL) {
             windd[xt] = (float)dat.course;
             lastval->winddir = (float)dat.course;
-            vh = (float)dat.speed*1.609f;
-            if (vh>=0.0f && vh<=1000.0f) {
-               winds[xt] = vh;
-               lastval->winds = vh;
-               if (vh>max0.wind) max0.wind = vh;
-            }
+            dirvalid = 1;
+         }
+         vh = (float)dat.speed*1.609f;
+         if (vh>=0.0f && vh<=1000.0f) {
+            winds[xt] = vh;
+            lastval->winds = vh;
+            if (vh>max0.wind) max0.wind = vh;
          }
          vh = dat.wx.gust*1.609f;
          if (vh>=0.0f && vh<=1000.0f) {
             gust[xt] = vh;
+            lastval->gust = vh;
             if (vh>max0.wind) max0.wind = vh;
          }
       }
@@ -1314,39 +1319,48 @@ extern void aprstat_wxgraph(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
    }
    if (max0.wind!=(-1.E+4f)) {
       have |= 0x8U;
-      have |= 0x10U;
       if ((0x8U & *what)) {
          if (!newimg(Maxx, img)) return;
          scale(winds, 1440ul, (-1.E+4f), max0.wind, 120.0f, 20.0f, &yax0,
                 &yax1, &step);
          scale(gust, 1440ul, (-1.E+4f), max0.wind, 120.0f, 30.0f, &yax0,
                 &yax1, &step);
-         aprsstr_FixToStr(lastval->winds, 0UL, s, 256ul);
-         aprsstr_Append(s, 256ul, "km/h Wind/Gust ", 16ul);
+         s[0U] = 0;
+         if (lastval->winds!=0.0f) {
+            aprsstr_FixToStr(lastval->winds, 0UL, hh, 256ul);
+            aprsstr_Append(hh, 256ul, "km/h Wind  ", 12ul);
+            aprsstr_Append(s, 256ul, hh, 256ul);
+         }
+         if (lastval->gust!=0.0f) {
+            aprsstr_FixToStr(lastval->gust, 0UL, hh, 256ul);
+            aprsstr_Append(hh, 256ul, "km/h Gust  ", 12ul);
+            aprsstr_Append(s, 256ul, hh, 256ul);
+         }
          aprsstr_Append(s, 256ul, h, 256ul);
          paper(img, yax0, yax1, step, 8UL, Maxx, 120UL, s, 256ul);
          timeline(stime, img, Maxx);
          dots(XStep, img, winds, 1440ul, 1, 100UL, 500UL, 700UL);
          dots(XStep, img, gust, 1440ul, 1, 600UL, 100UL, 0UL);
       }
-      if ((0x10U & *what)) {
-         if (!newimg(Maxx, img)) return;
-         scale(windd, 1440ul, (-1.E+4f), 360.0f, 120.0f, 365.0f, &yax0,
+      if (dirvalid) {
+         have |= 0x10U;
+         if ((0x10U & *what)) {
+            if (!newimg(Maxx, img)) return;
+            scale(windd, 1440ul, (-1.E+4f), 360.0f, 120.0f, 365.0f, &yax0,
                 &yax1, &step);
-         aprsstr_FixToStr(lastval->winddir, 0UL, s, 256ul);
-         aprsstr_Append(s, 256ul, "deg Wind Direction ", 20ul);
-         aprsstr_Append(s, 256ul, h, 256ul);
-         paper(img, yax0, yax1, 90UL, 8UL, Maxx, 120UL, s, 256ul);
-         timeline(stime, img, Maxx);
-         dots(XStep, img, windd, 1440ul, 0, 200UL, 700UL, 700UL);
+            aprsstr_FixToStr(lastval->winddir, 0UL, s, 256ul);
+            aprsstr_Append(s, 256ul, "deg Wind Direction ", 20ul);
+            aprsstr_Append(s, 256ul, h, 256ul);
+            paper(img, yax0, yax1, 90UL, 8UL, Maxx, 120UL, s, 256ul);
+            timeline(stime, img, Maxx);
+            dots(XStep, img, windd, 1440ul, 0, 200UL, 700UL, 700UL);
+         }
       }
    }
    if (max0.hyg!=(-1.E+4f)) {
       have |= 0x4U;
       if ((0x4U & *what)) {
-         if (!newimg(Maxx, img)) {
-            return;
-         }
+         if (!newimg(Maxx, img)) return;
          scale(hyg, 1440ul, (-1.E+4f), 100.0f, 120.0f, 101.0f, &yax0, &yax1,
                 &step);
          aprsstr_FixToStr(lastval->hyg, 0UL, s, 256ul);

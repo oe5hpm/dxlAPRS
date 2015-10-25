@@ -28,6 +28,7 @@ struct aprstat_LASTVAL {
    float baro;
    float winds;
    float winddir;
+   float gust;
    float rain;
    float rain24;
    float lumi;

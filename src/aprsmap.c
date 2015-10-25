@@ -4840,6 +4840,7 @@ static void MainEvent(void)
       else if (aprsdecode_click.cmd=='t'
                 && aprspos_posvalid(aprsdecode_click.markpos)) {
          /* click to listwin line */
+         push(maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom));
          maptool_center(maptool_xsize, maptool_ysize,
                 maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom),
                 aprsdecode_click.markpos, &aprsdecode_mappos);
@@ -4933,10 +4934,10 @@ static void MainEvent(void)
          importlog(aprsdecode_click.cmdatt);
          aprsdecode_click.cmdatt = 0;
       }
-      else if (aprsdecode_click.cmd=='\011') toggview();
-      else if (aprsdecode_click.cmd=='(') {
-         mapbri(-5L);
+      else if (aprsdecode_click.cmd=='\011') {
+         toggview();
       }
+      else if (aprsdecode_click.cmd=='(') mapbri(-5L);
       else if (aprsdecode_click.cmd==')') mapbri(5L);
       makeimage(0);
       aprsdecode_click.cmd = 0;

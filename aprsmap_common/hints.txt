@@ -410,7 +410,7 @@ deleted (only in RAM not in Logfile)
 |1445 Cycle through avaliable Track Colours incl Invisable
 
 |1450 Count Sent Messages, Acks, Rejects in Fullbright Time
-
+If one or more Messages click to view
  
 
 

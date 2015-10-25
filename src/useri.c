@@ -4052,7 +4052,7 @@ static void mapclick(void)
    if (!aprsdecode_lums.headmenuy) {
       addline(menu, "\365\365|Menu", 8ul, "\201", 2ul, 1020UL);
    }
-   else addline(menu, "\365\365|Clear Menus", 15ul, "\201", 2ul, 1025UL);
+   else addline(menu, "\365\365|More Options", 16ul, "\201", 2ul, 1025UL);
    menu->ysize = menu->oldknob*menu->yknob;
    menu->oldknob = 0UL;
 } /* end mapclick() */
@@ -4392,6 +4392,13 @@ static void infosdo(pMENU menu)
       aprsstr_Append(h, 101ul, s, 101ul);
       aprsstr_Append(h, 101ul, "km/h", 5ul);
       addline(menu, h, 101ul, "j", 2ul, 1462UL);
+      if (lastval.gust<1000.0f && lastval.gust>=lastval.winds) {
+         aprsstr_FixToStr(lastval.gust, 0UL, s, 101ul);
+         strncpy(h,"Gust       |",101u);
+         aprsstr_Append(h, 101ul, s, 101ul);
+         aprsstr_Append(h, 101ul, "km/h", 5ul);
+         addline(menu, h, 101ul, "j", 2ul, 1462UL);
+      }
    }
    if ((0x10U & what)) {
       aprsstr_FixToStr(lastval.winddir, 0UL, s, 101ul);
@@ -4437,7 +4444,7 @@ static void infosdo(pMENU menu)
 static void infos(void)
 {
    pMENU menu;
-   newmenu(&menu, 125UL, aprsdecode_lums.fontysize+5UL, 23UL, useri_bTRANSP);
+   newmenu(&menu, 125UL, aprsdecode_lums.fontysize+5UL, 24UL, useri_bTRANSP);
    infosdo(menu);
    /*  menu^.ysize:=menu^.oldknob*menu^.yknob; */
    menu->oldknob = 0UL;
