@@ -1323,7 +1323,7 @@ extern void aprstat_wxgraph(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
          if (!newimg(Maxx, img)) return;
          scale(winds, 1440ul, (-1.E+4f), max0.wind, 120.0f, 20.0f, &yax0,
                 &yax1, &step);
-         scale(gust, 1440ul, (-1.E+4f), max0.wind, 120.0f, 30.0f, &yax0,
+         scale(gust, 1440ul, (-1.E+4f), max0.wind, 120.0f, 20.0f, &yax0,
                 &yax1, &step);
          s[0U] = 0;
          if (lastval->winds!=0.0f) {
