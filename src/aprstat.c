@@ -1323,16 +1323,16 @@ extern void aprstat_wxgraph(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
          if (!newimg(Maxx, img)) return;
          scale(winds, 1440ul, (-1.E+4f), max0.wind, 120.0f, 20.0f, &yax0,
                 &yax1, &step);
-         scale(gust, 1440ul, (-1.E+4f), max0.wind, 120.0f, 30.0f, &yax0,
+         scale(gust, 1440ul, (-1.E+4f), max0.wind, 120.0f, 20.0f, &yax0,
                 &yax1, &step);
          s[0U] = 0;
          if (lastval->winds!=0.0f) {
-            aprsstr_FixToStr(lastval->winds, 0UL, hh, 256ul);
+            aprsstr_FixToStr(lastval->winds, 2UL, hh, 256ul);
             aprsstr_Append(hh, 256ul, "km/h Wind  ", 12ul);
             aprsstr_Append(s, 256ul, hh, 256ul);
          }
          if (lastval->gust!=0.0f) {
-            aprsstr_FixToStr(lastval->gust, 0UL, hh, 256ul);
+            aprsstr_FixToStr(lastval->gust, 2UL, hh, 256ul);
             aprsstr_Append(hh, 256ul, "km/h Gust  ", 12ul);
             aprsstr_Append(s, 256ul, hh, 256ul);
          }

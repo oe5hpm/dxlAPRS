@@ -4387,13 +4387,13 @@ static void infosdo(pMENU menu)
       addline(menu, h, 101ul, "h", 2ul, 1460UL);
    }
    if ((0x8U & what)) {
-      aprsstr_FixToStr(lastval.winds, 0UL, s, 101ul);
+      aprsstr_FixToStr(lastval.winds, 2UL, s, 101ul);
       strncpy(h,"Wind       |",101u);
       aprsstr_Append(h, 101ul, s, 101ul);
       aprsstr_Append(h, 101ul, "km/h", 5ul);
       addline(menu, h, 101ul, "j", 2ul, 1462UL);
       if (lastval.gust<1000.0f && lastval.gust>=lastval.winds) {
-         aprsstr_FixToStr(lastval.gust, 0UL, s, 101ul);
+         aprsstr_FixToStr(lastval.gust, 2UL, s, 101ul);
          strncpy(h,"Gust       |",101u);
          aprsstr_Append(h, 101ul, s, 101ul);
          aprsstr_Append(h, 101ul, "km/h", 5ul);

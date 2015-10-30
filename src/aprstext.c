@@ -450,7 +450,7 @@ extern void aprstext_decode(char s[], unsigned long s_len,
          if (dat->wx.gust!=1.E+6f) {
             nl = 0;
             aprsstr_Append(s, s_len, "\012 Gust:", 8ul);
-            aprsstr_FixToStr(dat->wx.gust*1.609f, 0UL, h, 512ul);
+            aprsstr_FixToStr(dat->wx.gust*1.609f, 2UL, h, 512ul);
             aprsstr_Append(s, s_len, h, 512ul);
             aprsstr_Append(s, s_len, "km/h", 5ul);
          }
