@@ -262,8 +262,8 @@ old Maps will come back
 
 |710 Shortcut "7" "8" "9" are last 3 Lines
 Last Line will be used at Program Start
-Resort Lines in "Add Maps" with "Edit"
-and "Add"
+Move Lines to bottom in "Add Maptypes" with
+"Edit" and "Add"
 
 |900 What to do on a Click to Map
 "Center" if You prefere Map movement
@@ -441,11 +441,12 @@ data will stay in RAM until
 after "Full Bright Time"
 
 |1700 AprsIs Connect Status
-Start/Stop Connection.
-Shift-Leftclick to Config.
-If no data sent (yellow) or
-received (green), change to red.
-Configure in Config, Online
+Leftclick to Start/Stop Connection.
+Shift-Leftclick to quick Config.
+No Data Flow: red
+Data Sent: yellow
+Data Received: green
+Full Configure in Config, Online
 
 |1701 UDP Port 1 Status
 Switch AXUDP Interface to
@@ -496,7 +497,9 @@ Shift-Leftclick to Config
 
 |1708 Trackfilter on
 
-|1709 Exit this Map Option
+|1709 Show Objects
+
+|1710 Exit this Map Option
 
 |1800 path and filename, %t inserts time, %n is 000..999
 .bmp at end writes filetype BMP else PPM

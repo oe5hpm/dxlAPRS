@@ -92,6 +92,8 @@
 
 #define useri_CFGRAWDECODED "u"
 
+#define useri_DEFAULTLUMOBJ "70"
+
 #define useri_MULTILINEDEL 1
 /* subknob */
 

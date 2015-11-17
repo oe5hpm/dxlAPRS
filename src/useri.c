@@ -1107,7 +1107,7 @@ f 22050 -C 0 -p /dev/ttyS0 0 -M 0 -U 127.0.0.1:9002:9001 -m 0", 73ul, 0,
                 1ul, 0, 376UL);
    initc(useri_fQUERYS, "Querys", 7ul, useri_cBLIST, "", 1ul, 0, 380UL);
    initc(useri_fKMH, "Km/h Text", 10ul, useri_cBLINE, "km/h", 5ul, 1, 385UL);
-   initc(useri_fWRINCOM, "Monitor InOut", 14ul, useri_cLINE, "", 1ul, 0,
+   initc(useri_fWRINCOM, "Monitor InOut", 14ul, useri_cLINE, "1234", 5ul, 0,
                 388UL);
    initc(useri_fWRTICKER, "Show Headline", 14ul, useri_cBLINE, "1", 2ul, 0,
                 390UL);
@@ -1146,11 +1146,11 @@ f 22050 -C 0 -p /dev/ttyS0 0 -M 0 -U 127.0.0.1:9002:9001 -m 0", 73ul, 0,
    initc(useri_fSRTMCACHE, "Srtmcache MByte", 16ul, useri_cBLINE, "100", 4ul,
                  0, 431UL);
    initc(useri_fBEEPPROX, "Bell on Approxy", 16ul, useri_cBLINE, "400 40 2000\
- 1000", 17ul, 0, 428UL);
+ 1000", 17ul, 1, 428UL);
    initc(useri_fBEEPWATCH, "Bell on Watchcall", 18ul, useri_cBLINE, "350 50",
-                 7ul, 0, 429UL);
+                 7ul, 1, 429UL);
    initc(useri_fBEEPMSG, "Bell on Message/Ack", 20ul, useri_cBLINE, "800 500 \
-1000 100", 17ul, 0, 430UL);
+1000 100", 17ul, 1, 430UL);
    initc(useri_fMSGTO, "To Call", 8ul, useri_cLINE, "", 1ul, 0, 435UL);
    configs[useri_fMSGTO].width = 9U;
    initc(useri_fMSGTEXT, "MsgText", 8ul, useri_cLINE, "", 1ul, 0, 431UL);
@@ -3973,7 +3973,7 @@ static void helpmenu(void)
    newmenu(&menu, 150UL, aprsdecode_lums.fontysize+7UL, 3UL, useri_bTRANSP);
    /*  addline(menu, "Shortcuts", CMDSHORTCUTLIST, MINH*6); */
    addline(menu, "Helptext", 9ul, "\305", 2ul, 610UL);
-   addline(menu, "aprsmap(cu) 0.56 by OE5DXL ", 28ul, " ", 2ul, 605UL);
+   addline(menu, "aprsmap(cu) 0.57 by OE5DXL ", 28ul, " ", 2ul, 605UL);
    setunderbar(menu, 37L);
    menu->ysize = menu->oldknob*menu->yknob;
    menu->oldknob = 0UL;
@@ -9557,7 +9557,7 @@ static void udpstat(unsigned long port)
 
 #define useri_XKNOB 13
 
-#define useri_KNOBS 9
+#define useri_KNOBS 10
 
 #define useri_MAXEXTRALEN 84
 /* dynamic message field width */
@@ -9580,24 +9580,28 @@ static void statusbar(void)
    char s[100];
    char ch;
    e[0U] = 0;
-   if (aprsdecode_lums.wxcol=='R') strncpy(e,"Rain Map",100u);
-   else if (aprsdecode_lums.wxcol=='W') strncpy(e,"Temp.Map",100u);
-   else if (aprsdecode_lums.wxcol=='w') strncpy(e,"Wx Stations",100u);
+   if (aprsdecode_lums.wxcol=='R') aprsstr_Append(e, 100ul, "Rain Map", 9ul);
+   else if (aprsdecode_lums.wxcol=='W') {
+      aprsstr_Append(e, 100ul, "Temp.Map", 9ul);
+   }
+   else if (aprsdecode_lums.wxcol=='w') {
+      aprsstr_Append(e, 100ul, "Wx Stations", 12ul);
+   }
    else if (aprsdecode_click.withradio) {
       /*    IF click.panorama THEN e:="Panorama" ELSE */
-      if (aprsdecode_click.altimap) strncpy(e,"Geo Map",100u);
-      else strncpy(e,"Radio Map",100u);
+      if (aprsdecode_click.altimap) aprsstr_Append(e, 100ul, "Geo Map", 8ul);
+      else aprsstr_Append(e, 100ul, "Radio Map", 10ul);
+   }
+   else if (aprsdecode_click.mhop[0UL]) {
+      /*    END; */
+      aprsstr_Append(e, 100ul, aprsdecode_click.mhop, 9ul);
    }
    else if (aprsdecode_click.onesymbol.tab) {
-      /*    END; */
-      aprsstr_Assign(e, 100ul, "Symbol ", 8ul);
+      aprsstr_Append(e, 100ul, "Symbol ", 8ul);
       aprsstr_Append(e, 100ul, (char *) &aprsdecode_click.onesymbol.tab,
                 1u/1u);
       aprsstr_Append(e, 100ul, (char *) &aprsdecode_click.onesymbol.pic,
                 1u/1u);
-   }
-   else if (aprsdecode_click.mhop[0UL]) {
-      aprsstr_Assign(e, 100ul, aprsdecode_click.mhop, 9ul);
    }
    elen = aprsstr_Length(e, 100ul)*6UL;
    if (elen>0UL) {
@@ -9606,43 +9610,31 @@ static void statusbar(void)
    }
    menu = findmenuid(254UL);
    redraw = menu!=0;
-   /*IF redraw THEN hk:=menu^.hiknob ELSE hk:=0 END; */
    if (!redraw) {
-      newmenu(&menu, 201UL, aprsdecode_lums.fontysize, 1UL, useri_bBLACK);
+      newmenu(&menu, 214UL, aprsdecode_lums.fontysize, 1UL, useri_bBLACK);
    }
    okn = menu->oldknob;
    osub = menu->oldsub;
    menu->oldknob = 0UL;
-   menu->xsize = 117UL+elen;
+   menu->xsize = 130UL+elen;
    strncpy(s,"\346\360N\365|\3601\365|\3602\365|\3603\365|\3604\365|\360L\365\
 |\360M\365|\360",100u);
    if (aprsdecode_maploadpid.runs) ch = 'd';
    else ch = 'e';
    if (useri_configon(useri_fGETMAPS)) ch = X2C_CAP(ch);
    aprsstr_Append(s, 100ul, (char *) &ch, 1u/1u);
-   /*Append(s, SP6+"|"+SP1+"F"+SP6+"|"+SP1+"."+SP6); */
-   aprsstr_Append(s, 100ul, "\365|\360F", 5ul);
+   aprsstr_Append(s, 100ul, "\365|\360F\365|\360O", 9ul);
    if (aprsdecode_lasttcprx==0UL) s[2U] = 'X';
    if (e[0U]) {
       aprsstr_Append(s, 100ul, "\364|", 3ul);
       aprsstr_Append(s, 100ul, e, 100ul);
    }
    addline(menu, s, 100ul, "\277", 2ul, 1700UL);
-   /*
-     IF configon(fCONNECT) THEN timecolor(realtime-lasttcprx, c);
-     ELSE c.r:=0; c.g:=0; c.b:=0 END;
-     statuscol(menu^.image, XKNOB DIV 2, c);
-   */
    statuscoly(menu->image, 6L, aprsdecode_realtime-aprsdecode_lasttcptx,
                 aprsdecode_realtime-aprsdecode_lasttcprx,
                 useri_configon(useri_fCONNECT));
    kx = 0UL;
    for (i = useri_fUDP1; i<=useri_fUDP4; i++) {
-      /*
-          IF configon(i) THEN timecolor(realtime-udpsocks[kx].lastudprx, c);
-          ELSE c.r:=0; c.g:=0; c.b:=0 END;
-          statuscol(menu^.image, XKNOB DIV 2+XKNOB*(kx+1), c);
-      */
       statuscoly(menu->image, (long)(6UL+13UL*(kx+1UL)),
                 aprsdecode_realtime-aprsdecode_udpsocks0[kx].lastudptx,
                 aprsdecode_realtime-aprsdecode_udpsocks0[kx].lastudprx,
@@ -9665,9 +9657,7 @@ static void statusbar(void)
    c.r = 0U;
    c.g = 0U;
    c.b = 0U;
-   if (useri_isblown) {
-      c.r = 400U;
-   }
+   if (useri_isblown) c.r = 400U;
    else if (useri_configon(useri_fALLOWEXP)) c.g = 300U;
    statuscol(menu->image, (long)(6UL+13UL*kx), 5L, c);
    ++kx;
@@ -9682,12 +9672,17 @@ static void statusbar(void)
    c.r = 0U;
    statuscol(menu->image, (long)(6UL+13UL*kx), 5L, c);
    ++kx;
-   /*
-     IF click.mhop[0]<>0C THEN c.r:=600; c.g:=300 ELSE c.r:=0; c.g:=0 END;
-                c.b:=0;
-     statuscol(menu^.image, XKNOB DIV 2+XKNOB*kx,XKNOBC, c);
-     INC(kx);
-   */
+   if (aprsdecode_lums.obj>0L) {
+      c.g = 100U;
+      c.b = 700U;
+   }
+   else {
+      c.g = 0U;
+      c.b = 0U;
+   }
+   c.r = 0U;
+   statuscol(menu->image, (long)(6UL+13UL*kx), 5L, c);
+   ++kx;
    if (elen>0UL) {
       c.r = 300U;
       c.g = 100U;
@@ -11258,8 +11253,8 @@ static void mouseleft(long mousx, long mousy)
             configtogg(useri_fTRACKFILT);
             aprsdecode_click.cmd = ' ';
          }
-         else if (subknob==9UL) {
-            /*        ELSIF subknob=9 THEN click.cmd:="0"; */
+         else if (subknob==9UL) aprsdecode_click.cmd = 'O';
+         else if (subknob==10UL) {
             aprsdecode_lums.wxcol = 0;
             aprsdecode_click.withradio = 0;
             aprsdecode_click.cmd = '0';

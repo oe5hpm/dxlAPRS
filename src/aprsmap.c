@@ -4801,6 +4801,13 @@ static void MainEvent(void)
          if (aprsdecode_lums.obj==0L) {
             aprsdecode_lums.obj = 10L*useri_conf2int(useri_fLOBJ, 0UL, 0L,
                 100L, 100L);
+            if (aprsdecode_lums.obj<30L) {
+               /* switch on objects but are too dark */
+               useri_AddConfLine(useri_fLOBJ, 0U, "70", 3ul);
+                /* set to default brightness */
+               aprsdecode_lums.obj = 10L*useri_conf2int(useri_fLOBJ, 0UL, 0L,
+                 100L, 100L);
+            }
          }
          else aprsdecode_lums.obj = 0L;
          useri_sayonoff("Show Items/Objects", 19ul, aprsdecode_lums.obj!=0L);
@@ -4856,7 +4863,9 @@ static void MainEvent(void)
                 maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom),
                 aprsdecode_click.markpos, &aprsdecode_mappos);
          aprsdecode_click.marktime = aprsdecode_realtime;
-         if (aprsdecode_click.mhop[0UL]) setshowall();
+         if (aprsdecode_click.mhop[0UL]) {
+            setshowall();
+         }
       }
       else if (aprsdecode_click.cmd=='c') centermouse(0);
       else if (aprsdecode_click.cmd=='X') xytomark();
@@ -4926,7 +4935,9 @@ static void MainEvent(void)
          useri_helptext(0UL, 0UL, 0UL, 0UL, "en-shortcuts", 13ul);
       }
       else if (aprsdecode_click.cmd=='7') useri_Setmap(0UL);
-      else if (aprsdecode_click.cmd=='8') useri_Setmap(1UL);
+      else if (aprsdecode_click.cmd=='8') {
+         useri_Setmap(1UL);
+      }
       else if (aprsdecode_click.cmd=='9') useri_Setmap(2UL);
       else if (aprsdecode_click.cmd=='Q') quit = 1;
       else if (aprsdecode_click.cmd=='e') aprsdecode_click.dryrun = 0;
@@ -4934,9 +4945,7 @@ static void MainEvent(void)
          importlog(aprsdecode_click.cmdatt);
          aprsdecode_click.cmdatt = 0;
       }
-      else if (aprsdecode_click.cmd=='\011') {
-         toggview();
-      }
+      else if (aprsdecode_click.cmd=='\011') toggview();
       else if (aprsdecode_click.cmd=='(') mapbri(-5L);
       else if (aprsdecode_click.cmd==')') mapbri(5L);
       makeimage(0);

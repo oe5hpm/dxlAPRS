@@ -58,7 +58,7 @@
 #define aprsdecode_MAXMULTILINES 40
 /* AE5PL limits to 23 multiline elements */
 
-#define aprsdecode_VERS "aprsmap(cu) 0.56"
+#define aprsdecode_VERS "aprsmap(cu) 0.57"
 
 typedef char aprsdecode_MONCALL[9];
 
