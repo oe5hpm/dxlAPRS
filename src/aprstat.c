@@ -1317,7 +1317,7 @@ extern void aprstat_wxgraph(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
          dots(XStep, img, baro, 1440ul, 1, 500UL, 400UL, 500UL);
       }
    }
-   if (max0.wind!=(-1.E+4f)) {
+   if (max0.wind!=(-1.E+4f) && max0.wind>0.0f) {
       have |= 0x8U;
       if ((0x8U & *what)) {
          if (!newimg(Maxx, img)) return;

@@ -81,8 +81,8 @@ maptool_pIMAGE useri_panoimage;
 #define useri_SERIAL1 "udpflex -t /dev/ttyUSB0:9600 -i kiss.txt -u -U :9002:9\
 001"
 
-#define useri_SERIAL2 "afskmodem -f 22050 -C 0 -p /dev/ttyS0 0 -M 0 -U 127.0.\
-0.1:9002:9001 -m 0"
+#define useri_SERIAL2 "afskmodem -f 22050 -C 0 -p /dev/ttyS0 0 -M 0 -T 6 -U 1\
+27.0.0.1:9002:9001 -m 0"
 
 static char useri_TICKERHEADLINE = 0;
                 /* some window managers do not free window headline mem */
@@ -871,7 +871,7 @@ static void initconfig1(void)
                  0, 160UL);
    initc(useri_fLWAY, "Brightness Waypoint", 20ul, useri_cLINE, "75", 3ul, 0,
                  175UL);
-   initc(useri_fTRANSP, "Menu Background", 16ul, useri_cBLINE, "60", 3ul, 1,
+   initc(useri_fTRANSP, "Menu Background", 16ul, useri_cBLINE, "75", 3ul, 1,
                 180UL);
    initc(useri_fLTEXT, "Brightness Text", 16ul, useri_cLINE, "70", 3ul, 0,
                 185UL);
@@ -1051,8 +1051,8 @@ d", 14ul, 1, 15UL);
    initc(useri_fSERIALTASK, "Serial Task", 12ul, useri_cBLINE, "udpflex -t /d\
 ev/ttyUSB0:9600 -i kiss.txt -u -U :9002:9001", 58ul, 0, 137UL);
    initc(useri_fSERIALTASK2, "Serial Task2", 13ul, useri_cBLINE, "afskmodem -\
-f 22050 -C 0 -p /dev/ttyS0 0 -M 0 -U 127.0.0.1:9002:9001 -m 0", 73ul, 0,
-                137UL);
+f 22050 -C 0 -p /dev/ttyS0 0 -M 0 -T 6 -U 127.0.0.1:9002:9001 -m 0", 78ul, 0,
+                 137UL);
    initc(useri_fDIGI, "Digipeater", 11ul, useri_cBLIST, "", 1ul, 0, 139UL);
    initc(useri_fDIGITIME, "block same Content [s]", 23ul, useri_cLINE, "890",
                  4ul, 0, 140UL);
@@ -1224,6 +1224,7 @@ static char configson(unsigned char v, unsigned long line)
 extern void useri_saveconfig(void)
 {
    long fd;
+   char backupfn[1000];
    char h[1000];
    unsigned char i;
    pCONFLINE pl;
@@ -1234,10 +1235,19 @@ extern void useri_saveconfig(void)
    aprstext_postostr(aprsdecode_click.markpos, '3', h, 1000ul);
    useri_AddConfLine(useri_fMARKPOS, 1U, h, 1000ul);
    aprsstr_cleanfilename(aprsdecode_lums.configfn, 257ul);
-   fd = osi_OpenWrite(aprsdecode_lums.configfn, 257ul);
+   /*
+     IF Exists(lums.configfn) THEN                                (* make config backup *)
+       Assign(backupfn, lums.configfn); Append(backupfn, "~");
+       Rename(lums.configfn,backupfn);
+     END;
+   */
+   aprsstr_Assign(backupfn, 1000ul, aprsdecode_lums.configfn, 257ul);
+   aprsstr_Append(backupfn, 1000ul, "~", 2ul);
+                /* write temp file and rename later */
+   fd = osi_OpenWrite(backupfn, 1000ul);
    if (!osi_FdValid(fd)) {
       strncpy(h,"Can not write ",1000u);
-      aprsstr_Append(h, 1000ul, aprsdecode_lums.configfn, 257ul);
+      aprsstr_Append(h, 1000ul, backupfn, 1000ul);
       useri_textautosize(0L, 0L, 6UL, 4UL, 'e', h, 1000ul);
       useri_refresh = 1;
       return;
@@ -1296,6 +1306,7 @@ extern void useri_saveconfig(void)
       if (i==useri_fEDITLINE) break;
    } /* end for */
    osi_Close(fd);
+   osi_Rename(backupfn, 1000ul, aprsdecode_lums.configfn, 257ul);
    useri_textautosize(0L, 0L, 6UL, 4UL, 'b', "Config Saved", 13ul);
    useri_rdlums();
 } /* end saveconfig() */
@@ -3973,7 +3984,7 @@ static void helpmenu(void)
    newmenu(&menu, 150UL, aprsdecode_lums.fontysize+7UL, 3UL, useri_bTRANSP);
    /*  addline(menu, "Shortcuts", CMDSHORTCUTLIST, MINH*6); */
    addline(menu, "Helptext", 9ul, "\305", 2ul, 610UL);
-   addline(menu, "aprsmap(cu) 0.57 by OE5DXL ", 28ul, " ", 2ul, 605UL);
+   addline(menu, "aprsmap(cu) 0.58 by OE5DXL ", 28ul, " ", 2ul, 605UL);
    setunderbar(menu, 37L);
    menu->ysize = menu->oldknob*menu->yknob;
    menu->oldknob = 0UL;
@@ -5769,9 +5780,8 @@ static void extractdigi(char s[], unsigned long s_len, char vv[],
    X2C_PCOPY((void **)&s,s_len);
    aprsstr_Extractword(s, s_len, h, 201ul);
    *from = h[0U];
-   if (((unsigned char)*from<'1' || (unsigned char)*from>'4') && *from!='*') {
-      *from = '*';
-   }
+   if ((((unsigned char)*from<'1' || (unsigned char)*from>'4') && *from!='*')
+                 && *from!='N') *from = '*';
    *to = h[1U];
    if ((unsigned char)*to<'1' || (unsigned char)*to>'4') *to = '1';
    *dir = (unsigned char)h[2U]<='1';
@@ -5854,11 +5864,6 @@ static void digieditor(void)
    ohs = m->oldsub;
    m->oldknob = 0UL;
    m->scroll = 1UL;
-   /*    IF (cnt>0) & (digiedline[0]<>0C)
-                THEN h:="        Add     |        Save     |      Close" */
-   /*    ELSE          h:="           Add        |              Close" END;
-                */
-   /*    addline(m, h, CMDDIGILINE, MINH*83); */
    addline(m, "         Add     |        Save     |      Close", 48ul,
                 "\314", 2ul, 8305UL);
    AddEditLine(m, "\314", 2ul, "", 1ul, useri_fDIGIX, 8310UL);
@@ -5913,9 +5918,7 @@ static void digieditor(void)
       xp = ((unsigned long)maptool_xsize-xw)/2UL;
    }
    else xp = 0UL;
-   if (aprsdecode_lums.headmenuy) {
-      yp = aprsdecode_lums.fontysize;
-   }
+   if (aprsdecode_lums.headmenuy) yp = aprsdecode_lums.fontysize;
    else yp = 0UL;
    setmenupos(m, xp, yp);
    m->oldsub = ohs;
@@ -6040,7 +6043,7 @@ static void dodigi(unsigned long scroll, unsigned long knob,
       if (subknob==0UL) configdelman(useri_fDIGI, 1UL, knob-scroll);
       else if (subknob==1UL) {
          /* change rx port */
-         rollport(&s[0U], "1234*", 6ul);
+         rollport(&s[0U], "1234*N", 7ul);
          confreplace(useri_fDIGI, (knob-scroll)-1UL, 1, s, 200ul);
       }
       else if (subknob==2UL) {

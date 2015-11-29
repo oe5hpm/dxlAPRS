@@ -189,6 +189,13 @@ struct BEACON {
 
 typedef char TICKERCALL[31];
 
+
+struct UDPSET {
+   long txd;
+   long level;
+   long quali;
+};
+
 static char sentemptymsg;
 
 static char callsrc;
@@ -412,113 +419,6 @@ static void parms(void)
       if (h[0U]==0) break;
       if ((h[0U]=='-' && h[1U]) && h[2U]==0) {
          lasth = h[1U];
-         /*
-               IF (lasth="s") OR (lasth="S") THEN
-                 NextArg(h);
-                 Assign(servercall, h);
-                 IF (h[0]=0C) OR (h[0]="-") OR ((lasth="s") & NOT callok(h))
-                THEN Err("-s call-ssid") END;
-         */
-         /*
-               IF lasth="p" THEN
-                 NextArg(h);
-                 IF (h[0]>="0") & (h[0]<="9") THEN
-                   i:=0;  
-                   WHILE (i<=HIGH(passwd)) & (h[i]>=" ") DO passwd[i]:=h[i];
-                INC(i) END;
-                 ELSE
-                   fdf:=OpenRead(h);
-                   IF NOT FdValid(fdf)
-                THEN Err("-p passcode or passwordfile") END;
-                   len:=RdBin(fdf, passwd, SIZE(passwd)-1);
-                   IF len>=0 THEN passwd[len]
-                :=0C ELSE Err("-p error with password file") END;
-                   Close(fdf);
-                 END;
-                 passwd[HIGH(passwd)]:=0C;
-                 i:=0; 
-                 WHILE (passwd[i]>="0") & (passwd[i]<="9") DO INC(i) END;
-                 IF (i=0) OR (passwd[i]<>0C) THEN Err("-p invalid passcode")
-                END;
-         */
-         /*
-               ELSIF lasth="n" THEN
-                 NextArg(h);
-                 i:=0;
-                 IF (GetSec(h,i,n)>=0) & (h[i]=":") THEN
-                   netbeaconintervall:=n*60;
-                   INC(i);
-                   FOR n:=0 TO HIGH(netbeaconfn) DO
-                     IF i<=HIGH(h) THEN
-                       netbeaconfn[n]:=h[i];
-                       INC(i);
-                     END;
-                   END;
-                   IF netbeaconfn[0]<=" " THEN Err("-n netbeacon filename")
-                END;
-                 ELSE Err("-n netbeacon format is minutes:file") END;
-         */
-         /*
-               IF lasth="f" THEN
-                 NextArg(h);
-                 Assign(serverrangefilter, h);
-                 IF (h[0]=0C) OR (h[0]="-") THEN Err("-f rangefilter") END;
-                 FOR i:=0 TO Length(serverrangefilter) DO
-                   IF serverrangefilter[i]=",
-                " THEN serverrangefilter[i]:=" " END;
-                 END;  
-         
-               IF lasth="G" THEN
-                 NextArg(h);
-                 WITH lums DO
-                  IF NOT StrToFix(gamma,
-                h) OR (gamma<0.1) OR (gamma>10.0)
-                THEN Err("-G gamma (0.1..10)") END;
-                 END;
-         */
-         /*
-               IF (lasth="R") OR (lasth="M") THEN
-                 NextArg(h);
-                 ALLOCATE(usock, SIZE(usock^)); debugmem.req:=SIZE(usock^);
-                INC(debugmem.mon, debugmem.req);
-                 IF usock=NIL THEN Err("out of memory") END;
-         
-                 FILL(usock, 0C, SIZE(usock^));
-                 WITH usock^ DO
-                   IF GetIp2(h, ip, dport, bindport,
-                checkip)<0 THEN Err("-R or -M need ip:port:port") END;
-                   fds:=openudp();
-                   INC(udpch);
-                   chan:=udpch;
-                   rawread:=lasth="R";
-                   IF (CAST(INTEGER,fds)<0) OR (bindudp(fds,
-                bindport)<0) THEN Err("-R or -M cannot bind udpport") END;
-         
-                   len:=socknonblock(fds);
-         */
-         /*
-                   fd:=fds; 
-                   ii:=InStr(h, "+");
-                   IF ii>0 THEN 
-                     i:=ii+1;
-                     IF (GetSec(h,i,n)>=0) THEN 
-                       maxbytes:=n;
-                       INC(i);
-                       IF (h[i-1]=":") & (GetSec(h,i,
-                n)>=0) THEN torfradius:=FLOAT(n) END;
-                     END;
-                   END;
-         */
-         /*
-                   next:=NIL;
-                 END;
-                 IF udpsocks=NIL THEN udpsocks:=usock;
-                 ELSE 
-                   ush:=udpsocks; 
-                   WHILE ush^.next<>NIL DO ush:=ush^.next END; 
-                   ush^.next:=usock;
-                 END; 
-         */
          if (lasth=='x') {
             Lib_NextArg(h, 4096ul);
             i = 0UL;
@@ -562,13 +462,6 @@ static void parms(void)
          else if (lasth=='g') {
             Lib_NextArg(h, 4096ul);
             if (gatecnt>9UL) Err("-g gateway table full", 22ul);
-            /*
-                    Assign(gateways[gatecnt].url, h);
-                    IF h[0]=0C THEN Err("-g url port") END;
-                    NextArg(h);
-                    Assign(gateways[gatecnt].port, h);
-                    IF h[0]=0C THEN Err("-g url port") END;
-            */
             h[4095U] = 0;
             if (h[0U]=='[') {
                ii = 1L;
@@ -647,27 +540,10 @@ vices like WLNK, WHO-IS", 73ul);
 e (from km around digi)", 73ul);
                osi_WrStrLn("                repeat -M for each radio port wit\
 h a tx", 56ul);
-               /*        WrStrLn("
-                -n <min>:<file> netbeacon minutes:filename -n 10:netbeacon.txt"
-                ); */
-               /*        WrStrLn("
-                beacon file like: !8959.00N/17959.00E&igate mars"); */
-               /*        WrStrLn("
-                beacon file used by udpgate itself to find out own position")
-                ; */
                osi_WrStrLn(" -o <outfile>   out file, delete after read",
                 44ul);
-               /*        WrStrLn("
-                -p <password>  login passwort for aprs-is servers -p 12345");
-                 */
-               /*        WrStrLn("
-                to hide password in commandline use file mode -p pass.txt");
-                */
                osi_WrStrLn(" -R             same as -M but axudp format",
                 44ul);
-               /*        WrStrLn("
-                -s <call>      server call of this server -s MYCALL-10 (-S no callcheck)
-                "); */
                osi_WrStrLn(" -v             show frames and analytics on stdo\
 ut", 52ul);
                osi_WrLn();
@@ -783,8 +659,6 @@ ut", 52ul);
       aprsstr_Append(h, 4096ul, " ? use -h", 10ul);
       Err(h, 4096ul);
    }
-/*  IF servercall[0]=0C THEN WrLn; WrStrLn("aprsmap: NO SERVERCALL ?"); WrLn;
-                 END; */
 } /* end parms() */
 
 
@@ -1009,7 +883,7 @@ static void tickermon(const char port[], unsigned long port_len, char dir,
       aprsstr_Assign(h2, 31ul, port, port_len);
       h2[0U] = X2C_CAP(h2[0U]);
       aprsstr_Append(h2, 31ul, (char *) &dir, 1u/1u);
-      aprsstr_Append(h2, 31ul, dat.srccall, 9ul);
+      aprsstr_Append(h2, 31ul, dat.symcall, 9ul);
       if (dat.wx.temp!=1.E+6f) {
          aprsstr_FixToStr(aprstext_FtoC(dat.wx.temp), 2UL, h, 31ul);
          aprsstr_Append(h2, 31ul, " ", 2ul);
@@ -1081,6 +955,67 @@ static void wrmon(unsigned long port, char dir, const char s[],
 } /* end wrmon() */
 
 
+static char filtdupes(const char tb[], unsigned long tb_len,
+                unsigned long oport, unsigned long dt)
+{
+   unsigned long n2;
+   unsigned long n1;
+   unsigned long n;
+   unsigned long p;
+   unsigned char hashh;
+   unsigned char hashl;
+   struct aprsdecode_UDPSOCK * anonym;
+   hashl = 0U;
+   hashh = 0U;
+   p = 0UL;
+   n1 = 0UL;
+   n2 = 0UL;
+   for (;;) {
+      while (tb[p] && tb[p]!=':') ++p;
+      if (tb[p]!=':') break;
+      n1 = p;
+      ++p;
+      if (tb[p]!='}') break;
+      ++p;
+      n2 = p;
+   }
+   p = n2;
+   while (p<n1 && tb[p]!='>') {
+      aprsstr_HashCh(tb[p], &hashl, &hashh);
+      ++p;
+   }
+   while ((p<n1 && tb[p]!='-') && tb[p]!=',') {
+      aprsstr_HashCh(tb[p], &hashl, &hashh);
+      ++p;
+   }
+   p = n1;
+   while (tb[p]) {
+      aprsstr_HashCh(tb[p], &hashl, &hashh);
+      ++p;
+   }
+   n = (unsigned long)(unsigned char)(char)hashl+(unsigned long)
+                (unsigned char)(char)hashh*256UL&65535UL;
+   { /* with */
+      struct aprsdecode_UDPSOCK * anonym = &aprsdecode_udpsocks0[oport];
+      if (anonym->pdupetimes==0) {
+         Storage_ALLOCATE((X2C_ADDRESS *) &anonym->pdupetimes, 262144UL);
+         useri_debugmem.req = 262144UL;
+         useri_debugmem.mon += 262144UL;
+         if (anonym->pdupetimes==0) {
+            osi_WrStrLn("duptime out of memory", 22ul);
+            useri_wrheap();
+            return 0;
+         }
+         memset((X2C_ADDRESS)anonym->pdupetimes,(char)0,262144UL);
+      }
+      if (anonym->pdupetimes[n]+dt>aprsdecode_realtime) return 0;
+      /* it is a dupe */
+      anonym->pdupetimes[n] = aprsdecode_realtime;
+   }
+   return 1;
+} /* end filtdupes() */
+
+
 static char Sendtcp(aprsdecode_pTCPSOCK to, const aprsdecode_FRAMEBUF buf)
 {
    long i;
@@ -1117,40 +1052,82 @@ static char Sendtcp(aprsdecode_pTCPSOCK to, const aprsdecode_FRAMEBUF buf)
 } /* end Sendtcp() */
 
 
-static char Sendudp(const char s[], unsigned long s_len,
-                unsigned long uport)
+static long Sendudp(const char s[], unsigned long s_len, unsigned long uport,
+                 unsigned long dupetime0)
 {
    long len;
    aprsdecode_FRAMEBUF raw;
-   char ok0;
    struct aprsdecode_UDPSOCK * anonym;
-   ok0 = 0;
+   len = -1L;
    if ((uport<=3UL && (long)aprsdecode_udpsocks0[uport].fd>=0L)
                 && aprsdecode_udpsocks0[uport].dport>0UL) {
-      aprsstr_mon2raw(s, s_len, raw, 512ul, &len);
-      if (len>1L) {
-         len = udpsend(aprsdecode_udpsocks0[uport].fd, raw, len,
+      if (dupetime0==0UL || filtdupes(s, s_len, uport, dupetime0)) {
+         aprsstr_mon2raw(s, s_len, raw, 512ul, &len);
+         if (len>1L) {
+            len = udpsend(aprsdecode_udpsocks0[uport].fd, raw, len,
                 aprsdecode_udpsocks0[uport].dport,
                 aprsdecode_udpsocks0[uport].ip);
-         if (len>0L) {
-            wrmon(uport+1UL, '<', s, s_len);
-            { /* with */
-               struct aprsdecode_UDPSOCK * anonym = &aprsdecode_udpsocks0[uport]
+            if (len>0L) {
+               wrmon(uport+1UL, '<', s, s_len);
+               { /* with */
+                  struct aprsdecode_UDPSOCK * anonym = &aprsdecode_udpsocks0[uport]
                 ;
-               ++anonym->txframes;
-               anonym->txbytes += (unsigned long)len;
-               anonym->lastudptx = aprsdecode_realtime;
-               if (anonym->starttime==0UL) {
-                  anonym->starttime = aprsdecode_realtime;
+                  ++anonym->txframes;
+                  anonym->txbytes += (unsigned long)len;
+                  anonym->lastudptx = aprsdecode_realtime;
+                  if (anonym->starttime==0UL) {
+                     anonym->starttime = aprsdecode_realtime;
+                  }
                }
-               ok0 = 1;
             }
          }
+         else if (aprsdecode_verb) {
+            osi_WrStrLn("wrong rf monitor format", 24ul);
+         }
       }
-      else if (aprsdecode_verb) osi_WrStrLn("wrong rf monitor format", 24ul);
+      else len = 0L;
    }
-   return ok0;
+   return len;
 } /* end Sendudp() */
+
+#define aprsdecode_MAXTXBIT 2000
+/* clamp to +- bit */
+
+#define aprsdecode_MSGPREF 1000
+/* prefer msg time space */
+
+
+static char Checkbps(unsigned long uport, unsigned long bps,
+                unsigned long bytes, char msgprefer)
+/* check/set bit/s for net>rf*/
+{
+   unsigned long t;
+   struct aprsdecode_UDPSOCK * anonym;
+   if (bps>0UL && uport<=3UL) {
+      t = 2000UL/bps;
+      { /* with */
+         struct aprsdecode_UDPSOCK * anonym = &aprsdecode_udpsocks0[uport];
+         if (bytes==0UL) {
+            /* check */
+            /*WrInt(bpstime-realtime, 10); WrStrLn(" check tx"); */
+            if (anonym->bpstime<=aprsdecode_realtime+(1000UL/bps)
+                *(unsigned long)msgprefer) return 1;
+            t += aprsdecode_realtime;
+            if (anonym->bpstime>t) anonym->bpstime = t;
+         }
+         else {
+            /* set next tx time */
+            if (anonym->bpstime+t<aprsdecode_realtime) {
+               anonym->bpstime = aprsdecode_realtime-t;
+                /* limit transmission at once */
+            }
+            anonym->bpstime += (bytes*8UL)/bps;
+         }
+      }
+   }
+   /*WrInt(bpstime-realtime, 10); WrStrLn(" next tx"); */
+   return 0;
+} /* end Checkbps() */
 
 #define aprsdecode_RAININCH 3.9370078740157
 
@@ -1532,7 +1509,7 @@ static void beaconmacros(char s[], unsigned long s_len, const char path[],
             }
             else if (s[i]=='\\') aprsstr_Append(ns, 256ul, "\\\\", 3ul);
             else if (s[i]=='v') {
-               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.57", 17ul);
+               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.58", 17ul);
             }
             else if (s[i]=='l') {
                if (aprstext_getmypos(&pos)) {
@@ -2751,12 +2728,12 @@ extern char aprsdecode_checksymb(char symt, char symb)
 extern long aprsdecode_Decode(char buf[], unsigned long buf_len,
                 struct aprsdecode_DAT * dat)
 {
-   unsigned long payload;
    unsigned long iv;
    unsigned long micedest;
    unsigned long len;
    unsigned long p;
    unsigned long i;
+   char thirdparty;
    memset((char *)dat,(char)0,sizeof(struct aprsdecode_DAT));
    dat->speed = X2C_max_longcard;
    dat->altitude = X2C_max_longint;
@@ -2771,14 +2748,16 @@ extern long aprsdecode_Decode(char buf[], unsigned long buf_len,
       while (i<len && buf[i]!=':') ++i;
       i += 2UL;
    } while (!(i>len || buf[i-1UL]!='}'));
+   thirdparty = p!=0UL;
    i = 0UL;
    while (buf[p]!='>') {
       /* source call */
       if (p>=len || i>8UL) return -1L;
-      dat->srccall[i] = buf[p];
+      dat->symcall[i] = buf[p];
       ++p;
       ++i;
    }
+   memcpy(dat->srcall,dat->symcall,9u);
    ++p;
    micedest = p;
    i = 0UL;
@@ -2791,16 +2770,12 @@ extern long aprsdecode_Decode(char buf[], unsigned long buf_len,
    }
    iv = 0UL;
    while (buf[p]==',') {
-      /*
-          IF iv>HIGH(dat.viacalls) THEN RETURN -1 END;
-      */
       if (iv>9UL) iv = 9UL;
       ++p;
-      if ((buf[p]=='q' && buf[p+1UL]=='A') && buf[p+2UL]!='C') {
-         dat->igatep = iv+1UL;
-      }
-      /*      IF dat.igatep>HIGH(dat.viacalls) THEN dat.igatep:=0;
-                RETURN -1 END; */
+      if (((((thirdparty && buf[p]=='T') && buf[p+1UL]=='C')
+                && buf[p+2UL]=='P') && buf[p+3UL]=='I')
+                && buf[p+4UL]=='P' || ((buf[p]=='q' && buf[p+1UL]=='A')
+                && buf[p+2UL]!='C') && iv<9UL) dat->igatep = iv+1UL;
       if (dat->igatep==iv) dat->igaterawp = p;
       i = 0UL;
       while (buf[p]!=',' && buf[p]!=':') {
@@ -2814,7 +2789,8 @@ extern long aprsdecode_Decode(char buf[], unsigned long buf_len,
          }
          ++p;
       }
-      if (dat->igatep==iv) dat->igatelen = p-dat->igaterawp;
+      /*    IF dat.igatep=iv THEN dat.igatelen:=p-dat.igaterawp END; */
+      if (dat->igatep==iv) dat->igatelen = i;
       ++iv;
    }
    if (dat->hbitp>0UL || iv>(unsigned long)(dat->igatep!=0UL)
@@ -2828,8 +2804,8 @@ extern long aprsdecode_Decode(char buf[], unsigned long buf_len,
    /*WrInt(dat.hbitp, 1);WrStrLn("=h"); */
    if (p+1UL>=len || buf[p]!=':') return -1L;
    ++p;
-   payload = p;
-   dat->typc = buf[payload];
+   dat->payload = p;
+   dat->typc = buf[dat->payload];
    switch ((unsigned)dat->typc) {
    case '\034':
    case '\035':
@@ -2882,18 +2858,18 @@ extern long aprsdecode_Decode(char buf[], unsigned long buf_len,
    if (dat->type==aprsdecode_OBJ) {
       /* object */
       if (buf[p+9UL]=='_' || buf[p+9UL]=='*') {
-         memcpy(dat->objectfrom,dat->srccall,9u);
+         memcpy(dat->objectfrom,dat->symcall,9u);
          i = 0UL;
          while (i<=8UL) {
             if (p+i>=len) return -1L;
-            dat->srccall[i] = buf[p+i];
+            dat->symcall[i] = buf[p+i];
             ++i;
          }
          if (buf[p+i]=='_') dat->objkill = '1';
          else if (buf[p+i]!='*') dat->type = aprsdecode_UNKNOWN;
          dat->timestamp = buf[p+16UL];
-         while (i>0UL && (unsigned char)dat->srccall[i-1UL]<=' ') {
-            dat->srccall[i-1UL] = 0;
+         while (i>0UL && (unsigned char)dat->symcall[i-1UL]<=' ') {
+            dat->symcall[i-1UL] = 0;
             --i;
          }
       }
@@ -2901,14 +2877,14 @@ extern long aprsdecode_Decode(char buf[], unsigned long buf_len,
    }
    else if (dat->typc==')') {
       /* item */
-      memcpy(dat->objectfrom,dat->srccall,9u);
+      memcpy(dat->objectfrom,dat->symcall,9u);
       i = 0UL;
       while (buf[p+i]!='!' && buf[p+i]!='_') {
          if (p+i>=len) return -1L;
-         if (i<=8UL) dat->srccall[i] = buf[p+i];
+         if (i<=8UL) dat->symcall[i] = buf[p+i];
          ++i;
       }
-      if (i<=8UL) dat->srccall[i] = 0;
+      if (i<=8UL) dat->symcall[i] = 0;
       if (buf[p+i]=='_') dat->objkill = '1';
    }
    else if (dat->typc==':') {
@@ -2920,7 +2896,7 @@ extern long aprsdecode_Decode(char buf[], unsigned long buf_len,
             ++i;
             ++p;
          }
-         if (X2C_STRCMP(dat->msgto,9u,dat->srccall,9u)==0) {
+         if (X2C_STRCMP(dat->msgto,9u,dat->symcall,9u)==0) {
             dat->type = aprsdecode_TELE; /* msg to itself */
          }
          ++p;
@@ -2972,7 +2948,7 @@ extern long aprsdecode_Decode(char buf[], unsigned long buf_len,
    dat->course = X2C_max_longcard;
    if (X2C_IN((long)dat->type,12,0xCEU)) {
       aprspos_GetPos(&dat->pos, &dat->speed, &dat->course, &dat->altitude,
-                &dat->sym, &dat->symt, buf, buf_len, micedest, payload,
+                &dat->sym, &dat->symt, buf, buf_len, micedest, dat->payload,
                 dat->comment0, 256ul, &dat->postyp);
       aprspos_GetSym(dat->dstcall, 9ul, &dat->sym, &dat->symt);
       if (aprsdecode_checksymb(dat->symt, dat->sym)) {
@@ -3006,7 +2982,7 @@ extern long aprsdecode_Decode(char buf[], unsigned long buf_len,
    }
    else {
       i = 0UL;
-      p = payload+(unsigned long)(dat->type!=aprsdecode_UNKNOWN);
+      p = dat->payload+(unsigned long)(dat->type!=aprsdecode_UNKNOWN);
       while (p<len && i<=255UL) {
          dat->comment0[i] = buf[p];
          ++p;
@@ -3022,15 +2998,6 @@ extern long aprsdecode_Decode(char buf[], unsigned long buf_len,
       if (dat->course>0UL && dat->course<=360UL) --dat->course;
       else dat->course = X2C_max_longcard;
    }
-   /*
-     i:=0;
-     IF compos<>0 THEN p:=compos ELSE p:=payload+ORD(dat.type<>UNKNOWN) END;
-     WHILE (p<len) & (i<=HIGH(dat.comment)) DO 
-       dat.comment[i]:=buf[p];
-       INC(p);
-       INC(i);
-     END;
-   */
    return 0L;
 } /* end Decode() */
 
@@ -3071,7 +3038,7 @@ extern void aprsdecode_getbeaconname(char raw[], unsigned long raw_len,
    if (getbeaconparm(raw, raw_len, &time0, &port)) {
       beaconmacros(raw, raw_len, "", 1ul, "", 1ul, 0);
       if (aprsdecode_Decode(raw, raw_len, &dat)==0L) {
-         aprsstr_Assign(name, name_len, dat.srccall, 9ul);
+         aprsstr_Assign(name, name_len, dat.symcall, 9ul);
          aprsstr_Assign(symb, symb_len, (char *) &dat.symt, 1u/1u);
          aprsstr_Append(symb, symb_len, (char *) &dat.sym, 1u/1u);
          *isobj = dat.type==aprsdecode_OBJ || dat.type==aprsdecode_ITEM;
@@ -3107,7 +3074,7 @@ extern void aprsdecode_extractbeacon(char raw[], unsigned long raw_len,
    }
    if (aprsdecode_Decode(raw, raw_len, &dat)==0L) {
       if (dat.type==aprsdecode_OBJ || dat.type==aprsdecode_ITEM) {
-         aprsstr_Assign(s, 1000ul, dat.srccall, 9ul);
+         aprsstr_Assign(s, 1000ul, dat.symcall, 9ul);
       }
       else useri_confstr(useri_fMYCALL, s, 1000ul);
       useri_AddConfLine(useri_fRBNAME, 1U, s, 1000ul);
@@ -3173,7 +3140,7 @@ extern void aprsdecode_extractbeacon(char raw[], unsigned long raw_len,
          }
          if (dat.type==aprsdecode_MICE) strncpy(dat.dstcall,"APLM01",9u);
          useri_AddConfLine(useri_fRBDEST, 1U, dat.dstcall, 9ul);
-         useri_AddConfLine(useri_fRBNAME, 1U, dat.srccall, 9ul);
+         useri_AddConfLine(useri_fRBNAME, 1U, dat.symcall, 9ul);
          i = 0UL;
          while (i<=9UL && dat.viacalls[i][0UL]) {
             /* make via path */
@@ -3407,7 +3374,7 @@ static char sendtxmsg(unsigned long acknum, const aprsdecode_MONCALL to,
       /* try the rf ports */
       if ((useri_configon((unsigned char)(36UL+i))
                 && (port=='A' || port==(char)(i+49UL))) && Sendudp(rfs,
-                512ul, i)) {
+                512ul, i, 0UL)>0L) {
          memcpy(h,am,51u);
          if (ackcnt==1UL) aprsstr_Append(h, 51ul, "sent", 5ul);
          else {
@@ -3610,7 +3577,7 @@ static char isquery(const struct aprsdecode_DAT dat, char port)
    char path[201];
    char s[201];
    /*  IF dat.msgtext[0]<>"?" THEN RETURN FALSE END; */
-   aprsstr_Assign(path, 201ul, dat.srccall, 9ul);
+   aprsstr_Assign(path, 201ul, dat.symcall, 9ul);
    aprsstr_Append(path, 201ul, ">", 2ul);
    aprsstr_Append(path, 201ul, dat.dstcall, 9ul);
    i = 0UL;
@@ -3634,7 +3601,7 @@ static char isquery(const struct aprsdecode_DAT dat, char port)
             aprsstr_Delstr(wdata, 201ul, 0UL, aprsstr_Length(key, 201ul));
             beaconmacros(s, 201ul, path, 201ul, wdata, 201ul, 1);
             if (s[0U]==0) return 1;
-            if (!sendtxmsg(0UL, dat.srccall, s, 201ul, port, port!='N', 1UL,
+            if (!sendtxmsg(0UL, dat.symcall, s, 201ul, port, port!='N', 1UL,
                 err, 201ul)) {
                useri_xerrmsg(err, 201ul);
                return 0;
@@ -3647,7 +3614,7 @@ static char isquery(const struct aprsdecode_DAT dat, char port)
       }
       ++i;
    }
-   /*WrStrLn(port);WrStrLn(dat.srccall);WrStrLn(dat.msgtext); */
+   /*WrStrLn(port);WrStrLn(dat.symcall);WrStrLn(dat.msgtext); */
    return 0;
 } /* end isquery() */
 
@@ -3685,21 +3652,21 @@ static void getmessage(aprsdecode_pTCPSOCK cp, unsigned long up,
          /*FOR i:=0 TO HIGH(dat.acktext) DO WrInt(ORD(dat.acktext[i]), 4);
                 END; WrStrLn("=ack"); */
          query = isquery(dat, port);
-         showmsg(dat.srccall, 9ul, dat.msgto, 9ul, dat.msgtext, 67ul,
+         showmsg(dat.symcall, 9ul, dat.msgto, 9ul, dat.msgtext, 67ul,
                 dat.acktext, 5ul, dat.ackrej, 1, query, port);
          if (!query && dat.acktext[0UL]) {
-            void0 = sendtxmsg(0UL, dat.srccall, dat.acktext, 5ul, port,
+            void0 = sendtxmsg(0UL, dat.symcall, dat.acktext, 5ul, port,
                 port!='N', 0UL, h, 100ul);
             useri_xerrmsg(h, 100ul);
          }
       }
       if (dat.acktext[0UL]) {
-         ackmsg(dat.srccall, 9ul, dat.acktext, 5ul, dat.ackrej);
+         ackmsg(dat.symcall, 9ul, dat.acktext, 5ul, dat.ackrej);
       }
    }
    else if (fit && dat.ackrej==aprsdecode_MSGMSG) {
       /*  WrStr("other ssid message "); */
-      showmsg(dat.srccall, 9ul, dat.msgto, 9ul, dat.msgtext, 67ul,
+      showmsg(dat.symcall, 9ul, dat.msgto, 9ul, dat.msgtext, 67ul,
                 dat.acktext, 5ul, dat.ackrej, 0, 0, port);
    }
 } /* end getmessage() */
@@ -4034,6 +4001,9 @@ static void timespeed(aprsdecode_pFRAMEHIST lastf,
 
 #define aprsdecode_HOPPART 0.5
 
+#define aprsdecode_MINSPIKE 0.02
+/* min distance to mark as spike */
+
 
 /* 1 wayout, delete before, 2 wayout join last good with last else delete before */
 static void joinchunk(aprsdecode_pOPHIST op)
@@ -4061,15 +4031,12 @@ static void joinchunk(aprsdecode_pOPHIST op)
          if (lpf) {
             km = aprspos_distance(lpf->vardat->pos, v->pos);
             if (aprsdecode_spikesens>0.0f && llpf) {
-               d = aprsdecode_spikesens*aprspos_distance(llpf->vardat->pos,
-                v->pos);
+               d = 0.02f+aprsdecode_spikesens*aprspos_distance(llpf->vardat->pos,
+                 v->pos);
                if ((km>d && lastkm>d) && (0x8U & lpf->nodraw)==0) {
                   lpf->nodraw = lpf->nodraw&~0x11U|0x2U;
                }
             }
-            /*
-                        pf^.nodraw:=pf^.nodraw-ERRSET{eDIST, eSPEED};
-            */
             if (aprsdecode_maxhop>0.0f) {
                if ((0x2U & lpf->nodraw)) lbad = 0;
                else if (lbad) bad = lbad;
@@ -4499,7 +4466,7 @@ WrInt(sum, 10);WrInt(ip, 10);WrStrLn("=ip");
                  not found *)
       DEC(ip);
       jp:=ip;
-      dat1.srccall[0]:=0C;
+      dat1.symcall[0]:=0C;
       LOOP
 WrStr(".");
         WITH table[jp].wayp^ DO 
@@ -4507,7 +4474,7 @@ WrStr(".");
           OR (vardat^.pos.lat=waypoint^.vardat^.pos.lat)
           & (vardat^.pos.long=waypoint^.vardat^.pos.long)
           & (Decode(vardat^.raw, dat)>=0)
-          & ((dat1.srccall[0]<>0C) OR (Decode(waypoint^.vardat^.raw,
+          & ((dat1.symcall[0]<>0C) OR (Decode(waypoint^.vardat^.raw,
                 dat1)>=0))  
           & (dat1.speed=dat.speed) & (dat1.course=dat.course)
                 & (dat1.altitude=dat.altitude) THEN
@@ -4832,7 +4799,7 @@ extern long aprsdecode_Stoframe(aprsdecode_pOPHIST * optab, char rawbuf[],
       memcpy(igate,dat.viacalls[dat.igatep],9u);
    }
    else igate[0UL] = 0;
-   if (((((callfilt(useri_fOPFILT, dat.srccall, 9ul,
+   if (((((callfilt(useri_fOPFILT, dat.symcall, 9ul,
                 1) || callfilt(useri_fIGATEFILT, igate, 9ul,
                 1)) || callfilt(useri_fOBJSRCFILT, dat.objectfrom, 9ul,
                 1)) || callfilt(useri_fDESTFILT, dat.dstcall, 9ul,
@@ -4848,7 +4815,7 @@ extern long aprsdecode_Stoframe(aprsdecode_pOPHIST * optab, char rawbuf[],
             goto label;
          }
       }
-      else if (!aprstext_isacall(dat.srccall, 9ul)) {
+      else if (!aprstext_isacall(dat.symcall, 9ul)) {
          aprsdecode_Stoframe_ret = -1L;
          goto label;
       }
@@ -4865,7 +4832,7 @@ extern long aprsdecode_Stoframe(aprsdecode_pOPHIST * optab, char rawbuf[],
    }
    opo = 0;
    op = *optab;
-   while (op && X2C_STRCMP(dat.srccall,9u,op->call,9u)) {
+   while (op && X2C_STRCMP(dat.symcall,9u,op->call,9u)) {
       opo = op;
       op = op->next;
    }
@@ -4879,7 +4846,7 @@ extern long aprsdecode_Stoframe(aprsdecode_pOPHIST * optab, char rawbuf[],
          goto label;
       }
       memset((X2C_ADDRESS)op,(char)0,sizeof(struct aprsdecode_OPHIST));
-      memcpy(op->call,dat.srccall,9u);
+      memcpy(op->call,dat.symcall,9u);
       if (logmode || opo==0) {
          /* store it at begin of list for quick find */
          op->next = *optab;
@@ -5644,6 +5611,13 @@ extern void aprsdecode_udpconnstat(unsigned long port, char s[],
                 51ul);
                aprsstr_Append(s, s_len, h, 51ul);
             }
+            if (aprsdecode_realtime<anonym->bpstime && anonym->bpstime-aprsdecode_realtime<3600UL)
+                 {
+               aprsstr_Append(s, s_len, "\012  Next net>rf(s):", 19ul);
+               aprsstr_IntToStr((long)(anonym->bpstime-aprsdecode_realtime),
+                1UL, h, 51ul);
+               aprsstr_Append(s, s_len, h, 51ul);
+            }
             aprsstr_Append(s, s_len, "\012  Rx Frames:", 14ul);
             aprsstr_IntToStr((long)anonym->rxframes, 1UL, h, 51ul);
             aprsstr_Append(s, s_len, h, 51ul);
@@ -5766,7 +5740,7 @@ static char tcpconn(aprsdecode_pTCPSOCK * sockchain, long f)
          aprsstr_Append(h, 512ul, s, 100ul);
       }
       aprsstr_Append(h, 512ul, " vers ", 7ul);
-      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.57", 17ul);
+      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.58", 17ul);
       appfilter(h, 512ul);
       /*    IF filter[0]<>0C THEN Append(h, " filter ");
                 Append(h, filter) END; */
@@ -5983,7 +5957,7 @@ static void rfbeacons(void)
                         i = (unsigned long)(unsigned char)port-49UL;
                         if (i<4UL && useri_configon((unsigned char)(36UL+i)))
                  {
-                           if (!Sendudp(s, 512ul, i)) {
+                           if (Sendudp(s, 512ul, i, 1UL)<0L) {
                               strncpy(says,"beacon: Rfport ",101u);
                               aprsstr_Append(says, 101ul,
                 (char *)(tmp = (char)(i+49UL),&tmp), 1u/1u);
@@ -6123,8 +6097,6 @@ Rx)Port or in Use", 44ul);
                 0);
                }
             }
-            startserial(&aprsdecode_serialpid, useri_fSERIALTASK);
-            startserial(&aprsdecode_serialpid2, useri_fSERIALTASK2);
          }
          else if ((long)anonym0->fd>=0L) {
             osi_CloseSock(anonym0->fd);
@@ -6136,6 +6108,8 @@ Rx)Port or in Use", 44ul);
          }
       }
    } /* end for */
+   startserial(&aprsdecode_serialpid, useri_fSERIALTASK);
+   startserial(&aprsdecode_serialpid2, useri_fSERIALTASK2);
    sendmsg();
    /*WrInt(tickertime, 15); WrInt(realtime, 15); WrLn; */
    if (tickertime+60UL<aprsdecode_realtime) Stopticker();
@@ -6156,6 +6130,8 @@ static void beepprox(float d, float km)
                  3UL, 0L, 5000L, 1000L)));
    }
 } /* end beepprox() */
+
+#define aprsdecode_WARNFN "proxwarn"
 
 #define aprsdecode_LOOKBACK 180
 /* last s look if nearest pos is last */
@@ -6213,16 +6189,18 @@ static void approxywarn(struct aprspos_POSITION pos, const char call[],
                   aprsstr_Append(h, 101ul, "km ", 4ul);
                   aprsstr_Append(h, 101ul, call, call_len);
                   useri_textautosize(0L, 5L, 6UL, 120UL, 'r', h, 101ul);
-                  fd = osi_OpenWrite("proxwarn", 9ul);
-                  if (osi_FdValid(fd)) {
-                     aprsstr_Assign(h, 101ul, call, call_len);
-                     aprsstr_IntToStr((long)aprsdecode_trunc(d*1000.0f), 0UL,
-                 s, 31ul);
-                     aprsstr_Append(h, 101ul, " p ", 4ul);
-                     aprsstr_Append(h, 101ul, s, 31ul);
-                     osi_WrBin(fd, (char *)h, 101u/1u, aprsstr_Length(h,
+                  if (!FileSys_Exists("proxwarn", 9ul)) {
+                     fd = osi_OpenWrite("proxwarn", 9ul);
+                     if (osi_FdValid(fd)) {
+                        aprsstr_Assign(h, 101ul, call, call_len);
+                        aprsstr_IntToStr((long)aprsdecode_trunc(d*1000.0f),
+                0UL, s, 31ul);
+                        aprsstr_Append(h, 101ul, " p ", 4ul);
+                        aprsstr_Append(h, 101ul, s, 31ul);
+                        osi_WrBin(fd, (char *)h, 101u/1u, aprsstr_Length(h,
                 101ul));
-                     osi_Close(fd);
+                        osi_Close(fd);
+                     }
                   }
                }
             }
@@ -6301,10 +6279,10 @@ static char scanpath(char words[], unsigned long words_len,
 } /* end scanpath() */
 
 
-static void digi(const aprsdecode_FRAMEBUF b, unsigned long udpch,
+static void digi(const aprsdecode_FRAMEBUF b, char fromrf,
                 unsigned long outport, char directonly, char appendrest,
                 unsigned long nomovetime, unsigned long radius, char words[],
-                 unsigned long words_len)
+                 unsigned long words_len, long * txbyte)
 {
    struct aprsdecode_DAT dat;
    unsigned long pn;
@@ -6317,134 +6295,134 @@ static void digi(const aprsdecode_FRAMEBUF b, unsigned long udpch,
    unsigned long tp;
    unsigned long p;
    aprsdecode_FRAMEBUF tb;
-   unsigned char hashh;
-   unsigned char hashl;
+   /*    hashl, hashh:SET8; */
    unsigned long dt;
    char norout;
    struct aprspos_POSITION mypos;
    char s2[31];
    char s1[31];
    char mycall[31];
-   struct aprsdecode_UDPSOCK * anonym;
+   *txbyte = 0L;
    if (nomovetime<27UL) nomovetime = 27UL;
-   if (udpch==0UL) return;
-   --udpch;
-   if (udpch>3UL) return;
-   tp = 0UL;
-   p = 0UL;
-   len = 0UL;
-   ssid = 0UL;
-   viac = 0UL;
-   useri_confstr(useri_fMYCALL, mycall, 31ul);
-   if (mycall[0U]==0) {
-      useri_xerrmsg("Digi needs \'My Call\'", 21ul); /* no mycall */
-      return;
-   }
-   norout = aprsstr_InStr(words, words_len, " x-", 4ul)>=0L;
+   if (fromrf) {
+      tp = 0UL;
+      p = 0UL;
+      len = 0UL;
+      ssid = 0UL;
+      viac = 0UL;
+      useri_confstr(useri_fMYCALL, mycall, 31ul);
+      if (mycall[0U]==0) {
+         useri_xerrmsg("Digi needs \'My Call\'", 21ul); /* no mycall */
+         return;
+      }
+      norout = aprsstr_InStr(words, words_len, " x-", 4ul)>=0L;
                 /* ssid routing off */
-   if (aprsstr_InStr(words, words_len, " xi", 4ul)<0L) {
-      aprsstr_Append(words, words_len, " v", 3ul);
+      if (aprsstr_InStr(words, words_len, " xi", 4ul)<0L) {
+         aprsstr_Append(words, words_len, " v", 3ul);
                 /* if not diabled append mycall for via */
+         aprsstr_Append(words, words_len, mycall, 31ul);
+      }
+      aprsstr_Append(words, words_len, " x", 3ul); /* mycall as badword */
       aprsstr_Append(words, words_len, mycall, 31ul);
-   }
-   aprsstr_Append(words, words_len, " x", 3ul); /* mycall as badword */
-   aprsstr_Append(words, words_len, mycall, 31ul);
-   aprsstr_Append(words, words_len, " ", 2ul);
-   while ((len<511UL && b[len]) && b[len]!=':') ++len;
-   while (p<len && b[p]!='>') {
-      app0(&viac, tb, &tp, b[p]); /* end of src call */
-      ++p;
-   }
-   if (via(words, words_len, b, 'x', 0UL, p)) return;
-   /* bad src call */
-   if (useri_configon(useri_fMUSTBECALL)) {
-      tb[tp] = 0;
-      if (!aprstext_isacall(tb, 512ul)) return;
-   }
-   n = p+1UL;
-   while ((p<len && b[p]!='-') && b[p]!=',') {
-      app0(&viac, tb, &tp, b[p]); /* ssid or end of dst call */
-      ++p;
-   }
-   if (via(words, words_len, b, 'x', n, p)) return;
-   /* bad dest call */
-   if (b[p]=='-') {
-      /* we have a ssid */
-      ++p;
-      if (num0(b, p, &n)) {
-         ssid = n;
+      aprsstr_Append(words, words_len, " ", 2ul);
+      while ((len<511UL && b[len]) && b[len]!=':') ++len;
+      while (p<len && b[p]!='>') {
+         app0(&viac, tb, &tp, b[p]); /* end of src call */
+         ++p;
+      }
+      if (via(words, words_len, b, 'x', 0UL, p)) return;
+      /* bad src call */
+      if (useri_configon(useri_fMUSTBECALL)) {
+         tb[tp] = 0;
+         if (!aprstext_isacall(tb, 512ul)) return;
+      }
+      n = p+1UL;
+      while ((p<len && b[p]!='-') && b[p]!=',') {
+         app0(&viac, tb, &tp, b[p]); /* ssid or end of dst call */
+         ++p;
+      }
+      if (via(words, words_len, b, 'x', n, p)) return;
+      /* bad dest call */
+      if (b[p]=='-') {
+         /* we have a ssid */
          ++p;
          if (num0(b, p, &n)) {
-            ssid = ssid*10UL+n;
+            ssid = n;
             ++p;
+            if (num0(b, p, &n)) {
+               ssid = ssid*10UL+n;
+               ++p;
+            }
          }
       }
-   }
-   if (ssid==0UL || ssid>7UL) norout = 1;
-   if (!norout) --ssid;
-   if (ssid>0UL) {
-      /* write old or new ssid */
-      app0(&viac, tb, &tp, '-');
-      if (ssid>=10UL) app0(&viac, tb, &tp, '1');
-      app0(&viac, tb, &tp, (char)(ssid%10UL+48UL));
-   }
-   n = p;
-   while (n<len && b[n]!='*') ++n;
-   if (n<len) {
-      if (directonly) return;
-      /* not direct heard */
-      if (!scanpath(words, words_len, &tp, tb, &viac, b, &p, n, 1)) return;
-      /* append path till * and find badwords */
-      ++p;
-   }
-   app0(&viac, tb, &tp, ',');
-   n = 0UL;
-   while (mycall[n]) {
-      app0(&viac, tb, &tp, mycall[n]); /* append mycall */
-      ++n;
-   }
-   app0(&viac, tb, &tp, '*');
-   if (p<len) {
-      /* look for via routing */
-      norout = 1;
-      if (b[p]==',') ++p;
+      if (ssid==0UL || ssid>7UL) norout = 1;
+      if (!norout) --ssid;
+      if (ssid>0UL) {
+         /* write old or new ssid */
+         app0(&viac, tb, &tp, '-');
+         if (ssid>=10UL) app0(&viac, tb, &tp, '1');
+         app0(&viac, tb, &tp, (char)(ssid%10UL+48UL));
+      }
       n = p;
-      while (p<len && b[p]!=',') ++p;
-      if (((((((via(words, words_len, b, 'n', n, p-3UL) && num0(b, p-3UL,
+      while (n<len && b[n]!='*') ++n;
+      if (n<len) {
+         if (directonly) return;
+         /* not direct heard */
+         if (!scanpath(words, words_len, &tp, tb, &viac, b, &p, n, 1)) {
+            return;
+         }
+         /* append path till * and find badwords */
+         ++p;
+      }
+      app0(&viac, tb, &tp, ',');
+      n = 0UL;
+      while (mycall[n]) {
+         app0(&viac, tb, &tp, mycall[n]); /* append mycall */
+         ++n;
+      }
+      app0(&viac, tb, &tp, '*');
+      if (p<len) {
+         /* look for via routing */
+         norout = 1;
+         if (b[p]==',') ++p;
+         n = p;
+         while (p<len && b[p]!=',') ++p;
+         if (((((((via(words, words_len, b, 'n', n, p-3UL) && num0(b, p-3UL,
                 &n1)) && n1>0UL) && n1<=7UL) && b[p-2UL]=='-') && num0(b,
                 p-1UL, &n2)) && n2>0UL) && n2<=n1) {
-         if (directonly && n1!=n2) return;
-         /* not direct heard */
-         if (appendrest && n2>1UL) {
-            /* append not n-0 */
-            app0(&viac, tb, &tp, ',');
-            pn = n;
-            while (pn+3UL<p) {
-               app0(&viac, tb, &tp, b[pn]); /* append via word */
-               ++pn;
+            if (directonly && n1!=n2) return;
+            /* not direct heard */
+            if (appendrest && n2>1UL) {
+               /* append not n-0 */
+               app0(&viac, tb, &tp, ',');
+               pn = n;
+               while (pn+3UL<p) {
+                  app0(&viac, tb, &tp, b[pn]); /* append via word */
+                  ++pn;
+               }
+               app0(&viac, tb, &tp, (char)(n1+48UL)); /* append n-n */
+               app0(&viac, tb, &tp, '-');
+               app0(&viac, tb, &tp, (char)(n2+47UL));
             }
-            app0(&viac, tb, &tp, (char)(n1+48UL)); /* append n-n */
-            app0(&viac, tb, &tp, '-');
-            app0(&viac, tb, &tp, (char)(n2+47UL));
+            norout = 0; /* append rest path later*/
          }
-         norout = 0; /* append rest path later*/
+         else if (via(words, words_len, b, 'v', n, p)) norout = 0;
       }
-      else if (via(words, words_len, b, 'v', n, p)) norout = 0;
+      if (norout) return;
+      /* nothing to digipeat */
+      if (!scanpath(words, words_len, &tp, tb, &viac, b, &p, len,
+                appendrest)) return;
+      /* append rest path and find badwords */
+      if (viac>7UL) return;
+      /* too much via */
+      p = len;
+      while (p<511UL && b[p]) {
+         app0(&viac, tb, &tp, b[p]);
+         ++p;
+      }
+      app0(&viac, tb, &tp, 0);
    }
-   if (norout) return;
-   /* nothing to digipeat */
-   if (!scanpath(words, words_len, &tp, tb, &viac, b, &p, len, appendrest)) {
-      return;
-   }
-   /* append rest path and find badwords */
-   if (viac>7UL) return;
-   /* too much via */
-   p = len;
-   while (p<511UL && b[p]) {
-      app0(&viac, tb, &tp, b[p]);
-      ++p;
-   }
-   app0(&viac, tb, &tp, 0);
+   else memcpy(tb,b,512u);
    if (aprsdecode_Decode(tb, 512ul, &dat)<0L) return;
    /*radius */
    if (dat.type!=aprsdecode_MSG && radius>0UL) {
@@ -6452,79 +6430,109 @@ static void digi(const aprsdecode_FRAMEBUF b, unsigned long udpch,
          useri_xerrmsg("Digi with Radius needs MY Position", 35ul);
          return;
       }
-      /*IF posvalid(dat.pos) THEN WrFixed(distance(mypos, dat.pos), 1, 6);
-                WrStrLn("=radius"); END; */
       if (!aprspos_posvalid(dat.pos) || aprspos_distance(mypos,
                 dat.pos)>(float)radius) return;
    }
-   /* dupe */
-   hashl = 0U;
-   hashh = 0U;
-   p = 0UL;
-   n1 = 0UL;
-   n2 = 0UL;
-   for (;;) {
-      while (tb[p] && tb[p]!=':') ++p;
-      if (tb[p]!=':') break;
-      n1 = p;
-      ++p;
-      if (tb[p]!='}') break;
-      ++p;
-      n2 = p;
-   }
-   p = n2;
-   while (p<n1 && tb[p]!='>') {
-      aprsstr_HashCh(tb[p], &hashl, &hashh);
-      ++p;
-   }
-   while ((p<n1 && tb[p]!='-') && tb[p]!=',') {
-      aprsstr_HashCh(tb[p], &hashl, &hashh);
-      ++p;
-   }
-   p = n1;
-   while (tb[p]) {
-      aprsstr_HashCh(tb[p], &hashl, &hashh);
-      ++p;
-   }
-   n = (unsigned long)(unsigned char)(char)hashl+(unsigned long)
-                (unsigned char)(char)hashh*256UL&65535UL;
    if (dat.type==aprsdecode_MSG && aprstext_isacall(dat.msgto, 9ul)) {
-      /*NOT IsBulletin(dat)*/
       dt = 27UL; /* real messages fast dupetime */
    }
    else dt = nomovetime;
    if (outport>0UL && outport-1UL<=3UL) {
-      { /* with */
-         struct aprsdecode_UDPSOCK * anonym = &aprsdecode_udpsocks0[outport-1UL]
-                ;
-         if (anonym->pdupetimes==0) {
-            Storage_ALLOCATE((X2C_ADDRESS *) &anonym->pdupetimes, 262144UL);
-            useri_debugmem.req = 262144UL;
-            useri_debugmem.mon += 262144UL;
-            if (anonym->pdupetimes==0) {
-               osi_WrStrLn("duptime out of memory", 22ul);
-               useri_wrheap();
-               return;
-            }
-            memset((X2C_ADDRESS)anonym->pdupetimes,(char)0,262144UL);
-         }
-         if (anonym->pdupetimes[n]+dt>aprsdecode_realtime) {
-            /*WrInt(pdupetimes^[n]+dt-realtime, 5); WrStrLn("=age");*/
-            return;
-         }
-         anonym->pdupetimes[n] = aprsdecode_realtime;
+      *txbyte = Sendudp(tb, 512ul, outport-1UL, dt);
+      if (*txbyte<0L) {
+         strncpy(s1,"aprsdigi:can not send to port ",31u);
+         aprsstr_IntToStr((long)outport, 0UL, s2, 31ul);
+         aprsstr_Append(s1, 31ul, s2, 31ul);
+         useri_xerrmsg(s1, 31ul);
       }
    }
-   if ((outport==0UL || outport-1UL>3UL) || !Sendudp(tb, 512ul,
-                outport-1UL)) {
-      strncpy(s1,"aprsdigi:can not send to port ",31u);
-      aprsstr_IntToStr((long)outport, 0UL, s2, 31ul);
-      aprsstr_Append(s1, 31ul, s2, 31ul);
-      useri_xerrmsg(s1, 31ul);
-   }
-/*WrInt(udpch, 10); WrInt(dt, 10); WrInt(n, 10); WrStrLn("=h"); WrStrLn(tb);
-                */
 } /* end digi() */
+
+#define aprsdecode_MAXPAYLOAD 200
+/* spare min 36 byte for 3rd party header */
+
+#define aprsdecode_MSGMHTIME 3600
+/* last heard age for msgs sending */
+
+
+static void digitorf(const aprsdecode_FRAMEBUF b, unsigned long outport,
+                unsigned long nomovetime, unsigned long radius, long maxbps,
+                char words[], unsigned long words_len)
+{
+   unsigned long j;
+   unsigned long i;
+   long sentbytes;
+   aprsdecode_pOPHIST op;
+   char ok0;
+   aprsdecode_FRAMEBUF tb;
+   struct aprsdecode_DAT dat;
+   char via0[201];
+   char ww[201];
+   char w[201];
+   /*"OH4ZZZ-5>APZ123,WIDE2-2:}OH2XYZ-11>APZYXW-4,TCPIP,OH4ZZZ-5*:>packet  "*/
+   /*WrStr(words); WrStrLn(b); */
+   if (aprsdecode_Decode(b, 512ul, &dat)<0L || dat.igatep==0UL) return;
+   aprsstr_Assign(w, 201ul, words, words_len);
+   do {
+      aprsstr_Extractword(w, 201ul, ww, 201ul);
+   } while (!(ww[0U]==0 || ww[0U]=='n'));
+   if (ww[0U]==0) return;
+   aprsstr_Delstr(ww, 201ul, 0UL, 1UL);
+   if (!aprsstr_StrToInt(ww, 201ul, &maxbps)) return;
+   aprsstr_Extractword(w, 201ul, via0, 201ul); /* via path */
+   if (via0[0U]=='n') aprsstr_Delstr(via0, 201ul, 0UL, 1UL);
+   else via0[0U] = 0;
+   /*WrInt(maxbps, 10); WrStrLn(via); */
+   if (maxbps<0L) {
+      if (dat.type!=aprsdecode_MSG) return;
+      /* if neg bps send msg only */
+      /*WrStr(dat.msgto);  WrStrLn(" msgto"); */
+      op = findop(dat.msgto, 1);
+      /*IF (op<>NIL) THEN WrStr(op^.lastrxport); WrStrLn(" opok") END; */
+      if ((op==0 || op->lastrxport!=(char)(outport+48UL))
+                || op->lasttime+3600UL<aprsdecode_realtime) return;
+   }
+   /* user not heard on this port */
+   if (!Checkbps(outport-1UL, (unsigned long)labs(maxbps), 0UL,
+                dat.type==aprsdecode_MSG)) return;
+   /* -bps only msg */
+   useri_confstr(useri_fMYCALL, tb, 512ul);
+   if (tb[0UL]==0) {
+      useri_xerrmsg("Gate to rf needs \'My Call\'", 27ul);
+      return;
+   }
+   aprsstr_Append(tb, 512ul, ">APLM01", 8ul);
+   if (via0[0U]) {
+      if (via0[0U]!='-') aprsstr_Append(tb, 512ul, ",", 2ul);
+      else if (((unsigned char)via0[1U]<'1' || (unsigned char)via0[1U]>'9')
+                || via0[2U]) return;
+      /* not correct ssid */
+      aprsstr_Append(tb, 512ul, via0, 201ul);
+   }
+   aprsstr_Append(tb, 512ul, ":}", 3ul);
+   aprsstr_Append(tb, 512ul, dat.srcall, 9ul);
+   aprsstr_Append(tb, 512ul, ">", 2ul);
+   aprsstr_Append(tb, 512ul, dat.dstcall, 9ul);
+   aprsstr_Append(tb, 512ul, ",TCPIP,", 8ul);
+   aprsstr_Append(tb, 512ul, dat.viacalls[dat.igatep], 9ul);
+   aprsstr_Append(tb, 512ul, "*:", 3ul);
+   i = dat.payload;
+   j = aprsstr_Length(tb, 512ul);
+   while (((i<=511UL && b[i]) && b[i]!='\015') && j<511UL) {
+      tb[j] = b[i];
+      ++j;
+      ++i;
+   }
+   tb[j] = 0;
+   if (i-dat.payload>200UL) return;
+   /* frame too long */
+   w[0] = 0;
+   digi(tb, 0, outport, 0, 1, nomovetime, radius, w, 201ul, &sentbytes);
+   if (sentbytes>0L) {
+      ok0 = Checkbps(outport-1UL, (unsigned long)labs(maxbps),
+                (unsigned long)sentbytes, 0); /* sum up txbytes */
+   }
+} /* end digitorf() */
 
 
 static void digipeat(const aprsdecode_FRAMEBUF b, unsigned long udpch)
@@ -6532,20 +6540,22 @@ static void digipeat(const aprsdecode_FRAMEBUF b, unsigned long udpch)
    unsigned long line;
    unsigned long outport;
    unsigned long radius;
+   long sentbytes;
    unsigned long nomovetime;
    char directonly;
    char appendrest;
    char words[201];
    char word[11];
+   char cin;
    char c;
    line = 0UL;
    for (;;) {
       useri_confstrings(useri_fDIGI, line, 0, words, 201ul);
       if (words[0U]==0) break;
-      /*words:="*42 890 300 TCPIP* WIDEn TRACEn RELAY ECHO GATE ";  */
-      c = words[0U]; /* input port */
-      if (c=='*' || c==(char)(udpch+48UL)) {
-         /* our input port */
+      cin = words[0U]; /* input port */
+      if ((cin=='*' && udpch>0UL || cin==(char)(udpch+48UL))
+                || cin=='N' && udpch==0UL) {
+         /* input port, 0 is from net */
          c = words[1U]; /* output port */
          if ((unsigned char)c>='1') {
             outport = (unsigned long)(unsigned char)c-48UL;
@@ -6570,8 +6580,14 @@ static void digipeat(const aprsdecode_FRAMEBUF b, unsigned long udpch)
          if (aprsstr_StrToCard(word, 11ul, &nomovetime)) {
             aprsstr_Extractword(words, 201ul, word, 11ul);
             if (aprsstr_StrToCard(word, 11ul, &radius)) {
-               digi(b, udpch, outport, directonly, appendrest, nomovetime,
-                radius, words, 201ul);
+               if (cin=='N') {
+                  digitorf(b, outport, nomovetime, radius, -5L, words,
+                201ul);
+               }
+               else if (udpch>0UL) {
+                  digi(b, 1, outport, directonly, appendrest, nomovetime,
+                radius, words, 201ul, &sentbytes);
+               }
             }
          }
       }
@@ -6676,7 +6692,7 @@ temporarily", 56ul);
             }
          }
          if (aprspos_posvalid(dat.pos) && useri_configon(useri_fAPPROXY)) {
-            approxywarn(dat.pos, dat.srccall, 9ul);
+            approxywarn(dat.pos, dat.symcall, 9ul);
          }
       }
    }

@@ -760,6 +760,8 @@ static char aprsstr_PID = '\360';
 
 #define aprsstr_CALLFILL " "
 
+#define aprsstr_MAXINFOLEN 256
+
 
 static char call(long * p, char raw[], unsigned long raw_len,
                 unsigned long * i, char mon[], unsigned long mon_len,
@@ -858,15 +860,17 @@ extern void aprsstr_mon2raw(char mon[], unsigned long mon_len, char raw[],
    raw[*p] = '\360';
    ++*p;
    ++i;
+   n = 256UL;
    while (mon[i] && i<=mon_len-1) {
       /* copy info part */
-      if (*p>=(long)(raw_len-1)-2L) {
+      if (*p>=(long)(raw_len-1)-2L || n==0UL) {
          *p = 0L; /* spare 2 bytes for crc */
          return;
       }
       raw[*p] = mon[i];
       ++*p;
       ++i;
+      --n;
    }
    aprsstr_AppCRC(raw, raw_len, *p);
    *p += 2L;

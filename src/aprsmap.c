@@ -5255,6 +5255,7 @@ extern int main(int argc, char **argv)
       xosi_StopProg(&aprsdecode_maploadpid);
       xosi_StopProg(&aprsdecode_serialpid);
       xosi_StopProg(&aprsdecode_serialpid2);
+      xosi_closewin();
    }
 /*
 data structure op

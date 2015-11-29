@@ -5119,8 +5119,10 @@ static void loadsym(char h[], unsigned long h_len)
    maxxbyte = maxx*3L;
    res = readpng(h, (X2C_ADDRESS *)rows, &maxx, &maxy, &maxxbyte);
    if (res<0L) {
+      InOut_WriteString(h, h_len);
+      osi_WrStrLn(" file read error ", 18ul);
       InOut_WriteInt(res, 1UL);
-      osi_WrStrLn(" symbol file read error", 24ul);
+      osi_WrStrLn("", 1ul);
       goto label;
    }
    memset((char *)symbols,(char)0,sizeof(struct PIX8 [3072][17]));

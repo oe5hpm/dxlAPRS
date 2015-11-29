@@ -1459,6 +1459,12 @@ but may be part of "Via Alias" Line.
 treated same way because <mycall>
 is always appended to (done) Path.
 
+For gate Net-to-Rf this line contains
+max. Bit/s and VIA path like "20 WIDE1-1"
+negative Bit/s will only gate Messages
+to on send-port heard Users.
+ 
+
 |8320 Enter Words or Calls for Digipeating
 which will be replaced by <mycall>*
 <mycall> is automatic part of this
@@ -1495,7 +1501,8 @@ whole world. With normal (not USB)
 com-port use only with SMACK CRC.
 
 |8336 Cycle through possible Input (rx)
-"Rf-Ports". A "*" listens on All Ports.
+"Rf-Ports". "N" is for gate Net to Rf,
+"*" listens on All Ports except Net.
 
 |8337 Cycle through possible output (tx) "Rf-Ports"
 

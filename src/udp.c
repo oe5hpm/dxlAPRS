@@ -11,11 +11,17 @@
 #include <stdlib.h>
 #include <fcntl.h>
 
-
+#ifndef O_CLOEXEC
+# define O_CLOEXEC 02000000
+#endif
 
 int openudp()
 {
-return socket(PF_INET, SOCK_DGRAM, 0);
+int fd;
+/*return socket(PF_INET, SOCK_DGRAM|O_CLOEXEC, 0);*/
+  fd = socket(PF_INET, SOCK_DGRAM, 0);
+  fcntl(fd, F_SETFD, fcntl(fd, F_GETFD) | FD_CLOEXEC);
+  return fd;
 }
 
 int bindudp(int fd, unsigned port)

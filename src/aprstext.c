@@ -279,11 +279,6 @@ static void rfdist(aprsdecode_pVARDAT v, char h[], unsigned long h_len)
       aprsstr_Append(h, h_len, s, 32ul);
       aprsstr_Append(h, h_len, "km)", 4ul);
    }
-/*
-FixToStr(distance(ig^.lastpos, pos), 4, s); WrStr(s); WrStr("|");
-FixToStr(distance(pos, ig^.lastpos), 4, s); WrStr(s); WrStr(" ");
-postostr(ig^.lastpos, s); WrStr(s); WrStr(" "); postostr(pos, s); WrStrLn(s);
-*/
 } /* end rfdist() */
 
 
@@ -353,7 +348,7 @@ extern void aprstext_decode(char s[], unsigned long s_len,
    else s[0UL] = 0;
    ret = aprsdecode_Decode(pf->vardat->raw, 500ul, dat);
    if (decoded) {
-      aprstext_Apphex(s, s_len, dat->srccall, 9ul);
+      aprstext_Apphex(s, s_len, dat->symcall, 9ul);
       og = X2C_max_longint;
       if (!aprspos_posvalid(dat->pos)) dat->pos = pf->vardat->pos;
       if (aprspos_posvalid(dat->pos)) {
@@ -772,7 +767,7 @@ extern void aprstext_listop(char decoded)
          oldt = pf->time0;
          aprsstr_Append(s, 1000ul, "\012", 2ul);
          if (decoded) aprsstr_Append(s, 1000ul, "\012", 2ul);
-         useri_wrstrlist(s, 1000ul, dat.srccall, pf->vardat->pos, pf->time0);
+         useri_wrstrlist(s, 1000ul, dat.symcall, pf->vardat->pos, pf->time0);
          pf = pf->next;
       }
    }
@@ -816,6 +811,9 @@ extern void aprstext_listin(char r[], unsigned long r_len, char port,
    useri_wrstrmon(s1, 1000ul, dat.pos);
 } /* end listin() */
 
+#define aprstext_TRIVIAL 3.1397174254317E-6
+/* 20m */
+
 
 extern void aprstext_listtyps(char typ, char decod, char oneop[],
                 unsigned long oneop_len)
@@ -837,19 +835,19 @@ extern void aprstext_listtyps(char typ, char decod, char oneop[],
             aprstext_decode(s, 1000ul, 0, pf, 0, 0UL, decod, &dat);
             if (decod) aprsstr_Append(s, 1000ul, "\012\012", 3ul);
             else aprsstr_Append(s, 1000ul, "\012", 2ul);
-            useri_wrstrlist(s, 1000ul, dat.srccall, pf->vardat->pos,
+            useri_wrstrlist(s, 1000ul, dat.symcall, pf->vardat->pos,
                 pf->time0);
          }
       }
       else if (typ=='D') {
          /* moveing stations */
-         if (pf && (op->margin0.lat>op->margin1.lat || op->margin0.long0<op->margin1.long0)
+         if (pf && (op->margin0.lat>op->margin1.lat+3.1397174254317E-6f || op->margin0.long0+3.1397174254317E-6f<op->margin1.long0)
                 ) {
             while (pf->next) pf = pf->next;
             aprstext_decode(s, 1000ul, 0, pf, 0, 0UL, decod, &dat);
             if (decod) aprsstr_Append(s, 1000ul, "\012\012", 3ul);
             else aprsstr_Append(s, 1000ul, "\012", 2ul);
-            useri_wrstrlist(s, 1000ul, dat.srccall, pf->vardat->pos,
+            useri_wrstrlist(s, 1000ul, dat.symcall, pf->vardat->pos,
                 pf->time0);
          }
       }
@@ -865,7 +863,7 @@ extern void aprstext_listtyps(char typ, char decod, char oneop[],
             if (dat.symt=='/' && dat.sym=='_') {
                if (decod) aprsstr_Append(s, 1000ul, "\012\012", 3ul);
                else aprsstr_Append(s, 1000ul, "\012", 2ul);
-               useri_wrstrlist(s, 1000ul, dat.srccall, pf->vardat->pos,
+               useri_wrstrlist(s, 1000ul, dat.symcall, pf->vardat->pos,
                 pf->time0);
             }
          }
@@ -877,7 +875,7 @@ extern void aprstext_listtyps(char typ, char decod, char oneop[],
          lasttext[0U] = 0;
          while (pf) {
             if (((((((pf->vardat->lastref==pf && aprsdecode_Decode(pf->vardat->raw,
-                 500ul, &dat)>=0L) && (typ=='M' || typ=='B')) && dat.type==aprsdecode_MSG) && X2C_STRCMP(dat.srccall,
+                 500ul, &dat)>=0L) && (typ=='M' || typ=='B')) && dat.type==aprsdecode_MSG) && X2C_STRCMP(dat.symcall,
                 9u,dat.msgto,9u)) && dat.msgtext[0UL]) && (typ=='B')==IsBulletin(dat)) && ((oneop[0UL]==0 || X2C_STRCMP(oneop,
                 oneop_len,op->call,9u)==0) || X2C_STRCMP(oneop,oneop_len,
                 dat.msgto,9u)==0)) {
@@ -885,7 +883,7 @@ extern void aprstext_listtyps(char typ, char decod, char oneop[],
                 9ul) && aprsstr_StrCmp(lasttext, 101ul, dat.msgtext, 67ul))) {
                   aprstext_DateLocToStr(pf->time0, s, 1000ul);
                   aprsstr_Append(s, 1000ul, " ", 2ul);
-                  aprsstr_Append(s, 1000ul, dat.srccall, 9ul);
+                  aprsstr_Append(s, 1000ul, dat.symcall, 9ul);
                   aprsstr_Append(s, 1000ul, ">", 2ul);
                   aprsstr_Append(s, 1000ul, dat.msgto, 9ul);
                   aprsstr_Append(s, 1000ul, ":[", 3ul);
@@ -897,7 +895,7 @@ extern void aprstext_listtyps(char typ, char decod, char oneop[],
                      aprsstr_Append(s, 1000ul, "]", 2ul);
                   }
                   aprsstr_Append(s, 1000ul, "\012", 2ul);
-                  useri_wrstrlist(s, 1000ul, dat.srccall, pf->vardat->pos,
+                  useri_wrstrlist(s, 1000ul, dat.symcall, pf->vardat->pos,
                 pf->time0);
                   aprsstr_Assign(lastto, 101ul, dat.msgto, 9ul);
                   aprsstr_Assign(lasttext, 101ul, dat.msgtext, 67ul);
@@ -917,13 +915,13 @@ extern void aprstext_listtyps(char typ, char decod, char oneop[],
                  IF (pf^.vardat^.lastref=pf) & (Decode(pf^.vardat^.raw,
                 dat)>=0) THEN
                    IF (typ="M") OR (typ="B") THEN
-                     IF (dat.type=MSG) & (dat.srccall<>dat.msgto)
+                     IF (dat.type=MSG) & (dat.symcall<>dat.msgto)
                 & (dat.msgtext[0]<>0C) THEN
                        IF (typ="B")=IsBulletin(dat) THEN 
                          IF NOT (StrCmp(lastto, dat.msgto) & StrCmp(lasttext,
                  dat.msgtext)) THEN 
                            DateLocToStr(pf^.time, s); Append(s, " ");
-                           Append(s, dat.srccall); Append(s, ">");
+                           Append(s, dat.symcall); Append(s, ">");
                            Append(s, dat.msgto); Append(s, ":[");
                            Apphex(s, dat.msgtext); Append(s, "]");
                            IF dat.acktext[0]<>0C THEN 
@@ -931,7 +929,7 @@ extern void aprstext_listtyps(char typ, char decod, char oneop[],
                 Append(s, "]");
                            END;
                            Append(s, LF);
-                           wrstrlist(s, dat.srccall, pf^.vardat^.pos,
+                           wrstrlist(s, dat.symcall, pf^.vardat^.pos,
                 pf^.time);
          
          <* IF WITHSTDOUT THEN *>
@@ -955,7 +953,7 @@ extern void aprstext_listtyps(char typ, char decod, char oneop[],
                 dat.objectfrom,9u)==0)) {
                if (decod) {
                   aprsstr_Append(s, 1000ul, "\012\012", 3ul);
-                  useri_wrstrlist(s, 1000ul, dat.srccall, pf->vardat->pos,
+                  useri_wrstrlist(s, 1000ul, dat.symcall, pf->vardat->pos,
                 pf->time0);
                }
                else {
@@ -993,11 +991,12 @@ static void degtostr(float d, char lat, char form, char s[],
    }
    else if (lat) s[i] = 'N';
    else s[i+1UL] = 'E';
+   i = (unsigned long)!lat;
    if (form=='2') {
       /* DDMM.MMNDDMM.MME */
-      n = aprsdecode_trunc(d*3.4377467707849E+5f+0.5f);
+      /*    n:=trunc(d*(6000*180/PI)+0.5); */
+      n = aprsdecode_trunc(d*3.4377467707849E+5f);
       s[0UL] = (char)((n/600000UL)%10UL+48UL);
-      i = (unsigned long)!lat;
       s[i] = (char)((n/60000UL)%10UL+48UL);
       ++i;
       s[i] = (char)((n/6000UL)%10UL+48UL);
@@ -1017,7 +1016,6 @@ static void degtostr(float d, char lat, char form, char s[],
       /* DDMM.MMMNDDMM.MMME */
       n = aprsdecode_trunc(d*3.4377467707849E+6f+0.5f);
       s[0UL] = (char)((n/6000000UL)%10UL+48UL);
-      i = (unsigned long)!lat;
       s[i] = (char)((n/600000UL)%10UL+48UL);
       ++i;
       s[i] = (char)((n/60000UL)%10UL+48UL);
@@ -1039,7 +1037,6 @@ static void degtostr(float d, char lat, char form, char s[],
       /* DDMMSS */
       n = aprsdecode_trunc(d*2.062648062471E+5f+0.5f);
       s[0UL] = (char)((n/360000UL)%10UL+48UL);
-      i = (unsigned long)!lat;
       s[i] = (char)((n/36000UL)%10UL+48UL);
       ++i;
       s[i] = (char)((n/3600UL)%10UL+48UL);

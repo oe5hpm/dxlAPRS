@@ -113,6 +113,8 @@ extern void xosi_Umlaut(char [], unsigned long);
 
 extern void xosi_setxwinsize(long, long);
 
+extern void xosi_closewin(void);
+
 #define xosi_BYTEPIXEL 4
 /* WIN32 screen rgb */
 

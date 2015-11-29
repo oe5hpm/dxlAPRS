@@ -208,6 +208,18 @@ extern void osi_WrBin(long fd, char buf[], unsigned long buf_len,
    res = write(fd, (char *)buf, size);
 } /* end WrBin() */
 
+
+extern void osi_Rename(char fname[], unsigned long fname_len, char newname[],
+                 unsigned long newname_len)
+{
+   char ok0;
+   X2C_PCOPY((void **)&fname,fname_len);
+   X2C_PCOPY((void **)&newname,newname_len);
+   FileSys_Rename(fname, fname_len, newname, newname_len, &ok0);
+   X2C_PFREE(fname);
+   X2C_PFREE(newname);
+} /* end Rename() */
+
 /*
 PROCEDURE Size(fd:File):CARDINAL;
 VAR st:stat.stat_t;
