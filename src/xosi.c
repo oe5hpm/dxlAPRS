@@ -369,6 +369,12 @@ static long MakeMainWin(char winname[], unsigned long winname_len,
 } /* end MakeMainWin() */
 
 
+extern void xosi_closewin(void)
+{
+   XCloseDisplay(dis);
+} /* end closewin() */
+
+
 extern long xosi_InitX(char winname[], unsigned long winname_len,
                 char iconname[], unsigned long iconname_len,
                 unsigned long xsizeh, unsigned long ysizeh)
@@ -826,7 +832,7 @@ extern void xosi_StartProg(char name[], unsigned long name_len,
 extern void xosi_StopProg(struct xosi_PROCESSHANDLE * chpid)
 {
    /*WrInt(chpid.pid, 9);WrStrLn(" closepid"); */
-   kill(chpid->pid, SIGTERM);
+   if (chpid->runs) kill(chpid->pid, SIGTERM);
 } /* end StopProg() */
 
 

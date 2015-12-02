@@ -58,7 +58,7 @@
 #define aprsdecode_MAXMULTILINES 40
 /* AE5PL limits to 23 multiline elements */
 
-#define aprsdecode_VERS "aprsmap(cu) 0.56"
+#define aprsdecode_VERS "aprsmap(cu) 0.58"
 
 typedef char aprsdecode_MONCALL[9];
 
@@ -145,10 +145,11 @@ struct aprsdecode_UDPSOCK {
    unsigned long lastudprx;
    unsigned long lastudptx;
    unsigned long starttime;
+   unsigned long bpstime;
    unsigned long rxframes;
    unsigned long rxbytes;
    unsigned long txframes;
-   unsigned long txbytes;
+   unsigned long txbytes; /* for tx bit/s limiter */
    unsigned long uip;
    unsigned long * pdupetimes;
 };
@@ -298,7 +299,8 @@ struct aprsdecode_DAT;
 
 
 struct aprsdecode_DAT {
-   aprsdecode_MONCALL srccall;
+   aprsdecode_MONCALL srcall;
+   aprsdecode_MONCALL symcall;
    aprsdecode_MONCALL dstcall;
    aprsdecode_MONCALL viacalls[10];
    aprsdecode_MONCALL msgto;
@@ -307,6 +309,7 @@ struct aprsdecode_DAT {
    unsigned long igaterawp;
    unsigned long igatelen;
    unsigned long igatep;
+   unsigned long payload;
    char postyp;
    char typc;
    struct aprsdecode_AREASYMB areasymb;

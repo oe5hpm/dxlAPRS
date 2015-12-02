@@ -1317,7 +1317,7 @@ extern void aprstat_wxgraph(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
          dots(XStep, img, baro, 1440ul, 1, 500UL, 400UL, 500UL);
       }
    }
-   if (max0.wind!=(-1.E+4f)) {
+   if (max0.wind!=(-1.E+4f) && max0.wind>0.0f) {
       have |= 0x8U;
       if ((0x8U & *what)) {
          if (!newimg(Maxx, img)) return;
@@ -1327,12 +1327,12 @@ extern void aprstat_wxgraph(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
                 &yax1, &step);
          s[0U] = 0;
          if (lastval->winds!=0.0f) {
-            aprsstr_FixToStr(lastval->winds, 0UL, hh, 256ul);
+            aprsstr_FixToStr(lastval->winds, 2UL, hh, 256ul);
             aprsstr_Append(hh, 256ul, "km/h Wind  ", 12ul);
             aprsstr_Append(s, 256ul, hh, 256ul);
          }
          if (lastval->gust!=0.0f) {
-            aprsstr_FixToStr(lastval->gust, 0UL, hh, 256ul);
+            aprsstr_FixToStr(lastval->gust, 2UL, hh, 256ul);
             aprsstr_Append(hh, 256ul, "km/h Gust  ", 12ul);
             aprsstr_Append(s, 256ul, hh, 256ul);
          }

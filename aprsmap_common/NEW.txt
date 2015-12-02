@@ -1274,6 +1274,22 @@
  
 
 
+24.11. 2015 (Ver 0.58)
+
++ Wx Grafiken korrigiert
+
++ Schaltknopf/Laempchen fuer Objekte Ein/Aus
+
++ Gate Net-to-Rf mit Radius und Bit/s Limit und Option nur Message zu (gehoerten) Usern
+  (mit Standard-3rd-party Protokoll und ohne speichern/wiederholen von Messages).
+  Einschalten mit Config/Rf-Ports/Digipeater, Rx auf "N", Bit/s in "N-n Words" siehe Hints.
+
+
+
+
+
+
+
 
 
 

@@ -162,6 +162,8 @@ extern void osi_Seek(long, unsigned long);
 
 extern void osi_Seekcur(long, long);
 
+extern void osi_Rename(char [], unsigned long, char [], unsigned long);
+
 extern void osi_WrLn(void);
 
 extern void osi_WrStrLn(char [], unsigned long);
