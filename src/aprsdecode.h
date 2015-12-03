@@ -618,7 +618,8 @@ extern long aprsdecode_Decode(char [], unsigned long,
                 struct aprsdecode_DAT *);
 
 extern long aprsdecode_Stoframe(aprsdecode_pOPHIST *, char [], unsigned long,
-                 unsigned long, char, struct aprsdecode_DAT);
+                 unsigned long, char, unsigned long *,
+                struct aprsdecode_DAT);
 
 extern void aprsdecode_Checktrack(aprsdecode_pOPHIST, aprsdecode_pFRAMEHIST);
 

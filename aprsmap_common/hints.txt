@@ -519,8 +519,8 @@ or lat/long ddmm.mm  dddmm.mm  "4806.09N 01318.67E"
 or lat/long ddmm.mmm dddmm.mmm "4806.091N 01318.676E"
 or lat/long (-)d.ddddd (-)d.ddddd "48.71 -13.967"
 In File "poi.txt" (in osm-directory) Repeat Find
-to step through matches "g?iss*"
-
+to step through matches "g?iss*".
+Cursor up/down steps thru 10 lines of History.
 
 |2101 Police, Sheriff
 |2102 Reserved (Had Been Rain)
@@ -1031,8 +1031,11 @@ Also used as not-call-Beacon Send warning.
 of received and sent Callsigns 
 
 |7536 Number of shown Callsigns in Window Title
-Do not enable on some Linux Windowmakers
-waisting Memory on changeing Window Titles
+0 show new Calls only, 1 call with time.
+
+Linux hint:Some Windowmakers seem to not
+free memory of old headline entries so,
+if RAM is small, use 0 or option off. 
 
 |7537 Configure Rf to Rf Digipeating
 
