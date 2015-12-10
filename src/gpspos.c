@@ -5,7 +5,7 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
-/* "@(#)gpspos.c Sep 26 14:44:02 2015" */
+/* "@(#)gpspos.c Dec  8  3:09:39 2015" */
 
 
 #define X2C_int32

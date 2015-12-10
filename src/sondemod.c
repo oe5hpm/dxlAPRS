@@ -5,7 +5,7 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
-/* "@(#)sondemod.c Oct 19 18:03:31 2015" */
+/* "@(#)sondemod.c Dec  8  4:01:29 2015" */
 
 
 #define X2C_int32
@@ -224,6 +224,8 @@ static unsigned long lastip;
 
 static unsigned long lastport;
 
+static char mycall[100];
+
 
 static void Error(char text[], unsigned long text_len)
 {
@@ -422,6 +424,7 @@ static void Parms(void)
    long inum;
    unsigned char channel;
    struct CHAN * anonym;
+   mycall[0U] = 0;
    semfile[0] = 0;
    yumafile[0] = 0;
    rinexfile[0] = 0;
@@ -555,10 +558,8 @@ static void Parms(void)
             }
          }
          else if (h[1U]=='I') {
-            Lib_NextArg(sondeaprs_mycall, 100ul);
-            if ((unsigned char)sondeaprs_mycall[0UL]<' ') {
-               Error("-I <mycall>", 12ul);
-            }
+            Lib_NextArg(mycall, 100ul);
+            if ((unsigned char)mycall[0U]<' ') Error("-I <mycall>", 12ul);
          }
          else if (h[1U]=='s') {
             Lib_NextArg(semfile, 1024ul);
@@ -1121,9 +1122,20 @@ static void domes(const char md[], unsigned long md_len, double * hp,
 static void calibfn(char obj[], unsigned long obj_len, char fn[],
                 unsigned long fn_len)
 {
+   unsigned long i0;
    X2C_PCOPY((void **)&obj,obj_len);
    aprsstr_Assign(fn, fn_len, obj, obj_len);
+   i0 = 0UL;
+   while (i0<=fn_len-1 && fn[i0]) {
+      if (((unsigned char)fn[i0]<'0' || (unsigned char)fn[i0]>'9')
+                && ((unsigned char)fn[i0]<'A' || (unsigned char)fn[i0]>'Z')) {
+         fn[0UL] = 0;
+         goto label;
+      }
+      ++i0;
+   }
    aprsstr_Append(fn, fn_len, ".cal", 5ul);
+   label:;
    X2C_PFREE(obj);
 } /* end calibfn() */
 
@@ -1189,11 +1201,13 @@ static void docalib(const char sf[], unsigned long sf_len, char objname0[],
          /* got more new info */
          cont->calibok |= (1UL<<idx);
          calibfn(objname0, objname_len, fn, 1024ul);
-         fd = osi_OpenWrite(fn, 1024ul);
-         if (fd>=0L) {
-            osi_WrBin(fd, (char *)cont, sizeof(struct CONTEXT)/1u,
+         if (fn[0U]) {
+            fd = osi_OpenWrite(fn, 1024ul);
+            if (fd>=0L) {
+               osi_WrBin(fd, (char *)cont, sizeof(struct CONTEXT)/1u,
                 sizeof(struct CONTEXT));
-            osi_Close(fd);
+               osi_Close(fd);
+            }
          }
       }
       /*    INCL(cont.calibok, idx); */
@@ -1208,7 +1222,7 @@ static void docalib(const char sf[], unsigned long sf_len, char objname0[],
          }
       }
       if (sondeaprs_verb) {
-         InOut_WriteString(" calibration: ", 15ul);
+         InOut_WriteString(" calib: ", 9ul);
          for (i0 = 0UL; i0<=31UL; i0++) {
             if (i0==idx) InOut_WriteString("!", 2ul);
             else if (X2C_IN(i0,32,cont->calibok)) {
@@ -1250,10 +1264,47 @@ static void WrRinexfn(unsigned long t)
    else osi_WrStrLn("can not write getalmanach file", 31ul);
 } /* end WrRinexfn() */
 
+
+static void getcall(const char b[], unsigned long b_len, char call[],
+                unsigned long call_len)
+{
+   unsigned long c;
+   unsigned long n;
+   unsigned long i0;
+   char tmp;
+   call[0UL] = 0;
+   if ((unsigned long)(unsigned char)b[4UL]<=15UL) {
+      n = (unsigned long)(unsigned char)b[0UL]*16777216UL+(unsigned long)
+                (unsigned char)b[1UL]*65536UL+(unsigned long)(unsigned char)
+                b[2UL]*256UL+(unsigned long)(unsigned char)b[3UL];
+      for (i0 = 5UL;; i0--) {
+         c = n%37UL;
+         if (c==0UL) call[i0] = 0;
+         else if (c<27UL) call[i0] = (char)((c+65UL)-1UL);
+         else call[i0] = (char)((c+48UL)-27UL);
+         n = n/37UL;
+         if (i0==0UL) break;
+      } /* end for */
+      call[6UL] = 0;
+      c = (unsigned long)(unsigned char)b[4UL];
+      if (c>0UL) {
+         aprsstr_Append(call, call_len, "-", 2ul);
+         if (c>=10UL) {
+            aprsstr_Append(call, call_len, "1", 2ul);
+            c = c%10UL;
+         }
+         aprsstr_Append(call, call_len, (char *)(tmp = (char)(c+48UL),&tmp),
+                1u/1u);
+      }
+   }
+/*WrStr("usercall:");WrStrLn(call); */
+} /* end getcall() */
+
 static unsigned short sondemod_POLYNOM = 0x1021U;
 
 
-static void decodeframe(unsigned char m)
+static void decodeframe(unsigned char m, unsigned long ip,
+                unsigned long fromport)
 {
    unsigned long gpstime;
    unsigned long frameno;
@@ -1266,8 +1317,10 @@ static void decodeframe(unsigned char m)
    unsigned short crc;
    char typ;
    char sf[256];
+   char bb[256];
    char b[256];
    char calok;
+   char usercall[11];
    struct CONTEXT * anonym;
    struct CONTEXT * anonym0;
    struct CONTEXT * anonym1;
@@ -1365,6 +1418,21 @@ static void decodeframe(unsigned char m)
       b[i0] = chan[m].rxbuf[i0];
    } /* end for */
    calok = 0;
+   getcall(b, 256ul, usercall, 11ul);
+   if (sondeaprs_verb && fromport>0UL) {
+      InOut_WriteString("UDP:", 5ul);
+      aprsstr_ipv4tostr(ip, bb, 256ul);
+      InOut_WriteString(bb, 256ul);
+      InOut_WriteString(":", 2ul);
+      InOut_WriteInt((long)fromport, 1UL);
+      if (usercall[0U]) {
+         InOut_WriteString(" (", 3ul);
+         InOut_WriteString(usercall, 11ul);
+         InOut_WriteString(")", 2ul);
+      }
+      osi_WrStrLn("", 1ul);
+   }
+   if (usercall[0U]==0) aprsstr_Assign(usercall, 11ul, mycall, 100ul);
    p = 6UL;
    for (;;) {
       typ = b[p];
@@ -1378,9 +1446,7 @@ static void decodeframe(unsigned char m)
       }
       else if (typ=='i') {
          /*IF verb THEN WrStr("unkn ") END;*/
-         if (sondeaprs_verb) {
-            InOut_WriteString("data ", 6ul);
-         }
+         if (sondeaprs_verb) InOut_WriteString("data ", 6ul);
       }
       else if (typ=='\377') {
          /*IF verb THEN WrStr("end ") END;*/
@@ -1519,7 +1585,7 @@ static void decodeframe(unsigned char m)
                 anonym1->hyg, anonym1->temp, (double)mhz,
                 (double)anonym1->hrmsc, (double)anonym1->vrmsc,
                 (anonym1->timems/1000UL)%86400UL, frameno, objname, 9ul,
-                almanachage, anonym1->goodsats);
+                almanachage, anonym1->goodsats, usercall, 11ul);
          anonym1->framesent = 1;
       }
    }
@@ -1540,7 +1606,7 @@ static void stobyte(unsigned char m, char b)
       else anonym->rxp = 0UL;
       if (anonym->rxp>=240UL) {
          anonym->rxp = 0UL;
-         decodeframe(m);
+         decodeframe(m, 0UL, 0UL);
       }
    }
 /*      FOR i:=0 TO 239 DO WrHex(ORD(rxbuf[i]), 4) END; WrStrLn("");
@@ -1729,19 +1795,17 @@ static void udprx(void)
    unsigned long fromport;
    unsigned long ip;
    long len;
-   char s[100];
    len = udpreceive(rxsock, chan[sondemod_LEFT].rxbuf, 256L, &fromport, &ip);
    if (len==240L) {
-      if (sondeaprs_verb && (ip!=lastip || fromport!=lastport)) {
-         aprsstr_ipv4tostr(ip, s, 100ul);
-         InOut_WriteString(s, 100ul);
-         InOut_WriteString(":", 2ul);
-         InOut_WriteInt((long)fromport, 1UL);
-         osi_WrStrLn("", 1ul);
-         lastip = ip;
-         lastport = fromport;
-      }
-      decodeframe(sondemod_LEFT);
+      /*
+          IF verb & ((ip<>lastip) OR (fromport<>lastport)) THEN
+            ipv4tostr(ip, s);
+            WrStr(s); WrStr(":"); WrInt(fromport, 1); WrStrLn("");
+            lastip:=ip;
+            lastport:=fromport; 
+          END; 
+      */
+      decodeframe(sondemod_LEFT, ip, fromport);
    }
    else Usleep(100000UL);
 } /* end udprx() */
