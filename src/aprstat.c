@@ -1326,7 +1326,7 @@ extern void aprstat_wxgraph(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
          scale(gust, 1440ul, (-1.E+4f), max0.wind, 120.0f, 20.0f, &yax0,
                 &yax1, &step);
          s[0U] = 0;
-         if (lastval->winds!=0.0f) {
+         if (lastval->winds!=0.0f || lastval->gust==0.0f) {
             aprsstr_FixToStr(lastval->winds, 2UL, hh, 256ul);
             aprsstr_Append(hh, 256ul, "km/h Wind  ", 12ul);
             aprsstr_Append(s, 256ul, hh, 256ul);
