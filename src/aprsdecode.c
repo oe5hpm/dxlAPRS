@@ -180,6 +180,10 @@ struct xosi_PROCESSHANDLE aprsdecode_maploadpid;
 
 #define aprsdecode_DIROUT "<"
 
+#define aprsdecode_DIRHAVIT "-"
+
+#define aprsdecode_DIRJUNC "#"
+
 typedef unsigned long SET256[8];
 
 typedef unsigned long CHSET[4];
@@ -1026,7 +1030,7 @@ static void wrmon(unsigned long port, char dir,
    char ms[31];
    if (port==0UL) strncpy(mcon,"n",10u);
    else aprsstr_IntToStr((long)port, 0UL, mcon, 10ul);
-   if ((dir=='>' || dir=='<') && useri_configon(useri_fWRTICKER)) {
+   if ((dir=='>' || dir=='-') && useri_configon(useri_fWRTICKER)) {
       tickermon(mcon, 10ul, dir, oldtime, s, s_len);
    }
    /*IF configon(fWRINCOM) THEN */
@@ -6017,8 +6021,7 @@ static void rfbeacons(void)
          /* valid time */
          bn = (aprsdecode_realtime+shift)%bt;
          /*WrInt(realtime MOD 86400, 10); WrInt(realtime-rfbecondone, 4);
-                WrInt(bshift, 4); WrInt(shift, 4); WrInt(n, 4);
-                WrStrLn(" b"); */
+                WrInt(bshift, 4); WrInt(shift, 14); WrStrLn(" bshift"); */
          if (bn<aprsdecode_realtime-rfbecondone) {
             beaconmacros(s, 512ul, "", 1ul, "", 1ul, 1);
             if (s[0UL]) {
@@ -7031,8 +7034,10 @@ extern void aprsdecode_initparms(void)
    Stopticker();
    tickertime = 0UL;
    sentemptymsg = 0;
-   beaconrandomstart = TimeConv_time()%60UL;
+   beaconrandomstart = TimeConv_time();
                 /* set a beacon scheduler start second in minute */
+   beaconrandomstart = (beaconrandomstart/60UL)%60UL+(beaconrandomstart%60UL)
+                *60UL;
 } /* end initparms() */
 
 

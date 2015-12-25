@@ -971,8 +971,8 @@ static void initconfig(void)
    initc(useri_fWATCH, "Watch Calls", 12ul, useri_cLIST, "", 1ul, 0, 5UL);
    initc(useri_fAPPROXY, "Approxy Warn (km)", 18ul, useri_cBLINE, "", 1ul, 0,
                  5UL);
-   initc(useri_fFIND, "Find Call or Locator", 21ul, useri_cLIST, " ", 2ul, 0,
-                 10UL);
+   initc(useri_fFIND, "Find Call or Locator", 21ul, useri_cLIST, "", 1ul, 0,
+                10UL);
    initc(useri_fLOGWFN, "WriteLogfilename", 17ul, useri_cBLINE, "logs/rawlog%\
 d", 14ul, 1, 15UL);
    initc(useri_fLOGDAYS, "Delete Log Days", 16ul, useri_cLINE, "31", 3ul, 0,
@@ -10411,7 +10411,7 @@ static void kbtomenu(char * ch)
       if (idx<=152UL) {
          { /* with */
             struct CONFIG * anonym = &configs[idx];
-            if (anonym->lines==0) icfg((unsigned char)idx, "", 1ul);
+            if (anonym->lines==0) icfg((unsigned char)idx, " ", 2ul);
             { /* with */
                struct CONFLINE * anonym0 = anonym->lines;
                eot = 0UL;
