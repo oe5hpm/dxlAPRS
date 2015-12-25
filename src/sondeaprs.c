@@ -5,7 +5,6 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
-/* "@(#)sondeaprs.c Dec  8  3:09:39 2015" */
 
 
 #define X2C_int32
@@ -958,8 +957,9 @@ static pCONTEXT findcontext(char n[], unsigned long n_len, unsigned long t)
 
 extern void sondeaprs_senddata(double lat, double long0, double alt,
                 double speed, double dir, double clb, double hp, double hyg,
-                double temp, double mhz, double hrms, double vrms,
-                unsigned long sattime, unsigned long uptime, char objname[],
+                double temp, double ozon, double otemp, double mhz,
+                double hrms, double vrms, unsigned long sattime,
+                unsigned long uptime, char objname[],
                 unsigned long objname_len, unsigned long almanachage,
                 unsigned long goodsats, char usercall[],
                 unsigned long usercall_len)
@@ -1009,7 +1009,7 @@ extern void sondeaprs_senddata(double lat, double long0, double alt,
             InOut_WriteString(" AlmAge ", 9ul);
             osi_WrFixed((float)(X2C_DIVL((double)almanachage,3600.0)), 1L,
                 3UL);
-            InOut_WriteString("h ", 3ul);
+            osi_WrStrLn("h ", 3ul);
             for (e = sondeaprs_ePRES;; e++) {
                if (X2C_IN((long)e,10,chk)) {
                   switch ((unsigned)e) {
@@ -1079,6 +1079,15 @@ extern void sondeaprs_senddata(double lat, double long0, double alt,
                 h, 101ul);
                aprsstr_Append(s, 101ul, h, 101ul);
                aprsstr_Append(s, 101ul, "%", 2ul);
+            }
+            if (ozon>0.1) {
+               aprsstr_Append(s, 101ul, " o3=", 5ul);
+               aprsstr_FixToStr((float)ozon, 2UL, h, 101ul);
+               aprsstr_Append(s, 101ul, h, 101ul);
+               aprsstr_Append(s, 101ul, "mPa ti=", 8ul);
+               aprsstr_FixToStr((float)otemp, 2UL, h, 101ul);
+               aprsstr_Append(s, 101ul, h, 101ul);
+               aprsstr_Append(s, 101ul, "C", 2ul);
             }
             aprsstr_Append(s, 101ul, " ", 2ul);
             aprsstr_FixToStr((float)mhz, 3UL, h, 101ul);

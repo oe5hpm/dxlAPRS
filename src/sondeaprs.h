@@ -19,8 +19,9 @@ typedef unsigned long sondeaprs_TIME;
 
 extern void sondeaprs_senddata(double, double, double, double, double,
                 double, double, double, double, double, double, double,
-                unsigned long, unsigned long, char [], unsigned long,
-                unsigned long, unsigned long, char [], unsigned long);
+                double, double, unsigned long, unsigned long, char [],
+                unsigned long, unsigned long, unsigned long, char [],
+                unsigned long);
 
 extern long sondeaprs_GetIp(char [], unsigned long, unsigned long *,
                 unsigned long *, unsigned long *);

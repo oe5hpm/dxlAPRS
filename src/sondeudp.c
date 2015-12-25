@@ -5,7 +5,6 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
-/* "@(#)sondeudp.c Dec  8 18:03:31 2015" */
 
 
 #define X2C_int32
@@ -447,7 +446,7 @@ static void Parms(void)
    struct CHAN * anonym1;
    err = 0;
    abortonsounderr = 0;
-   adcrate = 16000UL;
+   adcrate = 22050UL;
    adcbytes = 2UL;
    adcbuflen = 1024UL;
    fragmentsize = 11UL;
@@ -569,12 +568,12 @@ s (equalizer diversity)", 73ul);
 ighpass (-999..999)", 69ul);
                osi_WrStrLn("                -C <n> before -e sets channel num\
 ber", 53ul);
-               osi_WrStrLn(" -f <num>       adcrate (16000) (8000..96000)",
+               osi_WrStrLn(" -f <num>       adcrate (22050) (8000..96000)",
                 46ul);
                osi_WrStrLn(" -I <call>      mycall + ssid", 30ul);
                osi_WrStrLn(" -l <num>       adcbuflen (256)", 32ul);
                osi_WrStrLn(" -o <filename>  oss devicename (/dev/dsp) or raw/\
-wav audio file", 64ul);
+wav audio file or pipe /dev/stdin", 83ul);
                osi_WrStrLn(" -u <x.x.x.x:destport> send rx data in udp (to so\
 ndemod), -C <n> before sets", 77ul);
                osi_WrStrLn("                channel number, maybe repeated fo\
@@ -582,7 +581,7 @@ r more destinations", 69ul);
                osi_WrStrLn(" -h             help", 21ul);
                osi_WrStrLn(" -v             verbous, (CRC-checked Sondename)",
                  49ul);
-               osi_WrStrLn("example: sondeudp -f 16000 -o /dev/dsp -c 2 -C 1 \
+               osi_WrStrLn("example: sondeudp -f 16000 -o /dev/dsp -c 2 -C 0 \
 -e 50 -u 127.0.0.1:4000", 73ul);
                X2C_ABORT();
             }
