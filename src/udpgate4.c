@@ -1090,7 +1090,9 @@ cept query answers", 68ul);
                osi_WrStrLn(" -n <min>:<file> netbeacon minutes:filename -n 10\
 :netbeacon.txt", 64ul);
                osi_WrStrLn("                \\\\z ddhhmm, \\\\h hhmmss, \\\\:\
-filename: insert file, \\\\\\ is \\\\", 76ul);
+filename: insert file, \\\\v insert", 77ul);
+               osi_WrStrLn("                Version, \\\\\\ insert \\\\",
+                39ul);
                osi_WrStrLn("                beacon file like: !8959.00N/17959\
 .00E&igate mars", 65ul);
                osi_WrStrLn("                beacon file used by udpgate itsel\
@@ -1173,13 +1175,13 @@ rt GHOST* in otherwise false", 78ul);
             else if (lasth=='U') {
                Lib_NextArg(h, 4096ul);
                i0 = 0UL;
-               if (GetSec(h, 4096ul, &i0, &n)>=0L) purgeunack = n;
+               if (GetSec(h, 4096ul, &i0, &n)>=0L) {
+                  purgeunack = n;
+               }
                else Err("-U seconds", 11ul);
                if (h[i0]==':') {
                   ++i0;
-                  if (GetSec(h, 4096ul, &i0, &n)>=0L) {
-                     purgeunacksent = n;
-                  }
+                  if (GetSec(h, 4096ul, &i0, &n)>=0L) purgeunacksent = n;
                   else Err("-U seconds:seconds", 19ul);
                }
             }
@@ -2262,7 +2264,7 @@ static char cmpfrom(const char a[], unsigned long a_len, unsigned long from,
 #define udpgate4_MSYM "\\"
 
 
-static void beaconmacros(char s[], unsigned long s_len, char * del)
+static void beaconmacros(char s[], unsigned long s_len)
 {
    unsigned long i0;
    long j;
@@ -2271,7 +2273,6 @@ static void beaconmacros(char s[], unsigned long s_len, char * del)
    char ds[256];
    char fn[1024];
    long f;
-   *del = 0;
    i0 = 0UL;
    ns[0U] = 0;
    while (i0<s_len-1 && s[i0]) {
@@ -2301,6 +2302,10 @@ static void beaconmacros(char s[], unsigned long s_len, char * del)
             ds[6U] = 0;
             aprsstr_Append(ns, 256ul, ds, 256ul);
          }
+         else if (s[i0]=='v') {
+            /* insert version */
+            aprsstr_Append(ns, 256ul, "udpgate(c) 0.60", 16ul);
+         }
          else if (s[i0]==':') {
             /* insert file */
             fn[0U] = 0;
@@ -2328,22 +2333,14 @@ static void beaconmacros(char s[], unsigned long s_len, char * del)
                return;
             }
          }
+         else if (s[i0]=='\\') aprsstr_Append(ns, 256ul, "\\\\", 3ul);
          else {
-            if (s[i0]=='r' && s[i0+1UL]=='m') {
-               /* delete beacon file */
-               s[0UL] = 0;
-               *del = 1;
-               return;
+            if (verb) {
+               osi_WrLn();
+               osi_WrStrLn("bad beacon macro ", 18ul);
             }
-            if (s[i0]=='\\') aprsstr_Append(ns, 256ul, "\\\\", 3ul);
-            else {
-               if (verb) {
-                  osi_WrLn();
-                  osi_WrStrLn("bad beacon macro ", 18ul);
-               }
-               s[0UL] = 0;
-               return;
-            }
+            s[0UL] = 0;
+            return;
          }
       }
       else aprsstr_Append(ns, 256ul, (char *) &s[i0], 1u/1u);
@@ -2370,7 +2367,6 @@ static void Netbeacon(char h[], unsigned long h_len, char qai,
    long i0;
    long f;
    FRAMEBUF h1;
-   char del;
    unsigned long j;
    unsigned long vspeed0;
    unsigned long vcourse0;
@@ -2387,7 +2383,7 @@ static void Netbeacon(char h[], unsigned long h_len, char qai,
             i0 = 0L;
             while ((unsigned char)h1[i0]>=' ') ++i0;
             h1[i0] = 0;
-            beaconmacros(h1, 512ul, &del);
+            beaconmacros(h1, 512ul);
             if (withpath) {
                aprsstr_Assign(h, h_len, servercall, 10ul);
                if (qai) AppQ(h, h_len, "TCPIP*,qAI,", 12ul, 1);
