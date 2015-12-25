@@ -5,7 +5,7 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
-/* "@(#)afskmodem.c Aug 29 18:39:18 2015" */
+/* "@(#)afskmodem.c Dec 25  6:10:37 2015" */
 
 
 #define X2C_int32
@@ -681,7 +681,7 @@ static void StoBuf(long m, pKISSNEXT p)
          anonym->txbufout = p;
       }
       else {
-         p->next = 0; /* discard frame, out of memory */
+         p->next = pTxFree; /* discard frame, out of memory */
          pTxFree = p;
       }
    }
@@ -2543,7 +2543,7 @@ static void sendmodem(void)
                 END;
                */
                if (anonym->pttstate && anonym->pttsoundbufs==0UL) {
-                  anonym->pttstate = 0; /*; WrInt(ORD(c),1);
+                  anonym->pttstate = 0; /* WrInt(ORD(c),1);
                 WrStrLn(" pttoff");*/ /* guess all sound buffers are sent*/
                   ptt(anonym->hptt, 0L);
                }
@@ -2780,12 +2780,14 @@ extern int main(int argc, char **argv)
    esc = 0;
    afin = 0UL;
    soundbufs = 0UL;
+   ptt(chan[afskmodem_LEFT].hptt, -1L); /* sync ptt to hardware sometime */
+   ptt(chan[afskmodem_RIGHT].hptt, -1L);
    for (;;) {
       getadc();
       ++clock0;
       if ((clock0&63UL)==0UL) {
          ptt(chan[afskmodem_LEFT].hptt, -1L);
-                /* sync ptt to hardware somtime */
+                /* sync ptt to hardware sometime */
          ptt(chan[afskmodem_RIGHT].hptt, -1L);
          systime = TimeConv_time();
       }
