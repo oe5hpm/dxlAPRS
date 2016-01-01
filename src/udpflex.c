@@ -502,8 +502,8 @@ orts)", 55ul);
 7.0.0.1:8001 (default)", 72ul);
                osi_WrStrLn("                                   dire-wolf soun\
 dmodem -T :", 61ul);
-               osi_WrStrLn(" -U <x.x.x.x:destport:listenport>  axudp  /listen\
-port not check ip", 67ul);
+               osi_WrStrLn(" -U <x.x.x.x:destport:listenport>  axudp  destpor\
+t/listenport check ip", 71ul);
                osi_WrStrLn("                                   (repeat for mo\
 re Ports)", 59ul);
                osi_WrStrLn(" -u                                retry until (r\
@@ -705,6 +705,7 @@ static long getudp(long fd, char buf[], unsigned long buf_len,
    unsigned long fromport;
    unsigned long ip;
    long len0;
+   char udp2[100];
    len0 = udpreceive(fd, buf, (long)(buf_len), &fromport, &ip);
    if (len0==-1L) return 0L;
    if ((len0<=2L || len0>=(long)(buf_len)) || any && inip!=ip) return -1L;
@@ -712,6 +713,7 @@ static long getudp(long fd, char buf[], unsigned long buf_len,
                 (unsigned char)buf[len0-1L]!=UDPCRC(buf, buf_len, len0-2L)) {
       return -2L;
    }
+   if (buf[0UL]=='\001') aprsstr_extrudp2(buf, buf_len, udp2, 100ul, &len0);
    return len0;
 } /* end getudp() */
 
@@ -836,15 +838,21 @@ static void ShowFrame(char f[], unsigned long f_len, unsigned long len0,
    unsigned long i0;
    char d;
    char v;
+   InOut_WriteString((char *) &port, 1u/1u);
    i0 = 0UL;
    while (!((unsigned long)(unsigned char)f[i0]&1)) {
       ++i0;
-      if (i0>len0) return;
+      if (i0>len0) {
+         osi_WrStrLn(" no axudp (no address end mark)", 32ul);
+         return;
+      }
    }
    /* no address end mark found */
-   if (i0%7UL!=6UL) return;
+   if (i0%7UL!=6UL) {
+      osi_WrStrLn(" no axudp (address field size not modulo 7)", 44ul);
+      return;
+   }
    /* address end not modulo 7 error */
-   InOut_WriteString((char *) &port, 1u/1u);
    InOut_WriteString(":fm ", 5ul);
    ShowCall(f, f_len, 7UL);
    InOut_WriteString(" to ", 5ul);
