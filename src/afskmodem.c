@@ -5,7 +5,6 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
-/* "@(#)afskmodem.c Dec 25  6:10:37 2015" */
 
 
 #define X2C_int32
@@ -1232,16 +1231,16 @@ d output. Use for stereo or fullduplex)", 89ul);
 )", 51ul);
                osi_WrStrLn(" -D <filename>  (debug) write raw soundcard input\
  data to file or pipe", 71ul);
-               osi_WrStrLn(" -e <num>       extra audio delay ptt hold time (\
-1) in soundframes", 67ul);
+               osi_WrStrLn(" -e <num>       additional ptt hold time (if soun\
+dsystem has delay) unit=adcbuffers (1)", 88ul);
                osi_WrStrLn(" -f <num>       adcrate (16000) (8000..96000)",
                 46ul);
                osi_WrStrLn(" -h             help", 21ul);
                osi_WrStrLn(" -i <filename>  kiss pipename (/dev/kiss/soundmod\
 em)", 53ul);
                osi_WrStrLn(" -k <num>       tx kiss bufs (60)", 34ul);
-               osi_WrStrLn(" -l <num>       adcbuflen (256) more: lower syste\
-m load but slower reaction", 76ul);
+               osi_WrStrLn(" -l <num>       adcbuffer length (256) more: lowe\
+r system load but slower reaction", 83ul);
                osi_WrStrLn(" -m [<mixername>:]<channel>:<left>:<right> (0..25\
 5) ossmixer (/dev/mixer)", 74ul);
                osi_WrStrLn(" -o <filename>  oss devicename (/dev/dsp)",
@@ -2780,7 +2779,7 @@ extern int main(int argc, char **argv)
    esc = 0;
    afin = 0UL;
    soundbufs = 0UL;
-   ptt(chan[afskmodem_LEFT].hptt, -1L); /* sync ptt to hardware sometime */
+   ptt(chan[afskmodem_LEFT].hptt, -1L);
    ptt(chan[afskmodem_RIGHT].hptt, -1L);
    for (;;) {
       getadc();
