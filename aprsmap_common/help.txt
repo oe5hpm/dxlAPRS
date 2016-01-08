@@ -1009,8 +1009,9 @@ w WX-Stationen (mit l nur Temperatur ohne Calls)
 ww grafische Temperaturverteilung
 x setze Marker 1 auf Mausposition
 y setze Marker 2 und Linie/Gelaendeschnitt zu Marker 1
-B Baken Editor oeffnen
-F Finde Call (mit Wildcards * ?), Lokator, Breite/Laenge
+B Baken Editor oeffnen/schliessen
+D Digi Konfiguration oeffnen/schliessen
+F Finde Call (mit Wildcards * ?), Lokator, Breite/Laenge, POI
 H Farbdarstellung der Hoehendaten (sofern vorhanden)
 M Message Schreiben
 R Funkreichweiten Karte ein/aus
@@ -1057,7 +1058,8 @@ u toggle tx/rx-Monitor window on/off
 w toggle WX stations and Temperature
 x set Marker 1 to mouse position
 y set Marker 2 and Line to Marker 1
-B Open Beacon editor
+B Beacon editor open/close
+D Digi Config open/close
 F Find Call (with wildcards * ?), Locator, Latitude/Longitude
 H Altitude Colour Map (if srtm-Data avaliable)
 M Compose Message

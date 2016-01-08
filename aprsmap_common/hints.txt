@@ -486,8 +486,8 @@ Configure in Config, Rf-Ports
 
 |1705 (End) Viewing data from logfile
 
-|1706 (View) Messages stored
-Shift-Leftclick to Compose Message
+|1706 (View) stored Messages
+Shift-Leftclick or "M" to Compose Message
 
 |1707 Red: Expanded parts of Map on Screen
 Green: allow Expand else Expand off
@@ -495,9 +495,9 @@ Green: allow Expand else Expand off
 "e" or "d" Download off, toggle with "d"-Key
 Shift-Leftclick to Config
 
-|1708 Trackfilter on
+|1708 Trackfilter on/off "f"
 
-|1709 Show Objects
+|1709 Show Objects on/off "o"
 
 |1710 Exit this Map Option
 
@@ -1048,7 +1048,8 @@ even if sent on different Frequecys.
 To avoid this, the Shift Time is used
 to spread Transmissions over the Time.
 
-|7550 What to do if a Message arrives
+|7550 What to do if a Message or Query arrives
+and config reply/send message Path
 
 |7695 Enable/Disable the Line. Disabled lines do
 nothing but wait for being reenable later
@@ -1463,9 +1464,9 @@ treated same way because <mycall>
 is always appended to (done) Path.
 
 For gate Net-to-Rf this line contains
-max. Bit/s and VIA path like "20 WIDE1-1"
-negative Bit/s will only gate Messages
-to on send-port heard Users.
+max. Bit/s and optional VIA path like
+"20 WIDE1-1" negative Bit/s will only
+gate Messages to on send-port heard Users.
  
 
 |8320 Enter Words or Calls for Digipeating
@@ -1503,11 +1504,11 @@ will spread wrong Positions seen on
 whole world. With normal (not USB)
 com-port use only with SMACK CRC.
 
-|8336 Cycle through possible Input (rx)
+|8336 Cycle thru possible Input (rx)
 "Rf-Ports". "N" is for gate Net to Rf,
 "*" listens on All Ports except Net.
 
-|8337 Cycle through possible output (tx) "Rf-Ports"
+|8337 Cycle thru possible output (tx) "Rf-Ports"
 
 |8338 If enabled, only "direct heard" (First digi in chain)
 Beacons will be digipeated. Since most digi-paths are
@@ -1527,7 +1528,9 @@ if no (eg) 70cm Port is avaliable to do this better.
 
 |8350 Quick On/Off Digi.
 Inactive Lines may be preserved for later use
-|8351 Input (Rx) Rf-Port
+
+|8351 Input (Rx) Rf-Port or "N" Net source to Rf Gate
+
 |8352 Output (Tx) Rf-Port
 |8353 Use Direct Heard only (direct heard is not detectable any longer) 
 |8354 Cut off rest of via path

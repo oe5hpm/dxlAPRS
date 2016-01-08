@@ -36,6 +36,8 @@
 
 #define aprspos_ENCODEAREA "A"
 
+#define aprspos_ENCODEMULTILINE "L"
+
 #define aprspos_EARTH 6370.0
 
 #define aprspos_AREASYMT "\\"

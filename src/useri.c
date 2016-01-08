@@ -209,6 +209,9 @@ maptool_pIMAGE useri_panoimage;
 #define useri_BEACONEDI 3
 /* beacon edit shortcut knob */
 
+#define useri_DIGIEDI 4
+/* digi edit shortcut knob */
+
 #define useri_PULLMENUY 8
 /* ysize of menu from top to be pulled */
 
@@ -1021,8 +1024,8 @@ d", 14ul, 1, 15UL);
    initc(useri_fRBDEST, "Destination", 12ul, useri_cLINE, "APLM01", 7ul, 0,
                 82UL);
    configs[useri_fRBDEST].width = 9U;
-   initc(useri_fNBTEXT, "Net Beacontext", 15ul, useri_cLINE, "Test aprsmap",
-                13ul, 0, 83UL);
+   initc(useri_fNBTEXT, "Net Beacontext", 15ul, useri_cLINE, "aprsmap", 8ul,
+                0, 83UL);
    initc(useri_fMYSYM, "My Symbol", 10ul, useri_cLINE, "/-", 3ul, 0, 84UL);
    configs[useri_fMYSYM].width = 2U;
    initc(useri_fNETBTIME, "Netbeacontime (s)", 18ul, useri_cLINE, "600", 4ul,
@@ -1596,7 +1599,7 @@ extern void useri_postoconfig(struct aprspos_POSITION pos)
    if (s[0U]) useri_copypaste(s, 100ul);
    if (useri_beaconediting) {
       useri_confstr(useri_fRBPOSTYP, s, 100ul);
-      if (X2C_STRCMP(s,100u,"A",2u)==0) aprsdecode_appendmultiline(pos);
+      if (X2C_STRCMP(s,100u,"L",2u)==0) aprsdecode_appendmultiline(pos);
       else {
          aprstext_postostr(pos, '3', s, 100ul);
          useri_AddConfLine(useri_fRBPOS, 1U, s, 100ul);
@@ -5329,6 +5332,13 @@ static void DelBeaconByName(char dname[], unsigned long dname_len)
    X2C_PFREE(dname);
 } /* end DelBeaconByName() */
 
+
+static char isbkn(char typ)
+{
+   typ = X2C_CAP(typ);
+   return (((typ!='O' && typ!='H') && typ!='P') && typ!='I') && typ!='J';
+} /* end isbkn() */
+
 #define useri_XSIZE0 300
 /*      YPOS=140; */
 
@@ -5404,9 +5414,9 @@ static void beaconeditor(void)
                  2ul, 8110UL);
    }
    if (useri_beaconed) {
-      useri_confstr(useri_fRBTYP, s, 201ul);
-      typ = X2C_CAP(s[0U]);
-      bkn = (((typ!='O' && typ!='H') && typ!='P') && typ!='I') && typ!='J';
+      useri_confstr(useri_fRBTYP, (char *) &typ, 1u/1u);
+      typ = X2C_CAP(typ);
+      bkn = isbkn(typ);
       useri_confstr(useri_fRBPOSTYP, (char *) &postyp, 1u/1u);
       AddEditLine(m, "\223", 2ul, "", 1ul, useri_fRBNAME, 8115UL);
       if (bkn && aprstext_getmypos(&mypos)) {
@@ -5453,9 +5463,10 @@ static void beaconeditor(void)
       addline(m, s, 201ul, "\223", 2ul, 8140UL);
       ++m->scroll;
       strncpy(s,"\355",201u);
-      AppBlueButton(s, 201ul, " Lat/Long |", 12ul, postyp=='g');
+      AppBlueButton(s, 201ul, " Lat/Long |", 12ul,
+                postyp=='g' || postyp=='A');
       if (bkn) AppBlueButton(s, 201ul, "    Mic-e |", 12ul, postyp=='m');
-      else AppBlueButton(s, 201ul, " Multiline|", 12ul, postyp=='A');
+      else AppBlueButton(s, 201ul, " Multiline|", 12ul, postyp=='L');
       /*      ELSE AppBlueButton(s, "          |", FALSE) END;  */
       AppBlueButton(s, 201ul, "Compressed|", 12ul, postyp=='c');
       AppBlueButton(s, 201ul, " Lat/Long+|", 12ul, postyp=='G');
@@ -5695,11 +5706,11 @@ static void managebeacon(unsigned long scroll, unsigned long knob,
    else if (knob==13UL) {
       useri_confstr(useri_fRBTYP, (char *) &typ, 1u/1u);
       if (subknob==1UL) {
-         if ((((typ=='O' || typ=='H') || typ=='P') || typ=='I') || typ=='J') {
-            ch = 'A';
+         if (isbkn(typ)) ch = 'm';
+         else {
+            ch = 'L';
             aprsdecode_click.cmd = ' ';
          }
-         else ch = 'm';
       }
       else if (subknob==2UL) ch = 'c';
       else if (subknob==3UL) ch = 'G';
@@ -11559,6 +11570,13 @@ extern void useri_keychar(char ch, char ispasted, char movecmd)
          useri_killmenuid(226UL);
       }
       else dorfcfg(3UL, 0UL);
+   }
+   else if (aprsdecode_click.cmd=='D') {
+      if (digied) {
+         digied = 0;
+         useri_killmenuid(224UL);
+      }
+      else dorfcfg(4UL, 0UL);
    }
    else if (aprsdecode_click.cmd=='M') {
       if (sndmsg) {

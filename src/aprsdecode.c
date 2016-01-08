@@ -1837,7 +1837,7 @@ static void NoWX(struct aprsdecode_WX * wx)
 
 
 static void wpar(unsigned long * p, char buf[], unsigned long buf_len,
-                float * v)
+                float * v, long dig)
 {
    char empty;
    char dot;
@@ -1856,11 +1856,14 @@ static void wpar(unsigned long * p, char buf[], unsigned long buf_len,
       if (sn && c=='-') {
          div0 = -div0;
          empty = 0;
+         --dig;
       }
       else if ((unsigned char)c>='0' && (unsigned char)c<='9') {
+         if (!dot && dig<=0L) break;
          x = x*10.0f+(float)((unsigned long)(unsigned char)buf[*p]-48UL);
          if (x>1.E+5f) return;
          if (dot) div0 = div0*0.1f;
+         else --dig;
          empty = 0;
       }
       else if (empty) {
@@ -1921,38 +1924,38 @@ static void GetWX(struct aprsdecode_WX * wx, unsigned long * course,
    for (;;) {
       switch ((unsigned)buf[p]) {
       case 'g':
-         wpar(&p, buf, buf_len, &wx->gust);
+         wpar(&p, buf, buf_len, &wx->gust, 3L);
          break;
       case 't':
-         wpar(&p, buf, buf_len, &wx->temp);
+         wpar(&p, buf, buf_len, &wx->temp, 3L);
          break;
       case 'r':
-         wpar(&p, buf, buf_len, &wx->rain1);
+         wpar(&p, buf, buf_len, &wx->rain1, 3L);
          break;
       case 'p':
-         wpar(&p, buf, buf_len, &wx->rain24);
+         wpar(&p, buf, buf_len, &wx->rain24, 3L);
          break;
       case 'P':
-         wpar(&p, buf, buf_len, &wx->raintoday);
+         wpar(&p, buf, buf_len, &wx->raintoday, 3L);
          break;
       case 'h':
-         wpar(&p, buf, buf_len, &wx->hygro);
+         wpar(&p, buf, buf_len, &wx->hygro, 2L);
          break;
       case 'b':
-         wpar(&p, buf, buf_len, &wx->baro);
+         wpar(&p, buf, buf_len, &wx->baro, 5L);
          break;
       case 'L':
-         wpar(&p, buf, buf_len, &wx->lum);
+         wpar(&p, buf, buf_len, &wx->lum, 3L);
          break;
       case 'l':
-         wpar(&p, buf, buf_len, &wx->lum);
+         wpar(&p, buf, buf_len, &wx->lum, 3L);
          wx->lum = wx->lum+1000.0f;
          break;
       case 'c':
-         wpar(&p, buf, buf_len, &wdir);
+         wpar(&p, buf, buf_len, &wdir, 3L);
          break;
       case 's':
-         wpar(&p, buf, buf_len, &wwind);
+         wpar(&p, buf, buf_len, &wwind, 3L);
          break;
       case 'X':
          wexp(buf, buf_len, &p, &wx->sievert, 1.E-9f);
@@ -1962,7 +1965,8 @@ static void GetWX(struct aprsdecode_WX * wx, unsigned long * course,
       } /* end switch */
    }
    loop_exit:;
-   if (wdir>=1.0f && wdir<=360.0f) *course = aprsdecode_trunc(wdir);
+   wdir = wdir+0.5f;
+   if (wdir>=1.0f && wdir<361.0f) *course = aprsdecode_trunc(wdir);
    if (wwind>=0.0f && wwind<1000.0f) *speed = aprsdecode_trunc(wwind);
    aprsstr_Delstr(buf, buf_len, 0UL, p);
 /* X123 is 12 * 10^3 nanosieverts/hr*/
@@ -2583,7 +2587,7 @@ extern char aprsdecode_ismultiline(char editing)
    struct aprsdecode_MULTILINE ml;
    if (editing) {
       useri_confstr(useri_fRBPOSTYP, s, 251ul);
-      if (s[0U]!='A') return 0;
+      if (s[0U]!='L') return 0;
    }
    useri_confstr(useri_fRBCOMMENT, s, 251ul);
    aprsdecode_GetMultiline(s, 251ul, &i, &ml);
@@ -3039,7 +3043,8 @@ extern long aprsdecode_Decode(char buf[], unsigned long buf_len,
          ++p;
       }
    }
-   dat->course = X2C_max_longcard;
+   /*  dat.course:=MAX(CARDINAL); */
+   dat->course = 0UL;
    if (X2C_IN((long)dat->type,12,0xCEU)) {
       aprspos_GetPos(&dat->pos, &dat->speed, &dat->course, &dat->altitude,
                 &dat->sym, &dat->symt, buf, buf_len, micedest, dat->payload,
@@ -3069,6 +3074,7 @@ extern long aprsdecode_Decode(char buf[], unsigned long buf_len,
       }
       if (dat->type==aprsdecode_OBJ || dat->type==aprsdecode_ITEM) {
          aprsdecode_GetMultiline(dat->comment0, 256ul, &i, &dat->multiline);
+         if (dat->multiline.size>0UL) dat->postyp = 'L';
       }
       GetHRT(&dat->pos, &dat->altitude, &dat->speed, dat->comment0, 256ul,
                 dat->hrtposes, 32ul, &dat->hrtlen, &dat->hrttime);
@@ -3089,8 +3095,7 @@ extern long aprsdecode_Decode(char buf[], unsigned long buf_len,
          aprsstr_Delstr(dat->comment0, 256ul, 0UL, 8UL);
       }
       GetWX(&dat->wx, &dat->course, &dat->speed, dat->comment0, 256ul);
-      if (dat->course>0UL && dat->course<=360UL) --dat->course;
-      else dat->course = X2C_max_longcard;
+      if (dat->course<1UL || dat->course>360UL) dat->course = 0UL;
    }
    return 0L;
 } /* end Decode() */
@@ -3173,6 +3178,12 @@ extern void aprsdecode_extractbeacon(char raw[], unsigned long raw_len,
       else useri_confstr(useri_fMYCALL, s, 1000ul);
       useri_AddConfLine(useri_fRBNAME, 1U, s, 1000ul);
       if (aprspos_posvalid(dat.pos)) {
+         if (dat.postyp=='A' && dat.type==aprsdecode_OBJ) {
+            /* area object */
+            dat.pos.lat = dat.pos.lat+dat.areasymb.dpos.lat;
+            dat.pos.long0 = dat.pos.long0-dat.areasymb.dpos.long0;
+                /* shift pos to upleft of area */
+         }
          aprstext_postostr(dat.pos, '3', s, 1000ul);
          useri_AddConfLine(useri_fRBPOS, 1U, s, 1000ul);
       }
@@ -3187,21 +3198,23 @@ extern void aprsdecode_extractbeacon(char raw[], unsigned long raw_len,
          /*      IntToStr(dat.areasymb.color*100+trunc(sqrt(dat.areasymb.dpos.long/(RAD/200.0/60.0)
                 )), 1, s); */
          aprsstr_IntToStr((long)((unsigned long)
-                dat.areasymb.color*100UL+aprsdecode_trunc(RealMath_sqrt(X2C_DIVR(dat.areasymb.dpos.long0,
-                1.454441043287E-6f)))), 1UL, s, 1000ul);
+                dat.areasymb.color*100UL+aprsdecode_trunc(RealMath_sqrt(X2C_DIVR((float)
+                fabs(dat.areasymb.dpos.long0),1.454441043287E-6f)))), 1UL, s,
+                 1000ul);
          useri_AddConfLine(useri_fRBSPEED, 1U, s, 1000ul);
          aprsstr_IntToStr((long)(((unsigned long)(unsigned char)
                 dat.areasymb.typ-48UL)
-                *100UL+aprsdecode_trunc(RealMath_sqrt(X2C_DIVR(dat.areasymb.dpos.lat,
-                1.454441043287E-6f)))), 1UL, s, 1000ul);
+                *100UL+aprsdecode_trunc(RealMath_sqrt(X2C_DIVR((float)
+                fabs(dat.areasymb.dpos.lat),1.454441043287E-6f)))), 1UL, s,
+                1000ul);
          useri_AddConfLine(useri_fRBDIR, 1U, s, 1000ul);
       }
       else if (dat.speed>0UL && dat.speed<2147483647UL) {
          aprsstr_IntToStr((long)aprsdecode_trunc((float)dat.speed*1.852f),
                 1UL, s, 1000ul);
          useri_AddConfLine(useri_fRBSPEED, 1U, s, 1000ul);
-         if (dat.course<360UL) {
-            aprsstr_IntToStr((long)dat.course, 1UL, s, 1000ul);
+         if (dat.course>0UL) {
+            aprsstr_IntToStr((long)(dat.course%360UL), 1UL, s, 1000ul);
             useri_AddConfLine(useri_fRBDIR, 1U, s, 1000ul);
          }
       }
@@ -3215,7 +3228,9 @@ extern void aprsdecode_extractbeacon(char raw[], unsigned long raw_len,
       if (dat.type==aprsdecode_OBJ) {
          if (dat.timestamp=='h') s[0U] = 'H';
          else s[0U] = 'O';
-         if (dat.objkill=='1') s[0U] = 'P';
+         if (dat.objkill=='1') {
+            s[0U] = 'P';
+         }
       }
       else if (dat.type==aprsdecode_ITEM) {
          if (dat.objkill=='1') s[0U] = 'J';
@@ -6577,7 +6592,6 @@ static void digitorf(const aprsdecode_FRAMEBUF b, unsigned long outport,
    aprsstr_Extractword(w, 201ul, via0, 201ul); /* via path */
    if (via0[0U]=='n') aprsstr_Delstr(via0, 201ul, 0UL, 1UL);
    else via0[0U] = 0;
-   /*WrInt(maxbps, 10); WrStrLn(via); */
    if (maxbps<0L) {
       if (dat.type!=aprsdecode_MSG) return;
       /* if neg bps send msg only */
@@ -6815,7 +6829,11 @@ extern void aprsdecode_drawbeacon(char raw[], unsigned long raw_len)
       if (b[0UL]) {
          memset((char *) &modeminfo,(char)0,sizeof(struct UDPSET));
          storedata(b, 0, 0UL, modeminfo, 0, 1);
-         if (aprsdecode_click.mhop[0UL]) {
+         if (aprsdecode_lums.logmode) {
+            useri_say("drawn to Realtime Data not to imported Log!", 44ul,
+                5UL, 'r');
+         }
+         else if (aprsdecode_click.mhop[0UL]) {
             useri_say("switch to \"show all\" to see new object", 39ul, 5UL,
                 'r');
          }

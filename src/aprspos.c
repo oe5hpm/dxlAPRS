@@ -27,13 +27,6 @@
 
 #define aprspos_power pow
 
-/*
-PROCEDURE myround(x:REAL):INTEGER;
-BEGIN
-  IF x>=0.0 THEN x:=x+0.5 ELSE x:=x-0.5 END;
-  RETURN VAL(INTEGER, x)
-END myround;
-*/
 
 extern float aprspos_rad0(float w)
 {
@@ -46,21 +39,6 @@ extern char aprspos_posvalid(struct aprspos_POSITION pos)
    return pos.lat!=0.0f || pos.long0!=0.0f;
 } /* end posvalid() */
 
-/*
-PROCEDURE distance(home,dist:POSITION):REAL;
-VAR h:LONGREAL;
-BEGIN
-  h:=ABS(dist.long-home.long);
-  IF (h=0.0) & (dist.lat=home.lat) THEN RETURN 0.0
-  ELSE
-    IF h>PI2 THEN h:=PI2-h END;
-    h:=LongMath.sin(dist.lat)*LongMath.sin(home.lat) + LongMath.cos(dist.lat)
-                *LongMath.cos(home.lat)*LongMath.cos(h);
-    IF ABS(h)>=1.0 THEN RETURN 0.0 END;
-    RETURN 6370.0*LongMath.arccos(h)
-  END;
-END distance;
-*/
 
 extern float aprspos_distance(struct aprspos_POSITION home,
                 struct aprspos_POSITION dist)
@@ -342,19 +320,23 @@ extern void aprspos_GetPos(struct aprspos_POSITION * pos,
             if (*course>=400UL) *course -= 400UL;
             if (*course>=360UL) ok0 = 0;
          }
-         else ok0 = 0;
+         else {
+            /*        INC(course);
+                  (* compatible to 1..360 system *) */
+            ok0 = 0;
+         }
          *symb = buf[payload+7UL];
          *symbt = Mapsym(buf[payload+8UL]);
       }
       compos = payload+9UL;
       i = payload+9UL;
       manucode = buf[i];
-      if (!X2C_INL((long)(unsigned char)manucode,128,_cnst)) manucode = 0;
+      if (!X2C_INL((long)(unsigned char)manucode,128,_cnst)) {
+         manucode = 0; /* no manufacturer code */
+      }
       if (buf[i+3UL]=='}' || manucode && buf[i+4UL]=='}') {
          /* altitude in meters +10000 */
-         if (buf[i+3UL]!='}' && manucode) {
-            ++i; /* skip manufacturer code */
-         }
+         if (buf[i+3UL]!='}' && manucode) ++i;
          sc = 0.0f;
          if ((r91(&sc, buf[i], 8281.0f) && r91(&sc, buf[i+1UL],
                 91.0f)) && r91(&sc, buf[i+2UL], 1.0f)) {
@@ -433,7 +415,9 @@ extern void aprspos_GetPos(struct aprspos_POSITION * pos,
             sc = 0.0f;
             for (;;) {
                sc = sc*10.0f;
-               if ((i>=len || sc>1.E+6f) || !dig(&sc, buf[i], 0.1f)) break;
+               if ((i>=len || sc>1.E+6f) || !dig(&sc, buf[i], 0.1f)) {
+                  break;
+               }
                ++i;
             }
             *speed = (unsigned long)X2C_TRUNCC(X2C_DIVR(sc,1.852f)+0.5f,0UL,
@@ -517,11 +501,11 @@ extern void aprspos_GetPos(struct aprspos_POSITION * pos,
                ++i;
                *symbt = buf[i];
                ++i;
-               if (!dig(&pos->long0, buf[i], 1.7453292519444f)) ok0 = 0;
-               ++i;
-               if (!dig(&pos->long0, buf[i], 1.7453292519444E-1f)) {
+               if (!dig(&pos->long0, buf[i], 1.7453292519444f)) {
                   ok0 = 0;
                }
+               ++i;
+               if (!dig(&pos->long0, buf[i], 1.7453292519444E-1f)) ok0 = 0;
                ++i;
                if (!dig(&pos->long0, buf[i], 1.7453292519444E-2f)) ok0 = 0;
                ++i;
@@ -541,7 +525,9 @@ extern void aprspos_GetPos(struct aprspos_POSITION * pos,
                ++i;
                compos = i;
                *postyp = 'g';
-               if (i+7UL<=len && dig3(buf, buf_len, &nc, &i)) {
+               if (i+7UL<=len) {
+                  if (dig3(buf, buf_len, &nc, &i)) *course = nc;
+                  else *course = 0UL;
                   /* area obj */
                   if (*symbt=='\\' && *symb=='l') {
                      /* area symbol */
@@ -555,7 +541,6 @@ extern void aprspos_GetPos(struct aprspos_POSITION * pos,
                            if (n<=1599UL) {
                               /* Tyy15xx max 5 */
                               *speed = n;
-                              *course = nc;
                               compos = i;
                               *postyp = 'A';
                            }
@@ -568,9 +553,6 @@ extern void aprspos_GetPos(struct aprspos_POSITION * pos,
                      ++i;
                      if (dig3(buf, buf_len, &n, &i)) {
                         *speed = n;
-                        *course = nc;
-                        /*                IF (nc>0) & (nc<=360)
-                THEN course:=nc MOD 360 END;  */
                         compos = i;
                      }
                   }
@@ -597,9 +579,7 @@ extern void aprspos_GetPos(struct aprspos_POSITION * pos,
             ++i;
             if (!r91(&pos->long0, buf[i], 91.0f)) ok0 = 0;
             ++i;
-            if (!r91(&pos->long0, buf[i], 1.0f)) {
-               ok0 = 0;
-            }
+            if (!r91(&pos->long0, buf[i], 1.0f)) ok0 = 0;
             pos->long0 = pos->long0*9.1636131529192E-8f-3.1415926535f;
             *symb = buf[i+1UL];
             if (ok0) {

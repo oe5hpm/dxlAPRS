@@ -383,9 +383,9 @@ extern void aprstext_decode(char s[], unsigned long s_len,
          else aprsstr_FixToStr((float)dat->speed*1.852f, 0UL, h, 512ul);
          aprsstr_Append(s, s_len, h, 512ul);
          aprsstr_Append(s, s_len, "km/h\376", 6ul);
-         if (dat->course<360UL) {
+         if (dat->course>0UL) {
             aprsstr_Append(s, s_len, " dir:", 6ul);
-            aprsstr_IntToStr((long)dat->course, 1UL, h, 512ul);
+            aprsstr_IntToStr((long)(dat->course%360UL), 1UL, h, 512ul);
             aprsstr_Append(s, s_len, h, 512ul);
             aprsstr_Append(s, s_len, "deg", 4ul);
          }
@@ -1332,7 +1332,9 @@ static void micedata(long lat, long long0, unsigned long knots,
    unsigned long n;
    unsigned long nl;
    X2C_PCOPY((void **)&sym,sym_len);
-   if (dir>=360UL) dir = 0UL;
+   dir = dir%360UL;
+   /*IF dir>0 THEN DEC(dir) END; */
+   /*IF dir>359 THEN dir:=359 END; */
    if (knots>799UL) knots = 0UL;
    nl = (unsigned long)X2C_DIV(labs(long0),6000L);
    if (nl<10UL) s[0UL] = (char)(nl+118UL);
@@ -1389,8 +1391,8 @@ static void alt2str(long feet, char s[], unsigned long s_len)
 static void speeddir2str(long knots, long dir, char areaobj, char s[],
                 unsigned long s_len)
 {
-   if (areaobj || dir>=0L && dir<360L) {
-      if (dir==0L) dir = 360L;
+   if (areaobj || dir>0L && dir<=360L) {
+      /*    IF dir=0 THEN dir:=360 END; */
       s[0UL] = num(X2C_DIV(dir,100L));
       s[1UL] = num(X2C_DIV(dir,10L));
       s[2UL] = num(dir);
@@ -1579,11 +1581,18 @@ extern void aprstext_encbeacon(char s[], unsigned long s_len,
    if (!areaobj) {
       knots = (long)aprsdecode_trunc((float)knots*5.3995680345572E-1f+0.5f);
    }
-   dir = useri_conf2int(useri_fRBDIR, 0UL, 0L, 999L, 360L);
-   if (!areaobj && dir>360L) useri_say("Direction <=360", 16ul, 20UL, 'e');
-   else if (knots==0L && dir!=360L) {
-      useri_say("direction needs speed>0", 24ul, 20UL, 'e');
+   dir = useri_conf2int(useri_fRBDIR, 0UL, 0L, 1000L, 1000L);
+   /*WrInt(dir, 9); WrStrLn("defdir"); */
+   if (dir<1000L) {
+      if (!areaobj) {
+         if (dir>359L) useri_say("Direction <360", 15ul, 20UL, 'e');
+         else if (knots==0L) {
+            useri_say("direction needs speed>0", 24ul, 20UL, 'e');
+         }
+         if (dir==0L) dir = 360L;
+      }
    }
+   else dir = 0L;
    alt = useri_conf2int(useri_fRBALT, 0UL, -10000L, 1000000L, -32768L);
    feet = (long)aprsdecode_trunc((float)fabs(X2C_DIVR((float)alt,
                 0.3048f)+0.5f));
@@ -1637,11 +1646,11 @@ extern void aprstext_encbeacon(char s[], unsigned long s_len,
    if (X2C_CAP(postyp)=='M') micedest(lat, long0, h, 201ul);
    else {
       useri_confstr(useri_fRBDEST, h, 201ul);
-      if (h[0U]==0) strncpy(h,"APLM01",201u);
-      i = aprsstr_InStr(h, 201ul, "-", 2ul);
-      if (i>0L) {
-         aprsstr_Delstr(h, 201ul, (unsigned long)i, 201UL); /* delete ssid */
+      if (h[0U]==0) {
+         strncpy(h,"APLM01",201u);
       }
+      i = aprsstr_InStr(h, 201ul, "-", 2ul);
+      if (i>0L) aprsstr_Delstr(h, 201ul, (unsigned long)i, 201UL);
    }
    aprsstr_Append(s, s_len, h, 201ul);
    useri_confstr(useri_fRBPATH, h, 201ul);

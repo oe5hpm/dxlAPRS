@@ -1265,9 +1265,9 @@ extern void aprstat_wxgraph(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
             if (dat.wx.sievert>max0.siev) max0.siev = dat.wx.sievert;
             lastval->siev = dat.wx.sievert;
          }
-         if (dat.course<360UL) {
-            windd[xt] = (float)dat.course;
-            lastval->winddir = (float)dat.course;
+         if (dat.course>0UL && dat.course<=360UL) {
+            lastval->winddir = (float)(dat.course%360UL);
+            windd[xt] = lastval->winddir;
             dirvalid = 1;
          }
          vh = (float)dat.speed*1.609f;

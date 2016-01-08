@@ -1316,6 +1316,7 @@ static void metercolor(char what)
    float qq;
    float y;
    float x;
+   long xii;
    long rbr;
    long radius;
    long q;
@@ -1363,13 +1364,13 @@ static void metercolor(char what)
                if (yi<=tmp) for (;; yi++) {
                   my = y00+yi;
                   if (my>0L && my<maptool_ysize) {
-                     tmp0 = radius;
-                     xi = -radius;
-                     if (xi<=tmp0) for (;; xi++) {
-                        mx = x0+xi;
-                        if (mx>0L && mx<maptool_xsize) {
-                           q = xi*xi+yi*yi;
-                           if (q<rbr) {
+                     xii = 1L;
+                     xi = 0L;
+                     for (;;) {
+                        q = xi*xi+yi*yi;
+                        if (q<rbr) {
+                           mx = x0+xi;
+                           if (mx>0L && mx<maptool_xsize) {
                               qq = 1.0f-RealMath_sqrt((float)q)*oor;
                               f = qq*qq;
                               f = f*f;
@@ -1377,8 +1378,6 @@ static void metercolor(char what)
                                  struct maptool_PIX * anonym = &rfimg->Adr[(mx)
                 *rfimg->Len0+my];
                                  gb = aprsdecode_trunc(f*1.E+7f)+1UL;
-                                 /*                      IF (what="T")
-                & (r=0) THEN r:=trunc(FLOAT(t)*(1.0-FLOAT(q)/FLOAT(rbr))); */
                                  if (what=='T' && anonym->r==0U) {
                                     anonym->r = (unsigned short)t;
                                  }
@@ -1409,16 +1408,19 @@ static void metercolor(char what)
                               }
                            }
                         }
-                        if (xi==tmp0) break;
-                     } /* end for */
+                        else {
+                           if (xii<0L) break;
+                           xi = 0L;
+                           xii = -1L;
+                        }
+                        xi += xii;
+                     }
                   }
                   if (yi==tmp) break;
                } /* end for */
             }
          }
       }
-      /*                    g:=gb MOD 65536; */
-      /*                    b:=gb DIV 65536; */
       aprsdecode_click.ops = aprsdecode_click.ops->next;
    }
    tmp = maptool_ysize-1L;
@@ -1824,7 +1826,7 @@ static void bootreadlog(void)
       useri_redraw(image);
    }
    else {
-      useri_say("Read Log", 9ul, 0UL, 'b');
+      useri_say("Reading Log ...", 16ul, 0UL, 'b');
       useri_redraw(image);
       aprsdecode_realtime = TimeConv_time();
       logt = aprsdecode_realtime-aprsdecode_lums.purgetime;
@@ -4148,15 +4150,6 @@ static void animate(const aprsdecode_MONCALL singlecall, unsigned long step,
                         maptool_drawsym(rfimg, op->sym.tab, op->sym.pic, dir,
                  x, y, (unsigned long)X2C_DIV(aprsdecode_lums.sym,4L));
                      }
-                     /*
-                                   IF configon(fARROW)
-                & (Decode(pf^.vardat^.raw)>=0) & (dat.course<360) THEN
-                                     col.r:=500; col.g:=500; col.b:=0;
-                                     drawarrow(rfimg, x, y,
-                FLOAT(dat.speed)*0.25+10.0, FLOAT(dat.course)*(-pi/180.0), 0,
-                 256, col);
-                                   END;
-                     */
                      if (useri_configon(useri_fKMH)
                 && aprsdecode_Decode(pf->vardat->raw, 500ul, &dat)>=0L) {
                         s[0] = 0;
@@ -4234,9 +4227,7 @@ static void animate(const aprsdecode_MONCALL singlecall, unsigned long step,
             useri_refresh = 1;
             for (;;) {
                /* while stop pressed */
-               if (useri_refresh) {
-                  useri_redraw(rfimg);
-               }
+               if (useri_refresh) useri_redraw(rfimg);
                aprsdecode_lums.actfps = (long)step;
                 /* for faster/slower button */
                xosi_Eventloop(1000UL);
