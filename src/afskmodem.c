@@ -273,6 +273,10 @@ static char abortonsounderr;
 
 static char badsounddriver;
 
+static char deb01;
+
+static unsigned long debp;
+
 static unsigned long getst;
 
 static unsigned long i;
@@ -316,6 +320,8 @@ static unsigned char CRCL[256];
 static unsigned char CRCH[256];
 
 static FILENAME soundfn;
+
+static char debb[81];
 
 
 static void Error(char text[], unsigned long text_len)
@@ -882,6 +888,8 @@ static void Parms(void)
    maxchannels = afskmodem_LEFT;
    extraaudiodelay = 1UL;
    debfd = -1L;
+   deb01 = 0;
+   debp = 0UL;
    badsounddriver = 0;
    for (cnum = 0UL; cnum<=32767UL; cnum++) {
       SIN[cnum] = RealMath_cos(X2C_DIVR((float)cnum*2.0f*3.141592f,
@@ -997,6 +1005,10 @@ static void Parms(void)
          else if (h[1U]=='D') {
             Lib_NextArg(h1, 1024ul);
             debfd = creat(h1, 420L);
+            inum = 0L;
+            while (inum<1023L && h1[inum]) ++inum;
+            deb01 = (((inum>=4L && h1[inum-4L]=='.') && h1[inum-3L]=='t')
+                && h1[inum-2L]=='x') && h1[inum-1L]=='t';
          }
          else if (h[1U]=='d') {
             Lib_NextArg(h, 1024ul);
@@ -1119,9 +1131,7 @@ static void Parms(void)
                Lib_NextArg(h, 1024ul);
                if (!aprsstr_StrToInt(h, 1024ul, &inum)) err = 1;
                inum = labs(inum)+1L;
-               if (h[0U]=='-') {
-                  inum = -inum;
-               }
+               if (h[0U]=='-') inum = -inum;
                chan[channel].hptt = pttinit((char *)h1, inum);
             }
          }
@@ -1196,9 +1206,7 @@ static void Parms(void)
                if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
                modpar[modem].txdelpattern = cnum;
             }
-            else {
-               Error("need modem number -M before -w", 31ul);
-            }
+            else Error("need modem number -M before -w", 31ul);
          }
          else if (h[1U]=='x') {
             if (modem>=0L) {
@@ -1231,6 +1239,8 @@ d output. Use for stereo or fullduplex)", 89ul);
 )", 51ul);
                osi_WrStrLn(" -D <filename>  (debug) write raw soundcard input\
  data to file or pipe", 71ul);
+               osi_WrStrLn(" -D <filename>.txt  (debug) write demodulated bit\
+s as \"01..\" to file or pipe", 77ul);
                osi_WrStrLn(" -e <num>       additional ptt hold time (if soun\
 dsystem has delay) unit=adcbuffers (1)", 88ul);
                osi_WrStrLn(" -f <num>       adcrate (16000) (8000..96000)",
@@ -1956,9 +1966,15 @@ static void demodbit(long m, char d)
       xor = d;
       d = d==anonym->data1;
       anonym->data1 = xor;
-      /*
-      IO.WrCard(ORD(d),1);
-      */
+      if (deb01) {
+         debb[debp] = (char)(48UL+(unsigned long)d);
+         ++debp;
+         if (debp>=80UL) {
+            debb[80U] = '\012';
+            debp = (unsigned long)write(debfd, (char *)debb, debp+1UL);
+            debp = 0UL;
+         }
+      }
       /*bert*/
       if (anonym->bert) {
          if (!d) ++anonym->berterr;
@@ -2071,62 +2087,6 @@ static void demod(float u, long m)
    }
 } /* end demod() */
 
-/*
-PROCEDURE Afsk(m:INTEGER);
-VAR right, mid, d, a, b, ff:REAL;
-BEGIN
-  WITH modpar[m] DO
-    right:=Fir(afin, 0, AOVERSAMP, chan[ch].afir, afirtab);
-(*
-tii:=VAL(INTEGER, right/3.0); 
-FIO.WrBin(tfd, tii, 2);
-*)
-    IF (left<0.0)<>(right<0.0) THEN
-      d:=left/(left-right);
-      a:=FLOAT(TRUNC(d*FLOAT(AOVERSAMP)+0.5));
-      b:=a * (1.0/FLOAT(AOVERSAMP));
-      IF (TRUNC(a)>0) & (TRUNC(a)<AOVERSAMP) THEN
-        mid:=Fir(afin, AOVERSAMP-TRUNC(a), AOVERSAMP, chan[ch].afir,
-                afirtab);
-        IF (left<0.0)<>(mid<0.0) THEN d:=left/(left-mid)*b;
-        ELSE d:=b + mid/(mid-right)*(1.0-b) END; 
-      END;
-(*
-IO.WrStr(" left=");IO.WrFixed(left, 0,1);
-IO.WrStr(" mid="); IO.WrFixed(mid, 0,1);
-IO.WrStr(" right=");IO.WrFixed(right, 0,1);
-IO.WrStr(" d=");IO.WrFixed(d, 2,1);
-IO.WrStr(" a=");IO.WrFixed(a, 2,1);
-IO.WrLn;
-*)
-
-(*
-mid:=Fira(afin, AOVERSAMP DIV 2)-left;   
-right:=right-left;
-b:=right*0.5 - mid;
-a:=(right*0.25 - mid)/b;
-d:=sqrt(a*a - left/b);
-IF a>=0.0 THEN d:=-d END;
-d:=(d+a)*0.5;
-*)
-      IF tcnt+d<>0.0 THEN freq:=1.0/(tcnt+d) END;
-      tcnt:=0.0-d;
-    END;
-
-    tcnt:=tcnt+1.0;
-    left:=right;
-    dfir[dfin]:=freq - afskmidfreq;   
-    dfin:=(dfin+1) MOD DFIRLEN;
-    INC(baudfine, demodbaud);
-    IF baudfine>=BAUDSAMP THEN
-      DEC(baudfine, BAUDSAMP);  
-      ff:=Fir(dfin, DOVERSAMP - baudfine DIV (BAUDSAMP DIV DOVERSAMP),
-                DOVERSAMP, dfir, dfirtab);
-      demod(ff, m);  
-    END;
-  END;
-END Afsk;
-*/
 
 static void Afsk(long m)
 {
@@ -2354,7 +2314,7 @@ static void getadc(void)
       repairsound();
       return;
    }
-   if (debfd>=0L) i0 = write(debfd, (char *)buf, (unsigned long)l);
+   if (debfd>=0L && !deb01) i0 = write(debfd, (char *)buf, (unsigned long)l);
    l = (long)((unsigned long)l/adcbytes);
    for (c = afskmodem_LEFT;; c++) {
       chan[c].adcmax = chan[c].adcmax*15L>>4;
