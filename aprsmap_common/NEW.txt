@@ -1286,8 +1286,19 @@
 
 
 
+28.11. 2015 (Ver 0.58)
+
++ Starten ohne "terminal" und Abstellen sollte ohne X11 abschmieren gehen.
++ UDP Ports an und abschalten auch mit laufendem "serial interface".
 
 
+
+29.11. 2015 (Ver 0.58)
+
++ History bei der "Find" Zeile mit Cursor up/down.
++ Rf-Monitor mit Txdelay, Level und Quality, sofern vom Modem geliefert (afskmodem linux).
++ Fenster Kopfzeile "nur neue" Calls (Config/rf-ports/monitor headline 0) und Zeit seit
+  letztem mal gehoert(1).
 
 
 

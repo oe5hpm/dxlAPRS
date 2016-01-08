@@ -5,7 +5,6 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
-/* "@(#)sondeudp.c Apr 19 13:42:05 2015" */
 
 
 #define X2C_int32
@@ -115,6 +114,8 @@ struct CHAN {
    /*       destport                             : UDPPORT; */
    /*       udpfd                                : INTEGER */
    pUDPTX udptx;
+   unsigned long mycallc;
+   char myssid;
 };
 
 static long soundfd;
@@ -285,6 +286,64 @@ static void OpenSound(void)
 } /* end OpenSound() */
 
 
+static char packcall(char cs[], unsigned long cs_len, unsigned long * cc,
+                char * ssid)
+{
+   unsigned long s;
+   unsigned long j;
+   unsigned long i;
+   char c;
+   char packcall_ret;
+   X2C_PCOPY((void **)&cs,cs_len);
+   cs[cs_len-1] = 0;
+   *cc = 0UL;
+   s = 0UL;
+   i = 0UL;
+   for (j = 0UL; j<=5UL; j++) {
+      *cc =  *cc*37UL;
+      c = cs[i];
+      if ((unsigned char)c>='A' && (unsigned char)c<='Z') {
+         *cc += ((unsigned long)(unsigned char)c-65UL)+1UL;
+         ++i;
+      }
+      else if ((unsigned char)c>='0' && (unsigned char)c<='9') {
+         *cc += ((unsigned long)(unsigned char)c-48UL)+27UL;
+         ++i;
+      }
+      else if (c && c!='-') {
+         packcall_ret = 0;
+         goto label;
+      }
+   } /* end for */
+   if (cs[i]=='-') {
+      /* ssid */
+      ++i;
+      c = cs[i];
+      if ((unsigned char)c>='0' && (unsigned char)c<='9') {
+         s += (unsigned long)(unsigned char)c-48UL;
+         ++i;
+         c = cs[i];
+         if ((unsigned char)c>='0' && (unsigned char)c<='9') {
+            s = (s*10UL+(unsigned long)(unsigned char)c)-48UL;
+         }
+      }
+      if (s>15UL) {
+         packcall_ret = 0;
+         goto label;
+      }
+   }
+   else if (cs[i]) {
+      packcall_ret = 0;
+      goto label;
+   }
+   *ssid = (char)s;
+   packcall_ret = *cc>0UL;
+   label:;
+   X2C_PFREE(cs);
+   return packcall_ret;
+} /* end packcall() */
+
+
 static long GetIp(char h[], unsigned long h_len, unsigned long * ip,
                 unsigned long * port)
 {
@@ -377,22 +436,30 @@ static void Parms(void)
    long inum;
    unsigned char channel;
    pUDPTX utx;
+   char chanset;
+   char mycall[11];
+   unsigned long myc;
+   char mys;
    struct CHAN * anonym;
+   /* set only 1 chan */
    struct CHAN * anonym0;
+   struct CHAN * anonym1;
    err = 0;
    abortonsounderr = 0;
-   adcrate = 16000UL;
+   adcrate = 22050UL;
    adcbytes = 2UL;
    adcbuflen = 1024UL;
    fragmentsize = 11UL;
    maxchannels = sondeudp_LEFT;
    debfd = -1L;
+   chanset = 0;
    for (channel = sondeudp_LEFT;; channel++) {
       { /* with */
          struct CHAN * anonym = &chan[channel];
          anonym->configequalizer = 0L;
          anonym->pllshift = 1024L;
          anonym->udptx = 0;
+         anonym->mycallc = 0UL;
       }
       if (channel==sondeudp_RIGHT) break;
    } /* end for */
@@ -419,6 +486,7 @@ static void Parms(void)
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
             if (cnum>1UL) Error("channel 0 to 1", 15ul);
             channel = (unsigned char)cnum;
+            chanset = 1;
          }
          else if (h[1U]=='D') {
             Lib_NextArg(h1, 1024ul);
@@ -445,16 +513,36 @@ static void Parms(void)
             else Error("sound buffer out of range", 26ul);
          }
          else if (h[1U]=='o') Lib_NextArg(soundfn, 1024ul);
+         else if (h[1U]=='I') {
+            Lib_NextArg(mycall, 11ul);
+            if (!packcall(mycall, 11ul, &myc, &mys)) {
+               Error("-I illegall Callsign + ssid", 28ul);
+            }
+            if (chanset) {
+               { /* with */
+                  struct CHAN * anonym0 = &chan[channel];
+                  anonym0->mycallc = myc;
+                  anonym0->myssid = mys;
+               }
+            }
+            else {
+               /* use before -C set both */
+               chan[sondeudp_LEFT].mycallc = myc;
+               chan[sondeudp_LEFT].myssid = mys;
+               chan[sondeudp_RIGHT].mycallc = myc;
+               chan[sondeudp_RIGHT].myssid = mys;
+            }
+         }
          else if (h[1U]=='u') {
             Lib_NextArg(h, 1024ul);
             { /* with */
-               struct CHAN * anonym0 = &chan[channel];
+               struct CHAN * anonym1 = &chan[channel];
                Storage_ALLOCATE((X2C_ADDRESS *) &utx, sizeof(struct UDPTX));
                if (utx==0) Error("udp socket out of memory", 25ul);
                utx->udpfd = GetIp(h, 1024ul, &utx->ip, &utx->destport);
                if (utx->udpfd<0L) Error("cannot open udp socket", 23ul);
-               utx->next = anonym0->udptx;
-               anonym0->udptx = utx;
+               utx->next = anonym1->udptx;
+               anonym1->udptx = utx;
             }
          }
          else if (h[1U]=='v') verb = 1;
@@ -480,11 +568,12 @@ s (equalizer diversity)", 73ul);
 ighpass (-999..999)", 69ul);
                osi_WrStrLn("                -C <n> before -e sets channel num\
 ber", 53ul);
-               osi_WrStrLn(" -f <num>       adcrate (16000) (8000..96000)",
+               osi_WrStrLn(" -f <num>       adcrate (22050) (8000..96000)",
                 46ul);
+               osi_WrStrLn(" -I <call>      mycall + ssid", 30ul);
                osi_WrStrLn(" -l <num>       adcbuflen (256)", 32ul);
                osi_WrStrLn(" -o <filename>  oss devicename (/dev/dsp) or raw/\
-wav audio file", 64ul);
+wav audio file or pipe /dev/stdin", 83ul);
                osi_WrStrLn(" -u <x.x.x.x:destport> send rx data in udp (to so\
 ndemod), -C <n> before sets", 77ul);
                osi_WrStrLn("                channel number, maybe repeated fo\
@@ -492,7 +581,7 @@ r more destinations", 69ul);
                osi_WrStrLn(" -h             help", 21ul);
                osi_WrStrLn(" -v             verbous, (CRC-checked Sondename)",
                  49ul);
-               osi_WrStrLn("example: sondeudp -f 16000 -o /dev/dsp -c 2 -C 1 \
+               osi_WrStrLn("example: sondeudp -f 16000 -o /dev/dsp -c 2 -C 0 \
 -e 50 -u 127.0.0.1:4000", 73ul);
                X2C_ABORT();
             }
@@ -582,6 +671,13 @@ static void decodeframe(unsigned char m)
    }
    { /* with */
       struct CHAN * anonym = &chan[channel];
+      if (anonym->mycallc>0UL) {
+         chan[m].rxbuf[0U] = (char)(anonym->mycallc/16777216UL);
+         chan[m].rxbuf[1U] = (char)(anonym->mycallc/65536UL&255UL);
+         chan[m].rxbuf[2U] = (char)(anonym->mycallc/256UL&255UL);
+         chan[m].rxbuf[3U] = (char)(anonym->mycallc&255UL);
+         chan[m].rxbuf[4U] = anonym->myssid;
+      }
       utx = anonym->udptx;
       while (utx) {
          if (utx->udpfd>=0L) {

@@ -81,11 +81,11 @@ maptool_pIMAGE useri_panoimage;
 #define useri_SERIAL1 "udpflex -t /dev/ttyUSB0:9600 -i kiss.txt -u -U :9002:9\
 001"
 
-#define useri_SERIAL2 "afskmodem -f 22050 -C 0 -p /dev/ttyS0 0 -M 0 -T 6 -U 1\
-27.0.0.1:9002:9001 -m 0"
+#define useri_SERIAL2 "afskmodem -f 22050 -C 0 -p /dev/ttyS0 0 -M 0 -t 250 -T\
+ 6 -L 127.0.0.1:9002:9001 -m 0"
 
-static char useri_TICKERHEADLINE = 0;
-                /* some window managers do not free window headline mem */
+#define useri_TICKERHEADLINE "0"
+/* some window managers do not free window headline mem */
 
 #define useri_POIFILENAME "poi.txt"
 
@@ -971,7 +971,7 @@ static void initconfig(void)
    initc(useri_fWATCH, "Watch Calls", 12ul, useri_cLIST, "", 1ul, 0, 5UL);
    initc(useri_fAPPROXY, "Approxy Warn (km)", 18ul, useri_cBLINE, "", 1ul, 0,
                  5UL);
-   initc(useri_fFIND, "Find Call or Locator", 21ul, useri_cLINE, "", 1ul, 0,
+   initc(useri_fFIND, "Find Call or Locator", 21ul, useri_cLIST, "", 1ul, 0,
                 10UL);
    initc(useri_fLOGWFN, "WriteLogfilename", 17ul, useri_cBLINE, "logs/rawlog%\
 d", 14ul, 1, 15UL);
@@ -1051,8 +1051,8 @@ d", 14ul, 1, 15UL);
    initc(useri_fSERIALTASK, "Serial Task", 12ul, useri_cBLINE, "udpflex -t /d\
 ev/ttyUSB0:9600 -i kiss.txt -u -U :9002:9001", 58ul, 0, 137UL);
    initc(useri_fSERIALTASK2, "Serial Task2", 13ul, useri_cBLINE, "afskmodem -\
-f 22050 -C 0 -p /dev/ttyS0 0 -M 0 -T 6 -U 127.0.0.1:9002:9001 -m 0", 78ul, 0,
-                 137UL);
+f 22050 -C 0 -p /dev/ttyS0 0 -M 0 -t 250 -T 6 -L 127.0.0.1:9002:9001 -m 0",
+                85ul, 0, 137UL);
    initc(useri_fDIGI, "Digipeater", 11ul, useri_cBLIST, "", 1ul, 0, 139UL);
    initc(useri_fDIGITIME, "block same Content [s]", 23ul, useri_cLINE, "890",
                  4ul, 0, 140UL);
@@ -1109,7 +1109,7 @@ f 22050 -C 0 -p /dev/ttyS0 0 -M 0 -T 6 -U 127.0.0.1:9002:9001 -m 0", 78ul, 0,
    initc(useri_fKMH, "Km/h Text", 10ul, useri_cBLINE, "km/h", 5ul, 1, 385UL);
    initc(useri_fWRINCOM, "Monitor InOut", 14ul, useri_cLINE, "1234", 5ul, 0,
                 388UL);
-   initc(useri_fWRTICKER, "Show Headline", 14ul, useri_cBLINE, "1", 2ul, 0,
+   initc(useri_fWRTICKER, "Show Headline", 14ul, useri_cBLINE, "0", 2ul, 1,
                 390UL);
    initc(useri_fLOCALTIME, "Local Time h", 13ul, useri_cLINE, "0", 2ul, 0,
                 395UL);
@@ -1586,18 +1586,11 @@ extern void useri_copypaste(char s[], unsigned long s_len)
    }
 } /* end copypaste() */
 
-/*
-PROCEDURE ismultiline():BOOLEAN;
-VAR c:CHAR;
-BEGIN confstr(fRBPOSTYP, c); RETURN c=ENCODEAREA END ismultiline;
-*/
 
 extern void useri_postoconfig(struct aprspos_POSITION pos)
 /* copy position to editline */
 {
    char s[100];
-   /*  postostr(pos, "3", s); */
-   /*  AddConfLine(fRBPOS, 1, s); */
    aprstext_postostr(pos, '3', s, 100ul);
    useri_AddConfLine(useri_fEDITLINE, 1U, s, 100ul);
    if (s[0U]) useri_copypaste(s, 100ul);
@@ -10293,6 +10286,89 @@ static pMENU FindClampMenu(void)
 } /* end FindClampMenu() */
 
 
+static void rotatehist(unsigned char v, char up)
+{
+   char s1[201];
+   char s[201];
+   pCONFLINE p1;
+   pCONFLINE p0;
+   unsigned long n;
+   unsigned long i;
+   i = 0UL;
+   conflineno(v, 0UL, 1, &p0);
+   if (p0) {
+      aprsstr_Assign(s, 201ul, p0->line, 201ul);
+      for (;;) {
+         /* rotate lines up/down */
+         ++i;
+         conflineno(v, i, 1, &p1);
+         if (p1) {
+            if (up) {
+               memcpy(p0->line,p1->line,201u);
+               p0 = p1;
+            }
+            else {
+               aprsstr_Assign(s1, 201ul, p1->line, 201ul);
+               aprsstr_Assign(p1->line, 201ul, s, 201ul);
+               memcpy(s,s1,201u);
+            }
+         }
+         else {
+            aprsstr_Assign(p0->line, 201ul, s, 201ul);
+            break;
+         }
+      }
+   }
+   conflineno(v, 0UL, 1, &p0); /* clear same content lines */
+   if (p0) {
+      i = 1UL;
+      for (;;) {
+         conflineno(v, i, 1, &p1);
+         if (p1==0) break;
+         if (aprsstr_StrCmp(p0->line, 201ul, p1->line, 201ul)) {
+            p1->line[0U] = 0;
+         }
+         ++i;
+      }
+   }
+   i = 0UL;
+   n = 0UL;
+   for (;;) {
+      /* count empty lines */
+      conflineno(v, i, 1, &p0);
+      if (p0==0) break;
+      if (p0->line[0U]==0) ++n;
+      ++i;
+   }
+   i = 0UL;
+   for (;;) {
+      /* del empty lines till 1 */
+      conflineno(v, i, 1, &p0);
+      if (p0==0 || n<=1UL) break;
+      if (p0->line[0U]==0) {
+         configdelman(v, 3UL, i+1UL);
+         --n;
+      }
+      else ++i;
+   }
+   i = 0UL;
+   for (;;) {
+      /* count lines */
+      conflineno(v, i, 1, &p0);
+      if (p0==0) break;
+      ++i;
+   }
+   if (n==0UL && i<10UL) {
+      /* make new empty line */
+      useri_AddConfLine(v, 0U, " ", 2ul);
+      conflineno(v, 0UL, 1, &p0);
+      if (p0) p0->line[0U] = 0;
+   }
+   conflineno(v, 0UL, 1, &p0);
+   if (p0 && p0->line[0U]==0) configs[v].curspos = 0U;
+} /* end rotatehist() */
+
+
 static void kbtomenu(char * ch)
 /* if keystroke to window return 0C */
 {
@@ -10302,7 +10378,6 @@ static void kbtomenu(char * ch)
    unsigned long le;
    unsigned long i;
    char uml[10];
-   /* & (configs[VAL(CONFSET,idx)].lines<>NIL)*/
    struct CONFIG * anonym;
    struct CONFLINE * anonym0;
    unsigned long tmp;
@@ -10320,7 +10395,11 @@ static void kbtomenu(char * ch)
          clampedline = pm->oldknob;
          useri_refresh = 1;
       }
-      return;
+      else if ((unsigned long)pm->confidx[pm->oldknob]==0UL) {
+         /* rotate in history lines */
+         rotatehist(useri_fFIND, *ch=='\005');
+         *ch = 0;
+      }
    }
    /*>line editor */
    uml[0U] = *ch;
@@ -10332,7 +10411,7 @@ static void kbtomenu(char * ch)
       if (idx<=152UL) {
          { /* with */
             struct CONFIG * anonym = &configs[idx];
-            if (anonym->lines==0) icfg((unsigned char)idx, "", 1ul);
+            if (anonym->lines==0) icfg((unsigned char)idx, " ", 2ul);
             { /* with */
                struct CONFLINE * anonym0 = anonym->lines;
                eot = 0UL;

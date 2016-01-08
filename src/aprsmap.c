@@ -477,6 +477,7 @@ static void rdlonglog(aprsdecode_pOPHIST * optab, char fn[],
    unsigned long i;
    unsigned long wp;
    aprsdecode_FRAMEBUF mbuf;
+   unsigned long ot;
    unsigned long end;
    unsigned long start;
    aprsdecode_pOPHIST op;
@@ -527,7 +528,8 @@ static void rdlonglog(aprsdecode_pOPHIST * optab, char fn[],
             mbuf[j] = 0;
             if (aprsdecode_Decode(mbuf, 512ul, &dat)>=0L) {
                aprsdecode_systime = *lastread;
-               ret = aprsdecode_Stoframe(optab, mbuf, 512ul, start, 1, dat);
+               ret = aprsdecode_Stoframe(optab, mbuf, 512ul, start, 1, &ot,
+                dat);
                ++*lines;
                if (*firstread==0UL) *firstread = start;
                *lastread = start;
@@ -566,6 +568,7 @@ static void rdlog(aprsdecode_pOPHIST * optab, char fn[],
    aprsdecode_FRAMEBUF mbuf;
    aprsdecode_pOPHIST op;
    struct aprsdecode_DAT dat;
+   unsigned long ot;
    unsigned long start;
    unsigned long t;
    aprsdecode_FILENAME fnd;
@@ -633,7 +636,7 @@ static void rdlog(aprsdecode_pOPHIST * optab, char fn[],
                if (aprsdecode_Decode(mbuf, 512ul, &dat)>=0L) {
                   aprsdecode_systime = *lastread;
                   ret = aprsdecode_Stoframe(optab, mbuf, 512ul, start, 1,
-                dat);
+                &ot, dat);
                   ++*lines;
                   if (*firstread==0UL) *firstread = start;
                   *lastread = start;

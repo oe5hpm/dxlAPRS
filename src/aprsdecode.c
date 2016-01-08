@@ -176,6 +176,14 @@ struct xosi_PROCESSHANDLE aprsdecode_maploadpid;
 #define aprsdecode_PINGINTERVALL 20
 /* ping-pong ping intervall */
 
+#define aprsdecode_DIRIN ">"
+
+#define aprsdecode_DIROUT "<"
+
+#define aprsdecode_DIRHAVIT "-"
+
+#define aprsdecode_DIRJUNC "#"
+
 typedef unsigned long SET256[8];
 
 typedef unsigned long CHSET[4];
@@ -188,6 +196,8 @@ struct BEACON {
 };
 
 typedef char TICKERCALL[31];
+
+struct UDPSET;
 
 
 struct UDPSET {
@@ -662,8 +672,57 @@ ut", 52ul);
 } /* end parms() */
 
 
+static void getval(const char s[], unsigned long s_len, unsigned long * i,
+                long * v)
+{
+   char m;
+   ++*i;
+   *v = 0L;
+   m = s[*i]=='-';
+   if (m) ++*i;
+   while ((*i<s_len-1 && (unsigned char)s[*i]>='0') && (unsigned char)
+                s[*i]<='9') {
+      *v =  *v*10L+(long)((unsigned long)(unsigned char)s[*i]-48UL);
+      ++*i;
+   }
+   while (*i<s_len-1 && (unsigned char)s[*i]>' ') ++*i;
+   while (*i<s_len-1 && s[*i]==' ') ++*i;
+   if (m) *v = -*v;
+} /* end getval() */
+
+
+static void decodeudp2(const char ub[], unsigned long ub_len,
+                struct UDPSET * modeminfo)
+{
+   unsigned long i;
+   long res;
+   if (ub[0UL] && ub[1UL]) {
+      i = 2UL;
+      while (i<ub_len-1 && ub[i]) {
+         switch ((unsigned)ub[i]) {
+         case 'T':
+            getval(ub, ub_len, &i, &res);
+            modeminfo->txd = res;
+            break;
+         case 'V':
+            getval(ub, ub_len, &i, &res);
+            modeminfo->level = res;
+            break;
+         case 'Q':
+            getval(ub, ub_len, &i, &res);
+            modeminfo->quali = res;
+            break;
+         default:;
+            getval(ub, ub_len, &i, &res);
+            break;
+         } /* end switch */
+      }
+   }
+} /* end decodeudp2() */
+
+
 static char getudp(unsigned long usock, aprsdecode_FRAMEBUF buf,
-                aprsstr_GHOSTSET ghostset)
+                struct UDPSET * modeminfo, aprsstr_GHOSTSET ghostset)
 {
    unsigned long fromport;
    unsigned long ipn;
@@ -682,6 +741,7 @@ static char getudp(unsigned long usock, aprsdecode_FRAMEBUF buf,
                 ) {
       /*WrInt(udpsend(usock^.fd, buf, len, usock^.dport, usock^.ip), 1);
                 WrStrLn(" us"); */
+      memset((char *)modeminfo,(char)0,sizeof(struct UDPSET));
       buf[len] = 0;
       if (aprsdecode_udpsocks0[usock].rawread) {
          len -= 2L;
@@ -695,7 +755,10 @@ static char getudp(unsigned long usock, aprsdecode_FRAMEBUF buf,
          else {
             if (buf[0UL]=='\001') {
                aprsstr_extrudp2(buf, 512ul, udp2, 100ul, &len);
+               decodeudp2(udp2, 100ul, modeminfo);
             }
+            /*WrInt(modeminfo.txd, 5); WrInt(modeminfo.level, 5);
+                WrInt(modeminfo.quali, 5); WrStrLn(" modem"); */
             aprsstr_raw2mon(buf, 512ul, mbuf, 512ul, (unsigned long)len,
                 &mlen, ghostset);
             memcpy(buf,mbuf,512u);
@@ -868,7 +931,7 @@ static void WatchTXQ(aprsdecode_pTCPSOCK sock)
 
 
 static void tickermon(const char port[], unsigned long port_len, char dir,
-                const char s[], unsigned long s_len)
+                unsigned long ot, const char s[], unsigned long s_len)
 {
    struct aprsdecode_DAT dat;
    TICKERCALL h2;
@@ -878,10 +941,33 @@ static void tickermon(const char port[], unsigned long port_len, char dir,
    unsigned long i;
    unsigned long tmp;
    cnt = (unsigned long)useri_conf2int(useri_fWRTICKER, 0UL, 0L, 99L, 1L);
+   if (cnt==0UL && ot==0UL) cnt = 1UL;
    /*WrInt(cnt, 10); WrLn; */
    if (cnt>0UL && aprsdecode_Decode(s, s_len, &dat)>=0L) {
-      aprsstr_Assign(h2, 31ul, port, port_len);
-      h2[0U] = X2C_CAP(h2[0U]);
+      h2[0] = 0;
+      if (cnt==1UL) {
+         if (ot==0UL) strncpy(h2,"New User: ",31u);
+         else if (ot<=aprsdecode_realtime) {
+            strncpy(h2,"since ",31u);
+            ot = aprsdecode_realtime-ot;
+            if (ot<180UL) {
+               aprsstr_IntToStr((long)ot, 3UL, h1, 31ul);
+               aprsstr_Append(h1, 31ul, "s: ", 4ul);
+            }
+            else if (ot<10790UL) {
+               aprsstr_IntToStr((long)((ot+10UL)/60UL), 3UL, h1, 31ul);
+               aprsstr_Append(h1, 31ul, "m: ", 4ul);
+            }
+            else {
+               aprsstr_IntToStr((long)((ot+10UL)/3600UL), 3UL, h1, 31ul);
+               aprsstr_Append(h1, 31ul, "h: ", 4ul);
+            }
+            aprsstr_Append(h2, 31ul, h1, 31ul);
+         }
+      }
+      aprsstr_Assign(h1, 31ul, port, port_len);
+      h1[0U] = X2C_CAP(h1[0U]);
+      aprsstr_Append(h2, 31ul, h1, 31ul);
       aprsstr_Append(h2, 31ul, (char *) &dir, 1u/1u);
       aprsstr_Append(h2, 31ul, dat.symcall, 9ul);
       if (dat.wx.temp!=1.E+6f) {
@@ -936,20 +1022,24 @@ static void Stopticker(void)
 } /* end Stopticker() */
 
 
-static void wrmon(unsigned long port, char dir, const char s[],
-                unsigned long s_len)
+static void wrmon(unsigned long port, char dir,
+                const struct UDPSET modeminfo, unsigned long oldtime,
+                const char s[], unsigned long s_len)
 {
    char mcon[10];
    char ms[31];
    if (port==0UL) strncpy(mcon,"n",10u);
    else aprsstr_IntToStr((long)port, 0UL, mcon, 10ul);
-   if (useri_configon(useri_fWRTICKER)) tickermon(mcon, 10ul, dir, s, s_len);
+   if ((dir=='>' || dir=='-') && useri_configon(useri_fWRTICKER)) {
+      tickermon(mcon, 10ul, dir, oldtime, s, s_len);
+   }
    /*IF configon(fWRINCOM) THEN */
    useri_confstr(useri_fWRINCOM, ms, 31ul);
    if (aprsstr_InStr(ms, 31ul, mcon, 10ul)>=0L) {
       aprsstr_Append(mcon, 10ul, "+", 2ul);
       aprstext_listin(s, s_len, X2C_CAP(mcon[0U]), dir, aprsstr_InStr(ms,
-                31ul, mcon, 10ul)>=0L);
+                31ul, mcon, 10ul)>=0L, modeminfo.quali, modeminfo.txd,
+                modeminfo.level);
    }
 /*END; */
 } /* end wrmon() */
@@ -1021,13 +1111,14 @@ static char Sendtcp(aprsdecode_pTCPSOCK to, const aprsdecode_FRAMEBUF buf)
    long i;
    long len;
    char ok0;
+   struct UDPSET modeminfo;
    struct aprsdecode_TCPSOCK * anonym;
    long tmp;
    ok0 = 0;
    if (to) {
       if (to->connt>0UL) {
-         wrmon(0UL, '<', buf, 512ul);
-                /* do not mon the connected-test-transmissions */
+         memset((char *) &modeminfo,(char)0,sizeof(struct UDPSET));
+         wrmon(0UL, '<', modeminfo, 0UL, buf, 512ul);
       }
       len = (long)aprsstr_Length(buf, 512ul);
       { /* with */
@@ -1057,6 +1148,7 @@ static long Sendudp(const char s[], unsigned long s_len, unsigned long uport,
 {
    long len;
    aprsdecode_FRAMEBUF raw;
+   struct UDPSET modeminfo;
    struct aprsdecode_UDPSOCK * anonym;
    len = -1L;
    if ((uport<=3UL && (long)aprsdecode_udpsocks0[uport].fd>=0L)
@@ -1068,7 +1160,8 @@ static long Sendudp(const char s[], unsigned long s_len, unsigned long uport,
                 aprsdecode_udpsocks0[uport].dport,
                 aprsdecode_udpsocks0[uport].ip);
             if (len>0L) {
-               wrmon(uport+1UL, '<', s, s_len);
+               memset((char *) &modeminfo,(char)0,sizeof(struct UDPSET));
+               wrmon(uport+1UL, '<', modeminfo, 0UL, s, s_len);
                { /* with */
                   struct aprsdecode_UDPSOCK * anonym = &aprsdecode_udpsocks0[uport]
                 ;
@@ -1586,6 +1679,7 @@ static void SendNetBeacon(aprsdecode_pTCPSOCK cp,
 {
    long ret;
    struct aprsdecode_DAT dat;
+   unsigned long t;
    if (b[0UL]==0 || aprsdecode_Decode(b, 512ul, &dat)<0L) {
       aprsstr_Assign(errtxt, errtxt_len, "Net Beacon not Decodable", 25ul);
       return;
@@ -1598,11 +1692,11 @@ static void SendNetBeacon(aprsdecode_pTCPSOCK cp,
    }
    if (aprsdecode_lums.logmode) {
       ret = aprsdecode_Stoframe(&aprsdecode_ophist2, b, 512ul,
-                aprsdecode_realtime, 0, dat);
+                aprsdecode_realtime, 0, &t, dat);
    }
    else {
       ret = aprsdecode_Stoframe(&aprsdecode_ophist0, b, 512ul,
-                aprsdecode_realtime, 0, dat);
+                aprsdecode_realtime, 0, &t, dat);
    }
 } /* end SendNetBeacon() */
 
@@ -4766,7 +4860,7 @@ static CHSET _cnst = {0x30000000UL,0x280086BAUL,0x80000001UL,0x00000001UL};
 
 extern long aprsdecode_Stoframe(aprsdecode_pOPHIST * optab, char rawbuf[],
                 unsigned long rawbuf_len, unsigned long stime, char logmode,
-                struct aprsdecode_DAT dat)
+                unsigned long * oldtime, struct aprsdecode_DAT dat)
 {
    aprsdecode_pOPHIST opo;
    aprsdecode_pOPHIST op;
@@ -4782,6 +4876,7 @@ extern long aprsdecode_Stoframe(aprsdecode_pOPHIST * optab, char rawbuf[],
    struct aprsdecode_VARDAT * anonym;
    long aprsdecode_Stoframe_ret;
    X2C_PCOPY((void **)&rawbuf,rawbuf_len);
+   *oldtime = 0UL;
    i = 0UL;
    hash = 0U;
    do {
@@ -4860,6 +4955,7 @@ extern long aprsdecode_Stoframe(aprsdecode_pOPHIST * optab, char rawbuf[],
       op->next = *optab;
       *optab = op;
    }
+   else *oldtime = op->lasttime;
    if (dat.hrttime>0UL) stime = dat.hrttime;
    if (op->lasttime<=stime) {
       /* new waypoint */
@@ -5925,8 +6021,7 @@ static void rfbeacons(void)
          /* valid time */
          bn = (aprsdecode_realtime+shift)%bt;
          /*WrInt(realtime MOD 86400, 10); WrInt(realtime-rfbecondone, 4);
-                WrInt(bshift, 4); WrInt(shift, 4); WrInt(n, 4);
-                WrStrLn(" b"); */
+                WrInt(bshift, 4); WrInt(shift, 14); WrStrLn(" bshift"); */
          if (bn<aprsdecode_realtime-rfbecondone) {
             beaconmacros(s, 512ul, "", 1ul, "", 1ul, 1);
             if (s[0UL]) {
@@ -6600,7 +6695,8 @@ static void digipeat(const aprsdecode_FRAMEBUF b, unsigned long udpch)
 
 
 static void storedata(aprsdecode_FRAMEBUF mb, aprsdecode_pTCPSOCK cp,
-                unsigned long udpch, char valid, char local)
+                unsigned long udpch, const struct UDPSET modeminfo,
+                char valid, char local)
 {
    long res;
    char fn[1000];
@@ -6611,6 +6707,7 @@ static void storedata(aprsdecode_FRAMEBUF mb, aprsdecode_pTCPSOCK cp,
    aprsdecode_pTCPSOCK tp;
    struct aprsdecode_DAT dat;
    char dir;
+   unsigned long otime;
    char tmp;
    if (aprsdecode_lastpurge!=aprsdecode_realtime/10UL) {
       if (aprsdecode_lums.logmode) {
@@ -6677,11 +6774,11 @@ temporarily", 56ul);
       }
       if (aprsdecode_lums.logmode) {
          res = aprsdecode_Stoframe(&aprsdecode_ophist2, mb, 512ul,
-                aprsdecode_realtime, 0, dat);
+                aprsdecode_realtime, 0, &otime, dat);
       }
       else {
          res = aprsdecode_Stoframe(&aprsdecode_ophist0, mb, 512ul,
-                aprsdecode_realtime, 0, dat);
+                aprsdecode_realtime, 0, &otime, dat);
       }
       if (!local) {
          if (useri_configon(useri_fLOGWFN)) {
@@ -6701,8 +6798,8 @@ temporarily", 56ul);
    }
    else if (res<0L) dir = '-';
    else dir = '>';
-   if (udpch>0UL) wrmon(udpch, dir, mb, 512ul);
-   else wrmon(0UL, dir, mb, 512ul);
+   if (udpch>0UL) wrmon(udpch, dir, modeminfo, otime, mb, 512ul);
+   else wrmon(0UL, dir, modeminfo, otime, mb, 512ul);
 } /* end storedata() */
 
 
@@ -6711,11 +6808,13 @@ extern void aprsdecode_drawbeacon(char raw[], unsigned long raw_len)
    aprsdecode_FRAMEBUF b;
    char port;
    unsigned long time0;
+   struct UDPSET modeminfo;
    aprsstr_Assign(b, 512ul, raw, raw_len);
    if (getbeaconparm(b, 512ul, &time0, &port)) {
       beaconmacros(b, 512ul, "", 1ul, "", 1ul, 1);
       if (b[0UL]) {
-         storedata(b, 0, 0UL, 0, 1);
+         memset((char *) &modeminfo,(char)0,sizeof(struct UDPSET));
+         storedata(b, 0, 0UL, modeminfo, 0, 1);
          if (aprsdecode_click.mhop[0UL]) {
             useri_say("switch to \"show all\" to see new object", 39ul, 5UL,
                 'r');
@@ -6766,9 +6865,10 @@ static unsigned long * getghostset(aprsstr_GHOSTSET getghostset_ret,
 extern void aprsdecode_udpin(unsigned long port)
 {
    aprsdecode_FRAMEBUF mbuf;
+   struct UDPSET modeminfo;
    struct aprsdecode_UDPSOCK * anonym;
    aprsstr_GHOSTSET tmp;
-   while (getudp(port, mbuf, getghostset(tmp, port))) {
+   while (getudp(port, mbuf, &modeminfo, getghostset(tmp, port))) {
       if (mbuf[0UL]) {
          { /* with */
             struct aprsdecode_UDPSOCK * anonym = &aprsdecode_udpsocks0[port];
@@ -6781,7 +6881,7 @@ extern void aprsdecode_udpin(unsigned long port)
             }
          }
          aprsdecode_lastanyudprx = aprsdecode_realtime;
-         storedata(mbuf, 0, port+1UL, 0, 0);
+         storedata(mbuf, 0, port+1UL, modeminfo, 0, 0);
       }
       else if (aprsdecode_verb) osi_WrStrLn("axudp decode error", 19ul);
    }
@@ -6826,6 +6926,7 @@ extern void aprsdecode_tcpin(aprsdecode_pTCPSOCK acttcp)
 {
    long res;
    aprsdecode_FRAMEBUF mbuf;
+   struct UDPSET modeminfo;
    if ((long)acttcp->fd>=0L) {
       for (;;) {
          res = Gettcp(acttcp->fd, mbuf, acttcp->rbuf, &acttcp->rpos);
@@ -6842,7 +6943,8 @@ extern void aprsdecode_tcpin(aprsdecode_pTCPSOCK acttcp)
          acttcp->watchtime = aprsdecode_realtime;
          /*    WrMon(mbuf); */
          if (mbuf[0UL]=='#') getpong(acttcp, mbuf, 512ul);
-         storedata(mbuf, acttcp, 0UL, 1, 0);
+         memset((char *) &modeminfo,(char)0,sizeof(struct UDPSET));
+         storedata(mbuf, acttcp, 0UL, modeminfo, 1, 0);
          aprsdecode_lasttcprx = aprsdecode_realtime;
       }
    }
@@ -6932,8 +7034,10 @@ extern void aprsdecode_initparms(void)
    Stopticker();
    tickertime = 0UL;
    sentemptymsg = 0;
-   beaconrandomstart = TimeConv_time()%60UL;
+   beaconrandomstart = TimeConv_time();
                 /* set a beacon scheduler start second in minute */
+   beaconrandomstart = (beaconrandomstart/60UL)%60UL+(beaconrandomstart%60UL)
+                *60UL;
 } /* end initparms() */
 
 

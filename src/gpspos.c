@@ -5,7 +5,6 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
-/* "@(#)gpspos.c Sep 26 14:44:02 2015" */
 
 
 #define X2C_int32
@@ -1284,6 +1283,7 @@ extern char gpspos_readalmanach(char fnsem[], unsigned long fnsem_len,
                 unsigned long * tilltime, char verb)
 {
    unsigned char cnt;
+   unsigned long nearmed;
    unsigned long ti;
    unsigned long ri;
    unsigned long j;
@@ -1371,15 +1371,23 @@ extern char gpspos_readalmanach(char fnsem[], unsigned long fnsem_len,
          if (j==tmp) break;
       } /* end for */
       j = 0UL;
+      nearmed = 2147483647UL;
       do {
-         /* dinf median time */
+         /* find median time */
          ti = 0UL;
-         *tilltime = calm[j].treal;
          for (i = 0UL; i<=31UL; i++) {
-            if (*tilltime<calm[i].treal) ++ti;
+            if (calm[j].treal<calm[i].treal) ++ti;
          } /* end for */
+         ti = (unsigned long)labs(15L-(long)ti);
+         if (ti<nearmed) {
+            nearmed = ti;
+            *tilltime = calm[j].treal;
+         }
+         /*IF verb THEN WrStr("sat time:"); WrInt(j, 8); WrInt(ti, 8);
+                WrInt(nearmed, 8); WrStr(" "); wrdate(calm[j].treal);
+                WrStrLn("") END; */
          ++j;
-      } while (!(ti==15UL || j>31UL));
+      } while (j<=31UL);
       if (verb) {
          InOut_WriteString("median last almanach time:", 27ul);
          wrdate(*tilltime);

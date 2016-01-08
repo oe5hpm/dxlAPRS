@@ -775,8 +775,9 @@ extern void aprstext_listop(char decoded)
 
 
 extern void aprstext_listin(char r[], unsigned long r_len, char port,
-                char dir, char decoded)
+                char dir, char decoded, long quali, long txd, long level)
 {
+   char s2[1000];
    char s1[1000];
    char s[1000];
    struct aprsdecode_VARDAT vard;
@@ -807,6 +808,21 @@ extern void aprstext_listin(char r[], unsigned long r_len, char port,
    }
    if (dir=='<') aprsstr_Append(s1, 1000ul, "\370<\376", 4ul);
    else aprsstr_Append(s1, 1000ul, (char *) &dir, 1u/1u);
+   if (txd>0L || quali>0L) {
+      aprsstr_Append(s1, 1000ul, "(", 2ul);
+      if (txd>0L) aprsstr_IntToStr(txd, 3UL, s2, 1000ul);
+      else strncpy(s2,"   ",1000u);
+      aprsstr_Append(s1, 1000ul, s2, 1000ul);
+      aprsstr_Append(s1, 1000ul, "/", 2ul);
+      if (level) aprsstr_IntToStr(level, 3UL, s2, 1000ul);
+      else strncpy(s2,"   ",1000u);
+      aprsstr_Append(s1, 1000ul, s2, 1000ul);
+      aprsstr_Append(s1, 1000ul, "/", 2ul);
+      if (quali>0L) aprsstr_IntToStr(quali, 2UL, s2, 1000ul);
+      else strncpy(s2,"  ",1000u);
+      aprsstr_Append(s1, 1000ul, s2, 1000ul);
+      aprsstr_Append(s1, 1000ul, ")", 2ul);
+   }
    aprsstr_Append(s1, 1000ul, s, 1000ul);
    useri_wrstrmon(s1, 1000ul, dat.pos);
 } /* end listin() */

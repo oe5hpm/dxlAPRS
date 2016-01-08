@@ -70,7 +70,8 @@ extern void aprstext_listop(char);
 
 extern void aprstext_listtyps(char, char, char [], unsigned long);
 
-extern void aprstext_listin(char [], unsigned long, char, char, char);
+extern void aprstext_listin(char [], unsigned long, char, char, char, long,
+                long, long);
 
 extern void aprstext_DateLocToStr(unsigned long, char [], unsigned long);
 /* append (+localtime) to time */

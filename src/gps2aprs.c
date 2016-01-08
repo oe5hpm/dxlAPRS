@@ -19,6 +19,9 @@
 #ifndef osi_H_
 #include "osi.h"
 #endif
+#ifndef RealMath_H_
+#include "RealMath.h"
+#endif
 #ifndef Lib_H_
 #include "Lib.h"
 #endif
@@ -33,9 +36,6 @@
 #endif
 #ifndef TimeConv_H_
 #include "TimeConv.h"
-#endif
-#ifndef RealMath_H_
-#include "RealMath.h"
 #endif
 #ifndef aprsstr_H_
 #include "aprsstr.h"
@@ -70,6 +70,9 @@ FROM TimeConv IMPORT time;
 #define gps2aprs_DEFAULTIP 0x7F000001 
 /* 127.0.0.1 */
 
+#define gps2aprs_BTIMENAVI 2
+/* fast beacon to aprsmap as navi -N */
+
 /*CRCL, CRCH: ARRAY[0..255] OF SET8;*/
 static char tbuf[1024];
 
@@ -87,9 +90,13 @@ static char symb;
 
 static unsigned long toport;
 
+static unsigned long toport2;
+
 static unsigned long baud;
 
 static unsigned long ipnum;
+
+static unsigned long ipnum2;
 
 static long udpsock;
 
@@ -129,6 +136,8 @@ static unsigned long btime;
 
 static unsigned long msgtyp;
 
+static unsigned long btimeN;
+
 static double lat;
 
 static double long0;
@@ -167,6 +176,10 @@ static unsigned long truncc(double r)
    return 0;
 } /* end truncc() */
 
+#define gps2aprs_DEFAULTIP0 0x7F000001 
+
+#define gps2aprs_PORTSEP ":"
+
 
 static long GetIp(char h[], unsigned long h_len, unsigned long * p,
                 unsigned long * ip, unsigned long * port)
@@ -180,29 +193,39 @@ static long GetIp(char h[], unsigned long h_len, unsigned long * p,
    h[h_len-1] = 0;
    *ip = 0UL;
    for (i = 0UL; i<=4UL; i++) {
-      n = 0UL;
-      ok0 = 0;
-      while ((unsigned char)h[*p]>='0' && (unsigned char)h[*p]<='9') {
-         ok0 = 1;
-         n = (n*10UL+(unsigned long)(unsigned char)h[*p])-48UL;
-         ++*p;
-      }
-      if (!ok0) {
-         GetIp_ret = -1L;
-         goto label;
-      }
-      if (i<3UL) {
-         if (h[*p]!='.' || n>255UL) {
+      if (i>=3UL || h[0UL]!=':') {
+         n = 0UL;
+         ok0 = 0;
+         while ((unsigned char)h[*p]>='0' && (unsigned char)h[*p]<='9') {
+            ok0 = 1;
+            n = (n*10UL+(unsigned long)(unsigned char)h[*p])-48UL;
+            ++*p;
+         }
+         if (!ok0) {
             GetIp_ret = -1L;
             goto label;
          }
-         *ip =  *ip*256UL+n;
+      }
+      if (i<3UL) {
+         if (h[0UL]!=':') {
+            if (h[*p]!='.' || n>255UL) {
+               GetIp_ret = -1L;
+               goto label;
+            }
+            *ip =  *ip*256UL+n;
+         }
       }
       else if (i==3UL) {
-         *ip =  *ip*256UL+n;
-         if (h[*p]!=':' || n>255UL) {
-            GetIp_ret = -1L;
-            goto label;
+         if (h[0UL]!=':') {
+            *ip =  *ip*256UL+n;
+            if (h[*p]!=':' || n>255UL) {
+               GetIp_ret = -1L;
+               goto label;
+            }
+         }
+         else {
+            *p = 0UL;
+            *ip = 2130706433UL;
          }
       }
       else if (n>65535UL) {
@@ -307,13 +330,15 @@ static void Parms(void)
                Error("-m or -r ip:port number", 24ul);
             }
          }
-         else if (h[1U]=='a') {
-            /*WrInt(ipnum, 15); WrStrLn(""); */
-            /*        udpsock:=openudp(); */
-            /*        IF udpsock<0 THEN Error("cannot open udp socket") END;
-                */
-            withalti = 0;
+         else if (h[1U]=='N') {
+            useaxudp = 1;
+            Lib_NextArg(h, 1024ul);
+            i = 0UL;
+            if (GetIp(h, 1024ul, &i, &ipnum2, &toport2)<0L) {
+               Error("-N ip:port", 11ul);
+            }
          }
+         else if (h[1U]=='a') withalti = 0;
          else if (h[1U]=='u') usbrobust = 0;
          else if (h[1U]=='k') withspeed = 0;
          else if (h[1U]=='s') sumoff = 1;
@@ -433,7 +458,9 @@ FF (not in mic-e)", 67ul);
                osi_WrStrLn(" -l <n>                            every n Beacon\
 s send one with Comment", 73ul);
                osi_WrStrLn(" -m <x.x.x.x:destport>             use Monitor UD\
-P format", 58ul);
+P format :port for localhost", 78ul);
+               osi_WrStrLn(" -N <x.x.x.x:destport>             send Position \
+AXUDP every 2s eg. to aprsmap", 79ul);
                osi_WrStrLn(" -r <x.x.x.x:destport>             use AXUDP (to \
 Soundmodem)", 61ul);
                osi_WrStrLn(" -s                                GPS Checksum c\
@@ -505,25 +532,15 @@ BEGIN
 END UDPCRC;
 */
 
-static void sendudp(char buf[], unsigned long buf_len, long len0)
+static void sendudp(char buf[], unsigned long buf_len, long len0,
+                unsigned long ip, unsigned long port)
 {
    long i;
    /*  crc:CARDINAL;  */
    X2C_PCOPY((void **)&buf,buf_len);
-   /*
-     IF withcrc THEN
-       crc:=UDPCRC(buf, len);
-       buf[len]:=CHR(crc MOD 256);
-       buf[len+1]:=CHR(crc DIV 256);
-       INC(len, 2);
-     END;
-     AppCRC(buf, len);
-   */
-   i = udpsend(udpsock, buf, len0, toport, ipnum);
+   i = udpsend(udpsock, buf, len0, port, ip);
    X2C_PFREE(buf);
-/*
-FOR i:=0 TO upos-2 DO IO.WrHex(ORD(buf[i]), 3) END; IO.WrLn;
-*/
+/*FOR i:=0 TO upos-2 DO IO.WrHex(ORD(buf[i]), 3) END; IO.WrLn; */
 } /* end sendudp() */
 
 
@@ -852,7 +869,8 @@ static unsigned long dao91(double x)
 static void sendaprs(double lat0, double long1, double alt0, double course0,
                 double speed0, unsigned long comp0, char withspd,
                 char withalt, char dao, char com, char comm[],
-                unsigned long comm_len)
+                unsigned long comm_len, char local, unsigned long ip,
+                unsigned long port)
 {
    char b[201];
    char raw[361];
@@ -864,19 +882,22 @@ static void sendaprs(double lat0, double long1, double alt0, double course0,
    double a;
    char tmp;
    X2C_PCOPY((void **)&comm,comm_len);
-   /* OE5FHM-9>APERXQ,RELAY,WIDE2-2:!4805.44N/01333.64E>325/016/A=001824 */
+   /* OE0AAA-9>APERXQ,RELAY,WIDE2-2:!4805.44N/01333.64E>325/016/A=001824 */
    b[0] = 0;
    aprsstr_Append(b, 201ul, mycall, 100ul);
    micdest = aprsstr_Length(b, 201ul)+1UL;
-   aprsstr_Append(b, 201ul, ">APLT01", 8ul);
-   if (micessid>0UL) {
-      aprsstr_Append(b, 201ul, "-", 2ul);
-      aprsstr_Append(b, 201ul, (char *)(tmp = (char)(micessid+48UL),&tmp),
-                1u/1u);
-   }
-   if (via[0U]) {
-      aprsstr_Append(b, 201ul, ",", 2ul);
-      aprsstr_Append(b, 201ul, via, 100ul);
+   if (local) aprsstr_Append(b, 201ul, ">NOGATE", 8ul);
+   else {
+      aprsstr_Append(b, 201ul, ">APLT01", 8ul);
+      if (micessid>0UL) {
+         aprsstr_Append(b, 201ul, "-", 2ul);
+         aprsstr_Append(b, 201ul, (char *)(tmp = (char)(micessid+48UL),&tmp),
+                 1u/1u);
+      }
+      if (via[0U]) {
+         aprsstr_Append(b, 201ul, ",", 2ul);
+         aprsstr_Append(b, 201ul, via, 100ul);
+      }
    }
    if (comp0==0UL) {
       /* uncompressed */
@@ -985,7 +1006,9 @@ static void sendaprs(double lat0, double long1, double alt0, double course0,
       ++i;
       b[i] = (char)(33UL+n%91UL);
       ++i;
-      if (long1>(-180.0)) n = truncc((180.0+long1)*1.90463E+5);
+      if (long1>(-180.0)) {
+         n = truncc((180.0+long1)*1.90463E+5);
+      }
       else n = 0UL;
       b[i] = (char)(33UL+n/753571UL);
       ++i;
@@ -1131,9 +1154,9 @@ static void sendaprs(double lat0, double long1, double alt0, double course0,
    if (aprsstr_Length(mycall, 100ul)>=3UL) {
       if (useaxudp) {
          aprsstr_mon2raw(b, 201ul, raw, 361ul, &rp0);
-         if (rp0>0L) sendudp(raw, 361ul, rp0);
+         if (rp0>0L) sendudp(raw, 361ul, rp0, ip, port);
       }
-      else sendudp(b, 201ul, (long)(aprsstr_Length(b, 201ul)+1UL));
+      else sendudp(b, 201ul, (long)(aprsstr_Length(b, 201ul)+1UL), ip, port);
    }
    if (verb) {
       osi_WrFixed((float)lat0, 6L, 10UL);
@@ -1194,12 +1217,15 @@ extern int main(int argc, char **argv)
    btime0 = 180UL;
    btimedrive = 15UL;
    drivekm = 4UL;
+   btimeN = 0UL;
    comintval = 5UL;
    comcnt = 0UL;
    btime = 0UL;
    msgtyp = 6UL;
    toport = 9002UL;
    ipnum = 2130706433UL;
+   toport2 = 0UL;
+   ipnum2 = 0UL;
    useaxudp = 1;
    Parms();
    if (aprsstr_Length(mycall, 100ul)<3UL) {
@@ -1243,10 +1269,19 @@ extern int main(int argc, char **argv)
                            if (btime==0UL) {
                               sendaprs(lat, long0, alt, course, speed,
                 comptyp, withspeed, withalti && altok, withdao, comcnt==0UL,
-                comment0, 100ul);
+                comment0, 100ul, 0, ipnum, toport);
                               ++comcnt;
                               if (comcnt>=comintval) {
                                  comcnt = 0UL;
+                              }
+                           }
+                           if (toport2>0UL) {
+                              /* second (fast) beacon to map */
+                              ++btimeN;
+                              if (btimeN>=2UL) {
+                                 sendaprs(lat, long0, alt, course, speed,
+                0UL, 1, altok, 1, 0, "", 1ul, 1, ipnum2, toport2);
+                                 btimeN = 0UL;
                               }
                            }
                            altok = 0;

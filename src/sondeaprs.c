@@ -5,7 +5,6 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
-/* "@(#)sondeaprs.c Aug  9 23:50:09 2015" */
 
 
 #define X2C_int32
@@ -36,7 +35,6 @@
 #include "Storage.h"
 #endif
 
-char sondeaprs_mycall[100];
 char sondeaprs_via[100];
 char sondeaprs_destcall[100];
 char sondeaprs_objname[100];
@@ -788,7 +786,7 @@ static void WrDeg(double la, double lo)
 static void show(struct DATLINE d)
 {
    char s[31];
-   osi_WrFixed((float)d.hpa, 1L, 12UL);
+   osi_WrFixed((float)d.hpa, 1L, 6UL);
    InOut_WriteString("hPa ", 5ul);
    osi_WrFixed((float)d.temp, 1L, 5UL);
    InOut_WriteString("C ", 3ul);
@@ -805,8 +803,6 @@ static void show(struct DATLINE d)
    InOut_WriteInt((long)X2C_TRUNCI(d.alt,X2C_min_longint,X2C_max_longint),
                 1UL);
    InOut_WriteString("m ", 3ul);
-   osi_WrFixed((float)d.climb0, 1L, 5UL);
-   InOut_WriteString("m/s ", 5ul);
    osi_WrFixed((float)d.clb, 1L, 5UL);
    InOut_WriteString("m/s ", 5ul);
    aprsstr_TimeToStr(d.time0, s, 31ul);
@@ -961,10 +957,12 @@ static pCONTEXT findcontext(char n[], unsigned long n_len, unsigned long t)
 
 extern void sondeaprs_senddata(double lat, double long0, double alt,
                 double speed, double dir, double clb, double hp, double hyg,
-                double temp, double mhz, double hrms, double vrms,
-                unsigned long sattime, unsigned long uptime, char objname[],
+                double temp, double ozon, double otemp, double mhz,
+                double hrms, double vrms, unsigned long sattime,
+                unsigned long uptime, char objname[],
                 unsigned long objname_len, unsigned long almanachage,
-                unsigned long goodsats)
+                unsigned long goodsats, char usercall[],
+                unsigned long usercall_len)
 {
    unsigned char e;
    pCONTEXT ct;
@@ -974,7 +972,7 @@ extern void sondeaprs_senddata(double lat, double long0, double alt,
    unsigned long bt;
    struct CONTEXT * anonym;
    X2C_PCOPY((void **)&objname,objname_len);
-   if (aprsstr_Length(sondeaprs_mycall, 100ul)<3UL) {
+   if (aprsstr_Length(usercall, usercall_len)<3UL) {
       osi_WrStrLn("no tx witout <mycall>", 22ul);
       goto label;
    }
@@ -1011,7 +1009,7 @@ extern void sondeaprs_senddata(double lat, double long0, double alt,
             InOut_WriteString(" AlmAge ", 9ul);
             osi_WrFixed((float)(X2C_DIVL((double)almanachage,3600.0)), 1L,
                 3UL);
-            InOut_WriteString("h ", 3ul);
+            osi_WrStrLn("h ", 3ul);
             for (e = sondeaprs_ePRES;; e++) {
                if (X2C_IN((long)e,10,chk)) {
                   switch ((unsigned)e) {
@@ -1082,12 +1080,21 @@ extern void sondeaprs_senddata(double lat, double long0, double alt,
                aprsstr_Append(s, 101ul, h, 101ul);
                aprsstr_Append(s, 101ul, "%", 2ul);
             }
+            if (ozon>0.1) {
+               aprsstr_Append(s, 101ul, " o3=", 5ul);
+               aprsstr_FixToStr((float)ozon, 2UL, h, 101ul);
+               aprsstr_Append(s, 101ul, h, 101ul);
+               aprsstr_Append(s, 101ul, "mPa ti=", 8ul);
+               aprsstr_FixToStr((float)otemp, 2UL, h, 101ul);
+               aprsstr_Append(s, 101ul, h, 101ul);
+               aprsstr_Append(s, 101ul, "C", 2ul);
+            }
             aprsstr_Append(s, 101ul, " ", 2ul);
             aprsstr_FixToStr((float)mhz, 3UL, h, 101ul);
             aprsstr_Append(s, 101ul, h, 101ul);
             aprsstr_Append(s, 101ul, "MHz", 4ul);
             sendaprs(0UL, 0UL, sondeaprs_dao, anonym->dat[0U].time0, uptime,
-                sondeaprs_mycall, 100ul, sondeaprs_destcall, 100ul,
+                usercall, usercall_len, sondeaprs_destcall, 100ul,
                 sondeaprs_via, 100ul, sondeaprs_sym, 2ul, objname,
                 objname_len, anonym->dat[0U].lat, anonym->dat[0U].long0,
                 anonym->dat[0U].alt,
@@ -1117,7 +1124,6 @@ extern void sondeaprs_BEGIN(void)
    aprsstr_BEGIN();
    contexts = 0;
    sondeaprs_udpsock = -1L;
-   sondeaprs_mycall[0UL] = 0;
    sondeaprs_commentfn[0UL] = 0;
    strncpy(sondeaprs_destcall,"APLWS2",100u);
    sondeaprs_via[0UL] = 0;
