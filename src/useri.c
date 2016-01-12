@@ -1235,7 +1235,10 @@ extern void useri_saveconfig(void)
    unsigned long n;
    char c;
    unsigned long tmp;
-   aprstext_postostr(aprsdecode_click.markpos, '3', h, 1000ul);
+   if (aprsdecode_click.marktime==0UL) {
+      aprstext_postostr(aprsdecode_click.markpos, '3', h, 1000ul);
+   }
+   else h[0] = 0;
    useri_AddConfLine(useri_fMARKPOS, 1U, h, 1000ul);
    aprsstr_cleanfilename(aprsdecode_lums.configfn, 257ul);
    /*
@@ -3980,7 +3983,7 @@ static void helpmenu(void)
    newmenu(&menu, 150UL, aprsdecode_lums.fontysize+7UL, 3UL, useri_bTRANSP);
    /*  addline(menu, "Shortcuts", CMDSHORTCUTLIST, MINH*6); */
    addline(menu, "Helptext", 9ul, "\305", 2ul, 610UL);
-   addline(menu, "aprsmap(cu) 0.58 by OE5DXL ", 28ul, " ", 2ul, 605UL);
+   addline(menu, "aprsmap(cu) 0.59 by OE5DXL ", 28ul, " ", 2ul, 605UL);
    setunderbar(menu, 37L);
    menu->ysize = menu->oldknob*menu->yknob;
    menu->oldknob = 0UL;

@@ -58,7 +58,7 @@
 #define aprsdecode_MAXMULTILINES 40
 /* AE5PL limits to 23 multiline elements */
 
-#define aprsdecode_VERS "aprsmap(cu) 0.58"
+#define aprsdecode_VERS "aprsmap(cu) 0.59"
 
 typedef char aprsdecode_MONCALL[9];
 
@@ -245,6 +245,10 @@ struct aprsdecode_OPHIST {
    char poligon;
 };
 
+enum aprsdecode_STORM {aprsdecode_WXNOWX, aprsdecode_WXNORMAL,
+                aprsdecode_WXTS, aprsdecode_WXHC, aprsdecode_WXTD};
+
+
 struct aprsdecode_WX;
 
 
@@ -258,6 +262,11 @@ struct aprsdecode_WX {
    float raintoday;
    float lum;
    float sievert;
+   unsigned char storm;
+   float sustaind;
+   float radiushurr;
+   float radiusstorm;
+   float wholegale;
 };
 
 enum aprsdecode_TYPES {aprsdecode_UNKNOWN, aprsdecode_MICE, aprsdecode_POS,

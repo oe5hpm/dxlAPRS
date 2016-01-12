@@ -765,11 +765,19 @@ static void changecolor(aprsdecode_pOPHIST op)
    }
 } /* end changecolor() */
 
-/*
-PROCEDURE wrtime(t:TIME);
-VAR h:ARRAY[0..100] OF CHAR;
-BEGIN  DateToStr(t,h); WrStr(h) END wrtime;
-*/
+
+static char isvis(const unsigned char vismask)
+{
+   struct aprsdecode_OPHIST * anonym;
+   { /* with */
+      struct aprsdecode_OPHIST * anonym = aprsdecode_click.ops;
+      return (((anonym->drawhints&vismask)!=0U && anonym->sym.tab!='\001')
+                && maptool_vistime(anonym->lasttime))
+                && (aprsdecode_lums.wxcol==0 || anonym->lastinftyp>=100U && anonym->temptime+3600UL>aprsdecode_systime)
+                ;
+   }
+} /* end isvis() */
+
 #define aprsmap_MAXDIST 5.E+5
 
 #define aprsmap_MINWPDIST 9.0
@@ -792,10 +800,7 @@ static void tracks(maptool_pIMAGE img, aprsdecode_pOPHIST op,
    aprsdecode_click.ops = op;
    if (!highlight0) aprsdecode_click.typ = aprsdecode_tTRACK;
    while (aprsdecode_click.ops) {
-      if ((((((aprsdecode_click.ops->drawhints&0x18U)
-                !=0U && (aprsdecode_click.ops->lastinftyp>=100U || aprsdecode_lums.wxcol==0)
-                ) && aprsdecode_click.ops->trackcol<58)
-                && aprsdecode_click.ops->sym.tab!='\001')
+      if (((isvis(0x18U) && aprsdecode_click.ops->trackcol<58)
                 && aprsdecode_click.ops->areasymb.typ==0)
                 && !aprsdecode_click.ops->poligon) {
          /* make a random track color */
@@ -854,6 +859,51 @@ static void tracks(maptool_pIMAGE img, aprsdecode_pOPHIST op,
    }
 } /* end tracks() */
 
+
+static void stormcicle(maptool_pIMAGE image0, struct aprspos_POSITION center,
+                 float hurr, float storm, float whole, unsigned long lig)
+{
+   struct aprsdecode_AREASYMB asymb;
+   asymb.dpos.long0 = 0.0f;
+   if (hurr!=0.0f) {
+      asymb.typ = '5'; /* circle */
+      asymb.color = 4U;
+      asymb.dpos.lat = hurr*2.5274112897407E-4f;
+      maptool_drawareasym(image0, center, asymb, lig);
+   }
+   if (storm!=0.0f) {
+      asymb.typ = '5'; /* circle */
+      asymb.color = 1U;
+      asymb.dpos.lat = storm*2.5274112897407E-4f;
+      maptool_drawareasym(image0, center, asymb, lig);
+   }
+   if (whole!=0.0f) {
+      asymb.typ = '0'; /* circle */
+      asymb.color = 0U;
+      asymb.dpos.lat = whole*2.5274112897407E-4f;
+      maptool_drawareasym(image0, center, asymb, lig);
+   }
+} /* end stormcicle() */
+
+
+static void tolastframe(aprsdecode_pFRAMEHIST * pfm)
+{
+   if (*pfm==0) {
+      *pfm = aprsdecode_click.ops->frames;
+      if (*pfm) while ((*pfm)->next) *pfm = (*pfm)->next;
+   }
+} /* end tolastframe() */
+
+/*
+PROCEDURE isvis():BOOLEAN;
+BEGIN
+  WITH click.ops^ DO
+    RETURN (MARKED IN drawhints) & (sym.tab<>DELETSYM) & vistime(lasttime)
+    & ((lums.wxcol=0C) OR (lastinftyp>=100) & (temptime+SHOWTEMPWIND>systime)
+                )
+  END;
+END isvis;
+*/
 #define aprsmap_HOVERDIST 64
 
 
@@ -884,13 +934,9 @@ static void symbols(aprsdecode_pOPHIST op, char objects, char highlight0,
    }
    else pfm = 0;
    while (aprsdecode_click.ops) {
-      if ((((((0x8U & aprsdecode_click.ops->drawhints)
-                && ((0x2U & aprsdecode_click.ops->drawhints)!=0)==objects)
-                && aprsdecode_click.ops->sym.tab!='\001')
-                && maptool_mapxy(aprsdecode_click.ops->lastpos, &x,
-                &y)>=0L) && maptool_vistime(aprsdecode_click.ops->lasttime))
-                && (aprsdecode_click.ops->lastinftyp>=100U || aprsdecode_lums.wxcol==0)
-                ) {
+      if ((isvis(0x8U) && ((0x2U & aprsdecode_click.ops->drawhints)!=0)
+                ==objects) && maptool_mapxy(aprsdecode_click.ops->lastpos,
+                &x, &y)>=0L) {
          hd = (x-hoverx)*(x-hoverx)+(y-hovery)*(y-hovery);
                 /* dist mouse to symbol */
          if (hd<hdmin) {
@@ -909,16 +955,17 @@ static void symbols(aprsdecode_pOPHIST op, char objects, char highlight0,
          if (objects) lig = (lig*(unsigned long)aprsdecode_lums.obj)/1024UL;
          else lig = (lig*(unsigned long)aprsdecode_lums.sym)/1024UL;
          if (aprsdecode_click.ops->areasymb.typ) {
-            maptool_drawareasym(image, aprsdecode_click.ops->lastpos,
+            if (pfm==0) {
+               maptool_drawareasym(image, aprsdecode_click.ops->lastpos,
                 aprsdecode_click.ops->areasymb, lig);
+            }
+            else if (aprsdecode_Decode(pfm->vardat->raw, 500ul, &dat)>=0L) {
+               maptool_drawareasym(image, dat.pos, dat.areasymb, lig);
+            }
          }
          else if (aprsdecode_click.ops->poligon) {
-            aprsdecode_click.pf = aprsdecode_click.ops->frames;
-            while (aprsdecode_click.pf!=pfm && aprsdecode_click.pf->next) {
-               aprsdecode_click.pf = aprsdecode_click.pf->next;
-            }
-            if (aprsdecode_Decode(aprsdecode_click.pf->vardat->raw, 500ul,
-                &dat)>=0L) {
+            tolastframe(&pfm);
+            if (pfm && aprsdecode_Decode(pfm->vardat->raw, 500ul, &dat)>=0L) {
                maptool_drawpoligon(image, dat.pos, dat.multiline, dat.symt,
                 dat.sym, lig);
             }
@@ -927,6 +974,15 @@ static void symbols(aprsdecode_pOPHIST op, char objects, char highlight0,
             maptool_drawsym(image, aprsdecode_click.ops->sym.tab,
                 aprsdecode_click.ops->sym.pic,
                 (0x1U & aprsdecode_click.ops->drawhints)!=0, x, y, lig);
+            if (aprsdecode_click.ops->sym.pic=='@') {
+               /* storm circles */
+               tolastframe(&pfm);
+               if ((pfm && aprsdecode_Decode(pfm->vardat->raw, 500ul,
+                &dat)>=0L) && dat.wx.storm>aprsdecode_WXNORMAL) {
+                  stormcicle(image, dat.pos, dat.wx.radiushurr,
+                dat.wx.radiusstorm, dat.wx.wholegale, lig);
+               }
+            }
          }
          if (aprsdecode_click.ops->lastkmh>0) {
             if (aprsdecode_click.ops->lastinftyp>=10U && aprsdecode_click.ops->lastinftyp<100U)
@@ -988,14 +1044,9 @@ static void text(aprsdecode_pOPHIST op, char yesno, char objmove,
    useri_ColConfset(&colo, useri_fCOLOBJTEXT);
    while (aprsdecode_click.ops) {
       object = (0x2U & aprsdecode_click.ops->drawhints)!=0;
-      if (((((((0x8U & aprsdecode_click.ops->drawhints)
-                && aprsdecode_click.ops->sym.tab!='\001')
-                && (aprsdecode_click.ops->lastinftyp>=100U || aprsdecode_lums.wxcol==0)
-                ) && (objmove && object==yesno || !objmove && moving(aprsdecode_click.ops)
-                ==yesno)) && maptool_vistime(aprsdecode_click.ops->lasttime))
-                 && (aprsdecode_click.ops->lastinftyp>=100U || aprsdecode_lums.wxcol==0)
-                ) && maptool_mapxy(aprsdecode_click.ops->lastpos, &x,
-                &y)>=0L) {
+      if ((isvis(0x8U) && (objmove && object==yesno || !objmove && moving(aprsdecode_click.ops)
+                ==yesno)) && maptool_mapxy(aprsdecode_click.ops->lastpos, &x,
+                 &y)>=0L) {
          lig = (fade(aprsdecode_click.ops->lasttime,
                 aprsdecode_click.ops)*lumtext)/256UL;
          if (object) {
@@ -3946,6 +3997,7 @@ static void animate(const aprsdecode_MONCALL singlecall, unsigned long step,
    struct aprspos_POSITION * anonym1;
    /* interpolate areasymbol form */
    struct aprspos_POSITION * anonym2;
+   struct aprspos_POSITION * anonym3;
    aprsdecode_MONCALL tmp;
    X2C_PCOPY((void **)&tofile,tofile_len);
    closeradio();
@@ -4149,6 +4201,24 @@ static void animate(const aprsdecode_MONCALL singlecall, unsigned long step,
                      else {
                         maptool_drawsym(rfimg, op->sym.tab, op->sym.pic, dir,
                  x, y, (unsigned long)X2C_DIV(aprsdecode_lums.sym,4L));
+                        if (op->sym.pic=='@'
+                && aprsdecode_Decode(pf->vardat->raw, 500ul, &dat)>=0L) {
+                           if (itime>0.0f && aprsdecode_Decode(pf1->vardat->raw,
+                 500ul, &dat1)>=0L) {
+                              /* interpolate storm areas */
+                              { /* with */
+                                 struct aprspos_POSITION * anonym3 = &dat.areasymb.dpos;
+                
+                                 anonym3->lat = anonym3->lat*iitime+dat1.areasymb.dpos.lat*itime;
+                                 anonym3->long0 = anonym3->long0*iitime+dat1.areasymb.dpos.long0*itime;
+                              }
+                              stormcicle(rfimg, ipos,
+                dat.wx.radiushurr*iitime+dat1.wx.radiushurr*itime,
+                dat.wx.radiusstorm*iitime+dat1.wx.radiusstorm*itime,
+                dat.wx.wholegale*iitime+dat1.wx.wholegale*itime,
+                (unsigned long)X2C_DIV(aprsdecode_lums.sym,4L));
+                           }
+                        }
                      }
                      if (useri_configon(useri_fKMH)
                 && aprsdecode_Decode(pf->vardat->raw, 500ul, &dat)>=0L) {

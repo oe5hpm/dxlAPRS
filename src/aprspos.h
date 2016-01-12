@@ -21,8 +21,13 @@
 #define aprspos_FEET 0.3048
 
 #define aprspos_KNOTS 1.852
+/* nautic miles */
 
 #define aprspos_WKNOTS 1.609
+/* wx knots */
+
+#define aprspos_SKNOTS 1.609
+/* stormdata knots */
 
 #define aprspos_ENCODEGPS "g"
 

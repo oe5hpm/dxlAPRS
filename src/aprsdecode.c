@@ -289,17 +289,6 @@ extern unsigned long aprsdecode_trunc(float r)
    return aprsdecode_trunc_ret;
 } /* end trunc() */
 
-/*
-PROCEDURE trunc(r:REAL):CARDINAL;
-VAR n:CARDINAL;
-BEGIN
-WrStrLn(" t1 ");
-  IF r<=0.0 THEN n:=0 ELSIF r>=MAX(INTEGER) THEN n:=MAX(INTEGER)
-                ELSE n:=TRUNC(r) END;
-WrStrLn(" t2 ");
-  RETURN n
-END trunc;
-*/
 
 extern float aprsdecode_floor(float r)
 {
@@ -326,7 +315,6 @@ extern void aprsdecode_posinval(struct aprspos_POSITION * pos)
 static char Watchclock(unsigned long * t, unsigned long intervall)
 {
    unsigned long tn;
-   /*WrInt(t, 10); WrInt(intervall, 10); WrLn; */
    if (intervall>0UL || *t==0UL) {
       /* send once */
       tn = aprsdecode_realtime;
@@ -1602,7 +1590,7 @@ static void beaconmacros(char s[], unsigned long s_len, const char path[],
             }
             else if (s[i]=='\\') aprsstr_Append(ns, 256ul, "\\\\", 3ul);
             else if (s[i]=='v') {
-               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.58", 17ul);
+               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.59", 17ul);
             }
             else if (s[i]=='l') {
                if (aprstext_getmypos(&pos)) {
@@ -1663,15 +1651,6 @@ static void BuildNetBeacon(char h[], unsigned long h_len)
    aprsstr_Append(h, h_len, h2, 301ul);
 } /* end BuildNetBeacon() */
 
-/*
-PROCEDURE Testbeacon(b:ARRAY OF CHAR):BOOLEAN;
-VAR dat:DAT;
-BEGIN
-  IF (b[0]=0C) OR (Decode(b, dat)<0) THEN RETURN FALSE END;
-  IF dat.symt=0C THEN xerrmsg("Beacon: wrong Symbol"); RETURN FALSE END;
-  RETURN TRUE
-END Testbeacon;
-*/
 
 static void SendNetBeacon(aprsdecode_pTCPSOCK cp,
                 const aprsdecode_FRAMEBUF b, char manual, char errtxt[],
@@ -1701,7 +1680,8 @@ static void SendNetBeacon(aprsdecode_pTCPSOCK cp,
 } /* end SendNetBeacon() */
 
 
-static void SendNet(aprsdecode_pTCPSOCK cp, const char data[],
+static void SendNet(aprsdecode_pTCPSOCK cp, char mycall[],
+                unsigned long mycall_len, const char data[],
                 unsigned long data_len, char manual, char errtxt[],
                 unsigned long errtxt_len)
 /* make net header append string and send */
@@ -1709,6 +1689,7 @@ static void SendNet(aprsdecode_pTCPSOCK cp, const char data[],
    aprsdecode_FRAMEBUF s;
    char pass[51];
    char h[51];
+   X2C_PCOPY((void **)&mycall,mycall_len);
    errtxt[0UL] = 0;
    if (!useri_configon(useri_fALLOWNETTX) || !useri_configon(useri_fCONNECT))
                  {
@@ -1716,18 +1697,19 @@ static void SendNet(aprsdecode_pTCPSOCK cp, const char data[],
          aprsstr_Assign(errtxt, errtxt_len,
                 "Net Port not configured to Send", 32ul);
       }
-      return;
+      goto label;
    }
-   useri_confstr(useri_fMYCALL, s, 512ul);
+   if (mycall[0UL]) aprsstr_Assign(s, 512ul, mycall, mycall_len);
+   else useri_confstr(useri_fMYCALL, s, 512ul);
    if (aprsstr_Length(s, 512ul)<3UL) {
       aprsstr_Assign(errtxt, errtxt_len, "netbeacon: no mycall", 21ul);
-      return;
+      goto label;
    }
    useri_confstr(useri_fMSGNETDEST, h, 51ul);
    if (h[0U]==0) {
       aprsstr_Assign(errtxt, errtxt_len, "netbeacon: no destination call",
                 31ul);
-      return;
+      goto label;
    }
    if (manual) {
       useri_confstr(useri_fPW, pass, 51ul);
@@ -1741,6 +1723,8 @@ static void SendNet(aprsdecode_pTCPSOCK cp, const char data[],
    aprsstr_Append(s, 512ul, data, data_len);
    aprsstr_Append(s, 512ul, "\015\012", 3ul);
    SendNetBeacon(cp, s, manual, errtxt, errtxt_len);
+   label:;
+   X2C_PFREE(mycall);
 } /* end SendNet() */
 
 
@@ -1799,7 +1783,7 @@ static void Timebeacon(aprsdecode_pTCPSOCK cp)
             useri_xerrmsg("Netbeacon: too fast", 20ul);
          }
          BuildNetBeacon(h, 512ul);
-         SendNet(cp, h, 512ul, 0, err, 100ul);
+         SendNet(cp, "", 1ul, h, 512ul, 0, err, 100ul);
          useri_xerrmsg(err, 100ul);
       }
       if (cp->lastping>0UL && useri_configon(useri_fALLOWGATE)) sendping(cp);
@@ -1833,11 +1817,16 @@ static void NoWX(struct aprsdecode_WX * wx)
    wx->baro = 1.E+6f;
    wx->lum = 1.E+6f;
    wx->sievert = 1.E+6f;
+   wx->storm = aprsdecode_WXNOWX;
+   wx->sustaind = 0.0f;
+   wx->radiushurr = 0.0f;
+   wx->radiusstorm = 0.0f;
+   wx->wholegale = 0.0f;
 } /* end NoWX() */
 
 
 static void wpar(unsigned long * p, char buf[], unsigned long buf_len,
-                float * v, long dig)
+                float * v, long mindig, long maxdig)
 {
    char empty;
    char dot;
@@ -1856,14 +1845,18 @@ static void wpar(unsigned long * p, char buf[], unsigned long buf_len,
       if (sn && c=='-') {
          div0 = -div0;
          empty = 0;
-         --dig;
+         --mindig;
+         --maxdig;
       }
       else if ((unsigned char)c>='0' && (unsigned char)c<='9') {
-         if (!dot && dig<=0L) break;
+         if (!dot && maxdig<=0L) break;
          x = x*10.0f+(float)((unsigned long)(unsigned char)buf[*p]-48UL);
          if (x>1.E+5f) return;
          if (dot) div0 = div0*0.1f;
-         else --dig;
+         else {
+            --mindig;
+            --maxdig;
+         }
          empty = 0;
       }
       else if (empty) {
@@ -1876,7 +1869,7 @@ static void wpar(unsigned long * p, char buf[], unsigned long buf_len,
       else break;
       sn = 0;
    }
-   if (!empty) *v = x*div0;
+   if (!empty && mindig<=0L) *v = x*div0;
 } /* end wpar() */
 
 
@@ -1911,7 +1904,8 @@ static void wexp(char buf[], unsigned long buf_len, unsigned long * p,
 
 
 static void GetWX(struct aprsdecode_WX * wx, unsigned long * course,
-                unsigned long * speed, char buf[], unsigned long buf_len)
+                unsigned long * speed, char buf[], unsigned long buf_len,
+                char storm)
 {
    float wdir;
    float wwind;
@@ -1921,50 +1915,80 @@ static void GetWX(struct aprsdecode_WX * wx, unsigned long * course,
    wwind = 1.E+6f;
    wdir = 1.E+6f;
    /*  IF buf[p]="_" THEN INC(p, 9) END;     (* positionless wx *) */
-   for (;;) {
-      switch ((unsigned)buf[p]) {
-      case 'g':
-         wpar(&p, buf, buf_len, &wx->gust, 3L);
-         break;
-      case 't':
-         wpar(&p, buf, buf_len, &wx->temp, 3L);
-         break;
-      case 'r':
-         wpar(&p, buf, buf_len, &wx->rain1, 3L);
-         break;
-      case 'p':
-         wpar(&p, buf, buf_len, &wx->rain24, 3L);
-         break;
-      case 'P':
-         wpar(&p, buf, buf_len, &wx->raintoday, 3L);
-         break;
-      case 'h':
-         wpar(&p, buf, buf_len, &wx->hygro, 2L);
-         break;
-      case 'b':
-         wpar(&p, buf, buf_len, &wx->baro, 5L);
-         break;
-      case 'L':
-         wpar(&p, buf, buf_len, &wx->lum, 3L);
-         break;
-      case 'l':
-         wpar(&p, buf, buf_len, &wx->lum, 3L);
-         wx->lum = wx->lum+1000.0f;
-         break;
-      case 'c':
-         wpar(&p, buf, buf_len, &wdir, 3L);
-         break;
-      case 's':
-         wpar(&p, buf, buf_len, &wwind, 3L);
-         break;
-      case 'X':
-         wexp(buf, buf_len, &p, &wx->sievert, 1.E-9f);
-         break;
-      default:;
-         goto loop_exit;
-      } /* end switch */
+   if (storm) {
+      /* storm data */
+      /*4903.50N\07202.75W@088/036/HC/150^200/0980>090&030%040 */
+      if (((buf[0UL]=='/' && buf[3UL]=='/') && buf[7UL]=='^')
+                && buf[11UL]=='/') {
+         ++p;
+         if (buf[1UL]=='T' && buf[2UL]=='S') wx->storm = aprsdecode_WXTS;
+         else if (buf[1UL]=='H' && buf[2UL]=='C') {
+            wx->storm = aprsdecode_WXHC;
+         }
+         else if (buf[1UL]=='T' && buf[2UL]=='D') {
+            wx->storm = aprsdecode_WXTD;
+         }
+         if (wx->storm) {
+            p += 2UL;
+            wpar(&p, buf, buf_len, &wx->sustaind, 3L, 3L);
+            wpar(&p, buf, buf_len, &wx->gust, 3L, 3L);
+            wpar(&p, buf, buf_len, &wx->baro, 4L, 4L);
+            if (buf[p]=='>') wpar(&p, buf, buf_len, &wx->radiushurr, 3L, 3L);
+            if (buf[p]=='&') {
+               wpar(&p, buf, buf_len, &wx->radiusstorm, 3L, 3L);
+            }
+            if (buf[p]=='%') wpar(&p, buf, buf_len, &wx->wholegale, 3L, 3L);
+         }
+      }
    }
-   loop_exit:;
+   else {
+      /* normal wx */
+      for (;;) {
+         switch ((unsigned)buf[p]) {
+         case 'g':
+            wpar(&p, buf, buf_len, &wx->gust, 3L, 3L);
+            break;
+         case 't':
+            wpar(&p, buf, buf_len, &wx->temp, 3L, 3L);
+            break;
+         case 'r':
+            wpar(&p, buf, buf_len, &wx->rain1, 3L, 3L);
+            break;
+         case 'p':
+            wpar(&p, buf, buf_len, &wx->rain24, 3L, 3L);
+            break;
+         case 'P':
+            wpar(&p, buf, buf_len, &wx->raintoday, 3L, 3L);
+            break;
+         case 'h':
+            wpar(&p, buf, buf_len, &wx->hygro, 2L, 3L);
+            break;
+         case 'b':
+            wpar(&p, buf, buf_len, &wx->baro, 5L, 5L);
+            break;
+         case 'L':
+            wpar(&p, buf, buf_len, &wx->lum, 3L, 3L);
+            break;
+         case 'l':
+            wpar(&p, buf, buf_len, &wx->lum, 3L, 3L);
+            wx->lum = wx->lum+1000.0f;
+            break;
+         case 'c':
+            wpar(&p, buf, buf_len, &wdir, 3L, 3L);
+            break;
+         case 's':
+            wpar(&p, buf, buf_len, &wwind, 3L, 3L);
+            break;
+         case 'X':
+            wexp(buf, buf_len, &p, &wx->sievert, 1.E-9f);
+            break;
+         default:;
+            goto loop_exit;
+         } /* end switch */
+      }
+      loop_exit:;
+      wx->storm = aprsdecode_WXNORMAL;
+   }
    wdir = wdir+0.5f;
    if (wdir>=1.0f && wdir<361.0f) *course = aprsdecode_trunc(wdir);
    if (wwind>=0.0f && wwind<1000.0f) *speed = aprsdecode_trunc(wwind);
@@ -1985,11 +2009,6 @@ static char wrlog(const char b[], unsigned long b_len, unsigned long time0,
    char wrlog_ret;
    X2C_PCOPY((void **)&wfn,wfn_len);
    if (wfn[0UL]==0) {
-      /*
-      WrStrLn("--- wfn0");
-      FOR i:=0 TO HIGH(wfn) DO WrInt(ORD(wfn[i]), 4) END;
-      WrLn;
-      */
       wrlog_ret = 0;
       goto label;
    }
@@ -3089,12 +3108,24 @@ extern long aprsdecode_Decode(char buf[], unsigned long buf_len,
          ++i;
       }
    }
-   if (X2C_IN((long)dat->type,12,
-                0xCCU) && dat->sym=='_' || dat->type==aprsdecode_PWETH) {
-      if (dat->type==aprsdecode_PWETH) {
-         aprsstr_Delstr(dat->comment0, 256ul, 0UL, 8UL);
+   if (X2C_IN((long)dat->type,12,0xCCU)) {
+      if (dat->sym=='_' || dat->type==aprsdecode_PWETH) {
+         if (dat->type==aprsdecode_PWETH) {
+            aprsstr_Delstr(dat->comment0, 256ul, 0UL, 8UL);
+         }
+         GetWX(&dat->wx, &dat->course, &dat->speed, dat->comment0, 256ul, 0);
       }
-      GetWX(&dat->wx, &dat->course, &dat->speed, dat->comment0, 256ul);
+      else if (dat->sym=='@') {
+         GetWX(&dat->wx, &dat->course, &dat->speed, dat->comment0, 256ul, 1);
+      }
+      /*
+            IF dat.wx.storm>WXNORMAL THEN
+              dat.areasymb.typ:="5";                      (* circle *)
+              dat.areasymb.color:=5;
+              dat.areasymb.dpos.lat :=0.006;
+              dat.areasymb.dpos.long:=0.0;
+            END;
+      */
       if (dat->course<1UL || dat->course>360UL) dat->course = 0UL;
    }
    return 0L;
@@ -3362,7 +3393,6 @@ static void popupmessage(const char from[], unsigned long from_len,
       }
       pl->next = pm;
    }
-   /*WrInt(nextmsg, 10); WrStrLn("nm"); */
    if (useri_nextmsg==0L) {
       if (useri_configon(useri_fPOPUPMSG)) useri_nextmsg = -cnt;
    }
@@ -3502,22 +3532,7 @@ static char sendtxmsg(unsigned long acknum, const aprsdecode_MONCALL to,
    } /* end for */
    /* make it better */
    if (!rfonly && port=='N') {
-      /*
-          IF configon(fCONNECT) & configon(fALLOWNETTX) THEN 
-            IF SendNet(tcpsocks, s, TRUE) THEN
-              errm[0]:=0C;
-              h:=am; Append(h, "(re)sent to "); Append(h, to);
-                Append(h, " on Net");
-              textautosize(0, 0, 4, 2, "b", h);
-              RETURN TRUE
-      
-            ELSE Assign(errm, am); Append(errm, "not sent");
-                RETURN FALSE END;
-      
-          ELSE Assign(errm, am); Append(errm, "not sent (Netport not configured for tx)");
-                 RETURN FALSE END;
-      */
-      SendNet(aprsdecode_tcpsocks, s, 512ul, 1, errm, errm_len);
+      SendNet(aprsdecode_tcpsocks, "", 1ul, s, 512ul, 1, errm, errm_len);
       if (errm[0UL]) {
          memcpy(h,am,51u);
          aprsstr_Append(h, 51ul, "not sent ", 10ul);
@@ -3534,8 +3549,6 @@ static char sendtxmsg(unsigned long acknum, const aprsdecode_MONCALL to,
       return 1;
    }
    else {
-      /*    ELSE (*Assign(errm, am); Append(errm, "not sent");
-                *) RETURN FALSE END; */
       aprsstr_Assign(errm, errm_len, am, 51ul);
       aprsstr_Append(errm, errm_len, "not sent (delete Msg or open outgoing P\
 ort)", 44ul);
@@ -4538,154 +4551,6 @@ WrStr(op^.call); WrStr(op^.sym.tab);WrFixed(op^.lastpos.lat, 5,10);WrLn;
 */
 } /* end Checktrack() */
 
-/*
-PROCEDURE Checktrack(op:pOPHIST; lastf:pFRAMEHIST);
-VAR frame, f:pFRAMEHIST;
---    v:pVARDAT;
-    apos, last, last2:POSITION;
-
-    starttime:TIME;
-    cmp:BOOLEAN;
---    sum:CARD16;
---    dat        : DAT;
---    duphash               : HASHSET;
-    wridx, new:CARDINAL;
-    index:ARRAY[0..16383] OF CARD16;
-    table:ARRAY[0..4095] OF RECORD
-      wayp:pFRAMEHIST;
-      next:CARD16;
-    END;
-
-
-  PROCEDURE lookup(waypoint:pFRAMEHIST):BOOLEAN;
-
-  TYPE pHASH=POINTER TO ARRAY[0..7] OF CHAR;
-
-  VAR sum: CARDINAL;
-    ip, jp, ojp:CARD16;
-    dat, dat1:DAT;
-    phash:pHASH;
- 
-  BEGIN
-    phash:=CAST(pHASH, ADR(waypoint^.vardat^.pos));
-    sum:=Hash(phash^, 0, SIZE(phash^)) MOD (HIGH(index)+1);
-    ip:=index[sum];
-WrInt(sum, 10);WrInt(ip, 10);WrStrLn("=ip");
-    IF ip<>0 THEN                                                  (* starts with 1,
-                 not found *)
-      DEC(ip);
-      jp:=ip;
-      dat1.symcall[0]:=0C;
-      LOOP
-WrStr(".");
-        WITH table[jp].wayp^ DO 
-          IF (vardat=waypoint^.vardat)
-          OR (vardat^.pos.lat=waypoint^.vardat^.pos.lat)
-          & (vardat^.pos.long=waypoint^.vardat^.pos.long)
-          & (Decode(vardat^.raw, dat)>=0)
-          & ((dat1.symcall[0]<>0C) OR (Decode(waypoint^.vardat^.raw,
-                dat1)>=0))  
-          & (dat1.speed=dat.speed) & (dat1.course=dat.course)
-                & (dat1.altitude=dat.altitude) THEN
-            IF time+lums.dupemaxtime>waypoint^.time THEN RETURN TRUE ELSE EXIT END;
-
-          END;
-        END;
-        ojp:=jp; 
-        jp:=table[jp].next;
-        IF (jp>HIGH(table)) OR ((ojp<jp)=((ojp<wridx)=(jp<wridx))) THEN
-WrInt(ORD(jp>HIGH(table)), 2); WrInt(ojp, 6); WrInt(jp, 6); WrInt(wridx, 6);
-                WrStr("o");
-          EXIT
-
-        END;
-      END;
-WrStrLn("/");
-    ELSE ip:=MAX(CARD16) END;
-    index[sum]:=wridx+1;
-    table[wridx].wayp:=waypoint;
-    table[wridx].next:=ip;
-    wridx:=(wridx+1) MOD (HIGH(table)+1);
-    RETURN FALSE
-  END lookup;
-
-
-
-BEGIN
-
-WrStrLn(op^.call);
-
-  IF lastf<>NIL THEN frame:=lastf^.next; 
-  ELSE 
-    op^.margin0.long:=PI2*0.5;
-    op^.margin0.lat:=-PI2*0.25;
-    op^.margin1.long:=-PI2*0.5;
-    op^.margin1.lat:=PI2*0.25;
-    frame:=op^.frames;
-    WHILE frame<>NIL DO frame^.vardat^.refcnt:=0; frame:=frame^.next END;
-    frame:=op^.frames;
-    WHILE frame<>NIL DO INC(frame^.vardat^.refcnt); frame:=frame^.next END;
-    frame:=op^.frames;
-  END;
-  IF frame=NIL THEN RETURN END;
-
-  starttime:=frame^.time;                      (* from this waypoint dupes will be set *)
-  f:=op^.frames;
-  WHILE (f<>NIL) & (f^.time+lums.dupemaxtime<starttime) DO f:=f^.next END;
-                (* skip before dupetime *)
-
-  FILL(ADR(index), 0C, SIZE(index));
-  wridx:=0;
-  lastf:=NIL;
-  cmp:=FALSE;
-  posinval(last);
-  posinval(last2);
-  WHILE f<>NIL DO
-    apos:=f^.vardat^.pos;
-    IF posvalid(apos) THEN
-      IF f=frame THEN cmp:=TRUE END;
-                (* from now set dupes *)
-      IF cmp THEN
-        WITH op^ DO
-          IF apos.long<margin0.long THEN margin0.long:=apos.long END;
-          IF apos.long>margin1.long THEN margin1.long:=apos.long END;
-          IF apos.lat >margin0.lat  THEN margin0.lat :=apos.lat  END;
-          IF apos.lat <margin1.lat  THEN margin1.lat :=apos.lat  END;
-        END;
-
---        IF (op^.margin0.long<>op^.margin1.long)
-                OR (op^.margin0.lat<>op^.margin1.lat)
-                THEN   (* moving station *)
-
-        EXCL(f^.nodraw, eDUPE);
-      END;
-      IF lookup(f) & cmp THEN
---WrFixed(apos.lat, 10,5); WrFixed(apos.long, 10,5); WrLn;
-        IF (apos.lat<>last.lat) OR (apos.long<>last.long) THEN
-          IF (apos.lat<>last2.lat) OR (apos.long<>last2.long)
-                THEN INCL(f^.nodraw, eDUPE) END;
-        END;
-
-      END; 
-      IF maxspeed>0.0 THEN timespeed(lastf, apos, f^.time, f^.nodraw) END;
-      IF (f^.nodraw<=ERRSET{eSYMB,eSPEED}
-                ) OR NOT posvalid(op^.lastpos) THEN op^.lastpos:=apos END;
-
-      last2:=last;
-      last:=apos;
-
-
-    ELSE INCL(frame^.nodraw, eNOPOS) END;
-    lastf:=f;
-    f:=f^.next;
-
-  END;
-  joinchunk(op);
-(*
-WrStr(op^.call); WrStr(op^.sym.tab);WrFixed(op^.lastpos.lat, 5,10);WrLn;
-*)
-END Checktrack;
-*/
 
 static char strcmp0(const char a[], unsigned long a_len, const char b[],
                 unsigned long b_len)
@@ -5124,11 +4989,6 @@ extern long aprsdecode_Stoframe(aprsdecode_pOPHIST * optab, char rawbuf[],
       aprsdecode_Checktrack(op, lastf);
       inwindow(op, rawbuf, rawbuf_len);
    }
-   /*WrInt(dat.igatep, 10); WrInt(dat.hbitp, 5);  WrStrLn(rawbuf); */
-   /*IF (dat.igatep>0) & (dat.igatep<=HIGH(dat.viacalls)) */
-   /*THEN framestat(dat.viacalls[dat.igatep], TRUE) END; */
-   /*FOR i:=1 TO dat.hbitp DO framestat(dat.viacalls[i], FALSE) END; */
-   /*WrLn; */
    if (!(frame->nodraw&~0x1U)) aprsdecode_Stoframe_ret = 0L;
    else aprsdecode_Stoframe_ret = -1L;
    label:;
@@ -5136,51 +4996,6 @@ extern long aprsdecode_Stoframe(aprsdecode_pOPHIST * optab, char rawbuf[],
    return aprsdecode_Stoframe_ret;
 } /* end Stoframe() */
 
-/*
-PROCEDURE chkptr(op:pOPHIST);                     (* check database pointer system *)
-VAR
-    frame, f:pFRAMEHIST;
-    v:pVARDAT;
-    c, cl:CARDINAL;
-BEGIN
-  WHILE op<>NIL DO
-    frame:=op^.frames;
-    WHILE frame<>NIL DO EXCL(frame^.nodraw, eNODRAW); frame:=frame^.next;
-                END;
-    frame:=op^.frames;
-
-    IF frame=NIL THEN WrStrLn("op with no frames") END; 
-    LOOP
-      IF frame=NIL THEN EXIT END;
-
-      IF (frame^.next<>NIL) & (frame^.time>frame^.next^.time)
-                THEN WrStrLn("time decreases") END;
-
-      IF NOT (eNODRAW IN frame^.nodraw) THEN 
-        v:=frame^.vardat;
-        f:=frame;
-        c:=0;
-        cl:=0;
-        WHILE f<>NIL DO
-          IF f^.vardat=v THEN 
-            INC(c);
-            IF eNODRAW IN f^.nodraw THEN WrStrLn("double used waypoint") END;
-                  
-            INCL(f^.nodraw, eNODRAW);
-            IF v^.lastref=f THEN cl:=c END;
-          END;
-          f:=f^.next;
-        END;
-        IF cl<>c THEN WrStrLn("lastref not last") END;
-        IF v^.refcnt<>c THEN WrStrLn("refcnt wrong") END;
-      END;
-      frame:=frame^.next;
-
-    END;
-    op:=op^.next;
-  END;
-END chkptr;
-*/
 
 static char locked(aprsdecode_pOPHIST op)
 /* prevent entries in click table from purge */
@@ -5751,18 +5566,6 @@ extern void aprsdecode_tcpclose(aprsdecode_pTCPSOCK w, char fin)
 {
    char h[201];
    struct aprsdecode_TCPSOCK * anonym;
-   /*
-       WHILE txbuf<>NIL DO
-         pb:=txbuf;
-         txbuf:=txbuf^.next;
-   (*
-   WrStrLn("deallocw");
-   *)
-         DEC(debugmem.mon, SIZE(pb^)); DEALLOCATE(pb, SIZE(pb^));
-         IF NOT fin & (txbuf<>NIL) THEN RETURN END;
-   
-       END;
-   */
    { /* with */
       struct aprsdecode_TCPSOCK * anonym = w;
       if ((long)anonym->fd>=0L) osi_CloseSock(anonym->fd);
@@ -5851,7 +5654,7 @@ static char tcpconn(aprsdecode_pTCPSOCK * sockchain, long f)
          aprsstr_Append(h, 512ul, s, 100ul);
       }
       aprsstr_Append(h, 512ul, " vers ", 7ul);
-      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.58", 17ul);
+      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.59", 17ul);
       appfilter(h, 512ul);
       /*    IF filter[0]<>0C THEN Append(h, " filter ");
                 Append(h, filter) END; */
@@ -6047,13 +5850,14 @@ static void rfbeacons(void)
                      useri_xerrmsg(h, 101ul);
                   }
                   if (X2C_CAP(port)=='N') {
+                     /* beacon to net */
                      if (dat.type!=aprsdecode_MICE) {
                         j = aprsstr_InStr(s, 512ul, ":", 2ul);
                         if (j>=0L) {
                            aprsstr_Delstr(s, 512ul, 0UL,
                 (unsigned long)(j+1L)); /* remove rf adress */
-                           SendNet(aprsdecode_tcpsocks, s, 512ul, 1, h,
-                101ul);
+                           SendNet(aprsdecode_tcpsocks, dat.srcall, 9ul, s,
+                512ul, 1, h, 101ul);
                            if (h[0U]) {
                               strncpy(says,"beacon: not sent ",101u);
                               aprsstr_Append(says, 101ul, h, 101ul);

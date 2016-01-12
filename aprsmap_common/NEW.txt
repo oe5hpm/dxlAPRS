@@ -1302,6 +1302,22 @@
 
 
 
+7. 1. 2016 (Ver 0.59) 
+
++ "Storm Data" Auswertung und Flaechen-Darstellung mit interpolierter Animation.
+  (mangels Aktueller Testdaten nach APRS101.pdf in nautischen Meilen 1.609km)
++ Area-, Multiline-, Sturm-Objekte mit "<>" durchsteppen mit zum Wegpunkt gehoerender
+  Flaechendarstellung.
+
+
+
+
+
+
+
+
+
+
 
 
 

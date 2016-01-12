@@ -438,7 +438,7 @@ extern void aprstext_decode(char s[], unsigned long s_len,
       }
       if (dat->type!=aprsdecode_MSG) Errtxt(s, s_len, pf0, pf);
       nl = 1;
-      if (dat->sym=='_') {
+      if (dat->wx.storm==aprsdecode_WXNORMAL) {
          if (dat->type==aprsdecode_OBJ || dat->type==aprsdecode_ITEM) {
             objitem(s, s_len, dat);
          }
@@ -476,7 +476,7 @@ extern void aprstext_decode(char s[], unsigned long s_len,
                nl = 0;
             }
             aprsstr_Append(s, s_len, " Baro:", 7ul);
-            aprsstr_FixToStr(dat->wx.baro*0.1f, 2UL, h, 512ul);
+            aprsstr_FixToStr(dat->wx.baro*0.1f+0.05f, 2UL, h, 512ul);
             aprsstr_Append(s, s_len, h, 512ul);
             aprsstr_Append(s, s_len, "hPa", 4ul);
          }
@@ -513,7 +513,7 @@ extern void aprstext_decode(char s[], unsigned long s_len,
          if (dat->wx.lum!=1.E+6f) {
             if (nl) aprsstr_Append(s, s_len, "\012 ", 3ul);
             aprsstr_Append(s, s_len, " Luminosity:", 13ul);
-            aprsstr_FixToStr(dat->wx.lum, 0UL, h, 512ul);
+            aprsstr_FixToStr(dat->wx.lum+0.5f, 0UL, h, 512ul);
             aprsstr_Append(s, s_len, h, 512ul);
             aprsstr_Append(s, s_len, "W", 2ul);
          }
@@ -522,6 +522,59 @@ extern void aprstext_decode(char s[], unsigned long s_len,
             aprsstr_Append(s, s_len, " Radiation:", 12ul);
             aprstext_sievert2str(dat->wx.sievert, h, 512ul);
             aprsstr_Append(s, s_len, h, 512ul);
+         }
+      }
+      else if (dat->wx.storm>aprsdecode_WXNORMAL) {
+         if (dat->type==aprsdecode_OBJ || dat->type==aprsdecode_ITEM) {
+            objitem(s, s_len, dat);
+         }
+         nl = 0;
+         aprsstr_Append(s, s_len, "\012 ", 3ul);
+         if (dat->wx.storm==aprsdecode_WXTS) {
+            aprsstr_Append(s, s_len, "Tropical Storm", 15ul);
+         }
+         else if (dat->wx.storm==aprsdecode_WXHC) {
+            aprsstr_Append(s, s_len, "Hurricane", 10ul);
+         }
+         else if (dat->wx.storm==aprsdecode_WXTD) {
+            aprsstr_Append(s, s_len, "Tropical Depression", 20ul);
+         }
+         nl = 0;
+         if (dat->wx.gust!=1.E+6f) {
+            aprsstr_Append(s, s_len, " Gust:", 7ul);
+            aprsstr_FixToStr(dat->wx.gust*1.609f, 2UL, h, 512ul);
+            aprsstr_Append(s, s_len, h, 512ul);
+            aprsstr_Append(s, s_len, "km/h", 5ul);
+         }
+         if (dat->wx.sustaind!=0.0f) {
+            aprsstr_Append(s, s_len, " Sustaind Speed:", 17ul);
+            aprsstr_FixToStr(dat->wx.sustaind*1.609f, 2UL, h, 512ul);
+            aprsstr_Append(s, s_len, h, 512ul);
+            aprsstr_Append(s, s_len, "km/h", 5ul);
+         }
+         if (dat->wx.baro!=1.E+6f) {
+            aprsstr_Append(s, s_len, " Baro:", 7ul);
+            aprsstr_FixToStr(dat->wx.baro, 2UL, h, 512ul);
+            aprsstr_Append(s, s_len, h, 512ul);
+            aprsstr_Append(s, s_len, "hPa", 4ul);
+         }
+         if (dat->wx.radiushurr!=0.0f) {
+            aprsstr_Append(s, s_len, " Radius Hurricane Winds:", 25ul);
+            aprsstr_FixToStr(dat->wx.radiushurr*1.609f, 2UL, h, 512ul);
+            aprsstr_Append(s, s_len, h, 512ul);
+            aprsstr_Append(s, s_len, "km", 3ul);
+         }
+         if (dat->wx.radiusstorm!=0.0f) {
+            aprsstr_Append(s, s_len, " Storm Winds:", 14ul);
+            aprsstr_FixToStr(dat->wx.radiusstorm*1.609f, 2UL, h, 512ul);
+            aprsstr_Append(s, s_len, h, 512ul);
+            aprsstr_Append(s, s_len, "km", 3ul);
+         }
+         if (dat->wx.wholegale!=0.0f) {
+            aprsstr_Append(s, s_len, " Whole gale:", 13ul);
+            aprsstr_FixToStr(dat->wx.wholegale*1.609f, 2UL, h, 512ul);
+            aprsstr_Append(s, s_len, h, 512ul);
+            aprsstr_Append(s, s_len, "km", 3ul);
          }
       }
       else if (dat->type==aprsdecode_MSG) {

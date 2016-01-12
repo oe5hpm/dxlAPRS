@@ -3272,7 +3272,7 @@ extern void maptool_drawareasym(maptool_pIMAGE image,
    unsigned long r;
    unsigned long tmp;
    switch ((unsigned)(area.color&7U)) {
-   case 0U: /* we have no black sso make gray */
+   case 0U: /* we have no black so make gray */
       r = 128UL;
       g = 128UL;
       b = 128UL;
