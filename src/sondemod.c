@@ -35,6 +35,9 @@
 #ifndef aprsstr_H_
 #include "aprsstr.h"
 #endif
+#ifndef Storage_H_
+#include "Storage.h"
+#endif
 #ifndef Select_H_
 #include "Select.h"
 #endif
@@ -52,6 +55,10 @@
 /*FROM reedsolomon IMPORT decode, encode, CRC; */
 /*FROM rs IMPORT initialize_ecc, encode_data; */
 /*IMPORT IO; */
+#define sondemod_DAYSEC 86400
+
+#define sondemod_GPSTIMECORR 15
+
 #define sondemod_ADCBUFLEN 4096
 
 #define sondemod_BAUDSAMP 65536
@@ -85,8 +92,16 @@ static char sondemod_EMPTYAUX = '\003';
 #define sondemod_MYLONG 2.2755602787502E-1
 
 #define sondemod_NEWALMAGE 30
+/* every s reread almanach */
+
+#define sondemod_FASTALM 4
+/* reread almanach if old */
 
 typedef char FILENAME[1024];
+
+typedef char OBJNAME[9];
+
+typedef char CALLSSID[11];
 
 enum CHANNELS {sondemod_LEFT, sondemod_RIGHT};
 
@@ -122,8 +137,6 @@ struct CHAN {
    long asynst[10];
 };
 
-typedef char OBJNAME[9];
-
 struct CONTEXT;
 
 
@@ -157,6 +170,39 @@ struct CONTEXT {
    unsigned long framenum;
 };
 
+struct CONTEXTC34;
+
+typedef struct CONTEXTC34 * pCONTEXTC34;
+
+
+struct CONTEXTC34 {
+   pCONTEXTC34 next;
+   OBJNAME name;
+   double clmb;
+   double lat;
+   double lon;
+   double lat1;
+   double lon1;
+   double alt;
+   double speed;
+   double dir;
+   double temp;
+   double dewp;
+   unsigned long lastsent;
+   unsigned long tname;
+   unsigned long gpstime;
+   unsigned long tgpstime;
+   unsigned long tlat;
+   unsigned long tlon;
+   unsigned long tlat1;
+   unsigned long tlon1;
+   unsigned long talt;
+   unsigned long tspeed;
+   unsigned long tdir;
+   unsigned long ttemp;
+   unsigned long tdewp;
+};
+
 static long soundfd;
 
 static long debfd;
@@ -185,6 +231,9 @@ static unsigned long adcbytes;
 
 static unsigned long fragmentsize;
 
+static unsigned long sendquick;
+
+/* 0 send if full calibrated, 1 with mhz, 2 always */
 static unsigned long clock0;
 
 static unsigned long almread;
@@ -228,6 +277,8 @@ static unsigned long lastip;
 static unsigned long lastport;
 
 static char mycall[100];
+
+static pCONTEXTC34 pcontextc;
 
 
 static void Error(char text[], unsigned long text_len)
@@ -446,6 +497,7 @@ static void Parms(void)
    almrequest = 14400UL;
    sondeaprs_verb = 0;
    sondeaprs_verb2 = 0;
+   sendquick = 1UL;
    for (channel = sondemod_LEFT;; channel++) {
       { /* with */
          struct CHAN * anonym = &chan[channel];
@@ -520,6 +572,11 @@ static void Parms(void)
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
             almrequest = cnum*60UL;
          }
+         else if (h[1U]=='p') {
+            Lib_NextArg(h, 1024ul);
+            if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
+            sendquick = cnum;
+         }
          else if (h[1U]=='t') Lib_NextArg(sondeaprs_commentfn, 1025ul);
          else if (h[1U]=='m' || h[1U]=='r') {
             sondeaprs_sendmon = h[1U]!='r';
@@ -587,7 +644,9 @@ static void Parms(void)
          }
          else {
             if (h[1U]=='h') {
-               osi_WrStrLn("sondemod(c) 0.3", 16ul);
+               InOut_WriteString("sondemod(c) 0.4", 16ul);
+               osi_WrStrLn(" multichannel decoder RS92 and SRS-C34 Radiosonde\
+s", 51ul);
                osi_WrStrLn(" -A <meter>     at lower altitude use -B beacon t\
 ime (meter) -A 1000", 69ul);
                osi_WrStrLn(" -a             (internal demod only) abort on so\
@@ -617,6 +676,8 @@ raw file, prefer external", 75ul);
 ause GPS decode time may cause", 78ul);
                osi_WrStrLn("                bad decoding on sound overruns",
                 47ul);
+               osi_WrStrLn(" -p <num>       0 send if weather data ready, 1 i\
+f MHz known, 2 send immediatly (1)", 84ul);
                osi_WrStrLn(" -R <minutes>   request new rinex almanach after \
 minutes if receiving gps (-R 240)", 83ul);
                osi_WrStrLn("                use somewhat like \'getalmd\'-scr\
@@ -635,8 +696,8 @@ le", 52ul);
 at (prefered)", 63ul);
                osi_WrStrLn(" -y <filename>  gps almanach yuma format (DO NOT \
 USE, not exact)", 65ul);
-               osi_WrStrLn("example: sondemod -o 4000 -x almanach.txt -d -A 1\
-500 -B 10 -I OE0AAA -r 127.0.0.1:9001", 87ul);
+               osi_WrStrLn("example: sondemod -o 18000 -x almanach.txt -d -A \
+1500 -B 10 -I OE0AAA -r 127.0.0.1:9001", 88ul);
                X2C_ABORT();
             }
             err = 1;
@@ -928,8 +989,6 @@ static void decodecalib(const char cd[], unsigned long cd_len)
    unsigned long cr;
    unsigned long tmp;
    memset((char *)coeff,(char)0,sizeof(float [256]));
-   /*FOR i:=0 TO HIGH(coeff) DO coeff[i]:=0.0 END; */
-   /*WrStrLn("calib:"); */
    i0 = 64UL;
    for (tmp = 88UL;;) {
       n = (unsigned long)(unsigned char)cd[i0];
@@ -942,28 +1001,6 @@ static void decodecalib(const char cd[], unsigned long cd_len)
       --tmp;
       i0 += 5UL;
    } /* end for */
-/*WrInt(n, 3); WrInt(n DIV 10, 3);  WrInt(n MOD 10, 3);
-                WrFixed(coeff[n], 15, 30); WrStrLn("");  */
-/*
-FOR i:=0 TO 255 DO
---  IF coeff[i]<>0.0 THEN 
-  (*  WrInt(i DIV 10, 1);  WrInt(i MOD 10, 2);*)
-   WrInt(i, 1); WrStr(" ");
-   IF coeff[i]<>0.0 THEN WrFixed(coeff[i], 12, 15) ELSE WrFixed(coeff[i], 0,
-                1) END; WrStr(" ");
---  END;
-  IF i MOD 10=9 THEN WrStrLn("") END;
-END;
-
-WrStrLn("");    
-*/
-/*
-FOR i:=0 TO 511 DO
- WrHex(ORD(cd[i]), 3);
- IF i MOD 16=15 THEN WrStrLn("") END;
-END;
-WrStrLn("");
-*/
 } /* end decodecalib() */
 
 
@@ -1204,7 +1241,6 @@ static void calibfn(char obj[], unsigned long obj_len, char fn[],
 static void docalib(const char sf[], unsigned long sf_len, char objname0[],
                 unsigned long objname_len, struct CONTEXT * cont,
                 float * mhz0, unsigned long * frameno)
-/*; VAR sameid:BOOLEAN*/
 {
    unsigned long idx;
    unsigned long j;
@@ -1212,6 +1248,7 @@ static void docalib(const char sf[], unsigned long sf_len, char objname0[],
    char fn[1024];
    long fd;
    char new0;
+   *mhz0 = 0.0f;
    new0 = 0;
    i0 = 0UL;
    for (j = 2UL; j<=11UL; j++) {
@@ -1300,6 +1337,18 @@ static void docalib(const char sf[], unsigned long sf_len, char objname0[],
 } /* end docalib() */
 
 
+static unsigned long calperc(unsigned long cs)
+{
+   unsigned long n;
+   unsigned long i0;
+   n = 0UL;
+   for (i0 = 0UL; i0<=31UL; i0++) {
+      if (X2C_IN(i0,32,cs)) ++n;
+   } /* end for */
+   return (n*100UL)/32UL;
+} /* end calperc() */
+
+
 static void WrRinexfn(unsigned long t)
 {
    char fn[31];
@@ -1334,10 +1383,10 @@ static void getcall(const char b[], unsigned long b_len, char call[],
    unsigned long i0;
    char tmp;
    call[0UL] = 0;
-   if ((unsigned long)(unsigned char)b[4UL]<=15UL) {
-      n = (unsigned long)(unsigned char)b[0UL]*16777216UL+(unsigned long)
+   n = (unsigned long)(unsigned char)b[0UL]*16777216UL+(unsigned long)
                 (unsigned char)b[1UL]*65536UL+(unsigned long)(unsigned char)
                 b[2UL]*256UL+(unsigned long)(unsigned char)b[3UL];
+   if (n>0UL && (unsigned long)(unsigned char)b[4UL]<=15UL) {
       for (i0 = 5UL;; i0--) {
          c = n%37UL;
          if (c==0UL) call[i0] = 0;
@@ -1382,7 +1431,7 @@ static void decodeframe(unsigned char m, unsigned long ip,
    char b[256];
    char crdone;
    char calok;
-   char usercall[11];
+   CALLSSID usercall;
    struct CONTEXT * anonym;
    struct CONTEXT * anonym0;
    struct CONTEXT * anonym1;
@@ -1481,6 +1530,7 @@ static void decodeframe(unsigned char m, unsigned long ip,
    } /* end for */
    calok = 0;
    getcall(b, 256ul, usercall, 11ul);
+   if (usercall[0U]==0) aprsstr_Assign(usercall, 11ul, mycall, 100ul);
    if (sondeaprs_verb && fromport>0UL) {
       InOut_WriteString("UDP:", 5ul);
       aprsstr_ipv4tostr(ip, bb, 256ul);
@@ -1494,11 +1544,11 @@ static void decodeframe(unsigned char m, unsigned long ip,
       }
       osi_WrStrLn("", 1ul);
    }
-   if (usercall[0U]==0) aprsstr_Assign(usercall, 11ul, mycall, 100ul);
    p = 6UL;
    crdone = 1;
    context.ozontemp = 0.0;
    context.ozon = 0.0;
+   mhz = 0.0f;
    for (;;) {
       typ = b[p];
       if (typ=='e') {
@@ -1632,6 +1682,10 @@ static void decodeframe(unsigned char m, unsigned long ip,
                   else if (almanachage>0UL) {
                      InOut_WriteInt((long)(almanachage/60UL), 10UL);
                      osi_WrStrLn(" Min (almanach too old)", 24ul);
+                     if (almread+4UL<=systime) {
+                        almread = systime-30UL;
+                /* look often for new almanach */
+                     }
                   }
                }
                crdone = 1;
@@ -1672,32 +1726,321 @@ static void decodeframe(unsigned char m, unsigned long ip,
    }
    loop_exit:;
    if (((((context.posok && calok) && almread+60UL>systime)
-                && (context.mesok && context.calibok==0xFFFFFFFFUL || sondeaprs_nofilter)
-                ) && context.lat!=0.0) && context.long0!=0.0) {
+                && (((sendquick==2UL || sondeaprs_nofilter)
+                || context.calibok==0xFFFFFFFFUL) || (context.calibok&0x1UL)
+                !=0UL && sendquick==1UL)) && context.lat!=0.0)
+                && context.long0!=0.0) {
       { /* with */
          struct CONTEXT * anonym1 = &context;
-         if (anonym1->calibok!=0xFFFFFFFFUL) {
+         if (!context.mesok || anonym1->calibok!=0xFFFFFFFFUL) {
             anonym1->hp = 0.0;
             anonym1->hyg = 0.0;
-            anonym1->temp = 0.0;
-            mhz = 0.0f;
+            anonym1->temp = (double)X2C_max_real;
          }
          sondeaprs_senddata(anonym1->lat, anonym1->long0, anonym1->heig,
                 anonym1->speed, anonym1->dir, anonym1->climb, anonym1->hp,
                 anonym1->hyg, anonym1->temp, anonym1->ozon,
-                anonym1->ozontemp, (double)mhz, (double)anonym1->hrmsc,
-                (double)anonym1->vrmsc, (anonym1->timems/1000UL)%86400UL,
-                frameno, objname, 9ul, almanachage, anonym1->goodsats,
-                usercall, 11ul);
+                anonym1->ozontemp, (double)X2C_max_real, (double)mhz,
+                (double)anonym1->hrmsc, (double)anonym1->vrmsc,
+                (anonym1->timems/1000UL+86385UL)%86400UL, frameno, objname,
+                9ul, almanachage, anonym1->goodsats, usercall, 11ul,
+                calperc(context.calibok));
          anonym1->framesent = 1;
       }
       crdone = 1;
    }
    if (sondeaprs_verb) {
       if (!crdone) osi_WrStrLn("", 1ul);
-      osi_WrStrLn("---------------", 16ul);
+      osi_WrStrLn("------------", 13ul);
    }
 } /* end decodeframe() */
+
+
+static double latlong(unsigned long val)
+{
+   double hf;
+   double hr;
+   hr = (double)(X2C_DIVR((float)(val%0x080000000UL),1.E+6f));
+   hf = (double)(float)(unsigned long)X2C_TRUNCC(hr,0UL,X2C_max_longcard);
+   hr = hf+X2C_DIVL(hr-hf,0.6);
+   if (val>=0x080000000UL) hr = -hr;
+   return hr;
+} /* end latlong() */
+
+#define sondemod_MAXEXTEND 4
+/* limit extrapolation range */
+
+#define sondemod_MAXTIMESPAN 10
+
+
+static double extrapolate(double yold, double y, unsigned long told,
+                unsigned long t, unsigned long systime0, char * good)
+{
+   double k;
+   *good = 1;
+   if (t>=systime0) return y;
+   if (told<t) {
+      k = (double)(X2C_DIVR((float)(systime0-told),(float)(t-told)));
+      if (k>4.0 || told+10UL<systime0) *good = 0;
+      return yold+(y-yold)*k;
+   }
+   *good = 0;
+   return y;
+} /* end extrapolate() */
+
+
+static void decodec34(const char rxb[], unsigned long rxb_len,
+                unsigned long ip, unsigned long fromport)
+{
+   OBJNAME nam;
+   char cb[10];
+   char s[1001];
+   CALLSSID usercall;
+   unsigned long val;
+   unsigned long sum2;
+   unsigned long sum1;
+   unsigned long j;
+   unsigned long i0;
+   double exlat;
+   double exlon;
+   double hr;
+   pCONTEXTC34 pc;
+   double stemp;
+   char latok;
+   char lonok;
+   char posok;
+   struct CONTEXTC34 * anonym;
+   if (rxb[0UL]!='S' || rxb[1UL]!='C') return;
+   /* no srsc34 frame */
+   i0 = 0UL;
+   do {
+      nam[i0] = rxb[i0];
+      ++i0;
+   } while (i0<=8UL);
+   if (nam[0U]==0) return;
+   /* wait for id */
+   ++i0;
+   j = 0UL;
+   do {
+      cb[j] = rxb[i0];
+      ++i0;
+      ++j;
+   } while (j<=4UL);
+   getcall(cb, 10ul, usercall, 11ul);
+   if (usercall[0U]==0) aprsstr_Assign(usercall, 11ul, mycall, 100ul);
+   j = 0UL;
+   do {
+      cb[j] = rxb[i0];
+      ++i0;
+      ++j;
+   } while (j<=9UL);
+   sum1 = 0UL;
+   sum2 = 65791UL;
+   for (i0 = 0UL; i0<=4UL; i0++) {
+      sum1 += (unsigned long)(unsigned char)cb[i0];
+      sum2 -= (unsigned long)(unsigned char)cb[i0]*(5UL-i0);
+   } /* end for */
+   sum1 = sum1&255UL;
+   sum2 = sum2&255UL;
+   if (sum1!=(unsigned long)(unsigned char)cb[5U] || sum2!=(unsigned long)
+                (unsigned char)cb[6U]) return;
+   /* chesum error */
+   systime = TimeConv_time();
+   if (sondeaprs_verb && fromport>0UL) {
+      InOut_WriteString("UDP:", 5ul);
+      aprsstr_ipv4tostr(ip, s, 1001ul);
+      InOut_WriteString(s, 1001ul);
+      InOut_WriteString(":", 2ul);
+      InOut_WriteInt((long)fromport, 1UL);
+      if (usercall[0U]) {
+         InOut_WriteString(" (", 3ul);
+         InOut_WriteString(usercall, 11ul);
+         InOut_WriteString(")", 2ul);
+      }
+      InOut_WriteString(" ", 2ul);
+   }
+   InOut_WriteString(nam, 9ul);
+   InOut_WriteString(" ", 2ul);
+   pc = pcontextc;
+   while (pc && !aprsstr_StrCmp(nam, 9ul, pc->name, 9ul)) pc = pc->next;
+   if (pc==0) {
+      Storage_ALLOCATE((X2C_ADDRESS *) &pc, sizeof(struct CONTEXTC34));
+      if (pc==0) Error("allocate context out im memory", 31ul);
+      memset((X2C_ADDRESS)pc,(char)0,sizeof(struct CONTEXTC34));
+      pc->next = pcontextc;
+      pcontextc = pc;
+      aprsstr_Assign(pc->name, 9ul, nam, 9ul);
+      if (sondeaprs_verb) osi_WrStrLn("is new ", 8ul);
+   }
+   val = (unsigned long)(unsigned char)cb[4U]+(unsigned long)(unsigned char)
+                cb[3U]*256UL+(unsigned long)(unsigned char)
+                cb[2U]*65536UL+(unsigned long)(unsigned char)
+                cb[1U]*16777216UL;
+   hr = (double)*X2C_CAST(&val,unsigned long,float,float *);
+   posok = 0;
+   switch ((unsigned)cb[0U]) {
+   case '\003':
+      /*
+          CHR(01H): IF (hr<99.9) & (hr>-99.9)
+                THEN       (* something magic with this value *)
+                      IF verb THEN WrStr("pres"); (* WrFixed(hr, 2, 0);
+                WrStr("hPa");*) END;
+                    END;
+      */
+      if (hr<99.9 && hr>(-99.9)) {
+         if (sondeaprs_verb) {
+            InOut_WriteString("temp", 5ul);
+            osi_WrFixed((float)hr, 1L, 0UL);
+            InOut_WriteString("oC", 3ul);
+         }
+         pc->temp = hr;
+         pc->ttemp = systime;
+      }
+      break;
+   case '\007':
+      if (hr<99.9 && hr>(-99.9)) {
+         if (sondeaprs_verb) {
+            InOut_WriteString("dewp", 5ul);
+            osi_WrFixed((float)hr, 1L, 0UL);
+            InOut_WriteString("oC", 3ul);
+         }
+         pc->dewp = hr;
+         pc->tdewp = systime;
+      }
+      break;
+   case '\024':
+      if (sondeaprs_verb) {
+         InOut_WriteString("date", 5ul);
+         aprsstr_IntToStr((long)(val%1000000UL+1000000UL), 1UL, s, 1001ul);
+         s[0U] = ' ';
+         InOut_WriteString(s, 1001ul);
+      }
+      break;
+   case '\025':
+      pc->gpstime = (val/10000UL)*3600UL+((val%10000UL)/100UL)
+                *60UL+val%100UL;
+      pc->tgpstime = systime;
+      if (sondeaprs_verb) {
+         aprsstr_TimeToStr(pc->gpstime, s, 1001ul);
+         InOut_WriteString("time ", 6ul);
+         InOut_WriteString(s, 1001ul);
+      }
+      break;
+   case '\026':
+      hr = latlong(val);
+      if (hr<89.9 && hr>(-89.9)) {
+         if (sondeaprs_verb) {
+            InOut_WriteString("lati", 5ul);
+            osi_WrFixed((float)hr, 5L, 0UL);
+         }
+         if (pc->tlat!=systime) {
+            pc->lat1 = pc->lat;
+            pc->tlat1 = pc->tlat;
+            pc->lat = hr*1.7453292519943E-2;
+            pc->tlat = systime;
+            posok = 1;
+         }
+      }
+      break;
+   case '\027':
+      hr = latlong(val);
+      if (hr<180.0 && hr>(-180.0)) {
+         if (sondeaprs_verb) {
+            InOut_WriteString("long", 5ul);
+            osi_WrFixed((float)hr, 5L, 0UL);
+         }
+         if (pc->tlon!=systime) {
+            pc->lon1 = pc->lon; /* save 2 values for extrapolating */
+            pc->tlon1 = pc->tlon;
+            pc->lon = hr*1.7453292519943E-2;
+            pc->tlon = systime;
+            posok = 1;
+         }
+      }
+      break;
+   case '\030':
+      hr = (double)((float)val*0.1f);
+      if (hr<50000.0) {
+         if (sondeaprs_verb) {
+            InOut_WriteString("alti", 5ul);
+            osi_WrFixed((float)hr, 1L, 0UL);
+            InOut_WriteString("m", 2ul);
+         }
+         if (pc->talt<systime) {
+            pc->clmb = pc->clmb+(X2C_DIVL(hr-pc->alt,
+                (double)(float)(systime-pc->talt))-pc->clmb)*0.25;
+         }
+         pc->alt = hr;
+         pc->talt = systime;
+      }
+      break;
+   case '\031':
+      hr = (double)((float)val*0.1609f); /*1.852*/ /* guess knots or miles */
+      if (hr>=0.0 && hr<1000.0) {
+         if (sondeaprs_verb) {
+            InOut_WriteString("wind", 5ul);
+            osi_WrFixed((float)hr, 1L, 0UL);
+            InOut_WriteString("km/h", 5ul);
+         }
+         pc->speed = hr*2.7777777777778E-1;
+         pc->tspeed = systime;
+      }
+      break;
+   case '\032':
+      hr = (double)((float)val*0.1f);
+      if (hr>=0.0 && hr<=360.0) {
+         if (sondeaprs_verb) {
+            InOut_WriteString("wdir", 5ul);
+            osi_WrFixed((float)hr, 1L, 0UL);
+            InOut_WriteString("deg", 4ul);
+         }
+         pc->dir = hr;
+         pc->tdir = systime;
+      }
+      break;
+   default:;
+      if (sondeaprs_verb) {
+         osi_WrHex((unsigned long)(unsigned char)cb[0U], 0UL);
+         InOut_WriteString(" ", 2ul);
+         osi_WrHex((unsigned long)(unsigned char)cb[1U], 0UL);
+         osi_WrHex((unsigned long)(unsigned char)cb[2U], 0UL);
+         osi_WrHex((unsigned long)(unsigned char)cb[3U], 0UL);
+         osi_WrHex((unsigned long)(unsigned char)cb[4U], 0UL);
+      }
+      break;
+   } /* end switch */
+   { /* with */
+      struct CONTEXTC34 * anonym = pc;
+      if (((((((posok && anonym->lastsent!=systime)
+                && anonym->tlon+8UL>systime) && anonym->tlat+8UL>systime)
+                && anonym->talt+15UL>systime) && anonym->tspeed+15UL>systime)
+                 && anonym->tdir+15UL>systime)
+                && anonym->tgpstime+120UL>systime) {
+         if (anonym->ttemp+30UL>systime) stemp = anonym->temp;
+         else stemp = (double)X2C_max_real;
+         exlon = extrapolate(anonym->lon1, anonym->lon, anonym->tlon1,
+                anonym->tlon, systime, &lonok);
+         exlat = extrapolate(anonym->lat1, anonym->lat, anonym->tlat1,
+                anonym->tlat, systime, &latok);
+         /*
+         IF lonok THEN WrStrLn("--good ") ELSE WrStrLn("--bad  ") END;
+         WrInt(systime-tlon1, 10); WrInt(systime-tlon, 10);
+         WrFixed(lon1/RAD, 5,0); WrStr(" ");WrFixed(lon/RAD, 5,0);
+                WrStr(" ");
+         WrFixed(exlon/RAD, 5,0); WrStrLn("t1 t x1 x xext");
+         */
+         if (lonok && latok) {
+            sondeaprs_senddata(exlat, exlon, anonym->alt, anonym->speed,
+                anonym->dir, anonym->clmb, 0.0, 0.0, stemp, 0.0, 0.0,
+                anonym->dewp, 0.0, 0.0, 0.0,
+                ((systime-anonym->tgpstime)+anonym->gpstime)%86400UL, 0UL,
+                anonym->name, 9ul, 0UL, 0UL, usercall, 11ul, 0UL);
+            anonym->lastsent = systime;
+         }
+      }
+   }
+   if (sondeaprs_verb) osi_WrStrLn("", 1ul);
+} /* end decodec34() */
 
 
 static void stobyte(unsigned char m, char b)
@@ -1911,7 +2254,10 @@ static void udprx(void)
       */
       decodeframe(sondemod_LEFT, ip, fromport);
    }
-   else Usleep(100000UL);
+   else if (len==22L) {
+      decodec34(chan[sondemod_LEFT].rxbuf, 256ul, ip, fromport);
+   }
+   else Usleep(50000UL);
 } /* end udprx() */
 
 
@@ -1921,11 +2267,13 @@ extern int main(int argc, char **argv)
    X2C_BEGIN(&argc,argv,1,4000000l,8000000l);
    if (sizeof(FILENAME)!=1024) X2C_ASSERT(0);
    if (sizeof(OBJNAME)!=9) X2C_ASSERT(0);
+   if (sizeof(CALLSSID)!=11) X2C_ASSERT(0);
    sondeaprs_BEGIN();
    gpspos_BEGIN();
    TimeConv_BEGIN();
    Lib_BEGIN();
    RealMath_BEGIN();
+   Storage_BEGIN();
    aprsstr_BEGIN();
    osi_BEGIN();
    Parms();
@@ -1933,6 +2281,7 @@ extern int main(int argc, char **argv)
    afin = 0UL;
    soundbufs = 0UL;
    initcontext(&context);
+   pcontextc = 0;
    objname[0] = 0;
    almread = 0UL;
    almage = 0UL;

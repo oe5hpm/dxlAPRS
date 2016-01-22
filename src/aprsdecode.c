@@ -4689,21 +4689,26 @@ static void settempspeed(aprsdecode_pOPHIST op,
    if (dat.objectfrom[0UL]) op->drawhints |= 0x2U;
    /*  EXCL(op^.drawhints, MIRRORSYM); */
    if (dat.sym=='_') {
+      op->lastinftyp = 0U;
+      op->lasttempalt = -32768;
       rv = aprstext_FtoC(dat.wx.temp);
       if (rv>=(-99.0f) && rv<=99.0f) {
          op->lasttempalt = (short)X2C_TRUNCI(rv,-32768,32767);
          op->temptime = aprsdecode_systime;
-         if (dat.course<=360UL) {
-            op->lastinftyp = (unsigned char)(110UL+dat.course/4UL);
-         }
-         else op->lastinftyp = 100U;
-         if (dat.speed<500UL) {
-            op->lastkmh = (short)X2C_TRUNCI((float)dat.speed*1.609f+0.5f,
-                -32768,32767);
-         }
-         else op->lastkmh = 0;
+         op->lastinftyp = 100U;
       }
-      else op->lastinftyp = 0U;
+      if (dat.course>=1UL && dat.course<=360UL) {
+         op->lastinftyp = (unsigned char)(110UL+(dat.course%360UL)/4UL);
+         op->temptime = aprsdecode_systime;
+      }
+      else op->lastinftyp = 100U;
+      if (dat.speed<500UL) {
+         op->lastkmh = (short)X2C_TRUNCI((float)dat.speed*1.609f+0.5f,-32768,
+                32767);
+         if (op->lastinftyp<100U) op->lastinftyp = 100U;
+         op->temptime = aprsdecode_systime;
+      }
+      else op->lastkmh = 0;
    }
    else if (dat.speed<30000UL) {
       op->lastkmh = (short)X2C_TRUNCI((float)dat.speed*1.852f+0.5f,-32768,
@@ -4840,40 +4845,6 @@ extern long aprsdecode_Stoframe(aprsdecode_pOPHIST * optab, char rawbuf[],
    if (op->lasttime<=stime) {
       /* new waypoint */
       settempspeed(op, dat);
-      /*
-          IF dat.objectfrom[0]<>0C THEN INCL(op^.drawhints, ISOBJECT) END;
-          EXCL(op^.drawhints, MIRRORSYM);
-      
-          IF dat.sym="_" THEN
-            rv:=FtoC(dat.wx.temp);
-            IF (rv>=MINTEMP) & (rv<=MAXTEMP) THEN
-              op^.lasttempalt:=VAL(INT16, rv);
-              op^.temptime:=systime;
-              IF dat.course<=360 THEN op^.lastinftyp:=110+dat.course DIV 4;
-              ELSE op^.lastinftyp:=100 END;
-                (* wx but no course *)
-              IF dat.speed<500 THEN
-                op^.lastkmh:=VAL(INT16, FLOAT(dat.speed)*WKNOTS+0.5);
-              ELSE op^.lastkmh:=0 END;
-            ELSE op^.lastinftyp:=0 END;
-      
-          ELSIF dat.speed<30000 THEN
-            op^.lastkmh:=VAL(INT16, FLOAT(dat.speed)*KNOTS+0.5);
-            IF (dat.speed>0) & (dat.course>180) THEN INCL(op^.drawhints,
-                MIRRORSYM) END;
-            IF dat.course<=360 THEN op^.lastinftyp:=10+dat.course DIV 4
-            ELSE op^.lastinftyp:=1 END;
-                (* drive speed but no course *)
-      
-          ELSIF op^.lastinftyp<100 THEN op^.lastinftyp:=0 END;
-                (* set no info if not wx *)
-      
-          IF op^.lastinftyp<100 THEN
-            IF (dat.altitude>-10000) & (dat.altitude<65535-10000)
-            THEN op^.lasttempalt:=dat.altitude+(10000-32768)
-                ELSE op^.lasttempalt:=-32768 END;
-          END;
-      */
       op->lasttime = stime;
    }
    frame = op->frames;
@@ -4983,7 +4954,9 @@ extern long aprsdecode_Stoframe(aprsdecode_pOPHIST * optab, char rawbuf[],
       frame->next = lastf->next; /* not nil if insert older frame */
       lastf->next = frame; /* append waypoint */
    }
-   if (dat.hrtlen>0UL) inserthrt(dat, &op, frame->nodraw);
+   if (dat.hrtlen>0UL) {
+      inserthrt(dat, &op, frame->nodraw);
+   }
    if (!logmode) {
       /* read log check whole track at end */
       aprsdecode_Checktrack(op, lastf);

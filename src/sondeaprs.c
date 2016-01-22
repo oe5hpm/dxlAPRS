@@ -63,11 +63,10 @@ char sondeaprs_dao;
 
 #define sondeaprs_FEET 3.2808398950131
 
-#define sondeaprs_LINESBUF 4
+#define sondeaprs_LINESBUF 60
+/* seconds pos history */
 
 #define sondeaprs_PI 3.1415926535898
-
-#define sondeaprs_GPSTIMECORR 15
 
 #define sondeaprs_DAYSEC 86400
 
@@ -100,7 +99,7 @@ struct DATLINE {
    double dir;
    double lat;
    double long0;
-   double climb0;
+   /*-       climb, */
    double clb;
    unsigned long time0;
    unsigned long uptime;
@@ -114,7 +113,7 @@ struct POSITION {
    double lat;
 };
 
-typedef struct DATLINE DATS[4];
+typedef struct DATLINE DATS[60];
 
 struct CONTEXT;
 
@@ -262,13 +261,16 @@ static void comment0(char buf[], unsigned long buf_len, unsigned long uptime,
          if (eol+2L>=bol && fb[bol]=='%') {
             if (fb[bol+1L]=='u') {
                /* insert uptime */
-               strncpy(fb," powerup h:m:s ",32768u);
-               aprsstr_TimeToStr(uptime, h, 100ul);
-               aprsstr_Append(fb, 32768ul, h, 100ul);
+               if (uptime>0UL) {
+                  strncpy(fb," powerup h:m:s ",32768u);
+                  aprsstr_TimeToStr(uptime, h, 100ul);
+                  aprsstr_Append(fb, 32768ul, h, 100ul);
+               }
+               else fb[0] = 0;
             }
             else if (fb[bol+1L]=='v') {
                /* insert version */
-               strncpy(fb," sondemod(c) 0.3",32768u);
+               strncpy(fb," sondemod(c) 0.4",32768u);
             }
             else if (fb[bol+1L]=='s') {
                /* insert sat count */
@@ -289,6 +291,7 @@ static void comment0(char buf[], unsigned long buf_len, unsigned long uptime,
                }
                else fb[0] = 0;
             }
+            else fb[0] = 0;
             bol = 0L;
             eol = (long)aprsstr_Length(fb, 32768ul);
          }
@@ -371,7 +374,6 @@ static void sendaprs(unsigned long comp0, unsigned long micessid, char dao,
    X2C_PCOPY((void **)&sym,sym_len);
    X2C_PCOPY((void **)&obj,obj_len);
    X2C_PCOPY((void **)&comm,comm_len);
-   /* OE0AAA-9>APERXQ,RELAY,WIDE2-2:!4805.44N/01333.64E>325/016/A=001824 */
    b[0] = 0;
    aprsstr_Append(b, 201ul, mycall, mycall_len);
    micdest = aprsstr_Length(b, 201ul)+1UL;
@@ -603,7 +605,9 @@ static void sendaprs(unsigned long comp0, unsigned long micessid, char dao,
       ++i;
       nl = truncr((fabs(long0)-(double)(float)nl)*6000.0); /* long min*100 */
       n = nl/100UL;
-      if (n<10UL) n += 60UL;
+      if (n<10UL) {
+         n += 60UL;
+      }
       b[i] = (char)(n+28UL);
       ++i;
       b[i] = (char)(nl%100UL+28UL);
@@ -788,8 +792,10 @@ static void show(struct DATLINE d)
    char s[31];
    osi_WrFixed((float)d.hpa, 1L, 6UL);
    InOut_WriteString("hPa ", 5ul);
-   osi_WrFixed((float)d.temp, 1L, 5UL);
-   InOut_WriteString("C ", 3ul);
+   if (d.temp<100.0) {
+      osi_WrFixed((float)d.temp, 1L, 5UL);
+      InOut_WriteString("C ", 3ul);
+   }
    InOut_WriteInt((long)truncr(d.hyg), 2UL);
    InOut_WriteString("% ", 3ul);
    InOut_WriteInt((long)X2C_TRUNCI(d.speed*3.6,X2C_min_longint,
@@ -810,7 +816,8 @@ static void show(struct DATLINE d)
 } /* end show() */
 
 
-static char Checkval(double a[], unsigned long a_len, double err,
+static char Checkval(const double a[], unsigned long a_len,
+                const unsigned long t[], unsigned long t_len, double err,
                 double min0, double max0)
 {
    unsigned long i;
@@ -818,103 +825,140 @@ static char Checkval(double a[], unsigned long a_len, double err,
    double m;
    double k;
    unsigned long tmp;
-   char Checkval_ret;
-   X2C_PCOPY((void **)&a,a_len*sizeof(double));
    tmp = a_len-1;
    i = 0UL;
    if (i<=tmp) for (;; i++) {
-      if (a[i]<min0 || a[i]>max0) {
-         Checkval_ret = 0;
-         goto label;
-      }
+      if (a[i]<min0 || a[i]>max0) return 0;
       if (i==tmp) break;
    } /* end for */
+   /* >=1 value out of range */
    k = 0.0;
-   tmp = (a_len-1)-1UL;
-   i = 0UL;
+   tmp = a_len-1;
+   i = 1UL;
    if (i<=tmp) for (;; i++) {
-      k = (k+a[i+1UL])-a[i]; /* median slope */
+      if (t[i]>t[0UL]) {
+         k = k+X2C_DIVL(a[i]-a[0UL],(double)(float)(t[i]-t[0UL]));
+                /* median slope */
+      }
       if (i==tmp) break;
    } /* end for */
    k = X2C_DIVL(k,(double)(float)(a_len-1));
    m = 0.0;
-   tmp = (a_len-1)-1UL;
-   i = 0UL;
+   tmp = a_len-1;
+   i = 1UL;
    if (i<=tmp) for (;; i++) {
-      y = fabs((a[i+1UL]-a[i])-k);
-      if (y>m) m = y;
+      if (t[i]>t[0UL]) {
+         y = fabs((a[i]-a[0UL])-(double)(float)(t[i]-t[0UL])*k);
+         if (y>m) m = y;
+      }
       if (i==tmp) break;
    } /* end for */
-   k = fabs(k);
-   if (k<err) k = err;
-   Checkval_ret = m<fabs(k);
-   label:;
-   X2C_PFREE(a);
-   return Checkval_ret;
+   /*  k:=ABS(k); */
+   /*  IF k<err THEN k:=err END; */
+   /*
+   FOR i:=0 TO HIGH(a) DO WrFixed(a[i], 5, 0); WrStr("/"); END;
+   WrFixed(k, 5, 0); WrStr(" "); WrFixed(m, 5, 0); WrStr(" ");
+                WrFixed(err, 5, 0); WrStr(" ");
+   WrInt(t[HIGH(t)]-t[0],6); WrStrLn(" k,m,err,timespan"); 
+   */
+   return m<err;
 } /* end Checkval() */
 
-
-static void climb(DATS d)
-{
-   unsigned long i;
-   double k;
-   k = 0.0;
-   for (i = 0UL; i<=2UL; i++) {
-      k = (k+d[i+1UL].alt)-d[i].alt; /* median slope */
-   } /* end for */
-   d[0U].climb0 = -(X2C_DIVL(k,3.0));
-} /* end climb() */
+/*
+PROCEDURE climb(VAR d:DATS);
+VAR i:CARDINAL;
+    k:REAL;
+BEGIN
+  k:=0.0;
+  FOR i:=0 TO HIGH(d)-1 DO k:=k+d[i+1].alt-d[i].alt END;
+                (* median slope *)
+  d[0].climb:=-k/FLOAT(HIGH(d));
+END climb;
+*/
+#define sondeaprs_MAXTIMESPAN 15
 
 
 static void Checkvals(const DATS d, unsigned short * e)
 {
-   unsigned long ta;
+   unsigned long n;
    unsigned long i;
    double v[4];
+   unsigned long t[4];
+   unsigned long tmp;
    *e = 0U;
+   n = 3UL;
    for (i = 0UL; i<=3UL; i++) {
-      v[i] = d[i].hpa;
+      v[n-i] = d[i].hpa;
+      t[n-i] = d[i].time0;
    } /* end for */
-   if (!Checkval(v, 4ul, 2000.0, 1.0, 1100.0)) *e |= 0x1U;
-   for (i = 0UL; i<=3UL; i++) {
-      v[i] = d[i].temp;
+   if (!Checkval(v, 4ul, t, 4ul, 2000.0, 0.0, 1100.0)) *e |= 0x1U;
+   tmp = n;
+   i = 0UL;
+   if (i<=tmp) for (;; i++) {
+      v[n-i] = d[i].temp;
+      if (i==tmp) break;
    } /* end for */
-   if (!Checkval(v, 4ul, 200.0, (-150.0), 80.0)) *e |= 0x2U;
-   for (i = 0UL; i<=3UL; i++) {
-      v[i] = d[i].hyg;
+   if (!Checkval(v, 4ul, t, 4ul, 200.0, (-150.0), 80.0)) *e |= 0x2U;
+   tmp = n;
+   i = 0UL;
+   if (i<=tmp) for (;; i++) {
+      v[n-i] = d[i].hyg;
+      if (i==tmp) break;
    } /* end for */
-   if (!Checkval(v, 4ul, 100.0, 0.0, 100.0)) *e |= 0x4U;
-   for (i = 0UL; i<=3UL; i++) {
-      v[i] = d[i].speed;
+   if (!Checkval(v, 4ul, t, 4ul, 100.0, 0.0, 100.0)) *e |= 0x4U;
+   tmp = n;
+   i = 0UL;
+   if (i<=tmp) for (;; i++) {
+      v[n-i] = d[i].speed;
+      if (i==tmp) break;
    } /* end for */
-   if (!Checkval(v, 4ul, 200.0, 0.0, 200.0)) *e |= 0x8U;
-   for (i = 0UL; i<=3UL; i++) {
-      v[i] = d[i].dir;
+   if (!Checkval(v, 4ul, t, 4ul, 100.0, 0.0, 300.0)) *e |= 0x8U;
+   tmp = n;
+   i = 0UL;
+   if (i<=tmp) for (;; i++) {
+      v[n-i] = d[i].dir;
+      if (i==tmp) break;
    } /* end for */
-   if (!Checkval(v, 4ul, 360.0, 0.0, 359.0)) *e |= 0x10U;
-   for (i = 0UL; i<=3UL; i++) {
-      v[i] = d[i].lat;
+   if (!Checkval(v, 4ul, t, 4ul, 360.0, 0.0, 359.0)) *e |= 0x10U;
+   tmp = n;
+   i = 0UL;
+   if (i<=tmp) for (;; i++) {
+      v[n-i] = d[i].lat;
+      if (i==tmp) break;
    } /* end for */
-   if (!Checkval(v, 4ul, 4.5454545454545E-4, (-85.0), 85.0)) *e |= 0x20U;
-   for (i = 0UL; i<=3UL; i++) {
-      v[i] = d[i].long0;
+   if (!Checkval(v, 4ul, t, 4ul, 4.5454545454545E-4, (-85.0), 85.0)) {
+      *e |= 0x20U;
+   }
+   tmp = n;
+   i = 0UL;
+   if (i<=tmp) for (;; i++) {
+      v[n-i] = d[i].long0;
+      if (i==tmp) break;
    } /* end for */
-   if (!Checkval(v, 4ul, 4.5454545454545E-4, (-180.0), 180.0)) *e |= 0x40U;
-   for (i = 0UL; i<=3UL; i++) {
-      v[i] = d[i].alt;
+   if (!Checkval(v, 4ul, t, 4ul, 4.5454545454545E-4, (-180.0), 180.0)) {
+      *e |= 0x40U;
+   }
+   tmp = n;
+   i = 0UL;
+   if (i<=tmp) for (;; i++) {
+      v[n-i] = d[i].alt;
+      if (i==tmp) break;
    } /* end for */
-   if (!Checkval(v, 4ul, 100.0, 5.0, 60000.0)) *e |= 0x80U;
-   for (i = 0UL; i<=3UL; i++) {
-      if (i>0UL && ta!=(d[i].time0+1UL)%86400UL) *e |= 0x100U;
-      ta = d[i].time0;
-   } /* end for */
+   if (!Checkval(v, 4ul, t, 4ul, 100.0, 5.0, 60000.0)) *e |= 0x80U;
+   /*
+     FOR i:=0 TO n DO 
+       IF (i>0) & (ta<>(d[i].time+1) MOD (3600*24)) THEN INCL(e, eMISS) END;
+       ta:=d[i].time;
+     END;
+   */
+   if (((d[0U].time0+86400UL)-d[n].time0)%86400UL>15UL) *e |= 0x100U;
 } /* end Checkvals() */
 
 
 static void shift(DATS d)
 {
    unsigned long i;
-   for (i = 3UL; i>=1UL; i--) {
+   for (i = 59UL; i>=1UL; i--) {
       d[i] = d[i-1UL];
    } /* end for */
 } /* end shift() */
@@ -954,20 +998,59 @@ static pCONTEXT findcontext(char n[], unsigned long n_len, unsigned long t)
    return findcontext_ret;
 } /* end findcontext() */
 
+/*
+PROCEDURE highresstr(hrstr:ARRAY OF CHAR; dat-:DATS; bt:TIME);
+CONST STEP=2;
+      DEGUNIT=PI2/360.0/100000.0;  (* 1/100000 deg = 1.1111m*)
+
+TYPE  VEC=ARRAY[0..LINESBUF-1] OF RECORD lat, long, alt:REAL; time:TIME END;
+
+VAR i,n:CARDINAL;
+    vec:VEC;
+    t:TIME;
+BEGIN
+  hrstr[0]:=0C;
+  t:=dat[0].time;
+  IF (bt<=STEP) OR (t<bt) THEN RETURN END;
+
+  i:=0;
+  n:=0;
+  LOOP
+    DEC(t, STEP);
+    IF (i>HIGH(dat)) OR (t+bt<dat[0].time) THEN EXIT END;
+    
+    IF t<=dat[i].time THEN
+      vec[n].lat :=dat[i].lat;
+      vec[n].long:=dat[i].long;
+      vec[n].alt :=dat[i].alt;
+      vec[n].time:=dat[i].time;
+      INC(n);
+    END;
+    INC(i);
+  END;
+  
+
+
+
+
+
+
+END highresstr;
+*/
 
 extern void sondeaprs_senddata(double lat, double long0, double alt,
                 double speed, double dir, double clb, double hp, double hyg,
-                double temp, double ozon, double otemp, double mhz,
-                double hrms, double vrms, unsigned long sattime,
+                double temp, double ozon, double otemp, double dewp,
+                double mhz, double hrms, double vrms, unsigned long sattime,
                 unsigned long uptime, char objname[],
                 unsigned long objname_len, unsigned long almanachage,
                 unsigned long goodsats, char usercall[],
-                unsigned long usercall_len)
+                unsigned long usercall_len, unsigned long calperc)
 {
    unsigned char e;
    pCONTEXT ct;
-   char h[101];
-   char s[101];
+   char h[251];
+   char s[251];
    unsigned long systime;
    unsigned long bt;
    struct CONTEXT * anonym;
@@ -997,10 +1080,11 @@ extern void sondeaprs_senddata(double lat, double long0, double alt,
          anonym->dat[0U].dir = dir;
          anonym->dat[0U].lat = X2C_DIVL(lat,1.7453292519943E-2);
          anonym->dat[0U].long0 = X2C_DIVL(long0,1.7453292519943E-2);
-         anonym->dat[0U].time0 = ((sattime+86400UL)-15UL)%86400UL;
-         anonym->dat[0U].uptime = (((sattime+86400UL)-15UL)-uptime)%86400UL;
+         /*    dat[0].time:=(sattime+DAYSEC-GPSTIMECORR) MOD DAYSEC; */
+         anonym->dat[0U].time0 = sattime%86400UL;
+         anonym->dat[0U].uptime = sattime%86400UL;
          anonym->dat[0U].clb = clb;
-         climb(anonym->dat);
+         /*    climb(dat); */
          Checkvals(anonym->dat, &chk);
          if (hrms>50.0 || vrms>500.0) chk |= 0x200U;
          if (sondeaprs_verb) {
@@ -1057,49 +1141,64 @@ extern void sondeaprs_senddata(double lat, double long0, double alt,
          else bt = sondeaprs_beacontime;
          if ((bt>0UL && anonym->lastbeacon+bt<=systime)
                 && (sondeaprs_nofilter || (chk&0x3E0U)==0U)) {
-            strncpy(s,"Clb=",101u);
-            aprsstr_FixToStr((float)clb, 2UL, h, 101ul); /*dat[0].climb*/
-            aprsstr_Append(s, 101ul, h, 101ul);
-            aprsstr_Append(s, 101ul, "m/s", 4ul);
-            if ((0x1U & chk)==0) {
-               aprsstr_Append(s, 101ul, " p=", 4ul);
-               aprsstr_FixToStr((float)anonym->dat[0U].hpa, 2UL, h, 101ul);
-               aprsstr_Append(s, 101ul, h, 101ul);
-               aprsstr_Append(s, 101ul, "hPa", 4ul);
+            strncpy(s,"Clb=",251u);
+            aprsstr_FixToStr((float)clb, 2UL, h, 251ul); /*dat[0].climb*/
+            aprsstr_Append(s, 251ul, h, 251ul);
+            aprsstr_Append(s, 251ul, "m/s", 4ul);
+            if ((0x1U & chk)==0 && anonym->dat[0U].hpa>=1.0) {
+               aprsstr_Append(s, 251ul, " p=", 4ul);
+               aprsstr_FixToStr((float)anonym->dat[0U].hpa, 2UL, h, 251ul);
+               aprsstr_Append(s, 251ul, h, 251ul);
+               aprsstr_Append(s, 251ul, "hPa", 4ul);
             }
             if ((0x2U & chk)==0) {
-               aprsstr_Append(s, 101ul, " t=", 4ul);
-               aprsstr_FixToStr((float)anonym->dat[0U].temp, 2UL, h, 101ul);
-               aprsstr_Append(s, 101ul, h, 101ul);
-               aprsstr_Append(s, 101ul, "C", 2ul);
+               aprsstr_Append(s, 251ul, " t=", 4ul);
+               aprsstr_FixToStr((float)anonym->dat[0U].temp, 2UL, h, 251ul);
+               aprsstr_Append(s, 251ul, h, 251ul);
+               aprsstr_Append(s, 251ul, "C", 2ul);
             }
             if (hyg>=0.5 && (0x4U & chk)==0) {
-               aprsstr_Append(s, 101ul, " h=", 4ul);
+               aprsstr_Append(s, 251ul, " h=", 4ul);
                aprsstr_IntToStr((long)truncc(anonym->dat[0U].hyg+0.5), 1UL,
-                h, 101ul);
-               aprsstr_Append(s, 101ul, h, 101ul);
-               aprsstr_Append(s, 101ul, "%", 2ul);
+                h, 251ul);
+               aprsstr_Append(s, 251ul, h, 251ul);
+               aprsstr_Append(s, 251ul, "%", 2ul);
             }
             if (ozon>0.1) {
-               aprsstr_Append(s, 101ul, " o3=", 5ul);
-               aprsstr_FixToStr((float)ozon, 2UL, h, 101ul);
-               aprsstr_Append(s, 101ul, h, 101ul);
-               aprsstr_Append(s, 101ul, "mPa ti=", 8ul);
-               aprsstr_FixToStr((float)otemp, 2UL, h, 101ul);
-               aprsstr_Append(s, 101ul, h, 101ul);
-               aprsstr_Append(s, 101ul, "C", 2ul);
+               aprsstr_Append(s, 251ul, " o3=", 5ul);
+               aprsstr_FixToStr((float)ozon, 2UL, h, 251ul);
+               aprsstr_Append(s, 251ul, h, 251ul);
+               aprsstr_Append(s, 251ul, "mPa ti=", 8ul);
+               aprsstr_FixToStr((float)otemp, 2UL, h, 251ul);
+               aprsstr_Append(s, 251ul, h, 251ul);
+               aprsstr_Append(s, 251ul, "C", 2ul);
             }
-            aprsstr_Append(s, 101ul, " ", 2ul);
-            aprsstr_FixToStr((float)mhz, 3UL, h, 101ul);
-            aprsstr_Append(s, 101ul, h, 101ul);
-            aprsstr_Append(s, 101ul, "MHz", 4ul);
+            if (dewp>(-100.0) && dewp<100.0) {
+               aprsstr_Append(s, 251ul, " dp=", 5ul);
+               aprsstr_FixToStr((float)dewp, 2UL, h, 251ul);
+               aprsstr_Append(s, 251ul, h, 251ul);
+               aprsstr_Append(s, 251ul, "C", 2ul);
+            }
+            if (calperc>0UL && calperc<100UL) {
+               aprsstr_Append(s, 251ul, " calibration ", 14ul);
+               aprsstr_IntToStr((long)calperc, 1UL, h, 251ul);
+               aprsstr_Append(s, 251ul, h, 251ul);
+               aprsstr_Append(s, 251ul, "%", 2ul);
+            }
+            if (mhz>0.0) {
+               aprsstr_Append(s, 251ul, " ", 2ul);
+               aprsstr_FixToStr((float)mhz, 3UL, h, 251ul);
+               aprsstr_Append(s, 251ul, h, 251ul);
+               aprsstr_Append(s, 251ul, "MHz", 4ul);
+            }
+            /*        highresstr(hrstr, dat, bt); */
             sendaprs(0UL, 0UL, sondeaprs_dao, anonym->dat[0U].time0, uptime,
                 usercall, usercall_len, sondeaprs_destcall, 100ul,
                 sondeaprs_via, 100ul, sondeaprs_sym, 2ul, objname,
                 objname_len, anonym->dat[0U].lat, anonym->dat[0U].long0,
                 anonym->dat[0U].alt,
                 (double)(float)(truncc(anonym->dat[0U].dir)%360UL),
-                anonym->dat[0U].speed*3.6, goodsats, hrms, s, 101ul,
+                anonym->dat[0U].speed*3.6, goodsats, hrms, s, 251ul,
                 &anonym->commentline);
             anonym->lastbeacon = systime;
             anonym->speedcnt = 0UL;
