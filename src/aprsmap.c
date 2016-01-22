@@ -894,16 +894,6 @@ static void tolastframe(aprsdecode_pFRAMEHIST * pfm)
    }
 } /* end tolastframe() */
 
-/*
-PROCEDURE isvis():BOOLEAN;
-BEGIN
-  WITH click.ops^ DO
-    RETURN (MARKED IN drawhints) & (sym.tab<>DELETSYM) & vistime(lasttime)
-    & ((lums.wxcol=0C) OR (lastinftyp>=100) & (temptime+SHOWTEMPWIND>systime)
-                )
-  END;
-END isvis;
-*/
 #define aprsmap_HOVERDIST 64
 
 
@@ -1087,7 +1077,10 @@ static void text(aprsdecode_pOPHIST op, char yesno, char objmove,
                      col.g = 180UL;
                      col.b = 255UL;
                   }
-                  else maptool_Colset(&col, 'Y');
+                  else if (aprsdecode_click.ops->lasttempalt<40) {
+                     maptool_Colset(&col, 'Y');
+                  }
+                  else maptool_Colset(&col, 'R');
                   /*          drawstr(image, s, VAL(INTEGER,x+6),
                 VAL(INTEGER,y-6), lig, 1, col, click.ops^.valuepos, 4, fix);
                 */
@@ -1339,7 +1332,8 @@ static long gettemp(aprsdecode_pOPHIST op)
 {
    long t;
    t = (long)op->lasttempalt;
-   if (t>=-30L && t<=50L || !useri_configon(useri_fTRACKFILT)) {
+   if (t>=-30L && t<=50L || (t>=-80L && t<80L)
+                && !useri_configon(useri_fTRACKFILT)) {
       /* show or not garbage */
       if (t<-30L) t = -30L;
       else if (t>50L) t = 50L;
