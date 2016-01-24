@@ -252,6 +252,30 @@ rf     qA?                                                            +
   Spruenge in der Systemzeit sollten sich nicht mehr auf die Statistiken auswirken
   zB. bei Betrieb ohne RTC/Batterie und/oder Netzwerk Zeit holen.
  
+
+20.1.2016
+
+  -C <m> tut via TCP connectete Stationen <m> Minuten lang auf die MH-Liste.
+     Hauptzweck, Stationen die nicht sofort nach dem connecten eine Positionsbake
+     senden haben eine (evtl. noch von einem vorherigen connect) bekannte Position.
+     Damit sollten m/... Filter von Anfang an funktionieren.
+
+  -g :<filename> liest die Igate-Liste aus dem File und das wird vor jedem Connect neu
+     eingelesen. Schreibweise genau wie bei -g mit "#" ganz links zum weg kommentieren.
+     Wie bei -g wird die Verbindung zur obersten funktionierenden Zeile gehalten.
+     zB. nuremberg.aprs2.net:14580#m/250,p/OE,-t/t
+
+
+
+
+
+
+
+
+
+
+
+
   
 
 
@@ -329,5 +353,8 @@ udphub
   Fixe Routen aus Textfile mit Zielport 0 sperrt senden zu dem Call (zum Host gehts immer),
   damit durch falsche dynamische Routen kein doppelter Weg zu den Calls, die via Host
   gehen, entstehen kann.
+
+
+
 
 

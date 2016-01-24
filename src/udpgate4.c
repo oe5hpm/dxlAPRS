@@ -58,7 +58,7 @@ FROM stat IMPORT fstat, stat_t;
 
 #define udpgate4_HASHSIZE 65536
 
-#define udpgate4_VERS "udpgate(c) 0.60"
+#define udpgate4_VERS "udpgate(c) 0.61"
 
 #define udpgate4_FEATURE " $IX^[V1]"
 
@@ -435,6 +435,8 @@ static unsigned long trygate;
 
 static long qmaxtime;
 
+static FILENAME gatesfn; /* filename with gateway table */
+
 struct _1;
 
 
@@ -482,6 +484,8 @@ static unsigned long heardtimevia;
 
 static unsigned long heardtimew;
 
+static unsigned long heardtimetcp;
+
 static unsigned long heardtime;
 
 static pMESSAGE messages;
@@ -489,6 +493,8 @@ static pMESSAGE messages;
 static pHEARD heardvia;
 
 static pHEARD hearddir;
+
+static pHEARD heardtcp;
 
 static char sendnetmsg;
 
@@ -713,6 +719,87 @@ static char callok(const char h[], unsigned long h_len)
    return h[i0]==0;
 } /* end callok() */
 
+
+static void readurlsfile(const char gatesfn0[], unsigned long gatesfn_len)
+{
+   unsigned long i0;
+   unsigned long n;
+   long ii;
+   long len;
+   long fd;
+   FILENAME h;
+   memset((char *)gateways,(char)0,sizeof(struct _1 [21]));
+   fd = osi_OpenRead(gatesfn0, gatesfn_len);
+   if (fd<0L) {
+      strncpy(h,"-g :file <",1024u);
+      aprsstr_Append(h, 1024ul, gatesfn0, gatesfn_len);
+      aprsstr_Append(h, 1024ul, "> not readable", 15ul);
+      osi_WrStrLn(h, 1024ul);
+      return;
+   }
+   n = 0UL;
+   do {
+      i0 = 0UL;
+      for (;;) {
+         len = osi_RdBin(fd, (char *) &h[i0], 1u/1u, 1UL);
+         if (((len<=0L || i0>=1023UL) || h[i0]=='\015') || h[i0]=='\012') {
+            h[i0] = 0;
+            break;
+         }
+         ++i0;
+      }
+      if (h[0U] && h[0U]!='#') {
+         if (h[0U]=='[') {
+            ii = 1L;
+            while (h[ii] && h[ii]!=']') ++ii;
+            if (h[ii]!=']' || h[ii+1L]!=':') {
+               osi_WrStrLn("urlfile: [url]:port", 20ul);
+            }
+            h[ii] = 0;
+            i0 = 1UL;
+            while (i0<=1023UL) {
+               h[i0-1UL] = h[i0];
+               ++i0;
+            }
+         }
+         else ii = aprsstr_InStr(h, 1024ul, ":", 2ul);
+         if (ii>=0L) h[ii] = 0;
+         aprsstr_Assign(gateways[n].url, 256ul, h, 1024ul);
+         if (ii>0L) {
+            /* port number */
+            ++ii;
+            i0 = 0UL;
+            while (ii<=1023L) {
+               h[i0] = h[ii];
+               ++i0;
+               ++ii;
+            }
+         }
+         else osi_WrStrLn("urlfile: [url]:port", 20ul);
+         ii = aprsstr_InStr(h, 1024ul, "#", 2ul);
+         if (ii>=0L) h[ii] = 0;
+         if (h[0U]==0) {
+            osi_WrStrLn("urlfile: [url]:port#filters", 28ul);
+         }
+         aprsstr_Assign(gateways[n].port, 6ul, h, 1024ul);
+         if (ii>0L) {
+            /* we have a filter string */
+            ++ii;
+            i0 = 0UL;
+            while (ii<=1023L) {
+               if (h[ii]==',') h[ii] = ' ';
+               h[i0] = h[ii];
+               ++i0;
+               ++ii;
+            }
+            aprsstr_Assign(gateways[n].filterst, 256ul, h, 1024ul);
+         }
+         ++n;
+      }
+   } while (!(len<=0L || n>20UL));
+   osi_Close(fd);
+} /* end readurlsfile() */
+
 static aprsstr_GHOSTSET _cnst = {0x00000000UL,0x00000000UL,0x00000000UL,
                 0x00000000UL,0x00000000UL,0x00000000UL,0x00000000UL,
                 0x00000000UL,0x00000000UL};
@@ -857,6 +944,12 @@ static void parms(void)
             }
             else Err("-e seconds", 11ul);
          }
+         else if (lasth=='C') {
+            Lib_NextArg(h, 4096ul);
+            i0 = 0UL;
+            if (GetSec(h, 4096ul, &i0, &n)>=0L) heardtimetcp = n*60UL;
+            else Err("-C minutes", 11ul);
+         }
          else if (lasth=='H') {
             Lib_NextArg(h, 4096ul);
             i0 = 0UL;
@@ -966,54 +1059,71 @@ static void parms(void)
             /* "url port" or "url:port" or "url:port#filter" */
             Lib_NextArg(h, 4096ul);
             if (h[0U]==0) Err("-g url port", 12ul);
-            if (gatecnt>20UL) Err("-g gateway table full", 22ul);
-            h[4095U] = 0;
-            if (h[0U]=='[') {
-               ii = 1L;
-               while (h[ii] && h[ii]!=']') ++ii;
-               if (h[ii]!=']' || h[ii+1L]!=':') Err("-g [url]:port", 14ul);
-               h[ii] = 0;
-               i0 = 1UL;
-               while (i0<=4095UL) {
+            if (h[0U]==':') {
+               /* get urls later from file */
+               for (i0 = 1UL; i0<=4095UL; i0++) {
                   h[i0-1UL] = h[i0];
-                  ++i0;
-               }
+               } /* end for */
+               h[4095U] = 0;
+               aprsstr_Assign(gatesfn, 1024ul, h, 4096ul);
             }
-            else ii = aprsstr_InStr(h, 4096ul, ":", 2ul);
-            if (ii>=0L) h[ii] = 0;
-            aprsstr_Assign(gateways[gatecnt].url, 256ul, h, 4096ul);
-            if (ii>0L) {
-               /* port number */
-               ++ii;
-               i0 = 0UL;
-               while (ii<=4095L) {
-                  h[i0] = h[ii];
-                  ++i0;
+            else {
+               if (gatecnt>20UL) {
+                  Err("-g gateway table full", 22ul);
+               }
+               h[4095U] = 0;
+               if (h[0U]=='[') {
+                  ii = 1L;
+                  while (h[ii] && h[ii]!=']') ++ii;
+                  if (h[ii]!=']' || h[ii+1L]!=':') {
+                     Err("-g [url]:port", 14ul);
+                  }
+                  h[ii] = 0;
+                  i0 = 1UL;
+                  while (i0<=4095UL) {
+                     h[i0-1UL] = h[i0];
+                     ++i0;
+                  }
+               }
+               else ii = aprsstr_InStr(h, 4096ul, ":", 2ul);
+               if (ii>=0L) h[ii] = 0;
+               aprsstr_Assign(gateways[gatecnt].url, 256ul, h, 4096ul);
+               if (ii>0L) {
+                  /* port number */
                   ++ii;
+                  i0 = 0UL;
+                  while (ii<=4095L) {
+                     h[i0] = h[ii];
+                     ++i0;
+                     ++ii;
+                  }
                }
-            }
-            else Lib_NextArg(h, 4096ul);
-            h[4095U] = 0;
-            ii = aprsstr_InStr(h, 4096ul, "#", 2ul);
-            if (ii>=0L) h[ii] = 0;
-            if (h[0U]==0) Err("-g url:port", 12ul);
-            aprsstr_Assign(gateways[gatecnt].port, 6ul, h, 4096ul);
-            if (ii>0L) {
-               /* we have a filter string */
-               ++ii;
-               i0 = 0UL;
-               while (ii<=4095L) {
-                  if (h[ii]==',') h[ii] = ' ';
-                  h[i0] = h[ii];
-                  ++i0;
+               else Lib_NextArg(h, 4096ul);
+               h[4095U] = 0;
+               ii = aprsstr_InStr(h, 4096ul, "#", 2ul);
+               if (ii>=0L) h[ii] = 0;
+               if (h[0U]==0) Err("-g url:port", 12ul);
+               aprsstr_Assign(gateways[gatecnt].port, 6ul, h, 4096ul);
+               if (ii>0L) {
+                  /* we have a filter string */
                   ++ii;
+                  i0 = 0UL;
+                  while (ii<=4095L) {
+                     if (h[ii]==',') h[ii] = ' ';
+                     h[i0] = h[ii];
+                     ++i0;
+                     ++ii;
+                  }
+                  aprsstr_Assign(gateways[gatecnt].filterst, 256ul, h,
+                4096ul);
                }
-               aprsstr_Assign(gateways[gatecnt].filterst, 256ul, h, 4096ul);
+               ++gatecnt;
             }
-            ++gatecnt;
          }
          else {
             if (lasth=='h') {
+               osi_WrStrLn(" -C <time>      connected (tcp) remember position\
+ minutes (Min) (-C 1440)", 74ul);
                osi_WrStrLn(" -c             delete frames with no valid sourc\
 e call in APRS-IS stream", 74ul);
                osi_WrStrLn(" -D <path>      www server root directory (-D /us\
@@ -1044,6 +1154,8 @@ ilter is used", 63ul);
 7.0.0.1:3000", 62ul);
                osi_WrStrLn("                ipv6 if enabled by kernel -g [::1\
 ]:14580#m/200", 63ul);
+               osi_WrStrLn(" -g :<filename> read gateway urls from file url:p\
+ort#filter,filter,...", 71ul);
                osi_WrStrLn(" -h             this", 21ul);
                osi_WrStrLn(" -H <time>      direct heard keep time minutes (M\
 in) (-H 1440)", 63ul);
@@ -1175,9 +1287,7 @@ rt GHOST* in otherwise false", 78ul);
             else if (lasth=='U') {
                Lib_NextArg(h, 4096ul);
                i0 = 0UL;
-               if (GetSec(h, 4096ul, &i0, &n)>=0L) {
-                  purgeunack = n;
-               }
+               if (GetSec(h, 4096ul, &i0, &n)>=0L) purgeunack = n;
                else Err("-U seconds", 11ul);
                if (h[i0]==':') {
                   ++i0;
@@ -2304,7 +2414,7 @@ static void beaconmacros(char s[], unsigned long s_len)
          }
          else if (s[i0]=='v') {
             /* insert version */
-            aprsstr_Append(ns, 256ul, "udpgate(c) 0.60", 16ul);
+            aprsstr_Append(ns, 256ul, "udpgate(c) 0.61", 16ul);
          }
          else if (s[i0]==':') {
             /* insert file */
@@ -2628,22 +2738,29 @@ static void SendMsg(pMESSAGE mp, unsigned long torf)
 } /* end SendMsg() */
 
 
-static unsigned long FindHeard(pHEARD ph, MONCALL c, unsigned long * rfport)
+static unsigned long FindUserHeard(pHEARD * ph, const MONCALL c,
+                unsigned long * rfport)
 /* never heard or too long = 0 else time+1 */
 {
-   MONCALL tmp;
-   c = (char *)memcpy(tmp,c,10u);
-   while (ph && ph->time0+heardtime>systime) {
-      if (aprsstr_StrCmp(ph->call, 10ul, c, 10ul)) {
-         if (ph->time0<=systime) {
-            *rfport = ph->fromrx;
-            return (1UL+systime)-ph->time0;
+   while (*ph && (*ph)->time0+heardtime>systime) {
+      if (aprsstr_StrCmp((*ph)->call, 10ul, c, 10ul)) {
+         if ((*ph)->time0<=systime) {
+            *rfport = (*ph)->fromrx;
+            return (1UL+systime)-(*ph)->time0;
          }
          else return 0UL;
       }
-      ph = ph->next;
+      *ph = (*ph)->next;
    }
    return 0UL;
+} /* end FindUserHeard() */
+
+
+static unsigned long FindHeard(pHEARD ph, const MONCALL c,
+                unsigned long * rfport)
+/* never heard or too long = 0 else time+1 */
+{
+   return FindUserHeard(&ph, c, rfport);
 } /* end FindHeard() */
 
 
@@ -3404,39 +3521,6 @@ static void degtostr(char s[], unsigned long s_len, float d, char posc,
    aprsstr_Append(s, s_len, (char *) &c, 1u/1u);
 } /* end degtostr() */
 
-/*
-PROCEDURE SortMH(VAR ho:pHEARD):BOOLEAN;
-VAR hp, hn :pHEARD;
-    eq, ok :BOOLEAN;
-BEGIN
-  eq:=FALSE;
-  hp:=heard;
-  hn:=NIL;
-  WHILE hp<>NIL DO
-    IF hp^.time+heardtimew>systime THEN
-      ok:=ho=NIL;
-      IF NOT ok THEN
-        IF hp^.time=ho^.time THEN
-          IF eq THEN ok:=TRUE; eq:=FALSE;
-          ELSIF hp=ho THEN eq:=TRUE END;
-        ELSIF hp^.time<ho^.time THEN ok:=TRUE END;
-      END;
-      IF ok & ((hn=NIL) OR (hp^.time>hn^.time)) THEN hn:=hp END;
-    END;
-    hp:=hp^.next;
-  END;
-  ho:=hn;
-  RETURN ho<>NIL
-END SortMH;
-*/
-/*
-PROCEDURE MHtimes(a,b:pHEARD):INTEGER;
-BEGIN 
-  IF a^.time>b^.time THEN RETURN 1 
-  ELSIF a^.time=b^.time THEN RETURN 0 END; 
-  RETURN -1 
-END MHtimes; 
-*/
 #define udpgate4_PARPOS 6
 
 
@@ -3652,12 +3736,12 @@ static void Query(MONCALL fromcall, char msg[], unsigned long msg_len,
                  1, path);
    }
    else if (cmd=='S') {
-      Stomsg(servercall, fromcall, *(MSGTEXT *)memcpy(&tmp1,"udpgate(c) 0.60 \
+      Stomsg(servercall, fromcall, *(MSGTEXT *)memcpy(&tmp1,"udpgate(c) 0.61 \
 Msg S&F Relay",30u), *(ACKTEXT *)memcpy(&tmp0,"",1u), 0, 0, 1, path);
    }
    else if (cmd=='v') {
       Stomsg(servercall, fromcall, *(MSGTEXT *)memcpy(&tmp1,
-                "udpgate(c) 0.60",16u), *(ACKTEXT *)memcpy(&tmp0,"",1u), 0,
+                "udpgate(c) 0.61",16u), *(ACKTEXT *)memcpy(&tmp0,"",1u), 0,
                 0, 1, path);
    }
    else if (cmd=='h') {
@@ -3763,14 +3847,16 @@ static void Getmsg(const char b[], unsigned long b_len, unsigned long rxport,
    if ((b[0UL]==0 || rxport && !iscall(b, b_len, 0UL)) || aprsstr_InStr(b,
                 b_len, "!x!", 4ul)>=0L) return;
    dir = Heard(b, b_len, hfrom, &trust);
-   if (rxport && hfrom[0U]) {
-      if ((heardtime>0UL && dir) && trust) {
-         AddHeard(&hearddir, Max(heardtime, heardtimew), hfrom, rxport, b,
-                b_len, ungate, 0);
-      }
-      else if (heardtimevia>0UL) {
-         AddHeard(&heardvia, heardtimevia, hfrom, rxport, b, b_len, ungate,
-                0);
+   if (hfrom[0U]) {
+      if (rxport) {
+         if ((heardtime>0UL && dir) && trust) {
+            AddHeard(&hearddir, Max(heardtime, heardtimew), hfrom, rxport, b,
+                 b_len, ungate, 0);
+         }
+         else if (heardtimevia>0UL) {
+            AddHeard(&heardvia, heardtimevia, hfrom, rxport, b, b_len,
+                ungate, 0);
+         }
       }
    }
    if (maxmsg==0UL && viacall[0U]==0) return;
@@ -3870,14 +3956,19 @@ static void getportname(unsigned long n, char s[], unsigned long s_len)
 {
    pUDPSOCK u;
    unsigned long i0;
-   u = udpsocks;
-   i0 = 1UL;
-   while (u && i0<n) {
-      ++i0;
-      u = u->next;
+   if (n==0UL) aprsstr_Assign(s, s_len, "TCPIP", 6ul);
+   else {
+      u = udpsocks;
+      i0 = 1UL;
+      while (u && i0<n) {
+         ++i0;
+         u = u->next;
+      }
+      if (u==0 || u->portname[0U]==0) {
+         aprsstr_IntToStr((long)n, 1UL, s, s_len);
+      }
+      else aprsstr_Assign(s, s_len, u->portname, 10ul);
    }
-   if (u==0 || u->portname[0U]==0) aprsstr_IntToStr((long)n, 1UL, s, s_len);
-   else aprsstr_Assign(s, s_len, u->portname, 10ul);
 } /* end getportname() */
 
 #define udpgate4_SEP "|"
@@ -4463,10 +4554,12 @@ static void saypongout(pTCPSOCK pt)
 
 static char Auth(const char mbuf0[], unsigned long mbuf_len, pTCPSOCK pu)
 {
+   unsigned long vport;
    unsigned long j;
    unsigned long i0;
    FRAMEBUF h1;
    FRAMEBUF h;
+   pHEARD pmh;
    struct TCPSOCK * anonym;
    { /* with */
       struct TCPSOCK * anonym = pu;
@@ -4518,6 +4611,11 @@ static char Auth(const char mbuf0[], unsigned long mbuf_len, pTCPSOCK pu)
             anonym->vers[j] = 0;
          }
          GetFilters(&anonym->filters, mbuf0, mbuf_len, i0, 0);
+         pmh = heardtcp;
+         if ((!aprspos_posvalid(anonym->user.pos) && FindUserHeard(&pmh,
+                anonym->user.call, &vport)>0UL) && pmh) {
+            anonym->user.pos = pmh->position;
+         }
          aprsstr_Assign(h, 512ul, "# logresp ", 11ul);
          aprsstr_Append(h, 512ul, anonym->user.call, 10ul);
          if (anonym->valid) aprsstr_Append(h, 512ul, " verified", 10ul);
@@ -5189,8 +5287,30 @@ static void getlinkfile(char b[], unsigned long b_len, const char fn[],
 } /* end getlinkfile() */
 
 
+static void apppos(WWWB wbuf, pTCPSOCK * wsock, struct aprspos_POSITION pos,
+                char withloc)
+{
+   char h[32];
+   if (aprspos_posvalid(pos)) {
+      aprsstr_FixToStr(X2C_DIVR(pos.lat,1.7453292519444E-2f), 5UL, h, 32ul);
+      Appwww(wsock, wbuf, " ", 2ul);
+      Appwww(wsock, wbuf, h, 32ul);
+      aprsstr_FixToStr(X2C_DIVR(pos.long0,1.7453292519444E-2f), 5UL, h,
+                32ul);
+      Appwww(wsock, wbuf, "/", 2ul);
+      Appwww(wsock, wbuf, h, 32ul);
+      if (withloc) {
+         postoloc(h, 32ul, pos);
+         Appwww(wsock, wbuf, " ", 2ul);
+         Appwww(wsock, wbuf, h, 32ul);
+      }
+   }
+   else Appwww(wsock, wbuf, " (NoPos)", 9ul);
+} /* end apppos() */
+
+
 static void showmh(WWWB wbuf, pTCPSOCK * wsock, char h1[256], pHEARD ph0,
-                char dir, unsigned long maxtime, char title0[],
+                char dir, char net, unsigned long maxtime, char title0[],
                 unsigned long title_len, const char sortby[],
                 unsigned long sortby_len)
 {
@@ -5213,11 +5333,9 @@ static void showmh(WWWB wbuf, pTCPSOCK * wsock, char h1[256], pHEARD ph0,
    Appwww(wsock, wbuf, "<table id=mheard border=0 align=center CELLPADDING=3 \
 CELLSPACING=1 BGCOLOR=#FFFFFF><tr class=tab-mh-titel BGCOLOR=#A9EEFF><th cols\
 pan=", 135ul);
-   /*    Appwww(CHR(ORD("6")+ORD(withicon)+ORD(withport)+ORD(dir&withqual)*3)
-                ); */
    aprsstr_IntToStr((long)(6UL+(unsigned long)withicon+(unsigned long)
-                withport+(unsigned long)(dir && withqual)*3UL), 1UL, h1,
-                256ul);
+                withport+(unsigned long)(dir && withqual)*3UL+(unsigned long)
+                net), 1UL, h1, 256ul);
    Appwww(wsock, wbuf, h1, 256ul);
    Appwww(wsock, wbuf, ">", 2ul);
    Appwww(wsock, wbuf, title0, title_len);
@@ -5250,6 +5368,7 @@ pan=", 135ul);
    if (dir && withqual) {
       Appwww(wsock, wbuf, "</th><th>Txd</th><th>Lev</th><th>q&#37;", 40ul);
    }
+   if (net) Appwww(wsock, wbuf, "</th><th>Position", 18ul);
    Appwww(wsock, wbuf, "</th><th>", 10ul);
    klick(wbuf, wsock, "mh", 3ul, "Pack", 5ul, 'h');
    Appwww(wsock, wbuf, "</th><th>", 10ul);
@@ -5275,9 +5394,6 @@ n:right\">", 56ul);
          AppCall(wbuf, wsock, ph->call, 10ul, ph->ungate, 0, callink,
                 1024ul);
          if (withicon) {
-            /*
-                      Appwww('<td class=tab-mh-icon ');
-            */
             Appwww(wsock, wbuf, "<td", 4ul);
             if (iconf(ph->sym, ph->symt, h1, 256ul, &hch)) {
                Appwww(wsock, wbuf, " style=\"background-image:url(/", 31ul);
@@ -5291,11 +5407,6 @@ n:right\">", 56ul);
                else Appwww(wsock, wbuf, "\">", 3ul);
             }
             else Appwww(wsock, wbuf, ">", 2ul);
-            /*
-                      Appwww('background-color:#C0FFC0');
-                      IF hch<>0C THEN Appwww(';text-align:center">');
-                Appwww(hch) ELSE Appwww('">') END;
-            */
             Appwww(wsock, wbuf, "</td>", 6ul);
          }
          if (withport) {
@@ -5307,9 +5418,6 @@ n:right\">", 56ul);
          Appwww(wsock, wbuf, "<td>", 5ul);
          AppMinSec(wbuf, wsock, ph->time0);
          Appwww(wsock, wbuf, "</td>", 6ul);
-         /*
-                 Appwww('<td>'); 
-         */
          if (dir && withqual) {
             /* txdel */
             Appwww(wsock, wbuf, "<td style=\"background-color:#", 30ul);
@@ -5344,6 +5452,11 @@ n:right\">", 56ul);
             }
             Appwww(wsock, wbuf, "</td>", 6ul);
          }
+         if (net) {
+            Appwww(wsock, wbuf, "<td>", 5ul);
+            apppos(wbuf, wsock, ph->position, 0);
+            Appwww(wsock, wbuf, "</td>", 6ul);
+         }
          Appwww(wsock, wbuf, "<td style=\"background-color:#", 30ul);
          strncpy(h1,"80FF80",256u);
          green(h1, ci, maxtime, ph->datatyp=='S');
@@ -5360,17 +5473,6 @@ n:right\">", 56ul);
          Appwww(wsock, wbuf, "<td>", 5ul);
          Appwww(wsock, wbuf, h1, 256ul);
          Appwww(wsock, wbuf, "</td>", 6ul);
-         /*
-                 IF ph^.datatyp=tCELSIUS THEN 
-                   Appwww('<td style=background-color:#'); tempcol(ph^.data);
-                 Appwww('>'); 
-                   FixToStr(ph^.data, 2, h1); Append(h1, 260C+"C");
-                 ELSIF ph^.datatyp=tSPEED THEN 
-                   Appwww('<td style=background-color:#');
-                tempcol(ph^.data*0.2); Appwww('>');
-                   FixToStr(ph^.data, 0, h1); Append(h1, "kmh");
-                 ELSE h1:='<td>' END;
-         */
          Appwww(wsock, wbuf, "<td>", 5ul);
          if (ph->datatyp=='C') {
             aprsstr_FixToStr(ph->data, 2UL, h1, 256ul);
@@ -5513,20 +5615,8 @@ enter\"><H3>\015\012", 131ul);
       Appwww(wsock, wbuf, " MsgCall ", 10ul);
       Appwww(wsock, wbuf, viacall, 10ul);
    }
-   if (aprspos_posvalid(home)) {
-      aprsstr_FixToStr(X2C_DIVR(home.lat,1.7453292519444E-2f), 5UL, h, 32ul);
-      Appwww(wsock, wbuf, " ", 2ul);
-      Appwww(wsock, wbuf, h, 32ul);
-      aprsstr_FixToStr(X2C_DIVR(home.long0,1.7453292519444E-2f), 5UL, h,
-                32ul);
-      Appwww(wsock, wbuf, "/", 2ul);
-      Appwww(wsock, wbuf, h, 32ul);
-      postoloc(h, 32ul, home);
-      Appwww(wsock, wbuf, " ", 2ul);
-      Appwww(wsock, wbuf, h, 32ul);
-   }
-   else Appwww(wsock, wbuf, " (NoPos)", 9ul);
-   Appwww(wsock, wbuf, " [udpgate(c) 0.60] http#", 25ul);
+   apppos(wbuf, wsock, home, 1);
+   Appwww(wsock, wbuf, " [udpgate(c) 0.61] http#", 25ul);
    aprsstr_IntToStr((long)*cnt, 1UL, h, 32ul);
    Appwww(wsock, wbuf, h, 32ul);
    Appwww(wsock, wbuf, " Uptime ", 9ul);
@@ -5616,7 +5706,7 @@ gn:center\"><H3>\015\012", 131ul);
          Appwww(&wsock, wbuf, "  Port ", 8ul);
          Appwww(&wsock, wbuf, tcpbindport, 6ul);
       }
-      Appwww(&wsock, wbuf, " [udpgate(c) 0.60] Maxusers ", 29ul);
+      Appwww(&wsock, wbuf, " [udpgate(c) 0.61] Maxusers ", 29ul);
       aprsstr_IntToStr((long)maxusers, 1UL, h1, 256ul);
       Appwww(&wsock, wbuf, h1, 256ul);
       Appwww(&wsock, wbuf, " http#", 7ul);
@@ -5815,12 +5905,16 @@ ign:center\" BGCOLOR=\"#D0C0C0\"><TD>out", 74ul);
       title(wbuf, &wsock, &mhhttpcount);
       klicks(wbuf, &wsock);
       if (heardtimew>0UL) {
-         showmh(wbuf, &wsock, h1, hearddir, 1, heardtimew, "Heard Stations Si\
-nce Last ", 27ul, wsock->sortby, 2ul);
+         showmh(wbuf, &wsock, h1, hearddir, 1, 0, heardtimew, "Heard Stations\
+ Since Last ", 27ul, wsock->sortby, 2ul);
       }
       if (heardtimevia>0UL) {
-         showmh(wbuf, &wsock, h1, heardvia, 0, heardtimevia, "Via RF Heard St\
-ations Since Last ", 34ul, wsock->sortby, 2ul);
+         showmh(wbuf, &wsock, h1, heardvia, 0, 0, heardtimevia, "Via RF Heard\
+ Stations Since Last ", 34ul, wsock->sortby, 2ul);
+      }
+      if (heardtimetcp>0UL) {
+         showmh(wbuf, &wsock, h1, heardtcp, 0, 1, heardtimetcp, "Via TCP Conn\
+ected Stations Since Last ", 39ul, wsock->sortby, 2ul);
       }
    }
    else if (aprsstr_StrCmp(wsock->get, 256ul, "msg", 4ul)) {
@@ -6038,7 +6132,7 @@ static char tcpconn(pTCPSOCK * sockchain, long f, char cservice)
             aprsstr_Append(h, 512ul, passwd, 6ul);
          }
          aprsstr_Append(h, 512ul, " vers ", 7ul);
-         aprsstr_Append(h, 512ul, "udpgate(c) 0.60", 16ul);
+         aprsstr_Append(h, 512ul, "udpgate(c) 0.61", 16ul);
          if (actfilter[0U]) {
             aprsstr_Append(h, 512ul, " filter ", 9ul);
             aprsstr_Append(h, 512ul, actfilter, 256ul);
@@ -6069,7 +6163,7 @@ static char tcpconn(pTCPSOCK * sockchain, long f, char cservice)
          aprsstr_Append(h1, 512ul, h2, 512ul);
          logline(1L, h1, 512ul);
       }
-      aprsstr_Assign(h, 512ul, "# udpgate(c) 0.60\015\012", 20ul);
+      aprsstr_Assign(h, 512ul, "# udpgate(c) 0.61\015\012", 20ul);
       Sendtcp(cp, h);
    }
    return 1;
@@ -6110,8 +6204,8 @@ static void Gateconn(pTCPSOCK * cp)
       }
       p = p->next;
    }
-   /*IF (try=NIL) & Watchclock(connecttime, gateconndelay) THEN */
    if (try0==0) {
+      if (gatesfn[0U]) readurlsfile(gatesfn, 1024ul);
       if (act==0) max0 = 20UL;
       else max0 = act->gatepri;
       if ((trygate>=max0 || trygate>20UL) || gateways[trygate].url[0U]==0) {
@@ -6237,6 +6331,8 @@ static unsigned long lenh;
 
 static struct POSCALL poscall;
 
+static char voidungate;
+
 static char rfhered;
 
 static unsigned long keepconn;
@@ -6279,6 +6375,7 @@ extern int main(int argc, char **argv)
    heardtime = 7200UL;
    heardtimew = 86400UL;
    heardtimevia = 1800UL;
+   heardtimetcp = 86400UL;
    purgemsg = 86400UL;
    purgeacked = 86400UL;
    purgeunack = 3600UL;
@@ -6291,6 +6388,7 @@ extern int main(int argc, char **argv)
    messages = 0;
    hearddir = 0;
    heardvia = 0;
+   heardtcp = 0;
    lastrfsent = 0UL;
    sendnetmsg = 1;
    mhfilelines = 0UL;
@@ -6326,6 +6424,7 @@ extern int main(int argc, char **argv)
    qas = 0UL;
    qasc = 0UL;
    maxpongtime = 30UL;
+   gatesfn[0U] = 0;
    parms();
    if (aprsstr_StrCmp(viacall, 10ul, "-", 2ul)) viacall[0U] = 0;
    else if (viacall[0U]==0) memcpy(viacall,servercall,10u);
@@ -6519,7 +6618,14 @@ extern int main(int argc, char **argv)
                      if ((aprspos_posvalid(poscall.pos)
                 && aprsstr_StrCmp(poscall.call, 10ul, acttcp->user.call,
                 10ul)) && X2C_INL((long)(unsigned char)poscall.typ0,128,
-                _cnst1)) acttcp->user.pos = poscall.pos;
+                _cnst1)) {
+                        acttcp->user.pos = poscall.pos;
+                        if (heardtimetcp>0UL) {
+                           AddHeard(&heardtcp, heardtimetcp, poscall.call,
+                0UL, mbuf, 512ul, &voidungate, 0);
+                /* store pos in mh to remember pos at next connect */
+                        }
+                     }
                      if (acttcp->valid && !acttcp->pingout) {
                         if (res>=0L) Sendall(mbuf, acttcp->fd, poscall);
                         if (verb || logframes>1L) {
