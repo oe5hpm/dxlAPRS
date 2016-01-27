@@ -2707,7 +2707,6 @@ static void textwin(unsigned long xw, unsigned long lines, unsigned long xpo,
    menu->x0 = xpo;
    menu->y00 = ypo;
    menu->nohilite = 0x7FFFFFFFUL;
-   /*WrInt(menu^.y0, 10);WrStrLn("=y0"); */
    tmp = menu->ysize-1UL;
    y = 0UL;
    if (y<=tmp) for (;; y++) {
@@ -2824,15 +2823,7 @@ extern void useri_textautomenu(long x0, long y00, unsigned long id,
          x0 = popxbase((unsigned long)(y00+(long)
                 menuimgy(aprsdecode_lums.fontysize, n+1UL)));
       }
-      else if (x0<0L) {
-         /*
-             ELSIF x0=-2 THEN
-               x0:=0; 
-               lastmenuxy(0, x0, y0);
-         --WrInt(x0, 10); WrInt(y0, 10); WrLn;
-         */
-         x0 = X2C_DIV(maptool_xsize-(long)xmax,2L);
-      }
+      else if (x0<0L) x0 = X2C_DIV(maptool_xsize-(long)xmax,2L);
       if (y00<0L) y00 = X2C_DIV(maptool_ysize,2L)-28L;
       if (x0<0L) x0 = 0L;
       if (y00<0L) y00 = 0L;
@@ -3162,6 +3153,9 @@ static void msgpop(void)
          { /* with */
             struct aprsdecode_MSGFIFO * anonym = pm;
             if (anonym->query) strncpy(s,"Query (",201u);
+            else if (aprspos_posvalid(anonym->itempos)) {
+               strncpy(s,"Item Message (",201u);
+            }
             else strncpy(s,"Message (",201u);
             i = useri_nextmsg;
             if (i>mc) i = mc;
@@ -3183,15 +3177,27 @@ static void msgpop(void)
             aprstext_DateLocToStr(anonym->time0, s1, 201ul);
             aprsstr_Append(s, 201ul, "] ", 3ul);
             aprsstr_Append(s, 201ul, s1, 201ul);
-            aprsstr_Append(s, 201ul, "\012[", 3ul);
+            aprsstr_Append(s, 201ul, "\012", 2ul);
+            if (aprspos_posvalid(anonym->itempos)) {
+               aprsstr_Append(s, 201ul, "\373", 2ul);
+               aprsstr_Append(s, 201ul, anonym->itemname, 9ul);
+               aprsstr_Append(s, 201ul, "\376 [", 4ul);
+               strncpy(s1,"    Close  |     Next   |  Reply  |  Delete |  Fin\
+d Item",201u);
+            }
+            else {
+               aprsstr_Append(s, 201ul, "[", 2ul);
+               strncpy(s1,"    Close  |     Next   |   Reply  |    Delete",
+                201u);
+            }
             aprsstr_Append(s, 201ul, anonym->txt, 67ul);
             aprsstr_Append(s, 201ul, "]", 2ul);
             if (sndmsg) y00 = 20L;
             else y00 = -1L;
             if (new0) col = 'r';
             else col = 'b';
-            useri_textautomenu(-1L, y00, 211UL, 0UL, col, s, 201ul, "    Clos\
-e  |     Next  |    Reply  |    Delete", 47ul, "\243", 2ul);
+            useri_textautomenu(-1L, y00, 211UL, 0UL, col, s, 201ul, s1,
+                201ul, "\243", 2ul);
          }
       }
    }
@@ -3260,7 +3266,6 @@ static void delmsgfifo(void)
    aprsdecode_pMSGFIFO pm;
    long i;
    if (aprsdecode_msgfifo0) {
-      /*WrInt(nextmsg, 4);WrStrLn(" n"); */
       pm = aprsdecode_msgfifo0;
       if (pm->next==0 || labs(useri_nextmsg)<=1L) {
          aprsdecode_msgfifo0 = aprsdecode_msgfifo0->next;
@@ -3273,7 +3278,6 @@ static void delmsgfifo(void)
             pm = pm->next;
             ++i;
          }
-         /*WrInt(i, 3);WrLn; */
          if (po) po->next = pm->next;
       }
       Storage_DEALLOCATE((X2C_ADDRESS *) &pm,
@@ -3282,6 +3286,19 @@ static void delmsgfifo(void)
    useri_killmenuid(211UL);
    useri_refresh = 1;
 } /* end delmsgfifo() */
+
+
+static void zoomtoitem(void)
+{
+   if (aprsdecode_msgfifo0 && aprspos_posvalid(aprsdecode_msgfifo0->itempos))
+                 {
+      aprstext_setmark1(aprsdecode_msgfifo0->itempos, 1, X2C_max_longint,
+                aprsdecode_realtime);
+   }
+   /*  click.cmd:=CMDZOOMTOMARKS; */
+   aprsdecode_click.cmd = 't';
+   useri_refresh = 1;
+} /* end zoomtoitem() */
 
 
 static void getwxset(unsigned char set, char * ch, unsigned short * wset)
@@ -3311,7 +3328,6 @@ static void textinfo(unsigned long typ)
    char s[1001];
    char col;
    struct aprsdecode_CLICKOBJECT * anonym;
-   /*WrInt(typ, 5);WrStrLn("ti"); */
    aprstext_optext(typ, &aprsdecode_click.table[aprsdecode_click.selected],
                 &aprsdecode_click.watchlast, s, 1001ul);
    { /* with */
@@ -3983,7 +3999,7 @@ static void helpmenu(void)
    newmenu(&menu, 150UL, aprsdecode_lums.fontysize+7UL, 3UL, useri_bTRANSP);
    /*  addline(menu, "Shortcuts", CMDSHORTCUTLIST, MINH*6); */
    addline(menu, "Helptext", 9ul, "\305", 2ul, 610UL);
-   addline(menu, "aprsmap(cu) 0.59 by OE5DXL ", 28ul, " ", 2ul, 605UL);
+   addline(menu, "aprsmap(cu) 0.60 by OE5DXL ", 28ul, " ", 2ul, 605UL);
    setunderbar(menu, 37L);
    menu->ysize = menu->oldknob*menu->yknob;
    menu->oldknob = 0UL;
@@ -4904,33 +4920,13 @@ static void inv(pMENU m, unsigned long sub, unsigned long k)
          x0 = (unsigned long)m->subk[k-1UL][sub-1UL];
          x1 = (unsigned long)m->subk[k-1UL][sub];
       }
-      /*    IF k IN m^.noprop THEN x0:=0; x1:=0 END; */
       if (x1==0UL) x1 = m->xsize;
       y00 = (k-1UL)*m->yknob+1UL;
       y1 = k*m->yknob-2UL;
-      /*WrInt(sub,3);WrInt(k,3);WrInt(y0,5);WrInt(y1,5);WrInt(x0,5);
-                WrInt(x1,5);WrStrLn("y-y,x-x"); */
       invline(m->image, x0, y00, x1, y1, 0);
    }
 } /* end inv() */
 
-/*
-PROCEDURE drawpullknob(image:pIMAGE; xs, y0, y1:INTEGER);
-VAR x, y:INTEGER;
-    col, col1, col2:PIX;
-BEGIN
-  col.r:=200; col.g:=200; col.b:=200;
-  col1.r:=200; col1.g:=300; col1.b:=700;
-  col2.r:=500; col2.g:=500; col2.b:=500;
-
-  FOR y:=y0 TO y1 DO
-    FOR x:=0 TO xs-2 DO
-      IF (y=y1) OR (x=0) THEN image^[x][y]:=col2 
-      ELSIF ODD(x DIV 2+y DIV 2) THEN image^[x][y]:=col ELSE image^[x][y]:=col1 END;
-    END;
-  END;
-END drawpullknob;
-*/
 
 static void movewin(pMENU pm, long dx, long dy)
 {
@@ -7065,18 +7061,6 @@ static void dolist(pMENU m, unsigned long xcl, unsigned long ycl)
    else {
       /* click on text */
       findtextpos(m, xcl, ycl, &bb, &bl, &xl);
-      /*WrInt(xcl, 10); WrInt(ycl, 10); WrInt(xl, 10); WrStrLn(" cl"); */
-      /*
-          n:=m^.ysize-lums.fontysize-ycl+m^.scroll;
-          IF n<0 THEN n:=0 END;
-          n:=VAL(CARDINAL,n) DIV lums.fontysize;
-          IF listwin="L" THEN bl:=listbuffer.listlines
-          ELSIF listwin="M" THEN
-            bl:=monbuffer.listlines;
-            INC(n, monbuffer.newlines);
-          ELSE bl:=NIL END;
-          WHILE (n>0) & (bl<>NIL) DO DEC(n); bl:=bl^.next; END;
-      */
       if (bl) {
          if (!aprspos_posvalid(bl->position)) {
             /* no pos in line */
@@ -7742,6 +7726,7 @@ static void escmenus(void)
    aprsdecode_lums.wxcol = 0;
    aprsdecode_lums.text = 10L*useri_conf2int(useri_fLTEXT, 0UL, 0L, 100L,
                 100L);
+   aprsdecode_lums.moving = 0;
    aprsdecode_click.withradio = 0;
    aprsdecode_click.onesymbol.tab = 0;
    if (panowin.on) closepano();
@@ -11279,6 +11264,7 @@ static void mouseleft(long mousx, long mousy)
          aprsdecode_click.cmd = ' ';
       }
       else if (c=='\243') {
+         aprsdecode_click.cmd = ' ';
          if (subknob==0UL) {
             useri_nextmsg = 0L;
             useri_killmenuid(211UL);
@@ -11292,8 +11278,8 @@ static void mouseleft(long mousx, long mousy)
             reply();
          }
          else if (subknob==3UL) delmsgfifo();
+         else if (subknob==4UL) zoomtoitem();
          useri_refresh = 1;
-         aprsdecode_click.cmd = ' ';
       }
       else if (c=='\277') {
          if (xosi_Shift) {
@@ -11442,7 +11428,7 @@ static void mouseleft(long mousx, long mousy)
          else if (knob==1UL) aprsdecode_click.cmd = 'I';
       }
       else if (c=='\246') {
-         startlist("Beacons", 8ul, "", 1ul);
+         startlist("Lines", 6ul, "", 1ul);
          aprstext_listop(subknob==1UL);
       }
       else if (c=='\250') listusermsg();

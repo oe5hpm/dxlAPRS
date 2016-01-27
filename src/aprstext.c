@@ -652,9 +652,6 @@ extern void aprstext_setmark1(struct aprspos_POSITION pos, char overwrite,
       aprsdecode_click.markalti = alt;
       aprsdecode_click.markpost = timestamp;
    }
-/*WrFixed(pos.lat, 5, 10); WrFixed(pos.long, 5, 10); */
-/*WrFixed(click.markpos.lat, 5, 10); WrFixed(click.markpos.long, 5, 10);
-                WrStrLn(" mp"); */
 } /* end setmark1() */
 
 

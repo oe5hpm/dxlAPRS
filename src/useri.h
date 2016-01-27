@@ -88,6 +88,8 @@
 
 #define useri_CMDRESETIMGPARMS "\014"
 
+#define useri_CMDZOOMTOMARKS "/"
+
 #define useri_CFGHEARD "H"
 
 #define useri_CFGRAWDECODED "u"

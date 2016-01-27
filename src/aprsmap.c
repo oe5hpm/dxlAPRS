@@ -2625,6 +2625,15 @@ END testlist;
 */
 } /* end copypastepos() */
 
+
+static void centerpos(struct aprspos_POSITION centpos,
+                struct aprspos_POSITION * newpos)
+{
+   maptool_center(maptool_xsize, maptool_ysize,
+                maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom),
+                centpos, newpos);
+} /* end centerpos() */
+
 #define aprsmap_MARGIN 0.07
 
 #define aprsmap_YMARGIN 0.025
@@ -2679,9 +2688,7 @@ static void mapzoom(struct aprspos_POSITION pos0,
       if (aprsdecode_initzoom<=1L) break;
       /* test if map is complete */
       if (useri_configon(useri_fZOOMMISS) && aprsdecode_lums.map>0L) {
-         maptool_center(maptool_xsize, maptool_ysize,
-                maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom),
-                mid, &testpos);
+         centerpos(mid, &testpos);
          maptool_mercator(testpos.long0, testpos.lat, aprsdecode_initzoom,
                 &testtx, &testty, &testshx, &testshy);
          maptool_loadmap(image, testtx, testty, aprsdecode_initzoom,
@@ -2718,9 +2725,7 @@ static void mapzoom(struct aprspos_POSITION pos0,
       aprsdecode_finezoom = fo;
    }
    mo = aprsdecode_mappos;
-   maptool_center(maptool_xsize, maptool_ysize,
-                maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom),
-                mid, &aprsdecode_mappos);
+   centerpos(mid, &aprsdecode_mappos);
    if (aprsdecode_mappos.lat<mo.lat) aprsdecode_mappos.lat = mo.lat;
 } /* end mapzoom() */
 
@@ -2812,9 +2817,7 @@ static char qth(char loc[], unsigned long loc_len)
    maptool_limpos(&pos1);
    mapzoom(pos, pos1, (unsigned long)useri_conf2int(useri_fDEFZOOM, 0UL, 1L,
                 18L, 14L), 1);
-   maptool_center(maptool_xsize, maptool_ysize,
-                maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom),
-                aprsdecode_click.markpos, &aprsdecode_mappos);
+   centerpos(aprsdecode_click.markpos, &aprsdecode_mappos);
    qth_ret = 1;
    label:;
    X2C_PFREE(loc);
@@ -2903,9 +2906,7 @@ static void find(void)
          aprstext_setmark1(pos, 1, X2C_max_longint, 0UL);
          /*    click.markpos:=pos;  click.marktime:=0;
                 click.markalti:=MAX(INTEGER);     */
-         maptool_center(maptool_xsize, maptool_ysize,
-                maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom),
-                pos, &aprsdecode_mappos);
+         centerpos(pos, &aprsdecode_mappos);
          pandone = 0;
          useri_textautosize(-3L, 0L, 3UL, 4UL, 'b', "marker set", 11ul);
       }
@@ -3098,11 +3099,7 @@ static void View(unsigned long n)
                 aprsdecode_finezoom), &mid);
          aprsdecode_mappos = mid;
       }
-      if (aprspos_posvalid(pos)) {
-         maptool_center(maptool_xsize, maptool_ysize,
-                maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom),
-                pos, &aprsdecode_mappos);
-      }
+      if (aprspos_posvalid(pos)) centerpos(pos, &aprsdecode_mappos);
       pandone = 0;
       if (aprsdecode_click.mhop[0UL]) setshowall();
       useri_rdonesymb(0); /* show all symbols */
@@ -3879,9 +3876,7 @@ static void centermouse(char shortcut)
    }
    if (aprspos_posvalid(pos)) {
       push(maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom));
-      maptool_center(maptool_xsize, maptool_ysize,
-                maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom),
-                pos, &aprsdecode_mappos);
+      centerpos(pos, &aprsdecode_mappos);
    }
 } /* end centermouse() */
 
@@ -4906,9 +4901,7 @@ static void MainEvent(void)
                 && aprspos_posvalid(aprsdecode_click.markpos)) {
          /* click to listwin line */
          push(maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom));
-         maptool_center(maptool_xsize, maptool_ysize,
-                maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom),
-                aprsdecode_click.markpos, &aprsdecode_mappos);
+         centerpos(aprsdecode_click.markpos, &aprsdecode_mappos);
          aprsdecode_click.marktime = aprsdecode_realtime;
          if (aprsdecode_click.mhop[0UL]) setshowall();
       }
@@ -4917,13 +4910,9 @@ static void MainEvent(void)
          /* click to watchcall popup */
          aprsdecode_click.markpos = clickwatchpos;
          push(maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom));
-         maptool_center(maptool_xsize, maptool_ysize,
-                maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom),
-                aprsdecode_click.markpos, &aprsdecode_mappos);
+         centerpos(aprsdecode_click.markpos, &aprsdecode_mappos);
          aprsdecode_click.marktime = aprsdecode_realtime;
-         if (aprsdecode_click.mhop[0UL]) {
-            setshowall();
-         }
+         if (aprsdecode_click.mhop[0UL]) setshowall();
       }
       else if (aprsdecode_click.cmd=='c') centermouse(0);
       else if (aprsdecode_click.cmd=='X') xytomark();
@@ -4993,9 +4982,7 @@ static void MainEvent(void)
          useri_helptext(0UL, 0UL, 0UL, 0UL, "en-shortcuts", 13ul);
       }
       else if (aprsdecode_click.cmd=='7') useri_Setmap(0UL);
-      else if (aprsdecode_click.cmd=='8') {
-         useri_Setmap(1UL);
-      }
+      else if (aprsdecode_click.cmd=='8') useri_Setmap(1UL);
       else if (aprsdecode_click.cmd=='9') useri_Setmap(2UL);
       else if (aprsdecode_click.cmd=='Q') quit = 1;
       else if (aprsdecode_click.cmd=='e') aprsdecode_click.dryrun = 0;
@@ -5197,7 +5184,6 @@ BEGIN
       pm^.alt:=trunc(alt);
       pm^.next:=mountains;
       mountains:=pm;
---WrInt(pm^.alt, 10); WrStrLn(pm^.name);
     END;
   END;
   Close(fd);
@@ -5228,36 +5214,19 @@ extern int main(int argc, char **argv)
    useri_maximized = 0;
    useri_getstartxysize(&maptool_xsize, &maptool_ysize);
    if (aprsdecode_initxsize>0L) maptool_xsize = aprsdecode_initxsize;
-   /*  IF xsize<MINXSIZE THEN xsize:=MINXSIZE ELSIF xsize>MAXXSIZE THEN xsize:=MAXXSIZE END;
-                 */
    if (aprsdecode_initysize>0L) maptool_ysize = aprsdecode_initysize;
-   /*  IF ysize<MINYSIZE THEN ysize:=MINYSIZE ELSIF ysize>MAXYSIZE THEN ysize:=MAXYSIZE END;
-                 */
    aprsdecode_mappos.long0 = 2.0943951023333E-1f;
    aprsdecode_mappos.lat = 8.5521133345278E-1f;
    getinitview();
    maptool_mercator(aprsdecode_mappos.long0, aprsdecode_mappos.lat,
                 aprsdecode_initzoom, &aprsdecode_inittilex,
                 &aprsdecode_inittiley, &maptool_shiftx, &maptool_shifty);
-   maptool_center(maptool_xsize, maptool_ysize,
-                maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom),
-                aprsdecode_mappos, &aprsdecode_mappos);
-   /*
-   WrInt(inittiley, 10); WrStrLn("=inittiley");
-   WrFixed(shifty, 3, 10); WrStrLn("=shifty");
-   */
+   centerpos(aprsdecode_mappos, &aprsdecode_mappos);
    makegammatab();
    vidbuf = 0;
    image = 0;
    rfimg = 0;
-   /*
-     xsize:=initxsize;
-     ysize:=initysize;  
-   */
    useri_allocimage(&image, maptool_xsize, maptool_ysize, 0);
-   /*
-     allocimage(map, xsize, ysize, FALSE);
-   */
    useri_allocimage(&rfimg, maptool_xsize, maptool_ysize, 0);
    aprsdecode_posinval(&clickwatchpos);
    tabview.stkpo = 0UL;

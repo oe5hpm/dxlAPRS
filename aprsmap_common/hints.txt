@@ -1314,6 +1314,9 @@ label.
 but witout Timestamp and needs less bytes
 with short Name and compressed position.
 On Rf prefer this if no Time info needed.
+If Message editor (M) is open, a Copy of
+the Item will be ready to transmit as Item
+Message.  
 
 |8144 Set Type "Delete Item". This wipes out
 Items with This Name on all Maps. 

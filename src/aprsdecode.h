@@ -58,7 +58,7 @@
 #define aprsdecode_MAXMULTILINES 40
 /* AE5PL limits to 23 multiline elements */
 
-#define aprsdecode_VERS "aprsmap(cu) 0.59"
+#define aprsdecode_VERS "aprsmap(cu) 0.60"
 
 typedef char aprsdecode_MONCALL[9];
 
@@ -392,11 +392,13 @@ struct aprsdecode_MSGFIFO {
    aprsdecode_pMSGFIFO next;
    unsigned long time0;
    char port;
+   aprsdecode_MONCALL itemname;
    aprsdecode_MONCALL from;
    aprsdecode_MONCALL to;
    aprsdecode_MSGTEXT txt;
    aprsdecode_ACKTEXT ack;
    char query;
+   struct aprspos_POSITION itempos;
 };
 
 struct aprsdecode_ZOOMFRAME;

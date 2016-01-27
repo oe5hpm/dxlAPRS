@@ -1592,7 +1592,7 @@ static void beaconmacros(char s[], unsigned long s_len, const char path[],
             }
             else if (s[i]=='\\') aprsstr_Append(ns, 256ul, "\\\\", 3ul);
             else if (s[i]=='v') {
-               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.59", 17ul);
+               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.60", 17ul);
             }
             else if (s[i]=='l') {
                if (aprstext_getmypos(&pos)) {
@@ -3355,7 +3355,8 @@ static void popupmessage(const char from[], unsigned long from_len,
                 const char to[], unsigned long to_len, const char txt[],
                 unsigned long txt_len, const char ack[],
                 unsigned long ack_len, unsigned long time0, char port,
-                char isquery0)
+                char isquery0, struct aprspos_POSITION pos,
+                const char item[], unsigned long item_len)
 {
    aprsdecode_pMSGFIFO pl;
    aprsdecode_pMSGFIFO pm;
@@ -3389,6 +3390,8 @@ static void popupmessage(const char from[], unsigned long from_len,
    aprsstr_Assign(pm->to, 9ul, to, to_len);
    aprsstr_Assign(pm->txt, 67ul, txt, txt_len);
    aprsstr_Assign(pm->ack, 5ul, ack, ack_len);
+   aprsstr_Assign(pm->itemname, 9ul, item, item_len);
+   pm->itempos = pos;
    pm->time0 = time0;
    pm->port = port;
    pm->query = isquery0;
@@ -3569,26 +3572,30 @@ ort)", 44ul);
 } /* end sendtxmsg() */
 
 
-static char iteminmsg(const char from[], unsigned long from_len,
+static void iteminmsg(const char from[], unsigned long from_len,
                 const char to[], unsigned long to_len, const char txt[],
-                unsigned long txt_len)
+                unsigned long txt_len, struct aprspos_POSITION * pos,
+                char name[], unsigned long name_len)
 /* test for and draw item in a message */
 {
    char h[1000];
    char s[1000];
    struct aprsdecode_DAT dat;
+   aprsdecode_posinval(pos);
    aprsstr_Assign(s, 1000ul, from, from_len);
    aprsstr_Append(s, 1000ul, ">", 2ul);
    aprsstr_Append(s, 1000ul, to, to_len);
    aprsstr_Append(s, 1000ul, ":", 2ul);
    aprsstr_Append(s, 1000ul, txt, txt_len);
-   if (aprsdecode_Decode(s, 1000ul, &dat)>=0L && dat.type==aprsdecode_ITEM) {
+   if ((aprsdecode_Decode(s, 1000ul,
+                &dat)>=0L && dat.type==aprsdecode_ITEM)
+                && aprspos_posvalid(dat.pos)) {
       aprsstr_Assign(h, 1000ul, "0:0:", 5ul);
       aprsstr_Append(h, 1000ul, s, 1000ul);
       aprsdecode_drawbeacon(h, 1000ul);
-      return 1;
+      *pos = dat.pos;
+      aprsstr_Assign(name, name_len, dat.symcall, 9ul);
    }
-   return 0;
 } /* end iteminmsg() */
 
 
@@ -3646,6 +3653,8 @@ static void showmsg(const char from[], unsigned long from_len,
    aprsdecode_ACKTEXT rep;
    aprsdecode_MONCALL call;
    struct aprsdecode_DAT dat;
+   struct aprspos_POSITION itempos;
+   aprsdecode_MONCALL itemname;
    char s[501];
    /*
      WrStr(from);
@@ -3701,13 +3710,10 @@ static void showmsg(const char from[], unsigned long from_len,
             aprsstr_Append(s, 501ul, " (click on M Button)", 21ul);
             useri_textautosize(0L, 5L, 6UL, 0UL, 'y', s, 501ul);
          }
-         if (iteminmsg(from, from_len, to, to_len, txt, txt_len)) {
-            aprsstr_Assign(s, 501ul, "Item Msg:", 10ul);
-         }
-         else s[0] = 0;
-         aprsstr_Append(s, 501ul, txt, txt_len);
-         popupmessage(from, from_len, to, to_len, s, 501ul, ack, ack_len,
-                aprsdecode_realtime, port, query);
+         iteminmsg(from, from_len, to, to_len, txt, txt_len, &itempos,
+                itemname, 9ul);
+         popupmessage(from, from_len, to, to_len, txt, txt_len, ack, ack_len,
+                 aprsdecode_realtime, port, query, itempos, itemname, 9ul);
          ++aprsdecode_tracenew.winevent;
          beepmsg(0);
       }
@@ -5669,7 +5675,7 @@ static char tcpconn(aprsdecode_pTCPSOCK * sockchain, long f)
          aprsstr_Append(h, 512ul, s, 100ul);
       }
       aprsstr_Append(h, 512ul, " vers ", 7ul);
-      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.59", 17ul);
+      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.60", 17ul);
       appfilter(h, 512ul);
       /*    IF filter[0]<>0C THEN Append(h, " filter ");
                 Append(h, filter) END; */

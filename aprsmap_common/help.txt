@@ -1041,7 +1041,7 @@ ctrl-V Paste
 @ reset <On Next Click> to menu mode
 a Animate (Click to Map to set Parameters)
 b or <Backspace> go back in position history
-c Center (to last clicked Pixel)
+c Center map to mouse position
 d toggle (missing) map download
 e toggle Errors only/All for stepping along a track with <>
 f Junk Filter toggle on/off
