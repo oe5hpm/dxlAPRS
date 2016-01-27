@@ -1311,7 +1311,17 @@
 
 
 
+23.1.2016 (Ver 0.59)
 
++ Item in Messages, (B)akeneditor (auf "Item") + (M)essage Send Fenster geoeffnet
+  kopiert den Bakeninhalt in Message Text und erzeugt dann beim Empfaenger der Msg
+  ein Symbol auf der Karte. (APRS1.2)
+  Da sich die Protokollerweiterung Item-Message und Multiline-Object gegenseitig
+  beissen ("{" symbol), geht die Kombination vermutlich nur mit aprsmap + send with ack.
+
+
+
+ 
 
 
 

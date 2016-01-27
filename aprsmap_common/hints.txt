@@ -1406,7 +1406,7 @@ On Net always software-ID is used.
 number for SSID-Routing "2" makes -2 to destination call
 or some old chunk like "RELAY" "WIDE"...
 
-|8215 Toggle On/Off a popup window if a msg arrives
+|8215 Toggle big/small popup window if a msg arrives
 |8220 Show (not ack) Messages to My Call but other SSID too
 |8225 Show Messages from/to same Call and
 same SSID (Telemetry Headlines)

@@ -184,6 +184,8 @@ struct xosi_PROCESSHANDLE aprsdecode_maploadpid;
 
 #define aprsdecode_DIRJUNC "#"
 
+#define aprsdecode_cMSGACK "{"
+
 typedef unsigned long SET256[8];
 
 typedef unsigned long CHSET[4];
@@ -2845,6 +2847,7 @@ extern char aprsdecode_checksymb(char symt, char symb)
 extern long aprsdecode_Decode(char buf[], unsigned long buf_len,
                 struct aprsdecode_DAT * dat)
 {
+   unsigned long ia;
    unsigned long iv;
    unsigned long micedest;
    unsigned long len;
@@ -3033,7 +3036,15 @@ extern long aprsdecode_Decode(char buf[], unsigned long buf_len,
             }
          }
          else {
-            while ((i<=66UL && buf[p]!='{') && p<len) {
+            i = p;
+            ia = len;
+            while (i<len) {
+               /* find last { */
+               if (buf[i]=='{') ia = i;
+               ++i;
+            }
+            i = 0UL;
+            while (i<=66UL && p<ia) {
                /* message text */
                dat->msgtext[i] = buf[p];
                ++i;
@@ -3558,6 +3569,29 @@ ort)", 44ul);
 } /* end sendtxmsg() */
 
 
+static char iteminmsg(const char from[], unsigned long from_len,
+                const char to[], unsigned long to_len, const char txt[],
+                unsigned long txt_len)
+/* test for and draw item in a message */
+{
+   char h[1000];
+   char s[1000];
+   struct aprsdecode_DAT dat;
+   aprsstr_Assign(s, 1000ul, from, from_len);
+   aprsstr_Append(s, 1000ul, ">", 2ul);
+   aprsstr_Append(s, 1000ul, to, to_len);
+   aprsstr_Append(s, 1000ul, ":", 2ul);
+   aprsstr_Append(s, 1000ul, txt, txt_len);
+   if (aprsdecode_Decode(s, 1000ul, &dat)>=0L && dat.type==aprsdecode_ITEM) {
+      aprsstr_Assign(h, 1000ul, "0:0:", 5ul);
+      aprsstr_Append(h, 1000ul, s, 1000ul);
+      aprsdecode_drawbeacon(h, 1000ul);
+      return 1;
+   }
+   return 0;
+} /* end iteminmsg() */
+
+
 static void ackmsg(const char from[], unsigned long from_len,
                 const char rep[], unsigned long rep_len, unsigned char rej)
 {
@@ -3612,7 +3646,7 @@ static void showmsg(const char from[], unsigned long from_len,
    aprsdecode_ACKTEXT rep;
    aprsdecode_MONCALL call;
    struct aprsdecode_DAT dat;
-   char s[81];
+   char s[501];
    /*
      WrStr(from);
      WrStr(">");
@@ -3659,16 +3693,21 @@ static void showmsg(const char from[], unsigned long from_len,
       if (my || useri_configon(useri_fMSGALLSSID) && (!aprsstr_StrCmp(from,
                 from_len, to, to_len) || useri_configon(useri_fPASSSELFMSG))) {
          if (!useri_configon(useri_fPOPUPMSG)) {
-            if (query) strncpy(s,"Query from ",81u);
-            else strncpy(s,"Message from ",81u);
-            aprsstr_Append(s, 81ul, from, from_len);
-            aprsstr_Append(s, 81ul, " to ", 5ul);
-            aprsstr_Append(s, 81ul, to, to_len);
-            aprsstr_Append(s, 81ul, " (click on M Button)", 21ul);
-            useri_textautosize(0L, 5L, 6UL, 0UL, 'y', s, 81ul);
+            if (query) strncpy(s,"Query from ",501u);
+            else strncpy(s,"Message from ",501u);
+            aprsstr_Append(s, 501ul, from, from_len);
+            aprsstr_Append(s, 501ul, " to ", 5ul);
+            aprsstr_Append(s, 501ul, to, to_len);
+            aprsstr_Append(s, 501ul, " (click on M Button)", 21ul);
+            useri_textautosize(0L, 5L, 6UL, 0UL, 'y', s, 501ul);
          }
-         popupmessage(from, from_len, to, to_len, txt, txt_len, ack, ack_len,
-                 aprsdecode_realtime, port, query);
+         if (iteminmsg(from, from_len, to, to_len, txt, txt_len)) {
+            aprsstr_Assign(s, 501ul, "Item Msg:", 10ul);
+         }
+         else s[0] = 0;
+         aprsstr_Append(s, 501ul, txt, txt_len);
+         popupmessage(from, from_len, to, to_len, s, 501ul, ack, ack_len,
+                aprsdecode_realtime, port, query);
          ++aprsdecode_tracenew.winevent;
          beepmsg(0);
       }
@@ -3913,7 +3952,10 @@ extern void aprsdecode_makemsg(char ack)
          i = 0L;
          if (i<=tmp) for (;; i++) {
             c = anonym->msgtext[i];
-            if ((c=='|' || c=='~') || c=='{') anonym->msgtext[i] = ' ';
+            if (c=='|' || c=='~') {
+               /* OR (c=cMSGACK) */
+               anonym->msgtext[i] = ' ';
+            }
             if (i==tmp) break;
          } /* end for */
          if (ack) {

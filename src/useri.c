@@ -5114,6 +5114,7 @@ static void sendmsg(void)
    unsigned long cnt;
    unsigned long cntm;
    unsigned long xw;
+   long ii;
    aprsdecode_pTXMESSAGE pmh;
    aprsdecode_pTXMESSAGE pm;
    char h[201];
@@ -5143,15 +5144,22 @@ static void sendmsg(void)
    ohs = m->oldsub;
    m->oldknob = 0UL;
    m->scroll = 0UL;
-   /*
-       h:=MOP3+"       Send with Ack     |        Send/Query       |        Close"
-                ;
-       confstr(fMSGTEXT, s);
-       IF s[0]<>0C THEN
-         confstr(fMSGTO, s);
-         IF s[0]<>0C THEN h:="       Send with Ack     |        Send/Query       |        Close" END;
-       END;
-   */
+   if (useri_beaconediting && useri_beaconed) {
+      /* beacon editor is open too */
+      useri_confstr(useri_fRBTYP, s, 201ul);
+      if (s[0U]=='I' || s[0U]=='J') {
+         /* send item message from beacon editor */
+         aprstext_encbeacon(s, 201ul, &i);
+         ii = aprsstr_InStr(s, 201ul, ":)", 3ul);
+         if (ii>1L) {
+            aprsstr_Delstr(s, 201ul, 0UL, (unsigned long)(ii+1L));
+            icfg(useri_fMSGTEXT, s, 201ul);
+            if (aprsstr_Length(s, 201ul)>=67UL) {
+               useri_say("Beacon does not fit in Msg!", 28ul, 4UL, 'e');
+            }
+         }
+      }
+   }
    addline(m, "       Send with Ack     |        Send/Query       |        Cl\
 ose", 66ul, "\255", 2ul, 6800UL);
    ++m->scroll;
@@ -5566,29 +5574,6 @@ static void beaconeditor(void)
       if (X2C_IN(m->hiknob,31,m->clampkb)) keybknob(m, m->hiknob, 1, 0UL);
       inv(m, m->oldsub, m->hiknob);
    }
-/*
-  IF NOT beaconed & (beaconimported[0]<>0C) & (beaconimporttime+4>time())
-                THEN
-(*
-    IF beaconimported[0]=LF THEN
-      textautosize(0, 0, 5, 5, "e", "Object Cloned to Beacon Editor!");
-      beaconimported[0]:=0C;
-    ELSIF beaconimporttime+2>time() THEN
-
-      s:="Click again ["; Append(s, beaconimported);
-                Append(s, "] to Clone Object");
-      textautosize(0, 0, 5, 2, "b", s);
-*)
-
-      s:="Clone ["; Append(s, beaconimported);
-                Append(s, "] to Beacon Editor");
-      textautomenu(DOCKX, 0, 5, 2, "g", "", s, CMDCLONE);
-
-(*
-    END;
-*)
-  END;
-*/
 } /* end beaconeditor() */
 
 
@@ -11476,26 +11461,7 @@ static void mouseleft(long mousx, long mousy)
          else aprsdecode_posinval(&aprsdecode_click.measurepos);
          aprsdecode_click.cmd = ' ';
       }
-      else if (c=='\301') {
-         /*     IF subknob=1 THEN click.cmd:=":" */
-         /*     ELSE setmarks(subknob=0, TRUE); click.cmd:=" " END; */
-         /*
-             ELSIF c=CMDINTERNSTAT THEN click.cmd:=CMDINTERNSTAT;
-             ELSIF c=LISTMESSAGES THEN startlist("Messages");
-                listtyps("M", subknob=1); 
-             ELSIF c=LISTBULLETINS THEN startlist("Bulletins");
-                listtyps("B", subknob=1);
-             ELSIF c=LISTNOPOS THEN startlist("No Position");
-                listtyps("N", subknob=1);
-             ELSIF c=LISTMOVED THEN startlist("Moving Stations");
-                listtyps("D", subknob=1);
-             ELSIF c=LISTWX THEN startlist("Wx Stations");
-                listtyps("W", subknob=1);
-             ELSIF c=LISTOBJ THEN startlist("Objects");
-                listtyps("O", subknob=1);
-         */
-         mapadd();
-      }
+      else if (c=='\301') mapadd();
       else if (c=='\305') useri_helptext(0UL, 0UL, 0UL, 0UL, "index", 6ul);
       else if (c=='\306') useri_helptext(knob, subknob, potx, poty, "", 1ul);
       else if (c=='\223') managebeacon(menu->scroll, knob, subknob, 0);
@@ -11805,10 +11771,6 @@ extern void useri_mouserightdown(long x, long y)
    setclick(x, y);
    if (xosi_pulling) useri_pulloff();
    rightbutton = 1;
-   /*  clampedline:=0; */
-   /*  IF sndmsg OR (configedit<>0) THEN paste ELSE click.cmd:=CURSBS END; */
-   /*  IF FindClampMenu()<>NIL THEN paste ELSE click.cmd:=CURSBS END; */
-   /*  redrawpop(redrawimg); */
    useri_refresh = 1;
 } /* end mouserightdown() */
 
