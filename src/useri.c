@@ -3154,7 +3154,8 @@ static void msgpop(void)
             struct aprsdecode_MSGFIFO * anonym = pm;
             if (anonym->query) strncpy(s,"Query (",201u);
             else if (aprspos_posvalid(anonym->itempos)) {
-               strncpy(s,"Item Message (",201u);
+               if (anonym->deleteitem) strncpy(s,"Deleted Item (",201u);
+               else strncpy(s,"Item Message (",201u);
             }
             else strncpy(s,"Message (",201u);
             i = useri_nextmsg;

@@ -3355,7 +3355,7 @@ static void popupmessage(const char from[], unsigned long from_len,
                 const char to[], unsigned long to_len, const char txt[],
                 unsigned long txt_len, const char ack[],
                 unsigned long ack_len, unsigned long time0, char port,
-                char isquery0, struct aprspos_POSITION pos,
+                char isquery0, char kill, struct aprspos_POSITION pos,
                 const char item[], unsigned long item_len)
 {
    aprsdecode_pMSGFIFO pl;
@@ -3396,6 +3396,7 @@ static void popupmessage(const char from[], unsigned long from_len,
    pm->port = port;
    pm->query = isquery0;
    pm->next = 0;
+   pm->deleteitem = kill;
    cnt = 1L;
    if (aprsdecode_msgfifo0==0) aprsdecode_msgfifo0 = pm;
    else {
@@ -3575,7 +3576,7 @@ ort)", 44ul);
 static void iteminmsg(const char from[], unsigned long from_len,
                 const char to[], unsigned long to_len, const char txt[],
                 unsigned long txt_len, struct aprspos_POSITION * pos,
-                char name[], unsigned long name_len)
+                char name[], unsigned long name_len, char * del)
 /* test for and draw item in a message */
 {
    char h[1000];
@@ -3595,6 +3596,7 @@ static void iteminmsg(const char from[], unsigned long from_len,
       aprsdecode_drawbeacon(h, 1000ul);
       *pos = dat.pos;
       aprsstr_Assign(name, name_len, dat.symcall, 9ul);
+      *del = dat.objkill=='1';
    }
 } /* end iteminmsg() */
 
@@ -3655,21 +3657,10 @@ static void showmsg(const char from[], unsigned long from_len,
    struct aprsdecode_DAT dat;
    struct aprspos_POSITION itempos;
    aprsdecode_MONCALL itemname;
+   char delitem;
    char s[501];
-   /*
-     WrStr(from);
-     WrStr(">");
-     WrStr(to);
-     WrStr("|");
-     WrStr(txt);
-     WrStr("|");
-     WrStr(ack);
-     WrLn;
-   */
    opf = 0;
-   /*WrStr(ack);WrStrLn("<a1"); */
    if (ack[0UL]) {
-      /*WrStr(ack);WrStrLn("<a2"); */
       aprsstr_Assign(call, 9ul, from, from_len);
       op = findop(call, 1); /* find sender of msg */
       if (op) {
@@ -3689,8 +3680,6 @@ static void showmsg(const char from[], unsigned long from_len,
                else if (X2C_STRCMP(dat.acktext,5u,ack,
                 ack_len)==0 || replyack(rep, 5ul, aack, 5ul, dat.acktext,
                 5ul) && X2C_STRCMP(aack,5u,ack,ack_len)==0) {
-                  /*            OR (opf^.time+dupetime>=realtime)
-                THEN EXIT END;               (* dupe of a response *) */
                   break; /* we have this msg got before */
                }
             }
@@ -3711,9 +3700,10 @@ static void showmsg(const char from[], unsigned long from_len,
             useri_textautosize(0L, 5L, 6UL, 0UL, 'y', s, 501ul);
          }
          iteminmsg(from, from_len, to, to_len, txt, txt_len, &itempos,
-                itemname, 9ul);
+                itemname, 9ul, &delitem);
          popupmessage(from, from_len, to, to_len, txt, txt_len, ack, ack_len,
-                 aprsdecode_realtime, port, query, itempos, itemname, 9ul);
+                 aprsdecode_realtime, port, query, delitem, itempos,
+                itemname, 9ul);
          ++aprsdecode_tracenew.winevent;
          beepmsg(0);
       }

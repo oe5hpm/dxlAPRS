@@ -398,6 +398,7 @@ struct aprsdecode_MSGFIFO {
    aprsdecode_MSGTEXT txt;
    aprsdecode_ACKTEXT ack;
    char query;
+   char deleteitem;
    struct aprspos_POSITION itempos;
 };
 
