@@ -931,7 +931,9 @@ static pUSER Realloc(char alloc)
          ++cnt;
       }
    }
-   if (new0==0) Storage_ALLOCATE((X2C_ADDRESS *) &new0, sizeof(struct USER));
+   if (alloc && new0==0) {
+      Storage_ALLOCATE((X2C_ADDRESS *) &new0, sizeof(struct USER));
+   }
    /*  IF show THEN WrStr(" Table entries="); WrInt(cnt, 1); WrLn; END; */
    return new0;
 } /* end Realloc() */
