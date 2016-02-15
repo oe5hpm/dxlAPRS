@@ -818,7 +818,7 @@ static void show(struct DATLINE d)
 
 static char Checkval(const double a[], unsigned long a_len,
                 const unsigned long t[], unsigned long t_len, double err,
-                double min0, double max0)
+                double min0, double max0, double unitspers)
 {
    unsigned long i;
    double y;
@@ -829,14 +829,18 @@ static char Checkval(const double a[], unsigned long a_len,
    i = 0UL;
    if (i<=tmp) for (;; i++) {
       if (a[i]<min0 || a[i]>max0) return 0;
+      /* >=1 value out of range */
+      if (i>0UL && t[i]<t[i-1UL]) return 0;
       if (i==tmp) break;
    } /* end for */
-   /* >=1 value out of range */
+   /* time goes back */
    k = 0.0;
    tmp = a_len-1;
    i = 1UL;
    if (i<=tmp) for (;; i++) {
       if (t[i]>t[0UL]) {
+         y = X2C_DIVL(a[i]-a[0UL],(double)(float)(t[i]-t[0UL]));
+         if (y>unitspers) return 0;
          k = k+X2C_DIVL(a[i]-a[0UL],(double)(float)(t[i]-t[0UL]));
                 /* median slope */
       }
@@ -891,60 +895,58 @@ static void Checkvals(const DATS d, unsigned short * e)
       v[n-i] = d[i].hpa;
       t[n-i] = d[i].time0;
    } /* end for */
-   if (!Checkval(v, 4ul, t, 4ul, 2000.0, 0.0, 1100.0)) *e |= 0x1U;
+   if (!Checkval(v, 4ul, t, 4ul, 2000.0, 0.0, 1100.0, 200.0)) *e |= 0x1U;
    tmp = n;
    i = 0UL;
    if (i<=tmp) for (;; i++) {
       v[n-i] = d[i].temp;
       if (i==tmp) break;
    } /* end for */
-   if (!Checkval(v, 4ul, t, 4ul, 200.0, (-150.0), 80.0)) *e |= 0x2U;
+   if (!Checkval(v, 4ul, t, 4ul, 200.0, (-150.0), 80.0, 5.0)) *e |= 0x2U;
    tmp = n;
    i = 0UL;
    if (i<=tmp) for (;; i++) {
       v[n-i] = d[i].hyg;
       if (i==tmp) break;
    } /* end for */
-   if (!Checkval(v, 4ul, t, 4ul, 100.0, 0.0, 100.0)) *e |= 0x4U;
+   if (!Checkval(v, 4ul, t, 4ul, 100.0, 0.0, 100.0, 20.0)) *e |= 0x4U;
    tmp = n;
    i = 0UL;
    if (i<=tmp) for (;; i++) {
       v[n-i] = d[i].speed;
       if (i==tmp) break;
    } /* end for */
-   if (!Checkval(v, 4ul, t, 4ul, 100.0, 0.0, 300.0)) *e |= 0x8U;
+   if (!Checkval(v, 4ul, t, 4ul, 100.0, 0.0, 300.0, 100.0)) *e |= 0x8U;
    tmp = n;
    i = 0UL;
    if (i<=tmp) for (;; i++) {
       v[n-i] = d[i].dir;
       if (i==tmp) break;
    } /* end for */
-   if (!Checkval(v, 4ul, t, 4ul, 360.0, 0.0, 359.0)) *e |= 0x10U;
+   if (!Checkval(v, 4ul, t, 4ul, 360.0, 0.0, 359.0, 1000.0)) *e |= 0x10U;
    tmp = n;
    i = 0UL;
    if (i<=tmp) for (;; i++) {
       v[n-i] = d[i].lat;
       if (i==tmp) break;
    } /* end for */
-   if (!Checkval(v, 4ul, t, 4ul, 4.5454545454545E-4, (-85.0), 85.0)) {
-      *e |= 0x20U;
-   }
+   if (!Checkval(v, 4ul, t, 4ul, 4.5454545454545E-4, (-85.0), 85.0,
+                2.7272727272727E-3)) *e |= 0x20U;
    tmp = n;
    i = 0UL;
    if (i<=tmp) for (;; i++) {
       v[n-i] = d[i].long0;
       if (i==tmp) break;
    } /* end for */
-   if (!Checkval(v, 4ul, t, 4ul, 4.5454545454545E-4, (-180.0), 180.0)) {
-      *e |= 0x40U;
-   }
+   if (!Checkval(v, 4ul, t, 4ul, 4.5454545454545E-4, (-180.0), 180.0,
+                2.7272727272727E-3)) *e |= 0x40U;
    tmp = n;
    i = 0UL;
    if (i<=tmp) for (;; i++) {
       v[n-i] = d[i].alt;
       if (i==tmp) break;
    } /* end for */
-   if (!Checkval(v, 4ul, t, 4ul, 100.0, 5.0, 60000.0)) *e |= 0x80U;
+   if (!Checkval(v, 4ul, t, 4ul, 100.0, 5.0, 60000.0, 1000.0)) *e |= 0x80U;
    /*
      FOR i:=0 TO n DO 
        IF (i>0) & (ta<>(d[i].time+1) MOD (3600*24)) THEN INCL(e, eMISS) END;
@@ -971,13 +973,10 @@ static pCONTEXT findcontext(char n[], unsigned long n_len, unsigned long t)
    pCONTEXT findcontext_ret;
    X2C_PCOPY((void **)&n,n_len);
    c = contexts;
-   while (c && !aprsstr_StrCmp(X2C_CHKNIL(pCONTEXT,c)->name, 12ul, n,
-                n_len)) c = X2C_CHKNIL(pCONTEXT,c)->next;
+   while (c && !aprsstr_StrCmp(c->name, 12ul, n, n_len)) c = c->next;
    if (c==0) {
       c = contexts;
-      while (c && X2C_CHKNIL(pCONTEXT,c)->lastused+86400UL>t) {
-         c = X2C_CHKNIL(pCONTEXT,c)->next;
-      }
+      while (c && c->lastused+86400UL>t) c = c->next;
       if (c==0) {
          Storage_ALLOCATE((X2C_ADDRESS *) &c, sizeof(struct CONTEXT));
          memset((X2C_ADDRESS)c,(char)0,sizeof(struct CONTEXT));
@@ -986,13 +985,13 @@ static pCONTEXT findcontext(char n[], unsigned long n_len, unsigned long t)
       }
       else {
          /* reuse old context */
-         p = X2C_CHKNIL(pCONTEXT,c)->next;
+         p = c->next;
          memset((X2C_ADDRESS)c,(char)0,sizeof(struct CONTEXT));
          c->next = p;
       }
       aprsstr_Assign(c->name, 12ul, n, n_len);
    }
-   if (c) X2C_CHKNIL(pCONTEXT,c)->lastused = t;
+   if (c) c->lastused = t;
    findcontext_ret = c;
    X2C_PFREE(n);
    return findcontext_ret;
@@ -1067,7 +1066,7 @@ extern void sondeaprs_senddata(double lat, double long0, double alt,
    ct = findcontext(objname, objname_len, systime);
    if (ct) {
       { /* with */
-         struct CONTEXT * anonym = X2C_CHKNIL(pCONTEXT,ct);
+         struct CONTEXT * anonym = ct;
          shift(anonym->dat);
          anonym->speedsum = anonym->speedsum+speed;
          ++anonym->speedcnt;

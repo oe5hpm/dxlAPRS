@@ -932,8 +932,7 @@ static void tickermon(const char port[], unsigned long port_len, char dir,
    unsigned long tmp;
    cnt = (unsigned long)useri_conf2int(useri_fWRTICKER, 0UL, 0L, 99L, 1L);
    if (cnt==0UL && ot==0UL) cnt = 1UL;
-   /*WrInt(cnt, 10); WrLn; */
-   if (cnt>0UL && aprsdecode_Decode(s, s_len, &dat)>=0L) {
+   if ((ot!=1UL && cnt>0UL) && aprsdecode_Decode(s, s_len, &dat)>=0L) {
       h2[0] = 0;
       if (cnt==1UL) {
          if (ot==0UL) strncpy(h2,"New User: ",31u);
@@ -1108,7 +1107,7 @@ static char Sendtcp(aprsdecode_pTCPSOCK to, const aprsdecode_FRAMEBUF buf)
    if (to) {
       if (to->connt>0UL) {
          memset((char *) &modeminfo,(char)0,sizeof(struct UDPSET));
-         wrmon(0UL, '<', modeminfo, 0UL, buf, 512ul);
+         wrmon(0UL, '<', modeminfo, 1UL, buf, 512ul);
       }
       len = (long)aprsstr_Length(buf, 512ul);
       { /* with */
@@ -1151,7 +1150,7 @@ static long Sendudp(const char s[], unsigned long s_len, unsigned long uport,
                 aprsdecode_udpsocks0[uport].ip);
             if (len>0L) {
                memset((char *) &modeminfo,(char)0,sizeof(struct UDPSET));
-               wrmon(uport+1UL, '<', modeminfo, 0UL, s, s_len);
+               wrmon(uport+1UL, '<', modeminfo, 1UL, s, s_len);
                { /* with */
                   struct aprsdecode_UDPSOCK * anonym = &aprsdecode_udpsocks0[uport]
                 ;
@@ -4799,7 +4798,7 @@ extern long aprsdecode_Stoframe(aprsdecode_pOPHIST * optab, char rawbuf[],
    struct aprsdecode_VARDAT * anonym;
    long aprsdecode_Stoframe_ret;
    X2C_PCOPY((void **)&rawbuf,rawbuf_len);
-   *oldtime = 0UL;
+   *oldtime = 1UL; /* say not "new user" if filtered out */
    i = 0UL;
    hash = 0U;
    do {
@@ -4839,6 +4838,7 @@ extern long aprsdecode_Stoframe(aprsdecode_pOPHIST * optab, char rawbuf[],
       }
    }
    /*  END; */
+   *oldtime = 0UL;
    cnt = 0UL; /* check for 2 WIDE chunk */
    if (widefilt()) {
       i = 0UL;
@@ -4992,9 +4992,7 @@ extern long aprsdecode_Stoframe(aprsdecode_pOPHIST * optab, char rawbuf[],
       frame->next = lastf->next; /* not nil if insert older frame */
       lastf->next = frame; /* append waypoint */
    }
-   if (dat.hrtlen>0UL) {
-      inserthrt(dat, &op, frame->nodraw);
-   }
+   if (dat.hrtlen>0UL) inserthrt(dat, &op, frame->nodraw);
    if (!logmode) {
       /* read log check whole track at end */
       aprsdecode_Checktrack(op, lastf);
@@ -6589,6 +6587,7 @@ temporarily", 56ul);
          osi_WrStrLn("---discarded delayed digpeat-frame", 35ul);
       }
    }
+   otime = 0UL;
    if (aprsdecode_verb && udpch>0UL) {
       InOut_WriteInt(res, 3UL);
       InOut_WriteString(" udp ", 6ul);

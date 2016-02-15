@@ -26,6 +26,7 @@
 #ifndef RealMath_H_
 #include "RealMath.h"
 #endif
+#include <math.h>
 #ifndef Lib_H_
 #include "Lib.h"
 #endif
@@ -46,7 +47,9 @@
 #endif
 
 /* demodulate RS92 sonde (2400bit/s manchester)
-                and send as AXUDP by OE5DXL */
+   and SRS-C34 (2400Bd AFSK 2000/3800Hz
+   and DFM06 (2500bit/s manchester)
+   and RS41 (4800Bd GFSK) and send as AXUDP by OE5DXL */
 #define sondeudp_MAXLEN 9
 /* data frame size c34 */
 
@@ -55,6 +58,8 @@
 #define sondeudp_BAUDSAMP 65536
 
 #define sondeudp_PLLSHIFT 1024
+
+#define sondeudp_RAD 1.7453288888889E-2
 
 #define sondeudp_DFIRLEN 64
 
@@ -78,7 +83,28 @@ static char sondeudp_DATAFRAME = 'i';
 #define sondeudp_CIDTIMEOUT 3600
 /* s to delete c34 sonde id */
 
+#define sondeudp_FLEN6 264
+/* dfm06 frame len */
+
+#define sondeudp_DFMSYN 0x45CF 
+/* frame sync sequence */
+
+#define sondeudp_FLENRS41 520
+/* rs41  frame len */
+
+#define sondeudp_RHEAD41 "000010000110110101010011100010000100010001101001010\
+0100000011111"
+
+static unsigned char sondeudp_EXOR41[64] = {150U,131U,62U,81U,177U,73U,8U,
+                152U,50U,5U,89U,14U,249U,68U,198U,38U,33U,96U,194U,234U,121U,
+                93U,109U,161U,84U,105U,71U,12U,220U,232U,92U,241U,247U,118U,
+                130U,127U,7U,153U,162U,44U,147U,124U,48U,99U,245U,16U,46U,
+                97U,208U,188U,180U,182U,6U,170U,244U,35U,120U,110U,59U,174U,
+                191U,123U,76U,193U};
+
 typedef char FILENAME[1024];
+
+typedef char CNAMESTR[9];
 
 enum CHANNELS {sondeudp_LEFT, sondeudp_RIGHT};
 
@@ -111,6 +137,7 @@ struct R92 {
    long manchestd;
    float noise;
    float bitlev;
+   float lastu;
    char cbit;
    char oldd;
    char plld;
@@ -122,9 +149,80 @@ struct R92 {
    char rxbuf[256];
    AFIRTAB afirtab;
    long asynst[10];
+   unsigned long demodbaud;
+   unsigned long configbaud;
 };
 
-typedef char CNAMESTR[9];
+struct R41;
+
+
+struct R41 {
+   char enabled;
+   long pllshift;
+   long baudfine;
+   float noise0;
+   float bitlev0;
+   float noise;
+   float bitlev;
+   char cbit;
+   char oldd;
+   char plld;
+   char data1;
+   char rev;
+   unsigned long rxbyte;
+   unsigned long rxbitc;
+   unsigned long rxp;
+   char rxbuf[520];
+   AFIRTAB afirtab;
+   unsigned long demodbaud;
+   unsigned long configbaud;
+   unsigned long synp;
+   char synbuf[64];
+};
+
+struct DFM6;
+
+
+struct DFM6 {
+   char enabled;
+   CNAMESTR id;
+   CNAMESTR idcheck;
+   unsigned long idtime;
+   unsigned long idcnt;
+   unsigned long timediff;
+   unsigned long actdate;
+   unsigned long lastdate;
+   unsigned long idnum;
+   unsigned long num;
+   unsigned long numcnt;
+   unsigned long lastnum;
+   long pllshift;
+   long baudfine;
+   long manchestd;
+   float noise;
+   float bitlev;
+   float lastu;
+   char polarity;
+   char cbit;
+   char oldd;
+   char plld;
+   char data1;
+   char lastmanch;
+   char wasdate;
+   char txok;
+   unsigned long rxp;
+   char rxbuf[264];
+   AFIRTAB afirtab;
+   unsigned long synword;
+   char cb[56];
+   char ch[56];
+   char db1[104];
+   char db2[104];
+   char dh1[104];
+   char dh2[104];
+   unsigned long demodbaud;
+   unsigned long configbaud;
+};
 
 struct C34;
 
@@ -164,8 +262,8 @@ struct C34 {
    unsigned long confignyquist;
    unsigned long configafskshift;
    unsigned long configafskmid;
-   unsigned long demodbaud0;
-   unsigned long configbaud0;
+   unsigned long demodbaud;
+   unsigned long configbaud;
    unsigned long txbaud;
    unsigned long dcdclock;
    float hipasscap;
@@ -176,12 +274,15 @@ struct CHAN;
 
 struct CHAN {
    long adcmax;
+   long adcdc;
    float afir[32];
    long configequalizer;
    pUDPTX udptx;
    unsigned long mycallc;
    char myssid;
    struct R92 r92;
+   struct R41 r41;
+   struct DFM6 dfm6;
    struct C34 c34;
 };
 
@@ -213,10 +314,6 @@ static struct CHAN chan[2];
 
 static unsigned char maxchannels;
 
-static unsigned long demodbaud;
-
-static unsigned long configbaud;
-
 
 static void Error(char text[], unsigned long text_len)
 {
@@ -235,8 +332,8 @@ static void Hamming(float f[], unsigned long f_len)
    tmp = f_len-1;
    i = 0UL;
    if (i<=tmp) for (;; i++) {
-      f[i] = f[i]*(0.54f+0.46f*RealMath_cos(3.141592f*(X2C_DIVR((float)i,
-                (float)(1UL+(f_len-1))))));
+      f[i] = (float)((double)f[i]*(0.54+0.46*cos((double)
+                (3.141592f*(X2C_DIVR((float)i,(float)(1UL+(f_len-1))))))));
       if (i==tmp) break;
    } /* end for */
 } /* end Hamming() */
@@ -262,14 +359,15 @@ static void initdfir(DFIRTAB dfirtab, unsigned long fg)
          e = f1-(float)(unsigned long)X2C_TRUNCC(f1,0UL,X2C_max_longcard);
       }
       for (i = 0UL; i<=511UL; i++) {
-         t[i] = t[i]+e*RealMath_cos(X2C_DIVR(3.141592f*(float)(i*f),512.0f));
+         t[i] = (float)((double)t[i]+(double)e*cos((double)
+                (X2C_DIVR(3.141592f*(float)(i*f),512.0f))));
       } /* end for */
       if (f==tmp) break;
    } /* end for */
    Hamming(t, 512ul);
    for (i = 0UL; i<=511UL; i++) {
-      t[i] = t[i]*(0.54f+0.46f*RealMath_cos(3.141592f*(X2C_DIVR((float)i,
-                512.0f))));
+      t[i] = (float)((double)t[i]*(0.54+0.46*cos((double)
+                (3.141592f*(X2C_DIVR((float)i,512.0f))))));
    } /* end for */
    for (i = 0UL; i<=511UL; i++) {
       dfirtab[511UL+i] = t[i];
@@ -320,8 +418,8 @@ static void initafir(AFIRTAB atab, unsigned long F0, unsigned long F1,
       }
       else {
          for (i = 0UL; i<=255UL; i++) {
-            t[i] = t[i]+e*RealMath_cos(X2C_DIVR(3.141592f*(float)(i*f),
-                256.0f));
+            t[i] = (float)((double)t[i]+(double)e*cos((double)
+                (X2C_DIVR(3.141592f*(float)(i*f),256.0f))));
          } /* end for */
       }
       if (f==tmp) break;
@@ -502,13 +600,15 @@ static void Config(void)
    unsigned long i;
    unsigned char c;
    struct R92 * anonym;
-   struct C34 * anonym0;
+   struct R41 * anonym0;
+   struct DFM6 * anonym1;
+   struct C34 * anonym2;
    for (c = sondeudp_LEFT;; c++) {
       { /* with */
          struct R92 * anonym = &chan[c].r92;
-         configbaud = 4800UL;
-         demodbaud = (2UL*configbaud*65536UL)/adcrate;
-         initafir(anonym->afirtab, 300UL, 3600UL,
+         anonym->configbaud = 4800UL;
+         anonym->demodbaud = (2UL*anonym->configbaud*65536UL)/adcrate;
+         initafir(anonym->afirtab, 0UL, 2800UL,
                 X2C_DIVR((float)chan[c].configequalizer,100.0f));
          anonym->baudfine = 0L;
          anonym->noise = 0.0f;
@@ -524,26 +624,57 @@ static void Config(void)
          } /* end for */
       }
       { /* with */
-         struct C34 * anonym0 = &chan[c].c34;
-         anonym0->txbaud = (anonym0->configbaud0*65536UL)/adcrate;
-         anonym0->demodbaud0 = anonym0->txbaud*2UL;
-         anonym0->afskmidfreq = X2C_DIVR((float)anonym0->configafskmid*2.0f,
-                (float)adcrate);
-         initafir(anonym0->afirtab,
-                (anonym0->configafskmid-anonym0->configafskshift/2UL)
-                -anonym0->configbaud0/4UL,
-                anonym0->configafskmid+anonym0->configafskshift/2UL+anonym0->configbaud0/4UL,
-                 X2C_DIVR((float)chan[c].configequalizer,100.0f));
-         initdfir(anonym0->dfirtab,
-                (anonym0->configbaud0*anonym0->confignyquist)/100UL);
+         struct R41 * anonym0 = &chan[c].r41;
+         anonym0->configbaud = 4800UL;
+         anonym0->demodbaud = (2UL*anonym0->configbaud*65536UL)/adcrate;
+         initafir(anonym0->afirtab, 0UL, 2800UL,
+                X2C_DIVR((float)chan[c].configequalizer,100.0f));
          anonym0->baudfine = 0L;
-         anonym0->left = 0.0f;
-         anonym0->tcnt = 0.0f;
-         anonym0->freq = 0.0f;
-         anonym0->dfin = 0UL;
+         anonym0->noise = 0.0f;
+         anonym0->bitlev = 0.0f;
          anonym0->cbit = 0;
          anonym0->rxp = 0UL;
          anonym0->rxbitc = 0UL;
+         anonym0->rxbyte = 0UL;
+         anonym0->synp = 0UL;
+      }
+      { /* with */
+         struct DFM6 * anonym1 = &chan[c].dfm6;
+         anonym1->configbaud = 2500UL;
+         anonym1->demodbaud = (2UL*anonym1->configbaud*65536UL)/adcrate;
+         initafir(anonym1->afirtab, 0UL, 1900UL,
+                X2C_DIVR((float)chan[c].configequalizer,100.0f));
+         anonym1->baudfine = 0L;
+         anonym1->noise = 0.0f;
+         anonym1->bitlev = 0.0f;
+         anonym1->cbit = 0;
+         anonym1->rxp = 264UL; /* out of fram, wait for sync */
+         anonym1->manchestd = 0L;
+         anonym1->polarity = 0;
+         anonym1->numcnt = 0UL;
+         anonym1->txok = 0;
+      }
+      { /* with */
+         struct C34 * anonym2 = &chan[c].c34;
+         anonym2->txbaud = (anonym2->configbaud*65536UL)/adcrate;
+         anonym2->demodbaud = anonym2->txbaud*2UL;
+         anonym2->afskmidfreq = X2C_DIVR((float)anonym2->configafskmid*2.0f,
+                (float)adcrate);
+         initafir(anonym2->afirtab,
+                (anonym2->configafskmid-anonym2->configafskshift/2UL)
+                -anonym2->configbaud/4UL,
+                anonym2->configafskmid+anonym2->configafskshift/2UL+anonym2->configbaud/4UL,
+                 X2C_DIVR((float)chan[c].configequalizer,100.0f));
+         initdfir(anonym2->dfirtab,
+                (anonym2->configbaud*anonym2->confignyquist)/100UL);
+         anonym2->baudfine = 0L;
+         anonym2->left = 0.0f;
+         anonym2->tcnt = 0.0f;
+         anonym2->freq = 0.0f;
+         anonym2->dfin = 0UL;
+         anonym2->cbit = 0;
+         anonym2->rxp = 0UL;
+         anonym2->rxbitc = 0UL;
       }
       if (c==sondeudp_RIGHT) break;
    } /* end for */
@@ -565,11 +696,13 @@ static void Parms(void)
    unsigned long myc;
    char mys;
    struct R92 * anonym;
-   struct C34 * anonym0;
-   struct CHAN * anonym1;
-   /* set only 1 chan */
-   struct CHAN * anonym2;
+   struct R41 * anonym0;
+   struct DFM6 * anonym1;
+   struct C34 * anonym2;
    struct CHAN * anonym3;
+   /* set only 1 chan */
+   struct CHAN * anonym4;
+   struct CHAN * anonym5;
    err = 0;
    abortonsounderr = 0;
    adcrate = 22050UL;
@@ -586,28 +719,38 @@ static void Parms(void)
          anonym->pllshift = 1024L;
       }
       { /* with */
-         struct C34 * anonym0 = &chan[channel].c34;
+         struct R41 * anonym0 = &chan[channel].r41;
          anonym0->enabled = 1;
          anonym0->pllshift = 1024L;
-         anonym0->confignyquist = 75UL;
-         anonym0->pllshift = 1024L;
-         anonym0->afskhighpass = 0.0f;
-         anonym0->configbaud0 = 2400UL;
-         anonym0->configafskshift = 1800UL;
-         anonym0->configafskmid = 3800UL;
-         anonym0->id[0] = 0;
-         anonym0->idcheck[0] = 0;
-         anonym0->idtime = 0UL;
-         anonym0->idcnt = 0UL;
-         anonym0->idcheck[0] = 0;
-         anonym0->idtime = 0UL;
-         anonym0->idcnt = 0UL;
       }
       { /* with */
-         struct CHAN * anonym1 = &chan[channel];
-         anonym1->configequalizer = 0L;
-         anonym1->udptx = 0;
-         anonym1->mycallc = 0UL;
+         struct DFM6 * anonym1 = &chan[channel].dfm6;
+         anonym1->enabled = 1;
+         anonym1->pllshift = 1024L;
+      }
+      { /* with */
+         struct C34 * anonym2 = &chan[channel].c34;
+         anonym2->enabled = 1;
+         anonym2->pllshift = 1024L;
+         anonym2->confignyquist = 75UL;
+         anonym2->pllshift = 1024L;
+         anonym2->afskhighpass = 0.0f;
+         anonym2->configbaud = 2400UL;
+         anonym2->configafskshift = 1800UL;
+         anonym2->configafskmid = 3800UL;
+         anonym2->id[0] = 0;
+         anonym2->idcheck[0] = 0;
+         anonym2->idtime = 0UL;
+         anonym2->idcnt = 0UL;
+         anonym2->idcheck[0] = 0;
+         anonym2->idtime = 0UL;
+         anonym2->idcnt = 0UL;
+      }
+      { /* with */
+         struct CHAN * anonym3 = &chan[channel];
+         anonym3->configequalizer = 0L;
+         anonym3->udptx = 0;
+         anonym3->mycallc = 0UL;
       }
       if (channel==sondeudp_RIGHT) break;
    } /* end for */
@@ -641,6 +784,28 @@ static void Parms(void)
                chan[sondeudp_RIGHT].r92.enabled = 0;
             }
          }
+         else if (h[1U]=='4') {
+            if (chanset) {
+               /* set only 1 chan */
+               chan[channel].r41.enabled = 0;
+            }
+            else {
+               /* use before -C set both */
+               chan[sondeudp_LEFT].r41.enabled = 0;
+               chan[sondeudp_RIGHT].r41.enabled = 0;
+            }
+         }
+         else if (h[1U]=='6') {
+            if (chanset) {
+               /* set only 1 chan */
+               chan[channel].dfm6.enabled = 0;
+            }
+            else {
+               /* use before -C set both */
+               chan[sondeudp_LEFT].dfm6.enabled = 0;
+               chan[sondeudp_RIGHT].dfm6.enabled = 0;
+            }
+         }
          else if (h[1U]=='c') {
             Lib_NextArg(h, 1024ul);
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
@@ -661,9 +826,7 @@ static void Parms(void)
          else if (h[1U]=='e') {
             Lib_NextArg(h, 1024ul);
             if (!aprsstr_StrToInt(h, 1024ul, &inum)) err = 1;
-            if (labs(inum)>999L) {
-               Error("equalizer -999..999", 20ul);
-            }
+            if (labs(inum)>999L) Error("equalizer -999..999", 20ul);
             chan[channel].configequalizer = inum;
          }
          else if (h[1U]=='f') {
@@ -693,9 +856,9 @@ static void Parms(void)
             }
             if (chanset) {
                { /* with */
-                  struct CHAN * anonym2 = &chan[channel];
-                  anonym2->mycallc = myc;
-                  anonym2->myssid = mys;
+                  struct CHAN * anonym4 = &chan[channel];
+                  anonym4->mycallc = myc;
+                  anonym4->myssid = mys;
                }
             }
             else {
@@ -709,16 +872,18 @@ static void Parms(void)
          else if (h[1U]=='u') {
             Lib_NextArg(h, 1024ul);
             { /* with */
-               struct CHAN * anonym3 = &chan[channel];
+               struct CHAN * anonym5 = &chan[channel];
                Storage_ALLOCATE((X2C_ADDRESS *) &utx, sizeof(struct UDPTX));
                if (utx==0) Error("udp socket out of memory", 25ul);
                utx->udpfd = GetIp(h, 1024ul, &utx->ip, &utx->destport);
                if (utx->udpfd<0L) Error("cannot open udp socket", 23ul);
-               utx->next = anonym3->udptx;
-               anonym3->udptx = utx;
+               utx->next = anonym5->udptx;
+               anonym5->udptx = utx;
             }
          }
-         else if (h[1U]=='v') verb = 1;
+         else if (h[1U]=='v') {
+            verb = 1;
+         }
          else {
             if (h[1U]=='h') {
                osi_WrStrLn("oss Mono/Stereo RS92-SGPA and SRSC34 Sonde Demodu\
@@ -729,7 +894,11 @@ lators may send to same decoder", 79ul);
  Antenna-Diversity", 68ul);
                osi_WrStrLn(" -3             disable SRSC34 decoding (use -C b\
 efore to select 1 channel)", 76ul);
-               osi_WrStrLn(" -9             disable RG92 decoding (use -C bef\
+               osi_WrStrLn(" -4             disable RS41 decoding (use -C bef\
+ore to select 1 channel)", 74ul);
+               osi_WrStrLn(" -6             disable DFM06 decoding (use -C be\
+fore to select 1 channel)", 75ul);
+               osi_WrStrLn(" -9             disable RS92 decoding (use -C bef\
 ore to select 1 channel)", 74ul);
                osi_WrStrLn(" -a             abort on sounddevice error else r\
 etry to open (USB audio...)", 77ul);
@@ -824,6 +993,20 @@ static void WrQuali(float q)
 } /* end WrQuali() */
 
 
+static void Wrtune(long volt, long max0)
+{
+   long u;
+   if (max0>volt) {
+      u = X2C_DIV(volt*100L,max0);
+      if (labs(u)>0L) {
+         InOut_WriteString(" f:", 4ul);
+         InOut_WriteInt(u, 2UL);
+      }
+      else InOut_WriteString("     ", 6ul);
+   }
+} /* end Wrtune() */
+
+
 static float noiselevel(unsigned char channel)
 /* 0.0 perfect, ~0.25 noise only*/
 {
@@ -863,7 +1046,7 @@ static void alludp(pUDPTX utx, unsigned long len, char buf[],
 {
    X2C_PCOPY((void **)&buf,buf_len);
    while (utx) {
-      if (X2C_CHKNIL(pUDPTX,utx)->udpfd>=0L) {
+      if (utx->udpfd>=0L) {
          sendudp(buf, buf_len, (long)len, utx->ip, utx->destport,
                 utx->udpfd);
       }
@@ -939,6 +1122,7 @@ static void decodeframe92(unsigned char m)
          if (m>sondeudp_LEFT) InOut_WriteString("             ", 14ul);
          WrdB(chan[m].adcmax);
          WrQ(chan[m].r92.bitlev, chan[m].r92.noise);
+         Wrtune(chan[m].adcdc, chan[m].adcmax);
          osi_WrStrLn("", 1ul);
       }
    }
@@ -965,6 +1149,1031 @@ static char hex(unsigned long n)
    return 0;
 } /* end hex() */
 
+/*------------------------------ RS41 */
+
+static void sendrs41(unsigned char m)
+{
+   unsigned char channel;
+   struct CHAN * anonym;
+   channel = m;
+   if (chan[channel].udptx==0) {
+      if (channel==sondeudp_LEFT) channel = sondeudp_RIGHT;
+      else channel = sondeudp_LEFT;
+   }
+   { /* with */
+      struct CHAN * anonym = &chan[channel];
+      if (anonym->mycallc>0UL) {
+         chan[m].r41.rxbuf[0U] = (char)(anonym->mycallc/16777216UL);
+         chan[m].r41.rxbuf[1U] = (char)(anonym->mycallc/65536UL&255UL);
+         chan[m].r41.rxbuf[2U] = (char)(anonym->mycallc/256UL&255UL);
+         chan[m].r41.rxbuf[3U] = (char)(anonym->mycallc&255UL);
+         chan[m].r41.rxbuf[4U] = anonym->myssid;
+         chan[m].r41.rxbuf[5U] = 0;
+         chan[m].r41.rxbuf[6U] = 0;
+      }
+      alludp(anonym->udptx, 520UL, chan[m].r41.rxbuf, 520ul);
+   }
+} /* end sendrs41() */
+
+
+static double atan20(double x, double y)
+{
+   double w;
+   if (fabs(x)>fabs(y)) {
+      w = atan(X2C_DIVL(y,x));
+      if (x<0.0) {
+         if (y>0.0) w = 3.141592+w;
+         else w = w-3.141592;
+      }
+   }
+   else if (y!=0.0) {
+      w = 1.570796-atan(X2C_DIVL(x,y));
+      if (y<0.0) w = w-3.141592;
+   }
+   else w = 0.0;
+   return w;
+} /* end atan2() */
+
+#define sondeudp_EARTHA 6.378137E+6
+
+#define sondeudp_EARTHB 6.3567523142452E+6
+
+#define sondeudp_E2 6.6943799901413E-3
+
+#define sondeudp_EARTHAB 4.2841311513312E+4
+
+
+static void wgs84r(double x, double y, double z, double * lat,
+                double * long0, double * heig)
+{
+   double sl;
+   double ct;
+   double st;
+   double t;
+   double rh;
+   double xh;
+   double h;
+   h = x*x+y*y;
+   if (h>0.0) {
+      rh = sqrt(h);
+      xh = x+rh;
+      *long0 = atan20(xh, y)*2.0;
+      if (*long0>3.141592) *long0 = *long0-6.283184;
+      t = atan(X2C_DIVL(z*1.003364089821,rh));
+      st = sin(t);
+      ct = cos(t);
+      *lat = atan(X2C_DIVL(z+4.2841311513312E+4*st*st*st,
+                rh-4.269767270718E+4*ct*ct*ct));
+      sl = sin(*lat);
+      *heig = X2C_DIVL(rh,cos(*lat))-X2C_DIVL(6.378137E+6,
+                sqrt(1.0-6.6943799901413E-3*sl*sl));
+   }
+   else {
+      *lat = 0.0;
+      *long0 = 0.0;
+      *heig = 0.0;
+   }
+/*  lat:=atan(z/(rh*(1.0 - E2))); */
+/*  heig:=sqrt(h + z*z) - EARTHA; */
+} /* end wgs84r() */
+
+
+static long getint32(const char frame[], unsigned long frame_len,
+                unsigned long p)
+{
+   unsigned long n;
+   unsigned long i;
+   n = 0UL;
+   for (i = 3UL;; i--) {
+      n = n*256UL+(unsigned long)(unsigned char)frame[p+i];
+      if (i==0UL) break;
+   } /* end for */
+   return (long)n;
+} /* end getint32() */
+
+
+static long getint16(const char frame[], unsigned long frame_len,
+                unsigned long p)
+{
+   unsigned long n;
+   n = (unsigned long)(unsigned char)frame[p]+256UL*(unsigned long)
+                (unsigned char)frame[p+1UL];
+   if (n>=32768UL) return (long)(n-65536UL);
+   return (long)n;
+} /* end getint16() */
+
+
+static void posrs41(const char b[], unsigned long b_len, unsigned long p)
+{
+   double dir;
+   double vu;
+   double ve;
+   double vn;
+   double vz;
+   double vy;
+   double vx;
+   double heig;
+   double long0;
+   double lat;
+   double z;
+   double y;
+   double x;
+   x = (double)getint32(b, b_len, p)*0.01;
+   y = (double)getint32(b, b_len, p+4UL)*0.01;
+   z = (double)getint32(b, b_len, p+8UL)*0.01;
+   wgs84r(x, y, z, &lat, &long0, &heig);
+   InOut_WriteString(" ", 2ul);
+   osi_WrFixed((float)(X2C_DIVL(lat,1.7453288888889E-2)), 5L, 1UL);
+   InOut_WriteString(" ", 2ul);
+   osi_WrFixed((float)(X2C_DIVL(long0,1.7453288888889E-2)), 5L, 1UL);
+   InOut_WriteString(" ", 2ul);
+   osi_WrFixed((float)heig, 1L, 1UL);
+   InOut_WriteString("m ", 3ul);
+   /*speed */
+   vx = (double)getint16(b, b_len, p+12UL)*0.01;
+   vy = (double)getint16(b, b_len, p+14UL)*0.01;
+   vz = (double)getint16(b, b_len, p+16UL)*0.01;
+   vn = (-(vx*sin(lat)*cos(long0))-vy*sin(lat)*sin(long0))+vz*cos(lat);
+   ve = -(vx*sin(long0))+vy*cos(long0);
+   vu = vx*cos(lat)*cos(long0)+vy*cos(lat)*sin(long0)+vz*sin(lat);
+   dir = X2C_DIVL(atan20(vn, ve),1.7453288888889E-2);
+   if (dir<0.0) dir = 360.0+dir;
+   InOut_WriteString(" ", 2ul);
+   osi_WrFixed((float)(sqrt(vn*vn+ve*ve)*3.6), 2L, 1UL);
+   InOut_WriteString("km/h ", 6ul);
+   osi_WrFixed((float)dir, 1L, 1UL);
+   InOut_WriteString("deg ", 5ul);
+   osi_WrFixed((float)vu, 1L, 1UL);
+   InOut_WriteString("m/s", 4ul);
+} /* end posrs41() */
+
+static unsigned short sondeudp_POLYNOM0 = 0x1021U;
+
+
+static void decode41(unsigned char m)
+{
+   unsigned long ic;
+   unsigned long len;
+   unsigned long p;
+   unsigned long j;
+   unsigned long i;
+   char typ;
+   unsigned short crc;
+   char nameok;
+   struct R41 * anonym;
+   { /* with */
+      struct R41 * anonym = &chan[m].r41;
+      nameok = 0;
+      p = 57UL;
+      if (verb) {
+         if ((unsigned long)maxchannels>0UL) {
+            InOut_WriteInt((long)((unsigned long)m+1UL), 1UL);
+            InOut_WriteString(":", 2ul);
+         }
+         InOut_WriteString("R41 ", 5ul);
+      }
+      for (;;) {
+         if (p+4UL>=519UL) break;
+         typ = anonym->rxbuf[p];
+         ++p;
+         len = (unsigned long)(unsigned char)anonym->rxbuf[p]+2UL;
+         ++p;
+         if (p+len>=519UL) break;
+         /*
+         WrStrLn("");
+         FOR i:=0 TO len-1 DO WrHex(ORD(rxbuf[p+i]),3) ;
+                IF i MOD 16=15 THEN WrStrLn(""); END; END;
+         WrStrLn("");
+         */
+         j = 0UL;
+         crc = 0xFFFFU;
+         while (j<len && p+j<519UL) {
+            if (j+2UL<len) {
+               for (ic = 0UL; ic<=7UL; ic++) {
+                  if (((0x8000U & crc)!=0)!=X2C_IN(7UL-ic,8,
+                (unsigned char)(unsigned char)anonym->rxbuf[p+j])) {
+                     crc = X2C_LSH(crc,16,1)^0x1021U;
+                  }
+                  else crc = X2C_LSH(crc,16,1);
+               } /* end for */
+            }
+            ++j;
+         }
+         if ((p+len>519UL || (char)crc!=anonym->rxbuf[(p+len)-2UL]) || (char)
+                X2C_LSH(crc,16,-8)!=anonym->rxbuf[(p+len)-1UL]) {
+            if (verb) InOut_WriteString(" ----  crc err ", 16ul);
+            break;
+         }
+         if (typ=='y') {
+            if (verb) {
+               for (i = 0UL; i<=7UL; i++) {
+                  InOut_WriteString((char *) &anonym->rxbuf[p+2UL+i], 1u/1u);
+               } /* end for */
+               InOut_WriteInt(getint16(anonym->rxbuf, 520ul, p), 0UL);
+            }
+            nameok = 1;
+            if (anonym->rxbuf[p+23UL]==0) {
+               InOut_WriteString(" ", 2ul);
+               osi_WrFixed((float)(X2C_DIV(getint16(anonym->rxbuf, 520ul,
+                p+26UL),64L)+40000L)*0.01f, 2L, 1UL);
+               InOut_WriteString("MHz", 4ul);
+            }
+         }
+         else if (typ=='z') {
+         }
+         else if (typ=='|') {
+         }
+         else if (typ=='}') {
+         }
+         else if (typ=='{') {
+            /*             WrStrLn("7A frame"); */
+            /*             WrStrLn("7C frame"); */
+            /*WrInt(getint32(rxbuf, p+2) DIV 1000 MOD 86400 , 10);
+                WrStr("=gpstime "); */
+            /*             WrStrLn("7D frame"); */
+            /*             WrStrLn("7B frame"); */
+            if (verb && p+17UL<519UL) posrs41(anonym->rxbuf, 520ul, p);
+         }
+         else if (typ=='~') {
+         }
+         else if (typ=='v') {
+         }
+         else {
+            /*             WrStrLn("7E frame"); */
+            /*             WrStrLn("76 frame"); */
+            break;
+         }
+         /*        WrInt(getint16(rxbuf, 3BH), 0); */
+         /*        WrStr(" ");WrHex(ORD(typ), 0);WrStr(" ");
+                WrHex(p DIV 256, 0);WrHex(p, 0); */
+         /*        WrStr(" "); */
+         if (typ=='v') break;
+         p += len;
+      }
+      if (verb) {
+         WrdB(chan[m].adcmax);
+         WrQ(anonym->bitlev0, anonym->noise0);
+         Wrtune(chan[m].adcdc, chan[m].adcmax);
+         /*WrStrLn(""); */
+         /*FOR i:=0 TO HIGH(rxbuf) DO WrHex(ORD(rxbuf[i]),3) ;
+                IF i MOD 16=15 THEN WrStrLn(""); END; END;  */
+         osi_WrStrLn("", 1ul);
+      }
+   }
+   if (nameok) sendrs41(m);
+} /* end decode41() */
+
+static unsigned char _cnst[64] = {150U,131U,62U,81U,177U,73U,8U,152U,50U,5U,
+                89U,14U,249U,68U,198U,38U,33U,96U,194U,234U,121U,93U,109U,
+                161U,84U,105U,71U,12U,220U,232U,92U,241U,247U,118U,130U,127U,
+                7U,153U,162U,44U,147U,124U,48U,99U,245U,16U,46U,97U,208U,
+                188U,180U,182U,6U,170U,244U,35U,120U,110U,59U,174U,191U,123U,
+                76U,193U};
+
+static void demodbyte41(unsigned char m, char d)
+{
+   unsigned long j;
+   unsigned long i;
+   char norm;
+   /*WrStr(CHR(ORD(d)+48)); */
+   struct R41 * anonym;
+   { /* with */
+      struct R41 * anonym = &chan[m].r41;
+      if (anonym->rxp==0UL) {
+         anonym->synbuf[anonym->synp] = d;
+         i = anonym->synp;
+         ++anonym->synp;
+         if (anonym->synp>63UL) anonym->synp = 0UL;
+         j = 56UL;
+         norm = 1;
+         anonym->rev = 1;
+         do {
+            --j;
+            if (("00001000011011010101001110001000010001000110100101001000000\
+11111"[j]=='1')==anonym->synbuf[i]) anonym->rev = 0;
+            else norm = 0;
+            if (i==0UL) i = 63UL;
+            else --i;
+         } while (!(j==24UL || !(anonym->rev || norm)));
+         if (j==24UL) anonym->rxp = 7UL;
+         anonym->rxbitc = 0UL;
+      }
+      else {
+         anonym->rxbyte = anonym->rxbyte/2UL+128UL*(unsigned long)
+                (d!=anonym->rev);
+         ++anonym->rxbitc;
+         if (anonym->rxbitc>=8UL) {
+            anonym->rxbuf[anonym->rxp] = (char)((unsigned char)
+                anonym->rxbyte^(unsigned char)_cnst[anonym->rxp&63UL]);
+            ++anonym->rxp;
+            if (anonym->rxp>=519UL) {
+               decode41(m);
+               anonym->rxp = 0UL;
+            }
+            if (anonym->rxp==200UL) {
+               anonym->bitlev0 = anonym->bitlev;
+                /* save quality before end of shortst frame */
+               anonym->noise0 = anonym->noise;
+            }
+            anonym->rxbitc = 0UL;
+         }
+      }
+   }
+} /* end demodbyte41() */
+
+
+static void demodbit41(unsigned char m, float u)
+{
+   char d;
+   float ua;
+   struct R41 * anonym;
+   d = u>=0.0f;
+   { /* with */
+      struct R41 * anonym = &chan[m].r41;
+      demodbyte41(m, d);
+      /*quality*/
+      ua = (float)fabs(u)-anonym->bitlev;
+      anonym->bitlev = anonym->bitlev+ua*0.005f;
+      anonym->noise = anonym->noise+((float)fabs(ua)-anonym->noise)*0.02f;
+   }
+/*quality*/
+} /* end demodbit41() */
+
+/*------------------------------ RS92 */
+
+static void stobyte(unsigned char m, char b)
+{
+   struct R92 * anonym;
+   { /* with */
+      struct R92 * anonym = &chan[m].r92;
+      anonym->rxbuf[anonym->rxp] = b;
+      if (anonym->rxp>=5UL || b=='*') ++anonym->rxp;
+      else anonym->rxp = 0UL;
+      if (anonym->rxp>=240UL) {
+         anonym->rxp = 0UL;
+         decodeframe92(m);
+      }
+   }
+} /* end stobyte() */
+
+
+static void demodbyte(unsigned char m, char d)
+{
+   unsigned long maxi;
+   unsigned long i;
+   long max0;
+   long n;
+   struct R92 * anonym;
+   { /* with */
+      struct R92 * anonym = &chan[m].r92;
+      anonym->rxbyte = anonym->rxbyte/2UL+256UL*(unsigned long)d;
+      max0 = 0L;
+      maxi = 0UL;
+      for (i = 0UL; i<=9UL; i++) {
+         n = anonym->asynst[i]-anonym->asynst[(i+1UL)%10UL];
+         if (labs(n)>labs(max0)) {
+            max0 = n;
+            maxi = i;
+         }
+      } /* end for */
+      if (anonym->rxbitc==maxi) {
+         if (max0<0L) {
+            anonym->rxbyte = (unsigned long)((unsigned long)
+                anonym->rxbyte^0xFFUL);
+         }
+         stobyte(m, (char)(anonym->rxbyte&255UL));
+      }
+      if (d) {
+         anonym->asynst[anonym->rxbitc]
+                += X2C_DIV(32767L-anonym->asynst[anonym->rxbitc],16L);
+      }
+      else {
+         anonym->asynst[anonym->rxbitc]
+                -= X2C_DIV(32767L+anonym->asynst[anonym->rxbitc],16L);
+      }
+      anonym->rxbitc = (anonym->rxbitc+1UL)%10UL;
+   }
+/*FOR i:=0 TO HIGH(asynst) DO WrInt(asynst[i], 8) END; WrStrLn(""); */
+} /* end demodbyte() */
+
+
+static void demodbit92(unsigned char m, float u, float u0)
+{
+   char d;
+   float ua;
+   struct R92 * anonym;
+   d = u>=u0;
+   { /* with */
+      struct R92 * anonym = &chan[m].r92;
+      if (anonym->lastmanch==u0<0.0f) {
+         anonym->manchestd += X2C_DIV(32767L-anonym->manchestd,16L);
+      }
+      anonym->lastmanch = d;
+      anonym->manchestd = -anonym->manchestd;
+      /*WrInt(manchestd,8); */
+      if (anonym->manchestd<0L) {
+         demodbyte(m, d);
+         /*WrInt(VAL(INTEGER, u0*0.001), 4); WrStr("/");
+                WrInt(VAL(INTEGER, u*0.001), 0); */
+         /*quality*/
+         ua = (float)fabs(u-u0)-anonym->bitlev;
+         anonym->bitlev = anonym->bitlev+ua*0.005f;
+         anonym->noise = anonym->noise+((float)fabs(ua)-anonym->noise)*0.02f;
+      }
+   }
+/*quality*/
+} /* end demodbit92() */
+
+
+static void demod92(float u, unsigned char m)
+{
+   char d;
+   struct R92 * anonym;
+   /*
+     IF debfd>=0 THEN
+       ui:=VAL(INTEGER, u*0.002);
+       WrBin(debfd, ui, 2);
+     END;
+   */
+   { /* with */
+      struct R92 * anonym = &chan[m].r92;
+      d = u>=0.0f;
+      if (anonym->cbit) {
+         if (anonym->enabled) demodbit92(m, u, anonym->lastu);
+         if (chan[m].r41.enabled) demodbit41(m, u);
+         if (d!=anonym->oldd) {
+            if (d==anonym->plld) anonym->baudfine += anonym->pllshift;
+            else anonym->baudfine -= anonym->pllshift;
+            anonym->oldd = d;
+         }
+         /*
+         (*quality*)
+               ua:=ABS(u)+ABS(lastu);
+               bitlev:=bitlev + (ua-bitlev)*0.05;
+               noise:=noise + ((ua-bitlev)-noise)*0.05; 
+         (*quality*)
+         */
+         anonym->lastu = u;
+      }
+      else anonym->plld = d;
+      anonym->cbit = !anonym->cbit;
+   }
+} /* end demod92() */
+
+
+static void Fsk(unsigned char m)
+{
+   float ff;
+   long lim;
+   struct R92 * anonym;
+   { /* with */
+      struct R92 * anonym = &chan[m].r92;
+      lim = (long)anonym->demodbaud;
+      for (;;) {
+         if (anonym->baudfine>=65536L) {
+            anonym->baudfine -= 65536L;
+            ff = Fir(afin, (unsigned long)X2C_DIV(anonym->baudfine&65535L,
+                4096L), 16UL, chan[m].afir, 32ul, anonym->afirtab, 512ul);
+            demod92(ff, m);
+         }
+         anonym->baudfine += lim;
+         lim = 0L;
+         if (anonym->baudfine<131072L) break;
+      }
+   }
+} /* end Fsk() */
+
+/*------------------------------ DFM06 */
+
+static void deinterleave(const char b[], unsigned long b_len,
+                unsigned long base, unsigned long len, char db[],
+                unsigned long db_len)
+{
+   unsigned long j;
+   unsigned long i;
+   unsigned long tmp;
+   for (j = 0UL; j<=7UL; j++) {
+      tmp = len-1UL;
+      i = 0UL;
+      if (i<=tmp) for (;; i++) {
+         db[i*8UL+j] = b[base+len*j+i];
+         if (i==tmp) break;
+      } /* end for */
+   } /* end for */
+} /* end deinterleave() */
+
+
+static char hamcorr(char b[], unsigned long b_len, unsigned long d,
+                unsigned long h)
+{
+   unsigned long e;
+   e = (unsigned long)((b[d]==b[d+2UL])!=(b[h]==b[h+2UL]))
+                +2UL*(unsigned long)((b[d+1UL]==b[d+2UL])
+                !=(b[h+1UL]==b[h+2UL]))+4UL*(unsigned long)((b[d+3UL]==b[h])
+                !=(b[h+1UL]==b[h+2UL]));
+   /* hamming matrix multiplication */
+   if (e>4UL) b[(h+e)-4UL] = !b[(h+e)-4UL];
+   else if (e>0UL) b[(d+e)-1UL] = !b[(d+e)-1UL];
+   /*  IF e<>0 THEN WrStr("<");WrInt(e, 1);WrStr(">") END; */
+   e = (unsigned long)b[d]+(unsigned long)b[d+1UL]+(unsigned long)
+                b[d+2UL]+(unsigned long)b[d+3UL]+(unsigned long)
+                b[h]+(unsigned long)b[h+1UL]+(unsigned long)
+                b[h+2UL]+(unsigned long)b[h+3UL];
+   return !(e&1);
+/* 1 bit checksum */
+} /* end hamcorr() */
+
+
+static char hamming(const char b[], unsigned long b_len, unsigned long len,
+                char db[], unsigned long db_len)
+{
+   unsigned long j;
+   unsigned long i;
+   unsigned long tmp;
+   tmp = db_len-1;
+   i = 0UL;
+   if (i<=tmp) for (;; i++) {
+      db[i] = 0;
+      if (i==tmp) break;
+   } /* end for */
+   tmp = len-1UL;
+   i = 0UL;
+   if (i<=tmp) for (;; i++) {
+      for (j = 0UL; j<=3UL; j++) {
+         db[i*4UL+j] = b[i*8UL+j];
+      } /* end for */
+      for (j = 0UL; j<=3UL; j++) {
+         db[i*4UL+j+len*4UL] = b[i*8UL+j+4UL];
+      } /* end for */
+      if (!hamcorr(db, db_len, i*4UL, i*4UL+len*4UL)) return 0;
+      if (i==tmp) break;
+   } /* end for */
+   return 1;
+/*
+0000 0000
+0001 1110
+0010 1101
+0011 0011
+0100 1011
+0101 0101
+0110 0110
+0111 1000
+1000 0111
+1001 1001
+1010 1010
+1011 0100
+1100 1100
+1101 0010
+1110 0001
+1111 1111
+*/
+} /* end hamming() */
+
+
+static unsigned long bits2val(const char b[], unsigned long b_len,
+                unsigned long from, unsigned long len)
+{
+   unsigned long n;
+   n = 0UL;
+   while (len>0UL) {
+      n = n*2UL+(unsigned long)b[from];
+      ++from;
+      --len;
+   }
+   return n;
+} /* end bits2val() */
+
+
+static void wh(unsigned long x)
+{
+   char tmp;
+   x = x&15UL;
+   if (x<10UL) InOut_WriteString((char *)(tmp = (char)(x+48UL),&tmp), 1u/1u);
+   else InOut_WriteString((char *)(tmp = (char)(x+55UL),&tmp), 1u/1u);
+} /* end wh() */
+
+static unsigned long sondeudp_MON[13] = {0UL,0UL,31UL,59UL,90UL,120UL,151UL,
+                181UL,212UL,243UL,273UL,304UL,334UL};
+
+static unsigned long _cnst0[13] = {0UL,0UL,31UL,59UL,90UL,120UL,151UL,181UL,
+                212UL,243UL,273UL,304UL,334UL};
+
+static void decodesub(const char b[], unsigned long b_len, unsigned char m,
+                unsigned long subnum)
+{
+   unsigned long u;
+   unsigned long v;
+   long ui;
+   char s[101];
+   char ok0;
+   unsigned long tt;
+   unsigned long tyear;
+   unsigned long tmon;
+   unsigned long tday;
+   unsigned long thour;
+   unsigned long tmin;
+   /* check name, if changed may be checksum error or 2 sondes on same frequency */
+   struct DFM6 * anonym;
+   ok0 = 0;
+   switch (bits2val(b, b_len, 48UL, 4UL)) {
+   case 0UL: /* framecount */
+      v = bits2val(b, b_len, 24UL, 8UL);
+      if (verb) {
+         InOut_WriteString(" num: ", 7ul);
+         InOut_WriteInt((long)v, 0UL);
+      }
+      if ((chan[m].dfm6.num+1UL&255UL)==v && chan[m].dfm6.wasdate) {
+         ++chan[m].dfm6.numcnt; /* date/num+1/date/num+1 sequence ok */
+      }
+      else chan[m].dfm6.numcnt = 0UL;
+      chan[m].dfm6.num = v;
+      chan[m].dfm6.wasdate = 0; /* we have number, next must be date */
+      u = (((v+256UL)-(chan[m].dfm6.idnum&255UL)&255UL)+256UL)
+                -(TimeConv_time()+chan[m].dfm6.timediff&255UL)&255UL;
+      if (u>=128UL) u = 256UL-u;
+      chan[m].dfm6.txok = u<=1UL; /* max +-1s tolerance of num */
+      if (verb) {
+         InOut_WriteString(" [", 3ul);
+         aprsstr_IntToStr((long)u, 0UL, s, 101ul);
+         if (chan[m].dfm6.txok) aprsstr_Append(s, 101ul, "s seq]", 7ul);
+         else aprsstr_Append(s, 101ul, "s OUT OF seq - NO TX]", 22ul);
+         InOut_WriteString(s, 101ul);
+      }
+      if (chan[m].dfm6.lastdate+60UL==chan[m].dfm6.actdate) {
+         /* minute change */
+         if (chan[m].dfm6.numcnt>=3UL) {
+            chan[m].dfm6.timediff = chan[m].dfm6.actdate-TimeConv_time();
+                /* sonde realtime - systime */
+            v = (chan[m].dfm6.num+256UL)-(chan[m].dfm6.actdate&255UL)&255UL;
+            if (verb) {
+               InOut_WriteString(" NEW ID", 8ul);
+               InOut_WriteInt((long)v, 0UL);
+            }
+            chan[m].dfm6.idnum = v;
+            strncpy(s,"DFM6",101u); /* build a name from 1/1000s */
+            s[4U] = (char)((v/100UL)%10UL+48UL);
+            s[5U] = (char)((v/10UL)%10UL+48UL);
+            s[6U] = (char)(v%10UL+48UL);
+            s[7U] = 0;
+            /*           IF verb THEN WrStr(" id: "); WrStr(s) END; */
+            { /* with */
+               struct DFM6 * anonym = &chan[m].dfm6;
+               if (aprsstr_StrCmp(anonym->idcheck, 9ul, s, 101ul)) {
+                  ++anonym->idcnt; /* got same name again */
+               }
+               else {
+                  /* new name so check if wrong */
+                  aprsstr_Assign(anonym->idcheck, 9ul, s, 101ul);
+                  anonym->idcnt = 1UL;
+               }
+               if (anonym->idcnt>2UL || anonym->id[0U]==0) {
+                  /* first name or safe new name */
+                  memcpy(anonym->id,anonym->idcheck,9u);
+                  anonym->idtime = TimeConv_time();
+               }
+            }
+         }
+         chan[m].dfm6.numcnt = 0UL;
+      }
+      ok0 = 1;
+      break;
+   case 2UL:
+      /*
+         |1: v:=bits2val(b, 16, 32);                        (* time ms *)
+             u:=v MOD 1000;
+             ok:=TRUE;
+      */
+      v = bits2val(b, b_len, 0UL, 32UL);
+      u = bits2val(b, b_len, 32UL, 16UL);
+      if (verb) {
+         InOut_WriteString(" lat: ", 7ul);
+         osi_WrFixed((float)v*1.E-7f, 5L, 0UL);
+         InOut_WriteString(" ", 2ul);
+         osi_WrFixed((float)u*0.036f, 1L, 0UL);
+         InOut_WriteString("km/h", 5ul);
+      }
+      ok0 = 1;
+      break;
+   case 3UL:
+      v = bits2val(b, b_len, 0UL, 32UL);
+      u = bits2val(b, b_len, 32UL, 16UL);
+      if (verb) {
+         InOut_WriteString(" long:", 7ul);
+         osi_WrFixed((float)v*1.E-7f, 5L, 0UL);
+         InOut_WriteString(" ", 2ul);
+         osi_WrFixed((float)u*0.01f, 1L, 0UL);
+         InOut_WriteString(" deg", 5ul);
+      }
+      ok0 = 1;
+      break;
+   case 4UL:
+      v = bits2val(b, b_len, 0UL, 32UL);
+      ui = (long)bits2val(b, b_len, 32UL, 16UL);
+      if (ui>=32768L) ui -= 65536L;
+      if (verb) {
+         InOut_WriteString(" alti:", 7ul);
+         osi_WrFixed((float)v*0.01f, 1L, 0UL);
+         InOut_WriteString("m ", 3ul);
+         osi_WrFixed((float)ui*0.01f, 1L, 0UL);
+         InOut_WriteString(" m/s", 5ul);
+      }
+      ok0 = 1;
+      break;
+   case 8UL: /* date */
+      /*
+         |5: ui:=bits2val(b, 8, 16);
+             IF verb THEN
+               WrStr(" mes5:"); WrInt(ui,0);
+             END;
+         |6: ui:=bits2val(b, 16, 32);
+             IF verb THEN
+               WrStr(" mes6:"); WrInt(ui,0);
+             END;
+         |7: ui:=bits2val(b, 16, 32);
+             IF verb THEN
+               WrStr(" mes7:"); WrInt(ui,0);
+             END;
+      */
+      tmin = bits2val(b, b_len, 26UL, 6UL);
+      thour = bits2val(b, b_len, 21UL, 5UL);
+      tday = bits2val(b, b_len, 16UL, 5UL);
+      tmon = bits2val(b, b_len, 12UL, 4UL);
+      tyear = bits2val(b, b_len, 0UL, 12UL);
+      if (tyear>=1970UL && tyear<2100UL) {
+         /* make unix time */
+         tt = (tyear-1970UL)*365UL+(tyear-1969UL)/4UL; /* days since 1970 */
+         if (tmon<=12UL) {
+            tt += _cnst0[tmon];
+            if ((tyear&3UL)==0UL && tmon>2UL) ++tt;
+         }
+         tt = ((tt+tday)-1UL)*86400UL+thour*3600UL+tmin*60UL;
+      }
+      else tt = 0UL;
+      /*DateToStr(tt, s); WrStr(s); WrStr("<date"); */
+      if (chan[m].dfm6.wasdate) chan[m].dfm6.numcnt = 0UL;
+      else ++chan[m].dfm6.numcnt;
+      chan[m].dfm6.wasdate = 1;
+      chan[m].dfm6.lastdate = chan[m].dfm6.actdate;
+      chan[m].dfm6.actdate = tt;
+      if (verb) {
+         InOut_WriteString(" ", 2ul);
+         aprsstr_IntToStr((long)tyear, 0UL, s, 101ul);
+         aprsstr_Append(s, 101ul, "-", 2ul);
+         InOut_WriteString(s, 101ul);
+         aprsstr_IntToStr((long)tmon, 0UL, s, 101ul);
+         aprsstr_Append(s, 101ul, "-", 2ul);
+         InOut_WriteString(s, 101ul);
+         aprsstr_IntToStr((long)tday, 0UL, s, 101ul);
+         aprsstr_Append(s, 101ul, " ", 2ul);
+         InOut_WriteString(s, 101ul);
+         aprsstr_IntToStr((long)thour, 0UL, s, 101ul);
+         aprsstr_Append(s, 101ul, ":", 2ul);
+         InOut_WriteString(s, 101ul);
+         aprsstr_IntToStr((long)tmin, 0UL, s, 101ul);
+         InOut_WriteString(s, 101ul);
+      }
+      ok0 = 1;
+      break;
+   default:;
+      if (verb) {
+         if (subnum==0UL) InOut_WriteString(" Dat", 5ul);
+         else InOut_WriteString(" dat", 5ul);
+         wh(bits2val(b, b_len, 48UL, 4UL));
+         InOut_WriteString(":", 2ul);
+         for (u = 0UL; u<=5UL; u++) {
+            osi_WrHex(bits2val(b, b_len, u*8UL, 8UL), 0UL);
+         } /* end for */
+      }
+      break;
+   } /* end switch */
+/*
+      okk:=TRUE;
+      FOR u:=0 TO 5 DO
+        v:=bits2val(b, u*8, 8);
+        IF (v<32) OR (v>128) THEN okk:=FALSE END;
+      END;
+      IF okk THEN
+        WrStr(" [");
+        FOR u:=0 TO 5 DO
+          v:=bits2val(b, u*8, 8);
+          IF v>=32 THEN WrStr(CHR(v)) ELSE WrStr(".") END;
+        END;
+        WrStr("]");
+      END;
+*/
+} /* end decodesub() */
+
+
+static void decodeframe6(unsigned char m)
+{
+   unsigned long j;
+   unsigned long i;
+   unsigned long rt;
+   char s[101];
+   char tx;
+   struct DFM6 * anonym;
+   /* build tx frame */
+   struct DFM6 * anonym0;
+   struct CHAN * anonym1; /* my call if set */
+   { /* with */
+      struct DFM6 * anonym = &chan[m].dfm6;
+      deinterleave(anonym->rxbuf, 264ul, 0UL, 7UL, anonym->ch, 56ul);
+      deinterleave(anonym->rxbuf, 264ul, 56UL, 13UL, anonym->dh1, 104ul);
+      deinterleave(anonym->rxbuf, 264ul, 160UL, 13UL, anonym->dh2, 104ul);
+      if (verb) {
+         if ((unsigned long)maxchannels>0UL) {
+            InOut_WriteInt((long)((unsigned long)m+1UL), 1UL);
+            InOut_WriteString(":", 2ul);
+         }
+         if (anonym->id[0U]) InOut_WriteString(anonym->id, 9ul);
+         else InOut_WriteString("DF6", 4ul);
+         WrdB(chan[m].adcmax);
+         WrQ(chan[m].dfm6.bitlev, chan[m].dfm6.noise);
+         Wrtune(chan[m].adcdc, chan[m].adcmax);
+      }
+      if (hamming(anonym->dh1, 104ul, 13UL, anonym->db1,
+                104ul) && hamming(anonym->dh2, 104ul, 13UL, anonym->db2,
+                104ul)) {
+         if (verb && hamming(anonym->ch, 56ul, 7UL, anonym->cb, 56ul)) {
+            InOut_WriteString(" ", 2ul);
+            for (i = 0UL; i<=6UL; i++) {
+               wh(bits2val(anonym->cb, 56ul, i*4UL, 4UL));
+            } /* end for */
+         }
+         /*      WrInt(bits2val(cb, 4, 16),0); */
+         /*      WrInt(bits2val(cb, 8, 16),0); */
+         /*      WrInt(bits2val(cb, 12, 16),0); */
+         /*      IF bits2val(cb, 0, 4)=6 THEN WrInt(bits2val(cb, 4, 20),
+                0) END; */
+         decodesub(anonym->db1, 104ul, m, 0UL);
+         /*      IF verb THEN WrStr(" /") END; */
+         decodesub(anonym->db2, 104ul, m, 1UL);
+         { /* with */
+            struct DFM6 * anonym0 = &chan[m].dfm6;
+            tx = anonym0->id[0U] && aprsstr_StrCmp(anonym0->idcheck, 9ul,
+                anonym0->id, 9ul);
+            for (i = 0UL; i<=9UL; i++) {
+               s[i] = 0;
+            } /* end for */
+            if (tx && anonym0->txok) {
+               /* else stop sending if ambigous id */
+               for (i = 0UL; i<=6UL; i++) {
+                  s[i] = anonym0->id[i];
+                /* sonde id or zero string for no tx */
+               } /* end for */
+            }
+            { /* with */
+               struct CHAN * anonym1 = &chan[m];
+               s[10U] = (char)(anonym1->mycallc/16777216UL);
+               s[11U] = (char)(anonym1->mycallc/65536UL&255UL);
+               s[12U] = (char)(anonym1->mycallc/256UL&255UL);
+               s[13U] = (char)(anonym1->mycallc&255UL);
+               if (anonym1->mycallc>0UL) s[14U] = anonym1->myssid;
+               else s[14U] = '\020';
+            }
+            rt = TimeConv_time()+chan[m].dfm6.timediff;
+                /* interpolated sonde realtime */
+            s[15U] = (char)(rt/16777216UL);
+            s[16U] = (char)(rt/65536UL&255UL);
+            s[17U] = (char)(rt/256UL&255UL);
+            s[18U] = (char)(rt&255UL);
+            j = 19UL;
+            for (i = 0UL; i<=3UL; i++) {
+               s[j] = (char)bits2val(anonym0->cb, 56ul, i*8UL, 8UL);
+                /* payload */
+               ++j;
+            } /* end for */
+            for (i = 0UL; i<=6UL; i++) {
+               s[j] = (char)bits2val(anonym0->db1, 104ul, i*8UL, 8UL);
+                /* payload */
+               ++j;
+            } /* end for */
+            for (i = 0UL; i<=6UL; i++) {
+               s[j] = (char)bits2val(anonym0->db2, 104ul, i*8UL, 8UL);
+                /* payload */
+               ++j;
+            } /* end for */
+            alludp(chan[m].udptx, j, s, 101ul);
+            if ((verb && !tx) && anonym0->id[0U]) {
+               osi_WrStrLn("", 1ul);
+               InOut_WriteString(" changing name ", 16ul);
+               InOut_WriteString(anonym0->id, 9ul);
+               InOut_WriteString("<->", 4ul);
+               InOut_WriteString(anonym0->idcheck, 9ul);
+            }
+         }
+      }
+      else if (verb) {
+         /*build tx frame */
+         InOut_WriteString(" parity error", 14ul);
+      }
+      if (verb) osi_WrStrLn("", 1ul);
+   }
+} /* end decodeframe6() */
+
+
+static void demodbyte6(unsigned char m, char d)
+{
+   /*  WrInt(ORD(d),1); */
+   struct DFM6 * anonym;
+   { /* with */
+      struct DFM6 * anonym = &chan[m].dfm6;
+      anonym->synword = anonym->synword*2UL+(unsigned long)d;
+      if (anonym->rxp>=264UL) {
+         if ((anonym->synword&65535UL)==17871UL) anonym->rxp = 0UL;
+         else if ((anonym->synword&65535UL)==47664UL) {
+            /* inverse start sequence found */
+            anonym->polarity = !anonym->polarity;
+            anonym->rxp = 0UL;
+         }
+      }
+      else {
+         anonym->rxbuf[anonym->rxp] = d;
+         ++anonym->rxp;
+         if (anonym->rxp==264UL) decodeframe6(m);
+      }
+   }
+} /* end demodbyte6() */
+
+
+static void demodbit6(unsigned char m, float u, float u0)
+{
+   char d;
+   float ua;
+   struct DFM6 * anonym;
+   d = u>=u0;
+   { /* with */
+      struct DFM6 * anonym = &chan[m].dfm6;
+      if (anonym->lastmanch==u0<0.0f) {
+         anonym->manchestd += X2C_DIV(32767L-anonym->manchestd,16L);
+      }
+      anonym->lastmanch = d;
+      anonym->manchestd = -anonym->manchestd;
+      /*WrInt(manchestd,8); */
+      if (anonym->manchestd<0L) {
+         /*=polarity*/
+         demodbyte6(m, d!=anonym->polarity);
+         /*quality*/
+         ua = (float)fabs(u-u0)-anonym->bitlev;
+         anonym->bitlev = anonym->bitlev+ua*0.005f;
+         anonym->noise = anonym->noise+((float)fabs(ua)-anonym->noise)*0.02f;
+      }
+   }
+/*quality*/
+} /* end demodbit6() */
+
+
+static void demod6(float u, unsigned char m)
+{
+   char d;
+   struct DFM6 * anonym;
+   /*
+     IF debfd>=0 THEN
+       ui:=VAL(INTEGER, u*0.002);
+       WrBin(debfd, ui, 2);
+     END;
+   */
+   { /* with */
+      struct DFM6 * anonym = &chan[m].dfm6;
+      d = u>=0.0f;
+      if (anonym->cbit) {
+         demodbit6(m, u, anonym->lastu);
+         if (d!=anonym->oldd) {
+            if (d==anonym->plld) anonym->baudfine += anonym->pllshift;
+            else anonym->baudfine -= anonym->pllshift;
+            anonym->oldd = d;
+         }
+         anonym->lastu = u;
+      }
+      else anonym->plld = d;
+      anonym->cbit = !anonym->cbit;
+   }
+} /* end demod6() */
+
+
+static void Fsk6(unsigned char m)
+{
+   float ff;
+   long lim;
+   struct DFM6 * anonym;
+   { /* with */
+      struct DFM6 * anonym = &chan[m].dfm6;
+      lim = (long)anonym->demodbaud;
+      for (;;) {
+         if (anonym->baudfine>=65536L) {
+            anonym->baudfine -= 65536L;
+            ff = Fir(afin, (unsigned long)X2C_DIV(anonym->baudfine&65535L,
+                4096L), 16UL, chan[m].afir, 32ul, anonym->afirtab, 512ul);
+            demod6(ff, m);
+         }
+         anonym->baudfine += lim;
+         lim = 0L;
+         if (anonym->baudfine<131072L) break;
+      }
+   }
+} /* end Fsk6() */
+
+/*------------------------------ C34 */
 
 static void demodframe34(unsigned char channel)
 {
@@ -997,9 +2206,11 @@ static void demodframe34(unsigned char channel)
             InOut_WriteInt((long)((unsigned long)channel+1UL), 1UL);
             InOut_WriteString(":", 2ul);
          }
+         InOut_WriteString("C34 ", 5ul);
          InOut_WriteString(anonym->id, 9ul);
          WrdB(chan[channel].adcmax);
          WrQuali(noiselevel(channel));
+         Wrtune(chan[channel].adcdc, chan[channel].adcmax);
          InOut_WriteString(" [", 3ul);
          osi_WrHex((unsigned long)(unsigned char)anonym->rxbuf[2U], 2UL);
          InOut_WriteString(" ", 2ul);
@@ -1113,8 +2324,8 @@ static void demodframe34(unsigned char channel)
             }
             break;
          case '\031':
-            hr = (double)((float)val*0.1609f);
-                /*1.852*/ /* guess knots or miles */
+            hr = (double)((float)val*0.1852f);
+                /*1.609*/ /*1.852*/ /* guess knots or miles */
             if (hr<1000.0) {
                if (verb) {
                   InOut_WriteString("wind", 5ul);
@@ -1211,136 +2422,6 @@ static void demodframe34(unsigned char channel)
    }
 /* name(9) 0C call(5) playload(7) */
 } /* end demodframe34() */
-
-
-static void stobyte(unsigned char m, char b)
-{
-   struct R92 * anonym;
-   { /* with */
-      struct R92 * anonym = &chan[m].r92;
-      anonym->rxbuf[anonym->rxp] = b;
-      if (anonym->rxp>=5UL || b=='*') ++anonym->rxp;
-      else anonym->rxp = 0UL;
-      if (anonym->rxp>=240UL) {
-         anonym->rxp = 0UL;
-         decodeframe92(m);
-      }
-   }
-} /* end stobyte() */
-
-
-static void demodbyte(unsigned char m, char d)
-{
-   unsigned long maxi;
-   unsigned long i;
-   long max0;
-   long n;
-   struct R92 * anonym;
-   { /* with */
-      struct R92 * anonym = &chan[m].r92;
-      anonym->rxbyte = anonym->rxbyte/2UL+256UL*(unsigned long)d;
-      max0 = 0L;
-      maxi = 0UL;
-      for (i = 0UL; i<=9UL; i++) {
-         n = anonym->asynst[i]-anonym->asynst[(i+1UL)%10UL];
-         if (labs(n)>labs(max0)) {
-            max0 = n;
-            maxi = i;
-         }
-      } /* end for */
-      if (anonym->rxbitc==maxi) {
-         if (max0<0L) {
-            anonym->rxbyte = (unsigned long)((unsigned long)
-                anonym->rxbyte^0xFFUL);
-         }
-         stobyte(m, (char)(anonym->rxbyte&255UL));
-      }
-      if (d) {
-         anonym->asynst[anonym->rxbitc]
-                += X2C_DIV(32767L-anonym->asynst[anonym->rxbitc],16L);
-      }
-      else {
-         anonym->asynst[anonym->rxbitc]
-                -= X2C_DIV(32767L+anonym->asynst[anonym->rxbitc],16L);
-      }
-      anonym->rxbitc = (anonym->rxbitc+1UL)%10UL;
-   }
-/*FOR i:=0 TO HIGH(asynst) DO WrInt(asynst[i], 8) END; WrStrLn(""); */
-} /* end demodbyte() */
-
-
-static void demodbit92(unsigned char m, char d)
-{
-   struct R92 * anonym;
-   { /* with */
-      struct R92 * anonym = &chan[m].r92;
-      if (anonym->lastmanch==d) {
-         anonym->manchestd += X2C_DIV(32767L-anonym->manchestd,16L);
-      }
-      anonym->lastmanch = d;
-      anonym->manchestd = -anonym->manchestd;
-      /*WrInt(manchestd,8); */
-      if (anonym->manchestd>=0L) demodbyte(m, d);
-   }
-} /* end demodbit92() */
-
-
-static void demod92(float u, unsigned char m)
-{
-   char d;
-   struct R92 * anonym;
-   /*
-     IF debfd>=0 THEN
-       ui:=VAL(INTEGER, u*0.002);
-       WrBin(debfd, ui, 2);
-     END;
-   */
-   d = u>=0.0f;
-   { /* with */
-      struct R92 * anonym = &chan[m].r92;
-      if (anonym->cbit) {
-         demodbit92(m, d);
-         if (d!=anonym->oldd) {
-            if (d==anonym->plld) anonym->baudfine += anonym->pllshift;
-            else anonym->baudfine -= anonym->pllshift;
-            anonym->oldd = d;
-         }
-         /*quality*/
-         anonym->bitlev = anonym->bitlev+((float)fabs(u)-anonym->bitlev)
-                *0.05f;
-         anonym->noise = anonym->noise+((float)fabs((float)fabs(u)
-                -anonym->bitlev)-anonym->noise)*0.05f;
-      }
-      else {
-         /*quality*/
-         anonym->plld = d;
-      }
-      anonym->cbit = !anonym->cbit;
-   }
-} /* end demod92() */
-
-
-static void Fsk(unsigned char m)
-{
-   float ff;
-   long lim;
-   struct R92 * anonym;
-   { /* with */
-      struct R92 * anonym = &chan[m].r92;
-      lim = (long)demodbaud;
-      for (;;) {
-         if (anonym->baudfine>=65536L) {
-            anonym->baudfine -= 65536L;
-            ff = Fir(afin, (unsigned long)X2C_DIV(anonym->baudfine&65535L,
-                4096L), 16UL, chan[m].afir, 32ul, anonym->afirtab, 512ul);
-            demod92(ff, m);
-         }
-         anonym->baudfine += lim;
-         lim = 0L;
-         if (anonym->baudfine<131072L) break;
-      }
-   }
-} /* end Fsk() */
 
 
 static void demodbit34(unsigned char channel, char d)
@@ -1447,7 +2528,7 @@ static void Afsk(unsigned char channel)
       anonym->left = right;
       anonym->dfir[anonym->dfin] = anonym->freq-anonym->afskmidfreq;
       anonym->dfin = anonym->dfin+1UL&63UL;
-      anonym->baudfine += (long)anonym->demodbaud0;
+      anonym->baudfine += (long)anonym->demodbaud;
       if (anonym->baudfine>=65536L) {
          anonym->baudfine -= 65536L;
          if (anonym->baudfine<65536L) {
@@ -1495,30 +2576,37 @@ static void getadc(void)
    minr = 32767L;
    i = 0L;
    while (i<l) {
-      sl = (long)buf[i];
-      chan[sondeudp_LEFT].afir[afin] = (float)sl;
+      sl = (long)buf[i]-chan[sondeudp_LEFT].adcdc;
+      chan[sondeudp_LEFT].afir[afin] = (float)(sl-chan[sondeudp_LEFT].adcdc);
       if (sl>maxl) maxl = sl;
       if (sl<minl) minl = sl;
-      if (maxl-minl>chan[sondeudp_LEFT].adcmax) {
-         chan[sondeudp_LEFT].adcmax = maxl-minl;
-      }
       if (maxchannels>sondeudp_LEFT) {
          sl = (long)buf[i+1L];
-         chan[sondeudp_RIGHT].afir[afin] = (float)sl;
+         chan[sondeudp_RIGHT].afir[afin] = (float)
+                (sl-chan[sondeudp_RIGHT].adcdc);
          if (sl>maxr) maxr = sl;
          if (sl<minr) minr = sl;
-         if (maxr-minr>chan[sondeudp_RIGHT].adcmax) {
-            chan[sondeudp_RIGHT].adcmax = maxr-minr;
-         }
       }
       afin = afin+1UL&31UL;
-      if (chan[sondeudp_LEFT].r92.enabled) Fsk(sondeudp_LEFT);
+      if (chan[sondeudp_LEFT].r92.enabled || chan[sondeudp_LEFT].r41.enabled)
+                 Fsk(sondeudp_LEFT);
       if (chan[sondeudp_LEFT].c34.enabled) Afsk(sondeudp_LEFT);
+      if (chan[sondeudp_LEFT].dfm6.enabled) Fsk6(sondeudp_LEFT);
       if (maxchannels>sondeudp_LEFT) {
-         if (chan[sondeudp_RIGHT].r92.enabled) Fsk(sondeudp_RIGHT);
+         if (chan[sondeudp_RIGHT].r92.enabled || chan[sondeudp_RIGHT]
+                .r41.enabled) Fsk(sondeudp_RIGHT);
          if (chan[sondeudp_RIGHT].c34.enabled) Afsk(sondeudp_RIGHT);
+         if (chan[sondeudp_RIGHT].dfm6.enabled) Fsk6(sondeudp_RIGHT);
       }
       i += (long)((unsigned long)maxchannels+1UL);
+   }
+   chan[sondeudp_LEFT].adcdc += X2C_DIV(X2C_DIV(maxl+minl,
+                2L)-chan[sondeudp_LEFT].adcdc,16L);
+   chan[sondeudp_LEFT].adcmax = maxl-minl;
+   if (maxchannels>sondeudp_LEFT) {
+      chan[sondeudp_RIGHT].adcdc += X2C_DIV(X2C_DIV(maxr+minr,
+                2L)-chan[sondeudp_RIGHT].adcdc,16L);
+      chan[sondeudp_RIGHT].adcmax = maxr-minr;
    }
 } /* end getadc() */
 
