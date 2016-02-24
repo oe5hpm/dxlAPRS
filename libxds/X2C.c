@@ -188,7 +188,6 @@ static void interrupt profiler_proc() { X2C_Profiler_clock(); }
 #include <time.h>
 #include <sys/time.h>
 
-
 #define EN_INTS()
 #define DIS_INTS()
 #define PROFILER_VEC SIGPROF
@@ -730,7 +729,9 @@ static void init_coroutines(stk_start) X2C_ADDRESS stk_start;
 		stk_up=1;
 		search_ss_sp(ss);
 	}
+#if 0 /* hpm: commented out, fails on own built lib on every platform */
 	if (sp_offs<0 || ss && ss_offs<0) search_fault(3);
+#endif
 #endif
 }
 
