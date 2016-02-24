@@ -8,7 +8,7 @@ STRIP	= $(CROSS_COMPILE)strip
 INCL    = .
 TARGET	= gps2aprs
 CDEFS	= -D_unix -D_linux -DX2C_no_spawn -w $(ARCHSPEC)
-CFLAGS	= -O2 -c -g -fno-strength-reduce -I$(INCL) -I$(EXTLIB)
+CFLAGS	= -O2 -c -fno-strength-reduce -I$(INCL) -I$(EXTLIB)
 # ---------------------- armv6 (raspberry) specific ---------------------------
 ifeq ($(PLATFORM), armv6)
 XDSLIB  = lib_armv6/libxds.a
