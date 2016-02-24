@@ -17,9 +17,6 @@
 #include "RealMath.h"
 #endif
 #include <math.h>
-#ifndef flush_H_
-#include "flush.h"
-#endif
 #ifndef Lib_H_
 #include "Lib.h"
 #endif
@@ -61,7 +58,7 @@ static IOChan_ChanId cid;
 extern void osi_WrLn(void)
 {
    InOut_WriteLn();
-   Flush();
+   fflush(stdout);
 } /* end WrLn() */
 
 

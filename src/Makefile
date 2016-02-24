@@ -92,7 +92,6 @@ OBJ_COMMON = \
 	Select.o \
 	aprspos.o \
 	aprsstr.o \
-	flush.o \
 	osi.o \
 	ptty.o \
 	soundctl.o \

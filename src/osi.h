@@ -15,9 +15,6 @@
 #ifndef InOut_H_
 #include "InOut.h"
 #endif
-#ifndef flush_H_
-#include "flush.h"
-#endif
 #include <stdio.h>
 #ifndef FileSys_H_
 #include "FileSys.h"
