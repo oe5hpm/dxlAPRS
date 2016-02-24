@@ -1,3 +1,4 @@
 *.o
 libxds.a
-
+.cproject
+.project
