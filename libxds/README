@@ -1,0 +1,6 @@
+This tree is an extrac of "xds-260-beta2-linux.tgz".
+All files which are not needed to build "libxds.a" are dropped.
+
+Further the makefile is modified, rewritten to be able to do
+cross-compiling for ARM plattforms.
+

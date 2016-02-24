@@ -1,8 +1,0 @@
--BACKEND = Common
--DEFEXT  = def
--DEFPFX  = h2d_
--MACPFX  = mac_
-
--GENMACRO+
-
-#module <example.h>
