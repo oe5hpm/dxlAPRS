@@ -1,0 +1,227 @@
+#
+# Makefile for dxlAPRS toolchain containing:
+# - afskmodem	soundmodem for afsk/fsk up to 19200 bd using Linux OSS
+# - gps2aprs	aprs-tracker using some serial gps, produces axudp frames which
+#				may be sent with afskmodem
+# - gps2digipos	generates a beaconfile for a (mobile) aprs-digi,
+#				using some serial GPS
+# - sondeudp	soundmodem for RS92 (and other) wx-ballons using Linux OSS,
+#				the produced axudp frames are beeing post-processed by sondemod
+#				to generate aprs-beacons
+# - sondemod	RS92 (and other) wx-ballon decoder (takes data from sondeudp
+#				and generates aprs-beacons)
+# - udpbox		very powerful aprs-digi and axudp "distributor"
+# - udpgate4	very powerful aprs-igate server (with http-interface)
+# - udpflex		interfaces serial stuff like TNC2, TNC3, KISS, RMNC
+#				to axudp frames
+# - udphub		L2 AX25 switch to process many Packet Radio clients on one
+#				single AXUDP interface from Flexnet, XNET, ...
+# - udprfnet
+# - aprsmap		powerful APRS viewer based on Openstreetmap
+# ---------------------- common section ---------------------------------------
+HOSTARCH := $(shell uname -m | \
+	sed -e s/i.86/x86/ \
+	    -e s/sun4u/sparc64/ \
+	    -e s/arm.*/arm/ \
+	    -e s/sa110/arm/ \
+	    -e s/ppc64/powerpc/ \
+	    -e s/ppc/powerpc/ \
+	    -e s/macppc/powerpc/\
+	    -e s/sh.*/sh/)
+export HOSTARCH
+
+CC			= $(CROSS_COMPILE)gcc
+STRIP		= $(CROSS_COMPILE)strip
+INCL		= .
+CDEFS		= -D_unix -D_linux -DX2C_no_spawn -w
+CFLAGS		= -I$(INCL) -I$(EXTLIB) -c -O2 -fgnu89-inline -fdata-sections -ffunction-sections
+LFLAGS		= -Wl,--gc-sections
+# ---------------------- armv6 (raspberry pi 1) specific -----------------------
+ifeq ($(PLATFORM), armv6tce)
+XDSLIB  	= lib_armv6/libxds.a
+EXTLIB  	= lib_armv6/
+ADDLIBS		= lib_armv6/libpng15/libpng.a \
+			  lib_armv6/libz.a \
+			  lib_armv6/libjpeg.a
+XLIBS		= $(EXTLIB)libxcb.so.1 $(EXTLIB)libXdmcp.so.6 $(EXTLIB)libXau.so.6 -L$(EXTLIB) -lXext -lX11
+CFLAGS		+= -march=armv6zk -mfpu=vfp -mfloat-abi=hard -mcpu=arm1176jzf-s
+CFLAGS		+= -Ilib_armv6/libpng15/
+LFLAGS		+=
+else ifeq ($(PLATFORM), armv6)
+XDSLIB  	= lib_armv6/libxds.a
+EXTLIB  	= lib_armv6/
+ADDLIBS		= lib_armv6/libpng16/libpng.a \
+			  lib_armv6/libz.a \
+			  lib_armv6/libjpeg.a
+XLIBS		= $(EXTLIB)libxcb.so.1 $(EXTLIB)libXdmcp.so.6 $(EXTLIB)libXau.so.6 -L$(EXTLIB) -lXext -lX11
+CFLAGS		+= -march=armv6zk -mfpu=vfp -mfloat-abi=hard -mcpu=arm1176jzf-s
+CFLAGS		+= -Ilib_armv6/libpng16/
+LFLAGS		+=
+# ---------------------- armv7hf (bur am335x pp) specific ---------------------
+else ifeq ($(PLATFORM), armv7hf)
+XDSLIB		= lib_armv7hf/libxds.a
+EXTLIB		= lib_armv7hf/
+XLIBS		= $(EXTLIB)libxcb.so $(EXTLIB)libXdmcp.so $(EXTLIB)libXau.so -L$(EXTLIB) -lXext -lX11
+ADDLIBS		= lib_armv7hf/libpng.a \
+			  lib_armv7hf/libz.a \
+			  lib_armv7hf/libjpeg.a
+CFLAGS		+= -march=armv7-a -mfpu=neon -mfloat-abi=hard
+LFLAGS		+=
+# -------------------------- x86_64 specific -----------------------------------
+else ifeq ($(HOSTARCH), x86_64)
+XDSLIB		= lib_x86/libxds.a
+EXTLIB		= .
+ADDLIBS		= lib_x86/libpng.a \
+			  lib_x86/libz.a \
+			  lib_x86/libjpeg.a
+XLIBS		= -L/usr/X11R6/lib -lXext -lX11
+CFLAGS		+= -m32
+LFLAGS		+= -m32
+# -------------------------- x86_32 (default) specific ------------------------
+else
+XDSLIB		= lib_x86/libxds.a
+EXTLIB		= .
+ADDLIBS		= lib_x86/libpng.a \
+			  lib_x86/libz.a \
+			  lib_x86/libjpeg.a
+XLIBS		= -L/usr/X11R6/lib -lXext -lX11
+endif
+# ------------------ objects enumeration ------------------
+OBJ_COMMON = \
+	Lib.o \
+	Select.o \
+	aprspos.o \
+	aprsstr.o \
+	filesize.o \
+	flush.o \
+	osi.o \
+	ptty.o \
+	soundctl.o \
+	symlink.o \
+	tcp.o \
+	udp.o \
+	cfileio.o
+
+OBJ_AFSKMODEM = \
+	afskmodem.o \
+	afskmodemptt.o
+
+OBJ_GPS2APRS	= gps2aprs.o
+OBJ_GPS2DIGIPOS= gps2digipos.o
+
+OBJ_SONDEMOD	= \
+	geodesy.o \
+	gps.o \
+	gpspos.o \
+	navigation.o \
+	rinex.o \
+	sem.o \
+	sondeaprs.o \
+	time_conversion.o \
+	yuma.o \
+	sondemod.o
+
+OBJ_SONDEUDP	= sondeudp.o
+OBJ_UDPBOX		= udpbox.o
+OBJ_UDPGATE4	= udpgate4.o
+OBJ_UDPFLEX	= udpflex.o
+OBJ_UDPHUB		= udphub.o
+OBJ_UDPRFNET	= udprfnet.o
+OBJ_APRSMAP	= \
+	aprsdecode.o \
+	aprsmap.o \
+	aprstat.o \
+	aprstext.o \
+	beep.o \
+	maptool.o \
+	mathlib.o \
+	pngread.o \
+	pngwrite.o \
+	jpgdec.o \
+	useri.o \
+	xosi.o
+
+TARGETS = \
+	afskmodem \
+	gps2aprs \
+	gps2digipos \
+	sondemod \
+	sondeudp \
+	udpbox \
+	udpgate4 \
+	udpflex \
+	udphub \
+	udprfnet \
+	aprsmap
+	
+OBJS = \
+	$(OBJ_COMMON) \
+	$(OBJ_AFSKMODEM) \
+	$(OBJ_GPS2APRS) \
+	$(OBJ_GPS2DIGIPOS) \
+	$(OBJ_SONDEMOD) \
+	$(OBJ_SONDEUDP) \
+	$(OBJ_UDPBOX) \
+	$(OBJ_UDPGATE4) \
+	$(OBJ_UDPFLEX) \
+	$(OBJ_UDPHUB) \
+	$(OBJ_UDPRFNET) \
+	$(OBJ_APRSMAP)
+# ------------------- target make rules -------------------
+#                     -----------------
+%.o: %.c
+	$(CC) $(CDEFS) $(CFLAGS) -o $@ $<
+
+all: $(TARGETS)
+	
+clean:
+	rm -f $(OBJS) $(TARGETS)
+	
+afskmodem: $(OBJ_AFSKMODEM) $(OBJ_COMMON)
+	$(CC) $(LFLAGS) -o afskmodem $(OBJ_COMMON) $(OBJ_AFSKMODEM) $(XDSLIB) -lm
+	$(STRIP) afskmodem -s
+	
+gps2aprs: $(OBJ_GPS2APRS) $(OBJ_COMMON)
+	$(CC) $(LFLAGS) -o gps2aprs $(OBJ_COMMON) $(OBJ_GPS2APRS) $(XDSLIB) -lm
+	$(STRIP) gps2aprs -s
+	
+gps2digipos: $(OBJ_GPS2DIGIPOS) $(OBJ_COMMON)
+	$(CC) $(LFLAGS) -o gps2digipos $(OBJ_COMMON) $(OBJ_GPS2DIGIPOS) $(XDSLIB) -lm
+	$(STRIP) gps2digipos -s
+
+sondemod: $(OBJ_SONDEMOD) $(OBJ_COMMON)
+	$(CC) $(LFLAGS) -o sondemod $(OBJ_COMMON) $(OBJ_SONDEMOD) $(XDSLIB) -lm
+	$(STRIP) sondemod -s
+
+sondeudp: $(OBJ_SONDEUDP) $(OBJ_COMMON)
+	$(CC) $(LFLAGS) -o sondeudp $(OBJ_COMMON) $(OBJ_SONDEUDP) $(XDSLIB) -lm
+	$(STRIP) sondeudp -s
+
+udpbox: $(OBJ_UDPBOX) $(OBJ_COMMON)
+	$(CC) $(LFLAGS) -o udpbox $(OBJ_COMMON) $(OBJ_UDPBOX) $(XDSLIB) -lm
+	$(STRIP) udpbox -s
+
+udpgate4: $(OBJ_UDPGATE4) $(OBJ_COMMON)
+	$(CC) $(LFLAGS) -o udpgate4 $(OBJ_COMMON) $(OBJ_UDPGATE4) $(XDSLIB) -lm
+	$(STRIP) udpgate4 -s
+	
+udpflex: $(OBJ_UDPFLEX) $(OBJ_COMMON)
+	$(CC) $(LFLAGS) -o udpflex $(OBJ_COMMON) $(OBJ_UDPFLEX) $(XDSLIB) -lm
+	$(STRIP) udpflex -s
+	
+udphub: $(OBJ_UDPHUB) $(OBJ_COMMON)
+	$(CC) $(LFLAGS) -o udphub $(OBJ_COMMON) $(OBJ_UDPHUB) $(XDSLIB) -lm
+	$(STRIP) udphub -s	
+	
+udprfnet: $(OBJ_UDPRFNET) $(OBJ_COMMON)
+	$(CC) $(LFLAGS) -o udprfnet $(OBJ_COMMON) $(OBJ_UDPRFNET) $(XDSLIB) -lm -lrt
+	$(STRIP) udprfnet -s
+
+aprsmap : $(OBJ_APRSMAP) $(OBJ_COMMON)
+	$(CC) $(LFLAGS) -o aprsmap $(OBJ_APRSMAP) $(OBJ_COMMON) $(XDSLIB) $(ADDLIBS) $(XLIBS) -lm 
+	$(STRIP) aprsmap -s
+aprsmap-cleanobj:
+	rm -f $(OBJ_APRSMAP)
+
+# end of makefile
+
