@@ -32,7 +32,7 @@ export HOSTARCH
 
 CC			= $(CROSS_COMPILE)gcc
 STRIP		= $(CROSS_COMPILE)strip
-INCL		= .
+INCL		= ../libxds/include
 CDEFS		= -D_unix -D_linux -DX2C_no_spawn -w
 CFLAGS		= -I$(INCL) -I$(EXTLIB) -c -O2 -fgnu89-inline -fdata-sections -ffunction-sections
 LFLAGS		= -Wl,--gc-sections
