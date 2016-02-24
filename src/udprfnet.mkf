@@ -17,7 +17,7 @@ LFLAGS	=
 else ifeq ($(PLATFORM), armv7hf)
 XDSLIB  = lib_armv7hf/libxds.a
 EXTLIB  = lib_armv7hf/
-ARCHSPEC= -march=armv7-a -mfpu=neon -mfloat-abi=hard -mcpu=cortex-a8
+ARCHSPEC= -march=armv7-a -mfpu=neon -mfloat-abi=hard
 LFLAGS	=
 # -------------------------- x86 (default) specific ---------------------------
 else
