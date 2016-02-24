@@ -37,9 +37,6 @@
 #ifndef FileSys_H_
 #include "FileSys.h"
 #endif
-#ifndef filesize_H_
-#include "filesize.h"
-#endif
 #ifndef aprsstr_H_
 #include "aprsstr.h"
 #endif
@@ -716,7 +713,7 @@ static long daylylogsize(const char fname[], unsigned long fname_len,
       fc = osi_OpenRead(fnd, 1024ul);
       if (osi_FdValid(fc)) {
          ret = 0L;
-         size = size+(float)Size(fc);
+         size = size+(float)osi_Size(fc);
          osi_Close(fc);
       }
       t -= 86400UL;
@@ -765,7 +762,7 @@ extern long useri_guesssize(char fn[], unsigned long fn_len, char lenstr[],
       pos += 131072UL;
    }
    if (pos<2000000UL) {
-      byte = Size(fc);
+      byte = osi_Size(fc);
       pos = byte/1000UL;
    }
    osi_Close(fc);

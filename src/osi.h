@@ -31,9 +31,6 @@
 #ifndef udp_H_
 #include "udp.h"
 #endif
-#ifndef filesize_H_
-#include "filesize.h"
-#endif
 #ifndef RealMath_H_
 #include "RealMath.h"
 #endif
@@ -134,8 +131,6 @@ VAR
 
 #define osi_remove remove
 
-#define osi_Size Size
-
 extern long osi_OpenAppendLong(char [], unsigned long);
 
 extern long osi_OpenAppend(char [], unsigned long);
@@ -157,6 +152,8 @@ extern long osi_RdBin(long, char [], unsigned long, unsigned long);
 extern void osi_WrBin(long, char [], unsigned long, unsigned long);
 
 extern void osi_WrFixed(float, long, unsigned long);
+
+int osi_Size(int fd);
 
 extern void osi_Seek(long, unsigned long);
 

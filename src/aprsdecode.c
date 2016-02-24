@@ -40,9 +40,6 @@
 #ifndef udp_H_
 #include "udp.h"
 #endif
-#ifndef filesize_H_
-#include "filesize.h"
-#endif
 #ifndef aprsstr_H_
 #include "aprsstr.h"
 #endif
@@ -1323,7 +1320,7 @@ static void wxmacro(char ws[], unsigned long ws_len, char wms[],
       if (fn[0U]) {
          f = osi_OpenRead(fn, 1024ul);
          if (osi_FdValid(f)) {
-            n = Size(f);
+            n = osi_Size(f);
             if (n>1024UL) osi_Seek(f, n-1024UL);
             len = osi_RdBin(f, (char *)cb, 1024u/1u, 1024UL);
          }

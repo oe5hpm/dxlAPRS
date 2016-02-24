@@ -36,9 +36,6 @@
 #include "udp.h"
 #endif
 #include <stdio.h>
-#ifndef filesize_H_
-#include "filesize.h"
-#endif
 #ifndef StdChans_H_
 #include "StdChans.h"
 #endif
@@ -228,6 +225,19 @@ BEGIN
   RETURN st.st_size
 END Size;
 */
+
+int osi_Size(int fd)
+{
+  struct stat st;
+  fstat(fd, &st);
+  return st.st_size;
+}
+
+static int LSeek(int fd, long lo, int whence)
+{
+  if (lseek64(fd, lo, whence)<0) return -1;
+  return 0;
+}
 
 extern void osi_Seek(long fd, unsigned long pos)
 {

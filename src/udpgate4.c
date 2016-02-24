@@ -31,9 +31,6 @@
 #ifndef InOut_H_
 #include "InOut.h"
 #endif
-#ifndef filesize_H_
-#include "filesize.h"
-#endif
 #ifndef Select_H_
 #include "Select.h"
 #endif
@@ -5090,7 +5087,7 @@ static char openfile(char fn[], unsigned long fn_len, long * fd,
        IF CAST(BITSET, s.st_mode)*CAST(BITSET,170000B)<>CAST(BITSET,
                 100000B) THEN RETURN FALSE END;
    */
-   *flen = (long)Size(*fd);
+   *flen = (long)osi_Size(*fd);
    if (*flen<=0L || *flen>=wwwsizelimit) {
       openfile_ret = 0;
       goto label;
