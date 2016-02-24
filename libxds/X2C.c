@@ -188,11 +188,6 @@ static void interrupt profiler_proc() { X2C_Profiler_clock(); }
 #include <time.h>
 #include <sys/time.h>
 
-#ifdef _linux
-#include <sys/user.h>
-#include <asm/sigcontext.h>
-//  static struct user_i387_struct sigfpe_fpu_state;
-#endif /* _linux */
 
 #define EN_INTS()
 #define DIS_INTS()
