@@ -18,7 +18,7 @@ for i in $FLIST; do
 	fi
 done
 
-PACKLIST=`echo $PACKLIST ../aprsmap_common/* ../dxlAPRS_common/*`
+PACKLIST=`echo $PACKLIST ../aprsmap_common/* ../dxlAPRS_common/* ../scripts/*`
 
 echo $PACKLIST
 
