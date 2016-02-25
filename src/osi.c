@@ -30,6 +30,7 @@
 
 void osi_WrLn(void)
 {
+	fprintf(stdout, "\n");
 	fflush(stdout);
 }
 
@@ -38,7 +39,7 @@ void osi_WrStr(char s[], unsigned long s_len)
 	if (FNLENCHECK && strnlen(s, s_len) >= s_len)
 		return;
 	fprintf(stdout, "%s", s);
-	fflush(stdout);
+	osi_WrLn();
 }
 
 void osi_WrStrLn(char s[], unsigned long s_len)
@@ -46,17 +47,17 @@ void osi_WrStrLn(char s[], unsigned long s_len)
 	if (FNLENCHECK && strnlen(s, s_len) >= s_len)
 		return;
 	fprintf(stdout, "%s\n", s);
-	fflush(stdout);
+	osi_WrLn();
 }
 
 void osi_WrUINT32(uint32_t x, unsigned long witdh)
 {
-	fprintf(stdout, "%d", x);
+	fprintf(stdout, "%*d", (int)witdh, x);
 }
 
 void osi_WrFixed(float x, long place, unsigned long witdh)
 {
-	fprintf(stdout, "%.*f", (int)place, x);
+	fprintf(stdout, "%*.*f", (int)witdh, (int)place, x);
 }
 
 static void h(unsigned long n)
