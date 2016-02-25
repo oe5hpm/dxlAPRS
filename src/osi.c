@@ -36,7 +36,7 @@ void osi_WrLn(void)
 
 void osi_WrStr(char s[], unsigned long s_len)
 {
-	if (FNLENCHECK && strnlen(s, s_len) >= s_len)
+	if (FNLENCHECK && strnlen(s, s_len) > s_len) {
 		return;
 	fprintf(stdout, "%s", s);
 	osi_WrLn();
@@ -44,7 +44,7 @@ void osi_WrStr(char s[], unsigned long s_len)
 
 void osi_WrStrLn(char s[], unsigned long s_len)
 {
-	if (FNLENCHECK && strnlen(s, s_len) >= s_len)
+	if (FNLENCHECK && strnlen(s, s_len) > s_len) {
 		return;
 	fprintf(stdout, "%s\n", s);
 	osi_WrLn();
@@ -82,7 +82,7 @@ void osi_WrHex(unsigned long n, unsigned long f)
 
 extern long osi_OpenAppendLong(char fn[], unsigned long fn_len)
 {
-	if (FNLENCHECK && strnlen(fn, fn_len) >= fn_len)
+	if (FNLENCHECK && strnlen(fn, fn_len) > fn_len)
 		return -1;
 	return open(fn, O_WRONLY | O_APPEND | O_LARGEFILE);
 }
@@ -90,41 +90,41 @@ extern long osi_OpenAppendLong(char fn[], unsigned long fn_len)
 
 extern long osi_OpenAppend(char fn[], unsigned long fn_len)
 {
-	if (FNLENCHECK && strnlen(fn, fn_len) >= fn_len)
+	if (FNLENCHECK && strnlen(fn, fn_len) > fn_len)
 		return -1;
 	return open(fn, O_WRONLY | O_APPEND);
 }
 
 extern long osi_OpenWrite(char fn[], unsigned long fn_len)
 {
-	if (FNLENCHECK && strnlen(fn, fn_len) >= fn_len)
+	if (FNLENCHECK && strnlen(fn, fn_len) > fn_len)
 		return -1;
 	return creat(fn, 0664);
 }
 
 extern long osi_OpenReadLong(char fn[], unsigned long fn_len)
 {
-	if (FNLENCHECK && strnlen(fn, fn_len) >= fn_len)
+	if (FNLENCHECK && strnlen(fn, fn_len) > fn_len)
 		return -1;
 	return open(fn, O_RDONLY | O_LARGEFILE);
 }
 
 extern long osi_OpenRead(char fn[], unsigned long fn_len)
 {
-	if (FNLENCHECK && strnlen(fn, fn_len) >= fn_len)
+	if (FNLENCHECK && strnlen(fn, fn_len) > fn_len)
 		return -1;
 	return open(fn, O_RDONLY);
 }
 
 extern long osi_OpenRW(char fn[], unsigned long fn_len)
 {
-	if (FNLENCHECK && strnlen(fn, fn_len) >= fn_len)
+	if (FNLENCHECK && strnlen(fn, fn_len) > fn_len)
 		return -1;
 	return open(fn, O_RDWR);
 }
 extern long osi_OpenNONBLOCK(char fn[], unsigned long fn_len)
 {
-	if (FNLENCHECK && strnlen(fn, fn_len) >= fn_len)
+	if (FNLENCHECK && strnlen(fn, fn_len) > fn_len)
 		return -1;
 	return open(fn, O_RDWR | O_NONBLOCK);
 }
