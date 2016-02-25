@@ -1,266 +1,202 @@
 /*
  * dxlAPRS toolchain
  *
+ * Copyright (C) Hannes Schmelzer <oe5hpm@oevsv.at>
  * Copyright (C) Christian Rabler <oe5dxl@oevsv.at>
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
+#define _LARGEFILE64_SOURCE
 
-
-#define X2C_int32
-#define X2C_index32
-#ifndef osi_H_
-#include "osi.h"
-#endif
-#define osi_C_
-#ifndef RealMath_H_
-#include "RealMath.h"
-#endif
-#include <math.h>
-#ifndef Lib_H_
-#include "Lib.h"
-#endif
-#ifndef InOut_H_
-#include "InOut.h"
-#endif
-#ifndef FileSys_H_
-#include "FileSys.h"
-#endif
-#ifndef tcp_H_
-#include "tcp.h"
-#endif
-#ifndef udp_H_
-#include "udp.h"
-#endif
-#include <stdio.h>
-#ifndef StdChans_H_
-#include "StdChans.h"
-#endif
-#ifndef IOChan_H_
-#include "IOChan.h"
-#endif
 #include <fcntl.h>
-#ifndef RealIO_H_
-#include "RealIO.h"
-#endif
+#include <sys/types.h>
+#include <stdint.h>
+#include <stdlib.h>
 #include <unistd.h>
-#ifndef cfileio_H_
-#include "cfileio.h"
+#include <stdio.h>
+#include <math.h>
+
+#include "Lib.h"
+#include "osi.h"
+
+#define DEBUG
+#ifdef DEBUG
+# define DBG(...)	printf(__VA_ARGS__)
+#else
+# define DBG(...)	;
 #endif
 
-/* os interface linux/win32 */
-/*FROM Storage IMPORT ALLOCATE, DEALLOCATE; */
-/*FROM Select IMPORT fdsetr, fdsetw; */
-/*FROM aprsstr IMPORT IntToStr, Append, Length; */
-static IOChan_ChanId cid;
+#define FNLENCHECK	1
 
-
-extern void osi_WrLn(void)
+void osi_WrLn(void)
 {
-   InOut_WriteLn();
-   fflush(stdout);
-} /* end WrLn() */
+	fflush(stdout);
+}
 
-
-extern void osi_WrStrLn(char s[], unsigned long s_len)
+void osi_WrStr(char s[], unsigned long s_len)
 {
-   X2C_PCOPY((void **)&s,s_len);
-   InOut_WriteString(s, s_len);
-   osi_WrLn();
-   X2C_PFREE(s);
-} /* end WrStrLn() */
+	if (FNLENCHECK && strnlen(s, s_len) >= s_len)
+		return;
+	fprintf(stdout, "%s", s);
+	fflush(stdout);
+}
 
-
-extern void osi_WrFixed(float x, long place, unsigned long witdh)
+void osi_WrStrLn(char s[], unsigned long s_len)
 {
-   RealIO_WriteFixed(cid, x, place, witdh);
-} /* end WrFixed() */
+	if (FNLENCHECK && strnlen(s, s_len) >= s_len)
+		return;
+	fprintf(stdout, "%s\n", s);
+	fflush(stdout);
+}
 
+void osi_WrUINT32(uint32_t x, unsigned long witdh)
+{
+	fprintf(stdout, "%d", x);
+}
+
+void osi_WrFixed(float x, long place, unsigned long witdh)
+{
+	fprintf(stdout, "%.*f", (int)place, x);
+}
 
 static void h(unsigned long n)
 {
-   char tmp;
-   if (n<10UL) InOut_WriteString((char *)(tmp = (char)(n+48UL),&tmp), 1u/1u);
-   else InOut_WriteString((char *)(tmp = (char)((n-10UL)+65UL),&tmp), 1u/1u);
-} /* end h() */
+	char tmp;
+	if (n < 10)
+		osi_WrStr((char *)(tmp = (char)(n+48UL),&tmp), 1);
+	else
+		osi_WrStr((char *)(tmp = (char)((n-10UL)+65UL),&tmp), 1);
+}
 
-
-extern void osi_WrHex(unsigned long n, unsigned long f)
+void osi_WrHex(unsigned long n, unsigned long f)
 {
-   h(n/16UL&15UL);
-   h(n&15UL);
-   while (f>=3UL) {
-      InOut_WriteString(" ", 2ul);
-      --f;
-   }
-} /* end WrHex() */
+	h(n / 0x10);
+	h(n & 0x0F);
 
+	while (f>=3UL) {
+		osi_WrStr(" ", 2ul);
+		--f;
+	}
+}
 
 extern long osi_OpenAppendLong(char fn[], unsigned long fn_len)
 {
-   long osi_OpenAppendLong_ret;
-   X2C_PCOPY((void **)&fn,fn_len);
-   osi_OpenAppendLong_ret = cOpenAppendLong(fn);
-   X2C_PFREE(fn);
-   return osi_OpenAppendLong_ret;
-} /* end OpenAppendLong() */
+	if (FNLENCHECK && strnlen(fn, fn_len) >= fn_len)
+		return -1;
+	return open(fn, O_WRONLY | O_APPEND | O_LARGEFILE);
+}
 
 
 extern long osi_OpenAppend(char fn[], unsigned long fn_len)
 {
-   long osi_OpenAppend_ret;
-   X2C_PCOPY((void **)&fn,fn_len);
-   osi_OpenAppend_ret = cOpenAppend(fn);
-   X2C_PFREE(fn);
-   return osi_OpenAppend_ret;
-} /* end OpenAppend() */
-
+	if (FNLENCHECK && strnlen(fn, fn_len) >= fn_len)
+		return -1;
+	return open(fn, O_WRONLY | O_APPEND);
+}
 
 extern long osi_OpenWrite(char fn[], unsigned long fn_len)
 {
-   long osi_OpenWrite_ret;
-   X2C_PCOPY((void **)&fn,fn_len);
-   osi_OpenWrite_ret = cOpenWrite(fn);
-   X2C_PFREE(fn);
-   return osi_OpenWrite_ret;
-} /* end OpenWrite() */
-
+	if (FNLENCHECK && strnlen(fn, fn_len) >= fn_len)
+		return -1;
+	return creat(fn, 0664);
+}
 
 extern long osi_OpenReadLong(char fn[], unsigned long fn_len)
 {
-   long osi_OpenReadLong_ret;
-   X2C_PCOPY((void **)&fn,fn_len);
-   osi_OpenReadLong_ret = cOpenReadLong(fn);
-   X2C_PFREE(fn);
-   return osi_OpenReadLong_ret;
-} /* end OpenReadLong() */
-
+	if (FNLENCHECK && strnlen(fn, fn_len) >= fn_len)
+		return -1;
+	return open(fn, O_RDONLY | O_LARGEFILE);
+}
 
 extern long osi_OpenRead(char fn[], unsigned long fn_len)
 {
-   long osi_OpenRead_ret;
-   X2C_PCOPY((void **)&fn,fn_len);
-   osi_OpenRead_ret = cOpenRead(fn);
-   X2C_PFREE(fn);
-   return osi_OpenRead_ret;
-} /* end OpenRead() */
-
+	if (FNLENCHECK && strnlen(fn, fn_len) >= fn_len)
+		return -1;
+	return open(fn, O_RDONLY);
+}
 
 extern long osi_OpenRW(char fn[], unsigned long fn_len)
 {
-   long osi_OpenRW_ret;
-   X2C_PCOPY((void **)&fn,fn_len);
-   osi_OpenRW_ret = cOpenRW(fn);
-   X2C_PFREE(fn);
-   return osi_OpenRW_ret;
-} /* end OpenRW() */
-
-
+	if (FNLENCHECK && strnlen(fn, fn_len) >= fn_len)
+		return -1;
+	return open(fn, O_RDWR);
+}
 extern long osi_OpenNONBLOCK(char fn[], unsigned long fn_len)
 {
-   long osi_OpenNONBLOCK_ret;
-   X2C_PCOPY((void **)&fn,fn_len);
-   osi_OpenNONBLOCK_ret = cOpenNONBLOCK(fn);
-   X2C_PFREE(fn);
-   return osi_OpenNONBLOCK_ret;
-} /* end OpenNONBLOCK() */
-
-
+	if (FNLENCHECK && strnlen(fn, fn_len) >= fn_len)
+		return -1;
+	return open(fn, O_RDWR | O_NONBLOCK);
+}
 extern char osi_FdValid(long fd)
 {
-   return fd>=0L;
-} /* end FdValid() */
-
+	return (fd >= 0L);
+}
 
 extern void osi_Close(long fd)
 {
-   long res;
-   res = close(fd);
-} /* end Close() */
-
+	close(fd);
+}
 
 extern void osi_CloseSock(long fd)
 {
-   long res;
-   res = close(fd);
-} /* end CloseSock() */
+	close(fd);
+}
 
-
-extern long osi_RdBin(long fd, char buf[], unsigned long buf_len,
-                unsigned long size)
+extern long osi_RdBin(long fd,
+		      char buf[], unsigned long buf_len,
+		      unsigned long size)
 {
-   if (size>(buf_len-1)+1UL) size = (buf_len-1)+1UL;
-   return read(fd, (char *)buf, size);
-} /* end RdBin() */
+	if (size > (buf_len-1) + 1UL)
+		size = (buf_len-1)+1UL;
+	return read(fd, (char *)buf, size);
+}
 
-
-extern void osi_WrBin(long fd, char buf[], unsigned long buf_len,
-                unsigned long size)
+extern void osi_WrBin(long fd, char buf[],
+		      unsigned long buf_len,
+		      unsigned long size)
 {
-   long res;
-   if (size>(buf_len-1)+1UL) size = (buf_len-1)+1UL;
-   res = write(fd, (char *)buf, size);
-} /* end WrBin() */
+	if (size > (buf_len-1)+1UL)
+		size = (buf_len-1)+1UL;
+	write(fd, (char *)buf, size);
+}
 
-
-extern void osi_Rename(char fname[], unsigned long fname_len, char newname[],
-                 unsigned long newname_len)
+extern void osi_Rename(char fname[], unsigned long fname_len,
+		       char newname[], unsigned long newname_len)
 {
-   char ok0;
-   X2C_PCOPY((void **)&fname,fname_len);
-   X2C_PCOPY((void **)&newname,newname_len);
-   FileSys_Rename(fname, fname_len, newname, newname_len, &ok0);
-   X2C_PFREE(fname);
-   X2C_PFREE(newname);
-} /* end Rename() */
-
-/*
-PROCEDURE Size(fd:File):CARDINAL;
-VAR st:stat.stat_t;
-BEGIN
-  stat.fstat(fd, st);
-  RETURN st.st_size
-END Size;
-*/
+	if (FNLENCHECK && strnlen(fname, fname_len) >= fname_len)
+		return;
+	if (FNLENCHECK && strnlen(newname, newname_len) >= newname_len)
+		return;
+	rename(fname, newname);
+}
 
 int osi_Size(int fd)
 {
-  struct stat st;
-  fstat(fd, &st);
-  return st.st_size;
-}
-
-static int LSeek(int fd, long lo, int whence)
-{
-  if (lseek64(fd, lo, whence)<0) return -1;
-  return 0;
+	struct stat st = { };
+	fstat(fd, &st);
+	return st.st_size;
 }
 
 extern void osi_Seek(long fd, unsigned long pos)
 {
-   long res;
-   res = lseek(fd, (long)pos, SEEK_SET);
-} /* end Seek() */
+	lseek(fd, (long)pos, SEEK_SET);
+}
 
 
 extern void osi_Seekcur(long fd, long rel)
 {
-   if (LSeek(fd, rel, (unsigned long)SEEK_CUR)<0L) lseek(fd, 0L, SEEK_SET);
-} /* end Seekcur() */
-
+	if (lseek64(fd, rel, (unsigned long)SEEK_CUR) < 0L)
+		lseek(fd, 0L, SEEK_SET);
+}
 
 extern void osi_BEGIN(void)
 {
-   static int osi_init = 0;
-   if (osi_init) return;
-   osi_init = 1;
-   RealIO_BEGIN();
-   IOChan_BEGIN();
-   StdChans_BEGIN();
-   InOut_BEGIN();
-   FileSys_BEGIN();
-   Lib_BEGIN();
-   RealMath_BEGIN();
-   cid = StdChans_StdOutChan();
+	static int osi_init = 0;
+	if (osi_init)
+		return;
+	osi_init = 1;
+
+	StdChans_BEGIN();
+	Lib_BEGIN();
 }
 

@@ -97,8 +97,7 @@ OBJ_COMMON = \
 	soundctl.o \
 	symlink.o \
 	tcp.o \
-	udp.o \
-	cfileio.o
+	udp.o
 
 OBJ_AFSKMODEM = \
 	afskmodem.o \

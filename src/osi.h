@@ -1,176 +1,67 @@
 /*
  * dxlAPRS toolchain
  *
+ * Copyright (C) Hannes Schmelzer <oe5hpm@oevsv.at>
  * Copyright (C) Christian Rabler <oe5dxl@oevsv.at>
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
 
 
-#ifndef osi_H_
-#define osi_H_
-#ifndef X2C_H_
-#include "X2C.h"
-#endif
-#ifndef InOut_H_
-#include "InOut.h"
-#endif
-#include <stdio.h>
-#ifndef FileSys_H_
-#include "FileSys.h"
-#endif
-#ifndef Lib_H_
-#include "Lib.h"
-#endif
-#ifndef tcp_H_
-#include "tcp.h"
-#endif
-#ifndef udp_H_
-#include "udp.h"
-#endif
-#ifndef RealMath_H_
-#include "RealMath.h"
-#endif
-#include <math.h>
+#ifndef __OSI_H__
+#define __OSI_H__
 
-/* os interface */
-typedef long osi_File;
+#include <stdint.h>
 
-typedef long osi_SOCKET;
+void osi_WrLn(void);
 
-/*
-CONST sin=   math.sin;
-      cos=   math.cos;
-      arctan=math.atan;
-      arccos=math.acos;
-      tan=   math.tan;
-      sqrt=  math.sqrt;
-      exp=   math.exp;
-      ln=    math.log;
-      power= math.pow;
-      floor= math.floor;
-*/
-#define osi_sin RealMath_sin
+void osi_WrStr(char s[], unsigned long s_len);
 
-#define osi_cos RealMath_cos
+void osi_WrStrLn(char s[], unsigned long s_len);
 
-#define osi_arctan RealMath_arctan
+void osi_WrUINT32(uint32_t x, unsigned long witdh);
 
-#define osi_arccos RealMath_arccos
+void osi_WrFixed(float x, long place, unsigned long witdh);
 
-#define osi_tan RealMath_tan
+void osi_WrHex(unsigned long n, unsigned long f);
 
-#define osi_sqrt RealMath_sqrt
+extern long osi_OpenAppendLong(char fn[], unsigned long fn_len);
 
-#define osi_exp RealMath_exp
+extern long osi_OpenAppend(char fn[], unsigned long fn_len);
 
-#define osi_ln RealMath_ln
+extern long osi_OpenWrite(char fn[], unsigned long fn_len);
 
-#define osi_power RealMath_power
+extern long osi_OpenReadLong(char fn[], unsigned long fn_len);
 
-#define osi_floor floor
+extern long osi_OpenRead(char fn[], unsigned long fn_len);
 
-/*
-<* IF __GEN_C__ THEN *>
-VAR
-      O_TRUNC     -: INTEGER;    (* open with truncation *)
-      O_APPEND    -: INTEGER;    (* append, i.e writes at the end *)
-      O_NONBLOCK  -: INTEGER;    (* open and accesses never block *)
-      O_RDWR      -: INTEGER;    (* open for reading and writing *)
-      O_WRONLY    -: INTEGER;    (* open for writing only *)
-      O_RDONLY    -: INTEGER;    (* open for reading only *)
-      O_CREAT     -: INTEGER;    (* create if not exists *)
-      O_LARGEFILE -: INTEGER;
-<* ELSE *>
-<* END *>
-*/
-#define osi_pi 3.1415926535898
+extern long osi_OpenRW(char fn[], unsigned long fn_len);
 
-#define osi_DIRSEP "/"
+extern long osi_OpenNONBLOCK(char fn[], unsigned long fn_len);
 
-#define osi_DIRSEP2 "/"
+extern char osi_FdValid(long fd);
 
-#define osi_InvalidFd (-1)
+extern void osi_Close(long fd);
 
-#define osi_Flush Flush
+extern void osi_CloseSock(long fd);
 
-#define osi_NextArg Lib_NextArg
+extern long osi_RdBin(long fd,
+		      char buf[], unsigned long buf_len,
+		      unsigned long size);
 
-#define osi_WrStr InOut_WriteString
+extern void osi_WrBin(long fd, char buf[],
+		      unsigned long buf_len,
+		      unsigned long size);
 
-#define osi_WrCard InOut_WriteCard
-
-#define osi_WrInt InOut_WriteInt
-
-#define osi_Exists FileSys_Exists
-
-#define osi_Erase FileSys_Remove
-
-#define osi_readsock readsock
-
-#define osi_sendsock sendsock
-
-#define osi_connectto connectto
-
-#define osi_getunack getunack
-
-#define osi_stoptxrx stoptxrx
-
-#define osi_openudp openudp
-
-#define osi_bindudp bindudp
-
-#define osi_socknonblock socknonblock
-
-#define osi_udpreceive udpreceive
-
-#define osi_udpsend udpsend
-
-#define osi_remove remove
-
-extern long osi_OpenAppendLong(char [], unsigned long);
-
-extern long osi_OpenAppend(char [], unsigned long);
-
-extern long osi_OpenWrite(char [], unsigned long);
-
-extern long osi_OpenReadLong(char [], unsigned long);
-
-extern long osi_OpenRead(char [], unsigned long);
-
-extern long osi_OpenRW(char [], unsigned long);
-
-extern long osi_OpenNONBLOCK(char [], unsigned long);
-
-extern void osi_Close(long);
-
-extern long osi_RdBin(long, char [], unsigned long, unsigned long);
-
-extern void osi_WrBin(long, char [], unsigned long, unsigned long);
-
-extern void osi_WrFixed(float, long, unsigned long);
+extern void osi_Rename(char fname[], unsigned long fname_len,
+		       char newname[], unsigned long newname_len);
 
 int osi_Size(int fd);
 
-extern void osi_Seek(long, unsigned long);
+extern void osi_Seek(long fd, unsigned long pos);
 
-extern void osi_Seekcur(long, long);
-
-extern void osi_Rename(char [], unsigned long, char [], unsigned long);
-
-extern void osi_WrLn(void);
-
-extern void osi_WrStrLn(char [], unsigned long);
-
-extern char osi_FdValid(long);
-/*PROCEDURE Create(fn:ARRAY OF CHAR):File;*/
-
-extern void osi_CloseSock(long);
-
-extern void osi_WrHex(unsigned long, unsigned long);
-
+extern void osi_Seekcur(long fd, long rel);
 
 extern void osi_BEGIN(void);
 
-
-#endif /* osi_H_ */
+#endif /* __OSI_H__ */
