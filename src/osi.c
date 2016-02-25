@@ -37,16 +37,27 @@ void osi_WrLn(void)
 void osi_WrStr(char s[], unsigned long s_len)
 {
 	if (FNLENCHECK && strnlen(s, s_len) > s_len) {
+		DBG("%s: oversize %d > %d!\n",
+		    __func__, strnlen(s, s_len), s_len);
 		return;
-	fprintf(stdout, "%s", s);
-	osi_WrLn();
+	}
+	if (s_len > 1)
+		fprintf(stdout, "%s", s);
+	else
+		fprintf(stdout, "%c", s[0]);
 }
 
 void osi_WrStrLn(char s[], unsigned long s_len)
 {
 	if (FNLENCHECK && strnlen(s, s_len) > s_len) {
+		DBG("%s: oversize %d > %d!\n",
+		    __func__, strnlen(s, s_len), s_len);
 		return;
-	fprintf(stdout, "%s\n", s);
+	}
+	if (s_len > 1)
+		fprintf(stdout, "%s\n", s);
+	else
+		fprintf(stdout, "%c\n", s[0]);
 	osi_WrLn();
 }
 
