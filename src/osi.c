@@ -60,24 +60,10 @@ void osi_WrFixed(float x, long place, unsigned long witdh)
 	fprintf(stdout, "%*.*f", (int)witdh, (int)place, x);
 }
 
-static void h(unsigned long n)
-{
-	char tmp;
-	if (n < 10)
-		osi_WrStr((char *)(tmp = (char)(n+48UL),&tmp), 1);
-	else
-		osi_WrStr((char *)(tmp = (char)((n-10UL)+65UL),&tmp), 1);
-}
-
 void osi_WrHex(unsigned long n, unsigned long f)
 {
-	h(n / 0x10);
-	h(n & 0x0F);
-
-	while (f>=3UL) {
-		osi_WrStr(" ", 2ul);
-		--f;
-	}
+	fprintf(stdout, "%*X", (int)f, n);
+	fflush(stdout);
 }
 
 extern long osi_OpenAppendLong(char fn[], unsigned long fn_len)
