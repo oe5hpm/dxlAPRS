@@ -270,7 +270,7 @@ static void comment0(char buf[], unsigned long buf_len, unsigned long uptime,
             }
             else if (fb[bol+1L]=='v') {
                /* insert version */
-               strncpy(fb," sondemod(c) 0.4",32768u);
+               strncpy(fb," sondemod(c) 0.5",32768u);
             }
             else if (fb[bol+1L]=='s') {
                /* insert sat count */
@@ -840,9 +840,8 @@ static char Checkval(const double a[], unsigned long a_len,
    if (i<=tmp) for (;; i++) {
       if (t[i]>t[0UL]) {
          y = X2C_DIVL(a[i]-a[0UL],(double)(float)(t[i]-t[0UL]));
-         if (y>unitspers) return 0;
-         k = k+X2C_DIVL(a[i]-a[0UL],(double)(float)(t[i]-t[0UL]));
-                /* median slope */
+         if (fabs(y)>unitspers) return 0;
+         k = k+y; /* median slope */
       }
       if (i==tmp) break;
    } /* end for */
@@ -1089,10 +1088,13 @@ extern void sondeaprs_senddata(double lat, double long0, double alt,
          if (sondeaprs_verb) {
             osi_WrStrLn("", 1ul);
             show(anonym->dat[0U]);
-            InOut_WriteString(" AlmAge ", 9ul);
-            osi_WrFixed((float)(X2C_DIVL((double)almanachage,3600.0)), 1L,
-                3UL);
-            osi_WrStrLn("h ", 3ul);
+            if (almanachage) {
+               InOut_WriteString(" AlmAge ", 9ul);
+               osi_WrFixed((float)(X2C_DIVL((double)almanachage,3600.0)), 1L,
+                 3UL);
+               osi_WrStrLn("h ", 3ul);
+            }
+            else osi_WrStrLn("", 1ul);
             for (e = sondeaprs_ePRES;; e++) {
                if (X2C_IN((long)e,10,chk)) {
                   switch ((unsigned)e) {
