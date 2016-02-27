@@ -410,31 +410,18 @@ extern void maptool_mercator(float lon, float lat, long zoom, long * tilex,
                 long * tiley, float * x, float * y)
 {
    float z;
-   struct X2C_XHandler_STR anonym;
-   if (X2C_XTRY(&anonym)) {
-      if (lat>1.484f) lat = 1.484f;
-      else if (lat<(-1.484f)) lat = (-1.484f);
-      if (lon>3.1414926535898f) lon = 3.1414926535898f;
-      else if (lon<(-3.1414926535898f)) lon = (-3.1414926535898f);
-      lat = RealMath_ln(RealMath_tan(lat)+X2C_DIVR(1.0f,RealMath_cos(lat)));
-      z = expzoom(zoom);
-      *x = (0.5f+lon*1.591549430919E-1f)*z;
-      *y = (0.5f-lat*1.591549430919E-1f)*z;
-      *tilex = (long)aprsdecode_trunc(*x);
-      *tiley = (long)aprsdecode_trunc(*y);
-      *x = (*x-(float)*tilex)*256.0f;
-      *y = (*y-(float)*tiley)*256.0f;
-      X2C_XOFF();
-   }
-   else {
-      osi_WrStrLn("error in mercator", 18ul);
-      *tilex = 0L;
-      *tiley = 0L;
-      *x = 0.0f;
-      *y = 0.0f;
-      X2C_XON();
-   }
-   X2C_XREMOVE();
+   if (lat>1.484f) lat = 1.484f;
+   else if (lat<(-1.484f)) lat = (-1.484f);
+   if (lon>3.1414926535898f) lon = 3.1414926535898f;
+   else if (lon<(-3.1414926535898f)) lon = (-3.1414926535898f);
+   lat = RealMath_ln(RealMath_tan(lat)+X2C_DIVR(1.0f,RealMath_cos(lat)));
+   z = expzoom(zoom);
+   *x = (0.5f+lon*1.591549430919E-1f)*z;
+   *y = (0.5f-lat*1.591549430919E-1f)*z;
+   *tilex = (long)aprsdecode_trunc(*x);
+   *tiley = (long)aprsdecode_trunc(*y);
+   *x = (*x-(float)*tilex)*256.0f;
+   *y = (*y-(float)*tiley)*256.0f;
 } /* end mercator() */
 
 
@@ -1064,29 +1051,22 @@ static void elevation(float x0, float y00, float z0, float x1, float y1,
    float c;
    float b;
    float a;
-   struct X2C_XHandler_STR anonym;
+   *e1 = 0.0f;
+   *e0 = 0.0f;
+   a = RealMath_sqrt(x0*x0+y00*y00+z0*z0);
+   b = RealMath_sqrt(x1*x1+y1*y1+z1*z1);
+   x1 = x1-x0;
+   y1 = y1-y00;
+   z1 = z1-z0;
+   c = RealMath_sqrt(x1*x1+y1*y1+z1*z1);
    /* halbwinkelsatz */
-   if (X2C_XTRY(&anonym)) {
-      *e1 = 0.0f;
-      *e0 = 0.0f;
-      a = RealMath_sqrt(x0*x0+y00*y00+z0*z0);
-      b = RealMath_sqrt(x1*x1+y1*y1+z1*z1);
-      x1 = x1-x0;
-      y1 = y1-y00;
-      z1 = z1-z0;
-      c = RealMath_sqrt(x1*x1+y1*y1+z1*z1);
-      s = (a+b+c)*0.5f;
-      if (s==0.0f) goto label;
-      r = X2C_DIVR((s-a)*(s-b)*(s-c),s);
-      if (r<=0.0f) goto label;
-      r = RealMath_sqrt(r);
-      *e1 = 1.1459155902616E+2f*RealMath_arctan(X2C_DIVR(r,s-a))-90.0f;
-      *e0 = 1.1459155902616E+2f*RealMath_arctan(X2C_DIVR(r,s-b))-90.0f;
-      label:;
-      X2C_XOFF();
-   }
-   else X2C_XON();
-   X2C_XREMOVE();
+   s = (a+b+c)*0.5f;
+   if (s==0.0f) return;
+   r = X2C_DIVR((s-a)*(s-b)*(s-c),s);
+   if (r<=0.0f) return;
+   r = RealMath_sqrt(r);
+   *e1 = 1.1459155902616E+2f*RealMath_arctan(X2C_DIVR(r,s-a))-90.0f;
+   *e0 = 1.1459155902616E+2f*RealMath_arctan(X2C_DIVR(r,s-b))-90.0f;
 } /* end elevation() */
 
 
@@ -2710,170 +2690,152 @@ extern void maptool_vector(maptool_pIMAGE image, float x0, float y00,
    char mirr;
    char mirror;
    char flip;
-   struct X2C_XHandler_STR anonym;
    /*scissoring*/
+   mirr = y00>y1;
+   if (x0>x1) {
+      h = x1;
+      x1 = x0;
+      x0 = h;
+      h = y1;
+      y1 = y00;
+      y00 = h;
+      mirror = 1;
+   }
+   else mirror = 0;
+   if (x0>=(float)((image->Len1-1)-1UL) || x1<=0.0f) return;
    /* hor out */
-   /* bottom out */
-   /* top out */
+   if (x0<=0.0f) {
+      y00 = y00+X2C_DIVR((y1-y00)*x0,x0-x1);
+      x0 = 1.0f;
+   }
+   if (x1>=(float)((image->Len1-1)-1UL)) {
+      y1 = y00+X2C_DIVR((y1-y00)*((float)((image->Len1-1)-1UL)-x0),x1-x0);
+      x1 = (float)((image->Len1-1)-1UL);
+   }
+   if (y00<=0.0f) {
+      if (y1<=0.0f) return;
+      /* bottom out */
+      x0 = x0+X2C_DIVR((x1-x0)*y00,y00-y1);
+      y00 = 1.0f;
+   }
+   else if (y00>=(float)((image->Len0-1)-1UL)) {
+      if (y1>=(float)((image->Len0-1)-1UL)) return;
+      /* top out */
+      x0 = x0+X2C_DIVR((x1-x0)*((float)((image->Len0-1)-1UL)-y00),y1-y00);
+      y00 = (float)((image->Len0-1)-1UL);
+   }
+   if (y1<=0.0f) {
+      x1 = x1+X2C_DIVR((x1-x0)*y1,y00-y1);
+      y1 = 1.0f;
+   }
+   else if (y1>=(float)((image->Len0-1)-1UL)) {
+      x1 = x0+X2C_DIVR((x1-x0)*((float)((image->Len0-1)-1UL)-y00),y1-y00);
+      y1 = (float)((image->Len0-1)-1UL);
+   }
    /*scissoring*/
+   if (x0<2.0f) x0 = 2.0f;
+   if (x0>(float)((image->Len1-1)-1UL)) x0 = (float)((image->Len1-1)-1UL);
+   if (y00<2.0f) y00 = 2.0f;
+   if (y00>(float)((image->Len0-1)-1UL)) y00 = (float)((image->Len0-1)-1UL);
+   if (x1<2.0f) x1 = 2.0f;
+   if (x1>(float)((image->Len1-1)-1UL)) x1 = (float)((image->Len1-1)-1UL);
+   if (y1<2.0f) y1 = 2.0f;
+   if (y1>(float)((image->Len0-1)-1UL)) y1 = (float)((image->Len0-1)-1UL);
+   w1 = X2C_DIVR((float)width,512.0f);
+   if (x1-x0<(float)fabs(y1-y00)) {
+      h = x0;
+      x0 = y00;
+      y00 = h;
+      h = x1;
+      x1 = y1;
+      y1 = h;
+      flip = 1;
+   }
+   else flip = 0;
+   if (x0>x1) {
+      h = y1;
+      y1 = y00;
+      y00 = h;
+      h = x1;
+      x1 = x0;
+      x0 = h;
+      mirror = !mirror;
+   }
+   if (x1==x0) return;
+   h = X2C_DIVR(y1-y00,x1-x0);
+   ro = RealMath_sqrt(1.0f+h*h);
+   w2 = w1*ro;
+   iw2 = aprsdecode_trunc(w2*65536.0f);
+   r = w1*RealMath_sin(RealMath_arctan(h));
+   xi = aprsdecode_trunc(x0-(float)fabs(r));
+   w1 = (((y00-h*(float)fabs(r))-w2)-0.5f)*65536.0f;
+   if (w1<0.0f) ya = 0UL;
+   else ya = aprsdecode_trunc(w1);
    /*
      ya:=TRUNC((y0-h*ABS(r)-w2-0.5)*K);
    */
-   /*      INC(yb, k); */
-   /*    INC(ya, k); */
-   if (X2C_XTRY(&anonym)) {
-      mirr = y00>y1;
-      if (x0>x1) {
-         h = x1;
-         x1 = x0;
-         x0 = h;
-         h = y1;
-         y1 = y00;
-         y00 = h;
-         mirror = 1;
-      }
-      else mirror = 0;
-      if (x0>=(float)((image->Len1-1)-1UL) || x1<=0.0f) goto label;
-      if (x0<=0.0f) {
-         y00 = y00+X2C_DIVR((y1-y00)*x0,x0-x1);
-         x0 = 1.0f;
-      }
-      if (x1>=(float)((image->Len1-1)-1UL)) {
-         y1 = y00+X2C_DIVR((y1-y00)*((float)((image->Len1-1)-1UL)-x0),x1-x0);
-         x1 = (float)((image->Len1-1)-1UL);
-      }
-      if (y00<=0.0f) {
-         if (y1<=0.0f) goto label;
-         x0 = x0+X2C_DIVR((x1-x0)*y00,y00-y1);
-         y00 = 1.0f;
-      }
-      else if (y00>=(float)((image->Len0-1)-1UL)) {
-         if (y1>=(float)((image->Len0-1)-1UL)) goto label;
-         x0 = x0+X2C_DIVR((x1-x0)*((float)((image->Len0-1)-1UL)-y00),y1-y00);
-         y00 = (float)((image->Len0-1)-1UL);
-      }
-      if (y1<=0.0f) {
-         x1 = x1+X2C_DIVR((x1-x0)*y1,y00-y1);
-         y1 = 1.0f;
-      }
-      else if (y1>=(float)((image->Len0-1)-1UL)) {
-         x1 = x0+X2C_DIVR((x1-x0)*((float)((image->Len0-1)-1UL)-y00),y1-y00);
-         y1 = (float)((image->Len0-1)-1UL);
-      }
-      if (x0<2.0f) x0 = 2.0f;
-      if (x0>(float)((image->Len1-1)-1UL)) x0 = (float)((image->Len1-1)-1UL);
-      if (y00<2.0f) y00 = 2.0f;
-      if (y00>(float)((image->Len0-1)-1UL)) {
-         y00 = (float)((image->Len0-1)-1UL);
-      }
-      if (x1<2.0f) x1 = 2.0f;
-      if (x1>(float)((image->Len1-1)-1UL)) x1 = (float)((image->Len1-1)-1UL);
-      if (y1<2.0f) y1 = 2.0f;
-      if (y1>(float)((image->Len0-1)-1UL)) y1 = (float)((image->Len0-1)-1UL);
-      w1 = X2C_DIVR((float)width,512.0f);
-      if (x1-x0<(float)fabs(y1-y00)) {
-         h = x0;
-         x0 = y00;
-         y00 = h;
-         h = x1;
-         x1 = y1;
-         y1 = h;
-         flip = 1;
-      }
-      else flip = 0;
-      if (x0>x1) {
-         h = y1;
-         y1 = y00;
-         y00 = h;
-         h = x1;
-         x1 = x0;
-         x0 = h;
-         mirror = !mirror;
-      }
-      if (x1==x0) goto label;
-      h = X2C_DIVR(y1-y00,x1-x0);
-      ro = RealMath_sqrt(1.0f+h*h);
-      w2 = w1*ro;
-      iw2 = aprsdecode_trunc(w2*65536.0f);
-      r = w1*RealMath_sin(RealMath_arctan(h));
-      xi = aprsdecode_trunc(x0-(float)fabs(r));
-      w1 = (((y00-h*(float)fabs(r))-w2)-0.5f)*65536.0f;
-      if (w1<0.0f) ya = 0UL;
-      else ya = aprsdecode_trunc(w1);
-      e0 = iw2*2UL;
-      yb = ya+e0;
-      if ((float)fabs(r)>0.1f) {
-         de0 = aprsdecode_trunc(X2C_DIVR((float)e0,(float)fabs(r)*2.0f));
-      }
-      else de0 = e0;
-      k = (long)X2C_TRUNCI(h*65536.0f,X2C_min_longint,X2C_max_longint);
-      n = aprsdecode_trunc((x1-(float)xi)+(float)fabs(r));
-      mirr = y00>y1;
-      if (aprsdecode_click.dryrun) ya = (ya+yb)/2UL;
-      glow = X2C_DIVR(glow,ro);
-      e1 = 0UL;
-      n0 = n;
-      while (n>0UL) {
-         if (aprsdecode_click.dryrun) {
-            yi = ya/65536UL;
-            if (flip) {
-               findinfo((long)(yi-1UL), (long)xi);
-               findinfo((long)yi, (long)xi);
-               findinfo((long)(yi+1UL), (long)xi);
-            }
-            else {
-               findinfo((long)xi, (long)(yi-1UL));
-               findinfo((long)xi, (long)yi);
-               findinfo((long)xi, (long)(yi+1UL));
-            }
+   e0 = iw2*2UL;
+   yb = ya+e0;
+   if ((float)fabs(r)>0.1f) {
+      de0 = aprsdecode_trunc(X2C_DIVR((float)e0,(float)fabs(r)*2.0f));
+   }
+   else de0 = e0;
+   k = (long)X2C_TRUNCI(h*65536.0f,X2C_min_longint,X2C_max_longint);
+   n = aprsdecode_trunc((x1-(float)xi)+(float)fabs(r));
+   mirr = y00>y1;
+   if (aprsdecode_click.dryrun) ya = (ya+yb)/2UL;
+   glow = X2C_DIVR(glow,ro);
+   e1 = 0UL;
+   n0 = n;
+   while (n>0UL) {
+      if (aprsdecode_click.dryrun) {
+         yi = ya/65536UL;
+         if (flip) {
+            findinfo((long)(yi-1UL), (long)xi);
+            findinfo((long)yi, (long)xi);
+            findinfo((long)(yi+1UL), (long)xi);
          }
          else {
-            if (mirror) h = (float)n;
-            else h = (float)(n0-n);
-            if (h<glow) {
-               h = X2C_DIVR(h,glow);
-               frr = (long)aprsdecode_trunc((float)rr*(1.125f-h)*6.0f);
-               fgg = (long)aprsdecode_trunc((float)gg*h);
-               fbb = (long)aprsdecode_trunc((float)bb*h);
+            findinfo((long)xi, (long)(yi-1UL));
+            findinfo((long)xi, (long)yi);
+            findinfo((long)xi, (long)(yi+1UL));
+         }
+      }
+      else {
+         if (mirror) h = (float)n;
+         else h = (float)(n0-n);
+         if (h<glow) {
+            h = X2C_DIVR(h,glow);
+            frr = (long)aprsdecode_trunc((float)rr*(1.125f-h)*6.0f);
+            fgg = (long)aprsdecode_trunc((float)gg*h);
+            fbb = (long)aprsdecode_trunc((float)bb*h);
+         }
+         else {
+            frr = rr;
+            fbb = bb;
+            fgg = gg;
+         }
+         if (mirr) {
+            if (e0>de0) {
+               yie = yb-e0;
+               e0 -= de0;
             }
-            else {
-               frr = rr;
-               fbb = bb;
-               fgg = gg;
+            else yie = yb;
+            if (n<=aprsdecode_trunc((float)fabs(r)*2.0f)) ya += de0;
+            yi = ya;
+         }
+         else {
+            if (e0>de0) {
+               yi = ya+e0;
+               e0 -= de0;
             }
-            if (mirr) {
-               if (e0>de0) {
-                  yie = yb-e0;
-                  e0 -= de0;
-               }
-               else yie = yb;
-               if (n<=aprsdecode_trunc((float)fabs(r)*2.0f)) ya += de0;
-               yi = ya;
-            }
-            else {
-               if (e0>de0) {
-                  yi = ya+e0;
-                  e0 -= de0;
-               }
-               else yi = ya;
-               if (n<=aprsdecode_trunc((float)fabs(r)*2.0f)) yb -= de0;
-               yie = yb;
-            }
-            f1 = 256UL-(yi&65535UL)/256UL;
-            yi = (yi/65536UL)*65536UL;
-            do {
-               if (flip) {
-                  addcol(&image->Adr[(yi/65536UL)*image->Len0+xi], frr, fgg,
-                fbb, (long)f1);
-               }
-               else {
-                  addcol(&image->Adr[(xi)*image->Len0+yi/65536UL], frr, fgg,
-                fbb, (long)f1);
-               }
-               yi += 65536UL;
-               f1 = 256UL;
-            } while (yi<yie);
-            f1 = ((65536UL+yie)-yi&65535UL)/256UL;
+            else yi = ya;
+            if (n<=aprsdecode_trunc((float)fabs(r)*2.0f)) yb -= de0;
+            yie = yb;
+         }
+         f1 = 256UL-(yi&65535UL)/256UL;
+         yi = (yi/65536UL)*65536UL;
+         do {
             if (flip) {
                addcol(&image->Adr[(yi/65536UL)*image->Len0+xi], frr, fgg,
                 fbb, (long)f1);
@@ -2882,18 +2844,26 @@ extern void maptool_vector(maptool_pIMAGE image, float x0, float y00,
                addcol(&image->Adr[(xi)*image->Len0+yi/65536UL], frr, fgg,
                 fbb, (long)f1);
             }
-            yb = (unsigned long)((long)yb+k);
+            yi += 65536UL;
+            f1 = 256UL;
+         } while (yi<yie);
+         f1 = ((65536UL+yie)-yi&65535UL)/256UL;
+         if (flip) {
+            addcol(&image->Adr[(yi/65536UL)*image->Len0+xi], frr, fgg, fbb,
+                (long)f1);
          }
-         ya = (unsigned long)((long)ya+k);
-         ++xi;
-         --n;
+         else {
+            addcol(&image->Adr[(xi)*image->Len0+yi/65536UL], frr, fgg, fbb,
+                (long)f1);
+         }
+         /*      INC(yb, k); */
+         yb = (unsigned long)((long)yb+k);
       }
-      label:;
-      X2C_XOFF();
+      /*    INC(ya, k); */
+      ya = (unsigned long)((long)ya+k);
+      ++xi;
+      --n;
    }
-   else {
-   }
-   X2C_XREMOVE();
 } /* end vector() */
 
 

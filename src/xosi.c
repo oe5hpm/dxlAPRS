@@ -137,29 +137,12 @@ static char cursorset;
 
 static unsigned long Gamma(unsigned long c, float g)
 {
-   struct X2C_XHandler_STR anonym;
-   unsigned long Gamma_ret;
-   if (X2C_XTRY(&anonym)) {
-      if (c==0UL) {
-         Gamma_ret = 0UL;
-         goto label;
-      }
-      if (c<1024UL) {
-         Gamma_ret = (unsigned long)
-                X2C_TRUNCC(RealMath_exp(X2C_DIVR(RealMath_ln(X2C_DIVR((float)
+   if (c==0UL) return 0UL;
+   if (c<1024UL) {
+      return (unsigned long)X2C_TRUNCC(RealMath_exp(X2C_DIVR(RealMath_ln(X2C_DIVR((float)
                 c,1024.0f)),g))*255.5f,0UL,X2C_max_longcard);
-         goto label;
-      }
-      Gamma_ret = 255UL;
-      label:;
-      X2C_XOFF();
    }
-   else {
-      osi_WrStrLn("error in Gamma TRUNC() ", 24ul);
-      Gamma_ret = 0UL;
-   }
-   X2C_XREMOVE();
-   return Gamma_ret;
+   return 255UL;
 } /* end Gamma() */
 
 

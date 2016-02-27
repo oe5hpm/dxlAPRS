@@ -39,23 +39,10 @@
 #endif
 #include <math.h>
 
-/* os interface */
 typedef long osi_File;
 
 typedef long osi_SOCKET;
 
-/*
-CONST sin=   math.sin;
-      cos=   math.cos;
-      arctan=math.atan;
-      arccos=math.acos;
-      tan=   math.tan;
-      sqrt=  math.sqrt;
-      exp=   math.exp;
-      ln=    math.log;
-      power= math.pow;
-      floor= math.floor;
-*/
 #define osi_sin RealMath_sin
 
 #define osi_cos RealMath_cos
@@ -76,20 +63,6 @@ CONST sin=   math.sin;
 
 #define osi_floor floor
 
-/*
-<* IF __GEN_C__ THEN *>
-VAR
-      O_TRUNC     -: INTEGER;    (* open with truncation *)
-      O_APPEND    -: INTEGER;    (* append, i.e writes at the end *)
-      O_NONBLOCK  -: INTEGER;    (* open and accesses never block *)
-      O_RDWR      -: INTEGER;    (* open for reading and writing *)
-      O_WRONLY    -: INTEGER;    (* open for writing only *)
-      O_RDONLY    -: INTEGER;    (* open for reading only *)
-      O_CREAT     -: INTEGER;    (* create if not exists *)
-      O_LARGEFILE -: INTEGER;
-<* ELSE *>
-<* END *>
-*/
 #define osi_pi 3.1415926535898
 
 #define osi_DIRSEP "/"
@@ -169,7 +142,6 @@ extern void osi_WrLn(void);
 extern void osi_WrStrLn(char [], unsigned long);
 
 extern char osi_FdValid(long);
-/*PROCEDURE Create(fn:ARRAY OF CHAR):File;*/
 
 extern void osi_CloseSock(long);
 
