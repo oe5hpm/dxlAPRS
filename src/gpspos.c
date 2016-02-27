@@ -356,21 +356,12 @@ static long get4sats(const SATPOSES sats, const unsigned long satnum[],
    double rx_clock_bias; /*, clock_drift, satVx,satVy,satVz,azimuth,elevation,doppler*/
    long ret;
    double dils[4];
-   struct X2C_XHandler_STR anonym;
-   long get4sats_ret;
    /*WrStrLn(" satnums"); */
-   /* ;WrInt(satnum[i], 3);*/
-   /*+K*sats[satnum[0]].drydelay*/
-   /*+K*sats[satnum[1]].drydelay*/
-   /*+K*sats[satnum[2]].drydelay*/
-   /*+K*sats[satnum[3]].drydelay*/
-   /*WrFixed(rx_clock_bias, 2,12); WrStrLn("=bias"); */
-   if (X2C_XTRY(&anonym)) {
-      for (i = 0UL; i<=3UL; i++) {
-         dils[i] = 0.0;
-      } /* end for */
-      if (dil>0UL) dils[dil-1UL] = dilm;
-      ret = NAVIGATION_PerformClosedFormPositionSolution_FromPseuodrangeMeasurements(sats[satnum[0UL]
+   for (i = 0UL; i<=3UL; i++) {
+      dils[i] = 0.0; /* ;WrInt(satnum[i], 3);*/
+   } /* end for */
+   if (dil>0UL) dils[dil-1UL] = dilm;
+   ret = NAVIGATION_PerformClosedFormPositionSolution_FromPseuodrangeMeasurements(sats[satnum[0UL]
                 ].range+dils[0U], sats[satnum[1UL]].range+dils[1U],
                 sats[satnum[2UL]].range+dils[2U],
                 sats[satnum[3UL]].range+dils[3U], sats[satnum[0UL]].clk,
@@ -382,16 +373,16 @@ static long get4sats(const SATPOSES sats, const unsigned long satnum[],
                 sats[satnum[3UL]].y, sats[satnum[0UL]].z,
                 sats[satnum[1UL]].z, sats[satnum[2UL]].z,
                 sats[satnum[3UL]].z, lat, long0, heig, &rx_clock_bias);
-      if (ret>500L) ret = 500L;
-      if ((long)X2C_TRUNCI(*heig,X2C_min_longint,X2C_max_longint)<-10000L) {
-         ret = 0L;
-      }
-      get4sats_ret = ret;
-      X2C_XOFF();
+   /*+K*sats[satnum[0]].drydelay*/
+   /*+K*sats[satnum[1]].drydelay*/
+   /*+K*sats[satnum[2]].drydelay*/
+   /*+K*sats[satnum[3]].drydelay*/
+   /*WrFixed(rx_clock_bias, 2,12); WrStrLn("=bias"); */
+   if (ret>500L) ret = 500L;
+   if ((long)X2C_TRUNCI(*heig,X2C_min_longint,X2C_max_longint)<-10000L) {
+      ret = 0L;
    }
-   else get4sats_ret = -1L;
-   X2C_XREMOVE();
-   return get4sats_ret;
+   return ret;
 } /* end get4sats() */
 
 
@@ -912,27 +903,26 @@ static double neardist(double lat1, double long1, double lat2, double long2)
 static double azimuth(double lat1, double long1, double lat2, double long2)
 /* degrees */
 {
+   double cl2;
+   double cl1;
+   double sinld;
    double ldiff;
    double h;
-   struct X2C_XHandler_STR anonym;
-   double azimuth_ret;
-   if (X2C_XTRY(&anonym)) {
-      ldiff = long2-long1;
-      if ((ldiff==0.0 || cos(lat1)==0.0) || cos(lat2)==0.0) {
-         if (lat1<=lat2) azimuth_ret = 0.0;
-         else azimuth_ret = 180.0;
-      }
-      else {
-         h = X2C_DIVL(atan(cos(lat1)*(X2C_DIVL(tan(lat1)*cos(ldiff)-tan(lat2)
-                ,sin(ldiff)))),1.7453292519943E-2);
-         if (ldiff<0.0) azimuth_ret = h+270.0;
-         else azimuth_ret = h+90.0;
-      }
-      X2C_XOFF();
+   ldiff = long2-long1;
+   sinld = sin(ldiff);
+   cl1 = cos(lat1);
+   cl2 = cos(lat2);
+   if ((ldiff==0.0 || cl1==0.0) || cl2==0.0) {
+      if (lat1<=lat2) return 0.0;
+      else return 180.0;
    }
-   else azimuth_ret = 0.0;
-   X2C_XREMOVE();
-   return azimuth_ret;
+   else {
+      h = atan(cl1*(X2C_DIVL(tan(lat1)*cos(ldiff)-tan(lat2),
+                sinld)))*5.7295779513082E+1;
+      if (ldiff<0.0) return h+270.0;
+      else return h+90.0;
+   }
+   return 0;
 } /* end azimuth() */
 
 

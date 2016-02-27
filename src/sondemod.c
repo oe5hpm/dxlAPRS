@@ -679,8 +679,8 @@ static void Parms(void)
          }
          else {
             if (h[1U]=='h') {
-               osic_WrStr("sondemod(c) 0.4", 16ul);
-               osic_WrStrLn(" multichannel decoder RS92 and SRS-C34 Radiosonde\
+               InOut_WriteString("sondemod(c) 0.5", 16ul);
+               osi_WrStrLn(" multichannel decoder RS92 and SRS-C34 Radiosonde\
 s", 51ul);
                osic_WrStrLn(" -A <meter>     at lower altitude use -B beacon t\
 ime (meter) -A 1000", 69ul);

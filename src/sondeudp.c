@@ -41,6 +41,10 @@
    and SRS-C34 (2400Bd AFSK 2000/3800Hz
    and DFM06 (2500bit/s manchester)
    and RS41 (4800Bd GFSK) and send as AXUDP by OE5DXL */
+#define sondeudp_MAXCHAN 16
+
+#define sondeudp_ADCBYTES 2
+
 #define sondeudp_MAXLEN 9
 /* data frame size c34 */
 
@@ -96,9 +100,6 @@ static unsigned char sondeudp_EXOR41[64] = {150U,131U,62U,81U,177U,73U,8U,
 typedef char FILENAME[1024];
 
 typedef char CNAMESTR[9];
-
-enum CHANNELS {sondeudp_LEFT, sondeudp_RIGHT};
-
 
 typedef float AFIRTAB[512];
 
@@ -295,15 +296,23 @@ static unsigned long adcrate;
 
 static unsigned long adcbuflen;
 
-static unsigned long adcbytes;
+static unsigned long adcbufrd;
+
+static unsigned long adcbufsamps;
 
 static unsigned long fragmentsize;
 
 static FILENAME soundfn;
 
-static struct CHAN chan[2];
+static struct CHAN chan[16];
 
-static unsigned char maxchannels;
+static unsigned long adcbufsampx;
+
+static unsigned long maxchannels;
+
+static unsigned long cfgchannels;
+
+static short adcbuf[4096];
 
 
 static void Error(char text[], unsigned long text_len)
@@ -453,20 +462,22 @@ static void OpenSound(void)
    long i;
    soundfd = osic_OpenRW(soundfn, 1024ul);
    if (soundfd>=0L) {
-      i = samplesize(soundfd, 16UL); /* 8, 16 */
-      i = channels(soundfd, (unsigned long)maxchannels+1UL); /* 1, 2  */
-      i = setfragment(soundfd, fragmentsize); /* 2^bufsize * 65536*bufs*/
-      if (i) {
-         osic_WrStr("sound setfragment returns ", 27ul);
-         osic_WrUINT32(i, 1UL);
-         osic_WrLn();
-      }
-      i = sampelrate(soundfd, adcrate); /* 8000..48000 */
-      s = (long)getsampelrate(soundfd);
-      if (s!=(long)adcrate) {
-         osic_WrStr("sound device returns ", 22ul);
-         osic_WrUINT32(s, 1UL);
-         osic_WrStrLn("Hz!", 4ul);
+      if (maxchannels<2UL) {
+         i = samplesize(soundfd, 16UL); /* 8, 16 */
+         i = channels(soundfd, maxchannels+1UL); /* 1, 2  */
+         i = setfragment(soundfd, fragmentsize); /* 2^bufsize * 65536*bufs*/
+         if (i) {
+            InOut_WriteString("sound setfragment returns ", 27ul);
+            InOut_WriteInt(i, 1UL);
+            osi_WrLn();
+         }
+         i = sampelrate(soundfd, adcrate); /* 8000..48000 */
+         s = (long)getsampelrate(soundfd);
+         if (s!=(long)adcrate) {
+            InOut_WriteString("sound device returns ", 22ul);
+            InOut_WriteInt(s, 1UL);
+            osi_WrStrLn("Hz!", 4ul);
+         }
       }
    }
    else if (abortonsounderr) {
@@ -588,13 +599,13 @@ static long GetIp(char h[], unsigned long h_len, unsigned long * ip,
 
 static void Config(void)
 {
+   unsigned long c;
    unsigned long i;
-   unsigned char c;
    struct R92 * anonym;
    struct R41 * anonym0;
    struct DFM6 * anonym1;
    struct C34 * anonym2;
-   for (c = sondeudp_LEFT;; c++) {
+   for (c = 0UL; c<=15UL; c++) {
       { /* with */
          struct R92 * anonym = &chan[c].r92;
          anonym->configbaud = 4800UL;
@@ -667,7 +678,6 @@ static void Config(void)
          anonym2->rxp = 0UL;
          anonym2->rxbitc = 0UL;
       }
-      if (c==sondeudp_RIGHT) break;
    } /* end for */
 } /* end Config() */
 
@@ -678,9 +688,10 @@ static void Parms(void)
    FILENAME mixfn;
    FILENAME h1;
    FILENAME h;
+   unsigned long ch;
    unsigned long cnum;
    long inum;
-   unsigned char channel;
+   unsigned long channel;
    pUDPTX utx;
    char chanset;
    char mycall[11];
@@ -693,17 +704,16 @@ static void Parms(void)
    struct CHAN * anonym3;
    /* set only 1 chan */
    struct CHAN * anonym4;
-   struct CHAN * anonym5;
    err = 0;
    abortonsounderr = 0;
    adcrate = 22050UL;
-   adcbytes = 2UL;
    adcbuflen = 1024UL;
    fragmentsize = 11UL;
-   maxchannels = sondeudp_LEFT;
+   maxchannels = 0UL;
+   cfgchannels = 1UL; /* fix 1 channel */
    debfd = -1L;
    chanset = 0;
-   for (channel = sondeudp_LEFT;; channel++) {
+   for (channel = 0UL; channel<=15UL; channel++) {
       { /* with */
          struct R92 * anonym = &chan[channel].r92;
          anonym->enabled = 1;
@@ -743,9 +753,8 @@ static void Parms(void)
          anonym3->udptx = 0;
          anonym3->mycallc = 0UL;
       }
-      if (channel==sondeudp_RIGHT) break;
    } /* end for */
-   channel = sondeudp_LEFT;
+   channel = 0UL;
    X2C_COPY("/dev/dsp",9ul,soundfn,1024u);
    X2C_COPY("/dev/mixer",11ul,mixfn,1024u);
    for (;;) {
@@ -760,8 +769,9 @@ static void Parms(void)
             }
             else {
                /* use before -C set both */
-               chan[sondeudp_LEFT].c34.enabled = 0;
-               chan[sondeudp_RIGHT].c34.enabled = 0;
+               for (ch = 0UL; ch<=15UL; ch++) {
+                  chan[ch].c34.enabled = 0;
+               } /* end for */
             }
          }
          else if (h[1U]=='9') {
@@ -771,8 +781,9 @@ static void Parms(void)
             }
             else {
                /* use before -C set both */
-               chan[sondeudp_LEFT].r92.enabled = 0;
-               chan[sondeudp_RIGHT].r92.enabled = 0;
+               for (ch = 0UL; ch<=15UL; ch++) {
+                  chan[ch].r92.enabled = 0;
+               } /* end for */
             }
          }
          else if (h[1U]=='4') {
@@ -782,8 +793,9 @@ static void Parms(void)
             }
             else {
                /* use before -C set both */
-               chan[sondeudp_LEFT].r41.enabled = 0;
-               chan[sondeudp_RIGHT].r41.enabled = 0;
+               for (ch = 0UL; ch<=15UL; ch++) {
+                  chan[ch].r41.enabled = 0;
+               } /* end for */
             }
          }
          else if (h[1U]=='6') {
@@ -793,21 +805,23 @@ static void Parms(void)
             }
             else {
                /* use before -C set both */
-               chan[sondeudp_LEFT].dfm6.enabled = 0;
-               chan[sondeudp_RIGHT].dfm6.enabled = 0;
+               for (ch = 0UL; ch<=15UL; ch++) {
+                  chan[ch].dfm6.enabled = 0;
+               } /* end for */
             }
          }
          else if (h[1U]=='c') {
             Lib_NextArg(h, 1024ul);
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
-            if (cnum<1UL || cnum>2UL) Error("maxchannels 1..2", 17ul);
-            maxchannels = (unsigned char)(cnum-1UL);
+            if (cnum>=15UL) Error("maxchannels 0..max", 19ul);
+            cfgchannels = cnum;
+            if (cfgchannels>0UL) maxchannels = cfgchannels-1UL;
          }
          else if (h[1U]=='C') {
             Lib_NextArg(h, 1024ul);
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
-            if (cnum>1UL) Error("channel 0 to 1", 15ul);
-            channel = (unsigned char)cnum;
+            if (cnum>1UL) Error("channel 0 to max", 17ul);
+            channel = cnum;
             chanset = 1;
          }
          else if (h[1U]=='D') {
@@ -854,27 +868,32 @@ static void Parms(void)
             }
             else {
                /* use before -C set both */
-               chan[sondeudp_LEFT].mycallc = myc;
-               chan[sondeudp_LEFT].myssid = mys;
-               chan[sondeudp_RIGHT].mycallc = myc;
-               chan[sondeudp_RIGHT].myssid = mys;
+               for (ch = 0UL; ch<=15UL; ch++) {
+                  chan[ch].mycallc = myc;
+                  chan[ch].myssid = mys;
+               } /* end for */
             }
          }
          else if (h[1U]=='u') {
             Lib_NextArg(h, 1024ul);
-            { /* with */
-               struct CHAN * anonym5 = &chan[channel];
-               Storage_ALLOCATE((X2C_ADDRESS *) &utx, sizeof(struct UDPTX));
-               if (utx==0) Error("udp socket out of memory", 25ul);
-               utx->udpfd = GetIp(h, 1024ul, &utx->ip, &utx->destport);
-               if (utx->udpfd<0L) Error("cannot open udp socket", 23ul);
-               utx->next = anonym5->udptx;
-               anonym5->udptx = utx;
+            Storage_ALLOCATE((X2C_ADDRESS *) &utx, sizeof(struct UDPTX));
+            if (utx==0) Error("udp socket out of memory", 25ul);
+            utx->udpfd = GetIp(h, 1024ul, &utx->ip, &utx->destport);
+            if (utx->udpfd<0L) Error("cannot open udp socket", 23ul);
+            if (chanset) {
+               /* set only 1 chan */
+               utx->next = chan[channel].udptx;
+               chan[channel].udptx = utx;
+            }
+            else {
+               /* use before -C set both */
+               for (ch = 0UL; ch<=15UL; ch++) {
+                  utx->next = chan[ch].udptx;
+                  chan[ch].udptx = utx;
+               } /* end for */
             }
          }
-         else if (h[1U]=='v') {
-            verb = 1;
-         }
+         else if (h[1U]=='v') verb = 1;
          else {
             if (h[1U]=='h') {
                osic_WrStrLn("oss Mono/Stereo RS92-SGPA and SRSC34 Sonde Demodu\
@@ -893,11 +912,11 @@ fore to select 1 channel)", 75ul);
 ore to select 1 channel)", 74ul);
                osic_WrStrLn(" -a             abort on sounddevice error else r\
 etry to open (USB audio...)", 77ul);
-               osic_WrStrLn(" -c <num>       maxchannels (1) (1=mono, 2=stereo\
-)", 51ul);
-               osic_WrStrLn(" -C <num>       (0..1) channel parameters follow \
-(repeat for each channel)", 75ul);
-               osic_WrStrLn(" -D <filename>  write raw soundcard input data to\
+               osi_WrStrLn(" -c <num>       maxchannels, 0 for automatic chan\
+nel number recognition", 72ul);
+               osi_WrStrLn(" -C <num>       channel parameters follow (repeat\
+ for each channel)", 68ul);
+               osi_WrStrLn(" -D <filename>  write raw soundcard input data to\
  file or pipe", 63ul);
                osic_WrStrLn("                for debug or chaining demodulator\
 s (equalizer diversity)", 73ul);
@@ -934,6 +953,9 @@ r more destinations", 69ul);
       osic_WrStr(h, 1024ul);
       osic_WrStrLn("< use -h", 9ul);
       X2C_ABORT();
+   }
+   if (adcbuflen*(maxchannels+1UL)>4096UL) {
+      adcbuflen = 4096UL/(maxchannels+1UL);
    }
    Config();
    OpenSound();
@@ -987,7 +1009,7 @@ static void WrQuali(float q)
 static void Wrtune(long volt, long max0)
 {
    long u;
-   if (max0>volt) {
+   if (max0>0L && max0>labs(volt)) {
       u = X2C_DIV(volt*100L,max0);
       if (labs(u)>0L) {
          osic_WrStr(" f:", 4ul);
@@ -998,7 +1020,7 @@ static void Wrtune(long volt, long max0)
 } /* end Wrtune() */
 
 
-static float noiselevel(unsigned char channel)
+static float noiselevel(unsigned long channel)
 /* 0.0 perfect, ~0.25 noise only*/
 {
    struct C34 * anonym;
@@ -1049,22 +1071,16 @@ static void alludp(pUDPTX utx, unsigned long len, char buf[],
 static unsigned short sondeudp_POLYNOM = 0x1021U;
 
 
-static void decodeframe92(unsigned char m)
+static void decodeframe92(unsigned long m)
 {
    unsigned long ic;
    unsigned long len;
    unsigned long p;
    unsigned long j;
    unsigned short crc;
-   unsigned char channel;
    struct CHAN * anonym;
-   channel = m;
-   if (chan[channel].udptx==0) {
-      if (channel==sondeudp_LEFT) channel = sondeudp_RIGHT;
-      else channel = sondeudp_LEFT;
-   }
    { /* with */
-      struct CHAN * anonym = &chan[channel];
+      struct CHAN * anonym = &chan[m];
       if (anonym->mycallc>0UL) {
          chan[m].r92.rxbuf[0U] = (char)(anonym->mycallc/16777216UL);
          chan[m].r92.rxbuf[1U] = (char)(anonym->mycallc/65536UL&255UL);
@@ -1095,22 +1111,28 @@ static void decodeframe92(unsigned char m)
             }
             ++j;
          }
+         if (maxchannels>0UL) {
+            InOut_WriteInt((long)(m+1UL), 1UL);
+            InOut_WriteString(":", 2ul);
+         }
+         InOut_WriteString("R92 ", 5ul);
          if ((8UL+len>240UL || (char)crc!=chan[m].r92.rxbuf[(8UL+len)-2UL])
                 || (char)X2C_LSH(crc,16,
                 -8)!=chan[m].r92.rxbuf[(8UL+len)-1UL]) {
-            if (verb) osic_WrStr("----  crc err ", 15ul);
+            InOut_WriteString("----  crc err ", 15ul);
          }
          else {
-            osic_WrUINT32((long)((unsigned long)(unsigned char)
-                chan[m].r92.rxbuf[8U]+(unsigned long)(unsigned char)
-                chan[m].r92.rxbuf[9U]*256UL), 4UL);
-            j = 2UL;
+            j = 4UL;
             while ((unsigned char)chan[m].r92.rxbuf[8UL+j]>=' ') {
                osic_WrStr((char *) &chan[m].r92.rxbuf[8UL+j], 1u/1u);
                ++j;
             }
+            InOut_WriteString(" ", 2ul);
+            InOut_WriteInt((long)((unsigned long)(unsigned char)
+                chan[m].r92.rxbuf[8U]+(unsigned long)(unsigned char)
+                chan[m].r92.rxbuf[9U]*256UL), 4UL);
          }
-         if (m>sondeudp_LEFT) osic_WrStr("             ", 14ul);
+         /*      IF m>0 THEN WrStr("             ") END; */
          WrdB(chan[m].adcmax);
          WrQ(chan[m].r92.bitlev, chan[m].r92.noise);
          Wrtune(chan[m].adcdc, chan[m].adcmax);
@@ -1142,17 +1164,11 @@ static char hex(unsigned long n)
 
 /*------------------------------ RS41 */
 
-static void sendrs41(unsigned char m)
+static void sendrs41(unsigned long m)
 {
-   unsigned char channel;
    struct CHAN * anonym;
-   channel = m;
-   if (chan[channel].udptx==0) {
-      if (channel==sondeudp_LEFT) channel = sondeudp_RIGHT;
-      else channel = sondeudp_LEFT;
-   }
    { /* with */
-      struct CHAN * anonym = &chan[channel];
+      struct CHAN * anonym = &chan[m];
       if (anonym->mycallc>0UL) {
          chan[m].r41.rxbuf[0U] = (char)(anonym->mycallc/16777216UL);
          chan[m].r41.rxbuf[1U] = (char)(anonym->mycallc/65536UL&255UL);
@@ -1301,7 +1317,7 @@ static void posrs41(const char b[], unsigned long b_len, unsigned long p)
 static unsigned short sondeudp_POLYNOM0 = 0x1021U;
 
 
-static void decode41(unsigned char m)
+static void decode41(unsigned long m)
 {
    unsigned long ic;
    unsigned long len;
@@ -1317,9 +1333,9 @@ static void decode41(unsigned char m)
       nameok = 0;
       p = 57UL;
       if (verb) {
-         if ((unsigned long)maxchannels>0UL) {
-            osic_WrUINT32((long)((unsigned long)m+1UL), 1UL);
-            osic_WrStr(":", 2ul);
+         if (maxchannels>0UL) {
+            InOut_WriteInt((long)(m+1UL), 1UL);
+            InOut_WriteString(":", 2ul);
          }
          osic_WrStr("R41 ", 5ul);
       }
@@ -1421,7 +1437,7 @@ static unsigned char _cnst[64] = {150U,131U,62U,81U,177U,73U,8U,152U,50U,5U,
                 188U,180U,182U,6U,170U,244U,35U,120U,110U,59U,174U,191U,123U,
                 76U,193U};
 
-static void demodbyte41(unsigned char m, char d)
+static void demodbyte41(unsigned long m, char d)
 {
    unsigned long j;
    unsigned long i;
@@ -1473,7 +1489,7 @@ static void demodbyte41(unsigned char m, char d)
 } /* end demodbyte41() */
 
 
-static void demodbit41(unsigned char m, float u)
+static void demodbit41(unsigned long m, float u)
 {
    char d;
    float ua;
@@ -1492,7 +1508,7 @@ static void demodbit41(unsigned char m, float u)
 
 /*------------------------------ RS92 */
 
-static void stobyte(unsigned char m, char b)
+static void stobyte(unsigned long m, char b)
 {
    struct R92 * anonym;
    { /* with */
@@ -1508,7 +1524,7 @@ static void stobyte(unsigned char m, char b)
 } /* end stobyte() */
 
 
-static void demodbyte(unsigned char m, char d)
+static void demodbyte(unsigned long m, char d)
 {
    unsigned long maxi;
    unsigned long i;
@@ -1548,7 +1564,7 @@ static void demodbyte(unsigned char m, char d)
 } /* end demodbyte() */
 
 
-static void demodbit92(unsigned char m, float u, float u0)
+static void demodbit92(unsigned long m, float u, float u0)
 {
    char d;
    float ua;
@@ -1576,7 +1592,7 @@ static void demodbit92(unsigned char m, float u, float u0)
 } /* end demodbit92() */
 
 
-static void demod92(float u, unsigned char m)
+static void demod92(float u, unsigned long m)
 {
    char d;
    struct R92 * anonym;
@@ -1612,7 +1628,7 @@ static void demod92(float u, unsigned char m)
 } /* end demod92() */
 
 
-static void Fsk(unsigned char m)
+static void Fsk(unsigned long m)
 {
    float ff;
    long lim;
@@ -1749,7 +1765,7 @@ static unsigned long sondeudp_MON[13] = {0UL,0UL,31UL,59UL,90UL,120UL,151UL,
 static unsigned long _cnst0[13] = {0UL,0UL,31UL,59UL,90UL,120UL,151UL,181UL,
                 212UL,243UL,273UL,304UL,334UL};
 
-static void decodesub(const char b[], unsigned long b_len, unsigned char m,
+static void decodesub(const char b[], unsigned long b_len, unsigned long m,
                 unsigned long subnum)
 {
    unsigned long u;
@@ -1955,7 +1971,7 @@ static void decodesub(const char b[], unsigned long b_len, unsigned char m,
 } /* end decodesub() */
 
 
-static void decodeframe6(unsigned char m)
+static void decodeframe6(unsigned long m)
 {
    unsigned long j;
    unsigned long i;
@@ -1972,9 +1988,9 @@ static void decodeframe6(unsigned char m)
       deinterleave(anonym->rxbuf, 264ul, 56UL, 13UL, anonym->dh1, 104ul);
       deinterleave(anonym->rxbuf, 264ul, 160UL, 13UL, anonym->dh2, 104ul);
       if (verb) {
-         if ((unsigned long)maxchannels>0UL) {
-            osic_WrUINT32((long)((unsigned long)m+1UL), 1UL);
-            osic_WrStr(":", 2ul);
+         if (maxchannels>0UL) {
+            InOut_WriteInt((long)(m+1UL), 1UL);
+            InOut_WriteString(":", 2ul);
          }
          if (anonym->id[0U]) osic_WrStr(anonym->id, 9ul);
          else osic_WrStr("DF6", 4ul);
@@ -2063,7 +2079,7 @@ static void decodeframe6(unsigned char m)
 } /* end decodeframe6() */
 
 
-static void demodbyte6(unsigned char m, char d)
+static void demodbyte6(unsigned long m, char d)
 {
    /*  WrInt(ORD(d),1); */
    struct DFM6 * anonym;
@@ -2087,7 +2103,7 @@ static void demodbyte6(unsigned char m, char d)
 } /* end demodbyte6() */
 
 
-static void demodbit6(unsigned char m, float u, float u0)
+static void demodbit6(unsigned long m, float u, float u0)
 {
    char d;
    float ua;
@@ -2114,7 +2130,7 @@ static void demodbit6(unsigned char m, float u, float u0)
 } /* end demodbit6() */
 
 
-static void demod6(float u, unsigned char m)
+static void demod6(float u, unsigned long m)
 {
    char d;
    struct DFM6 * anonym;
@@ -2142,7 +2158,7 @@ static void demod6(float u, unsigned char m)
 } /* end demod6() */
 
 
-static void Fsk6(unsigned char m)
+static void Fsk6(unsigned long m)
 {
    float ff;
    long lim;
@@ -2166,7 +2182,7 @@ static void Fsk6(unsigned char m)
 
 /*------------------------------ C34 */
 
-static void demodframe34(unsigned char channel)
+static void demodframe34(unsigned long channel)
 {
    unsigned long val;
    unsigned long sum2;
@@ -2193,9 +2209,9 @@ static void demodframe34(unsigned char channel)
                 anonym->rxbuf[8U];
       good = 0;
       if (verb) {
-         if ((unsigned long)maxchannels>0UL) {
-            osic_WrUINT32((long)((unsigned long)channel+1UL), 1UL);
-            osic_WrStr(":", 2ul);
+         if (maxchannels>0UL) {
+            InOut_WriteInt((long)(channel+1UL), 1UL);
+            InOut_WriteString(":", 2ul);
          }
          osic_WrStr("C34 ", 5ul);
          osic_WrStr(anonym->id, 9ul);
@@ -2415,7 +2431,7 @@ static void demodframe34(unsigned char channel)
 } /* end demodframe34() */
 
 
-static void demodbit34(unsigned char channel, char d)
+static void demodbit34(unsigned long channel, char d)
 {
    struct C34 * anonym;
    d = !d;
@@ -2453,7 +2469,7 @@ static void demodbit34(unsigned char channel, char d)
 } /* end demodbit34() */
 
 
-static void demod34(float u, unsigned char channel)
+static void demod34(float u, unsigned long channel)
 {
    char d;
    struct C34 * anonym;
@@ -2481,7 +2497,7 @@ static void demod34(float u, unsigned char channel)
 } /* end demod34() */
 
 
-static void Afsk(unsigned char channel)
+static void Afsk(unsigned long channel)
 {
    float ff;
    float b;
@@ -2536,69 +2552,83 @@ static void Afsk(unsigned char channel)
 
 static void getadc(void)
 {
-   short buf[4096];
-   long minr;
-   long maxr;
-   long minl;
-   long maxl;
    long sl;
-   long i;
    long l;
-   unsigned char c;
-   l = osic_RdBin(soundfd, (char *)buf, 8192u/1u, adcbuflen*adcbytes);
-   if (l<0L) {
-      if (abortonsounderr) Error("Sounddevice Failure", 20ul);
-      else {
-         osic_Close(soundfd);
-         Usleep(100000UL);
-         OpenSound();
-         return;
+   long max0[16];
+   long min0[16];
+   unsigned long ch;
+   unsigned long c;
+   unsigned long tmp;
+   c = 0UL;
+   do {
+      if (adcbufrd>=adcbufsamps) {
+         adcbufrd = 0UL;
+         l = osi_RdBin(soundfd, (char *)adcbuf, 8192u/1u, adcbuflen*2UL);
+         adcbufsamps = 0UL;
+         if (l<0L) {
+            if (abortonsounderr) Error("Sounddevice Failure", 20ul);
+            else {
+               osi_Close(soundfd);
+               Usleep(100000UL);
+               OpenSound();
+               return;
+            }
+         }
+         if (l<2L) return;
+         adcbufsamps = (unsigned long)X2C_DIV(l,2L);
+         if (debfd>=0L) {
+            osi_WrBin(debfd, (char *)adcbuf, 8192u/1u, adcbufsamps*2UL);
+         }
+         tmp = maxchannels;
+         ch = 0UL;
+         if (ch<=tmp) for (;; ch++) {
+            chan[ch].adcmax = X2C_DIV(chan[ch].adcmax*15L,16L);
+            max0[ch] = -32768L;
+            min0[ch] = 32767L;
+            chan[ch].adcdc += X2C_DIV(X2C_DIV(max0[ch]+min0[ch],
+                2L)-chan[ch].adcdc,16L);
+            chan[ch].adcmax = max0[ch]-min0[ch];
+            if (ch==tmp) break;
+         } /* end for */
+         adcbufsampx = X2C_max_longcard;
       }
-   }
-   if (debfd>=0L) osic_WrBin(debfd, (char *)buf, 8192u/1u, (unsigned long)l);
-   l = (long)((unsigned long)l/adcbytes);
-   for (c = sondeudp_LEFT;; c++) {
-      chan[c].adcmax = chan[c].adcmax*15L>>4;
-      if (c==sondeudp_RIGHT) break;
+      sl = (long)adcbuf[adcbufrd];
+      if (cfgchannels==0UL && (sl&1)) {
+         /* auto channels channel 0 */
+         /*WrInt(lastc, 1); WrStrLn(" ch1"); */
+         if (adcbufsampx!=X2C_max_longcard) {
+            ch = (adcbufrd-adcbufsampx)-1UL;
+            /*WrInt(ch, 1); WrStrLn(" ch"); */
+            if (ch<15UL) {
+               if (verb && maxchannels!=ch) {
+                  InOut_WriteString("channels changed from ", 23ul);
+                  InOut_WriteInt((long)(maxchannels+1UL), 0UL);
+                  InOut_WriteString(" to ", 5ul);
+                  InOut_WriteInt((long)(ch+1UL), 0UL);
+                  osi_WrStrLn("", 1ul);
+               }
+               maxchannels = ch;
+            }
+         }
+         adcbufsampx = adcbufrd;
+         c = 0UL;
+      }
+      sl -= chan[c].adcdc;
+      ++adcbufrd;
+      chan[c].afir[afin] = (float)(sl-chan[c].adcdc);
+      if (sl>max0[c]) max0[c] = sl;
+      if (sl<min0[c]) min0[c] = sl;
+      ++c;
+   } while (c<=maxchannels);
+   afin = afin+1UL&31UL;
+   tmp = maxchannels;
+   c = 0UL;
+   if (c<=tmp) for (;; c++) {
+      if (chan[c].r92.enabled || chan[c].r41.enabled) Fsk(c);
+      if (chan[c].c34.enabled) Afsk(c);
+      if (chan[c].dfm6.enabled) Fsk6(c);
+      if (c==tmp) break;
    } /* end for */
-   maxl = -32768L;
-   maxr = -32768L;
-   minl = 32767L;
-   minr = 32767L;
-   i = 0L;
-   while (i<l) {
-      sl = (long)buf[i]-chan[sondeudp_LEFT].adcdc;
-      chan[sondeudp_LEFT].afir[afin] = (float)(sl-chan[sondeudp_LEFT].adcdc);
-      if (sl>maxl) maxl = sl;
-      if (sl<minl) minl = sl;
-      if (maxchannels>sondeudp_LEFT) {
-         sl = (long)buf[i+1L];
-         chan[sondeudp_RIGHT].afir[afin] = (float)
-                (sl-chan[sondeudp_RIGHT].adcdc);
-         if (sl>maxr) maxr = sl;
-         if (sl<minr) minr = sl;
-      }
-      afin = afin+1UL&31UL;
-      if (chan[sondeudp_LEFT].r92.enabled || chan[sondeudp_LEFT].r41.enabled)
-                 Fsk(sondeudp_LEFT);
-      if (chan[sondeudp_LEFT].c34.enabled) Afsk(sondeudp_LEFT);
-      if (chan[sondeudp_LEFT].dfm6.enabled) Fsk6(sondeudp_LEFT);
-      if (maxchannels>sondeudp_LEFT) {
-         if (chan[sondeudp_RIGHT].r92.enabled || chan[sondeudp_RIGHT]
-                .r41.enabled) Fsk(sondeudp_RIGHT);
-         if (chan[sondeudp_RIGHT].c34.enabled) Afsk(sondeudp_RIGHT);
-         if (chan[sondeudp_RIGHT].dfm6.enabled) Fsk6(sondeudp_RIGHT);
-      }
-      i += (long)((unsigned long)maxchannels+1UL);
-   }
-   chan[sondeudp_LEFT].adcdc += X2C_DIV(X2C_DIV(maxl+minl,
-                2L)-chan[sondeudp_LEFT].adcdc,16L);
-   chan[sondeudp_LEFT].adcmax = maxl-minl;
-   if (maxchannels>sondeudp_LEFT) {
-      chan[sondeudp_RIGHT].adcdc += X2C_DIV(X2C_DIV(maxr+minr,
-                2L)-chan[sondeudp_RIGHT].adcdc,16L);
-      chan[sondeudp_RIGHT].adcmax = maxr-minr;
-   }
 } /* end getadc() */
 
 
@@ -2611,11 +2641,16 @@ extern int main(int argc, char **argv)
    aprsstr_BEGIN();
    osic_BEGIN();
    /*  Gencrctab; */
+   memset((char *)chan,(char)0,sizeof(struct CHAN [16]));
    Parms();
    getst = 0UL;
    afin = 0UL;
    soundbufs = 0UL;
-   if (verb) osic_WrStrLn("Frame ID       level-L qual level-R qual", 41ul);
+   /*  IF verb THEN WrStrLn("Frame ID       level-L qual level-R qual") END;
+                */
+   adcbufrd = 0UL;
+   adcbufsamps = 0UL;
+   adcbufsampx = X2C_max_longcard;
    for (;;) getadc();
    X2C_EXIT();
    return 0;

@@ -254,23 +254,10 @@ static void Err(const char text[], unsigned long text_len)
 
 extern unsigned long aprsdecode_trunc(float r)
 {
-   struct X2C_XHandler_STR anonym;
-   unsigned long aprsdecode_trunc_ret;
-   if (X2C_XTRY(&anonym)) {
-      if (r<=0.0f) aprsdecode_trunc_ret = 0UL;
-      else if (r>=2.147483647E+9f) aprsdecode_trunc_ret = 2147483647UL;
-      else {
-         aprsdecode_trunc_ret = (unsigned long)X2C_TRUNCC(r,0UL,
-                X2C_max_longcard);
-      }
-      X2C_XOFF();
-   }
-   else {
-      osic_WrStrLn("error in TRUNC() ", 18ul);
-      aprsdecode_trunc_ret = 0UL;
-   }
-   X2C_XREMOVE();
-   return aprsdecode_trunc_ret;
+   if (r<=0.0f) return 0UL;
+   else if (r>=2.147483647E+9f) return 2147483647UL;
+   else return (unsigned long)X2C_TRUNCC(r,0UL,X2C_max_longcard);
+   return 0;
 } /* end trunc() */
 
 
