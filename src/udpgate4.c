@@ -3058,7 +3058,7 @@ static void AddHeard(pHEARD * table, unsigned long maxtime,
             DirectPos(buf, buf_len, &anonym0->position, &anonym0->sym,
                 &anonym0->symt, &anonym0->datatyp, &anonym0->data);
             i0 = 0UL;
-            while (i0<buf_len-1 && buf[i0]!='>') ++i0;
+            while ((i0<buf_len-1 && buf[i0]!='>') && buf[i0]) ++i0;
             ++i0;
             j = 0UL;
             while ((((j<40UL && i0<buf_len-1) && buf[i0]!=':') && buf[i0])
