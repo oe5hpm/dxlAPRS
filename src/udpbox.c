@@ -1845,7 +1845,7 @@ static void showhex(long * n, long e, char in[], unsigned long in_len,
             osic_WrStr(">", 2ul);
          }
          else osic_WrStr((char *)(tmp0 = (char)*n,&tmp0), 1u/1u);
-         if (X2C_MOD(i,7L)==6L) osic_WrStr(",", 2ul);
+         if (i%7L==6L) osic_WrStr(",", 2ul);
          if (i==tmp) break;
       } /* end for */
       osic_WrLn();

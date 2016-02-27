@@ -431,7 +431,7 @@ static void binseek(unsigned long * i, long fc, unsigned long * wp,
          if (ftime>*last) *last = ftime;
       }
       else ftime = X2C_max_longcard;
-      if (ftime<time0==seekstep<0L) seekstep = -X2C_DIV(seekstep,2L);
+      if (ftime<time0==seekstep<0L) seekstep = -(seekstep/2L);
       if (seekstep>=0L && seekstep<5000L || retry>=200UL) break;
       osic_Seekcur(fc, seekstep-1024L);
       ++retry;
@@ -745,9 +745,7 @@ static unsigned long findfreecol(aprsdecode_pOPHIST opn)
 
 static void changecolor(aprsdecode_pOPHIST op)
 {
-   if (op && op->trackcol>=48) {
-      op->trackcol = (signed char)X2C_MOD((op->trackcol-48)+1,11)+48;
-   }
+   if (op && op->trackcol>=48) op->trackcol = ((op->trackcol-48)+1)%11+48;
 } /* end changecolor() */
 
 
@@ -1322,7 +1320,7 @@ static long gettemp(aprsdecode_pOPHIST op)
       /* show or not garbage */
       if (t<-30L) t = -30L;
       else if (t>50L) t = 50L;
-      t = X2C_DIV((t-(-30L))*32766L,80L)+1L;
+      t = ((t-(-30L))*32766L)/80L+1L;
    }
    else t = 0L;
    return t;
@@ -1367,7 +1365,7 @@ static void metercolor(char what)
                 maptool_realzoom(aprsdecode_initzoom,
                 aprsdecode_finezoom)+0.2f));
    if (radius>1000L) radius = 1000L;
-   if (what=='1') radius = X2C_DIV(radius,2L);
+   if (what=='1') radius = radius/2L;
    rbr = radius*radius;
    oor = X2C_DIVR(1.0f,(float)radius);
    aprsdecode_click.ops = aprsdecode_ophist0;
@@ -1464,7 +1462,7 @@ static void metercolor(char what)
             if (anonym0->r>0U) {
                if (what=='T') {
                   t = (long)(((unsigned long)anonym0->r*80UL)/32768UL);
-                  t = X2C_DIV(t,2L);
+                  t = t/2L;
                   if (t<0L) t = 0L;
                   else if (t>38L) t = 38L;
                   anonym0->r = (unsigned short)(_cnst0[t]*2L);
@@ -2289,27 +2287,27 @@ static void pop(void)
             aprsdecode_lums.wxcol = anonym0->wxcol;
             aprsdecode_lums.text = anonym0->lumtext;
             if (anonym0->lumtext>0L) {
-               useri_int2cfg(useri_fLTEXT, X2C_DIV(anonym0->lumtext,10L));
+               useri_int2cfg(useri_fLTEXT, anonym0->lumtext/10L);
             }
             aprsdecode_lums.track = anonym0->lumtrack;
             if (anonym0->lumtrack>0L) {
-               useri_int2cfg(useri_fLTRACK, X2C_DIV(anonym0->lumtrack,10L));
+               useri_int2cfg(useri_fLTRACK, anonym0->lumtrack/10L);
             }
             aprsdecode_lums.waypoint = anonym0->lumwaypoint;
             if (anonym0->lumwaypoint>0L) {
-               useri_int2cfg(useri_fLWAY, X2C_DIV(anonym0->lumwaypoint,10L));
+               useri_int2cfg(useri_fLWAY, anonym0->lumwaypoint/10L);
             }
             aprsdecode_lums.map = anonym0->lummap;
             if (anonym0->lummap>0L) {
-               useri_int2cfg(useri_fLMAP, X2C_DIV(anonym0->lummap,10L));
+               useri_int2cfg(useri_fLMAP, anonym0->lummap/10L);
             }
             aprsdecode_lums.sym = anonym0->lumsym;
             if (anonym0->lumsym>0L) {
-               useri_int2cfg(useri_fLSYM, X2C_DIV(anonym0->lumsym,10L));
+               useri_int2cfg(useri_fLSYM, anonym0->lumsym/10L);
             }
             aprsdecode_lums.obj = anonym0->lumobj;
             if (anonym0->lumobj>0L) {
-               useri_int2cfg(useri_fLOBJ, X2C_DIV(anonym0->lumobj,10L));
+               useri_int2cfg(useri_fLOBJ, anonym0->lumobj/10L);
             }
             memcpy(aprsdecode_lums.mapname,anonym0->mapname,41u);
             /*        click.altimap:=altimap; */
@@ -2526,12 +2524,12 @@ static void getgeocol(unsigned char c, long bri, unsigned long dr,
                 unsigned long dg, unsigned long db,
                 struct aprsdecode_COLTYP * col)
 {
-   col->r = (unsigned long)X2C_DIV(useri_conf2int(c, 0UL, 0L, 100L,
-                (long)dr)*bri,100L);
-   col->g = (unsigned long)X2C_DIV(useri_conf2int(c, 1UL, 0L, 100L,
-                (long)dg)*bri,100L);
-   col->b = (unsigned long)X2C_DIV(useri_conf2int(c, 2UL, 0L, 100L,
-                (long)db)*bri,100L);
+   col->r = (unsigned long)((useri_conf2int(c, 0UL, 0L, 100L,
+                (long)dr)*bri)/100L);
+   col->g = (unsigned long)((useri_conf2int(c, 1UL, 0L, 100L,
+                (long)dg)*bri)/100L);
+   col->b = (unsigned long)((useri_conf2int(c, 2UL, 0L, 100L,
+                (long)db)*bri)/100L);
 } /* end getgeocol() */
 
 
@@ -2570,7 +2568,7 @@ static void reliefcolors(maptool_pIMAGE img, char color)
             }
             else {
                /*        ELSE r:=r*bri DIV 100; g:=r; b:=r END; */
-               bri = (unsigned long)X2C_DIV((long)anonym->r*def,100L);
+               bri = (unsigned long)(((long)anonym->r*def)/100L);
                anonym->r = (unsigned short)bri;
                anonym->g = (unsigned short)bri;
                anonym->b = (unsigned short)bri;
@@ -2865,8 +2863,8 @@ static void zoominout(char in, char fine, char allowrev)
       aprsdecode_finezoom = 1.0f;
    }
    z = maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom);
-   maptool_shiftmap(X2C_DIV(maptool_xsize,2L), X2C_DIV(maptool_ysize,2L),
-                maptool_ysize, z, &mid);
+   maptool_shiftmap(maptool_xsize/2L, maptool_ysize/2L, maptool_ysize, z,
+                &mid);
    aprsdecode_mappos = mid;
 } /* end zoominout() */
 
@@ -3079,9 +3077,9 @@ static void View(unsigned long n)
          mid.lat = mid.lat+(-6.E-7f);
          aprsdecode_initzoom = (long)aprsdecode_trunc(z);
          aprsdecode_finezoom = (1.0f+z)-(float)aprsdecode_initzoom;
-         maptool_shiftmap(X2C_DIV(maptool_xsize,2L), X2C_DIV(maptool_ysize,
-                2L), maptool_ysize, maptool_realzoom(aprsdecode_initzoom,
-                aprsdecode_finezoom), &mid);
+         maptool_shiftmap(maptool_xsize/2L, maptool_ysize/2L, maptool_ysize,
+                maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom),
+                &mid);
          aprsdecode_mappos = mid;
       }
       if (aprspos_posvalid(pos)) centerpos(pos, &aprsdecode_mappos);
@@ -3554,9 +3552,9 @@ static void savevideo420(maptool_pIMAGE img, char fn[], unsigned long fn_len,
    }
    if (vidbuf==0) {
       Storage_ALLOCATE((X2C_ADDRESS *) &vidbuf,
-                (unsigned long)X2C_DIV(maptool_xsize*maptool_ysize*3L,2L));
-      useri_debugmem.req = (unsigned long)
-                X2C_DIV(maptool_xsize*maptool_ysize*3L,2L);
+                (unsigned long)((maptool_xsize*maptool_ysize*3L)/2L));
+      useri_debugmem.req = (unsigned long)((maptool_xsize*maptool_ysize*3L)
+                /2L);
       useri_debugmem.screens += useri_debugmem.req;
       if (vidbuf==0) Error("video buffer alloc", 19ul);
    }
@@ -3579,9 +3577,9 @@ static void savevideo420(maptool_pIMAGE img, char fn[], unsigned long fn_len,
                 anonym->b*29UL)/256UL));
             }
             else {
-               vidbuf[pw] = (char)(X2C_DIV(flo((short)(((unsigned long)
+               vidbuf[pw] = (char)((flo((short)(((unsigned long)
                 anonym->r*76UL+(unsigned long)anonym->g*150UL+(unsigned long)
-                anonym->b*29UL)/256UL))*219L,256L)+16L);
+                anonym->b*29UL)/256UL))*219L)/256L+16L);
             }
             ++pw;
          }
@@ -3612,14 +3610,14 @@ static void savevideo420(maptool_pIMAGE img, char fn[], unsigned long fn_len,
                gg += (long)anonym3->g;
                bb += (long)anonym3->b;
             }
-            rr = flo((short)X2C_DIV(rr,4L));
-            gg = flo((short)X2C_DIV(gg,4L));
-            bb = flo((short)X2C_DIV(bb,4L));
-            ww = X2C_DIV(rr*76L+gg*150L+bb*29L,256L);
-            rr = X2C_DIV((rr-ww)*145L,256L)+128L;
+            rr = flo((short)(rr/4L));
+            gg = flo((short)(gg/4L));
+            bb = flo((short)(bb/4L));
+            ww = (rr*76L+gg*150L+bb*29L)/256L;
+            rr = ((rr-ww)*145L)/256L+128L;
             if (rr<0L) rr = 0L;
             else if (rr>255L) rr = 255L;
-            bb = X2C_DIV((bb-ww)*182L,256L)+128L;
+            bb = ((bb-ww)*182L)/256L+128L;
             if (bb<0L) bb = 0L;
             else if (bb>255L) bb = 255L;
             if (format!='M') {
@@ -3637,8 +3635,8 @@ static void savevideo420(maptool_pIMAGE img, char fn[], unsigned long fn_len,
       } /* end for */
    } /* end for */
    osic_WrBin(videofd, (char *)vidbuf, 10000001u/1u,
-                (unsigned long)X2C_DIV(maptool_xsize*maptool_ysize*3L,2L));
-   *bytecnt = *bytecnt+(float)X2C_DIV(maptool_xsize*maptool_ysize*3L,2L);
+                (unsigned long)((maptool_xsize*maptool_ysize*3L)/2L));
+   *bytecnt = *bytecnt+(float)((maptool_xsize*maptool_ysize*3L)/2L);
    label:;
    X2C_PFREE(fn);
 } /* end savevideo420() */
@@ -4154,8 +4152,7 @@ static void animate(const aprsdecode_MONCALL singlecall, unsigned long step,
                            }
                         }
                         maptool_drawpoligon(rfimg, ipos, dat.multiline,
-                dat.symt, dat.sym,
-                (unsigned long)X2C_DIV(aprsdecode_lums.sym,4L));
+                dat.symt, dat.sym, (unsigned long)(aprsdecode_lums.sym/4L));
                      }
                      else if (op->areasymb.typ && aprsdecode_Decode(pf->vardat->raw,
                  500ul, &dat)>=0L) {
@@ -4170,11 +4167,11 @@ static void animate(const aprsdecode_MONCALL singlecall, unsigned long step,
                            }
                         }
                         maptool_drawareasym(rfimg, ipos, dat.areasymb,
-                (unsigned long)X2C_DIV(aprsdecode_lums.obj,4L));
+                (unsigned long)(aprsdecode_lums.obj/4L));
                      }
                      else {
                         maptool_drawsym(rfimg, op->sym.tab, op->sym.pic, dir,
-                 x, y, (unsigned long)X2C_DIV(aprsdecode_lums.sym,4L));
+                 x, y, (unsigned long)(aprsdecode_lums.sym/4L));
                         if (op->sym.pic=='@'
                 && aprsdecode_Decode(pf->vardat->raw, 500ul, &dat)>=0L) {
                            if (itime>0.0f && aprsdecode_Decode(pf1->vardat->raw,
@@ -4190,7 +4187,7 @@ static void animate(const aprsdecode_MONCALL singlecall, unsigned long step,
                 dat.wx.radiushurr*iitime+dat1.wx.radiushurr*itime,
                 dat.wx.radiusstorm*iitime+dat1.wx.radiusstorm*itime,
                 dat.wx.wholegale*iitime+dat1.wx.wholegale*itime,
-                (unsigned long)X2C_DIV(aprsdecode_lums.sym,4L));
+                (unsigned long)(aprsdecode_lums.sym/4L));
                            }
                         }
                      }
@@ -4292,7 +4289,7 @@ static void animate(const aprsdecode_MONCALL singlecall, unsigned long step,
             }
          }
          if (fast>250L) fast = 250L;
-         if (fast>0L) skip = (unsigned long)X2C_DIV(fast,25L);
+         if (fast>0L) skip = (unsigned long)(fast/25L);
          else skip = 0UL;
       }
       else --skip;
@@ -4311,9 +4308,9 @@ static void animate(const aprsdecode_MONCALL singlecall, unsigned long step,
    }
    if (vidbuf) {
       useri_debugmem.screens -= (unsigned long)
-                X2C_DIV(maptool_xsize*maptool_ysize*3L,2L);
+                ((maptool_xsize*maptool_ysize*3L)/2L);
       Storage_DEALLOCATE((X2C_ADDRESS *) &vidbuf,
-                (unsigned long)X2C_DIV(maptool_xsize*maptool_ysize*3L,2L));
+                (unsigned long)((maptool_xsize*maptool_ysize*3L)/2L));
       vidbuf = 0;
    }
    X2C_PFREE(tofile);

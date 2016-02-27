@@ -1708,12 +1708,12 @@ static void toggcfg(unsigned char v, char c, const char del[],
 
 extern void useri_ColConfset(struct aprsdecode_COLTYP * c, unsigned char v)
 {
-   c->r = (unsigned long)X2C_DIV(useri_conf2int(v, 0UL, 0L, 100L, 100L)*256L,
-                100L);
-   c->g = (unsigned long)X2C_DIV(useri_conf2int(v, 1UL, 0L, 100L, 100L)*256L,
-                100L);
-   c->b = (unsigned long)X2C_DIV(useri_conf2int(v, 2UL, 0L, 100L, 100L)*256L,
-                100L);
+   c->r = (unsigned long)((useri_conf2int(v, 0UL, 0L, 100L,
+                100L)*256L)/100L);
+   c->g = (unsigned long)((useri_conf2int(v, 1UL, 0L, 100L,
+                100L)*256L)/100L);
+   c->b = (unsigned long)((useri_conf2int(v, 2UL, 0L, 100L,
+                100L)*256L)/100L);
    if (c->r+c->g+c->b<100UL) {
       c->r = 256UL; /* no self knocking out */
       c->g = 256UL;
@@ -2710,9 +2710,9 @@ static void textwin(unsigned long xw, unsigned long lines, unsigned long xpo,
                   anonym->b = (unsigned short)bb;
                }
                else {
-                  anonym->r = (unsigned short)X2C_DIV(rr,2L);
-                  anonym->g = (unsigned short)X2C_DIV(gg,2L);
-                  anonym->b = (unsigned short)X2C_DIV(bb,2L);
+                  anonym->r = (unsigned short)(rr/2L);
+                  anonym->g = (unsigned short)(gg/2L);
+                  anonym->b = (unsigned short)(bb/2L);
                }
             }
          }
@@ -2805,8 +2805,8 @@ extern void useri_textautomenu(long x0, long y00, unsigned long id,
          x0 = popxbase((unsigned long)(y00+(long)
                 menuimgy(aprsdecode_lums.fontysize, n+1UL)));
       }
-      else if (x0<0L) x0 = X2C_DIV(maptool_xsize-(long)xmax,2L);
-      if (y00<0L) y00 = X2C_DIV(maptool_ysize,2L)-28L;
+      else if (x0<0L) x0 = (maptool_xsize-(long)xmax)/2L;
+      if (y00<0L) y00 = maptool_ysize/2L-28L;
       if (x0<0L) x0 = 0L;
       if (y00<0L) y00 = 0L;
       textwin(xmax+8UL, n, (unsigned long)x0, (unsigned long)y00, id, time0,
@@ -6135,12 +6135,12 @@ static void drawarrow(maptool_pIMAGE img, long x, long y, long size,
    struct maptool_PIX * anonym;
    long tmp;
    long tmp0;
-   s = X2C_DIV(size,2L)-3L;
+   s = size/2L-3L;
    tmp = s-1L;
    i = -s;
    if (i<=tmp) for (;; i++) {
       if (i<=-s) t = s+1L;
-      else t = i+X2C_DIV(s,2L);
+      else t = i+s/2L;
       tmp0 = t;
       j = -t;
       if (j<=tmp0) for (;; j++) {
@@ -6172,7 +6172,7 @@ static void drawclosewin(maptool_pIMAGE img, long x, long y, long size)
    struct maptool_PIX * anonym;
    struct maptool_PIX * anonym0;
    long tmp;
-   s = X2C_DIV(size,3L);
+   s = size/3L;
    tmp = s;
    i = -s;
    if (i<=tmp) for (;; i++) {
@@ -6202,7 +6202,7 @@ static void drawmaximize(maptool_pIMAGE img, long x, long y, long size)
    struct maptool_PIX * anonym1;
    struct maptool_PIX * anonym2;
    long tmp;
-   s = X2C_DIV(size,2L)-1L;
+   s = size/2L-1L;
    tmp = s;
    i = -s;
    if (i<=tmp) for (;; i++) {
@@ -6244,7 +6244,7 @@ static void drawnormal(maptool_pIMAGE img, long x, long y, long size)
    struct maptool_PIX * anonym1;
    struct maptool_PIX * anonym2;
    long tmp;
-   s = X2C_DIV(size,4L);
+   s = size/4L;
    tmp = s;
    i = -s;
    if (i<=tmp) for (;; i++) {
@@ -6288,7 +6288,7 @@ static void drawminimize(maptool_pIMAGE img, long x, long y, long size)
    long i;
    struct maptool_PIX * anonym;
    long tmp;
-   s = X2C_DIV(size,3L);
+   s = size/3L;
    tmp = s;
    i = -s;
    if (i<=tmp) for (;; i++) {
@@ -6306,7 +6306,7 @@ static void drawminimize(maptool_pIMAGE img, long x, long y, long size)
 
 static long limscrbar(long pot, long drawsize, long potsize)
 {
-   if (X2C_DIV(pot,256L)+drawsize>potsize) pot = (potsize-drawsize)*256L;
+   if (pot/256L+drawsize>potsize) pot = (potsize-drawsize)*256L;
    if (pot<0L) pot = 0L;
    return pot;
 } /* end limscrbar() */
@@ -6318,15 +6318,15 @@ static void scrollbarpos(unsigned long * start, unsigned long * len,
    long textsize;
    textsize = max0-min0;
    if (pot<0L) pot = 0L;
-   pot = X2C_DIV(pot,256L);
+   pot = pot/256L;
    if (potsize<=0L) {
       *start = 0UL;
       *len = 0UL;
    }
    else {
       if (pot>potsize) pot = potsize;
-      *start = (unsigned long)X2C_DIV(textsize*pot,potsize);
-      *len = (unsigned long)X2C_DIV(textsize*textsize,potsize);
+      *start = (unsigned long)((textsize*pot)/potsize);
+      *len = (unsigned long)((textsize*textsize)/potsize);
       if (*len<8UL) *len = 8UL;
       if ((long)*len>=textsize) {
          *len = (unsigned long)textsize;
@@ -6541,8 +6541,8 @@ static void makelistwin(struct LISTBUFFER * b)
       if (m->scry>0L) m->scry += (long)(b->newlines*linehi*256UL);
       b->newlines = 0UL;
       m->scrysize = b->listlinecnt*linehi;
-      yp = (unsigned long)X2C_DIV(limscrbar(m->scry, (long)(ys-linehi*4UL),
-                (long)m->scrysize),256L);
+      yp = (unsigned long)(limscrbar(m->scry, (long)(ys-linehi*4UL),
+                (long)m->scrysize)/256L);
       m->scroll = yp;
       bl = b->listlines; /* shift text vertical */
       while (yp>=linehi && bl) {
@@ -6566,8 +6566,8 @@ static void makelistwin(struct LISTBUFFER * b)
          if (i==tmp) break;
       } /* end for */
       m->scrxsize = xch*6UL;
-      x0 = (unsigned long)X2C_DIV(limscrbar(m->scrx, (long)(xs-linehi*3UL),
-                (long)m->scrxsize),256L);
+      x0 = (unsigned long)(limscrbar(m->scrx, (long)(xs-linehi*3UL),
+                (long)m->scrxsize)/256L);
       xp = (x0+5UL)/6UL;
       x0 = (6UL-x0%6UL)%6UL;
       yp = linehi-yp;

@@ -938,8 +938,8 @@ static char statneibor(const char b[], unsigned long b_len,
                      rtt = (rtt-anonym->pollns)/1000UL;
                      if (anonym->medrtt==0UL) anonym->medrtt = rtt;
                      else {
-                        anonym->medrtt += (unsigned long)X2C_DIV((long)
-                (rtt-anonym->medrtt),10L);
+                        anonym->medrtt += (unsigned long)((long)
+                (rtt-anonym->medrtt)/10L);
                      }
                      if (verb) {
                         showpip(anonym->ipnum, anonym->toport);
@@ -1200,7 +1200,7 @@ static void wint(char h[1024], long n, long col, char red)
    col = 224L-col;
    if (col<0L) col = 0L;
    strncpy(h1,"E0E0E0",16u);
-   a = hex((unsigned long)X2C_DIV(col,16L));
+   a = hex((unsigned long)(col/16L));
    b = hex((unsigned long)(col&15L));
    h1[4U] = a;
    h1[5U] = b;
@@ -1337,14 +1337,14 @@ IGN=\"BASELINE\" BGCOLOR=\"#E0C0A0\"><TH COLSPAN=14 style=\"text-align:center\\
             aprsstr_Append(h, 1024ul, "</TD>", 6ul);
             if (tt>0UL) res0 = (long)((anonym0->bsent*8UL)/tt);
             else res0 = 0L;
-            wint(h, (long)anonym0->bsent, X2C_DIV(res0*120L,maxbs), 1);
-            wint(h, (long)anonym0->nsent, X2C_DIV(res0*120L,maxbs), 1);
-            wint(h, res0, X2C_DIV(res0*120L,maxbs), 1);
+            wint(h, (long)anonym0->bsent, (res0*120L)/maxbs, 1);
+            wint(h, (long)anonym0->nsent, (res0*120L)/maxbs, 1);
+            wint(h, res0, (res0*120L)/maxbs, 1);
             if (tt>0UL) res0 = (long)((anonym0->brec*8UL)/tt);
             else res0 = 0L;
-            wint(h, (long)anonym0->brec, X2C_DIV(res0*120L,maxbs), 0);
-            wint(h, (long)anonym0->nrec, X2C_DIV(res0*120L,maxbs), 0);
-            wint(h, res0, X2C_DIV(res0*120L,maxbs), 0);
+            wint(h, (long)anonym0->brec, (res0*120L)/maxbs, 0);
+            wint(h, (long)anonym0->nrec, (res0*120L)/maxbs, 0);
+            wint(h, res0, (res0*120L)/maxbs, 0);
             aprsstr_Append(h, 1024ul, "<TD style=\"text-align:right\">",
                 30ul);
             aprsstr_IntToStr((long)anonym0->medrtt, 1UL, h1, 256ul);

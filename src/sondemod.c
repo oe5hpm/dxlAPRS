@@ -2588,8 +2588,8 @@ static void decoders41(const char rxb[], unsigned long rxb_len,
             osic_WrUINT32((long)pc->framenum, 1UL);
          }
          if (rxb[p+23UL]==0) {
-            pc->mhz0 = (float)(X2C_DIV(getint16(rxb, rxb_len, p+26UL),
-                64L)+40000L)*0.01f+0.0005f;
+            pc->mhz0 = (float)(getint16(rxb, rxb_len,
+                p+26UL)/64L+40000L)*0.01f+0.0005f;
          }
          if (sondeaprs_verb) {
             osic_WrStr(objname, 9ul);
@@ -2602,8 +2602,8 @@ static void decoders41(const char rxb[], unsigned long rxb_len,
          /*             WrStrLn("7A frame"); */
          /*             WrStrLn("7C frame"); */
          if (pc) {
-            pc->gpssecond = (unsigned long)X2C_MOD(X2C_DIV(getint32(rxb,
-                rxb_len, p+2UL),1000L)+86385L,86400L); /* gps TOW */
+            pc->gpssecond = (unsigned long)((getint32(rxb, rxb_len,
+                p+2UL)/1000L+86385L)%86400L); /* gps TOW */
          }
       }
       else if (typ=='}') {
@@ -2688,11 +2688,11 @@ static void demodbyte(unsigned char m, char d)
       }
       if (d) {
          anonym->asynst[anonym->rxbitc]
-                += X2C_DIV(32767L-anonym->asynst[anonym->rxbitc],16L);
+                += (32767L-anonym->asynst[anonym->rxbitc])/16L;
       }
       else {
          anonym->asynst[anonym->rxbitc]
-                -= X2C_DIV(32767L+anonym->asynst[anonym->rxbitc],16L);
+                -= (32767L+anonym->asynst[anonym->rxbitc])/16L;
       }
       anonym->rxbitc = (anonym->rxbitc+1UL)%10UL;
    }
@@ -2706,7 +2706,7 @@ static void demodbit(unsigned char m, char d)
    { /* with */
       struct CHAN * anonym = &chan[m];
       if (anonym->lastmanch==d) {
-         anonym->manchestd += X2C_DIV(32767L-anonym->manchestd,16L);
+         anonym->manchestd += (32767L-anonym->manchestd)/16L;
       }
       anonym->lastmanch = d;
       anonym->manchestd = -anonym->manchestd;
@@ -2766,8 +2766,8 @@ static void Fsk(unsigned char m)
       for (;;) {
          if (anonym->baudfine>=65536L) {
             anonym->baudfine -= 65536L;
-            ff = Fir(afin, (unsigned long)X2C_DIV(anonym->baudfine&65535L,
-                4096L), 16UL, anonym->afir, 512ul, anonym->afirtab, 8192ul);
+            ff = Fir(afin, (unsigned long)((anonym->baudfine&65535L)/4096L),
+                16UL, anonym->afir, 512ul, anonym->afirtab, 8192ul);
             demod(ff, m);
          }
          anonym->baudfine += lim;

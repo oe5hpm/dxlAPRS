@@ -1010,7 +1010,7 @@ static void Wrtune(long volt, long max0)
 {
    long u;
    if (max0>0L && max0>labs(volt)) {
-      u = X2C_DIV(volt*100L,max0);
+      u = (volt*100L)/max0;
       if (labs(u)>0L) {
          osic_WrStr(" f:", 4ul);
          osic_WrUINT32(u, 2UL);
@@ -1381,8 +1381,8 @@ static void decode41(unsigned long m)
             nameok = 1;
             if (anonym->rxbuf[p+23UL]==0) {
                osic_WrStr(" ", 2ul);
-               osic_WrFixed((float)(X2C_DIV(getint16(anonym->rxbuf, 520ul,
-                p+26UL),64L)+40000L)*0.01f, 2L, 1UL);
+               osic_WrFixed((float)(getint16(anonym->rxbuf, 520ul,
+                p+26UL)/64L+40000L)*0.01f, 2L, 1UL);
                osic_WrStr("MHz", 4ul);
             }
          }
@@ -1552,11 +1552,11 @@ static void demodbyte(unsigned long m, char d)
       }
       if (d) {
          anonym->asynst[anonym->rxbitc]
-                += X2C_DIV(32767L-anonym->asynst[anonym->rxbitc],16L);
+                += (32767L-anonym->asynst[anonym->rxbitc])/16L;
       }
       else {
          anonym->asynst[anonym->rxbitc]
-                -= X2C_DIV(32767L+anonym->asynst[anonym->rxbitc],16L);
+                -= (32767L+anonym->asynst[anonym->rxbitc])/16L;
       }
       anonym->rxbitc = (anonym->rxbitc+1UL)%10UL;
    }
@@ -1573,7 +1573,7 @@ static void demodbit92(unsigned long m, float u, float u0)
    { /* with */
       struct R92 * anonym = &chan[m].r92;
       if (anonym->lastmanch==u0<0.0f) {
-         anonym->manchestd += X2C_DIV(32767L-anonym->manchestd,16L);
+         anonym->manchestd += (32767L-anonym->manchestd)/16L;
       }
       anonym->lastmanch = d;
       anonym->manchestd = -anonym->manchestd;
@@ -1639,8 +1639,8 @@ static void Fsk(unsigned long m)
       for (;;) {
          if (anonym->baudfine>=65536L) {
             anonym->baudfine -= 65536L;
-            ff = Fir(afin, (unsigned long)X2C_DIV(anonym->baudfine&65535L,
-                4096L), 16UL, chan[m].afir, 32ul, anonym->afirtab, 512ul);
+            ff = Fir(afin, (unsigned long)((anonym->baudfine&65535L)/4096L),
+                16UL, chan[m].afir, 32ul, anonym->afirtab, 512ul);
             demod92(ff, m);
          }
          anonym->baudfine += lim;
@@ -2112,7 +2112,7 @@ static void demodbit6(unsigned long m, float u, float u0)
    { /* with */
       struct DFM6 * anonym = &chan[m].dfm6;
       if (anonym->lastmanch==u0<0.0f) {
-         anonym->manchestd += X2C_DIV(32767L-anonym->manchestd,16L);
+         anonym->manchestd += (32767L-anonym->manchestd)/16L;
       }
       anonym->lastmanch = d;
       anonym->manchestd = -anonym->manchestd;
@@ -2169,8 +2169,8 @@ static void Fsk6(unsigned long m)
       for (;;) {
          if (anonym->baudfine>=65536L) {
             anonym->baudfine -= 65536L;
-            ff = Fir(afin, (unsigned long)X2C_DIV(anonym->baudfine&65535L,
-                4096L), 16UL, chan[m].afir, 32ul, anonym->afirtab, 512ul);
+            ff = Fir(afin, (unsigned long)((anonym->baudfine&65535L)/4096L),
+                16UL, chan[m].afir, 32ul, anonym->afirtab, 512ul);
             demod6(ff, m);
          }
          anonym->baudfine += lim;
@@ -2541,7 +2541,7 @@ static void Afsk(unsigned long channel)
          if (anonym->baudfine<65536L) {
             /* normal alway true */
             ff = Fir(anonym->dfin,
-                (unsigned long)(16L-X2C_DIV(anonym->baudfine,4096L)), 16UL,
+                (unsigned long)(16L-anonym->baudfine/4096L), 16UL,
                 anonym->dfir, 64ul, anonym->dfirtab, 1024ul);
             demod34(ff, channel);
          }
@@ -2575,18 +2575,17 @@ static void getadc(void)
             }
          }
          if (l<2L) return;
-         adcbufsamps = (unsigned long)X2C_DIV(l,2L);
+         adcbufsamps = (unsigned long)(l/2L);
          if (debfd>=0L) {
             osic_WrBin(debfd, (char *)adcbuf, 8192u/1u, adcbufsamps*2UL);
          }
          tmp = maxchannels;
          ch = 0UL;
          if (ch<=tmp) for (;; ch++) {
-            chan[ch].adcmax = X2C_DIV(chan[ch].adcmax*15L,16L);
+            chan[ch].adcmax = (chan[ch].adcmax*15L)/16L;
             max0[ch] = -32768L;
             min0[ch] = 32767L;
-            chan[ch].adcdc += X2C_DIV(X2C_DIV(max0[ch]+min0[ch],
-                2L)-chan[ch].adcdc,16L);
+            chan[ch].adcdc += ((max0[ch]+min0[ch])/2L-chan[ch].adcdc)/16L;
             chan[ch].adcmax = max0[ch]-min0[ch];
             if (ch==tmp) break;
          } /* end for */
