@@ -467,16 +467,16 @@ static void OpenSound(void)
          i = channels(soundfd, maxchannels+1UL); /* 1, 2  */
          i = setfragment(soundfd, fragmentsize); /* 2^bufsize * 65536*bufs*/
          if (i) {
-            InOut_WriteString("sound setfragment returns ", 27ul);
-            InOut_WriteInt(i, 1UL);
-            osi_WrLn();
+            osic_WrStr("sound setfragment returns ", 27ul);
+            osic_WrUINT32(i, 1UL);
+            osic_WrLn();
          }
          i = sampelrate(soundfd, adcrate); /* 8000..48000 */
          s = (long)getsampelrate(soundfd);
          if (s!=(long)adcrate) {
-            InOut_WriteString("sound device returns ", 22ul);
-            InOut_WriteInt(s, 1UL);
-            osi_WrStrLn("Hz!", 4ul);
+            osic_WrStr("sound device returns ", 22ul);
+            osic_WrUINT32(s, 1UL);
+            osic_WrStrLn("Hz!", 4ul);
          }
       }
    }
@@ -912,11 +912,11 @@ fore to select 1 channel)", 75ul);
 ore to select 1 channel)", 74ul);
                osic_WrStrLn(" -a             abort on sounddevice error else r\
 etry to open (USB audio...)", 77ul);
-               osi_WrStrLn(" -c <num>       maxchannels, 0 for automatic chan\
+               osic_WrStrLn(" -c <num>       maxchannels, 0 for automatic chan\
 nel number recognition", 72ul);
-               osi_WrStrLn(" -C <num>       channel parameters follow (repeat\
+               osic_WrStrLn(" -C <num>       channel parameters follow (repeat\
  for each channel)", 68ul);
-               osi_WrStrLn(" -D <filename>  write raw soundcard input data to\
+               osic_WrStrLn(" -D <filename>  write raw soundcard input data to\
  file or pipe", 63ul);
                osic_WrStrLn("                for debug or chaining demodulator\
 s (equalizer diversity)", 73ul);
@@ -1112,14 +1112,14 @@ static void decodeframe92(unsigned long m)
             ++j;
          }
          if (maxchannels>0UL) {
-            InOut_WriteInt((long)(m+1UL), 1UL);
-            InOut_WriteString(":", 2ul);
+            osic_WrUINT32((long)(m+1UL), 1UL);
+            osic_WrStr(":", 2ul);
          }
-         InOut_WriteString("R92 ", 5ul);
+         osic_WrStr("R92 ", 5ul);
          if ((8UL+len>240UL || (char)crc!=chan[m].r92.rxbuf[(8UL+len)-2UL])
                 || (char)X2C_LSH(crc,16,
                 -8)!=chan[m].r92.rxbuf[(8UL+len)-1UL]) {
-            InOut_WriteString("----  crc err ", 15ul);
+            osic_WrStr("----  crc err ", 15ul);
          }
          else {
             j = 4UL;
@@ -1127,8 +1127,8 @@ static void decodeframe92(unsigned long m)
                osic_WrStr((char *) &chan[m].r92.rxbuf[8UL+j], 1u/1u);
                ++j;
             }
-            InOut_WriteString(" ", 2ul);
-            InOut_WriteInt((long)((unsigned long)(unsigned char)
+            osic_WrStr(" ", 2ul);
+            osic_WrUINT32((long)((unsigned long)(unsigned char)
                 chan[m].r92.rxbuf[8U]+(unsigned long)(unsigned char)
                 chan[m].r92.rxbuf[9U]*256UL), 4UL);
          }
@@ -1334,8 +1334,8 @@ static void decode41(unsigned long m)
       p = 57UL;
       if (verb) {
          if (maxchannels>0UL) {
-            InOut_WriteInt((long)(m+1UL), 1UL);
-            InOut_WriteString(":", 2ul);
+            osic_WrUINT32((long)(m+1UL), 1UL);
+            osic_WrStr(":", 2ul);
          }
          osic_WrStr("R41 ", 5ul);
       }
@@ -1989,8 +1989,8 @@ static void decodeframe6(unsigned long m)
       deinterleave(anonym->rxbuf, 264ul, 160UL, 13UL, anonym->dh2, 104ul);
       if (verb) {
          if (maxchannels>0UL) {
-            InOut_WriteInt((long)(m+1UL), 1UL);
-            InOut_WriteString(":", 2ul);
+            osic_WrUINT32((long)(m+1UL), 1UL);
+            osic_WrStr(":", 2ul);
          }
          if (anonym->id[0U]) osic_WrStr(anonym->id, 9ul);
          else osic_WrStr("DF6", 4ul);
@@ -2210,8 +2210,8 @@ static void demodframe34(unsigned long channel)
       good = 0;
       if (verb) {
          if (maxchannels>0UL) {
-            InOut_WriteInt((long)(channel+1UL), 1UL);
-            InOut_WriteString(":", 2ul);
+            osic_WrUINT32((long)(channel+1UL), 1UL);
+            osic_WrStr(":", 2ul);
          }
          osic_WrStr("C34 ", 5ul);
          osic_WrStr(anonym->id, 9ul);
@@ -2563,12 +2563,12 @@ static void getadc(void)
    do {
       if (adcbufrd>=adcbufsamps) {
          adcbufrd = 0UL;
-         l = osi_RdBin(soundfd, (char *)adcbuf, 8192u/1u, adcbuflen*2UL);
+         l = osic_RdBin(soundfd, (char *)adcbuf, 8192u/1u, adcbuflen*2UL);
          adcbufsamps = 0UL;
          if (l<0L) {
             if (abortonsounderr) Error("Sounddevice Failure", 20ul);
             else {
-               osi_Close(soundfd);
+               osic_Close(soundfd);
                Usleep(100000UL);
                OpenSound();
                return;
@@ -2577,7 +2577,7 @@ static void getadc(void)
          if (l<2L) return;
          adcbufsamps = (unsigned long)X2C_DIV(l,2L);
          if (debfd>=0L) {
-            osi_WrBin(debfd, (char *)adcbuf, 8192u/1u, adcbufsamps*2UL);
+            osic_WrBin(debfd, (char *)adcbuf, 8192u/1u, adcbufsamps*2UL);
          }
          tmp = maxchannels;
          ch = 0UL;
@@ -2601,11 +2601,11 @@ static void getadc(void)
             /*WrInt(ch, 1); WrStrLn(" ch"); */
             if (ch<15UL) {
                if (verb && maxchannels!=ch) {
-                  InOut_WriteString("channels changed from ", 23ul);
-                  InOut_WriteInt((long)(maxchannels+1UL), 0UL);
-                  InOut_WriteString(" to ", 5ul);
-                  InOut_WriteInt((long)(ch+1UL), 0UL);
-                  osi_WrStrLn("", 1ul);
+                  osic_WrStr("channels changed from ", 23ul);
+                  osic_WrUINT32((long)(maxchannels+1UL), 0UL);
+                  osic_WrStr(" to ", 5ul);
+                  osic_WrUINT32((long)(ch+1UL), 0UL);
+                  osic_WrStrLn("", 1ul);
                }
                maxchannels = ch;
             }

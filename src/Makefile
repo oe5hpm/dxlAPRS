@@ -142,8 +142,11 @@ TARGETS = \
 	udpgate4 \
 	udpflex \
 	udphub \
-	udprfnet
-	
+	udprfnet \
+	sondemod \
+	sondeudp \
+	aprsmap
+
 OBJS = \
 	$(OBJ_COMMON) \
 	$(OBJ_AFSKMODEM) \
@@ -208,7 +211,7 @@ udprfnet: $(OBJ_UDPRFNET) $(OBJ_COMMON)
 	$(STRIP) udprfnet -s
 
 aprsmap : $(OBJ_APRSMAP) $(OBJ_COMMON)
-	$(CC) $(LFLAGS) -o aprsmap $(OBJ_APRSMAP) $(OBJ_COMMON) $(ADDLIBS) $(XLIBS) -lm 
+	$(CC) $(LFLAGS) -o aprsmap $(OBJ_APRSMAP) $(OBJ_COMMON) $(ADDLIBS) $(XLIBS) -lm
 	$(STRIP) aprsmap -s
 aprsmap-cleanobj:
 	rm -f $(OBJ_APRSMAP)

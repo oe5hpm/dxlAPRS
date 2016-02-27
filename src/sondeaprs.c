@@ -1076,20 +1076,13 @@ extern void sondeaprs_senddata(double lat, double long0, double alt,
          if (sondeaprs_verb) {
             osic_WrStrLn("", 1ul);
             show(anonym->dat[0U]);
-<<<<<<< HEAD
-            osic_WrStr(" AlmAge ", 9ul);
-            osic_WrFixed((float)(X2C_DIVL((double)almanachage,3600.0)), 1L,
-                3UL);
-            osic_WrStrLn("h ", 3ul);
-=======
             if (almanachage) {
-               InOut_WriteString(" AlmAge ", 9ul);
-               osi_WrFixed((float)(X2C_DIVL((double)almanachage,3600.0)), 1L,
+               osic_WrStrLn(" AlmAge ", 9ul);
+               osic_WrFixed((float)(X2C_DIVL((double)almanachage,3600.0)), 1L,
                  3UL);
-               osi_WrStrLn("h ", 3ul);
+               osic_WrStrLn("h ", 3ul);
             }
-            else osi_WrStrLn("", 1ul);
->>>>>>> master-dbg
+            else osic_WrStrLn("", 1ul);
             for (e = sondeaprs_ePRES;; e++) {
                if (X2C_IN((long)e,10,chk)) {
                   switch ((unsigned)e) {
