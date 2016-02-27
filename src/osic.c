@@ -273,18 +273,6 @@ X2C_LONGREAL X2C_DIVL_F(X2C_LONGREAL a, X2C_LONGREAL b)
 	return (a/b);
 }
 
-X2C_INT32 X2C_DIV_F(X2C_INT32 a, X2C_INT32 b)
-{
-	X2C_INT32 c;
-
-	if (b <= 0)
-		assert(0);
-	c = (a/b);
-	if (a < 0 && c*b > a)
-		--c;
-	return c;
-}
-
 X2C_pVOID X2C_COPY(void *src, size_t src_len, void *dst, size_t dst_len)
 {
 	return memcpy(dst, src, src_len <= dst_len ? src_len : dst_len);
