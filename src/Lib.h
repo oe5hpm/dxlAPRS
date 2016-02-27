@@ -30,7 +30,7 @@ extern float Lib_Noise12(void);
 extern float Lib_NoiseGauss(void);
 
 
-extern void Lib_BEGIN(void);
+extern void Lib_BEGIN(int argc, char *argv[]);
 
 
 #endif /* Lib_H_ */

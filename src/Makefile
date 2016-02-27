@@ -33,12 +33,11 @@ export HOSTARCH
 CC			= $(CROSS_COMPILE)gcc
 STRIP		= $(CROSS_COMPILE)strip
 INCL		= ../libxds/include
-CDEFS		= -D_unix -D_linux -DX2C_no_spawn -w
-CFLAGS		= -I$(INCL) -I$(EXTLIB) -c -O2 -fgnu89-inline -fdata-sections -ffunction-sections
+CDEFS		= -D_unix -D_linux -DX2C_no_spawn -Wall -Wno-unused-variable -Wno-parentheses -Wno-pointer-sign -Wno-format -Wno-unused-but-set-variable
+CFLAGS		= -I$(INCL) -I$(EXTLIB) -c -O2 -fdata-sections -ffunction-sections
 LFLAGS		= -Wl,--gc-sections
 # ---------------------- armv6 (raspberry pi 1) specific -----------------------
 ifeq ($(PLATFORM), armv6tce)
-XDSLIB  	= lib_armv6/libxds.a
 EXTLIB  	= lib_armv6/
 ADDLIBS		= lib_armv6/libpng15/libpng.a \
 			  lib_armv6/libz.a \
@@ -48,7 +47,6 @@ CFLAGS		+= -march=armv6zk -mfpu=vfp -mfloat-abi=hard -mcpu=arm1176jzf-s
 CFLAGS		+= -Ilib_armv6/libpng15/
 LFLAGS		+=
 else ifeq ($(PLATFORM), armv6)
-XDSLIB  	= lib_armv6/libxds.a
 EXTLIB  	= lib_armv6/
 ADDLIBS		= lib_armv6/libpng16/libpng.a \
 			  lib_armv6/libz.a \
@@ -59,7 +57,6 @@ CFLAGS		+= -Ilib_armv6/libpng16/
 LFLAGS		+=
 # ---------------------- armv7hf (bur am335x pp) specific ---------------------
 else ifeq ($(PLATFORM), armv7hf)
-XDSLIB		= lib_armv7hf/libxds.a
 EXTLIB		= lib_armv7hf/
 XLIBS		= $(EXTLIB)libxcb.so $(EXTLIB)libXdmcp.so $(EXTLIB)libXau.so -L$(EXTLIB) -lXext -lX11
 ADDLIBS		= lib_armv7hf/libpng.a \
@@ -69,7 +66,6 @@ CFLAGS		+= -march=armv7-a -mfpu=neon -mfloat-abi=hard
 LFLAGS		+=
 # -------------------------- x86_64 specific -----------------------------------
 else ifeq ($(HOSTARCH), x86_64)
-XDSLIB		= lib_x86/libxds.a
 EXTLIB		= .
 ADDLIBS		= lib_x86/libpng.a \
 			  lib_x86/libz.a \
@@ -79,7 +75,6 @@ CFLAGS		+= -m32
 LFLAGS		+= -m32
 # -------------------------- x86_32 (default) specific ------------------------
 else
-XDSLIB		= lib_x86/libxds.a
 EXTLIB		= .
 ADDLIBS		= lib_x86/libpng.a \
 			  lib_x86/libz.a \
@@ -92,7 +87,7 @@ OBJ_COMMON = \
 	Select.o \
 	aprspos.o \
 	aprsstr.o \
-	osi.o \
+	osic.o \
 	ptty.o \
 	soundctl.o \
 	symlink.o \
@@ -142,14 +137,11 @@ TARGETS = \
 	afskmodem \
 	gps2aprs \
 	gps2digipos \
-	sondemod \
-	sondeudp \
 	udpbox \
 	udpgate4 \
 	udpflex \
 	udphub \
-	udprfnet \
-	aprsmap
+	udprfnet
 	
 OBJS = \
 	$(OBJ_COMMON) \
@@ -170,55 +162,54 @@ OBJS = \
 	$(CC) $(CDEFS) $(CFLAGS) -o $@ $<
 
 all: $(TARGETS)
-	
+
 clean:
 	rm -f $(OBJS) $(TARGETS)
-	
+
 afskmodem: $(OBJ_AFSKMODEM) $(OBJ_COMMON)
-	$(CC) $(LFLAGS) -o afskmodem $(OBJ_COMMON) $(OBJ_AFSKMODEM) $(XDSLIB) -lm
+	$(CC) $(LFLAGS) -o afskmodem $(OBJ_COMMON) $(OBJ_AFSKMODEM) -lm
 	$(STRIP) afskmodem -s
-	
+
 gps2aprs: $(OBJ_GPS2APRS) $(OBJ_COMMON)
-	$(CC) $(LFLAGS) -o gps2aprs $(OBJ_COMMON) $(OBJ_GPS2APRS) $(XDSLIB) -lm
+	$(CC) $(LFLAGS) -o gps2aprs $(OBJ_COMMON) $(OBJ_GPS2APRS) -lm
 	$(STRIP) gps2aprs -s
-	
+
 gps2digipos: $(OBJ_GPS2DIGIPOS) $(OBJ_COMMON)
-	$(CC) $(LFLAGS) -o gps2digipos $(OBJ_COMMON) $(OBJ_GPS2DIGIPOS) $(XDSLIB) -lm
+	$(CC) $(LFLAGS) -o gps2digipos $(OBJ_COMMON) $(OBJ_GPS2DIGIPOS) -lm
 	$(STRIP) gps2digipos -s
 
 sondemod: $(OBJ_SONDEMOD) $(OBJ_COMMON)
-	$(CC) $(LFLAGS) -o sondemod $(OBJ_COMMON) $(OBJ_SONDEMOD) $(XDSLIB) -lm
+	$(CC) $(LFLAGS) -o sondemod $(OBJ_COMMON) $(OBJ_SONDEMOD) -lm
 	$(STRIP) sondemod -s
 
 sondeudp: $(OBJ_SONDEUDP) $(OBJ_COMMON)
-	$(CC) $(LFLAGS) -o sondeudp $(OBJ_COMMON) $(OBJ_SONDEUDP) $(XDSLIB) -lm
+	$(CC) $(LFLAGS) -o sondeudp $(OBJ_COMMON) $(OBJ_SONDEUDP) -lm
 	$(STRIP) sondeudp -s
 
 udpbox: $(OBJ_UDPBOX) $(OBJ_COMMON)
-	$(CC) $(LFLAGS) -o udpbox $(OBJ_COMMON) $(OBJ_UDPBOX) $(XDSLIB) -lm
+	$(CC) $(LFLAGS) -o udpbox $(OBJ_COMMON) $(OBJ_UDPBOX) -lm
 	$(STRIP) udpbox -s
 
 udpgate4: $(OBJ_UDPGATE4) $(OBJ_COMMON)
-	$(CC) $(LFLAGS) -o udpgate4 $(OBJ_COMMON) $(OBJ_UDPGATE4) $(XDSLIB) -lm
+	$(CC) $(LFLAGS) -o udpgate4 $(OBJ_COMMON) $(OBJ_UDPGATE4) -lm
 	$(STRIP) udpgate4 -s
-	
+
 udpflex: $(OBJ_UDPFLEX) $(OBJ_COMMON)
-	$(CC) $(LFLAGS) -o udpflex $(OBJ_COMMON) $(OBJ_UDPFLEX) $(XDSLIB) -lm
+	$(CC) $(LFLAGS) -o udpflex $(OBJ_COMMON) $(OBJ_UDPFLEX) -lm
 	$(STRIP) udpflex -s
-	
+
 udphub: $(OBJ_UDPHUB) $(OBJ_COMMON)
-	$(CC) $(LFLAGS) -o udphub $(OBJ_COMMON) $(OBJ_UDPHUB) $(XDSLIB) -lm
-	$(STRIP) udphub -s	
-	
+	$(CC) $(LFLAGS) -o udphub $(OBJ_COMMON) $(OBJ_UDPHUB) -lm
+	$(STRIP) udphub -s
+
 udprfnet: $(OBJ_UDPRFNET) $(OBJ_COMMON)
-	$(CC) $(LFLAGS) -o udprfnet $(OBJ_COMMON) $(OBJ_UDPRFNET) $(XDSLIB) -lm -lrt
+	$(CC) $(LFLAGS) -o udprfnet $(OBJ_COMMON) $(OBJ_UDPRFNET) -lm -lrt
 	$(STRIP) udprfnet -s
 
 aprsmap : $(OBJ_APRSMAP) $(OBJ_COMMON)
-	$(CC) $(LFLAGS) -o aprsmap $(OBJ_APRSMAP) $(OBJ_COMMON) $(XDSLIB) $(ADDLIBS) $(XLIBS) -lm 
+	$(CC) $(LFLAGS) -o aprsmap $(OBJ_APRSMAP) $(OBJ_COMMON) $(ADDLIBS) $(XLIBS) -lm 
 	$(STRIP) aprsmap -s
 aprsmap-cleanobj:
 	rm -f $(OBJ_APRSMAP)
 
 # end of makefile
-

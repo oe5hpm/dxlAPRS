@@ -15,18 +15,15 @@
 #include "Lib.h"
 #endif
 #define Lib_C_
-#ifndef ProgEnv_H_
-#include "ProgEnv.h"
-#endif
-#ifndef RealMath_H_
-#include "RealMath.h"
-#endif
+#include "osic.h"
 
-unsigned long Lib_argc;
+unsigned long Lib_argc = 0;
 #define Lib_PI 3.1415926535898
 
 static double rnd;
 
+static int lib_argc = 0;
+static char *lib_argv[128];
 
 extern void Lib_Fill(X2C_ADDRESS buf, unsigned long len, char byte)
 {
@@ -66,16 +63,22 @@ extern void Lib_Move(X2C_ADDRESS from, X2C_ADDRESS to, unsigned long len)
 
 extern void Lib_NextArg(char s[], unsigned long s_len)
 {
-   ProgEnv_GetArg(Lib_argc, s, s_len);
-   ++Lib_argc;
-} /* end NextArg() */
+	if (Lib_argc >= lib_argc-1) {
+		s[0] = 0;
+		return;
+	} else {
+		strncpy(s, lib_argv[Lib_argc+1], s_len);
+	}
+	Lib_argc++;
+}
 
 
 extern void Lib_ArgN0(unsigned long n, char s[], unsigned long s_len)
 {
-   if (n>0UL) --n;
-   ProgEnv_GetArg(n, s, s_len);
-} /* end ArgN() */
+	if (n>0UL)
+		--n;
+	strncpy(s, lib_argv[n+1], s_len);
+}
 
 
 extern void Lib_Randomize(double start)
@@ -147,13 +150,16 @@ BEGIN
 END Random;
 */
 
-extern void Lib_BEGIN(void)
+extern void Lib_BEGIN(int argc, char *argv[])
 {
+	int i;
    static int Lib_init = 0;
    if (Lib_init) return;
    Lib_init = 1;
-   RealMath_BEGIN();
-   ProgEnv_BEGIN();
+   lib_argc = argc;
+   for (i = 0; i < 128 && i < argc; i++) {
+	lib_argv[i] = strdup(argv[i]);
+   }
    Lib_argc = 0UL;
    rnd = 0.0;
 }
