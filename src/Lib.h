@@ -5,32 +5,13 @@
 #ifndef X2C_H_
 #include "X2C.h"
 #endif
-#ifndef ProgEnv_H_
-#include "ProgEnv.h"
-#endif
-
-#define Lib_argn ProgEnv_ArgNumber
-
-extern unsigned long Lib_argc;
 
 extern void Lib_Fill(X2C_ADDRESS, unsigned long, char);
 
-extern void Lib_Move(X2C_ADDRESS, X2C_ADDRESS, unsigned long);
-
 extern void Lib_NextArg(char [], unsigned long);
-
-extern void Lib_ArgN0(unsigned long, char [], unsigned long);
-
-extern void Lib_Randomize(double);
 
 extern double Lib_Random(void);
 
-extern float Lib_Noise12(void);
-
-extern float Lib_NoiseGauss(void);
-
-
 extern void Lib_BEGIN(int argc, char *argv[]);
-
 
 #endif /* Lib_H_ */
