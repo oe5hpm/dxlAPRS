@@ -70,7 +70,7 @@ extern void aprstext_DateLocToStr(unsigned long time0, char s[],
    }
    else aprsstr_TimeToStr((time0+lo)%86400UL, s, s_len);
    if (lo) {
-      aprsstr_IntToStr(X2C_DIV((long)lo,3600L), 0UL, h, 10ul);
+      aprsstr_IntToStr((long)lo/3600L, 0UL, h, 10ul);
       aprsstr_Append(s, s_len, "(", 2ul);
       aprsstr_Append(s, s_len, h, 10ul);
       aprsstr_Append(s, s_len, ")", 2ul);
@@ -1335,7 +1335,7 @@ extern char aprstext_getmypos(struct aprspos_POSITION * pos)
 
 static char num(long n)
 {
-   return (char)(X2C_MOD(labs(n),10L)+48L);
+   return (char)(labs(n)%10L+48L);
 } /* end num() */
 
 
@@ -1361,8 +1361,8 @@ static void micedest(long lat, long long0, char s[], unsigned long s_len)
 {
    unsigned long nl;
    unsigned long nb;
-   nl = (unsigned long)X2C_DIV(labs(long0),6000L);
-   nb = (unsigned long)X2C_DIV(labs(lat),6000L);
+   nl = (unsigned long)(labs(long0)/6000L);
+   nb = (unsigned long)(labs(lat)/6000L);
    s[0UL] = (char)(80UL+nb/10UL);
    s[1UL] = (char)(80UL+nb%10UL);
    nb = (unsigned long)labs(lat)-nb*6000UL;
@@ -1386,7 +1386,7 @@ static void micedata(long lat, long long0, unsigned long knots,
    /*IF dir>0 THEN DEC(dir) END; */
    /*IF dir>359 THEN dir:=359 END; */
    if (knots>799UL) knots = 0UL;
-   nl = (unsigned long)X2C_DIV(labs(long0),6000L);
+   nl = (unsigned long)(labs(long0)/6000L);
    if (nl<10UL) s[0UL] = (char)(nl+118UL);
    else if (nl>=100UL) {
       if (nl<110UL) s[0UL] = (char)(nl+8UL);
@@ -1426,11 +1426,11 @@ static void alt2str(long feet, char s[], unsigned long s_len)
          feet = -feet;
          s[3UL] = '-';
       }
-      else s[3UL] = num(X2C_DIV(feet,100000L));
-      s[4UL] = num(X2C_DIV(feet,10000L));
-      s[5UL] = num(X2C_DIV(feet,1000L));
-      s[6UL] = num(X2C_DIV(feet,100L));
-      s[7UL] = num(X2C_DIV(feet,10L));
+      else s[3UL] = num(feet/100000L);
+      s[4UL] = num(feet/10000L);
+      s[5UL] = num(feet/1000L);
+      s[6UL] = num(feet/100L);
+      s[7UL] = num(feet/10L);
       s[8UL] = num(feet);
       s[9UL] = 0;
    }
@@ -1443,8 +1443,8 @@ static void speeddir2str(long knots, long dir, char areaobj, char s[],
 {
    if (areaobj || dir>0L && dir<=360L) {
       /*    IF dir=0 THEN dir:=360 END; */
-      s[0UL] = num(X2C_DIV(dir,100L));
-      s[1UL] = num(X2C_DIV(dir,10L));
+      s[0UL] = num(dir/100L);
+      s[1UL] = num(dir/10L);
       s[2UL] = num(dir);
    }
    else {
@@ -1452,10 +1452,10 @@ static void speeddir2str(long knots, long dir, char areaobj, char s[],
       s[1UL] = '.';
       s[2UL] = '.';
    }
-   if (areaobj && knots>=1000L) s[3UL] = num(X2C_DIV(knots,1000L));
+   if (areaobj && knots>=1000L) s[3UL] = num(knots/1000L);
    else s[3UL] = '/';
-   s[4UL] = num(X2C_DIV(knots,100L));
-   s[5UL] = num(X2C_DIV(knots,10L));
+   s[4UL] = num(knots/100L);
+   s[5UL] = num(knots/10L);
    s[6UL] = num(knots);
    s[7UL] = 0;
 } /* end speeddir2str() */
@@ -1476,18 +1476,18 @@ extern void aprstext_compressdata(struct aprspos_POSITION pos,
       n = (long)aprsdecode_trunc((90.0f-pos.lat)*3.80926E+5f);
    }
    else n = 0L;
-   s[1UL] = (char)(33L+X2C_DIV(n,753571L));
-   s[2UL] = (char)(33L+X2C_MOD(X2C_DIV(n,8281L),91L));
-   s[3UL] = (char)(33L+X2C_MOD(X2C_DIV(n,91L),91L));
-   s[4UL] = (char)(33L+X2C_MOD(n,91L));
+   s[1UL] = (char)(33L+n/753571L);
+   s[2UL] = (char)(33L+(n/8281L)%91L);
+   s[3UL] = (char)(33L+(n/91L)%91L);
+   s[4UL] = (char)(33L+n%91L);
    if (pos.long0>(-180.0f)) {
       n = (long)aprsdecode_trunc((180.0f+pos.long0)*1.90463E+5f);
    }
    else n = 0L;
-   s[5UL] = (char)(33L+X2C_DIV(n,753571L));
-   s[6UL] = (char)(33L+X2C_MOD(X2C_DIV(n,8281L),91L));
-   s[7UL] = (char)(33L+X2C_MOD(X2C_DIV(n,91L),91L));
-   s[8UL] = (char)(33L+X2C_MOD(n,91L));
+   s[5UL] = (char)(33L+n/753571L);
+   s[6UL] = (char)(33L+(n/8281L)%91L);
+   s[7UL] = (char)(33L+(n/91L)%91L);
+   s[8UL] = (char)(33L+n%91L);
    s[9UL] = sym[1UL];
    if (knots>0UL) {
       if (dir>=360UL) dir = 0UL;
@@ -1499,8 +1499,8 @@ extern void aprstext_compressdata(struct aprspos_POSITION pos,
    else if (feet>0L) {
       n = (long)aprsdecode_trunc(RealMath_ln((float)feet)*500.5f+0.5f);
       if (n>=8281L) n = 8280L;
-      s[10UL] = (char)(33L+X2C_DIV(n,91L));
-      s[11UL] = (char)(33L+X2C_MOD(n,91L));
+      s[10UL] = (char)(33L+n/91L);
+      s[11UL] = (char)(33L+n%91L);
       s[12UL] = 'W';
    }
    else {
@@ -1532,21 +1532,21 @@ static void deg2str(long lat, long long0, char s[], unsigned long s_len)
       s[17UL] = 'W';
    }
    else s[17UL] = 'E';
-   s[0UL] = (char)(X2C_DIV(lat,60000L)+48L);
-   s[1UL] = (char)(X2C_MOD(X2C_DIV(lat,6000L),10L)+48L);
-   s[2UL] = (char)(X2C_MOD(X2C_DIV(lat,1000L),6L)+48L);
-   s[3UL] = (char)(X2C_MOD(X2C_DIV(lat,100L),10L)+48L);
+   s[0UL] = (char)(lat/60000L+48L);
+   s[1UL] = (char)((lat/6000L)%10L+48L);
+   s[2UL] = (char)((lat/1000L)%6L+48L);
+   s[3UL] = (char)((lat/100L)%10L+48L);
    s[4UL] = '.';
-   s[5UL] = (char)(X2C_MOD(X2C_DIV(lat,10L),10L)+48L);
-   s[6UL] = (char)(X2C_MOD(lat,10L)+48L);
-   s[9UL] = (char)(X2C_DIV(long0,600000L)+48L);
-   s[10UL] = (char)(X2C_MOD(X2C_DIV(long0,60000L),10L)+48L);
-   s[11UL] = (char)(X2C_MOD(X2C_DIV(long0,6000L),10L)+48L);
-   s[12UL] = (char)(X2C_MOD(X2C_DIV(long0,1000L),6L)+48L);
-   s[13UL] = (char)(X2C_MOD(X2C_DIV(long0,100L),10L)+48L);
+   s[5UL] = (char)((lat/10L)%10L+48L);
+   s[6UL] = (char)(lat%10L+48L);
+   s[9UL] = (char)(long0/600000L+48L);
+   s[10UL] = (char)((long0/60000L)%10L+48L);
+   s[11UL] = (char)((long0/6000L)%10L+48L);
+   s[12UL] = (char)((long0/1000L)%6L+48L);
+   s[13UL] = (char)((long0/100L)%10L+48L);
    s[14UL] = '.';
-   s[15UL] = (char)(X2C_MOD(X2C_DIV(long0,10L),10L)+48L);
-   s[16UL] = (char)(X2C_MOD(long0,10L)+48L);
+   s[15UL] = (char)((long0/10L)%10L+48L);
+   s[16UL] = (char)(long0%10L+48L);
    s[18UL] = 0;
 } /* end deg2str() */
 
@@ -1688,8 +1688,8 @@ extern void aprstext_encbeacon(char s[], unsigned long s_len,
       lat -= latd;
       long0 -= longd;
    }
-   lat = X2C_DIV(lat,100L);
-   long0 = X2C_DIV(long0,100L);
+   lat = lat/100L;
+   long0 = long0/100L;
    if (pos.lat<0.0f) lat = -lat;
    if (pos.long0<0.0f) long0 = -long0;
    aprsstr_Append(s, s_len, ">", 2ul);

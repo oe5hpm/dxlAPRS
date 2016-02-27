@@ -1857,7 +1857,7 @@ static void showhex(long * n, long e, char in[], unsigned long in_len,
             InOut_WriteString(">", 2ul);
          }
          else InOut_WriteString((char *)(tmp0 = (char)*n,&tmp0), 1u/1u);
-         if (X2C_MOD(i,7L)==6L) InOut_WriteString(",", 2ul);
+         if (i%7L==6L) InOut_WriteString(",", 2ul);
          if (i==tmp) break;
       } /* end for */
       osi_WrLn();

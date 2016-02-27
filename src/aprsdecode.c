@@ -1277,9 +1277,9 @@ static void apd(char ws[], unsigned long ws_len, char c, float v,
       --f;
    }
    do {
-      aprsstr_Append(ws, ws_len, (char *)(tmp = (char)(X2C_MOD(X2C_DIV(n,d),
-                10L)+48L),&tmp), 1u/1u);
-      d = X2C_DIV(d,10L);
+      aprsstr_Append(ws, ws_len, (char *)(tmp = (char)((n/d)%10L+48L),&tmp),
+                1u/1u);
+      d = d/10L;
    } while (d);
 } /* end apd() */
 

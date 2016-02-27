@@ -396,10 +396,10 @@ extern void maptool_center(long xsize, long ysize, float zoom,
    pixrad = ((1.0f+zoom)-(float)zi)*256.0f*expzoom((long)
                 aprsdecode_trunc(zoom));
    pos->long0 = centpos.long0-(X2C_DIVR(6.2831853071796f,
-                pixrad))*(float)X2C_DIV(xsize,2L);
+                pixrad))*(float)(xsize/2L);
    pos->lat = 2.0f*RealMath_arctan(RealMath_exp(RealMath_ln(RealMath_tan(centpos.lat)
                 +X2C_DIVR(1.0f,RealMath_cos(centpos.lat)))+(X2C_DIVR(6.2831853071796f,
-                pixrad))*(float)X2C_DIV(ysize,2L)))-1.5707963267949f;
+                pixrad))*(float)(ysize/2L)))-1.5707963267949f;
    maptool_limpos(pos);
 } /* end center() */
 
@@ -1901,7 +1901,7 @@ extern char maptool_SimpleRelief(maptool_pIMAGE image)
       h = max0-min0;
       if (h<10L) h = 10L;
       bri = useri_conf2int(useri_fGEOBRIGHTNESS, 0UL, 0L, 100L, 50L);
-      mul = X2C_DIV(1024000L,h);
+      mul = 1024000L/h;
       /*    difmul:=trunc(20000000.0/((FLOAT(h)*sqrt(mperpix))));
                 (* highpass level *) */
       /*    difmul:=trunc(50000000.0/(sqrt(mperpix)*FLOAT(h)));
@@ -1920,7 +1920,7 @@ extern char maptool_SimpleRelief(maptool_pIMAGE image)
                 image^[xp][yp].g)-DIFMIN)*difmul; */
                /*          IF dif>MAXDIF THEN dif:=MAXDIF ELSIF dif<-MAXDIF THEN dif:=-MAXDIF END;
                  */
-               if (h<10000L) h = X2C_DIV(h*mul,1024L);
+               if (h<10000L) h = (h*mul)/1024L;
                else h = 0L;
                if (h<0L) h = 0L;
                else if (h>1023L) h = 1023L;
@@ -2596,15 +2596,15 @@ static void addcol(struct maptool_PIX * pixel, long rr, long gg, long bb,
    struct maptool_PIX * anonym;
    { /* with */
       struct maptool_PIX * anonym = pixel;
-      fh = (long)anonym->r+X2C_DIV(rr*f,256L);
+      fh = (long)anonym->r+(rr*f)/256L;
       if (fh<0L) fh = 0L;
       else if (fh>30000L) fh = 30000L;
       anonym->r = (unsigned short)fh;
-      fh = (long)anonym->g+X2C_DIV(gg*f,256L);
+      fh = (long)anonym->g+(gg*f)/256L;
       if (fh<0L) fh = 0L;
       else if (fh>30000L) fh = 30000L;
       anonym->g = (unsigned short)fh;
-      fh = (long)anonym->b+X2C_DIV(bb*f,256L);
+      fh = (long)anonym->b+(bb*f)/256L;
       if (fh<0L) fh = 0L;
       else if (fh>30000L) fh = 30000L;
       anonym->b = (unsigned short)fh;
@@ -3841,7 +3841,7 @@ static void OptTextPlace(maptool_pIMAGE img, char s[], unsigned long s_len,
          } /* end for */
       }
       else cont = wid*32768L;
-      if (y<fonty || y>=fonty*2L) cont = X2C_DIV(cont*400L,256L);
+      if (y<fonty || y>=fonty*2L) cont = (cont*400L)/256L;
       ct[y] = cont;
       n += cont;
       if (y>=fonty) {
@@ -3878,8 +3878,7 @@ extern void maptool_drawstr(maptool_pIMAGE image, char s[],
          x = (long)X2C_TRUNCI(xr,X2C_min_longint,X2C_max_longint);
          dy = y;
          OptTextPlace(image, s, s_len, &x, &y);
-         y = X2C_DIV(y,2L)*2L+1L;
-                /* not odd lines for better 420 color conversion */
+         y = (y/2L)*2L+1L; /* not odd lines for better 420 color conversion */
          *pos = (signed char)(y-dy);
          xr = (float)x;
          yr = (float)y;
@@ -4307,12 +4306,9 @@ extern void maptool_shine(maptool_pIMAGE image, long lum)
       if (x<=tmp0) for (;; x++) {
          { /* with */
             struct maptool_PIX * anonym14 = &image->Adr[(x)*image->Len0+y];
-            anonym14->r = (unsigned short)X2C_DIV((long)anonym14->r*lum,
-                512L);
-            anonym14->g = (unsigned short)X2C_DIV((long)anonym14->g*lum,
-                512L);
-            anonym14->b = (unsigned short)X2C_DIV((long)anonym14->b*lum,
-                512L);
+            anonym14->r = (unsigned short)(((long)anonym14->r*lum)/512L);
+            anonym14->g = (unsigned short)(((long)anonym14->g*lum)/512L);
+            anonym14->b = (unsigned short)(((long)anonym14->b*lum)/512L);
          }
          if (x==tmp0) break;
       } /* end for */
@@ -4662,9 +4658,9 @@ static void zoommap(float fzoom, maptool_pIMAGE map)
          }
          { /* with */
             struct maptool_PIX * anonym1 = &map->Adr[(x)*map->Len0+y];
-            anonym1->r = (unsigned short)X2C_DIV(rr,256L);
-            anonym1->g = (unsigned short)X2C_DIV(gg,256L);
-            anonym1->b = (unsigned short)X2C_DIV(bb,256L);
+            anonym1->r = (unsigned short)(rr/256L);
+            anonym1->g = (unsigned short)(gg/256L);
+            anonym1->b = (unsigned short)(bb/256L);
          }
          if (y==tmp) break;
       } /* end for */
@@ -4699,9 +4695,9 @@ static void zoommap(float fzoom, maptool_pIMAGE map)
          }
          { /* with */
             struct maptool_PIX * anonym4 = &map->Adr[(x)*map->Len0+y];
-            anonym4->r = (unsigned short)X2C_DIV(rr,256L);
-            anonym4->g = (unsigned short)X2C_DIV(gg,256L);
-            anonym4->b = (unsigned short)X2C_DIV(bb,256L);
+            anonym4->r = (unsigned short)(rr/256L);
+            anonym4->g = (unsigned short)(gg/256L);
+            anonym4->b = (unsigned short)(bb/256L);
          }
          if (x==tmp0) break;
       } /* end for */
@@ -4803,7 +4799,7 @@ static char loadtile(maptool_pIMAGE map, char * done, char dryrun,
             ix = 1L;
          }
          do {
-            pngbuf[y][x] = pngbuf[yy+X2C_DIV(y,2L)][xx+X2C_DIV(x,2L)];
+            pngbuf[y][x] = pngbuf[yy+y/2L][xx+x/2L];
             /*        pngbuf[y]^[x].r8:=255; */
             x += ix;
          } while (!(x<0L || x>255L));
@@ -4854,10 +4850,10 @@ extern void maptool_loadmap(maptool_pIMAGE map, long tx, long ty, long zoom,
    *blown = 0;
    /*  FILL(map, 0C, SIZE(PIX)*xsize*ysize); */
    maxtil = (long)(aprsdecode_trunc(expzoom(zoom))-1UL);
-   yh = X2C_DIV((long)X2C_TRUNCI(X2C_DIVR((float)(map->Len0-1),fzoom)+shfty,
-                X2C_min_longint,X2C_max_longint),256L);
-   xh = X2C_DIV((long)X2C_TRUNCI(X2C_DIVR((float)(map->Len1-1),fzoom)+shftx,
-                X2C_min_longint,X2C_max_longint),256L);
+   yh = (long)X2C_TRUNCI(X2C_DIVR((float)(map->Len0-1),fzoom)+shfty,
+                X2C_min_longint,X2C_max_longint)/256L;
+   xh = (long)X2C_TRUNCI(X2C_DIVR((float)(map->Len1-1),fzoom)+shftx,
+                X2C_min_longint,X2C_max_longint)/256L;
    /*  IF ((tx+1>=maxtil) OR (ty+1>=maxtil)) & NOT dryrun THEN clr(map) END;
                 */
    /*  FOR y:=0 TO VAL(INTEGER, FLOAT(HIGH(map^[0]))/fzoom+shfty) DIV TILESIZE DO */
@@ -4878,8 +4874,8 @@ extern void maptool_loadmap(maptool_pIMAGE map, long tx, long ty, long zoom,
                 X2C_TRUNCI(shfty,X2C_min_longint,X2C_max_longint);
             if (((!loadtile(map, done, dryrun, fnn, 4096ul, wfn, 4096ul, dx,
                 dy, 0UL, 0UL) && zoom>4L) && !dryrun) && blow) {
-               mapname(X2C_DIV(tx+x,2L), X2C_DIV(ty+y,2L), zoom-1L, fnn,
-                4096ul, wfn, 4096ul);
+               mapname((tx+x)/2L, (ty+y)/2L, zoom-1L, fnn, 4096ul, wfn,
+                4096ul);
                ok0 = loadtile(map, done, dryrun, fnn, 4096ul, "", 1ul, dx,
                 dy, (unsigned long)((tx+x&1L)+1L),
                 (unsigned long)((ty+y&1L)+1L));
@@ -5376,8 +5372,8 @@ extern long maptool_saveppm(char fn[], unsigned long fn_len,
       memset((char *)h,(char)0,256UL);
       h[0U] = 'B';
       h[1U] = 'M';
-      numh(h, (unsigned long)(X2C_DIV(xsize*3L+4L,4L)*4L*ysize+54L), 2UL,
-                4UL); /* file len pad lines to x4 byte */
+      numh(h, (unsigned long)(((xsize*3L+4L)/4L)*4L*ysize+54L), 2UL, 4UL);
+                /* file len pad lines to x4 byte */
       numh(h, 54UL, 10UL, 4UL); /* headerlen */
       numh(h, 40UL, 14UL, 4UL); /* DWORD   biSize */
       numh(h, (unsigned long)xsize, 18UL, 4UL); /* LONG    biWidth */
