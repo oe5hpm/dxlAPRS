@@ -1418,7 +1418,6 @@ extern void aprstat_BEGIN(void)
    aprstext_BEGIN();
    useri_BEGIN();
    aprspos_BEGIN();
-   osic_BEGIN();
    aprsdecode_BEGIN();
    aprsstr_BEGIN();
    maptool_BEGIN();

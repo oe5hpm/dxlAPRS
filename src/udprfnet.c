@@ -22,9 +22,6 @@
 #ifndef osi_H_
 #include "osic.h"
 #endif
-#ifndef Lib_H_
-#include "Lib.h"
-#endif
 #ifndef Select_H_
 #include "Select.h"
 #endif
@@ -324,7 +321,7 @@ static pNEIGHBOUR addneibor(unsigned long ip, unsigned long port)
    if (n==0) {
       Storage_ALLOCATE((X2C_ADDRESS *) &n, sizeof(struct NEIGHBOUR));
       if (n==0) Err("out of memory", 14ul);
-      Lib_Fill((X2C_ADDRESS)n, sizeof(struct NEIGHBOUR), 0);
+      osic_Fill((X2C_ADDRESS)n, sizeof(struct NEIGHBOUR), 0);
       n->ipnum = ip;
       chain(n);
    }
@@ -432,33 +429,33 @@ static void parms(void)
    unsigned long i;
    err = 0;
    for (;;) {
-      Lib_NextArg(h, 4096ul);
+      osic_NextArg(h, 4096ul);
       if (h[0U]==0) break;
       if ((h[0U]=='-' && h[1U]) && h[2U]==0) {
          lasth = h[1U];
          if (lasth=='a') autonode = 1;
          else if (lasth=='c') {
-            Lib_NextArg(h, 4096ul);
+            osic_NextArg(h, 4096ul);
             i = 0UL;
             if (!GetNum(h, 4096ul, ':', &i, &checktime) || !GetNum(h, 4096ul,
                  0, &i, &n)) Err("-c s:s", 7ul);
             qtime = checktime+n;
          }
-         else if (lasth=='i') Lib_NextArg(nlocal.call, 10ul);
+         else if (lasth=='i') osic_NextArg(nlocal.call, 10ul);
          else if (lasth=='d') {
-            Lib_NextArg(h, 4096ul);
+            osic_NextArg(h, 4096ul);
             i = 0UL;
             if (!GetNum(h, 4096ul, 0, &i, &duptime)) Err("-d number", 10ul);
          }
          else if (lasth=='e') localecho = 1;
          else if (lasth=='f') {
-            Lib_NextArg(h, 4096ul);
+            osic_NextArg(h, 4096ul);
             i = 0UL;
             if (!GetNum(h, 4096ul, 0, &i, &fastcheck)) {
                Err("-f seconds", 11ul);
             }
          }
-         else if (lasth=='n') Lib_NextArg(netname, 64ul);
+         else if (lasth=='n') osic_NextArg(netname, 64ul);
          else {
             if (lasth=='h') {
                osic_WrLn();
@@ -495,7 +492,7 @@ r routes.txt", 62ul);
                X2C_ABORT();
             }
             if (lasth=='M') {
-               Lib_NextArg(h, 4096ul);
+               osic_NextArg(h, 4096ul);
                i = 0UL;
                if (str2ip(h, 4096ul, &i, &nlocal.ipnum, 0, &nlocal.toport,
                 &localfromport, &localcheckip)<0L) {
@@ -507,7 +504,7 @@ r routes.txt", 62ul);
                }
             }
             else if (lasth=='p') {
-               Lib_NextArg(h, 4096ul);
+               osic_NextArg(h, 4096ul);
                i = 0UL;
                if (!GetNum(h, 4096ul, 0, &i, &netport)) {
                   Err("-p number", 10ul);
@@ -517,22 +514,22 @@ r routes.txt", 62ul);
                if (nlocal.toport==0UL) {
                   Err("need -M before -m secondport", 29ul);
                }
-               Lib_NextArg(h, 4096ul);
+               osic_NextArg(h, 4096ul);
                i = 0UL;
                if (!GetNum(h, 4096ul, 0, &i, &tx2port)) {
                   Err("-m number", 10ul);
                }
             }
-            else if (lasth=='r') Lib_NextArg(nodefile, 1024ul);
+            else if (lasth=='r') osic_NextArg(nodefile, 1024ul);
             else if (lasth=='s') {
-               Lib_NextArg(h, 4096ul);
+               osic_NextArg(h, 4096ul);
                i = 0UL;
                if (!GetNum(h, 4096ul, 0, &i, &slowcheck)) {
                   Err("-s seconds", 11ul);
                }
             }
             else if (lasth=='v') verb = 1;
-            else if (lasth=='w') Lib_NextArg(wwwbindport, 6ul);
+            else if (lasth=='w') osic_NextArg(wwwbindport, 6ul);
             else err = 1;
          }
          h[0U] = 0;
@@ -1457,10 +1454,9 @@ extern int main(int argc, char **argv)
    if (sizeof(MONCALL)!=10) X2C_ASSERT(0);
    if (sizeof(FILENAME)!=1024) X2C_ASSERT(0);
    aprsstr_BEGIN();
-   Lib_BEGIN(argc, argv);
-   osic_BEGIN();
+   X2C_BEGIN(&argc,argv,1,4000000l,8000000l);
    Gencrctab();
-   Lib_Fill((char *) &nlocal, sizeof(struct NEIGHBOUR), 0);
+   osic_Fill((char *) &nlocal, sizeof(struct NEIGHBOUR), 0);
    nlocal.pri = 1UL;
    tx2port = 0UL;
    neibors = 0;

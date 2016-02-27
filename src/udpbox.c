@@ -1362,17 +1362,17 @@ static void parms(void)
    actpassui = 0;
    actsat = 0;
    for (;;) {
-      Lib_NextArg(h, 4096ul);
+      osic_NextArg(h, 4096ul);
       if (h[0U]==0) break;
       if ((h[0U]=='-' && h[1U]) && h[2U]==0) {
          lasth = h[1U];
          if (lasth=='a') {
-            Lib_NextArg(h, 4096ul);
+            osic_NextArg(h, 4096ul);
             if (h[0U]=='-') h[0U] = 0;
             Ackpath(h, 4096ul);
          }
          else if ((lasth=='R' || lasth=='M') || lasth=='L') {
-            Lib_NextArg(h, 4096ul);
+            osic_NextArg(h, 4096ul);
             actecho = 0;
             memcpy(actpass,_cnst,32u);
             actdigi = 0;
@@ -1417,7 +1417,7 @@ static void parms(void)
             insocks = actsock0;
          }
          else if (lasth=='f') {
-            Lib_NextArg(h, 4096ul);
+            osic_NextArg(h, 4096ul);
             if (actsock0==0) Err("need input -M or -R before -f", 30ul);
             memcpy(actpass,_cnst0,32u);
             if (h[0U]!='d' && h[0U]!='p') {
@@ -1451,7 +1451,7 @@ static void parms(void)
             }
          }
          else if (lasth=='k') {
-            Lib_NextArg(h, 4096ul);
+            osic_NextArg(h, 4096ul);
             if (actsock0==0) Err("need input -M or -R before -k", 30ul);
             i = 0UL;
             if (!getfix(&actpos.lat, h, 4096ul, &i)) {
@@ -1466,7 +1466,7 @@ static void parms(void)
                 &i)) || actkm>=2.147483647E+9f) Err("distance in km", 15ul);
          }
          else if (lasth=='b') {
-            Lib_NextArg(h, 4096ul);
+            osic_NextArg(h, 4096ul);
             if (actsock0==0) Err("need input -M or -R before -b", 30ul);
             { /* with */
                struct BEACON * anonym0 = &actbeacon;
@@ -1487,7 +1487,7 @@ static void parms(void)
             }
          }
          else if (lasth=='d') {
-            Lib_NextArg(h, 4096ul);
+            osic_NextArg(h, 4096ul);
             if (actsock0==0) Err("need input -M or -R before -d", 30ul);
             Storage_ALLOCATE((X2C_ADDRESS *) &actdigi,
                 sizeof(struct DIGIPARMS));
@@ -1511,7 +1511,7 @@ static void parms(void)
             if (actsock0==0) {
                Err("need input -M or -R before -r or -m or -c", 42ul);
             }
-            Lib_NextArg(h, 4096ul);
+            osic_NextArg(h, 4096ul);
             Storage_ALLOCATE((X2C_ADDRESS *) &outsock0,
                 sizeof(struct OUTPORT));
             if (outsock0==0) Err("out of memory", 14ul);
@@ -1671,7 +1671,7 @@ t 1800,28 -r 192.168.1.24:9400", 80ul);
             else if (lasth=='S') actsat = 1;
             else if (lasth=='t') {
                if (actdigi==0) Err("need -d before -t", 18ul);
-               Lib_NextArg(h, 4096ul);
+               osic_NextArg(h, 4096ul);
                i = 0UL;
                if (GetSec(h, 4096ul, &i, &n)>=0L) {
                   actdigi->duptime = n;
@@ -1683,13 +1683,13 @@ t 1800,28 -r 192.168.1.24:9400", 80ul);
             }
             else if (lasth=='P') {
                if (actsock0==0) Err("need input -M or -R before -P", 30ul);
-               Lib_NextArg(h, 4096ul);
+               osic_NextArg(h, 4096ul);
                i = 0UL;
                if (GetSec(h, 4096ul, &i, &n)>=0L) actbeacon.piggytime = n;
             }
             else if (lasth=='p') {
                if (actdigi==0) Err("need -d before -p", 18ul);
-               Lib_NextArg(h, 4096ul);
+               osic_NextArg(h, 4096ul);
                i = 0UL;
                while (GetSec(h, 4096ul, &i, &n)>=0L) {
                   if (n<31UL) actdigi->pathcheck |= (1UL<<n);
@@ -1697,7 +1697,7 @@ t 1800,28 -r 192.168.1.24:9400", 80ul);
                }
             }
             else if (lasth=='u') {
-               Lib_NextArg(h, 4096ul);
+               osic_NextArg(h, 4096ul);
                Storage_ALLOCATE((X2C_ADDRESS *) &user,
                 sizeof(struct MSGHASH));
                if (user==0) Err("out of memory", 14ul);
@@ -1735,7 +1735,7 @@ t 1800,28 -r 192.168.1.24:9400", 80ul);
             }
             else if (lasth=='v') show = 1;
             else if (lasth=='x') {
-               Lib_NextArg(h, 4096ul);
+               osic_NextArg(h, 4096ul);
                if (actsock0==0) Err("need input -M or -R before -x", 30ul);
                i = 0UL;
                for (;;) {
@@ -2265,8 +2265,7 @@ extern int main(int argc, char **argv)
    if (sizeof(FILENAME)!=1024) X2C_ASSERT(0);
    aprsstr_BEGIN();
    aprspos_BEGIN();
-   Lib_BEGIN(argc, argv);
-   osic_BEGIN();
+   X2C_BEGIN(&argc,argv,1,4000000l,8000000l);
    stdinpos = 0UL;
    insocks = 0;
    parms();

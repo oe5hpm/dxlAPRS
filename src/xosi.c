@@ -884,7 +884,6 @@ extern void xosic_BEGIN(void)
    static int xosi_init = 0;
    if (xosi_init) return;
    xosi_init = 1;
-   osic_BEGIN();
    useri_BEGIN();
    aprsstr_BEGIN();
    aprsdecode_BEGIN();

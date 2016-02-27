@@ -1496,6 +1496,5 @@ extern void gpspos_BEGIN(void)
    if (gpspos_init) return;
    gpspos_init = 1;
    aprsstr_BEGIN();
-   osic_BEGIN();
 }
 

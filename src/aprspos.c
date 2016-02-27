@@ -780,6 +780,5 @@ extern void aprspos_BEGIN(void)
    static int aprspos_init = 0;
    if (aprspos_init) return;
    aprspos_init = 1;
-   osic_BEGIN();
 }
 

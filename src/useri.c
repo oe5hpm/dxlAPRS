@@ -11939,7 +11939,6 @@ extern void useri_BEGIN(void)
    aprstat_BEGIN();
    aprstext_BEGIN();
    xosic_BEGIN();
-   osic_BEGIN();
    maptool_BEGIN();
    aprspos_BEGIN();
    aprsstr_BEGIN();

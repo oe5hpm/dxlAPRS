@@ -5607,7 +5607,6 @@ extern void maptool_BEGIN(void)
    aprstext_BEGIN();
    useri_BEGIN();
    xosic_BEGIN();
-   osic_BEGIN();
    aprspos_BEGIN();
    aprsstr_BEGIN();
    aprsdecode_BEGIN();

@@ -596,16 +596,16 @@ static void parms(void)
    unsigned long fromdigiport;
    err0 = 0;
    for (;;) {
-      Lib_NextArg(h, 1024ul);
+      osic_NextArg(h, 1024ul);
       if (h[0U]==0) break;
       if ((h[0U]=='-' && h[1U]) && h[2U]==0) {
          if (h[1U]=='l') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             if (!GetNum(h, 1024ul, &i)) Err("-l minutes", 11ul);
             lifetime = i*60UL;
          }
          else if (h[1U]=='L') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             if (!GetNum(h, 1024ul, &i)) Err("-L minutes", 11ul);
             alllifetime = i*60UL;
          }
@@ -613,7 +613,7 @@ static void parms(void)
          else if (h[1U]=='I') defaultbcin = 1;
          else if (h[1U]=='O') defaultbcout = 1;
          else if (h[1U]=='b') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             if (h[0U]==0) Err("-b call", 8ul);
             i = 0UL;
             if (!Str2Call(h, 1024ul, &i, 0UL, broadcastdest, 7ul)) {
@@ -622,22 +622,22 @@ static void parms(void)
          }
          else if (h[1U]=='i') {
             /* init filename */
-            Lib_NextArg(initfn, 1025ul);
+            osic_NextArg(initfn, 1025ul);
          }
          else if (h[1U]=='w') {
             /* write table filename */
-            Lib_NextArg(wrfn, 1025ul);
+            osic_NextArg(wrfn, 1025ul);
          }
          else if (h[1U]=='m') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             if (!GetNum(h, 1024ul, &maxentries)) Err("-m number", 10ul);
          }
          else if (h[1U]=='p') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             if (!GetNum(h, 1024ul, &touserport)) Err("-p portnumber", 14ul);
          }
          else if (h[1U]=='u') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             if (GetIp(h, 1024ul, &digiip, &todigiport, &fromdigiport,
                 &digisock, &checkdigiip)<0L) {
                Err("cannot open digi udp socket", 28ul);
@@ -1210,9 +1210,8 @@ X2C_STACK_LIMIT(100000l)
 extern int main(int argc, char **argv)
 {
    if (sizeof(RAWCALL)!=7) X2C_ASSERT(0);
-   Lib_BEGIN(argc, argv);
+   X2C_BEGIN(&argc,argv,1,4000000l,8000000l);
    aprsstr_BEGIN();
-   osic_BEGIN();
    Gencrctab();
    noinf = 1;
    show = 0;

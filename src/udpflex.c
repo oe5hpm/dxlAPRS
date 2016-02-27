@@ -393,7 +393,7 @@ static void Parms(void)
    err = 0;
    sockc = 0UL;
    for (;;) {
-      Lib_NextArg(h, 1024ul);
+      osic_NextArg(h, 1024ul);
       if (h[0U]==0) break;
       if ((h[0U]=='-' && h[1U]) && h[2U]==0) {
          if (h[1U]=='c') {
@@ -409,7 +409,7 @@ static void Parms(void)
          }
          else if (h[1U]=='k') kisson = 1;
          else if (h[1U]=='p') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             i0 = 0UL;
             if (!GetNum(h, 1024ul, ':', &i0, &cmd)) {
                Error("-p cmd:value", 13ul);
@@ -427,7 +427,7 @@ static void Parms(void)
             if (auto0 && sockc>0UL) {
                Error("-U only 1 UDP with -a Mode", 27ul);
             }
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             { /* with */
                struct _0 * anonym = &udpsocks[sockc];
                if (aprsstr_GetIp2(h, 1024ul, &anonym->ipnum, &anonym->toport,
@@ -445,7 +445,7 @@ static void Parms(void)
          }
          else if (h[1U]=='u') usbrobust = 1;
          else if (h[1U]=='t') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             i0 = 0UL;
             while ((h[i0] && h[i0]!=':') && i0<700UL) {
                ttynamee[i0] = h[i0];
@@ -460,7 +460,7 @@ static void Parms(void)
             }
          }
          else if (h[1U]=='T') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             urlport(direwolfurl, 2048ul, direwolfport, 11ul, h, 1024ul);
             direwolf = 1;
          }
@@ -512,7 +512,7 @@ messages", 58ul);
                osic_WrLn();
                X2C_ABORT();
             }
-            if (h[1U]=='i') Lib_NextArg(ifn, 701ul);
+            if (h[1U]=='i') osic_NextArg(ifn, 701ul);
             else err = 1;
          }
       }
@@ -903,8 +903,7 @@ extern int main(int argc, char **argv)
 {
    long tmp;
    long tmp0;
-   Lib_BEGIN(argc, argv);
-   osic_BEGIN();
+   X2C_BEGIN(&argc,argv,1,4000000l,8000000l);
    aprsstr_BEGIN();
    auto0 = 0;
    kisson = 0;

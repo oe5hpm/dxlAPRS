@@ -310,12 +310,12 @@ static void Parms(void)
    unsigned long i;
    err = 0;
    for (;;) {
-      Lib_NextArg(h, 1024ul);
+      osic_NextArg(h, 1024ul);
       if (h[0U]==0) break;
       if ((h[0U]=='-' && h[1U]) && h[2U]==0) {
          if (h[1U]=='m' || h[1U]=='r') {
             useaxudp = h[1U]=='r';
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             i = 0UL;
             if (GetIp(h, 1024ul, &i, &ipnum, &toport)<0L) {
                Error("-m or -r ip:port number", 24ul);
@@ -323,7 +323,7 @@ static void Parms(void)
          }
          else if (h[1U]=='N') {
             useaxudp = 1;
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             i = 0UL;
             if (GetIp(h, 1024ul, &i, &ipnum2, &toport2)<0L) {
                Error("-N ip:port", 11ul);
@@ -335,23 +335,23 @@ static void Parms(void)
          else if (h[1U]=='s') sumoff = 1;
          else if (h[1U]=='D') withdao = 1;
          else if (h[1U]=='I') {
-            Lib_NextArg(mycall, 100ul);
+            osic_NextArg(mycall, 100ul);
             if ((unsigned char)mycall[0U]<'0') Error("-I <mycall>", 12ul);
          }
          else if (h[1U]=='w') {
-            Lib_NextArg(via, 100ul);
+            osic_NextArg(via, 100ul);
             if ((unsigned char)via[0U]<=' ') {
                Error("-m vias like RELAY,WIDE1-1", 27ul);
             }
          }
          else if (h[1U]=='c') {
-            Lib_NextArg(comment0, 100ul);
+            osic_NextArg(comment0, 100ul);
             if (aprsstr_Length(comment0, 100ul)>40UL) {
                Error("-c <comment>  (max 40 byte)", 28ul);
             }
          }
          else if (h[1U]=='i') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             if ((unsigned char)h[0U]>' ' && (unsigned char)h[1U]>' ') {
                symt = h[0U];
                symb = h[1U];
@@ -359,7 +359,7 @@ static void Parms(void)
             else Error("-i <icon> (house /-)", 21ul);
          }
          else if (h[1U]=='t') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             i = 0UL;
             while ((h[i] && h[i]!=':') && i<1023UL) {
                ttynamee[i] = h[i];
@@ -374,36 +374,36 @@ static void Parms(void)
             }
          }
          else if (h[1U]=='b') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             i = 0UL;
             if (!GetNum(h, 1024ul, 0, &i, &btimedrive)) Error("-b <s>", 7ul);
          }
          else if (h[1U]=='0') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             i = 0UL;
             if (!GetNum(h, 1024ul, 0, &i, &btime0)) Error("-0 <s>", 7ul);
          }
          else if (h[1U]=='g') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             i = 0UL;
             if (!GetNum(h, 1024ul, 0, &i, &drivekm)) {
                Error("-g <km/h>", 10ul);
             }
          }
          else if (h[1U]=='l') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             i = 0UL;
             if (!GetNum(h, 1024ul, 0, &i, &comintval)) Error("-l <n>", 7ul);
          }
          else if (h[1U]=='f') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             i = 0UL;
             if (!GetNum(h, 1024ul, 0, &i, &comptyp) || comptyp>2UL) {
                Error("-f <format> 0=uncomp, 1=comp, 2=mic-e", 38ul);
             }
          }
          else if (h[1U]=='d') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             i = 0UL;
             if (!GetNum(h, 1024ul, 0, &i, &micessid) || micessid>7UL) {
                Error("-d <ssid> 0..7", 15ul);
@@ -1179,8 +1179,7 @@ extern int main(int argc, char **argv)
 {
    long tmp;
    aprsstr_BEGIN();
-   Lib_BEGIN(argc, argv);
-   osic_BEGIN();
+   X2C_BEGIN(&argc,argv,1,4000000l,8000000l);
    sumoff = 0;
    anyip = 1;
    junk = 1;

@@ -1796,7 +1796,6 @@ extern void aprstext_BEGIN(void)
    if (aprstext_init) return;
    aprstext_init = 1;
    useri_BEGIN();
-   osic_BEGIN();
    maptool_BEGIN();
    aprsdecode_BEGIN();
    aprsstr_BEGIN();

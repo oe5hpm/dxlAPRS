@@ -384,12 +384,12 @@ static void parms(void)
    aprsdecode_verb = 0;
    gatecnt = 0UL;
    for (;;) {
-      Lib_NextArg(h, 4096ul);
+      osic_NextArg(h, 4096ul);
       if (h[0U]==0) break;
       if ((h[0U]=='-' && h[1U]) && h[2U]==0) {
          lasth = h[1U];
          if (lasth=='x') {
-            Lib_NextArg(h, 4096ul);
+            osic_NextArg(h, 4096ul);
             i = 0UL;
             if (GetNum(h, 4096ul, &i, &n)>=0L && n>=30UL) {
                aprsdecode_initxsize = (long)n;
@@ -397,7 +397,7 @@ static void parms(void)
             else Err("-x xsize", 9ul);
          }
          else if (lasth=='y') {
-            Lib_NextArg(h, 4096ul);
+            osic_NextArg(h, 4096ul);
             i = 0UL;
             if (GetNum(h, 4096ul, &i, &n)>=0L && n>=20UL) {
                aprsdecode_initysize = (long)n;
@@ -405,7 +405,7 @@ static void parms(void)
             else Err("-y xsize", 9ul);
          }
          else if (lasth=='z') {
-            Lib_NextArg(h, 4096ul);
+            osic_NextArg(h, 4096ul);
             if (!aprsstr_StrToFix(&aprsdecode_parmfinezoom, h,
                 4096ul) || aprsdecode_parmfinezoom<=1.0f) {
                Err("-z zoomlevel", 13ul);
@@ -416,20 +416,20 @@ static void parms(void)
             aprsdecode_parmzoom = (long)n;
          }
          else if (lasth=='m') {
-            Lib_NextArg(h, 4096ul);
+            osic_NextArg(h, 4096ul);
             if (!aprsstr_StrToFix(&aprsdecode_mappos.long0, h, 4096ul)) {
                Err("-m long lat", 12ul);
             }
-            Lib_NextArg(h, 4096ul);
+            osic_NextArg(h, 4096ul);
             if (!aprsstr_StrToFix(&aprsdecode_mappos.lat, h, 4096ul)) {
                Err("-m long lat", 12ul);
             }
             aprsdecode_mappos.long0 = aprspos_rad0(aprsdecode_mappos.long0);
             aprsdecode_mappos.lat = aprspos_rad0(aprsdecode_mappos.lat);
          }
-         else if (lasth=='c') Lib_NextArg(aprsdecode_lums.configfn, 257ul);
+         else if (lasth=='c') osic_NextArg(aprsdecode_lums.configfn, 257ul);
          else if (lasth=='g') {
-            Lib_NextArg(h, 4096ul);
+            osic_NextArg(h, 4096ul);
             if (gatecnt>9UL) Err("-g gateway table full", 22ul);
             h[4095U] = 0;
             if (h[0U]=='[') {
@@ -457,7 +457,7 @@ static void parms(void)
                   ++ii;
                }
             }
-            else Lib_NextArg(h, 4096ul);
+            else osic_NextArg(h, 4096ul);
             h[4095U] = 0;
             ii = aprsstr_InStr(h, 4096ul, "#", 2ul);
             if (ii>=0L) h[ii] = 0;
@@ -519,7 +519,7 @@ ut", 52ul);
                X2C_ABORT();
             }
             if (lasth=='C') {
-               Lib_NextArg(h, 4096ul);
+               osic_NextArg(h, 4096ul);
                i = 0UL;
                if (GetNum(h, 4096ul, &i, &n)>=0L && n<=100UL) {
                   aprsdecode_lums.centering = (long)n;
@@ -527,7 +527,7 @@ ut", 52ul);
                else Err("-C center%", 11ul);
             }
             else if (lasth=='X') {
-               Lib_NextArg(h, 4096ul);
+               osic_NextArg(h, 4096ul);
                i = 0UL;
                if (GetNum(h, 4096ul, &i, &n)>=0L && n<=1024UL) {
                   aprsdecode_lums.sym = (long)n;
@@ -535,7 +535,7 @@ ut", 52ul);
                else Err("-X symbollumen", 15ul);
             }
             else if (lasth=='O') {
-               Lib_NextArg(h, 4096ul);
+               osic_NextArg(h, 4096ul);
                i = 0UL;
                if (GetNum(h, 4096ul, &i, &n)>=0L && n<=1024UL) {
                   aprsdecode_lums.obj = (long)n;
@@ -543,7 +543,7 @@ ut", 52ul);
                else Err("-O objectlumen", 15ul);
             }
             else if (lasth=='W') {
-               Lib_NextArg(h, 4096ul);
+               osic_NextArg(h, 4096ul);
                i = 0UL;
                if (GetNum(h, 4096ul, &i, &n)>=0L && n<=1024UL) {
                   aprsdecode_lums.waypoint = (long)n;
@@ -551,7 +551,7 @@ ut", 52ul);
                else Err("-W waypointlumen", 17ul);
             }
             else if (lasth=='A') {
-               Lib_NextArg(h, 4096ul);
+               osic_NextArg(h, 4096ul);
                i = 0UL;
                if (GetNum(h, 4096ul, &i, &n)>=0L && n<=1024UL) {
                   aprsdecode_lums.text = (long)n;
@@ -559,7 +559,7 @@ ut", 52ul);
                else Err("-A textlumen", 13ul);
             }
             else if (lasth=='T') {
-               Lib_NextArg(h, 4096ul);
+               osic_NextArg(h, 4096ul);
                i = 0UL;
                if (GetNum(h, 4096ul, &i, &n)>=0L && n<=1024UL) {
                   aprsdecode_lums.track = (long)n;
@@ -567,7 +567,7 @@ ut", 52ul);
                else Err("-T tracklumen", 14ul);
             }
             else if (lasth=='F') {
-               Lib_NextArg(h, 4096ul);
+               osic_NextArg(h, 4096ul);
                i = 0UL;
                if (GetNum(h, 4096ul, &i, &n)>=0L && n>0UL) {
                   aprsdecode_lums.firstdim = n*60UL;
@@ -575,7 +575,7 @@ ut", 52ul);
                else Err("-F fadetime (min)", 18ul);
             }
             else if (lasth=='V') {
-               Lib_NextArg(h, 4096ul);
+               osic_NextArg(h, 4096ul);
                i = 0UL;
                if (GetNum(h, 4096ul, &i, &n)>=0L && n>0UL) {
                   aprsdecode_lums.fps = (long)n;
@@ -583,7 +583,7 @@ ut", 52ul);
                else Err("-V fps", 7ul);
             }
             else if (lasth=='B') {
-               Lib_NextArg(h, 4096ul);
+               osic_NextArg(h, 4096ul);
                i = 0UL;
                if (GetNum(h, 4096ul, &i, &n)>=0L && n>0UL) {
                   aprsdecode_lums.maxdim = n*60UL;
@@ -591,7 +591,7 @@ ut", 52ul);
                else Err("-B blanktime (min)", 19ul);
             }
             else if (lasth=='P') {
-               Lib_NextArg(h, 4096ul);
+               osic_NextArg(h, 4096ul);
                i = 0UL;
                if (GetNum(h, 4096ul, &i, &n)>=0L && n>0UL) {
                   aprsdecode_lums.purgetime = n*60UL;
@@ -599,7 +599,7 @@ ut", 52ul);
                else Err("-P purgetime (min)", 19ul);
             }
             else if (lasth=='r') {
-               Lib_NextArg(h, 4096ul);
+               osic_NextArg(h, 4096ul);
                i = 0UL;
                if (GetNum(h, 4096ul, &i, &n)>=0L && n<=1024UL) {
                   aprsdecode_lums.rf = (long)n;
@@ -607,7 +607,7 @@ ut", 52ul);
                else Err("-r rftracklumen", 16ul);
             }
             else if (lasth=='o') {
-               Lib_NextArg(h, 4096ul);
+               osic_NextArg(h, 4096ul);
                i = 0UL;
                if (GetNum(h, 4096ul, &i, &n)>=0L && n<=1024UL) {
                   aprsdecode_lums.map = (long)n;
@@ -6868,7 +6868,6 @@ extern void aprsdecode_BEGIN(void)
    useri_BEGIN();
    aprspos_BEGIN();
    aprsstr_BEGIN();
-   osic_BEGIN();
    xosic_BEGIN();
 }
 

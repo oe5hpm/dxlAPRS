@@ -1205,7 +1205,6 @@ extern void sondeaprs_BEGIN(void)
    static int sondeaprs_init = 0;
    if (sondeaprs_init) return;
    sondeaprs_init = 1;
-   osic_BEGIN();
    aprsstr_BEGIN();
    contexts = 0;
    sondeaprs_udpsock = -1L;

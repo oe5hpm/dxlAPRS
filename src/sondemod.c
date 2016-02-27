@@ -549,29 +549,29 @@ static void Parms(void)
    X2C_COPY("/dev/dsp",9ul,soundfn,1024u);
    X2C_COPY("/dev/mixer",11ul,mixfn,1024u);
    for (;;) {
-      Lib_NextArg(h, 1024ul);
+      osic_NextArg(h, 1024ul);
       if (h[0U]==0) break;
       if ((h[0U]=='-' && h[1U]) && h[2U]==0) {
          if (h[1U]=='a') abortonsounderr = 1;
          else if (h[1U]=='c') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
             if (cnum<1UL || cnum>2UL) Error("maxchannels 1..2", 17ul);
             maxchannels = (unsigned char)(cnum-1UL);
          }
          else if (h[1U]=='D') {
-            Lib_NextArg(h1, 1024ul);
+            osic_NextArg(h1, 1024ul);
             debfd = creat(h1, 420L);
          }
          else if (h[1U]=='d') sondeaprs_dao = 1;
          else if (h[1U]=='e') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             if (!aprsstr_StrToInt(h, 1024ul, &inum)) err = 1;
             if (labs(inum)>999L) Error("equalizer -999..999", 20ul);
             chan[channel].configequalizer = inum;
          }
          else if (h[1U]=='f') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
             if (cnum<8000UL || cnum>96000UL) {
                Error("sampelrate 8000..96000", 23ul);
@@ -580,13 +580,13 @@ static void Parms(void)
          }
          else if (h[1U]=='F') sondeaprs_nofilter = 1;
          else if (h[1U]=='l') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
             if (cnum>=16UL && cnum<=4096UL) adcbuflen = cnum;
             else Error("sound buffer out of range", 26ul);
          }
          else if (h[1U]=='o') {
-            Lib_NextArg(soundfn, 1024ul);
+            osic_NextArg(soundfn, 1024ul);
             if (aprsstr_StrToCard(soundfn, 1024ul, &cnum)) {
                /* listen on UDP instead of soundcard */
                soundfn[0] = 0;
@@ -598,24 +598,24 @@ static void Parms(void)
             }
          }
          else if (h[1U]=='T') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
             maxalmage = cnum*60UL;
          }
          else if (h[1U]=='R') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
             almrequest = cnum*60UL;
          }
          else if (h[1U]=='p') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
             sendquick = cnum;
          }
-         else if (h[1U]=='t') Lib_NextArg(sondeaprs_commentfn, 1025ul);
+         else if (h[1U]=='t') osic_NextArg(sondeaprs_commentfn, 1025ul);
          else if (h[1U]=='m' || h[1U]=='r') {
             sondeaprs_sendmon = h[1U]!='r';
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             i = 0UL;
             if (sondeaprs_GetIp(h, 1024ul, &i, &sondeaprs_ipnum,
                 &sondeaprs_toport)<0L) {
@@ -625,20 +625,20 @@ static void Parms(void)
             if (sondeaprs_udpsock<0L) Error("cannot open udp socket", 23ul);
          }
          else if (h[1U]=='w') {
-            Lib_NextArg(sondeaprs_via, 100ul);
+            osic_NextArg(sondeaprs_via, 100ul);
             if ((unsigned char)sondeaprs_via[0UL]<=' ') {
                Error("-m vias like RELAY,WIDE1-1", 27ul);
             }
          }
          else if (h[1U]=='b') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             i = 0UL;
             if (!GetNum(h, 1024ul, 0, &i, &sondeaprs_beacontime)) {
                Error("-b <s>", 7ul);
             }
          }
          else if (h[1U]=='B') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             i = 0UL;
             if (!GetNum(h, 1024ul, 0, &i, &sondeaprs_lowaltbeacontime)) {
                Error("-B <s>", 7ul);
@@ -646,28 +646,28 @@ static void Parms(void)
             lowbeacon = 1;
          }
          else if (h[1U]=='A') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             i = 0UL;
             if (!GetNum(h, 1024ul, 0, &i, &sondeaprs_lowalt)) {
                Error("-A <s>", 7ul);
             }
          }
          else if (h[1U]=='I') {
-            Lib_NextArg(mycall, 100ul);
+            osic_NextArg(mycall, 100ul);
             if ((unsigned char)mycall[0U]<' ') Error("-I <mycall>", 12ul);
          }
          else if (h[1U]=='s') {
-            Lib_NextArg(semfile, 1024ul);
+            osic_NextArg(semfile, 1024ul);
             if ((unsigned char)semfile[0U]<' ') Error("-s <filename>", 14ul);
          }
          else if (h[1U]=='x') {
-            Lib_NextArg(rinexfile, 1024ul);
+            osic_NextArg(rinexfile, 1024ul);
             if ((unsigned char)rinexfile[0U]<' ') {
                Error("-x <filename>", 14ul);
             }
          }
          else if (h[1U]=='y') {
-            Lib_NextArg(yumafile, 1024ul);
+            osic_NextArg(yumafile, 1024ul);
             if ((unsigned char)yumafile[0U]<' ') {
                Error("-y <filename>", 14ul);
             }
@@ -2873,9 +2873,8 @@ extern int main(int argc, char **argv)
    if (sizeof(CALLSSID)!=11) X2C_ASSERT(0);
    sondeaprs_BEGIN();
    gpspos_BEGIN();
-   Lib_BEGIN(argc, argv);
+   X2C_BEGIN(&argc,argv,1,4000000l,8000000l);
    aprsstr_BEGIN();
-   osic_BEGIN();
    Parms();
    getst = 0UL;
    afin = 0UL;

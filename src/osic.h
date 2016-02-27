@@ -63,7 +63,8 @@ void osic_Seek(long fd, unsigned long pos);
 
 void osic_Seekcur(long fd, long rel);
 
-void osic_BEGIN(void);
+void X2C_BEGIN(int *argc, char *argv[],
+	       int gc_auto, long gc_threshold, long heap_limit);
 
 X2C_REAL RealMath_cos(X2C_REAL x);
 

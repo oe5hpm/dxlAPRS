@@ -5178,15 +5178,14 @@ END rdmountains;
 X2C_STACK_LIMIT(100000l)
 extern int main(int argc, char **argv)
 {
+   X2C_BEGIN(&argc,argv,1,4000000l,8000000l);
    aprstext_BEGIN();
    aprsstr_BEGIN();
    aprspos_BEGIN();
    aprsdecode_BEGIN();
    maptool_BEGIN();
    xosic_BEGIN();
-   osic_BEGIN();
    useri_BEGIN();
-   Lib_BEGIN(argc, argv);
    memset((char *) &useri_debugmem,(char)0,sizeof(struct useri__D0));
    useri_clrconfig();
    aprsdecode_initparms();

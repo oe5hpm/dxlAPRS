@@ -84,14 +84,12 @@ XLIBS		= -L/usr/X11R6/lib -lXext -lX11
 endif
 # ------------------ objects enumeration ------------------
 OBJ_COMMON = \
-	Lib.o \
 	Select.o \
 	aprspos.o \
 	aprsstr.o \
 	osic.o \
 	ptty.o \
 	soundctl.o \
-	symlink.o \
 	tcp.o \
 	udp.o
 

@@ -33,9 +33,6 @@
 #ifndef aprsstr_H_
 #include "aprsstr.h"
 #endif
-#ifndef symlink_H_
-#include "symlink.h"
-#endif
 #ifndef mlib_H_
 #include "mlib.h"
 #endif
@@ -632,7 +629,7 @@ static long Opentty(char linkname[], unsigned long linkname_len)
    ttypar(ptsname, 4096ul);
    /*make link*/
    remove(linkname);
-   if (symblink((char *)ptsname, (char *)linkname)) {
+   if (osic_symblink((char *)ptsname, (char *)linkname)) {
       osic_WrStr("cannot create link <", 21ul);
       osic_WrStr(linkname, linkname_len);
       osic_WrStrLn(">, starting without kiss interface", 35ul);
@@ -938,7 +935,7 @@ static void Parms(void)
    maxsoundbufs = 10UL;
 
    for (;;) {
-      Lib_NextArg(h, 1024ul);
+      osic_NextArg(h, 1024ul);
       if (h[0U]==0) {
 	      printf("have all.\n");
 	      break;
@@ -950,7 +947,7 @@ static void Parms(void)
             else Error("need modem number -M before -a", 31ul);
          }
          else if (h[1U]=='b') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             if (modem>=0L) {
                if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
                if (cnum>=adcrate) {
@@ -968,20 +965,20 @@ static void Parms(void)
                badsounddriver = 1;
             }
             else {
-               Lib_NextArg(h, 1024ul);
+               osic_NextArg(h, 1024ul);
                if (!aprsstr_StrToInt(h, 1024ul, &inum)) err = 1;
                if (modem>=0L) modpar[modem].bert = inum*8000L;
                else Error("need modem number -M before -B", 31ul);
             }
          }
          else if (h[1U]=='C') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
             if (cnum>1UL) Error("channel 0 to 1", 15ul);
             channel = (long)cnum;
          }
          else if (h[1U]=='c') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
             if (modem>=0L) {
                if (cnum>(unsigned long)maxchannels) {
@@ -995,7 +992,7 @@ static void Parms(void)
             }
          }
          else if (h[1U]=='D') {
-            Lib_NextArg(h1, 1024ul);
+            osic_NextArg(h1, 1024ul);
             debfd = creat(h1, 420L);
             inum = 0L;
             while (inum<1023L && h1[inum]) ++inum;
@@ -1003,7 +1000,7 @@ static void Parms(void)
                 && h1[inum-2L]=='x') && h1[inum-1L]=='t';
          }
          else if (h[1U]=='d') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
             if (modem>=0L) {
                modpar[modem].squelchdcd = X2C_DIVR((float)cnum,400.0f);
@@ -1011,7 +1008,7 @@ static void Parms(void)
             else Error("need modem number -M before -d", 31ul);
          }
          else if (h[1U]=='e') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             if (modem>=0L) {
                if (!aprsstr_StrToInt(h, 1024ul, &inum)) err = 1;
                if (labs(inum)>999L) Error("equalizer -999..999", 20ul);
@@ -1025,7 +1022,7 @@ static void Parms(void)
             }
          }
          else if (h[1U]=='f') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
             if (modem>=0L) modpar[modem].configafskmid = cnum;
             else if (channel>=0L) {
@@ -1042,7 +1039,7 @@ static void Parms(void)
          else if (h[1U]=='g') {
             if (modem>=0L) modpar[modem].scramb = 1;
             else if (channel>=0L) {
-               Lib_NextArg(h, 1024ul);
+               osic_NextArg(h, 1024ul);
                if (!aprsstr_StrToCard(h, 1024ul, &cnum) || cnum>999UL) {
                   Error("-g <ms>", 8ul);
                }
@@ -1051,17 +1048,17 @@ static void Parms(void)
             else Error("need modem number -M before -g", 31ul);
          }
          else if (h[1U]=='H') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
             if (modem>=0L) modpar[modem].afskhighpass = (float)cnum*0.01f;
             else Error("need modem number -M before -H", 31ul);
          }
          else if (h[1U]=='i') {
             if (modem>=0L) modpar[modem].kissignore = 1;
-            else Lib_NextArg(pipefn, 1024ul);
+            else osic_NextArg(pipefn, 1024ul);
          }
          else if (h[1U]=='k') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
             if (modem>=0L) {
                if (cnum>7UL) Error("kissports 0..7", 15ul);
@@ -1070,20 +1067,20 @@ static void Parms(void)
             else kissbufs = cnum;
          }
          else if (h[1U]=='l') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
             if (cnum>=16UL && cnum<=4096UL) adcbuflen = cnum;
             else Error("sound buffer out of range", 26ul);
          }
          else if (h[1U]=='M') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
             if (cnum>7UL) Error(">maxmodems", 11ul);
             modem = (long)cnum;
             modpar[modem].configured = 1;
          }
          else if (h[1U]=='m') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             if (modem<0L && channel<0L) {
                while (h[0U]) {
                   ExtractWord(h1, 1024ul, h, 1024ul);
@@ -1106,21 +1103,21 @@ static void Parms(void)
             }
          }
          else if (h[1U]=='n') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
             if (modem>=0L) modpar[modem].confignyquist = cnum;
             else Error("need modem number -M before -n", 31ul);
          }
-         else if (h[1U]=='o') Lib_NextArg(soundfn, 1024ul);
+         else if (h[1U]=='o') osic_NextArg(soundfn, 1024ul);
          else if (h[1U]=='p') {
             if (modem>=0L) {
-               Lib_NextArg(h, 1024ul);
+               osic_NextArg(h, 1024ul);
                if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
                modpar[modem].pllshift = (long)(cnum*256UL);
             }
             else if (channel>=0L) {
-               Lib_NextArg(h1, 1024ul);
-               Lib_NextArg(h, 1024ul);
+               osic_NextArg(h1, 1024ul);
+               osic_NextArg(h, 1024ul);
                if (!aprsstr_StrToInt(h, 1024ul, &inum)) err = 1;
                inum = labs(inum)+1L;
                if (h[0U]=='-') inum = -inum;
@@ -1129,14 +1126,14 @@ static void Parms(void)
          }
          else if (h[1U]=='q') {
             if (modem>=0L) {
-               Lib_NextArg(h, 1024ul);
+               osic_NextArg(h, 1024ul);
                if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
                modpar[modem].leveldcd = (long)cnum;
             }
             else Error("need modem number -M before -q", 31ul);
          }
          else if (h[1U]=='r') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
             if (channel>=0L) {
                if (!aprsstr_StrToCard(h, 1024ul,
@@ -1145,14 +1142,14 @@ static void Parms(void)
             else Error("need channel number -C before -r", 33ul);
          }
          else if (h[1U]=='s') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
             if (modem>=0L) modpar[modem].configafskshift = cnum;
             else fragmentsize = cnum;
          }
          else if (h[1U]=='t') {
             if (modem>=0L) {
-               Lib_NextArg(h, 1024ul);
+               osic_NextArg(h, 1024ul);
                if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
                modpar[modem].configtxdel = cnum;
             }
@@ -1165,7 +1162,7 @@ static void Parms(void)
                modpar[modem].axudp2 = h[1U]!='U'; /* switch on axudp2 */
                modpar[modem].dcdmsgs = h[1U]=='P';
                 /* send dcd change & txbuffer empty messages*/
-               Lib_NextArg(h, 1024ul);
+               osic_NextArg(h, 1024ul);
                { /* with */
                   struct MPAR * anonym1 = &modpar[modem];
                   if (GetIp(h, 1024ul, &anonym1->udpip, &anonym1->udpport,
@@ -1177,7 +1174,7 @@ static void Parms(void)
          }
          else if (h[1U]=='v') {
             if (modem>=0L) {
-               Lib_NextArg(h, 1024ul);
+               osic_NextArg(h, 1024ul);
                if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
                if (cnum>100UL) cnum = 100UL;
                modpar[modem].txvolum = (float)cnum*250.0f;
@@ -1186,7 +1183,7 @@ static void Parms(void)
          }
          else if (h[1U]=='T') {
             if (modem>=0L) {
-               Lib_NextArg(h, 1024ul);
+               osic_NextArg(h, 1024ul);
                if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
                modpar[modem].timeout = cnum;
             }
@@ -1194,7 +1191,7 @@ static void Parms(void)
          }
          else if (h[1U]=='w') {
             if (modem>=0L) {
-               Lib_NextArg(h, 1024ul);
+               osic_NextArg(h, 1024ul);
                if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
                modpar[modem].txdelpattern = cnum;
             }
@@ -1202,14 +1199,14 @@ static void Parms(void)
          }
          else if (h[1U]=='x') {
             if (modem>=0L) {
-               Lib_NextArg(h, 1024ul);
+               osic_NextArg(h, 1024ul);
                if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
                modpar[modem].configtxtail = cnum;
             }
             else Error("need modem number -M before -x", 31ul);
          }
          else if (h[1U]=='z') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
             if (modem>=0L) {
                modpar[modem].clamp = X2C_DIVR((float)cnum,1000.0f);
@@ -2510,7 +2507,7 @@ static void sendmodem(void)
                /* data ptt off */
                anonym->tbytec = 0UL;
                anonym->state = afskmodem_slotwait;
-               anonym->addrandom = 2UL+(unsigned long)X2C_TRUNCC(Lib_Random()
+               anonym->addrandom = 2UL+(unsigned long)X2C_TRUNCC(osic_Random()
                 *(double)anonym->persist,0UL,X2C_max_longcard);
                 /* store ramdom wait */
                anonym->dcdclock = clock0; /* start txwait after we sent */
@@ -2711,9 +2708,8 @@ X2C_STACK_LIMIT(100000l)
 extern int main(int argc, char *argv[])
 {
    if (sizeof(FILENAME)!=1024) X2C_ASSERT(0);
-   Lib_BEGIN(argc, argv);
+   X2C_BEGIN(&argc,argv,1,4000000l,8000000l);
    aprsstr_BEGIN();
-   osic_BEGIN();
    signal(SIGTERM, afskmodemcleanup);
    signal(SIGINT, afskmodemcleanup);
    memset((char *)modpar,(char)0,sizeof(struct MPAR [8]));

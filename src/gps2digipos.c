@@ -198,7 +198,7 @@ static void Parms(void)
    unsigned long i;
    err = 0;
    for (;;) {
-      Lib_NextArg(h, 1024ul);
+      osic_NextArg(h, 1024ul);
       if (h[0U]==0) break;
       if ((h[0U]=='-' && h[1U]) && h[2U]==0) {
          if (h[1U]=='u') usbrobust = 0;
@@ -213,11 +213,11 @@ static void Parms(void)
                       IF h[1]>" " THEN symb:=h[1] ELSE symb:=0C END;
                     ELSE Error("-i <icon> (house /-)") END;
             */
-            Lib_NextArg(basefilename, 1024ul);
+            osic_NextArg(basefilename, 1024ul);
             if (basefilename[0U]==0) Error("-f filename", 12ul);
          }
          else if (h[1U]=='t') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             i = 0UL;
             while ((h[i] && h[i]!=':') && i<1023UL) {
                ttynamee[i] = h[i];
@@ -232,7 +232,7 @@ static void Parms(void)
             }
          }
          else if (h[1U]=='m') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             i = 0UL;
             if (!GetNum(h, 1024ul, 0, &i, &mediantime)) {
                Error("-m <seconds>", 13ul);
@@ -244,7 +244,7 @@ static void Parms(void)
             }
          }
          else if (h[1U]=='f') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             i = 0UL;
             if (!GetNum(h, 1024ul, 0, &i, &comptyp) || comptyp>2UL) {
                Error("-f <format> 0=uncomp, 1=comp, 2=mic-e", 38ul);
@@ -767,8 +767,7 @@ extern int main(int argc, char **argv)
 {
    long tmp;
    aprsstr_BEGIN();
-   Lib_BEGIN(argc, argv);
-   osic_BEGIN();
+   X2C_BEGIN(&argc,argv,1,4000000l,8000000l);
    sumoff = 0;
    junk = 1;
    posok = 0;

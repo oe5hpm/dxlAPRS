@@ -758,7 +758,7 @@ static void Parms(void)
    X2C_COPY("/dev/dsp",9ul,soundfn,1024u);
    X2C_COPY("/dev/mixer",11ul,mixfn,1024u);
    for (;;) {
-      Lib_NextArg(h, 1024ul);
+      osic_NextArg(h, 1024ul);
       if (h[0U]==0) break;
       if ((h[0U]=='-' && h[1U]) && h[2U]==0) {
          if (h[1U]=='a') abortonsounderr = 1;
@@ -811,31 +811,31 @@ static void Parms(void)
             }
          }
          else if (h[1U]=='c') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
             if (cnum>=15UL) Error("maxchannels 0..max", 19ul);
             cfgchannels = cnum;
             if (cfgchannels>0UL) maxchannels = cfgchannels-1UL;
          }
          else if (h[1U]=='C') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
             if (cnum>1UL) Error("channel 0 to max", 17ul);
             channel = cnum;
             chanset = 1;
          }
          else if (h[1U]=='D') {
-            Lib_NextArg(h1, 1024ul);
+            osic_NextArg(h1, 1024ul);
             debfd = creat(h1, 420L);
          }
          else if (h[1U]=='e') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             if (!aprsstr_StrToInt(h, 1024ul, &inum)) err = 1;
             if (labs(inum)>999L) Error("equalizer -999..999", 20ul);
             chan[channel].configequalizer = inum;
          }
          else if (h[1U]=='f') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
             if (cnum<8000UL || cnum>96000UL) {
                Error("sampelrate 8000..96000", 23ul);
@@ -843,19 +843,19 @@ static void Parms(void)
             adcrate = cnum;
          }
          else if (h[1U]=='F') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
             chan[channel].c34.configafskmid = cnum;
          }
          else if (h[1U]=='l') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
             if (cnum>=16UL && cnum<=4096UL) adcbuflen = cnum;
             else Error("sound buffer out of range", 26ul);
          }
-         else if (h[1U]=='o') Lib_NextArg(soundfn, 1024ul);
+         else if (h[1U]=='o') osic_NextArg(soundfn, 1024ul);
          else if (h[1U]=='I') {
-            Lib_NextArg(mycall, 11ul);
+            osic_NextArg(mycall, 11ul);
             if (!packcall(mycall, 11ul, &myc, &mys)) {
                Error("-I illegall Callsign + ssid", 28ul);
             }
@@ -875,7 +875,7 @@ static void Parms(void)
             }
          }
          else if (h[1U]=='u') {
-            Lib_NextArg(h, 1024ul);
+            osic_NextArg(h, 1024ul);
             Storage_ALLOCATE((X2C_ADDRESS *) &utx, sizeof(struct UDPTX));
             if (utx==0) Error("udp socket out of memory", 25ul);
             utx->udpfd = GetIp(h, 1024ul, &utx->ip, &utx->destport);
@@ -2637,9 +2637,8 @@ extern int main(int argc, char **argv)
 {
    if (sizeof(FILENAME)!=1024) X2C_ASSERT(0);
    if (sizeof(CNAMESTR)!=9) X2C_ASSERT(0);
-   Lib_BEGIN(argc, argv);
+   X2C_BEGIN(&argc,argv,1,4000000l,8000000l);
    aprsstr_BEGIN();
-   osic_BEGIN();
    /*  Gencrctab; */
    memset((char *)chan,(char)0,sizeof(struct CHAN [16]));
    Parms();

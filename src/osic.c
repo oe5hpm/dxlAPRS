@@ -18,7 +18,6 @@
 #include <assert.h>
 #include <time.h>
 
-#include "Lib.h"
 #include "osic.h"
 
 #define DEBUG
@@ -29,6 +28,9 @@
 #endif
 
 #define FNLENCHECK	1
+
+static int osic_argc = 0, argc_delivered = 0;
+static char **osic_argv;
 
 void osic_WrLn(void)
 {
@@ -76,7 +78,6 @@ long osic_OpenAppendLong(char fn[], unsigned long fn_len)
 	return open(fn, O_WRONLY | O_APPEND | O_LARGEFILE);
 }
 
-
 long osic_OpenAppend(char fn[], unsigned long fn_len)
 {
 	if (FNLENCHECK && strnlen(fn, fn_len) > fn_len)
@@ -111,12 +112,14 @@ long osic_OpenRW(char fn[], unsigned long fn_len)
 		return -1;
 	return open(fn, O_RDWR);
 }
+
 long osic_OpenNONBLOCK(char fn[], unsigned long fn_len)
 {
 	if (FNLENCHECK && strnlen(fn, fn_len) > fn_len)
 		return -1;
 	return open(fn, O_RDWR | O_NONBLOCK);
 }
+
 char osic_FdValid(long fd)
 {
 	return (fd >= 0);
@@ -133,8 +136,8 @@ void osic_CloseSock(long fd)
 }
 
 long osic_RdBin(long fd,
-		      char buf[], unsigned long buf_len,
-		      unsigned long size)
+		char buf[], unsigned long buf_len,
+		unsigned long size)
 {
 	if (size > (buf_len-1) + 1)
 		size = (buf_len-1)+1;
@@ -142,8 +145,8 @@ long osic_RdBin(long fd,
 }
 
 void osic_WrBin(long fd, char buf[],
-		      unsigned long buf_len,
-		      unsigned long size)
+		unsigned long buf_len,
+		unsigned long size)
 {
 	if (size > (buf_len-1)+1)
 		size = (buf_len-1)+1;
@@ -151,7 +154,7 @@ void osic_WrBin(long fd, char buf[],
 }
 
 void osic_Rename(char fname[], unsigned long fname_len,
-		       char newname[], unsigned long newname_len)
+		 char newname[], unsigned long newname_len)
 {
 	if (FNLENCHECK && strnlen(fname, fname_len) >= fname_len)
 		return;
@@ -173,15 +176,40 @@ void osic_Seek(long fd, unsigned long pos)
 	lseek(fd, (long)pos, SEEK_SET);
 }
 
-
 void osic_Seekcur(long fd, long rel)
 {
 	if (lseek64(fd, rel, (unsigned long)SEEK_CUR) < 0)
 		lseek(fd, 0, SEEK_SET);
 }
 
-void osic_BEGIN(void)
+void osic_NextArg(char s[], unsigned long s_len)
 {
+	if (argc_delivered >= osic_argc-1) {
+		s[0] = 0;
+		return;
+	} else {
+		strncpy(s, osic_argv[argc_delivered+1], s_len);
+	}
+	argc_delivered++;
+}
+
+void osic_Fill(X2C_ADDRESS buf, unsigned long len, char byte)
+{
+	memset(buf, byte, len);
+}
+
+double osic_Random(void)
+{
+	return rand();
+}
+
+void X2C_BEGIN(int *argc, char *argv[],
+	       int gc_auto, long gc_threshold, long heap_limit)
+{
+	if (osic_argc != 0)
+		return;
+	osic_argc = *argc;
+	osic_argv = argv;
 }
 
 void X2C_PCOPY(void **ppcpy, size_t size)
@@ -197,8 +225,7 @@ void X2C_PCOPY(void **ppcpy, size_t size)
 
 void X2C_PFREE(void *p)
 {
-	if (p == NULL)
-		return;
+	assert(p);
 	free(p);
 }
 
@@ -217,6 +244,7 @@ X2C_INT32 X2C_TRUNCI(X2C_LONGREAL x, X2C_INT32 min0, X2C_INT32 max0)
 	}
 	return i;
 }
+
 X2C_CARD32 X2C_TRUNCC(X2C_LONGREAL x, X2C_CARD32 min0, X2C_CARD32 max0)
 {
 	X2C_CARD32 i;
@@ -256,7 +284,6 @@ X2C_INT32 X2C_DIV_F(X2C_INT32 a, X2C_INT32 b)
 		--c;
 	return c;
 }
-
 
 X2C_pVOID X2C_COPY(void *src, size_t src_len, void *dst, size_t dst_len)
 {
@@ -312,7 +339,6 @@ X2C_REAL RealMath_power(X2C_REAL base, X2C_REAL exponent)
 		assert(0);
 	return pow(base, exponent);
 }
-
 
 void X2C_EXIT(void)
 {
@@ -446,6 +472,11 @@ void FileSys_Rename(X2C_CHAR fname[], X2C_CARD32 fname_len,
 		*done = 0;
 }
 
+int osic_symblink(char *existing, char *newname)
+{
+	return symlink(existing, newname);
+}
+
 struct xrMM_Dynarr {
 	X2C_ADDRESS a;
 	size_t n[15];
@@ -453,7 +484,7 @@ struct xrMM_Dynarr {
 
 size_t xrMM_DynarrDescSize(size_t i)
 {
-	return 8 + i * 2 * 4;
+	return (sizeof(X2C_ADDRESS) + i * sizeof(size_t) * 2);
 }
 
 void X2C_InitDesc(struct xrMM_Dynarr *d, size_t *size, size_t lens[], size_t dims)
@@ -466,7 +497,7 @@ void X2C_InitDesc(struct xrMM_Dynarr *d, size_t *size, size_t lens[], size_t dim
 	i = 1;
 	if (i <= tmp) {
 		for (;; i++) {
-			*size =  *size*lens[dims-i];
+			*size =  *size * lens[dims-i];
 			d->n[i * 2 - 1] = *size;
 			d->n[(dims - i) * 2 - 2] = lens[i];
 			if (i == tmp)
@@ -481,14 +512,18 @@ void X2C_DYNALLOCATE(X2C_ADDRESS *a, size_t size, size_t lens[], size_t dims)
 	struct xrMM_Dynarr *desc;
 
 	*a = 0;
-	Storage_ALLOCATE((X2C_ADDRESS *)&desc, xrMM_DynarrDescSize(dims));
+	desc = malloc(xrMM_DynarrDescSize(dims));
 	if (desc) {
 		X2C_InitDesc(desc, &size, lens, dims);
-		Storage_ALLOCATE(&desc->a, size);
-		if (desc->a == 0)
-			free((X2C_ADDRESS *)&desc);
-		else
+		desc->a = malloc(size);
+		if (desc->a == 0) {
+			free(desc);
+		} else {
+			DBG("%s: %p (%d bytes) with child %p (%d bytes)\n",
+			    __func__, desc, xrMM_DynarrDescSize(dims),
+			    desc->a, size);
 			*a = (X2C_ADDRESS)desc;
+		}
 	}
 }
 
@@ -498,8 +533,9 @@ void X2C_DYNDEALLOCATE(X2C_ADDRESS *a)
 
 	if (*a) {
 		d = (struct xrMM_Dynarr *)*a;
-		free(&d->a);
-		free(a);
+		DBG("%s: have %p with child %p\n", __func__, d, d->a);
+		free(d->a);
+		free(d);
 	}
 }
 
