@@ -17,25 +17,16 @@
 #include "udp.h"
 #endif
 #ifndef osi_H_
-#include "osi.h"
-#endif
-#ifndef RealMath_H_
-#include "RealMath.h"
+#include "osic.h"
 #endif
 #ifndef Lib_H_
 #include "Lib.h"
-#endif
-#ifndef InOut_H_
-#include "InOut.h"
 #endif
 #ifndef mlib_H_
 #include "mlib.h"
 #endif
 #ifndef Select_H_
 #include "Select.h"
-#endif
-#ifndef TimeConv_H_
-#include "TimeConv.h"
 #endif
 #ifndef aprsstr_H_
 #include "aprsstr.h"
@@ -160,9 +151,9 @@ static struct termios saved;
 static void Error(char text[], unsigned long text_len)
 {
    X2C_PCOPY((void **)&text,text_len);
-   InOut_WriteString("aprstracker: ", 14ul);
-   InOut_WriteString(text, text_len);
-   osi_WrStrLn(" error abort", 13ul);
+   osic_WrStr("aprstracker: ", 14ul);
+   osic_WrStr(text, text_len);
+   osic_WrStrLn(" error abort", 13ul);
    X2C_ABORT();
    X2C_PFREE(text);
 } /* end Error() */
@@ -277,13 +268,13 @@ static void SetComMode(long fd, unsigned long baud0)
 static void opentty(void)
 {
    for (;;) {
-      tty = osi_OpenRW(ttynamee, 1024ul);
+      tty = osic_OpenRW(ttynamee, 1024ul);
       if (tty>=0L) {
          SetComMode(tty, baud);
          break;
       }
       if (!usbrobust) Error("tty open", 9ul);
-      if (verb) osi_WrStrLn("tty open error", 15ul);
+      if (verb) osic_WrStrLn("tty open error", 15ul);
       usleep(1000000UL);
    }
 } /* end opentty() */
@@ -292,7 +283,7 @@ static void opentty(void)
 static void testtty(long len0, char * err)
 {
    if (len0<=0L) {
-      osi_Close(tty);
+      osic_Close(tty);
       usleep(1000000UL);
       opentty();
       *err = 1;
@@ -421,59 +412,59 @@ static void Parms(void)
          else if (h[1U]=='v') verb = 1;
          else {
             if (h[1U]=='h') {
-               osi_WrLn();
-               osi_WrStrLn("Read serial GPS and make normal/compressed/mic-e \
+               osic_WrLn();
+               osic_WrStrLn("Read serial GPS and make normal/compressed/mic-e \
 Beacon as AXUDP or monitor", 76ul);
-               osi_WrStrLn(" -0 <s>                            standing Beaco\
+               osic_WrStrLn(" -0 <s>                            standing Beaco\
 n Time in Seconds (180)", 73ul);
-               osi_WrStrLn(" -a                                altitude OFF",
+               osic_WrStrLn(" -a                                altitude OFF",
                  48ul);
-               osi_WrStrLn(" -b <s>                            driving Beacon\
+               osic_WrStrLn(" -b <s>                            driving Beacon\
  Time in Seconds (15)", 71ul);
-               osi_WrStrLn(" -c <commentstring>                APRS Comment (\
+               osic_WrStrLn(" -c <commentstring>                APRS Comment (\
 max 40 char)", 62ul);
-               osi_WrStrLn("                                     insert time \
+               osic_WrStrLn("                                     insert time \
 hhmmss: \\\\h", 61ul);
-               osi_WrStrLn("                                     insert time \
+               osic_WrStrLn("                                     insert time \
 ddhhmm: \\\\z", 61ul);
-               osi_WrStrLn("                                     insert file \
+               osic_WrStrLn("                                     insert file \
       : \\\\:filename:", 70ul);
-               osi_WrStrLn("                                     insert \\\\ \
+               osic_WrStrLn("                                     insert \\\\ \
         : \\\\\\", 61ul);
-               osi_WrStrLn(" -d <x>                            Destination Ca\
+               osic_WrStrLn(" -d <x>                            Destination Ca\
 ll SSID 0..7", 62ul);
-               osi_WrStrLn(" -D                                DAO Extension \
+               osic_WrStrLn(" -D                                DAO Extension \
 on for 20cm Resolution", 72ul);
-               osi_WrStrLn(" -f <x>                            format 0=norma\
+               osic_WrStrLn(" -f <x>                            format 0=norma\
 l 1=compressed 2=mic-e (0)", 76ul);
-               osi_WrStrLn(" -g <km/h>                         min. Speed for\
+               osic_WrStrLn(" -g <km/h>                         min. Speed for\
  driving Beacon Time (4)", 74ul);
-               osi_WrStrLn(" -h                                this", 40ul);
-               osi_WrStrLn(" -I <mycall>                       Mycall with SS\
+               osic_WrStrLn(" -h                                this", 40ul);
+               osic_WrStrLn(" -I <mycall>                       Mycall with SS\
 ID like NOCALL-15", 67ul);
-               osi_WrStrLn(" -i <icon>                         2 Icon chars \\
+               osic_WrStrLn(" -i <icon>                         2 Icon chars \\
 "/-\" (House), \"/>\" (Car)...(//)", 80ul);
-               osi_WrStrLn(" -k                                Speed/Course O\
+               osic_WrStrLn(" -k                                Speed/Course O\
 FF (not in mic-e)", 67ul);
-               osi_WrStrLn(" -l <n>                            every n Beacon\
+               osic_WrStrLn(" -l <n>                            every n Beacon\
 s send one with Comment", 73ul);
-               osi_WrStrLn(" -m <x.x.x.x:destport>             use Monitor UD\
+               osic_WrStrLn(" -m <x.x.x.x:destport>             use Monitor UD\
 P format :port for localhost", 78ul);
-               osi_WrStrLn(" -N <x.x.x.x:destport>             send Position \
+               osic_WrStrLn(" -N <x.x.x.x:destport>             send Position \
 AXUDP every 2s eg. to aprsmap", 79ul);
-               osi_WrStrLn(" -r <x.x.x.x:destport>             use AXUDP (to \
+               osic_WrStrLn(" -r <x.x.x.x:destport>             use AXUDP (to \
 Soundmodem)", 61ul);
-               osi_WrStrLn(" -s                                GPS Checksum c\
+               osic_WrStrLn(" -s                                GPS Checksum c\
 heck OFF", 58ul);
-               osi_WrStrLn(" -t <tty>:<baud>                   (/dev/ttyS0:48\
+               osic_WrStrLn(" -t <tty>:<baud>                   (/dev/ttyS0:48\
 00)", 53ul);
-               osi_WrStrLn(" -u                                not retry unti\
+               osic_WrStrLn(" -u                                not retry unti\
 l open removable USB tty", 74ul);
-               osi_WrStrLn(" -v                                verbous",
+               osic_WrStrLn(" -v                                verbous",
                 43ul);
-               osi_WrStrLn(" -w <viapath>                      via Path like \
+               osic_WrStrLn(" -w <viapath>                      via Path like \
 RELAY,WIDE1-1", 63ul);
-               osi_WrLn();
+               osic_WrLn();
                X2C_ABORT();
             }
             err = 1;
@@ -491,9 +482,9 @@ RELAY,WIDE1-1", 63ul);
       Error("DAO Option not with compressed Format", 38ul);
    }
    if (err) {
-      InOut_WriteString(">", 2ul);
-      InOut_WriteString(h, 1024ul);
-      osi_WrStrLn("< use -h", 9ul);
+      osic_WrStr(">", 2ul);
+      osic_WrStr(h, 1024ul);
+      osic_WrStrLn("< use -h", 9ul);
       X2C_ABORT();
    }
 } /* end Parms() */
@@ -616,10 +607,10 @@ static void beaconmacros(char s[], unsigned long s_len)
                aprsstr_Append(fn, 1024ul, (char *) &s[i], 1u/1u);
                ++i;
             }
-            f = osi_OpenRead(fn, 1024ul);
-            if (osi_FdValid(f)) {
-               len0 = osi_RdBin(f, (char *)ds, 256u/1u, 255UL);
-               osi_Close(f);
+            f = osic_OpenRead(fn, 1024ul);
+            if (osic_FdValid(f)) {
+               len0 = osic_RdBin(f, (char *)ds, 256u/1u, 255UL);
+               osic_Close(f);
                j = 0L;
                while (((j<len0 && ds[j]!='\015') && ds[j]!='\012') && ds[j]) {
                   aprsstr_Append(ns, 256ul, (char *) &ds[j], 1u/1u);
@@ -630,7 +621,7 @@ static void beaconmacros(char s[], unsigned long s_len)
                aprsstr_Assign(s, s_len, "beacon macro file not readable ",
                 32ul);
                aprsstr_Append(s, s_len, fn, 1024ul);
-               if (verb) osi_WrStrLn(s, s_len);
+               if (verb) osic_WrStrLn(s, s_len);
                s[0UL] = 0;
                return;
             }
@@ -640,7 +631,7 @@ static void beaconmacros(char s[], unsigned long s_len)
             aprsstr_Assign(s, s_len, "bad beacon macro ", 18ul);
             aprsstr_Append(s, s_len, ns, 256ul);
             aprsstr_Append(s, s_len, "???", 4ul);
-            if (verb) osi_WrStrLn(s, s_len);
+            if (verb) osic_WrStrLn(s, s_len);
             s[0UL] = 0;
             return;
          }
@@ -832,7 +823,7 @@ static char checksum(const char b[], unsigned long b_len,
       if (b[i+1UL]!=Hex((unsigned long)cs/16UL)
                 || b[i+2UL]!=Hex((unsigned long)cs&15UL)) ok0 = 0;
    }
-   if (verb && !ok0) osi_WrStrLn("GPS Checksum Error", 19ul);
+   if (verb && !ok0) osic_WrStrLn("GPS Checksum Error", 19ul);
    return ok0;
 } /* end checksum() */
 
@@ -843,10 +834,10 @@ static void showline(const char b[], unsigned long b_len,
    unsigned long i;
    i = 0UL;
    while (i<len0) {
-      InOut_WriteString((char *) &b[i], 1u/1u);
+      osic_WrStr((char *) &b[i], 1u/1u);
       ++i;
    }
-   osi_WrLn();
+   osic_WrLn();
 } /* end showline() */
 
 
@@ -1159,15 +1150,15 @@ static void sendaprs(double lat0, double long1, double alt0, double course0,
       else sendudp(b, 201ul, (long)(aprsstr_Length(b, 201ul)+1UL), ip, port);
    }
    if (verb) {
-      osi_WrFixed((float)lat0, 6L, 10UL);
-      osi_WrFixed((float)long1, 6L, 10UL);
-      osi_WrFixed((float)speed0, 1L, 10UL);
-      InOut_WriteString("km/h", 5ul);
-      osi_WrFixed((float)course0, 1L, 7UL);
-      InOut_WriteString("deg", 4ul);
-      osi_WrFixed((float)alt0, 1L, 10UL);
-      osi_WrStrLn("m", 2ul);
-      osi_WrStrLn(b, 201ul);
+      osic_WrFixed((float)lat0, 6L, 10UL);
+      osic_WrFixed((float)long1, 6L, 10UL);
+      osic_WrFixed((float)speed0, 1L, 10UL);
+      osic_WrStr("km/h", 5ul);
+      osic_WrFixed((float)course0, 1L, 7UL);
+      osic_WrStr("deg", 4ul);
+      osic_WrFixed((float)alt0, 1L, 10UL);
+      osic_WrStrLn("m", 2ul);
+      osic_WrStrLn(b, 201ul);
    }
    X2C_PFREE(comm);
 } /* end sendaprs() */
@@ -1187,12 +1178,9 @@ X2C_STACK_LIMIT(100000l)
 extern int main(int argc, char **argv)
 {
    long tmp;
-   X2C_BEGIN(&argc,argv,1,4000000l,8000000l);
    aprsstr_BEGIN();
-   RealMath_BEGIN();
-   TimeConv_BEGIN();
-   Lib_BEGIN();
-   osi_BEGIN();
+   Lib_BEGIN(argc, argv);
+   osic_BEGIN();
    sumoff = 0;
    anyip = 1;
    junk = 1;
@@ -1229,7 +1217,7 @@ extern int main(int argc, char **argv)
    useaxudp = 1;
    Parms();
    if (aprsstr_Length(mycall, 100ul)<3UL) {
-      osi_WrStrLn("no tx witout <mycall>", 22ul);
+      osic_WrStrLn("no tx witout <mycall>", 22ul);
    }
    /*Gencrctab; */
    opentty();
@@ -1241,7 +1229,7 @@ extern int main(int argc, char **argv)
       /*  fdsetr(udpsock); */
       if (selectr(0UL, 0UL)>=0L) {
          if (issetr((unsigned long)tty)) {
-            len = osi_RdBin(tty, (char *)tbuf, 1024u/1u, 1024UL);
+            len = osic_RdBin(tty, (char *)tbuf, 1024u/1u, 1024UL);
             testtty(len, &junk);
             if (!junk) {
                tmp = len-1L;

@@ -24,16 +24,10 @@
 #endif
 #include <fcntl.h>
 #ifndef osi_H_
-#include "osi.h"
-#endif
-#ifndef RealMath_H_
-#include "RealMath.h"
+#include "osic.h"
 #endif
 #ifndef Lib_H_
 #include "Lib.h"
-#endif
-#ifndef InOut_H_
-#include "InOut.h"
 #endif
 #include <stdio.h>
 #ifndef aprsstr_H_
@@ -47,12 +41,6 @@
 #endif
 #ifndef Select_H_
 #include "Select.h"
-#endif
-#ifndef Storage_H_
-#include "Storage.h"
-#endif
-#ifndef TimeConv_H_
-#include "TimeConv.h"
 #endif
 #include <unistd.h>
 #ifndef afskmodemptt_H_
@@ -327,8 +315,8 @@ static char debb[81];
 static void Error(char text[], unsigned long text_len)
 {
    X2C_PCOPY((void **)&text,text_len);
-   InOut_WriteString(text, text_len);
-   osi_WrStrLn(" error abort", 13ul);
+   osic_WrStr(text, text_len);
+   osic_WrStrLn(" error abort", 13ul);
    X2C_ABORT();
    X2C_PFREE(text);
 } /* end Error() */
@@ -558,13 +546,13 @@ static void SetMixer(char mixfn[], unsigned long mixfn_len,
 {
    long fd;
    X2C_PCOPY((void **)&mixfn,mixfn_len);
-   fd = osi_OpenRW(mixfn, mixfn_len);
+   fd = osic_OpenRW(mixfn, mixfn_len);
    if (fd>=0L) {
       if (chan0==255UL) chan0 = recnum();
       setmixer(fd, chan0, (right<<8)+left);
    }
    else {
-      InOut_WriteString(mixfn, mixfn_len);
+      osic_WrStr(mixfn, mixfn_len);
       Error(" open", 6ul);
    }
    X2C_PFREE(mixfn);
@@ -575,29 +563,29 @@ static void OpenSound(void)
 {
    long s;
    long i0;
-   soundfd = osi_OpenRW(soundfn, 1024ul);
+   soundfd = osic_OpenRW(soundfn, 1024ul);
    if (soundfd>=0L) {
       i0 = samplesize(soundfd, 16UL); /* 8, 16 */
       i0 = channels(soundfd, (unsigned long)maxchannels+1UL); /* 1, 2  */
       i0 = setfragment(soundfd, fragmentsize); /* 2^bufsize * 65536*bufs*/
       if (i0) {
-         InOut_WriteString("sound setfragment returns ", 27ul);
-         InOut_WriteInt(i0, 1UL);
-         osi_WrLn();
+         osic_WrStr("sound setfragment returns ", 27ul);
+         osic_WrUINT32(i0, 1UL);
+         osic_WrLn();
       }
       i0 = sampelrate(soundfd, adcrate); /* 8000..48000 */
       s = (long)getsampelrate(soundfd);
       if (s!=(long)adcrate) {
-         InOut_WriteString("sound device returns ", 22ul);
-         InOut_WriteInt(s, 1UL);
-         osi_WrStrLn("Hz!", 4ul);
+         osic_WrStr("sound device returns ", 22ul);
+         osic_WrUINT32(s, 1UL);
+         osic_WrStrLn("Hz!", 4ul);
       }
    }
    else if (abortonsounderr) {
       /*
             IF s>=0 THEN Error("") END;
       */
-      InOut_WriteString(soundfn, 1024ul);
+      osic_WrStr(soundfn, 1024ul);
       Error(" open", 6ul);
    }
 } /* end OpenSound() */
@@ -609,7 +597,7 @@ static void ttypar(char fn[], unsigned long fn_len)
    long fd;
    long res;
    X2C_PCOPY((void **)&fn,fn_len);
-   fd = osi_OpenNONBLOCK(fn, fn_len);
+   fd = osic_OpenNONBLOCK(fn, fn_len);
    if (fd>=0L) {
       res = tcgetattr(fd, &term);
       /*
@@ -622,7 +610,7 @@ static void ttypar(char fn[], unsigned long fn_len)
    /*
        res:=tcsetattr (fd, 0, term);
    */
-   osi_Close(fd);
+   osic_Close(fd);
    X2C_PFREE(fn);
 } /* end ttypar() */
 
@@ -633,7 +621,7 @@ static long Opentty(char linkname[], unsigned long linkname_len)
    char ptsname[4096];
    long Opentty_ret;
    X2C_PCOPY((void **)&linkname,linkname_len);
-   fd = osi_OpenNONBLOCK("/dev/ptmx", 10ul);
+   fd = osic_OpenNONBLOCK("/dev/ptmx", 10ul);
    if (fd<0L) Error("/dev/ptmx open", 15ul);
    if (getptsname(fd, (char *)ptsname, 4096UL)) Error("no ttyname", 11ul);
    /*
@@ -645,10 +633,10 @@ static long Opentty(char linkname[], unsigned long linkname_len)
    /*make link*/
    remove(linkname);
    if (symblink((char *)ptsname, (char *)linkname)) {
-      InOut_WriteString("cannot create link <", 21ul);
-      InOut_WriteString(linkname, linkname_len);
-      osi_WrStrLn(">, starting without kiss interface", 35ul);
-      osi_Close(fd);
+      osic_WrStr("cannot create link <", 21ul);
+      osic_WrStr(linkname, linkname_len);
+      osic_WrStrLn(">, starting without kiss interface", 35ul);
+      osic_Close(fd);
       fd = -1L;
    }
    Opentty_ret = fd;
@@ -948,9 +936,13 @@ static void Parms(void)
    pipefn[0U] = 0;
    X2C_COPY("/dev/mixer",11ul,mixfn,1024u);
    maxsoundbufs = 10UL;
+
    for (;;) {
       Lib_NextArg(h, 1024ul);
-      if (h[0U]==0) break;
+      if (h[0U]==0) {
+	      printf("have all.\n");
+	      break;
+      }
       if ((h[0U]=='-' && h[1U]) && h[2U]==0) {
          if (h[1U]=='a') {
             if (modem>=0L) modpar[modem].afsk = 0;
@@ -1226,109 +1218,109 @@ static void Parms(void)
          }
          else {
             if (h[1U]=='h') {
-               osi_WrStrLn("first for all modems", 21ul);
-               osi_WrStrLn(" -a             abort on sounddevice error else r\
+               osic_WrStrLn("first for all modems", 21ul);
+               osic_WrStrLn(" -a             abort on sounddevice error else r\
 etry to open", 62ul);
-               osi_WrStrLn(" -b <num>       tx dacbuffers (10) (more to avoid\
+               osic_WrStrLn(" -b <num>       tx dacbuffers (10) (more to avoid\
  underruns)", 61ul);
-               osi_WrStrLn(" -B             bad sound driver repair, sending \
+               osic_WrStrLn(" -B             bad sound driver repair, sending \
 continuous quietness to avoid receive", 87ul);
-               osi_WrStrLn("                sample loss on start/stop of soun\
+               osic_WrStrLn("                sample loss on start/stop of soun\
 d output. Use for stereo or fullduplex)", 89ul);
-               osi_WrStrLn(" -c <num>       maxchannels (1) (1=mono, 2=stereo\
+               osic_WrStrLn(" -c <num>       maxchannels (1) (1=mono, 2=stereo\
 )", 51ul);
-               osi_WrStrLn(" -D <filename>  (debug) write raw soundcard input\
+               osic_WrStrLn(" -D <filename>  (debug) write raw soundcard input\
  data to file or pipe", 71ul);
-               osi_WrStrLn(" -D <filename>.txt  (debug) write demodulated bit\
+               osic_WrStrLn(" -D <filename>.txt  (debug) write demodulated bit\
 s as \"01..\" to file or pipe", 77ul);
-               osi_WrStrLn(" -e <num>       additional ptt hold time (if soun\
+               osic_WrStrLn(" -e <num>       additional ptt hold time (if soun\
 dsystem has delay) unit=adcbuffers (1)", 88ul);
-               osi_WrStrLn(" -f <num>       adcrate (16000) (8000..96000)",
+               osic_WrStrLn(" -f <num>       adcrate (16000) (8000..96000)",
                 46ul);
-               osi_WrStrLn(" -h             help", 21ul);
-               osi_WrStrLn(" -i <filename>  kiss pipename (/dev/kiss/soundmod\
+               osic_WrStrLn(" -h             help", 21ul);
+               osic_WrStrLn(" -i <filename>  kiss pipename (/dev/kiss/soundmod\
 em)", 53ul);
-               osi_WrStrLn(" -k <num>       tx kiss bufs (60)", 34ul);
-               osi_WrStrLn(" -l <num>       adcbuffer length (256) more: lowe\
+               osic_WrStrLn(" -k <num>       tx kiss bufs (60)", 34ul);
+               osic_WrStrLn(" -l <num>       adcbuffer length (256) more: lowe\
 r system load but slower reaction", 83ul);
-               osi_WrStrLn(" -m [<mixername>:]<channel>:<left>:<right> (0..25\
+               osic_WrStrLn(" -m [<mixername>:]<channel>:<left>:<right> (0..25\
 5) ossmixer (/dev/mixer)", 74ul);
-               osi_WrStrLn(" -o <filename>  oss devicename (/dev/dsp)",
+               osic_WrStrLn(" -o <filename>  oss devicename (/dev/dsp)",
                 42ul);
-               osi_WrStrLn(" -s <num>       fragment size in 2^n (9)", 41ul);
-               osi_WrLn();
-               osi_WrStrLn("repeat for each channel -C ... :", 33ul);
-               osi_WrStrLn("  -C <num>              (0..1) channel parameters\
+               osic_WrStrLn(" -s <num>       fragment size in 2^n (9)", 41ul);
+               osic_WrLn();
+               osic_WrStrLn("repeat for each channel -C ... :", 33ul);
+               osic_WrStrLn("  -C <num>              (0..1) channel parameters\
  follow (repeat for each channel)", 83ul);
                pttHelp((char *)ptth, 4096UL);
-               osi_WrStrLn(ptth, 4096ul);
-               osi_WrStrLn("  -f <num>              (0) (0=halfduplex, 1=mast\
+               osic_WrStrLn(ptth, 4096ul);
+               osic_WrStrLn("  -f <num>              (0) (0=halfduplex, 1=mast\
 er fullduplex, 2=all fullduplex,", 82ul);
-               osi_WrStrLn("                        3=simplex \'stereo never \
+               osic_WrStrLn("                        3=simplex \'stereo never \
 both tx same time\')", 68ul);
-               osi_WrStrLn("  -g <ms>               GM900 audio quiet time af\
+               osic_WrStrLn("  -g <ms>               GM900 audio quiet time af\
 ter ptt on (0)", 64ul);
-               osi_WrStrLn("  -r <num>              max random wait time afte\
+               osic_WrStrLn("  -r <num>              max random wait time afte\
 r dcd before start tx (ms) (800)", 82ul);
-               osi_WrLn();
-               osi_WrStrLn("repeat for each modem -M ... :", 31ul);
-               osi_WrStrLn("   -M <num> (0..7) modem parameters follow (repea\
+               osic_WrLn();
+               osic_WrStrLn("repeat for each modem -M ... :", 31ul);
+               osic_WrStrLn("   -M <num> (0..7) modem parameters follow (repea\
 t for each modem)", 67ul);
-               osi_WrStrLn("   -a       afsk off, fsk on (on)", 34ul);
-               osi_WrStrLn("   -b <num> baud (1200) (1..32000)", 35ul);
-               osi_WrStrLn("   -B <kbyte> send BERT, (negative bytes receive \
+               osic_WrStrLn("   -a       afsk off, fsk on (on)", 34ul);
+               osic_WrStrLn("   -b <num> baud (1200) (1..32000)", 35ul);
+               osic_WrStrLn("   -B <kbyte> send BERT, (negative bytes receive \
 only)", 55ul);
-               osi_WrStrLn("   -c <num> use stereo channel 0=left (or mono), \
+               osic_WrStrLn("   -c <num> use stereo channel 0=left (or mono), \
 1=right", 57ul);
-               osi_WrStrLn("   -d <num> dcdlevel, 0 no dcd (56) (0..100)",
+               osic_WrStrLn("   -d <num> dcdlevel, 0 no dcd (56) (0..100)",
                 45ul);
-               osi_WrStrLn("   -e <num> demod equalizer (0) 100=6db/oct highp\
+               osic_WrStrLn("   -e <num> demod equalizer (0) 100=6db/oct highp\
 ass   (-999..999)", 67ul);
-               osi_WrStrLn("   -f <num> afsk mid frequency, tx and rx (hz) (1\
+               osic_WrStrLn("   -f <num> afsk mid frequency, tx and rx (hz) (1\
 700)", 54ul);
-               osi_WrStrLn("   -g       g3ruh scrambler on (off)", 37ul);
-               osi_WrStrLn("   -H <num> afsk tx highpass (0) (0..100)",
+               osic_WrStrLn("   -g       g3ruh scrambler on (off)", 37ul);
+               osic_WrStrLn("   -H <num> afsk tx highpass (0) (0..100)",
                 42ul);
-               osi_WrStrLn("   -i       ignore modem parameters from kiss (of\
+               osic_WrStrLn("   -i       ignore modem parameters from kiss (of\
 f)", 52ul);
-               osi_WrStrLn("   -k <num> received data send to this kiss port \
+               osic_WrStrLn("   -k <num> received data send to this kiss port \
 (0) (0..7)", 60ul);
                /*
                        WrStrLn("#  -l <num> filterlow (hz)");
                */
-               osi_WrStrLn("   -m <num> monitor (2) (0=off, 1=header, 2=all, \
+               osic_WrStrLn("   -m <num> monitor (2) (0=off, 1=header, 2=all, \
 3=passall)", 60ul);
-               osi_WrStrLn("   -n <num> nyquist filter baseband -6db point in\
+               osic_WrStrLn("   -n <num> nyquist filter baseband -6db point in\
  % of baudrate (65) (0..100)", 78ul);
-               osi_WrStrLn("   -P same as -U but use AXUDP v2, send dcd and t\
+               osic_WrStrLn("   -P same as -U but use AXUDP v2, send dcd and t\
 xbuffer empty messages", 72ul);
-               osi_WrStrLn("   -p <num> receive clock pll aquisition speed (1\
+               osic_WrStrLn("   -p <num> receive clock pll aquisition speed (1\
 6) (num/256 of bit time)", 74ul);
-               osi_WrStrLn("   -q <num> quiet adc level to save cpu or avoid \
+               osic_WrStrLn("   -q <num> quiet adc level to save cpu or avoid \
 reciption of channel crosstalk (0)", 84ul);
                /*
                        WrStrLn("#  -r       rzi -1 1");
                */
-               osi_WrStrLn("   -s <num> afsk shift tx (for rx bandfilter widt\
+               osic_WrStrLn("   -s <num> afsk shift tx (for rx bandfilter widt\
 h) (1000) (hz)", 64ul);
-               osi_WrStrLn("   -t <num> txdelay (300) (ms)", 31ul);
-               osi_WrStrLn("   -T <seconds> timeout for tx buffered frame (60\
+               osic_WrStrLn("   -t <num> txdelay (300) (ms)", 31ul);
+               osic_WrStrLn("   -T <seconds> timeout for tx buffered frame (60\
 ) (s)", 55ul);
                /*
                        WrStrLn("#  -u       filterup  (hz)");
                */
-               osi_WrStrLn("   -U <[x.x.x.x]:destport:listenport> use axudp i\
+               osic_WrStrLn("   -U <[x.x.x.x]:destport:listenport> use axudp i\
 nstead of kiss /listenport check ip", 85ul);
-               osi_WrStrLn("   -L same as -U but use AXUDP v2 (no dcd and txb\
+               osic_WrStrLn("   -L same as -U but use AXUDP v2 (no dcd and txb\
 uffer empty messages)", 71ul);
-               osi_WrStrLn("   -v <num> tx loudness (100)", 30ul);
-               osi_WrStrLn("   -w <num> txdelay pattern before 1 flag (126) (\
+               osic_WrStrLn("   -v <num> tx loudness (100)", 30ul);
+               osic_WrStrLn("   -w <num> txdelay pattern before 1 flag (126) (\
 0..255)", 57ul);
-               osi_WrStrLn("   -x <num> txtail (20) (ms), ptt hold for fulldu\
+               osic_WrStrLn("   -x <num> txtail (20) (ms), ptt hold for fulldu\
 plex", 54ul);
-               osi_WrStrLn("   -z <num> fsk rx baseband dc regeneration clamp\
+               osic_WrStrLn("   -z <num> fsk rx baseband dc regeneration clamp\
  speed (996) (0=off, 1=fast, 999=slow)", 88ul);
-               osi_WrStrLn("example: ./afskmodem -f 22050 -c 2 -C 0 -p /dev/t\
+               osic_WrStrLn("example: ./afskmodem -f 22050 -c 2 -C 0 -p /dev/t\
 tyS0 0 -M 0 -c 0 -b 1200 -M 1 -c 1 -b 9600 -a -g -U 127.0.0.1:6001:1093",
                 121ul);
                X2C_ABORT();
@@ -1345,9 +1337,9 @@ tyS0 0 -M 0 -c 0 -b 1200 -M 1 -c 1 -b 9600 -a -g -U 127.0.0.1:6001:1093",
       if (err) break;
    }
    if (err) {
-      InOut_WriteString(">", 2ul);
-      InOut_WriteString(h, 1024ul);
-      osi_WrStrLn("< use -h", 9ul);
+      osic_WrStr(">", 2ul);
+      osic_WrStr(h, 1024ul);
+      osic_WrStrLn("< use -h", 9ul);
       X2C_ABORT();
    }
    Config();
@@ -1390,37 +1382,37 @@ static void Kisscmd(void)
    cmd = (unsigned long)(unsigned char)pGetKiss->port;
    modem = (long)(cmd>>4&7UL);
    cmd = cmd&15UL;
-   InOut_WriteString("p=", 3ul);
-   InOut_WriteInt(modem, 1UL);
-   osi_WrLn();
+   osic_WrStr("p=", 3ul);
+   osic_WrUINT32(modem, 1UL);
+   osic_WrLn();
    { /* with */
       struct MPAR * anonym = &modpar[modem];
       if (anonym->configured && !anonym->kissignore) {
          x = (unsigned long)(unsigned char)pGetKiss->data[0U];
          if (cmd==1UL) {
             anonym->configtxdel = x*10UL;
-            InOut_WriteString("txdel=", 7ul);
-            InOut_WriteInt((long)anonym->configtxdel, 1UL);
-            osi_WrLn();
+            osic_WrStr("txdel=", 7ul);
+            osic_WrUINT32((long)anonym->configtxdel, 1UL);
+            osic_WrLn();
          }
          else if (cmd==2UL) {
             chan[modpar[modem].ch].configpersist = 10UL*(255UL-x);
-            InOut_WriteString("persist=", 9ul);
-            InOut_WriteInt((long)chan[modpar[modem].ch].configpersist, 1UL);
-            osi_WrLn();
+            osic_WrStr("persist=", 9ul);
+            osic_WrUINT32((long)chan[modpar[modem].ch].configpersist, 1UL);
+            osic_WrLn();
          }
          else if (cmd==4UL) {
             /*3 SlotTime*/
             anonym->configtxtail = x*10UL;
-            InOut_WriteString("txtail=", 8ul);
-            InOut_WriteInt((long)anonym->configtxtail, 1UL);
-            osi_WrLn();
+            osic_WrStr("txtail=", 8ul);
+            osic_WrUINT32((long)anonym->configtxtail, 1UL);
+            osic_WrLn();
          }
          else if (cmd==5UL) {
             if (x<=2UL) chan[modpar[modem].ch].duplex = (unsigned char)x;
-            InOut_WriteString("duplex=", 8ul);
-            InOut_WriteInt((long)x, 1UL);
-            osi_WrLn();
+            osic_WrStr("duplex=", 8ul);
+            osic_WrUINT32((long)x, 1UL);
+            osic_WrLn();
          }
          Config();
       }
@@ -1703,8 +1695,8 @@ static void WrQuali(float q)
    if (q>0.0f) {
       q = 100.5f-q*200.0f;
       if (q<0.0f) q = 0.0f;
-      InOut_WriteString(" q:", 4ul);
-      InOut_WriteInt((long)(unsigned long)X2C_TRUNCC(q,0UL,X2C_max_longcard),
+      osic_WrStr(" q:", 4ul);
+      osic_WrUINT32((long)(unsigned long)X2C_TRUNCC(q,0UL,X2C_max_longcard),
                  1UL);
    }
 } /* end WrQuali() */
@@ -1713,17 +1705,17 @@ static void WrQuali(float q)
 static void WrdB(long volt)
 {
    if (volt>0L) {
-      osi_WrFixed(dB((unsigned long)volt), 1L, 6UL);
-      InOut_WriteString("dB", 3ul);
+      osic_WrFixed(dB((unsigned long)volt), 1L, 6UL);
+      osic_WrStr("dB", 3ul);
    }
 } /* end WrdB() */
 
 
 static void WrTXD(unsigned long ms)
 {
-   InOut_WriteString(" txd:", 6ul);
-   InOut_WriteInt((long)ms, 1UL);
-   InOut_WriteString("ms", 3ul);
+   osic_WrStr(" txd:", 6ul);
+   osic_WrUINT32((long)ms, 1UL);
+   osic_WrStr("ms", 3ul);
 } /* end WrTXD() */
 
 
@@ -1731,9 +1723,9 @@ static void WCh(char c)
 {
    if (c!='\015') {
       if ((unsigned char)c<' ' || (unsigned char)c>='\177') {
-         InOut_WriteString(".", 2ul);
+         osic_WrStr(".", 2ul);
       }
-      else InOut_WriteString((char *) &c, 1u/1u);
+      else osic_WrStr((char *) &c, 1u/1u);
    }
 } /* end WCh() */
 
@@ -1757,8 +1749,8 @@ static void ShowCall(char f[], unsigned long f_len, unsigned long pos)
       if (i0==tmp) break;
    } /* end for */
    if ((unsigned long)(unsigned char)f[pos+6UL]>>1&15UL) {
-      InOut_WriteString("-", 2ul);
-      InOut_WriteInt((long)((unsigned long)(unsigned char)f[pos+6UL]>>1&15UL)
+      osic_WrStr("-", 2ul);
+      osic_WrUINT32((long)((unsigned long)(unsigned char)f[pos+6UL]>>1&15UL)
                 , 1UL);
    }
 } /* end ShowCall() */
@@ -1787,37 +1779,37 @@ static void Showctl(unsigned long com, unsigned long cmd)
    unsigned long cm;
    char PF[4];
    char tmp;
-   InOut_WriteString(" ctl ", 6ul);
+   osic_WrStr(" ctl ", 6ul);
    cm = (unsigned long)cmd&~0x10UL;
    if ((cm&0xFUL)==0x1UL) {
-      InOut_WriteString("RR", 3ul);
-      InOut_WriteString((char *)(tmp = (char)(48UL+(cmd>>5)),&tmp), 1u/1u);
+      osic_WrStr("RR", 3ul);
+      osic_WrStr((char *)(tmp = (char)(48UL+(cmd>>5)),&tmp), 1u/1u);
    }
    else if ((cm&0xFUL)==0x5UL) {
-      InOut_WriteString("RNR", 4ul);
-      InOut_WriteString((char *)(tmp = (char)(48UL+(cmd>>5)),&tmp), 1u/1u);
+      osic_WrStr("RNR", 4ul);
+      osic_WrStr((char *)(tmp = (char)(48UL+(cmd>>5)),&tmp), 1u/1u);
    }
    else if ((cm&0xFUL)==0x9UL) {
-      InOut_WriteString("REJ", 4ul);
-      InOut_WriteString((char *)(tmp = (char)(48UL+(cmd>>5)),&tmp), 1u/1u);
+      osic_WrStr("REJ", 4ul);
+      osic_WrStr((char *)(tmp = (char)(48UL+(cmd>>5)),&tmp), 1u/1u);
    }
    else if ((cm&0x1UL)==0UL) {
-      InOut_WriteString("I", 2ul);
-      InOut_WriteString((char *)(tmp = (char)(48UL+(cmd>>5)),&tmp), 1u/1u);
-      InOut_WriteString((char *)(tmp = (char)(48UL+(cmd>>1&7UL)),&tmp),
+      osic_WrStr("I", 2ul);
+      osic_WrStr((char *)(tmp = (char)(48UL+(cmd>>5)),&tmp), 1u/1u);
+      osic_WrStr((char *)(tmp = (char)(48UL+(cmd>>1&7UL)),&tmp),
                 1u/1u);
    }
-   else if (cm==0x3UL) InOut_WriteString("UI", 3ul);
-   else if (cm==0xFUL) InOut_WriteString("DM", 3ul);
-   else if (cm==0x2FUL) InOut_WriteString("SABM", 5ul);
-   else if (cm==0x43UL) InOut_WriteString("DISC", 5ul);
-   else if (cm==0x63UL) InOut_WriteString("UA", 3ul);
-   else if (cm==0x87UL) InOut_WriteString("FRMR", 5ul);
-   else osi_WrHex(cmd, 1UL);
+   else if (cm==0x3UL) osic_WrStr("UI", 3ul);
+   else if (cm==0xFUL) osic_WrStr("DM", 3ul);
+   else if (cm==0x2FUL) osic_WrStr("SABM", 5ul);
+   else if (cm==0x43UL) osic_WrStr("DISC", 5ul);
+   else if (cm==0x63UL) osic_WrStr("UA", 3ul);
+   else if (cm==0x87UL) osic_WrStr("FRMR", 5ul);
+   else osic_WrHex(cmd, 1UL);
    strncpy(PF,"v^-+",4u);
-   if (com==0UL || com==3UL) InOut_WriteString("v1", 3ul);
+   if (com==0UL || com==3UL) osic_WrStr("v1", 3ul);
    else {
-      InOut_WriteString((char *) &PF[(com&1UL)+2UL*(unsigned long)
+      osic_WrStr((char *) &PF[(com&1UL)+2UL*(unsigned long)
                 ((0x10UL & (unsigned long)cmd)!=0)], 1u/1u);
    }
 } /* end Showctl() */
@@ -1839,23 +1831,23 @@ static void ShowFrame(char f[], unsigned long f_len, unsigned long len,
    /* no address end mark found */
    if (i0%7UL!=6UL) return;
    /* address end not modulo 7 error */
-   InOut_WriteString((char *)(tmp = (char)((modem&7L)+48L),&tmp), 1u/1u);
-   InOut_WriteString(":fm ", 5ul);
+   osic_WrStr((char *)(tmp = (char)((modem&7L)+48L),&tmp), 1u/1u);
+   osic_WrStr(":fm ", 5ul);
    ShowCall(f, f_len, 7UL);
-   InOut_WriteString(" to ", 5ul);
+   osic_WrStr(" to ", 5ul);
    ShowCall(f, f_len, 0UL);
    i0 = 14UL;
    v = 1;
    while (i0+6UL<len && !((unsigned long)(unsigned char)f[i0-1UL]&1)) {
       if (v) {
-         InOut_WriteString(" via", 5ul);
+         osic_WrStr(" via", 5ul);
          v = 0;
       }
-      InOut_WriteString(" ", 2ul);
+      osic_WrStr(" ", 2ul);
       ShowCall(f, f_len, i0);
       if ((unsigned long)(unsigned char)f[i0+6UL]>=128UL && (((unsigned long)
                 (unsigned char)f[i0+6UL]&1) || (unsigned long)(unsigned char)
-                f[i0+13UL]<128UL)) InOut_WriteString("*", 2ul);
+                f[i0+13UL]<128UL)) osic_WrStr("*", 2ul);
       i0 += 7UL;
    }
    /*
@@ -1866,8 +1858,8 @@ static void ShowFrame(char f[], unsigned long f_len, unsigned long len,
                 f[13UL])!=0), (unsigned long)(unsigned char)f[i0]);
    ++i0;
    if (i0<len) {
-      InOut_WriteString(" pid ", 6ul);
-      osi_WrHex((unsigned long)(unsigned char)f[i0], 1UL);
+      osic_WrStr(" pid ", 6ul);
+      osic_WrHex((unsigned long)(unsigned char)f[i0], 1UL);
    }
    ++i0;
    if (volt>0L) {
@@ -1879,7 +1871,7 @@ static void ShowFrame(char f[], unsigned long f_len, unsigned long len,
    /*
    IO.WrCard(bufree(), 3);
    */
-   osi_WrLn();
+   osic_WrLn();
    if (!noinfo) {
       d = 0;
       while (i0<len) {
@@ -1888,12 +1880,12 @@ static void ShowFrame(char f[], unsigned long f_len, unsigned long len,
             d = 1;
          }
          else if (d) {
-            osi_WrLn();
+            osic_WrLn();
             d = 0;
          }
          ++i0;
       }
-      if (d) osi_WrLn();
+      if (d) osic_WrLn();
    }
 /*
 FOR i:=0 TO len-1 DO WrStr("\"); WrInt(ASH(ORD(f[i]), -6),1);
@@ -1982,14 +1974,14 @@ static void demodbit(long m, char d)
          if (anonym->bert<0L) {
             /* receive only */
             ++anonym->bert;
-            if (anonym->bert==0L) osi_WrStrLn("---- end BERT", 14ul);
+            if (anonym->bert==0L) osic_WrStrLn("---- end BERT", 14ul);
          }
          if (anonym->bertc>2000UL) {
-            InOut_WriteInt((long)anonym->berterr, 4UL);
-            InOut_WriteInt(m, 2UL);
+            osic_WrUINT32((long)anonym->berterr, 4UL);
+            osic_WrUINT32(m, 2UL);
             WrQuali(noiselevel((unsigned long)m));
             WrdB(chan[anonym->ch].adcmax);
-            osi_WrLn();
+            osic_WrLn();
             anonym->bertc = 0UL;
             anonym->berterr = 0UL;
          }
@@ -2284,7 +2276,7 @@ static void repairsound(void)
    ptt(chan[afskmodem_LEFT].hptt, -1L);
    ptt(chan[afskmodem_RIGHT].hptt, -1L);
    if (abortonsounderr) Error("Sounddevice Failure", 20ul);
-   osi_Close(soundfd);
+   osic_Close(soundfd);
    Usleep(100000UL);
    /*WrStrLn("openA"); */
    OpenSound();
@@ -2708,24 +2700,20 @@ static void afskmodemcleanup(long signum)
 {
    pttDestroy(chan[afskmodem_LEFT].hptt);
    pttDestroy(chan[afskmodem_RIGHT].hptt);
-   InOut_WriteString("exit ", 6ul);
-   InOut_WriteInt(signum, 0UL);
-   osi_WrStrLn("!", 2ul);
+   osic_WrStr("exit ", 6ul);
+   osic_WrUINT32(signum, 0UL);
+   osic_WrStrLn("!", 2ul);
    X2C_HALT((unsigned long)signum);
 } /* end afskmodemcleanup() */
 
 
 X2C_STACK_LIMIT(100000l)
-extern int main(int argc, char **argv)
+extern int main(int argc, char *argv[])
 {
-   X2C_BEGIN(&argc,argv,1,4000000l,8000000l);
    if (sizeof(FILENAME)!=1024) X2C_ASSERT(0);
-   TimeConv_BEGIN();
-   Storage_BEGIN();
-   Lib_BEGIN();
-   RealMath_BEGIN();
+   Lib_BEGIN(argc, argv);
    aprsstr_BEGIN();
-   osi_BEGIN();
+   osic_BEGIN();
    signal(SIGTERM, afskmodemcleanup);
    signal(SIGINT, afskmodemcleanup);
    memset((char *)modpar,(char)0,sizeof(struct MPAR [8]));
@@ -2741,6 +2729,7 @@ extern int main(int argc, char **argv)
    soundbufs = 0UL;
    ptt(chan[afskmodem_LEFT].hptt, -1L);
    ptt(chan[afskmodem_RIGHT].hptt, -1L);
+
    for (;;) {
       getadc();
       ++clock0;

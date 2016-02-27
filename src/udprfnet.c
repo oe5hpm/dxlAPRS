@@ -20,22 +20,13 @@
 #include "udp.h"
 #endif
 #ifndef osi_H_
-#include "osi.h"
+#include "osic.h"
 #endif
 #ifndef Lib_H_
 #include "Lib.h"
 #endif
-#ifndef InOut_H_
-#include "InOut.h"
-#endif
 #ifndef Select_H_
 #include "Select.h"
-#endif
-#ifndef Storage_H_
-#include "Storage.h"
-#endif
-#ifndef TimeConv_H_
-#include "TimeConv.h"
 #endif
 #ifndef aprsstr_H_
 #include "aprsstr.h"
@@ -172,9 +163,9 @@ extern long clock_gettime(unsigned long, struct TIMEHR *);
 
 static void Err(const char text[], unsigned long text_len)
 {
-   InOut_WriteString("udprfnet: ", 11ul);
-   InOut_WriteString(text, text_len);
-   osi_WrStrLn(" error abort", 13ul);
+   osic_WrStr("udprfnet: ", 11ul);
+   osic_WrStr(text, text_len);
+   osic_WrStrLn(" error abort", 13ul);
    X2C_ABORT();
 } /* end Err() */
 
@@ -470,37 +461,37 @@ static void parms(void)
          else if (lasth=='n') Lib_NextArg(netname, 64ul);
          else {
             if (lasth=='h') {
-               osi_WrLn();
-               osi_WrStrLn(" -a                     accept new neighbours",
+               osic_WrLn();
+               osic_WrStrLn(" -a                     accept new neighbours",
                 46ul);
-               osi_WrStrLn(" -c <sec:sec>           check link time : stop tr\
+               osic_WrStrLn(" -c <sec:sec>           check link time : stop tr\
 ansfer after no reply", 71ul);
-               osi_WrStrLn(" -d <seconds>           dupe filter time (default\
+               osic_WrStrLn(" -d <seconds>           dupe filter time (default\
  57s min 27s)", 63ul);
-               osi_WrStrLn(" -e                     echo local received frame\
+               osic_WrStrLn(" -e                     echo local received frame\
 s", 51ul);
-               osi_WrStrLn(" -f <seconds>           poll intervall until repl\
+               osic_WrStrLn(" -f <seconds>           poll intervall until repl\
 y (default 10s)", 65ul);
-               osi_WrStrLn(" -h                     this", 29ul);
-               osi_WrStrLn(" -i <mycall>", 13ul);
-               osi_WrStrLn(" -p <portnum>           network udp listen port",
+               osic_WrStrLn(" -h                     this", 29ul);
+               osic_WrStrLn(" -i <mycall>", 13ul);
+               osic_WrStrLn(" -p <portnum>           network udp listen port",
                  48ul);
-               osi_WrStrLn(" -M <ipnum:dport:lport> tnc-2 format local udp li\
+               osic_WrStrLn(" -M <ipnum:dport:lport> tnc-2 format local udp li\
 nk", 52ul);
-               osi_WrStrLn(" -m <portnum>           send a copy in tnc-2 moni\
+               osic_WrStrLn(" -m <portnum>           send a copy in tnc-2 moni\
 tor to this port", 66ul);
-               osi_WrStrLn(" -n <netname>", 14ul);
-               osi_WrStrLn(" -r <filename>          static routes config file\
+               osic_WrStrLn(" -n <netname>", 14ul);
+               osic_WrStrLn(" -r <filename>          static routes config file\
 ", 50ul);
-               osi_WrStrLn(" -s <seconds>           poll intervall dead link \
+               osic_WrStrLn(" -s <seconds>           poll intervall dead link \
 (default 180s)", 64ul);
-               osi_WrStrLn(" -v                     verbous to stdout",
+               osic_WrStrLn(" -v                     verbous to stdout",
                 42ul);
-               osi_WrStrLn(" -w <portnum>           www server listen port",
+               osic_WrStrLn(" -w <portnum>           www server listen port",
                 47ul);
-               osi_WrStrLn("udprfnet -i OE0AAA -a -e -M 127.0.0.1:2010:2020 -\
+               osic_WrStrLn("udprfnet -i OE0AAA -a -e -M 127.0.0.1:2010:2020 -\
 r routes.txt", 62ul);
-               osi_WrLn();
+               osic_WrLn();
                X2C_ABORT();
             }
             if (lasth=='M') {
@@ -550,9 +541,9 @@ r routes.txt", 62ul);
       if (err) break;
    }
    if (err) {
-      InOut_WriteString(">", 2ul);
-      InOut_WriteString(h, 4096ul);
-      osi_WrStrLn("< use -h", 9ul);
+      osic_WrStr(">", 2ul);
+      osic_WrStr(h, 4096ul);
+      osic_WrStrLn("< use -h", 9ul);
       X2C_ABORT();
    }
 } /* end parms() */
@@ -560,15 +551,15 @@ r routes.txt", 62ul);
 
 static void showpip(unsigned long ip, unsigned long port)
 {
-   InOut_WriteInt((long)(ip/16777216UL), 1UL);
-   InOut_WriteString(".", 2ul);
-   InOut_WriteInt((long)(ip/65536UL&255UL), 1UL);
-   InOut_WriteString(".", 2ul);
-   InOut_WriteInt((long)(ip/256UL&255UL), 1UL);
-   InOut_WriteString(".", 2ul);
-   InOut_WriteInt((long)(ip&255UL), 1UL);
-   InOut_WriteString(":", 2ul);
-   InOut_WriteInt((long)port, 1UL);
+   osic_WrUINT32((long)(ip/16777216UL), 1UL);
+   osic_WrStr(".", 2ul);
+   osic_WrUINT32((long)(ip/65536UL&255UL), 1UL);
+   osic_WrStr(".", 2ul);
+   osic_WrUINT32((long)(ip/256UL&255UL), 1UL);
+   osic_WrStr(".", 2ul);
+   osic_WrUINT32((long)(ip&255UL), 1UL);
+   osic_WrStr(":", 2ul);
+   osic_WrUINT32((long)port, 1UL);
 } /* end showpip() */
 
 
@@ -597,7 +588,7 @@ static void showdata(char b[], unsigned long b_len, unsigned long len)
    X2C_PCOPY((void **)&b,b_len);
    if (len<=b_len-1) b[len] = 0;
    aprsstr_CtrlHex(b, b_len);
-   osi_WrStrLn(b, b_len);
+   osic_WrStrLn(b, b_len);
    X2C_PFREE(b);
 /*
   IF len>70 THEN IO.WrLn END;
@@ -644,14 +635,14 @@ static void sendall(char b[], unsigned long b_len, char local)
    if (b[0UL]==0) goto label;
    if (Dup(b, b_len)) {
       if (verb) {
-         InOut_WriteString("dup:", 5ul);
+         osic_WrStr("dup:", 5ul);
          showdata(b, b_len, aprsstr_Length(b, b_len));
       }
       goto label;
    }
    if (verb) {
-      osi_WrLn();
-      InOut_WriteString("rx: ", 5ul);
+      osic_WrLn();
+      osic_WrStr("rx: ", 5ul);
       showdata(b, b_len, aprsstr_Length(b, b_len));
    }
    ilen = 0UL;
@@ -678,9 +669,9 @@ static void sendall(char b[], unsigned long b_len, char local)
       ++nlocal.nsent;
       nlocal.bsent += ilen;
       if (verb) {
-         InOut_WriteString("tx: ", 5ul);
+         osic_WrStr("tx: ", 5ul);
          showpip(nlocal.ipnum, nlocal.toport);
-         osi_WrLn();
+         osic_WrLn();
       }
    }
    len = ilen+mylen;
@@ -712,9 +703,9 @@ static void sendall(char b[], unsigned long b_len, char local)
             if ((anonym->wantdata && best) && noloop(b, b_len, anonym->call,
                 10ul)) {
                if (verb) {
-                  InOut_WriteString("tx: ", 5ul);
+                  osic_WrStr("tx: ", 5ul);
                   showpip(anonym->ipnum, anonym->toport);
-                  osi_WrLn();
+                  osic_WrLn();
                }
                res0 = udpsend(netsock, b, (long)len, anonym->toport,
                 anonym->ipnum);
@@ -852,7 +843,7 @@ static char statneibor(const char b[], unsigned long b_len,
       if (netname[j]!=b[i]) {
          if (verb) {
             showpip(n->ipnum, n->toport);
-            osi_WrStrLn(" got wrong netname", 19ul);
+            osic_WrStrLn(" got wrong netname", 19ul);
          }
          return 0;
       }
@@ -886,8 +877,8 @@ static char statneibor(const char b[], unsigned long b_len,
                      setcall(b, b_len, anonym->call, 10ul);
                      if (verb) {
                         showpip(anonym->ipnum, anonym->toport);
-                        InOut_WriteString(" got WHOIS from ", 17ul);
-                        osi_WrStrLn(anonym->call, 10ul);
+                        osic_WrStr(" got WHOIS from ", 17ul);
+                        osic_WrStrLn(anonym->call, 10ul);
                      }
                   }
                   else {
@@ -937,9 +928,9 @@ static char statneibor(const char b[], unsigned long b_len,
                         setcall(b, b_len, anonym->call, 10ul);
                         if (verb) {
                            showpip(anonym->ipnum, anonym->toport);
-                           InOut_WriteString(" got RTR and set call from ",
+                           osic_WrStr(" got RTR and set call from ",
                 28ul);
-                           osi_WrStrLn(anonym->call, 10ul);
+                           osic_WrStrLn(anonym->call, 10ul);
                         }
                      }
                      if (anonym->pri==0UL && b[i+3UL]=='A') {
@@ -955,15 +946,15 @@ static char statneibor(const char b[], unsigned long b_len,
                      }
                      if (verb) {
                         showpip(anonym->ipnum, anonym->toport);
-                        InOut_WriteString(" new rtt=", 10ul);
-                        InOut_WriteInt((long)anonym->medrtt, 1UL);
-                        osi_WrStrLn("us", 3ul);
+                        osic_WrStr(" new rtt=", 10ul);
+                        osic_WrUINT32((long)anonym->medrtt, 1UL);
+                        osic_WrStrLn("us", 3ul);
                      }
                   }
                   else {
                      if (verb) {
                         showpip(anonym->ipnum, anonym->toport);
-                        osi_WrStrLn(" reply wrong mycall ", 21ul);
+                        osic_WrStrLn(" reply wrong mycall ", 21ul);
                      }
                      anonym->call[0U] = 0;
                      anonym->pollrtr = 0UL; /* reset link */
@@ -972,7 +963,7 @@ static char statneibor(const char b[], unsigned long b_len,
                else {
                   if (verb) {
                      showpip(anonym->ipnum, anonym->toport);
-                     osi_WrStrLn(" got wrong RTR number", 22ul);
+                     osic_WrStrLn(" got wrong RTR number", 22ul);
                   }
                   anonym->pollrtr = systime-qtime;
                 /* long delay, stop data tx */
@@ -1036,7 +1027,7 @@ static void checklinks(void)
                anonym->pollns = nsec();
                if (verb) {
                   showpip(anonym->ipnum, anonym->toport);
-                  osi_WrStrLn(" send check poll", 17ul);
+                  osic_WrStrLn(" send check poll", 17ul);
                }
                pollstr(pb, 256ul, &j, n);
                if (needdata(n)) pb[j] = 'P';
@@ -1079,22 +1070,22 @@ static void readroutes(void)
    unsigned long fromport;
    len = 0UL;
    if (nodefile[0U]) {
-      f = osi_OpenRead(nodefile, 1024ul);
+      f = osic_OpenRead(nodefile, 1024ul);
       if (f<0L) {
          if (verb) {
-            InOut_WriteString("routefile not readable <", 25ul);
-            InOut_WriteString(nodefile, 1024ul);
-            osi_WrStrLn(">", 2ul);
+            osic_WrStr("routefile not readable <", 25ul);
+            osic_WrStr(nodefile, 1024ul);
+            osic_WrStrLn(">", 2ul);
          }
       }
       else {
-         l = osi_RdBin(f, (char *)h, 65536u/1u, 65535UL);
-         osi_Close(f);
+         l = osic_RdBin(f, (char *)h, 65536u/1u, 65535UL);
+         osic_Close(f);
          if (l<0L) {
             if (verb) {
-               InOut_WriteString("routefile not read error <", 27ul);
-               InOut_WriteString(nodefile, 1024ul);
-               osi_WrStrLn(">", 2ul);
+               osic_WrStr("routefile not read error <", 27ul);
+               osic_WrStr(nodefile, 1024ul);
+               osic_WrStrLn(">", 2ul);
             }
          }
          else len = (unsigned long)l;
@@ -1122,7 +1113,7 @@ static void readroutes(void)
             if (n) n->pri = pr+1UL;
             ++pr;
          }
-         else if (verb) osi_WrStrLn("routefile wrong ip:port number", 31ul);
+         else if (verb) osic_WrStrLn("routefile wrong ip:port number", 31ul);
          while (p<len && h[p]==' ') ++p;
          if ((unsigned char)h[p]<' ') pr = 0UL;
          while (p<len && (unsigned char)h[p]<' ') ++p;
@@ -1135,7 +1126,7 @@ static void readroutes(void)
       else {
          if (verb) {
             showpip(n->ipnum, n->toport);
-            osi_WrStrLn(" dead autoroute removed", 24ul);
+            osic_WrStrLn(" dead autoroute removed", 24ul);
          }
          Storage_DEALLOCATE((X2C_ADDRESS *) &n, sizeof(pNEIGHBOUR));
       }
@@ -1149,35 +1140,35 @@ static void showroutes(void)
    char h[256];
    struct NEIGHBOUR * anonym;
    n = neibors;
-   osi_WrStrLn("routing table:==============================", 45ul);
+   osic_WrStrLn("routing table:==============================", 45ul);
    while (n) {
       { /* with */
          struct NEIGHBOUR * anonym = n;
          showpip(anonym->ipnum, anonym->toport);
-         InOut_WriteString(" pri=", 6ul);
-         InOut_WriteInt((long)anonym->pri, 1UL);
+         osic_WrStr(" pri=", 6ul);
+         osic_WrUINT32((long)anonym->pri, 1UL);
          if (anonym->uptime>0UL) {
             aprsstr_TimeToStr(systime-anonym->uptime, h, 256ul);
-            InOut_WriteString(" up:", 5ul);
-            InOut_WriteString(h, 256ul);
+            osic_WrStr(" up:", 5ul);
+            osic_WrStr(h, 256ul);
          }
-         InOut_WriteString(" ", 2ul);
-         InOut_WriteString(anonym->call, 10ul);
+         osic_WrStr(" ", 2ul);
+         osic_WrStr(anonym->call, 10ul);
          if (anonym->heard>0UL) {
-            InOut_WriteString(" heard:", 8ul);
-            InOut_WriteInt((long)(systime-anonym->heard), 1UL);
+            osic_WrStr(" heard:", 8ul);
+            osic_WrUINT32((long)(systime-anonym->heard), 1UL);
          }
-         InOut_WriteString(" rtt:", 6ul);
-         InOut_WriteInt((long)anonym->medrtt, 1UL);
-         InOut_WriteString(" tf:", 5ul);
-         InOut_WriteInt((long)anonym->nsent, 1UL);
-         InOut_WriteString(" rf:", 5ul);
-         InOut_WriteInt((long)anonym->nrec, 1UL);
-         osi_WrLn();
+         osic_WrStr(" rtt:", 6ul);
+         osic_WrUINT32((long)anonym->medrtt, 1UL);
+         osic_WrStr(" tf:", 5ul);
+         osic_WrUINT32((long)anonym->nsent, 1UL);
+         osic_WrStr(" rf:", 5ul);
+         osic_WrUINT32((long)anonym->nrec, 1UL);
+         osic_WrLn();
          n = anonym->next;
       }
    }
-   osi_WrStrLn("============================================", 45ul);
+   osic_WrStrLn("============================================", 45ul);
 } /* end showroutes() */
 
 
@@ -1248,7 +1239,7 @@ static void Www(long * sock)
    struct NEIGHBOUR * anonym0;
    res0 = readsock(*sock, h, 1023L);
    if (res0<0L) {
-      osi_Close(*sock);
+      osic_Close(*sock);
       *sock = -1L;
       return;
    }
@@ -1379,7 +1370,7 @@ IGN=\"BASELINE\" BGCOLOR=\"#E0C0A0\"><TH COLSPAN=14 style=\"text-align:center\\
       strncpy(h,"</TABLE></BODY></HTML>\015\012",1024u);
    }
    res0 = sendsock(*sock, h, (long)aprsstr_Length(h, 1024ul));
-   osi_Close(*sock);
+   osic_Close(*sock);
    *sock = -1L;
 } /* end Www() */
 
@@ -1463,14 +1454,11 @@ X2C_STACK_LIMIT(100000l)
 extern int main(int argc, char **argv)
 {
    long tmp;
-   X2C_BEGIN(&argc,argv,1,4000000l,8000000l);
    if (sizeof(MONCALL)!=10) X2C_ASSERT(0);
    if (sizeof(FILENAME)!=1024) X2C_ASSERT(0);
    aprsstr_BEGIN();
-   TimeConv_BEGIN();
-   Lib_BEGIN();
-   Storage_BEGIN();
-   osi_BEGIN();
+   Lib_BEGIN(argc, argv);
+   osic_BEGIN();
    Gencrctab();
    Lib_Fill((char *) &nlocal, sizeof(struct NEIGHBOUR), 0);
    nlocal.pri = 1UL;
@@ -1528,8 +1516,8 @@ extern int main(int argc, char **argv)
             /* open listensocket www connects */
             tcpsock = waitconnect(wwwbindport, 4UL);
             if (verb && tcpsock<0L) {
-               InOut_WriteString("cant bind to port ", 19ul);
-               osi_WrStrLn(wwwbindport, 6ul);
+               osic_WrStr("cant bind to port ", 19ul);
+               osic_WrStrLn(wwwbindport, 6ul);
             }
          }
          if (wwwsock>=0L) {
@@ -1538,7 +1526,7 @@ extern int main(int argc, char **argv)
                strncpy(tbuf,"timeout\015\012",512u);
                res = sendsock(wwwsock, tbuf, (long)aprsstr_Length(tbuf,
                 512ul));
-               osi_Close(wwwsock);
+               osic_Close(wwwsock);
                wwwsock = -1L;
             }
          }

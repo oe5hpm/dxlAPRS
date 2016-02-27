@@ -15,18 +15,12 @@
 #define xosi_C_
 #include <keysym.h>
 #include <unistd.h>
-#ifndef xmRTS_H_
-#include "xmRTS.h"
-#endif
 #ifndef signal_H_
 #include "signal.h"
 #endif
 #include <wait.h>
 #ifndef beep_H_
 #include "beep.h"
-#endif
-#ifndef Storage_H_
-#include "Storage.h"
 #endif
 #include <X.h>
 #include <Xutil.h>
@@ -39,10 +33,7 @@
 #include "aprsdecode.h"
 #endif
 #ifndef osi_H_
-#include "osi.h"
-#endif
-#ifndef RealMath_H_
-#include "RealMath.h"
+#include "osic.h"
 #endif
 #ifndef aprsstr_H_
 #include "aprsstr.h"
@@ -50,9 +41,7 @@
 #ifndef useri_H_
 #include "useri.h"
 #endif
-#ifndef TimeConv_H_
-#include "TimeConv.h"
-#endif
+
 
 
 
@@ -155,7 +144,7 @@ static unsigned long Gamma(unsigned long c, float g)
       X2C_XOFF();
    }
    else {
-      osi_WrStrLn("error in Gamma TRUNC() ", 24ul);
+      osic_WrStrLn("error in Gamma TRUNC() ", 24ul);
       Gamma_ret = 0UL;
    }
    X2C_XREMOVE();
@@ -239,14 +228,14 @@ static void allocxbufw(struct XWIN * w, unsigned long xsizeh,
       useri_debugmem.req = (unsigned long)xbuf0size;
       useri_debugmem.screens += useri_debugmem.req;
       if (xbuf016==0) {
-         osi_WrStrLn("initx: out of memory", 21ul);
+         osic_WrStrLn("initx: out of memory", 21ul);
          useri_wrheap();
          X2C_ABORT();
       }
       anonym->ximage0 = XCreateImage(dis, anonym->pvis, anonym->bitperpixel,
                 2L, 0L, (X2C_ADDRESS)xbuf016, xsizeh, ysizeh, 32L, 0L);
       if (anonym->ximage0==0) {
-         osi_WrStrLn("XCreateImage returns NIL", 25ul);
+         osic_WrStrLn("XCreateImage returns NIL", 25ul);
          X2C_ABORT();
       }
       /*
@@ -286,7 +275,7 @@ static long MakeMainWin(char winname[], unsigned long winname_len,
       /* Connect to the X server */
       dis = XOpenDisplay("");
       if (dis==0) {
-         osi_WrStrLn("Couldnt open display", 21ul);
+         osic_WrStrLn("Couldnt open display", 21ul);
          MakeMainWin_ret = -1L;
          goto label;
       }
@@ -301,13 +290,13 @@ static long MakeMainWin(char winname[], unsigned long winname_len,
                 (unsigned long)anonym->myhint.width,
                 (unsigned long)anonym->myhint.height, 1UL, 0UL, 0UL);
       if (anonym->win==0UL) {
-         osi_WrStrLn("Couldnt open window", 20ul);
+         osic_WrStrLn("Couldnt open window", 20ul);
          MakeMainWin_ret = -1L;
          goto label;
       }
       anonym->pvis = DefaultVisual(dis, 0L);
       if (anonym->pvis==0) {
-         osi_WrStrLn("no visual", 10ul);
+         osic_WrStrLn("no visual", 10ul);
          MakeMainWin_ret = -1L;
          goto label;
       }
@@ -907,17 +896,15 @@ extern void xosi_Eventloop(unsigned long timeout)
 } /* end Eventloop() */
 
 
-extern void xosi_BEGIN(void)
+extern void xosic_BEGIN(void)
 {
    static int xosi_init = 0;
    if (xosi_init) return;
    xosi_init = 1;
-   TimeConv_BEGIN();
-   osi_BEGIN();
+   osic_BEGIN();
    useri_BEGIN();
    aprsstr_BEGIN();
    aprsdecode_BEGIN();
-   Storage_BEGIN();
    xosi_headmh[0UL] = 0;
    xosi_cutbuffer.text = 0;
 }

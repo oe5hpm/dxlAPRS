@@ -13,12 +13,6 @@
 #include "X2C.h"
 #endif
 #define aprsmap_C_
-#ifndef Storage_H_
-#include "Storage.h"
-#endif
-#ifndef TimeConv_H_
-#include "TimeConv.h"
-#endif
 #ifndef useri_H_
 #include "useri.h"
 #endif
@@ -32,21 +26,12 @@
 #include "aprsdecode.h"
 #endif
 #ifndef xosi_H_
-#include "xosi.h"
+#include "xosic.h"
 #endif
 #ifndef osi_H_
-#include "osi.h"
-#endif
-#ifndef RealMath_H_
-#include "RealMath.h"
+#include "osic.h"
 #endif
 #include <math.h>
-#ifndef InOut_H_
-#include "InOut.h"
-#endif
-#ifndef FileSys_H_
-#include "FileSys.h"
-#endif
 #ifndef aprsstr_H_
 #include "aprsstr.h"
 #endif
@@ -195,8 +180,8 @@ static struct aprspos_POSITION clickwatchpos;
 static void Error(char text0[], unsigned long text_len)
 {
    X2C_PCOPY((void **)&text0,text_len);
-   InOut_WriteString(text0, text_len);
-   osi_WrStrLn(" error abort", 13ul);
+   osic_WrStr(text0, text_len);
+   osic_WrStrLn(" error abort", 13ul);
    X2C_ABORT();
    X2C_PFREE(text0);
 } /* end Error() */
@@ -413,7 +398,7 @@ static void binseek(unsigned long * i, long fc, unsigned long * wp,
       bof = 0;
       for (;;) {
          if (rp>=len) {
-            len = osi_RdBin(fc, (char *)sb, 1024u/1u, 1024UL);
+            len = osic_RdBin(fc, (char *)sb, 1024u/1u, 1024UL);
             rp = 0L;
          }
          if (len<=0L) {
@@ -448,17 +433,17 @@ static void binseek(unsigned long * i, long fc, unsigned long * wp,
       else ftime = X2C_max_longcard;
       if (ftime<time0==seekstep<0L) seekstep = -X2C_DIV(seekstep,2L);
       if (seekstep>=0L && seekstep<5000L || retry>=200UL) break;
-      osi_Seekcur(fc, seekstep-1024L);
+      osic_Seekcur(fc, seekstep-1024L);
       ++retry;
    }
-   if (time0<=*first) osi_Seek(fc, 0UL);
+   if (time0<=*first) osic_Seek(fc, 0UL);
    else if (retry>=200UL) {
-      osi_Seek(fc, 0UL);
+      osic_Seek(fc, 0UL);
       useri_say("unsort logfile, trying linear search", 37ul, 180UL, 'r');
    }
    else {
       /*      WrStrLn("unsort logfile, trying linear search"); */
-      osi_Seekcur(fc, -6024L); /* set back for safety */
+      osic_Seekcur(fc, -6024L); /* set back for safety */
    }
 } /* end binseek() */
 
@@ -487,8 +472,8 @@ static void rdlonglog(aprsdecode_pOPHIST * optab, char fn[],
    *lines = 0L;
    aprsstr_cleanfilename(fn, fn_len);
    if (fn[0UL]==0) goto label;
-   fc = osi_OpenReadLong(fn, fn_len);
-   if (!osi_FdValid(fc)) goto label;
+   fc = osic_OpenReadLong(fn, fn_len);
+   if (!osic_FdValid(fc)) goto label;
    *firstread = 0UL;
    *lastread = 0UL;
    end = 0UL;
@@ -504,7 +489,7 @@ static void rdlonglog(aprsdecode_pOPHIST * optab, char fn[],
    else lfc = 0UL;
    for (;;) {
       if (rp>=len) {
-         len = osi_RdBin(fc, (char *)ib, 32768u/1u, 32768UL);
+         len = osic_RdBin(fc, (char *)ib, 32768u/1u, 32768UL);
          if (len<=0L) break;
          rp = 0L;
       }
@@ -540,7 +525,7 @@ static void rdlonglog(aprsdecode_pOPHIST * optab, char fn[],
       else if (wp<510UL) ++wp;
       ++rp;
    }
-   osi_Close(fc);
+   osic_Close(fc);
    op = *optab;
    while (op) {
       aprsdecode_Checktrack(op, 0);
@@ -609,13 +594,13 @@ static void rdlog(aprsdecode_pOPHIST * optab, char fn[],
                memcpy(fnd,fnn,1024u);
                aprstext_logfndate(t, fnd, 1024ul);
                t = (t/86400UL+1UL)*86400UL;
-               if (fo) osi_Close(fc);
-               fc = osi_OpenRead(fnd, 1024ul);
-            } while (!osi_FdValid(fc));
+               if (fo) osic_Close(fc);
+               fc = osic_OpenRead(fnd, 1024ul);
+            } while (!osic_FdValid(fc));
             fo = 1;
             if (*lines<0L) *lines = 0L;
          }
-         len = osi_RdBin(fc, (char *)ib, 32768u/1u, 32768UL);
+         len = osic_RdBin(fc, (char *)ib, 32768u/1u, 32768UL);
          rp = 0L;
       }
       mbuf[wp] = ib[rp];
@@ -649,7 +634,7 @@ static void rdlog(aprsdecode_pOPHIST * optab, char fn[],
       ++rp;
    }
    loop_exit:;
-   if (fo) osi_Close(fc);
+   if (fo) osic_Close(fc);
    op = *optab;
    while (op) {
       aprsdecode_Checktrack(op, 0);
@@ -3549,13 +3534,13 @@ static void savevideo420(maptool_pIMAGE img, char fn[], unsigned long fn_len,
    struct maptool_PIX * anonym3;
    long tmp;
    X2C_PCOPY((void **)&fn,fn_len);
-   if (!osi_FdValid(videofd)) {
+   if (!osic_FdValid(videofd)) {
       /*
           videofd:=Create(fn);
       */
-      if (FileSys_Exists(fn, fn_len)) videofd = osi_OpenWrite(fn, fn_len);
-      else videofd = osi_OpenWrite(fn, fn_len);
-      if (!osi_FdValid(videofd)) goto label;
+      if (FileSys_Exists(fn, fn_len)) videofd = osic_OpenWrite(fn, fn_len);
+      else videofd = osic_OpenWrite(fn, fn_len);
+      if (!osic_FdValid(videofd)) goto label;
       if (format=='M') {
          strncpy(h,"YUV4MPEG2 C420jpeg W",256u);
          aprsstr_IntToStr(maptool_xsize, 1UL, s, 256ul);
@@ -3564,7 +3549,7 @@ static void savevideo420(maptool_pIMAGE img, char fn[], unsigned long fn_len,
          aprsstr_IntToStr(maptool_ysize, 1UL, s, 256ul);
          aprsstr_Append(h, 256ul, s, 256ul);
          aprsstr_Append(h, 256ul, " F25000000:1000000 Ip\012", 23ul);
-         osi_WrBin(videofd, (char *)h, 256u/1u, aprsstr_Length(h, 256ul));
+         osic_WrBin(videofd, (char *)h, 256u/1u, aprsstr_Length(h, 256ul));
       }
    }
    if (vidbuf==0) {
@@ -3577,7 +3562,7 @@ static void savevideo420(maptool_pIMAGE img, char fn[], unsigned long fn_len,
    }
    if (format=='M') {
       strncpy(h,"FRAME\012",256u);
-      osi_WrBin(videofd, (char *)h, 256u/1u, 6UL);
+      osic_WrBin(videofd, (char *)h, 256u/1u, 6UL);
    }
    pw = 0UL;
    pb = (unsigned long)(maptool_xsize*maptool_ysize);
@@ -3651,7 +3636,7 @@ static void savevideo420(maptool_pIMAGE img, char fn[], unsigned long fn_len,
          if (x==tmp) break;
       } /* end for */
    } /* end for */
-   osi_WrBin(videofd, (char *)vidbuf, 10000001u/1u,
+   osic_WrBin(videofd, (char *)vidbuf, 10000001u/1u,
                 (unsigned long)X2C_DIV(maptool_xsize*maptool_ysize*3L,2L));
    *bytecnt = *bytecnt+(float)X2C_DIV(maptool_xsize*maptool_ysize*3L,2L);
    label:;
@@ -4320,8 +4305,8 @@ static void animate(const aprsdecode_MONCALL singlecall, unsigned long step,
       */
       aprsdecode_realtime = TimeConv_time();
    } while (!((vtime>endtime+(step*10UL)/25UL || (aprsdecode_click.cmd!='A' && aprsdecode_click.cmd!='a') && aprsdecode_click.cmd!='\312') || useri_newxsize>0UL));
-   if (osi_FdValid(videofd)) {
-      osi_Close(videofd);
+   if (osic_FdValid(videofd)) {
+      osic_Close(videofd);
       useri_say("map.y4m Saved", 14ul, 0UL, 'b');
    }
    if (vidbuf) {
@@ -5094,9 +5079,9 @@ static void killsave(long);
 static void killsave(long signum)
 {
    if (!quit && useri_configon(useri_fAUTOSAVE)) useri_saveconfig();
-   InOut_WriteString("exit ", 6ul);
-   InOut_WriteInt(signum, 0UL);
-   osi_WrStrLn("!", 2ul);
+   osic_WrStr("exit ", 6ul);
+   osic_WrUINT32(signum, 0UL);
+   osic_WrStrLn("!", 2ul);
    X2C_HALT((unsigned long)signum);
 } /* end killsave() */
 
@@ -5193,17 +5178,15 @@ END rdmountains;
 X2C_STACK_LIMIT(100000l)
 extern int main(int argc, char **argv)
 {
-   X2C_BEGIN(&argc,argv,1,4000000l,1000000000l);
    aprstext_BEGIN();
    aprsstr_BEGIN();
    aprspos_BEGIN();
    aprsdecode_BEGIN();
    maptool_BEGIN();
-   xosi_BEGIN();
-   osi_BEGIN();
+   xosic_BEGIN();
+   osic_BEGIN();
    useri_BEGIN();
-   TimeConv_BEGIN();
-   Storage_BEGIN();
+   Lib_BEGIN(argc, argv);
    memset((char *) &useri_debugmem,(char)0,sizeof(struct useri__D0));
    useri_clrconfig();
    aprsdecode_initparms();
@@ -5257,7 +5240,7 @@ extern int main(int argc, char **argv)
                 (unsigned long)maptool_xsize,
                 (unsigned long)maptool_ysize)>=0L;
    if (!withx) {
-      osi_WrStrLn("cannot open xwindow, image generation only", 43ul);
+      osic_WrStrLn("cannot open xwindow, image generation only", 43ul);
    }
    xosi_Gammatab(aprsdecode_lums.gamma);
    aprsdecode_realtime = TimeConv_time();

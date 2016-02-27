@@ -14,13 +14,10 @@
 #endif
 #define gps2digipos_C_
 #ifndef osi_H_
-#include "osi.h"
+#include "osic.h"
 #endif
 #ifndef Lib_H_
 #include "Lib.h"
-#endif
-#ifndef InOut_H_
-#include "InOut.h"
 #endif
 #ifndef mlib_H_
 #include "mlib.h"
@@ -103,9 +100,9 @@ static struct _0 median[500];
 static void Error(char text[], unsigned long text_len)
 {
    X2C_PCOPY((void **)&text,text_len);
-   InOut_WriteString("agps2digipos: ", 15ul);
-   InOut_WriteString(text, text_len);
-   osi_WrStrLn(" error abort", 13ul);
+   osic_WrStr("agps2digipos: ", 15ul);
+   osic_WrStr(text, text_len);
+   osic_WrStrLn(" error abort", 13ul);
    X2C_ABORT();
    X2C_PFREE(text);
 } /* end Error() */
@@ -170,7 +167,7 @@ static void SetComMode(long fd, unsigned long baud0)
 static void opentty(void)
 {
    for (;;) {
-      tty = osi_OpenRW(ttynamee, 1024ul);
+      tty = osic_OpenRW(ttynamee, 1024ul);
       if (tty>=0L) {
          SetComMode(tty, baud);
          break;
@@ -256,30 +253,30 @@ static void Parms(void)
          else if (h[1U]=='v') verb = 1;
          else {
             if (h[1U]=='h') {
-               osi_WrLn();
-               osi_WrStrLn("Read serial GPS and make position string to inser\
+               osic_WrLn();
+               osic_WrStrLn("Read serial GPS and make position string to inser\
 t into APRS-beacon", 68ul);
-               osi_WrStrLn(" -a                                altitude on",
+               osic_WrStrLn(" -a                                altitude on",
                 47ul);
-               osi_WrStrLn(" -f <filename>                     writes <fn.lat\
+               osic_WrStrLn(" -f <filename>                     writes <fn.lat\
 > <fn.long> and <filename.alt>", 80ul);
-               osi_WrStrLn(" -h                                this", 40ul);
+               osic_WrStrLn(" -h                                this", 40ul);
                /*        WrStrLn('
                 -i <icon>                         2 Icon chars "/-" (House),
                 "/>" (Car)...'); */
-               osi_WrStrLn(" -m <seconds>                      time to read g\
+               osic_WrStrLn(" -m <seconds>                      time to read g\
 ps to make median position", 76ul);
-               osi_WrStrLn(" -s                                GPS Checksum c\
+               osic_WrStrLn(" -s                                GPS Checksum c\
 heck OFF", 58ul);
-               osi_WrStrLn(" -t <tty>:<baud>                   default /dev/t\
+               osic_WrStrLn(" -t <tty>:<baud>                   default /dev/t\
 tyS0:9600", 59ul);
-               osi_WrStrLn(" -u                                not retry unti\
+               osic_WrStrLn(" -u                                not retry unti\
 l open removable USB tty", 74ul);
-               osi_WrStrLn(" -v                                verbous",
+               osic_WrStrLn(" -v                                verbous",
                 43ul);
-               osi_WrStrLn(" example:  -t /dev/ttyS0:9600 -u -f test -i \"/-\\
+               osic_WrStrLn(" example:  -t /dev/ttyS0:9600 -u -f test -i \"/-\\
 " -a -m 30 -v", 61ul);
-               osi_WrLn();
+               osic_WrLn();
                X2C_ABORT();
             }
             err = 1;
@@ -294,9 +291,9 @@ l open removable USB tty", 74ul);
       if (err) break;
    }
    if (err) {
-      InOut_WriteString(">", 2ul);
-      InOut_WriteString(h, 1024ul);
-      osi_WrStrLn("< use -h", 9ul);
+      osic_WrStr(">", 2ul);
+      osic_WrStr(h, 1024ul);
+      osic_WrStrLn("< use -h", 9ul);
       X2C_ABORT();
    }
 } /* end Parms() */
@@ -502,7 +499,7 @@ static char checksum(const char b[], unsigned long b_len,
       if (b[i+1UL]!=Hex((unsigned long)cs/16UL)
                 || b[i+2UL]!=Hex((unsigned long)cs&15UL)) ok0 = 0;
    }
-   if (verb && !ok0) osi_WrStrLn("GPS Checksum Error", 19ul);
+   if (verb && !ok0) osic_WrStrLn("GPS Checksum Error", 19ul);
    return ok0;
 } /* end checksum() */
 
@@ -514,13 +511,13 @@ static void showline(const char b[], unsigned long b_len,
    i = 0UL;
    while (i<len0) {
       if ((unsigned char)b[i]<' ') {
-         if (b[i]=='\012') osi_WrLn();
-         else InOut_WriteString(".", 2ul);
+         if (b[i]=='\012') osic_WrLn();
+         else osic_WrStr(".", 2ul);
       }
-      else InOut_WriteString((char *) &b[i], 1u/1u);
+      else osic_WrStr((char *) &b[i], 1u/1u);
       ++i;
    }
-   osi_WrLn();
+   osic_WrLn();
 } /* end showline() */
 
 
@@ -533,10 +530,10 @@ static void wrfile(char b[], unsigned long b_len, unsigned long len0,
    X2C_PCOPY((void **)&ext,ext_len);
    aprsstr_Assign(s, 2001ul, basefilename, 1024ul);
    aprsstr_Append(s, 2001ul, ext, ext_len);
-   f = osi_OpenWrite(s, 2001ul);
+   f = osic_OpenWrite(s, 2001ul);
    if (f>=0L) {
-      if (len0>0UL) osi_WrBin(f, (char *)b, (b_len)/1u, len0);
-      osi_Close(f);
+      if (len0>0UL) osic_WrBin(f, (char *)b, (b_len)/1u, len0);
+      osic_Close(f);
    }
    X2C_PFREE(b);
    X2C_PFREE(ext);
@@ -721,7 +718,7 @@ static void getmedian(double * lat0, double * long1, double * alt0)
    *long1 = 0.0;
    *alt0 = 0.0;
    if (verb) {
-      osi_WrStrLn("   lat           long                alt  ok", 45ul);
+      osic_WrStrLn("   lat           long                alt  ok", 45ul);
    }
    tmp = medians-1UL;
    i = 0UL;
@@ -739,11 +736,11 @@ static void getmedian(double * lat0, double * long1, double * alt0)
       if (verb) {
          { /* with */
             struct _0 * anonym1 = &median[i];
-            osi_WrFixed((float)anonym1->mlat, 8L, 14UL);
-            osi_WrFixed((float)anonym1->mlong, 8L, 14UL);
-            osi_WrFixed((float)anonym1->malt, 1L, 14UL);
-            InOut_WriteInt((long)(unsigned long)anonym1->ok0, 2UL);
-            osi_WrStrLn("", 1ul);
+            osic_WrFixed((float)anonym1->mlat, 8L, 14UL);
+            osic_WrFixed((float)anonym1->mlong, 8L, 14UL);
+            osic_WrFixed((float)anonym1->malt, 1L, 14UL);
+            osic_WrUINT32((long)(unsigned long)anonym1->ok0, 2UL);
+            osic_WrStrLn("", 1ul);
          }
       }
       if (i==tmp) break;
@@ -769,10 +766,9 @@ X2C_STACK_LIMIT(100000l)
 extern int main(int argc, char **argv)
 {
    long tmp;
-   X2C_BEGIN(&argc,argv,1,4000000l,8000000l);
    aprsstr_BEGIN();
-   Lib_BEGIN();
-   osi_BEGIN();
+   Lib_BEGIN(argc, argv);
+   osic_BEGIN();
    sumoff = 0;
    junk = 1;
    posok = 0;
@@ -794,9 +790,9 @@ extern int main(int argc, char **argv)
    Parms();
    opentty();
    for (;;) {
-      len = osi_RdBin(tty, (char *)tbuf, 1024u/1u, 1024UL);
+      len = osic_RdBin(tty, (char *)tbuf, 1024u/1u, 1024UL);
       if (len<=0L) {
-         osi_Close(tty);
+         osic_Close(tty);
          usleep(1000000UL);
          opentty();
          junk = 1;
@@ -821,8 +817,8 @@ extern int main(int argc, char **argv)
                      if (mediantime>0UL) {
                         --mediantime;
                         if (verb) {
-                           InOut_WriteInt((long)mediantime, 4UL);
-                           osi_WrStrLn(" mediantime", 12ul);
+                           osic_WrUINT32((long)mediantime, 4UL);
+                           osic_WrStrLn(" mediantime", 12ul);
                         }
                      }
                      else {

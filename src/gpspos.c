@@ -14,7 +14,7 @@
 #endif
 #define gpspos_C_
 #ifndef osi_H_
-#include "osi.h"
+#include "osic.h"
 #endif
 #include <math.h>
 #ifndef InOut_H_
@@ -26,9 +26,6 @@
 #include "gps.h"
 #include "navigation.h"
 #include "geodesy.h"
-#ifndef TimeConv_H_
-#include "TimeConv.h"
-#endif
 #ifndef aprsstr_H_
 #include "aprsstr.h"
 #endif
@@ -727,37 +724,37 @@ static void showstats(const struct RESULTS stats0[], unsigned long stats_len,
    char h[31];
    unsigned long tmp;
    if (full) {
-      InOut_WriteString(" probs:", 8ul);
-      InOut_WriteInt((long)probs, 1UL);
-      osi_WrStrLn("", 1ul);
+      osic_WrStr(" probs:", 8ul);
+      osic_WrUINT32((long)probs, 1UL);
+      osic_WrStrLn("", 1ul);
       tmp = probs-1UL;
       p = 0UL;
       if (p<=tmp) for (;; p++) {
          for (i = 0UL; i<=11UL; i++) {
-            InOut_WriteInt((long)(unsigned long)X2C_IN(i,16,
+            osic_WrUINT32((long)(unsigned long)X2C_IN(i,16,
                 stats0[p].satset), 1UL);
          } /* end for */
-         InOut_WriteString(" ", 2ul);
+         osic_WrStr(" ", 2ul);
          degtostr((float)stats0[p].lat, 1, '2', h, 31ul);
-         InOut_WriteString(h, 31ul);
-         InOut_WriteString(" ", 2ul);
+         osic_WrStr(h, 31ul);
+         osic_WrStr(" ", 2ul);
          degtostr((float)stats0[p].long0, 0, '2', h, 31ul);
-         InOut_WriteString(h, 31ul);
-         InOut_WriteInt((long)X2C_TRUNCI(stats0[p].heig,X2C_min_longint,
+         osic_WrStr(h, 31ul);
+         osic_WrUINT32((long)X2C_TRUNCI(stats0[p].heig,X2C_min_longint,
                 X2C_max_longint), 7UL);
          for (i = 0UL; i<=3UL; i++) {
-            osi_WrFixed((float)stats0[p].hd[i], 0L, 5UL);
-            osi_WrFixed((float)stats0[p].vd[i], 0L, 5UL);
+            osic_WrFixed((float)stats0[p].hd[i], 0L, 5UL);
+            osic_WrFixed((float)stats0[p].vd[i], 0L, 5UL);
          } /* end for */
-         osi_WrFixed((float)stats0[p].qsumh, 0L, 8UL);
-         osi_WrFixed((float)stats0[p].qsumv, 0L, 8UL);
-         InOut_WriteString(" ", 2ul);
+         osic_WrFixed((float)stats0[p].qsumh, 0L, 8UL);
+         osic_WrFixed((float)stats0[p].qsumv, 0L, 8UL);
+         osic_WrStr(" ", 2ul);
          /*    WrFixed(stats[p].minele/RAD, 0, 3); WrStr(" "); */
          for (i = 0UL; i<=4UL; i++) {
-            InOut_WriteInt((long)(unsigned long)X2C_IN(i,16,stats0[p].res),
+            osic_WrUINT32((long)(unsigned long)X2C_IN(i,16,stats0[p].res),
                 1UL);
          } /* end for */
-         osi_WrStrLn("", 1ul);
+         osic_WrStrLn("", 1ul);
          if (p==tmp) break;
       } /* end for */
    }
@@ -776,12 +773,12 @@ static void showstats(const struct RESULTS stats0[], unsigned long stats_len,
      WrStr("s=");WrFixed(las/LFLOAT(i)*100000.0, 2, 8); WrStr(" ");
                 WrFixed(los/LFLOAT(i)*100000.0, 2, 8); WrStrLn("");
    */
-   InOut_WriteString("n=", 3ul);
-   InOut_WriteInt((long)restcnt, 3UL);
-   InOut_WriteString(" s=", 4ul);
-   osi_WrFixed(errh, 1L, 0UL);
-   osi_WrFixed(errv, 1L, 6UL);
-   osi_WrStrLn("", 1ul);
+   osic_WrStr("n=", 3ul);
+   osic_WrUINT32((long)restcnt, 3UL);
+   osic_WrStr(" s=", 4ul);
+   osic_WrFixed(errh, 1L, 0UL);
+   osic_WrFixed(errv, 1L, 6UL);
+   osic_WrStrLn("", 1ul);
 } /* end showstats() */
 
 
@@ -1113,10 +1110,10 @@ extern long gpspos_getposit(unsigned long weekms, unsigned long * systime,
          ++comb;
       } while (!X2C_IN(satcnt,16,(unsigned short)comb));
    }
-   InOut_WriteInt((long)satcnt, 2UL);
-   InOut_WriteString("=sats", 6ul);
-   InOut_WriteInt((long)tries, 5UL);
-   InOut_WriteString("=tries ", 8ul);
+   osic_WrUINT32((long)satcnt, 2UL);
+   osic_WrStr("=sats", 6ul);
+   osic_WrUINT32((long)tries, 5UL);
+   osic_WrStr("=tries ", 8ul);
    if (tries>0UL) {
       killdop(stats, 500ul, tries);
       killexo(stats, 500ul, tries, hrms, vrms);
@@ -1184,29 +1181,29 @@ extern long gpspos_getposit(unsigned long weekms, unsigned long * systime,
       */
       /*---speed */
       min0 = 0.0;
-      osi_WrStrLn("prn az    ele       clc      dopp   freq0", 42ul);
+      osic_WrStrLn("prn az    ele       clc      dopp   freq0", 42ul);
       tmp0 = satcnt;
       i = 1UL;
       if (i<=tmp0) for (;; i++) {
          j = sats[i-1UL].almidx;
          if (j<=31UL) {
             if (!sats[i-1UL].badspeed) ++*goodsats;
-            InOut_WriteInt((long)sats[i-1UL].prn, 2UL);
-            osi_WrFixed((float)(X2C_DIVL(satspos[j].azimuth0,
+            osic_WrUINT32((long)sats[i-1UL].prn, 2UL);
+            osic_WrFixed((float)(X2C_DIVL(satspos[j].azimuth0,
                 1.7453292519943E-2)), 1L, 7UL);
-            osi_WrFixed((float)(X2C_DIVL(satspos[j].elevation,
+            osic_WrFixed((float)(X2C_DIVL(satspos[j].elevation,
                 1.7453292519943E-2)), 1L, 6UL);
-            osi_WrFixed((float)satspos[j].clk, 0L, 10UL);
-            osi_WrFixed((float)satspos[j].doppler, 1L, 10UL);
-            InOut_WriteInt(sats[i-1UL].rang1, 8UL);
+            osic_WrFixed((float)satspos[j].clk, 0L, 10UL);
+            osic_WrFixed((float)satspos[j].doppler, 1L, 10UL);
+            osic_WrUINT32(sats[i-1UL].rang1, 8UL);
             /*        WrFixed(LFLOAT(sats[i-1].freq0)*(WAVLEN/256.0), 3, 10);
                  */
             aa = (double)sats[i-1UL].rang1*7.4333465936861E-4-satspos[j].doppler;
-            osi_WrFixed((float)aa, 3L, 10UL);
+            osic_WrFixed((float)aa, 3L, 10UL);
             /*      WrFixed(ABS(aa-min), 3, 10); */
             min0 = aa;
-            if (sats[i-1UL].badspeed) InOut_WriteString(" v", 3ul);
-            osi_WrStrLn("", 1ul);
+            if (sats[i-1UL].badspeed) osic_WrStr(" v", 3ul);
+            osic_WrStrLn("", 1ul);
          }
          if (i==tmp0) break;
       } /* end for */
@@ -1219,7 +1216,7 @@ static void wrdate(unsigned long t)
 {
    char s[31];
    aprsstr_DateToStr(t, s, 31ul);
-   InOut_WriteString(s, 31ul);
+   osic_WrStr(s, 31ul);
 } /* end wrdate() */
 
 #define gpspos_MAXTRUST 21600
@@ -1314,17 +1311,17 @@ extern char gpspos_readalmanach(char fnsem[], unsigned long fnsem_len,
                 (char *) &rinexklobuchar, (char *)rinexalm, 3071UL, &ri);
    if (rinexok && ri>0UL) {
       if (verb) {
-         InOut_WriteInt((long)ri, 1UL);
-         osi_WrStrLn("=rec", 5ul);
+         osic_WrUINT32((long)ri, 1UL);
+         osic_WrStrLn("=rec", 5ul);
       }
       for (i = 0UL; i<=31UL; i++) {
          min0[i] = 0UL;
       } /* end for */
       ti = ((TimeConv_time()-7200UL)+345600UL)%604800UL;
       if (verb) {
-         InOut_WriteInt((long)ti, 12UL);
-         InOut_WriteInt((long)secondinweek, 12UL);
-         osi_WrStrLn("=ti secondinweek", 17ul);
+         osic_WrUINT32((long)ti, 12UL);
+         osic_WrUINT32((long)secondinweek, 12UL);
+         osic_WrStrLn("=ti secondinweek", 17ul);
       }
       tmp = ri-1UL;
       j = 0UL;
@@ -1389,9 +1386,9 @@ extern char gpspos_readalmanach(char fnsem[], unsigned long fnsem_len,
          ++j;
       } while (j<=31UL);
       if (verb) {
-         InOut_WriteString("median last almanach time:", 27ul);
+         osic_WrStr("median last almanach time:", 27ul);
          wrdate(*tilltime);
-         InOut_WriteString(" ", 2ul);
+         osic_WrStr(" ", 2ul);
       }
    }
    else if (semok) {
@@ -1509,7 +1506,6 @@ extern void gpspos_BEGIN(void)
    if (gpspos_init) return;
    gpspos_init = 1;
    aprsstr_BEGIN();
-   TimeConv_BEGIN();
-   osi_BEGIN();
+   osic_BEGIN();
 }
 

@@ -25,6 +25,7 @@
 #include <sys/ioctl.h>
 #include <termios.h>
 #include <linux/ppdev.h>
+#include <unistd.h>
 
 #include "pp065mb.h"
 

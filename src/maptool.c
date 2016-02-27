@@ -20,21 +20,12 @@
 #include "aprsdecode.h"
 #endif
 #ifndef xosi_H_
-#include "xosi.h"
+#include "xosic.h"
 #endif
 #ifndef osi_H_
-#include "osi.h"
-#endif
-#ifndef RealMath_H_
-#include "RealMath.h"
+#include "osic.h"
 #endif
 #include <math.h>
-#ifndef InOut_H_
-#include "InOut.h"
-#endif
-#ifndef FileSys_H_
-#include "FileSys.h"
-#endif
 #ifndef aprsstr_H_
 #include "aprsstr.h"
 #endif
@@ -46,12 +37,6 @@
 #endif
 #ifndef jpgdec_H_
 #include "jpgdec.h"
-#endif
-#ifndef TimeConv_H_
-#include "TimeConv.h"
-#endif
-#ifndef Storage_H_
-#include "Storage.h"
 #endif
 #ifndef useri_H_
 #include "useri.h"
@@ -427,7 +412,7 @@ extern void maptool_mercator(float lon, float lat, long zoom, long * tilex,
       X2C_XOFF();
    }
    else {
-      osi_WrStrLn("error in mercator", 18ul);
+      osic_WrStrLn("error in mercator", 18ul);
       *tilex = 0L;
       *tiley = 0L;
       *x = 0.0f;
@@ -621,7 +606,7 @@ static long opensrtm(unsigned char t, unsigned long tlat,
       s[10U] = 't';
       s[11U] = 0;
       aprsstr_Append(path, 1024ul, s, 21ul);
-      return osi_OpenRead(path, 1024ul);
+      return osic_OpenRead(path, 1024ul);
    }
    else {
       aprsstr_Append(path, 1024ul, "/srtm30/", 9ul);
@@ -666,7 +651,7 @@ static long opensrtm(unsigned char t, unsigned long tlat,
       s[10U] = 'M';
       s[11U] = 0;
       aprsstr_Append(path, 1024ul, s, 21ul);
-      f = osi_OpenRead(path, 1024ul);
+      f = osic_OpenRead(path, 1024ul);
       srtm30fd[xi][yi].fd = f;
       srtm30fd[xi][yi].havefile = 1;
       /*WrInt(xi, 4); WrInt(yi, 4); WrStrLn(path); */
@@ -714,7 +699,7 @@ static void purgesrtm(char all)
                   } /* end for */
                }
                if (all) {
-                  if (pt->fd!=-1L) osi_Close(pt->fd);
+                  if (pt->fd!=-1L) osic_Close(pt->fd);
                   Storage_DEALLOCATE((X2C_ADDRESS *) &pt,
                 sizeof(struct SRTMTILE));
                   useri_debugmem.srtm -= sizeof(struct SRTMTILE);
@@ -731,7 +716,7 @@ static void purgesrtm(char all)
    } /* end for */
    for (x = 0UL; x<=8UL; x++) {
       for (y = 0UL; y<=3UL; y++) {
-         if (srtm30fd[x][y].havefile) osi_Close(srtm30fd[x][y].fd);
+         if (srtm30fd[x][y].havefile) osic_Close(srtm30fd[x][y].fd);
       } /* end for */
    } /* end for */
 } /* end purgesrtm() */
@@ -845,8 +830,8 @@ static float getsrtm1(unsigned long ilat, unsigned long ilong,
          useri_debugmem.srtm += rdsize;
          anonym0->strips[xx][y] = pb;
          /*WrInt(seek, 15);WrStrLn(" seek"); */
-         osi_Seek(anonym0->fd, (unsigned long)seek);
-         if (osi_RdBin(anonym0->fd, (char *)pb, 2400u/1u,
+         osic_Seek(anonym0->fd, (unsigned long)seek);
+         if (osic_RdBin(anonym0->fd, (char *)pb, 2400u/1u,
                 rdsize)!=(long)rdsize) return 32767.0f;
          /*
          c-translator frissts nicht
@@ -4585,15 +4570,15 @@ wnloader", 27ul);
             }
             if (maploopcnt<8UL) ++maploopcnt;
          }
-         fd = osi_OpenWrite("gettiles", 9ul);
-         if (osi_FdValid(fd)) {
-            osi_WrBin(fd, (char *)mapnamesbuf, 4096u/1u, lb);
-            osi_Close(fd);
+         fd = osic_OpenWrite("gettiles", 9ul);
+         if (osic_FdValid(fd)) {
+            osic_WrBin(fd, (char *)mapnamesbuf, 4096u/1u, lb);
+            osic_Close(fd);
             if (aprsdecode_verb) {
-               InOut_WriteString("try:", 5ul);
-               InOut_WriteInt((long)maploopcnt, 1UL);
-               osi_WrStrLn(" written gettiles:", 19ul);
-               InOut_WriteString(mapnamesbuf, 4096ul);
+               osic_WrStr("try:", 5ul);
+               osic_WrUINT32((long)maploopcnt, 1UL);
+               osic_WrStrLn(" written gettiles:", 19ul);
+               osic_WrStr(mapnamesbuf, 4096ul);
             }
             lastmapreq = aprsdecode_realtime;
             mapdelay = 0UL;
@@ -4634,7 +4619,7 @@ wnloader", 27ul);
                maploadstart = 0UL; /* if clock jumped back */
             }
          }
-         else osi_WrStrLn("cannot write gettiles", 22ul);
+         else osic_WrStrLn("cannot write gettiles", 22ul);
       }
       else if (lastmapreq>aprsdecode_realtime) {
          lastmapreq = aprsdecode_realtime; /* systime gone backward */
@@ -4777,9 +4762,9 @@ static char loadtile(maptool_pIMAGE map, char * done, char dryrun,
    }
    if (map==0) return 0;
    if (aprsdecode_verb) {
-      InOut_WriteString("open>", 6ul);
-      InOut_WriteString(h, h_len);
-      osi_WrStrLn("<", 2ul);
+      osic_WrStr("open>", 6ul);
+      osic_WrStr(h, h_len);
+      osic_WrStrLn("<", 2ul);
    }
    if (!decodetile(h, h_len, (pPNGBUF)pngbuf, 256L, 256L,
                 768L) || useri_reloadmap) {
@@ -5119,10 +5104,10 @@ static void loadsym(char h[], unsigned long h_len)
    maxxbyte = maxx*3L;
    res = readpng(h, (X2C_ADDRESS *)rows, &maxx, &maxy, &maxxbyte);
    if (res<0L) {
-      InOut_WriteString(h, h_len);
-      osi_WrStrLn(" file read error ", 18ul);
-      InOut_WriteInt(res, 1UL);
-      osi_WrStrLn("", 1ul);
+      osic_WrStr(h, h_len);
+      osic_WrStrLn(" file read error ", 18ul);
+      osic_WrUINT32(res, 1UL);
+      osic_WrStrLn("", 1ul);
       goto label;
    }
    memset((char *)symbols,(char)0,sizeof(struct PIX8 [3072][17]));
@@ -5209,8 +5194,8 @@ extern void maptool_loadfont(void)
    strncpy(fn,"font.png",1025u);
    res = readpng(fn, (X2C_ADDRESS *)rows, &maxx, &maxy, &maxxbyte);
    if ((((res<0L || maxx<1L) || maxx>600L) || maxy<1L) || maxy>24L) {
-      InOut_WriteInt(res, 1UL);
-      osi_WrStrLn(" fontfile read error", 21ul);
+      osic_WrUINT32(res, 1UL);
+      osic_WrStrLn(" fontfile read error", 21ul);
       aprsdecode_lums.fontysize = higth+3UL;
       return;
    }
@@ -5250,7 +5235,7 @@ extern void maptool_loadfont(void)
       }
    } /* end for */
    if (y1<y00+4UL) {
-      osi_WrStrLn(" font too small error", 22ul);
+      osic_WrStrLn(" font too small error", 22ul);
       return;
    }
    /*
@@ -5359,7 +5344,7 @@ static void wr(long fd, unsigned long * len, char b[32768],
    else b[*len] = '\377';
    ++*len;
    if (*len>32767UL) {
-      osi_WrBin(fd, (char *)b, 32768u/1u, *len);
+      osic_WrBin(fd, (char *)b, 32768u/1u, *len);
       *len = 0UL;
    }
 } /* end wr() */
@@ -5393,8 +5378,8 @@ extern long maptool_saveppm(char fn[], unsigned long fn_len,
    long maptool_saveppm_ret;
    X2C_PCOPY((void **)&fn,fn_len);
    aprsstr_cleanfilename(fn, fn_len);
-   fd = osi_OpenWrite(fn, fn_len);
-   if (!osi_FdValid(fd)) {
+   fd = osic_OpenWrite(fn, fn_len);
+   if (!osic_FdValid(fd)) {
       /*    WrStr(fn); WrStrLn(" not writeable"); */
       maptool_saveppm_ret = -1L;
       goto label;
@@ -5415,7 +5400,7 @@ extern long maptool_saveppm(char fn[], unsigned long fn_len,
       numh(h, 1UL, 26UL, 2UL); /* WORD    biPlanes */
       numh(h, 24UL, 28UL, 2UL); /* WORD    biBitCount */
       numh(h, 0UL, 30UL, 4UL); /* DWORD   biCompression */
-      osi_WrBin(fd, (char *)h, 256u/1u, 54UL);
+      osic_WrBin(fd, (char *)h, 256u/1u, 54UL);
       len = 0UL;
       tmp = ysize-1L;
       y = 0L;
@@ -5434,15 +5419,15 @@ extern long maptool_saveppm(char fn[], unsigned long fn_len,
          while (len&3UL) wr(fd, &len, b, 0U);
          if (y==tmp) break;
       } /* end for */
-      if (len>0UL) osi_WrBin(fd, (char *)b, 32768u/1u, len);
-      osi_Close(fd);
+      if (len>0UL) osic_WrBin(fd, (char *)b, 32768u/1u, len);
+      osic_Close(fd);
       ret = 0L;
    }
    else if ((((len>=4UL && fn[len-4UL]=='.') && X2C_CAP(fn[len-3UL])=='P')
                 && X2C_CAP(fn[len-2UL])=='N') && X2C_CAP(fn[len-1UL])=='G') {
       /* make PNG */
       ret = -1L;
-      osi_Close(fd);
+      osic_Close(fd);
       Storage_ALLOCATE((X2C_ADDRESS *) &pngimg.image,
                 (unsigned long)(xsize*ysize*3L));
       if (pngimg.image) {
@@ -5472,20 +5457,20 @@ extern long maptool_saveppm(char fn[], unsigned long fn_len,
          Storage_DEALLOCATE((X2C_ADDRESS *) &pngimg.image,
                 (unsigned long)(xsize*ysize*3L));
       }
-      else osi_WrStrLn("png write out of memory", 24ul);
+      else osic_WrStrLn("png write out of memory", 24ul);
    }
    else {
       /* ppm header */
       strncpy(h,"P6\012",256u);
-      osi_WrBin(fd, (char *)h, 256u/1u, aprsstr_Length(h, 256ul));
+      osic_WrBin(fd, (char *)h, 256u/1u, aprsstr_Length(h, 256ul));
       aprsstr_IntToStr(xsize, 1UL, h, 256ul);
-      osi_WrBin(fd, (char *)h, 256u/1u, aprsstr_Length(h, 256ul));
+      osic_WrBin(fd, (char *)h, 256u/1u, aprsstr_Length(h, 256ul));
       strncpy(h," ",256u);
-      osi_WrBin(fd, (char *)h, 256u/1u, aprsstr_Length(h, 256ul));
+      osic_WrBin(fd, (char *)h, 256u/1u, aprsstr_Length(h, 256ul));
       aprsstr_IntToStr(ysize, 1UL, h, 256ul);
-      osi_WrBin(fd, (char *)h, 256u/1u, aprsstr_Length(h, 256ul));
+      osic_WrBin(fd, (char *)h, 256u/1u, aprsstr_Length(h, 256ul));
       strncpy(h,"\012255\012",256u);
-      osi_WrBin(fd, (char *)h, 256u/1u, aprsstr_Length(h, 256ul));
+      osic_WrBin(fd, (char *)h, 256u/1u, aprsstr_Length(h, 256ul));
       len = 0UL;
       for (y = ysize-1L; y>=0L; y--) {
          tmp = xsize-1L;
@@ -5501,8 +5486,8 @@ extern long maptool_saveppm(char fn[], unsigned long fn_len,
             if (x==tmp) break;
          } /* end for */
       } /* end for */
-      if (len>0UL) osi_WrBin(fd, (char *)b, 32768u/1u, len);
-      osi_Close(fd);
+      if (len>0UL) osic_WrBin(fd, (char *)b, 32768u/1u, len);
+      osic_Close(fd);
       ret = 0L;
    }
    maptool_saveppm_ret = ret;
@@ -5520,7 +5505,7 @@ static void allocpngbuf(void)
       useri_debugmem.req = sizeof(pROWS0);
       useri_debugmem.screens += useri_debugmem.req;
       if (pngbuf[i]==0) {
-         osi_WrStrLn("pngbuf out of memory", 21ul);
+         osic_WrStrLn("pngbuf out of memory", 21ul);
          useri_wrheap();
          X2C_ABORT();
       }
@@ -5531,7 +5516,7 @@ static void allocpngbuf(void)
 static char getch(char b[4096], long fd, long * len, long * p)
 {
    if (*p>=*len) {
-      *len = osi_RdBin(fd, (char *)b, 4096u/1u, 4096UL);
+      *len = osic_RdBin(fd, (char *)b, 4096u/1u, 4096UL);
       if (*len<=0L) return 0;
       *p = 0L;
    }
@@ -5594,8 +5579,8 @@ extern void maptool_rdmountains(char fn[], unsigned long fn_len, char add)
    aprsstr_Append(b, 4096ul, s, 1024ul);
    aprsstr_Append(b, 4096ul, "/", 2ul);
    aprsstr_Append(b, 4096ul, fn, fn_len);
-   fd = osi_OpenRead(b, 4096ul);
-   if (!osi_FdValid(fd)) goto label;
+   fd = osic_OpenRead(b, 4096ul);
+   if (!osic_FdValid(fd)) goto label;
    p = 0L;
    len = 0L;
    for (;;) {
@@ -5637,7 +5622,7 @@ extern void maptool_rdmountains(char fn[], unsigned long fn_len, char add)
       }
    }
    /*WrInt(pm^.alt, 10); WrStrLn(pm^.name); */
-   osi_Close(fd);
+   osic_Close(fd);
    label:;
    X2C_PFREE(fn);
 } /* end rdmountains() */
@@ -5651,10 +5636,8 @@ extern void maptool_BEGIN(void)
    if (sizeof(FN)!=1024) X2C_ASSERT(0);
    aprstext_BEGIN();
    useri_BEGIN();
-   Storage_BEGIN();
-   TimeConv_BEGIN();
-   xosi_BEGIN();
-   osi_BEGIN();
+   xosic_BEGIN();
+   osic_BEGIN();
    aprspos_BEGIN();
    aprsstr_BEGIN();
    aprsdecode_BEGIN();

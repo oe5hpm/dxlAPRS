@@ -14,7 +14,7 @@
 #endif
 #define aprspos_C_
 #ifndef osi_H_
-#include "osi.h"
+#include "osic.h"
 #endif
 #include <math.h>
 
@@ -780,6 +780,6 @@ extern void aprspos_BEGIN(void)
    static int aprspos_init = 0;
    if (aprspos_init) return;
    aprspos_init = 1;
-   osi_BEGIN();
+   osic_BEGIN();
 }
 

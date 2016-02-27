@@ -23,28 +23,13 @@
 #include "aprsdecode.h"
 #endif
 #ifndef xosi_H_
-#include "xosi.h"
+#include "xosic.h"
 #endif
 #ifndef osi_H_
-#include "osi.h"
-#endif
-#ifndef RealMath_H_
-#include "RealMath.h"
-#endif
-#ifndef InOut_H_
-#include "InOut.h"
-#endif
-#ifndef FileSys_H_
-#include "FileSys.h"
+#include "osic.h"
 #endif
 #ifndef aprsstr_H_
 #include "aprsstr.h"
-#endif
-#ifndef Storage_H_
-#include "Storage.h"
-#endif
-#ifndef TimeConv_H_
-#include "TimeConv.h"
 #endif
 #ifndef aprstext_H_
 #include "aprstext.h"
@@ -682,7 +667,7 @@ extern void useri_allocimage(maptool_pIMAGE * image, long x, long y,
       useri_debugmem.req = (*image)->Len1*(*image)->Size1;
       useri_debugmem.screens += useri_debugmem.req;
       if (*image==0) {
-         osi_WrStrLn("image out of memory", 20ul);
+         osic_WrStrLn("image out of memory", 20ul);
          useri_wrheap();
          X2C_ABORT();
       }
@@ -710,11 +695,11 @@ static long daylylogsize(const char fname[], unsigned long fname_len,
       aprstext_logfndate(t, fnd, 1024ul);
       if (X2C_STRCMP(fnd,1024u,fn,1024u)==0) return -1L;
       /* not dayly log */
-      fc = osi_OpenRead(fnd, 1024ul);
-      if (osi_FdValid(fc)) {
+      fc = osic_OpenRead(fnd, 1024ul);
+      if (osic_FdValid(fc)) {
          ret = 0L;
-         size = size+(float)osi_Size(fc);
-         osi_Close(fc);
+         size = size+(float)osic_Size(fc);
+         osic_Close(fc);
       }
       t -= 86400UL;
    } while (t>=1388534400UL);
@@ -753,19 +738,19 @@ extern long useri_guesssize(char fn[], unsigned long fn_len, char lenstr[],
    if (ret>=0L) return ret;
    /* dayly log */
    lenstr[0UL] = 0;
-   fc = osi_OpenRead(fn, fn_len);
-   if (!osi_FdValid(fc)) return -1L;
+   fc = osic_OpenRead(fn, fn_len);
+   if (!osic_FdValid(fc)) return -1L;
    pos = 0UL;
    for (;;) {
-      osi_Seekcur(fc, 1000000000L); /* seek in 100mb steps for eof */
-      if (osi_RdBin(fc, (char *) &b, 1u/1u, 1UL)!=1L) break;
+      osic_Seekcur(fc, 1000000000L); /* seek in 100mb steps for eof */
+      if (osic_RdBin(fc, (char *) &b, 1u/1u, 1UL)!=1L) break;
       pos += 131072UL;
    }
    if (pos<2000000UL) {
-      byte = osi_Size(fc);
+      byte = osic_Size(fc);
       pos = byte/1000UL;
    }
-   osi_Close(fc);
+   osic_Close(fc);
    /* make text kb mb gb... */
    if (pos<100UL) {
       strncpy(s,"B",100u);
@@ -809,7 +794,7 @@ extern void useri_AddConfLine(unsigned char v, unsigned char act, char s[],
                Storage_ALLOCATE((X2C_ADDRESS *) &pl,
                 sizeof(struct CONFLINE));
                if (pl==0) {
-                  osi_WrStrLn("menu out of memory", 19ul);
+                  osic_WrStrLn("menu out of memory", 19ul);
                   useri_wrheap();
                   return;
                }
@@ -1247,8 +1232,8 @@ extern void useri_saveconfig(void)
    aprsstr_Assign(backupfn, 1000ul, aprsdecode_lums.configfn, 257ul);
    aprsstr_Append(backupfn, 1000ul, "~", 2ul);
                 /* write temp file and rename later */
-   fd = osi_OpenWrite(backupfn, 1000ul);
-   if (!osi_FdValid(fd)) {
+   fd = osic_OpenWrite(backupfn, 1000ul);
+   if (!osic_FdValid(fd)) {
       strncpy(h,"Can not write ",1000u);
       aprsstr_Append(h, 1000ul, backupfn, 1000ul);
       useri_textautosize(0L, 0L, 6UL, 4UL, 'e', h, 1000ul);
@@ -1301,15 +1286,15 @@ extern void useri_saveconfig(void)
                }
             }
             aprsstr_Append(h, 1000ul, "\012", 2ul);
-            osi_WrBin(fd, (char *)h, 1000u/1u, aprsstr_Length(h, 1000ul));
+            osic_WrBin(fd, (char *)h, 1000u/1u, aprsstr_Length(h, 1000ul));
             if (n<=1UL) break;
             --n;
          }
       }
       if (i==useri_fEDITLINE) break;
    } /* end for */
-   osi_Close(fd);
-   osi_Rename(backupfn, 1000ul, aprsdecode_lums.configfn, 257ul);
+   osic_Close(fd);
+   osic_Rename(backupfn, 1000ul, aprsdecode_lums.configfn, 257ul);
    useri_textautosize(0L, 0L, 6UL, 4UL, 'b', "Config Saved", 13ul);
    useri_rdlums();
 } /* end saveconfig() */
@@ -1374,10 +1359,10 @@ extern void useri_loadconfig(char verb)
    initconfig();
    titmod = 0UL;
    aprsstr_cleanfilename(aprsdecode_lums.configfn, 257ul);
-   fd = osi_OpenRead(aprsdecode_lums.configfn, 257ul);
-   if (osi_FdValid(fd)) {
+   fd = osic_OpenRead(aprsdecode_lums.configfn, 257ul);
+   if (osic_FdValid(fd)) {
       h[0U] = 0;
-      while (osi_RdBin(fd, (char *) &c, 1u/1u, 1UL)==1L) {
+      while (osic_RdBin(fd, (char *) &c, 1u/1u, 1UL)==1L) {
          if (c!='\015') {
             if (c=='\012') {
                if (titmod==2UL) {
@@ -1436,14 +1421,14 @@ extern void useri_loadconfig(char verb)
             }
          }
       }
-      osi_Close(fd);
+      osic_Close(fd);
    }
    else {
       strncpy(h,"Can not read ",1000u);
       aprsstr_Append(h, 1000ul, aprsdecode_lums.configfn, 257ul);
       useri_textautosize(0L, 0L, 6UL, 10UL, 'e', h, 1000ul);
       useri_refresh = 1;
-      if (verb) osi_WrStrLn(h, 1000ul);
+      if (verb) osic_WrStrLn(h, 1000ul);
    }
    useri_rdlums();
    useri_confstr(useri_fMAPNAMES, s, 1000ul);
@@ -1563,7 +1548,7 @@ static void alloccutbuf(unsigned long len)
       useri_debugmem.req = xosi_cutbuffer.cutlen;
       useri_debugmem.screens += useri_debugmem.req;
       if (xosi_cutbuffer.text==0) {
-         osi_WrStrLn("cutbuf: out of memory", 22ul);
+         osic_WrStrLn("cutbuf: out of memory", 22ul);
          useri_wrheap();
          X2C_ABORT();
       }
@@ -1991,7 +1976,7 @@ static void allocmenu(pMENU * m, unsigned long xsize, unsigned long ysize,
    useri_debugmem.req = sizeof(struct MENU);
    useri_debugmem.menus += sizeof(struct MENU);
    if (*m==0) {
-      osi_WrStrLn("menu out of memory", 19ul);
+      osic_WrStrLn("menu out of memory", 19ul);
       useri_wrheap();
       return;
    }
@@ -2007,7 +1992,7 @@ static void allocmenu(pMENU * m, unsigned long xsize, unsigned long ysize,
       useri_allocimage(&(*m)->image, (long)xsize, (long)ysize,
                 (*m)->saveimage);
       if ((*m)->image==0) {
-         osi_WrStrLn("menuimage out of memory", 24ul);
+         osic_WrStrLn("menuimage out of memory", 24ul);
          useri_wrheap();
          return;
       }
@@ -2645,7 +2630,7 @@ static void textwin(unsigned long xw, unsigned long lines, unsigned long xpo,
    X2C_PCOPY((void **)&mstr,mstr_len);
    X2C_PCOPY((void **)&cstr,cstr_len);
    if (redrawimg==0) {
-      osi_WrStrLn(s, s_len); /* no graphical window open */
+      osic_WrStrLn(s, s_len); /* no graphical window open */
       goto label;
    }
    if (xw==0UL) goto label;
@@ -2871,7 +2856,7 @@ extern void useri_poligonmenu(void)
 static char rh(char fb[4096], long fd, long * fl, long * fp)
 {
    if (*fp>=*fl) {
-      *fl = osi_RdBin(fd, (char *)fb, 4096u/1u, 4096UL);
+      *fl = osic_RdBin(fd, (char *)fb, 4096u/1u, 4096UL);
       if (*fl<=0L) return 0;
       *fp = 0L;
    }
@@ -2888,8 +2873,8 @@ static long hopen(char fb[4096], long * fd, long * fl, long * fp,
    char c;
    *fp = 0L;
    *fl = 0L;
-   *fd = osi_OpenRead("help.txt", 9ul);
-   if (!osi_FdValid(*fd)) return -1L;
+   *fd = osic_OpenRead("help.txt", 9ul);
+   if (!osic_FdValid(*fd)) return -1L;
    lc = 0L;
    i = 0UL;
    for (;;) {
@@ -2962,7 +2947,7 @@ extern void useri_helptext(unsigned long line, unsigned long sub,
          aprsstr_Assign(s, 2001ul, helpscroll[helpdepth], 41ul);
          aprsstr_Append(s, 2001ul, "index not found", 16ul);
          --helpdepth; /* try last link */
-         osi_Close(fd);
+         osic_Close(fd);
          line = 1UL;
          useri_textautosize(-1L, 0L, 5UL, 2UL, 'e', s, 2001ul);
       }
@@ -3025,7 +3010,7 @@ extern void useri_helptext(unsigned long line, unsigned long sub,
          else if (helpdepth>0UL) {
             --helpdepth; /* no link found */
          }
-         osi_Close(fd);
+         osic_Close(fd);
          line = 1UL;
       }
       else if (line>0UL) line = 0UL;
@@ -3064,7 +3049,7 @@ extern void useri_helptext(unsigned long line, unsigned long sub,
    else strncpy(fb," < Back | Index ",4096u);
    useri_textautomenu(-1L, (long)aprsdecode_lums.fontysize, 4UL, 0UL, 'b', s,
                  2001ul, fb, 4096ul, "\306", 2ul);
-   osi_Close(fd);
+   osic_Close(fd);
 } /* end helptext() */
 
 
@@ -3593,7 +3578,7 @@ static void refrmenu(pMENU * menu, unsigned long linex, unsigned long liney,
          useri_allocimage(&(*menu)->image, (long)linex, (long)ys,
                 (*menu)->saveimage);
          if ((*menu)->image==0) {
-            osi_WrStrLn("menuimage out of memory", 24ul);
+            osic_WrStrLn("menuimage out of memory", 24ul);
             useri_wrheap();
             return;
          }
@@ -5404,7 +5389,7 @@ static void beaconeditor(void)
    oks = m->oldknob;
    hks = m->hiknob;
    ohs = m->oldsub;
-   if (m->image==0) osi_WrStrLn("menu img nil", 13ul);
+   if (m->image==0) osic_WrStrLn("menu img nil", 13ul);
    m->oldknob = 0UL;
    m->scroll = 1UL;
    if (useri_beaconed) {
@@ -7105,7 +7090,7 @@ static void wrlist(struct LISTBUFFER * b, char s[], unsigned long s_len,
       useri_debugmem.req = blen;
       useri_debugmem.mon += blen;
       if (bl==0) {
-         osi_WrStrLn("menu out of memory", 19ul);
+         osic_WrStrLn("menu out of memory", 19ul);
          useri_wrheap();
          goto label;
       }
@@ -9772,7 +9757,7 @@ extern void useri_textbubble(struct aprspos_POSITION pos, char s[],
    unsigned long tmp0;
    if (!aprspos_posvalid(pos) || maptool_mapxy(pos, &xpoi, &ypoi)<0L) return;
    if (redrawimg==0) {
-      osi_WrStrLn(s, s_len); /* no graphical window open */
+      osic_WrStrLn(s, s_len); /* no graphical window open */
       return;
    }
    i = 0UL;
@@ -10154,15 +10139,15 @@ static void printhint(void)
    else if (hintnum>=1701UL && hintnum<=1704UL) udpstat(hintnum-1701UL);
    if (hinttime+2UL<=aprsdecode_realtime && hintnum>=100UL) {
       hintmouse = useri_xmouse;
-      fd = osi_OpenRead("hints.txt", 10ul);
-      if (osi_FdValid(fd)) {
+      fd = osic_OpenRead("hints.txt", 10ul);
+      if (osic_FdValid(fd)) {
          p = 0L;
          len = 0L;
          w = 0L;
          m = 0L;
          for (;;) {
             if (p>=len) {
-               len = osi_RdBin(fd, (char *)buf, 32768u/1u, 32768UL);
+               len = osic_RdBin(fd, (char *)buf, 32768u/1u, 32768UL);
                if (len<=0L) break;
                p = 0L;
             }
@@ -10212,10 +10197,10 @@ static void printhint(void)
          }
          hinton = 1;
          useri_refresh = 1;
-         osi_Close(fd);
+         osic_Close(fd);
          hintnum = 0UL;
       }
-      else osi_WrStrLn("hints.txt not found", 20ul);
+      else osic_WrStrLn("hints.txt not found", 20ul);
    }
 } /* end printhint() */
 
@@ -11891,16 +11876,16 @@ extern void useri_Quit(void)
 
 extern void useri_wrheap(void)
 {
-   InOut_WriteString("heapusage screenbuf:", 21ul);
-   InOut_WriteInt((long)useri_debugmem.screens, 1UL);
-   InOut_WriteString(" mondata:", 10ul);
-   InOut_WriteInt((long)useri_debugmem.mon, 1UL);
-   InOut_WriteString(" menus:", 8ul);
-   InOut_WriteInt((long)useri_debugmem.menus, 1UL);
-   InOut_WriteString(" requested:", 12ul);
-   InOut_WriteInt((long)useri_debugmem.req, 1UL);
+   osic_WrStr("heapusage screenbuf:", 21ul);
+   osic_WrUINT32((long)useri_debugmem.screens, 1UL);
+   osic_WrStr(" mondata:", 10ul);
+   osic_WrUINT32((long)useri_debugmem.mon, 1UL);
+   osic_WrStr(" menus:", 8ul);
+   osic_WrUINT32((long)useri_debugmem.menus, 1UL);
+   osic_WrStr(" requested:", 12ul);
+   osic_WrUINT32((long)useri_debugmem.req, 1UL);
    useri_debugmem.req = 0UL;
-   osi_WrLn();
+   osic_WrLn();
 } /* end wrheap() */
 
 
@@ -11953,10 +11938,8 @@ extern void useri_BEGIN(void)
    useri_init = 1;
    aprstat_BEGIN();
    aprstext_BEGIN();
-   xosi_BEGIN();
-   TimeConv_BEGIN();
-   osi_BEGIN();
-   Storage_BEGIN();
+   xosic_BEGIN();
+   osic_BEGIN();
    maptool_BEGIN();
    aprspos_BEGIN();
    aprsstr_BEGIN();

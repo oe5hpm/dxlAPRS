@@ -17,25 +17,13 @@
 #include "udp.h"
 #endif
 #ifndef osi_H_
-#include "osi.h"
+#include "osic.h"
 #endif
 #ifndef Lib_H_
 #include "Lib.h"
 #endif
-#ifndef InOut_H_
-#include "InOut.h"
-#endif
-#ifndef FileSys_H_
-#include "FileSys.h"
-#endif
 #ifndef Select_H_
 #include "Select.h"
-#endif
-#ifndef Storage_H_
-#include "Storage.h"
-#endif
-#ifndef TimeConv_H_
-#include "TimeConv.h"
 #endif
 #ifndef aprspos_H_
 #include "aprspos.h"
@@ -254,9 +242,9 @@ static char stdinbuf[256];
 
 static void Err(const char text[], unsigned long text_len)
 {
-   InOut_WriteString("udpbox: ", 9ul);
-   InOut_WriteString(text, text_len);
-   osi_WrStrLn(" error abort", 13ul);
+   osic_WrStr("udpbox: ", 9ul);
+   osic_WrStr(text, text_len);
+   osic_WrStrLn(" error abort", 13ul);
    X2C_ABORT();
 } /* end Err() */
 
@@ -297,17 +285,17 @@ static void Stomsg(pMSGHASH user, const char from[], unsigned long from_len,
          aprsstr_Append(mb, 256ul, ack, ack_len);
          aprsstr_Append(mb, 256ul, ")", 2ul);
          if (show) {
-            InOut_WriteString(" <", 3ul);
-            InOut_WriteString(mb, 256ul);
-            InOut_WriteString("> ", 3ul);
+            osic_WrStr(" <", 3ul);
+            osic_WrStr(mb, 256ul);
+            osic_WrStr("> ", 3ul);
          }
          aprsstr_Append(mb, 256ul, "\012", 2ul);
          if (anonym->msgfile[0U]) {
-            f = osi_OpenAppend(anonym->msgfile, 1024ul);
-            if (f<0L) f = osi_OpenWrite(anonym->msgfile, 1024ul);
+            f = osic_OpenAppend(anonym->msgfile, 1024ul);
+            if (f<0L) f = osic_OpenWrite(anonym->msgfile, 1024ul);
             if (f>=0L) {
-               osi_WrBin(f, (char *)mb, 256u/1u, aprsstr_Length(mb, 256ul));
-               osi_Close(f);
+               osic_WrBin(f, (char *)mb, 256u/1u, aprsstr_Length(mb, 256ul));
+               osic_Close(f);
             }
          }
          { /* with */
@@ -383,7 +371,7 @@ static char Usermsg(const char b[], unsigned long b_len, long len, long p,
       } /* end for */
       if (!ok0) {
          /* msg from to same call */
-         if (show) InOut_WriteString(" msg to it self ", 17ul);
+         if (show) osic_WrStr(" msg to it self ", 17ul);
          *selfmsg = 1;
          return 0;
       }
@@ -541,7 +529,7 @@ static char Filter(const char b[], unsigned long b_len, long len,
    len -= 2L; /* crc */
    if (len<=0L) {
       if (parm->passnoUI) {
-         if (show) osi_WrStrLn(" pass axudp2", 13ul);
+         if (show) osic_WrStrLn(" pass axudp2", 13ul);
          return 1;
       }
       else return 0;
@@ -550,20 +538,20 @@ static char Filter(const char b[], unsigned long b_len, long len,
    while (i<len && !((unsigned long)(unsigned char)b[i]&1)) i += 7L;
    i += 3L;
    if (i>len || ((unsigned char)(unsigned char)b[i-2L]&~0x10U)!=0x3U) {
-      if (show) InOut_WriteString(" not UI ", 9ul);
+      if (show) osic_WrStr(" not UI ", 9ul);
       return parm->passnoUI;
    }
    /* not UI frame */
    /* is UI frame */
    if (Usermsg(b, b_len, len, i, fromsock, &selfmsg)) return 0;
    if (parm->filtercalls && CallFilt(parm->filtercalls, b, b_len, len)) {
-      if (show) osi_WrStrLn(" callfilter match", 18ul);
+      if (show) osic_WrStrLn(" callfilter match", 18ul);
       return 0;
    }
    if (!X2C_INL((unsigned char)b[i],256,
                 parm->aprspass) || selfmsg && !X2C_INL((long)84,256,
                 parm->aprspass)) {
-      if (show) osi_WrStrLn(" message type filter", 21ul);
+      if (show) osic_WrStrLn(" message type filter", 21ul);
       return 0;
    }
    if (parm->maxkm>0L && (b[i]!=':' || b[i+10L]!=':')) {
@@ -571,23 +559,23 @@ static char Filter(const char b[], unsigned long b_len, long len,
       km = DistFilt(parm->mypos, b, b_len, (unsigned long)i,
                 (unsigned long)len);
       if (km<0L) {
-         if (show) osi_WrStrLn(" no pos", 8ul);
+         if (show) osic_WrStrLn(" no pos", 8ul);
          return 0;
       }
       if (show) {
-         osi_WrStrLn(" ", 2ul);
-         InOut_WriteInt(km, 1UL);
-         InOut_WriteString("km", 3ul);
+         osic_WrStrLn(" ", 2ul);
+         osic_WrUINT32(km, 1UL);
+         osic_WrStr("km", 3ul);
       }
       if (km>=parm->maxkm) {
-         if (show) osi_WrStrLn(" too far", 9ul);
+         if (show) osic_WrStrLn(" too far", 9ul);
          return 0;
       }
    }
    if ((parm->satgate && !((unsigned long)(unsigned char)b[13UL]&1))
                 && (unsigned char)b[20UL]<(unsigned char)'\200') {
       /* has >=1 vias and first via no h-bit */
-      if (show) osi_WrStrLn(" sat gate and direct heard", 27ul);
+      if (show) osic_WrStrLn(" sat gate and direct heard", 27ul);
       return 0;
    }
    return 1;
@@ -597,7 +585,7 @@ static char Filter(const char b[], unsigned long b_len, long len,
 static long getstdin(char buf[], unsigned long buf_len)
 {
    char c;
-   while (osi_RdBin(0L, (char *) &c, 1u/1u, 1UL)==1L) {
+   while (osic_RdBin(0L, (char *) &c, 1u/1u, 1UL)==1L) {
       if (c=='\012') c = 0;
       if (stdinpos<255UL) {
          stdinbuf[stdinpos] = c;
@@ -630,7 +618,7 @@ static long getudp(long fd, char buf[], unsigned long buf_len,
       crc2 = buf[len-1L];
       aprsstr_AppCRC(buf, buf_len, len-2L);
       if (crc1==buf[len-2L] && crc2==buf[len-1L]) return len;
-      if (show) osi_WrStrLn(" raw crc error ", 16ul);
+      if (show) osic_WrStrLn(" raw crc error ", 16ul);
    }
    /*
          IO.WrHex(ORD(crc1)+ORD(crc2)*256, 1);
@@ -1004,7 +992,7 @@ static void Digi(char raw[], unsigned long raw_len, char send[],
                setSSID(&raw[6UL], 0UL); /* switch to via routing */
             }
             downpath = 0L; /* delete rest of path */
-            if (show) InOut_WriteString(" via ssid routing ", 19ul);
+            if (show) osic_WrStr(" via ssid routing ", 19ul);
          }
          else {
             ssidroute = 0UL;
@@ -1026,7 +1014,7 @@ static void Digi(char raw[], unsigned long raw_len, char send[],
                }
                if (ok0) {
                   if ((0x80UL & parm->pathcheck)) downpath = pathlen;
-                  if (show) InOut_WriteString(" via digicall ", 15ul);
+                  if (show) osic_WrStr(" via digicall ", 15ul);
                }
                else if ((0x800UL & parm->pathcheck)==0) {
                   ok0 = Cmp(raw, raw_len, (unsigned long)actdigi, "RELAY ",
@@ -1037,7 +1025,7 @@ static void Digi(char raw[], unsigned long raw_len, char send[],
                   }
                   if (ok0) {
                      if ((0x100UL & parm->pathcheck)) downpath = pathlen;
-                     if (show) InOut_WriteString(" via RELAY ", 12ul);
+                     if (show) osic_WrStr(" via RELAY ", 12ul);
                   }
                }
                if (!ok0) {
@@ -1048,7 +1036,7 @@ static void Digi(char raw[], unsigned long raw_len, char send[],
                         if ((0x100UL & parm->pathcheck)) {
                            downpath = pathlen;
                         }
-                        if (show) InOut_WriteString(" via GATE ", 11ul);
+                        if (show) osic_WrStr(" via GATE ", 11ul);
                      }
                   }
                }
@@ -1068,7 +1056,7 @@ static void Digi(char raw[], unsigned long raw_len, char send[],
                         downpath = actdigi+7L;
                      }
                   }
-                  if (show && ok0) InOut_WriteString(" via TRACEn-n ", 15ul);
+                  if (show && ok0) osic_WrStr(" via TRACEn-n ", 15ul);
                }
                if (!ok0) {
                   if (((((0x2000UL & parm->pathcheck)==0 && Cmp(raw, raw_len,
@@ -1095,14 +1083,14 @@ static void Digi(char raw[], unsigned long raw_len, char send[],
                         downpath = actdigi+7L;
                      }
                   }
-                  if (show && ok0) InOut_WriteString(" via WIDEn-n ", 14ul);
+                  if (show && ok0) osic_WrStr(" via WIDEn-n ", 14ul);
                }
-               if (show && !ok0) InOut_WriteString(" no source path ", 17ul);
+               if (show && !ok0) osic_WrStr(" no source path ", 17ul);
             }
-            else if (show) InOut_WriteString(" already digipeated ", 21ul);
+            else if (show) osic_WrStr(" already digipeated ", 21ul);
          }
       }
-      else if (show) InOut_WriteString(" we have already digipeated ", 29ul);
+      else if (show) osic_WrStr(" we have already digipeated ", 29ul);
    }
    /*    ELSIF show THEN WrStr(" fingerprint filtered " ) END; */
    if (duponly || ok0) {
@@ -1186,9 +1174,9 @@ static void Digi(char raw[], unsigned long raw_len, char send[],
          }
       }
       else if (show) {
-         InOut_WriteString(" ", 2ul);
-         InOut_WriteInt((long)(t-parm->timehash[hash]), 1UL);
-         InOut_WriteString("s since same payload ", 22ul);
+         osic_WrStr(" ", 2ul);
+         osic_WrUINT32((long)(t-parm->timehash[hash]), 1UL);
+         osic_WrStr("s since same payload ", 22ul);
       }
    }
 } /* end Digi() */
@@ -1561,122 +1549,122 @@ static void parms(void)
          }
          else {
             if (lasth=='h') {
-               osi_WrLn();
-               osi_WrStrLn(" -a <paths>     user message ack path eg. WIDE2-2\
+               osic_WrLn();
+               osic_WrStrLn(" -a <paths>     user message ack path eg. WIDE2-2\
  or - for no path", 67ul);
-               osi_WrStrLn(" -b <s>:<file>  enable beacon every s(econds) pat\
+               osic_WrStrLn(" -b <s>:<file>  enable beacon every s(econds) pat\
 h and text from <file>", 72ul);
-               osi_WrStrLn("                cycles thru lines in file, empty \
+               osic_WrStrLn("                cycles thru lines in file, empty \
 lines = no tx (size max 32kb)", 79ul);
-               osi_WrStrLn("                \\\\z ddhhmm, \\\\h hhmmss, \\\\:\
+               osic_WrStrLn("                \\\\z ddhhmm, \\\\h hhmmss, \\\\:\
 filename: insert file, \\\\[filename]", 79ul);
-               osi_WrStrLn("                insert file and delete after, \\\\
+               osic_WrStrLn("                insert file and delete after, \\\\
 \(filename) if exists insert", 76ul);
-               osi_WrStrLn("                and delete,\\\\\\ is \\\\, \\\\rm\
+               osic_WrStrLn("                and delete,\\\\\\ is \\\\, \\\\rm\
  delete beacon file", 62ul);
-               osi_WrStrLn("                file may be modified any time eg.\
+               osic_WrStrLn("                file may be modified any time eg.\
  by telemetry program", 71ul);
-               osi_WrStrLn(" -c <ip>:<port> send text monitor udp frame with \
+               osic_WrStrLn(" -c <ip>:<port> send text monitor udp frame with \
 cr lf", 55ul);
-               osi_WrStrLn(" -d <call>      digipeater enable (and dupe filte\
+               osic_WrStrLn(" -d <call>      digipeater enable (and dupe filte\
 r) call", 57ul);
-               osi_WrStrLn(" -d -           dupe filter without data modifica\
+               osic_WrStrLn(" -d -           dupe filter without data modifica\
 tion", 54ul);
-               osi_WrStrLn(" -e             echo last (filtert) output",
+               osic_WrStrLn(" -e             echo last (filtert) output",
                 43ul);
-               osi_WrStrLn(" -f <filterparm>  \'p<x>,<x>...\' pass UI frames \
+               osic_WrStrLn(" -f <filterparm>  \'p<x>,<x>...\' pass UI frames \
 with first char (-f p58,110)", 76ul);
-               osi_WrStrLn("                  \'d<x>,<x>...\' pass UI frames \
+               osic_WrStrLn("                  \'d<x>,<x>...\' pass UI frames \
 with not first char (-f d32,65-79)", 82ul);
-               osi_WrStrLn("                  Messages to itself are treated \
+               osic_WrStrLn("                  Messages to itself are treated \
 as Telemetry  (-f d84)", 72ul);
-               osi_WrStrLn(" -h             this", 21ul);
-               osi_WrStrLn(" -k <deg>/<deg>/<km> distance filter, center/radi\
+               osic_WrStrLn(" -h             this", 21ul);
+               osic_WrStrLn(" -k <deg>/<deg>/<km> distance filter, center/radi\
 us -k 48.2/13.5/100", 69ul);
-               osi_WrStrLn("                -k 0/0/20000 remove all (not user\
+               osic_WrStrLn("                -k 0/0/20000 remove all (not user\
  msg) with no position data", 77ul);
-               osi_WrStrLn(" -L <ip>:<port>:<netname>   read monitor rflink h\
+               osic_WrStrLn(" -L <ip>:<port>:<netname>   read monitor rflink h\
 eader with netname", 68ul);
-               osi_WrStrLn(" -l <ip>:<port> send raw axudp frame and pass thr\
+               osic_WrStrLn(" -l <ip>:<port> send raw axudp frame and pass thr\
 u axudp2 header", 65ul);
-               osi_WrStrLn(" -M <ip>:<port> read text monitor udp frame",
+               osic_WrStrLn(" -M <ip>:<port> read text monitor udp frame",
                 44ul);
-               osi_WrStrLn("                ip=255.255.255.255:0 read text mo\
+               osic_WrStrLn("                ip=255.255.255.255:0 read text mo\
 nitor from stdin", 66ul);
-               osi_WrStrLn("                ip=255.255.255.255:1 read text mo\
+               osic_WrStrLn("                ip=255.255.255.255:1 read text mo\
 nitor from stdin and terminate", 80ul);
-               osi_WrStrLn(" -m <ip>:<port> send text monitor udp frame 0 ter\
+               osic_WrStrLn(" -m <ip>:<port> send text monitor udp frame 0 ter\
 minated", 57ul);
-               osi_WrStrLn(" -p <n>,<...>   -p 7,8 igate friendly digi relayi\
+               osic_WrStrLn(" -p <n>,<...>   -p 7,8 igate friendly digi relayi\
 ng all direct heared", 70ul);
-               osi_WrStrLn("                -p 5,6,7,8,9 first hop digi, -p 3\
+               osic_WrStrLn("                -p 5,6,7,8,9 first hop digi, -p 3\
 ,4 (noisy) last hop digi", 74ul);
-               osi_WrStrLn("                -p 0,1,3,4,5,6,7,8,9,14,16 origin\
+               osic_WrStrLn("                -p 0,1,3,4,5,6,7,8,9,14,16 origin\
 al, noisy, path loosing ...", 77ul);
-               osi_WrStrLn("                0..2 limit ssid-routing to (bit0 \
+               osic_WrStrLn("                0..2 limit ssid-routing to (bit0 \
 + 2*bit1 + 4*bit2)", 68ul);
-               osi_WrStrLn("                dest-3: dest-2,digicall*, dest-3,\
+               osic_WrStrLn("                dest-3: dest-2,digicall*, dest-3,\
 call*: dest-2,call,digicall*", 78ul);
-               osi_WrStrLn("                3 allow repeatet before (mostly w\
+               osic_WrStrLn("                3 allow repeatet before (mostly w\
 ith wrong path trace)", 71ul);
-               osi_WrStrLn("                4 no uplink check for \'looks lik\
+               osic_WrStrLn("                4 no uplink check for \'looks lik\
 e direct heared\'", 65ul);
-               osi_WrStrLn("                  (noisy, wrong path trace possib\
+               osic_WrStrLn("                  (noisy, wrong path trace possib\
 le)", 53ul);
-               osi_WrStrLn("                5 resend TRACEn-(N-1), 6 resend W\
+               osic_WrStrLn("                5 resend TRACEn-(N-1), 6 resend W\
 IDEn-(N-1)", 60ul);
-               osi_WrStrLn("                  so frames may be relayed again \
+               osic_WrStrLn("                  so frames may be relayed again \
 by loss of downlink trace", 75ul);
-               osi_WrStrLn("                7 append remaining digi path afte\
+               osic_WrStrLn("                7 append remaining digi path afte\
 r via digicall", 64ul);
-               osi_WrStrLn("                8 append remaining digi path afte\
+               osic_WrStrLn("                8 append remaining digi path afte\
 r RELAY/GATE/TRACE", 68ul);
-               osi_WrStrLn("                9 append remaining digi path afte\
+               osic_WrStrLn("                9 append remaining digi path afte\
 r WIDE", 56ul);
-               osi_WrStrLn("                  so frames may be relayed again \
+               osic_WrStrLn("                  so frames may be relayed again \
 by loss of downlink trace", 75ul);
-               osi_WrStrLn("                10, 11, 12, 13 switch off via dig\
+               osic_WrStrLn("                10, 11, 12, 13 switch off via dig\
 icall, RELAY, TRACE, WIDE", 75ul);
-               osi_WrStrLn("                14 insert not digicall on direct \
+               osic_WrStrLn("                14 insert not digicall on direct \
 heared before WIDEn-N,", 72ul);
-               osi_WrStrLn("                   as others do, your digi is hid\
+               osic_WrStrLn("                   as others do, your digi is hid\
 den, and path is shown wrong", 78ul);
-               osi_WrStrLn("                15 convert destination ssid routi\
+               osic_WrStrLn("                15 convert destination ssid routi\
 ng to WIDEn-n", 63ul);
-               osi_WrStrLn("                16 send n-0 without repeated flag\
+               osic_WrStrLn("                16 send n-0 without repeated flag\
 ", 50ul);
-               osi_WrStrLn("                17 remove all WIDE from downlink \
+               osic_WrStrLn("                17 remove all WIDE from downlink \
 path", 54ul);
-               osi_WrStrLn("                18 enable via GATE (use as gate: \
+               osic_WrStrLn("                18 enable via GATE (use as gate: \
 disable via all other)", 72ul);
-               osi_WrStrLn("                19 allow ECHO as alias to RELAY",
+               osic_WrStrLn("                19 allow ECHO as alias to RELAY",
                  48ul);
-               osi_WrStrLn(" -P <s>         piggyback time sending beacon ear\
+               osic_WrStrLn(" -P <s>         piggyback time sending beacon ear\
 lier if sent anything now", 75ul);
-               osi_WrStrLn(" -R <ip>:<port> read raw axudp frame, 0 ip read f\
+               osic_WrStrLn(" -R <ip>:<port> read raw axudp frame, 0 ip read f\
 rom all (-R 0.0.0.0:2000)", 75ul);
-               osi_WrStrLn(" -r <ip>:<port> send raw axudp frame", 37ul);
-               osi_WrStrLn(" -S             Satgate, filter out uplink (has v\
+               osic_WrStrLn(" -r <ip>:<port> send raw axudp frame", 37ul);
+               osic_WrStrLn(" -S             Satgate, filter out uplink (has v\
 ia with no h-bit", 66ul);
-               osi_WrStrLn(" -s             pass not-UI-frames too (all PR-Fr\
+               osic_WrStrLn(" -s             pass not-UI-frames too (all PR-Fr\
 ames, SABM, RR..)", 67ul);
-               osi_WrStrLn("                (raw axudp only) and axudp2 modem\
+               osic_WrStrLn("                (raw axudp only) and axudp2 modem\
  to layer2 message frames", 75ul);
-               osi_WrStrLn(" -t <s>,<s>     dupe filter time in seconds (all \
+               osic_WrStrLn(" -t <s>,<s>     dupe filter time in seconds (all \
 types, user messages)", 71ul);
-               osi_WrStrLn("                -t 1740,28 29min not same beacon,\
+               osic_WrStrLn("                -t 1740,28 29min not same beacon,\
  28s for retrying user message)", 81ul);
-               osi_WrStrLn(" -u <call>:<file> global option, receive & ack us\
+               osic_WrStrLn(" -u <call>:<file> global option, receive & ack us\
 ermessages to call store in file", 82ul);
-               osi_WrStrLn("                repeat -u for more Calls to same \
+               osic_WrStrLn("                repeat -u for more Calls to same \
 or different File", 67ul);
-               osi_WrStrLn(" -v             show frames and analytics on stdo\
+               osic_WrStrLn(" -v             show frames and analytics on stdo\
 ut", 52ul);
-               osi_WrStrLn(" -x <call>{,<call>} delete frames with call in a \
+               osic_WrStrLn(" -x <call>{,<call>} delete frames with call in a \
 address field, -x TCPIP,UID***-*", 82ul);
-               osi_WrStrLn("udpbox -v -M 0.0.0.0:9200 -d MYCALL-10 -p 0,1,7 -\
+               osic_WrStrLn("udpbox -v -M 0.0.0.0:9200 -d MYCALL-10 -p 0,1,7 -\
 t 1800,28 -r 192.168.1.24:9400", 80ul);
-               osi_WrLn();
+               osic_WrLn();
                X2C_ABORT();
             }
             if (lasth=='s') actpassui = 1;
@@ -1779,9 +1767,9 @@ t 1800,28 -r 192.168.1.24:9400", 80ul);
       if (err) break;
    }
    if (err) {
-      InOut_WriteString(">", 2ul);
-      InOut_WriteString(h, 4096ul);
-      osi_WrStrLn("< use -h", 9ul);
+      osic_WrStr(">", 2ul);
+      osic_WrStr(h, 4096ul);
+      osic_WrStrLn("< use -h", 9ul);
       X2C_ABORT();
    }
 } /* end parms() */
@@ -1789,15 +1777,15 @@ t 1800,28 -r 192.168.1.24:9400", 80ul);
 
 static void showpip(unsigned long ip, unsigned long port)
 {
-   InOut_WriteInt((long)(ip/16777216UL), 1UL);
-   InOut_WriteString(".", 2ul);
-   InOut_WriteInt((long)(ip/65536UL&255UL), 1UL);
-   InOut_WriteString(".", 2ul);
-   InOut_WriteInt((long)(ip/256UL&255UL), 1UL);
-   InOut_WriteString(".", 2ul);
-   InOut_WriteInt((long)(ip&255UL), 1UL);
-   InOut_WriteString(":", 2ul);
-   InOut_WriteInt((long)port, 1UL);
+   osic_WrUINT32((long)(ip/16777216UL), 1UL);
+   osic_WrStr(".", 2ul);
+   osic_WrUINT32((long)(ip/65536UL&255UL), 1UL);
+   osic_WrStr(".", 2ul);
+   osic_WrUINT32((long)(ip/256UL&255UL), 1UL);
+   osic_WrStr(".", 2ul);
+   osic_WrUINT32((long)(ip&255UL), 1UL);
+   osic_WrStr(":", 2ul);
+   osic_WrUINT32((long)port, 1UL);
 } /* end showpip() */
 
 /*
@@ -1838,29 +1826,29 @@ static void showhex(long * n, long e, char in[], unsigned long in_len,
    long tmp;
    char tmp0;
    if (show) {
-      osi_WrLn();
-      osi_WrStrLn(s, s_len);
+      osic_WrLn();
+      osic_WrStrLn(s, s_len);
       tmp = *len-1L;
       i = 0L;
       if (i<=tmp) for (;; i++) {
-         osi_WrHex((unsigned long)(unsigned char)in[i], 3UL);
+         osic_WrHex((unsigned long)(unsigned char)in[i], 3UL);
          if (i==tmp) break;
       } /* end for */
-      osi_WrLn();
+      osic_WrLn();
       tmp = e-1L;
       i = 0L;
       if (i<=tmp) for (;; i++) {
          *n = (long)((unsigned long)(unsigned char)in[i]/2UL);
          if (*n<32L) {
-            InOut_WriteString("<", 2ul);
-            osi_WrHex((unsigned long)*n, 1UL);
-            InOut_WriteString(">", 2ul);
+            osic_WrStr("<", 2ul);
+            osic_WrHex((unsigned long)*n, 1UL);
+            osic_WrStr(">", 2ul);
          }
-         else InOut_WriteString((char *)(tmp0 = (char)*n,&tmp0), 1u/1u);
-         if (X2C_MOD(i,7L)==6L) InOut_WriteString(",", 2ul);
+         else osic_WrStr((char *)(tmp0 = (char)*n,&tmp0), 1u/1u);
+         if (X2C_MOD(i,7L)==6L) osic_WrStr(",", 2ul);
          if (i==tmp) break;
       } /* end for */
-      osi_WrLn();
+      osic_WrLn();
    }
 } /* end showhex() */
 
@@ -1981,10 +1969,10 @@ static void beaconmacros(char s[], unsigned long s_len, char * del)
                aprsstr_Append(fn, 1024ul, (char *) &s[i], 1u/1u);
                ++i;
             }
-            f = osi_OpenRead(fn, 1024ul);
+            f = osic_OpenRead(fn, 1024ul);
             if (f>=0L) {
-               len = osi_RdBin(f, (char *)ds, 256u/1u, 255UL);
-               osi_Close(f);
+               len = osic_RdBin(f, (char *)ds, 256u/1u, 255UL);
+               osic_Close(f);
                if (fnend==']' || fnend==')') {
                   FileSys_Remove(fn, 1024ul, &voidok);
                 /* delete insert file after inserting */
@@ -1998,8 +1986,8 @@ static void beaconmacros(char s[], unsigned long s_len, char * del)
             else if (fnend!=')') {
                /* skip whole beacon line */
                if (show) {
-                  osi_WrLn();
-                  osi_WrStrLn("beacon macro file not readable ", 32ul);
+                  osic_WrLn();
+                  osic_WrStrLn("beacon macro file not readable ", 32ul);
                }
                s[0UL] = 0;
                return;
@@ -2015,8 +2003,8 @@ static void beaconmacros(char s[], unsigned long s_len, char * del)
             if (s[i]=='\\') aprsstr_Append(ns, 256ul, "\\\\", 3ul);
             else {
                if (show) {
-                  osi_WrLn();
-                  osi_WrStrLn("bad beacon macro ", 18ul);
+                  osic_WrLn();
+                  osic_WrStrLn("bad beacon macro ", 18ul);
                }
                s[0UL] = 0;
                return;
@@ -2059,10 +2047,10 @@ static void beacon(pINSOCK insock, char buf[], unsigned long buf_len,
                 && anonym->btime<=t) {
             anonym->btime += anonym->bintervall;
             if (anonym->btime<=t) anonym->btime = t+anonym->bintervall;
-            f = osi_OpenRead(anonym->bfile, 1024ul);
+            f = osic_OpenRead(anonym->bfile, 1024ul);
             if (f>=0L) {
-               *len = osi_RdBin(f, (char *)fb, 32768u/1u, 32767UL);
-               osi_Close(f);
+               *len = osic_RdBin(f, (char *)fb, 32768u/1u, 32767UL);
+               osic_Close(f);
                while (*len>0L && (unsigned char)fb[*len-1L]<=' ') {
                   --*len; /* remove junk from eof */
                }
@@ -2110,14 +2098,14 @@ static void beacon(pINSOCK insock, char buf[], unsigned long buf_len,
                   if (del) FileSys_Remove(anonym->bfile, 1024ul, &ok0);
                   else aprsstr_mon2raw(fb, 32768ul, buf, buf_len, len);
                   if (show && *len==0L) {
-                     osi_WrLn();
-                     if (del) osi_WrStrLn("delete beacon file ", 20ul);
-                     else osi_WrStrLn("bad beacon format ", 19ul);
+                     osic_WrLn();
+                     if (del) osic_WrStrLn("delete beacon file ", 20ul);
+                     else osic_WrStrLn("bad beacon format ", 19ul);
                   }
                }
                break;
             }
-            if (show) osi_WrStrLn("beacon file not found", 22ul);
+            if (show) osic_WrStrLn("beacon file not found", 22ul);
          }
          *outsock0 = (*outsock0)->next;
       }
@@ -2192,8 +2180,8 @@ static void sendack(char buf[], unsigned long buf_len, long * len,
                   */
                   aprsstr_mon2raw(fb, 256ul, buf, buf_len, len);
                   if (show && *len==0L) {
-                     InOut_WriteString(fb, 256ul);
-                     osi_WrStrLn(" message ack path wrong", 24ul);
+                     osic_WrStr(fb, 256ul);
+                     osic_WrStrLn(" message ack path wrong", 24ul);
                   }
                   return;
                }
@@ -2271,17 +2259,14 @@ static aprsstr_GHOSTSET _cnst1 = {0x00000000UL,0x00000000UL,0x00000000UL,
 X2C_STACK_LIMIT(100000l)
 extern int main(int argc, char **argv)
 {
-   X2C_BEGIN(&argc,argv,1,4000000l,8000000l);
    if (sizeof(SET256)!=32) X2C_ASSERT(0);
    if (sizeof(RAWCALL)!=7) X2C_ASSERT(0);
    if (sizeof(MONCALL)!=9) X2C_ASSERT(0);
    if (sizeof(FILENAME)!=1024) X2C_ASSERT(0);
    aprsstr_BEGIN();
    aprspos_BEGIN();
-   TimeConv_BEGIN();
-   Lib_BEGIN();
-   Storage_BEGIN();
-   osi_BEGIN();
+   Lib_BEGIN(argc, argv);
+   osic_BEGIN();
    stdinpos = 0UL;
    insocks = 0;
    parms();
@@ -2327,11 +2312,11 @@ extern int main(int argc, char **argv)
                      if (inlen>0L) {
                         aprsstr_mon2raw(ibuf, 338ul, rawbuf, 338ul, &inlen);
                         if (show && inlen==0L) {
-                           osi_WrStrLn("bad mon format ", 16ul);
+                           osic_WrStrLn("bad mon format ", 16ul);
                         }
                      }
                      else if (show) {
-                        osi_WrStrLn("no rflink head match", 21ul);
+                        osic_WrStrLn("no rflink head match", 21ul);
                      }
                   }
                   isbeacon = 0;
@@ -2345,23 +2330,23 @@ extern int main(int argc, char **argv)
                   if (show && inlen>2L) {
                      aprsstr_raw2mon(rawbuf, 338ul, mbuf, 512ul,
                 (unsigned long)(inlen-2L), &monlen, _cnst1);
-                     osi_WrLn();
+                     osic_WrLn();
                      showpip(showip, showport);
-                     InOut_WriteString("(", 2ul);
-                     InOut_WriteInt(inlen, 1UL);
-                     InOut_WriteString(")", 2ul);
-                     InOut_WriteString(":", 2ul);
+                     osic_WrStr("(", 2ul);
+                     osic_WrUINT32(inlen, 1UL);
+                     osic_WrStr(")", 2ul);
+                     osic_WrStr(":", 2ul);
                      if (monlen<=0UL) {
-                        InOut_WriteString("<raw to mon error>", 19ul);
+                        osic_WrStr("<raw to mon error>", 19ul);
                      }
                      aprsstr_CtrlHex(mbuf, 512ul);
-                     osi_WrStrLn(mbuf, 512ul);
+                     osic_WrStrLn(mbuf, 512ul);
                   }
                   outsock = actsock->outchain;
                   outlen = 0L;
                   while (outsock) {
                      if (show && inlen>2L) {
-                        InOut_WriteString(" tx: ", 6ul);
+                        osic_WrStr(" tx: ", 6ul);
                         showpip(outsock->toip, outsock->toport);
                      }
                      memcpy(workraw,rawbuf,338u);
@@ -2372,7 +2357,7 @@ extern int main(int argc, char **argv)
                            Digi(workraw, 338ul, rawout, 338ul, inlen,
                 &outlen, hamup, outsock->digiparm, !nobeacon);
                            if (show && outlen>2L) {
-                              InOut_WriteString(" digi", 6ul);
+                              osic_WrStr(" digi", 6ul);
                            }
                         }
                         else if (!outsock->echo) {
@@ -2396,7 +2381,7 @@ extern int main(int argc, char **argv)
                 outsock->toport, outsock->toip);
                               }
                               if (show && outlen>2L) {
-                                 osi_WrStrLn(" raw", 5ul);
+                                 osic_WrStrLn(" raw", 5ul);
                               }
                            }
                            else {
@@ -2411,18 +2396,18 @@ extern int main(int argc, char **argv)
                                  res = udpsend(actsock->fd, mbuf,
                 (long)monlen, outsock->toport, outsock->toip);
                                  if (show) {
-                                    osi_WrStrLn(" mon", 5ul);
+                                    osic_WrStrLn(" mon", 5ul);
                                  }
                               }
                               else if (show) {
-                                 osi_WrStrLn(" monerr", 8ul);
+                                 osic_WrStrLn(" monerr", 8ul);
                               }
                            }
                         }
-                        else if (show) osi_WrStrLn(" no tx", 7ul);
+                        else if (show) osic_WrStrLn(" no tx", 7ul);
                      }
                      else if (show && outlen>2L) {
-                        osi_WrStrLn(" deleted", 9ul);
+                        osic_WrStrLn(" deleted", 9ul);
                      }
                      outsock = outsock->next;
                   }
