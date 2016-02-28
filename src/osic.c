@@ -51,7 +51,7 @@ void osic_WrStrLn(char s[], unsigned long s_len)
 	size_t len;
 
 	len = strnlen(s, s_len);
-	fprintf(stdout, "%.*s\n", len, s);
+	fprintf(stdout, "%.*s", len, s);
 	osic_WrLn();
 }
 
