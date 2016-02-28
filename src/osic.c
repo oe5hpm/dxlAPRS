@@ -38,6 +38,12 @@ void osic_WrLn(void)
 	fflush(stdout);
 }
 
+void osic_WerrLn(void)
+{
+	fprintf(stderr, "\n");
+	fflush(stderr);
+}
+
 void osic_WrStr(char s[], unsigned long s_len)
 {
 	size_t len;
@@ -52,6 +58,23 @@ void osic_WrStrLn(char s[], unsigned long s_len)
 
 	len = strnlen(s, s_len);
 	fprintf(stdout, "%.*s", len, s);
+	osic_WrLn();
+}
+
+void osic_WerrStr(char s[], unsigned long s_len)
+{
+	size_t len;
+
+	len = strnlen(s, s_len);
+	fprintf(stderr, "%.*s", len, s);
+}
+
+void osic_WerrStrLn(char s[], unsigned long s_len)
+{
+	size_t len;
+
+	len = strnlen(s, s_len);
+	fprintf(stderr, "%.*s", len, s);
 	osic_WrLn();
 }
 
