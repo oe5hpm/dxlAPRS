@@ -13,18 +13,7 @@
 #include "X2C.h"
 #endif
 #define radio_C_
-#ifndef osi_H_
-#include "osi.h"
-#endif
-#ifndef RealMath_H_
-#include "RealMath.h"
-#endif
-#ifndef Lib_H_
-#include "Lib.h"
-#endif
-#ifndef InOut_H_
-#include "InOut.h"
-#endif
+#include "osic.h"
 #ifndef aprsstr_H_
 #include "aprsstr.h"
 #endif
@@ -81,7 +70,7 @@ static struct STICKPARM stickparm[256];
 static void Werr(char text[], unsigned long text_len)
 {
    X2C_PCOPY((void **)&text,text_len);
-   osi_WrBin(2L, (char *)text, (text_len)/1u, aprsstr_Length(text,
+   osic_WrBin(2L, (char *)text, (text_len)/1u, aprsstr_Length(text,
                 text_len));
    X2C_PFREE(text);
 } /* end Werr() */
@@ -90,8 +79,8 @@ static void Werr(char text[], unsigned long text_len)
 static void Usage(char text[], unsigned long text_len)
 {
    X2C_PCOPY((void **)&text,text_len);
-   InOut_WriteString(" usage: ", 9ul);
-   osi_WrStrLn(text, text_len);
+   osic_WrStr(" usage: ", 9ul);
+   osic_WrStrLn(text, text_len);
    X2C_ABORT();
    X2C_PFREE(text);
 } /* end Usage() */
@@ -135,13 +124,13 @@ static void Parms(void)
    soundfn[0] = 0;
    tune = 100000000UL;
    for (;;) {
-      Lib_NextArg(s, 1001ul);
+      osic_NextArg(s, 1001ul);
       if (s[0U]==0) break;
       if ((s[0U]=='-' && s[1U]) && s[2U]==0) {
          if (s[1U]=='m') mono = 1;
-         else if (s[1U]=='s') Lib_NextArg(soundfn, 1001ul);
+         else if (s[1U]=='s') osic_NextArg(soundfn, 1001ul);
          else if (s[1U]=='t') {
-            Lib_NextArg(s, 1001ul); /* url */
+            osic_NextArg(s, 1001ul); /* url */
             n = 0UL;
             while ((n<1000UL && s[n]) && s[n]!=':') {
                if (n<1000UL) url[n] = s[n];
@@ -163,7 +152,7 @@ static void Parms(void)
          }
          else if (s[1U]=='f') {
             /* MHz */
-            Lib_NextArg(s, 1001ul);
+            osic_NextArg(s, 1001ul);
             n = 0UL;
             fix(s, 1001ul, &n, &fr, &ok0);
             if (ok0) {
@@ -180,9 +169,9 @@ static void Parms(void)
             else Usage(" -f <mhz> or -f <hz>", 21ul);
          }
          else if (s[1U]=='p') {
-            Lib_NextArg(s, 1001ul);
+            osic_NextArg(s, 1001ul);
             if (aprsstr_StrToCard(s, 1001ul, &m) && m<256UL) {
-               Lib_NextArg(s, 1001ul);
+               osic_NextArg(s, 1001ul);
                if (aprsstr_StrToCard(s, 1001ul, &n) && n<=255UL) {
                   stickparm[m].val = n; /* stick parameter */
                   stickparm[m].ok0 = 1;
@@ -193,26 +182,26 @@ static void Parms(void)
          }
          else if (s[1U]=='a') {
             /* afc */
-            Lib_NextArg(s, 1001ul);
+            osic_NextArg(s, 1001ul);
             if (!aprsstr_StrToCard(s, 1001ul, &afc) || afc>200UL) {
                Usage(" -a <khz>", 10ul);
             }
          }
          else if (s[1U]=='v') verb = 1;
          else if (s[1U]=='h') {
-            osi_WrStrLn("Stereo UKW Radio from rtl:tcp (8 bit IQ via tcpip to\
+            osic_WrStrLn("Stereo UKW Radio from rtl:tcp (8 bit IQ via tcpip to\
  2 channel 16 bit pcm file/pipe ", 85ul);
-            osi_WrStrLn(" -a <khz>       max afc <kHz> (50) or 0 for off",
+            osic_WrStrLn(" -a <khz>       max afc <kHz> (50) or 0 for off",
                 48ul);
-            osi_WrStrLn(" -f <freq>      tune to MHz or Hz", 34ul);
-            osi_WrStrLn(" -h             help", 21ul);
-            osi_WrStrLn(" -p <cmd> <value> send rtl_tcp parameter, ppm, tuner\
+            osic_WrStrLn(" -f <freq>      tune to MHz or Hz", 34ul);
+            osic_WrStrLn(" -h             help", 21ul);
+            osic_WrStrLn(" -p <cmd> <value> send rtl_tcp parameter, ppm, tuner\
 gain ...", 61ul);
-            osi_WrStrLn(" -t <url:port>  connect rtl:tcp server (127.0.0.1:12\
+            osic_WrStrLn(" -t <url:port>  connect rtl:tcp server (127.0.0.1:12\
 34)", 56ul);
-            osi_WrStrLn(" -v             show rssi (dB) and afc (khz)",
+            osic_WrStrLn(" -v             show rssi (dB) and afc (khz)",
                 45ul);
-            osi_WrStrLn("example: radio -f 101.2 -s /tmp/sound.pcm -c 192.168\
+            osic_WrStrLn("example: radio -f 101.2 -s /tmp/sound.pcm -c 192.168\
 .1.1:1234 -p 5 72 -p 8 1 -v", 80ul);
             X2C_ABORT();
          }
@@ -331,11 +320,8 @@ extern int main(int argc, char **argv)
 {
    long tmp;
    X2C_BEGIN(&argc,argv,1,4000000l,8000000l);
-   Lib_BEGIN();
-   RealMath_BEGIN();
    sdr_BEGIN();
    aprsstr_BEGIN();
-   osi_BEGIN();
    memset((char *) &rxx,(char)0,sizeof(struct sdr_RX));
    prx[0U] = &rxx;
    prx[1U] = 0;
@@ -355,7 +341,7 @@ extern int main(int argc, char **argv)
       } /* end for */
       lp = 0.14f;
       sndw = 0UL;
-      fd = osi_OpenWrite(soundfn, 1001ul);
+      fd = osic_OpenWrite(soundfn, 1001ul);
       if (fd>=0L) {
          recon = 1;
          for (;;) {
@@ -386,7 +372,7 @@ extern int main(int argc, char **argv)
                      sndbuf[sndw] = lim(deem2*2.0f);
                      ++sndw;
                      if (sndw>1023UL) {
-                        osi_WrBin(fd, (char *)sndbuf, 2048u/1u, sndw*2UL);
+                        osic_WrBin(fd, (char *)sndbuf, 2048u/1u, sndw*2UL);
                         sndw = 0UL;
                         if (tshow>20UL) {
                            recon = 0;
@@ -402,11 +388,11 @@ extern int main(int argc, char **argv)
             }
          }
       }
-      InOut_WriteString(soundfn, 1001ul);
-      osi_WrStrLn(" sound file open error", 23ul);
-      osi_WrStrLn("connection lost", 16ul);
+      osic_WrStr(soundfn, 1001ul);
+      osic_WrStrLn(" sound file open error", 23ul);
+      osic_WrStrLn("connection lost", 16ul);
    }
-   else osi_WrStrLn("not connected", 14ul);
+   else osic_WrStrLn("not connected", 14ul);
    X2C_EXIT();
    return 0;
 }

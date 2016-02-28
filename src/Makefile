@@ -132,6 +132,9 @@ OBJ_APRSMAP	= \
 	useri.o \
 	xosi.o
 
+OBJ_SDRTST		= tcpb.o sdr.o sdrtest.o
+OBJ_SDRRADIO	= tcpb.o sdr.o radio.o
+
 TARGETS = \
 	afskmodem \
 	gps2aprs \
@@ -143,7 +146,9 @@ TARGETS = \
 	udprfnet \
 	sondemod \
 	sondeudp \
-	aprsmap
+	aprsmap \
+	sdrtst \
+	sdrradio
 
 OBJS = \
 	$(OBJ_COMMON) \
@@ -157,7 +162,9 @@ OBJS = \
 	$(OBJ_UDPFLEX) \
 	$(OBJ_UDPHUB) \
 	$(OBJ_UDPRFNET) \
-	$(OBJ_APRSMAP)
+	$(OBJ_APRSMAP) \
+	$(OBJ_SDRTST) \
+	$(OBJ_SDRRADIO)
 # ------------------- target make rules -------------------
 #                     -----------------
 %.o: %.c
@@ -213,5 +220,13 @@ aprsmap : $(OBJ_APRSMAP) $(OBJ_COMMON)
 	$(STRIP) aprsmap -s
 aprsmap-cleanobj:
 	rm -f $(OBJ_APRSMAP)
+
+sdrtst : $(OBJ_SDRTST) $(OBJ_COMMON)
+	$(CC) $(LFLAGS) -o sdrtst $(OBJ_SDRTST) $(OBJ_COMMON) -lm
+	$(STRIP) sdrtst -s
+
+sdrradio : $(OBJ_SDRRADIO) $(OBJ_COMMON)
+	$(CC) $(LFLAGS) -o sdrradio $(OBJ_SDRRADIO) $(OBJ_COMMON) -lm
+	$(STRIP) sdrradio -s
 
 # end of makefile

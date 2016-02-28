@@ -13,27 +13,13 @@
 #include "X2C.h"
 #endif
 #define sdrtest_C_
-#ifndef osi_H_
-#include "osi.h"
-#endif
-#ifndef RealMath_H_
-#include "RealMath.h"
-#endif
-#ifndef flush_H_
-#include "flush.h"
-#endif
-#ifndef Lib_H_
-#include "Lib.h"
-#endif
-#ifndef InOut_H_
-#include "InOut.h"
-#endif
 #ifndef aprsstr_H_
 #include "aprsstr.h"
 #endif
 #ifndef sdr_H_
 #include "sdr.h"
 #endif
+#include "osic.h"
 
 /* test rtl_tcp iq fm demodulator by OE5DXL */
 #define sdrtest_MAXCHANNELS 32
@@ -109,8 +95,8 @@ static char reconn;
 static void Error(char text[], unsigned long text_len)
 {
    X2C_PCOPY((void **)&text,text_len);
-   InOut_WriteString(text, text_len);
-   osi_WrStrLn(" error abort", 13ul);
+   osic_WrStr(text, text_len);
+   osic_WrStrLn(" error abort", 13ul);
    X2C_ABORT();
    X2C_PFREE(text);
 } /* end Error() */
@@ -166,13 +152,13 @@ static void Parms(void)
    samphz = 16000UL;
    strncpy(parmfn,"sdrcfg.txt",1001u);
    for (;;) {
-      Lib_NextArg(s, 1001ul);
+      osic_NextArg(s, 1001ul);
       if (s[0U]==0) break;
       if ((s[0U]=='-' && s[1U]) && s[2U]==0) {
-         if (s[1U]=='s') Lib_NextArg(soundfn, 1001ul);
-         else if (s[1U]=='c') Lib_NextArg(parmfn, 1001ul);
+         if (s[1U]=='s') osic_NextArg(soundfn, 1001ul);
+         else if (s[1U]=='c') osic_NextArg(parmfn, 1001ul);
          else if (s[1U]=='t') {
-            Lib_NextArg(s, 1001ul); /* url */
+            osic_NextArg(s, 1001ul); /* url */
             n = 0UL;
             while ((n<1000UL && s[n]) && s[n]!=':') {
                if (n<1000UL) url[n] = s[n];
@@ -194,14 +180,14 @@ static void Parms(void)
          }
          else if (s[1U]=='r') {
             /* sampelrate */
-            Lib_NextArg(s, 1001ul);
+            osic_NextArg(s, 1001ul);
             if (!aprsstr_StrToCard(s, 1001ul, &samphz) || samphz>192000UL) {
                Error(" -r <Hz>", 9ul);
             }
          }
          else if (s[1U]=='i') {
             /* iq sampelrate */
-            Lib_NextArg(s, 1001ul);
+            osic_NextArg(s, 1001ul);
             if (!aprsstr_StrToCard(s, 1001ul,
                 &iqrate) || iqrate!=2048000UL && iqrate!=1024000UL) {
                Error(" -i <Hz> 2048000 or 1024000", 28ul);
@@ -211,32 +197,32 @@ static void Parms(void)
          else if (s[1U]=='k') reconn = 1;
          else {
             if (s[1U]=='h') {
-               osi_WrStrLn("FM Multirx from rtl:tcp (8 bit IQ via tcpip to 2 \
+               osic_WrStrLn("FM Multirx from rtl:tcp (8 bit IQ via tcpip to 2 \
 channel 16 bit pcm file/pipe", 78ul);
-               osi_WrStrLn(" -c configfilename> read channels config from fil\
+               osic_WrStrLn(" -c configfilename> read channels config from fil\
 e (sdrcfg.txt)", 64ul);
-               osi_WrStrLn(" -h                 help", 25ul);
-               osi_WrStrLn(" -i <Hz>            input sampelrate Hz (2048000)\
+               osic_WrStrLn(" -h                 help", 25ul);
+               osic_WrStrLn(" -i <Hz>            input sampelrate Hz (2048000)\
  or 1024000", 61ul);
-               osi_WrStrLn(" -k                 keep connection", 36ul);
-               osi_WrStrLn(" -p <cmd> <value>   send rtl_tcp parameter, ppm, \
+               osic_WrStrLn(" -k                 keep connection", 36ul);
+               osic_WrStrLn(" -p <cmd> <value>   send rtl_tcp parameter, ppm, \
 tunergain ...", 63ul);
-               osi_WrStrLn(" -r <Hz>            output sampelrate Hz (16000)",
+               osic_WrStrLn(" -r <Hz>            output sampelrate Hz (16000)",
                  49ul);
-               osi_WrStrLn(" -s <soundfilename> 16bit signed n-channel sound \
+               osic_WrStrLn(" -s <soundfilename> 16bit signed n-channel sound \
 stream", 56ul);
-               osi_WrStrLn(" -t <url:port>      connect rtl:tcp server (127.0\
+               osic_WrStrLn(" -t <url:port>      connect rtl:tcp server (127.0\
 .0.1:1234)", 60ul);
-               osi_WrStrLn(" -v                 show rssi (dB) and afc (khz)",
+               osic_WrStrLn(" -v                 show rssi (dB) and afc (khz)",
                  49ul);
-               osi_WrStrLn("example: -s /tmp/sound.pcm -c 192.168.1.1:1234 -p\
+               osic_WrStrLn("example: -s /tmp/sound.pcm -c 192.168.1.1:1234 -p\
  5 72 -p 8 1 -v", 65ul);
                X2C_ABORT();
             }
             if (s[1U]=='p') {
-               Lib_NextArg(s, 1001ul);
+               osic_NextArg(s, 1001ul);
                if (aprsstr_StrToCard(s, 1001ul, &m) && m<256UL) {
-                  Lib_NextArg(s, 1001ul);
+                  osic_NextArg(s, 1001ul);
                   if (aprsstr_StrToCard(s, 1001ul, &n) && n<=255UL) {
                      stickparm[m].val = n; /* stick parameter */
                      stickparm[m].ok0 = 1;
@@ -263,14 +249,14 @@ static void setparms(char all)
       if (stickparm[i].ok0 && (all || stickparm[i].changed)) {
          sdr_setparm(i, stickparm[i].val);
          if (nl) {
-            osi_WrStrLn("", 1ul);
+            osic_WrStrLn("", 1ul);
             nl = 0;
          }
-         InOut_WriteString("parm:", 6ul);
-         InOut_WriteInt((long)i, 0UL);
-         InOut_WriteString(" ", 2ul);
-         InOut_WriteInt((long)stickparm[i].val, 1UL);
-         osi_WrStrLn("", 1ul);
+         osic_WrStr("parm:", 6ul);
+         osic_WrUINT32((long)i, 0UL);
+         osic_WrStr(" ", 2ul);
+         osic_WrUINT32((long)stickparm[i].val, 1UL);
+         osic_WrStrLn("", 1ul);
       }
       stickparm[i].changed = 0;
    } /* end for */
@@ -306,7 +292,7 @@ static void centerfreq(const struct FREQTAB freq[], unsigned long freq_len)
       ++i;
    }
    if (max0>=min0) {
-      if (max0-min0>2000UL) osi_WrStrLn("freq span > 2MHz", 17ul);
+      if (max0-min0>2000UL) osic_WrStrLn("freq span > 2MHz", 17ul);
       midfreq = (max0+min0)/2UL;
       nomid = X2C_max_longint;
       i = 0UL;
@@ -363,9 +349,9 @@ static void rdconfig(void)
    char b[10001];
    char li[256];
    struct FREQTAB freq[32];
-   fd0 = osi_OpenRead(parmfn, 1001ul);
+   fd0 = osic_OpenRead(parmfn, 1001ul);
    if (fd0>=0L) {
-      len = osi_RdBin(fd0, (char *)b, 10001u/1u, 10001UL);
+      len = osic_RdBin(fd0, (char *)b, 10001u/1u, 10001UL);
       if ((len>0L && len<10000L) && (unsigned char)b[len-1L]>=' ') {
          b[len-1L] = 0;
       }
@@ -389,12 +375,12 @@ static void rdconfig(void)
                skip(li, 256ul, &i);
                card(li, 256ul, &i, &n, &ok0);
                if (n>255UL || !ok0) {
-                  osi_WrStrLn("wrong parameter number", 23ul);
+                  osic_WrStrLn("wrong parameter number", 23ul);
                }
                else {
                   skip(li, 256ul, &i);
                   card(li, 256ul, &i, &m, &ok0);
-                  if (!ok0) osi_WrStrLn("wrong value", 12ul);
+                  if (!ok0) osic_WrStrLn("wrong value", 12ul);
                   else setstickparm(n, m);
                }
                i = 0UL;
@@ -403,7 +389,7 @@ static void rdconfig(void)
                ++i;
                skip(li, 256ul, &i);
                fix(li, 256ul, &i, &x, &ok0);
-               if (!ok0) osi_WrStrLn("wrong value", 12ul);
+               if (!ok0) osic_WrStrLn("wrong value", 12ul);
                skip(li, 256ul, &i);
                card(li, 256ul, &i, &m, &ok0);
                if (!ok0) m = 0UL;
@@ -416,7 +402,7 @@ static void rdconfig(void)
                skip(li, 256ul, &i);
                card(li, 256ul, &i, &wid, &ok0);
                if (!ok0) wid = 0UL;
-               if (freqc>31UL) osi_WrStrLn("freq table full", 16ul);
+               if (freqc>31UL) osic_WrStrLn("freq table full", 16ul);
                else {
                   freq[freqc].khz = (unsigned long)X2C_TRUNCC(x*1000.0f+0.5f,
                 0UL,X2C_max_longcard);
@@ -434,12 +420,12 @@ static void rdconfig(void)
                i = 0UL;
             }
             else if (li[i]=='#') i = 0UL;
-            else osi_WrStrLn("unkown command", 15ul);
+            else osic_WrStrLn("unkown command", 15ul);
             ++lino;
          }
          ++p;
       }
-      osi_Close(fd0);
+      osic_Close(fd0);
    }
    else Error("config file not readable", 25ul);
    centerfreq(freq, 32ul);
@@ -451,18 +437,17 @@ static void showrssi(void)
    unsigned long i;
    i = 0UL;
    while (prx[i]) {
-      osi_WrFixed(RealMath_ln((rxx[i].rssi+1.0f)*3.0517578125E-5f)
+      osic_WrFixed(RealMath_ln((rxx[i].rssi+1.0f)*3.0517578125E-5f)
                 *4.342944819f, 1L, 6UL);
-      InOut_WriteString("dB", 3ul);
+      osic_WrStr("dB", 3ul);
       if (rxx[i].squelch) {
-         InOut_WriteString(" ", 2ul);
-         osi_WrFixed(rxx[i].sqmed, 1L, 1UL);
+         osic_WrStr(" ", 2ul);
+         osic_WrFixed(rxx[i].sqmed, 1L, 1UL);
       }
-      InOut_WriteInt(rxx[i].afckhz, 0UL);
+      osic_WrUINT32(rxx[i].afckhz, 0UL);
       ++i;
    }
-   InOut_WriteString("   \015", 5ul);
-   Flush();
+   osic_WrStrLn("   \015", 5ul);
 } /* end showrssi() */
 
 static long sp;
@@ -485,11 +470,8 @@ extern int main(int argc, char **argv)
 {
    long tmp;
    X2C_BEGIN(&argc,argv,1,4000000l,8000000l);
-   Lib_BEGIN();
-   RealMath_BEGIN();
    sdr_BEGIN();
    aprsstr_BEGIN();
-   osi_BEGIN();
    midfreq = 0UL;
    lastmidfreq = 0UL;
    tshow = 0UL;
@@ -503,7 +485,7 @@ extern int main(int argc, char **argv)
    if (sdr_startsdr(url, 1001ul, port, 1001ul, iqrate, samphz, reconn)) {
       rdconfig();
       sndw = 0UL;
-      fd = osi_OpenWrite(soundfn, 1001ul);
+      fd = osic_OpenWrite(soundfn, 1001ul);
       if (fd>=0L) {
          recon = 1;
          for (;;) {
@@ -511,9 +493,9 @@ extern int main(int argc, char **argv)
             if (sn<0L) {
                if (verb) {
                   if (sn==-2L) {
-                     osi_WrStrLn("impossible sampelrate conversion", 33ul);
+                     osic_WrStrLn("impossible sampelrate conversion", 33ul);
                   }
-                  else osi_WrStrLn("connection lost", 16ul);
+                  else osic_WrStrLn("connection lost", 16ul);
                }
                recon = 1;
                if (!reconn) break;
@@ -550,7 +532,7 @@ extern int main(int argc, char **argv)
                      sndbuf[sndw] = (short)pcm;
                      ++sndw;
                      if (sndw>1023UL) {
-                        osi_WrBin(fd, (char *)sndbuf, 2048u/1u, sndw*2UL);
+                        osic_WrBin(fd, (char *)sndbuf, 2048u/1u, sndw*2UL);
                         sndw = 0UL;
                         if (tshow>20UL) {
                            rdconfig();
@@ -569,12 +551,12 @@ extern int main(int argc, char **argv)
          }
       }
       else {
-         InOut_WriteString(soundfn, 1001ul);
-         osi_WrStrLn(" sound file open error", 23ul);
+         osic_WrStr(soundfn, 1001ul);
+         osic_WrStrLn(" sound file open error", 23ul);
       }
-      if (verb) osi_WrStrLn("connection lost", 16ul);
+      if (verb) osic_WrStrLn("connection lost", 16ul);
    }
-   else osi_WrStrLn("not connected", 14ul);
+   else osic_WrStrLn("not connected", 14ul);
    X2C_EXIT();
    return 0;
 }

@@ -13,12 +13,6 @@
 #include "sdr.h"
 #endif
 #define sdr_C_
-#ifndef osi_H_
-#include "osi.h"
-#endif
-#ifndef RealMath_H_
-#include "RealMath.h"
-#endif
 #ifndef tcp_H_
 #include "tcp.h"
 #endif
@@ -31,8 +25,7 @@
 #ifndef Select_H_
 #include "Select.h"
 #endif
-
-
+#include "osic.h"
 
 
 
@@ -536,7 +529,7 @@ long sdr_getsdr(samps, rx, rx_len)
       if (readsockb(fd, (char *)iqbuf,
                 (long)(((samps*reduce+sampsum)/1024L)*2L))<0L) {
          /* connect lost */
-         osi_Close(fd);
+         osic_Close(fd);
          fd = -1L;
          return -1L;
       }
@@ -639,8 +632,6 @@ void sdr_BEGIN()
    sdr_init = 1;
    if (sizeof(sdr_AUDIOSAMPLE)!=131072) X2C_ASSERT(0);
    aprsstr_BEGIN();
-   RealMath_BEGIN();
-   osi_BEGIN();
    fd = -1L;
    reconnect = 0;
    rtlhz = 2048000L;

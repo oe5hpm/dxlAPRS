@@ -621,3 +621,9 @@ X2C_PROC X2C_CHKPROC_F(X2C_PROC p)
 	assert(p);
 	return p;
 }
+
+X2C_pVOID X2C_CHKNIL_F(X2C_pVOID p)
+{
+	assert(p);
+	return p;
+}
