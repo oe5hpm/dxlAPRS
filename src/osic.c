@@ -182,6 +182,29 @@ void osic_Seekcur(long fd, long rel)
 		lseek(fd, 0, SEEK_SET);
 }
 
+void osic_Remove(X2C_CHAR fname[], X2C_CARD32 fname_len, X2C_BOOLEAN *done)
+{
+	int rc;
+
+	rc = remove(fname);
+	if (rc == 0)
+		*done = 1;
+	else
+		*done = 0;
+}
+
+X2C_BOOLEAN osic_Exists(X2C_CHAR fname[], X2C_CARD32 fname_len)
+{
+	if (access(fname, F_OK) != -1)
+		return 1;
+	return 0;
+}
+
+int osic_symblink(char *existing, char *newname)
+{
+	return symlink(existing, newname);
+}
+
 void osic_NextArg(char s[], unsigned long s_len)
 {
 	if (argc_delivered >= osic_argc-1) {
@@ -425,42 +448,6 @@ LSET X2C_COMPLEMENT(LSET res, LSET a, X2C_CARD16 length)
 		*c++ = ~(*a++);
 	}
 	return res;
-}
-
-void FileSys_Remove(X2C_CHAR fname[], X2C_CARD32 fname_len, X2C_BOOLEAN *done)
-{
-	int rc;
-
-	rc = remove(fname);
-	if (rc == 0)
-		*done = 1;
-	else
-		*done = 0;
-}
-
-X2C_BOOLEAN FileSys_Exists(X2C_CHAR fname[], X2C_CARD32 fname_len)
-{
-	if (access(fname, F_OK) != -1)
-		return 1;
-	return 0;
-}
-
-void FileSys_Rename(X2C_CHAR fname[], X2C_CARD32 fname_len,
-		    X2C_CHAR newname[], X2C_CARD32 newname_len,
-		    X2C_BOOLEAN *done)
-{
-	int rc;
-
-	rc = rename(fname, newname);
-	if (rc == 0)
-		*done = 1;
-	else
-		*done = 0;
-}
-
-int osic_symblink(char *existing, char *newname)
-{
-	return symlink(existing, newname);
 }
 
 struct xrMM_Dynarr {

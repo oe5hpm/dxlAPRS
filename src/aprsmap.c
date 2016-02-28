@@ -1536,7 +1536,7 @@ static char deletelogfile(char all)
       aprstext_logfndate(t, fnd, 1024ul);
       if (X2C_STRCMP(fnd,1024u,fn,1024u)==0) return 0;
       /* not dayly log */
-      FileSys_Remove(fnd, 1024ul, &ok0);
+      osic_Remove(fnd, 1024ul, &ok0);
       if (ok0) ++cnt;
       t -= 86400UL;
    } while (t>=1388534400UL);
@@ -1661,7 +1661,7 @@ static void importlog(char cmd)
       ok0 = 0;
       if (fn[0U]) {
          if (deletelogfile(1)) ok0 = 1;
-         else FileSys_Remove(fn, 1025ul, &ok0);
+         else osic_Remove(fn, 1025ul, &ok0);
       }
       if (ok0) {
          strncpy(h,"[",1025u);
@@ -3318,7 +3318,7 @@ static void screenshot(void)
                ++j;
             }
             ++n;
-         } while (!(n>999UL || !FileSys_Exists(s, 1000ul)));
+         } while (!(n>999UL || !osic_Exists(s, 1000ul)));
       }
    }
    if (s[0]) {
@@ -3536,7 +3536,7 @@ static void savevideo420(maptool_pIMAGE img, char fn[], unsigned long fn_len,
       /*
           videofd:=Create(fn);
       */
-      if (FileSys_Exists(fn, fn_len)) videofd = osic_OpenWrite(fn, fn_len);
+      if (osic_Exists(fn, fn_len)) videofd = osic_OpenWrite(fn, fn_len);
       else videofd = osic_OpenWrite(fn, fn_len);
       if (!osic_FdValid(videofd)) goto label;
       if (format=='M') {

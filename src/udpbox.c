@@ -1974,7 +1974,7 @@ static void beaconmacros(char s[], unsigned long s_len, char * del)
                len = osic_RdBin(f, (char *)ds, 256u/1u, 255UL);
                osic_Close(f);
                if (fnend==']' || fnend==')') {
-                  FileSys_Remove(fn, 1024ul, &voidok);
+                  osic_Remove(fn, 1024ul, &voidok);
                 /* delete insert file after inserting */
                }
                j = 0L;
@@ -2095,7 +2095,7 @@ static void beacon(pINSOCK insock, char buf[], unsigned long buf_len,
                *len = 0L;
                if (i>0L) {
                   beaconmacros(fb, 32768ul, &del);
-                  if (del) FileSys_Remove(anonym->bfile, 1024ul, &ok0);
+                  if (del) osic_Remove(anonym->bfile, 1024ul, &ok0);
                   else aprsstr_mon2raw(fb, 32768ul, buf, buf_len, len);
                   if (show && *len==0L) {
                      osic_WrLn();

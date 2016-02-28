@@ -9200,7 +9200,7 @@ static void watchdo(unsigned long knob, unsigned long sub)
             aprsstr_Assign(fn, 1024ul, pl->line, 201ul);
             aprsdecode_makelogfn(fn, 1024ul);
             ok0 = 0;
-            if (fn[0UL]) FileSys_Remove(fn, 1024ul, &ok0);
+            if (fn[0UL]) osic_Remove(fn, 1024ul, &ok0);
             if (ok0) {
                strncpy(h,"[",1024u);
                aprsstr_Append(h, 1024ul, fn, 1024ul);
@@ -9305,12 +9305,12 @@ static char existslog(char fname[], unsigned long fname_len)
    memcpy(fnd,fn,1024u);
    aprstext_logfndate(t, fnd, 1024ul);
    if (X2C_STRCMP(fn,1024u,fnd,1024u)==0) {
-      existslog_ret = FileSys_Exists(fnd, 1024ul);
+      existslog_ret = osic_Exists(fnd, 1024ul);
       goto label;
    }
    /* no single day log */
    do {
-      if (FileSys_Exists(fnd, 1024ul)) {
+      if (osic_Exists(fnd, 1024ul)) {
          existslog_ret = 1;
          goto label;
       }

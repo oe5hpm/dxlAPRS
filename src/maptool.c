@@ -4467,7 +4467,7 @@ static char decodetile(const char fn[], unsigned long fn_len,
          return 1;
       }
    }
-   else if (FileSys_Exists(s, 100ul)) {
+   else if (osic_Exists(s, 100ul)) {
       /* jpg hided in .png */
       return 1;
    }
@@ -4478,7 +4478,7 @@ static char decodetile(const char fn[], unsigned long fn_len,
                 
    }
    /* jpg in .jpg */
-   return FileSys_Exists(s, 100ul);
+   return osic_Exists(s, 100ul);
 } /* end decodetile() */
 
 /*
@@ -4509,7 +4509,7 @@ static void reqmap(char wfn[], unsigned long wfn_len, char byop)
    if (mapnamesdone==1U) {
       /* filled buffer written */
       mapnamesdone = 0U;
-      if (!FileSys_Exists("gettiles", 9ul)) {
+      if (!osic_Exists("gettiles", 9ul)) {
          /* a maploader is at work */
          if ((byop && wfn[0UL]) && aprsstr_InStr(mapnamesbuf, 4096ul, wfn,
                 wfn_len)>=0L) mapnamesdone = 2U;
@@ -4874,7 +4874,7 @@ extern void maptool_loadmap(maptool_pIMAGE map, long tx, long ty, long zoom,
    if (!dryrun) {
       if (fzoom>1.0f) zoommap(fzoom, map);
       if (mapnamesbuf[0U]) reqmap("", 1ul, !useri_reloadmap);
-      else FileSys_Remove("gettiles", 9ul, &ok0);
+      else osic_Remove("gettiles", 9ul, &ok0);
    }
    useri_reloadmap = 0;
 } /* end loadmap() */
@@ -4882,7 +4882,7 @@ extern void maptool_loadmap(maptool_pIMAGE map, long tx, long ty, long zoom,
 
 extern char maptool_IsMapLoaded(void)
 {
-   return !aprsdecode_maploadpid.runs || !FileSys_Exists("gettiles", 9ul);
+   return !aprsdecode_maploadpid.runs || !osic_Exists("gettiles", 9ul);
 } /* end IsMapLoaded() */
 
 

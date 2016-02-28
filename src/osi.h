@@ -19,9 +19,6 @@
 #include "flush.h"
 #endif
 #include <stdio.h>
-#ifndef FileSys_H_
-#include "FileSys.h"
-#endif
 #ifndef Lib_H_
 #include "Lib.h"
 #endif
@@ -80,10 +77,6 @@ typedef long osi_SOCKET;
 #define osi_WrCard InOut_WriteCard
 
 #define osi_WrInt InOut_WriteInt
-
-#define osi_Exists FileSys_Exists
-
-#define osi_Erase FileSys_Remove
 
 #define osi_readsock readsock
 

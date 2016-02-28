@@ -1528,7 +1528,7 @@ static void beaconmacros(char s[], unsigned long s_len, const char path[],
                   if (osic_FdValid(f)) {
                      len = osic_RdBin(f, (char *)ds, 256u/1u, 255UL);
                      osic_Close(f);
-                     if (rw=='[') FileSys_Remove(fn, 1024ul, &ok0);
+                     if (rw=='[') osic_Remove(fn, 1024ul, &ok0);
                      j = 0L;
                      while (((j<len && ds[j]!='\015') && ds[j]!='\012')
                 && ds[j]) {
@@ -2068,7 +2068,7 @@ extern void aprsdecode_savetrack(void)
          aprsstr_Assign(fn, 1001ul, op->call, 9ul); /* make 0C terminated */
          alfanum(fn, 1001ul); /* remove bad chars */
          aprsdecode_makelogfn(fn, 1001ul);
-         ap = FileSys_Exists(fn, 1001ul);
+         ap = osic_Exists(fn, 1001ul);
          pf = op->frames;
          while (pf) {
             if (!wrlog(pf->vardat->raw, 500ul, pf->time0, fn, 1001ul, 0L)) {
@@ -6081,7 +6081,7 @@ static void approxywarn(struct aprspos_POSITION pos, const char call[],
                   aprsstr_Append(h, 101ul, "km ", 4ul);
                   aprsstr_Append(h, 101ul, call, call_len);
                   useri_textautosize(0L, 5L, 6UL, 120UL, 'r', h, 101ul);
-                  if (!FileSys_Exists("proxwarn", 9ul)) {
+                  if (!osic_Exists("proxwarn", 9ul)) {
                      fd = osic_OpenWrite("proxwarn", 9ul);
                      if (osic_FdValid(fd)) {
                         aprsstr_Assign(h, 101ul, call, call_len);

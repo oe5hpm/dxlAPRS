@@ -503,19 +503,6 @@ static void spintime(void)
    if (dt<60UL) systime += dt;
 } /* end spintime() */
 
-
-static void Rename(char fname[], unsigned long fname_len, char newname[],
-                unsigned long newname_len)
-{
-   char ok0;
-   X2C_PCOPY((void **)&fname,fname_len);
-   X2C_PCOPY((void **)&newname,newname_len);
-   FileSys_Rename(fname, fname_len, newname, newname_len, &ok0);
-   X2C_PFREE(fname);
-   X2C_PFREE(newname);
-} /* end Rename() */
-
-
 static void Err(const char text[], unsigned long text_len)
 {
    osic_WrStr("udpgate: ", 10ul);
@@ -4055,7 +4042,7 @@ static void MHtoFile(void)
       --cnt;
    }
    osic_Close(fd);
-   Rename(fn, 1024ul, mhfilename, 1024ul);
+   osic_Rename(fn, 1024ul, mhfilename, 1024ul);
 } /* end MHtoFile() */
 
 /*
@@ -5204,7 +5191,7 @@ static char iconf(char sym, char symt, char fn[], unsigned long fn_len,
    aprsstr_Append(fn, fn_len, ".gif", 5ul);
    aprsstr_Assign(h, 256ul, wwwdir, 1024ul);
    aprsstr_Append(h, 256ul, fn, fn_len);
-   return FileSys_Exists(h, 256ul);
+   return osic_Exists(h, 256ul);
 } /* end iconf() */
 
 
@@ -5314,7 +5301,7 @@ static void showmh(WWWB wbuf, pTCPSOCK * wsock, char h1[256], pHEARD ph0,
    withport = udpsocks && udpsocks->next;
    aprsstr_Assign(h1, 256ul, wwwdir, 1024ul);
    aprsstr_Append(h1, 256ul, "icon", 5ul);
-   withicon = FileSys_Exists(h1, 256ul);
+   withicon = osic_Exists(h1, 256ul);
    Appwww(wsock, wbuf, "<table id=mheard border=0 align=center CELLPADDING=3 \
 CELLSPACING=1 BGCOLOR=#FFFFFF><tr class=tab-mh-titel BGCOLOR=#A9EEFF><th cols\
 pan=", 135ul);
