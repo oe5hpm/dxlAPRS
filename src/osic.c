@@ -71,6 +71,21 @@ void osic_WrHex(unsigned long n, unsigned long f)
 	fflush(stdout);
 }
 
+int getptsname(int fd, char *name, int len)
+{
+	return ptsname_r(fd, name, len);
+}
+
+int grantpts(int fd)
+{
+	return grantpt(fd);
+}
+
+int unlockpts(int fd)
+{
+	return unlockpt(fd);
+}
+
 long osic_OpenAppendLong(char fn[], unsigned long fn_len)
 {
 	if (FNLENCHECK && strnlen(fn, fn_len) > fn_len)

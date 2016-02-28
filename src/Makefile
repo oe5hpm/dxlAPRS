@@ -89,7 +89,6 @@ OBJ_COMMON = \
 	aprspos.o \
 	aprsstr.o \
 	osic.o \
-	ptty.o \
 	soundctl.o \
 	tcp.o \
 	udp.o

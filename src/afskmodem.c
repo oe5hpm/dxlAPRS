@@ -13,9 +13,6 @@
 #include "X2C.h"
 #endif
 #define afskmodem_C_
-#ifndef ptty_H_
-#include "ptty.h"
-#endif
 #ifndef soundctl_H_
 #include "soundctl.h"
 #endif
