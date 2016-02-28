@@ -404,9 +404,7 @@ X2C_INT32 X2C_MOD_F(X2C_INT32 a, X2C_INT32 b)
 
 X2C_CHAR X2C_CAP(X2C_CHAR x)
 {
-	if ((X2C_CARD8)x >= 'a' && (X2C_CARD8)x <= 'z')
-		x = (X2C_CHAR)(((X2C_CARD32)(X2C_CARD8)x + 65) - 97);
-	return x;
+	return toupper(x);
 }
 
 LSET X2C_INCL(LSET set, X2C_CARD32 i, X2C_CARD16 bits)
