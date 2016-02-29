@@ -139,8 +139,6 @@ X2C_INT32 X2C_QUO(X2C_INT32 a, X2C_INT32 b);
 
 X2C_LONGREAL X2C_EXPRI(X2C_LONGREAL base, X2C_INT32 ex);
 
-void *X2C_CHKPROC_F(void *p);
-
-void *X2C_CHKNIL_F(void *p);
+void *osic_chkptr(void *p);
 
 #endif /* __OSIC_H__ */

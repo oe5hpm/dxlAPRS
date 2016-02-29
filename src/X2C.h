@@ -63,8 +63,8 @@ typedef X2C_LSET_BASE			* X2C_LSET;
 #define X2C_MOVE(source, dest, size)	memcpy(dest, source, size)
 #define X2C_STRCMP(a, alen, b, blen)	strncmp(a, b, alen < blen ? alen : blen)
 
-#define X2C_CHKNIL(T, p)		((T)(X2C_CHKNIL_F((void *)(p))))
-#define X2C_CHKPROC(T, p)		((T)(X2C_CHKPROC_F((void *)(p))))
+#define X2C_CHKNIL(T, p)		((T)(osic_chkptr((void *)(p))))
+#define X2C_CHKPROC(T, p)		((T)(osic_chkptr((void *)(p))))
 
 #define X2C_CAST(val, fr, to, to_ref) \
 	((sizeof(fr) < sizeof(to)) ? (assert(0), (to_ref)0) : (to_ref)(val))
