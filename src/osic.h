@@ -11,7 +11,6 @@
 #ifndef __OSIC_H__
 #define __OSIC_H__
 
-#include <stdint.h>
 #include "X2C.h"
 
 void osic_WrLn(void);
@@ -92,19 +91,11 @@ void X2C_BEGIN(int *argc, char *argv[],
 
 void X2C_PCOPY(void **ppcpy, size_t size);
 
-void X2C_PFREE(void *p);
-
 X2C_INT32 X2C_TRUNCI(X2C_LONGREAL x, X2C_INT32 min0, X2C_INT32 max0);
 
 X2C_CARD32 X2C_TRUNCC(X2C_LONGREAL x, X2C_CARD32 min0, X2C_CARD32 max0);
 
-X2C_REAL X2C_DIVR_F(X2C_REAL a, X2C_REAL b);
-
-X2C_LONGREAL X2C_DIVL_F(X2C_LONGREAL a, X2C_LONGREAL b);
-
-X2C_pVOID X2C_COPY(void *src, size_t src_len, void *dst, size_t dst_len);
-
-void X2C_ABORT(void);
+X2C_REAL X2C_DIVR(X2C_REAL a, X2C_REAL b);
 
 X2C_REAL RealMath_cos(X2C_REAL x);
 
@@ -122,10 +113,6 @@ X2C_REAL RealMath_exp(X2C_REAL x);
 
 X2C_REAL RealMath_power(X2C_REAL base, X2C_REAL exponent);
 
-void X2C_EXIT(void);
-
-void X2C_HALT(X2C_INT32 x);
-
 void Storage_ALLOCATE(X2C_ADDRESS *p, X2C_CARD32 size);
 
 void Storage_DEALLOCATE(X2C_ADDRESS *a, X2C_CARD32 size);
@@ -138,9 +125,7 @@ X2C_BOOLEAN X2C_IN(X2C_CARD32 i, X2C_CARD16 bits, X2C_CARD32 set);
 
 X2C_BOOLEAN X2C_INL(X2C_CARD32 i, X2C_CARD16 bits, LSET set);
 
-X2C_INT32 X2C_MOD_F(X2C_INT32 a, X2C_INT32 b);
-
-X2C_CHAR X2C_CAP(X2C_CHAR x);
+X2C_INT32 X2C_MOD(X2C_INT32 a, X2C_INT32 b);
 
 LSET X2C_INCL(LSET set, X2C_CARD32 i, X2C_CARD16 bits);
 
@@ -152,7 +137,7 @@ void X2C_DYNDEALLOCATE(X2C_ADDRESS *a);
 
 int X2C_STRCMP_PROC(X2C_pVOID x, size_t alen, X2C_pVOID y, size_t blen);
 
-X2C_INT32 X2C_QUO_F(X2C_INT32 a, X2C_INT32 b);
+X2C_INT32 X2C_QUO(X2C_INT32 a, X2C_INT32 b);
 
 X2C_LONGREAL X2C_EXPRI(X2C_LONGREAL base, X2C_INT32 ex);
 

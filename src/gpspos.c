@@ -17,9 +17,6 @@
 #include "osic.h"
 #endif
 #include <math.h>
-#ifndef InOut_H_
-#include "InOut.h"
-#endif
 #include "sem.h"
 #include "yuma.h"
 #include "rinex.h"

@@ -32,7 +32,7 @@ export HOSTARCH
 
 CC			= $(CROSS_COMPILE)gcc
 STRIP		= $(CROSS_COMPILE)strip
-INCL		= ../libxds/include
+INCL		= .
 #CDEFS		= -D_unix -D_linux -DX2C_no_spawn -Wall -Wno-unused-variable -Wno-parentheses -Wno-pointer-sign -Wno-format -Wno-unused-but-set-variable
 CDEFS		= -D_unix -D_linux -DX2C_no_spawn -w
 CFLAGS		= -I$(INCL) -I$(EXTLIB) -c -O2 -fdata-sections -ffunction-sections
@@ -45,7 +45,7 @@ ADDLIBS		= lib_armv6/libpng15/libpng.a \
 			  lib_armv6/libjpeg.a
 XLIBS		= $(EXTLIB)libxcb.so.1 $(EXTLIB)libXdmcp.so.6 $(EXTLIB)libXau.so.6 -L$(EXTLIB) -lXext -lX11
 CFLAGS		+= -march=armv6zk -mfpu=vfp -mfloat-abi=hard -mcpu=arm1176jzf-s
-CFLAGS		+= -Ilib_armv6/libpng15/ -I.
+CFLAGS		+= -Ilib_armv6/libpng15/
 LFLAGS		+=
 else ifeq ($(PLATFORM), armv6)
 EXTLIB  	= lib_armv6/
@@ -54,7 +54,7 @@ ADDLIBS		= lib_armv6/libpng16/libpng.a \
 			  lib_armv6/libjpeg.a
 XLIBS		= $(EXTLIB)libxcb.so.1 $(EXTLIB)libXdmcp.so.6 $(EXTLIB)libXau.so.6 -L$(EXTLIB) -lXext -lX11
 CFLAGS		+= -march=armv6zk -mfpu=vfp -mfloat-abi=hard -mcpu=arm1176jzf-s
-CFLAGS		+= -Ilib_armv6/libpng16/ -I.
+CFLAGS		+= -Ilib_armv6/libpng16/
 LFLAGS		+=
 # ---------------------- armv7hf (bur am335x pp) specific ---------------------
 else ifeq ($(PLATFORM), armv7hf)
@@ -64,7 +64,7 @@ ADDLIBS		= lib_armv7hf/libpng.a \
 			  lib_armv7hf/libz.a \
 			  lib_armv7hf/libjpeg.a
 CFLAGS		+= -march=armv7-a -mfpu=neon -mfloat-abi=hard
-CFLAGS		+= -Ilib_armv7hf -I.
+CFLAGS		+= -Ilib_armv7hf
 LFLAGS		+=
 # -------------------------- x86_64 specific -----------------------------------
 else ifeq ($(HOSTARCH), x86_64)

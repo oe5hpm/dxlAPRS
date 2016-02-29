@@ -24,12 +24,6 @@
 #include "osic.h"
 #endif
 #include <math.h>
-#ifndef Lib_H_
-#include "Lib.h"
-#endif
-#ifndef InOut_H_
-#include "InOut.h"
-#endif
 #ifndef aprsstr_H_
 #include "aprsstr.h"
 #endif

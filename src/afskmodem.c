@@ -23,9 +23,6 @@
 #ifndef osi_H_
 #include "osic.h"
 #endif
-#ifndef Lib_H_
-#include "Lib.h"
-#endif
 #include <stdio.h>
 #ifndef aprsstr_H_
 #include "aprsstr.h"

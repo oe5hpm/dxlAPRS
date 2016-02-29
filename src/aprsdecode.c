@@ -22,9 +22,6 @@
 #ifndef osi_H_
 #include "osic.h"
 #endif
-#ifndef Lib_H_
-#include "Lib.h"
-#endif
 #ifndef tcp_H_
 #include "tcp.h"
 #endif
