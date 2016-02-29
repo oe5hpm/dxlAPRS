@@ -24,14 +24,10 @@
 #define X2C_LONGREAL			double
 #define X2C_CHAR			char
 #define X2C_BOOLEAN			char
-
-typedef char				*X2C_ADDRESS;
-typedef char				*X2C_pCHAR;
-typedef X2C_CARD32			* LSET;
-
-typedef X2C_CARD32			X2C_LSET_BASE;
-typedef X2C_LSET_BASE			* X2C_LSET;
-#define X2C_LSET_SIZE			(sizeof(X2C_LSET_BASE) * 8)
+#define X2C_ADDRESS			char *
+#define X2C_pCHAR			char *
+#define X2C_LSET			unsigned long *
+#define X2C_LSET_SIZE			(sizeof(unsigned long) * 8)
 
 #define X2C_max_longint			0x7FFFFFFFL
 #define X2C_min_longint			(-0x7FFFFFFFL-1)
