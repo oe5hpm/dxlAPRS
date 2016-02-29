@@ -29,7 +29,7 @@
 
 #define FNLENCHECK	1
 
-static int osic_argc = 0, argc_delivered = 0;
+static int osic_argc, argc_delivered;
 static char **osic_argv;
 
 void osic_WrLn(void)
@@ -248,9 +248,8 @@ void osic_NextArg(char s[], unsigned long s_len)
 	if (argc_delivered >= osic_argc-1) {
 		s[0] = 0;
 		return;
-	} else {
-		strncpy(s, osic_argv[argc_delivered+1], s_len);
 	}
+	strncpy(s, osic_argv[argc_delivered+1], s_len);
 	argc_delivered++;
 }
 
