@@ -125,7 +125,6 @@ OBJ_APRSMAP	= \
 	aprstext.o \
 	beep.o \
 	maptool.o \
-	mathlib.o \
 	pngread.o \
 	pngwrite.o \
 	jpgdec.o \
