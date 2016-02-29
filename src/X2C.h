@@ -18,24 +18,17 @@
 #include <float.h>
 #include <assert.h>
 
-#define X2C_INT32			long
-#define X2C_CARD32			unsigned long
-#define X2C_REAL			float
-#define X2C_LONGREAL			double
-#define X2C_CHAR			char
-#define X2C_BOOLEAN			char
 #define X2C_ADDRESS			char *
 #define X2C_pCHAR			char *
-#define X2C_LSET			unsigned long *
 #define X2C_LSET_SIZE			(sizeof(unsigned long) * 8)
 
 #define X2C_max_longint			0x7FFFFFFFL
 #define X2C_min_longint			(-0x7FFFFFFFL-1)
 #define X2C_max_longcard		0xFFFFFFFFUL
-#define X2C_max_real			((X2C_REAL)FLT_MAX)
-#define X2C_min_real			(-((X2C_REAL)FLT_MAX))
-#define X2C_max_longreal		((X2C_LONGREAL)DBL_MAX)
-#define X2C_min_longreal		(-((X2C_LONGREAL)DBL_MAX))
+#define X2C_max_real			((float)FLT_MAX)
+#define X2C_min_real			(-((float)FLT_MAX))
+#define X2C_max_longreal		((double)DBL_MAX)
+#define X2C_min_longreal		(-((double)DBL_MAX))
 #define X2C_max_longdouble		((X2C_LONGDOUBLE)LDBL_MAX)
 #define X2C_min_longdouble		(-((X2C_LONGDOUBLE)LDBL_MAX))
 

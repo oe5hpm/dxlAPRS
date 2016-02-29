@@ -220,7 +220,7 @@ void osic_Seekcur(long fd, long rel)
 		lseek(fd, 0, SEEK_SET);
 }
 
-void osic_Remove(X2C_CHAR fname[], X2C_CARD32 fname_len, X2C_BOOLEAN *done)
+void osic_Remove(char fname[], unsigned long fname_len, char *done)
 {
 	int rc;
 
@@ -231,7 +231,7 @@ void osic_Remove(X2C_CHAR fname[], X2C_CARD32 fname_len, X2C_BOOLEAN *done)
 		*done = 0;
 }
 
-X2C_BOOLEAN osic_Exists(X2C_CHAR fname[], X2C_CARD32 fname_len)
+char osic_Exists(char fname[], unsigned long fname_len)
 {
 	if (access(fname, F_OK) != -1)
 		return 1;
@@ -253,7 +253,7 @@ void osic_NextArg(char s[], unsigned long s_len)
 	argc_delivered++;
 }
 
-void osic_Fill(X2C_ADDRESS buf, unsigned long len, char byte)
+void osic_Fill(char *buf, unsigned long len, char byte)
 {
 	memset(buf, byte, len);
 }
@@ -283,90 +283,90 @@ void X2C_PCOPY(void **ppcpy, size_t size)
 	*ppcpy = pnew;
 }
 
-X2C_INT32 X2C_TRUNCI(X2C_LONGREAL x, X2C_INT32 min0, X2C_INT32 max0)
+long X2C_TRUNCI(double x, long min0, long max0)
 {
-	X2C_INT32 i;
+	long i;
 
-	if (x < (X2C_LONGREAL)min0 || x > (X2C_LONGREAL)max0)
+	if (x < (double)min0 || x > (double)max0)
 		assert(0);
 	i = (long)x;
 	if (x > 0.0) {
-		if ((X2C_LONGREAL)i > x)
+		if ((double)i > x)
 			--i;
-	} else if ((X2C_LONGREAL)i < x) {
+	} else if ((double)i < x) {
 		++i;
 	}
 	return i;
 }
 
-X2C_CARD32 X2C_TRUNCC(X2C_LONGREAL x, X2C_CARD32 min0, X2C_CARD32 max0)
+unsigned long X2C_TRUNCC(double x, unsigned long min0, unsigned long max0)
 {
-	X2C_CARD32 i;
+	unsigned long i;
 
-	if (x < (X2C_LONGREAL)min0)
+	if (x < (double)min0)
 		i = (unsigned long)min0;
-	if (x > (X2C_LONGREAL)max0)
+	if (x > (double)max0)
 		i = (unsigned long)max0;
 
 	i = (unsigned long)x;
-	if ((X2C_LONGREAL)i > x)
+	if ((double)i > x)
 		--i;
 	return i;
 }
 
-X2C_REAL X2C_DIVR(X2C_REAL a, X2C_REAL b)
+float X2C_DIVR(float a, float b)
 {
 	if (b == 0.0f)
 		return a;
 	return (a/b);
 }
 
-X2C_REAL RealMath_cos(X2C_REAL x)
+float RealMath_cos(float x)
 {
 	return cos(x);
 }
 
-X2C_REAL RealMath_ln(X2C_REAL x)
+float RealMath_ln(float x)
 {
 	if (x <= 0.0)
 		assert(0);
 	return log(x);
 }
 
-X2C_REAL RealMath_sqrt(X2C_REAL x)
+float RealMath_sqrt(float x)
 {
 	if (x < 0.0)
 		assert(0);
 	return sqrt(x);
 }
 
-X2C_REAL RealMath_sin(X2C_REAL x)
+float RealMath_sin(float x)
 {
 	return sin(x);
 }
-X2C_REAL RealMath_arctan(X2C_REAL x)
+float RealMath_arctan(float x)
 {
 	return atan(x);
 }
 
-X2C_REAL RealMath_tan(X2C_REAL x)
+float RealMath_tan(float x)
 {
 	return tan(x);
 }
 
-X2C_REAL RealMath_exp(X2C_REAL x)
+float RealMath_exp(float x)
 {
 	return exp(x);
 }
 
-X2C_REAL RealMath_power(X2C_REAL base, X2C_REAL exponent)
+float RealMath_power(float base, float exponent)
 {
 	if (base <= 0.0)
 		assert(0);
 	return pow(base, exponent);
 }
 
-void Storage_ALLOCATE(X2C_ADDRESS *p, X2C_CARD32 size)
+void Storage_ALLOCATE(X2C_ADDRESS *p, unsigned long size)
 {
 	void *pmem;
 
@@ -376,49 +376,49 @@ void Storage_ALLOCATE(X2C_ADDRESS *p, X2C_CARD32 size)
 	*p = pmem;
 }
 
-void Storage_DEALLOCATE(X2C_ADDRESS *a, X2C_CARD32 size)
+void Storage_DEALLOCATE(X2C_ADDRESS *a, unsigned long size)
 {
 	assert(*a);
 	free(*a);
 }
 
-X2C_CARD32 TimeConv_time(void)
+unsigned long TimeConv_time(void)
 {
 	return time(NULL);
 }
 
-X2C_CARD32 X2C_LSH(X2C_CARD32 a, X2C_INT32 length, X2C_INT32 n)
+unsigned long X2C_LSH(unsigned long a, long length, long n)
 {
-	X2C_CARD32 m;
+	unsigned long m;
 
 	m = 0;
 	m = (length == 32) ? 0xFFFFFFFFl : (1 << length) - 1;
 	if (n > 0) {
-		if (n >= (X2C_INT32)length)
+		if (n >= (long)length)
 			return 0;
 		return (a << n) & m;
 	}
 
-	if (n <= (X2C_INT32)-length)
+	if (n <= (long)-length)
 		return 0;
 	return (a >> -n) & m;
 }
 
-X2C_BOOLEAN X2C_IN(X2C_CARD32 i, X2C_CARD32 bits, X2C_CARD32 set)
+char X2C_IN(unsigned long i, unsigned long bits, unsigned long set)
 {
 	if (i < bits)
 		return (((1 << (int)i) & set) != 0);
 	return 0;
 }
 
-X2C_BOOLEAN X2C_INL(X2C_CARD32 i, X2C_CARD32 bits, X2C_LSET set)
+char X2C_INL(unsigned long i, unsigned long bits, unsigned long *set)
 {
 	if (i < bits)
 		return (set[(int)i / X2C_LSET_SIZE] & (1 << ((int)i % X2C_LSET_SIZE))) != 0;
 	return 0;
 }
 
-X2C_LSET X2C_INCL(X2C_LSET set, X2C_CARD32 i, X2C_CARD32 bits)
+unsigned long *X2C_INCL(unsigned long *set, unsigned long i, unsigned long bits)
 {
 	if (i >= bits)
 		assert(0);
@@ -426,9 +426,9 @@ X2C_LSET X2C_INCL(X2C_LSET set, X2C_CARD32 i, X2C_CARD32 bits)
 
 	return set;
 }
-X2C_LSET X2C_COMPLEMENT(X2C_LSET res, X2C_LSET a, X2C_CARD32 length)
+unsigned long *X2C_COMPLEMENT(unsigned long *res, unsigned long *a, unsigned long length)
 {
-	X2C_LSET c;
+	unsigned long *c;
 
 	c = res;
 	while (length) {
@@ -439,19 +439,19 @@ X2C_LSET X2C_COMPLEMENT(X2C_LSET res, X2C_LSET a, X2C_CARD32 length)
 }
 
 struct xrMM_Dynarr {
-	X2C_ADDRESS a;
+	char *a;
 	size_t n[15];
 };
 
 size_t xrMM_DynarrDescSize(size_t i)
 {
-	return (sizeof(X2C_ADDRESS) + i * sizeof(size_t) * 2);
+	return (sizeof(char *) + i * sizeof(size_t) * 2);
 }
 
 void X2C_InitDesc(struct xrMM_Dynarr *d, size_t *size, size_t lens[], size_t dims)
 {
-	X2C_CARD32 i;
-	X2C_CARD32 tmp;
+	unsigned long i;
+	unsigned long tmp;
 
 	d->n[(dims - 1) * 2] = lens[0];
 	tmp = dims - 1;
@@ -468,7 +468,7 @@ void X2C_InitDesc(struct xrMM_Dynarr *d, size_t *size, size_t lens[], size_t dim
 	*size =  *size*lens[0];
 }
 
-void X2C_DYNALLOCATE(X2C_ADDRESS *a, size_t size, size_t lens[], size_t dims)
+void X2C_DYNALLOCATE(char **a, size_t size, size_t lens[], size_t dims)
 {
 	struct xrMM_Dynarr *desc;
 
@@ -483,12 +483,12 @@ void X2C_DYNALLOCATE(X2C_ADDRESS *a, size_t size, size_t lens[], size_t dims)
 			DBG("%s: %p (%d bytes) with child %p (%d bytes)\n",
 			    __func__, desc, xrMM_DynarrDescSize(dims),
 			    desc->a, size);
-			*a = (X2C_ADDRESS)desc;
+			*a = (char *)desc;
 		}
 	}
 }
 
-void X2C_DYNDEALLOCATE(X2C_ADDRESS *a)
+void X2C_DYNDEALLOCATE(char **a)
 {
 	struct xrMM_Dynarr *d;
 
@@ -500,7 +500,7 @@ void X2C_DYNDEALLOCATE(X2C_ADDRESS *a)
 	}
 }
 
-X2C_INT32 X2C_QUO(X2C_INT32 a, X2C_INT32 b)
+long X2C_QUO(long a, long b)
 {
 	assert(b);
 	if (a >= 0) {
@@ -516,12 +516,12 @@ X2C_INT32 X2C_QUO(X2C_INT32 a, X2C_INT32 b)
 	return 0;
 }
 
-X2C_LONGREAL X2C_EXPRI(X2C_LONGREAL base, X2C_INT32 ex)
+double X2C_EXPRI(double base, long ex)
 {
-	X2C_LONGREAL res;
+	double res;
 
 	if (ex < 0 || ex > 8)
-		return pow(base, (X2C_LONGREAL)ex);
+		return pow(base, (double)ex);
 	res = 1.0;
 	while (ex > 0) {
 		res = res*base;

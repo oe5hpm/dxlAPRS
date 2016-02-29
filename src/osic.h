@@ -75,15 +75,15 @@ void osic_Seek(long fd, unsigned long pos);
 
 void osic_Seekcur(long fd, long rel);
 
-void osic_Remove(X2C_CHAR fname[], X2C_CARD32 fname_len, X2C_BOOLEAN *done);
+void osic_Remove(char fname[], unsigned long fname_len, char *done);
 
-X2C_BOOLEAN osic_Exists(X2C_CHAR fname[], X2C_CARD32 fname_len);
+char osic_Exists(char fname[], unsigned long fname_len);
 
 int osic_symblink(char *existing, char *newname);
 
 void osic_NextArg(char s[], unsigned long s_len);
 
-void osic_Fill(X2C_ADDRESS buf, unsigned long len, char byte);
+void osic_Fill(char *buf, unsigned long len, char byte);
 
 double osic_Random(void);
 
@@ -92,51 +92,51 @@ void X2C_BEGIN(int *argc, char *argv[],
 
 void X2C_PCOPY(void **ppcpy, size_t size);
 
-X2C_INT32 X2C_TRUNCI(X2C_LONGREAL x, X2C_INT32 min0, X2C_INT32 max0);
+long X2C_TRUNCI(double x, long min0, long max0);
 
-X2C_CARD32 X2C_TRUNCC(X2C_LONGREAL x, X2C_CARD32 min0, X2C_CARD32 max0);
+unsigned long X2C_TRUNCC(double x, unsigned long min0, unsigned long max0);
 
-X2C_REAL X2C_DIVR(X2C_REAL a, X2C_REAL b);
+float X2C_DIVR(float a, float b);
 
-X2C_REAL RealMath_cos(X2C_REAL x);
+float RealMath_cos(float x);
 
-X2C_REAL RealMath_ln(X2C_REAL x);
+float RealMath_ln(float x);
 
-X2C_REAL RealMath_sqrt(X2C_REAL x);
+float RealMath_sqrt(float x);
 
-X2C_REAL RealMath_sin(X2C_REAL x);
+float RealMath_sin(float x);
 
-X2C_REAL RealMath_arctan(X2C_REAL x);
+float RealMath_arctan(float x);
 
-X2C_REAL RealMath_tan(X2C_REAL x);
+float RealMath_tan(float x);
 
-X2C_REAL RealMath_exp(X2C_REAL x);
+float RealMath_exp(float x);
 
-X2C_REAL RealMath_power(X2C_REAL base, X2C_REAL exponent);
+float RealMath_power(float base, float exponent);
 
-void Storage_ALLOCATE(X2C_ADDRESS *p, X2C_CARD32 size);
+void Storage_ALLOCATE(X2C_ADDRESS *p, unsigned long size);
 
-void Storage_DEALLOCATE(X2C_ADDRESS *a, X2C_CARD32 size);
+void Storage_DEALLOCATE(X2C_ADDRESS *a, unsigned long size);
 
-X2C_CARD32 TimeConv_time(void);
+unsigned long TimeConv_time(void);
 
-X2C_CARD32 X2C_LSH(X2C_CARD32 a, X2C_INT32 length, X2C_INT32 n);
+unsigned long X2C_LSH(unsigned long a, long length, long n);
 
-X2C_BOOLEAN X2C_IN(X2C_CARD32 i, X2C_CARD32 bits, X2C_CARD32 set);
+char X2C_IN(unsigned long i, unsigned long bits, unsigned long set);
 
-X2C_BOOLEAN X2C_INL(X2C_CARD32 i, X2C_CARD32 bits, X2C_LSET set);
+char X2C_INL(unsigned long i, unsigned long bits, unsigned long *set);
 
-X2C_LSET X2C_INCL(X2C_LSET set, X2C_CARD32 i, X2C_CARD32 bits);
+unsigned long *X2C_INCL(unsigned long *set, unsigned long i, unsigned long bits);
 
-X2C_LSET X2C_COMPLEMENT(X2C_LSET res, X2C_LSET a, X2C_CARD32 length);
+unsigned long *X2C_COMPLEMENT(unsigned long *res, unsigned long *a, unsigned long length);
 
-void X2C_DYNALLOCATE(X2C_ADDRESS *a, size_t size, size_t lens[], size_t dims);
+void X2C_DYNALLOCATE(char **a, size_t size, size_t lens[], size_t dims);
 
-void X2C_DYNDEALLOCATE(X2C_ADDRESS *a);
+void X2C_DYNDEALLOCATE(char **a);
 
-X2C_INT32 X2C_QUO(X2C_INT32 a, X2C_INT32 b);
+long X2C_QUO(long a, long b);
 
-X2C_LONGREAL X2C_EXPRI(X2C_LONGREAL base, X2C_INT32 ex);
+double X2C_EXPRI(double base, long ex);
 
 void *osic_chkptr(void *p);
 
