@@ -135,7 +135,7 @@ extern void aprsstr_IntToStr(long x, unsigned long f, char s[],
    else neg = 0;
    do {
       --i;
-      s[i] = (char)(X2C_MOD(x,10L)+48L);
+      s[i] = (char)(x%10L+48L);
       x = (long)((unsigned long)x/10UL);
    } while (!(x==0L || i==0UL));
    if (neg && i>0UL) {

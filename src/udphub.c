@@ -19,14 +19,15 @@
 #ifndef osi_H_
 #include "osi.h"
 #endif
-#ifndef Lib_H_
-#include "Lib.h"
-#endif
+#include <osic.h>
 #ifndef InOut_H_
 #include "InOut.h"
 #endif
 #ifndef udp_H_
 #include "udp.h"
+#endif
+#ifndef Lib_H_
+#include "Lib.h"
 #endif
 #ifndef aprsstr_H_
 #include "aprsstr.h"
@@ -273,7 +274,7 @@ static void Showctl(unsigned long com, unsigned long cmd)
    else if (cm==0x43UL) InOut_WriteString("DISC", 5ul);
    else if (cm==0x63UL) InOut_WriteString("UA", 3ul);
    else if (cm==0x87UL) InOut_WriteString("FRMR", 5ul);
-   else osi_WrHex(cmd, 1UL);
+   else osic_WrHex(cmd, 1UL);
    strncpy(PF,"v^-+",4u);
    if (com==0UL || com==3UL) InOut_WriteString("v1", 3ul);
    else {
@@ -321,10 +322,10 @@ static void ShowFrame(char f[], unsigned long f_len, unsigned long len,
    ++i;
    if (i<len) {
       InOut_WriteString(" pid ", 6ul);
-      osi_WrHex((unsigned long)(unsigned char)f[i], 1UL);
+      osic_WrHex((unsigned long)(unsigned char)f[i], 1UL);
    }
    ++i;
-   osi_WrLn();
+   osic_WrLn();
    if (!noinfo) {
       d = 0;
       while (i<len) {
@@ -333,12 +334,12 @@ static void ShowFrame(char f[], unsigned long f_len, unsigned long len,
             d = 1;
          }
          else if (d) {
-            osi_WrLn();
+            osic_WrLn();
             d = 0;
          }
          ++i;
       }
-      if (d) osi_WrLn();
+      if (d) osic_WrLn();
    }
 } /* end ShowFrame() */
 
@@ -659,7 +660,7 @@ static void parms(void)
          }
          else {
             if (h[1U]=='h') {
-               osi_WrLn();
+               osic_WrLn();
                osi_WrStrLn(" -a                                route user-to-\
 digi AND user-to-user", 71ul);
                osi_WrStrLn(" -b <call>                         broadcast dest\
@@ -689,7 +690,7 @@ sers", 54ul);
 es with Text", 62ul);
                osi_WrStrLn(" -w <file>                         write user tab\
 le to file (only if new entries and max. every 15s)", 101ul);
-               osi_WrLn();
+               osic_WrLn();
                osi_WrStrLn("Initfile:", 10ul);
                osi_WrStrLn("NOCALL-15 192.168.0.1:4711 #comment", 36ul);
                osi_WrStrLn("NOCALL-15 p 192.168.0.1:4711 #protected entry",
@@ -700,25 +701,25 @@ le to file (only if new entries and max. every 15s)", 101ul);
                osi_WrStrLn("b enable broadcast input", 25ul);
                osi_WrStrLn("B enable broadcast output", 26ul);
                osi_WrStrLn("A send all frames", 18ul);
-               osi_WrLn();
+               osic_WrLn();
                osi_WrStrLn("Routing Table:", 15ul);
                osi_WrStrLn("(-l) time old table entries will be purged except\
  those from init file", 71ul);
-               osi_WrLn();
+               osic_WrLn();
                osi_WrStrLn("Source: AX.25 Source Call makes table entry with \
 call/ip/sourceport/date", 73ul);
                osi_WrStrLn("        Exception: Protected entry updates Date o\
 nly", 53ul);
-               osi_WrLn();
+               osic_WrLn();
                osi_WrStrLn("Destinationcall: (call used for routing)", 41ul);
                osi_WrStrLn("  First Digi with no H-bit, if not present, ax25 \
 destination call is used", 74ul);
-               osi_WrLn();
+               osic_WrLn();
                osi_WrStrLn("Broadcast: if user enabled to input broadcast and\
  ax25-destination equals broadcast call", 89ul);
-               osi_WrLn();
+               osic_WrLn();
                osi_WrStrLn("Destination: axudp ip/port", 27ul);
-               osi_WrLn();
+               osic_WrLn();
                osi_WrStrLn("Routing: frame will be sent to if", 34ul);
                osi_WrStrLn("  user enabled to get all data", 31ul);
                osi_WrStrLn("  OR broadcast and user enabled to get broadcast",
@@ -735,7 +736,7 @@ where came from", 65ul);
  even if more destinationcalls share same ip/port", 99ul);
                osi_WrStrLn("  exception 3: with not \'-a\' only data from dig\
 i port routes to destinationcall", 80ul);
-               osi_WrLn();
+               osic_WrLn();
                X2C_ABORT();
             }
             err0 = 1;
@@ -811,7 +812,7 @@ static void listtab(char fn[], unsigned long fn_len)
    unsigned long i;
    X2C_PCOPY((void **)&fn,fn_len);
    fd = osi_OpenWrite(fn, fn_len);
-   if (osi_FdValid(fd)) {
+   if (osic_FdValid(fd)) {
       u = users;
       while (u) {
          i = 0UL;
@@ -880,7 +881,7 @@ C in\012A gets all\012",201u);
       aprsstr_IntToStr((long)touserport, 0UL, h, 201ul);
       aprsstr_Append(h, 201ul, " user UDP port\012", 16ul);
       osi_WrBin(fd, (char *)h, 201u/1u, aprsstr_Length(h, 201ul));
-      osi_Close(fd);
+      osic_Close(fd);
    }
    else Err("-w File Create", 15ul);
    X2C_PFREE(fn);
@@ -917,7 +918,7 @@ static pUSER Realloc(char alloc)
          if (show) {
             InOut_WriteString("Purge User ", 12ul);
             showcall(u->call, 7ul, 0UL);
-            osi_WrLn();
+            osic_WrLn();
          }
          if (alloc && new0==0) new0 = u;
          else Storage_DEALLOCATE((X2C_ADDRESS *) &u, sizeof(struct USER));
@@ -947,7 +948,7 @@ static void showu(unsigned long dp, pUSER u)
    if (u->willall) InOut_WriteString(" gets-all", 10ul);
    InOut_WriteString(" IP:", 5ul);
    showpip(u->uip, dp);
-   osi_WrLn();
+   osic_WrLn();
 } /* end showu() */
 
 
@@ -1147,7 +1148,7 @@ static void initroutes(char fn[], unsigned long fn_len)
    unsigned long dp;
    X2C_PCOPY((void **)&fn,fn_len);
    fd = osi_OpenRead(fn, fn_len);
-   if (osi_FdValid(fd)) {
+   if (osic_FdValid(fd)) {
       lc = 1UL;
       for (;;) {
          i = 0UL;
@@ -1192,7 +1193,7 @@ static void initroutes(char fn[], unsigned long fn_len)
          ++lc;
       }
       loop_exit:;
-      osi_Close(fd);
+      osic_Close(fd);
    }
    else Err("-i File not found", 18ul);
    X2C_PFREE(fn);

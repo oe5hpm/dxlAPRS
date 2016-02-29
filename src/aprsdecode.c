@@ -22,12 +22,7 @@
 #ifndef osi_H_
 #include "osi.h"
 #endif
-#ifndef RealMath_H_
-#include "RealMath.h"
-#endif
-#ifndef Lib_H_
-#include "Lib.h"
-#endif
+#include <osic.h>
 #ifndef InOut_H_
 #include "InOut.h"
 #endif
@@ -402,12 +397,12 @@ static void parms(void)
    aprsdecode_verb = 0;
    gatecnt = 0UL;
    for (;;) {
-      Lib_NextArg(h, 4096ul);
+      osi_NextArg(h, 4096ul);
       if (h[0U]==0) break;
       if ((h[0U]=='-' && h[1U]) && h[2U]==0) {
          lasth = h[1U];
          if (lasth=='x') {
-            Lib_NextArg(h, 4096ul);
+            osi_NextArg(h, 4096ul);
             i = 0UL;
             if (GetNum(h, 4096ul, &i, &n)>=0L && n>=30UL) {
                aprsdecode_initxsize = (long)n;
@@ -415,7 +410,7 @@ static void parms(void)
             else Err("-x xsize", 9ul);
          }
          else if (lasth=='y') {
-            Lib_NextArg(h, 4096ul);
+            osi_NextArg(h, 4096ul);
             i = 0UL;
             if (GetNum(h, 4096ul, &i, &n)>=0L && n>=20UL) {
                aprsdecode_initysize = (long)n;
@@ -423,7 +418,7 @@ static void parms(void)
             else Err("-y xsize", 9ul);
          }
          else if (lasth=='z') {
-            Lib_NextArg(h, 4096ul);
+            osi_NextArg(h, 4096ul);
             if (!aprsstr_StrToFix(&aprsdecode_parmfinezoom, h,
                 4096ul) || aprsdecode_parmfinezoom<=1.0f) {
                Err("-z zoomlevel", 13ul);
@@ -434,20 +429,20 @@ static void parms(void)
             aprsdecode_parmzoom = (long)n;
          }
          else if (lasth=='m') {
-            Lib_NextArg(h, 4096ul);
+            osi_NextArg(h, 4096ul);
             if (!aprsstr_StrToFix(&aprsdecode_mappos.long0, h, 4096ul)) {
                Err("-m long lat", 12ul);
             }
-            Lib_NextArg(h, 4096ul);
+            osi_NextArg(h, 4096ul);
             if (!aprsstr_StrToFix(&aprsdecode_mappos.lat, h, 4096ul)) {
                Err("-m long lat", 12ul);
             }
             aprsdecode_mappos.long0 = aprspos_rad0(aprsdecode_mappos.long0);
             aprsdecode_mappos.lat = aprspos_rad0(aprsdecode_mappos.lat);
          }
-         else if (lasth=='c') Lib_NextArg(aprsdecode_lums.configfn, 257ul);
+         else if (lasth=='c') osi_NextArg(aprsdecode_lums.configfn, 257ul);
          else if (lasth=='g') {
-            Lib_NextArg(h, 4096ul);
+            osi_NextArg(h, 4096ul);
             if (gatecnt>9UL) Err("-g gateway table full", 22ul);
             h[4095U] = 0;
             if (h[0U]=='[') {
@@ -475,7 +470,7 @@ static void parms(void)
                   ++ii;
                }
             }
-            else Lib_NextArg(h, 4096ul);
+            else osi_NextArg(h, 4096ul);
             h[4095U] = 0;
             ii = aprsstr_InStr(h, 4096ul, "#", 2ul);
             if (ii>=0L) h[ii] = 0;
@@ -533,11 +528,11 @@ h a tx", 56ul);
                 44ul);
                osi_WrStrLn(" -v             show frames and analytics on stdo\
 ut", 52ul);
-               osi_WrLn();
+               osic_WrLn();
                X2C_ABORT();
             }
             if (lasth=='C') {
-               Lib_NextArg(h, 4096ul);
+               osi_NextArg(h, 4096ul);
                i = 0UL;
                if (GetNum(h, 4096ul, &i, &n)>=0L && n<=100UL) {
                   aprsdecode_lums.centering = (long)n;
@@ -545,7 +540,7 @@ ut", 52ul);
                else Err("-C center%", 11ul);
             }
             else if (lasth=='X') {
-               Lib_NextArg(h, 4096ul);
+               osi_NextArg(h, 4096ul);
                i = 0UL;
                if (GetNum(h, 4096ul, &i, &n)>=0L && n<=1024UL) {
                   aprsdecode_lums.sym = (long)n;
@@ -553,7 +548,7 @@ ut", 52ul);
                else Err("-X symbollumen", 15ul);
             }
             else if (lasth=='O') {
-               Lib_NextArg(h, 4096ul);
+               osi_NextArg(h, 4096ul);
                i = 0UL;
                if (GetNum(h, 4096ul, &i, &n)>=0L && n<=1024UL) {
                   aprsdecode_lums.obj = (long)n;
@@ -561,7 +556,7 @@ ut", 52ul);
                else Err("-O objectlumen", 15ul);
             }
             else if (lasth=='W') {
-               Lib_NextArg(h, 4096ul);
+               osi_NextArg(h, 4096ul);
                i = 0UL;
                if (GetNum(h, 4096ul, &i, &n)>=0L && n<=1024UL) {
                   aprsdecode_lums.waypoint = (long)n;
@@ -569,7 +564,7 @@ ut", 52ul);
                else Err("-W waypointlumen", 17ul);
             }
             else if (lasth=='A') {
-               Lib_NextArg(h, 4096ul);
+               osi_NextArg(h, 4096ul);
                i = 0UL;
                if (GetNum(h, 4096ul, &i, &n)>=0L && n<=1024UL) {
                   aprsdecode_lums.text = (long)n;
@@ -577,7 +572,7 @@ ut", 52ul);
                else Err("-A textlumen", 13ul);
             }
             else if (lasth=='T') {
-               Lib_NextArg(h, 4096ul);
+               osi_NextArg(h, 4096ul);
                i = 0UL;
                if (GetNum(h, 4096ul, &i, &n)>=0L && n<=1024UL) {
                   aprsdecode_lums.track = (long)n;
@@ -585,7 +580,7 @@ ut", 52ul);
                else Err("-T tracklumen", 14ul);
             }
             else if (lasth=='F') {
-               Lib_NextArg(h, 4096ul);
+               osi_NextArg(h, 4096ul);
                i = 0UL;
                if (GetNum(h, 4096ul, &i, &n)>=0L && n>0UL) {
                   aprsdecode_lums.firstdim = n*60UL;
@@ -593,7 +588,7 @@ ut", 52ul);
                else Err("-F fadetime (min)", 18ul);
             }
             else if (lasth=='V') {
-               Lib_NextArg(h, 4096ul);
+               osi_NextArg(h, 4096ul);
                i = 0UL;
                if (GetNum(h, 4096ul, &i, &n)>=0L && n>0UL) {
                   aprsdecode_lums.fps = (long)n;
@@ -601,7 +596,7 @@ ut", 52ul);
                else Err("-V fps", 7ul);
             }
             else if (lasth=='B') {
-               Lib_NextArg(h, 4096ul);
+               osi_NextArg(h, 4096ul);
                i = 0UL;
                if (GetNum(h, 4096ul, &i, &n)>=0L && n>0UL) {
                   aprsdecode_lums.maxdim = n*60UL;
@@ -609,7 +604,7 @@ ut", 52ul);
                else Err("-B blanktime (min)", 19ul);
             }
             else if (lasth=='P') {
-               Lib_NextArg(h, 4096ul);
+               osi_NextArg(h, 4096ul);
                i = 0UL;
                if (GetNum(h, 4096ul, &i, &n)>=0L && n>0UL) {
                   aprsdecode_lums.purgetime = n*60UL;
@@ -617,7 +612,7 @@ ut", 52ul);
                else Err("-P purgetime (min)", 19ul);
             }
             else if (lasth=='r') {
-               Lib_NextArg(h, 4096ul);
+               osi_NextArg(h, 4096ul);
                i = 0UL;
                if (GetNum(h, 4096ul, &i, &n)>=0L && n<=1024UL) {
                   aprsdecode_lums.rf = (long)n;
@@ -625,7 +620,7 @@ ut", 52ul);
                else Err("-r rftracklumen", 16ul);
             }
             else if (lasth=='o') {
-               Lib_NextArg(h, 4096ul);
+               osi_NextArg(h, 4096ul);
                i = 0UL;
                if (GetNum(h, 4096ul, &i, &n)>=0L && n<=1024UL) {
                   aprsdecode_lums.map = (long)n;
@@ -826,7 +821,7 @@ static void saybusy(long * fd, char s[], unsigned long s_len)
    X2C_PCOPY((void **)&s,s_len);
    if ((long)*fd>=0L) {
       res = sendsock(*fd, s, (long)aprsstr_Length(s, s_len));
-      osi_CloseSock(*fd);
+      osic_CloseSock(*fd);
       *fd = -1L;
    }
    X2C_PFREE(s);
@@ -1309,9 +1304,9 @@ static void wxmacro(char ws[], unsigned long ws_len, char wms[],
       len = 0L;
       if (fn[0U]) {
          f = osi_OpenRead(fn, 1024ul);
-         if (osi_FdValid(f)) {
+         if (osic_FdValid(f)) {
             n = Size(f);
-            if (n>1024UL) osi_Seek(f, n-1024UL);
+            if (n>1024UL) osic_Seek(f, n-1024UL);
             len = osi_RdBin(f, (char *)cb, 1024u/1u, 1024UL);
          }
          if (len>0L) {
@@ -1543,9 +1538,9 @@ static void beaconmacros(char s[], unsigned long s_len, const char path[],
                if (rw=='<' || rw=='[') {
                   /* read file */
                   f = osi_OpenRead(fn, 1024ul);
-                  if (osi_FdValid(f)) {
+                  if (osic_FdValid(f)) {
                      len = osi_RdBin(f, (char *)ds, 256u/1u, 255UL);
-                     osi_Close(f);
+                     osic_Close(f);
                      if (rw=='[') FileSys_Remove(fn, 1024ul, &ok0);
                      j = 0L;
                      while (((j<len && ds[j]!='\015') && ds[j]!='\012')
@@ -1567,10 +1562,10 @@ static void beaconmacros(char s[], unsigned long s_len, const char path[],
                   if (wdata[0UL]) {
                      /* write file */
                      f = osi_OpenWrite(fn, 1024ul);
-                     if (osi_FdValid(f)) {
+                     if (osic_FdValid(f)) {
                         osi_WrBin(f, (char *)wdata, (wdata_len)/1u,
                 aprsstr_Length(wdata, wdata_len));
-                        osi_Close(f);
+                        osic_Close(f);
                      }
                   }
                }
@@ -2005,8 +2000,8 @@ static char wrlog(const char b[], unsigned long b_len, unsigned long time0,
    if (l>0UL) {
       aprsstr_cleanfilename(wfn, wfn_len);
       f = osi_OpenAppendLong(wfn, wfn_len);
-      if (!osi_FdValid(f)) f = osi_OpenWrite(wfn, wfn_len);
-      if (!osi_FdValid(f)) {
+      if (!osic_FdValid(f)) f = osi_OpenWrite(wfn, wfn_len);
+      if (!osic_FdValid(f)) {
          wrlog_ret = 0;
          goto label;
       }
@@ -2033,7 +2028,7 @@ static char wrlog(const char b[], unsigned long b_len, unsigned long time0,
       h[i+16UL] = '\012';
       ++i;
       osi_WrBin(f, (char *)h, 1001u/1u, i+16UL);
-      osi_Close(f);
+      osic_Close(f);
    }
    wrlog_ret = 1;
    label:;
@@ -3705,7 +3700,7 @@ static void showmsg(const char from[], unsigned long from_len,
       InOut_WriteString(ack, ack_len);
       InOut_WriteString("|", 2ul);
       InOut_WriteString((char *) &port, 1u/1u);
-      osi_WrLn();
+      osic_WrLn();
    }
 } /* end showmsg() */
 
@@ -5564,7 +5559,7 @@ extern void aprsdecode_tcpclose(aprsdecode_pTCPSOCK w, char fin)
    struct aprsdecode_TCPSOCK * anonym;
    { /* with */
       struct aprsdecode_TCPSOCK * anonym = w;
-      if ((long)anonym->fd>=0L) osi_CloseSock(anonym->fd);
+      if ((long)anonym->fd>=0L) osic_CloseSock(anonym->fd);
       anonym->fd = -1L;
       aprsdecode_lasttcprx = 0UL;
       strncpy(h,"TCP Close ",201u);
@@ -5625,7 +5620,7 @@ static char tcpconn(aprsdecode_pTCPSOCK * sockchain, long f)
    useri_debugmem.req = sizeof(struct aprsdecode_TCPSOCK);
    useri_debugmem.mon += useri_debugmem.req;
    if (cp==0) {
-      osi_CloseSock(f);
+      osic_CloseSock(f);
       if (aprsdecode_verb) osi_WrStrLn("tcp conn out of memory", 23ul);
       return 0;
    }
@@ -5986,7 +5981,7 @@ t:RxPort>", 39ul);
 Rx)Port or in Use", 44ul);
                         useri_textautosize(0L, 5L, 6UL, 10UL, 'e', s,
                 1000ul);
-                        osi_CloseSock(anonym0->fd);
+                        osic_CloseSock(anonym0->fd);
                         anonym0->fd = -1L;
                      }
                      else {
@@ -6009,7 +6004,7 @@ Rx)Port or in Use", 44ul);
             }
          }
          else if ((long)anonym0->fd>=0L) {
-            osi_CloseSock(anonym0->fd);
+            osic_CloseSock(anonym0->fd);
             anonym0->fd = -1L;
             anonym0->starttime = 0UL;
             porttext((unsigned long)i, s, 1000ul);
@@ -6101,7 +6096,7 @@ static void approxywarn(struct aprspos_POSITION pos, const char call[],
                   useri_textautosize(0L, 5L, 6UL, 120UL, 'r', h, 101ul);
                   if (!FileSys_Exists("proxwarn", 9ul)) {
                      fd = osi_OpenWrite("proxwarn", 9ul);
-                     if (osi_FdValid(fd)) {
+                     if (osic_FdValid(fd)) {
                         aprsstr_Assign(h, 101ul, call, call_len);
                         aprsstr_IntToStr((long)aprsdecode_trunc(d*1000.0f),
                 0UL, s, 31ul);
@@ -6109,7 +6104,7 @@ static void approxywarn(struct aprspos_POSITION pos, const char call[],
                         aprsstr_Append(h, 101ul, s, 31ul);
                         osi_WrBin(fd, (char *)h, 101u/1u, aprsstr_Length(h,
                 101ul));
-                        osi_Close(fd);
+                        osic_Close(fd);
                      }
                   }
                }
@@ -6752,7 +6747,7 @@ extern void aprsdecode_tcpin(aprsdecode_pTCPSOCK acttcp)
          /*WrInt(res, 1);WrStrLn(" gettcp"); */
          if (res<0L) {
             /*WrStrLn("closesock"); */
-            osi_CloseSock(acttcp->fd);
+            osic_CloseSock(acttcp->fd);
             acttcp->fd = -1L;
             break;
          }

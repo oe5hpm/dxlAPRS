@@ -25,9 +25,7 @@
 #ifndef osi_H_
 #include "osi.h"
 #endif
-#ifndef RealMath_H_
-#include "RealMath.h"
-#endif
+#include <osic.h>
 #ifndef aprsstr_H_
 #include "aprsstr.h"
 #endif

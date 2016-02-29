@@ -16,9 +16,7 @@
 #ifndef osi_H_
 #include "osi.h"
 #endif
-#ifndef RealMath_H_
-#include "RealMath.h"
-#endif
+#include <osic.h>
 #ifndef tcp_H_
 #include "tcp.h"
 #endif
@@ -28,15 +26,13 @@
 #ifndef aprsstr_H_
 #include "aprsstr.h"
 #endif
-#ifndef Select_H_
-#include "Select.h"
-#endif
 
 
 
 
 
 /* rtl_tcp iq fm demodulator by OE5DXL */
+/*FROM Select IMPORT Usleep; */
 #define sdr_IQBUF 65536
 
 #define sdr_DDSMAXLEN 2048
@@ -82,32 +78,28 @@ static unsigned long ddslen;
 static unsigned long ddslen4;
 
 
-static void initdds(size)
-  unsigned long size;
+static void initdds(unsigned long size)
 {
    unsigned long i;
    float d;
    unsigned long tmp;
-   if (size>2047L) size = 2048L;
-   d = X2C_DIVR(6.283184f,(float)size);
-   tmp = size-1L;
-   i = 0L;
+   if (size>2047UL) size = 2048UL;
+   d = X2C_DIVR(6.2831853071796f,(float)size);
+   tmp = size-1UL;
+   i = 0UL;
    if (i<=tmp) for (;; i++) {
       DDS[i] = (short)(long)X2C_TRUNCI(32767.5f*RealMath_sin((float)i*d),
                 X2C_min_longint,X2C_max_longint);
       if (i==tmp) break;
    } /* end for */
-   ddslen = (unsigned long)(size-1L);
-   ddslen4 = size/4L;
+   ddslen = (unsigned long)(size-1UL);
+   ddslen4 = size/4UL;
 } /* end initdds() */
 
 #define sdr_FG 128
 
 
-static void iir128(rx, a, b)
-  sdr_pRX rx;
-  unsigned long a;
-  unsigned long b;
+static void iir128(sdr_pRX rx, unsigned long a, unsigned long b)
 {
    unsigned long dfc;
    unsigned long ph;
@@ -176,10 +168,7 @@ static void iir128(rx, a, b)
 #define sdr_FG0 64
 
 
-static void iir64(rx, a, b)
-  sdr_pRX rx;
-  unsigned long a;
-  unsigned long b;
+static void iir64(sdr_pRX rx, unsigned long a, unsigned long b)
 {
    unsigned long dfc;
    unsigned long ph;
@@ -248,10 +237,7 @@ static void iir64(rx, a, b)
 #define sdr_FG1 32
 
 
-static void iir32(rx, a, b)
-  sdr_pRX rx;
-  unsigned long a;
-  unsigned long b;
+static void iir32(sdr_pRX rx, unsigned long a, unsigned long b)
 {
    unsigned long dfc;
    unsigned long ph;
@@ -320,10 +306,7 @@ static void iir32(rx, a, b)
 #define sdr_FG2 16
 
 
-static void iir16(rx, a, b)
-  sdr_pRX rx;
-  unsigned long a;
-  unsigned long b;
+static void iir16(sdr_pRX rx, unsigned long a, unsigned long b)
 {
    unsigned long dfc;
    unsigned long ph;
@@ -392,10 +375,7 @@ static void iir16(rx, a, b)
 #define sdr_FG3 8
 
 
-static void iir8(rx, a, b)
-  sdr_pRX rx;
-  unsigned long a;
-  unsigned long b;
+static void iir8(sdr_pRX rx, unsigned long a, unsigned long b)
 {
    unsigned long dfc;
    unsigned long ph;
@@ -463,8 +443,7 @@ static void iir8(rx, a, b)
 } /* end iir8() */
 
 
-static short getsamp(rx)
-  sdr_pRX rx;
+static short getsamp(sdr_pRX rx)
 {
    struct Complex abs0;
    struct Complex u;
@@ -480,14 +459,14 @@ static short getsamp(rx)
    if (abs0.Im>abs0.Re) {
       if (abs0.Im>0.0f) w = X2C_DIVR(abs0.Re,abs0.Im);
       else w = 0.0f;
-      w = 1.570796f-(w*1.055f-w*w*0.267f); /* arctan */
+      w = 1.5707963267949f-(w*1.055f-w*w*0.267f); /* arctan */
    }
    else {
       if (abs0.Re>0.0f) w = X2C_DIVR(abs0.Im,abs0.Re);
       else w = 0.0f;
       w = w*1.055f-w*w*0.267f;
    }
-   if (u.Re<0.0f) w = 3.141592f-w;
+   if (u.Re<0.0f) w = 3.1415926535898f-w;
    if (u.Im<0.0f) w = -w;
    /* complex to phase */
    /* rssi */
@@ -504,18 +483,16 @@ static short getsamp(rx)
    /* phase highpass make FM */
    af = w-rx->w1;
    rx->w1 = w;
-   if (af>3.141592f) af = af-6.283184f;
-   if (af<(-3.141592f)) af = af+6.283184f;
-   return (short)X2C_TRUNCI(af*7.9577488101574E+3f,-32768,32767);
+   if (af>3.1415926535898f) af = af-6.2831853071796f;
+   if (af<(-3.1415926535898f)) af = af+6.2831853071796f;
+   return (short)X2C_TRUNCI(af*7.9577471545948E+3f,-32768,32767);
 } /* end getsamp() */
 
 #define sdr_FINESTEP 1024
 
 
-long sdr_getsdr(samps, rx, rx_len)
-  unsigned long samps;
-  sdr_pRX rx[];
-  unsigned long rx_len;
+extern long sdr_getsdr(unsigned long samps, sdr_pRX rx[],
+                unsigned long rx_len)
 {
    unsigned long bs;
    unsigned long as;
@@ -527,40 +504,40 @@ long sdr_getsdr(samps, rx, rx_len)
    struct sdr_RX * anonym;
    unsigned long tmp;
    if (reconnect && fd<0L) {
-      Usleep(1000000L);
+      /*    Usleep(1000000); */
       fd = connecttob(url, port);
    }
    if (fd>=0L) {
-      sampsum = sampsum&1023L; /* partial sample reminder of last block */
-      if (samps*(sampsize+1L)>32768L) samps = 32768L/(sampsize+1L);
+      sampsum = sampsum&1023UL; /* partial sample reminder of last block */
+      if (samps*(sampsize+1UL)>32768UL) samps = 32768UL/(sampsize+1UL);
       if (readsockb(fd, (char *)iqbuf,
-                (long)(((samps*reduce+sampsum)/1024L)*2L))<0L) {
+                (long)(((samps*reduce+sampsum)/1024UL)*2UL))<0L) {
          /* connect lost */
-         osi_Close(fd);
+         osic_Close(fd);
          fd = -1L;
          return -1L;
       }
       a = sampsum; /* continue from last partial step */
-      tmp = samps-1L;
-      s = 0L;
+      tmp = samps-1UL;
+      s = 0UL;
       if (s<=tmp) for (;; s++) {
-         r = 0L;
+         r = 0UL;
          b = a+reduce;
-         as = (a/1024L)*2L;
-         bs = (b/1024L)*2L-2L;
+         as = (a/1024UL)*2UL;
+         bs = (b/1024UL)*2UL-2UL;
          while (rx[r]) {
             { /* with */
                struct sdr_RX * anonym = rx[r];
-               if (anonym->width==128L) iir128(rx[r], as, bs);
-               else if (anonym->width==64L) iir64(rx[r], as, bs);
-               else if (anonym->width==32L) iir32(rx[r], as, bs);
-               else if (anonym->width==16L) iir16(rx[r], as, bs);
-               else if (anonym->width==8L) iir8(rx[r], as, bs);
+               if (anonym->width==128UL) iir128(rx[r], as, bs);
+               else if (anonym->width==64UL) iir64(rx[r], as, bs);
+               else if (anonym->width==32UL) iir32(rx[r], as, bs);
+               else if (anonym->width==16UL) iir16(rx[r], as, bs);
+               else if (anonym->width==8UL) iir8(rx[r], as, bs);
                else return -2L;
                u = (long)getsamp(rx[r]);
                anonym->samples[s] = (short)u;
                /* AFC */
-               if (anonym->maxafc>0L) {
+               if (anonym->maxafc>0UL) {
                   anonym->median = (anonym->median+u)-(anonym->afckhz*1024L)
                 /(long)anonym->maxafc;
                   if (anonym->median>400000000L) {
@@ -591,59 +568,51 @@ long sdr_getsdr(samps, rx, rx_len)
 } /* end getsdr() */
 
 
-void sdr_setparm(num, value)
-  unsigned long num;
-  unsigned long value;
+extern void sdr_setparm(unsigned long num, unsigned long value)
 {
    long res;
    char tbuf[5];
-   tbuf[0] = (char)num;
-   tbuf[1] = (char)(value/16777216L);
-   tbuf[2] = (char)(value/65536L&255L);
-   tbuf[3] = (char)(value/256L&255L);
-   tbuf[4] = (char)(value&255L);
+   tbuf[0U] = (char)num;
+   tbuf[1U] = (char)(value/16777216UL);
+   tbuf[2U] = (char)(value/65536UL&255UL);
+   tbuf[3U] = (char)(value/256UL&255UL);
+   tbuf[4U] = (char)(value&255UL);
    res = sendsock(fd, tbuf, 5L);
 } /* end setparm() */
 
 
-char sdr_startsdr(ip, ip_len, tport, tport_len, inhz, outhz, reconn)
-  char ip[];
-  unsigned long ip_len;
-  char tport[];
-  unsigned long tport_len;
-  unsigned long inhz;
-  unsigned long outhz;
-  char reconn;
+extern char sdr_startsdr(char ip[], unsigned long ip_len, char tport[],
+                unsigned long tport_len, unsigned long inhz,
+                unsigned long outhz, char reconn)
 {
-   aprsstr_Assign(url, 1001l, ip, ip_len);
-   aprsstr_Assign(port, 11l, tport, tport_len);
+   aprsstr_Assign(url, 1001ul, ip, ip_len);
+   aprsstr_Assign(port, 11ul, tport, tport_len);
    reconnect = reconn;
-   if (inhz>0L) rtlhz = inhz;
-   if (rtlhz!=1024000L && rtlhz!=2048000L) return 0;
-   if (outhz>0L) audiohz = outhz;
-   reduce = (1024L*rtlhz+audiohz/2L)/audiohz; /* sample reduction * 1024 */
-   sampsize = reduce/1024L; /* input samples per output sample, trunc */
+   if (inhz>0UL) rtlhz = inhz;
+   if (rtlhz!=1024000UL && rtlhz!=2048000UL) return 0;
+   if (outhz>0UL) audiohz = outhz;
+   reduce = (1024UL*rtlhz+audiohz/2UL)/audiohz; /* sample reduction * 1024 */
+   sampsize = reduce/1024UL; /* input samples per output sample, trunc */
    if (fd<0L) fd = connecttob(url, port);
    if (fd>=0L) {
-      sdr_setparm(2L, rtlhz);
-      initdds(inhz/1000L);
+      sdr_setparm(2UL, rtlhz);
+      initdds(inhz/1000UL);
    }
    return fd>=0L;
 } /* end startsdr() */
 
 
-void sdr_BEGIN()
+extern void sdr_BEGIN(void)
 {
    static int sdr_init = 0;
    if (sdr_init) return;
    sdr_init = 1;
    if (sizeof(sdr_AUDIOSAMPLE)!=131072) X2C_ASSERT(0);
    aprsstr_BEGIN();
-   RealMath_BEGIN();
    osi_BEGIN();
    fd = -1L;
    reconnect = 0;
-   rtlhz = 2048000L;
-   audiohz = 16000L;
+   rtlhz = 2048000UL;
+   audiohz = 16000UL;
 }
 

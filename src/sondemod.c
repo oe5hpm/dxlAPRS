@@ -23,15 +23,16 @@
 #ifndef osi_H_
 #include "osi.h"
 #endif
+#include <math.h>
+#include <osic.h>
+#ifndef InOut_H_
+#include "InOut.h"
+#endif
 #ifndef RealMath_H_
 #include "RealMath.h"
 #endif
-#include <math.h>
 #ifndef Lib_H_
 #include "Lib.h"
-#endif
-#ifndef InOut_H_
-#include "InOut.h"
 #endif
 #ifndef aprsstr_H_
 #include "aprsstr.h"
@@ -456,7 +457,7 @@ static void OpenSound(void)
       if (i0) {
          InOut_WriteString("sound setfragment returns ", 27ul);
          InOut_WriteInt(i0, 1UL);
-         osi_WrLn();
+         osic_WrLn();
       }
       i0 = sampelrate(soundfd, adcrate); /* 8000..48000 */
       s = (long)getsampelrate(soundfd);
@@ -947,7 +948,7 @@ static void dogps(const char sf[], unsigned long sf_len,
       osi_WrStrLn("", 1ul);
       InOut_WriteString("sig: ", 6ul);
       for (i0 = 0UL; i0<=11UL; i0++) {
-         osi_WrHex((unsigned long)(unsigned char)sf[i0+14UL], 3UL);
+         osic_WrHex((unsigned long)(unsigned char)sf[i0+14UL], 3UL);
       } /* end for */
       osi_WrStrLn("", 1ul);
       osi_WrStrLn("rang:", 6ul);
@@ -1012,18 +1013,18 @@ static void dogps(const char sf[], unsigned long sf_len,
       InOut_WriteString(h, 100ul);
       /*    WrStr("pos: "); WrFixed(lat/RAD, 5, 12);
                 WrFixed(long/RAD, 5, 12); */
-      osi_WrFixed((float)cont->heig, 0L, 10UL);
+      osic_WrFixed((float)cont->heig, 0L, 10UL);
       InOut_WriteString("m", 2ul);
-      osi_WrFixed((float)(cont->speed*3.6), 1L, 6UL);
+      osic_WrFixed((float)(cont->speed*3.6), 1L, 6UL);
       InOut_WriteString("km/h", 5ul);
-      osi_WrFixed((float)cont->dir, 0L, 5UL);
+      osic_WrFixed((float)cont->dir, 0L, 5UL);
       InOut_WriteString("deg", 4ul);
-      osi_WrFixed((float)cont->climb, 1L, 7UL);
+      osic_WrFixed((float)cont->climb, 1L, 7UL);
       InOut_WriteString("m/s", 4ul);
       InOut_WriteString(" h/vrms:", 9ul);
-      osi_WrFixed(cont->hrmsc, 1L, 0UL);
+      osic_WrFixed(cont->hrmsc, 1L, 0UL);
       InOut_WriteString(" ", 2ul);
-      osi_WrFixed(cont->vrmsc, 1L, 0UL);
+      osic_WrFixed(cont->vrmsc, 1L, 0UL);
       osi_WrStrLn("", 1ul);
    }
 } /* end dogps() */
@@ -1204,12 +1205,12 @@ static void domes(const char md[], unsigned long md_len, double * hp,
          } /* end for */
          osi_WrStrLn("", 1ul);
       }
-      osi_WrFixed((float)*temp, 3L, 7UL);
+      osic_WrFixed((float)*temp, 3L, 7UL);
       InOut_WriteString(" ", 2ul);
-      osi_WrFixed(hr1, 3L, 7UL);
+      osic_WrFixed(hr1, 3L, 7UL);
       /*WrStr(" ");WrFixed(hr2, 3,7); */
       InOut_WriteString(" ", 2ul);
-      osi_WrFixed(p, 2L, 8UL);
+      osic_WrFixed(p, 2L, 8UL);
    }
 /*WrStr(" ");WrFixed(x2, 2,8); */
 /*WrStrLn(""); */
@@ -1255,9 +1256,9 @@ static void doozon(const char s[], unsigned long s_len, double * otemp,
    if (*ozon<=0.0) *ozon = 0.0;
    if (sondeaprs_verb) {
       InOut_WriteString("ozon:", 6ul);
-      osi_WrFixed((float)*ozon, 1L, 5UL);
+      osic_WrFixed((float)*ozon, 1L, 5UL);
       InOut_WriteString("mPa temp:", 10ul);
-      osi_WrFixed((float)*otemp, 1L, 5UL);
+      osic_WrFixed((float)*otemp, 1L, 5UL);
       osi_WrStrLn("C", 2ul);
    }
 /*WrStr(" ");WrFixed(FLOAT(ORD(s[8])+ORD(s[9])*256), 0,8); */
@@ -1299,7 +1300,7 @@ static void readcontext(struct CONTEXT * cont, char objname0[],
                 sizeof(struct CONTEXT))!=(long)sizeof(struct CONTEXT)) {
          initcontext(cont);
       }
-      osi_Close(fd);
+      osic_Close(fd);
    }
    X2C_PFREE(objname0);
 } /* end readcontext() */
@@ -1317,7 +1318,7 @@ static void wrcontext(struct CONTEXT * cont, char objname0[],
       if (fd>=0L) {
          osi_WrBin(fd, (char *)cont, sizeof(struct CONTEXT)/1u,
                 sizeof(struct CONTEXT));
-         osi_Close(fd);
+         osic_Close(fd);
       }
    }
    X2C_PFREE(objname0);
@@ -1379,7 +1380,7 @@ static void docalib(const char sf[], unsigned long sf_len, char objname0[],
                 cont->calibdata[3U]*256UL)*10UL)*0.001f;
          if (sondeaprs_verb) {
             InOut_WriteString(" ", 2ul);
-            osi_WrFixed(*mhz0, 2L, 6UL);
+            osic_WrFixed(*mhz0, 2L, 6UL);
             InOut_WriteString("MHz ", 5ul);
          }
       }
@@ -1433,7 +1434,7 @@ static void WrRinexfn(unsigned long t)
    f = osi_OpenWrite("getalmanach", 12ul);
    if (f>=0L) {
       osi_WrBin(f, (char *)fn, 31u/1u, aprsstr_Length(fn, 31ul));
-      osi_Close(f);
+      osic_Close(f);
    }
    else osi_WrStrLn("can not write getalmanach file", 31ul);
 } /* end WrRinexfn() */
@@ -1646,7 +1647,7 @@ static void decodeframe(unsigned char m, unsigned long ip,
       else {
          InOut_WriteString("end  ", 6ul);
          if (sondeaprs_verb) {
-            osi_WrHex((unsigned long)(unsigned char)typ, 4UL);
+            osic_WrHex((unsigned long)(unsigned char)typ, 4UL);
             crdone = 0;
          }
          break;
@@ -1761,7 +1762,7 @@ static void decodeframe(unsigned char m, unsigned long ip,
                   tmp = len-1UL;
                   j = 0UL;
                   if (j<=tmp) for (;; j++) {
-                     osi_WrHex((unsigned long)(unsigned char)sf[j], 3UL);
+                     osic_WrHex((unsigned long)(unsigned char)sf[j], 3UL);
                      if (j==tmp) break;
                   } /* end for */
                   osi_WrStrLn("", 1ul);
@@ -1777,7 +1778,7 @@ static void decodeframe(unsigned char m, unsigned long ip,
             tmp = len-1UL;
             j = 0UL;
             if (j<=tmp) for (;; j++) {
-               osi_WrHex((unsigned long)(unsigned char)sf[j], 3UL);
+               osic_WrHex((unsigned long)(unsigned char)sf[j], 3UL);
                if (j==tmp) break;
             } /* end for */
             crdone = 0;
@@ -1961,7 +1962,7 @@ static void decodec34(const char rxb[], unsigned long rxb_len,
       if (hr<99.9 && hr>(-99.9)) {
          if (sondeaprs_verb) {
             InOut_WriteString("temp", 5ul);
-            osi_WrFixed((float)hr, 1L, 0UL);
+            osic_WrFixed((float)hr, 1L, 0UL);
             InOut_WriteString("oC", 3ul);
          }
          pc->temp = hr;
@@ -1972,7 +1973,7 @@ static void decodec34(const char rxb[], unsigned long rxb_len,
       if (hr<99.9 && hr>(-99.9)) {
          if (sondeaprs_verb) {
             InOut_WriteString("dewp", 5ul);
-            osi_WrFixed((float)hr, 1L, 0UL);
+            osic_WrFixed((float)hr, 1L, 0UL);
             InOut_WriteString("oC", 3ul);
          }
          pc->dewp = hr;
@@ -2002,7 +2003,7 @@ static void decodec34(const char rxb[], unsigned long rxb_len,
       if (hr<89.9 && hr>(-89.9)) {
          if (sondeaprs_verb) {
             InOut_WriteString("lati", 5ul);
-            osi_WrFixed((float)hr, 5L, 0UL);
+            osic_WrFixed((float)hr, 5L, 0UL);
          }
          if (pc->tlat!=systime) {
             pc->lat1 = pc->lat;
@@ -2018,7 +2019,7 @@ static void decodec34(const char rxb[], unsigned long rxb_len,
       if (hr<180.0 && hr>(-180.0)) {
          if (sondeaprs_verb) {
             InOut_WriteString("long", 5ul);
-            osi_WrFixed((float)hr, 5L, 0UL);
+            osic_WrFixed((float)hr, 5L, 0UL);
          }
          if (pc->tlon!=systime) {
             pc->lon1 = pc->lon; /* save 2 values for extrapolating */
@@ -2034,7 +2035,7 @@ static void decodec34(const char rxb[], unsigned long rxb_len,
       if (hr<50000.0) {
          if (sondeaprs_verb) {
             InOut_WriteString("alti", 5ul);
-            osi_WrFixed((float)hr, 1L, 0UL);
+            osic_WrFixed((float)hr, 1L, 0UL);
             InOut_WriteString("m", 2ul);
          }
          if (pc->talt<systime) {
@@ -2051,7 +2052,7 @@ static void decodec34(const char rxb[], unsigned long rxb_len,
       if (hr>=0.0 && hr<1000.0) {
          if (sondeaprs_verb) {
             InOut_WriteString("wind", 5ul);
-            osi_WrFixed((float)hr, 1L, 0UL);
+            osic_WrFixed((float)hr, 1L, 0UL);
             InOut_WriteString("km/h", 5ul);
          }
          pc->speed = hr*2.7777777777778E-1;
@@ -2063,7 +2064,7 @@ static void decodec34(const char rxb[], unsigned long rxb_len,
       if (hr>=0.0 && hr<=360.0) {
          if (sondeaprs_verb) {
             InOut_WriteString("wdir", 5ul);
-            osi_WrFixed((float)hr, 1L, 0UL);
+            osic_WrFixed((float)hr, 1L, 0UL);
             InOut_WriteString("deg", 4ul);
          }
          pc->dir = hr;
@@ -2072,12 +2073,12 @@ static void decodec34(const char rxb[], unsigned long rxb_len,
       break;
    default:;
       if (sondeaprs_verb) {
-         osi_WrHex((unsigned long)(unsigned char)cb[0U], 0UL);
+         osic_WrHex((unsigned long)(unsigned char)cb[0U], 0UL);
          InOut_WriteString(" ", 2ul);
-         osi_WrHex((unsigned long)(unsigned char)cb[1U], 0UL);
-         osi_WrHex((unsigned long)(unsigned char)cb[2U], 0UL);
-         osi_WrHex((unsigned long)(unsigned char)cb[3U], 0UL);
-         osi_WrHex((unsigned long)(unsigned char)cb[4U], 0UL);
+         osic_WrHex((unsigned long)(unsigned char)cb[1U], 0UL);
+         osic_WrHex((unsigned long)(unsigned char)cb[2U], 0UL);
+         osic_WrHex((unsigned long)(unsigned char)cb[3U], 0UL);
+         osic_WrHex((unsigned long)(unsigned char)cb[4U], 0UL);
       }
       break;
    } /* end switch */
@@ -2161,9 +2162,10 @@ static void decodesub(const char b[], unsigned long b_len, pCONTEXTDFM6 pc,
       }
       if (sondeaprs_verb) {
          InOut_WriteString(" lat: ", 7ul);
-         osi_WrFixed((float)(X2C_DIVL(pc->lat,1.7453292519943E-2)), 5L, 0UL);
+         osic_WrFixed((float)(X2C_DIVL(pc->lat,1.7453292519943E-2)), 5L,
+                0UL);
          InOut_WriteString(" ", 2ul);
-         osi_WrFixed((float)u*0.036f, 1L, 0UL);
+         osic_WrFixed((float)u*0.036f, 1L, 0UL);
          InOut_WriteString("km/h", 5ul);
       }
       ok0 = 1;
@@ -2186,9 +2188,10 @@ static void decodesub(const char b[], unsigned long b_len, pCONTEXTDFM6 pc,
       }
       if (sondeaprs_verb) {
          InOut_WriteString(" long:", 7ul);
-         osi_WrFixed((float)(X2C_DIVL(pc->lon,1.7453292519943E-2)), 5L, 0UL);
+         osic_WrFixed((float)(X2C_DIVL(pc->lon,1.7453292519943E-2)), 5L,
+                0UL);
          InOut_WriteString(" ", 2ul);
-         osi_WrFixed((float)u*0.01f, 1L, 0UL);
+         osic_WrFixed((float)u*0.01f, 1L, 0UL);
          InOut_WriteString(" deg", 5ul);
       }
       ok0 = 1;
@@ -2206,9 +2209,9 @@ static void decodesub(const char b[], unsigned long b_len, pCONTEXTDFM6 pc,
       if (vr<50.0 && vr>(-500.0)) pc->clmb = vr;
       if (sondeaprs_verb) {
          InOut_WriteString(" alti:", 7ul);
-         osi_WrFixed((float)pc->alt, 1L, 0UL);
+         osic_WrFixed((float)pc->alt, 1L, 0UL);
          InOut_WriteString("m ", 3ul);
-         osi_WrFixed((float)pc->clmb, 1L, 0UL);
+         osic_WrFixed((float)pc->clmb, 1L, 0UL);
          InOut_WriteString(" m/s", 5ul);
       }
       ok0 = 1;
@@ -2447,11 +2450,11 @@ static void posrs41(const char b[], unsigned long b_len, unsigned long p,
    wgs84r(x, y, z, lat, long0, heig);
    if (sondeaprs_verb) {
       InOut_WriteString(" ", 2ul);
-      osi_WrFixed((float)(X2C_DIVL(*lat,1.7453292519943E-2)), 5L, 1UL);
+      osic_WrFixed((float)(X2C_DIVL(*lat,1.7453292519943E-2)), 5L, 1UL);
       InOut_WriteString(" ", 2ul);
-      osi_WrFixed((float)(X2C_DIVL(*long0,1.7453292519943E-2)), 5L, 1UL);
+      osic_WrFixed((float)(X2C_DIVL(*long0,1.7453292519943E-2)), 5L, 1UL);
       InOut_WriteString(" ", 2ul);
-      osi_WrFixed((float)*heig, 1L, 1UL);
+      osic_WrFixed((float)*heig, 1L, 1UL);
       InOut_WriteString("m ", 3ul);
    }
    if (*heig<(-500.0) || *heig>50000.0) {
@@ -2472,11 +2475,11 @@ static void posrs41(const char b[], unsigned long b_len, unsigned long p,
    *clmb = vu;
    if (sondeaprs_verb) {
       InOut_WriteString(" ", 2ul);
-      osi_WrFixed((float)( *speed*3.6), 2L, 1UL);
+      osic_WrFixed((float)( *speed*3.6), 2L, 1UL);
       InOut_WriteString("km/h ", 6ul);
-      osi_WrFixed((float)*dir, 1L, 1UL);
+      osic_WrFixed((float)*dir, 1L, 1UL);
       InOut_WriteString("deg ", 5ul);
-      osi_WrFixed((float)vu, 1L, 1UL);
+      osic_WrFixed((float)vu, 1L, 1UL);
       InOut_WriteString("m/s", 4ul);
    }
 } /* end posrs41() */
@@ -2805,7 +2808,7 @@ static void getadc(void)
    if (l<0L) {
       if (abortonsounderr) Error("Sounddevice Failure", 20ul);
       else {
-         osi_Close(soundfd);
+         osic_Close(soundfd);
          Usleep(100000UL);
          OpenSound();
          return;

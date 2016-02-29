@@ -23,15 +23,16 @@
 #ifndef osi_H_
 #include "osi.h"
 #endif
+#include <math.h>
+#include <osic.h>
+#ifndef InOut_H_
+#include "InOut.h"
+#endif
 #ifndef RealMath_H_
 #include "RealMath.h"
 #endif
-#include <math.h>
 #ifndef Lib_H_
 #include "Lib.h"
-#endif
-#ifndef InOut_H_
-#include "InOut.h"
 #endif
 #ifndef aprsstr_H_
 #include "aprsstr.h"
@@ -478,7 +479,7 @@ static void OpenSound(void)
          if (i) {
             InOut_WriteString("sound setfragment returns ", 27ul);
             InOut_WriteInt(i, 1UL);
-            osi_WrLn();
+            osic_WrLn();
          }
          i = sampelrate(soundfd, adcrate); /* 8000..48000 */
          s = (long)getsampelrate(soundfd);
@@ -984,7 +985,7 @@ static void sendudp(char data[], unsigned long data_len, long len,
 static void WrdB(long volt)
 {
    if (volt>0L) {
-      osi_WrFixed(RealMath_ln((float)volt)*8.685889638f-96.4f, 1L, 6UL);
+      osic_WrFixed(RealMath_ln((float)volt)*8.685889638f-96.4f, 1L, 6UL);
       InOut_WriteString("dB", 3ul);
    }
 } /* end WrdB() */
@@ -1299,11 +1300,11 @@ static void posrs41(const char b[], unsigned long b_len, unsigned long p)
    z = (double)getint32(b, b_len, p+8UL)*0.01;
    wgs84r(x, y, z, &lat, &long0, &heig);
    InOut_WriteString(" ", 2ul);
-   osi_WrFixed((float)(X2C_DIVL(lat,1.7453288888889E-2)), 5L, 1UL);
+   osic_WrFixed((float)(X2C_DIVL(lat,1.7453288888889E-2)), 5L, 1UL);
    InOut_WriteString(" ", 2ul);
-   osi_WrFixed((float)(X2C_DIVL(long0,1.7453288888889E-2)), 5L, 1UL);
+   osic_WrFixed((float)(X2C_DIVL(long0,1.7453288888889E-2)), 5L, 1UL);
    InOut_WriteString(" ", 2ul);
-   osi_WrFixed((float)heig, 1L, 1UL);
+   osic_WrFixed((float)heig, 1L, 1UL);
    InOut_WriteString("m ", 3ul);
    /*speed */
    vx = (double)getint16(b, b_len, p+12UL)*0.01;
@@ -1315,11 +1316,11 @@ static void posrs41(const char b[], unsigned long b_len, unsigned long p)
    dir = X2C_DIVL(atan20(vn, ve),1.7453288888889E-2);
    if (dir<0.0) dir = 360.0+dir;
    InOut_WriteString(" ", 2ul);
-   osi_WrFixed((float)(sqrt(vn*vn+ve*ve)*3.6), 2L, 1UL);
+   osic_WrFixed((float)(sqrt(vn*vn+ve*ve)*3.6), 2L, 1UL);
    InOut_WriteString("km/h ", 6ul);
-   osi_WrFixed((float)dir, 1L, 1UL);
+   osic_WrFixed((float)dir, 1L, 1UL);
    InOut_WriteString("deg ", 5ul);
-   osi_WrFixed((float)vu, 1L, 1UL);
+   osic_WrFixed((float)vu, 1L, 1UL);
    InOut_WriteString("m/s", 4ul);
 } /* end posrs41() */
 
@@ -1390,7 +1391,7 @@ static void decode41(unsigned long m)
             nameok = 1;
             if (anonym->rxbuf[p+23UL]==0) {
                InOut_WriteString(" ", 2ul);
-               osi_WrFixed((float)(getint16(anonym->rxbuf, 520ul,
+               osic_WrFixed((float)(getint16(anonym->rxbuf, 520ul,
                 p+26UL)/64L+40000L)*0.01f, 2L, 1UL);
                InOut_WriteString("MHz", 4ul);
             }
@@ -1863,9 +1864,9 @@ static void decodesub(const char b[], unsigned long b_len, unsigned long m,
       u = bits2val(b, b_len, 32UL, 16UL);
       if (verb) {
          InOut_WriteString(" lat: ", 7ul);
-         osi_WrFixed((float)v*1.E-7f, 5L, 0UL);
+         osic_WrFixed((float)v*1.E-7f, 5L, 0UL);
          InOut_WriteString(" ", 2ul);
-         osi_WrFixed((float)u*0.036f, 1L, 0UL);
+         osic_WrFixed((float)u*0.036f, 1L, 0UL);
          InOut_WriteString("km/h", 5ul);
       }
       ok0 = 1;
@@ -1875,9 +1876,9 @@ static void decodesub(const char b[], unsigned long b_len, unsigned long m,
       u = bits2val(b, b_len, 32UL, 16UL);
       if (verb) {
          InOut_WriteString(" long:", 7ul);
-         osi_WrFixed((float)v*1.E-7f, 5L, 0UL);
+         osic_WrFixed((float)v*1.E-7f, 5L, 0UL);
          InOut_WriteString(" ", 2ul);
-         osi_WrFixed((float)u*0.01f, 1L, 0UL);
+         osic_WrFixed((float)u*0.01f, 1L, 0UL);
          InOut_WriteString(" deg", 5ul);
       }
       ok0 = 1;
@@ -1888,9 +1889,9 @@ static void decodesub(const char b[], unsigned long b_len, unsigned long m,
       if (ui>=32768L) ui -= 65536L;
       if (verb) {
          InOut_WriteString(" alti:", 7ul);
-         osi_WrFixed((float)v*0.01f, 1L, 0UL);
+         osic_WrFixed((float)v*0.01f, 1L, 0UL);
          InOut_WriteString("m ", 3ul);
-         osi_WrFixed((float)ui*0.01f, 1L, 0UL);
+         osic_WrFixed((float)ui*0.01f, 1L, 0UL);
          InOut_WriteString(" m/s", 5ul);
       }
       ok0 = 1;
@@ -1957,7 +1958,7 @@ static void decodesub(const char b[], unsigned long b_len, unsigned long m,
          wh(bits2val(b, b_len, 48UL, 4UL));
          InOut_WriteString(":", 2ul);
          for (u = 0UL; u<=5UL; u++) {
-            osi_WrHex(bits2val(b, b_len, u*8UL, 8UL), 0UL);
+            osic_WrHex(bits2val(b, b_len, u*8UL, 8UL), 0UL);
          } /* end for */
       }
       break;
@@ -2228,15 +2229,15 @@ static void demodframe34(unsigned long channel)
          WrQuali(noiselevel(channel));
          Wrtune(chan[channel].adcdc, chan[channel].adcmax);
          InOut_WriteString(" [", 3ul);
-         osi_WrHex((unsigned long)(unsigned char)anonym->rxbuf[2U], 2UL);
+         osic_WrHex((unsigned long)(unsigned char)anonym->rxbuf[2U], 2UL);
          InOut_WriteString(" ", 2ul);
-         osi_WrHex((unsigned long)(unsigned char)anonym->rxbuf[3U], 2UL);
-         osi_WrHex((unsigned long)(unsigned char)anonym->rxbuf[4U], 2UL);
-         osi_WrHex((unsigned long)(unsigned char)anonym->rxbuf[5U], 2UL);
-         osi_WrHex((unsigned long)(unsigned char)anonym->rxbuf[6U], 2UL);
+         osic_WrHex((unsigned long)(unsigned char)anonym->rxbuf[3U], 2UL);
+         osic_WrHex((unsigned long)(unsigned char)anonym->rxbuf[4U], 2UL);
+         osic_WrHex((unsigned long)(unsigned char)anonym->rxbuf[5U], 2UL);
+         osic_WrHex((unsigned long)(unsigned char)anonym->rxbuf[6U], 2UL);
          InOut_WriteString(" ", 2ul);
-         osi_WrHex((unsigned long)(unsigned char)anonym->rxbuf[7U], 2UL);
-         osi_WrHex((unsigned long)(unsigned char)anonym->rxbuf[8U], 2UL);
+         osic_WrHex((unsigned long)(unsigned char)anonym->rxbuf[7U], 2UL);
+         osic_WrHex((unsigned long)(unsigned char)anonym->rxbuf[8U], 2UL);
          InOut_WriteString("] ", 3ul);
       }
       if (ok0) {
@@ -2265,7 +2266,7 @@ static void demodframe34(unsigned long channel)
          case '\033':
             if (verb) {
                InOut_WriteString("hygr", 5ul);
-               osi_WrFixed((float)hr, 2L, 0UL);
+               osic_WrFixed((float)hr, 2L, 0UL);
                InOut_WriteString("%", 2ul);
             }
             break;
@@ -2273,7 +2274,7 @@ static void demodframe34(unsigned long channel)
             if (hr<99.9 && hr>(-99.9)) {
                if (verb) {
                   InOut_WriteString("temp", 5ul);
-                  osi_WrFixed((float)hr, 1L, 0UL);
+                  osic_WrFixed((float)hr, 1L, 0UL);
                   InOut_WriteString("oC", 3ul);
                }
                good = 1;
@@ -2283,7 +2284,7 @@ static void demodframe34(unsigned long channel)
             if (hr<99.9 && hr>(-99.9)) {
                if (verb) {
                   InOut_WriteString("dewp", 5ul);
-                  osi_WrFixed((float)hr, 1L, 0UL);
+                  osic_WrFixed((float)hr, 1L, 0UL);
                   InOut_WriteString("oC", 3ul);
                }
                good = 1;
@@ -2313,7 +2314,7 @@ static void demodframe34(unsigned long channel)
             if (hr<89.9 && hr>(-89.9)) {
                if (verb) {
                   InOut_WriteString("lati", 5ul);
-                  osi_WrFixed((float)hr, 5L, 0UL);
+                  osic_WrFixed((float)hr, 5L, 0UL);
                }
                good = 1;
             }
@@ -2323,7 +2324,7 @@ static void demodframe34(unsigned long channel)
             if (hr<180.0 && hr>(-180.0)) {
                if (verb) {
                   InOut_WriteString("long", 5ul);
-                  osi_WrFixed((float)hr, 5L, 0UL);
+                  osic_WrFixed((float)hr, 5L, 0UL);
                }
                good = 1;
             }
@@ -2333,7 +2334,7 @@ static void demodframe34(unsigned long channel)
             if (hr<50000.0) {
                if (verb) {
                   InOut_WriteString("alti", 5ul);
-                  osi_WrFixed((float)hr, 1L, 0UL);
+                  osic_WrFixed((float)hr, 1L, 0UL);
                   InOut_WriteString("m", 2ul);
                }
                good = 1;
@@ -2345,7 +2346,7 @@ static void demodframe34(unsigned long channel)
             if (hr<1000.0) {
                if (verb) {
                   InOut_WriteString("wind", 5ul);
-                  osi_WrFixed((float)hr, 1L, 0UL);
+                  osic_WrFixed((float)hr, 1L, 0UL);
                   InOut_WriteString("km/h", 5ul);
                }
                good = 1;
@@ -2356,7 +2357,7 @@ static void demodframe34(unsigned long channel)
             if (hr>=0.0 && hr<=360.0) {
                if (verb) {
                   InOut_WriteString("wdir", 5ul);
-                  osi_WrFixed((float)hr, 1L, 0UL);
+                  osic_WrFixed((float)hr, 1L, 0UL);
                   InOut_WriteString("deg", 4ul);
                }
                good = 1;
@@ -2431,8 +2432,8 @@ static void demodframe34(unsigned long channel)
       else if (verb) {
          /*build tx frame */
          InOut_WriteString("---- chksum ", 13ul);
-         osi_WrHex(sum1, 2UL);
-         osi_WrHex(sum2, 2UL);
+         osic_WrHex(sum1, 2UL);
+         osic_WrHex(sum2, 2UL);
       }
       if (verb) osi_WrStrLn("", 1ul);
    }
@@ -2577,7 +2578,7 @@ static void getadc(void)
          if (l<0L) {
             if (abortonsounderr) Error("Sounddevice Failure", 20ul);
             else {
-               osi_Close(soundfd);
+               osic_Close(soundfd);
                Usleep(100000UL);
                OpenSound();
                return;

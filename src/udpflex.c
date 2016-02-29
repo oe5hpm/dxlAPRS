@@ -19,9 +19,7 @@
 #ifndef osi_H_
 #include "osi.h"
 #endif
-#ifndef Lib_H_
-#include "Lib.h"
-#endif
+#include <osic.h>
 #ifndef InOut_H_
 #include "InOut.h"
 #endif
@@ -227,7 +225,7 @@ static void initfile(char fn[], unsigned long fn_len)
       if (fd!=-1L) {
          len0 = osi_RdBin(fd, (char *)b, 4001u/1u, 4001UL);
          osi_WrBin(tty, (char *)b, 4001u/1u, (unsigned long)len0);
-         osi_Close(fd);
+         osic_Close(fd);
       }
       else Error("initfile not found", 19ul);
    }
@@ -302,7 +300,7 @@ static void opentty(void)
 static void testtty(long len0)
 {
    if (len0<=0L) {
-      osi_Close(tty);
+      osic_Close(tty);
       usleep(1000000UL);
       opentty();
    }
@@ -399,7 +397,7 @@ static void Parms(void)
    err = 0;
    sockc = 0UL;
    for (;;) {
-      Lib_NextArg(h, 1024ul);
+      osi_NextArg(h, 1024ul);
       if (h[0U]==0) break;
       if ((h[0U]=='-' && h[1U]) && h[2U]==0) {
          if (h[1U]=='c') {
@@ -415,7 +413,7 @@ static void Parms(void)
          }
          else if (h[1U]=='k') kisson = 1;
          else if (h[1U]=='p') {
-            Lib_NextArg(h, 1024ul);
+            osi_NextArg(h, 1024ul);
             i0 = 0UL;
             if (!GetNum(h, 1024ul, ':', &i0, &cmd)) {
                Error("-p cmd:value", 13ul);
@@ -433,7 +431,7 @@ static void Parms(void)
             if (auto0 && sockc>0UL) {
                Error("-U only 1 UDP with -a Mode", 27ul);
             }
-            Lib_NextArg(h, 1024ul);
+            osi_NextArg(h, 1024ul);
             { /* with */
                struct _0 * anonym = &udpsocks[sockc];
                if (aprsstr_GetIp2(h, 1024ul, &anonym->ipnum, &anonym->toport,
@@ -451,7 +449,7 @@ static void Parms(void)
          }
          else if (h[1U]=='u') usbrobust = 1;
          else if (h[1U]=='t') {
-            Lib_NextArg(h, 1024ul);
+            osi_NextArg(h, 1024ul);
             i0 = 0UL;
             while ((h[i0] && h[i0]!=':') && i0<700UL) {
                ttynamee[i0] = h[i0];
@@ -466,7 +464,7 @@ static void Parms(void)
             }
          }
          else if (h[1U]=='T') {
-            Lib_NextArg(h, 1024ul);
+            osi_NextArg(h, 1024ul);
             urlport(direwolfurl, 2048ul, direwolfport, 11ul, h, 1024ul);
             direwolf = 1;
          }
@@ -477,7 +475,7 @@ static void Parms(void)
          }
          else {
             if (h[1U]=='h') {
-               osi_WrLn();
+               osic_WrLn();
                osi_WrStrLn(" -a                                automatic swit\
 ch to KISS/FLEX/SMACK mode", 76ul);
                osi_WrStrLn("                                   (only with 1 P\
@@ -515,10 +513,10 @@ messages", 58ul);
                osi_WrStrLn(" -V                                verbous errors\
  and monitor data to stdout", 77ul);
                osi_WrStrLn(" -h                                this", 40ul);
-               osi_WrLn();
+               osic_WrLn();
                X2C_ABORT();
             }
-            if (h[1U]=='i') Lib_NextArg(ifn, 701ul);
+            if (h[1U]=='i') osi_NextArg(ifn, 701ul);
             else err = 1;
          }
       }
@@ -822,7 +820,7 @@ static void Showctl(unsigned long com, unsigned long cmd)
    else if (cm==0x43UL) InOut_WriteString("DISC", 5ul);
    else if (cm==0x63UL) InOut_WriteString("UA", 3ul);
    else if (cm==0x87UL) InOut_WriteString("FRMR", 5ul);
-   else osi_WrHex(cmd, 1UL);
+   else osic_WrHex(cmd, 1UL);
    strncpy(PF,"v^-+",4u);
    if (com==0UL || com==3UL) InOut_WriteString("v1", 3ul);
    else {
@@ -877,10 +875,10 @@ static void ShowFrame(char f[], unsigned long f_len, unsigned long len0,
    ++i0;
    if (i0<len0) {
       InOut_WriteString(" pid ", 6ul);
-      osi_WrHex((unsigned long)(unsigned char)f[i0], 1UL);
+      osic_WrHex((unsigned long)(unsigned char)f[i0], 1UL);
    }
    ++i0;
-   osi_WrLn();
+   osic_WrLn();
    /*  IF NOT noinfo THEN */
    d = 0;
    while (i0<len0) {
@@ -889,12 +887,12 @@ static void ShowFrame(char f[], unsigned long f_len, unsigned long len0,
          d = 1;
       }
       else if (d) {
-         osi_WrLn();
+         osic_WrLn();
          d = 0;
       }
       ++i0;
    }
-   if (d) osi_WrLn();
+   if (d) osic_WrLn();
 /*  END; */
 } /* end ShowFrame() */
 
@@ -962,7 +960,7 @@ extern int main(int argc, char **argv)
             if (direwolf) {
                len = readsock(tcpfd, tbuf, 701L);
                if (len<0L) {
-                  osi_CloseSock(tcpfd);
+                  osic_CloseSock(tcpfd);
                   tcpfd = -1L;
                   len = 0L;
                   usleep(2000000UL);
@@ -1156,7 +1154,7 @@ extern int main(int argc, char **argv)
                         if ((long)tcpfd>=0L) {
                            if (sendsock(tcpfd, kbuf, tpos+1L)<0L) {
                               /* disconnected */
-                              osi_CloseSock(tcpfd);
+                              osic_CloseSock(tcpfd);
                               tcpfd = -1L;
                            }
                         }

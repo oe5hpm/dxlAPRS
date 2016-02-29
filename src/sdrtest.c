@@ -16,15 +16,10 @@
 #ifndef osi_H_
 #include "osi.h"
 #endif
-#ifndef RealMath_H_
-#include "RealMath.h"
-#endif
 #ifndef flush_H_
 #include "flush.h"
 #endif
-#ifndef Lib_H_
-#include "Lib.h"
-#endif
+#include <osic.h>
 #ifndef InOut_H_
 #include "InOut.h"
 #endif
@@ -129,6 +124,20 @@ static void card(const char s[], unsigned long s_len, unsigned long * p,
 } /* end card() */
 
 
+static void int0(const char s[], unsigned long s_len, unsigned long * p,
+                unsigned long * n, char * ok0)
+{
+   char sgn;
+   if (s[*p]=='-') {
+      sgn = 1;
+      ++*p;
+   }
+   else sgn = 0;
+   card(s, s_len, p, n, ok0);
+   if (sgn) *n = (unsigned long) -(long)*n;
+} /* end int() */
+
+
 static void fix(const char s[], unsigned long s_len, unsigned long * p,
                 float * x, char * ok0)
 {
@@ -157,6 +166,7 @@ static void Parms(void)
    char s[1001];
    unsigned long n;
    unsigned long m;
+   long ni;
    reconn = 0;
    verb = 0;
    strncpy(url,"127.0.0.1",1001u);
@@ -166,13 +176,13 @@ static void Parms(void)
    samphz = 16000UL;
    strncpy(parmfn,"sdrcfg.txt",1001u);
    for (;;) {
-      Lib_NextArg(s, 1001ul);
+      osi_NextArg(s, 1001ul);
       if (s[0U]==0) break;
       if ((s[0U]=='-' && s[1U]) && s[2U]==0) {
-         if (s[1U]=='s') Lib_NextArg(soundfn, 1001ul);
-         else if (s[1U]=='c') Lib_NextArg(parmfn, 1001ul);
+         if (s[1U]=='s') osi_NextArg(soundfn, 1001ul);
+         else if (s[1U]=='c') osi_NextArg(parmfn, 1001ul);
          else if (s[1U]=='t') {
-            Lib_NextArg(s, 1001ul); /* url */
+            osi_NextArg(s, 1001ul); /* url */
             n = 0UL;
             while ((n<1000UL && s[n]) && s[n]!=':') {
                if (n<1000UL) url[n] = s[n];
@@ -194,14 +204,14 @@ static void Parms(void)
          }
          else if (s[1U]=='r') {
             /* sampelrate */
-            Lib_NextArg(s, 1001ul);
+            osi_NextArg(s, 1001ul);
             if (!aprsstr_StrToCard(s, 1001ul, &samphz) || samphz>192000UL) {
                Error(" -r <Hz>", 9ul);
             }
          }
          else if (s[1U]=='i') {
             /* iq sampelrate */
-            Lib_NextArg(s, 1001ul);
+            osi_NextArg(s, 1001ul);
             if (!aprsstr_StrToCard(s, 1001ul,
                 &iqrate) || iqrate!=2048000UL && iqrate!=1024000UL) {
                Error(" -i <Hz> 2048000 or 1024000", 28ul);
@@ -211,34 +221,61 @@ static void Parms(void)
          else if (s[1U]=='k') reconn = 1;
          else {
             if (s[1U]=='h') {
-               osi_WrStrLn("FM Multirx from rtl:tcp (8 bit IQ via tcpip to 2 \
+               osi_WrStrLn("", 1ul);
+               osi_WrStrLn("FM Multirx from rtl_tcp (8 bit IQ via tcpip to 2 \
 channel 16 bit pcm file/pipe", 78ul);
-               osi_WrStrLn(" -c configfilename> read channels config from fil\
-e (sdrcfg.txt)", 64ul);
-               osi_WrStrLn(" -h                 help", 25ul);
-               osi_WrStrLn(" -i <Hz>            input sampelrate Hz (2048000)\
- or 1024000", 61ul);
-               osi_WrStrLn(" -k                 keep connection", 36ul);
-               osi_WrStrLn(" -p <cmd> <value>   send rtl_tcp parameter, ppm, \
-tunergain ...", 63ul);
-               osi_WrStrLn(" -r <Hz>            output sampelrate Hz (16000)",
-                 49ul);
-               osi_WrStrLn(" -s <soundfilename> 16bit signed n-channel sound \
-stream", 56ul);
-               osi_WrStrLn(" -t <url:port>      connect rtl:tcp server (127.0\
-.0.1:1234)", 60ul);
-               osi_WrStrLn(" -v                 show rssi (dB) and afc (khz)",
-                 49ul);
-               osi_WrStrLn("example: -s /tmp/sound.pcm -c 192.168.1.1:1234 -p\
+               osi_WrStrLn(" -c <configfilename> read channels config from fi\
+le (sdrcfg.txt)", 65ul);
+               osi_WrStrLn(" -h                  help", 26ul);
+               osi_WrStrLn(" -i <Hz>             input sampelrate Hz (2048000\
+) or 1024000", 62ul);
+               osi_WrStrLn(" -k                  keep connection", 37ul);
+               osi_WrStrLn(" -p <cmd> <value>    send rtl_tcp parameter, ppm,\
+ tunergain ...", 64ul);
+               osi_WrStrLn(" -r <Hz>             output sampelrate Hz for all\
+ channels (16000)", 67ul);
+               osi_WrStrLn(" -s <soundfilename>  16bit signed n-channel sound\
+ stream/pipe", 62ul);
+               osi_WrStrLn(" -t <url:port>       connect rtl_tcp server (127.\
+0.0.1:1234)", 61ul);
+               osi_WrStrLn(" -v                  show rssi (dB) and afc (khz)\
+", 50ul);
+               osi_WrStrLn("example: -s /tmp/sound.pcm -t 192.168.1.1:1234 -p\
  5 72 -p 8 1 -v", 65ul);
+               osi_WrStrLn("", 1ul);
+               osi_WrStrLn("config file: (re-read every some seconds and may \
+be modified any time)", 71ul);
+               osi_WrStrLn("  # comment", 12ul);
+               osi_WrStrLn("  p <cmd> <value>  rtl_tcp parameter like \'p 5 5\
+0\' ppm, \'p 8 1\' autogain", 73ul);
+               osi_WrStrLn("  f <mhz> <afc-range> <squelch%> <lowpass%> <if-w\
+idth>", 55ul);
+               osi_WrStrLn("    AFC-range in +-kHz, Squelch 0 off, 100 open, \
+95 near open", 62ul);
+               osi_WrStrLn("    audio lowpass in % Nyquist frequ. of output s\
+ampelrate, 0 is off", 69ul);
+               osi_WrStrLn("    if-width 1=12kHz 2=24kHz .. 5=192kHz (5 only \
+with 2048kHz input sample)", 76ul);
+               osi_WrStrLn("  example:", 11ul);
+               osi_WrStrLn("    p 5 50", 11ul);
+               osi_WrStrLn("    p 8 1", 10ul);
+               osi_WrStrLn("    f 438.825 5 95 70", 22ul);
+               osi_WrStrLn("    f 439.275 5 90 70", 22ul);
+               osi_WrStrLn("  will generate 2 channel 16bit PCM stream (up to\
+ 32 channels with future cpu...)", 82ul);
+               osi_WrStrLn("  max 2MHz span, automatic rtl-tuned to center of\
+ the span", 59ul);
+               osi_WrStrLn("  excluded +-10khz of rtl-band-center to avoid AD\
+C-DC offset pseudo carriers", 77ul);
                X2C_ABORT();
             }
             if (s[1U]=='p') {
-               Lib_NextArg(s, 1001ul);
+               osi_NextArg(s, 1001ul);
                if (aprsstr_StrToCard(s, 1001ul, &m) && m<256UL) {
-                  Lib_NextArg(s, 1001ul);
-                  if (aprsstr_StrToCard(s, 1001ul, &n) && n<=255UL) {
-                     stickparm[m].val = n; /* stick parameter */
+                  osi_NextArg(s, 1001ul);
+                  if (aprsstr_StrToInt(s, 1001ul, &ni)) {
+                     stickparm[m].val = (unsigned long)ni;
+                /* stick parameter */
                      stickparm[m].ok0 = 1;
                      stickparm[m].changed = 1;
                   }
@@ -258,19 +295,23 @@ static void setparms(char all)
 {
    unsigned long i;
    char nl;
+   char s[31];
    nl = 1;
    for (i = 0UL; i<=255UL; i++) {
       if (stickparm[i].ok0 && (all || stickparm[i].changed)) {
          sdr_setparm(i, stickparm[i].val);
-         if (nl) {
-            osi_WrStrLn("", 1ul);
-            nl = 0;
+         if (verb) {
+            if (nl) {
+               osi_WerrLn("", 1ul);
+               nl = 0;
+            }
+            osi_Werr("parm:", 6ul);
+            aprsstr_IntToStr((long)i, 0UL, s, 31ul);
+            osi_Werr(s, 31ul);
+            osi_Werr(" ", 2ul);
+            aprsstr_IntToStr((long)stickparm[i].val, 0UL, s, 31ul);
+            osi_WerrLn(s, 31ul);
          }
-         InOut_WriteString("parm:", 6ul);
-         InOut_WriteInt((long)i, 0UL);
-         InOut_WriteString(" ", 2ul);
-         InOut_WriteInt((long)stickparm[i].val, 1UL);
-         osi_WrStrLn("", 1ul);
       }
       stickparm[i].changed = 0;
    } /* end for */
@@ -306,7 +347,7 @@ static void centerfreq(const struct FREQTAB freq[], unsigned long freq_len)
       ++i;
    }
    if (max0>=min0) {
-      if (max0-min0>2000UL) osi_WrStrLn("freq span > 2MHz", 17ul);
+      if (max0-min0>2000UL) osi_WerrLn("freq span > 2MHz", 17ul);
       midfreq = (max0+min0)/2UL;
       nomid = X2C_max_longint;
       i = 0UL;
@@ -389,12 +430,12 @@ static void rdconfig(void)
                skip(li, 256ul, &i);
                card(li, 256ul, &i, &n, &ok0);
                if (n>255UL || !ok0) {
-                  osi_WrStrLn("wrong parameter number", 23ul);
+                  osi_WerrLn("wrong parameter number", 23ul);
                }
                else {
                   skip(li, 256ul, &i);
-                  card(li, 256ul, &i, &m, &ok0);
-                  if (!ok0) osi_WrStrLn("wrong value", 12ul);
+                  int0(li, 256ul, &i, &m, &ok0);
+                  if (!ok0) osi_WerrLn("wrong value", 12ul);
                   else setstickparm(n, m);
                }
                i = 0UL;
@@ -403,7 +444,7 @@ static void rdconfig(void)
                ++i;
                skip(li, 256ul, &i);
                fix(li, 256ul, &i, &x, &ok0);
-               if (!ok0) osi_WrStrLn("wrong value", 12ul);
+               if (!ok0) osi_WerrLn("wrong value", 12ul);
                skip(li, 256ul, &i);
                card(li, 256ul, &i, &m, &ok0);
                if (!ok0) m = 0UL;
@@ -416,7 +457,7 @@ static void rdconfig(void)
                skip(li, 256ul, &i);
                card(li, 256ul, &i, &wid, &ok0);
                if (!ok0) wid = 0UL;
-               if (freqc>31UL) osi_WrStrLn("freq table full", 16ul);
+               if (freqc>31UL) osi_WerrLn("freq table full", 16ul);
                else {
                   freq[freqc].khz = (unsigned long)X2C_TRUNCC(x*1000.0f+0.5f,
                 0UL,X2C_max_longcard);
@@ -434,12 +475,12 @@ static void rdconfig(void)
                i = 0UL;
             }
             else if (li[i]=='#') i = 0UL;
-            else osi_WrStrLn("unkown command", 15ul);
+            else osi_WerrLn("unkown command", 15ul);
             ++lino;
          }
          ++p;
       }
-      osi_Close(fd0);
+      osic_Close(fd0);
    }
    else Error("config file not readable", 25ul);
    centerfreq(freq, 32ul);
@@ -449,20 +490,26 @@ static void rdconfig(void)
 static void showrssi(void)
 {
    unsigned long i;
+   char s[31];
    i = 0UL;
    while (prx[i]) {
-      osi_WrFixed(RealMath_ln((rxx[i].rssi+1.0f)*3.0517578125E-5f)
-                *4.342944819f, 1L, 6UL);
-      InOut_WriteString("dB", 3ul);
+      aprsstr_FixToStr(RealMath_ln((rxx[i].rssi+1.0f)*3.0517578125E-5f)
+                *4.342944819f, 2UL, s, 31ul);
+      osi_Werr(s, 31ul);
+      osi_Werr("dB", 3ul);
       if (rxx[i].squelch) {
-         InOut_WriteString(" ", 2ul);
-         osi_WrFixed(rxx[i].sqmed, 1L, 1UL);
+         osi_Werr(" ", 2ul);
+         aprsstr_FixToStr(rxx[i].sqmed, 3UL, s, 31ul);
+         osi_Werr(s, 31ul);
       }
-      InOut_WriteInt(rxx[i].afckhz, 0UL);
+      osi_Werr(" ", 2ul);
+      aprsstr_IntToStr(rxx[i].afckhz, 0UL, s, 31ul);
+      osi_Werr(s, 31ul);
+      osi_Werr(" ", 2ul);
+      Flush();
       ++i;
    }
-   InOut_WriteString("   \015", 5ul);
-   Flush();
+   osi_Werr("    \015", 6ul);
 } /* end showrssi() */
 
 static long sp;
@@ -485,8 +532,6 @@ extern int main(int argc, char **argv)
 {
    long tmp;
    X2C_BEGIN(&argc,argv,1,4000000l,8000000l);
-   Lib_BEGIN();
-   RealMath_BEGIN();
    sdr_BEGIN();
    aprsstr_BEGIN();
    osi_BEGIN();
@@ -511,9 +556,9 @@ extern int main(int argc, char **argv)
             if (sn<0L) {
                if (verb) {
                   if (sn==-2L) {
-                     osi_WrStrLn("impossible sampelrate conversion", 33ul);
+                     osi_WerrLn("impossible sampelrate conversion", 33ul);
                   }
-                  else osi_WrStrLn("connection lost", 16ul);
+                  else osi_WerrLn("connection lost", 16ul);
                }
                recon = 1;
                if (!reconn) break;
@@ -569,12 +614,12 @@ extern int main(int argc, char **argv)
          }
       }
       else {
-         InOut_WriteString(soundfn, 1001ul);
-         osi_WrStrLn(" sound file open error", 23ul);
+         osi_Werr(soundfn, 1001ul);
+         osi_WerrLn(" sound file open error", 23ul);
       }
-      if (verb) osi_WrStrLn("connection lost", 16ul);
+      if (verb) osi_WerrLn("connection lost", 16ul);
    }
-   else osi_WrStrLn("not connected", 14ul);
+   else osi_WerrLn("not connected", 14ul);
    X2C_EXIT();
    return 0;
 }

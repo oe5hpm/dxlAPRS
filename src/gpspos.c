@@ -17,6 +17,7 @@
 #include "osi.h"
 #endif
 #include <math.h>
+#include <osic.h>
 #ifndef InOut_H_
 #include "InOut.h"
 #endif
@@ -737,11 +738,11 @@ static void showstats(const struct RESULTS stats0[], unsigned long stats_len,
          InOut_WriteInt((long)X2C_TRUNCI(stats0[p].heig,X2C_min_longint,
                 X2C_max_longint), 7UL);
          for (i = 0UL; i<=3UL; i++) {
-            osi_WrFixed((float)stats0[p].hd[i], 0L, 5UL);
-            osi_WrFixed((float)stats0[p].vd[i], 0L, 5UL);
+            osic_WrFixed((float)stats0[p].hd[i], 0L, 5UL);
+            osic_WrFixed((float)stats0[p].vd[i], 0L, 5UL);
          } /* end for */
-         osi_WrFixed((float)stats0[p].qsumh, 0L, 8UL);
-         osi_WrFixed((float)stats0[p].qsumv, 0L, 8UL);
+         osic_WrFixed((float)stats0[p].qsumh, 0L, 8UL);
+         osic_WrFixed((float)stats0[p].qsumv, 0L, 8UL);
          InOut_WriteString(" ", 2ul);
          /*    WrFixed(stats[p].minele/RAD, 0, 3); WrStr(" "); */
          for (i = 0UL; i<=4UL; i++) {
@@ -770,8 +771,8 @@ static void showstats(const struct RESULTS stats0[], unsigned long stats_len,
    InOut_WriteString("n=", 3ul);
    InOut_WriteInt((long)restcnt, 3UL);
    InOut_WriteString(" s=", 4ul);
-   osi_WrFixed(errh, 1L, 0UL);
-   osi_WrFixed(errv, 1L, 6UL);
+   osic_WrFixed(errh, 1L, 0UL);
+   osic_WrFixed(errv, 1L, 6UL);
    osi_WrStrLn("", 1ul);
 } /* end showstats() */
 
@@ -1182,17 +1183,17 @@ extern long gpspos_getposit(unsigned long weekms, unsigned long * systime,
          if (j<=31UL) {
             if (!sats[i-1UL].badspeed) ++*goodsats;
             InOut_WriteInt((long)sats[i-1UL].prn, 2UL);
-            osi_WrFixed((float)(X2C_DIVL(satspos[j].azimuth0,
+            osic_WrFixed((float)(X2C_DIVL(satspos[j].azimuth0,
                 1.7453292519943E-2)), 1L, 7UL);
-            osi_WrFixed((float)(X2C_DIVL(satspos[j].elevation,
+            osic_WrFixed((float)(X2C_DIVL(satspos[j].elevation,
                 1.7453292519943E-2)), 1L, 6UL);
-            osi_WrFixed((float)satspos[j].clk, 0L, 10UL);
-            osi_WrFixed((float)satspos[j].doppler, 1L, 10UL);
+            osic_WrFixed((float)satspos[j].clk, 0L, 10UL);
+            osic_WrFixed((float)satspos[j].doppler, 1L, 10UL);
             InOut_WriteInt(sats[i-1UL].rang1, 8UL);
             /*        WrFixed(LFLOAT(sats[i-1].freq0)*(WAVLEN/256.0), 3, 10);
                  */
             aa = (double)sats[i-1UL].rang1*7.4333465936861E-4-satspos[j].doppler;
-            osi_WrFixed((float)aa, 3L, 10UL);
+            osic_WrFixed((float)aa, 3L, 10UL);
             /*      WrFixed(ABS(aa-min), 3, 10); */
             min0 = aa;
             if (sats[i-1UL].badspeed) InOut_WriteString(" v", 3ul);

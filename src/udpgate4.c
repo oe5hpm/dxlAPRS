@@ -25,9 +25,7 @@
 #ifndef osi_H_
 #include "osi.h"
 #endif
-#ifndef Lib_H_
-#include "Lib.h"
-#endif
+#include <osic.h>
 #ifndef InOut_H_
 #include "InOut.h"
 #endif
@@ -797,7 +795,7 @@ static void readurlsfile(const char gatesfn0[], unsigned long gatesfn_len)
          ++n;
       }
    } while (!(len<=0L || n>20UL));
-   osi_Close(fd);
+   osic_Close(fd);
 } /* end readurlsfile() */
 
 static aprsstr_GHOSTSET _cnst = {0x00000000UL,0x00000000UL,0x00000000UL,
@@ -828,12 +826,12 @@ static void parms(void)
    keeptime = 0UL; /*600*/ /* default keep connected to gateway time */
    allkey[0U] = 0;
    for (;;) {
-      Lib_NextArg(h, 4096ul);
+      osi_NextArg(h, 4096ul);
       if (h[0U]==0) break;
       if ((h[0U]=='-' && h[1U]) && h[2U]==0) {
          lasth = h[1U];
          if (lasth=='R' || lasth=='M') {
-            Lib_NextArg(h, 4096ul);
+            osi_NextArg(h, 4096ul);
             Storage_ALLOCATE((X2C_ADDRESS *) &usock, sizeof(struct UDPSOCK));
             if (usock==0) Err("out of memory", 14ul);
             memset((X2C_ADDRESS)usock,(char)0,sizeof(struct UDPSOCK));
@@ -885,7 +883,7 @@ static void parms(void)
          }
          else if (lasth=='c') callsrc = 1;
          else if (lasth=='s' || lasth=='S') {
-            Lib_NextArg(h, 4096ul);
+            osi_NextArg(h, 4096ul);
             aprsstr_Assign(servercall, 10ul, h, 4096ul);
             if ((servercall[0U]==0 || servercall[0U]=='-')
                 || lasth=='s' && !callok(h, 4096ul)) {
@@ -893,7 +891,7 @@ static void parms(void)
             }
          }
          else if (lasth=='p') {
-            Lib_NextArg(h, 4096ul);
+            osi_NextArg(h, 4096ul);
             if ((unsigned char)h[0U]>='0' && (unsigned char)h[0U]<='9') {
                i0 = 0UL;
                while (i0<=5UL && (unsigned char)h[i0]>=' ') {
@@ -907,7 +905,7 @@ static void parms(void)
                len = osi_RdBin(fd, (char *)passwd, 6u/1u, 5UL);
                if (len>=0L) passwd[len] = 0;
                else Err("-p error with password file", 28ul);
-               osi_Close(fd);
+               osic_Close(fd);
             }
             passwd[5U] = 0;
             i0 = 0UL;
@@ -916,18 +914,18 @@ static void parms(void)
             if (i0==0UL || passwd[i0]) Err("-p invalid passcode", 20ul);
          }
          else if (lasth=='m') {
-            Lib_NextArg(h, 4096ul);
+            osi_NextArg(h, 4096ul);
             i0 = 0UL;
             if (GetSec(h, 4096ul, &i0, &n)>=0L) maxusers = n;
             else Err("-m number", 10ul);
          }
          else if (lasth=='D') {
-            Lib_NextArg(h, 4096ul);
+            osi_NextArg(h, 4096ul);
             aprsstr_Assign(wwwdir, 1024ul, h, 4096ul);
             if (h[0U]==0 || h[0U]=='-') Err("-D directory", 13ul);
          }
          else if (lasth=='d') {
-            Lib_NextArg(h, 4096ul);
+            osi_NextArg(h, 4096ul);
             i0 = 0UL;
             if (GetSec(h, 4096ul, &i0, &n)>=0L) dupetime = n;
             else Err("-d number", 10ul);
@@ -936,7 +934,7 @@ static void parms(void)
             }
          }
          else if (lasth=='e') {
-            Lib_NextArg(h, 4096ul);
+            osi_NextArg(h, 4096ul);
             i0 = 0UL;
             if (GetSec(h, 4096ul, &i0, &n)>=0L) {
                if (n==0UL) n = 1UL;
@@ -945,36 +943,36 @@ static void parms(void)
             else Err("-e seconds", 11ul);
          }
          else if (lasth=='C') {
-            Lib_NextArg(h, 4096ul);
+            osi_NextArg(h, 4096ul);
             i0 = 0UL;
             if (GetSec(h, 4096ul, &i0, &n)>=0L) heardtimetcp = n*60UL;
             else Err("-C minutes", 11ul);
          }
          else if (lasth=='H') {
-            Lib_NextArg(h, 4096ul);
+            osi_NextArg(h, 4096ul);
             i0 = 0UL;
             if (GetSec(h, 4096ul, &i0, &n)>=0L) heardtimew = n*60UL;
             else Err("-H minutes", 11ul);
          }
          else if (lasth=='I') {
-            Lib_NextArg(h, 4096ul);
+            osi_NextArg(h, 4096ul);
             i0 = 0UL;
             if (GetSec(h, 4096ul, &i0, &n)>=0L) heardtimevia = n*60UL;
             else Err("-I minutes", 11ul);
          }
          else if (lasth=='i') {
-            Lib_NextArg(h, 4096ul);
+            osi_NextArg(h, 4096ul);
             if (h[0U]=='-') h[0U] = 0;
             aprsstr_Assign(allkey, 10ul, h, 4096ul);
          }
          else if (lasth=='L') {
-            Lib_NextArg(h, 4096ul);
+            osi_NextArg(h, 4096ul);
             i0 = 0UL;
             if (GetSec(h, 4096ul, &i0, &n)>=0L) maxmsg = n;
             else Err("-L number", 10ul);
          }
          else if (lasth=='l') {
-            Lib_NextArg(h, 4096ul);
+            osi_NextArg(h, 4096ul);
             i0 = 0UL;
             if (GetSec(h, 4096ul, &i0, &n)>=0L && h[i0]==':') {
                logframes = (long)n;
@@ -992,13 +990,13 @@ static void parms(void)
             else Err("log format is level:file", 25ul);
          }
          else if (lasth=='r') {
-            Lib_NextArg(rawlogname, 1024ul);
+            osi_NextArg(rawlogname, 1024ul);
             if ((unsigned char)rawlogname[0U]<=' ') {
                Err("-r rawlogfilename", 18ul);
             }
          }
          else if (lasth=='F') {
-            Lib_NextArg(h, 4096ul);
+            osi_NextArg(h, 4096ul);
             i0 = 0UL;
             if (GetSec(h, 4096ul, &i0, &n)>=0L && h[i0]==':') {
                mhfilelines = n;
@@ -1016,7 +1014,7 @@ static void parms(void)
             else Err("MH File lines:file", 19ul);
          }
          else if (lasth=='n') {
-            Lib_NextArg(h, 4096ul);
+            osi_NextArg(h, 4096ul);
             i0 = 0UL;
             if (GetSec(h, 4096ul, &i0, &n)>=0L && h[i0]==':') {
                netbeaconintervall = n*60UL;
@@ -1035,17 +1033,17 @@ static void parms(void)
          }
          else if (lasth=='N') sendnetmsg = 0;
          else if (lasth=='t') {
-            Lib_NextArg(h, 4096ul);
+            osi_NextArg(h, 4096ul);
             aprsstr_Assign(tcpbindport, 6ul, h, 4096ul);
             if (h[0U]==0 || h[0U]=='-') Err("-t port", 8ul);
          }
          else if (lasth=='w') {
-            Lib_NextArg(h, 4096ul);
+            osi_NextArg(h, 4096ul);
             aprsstr_Assign(wwwbindport, 6ul, h, 4096ul);
             if (h[0U]==0 || h[0U]=='-') Err("-w port", 8ul);
          }
          else if (lasth=='f') {
-            Lib_NextArg(h, 4096ul);
+            osi_NextArg(h, 4096ul);
             aprsstr_Assign(serverrangefilter, 256ul, h, 4096ul);
             if (h[0U]==0 || h[0U]=='-') Err("-f rangefilter", 15ul);
             tmp = aprsstr_Length(serverrangefilter, 256ul);
@@ -1057,7 +1055,7 @@ static void parms(void)
          }
          else if (lasth=='g') {
             /* "url port" or "url:port" or "url:port#filter" */
-            Lib_NextArg(h, 4096ul);
+            osi_NextArg(h, 4096ul);
             if (h[0U]==0) Err("-g url port", 12ul);
             if (h[0U]==':') {
                /* get urls later from file */
@@ -1098,7 +1096,7 @@ static void parms(void)
                      ++ii;
                   }
                }
-               else Lib_NextArg(h, 4096ul);
+               else osi_NextArg(h, 4096ul);
                h[4095U] = 0;
                ii = aprsstr_InStr(h, 4096ul, "#", 2ul);
                if (ii>=0L) h[ii] = 0;
@@ -1268,13 +1266,13 @@ rt GHOST* in otherwise false", 78ul);
             */
             if (lasth=='O') mhperport = 1;
             else if (lasth=='j') {
-               Lib_NextArg(h, 4096ul);
+               osi_NextArg(h, 4096ul);
                i0 = 0UL;
                if (GetSec(h, 4096ul, &i0, &n)>=0L) msgsendtime = n;
                else Err("-j seconds", 11ul);
             }
             else if (lasth=='P') {
-               Lib_NextArg(h, 4096ul);
+               osi_NextArg(h, 4096ul);
                i0 = 0UL;
                if (GetSec(h, 4096ul, &i0, &n)>=0L) purgemsg = n;
                else Err("-P seconds", 11ul);
@@ -1285,7 +1283,7 @@ rt GHOST* in otherwise false", 78ul);
                }
             }
             else if (lasth=='U') {
-               Lib_NextArg(h, 4096ul);
+               osi_NextArg(h, 4096ul);
                i0 = 0UL;
                if (GetSec(h, 4096ul, &i0, &n)>=0L) purgeunack = n;
                else Err("-U seconds", 11ul);
@@ -1296,51 +1294,51 @@ rt GHOST* in otherwise false", 78ul);
                }
             }
             else if (lasth=='Q') {
-               Lib_NextArg(h, 4096ul);
+               osi_NextArg(h, 4096ul);
                i0 = 0UL;
                if (GetSec(h, 4096ul, &i0, &n)>=0L) qas = n;
                else Err("-Q number", 10ul);
             }
             else if (lasth=='q') {
-               Lib_NextArg(h, 4096ul);
+               osi_NextArg(h, 4096ul);
                i0 = 0UL;
                if (GetSec(h, 4096ul, &i0, &n)>=0L) rfquiet = n;
                else Err("-q seconds", 11ul);
             }
             else if (lasth=='v') verb = 1;
             else if (lasth=='V') {
-               Lib_NextArg(h, 4096ul);
+               osi_NextArg(h, 4096ul);
                aprsstr_Assign(nettorfpath, 81ul, h, 4096ul);
                if (h[0U]==0 || h[0U]=='-' && h[1U]) {
                   Err("-V net to rf via path", 22ul);
                }
             }
             else if (lasth=='k') {
-               Lib_NextArg(h, 4096ul);
+               osi_NextArg(h, 4096ul);
                i0 = 0UL;
                if (GetSec(h, 4096ul, &i0, &n)>=0L) keeptime = n;
                else Err("-k seconds", 11ul);
             }
             else if (lasth=='T') {
-               Lib_NextArg(h, 4096ul);
+               osi_NextArg(h, 4096ul);
                i0 = 0UL;
                if (GetSec(h, 4096ul, &i0, &n)>=0L) qmaxtime = (long)n;
                else Err("-T seconds", 11ul);
                if (qmaxtime>59L) qmaxtime = 59L;
             }
             else if (lasth=='o') {
-               Lib_NextArg(h, 4096ul);
+               osi_NextArg(h, 4096ul);
                i0 = 0UL;
                if (GetSec(h, 4096ul, &i0, &n)>=0L) maxpongtime = n;
                else Err("-o seconds", 11ul);
             }
             else if (lasth=='x') {
-               Lib_NextArg(h, 4096ul);
+               osi_NextArg(h, 4096ul);
                aprsstr_Assign(viacall, 10ul, h, 4096ul);
                if (h[0U]==0 || h[0U]=='-' && h[1U]) Err("-x call", 8ul);
             }
             else if (lasth=='W') {
-               Lib_NextArg(h, 4096ul);
+               osi_NextArg(h, 4096ul);
                i0 = 0UL;
                if (GetSec(h, 4096ul, &i0, &n)>=0L) {
                   wwwsizelimit = (long)(n*1024UL);
@@ -1348,7 +1346,7 @@ rt GHOST* in otherwise false", 78ul);
                else Err("-W kbytes", 10ul);
             }
             else if (lasth=='Y') {
-               Lib_NextArg(h, 4096ul);
+               osi_NextArg(h, 4096ul);
                i0 = 0UL;
                while (i0<4095UL && h[i0]) {
                   if (GetSec(h, 4096ul, &i0, &n)>=0L) X2C_INCL(ghost,n,257);
@@ -1370,14 +1368,14 @@ rt GHOST* in otherwise false", 78ul);
       Err(h, 4096ul);
    }
    if (servercall[0U]==0) {
-      osi_WrLn();
+      osic_WrLn();
       osi_WrStrLn("udpgate: NO SERVERCALL ?", 25ul);
-      osi_WrLn();
+      osic_WrLn();
    }
    if (wwwbindport[0U] && wwwdir[0]==0) {
-      osi_WrLn();
+      osic_WrLn();
       osi_WrStrLn("udpgate: -w www-port but no -D icon-dir-path ?", 47ul);
-      osi_WrLn();
+      osic_WrLn();
    }
 } /* end parms() */
 
@@ -1470,17 +1468,17 @@ static char getudp(pUDPSOCK usock, FRAMEBUF buf, aprsstr_GHOSTSET ghost)
                   tmp0 = len-3L;
                   i0 = 0L;
                   if (i0<=tmp0) for (;; i0++) {
-                     osi_WrHex((unsigned long)(unsigned char)buf[i0], 3UL);
+                     osic_WrHex((unsigned long)(unsigned char)buf[i0], 3UL);
                      if (i0==tmp0) break;
                   } /* end for */
-                  osi_WrLn();
+                  osic_WrLn();
                   i0 = 0L;
                   for (;;) {
                      if (i0>=len-3L) break;
                      if ((unsigned long)(unsigned char)buf[i0]/2UL<32UL) {
                         InOut_WriteString("<", 2ul);
-                        osi_WrHex((unsigned long)(unsigned char)buf[i0]/2UL,
-                1UL);
+                        osic_WrHex((unsigned long)(unsigned char)buf[i0]/2UL,
+                 1UL);
                         InOut_WriteString(">", 2ul);
                      }
                      else {
@@ -1488,10 +1486,10 @@ static char getudp(pUDPSOCK usock, FRAMEBUF buf, aprsstr_GHOSTSET ghost)
                 ((unsigned long)(unsigned char)buf[i0]/2UL),&tmp1), 1u/1u);
                      }
                      if (((unsigned long)(unsigned char)buf[i0]&1)) break;
-                     if (X2C_MOD(i0,7L)==6L) InOut_WriteString(",", 2ul);
+                     if (i0%7L==6L) InOut_WriteString(",", 2ul);
                      ++i0;
                   }
-                  osi_WrLn();
+                  osic_WrLn();
                }
                memcpy(buf,mbuf0,512u);
             }
@@ -1664,12 +1662,12 @@ static void logline(long r, char s[], unsigned long s_len)
          aprsstr_Append(h, 512ul, s, s_len);
          aprsstr_Append(h, 512ul, "\012", 2ul);
          osi_WrBin(fd, (char *)h, 512u/1u, aprsstr_Length(h, 512ul));
-         osi_Close(fd);
+         osic_Close(fd);
       }
       else {
          InOut_WriteString("cannot write", 13ul);
          InOut_WriteString(logframename, 1024ul);
-         osi_WrLn();
+         osic_WrLn();
       }
    }
    if (verb) {
@@ -1721,7 +1719,7 @@ static void writerawlog(const FRAMEBUF b)
          h[i0+16UL] = '\012';
          ++i0;
          osi_WrBin(f, (char *)h, 512u/1u, i0+16UL);
-         osi_Close(f);
+         osic_Close(f);
       }
       else if (verb) {
          InOut_WriteString("cannot write ", 14ul);
@@ -2427,7 +2425,7 @@ static void beaconmacros(char s[], unsigned long s_len)
             f = osi_OpenRead(fn, 1024ul);
             if (f>=0L) {
                len = osi_RdBin(f, (char *)ds, 256u/1u, 255UL);
-               osi_Close(f);
+               osic_Close(f);
                j = 0L;
                while (((j<len && ds[j]!='\015') && ds[j]!='\012') && ds[j]) {
                   aprsstr_Append(ns, 256ul, (char *) &ds[j], 1u/1u);
@@ -2436,7 +2434,7 @@ static void beaconmacros(char s[], unsigned long s_len)
             }
             else {
                if (verb) {
-                  osi_WrLn();
+                  osic_WrLn();
                   osi_WrStrLn("beacon macro file not readable ", 32ul);
                }
                s[0UL] = 0;
@@ -2446,7 +2444,7 @@ static void beaconmacros(char s[], unsigned long s_len)
          else if (s[i0]=='\\') aprsstr_Append(ns, 256ul, "\\\\", 3ul);
          else {
             if (verb) {
-               osi_WrLn();
+               osic_WrLn();
                osi_WrStrLn("bad beacon macro ", 18ul);
             }
             s[0UL] = 0;
@@ -2503,7 +2501,7 @@ static void Netbeacon(char h[], unsigned long h_len, char qai,
             }
             else aprsstr_Assign(h, h_len, h1, 512ul);
          }
-         osi_Close(f);
+         osic_Close(f);
          j = 0UL;
          while (j<(h_len-1)-1UL && h[j]!=':') ++j;
          aprspos_GetPos(&home, &vspeed0, &vcourse0, &valt0, &vsym0, &vsymt0,
@@ -4069,7 +4067,7 @@ static void MHtoFile(void)
       hn = hn->next;
       --cnt;
    }
-   osi_Close(fd);
+   osic_Close(fd);
    Rename(fn, 1024ul, mhfilename, 1024ul);
 } /* end MHtoFile() */
 
@@ -4655,7 +4653,7 @@ static void closetcp(pTCPSOCK * w, char fin)
          Storage_DEALLOCATE((X2C_ADDRESS *) &pb, sizeof(struct WWWBUF));
          if (!fin && anonym->txbuf) return;
       }
-      if (anonym->fd>=0L) osi_Close(anonym->fd);
+      if (anonym->fd>=0L) osic_Close(anonym->fd);
       anonym->fd = -1L;
    }
 } /* end closetcp() */
@@ -5084,7 +5082,7 @@ static char openfile(char fn[], unsigned long fn_len, long * fd,
       goto label;
    }
    /* test read if regular file */
-   osi_Seek(*fd, 0UL);
+   osic_Seek(*fd, 0UL);
    /*
        fstat(fd, s);
        IF CAST(BITSET, s.st_mode)*CAST(BITSET,170000B)<>CAST(BITSET,
@@ -5282,7 +5280,7 @@ static void getlinkfile(char b[], unsigned long b_len, const char fn[],
       len = osi_RdBin(fd, (char *)b, (b_len)/1u, b_len-1UL);
       if (len<0L) len = 0L;
       b[len] = 0;
-      osi_Close(fd);
+      osic_Close(fd);
    }
 } /* end getlinkfile() */
 
@@ -5651,7 +5649,7 @@ static void Www(pTCPSOCK wsock)
    for (;;) {
       if ((long)i0>=res0) {
          if (res0<=0L) {
-            osi_Close(wsock->fd);
+            osic_Close(wsock->fd);
             wsock->fd = -1L;
          }
          return;
@@ -6019,7 +6017,7 @@ etr</th><th>m>r</th><th>m>n</th><th>a>r</th><th>a>n</th><th>A</th><th>Ack</th\
          }
          else flen = 0L;
       }
-      osi_Close(fdw);
+      osic_Close(fdw);
       wbuf[0U] = 0;
    }
    else strncpy(wbuf,"HTTP/1.1 404\015\012",1401u);
@@ -6070,7 +6068,7 @@ static void saybusy(long * fd, char s[], unsigned long s_len)
    X2C_PCOPY((void **)&s,s_len);
    if (*fd>=0L) {
       res0 = sendsock(*fd, s, (long)aprsstr_Length(s, s_len));
-      osi_Close(*fd);
+      osic_Close(*fd);
       *fd = -1L;
    }
    X2C_PFREE(s);
@@ -6108,7 +6106,7 @@ static char tcpconn(pTCPSOCK * sockchain, long f, char cservice)
    if (f<0L) return 0;
    Storage_ALLOCATE((X2C_ADDRESS *) &cp, sizeof(struct TCPSOCK));
    if (cp==0) {
-      osi_Close(f);
+      osic_Close(f);
       if (verb) osi_WrStrLn("tcp conn out of memory", 23ul);
       return 0;
    }
@@ -6586,7 +6584,7 @@ extern int main(int argc, char **argv)
                   res = Gettcp(acttcp->fd, mbuf, acttcp->rbuf,
                 &acttcp->rpos);
                   if (res<0L) {
-                     osi_Close(acttcp->fd);
+                     osic_Close(acttcp->fd);
                      acttcp->fd = -1L;
                      break;
                   }

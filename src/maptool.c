@@ -25,10 +25,8 @@
 #ifndef osi_H_
 #include "osi.h"
 #endif
-#ifndef RealMath_H_
-#include "RealMath.h"
-#endif
 #include <math.h>
+#include <osic.h>
 #ifndef InOut_H_
 #include "InOut.h"
 #endif
@@ -701,7 +699,7 @@ static void purgesrtm(char all)
                   } /* end for */
                }
                if (all) {
-                  if (pt->fd!=-1L) osi_Close(pt->fd);
+                  if (pt->fd!=-1L) osic_Close(pt->fd);
                   Storage_DEALLOCATE((X2C_ADDRESS *) &pt,
                 sizeof(struct SRTMTILE));
                   useri_debugmem.srtm -= sizeof(struct SRTMTILE);
@@ -718,7 +716,7 @@ static void purgesrtm(char all)
    } /* end for */
    for (x = 0UL; x<=8UL; x++) {
       for (y = 0UL; y<=3UL; y++) {
-         if (srtm30fd[x][y].havefile) osi_Close(srtm30fd[x][y].fd);
+         if (srtm30fd[x][y].havefile) osic_Close(srtm30fd[x][y].fd);
       } /* end for */
    } /* end for */
 } /* end purgesrtm() */
@@ -832,7 +830,7 @@ static float getsrtm1(unsigned long ilat, unsigned long ilong,
          useri_debugmem.srtm += rdsize;
          anonym0->strips[xx][y] = pb;
          /*WrInt(seek, 15);WrStrLn(" seek"); */
-         osi_Seek(anonym0->fd, (unsigned long)seek);
+         osic_Seek(anonym0->fd, (unsigned long)seek);
          if (osi_RdBin(anonym0->fd, (char *)pb, 2400u/1u,
                 rdsize)!=(long)rdsize) return 32767.0f;
          /*
@@ -4552,9 +4550,9 @@ wnloader", 27ul);
             if (maploopcnt<8UL) ++maploopcnt;
          }
          fd = osi_OpenWrite("gettiles", 9ul);
-         if (osi_FdValid(fd)) {
+         if (osic_FdValid(fd)) {
             osi_WrBin(fd, (char *)mapnamesbuf, 4096u/1u, lb);
-            osi_Close(fd);
+            osic_Close(fd);
             if (aprsdecode_verb) {
                InOut_WriteString("try:", 5ul);
                InOut_WriteInt((long)maploopcnt, 1UL);
@@ -5360,7 +5358,7 @@ extern long maptool_saveppm(char fn[], unsigned long fn_len,
    X2C_PCOPY((void **)&fn,fn_len);
    aprsstr_cleanfilename(fn, fn_len);
    fd = osi_OpenWrite(fn, fn_len);
-   if (!osi_FdValid(fd)) {
+   if (!osic_FdValid(fd)) {
       /*    WrStr(fn); WrStrLn(" not writeable"); */
       maptool_saveppm_ret = -1L;
       goto label;
@@ -5401,14 +5399,14 @@ extern long maptool_saveppm(char fn[], unsigned long fn_len,
          if (y==tmp) break;
       } /* end for */
       if (len>0UL) osi_WrBin(fd, (char *)b, 32768u/1u, len);
-      osi_Close(fd);
+      osic_Close(fd);
       ret = 0L;
    }
    else if ((((len>=4UL && fn[len-4UL]=='.') && X2C_CAP(fn[len-3UL])=='P')
                 && X2C_CAP(fn[len-2UL])=='N') && X2C_CAP(fn[len-1UL])=='G') {
       /* make PNG */
       ret = -1L;
-      osi_Close(fd);
+      osic_Close(fd);
       Storage_ALLOCATE((X2C_ADDRESS *) &pngimg.image,
                 (unsigned long)(xsize*ysize*3L));
       if (pngimg.image) {
@@ -5468,7 +5466,7 @@ extern long maptool_saveppm(char fn[], unsigned long fn_len,
          } /* end for */
       } /* end for */
       if (len>0UL) osi_WrBin(fd, (char *)b, 32768u/1u, len);
-      osi_Close(fd);
+      osic_Close(fd);
       ret = 0L;
    }
    maptool_saveppm_ret = ret;
@@ -5561,7 +5559,7 @@ extern void maptool_rdmountains(char fn[], unsigned long fn_len, char add)
    aprsstr_Append(b, 4096ul, "/", 2ul);
    aprsstr_Append(b, 4096ul, fn, fn_len);
    fd = osi_OpenRead(b, 4096ul);
-   if (!osi_FdValid(fd)) goto label;
+   if (!osic_FdValid(fd)) goto label;
    p = 0L;
    len = 0L;
    for (;;) {
@@ -5603,7 +5601,7 @@ extern void maptool_rdmountains(char fn[], unsigned long fn_len, char add)
       }
    }
    /*WrInt(pm^.alt, 10); WrStrLn(pm^.name); */
-   osi_Close(fd);
+   osic_Close(fd);
    label:;
    X2C_PFREE(fn);
 } /* end rdmountains() */

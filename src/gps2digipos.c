@@ -16,11 +16,12 @@
 #ifndef osi_H_
 #include "osi.h"
 #endif
-#ifndef Lib_H_
-#include "Lib.h"
-#endif
+#include <osic.h>
 #ifndef InOut_H_
 #include "InOut.h"
+#endif
+#ifndef Lib_H_
+#include "Lib.h"
 #endif
 #ifndef mlib_H_
 #include "mlib.h"
@@ -256,7 +257,7 @@ static void Parms(void)
          else if (h[1U]=='v') verb = 1;
          else {
             if (h[1U]=='h') {
-               osi_WrLn();
+               osic_WrLn();
                osi_WrStrLn("Read serial GPS and make position string to inser\
 t into APRS-beacon", 68ul);
                osi_WrStrLn(" -a                                altitude on",
@@ -279,7 +280,7 @@ l open removable USB tty", 74ul);
                 43ul);
                osi_WrStrLn(" example:  -t /dev/ttyS0:9600 -u -f test -i \"/-\\
 " -a -m 30 -v", 61ul);
-               osi_WrLn();
+               osic_WrLn();
                X2C_ABORT();
             }
             err = 1;
@@ -514,13 +515,13 @@ static void showline(const char b[], unsigned long b_len,
    i = 0UL;
    while (i<len0) {
       if ((unsigned char)b[i]<' ') {
-         if (b[i]=='\012') osi_WrLn();
+         if (b[i]=='\012') osic_WrLn();
          else InOut_WriteString(".", 2ul);
       }
       else InOut_WriteString((char *) &b[i], 1u/1u);
       ++i;
    }
-   osi_WrLn();
+   osic_WrLn();
 } /* end showline() */
 
 
@@ -536,7 +537,7 @@ static void wrfile(char b[], unsigned long b_len, unsigned long len0,
    f = osi_OpenWrite(s, 2001ul);
    if (f>=0L) {
       if (len0>0UL) osi_WrBin(f, (char *)b, (b_len)/1u, len0);
-      osi_Close(f);
+      osic_Close(f);
    }
    X2C_PFREE(b);
    X2C_PFREE(ext);
@@ -739,9 +740,9 @@ static void getmedian(double * lat0, double * long1, double * alt0)
       if (verb) {
          { /* with */
             struct _0 * anonym1 = &median[i];
-            osi_WrFixed((float)anonym1->mlat, 8L, 14UL);
-            osi_WrFixed((float)anonym1->mlong, 8L, 14UL);
-            osi_WrFixed((float)anonym1->malt, 1L, 14UL);
+            osic_WrFixed((float)anonym1->mlat, 8L, 14UL);
+            osic_WrFixed((float)anonym1->mlong, 8L, 14UL);
+            osic_WrFixed((float)anonym1->malt, 1L, 14UL);
             InOut_WriteInt((long)(unsigned long)anonym1->ok0, 2UL);
             osi_WrStrLn("", 1ul);
          }
@@ -796,7 +797,7 @@ extern int main(int argc, char **argv)
    for (;;) {
       len = osi_RdBin(tty, (char *)tbuf, 1024u/1u, 1024UL);
       if (len<=0L) {
-         osi_Close(tty);
+         osic_Close(tty);
          usleep(1000000UL);
          opentty();
          junk = 1;

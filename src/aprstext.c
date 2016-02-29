@@ -25,9 +25,7 @@
 #ifndef osi_H_
 #include "osi.h"
 #endif
-#ifndef RealMath_H_
-#include "RealMath.h"
-#endif
+#include <osic.h>
 #ifndef maptool_H_
 #include "maptool.h"
 #endif
@@ -1562,7 +1560,7 @@ static void getbeaconpos(struct aprspos_POSITION * pos, char * err)
       aprsstr_Delstr(s, 1001ul, 0UL, 1UL);
       fd = osi_OpenRead(s, 1001ul);
       s[0U] = 0;
-      if (osi_FdValid(fd)) {
+      if (osic_FdValid(fd)) {
          len = osi_RdBin(fd, (char *)s, 1001u/1u, 1000UL);
          if (len<1L) {
             len = 0L;
@@ -1570,7 +1568,7 @@ static void getbeaconpos(struct aprspos_POSITION * pos, char * err)
          }
          else if (len>1000L) len = 1000L;
          s[len] = 0;
-         osi_Close(fd);
+         osic_Close(fd);
       }
       else useri_say("beacon position file not found", 31ul, 20UL, 'e');
    }

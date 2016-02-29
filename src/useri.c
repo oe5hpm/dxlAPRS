@@ -28,9 +28,7 @@
 #ifndef osi_H_
 #include "osi.h"
 #endif
-#ifndef RealMath_H_
-#include "RealMath.h"
-#endif
+#include <osic.h>
 #ifndef InOut_H_
 #include "InOut.h"
 #endif
@@ -714,10 +712,10 @@ static long daylylogsize(const char fname[], unsigned long fname_len,
       if (X2C_STRCMP(fnd,1024u,fn,1024u)==0) return -1L;
       /* not dayly log */
       fc = osi_OpenRead(fnd, 1024ul);
-      if (osi_FdValid(fc)) {
+      if (osic_FdValid(fc)) {
          ret = 0L;
          size = size+(float)Size(fc);
-         osi_Close(fc);
+         osic_Close(fc);
       }
       t -= 86400UL;
    } while (t>=1388534400UL);
@@ -757,10 +755,10 @@ extern long useri_guesssize(char fn[], unsigned long fn_len, char lenstr[],
    /* dayly log */
    lenstr[0UL] = 0;
    fc = osi_OpenRead(fn, fn_len);
-   if (!osi_FdValid(fc)) return -1L;
+   if (!osic_FdValid(fc)) return -1L;
    pos = 0UL;
    for (;;) {
-      osi_Seekcur(fc, 1000000000L); /* seek in 100mb steps for eof */
+      osic_Seekcur(fc, 1000000000L); /* seek in 100mb steps for eof */
       if (osi_RdBin(fc, (char *) &b, 1u/1u, 1UL)!=1L) break;
       pos += 131072UL;
    }
@@ -768,7 +766,7 @@ extern long useri_guesssize(char fn[], unsigned long fn_len, char lenstr[],
       byte = Size(fc);
       pos = byte/1000UL;
    }
-   osi_Close(fc);
+   osic_Close(fc);
    /* make text kb mb gb... */
    if (pos<100UL) {
       strncpy(s,"B",100u);
@@ -1251,7 +1249,7 @@ extern void useri_saveconfig(void)
    aprsstr_Append(backupfn, 1000ul, "~", 2ul);
                 /* write temp file and rename later */
    fd = osi_OpenWrite(backupfn, 1000ul);
-   if (!osi_FdValid(fd)) {
+   if (!osic_FdValid(fd)) {
       strncpy(h,"Can not write ",1000u);
       aprsstr_Append(h, 1000ul, backupfn, 1000ul);
       useri_textautosize(0L, 0L, 6UL, 4UL, 'e', h, 1000ul);
@@ -1311,7 +1309,7 @@ extern void useri_saveconfig(void)
       }
       if (i==useri_fEDITLINE) break;
    } /* end for */
-   osi_Close(fd);
+   osic_Close(fd);
    osi_Rename(backupfn, 1000ul, aprsdecode_lums.configfn, 257ul);
    useri_textautosize(0L, 0L, 6UL, 4UL, 'b', "Config Saved", 13ul);
    useri_rdlums();
@@ -1378,7 +1376,7 @@ extern void useri_loadconfig(char verb)
    titmod = 0UL;
    aprsstr_cleanfilename(aprsdecode_lums.configfn, 257ul);
    fd = osi_OpenRead(aprsdecode_lums.configfn, 257ul);
-   if (osi_FdValid(fd)) {
+   if (osic_FdValid(fd)) {
       h[0U] = 0;
       while (osi_RdBin(fd, (char *) &c, 1u/1u, 1UL)==1L) {
          if (c!='\015') {
@@ -1439,7 +1437,7 @@ extern void useri_loadconfig(char verb)
             }
          }
       }
-      osi_Close(fd);
+      osic_Close(fd);
    }
    else {
       strncpy(h,"Can not read ",1000u);
@@ -2892,7 +2890,7 @@ static long hopen(char fb[4096], long * fd, long * fl, long * fp,
    *fp = 0L;
    *fl = 0L;
    *fd = osi_OpenRead("help.txt", 9ul);
-   if (!osi_FdValid(*fd)) return -1L;
+   if (!osic_FdValid(*fd)) return -1L;
    lc = 0L;
    i = 0UL;
    for (;;) {
@@ -2965,7 +2963,7 @@ extern void useri_helptext(unsigned long line, unsigned long sub,
          aprsstr_Assign(s, 2001ul, helpscroll[helpdepth], 41ul);
          aprsstr_Append(s, 2001ul, "index not found", 16ul);
          --helpdepth; /* try last link */
-         osi_Close(fd);
+         osic_Close(fd);
          line = 1UL;
          useri_textautosize(-1L, 0L, 5UL, 2UL, 'e', s, 2001ul);
       }
@@ -3028,7 +3026,7 @@ extern void useri_helptext(unsigned long line, unsigned long sub,
          else if (helpdepth>0UL) {
             --helpdepth; /* no link found */
          }
-         osi_Close(fd);
+         osic_Close(fd);
          line = 1UL;
       }
       else if (line>0UL) line = 0UL;
@@ -3067,7 +3065,7 @@ extern void useri_helptext(unsigned long line, unsigned long sub,
    else strncpy(fb," < Back | Index ",4096u);
    useri_textautomenu(-1L, (long)aprsdecode_lums.fontysize, 4UL, 0UL, 'b', s,
                  2001ul, fb, 4096ul, "\306", 2ul);
-   osi_Close(fd);
+   osic_Close(fd);
 } /* end helptext() */
 
 
@@ -10158,7 +10156,7 @@ static void printhint(void)
    if (hinttime+2UL<=aprsdecode_realtime && hintnum>=100UL) {
       hintmouse = useri_xmouse;
       fd = osi_OpenRead("hints.txt", 10ul);
-      if (osi_FdValid(fd)) {
+      if (osic_FdValid(fd)) {
          p = 0L;
          len = 0L;
          w = 0L;
@@ -10215,7 +10213,7 @@ static void printhint(void)
          }
          hinton = 1;
          useri_refresh = 1;
-         osi_Close(fd);
+         osic_Close(fd);
          hintnum = 0UL;
       }
       else osi_WrStrLn("hints.txt not found", 20ul);
@@ -11903,7 +11901,7 @@ extern void useri_wrheap(void)
    InOut_WriteString(" requested:", 12ul);
    InOut_WriteInt((long)useri_debugmem.req, 1UL);
    useri_debugmem.req = 0UL;
-   osi_WrLn();
+   osic_WrLn();
 } /* end wrheap() */
 
 

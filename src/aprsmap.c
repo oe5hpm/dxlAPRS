@@ -37,10 +37,8 @@
 #ifndef osi_H_
 #include "osi.h"
 #endif
-#ifndef RealMath_H_
-#include "RealMath.h"
-#endif
 #include <math.h>
+#include <osic.h>
 #ifndef InOut_H_
 #include "InOut.h"
 #endif
@@ -448,17 +446,17 @@ static void binseek(unsigned long * i, long fc, unsigned long * wp,
       else ftime = X2C_max_longcard;
       if (ftime<time0==seekstep<0L) seekstep = -(seekstep/2L);
       if (seekstep>=0L && seekstep<5000L || retry>=200UL) break;
-      osi_Seekcur(fc, seekstep-1024L);
+      osic_Seekcur(fc, seekstep-1024L);
       ++retry;
    }
-   if (time0<=*first) osi_Seek(fc, 0UL);
+   if (time0<=*first) osic_Seek(fc, 0UL);
    else if (retry>=200UL) {
-      osi_Seek(fc, 0UL);
+      osic_Seek(fc, 0UL);
       useri_say("unsort logfile, trying linear search", 37ul, 180UL, 'r');
    }
    else {
       /*      WrStrLn("unsort logfile, trying linear search"); */
-      osi_Seekcur(fc, -6024L); /* set back for safety */
+      osic_Seekcur(fc, -6024L); /* set back for safety */
    }
 } /* end binseek() */
 
@@ -488,7 +486,7 @@ static void rdlonglog(aprsdecode_pOPHIST * optab, char fn[],
    aprsstr_cleanfilename(fn, fn_len);
    if (fn[0UL]==0) goto label;
    fc = osi_OpenReadLong(fn, fn_len);
-   if (!osi_FdValid(fc)) goto label;
+   if (!osic_FdValid(fc)) goto label;
    *firstread = 0UL;
    *lastread = 0UL;
    end = 0UL;
@@ -540,7 +538,7 @@ static void rdlonglog(aprsdecode_pOPHIST * optab, char fn[],
       else if (wp<510UL) ++wp;
       ++rp;
    }
-   osi_Close(fc);
+   osic_Close(fc);
    op = *optab;
    while (op) {
       aprsdecode_Checktrack(op, 0);
@@ -609,9 +607,9 @@ static void rdlog(aprsdecode_pOPHIST * optab, char fn[],
                memcpy(fnd,fnn,1024u);
                aprstext_logfndate(t, fnd, 1024ul);
                t = (t/86400UL+1UL)*86400UL;
-               if (fo) osi_Close(fc);
+               if (fo) osic_Close(fc);
                fc = osi_OpenRead(fnd, 1024ul);
-            } while (!osi_FdValid(fc));
+            } while (!osic_FdValid(fc));
             fo = 1;
             if (*lines<0L) *lines = 0L;
          }
@@ -649,7 +647,7 @@ static void rdlog(aprsdecode_pOPHIST * optab, char fn[],
       ++rp;
    }
    loop_exit:;
-   if (fo) osi_Close(fc);
+   if (fo) osic_Close(fc);
    op = *optab;
    while (op) {
       aprsdecode_Checktrack(op, 0);
@@ -3547,13 +3545,13 @@ static void savevideo420(maptool_pIMAGE img, char fn[], unsigned long fn_len,
    struct maptool_PIX * anonym3;
    long tmp;
    X2C_PCOPY((void **)&fn,fn_len);
-   if (!osi_FdValid(videofd)) {
+   if (!osic_FdValid(videofd)) {
       /*
           videofd:=Create(fn);
       */
       if (FileSys_Exists(fn, fn_len)) videofd = osi_OpenWrite(fn, fn_len);
       else videofd = osi_OpenWrite(fn, fn_len);
-      if (!osi_FdValid(videofd)) goto label;
+      if (!osic_FdValid(videofd)) goto label;
       if (format=='M') {
          strncpy(h,"YUV4MPEG2 C420jpeg W",256u);
          aprsstr_IntToStr(maptool_xsize, 1UL, s, 256ul);
@@ -4317,8 +4315,8 @@ static void animate(const aprsdecode_MONCALL singlecall, unsigned long step,
       */
       aprsdecode_realtime = TimeConv_time();
    } while (!((vtime>endtime+(step*10UL)/25UL || (aprsdecode_click.cmd!='A' && aprsdecode_click.cmd!='a') && aprsdecode_click.cmd!='\312') || useri_newxsize>0UL));
-   if (osi_FdValid(videofd)) {
-      osi_Close(videofd);
+   if (osic_FdValid(videofd)) {
+      osic_Close(videofd);
       useri_say("map.y4m Saved", 14ul, 0UL, 'b');
    }
    if (vidbuf) {

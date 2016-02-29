@@ -19,14 +19,15 @@
 #ifndef osi_H_
 #include "osi.h"
 #endif
+#include <osic.h>
+#ifndef InOut_H_
+#include "InOut.h"
+#endif
 #ifndef RealMath_H_
 #include "RealMath.h"
 #endif
 #ifndef Lib_H_
 #include "Lib.h"
-#endif
-#ifndef InOut_H_
-#include "InOut.h"
 #endif
 #ifndef mlib_H_
 #include "mlib.h"
@@ -292,7 +293,7 @@ static void opentty(void)
 static void testtty(long len0, char * err)
 {
    if (len0<=0L) {
-      osi_Close(tty);
+      osic_Close(tty);
       usleep(1000000UL);
       opentty();
       *err = 1;
@@ -421,7 +422,7 @@ static void Parms(void)
          else if (h[1U]=='v') verb = 1;
          else {
             if (h[1U]=='h') {
-               osi_WrLn();
+               osic_WrLn();
                osi_WrStrLn("Read serial GPS and make normal/compressed/mic-e \
 Beacon as AXUDP or monitor", 76ul);
                osi_WrStrLn(" -0 <s>                            standing Beaco\
@@ -473,7 +474,7 @@ l open removable USB tty", 74ul);
                 43ul);
                osi_WrStrLn(" -w <viapath>                      via Path like \
 RELAY,WIDE1-1", 63ul);
-               osi_WrLn();
+               osic_WrLn();
                X2C_ABORT();
             }
             err = 1;
@@ -617,9 +618,9 @@ static void beaconmacros(char s[], unsigned long s_len)
                ++i;
             }
             f = osi_OpenRead(fn, 1024ul);
-            if (osi_FdValid(f)) {
+            if (osic_FdValid(f)) {
                len0 = osi_RdBin(f, (char *)ds, 256u/1u, 255UL);
-               osi_Close(f);
+               osic_Close(f);
                j = 0L;
                while (((j<len0 && ds[j]!='\015') && ds[j]!='\012') && ds[j]) {
                   aprsstr_Append(ns, 256ul, (char *) &ds[j], 1u/1u);
@@ -846,7 +847,7 @@ static void showline(const char b[], unsigned long b_len,
       InOut_WriteString((char *) &b[i], 1u/1u);
       ++i;
    }
-   osi_WrLn();
+   osic_WrLn();
 } /* end showline() */
 
 
@@ -1159,13 +1160,13 @@ static void sendaprs(double lat0, double long1, double alt0, double course0,
       else sendudp(b, 201ul, (long)(aprsstr_Length(b, 201ul)+1UL), ip, port);
    }
    if (verb) {
-      osi_WrFixed((float)lat0, 6L, 10UL);
-      osi_WrFixed((float)long1, 6L, 10UL);
-      osi_WrFixed((float)speed0, 1L, 10UL);
+      osic_WrFixed((float)lat0, 6L, 10UL);
+      osic_WrFixed((float)long1, 6L, 10UL);
+      osic_WrFixed((float)speed0, 1L, 10UL);
       InOut_WriteString("km/h", 5ul);
-      osi_WrFixed((float)course0, 1L, 7UL);
+      osic_WrFixed((float)course0, 1L, 7UL);
       InOut_WriteString("deg", 4ul);
-      osi_WrFixed((float)alt0, 1L, 10UL);
+      osic_WrFixed((float)alt0, 1L, 10UL);
       osi_WrStrLn("m", 2ul);
       osi_WrStrLn(b, 201ul);
    }

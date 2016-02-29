@@ -7,7 +7,6 @@
  */
 #ifndef tcp_H_
 #define tcp_H_
-#include "X2C.h"
 
 extern long resolv(char [], unsigned long *);
 

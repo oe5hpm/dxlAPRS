@@ -22,9 +22,6 @@
 #ifndef FileSys_H_
 #include "FileSys.h"
 #endif
-#ifndef Lib_H_
-#include "Lib.h"
-#endif
 #ifndef tcp_H_
 #include "tcp.h"
 #endif
@@ -34,34 +31,12 @@
 #ifndef filesize_H_
 #include "filesize.h"
 #endif
-#ifndef RealMath_H_
-#include "RealMath.h"
-#endif
 #include <math.h>
+#include <osic.h>
 
 typedef long osi_File;
 
 typedef long osi_SOCKET;
-
-#define osi_sin RealMath_sin
-
-#define osi_cos RealMath_cos
-
-#define osi_arctan RealMath_arctan
-
-#define osi_arccos RealMath_arccos
-
-#define osi_tan RealMath_tan
-
-#define osi_sqrt RealMath_sqrt
-
-#define osi_exp RealMath_exp
-
-#define osi_ln RealMath_ln
-
-#define osi_power RealMath_power
-
-#define osi_floor floor
 
 #define osi_pi 3.1415926535898
 
@@ -71,9 +46,41 @@ typedef long osi_SOCKET;
 
 #define osi_InvalidFd (-1)
 
+#define osi_floor floor
+
 #define osi_Flush Flush
 
-#define osi_NextArg Lib_NextArg
+#define osi_ln RealMath_ln
+
+#define osi_sin RealMath_sin
+
+#define osi_cos RealMath_cos
+
+#define osi_tan RealMath_tan
+
+#define osi_arctan RealMath_arctan
+
+#define osi_exp RealMath_exp
+
+#define osi_power RealMath_power
+
+#define osi_sqrt RealMath_sqrt
+
+#define osi_Close osic_Close
+
+#define osi_WrFixed osic_WrFixed
+
+#define osi_Seek osic_Seek
+
+#define osi_Seekcur osic_Seekcur
+
+#define osi_WrLn osic_WrLn
+
+#define osi_FdValid osic_FdValid
+
+#define osi_CloseSock osic_CloseSock
+
+#define osi_WrHex osic_WrHex
 
 #define osi_WrStr InOut_WriteString
 
@@ -123,29 +130,19 @@ extern long osi_OpenRW(char [], unsigned long);
 
 extern long osi_OpenNONBLOCK(char [], unsigned long);
 
-extern void osi_Close(long);
+extern void osi_Rename(char [], unsigned long, char [], unsigned long);
+
+extern void osi_WerrLn(char [], unsigned long);
 
 extern long osi_RdBin(long, char [], unsigned long, unsigned long);
 
 extern void osi_WrBin(long, char [], unsigned long, unsigned long);
 
-extern void osi_WrFixed(float, long, unsigned long);
+extern void osi_Werr(char [], unsigned long);
 
-extern void osi_Seek(long, unsigned long);
-
-extern void osi_Seekcur(long, long);
-
-extern void osi_Rename(char [], unsigned long, char [], unsigned long);
-
-extern void osi_WrLn(void);
+extern void osi_NextArg(char [], unsigned long);
 
 extern void osi_WrStrLn(char [], unsigned long);
-
-extern char osi_FdValid(long);
-
-extern void osi_CloseSock(long);
-
-extern void osi_WrHex(unsigned long, unsigned long);
 
 
 extern void osi_BEGIN(void);

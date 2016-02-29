@@ -19,14 +19,15 @@
 #ifndef osi_H_
 #include "osi.h"
 #endif
-#ifndef Lib_H_
-#include "Lib.h"
-#endif
+#include <osic.h>
 #ifndef InOut_H_
 #include "InOut.h"
 #endif
 #ifndef FileSys_H_
 #include "FileSys.h"
+#endif
+#ifndef Lib_H_
+#include "Lib.h"
 #endif
 #ifndef Select_H_
 #include "Select.h"
@@ -307,7 +308,7 @@ static void Stomsg(pMSGHASH user, const char from[], unsigned long from_len,
             if (f<0L) f = osi_OpenWrite(anonym->msgfile, 1024ul);
             if (f>=0L) {
                osi_WrBin(f, (char *)mb, 256u/1u, aprsstr_Length(mb, 256ul));
-               osi_Close(f);
+               osic_Close(f);
             }
          }
          { /* with */
@@ -1561,7 +1562,7 @@ static void parms(void)
          }
          else {
             if (lasth=='h') {
-               osi_WrLn();
+               osic_WrLn();
                osi_WrStrLn(" -a <paths>     user message ack path eg. WIDE2-2\
  or - for no path", 67ul);
                osi_WrStrLn(" -b <s>:<file>  enable beacon every s(econds) pat\
@@ -1676,7 +1677,7 @@ ut", 52ul);
 address field, -x TCPIP,UID***-*", 82ul);
                osi_WrStrLn("udpbox -v -M 0.0.0.0:9200 -d MYCALL-10 -p 0,1,7 -\
 t 1800,28 -r 192.168.1.24:9400", 80ul);
-               osi_WrLn();
+               osic_WrLn();
                X2C_ABORT();
             }
             if (lasth=='s') actpassui = 1;
@@ -1838,29 +1839,29 @@ static void showhex(long * n, long e, char in[], unsigned long in_len,
    long tmp;
    char tmp0;
    if (show) {
-      osi_WrLn();
+      osic_WrLn();
       osi_WrStrLn(s, s_len);
       tmp = *len-1L;
       i = 0L;
       if (i<=tmp) for (;; i++) {
-         osi_WrHex((unsigned long)(unsigned char)in[i], 3UL);
+         osic_WrHex((unsigned long)(unsigned char)in[i], 3UL);
          if (i==tmp) break;
       } /* end for */
-      osi_WrLn();
+      osic_WrLn();
       tmp = e-1L;
       i = 0L;
       if (i<=tmp) for (;; i++) {
          *n = (long)((unsigned long)(unsigned char)in[i]/2UL);
          if (*n<32L) {
             InOut_WriteString("<", 2ul);
-            osi_WrHex((unsigned long)*n, 1UL);
+            osic_WrHex((unsigned long)*n, 1UL);
             InOut_WriteString(">", 2ul);
          }
          else InOut_WriteString((char *)(tmp0 = (char)*n,&tmp0), 1u/1u);
          if (i%7L==6L) InOut_WriteString(",", 2ul);
          if (i==tmp) break;
       } /* end for */
-      osi_WrLn();
+      osic_WrLn();
    }
 } /* end showhex() */
 
@@ -1984,7 +1985,7 @@ static void beaconmacros(char s[], unsigned long s_len, char * del)
             f = osi_OpenRead(fn, 1024ul);
             if (f>=0L) {
                len = osi_RdBin(f, (char *)ds, 256u/1u, 255UL);
-               osi_Close(f);
+               osic_Close(f);
                if (fnend==']' || fnend==')') {
                   FileSys_Remove(fn, 1024ul, &voidok);
                 /* delete insert file after inserting */
@@ -1998,7 +1999,7 @@ static void beaconmacros(char s[], unsigned long s_len, char * del)
             else if (fnend!=')') {
                /* skip whole beacon line */
                if (show) {
-                  osi_WrLn();
+                  osic_WrLn();
                   osi_WrStrLn("beacon macro file not readable ", 32ul);
                }
                s[0UL] = 0;
@@ -2015,7 +2016,7 @@ static void beaconmacros(char s[], unsigned long s_len, char * del)
             if (s[i]=='\\') aprsstr_Append(ns, 256ul, "\\\\", 3ul);
             else {
                if (show) {
-                  osi_WrLn();
+                  osic_WrLn();
                   osi_WrStrLn("bad beacon macro ", 18ul);
                }
                s[0UL] = 0;
@@ -2062,7 +2063,7 @@ static void beacon(pINSOCK insock, char buf[], unsigned long buf_len,
             f = osi_OpenRead(anonym->bfile, 1024ul);
             if (f>=0L) {
                *len = osi_RdBin(f, (char *)fb, 32768u/1u, 32767UL);
-               osi_Close(f);
+               osic_Close(f);
                while (*len>0L && (unsigned char)fb[*len-1L]<=' ') {
                   --*len; /* remove junk from eof */
                }
@@ -2110,7 +2111,7 @@ static void beacon(pINSOCK insock, char buf[], unsigned long buf_len,
                   if (del) FileSys_Remove(anonym->bfile, 1024ul, &ok0);
                   else aprsstr_mon2raw(fb, 32768ul, buf, buf_len, len);
                   if (show && *len==0L) {
-                     osi_WrLn();
+                     osic_WrLn();
                      if (del) osi_WrStrLn("delete beacon file ", 20ul);
                      else osi_WrStrLn("bad beacon format ", 19ul);
                   }
@@ -2345,7 +2346,7 @@ extern int main(int argc, char **argv)
                   if (show && inlen>2L) {
                      aprsstr_raw2mon(rawbuf, 338ul, mbuf, 512ul,
                 (unsigned long)(inlen-2L), &monlen, _cnst1);
-                     osi_WrLn();
+                     osic_WrLn();
                      showpip(showip, showport);
                      InOut_WriteString("(", 2ul);
                      InOut_WriteInt(inlen, 1UL);

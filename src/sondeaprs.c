@@ -19,14 +19,15 @@
 #ifndef osi_H_
 #include "osi.h"
 #endif
-#ifndef RealMath_H_
-#include "RealMath.h"
-#endif
+#include <osic.h>
 #ifndef InOut_H_
 #include "InOut.h"
 #endif
 #ifndef udp_H_
 #include "udp.h"
+#endif
+#ifndef RealMath_H_
+#include "RealMath.h"
 #endif
 #ifndef TimeConv_H_
 #include "TimeConv.h"
@@ -228,7 +229,7 @@ static void comment0(char buf[], unsigned long buf_len, unsigned long uptime,
       f = osi_OpenRead(sondeaprs_commentfn, 1025ul);
       if (f>=0L) {
          len = osi_RdBin(f, (char *)fb, 32768u/1u, 32767UL);
-         osi_Close(f);
+         osic_Close(f);
          while (len>0L && (unsigned char)fb[len-1L]<=' ') --len;
          if (len>0L && len<32767L) {
             fb[len] = '\012';
@@ -790,10 +791,10 @@ static void WrDeg(double la, double lo)
 static void show(struct DATLINE d)
 {
    char s[31];
-   osi_WrFixed((float)d.hpa, 1L, 6UL);
+   osic_WrFixed((float)d.hpa, 1L, 6UL);
    InOut_WriteString("hPa ", 5ul);
    if (d.temp<100.0) {
-      osi_WrFixed((float)d.temp, 1L, 5UL);
+      osic_WrFixed((float)d.temp, 1L, 5UL);
       InOut_WriteString("C ", 3ul);
    }
    InOut_WriteInt((long)truncr(d.hyg), 2UL);
@@ -809,7 +810,7 @@ static void show(struct DATLINE d)
    InOut_WriteInt((long)X2C_TRUNCI(d.alt,X2C_min_longint,X2C_max_longint),
                 1UL);
    InOut_WriteString("m ", 3ul);
-   osi_WrFixed((float)d.clb, 1L, 5UL);
+   osic_WrFixed((float)d.clb, 1L, 5UL);
    InOut_WriteString("m/s ", 5ul);
    aprsstr_TimeToStr(d.time0, s, 31ul);
    InOut_WriteString(s, 31ul);
@@ -1090,8 +1091,8 @@ extern void sondeaprs_senddata(double lat, double long0, double alt,
             show(anonym->dat[0U]);
             if (almanachage) {
                InOut_WriteString(" AlmAge ", 9ul);
-               osi_WrFixed((float)(X2C_DIVL((double)almanachage,3600.0)), 1L,
-                 3UL);
+               osic_WrFixed((float)(X2C_DIVL((double)almanachage,3600.0)),
+                1L, 3UL);
                osi_WrStrLn("h ", 3ul);
             }
             else osi_WrStrLn("", 1ul);
