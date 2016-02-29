@@ -39,10 +39,6 @@
 #define X2C_max_longdouble		((X2C_LONGDOUBLE)LDBL_MAX)
 #define X2C_min_longdouble		(-((X2C_LONGDOUBLE)LDBL_MAX))
 
-#define X2C_MIN(type, min_value)	((type)(min_value))
-#define X2C_MAX(type, max_value)	((type)(max_value))
-#define X2C_INRANGE(v, min, max)	(((v) >= (min)) && ((v) <= (max)))
-
 #define X2C_CASE_TRAP			0
 
 #define X2C_ABORT(void)			exit(-1)
