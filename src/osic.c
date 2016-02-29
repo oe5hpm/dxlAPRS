@@ -418,18 +418,6 @@ X2C_BOOLEAN X2C_INL(X2C_CARD32 i, X2C_CARD32 bits, X2C_LSET set)
 	return 0;
 }
 
-X2C_INT32 X2C_MOD_F(X2C_INT32 a, X2C_INT32 b)
-{
-	X2C_INT32 c;
-
-	if (b <= 0)
-		assert(0);
-	c = (a % b);
-	if (a < 0 && c < 0)
-		c += b;
-	return c;
-}
-
 X2C_LSET X2C_INCL(X2C_LSET set, X2C_CARD32 i, X2C_CARD32 bits)
 {
 	if (i >= bits)
