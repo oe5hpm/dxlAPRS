@@ -388,7 +388,7 @@ X2C_CARD32 TimeConv_time(void)
 	return time(NULL);
 }
 
-X2C_CARD32 X2C_LSH(X2C_CARD32 a, X2C_INT16 length, X2C_INT32 n)
+X2C_CARD32 X2C_LSH(X2C_CARD32 a, X2C_INT32 length, X2C_INT32 n)
 {
 	X2C_CARD32 m;
 
@@ -405,16 +405,16 @@ X2C_CARD32 X2C_LSH(X2C_CARD32 a, X2C_INT16 length, X2C_INT32 n)
 	return (a >> -n) & m;
 }
 
-X2C_BOOLEAN X2C_IN(X2C_CARD32 i, X2C_CARD16 bits, X2C_CARD32 set)
+X2C_BOOLEAN X2C_IN(X2C_CARD32 i, X2C_CARD32 bits, X2C_CARD32 set)
 {
-	if (i < (X2C_CARD32)bits)
+	if (i < bits)
 		return (((1 << (int)i) & set) != 0);
 	return 0;
 }
 
-X2C_BOOLEAN X2C_INL(X2C_CARD32 i, X2C_CARD16 bits, LSET set)
+X2C_BOOLEAN X2C_INL(X2C_CARD32 i, X2C_CARD32 bits, LSET set)
 {
-	if (i < (X2C_CARD32)bits)
+	if (i < bits)
 		return (set[(int)i / X2C_LSET_SIZE] & (1 << ((int)i % X2C_LSET_SIZE))) != 0;
 	return 0;
 }
@@ -431,15 +431,15 @@ X2C_INT32 X2C_MOD(X2C_INT32 a, X2C_INT32 b)
 	return c;
 }
 
-LSET X2C_INCL(LSET set, X2C_CARD32 i, X2C_CARD16 bits)
+LSET X2C_INCL(LSET set, X2C_CARD32 i, X2C_CARD32 bits)
 {
-	if (i >= (X2C_CARD32)bits)
+	if (i >= bits)
 		assert(0);
 	set[(int)i / X2C_LSET_SIZE] |= 1L << ((int)i % X2C_LSET_SIZE);
 
 	return set;
 }
-LSET X2C_COMPLEMENT(LSET res, LSET a, X2C_CARD16 length)
+LSET X2C_COMPLEMENT(LSET res, LSET a, X2C_CARD32 length)
 {
 	LSET c;
 
@@ -543,13 +543,13 @@ X2C_LONGREAL X2C_EXPRI(X2C_LONGREAL base, X2C_INT32 ex)
 	return res;
 }
 
-X2C_PROC X2C_CHKPROC_F(X2C_PROC p)
+void *X2C_CHKPROC_F(void *p)
 {
 	assert(p);
 	return p;
 }
 
-X2C_pVOID X2C_CHKNIL_F(X2C_pVOID p)
+void *X2C_CHKNIL_F(void *p)
 {
 	assert(p);
 	return p;

@@ -18,25 +18,19 @@
 #include <float.h>
 #include <assert.h>
 
-#define X2C_CARD8			unsigned char
-#define X2C_INT16			short
-#define X2C_CARD16			unsigned short
 #define X2C_INT32			long
 #define X2C_CARD32			unsigned long
 #define X2C_REAL			float
 #define X2C_LONGREAL			double
 #define X2C_CHAR			char
 #define X2C_BOOLEAN			char
-#define X2C_LOC				char
-typedef X2C_LOC				* X2C_ADDRESS;
-typedef X2C_CHAR			* X2C_pCHAR;
-typedef void				*X2C_pVOID;
+
+typedef char				*X2C_ADDRESS;
+typedef char				*X2C_pCHAR;
 typedef X2C_CARD32			* LSET;
 
 typedef X2C_CARD32			X2C_LSET_BASE;
 typedef X2C_LSET_BASE			* X2C_LSET;
-typedef void (*X2C_PROC)		(void);
-
 #define X2C_LSET_SIZE			(sizeof(X2C_LSET_BASE) * 8)
 
 #define X2C_max_longint			0x7FFFFFFFL
@@ -56,7 +50,7 @@ typedef void (*X2C_PROC)		(void);
 #define X2C_CASE_TRAP			0
 
 #define X2C_ABORT(void)			exit(-1)
-#define X2C_EXIT(x)			exit(0)
+#define X2C_EXIT(void)			exit(0)
 #define X2C_HALT(x)			(exit(x))
 
 #define X2C_CAP(x)			toupper(x)
@@ -68,18 +62,14 @@ typedef void (*X2C_PROC)		(void);
 
 #define X2C_MOVE(source, dest, size)	memcpy(dest, source, size)
 #define X2C_STRCMP(a, alen, b, blen)	strncmp(a, b, alen < blen ? alen : blen)
-#define X2C_STACK_LIMIT(x)
 
-extern void X2C_BEGIN(
-		int *argc, char **argv,
-		int gc_auto, long gc_threshold, long heap_limit);
-
-#define X2C_CHKNIL(T, p)	((T)(X2C_CHKNIL_F((void *)(p))))
-#define X2C_CHKPROC(T, p)	((T)(X2C_CHKPROC_F((X2C_PROC)(p))))
+#define X2C_CHKNIL(T, p)		((T)(X2C_CHKNIL_F((void *)(p))))
+#define X2C_CHKPROC(T, p)		((T)(X2C_CHKPROC_F((void *)(p))))
 
 #define X2C_CAST(val, fr, to, to_ref) \
-((sizeof(fr) < sizeof(to)) ? (assert(0), (to_ref)0) : (to_ref)(val))
+	((sizeof(fr) < sizeof(to)) ? (assert(0), (to_ref)0) : (to_ref)(val))
 
 #define X2C_MAIN_DEFINITION
+#define X2C_STACK_LIMIT(x)
 
 #endif
