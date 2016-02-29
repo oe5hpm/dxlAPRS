@@ -35,7 +35,7 @@ STRIP		= $(CROSS_COMPILE)strip
 INCL		= .
 #CDEFS		= -Wall -Wno-unused-variable -Wno-parentheses -Wno-pointer-sign -Wno-format -Wno-unused-but-set-variable
 CDEFS		= -w
-CFLAGS		= -I$(INCL) -I$(EXTLIB) -c -O2 -fdata-sections -ffunction-sections
+CFLAGS		= -I$(INCL) -c -O2 -fdata-sections -ffunction-sections
 LFLAGS		= -Wl,--gc-sections
 # ---------------------- armv6 (raspberry pi 1) specific -----------------------
 ifeq ($(PLATFORM), armv6tce)
