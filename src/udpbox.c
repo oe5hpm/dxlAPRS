@@ -262,7 +262,7 @@ static void Stomsg(pMSGHASH user, const char from[], unsigned long from_len,
       struct MSGHASH * anonym = user;
       i = 0UL;
       while (i<=msg_len-1 && msg[i]) ++i;
-      t = TimeConv_time();
+      t = osic_time();
       h = aprsstr_Hash(msg, msg_len, 0L, (long)i)&16383UL;
       i = 0UL;
       while (i<=15UL && !(((h==anonym->hash[i].sums && anonym->hash[i]
@@ -1098,7 +1098,7 @@ static void Digi(char raw[], unsigned long raw_len, char send[],
       tt = parm->duptime;
       if (Dup(raw, raw_len, (unsigned long)pathlen, (unsigned long)inlen0,
                 &hash)) tt = parm->messagetime;
-      t = TimeConv_time(); /* time in s */
+      t = osic_time(); /* time in s */
       if (parm->timehash[hash]+tt<=t) {
          /* not a duplicate */
          parm->timehash[hash] = t;
@@ -1380,7 +1380,7 @@ static void parms(void)
             actbeacon.bintervall = 0UL;
             actbeacon.piggytime = 0UL;
             actbeacon.piggyback = 0;
-            Storage_ALLOCATE((X2C_ADDRESS *) &actsock0,
+            osic_alloc((X2C_ADDRESS *) &actsock0,
                 sizeof(struct INSOCK));
             if (actsock0==0) Err("out of memory", 14ul);
             { /* with */
@@ -1470,7 +1470,7 @@ static void parms(void)
                i = 0UL;
                if (GetSec(h, 4096ul, &i, &n)>=0L && h[i]==':') {
                   anonym0->bintervall = n;
-                  anonym0->btime = anonym0->bintervall+TimeConv_time();
+                  anonym0->btime = anonym0->bintervall+osic_time();
                   anonym0->bline = 0UL;
                   ++i;
                   for (n = 0UL; n<=1023UL; n++) {
@@ -1486,7 +1486,7 @@ static void parms(void)
          else if (lasth=='d') {
             osic_NextArg(h, 4096ul);
             if (actsock0==0) Err("need input -M or -R before -d", 30ul);
-            Storage_ALLOCATE((X2C_ADDRESS *) &actdigi,
+            osic_alloc((X2C_ADDRESS *) &actdigi,
                 sizeof(struct DIGIPARMS));
             if (actdigi==0) Err("out of memory", 14ul);
             { /* with */
@@ -1509,7 +1509,7 @@ static void parms(void)
                Err("need input -M or -R before -r or -m or -c", 42ul);
             }
             osic_NextArg(h, 4096ul);
-            Storage_ALLOCATE((X2C_ADDRESS *) &outsock0,
+            osic_alloc((X2C_ADDRESS *) &outsock0,
                 sizeof(struct OUTPORT));
             if (outsock0==0) Err("out of memory", 14ul);
             { /* with */
@@ -1695,7 +1695,7 @@ t 1800,28 -r 192.168.1.24:9400", 80ul);
             }
             else if (lasth=='u') {
                osic_NextArg(h, 4096ul);
-               Storage_ALLOCATE((X2C_ADDRESS *) &user,
+               osic_alloc((X2C_ADDRESS *) &user,
                 sizeof(struct MSGHASH));
                if (user==0) Err("out of memory", 14ul);
                { /* with */
@@ -1736,7 +1736,7 @@ t 1800,28 -r 192.168.1.24:9400", 80ul);
                if (actsock0==0) Err("need input -M or -R before -x", 30ul);
                i = 0UL;
                for (;;) {
-                  Storage_ALLOCATE((X2C_ADDRESS *) &callnext,
+                  osic_alloc((X2C_ADDRESS *) &callnext,
                 sizeof(struct CALLS));
                   if (callnext==0) Err("out of memory", 14ul);
                   MakeRawCall(callnext->call, h, 4096ul, i);
@@ -1933,7 +1933,7 @@ static void beaconmacros(char s[], unsigned long s_len, char * del)
          i += 2UL;
          if (s[i]=='z') {
             /* insert day, hour, min */
-            aprsstr_DateToStr(TimeConv_time(), ds, 256ul);
+            aprsstr_DateToStr(osic_time(), ds, 256ul);
             ds[0U] = ds[8U];
             ds[1U] = ds[9U];
             ds[2U] = ds[11U];
@@ -1945,7 +1945,7 @@ static void beaconmacros(char s[], unsigned long s_len, char * del)
          }
          else if (s[i]=='h') {
             /* insert hour, min, s */
-            aprsstr_DateToStr(TimeConv_time(), ds, 256ul);
+            aprsstr_DateToStr(osic_time(), ds, 256ul);
             ds[0U] = ds[11U];
             ds[1U] = ds[12U];
             ds[2U] = ds[14U];
@@ -2037,7 +2037,7 @@ static void beacon(pINSOCK insock, char buf[], unsigned long buf_len,
       }
       { /* with */
          struct BEACON * anonym = &(*outsock0)->beacon0;
-         t = TimeConv_time();
+         t = osic_time();
          if (anonym->piggyback) t += anonym->piggytime;
          anonym->piggyback = 0;
          if ((anonym->bintervall>0UL && anonym->bfile[0U])
@@ -2124,7 +2124,7 @@ static void sendack(char buf[], unsigned long buf_len, long * len,
    struct MSGHASH * anonym;
    struct _0 * anonym0;
    user = msgusers;
-   t = TimeConv_time();
+   t = osic_time();
    while (user) {
       *len = 0L;
       { /* with */

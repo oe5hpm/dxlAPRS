@@ -321,52 +321,52 @@ float X2C_DIVR(float a, float b)
 	return (a/b);
 }
 
-float RealMath_cos(float x)
+float osic_cos(float x)
 {
 	return cos(x);
 }
 
-float RealMath_ln(float x)
+float osic_ln(float x)
 {
 	if (x <= 0.0)
 		assert(0);
 	return log(x);
 }
 
-float RealMath_sqrt(float x)
+float osic_sqrt(float x)
 {
 	if (x < 0.0)
 		assert(0);
 	return sqrt(x);
 }
 
-float RealMath_sin(float x)
+float osic_sin(float x)
 {
 	return sin(x);
 }
-float RealMath_arctan(float x)
+float osic_arctan(float x)
 {
 	return atan(x);
 }
 
-float RealMath_tan(float x)
+float osic_tan(float x)
 {
 	return tan(x);
 }
 
-float RealMath_exp(float x)
+float osic_exp(float x)
 {
 	return exp(x);
 }
 
-float RealMath_power(float base, float exponent)
+float osic_power(float base, float exponent)
 {
 	if (base <= 0.0)
 		assert(0);
 	return pow(base, exponent);
 }
 
-void Storage_ALLOCATE(X2C_ADDRESS *p, unsigned long size)
+void osic_alloc(X2C_ADDRESS *p, unsigned long size)
 {
 	void *pmem;
 
@@ -376,13 +376,13 @@ void Storage_ALLOCATE(X2C_ADDRESS *p, unsigned long size)
 	*p = pmem;
 }
 
-void Storage_DEALLOCATE(X2C_ADDRESS *a, unsigned long size)
+void osic_free(X2C_ADDRESS *a, unsigned long size)
 {
 	assert(*a);
 	free(*a);
 }
 
-unsigned long TimeConv_time(void)
+unsigned long osic_time(void)
 {
 	return time(NULL);
 }

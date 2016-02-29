@@ -38,21 +38,21 @@ typedef long osi_SOCKET;
 
 #define osi_Flush Flush
 
-#define osi_ln RealMath_ln
+#define osi_ln osic_ln
 
-#define osi_sin RealMath_sin
+#define osi_sin osic_sin
 
-#define osi_cos RealMath_cos
+#define osi_cos osic_cos
 
-#define osi_tan RealMath_tan
+#define osi_tan osic_tan
 
-#define osi_arctan RealMath_arctan
+#define osi_arctan osic_arctan
 
-#define osi_exp RealMath_exp
+#define osi_exp osic_exp
 
-#define osi_power RealMath_power
+#define osi_power osic_power
 
-#define osi_sqrt RealMath_sqrt
+#define osi_sqrt osic_sqrt
 
 #define osi_Close osic_Close
 

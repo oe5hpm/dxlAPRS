@@ -1490,12 +1490,12 @@ extern void aprstext_compressdata(struct aprspos_POSITION pos,
    if (knots>0UL) {
       if (dir>=360UL) dir = 0UL;
       s[10UL] = (char)(33UL+dir/4UL);
-      s[11UL] = (char)(33UL+aprsdecode_trunc(RealMath_ln((float)(knots+1UL))
+      s[11UL] = (char)(33UL+aprsdecode_trunc(osic_ln((float)(knots+1UL))
                 *1.29935872129E+1f));
       s[12UL] = '_';
    }
    else if (feet>0L) {
-      n = (long)aprsdecode_trunc(RealMath_ln((float)feet)*500.5f+0.5f);
+      n = (long)aprsdecode_trunc(osic_ln((float)feet)*500.5f+0.5f);
       if (n>=8281L) n = 8280L;
       s[10UL] = (char)(33L+n/91L);
       s[11UL] = (char)(33L+n%91L);

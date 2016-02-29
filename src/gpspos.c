@@ -1304,7 +1304,7 @@ extern char gpspos_readalmanach(char fnsem[], unsigned long fnsem_len,
       for (i = 0UL; i<=31UL; i++) {
          min0[i] = 0UL;
       } /* end for */
-      ti = ((TimeConv_time()-7200UL)+345600UL)%604800UL;
+      ti = ((osic_time()-7200UL)+345600UL)%604800UL;
       if (verb) {
          osic_WrUINT32((long)ti, 12UL);
          osic_WrUINT32((long)secondinweek, 12UL);

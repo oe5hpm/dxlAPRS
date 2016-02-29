@@ -484,7 +484,7 @@ static void showrssi(void)
    char s[31];
    i = 0UL;
    while (prx[i]) {
-      aprsstr_FixToStr(RealMath_ln((rxx[i].rssi+1.0f)*3.0517578125E-5f)
+      aprsstr_FixToStr(osic_ln((rxx[i].rssi+1.0f)*3.0517578125E-5f)
                 *4.342944819f, 2UL, s, 31ul);
       osi_Werr(s, 31ul);
       osi_Werr("dB", 3ul);

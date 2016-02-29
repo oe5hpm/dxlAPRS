@@ -908,7 +908,7 @@ static pUSER Realloc(char alloc)
             osic_WrLn();
          }
          if (alloc && new0==0) new0 = u;
-         else Storage_DEALLOCATE((X2C_ADDRESS *) &u, sizeof(struct USER));
+         else osic_free((X2C_ADDRESS *) &u, sizeof(struct USER));
          if (last==0) u = users;
          else u = last->next;
          modified = 1;
@@ -920,7 +920,7 @@ static pUSER Realloc(char alloc)
       }
    }
    if (alloc && new0==0) {
-      Storage_ALLOCATE((X2C_ADDRESS *) &new0, sizeof(struct USER));
+      osic_alloc((X2C_ADDRESS *) &new0, sizeof(struct USER));
    }
    /*  IF show THEN WrStr(" Table entries="); WrInt(cnt, 1); WrLn; END; */
    return new0;
@@ -1232,7 +1232,7 @@ extern int main(int argc, char **argv)
    if ((touserport==0UL || usersock<0L) || bindudp(usersock, touserport)<0L) {
       Err("cannot bind userport (-p userport)", 35ul);
    }
-   systime = TimeConv_time();
+   systime = osic_time();
    for (;;) {
       fdclr();
       if (digisock>=0L) fdsetr((unsigned long)digisock);
@@ -1279,7 +1279,7 @@ extern int main(int argc, char **argv)
             }
          }
       }
-      systime = TimeConv_time();
+      systime = osic_time();
       if (lastlist+15UL<systime || lastlist>systime) {
          voidu = Realloc(0); /* cyclic purge */
          if (modified && wrfn[0U]) {

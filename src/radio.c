@@ -210,7 +210,7 @@ static void showrssi(void)
    char s[31];
    if (isstereo) strncpy(s,"S ",31u);
    else strncpy(s,"M ",31u);
-   aprsstr_FixToStr(RealMath_ln((rxx.rssi+1.0f)*3.0517578125E-5f)
+   aprsstr_FixToStr(osic_ln((rxx.rssi+1.0f)*3.0517578125E-5f)
                 *4.342944819f, 2UL, ss, 31ul);
    aprsstr_Append(s, 31ul, ss, 31ul);
    aprsstr_Append(s, 31ul, "dB ", 4ul);

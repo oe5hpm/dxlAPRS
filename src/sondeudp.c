@@ -870,7 +870,7 @@ static void Parms(void)
          }
          else if (h[1U]=='u') {
             osic_NextArg(h, 1024ul);
-            Storage_ALLOCATE((X2C_ADDRESS *) &utx, sizeof(struct UDPTX));
+            osic_alloc((X2C_ADDRESS *) &utx, sizeof(struct UDPTX));
             if (utx==0) Error("udp socket out of memory", 25ul);
             utx->udpfd = GetIp(h, 1024ul, &utx->ip, &utx->destport);
             if (utx->udpfd<0L) Error("cannot open udp socket", 23ul);
@@ -969,7 +969,7 @@ static void sendudp(char data[], unsigned long data_len, long len,
 static void WrdB(long volt)
 {
    if (volt>0L) {
-      osic_WrFixed(RealMath_ln((float)volt)*8.685889638f-96.4f, 1L, 6UL);
+      osic_WrFixed(osic_ln((float)volt)*8.685889638f-96.4f, 1L, 6UL);
       osic_WrStr("dB", 3ul);
    }
 } /* end WrdB() */
@@ -1790,7 +1790,7 @@ static void decodesub(const char b[], unsigned long b_len, unsigned long m,
       chan[m].dfm6.num = v;
       chan[m].dfm6.wasdate = 0; /* we have number, next must be date */
       u = (((v+256UL)-(chan[m].dfm6.idnum&255UL)&255UL)+256UL)
-                -(TimeConv_time()+chan[m].dfm6.timediff&255UL)&255UL;
+                -(osic_time()+chan[m].dfm6.timediff&255UL)&255UL;
       if (u>=128UL) u = 256UL-u;
       chan[m].dfm6.txok = u<=1UL; /* max +-1s tolerance of num */
       if (verb) {
@@ -1803,7 +1803,7 @@ static void decodesub(const char b[], unsigned long b_len, unsigned long m,
       if (chan[m].dfm6.lastdate+60UL==chan[m].dfm6.actdate) {
          /* minute change */
          if (chan[m].dfm6.numcnt>=3UL) {
-            chan[m].dfm6.timediff = chan[m].dfm6.actdate-TimeConv_time();
+            chan[m].dfm6.timediff = chan[m].dfm6.actdate-osic_time();
                 /* sonde realtime - systime */
             v = (chan[m].dfm6.num+256UL)-(chan[m].dfm6.actdate&255UL)&255UL;
             if (verb) {
@@ -1830,7 +1830,7 @@ static void decodesub(const char b[], unsigned long b_len, unsigned long m,
                if (anonym->idcnt>2UL || anonym->id[0U]==0) {
                   /* first name or safe new name */
                   memcpy(anonym->id,anonym->idcheck,9u);
-                  anonym->idtime = TimeConv_time();
+                  anonym->idtime = osic_time();
                }
             }
          }
@@ -2032,7 +2032,7 @@ static void decodeframe6(unsigned long m)
                if (anonym1->mycallc>0UL) s[14U] = anonym1->myssid;
                else s[14U] = '\020';
             }
-            rt = TimeConv_time()+chan[m].dfm6.timediff;
+            rt = osic_time()+chan[m].dfm6.timediff;
                 /* interpolated sonde realtime */
             s[15U] = (char)(rt/16777216UL);
             s[16U] = (char)(rt/65536UL&255UL);
@@ -2226,7 +2226,7 @@ static void demodframe34(unsigned long channel)
       }
       if (ok0) {
          /* chksum ok */
-         if (anonym->idtime+3600UL<TimeConv_time()) {
+         if (anonym->idtime+3600UL<osic_time()) {
             anonym->id[0U] = 0;
             anonym->idcheck[0U] = 0;
             anonym->idcnt = 0UL;
@@ -2376,7 +2376,7 @@ static void demodframe34(unsigned long channel)
             if (anonym->idcnt>3UL || anonym->id[0U]==0) {
                /* first name or safe new name */
                memcpy(anonym->id,anonym->idcheck,9u);
-               anonym->idtime = TimeConv_time();
+               anonym->idtime = osic_time();
             }
             good = 1;
             break;

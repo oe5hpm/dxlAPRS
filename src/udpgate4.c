@@ -494,7 +494,7 @@ static void spintime(void)
    /* make monotonic systime out of jumping realtime */
    unsigned long dt;
    unsigned long t;
-   t = TimeConv_time();
+   t = osic_time();
    dt = t-realtime;
    realtime = t;
    if (dt<60UL) systime += dt;
@@ -803,7 +803,7 @@ static void parms(void)
          lasth = h[1U];
          if (lasth=='R' || lasth=='M') {
             osi_NextArg(h, 4096ul);
-            Storage_ALLOCATE((X2C_ADDRESS *) &usock, sizeof(struct UDPSOCK));
+            osic_alloc((X2C_ADDRESS *) &usock, sizeof(struct UDPSOCK));
             if (usock==0) Err("out of memory", 14ul);
             memset((X2C_ADDRESS)usock,(char)0,sizeof(struct UDPSOCK));
             { /* with */
@@ -1628,7 +1628,7 @@ static void logline(long r, char s[], unsigned long s_len)
       fd = osic_OpenAppend(logframename, 1024ul);
       if (fd<0L) fd = osic_OpenWrite(logframename, 1024ul);
       if (fd>=0L) {
-         aprsstr_DateToStr(TimeConv_time(), h, 512ul);
+         aprsstr_DateToStr(osic_time(), h, 512ul);
          aprsstr_Append(h, 512ul, " ", 2ul);
          aprsstr_Append(h, 512ul, s, s_len);
          aprsstr_Append(h, 512ul, "\012", 2ul);
@@ -1662,7 +1662,7 @@ static void writerawlog(const FRAMEBUF b)
    l = aprsstr_Length(b, 512ul);
    while (l>0UL && (unsigned char)b[l-1UL]<='\015') --l;
    if (l>0UL) {
-      aprsstr_DateToStr(TimeConv_time(), h, 512ul);
+      aprsstr_DateToStr(osic_time(), h, 512ul);
       h[4U] = h[5U];
       h[5U] = h[6U];
       h[6U] = h[8U];
@@ -2359,7 +2359,7 @@ static void beaconmacros(char s[], unsigned long s_len)
          i0 += 2UL;
          if (s[i0]=='z') {
             /* insert day, hour, min */
-            aprsstr_DateToStr(TimeConv_time(), ds, 256ul);
+            aprsstr_DateToStr(osic_time(), ds, 256ul);
             ds[0U] = ds[8U];
             ds[1U] = ds[9U];
             ds[2U] = ds[11U];
@@ -2371,7 +2371,7 @@ static void beaconmacros(char s[], unsigned long s_len)
          }
          else if (s[i0]=='h') {
             /* insert hour, min, s */
-            aprsstr_DateToStr(TimeConv_time(), ds, 256ul);
+            aprsstr_DateToStr(osic_time(), ds, 256ul);
             ds[0U] = ds[11U];
             ds[1U] = ds[12U];
             ds[2U] = ds[14U];
@@ -2984,7 +2984,7 @@ static void AddHeard(pHEARD * table, unsigned long maxtime,
          else ph = 0;
       }
       if (ph==0) {
-         Storage_ALLOCATE((X2C_ADDRESS *) &ph, sizeof(struct HEARD));
+         osic_alloc((X2C_ADDRESS *) &ph, sizeof(struct HEARD));
          if (ph==0 && po) {
             ph = po->next;
             po->next = 0;
@@ -3089,7 +3089,7 @@ static void delmsg(pMESSAGE md)
       osic_WrStrLn("---delete:", 11ul);
       Showmsg(md);
    }
-   Storage_DEALLOCATE((X2C_ADDRESS *) &md, sizeof(struct MESSAGE));
+   osic_free((X2C_ADDRESS *) &md, sizeof(struct MESSAGE));
 } /* end delmsg() */
 
 
@@ -3384,7 +3384,7 @@ static void Stomsg(MONCALL fromcall, MONCALL tocall, MSGTEXT msg,
    if (mp==0) {
       /* new msg */
       if (cnt<maxmsg) {
-         Storage_ALLOCATE((X2C_ADDRESS *) &mp, sizeof(struct MESSAGE));
+         osic_alloc((X2C_ADDRESS *) &mp, sizeof(struct MESSAGE));
       }
       if (mp==0 && messages) {
          mp = messages; /* recycle oldest */
@@ -4621,7 +4621,7 @@ static void closetcp(pTCPSOCK * w, char fin)
          /*
          IO.WrStrLn("deallocw");
          */
-         Storage_DEALLOCATE((X2C_ADDRESS *) &pb, sizeof(struct WWWBUF));
+         osic_free((X2C_ADDRESS *) &pb, sizeof(struct WWWBUF));
          if (!fin && anonym->txbuf) return;
       }
       if (anonym->fd>=0L) osic_Close(anonym->fd);
@@ -4638,7 +4638,7 @@ static void sendwww(pTCPSOCK * w, WWWB b, long len, char push)
    /*
    IO.WrStrLn("allocw");
    */
-   Storage_ALLOCATE((X2C_ADDRESS *) &pb, sizeof(struct WWWBUF));
+   osic_alloc((X2C_ADDRESS *) &pb, sizeof(struct WWWBUF));
    if (pb==0) return;
    memcpy(pb->buf,b,1401u);
    pb->tlen = len;
@@ -6075,7 +6075,7 @@ static char tcpconn(pTCPSOCK * sockchain, long f, char cservice)
    long res0;
    struct TCPSOCK * anonym;
    if (f<0L) return 0;
-   Storage_ALLOCATE((X2C_ADDRESS *) &cp, sizeof(struct TCPSOCK));
+   osic_alloc((X2C_ADDRESS *) &cp, sizeof(struct TCPSOCK));
    if (cp==0) {
       osic_Close(f);
       if (verb) osi_WrStrLn("tcp conn out of memory", 23ul);
@@ -6612,7 +6612,7 @@ extern int main(int argc, char **argv)
                while (acttmp->next!=acttcp) acttmp = acttmp->next;
                acttmp->next = acttcp->next;
             }
-            Storage_DEALLOCATE((X2C_ADDRESS *) &acttcp,
+            osic_free((X2C_ADDRESS *) &acttcp,
                 sizeof(struct TCPSOCK));
             acttcp = tcpsocks;
          }

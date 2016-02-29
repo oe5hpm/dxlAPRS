@@ -85,7 +85,7 @@ static void initdds(unsigned long size)
    tmp = size-1UL;
    i = 0UL;
    if (i<=tmp) for (;; i++) {
-      DDS[i] = (short)(long)X2C_TRUNCI(32767.5f*RealMath_sin((float)i*d),
+      DDS[i] = (short)(long)X2C_TRUNCI(32767.5f*osic_sin((float)i*d),
                 X2C_min_longint,X2C_max_longint);
       if (i==tmp) break;
    } /* end for */

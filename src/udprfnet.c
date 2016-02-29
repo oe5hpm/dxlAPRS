@@ -317,7 +317,7 @@ static pNEIGHBOUR addneibor(unsigned long ip, unsigned long port)
    pNEIGHBOUR n;
    n = findneibor(neibors, ip);
    if (n==0) {
-      Storage_ALLOCATE((X2C_ADDRESS *) &n, sizeof(struct NEIGHBOUR));
+      osic_alloc((X2C_ADDRESS *) &n, sizeof(struct NEIGHBOUR));
       if (n==0) Err("out of memory", 14ul);
       osic_Fill((X2C_ADDRESS)n, sizeof(struct NEIGHBOUR), 0);
       n->ipnum = ip;
@@ -1123,7 +1123,7 @@ static void readroutes(void)
             showpip(n->ipnum, n->toport);
             osic_WrStrLn(" dead autoroute removed", 24ul);
          }
-         Storage_DEALLOCATE((X2C_ADDRESS *) &n, sizeof(pNEIGHBOUR));
+         osic_free((X2C_ADDRESS *) &n, sizeof(pNEIGHBOUR));
       }
    }
 } /* end readroutes() */
@@ -1478,7 +1478,7 @@ extern int main(int argc, char **argv)
    if (netname[0U]==0) Err("need netname", 13ul);
    netname[63U] = 0;
    nlocal.call[9U] = 0;
-   systime = TimeConv_time();
+   systime = osic_time();
    upt = systime;
    if (nlocal.toport) {
       nlocal.uptime = systime;
@@ -1498,7 +1498,7 @@ extern int main(int argc, char **argv)
    }
    readroutes();
    for (;;) {
-      systime = TimeConv_time();
+      systime = osic_time();
       if (lasttime!=systime) {
          lasttime = systime;
          checklinks();

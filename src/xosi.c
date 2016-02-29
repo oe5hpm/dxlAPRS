@@ -129,7 +129,7 @@ static unsigned long Gamma(unsigned long c, float g)
 {
    if (c==0UL) return 0UL;
    if (c<1024UL) {
-      return (unsigned long)X2C_TRUNCC(RealMath_exp(X2C_DIVR(RealMath_ln(X2C_DIVR((float)
+      return (unsigned long)X2C_TRUNCC(osic_exp(X2C_DIVR(osic_ln(X2C_DIVR((float)
                 c,1024.0f)),g))*255.5f,0UL,X2C_max_longcard);
    }
    return 255UL;
@@ -200,7 +200,7 @@ static void allocxbufw(struct XWIN * w, unsigned long xsizeh,
       xbufysize = ysizeh;
       if (anonym->ximage0) {
          useri_debugmem.screens -= (unsigned long)xbuf0size;
-         Storage_DEALLOCATE((X2C_ADDRESS *) &xbuf016,
+         osic_free((X2C_ADDRESS *) &xbuf016,
                 (unsigned long)xbuf0size);
          xbuf016 = 0;
          anonym->ximage0->data = 0;
@@ -208,7 +208,7 @@ static void allocxbufw(struct XWIN * w, unsigned long xsizeh,
       }
       xbuf0size = (long)(2UL*ysizeh*xsizeh);
       if (anonym->bitperpixel>16UL) xbuf0size = xbuf0size*2L;
-      Storage_ALLOCATE((X2C_ADDRESS *) &xbuf016, (unsigned long)xbuf0size);
+      osic_alloc((X2C_ADDRESS *) &xbuf016, (unsigned long)xbuf0size);
       useri_debugmem.req = (unsigned long)xbuf0size;
       useri_debugmem.screens += useri_debugmem.req;
       if (xbuf016==0) {
@@ -841,7 +841,7 @@ extern void xosi_Eventloop(unsigned long timeout)
                     (* kbd, mouse *) */
    xosi_xevent();
    checkbuttons();
-   t = TimeConv_time();
+   t = osic_time();
    if (aprsdecode_lastlooped+5UL<t) aprsdecode_rxidle = 0UL;
    else ++aprsdecode_rxidle;
    aprsdecode_lastlooped = t;
@@ -871,7 +871,7 @@ extern void xosi_Eventloop(unsigned long timeout)
             acttmp->next = acttcp->next;
          }
          useri_debugmem.mon -= sizeof(struct aprsdecode_TCPSOCK);
-         Storage_DEALLOCATE((X2C_ADDRESS *) &acttcp,
+         osic_free((X2C_ADDRESS *) &acttcp,
                 sizeof(struct aprsdecode_TCPSOCK));
          acttcp = aprsdecode_tcpsocks;
       }

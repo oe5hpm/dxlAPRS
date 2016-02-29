@@ -513,7 +513,7 @@ static void sendaprs(unsigned long comp0, unsigned long micessid, char dao,
       if (speed>0.5) {
          b[i] = (char)(33UL+truncr(course)/4UL);
          ++i;
-         b[i] = (char)(33UL+truncr((double)(RealMath_ln((float)
+         b[i] = (char)(33UL+truncr((double)(osic_ln((float)
                 (speed*5.3996146834962E-1+1.0))*1.29935872129E+1f)));
          ++i;
          b[i] = '_';
@@ -521,7 +521,7 @@ static void sendaprs(unsigned long comp0, unsigned long micessid, char dao,
       }
       else if (alt>0.5) {
          if (alt*3.2808398950131>1.0) {
-            n = truncr((double)(RealMath_ln((float)(alt*3.2808398950131))
+            n = truncr((double)(osic_ln((float)(alt*3.2808398950131))
                 *500.5f));
          }
          else n = 0UL;
@@ -965,7 +965,7 @@ static pCONTEXT findcontext(char n[], unsigned long n_len, unsigned long t)
       c = contexts;
       while (c && c->lastused+86400UL>t) c = c->next;
       if (c==0) {
-         Storage_ALLOCATE((X2C_ADDRESS *) &c, sizeof(struct CONTEXT));
+         osic_alloc((X2C_ADDRESS *) &c, sizeof(struct CONTEXT));
          memset((X2C_ADDRESS)c,(char)0,sizeof(struct CONTEXT));
          c->next = contexts;
          contexts = c;
@@ -1049,7 +1049,7 @@ extern void sondeaprs_senddata(double lat, double long0, double alt,
       osic_WrStrLn("no tx witout <objectname>", 26ul);
       goto label;
    }
-   systime = TimeConv_time();
+   systime = osic_time();
    ct = findcontext(objname, objname_len, systime);
    if (ct) {
       { /* with */

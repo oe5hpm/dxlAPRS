@@ -968,7 +968,7 @@ static void dogps(const char sf[], unsigned long sf_len,
    memcpy(lastsat,sats,sizeof(gpspos_SATS));
    { /* with */
       struct CONTEXT * anonym = cont;
-      systime = TimeConv_time();
+      systime = osic_time();
       if (almread>systime) almread = 0UL;
       if (almread+60UL>systime) {
          *gpstime = systime;
@@ -1901,7 +1901,7 @@ static void decodec34(const char rxb[], unsigned long rxb_len,
    if (sum1!=(unsigned long)(unsigned char)cb[5U] || sum2!=(unsigned long)
                 (unsigned char)cb[6U]) return;
    /* chesum error */
-   systime = TimeConv_time();
+   systime = osic_time();
    if (sondeaprs_verb && fromport>0UL) {
       osic_WrStr("UDP:", 5ul);
       aprsstr_ipv4tostr(ip, s, 1001ul);
@@ -1920,7 +1920,7 @@ static void decodec34(const char rxb[], unsigned long rxb_len,
    pc = pcontextc;
    while (pc && !aprsstr_StrCmp(nam, 9ul, pc->name, 9ul)) pc = pc->next;
    if (pc==0) {
-      Storage_ALLOCATE((X2C_ADDRESS *) &pc, sizeof(struct CONTEXTC34));
+      osic_alloc((X2C_ADDRESS *) &pc, sizeof(struct CONTEXTC34));
       if (pc==0) Error("allocate context out im memory", 31ul);
       memset((X2C_ADDRESS)pc,(char)0,sizeof(struct CONTEXTC34));
       pc->next = pcontextc;
@@ -2243,7 +2243,7 @@ static void decodedfm6(const char rxb[], unsigned long rxb_len,
       rt = rt*256UL+(unsigned long)(unsigned char)rxb[i0]; /* realtime */
       ++i0;
    } /* end for */
-   systime = TimeConv_time();
+   systime = osic_time();
    if (sondeaprs_verb && fromport>0UL) {
       osic_WrStr("UDP:", 5ul);
       aprsstr_ipv4tostr(ip, s, 1001ul);
@@ -2262,7 +2262,7 @@ static void decodedfm6(const char rxb[], unsigned long rxb_len,
    pc = pcontextdfm6;
    while (pc && !aprsstr_StrCmp(nam, 9ul, pc->name, 9ul)) pc = pc->next;
    if (pc==0) {
-      Storage_ALLOCATE((X2C_ADDRESS *) &pc, sizeof(struct CONTEXTDFM6));
+      osic_alloc((X2C_ADDRESS *) &pc, sizeof(struct CONTEXTDFM6));
       if (pc==0) Error("allocate context out im memory", 31ul);
       memset((X2C_ADDRESS)pc,(char)0,sizeof(struct CONTEXTDFM6));
       pc->next = pcontextdfm6;
@@ -2561,7 +2561,7 @@ static void decoders41(const char rxb[], unsigned long rxb_len,
             pc = pc->next;
          }
          if (pc==0) {
-            Storage_ALLOCATE((X2C_ADDRESS *) &pc, sizeof(struct CONTEXTR4));
+            osic_alloc((X2C_ADDRESS *) &pc, sizeof(struct CONTEXTR4));
             if (pc==0) Error("allocate context out im memory", 31ul);
             memset((X2C_ADDRESS)pc,(char)0,sizeof(struct CONTEXTR4));
             pc->next = pcontextr4;
@@ -2885,13 +2885,13 @@ extern int main(int argc, char **argv)
    almage = 0UL;
    lastip = 0UL;
    lastport = 0UL;
-   systime = TimeConv_time();
+   systime = osic_time();
    /*testalm; */
    for (;;) {
       if (soundfn[0U]) getadc();
       else if (rxsock>=0L) udprx();
       ++clock0;
-      if ((clock0&63UL)==0UL) systime = TimeConv_time();
+      if ((clock0&63UL)==0UL) systime = osic_time();
    }
    X2C_EXIT();
    return 0;

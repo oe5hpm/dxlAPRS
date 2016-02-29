@@ -1043,7 +1043,7 @@ static char filtdupes(const char tb[], unsigned long tb_len,
    { /* with */
       struct aprsdecode_UDPSOCK * anonym = &aprsdecode_udpsocks0[oport];
       if (anonym->pdupetimes==0) {
-         Storage_ALLOCATE((X2C_ADDRESS *) &anonym->pdupetimes, 262144UL);
+         osic_alloc((X2C_ADDRESS *) &anonym->pdupetimes, 262144UL);
          useri_debugmem.req = 262144UL;
          useri_debugmem.mon += 262144UL;
          if (anonym->pdupetimes==0) {
@@ -2516,7 +2516,7 @@ extern void aprsdecode_GetMultiline(char buf[], unsigned long buf_len,
       }
       else if (s==4UL) {
          if ((unsigned char)c>='!' && (unsigned char)c<='q') {
-            scale = RealMath_exp((float)((unsigned long)(unsigned char)
+            scale = osic_exp((float)((unsigned long)(unsigned char)
                 c-33UL)*1.15129255E-1f)*1.7453292519444E-6f;
                 /* 10^(x/20)*0.0001 deg */
             s = 5UL;
@@ -2631,10 +2631,10 @@ static void EncMultiline(char buf[], unsigned long buf_len,
    /*WrFixed(scale, 10, 15); WrStrLn(" scaleo"); */
    if (scale<1.57079632675f) {
       if (scale>0.0f) {
-         scaler = aprsdecode_trunc(X2C_DIVR(RealMath_ln(X2C_DIVR(scale,
+         scaler = aprsdecode_trunc(X2C_DIVR(osic_ln(X2C_DIVR(scale,
                 1.5358897417111E-4f)),1.15129255E-1f)+1.0f);
          /*WrInt(scaler, 10);WrStrLn(" scaler"); */
-         scale = RealMath_exp((float)scaler*1.15129255E-1f)
+         scale = osic_exp((float)scaler*1.15129255E-1f)
                 *1.5358897417111E-4f; /* 10^(x/20)*0.0001 deg */
          /*WrFixed(scale, 10, 15); WrStrLn(" scale"); */
          scale = X2C_DIVR(88.0f,scale);
@@ -3205,13 +3205,13 @@ extern void aprsdecode_extractbeacon(char raw[], unsigned long raw_len,
          /*      IntToStr(dat.areasymb.color*100+trunc(sqrt(dat.areasymb.dpos.long/(RAD/200.0/60.0)
                 )), 1, s); */
          aprsstr_IntToStr((long)((unsigned long)
-                dat.areasymb.color*100UL+aprsdecode_trunc(RealMath_sqrt(X2C_DIVR((float)
+                dat.areasymb.color*100UL+aprsdecode_trunc(osic_sqrt(X2C_DIVR((float)
                 fabs(dat.areasymb.dpos.long0),1.454441043287E-6f)))), 1UL, s,
                  1000ul);
          useri_AddConfLine(useri_fRBSPEED, 1U, s, 1000ul);
          aprsstr_IntToStr((long)(((unsigned long)(unsigned char)
                 dat.areasymb.typ-48UL)
-                *100UL+aprsdecode_trunc(RealMath_sqrt(X2C_DIVR((float)
+                *100UL+aprsdecode_trunc(osic_sqrt(X2C_DIVR((float)
                 fabs(dat.areasymb.dpos.lat),1.454441043287E-6f)))), 1UL, s,
                 1000ul);
          useri_AddConfLine(useri_fRBDIR, 1U, s, 1000ul);
@@ -3336,7 +3336,7 @@ static void popupmessage(const char from[], unsigned long from_len,
                 txt_len)) && aprsstr_StrCmp(pm->ack, 5ul, ack, ack_len)) {
          if (pl==0) aprsdecode_msgfifo0 = pm->next;
          else pl->next = pm->next;
-         Storage_DEALLOCATE((X2C_ADDRESS *) &pm,
+         osic_free((X2C_ADDRESS *) &pm,
                 sizeof(struct aprsdecode_MSGFIFO));
          pm = aprsdecode_msgfifo0;
          pl = 0;
@@ -3346,7 +3346,7 @@ static void popupmessage(const char from[], unsigned long from_len,
          pm = pm->next;
       }
    }
-   Storage_ALLOCATE((X2C_ADDRESS *) &pm, sizeof(struct aprsdecode_MSGFIFO));
+   osic_alloc((X2C_ADDRESS *) &pm, sizeof(struct aprsdecode_MSGFIFO));
    if (pm==0) {
       osic_WrStrLn("msg out of memory", 18ul);
       return;
@@ -3830,7 +3830,7 @@ extern void aprsdecode_deltxmsg(unsigned long cmd, unsigned long n)
                useri_AddConfLine(useri_fMSGPORT, 0U, (char *) &pm->port,
                 1u/1u);
             }
-            Storage_DEALLOCATE((X2C_ADDRESS *) &pm,
+            osic_free((X2C_ADDRESS *) &pm,
                 sizeof(struct aprsdecode_TXMESSAGE));
          }
       }
@@ -3899,7 +3899,7 @@ extern void aprsdecode_makemsg(char ack)
       pn = pn->next;
    }
    if (mes[0U]==0) {
-      Storage_ALLOCATE((X2C_ADDRESS *) &pm,
+      osic_alloc((X2C_ADDRESS *) &pm,
                 sizeof(struct aprsdecode_TXMESSAGE));
       if (pm==0) Err("out of memory", 14ul);
       memset((X2C_ADDRESS)pm,(char)0,sizeof(struct aprsdecode_TXMESSAGE));
@@ -4633,7 +4633,7 @@ static void inserthrt(const struct aprsdecode_DAT dat,
          }
          if (f==0 || f->time0!=stime) {
             /* not a redundant same time frame */
-            Storage_ALLOCATE((X2C_ADDRESS *) &f,
+            osic_alloc((X2C_ADDRESS *) &f,
                 sizeof(struct aprsdecode_FRAMEHIST));
             useri_debugmem.req = sizeof(struct aprsdecode_FRAMEHIST);
             useri_debugmem.mon += useri_debugmem.req;
@@ -4650,7 +4650,7 @@ static void inserthrt(const struct aprsdecode_DAT dat,
             else rb[0U] = 0;
             len = (sizeof(struct aprsdecode_VARDAT)-499UL)+aprsstr_Length(rb,
                  51ul);
-            Storage_ALLOCATE((X2C_ADDRESS *) &v, len);
+            osic_alloc((X2C_ADDRESS *) &v, len);
             useri_debugmem.req = len;
             useri_debugmem.mon += len;
             if (v==0) return;
@@ -4821,7 +4821,7 @@ extern long aprsdecode_Stoframe(aprsdecode_pOPHIST * optab, char rawbuf[],
       op = op->next;
    }
    if (op==0) {
-      Storage_ALLOCATE((X2C_ADDRESS *) &op,
+      osic_alloc((X2C_ADDRESS *) &op,
                 sizeof(struct aprsdecode_OPHIST));
       useri_debugmem.req = sizeof(struct aprsdecode_OPHIST);
       useri_debugmem.mon += useri_debugmem.req;
@@ -4890,7 +4890,7 @@ extern long aprsdecode_Stoframe(aprsdecode_pOPHIST * optab, char rawbuf[],
       }
    }
    /* not insert same frame */
-   Storage_ALLOCATE((X2C_ADDRESS *) &frame,
+   osic_alloc((X2C_ADDRESS *) &frame,
                 sizeof(struct aprsdecode_FRAMEHIST));
    useri_debugmem.req = sizeof(struct aprsdecode_FRAMEHIST);
    useri_debugmem.mon += useri_debugmem.req;
@@ -4903,7 +4903,7 @@ extern long aprsdecode_Stoframe(aprsdecode_pOPHIST * optab, char rawbuf[],
       /* found new data */
       len = (sizeof(struct aprsdecode_VARDAT)-499UL)+aprsstr_Length(rawbuf,
                 rawbuf_len);
-      Storage_ALLOCATE((X2C_ADDRESS *) &same, len);
+      osic_alloc((X2C_ADDRESS *) &same, len);
       useri_debugmem.req = len;
       useri_debugmem.mon += len;
       if (same==0) {
@@ -4990,7 +4990,7 @@ static void freevardat(aprsdecode_pVARDAT v)
    unsigned long alen;
    alen = (sizeof(struct aprsdecode_VARDAT)-499UL)+aprsstr_Length(v->raw,
                 500ul);
-   Storage_DEALLOCATE((X2C_ADDRESS *) &v, alen);
+   osic_free((X2C_ADDRESS *) &v, alen);
    useri_debugmem.mon -= alen;
 } /* end freevardat() */
 
@@ -5040,7 +5040,7 @@ extern void aprsdecode_purge(aprsdecode_pOPHIST * ops, unsigned long oldt,
          op->frames = frame->next;
          /*WrStr("(purge)"); */
          useri_debugmem.mon -= sizeof(struct aprsdecode_FRAMEHIST);
-         Storage_DEALLOCATE((X2C_ADDRESS *) &frame,
+         osic_free((X2C_ADDRESS *) &frame,
                 sizeof(struct aprsdecode_FRAMEHIST));
       }
       if (op->frames==0 && !locked(op)) {
@@ -5051,7 +5051,7 @@ extern void aprsdecode_purge(aprsdecode_pOPHIST * ops, unsigned long oldt,
          else lastop->next = op;
          /*WrStr(opx^.call); WrStrLn("(purgop) "); */
          useri_debugmem.mon -= sizeof(struct aprsdecode_OPHIST);
-         Storage_DEALLOCATE((X2C_ADDRESS *) &opx,
+         osic_free((X2C_ADDRESS *) &opx,
                 sizeof(struct aprsdecode_OPHIST));
       }
       else {
@@ -5097,7 +5097,7 @@ extern void aprsdecode_delwaypoint(aprsdecode_pOPHIST op,
    if (lf==0) op->frames = (*frame)->next;
    else lf->next = (*frame)->next;
    useri_debugmem.mon -= sizeof(struct aprsdecode_FRAMEHIST);
-   Storage_DEALLOCATE((X2C_ADDRESS *)frame,
+   osic_free((X2C_ADDRESS *)frame,
                 sizeof(struct aprsdecode_FRAMEHIST));
    f = op->frames;
    while (f) {
@@ -5600,7 +5600,7 @@ static char tcpconn(aprsdecode_pTCPSOCK * sockchain, long f)
    char s[100];
    struct aprsdecode_TCPSOCK * anonym;
    if ((long)f<0L) return 0;
-   Storage_ALLOCATE((X2C_ADDRESS *) &cp, sizeof(struct aprsdecode_TCPSOCK));
+   osic_alloc((X2C_ADDRESS *) &cp, sizeof(struct aprsdecode_TCPSOCK));
    useri_debugmem.req = sizeof(struct aprsdecode_TCPSOCK);
    useri_debugmem.mon += useri_debugmem.req;
    if (cp==0) {
@@ -6520,7 +6520,7 @@ static void storedata(aprsdecode_FRAMEBUF mb, aprsdecode_pTCPSOCK cp,
    /*WrInt(rxidle, 15); WrInt(lastlooped+IGATEMAXDELAY, 15);
                 WrInt(time(), 15); WrStrLn(" ig"); */
    if (local) res = 0L;
-   else if (aprsdecode_rxidle>=3UL && aprsdecode_lastlooped+5UL>=TimeConv_time()
+   else if (aprsdecode_rxidle>=3UL && aprsdecode_lastlooped+5UL>=osic_time()
                 ) {
       /* not too long delayd data */
       digipeat(mb, udpch);
@@ -6817,7 +6817,7 @@ extern void aprsdecode_initparms(void)
    aprsdecode_txmessages = 0;
    aprsdecode_msgfifo0 = 0;
    msgmid = 0UL;
-   aprsdecode_realtime = TimeConv_time();
+   aprsdecode_realtime = osic_time();
    uptime = aprsdecode_realtime;
    trygate = 0UL;
    dupetime = 60UL;
@@ -6832,7 +6832,7 @@ extern void aprsdecode_initparms(void)
    Stopticker();
    tickertime = 0UL;
    sentemptymsg = 0;
-   beaconrandomstart = TimeConv_time();
+   beaconrandomstart = osic_time();
                 /* set a beacon scheduler start second in minute */
    beaconrandomstart = (beaconrandomstart/60UL)%60UL+(beaconrandomstart%60UL)
                 *60UL;

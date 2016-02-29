@@ -574,7 +574,7 @@ static void beaconmacros(char s[], unsigned long s_len)
          i += 2UL;
          if (s[i]=='z') {
             /* insert day, hour, min */
-            aprsstr_DateToStr(TimeConv_time(), ds, 256ul);
+            aprsstr_DateToStr(osic_time(), ds, 256ul);
             ds[0U] = ds[8U];
             ds[1U] = ds[9U];
             ds[2U] = ds[11U];
@@ -586,7 +586,7 @@ static void beaconmacros(char s[], unsigned long s_len)
          }
          else if (s[i]=='h') {
             /* insert hour, min, s */
-            aprsstr_DateToStr(TimeConv_time(), ds, 256ul);
+            aprsstr_DateToStr(osic_time(), ds, 256ul);
             ds[0U] = ds[11U];
             ds[1U] = ds[12U];
             ds[2U] = ds[14U];
@@ -1011,7 +1011,7 @@ static void sendaprs(double lat0, double long1, double alt0, double course0,
       if (withspd) {
          b[i] = (char)(33UL+truncc(course0)/4UL);
          ++i;
-         b[i] = (char)(33UL+truncc((double)(RealMath_ln((float)
+         b[i] = (char)(33UL+truncc((double)(osic_ln((float)
                 (speed0*5.3996146834962E-1+1.0))*1.29935872129E+1f)));
          ++i;
          b[i] = '_';
@@ -1019,7 +1019,7 @@ static void sendaprs(double lat0, double long1, double alt0, double course0,
       }
       else if (withalt) {
          if (alt0*3.2808398950131>1.0) {
-            n = truncc((double)(RealMath_ln((float)(alt0*3.2808398950131))
+            n = truncc((double)(osic_ln((float)(alt0*3.2808398950131))
                 *500.5f));
          }
          else n = 0UL;

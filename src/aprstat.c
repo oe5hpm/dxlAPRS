@@ -98,7 +98,7 @@ static unsigned long pixl(float x, float y)
 {
    x = x*x+y*y;
    if (x<=0.0f) return 0UL;
-   return aprsdecode_trunc(256.0f*RealMath_sqrt(x));
+   return aprsdecode_trunc(256.0f*osic_sqrt(x));
 } /* end pixl() */
 /*
 BEGIN RETURN TRUNC(256.0*(ABS(x) + ABS(y))) END pixl;

@@ -98,27 +98,27 @@ unsigned long X2C_TRUNCC(double x, unsigned long min0, unsigned long max0);
 
 float X2C_DIVR(float a, float b);
 
-float RealMath_cos(float x);
+float osic_cos(float x);
 
-float RealMath_ln(float x);
+float osic_ln(float x);
 
-float RealMath_sqrt(float x);
+float osic_sqrt(float x);
 
-float RealMath_sin(float x);
+float osic_sin(float x);
 
-float RealMath_arctan(float x);
+float osic_arctan(float x);
 
-float RealMath_tan(float x);
+float osic_tan(float x);
 
-float RealMath_exp(float x);
+float osic_exp(float x);
 
-float RealMath_power(float base, float exponent);
+float osic_power(float base, float exponent);
 
-void Storage_ALLOCATE(X2C_ADDRESS *p, unsigned long size);
+void osic_alloc(X2C_ADDRESS *p, unsigned long size);
 
-void Storage_DEALLOCATE(X2C_ADDRESS *a, unsigned long size);
+void osic_free(X2C_ADDRESS *a, unsigned long size);
 
-unsigned long TimeConv_time(void);
+unsigned long osic_time(void);
 
 unsigned long X2C_LSH(unsigned long a, long length, long n);
 

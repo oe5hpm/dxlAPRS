@@ -791,7 +791,7 @@ extern void useri_AddConfLine(unsigned char v, unsigned char act, char s[],
             }
             if (pl==0) {
                /* not same text in table */
-               Storage_ALLOCATE((X2C_ADDRESS *) &pl,
+               osic_alloc((X2C_ADDRESS *) &pl,
                 sizeof(struct CONFLINE));
                if (pl==0) {
                   osic_WrStrLn("menu out of memory", 19ul);
@@ -937,7 +937,7 @@ static void initconfig(void)
       pl = configs[i].lines;
       while (pl) {
          ph = pl->next;
-         Storage_DEALLOCATE((X2C_ADDRESS *) &pl, sizeof(struct CONFLINE));
+         osic_free((X2C_ADDRESS *) &pl, sizeof(struct CONFLINE));
          pl = ph;
       }
       if (i==useri_fEDITLINE) break;
@@ -1537,13 +1537,13 @@ static void alloccutbuf(unsigned long len)
 {
    if (xosi_cutbuffer.text) {
       useri_debugmem.screens -= xosi_cutbuffer.cutlen;
-      Storage_DEALLOCATE((X2C_ADDRESS *) &xosi_cutbuffer.text,
+      osic_free((X2C_ADDRESS *) &xosi_cutbuffer.text,
                 xosi_cutbuffer.cutlen);
    }
    xosi_cutbuffer.text = 0;
    xosi_cutbuffer.cutlen = len;
    if (xosi_cutbuffer.cutlen>0UL) {
-      Storage_ALLOCATE((X2C_ADDRESS *) &xosi_cutbuffer.text,
+      osic_alloc((X2C_ADDRESS *) &xosi_cutbuffer.text,
                 xosi_cutbuffer.cutlen);
       useri_debugmem.req = xosi_cutbuffer.cutlen;
       useri_debugmem.screens += useri_debugmem.req;
@@ -1972,7 +1972,7 @@ static void subicon(maptool_pIMAGE img, long x0, long y00, long dir,
 static void allocmenu(pMENU * m, unsigned long xsize, unsigned long ysize,
                 char saveimage)
 {
-   Storage_ALLOCATE((X2C_ADDRESS *)m, sizeof(struct MENU));
+   osic_alloc((X2C_ADDRESS *)m, sizeof(struct MENU));
    useri_debugmem.req = sizeof(struct MENU);
    useri_debugmem.menus += sizeof(struct MENU);
    if (*m==0) {
@@ -2056,7 +2056,7 @@ static void killmenus(pMENU from)
       }
       /*  IF from=actmenu THEN actmenu:=NIL END;  */
       useri_debugmem.menus -= sizeof(struct MENU);
-      Storage_DEALLOCATE((X2C_ADDRESS *) &from, sizeof(struct MENU));
+      osic_free((X2C_ADDRESS *) &from, sizeof(struct MENU));
       /*DEC(menucnt); WrInt(menucnt, 3);WrStrLn("=menus-"); */
       from = m;
    }
@@ -3263,7 +3263,7 @@ static void delmsgfifo(void)
          }
          if (po) po->next = pm->next;
       }
-      Storage_DEALLOCATE((X2C_ADDRESS *) &pm,
+      osic_free((X2C_ADDRESS *) &pm,
                 sizeof(struct aprsdecode_MSGFIFO));
    }
    useri_killmenuid(211UL);
@@ -4577,7 +4577,7 @@ static void potimove(pMENU m, unsigned long potx, unsigned long knob)
       aprsdecode_lums.actfps = (long)v;
       strncpy(s,"s/Frame",100u);
       aprsstr_IntToStr((long)v, 0UL, h, 100ul);
-      vd = (unsigned long)X2C_TRUNCC(RealMath_sqrt((float)((v*220UL*220UL)
+      vd = (unsigned long)X2C_TRUNCC(osic_sqrt((float)((v*220UL*220UL)
                 /5000UL)),0UL,X2C_max_longcard);
       tx1 = 90UL;
       knob = 1UL;
@@ -5289,7 +5289,7 @@ static void configdelman(unsigned char cfg, unsigned long num,
             icfg(useri_fEDITLINE, pl->line, 201ul);
                 /* save deleted to editline */
          }
-         Storage_DEALLOCATE((X2C_ADDRESS *) &pl, sizeof(struct CONFLINE));
+         osic_free((X2C_ADDRESS *) &pl, sizeof(struct CONFLINE));
       }
    }
    useri_refresh = 1;
@@ -6062,7 +6062,7 @@ static void freelist(struct LISTBUFFER * b, unsigned long from)
       bl = bl->next;
       /*  len:=SIZE(bo^)-HIGH(bo^.text)+1+Length(bo^.text); */
       useri_debugmem.mon -= bo->len;
-      Storage_DEALLOCATE((X2C_ADDRESS *) &bo, bo->len);
+      osic_free((X2C_ADDRESS *) &bo, bo->len);
       if (b->listlinecnt>0UL) --b->listlinecnt;
    }
 } /* end freelist() */
@@ -7086,7 +7086,7 @@ static void wrlist(struct LISTBUFFER * b, char s[], unsigned long s_len,
          ++end;
       }
       blen = (((sizeof(struct LISTLINE)-500UL)+end)-start)+1UL;
-      Storage_ALLOCATE((X2C_ADDRESS *) &bl, blen);
+      osic_alloc((X2C_ADDRESS *) &bl, blen);
       useri_debugmem.req = blen;
       useri_debugmem.mon += blen;
       if (bl==0) {
@@ -8027,14 +8027,14 @@ static float ARC(float re, float im)
 {
    if (re==0.0f && im==0.0f) return 0.0f;
    else if ((float)fabs(re)>=(float)fabs(im)) {
-      if (re>=0.0f) return RealMath_arctan(X2C_DIVR(im,re));
+      if (re>=0.0f) return osic_arctan(X2C_DIVR(im,re));
       else if (im>=0.0f) {
-         return 3.1415926536f+RealMath_arctan(X2C_DIVR(im,re));
+         return 3.1415926536f+osic_arctan(X2C_DIVR(im,re));
       }
-      else return RealMath_arctan(X2C_DIVR(im,re))-3.1415926536f;
+      else return osic_arctan(X2C_DIVR(im,re))-3.1415926536f;
    }
-   else if (im>=0.0f) return 1.5707963268f-RealMath_arctan(X2C_DIVR(re,im));
-   else return (-1.5707963268f)-RealMath_arctan(X2C_DIVR(re,im));
+   else if (im>=0.0f) return 1.5707963268f-osic_arctan(X2C_DIVR(re,im));
+   else return (-1.5707963268f)-osic_arctan(X2C_DIVR(re,im));
    return 0;
 } /* end ARC() */
 
@@ -8072,7 +8072,7 @@ static char xytocolor(unsigned long x, unsigned long y, unsigned long * r,
    float xa;
    xa = 2.0f*(X2C_DIVR((float)x,100.0f)-0.5f);
    ya = 2.0f*(X2C_DIVR((float)y,100.0f)-0.5f);
-   ra = RealMath_sqrt(xa*xa+ya*ya);
+   ra = osic_sqrt(xa*xa+ya*ya);
    if (ra>1.0f) return 0;
    /* out of circle */
    h = ARC(xa, ya);

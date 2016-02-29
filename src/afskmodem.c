@@ -336,7 +336,7 @@ static void Hamming(float f[], unsigned long f_len)
    tmp = f_len-1;
    i0 = 0UL;
    if (i0<=tmp) for (;; i0++) {
-      f[i0] = f[i0]*(0.54f+0.46f*RealMath_cos(3.141592f*(X2C_DIVR((float)i0,
+      f[i0] = f[i0]*(0.54f+0.46f*osic_cos(3.141592f*(X2C_DIVR((float)i0,
                 (float)(1UL+(f_len-1))))));
       if (i0==tmp) break;
    } /* end for */
@@ -363,7 +363,7 @@ static void initdfir(DFIRTAB dfirtab, unsigned long fg)
          e = f1-(float)(unsigned long)X2C_TRUNCC(f1,0UL,X2C_max_longcard);
       }
       for (i0 = 0UL; i0<=511UL; i0++) {
-         t[i0] = t[i0]+e*RealMath_cos(X2C_DIVR(3.141592f*(float)(i0*f),
+         t[i0] = t[i0]+e*osic_cos(X2C_DIVR(3.141592f*(float)(i0*f),
                 512.0f));
       } /* end for */
       if (f==tmp) break;
@@ -376,7 +376,7 @@ static void initdfir(DFIRTAB dfirtab, unsigned long fg)
    */
    Hamming(t, 512ul);
    for (i0 = 0UL; i0<=511UL; i0++) {
-      t[i0] = t[i0]*(0.54f+0.46f*RealMath_cos(3.141592f*(X2C_DIVR((float)i0,
+      t[i0] = t[i0]*(0.54f+0.46f*osic_cos(3.141592f*(X2C_DIVR((float)i0,
                 512.0f))));
    } /* end for */
    for (i0 = 0UL; i0<=511UL; i0++) {
@@ -439,7 +439,7 @@ static void initafir(AFIRTAB atab, unsigned long F0, unsigned long F1,
       }
       else {
          for (i0 = 0UL; i0<=255UL; i0++) {
-            t[i0] = t[i0]+e*RealMath_cos(X2C_DIVR(3.141592f*(float)(i0*f),
+            t[i0] = t[i0]+e*osic_cos(X2C_DIVR(3.141592f*(float)(i0*f),
                 256.0f));
          } /* end for */
       }
@@ -499,7 +499,7 @@ static void initTFIR(void)
       }
       else k = 1.0f;
       for (i0 = 0UL; i0<=383UL; i0++) {
-         sym[i0] = sym[i0]+k*RealMath_cos(X2C_DIVR(3.141592f*(float)(i0*f),
+         sym[i0] = sym[i0]+k*osic_cos(X2C_DIVR(3.141592f*(float)(i0*f),
                 384.0f));
       } /* end for */
    } /* end for */
@@ -644,7 +644,7 @@ static void Makekissbufs(unsigned long n)
    i = 0UL;
    for (;;) {
       if (i>=n) break;
-      Storage_ALLOCATE((X2C_ADDRESS *) &pt, sizeof(struct KISSBUF));
+      osic_alloc((X2C_ADDRESS *) &pt, sizeof(struct KISSBUF));
       ++i;
       if (pt==0) break;
       pt->next = pTxFree;
@@ -871,7 +871,7 @@ static void Parms(void)
    debp = 0UL;
    badsounddriver = 0;
    for (cnum = 0UL; cnum<=32767UL; cnum++) {
-      SIN[cnum] = RealMath_cos(X2C_DIVR((float)cnum*2.0f*3.141592f,
+      SIN[cnum] = osic_cos(X2C_DIVR((float)cnum*2.0f*3.141592f,
                 32768.0f));
    } /* end for */
    for (c = afskmodem_LEFT;; c++) {
@@ -1483,7 +1483,7 @@ static void getkiss(void)
 
 static float dB(unsigned long v)
 {
-   if (v>0UL) return RealMath_ln((float)v)*8.685889638f-96.0f;
+   if (v>0UL) return osic_ln((float)v)*8.685889638f-96.0f;
    else return 0.0f;
    return 0;
 } /* end dB() */
@@ -2727,7 +2727,7 @@ extern int main(int argc, char *argv[])
          ptt(chan[afskmodem_LEFT].hptt, -1L);
                 /* sync ptt to hardware sometime */
          ptt(chan[afskmodem_RIGHT].hptt, -1L);
-         systime = TimeConv_time();
+         systime = osic_time();
       }
       getkiss();
       getudp();

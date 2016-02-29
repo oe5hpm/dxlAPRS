@@ -228,7 +228,7 @@ static void initfile(char fn[], unsigned long fn_len)
 
 static void inittnc(void)
 {
-   errtime = TimeConv_time();
+   errtime = osic_time();
    initfile(ifn, 701ul);
    if (kisson) {
       strncpy(tbuf,"\015\033@K\015",701u);
@@ -304,7 +304,7 @@ static void testtty(long len0)
 
 static void kisserr(void)
 {
-   if (errtime+4UL<TimeConv_time()) errtime = 0UL;
+   if (errtime+4UL<osic_time()) errtime = 0UL;
 } /* end kisserr() */
 
 
