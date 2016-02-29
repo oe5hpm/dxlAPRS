@@ -33,7 +33,7 @@ export HOSTARCH
 CC			= $(CROSS_COMPILE)gcc
 STRIP		= $(CROSS_COMPILE)strip
 INCL		= .
-#CDEFS		= -Wall -Wno-unused-variable -Wno-parentheses -Wno-pointer-sign -Wno-format -Wno-unused-but-set-variable
+#CDEFS		= -Wall -Wno-unused-variable -Wno-parentheses -Wno-pointer-sign -Wno-format -Wno-unused-but-set-variable -Wno-maybe-uninitialized -Wno-return-type
 CDEFS		= -w
 CFLAGS		= -I$(INCL) -c -O2 -fdata-sections -ffunction-sections
 LFLAGS		= -Wl,--gc-sections
