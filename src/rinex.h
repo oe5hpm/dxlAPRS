@@ -43,7 +43,7 @@ SUCH DAMAGE.
 #ifdef __cplusplus
 extern "C" {
 #endif
-
+#include <stdio.h>
 #include "basictypes.h"
 #include "gnss_types.h"
 #include "gps.h"
