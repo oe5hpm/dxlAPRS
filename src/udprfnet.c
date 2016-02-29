@@ -19,9 +19,7 @@
 #ifndef udp_H_
 #include "udp.h"
 #endif
-#ifndef osi_H_
 #include "osic.h"
-#endif
 #ifndef Select_H_
 #include "Select.h"
 #endif
@@ -459,7 +457,7 @@ static void parms(void)
          else {
             if (lasth=='h') {
                osic_WrLn();
-               osic_WrStrLn(" -a                     accept new neighbours",
+               osi_WrStrLn(" -a                     accept new neighbours",
                 46ul);
                osic_WrStrLn(" -c <sec:sec>           check link time : stop tr\
 ansfer after no reply", 71ul);
@@ -1076,7 +1074,7 @@ static void readroutes(void)
          }
       }
       else {
-         l = osic_RdBin(f, (char *)h, 65536u/1u, 65535UL);
+         l = osi_RdBin(f, (char *)h, 65536u/1u, 65535UL);
          osic_Close(f);
          if (l<0L) {
             if (verb) {

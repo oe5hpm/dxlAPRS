@@ -1417,7 +1417,7 @@ static void WrRinexfn(unsigned long t)
    if (sondeaprs_verb) osic_WrStrLn(fn, 31ul);
    f = osic_OpenWrite("getalmanach", 12ul);
    if (f>=0L) {
-      osic_WrBin(f, (char *)fn, 31u/1u, aprsstr_Length(fn, 31ul));
+      osi_WrBin(f, (char *)fn, 31u/1u, aprsstr_Length(fn, 31ul));
       osic_Close(f);
    }
    else osic_WrStrLn("can not write getalmanach file", 31ul);

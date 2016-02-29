@@ -251,7 +251,7 @@ static void Parms(void)
          else {
             if (h[1U]=='h') {
                osic_WrLn();
-               osic_WrStrLn("Read serial GPS and make position string to inser\
+               osi_WrStrLn("Read serial GPS and make position string to inser\
 t into APRS-beacon", 68ul);
                osic_WrStrLn(" -a                                altitude on",
                 47ul);
@@ -529,7 +529,7 @@ static void wrfile(char b[], unsigned long b_len, unsigned long len0,
    aprsstr_Append(s, 2001ul, ext, ext_len);
    f = osic_OpenWrite(s, 2001ul);
    if (f>=0L) {
-      if (len0>0UL) osic_WrBin(f, (char *)b, (b_len)/1u, len0);
+      if (len0>0UL) osi_WrBin(f, (char *)b, (b_len)/1u, len0);
       osic_Close(f);
    }
    X2C_PFREE(b);

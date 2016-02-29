@@ -1238,10 +1238,10 @@ r system load but slower reaction", 83ul);
 5) ossmixer (/dev/mixer)", 74ul);
                osic_WrStrLn(" -o <filename>  oss devicename (/dev/dsp)",
                 42ul);
-               osic_WrStrLn(" -s <num>       fragment size in 2^n (9)", 41ul);
+               osi_WrStrLn(" -s <num>       fragment size in 2^n (9)", 41ul);
                osic_WrLn();
-               osic_WrStrLn("repeat for each channel -C ... :", 33ul);
-               osic_WrStrLn("  -C <num>              (0..1) channel parameters\
+               osi_WrStrLn("repeat for each channel -C ... :", 33ul);
+               osi_WrStrLn("  -C <num>              (0..1) channel parameters\
  follow (repeat for each channel)", 83ul);
                pttHelp((char *)ptth, 4096UL);
                osic_WrStrLn(ptth, 4096ul);
@@ -1254,8 +1254,8 @@ ter ptt on (0)", 64ul);
                osic_WrStrLn("  -r <num>              max random wait time afte\
 r dcd before start tx (ms) (800)", 82ul);
                osic_WrLn();
-               osic_WrStrLn("repeat for each modem -M ... :", 31ul);
-               osic_WrStrLn("   -M <num> (0..7) modem parameters follow (repea\
+               osi_WrStrLn("repeat for each modem -M ... :", 31ul);
+               osi_WrStrLn("   -M <num> (0..7) modem parameters follow (repea\
 t for each modem)", 67ul);
                osic_WrStrLn("   -a       afsk off, fsk on (on)", 34ul);
                osic_WrStrLn("   -b <num> baud (1200) (1..32000)", 35ul);

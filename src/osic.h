@@ -11,6 +11,7 @@
 #ifndef __OSIC_H__
 #define __OSIC_H__
 
+#include <stdint.h>
 #include "X2C.h"
 
 void osic_WrLn(void);

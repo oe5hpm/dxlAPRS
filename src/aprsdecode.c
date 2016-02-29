@@ -381,12 +381,12 @@ static void parms(void)
    aprsdecode_verb = 0;
    gatecnt = 0UL;
    for (;;) {
-      osic_NextArg(h, 4096ul);
+      osi_NextArg(h, 4096ul);
       if (h[0U]==0) break;
       if ((h[0U]=='-' && h[1U]) && h[2U]==0) {
          lasth = h[1U];
          if (lasth=='x') {
-            osic_NextArg(h, 4096ul);
+            osi_NextArg(h, 4096ul);
             i = 0UL;
             if (GetNum(h, 4096ul, &i, &n)>=0L && n>=30UL) {
                aprsdecode_initxsize = (long)n;
@@ -394,7 +394,7 @@ static void parms(void)
             else Err("-x xsize", 9ul);
          }
          else if (lasth=='y') {
-            osic_NextArg(h, 4096ul);
+            osi_NextArg(h, 4096ul);
             i = 0UL;
             if (GetNum(h, 4096ul, &i, &n)>=0L && n>=20UL) {
                aprsdecode_initysize = (long)n;
@@ -402,7 +402,7 @@ static void parms(void)
             else Err("-y xsize", 9ul);
          }
          else if (lasth=='z') {
-            osic_NextArg(h, 4096ul);
+            osi_NextArg(h, 4096ul);
             if (!aprsstr_StrToFix(&aprsdecode_parmfinezoom, h,
                 4096ul) || aprsdecode_parmfinezoom<=1.0f) {
                Err("-z zoomlevel", 13ul);
@@ -413,20 +413,20 @@ static void parms(void)
             aprsdecode_parmzoom = (long)n;
          }
          else if (lasth=='m') {
-            osic_NextArg(h, 4096ul);
+            osi_NextArg(h, 4096ul);
             if (!aprsstr_StrToFix(&aprsdecode_mappos.long0, h, 4096ul)) {
                Err("-m long lat", 12ul);
             }
-            osic_NextArg(h, 4096ul);
+            osi_NextArg(h, 4096ul);
             if (!aprsstr_StrToFix(&aprsdecode_mappos.lat, h, 4096ul)) {
                Err("-m long lat", 12ul);
             }
             aprsdecode_mappos.long0 = aprspos_rad0(aprsdecode_mappos.long0);
             aprsdecode_mappos.lat = aprspos_rad0(aprsdecode_mappos.lat);
          }
-         else if (lasth=='c') osic_NextArg(aprsdecode_lums.configfn, 257ul);
+         else if (lasth=='c') osi_NextArg(aprsdecode_lums.configfn, 257ul);
          else if (lasth=='g') {
-            osic_NextArg(h, 4096ul);
+            osi_NextArg(h, 4096ul);
             if (gatecnt>9UL) Err("-g gateway table full", 22ul);
             h[4095U] = 0;
             if (h[0U]=='[') {
@@ -454,7 +454,7 @@ static void parms(void)
                   ++ii;
                }
             }
-            else osic_NextArg(h, 4096ul);
+            else osi_NextArg(h, 4096ul);
             h[4095U] = 0;
             ii = aprsstr_InStr(h, 4096ul, "#", 2ul);
             if (ii>=0L) h[ii] = 0;
@@ -516,7 +516,7 @@ ut", 52ul);
                X2C_ABORT();
             }
             if (lasth=='C') {
-               osic_NextArg(h, 4096ul);
+               osi_NextArg(h, 4096ul);
                i = 0UL;
                if (GetNum(h, 4096ul, &i, &n)>=0L && n<=100UL) {
                   aprsdecode_lums.centering = (long)n;
@@ -524,7 +524,7 @@ ut", 52ul);
                else Err("-C center%", 11ul);
             }
             else if (lasth=='X') {
-               osic_NextArg(h, 4096ul);
+               osi_NextArg(h, 4096ul);
                i = 0UL;
                if (GetNum(h, 4096ul, &i, &n)>=0L && n<=1024UL) {
                   aprsdecode_lums.sym = (long)n;
@@ -532,7 +532,7 @@ ut", 52ul);
                else Err("-X symbollumen", 15ul);
             }
             else if (lasth=='O') {
-               osic_NextArg(h, 4096ul);
+               osi_NextArg(h, 4096ul);
                i = 0UL;
                if (GetNum(h, 4096ul, &i, &n)>=0L && n<=1024UL) {
                   aprsdecode_lums.obj = (long)n;
@@ -540,7 +540,7 @@ ut", 52ul);
                else Err("-O objectlumen", 15ul);
             }
             else if (lasth=='W') {
-               osic_NextArg(h, 4096ul);
+               osi_NextArg(h, 4096ul);
                i = 0UL;
                if (GetNum(h, 4096ul, &i, &n)>=0L && n<=1024UL) {
                   aprsdecode_lums.waypoint = (long)n;
@@ -548,7 +548,7 @@ ut", 52ul);
                else Err("-W waypointlumen", 17ul);
             }
             else if (lasth=='A') {
-               osic_NextArg(h, 4096ul);
+               osi_NextArg(h, 4096ul);
                i = 0UL;
                if (GetNum(h, 4096ul, &i, &n)>=0L && n<=1024UL) {
                   aprsdecode_lums.text = (long)n;
@@ -556,7 +556,7 @@ ut", 52ul);
                else Err("-A textlumen", 13ul);
             }
             else if (lasth=='T') {
-               osic_NextArg(h, 4096ul);
+               osi_NextArg(h, 4096ul);
                i = 0UL;
                if (GetNum(h, 4096ul, &i, &n)>=0L && n<=1024UL) {
                   aprsdecode_lums.track = (long)n;
@@ -564,7 +564,7 @@ ut", 52ul);
                else Err("-T tracklumen", 14ul);
             }
             else if (lasth=='F') {
-               osic_NextArg(h, 4096ul);
+               osi_NextArg(h, 4096ul);
                i = 0UL;
                if (GetNum(h, 4096ul, &i, &n)>=0L && n>0UL) {
                   aprsdecode_lums.firstdim = n*60UL;
@@ -572,7 +572,7 @@ ut", 52ul);
                else Err("-F fadetime (min)", 18ul);
             }
             else if (lasth=='V') {
-               osic_NextArg(h, 4096ul);
+               osi_NextArg(h, 4096ul);
                i = 0UL;
                if (GetNum(h, 4096ul, &i, &n)>=0L && n>0UL) {
                   aprsdecode_lums.fps = (long)n;
@@ -580,7 +580,7 @@ ut", 52ul);
                else Err("-V fps", 7ul);
             }
             else if (lasth=='B') {
-               osic_NextArg(h, 4096ul);
+               osi_NextArg(h, 4096ul);
                i = 0UL;
                if (GetNum(h, 4096ul, &i, &n)>=0L && n>0UL) {
                   aprsdecode_lums.maxdim = n*60UL;
@@ -588,7 +588,7 @@ ut", 52ul);
                else Err("-B blanktime (min)", 19ul);
             }
             else if (lasth=='P') {
-               osic_NextArg(h, 4096ul);
+               osi_NextArg(h, 4096ul);
                i = 0UL;
                if (GetNum(h, 4096ul, &i, &n)>=0L && n>0UL) {
                   aprsdecode_lums.purgetime = n*60UL;
@@ -596,7 +596,7 @@ ut", 52ul);
                else Err("-P purgetime (min)", 19ul);
             }
             else if (lasth=='r') {
-               osic_NextArg(h, 4096ul);
+               osi_NextArg(h, 4096ul);
                i = 0UL;
                if (GetNum(h, 4096ul, &i, &n)>=0L && n<=1024UL) {
                   aprsdecode_lums.rf = (long)n;
@@ -604,7 +604,7 @@ ut", 52ul);
                else Err("-r rftracklumen", 16ul);
             }
             else if (lasth=='o') {
-               osic_NextArg(h, 4096ul);
+               osi_NextArg(h, 4096ul);
                i = 0UL;
                if (GetNum(h, 4096ul, &i, &n)>=0L && n<=1024UL) {
                   aprsdecode_lums.map = (long)n;
@@ -1287,11 +1287,11 @@ static void wxmacro(char ws[], unsigned long ws_len, char wms[],
       /* csv filename */
       len = 0L;
       if (fn[0U]) {
-         f = osic_OpenRead(fn, 1024ul);
+         f = osi_OpenRead(fn, 1024ul);
          if (osic_FdValid(f)) {
             n = osic_Size(f);
             if (n>1024UL) osic_Seek(f, n-1024UL);
-            len = osic_RdBin(f, (char *)cb, 1024u/1u, 1024UL);
+            len = osi_RdBin(f, (char *)cb, 1024u/1u, 1024UL);
          }
          if (len>0L) {
             while (len>0L && (unsigned char)cb[len-1L]<=' ') {
@@ -1521,9 +1521,9 @@ static void beaconmacros(char s[], unsigned long s_len, const char path[],
                }
                if (rw=='<' || rw=='[') {
                   /* read file */
-                  f = osic_OpenRead(fn, 1024ul);
+                  f = osi_OpenRead(fn, 1024ul);
                   if (osic_FdValid(f)) {
-                     len = osic_RdBin(f, (char *)ds, 256u/1u, 255UL);
+                     len = osi_RdBin(f, (char *)ds, 256u/1u, 255UL);
                      osic_Close(f);
                      if (rw=='[') osic_Remove(fn, 1024ul, &ok0);
                      j = 0L;
@@ -1545,9 +1545,9 @@ static void beaconmacros(char s[], unsigned long s_len, const char path[],
                else if (rw=='>') {
                   if (wdata[0UL]) {
                      /* write file */
-                     f = osic_OpenWrite(fn, 1024ul);
+                     f = osi_OpenWrite(fn, 1024ul);
                      if (osic_FdValid(f)) {
-                        osic_WrBin(f, (char *)wdata, (wdata_len)/1u,
+                        osi_WrBin(f, (char *)wdata, (wdata_len)/1u,
                 aprsstr_Length(wdata, wdata_len));
                         osic_Close(f);
                      }
@@ -1983,8 +1983,8 @@ static char wrlog(const char b[], unsigned long b_len, unsigned long time0,
    while (l>0UL && (unsigned char)b[l-1UL]<='\015') --l;
    if (l>0UL) {
       aprsstr_cleanfilename(wfn, wfn_len);
-      f = osic_OpenAppendLong(wfn, wfn_len);
-      if (!osic_FdValid(f)) f = osic_OpenWrite(wfn, wfn_len);
+      f = osi_OpenAppendLong(wfn, wfn_len);
+      if (!osic_FdValid(f)) f = osi_OpenWrite(wfn, wfn_len);
       if (!osic_FdValid(f)) {
          wrlog_ret = 0;
          goto label;
@@ -2011,7 +2011,7 @@ static char wrlog(const char b[], unsigned long b_len, unsigned long time0,
       } while (i<l);
       h[i+16UL] = '\012';
       ++i;
-      osic_WrBin(f, (char *)h, 1001u/1u, i+16UL);
+      osi_WrBin(f, (char *)h, 1001u/1u, i+16UL);
       osic_Close(f);
    }
    wrlog_ret = 1;
@@ -5605,7 +5605,7 @@ static char tcpconn(aprsdecode_pTCPSOCK * sockchain, long f)
    useri_debugmem.mon += useri_debugmem.req;
    if (cp==0) {
       osic_CloseSock(f);
-      if (aprsdecode_verb) osic_WrStrLn("tcp conn out of memory", 23ul);
+      if (aprsdecode_verb) osi_WrStrLn("tcp conn out of memory", 23ul);
       return 0;
    }
    memset((X2C_ADDRESS)cp,(char)0,sizeof(struct aprsdecode_TCPSOCK));
@@ -6079,7 +6079,7 @@ static void approxywarn(struct aprspos_POSITION pos, const char call[],
                   aprsstr_Append(h, 101ul, call, call_len);
                   useri_textautosize(0L, 5L, 6UL, 120UL, 'r', h, 101ul);
                   if (!osic_Exists("proxwarn", 9ul)) {
-                     fd = osic_OpenWrite("proxwarn", 9ul);
+                     fd = osi_OpenWrite("proxwarn", 9ul);
                      if (osic_FdValid(fd)) {
                         aprsstr_Assign(h, 101ul, call, call_len);
                         aprsstr_IntToStr((long)aprsdecode_trunc(d*1000.0f),

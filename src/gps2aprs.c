@@ -410,7 +410,7 @@ static void Parms(void)
          else {
             if (h[1U]=='h') {
                osic_WrLn();
-               osic_WrStrLn("Read serial GPS and make normal/compressed/mic-e \
+               osi_WrStrLn("Read serial GPS and make normal/compressed/mic-e \
 Beacon as AXUDP or monitor", 76ul);
                osic_WrStrLn(" -0 <s>                            standing Beaco\
 n Time in Seconds (180)", 73ul);
@@ -604,9 +604,9 @@ static void beaconmacros(char s[], unsigned long s_len)
                aprsstr_Append(fn, 1024ul, (char *) &s[i], 1u/1u);
                ++i;
             }
-            f = osic_OpenRead(fn, 1024ul);
+            f = osi_OpenRead(fn, 1024ul);
             if (osic_FdValid(f)) {
-               len0 = osic_RdBin(f, (char *)ds, 256u/1u, 255UL);
+               len0 = osi_RdBin(f, (char *)ds, 256u/1u, 255UL);
                osic_Close(f);
                j = 0L;
                while (((j<len0 && ds[j]!='\015') && ds[j]!='\012') && ds[j]) {

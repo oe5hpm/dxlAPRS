@@ -7,7 +7,6 @@
  */
 #ifndef udp_H_
 #define udp_H_
-#include "X2C.h"
 
 extern long openudp(void);
 

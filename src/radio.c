@@ -67,15 +67,6 @@ static unsigned long tune;
 static struct STICKPARM stickparm[256];
 
 
-static void Werr(char text[], unsigned long text_len)
-{
-   X2C_PCOPY((void **)&text,text_len);
-   osic_WrBin(2L, (char *)text, (text_len)/1u, aprsstr_Length(text,
-                text_len));
-   X2C_PFREE(text);
-} /* end Werr() */
-
-
 static void Usage(char text[], unsigned long text_len)
 {
    X2C_PCOPY((void **)&text,text_len);
@@ -115,6 +106,7 @@ static void Parms(void)
    float fr;
    unsigned long n;
    unsigned long m;
+   long ni;
    char ok0;
    mono = 0;
    verb = 0;
@@ -201,7 +193,7 @@ gain ...", 61ul);
 34)", 56ul);
             osic_WrStrLn(" -v             show rssi (dB) and afc (khz)",
                 45ul);
-            osic_WrStrLn("example: radio -f 101.2 -s /tmp/sound.pcm -c 192.168\
+            osi_WrStrLn("example: radio -f 101.2 -s /tmp/sound.pcm -t 192.168\
 .1.1:1234 -p 5 72 -p 8 1 -v", 80ul);
             X2C_ABORT();
          }
@@ -224,8 +216,8 @@ static void showrssi(void)
    aprsstr_Append(s, 31ul, "dB ", 4ul);
    aprsstr_IntToStr(rxx.afckhz, 0UL, ss, 31ul);
    aprsstr_Append(s, 31ul, ss, 31ul);
-   aprsstr_Append(s, 31ul, "   \015", 5ul);
-   Werr(s, 31ul);
+   aprsstr_Append(s, 31ul, "     \015", 7ul);
+   osi_Werr(s, 31ul);
 } /* end showrssi() */
 
 static float uc19;
@@ -347,7 +339,7 @@ extern int main(int argc, char **argv)
          for (;;) {
             sn = sdr_getsdr(64UL, prx, 17ul);
             if (sn<0L) {
-               Werr("connection lost\015\012", 18ul);
+               osi_WerrLn("connection lost", 16ul);
                recon = 1;
             }
             else {

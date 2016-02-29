@@ -818,7 +818,7 @@ static float getsrtm1(unsigned long ilat, unsigned long ilong,
          anonym0->strips[xx][y] = pb;
          /*WrInt(seek, 15);WrStrLn(" seek"); */
          osic_Seek(anonym0->fd, (unsigned long)seek);
-         if (osic_RdBin(anonym0->fd, (char *)pb, 2400u/1u,
+         if (osi_RdBin(anonym0->fd, (char *)pb, 2400u/1u,
                 rdsize)!=(long)rdsize) return 32767.0f;
          /*
          c-translator frissts nicht
@@ -4536,9 +4536,9 @@ wnloader", 27ul);
             }
             if (maploopcnt<8UL) ++maploopcnt;
          }
-         fd = osic_OpenWrite("gettiles", 9ul);
+         fd = osi_OpenWrite("gettiles", 9ul);
          if (osic_FdValid(fd)) {
-            osic_WrBin(fd, (char *)mapnamesbuf, 4096u/1u, lb);
+            osi_WrBin(fd, (char *)mapnamesbuf, 4096u/1u, lb);
             osic_Close(fd);
             if (aprsdecode_verb) {
                osic_WrStr("try:", 5ul);
@@ -5344,7 +5344,7 @@ extern long maptool_saveppm(char fn[], unsigned long fn_len,
    long maptool_saveppm_ret;
    X2C_PCOPY((void **)&fn,fn_len);
    aprsstr_cleanfilename(fn, fn_len);
-   fd = osic_OpenWrite(fn, fn_len);
+   fd = osi_OpenWrite(fn, fn_len);
    if (!osic_FdValid(fd)) {
       /*    WrStr(fn); WrStrLn(" not writeable"); */
       maptool_saveppm_ret = -1L;
@@ -5385,7 +5385,7 @@ extern long maptool_saveppm(char fn[], unsigned long fn_len,
          while (len&3UL) wr(fd, &len, b, 0U);
          if (y==tmp) break;
       } /* end for */
-      if (len>0UL) osic_WrBin(fd, (char *)b, 32768u/1u, len);
+      if (len>0UL) osi_WrBin(fd, (char *)b, 32768u/1u, len);
       osic_Close(fd);
       ret = 0L;
    }
@@ -5452,7 +5452,7 @@ extern long maptool_saveppm(char fn[], unsigned long fn_len,
             if (x==tmp) break;
          } /* end for */
       } /* end for */
-      if (len>0UL) osic_WrBin(fd, (char *)b, 32768u/1u, len);
+      if (len>0UL) osi_WrBin(fd, (char *)b, 32768u/1u, len);
       osic_Close(fd);
       ret = 0L;
    }
@@ -5545,7 +5545,7 @@ extern void maptool_rdmountains(char fn[], unsigned long fn_len, char add)
    aprsstr_Append(b, 4096ul, s, 1024ul);
    aprsstr_Append(b, 4096ul, "/", 2ul);
    aprsstr_Append(b, 4096ul, fn, fn_len);
-   fd = osic_OpenRead(b, 4096ul);
+   fd = osi_OpenRead(b, 4096ul);
    if (!osic_FdValid(fd)) goto label;
    p = 0L;
    len = 0L;

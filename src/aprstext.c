@@ -23,8 +23,9 @@
 #include "aprsstr.h"
 #endif
 #ifndef osi_H_
-#include "osic.h"
+#include "osi.h"
 #endif
+#include <osic.h>
 #ifndef maptool_H_
 #include "maptool.h"
 #endif
@@ -1560,7 +1561,7 @@ static void getbeaconpos(struct aprspos_POSITION * pos, char * err)
       fd = osic_OpenRead(s, 1001ul);
       s[0U] = 0;
       if (osic_FdValid(fd)) {
-         len = osic_RdBin(fd, (char *)s, 1001u/1u, 1000UL);
+         len = osi_RdBin(fd, (char *)s, 1001u/1u, 1000UL);
          if (len<1L) {
             len = 0L;
             useri_say("beacon position file not readable", 34ul, 20UL, 'e');

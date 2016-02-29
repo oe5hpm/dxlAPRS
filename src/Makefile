@@ -45,7 +45,7 @@ ADDLIBS		= lib_armv6/libpng15/libpng.a \
 			  lib_armv6/libjpeg.a
 XLIBS		= $(EXTLIB)libxcb.so.1 $(EXTLIB)libXdmcp.so.6 $(EXTLIB)libXau.so.6 -L$(EXTLIB) -lXext -lX11
 CFLAGS		+= -march=armv6zk -mfpu=vfp -mfloat-abi=hard -mcpu=arm1176jzf-s
-CFLAGS		+= -Ilib_armv6/libpng15/
+CFLAGS		+= -Ilib_armv6/libpng15/ -I.
 LFLAGS		+=
 else ifeq ($(PLATFORM), armv6)
 EXTLIB  	= lib_armv6/
@@ -54,7 +54,7 @@ ADDLIBS		= lib_armv6/libpng16/libpng.a \
 			  lib_armv6/libjpeg.a
 XLIBS		= $(EXTLIB)libxcb.so.1 $(EXTLIB)libXdmcp.so.6 $(EXTLIB)libXau.so.6 -L$(EXTLIB) -lXext -lX11
 CFLAGS		+= -march=armv6zk -mfpu=vfp -mfloat-abi=hard -mcpu=arm1176jzf-s
-CFLAGS		+= -Ilib_armv6/libpng16/
+CFLAGS		+= -Ilib_armv6/libpng16/ -I.
 LFLAGS		+=
 # ---------------------- armv7hf (bur am335x pp) specific ---------------------
 else ifeq ($(PLATFORM), armv7hf)
@@ -89,6 +89,7 @@ OBJ_COMMON = \
 	aprspos.o \
 	aprsstr.o \
 	osic.o \
+	osi.o \
 	soundctl.o \
 	tcp.o \
 	udp.o

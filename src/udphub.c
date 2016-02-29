@@ -648,7 +648,7 @@ static void parms(void)
          else {
             if (h[1U]=='h') {
                osic_WrLn();
-               osic_WrStrLn(" -a                                route user-to-\
+               osi_WrStrLn(" -a                                route user-to-\
 digi AND user-to-user", 71ul);
                osic_WrStrLn(" -b <call>                         broadcast dest\
 ination call", 62ul);
@@ -678,38 +678,38 @@ es with Text", 62ul);
                osic_WrStrLn(" -w <file>                         write user tab\
 le to file (only if new entries and max. every 15s)", 101ul);
                osic_WrLn();
-               osic_WrStrLn("Initfile:", 10ul);
-               osic_WrStrLn("NOCALL-15 192.168.0.1:4711 #comment", 36ul);
-               osic_WrStrLn("NOCALL-15 p 192.168.0.1:4711 #protected entry",
+               osi_WrStrLn("Initfile:", 10ul);
+               osi_WrStrLn("NOCALL-15 192.168.0.1:4711 #comment", 36ul);
+               osi_WrStrLn("NOCALL-15 p 192.168.0.1:4711 #protected entry",
                 46ul);
                osic_WrStrLn("#comment", 9ul);
                osic_WrStrLn("NOCALL-15 p 0.0.0.0:0 no data to this call except\
  to digi port", 63ul);
-               osic_WrStrLn("b enable broadcast input", 25ul);
-               osic_WrStrLn("B enable broadcast output", 26ul);
-               osic_WrStrLn("A send all frames", 18ul);
+               osi_WrStrLn("b enable broadcast input", 25ul);
+               osi_WrStrLn("B enable broadcast output", 26ul);
+               osi_WrStrLn("A send all frames", 18ul);
                osic_WrLn();
-               osic_WrStrLn("Routing Table:", 15ul);
-               osic_WrStrLn("(-l) time old table entries will be purged except\
+               osi_WrStrLn("Routing Table:", 15ul);
+               osi_WrStrLn("(-l) time old table entries will be purged except\
  those from init file", 71ul);
                osic_WrLn();
-               osic_WrStrLn("Source: AX.25 Source Call makes table entry with \
+               osi_WrStrLn("Source: AX.25 Source Call makes table entry with \
 call/ip/sourceport/date", 73ul);
                osic_WrStrLn("        Exception: Protected entry updates Date o\
 nly", 53ul);
                osic_WrLn();
-               osic_WrStrLn("Destinationcall: (call used for routing)", 41ul);
-               osic_WrStrLn("  First Digi with no H-bit, if not present, ax25 \
+               osi_WrStrLn("Destinationcall: (call used for routing)", 41ul);
+               osi_WrStrLn("  First Digi with no H-bit, if not present, ax25 \
 destination call is used", 74ul);
                osic_WrLn();
-               osic_WrStrLn("Broadcast: if user enabled to input broadcast and\
+               osi_WrStrLn("Broadcast: if user enabled to input broadcast and\
  ax25-destination equals broadcast call", 89ul);
                osic_WrLn();
-               osic_WrStrLn("Destination: axudp ip/port", 27ul);
+               osi_WrStrLn("Destination: axudp ip/port", 27ul);
                osic_WrLn();
-               osic_WrStrLn("Routing: frame will be sent to if", 34ul);
-               osic_WrStrLn("  user enabled to get all data", 31ul);
-               osic_WrStrLn("  OR broadcast and user enabled to get broadcast",
+               osi_WrStrLn("Routing: frame will be sent to if", 34ul);
+               osi_WrStrLn("  user enabled to get all data", 31ul);
+               osi_WrStrLn("  OR broadcast and user enabled to get broadcast",
                  49ul);
                osic_WrStrLn("  OR destinationcall with ssid equals user",
                 43ul);
@@ -798,7 +798,7 @@ static void listtab(char fn[], unsigned long fn_len)
    unsigned long j;
    unsigned long i;
    X2C_PCOPY((void **)&fn,fn_len);
-   fd = osic_OpenWrite(fn, fn_len);
+   fd = osi_OpenWrite(fn, fn_len);
    if (osic_FdValid(fd)) {
       u = users;
       while (u) {
@@ -867,7 +867,7 @@ C in\012A gets all\012",201u);
       }
       aprsstr_IntToStr((long)touserport, 0UL, h, 201ul);
       aprsstr_Append(h, 201ul, " user UDP port\012", 16ul);
-      osic_WrBin(fd, (char *)h, 201u/1u, aprsstr_Length(h, 201ul));
+      osi_WrBin(fd, (char *)h, 201u/1u, aprsstr_Length(h, 201ul));
       osic_Close(fd);
    }
    else Err("-w File Create", 15ul);
@@ -1134,7 +1134,7 @@ static void initroutes(char fn[], unsigned long fn_len)
    unsigned long ip;
    unsigned long dp;
    X2C_PCOPY((void **)&fn,fn_len);
-   fd = osic_OpenRead(fn, fn_len);
+   fd = osi_OpenRead(fn, fn_len);
    if (osic_FdValid(fd)) {
       lc = 1UL;
       for (;;) {

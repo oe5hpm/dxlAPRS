@@ -472,7 +472,7 @@ static void rdlonglog(aprsdecode_pOPHIST * optab, char fn[],
    *lines = 0L;
    aprsstr_cleanfilename(fn, fn_len);
    if (fn[0UL]==0) goto label;
-   fc = osic_OpenReadLong(fn, fn_len);
+   fc = osi_OpenReadLong(fn, fn_len);
    if (!osic_FdValid(fc)) goto label;
    *firstread = 0UL;
    *lastread = 0UL;
@@ -595,7 +595,7 @@ static void rdlog(aprsdecode_pOPHIST * optab, char fn[],
                aprstext_logfndate(t, fnd, 1024ul);
                t = (t/86400UL+1UL)*86400UL;
                if (fo) osic_Close(fc);
-               fc = osic_OpenRead(fnd, 1024ul);
+               fc = osi_OpenRead(fnd, 1024ul);
             } while (!osic_FdValid(fc));
             fo = 1;
             if (*lines<0L) *lines = 0L;
@@ -3536,8 +3536,8 @@ static void savevideo420(maptool_pIMAGE img, char fn[], unsigned long fn_len,
       /*
           videofd:=Create(fn);
       */
-      if (osic_Exists(fn, fn_len)) videofd = osic_OpenWrite(fn, fn_len);
-      else videofd = osic_OpenWrite(fn, fn_len);
+      if (osic_Exists(fn, fn_len)) videofd = osi_OpenWrite(fn, fn_len);
+      else videofd = osi_OpenWrite(fn, fn_len);
       if (!osic_FdValid(videofd)) goto label;
       if (format=='M') {
          strncpy(h,"YUV4MPEG2 C420jpeg W",256u);

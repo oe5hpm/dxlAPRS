@@ -216,8 +216,8 @@ static void initfile(char fn[], unsigned long fn_len)
    if (fn[0UL]) {
       fd = osic_OpenRead(fn, fn_len);
       if (fd!=-1L) {
-         len0 = osic_RdBin(fd, (char *)b, 4001u/1u, 4001UL);
-         osic_WrBin(tty, (char *)b, 4001u/1u, (unsigned long)len0);
+         len0 = osi_RdBin(fd, (char *)b, 4001u/1u, 4001UL);
+         osi_WrBin(tty, (char *)b, 4001u/1u, (unsigned long)len0);
          osic_Close(fd);
       }
       else Error("initfile not found", 19ul);
@@ -390,7 +390,7 @@ static void Parms(void)
    err = 0;
    sockc = 0UL;
    for (;;) {
-      osic_NextArg(h, 1024ul);
+      osi_NextArg(h, 1024ul);
       if (h[0U]==0) break;
       if ((h[0U]=='-' && h[1U]) && h[2U]==0) {
          if (h[1U]=='c') {
@@ -406,7 +406,7 @@ static void Parms(void)
          }
          else if (h[1U]=='k') kisson = 1;
          else if (h[1U]=='p') {
-            osic_NextArg(h, 1024ul);
+            osi_NextArg(h, 1024ul);
             i0 = 0UL;
             if (!GetNum(h, 1024ul, ':', &i0, &cmd)) {
                Error("-p cmd:value", 13ul);
@@ -424,7 +424,7 @@ static void Parms(void)
             if (auto0 && sockc>0UL) {
                Error("-U only 1 UDP with -a Mode", 27ul);
             }
-            osic_NextArg(h, 1024ul);
+            osi_NextArg(h, 1024ul);
             { /* with */
                struct _0 * anonym = &udpsocks[sockc];
                if (aprsstr_GetIp2(h, 1024ul, &anonym->ipnum, &anonym->toport,
@@ -442,7 +442,7 @@ static void Parms(void)
          }
          else if (h[1U]=='u') usbrobust = 1;
          else if (h[1U]=='t') {
-            osic_NextArg(h, 1024ul);
+            osi_NextArg(h, 1024ul);
             i0 = 0UL;
             while ((h[i0] && h[i0]!=':') && i0<700UL) {
                ttynamee[i0] = h[i0];
@@ -457,7 +457,7 @@ static void Parms(void)
             }
          }
          else if (h[1U]=='T') {
-            osic_NextArg(h, 1024ul);
+            osi_NextArg(h, 1024ul);
             urlport(direwolfurl, 2048ul, direwolfport, 11ul, h, 1024ul);
             direwolf = 1;
          }
@@ -469,7 +469,7 @@ static void Parms(void)
          else {
             if (h[1U]=='h') {
                osic_WrLn();
-               osic_WrStrLn(" -a                                automatic swit\
+               osi_WrStrLn(" -a                                automatic swit\
 ch to KISS/FLEX/SMACK mode", 76ul);
                osic_WrStrLn("                                   (only with 1 P\
 orts)", 55ul);
@@ -505,11 +505,11 @@ ror reinitialize kiss mode", 76ul);
 messages", 58ul);
                osic_WrStrLn(" -V                                verbous errors\
  and monitor data to stdout", 77ul);
-               osic_WrStrLn(" -h                                this", 40ul);
+               osi_WrStrLn(" -h                                this", 40ul);
                osic_WrLn();
                X2C_ABORT();
             }
-            if (h[1U]=='i') osic_NextArg(ifn, 701ul);
+            if (h[1U]=='i') osi_NextArg(ifn, 701ul);
             else err = 1;
          }
       }

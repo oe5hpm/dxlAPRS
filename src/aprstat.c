@@ -23,8 +23,9 @@
 #include "aprspos.h"
 #endif
 #ifndef osi_H_
-#include "osic.h"
+#include "osi.h"
 #endif
+#include <osic.h>
 #ifndef aprsstr_H_
 #include "aprsstr.h"
 #endif

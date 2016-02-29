@@ -215,7 +215,7 @@ static void comment0(char buf[], unsigned long buf_len, unsigned long uptime,
    if (sondeaprs_commentfn[0UL]) {
       f = osic_OpenRead(sondeaprs_commentfn, 1025ul);
       if (f>=0L) {
-         len = osic_RdBin(f, (char *)fb, 32768u/1u, 32767UL);
+         len = osi_RdBin(f, (char *)fb, 32768u/1u, 32767UL);
          osic_Close(f);
          while (len>0L && (unsigned char)fb[len-1L]<=' ') --len;
          if (len>0L && len<32767L) {

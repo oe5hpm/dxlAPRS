@@ -695,7 +695,7 @@ static long daylylogsize(const char fname[], unsigned long fname_len,
       aprstext_logfndate(t, fnd, 1024ul);
       if (X2C_STRCMP(fnd,1024u,fn,1024u)==0) return -1L;
       /* not dayly log */
-      fc = osic_OpenRead(fnd, 1024ul);
+      fc = osi_OpenRead(fnd, 1024ul);
       if (osic_FdValid(fc)) {
          ret = 0L;
          size = size+(float)osic_Size(fc);
@@ -743,7 +743,7 @@ extern long useri_guesssize(char fn[], unsigned long fn_len, char lenstr[],
    pos = 0UL;
    for (;;) {
       osic_Seekcur(fc, 1000000000L); /* seek in 100mb steps for eof */
-      if (osic_RdBin(fc, (char *) &b, 1u/1u, 1UL)!=1L) break;
+      if (osi_RdBin(fc, (char *) &b, 1u/1u, 1UL)!=1L) break;
       pos += 131072UL;
    }
    if (pos<2000000UL) {
@@ -1232,7 +1232,7 @@ extern void useri_saveconfig(void)
    aprsstr_Assign(backupfn, 1000ul, aprsdecode_lums.configfn, 257ul);
    aprsstr_Append(backupfn, 1000ul, "~", 2ul);
                 /* write temp file and rename later */
-   fd = osic_OpenWrite(backupfn, 1000ul);
+   fd = osi_OpenWrite(backupfn, 1000ul);
    if (!osic_FdValid(fd)) {
       strncpy(h,"Can not write ",1000u);
       aprsstr_Append(h, 1000ul, backupfn, 1000ul);
@@ -1294,7 +1294,7 @@ extern void useri_saveconfig(void)
       if (i==useri_fEDITLINE) break;
    } /* end for */
    osic_Close(fd);
-   osic_Rename(backupfn, 1000ul, aprsdecode_lums.configfn, 257ul);
+   osi_Rename(backupfn, 1000ul, aprsdecode_lums.configfn, 257ul);
    useri_textautosize(0L, 0L, 6UL, 4UL, 'b', "Config Saved", 13ul);
    useri_rdlums();
 } /* end saveconfig() */
@@ -1359,7 +1359,7 @@ extern void useri_loadconfig(char verb)
    initconfig();
    titmod = 0UL;
    aprsstr_cleanfilename(aprsdecode_lums.configfn, 257ul);
-   fd = osic_OpenRead(aprsdecode_lums.configfn, 257ul);
+   fd = osi_OpenRead(aprsdecode_lums.configfn, 257ul);
    if (osic_FdValid(fd)) {
       h[0U] = 0;
       while (osic_RdBin(fd, (char *) &c, 1u/1u, 1UL)==1L) {
@@ -2873,7 +2873,7 @@ static long hopen(char fb[4096], long * fd, long * fl, long * fp,
    char c;
    *fp = 0L;
    *fl = 0L;
-   *fd = osic_OpenRead("help.txt", 9ul);
+   *fd = osi_OpenRead("help.txt", 9ul);
    if (!osic_FdValid(*fd)) return -1L;
    lc = 0L;
    i = 0UL;
@@ -10139,7 +10139,7 @@ static void printhint(void)
    else if (hintnum>=1701UL && hintnum<=1704UL) udpstat(hintnum-1701UL);
    if (hinttime+2UL<=aprsdecode_realtime && hintnum>=100UL) {
       hintmouse = useri_xmouse;
-      fd = osic_OpenRead("hints.txt", 10ul);
+      fd = osi_OpenRead("hints.txt", 10ul);
       if (osic_FdValid(fd)) {
          p = 0L;
          len = 0L;
