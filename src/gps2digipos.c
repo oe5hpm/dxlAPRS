@@ -14,8 +14,9 @@
 #endif
 #define gps2digipos_C_
 #ifndef osi_H_
-#include "osic.h"
+#include "osi.h"
 #endif
+#include <osic.h>
 #ifndef mlib_H_
 #include "mlib.h"
 #endif
@@ -97,9 +98,9 @@ static struct _0 median[500];
 static void Error(char text[], unsigned long text_len)
 {
    X2C_PCOPY((void **)&text,text_len);
-   osic_WrStr("agps2digipos: ", 15ul);
-   osic_WrStr(text, text_len);
-   osic_WrStrLn(" error abort", 13ul);
+   osi_WrStr("agps2digipos: ", 15ul);
+   osi_WrStr(text, text_len);
+   osi_WrStrLn(" error abort", 13ul);
    X2C_ABORT();
    X2C_PFREE(text);
 } /* end Error() */
@@ -164,7 +165,7 @@ static void SetComMode(long fd, unsigned long baud0)
 static void opentty(void)
 {
    for (;;) {
-      tty = osic_OpenRW(ttynamee, 1024ul);
+      tty = osi_OpenRW(ttynamee, 1024ul);
       if (tty>=0L) {
          SetComMode(tty, baud);
          break;
@@ -195,7 +196,7 @@ static void Parms(void)
    unsigned long i;
    err = 0;
    for (;;) {
-      osic_NextArg(h, 1024ul);
+      osi_NextArg(h, 1024ul);
       if (h[0U]==0) break;
       if ((h[0U]=='-' && h[1U]) && h[2U]==0) {
          if (h[1U]=='u') usbrobust = 0;
@@ -210,11 +211,11 @@ static void Parms(void)
                       IF h[1]>" " THEN symb:=h[1] ELSE symb:=0C END;
                     ELSE Error("-i <icon> (house /-)") END;
             */
-            osic_NextArg(basefilename, 1024ul);
+            osi_NextArg(basefilename, 1024ul);
             if (basefilename[0U]==0) Error("-f filename", 12ul);
          }
          else if (h[1U]=='t') {
-            osic_NextArg(h, 1024ul);
+            osi_NextArg(h, 1024ul);
             i = 0UL;
             while ((h[i] && h[i]!=':') && i<1023UL) {
                ttynamee[i] = h[i];
@@ -229,7 +230,7 @@ static void Parms(void)
             }
          }
          else if (h[1U]=='m') {
-            osic_NextArg(h, 1024ul);
+            osi_NextArg(h, 1024ul);
             i = 0UL;
             if (!GetNum(h, 1024ul, 0, &i, &mediantime)) {
                Error("-m <seconds>", 13ul);
@@ -241,7 +242,7 @@ static void Parms(void)
             }
          }
          else if (h[1U]=='f') {
-            osic_NextArg(h, 1024ul);
+            osi_NextArg(h, 1024ul);
             i = 0UL;
             if (!GetNum(h, 1024ul, 0, &i, &comptyp) || comptyp>2UL) {
                Error("-f <format> 0=uncomp, 1=comp, 2=mic-e", 38ul);
@@ -253,25 +254,25 @@ static void Parms(void)
                osic_WrLn();
                osi_WrStrLn("Read serial GPS and make position string to inser\
 t into APRS-beacon", 68ul);
-               osic_WrStrLn(" -a                                altitude on",
+               osi_WrStrLn(" -a                                altitude on",
                 47ul);
-               osic_WrStrLn(" -f <filename>                     writes <fn.lat\
+               osi_WrStrLn(" -f <filename>                     writes <fn.lat\
 > <fn.long> and <filename.alt>", 80ul);
-               osic_WrStrLn(" -h                                this", 40ul);
+               osi_WrStrLn(" -h                                this", 40ul);
                /*        WrStrLn('
                 -i <icon>                         2 Icon chars "/-" (House),
                 "/>" (Car)...'); */
-               osic_WrStrLn(" -m <seconds>                      time to read g\
+               osi_WrStrLn(" -m <seconds>                      time to read g\
 ps to make median position", 76ul);
-               osic_WrStrLn(" -s                                GPS Checksum c\
+               osi_WrStrLn(" -s                                GPS Checksum c\
 heck OFF", 58ul);
-               osic_WrStrLn(" -t <tty>:<baud>                   default /dev/t\
+               osi_WrStrLn(" -t <tty>:<baud>                   default /dev/t\
 tyS0:9600", 59ul);
-               osic_WrStrLn(" -u                                not retry unti\
+               osi_WrStrLn(" -u                                not retry unti\
 l open removable USB tty", 74ul);
-               osic_WrStrLn(" -v                                verbous",
+               osi_WrStrLn(" -v                                verbous",
                 43ul);
-               osic_WrStrLn(" example:  -t /dev/ttyS0:9600 -u -f test -i \"/-\\
+               osi_WrStrLn(" example:  -t /dev/ttyS0:9600 -u -f test -i \"/-\\
 " -a -m 30 -v", 61ul);
                osic_WrLn();
                X2C_ABORT();
@@ -288,9 +289,9 @@ l open removable USB tty", 74ul);
       if (err) break;
    }
    if (err) {
-      osic_WrStr(">", 2ul);
-      osic_WrStr(h, 1024ul);
-      osic_WrStrLn("< use -h", 9ul);
+      osi_WrStr(">", 2ul);
+      osi_WrStr(h, 1024ul);
+      osi_WrStrLn("< use -h", 9ul);
       X2C_ABORT();
    }
 } /* end Parms() */
@@ -496,7 +497,7 @@ static char checksum(const char b[], unsigned long b_len,
       if (b[i+1UL]!=Hex((unsigned long)cs/16UL)
                 || b[i+2UL]!=Hex((unsigned long)cs&15UL)) ok0 = 0;
    }
-   if (verb && !ok0) osic_WrStrLn("GPS Checksum Error", 19ul);
+   if (verb && !ok0) osi_WrStrLn("GPS Checksum Error", 19ul);
    return ok0;
 } /* end checksum() */
 
@@ -509,9 +510,9 @@ static void showline(const char b[], unsigned long b_len,
    while (i<len0) {
       if ((unsigned char)b[i]<' ') {
          if (b[i]=='\012') osic_WrLn();
-         else osic_WrStr(".", 2ul);
+         else osi_WrStr(".", 2ul);
       }
-      else osic_WrStr((char *) &b[i], 1u/1u);
+      else osi_WrStr((char *) &b[i], 1u/1u);
       ++i;
    }
    osic_WrLn();
@@ -527,7 +528,7 @@ static void wrfile(char b[], unsigned long b_len, unsigned long len0,
    X2C_PCOPY((void **)&ext,ext_len);
    aprsstr_Assign(s, 2001ul, basefilename, 1024ul);
    aprsstr_Append(s, 2001ul, ext, ext_len);
-   f = osic_OpenWrite(s, 2001ul);
+   f = osi_OpenWrite(s, 2001ul);
    if (f>=0L) {
       if (len0>0UL) osi_WrBin(f, (char *)b, (b_len)/1u, len0);
       osic_Close(f);
@@ -715,7 +716,7 @@ static void getmedian(double * lat0, double * long1, double * alt0)
    *long1 = 0.0;
    *alt0 = 0.0;
    if (verb) {
-      osic_WrStrLn("   lat           long                alt  ok", 45ul);
+      osi_WrStrLn("   lat           long                alt  ok", 45ul);
    }
    tmp = medians-1UL;
    i = 0UL;
@@ -736,8 +737,8 @@ static void getmedian(double * lat0, double * long1, double * alt0)
             osic_WrFixed((float)anonym1->mlat, 8L, 14UL);
             osic_WrFixed((float)anonym1->mlong, 8L, 14UL);
             osic_WrFixed((float)anonym1->malt, 1L, 14UL);
-            osic_WrUINT32((long)(unsigned long)anonym1->ok0, 2UL);
-            osic_WrStrLn("", 1ul);
+            osic_WrUINT32((unsigned long)anonym1->ok0, 2UL);
+            osi_WrStrLn("", 1ul);
          }
       }
       if (i==tmp) break;
@@ -763,8 +764,9 @@ X2C_STACK_LIMIT(100000l)
 extern int main(int argc, char **argv)
 {
    long tmp;
-   aprsstr_BEGIN();
    X2C_BEGIN(&argc,argv,1,4000000l,8000000l);
+   aprsstr_BEGIN();
+   osi_BEGIN();
    sumoff = 0;
    junk = 1;
    posok = 0;
@@ -786,7 +788,7 @@ extern int main(int argc, char **argv)
    Parms();
    opentty();
    for (;;) {
-      len = osic_RdBin(tty, (char *)tbuf, 1024u/1u, 1024UL);
+      len = osi_RdBin(tty, (char *)tbuf, 1024u/1u, 1024UL);
       if (len<=0L) {
          osic_Close(tty);
          usleep(1000000UL);
@@ -813,8 +815,8 @@ extern int main(int argc, char **argv)
                      if (mediantime>0UL) {
                         --mediantime;
                         if (verb) {
-                           osic_WrUINT32((long)mediantime, 4UL);
-                           osic_WrStrLn(" mediantime", 12ul);
+                           osic_WrUINT32(mediantime, 4UL);
+                           osi_WrStrLn(" mediantime", 12ul);
                         }
                      }
                      else {

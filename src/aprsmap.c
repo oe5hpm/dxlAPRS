@@ -13,6 +13,12 @@
 #include "X2C.h"
 #endif
 #define aprsmap_C_
+#ifndef Storage_H_
+#include "Storage.h"
+#endif
+#ifndef TimeConv_H_
+#include "TimeConv.h"
+#endif
 #ifndef useri_H_
 #include "useri.h"
 #endif
@@ -26,12 +32,19 @@
 #include "aprsdecode.h"
 #endif
 #ifndef xosi_H_
-#include "xosic.h"
+#include "xosi.h"
 #endif
 #ifndef osi_H_
-#include "osic.h"
+#include "osi.h"
 #endif
 #include <math.h>
+#include <osic.h>
+#ifndef InOut_H_
+#include "InOut.h"
+#endif
+#ifndef FileSys_H_
+#include "FileSys.h"
+#endif
 #ifndef aprsstr_H_
 #include "aprsstr.h"
 #endif
@@ -180,8 +193,8 @@ static struct aprspos_POSITION clickwatchpos;
 static void Error(char text0[], unsigned long text_len)
 {
    X2C_PCOPY((void **)&text0,text_len);
-   osic_WrStr(text0, text_len);
-   osic_WrStrLn(" error abort", 13ul);
+   InOut_WriteString(text0, text_len);
+   osi_WrStrLn(" error abort", 13ul);
    X2C_ABORT();
    X2C_PFREE(text0);
 } /* end Error() */
@@ -199,7 +212,7 @@ static unsigned long gammac(unsigned long c)
 {
    if (c==0UL) return 0UL;
    if (c<1024UL) {
-      return aprsdecode_trunc(osic_exp(osic_ln(X2C_DIVR((float)c,
+      return aprsdecode_trunc(RealMath_exp(RealMath_ln(X2C_DIVR((float)c,
                 1024.0f))*4.5454545454545E-1f)*255.5f);
    }
    return 255UL;
@@ -267,7 +280,7 @@ static void mapbri(long v)
 
 static float movest(unsigned long width)
 {
-   return osic_power(2.0f, -maptool_realzoom(aprsdecode_initzoom,
+   return RealMath_power(2.0f, -maptool_realzoom(aprsdecode_initzoom,
                 aprsdecode_finezoom))*(float)width*(float)
                 aprsdecode_lums.movestep*0.0002f;
 } /* end movest() */
@@ -398,7 +411,7 @@ static void binseek(unsigned long * i, long fc, unsigned long * wp,
       bof = 0;
       for (;;) {
          if (rp>=len) {
-            len = osic_RdBin(fc, (char *)sb, 1024u/1u, 1024UL);
+            len = osi_RdBin(fc, (char *)sb, 1024u/1u, 1024UL);
             rp = 0L;
          }
          if (len<=0L) {
@@ -489,7 +502,7 @@ static void rdlonglog(aprsdecode_pOPHIST * optab, char fn[],
    else lfc = 0UL;
    for (;;) {
       if (rp>=len) {
-         len = osic_RdBin(fc, (char *)ib, 32768u/1u, 32768UL);
+         len = osi_RdBin(fc, (char *)ib, 32768u/1u, 32768UL);
          if (len<=0L) break;
          rp = 0L;
       }
@@ -600,7 +613,7 @@ static void rdlog(aprsdecode_pOPHIST * optab, char fn[],
             fo = 1;
             if (*lines<0L) *lines = 0L;
          }
-         len = osic_RdBin(fc, (char *)ib, 32768u/1u, 32768UL);
+         len = osi_RdBin(fc, (char *)ib, 32768u/1u, 32768UL);
          rp = 0L;
       }
       mbuf[wp] = ib[rp];
@@ -1361,7 +1374,7 @@ static void metercolor(char what)
    struct maptool_PIX * anonym0;
    long tmp;
    long tmp0;
-   radius = (long)aprsdecode_trunc(osic_power(2.0f,
+   radius = (long)aprsdecode_trunc(RealMath_power(2.0f,
                 maptool_realzoom(aprsdecode_initzoom,
                 aprsdecode_finezoom)+0.2f));
    if (radius>1000L) radius = 1000L;
@@ -1399,7 +1412,7 @@ static void metercolor(char what)
                         if (q<rbr) {
                            mx = x0+xi;
                            if (mx>0L && mx<maptool_xsize) {
-                              qq = 1.0f-osic_sqrt((float)q)*oor;
+                              qq = 1.0f-RealMath_sqrt((float)q)*oor;
                               f = qq*qq;
                               f = f*f;
                               { /* with */
@@ -1536,7 +1549,7 @@ static char deletelogfile(char all)
       aprstext_logfndate(t, fnd, 1024ul);
       if (X2C_STRCMP(fnd,1024u,fn,1024u)==0) return 0;
       /* not dayly log */
-      osic_Remove(fnd, 1024ul, &ok0);
+      FileSys_Remove(fnd, 1024ul, &ok0);
       if (ok0) ++cnt;
       t -= 86400UL;
    } while (t>=1388534400UL);
@@ -1661,7 +1674,7 @@ static void importlog(char cmd)
       ok0 = 0;
       if (fn[0U]) {
          if (deletelogfile(1)) ok0 = 1;
-         else osic_Remove(fn, 1025ul, &ok0);
+         else FileSys_Remove(fn, 1025ul, &ok0);
       }
       if (ok0) {
          strncpy(h,"[",1025u);
@@ -1710,7 +1723,7 @@ static void importlog(char cmd)
             clrstk();
             aprsdecode_purge(&aprsdecode_ophist0, X2C_max_longcard,
                 X2C_max_longcard);
-            aprsdecode_systime = osic_time();
+            aprsdecode_systime = TimeConv_time();
             if (fn[0U]) {
                rdlog(&aprsdecode_ophist0, fn, 1025ul,
                 aprsdecode_systime-aprsdecode_lums.purgetime,
@@ -1856,7 +1869,7 @@ static void bootreadlog(void)
    else {
       useri_say("Reading Log ...", 16ul, 0UL, 'b');
       useri_redraw(image);
-      aprsdecode_realtime = osic_time();
+      aprsdecode_realtime = TimeConv_time();
       logt = aprsdecode_realtime-aprsdecode_lums.purgetime;
                 /* start from now - data in ram */
       logredcnt = 0L;
@@ -1880,8 +1893,8 @@ static void bootreadlog(void)
    }
    revert();
    aprsdecode_purge(&aprsdecode_ophist0,
-                osic_time()-aprsdecode_lums.purgetime,
-                osic_time()-aprsdecode_lums.purgetimeobj);
+                TimeConv_time()-aprsdecode_lums.purgetime,
+                TimeConv_time()-aprsdecode_lums.purgetimeobj);
    logdone = 1;
 } /* end bootreadlog() */
 
@@ -2449,7 +2462,7 @@ static void measureline(maptool_pIMAGE img, struct aprspos_POSITION pos0,
                aprsstr_Append(s, 100ul, "\177 \376", 4ul);
             }
             if (mhz>=0.1f) {
-               aprsstr_FixToStr(32.2f+8.685889638065f*osic_ln(dist*0.001f*mhz)
+               aprsstr_FixToStr(32.2f+8.685889638065f*RealMath_ln(dist*0.001f*mhz)
                 , 2UL, h, 100ul);
                aprsstr_Append(s, 100ul, h, 100ul);
                aprsstr_Append(s, 100ul, "dBi", 4ul);
@@ -2987,7 +3000,7 @@ static void internstat(void)
       op = op->next;
    }
    aprsstr_Assign(s, 10001ul, "System Stat", 12ul);
-   ut = osic_time();
+   ut = TimeConv_time();
    if (ut>uptime) {
       aprsstr_Append(s, 10001ul, "\012Uptime:", 9ul);
       aprsstr_TimeToStr(ut-uptime, h, 31ul);
@@ -3289,7 +3302,7 @@ static void screenshot(void)
       if (s[i+1UL]=='t') {
          /* insert date in filename */
          s[i] = 0;
-         aprsstr_DateToStr(osic_time()+useri_localtime(), hh, 1000ul);
+         aprsstr_DateToStr(TimeConv_time()+useri_localtime(), hh, 1000ul);
          n = 0UL;
          while (hh[n]) {
             if ((unsigned char)hh[n]<'0' || (unsigned char)hh[n]>'9') {
@@ -3318,7 +3331,7 @@ static void screenshot(void)
                ++j;
             }
             ++n;
-         } while (!(n>999UL || !osic_Exists(s, 1000ul)));
+         } while (!(n>999UL || !FileSys_Exists(s, 1000ul)));
       }
    }
    if (s[0]) {
@@ -3536,7 +3549,7 @@ static void savevideo420(maptool_pIMAGE img, char fn[], unsigned long fn_len,
       /*
           videofd:=Create(fn);
       */
-      if (osic_Exists(fn, fn_len)) videofd = osi_OpenWrite(fn, fn_len);
+      if (FileSys_Exists(fn, fn_len)) videofd = osi_OpenWrite(fn, fn_len);
       else videofd = osi_OpenWrite(fn, fn_len);
       if (!osic_FdValid(videofd)) goto label;
       if (format=='M') {
@@ -3547,11 +3560,11 @@ static void savevideo420(maptool_pIMAGE img, char fn[], unsigned long fn_len,
          aprsstr_IntToStr(maptool_ysize, 1UL, s, 256ul);
          aprsstr_Append(h, 256ul, s, 256ul);
          aprsstr_Append(h, 256ul, " F25000000:1000000 Ip\012", 23ul);
-         osic_WrBin(videofd, (char *)h, 256u/1u, aprsstr_Length(h, 256ul));
+         osi_WrBin(videofd, (char *)h, 256u/1u, aprsstr_Length(h, 256ul));
       }
    }
    if (vidbuf==0) {
-      osic_alloc((X2C_ADDRESS *) &vidbuf,
+      Storage_ALLOCATE((X2C_ADDRESS *) &vidbuf,
                 (unsigned long)((maptool_xsize*maptool_ysize*3L)/2L));
       useri_debugmem.req = (unsigned long)((maptool_xsize*maptool_ysize*3L)
                 /2L);
@@ -3560,7 +3573,7 @@ static void savevideo420(maptool_pIMAGE img, char fn[], unsigned long fn_len,
    }
    if (format=='M') {
       strncpy(h,"FRAME\012",256u);
-      osic_WrBin(videofd, (char *)h, 256u/1u, 6UL);
+      osi_WrBin(videofd, (char *)h, 256u/1u, 6UL);
    }
    pw = 0UL;
    pb = (unsigned long)(maptool_xsize*maptool_ysize);
@@ -3634,7 +3647,7 @@ static void savevideo420(maptool_pIMAGE img, char fn[], unsigned long fn_len,
          if (x==tmp) break;
       } /* end for */
    } /* end for */
-   osic_WrBin(videofd, (char *)vidbuf, 10000001u/1u,
+   osi_WrBin(videofd, (char *)vidbuf, 10000001u/1u,
                 (unsigned long)((maptool_xsize*maptool_ysize*3L)/2L));
    *bytecnt = *bytecnt+(float)((maptool_xsize*maptool_ysize*3L)/2L);
    label:;
@@ -3992,7 +4005,7 @@ static void animate(const aprsdecode_MONCALL singlecall, unsigned long step,
    stime = endtime;
    nomove = movest(500UL)*5.0f; /* min km/s for a moving object */
    if (step==0UL) {
-      step = aprsdecode_trunc(osic_sqrt(nomove)*(float)
+      step = aprsdecode_trunc(RealMath_sqrt(nomove)*(float)
                 (25L*useri_conf2int(useri_fANIMSPEED, 0UL, 0L, 10000L,
                 400L)))+1UL;
    }
@@ -4257,8 +4270,8 @@ static void animate(const aprsdecode_MONCALL singlecall, unsigned long step,
          if (tofile[0UL]) {
             savevideo420(rfimg, tofile, tofile_len, 'M', &bytew);
             /*        INC(icnt); */
-            if (showt!=osic_time()) {
-               showt = osic_time();
+            if (showt!=TimeConv_time()) {
+               showt = TimeConv_time();
                wrvidsize(bytew);
                useri_redraw(rfimg);
             }
@@ -4285,7 +4298,7 @@ static void animate(const aprsdecode_MONCALL singlecall, unsigned long step,
                }
                else if (aprsdecode_click.cmd!='v') stop = 0;
                if (!stop && aprsdecode_click.cmd!='v') break;
-               aprsdecode_realtime = osic_time();
+               aprsdecode_realtime = TimeConv_time();
             }
          }
          if (fast>250L) fast = 250L;
@@ -4300,7 +4313,7 @@ static void animate(const aprsdecode_MONCALL singlecall, unsigned long step,
           IF fast>FASTDELAY THEN INC(vtime, step*STEPMUL) ELSE INC(vtime,
                 step) END;
       */
-      aprsdecode_realtime = osic_time();
+      aprsdecode_realtime = TimeConv_time();
    } while (!((vtime>endtime+(step*10UL)/25UL || (aprsdecode_click.cmd!='A' && aprsdecode_click.cmd!='a') && aprsdecode_click.cmd!='\312') || useri_newxsize>0UL));
    if (osic_FdValid(videofd)) {
       osic_Close(videofd);
@@ -4309,7 +4322,7 @@ static void animate(const aprsdecode_MONCALL singlecall, unsigned long step,
    if (vidbuf) {
       useri_debugmem.screens -= (unsigned long)
                 ((maptool_xsize*maptool_ysize*3L)/2L);
-      osic_free((X2C_ADDRESS *) &vidbuf,
+      Storage_DEALLOCATE((X2C_ADDRESS *) &vidbuf,
                 (unsigned long)((maptool_xsize*maptool_ysize*3L)/2L));
       vidbuf = 0;
    }
@@ -4425,7 +4438,7 @@ static void makeimage(char dryrun)
          measureline(image, aprsdecode_click.markpos, mpos,
                 aprsdecode_click.markalti);
       }
-      maptool_cc(image, osic_time(), 0UL);
+      maptool_cc(image, TimeConv_time(), 0UL);
       if (useri_configon(useri_fRULER)) maptool_ruler(image);
       drawzoomsquer(image);
       if (aprsdecode_click.withradio) {
@@ -4467,7 +4480,7 @@ static void MainEvent(void)
    char raw;
    menu = 0;
    raw = 0;
-   aprsdecode_realtime = osic_time();
+   aprsdecode_realtime = TimeConv_time();
    if (!aprsdecode_lums.logmode) aprsdecode_systime = aprsdecode_realtime;
    if (aprsdecode_realtime<lastxupdate) lastxupdate = aprsdecode_realtime;
    if (aprsdecode_realtime<laststatref) laststatref = aprsdecode_realtime;
@@ -5076,9 +5089,9 @@ static void killsave(long);
 static void killsave(long signum)
 {
    if (!quit && useri_configon(useri_fAUTOSAVE)) useri_saveconfig();
-   osic_WrStr("exit ", 6ul);
-   osic_WrUINT32(signum, 0UL);
-   osic_WrStrLn("!", 2ul);
+   InOut_WriteString("exit ", 6ul);
+   InOut_WriteInt(signum, 0UL);
+   osi_WrStrLn("!", 2ul);
    X2C_HALT((unsigned long)signum);
 } /* end killsave() */
 
@@ -5175,14 +5188,17 @@ END rdmountains;
 X2C_STACK_LIMIT(100000l)
 extern int main(int argc, char **argv)
 {
-   X2C_BEGIN(&argc,argv,1,4000000l,8000000l);
+   X2C_BEGIN(&argc,argv,1,4000000l,1000000000l);
    aprstext_BEGIN();
    aprsstr_BEGIN();
    aprspos_BEGIN();
    aprsdecode_BEGIN();
    maptool_BEGIN();
-   xosic_BEGIN();
+   xosi_BEGIN();
+   osi_BEGIN();
    useri_BEGIN();
+   TimeConv_BEGIN();
+   Storage_BEGIN();
    memset((char *) &useri_debugmem,(char)0,sizeof(struct useri__D0));
    useri_clrconfig();
    aprsdecode_initparms();
@@ -5231,15 +5247,15 @@ extern int main(int argc, char **argv)
    realday = 0UL;
    onetipp = 0;
    logdone = 0;
-   uptime = osic_time();
+   uptime = TimeConv_time();
    withx = xosi_InitX("Aprsmap", 8ul, "Aprsmap", 8ul,
                 (unsigned long)maptool_xsize,
                 (unsigned long)maptool_ysize)>=0L;
    if (!withx) {
-      osic_WrStrLn("cannot open xwindow, image generation only", 43ul);
+      osi_WrStrLn("cannot open xwindow, image generation only", 43ul);
    }
    xosi_Gammatab(aprsdecode_lums.gamma);
-   aprsdecode_realtime = osic_time();
+   aprsdecode_realtime = TimeConv_time();
    useri_initmenus();
    quit = 0;
    aprsdecode_tracenew.winevent = 1UL;
@@ -5249,7 +5265,7 @@ extern int main(int argc, char **argv)
    signal(SIGINT, killsave);
    signal(SIGPIPE, killsave);
    if (withx) {
-      aprsdecode_realtime = osic_time();
+      aprsdecode_realtime = TimeConv_time();
       aprsdecode_rxidle = 0UL;
       useri_refresh = 1;
       aprsdecode_lastlooped = aprsdecode_realtime;

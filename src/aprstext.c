@@ -1558,7 +1558,7 @@ static void getbeaconpos(struct aprspos_POSITION * pos, char * err)
    if (s[0U]==':') {
       /* get beacon position from file */
       aprsstr_Delstr(s, 1001ul, 0UL, 1UL);
-      fd = osic_OpenRead(s, 1001ul);
+      fd = osi_OpenRead(s, 1001ul);
       s[0U] = 0;
       if (osic_FdValid(fd)) {
          len = osi_RdBin(fd, (char *)s, 1001u/1u, 1000UL);
@@ -1797,6 +1797,7 @@ extern void aprstext_BEGIN(void)
    if (aprstext_init) return;
    aprstext_init = 1;
    useri_BEGIN();
+   osi_BEGIN();
    maptool_BEGIN();
    aprsdecode_BEGIN();
    aprsstr_BEGIN();

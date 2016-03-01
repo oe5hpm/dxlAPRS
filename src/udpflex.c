@@ -17,8 +17,9 @@
 #include "aprsstr.h"
 #endif
 #ifndef osi_H_
-#include "osic.h"
+#include "osi.h"
 #endif
+#include <osic.h>
 #ifndef tcp_H_
 #include "tcp.h"
 #endif
@@ -199,9 +200,9 @@ static char direwolfport[11];
 static void Error(char text[], unsigned long text_len)
 {
    X2C_PCOPY((void **)&text,text_len);
-   osic_WrStr("udpflex: ", 10ul);
-   osic_WrStr(text, text_len);
-   osic_WrStrLn(" error abort", 13ul);
+   osi_WrStr("udpflex: ", 10ul);
+   osi_WrStr(text, text_len);
+   osi_WrStrLn(" error abort", 13ul);
    X2C_ABORT();
    X2C_PFREE(text);
 } /* end Error() */
@@ -214,7 +215,7 @@ static void initfile(char fn[], unsigned long fn_len)
    long len0;
    X2C_PCOPY((void **)&fn,fn_len);
    if (fn[0UL]) {
-      fd = osic_OpenRead(fn, fn_len);
+      fd = osi_OpenRead(fn, fn_len);
       if (fd!=-1L) {
          len0 = osi_RdBin(fd, (char *)b, 4001u/1u, 4001UL);
          osi_WrBin(tty, (char *)b, 4001u/1u, (unsigned long)len0);
@@ -233,13 +234,13 @@ static void inittnc(void)
    if (kisson) {
       strncpy(tbuf,"\015\033@K\015",701u);
       usleep(500000UL);
-      osic_WrBin(tty, (char *)tbuf, 701u/1u, 5UL);
+      osi_WrBin(tty, (char *)tbuf, 701u/1u, 5UL);
    }
    if (inilen>0UL) {
       usleep(500000UL);
-      osic_WrBin(tty, (char *)kbuf, 701u/1u, inilen);
+      osi_WrBin(tty, (char *)kbuf, 701u/1u, inilen);
    }
-   if (verb) osic_WrStrLn("send init to tnc", 17ul);
+   if (verb) osi_WrStrLn("send init to tnc", 17ul);
 /*  kissm:=0; */
 } /* end inittnc() */
 
@@ -278,13 +279,13 @@ static void SetComMode(long fd, unsigned long baud0)
 static void opentty(void)
 {
    for (;;) {
-      tty = osic_OpenRW(ttynamee, 701ul);
+      tty = osi_OpenRW(ttynamee, 701ul);
       if (tty>=0L) {
          SetComMode(tty, baud);
          break;
       }
       if (!usbrobust) Error("tty open", 9ul);
-      if (verb) osic_WrStrLn("tty open error", 15ul);
+      if (verb) osi_WrStrLn("tty open error", 15ul);
       usleep(1000000UL);
    }
 } /* end opentty() */
@@ -471,39 +472,39 @@ static void Parms(void)
                osic_WrLn();
                osi_WrStrLn(" -a                                automatic swit\
 ch to KISS/FLEX/SMACK mode", 76ul);
-               osic_WrStrLn("                                   (only with 1 P\
+               osi_WrStrLn("                                   (only with 1 P\
 orts)", 55ul);
-               osic_WrStrLn(" -r                                use rmnc-crc",
+               osi_WrStrLn(" -r                                use rmnc-crc",
                  48ul);
-               osic_WrStrLn(" -i <filename>                     send this file\
+               osi_WrStrLn(" -i <filename>                     send this file\
  to tty to switch on kiss", 75ul);
-               osic_WrStrLn(" -k                                tnc2 tf switch\
+               osi_WrStrLn(" -k                                tnc2 tf switch\
  on kiss", 58ul);
-               osic_WrStrLn(" -p <cmd>:<value>                  tnc2 parameter\
+               osi_WrStrLn(" -p <cmd>:<value>                  tnc2 parameter\
  1=txd, 2=p", 61ul);
-               osic_WrStrLn("                                   3=slottime, 25\
+               osi_WrStrLn("                                   3=slottime, 25\
 5:13 kiss exit", 64ul);
-               osic_WrStrLn("                                   (add 16 to cmd\
+               osi_WrStrLn("                                   (add 16 to cmd\
  for next Port)", 65ul);
-               osic_WrStrLn(" -s                                SMACK (crc) on\
+               osi_WrStrLn(" -s                                SMACK (crc) on\
 ", 50ul);
-               osic_WrStrLn(" -t <tty>:<baud>                   /dev/ttyS0:960\
+               osi_WrStrLn(" -t <tty>:<baud>                   /dev/ttyS0:960\
 0", 51ul);
-               osic_WrStrLn(" -T [ip]:[port]                    TCP-KISS -T 12\
+               osi_WrStrLn(" -T [ip]:[port]                    TCP-KISS -T 12\
 7.0.0.1:8001 (default)", 72ul);
-               osic_WrStrLn("                                   dire-wolf soun\
+               osi_WrStrLn("                                   dire-wolf soun\
 dmodem -T :", 61ul);
-               osic_WrStrLn(" -U <x.x.x.x:destport:listenport>  axudp  destpor\
+               osi_WrStrLn(" -U <x.x.x.x:destport:listenport>  axudp  destpor\
 t/listenport check ip", 71ul);
-               osic_WrStrLn("                                   (repeat for mo\
+               osi_WrStrLn("                                   (repeat for mo\
 re Ports)", 59ul);
-               osic_WrStrLn(" -u                                retry until (r\
+               osi_WrStrLn(" -u                                retry until (r\
 e)pluged (USB) tty", 68ul);
-               osic_WrStrLn("                                   and on kiss er\
+               osi_WrStrLn("                                   and on kiss er\
 ror reinitialize kiss mode", 76ul);
-               osic_WrStrLn(" -v                                verbous error \
+               osi_WrStrLn(" -v                                verbous error \
 messages", 58ul);
-               osic_WrStrLn(" -V                                verbous errors\
+               osi_WrStrLn(" -V                                verbous errors\
  and monitor data to stdout", 77ul);
                osi_WrStrLn(" -h                                this", 40ul);
                osic_WrLn();
@@ -523,9 +524,9 @@ messages", 58ul);
    }
    if (flexmod==1UL && sockc>1UL) Error("only 1 UDP with flexnet", 24ul);
    if (err) {
-      osic_WrStr(">", 2ul);
-      osic_WrStr(h, 1024ul);
-      osic_WrStrLn("< use -h", 9ul);
+      osi_WrStr(">", 2ul);
+      osi_WrStr(h, 1024ul);
+      osi_WrStrLn("< use -h", 9ul);
       X2C_ABORT();
    }
 } /* end Parms() */
@@ -726,9 +727,9 @@ static void WCh(char c0)
 {
    if (c0!='\015') {
       if ((unsigned char)c0<' ' || (unsigned char)c0>='\177') {
-         osic_WrStr(".", 2ul);
+         osi_WrStr(".", 2ul);
       }
-      else osic_WrStr((char *) &c0, 1u/1u);
+      else osi_WrStr((char *) &c0, 1u/1u);
    }
 } /* end WCh() */
 
@@ -754,12 +755,11 @@ static void ShowCall(char f[], unsigned long f_len, unsigned long pos)
    } /* end for */
    i0 = (unsigned long)(unsigned char)f[pos+6UL]>>1&15UL;
    if (i0) {
-      osic_WrStr("-", 2ul);
+      osi_WrStr("-", 2ul);
       if (i0>=10UL) {
-         osic_WrStr((char *)(tmp0 = (char)(i0/10UL+48UL),&tmp0),
-                1u/1u);
+         osi_WrStr((char *)(tmp0 = (char)(i0/10UL+48UL),&tmp0), 1u/1u);
       }
-      osic_WrStr((char *)(tmp0 = (char)(i0%10UL+48UL),&tmp0), 1u/1u);
+      osi_WrStr((char *)(tmp0 = (char)(i0%10UL+48UL),&tmp0), 1u/1u);
    }
 } /* end ShowCall() */
 
@@ -787,37 +787,36 @@ static void Showctl(unsigned long com, unsigned long cmd)
    unsigned long cm;
    char PF[4];
    char tmp;
-   osic_WrStr(" ctl ", 6ul);
+   osi_WrStr(" ctl ", 6ul);
    cm = (unsigned long)cmd&~0x10UL;
    if ((cm&0xFUL)==0x1UL) {
-      osic_WrStr("RR", 3ul);
-      osic_WrStr((char *)(tmp = (char)(48UL+(cmd>>5)),&tmp), 1u/1u);
+      osi_WrStr("RR", 3ul);
+      osi_WrStr((char *)(tmp = (char)(48UL+(cmd>>5)),&tmp), 1u/1u);
    }
    else if ((cm&0xFUL)==0x5UL) {
-      osic_WrStr("RNR", 4ul);
-      osic_WrStr((char *)(tmp = (char)(48UL+(cmd>>5)),&tmp), 1u/1u);
+      osi_WrStr("RNR", 4ul);
+      osi_WrStr((char *)(tmp = (char)(48UL+(cmd>>5)),&tmp), 1u/1u);
    }
    else if ((cm&0xFUL)==0x9UL) {
-      osic_WrStr("REJ", 4ul);
-      osic_WrStr((char *)(tmp = (char)(48UL+(cmd>>5)),&tmp), 1u/1u);
+      osi_WrStr("REJ", 4ul);
+      osi_WrStr((char *)(tmp = (char)(48UL+(cmd>>5)),&tmp), 1u/1u);
    }
    else if ((cm&0x1UL)==0UL) {
-      osic_WrStr("I", 2ul);
-      osic_WrStr((char *)(tmp = (char)(48UL+(cmd>>5)),&tmp), 1u/1u);
-      osic_WrStr((char *)(tmp = (char)(48UL+(cmd>>1&7UL)),&tmp),
-                1u/1u);
+      osi_WrStr("I", 2ul);
+      osi_WrStr((char *)(tmp = (char)(48UL+(cmd>>5)),&tmp), 1u/1u);
+      osi_WrStr((char *)(tmp = (char)(48UL+(cmd>>1&7UL)),&tmp), 1u/1u);
    }
-   else if (cm==0x3UL) osic_WrStr("UI", 3ul);
-   else if (cm==0xFUL) osic_WrStr("DM", 3ul);
-   else if (cm==0x2FUL) osic_WrStr("SABM", 5ul);
-   else if (cm==0x43UL) osic_WrStr("DISC", 5ul);
-   else if (cm==0x63UL) osic_WrStr("UA", 3ul);
-   else if (cm==0x87UL) osic_WrStr("FRMR", 5ul);
+   else if (cm==0x3UL) osi_WrStr("UI", 3ul);
+   else if (cm==0xFUL) osi_WrStr("DM", 3ul);
+   else if (cm==0x2FUL) osi_WrStr("SABM", 5ul);
+   else if (cm==0x43UL) osi_WrStr("DISC", 5ul);
+   else if (cm==0x63UL) osi_WrStr("UA", 3ul);
+   else if (cm==0x87UL) osi_WrStr("FRMR", 5ul);
    else osic_WrHex(cmd, 1UL);
    strncpy(PF,"v^-+",4u);
-   if (com==0UL || com==3UL) osic_WrStr("v1", 3ul);
+   if (com==0UL || com==3UL) osi_WrStr("v1", 3ul);
    else {
-      osic_WrStr((char *) &PF[(com&1UL)+2UL*(unsigned long)
+      osi_WrStr((char *) &PF[(com&1UL)+2UL*(unsigned long)
                 ((0x10UL & (unsigned long)cmd)!=0)], 1u/1u);
    }
 } /* end Showctl() */
@@ -829,37 +828,37 @@ static void ShowFrame(char f[], unsigned long f_len, unsigned long len0,
    unsigned long i0;
    char d;
    char v;
-   osic_WrStr((char *) &port, 1u/1u);
+   osi_WrStr((char *) &port, 1u/1u);
    i0 = 0UL;
    while (!((unsigned long)(unsigned char)f[i0]&1)) {
       ++i0;
       if (i0>len0) {
-         osic_WrStrLn(" no axudp (no address end mark)", 32ul);
+         osi_WrStrLn(" no axudp (no address end mark)", 32ul);
          return;
       }
    }
    /* no address end mark found */
    if (i0%7UL!=6UL) {
-      osic_WrStrLn(" no axudp (address field size not modulo 7)", 44ul);
+      osi_WrStrLn(" no axudp (address field size not modulo 7)", 44ul);
       return;
    }
    /* address end not modulo 7 error */
-   osic_WrStr(":fm ", 5ul);
+   osi_WrStr(":fm ", 5ul);
    ShowCall(f, f_len, 7UL);
-   osic_WrStr(" to ", 5ul);
+   osi_WrStr(" to ", 5ul);
    ShowCall(f, f_len, 0UL);
    i0 = 14UL;
    v = 1;
    while (i0+6UL<len0 && !((unsigned long)(unsigned char)f[i0-1UL]&1)) {
       if (v) {
-         osic_WrStr(" via", 5ul);
+         osi_WrStr(" via", 5ul);
          v = 0;
       }
-      osic_WrStr(" ", 2ul);
+      osi_WrStr(" ", 2ul);
       ShowCall(f, f_len, i0);
       if ((unsigned long)(unsigned char)f[i0+6UL]>=128UL && (((unsigned long)
                 (unsigned char)f[i0+6UL]&1) || (unsigned long)(unsigned char)
-                f[i0+13UL]<128UL)) osic_WrStr("*", 2ul);
+                f[i0+13UL]<128UL)) osi_WrStr("*", 2ul);
       i0 += 7UL;
    }
    Showctl((unsigned long)((0x80U & (unsigned char)(unsigned char)f[6UL])!=0)
@@ -867,7 +866,7 @@ static void ShowFrame(char f[], unsigned long f_len, unsigned long len0,
                 f[13UL])!=0), (unsigned long)(unsigned char)f[i0]);
    ++i0;
    if (i0<len0) {
-      osic_WrStr(" pid ", 6ul);
+      osi_WrStr(" pid ", 6ul);
       osic_WrHex((unsigned long)(unsigned char)f[i0], 1UL);
    }
    ++i0;
@@ -901,6 +900,7 @@ extern int main(int argc, char **argv)
    long tmp;
    long tmp0;
    X2C_BEGIN(&argc,argv,1,4000000l,8000000l);
+   osi_BEGIN();
    aprsstr_BEGIN();
    auto0 = 0;
    kisson = 0;
@@ -928,10 +928,10 @@ extern int main(int argc, char **argv)
       if (errtime==0UL) inittnc();
       if (direwolf && tcpfd<0L) {
          if (verb) {
-            osic_WrStr("connect ", 9ul);
-            osic_WrStr(direwolfurl, 2048ul);
-            osic_WrStr(":", 2ul);
-            osic_WrStrLn(direwolfport, 11ul);
+            osi_WrStr("connect ", 9ul);
+            osi_WrStr(direwolfurl, 2048ul);
+            osi_WrStr(":", 2ul);
+            osi_WrStrLn(direwolfport, 11ul);
          }
          conntcp(&tcpfd, direwolfurl, 2048ul, direwolfport, 11ul);
       }
@@ -959,7 +959,7 @@ extern int main(int argc, char **argv)
             }
             else {
                /* disconnected */
-               len = osic_RdBin(tty, (char *)tbuf, 701u/1u, 701UL);
+               len = osi_RdBin(tty, (char *)tbuf, 701u/1u, 701UL);
             }
             if (!direwolf && usbrobust) testtty(len);
             /*WrInt(len, 5); WrLn; */
@@ -998,19 +998,19 @@ extern int main(int argc, char **argv)
                         if (auto0) {
                            if (ubuf[0U]==' ') {
                               if (verb && flexmod!=1UL) {
-                                 osic_WrStrLn("switching to FLEXKISS", 22ul);
+                                 osi_WrStrLn("switching to FLEXKISS", 22ul);
                               }
                               flexmod = 1UL;
                            }
                            else if (ubuf[0U]=='\200') {
                               if (verb && flexmod!=2UL) {
-                                 osic_WrStrLn("switching to SMACK", 19ul);
+                                 osi_WrStrLn("switching to SMACK", 19ul);
                               }
                               flexmod = 2UL;
                            }
                            else {
                               if (verb && flexmod) {
-                                 osic_WrStrLn("switching to KISS", 18ul);
+                                 osi_WrStrLn("switching to KISS", 18ul);
                               }
                               flexmod = 0UL;
                            }
@@ -1033,20 +1033,18 @@ extern int main(int argc, char **argv)
                            --upos;
                            if (hexdump) {
                               if (flexmod==1UL && c==' ') {
-                                 osic_WrStr("FLEX", 5ul);
+                                 osi_WrStr("FLEX", 5ul);
                               }
                               else if ((unsigned char)c>=(unsigned char)
-                '\200') osic_WrStr("SMACK", 6ul);
-                              else {
-                                 osic_WrStr("KISS", 5ul);
-                              }
+                '\200') osi_WrStr("SMACK", 6ul);
+                              else osi_WrStr("KISS", 5ul);
                               ShowFrame(ubuf, 701ul, (unsigned long)upos,
                 (char)(tncport+48UL));
                            }
                            sendudp(ubuf, 701ul, upos, tncport);
                         }
                         else if (verb) {
-                           osic_WrStrLn("serialport-crc error", 21ul);
+                           osi_WrStrLn("serialport-crc error", 21ul);
                         }
                      }
                      /*                FOR i:=0 TO upos-1 DO WrHex(ORD(ubuf[i]
@@ -1055,9 +1053,7 @@ extern int main(int argc, char **argv)
                      upos = 0L;
                      kissm = 1UL;
                   }
-                  else if (c=='\333') {
-                     kissm = 2UL;
-                  }
+                  else if (c=='\333') kissm = 2UL;
                   else if (upos<700L) {
                      ubuf[upos] = c;
                      ++upos;
@@ -1087,7 +1083,7 @@ extern int main(int argc, char **argv)
                   }
                   if (len>=2L && len<698L) {
                      if (hexdump) {
-                        osic_WrStr("UDP", 4ul);
+                        osi_WrStr("UDP", 4ul);
                         ShowFrame(ubuf, 701ul, (unsigned long)(len-2L),
                 (char)(tncport+48UL));
                      }
@@ -1151,17 +1147,17 @@ extern int main(int argc, char **argv)
                         }
                      }
                      else {
-                        osic_WrBin(tty, (char *)kbuf, 701u/1u,
+                        osi_WrBin(tty, (char *)kbuf, 701u/1u,
                 (unsigned long)(tpos+1L));
                      }
                   }
                   else if (verb) {
                      /*WrInt(tpos+1, 10); WrInt(dlen, 10); WrLn; */
-                     if (len==-2L) osic_WrStrLn("axudp crc error", 16ul);
+                     if (len==-2L) osi_WrStrLn("axudp crc error", 16ul);
                      else if (len==-1L) {
-                        osic_WrStrLn("axudp from wrong source ip", 27ul);
+                        osi_WrStrLn("axudp from wrong source ip", 27ul);
                      }
-                     else if (len) osic_WrStrLn("axudp length error", 19ul);
+                     else if (len) osi_WrStrLn("axudp length error", 19ul);
                   }
                }
             }

@@ -14,8 +14,9 @@
 #endif
 #define udphub_C_
 #ifndef osi_H_
-#include "osic.h"
+#include "osi.h"
 #endif
+#include <osic.h>
 #ifndef udp_H_
 #include "udp.h"
 #endif
@@ -27,10 +28,6 @@
 #endif
 
 /* axudp bidirectional digi - user hub by OE5DXL */
-/*
-FROM FIO IMPORT OpenMode, Close, oRDONLY, oAPPEND, oWRONLY, oNONBLOCK,
-                Create, WrBin, RdBin, File;
-*/
 #define udphub_CALLLEN 7
 
 #define udphub_MAXLEN 338
@@ -142,9 +139,9 @@ PROCEDURE ["C"] / select(n: INTEGER; readfds: ADDRESS; writefds: ADDRESS;
 
 static void Err(const char text[], unsigned long text_len)
 {
-   osic_WrStr("udphub: ", 9ul);
-   osic_WrStr(text, text_len);
-   osic_WrStrLn(" error abort", 13ul);
+   osi_WrStr("udphub: ", 9ul);
+   osi_WrStr(text, text_len);
+   osi_WrStrLn(" error abort", 13ul);
    X2C_ABORT();
 } /* end Err() */
 
@@ -174,9 +171,9 @@ static void WCh(char c)
 {
    if (c!='\015') {
       if ((unsigned char)c<' ' || (unsigned char)c>='\177') {
-         osic_WrStr(".", 2ul);
+         osi_WrStr(".", 2ul);
       }
-      else osic_WrStr((char *) &c, 1u/1u);
+      else osi_WrStr((char *) &c, 1u/1u);
    }
 } /* end WCh() */
 
@@ -202,12 +199,11 @@ static void ShowCall(char f[], unsigned long f_len, unsigned long pos)
    } /* end for */
    i = (unsigned long)(unsigned char)f[pos+6UL]>>1&15UL;
    if (i) {
-      osic_WrStr("-", 2ul);
+      osi_WrStr("-", 2ul);
       if (i>=10UL) {
-         osic_WrStr((char *)(tmp0 = (char)(i/10UL+48UL),&tmp0),
-                1u/1u);
+         osi_WrStr((char *)(tmp0 = (char)(i/10UL+48UL),&tmp0), 1u/1u);
       }
-      osic_WrStr((char *)(tmp0 = (char)(i%10UL+48UL),&tmp0), 1u/1u);
+      osi_WrStr((char *)(tmp0 = (char)(i%10UL+48UL),&tmp0), 1u/1u);
    }
 } /* end ShowCall() */
 
@@ -235,37 +231,36 @@ static void Showctl(unsigned long com, unsigned long cmd)
    unsigned long cm;
    char PF[4];
    char tmp;
-   osic_WrStr(" ctl ", 6ul);
+   osi_WrStr(" ctl ", 6ul);
    cm = (unsigned long)cmd&~0x10UL;
    if ((cm&0xFUL)==0x1UL) {
-      osic_WrStr("RR", 3ul);
-      osic_WrStr((char *)(tmp = (char)(48UL+(cmd>>5)),&tmp), 1u/1u);
+      osi_WrStr("RR", 3ul);
+      osi_WrStr((char *)(tmp = (char)(48UL+(cmd>>5)),&tmp), 1u/1u);
    }
    else if ((cm&0xFUL)==0x5UL) {
-      osic_WrStr("RNR", 4ul);
-      osic_WrStr((char *)(tmp = (char)(48UL+(cmd>>5)),&tmp), 1u/1u);
+      osi_WrStr("RNR", 4ul);
+      osi_WrStr((char *)(tmp = (char)(48UL+(cmd>>5)),&tmp), 1u/1u);
    }
    else if ((cm&0xFUL)==0x9UL) {
-      osic_WrStr("REJ", 4ul);
-      osic_WrStr((char *)(tmp = (char)(48UL+(cmd>>5)),&tmp), 1u/1u);
+      osi_WrStr("REJ", 4ul);
+      osi_WrStr((char *)(tmp = (char)(48UL+(cmd>>5)),&tmp), 1u/1u);
    }
    else if ((cm&0x1UL)==0UL) {
-      osic_WrStr("I", 2ul);
-      osic_WrStr((char *)(tmp = (char)(48UL+(cmd>>5)),&tmp), 1u/1u);
-      osic_WrStr((char *)(tmp = (char)(48UL+(cmd>>1&7UL)),&tmp),
-                1u/1u);
+      osi_WrStr("I", 2ul);
+      osi_WrStr((char *)(tmp = (char)(48UL+(cmd>>5)),&tmp), 1u/1u);
+      osi_WrStr((char *)(tmp = (char)(48UL+(cmd>>1&7UL)),&tmp), 1u/1u);
    }
-   else if (cm==0x3UL) osic_WrStr("UI", 3ul);
-   else if (cm==0xFUL) osic_WrStr("DM", 3ul);
-   else if (cm==0x2FUL) osic_WrStr("SABM", 5ul);
-   else if (cm==0x43UL) osic_WrStr("DISC", 5ul);
-   else if (cm==0x63UL) osic_WrStr("UA", 3ul);
-   else if (cm==0x87UL) osic_WrStr("FRMR", 5ul);
+   else if (cm==0x3UL) osi_WrStr("UI", 3ul);
+   else if (cm==0xFUL) osi_WrStr("DM", 3ul);
+   else if (cm==0x2FUL) osi_WrStr("SABM", 5ul);
+   else if (cm==0x43UL) osi_WrStr("DISC", 5ul);
+   else if (cm==0x63UL) osi_WrStr("UA", 3ul);
+   else if (cm==0x87UL) osi_WrStr("FRMR", 5ul);
    else osic_WrHex(cmd, 1UL);
    strncpy(PF,"v^-+",4u);
-   if (com==0UL || com==3UL) osic_WrStr("v1", 3ul);
+   if (com==0UL || com==3UL) osi_WrStr("v1", 3ul);
    else {
-      osic_WrStr((char *) &PF[(com&1UL)+2UL*(unsigned long)
+      osi_WrStr((char *) &PF[(com&1UL)+2UL*(unsigned long)
                 ((0x10UL & (unsigned long)cmd)!=0)], 1u/1u);
    }
 } /* end Showctl() */
@@ -285,22 +280,22 @@ static void ShowFrame(char f[], unsigned long f_len, unsigned long len,
    /* no address end mark found */
    if (i%7UL!=6UL) return;
    /* address end not modulo 7 error */
-   osic_WrStr(" fm ", 5ul);
+   osi_WrStr(" fm ", 5ul);
    ShowCall(f, f_len, 7UL);
-   osic_WrStr(" to ", 5ul);
+   osi_WrStr(" to ", 5ul);
    ShowCall(f, f_len, 0UL);
    i = 14UL;
    v = 1;
    while (i+6UL<len && !((unsigned long)(unsigned char)f[i-1UL]&1)) {
       if (v) {
-         osic_WrStr(" via", 5ul);
+         osi_WrStr(" via", 5ul);
          v = 0;
       }
-      osic_WrStr(" ", 2ul);
+      osi_WrStr(" ", 2ul);
       ShowCall(f, f_len, i);
       if ((unsigned long)(unsigned char)f[i+6UL]>=128UL && (((unsigned long)
                 (unsigned char)f[i+6UL]&1) || (unsigned long)(unsigned char)
-                f[i+13UL]<128UL)) osic_WrStr("*", 2ul);
+                f[i+13UL]<128UL)) osi_WrStr("*", 2ul);
       i += 7UL;
    }
    Showctl((unsigned long)((0x80U & (unsigned char)(unsigned char)f[6UL])!=0)
@@ -308,7 +303,7 @@ static void ShowFrame(char f[], unsigned long f_len, unsigned long len,
                 f[13UL])!=0), (unsigned long)(unsigned char)f[i]);
    ++i;
    if (i<len) {
-      osic_WrStr(" pid ", 6ul);
+      osi_WrStr(" pid ", 6ul);
       osic_WrHex((unsigned long)(unsigned char)f[i], 1UL);
    }
    ++i;
@@ -457,7 +452,7 @@ static long getudp(long fd, char buf[], unsigned long buf_len,
    long len;
    len = udpreceive(fd, buf, (long)(buf_len), fromport, &ip);
    if (len<2L || !testCRC(buf, buf_len, len)) {
-      if (show) osic_WrStrLn(" axudp crc error ", 18ul);
+      if (show) osi_WrStrLn(" axudp crc error ", 18ul);
       return -1L;
    }
    if (checkip && *fromip0!=ip) return -2L;
@@ -593,16 +588,16 @@ static void parms(void)
    unsigned long fromdigiport;
    err0 = 0;
    for (;;) {
-      osic_NextArg(h, 1024ul);
+      osi_NextArg(h, 1024ul);
       if (h[0U]==0) break;
       if ((h[0U]=='-' && h[1U]) && h[2U]==0) {
          if (h[1U]=='l') {
-            osic_NextArg(h, 1024ul);
+            osi_NextArg(h, 1024ul);
             if (!GetNum(h, 1024ul, &i)) Err("-l minutes", 11ul);
             lifetime = i*60UL;
          }
          else if (h[1U]=='L') {
-            osic_NextArg(h, 1024ul);
+            osi_NextArg(h, 1024ul);
             if (!GetNum(h, 1024ul, &i)) Err("-L minutes", 11ul);
             alllifetime = i*60UL;
          }
@@ -610,7 +605,7 @@ static void parms(void)
          else if (h[1U]=='I') defaultbcin = 1;
          else if (h[1U]=='O') defaultbcout = 1;
          else if (h[1U]=='b') {
-            osic_NextArg(h, 1024ul);
+            osi_NextArg(h, 1024ul);
             if (h[0U]==0) Err("-b call", 8ul);
             i = 0UL;
             if (!Str2Call(h, 1024ul, &i, 0UL, broadcastdest, 7ul)) {
@@ -619,22 +614,22 @@ static void parms(void)
          }
          else if (h[1U]=='i') {
             /* init filename */
-            osic_NextArg(initfn, 1025ul);
+            osi_NextArg(initfn, 1025ul);
          }
          else if (h[1U]=='w') {
             /* write table filename */
-            osic_NextArg(wrfn, 1025ul);
+            osi_NextArg(wrfn, 1025ul);
          }
          else if (h[1U]=='m') {
-            osic_NextArg(h, 1024ul);
+            osi_NextArg(h, 1024ul);
             if (!GetNum(h, 1024ul, &maxentries)) Err("-m number", 10ul);
          }
          else if (h[1U]=='p') {
-            osic_NextArg(h, 1024ul);
+            osi_NextArg(h, 1024ul);
             if (!GetNum(h, 1024ul, &touserport)) Err("-p portnumber", 14ul);
          }
          else if (h[1U]=='u') {
-            osic_NextArg(h, 1024ul);
+            osi_NextArg(h, 1024ul);
             if (GetIp(h, 1024ul, &digiip, &todigiport, &fromdigiport,
                 &digisock, &checkdigiip)<0L) {
                Err("cannot open digi udp socket", 28ul);
@@ -650,40 +645,40 @@ static void parms(void)
                osic_WrLn();
                osi_WrStrLn(" -a                                route user-to-\
 digi AND user-to-user", 71ul);
-               osic_WrStrLn(" -b <call>                         broadcast dest\
+               osi_WrStrLn(" -b <call>                         broadcast dest\
 ination call", 62ul);
-               osic_WrStrLn(" -h                                this", 40ul);
-               osic_WrStrLn(" -I                                for new user: \
+               osi_WrStrLn(" -h                                this", 40ul);
+               osi_WrStrLn(" -I                                for new user: \
 broadcast INPUT on", 68ul);
-               osic_WrStrLn(" -i <file>                         init routes fr\
+               osi_WrStrLn(" -i <file>                         init routes fr\
 om file", 57ul);
-               osic_WrStrLn(" -L <time>                         minutes route \
+               osi_WrStrLn(" -L <time>                         minutes route \
 to all ssid\'s (default 10 min)", 80ul);
-               osic_WrStrLn("                                   0 no all ssid \
+               osi_WrStrLn("                                   0 no all ssid \
 routing", 57ul);
-               osic_WrStrLn(" -l <time>                         minutes lifeti\
+               osi_WrStrLn(" -l <time>                         minutes lifeti\
 me (default 1 week)", 69ul);
-               osic_WrStrLn(" -m <maxentries>                   else delete ol\
+               osi_WrStrLn(" -m <maxentries>                   else delete ol\
 d entries (default 1000)", 74ul);
-               osic_WrStrLn(" -O                                for new user: \
+               osi_WrStrLn(" -O                                for new user: \
 broadcast OUTPUT on", 69ul);
-               osic_WrStrLn(" -p <userport>                     udp port for u\
+               osi_WrStrLn(" -p <userport>                     udp port for u\
 sers", 54ul);
-               osic_WrStrLn(" -u <x.x.x.x:destport:listenport>  axudp to digi \
+               osi_WrStrLn(" -u <x.x.x.x:destport:listenport>  axudp to digi \
 /listenport check ip", 70ul);
-               osic_WrStrLn(" -v                                verbous",
+               osi_WrStrLn(" -v                                verbous",
                 43ul);
-               osic_WrStrLn(" -V                                verbous + fram\
+               osi_WrStrLn(" -V                                verbous + fram\
 es with Text", 62ul);
-               osic_WrStrLn(" -w <file>                         write user tab\
+               osi_WrStrLn(" -w <file>                         write user tab\
 le to file (only if new entries and max. every 15s)", 101ul);
                osic_WrLn();
                osi_WrStrLn("Initfile:", 10ul);
                osi_WrStrLn("NOCALL-15 192.168.0.1:4711 #comment", 36ul);
                osi_WrStrLn("NOCALL-15 p 192.168.0.1:4711 #protected entry",
                 46ul);
-               osic_WrStrLn("#comment", 9ul);
-               osic_WrStrLn("NOCALL-15 p 0.0.0.0:0 no data to this call except\
+               osi_WrStrLn("#comment", 9ul);
+               osi_WrStrLn("NOCALL-15 p 0.0.0.0:0 no data to this call except\
  to digi port", 63ul);
                osi_WrStrLn("b enable broadcast input", 25ul);
                osi_WrStrLn("B enable broadcast output", 26ul);
@@ -695,7 +690,7 @@ le to file (only if new entries and max. every 15s)", 101ul);
                osic_WrLn();
                osi_WrStrLn("Source: AX.25 Source Call makes table entry with \
 call/ip/sourceport/date", 73ul);
-               osic_WrStrLn("        Exception: Protected entry updates Date o\
+               osi_WrStrLn("        Exception: Protected entry updates Date o\
 nly", 53ul);
                osic_WrLn();
                osi_WrStrLn("Destinationcall: (call used for routing)", 41ul);
@@ -711,17 +706,17 @@ destination call is used", 74ul);
                osi_WrStrLn("  user enabled to get all data", 31ul);
                osi_WrStrLn("  OR broadcast and user enabled to get broadcast",
                  49ul);
-               osic_WrStrLn("  OR destinationcall with ssid equals user",
+               osi_WrStrLn("  OR destinationcall with ssid equals user",
                 43ul);
-               osic_WrStrLn("  OR destinationcall with ssid fits to no user in\
+               osi_WrStrLn("  OR destinationcall with ssid fits to no user in\
  table", 56ul);
-               osic_WrStrLn("     but destinationcall without ssid equals user\
+               osi_WrStrLn("     but destinationcall without ssid equals user\
  seen since -L time", 69ul);
-               osic_WrStrLn("  exception 1: data never sent (back) to ip/port \
+               osi_WrStrLn("  exception 1: data never sent (back) to ip/port \
 where came from", 65ul);
-               osic_WrStrLn("  exception 2: data sent only one time to ip/port\
+               osi_WrStrLn("  exception 2: data sent only one time to ip/port\
  even if more destinationcalls share same ip/port", 99ul);
-               osic_WrStrLn("  exception 3: with not \'-a\' only data from dig\
+               osi_WrStrLn("  exception 3: with not \'-a\' only data from dig\
 i port routes to destinationcall", 80ul);
                osic_WrLn();
                X2C_ABORT();
@@ -738,9 +733,9 @@ i port routes to destinationcall", 80ul);
       if (err0) break;
    }
    if (err0) {
-      osic_WrStr(">", 2ul);
-      osic_WrStr(h, 1024ul);
-      osic_WrStrLn("< use -h", 9ul);
+      osi_WrStr(">", 2ul);
+      osi_WrStr(h, 1024ul);
+      osi_WrStrLn("< use -h", 9ul);
       X2C_ABORT();
    }
 } /* end parms() */
@@ -772,7 +767,7 @@ static void showpip(unsigned long ip, unsigned long port)
 {
    char h[51];
    ip2str(ip, port, h, 51ul);
-   osic_WrStr(h, 51ul);
+   osi_WrStr(h, 51ul);
 } /* end showpip() */
 
 
@@ -784,7 +779,7 @@ static void showcall(const char b[], unsigned long b_len,
    l = 0UL;
    if (Call2Str(b, b_len, h, 16ul, start, &l)) {
       h[l] = 0;
-      osic_WrStr(h, 16ul);
+      osi_WrStr(h, 16ul);
    }
 } /* end showcall() */
 
@@ -849,21 +844,21 @@ static void listtab(char fn[], unsigned long fn_len)
             aprsstr_Append(h, 201ul, s, 201ul);
          }
          aprsstr_Append(h, 201ul, "\012", 2ul);
-         osic_WrBin(fd, (char *)h, 201u/1u, aprsstr_Length(h, 201ul));
+         osi_WrBin(fd, (char *)h, 201u/1u, aprsstr_Length(h, 201ul));
          u = u->next;
       }
       strncpy(h,"f from init file, \012p ip/port protected\012B BC out\012b B\
 C in\012A gets all\012",201u);
-      osic_WrBin(fd, (char *)h, 201u/1u, aprsstr_Length(h, 201ul));
+      osi_WrBin(fd, (char *)h, 201u/1u, aprsstr_Length(h, 201ul));
       if (peertopeer) {
          strncpy(h,"peer-to-peer routing on\012",201u);
-         osic_WrBin(fd, (char *)h, 201u/1u, aprsstr_Length(h, 201ul));
+         osi_WrBin(fd, (char *)h, 201u/1u, aprsstr_Length(h, 201ul));
       }
       i = 0UL;
       if (Call2Str(broadcastdest, 7ul, h, 201ul, 0UL, &i)) {
          h[i] = 0;
          aprsstr_Append(h, 201ul, " broadcast destination\012", 24ul);
-         osic_WrBin(fd, (char *)h, 201u/1u, aprsstr_Length(h, 201ul));
+         osi_WrBin(fd, (char *)h, 201u/1u, aprsstr_Length(h, 201ul));
       }
       aprsstr_IntToStr((long)touserport, 0UL, h, 201ul);
       aprsstr_Append(h, 201ul, " user UDP port\012", 16ul);
@@ -903,7 +898,7 @@ static pUSER Realloc(char alloc)
          if (last==0) users = u->next;
          else last->next = u->next;
          if (show) {
-            osic_WrStr("Purge User ", 12ul);
+            osi_WrStr("Purge User ", 12ul);
             showcall(u->call, 7ul, 0UL);
             osic_WrLn();
          }
@@ -929,11 +924,11 @@ static pUSER Realloc(char alloc)
 
 static void showu(unsigned long dp, pUSER u)
 {
-   if (u->nospoof) osic_WrStr(" writeprotected", 16ul);
-   if (u->bcout) osic_WrStr(" bc-out", 8ul);
-   if (u->bcin) osic_WrStr(" bc-in", 7ul);
-   if (u->willall) osic_WrStr(" gets-all", 10ul);
-   osic_WrStr(" IP:", 5ul);
+   if (u->nospoof) osi_WrStr(" writeprotected", 16ul);
+   if (u->bcout) osi_WrStr(" bc-out", 8ul);
+   if (u->bcin) osi_WrStr(" bc-in", 7ul);
+   if (u->willall) osi_WrStr(" gets-all", 10ul);
+   osi_WrStr(" IP:", 5ul);
    showpip(u->uip, dp);
    osic_WrLn();
 } /* end showu() */
@@ -985,7 +980,7 @@ static void AddIp(unsigned long ip, unsigned long dp, char fix, char nspoof,
    if (u==0) {
       u = Realloc(1);
       if (u==0) {
-         if (show) osic_WrStrLn(" user add out of memory", 24ul);
+         if (show) osi_WrStrLn(" user add out of memory", 24ul);
       }
       else {
          { /* with */
@@ -1006,7 +1001,7 @@ static void AddIp(unsigned long ip, unsigned long dp, char fix, char nspoof,
          }
          *hasbcin = defbcin;
          if (show) {
-            osic_WrStr("Add User ", 10ul);
+            osi_WrStr("Add User ", 10ul);
             showcall(buf, buf_len, 7UL);
             showu(dp, u);
          }
@@ -1077,11 +1072,11 @@ static char sendtouser(char ubuf0[], unsigned long ubuf_len, long blen0,
             u->datagot = 1;
             res0 = udpsend(usersock, ubuf0, blen0, u->dport, u->uip);
             if (show) {
-               osic_WrStr("< send to user ", 16ul);
+               osi_WrStr("< send to user ", 16ul);
                showcall(u->call, 7ul, 0UL);
-               osic_WrStr(" ", 2ul);
+               osi_WrStr(" ", 2ul);
                showpip(u->uip, u->dport);
-               osic_WrStrLn("", 1ul);
+               osi_WrStrLn("", 1ul);
             }
             if (u==exactu || broadcast) ok0 = 1;
          }
@@ -1106,13 +1101,13 @@ static void err(char h[], unsigned long h_len, char fn[],
    char s[4001];
    X2C_PCOPY((void **)&h,h_len);
    X2C_PCOPY((void **)&fn,fn_len);
-   osic_WrStr("Error in line ", 15ul);
+   osi_WrStr("Error in line ", 15ul);
    aprsstr_IntToStr((long)lc, 1UL, s, 4001ul);
    aprsstr_Append(s, 4001ul, ":[", 3ul);
    aprsstr_Append(s, 4001ul, fn, fn_len);
    aprsstr_Append(s, 4001ul, "] ", 3ul);
    aprsstr_Append(s, 4001ul, h, h_len);
-   osic_WrStrLn(s, 4001ul);
+   osi_WrStrLn(s, 4001ul);
    X2C_PFREE(h);
    X2C_PFREE(fn);
 } /* end err() */
@@ -1140,7 +1135,7 @@ static void initroutes(char fn[], unsigned long fn_len)
       for (;;) {
          i = 0UL;
          do {
-            if (osic_RdBin(fd, (char *) &b[i], 1u/1u, 1UL)<1L) goto loop_exit;
+            if (osi_RdBin(fd, (char *) &b[i], 1u/1u, 1UL)<1L) goto loop_exit;
             ++i;
          } while (!(i>=200UL || b[i-1UL]=='\012'));
          b[i] = 0;
@@ -1206,9 +1201,10 @@ static pUSER voidu;
 X2C_STACK_LIMIT(100000l)
 extern int main(int argc, char **argv)
 {
-   if (sizeof(RAWCALL)!=7) X2C_ASSERT(0);
    X2C_BEGIN(&argc,argv,1,4000000l,8000000l);
+   if (sizeof(RAWCALL)!=7) X2C_ASSERT(0);
    aprsstr_BEGIN();
+   osi_BEGIN();
    Gencrctab();
    noinf = 1;
    show = 0;
@@ -1245,14 +1241,14 @@ extern int main(int argc, char **argv)
                 checkdigiip);
             if (blen>=17L) {
                if (show) {
-                  osic_WrStr("> from digi", 12ul);
+                  osi_WrStr("> from digi", 12ul);
                   ShowFrame(ubuf, 338ul, (unsigned long)(blen-2L), noinf);
                }
                if (!sendtouser(ubuf, 338ul, blen, 1, 1, digiip,
                 userdport) && show) {
-                  osic_WrStrLn(" digi out user not found", 25ul);
+                  osi_WrStrLn(" digi out user not found", 25ul);
                }
-               if (show) osic_WrStrLn("-----", 6ul);
+               if (show) osi_WrStrLn("-----", 6ul);
             }
          }
          if (issetr((unsigned long)usersock)) {
@@ -1261,7 +1257,7 @@ extern int main(int argc, char **argv)
             blen = getudp(usersock, ubuf, 338ul, &fromip, &userdport, 0);
             if (blen>=17L) {
                if (show) {
-                  osic_WrStr("> from user ", 13ul);
+                  osi_WrStr("> from user ", 13ul);
                   showpip(fromip, userdport);
                   ShowFrame(ubuf, 338ul, (unsigned long)(blen-2L), noinf);
                }
@@ -1273,9 +1269,9 @@ extern int main(int argc, char **argv)
                }
                if (!sendtouser(ubuf, 338ul, blen, 0, dbcin, fromip,
                 userdport) && show) {
-                  osic_WrStrLn(" peer-to-peer no user found", 28ul);
+                  osi_WrStrLn(" peer-to-peer no user found", 28ul);
                }
-               if (show) osic_WrStrLn("-----", 6ul);
+               if (show) osi_WrStrLn("-----", 6ul);
             }
          }
       }

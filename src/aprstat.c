@@ -305,7 +305,7 @@ extern void aprstat_btimehist(maptool_pIMAGE * img, aprsdecode_pOPHIST op)
                 (tmp0[0] = xm+16UL,tmp0[1] = 166U,tmp0),2u);
    useri_debugmem.screens += (*img)->Len1*(*img)->Size1;
    if (*img==0) {
-      osic_WrStrLn("error image alloc", 18ul);
+      osi_WrStrLn("error image alloc", 18ul);
       return;
    }
    maptool_clr(*img);
@@ -543,7 +543,7 @@ extern void aprstat_kmhist(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
                 (tmp0[0] = maxx+16UL,tmp0[1] = 136U,tmp0),2u);
       useri_debugmem.screens += (*img)->Len1*(*img)->Size1;
       if (*img==0) {
-         osic_WrStrLn("error image alloc", 18ul);
+         osi_WrStrLn("error image alloc", 18ul);
          return;
       }
       maptool_clr(*img);
@@ -910,7 +910,7 @@ extern void aprstat_althist(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
                 (tmp[0] = Maxx+16UL,tmp[1] = 136U,tmp),2u);
    useri_debugmem.screens += (*img)->Len1*(*img)->Size1;
    if (*img==0) {
-      osic_WrStrLn("error image alloc", 18ul);
+      osi_WrStrLn("error image alloc", 18ul);
       return;
    }
    maptool_clr(*img);
@@ -1419,6 +1419,7 @@ extern void aprstat_BEGIN(void)
    aprstext_BEGIN();
    useri_BEGIN();
    aprspos_BEGIN();
+   osi_BEGIN();
    aprsdecode_BEGIN();
    aprsstr_BEGIN();
    maptool_BEGIN();

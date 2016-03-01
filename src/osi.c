@@ -13,7 +13,6 @@
 #include "osi.h"
 #endif
 #define osi_C_
-#include <math.h>
 #include <osic.h>
 #ifndef tcp_H_
 #include "tcp.h"
@@ -21,7 +20,9 @@
 #ifndef udp_H_
 #include "udp.h"
 #endif
-#include <stdio.h>
+#ifndef flush_H_
+#include "flush.h"
+#endif
 
 /* os interface linux/win32 */
 
@@ -150,9 +151,36 @@ extern void osi_WrStrLn(char s[], unsigned long s_len)
 } /* end WrStrLn() */
 
 
+extern void osi_WrStr(char s[], unsigned long s_len)
+{
+   X2C_PCOPY((void **)&s,s_len);
+   osic_WrStr(s, s_len);
+   X2C_PFREE(s);
+} /* end WrStr() */
+
+
+extern void osi_Erase(char fn[], unsigned long fn_len, char * done)
+{
+   X2C_PCOPY((void **)&fn,fn_len);
+   osic_Remove(fn, fn_len, done);
+   X2C_PFREE(fn);
+} /* end Erase() */
+
+
+extern char osi_Exists(char fn[], unsigned long fn_len)
+{
+   char osi_Exists_ret;
+   X2C_PCOPY((void **)&fn,fn_len);
+   osi_Exists_ret = osic_Exists(fn, fn_len);
+   X2C_PFREE(fn);
+   return osi_Exists_ret;
+} /* end Exists() */
+
+
 extern void osi_BEGIN(void)
 {
    static int osi_init = 0;
    if (osi_init) return;
    osi_init = 1;
 }
+

@@ -20,12 +20,19 @@
 #include "aprsdecode.h"
 #endif
 #ifndef xosi_H_
-#include "xosic.h"
+#include "xosi.h"
 #endif
 #ifndef osi_H_
-#include "osic.h"
+#include "osi.h"
 #endif
 #include <math.h>
+#include <osic.h>
+#ifndef InOut_H_
+#include "InOut.h"
+#endif
+#ifndef FileSys_H_
+#include "FileSys.h"
+#endif
 #ifndef aprsstr_H_
 #include "aprsstr.h"
 #endif
@@ -37,6 +44,12 @@
 #endif
 #ifndef jpgdec_H_
 #include "jpgdec.h"
+#endif
+#ifndef TimeConv_H_
+#include "TimeConv.h"
+#endif
+#ifndef Storage_H_
+#include "Storage.h"
 #endif
 #ifndef useri_H_
 #include "useri.h"
@@ -193,7 +206,7 @@ static void makegammatab(void)
    unsigned long c;
    gammatab[0U] = 0;
    for (c = 1UL; c<=1023UL; c++) {
-      gammatab[c] = (char)aprsdecode_trunc(osic_exp(osic_ln(X2C_DIVR((float)
+      gammatab[c] = (char)aprsdecode_trunc(RealMath_exp(RealMath_ln(X2C_DIVR((float)
                 c,1024.0f))*4.5454545454545E-1f)*255.5f);
    } /* end for */
 } /* end makegammatab() */
@@ -349,8 +362,8 @@ extern void maptool_xytodeg(float x, float y, struct aprspos_POSITION * pos)
                 ((1.0f+zoom)-(float)zi)*256.0f*expzoom((long)
                 aprsdecode_trunc(zoom)));
    pos->long0 = aprsdecode_mappos.long0+pixrad*x;
-   pos->lat = 2.0f*osic_arctan(osic_exp(osic_ln(osic_tan(aprsdecode_mappos.lat)
-                +X2C_DIVR(1.0f,osic_cos(aprsdecode_mappos.lat)))-pixrad*y))-1.5707963267949f;
+   pos->lat = 2.0f*RealMath_arctan(RealMath_exp(RealMath_ln(RealMath_tan(aprsdecode_mappos.lat)
+                +X2C_DIVR(1.0f,RealMath_cos(aprsdecode_mappos.lat)))-pixrad*y))-1.5707963267949f;
    maptool_limpos(pos);
 } /* end xytodeg() */
 
@@ -364,8 +377,8 @@ extern void maptool_shiftmap(long x, long y, long ysize, float zoom,
    pixrad = ((1.0f+zoom)-(float)zi)*256.0f*expzoom((long)
                 aprsdecode_trunc(zoom));
    pos->long0 = pos->long0-(X2C_DIVR(6.2831853071796f,pixrad))*(float)x;
-   pos->lat = 2.0f*osic_arctan(osic_exp(osic_ln(osic_tan(pos->lat)
-                +X2C_DIVR(1.0f,osic_cos(pos->lat)))+(X2C_DIVR(6.2831853071796f,
+   pos->lat = 2.0f*RealMath_arctan(RealMath_exp(RealMath_ln(RealMath_tan(pos->lat)
+                +X2C_DIVR(1.0f,RealMath_cos(pos->lat)))+(X2C_DIVR(6.2831853071796f,
                 pixrad))*(float)(ysize-y)))-1.5707963267949f;
    maptool_limpos(pos);
 } /* end shiftmap() */
@@ -382,8 +395,8 @@ extern void maptool_center(long xsize, long ysize, float zoom,
                 aprsdecode_trunc(zoom));
    pos->long0 = centpos.long0-(X2C_DIVR(6.2831853071796f,
                 pixrad))*(float)(xsize/2L);
-   pos->lat = 2.0f*osic_arctan(osic_exp(osic_ln(osic_tan(centpos.lat)
-                +X2C_DIVR(1.0f,osic_cos(centpos.lat)))+(X2C_DIVR(6.2831853071796f,
+   pos->lat = 2.0f*RealMath_arctan(RealMath_exp(RealMath_ln(RealMath_tan(centpos.lat)
+                +X2C_DIVR(1.0f,RealMath_cos(centpos.lat)))+(X2C_DIVR(6.2831853071796f,
                 pixrad))*(float)(ysize/2L)))-1.5707963267949f;
    maptool_limpos(pos);
 } /* end center() */
@@ -399,7 +412,7 @@ extern void maptool_mercator(float lon, float lat, long zoom, long * tilex,
    else if (lat<(-1.484f)) lat = (-1.484f);
    if (lon>3.1414926535898f) lon = 3.1414926535898f;
    else if (lon<(-3.1414926535898f)) lon = (-3.1414926535898f);
-   lat = osic_ln(osic_tan(lat)+X2C_DIVR(1.0f,osic_cos(lat)));
+   lat = RealMath_ln(RealMath_tan(lat)+X2C_DIVR(1.0f,RealMath_cos(lat)));
    z = expzoom(zoom);
    *x = (0.5f+lon*1.591549430919E-1f)*z;
    *y = (0.5f-lat*1.591549430919E-1f)*z;
@@ -593,7 +606,7 @@ static long opensrtm(unsigned char t, unsigned long tlat,
       s[10U] = 't';
       s[11U] = 0;
       aprsstr_Append(path, 1024ul, s, 21ul);
-      return osic_OpenRead(path, 1024ul);
+      return osi_OpenRead(path, 1024ul);
    }
    else {
       aprsstr_Append(path, 1024ul, "/srtm30/", 9ul);
@@ -638,7 +651,7 @@ static long opensrtm(unsigned char t, unsigned long tlat,
       s[10U] = 'M';
       s[11U] = 0;
       aprsstr_Append(path, 1024ul, s, 21ul);
-      f = osic_OpenRead(path, 1024ul);
+      f = osi_OpenRead(path, 1024ul);
       srtm30fd[xi][yi].fd = f;
       srtm30fd[xi][yi].havefile = 1;
       /*WrInt(xi, 4); WrInt(yi, 4); WrStrLn(path); */
@@ -677,7 +690,7 @@ static void purgesrtm(char all)
                            if (all || anonym->used[x][y]==0U) {
                               asize = 2400UL;
                               if (pt->typ>3U) asize = 240UL;
-                              osic_free((X2C_ADDRESS *) &pb, asize);
+                              Storage_DEALLOCATE((X2C_ADDRESS *) &pb, asize);
                               useri_debugmem.srtm -= asize;
                               anonym->strips[x][y] = 0;
                            }
@@ -687,7 +700,7 @@ static void purgesrtm(char all)
                }
                if (all) {
                   if (pt->fd!=-1L) osic_Close(pt->fd);
-                  osic_free((X2C_ADDRESS *) &pt,
+                  Storage_DEALLOCATE((X2C_ADDRESS *) &pt,
                 sizeof(struct SRTMTILE));
                   useri_debugmem.srtm -= sizeof(struct SRTMTILE);
                   pl[yd] = 0;
@@ -695,7 +708,7 @@ static void purgesrtm(char all)
             }
          } /* end for */
          if (all) {
-            osic_free((X2C_ADDRESS *) &pl, sizeof(SRTMLAT));
+            Storage_DEALLOCATE((X2C_ADDRESS *) &pl, sizeof(SRTMLAT));
             useri_debugmem.srtm -= sizeof(SRTMLAT);
             srtmcache[xd] = 0;
          }
@@ -736,7 +749,7 @@ static float getsrtm1(unsigned long ilat, unsigned long ilong,
    if (xdeg>359UL || ydeg>179UL) return 32767.0f;
    if (srtmcache[xdeg]==0) {
       /* empty lat array */
-      osic_alloc((X2C_ADDRESS *) &srtmcache[xdeg], sizeof(SRTMLAT));
+      Storage_ALLOCATE((X2C_ADDRESS *) &srtmcache[xdeg], sizeof(SRTMLAT));
       if (srtmcache[xdeg]==0) return 32767.0f;
       /* out of memory */
       useri_debugmem.srtm += sizeof(SRTMLAT);
@@ -761,7 +774,7 @@ static float getsrtm1(unsigned long ilat, unsigned long ilong,
          }
       }
       /*INC(open); */
-      osic_alloc((X2C_ADDRESS *) &pt, sizeof(struct SRTMTILE));
+      Storage_ALLOCATE((X2C_ADDRESS *) &pt, sizeof(struct SRTMTILE));
                 /* a new 1x1 deg buffer */
       if (pt==0) return 32767.0f;
       useri_debugmem.srtm += sizeof(struct SRTMTILE);
@@ -812,7 +825,7 @@ static float getsrtm1(unsigned long ilat, unsigned long ilong,
             rdsize = 240UL; /* fill 1/10 buffer */
          }
          /*INC(miss); */
-         osic_alloc((X2C_ADDRESS *) &pb, rdsize);
+         Storage_ALLOCATE((X2C_ADDRESS *) &pb, rdsize);
          if (pb==0) return 32767.0f;
          useri_debugmem.srtm += rdsize;
          anonym0->strips[xx][y] = pb;
@@ -964,10 +977,10 @@ static void wgs84s(float lat, float long0, float nn, float * x, float * y,
    float c;
    float h;
    h = nn+6370.0f;
-   *z = h*osic_sin(lat);
-   c = osic_cos(lat);
-   *y = h*osic_sin(long0)*c;
-   *x = h*osic_cos(long0)*c;
+   *z = h*RealMath_sin(lat);
+   c = RealMath_cos(lat);
+   *y = h*RealMath_sin(long0)*c;
+   *x = h*RealMath_cos(long0)*c;
 } /* end wgs84s() */
 
 
@@ -978,25 +991,25 @@ static void wgs84r(float x, float y, float z, float * lat, float * long0,
    float h;
    h = x*x+y*y;
    if ((float)fabs(x)>(float)fabs(y)) {
-      *long0 = osic_arctan(X2C_DIVR(y,x));
+      *long0 = RealMath_arctan(X2C_DIVR(y,x));
       if (x<0.0f) {
          if (y>0.0f) *long0 = 3.1415926535898f+*long0;
          else *long0 = *long0-3.1415926535898f;
       }
    }
    else {
-      *long0 = 1.5707963267949f-osic_arctan(X2C_DIVR(x,y));
+      *long0 = 1.5707963267949f-RealMath_arctan(X2C_DIVR(x,y));
       if (y<0.0f) *long0 = *long0-3.1415926535898f;
    }
-   *lat = osic_arctan(X2C_DIVR(z,osic_sqrt(h)));
-   *heig = osic_sqrt(h+z*z)-6370.0f;
+   *lat = RealMath_arctan(X2C_DIVR(z,RealMath_sqrt(h)));
+   *heig = RealMath_sqrt(h+z*z)-6370.0f;
 } /* end wgs84r() */
 
 
 static float fresnel(float a, float b, float lambda)
 {
    if (lambda==0.0f) return 0.0f;
-   else return osic_sqrt(X2C_DIVR(lambda*a*b,a+b));
+   else return RealMath_sqrt(X2C_DIVR(lambda*a*b,a+b));
    return 0;
 } /* end fresnel() */
 
@@ -1038,20 +1051,20 @@ static void elevation(float x0, float y00, float z0, float x1, float y1,
    float a;
    *e1 = 0.0f;
    *e0 = 0.0f;
-   a = osic_sqrt(x0*x0+y00*y00+z0*z0);
-   b = osic_sqrt(x1*x1+y1*y1+z1*z1);
+   a = RealMath_sqrt(x0*x0+y00*y00+z0*z0);
+   b = RealMath_sqrt(x1*x1+y1*y1+z1*z1);
    x1 = x1-x0;
    y1 = y1-y00;
    z1 = z1-z0;
-   c = osic_sqrt(x1*x1+y1*y1+z1*z1);
+   c = RealMath_sqrt(x1*x1+y1*y1+z1*z1);
    /* halbwinkelsatz */
    s = (a+b+c)*0.5f;
    if (s==0.0f) return;
    r = X2C_DIVR((s-a)*(s-b)*(s-c),s);
    if (r<=0.0f) return;
-   r = osic_sqrt(r);
-   *e1 = 1.1459155902616E+2f*osic_arctan(X2C_DIVR(r,s-a))-90.0f;
-   *e0 = 1.1459155902616E+2f*osic_arctan(X2C_DIVR(r,s-b))-90.0f;
+   r = RealMath_sqrt(r);
+   *e1 = 1.1459155902616E+2f*RealMath_arctan(X2C_DIVR(r,s-a))-90.0f;
+   *e0 = 1.1459155902616E+2f*RealMath_arctan(X2C_DIVR(r,s-b))-90.0f;
 } /* end elevation() */
 
 
@@ -1180,7 +1193,7 @@ extern long maptool_geoprofile(maptool_pIMAGE image,
    x1 = x1-x0;
    y1 = y1-y00;
    z1 = z1-z0;
-   *dist = osic_sqrt(x1*x1+y1*y1+z1*z1)*1000.0f;
+   *dist = RealMath_sqrt(x1*x1+y1*y1+z1*z1)*1000.0f;
    if (*dist<1.0f) {
       maptool_closesrtmfile();
       return -3L;
@@ -1189,7 +1202,7 @@ extern long maptool_geoprofile(maptool_pIMAGE image,
       maptool_closesrtmfile();
       return -2L;
    }
-   refrac = (6.37E+6f-osic_sqrt(4.05769E+13f+ *dist* *dist*0.25f))
+   refrac = (6.37E+6f-RealMath_sqrt(4.05769E+13f+ *dist* *dist*0.25f))
                 *useri_conf2real(useri_fREFRACT, 0UL, (-10.0f), 10.0f,
                 0.0f)*4.0f;
    /*WrFixed(refrac,3, 10); WrStrLn(" refra"); */
@@ -1217,15 +1230,15 @@ extern long maptool_geoprofile(maptool_pIMAGE image,
          fs = -fstep;
          if (fs<=tmp) for (;; fs++) {
             kf = (X2C_DIVR((float)fs*resol,2.E+7f))*3.1415926535898f;
-            posf.lat = pos.lat+kf*osic_sin(nv);
-            posf.long0 = pos.long0-kf*osic_cos(nv);
+            posf.lat = pos.lat+kf*RealMath_sin(nv);
+            posf.long0 = pos.long0-kf*RealMath_cos(nv);
             dh = sqr(fres*0.5f)-sqr((float)fs*resol);
             nn = (long)X2C_TRUNCI(maptool_getsrtm(posf, 0UL, &resol)+0.5f,
                 X2C_min_longint,X2C_max_longint);
             if (nn>=30000L) h = (-2.E+4f);
             else h = (float)nn;
             if (dh>0.0f) {
-               dh = osic_sqrt(dh);
+               dh = RealMath_sqrt(dh);
                h0 = hmid-dh;
                h1 = hmid+dh;
                /*WrFixed(dh, 3, 10); WrFixed(h0, 3, 10); WrFixed(h1, 3, 10);
@@ -1255,7 +1268,7 @@ extern long maptool_geoprofile(maptool_pIMAGE image,
                   frescol(fresmin, &red, &green, &blue);
                   maptool_waypoint(image, x, y, 1.25f+X2C_DIVR(1.25f*fres,
                 maxfres), (long)red, (long)green, (long)blue);
-                  osic_alloc((X2C_ADDRESS *) &pht,
+                  Storage_ALLOCATE((X2C_ADDRESS *) &pht,
                 sizeof(struct HTAB));
                 /* store headroom values for scaling later */
                   if (pht) {
@@ -1294,16 +1307,16 @@ extern long maptool_geoprofile(maptool_pIMAGE image,
          pht = pht->next;
       }
       /*WrFixed(a, 10,1);WrStrLn("m"); */
-      d = osic_sqrt(1.0f+sqr(phtab->tx-pht->tx)+sqr(phtab->ty-pht->ty));
+      d = RealMath_sqrt(1.0f+sqr(phtab->tx-pht->tx)+sqr(phtab->ty-pht->ty));
                 /* rftrack pixels on screen */
-      wdif = sqr((pos0.long0-pos1.long0)*osic_cos(pos0.lat))
+      wdif = sqr((pos0.long0-pos1.long0)*RealMath_cos(pos0.lat))
                 +sqr(pos0.lat-pos1.lat);
       if (wdif!=0.0f) {
-         wdif = osic_sqrt(wdif); /* dist pos0-pos1 */
+         wdif = RealMath_sqrt(wdif); /* dist pos0-pos1 */
          wdif = X2C_DIVR(wdif*a,d*0.1f);
          xproj = X2C_DIVR(pos0.lat-pos1.lat,wdif);
                 /* 90 deg rotatationsvector */
-         yproj = X2C_DIVR((pos0.long0-pos1.long0)*osic_cos(pos0.lat),
+         yproj = X2C_DIVR((pos0.long0-pos1.long0)*RealMath_cos(pos0.lat),
                 wdif); /* for headroom lines to track */
       }
       else {
@@ -1338,7 +1351,7 @@ extern long maptool_geoprofile(maptool_pIMAGE image,
                 /* thicken end of headroom line */
          pht = phtab;
          phtab = phtab->next;
-         osic_free((X2C_ADDRESS *) &pht, sizeof(struct HTAB));
+         Storage_DEALLOCATE((X2C_ADDRESS *) &pht, sizeof(struct HTAB));
       }
    }
    return 0L;
@@ -1352,7 +1365,7 @@ static void progress(unsigned long startt, char s[], unsigned long s_len,
    char ss1[101];
    char ss[101];
    X2C_PCOPY((void **)&s,s_len);
-   rt = osic_time();
+   rt = TimeConv_time();
    if (rt!=aprsdecode_realtime) {
       aprsdecode_realtime = rt;
       if (startt+4UL<rt) {
@@ -1524,7 +1537,7 @@ extern void maptool_Radiorange(maptool_pIMAGE image,
    struct aprspos_POSITION pos;
    unsigned long startt;
    char ss[101];
-   startt = osic_time();
+   startt = TimeConv_time();
    nn = (long)X2C_TRUNCI(maptool_getsrtm(txpos, 0UL, &resoltx),
                 X2C_min_longint,X2C_max_longint);
                 /* altitude of tx an map resolution in m here */
@@ -1575,7 +1588,7 @@ extern void maptool_Radiorange(maptool_pIMAGE image,
          dz = z1-z0;
          oodist = dx*dx+dy*dy+dz*dz;
          if (oodist>1.E-6f) {
-            oodist = X2C_DIVR(0.001f,osic_sqrt(oodist));
+            oodist = X2C_DIVR(0.001f,RealMath_sqrt(oodist));
                 /* 1/sight line length in m */
             pixstep = 0.0f;
             resol = resoltx;
@@ -1792,7 +1805,7 @@ extern char maptool_SimpleRelief(maptool_pIMAGE image)
    struct maptool_PIX * anonym0;
    unsigned long tmp;
    unsigned long tmp0;
-   startt = osic_time();
+   startt = TimeConv_time();
    maxcache = (unsigned long)(useri_conf2int(useri_fSRTMCACHE, 0UL, 0L,
                 2000L, 100L)*1000000L);
    for (xi = 0UL; xi<=1023UL; xi++) {
@@ -1891,7 +1904,7 @@ extern char maptool_SimpleRelief(maptool_pIMAGE image)
                 (* highpass level *) */
       /*    difmul:=trunc(50000000.0/(sqrt(mperpix)*FLOAT(h)));
                 (* highpass level *) */
-      jm = X2C_DIVR(2.0f*(float)bri,(float)h*osic_sqrt(mperpix));
+      jm = X2C_DIVR(2.0f*(float)bri,(float)h*RealMath_sqrt(mperpix));
       tmp = image->Len0-1;
       yp = 0UL;
       if (yp<=tmp) for (;; yp++) {
@@ -2011,11 +2024,11 @@ static void raytrace(float minqual, float x0, float y00, float z0, float dx,
             pos1.long0 = pos->long0;
             h1 = maptool_getsrtm(pos1, 1UL, &resol);
             pos1.long0 = pos->long0+X2C_DIVR(4.7123889803847E-6f,
-                osic_cos(pos->lat));
+                RealMath_cos(pos->lat));
             pos1.lat = pos->lat;
             h2 = maptool_getsrtm(pos1, 1UL, &resol);
-            *lum = osic_cos(osic_arctan((h1-*h)*3.3333333333333E-2f))
-                *osic_cos(osic_arctan((h2-*h)*3.3333333333333E-2f));
+            *lum = RealMath_cos(RealMath_arctan((h1-*h)*3.3333333333333E-2f))
+                *RealMath_cos(RealMath_arctan((h2-*h)*3.3333333333333E-2f));
             /*        lum:=1.0-ABS(h-h1)*(2.0/TESTDIST); */
             /*        IF lum>1.0 THEN lum:=1.0 END; */
             /*
@@ -2119,7 +2132,7 @@ static void Panofind(char find, const struct maptool_PANOWIN panpar,
    unsigned long startt;
    struct aprsdecode_COLTYP col0;
    struct maptool_PIX * anonym;
-   startt = osic_time();
+   startt = TimeConv_time();
    if ((!aprspos_posvalid(panpar.eye) || !aprspos_posvalid(panpar.horizon))
                 || maptool_getsrtm(panpar.horizon, 0UL, &resoltx)>=30000.0f) {
       return;
@@ -2160,12 +2173,12 @@ static void Panofind(char find, const struct maptool_PANOWIN panpar,
    ele0 = (panpar.elevation-X2C_DIVR((X2C_DIVR(panpar.angle*0.5f,
                 panpar.yzoom))*(float)((panpar.image->Len0-1)+1UL),
                 (float)((panpar.image->Len1-1)+1UL)))*1.7453292519444E-2f;
-   slat = osic_sin(-panpar.eye.lat);
-   clat = osic_cos(-panpar.eye.lat);
-   slong = osic_sin(-panpar.eye.long0);
-   clong = osic_cos(-panpar.eye.long0);
-   sazi = osic_sin(azi);
-   cazi = osic_cos(azi);
+   slat = RealMath_sin(-panpar.eye.lat);
+   clat = RealMath_cos(-panpar.eye.lat);
+   slong = RealMath_sin(-panpar.eye.long0);
+   clong = RealMath_cos(-panpar.eye.long0);
+   sazi = RealMath_sin(azi);
+   cazi = RealMath_cos(azi);
    /*WrFixed(azi0/RAD, 4, 10); WrFixed(azid/RAD, 4, 10);
                 WrStrLn(" adi0 azid"); */
    /*WrFixed(panpar.elevation*RAD/azid, 4, 12); WrStrLn(" adi0 azid"); */
@@ -2175,7 +2188,7 @@ static void Panofind(char find, const struct maptool_PANOWIN panpar,
       /*    wx:=panpar.angle*RAD*(FLOAT(xi)-FLOAT(HIGH(panpar.image^)+1)*0.5)
                 /FLOAT(HIGH(panpar.image^)+1); */
       wx = azi0+azid*(float)xi;
-      if (panpar.flatscreen) wx = osic_arctan(wx);
+      if (panpar.flatscreen) wx = RealMath_arctan(wx);
       yi = 0UL;
       if (find) {
          yi = (unsigned long)((long)((panpar.image->Len0-1)+1UL)-panpar.hy);
@@ -2187,12 +2200,12 @@ static void Panofind(char find, const struct maptool_PANOWIN panpar,
       do {
          if (!heaven) {
             wy = ele0+eled*(float)yi;
-            if (panpar.flatscreen) wy = osic_arctan(wy);
+            if (panpar.flatscreen) wy = RealMath_arctan(wy);
             /*IF xi=0 THEN WrFixed(wx/RAD, 2, 8); WrFixed(wy/RAD, 2, 8);
                 WrStr(" wx wy"); END; */
-            zn = osic_cos(wx)*osic_cos(wy);
-            yn = osic_sin(wx);
-            xn = osic_sin(wy);
+            zn = RealMath_cos(wx)*RealMath_cos(wy);
+            yn = RealMath_sin(wx);
+            xn = RealMath_sin(wy);
             rotvector(&yn, &zn, cazi, sazi);
             /*IF xi=0 THEN WrFixed(xn, 2, 7); WrFixed(yn, 2, 7);
                 WrFixed(zn, 2, 7); END; */
@@ -2396,7 +2409,7 @@ extern void maptool_POIname(struct aprspos_POSITION * mpos, char s[],
    aprsdecode_pMOUNTAIN pm;
    struct aprsdecode_MOUNTAIN * anonym;
    pm = aprsdecode_mountains;
-   mindist = 2560.0f*osic_power(2.0f,
+   mindist = 2560.0f*RealMath_power(2.0f,
                 -maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom));
    if (mindist>10.0f) mindist = 10.0f;
    /*WrFixed(mpos.lat, 4, 8);WrFixed(mpos.long, 4, 8); WrStrLn(""); */
@@ -2628,7 +2641,7 @@ extern void maptool_waypoint(maptool_pIMAGE image, float x, float y, float r,
             mx = (float)xi-fx;
             my = (float)yi-fy;
             h = mx*mx+my*my;
-            if (h>0.0f) h = osic_sqrt(h);
+            if (h>0.0f) h = RealMath_sqrt(h);
             h = r-h;
             if (h>0.0f) {
                if (h>1.0f) h = 1.0f;
@@ -2748,10 +2761,10 @@ extern void maptool_vector(maptool_pIMAGE image, float x0, float y00,
    }
    if (x1==x0) return;
    h = X2C_DIVR(y1-y00,x1-x0);
-   ro = osic_sqrt(1.0f+h*h);
+   ro = RealMath_sqrt(1.0f+h*h);
    w2 = w1*ro;
    iw2 = aprsdecode_trunc(w2*65536.0f);
-   r = w1*osic_sin(osic_arctan(h));
+   r = w1*RealMath_sin(RealMath_arctan(h));
    xi = aprsdecode_trunc(x0-(float)fabs(r));
    w1 = (((y00-h*(float)fabs(r))-w2)-0.5f)*65536.0f;
    if (w1<0.0f) ya = 0UL;
@@ -3183,7 +3196,7 @@ static void arc(unsigned long b, unsigned long g, unsigned long r,
          *xhh = 1.0f-sqr(X2C_DIVR((float)i-*x1,*x1-*x0));
          if (*xhh<=0.0f) *xhh = 0.0f;
          *xhh = (float)fabs(((float)yi0-*y00)-yh)-(*y1-*y00)
-                *0.5f*osic_sqrt(*xhh);
+                *0.5f*RealMath_sqrt(*xhh);
       }
       else *xhh = (float)fabs(*x1-(float)i)-xh;
       *xhh = (1.5f-(float)fabs(*xhh+1.5f))*1.7066666666667E+2f;
@@ -3403,7 +3416,7 @@ extern void maptool_drawareasym(maptool_pIMAGE image,
          while (yi0<yi1) {
             xh = 1.0f-sqr(X2C_DIVR((y00+yh)-(float)yi0,yh));
             if (xh<=0.0f) xh = 0.0f;
-            xh = (x1-x0)*osic_sqrt(xh);
+            xh = (x1-x0)*RealMath_sqrt(xh);
             oct = (float)fabs(xh-xho)>=1.0f;
             xho = xh;
             xm = lim(x1+0.5f, image->Len1-1);
@@ -3449,7 +3462,7 @@ static void dashvec(maptool_pIMAGE image, float x0, float y00, float x1,
    y = y1-y00;
    k = x*x+y*y;
    if (k==0.0f) return;
-   k = osic_sqrt(k);
+   k = RealMath_sqrt(k);
    dx = X2C_DIVR(double0*y,k);
    dy = -(X2C_DIVR(double0*x,k)); /* rotate vector 90 deg for double dash */
    l = (float)len;
@@ -3583,7 +3596,7 @@ static void fillpoligon(maptool_pIMAGE image, struct aprspos_POSITION pm,
       /* modify hachure with image size */
       x = ((maxx-minx)+maxy)-miny;
       if (x>0L) {
-         hachuresize += aprsdecode_trunc(0.35f*osic_sqrt((float)x));
+         hachuresize += aprsdecode_trunc(0.35f*RealMath_sqrt((float)x));
       }
    }
    while (maxy>miny) {
@@ -3941,8 +3954,8 @@ extern void maptool_drawarrow(maptool_pIMAGE image, float x0, float y00,
    float y1;
    float x1;
    /*WrInt(wind, 10);WrStrLn("=w"); */
-   s = osic_sin(ang);
-   c = osic_cos(ang);
+   s = RealMath_sin(ang);
+   c = RealMath_cos(ang);
    r = (long)((bri*col0.r)/256UL);
    g = (long)((bri*col0.g)/256UL);
    b = (long)((bri*col0.b)/256UL);
@@ -3952,17 +3965,17 @@ extern void maptool_drawarrow(maptool_pIMAGE image, float x0, float y00,
       x1 = x0-len*s;
       y1 = y00+len*c;
       l = len-7.0f;
-      maptool_vector(image, x1, y1, x0-l*osic_sin(ang+0.12f),
-                y00+l*osic_cos(ang+0.12f), r, g, b, 200UL, 0.0f);
-      maptool_vector(image, x1, y1, x0-l*osic_sin(ang-0.12f),
-                y00+l*osic_cos(ang-0.12f), r, g, b, 200UL, 0.0f);
+      maptool_vector(image, x1, y1, x0-l*RealMath_sin(ang+0.12f),
+                y00+l*RealMath_cos(ang+0.12f), r, g, b, 200UL, 0.0f);
+      maptool_vector(image, x1, y1, x0-l*RealMath_sin(ang-0.12f),
+                y00+l*RealMath_cos(ang-0.12f), r, g, b, 200UL, 0.0f);
    }
    else {
       len = len+(float)((4UL*wind)/20UL);
       maptool_vector(image, x0, y00, x0-len*s, y00+len*c, r, g, b, 250UL,
                 0.0f);
-      s1 = osic_sin(ang+(-1.25f));
-      c1 = osic_cos(ang+(-1.25f));
+      s1 = RealMath_sin(ang+(-1.25f));
+      c1 = RealMath_cos(ang+(-1.25f));
       wi = (long)wind;
       if (wi<20L) wi = 20L;
       else if (wi>250L) wi = 250L;
@@ -4080,7 +4093,7 @@ static long smoo(float ex, long x)
 {
    if (x<=0L) return x;
    else {
-      return (long)aprsdecode_trunc(osic_exp(osic_ln(X2C_DIVR((float)
+      return (long)aprsdecode_trunc(RealMath_exp(RealMath_ln(X2C_DIVR((float)
                 x,80.0f))*ex)*80.0f);
    }
    return 0;
@@ -4133,7 +4146,7 @@ extern void maptool_shine(maptool_pIMAGE image, long lum)
       } /* end for */
       if (y==tmp) break;
    } /* end for */
-   ex = X2C_DIVR(osic_ln(12.5f),osic_ln(X2C_DIVR((float)max0,
+   ex = X2C_DIVR(RealMath_ln(12.5f),RealMath_ln(X2C_DIVR((float)max0,
                 80.0f)));
    if (ex>1.5f) ex = 1.5f;
    /*WrInt(max, 10);WrFixed(ex, 3,10);WrLn; */
@@ -4467,7 +4480,7 @@ static char decodetile(const char fn[], unsigned long fn_len,
          return 1;
       }
    }
-   else if (osic_Exists(s, 100ul)) {
+   else if (FileSys_Exists(s, 100ul)) {
       /* jpg hided in .png */
       return 1;
    }
@@ -4478,7 +4491,7 @@ static char decodetile(const char fn[], unsigned long fn_len,
                 
    }
    /* jpg in .jpg */
-   return osic_Exists(s, 100ul);
+   return FileSys_Exists(s, 100ul);
 } /* end decodetile() */
 
 /*
@@ -4509,7 +4522,7 @@ static void reqmap(char wfn[], unsigned long wfn_len, char byop)
    if (mapnamesdone==1U) {
       /* filled buffer written */
       mapnamesdone = 0U;
-      if (!osic_Exists("gettiles", 9ul)) {
+      if (!FileSys_Exists("gettiles", 9ul)) {
          /* a maploader is at work */
          if ((byop && wfn[0UL]) && aprsstr_InStr(mapnamesbuf, 4096ul, wfn,
                 wfn_len)>=0L) mapnamesdone = 2U;
@@ -4541,10 +4554,10 @@ wnloader", 27ul);
             osi_WrBin(fd, (char *)mapnamesbuf, 4096u/1u, lb);
             osic_Close(fd);
             if (aprsdecode_verb) {
-               osic_WrStr("try:", 5ul);
-               osic_WrUINT32((long)maploopcnt, 1UL);
-               osic_WrStrLn(" written gettiles:", 19ul);
-               osic_WrStr(mapnamesbuf, 4096ul);
+               InOut_WriteString("try:", 5ul);
+               InOut_WriteInt((long)maploopcnt, 1UL);
+               osi_WrStrLn(" written gettiles:", 19ul);
+               InOut_WriteString(mapnamesbuf, 4096ul);
             }
             lastmapreq = aprsdecode_realtime;
             mapdelay = 0UL;
@@ -4585,7 +4598,7 @@ wnloader", 27ul);
                maploadstart = 0UL; /* if clock jumped back */
             }
          }
-         else osic_WrStrLn("cannot write gettiles", 22ul);
+         else osi_WrStrLn("cannot write gettiles", 22ul);
       }
       else if (lastmapreq>aprsdecode_realtime) {
          lastmapreq = aprsdecode_realtime; /* systime gone backward */
@@ -4728,9 +4741,9 @@ static char loadtile(maptool_pIMAGE map, char * done, char dryrun,
    }
    if (map==0) return 0;
    if (aprsdecode_verb) {
-      osic_WrStr("open>", 6ul);
-      osic_WrStr(h, h_len);
-      osic_WrStrLn("<", 2ul);
+      InOut_WriteString("open>", 6ul);
+      InOut_WriteString(h, h_len);
+      osi_WrStrLn("<", 2ul);
    }
    if (!decodetile(h, h_len, (pPNGBUF)pngbuf, 256L, 256L,
                 768L) || useri_reloadmap) {
@@ -4874,7 +4887,7 @@ extern void maptool_loadmap(maptool_pIMAGE map, long tx, long ty, long zoom,
    if (!dryrun) {
       if (fzoom>1.0f) zoommap(fzoom, map);
       if (mapnamesbuf[0U]) reqmap("", 1ul, !useri_reloadmap);
-      else osic_Remove("gettiles", 9ul, &ok0);
+      else FileSys_Remove("gettiles", 9ul, &ok0);
    }
    useri_reloadmap = 0;
 } /* end loadmap() */
@@ -4882,7 +4895,7 @@ extern void maptool_loadmap(maptool_pIMAGE map, long tx, long ty, long zoom,
 
 extern char maptool_IsMapLoaded(void)
 {
-   return !aprsdecode_maploadpid.runs || !osic_Exists("gettiles", 9ul);
+   return !aprsdecode_maploadpid.runs || !FileSys_Exists("gettiles", 9ul);
 } /* end IsMapLoaded() */
 
 
@@ -5070,10 +5083,10 @@ static void loadsym(char h[], unsigned long h_len)
    maxxbyte = maxx*3L;
    res = readpng(h, (X2C_ADDRESS *)rows, &maxx, &maxy, &maxxbyte);
    if (res<0L) {
-      osic_WrStr(h, h_len);
-      osic_WrStrLn(" file read error ", 18ul);
-      osic_WrUINT32(res, 1UL);
-      osic_WrStrLn("", 1ul);
+      InOut_WriteString(h, h_len);
+      osi_WrStrLn(" file read error ", 18ul);
+      InOut_WriteInt(res, 1UL);
+      osi_WrStrLn("", 1ul);
       goto label;
    }
    memset((char *)symbols,(char)0,sizeof(struct PIX8 [3072][17]));
@@ -5099,7 +5112,7 @@ static float sinc(float x, unsigned long w)
    if ((float)fabs(x)<0.001f) return 1.0f;
    win = X2C_DIVR(3.1415926535f*x,(float)w);
    x = x*3.1415926535f;
-   return X2C_DIVR((X2C_DIVR(osic_sin(x),x))*osic_sin(win),win);
+   return X2C_DIVR((X2C_DIVR(RealMath_sin(x),x))*RealMath_sin(win),win);
 } /* end sinc() */
 
 #define maptool_MAXY 24
@@ -5160,8 +5173,8 @@ extern void maptool_loadfont(void)
    strncpy(fn,"font.png",1025u);
    res = readpng(fn, (X2C_ADDRESS *)rows, &maxx, &maxy, &maxxbyte);
    if ((((res<0L || maxx<1L) || maxx>600L) || maxy<1L) || maxy>24L) {
-      osic_WrUINT32(res, 1UL);
-      osic_WrStrLn(" fontfile read error", 21ul);
+      InOut_WriteInt(res, 1UL);
+      osi_WrStrLn(" fontfile read error", 21ul);
       aprsdecode_lums.fontysize = higth+3UL;
       return;
    }
@@ -5201,7 +5214,7 @@ extern void maptool_loadfont(void)
       }
    } /* end for */
    if (y1<y00+4UL) {
-      osic_WrStrLn(" font too small error", 22ul);
+      osi_WrStrLn(" font too small error", 22ul);
       return;
    }
    /*
@@ -5310,7 +5323,7 @@ static void wr(long fd, unsigned long * len, char b[32768],
    else b[*len] = '\377';
    ++*len;
    if (*len>32767UL) {
-      osic_WrBin(fd, (char *)b, 32768u/1u, *len);
+      osi_WrBin(fd, (char *)b, 32768u/1u, *len);
       *len = 0UL;
    }
 } /* end wr() */
@@ -5366,7 +5379,7 @@ extern long maptool_saveppm(char fn[], unsigned long fn_len,
       numh(h, 1UL, 26UL, 2UL); /* WORD    biPlanes */
       numh(h, 24UL, 28UL, 2UL); /* WORD    biBitCount */
       numh(h, 0UL, 30UL, 4UL); /* DWORD   biCompression */
-      osic_WrBin(fd, (char *)h, 256u/1u, 54UL);
+      osi_WrBin(fd, (char *)h, 256u/1u, 54UL);
       len = 0UL;
       tmp = ysize-1L;
       y = 0L;
@@ -5394,7 +5407,7 @@ extern long maptool_saveppm(char fn[], unsigned long fn_len,
       /* make PNG */
       ret = -1L;
       osic_Close(fd);
-      osic_alloc((X2C_ADDRESS *) &pngimg.image,
+      Storage_ALLOCATE((X2C_ADDRESS *) &pngimg.image,
                 (unsigned long)(xsize*ysize*3L));
       if (pngimg.image) {
          tmp = ysize-1L;
@@ -5420,23 +5433,23 @@ extern long maptool_saveppm(char fn[], unsigned long fn_len,
          pngimg.width = (unsigned long)xsize;
          pngimg.height = (unsigned long)ysize;
          ret = writepng(fn, &pngimg);
-         osic_free((X2C_ADDRESS *) &pngimg.image,
+         Storage_DEALLOCATE((X2C_ADDRESS *) &pngimg.image,
                 (unsigned long)(xsize*ysize*3L));
       }
-      else osic_WrStrLn("png write out of memory", 24ul);
+      else osi_WrStrLn("png write out of memory", 24ul);
    }
    else {
       /* ppm header */
       strncpy(h,"P6\012",256u);
-      osic_WrBin(fd, (char *)h, 256u/1u, aprsstr_Length(h, 256ul));
+      osi_WrBin(fd, (char *)h, 256u/1u, aprsstr_Length(h, 256ul));
       aprsstr_IntToStr(xsize, 1UL, h, 256ul);
-      osic_WrBin(fd, (char *)h, 256u/1u, aprsstr_Length(h, 256ul));
+      osi_WrBin(fd, (char *)h, 256u/1u, aprsstr_Length(h, 256ul));
       strncpy(h," ",256u);
-      osic_WrBin(fd, (char *)h, 256u/1u, aprsstr_Length(h, 256ul));
+      osi_WrBin(fd, (char *)h, 256u/1u, aprsstr_Length(h, 256ul));
       aprsstr_IntToStr(ysize, 1UL, h, 256ul);
-      osic_WrBin(fd, (char *)h, 256u/1u, aprsstr_Length(h, 256ul));
+      osi_WrBin(fd, (char *)h, 256u/1u, aprsstr_Length(h, 256ul));
       strncpy(h,"\012255\012",256u);
-      osic_WrBin(fd, (char *)h, 256u/1u, aprsstr_Length(h, 256ul));
+      osi_WrBin(fd, (char *)h, 256u/1u, aprsstr_Length(h, 256ul));
       len = 0UL;
       for (y = ysize-1L; y>=0L; y--) {
          tmp = xsize-1L;
@@ -5467,11 +5480,11 @@ static void allocpngbuf(void)
 {
    unsigned long i;
    for (i = 0UL; i<=255UL; i++) {
-      osic_alloc((char **) &pngbuf[i], sizeof(ROWS0));
+      Storage_ALLOCATE((char **) &pngbuf[i], sizeof(ROWS0));
       useri_debugmem.req = sizeof(pROWS0);
       useri_debugmem.screens += useri_debugmem.req;
       if (pngbuf[i]==0) {
-         osic_WrStrLn("pngbuf out of memory", 21ul);
+         osi_WrStrLn("pngbuf out of memory", 21ul);
          useri_wrheap();
          X2C_ABORT();
       }
@@ -5482,7 +5495,7 @@ static void allocpngbuf(void)
 static char getch(char b[4096], long fd, long * len, long * p)
 {
    if (*p>=*len) {
-      *len = osic_RdBin(fd, (char *)b, 4096u/1u, 4096UL);
+      *len = osi_RdBin(fd, (char *)b, 4096u/1u, 4096UL);
       if (*len<=0L) return 0;
       *p = 0L;
    }
@@ -5535,7 +5548,7 @@ extern void maptool_rdmountains(char fn[], unsigned long fn_len, char add)
       while (aprsdecode_mountains) {
          pm = aprsdecode_mountains;
          aprsdecode_mountains = pm->next;
-         osic_free((X2C_ADDRESS *) &pm,
+         Storage_DEALLOCATE((X2C_ADDRESS *) &pm,
                 sizeof(struct aprsdecode_MOUNTAIN));
          useri_debugmem.srtm -= sizeof(struct aprsdecode_MOUNTAIN);
       }
@@ -5574,7 +5587,7 @@ extern void maptool_rdmountains(char fn[], unsigned long fn_len, char add)
       if ((((com[0U]!='#' && name[0U]) && aprsstr_StrToFix(&pos.lat, lat,
                 100ul)) && aprsstr_StrToFix(&pos.long0, long0,
                 100ul)) && aprspos_posvalid(pos)) {
-         osic_alloc((X2C_ADDRESS *) &pm,
+         Storage_ALLOCATE((X2C_ADDRESS *) &pm,
                 sizeof(struct aprsdecode_MOUNTAIN));
          if (pm==0) break;
          useri_debugmem.srtm += sizeof(struct aprsdecode_MOUNTAIN);
@@ -5602,7 +5615,10 @@ extern void maptool_BEGIN(void)
    if (sizeof(FN)!=1024) X2C_ASSERT(0);
    aprstext_BEGIN();
    useri_BEGIN();
-   xosic_BEGIN();
+   Storage_BEGIN();
+   TimeConv_BEGIN();
+   xosi_BEGIN();
+   osi_BEGIN();
    aprspos_BEGIN();
    aprsstr_BEGIN();
    aprsdecode_BEGIN();
@@ -5618,7 +5634,7 @@ extern void maptool_BEGIN(void)
    lastmapreq = 0UL;
    mapdelay = 0UL;
    lastpoinum = 0UL;
-   osic_alloc((X2C_ADDRESS *) &srtmmiss, 1UL);
+   Storage_ALLOCATE((X2C_ADDRESS *) &srtmmiss, 1UL);
                 /* make empty tile for fast nofile hint */
    initsrtm();
 }

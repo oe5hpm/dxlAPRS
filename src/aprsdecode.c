@@ -17,11 +17,12 @@
 #include "aprspos.h"
 #endif
 #ifndef xosi_H_
-#include "xosic.h"
+#include "xosi.h"
 #endif
 #ifndef osi_H_
-#include "osic.h"
+#include "osi.h"
 #endif
+#include <osic.h>
 #ifndef tcp_H_
 #include "tcp.h"
 #endif
@@ -123,6 +124,8 @@ struct xosi_PROCESSHANDLE aprsdecode_serialpid;
 struct xosi_PROCESSHANDLE aprsdecode_serialpid2;
 struct xosi_PROCESSHANDLE aprsdecode_maploadpid;
 /* connect to aprs-is gateway and decode data for archive and map by OE5DXL */
+/*FROM Storage IMPORT ALLOCATE, DEALLOCATE; */
+/*FROM TimeConv IMPORT time;  */
 #define aprsdecode_CALLLEN 7
 
 #define aprsdecode_HASHSIZE 65536
@@ -242,9 +245,9 @@ static unsigned short crctable12[256];
 
 static void Err(const char text[], unsigned long text_len)
 {
-   osic_WrStr("aprsmap: ", 10ul);
-   osic_WrStr(text, text_len);
-   osic_WrStrLn(" error abort", 13ul);
+   osi_WrStr("aprsmap: ", 10ul);
+   osi_WrStr(text, text_len);
+   osi_WrStrLn(" error abort", 13ul);
    X2C_ABORT();
 } /* end Err() */
 
@@ -478,39 +481,39 @@ static void parms(void)
          }
          else {
             if (lasth=='h') {
-               osic_WrStrLn(" -c <configfilename>", 21ul);
-               osic_WrStrLn(" -g <url>:<port>#<filters> connect to APRS-IS gat\
+               osi_WrStrLn(" -c <configfilename>", 21ul);
+               osi_WrStrLn(" -g <url>:<port>#<filters> connect to APRS-IS gat\
 eway, repeat -g to other", 74ul);
-               osic_WrStrLn("                gateways write favorites first fo\
+               osi_WrStrLn("                gateways write favorites first fo\
 r 1 activ link to the best", 76ul);
-               osic_WrStrLn("                reachable and a polling link to r\
+               osi_WrStrLn("                reachable and a polling link to r\
 evert immediately to preferred again", 86ul);
-               osic_WrStrLn("                -g www.db0anf.de:14580#m/300 -g 1\
+               osi_WrStrLn("                -g www.db0anf.de:14580#m/300 -g 1\
 27.0.0.1:3000 -g [::1]:3000", 77ul);
-               osic_WrStrLn("                <filters> text sent to out connec\
+               osi_WrStrLn("                <filters> text sent to out connec\
 ted server -f m/50", 68ul);
-               osic_WrStrLn("                if blanks dont pass parameter set\
+               osi_WrStrLn("                if blanks dont pass parameter set\
 tings use , (-f m/30,-d/CW)", 77ul);
-               osic_WrStrLn("                ipv6 if enabled by kernel",
+               osi_WrStrLn("                ipv6 if enabled by kernel",
                 42ul);
-               osic_WrStrLn(" -h             this", 21ul);
-               osic_WrStrLn(" -M <ip>:<dport>/<lport>[+<byte/s>[:<radius>]]",
+               osi_WrStrLn(" -h             this", 21ul);
+               osi_WrStrLn(" -M <ip>:<dport>/<lport>[+<byte/s>[:<radius>]]",
                 47ul);
-               osic_WrStrLn("                udp rf port (monitor frame format\
+               osi_WrStrLn("                udp rf port (monitor frame format\
 ) for local (t)rx", 67ul);
-               osic_WrStrLn("                <dport>:<lport> read from any ip,\
+               osi_WrStrLn("                <dport>:<lport> read from any ip,\
  dport=0 no tx", 64ul);
-               osic_WrStrLn("                +byte/s enable inet to rf for ser\
+               osi_WrStrLn("                +byte/s enable inet to rf for ser\
 vices like WLNK, WHO-IS", 73ul);
-               osic_WrStrLn("                :radius enable all inet to rf gat\
+               osi_WrStrLn("                :radius enable all inet to rf gat\
 e (from km around digi)", 73ul);
-               osic_WrStrLn("                repeat -M for each radio port wit\
+               osi_WrStrLn("                repeat -M for each radio port wit\
 h a tx", 56ul);
-               osic_WrStrLn(" -o <outfile>   out file, delete after read",
+               osi_WrStrLn(" -o <outfile>   out file, delete after read",
                 44ul);
-               osic_WrStrLn(" -R             same as -M but axudp format",
+               osi_WrStrLn(" -R             same as -M but axudp format",
                 44ul);
-               osic_WrStrLn(" -v             show frames and analytics on stdo\
+               osi_WrStrLn(" -v             show frames and analytics on stdo\
 ut", 52ul);
                osic_WrLn();
                X2C_ABORT();
@@ -705,7 +708,7 @@ static char getudp(unsigned long usock, aprsdecode_FRAMEBUF buf,
          crc2 = buf[len+1L];
          aprsstr_AppCRC(buf, 512ul, len);
          if (crc1!=buf[len] || crc2!=buf[len+1L]) {
-            if (aprsdecode_verb) osic_WrStrLn(" axudp crc error", 17ul);
+            if (aprsdecode_verb) osi_WrStrLn(" axudp crc error", 17ul);
             buf[0UL] = 0;
          }
          else {
@@ -1047,7 +1050,7 @@ static char filtdupes(const char tb[], unsigned long tb_len,
          useri_debugmem.req = 262144UL;
          useri_debugmem.mon += 262144UL;
          if (anonym->pdupetimes==0) {
-            osic_WrStrLn("duptime out of memory", 22ul);
+            osi_WrStrLn("duptime out of memory", 22ul);
             useri_wrheap();
             return 0;
          }
@@ -1091,7 +1094,7 @@ static char Sendtcp(aprsdecode_pTCPSOCK to, const aprsdecode_FRAMEBUF buf)
             aprsdecode_lasttcptx = aprsdecode_realtime;
             ok0 = 1;
          }
-         else if (aprsdecode_verb) osic_WrStrLn("tx buf overflow", 16ul);
+         else if (aprsdecode_verb) osi_WrStrLn("tx buf overflow", 16ul);
       }
    }
    return ok0;
@@ -1130,7 +1133,7 @@ static long Sendudp(const char s[], unsigned long s_len, unsigned long uport,
             }
          }
          else if (aprsdecode_verb) {
-            osic_WrStrLn("wrong rf monitor format", 24ul);
+            osi_WrStrLn("wrong rf monitor format", 24ul);
          }
       }
       else len = 0L;
@@ -1289,7 +1292,7 @@ static void wxmacro(char ws[], unsigned long ws_len, char wms[],
       if (fn[0U]) {
          f = osi_OpenRead(fn, 1024ul);
          if (osic_FdValid(f)) {
-            n = osic_Size(f);
+            n = (unsigned long)osic_Size(f);
             if (n>1024UL) osic_Seek(f, n-1024UL);
             len = osi_RdBin(f, (char *)cb, 1024u/1u, 1024UL);
          }
@@ -1525,7 +1528,7 @@ static void beaconmacros(char s[], unsigned long s_len, const char path[],
                   if (osic_FdValid(f)) {
                      len = osi_RdBin(f, (char *)ds, 256u/1u, 255UL);
                      osic_Close(f);
-                     if (rw=='[') osic_Remove(fn, 1024ul, &ok0);
+                     if (rw=='[') osi_Erase(fn, 1024ul, &ok0);
                      j = 0L;
                      while (((j<len && ds[j]!='\015') && ds[j]!='\012')
                 && ds[j]) {
@@ -2065,7 +2068,7 @@ extern void aprsdecode_savetrack(void)
          aprsstr_Assign(fn, 1001ul, op->call, 9ul); /* make 0C terminated */
          alfanum(fn, 1001ul); /* remove bad chars */
          aprsdecode_makelogfn(fn, 1001ul);
-         ap = osic_Exists(fn, 1001ul);
+         ap = osi_Exists(fn, 1001ul);
          pf = op->frames;
          while (pf) {
             if (!wrlog(pf->vardat->raw, 500ul, pf->time0, fn, 1001ul, 0L)) {
@@ -2516,8 +2519,8 @@ extern void aprsdecode_GetMultiline(char buf[], unsigned long buf_len,
       }
       else if (s==4UL) {
          if ((unsigned char)c>='!' && (unsigned char)c<='q') {
-            scale = osic_exp((float)((unsigned long)(unsigned char)
-                c-33UL)*1.15129255E-1f)*1.7453292519444E-6f;
+            scale = osic_exp((float)((unsigned long)(unsigned char)c-33UL)
+                *1.15129255E-1f)*1.7453292519444E-6f;
                 /* 10^(x/20)*0.0001 deg */
             s = 5UL;
             idx = 0UL;
@@ -2634,8 +2637,8 @@ static void EncMultiline(char buf[], unsigned long buf_len,
          scaler = aprsdecode_trunc(X2C_DIVR(osic_ln(X2C_DIVR(scale,
                 1.5358897417111E-4f)),1.15129255E-1f)+1.0f);
          /*WrInt(scaler, 10);WrStrLn(" scaler"); */
-         scale = osic_exp((float)scaler*1.15129255E-1f)
-                *1.5358897417111E-4f; /* 10^(x/20)*0.0001 deg */
+         scale = osic_exp((float)scaler*1.15129255E-1f)*1.5358897417111E-4f;
+                /* 10^(x/20)*0.0001 deg */
          /*WrFixed(scale, 10, 15); WrStrLn(" scale"); */
          scale = X2C_DIVR(88.0f,scale);
       }
@@ -3336,8 +3339,7 @@ static void popupmessage(const char from[], unsigned long from_len,
                 txt_len)) && aprsstr_StrCmp(pm->ack, 5ul, ack, ack_len)) {
          if (pl==0) aprsdecode_msgfifo0 = pm->next;
          else pl->next = pm->next;
-         osic_free((X2C_ADDRESS *) &pm,
-                sizeof(struct aprsdecode_MSGFIFO));
+         osic_free((X2C_ADDRESS *) &pm, sizeof(struct aprsdecode_MSGFIFO));
          pm = aprsdecode_msgfifo0;
          pl = 0;
       }
@@ -3348,7 +3350,7 @@ static void popupmessage(const char from[], unsigned long from_len,
    }
    osic_alloc((X2C_ADDRESS *) &pm, sizeof(struct aprsdecode_MSGFIFO));
    if (pm==0) {
-      osic_WrStrLn("msg out of memory", 18ul);
+      osi_WrStrLn("msg out of memory", 18ul);
       return;
    }
    aprsstr_Assign(pm->from, 9ul, from, from_len);
@@ -3674,16 +3676,16 @@ static void showmsg(const char from[], unsigned long from_len,
       }
    }
    else if (aprsdecode_verb) {
-      osic_WrStr("seen msg:", 10ul);
-      osic_WrStr(from, from_len);
-      osic_WrStr(">", 2ul);
-      osic_WrStr(to, to_len);
-      osic_WrStr("|", 2ul);
-      osic_WrStr(txt, txt_len);
-      osic_WrStr("|", 2ul);
-      osic_WrStr(ack, ack_len);
-      osic_WrStr("|", 2ul);
-      osic_WrStr((char *) &port, 1u/1u);
+      osi_WrStr("seen msg:", 10ul);
+      osi_WrStr(from, from_len);
+      osi_WrStr(">", 2ul);
+      osi_WrStr(to, to_len);
+      osi_WrStr("|", 2ul);
+      osi_WrStr(txt, txt_len);
+      osi_WrStr("|", 2ul);
+      osi_WrStr(ack, ack_len);
+      osi_WrStr("|", 2ul);
+      osi_WrStr((char *) &port, 1u/1u);
       osic_WrLn();
    }
 } /* end showmsg() */
@@ -3899,8 +3901,7 @@ extern void aprsdecode_makemsg(char ack)
       pn = pn->next;
    }
    if (mes[0U]==0) {
-      osic_alloc((X2C_ADDRESS *) &pm,
-                sizeof(struct aprsdecode_TXMESSAGE));
+      osic_alloc((X2C_ADDRESS *) &pm, sizeof(struct aprsdecode_TXMESSAGE));
       if (pm==0) Err("out of memory", 14ul);
       memset((X2C_ADDRESS)pm,(char)0,sizeof(struct aprsdecode_TXMESSAGE));
       { /* with */
@@ -4821,8 +4822,7 @@ extern long aprsdecode_Stoframe(aprsdecode_pOPHIST * optab, char rawbuf[],
       op = op->next;
    }
    if (op==0) {
-      osic_alloc((X2C_ADDRESS *) &op,
-                sizeof(struct aprsdecode_OPHIST));
+      osic_alloc((X2C_ADDRESS *) &op, sizeof(struct aprsdecode_OPHIST));
       useri_debugmem.req = sizeof(struct aprsdecode_OPHIST);
       useri_debugmem.mon += useri_debugmem.req;
       if (op==0) {
@@ -4890,8 +4890,7 @@ extern long aprsdecode_Stoframe(aprsdecode_pOPHIST * optab, char rawbuf[],
       }
    }
    /* not insert same frame */
-   osic_alloc((X2C_ADDRESS *) &frame,
-                sizeof(struct aprsdecode_FRAMEHIST));
+   osic_alloc((X2C_ADDRESS *) &frame, sizeof(struct aprsdecode_FRAMEHIST));
    useri_debugmem.req = sizeof(struct aprsdecode_FRAMEHIST);
    useri_debugmem.mon += useri_debugmem.req;
    if (frame==0) {
@@ -4958,7 +4957,9 @@ extern long aprsdecode_Stoframe(aprsdecode_pOPHIST * optab, char rawbuf[],
       frame->next = lastf->next; /* not nil if insert older frame */
       lastf->next = frame; /* append waypoint */
    }
-   if (dat.hrtlen>0UL) inserthrt(dat, &op, frame->nodraw);
+   if (dat.hrtlen>0UL) {
+      inserthrt(dat, &op, frame->nodraw);
+   }
    if (!logmode) {
       /* read log check whole track at end */
       aprsdecode_Checktrack(op, lastf);
@@ -5051,8 +5052,7 @@ extern void aprsdecode_purge(aprsdecode_pOPHIST * ops, unsigned long oldt,
          else lastop->next = op;
          /*WrStr(opx^.call); WrStrLn("(purgop) "); */
          useri_debugmem.mon -= sizeof(struct aprsdecode_OPHIST);
-         osic_free((X2C_ADDRESS *) &opx,
-                sizeof(struct aprsdecode_OPHIST));
+         osic_free((X2C_ADDRESS *) &opx, sizeof(struct aprsdecode_OPHIST));
       }
       else {
          if (chk) {
@@ -5097,8 +5097,7 @@ extern void aprsdecode_delwaypoint(aprsdecode_pOPHIST op,
    if (lf==0) op->frames = (*frame)->next;
    else lf->next = (*frame)->next;
    useri_debugmem.mon -= sizeof(struct aprsdecode_FRAMEHIST);
-   osic_free((X2C_ADDRESS *)frame,
-                sizeof(struct aprsdecode_FRAMEHIST));
+   osic_free((X2C_ADDRESS *)frame, sizeof(struct aprsdecode_FRAMEHIST));
    f = op->frames;
    while (f) {
       if (f->vardat->refcnt<65535U) ++f->vardat->refcnt;
@@ -6078,7 +6077,7 @@ static void approxywarn(struct aprspos_POSITION pos, const char call[],
                   aprsstr_Append(h, 101ul, "km ", 4ul);
                   aprsstr_Append(h, 101ul, call, call_len);
                   useri_textautosize(0L, 5L, 6UL, 120UL, 'r', h, 101ul);
-                  if (!osic_Exists("proxwarn", 9ul)) {
+                  if (!osi_Exists("proxwarn", 9ul)) {
                      fd = osi_OpenWrite("proxwarn", 9ul);
                      if (osic_FdValid(fd)) {
                         aprsstr_Assign(h, 101ul, call, call_len);
@@ -6086,7 +6085,7 @@ static void approxywarn(struct aprspos_POSITION pos, const char call[],
                 0UL, s, 31ul);
                         aprsstr_Append(h, 101ul, " p ", 4ul);
                         aprsstr_Append(h, 101ul, s, 31ul);
-                        osic_WrBin(fd, (char *)h, 101u/1u, aprsstr_Length(h,
+                        osi_WrBin(fd, (char *)h, 101u/1u, aprsstr_Length(h,
                 101ul));
                         osic_Close(fd);
                      }
@@ -6520,8 +6519,8 @@ static void storedata(aprsdecode_FRAMEBUF mb, aprsdecode_pTCPSOCK cp,
    /*WrInt(rxidle, 15); WrInt(lastlooped+IGATEMAXDELAY, 15);
                 WrInt(time(), 15); WrStrLn(" ig"); */
    if (local) res = 0L;
-   else if (aprsdecode_rxidle>=3UL && aprsdecode_lastlooped+5UL>=osic_time()
-                ) {
+   else if (aprsdecode_rxidle>=3UL && aprsdecode_lastlooped+5UL>=osic_time())
+                 {
       /* not too long delayd data */
       digipeat(mb, udpch);
       res = AprsIs(mb, 512ul, 6UL, server, 9ul, udpch, valid, &tabchk);
@@ -6550,14 +6549,14 @@ temporarily", 56ul);
       /* delayed */
       res = 0L;
       if (aprsdecode_verb) {
-         osic_WrStrLn("---discarded delayed digpeat-frame", 35ul);
+         osi_WrStrLn("---discarded delayed digpeat-frame", 35ul);
       }
    }
    otime = 0UL;
    if (aprsdecode_verb && udpch>0UL) {
-      osic_WrUINT32(res, 3UL);
-      osic_WrStr(" udp ", 6ul);
-      osic_WrStrLn(mb, 512ul);
+      osic_WrUINT32((unsigned long)res, 3UL);
+      osi_WrStr(" udp ", 6ul);
+      osi_WrStrLn(mb, 512ul);
    }
    if (res>=0L && aprsdecode_Decode(mb, 512ul, &dat)>=0L) {
       if (udpch>0UL) dat.lastrxport = (char)(udpch+48UL);
@@ -6681,7 +6680,7 @@ extern void aprsdecode_udpin(unsigned long port)
          aprsdecode_lastanyudprx = aprsdecode_realtime;
          storedata(mbuf, 0, port+1UL, modeminfo, 0, 0);
       }
-      else if (aprsdecode_verb) osic_WrStrLn("axudp decode error", 19ul);
+      else if (aprsdecode_verb) osi_WrStrLn("axudp decode error", 19ul);
    }
 } /* end udpin() */
 
@@ -6865,6 +6864,7 @@ extern void aprsdecode_BEGIN(void)
    useri_BEGIN();
    aprspos_BEGIN();
    aprsstr_BEGIN();
-   xosic_BEGIN();
+   osi_BEGIN();
+   xosi_BEGIN();
 }
 

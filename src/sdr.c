@@ -26,10 +26,15 @@
 #ifndef aprsstr_H_
 #include "aprsstr.h"
 #endif
+#ifndef Select_H_
+#include "Select.h"
+#endif
+
+
+
 
 
 /* rtl_tcp iq fm demodulator by OE5DXL */
-/*FROM Select IMPORT Usleep; */
 #define sdr_IQBUF 65536
 
 #define sdr_DDSMAXLEN 2048
@@ -501,7 +506,7 @@ extern long sdr_getsdr(unsigned long samps, sdr_pRX rx[],
    struct sdr_RX * anonym;
    unsigned long tmp;
    if (reconnect && fd<0L) {
-      /*    Usleep(1000000); */
+      Usleep(1000000UL);
       fd = connecttob(url, port);
    }
    if (fd>=0L) {

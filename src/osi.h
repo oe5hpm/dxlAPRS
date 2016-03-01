@@ -12,14 +12,12 @@
 #ifndef X2C_H_
 #include "X2C.h"
 #endif
-#include <stdio.h>
 #ifndef tcp_H_
 #include "tcp.h"
 #endif
 #ifndef udp_H_
 #include "udp.h"
 #endif
-#include <math.h>
 #include <osic.h>
 
 typedef long osi_File;
@@ -33,10 +31,6 @@ typedef long osi_SOCKET;
 #define osi_DIRSEP2 "/"
 
 #define osi_InvalidFd (-1)
-
-#define osi_floor floor
-
-#define osi_Flush Flush
 
 #define osi_ln osic_ln
 
@@ -70,11 +64,17 @@ typedef long osi_SOCKET;
 
 #define osi_WrHex osic_WrHex
 
-#define osi_WrStr InOut_WriteString
+#define osi_ALLOCATE osic_alloc
 
-#define osi_WrCard InOut_WriteCard
+#define osi_DEALLOCATE osic_free
 
-#define osi_WrInt InOut_WriteInt
+#define osi_time osic_time
+
+#define osi_Size osic_Size
+
+#define osi_WrInt osic_WrUINT32
+
+#define osi_Flush osic_WrLn
 
 #define osi_readsock readsock
 
@@ -95,10 +95,6 @@ typedef long osi_SOCKET;
 #define osi_udpreceive udpreceive
 
 #define osi_udpsend udpsend
-
-#define osi_remove remove
-
-#define osi_Size Size
 
 extern long osi_OpenAppendLong(char [], unsigned long);
 
@@ -125,6 +121,12 @@ extern void osi_WrBin(long, char [], unsigned long, unsigned long);
 extern void osi_Werr(char [], unsigned long);
 
 extern void osi_NextArg(char [], unsigned long);
+
+extern void osi_WrStr(char [], unsigned long);
+
+extern void osi_Erase(char [], unsigned long, char *);
+
+extern char osi_Exists(char [], unsigned long);
 
 extern void osi_WrStrLn(char [], unsigned long);
 

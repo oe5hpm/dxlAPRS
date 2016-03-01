@@ -13,13 +13,16 @@
 #include "X2C.h"
 #endif
 #define sdrtest_C_
+#ifndef osi_H_
+#include "osi.h"
+#endif
+#include <osic.h>
 #ifndef aprsstr_H_
 #include "aprsstr.h"
 #endif
 #ifndef sdr_H_
 #include "sdr.h"
 #endif
-#include "osic.h"
 
 /* test rtl_tcp iq fm demodulator by OE5DXL */
 #define sdrtest_MAXCHANNELS 32
@@ -95,8 +98,8 @@ static char reconn;
 static void Error(char text[], unsigned long text_len)
 {
    X2C_PCOPY((void **)&text,text_len);
-   osic_WrStr(text, text_len);
-   osic_WrStrLn(" error abort", 13ul);
+   osi_WrStr(text, text_len);
+   osi_WrStrLn(" error abort", 13ul);
    X2C_ABORT();
    X2C_PFREE(text);
 } /* end Error() */
@@ -395,9 +398,9 @@ static void rdconfig(void)
    char b[10001];
    char li[256];
    struct FREQTAB freq[32];
-   fd0 = osic_OpenRead(parmfn, 1001ul);
+   fd0 = osi_OpenRead(parmfn, 1001ul);
    if (fd0>=0L) {
-      len = osic_RdBin(fd0, (char *)b, 10001u/1u, 10001UL);
+      len = osi_RdBin(fd0, (char *)b, 10001u/1u, 10001UL);
       if ((len>0L && len<10000L) && (unsigned char)b[len-1L]>=' ') {
          b[len-1L] = 0;
       }
@@ -496,7 +499,8 @@ static void showrssi(void)
       osi_Werr(" ", 2ul);
       aprsstr_IntToStr(rxx[i].afckhz, 0UL, s, 31ul);
       osi_Werr(s, 31ul);
-      osi_WerrLn(" ", 2ul);
+      osi_Werr(" ", 2ul);
+      osic_WrLn();
       ++i;
    }
    osi_Werr("    \015", 6ul);
@@ -524,6 +528,7 @@ extern int main(int argc, char **argv)
    X2C_BEGIN(&argc,argv,1,4000000l,8000000l);
    sdr_BEGIN();
    aprsstr_BEGIN();
+   osi_BEGIN();
    midfreq = 0UL;
    lastmidfreq = 0UL;
    tshow = 0UL;
@@ -537,7 +542,7 @@ extern int main(int argc, char **argv)
    if (sdr_startsdr(url, 1001ul, port, 1001ul, iqrate, samphz, reconn)) {
       rdconfig();
       sndw = 0UL;
-      fd = osic_OpenWrite(soundfn, 1001ul);
+      fd = osi_OpenWrite(soundfn, 1001ul);
       if (fd>=0L) {
          recon = 1;
          for (;;) {
@@ -584,7 +589,7 @@ extern int main(int argc, char **argv)
                      sndbuf[sndw] = (short)pcm;
                      ++sndw;
                      if (sndw>1023UL) {
-                        osic_WrBin(fd, (char *)sndbuf, 2048u/1u, sndw*2UL);
+                        osi_WrBin(fd, (char *)sndbuf, 2048u/1u, sndw*2UL);
                         sndw = 0UL;
                         if (tshow>20UL) {
                            rdconfig();

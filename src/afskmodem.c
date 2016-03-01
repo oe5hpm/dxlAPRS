@@ -13,6 +13,9 @@
 #include "X2C.h"
 #endif
 #define afskmodem_C_
+#ifndef ptty_H_
+#include "ptty.h"
+#endif
 #ifndef soundctl_H_
 #include "soundctl.h"
 #endif
@@ -21,17 +24,23 @@
 #endif
 #include <fcntl.h>
 #ifndef osi_H_
-#include "osic.h"
+#include "osi.h"
 #endif
-#include <stdio.h>
+#include <osic.h>
 #ifndef aprsstr_H_
 #include "aprsstr.h"
+#endif
+#ifndef symlink_H_
+#include "symlink.h"
 #endif
 #ifndef mlib_H_
 #include "mlib.h"
 #endif
 #ifndef Select_H_
 #include "Select.h"
+#endif
+#ifndef Lib_H_
+#include "Lib.h"
 #endif
 #include <unistd.h>
 #ifndef afskmodemptt_H_
@@ -306,8 +315,8 @@ static char debb[81];
 static void Error(char text[], unsigned long text_len)
 {
    X2C_PCOPY((void **)&text,text_len);
-   osic_WrStr(text, text_len);
-   osic_WrStrLn(" error abort", 13ul);
+   osi_WrStr(text, text_len);
+   osi_WrStrLn(" error abort", 13ul);
    X2C_ABORT();
    X2C_PFREE(text);
 } /* end Error() */
@@ -336,8 +345,8 @@ static void Hamming(float f[], unsigned long f_len)
    tmp = f_len-1;
    i0 = 0UL;
    if (i0<=tmp) for (;; i0++) {
-      f[i0] = f[i0]*(0.54f+0.46f*osic_cos(3.141592f*(X2C_DIVR((float)i0,
-                (float)(1UL+(f_len-1))))));
+      f[i0] = f[i0]*(0.54f+0.46f*osic_cos(3.1415926535898f*(X2C_DIVR((float)
+                i0,(float)(1UL+(f_len-1))))));
       if (i0==tmp) break;
    } /* end for */
 } /* end Hamming() */
@@ -363,7 +372,7 @@ static void initdfir(DFIRTAB dfirtab, unsigned long fg)
          e = f1-(float)(unsigned long)X2C_TRUNCC(f1,0UL,X2C_max_longcard);
       }
       for (i0 = 0UL; i0<=511UL; i0++) {
-         t[i0] = t[i0]+e*osic_cos(X2C_DIVR(3.141592f*(float)(i0*f),
+         t[i0] = t[i0]+e*osic_cos(X2C_DIVR(3.1415926535898f*(float)(i0*f),
                 512.0f));
       } /* end for */
       if (f==tmp) break;
@@ -376,8 +385,8 @@ static void initdfir(DFIRTAB dfirtab, unsigned long fg)
    */
    Hamming(t, 512ul);
    for (i0 = 0UL; i0<=511UL; i0++) {
-      t[i0] = t[i0]*(0.54f+0.46f*osic_cos(3.141592f*(X2C_DIVR((float)i0,
-                512.0f))));
+      t[i0] = t[i0]*(0.54f+0.46f*osic_cos(3.1415926535898f*(X2C_DIVR((float)
+                i0,512.0f))));
    } /* end for */
    for (i0 = 0UL; i0<=511UL; i0++) {
       dfirtab[511UL+i0] = t[i0];
@@ -439,7 +448,7 @@ static void initafir(AFIRTAB atab, unsigned long F0, unsigned long F1,
       }
       else {
          for (i0 = 0UL; i0<=255UL; i0++) {
-            t[i0] = t[i0]+e*osic_cos(X2C_DIVR(3.141592f*(float)(i0*f),
+            t[i0] = t[i0]+e*osic_cos(X2C_DIVR(3.1415926535898f*(float)(i0*f),
                 256.0f));
          } /* end for */
       }
@@ -499,8 +508,8 @@ static void initTFIR(void)
       }
       else k = 1.0f;
       for (i0 = 0UL; i0<=383UL; i0++) {
-         sym[i0] = sym[i0]+k*osic_cos(X2C_DIVR(3.141592f*(float)(i0*f),
-                384.0f));
+         sym[i0] = sym[i0]+k*osic_cos(X2C_DIVR(3.1415926535898f*(float)(i0*f)
+                ,384.0f));
       } /* end for */
    } /* end for */
    Hamming(sym, 384ul);
@@ -537,13 +546,13 @@ static void SetMixer(char mixfn[], unsigned long mixfn_len,
 {
    long fd;
    X2C_PCOPY((void **)&mixfn,mixfn_len);
-   fd = osic_OpenRW(mixfn, mixfn_len);
+   fd = osi_OpenRW(mixfn, mixfn_len);
    if (fd>=0L) {
       if (chan0==255UL) chan0 = recnum();
       setmixer(fd, chan0, (right<<8)+left);
    }
    else {
-      osic_WrStr(mixfn, mixfn_len);
+      osi_WrStr(mixfn, mixfn_len);
       Error(" open", 6ul);
    }
    X2C_PFREE(mixfn);
@@ -554,29 +563,29 @@ static void OpenSound(void)
 {
    long s;
    long i0;
-   soundfd = osic_OpenRW(soundfn, 1024ul);
+   soundfd = osi_OpenRW(soundfn, 1024ul);
    if (soundfd>=0L) {
       i0 = samplesize(soundfd, 16UL); /* 8, 16 */
       i0 = channels(soundfd, (unsigned long)maxchannels+1UL); /* 1, 2  */
       i0 = setfragment(soundfd, fragmentsize); /* 2^bufsize * 65536*bufs*/
       if (i0) {
-         osic_WrStr("sound setfragment returns ", 27ul);
-         osic_WrUINT32(i0, 1UL);
+         osi_WrStr("sound setfragment returns ", 27ul);
+         osic_WrUINT32((unsigned long)i0, 1UL);
          osic_WrLn();
       }
       i0 = sampelrate(soundfd, adcrate); /* 8000..48000 */
       s = (long)getsampelrate(soundfd);
       if (s!=(long)adcrate) {
-         osic_WrStr("sound device returns ", 22ul);
-         osic_WrUINT32(s, 1UL);
-         osic_WrStrLn("Hz!", 4ul);
+         osi_WrStr("sound device returns ", 22ul);
+         osic_WrUINT32((unsigned long)s, 1UL);
+         osi_WrStrLn("Hz!", 4ul);
       }
    }
    else if (abortonsounderr) {
       /*
             IF s>=0 THEN Error("") END;
       */
-      osic_WrStr(soundfn, 1024ul);
+      osi_WrStr(soundfn, 1024ul);
       Error(" open", 6ul);
    }
 } /* end OpenSound() */
@@ -588,7 +597,7 @@ static void ttypar(char fn[], unsigned long fn_len)
    long fd;
    long res;
    X2C_PCOPY((void **)&fn,fn_len);
-   fd = osic_OpenNONBLOCK(fn, fn_len);
+   fd = osi_OpenNONBLOCK(fn, fn_len);
    if (fd>=0L) {
       res = tcgetattr(fd, &term);
       /*
@@ -609,10 +618,11 @@ static void ttypar(char fn[], unsigned long fn_len)
 static long Opentty(char linkname[], unsigned long linkname_len)
 {
    long fd;
+   char voidok;
    char ptsname[4096];
    long Opentty_ret;
    X2C_PCOPY((void **)&linkname,linkname_len);
-   fd = osic_OpenNONBLOCK("/dev/ptmx", 10ul);
+   fd = osi_OpenNONBLOCK("/dev/ptmx", 10ul);
    if (fd<0L) Error("/dev/ptmx open", 15ul);
    if (getptsname(fd, (char *)ptsname, 4096UL)) Error("no ttyname", 11ul);
    /*
@@ -622,11 +632,11 @@ static long Opentty(char linkname[], unsigned long linkname_len)
    if (unlockpts(fd)) Error("ptty unlock", 12ul);
    ttypar(ptsname, 4096ul);
    /*make link*/
-   remove(linkname);
-   if (osic_symblink((char *)ptsname, (char *)linkname)) {
-      osic_WrStr("cannot create link <", 21ul);
-      osic_WrStr(linkname, linkname_len);
-      osic_WrStrLn(">, starting without kiss interface", 35ul);
+   osi_Erase(linkname, linkname_len, &voidok);
+   if (symblink((char *)ptsname, (char *)linkname)) {
+      osi_WrStr("cannot create link <", 21ul);
+      osi_WrStr(linkname, linkname_len);
+      osi_WrStrLn(">, starting without kiss interface", 35ul);
       osic_Close(fd);
       fd = -1L;
    }
@@ -871,7 +881,7 @@ static void Parms(void)
    debp = 0UL;
    badsounddriver = 0;
    for (cnum = 0UL; cnum<=32767UL; cnum++) {
-      SIN[cnum] = osic_cos(X2C_DIVR((float)cnum*2.0f*3.141592f,
+      SIN[cnum] = osic_cos(X2C_DIVR((float)cnum*2.0f*3.1415926535898f,
                 32768.0f));
    } /* end for */
    for (c = afskmodem_LEFT;; c++) {
@@ -927,13 +937,9 @@ static void Parms(void)
    pipefn[0U] = 0;
    X2C_COPY("/dev/mixer",11ul,mixfn,1024u);
    maxsoundbufs = 10UL;
-
    for (;;) {
-      osic_NextArg(h, 1024ul);
-      if (h[0U]==0) {
-	      printf("have all.\n");
-	      break;
-      }
+      osi_NextArg(h, 1024ul);
+      if (h[0U]==0) break;
       if ((h[0U]=='-' && h[1U]) && h[2U]==0) {
          if (h[1U]=='a') {
             if (modem>=0L) modpar[modem].afsk = 0;
@@ -941,7 +947,7 @@ static void Parms(void)
             else Error("need modem number -M before -a", 31ul);
          }
          else if (h[1U]=='b') {
-            osic_NextArg(h, 1024ul);
+            osi_NextArg(h, 1024ul);
             if (modem>=0L) {
                if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
                if (cnum>=adcrate) {
@@ -959,20 +965,20 @@ static void Parms(void)
                badsounddriver = 1;
             }
             else {
-               osic_NextArg(h, 1024ul);
+               osi_NextArg(h, 1024ul);
                if (!aprsstr_StrToInt(h, 1024ul, &inum)) err = 1;
                if (modem>=0L) modpar[modem].bert = inum*8000L;
                else Error("need modem number -M before -B", 31ul);
             }
          }
          else if (h[1U]=='C') {
-            osic_NextArg(h, 1024ul);
+            osi_NextArg(h, 1024ul);
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
             if (cnum>1UL) Error("channel 0 to 1", 15ul);
             channel = (long)cnum;
          }
          else if (h[1U]=='c') {
-            osic_NextArg(h, 1024ul);
+            osi_NextArg(h, 1024ul);
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
             if (modem>=0L) {
                if (cnum>(unsigned long)maxchannels) {
@@ -986,7 +992,7 @@ static void Parms(void)
             }
          }
          else if (h[1U]=='D') {
-            osic_NextArg(h1, 1024ul);
+            osi_NextArg(h1, 1024ul);
             debfd = creat(h1, 420L);
             inum = 0L;
             while (inum<1023L && h1[inum]) ++inum;
@@ -994,7 +1000,7 @@ static void Parms(void)
                 && h1[inum-2L]=='x') && h1[inum-1L]=='t';
          }
          else if (h[1U]=='d') {
-            osic_NextArg(h, 1024ul);
+            osi_NextArg(h, 1024ul);
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
             if (modem>=0L) {
                modpar[modem].squelchdcd = X2C_DIVR((float)cnum,400.0f);
@@ -1002,7 +1008,7 @@ static void Parms(void)
             else Error("need modem number -M before -d", 31ul);
          }
          else if (h[1U]=='e') {
-            osic_NextArg(h, 1024ul);
+            osi_NextArg(h, 1024ul);
             if (modem>=0L) {
                if (!aprsstr_StrToInt(h, 1024ul, &inum)) err = 1;
                if (labs(inum)>999L) Error("equalizer -999..999", 20ul);
@@ -1016,7 +1022,7 @@ static void Parms(void)
             }
          }
          else if (h[1U]=='f') {
-            osic_NextArg(h, 1024ul);
+            osi_NextArg(h, 1024ul);
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
             if (modem>=0L) modpar[modem].configafskmid = cnum;
             else if (channel>=0L) {
@@ -1033,7 +1039,7 @@ static void Parms(void)
          else if (h[1U]=='g') {
             if (modem>=0L) modpar[modem].scramb = 1;
             else if (channel>=0L) {
-               osic_NextArg(h, 1024ul);
+               osi_NextArg(h, 1024ul);
                if (!aprsstr_StrToCard(h, 1024ul, &cnum) || cnum>999UL) {
                   Error("-g <ms>", 8ul);
                }
@@ -1042,17 +1048,17 @@ static void Parms(void)
             else Error("need modem number -M before -g", 31ul);
          }
          else if (h[1U]=='H') {
-            osic_NextArg(h, 1024ul);
+            osi_NextArg(h, 1024ul);
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
             if (modem>=0L) modpar[modem].afskhighpass = (float)cnum*0.01f;
             else Error("need modem number -M before -H", 31ul);
          }
          else if (h[1U]=='i') {
             if (modem>=0L) modpar[modem].kissignore = 1;
-            else osic_NextArg(pipefn, 1024ul);
+            else osi_NextArg(pipefn, 1024ul);
          }
          else if (h[1U]=='k') {
-            osic_NextArg(h, 1024ul);
+            osi_NextArg(h, 1024ul);
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
             if (modem>=0L) {
                if (cnum>7UL) Error("kissports 0..7", 15ul);
@@ -1061,20 +1067,20 @@ static void Parms(void)
             else kissbufs = cnum;
          }
          else if (h[1U]=='l') {
-            osic_NextArg(h, 1024ul);
+            osi_NextArg(h, 1024ul);
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
             if (cnum>=16UL && cnum<=4096UL) adcbuflen = cnum;
             else Error("sound buffer out of range", 26ul);
          }
          else if (h[1U]=='M') {
-            osic_NextArg(h, 1024ul);
+            osi_NextArg(h, 1024ul);
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
             if (cnum>7UL) Error(">maxmodems", 11ul);
             modem = (long)cnum;
             modpar[modem].configured = 1;
          }
          else if (h[1U]=='m') {
-            osic_NextArg(h, 1024ul);
+            osi_NextArg(h, 1024ul);
             if (modem<0L && channel<0L) {
                while (h[0U]) {
                   ExtractWord(h1, 1024ul, h, 1024ul);
@@ -1097,21 +1103,21 @@ static void Parms(void)
             }
          }
          else if (h[1U]=='n') {
-            osic_NextArg(h, 1024ul);
+            osi_NextArg(h, 1024ul);
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
             if (modem>=0L) modpar[modem].confignyquist = cnum;
             else Error("need modem number -M before -n", 31ul);
          }
-         else if (h[1U]=='o') osic_NextArg(soundfn, 1024ul);
+         else if (h[1U]=='o') osi_NextArg(soundfn, 1024ul);
          else if (h[1U]=='p') {
             if (modem>=0L) {
-               osic_NextArg(h, 1024ul);
+               osi_NextArg(h, 1024ul);
                if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
                modpar[modem].pllshift = (long)(cnum*256UL);
             }
             else if (channel>=0L) {
-               osic_NextArg(h1, 1024ul);
-               osic_NextArg(h, 1024ul);
+               osi_NextArg(h1, 1024ul);
+               osi_NextArg(h, 1024ul);
                if (!aprsstr_StrToInt(h, 1024ul, &inum)) err = 1;
                inum = labs(inum)+1L;
                if (h[0U]=='-') inum = -inum;
@@ -1120,14 +1126,14 @@ static void Parms(void)
          }
          else if (h[1U]=='q') {
             if (modem>=0L) {
-               osic_NextArg(h, 1024ul);
+               osi_NextArg(h, 1024ul);
                if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
                modpar[modem].leveldcd = (long)cnum;
             }
             else Error("need modem number -M before -q", 31ul);
          }
          else if (h[1U]=='r') {
-            osic_NextArg(h, 1024ul);
+            osi_NextArg(h, 1024ul);
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
             if (channel>=0L) {
                if (!aprsstr_StrToCard(h, 1024ul,
@@ -1136,14 +1142,14 @@ static void Parms(void)
             else Error("need channel number -C before -r", 33ul);
          }
          else if (h[1U]=='s') {
-            osic_NextArg(h, 1024ul);
+            osi_NextArg(h, 1024ul);
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
             if (modem>=0L) modpar[modem].configafskshift = cnum;
             else fragmentsize = cnum;
          }
          else if (h[1U]=='t') {
             if (modem>=0L) {
-               osic_NextArg(h, 1024ul);
+               osi_NextArg(h, 1024ul);
                if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
                modpar[modem].configtxdel = cnum;
             }
@@ -1156,7 +1162,7 @@ static void Parms(void)
                modpar[modem].axudp2 = h[1U]!='U'; /* switch on axudp2 */
                modpar[modem].dcdmsgs = h[1U]=='P';
                 /* send dcd change & txbuffer empty messages*/
-               osic_NextArg(h, 1024ul);
+               osi_NextArg(h, 1024ul);
                { /* with */
                   struct MPAR * anonym1 = &modpar[modem];
                   if (GetIp(h, 1024ul, &anonym1->udpip, &anonym1->udpport,
@@ -1168,7 +1174,7 @@ static void Parms(void)
          }
          else if (h[1U]=='v') {
             if (modem>=0L) {
-               osic_NextArg(h, 1024ul);
+               osi_NextArg(h, 1024ul);
                if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
                if (cnum>100UL) cnum = 100UL;
                modpar[modem].txvolum = (float)cnum*250.0f;
@@ -1177,7 +1183,7 @@ static void Parms(void)
          }
          else if (h[1U]=='T') {
             if (modem>=0L) {
-               osic_NextArg(h, 1024ul);
+               osi_NextArg(h, 1024ul);
                if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
                modpar[modem].timeout = cnum;
             }
@@ -1185,7 +1191,7 @@ static void Parms(void)
          }
          else if (h[1U]=='w') {
             if (modem>=0L) {
-               osic_NextArg(h, 1024ul);
+               osi_NextArg(h, 1024ul);
                if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
                modpar[modem].txdelpattern = cnum;
             }
@@ -1193,14 +1199,14 @@ static void Parms(void)
          }
          else if (h[1U]=='x') {
             if (modem>=0L) {
-               osic_NextArg(h, 1024ul);
+               osi_NextArg(h, 1024ul);
                if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
                modpar[modem].configtxtail = cnum;
             }
             else Error("need modem number -M before -x", 31ul);
          }
          else if (h[1U]=='z') {
-            osic_NextArg(h, 1024ul);
+            osi_NextArg(h, 1024ul);
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
             if (modem>=0L) {
                modpar[modem].clamp = X2C_DIVR((float)cnum,1000.0f);
@@ -1209,34 +1215,34 @@ static void Parms(void)
          }
          else {
             if (h[1U]=='h') {
-               osic_WrStrLn("first for all modems", 21ul);
-               osic_WrStrLn(" -a             abort on sounddevice error else r\
+               osi_WrStrLn("first for all modems", 21ul);
+               osi_WrStrLn(" -a             abort on sounddevice error else r\
 etry to open", 62ul);
-               osic_WrStrLn(" -b <num>       tx dacbuffers (10) (more to avoid\
+               osi_WrStrLn(" -b <num>       tx dacbuffers (10) (more to avoid\
  underruns)", 61ul);
-               osic_WrStrLn(" -B             bad sound driver repair, sending \
+               osi_WrStrLn(" -B             bad sound driver repair, sending \
 continuous quietness to avoid receive", 87ul);
-               osic_WrStrLn("                sample loss on start/stop of soun\
+               osi_WrStrLn("                sample loss on start/stop of soun\
 d output. Use for stereo or fullduplex)", 89ul);
-               osic_WrStrLn(" -c <num>       maxchannels (1) (1=mono, 2=stereo\
+               osi_WrStrLn(" -c <num>       maxchannels (1) (1=mono, 2=stereo\
 )", 51ul);
-               osic_WrStrLn(" -D <filename>  (debug) write raw soundcard input\
+               osi_WrStrLn(" -D <filename>  (debug) write raw soundcard input\
  data to file or pipe", 71ul);
-               osic_WrStrLn(" -D <filename>.txt  (debug) write demodulated bit\
+               osi_WrStrLn(" -D <filename>.txt  (debug) write demodulated bit\
 s as \"01..\" to file or pipe", 77ul);
-               osic_WrStrLn(" -e <num>       additional ptt hold time (if soun\
+               osi_WrStrLn(" -e <num>       additional ptt hold time (if soun\
 dsystem has delay) unit=adcbuffers (1)", 88ul);
-               osic_WrStrLn(" -f <num>       adcrate (16000) (8000..96000)",
+               osi_WrStrLn(" -f <num>       adcrate (16000) (8000..96000)",
                 46ul);
-               osic_WrStrLn(" -h             help", 21ul);
-               osic_WrStrLn(" -i <filename>  kiss pipename (/dev/kiss/soundmod\
+               osi_WrStrLn(" -h             help", 21ul);
+               osi_WrStrLn(" -i <filename>  kiss pipename (/dev/kiss/soundmod\
 em)", 53ul);
-               osic_WrStrLn(" -k <num>       tx kiss bufs (60)", 34ul);
-               osic_WrStrLn(" -l <num>       adcbuffer length (256) more: lowe\
+               osi_WrStrLn(" -k <num>       tx kiss bufs (60)", 34ul);
+               osi_WrStrLn(" -l <num>       adcbuffer length (256) more: lowe\
 r system load but slower reaction", 83ul);
-               osic_WrStrLn(" -m [<mixername>:]<channel>:<left>:<right> (0..25\
+               osi_WrStrLn(" -m [<mixername>:]<channel>:<left>:<right> (0..25\
 5) ossmixer (/dev/mixer)", 74ul);
-               osic_WrStrLn(" -o <filename>  oss devicename (/dev/dsp)",
+               osi_WrStrLn(" -o <filename>  oss devicename (/dev/dsp)",
                 42ul);
                osi_WrStrLn(" -s <num>       fragment size in 2^n (9)", 41ul);
                osic_WrLn();
@@ -1244,74 +1250,74 @@ r system load but slower reaction", 83ul);
                osi_WrStrLn("  -C <num>              (0..1) channel parameters\
  follow (repeat for each channel)", 83ul);
                pttHelp((char *)ptth, 4096UL);
-               osic_WrStrLn(ptth, 4096ul);
-               osic_WrStrLn("  -f <num>              (0) (0=halfduplex, 1=mast\
+               osi_WrStrLn(ptth, 4096ul);
+               osi_WrStrLn("  -f <num>              (0) (0=halfduplex, 1=mast\
 er fullduplex, 2=all fullduplex,", 82ul);
-               osic_WrStrLn("                        3=simplex \'stereo never \
+               osi_WrStrLn("                        3=simplex \'stereo never \
 both tx same time\')", 68ul);
-               osic_WrStrLn("  -g <ms>               GM900 audio quiet time af\
+               osi_WrStrLn("  -g <ms>               GM900 audio quiet time af\
 ter ptt on (0)", 64ul);
-               osic_WrStrLn("  -r <num>              max random wait time afte\
+               osi_WrStrLn("  -r <num>              max random wait time afte\
 r dcd before start tx (ms) (800)", 82ul);
                osic_WrLn();
                osi_WrStrLn("repeat for each modem -M ... :", 31ul);
                osi_WrStrLn("   -M <num> (0..7) modem parameters follow (repea\
 t for each modem)", 67ul);
-               osic_WrStrLn("   -a       afsk off, fsk on (on)", 34ul);
-               osic_WrStrLn("   -b <num> baud (1200) (1..32000)", 35ul);
-               osic_WrStrLn("   -B <kbyte> send BERT, (negative bytes receive \
+               osi_WrStrLn("   -a       afsk off, fsk on (on)", 34ul);
+               osi_WrStrLn("   -b <num> baud (1200) (1..32000)", 35ul);
+               osi_WrStrLn("   -B <kbyte> send BERT, (negative bytes receive \
 only)", 55ul);
-               osic_WrStrLn("   -c <num> use stereo channel 0=left (or mono), \
+               osi_WrStrLn("   -c <num> use stereo channel 0=left (or mono), \
 1=right", 57ul);
-               osic_WrStrLn("   -d <num> dcdlevel, 0 no dcd (56) (0..100)",
+               osi_WrStrLn("   -d <num> dcdlevel, 0 no dcd (56) (0..100)",
                 45ul);
-               osic_WrStrLn("   -e <num> demod equalizer (0) 100=6db/oct highp\
+               osi_WrStrLn("   -e <num> demod equalizer (0) 100=6db/oct highp\
 ass   (-999..999)", 67ul);
-               osic_WrStrLn("   -f <num> afsk mid frequency, tx and rx (hz) (1\
+               osi_WrStrLn("   -f <num> afsk mid frequency, tx and rx (hz) (1\
 700)", 54ul);
-               osic_WrStrLn("   -g       g3ruh scrambler on (off)", 37ul);
-               osic_WrStrLn("   -H <num> afsk tx highpass (0) (0..100)",
+               osi_WrStrLn("   -g       g3ruh scrambler on (off)", 37ul);
+               osi_WrStrLn("   -H <num> afsk tx highpass (0) (0..100)",
                 42ul);
-               osic_WrStrLn("   -i       ignore modem parameters from kiss (of\
+               osi_WrStrLn("   -i       ignore modem parameters from kiss (of\
 f)", 52ul);
-               osic_WrStrLn("   -k <num> received data send to this kiss port \
+               osi_WrStrLn("   -k <num> received data send to this kiss port \
 (0) (0..7)", 60ul);
                /*
                        WrStrLn("#  -l <num> filterlow (hz)");
                */
-               osic_WrStrLn("   -m <num> monitor (2) (0=off, 1=header, 2=all, \
+               osi_WrStrLn("   -m <num> monitor (2) (0=off, 1=header, 2=all, \
 3=passall)", 60ul);
-               osic_WrStrLn("   -n <num> nyquist filter baseband -6db point in\
+               osi_WrStrLn("   -n <num> nyquist filter baseband -6db point in\
  % of baudrate (65) (0..100)", 78ul);
-               osic_WrStrLn("   -P same as -U but use AXUDP v2, send dcd and t\
+               osi_WrStrLn("   -P same as -U but use AXUDP v2, send dcd and t\
 xbuffer empty messages", 72ul);
-               osic_WrStrLn("   -p <num> receive clock pll aquisition speed (1\
+               osi_WrStrLn("   -p <num> receive clock pll aquisition speed (1\
 6) (num/256 of bit time)", 74ul);
-               osic_WrStrLn("   -q <num> quiet adc level to save cpu or avoid \
+               osi_WrStrLn("   -q <num> quiet adc level to save cpu or avoid \
 reciption of channel crosstalk (0)", 84ul);
                /*
                        WrStrLn("#  -r       rzi -1 1");
                */
-               osic_WrStrLn("   -s <num> afsk shift tx (for rx bandfilter widt\
+               osi_WrStrLn("   -s <num> afsk shift tx (for rx bandfilter widt\
 h) (1000) (hz)", 64ul);
-               osic_WrStrLn("   -t <num> txdelay (300) (ms)", 31ul);
-               osic_WrStrLn("   -T <seconds> timeout for tx buffered frame (60\
+               osi_WrStrLn("   -t <num> txdelay (300) (ms)", 31ul);
+               osi_WrStrLn("   -T <seconds> timeout for tx buffered frame (60\
 ) (s)", 55ul);
                /*
                        WrStrLn("#  -u       filterup  (hz)");
                */
-               osic_WrStrLn("   -U <[x.x.x.x]:destport:listenport> use axudp i\
+               osi_WrStrLn("   -U <[x.x.x.x]:destport:listenport> use axudp i\
 nstead of kiss /listenport check ip", 85ul);
-               osic_WrStrLn("   -L same as -U but use AXUDP v2 (no dcd and txb\
+               osi_WrStrLn("   -L same as -U but use AXUDP v2 (no dcd and txb\
 uffer empty messages)", 71ul);
-               osic_WrStrLn("   -v <num> tx loudness (100)", 30ul);
-               osic_WrStrLn("   -w <num> txdelay pattern before 1 flag (126) (\
+               osi_WrStrLn("   -v <num> tx loudness (100)", 30ul);
+               osi_WrStrLn("   -w <num> txdelay pattern before 1 flag (126) (\
 0..255)", 57ul);
-               osic_WrStrLn("   -x <num> txtail (20) (ms), ptt hold for fulldu\
+               osi_WrStrLn("   -x <num> txtail (20) (ms), ptt hold for fulldu\
 plex", 54ul);
-               osic_WrStrLn("   -z <num> fsk rx baseband dc regeneration clamp\
+               osi_WrStrLn("   -z <num> fsk rx baseband dc regeneration clamp\
  speed (996) (0=off, 1=fast, 999=slow)", 88ul);
-               osic_WrStrLn("example: ./afskmodem -f 22050 -c 2 -C 0 -p /dev/t\
+               osi_WrStrLn("example: ./afskmodem -f 22050 -c 2 -C 0 -p /dev/t\
 tyS0 0 -M 0 -c 0 -b 1200 -M 1 -c 1 -b 9600 -a -g -U 127.0.0.1:6001:1093",
                 121ul);
                X2C_ABORT();
@@ -1328,9 +1334,9 @@ tyS0 0 -M 0 -c 0 -b 1200 -M 1 -c 1 -b 9600 -a -g -U 127.0.0.1:6001:1093",
       if (err) break;
    }
    if (err) {
-      osic_WrStr(">", 2ul);
-      osic_WrStr(h, 1024ul);
-      osic_WrStrLn("< use -h", 9ul);
+      osi_WrStr(">", 2ul);
+      osi_WrStr(h, 1024ul);
+      osi_WrStrLn("< use -h", 9ul);
       X2C_ABORT();
    }
    Config();
@@ -1373,8 +1379,8 @@ static void Kisscmd(void)
    cmd = (unsigned long)(unsigned char)pGetKiss->port;
    modem = (long)(cmd>>4&7UL);
    cmd = cmd&15UL;
-   osic_WrStr("p=", 3ul);
-   osic_WrUINT32(modem, 1UL);
+   osi_WrStr("p=", 3ul);
+   osic_WrUINT32((unsigned long)modem, 1UL);
    osic_WrLn();
    { /* with */
       struct MPAR * anonym = &modpar[modem];
@@ -1382,27 +1388,27 @@ static void Kisscmd(void)
          x = (unsigned long)(unsigned char)pGetKiss->data[0U];
          if (cmd==1UL) {
             anonym->configtxdel = x*10UL;
-            osic_WrStr("txdel=", 7ul);
-            osic_WrUINT32((long)anonym->configtxdel, 1UL);
+            osi_WrStr("txdel=", 7ul);
+            osic_WrUINT32(anonym->configtxdel, 1UL);
             osic_WrLn();
          }
          else if (cmd==2UL) {
             chan[modpar[modem].ch].configpersist = 10UL*(255UL-x);
-            osic_WrStr("persist=", 9ul);
-            osic_WrUINT32((long)chan[modpar[modem].ch].configpersist, 1UL);
+            osi_WrStr("persist=", 9ul);
+            osic_WrUINT32(chan[modpar[modem].ch].configpersist, 1UL);
             osic_WrLn();
          }
          else if (cmd==4UL) {
             /*3 SlotTime*/
             anonym->configtxtail = x*10UL;
-            osic_WrStr("txtail=", 8ul);
-            osic_WrUINT32((long)anonym->configtxtail, 1UL);
+            osi_WrStr("txtail=", 8ul);
+            osic_WrUINT32(anonym->configtxtail, 1UL);
             osic_WrLn();
          }
          else if (cmd==5UL) {
             if (x<=2UL) chan[modpar[modem].ch].duplex = (unsigned char)x;
-            osic_WrStr("duplex=", 8ul);
-            osic_WrUINT32((long)x, 1UL);
+            osi_WrStr("duplex=", 8ul);
+            osic_WrUINT32(x, 1UL);
             osic_WrLn();
          }
          Config();
@@ -1686,9 +1692,8 @@ static void WrQuali(float q)
    if (q>0.0f) {
       q = 100.5f-q*200.0f;
       if (q<0.0f) q = 0.0f;
-      osic_WrStr(" q:", 4ul);
-      osic_WrUINT32((long)(unsigned long)X2C_TRUNCC(q,0UL,X2C_max_longcard),
-                 1UL);
+      osi_WrStr(" q:", 4ul);
+      osic_WrUINT32((unsigned long)X2C_TRUNCC(q,0UL,X2C_max_longcard), 1UL);
    }
 } /* end WrQuali() */
 
@@ -1697,16 +1702,16 @@ static void WrdB(long volt)
 {
    if (volt>0L) {
       osic_WrFixed(dB((unsigned long)volt), 1L, 6UL);
-      osic_WrStr("dB", 3ul);
+      osi_WrStr("dB", 3ul);
    }
 } /* end WrdB() */
 
 
 static void WrTXD(unsigned long ms)
 {
-   osic_WrStr(" txd:", 6ul);
-   osic_WrUINT32((long)ms, 1UL);
-   osic_WrStr("ms", 3ul);
+   osi_WrStr(" txd:", 6ul);
+   osic_WrUINT32(ms, 1UL);
+   osi_WrStr("ms", 3ul);
 } /* end WrTXD() */
 
 
@@ -1714,9 +1719,9 @@ static void WCh(char c)
 {
    if (c!='\015') {
       if ((unsigned char)c<' ' || (unsigned char)c>='\177') {
-         osic_WrStr(".", 2ul);
+         osi_WrStr(".", 2ul);
       }
-      else osic_WrStr((char *) &c, 1u/1u);
+      else osi_WrStr((char *) &c, 1u/1u);
    }
 } /* end WCh() */
 
@@ -1740,9 +1745,8 @@ static void ShowCall(char f[], unsigned long f_len, unsigned long pos)
       if (i0==tmp) break;
    } /* end for */
    if ((unsigned long)(unsigned char)f[pos+6UL]>>1&15UL) {
-      osic_WrStr("-", 2ul);
-      osic_WrUINT32((long)((unsigned long)(unsigned char)f[pos+6UL]>>1&15UL)
-                , 1UL);
+      osi_WrStr("-", 2ul);
+      osic_WrUINT32((unsigned long)(unsigned char)f[pos+6UL]>>1&15UL, 1UL);
    }
 } /* end ShowCall() */
 
@@ -1770,37 +1774,36 @@ static void Showctl(unsigned long com, unsigned long cmd)
    unsigned long cm;
    char PF[4];
    char tmp;
-   osic_WrStr(" ctl ", 6ul);
+   osi_WrStr(" ctl ", 6ul);
    cm = (unsigned long)cmd&~0x10UL;
    if ((cm&0xFUL)==0x1UL) {
-      osic_WrStr("RR", 3ul);
-      osic_WrStr((char *)(tmp = (char)(48UL+(cmd>>5)),&tmp), 1u/1u);
+      osi_WrStr("RR", 3ul);
+      osi_WrStr((char *)(tmp = (char)(48UL+(cmd>>5)),&tmp), 1u/1u);
    }
    else if ((cm&0xFUL)==0x5UL) {
-      osic_WrStr("RNR", 4ul);
-      osic_WrStr((char *)(tmp = (char)(48UL+(cmd>>5)),&tmp), 1u/1u);
+      osi_WrStr("RNR", 4ul);
+      osi_WrStr((char *)(tmp = (char)(48UL+(cmd>>5)),&tmp), 1u/1u);
    }
    else if ((cm&0xFUL)==0x9UL) {
-      osic_WrStr("REJ", 4ul);
-      osic_WrStr((char *)(tmp = (char)(48UL+(cmd>>5)),&tmp), 1u/1u);
+      osi_WrStr("REJ", 4ul);
+      osi_WrStr((char *)(tmp = (char)(48UL+(cmd>>5)),&tmp), 1u/1u);
    }
    else if ((cm&0x1UL)==0UL) {
-      osic_WrStr("I", 2ul);
-      osic_WrStr((char *)(tmp = (char)(48UL+(cmd>>5)),&tmp), 1u/1u);
-      osic_WrStr((char *)(tmp = (char)(48UL+(cmd>>1&7UL)),&tmp),
-                1u/1u);
+      osi_WrStr("I", 2ul);
+      osi_WrStr((char *)(tmp = (char)(48UL+(cmd>>5)),&tmp), 1u/1u);
+      osi_WrStr((char *)(tmp = (char)(48UL+(cmd>>1&7UL)),&tmp), 1u/1u);
    }
-   else if (cm==0x3UL) osic_WrStr("UI", 3ul);
-   else if (cm==0xFUL) osic_WrStr("DM", 3ul);
-   else if (cm==0x2FUL) osic_WrStr("SABM", 5ul);
-   else if (cm==0x43UL) osic_WrStr("DISC", 5ul);
-   else if (cm==0x63UL) osic_WrStr("UA", 3ul);
-   else if (cm==0x87UL) osic_WrStr("FRMR", 5ul);
+   else if (cm==0x3UL) osi_WrStr("UI", 3ul);
+   else if (cm==0xFUL) osi_WrStr("DM", 3ul);
+   else if (cm==0x2FUL) osi_WrStr("SABM", 5ul);
+   else if (cm==0x43UL) osi_WrStr("DISC", 5ul);
+   else if (cm==0x63UL) osi_WrStr("UA", 3ul);
+   else if (cm==0x87UL) osi_WrStr("FRMR", 5ul);
    else osic_WrHex(cmd, 1UL);
    strncpy(PF,"v^-+",4u);
-   if (com==0UL || com==3UL) osic_WrStr("v1", 3ul);
+   if (com==0UL || com==3UL) osi_WrStr("v1", 3ul);
    else {
-      osic_WrStr((char *) &PF[(com&1UL)+2UL*(unsigned long)
+      osi_WrStr((char *) &PF[(com&1UL)+2UL*(unsigned long)
                 ((0x10UL & (unsigned long)cmd)!=0)], 1u/1u);
    }
 } /* end Showctl() */
@@ -1822,23 +1825,23 @@ static void ShowFrame(char f[], unsigned long f_len, unsigned long len,
    /* no address end mark found */
    if (i0%7UL!=6UL) return;
    /* address end not modulo 7 error */
-   osic_WrStr((char *)(tmp = (char)((modem&7L)+48L),&tmp), 1u/1u);
-   osic_WrStr(":fm ", 5ul);
+   osi_WrStr((char *)(tmp = (char)((modem&7L)+48L),&tmp), 1u/1u);
+   osi_WrStr(":fm ", 5ul);
    ShowCall(f, f_len, 7UL);
-   osic_WrStr(" to ", 5ul);
+   osi_WrStr(" to ", 5ul);
    ShowCall(f, f_len, 0UL);
    i0 = 14UL;
    v = 1;
    while (i0+6UL<len && !((unsigned long)(unsigned char)f[i0-1UL]&1)) {
       if (v) {
-         osic_WrStr(" via", 5ul);
+         osi_WrStr(" via", 5ul);
          v = 0;
       }
-      osic_WrStr(" ", 2ul);
+      osi_WrStr(" ", 2ul);
       ShowCall(f, f_len, i0);
       if ((unsigned long)(unsigned char)f[i0+6UL]>=128UL && (((unsigned long)
                 (unsigned char)f[i0+6UL]&1) || (unsigned long)(unsigned char)
-                f[i0+13UL]<128UL)) osic_WrStr("*", 2ul);
+                f[i0+13UL]<128UL)) osi_WrStr("*", 2ul);
       i0 += 7UL;
    }
    /*
@@ -1849,7 +1852,7 @@ static void ShowFrame(char f[], unsigned long f_len, unsigned long len,
                 f[13UL])!=0), (unsigned long)(unsigned char)f[i0]);
    ++i0;
    if (i0<len) {
-      osic_WrStr(" pid ", 6ul);
+      osi_WrStr(" pid ", 6ul);
       osic_WrHex((unsigned long)(unsigned char)f[i0], 1UL);
    }
    ++i0;
@@ -1965,11 +1968,11 @@ static void demodbit(long m, char d)
          if (anonym->bert<0L) {
             /* receive only */
             ++anonym->bert;
-            if (anonym->bert==0L) osic_WrStrLn("---- end BERT", 14ul);
+            if (anonym->bert==0L) osi_WrStrLn("---- end BERT", 14ul);
          }
          if (anonym->bertc>2000UL) {
-            osic_WrUINT32((long)anonym->berterr, 4UL);
-            osic_WrUINT32(m, 2UL);
+            osic_WrUINT32(anonym->berterr, 4UL);
+            osic_WrUINT32((unsigned long)m, 2UL);
             WrQuali(noiselevel((unsigned long)m));
             WrdB(chan[anonym->ch].adcmax);
             osic_WrLn();
@@ -2501,7 +2504,7 @@ static void sendmodem(void)
                /* data ptt off */
                anonym->tbytec = 0UL;
                anonym->state = afskmodem_slotwait;
-               anonym->addrandom = 2UL+(unsigned long)X2C_TRUNCC(osic_Random()
+               anonym->addrandom = 2UL+(unsigned long)X2C_TRUNCC(Lib_Random()
                 *(double)anonym->persist,0UL,X2C_max_longcard);
                 /* store ramdom wait */
                anonym->dcdclock = clock0; /* start txwait after we sent */
@@ -2691,19 +2694,21 @@ static void afskmodemcleanup(long signum)
 {
    pttDestroy(chan[afskmodem_LEFT].hptt);
    pttDestroy(chan[afskmodem_RIGHT].hptt);
-   osic_WrStr("exit ", 6ul);
-   osic_WrUINT32(signum, 0UL);
-   osic_WrStrLn("!", 2ul);
+   osi_WrStr("exit ", 6ul);
+   osic_WrUINT32((unsigned long)signum, 0UL);
+   osi_WrStrLn("!", 2ul);
    X2C_HALT((unsigned long)signum);
 } /* end afskmodemcleanup() */
 
 
 X2C_STACK_LIMIT(100000l)
-extern int main(int argc, char *argv[])
+extern int main(int argc, char **argv)
 {
-   if (sizeof(FILENAME)!=1024) X2C_ASSERT(0);
    X2C_BEGIN(&argc,argv,1,4000000l,8000000l);
+   if (sizeof(FILENAME)!=1024) X2C_ASSERT(0);
+   Lib_BEGIN();
    aprsstr_BEGIN();
+   osi_BEGIN();
    signal(SIGTERM, afskmodemcleanup);
    signal(SIGINT, afskmodemcleanup);
    memset((char *)modpar,(char)0,sizeof(struct MPAR [8]));
@@ -2719,7 +2724,6 @@ extern int main(int argc, char *argv[])
    soundbufs = 0UL;
    ptt(chan[afskmodem_LEFT].hptt, -1L);
    ptt(chan[afskmodem_RIGHT].hptt, -1L);
-
    for (;;) {
       getadc();
       ++clock0;
