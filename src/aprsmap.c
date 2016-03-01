@@ -31,7 +31,6 @@
 #ifndef osi_H_
 #include "osi.h"
 #endif
-#include <math.h>
 #include <osic.h>
 #ifndef aprsstr_H_
 #include "aprsstr.h"
@@ -1038,10 +1037,9 @@ static void text(aprsdecode_pOPHIST op, char yesno, char objmove,
          else aprsdecode_click.typ = aprsdecode_tTEXT;
          aprsstr_Assign(s, 256ul, aprsdecode_click.ops->call, 9ul);
          if (!temponly) {
-            maptool_drawstr(image, s, 256ul, (float)floor((double)(x+7.0f)),
-                (float)floor((double)(y-(float)
-                (aprsdecode_lums.fontysize/2UL))), lig, 1UL, col,
-                &aprsdecode_click.ops->textpos, 3UL, fix,
+            maptool_drawstr(image, s, 256ul, osic_floor(x+7.0f),
+                osic_floor(y-(float)(aprsdecode_lums.fontysize/2UL)), lig,
+                1UL, col, &aprsdecode_click.ops->textpos, 3UL, fix,
                 aprsdecode_click.dryrun);
          }
          if (withvalues) {
@@ -1068,11 +1066,9 @@ static void text(aprsdecode_pOPHIST op, char yesno, char objmove,
                   /*          drawstr(image, s, VAL(INTEGER,x+6),
                 VAL(INTEGER,y-6), lig, 1, col, click.ops^.valuepos, 4, fix);
                 */
-                  maptool_drawstr(image, s, 256ul,
-                (float)floor((double)(x+6.0f)),
-                (float)floor((double)(y-(float)
-                (aprsdecode_lums.fontysize/2UL))), lig, 0UL, col,
-                &aprsdecode_click.ops->valuepos, 4UL, fix,
+                  maptool_drawstr(image, s, 256ul, osic_floor(x+6.0f),
+                osic_floor(y-(float)(aprsdecode_lums.fontysize/2UL)), lig,
+                0UL, col, &aprsdecode_click.ops->valuepos, 4UL, fix,
                 aprsdecode_click.dryrun);
                }
             }
@@ -1102,11 +1098,9 @@ static void text(aprsdecode_pOPHIST op, char yesno, char objmove,
                }
                if (s[0U]) {
                   maptool_Colset(&col, 'Y');
-                  maptool_drawstr(image, s, 256ul,
-                (float)floor((double)(x+7.0f)),
-                (float)floor((double)(y-(float)
-                (aprsdecode_lums.fontysize/2UL))), lig, 0UL, col,
-                &aprsdecode_click.ops->valuepos, 4UL, fix,
+                  maptool_drawstr(image, s, 256ul, osic_floor(x+7.0f),
+                osic_floor(y-(float)(aprsdecode_lums.fontysize/2UL)), lig,
+                0UL, col, &aprsdecode_click.ops->valuepos, 4UL, fix,
                 aprsdecode_click.dryrun);
                }
             }
@@ -5078,7 +5072,7 @@ static void killsave(long signum)
 {
    if (!quit && useri_configon(useri_fAUTOSAVE)) useri_saveconfig();
    osi_WrStr("exit ", 6ul);
-   osic_WrUINT32(signum, 0UL);
+   osic_WrINT32((unsigned long)signum, 0UL);
    osi_WrStrLn("!", 2ul);
    X2C_HALT((unsigned long)signum);
 } /* end killsave() */
