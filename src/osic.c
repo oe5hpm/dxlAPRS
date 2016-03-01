@@ -83,6 +83,11 @@ void osic_WrUINT32(uint32_t x, unsigned long witdh)
 	fprintf(stdout, "%*d", (int)witdh, x);
 }
 
+void osic_WrINT32(int32_t x, unsigned long witdh)
+{
+	fprintf(stdout, "%*d", (int)witdh, x);
+}
+
 void osic_WrFixed(float x, long place, unsigned long witdh)
 {
 	fprintf(stdout, "%*.*f", (int)witdh, (int)place, x);

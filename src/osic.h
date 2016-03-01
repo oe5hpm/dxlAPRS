@@ -28,6 +28,8 @@ void osic_WerrStrLn(char s[], unsigned long s_len);
 
 void osic_WrUINT32(uint32_t x, unsigned long witdh);
 
+void osic_WrINT32(int32_t x, unsigned long witdh);
+
 void osic_WrFixed(float x, long place, unsigned long witdh);
 
 void osic_WrHex(unsigned long n, unsigned long f);
