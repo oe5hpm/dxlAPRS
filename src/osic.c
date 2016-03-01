@@ -7,6 +7,7 @@
  * SPDX-License-Identifier:	GPL-2.0+
  */
 #define _LARGEFILE64_SOURCE
+#define _GNU_SOURCE
 
 #include <fcntl.h>
 #include <sys/types.h>
@@ -101,7 +102,7 @@ void osic_WrFixed(float x, long place, unsigned long witdh)
 
 void osic_WrHex(unsigned long n, unsigned long f)
 {
-	fprintf(stdout, "%*X", (int)f, n);
+	fprintf(stdout, "%*X", (int)f, (uint32_t)n);
 	fflush(stdout);
 }
 
