@@ -100,8 +100,6 @@ long X2C_TRUNCI(double x, long min0, long max0);
 
 unsigned long X2C_TRUNCC(double x, unsigned long min0, unsigned long max0);
 
-float X2C_DIVR(float a, float b);
-
 float osic_cos(float x);
 
 float osic_ln(float x);

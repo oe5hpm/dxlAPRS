@@ -41,6 +41,7 @@
 #define X2C_CAP(x)			toupper(x)
 
 #define X2C_DIVL(a, b)			((a)/(b))
+#define X2C_DIVR(a, b)			((b) != 0.0f ? (a)/(b) : (a))
 #define X2C_PFREE(p)			(free(p))
 #define X2C_COPY(src, src_len, dst, dst_len) \
 	memcpy(dst, src, src_len <= dst_len ? src_len : dst_len)

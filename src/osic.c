@@ -326,13 +326,6 @@ unsigned long X2C_TRUNCC(double x, unsigned long min0, unsigned long max0)
 	return i;
 }
 
-float X2C_DIVR(float a, float b)
-{
-	if (b == 0.0f)
-		return a;
-	return (a/b);
-}
-
 float osic_cos(float x)
 {
 	return cos(x);
