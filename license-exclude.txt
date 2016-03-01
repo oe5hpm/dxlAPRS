@@ -41,3 +41,6 @@ zlib.h
 X11
 keysym.h
 keysymdef.h
+osic.c
+osic.h
+
