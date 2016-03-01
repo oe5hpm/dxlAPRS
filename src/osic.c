@@ -99,17 +99,17 @@ void osic_WrHex(unsigned long n, unsigned long f)
 	fflush(stdout);
 }
 
-int getptsname(int fd, char *name, int len)
+int osic_getptsname(int fd, char *name, int len)
 {
 	return ptsname_r(fd, name, len);
 }
 
-int grantpts(int fd)
+int osic_grantpts(int fd)
 {
 	return grantpt(fd);
 }
 
-int unlockpts(int fd)
+int osic_unlockpts(int fd)
 {
 	return unlockpt(fd);
 }

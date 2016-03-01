@@ -34,11 +34,11 @@ void osic_WrFixed(float x, long place, unsigned long witdh);
 
 void osic_WrHex(unsigned long n, unsigned long f);
 
-int getptsname(int fd, char *name, int len);
+int osic_getptsname(int fd, char *name, int len);
 
-int grantpts(int fd);
+int osic_grantpts(int fd);
 
-int unlockpts(int fd);
+int osic_unlockpts(int fd);
 
 long osic_OpenAppendLong(char fn[], unsigned long fn_len);
 
