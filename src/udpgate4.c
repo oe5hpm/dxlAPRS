@@ -2569,9 +2569,9 @@ static void Showmsg(pMESSAGE m)
    struct MESSAGE * anonym;
    { /* with */
       struct MESSAGE * anonym = m;
-      osic_WrUINT32(anonym->retryc, 3UL);
-      osic_WrUINT32((unsigned long)anonym->acked, 1UL);
-      if (anonym->txtime) osic_WrUINT32(systime-anonym->txtime, 5UL);
+      osic_WrINT32(anonym->retryc, 3UL);
+      osic_WrINT32((unsigned long)anonym->acked, 1UL);
+      if (anonym->txtime) osic_WrINT32(systime-anonym->txtime, 5UL);
       else osi_WrStr(" notx", 6ul);
       osi_WrStr(":", 2ul);
       osi_WrStr(anonym->from, 10ul);
@@ -3431,7 +3431,7 @@ static void Stomsg(MONCALL fromcall, MONCALL tocall, MSGTEXT msg,
          else if (path==udpgate4_INDIR) osi_WrStr("new rf", 7ul);
          else osi_WrStr("new net", 8ul);
          osi_WrStr(" msg#", 6ul);
-         osic_WrUINT32(cnt, 1UL);
+         osic_WrINT32(cnt, 1UL);
          osi_WrStr(" ", 2ul);
          Showmsg(mp);
       }

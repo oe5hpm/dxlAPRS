@@ -13,7 +13,6 @@
 #include "aprsstr.h"
 #endif
 #define aprsstr_C_
-#include "osic.h"
 
 /* string lib by oe5dxl */
 /*FROM osi IMPORT WrInt, WrStrLn; */

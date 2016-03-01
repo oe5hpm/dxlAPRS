@@ -737,7 +737,7 @@ static void getmedian(double * lat0, double * long1, double * alt0)
             osic_WrFixed((float)anonym1->mlat, 8L, 14UL);
             osic_WrFixed((float)anonym1->mlong, 8L, 14UL);
             osic_WrFixed((float)anonym1->malt, 1L, 14UL);
-            osic_WrUINT32((unsigned long)anonym1->ok0, 2UL);
+            osic_WrINT32((unsigned long)anonym1->ok0, 2UL);
             osi_WrStrLn("", 1ul);
          }
       }
@@ -815,7 +815,7 @@ extern int main(int argc, char **argv)
                      if (mediantime>0UL) {
                         --mediantime;
                         if (verb) {
-                           osic_WrUINT32(mediantime, 4UL);
+                           osic_WrINT32(mediantime, 4UL);
                            osi_WrStrLn(" mediantime", 12ul);
                         }
                      }

@@ -17,8 +17,9 @@
 #include "aprsstr.h"
 #endif
 #ifndef osi_H_
-#include "osic.h"
+#include "osi.h"
 #endif
+#include <osic.h>
 #ifndef udp_H_
 #include "udp.h"
 #endif
@@ -43,6 +44,9 @@ char sondeaprs_anyip;
 char sondeaprs_sendmon;
 char sondeaprs_dao;
 /* encode demodulated sonde to aprs axudp by OE5DXL */
+/*FROM TimeConv IMPORT time; */
+/*FROM RealMath IMPORT ln; */
+/*FROM Storage IMPORT ALLOCATE; */
 #define sondeaprs_CR "\015"
 
 #define sondeaprs_LF "\012"
@@ -213,7 +217,7 @@ static void comment0(char buf[], unsigned long buf_len, unsigned long uptime,
    buf[0UL] = 0;
    len = 0L;
    if (sondeaprs_commentfn[0UL]) {
-      f = osic_OpenRead(sondeaprs_commentfn, 1025ul);
+      f = osi_OpenRead(sondeaprs_commentfn, 1025ul);
       if (f>=0L) {
          len = osi_RdBin(f, (char *)fb, 32768u/1u, 32767UL);
          osic_Close(f);
@@ -291,7 +295,7 @@ static void comment0(char buf[], unsigned long buf_len, unsigned long uptime,
          }
          buf[i] = 0;
       }
-      else if (sondeaprs_verb) osic_WrStrLn("beacon file not found", 22ul);
+      else if (sondeaprs_verb) osi_WrStrLn("beacon file not found", 22ul);
    }
 } /* end comment() */
 
@@ -521,8 +525,8 @@ static void sendaprs(unsigned long comp0, unsigned long micessid, char dao,
       }
       else if (alt>0.5) {
          if (alt*3.2808398950131>1.0) {
-            n = truncr((double)(osic_ln((float)(alt*3.2808398950131))
-                *500.5f));
+            n = truncr((double)(osic_ln((float)(alt*3.2808398950131))*500.5f)
+                );
          }
          else n = 0UL;
          if (n>=8281UL) n = 8280UL;
@@ -649,7 +653,7 @@ static void sendaprs(unsigned long comp0, unsigned long micessid, char dao,
       }
       else sendudp(b, 201ul, (long)(aprsstr_Length(b, 201ul)+1UL));
    }
-   if (sondeaprs_verb) osic_WrStrLn(b, 201ul);
+   if (sondeaprs_verb) osi_WrStrLn(b, 201ul);
    X2C_PFREE(mycall);
    X2C_PFREE(destcall);
    X2C_PFREE(via);
@@ -771,7 +775,7 @@ static void WrDeg(double la, double lo)
    pos.lat = la*1.7453292519943E-2;
    pos.long0 = lo*1.7453292519943E-2;
    postostr(pos, '2', s, 31ul);
-   osic_WrStr(s, 31ul);
+   osi_WrStr(s, 31ul);
 } /* end WrDeg() */
 
 
@@ -779,28 +783,28 @@ static void show(struct DATLINE d)
 {
    char s[31];
    osic_WrFixed((float)d.hpa, 1L, 6UL);
-   osic_WrStr("hPa ", 5ul);
+   osi_WrStr("hPa ", 5ul);
    if (d.temp<100.0) {
       osic_WrFixed((float)d.temp, 1L, 5UL);
-      osic_WrStr("C ", 3ul);
+      osi_WrStr("C ", 3ul);
    }
-   osic_WrUINT32((long)truncr(d.hyg), 2UL);
-   osic_WrStr("% ", 3ul);
-   osic_WrUINT32((long)X2C_TRUNCI(d.speed*3.6,X2C_min_longint,
+   osic_WrINT32(truncr(d.hyg), 2UL);
+   osi_WrStr("% ", 3ul);
+   osic_WrINT32((unsigned long)(long)X2C_TRUNCI(d.speed*3.6,X2C_min_longint,
                 X2C_max_longint), 3UL);
-   osic_WrStr("km/h ", 6ul);
-   osic_WrUINT32((long)truncr(d.dir), 3UL);
-   osic_WrStr("dir ", 5ul);
+   osi_WrStr("km/h ", 6ul);
+   osic_WrINT32(truncr(d.dir), 3UL);
+   osi_WrStr("dir ", 5ul);
    WrDeg(d.lat, d.long0);
-   osic_WrStr(" ", 2ul);
+   osi_WrStr(" ", 2ul);
    /*WrFixed(d.gpsalt, 1, 8); WrStr("m "); */
-   osic_WrUINT32((long)X2C_TRUNCI(d.alt,X2C_min_longint,X2C_max_longint),
-                1UL);
-   osic_WrStr("m ", 3ul);
+   osic_WrINT32((unsigned long)(long)X2C_TRUNCI(d.alt,X2C_min_longint,
+                X2C_max_longint), 1UL);
+   osi_WrStr("m ", 3ul);
    osic_WrFixed((float)d.clb, 1L, 5UL);
-   osic_WrStr("m/s ", 5ul);
+   osi_WrStr("m/s ", 5ul);
    aprsstr_TimeToStr(d.time0, s, 31ul);
-   osic_WrStr(s, 31ul);
+   osi_WrStr(s, 31ul);
 } /* end show() */
 
 
@@ -1042,11 +1046,11 @@ extern void sondeaprs_senddata(double lat, double long0, double alt,
    struct CONTEXT * anonym;
    X2C_PCOPY((void **)&objname,objname_len);
    if (aprsstr_Length(usercall, usercall_len)<3UL) {
-      osic_WrStrLn("no tx witout <mycall>", 22ul);
+      osi_WrStrLn("no tx witout <mycall>", 22ul);
       goto label;
    }
    if (aprsstr_Length(objname, objname_len)<3UL) {
-      osic_WrStrLn("no tx witout <objectname>", 26ul);
+      osi_WrStrLn("no tx witout <objectname>", 26ul);
       goto label;
    }
    systime = osic_time();
@@ -1074,48 +1078,48 @@ extern void sondeaprs_senddata(double lat, double long0, double alt,
          Checkvals(anonym->dat, &chk);
          if (hrms>50.0 || vrms>500.0) chk |= 0x200U;
          if (sondeaprs_verb) {
-            osic_WrStrLn("", 1ul);
+            osi_WrStrLn("", 1ul);
             show(anonym->dat[0U]);
             if (almanachage) {
-               osic_WrStrLn(" AlmAge ", 9ul);
-               osic_WrFixed((float)(X2C_DIVL((double)almanachage,3600.0)), 1L,
-                 3UL);
-               osic_WrStrLn("h ", 3ul);
+               osi_WrStr(" AlmAge ", 9ul);
+               osic_WrFixed((float)(X2C_DIVL((double)almanachage,3600.0)),
+                1L, 3UL);
+               osi_WrStrLn("h ", 3ul);
             }
-            else osic_WrStrLn("", 1ul);
+            else osi_WrStrLn("", 1ul);
             for (e = sondeaprs_ePRES;; e++) {
                if (X2C_IN((long)e,10,chk)) {
                   switch ((unsigned)e) {
                   case sondeaprs_ePRES:
-                     osic_WrStr("p", 2ul);
+                     osi_WrStr("p", 2ul);
                      break;
                   case sondeaprs_eTEMP:
-                     osic_WrStr("t", 2ul);
+                     osi_WrStr("t", 2ul);
                      break;
                   case sondeaprs_eHYG:
-                     osic_WrStr("h", 2ul);
+                     osi_WrStr("h", 2ul);
                      break;
                   case sondeaprs_eSPEED:
-                     osic_WrStr("v", 2ul);
+                     osi_WrStr("v", 2ul);
                      break;
                   case sondeaprs_eDIR:
-                     osic_WrStr("d", 2ul);
+                     osi_WrStr("d", 2ul);
                      break;
                   case sondeaprs_eLAT:
-                     osic_WrStr("y", 2ul);
+                     osi_WrStr("y", 2ul);
                      break;
                   case sondeaprs_eLONG:
-                     osic_WrStr("x", 2ul);
+                     osi_WrStr("x", 2ul);
                      break;
                   case sondeaprs_eALT:
-                     osic_WrStr("a", 2ul);
+                     osi_WrStr("a", 2ul);
                      break;
                   case sondeaprs_eMISS:
-                     osic_WrStr("s", 2ul);
+                     osi_WrStr("s", 2ul);
                      break;
                   case sondeaprs_eRMS: /*WrFixed(vrms, 1,5); WrStr(" ");
                 WrFixed(hrms, 1,5);*/
-                     osic_WrStr("r", 2ul);
+                     osi_WrStr("r", 2ul);
                      break;
                   default:
                      X2C_TRAP(X2C_CASE_TRAP);
@@ -1205,6 +1209,7 @@ extern void sondeaprs_BEGIN(void)
    static int sondeaprs_init = 0;
    if (sondeaprs_init) return;
    sondeaprs_init = 1;
+   osi_BEGIN();
    aprsstr_BEGIN();
    contexts = 0;
    sondeaprs_udpsock = -1L;
