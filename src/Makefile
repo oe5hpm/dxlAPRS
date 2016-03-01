@@ -30,6 +30,9 @@ HOSTARCH := $(shell uname -m | \
 	    -e s/sh.*/sh/)
 export HOSTARCH
 
+.SUFFIXES:
+	MAKEFLAGS += -r
+
 CC			= $(CROSS_COMPILE)gcc
 STRIP		= $(CROSS_COMPILE)strip
 INCL		= .
