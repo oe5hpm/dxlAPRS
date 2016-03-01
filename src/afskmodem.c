@@ -13,9 +13,6 @@
 #include "X2C.h"
 #endif
 #define afskmodem_C_
-#ifndef ptty_H_
-#include "ptty.h"
-#endif
 #ifndef soundctl_H_
 #include "soundctl.h"
 #endif
@@ -30,17 +27,11 @@
 #ifndef aprsstr_H_
 #include "aprsstr.h"
 #endif
-#ifndef symlink_H_
-#include "symlink.h"
-#endif
 #ifndef mlib_H_
 #include "mlib.h"
 #endif
 #ifndef Select_H_
 #include "Select.h"
-#endif
-#ifndef Lib_H_
-#include "Lib.h"
 #endif
 #include <unistd.h>
 #ifndef afskmodemptt_H_
@@ -633,7 +624,7 @@ static long Opentty(char linkname[], unsigned long linkname_len)
    ttypar(ptsname, 4096ul);
    /*make link*/
    osi_Erase(linkname, linkname_len, &voidok);
-   if (symblink((char *)ptsname, (char *)linkname)) {
+   if (osic_symblink((char *)ptsname, (char *)linkname)) {
       osi_WrStr("cannot create link <", 21ul);
       osi_WrStr(linkname, linkname_len);
       osi_WrStrLn(">, starting without kiss interface", 35ul);
@@ -2504,7 +2495,7 @@ static void sendmodem(void)
                /* data ptt off */
                anonym->tbytec = 0UL;
                anonym->state = afskmodem_slotwait;
-               anonym->addrandom = 2UL+(unsigned long)X2C_TRUNCC(Lib_Random()
+               anonym->addrandom = 2UL+(unsigned long)X2C_TRUNCC(osic_Random()
                 *(double)anonym->persist,0UL,X2C_max_longcard);
                 /* store ramdom wait */
                anonym->dcdclock = clock0; /* start txwait after we sent */
@@ -2706,7 +2697,6 @@ extern int main(int argc, char **argv)
 {
    X2C_BEGIN(&argc,argv,1,4000000l,8000000l);
    if (sizeof(FILENAME)!=1024) X2C_ASSERT(0);
-   Lib_BEGIN();
    aprsstr_BEGIN();
    osi_BEGIN();
    signal(SIGTERM, afskmodemcleanup);

@@ -20,9 +20,6 @@
 #ifndef udp_H_
 #include "udp.h"
 #endif
-#ifndef flush_H_
-#include "flush.h"
-#endif
 
 /* os interface linux/win32 */
 

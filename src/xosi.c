@@ -15,9 +15,6 @@
 #define xosi_C_
 #include <keysym.h>
 #include <unistd.h>
-#ifndef xmRTS_H_
-#include "xmRTS.h"
-#endif
 #ifndef signal_H_
 #include "signal.h"
 #endif

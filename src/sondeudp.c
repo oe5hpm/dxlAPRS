@@ -1179,25 +1179,6 @@ static void sendrs41(unsigned long m)
    }
 } /* end sendrs41() */
 
-
-static double atan2(double x, double y)
-{
-   double w;
-   if (fabs(x)>fabs(y)) {
-      w = (double)osic_arctan((float)(X2C_DIVL(y,x)));
-      if (x<0.0) {
-         if (y>0.0) w = 3.1415926535898+w;
-         else w = w-3.1415926535898;
-      }
-   }
-   else if (y!=0.0) {
-      w = (double)(1.5707963267949f-osic_arctan((float)(X2C_DIVL(x,y))));
-      if (y<0.0) w = w-3.1415926535898;
-   }
-   else w = 0.0;
-   return w;
-} /* end atan2() */
-
 #define sondeudp_EARTHA 6.378137E+6
 
 #define sondeudp_EARTHB 6.3567523142452E+6
