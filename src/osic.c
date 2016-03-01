@@ -32,6 +32,12 @@
 static int osic_argc, argc_delivered;
 static char **osic_argv;
 
+void osic_flush(void)
+{
+	fflush(stdout);
+	fflush(stderr);
+}
+
 void osic_WrLn(void)
 {
 	fprintf(stdout, "\n");
@@ -369,6 +375,16 @@ float osic_power(float base, float exponent)
 	if (base <= 0.0)
 		assert(0);
 	return pow(base, exponent);
+}
+
+float osic_arccos(float x)
+{
+	return acos(x);
+}
+
+float osic_floor(float x)
+{
+	return floorf(x);
 }
 
 void osic_alloc(X2C_ADDRESS *p, unsigned long size)

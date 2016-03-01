@@ -14,6 +14,8 @@
 #include <stdint.h>
 #include "X2C.h"
 
+void osic_flush(void);
+
 void osic_WrLn(void);
 
 void osic_WerrLn(void);
@@ -115,6 +117,10 @@ float osic_tan(float x);
 float osic_exp(float x);
 
 float osic_power(float base, float exponent);
+
+float osic_arccos(float x);
+
+float osic_floor(float x);
 
 void osic_alloc(X2C_ADDRESS *p, unsigned long size);
 
