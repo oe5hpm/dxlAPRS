@@ -174,6 +174,20 @@ extern char osi_Exists(char fn[], unsigned long fn_len)
 } /* end Exists() */
 
 
+extern long osi_getptsname(long fd, X2C_ADDRESS s, unsigned long size)
+{
+   return osic_getptsname(fd, s, size);
+} /* end getptsname() */
+
+typedef char * pSTR;
+
+
+extern long osi_symblink(X2C_ADDRESS fname, X2C_ADDRESS newname)
+{
+   return osic_symblink((pSTR)fname, (pSTR)newname);
+} /* end symblink() */
+
+
 extern void osi_BEGIN(void)
 {
    static int osi_init = 0;

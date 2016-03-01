@@ -322,7 +322,7 @@ static pNEIGHBOUR addneibor(unsigned long ip, unsigned long port)
    if (n==0) {
       osic_alloc((X2C_ADDRESS *) &n, sizeof(struct NEIGHBOUR));
       if (n==0) Err("out of memory", 14ul);
-      osic_Fill((X2C_ADDRESS)n, sizeof(struct NEIGHBOUR), 0);
+      memset((X2C_ADDRESS)n,(char)0,sizeof(struct NEIGHBOUR));
       n->ipnum = ip;
       chain(n);
    }
@@ -549,15 +549,15 @@ r routes.txt", 62ul);
 
 static void showpip(unsigned long ip, unsigned long port)
 {
-   osic_WrUINT32(ip/16777216UL, 1UL);
+   osic_WrINT32(ip/16777216UL, 1UL);
    osi_WrStr(".", 2ul);
-   osic_WrUINT32(ip/65536UL&255UL, 1UL);
+   osic_WrINT32(ip/65536UL&255UL, 1UL);
    osi_WrStr(".", 2ul);
-   osic_WrUINT32(ip/256UL&255UL, 1UL);
+   osic_WrINT32(ip/256UL&255UL, 1UL);
    osi_WrStr(".", 2ul);
-   osic_WrUINT32(ip&255UL, 1UL);
+   osic_WrINT32(ip&255UL, 1UL);
    osi_WrStr(":", 2ul);
-   osic_WrUINT32(port, 1UL);
+   osic_WrINT32(port, 1UL);
 } /* end showpip() */
 
 
@@ -944,7 +944,7 @@ static char statneibor(const char b[], unsigned long b_len,
                      if (verb) {
                         showpip(anonym->ipnum, anonym->toport);
                         osi_WrStr(" new rtt=", 10ul);
-                        osic_WrUINT32(anonym->medrtt, 1UL);
+                        osic_WrINT32(anonym->medrtt, 1UL);
                         osi_WrStrLn("us", 3ul);
                      }
                   }
@@ -1143,7 +1143,7 @@ static void showroutes(void)
          struct NEIGHBOUR * anonym = n;
          showpip(anonym->ipnum, anonym->toport);
          osi_WrStr(" pri=", 6ul);
-         osic_WrUINT32(anonym->pri, 1UL);
+         osic_WrINT32(anonym->pri, 1UL);
          if (anonym->uptime>0UL) {
             aprsstr_TimeToStr(systime-anonym->uptime, h, 256ul);
             osi_WrStr(" up:", 5ul);
@@ -1153,14 +1153,14 @@ static void showroutes(void)
          osi_WrStr(anonym->call, 10ul);
          if (anonym->heard>0UL) {
             osi_WrStr(" heard:", 8ul);
-            osic_WrUINT32(systime-anonym->heard, 1UL);
+            osic_WrINT32(systime-anonym->heard, 1UL);
          }
          osi_WrStr(" rtt:", 6ul);
-         osic_WrUINT32(anonym->medrtt, 1UL);
+         osic_WrINT32(anonym->medrtt, 1UL);
          osi_WrStr(" tf:", 5ul);
-         osic_WrUINT32(anonym->nsent, 1UL);
+         osic_WrINT32(anonym->nsent, 1UL);
          osi_WrStr(" rf:", 5ul);
-         osic_WrUINT32(anonym->nrec, 1UL);
+         osic_WrINT32(anonym->nrec, 1UL);
          osic_WrLn();
          n = anonym->next;
       }
@@ -1457,7 +1457,7 @@ extern int main(int argc, char **argv)
    aprsstr_BEGIN();
    osi_BEGIN();
    Gencrctab();
-   osic_Fill((char *) &nlocal, sizeof(struct NEIGHBOUR), 0);
+   memset((char *) &nlocal,(char)0,sizeof(struct NEIGHBOUR));
    nlocal.pri = 1UL;
    tx2port = 0UL;
    neibors = 0;

@@ -11873,13 +11873,13 @@ extern void useri_Quit(void)
 extern void useri_wrheap(void)
 {
    osi_WrStr("heapusage screenbuf:", 21ul);
-   osic_WrUINT32(useri_debugmem.screens, 1UL);
+   osic_WrINT32(useri_debugmem.screens, 1UL);
    osi_WrStr(" mondata:", 10ul);
-   osic_WrUINT32(useri_debugmem.mon, 1UL);
+   osic_WrINT32(useri_debugmem.mon, 1UL);
    osi_WrStr(" menus:", 8ul);
-   osic_WrUINT32(useri_debugmem.menus, 1UL);
+   osic_WrINT32(useri_debugmem.menus, 1UL);
    osi_WrStr(" requested:", 12ul);
-   osic_WrUINT32(useri_debugmem.req, 1UL);
+   osic_WrINT32(useri_debugmem.req, 1UL);
    useri_debugmem.req = 0UL;
    osic_WrLn();
 } /* end wrheap() */

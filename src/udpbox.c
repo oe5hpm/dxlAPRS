@@ -565,7 +565,7 @@ static char Filter(const char b[], unsigned long b_len, long len,
       }
       if (show) {
          osi_WrStrLn(" ", 2ul);
-         osic_WrUINT32((unsigned long)km, 1UL);
+         osic_WrINT32((unsigned long)km, 1UL);
          osi_WrStr("km", 3ul);
       }
       if (km>=parm->maxkm) {
@@ -1176,7 +1176,7 @@ static void Digi(char raw[], unsigned long raw_len, char send[],
       }
       else if (show) {
          osi_WrStr(" ", 2ul);
-         osic_WrUINT32(t-parm->timehash[hash], 1UL);
+         osic_WrINT32(t-parm->timehash[hash], 1UL);
          osi_WrStr("s since same payload ", 22ul);
       }
    }
@@ -1774,15 +1774,15 @@ t 1800,28 -r 192.168.1.24:9400", 80ul);
 
 static void showpip(unsigned long ip, unsigned long port)
 {
-   osic_WrUINT32(ip/16777216UL, 1UL);
+   osic_WrINT32(ip/16777216UL, 1UL);
    osi_WrStr(".", 2ul);
-   osic_WrUINT32(ip/65536UL&255UL, 1UL);
+   osic_WrINT32(ip/65536UL&255UL, 1UL);
    osi_WrStr(".", 2ul);
-   osic_WrUINT32(ip/256UL&255UL, 1UL);
+   osic_WrINT32(ip/256UL&255UL, 1UL);
    osi_WrStr(".", 2ul);
-   osic_WrUINT32(ip&255UL, 1UL);
+   osic_WrINT32(ip&255UL, 1UL);
    osi_WrStr(":", 2ul);
-   osic_WrUINT32(port, 1UL);
+   osic_WrINT32(port, 1UL);
 } /* end showpip() */
 
 /*
@@ -2330,7 +2330,7 @@ extern int main(int argc, char **argv)
                      osic_WrLn();
                      showpip(showip, showport);
                      osi_WrStr("(", 2ul);
-                     osic_WrUINT32((unsigned long)inlen, 1UL);
+                     osic_WrINT32((unsigned long)inlen, 1UL);
                      osi_WrStr(")", 2ul);
                      osi_WrStr(":", 2ul);
                      if (monlen<=0UL) osi_WrStr("<raw to mon error>", 19ul);

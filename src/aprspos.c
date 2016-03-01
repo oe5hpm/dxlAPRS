@@ -14,19 +14,16 @@
 #endif
 #define aprspos_C_
 #ifndef osi_H_
-#include "osic.h"
+#include "osi.h"
 #endif
-#include <math.h>
+#include <osic.h>
 
 
 
 /* get aprs position by OE5DXL */
-#define aprspos_arccos acos
-
-#define aprspos_arctan atan
-
-#define aprspos_power pow
-
+/*CONST arccos=acos; */
+/*      arctan=atan; */
+/*      power=pow; */
 
 extern float aprspos_rad0(float w)
 {
@@ -50,16 +47,16 @@ extern float aprspos_distance(struct aprspos_POSITION home,
    if (x==0.0f && y==0.0f) return 0.0f;
    else if (x+y<0.04f) {
       /* near */
-      x = (float)((double)x*cos((double)((home.lat+dist.lat)*0.5f)));
-      return (float)(6370.0*sqrt((double)(x*x+y*y)));
+      x = x*osic_cos((home.lat+dist.lat)*0.5f);
+      return 6370.0f*osic_sqrt(x*x+y*y);
    }
    else {
       /* far */
       if (x>6.283185307f) x = 6.283185307f-x;
-      x = (float)(sin((double)dist.lat)*sin((double)home.lat)+cos((double)
-                dist.lat)*cos((double)home.lat)*cos((double)x));
+      x = osic_sin(dist.lat)*osic_sin(home.lat)+osic_cos(dist.lat)
+                *osic_cos(home.lat)*osic_cos(x);
       if ((float)fabs(x)>=1.0f) return 0.0f;
-      return (float)(6370.0*acos((double)x));
+      return 6370.0f*osic_arccos(x);
    }
    return 0;
 } /* end distance() */
@@ -71,15 +68,15 @@ extern float aprspos_azimuth(struct aprspos_POSITION home,
    float ldiff;
    float h;
    ldiff = dist.long0-home.long0;
-   if ((ldiff==0.0f || cos((double)home.lat)==0.0) || cos((double)dist.lat)
-                ==0.0) {
+   if ((ldiff==0.0f || osic_cos(home.lat)==0.0f) || osic_cos(dist.lat)==0.0f)
+                 {
       if (home.lat<=dist.lat) return 0.0f;
       else return 180.0f;
    }
    else {
-      h = (float)(5.729577951472E+1*atan(cos((double)home.lat)
-                *(X2C_DIVL(tan((double)home.lat)*cos((double)ldiff)
-                -tan((double)dist.lat),sin((double)ldiff)))));
+      h = 5.729577951472E+1f*osic_arctan(osic_cos(home.lat)
+                *(X2C_DIVR(osic_tan(home.lat)*osic_cos(ldiff)
+                -osic_tan(dist.lat),osic_sin(ldiff))));
       if (ldiff<0.0f) return h+270.0f;
       else return h+90.0f;
    }
@@ -594,9 +591,9 @@ extern void aprspos_GetPos(struct aprspos_POSITION * pos,
                   n = (unsigned long)(unsigned char)buf[i+3UL];
                   if (((na>=33UL && na<=127UL) && n>=33UL) && n<=127UL) {
                      *altitude = (long)(unsigned long)
-                X2C_TRUNCC(0.3048*pow(1.002,
-                (double)(float)(((na-33UL)*91UL+n)-33UL)),0UL,
-                X2C_max_longcard); /* in feet */
+                X2C_TRUNCC(0.3048f*osic_power(1.002f,
+                (float)(((na-33UL)*91UL+n)-33UL)),0UL,X2C_max_longcard);
+                /* in feet */
                   }
                }
                else {
@@ -608,8 +605,9 @@ extern void aprspos_GetPos(struct aprspos_POSITION * pos,
                         *course = n*4UL;
                         n = (unsigned long)(unsigned char)buf[i+3UL];
                         if (n>=33UL && n<=127UL) {
-                           *speed = (unsigned long)X2C_TRUNCC(pow(1.08,
-                (double)(float)(n-33UL)),0UL,X2C_max_longcard);
+                           *speed = (unsigned long)
+                X2C_TRUNCC(osic_power(1.08f, (float)(n-33UL)),0UL,
+                X2C_max_longcard);
                         }
                      }
                   }
@@ -780,5 +778,6 @@ extern void aprspos_BEGIN(void)
    static int aprspos_init = 0;
    if (aprspos_init) return;
    aprspos_init = 1;
+   osi_BEGIN();
 }
 

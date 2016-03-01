@@ -561,14 +561,14 @@ static void OpenSound(void)
       i0 = setfragment(soundfd, fragmentsize); /* 2^bufsize * 65536*bufs*/
       if (i0) {
          osi_WrStr("sound setfragment returns ", 27ul);
-         osic_WrUINT32((unsigned long)i0, 1UL);
+         osic_WrINT32((unsigned long)i0, 1UL);
          osic_WrLn();
       }
       i0 = sampelrate(soundfd, adcrate); /* 8000..48000 */
       s = (long)getsampelrate(soundfd);
       if (s!=(long)adcrate) {
          osi_WrStr("sound device returns ", 22ul);
-         osic_WrUINT32((unsigned long)s, 1UL);
+         osic_WrINT32((unsigned long)s, 1UL);
          osi_WrStrLn("Hz!", 4ul);
       }
    }
@@ -615,16 +615,18 @@ static long Opentty(char linkname[], unsigned long linkname_len)
    X2C_PCOPY((void **)&linkname,linkname_len);
    fd = osi_OpenNONBLOCK("/dev/ptmx", 10ul);
    if (fd<0L) Error("/dev/ptmx open", 15ul);
-   if (getptsname(fd, (char *)ptsname, 4096UL)) Error("no ttyname", 11ul);
+   if (osi_getptsname(fd, (char *)ptsname, 4096UL)) {
+      Error("no ttyname", 11ul);
+   }
    /*
      IO.WrStr(ptsname); IO.WrLn;
    */
-   if (grantpts(fd)) Error("ptty grant", 11ul);
-   if (unlockpts(fd)) Error("ptty unlock", 12ul);
+   if (osic_grantpts(fd)) Error("ptty grant", 11ul);
+   if (osic_unlockpts(fd)) Error("ptty unlock", 12ul);
    ttypar(ptsname, 4096ul);
    /*make link*/
    osi_Erase(linkname, linkname_len, &voidok);
-   if (osic_symblink((char *)ptsname, (char *)linkname)) {
+   if (osi_symblink((char *)ptsname, (char *)linkname)) {
       osi_WrStr("cannot create link <", 21ul);
       osi_WrStr(linkname, linkname_len);
       osi_WrStrLn(">, starting without kiss interface", 35ul);
@@ -1371,7 +1373,7 @@ static void Kisscmd(void)
    modem = (long)(cmd>>4&7UL);
    cmd = cmd&15UL;
    osi_WrStr("p=", 3ul);
-   osic_WrUINT32((unsigned long)modem, 1UL);
+   osic_WrINT32((unsigned long)modem, 1UL);
    osic_WrLn();
    { /* with */
       struct MPAR * anonym = &modpar[modem];
@@ -1380,26 +1382,26 @@ static void Kisscmd(void)
          if (cmd==1UL) {
             anonym->configtxdel = x*10UL;
             osi_WrStr("txdel=", 7ul);
-            osic_WrUINT32(anonym->configtxdel, 1UL);
+            osic_WrINT32(anonym->configtxdel, 1UL);
             osic_WrLn();
          }
          else if (cmd==2UL) {
             chan[modpar[modem].ch].configpersist = 10UL*(255UL-x);
             osi_WrStr("persist=", 9ul);
-            osic_WrUINT32(chan[modpar[modem].ch].configpersist, 1UL);
+            osic_WrINT32(chan[modpar[modem].ch].configpersist, 1UL);
             osic_WrLn();
          }
          else if (cmd==4UL) {
             /*3 SlotTime*/
             anonym->configtxtail = x*10UL;
             osi_WrStr("txtail=", 8ul);
-            osic_WrUINT32(anonym->configtxtail, 1UL);
+            osic_WrINT32(anonym->configtxtail, 1UL);
             osic_WrLn();
          }
          else if (cmd==5UL) {
             if (x<=2UL) chan[modpar[modem].ch].duplex = (unsigned char)x;
             osi_WrStr("duplex=", 8ul);
-            osic_WrUINT32(x, 1UL);
+            osic_WrINT32(x, 1UL);
             osic_WrLn();
          }
          Config();
@@ -1684,7 +1686,7 @@ static void WrQuali(float q)
       q = 100.5f-q*200.0f;
       if (q<0.0f) q = 0.0f;
       osi_WrStr(" q:", 4ul);
-      osic_WrUINT32((unsigned long)X2C_TRUNCC(q,0UL,X2C_max_longcard), 1UL);
+      osic_WrINT32((unsigned long)X2C_TRUNCC(q,0UL,X2C_max_longcard), 1UL);
    }
 } /* end WrQuali() */
 
@@ -1701,7 +1703,7 @@ static void WrdB(long volt)
 static void WrTXD(unsigned long ms)
 {
    osi_WrStr(" txd:", 6ul);
-   osic_WrUINT32(ms, 1UL);
+   osic_WrINT32(ms, 1UL);
    osi_WrStr("ms", 3ul);
 } /* end WrTXD() */
 
@@ -1737,7 +1739,7 @@ static void ShowCall(char f[], unsigned long f_len, unsigned long pos)
    } /* end for */
    if ((unsigned long)(unsigned char)f[pos+6UL]>>1&15UL) {
       osi_WrStr("-", 2ul);
-      osic_WrUINT32((unsigned long)(unsigned char)f[pos+6UL]>>1&15UL, 1UL);
+      osic_WrINT32((unsigned long)(unsigned char)f[pos+6UL]>>1&15UL, 1UL);
    }
 } /* end ShowCall() */
 
@@ -1962,8 +1964,8 @@ static void demodbit(long m, char d)
             if (anonym->bert==0L) osi_WrStrLn("---- end BERT", 14ul);
          }
          if (anonym->bertc>2000UL) {
-            osic_WrUINT32(anonym->berterr, 4UL);
-            osic_WrUINT32((unsigned long)m, 2UL);
+            osic_WrINT32(anonym->berterr, 4UL);
+            osic_WrINT32((unsigned long)m, 2UL);
             WrQuali(noiselevel((unsigned long)m));
             WrdB(chan[anonym->ch].adcmax);
             osic_WrLn();
@@ -2495,9 +2497,9 @@ static void sendmodem(void)
                /* data ptt off */
                anonym->tbytec = 0UL;
                anonym->state = afskmodem_slotwait;
-               anonym->addrandom = 2UL+(unsigned long)X2C_TRUNCC(osic_Random()
-                *(double)anonym->persist,0UL,X2C_max_longcard);
-                /* store ramdom wait */
+               anonym->addrandom = 2UL+(unsigned long)
+                X2C_TRUNCC(osic_Random()*(double)anonym->persist,0UL,
+                X2C_max_longcard); /* store ramdom wait */
                anonym->dcdclock = clock0; /* start txwait after we sent */
             }
          }
@@ -2686,7 +2688,7 @@ static void afskmodemcleanup(long signum)
    pttDestroy(chan[afskmodem_LEFT].hptt);
    pttDestroy(chan[afskmodem_RIGHT].hptt);
    osi_WrStr("exit ", 6ul);
-   osic_WrUINT32((unsigned long)signum, 0UL);
+   osic_WrINT32((unsigned long)signum, 0UL);
    osi_WrStrLn("!", 2ul);
    X2C_HALT((unsigned long)signum);
 } /* end afskmodemcleanup() */

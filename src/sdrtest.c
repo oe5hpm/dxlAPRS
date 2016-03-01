@@ -500,7 +500,7 @@ static void showrssi(void)
       aprsstr_IntToStr(rxx[i].afckhz, 0UL, s, 31ul);
       osi_Werr(s, 31ul);
       osi_Werr(" ", 2ul);
-      osic_WrLn();
+      osic_flush();
       ++i;
    }
    osi_Werr("    \015", 6ul);

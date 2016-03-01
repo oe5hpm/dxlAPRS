@@ -466,14 +466,14 @@ static void OpenSound(void)
          i = setfragment(soundfd, fragmentsize); /* 2^bufsize * 65536*bufs*/
          if (i) {
             osi_WrStr("sound setfragment returns ", 27ul);
-            osic_WrUINT32((unsigned long)i, 1UL);
+            osic_WrINT32((unsigned long)i, 1UL);
             osic_WrLn();
          }
          i = sampelrate(soundfd, adcrate); /* 8000..48000 */
          s = (long)getsampelrate(soundfd);
          if (s!=(long)adcrate) {
             osi_WrStr("sound device returns ", 22ul);
-            osic_WrUINT32((unsigned long)s, 1UL);
+            osic_WrINT32((unsigned long)s, 1UL);
             osi_WrStrLn("Hz!", 4ul);
          }
       }
@@ -985,7 +985,7 @@ static void WrQ(float lev, float noise)
       noise = X2C_DIVR(noise*200.0f,lev);
       if (noise>100.0f) noise = 100.0f;
       else if (noise<=0.0f) noise = 0.0f;
-      osic_WrUINT32((unsigned long)(100L-(long)X2C_TRUNCI(noise,
+      osic_WrINT32((unsigned long)(100L-(long)X2C_TRUNCI(noise,
                 X2C_min_longint,X2C_max_longint)), 4UL);
       osi_WrStr("%", 2ul);
    }
@@ -998,7 +998,7 @@ static void WrQuali(float q)
       q = 100.5f-q*200.0f;
       if (q<0.0f) q = 0.0f;
       osi_WrStr(" q:", 4ul);
-      osic_WrUINT32((unsigned long)X2C_TRUNCC(q,0UL,X2C_max_longcard), 1UL);
+      osic_WrINT32((unsigned long)X2C_TRUNCC(q,0UL,X2C_max_longcard), 1UL);
    }
 } /* end WrQuali() */
 
@@ -1010,7 +1010,7 @@ static void Wrtune(long volt, long max0)
       u = (volt*100L)/max0;
       if (labs(u)>0L) {
          osi_WrStr(" f:", 4ul);
-         osic_WrUINT32((unsigned long)u, 2UL);
+         osic_WrINT32((unsigned long)u, 2UL);
       }
       else osi_WrStr("     ", 6ul);
    }
@@ -1109,7 +1109,7 @@ static void decodeframe92(unsigned long m)
             ++j;
          }
          if (maxchannels>0UL) {
-            osic_WrUINT32(m+1UL, 1UL);
+            osic_WrINT32(m+1UL, 1UL);
             osi_WrStr(":", 2ul);
          }
          osi_WrStr("R92 ", 5ul);
@@ -1125,7 +1125,7 @@ static void decodeframe92(unsigned long m)
                ++j;
             }
             osi_WrStr(" ", 2ul);
-            osic_WrUINT32((unsigned long)(unsigned char)
+            osic_WrINT32((unsigned long)(unsigned char)
                 chan[m].r92.rxbuf[8U]+(unsigned long)(unsigned char)
                 chan[m].r92.rxbuf[9U]*256UL, 4UL);
          }
@@ -1179,6 +1179,25 @@ static void sendrs41(unsigned long m)
    }
 } /* end sendrs41() */
 
+
+static double atang2(double x, double y)
+{
+   double w;
+   if (fabs(x)>fabs(y)) {
+      w = (double)osic_arctan((float)(X2C_DIVL(y,x)));
+      if (x<0.0) {
+         if (y>0.0) w = 3.1415926535898+w;
+         else w = w-3.1415926535898;
+      }
+   }
+   else if (y!=0.0) {
+      w = (double)(1.5707963267949f-osic_arctan((float)(X2C_DIVL(x,y))));
+      if (y<0.0) w = w-3.1415926535898;
+   }
+   else w = 0.0;
+   return w;
+} /* end atang2() */
+
 #define sondeudp_EARTHA 6.378137E+6
 
 #define sondeudp_EARTHB 6.3567523142452E+6
@@ -1202,7 +1221,7 @@ static void wgs84r(double x, double y, double z, double * lat,
    if (h>0.0) {
       rh = (double)osic_sqrt((float)h);
       xh = x+rh;
-      *long0 = atan2(xh, y)*2.0;
+      *long0 = atang2(xh, y)*2.0;
       if (*long0>3.1415926535898) *long0 = *long0-6.2831853071796;
       t = (double)osic_arctan((float)(X2C_DIVL(z*1.003364089821,rh)));
       st = (double)osic_sin((float)t);
@@ -1287,7 +1306,7 @@ static void posrs41(const char b[], unsigned long b_len, unsigned long p)
    vu = vx*(double)osic_cos((float)lat)*(double)osic_cos((float)long0)
                 +vy*(double)osic_cos((float)lat)*(double)osic_sin((float)
                 long0)+vz*(double)osic_sin((float)lat);
-   dir = X2C_DIVL(atan2(vn, ve),1.7453292519943E-2);
+   dir = X2C_DIVL(atang2(vn, ve),1.7453292519943E-2);
    if (dir<0.0) dir = 360.0+dir;
    osi_WrStr(" ", 2ul);
    osic_WrFixed(osic_sqrt((float)(vn*vn+ve*ve))*3.6f, 2L, 1UL);
@@ -1318,7 +1337,7 @@ static void decode41(unsigned long m)
       p = 57UL;
       if (verb) {
          if (maxchannels>0UL) {
-            osic_WrUINT32(m+1UL, 1UL);
+            osic_WrINT32(m+1UL, 1UL);
             osi_WrStr(":", 2ul);
          }
          osi_WrStr("R41 ", 5ul);
@@ -1360,8 +1379,8 @@ static void decode41(unsigned long m)
                for (i = 0UL; i<=7UL; i++) {
                   osi_WrStr((char *) &anonym->rxbuf[p+2UL+i], 1u/1u);
                } /* end for */
-               osic_WrUINT32((unsigned long)getint16(anonym->rxbuf, 520ul,
-                p), 0UL);
+               osic_WrINT32((unsigned long)getint16(anonym->rxbuf, 520ul, p),
+                 0UL);
             }
             nameok = 1;
             if (anonym->rxbuf[p+23UL]==0) {
@@ -1772,7 +1791,7 @@ static void decodesub(const char b[], unsigned long b_len, unsigned long m,
       v = bits2val(b, b_len, 24UL, 8UL);
       if (verb) {
          osi_WrStr(" num: ", 7ul);
-         osic_WrUINT32(v, 0UL);
+         osic_WrINT32(v, 0UL);
       }
       if ((chan[m].dfm6.num+1UL&255UL)==v && chan[m].dfm6.wasdate) {
          ++chan[m].dfm6.numcnt; /* date/num+1/date/num+1 sequence ok */
@@ -1799,7 +1818,7 @@ static void decodesub(const char b[], unsigned long b_len, unsigned long m,
             v = (chan[m].dfm6.num+256UL)-(chan[m].dfm6.actdate&255UL)&255UL;
             if (verb) {
                osi_WrStr(" NEW ID", 8ul);
-               osic_WrUINT32(v, 0UL);
+               osic_WrINT32(v, 0UL);
             }
             chan[m].dfm6.idnum = v;
             strncpy(s,"DFM6",101u); /* build a name from 1/1000s */
@@ -1974,7 +1993,7 @@ static void decodeframe6(unsigned long m)
       deinterleave(anonym->rxbuf, 264ul, 160UL, 13UL, anonym->dh2, 104ul);
       if (verb) {
          if (maxchannels>0UL) {
-            osic_WrUINT32(m+1UL, 1UL);
+            osic_WrINT32(m+1UL, 1UL);
             osi_WrStr(":", 2ul);
          }
          if (anonym->id[0U]) osi_WrStr(anonym->id, 9ul);
@@ -2195,7 +2214,7 @@ static void demodframe34(unsigned long channel)
       good = 0;
       if (verb) {
          if (maxchannels>0UL) {
-            osic_WrUINT32(channel+1UL, 1UL);
+            osic_WrINT32(channel+1UL, 1UL);
             osi_WrStr(":", 2ul);
          }
          osi_WrStr("C34 ", 5ul);
@@ -2586,9 +2605,9 @@ static void getadc(void)
             if (ch<31UL) {
                if (verb && maxchannels!=ch) {
                   osi_WrStr("channels changed from ", 23ul);
-                  osic_WrUINT32(maxchannels+1UL, 0UL);
+                  osic_WrINT32(maxchannels+1UL, 0UL);
                   osi_WrStr(" to ", 5ul);
-                  osic_WrUINT32(ch+1UL, 0UL);
+                  osic_WrINT32(ch+1UL, 0UL);
                   osi_WrStrLn("", 1ul);
                }
                maxchannels = ch;

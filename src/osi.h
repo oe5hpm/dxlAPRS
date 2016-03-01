@@ -42,11 +42,15 @@ typedef long osi_SOCKET;
 
 #define osi_arctan osic_arctan
 
+#define osi_arccos osic_arccos
+
 #define osi_exp osic_exp
 
 #define osi_power osic_power
 
 #define osi_sqrt osic_sqrt
+
+#define osi_floor osic_floor
 
 #define osi_Close osic_Close
 
@@ -72,9 +76,17 @@ typedef long osi_SOCKET;
 
 #define osi_Size osic_Size
 
-#define osi_WrInt osic_WrUINT32
+#define osi_grantpts osic_grantpts
 
-#define osi_Flush osic_WrLn
+#define osi_unlockpts osic_unlockpts
+
+#define osi_Random osic_Random
+
+#define osi_WrCard osic_WrUINT32
+
+#define osi_WrInt osic_WrINT32
+
+#define osi_Flush osic_flush
 
 #define osi_readsock readsock
 
@@ -127,6 +139,10 @@ extern void osi_WrStr(char [], unsigned long);
 extern void osi_Erase(char [], unsigned long, char *);
 
 extern char osi_Exists(char [], unsigned long);
+
+extern long osi_getptsname(long, X2C_ADDRESS, unsigned long);
+
+extern long osi_symblink(X2C_ADDRESS, X2C_ADDRESS);
 
 extern void osi_WrStrLn(char [], unsigned long);
 

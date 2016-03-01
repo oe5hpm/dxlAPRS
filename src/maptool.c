@@ -25,7 +25,6 @@
 #ifndef osi_H_
 #include "osi.h"
 #endif
-#include <math.h>
 #include <osic.h>
 #ifndef aprsstr_H_
 #include "aprsstr.h"
@@ -58,6 +57,8 @@ float maptool_shifty;
 
 struct maptool__D0 maptool_mappack;
 /* aprs tracks on osm map by oe5dxl */
+/*FROM TimeConv IMPORT time; */
+/*FROM Storage IMPORT ALLOCATE, DEALLOCATE; */
 #define maptool_LF "\012"
 
 #define maptool_MAXCOL 30000
@@ -688,8 +689,7 @@ static void purgesrtm(char all)
                }
                if (all) {
                   if (pt->fd!=-1L) osic_Close(pt->fd);
-                  osic_free((X2C_ADDRESS *) &pt,
-                sizeof(struct SRTMTILE));
+                  osic_free((X2C_ADDRESS *) &pt, sizeof(struct SRTMTILE));
                   useri_debugmem.srtm -= sizeof(struct SRTMTILE);
                   pl[yd] = 0;
                }
@@ -1073,8 +1073,8 @@ static void ruler(maptool_pIMAGE image, float m, float x, float y, char over,
    c.b = 400UL;
    if (right) x = x-(float)l;
    if (over) y = y-(float)aprsdecode_lums.fontysize;
-   maptool_drawstr(image, s, 21ul, (float)floor((double)x),
-                (float)floor((double)y), 250UL, 0UL, c, &void0, 0UL, 1, 0);
+   maptool_drawstr(image, s, 21ul, osic_floor(x), osic_floor(y), 250UL, 0UL,
+                c, &void0, 0UL, 1, 0);
 } /* end ruler() */
 
 #define maptool_SCALEHLINES 0.1
@@ -1256,8 +1256,7 @@ extern long maptool_geoprofile(maptool_pIMAGE image,
                   frescol(fresmin, &red, &green, &blue);
                   maptool_waypoint(image, x, y, 1.25f+X2C_DIVR(1.25f*fres,
                 maxfres), (long)red, (long)green, (long)blue);
-                  osic_alloc((X2C_ADDRESS *) &pht,
-                sizeof(struct HTAB));
+                  osic_alloc((X2C_ADDRESS *) &pht, sizeof(struct HTAB));
                 /* store headroom values for scaling later */
                   if (pht) {
                      pht->next = phtab;
@@ -1304,8 +1303,8 @@ extern long maptool_geoprofile(maptool_pIMAGE image,
          wdif = X2C_DIVR(wdif*a,d*0.1f);
          xproj = X2C_DIVR(pos0.lat-pos1.lat,wdif);
                 /* 90 deg rotatationsvector */
-         yproj = X2C_DIVR((pos0.long0-pos1.long0)*osic_cos(pos0.lat),
-                wdif); /* for headroom lines to track */
+         yproj = X2C_DIVR((pos0.long0-pos1.long0)*osic_cos(pos0.lat),wdif);
+                /* for headroom lines to track */
       }
       else {
          xproj = 0.0f;
@@ -2397,8 +2396,8 @@ extern void maptool_POIname(struct aprspos_POSITION * mpos, char s[],
    aprsdecode_pMOUNTAIN pm;
    struct aprsdecode_MOUNTAIN * anonym;
    pm = aprsdecode_mountains;
-   mindist = 2560.0f*osic_power(2.0f,
-                -maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom));
+   mindist = 2560.0f*osic_power(2.0f, -maptool_realzoom(aprsdecode_initzoom,
+                aprsdecode_finezoom));
    if (mindist>10.0f) mindist = 10.0f;
    /*WrFixed(mpos.lat, 4, 8);WrFixed(mpos.long, 4, 8); WrStrLn(""); */
    pmin = 0;
@@ -3583,9 +3582,7 @@ static void fillpoligon(maptool_pIMAGE image, struct aprspos_POSITION pm,
    if (hachuresize>0UL) {
       /* modify hachure with image size */
       x = ((maxx-minx)+maxy)-miny;
-      if (x>0L) {
-         hachuresize += aprsdecode_trunc(0.35f*osic_sqrt((float)x));
-      }
+      if (x>0L) hachuresize += aprsdecode_trunc(0.35f*osic_sqrt((float)x));
    }
    while (maxy>miny) {
       nc = 0UL;
@@ -4081,8 +4078,8 @@ static long smoo(float ex, long x)
 {
    if (x<=0L) return x;
    else {
-      return (long)aprsdecode_trunc(osic_exp(osic_ln(X2C_DIVR((float)
-                x,80.0f))*ex)*80.0f);
+      return (long)aprsdecode_trunc(osic_exp(osic_ln(X2C_DIVR((float)x,
+                80.0f))*ex)*80.0f);
    }
    return 0;
 } /* end smoo() */
@@ -4134,8 +4131,7 @@ extern void maptool_shine(maptool_pIMAGE image, long lum)
       } /* end for */
       if (y==tmp) break;
    } /* end for */
-   ex = X2C_DIVR(osic_ln(12.5f),osic_ln(X2C_DIVR((float)max0,
-                80.0f)));
+   ex = X2C_DIVR(osic_ln(12.5f),osic_ln(X2C_DIVR((float)max0,80.0f)));
    if (ex>1.5f) ex = 1.5f;
    /*WrInt(max, 10);WrFixed(ex, 3,10);WrLn; */
    tmp = (long)(image->Len0-1);
@@ -4543,7 +4539,7 @@ wnloader", 27ul);
             osic_Close(fd);
             if (aprsdecode_verb) {
                osi_WrStr("try:", 5ul);
-               osic_WrUINT32((long)maploopcnt, 1UL);
+               osic_WrINT32(maploopcnt, 1UL);
                osi_WrStrLn(" written gettiles:", 19ul);
                osi_WrStr(mapnamesbuf, 4096ul);
             }
@@ -5073,7 +5069,7 @@ static void loadsym(char h[], unsigned long h_len)
    if (res<0L) {
       osi_WrStr(h, h_len);
       osi_WrStrLn(" file read error ", 18ul);
-      osic_WrUINT32(res, 1UL);
+      osic_WrINT32((unsigned long)res, 1UL);
       osi_WrStrLn("", 1ul);
       goto label;
    }
@@ -5161,7 +5157,7 @@ extern void maptool_loadfont(void)
    strncpy(fn,"font.png",1025u);
    res = readpng(fn, (X2C_ADDRESS *)rows, &maxx, &maxy, &maxxbyte);
    if ((((res<0L || maxx<1L) || maxx>600L) || maxy<1L) || maxy>24L) {
-      osic_WrUINT32(res, 1UL);
+      osic_WrINT32((unsigned long)res, 1UL);
       osi_WrStrLn(" fontfile read error", 21ul);
       aprsdecode_lums.fontysize = higth+3UL;
       return;
@@ -5536,8 +5532,7 @@ extern void maptool_rdmountains(char fn[], unsigned long fn_len, char add)
       while (aprsdecode_mountains) {
          pm = aprsdecode_mountains;
          aprsdecode_mountains = pm->next;
-         osic_free((X2C_ADDRESS *) &pm,
-                sizeof(struct aprsdecode_MOUNTAIN));
+         osic_free((X2C_ADDRESS *) &pm, sizeof(struct aprsdecode_MOUNTAIN));
          useri_debugmem.srtm -= sizeof(struct aprsdecode_MOUNTAIN);
       }
    }
@@ -5575,8 +5570,7 @@ extern void maptool_rdmountains(char fn[], unsigned long fn_len, char add)
       if ((((com[0U]!='#' && name[0U]) && aprsstr_StrToFix(&pos.lat, lat,
                 100ul)) && aprsstr_StrToFix(&pos.long0, long0,
                 100ul)) && aprspos_posvalid(pos)) {
-         osic_alloc((X2C_ADDRESS *) &pm,
-                sizeof(struct aprsdecode_MOUNTAIN));
+         osic_alloc((X2C_ADDRESS *) &pm, sizeof(struct aprsdecode_MOUNTAIN));
          if (pm==0) break;
          useri_debugmem.srtm += sizeof(struct aprsdecode_MOUNTAIN);
          aprsstr_Assign(pm->name, 32ul, name, 100ul);

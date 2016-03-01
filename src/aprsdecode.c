@@ -6554,7 +6554,7 @@ temporarily", 56ul);
    }
    otime = 0UL;
    if (aprsdecode_verb && udpch>0UL) {
-      osic_WrUINT32((unsigned long)res, 3UL);
+      osic_WrINT32((unsigned long)res, 3UL);
       osi_WrStr(" udp ", 6ul);
       osi_WrStrLn(mb, 512ul);
    }
