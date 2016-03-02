@@ -3685,8 +3685,6 @@ extern void maptool_drawpoligon(maptool_pIMAGE image,
          case 2UL:
             dashvec(image, x0, y00, x1, y1, r, g, b, 2.5f, 6UL, 200UL);
             break;
-         default:
-            X2C_TRAP(X2C_CASE_TRAP);
          } /* end switch */
       }
       x0 = x1;
