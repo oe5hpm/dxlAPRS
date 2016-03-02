@@ -140,8 +140,6 @@ void X2C_DYNALLOCATE(char **a, size_t size, size_t lens[], size_t dims);
 
 void X2C_DYNDEALLOCATE(char **a);
 
-long X2C_QUO(long a, long b);
-
 void *osic_chkptr(void *p);
 
 #endif /* __OSIC_H__ */

@@ -510,22 +510,6 @@ void X2C_DYNDEALLOCATE(char **a)
 	}
 }
 
-long X2C_QUO(long a, long b)
-{
-	assert(b);
-	if (a >= 0) {
-		if (b > 0)
-			return (a / b);
-		else
-			return (-(a / (-b)));
-	} else if (b > 0) {
-		return (-((-a) / b));
-	} else {
-		return ((-a) / (-b));
-	}
-	return 0;
-}
-
 void *osic_chkptr(void *p)
 {
 	assert(p);
