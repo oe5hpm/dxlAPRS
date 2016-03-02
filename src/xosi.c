@@ -730,7 +730,7 @@ extern void xosi_CheckProg(struct xosi_PROCESSHANDLE * chpid)
 
 #define xosi_ARGS 100
 
-#define xosi_QUOT "\""
+#define xosi_QUOTT "\""
 
 
 extern void xosi_StartProg(char name[], unsigned long name_len,
