@@ -32,6 +32,7 @@
 #define X2C_max_longdouble		((X2C_LONGDOUBLE)LDBL_MAX)
 #define X2C_min_longdouble		(-((X2C_LONGDOUBLE)LDBL_MAX))
 
+#define X2C_TRAP(x)			assert(0)
 #define X2C_CASE_TRAP			0
 
 #define X2C_ABORT(void)			exit(-1)
