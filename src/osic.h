@@ -142,8 +142,6 @@ void X2C_DYNDEALLOCATE(char **a);
 
 long X2C_QUO(long a, long b);
 
-double X2C_EXPRI(double base, long ex);
-
 void *osic_chkptr(void *p);
 
 #endif /* __OSIC_H__ */

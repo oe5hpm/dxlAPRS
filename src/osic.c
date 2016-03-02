@@ -531,20 +531,6 @@ long X2C_QUO(long a, long b)
 	return 0;
 }
 
-double X2C_EXPRI(double base, long ex)
-{
-	double res;
-
-	if (ex < 0 || ex > 8)
-		return pow(base, (double)ex);
-	res = 1.0;
-	while (ex > 0) {
-		res = res*base;
-		--ex;
-	}
-	return res;
-}
-
 void *osic_chkptr(void *p)
 {
 	assert(p);
