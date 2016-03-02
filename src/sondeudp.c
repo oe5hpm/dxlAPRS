@@ -2569,7 +2569,7 @@ static void getadc(void)
          adcbufrd = 0UL;
          l = osi_RdBin(soundfd, (char *)adcbuf, 8192u/1u, adcbuflen*2UL);
          adcbufsamps = 0UL;
-         if (l<0L) {
+         if (l<=0L) {
             if (abortonsounderr) Error("Sounddevice Failure", 20ul);
             else {
                osic_Close(soundfd);

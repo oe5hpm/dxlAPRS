@@ -2289,7 +2289,7 @@ static void getadc(void)
    for (m = 0L; m<=7L; m++) {
       modpar[m].noise = modpar[m].noise*0.99f; /* clear dcd on silence */
    } /* end for */
-   if (l<0L) {
+   if (l<=0L) {
       repairsound();
       return;
    }
