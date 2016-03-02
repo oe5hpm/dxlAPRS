@@ -3267,8 +3267,6 @@ extern void maptool_drawareasym(maptool_pIMAGE image,
       g = 255UL;
       b = 255UL;
       break;
-   default:
-      X2C_TRAP(X2C_CASE_TRAP);
    } /* end switch */
    if (area.color>=8U) {
       r = r/2UL;

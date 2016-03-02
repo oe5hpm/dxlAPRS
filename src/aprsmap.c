@@ -187,10 +187,10 @@ static void Error(char text0[], unsigned long text_len)
 } /* end Error() */
 
 
-static float sq(float x)
+static float sqr(float x)
 {
    return x*x;
-} /* end sq() */
+} /* end sqr() */
 
 #define aprsmap_GAMMA 4.5454545454545E-1
 
@@ -252,7 +252,7 @@ static void mapbri(long v)
 {
    char h[100];
    char s[100];
-   v += X2C_QUO(aprsdecode_lums.map,10L);
+   v += (long)((unsigned long)aprsdecode_lums.map/10UL);
    if (v<0L) v = 0L;
    else if (v>100L) v = 100L;
    aprsdecode_lums.map = v*10L;
@@ -808,7 +808,7 @@ static void tracks(maptool_pIMAGE img, aprsdecode_pOPHIST op,
                      }
                      if ((maptool_mapxy(oldpos, &x0,
                 &y00)>=-1L && maptool_mapxy(anonym->pos, &x1,
-                &y1)>=-1L) && sq(x0-x1)+sq(y00-y1)>=9.0f) {
+                &y1)>=-1L) && sqr(x0-x1)+sqr(y00-y1)>=9.0f) {
                         /* collect short tracks to 1 */
                         aprsdecode_click.ops->trackcol = coln;
                         ligw = (lig*(unsigned long)aprsdecode_lums.waypoint)
@@ -3838,8 +3838,7 @@ static void centermouse(char shortcut)
       if ((((aprspos_posvalid(aprsdecode_click.bubblpos)
                 && maptool_mapxy(aprsdecode_click.bubblpos, &x0,
                 &y00)>=-1L) && aprspos_posvalid(pos)) && maptool_mapxy(pos,
-                &x1, &y1)>=-1L) && X2C_EXPRI(x0-x1,2L)+X2C_EXPRI(y00-y1,
-                2L)<25.0f) {
+                &x1, &y1)>=-1L) && sqr(x0-x1)+sqr(y00-y1)<25.0f) {
          pos = aprsdecode_click.bubblpos;
                 /* POI is near mouse so use POI position to center */
       }

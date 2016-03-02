@@ -1121,8 +1121,6 @@ extern void sondeaprs_senddata(double lat, double long0, double alt,
                 WrFixed(hrms, 1,5);*/
                      osi_WrStr("r", 2ul);
                      break;
-                  default:
-                     X2C_TRAP(X2C_CASE_TRAP);
                   } /* end switch */
                }
                if (e==sondeaprs_eRMS) break;
