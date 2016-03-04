@@ -34,6 +34,7 @@ struct FREQTAB {
    unsigned long khz;
    unsigned long afc;
    unsigned long width;
+   char am;
 };
 
 struct STICKPARM;
@@ -66,13 +67,19 @@ static unsigned long midfreq;
 
 static unsigned long lastmidfreq;
 
+static unsigned long downsamp;
+
+static unsigned long mixto;
+
 static short sndbuf[1024];
+
+static unsigned char sndbuf8[1024];
 
 static struct sdr_RX rxx[32];
 
 static sdr_pRX prx[33];
 
-static short sampx[32][16];
+static short sampx[32][32];
 
 static struct STICKPARM stickparm[256];
 
@@ -93,6 +100,10 @@ static char parmfn[1001];
 static char verb;
 
 static char reconn;
+
+static char pcm8;
+
+static float offset;
 
 
 static void Error(char text[], unsigned long text_len)
@@ -136,6 +147,12 @@ static void fix(const char s[], unsigned long s_len, unsigned long * p,
                 float * x, char * ok0)
 {
    float m;
+   char sgn;
+   if (s[*p]=='-') {
+      sgn = 1;
+      ++*p;
+   }
+   else sgn = 0;
    m = 1.0f;
    *ok0 = 0;
    *x = 0.0f;
@@ -152,6 +169,7 @@ static void fix(const char s[], unsigned long s_len, unsigned long * p,
       *ok0 = 1;
       ++*p;
    }
+   if (sgn) *x = -*x;
 } /* end fix() */
 
 
@@ -161,20 +179,55 @@ static void Parms(void)
    unsigned long n;
    unsigned long m;
    long ni;
+   char ok0;
    reconn = 0;
    verb = 0;
+   pcm8 = 0;
+   downsamp = 0UL;
+   mixto = 0UL;
    strncpy(url,"127.0.0.1",1001u);
    strncpy(port,"1234",1001u);
    soundfn[0] = 0;
    iqrate = 2048000UL;
    samphz = 16000UL;
+   offset = 0.0f;
    strncpy(parmfn,"sdrcfg.txt",1001u);
    for (;;) {
       osi_NextArg(s, 1001ul);
       if (s[0U]==0) break;
       if ((s[0U]=='-' && s[1U]) && s[2U]==0) {
-         if (s[1U]=='s') osi_NextArg(soundfn, 1001ul);
+         if (s[1U]=='s') {
+            osi_NextArg(soundfn, 1001ul);
+            pcm8 = 0;
+         }
+         else if (s[1U]=='S') {
+            osi_NextArg(soundfn, 1001ul);
+            pcm8 = 1;
+         }
          else if (s[1U]=='c') osi_NextArg(parmfn, 1001ul);
+         else if (s[1U]=='o') {
+            /* offset */
+            osi_NextArg(s, 1001ul);
+            n = 0UL;
+            fix(s, 1001ul, &n, &offset, &ok0);
+            if (!ok0) Error(" -o <MHz>", 10ul);
+         }
+         else if (s[1U]=='d') {
+            /* sampelrate */
+            osi_NextArg(s, 1001ul);
+            if (!aprsstr_StrToCard(s, 1001ul, &downsamp) || downsamp<1UL) {
+               Error(" -p <ratio>", 12ul);
+            }
+            --downsamp;
+         }
+         else if (s[1U]=='m') {
+            /* sampelrate */
+            osi_NextArg(s, 1001ul);
+            if ((!aprsstr_StrToCard(s, 1001ul,
+                &mixto) || mixto<1UL) || mixto>2UL) {
+               Error(" -m <1..2>", 11ul);
+            }
+         }
          else if (s[1U]=='t') {
             osi_NextArg(s, 1001ul); /* url */
             n = 0UL;
@@ -220,16 +273,24 @@ static void Parms(void)
 channel 16 bit pcm file/pipe", 78ul);
                osi_WrStrLn(" -c <configfilename> read channels config from fi\
 le (sdrcfg.txt)", 65ul);
+               osi_WrStrLn(" -d <ratio>          downsample output (1)",
+                43ul);
                osi_WrStrLn(" -h                  help", 26ul);
                osi_WrStrLn(" -i <Hz>             input sampelrate Hz (2048000\
 ) or 1024000", 62ul);
                osi_WrStrLn(" -k                  keep connection", 37ul);
+               osi_WrStrLn(" -m <audiochannels>  mix all rx channels to audio\
+channels (1..2)", 65ul);
+               osi_WrStrLn(" -o <mhz>            offset for entered frequenci\
+es if Converters are used", 75ul);
                osi_WrStrLn(" -p <cmd> <value>    send rtl_tcp parameter, ppm,\
  tunergain ...", 64ul);
                osi_WrStrLn(" -r <Hz>             output sampelrate Hz for all\
  channels (16000)", 67ul);
                osi_WrStrLn(" -s <soundfilename>  16bit signed n-channel sound\
  stream/pipe", 62ul);
+               osi_WrStrLn(" -S <soundfilename>  8bit unsigned n-channel soun\
+d stream/pipe", 63ul);
                osi_WrStrLn(" -t <url:port>       connect rtl_tcp server (127.\
 0.0.1:1234)", 61ul);
                osi_WrStrLn(" -v                  show rssi (dB) and afc (khz)\
@@ -243,18 +304,25 @@ be modified any time)", 71ul);
                osi_WrStrLn("  p <cmd> <value>  rtl_tcp parameter like \'p 5 5\
 0\' ppm, \'p 8 1\' autogain", 73ul);
                osi_WrStrLn("  f <mhz> <afc-range> <squelch%> <lowpass%> <if-w\
-idth>", 55ul);
+idth>  FM Demodulator", 71ul);
                osi_WrStrLn("    AFC-range in +-kHz, Squelch 0 off, 100 open, \
 95 near open", 62ul);
                osi_WrStrLn("    audio lowpass in % Nyquist frequ. of output s\
 ampelrate, 0 is off", 69ul);
-               osi_WrStrLn("    if-width 1=12kHz 2=24kHz .. 5=192kHz (5 only \
-with 2048kHz input sample)", 76ul);
+               osi_WrStrLn("    IF-width 1=6kHz 2=12kHz 3=24kHz .. 6=192kHz (\
+6 only with 2048kHz input sample)", 83ul);
+               osi_WrStrLn("    or width in Hz (with more CPU-load) (2 defaul\
+t)", 52ul);
+               osi_WrStrLn("  a <mhz> 0 <squelch> <lowpass%> <if-width>   AM \
+Demodulator", 61ul);
+               osi_WrStrLn("", 1ul);
                osi_WrStrLn("  example:", 11ul);
                osi_WrStrLn("    p 5 50", 11ul);
                osi_WrStrLn("    p 8 1", 10ul);
-               osi_WrStrLn("    f 438.825 5 95 70", 22ul);
-               osi_WrStrLn("    f 439.275 5 90 70", 22ul);
+               osi_WrStrLn("    f 438.825 5 95 70           (afc, quelch, aud\
+io lowpass, 12khz IF)", 71ul);
+               osi_WrStrLn("    f 439.275 0 0 0 20000       (20khz IF)",
+                43ul);
                osi_WrStrLn("  will generate 2 channel 16bit PCM stream (up to\
  32 channels with future cpu...)", 82ul);
                osi_WrStrLn("  max 2MHz span, automatic rtl-tuned to center of\
@@ -361,7 +429,12 @@ static void centerfreq(const struct FREQTAB freq[], unsigned long freq_len)
          rxx[i].df = freq[i].khz-midfreq;
          rxx[i].maxafc = freq[i].afc;
          rxx[i].squelch = squelchs[i].lev!=0.0f;
-         rxx[i].width = (freq[i].width*iqrate)/2048000UL;
+         if (freq[i].width>=1000UL) {
+            rxx[i].width = (unsigned long)X2C_TRUNCC(X2C_DIVR((float)
+                freq[i].width*(float)iqrate,2.048E+6f),0UL,X2C_max_longcard);
+         }
+         else rxx[i].width = (freq[i].width*iqrate)/2048000UL;
+         rxx[i].am = freq[i].am;
          ++i;
       }
       prx[i] = 0;
@@ -434,7 +507,8 @@ static void rdconfig(void)
                }
                i = 0UL;
             }
-            else if (X2C_CAP(li[i])=='F') {
+            else if (X2C_CAP(li[i])=='F' || X2C_CAP(li[i])=='A') {
+               freq[freqc].am = X2C_CAP(li[i])=='A';
                ++i;
                skip(li, 256ul, &i);
                fix(li, 256ul, &i, &x, &ok0);
@@ -450,17 +524,41 @@ static void rdconfig(void)
                if (!ok0) lpp = 0UL;
                skip(li, 256ul, &i);
                card(li, 256ul, &i, &wid, &ok0);
-               if (!ok0) wid = 0UL;
+               if (!ok0) wid = 2UL;
                if (freqc>31UL) osi_WerrLn("freq table full", 16ul);
                else {
+                  x = x+offset;
+                  if (x<=0.0f || x>=2.147483E+6f) {
+                     osi_WerrLn("freq out of range", 18ul);
+                     x = 0.0f;
+                  }
                   freq[freqc].khz = (unsigned long)X2C_TRUNCC(x*1000.0f+0.5f,
                 0UL,X2C_max_longcard);
                   freq[freqc].afc = m;
-                  if (wid==0UL) wid = 128UL;
-                  else if (wid==1UL) wid = 64UL;
-                  else if (wid==2UL) wid = 32UL;
-                  else if (wid==3UL) wid = 16UL;
-                  else wid = 8UL;
+                  switch (wid) {
+                  case 0UL:
+                     wid = 128UL;
+                     break;
+                  case 1UL:
+                     wid = 256UL;
+                     break;
+                  case 2UL:
+                     wid = 128UL;
+                     break;
+                  case 3UL:
+                     wid = 64UL;
+                     break;
+                  case 4UL:
+                     wid = 32UL;
+                     break;
+                  case 5UL:
+                     wid = 16UL;
+                     break;
+                  case 6UL:
+                     wid = 8UL;
+                     break;
+                  } /* end switch */
+                  /* else real width in hz */
                   freq[freqc].width = wid;
                   squelchs[freqc].lev = X2C_DIVR((float)sq,200.0f);
                   squelchs[freqc].lp = X2C_DIVR((float)lpp,200.0f);
@@ -496,14 +594,16 @@ static void showrssi(void)
          aprsstr_FixToStr(rxx[i].sqmed, 3UL, s, 31ul);
          osi_Werr(s, 31ul);
       }
-      osi_Werr(" ", 2ul);
-      aprsstr_IntToStr(rxx[i].afckhz, 0UL, s, 31ul);
-      osi_Werr(s, 31ul);
-      osi_Werr(" ", 2ul);
-      osic_flush();
+      if (!rxx[i].am) {
+         osi_Werr(" ", 2ul);
+         aprsstr_IntToStr(rxx[i].afckhz, 0UL, s, 31ul);
+         osi_Werr(s, 31ul);
+         osi_Werr(" ", 2ul);
+      }
       ++i;
    }
    osi_Werr("    \015", 6ul);
+   osic_flush();
 } /* end showrssi() */
 
 static long sp;
@@ -516,9 +616,44 @@ static float sqv;
 
 static unsigned long tshow;
 
+static unsigned long dsamp;
+
 static char recon;
 
 static long pcm;
+
+static long mixleft;
+
+static long mixright;
+
+
+static void sendaudio(long pcm0, char pcm80, char chan0)
+{
+   if (pcm0>32767L) pcm0 = 32767L;
+   else if (pcm0<-32767L) pcm0 = -32767L;
+   if (pcm80) {
+      sndbuf8[sndw] = (unsigned char)((unsigned long)(pcm0+32768L)/256UL);
+   }
+   else {
+      pcm0 = (long)((unsigned long)pcm0&0xFFFFFFFEUL);
+      if (chan0) ++pcm0;
+      sndbuf[sndw] = (short)pcm0;
+   }
+   ++sndw;
+   if (sndw>1023UL) {
+      if (pcm80) osi_WrBin(fd, (char *)sndbuf8, 1024u/1u, sndw);
+      else osi_WrBin(fd, (char *)sndbuf, 2048u/1u, sndw*2UL);
+      sndw = 0UL;
+      if (tshow>20UL) {
+         rdconfig();
+         setparms(recon);
+         recon = 0;
+         if (verb) showrssi();
+         tshow = 0UL;
+      }
+      else ++tshow;
+   }
+} /* end sendaudio() */
 
 
 X2C_STACK_LIMIT(100000l)
@@ -546,7 +681,7 @@ extern int main(int argc, char **argv)
       if (fd>=0L) {
          recon = 1;
          for (;;) {
-            sn = sdr_getsdr(16UL, prx, 33ul);
+            sn = sdr_getsdr(32UL, prx, 33ul);
             if (sn<0L) {
                if (verb) {
                   if (sn==-2L) {
@@ -566,6 +701,7 @@ extern int main(int argc, char **argv)
                      pcm = (long)rxx[rp].samples[sp];
                      { /* with */
                         struct SQUELCH * anonym = &squelchs[rp];
+                        /* squelch */
                         if (anonym->lev!=0.0f) {
                            sqv = (anonym->lev-rxx[rp].sqmed)*10.0f;
                            if (sqv<0.0f) sqv = 0.0f;
@@ -573,6 +709,8 @@ extern int main(int argc, char **argv)
                            pcm = (long)(short)X2C_TRUNCI((float)pcm*sqv,
                 -32768,32767);
                         }
+                        /* squelch */
+                        /* lowpass */
                         if (anonym->lp!=0.0f) {
                            anonym->u1 = anonym->u1+(((float)(pcm*2L)
                 -anonym->u1)-anonym->il)*anonym->lp;
@@ -580,28 +718,44 @@ extern int main(int argc, char **argv)
                 *anonym->lp;
                            anonym->il = anonym->il+(anonym->u1-anonym->u2)
                 *anonym->lp*2.0f;
-                           pcm = (long)(short)X2C_TRUNCI(anonym->u2,-32768,
-                32767);
+                           pcm = (long)X2C_TRUNCI(anonym->u2,X2C_min_longint,
+                X2C_max_longint);
                         }
                      }
-                     pcm = (long)((unsigned long)pcm&0xFFFFFFFEUL);
-                     if (rp==0UL) ++pcm;
-                     sndbuf[sndw] = (short)pcm;
-                     ++sndw;
-                     if (sndw>1023UL) {
-                        osi_WrBin(fd, (char *)sndbuf, 2048u/1u, sndw*2UL);
-                        sndw = 0UL;
-                        if (tshow>20UL) {
-                           rdconfig();
-                           setparms(recon);
-                           recon = 0;
-                           if (verb) showrssi();
-                           tshow = 0UL;
+                     /*lowpass  */
+                     if (dsamp==0UL) {
+                        /* channel mixer */
+                        if (mixto==1UL) mixleft += pcm;
+                        else if (mixto==2UL) {
+                           if (freqc<=1UL) {
+                              mixleft = pcm;
+                              mixright = pcm;
+                           }
+                           else {
+                              mixleft += pcm*(long)rp;
+                              mixright += pcm*(long)((freqc-rp)-1UL);
+                           }
                         }
-                        else ++tshow;
+                        /* channel mixer */
+                        if (mixto==0UL || rp==0UL) {
+                           if (mixto==0UL || freqc==0UL) {
+                              sendaudio(pcm, pcm8, rp==0UL);
+                           }
+                           else {
+                              sendaudio(mixleft/(long)freqc, pcm8, rp==0UL);
+                              if (mixto==2UL) {
+                                 sendaudio(mixright/(long)freqc, pcm8,
+                rp==0UL);
+                              }
+                           }
+                           mixleft = 0L;
+                           mixright = 0L;
+                        }
                      }
                      ++rp;
                   }
+                  if (dsamp==0UL) dsamp = downsamp;
+                  else --dsamp;
                   if (sp==tmp) break;
                } /* end for */
             }

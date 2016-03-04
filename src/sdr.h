@@ -24,6 +24,9 @@ struct sdr_TAP {
    long uc1;
    long uc2;
    long il;
+   float ucr1;
+   float ucr2;
+   float ilr;
 };
 
 struct sdr_RX;
@@ -34,6 +37,7 @@ struct sdr_RX {
    unsigned long maxafc;
    unsigned long width;
    char squelch;
+   char am;
    unsigned long phase;
    struct sdr_TAP tapre;
    struct sdr_TAP tapim;
@@ -43,6 +47,7 @@ struct sdr_RX {
    float lastlev;
    float rssi;
    float sqmed;
+   float a1;
    sdr_pAUDIOSAMPLE samples;
 };
 
