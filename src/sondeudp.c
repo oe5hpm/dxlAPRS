@@ -1327,6 +1327,7 @@ static void decode41(unsigned long m)
    unsigned long p;
    unsigned long j;
    unsigned long i;
+   char ch;
    char typ;
    unsigned short crc;
    char nameok;
@@ -1377,7 +1378,10 @@ static void decode41(unsigned long m)
          if (typ=='y') {
             if (verb) {
                for (i = 0UL; i<=7UL; i++) {
-                  osi_WrStr((char *) &anonym->rxbuf[p+2UL+i], 1u/1u);
+                  ch = anonym->rxbuf[p+2UL+i];
+                  if ((unsigned char)ch>' ' && (unsigned char)ch<'\177') {
+                     osi_WrStr((char *) &ch, 1u/1u);
+                  }
                } /* end for */
                osic_WrINT32((unsigned long)getint16(anonym->rxbuf, 520ul, p),
                  0UL);
