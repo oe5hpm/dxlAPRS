@@ -905,6 +905,10 @@ static void parms(void)
             osi_NextArg(h, 4096ul);
             aprsstr_Assign(wwwdir, 1024ul, h, 4096ul);
             if (h[0U]==0 || h[0U]=='-') Err("-D directory", 13ul);
+            i0 = aprsstr_Length(wwwdir, 1024ul);
+            if (i0>0UL && wwwdir[i0-1UL]!='/') {
+               aprsstr_Append(wwwdir, 1024ul, "/", 2ul);
+            }
          }
          else if (lasth=='d') {
             osi_NextArg(h, 4096ul);
@@ -1048,9 +1052,7 @@ static void parms(void)
                aprsstr_Assign(gatesfn, 1024ul, h, 4096ul);
             }
             else {
-               if (gatecnt>20UL) {
-                  Err("-g gateway table full", 22ul);
-               }
+               if (gatecnt>20UL) Err("-g gateway table full", 22ul);
                h[4095U] = 0;
                if (h[0U]=='[') {
                   ii = 1L;
