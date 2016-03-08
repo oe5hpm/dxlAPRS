@@ -917,6 +917,7 @@ extern int main(int argc, char **argv)
       udpsocks[tncport].sock = -1L;
    } /* end for */
    inilen = 0UL;
+   tty = -1L;
    Parms();
    Gencrctab();
    if (ttynamee[0U]) opentty();
@@ -939,7 +940,7 @@ extern int main(int argc, char **argv)
       if (direwolf) {
          if (tcpfd>=0L) fdsetr((unsigned long)tcpfd);
       }
-      else fdsetr((unsigned long)tty);
+      else if (tty!=-1L) fdsetr((unsigned long)tty);
       for (tncport = 0UL; tncport<=7UL; tncport++) {
          if (udpsocks[tncport].sock!=-1L) {
             fdsetr((unsigned long)udpsocks[tncport].sock);
@@ -947,7 +948,7 @@ extern int main(int argc, char **argv)
       } /* end for */
       if (selectr(0UL, 0UL)>=0L) {
          if ((direwolf && tcpfd>=0L) && issetr((unsigned long)tcpfd)
-                || !direwolf && issetr((unsigned long)tty)) {
+                || (!direwolf && tty!=-1L) && issetr((unsigned long)tty)) {
             if (direwolf) {
                len = readsock(tcpfd, tbuf, 701L);
                if (len<0L) {
@@ -957,10 +958,11 @@ extern int main(int argc, char **argv)
                   usleep(2000000UL);
                }
             }
-            else {
+            else if (tty!=-1L) {
                /* disconnected */
                len = osi_RdBin(tty, (char *)tbuf, 701u/1u, 701UL);
             }
+            else len = 0L;
             if (!direwolf && usbrobust) testtty(len);
             /*WrInt(len, 5); WrLn; */
             tmp = len-1L;
@@ -1053,7 +1055,9 @@ extern int main(int argc, char **argv)
                      upos = 0L;
                      kissm = 1UL;
                   }
-                  else if (c=='\333') kissm = 2UL;
+                  else if (c=='\333') {
+                     kissm = 2UL;
+                  }
                   else if (upos<700L) {
                      ubuf[upos] = c;
                      ++upos;
@@ -1146,7 +1150,7 @@ extern int main(int argc, char **argv)
                            }
                         }
                      }
-                     else {
+                     else if (tty!=-1L) {
                         osi_WrBin(tty, (char *)kbuf, 701u/1u,
                 (unsigned long)(tpos+1L));
                      }
