@@ -13,9 +13,11 @@
 #include "aprsstr.h"
 #endif
 #define aprsstr_C_
+#ifndef osi_H_
+#include "osi.h"
+#endif
 
 /* string lib by oe5dxl */
-/*FROM osi IMPORT WrInt, WrStrLn; */
 static unsigned char CRCL[256];
 
 static unsigned char CRCH[256];
@@ -1083,6 +1085,8 @@ extern void aprsstr_raw2mon(char raw[], unsigned long raw_len, char mon[],
    mon[*p] = 0;
    ++*p;
    mon[*p] = 0;
+   /*FOR i:=0 TO 256 DO IF i IN ghostset THEN WrInt(i, 4) END; END;
+                WrStrLn("=ghs"); */
    if (X2C_INL((long)256,257,ghostset) && brand>255UL || X2C_INL(brand,257,
                 ghostset)) brandghost(mon, mon_len, brand);
 /*WrInt(ORD(raw[6]) DIV 32,1); WrInt(ORD(raw[13]) DIV 32,1);WrStrLn(mon); */
@@ -1162,6 +1166,7 @@ extern void aprsstr_BEGIN(void)
    aprsstr_init = 1;
    if (sizeof(unsigned char)!=1) X2C_ASSERT(0);
    if (sizeof(aprsstr_GHOSTSET)!=36) X2C_ASSERT(0);
+   osi_BEGIN();
    Gencrctab();
 }
 

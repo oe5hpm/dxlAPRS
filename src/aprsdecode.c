@@ -6629,13 +6629,11 @@ static aprsstr_GHOSTSET _cnst1 = {0x00000000UL,0x00000000UL,0x00000000UL,
                 0x00000000UL,0x00000000UL,0x00000000UL,0x00000000UL,
                 0x00000000UL,0x00000000UL};
 
-static unsigned long * getghostset(aprsstr_GHOSTSET getghostset_ret,
-                unsigned long port)
+static void getghostset(unsigned long port, aprsstr_GHOSTSET g)
 {
    unsigned long n;
    unsigned long i;
    char s[11];
-   aprsstr_GHOSTSET g;
    char p;
    p = (char)(port+49UL);
    memcpy(g,_cnst1,36u);
@@ -6654,8 +6652,6 @@ static unsigned long * getghostset(aprsstr_GHOSTSET getghostset_ret,
       }
       ++i;
    }
-   memcpy(getghostset_ret,g,36u);
-   return getghostset_ret;
 } /* end getghostset() */
 
 
@@ -6663,9 +6659,10 @@ extern void aprsdecode_udpin(unsigned long port)
 {
    aprsdecode_FRAMEBUF mbuf;
    struct UDPSET modeminfo;
+   aprsstr_GHOSTSET gs;
    struct aprsdecode_UDPSOCK * anonym;
-   aprsstr_GHOSTSET tmp;
-   while (getudp(port, mbuf, &modeminfo, getghostset(tmp, port))) {
+   getghostset(port, gs);
+   while (getudp(port, mbuf, &modeminfo, gs)) {
       if (mbuf[0UL]) {
          { /* with */
             struct aprsdecode_UDPSOCK * anonym = &aprsdecode_udpsocks0[port];
