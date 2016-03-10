@@ -13,6 +13,8 @@
 #include "X2C.h"
 #endif
 
+#define sdr_ZFIRSIZE 256
+
 typedef short sdr_AUDIOSAMPLE[65536];
 
 typedef short * sdr_pAUDIOSAMPLE;
@@ -29,16 +31,32 @@ struct sdr_TAP {
    float ilr;
 };
 
+struct sdr_SSBTAP;
+
+
+struct sdr_SSBTAP {
+   float uc1;
+   float uc2;
+   float uc3;
+   float il;
+   float il2;
+};
+
 struct sdr_RX;
 
 
 struct sdr_RX {
    unsigned long df;
-   unsigned long maxafc;
+   unsigned long dffrac;
    unsigned long width;
+   unsigned long agc;
+   long maxafc;
    char squelch;
-   char am;
+   char modulation;
+   sdr_pAUDIOSAMPLE samples;
    unsigned long phase;
+   unsigned long bfo;
+   unsigned long fine;
    struct sdr_TAP tapre;
    struct sdr_TAP tapim;
    long median;
@@ -48,7 +66,13 @@ struct sdr_RX {
    float rssi;
    float sqmed;
    float a1;
-   sdr_pAUDIOSAMPLE samples;
+   unsigned long fracphase;
+   unsigned long bfophase;
+   struct sdr_SSBTAP ssbre;
+   struct sdr_SSBTAP ssbim;
+   float ssbfgq;
+   float ssbfg;
+   float agcspeed;
 };
 
 typedef struct sdr_RX * sdr_pRX;

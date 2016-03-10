@@ -34,6 +34,8 @@
 
 
 
+
+
 /* rtl_tcp iq fm demodulator by OE5DXL */
 #define sdr_IQBUF 65536
 
@@ -44,6 +46,10 @@
 
 #define sdr_AFCRECENTER 1024
 /* pull afc to middle */
+
+#define sdr_SSBDDSSIZE 2048
+
+#define sdr_SSBDDSSIZE4 512
 
 struct Complex;
 
@@ -81,6 +87,8 @@ static unsigned long ddslen;
 
 static unsigned long ddslen4;
 
+static float SSBDDS[2048];
+
 
 static void initdds(unsigned long size)
 {
@@ -101,7 +109,93 @@ static void initdds(unsigned long size)
    ddslen4 = size/4UL;
 } /* end initdds() */
 
-#define sdr_FG (-8)
+
+static void initssbdds(float dds[], unsigned long dds_len)
+{
+   unsigned long i;
+   float d;
+   unsigned long tmp;
+   d = X2C_DIVR(6.2831853071796f,(float)((dds_len-1)+1UL));
+   tmp = dds_len-1;
+   i = 0UL;
+   if (i<=tmp) for (;; i++) {
+      dds[i] = osic_sin((float)i*d);
+      if (i==tmp) break;
+   } /* end for */
+} /* end initssbdds() */
+
+#define sdr_FG (-9)
+
+
+static void iir512(sdr_pRX rx, unsigned long a, unsigned long b)
+{
+   unsigned long dfc;
+   unsigned long ph;
+   unsigned long i;
+   long i3;
+   long i2;
+   long i1;
+   long r3;
+   long r2;
+   long r1;
+   long ddsi;
+   long ddsr;
+   long xi;
+   long xr;
+   struct sdr_TAP * anonym;
+   struct sdr_TAP * anonym0;
+   struct sdr_TAP * anonym1;
+   struct sdr_TAP * anonym2;
+   { /* with */
+      struct sdr_TAP * anonym = &rx->tapre;
+      r1 = anonym->uc1;
+      r2 = anonym->uc2;
+      r3 = anonym->il;
+   }
+   { /* with */
+      struct sdr_TAP * anonym0 = &rx->tapim;
+      i1 = anonym0->uc1;
+      i2 = anonym0->uc2;
+      i3 = anonym0->il;
+   }
+   ph = rx->phase;
+   dfc = rx->df+(unsigned long)rx->afckhz;
+   i = a;
+   do {
+      xr = (long)iqbuf[i]-127L;
+      ++i;
+      xi = (long)iqbuf[i]-127L;
+      ++i;
+      ddsr = (long)DDS[ph]; /* mix osz sin */
+      ddsi = (long)DDS[(unsigned long)((unsigned long)(ph+ddslen4)&ddslen)];
+                /* mix osz cos */
+      ph = (unsigned long)((unsigned long)(ph+dfc)&ddslen);
+                /* drive mix osz */
+      r1 += ((xr*ddsr-xi*ddsi)-r1)-r3>>9; /* mixer + lowpass i */
+      r2 += r3-r2>>9;
+      r3 += r1-r2>>8;
+      i1 += ((xr*ddsi+xi*ddsr)-i1)-i3>>9; /* mixer + lowpass q */
+      i2 += i3-i2>>9;
+      i3 += i1-i2>>8;
+   } while (i<=b);
+   { /* with */
+      struct sdr_TAP * anonym1 = &rx->tapre;
+      anonym1->uc1 = r1;
+      anonym1->uc2 = r2;
+      anonym1->il = r3;
+      anonym1->ucr2 = (float)r2;
+   }
+   { /* with */
+      struct sdr_TAP * anonym2 = &rx->tapim;
+      anonym2->uc1 = i1;
+      anonym2->uc2 = i2;
+      anonym2->il = i3;
+      anonym2->ucr2 = (float)i2;
+   }
+   rx->phase = ph;
+} /* end iir512() */
+
+#define sdr_FG0 (-8)
 
 
 static void iir256(sdr_pRX rx, unsigned long a, unsigned long b)
@@ -172,7 +266,7 @@ static void iir256(sdr_pRX rx, unsigned long a, unsigned long b)
    rx->phase = ph;
 } /* end iir256() */
 
-#define sdr_FG0 (-7)
+#define sdr_FG1 (-7)
 
 
 static void iir128(sdr_pRX rx, unsigned long a, unsigned long b)
@@ -243,7 +337,7 @@ static void iir128(sdr_pRX rx, unsigned long a, unsigned long b)
    rx->phase = ph;
 } /* end iir128() */
 
-#define sdr_FG1 (-6)
+#define sdr_FG2 (-6)
 
 
 static void iir64(sdr_pRX rx, unsigned long a, unsigned long b)
@@ -314,7 +408,7 @@ static void iir64(sdr_pRX rx, unsigned long a, unsigned long b)
    rx->phase = ph;
 } /* end iir64() */
 
-#define sdr_FG2 (-5)
+#define sdr_FG3 (-5)
 
 
 static void iir32(sdr_pRX rx, unsigned long a, unsigned long b)
@@ -385,7 +479,7 @@ static void iir32(sdr_pRX rx, unsigned long a, unsigned long b)
    rx->phase = ph;
 } /* end iir32() */
 
-#define sdr_FG3 (-4)
+#define sdr_FG4 (-4)
 
 
 static void iir16(sdr_pRX rx, unsigned long a, unsigned long b)
@@ -456,7 +550,7 @@ static void iir16(sdr_pRX rx, unsigned long a, unsigned long b)
    rx->phase = ph;
 } /* end iir16() */
 
-#define sdr_FG4 (-3)
+#define sdr_FG5 (-3)
 
 
 static void iir8(sdr_pRX rx, unsigned long a, unsigned long b)
@@ -528,7 +622,7 @@ static void iir8(sdr_pRX rx, unsigned long a, unsigned long b)
    rx->phase = ph;
 } /* end iir8() */
 
-#define sdr_FG5 128
+#define sdr_FG6 128
 
 
 static void iirvar(sdr_pRX rx, unsigned long a, unsigned long b, float bw)
@@ -603,6 +697,71 @@ static void iirvar(sdr_pRX rx, unsigned long a, unsigned long b, float bw)
    rx->phase = ph;
 } /* end iirvar() */
 
+/*
+PROCEDURE genfirtab(VAR t:ARRAY OF REAL; fg:REAL);
+VAR i,f,h:CARDINAL;
+    f1, e:REAL;
+BEGIN
+  h:=(HIGH(t)+1) DIV 2; 
+  FOR i:=0 TO h-1 DO t[h+i]:=0.5 END;
+
+  f1:=fg*FLOAT(h);
+  FOR f:=1 TO TRUNC(f1)+1 DO
+    e:=1.0;
+    IF f=TRUNC(f1)+1 THEN e:=f1-FLOAT(TRUNC(f1)) END;
+    FOR i:=0 TO h-1 DO t[i+h]:=t[i+h]+e*cos(pi*FLOAT(i*f)/FLOAT(h)) END;
+  END;
+  FOR i:=0 TO h-1 DO
+    e:=0.54+0.46*cos(pi*(FLOAT(i)/FLOAT(h)));
+    t[i+h]:=t[i+h]*e END;                                         (* hamming window *)
+  FOR i:=0 TO h-1 DO t[h-i-1]:=t[i+h] END;
+--FOR i:=0 TO HIGH(t) DO WrFixed(t[i], 2,0); WrStr(" ") END; WrStrLn(""); 
+END genfirtab;
+
+
+
+PROCEDURE fir(rx:pRX; VAR u:Complex);
+VAR i,j:CARDINAL;
+BEGIN
+  WITH rx^ DO
+    i:=ifp;
+    ifre[i]:=u.Re;
+    ifim[i]:=u.Im;
+    u.Re:=0.0;
+    u.Im:=0.0;
+    FOR j:=0 TO HIGH(iftab) DO
+      i:=(i+1) MOD (HIGH(iftab)+1);
+      u.Re:=u.Re + ifre[i]*iftab[j];
+      u.Im:=u.Im + ifim[i]*iftab[j];
+    END;
+    ifp:=(i+1) MOD (HIGH(iftab)+1);
+  END;
+END fir;
+*/
+
+static void ssbiir(struct sdr_SSBTAP * tap, float fg, float fgq, float * u)
+{
+   struct sdr_SSBTAP * anonym;
+   { /* with */
+      struct sdr_SSBTAP * anonym = tap;
+      anonym->uc1 = (anonym->uc1+(*u-anonym->uc1)*fg)-anonym->il;
+      anonym->uc2 = (anonym->uc2+anonym->il)-anonym->il2;
+      anonym->uc3 = (anonym->uc3+anonym->il2)-anonym->uc3*fg;
+      anonym->il = anonym->il+(anonym->uc1-anonym->uc2)*fgq;
+      anonym->il2 = anonym->il2+(anonym->uc2-anonym->uc3)*fgq;
+      *u = anonym->uc3;
+   }
+} /* end ssbiir() */
+
+
+static void rotvector(struct Complex * v, float rr, float ri)
+{
+   float t;
+   t = v->Re*rr-v->Im*ri;
+   v->Im = v->Re*ri+v->Im*rr;
+   v->Re = t;
+} /* end rotvector() */
+
 
 static short getsamp(sdr_pRX rx)
 {
@@ -614,56 +773,85 @@ static short getsamp(sdr_pRX rx)
    float lev;
    u.Re = rx->tapre.ucr2;
    u.Im = rx->tapim.ucr2;
-   /* complex to phase */
-   abs0.Re = (float)fabs(u.Re);
-   abs0.Im = (float)fabs(u.Im);
-   if (abs0.Im>abs0.Re) {
-      if (abs0.Im>0.0f) w = X2C_DIVR(abs0.Re,abs0.Im);
-      else w = 0.0f;
-      w = 1.5707963267949f-(w*1.055f-w*w*0.267f); /* arctan */
+   /* fine shift rest of full 1khz */
+   if (rx->fine>0UL) {
+      rx->fracphase = (unsigned long)((unsigned long)(rx->fracphase+rx->fine)
+                &0x7FFUL);
+      rotvector(&u, SSBDDS[rx->fracphase],
+                SSBDDS[(unsigned long)((unsigned long)(rx->fracphase+512UL)
+                &0x7FFUL)]);
+   }
+   /* fine shift rest of full 1khz */
+   /* additional IF fir */
+   if (rx->modulation=='s') {
+      ssbiir(&rx->ssbre, rx->ssbfg, rx->ssbfgq, &u.Re);
+      ssbiir(&rx->ssbim, rx->ssbfg, rx->ssbfgq, &u.Im);
+   }
+   /* additional IF fir */
+   /* rssi */
+   lev = 1.0f+u.Re*u.Re+u.Im*u.Im;
+   l = lev-rx->rssi;
+   if (l>=0.0f) l = l*0.1f;
+   else l = l*rx->agcspeed;
+   rx->rssi = rx->rssi+l;
+   /* rssi */
+   if (rx->modulation=='s') {
+      /* ssb */
+      rx->bfophase = (unsigned long)((unsigned long)(rx->bfophase+rx->bfo)
+                &0x7FFUL);
+      af = X2C_DIVR((u.Re*SSBDDS[rx->bfophase]-u.Im*SSBDDS[(unsigned long)
+                ((unsigned long)(rx->bfophase+512UL)&0x7FFUL)])*20000.0f,
+                osic_sqrt(rx->rssi));
    }
    else {
-      if (abs0.Re>0.0f) w = X2C_DIVR(abs0.Im,abs0.Re);
-      else w = 0.0f;
-      w = w*1.055f-w*w*0.267f;
-   }
-   if (u.Re<0.0f) w = 3.1415926535898f-w;
-   if (u.Im<0.0f) w = -w;
-   /* complex to phase */
-   /* phase highpass make FM */
-   af = w-rx->w1;
-   rx->w1 = w;
-   if (af>3.1415926535898f) af = af-6.2831853071796f;
-   if (af<(-3.1415926535898f)) af = af+6.2831853071796f;
-   /* phase highpass make FM */
-   /* rssi */
-   lev = 1.0f+abs0.Re*abs0.Re+abs0.Im*abs0.Im;
-   rx->rssi = rx->rssi+(lev-rx->rssi)*0.001f;
-   /* rssi */
-   if (rx->am) {
-      /* am squelch */
-      if (rx->squelch) {
-         l = (float)fabs(rx->a1-af); /* frequency variation */
-         rx->a1 = af;
-         rx->sqmed = rx->sqmed+(l-rx->sqmed)*0.002f;
+      /* ssb */
+      /* complex to phase */
+      abs0.Re = (float)fabs(u.Re);
+      abs0.Im = (float)fabs(u.Im);
+      if (abs0.Im>abs0.Re) {
+         if (abs0.Im>0.0f) w = X2C_DIVR(abs0.Re,abs0.Im);
+         else w = 0.0f;
+         w = 1.5707963267949f-(w*1.055f-w*w*0.267f); /* arctan */
       }
-      /* am squelch */
-      /* am demod */
-      lev = osic_sqrt(lev); /* amplitude */
-      af = lev-rx->lastlev; /* - median aplitude */
-      rx->lastlev = rx->lastlev+af*0.001f;
-      af = (X2C_DIVR(af,rx->lastlev))*32000.0f; /* agc */
-   }
-   else {
-      /* am demod */
-      /* fm squelch */
-      if (rx->squelch) {
-         l = X2C_DIVR((float)fabs(rx->lastlev-lev),rx->lastlev+lev);
-         rx->sqmed = rx->sqmed+(l-rx->sqmed)*0.002f;
-         rx->lastlev = lev;
+      else {
+         if (abs0.Re>0.0f) w = X2C_DIVR(abs0.Im,abs0.Re);
+         else w = 0.0f;
+         w = w*1.055f-w*w*0.267f;
       }
-      /* fm squelch */
-      af = af*7.9577471545948E+3f;
+      if (u.Re<0.0f) w = 3.1415926535898f-w;
+      if (u.Im<0.0f) w = -w;
+      /* complex to phase */
+      /* phase highpass make FM */
+      af = w-rx->w1;
+      rx->w1 = w;
+      if (af>3.1415926535898f) af = af-6.2831853071796f;
+      if (af<(-3.1415926535898f)) af = af+6.2831853071796f;
+      /* phase highpass make FM */
+      if (rx->modulation=='a') {
+         /* am squelch */
+         if (rx->squelch) {
+            l = (float)fabs(rx->a1-af); /* frequency variation */
+            rx->a1 = af;
+            rx->sqmed = rx->sqmed+(l-rx->sqmed)*0.002f;
+         }
+         /* am squelch */
+         /* am demod */
+         lev = osic_sqrt(lev); /* amplitude */
+         af = lev-rx->lastlev; /* - median aplitude */
+         rx->lastlev = rx->lastlev+af*0.001f;
+         af = (X2C_DIVR(af,rx->lastlev))*32000.0f; /* agc */
+      }
+      else {
+         /* am demod */
+         /* fm squelch */
+         if (rx->squelch) {
+            l = X2C_DIVR((float)fabs(rx->lastlev-lev),rx->lastlev+lev);
+            rx->sqmed = rx->sqmed+(l-rx->sqmed)*0.002f;
+            rx->lastlev = lev;
+         }
+         /* fm squelch */
+         af = af*7.9577471545948E+3f;
+      }
    }
    if (af>32000.0f) af = 32000.0f;
    else if (af<(-3.2E+4f)) af = (-3.2E+4f);
@@ -676,6 +864,8 @@ static short getsamp(sdr_pRX rx)
 extern long sdr_getsdr(unsigned long samps, sdr_pRX rx[],
                 unsigned long rx_len)
 {
+   unsigned long wssb;
+   unsigned long ws;
    unsigned long bs;
    unsigned long as;
    unsigned long b;
@@ -684,6 +874,13 @@ extern long sdr_getsdr(unsigned long samps, sdr_pRX rx[],
    unsigned long s;
    long u;
    struct sdr_RX * anonym;
+   /*
+             IF (firwidth>0) & (oldwidth<>firwidth)
+                THEN   (* check for new FIR table *)
+               genfirtab(iftab, FLOAT(firwidth)/FLOAT(audiohz)); 
+               oldwidth:=firwidth;
+             END;
+   */
    unsigned long tmp;
    if (reconnect && fd<0L) {
       Usleep(1000000UL);
@@ -710,50 +907,56 @@ extern long sdr_getsdr(unsigned long samps, sdr_pRX rx[],
          while (rx[r]) {
             { /* with */
                struct sdr_RX * anonym = rx[r];
-               switch (anonym->width) {
-               case 256UL:
-                  iir256(rx[r], as, bs);
-                  break;
-               case 128UL:
-                  iir128(rx[r], as, bs);
-                  break;
-               case 64UL:
-                  iir64(rx[r], as, bs);
-                  break;
-               case 32UL:
-                  iir32(rx[r], as, bs);
-                  break;
-               case 16UL:
-                  iir16(rx[r], as, bs);
-                  break;
-               case 8UL:
-                  iir8(rx[r], as, bs);
-                  break;
-               default:;
-                  iirvar(rx[r], as, bs,
-                (float)anonym->width*6.7934782608696E-7f);
-                  break;
-               } /* end switch */
+               ws = anonym->width;
+               if (anonym->modulation=='s') {
+                  wssb = (anonym->width*5UL)/4UL;
+                  ws = 3000UL;
+                  while (ws<wssb) ws = ws*2UL;
+                  /*WrInt(ws, 0);WrStrLn(" ws"); */
+                  anonym->ssbfg = X2C_DIVR((float)anonym->width,
+                (float)audiohz);
+                  anonym->ssbfgq = anonym->ssbfg*anonym->ssbfg*2.0f;
+                  anonym->bfo = ((unsigned long)labs(anonym->maxafc)*2048UL)
+                /audiohz;
+                  if (anonym->maxafc>0L) anonym->bfo = 2048UL-anonym->bfo;
+                  /*WrInt(bfo, 0);WrStrLn(" bfo"); */
+                  anonym->fine = (anonym->dffrac*2048UL)/audiohz;
+                  if (anonym->agc>0UL) {
+                     anonym->agcspeed = X2C_DIVR(0.2f,(float)anonym->agc);
+                  }
+                  else anonym->agcspeed = 0.00025f;
+               }
+               else {
+                  anonym->fine = 0UL;
+                  anonym->agcspeed = 0.001f;
+               }
+               if (rtlhz<2048000UL) ws = ws*2UL;
+               if (ws==3000UL) iir512(rx[r], as, bs);
+               else if (ws==6000UL) iir256(rx[r], as, bs);
+               else if (ws==12000UL) iir128(rx[r], as, bs);
+               else if (ws==24000UL) iir64(rx[r], as, bs);
+               else if (ws==48000UL) iir32(rx[r], as, bs);
+               else if (ws==96000UL) iir16(rx[r], as, bs);
+               else if (ws==192000UL) iir8(rx[r], as, bs);
+               else iirvar(rx[r], as, bs, (float)ws*6.7934782608696E-7f);
                u = (long)getsamp(rx[r]);
                anonym->samples[s] = (short)u;
                /* AFC */
-               if (!anonym->am && anonym->maxafc>0UL) {
+               if (anonym->modulation=='f' && anonym->maxafc>0L) {
                   anonym->median = (anonym->median+u)-(anonym->afckhz*1024L)
-                /(long)anonym->maxafc;
+                /anonym->maxafc;
                   if (anonym->median>400000000L) {
-                     if (anonym->afckhz<(long)anonym->maxafc) {
-                        ++anonym->afckhz;
-                     }
+                     if (anonym->afckhz<anonym->maxafc) ++anonym->afckhz;
                      anonym->median = 0L;
                   }
                   else if (anonym->median<-400000000L) {
-                     if (anonym->afckhz>-(long)anonym->maxafc) {
-                        --anonym->afckhz;
-                     }
+                     if (anonym->afckhz>-anonym->maxafc) --anonym->afckhz;
                      anonym->median = 0L;
                   }
                }
-               else anonym->afckhz = 0L;
+               else {
+                  anonym->afckhz = 0L;
+               }
             }
             /* AFC */
             ++r;
@@ -798,6 +1001,7 @@ extern char sdr_startsdr(char ip[], unsigned long ip_len, char tport[],
    if (fd>=0L) {
       sdr_setparm(2UL, rtlhz);
       initdds(inhz/1000UL);
+      initssbdds(SSBDDS, 2048ul);
    }
    return fd>=0L;
 } /* end startsdr() */

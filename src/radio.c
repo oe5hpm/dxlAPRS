@@ -326,8 +326,8 @@ extern int main(int argc, char **argv)
    { /* with */
       struct sdr_RX * anonym = &rxx;
       anonym->df = 100UL;
-      anonym->maxafc = afc;
-      anonym->width = 8UL;
+      anonym->maxafc = (long)afc;
+      anonym->width = 192000UL;
       anonym->samples = (sdr_pAUDIOSAMPLE)sampx;
    }
    if (sdr_startsdr(url, 1001ul, port, 1001ul, 2048000UL, 192000UL, 1)) {

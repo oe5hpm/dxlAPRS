@@ -32,9 +32,11 @@ struct FREQTAB;
 
 struct FREQTAB {
    unsigned long khz;
-   unsigned long afc;
+   unsigned long hz;
    unsigned long width;
-   char am;
+   unsigned long agc;
+   long afc;
+   char modulation;
 };
 
 struct STICKPARM;
@@ -103,7 +105,7 @@ static char reconn;
 
 static char pcm8;
 
-static float offset;
+static double offset;
 
 
 static void Error(char text[], unsigned long text_len)
@@ -130,21 +132,23 @@ static void card(const char s[], unsigned long s_len, unsigned long * p,
 
 
 static void int0(const char s[], unsigned long s_len, unsigned long * p,
-                unsigned long * n, char * ok0)
+                long * n, char * ok0)
 {
    char sgn;
+   unsigned long c;
    if (s[*p]=='-') {
       sgn = 1;
       ++*p;
    }
    else sgn = 0;
-   card(s, s_len, p, n, ok0);
-   if (sgn) *n = (unsigned long) -(long)*n;
+   card(s, s_len, p, &c, ok0);
+   if (sgn) *n = -(long)c;
+   else *n = (long)c;
 } /* end int() */
 
 
 static void fix(const char s[], unsigned long s_len, unsigned long * p,
-                float * x, char * ok0)
+                double * x, char * ok0)
 {
    float m;
    char sgn;
@@ -155,15 +159,17 @@ static void fix(const char s[], unsigned long s_len, unsigned long * p,
    else sgn = 0;
    m = 1.0f;
    *ok0 = 0;
-   *x = 0.0f;
+   *x = 0.0;
    while ((unsigned char)s[*p]>='0' && (unsigned char)
                 s[*p]<='9' || s[*p]=='.') {
       if (s[*p]=='.') m = 0.1f;
       else if (m==1.0f) {
-         *x =  *x*10.0f+(float)((unsigned long)(unsigned char)s[*p]-48UL);
+         *x =  *x*10.0+(double)(float)((unsigned long)(unsigned char)
+                s[*p]-48UL);
       }
       else {
-         *x = *x+(float)((unsigned long)(unsigned char)s[*p]-48UL)*m;
+         *x = *x+(double)((float)((unsigned long)(unsigned char)s[*p]-48UL)
+                *m);
          m = m*0.1f;
       }
       *ok0 = 1;
@@ -190,7 +196,7 @@ static void Parms(void)
    soundfn[0] = 0;
    iqrate = 2048000UL;
    samphz = 16000UL;
-   offset = 0.0f;
+   offset = 0.0;
    strncpy(parmfn,"sdrcfg.txt",1001u);
    for (;;) {
       osi_NextArg(s, 1001ul);
@@ -213,7 +219,7 @@ static void Parms(void)
             if (!ok0) Error(" -o <MHz>", 10ul);
          }
          else if (s[1U]=='d') {
-            /* sampelrate */
+            /* sampelrate to output divide */
             osi_NextArg(s, 1001ul);
             if (!aprsstr_StrToCard(s, 1001ul, &downsamp) || downsamp<1UL) {
                Error(" -p <ratio>", 12ul);
@@ -221,7 +227,7 @@ static void Parms(void)
             --downsamp;
          }
          else if (s[1U]=='m') {
-            /* sampelrate */
+            /* downmix to */
             osi_NextArg(s, 1001ul);
             if ((!aprsstr_StrToCard(s, 1001ul,
                 &mixto) || mixto<1UL) || mixto>2UL) {
@@ -303,18 +309,29 @@ be modified any time)", 71ul);
                osi_WrStrLn("  # comment", 12ul);
                osi_WrStrLn("  p <cmd> <value>  rtl_tcp parameter like \'p 5 5\
 0\' ppm, \'p 8 1\' autogain", 73ul);
-               osi_WrStrLn("  f <mhz> <afc-range> <squelch%> <lowpass%> <if-w\
-idth>  FM Demodulator", 71ul);
+               osi_WrStrLn("  f <mhz> <AFC-range> <squelch%> <lowpass%>  <if-\
+width>  FM Demodulator", 72ul);
+               osi_WrStrLn("  a <mhz>  0           0         <lowpass%>  <if-\
+width>  AM Demodulator", 72ul);
+               osi_WrStrLn("  u <mhz> <if-shift>   0         <agc speed> <if-\
+width>  USB Demodulator", 73ul);
+               osi_WrStrLn("  l same for LSB", 17ul);
                osi_WrStrLn("    AFC-range in +-kHz, Squelch 0 off, 100 open, \
 95 near open", 62ul);
                osi_WrStrLn("    audio lowpass in % Nyquist frequ. of output s\
 ampelrate, 0 is off", 69ul);
-               osi_WrStrLn("    IF-width 1=6kHz 2=12kHz 3=24kHz .. 6=192kHz (\
-6 only with 2048kHz input sample)", 83ul);
-               osi_WrStrLn("    or width in Hz (with more CPU-load) (2 defaul\
-t)", 52ul);
+               osi_WrStrLn("    IF-width 3000 6000 12000 24000 48000 96000 19\
+2000Hz for low CPU usage", 74ul);
+               osi_WrStrLn("    (192000 only with 2048khz iq-rate), (4th orde\
+r IIR) SSB always low CPU", 75ul);
+               osi_WrStrLn("    (+ 8th order IF-IIR), other values with more \
+CPU-load (6000 default)", 73ul);
                osi_WrStrLn("  a <mhz> 0 <squelch> <lowpass%> <if-width>   AM \
 Demodulator", 61ul);
+               osi_WrStrLn("  u <mhz> 0 0 <lowpass%> <if-width>           USB\
+ Demodulator", 62ul);
+               osi_WrStrLn("  l <mhz> 0 0 <lowpass%> <if-width>           LSB\
+ Demodulator", 62ul);
                osi_WrStrLn("", 1ul);
                osi_WrStrLn("  example:", 11ul);
                osi_WrStrLn("    p 5 50", 11ul);
@@ -427,14 +444,13 @@ static void centerfreq(const struct FREQTAB freq[], unsigned long freq_len)
       while (i<freqc) {
          prx[i] = &rxx[i];
          rxx[i].df = freq[i].khz-midfreq;
+         rxx[i].dffrac = freq[i].hz;
          rxx[i].maxafc = freq[i].afc;
+         /*WrInt(rxx[i].maxafc, 0); WrStrLn(" maxafc"); */
          rxx[i].squelch = squelchs[i].lev!=0.0f;
-         if (freq[i].width>=1000UL) {
-            rxx[i].width = (unsigned long)X2C_TRUNCC(X2C_DIVR((float)
-                freq[i].width*(float)iqrate,2.048E+6f),0UL,X2C_max_longcard);
-         }
-         else rxx[i].width = (freq[i].width*iqrate)/2048000UL;
-         rxx[i].am = freq[i].am;
+         rxx[i].width = freq[i].width;
+         rxx[i].agc = freq[i].agc;
+         rxx[i].modulation = freq[i].modulation;
          ++i;
       }
       prx[i] = 0;
@@ -463,14 +479,15 @@ static void rdconfig(void)
    unsigned long sq;
    unsigned long p;
    unsigned long lino;
-   unsigned long m;
    unsigned long n;
    unsigned long i;
-   float x;
+   long m;
+   double x;
    char ok0;
    char b[10001];
    char li[256];
    struct FREQTAB freq[32];
+   char mo;
    fd0 = osi_OpenRead(parmfn, 1001ul);
    if (fd0>=0L) {
       len = osi_RdBin(fd0, (char *)b, 10001u/1u, 10001UL);
@@ -492,7 +509,8 @@ static void rdconfig(void)
             li[i] = 0;
             i = 0UL;
             skip(li, 256ul, &i);
-            if (X2C_CAP(li[i])=='P') {
+            mo = X2C_CAP(li[i]);
+            if (mo=='P') {
                ++i;
                skip(li, 256ul, &i);
                card(li, 256ul, &i, &n, &ok0);
@@ -503,19 +521,25 @@ static void rdconfig(void)
                   skip(li, 256ul, &i);
                   int0(li, 256ul, &i, &m, &ok0);
                   if (!ok0) osi_WerrLn("wrong value", 12ul);
-                  else setstickparm(n, m);
+                  else setstickparm(n, (unsigned long)m);
                }
                i = 0UL;
             }
-            else if (X2C_CAP(li[i])=='F' || X2C_CAP(li[i])=='A') {
-               freq[freqc].am = X2C_CAP(li[i])=='A';
+            else if (((mo=='F' || mo=='A') || mo=='U') || mo=='L') {
+               if (mo=='A') freq[freqc].modulation = 'a';
+               else if (mo=='F') freq[freqc].modulation = 'f';
+               else if (mo=='U') freq[freqc].modulation = 's';
+               else if (mo=='L') freq[freqc].modulation = 's';
+               else freq[freqc].modulation = 'f';
                ++i;
                skip(li, 256ul, &i);
                fix(li, 256ul, &i, &x, &ok0);
                if (!ok0) osi_WerrLn("wrong value", 12ul);
                skip(li, 256ul, &i);
-               card(li, 256ul, &i, &m, &ok0);
-               if (!ok0) m = 0UL;
+               int0(li, 256ul, &i, &m, &ok0);
+               if (!ok0) m = 0L;
+               if (mo=='U') m += 1500L;
+               else if (mo=='L') m -= 1500L;
                skip(li, 256ul, &i);
                card(li, 256ul, &i, &sq, &ok0);
                if (!ok0) sq = 0UL;
@@ -524,49 +548,34 @@ static void rdconfig(void)
                if (!ok0) lpp = 0UL;
                skip(li, 256ul, &i);
                card(li, 256ul, &i, &wid, &ok0);
-               if (!ok0) wid = 2UL;
+               if (!ok0) {
+                  if (freq[freqc].modulation=='s') wid = 2800UL;
+                  else if (freq[freqc].modulation=='a') wid = 6000UL;
+                  else wid = 12000UL;
+               }
                if (freqc>31UL) osi_WerrLn("freq table full", 16ul);
                else {
                   x = x+offset;
-                  if (x<=0.0f || x>=2.147483E+6f) {
+                  if (x<=0.0 || x>=2.147483E+6) {
                      osi_WerrLn("freq out of range", 18ul);
-                     x = 0.0f;
+                     x = 0.0;
                   }
-                  freq[freqc].khz = (unsigned long)X2C_TRUNCC(x*1000.0f+0.5f,
-                0UL,X2C_max_longcard);
+                  x = x*1.E+6+(double)m;
+                  freq[freqc].khz = (unsigned long)X2C_TRUNCC(x,0UL,
+                X2C_max_longcard);
+                  freq[freqc].hz = freq[freqc].khz%1000UL;
+                  freq[freqc].khz = freq[freqc].khz/1000UL;
                   freq[freqc].afc = m;
-                  switch (wid) {
-                  case 0UL:
-                     wid = 128UL;
-                     break;
-                  case 1UL:
-                     wid = 256UL;
-                     break;
-                  case 2UL:
-                     wid = 128UL;
-                     break;
-                  case 3UL:
-                     wid = 64UL;
-                     break;
-                  case 4UL:
-                     wid = 32UL;
-                     break;
-                  case 5UL:
-                     wid = 16UL;
-                     break;
-                  case 6UL:
-                     wid = 8UL;
-                     break;
-                  } /* end switch */
-                  /* else real width in hz */
                   freq[freqc].width = wid;
+                  freq[freqc].agc = lpp;
                   squelchs[freqc].lev = X2C_DIVR((float)sq,200.0f);
-                  squelchs[freqc].lp = X2C_DIVR((float)lpp,200.0f);
+                  if (freq[freqc].modulation=='s') squelchs[freqc].lp = 0.0f;
+                  else squelchs[freqc].lp = X2C_DIVR((float)lpp,200.0f);
                   ++freqc;
                }
                i = 0UL;
             }
-            else if (li[i]=='#') i = 0UL;
+            else if (mo=='#' || mo==' ') i = 0UL;
             else osi_WerrLn("unkown command", 15ul);
             ++lino;
          }
@@ -594,7 +603,7 @@ static void showrssi(void)
          aprsstr_FixToStr(rxx[i].sqmed, 3UL, s, 31ul);
          osi_Werr(s, 31ul);
       }
-      if (!rxx[i].am) {
+      if (rxx[i].modulation=='f') {
          osi_Werr(" ", 2ul);
          aprsstr_IntToStr(rxx[i].afckhz, 0UL, s, 31ul);
          osi_Werr(s, 31ul);
@@ -651,7 +660,7 @@ static void sendaudio(long pcm0, char pcm80, char chan0)
          if (verb) showrssi();
          tshow = 0UL;
       }
-      else ++tshow;
+      else tshow += (unsigned long)pcm80+1UL;
    }
 } /* end sendaudio() */
 
