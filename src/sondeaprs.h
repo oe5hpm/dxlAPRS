@@ -15,7 +15,7 @@
 
 typedef unsigned long sondeaprs_TIME;
 
-#define sondeaprs_VERSION "sondemod(c) 0.5"
+#define sondeaprs_VERSION "sondemod(c) 0.6"
 
 extern void sondeaprs_senddata(double, double, double, double, double,
                 double, double, double, double, double, double, double,

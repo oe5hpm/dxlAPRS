@@ -894,8 +894,8 @@ static void Parms(void)
          else if (h[1U]=='v') verb = 1;
          else {
             if (h[1U]=='h') {
-               osi_WrStrLn("oss Mono/Stereo RS92-SGPA and SRSC34 Sonde Demodu\
-lator to raw Frames", 69ul);
+               osi_WrStrLn("oss Mono/Stereo up to 32 Channel RS92, RS41, SRSC\
+34 Sonde Demodulator to raw Frames", 84ul);
                osi_WrStrLn("sent via UDP to \'sondemod\' decoder, more demodu\
 lators may send to same decoder", 79ul);
                osi_WrStrLn("Stereo used for 2 Rx for 2 Sondes or 1 Sonde with\
@@ -2573,7 +2573,7 @@ static void getadc(void)
          adcbufrd = 0UL;
          l = osi_RdBin(soundfd, (char *)adcbuf, 8192u/1u, adcbuflen*2UL);
          adcbufsamps = 0UL;
-         if (l<=0L) {
+         if (l<0L) {
             if (abortonsounderr) Error("Sounddevice Failure", 20ul);
             else {
                osic_Close(soundfd);
