@@ -176,7 +176,8 @@ OBJS = \
 # ------------------- target make rules -------------------
 #                     -----------------
 %.o: %.c
-	$(CC) $(CDEFS) $(CFLAGS) -o $@ $<
+	@echo [compiling] $@
+	@$(CC) $(CDEFS) $(CFLAGS) -o $@ $<
 
 all: $(TARGETS)
 
