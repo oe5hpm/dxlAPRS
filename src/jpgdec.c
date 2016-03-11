@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include "jpeglib.h"
 #include <setjmp.h>
+#include <string.h>
 
 struct my_error_mgr {
   struct jpeg_error_mgr pub;    /* "public" fields */

@@ -7,6 +7,8 @@
 #ifndef X2C_H_
 #define X2C_H_
 
+#include <ctype.h>
+#include <unistd.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -32,6 +34,7 @@
 #define X2C_max_longdouble		((X2C_LONGDOUBLE)LDBL_MAX)
 #define X2C_min_longdouble		(-((X2C_LONGDOUBLE)LDBL_MAX))
 
+#define X2C_ASSERT(x)			assert(x)
 #define X2C_TRAP(x)			assert(0)
 #define X2C_CASE_TRAP			0
 

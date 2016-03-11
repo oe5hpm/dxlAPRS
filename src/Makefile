@@ -36,8 +36,13 @@ export HOSTARCH
 CC			= $(CROSS_COMPILE)gcc
 STRIP		= $(CROSS_COMPILE)strip
 INCL		= .
-#CDEFS		= -Wall -Wno-unused-variable -Wno-parentheses -Wno-pointer-sign -Wno-format -Wno-unused-but-set-variable -Wno-maybe-uninitialized -Wno-return-type
-CDEFS		= -w
+CDEFS		= -Wall \
+			  -Wno-unused-variable -Wno-parentheses -Wno-pointer-sign \
+			  -Wno-format -Wno-unused-but-set-variable -Wno-return-type \
+			  -Wno-char-subscripts -Wno-unused-result -Wno-uninitialized \
+			  -Wno-strict-overflow
+			  -Werror=implicit-function-declaration
+#CDEFS		= -w
 CFLAGS		= -I$(INCL) -c -O2 -fdata-sections -ffunction-sections
 LFLAGS		= -Wl,--gc-sections
 # ---------------------- armv6 (raspberry pi 1) specific -----------------------

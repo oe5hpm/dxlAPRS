@@ -6,7 +6,7 @@
  * SPDX-License-Identifier:	GPL-2.0+
  */
 #include <linux/soundcard.h>
-
+#include <sys/ioctl.h>
 
 int samplesize(int fd, int bits)
 {

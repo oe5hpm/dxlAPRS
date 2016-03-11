@@ -8,6 +8,7 @@
 #include <sys/ioctl.h>
 #include <linux/kd.h>
 #include <fcntl.h>
+#include <unistd.h>
 
 int cbell(int hz, int ms)
 {

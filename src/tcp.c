@@ -9,11 +9,13 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <arpa/inet.h>
+#include <string.h>
 #include <stdlib.h>
 #include <fcntl.h>
 #include <netdb.h>
 #include <errno.h>
 #include <sys/ioctl.h>
+#include <unistd.h>
 #include <netinet/tcp.h>
 
 //--------------------
@@ -117,9 +119,10 @@ int connectto(char *url, char *port)
     close(sockfd);
   }
   freeaddrinfo(res);
-  if (rp = NULL) return -1;
+  if (rp == NULL)
+	return -1;
 
-  return sockfd;  
+  return sockfd;
 }
 
 //--------------------
@@ -152,7 +155,7 @@ int acceptconnect(int fd, char *addr, int *len)
   return accept(fd, (struct sockaddr *)addr, len);
 }
 
-ipnum2str(const struct sockaddr *sa, char *s, size_t maxlen)
+void ipnum2str(const struct sockaddr *sa, char *s, size_t maxlen)
 {
     switch(sa->sa_family) {
         case AF_INET:
@@ -170,7 +173,7 @@ ipnum2str(const struct sockaddr *sa, char *s, size_t maxlen)
 
 //---------------------
 
-ipnumport2str(const struct sockaddr *sa, socklen_t salen, char *ip, size_t maxiplen, char *port, size_t maxportlen)
+void ipnumport2str(const struct sockaddr *sa, socklen_t salen, char *ip, size_t maxiplen, char *port, size_t maxportlen)
 {
   getnameinfo(sa, salen, ip, maxiplen, port, maxportlen, NI_NUMERICHOST|NI_NUMERICSERV);
 }
@@ -226,7 +229,7 @@ int getunack(int fd)
 
 //--------------------
 
-stoptxrx(int fd, int how)
+void stoptxrx(int fd, int how)
 // how 0 rx, 1 tx, 2 rxtx
 {
   shutdown(fd, how);

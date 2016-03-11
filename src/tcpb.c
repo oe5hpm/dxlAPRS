@@ -9,11 +9,13 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <arpa/inet.h>
+#include <string.h>
 #include <stdlib.h>
 #include <fcntl.h>
 #include <netdb.h>
 #include <errno.h>
 #include <sys/ioctl.h>
+#include <unistd.h>
 #include <netinet/tcp.h>
 
 //--------------------
