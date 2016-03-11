@@ -13,7 +13,9 @@
 #include "aprsstr.h"
 #endif
 #define aprsstr_C_
+#ifndef osi_H_
 #include "osi.h"
+#endif
 
 /* string lib by oe5dxl */
 /*FROM osi IMPORT WrInt, WrStrLn; */
@@ -1165,6 +1167,7 @@ extern void aprsstr_BEGIN(void)
    aprsstr_init = 1;
    if (sizeof(unsigned char)!=1) X2C_ASSERT(0);
    if (sizeof(aprsstr_GHOSTSET)!=36) X2C_ASSERT(0);
+   osi_BEGIN();
    Gencrctab();
 }
 
