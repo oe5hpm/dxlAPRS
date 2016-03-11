@@ -25,7 +25,5 @@ extern char issetw(unsigned long);
 
 extern long selectrwt(unsigned long *, unsigned long *);
 
-extern void Usleep(unsigned long);
-
 
 #endif /* Select_H_ */

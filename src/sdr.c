@@ -17,6 +17,9 @@
 #include "osi.h"
 #endif
 #include <osic.h>
+#ifndef mlib_H_
+#include "mlib.h"
+#endif
 #ifndef tcp_H_
 #include "tcp.h"
 #endif
@@ -25,9 +28,6 @@
 #endif
 #ifndef aprsstr_H_
 #include "aprsstr.h"
-#endif
-#ifndef Select_H_
-#include "Select.h"
 #endif
 
 
@@ -784,18 +784,18 @@ static short getsamp(sdr_pRX rx)
    /* fine shift rest of full 1khz */
    /* additional IF fir */
    if (rx->modulation=='s') {
+      /* ssb */
+      /* additional IF fir */
       ssbiir(&rx->ssbre, rx->ssbfg, rx->ssbfgq, &u.Re);
       ssbiir(&rx->ssbim, rx->ssbfg, rx->ssbfgq, &u.Im);
-   }
-   /* additional IF fir */
-   /* rssi */
-   lev = 1.0f+u.Re*u.Re+u.Im*u.Im;
-   l = lev-rx->rssi;
-   if (l>=0.0f) l = l*0.1f;
-   else l = l*rx->agcspeed;
-   rx->rssi = rx->rssi+l;
-   /* rssi */
-   if (rx->modulation=='s') {
+      /* additional IF fir */
+      /* rssi */
+      lev = 1.0f+u.Re*u.Re+u.Im*u.Im;
+      l = lev-rx->rssi;
+      if (l>=0.0f) l = l*0.1f;
+      else l = l*rx->agcspeed;
+      rx->rssi = rx->rssi+l;
+      /* rssi */
       /* ssb */
       rx->bfophase = (unsigned long)((unsigned long)(rx->bfophase+rx->bfo)
                 &0x7FFUL);
@@ -805,6 +805,12 @@ static short getsamp(sdr_pRX rx)
    }
    else {
       /* ssb */
+      /* AM FM */
+      /* rssi */
+      lev = 1.0f+u.Re*u.Re+u.Im*u.Im;
+      l = lev-rx->rssi;
+      rx->rssi = rx->rssi+l*0.001f;
+      /* rssi */
       /* complex to phase */
       abs0.Re = (float)fabs(u.Re);
       abs0.Im = (float)fabs(u.Im);
@@ -883,7 +889,7 @@ extern long sdr_getsdr(unsigned long samps, sdr_pRX rx[],
    */
    unsigned long tmp;
    if (reconnect && fd<0L) {
-      Usleep(1000000UL);
+      usleep(1000000UL);
       fd = connecttob(url, port);
    }
    if (fd>=0L) {

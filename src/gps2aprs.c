@@ -31,17 +31,6 @@
 #endif
 
 /* read serial gps and make axudp aprs frames */
-/*
-FROM osi IMPORT WrLn, WrStr, WrStrLn, WrFixed, OpenRW, OpenRead, RdBin,
-                Close, ln;
-FROM Select IMPORT fdclr, fdsetr, issetr, selectr;
-FROM mlib IMPORT usleep, termios, tcgetattr, tcsetattr,
-                 CS8, CLOCAL, CREAD, TCSAFLUSH,
-                 B1200, B2400, B4800, B9600, B19200, B38400,
-                 B57600, B115200, B230400, B460800;
-FROM Lib IMPORT NextArg;
-FROM aprsstr IMPORT IPNUM, Append, mon2raw, Length, DateToStr, Assign;
-*/
 #define gps2aprs_DEFTTY "/dev/ttyS0"
 
 #define gps2aprs_CR "\015"

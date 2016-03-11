@@ -20,14 +20,14 @@
 #include "osi.h"
 #endif
 #include <osic.h>
+#ifndef mlib_H_
+#include "mlib.h"
+#endif
 #ifndef tcp_H_
 #include "tcp.h"
 #endif
 #ifndef udp_H_
 #include "udp.h"
-#endif
-#ifndef mlib_H_
-#include "mlib.h"
 #endif
 #ifndef Select_H_
 #include "Select.h"

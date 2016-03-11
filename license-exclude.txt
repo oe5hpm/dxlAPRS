@@ -43,4 +43,10 @@ keysym.h
 keysymdef.h
 osic.c
 osic.h
+udp.c
+tcp.c
+tcpb.c
+soundctl.c
+beep.c
+jpgdec.c
 

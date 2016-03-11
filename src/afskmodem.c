@@ -24,14 +24,11 @@
 #include "osi.h"
 #endif
 #include <osic.h>
-#ifndef aprsstr_H_
-#include "aprsstr.h"
-#endif
 #ifndef mlib_H_
 #include "mlib.h"
 #endif
-#ifndef Select_H_
-#include "Select.h"
+#ifndef aprsstr_H_
+#include "aprsstr.h"
 #endif
 #include <unistd.h>
 #ifndef afskmodemptt_H_
@@ -375,10 +372,8 @@ static void initdfir(DFIRTAB dfirtab, unsigned long fg)
      END;
    */
    Hamming(t, 512ul);
-   for (i0 = 0UL; i0<=511UL; i0++) {
-      t[i0] = t[i0]*(0.54f+0.46f*osic_cos(3.1415926535898f*(X2C_DIVR((float)
-                i0,512.0f))));
-   } /* end for */
+   /*  FOR i:=0 TO HIGH(t) DO t[i]:=t[i]*(0.54+0.46*cos(pi*(FLOAT(i)
+                /FLOAT(1+HIGH(t))))) END; */
    for (i0 = 0UL; i0<=511UL; i0++) {
       dfirtab[511UL+i0] = t[i0];
       dfirtab[511UL-i0] = t[i0];
@@ -2264,7 +2259,7 @@ static void repairsound(void)
    ptt(chan[afskmodem_RIGHT].hptt, -1L);
    if (abortonsounderr) Error("Sounddevice Failure", 20ul);
    osic_Close(soundfd);
-   Usleep(100000UL);
+   usleep(100000UL);
    /*WrStrLn("openA"); */
    OpenSound();
 } /* end repairsound() */

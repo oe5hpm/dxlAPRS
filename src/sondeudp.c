@@ -23,11 +23,11 @@
 #include "osi.h"
 #endif
 #include <osic.h>
+#ifndef mlib_H_
+#include "mlib.h"
+#endif
 #ifndef aprsstr_H_
 #include "aprsstr.h"
-#endif
-#ifndef Select_H_
-#include "Select.h"
 #endif
 
 /* demodulate RS92 sonde (2400bit/s manchester)
@@ -40,6 +40,9 @@
 /*FROM TimeConv IMPORT time; */
 /*FROM math IMPORT cos,sin,atan,tan,pow,sqrt; */
 #define sondeudp_MAXCHAN 32
+
+#define sondeudp_CONTEXTLIFE 3600
+/* seconds till forget context after last heared */
 
 #define sondeudp_ADCBYTES 2
 
@@ -182,6 +185,7 @@ struct DFM6 {
    unsigned long timediff;
    unsigned long actdate;
    unsigned long lastdate;
+   unsigned long tused;
    unsigned long idnum;
    unsigned long num;
    unsigned long numcnt;
@@ -257,6 +261,7 @@ struct C34 {
    unsigned long txbaud;
    unsigned long dcdclock;
    float hipasscap;
+   unsigned long tused;
 };
 
 struct CHAN;
@@ -1850,6 +1855,7 @@ static void decodesub(const char b[], unsigned long b_len, unsigned long m,
          }
          chan[m].dfm6.numcnt = 0UL;
       }
+      chan[m].dfm6.tused = osic_time();
       ok0 = 1;
       break;
    case 2UL:
@@ -1995,6 +2001,7 @@ static void decodeframe6(unsigned long m)
       deinterleave(anonym->rxbuf, 264ul, 0UL, 7UL, anonym->ch, 56ul);
       deinterleave(anonym->rxbuf, 264ul, 56UL, 13UL, anonym->dh1, 104ul);
       deinterleave(anonym->rxbuf, 264ul, 160UL, 13UL, anonym->dh2, 104ul);
+      if (anonym->tused+3600UL<osic_time()) anonym->id[0U] = 0;
       if (verb) {
          if (maxchannels>0UL) {
             osic_WrINT32(m+1UL, 1UL);
@@ -2216,6 +2223,7 @@ static void demodframe34(unsigned long channel)
                 anonym->rxbuf[7U] && sum2==(unsigned long)(unsigned char)
                 anonym->rxbuf[8U];
       good = 0;
+      if (anonym->tused+3600UL<osic_time()) anonym->id[0U] = 0;
       if (verb) {
          if (maxchannels>0UL) {
             osic_WrINT32(channel+1UL, 1UL);
@@ -2393,6 +2401,7 @@ static void demodframe34(unsigned long channel)
                anonym->idtime = osic_time();
             }
             good = 1;
+            anonym->tused = osic_time();
             break;
          default:;
             if (verb) osi_WrStr("????", 5ul);
@@ -2577,7 +2586,7 @@ static void getadc(void)
             if (abortonsounderr) Error("Sounddevice Failure", 20ul);
             else {
                osic_Close(soundfd);
-               Usleep(100000UL);
+               usleep(100000UL);
                OpenSound();
                return;
             }

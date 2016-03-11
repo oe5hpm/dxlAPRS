@@ -18,8 +18,12 @@
 #ifndef udp_H_
 #include "udp.h"
 #endif
+#ifndef mlib_H_
+#include "mlib.h"
+#endif
 #include <osic.h>
 
+/* os interface */
 typedef long osi_File;
 
 typedef long osi_SOCKET;
@@ -87,6 +91,8 @@ typedef long osi_SOCKET;
 #define osi_WrInt osic_WrINT32
 
 #define osi_Flush osic_flush
+
+#define osi_usleep usleep
 
 #define osi_readsock readsock
 

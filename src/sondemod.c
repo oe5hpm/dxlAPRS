@@ -24,11 +24,11 @@
 #include "osi.h"
 #endif
 #include <osic.h>
+#ifndef mlib_H_
+#include "mlib.h"
+#endif
 #ifndef aprsstr_H_
 #include "aprsstr.h"
-#endif
-#ifndef Select_H_
-#include "Select.h"
 #endif
 #ifndef gpspos_H_
 #include "gpspos.h"
@@ -38,14 +38,17 @@
 #endif
 
 /* decode RS92, RS41, SRS-C34 and DFM06 Radiosonde by OE5DXL */
-/*FROM Storage IMPORT ALLOCATE; */
 /*FROM RealMath IMPORT pi, ln; */
 /*FROM math IMPORT atan, sqrt, sin, cos; */
+/*FROM Select IMPORT Usleep; */
 /*FROM Lib IMPORT NextArg; */
 /*FROM TimeConv IMPORT time; */
 /*FROM reedsolomon IMPORT decode, encode, CRC; */
 /*FROM rs IMPORT initialize_ecc, encode_data; */
 /*IMPORT IO; */
+#define sondemod_CONTEXTLIFE 3600
+/* seconds till forget context after last heared */
+
 #define sondemod_DAYSEC 86400
 
 #define sondemod_GPSTIMECORR 15
@@ -1309,6 +1312,7 @@ static void decodeframe(unsigned char m, unsigned long ip,
    }
    p = 6UL;
    crdone = 1;
+   contextr9.posok = 0;
    contextr9.ozontemp = 0.0;
    contextr9.ozon = 0.0;
    mhz = 0.0f;
@@ -1338,12 +1342,9 @@ static void decodeframe(unsigned char m, unsigned long ip,
             crdone = 0;
          }
       }
-      else if (typ=='\377') {
-         /*IF verb THEN WrStr("end ") END;*/
-         break;
-      }
+      else if (typ=='\377') break;
       else {
-         osi_WrStr("end  ", 6ul);
+         osi_WrStr("R92 end ", 9ul);
          if (sondeaprs_verb) {
             osic_WrHex((unsigned long)(unsigned char)typ, 4UL);
             crdone = 0;
@@ -1352,9 +1353,17 @@ static void decodeframe(unsigned char m, unsigned long ip,
       }
       ++p;
       len = (unsigned long)(unsigned char)b[p]*2UL+2UL; /* +crc */
+      if (len>=240UL) {
+         if (sondeaprs_verb) {
+            osi_WrStr("RS92 Frame too long ", 21ul);
+            osic_WrINT32(len, 1UL);
+            crdone = 0;
+         }
+         break;
+      }
       ++p;
       j = 0UL;
-      /*WrInt(len, 3);WrStrLn("=len"); */
+      /*WrInt(len 3);WrStrLn("=len"); */
       crc = 0xFFFFU;
       while (j<len) {
          sf[j] = b[p];
@@ -1472,7 +1481,7 @@ static void decodeframe(unsigned char m, unsigned long ip,
                }
             }
          }
-         else {
+         else if (sondeaprs_verb2) {
             tmp = len-1UL;
             j = 0UL;
             if (j<=tmp) for (;; j++) {
@@ -1574,6 +1583,7 @@ static void decodec34(const char rxb[], unsigned long rxb_len,
    double exlat;
    double exlon;
    double hr;
+   pCONTEXTC34 pc1;
    pCONTEXTC34 pc;
    double stemp;
    char latok;
@@ -1631,7 +1641,20 @@ static void decodec34(const char rxb[], unsigned long rxb_len,
    osi_WrStr(nam, 9ul);
    osi_WrStr(" ", 2ul);
    pc = pcontextc;
-   while (pc && !aprsstr_StrCmp(nam, 9ul, pc->name, 9ul)) pc = pc->next;
+   /*WHILE (pc<>NIL) & NOT StrCmp(nam, pc^.name) DO pc:=pc^.next END; */
+   for (;;) {
+      if (pc==0) break;
+      if (pc->tused+3600UL<systime) {
+         /* timed out */
+         pc1 = pc;
+         pc = pc->next;
+         osic_free((X2C_ADDRESS *) &pc1, sizeof(struct CONTEXTC34));
+      }
+      else {
+         if (aprsstr_StrCmp(nam, 9ul, pc->name, 9ul)) break;
+         pc = pc->next;
+      }
+   }
    if (pc==0) {
       osic_alloc((X2C_ADDRESS *) &pc, sizeof(struct CONTEXTC34));
       if (pc==0) Error("allocate context out im memory", 31ul);
@@ -1641,6 +1664,7 @@ static void decodec34(const char rxb[], unsigned long rxb_len,
       aprsstr_Assign(pc->name, 9ul, nam, 9ul);
       if (sondeaprs_verb) osi_WrStrLn("is new ", 8ul);
    }
+   pc->tused = systime;
    val = (unsigned long)(unsigned char)cb[4U]+(unsigned long)(unsigned char)
                 cb[3U]*256UL+(unsigned long)(unsigned char)
                 cb[2U]*65536UL+(unsigned long)(unsigned char)
@@ -1833,7 +1857,7 @@ static unsigned long bits2val(const char b[], unsigned long b_len,
 
 static void jumpcheck(float p1, float p2, unsigned long * cnt)
 {
-   if (p2!=0.0f && (float)fabs(p1-p2)>1.5707963267949E-3f) *cnt = 100UL;
+   if (p2!=0.0f && (float)fabs(p1-p2)>1.5707963267949E-3f) *cnt = 30UL;
    else if (*cnt>0UL) --*cnt;
 } /* end jumpcheck() */
 
@@ -1869,7 +1893,7 @@ static void decodesub(const char b[], unsigned long b_len, pCONTEXTDFM6 pc,
          pc->tspeed = systime;
       }
       if (sondeaprs_verb) {
-         osi_WrStr(" lat: ", 7ul);
+         osi_WrStr(" Lat: ", 7ul);
          osic_WrFixed((float)(X2C_DIVL(pc->lat,1.7453292519943E-2)), 5L,
                 0UL);
          osi_WrStr(" ", 2ul);
@@ -1897,7 +1921,7 @@ static void decodesub(const char b[], unsigned long b_len, pCONTEXTDFM6 pc,
          pc->tdir = systime;
       }
       if (sondeaprs_verb) {
-         osi_WrStr(" long:", 7ul);
+         osi_WrStr(" Long:", 7ul);
          osic_WrFixed((float)(X2C_DIVL(pc->lon,1.7453292519943E-2)), 5L,
                 0UL);
          osi_WrStr(" ", 2ul);
@@ -1935,6 +1959,7 @@ static void decodedfm6(const char rxb[], unsigned long rxb_len,
 {
    unsigned long rt;
    char db[56];
+   pCONTEXTDFM6 pc1;
    pCONTEXTDFM6 pc;
    OBJNAME nam;
    char cb[10];
@@ -1987,7 +2012,20 @@ static void decodedfm6(const char rxb[], unsigned long rxb_len,
    osi_WrStr(nam, 9ul);
    osi_WrStr(" ", 2ul);
    pc = pcontextdfm6;
-   while (pc && !aprsstr_StrCmp(nam, 9ul, pc->name, 9ul)) pc = pc->next;
+   /*  WHILE (pc<>NIL) & NOT StrCmp(nam, pc^.name) DO pc:=pc^.next END; */
+   for (;;) {
+      if (pc==0) break;
+      if (pc->tused+3600UL<systime) {
+         /* timed out */
+         pc1 = pc;
+         pc = pc->next;
+         osic_free((X2C_ADDRESS *) &pc1, sizeof(struct CONTEXTDFM6));
+      }
+      else {
+         if (aprsstr_StrCmp(nam, 9ul, pc->name, 9ul)) break;
+         pc = pc->next;
+      }
+   }
    if (pc==0) {
       osic_alloc((X2C_ADDRESS *) &pc, sizeof(struct CONTEXTDFM6));
       if (pc==0) Error("allocate context out im memory", 31ul);
@@ -1999,10 +2037,11 @@ static void decodedfm6(const char rxb[], unsigned long rxb_len,
    }
    if (rt+1UL>=pc->actrt) {
       /* not an older frame */
+      pc->tused = systime;
       pc->actrt = rt;
       pc->posok = 0;
       i += 4UL;
-      for (j = 0UL; j<=7UL; j++) {
+      for (j = 0UL; j<=6UL; j++) {
          for (ib = 0UL; ib<=7UL; ib++) {
             db[ib+8UL*j] = X2C_IN(7UL-ib,8,
                 (unsigned char)(unsigned char)rxb[i]);
@@ -2010,7 +2049,7 @@ static void decodedfm6(const char rxb[], unsigned long rxb_len,
          ++i;
       } /* end for */
       decodesub(db, 56ul, pc, 0UL);
-      for (j = 0UL; j<=7UL; j++) {
+      for (j = 0UL; j<=6UL; j++) {
          for (ib = 0UL; ib<=7UL; ib++) {
             db[ib+8UL*j] = X2C_IN(7UL-ib,8,
                 (unsigned char)(unsigned char)rxb[i]);
@@ -2223,6 +2262,7 @@ static void decoders41(const char rxb[], unsigned long rxb_len,
    char calok;
    unsigned short crc;
    char typ;
+   pCONTEXTR4 pc1;
    pCONTEXTR4 pc;
    double climb;
    double dir;
@@ -2295,8 +2335,20 @@ static void decoders41(const char rxb[], unsigned long rxb_len,
          } /* end for */
          nam[8U] = 0;
          pc = pcontextr4;
-         while (pc && !aprsstr_StrCmp(nam, 9ul, pc->name, 9ul)) {
-            pc = pc->next;
+         /*        WHILE (pc<>NIL) & NOT StrCmp(nam,
+                pc^.name) DO pc:=pc^.next END; */
+         for (;;) {
+            if (pc==0) break;
+            if (pc->tused+3600UL<systime) {
+               /* timed out */
+               pc1 = pc;
+               pc = pc->next;
+               osic_free((X2C_ADDRESS *) &pc1, sizeof(struct CONTEXTR4));
+            }
+            else {
+               if (aprsstr_StrCmp(nam, 9ul, pc->name, 9ul)) break;
+               pc = pc->next;
+            }
          }
          if (pc==0) {
             osic_alloc((X2C_ADDRESS *) &pc, sizeof(struct CONTEXTR4));
@@ -2313,6 +2365,7 @@ static void decoders41(const char rxb[], unsigned long rxb_len,
             pc->framesent = 0;
             calok = 1;
             pc->framenum = frameno;
+            pc->tused = systime;
          }
          else if (pc->framenum==frameno && !pc->framesent) calok = 1;
          else if (frameno<pc->framenum && sondeaprs_verb) {
@@ -2402,7 +2455,7 @@ static void udprx(void)
    else if (len==320L) {
       decoders41(chan[sondemod_LEFT].rxbuf, 320ul, ip, fromport);
    }
-   else Usleep(50000UL);
+   else usleep(10000UL);
 } /* end udprx() */
 
 
