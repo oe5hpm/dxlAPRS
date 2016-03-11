@@ -10,7 +10,7 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
- 
+#include <time.h> 
 
 static fd_set rset, wset;
 static unsigned maxfd;
@@ -77,8 +77,24 @@ int selectrwt(long *sec, long *usec)
   return ret;
 }
 
-
+/*
 void Usleep(long microseconds)
 {
   usleep(microseconds);
 }
+*/
+/*
+unsigned Systime()
+{
+  struct timespec tv;
+  clock_gettime(CLOCK_REALTIME, &tv);
+  return tv.tv_sec;
+}
+
+unsigned monotonictime()
+{
+  struct timespec tv;
+  clock_gettime(CLOCK_MONOTONIC, &tv);
+  return tv.tv_sec;
+}
+*/
