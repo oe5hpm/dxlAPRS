@@ -38,9 +38,8 @@ STRIP		= $(CROSS_COMPILE)strip
 INCL		= .
 CDEFS		= -Wall \
 			  -Wno-unused-variable -Wno-parentheses -Wno-pointer-sign \
-			  -Wno-format -Wno-unused-but-set-variable -Wno-return-type \
-			  -Wno-char-subscripts -Wno-unused-result -Wno-uninitialized \
-			  -Wno-strict-overflow
+			  -Wno-format -Wno-return-type -Wno-char-subscripts \
+			  -Wno-uninitialized \
 			  -Werror=implicit-function-declaration
 #CDEFS		= -w
 CFLAGS		= -I$(INCL) -c -O2 -fdata-sections -ffunction-sections
