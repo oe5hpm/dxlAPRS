@@ -3,9 +3,8 @@
  *
  * Copyright (C) Christian Rabler <oe5dxl@oevsv.at>
  *
- * SPDX-License-Identifier:	GPL-2.0+
+ * SPDX-License-Identifier:     GPL-2.0+
  */
-
 #include <stdio.h>
 #include <sys/time.h>
 #include <sys/types.h>
