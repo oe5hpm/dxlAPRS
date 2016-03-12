@@ -30,18 +30,26 @@ HOSTARCH := $(shell uname -m | \
 	    -e s/sh.*/sh/)
 export HOSTARCH
 
+GCCVERSION := $(shell $(CROSS_COMPILE)gcc --version | \
+	grep gcc | sed 's/.*gcc (.*) //g' | cut -d '.' -f 1)
+
+GCCVERSION_GE4 := $(shell [ $(GCCVERSION) -ge 4 ] && echo true)
+
 .SUFFIXES:
 	MAKEFLAGS += -r
 
 CC			= $(CROSS_COMPILE)gcc
 STRIP		= $(CROSS_COMPILE)strip
 INCL		= .
+ifeq ($(GCCVERSION_GE4),true)
 CDEFS		= -Wall \
 			  -Wno-unused-variable -Wno-parentheses -Wno-pointer-sign \
 			  -Wno-format -Wno-return-type -Wno-char-subscripts \
 			  -Wno-uninitialized \
 			  -Werror=implicit-function-declaration
-#CDEFS		= -w
+else
+CDEFS		= -w
+endif
 CFLAGS		= -I$(INCL) -c -O2 -fdata-sections -ffunction-sections
 LFLAGS		= -Wl,--gc-sections
 # ---------------------- armv6 (raspberry pi 1) specific -----------------------
