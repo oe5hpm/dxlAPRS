@@ -635,6 +635,8 @@ static long mixleft;
 
 static long mixright;
 
+static long levdiv2;
+
 
 static void sendaudio(long pcm0, char pcm80, char chan0)
 {
@@ -702,6 +704,11 @@ extern int main(int argc, char **argv)
                if (!reconn) break;
             }
             else {
+               levdiv2 = 256L;
+               if (mixto==2UL) {
+                  if (freqc>2UL) levdiv2 = 512L/(long)freqc;
+               }
+               else levdiv2 = 256L/(long)freqc;
                tmp = sn-1L;
                sp = 0L;
                if (sp<=tmp) for (;; sp++) {
@@ -751,9 +758,9 @@ extern int main(int argc, char **argv)
                               sendaudio(pcm, pcm8, rp==0UL);
                            }
                            else {
-                              sendaudio(mixleft/(long)freqc, pcm8, rp==0UL);
+                              sendaudio(mixleft*levdiv2>>8, pcm8, rp==0UL);
                               if (mixto==2UL) {
-                                 sendaudio(mixright/(long)freqc, pcm8,
+                                 sendaudio(mixright*levdiv2>>8, pcm8,
                 rp==0UL);
                               }
                            }
