@@ -23,7 +23,6 @@
 #endif
 #include <osic.h>
 
-/* os interface */
 typedef long osi_File;
 
 typedef long osi_SOCKET;
@@ -69,8 +68,6 @@ typedef long osi_SOCKET;
 #define osi_FdValid osic_FdValid
 
 #define osi_CloseSock osic_CloseSock
-
-#define osi_WrHex osic_WrHex
 
 #define osi_ALLOCATE osic_alloc
 
@@ -137,6 +134,8 @@ extern long osi_RdBin(long, char [], unsigned long, unsigned long);
 extern void osi_WrBin(long, char [], unsigned long, unsigned long);
 
 extern void osi_Werr(char [], unsigned long);
+
+extern void osi_WrHex(unsigned long, unsigned long);
 
 extern void osi_NextArg(char [], unsigned long);
 

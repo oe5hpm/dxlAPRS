@@ -1785,7 +1785,6 @@ static void decodesub(const char b[], unsigned long b_len, unsigned long m,
    unsigned long v;
    long ui;
    char s[101];
-   char ok0;
    unsigned long tt;
    unsigned long tyear;
    unsigned long tmon;
@@ -1794,7 +1793,6 @@ static void decodesub(const char b[], unsigned long b_len, unsigned long m,
    unsigned long tmin;
    /* check name, if changed may be checksum error or 2 sondes on same frequency */
    struct DFM6 * anonym;
-   ok0 = 0;
    switch (bits2val(b, b_len, 48UL, 4UL)) {
    case 0UL: /* framecount */
       v = bits2val(b, b_len, 24UL, 8UL);
@@ -1856,13 +1854,11 @@ static void decodesub(const char b[], unsigned long b_len, unsigned long m,
          chan[m].dfm6.numcnt = 0UL;
       }
       chan[m].dfm6.tused = osic_time();
-      ok0 = 1;
       break;
    case 2UL:
       /*
          |1: v:=bits2val(b, 16, 32);                        (* time ms *)
              u:=v MOD 1000;
-             ok:=TRUE;
       */
       v = bits2val(b, b_len, 0UL, 32UL);
       u = bits2val(b, b_len, 32UL, 16UL);
@@ -1873,7 +1869,6 @@ static void decodesub(const char b[], unsigned long b_len, unsigned long m,
          osic_WrFixed((float)u*0.036f, 1L, 0UL);
          osi_WrStr("km/h", 5ul);
       }
-      ok0 = 1;
       break;
    case 3UL:
       v = bits2val(b, b_len, 0UL, 32UL);
@@ -1885,7 +1880,6 @@ static void decodesub(const char b[], unsigned long b_len, unsigned long m,
          osic_WrFixed((float)u*0.01f, 1L, 0UL);
          osi_WrStr(" deg", 5ul);
       }
-      ok0 = 1;
       break;
    case 4UL:
       v = bits2val(b, b_len, 0UL, 32UL);
@@ -1898,7 +1892,6 @@ static void decodesub(const char b[], unsigned long b_len, unsigned long m,
          osic_WrFixed((float)ui*0.01f, 1L, 0UL);
          osi_WrStr(" m/s", 5ul);
       }
-      ok0 = 1;
       break;
    case 8UL: /* date */
       /*
@@ -1953,7 +1946,6 @@ static void decodesub(const char b[], unsigned long b_len, unsigned long m,
          aprsstr_IntToStr((long)tmin, 0UL, s, 101ul);
          osi_WrStr(s, 101ul);
       }
-      ok0 = 1;
       break;
    default:;
       if (verb) {
@@ -1962,26 +1954,11 @@ static void decodesub(const char b[], unsigned long b_len, unsigned long m,
          wh(bits2val(b, b_len, 48UL, 4UL));
          osi_WrStr(":", 2ul);
          for (u = 0UL; u<=5UL; u++) {
-            osic_WrHex(bits2val(b, b_len, u*8UL, 8UL), 0UL);
+            osi_WrHex(bits2val(b, b_len, u*8UL, 8UL), 0UL);
          } /* end for */
       }
       break;
    } /* end switch */
-/*
-      okk:=TRUE;
-      FOR u:=0 TO 5 DO
-        v:=bits2val(b, u*8, 8);
-        IF (v<32) OR (v>128) THEN okk:=FALSE END;
-      END;
-      IF okk THEN
-        WrStr(" [");
-        FOR u:=0 TO 5 DO
-          v:=bits2val(b, u*8, 8);
-          IF v>=32 THEN WrStr(CHR(v)) ELSE WrStr(".") END;
-        END;
-        WrStr("]");
-      END;
-*/
 } /* end decodesub() */
 
 
@@ -2205,7 +2182,6 @@ static void demodframe34(unsigned long channel)
    unsigned long i;
    double hr;
    char s[101];
-   char good;
    char ok0;
    struct C34 * anonym;
    struct CHAN * anonym0; /* call if set */
@@ -2222,7 +2198,6 @@ static void demodframe34(unsigned long channel)
       ok0 = sum1==(unsigned long)(unsigned char)
                 anonym->rxbuf[7U] && sum2==(unsigned long)(unsigned char)
                 anonym->rxbuf[8U];
-      good = 0;
       if (anonym->tused+3600UL<osic_time()) anonym->id[0U] = 0;
       if (verb) {
          if (maxchannels>0UL) {
@@ -2235,15 +2210,15 @@ static void demodframe34(unsigned long channel)
          WrQuali(noiselevel(channel));
          Wrtune(chan[channel].adcdc, chan[channel].adcmax);
          osi_WrStr(" [", 3ul);
-         osic_WrHex((unsigned long)(unsigned char)anonym->rxbuf[2U], 2UL);
+         osi_WrHex((unsigned long)(unsigned char)anonym->rxbuf[2U], 2UL);
          osi_WrStr(" ", 2ul);
-         osic_WrHex((unsigned long)(unsigned char)anonym->rxbuf[3U], 2UL);
-         osic_WrHex((unsigned long)(unsigned char)anonym->rxbuf[4U], 2UL);
-         osic_WrHex((unsigned long)(unsigned char)anonym->rxbuf[5U], 2UL);
-         osic_WrHex((unsigned long)(unsigned char)anonym->rxbuf[6U], 2UL);
+         osi_WrHex((unsigned long)(unsigned char)anonym->rxbuf[3U], 2UL);
+         osi_WrHex((unsigned long)(unsigned char)anonym->rxbuf[4U], 2UL);
+         osi_WrHex((unsigned long)(unsigned char)anonym->rxbuf[5U], 2UL);
+         osi_WrHex((unsigned long)(unsigned char)anonym->rxbuf[6U], 2UL);
          osi_WrStr(" ", 2ul);
-         osic_WrHex((unsigned long)(unsigned char)anonym->rxbuf[7U], 2UL);
-         osic_WrHex((unsigned long)(unsigned char)anonym->rxbuf[8U], 2UL);
+         osi_WrHex((unsigned long)(unsigned char)anonym->rxbuf[7U], 2UL);
+         osi_WrHex((unsigned long)(unsigned char)anonym->rxbuf[8U], 2UL);
          osi_WrStr("] ", 3ul);
       }
       if (ok0) {
@@ -2264,14 +2239,14 @@ static void demodframe34(unsigned long channel)
          case '\001': /* something magic with this value */
             if (hr<99.9 && hr>(-99.9)) {
                if (verb) {
-                  osi_WrStr("pres", 5ul); /* WrFixed(hr, 2, 0); WrStr("hPa");
-                */
+                  osi_WrStr("pres ", 6ul); /* WrFixed(hr, 2, 0);
+                WrStr("hPa");*/
                }
             }
             break;
          case '\033':
             if (verb) {
-               osi_WrStr("hygr", 5ul);
+               osi_WrStr("hygr ", 6ul);
                osic_WrFixed((float)hr, 2L, 0UL);
                osi_WrStr("%", 2ul);
             }
@@ -2279,21 +2254,19 @@ static void demodframe34(unsigned long channel)
          case '\003':
             if (hr<99.9 && hr>(-99.9)) {
                if (verb) {
-                  osi_WrStr("temp", 5ul);
+                  osi_WrStr("temp ", 6ul);
                   osic_WrFixed((float)hr, 1L, 0UL);
                   osi_WrStr("oC", 3ul);
                }
-               good = 1;
             }
             break;
          case '\007':
             if (hr<99.9 && hr>(-99.9)) {
                if (verb) {
-                  osi_WrStr("dewp", 5ul);
+                  osi_WrStr("dewp ", 6ul);
                   osic_WrFixed((float)hr, 1L, 0UL);
                   osi_WrStr("oC", 3ul);
                }
-               good = 1;
             }
             break;
          case '\024':
@@ -2304,7 +2277,6 @@ static void demodframe34(unsigned long channel)
                s[0U] = ' ';
                osi_WrStr(s, 101ul);
             }
-            good = 1;
             break;
          case '\025':
             if (verb) {
@@ -2313,37 +2285,33 @@ static void demodframe34(unsigned long channel)
                osi_WrStr("time ", 6ul);
                osi_WrStr(s, 101ul);
             }
-            good = 1;
             break;
          case '\026':
             hr = latlong(val);
             if (hr<89.9 && hr>(-89.9)) {
                if (verb) {
-                  osi_WrStr("lati", 5ul);
+                  osi_WrStr("lati ", 6ul);
                   osic_WrFixed((float)hr, 5L, 0UL);
                }
-               good = 1;
             }
             break;
          case '\027':
             hr = latlong(val);
             if (hr<180.0 && hr>(-180.0)) {
                if (verb) {
-                  osi_WrStr("long", 5ul);
+                  osi_WrStr("long ", 6ul);
                   osic_WrFixed((float)hr, 5L, 0UL);
                }
-               good = 1;
             }
             break;
          case '\030':
             hr = (double)((float)val*0.1f);
             if (hr<50000.0) {
                if (verb) {
-                  osi_WrStr("alti", 5ul);
+                  osi_WrStr("alti ", 6ul);
                   osic_WrFixed((float)hr, 1L, 0UL);
                   osi_WrStr("m", 2ul);
                }
-               good = 1;
             }
             break;
          case '\031':
@@ -2351,22 +2319,20 @@ static void demodframe34(unsigned long channel)
                 /*1.609*/ /*1.852*/ /* guess knots or miles */
             if (hr<1000.0) {
                if (verb) {
-                  osi_WrStr("wind", 5ul);
+                  osi_WrStr("wind ", 6ul);
                   osic_WrFixed((float)hr, 1L, 0UL);
                   osi_WrStr("km/h", 5ul);
                }
-               good = 1;
             }
             break;
          case '\032':
             hr = (double)((float)val*0.1f);
             if (hr>=0.0 && hr<=360.0) {
                if (verb) {
-                  osi_WrStr("wdir", 5ul);
+                  osi_WrStr("wdir ", 6ul);
                   osic_WrFixed((float)hr, 1L, 0UL);
                   osi_WrStr("deg", 4ul);
                }
-               good = 1;
             }
             break;
          case 'd':
@@ -2400,7 +2366,6 @@ static void demodframe34(unsigned long channel)
                memcpy(anonym->id,anonym->idcheck,9u);
                anonym->idtime = osic_time();
             }
-            good = 1;
             anonym->tused = osic_time();
             break;
          default:;
@@ -2439,8 +2404,8 @@ static void demodframe34(unsigned long channel)
       else if (verb) {
          /*build tx frame */
          osi_WrStr("---- chksum ", 13ul);
-         osic_WrHex(sum1, 2UL);
-         osic_WrHex(sum2, 2UL);
+         osi_WrHex(sum1, 2UL);
+         osi_WrHex(sum2, 2UL);
       }
       if (verb) osi_WrStrLn("", 1ul);
    }
@@ -2599,11 +2564,11 @@ static void getadc(void)
          tmp = maxchannels;
          ch = 0UL;
          if (ch<=tmp) for (;; ch++) {
-            chan[ch].adcmax = (chan[ch].adcmax*15L)/16L;
+            /*        chan[ch].adcmax:=chan[ch].adcmax*15 DIV 16; */
+            chan[ch].adcdc += (max0[ch]+min0[ch])/2L-chan[ch].adcdc>>4;
+            chan[ch].adcmax += (max0[ch]-min0[ch])-chan[ch].adcmax>>4;
             max0[ch] = -32768L;
             min0[ch] = 32767L;
-            chan[ch].adcdc += ((max0[ch]+min0[ch])/2L-chan[ch].adcdc)/16L;
-            chan[ch].adcmax = max0[ch]-min0[ch];
             if (ch==tmp) break;
          } /* end for */
          adcbufsampx = X2C_max_longcard;

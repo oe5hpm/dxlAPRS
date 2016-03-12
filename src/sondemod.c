@@ -651,7 +651,7 @@ static void dogps(const char sf[], unsigned long sf_len,
       osi_WrStrLn("", 1ul);
       osi_WrStr("sig: ", 6ul);
       for (i = 0UL; i<=11UL; i++) {
-         osic_WrHex((unsigned long)(unsigned char)sf[i+14UL], 3UL);
+         osi_WrHex((unsigned long)(unsigned char)sf[i+14UL], 3UL);
       } /* end for */
       osi_WrStrLn("", 1ul);
       osi_WrStrLn("rang:", 6ul);
@@ -717,11 +717,11 @@ static void dogps(const char sf[], unsigned long sf_len,
       /*    WrStr("pos: "); WrFixed(lat/RAD, 5, 12);
                 WrFixed(long/RAD, 5, 12); */
       osic_WrFixed((float)cont->heig, 0L, 10UL);
-      osi_WrStr("m", 2ul);
+      osi_WrStr("m ", 3ul);
       osic_WrFixed((float)(cont->speed*3.6), 1L, 6UL);
-      osi_WrStr("km/h", 5ul);
+      osi_WrStr("km/h ", 6ul);
       osic_WrFixed((float)cont->dir, 0L, 5UL);
-      osi_WrStr("deg", 4ul);
+      osi_WrStr("deg ", 5ul);
       osic_WrFixed((float)cont->climb, 1L, 7UL);
       osi_WrStr("m/s", 4ul);
       osi_WrStr(" h/vrms:", 9ul);
@@ -1346,7 +1346,7 @@ static void decodeframe(unsigned char m, unsigned long ip,
       else {
          osi_WrStr("R92 end ", 9ul);
          if (sondeaprs_verb) {
-            osic_WrHex((unsigned long)(unsigned char)typ, 4UL);
+            osi_WrHex((unsigned long)(unsigned char)typ, 4UL);
             crdone = 0;
          }
          break;
@@ -1469,7 +1469,7 @@ static void decodeframe(unsigned char m, unsigned long ip,
                   tmp = len-1UL;
                   j = 0UL;
                   if (j<=tmp) for (;; j++) {
-                     osic_WrHex((unsigned long)(unsigned char)sf[j], 3UL);
+                     osi_WrHex((unsigned long)(unsigned char)sf[j], 3UL);
                      if (j==tmp) break;
                   } /* end for */
                   osi_WrStrLn("", 1ul);
@@ -1485,7 +1485,7 @@ static void decodeframe(unsigned char m, unsigned long ip,
             tmp = len-1UL;
             j = 0UL;
             if (j<=tmp) for (;; j++) {
-               osic_WrHex((unsigned long)(unsigned char)sf[j], 3UL);
+               osi_WrHex((unsigned long)(unsigned char)sf[j], 3UL);
                if (j==tmp) break;
             } /* end for */
             crdone = 0;
@@ -1676,13 +1676,13 @@ static void decodec34(const char rxb[], unsigned long rxb_len,
       /*
           CHR(01H): IF (hr<99.9) & (hr>-99.9)
                 THEN       (* something magic with this value *)
-                      IF verb THEN WrStr("pres"); (* WrFixed(hr, 2, 0);
+                      IF verb THEN WrStr("pres "); (* WrFixed(hr, 2, 0);
                 WrStr("hPa");*) END;
                     END;
       */
       if (hr<99.9 && hr>(-99.9)) {
          if (sondeaprs_verb) {
-            osi_WrStr("temp", 5ul);
+            osi_WrStr("temp ", 6ul);
             osic_WrFixed((float)hr, 1L, 0UL);
             osi_WrStr("oC", 3ul);
          }
@@ -1693,7 +1693,7 @@ static void decodec34(const char rxb[], unsigned long rxb_len,
    case '\007':
       if (hr<99.9 && hr>(-99.9)) {
          if (sondeaprs_verb) {
-            osi_WrStr("dewp", 5ul);
+            osi_WrStr("dewp ", 6ul);
             osic_WrFixed((float)hr, 1L, 0UL);
             osi_WrStr("oC", 3ul);
          }
@@ -1723,7 +1723,7 @@ static void decodec34(const char rxb[], unsigned long rxb_len,
       hr = latlong(val);
       if (hr<89.9 && hr>(-89.9)) {
          if (sondeaprs_verb) {
-            osi_WrStr("lati", 5ul);
+            osi_WrStr("lati ", 6ul);
             osic_WrFixed((float)hr, 5L, 0UL);
          }
          if (pc->tlat!=systime) {
@@ -1739,7 +1739,7 @@ static void decodec34(const char rxb[], unsigned long rxb_len,
       hr = latlong(val);
       if (hr<180.0 && hr>(-180.0)) {
          if (sondeaprs_verb) {
-            osi_WrStr("long", 5ul);
+            osi_WrStr("long ", 6ul);
             osic_WrFixed((float)hr, 5L, 0UL);
          }
          if (pc->tlon!=systime) {
@@ -1755,7 +1755,7 @@ static void decodec34(const char rxb[], unsigned long rxb_len,
       hr = (double)((float)val*0.1f);
       if (hr<50000.0) {
          if (sondeaprs_verb) {
-            osi_WrStr("alti", 5ul);
+            osi_WrStr("alti ", 6ul);
             osic_WrFixed((float)hr, 1L, 0UL);
             osi_WrStr("m", 2ul);
          }
@@ -1772,7 +1772,7 @@ static void decodec34(const char rxb[], unsigned long rxb_len,
                 /*1.609*/ /*1.852*/ /* guess knots or miles */
       if (hr>=0.0 && hr<1000.0) {
          if (sondeaprs_verb) {
-            osi_WrStr("wind", 5ul);
+            osi_WrStr("wind ", 6ul);
             osic_WrFixed((float)hr, 1L, 0UL);
             osi_WrStr("km/h", 5ul);
          }
@@ -1784,7 +1784,7 @@ static void decodec34(const char rxb[], unsigned long rxb_len,
       hr = (double)((float)val*0.1f);
       if (hr>=0.0 && hr<=360.0) {
          if (sondeaprs_verb) {
-            osi_WrStr("wdir", 5ul);
+            osi_WrStr("wdir ", 6ul);
             osic_WrFixed((float)hr, 1L, 0UL);
             osi_WrStr("deg", 4ul);
          }
@@ -1794,12 +1794,12 @@ static void decodec34(const char rxb[], unsigned long rxb_len,
       break;
    default:;
       if (sondeaprs_verb) {
-         osic_WrHex((unsigned long)(unsigned char)cb[0U], 0UL);
+         osi_WrHex((unsigned long)(unsigned char)cb[0U], 0UL);
          osi_WrStr(" ", 2ul);
-         osic_WrHex((unsigned long)(unsigned char)cb[1U], 0UL);
-         osic_WrHex((unsigned long)(unsigned char)cb[2U], 0UL);
-         osic_WrHex((unsigned long)(unsigned char)cb[3U], 0UL);
-         osic_WrHex((unsigned long)(unsigned char)cb[4U], 0UL);
+         osi_WrHex((unsigned long)(unsigned char)cb[1U], 0UL);
+         osi_WrHex((unsigned long)(unsigned char)cb[2U], 0UL);
+         osi_WrHex((unsigned long)(unsigned char)cb[3U], 0UL);
+         osi_WrHex((unsigned long)(unsigned char)cb[4U], 0UL);
       }
       break;
    } /* end switch */
@@ -1871,9 +1871,7 @@ static void decodesub(const char b[], unsigned long b_len, pCONTEXTDFM6 pc,
    unsigned long u;
    unsigned long v;
    long vi;
-   char ok0;
    double vr;
-   ok0 = 0;
    switch (bits2val(b, b_len, 48UL, 4UL)) {
    case 2UL:
       vi = (long)bits2val(b, b_len, 0UL, 32UL);
@@ -1900,7 +1898,6 @@ static void decodesub(const char b[], unsigned long b_len, pCONTEXTDFM6 pc,
          osic_WrFixed((float)u*0.036f, 1L, 0UL);
          osi_WrStr("km/h", 5ul);
       }
-      ok0 = 1;
       break;
    case 3UL:
       vi = (long)bits2val(b, b_len, 0UL, 32UL);
@@ -1928,7 +1925,6 @@ static void decodesub(const char b[], unsigned long b_len, pCONTEXTDFM6 pc,
          osic_WrFixed((float)u*0.01f, 1L, 0UL);
          osi_WrStr(" deg", 5ul);
       }
-      ok0 = 1;
       break;
    case 4UL:
       v = bits2val(b, b_len, 0UL, 32UL);
@@ -1948,7 +1944,6 @@ static void decodesub(const char b[], unsigned long b_len, pCONTEXTDFM6 pc,
          osic_WrFixed((float)pc->clmb, 1L, 0UL);
          osi_WrStr(" m/s", 5ul);
       }
-      ok0 = 1;
       break;
    } /* end switch */
 } /* end decodesub() */

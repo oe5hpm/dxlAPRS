@@ -26,6 +26,25 @@
 
 /* os interface linux/win32 */
 
+static void h(unsigned long n)
+{
+   char tmp;
+   if (n<10UL) osi_WrStr((char *)(tmp = (char)(n+48UL),&tmp), 1u/1u);
+   else osi_WrStr((char *)(tmp = (char)(n+55UL),&tmp), 1u/1u);
+} /* end h() */
+
+
+extern void osi_WrHex(unsigned long n, unsigned long f)
+{
+   h(n/16UL&15UL);
+   h(n&15UL);
+   while (f>=3UL) {
+      osi_WrStr(" ", 2ul);
+      --f;
+   }
+} /* end WrHex() */
+
+
 extern long osi_OpenAppendLong(char fn[], unsigned long fn_len)
 {
    return osic_OpenAppendLong(fn, fn_len);
