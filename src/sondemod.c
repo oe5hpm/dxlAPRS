@@ -1648,6 +1648,7 @@ static void decodec34(const char rxb[], unsigned long rxb_len,
          /* timed out */
          pc1 = pc;
          pc = pc->next;
+         if (pc1==pcontextc) pcontextc = pc;
          osic_free((X2C_ADDRESS *) &pc1, sizeof(struct CONTEXTC34));
       }
       else {
@@ -2014,6 +2015,7 @@ static void decodedfm6(const char rxb[], unsigned long rxb_len,
          /* timed out */
          pc1 = pc;
          pc = pc->next;
+         if (pc1==pcontextdfm6) pcontextdfm6 = pc;
          osic_free((X2C_ADDRESS *) &pc1, sizeof(struct CONTEXTDFM6));
       }
       else {
@@ -2338,6 +2340,7 @@ static void decoders41(const char rxb[], unsigned long rxb_len,
                /* timed out */
                pc1 = pc;
                pc = pc->next;
+               if (pc1==pcontextr4) pcontextr4 = pc;
                osic_free((X2C_ADDRESS *) &pc1, sizeof(struct CONTEXTR4));
             }
             else {
