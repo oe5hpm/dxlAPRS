@@ -91,12 +91,14 @@ XLIBS		= -L/usr/X11R6/lib -lXext -lX11
 CFLAGS		+= -m32
 LFLAGS		+= -m32
 # -------------------------- x86_32 (default) specific ------------------------
-else
+else ifeq ($(HOSTARCH), x86)
 EXTLIB		= .
 ADDLIBS		= lib_x86/libpng.a \
 			  lib_x86/libz.a \
 			  lib_x86/libjpeg.a
 XLIBS		= -L/usr/X11R6/lib -lXext -lX11
+else
+LFLAGS		+= -lpng -ljpeg -lXext -lX11
 endif
 # ------------------ objects enumeration ------------------
 OBJ_COMMON = \
@@ -244,5 +246,8 @@ sdrtst : $(OBJ_SDRTST) $(OBJ_COMMON)
 sdrradio : $(OBJ_SDRRADIO) $(OBJ_COMMON)
 	$(CC) $(LFLAGS) -o sdrradio $(OBJ_SDRRADIO) $(OBJ_COMMON) -lm
 	$(STRIP) sdrradio -s
+
+diag:
+	echo $(HOSTARCH)
 
 # end of makefile

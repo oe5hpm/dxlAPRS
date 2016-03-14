@@ -1,12 +1,15 @@
 compiling hints for C-Sources by OE5HPM@OE5XBL.#OE5.AUT.EU
 
 build for X86 with i386 (32-bit) host system
+or
+build on some native ARM machine (like raspbian on rpi)
 ================================================================================
 install following packages:
 - build-essential  (sudo apt-get install build-essential)
 - libX11-dev       (sudo apt-get install libX11-dev)
 - libXext-dev      (sudo apt-get install libXext-dev)
 - libpng-dev       (sudo apt-get install libpng-dev)
+- libjpeg-dev      (sudo apt-get install libjpeg-dev)
 
 make all
 
@@ -24,7 +27,7 @@ maybe you have also to install:
 
 make all
 
-build for ARMV6 (raspberry pi) on x86 host system
+cross-build for ARMV6 (raspberry pi) on x86 host system
 ================================================================================
 install following packages:
 - build-essential	(sudo apt-get install build-essential)
@@ -33,7 +36,7 @@ install following packages:
 
 PLATFORM=armv6 CROSS_COMPILE=~/rpi-tools/arm-bcm2708/arm-bcm2708hardfp-linux-gnueabi/bin/arm-bcm2708hardfp-linux-gnueabi- make all
 
-build for ARMV7hf (bur am335x pp, bananapi, beaglebone) on x86 host system
+cross-build for ARMV7hf (bur am335x pp, bananapi, beaglebone) on x86 host system
 ================================================================================
 install following packages:
 - build-essential   (sudo apt-get install build-essential)
