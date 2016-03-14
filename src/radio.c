@@ -328,6 +328,7 @@ extern int main(int argc, char **argv)
       anonym->df = 100UL;
       anonym->maxafc = (long)afc;
       anonym->width = 192000UL;
+      anonym->modulation = 'f';
       anonym->samples = (sdr_pAUDIOSAMPLE)sampx;
    }
    if (sdr_startsdr(url, 1001ul, port, 1001ul, 2048000UL, 192000UL, 1)) {
