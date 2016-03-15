@@ -55,48 +55,51 @@ LFLAGS		= -Wl,--gc-sections
 # ---------------------- armv6 (raspberry pi 1) specific -----------------------
 ifeq ($(PLATFORM), armv6tce)
 EXTLIB  	= lib_armv6/
-ADDLIBS		= lib_armv6/libpng15/libpng.a \
-			  lib_armv6/libz.a \
-			  lib_armv6/libjpeg.a
-XLIBS		= $(EXTLIB)libxcb.so.1 $(EXTLIB)libXdmcp.so.6 $(EXTLIB)libXau.so.6 -L$(EXTLIB) -lXext -lX11
+XLIBS		= $(EXTLIB)libpng15/libpng.a \
+			  $(EXTLIB)libz.a \
+			  $(EXTLIB)libjpeg.a \
+			  $(EXTLIB)libxcb.so.1 $(EXTLIB)libXdmcp.so.6 $(EXTLIB)libXau.so.6 \
+			  -L$(EXTLIB) -lXext -lX11
 CFLAGS		+= -march=armv6zk -mfpu=vfp -mfloat-abi=hard -mcpu=arm1176jzf-s
 CFLAGS		+= -Ilib_armv6/libpng15/ -I.
 LFLAGS		+=
 else ifeq ($(PLATFORM), armv6)
 EXTLIB  	= lib_armv6/
-ADDLIBS		= lib_armv6/libpng16/libpng.a \
-			  lib_armv6/libz.a \
-			  lib_armv6/libjpeg.a
-XLIBS		= $(EXTLIB)libxcb.so.1 $(EXTLIB)libXdmcp.so.6 $(EXTLIB)libXau.so.6 -L$(EXTLIB) -lXext -lX11
+XLIBS		= $(EXTLIB)libpng16/libpng.a \
+			  $(EXTLIB)libz.a \
+			  $(EXTLIB)libjpeg.a \
+			  $(EXTLIB)libxcb.so.1 $(EXTLIB)libXdmcp.so.6 $(EXTLIB)libXau.so.6 \
+			  -L$(EXTLIB) -lXext -lX11
 CFLAGS		+= -march=armv6zk -mfpu=vfp -mfloat-abi=hard -mcpu=arm1176jzf-s
 CFLAGS		+= -Ilib_armv6/libpng16/ -I.
 LFLAGS		+=
 # ---------------------- armv7hf (bur am335x pp) specific ---------------------
 else ifeq ($(PLATFORM), armv7hf)
 EXTLIB		= lib_armv7hf/
-XLIBS		= $(EXTLIB)libxcb.so $(EXTLIB)libXdmcp.so $(EXTLIB)libXau.so -L$(EXTLIB) -lXext -lX11
-ADDLIBS		= lib_armv7hf/libpng.a \
-			  lib_armv7hf/libz.a \
-			  lib_armv7hf/libjpeg.a
+XLIBS		= $(EXTLIB)libpng.a \
+			  $(EXTLIB)libz.a \
+			  $(EXTLIB)libjpeg.a \
+			  $(EXTLIB)libxcb.so $(EXTLIB)libXdmcp.so $(EXTLIB)libXau.so \
+			  -L$(EXTLIB) -lXext -lX11
 CFLAGS		+= -march=armv7-a -mfpu=neon -mfloat-abi=hard
 CFLAGS		+= -Ilib_armv7hf
 LFLAGS		+=
 # -------------------------- x86_64 specific -----------------------------------
 else ifeq ($(HOSTARCH), x86_64)
-EXTLIB		= .
-ADDLIBS		= lib_x86/libpng.a \
-			  lib_x86/libz.a \
-			  lib_x86/libjpeg.a
-XLIBS		= -L/usr/X11R6/lib -lXext -lX11
+EXTLIB		= lib_x86/
+XLIBS		= $(EXTLIB)libpng.a \
+			  $(EXTLIB)libz.a \
+			  $(EXTLIB)libjpeg.a \
+			  -L/usr/X11R6/lib -lXext -lX11
 CFLAGS		+= -m32
 LFLAGS		+= -m32
 # -------------------------- x86_32 (default) specific ------------------------
 else ifeq ($(HOSTARCH), x86)
-EXTLIB		= .
-ADDLIBS		= lib_x86/libpng.a \
-			  lib_x86/libz.a \
-			  lib_x86/libjpeg.a
-XLIBS		= -L/usr/X11R6/lib -lXext -lX11
+EXTLIB		= lib_x86/
+XLIBS		= $(EXTLIB)libpng.a \
+			  $(EXTLIB)libz.a \
+			  $(EXTLIB)libjpeg.a \
+			  -L/usr/X11R6/lib -lXext -lX11
 else
 XLIBS		+= -lpng -ljpeg -lXext -lX11
 endif
@@ -234,7 +237,7 @@ udprfnet: $(OBJ_UDPRFNET) $(OBJ_COMMON)
 	$(STRIP) udprfnet -s
 
 aprsmap : $(OBJ_APRSMAP) $(OBJ_COMMON)
-	$(CC) $(LFLAGS) -o aprsmap $(OBJ_APRSMAP) $(OBJ_COMMON) $(ADDLIBS) $(XLIBS) -lm
+	$(CC) $(LFLAGS) -o aprsmap $(OBJ_APRSMAP) $(OBJ_COMMON) $(XLIBS) -lm
 	$(STRIP) aprsmap -s
 aprsmap-cleanobj:
 	rm -f $(OBJ_APRSMAP)
