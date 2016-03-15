@@ -90,7 +90,7 @@ EXTLIB		= lib_x86/
 XLIBS		= $(EXTLIB)libpng.a \
 			  $(EXTLIB)libz.a \
 			  $(EXTLIB)libjpeg.a \
-			  -L/usr/X11R6/lib -lXext -lX11
+			 -lXext -lX11
 CFLAGS		+= -m32
 LFLAGS		+= -m32
 # -------------------------- x86_32 (default) specific ------------------------
@@ -99,7 +99,7 @@ EXTLIB		= lib_x86/
 XLIBS		= $(EXTLIB)libpng.a \
 			  $(EXTLIB)libz.a \
 			  $(EXTLIB)libjpeg.a \
-			  -L/usr/X11R6/lib -lXext -lX11
+			  -lXext -lX11
 else
 XLIBS		+= -lpng -ljpeg -lXext -lX11
 endif
