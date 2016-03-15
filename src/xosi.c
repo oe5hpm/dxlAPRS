@@ -13,7 +13,6 @@
 #include "xosi.h"
 #endif
 #define xosi_C_
-#include <keysym.h>
 #include <unistd.h>
 #ifndef signal_H_
 #include "signal.h"
@@ -22,10 +21,6 @@
 #ifndef beep_H_
 #include "beep.h"
 #endif
-#include <X.h>
-#include <Xutil.h>
-#include <Xlib.h>
-#include <cursorfont.h>
 #ifndef Select_H_
 #include "Select.h"
 #endif
@@ -43,6 +38,7 @@
 #include "useri.h"
 #endif
 
+#include "xosic.h"
 
 
 struct xosi__D0 xosi_gammalut[1024];

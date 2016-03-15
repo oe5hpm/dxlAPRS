@@ -3,7 +3,6 @@ afskmodemptt.h
 pp065mb.h
 basictypes.h
 constants.h
-cursorfont.h
 geodesy.c
 geodesy.h
 gnss_types.h
@@ -26,17 +25,8 @@ time_conversion.c
 time_conversion.h
 types.h
 X2C.h
-X.h
-XLib.h
-Xlib.h
-Xutil.h
 yuma.h
 yuma.c
-zconf.h
-zlib.h
-X11
-keysym.h
-keysymdef.h
 osic.c
 osic.h
 udp.c
@@ -46,4 +36,5 @@ soundctl.c
 beep.c
 jpgdec.c
 Select.c
+xosic.h
 

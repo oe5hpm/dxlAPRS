@@ -61,7 +61,7 @@ XLIBS		= $(EXTLIB)libpng15/libpng.a \
 			  $(EXTLIB)libxcb.so.1 $(EXTLIB)libXdmcp.so.6 $(EXTLIB)libXau.so.6 \
 			  -L$(EXTLIB) -lXext -lX11
 CFLAGS		+= -march=armv6zk -mfpu=vfp -mfloat-abi=hard -mcpu=arm1176jzf-s
-CFLAGS		+= -Ilib_armv6/libpng15/ -I.
+CFLAGS		+= -Ilib_armv6/libpng15/ -I$(EXTLIB) -I.
 LFLAGS		+=
 else ifeq ($(PLATFORM), armv6)
 EXTLIB  	= lib_armv6/
@@ -71,7 +71,7 @@ XLIBS		= $(EXTLIB)libpng16/libpng.a \
 			  $(EXTLIB)libxcb.so.1 $(EXTLIB)libXdmcp.so.6 $(EXTLIB)libXau.so.6 \
 			  -L$(EXTLIB) -lXext -lX11
 CFLAGS		+= -march=armv6zk -mfpu=vfp -mfloat-abi=hard -mcpu=arm1176jzf-s
-CFLAGS		+= -Ilib_armv6/libpng16/ -I.
+CFLAGS		+= -Ilib_armv6/libpng16/ -I$(EXTLIB) -I.
 LFLAGS		+=
 # ---------------------- armv7hf (bur am335x pp) specific ---------------------
 else ifeq ($(PLATFORM), armv7hf)
@@ -82,7 +82,7 @@ XLIBS		= $(EXTLIB)libpng.a \
 			  $(EXTLIB)libxcb.so $(EXTLIB)libXdmcp.so $(EXTLIB)libXau.so \
 			  -L$(EXTLIB) -lXext -lX11
 CFLAGS		+= -march=armv7-a -mfpu=neon -mfloat-abi=hard
-CFLAGS		+= -Ilib_armv7hf
+CFLAGS		+= -I$(EXTLIB)
 LFLAGS		+=
 # -------------------------- x86_64 specific -----------------------------------
 else ifeq ($(HOSTARCH), x86_64)
