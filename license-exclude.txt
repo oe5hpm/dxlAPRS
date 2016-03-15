@@ -15,12 +15,8 @@ jconfig.h
 jpeglib.h
 navigation.c
 navigation.h
-pngdebug.h
-pnginfo.h
-pngpriv.h
 pngread.c
 pngwrite.c
-pngstruct.h
 rinex.c
 rinex.h
 sem.c
