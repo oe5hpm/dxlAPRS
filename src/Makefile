@@ -119,7 +119,7 @@ OBJ_AFSKMODEM = \
 	afskmodemptt.o
 
 OBJ_GPS2APRS	= gps2aprs.o
-OBJ_GPS2DIGIPOS= gps2digipos.o
+OBJ_GPS2DIGIPOS	= gps2digipos.o
 
 OBJ_SONDEMOD	= \
 	geodesy.o \
@@ -136,7 +136,7 @@ OBJ_SONDEMOD	= \
 OBJ_SONDEUDP	= sondeudp.o
 OBJ_UDPBOX		= udpbox.o
 OBJ_UDPGATE4	= udpgate4.o
-OBJ_UDPFLEX	= udpflex.o
+OBJ_UDPFLEX		= udpflex.o
 OBJ_UDPHUB		= udphub.o
 OBJ_UDPRFNET	= udprfnet.o
 OBJ_APRSMAP	= \
