@@ -98,7 +98,7 @@ ADDLIBS		= lib_x86/libpng.a \
 			  lib_x86/libjpeg.a
 XLIBS		= -L/usr/X11R6/lib -lXext -lX11
 else
-LFLAGS		+= -lpng -ljpeg -lXext -lX11
+XLIBS		+= -lpng -ljpeg -lXext -lX11
 endif
 # ------------------ objects enumeration ------------------
 OBJ_COMMON = \
