@@ -763,7 +763,7 @@ static void rotvector(struct Complex * v, float rr, float ri)
 } /* end rotvector() */
 
 
-static short getsamp(sdr_pRX rx)
+static short getsamp(sdr_pRX rx, char notfirst)
 {
    struct Complex abs0;
    struct Complex u;
@@ -836,9 +836,8 @@ static short getsamp(sdr_pRX rx)
       if (rx->modulation=='a') {
          /* am squelch */
          if (rx->squelch) {
-            l = (float)fabs(rx->a1-af); /* frequency variation */
+            if (notfirst) rx->sqsum = rx->sqsum+(float)fabs(rx->a1-af);
             rx->a1 = af;
-            rx->sqmed = rx->sqmed+(l-rx->sqmed)*0.002f;
          }
          /* am squelch */
          /* am demod */
@@ -851,8 +850,10 @@ static short getsamp(sdr_pRX rx)
          /* am demod */
          /* fm squelch */
          if (rx->squelch) {
-            l = X2C_DIVR((float)fabs(rx->lastlev-lev),rx->lastlev+lev);
-            rx->sqmed = rx->sqmed+(l-rx->sqmed)*0.002f;
+            if (notfirst) {
+               rx->sqsum = rx->sqsum+X2C_DIVR((float)fabs(rx->lastlev-lev),
+                rx->lastlev+lev);
+            }
             rx->lastlev = lev;
          }
          /* fm squelch */
@@ -880,13 +881,7 @@ extern long sdr_getsdr(unsigned long samps, sdr_pRX rx[],
    unsigned long s;
    long u;
    struct sdr_RX * anonym;
-   /*
-             IF (firwidth>0) & (oldwidth<>firwidth)
-                THEN   (* check for new FIR table *)
-               genfirtab(iftab, FLOAT(firwidth)/FLOAT(audiohz)); 
-               oldwidth:=firwidth;
-             END;
-   */
+   struct sdr_RX * anonym0;
    unsigned long tmp;
    if (reconnect && fd<0L) {
       usleep(1000000UL);
@@ -945,32 +940,39 @@ extern long sdr_getsdr(unsigned long samps, sdr_pRX rx[],
                else if (ws==96000UL) iir16(rx[r], as, bs);
                else if (ws==192000UL) iir8(rx[r], as, bs);
                else iirvar(rx[r], as, bs, (float)ws*6.7934782608696E-7f);
-               u = (long)getsamp(rx[r]);
+               u = (long)getsamp(rx[r], s>0UL);
                anonym->samples[s] = (short)u;
-               /* AFC */
-               if (anonym->modulation=='f' && anonym->maxafc>0L) {
-                  anonym->median = (anonym->median+u)-(anonym->afckhz*1024L)
-                /anonym->maxafc;
-                  if (anonym->median>400000000L) {
-                     if (anonym->afckhz<anonym->maxafc) ++anonym->afckhz;
-                     anonym->median = 0L;
-                  }
-                  else if (anonym->median<-400000000L) {
-                     if (anonym->afckhz>-anonym->maxafc) --anonym->afckhz;
-                     anonym->median = 0L;
-                  }
-               }
-               else {
-                  anonym->afckhz = 0L;
-               }
+               anonym->median = anonym->median+u; /* afc */
             }
-            /* AFC */
             ++r;
          }
          a = b;
          if (s==tmp) break;
       } /* end for */
       sampsum = a;
+      /*AFC */
+      r = 0UL;
+      while (rx[r]) {
+         { /* with */
+            struct sdr_RX * anonym0 = rx[r];
+            if (anonym0->modulation=='f' && anonym0->maxafc>0L) {
+               anonym0->median = anonym0->median-(anonym0->afckhz*(long)
+                samps*1024L)/anonym0->maxafc; /* weak pull to middle */
+               if (anonym0->median>400000000L) {
+                  if (anonym0->afckhz<anonym0->maxafc) {
+                     ++anonym0->afckhz;
+                  }
+                  anonym0->median = 0L;
+               }
+               else if (anonym0->median<-400000000L) {
+                  if (anonym0->afckhz>-anonym0->maxafc) --anonym0->afckhz;
+                  anonym0->median = 0L;
+               }
+            }
+         }
+         ++r;
+      }
+      /*AFC */
       return (long)samps;
    }
    else return -1L;

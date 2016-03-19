@@ -27,6 +27,11 @@
 /* test rtl_tcp iq fm demodulator by OE5DXL */
 #define sdrtest_MAXCHANNELS 32
 
+#define sdrtest_DEFAULTPOWERSAVE 0
+
+#define sdrtest_SAMPSIZE 32
+/* samples per sdr call */
+
 struct FREQTAB;
 
 
@@ -57,6 +62,12 @@ struct SQUELCH {
    float u1;
    float u2;
    float il;
+   float medmed;
+   float mutlev;
+   long sqsave;
+   long wakeness;
+   long pcmc;
+   unsigned long nexttick;
 };
 
 static long fd;
@@ -72,6 +83,8 @@ static unsigned long lastmidfreq;
 static unsigned long downsamp;
 
 static unsigned long mixto;
+
+static unsigned long powersave;
 
 static short sndbuf[1024];
 
@@ -91,6 +104,8 @@ static unsigned long iqrate;
 
 static unsigned long samphz;
 
+static unsigned long maxrx;
+
 static char url[1001];
 
 static char port[1001];
@@ -104,6 +119,8 @@ static char verb;
 static char reconn;
 
 static char pcm8;
+
+static char nosquelch;
 
 static double offset;
 
@@ -198,6 +215,9 @@ static void Parms(void)
    samphz = 16000UL;
    offset = 0.0;
    strncpy(parmfn,"sdrcfg.txt",1001u);
+   powersave = 0UL;
+   maxrx = 31UL;
+   nosquelch = 0;
    for (;;) {
       osi_NextArg(s, 1001ul);
       if (s[0U]==0) break;
@@ -272,6 +292,22 @@ static void Parms(void)
          }
          else if (s[1U]=='v') verb = 1;
          else if (s[1U]=='k') reconn = 1;
+         else if (s[1U]=='z') {
+            /* powersave time */
+            osi_NextArg(s, 1001ul);
+            if (!aprsstr_StrToCard(s, 1001ul, &powersave)) {
+               Error(" -z <ms>", 9ul);
+            }
+            nosquelch = 0;
+         }
+         else if (s[1U]=='Z') {
+            /* powersave time */
+            osi_NextArg(s, 1001ul);
+            if (!aprsstr_StrToCard(s, 1001ul, &powersave)) {
+               Error(" -Z <ms>", 9ul);
+            }
+            nosquelch = 1;
+         }
          else {
             if (s[1U]=='h') {
                osi_WrStrLn("", 1ul);
@@ -301,6 +337,10 @@ d stream/pipe", 63ul);
 0.0.1:1234)", 61ul);
                osi_WrStrLn(" -v                  show rssi (dB) and afc (khz)\
 ", 50ul);
+               osi_WrStrLn(" -z <ms>             sleep time inactive channel \
+if squelch closed", 67ul);
+               osi_WrStrLn(" -Z <ms>             same but no audio quieting f\
+or sending to a decoder", 73ul);
                osi_WrStrLn("example: -s /tmp/sound.pcm -t 192.168.1.1:1234 -p\
  5 72 -p 8 1 -v", 65ul);
                osi_WrStrLn("", 1ul);
@@ -367,6 +407,7 @@ C-DC offset pseudo carriers", 77ul);
       }
       else Error("-h", 3ul);
    }
+   powersave = (powersave*samphz)/32000UL;
 } /* end Parms() */
 
 
@@ -442,6 +483,7 @@ static void centerfreq(const struct FREQTAB freq[], unsigned long freq_len)
       midfreq += (unsigned long)nomid;
       i = 0UL;
       while (i<freqc) {
+         /*     FILL(ADR(rxx[i]), 0C, SIZE(rxx[0])); */
          prx[i] = &rxx[i];
          rxx[i].df = freq[i].khz-midfreq;
          rxx[i].dffrac = freq[i].hz;
@@ -455,8 +497,8 @@ static void centerfreq(const struct FREQTAB freq[], unsigned long freq_len)
       }
       prx[i] = 0;
    }
-   if (midfreq<40000UL) Error("no valid frequency", 19ul);
-   if (midfreq!=lastmidfreq) {
+   if (midfreq<40000UL) osi_WerrLn("no valid frequency", 19ul);
+   else if (midfreq!=lastmidfreq) {
       setstickparm(1UL, midfreq*1000UL);
       /*WrStr("set ");WrInt(midfreq, 0); WrStrLn("kHz"); */
       lastmidfreq = midfreq;
@@ -474,9 +516,9 @@ static void rdconfig(void)
 {
    long len;
    long fd0;
+   unsigned long sq;
    unsigned long wid;
    unsigned long lpp;
-   unsigned long sq;
    unsigned long p;
    unsigned long lino;
    unsigned long n;
@@ -534,7 +576,7 @@ static void rdconfig(void)
                ++i;
                skip(li, 256ul, &i);
                fix(li, 256ul, &i, &x, &ok0);
-               if (!ok0) osi_WerrLn("wrong value", 12ul);
+               if (!ok0) osi_WerrLn("wrong MHz", 10ul);
                skip(li, 256ul, &i);
                int0(li, 256ul, &i, &m, &ok0);
                if (!ok0) m = 0L;
@@ -543,9 +585,11 @@ static void rdconfig(void)
                skip(li, 256ul, &i);
                card(li, 256ul, &i, &sq, &ok0);
                if (!ok0) sq = 0UL;
+               if (sq>200UL) sq = 200UL;
                skip(li, 256ul, &i);
                card(li, 256ul, &i, &lpp, &ok0);
                if (!ok0) lpp = 0UL;
+               if (lpp>100UL) lpp = 100UL;
                skip(li, 256ul, &i);
                card(li, 256ul, &i, &wid, &ok0);
                if (!ok0) {
@@ -553,6 +597,7 @@ static void rdconfig(void)
                   else if (freq[freqc].modulation=='a') wid = 6000UL;
                   else wid = 12000UL;
                }
+               if (wid>1000000UL) wid = 1000000UL;
                if (freqc>31UL) osi_WerrLn("freq table full", 16ul);
                else {
                   x = x+offset;
@@ -568,7 +613,7 @@ static void rdconfig(void)
                   freq[freqc].afc = m;
                   freq[freqc].width = wid;
                   freq[freqc].agc = lpp;
-                  squelchs[freqc].lev = X2C_DIVR((float)sq,200.0f);
+                  squelchs[freqc].lev = X2C_DIVR((float)sq*32.0f,200.0f);
                   if (freq[freqc].modulation=='s') squelchs[freqc].lp = 0.0f;
                   else squelchs[freqc].lp = X2C_DIVR((float)lpp,200.0f);
                   ++freqc;
@@ -590,25 +635,30 @@ static void rdconfig(void)
 
 static void showrssi(void)
 {
+   unsigned long j;
    unsigned long i;
    char s[31];
    i = 0UL;
    while (prx[i]) {
-      aprsstr_FixToStr(osic_ln((rxx[i].rssi+1.0f)*3.0517578125E-5f)
+      j = prx[i]->idx;
+      aprsstr_FixToStr(osic_ln((rxx[j].rssi+1.0f)*3.0517578125E-5f)
                 *4.342944819f, 2UL, s, 31ul);
       osi_Werr(s, 31ul);
-      osi_Werr("dB", 3ul);
-      if (rxx[i].squelch) {
+      if (squelchs[j].sqsave<=0L) osi_Werr("db", 3ul);
+      else osi_Werr("dB", 3ul);
+      if (!nosquelch && rxx[j].squelch) {
          osi_Werr(" ", 2ul);
-         aprsstr_FixToStr(rxx[i].sqmed, 3UL, s, 31ul);
+         aprsstr_FixToStr(squelchs[j].medmed*0.03125f, 3UL, s, 31ul);
          osi_Werr(s, 31ul);
       }
-      if (rxx[i].modulation=='f') {
+      if (rxx[j].modulation=='f') {
          osi_Werr(" ", 2ul);
-         aprsstr_IntToStr(rxx[i].afckhz, 0UL, s, 31ul);
+         aprsstr_IntToStr(rxx[j].afckhz, 0UL, s, 31ul);
          osi_Werr(s, 31ul);
          osi_Werr(" ", 2ul);
       }
+      /*Werr(" "); IntToStr(squelchs[j].wakeness, 0, s); Werr(s); Werr(" ");
+                */
       ++i;
    }
    osi_Werr("    \015", 6ul);
@@ -621,7 +671,11 @@ static long sn;
 
 static unsigned long rp;
 
-static float sqv;
+static unsigned long actch;
+
+static unsigned long ticker;
+
+static unsigned long ix;
 
 static unsigned long tshow;
 
@@ -655,22 +709,46 @@ static void sendaudio(long pcm0, char pcm80, char chan0)
       if (pcm80) osi_WrBin(fd, (char *)sndbuf8, 1024u/1u, sndw);
       else osi_WrBin(fd, (char *)sndbuf, 2048u/1u, sndw*2UL);
       sndw = 0UL;
-      if (tshow>20UL) {
-         rdconfig();
-         setparms(recon);
-         recon = 0;
-         if (verb) showrssi();
-         tshow = 0UL;
-      }
-      else tshow += (unsigned long)pcm80+1UL;
    }
 } /* end sendaudio() */
+
+
+static void userio(void)
+{
+   rdconfig();
+   setparms(recon);
+   recon = 0;
+   if (verb) showrssi();
+} /* end userio() */
+
+
+static void schedule(void)
+{
+   unsigned long j;
+   unsigned long i;
+   i = 0UL;
+   if (freqc>0UL) {
+      j = actch;
+      do {
+         if ((long)(ticker-squelchs[j].nexttick)>=0L) {
+            squelchs[j].nexttick = ticker;
+            prx[i] = &rxx[j];
+            ++i;
+         }
+         ++j;
+         if (j>=freqc) j = 0UL;
+      } while (!(i>maxrx || j==actch));
+   }
+   prx[i] = 0;
+   actch = j;
+} /* end schedule() */
 
 
 X2C_STACK_LIMIT(100000l)
 extern int main(int argc, char **argv)
 {
    long tmp;
+   unsigned long tmp0;
    X2C_BEGIN(&argc,argv,1,4000000l,8000000l);
    sdr_BEGIN();
    aprsstr_BEGIN();
@@ -678,12 +756,17 @@ extern int main(int argc, char **argv)
    midfreq = 0UL;
    lastmidfreq = 0UL;
    tshow = 0UL;
+   levdiv2 = 256L;
    memset((char *)rxx,(char)0,sizeof(struct sdr_RX [32]));
    memset((char *)stickparm,(char)0,sizeof(struct STICKPARM [256]));
    memset((char *)squelchs,(char)0,sizeof(struct SQUELCH [33]));
    Parms();
+   actch = 0UL;
+   ticker = 0UL;
+   prx[0U] = 0;
    for (freqc = 0UL; freqc<=31UL; freqc++) {
       rxx[freqc].samples = (sdr_pAUDIOSAMPLE)sampx[freqc];
+      rxx[freqc].idx = freqc;
    } /* end for */
    if (sdr_startsdr(url, 1001ul, port, 1001ul, iqrate, samphz, reconn)) {
       rdconfig();
@@ -692,6 +775,12 @@ extern int main(int argc, char **argv)
       if (fd>=0L) {
          recon = 1;
          for (;;) {
+            if (tshow>500UL) {
+               userio();
+               tshow = 0UL;
+            }
+            else ++tshow;
+            schedule();
             sn = sdr_getsdr(32UL, prx, 33ul);
             if (sn<0L) {
                if (verb) {
@@ -704,42 +793,89 @@ extern int main(int argc, char **argv)
                if (!reconn) break;
             }
             else {
-               levdiv2 = 256L;
-               if (mixto==2UL) {
-                  if (freqc>2UL) levdiv2 = 512L/(long)freqc;
+               rp = 0UL;
+               while (prx[rp]) {
+                  ix = prx[rp]->idx;
+                  { /* with */
+                     struct SQUELCH * anonym = &squelchs[ix];
+                     if (anonym->lev==0.0f || prx[rp]->modulation=='s') {
+                        squelchs[ix].mutlev = 1.0f;
+                     }
+                     else {
+                        if (anonym->lev<rxx[ix].sqsum) {
+                           /* noise */
+                           if (anonym->sqsave>0L) {
+                              --anonym->sqsave;
+                           }
+                           else {
+                              if (anonym->wakeness<(long)powersave) {
+                                 ++anonym->wakeness;
+                              }
+                              anonym->nexttick = ticker+(unsigned long)
+                anonym->wakeness;
+                           }
+                        }
+                        else {
+                           if (anonym->sqsave<2000L) {
+                              ++anonym->sqsave;
+                           }
+                           if (anonym->wakeness>-100L) {
+                              --anonym->wakeness;
+                           }
+                        }
+                        if ((nosquelch || rxx[ix].modulation=='u')
+                || rxx[ix].modulation=='l') anonym->mutlev = 1.0f;
+                        else {
+                           anonym->medmed = anonym->medmed+(rxx[ix]
+                .sqsum-anonym->medmed)*0.1f;
+                           anonym->mutlev = (anonym->lev-anonym->medmed)
+                *0.3125f;
+                           if (anonym->mutlev<0.0f) {
+                              anonym->mutlev = 0.0f;
+                           }
+                           else if (anonym->mutlev>1.0f) {
+                              anonym->mutlev = 1.0f;
+                           }
+                        }
+                     }
+                  }
+                  rxx[ix].sqsum = 0.0f;
+                  ++rp;
                }
-               else levdiv2 = 256L/(long)freqc;
                tmp = sn-1L;
                sp = 0L;
                if (sp<=tmp) for (;; sp++) {
                   rp = 0UL;
                   while (prx[rp]) {
-                     pcm = (long)rxx[rp].samples[sp];
+                     ix = prx[rp]->idx;
                      { /* with */
-                        struct SQUELCH * anonym = &squelchs[rp];
-                        /* squelch */
-                        if (anonym->lev!=0.0f) {
-                           sqv = (anonym->lev-rxx[rp].sqmed)*10.0f;
-                           if (sqv<0.0f) sqv = 0.0f;
-                           else if (sqv>1.0f) sqv = 1.0f;
-                           pcm = (long)(short)X2C_TRUNCI((float)pcm*sqv,
-                -32768,32767);
+                        struct SQUELCH * anonym0 = &squelchs[ix];
+                        anonym0->pcmc = (long)rxx[ix].samples[sp];
+                        if (!nosquelch) {
+                           anonym0->pcmc = (long)(short)X2C_TRUNCI((float)
+                anonym0->pcmc*anonym0->mutlev,-32768,32767);
                         }
-                        /* squelch */
                         /* lowpass */
-                        if (anonym->lp!=0.0f) {
-                           anonym->u1 = anonym->u1+(((float)(pcm*2L)
-                -anonym->u1)-anonym->il)*anonym->lp;
-                           anonym->u2 = anonym->u2+(anonym->il-anonym->u2)
-                *anonym->lp;
-                           anonym->il = anonym->il+(anonym->u1-anonym->u2)
-                *anonym->lp*2.0f;
-                           pcm = (long)X2C_TRUNCI(anonym->u2,X2C_min_longint,
-                X2C_max_longint);
+                        if (anonym0->lp!=0.0f) {
+                           anonym0->u1 = anonym0->u1+(((float)
+                (anonym0->pcmc*2L)-anonym0->u1)-anonym0->il)*anonym0->lp;
+                           anonym0->u2 = anonym0->u2+(anonym0->il-anonym0->u2)
+                *anonym0->lp;
+                           anonym0->il = anonym0->il+(anonym0->u1-anonym0->u2)
+                *anonym0->lp*2.0f;
+                           anonym0->pcmc = (long)X2C_TRUNCI(anonym0->u2,
+                X2C_min_longint,X2C_max_longint);
                         }
                      }
-                     /*lowpass  */
-                     if (dsamp==0UL) {
+                     /* lowpass */
+                     ++rp;
+                  }
+                  if (dsamp==0UL) {
+                     tmp0 = freqc-1UL;
+                     rp = 0UL;
+                     if (rp<=tmp0) for (;; rp++) {
+                        pcm = squelchs[rp].pcmc;
+                        squelchs[rp].pcmc = 0L;
                         /* channel mixer */
                         if (mixto==1UL) mixleft += pcm;
                         else if (mixto==2UL) {
@@ -764,17 +900,25 @@ extern int main(int argc, char **argv)
                 rp==0UL);
                               }
                            }
+                           if (labs(mixleft)>32767L || labs(mixright)>32767L)
+                 {
+                              if (levdiv2>20L) {
+                                 --levdiv2;
+                              }
+                           }
+                           else if (levdiv2<256L) ++levdiv2;
                            mixleft = 0L;
                            mixright = 0L;
                         }
-                     }
-                     ++rp;
+                        if (rp==tmp0) break;
+                     } /* end for */
                   }
                   if (dsamp==0UL) dsamp = downsamp;
                   else --dsamp;
                   if (sp==tmp) break;
                } /* end for */
             }
+            ++ticker;
          }
       }
       else {

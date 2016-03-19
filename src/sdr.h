@@ -50,6 +50,7 @@ struct sdr_RX {
    unsigned long dffrac;
    unsigned long width;
    unsigned long agc;
+   unsigned long idx;
    long maxafc;
    char squelch;
    char modulation;
@@ -64,7 +65,7 @@ struct sdr_RX {
    float w1;
    float lastlev;
    float rssi;
-   float sqmed;
+   float sqsum;
    float a1;
    unsigned long fracphase;
    unsigned long bfophase;
