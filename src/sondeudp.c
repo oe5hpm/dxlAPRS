@@ -273,6 +273,7 @@ struct CHAN {
    float afir[32];
    long configequalizer;
    pUDPTX udptx;
+   unsigned long squelch;
    unsigned long mycallc;
    char myssid;
    struct R92 r92;
@@ -1388,11 +1389,12 @@ static void decode41(unsigned long m)
                      osi_WrStr((char *) &ch, 1u/1u);
                   }
                } /* end for */
+               osi_WrStr(" ", 2ul);
                osic_WrINT32((unsigned long)getint16(anonym->rxbuf, 520ul, p),
-                 0UL);
+                 1UL);
             }
             nameok = 1;
-            if (anonym->rxbuf[p+23UL]==0) {
+            if (verb && anonym->rxbuf[p+23UL]==0) {
                osi_WrStr(" ", 2ul);
                osic_WrFixed((float)(getint16(anonym->rxbuf, 520ul,
                 p+26UL)/64L+40000L)*0.01f, 2L, 1UL);
@@ -2540,6 +2542,7 @@ static void getadc(void)
    long min0[32];
    unsigned long ch;
    unsigned long c;
+   struct CHAN * anonym;
    unsigned long tmp;
    c = 0UL;
    do {
@@ -2594,6 +2597,9 @@ static void getadc(void)
          adcbufsampx = adcbufrd;
          c = 0UL;
       }
+      sl = (long)((unsigned long)sl&0xFFFFFFFEUL);
+      if (sl==0L) ++chan[c].squelch;
+      else chan[c].squelch = 0UL;
       sl -= chan[c].adcdc;
       ++adcbufrd;
       chan[c].afir[afin] = (float)(sl-chan[c].adcdc);
@@ -2605,9 +2611,15 @@ static void getadc(void)
    tmp = maxchannels;
    c = 0UL;
    if (c<=tmp) for (;; c++) {
-      if (chan[c].r92.enabled || chan[c].r41.enabled) Fsk(c);
-      if (chan[c].c34.enabled) Afsk(c);
-      if (chan[c].dfm6.enabled) Fsk6(c);
+      { /* with */
+         struct CHAN * anonym = &chan[c];
+         if (anonym->squelch<64UL) {
+            /* squelch open */
+            if (anonym->r92.enabled || anonym->r41.enabled) Fsk(c);
+            if (anonym->c34.enabled) Afsk(c);
+            if (anonym->dfm6.enabled) Fsk6(c);
+         }
+      }
       if (c==tmp) break;
    } /* end for */
 } /* end getadc() */
