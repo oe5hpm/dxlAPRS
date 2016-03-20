@@ -25,18 +25,24 @@
 #endif
 
 /* test rtl_tcp iq fm demodulator by OE5DXL */
-#define sdrtest_MAXCHANNELS 32
+#define sdrtest_MAXCHANNELS 64
 
 #define sdrtest_DEFAULTPOWERSAVE 0
 
 #define sdrtest_SAMPSIZE 32
 /* samples per sdr call */
 
+#define sdrtest_TUNESTEP 1000
+/* minimal tuning step */
+
+#define sdrtest_TUNEBAND 200000
+/* step to minimize freq jumps from inexact pll */
+
 struct FREQTAB;
 
 
 struct FREQTAB {
-   unsigned long khz;
+   /*       khz, */
    unsigned long hz;
    unsigned long width;
    unsigned long agc;
@@ -90,15 +96,15 @@ static short sndbuf[1024];
 
 static unsigned char sndbuf8[1024];
 
-static struct sdr_RX rxx[32];
+static struct sdr_RX rxx[64];
 
-static sdr_pRX prx[33];
+static sdr_pRX prx[65];
 
-static short sampx[32][32];
+static short sampx[64][32];
 
 static struct STICKPARM stickparm[256];
 
-static struct SQUELCH squelchs[33];
+static struct SQUELCH squelchs[65];
 
 static unsigned long iqrate;
 
@@ -167,27 +173,25 @@ static void int0(const char s[], unsigned long s_len, unsigned long * p,
 static void fix(const char s[], unsigned long s_len, unsigned long * p,
                 double * x, char * ok0)
 {
-   float m;
+   double m;
    char sgn;
    if (s[*p]=='-') {
       sgn = 1;
       ++*p;
    }
    else sgn = 0;
-   m = 1.0f;
+   m = 1.0;
    *ok0 = 0;
    *x = 0.0;
    while ((unsigned char)s[*p]>='0' && (unsigned char)
                 s[*p]<='9' || s[*p]=='.') {
-      if (s[*p]=='.') m = 0.1f;
-      else if (m==1.0f) {
-         *x =  *x*10.0+(double)(float)((unsigned long)(unsigned char)
-                s[*p]-48UL);
+      if (s[*p]=='.') m = 0.1;
+      else if (m==1.0) {
+         *x =  *x*10.0+(double)((unsigned long)(unsigned char)s[*p]-48UL);
       }
       else {
-         *x = *x+(double)((float)((unsigned long)(unsigned char)s[*p]-48UL)
-                *m);
-         m = m*0.1f;
+         *x = *x+(double)((unsigned long)(unsigned char)s[*p]-48UL)*m;
+         m = m*0.1;
       }
       *ok0 = 1;
       ++*p;
@@ -216,7 +220,7 @@ static void Parms(void)
    offset = 0.0;
    strncpy(parmfn,"sdrcfg.txt",1001u);
    powersave = 0UL;
-   maxrx = 31UL;
+   maxrx = 63UL;
    nosquelch = 0;
    for (;;) {
       osi_NextArg(s, 1001ul);
@@ -447,7 +451,62 @@ static void setstickparm(unsigned long cmd, unsigned long value)
    stickparm[cmd].ok0 = 1;
 } /* end setstickparm() */
 
-#define sdrtest_OFFSET 10
+/*
+PROCEDURE centerfreq(freq-:ARRAY OF FREQTAB);
+CONST OFFSET=10;
+VAR i, min, max:CARDINAL;
+    nomid:INTEGER;
+BEGIN
+  midfreq:=0;
+  i:=0;
+  max:=0;
+  min:=MAX(CARDINAL);
+  WHILE i<freqc DO
+--WrStr("rx"); WrInt(i+1, 0); WrInt(freq[i].khz, 0); WrStrLn("kHz");
+    IF freq[i].khz>max THEN max:=freq[i].khz END;
+    IF freq[i].khz<min THEN min:=freq[i].khz END;
+    INC(i);
+  END;
+  IF max>=min THEN
+    IF max-min>2000 THEN WerrLn("freq span > 2MHz") END;
+    midfreq:=(max+min) DIV 2;
+
+    nomid:=MAX(INTEGER);
+    i:=0;
+    WHILE i<freqc DO
+      IF ABS(VAL(INTEGER, freq[i].khz-midfreq))<ABS(nomid) THEN nomid:=freq[i].khz-midfreq END;
+      INC(i);
+    END;
+    IF ABS(nomid)>OFFSET THEN nomid:=0 ELSIF nomid<0
+    THEN nomid:=OFFSET+nomid ELSE nomid:=nomid-OFFSET END;
+    INC(midfreq, nomid);
+
+    i:=0;
+    WHILE i<freqc DO  
+--     FILL(ADR(rxx[i]), 0C, SIZE(rxx[0]));
+      prx[i]:=ADR(rxx[i]);
+      rxx[i].df:=(freq[i].khz-midfreq) DIV 1000;
+      rxx[i].dffrac:=freq[i].hz;
+      rxx[i].maxafc:=freq[i].afc;
+--WrInt(rxx[i].maxafc, 0); WrStrLn(" maxafc");
+      rxx[i].squelch:=squelchs[i].lev<>0.0;
+      rxx[i].width:=freq[i].width;
+      rxx[i].agc:=freq[i].agc;
+      rxx[i].modulation:=freq[i].modulation;
+      INC(i);
+    END;
+    prx[i]:=NIL;
+  END;
+  IF midfreq<40000 THEN WerrLn("no valid frequency");
+  ELSIF midfreq<>lastmidfreq THEN
+    setstickparm(1, midfreq*TUNESTEP);
+
+--WrStr("set ");WrInt(midfreq, 0); WrStrLn("kHz");
+    lastmidfreq:=midfreq;
+  END;
+END centerfreq;
+*/
+#define sdrtest_OFFSET 10000
 
 
 static void centerfreq(const struct FREQTAB freq[], unsigned long freq_len)
@@ -456,39 +515,48 @@ static void centerfreq(const struct FREQTAB freq[], unsigned long freq_len)
    unsigned long min0;
    unsigned long i;
    long nomid;
+   char ssb;
    midfreq = 0UL;
    i = 0UL;
    max0 = 0UL;
    min0 = X2C_max_longcard;
    while (i<freqc) {
       /*WrStr("rx"); WrInt(i+1, 0); WrInt(freq[i].khz, 0); WrStrLn("kHz"); */
-      if (freq[i].khz>max0) max0 = freq[i].khz;
-      if (freq[i].khz<min0) min0 = freq[i].khz;
+      if (freq[i].hz>max0) max0 = freq[i].hz;
+      if (freq[i].hz<min0) min0 = freq[i].hz;
       ++i;
    }
    if (max0>=min0) {
-      if (max0-min0>2000UL) osi_WerrLn("freq span > 2MHz", 17ul);
+      if (max0-min0>2000000UL) osi_WerrLn("freq span > 2MHz", 17ul);
       midfreq = (max0+min0)/2UL;
       nomid = X2C_max_longint;
       i = 0UL;
+      ssb = 0;
       while (i<freqc) {
-         if (labs((long)(freq[i].khz-midfreq))<labs(nomid)) {
-            nomid = (long)(freq[i].khz-midfreq);
+         if (labs((long)(freq[i].hz-midfreq))<labs(nomid)) {
+            nomid = (long)(freq[i].hz-midfreq);
          }
+         if (freq[i].modulation=='s') ssb = 1;
          ++i;
       }
-      if (labs(nomid)>10L) nomid = 0L;
-      else if (nomid<0L) nomid = 10L+nomid;
-      else nomid -= 10L;
+      if (labs(nomid)>10000L) nomid = 0L;
+      else if (nomid<0L) nomid = 10000L+nomid;
+      else nomid -= 10000L;
       midfreq += (unsigned long)nomid;
+      if (ssb && max0-min0<200000UL) {
+         midfreq = (midfreq/200000UL)*200000UL+10000UL;
+      }
+      else midfreq = (midfreq/1000UL)*1000UL;
       i = 0UL;
       while (i<freqc) {
          /*     FILL(ADR(rxx[i]), 0C, SIZE(rxx[0])); */
          prx[i] = &rxx[i];
-         rxx[i].df = freq[i].khz-midfreq;
-         rxx[i].dffrac = freq[i].hz;
+         rxx[i].df = freq[i].hz/1000UL-midfreq/1000UL;
+         rxx[i].dffrac = (freq[i].hz-rxx[i].df*1000UL)%1000UL;
+         /*WrInt(nomid, 15);WrInt(midfreq, 15);WrInt(freq[i].hz, 15);
+                WrInt(rxx[i].df, 15); WrInt(rxx[i].dffrac, 15);
+                WrStrLn("n m h d fr"); */
          rxx[i].maxafc = freq[i].afc;
-         /*WrInt(rxx[i].maxafc, 0); WrStrLn(" maxafc"); */
          rxx[i].squelch = squelchs[i].lev!=0.0f;
          rxx[i].width = freq[i].width;
          rxx[i].agc = freq[i].agc;
@@ -497,9 +565,9 @@ static void centerfreq(const struct FREQTAB freq[], unsigned long freq_len)
       }
       prx[i] = 0;
    }
-   if (midfreq<40000UL) osi_WerrLn("no valid frequency", 19ul);
+   if (midfreq<40000000UL) osi_WerrLn("no valid frequency", 19ul);
    else if (midfreq!=lastmidfreq) {
-      setstickparm(1UL, midfreq*1000UL);
+      setstickparm(1UL, midfreq);
       /*WrStr("set ");WrInt(midfreq, 0); WrStrLn("kHz"); */
       lastmidfreq = midfreq;
    }
@@ -523,12 +591,13 @@ static void rdconfig(void)
    unsigned long lino;
    unsigned long n;
    unsigned long i;
+   long ssbsh;
    long m;
    double x;
    char ok0;
    char b[10001];
    char li[256];
-   struct FREQTAB freq[32];
+   struct FREQTAB freq[64];
    char mo;
    fd0 = osi_OpenRead(parmfn, 1001ul);
    if (fd0>=0L) {
@@ -580,8 +649,15 @@ static void rdconfig(void)
                skip(li, 256ul, &i);
                int0(li, 256ul, &i, &m, &ok0);
                if (!ok0) m = 0L;
-               if (mo=='U') m += 1500L;
-               else if (mo=='L') m -= 1500L;
+               ssbsh = 0L;
+               if (mo=='U') {
+                  m += 1500L;
+                  ssbsh = m;
+               }
+               else if (mo=='L') {
+                  m -= 1500L;
+                  ssbsh = m;
+               }
                skip(li, 256ul, &i);
                card(li, 256ul, &i, &sq, &ok0);
                if (!ok0) sq = 0UL;
@@ -589,7 +665,7 @@ static void rdconfig(void)
                skip(li, 256ul, &i);
                card(li, 256ul, &i, &lpp, &ok0);
                if (!ok0) lpp = 0UL;
-               if (lpp>100UL) lpp = 100UL;
+               if (freq[freqc].modulation!='s' && lpp>100UL) lpp = 100UL;
                skip(li, 256ul, &i);
                card(li, 256ul, &i, &wid, &ok0);
                if (!ok0) {
@@ -598,18 +674,16 @@ static void rdconfig(void)
                   else wid = 12000UL;
                }
                if (wid>1000000UL) wid = 1000000UL;
-               if (freqc>31UL) osi_WerrLn("freq table full", 16ul);
+               if (freqc>63UL) osi_WerrLn("freq table full", 16ul);
                else {
                   x = x+offset;
                   if (x<=0.0 || x>=2.147483E+6) {
                      osi_WerrLn("freq out of range", 18ul);
                      x = 0.0;
                   }
-                  x = x*1.E+6+(double)m;
-                  freq[freqc].khz = (unsigned long)X2C_TRUNCC(x,0UL,
+                  x = x*1.E+6+(double)ssbsh;
+                  freq[freqc].hz = (unsigned long)X2C_TRUNCC(x+0.5,0UL,
                 X2C_max_longcard);
-                  freq[freqc].hz = freq[freqc].khz%1000UL;
-                  freq[freqc].khz = freq[freqc].khz/1000UL;
                   freq[freqc].afc = m;
                   freq[freqc].width = wid;
                   freq[freqc].agc = lpp;
@@ -620,7 +694,7 @@ static void rdconfig(void)
                }
                i = 0UL;
             }
-            else if (mo=='#' || mo==' ') i = 0UL;
+            else if (mo=='#' || (unsigned char)mo<=' ') i = 0UL;
             else osi_WerrLn("unkown command", 15ul);
             ++lino;
          }
@@ -629,7 +703,7 @@ static void rdconfig(void)
       osic_Close(fd0);
    }
    else Error("config file not readable", 25ul);
-   centerfreq(freq, 32ul);
+   centerfreq(freq, 64ul);
 } /* end rdconfig() */
 
 
@@ -646,11 +720,12 @@ static void showrssi(void)
       osi_Werr(s, 31ul);
       if (squelchs[j].sqsave<=0L) osi_Werr("db", 3ul);
       else osi_Werr("dB", 3ul);
-      if (!nosquelch && rxx[j].squelch) {
-         osi_Werr(" ", 2ul);
-         aprsstr_FixToStr(squelchs[j].medmed*0.03125f, 3UL, s, 31ul);
-         osi_Werr(s, 31ul);
-      }
+      /*
+      IF NOT nosquelch & rxx[j].squelch THEN
+        Werr(" "); FixToStr(squelchs[j].medmed*(1.0/SAMPSIZE), 3, s);
+                Werr(s);
+      END;
+      */
       if (rxx[j].modulation=='f') {
          osi_Werr(" ", 2ul);
          aprsstr_IntToStr(rxx[j].afckhz, 0UL, s, 31ul);
@@ -748,7 +823,6 @@ X2C_STACK_LIMIT(100000l)
 extern int main(int argc, char **argv)
 {
    long tmp;
-   unsigned long tmp0;
    X2C_BEGIN(&argc,argv,1,4000000l,8000000l);
    sdr_BEGIN();
    aprsstr_BEGIN();
@@ -757,14 +831,14 @@ extern int main(int argc, char **argv)
    lastmidfreq = 0UL;
    tshow = 0UL;
    levdiv2 = 256L;
-   memset((char *)rxx,(char)0,sizeof(struct sdr_RX [32]));
+   memset((char *)rxx,(char)0,sizeof(struct sdr_RX [64]));
    memset((char *)stickparm,(char)0,sizeof(struct STICKPARM [256]));
-   memset((char *)squelchs,(char)0,sizeof(struct SQUELCH [33]));
+   memset((char *)squelchs,(char)0,sizeof(struct SQUELCH [65]));
    Parms();
    actch = 0UL;
    ticker = 0UL;
    prx[0U] = 0;
-   for (freqc = 0UL; freqc<=31UL; freqc++) {
+   for (freqc = 0UL; freqc<=63UL; freqc++) {
       rxx[freqc].samples = (sdr_pAUDIOSAMPLE)sampx[freqc];
       rxx[freqc].idx = freqc;
    } /* end for */
@@ -781,7 +855,7 @@ extern int main(int argc, char **argv)
             }
             else ++tshow;
             schedule();
-            sn = sdr_getsdr(32UL, prx, 33ul);
+            sn = sdr_getsdr(32UL, prx, 65ul);
             if (sn<0L) {
                if (verb) {
                   if (sn==-2L) {
@@ -823,8 +897,9 @@ extern int main(int argc, char **argv)
                               --anonym->wakeness;
                            }
                         }
-                        if ((nosquelch || rxx[ix].modulation=='u')
-                || rxx[ix].modulation=='l') anonym->mutlev = 1.0f;
+                        if (nosquelch || rxx[ix].modulation=='s') {
+                           anonym->mutlev = 1.0f;
+                        }
                         else {
                            anonym->medmed = anonym->medmed+(rxx[ix]
                 .sqsum-anonym->medmed)*0.1f;
@@ -871,9 +946,8 @@ extern int main(int argc, char **argv)
                      ++rp;
                   }
                   if (dsamp==0UL) {
-                     tmp0 = freqc-1UL;
                      rp = 0UL;
-                     if (rp<=tmp0) for (;; rp++) {
+                     while (rp<freqc) {
                         pcm = squelchs[rp].pcmc;
                         squelchs[rp].pcmc = 0L;
                         /* channel mixer */
@@ -910,8 +984,8 @@ extern int main(int argc, char **argv)
                            mixleft = 0L;
                            mixright = 0L;
                         }
-                        if (rp==tmp0) break;
-                     } /* end for */
+                        ++rp;
+                     }
                   }
                   if (dsamp==0UL) dsamp = downsamp;
                   else --dsamp;

@@ -15,6 +15,12 @@
 
 #define sdr_ZFIRSIZE 256
 
+#define sdr_mSSB "s"
+
+#define sdr_mFM "f"
+
+#define sdr_mAM "a"
+
 typedef short sdr_AUDIOSAMPLE[65536];
 
 typedef short * sdr_pAUDIOSAMPLE;

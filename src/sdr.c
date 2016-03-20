@@ -800,7 +800,7 @@ static short getsamp(sdr_pRX rx, char notfirst)
       rx->bfophase = (unsigned long)((unsigned long)(rx->bfophase+rx->bfo)
                 &0x7FFUL);
       af = X2C_DIVR((u.Re*SSBDDS[rx->bfophase]-u.Im*SSBDDS[(unsigned long)
-                ((unsigned long)(rx->bfophase+512UL)&0x7FFUL)])*20000.0f,
+                ((unsigned long)(rx->bfophase+512UL)&0x7FFUL)])*25000.0f,
                 osic_sqrt(rx->rssi));
    }
    else {
