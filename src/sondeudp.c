@@ -39,7 +39,7 @@
 /*FROM Lib IMPORT NextArg; */
 /*FROM TimeConv IMPORT time; */
 /*FROM math IMPORT cos,sin,atan,tan,pow,sqrt; */
-#define sondeudp_MAXCHAN 32
+#define sondeudp_MAXCHAN 64
 
 #define sondeudp_CONTEXTLIFE 3600
 /* seconds till forget context after last heared */
@@ -308,7 +308,7 @@ static unsigned long fragmentsize;
 
 static FILENAME soundfn;
 
-static struct CHAN chan[32];
+static struct CHAN chan[64];
 
 static unsigned long adcbufsampx;
 
@@ -609,7 +609,7 @@ static void Config(void)
    struct R41 * anonym0;
    struct DFM6 * anonym1;
    struct C34 * anonym2;
-   for (c = 0UL; c<=31UL; c++) {
+   for (c = 0UL; c<=63UL; c++) {
       { /* with */
          struct R92 * anonym = &chan[c].r92;
          anonym->configbaud = 4800UL;
@@ -717,7 +717,7 @@ static void Parms(void)
    cfgchannels = 1UL; /* fix 1 channel */
    debfd = -1L;
    chanset = 0;
-   for (channel = 0UL; channel<=31UL; channel++) {
+   for (channel = 0UL; channel<=63UL; channel++) {
       { /* with */
          struct R92 * anonym = &chan[channel].r92;
          anonym->enabled = 1;
@@ -773,7 +773,7 @@ static void Parms(void)
             }
             else {
                /* use before -C set both */
-               for (ch = 0UL; ch<=31UL; ch++) {
+               for (ch = 0UL; ch<=63UL; ch++) {
                   chan[ch].c34.enabled = 0;
                } /* end for */
             }
@@ -785,7 +785,7 @@ static void Parms(void)
             }
             else {
                /* use before -C set both */
-               for (ch = 0UL; ch<=31UL; ch++) {
+               for (ch = 0UL; ch<=63UL; ch++) {
                   chan[ch].r92.enabled = 0;
                } /* end for */
             }
@@ -797,7 +797,7 @@ static void Parms(void)
             }
             else {
                /* use before -C set both */
-               for (ch = 0UL; ch<=31UL; ch++) {
+               for (ch = 0UL; ch<=63UL; ch++) {
                   chan[ch].r41.enabled = 0;
                } /* end for */
             }
@@ -809,7 +809,7 @@ static void Parms(void)
             }
             else {
                /* use before -C set both */
-               for (ch = 0UL; ch<=31UL; ch++) {
+               for (ch = 0UL; ch<=63UL; ch++) {
                   chan[ch].dfm6.enabled = 0;
                } /* end for */
             }
@@ -817,7 +817,7 @@ static void Parms(void)
          else if (h[1U]=='c') {
             osi_NextArg(h, 1024ul);
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
-            if (cnum>=31UL) Error("maxchannels 0..max", 19ul);
+            if (cnum>=63UL) Error("maxchannels 0..max", 19ul);
             cfgchannels = cnum;
             if (cfgchannels>0UL) maxchannels = cfgchannels-1UL;
          }
@@ -872,7 +872,7 @@ static void Parms(void)
             }
             else {
                /* use before -C set both */
-               for (ch = 0UL; ch<=31UL; ch++) {
+               for (ch = 0UL; ch<=63UL; ch++) {
                   chan[ch].mycallc = myc;
                   chan[ch].myssid = mys;
                } /* end for */
@@ -891,7 +891,7 @@ static void Parms(void)
             }
             else {
                /* use before -C set both */
-               for (ch = 0UL; ch<=31UL; ch++) {
+               for (ch = 0UL; ch<=63UL; ch++) {
                   utx->next = chan[ch].udptx;
                   chan[ch].udptx = utx;
                } /* end for */
@@ -2538,8 +2538,8 @@ static void getadc(void)
 {
    long sl;
    long l;
-   long max0[32];
-   long min0[32];
+   long max0[64];
+   long min0[64];
    unsigned long ch;
    unsigned long c;
    struct CHAN * anonym;
@@ -2583,7 +2583,7 @@ static void getadc(void)
          if (adcbufsampx!=X2C_max_longcard) {
             ch = (adcbufrd-adcbufsampx)-1UL;
             /*WrInt(ch, 1); WrStrLn(" ch"); */
-            if (ch<31UL) {
+            if (ch<63UL) {
                if (verb && maxchannels!=ch) {
                   osi_WrStr("channels changed from ", 23ul);
                   osic_WrINT32(maxchannels+1UL, 0UL);
@@ -2634,7 +2634,7 @@ extern int main(int argc, char **argv)
    aprsstr_BEGIN();
    osi_BEGIN();
    /*  Gencrctab; */
-   memset((char *)chan,(char)0,sizeof(struct CHAN [32]));
+   memset((char *)chan,(char)0,sizeof(struct CHAN [64]));
    Parms();
    getst = 0UL;
    afin = 0UL;
