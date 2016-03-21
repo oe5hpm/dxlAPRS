@@ -1001,14 +1001,15 @@ extern char sdr_startsdr(char ip[], unsigned long ip_len, char tport[],
    aprsstr_Assign(port, 11ul, tport, tport_len);
    reconnect = reconn;
    if (inhz>0UL) rtlhz = inhz;
-   if (rtlhz!=1024000UL && rtlhz!=2048000UL) return 0;
+   if (rtlhz!=1024000UL && (rtlhz<2048000UL || rtlhz>2500000UL)) return 0;
    if (outhz>0UL) audiohz = outhz;
    reduce = (1024UL*rtlhz+audiohz/2UL)/audiohz; /* sample reduction * 1024 */
    sampsize = reduce/1024UL; /* input samples per output sample, trunc */
    if (fd<0L) fd = connecttob(url, port);
    if (fd>=0L) {
       sdr_setparm(2UL, rtlhz);
-      initdds(inhz/1000UL);
+      if (inhz>=2048000UL) initdds(2048UL);
+      else initdds(1024UL);
       initssbdds(SSBDDS, 2048ul);
    }
    return fd>=0L;

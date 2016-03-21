@@ -290,9 +290,8 @@ static void Parms(void)
             /* iq sampelrate */
             osi_NextArg(s, 1001ul);
             if (!aprsstr_StrToCard(s, 1001ul,
-                &iqrate) || iqrate!=2048000UL && iqrate!=1024000UL) {
-               Error(" -i <Hz> 2048000 or 1024000", 28ul);
-            }
+                &iqrate) || iqrate!=1024000UL && (iqrate<2048000UL || iqrate>2500000UL)
+                ) Error(" -i <Hz> 2048000 or 1024000", 28ul);
          }
          else if (s[1U]=='v') verb = 1;
          else if (s[1U]=='k') reconn = 1;
@@ -315,24 +314,28 @@ static void Parms(void)
          else {
             if (s[1U]=='h') {
                osi_WrStrLn("", 1ul);
-               osi_WrStrLn("FM Multirx from rtl_tcp (8 bit IQ via tcpip to 2 \
-channel 16 bit pcm file/pipe", 78ul);
+               osi_WrStrLn("AM/FM/SSB Multirx from rtl_tcp (8 bit IQ via tcpi\
+p) to audio channel(s) 8/16 bit PCM", 85ul);
                osi_WrStrLn(" -c <configfilename> read channels config from fi\
 le (sdrcfg.txt)", 65ul);
                osi_WrStrLn(" -d <ratio>          downsample output (1)",
                 43ul);
                osi_WrStrLn(" -h                  help", 26ul);
-               osi_WrStrLn(" -i <Hz>             input sampelrate Hz (2048000\
-) or 1024000", 62ul);
+               osi_WrStrLn(" -i <kHz>            input sampelrate kHz 1024000\
+ or 2048000..2500000 (2048000)", 80ul);
+               osi_WrStrLn("                      if greater 2048000, AM/FM-I\
+F-width will increase", 71ul);
                osi_WrStrLn(" -k                  keep connection", 37ul);
-               osi_WrStrLn(" -m <audiochannels>  mix all rx channels to audio\
-channels (1..2)", 65ul);
+               osi_WrStrLn(" -m <audiochannels>  mix up/down all rx channels \
+to 1 or 2 audiochannels (mono/stereo)", 87ul);
+               osi_WrStrLn("                      for 2 channels the rx audio\
+s will be arranged from left to right", 87ul);
                osi_WrStrLn(" -o <mhz>            offset for entered frequenci\
 es if Converters are used", 75ul);
                osi_WrStrLn(" -p <cmd> <value>    send rtl_tcp parameter, ppm,\
  tunergain ...", 64ul);
                osi_WrStrLn(" -r <Hz>             output sampelrate Hz for all\
- channels (16000)", 67ul);
+ channels 8000..192000 (16000)", 80ul);
                osi_WrStrLn(" -s <soundfilename>  16bit signed n-channel sound\
  stream/pipe", 62ul);
                osi_WrStrLn(" -S <soundfilename>  8bit unsigned n-channel soun\
@@ -341,55 +344,60 @@ d stream/pipe", 63ul);
 0.0.1:1234)", 61ul);
                osi_WrStrLn(" -v                  show rssi (dB) and afc (khz)\
 ", 50ul);
-               osi_WrStrLn(" -z <ms>             sleep time inactive channel \
-if squelch closed", 67ul);
-               osi_WrStrLn(" -Z <ms>             same but no audio quieting f\
-or sending to a decoder", 73ul);
-               osi_WrStrLn("example: -s /tmp/sound.pcm -t 192.168.1.1:1234 -p\
- 5 72 -p 8 1 -v", 65ul);
+               osi_WrStrLn(" -z <ms>             sleep time (no cpu) for inac\
+tive rx if squelch closed (-z 100)", 84ul);
+               osi_WrStrLn(" -Z <ms>             same but fast open with no a\
+udio quieting for sending", 75ul);
+               osi_WrStrLn("                      to decoders and not human e\
+ars", 53ul);
+               osi_WrStrLn("example: -m 1 -d 2 -S /dev/dsp -t 127.0.0.1:1234 \
+-p 5 72 -p 8 1 -v", 67ul);
                osi_WrStrLn("", 1ul);
                osi_WrStrLn("config file: (re-read every some seconds and may \
 be modified any time)", 71ul);
                osi_WrStrLn("  # comment", 12ul);
                osi_WrStrLn("  p <cmd> <value>  rtl_tcp parameter like \'p 5 5\
-0\' ppm, \'p 8 1\' autogain", 73ul);
-               osi_WrStrLn("  f <mhz> <AFC-range> <squelch%> <lowpass%>  <if-\
+0\' ppm, \'p 8 1\' autogain on", 76ul);
+               osi_WrStrLn("  f <mhz> <AFC-range> <squelch%> <lowpass%>  <IF-\
 width>  FM Demodulator", 72ul);
-               osi_WrStrLn("  a <mhz>  0           0         <lowpass%>  <if-\
+               osi_WrStrLn("  a <mhz>  0          <squelch%> <lowpass%>  <IF-\
 width>  AM Demodulator", 72ul);
-               osi_WrStrLn("  u <mhz> <if-shift>   0         <agc speed> <if-\
+               osi_WrStrLn("  u <mhz> <IF-shift>   0         <agc speed> <IF-\
 width>  USB Demodulator", 73ul);
                osi_WrStrLn("  l same for LSB", 17ul);
                osi_WrStrLn("    AFC-range in +-kHz, Squelch 0 off, 100 open, \
-95 near open", 62ul);
+70 may do", 59ul);
                osi_WrStrLn("    audio lowpass in % Nyquist frequ. of output s\
 ampelrate, 0 is off", 69ul);
                osi_WrStrLn("    IF-width 3000 6000 12000 24000 48000 96000 19\
 2000Hz for low CPU usage", 74ul);
-               osi_WrStrLn("    (192000 only with 2048khz iq-rate), (4th orde\
-r IIR) SSB always low CPU", 75ul);
-               osi_WrStrLn("    (+ 8th order IF-IIR), other values with more \
-CPU-load (6000 default)", 73ul);
-               osi_WrStrLn("  a <mhz> 0 <squelch> <lowpass%> <if-width>   AM \
-Demodulator", 61ul);
-               osi_WrStrLn("  u <mhz> 0 0 <lowpass%> <if-width>           USB\
- Demodulator", 62ul);
-               osi_WrStrLn("  l <mhz> 0 0 <lowpass%> <if-width>           LSB\
- Demodulator", 62ul);
+               osi_WrStrLn("    (192000 only with >=2048khz iq-rate), (4th or\
+der IIR)", 58ul);
+               osi_WrStrLn("    (SSB 8th order IF-IIR), OTHER values with MOR\
+E CPU-load (12000 default)", 76ul);
                osi_WrStrLn("", 1ul);
                osi_WrStrLn("  example:", 11ul);
                osi_WrStrLn("    p 5 50", 11ul);
                osi_WrStrLn("    p 8 1", 10ul);
-               osi_WrStrLn("    f 438.825 5 95 70           (afc, quelch, aud\
-io lowpass, 12khz IF)", 71ul);
-               osi_WrStrLn("    f 439.275 0 0 0 20000       (20khz IF)",
-                43ul);
-               osi_WrStrLn("  will generate 2 channel 16bit PCM stream (up to\
- 32 channels with future cpu...)", 82ul);
-               osi_WrStrLn("  max 2MHz span, automatic rtl-tuned to center of\
- the span", 59ul);
-               osi_WrStrLn("  excluded +-10khz of rtl-band-center to avoid AD\
-C-DC offset pseudo carriers", 77ul);
+               osi_WrStrLn("    f 438.825   5   75 70         (afc, quelch, a\
+udio lowpass, 12khz IF)", 73ul);
+               osi_WrStrLn("    f 439.275   0   0  80 20000   (20khz IF, uses\
+ more CPU)", 60ul);
+               osi_WrStrLn("    u 439.5001 -700 0  0  600     (USB with 600Hz\
+ CW-Filter at 800Hz", 69ul);
+               osi_WrStrLn("", 1ul);
+               osi_WrStrLn("  will generate 3 channel 16bit PCM stream (up to\
+ 64 channels with -z or -Z)", 77ul);
+               osi_WrStrLn("  use max. 95% of -i span. Rtl-stick will be tune\
+d to center of the span", 73ul);
+               osi_WrStrLn("  rx in center of band will be +-10khz relocated \
+to avoid ADC-DC offset pseudo", 79ul);
+               osi_WrStrLn("  carriers, SSB-only will be relocated 10..210khz\
+ to avoid inexact tuning steps", 80ul);
+               osi_WrStrLn("", 1ul);
+               osi_WrStrLn("    f 100.1 0 0 15 96000          (WFM with \"-r \
+192000 -d 4\" for 1 channnel 48khz", 82ul);
+               osi_WrStrLn("", 1ul);
                X2C_ABORT();
             }
             if (s[1U]=='p') {
@@ -516,6 +524,9 @@ static void centerfreq(const struct FREQTAB freq[], unsigned long freq_len)
    unsigned long i;
    long nomid;
    char ssb;
+   double rem;
+   double fhz;
+   double khz;
    midfreq = 0UL;
    i = 0UL;
    max0 = 0UL;
@@ -527,7 +538,7 @@ static void centerfreq(const struct FREQTAB freq[], unsigned long freq_len)
       ++i;
    }
    if (max0>=min0) {
-      if (max0-min0>2000000UL) osi_WerrLn("freq span > 2MHz", 17ul);
+      if (max0-min0>=iqrate) osi_WerrLn("freq span > iq-sampelrate", 26ul);
       midfreq = (max0+min0)/2UL;
       nomid = X2C_max_longint;
       i = 0UL;
@@ -551,8 +562,17 @@ static void centerfreq(const struct FREQTAB freq[], unsigned long freq_len)
       while (i<freqc) {
          /*     FILL(ADR(rxx[i]), 0C, SIZE(rxx[0])); */
          prx[i] = &rxx[i];
-         rxx[i].df = freq[i].hz/1000UL-midfreq/1000UL;
-         rxx[i].dffrac = (freq[i].hz-rxx[i].df*1000UL)%1000UL;
+         khz = 1.0;
+         if (iqrate>2048000UL) khz = X2C_DIVL(2.048E+6,(double)iqrate);
+         fhz = (double)((long)freq[i].hz-(long)midfreq)*khz;
+         rxx[i].df = (unsigned long)((long)X2C_TRUNCI(fhz,X2C_min_longint,
+                X2C_max_longint)/1000L);
+         rem = fhz-(double)(((long)X2C_TRUNCI(fhz,X2C_min_longint,
+                X2C_max_longint)/1000L)*1000L);
+         rxx[i].dffrac = (unsigned long)X2C_TRUNCC(X2C_DIVL(rem,khz)+0.5,0UL,
+                X2C_max_longcard);
+         /*      rxx[i].df:=(freq[i].hz DIV 1000 - midfreq DIV 1000); */
+         /*      rxx[i].dffrac:=(freq[i].hz-rxx[i].df*1000) MOD 1000; */
          /*WrInt(nomid, 15);WrInt(midfreq, 15);WrInt(freq[i].hz, 15);
                 WrInt(rxx[i].df, 15); WrInt(rxx[i].dffrac, 15);
                 WrStrLn("n m h d fr"); */
@@ -849,11 +869,11 @@ extern int main(int argc, char **argv)
       if (fd>=0L) {
          recon = 1;
          for (;;) {
-            if (tshow>500UL) {
+            if (tshow==0UL) {
                userio();
-               tshow = 0UL;
+               tshow = samphz/32UL;
             }
-            else ++tshow;
+            else --tshow;
             schedule();
             sn = sdr_getsdr(32UL, prx, 65ul);
             if (sn<0L) {
