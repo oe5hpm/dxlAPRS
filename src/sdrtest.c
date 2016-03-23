@@ -38,6 +38,9 @@
 #define sdrtest_TUNEBAND 200000
 /* step to minimize freq jumps from inexact pll */
 
+#define sdrtest_DEFAULTMAXWAKE 2000
+/* ms stay awake after squelch close */
+
 struct FREQTAB;
 
 
@@ -111,6 +114,8 @@ static unsigned long iqrate;
 static unsigned long samphz;
 
 static unsigned long maxrx;
+
+static unsigned long maxwake;
 
 static char url[1001];
 
@@ -222,6 +227,7 @@ static void Parms(void)
    powersave = 0UL;
    maxrx = 63UL;
    nosquelch = 0;
+   maxwake = 2000UL;
    for (;;) {
       osi_NextArg(s, 1001ul);
       if (s[0U]==0) break;
@@ -256,6 +262,13 @@ static void Parms(void)
             if ((!aprsstr_StrToCard(s, 1001ul,
                 &mixto) || mixto<1UL) || mixto>2UL) {
                Error(" -m <1..2>", 11ul);
+            }
+         }
+         else if (s[1U]=='a') {
+            /* maximal active rx */
+            osi_NextArg(s, 1001ul);
+            if (!aprsstr_StrToCard(s, 1001ul, &maxrx)) {
+               Error(" -a <number>", 13ul);
             }
          }
          else if (s[1U]=='t') {
@@ -295,6 +308,13 @@ static void Parms(void)
          }
          else if (s[1U]=='v') verb = 1;
          else if (s[1U]=='k') reconn = 1;
+         else if (s[1U]=='w') {
+            /* maximum wake time */
+            osi_NextArg(s, 1001ul);
+            if (!aprsstr_StrToCard(s, 1001ul, &maxwake)) {
+               Error(" -w <ms>", 9ul);
+            }
+         }
          else if (s[1U]=='z') {
             /* powersave time */
             osi_NextArg(s, 1001ul);
@@ -316,6 +336,10 @@ static void Parms(void)
                osi_WrStrLn("", 1ul);
                osi_WrStrLn("AM/FM/SSB Multirx from rtl_tcp (8 bit IQ via tcpi\
 p) to audio channel(s) 8/16 bit PCM", 85ul);
+               osi_WrStrLn(" -a <number>         maximum active rx to limit c\
+pu load, if number is reached,", 80ul);
+               osi_WrStrLn("                      no more inactive rx will li\
+sten to become active", 71ul);
                osi_WrStrLn(" -c <configfilename> read channels config from fi\
 le (sdrcfg.txt)", 65ul);
                osi_WrStrLn(" -d <ratio>          downsample output (1)",
@@ -323,8 +347,8 @@ le (sdrcfg.txt)", 65ul);
                osi_WrStrLn(" -h                  help", 26ul);
                osi_WrStrLn(" -i <kHz>            input sampelrate kHz 1024000\
  or 2048000..2500000 (2048000)", 80ul);
-               osi_WrStrLn("                      if greater 2048000, AM/FM-I\
-F-width will increase", 71ul);
+               osi_WrStrLn("                      if >2048000, AM/FM-IF-width\
+ will increase proportional", 77ul);
                osi_WrStrLn(" -k                  keep connection", 37ul);
                osi_WrStrLn(" -m <audiochannels>  mix up/down all rx channels \
 to 1 or 2 audiochannels (mono/stereo)", 87ul);
@@ -344,6 +368,8 @@ d stream/pipe", 63ul);
 0.0.1:1234)", 61ul);
                osi_WrStrLn(" -v                  show rssi (dB) and afc (khz)\
 ", 50ul);
+               osi_WrStrLn(" -w <ms>             max stay awake (use CPU) tim\
+e after squelch close (2000)", 78ul);
                osi_WrStrLn(" -z <ms>             sleep time (no cpu) for inac\
 tive rx if squelch closed (-z 100)", 84ul);
                osi_WrStrLn(" -Z <ms>             same but fast open with no a\
@@ -412,7 +438,9 @@ to avoid ADC-DC offset pseudo", 79ul);
                   }
                   else Error(" -p <cmd> <value>", 18ul);
                }
-               else Error(" -p <cmd> <value>", 18ul);
+               else {
+                  Error(" -p <cmd> <value>", 18ul);
+               }
             }
             else Error("-h", 3ul);
          }
@@ -420,6 +448,7 @@ to avoid ADC-DC offset pseudo", 79ul);
       else Error("-h", 3ul);
    }
    powersave = (powersave*samphz)/32000UL;
+   maxwake = (maxwake*samphz)/32000UL;
 } /* end Parms() */
 
 
@@ -816,26 +845,57 @@ static void userio(void)
    if (verb) showrssi();
 } /* end userio() */
 
+/*
+PROCEDURE schedule;
+VAR i,j:CARDINAL;
+BEGIN
+  i:=0;
+  IF freqc>0 THEN
+    j:=actch;
+    REPEAT
+      IF VAL(INTEGER, ticker-squelchs[j].nexttick)>=0 THEN 
+        squelchs[j].nexttick:=ticker;
+        prx[i]:=ADR(rxx[j]); 
+        INC(i);
+      END;
+      INC(j);
+      IF j>=freqc THEN j:=0 END;
+    UNTIL (i>maxrx) OR (j=actch);
+  END;
+  prx[i]:=NIL;
+  actch:=j;
+END schedule;
+*/
 
 static void schedule(void)
 {
    unsigned long j;
    unsigned long i;
    i = 0UL;
-   if (freqc>0UL) {
-      j = actch;
-      do {
-         if ((long)(ticker-squelchs[j].nexttick)>=0L) {
-            squelchs[j].nexttick = ticker;
-            prx[i] = &rxx[j];
-            ++i;
-         }
-         ++j;
-         if (j>=freqc) j = 0UL;
-      } while (!(i>maxrx || j==actch));
+   j = 0UL;
+   while (j<freqc && i<maxrx) {
+      /* first append wake rx */
+      if (squelchs[j].wakeness<=0L) {
+         /* rx awake */
+         squelchs[j].nexttick = ticker;
+         prx[i] = &rxx[j];
+         ++i;
+      }
+      ++j;
+   }
+   j = 0UL;
+   while (j<freqc && i<maxrx) {
+      /* then sleeping rx until maxrx */
+      if (squelchs[j].wakeness>0L && (long)(ticker-squelchs[j].nexttick)>=0L)
+                 {
+         /* rx run */
+         squelchs[j].nexttick = ticker;
+         prx[i] = &rxx[j];
+         ++i;
+      }
+      ++j;
    }
    prx[i] = 0;
-   actch = j;
 } /* end schedule() */
 
 
@@ -910,7 +970,8 @@ extern int main(int argc, char **argv)
                            }
                         }
                         else {
-                           if (anonym->sqsave<2000L) {
+                           /* squelch open */
+                           if (anonym->sqsave<(long)maxwake) {
                               ++anonym->sqsave;
                            }
                            if (anonym->wakeness>-100L) {
