@@ -192,6 +192,8 @@ static void Parms(void)
             osi_WrStrLn(" -h             help", 21ul);
             osi_WrStrLn(" -p <cmd> <value> send rtl_tcp parameter, ppm, tuner\
 gain ...", 61ul);
+            osi_WrStrLn(" -s <soundfilename>  16bit 48kHz signed 2 channel so\
+und stream/pipe", 68ul);
             osi_WrStrLn(" -t <url:port>  connect rtl:tcp server (127.0.0.1:12\
 34)", 56ul);
             osi_WrStrLn(" -v             show rssi (dB) and afc (khz)",
