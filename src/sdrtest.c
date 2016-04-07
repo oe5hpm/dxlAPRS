@@ -488,61 +488,6 @@ static void setstickparm(unsigned long cmd, unsigned long value)
    stickparm[cmd].ok0 = 1;
 } /* end setstickparm() */
 
-/*
-PROCEDURE centerfreq(freq-:ARRAY OF FREQTAB);
-CONST OFFSET=10;
-VAR i, min, max:CARDINAL;
-    nomid:INTEGER;
-BEGIN
-  midfreq:=0;
-  i:=0;
-  max:=0;
-  min:=MAX(CARDINAL);
-  WHILE i<freqc DO
---WrStr("rx"); WrInt(i+1, 0); WrInt(freq[i].khz, 0); WrStrLn("kHz");
-    IF freq[i].khz>max THEN max:=freq[i].khz END;
-    IF freq[i].khz<min THEN min:=freq[i].khz END;
-    INC(i);
-  END;
-  IF max>=min THEN
-    IF max-min>2000 THEN WerrLn("freq span > 2MHz") END;
-    midfreq:=(max+min) DIV 2;
-
-    nomid:=MAX(INTEGER);
-    i:=0;
-    WHILE i<freqc DO
-      IF ABS(VAL(INTEGER, freq[i].khz-midfreq))<ABS(nomid) THEN nomid:=freq[i].khz-midfreq END;
-      INC(i);
-    END;
-    IF ABS(nomid)>OFFSET THEN nomid:=0 ELSIF nomid<0
-    THEN nomid:=OFFSET+nomid ELSE nomid:=nomid-OFFSET END;
-    INC(midfreq, nomid);
-
-    i:=0;
-    WHILE i<freqc DO  
---     FILL(ADR(rxx[i]), 0C, SIZE(rxx[0]));
-      prx[i]:=ADR(rxx[i]);
-      rxx[i].df:=(freq[i].khz-midfreq) DIV 1000;
-      rxx[i].dffrac:=freq[i].hz;
-      rxx[i].maxafc:=freq[i].afc;
---WrInt(rxx[i].maxafc, 0); WrStrLn(" maxafc");
-      rxx[i].squelch:=squelchs[i].lev<>0.0;
-      rxx[i].width:=freq[i].width;
-      rxx[i].agc:=freq[i].agc;
-      rxx[i].modulation:=freq[i].modulation;
-      INC(i);
-    END;
-    prx[i]:=NIL;
-  END;
-  IF midfreq<40000 THEN WerrLn("no valid frequency");
-  ELSIF midfreq<>lastmidfreq THEN
-    setstickparm(1, midfreq*TUNESTEP);
-
---WrStr("set ");WrInt(midfreq, 0); WrStrLn("kHz");
-    lastmidfreq:=midfreq;
-  END;
-END centerfreq;
-*/
 #define sdrtest_OFFSET 10000
 
 
@@ -614,7 +559,7 @@ static void centerfreq(const struct FREQTAB freq[], unsigned long freq_len)
       }
       prx[i] = 0;
    }
-   if (midfreq<40000000UL) osi_WerrLn("no valid frequency", 19ul);
+   if (midfreq<20000000UL) osi_WerrLn("no valid frequency", 19ul);
    else if (midfreq!=lastmidfreq) {
       setstickparm(1UL, midfreq);
       /*WrStr("set ");WrInt(midfreq, 0); WrStrLn("kHz"); */
