@@ -86,6 +86,13 @@ struct maptool__D0 maptool_mappack;
 
 #define maptool_CHARS 97
 
+#define maptool_NOMAPR 100
+/* have no map fill colour */
+
+#define maptool_NOMAPG 120
+
+#define maptool_NOMAPB 100
+
 #define maptool_SRTMXY 3600
 
 #define maptool_STRIPS 3
@@ -4742,9 +4749,9 @@ static char loadtile(maptool_pIMAGE map, char * done, char dryrun,
                 ((map->Len0-1)+1UL)) {
                { /* with */
                   struct maptool_PIX * anonym = &map->Adr[(x)*map->Len0+y];
-                  anonym->r = 0U;
-                  anonym->g = 0U;
-                  anonym->b = 0U;
+                  anonym->r = 100U;
+                  anonym->g = 120U;
+                  anonym->b = 100U;
                }
             }
             if (x==tmp0) break;

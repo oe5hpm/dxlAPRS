@@ -7050,11 +7050,14 @@ static void dolist(pMENU m, unsigned long xcl, unsigned long ycl)
          }
          if (aprspos_posvalid(bl->position)) {
             aprstext_setmark1(bl->position, 1, X2C_max_longint, bl->time0);
-            /*
-                    click.markpos:=bl^.position;
-                    click.markpost:=bl^.time;
-                    click.markalti:=MAX(INTEGER);
-            */
+            aprsdecode_click.markpos = bl->position;
+            aprsdecode_click.markpost = bl->time0;
+            aprsdecode_click.markalti = X2C_max_longint;
+            op = aprstext_oppo(bl->call);
+            if (op) {
+               images(op, 0, aprsdecode_click.graphset);
+               useri_refresh = 1;
+            }
             aprsdecode_click.cmd = 't';
          }
       }

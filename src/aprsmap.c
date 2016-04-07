@@ -38,9 +38,7 @@
 #ifndef aprstext_H_
 #include "aprstext.h"
 #endif
-#ifndef signal_H_
-#include "signal.h"
-#endif
+#include <signal.h>
 
 /* aprs tracks on osm map by oe5dxl */
 #define aprsmap_MINLIG 60

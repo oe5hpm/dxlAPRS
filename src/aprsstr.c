@@ -18,6 +18,7 @@
 #endif
 
 /* string lib by oe5dxl */
+/* needed by hpm-libs */
 /*FROM osi IMPORT WrInt, WrStrLn; */
 static unsigned char CRCL[256];
 
