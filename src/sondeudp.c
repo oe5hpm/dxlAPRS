@@ -1263,6 +1263,14 @@ static long getint32(const char frame[], unsigned long frame_len,
 } /* end getint32() */
 
 
+static unsigned long getcard16(const char frame[], unsigned long frame_len,
+                unsigned long p)
+{
+   return (unsigned long)(unsigned char)frame[p]+256UL*(unsigned long)
+                (unsigned char)frame[p+1UL];
+} /* end getcard16() */
+
+
 static long getint16(const char frame[], unsigned long frame_len,
                 unsigned long p)
 {
@@ -1396,8 +1404,8 @@ static void decode41(unsigned long m)
             nameok = 1;
             if (verb && anonym->rxbuf[p+23UL]==0) {
                osi_WrStr(" ", 2ul);
-               osic_WrFixed((float)(getint16(anonym->rxbuf, 520ul,
-                p+26UL)/64L+40000L)*0.01f, 2L, 1UL);
+               osic_WrFixed((float)(getcard16(anonym->rxbuf, 520ul,
+                p+26UL)/64UL+40000UL)*0.01f, 2L, 1UL);
                osi_WrStr("MHz", 4ul);
             }
          }

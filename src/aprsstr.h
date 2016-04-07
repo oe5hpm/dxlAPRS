@@ -13,7 +13,6 @@
 #include "X2C.h"
 #endif
 
-/* string lib by oe5dxl */
 typedef unsigned long aprsstr_TIME;
 
 typedef unsigned long aprsstr_IPNUM;
