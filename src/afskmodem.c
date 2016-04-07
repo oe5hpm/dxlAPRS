@@ -1474,7 +1474,7 @@ static void getkiss(void)
 
 static float dB(unsigned long v)
 {
-   if (v>0UL) return osic_ln((float)v)*8.685889638f-96.0f;
+   if (v>0UL) return osic_ln((float)v)*8.685889638f-96.5f;
    else return 0.0f;
    return 0;
 } /* end dB() */
