@@ -1583,6 +1583,7 @@ static void decodec34(const char rxb[], unsigned long rxb_len,
    double exlat;
    double exlon;
    double hr;
+   pCONTEXTC34 pc0;
    pCONTEXTC34 pc1;
    pCONTEXTC34 pc;
    double stemp;
@@ -1641,20 +1642,21 @@ static void decodec34(const char rxb[], unsigned long rxb_len,
    osi_WrStr(nam, 9ul);
    osi_WrStr(" ", 2ul);
    pc = pcontextc;
-   /*WHILE (pc<>NIL) & NOT StrCmp(nam, pc^.name) DO pc:=pc^.next END; */
+   pc0 = 0;
    for (;;) {
       if (pc==0) break;
+      pc1 = pc->next;
       if (pc->tused+3600UL<systime) {
          /* timed out */
-         pc1 = pc;
-         pc = pc->next;
-         if (pc1==pcontextc) pcontextc = pc;
-         osic_free((X2C_ADDRESS *) &pc1, sizeof(struct CONTEXTC34));
+         if (pc0==0) pcontextc = pc1;
+         else pc0->next = pc1;
+         osic_free((X2C_ADDRESS *) &pc, sizeof(struct CONTEXTC34));
       }
       else {
          if (aprsstr_StrCmp(nam, 9ul, pc->name, 9ul)) break;
-         pc = pc->next;
+         pc0 = pc;
       }
+      pc = pc1;
    }
    if (pc==0) {
       osic_alloc((X2C_ADDRESS *) &pc, sizeof(struct CONTEXTC34));
@@ -1955,6 +1957,7 @@ static void decodedfm6(const char rxb[], unsigned long rxb_len,
 {
    unsigned long rt;
    char db[56];
+   pCONTEXTDFM6 pc0;
    pCONTEXTDFM6 pc1;
    pCONTEXTDFM6 pc;
    OBJNAME nam;
@@ -2008,20 +2011,21 @@ static void decodedfm6(const char rxb[], unsigned long rxb_len,
    osi_WrStr(nam, 9ul);
    osi_WrStr(" ", 2ul);
    pc = pcontextdfm6;
-   /*  WHILE (pc<>NIL) & NOT StrCmp(nam, pc^.name) DO pc:=pc^.next END; */
+   pc0 = 0;
    for (;;) {
       if (pc==0) break;
+      pc1 = pc->next;
       if (pc->tused+3600UL<systime) {
          /* timed out */
-         pc1 = pc;
-         pc = pc->next;
-         if (pc1==pcontextdfm6) pcontextdfm6 = pc;
-         osic_free((X2C_ADDRESS *) &pc1, sizeof(struct CONTEXTDFM6));
+         if (pc0==0) pcontextdfm6 = pc1;
+         else pc0->next = pc1;
+         osic_free((X2C_ADDRESS *) &pc, sizeof(struct CONTEXTDFM6));
       }
       else {
          if (aprsstr_StrCmp(nam, 9ul, pc->name, 9ul)) break;
-         pc = pc->next;
+         pc0 = pc;
       }
+      pc = pc1;
    }
    if (pc==0) {
       osic_alloc((X2C_ADDRESS *) &pc, sizeof(struct CONTEXTDFM6));
@@ -2171,6 +2175,14 @@ static long getint32(const char frame[], unsigned long frame_len,
 } /* end getint32() */
 
 
+static unsigned long getcard16(const char frame[], unsigned long frame_len,
+                unsigned long p)
+{
+   return (unsigned long)(unsigned char)frame[p]+256UL*(unsigned long)
+                (unsigned char)frame[p+1UL];
+} /* end getcard16() */
+
+
 static long getint16(const char frame[], unsigned long frame_len,
                 unsigned long p)
 {
@@ -2259,6 +2271,7 @@ static void decoders41(const char rxb[], unsigned long rxb_len,
    char calok;
    unsigned short crc;
    char typ;
+   pCONTEXTR4 pc0;
    pCONTEXTR4 pc1;
    pCONTEXTR4 pc;
    double climb;
@@ -2332,21 +2345,21 @@ static void decoders41(const char rxb[], unsigned long rxb_len,
          } /* end for */
          nam[8U] = 0;
          pc = pcontextr4;
-         /*        WHILE (pc<>NIL) & NOT StrCmp(nam,
-                pc^.name) DO pc:=pc^.next END; */
+         pc0 = 0;
          for (;;) {
             if (pc==0) break;
+            pc1 = pc->next;
             if (pc->tused+3600UL<systime) {
                /* timed out */
-               pc1 = pc;
-               pc = pc->next;
-               if (pc1==pcontextr4) pcontextr4 = pc;
-               osic_free((X2C_ADDRESS *) &pc1, sizeof(struct CONTEXTR4));
+               if (pc0==0) pcontextr4 = pc1;
+               else pc0->next = pc1;
+               osic_free((X2C_ADDRESS *) &pc, sizeof(struct CONTEXTR4));
             }
             else {
                if (aprsstr_StrCmp(nam, 9ul, pc->name, 9ul)) break;
-               pc = pc->next;
+               pc0 = pc;
             }
+            pc = pc1;
          }
          if (pc==0) {
             osic_alloc((X2C_ADDRESS *) &pc, sizeof(struct CONTEXTR4));
@@ -2374,8 +2387,8 @@ static void decoders41(const char rxb[], unsigned long rxb_len,
             osic_WrINT32(pc->framenum, 1UL);
          }
          if (rxb[p+23UL]==0) {
-            pc->mhz0 = (float)(getint16(rxb, rxb_len,
-                p+26UL)/64L+40000L)*0.01f+0.0005f;
+            pc->mhz0 = (float)(getcard16(rxb, rxb_len,
+                p+26UL)/64UL+40000UL)*0.01f+0.0005f;
          }
          if (sondeaprs_verb) {
             osi_WrStr(objname, 9ul);
