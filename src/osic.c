@@ -272,7 +272,7 @@ void osic_Fill(char *buf, unsigned long len, char byte)
 
 double osic_Random(void)
 {
-	return rand();
+	return (rand() / (double)RAND_MAX);
 }
 
 void X2C_BEGIN(int *argc, char *argv[],
