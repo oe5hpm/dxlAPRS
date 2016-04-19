@@ -142,7 +142,7 @@ struct _0;
 
 struct _0 {
    long fd;
-   char havefile;
+   char havefile; /* have tried to open file */
 };
 /* srtm */
 
@@ -639,7 +639,9 @@ static long opensrtm(unsigned char t, unsigned long tlat,
          s[5U] = '4';
          yi = 0UL;
       }
-      if (srtm30fd[xi][yi].havefile) return srtm30fd[xi][yi].fd;
+      if (srtm30fd[xi][yi].havefile && srtm30fd[xi][yi].fd!=-1L) {
+         return srtm30fd[xi][yi].fd;
+      }
       s[6U] = '0';
       s[7U] = '.';
       s[8U] = 'D';
@@ -650,7 +652,6 @@ static long opensrtm(unsigned char t, unsigned long tlat,
       f = osi_OpenRead(path, 1024ul);
       srtm30fd[xi][yi].fd = f;
       srtm30fd[xi][yi].havefile = 1;
-      /*WrInt(xi, 4); WrInt(yi, 4); WrStrLn(path); */
       return f;
    }
    return 0;
@@ -709,11 +710,16 @@ static void purgesrtm(char all)
          }
       }
    } /* end for */
-   for (x = 0UL; x<=8UL; x++) {
-      for (y = 0UL; y<=3UL; y++) {
-         if (srtm30fd[x][y].havefile) osic_Close(srtm30fd[x][y].fd);
+   if (all) {
+      for (x = 0UL; x<=8UL; x++) {
+         for (y = 0UL; y<=3UL; y++) {
+            if (srtm30fd[x][y].havefile && srtm30fd[x][y].fd!=-1L) {
+               osic_Close(srtm30fd[x][y].fd);
+               srtm30fd[x][y].fd = -1L;
+            }
+         } /* end for */
       } /* end for */
-   } /* end for */
+   }
 } /* end purgesrtm() */
 
 #define maptool_NOALT0 32767.0
@@ -824,7 +830,6 @@ static float getsrtm1(unsigned long ilat, unsigned long ilong,
          if (pb==0) return 32767.0f;
          useri_debugmem.srtm += rdsize;
          anonym0->strips[xx][y] = pb;
-         /*WrInt(seek, 15);WrStrLn(" seek"); */
          osic_Seek(anonym0->fd, (unsigned long)seek);
          if (osi_RdBin(anonym0->fd, (char *)pb, 2400u/1u,
                 rdsize)!=(long)rdsize) return 32767.0f;
@@ -4785,7 +4790,6 @@ static char loadtile(maptool_pIMAGE map, char * done, char dryrun,
          }
          do {
             pngbuf[y][x] = pngbuf[yy+y/2L][xx+x/2L];
-            /*        pngbuf[y]^[x].r8:=255; */
             x += ix;
          } while (!(x<0L || x>255L));
          y += iy;

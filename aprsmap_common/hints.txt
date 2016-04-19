@@ -902,6 +902,7 @@ in logfile for reimport with filter off
 |7315 Filter out all received from Igate
 
 |7320 Filter out Object/Call seen on Map
+* is wildcard
 
 |7400 Enter Your Callsign, it is not necessary
 to receive data from servers but would
