@@ -262,7 +262,7 @@ static void comment0(char buf[], unsigned long buf_len, unsigned long uptime,
             }
             else if (fb[bol+1L]=='v') {
                /* insert version */
-               strncpy(fb," sondemod(c) 0.6",32768u);
+               strncpy(fb," sondemod(c) 0.7",32768u);
             }
             else if (fb[bol+1L]=='s') {
                /* insert sat count */
@@ -1030,12 +1030,13 @@ END highresstr;
 
 extern void sondeaprs_senddata(double lat, double long0, double alt,
                 double speed, double dir, double clb, double hp, double hyg,
-                double temp, double ozon, double otemp, double dewp,
-                double mhz, double hrms, double vrms, unsigned long sattime,
-                unsigned long uptime, char objname[],
-                unsigned long objname_len, unsigned long almanachage,
-                unsigned long goodsats, char usercall[],
-                unsigned long usercall_len, unsigned long calperc)
+                double temp, double ozon, double otemp, double pumpmA,
+                double pumpv, double dewp, double mhz, double hrms,
+                double vrms, unsigned long sattime, unsigned long uptime,
+                char objname[], unsigned long objname_len,
+                unsigned long almanachage, unsigned long goodsats,
+                char usercall[], unsigned long usercall_len,
+                unsigned long calperc)
 {
    unsigned char e;
    pCONTEXT ct;
@@ -1163,6 +1164,18 @@ extern void sondeaprs_senddata(double lat, double long0, double alt,
                aprsstr_FixToStr((float)otemp, 2UL, h, 251ul);
                aprsstr_Append(s, 251ul, h, 251ul);
                aprsstr_Append(s, 251ul, "C", 2ul);
+               if (pumpmA>0.1) {
+                  aprsstr_Append(s, 251ul, " Pump=", 7ul);
+                  aprsstr_IntToStr((long)truncc(pumpmA), 1UL, h, 251ul);
+                  aprsstr_Append(s, 251ul, h, 251ul);
+                  aprsstr_Append(s, 251ul, "mA", 3ul);
+               }
+               if (pumpv>0.1) {
+                  aprsstr_Append(s, 251ul, " ", 2ul);
+                  aprsstr_FixToStr((float)pumpv, 2UL, h, 251ul);
+                  aprsstr_Append(s, 251ul, h, 251ul);
+                  aprsstr_Append(s, 251ul, "V", 2ul);
+               }
             }
             if (dewp>(-100.0) && dewp<100.0) {
                aprsstr_Append(s, 251ul, " dp=", 5ul);

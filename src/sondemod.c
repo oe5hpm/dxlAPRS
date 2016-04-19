@@ -38,14 +38,6 @@
 #endif
 
 /* decode RS92, RS41, SRS-C34 and DFM06 Radiosonde by OE5DXL */
-/*FROM RealMath IMPORT pi, ln; */
-/*FROM math IMPORT atan, sqrt, sin, cos; */
-/*FROM Select IMPORT Usleep; */
-/*FROM Lib IMPORT NextArg; */
-/*FROM TimeConv IMPORT time; */
-/*FROM reedsolomon IMPORT decode, encode, CRC; */
-/*FROM rs IMPORT initialize_ecc, encode_data; */
-/*IMPORT IO; */
 #define sondemod_CONTEXTLIFE 3600
 /* seconds till forget context after last heared */
 
@@ -107,7 +99,7 @@ struct CHAN {
    unsigned long rxbyte;
    unsigned long rxbitc;
    unsigned long rxp;
-   char rxbuf[320];
+   char rxbuf[520];
 };
 
 struct CONTEXTR9;
@@ -220,7 +212,20 @@ struct CONTEXTR4 {
    unsigned long gpssecond;
    unsigned long framenum;
    unsigned long tused;
+   double hp;
+   unsigned long ozonInstType;
+   unsigned long ozonInstNum;
+   double ozonTemp;
+   double ozonuA;
+   double ozonBatVolt;
+   double ozonPumpMA;
+   double ozonExtVolt;
 };
+/*
+       ozon_id_ser           : ARRAY[0..8] OF CHAR;
+       ozon_id_diag          : INT16;
+       ozon_id_version       : REAL;  
+*/
 
 static FILENAME semfile;
 
@@ -427,7 +432,7 @@ static void Parms(void)
          }
          else {
             if (h[1U]=='h') {
-               osi_WrStr("sondemod(c) 0.6", 16ul);
+               osi_WrStr("sondemod(c) 0.7", 16ul);
                osi_WrStrLn(" multichannel decoder RS92, RS41, SRS-C34 Radioso\
 ndes", 54ul);
                osi_WrStrLn(" -A <meter>     at lower altitude use -B beacon t\
@@ -1512,8 +1517,8 @@ static void decodeframe(unsigned char m, unsigned long ip,
          sondeaprs_senddata(anonym1->lat, anonym1->long0, anonym1->heig,
                 anonym1->speed, anonym1->dir, anonym1->climb, anonym1->hp,
                 anonym1->hyg, anonym1->temp, anonym1->ozon,
-                anonym1->ozontemp, (double)X2C_max_real, (double)mhz,
-                (double)anonym1->hrmsc, (double)anonym1->vrmsc,
+                anonym1->ozontemp, 0.0, 0.0, (double)X2C_max_real,
+                (double)mhz, (double)anonym1->hrmsc, (double)anonym1->vrmsc,
                 (anonym1->timems/1000UL+86385UL)%86400UL, frameno, objname,
                 9ul, almanachage, anonym1->goodsats, usercall, 11ul,
                 calperc(anonym1->calibok));
@@ -1828,8 +1833,8 @@ static void decodec34(const char rxb[], unsigned long rxb_len,
          */
          if (lonok && latok) {
             sondeaprs_senddata(exlat, exlon, anonym->alt, anonym->speed,
-                anonym->dir, anonym->clmb, 0.0, 0.0, stemp, 0.0, 0.0,
-                anonym->dewp, 0.0, 0.0, 0.0,
+                anonym->dir, anonym->clmb, 0.0, 0.0, stemp, 0.0, 0.0, 0.0,
+                0.0, anonym->dewp, 0.0, 0.0, 0.0,
                 ((systime-anonym->tgpstime)+anonym->gpstime)%86400UL, 0UL,
                 anonym->name, 9ul, 0UL, 0UL, usercall, 11ul, 0UL);
             anonym->lastsent = systime;
@@ -2086,7 +2091,7 @@ static void decodedfm6(const char rxb[], unsigned long rxb_len,
             if ((lonok && latok) && (pc->poserr==0UL || sondeaprs_nofilter)) {
                sondeaprs_senddata(exlat, exlon, anonym->alt, anonym->speed,
                 anonym->dir, anonym->clmb, 0.0, 0.0, (double)X2C_max_real,
-                0.0, 0.0, (double)X2C_max_real, 0.0, 0.0, 0.0,
+                0.0, 0.0, 0.0, 0.0, (double)X2C_max_real, 0.0, 0.0, 0.0,
                 anonym->actrt%86400UL, 0UL, anonym->name, 9ul, 0UL, 0UL,
                 usercall, 11ul, 0UL);
                anonym->lastsent = systime;
@@ -2099,6 +2104,14 @@ static void decodedfm6(const char rxb[], unsigned long rxb_len,
 } /* end decodedfm6() */
 
 /*------------------------------ RS41 */
+
+static void WrChChk(char ch)
+{
+   if ((unsigned char)ch>=' ' && (unsigned char)ch<'\177') {
+      osi_WrStr((char *) &ch, 1u/1u);
+   }
+} /* end WrChChk() */
+
 
 static double atan20(double x, double y)
 {
@@ -2194,6 +2207,27 @@ static long getint16(const char frame[], unsigned long frame_len,
 } /* end getint16() */
 
 
+static unsigned long gethex(const char frame[], unsigned long frame_len,
+                unsigned long p, unsigned long nibb)
+{
+   unsigned long c;
+   unsigned long n;
+   n = 0UL;
+   while (nibb>0UL) {
+      n = n*16UL;
+      /*WrStr("<<"); WrStr(frame[p]); WrStr(">>"); */
+      c = (unsigned long)(unsigned char)frame[p];
+      if (c>=48UL && c<=57UL) n += c-48UL;
+      else if (c>=65UL && c<=70UL) n += c-55UL;
+      else return 0UL;
+      ++p;
+      --nibb;
+   }
+   /*WrInt(n,5); */
+   return n;
+} /* end gethex() */
+
+
 static void posrs41(const char b[], unsigned long b_len, unsigned long p,
                 double * lat, double * long0, double * heig, double * speed,
                 double * dir, double * clmb)
@@ -2252,6 +2286,59 @@ static void posrs41(const char b[], unsigned long b_len, unsigned long p,
    }
 } /* end posrs41() */
 
+static float sondemod_P[13] = {1000.0f,150.0f,100.0f,70.0f,60.0f,50.0f,40.0f,
+                30.0f,20.0f,15.0f,10.0f,8.0f,0.0f};
+
+static float sondemod_C[13] = {1.0f,1.0f,1.01f,1.022f,1.025f,1.035f,1.047f,
+                1.065f,1.092f,1.12f,1.17f,1.206f,1.3f};
+
+static float _cnst0[13] = {1.0f,1.0f,1.01f,1.022f,1.025f,1.035f,1.047f,
+                1.065f,1.092f,1.12f,1.17f,1.206f,1.3f};
+static float _cnst[13] = {1000.0f,150.0f,100.0f,70.0f,60.0f,50.0f,40.0f,
+                30.0f,20.0f,15.0f,10.0f,8.0f,0.0f};
+
+static double getOzoneCorr(double p)
+/* From from ftp://ftp.cpc.ncep.noaa.gov/ndacc/meta/sonde/cv_payerne_snd.txt */
+{
+   unsigned long i;
+   i = 12UL;
+   while (i>0UL && (double)_cnst[i]<p) --i;
+   return (double)_cnst0[i];
+} /* end getOzoneCorr() */
+
+
+static double altToPres(double a)
+{
+   if (a<1000.0 || a>40000.0) return 0.0;
+   else {
+      return (double)(1010.0f*osic_exp(osic_ln((float)((293.0-0.0065*a)
+                *3.4129692832765E-3))*5.26f));
+   }
+   return 0;
+} /* end altToPres() */
+
+
+static double calcOzone(double uA, double temp, double airpres)
+{
+   return 4.307E-4*uA*(temp+273.15)*28.57*getOzoneCorr(airpres);
+/*
+        From Mast/Keystone ozonsensor 730-10 datasheet:
+                1 uA per 50 umb Ozone (1 uA per 5 mPa)
+                Airflow 190-230 ml/min (avg. 210 ml/min => 3.5 ml/s => 100 ml in 28,
+                57 s
+
+        Default ozone formula from ftp://ftp.cpc.ncep.noaa.gov/ndacc/meta/sonde/cv_payerne_snd.txt
+
+                POZ(nb)  = 0.004307 * i * Tp * t * E(p)
+                => POZ(mPa)  = 0.0004307 * i * Tp * t * E(p)
+
+                where:  i is the current from the sensor in uA
+                         t is the time in seconds to pump 0.100 liters of air through the pump
+                         E(p) is the pump efficiency correction
+                         Tp is the pump temperature
+*/
+} /* end calcOzone() */
+
 static unsigned short sondemod_POLYNOM0 = 0x1021U;
 
 
@@ -2259,6 +2346,7 @@ static void decoders41(const char rxb[], unsigned long rxb_len,
                 unsigned long ip, unsigned long fromport)
 {
    OBJNAME nam;
+   long res;
    char s[1001];
    CALLSSID usercall;
    unsigned long frameno;
@@ -2274,18 +2362,21 @@ static void decoders41(const char rxb[], unsigned long rxb_len,
    pCONTEXTR4 pc0;
    pCONTEXTR4 pc1;
    pCONTEXTR4 pc;
+   double ozonval;
    double climb;
    double dir;
    double speed;
    double heig;
    double long0;
    double lat;
+   unsigned long tmp;
    calok = 0;
    nameok = 0;
    nam[0U] = 0;
    pc = 0;
    lat = 0.0;
    long0 = 0.0;
+   ozonval = 0.0;
    getcall(rxb, rxb_len, usercall, 11ul);
    if (usercall[0U]==0) aprsstr_Assign(usercall, 11ul, mycall, 100ul);
    if (sondeaprs_verb && fromport>0UL) {
@@ -2413,14 +2504,67 @@ static void decoders41(const char rxb[], unsigned long rxb_len,
          if (pc) {
             posrs41(rxb, rxb_len, p, &lat, &long0, &heig, &speed, &dir,
                 &climb);
+            pc->hp = altToPres(heig); /* make hPa out of gps alt for ozone */
          }
       }
       else if (typ=='~') {
+         /* external device */
+         if (len==23UL) {
+            /* ozon values */
+            if (pc) {
+               /*          pc^.ozonInstType:=gethex(rxb, p+1, 2); */
+               /*          pc^.ozonInstNum:=gethex(rxb, p+3, 2); */
+               res = (long)gethex(rxb, rxb_len, p+5UL, 4UL);
+               if (res>=32768L) res = 32768L-res;
+               pc->ozonTemp = (double)res*0.01;
+               pc->ozonuA = (double)gethex(rxb, rxb_len, p+9UL, 5UL)*0.0001;
+               pc->ozonBatVolt = (double)gethex(rxb, rxb_len, p+14UL,
+                2UL)*0.1;
+               pc->ozonPumpMA = (double)gethex(rxb, rxb_len, p+16UL, 3UL);
+               pc->ozonExtVolt = (double)gethex(rxb, rxb_len, p+19UL,
+                2UL)*0.1;
+               ozonval = calcOzone(pc->ozonuA, pc->ozonTemp, pc->hp);
+               if (sondeaprs_verb) {
+                  osi_WrStr(" OZON:(", 8ul);
+                  osic_WrFixed((float)pc->ozonTemp, 2L, 1UL);
+                  osi_WrStr("oC ", 4ul);
+                  osic_WrFixed((float)pc->ozonuA, 4L, 1UL);
+                  osi_WrStr("uA ", 4ul);
+                  osic_WrFixed((float)ozonval, 3L, 1UL);
+                  osi_WrStr("mPa ", 5ul);
+                  osic_WrFixed((float)pc->ozonBatVolt, 1L, 1UL);
+                  osi_WrStr("BatV ", 6ul);
+                  osic_WrFixed((float)pc->ozonPumpMA, 0L, 1UL);
+                  osi_WrStr("mA ", 4ul);
+                  osic_WrFixed((float)pc->ozonExtVolt, 1L, 1UL);
+                  osi_WrStr("ExtV", 5ul);
+                  osi_WrStr(")", 2ul);
+               }
+            }
+         }
+         else if (len==24UL) {
+            /* Ozon id-data */
+            if (sondeaprs_verb) {
+               osi_WrStr(" OZONID:(", 10ul);
+               tmp = p+12UL;
+               i = p+5UL;
+               if (i<=tmp) for (;; i++) {
+                  WrChChk(rxb[i]);
+                  if (i==tmp) break;
+               } /* end for */
+               if (((unsigned long)(unsigned char)rxb[17UL]&1)) {
+                  osi_WrStr(" NotCal", 8ul);
+               }
+               osi_WrStr(" V:", 4ul);
+               osic_WrFixed((float)gethex(rxb, rxb_len, p+18UL, 2UL)*0.1f,
+                1L, 1UL);
+               osi_WrStr(")", 2ul);
+            }
+         }
       }
       else if (typ=='v') {
       }
       else {
-         /*             WrStrLn("7E frame"); */
          /*             WrStrLn("76 frame"); */
          break;
       }
@@ -2430,9 +2574,10 @@ static void decoders41(const char rxb[], unsigned long rxb_len,
    if (sondeaprs_verb) osi_WrStrLn("", 1ul);
    if ((((pc && nameok) && calok) && lat!=0.0) && long0!=0.0) {
       sondeaprs_senddata(lat, long0, heig, speed, dir, climb, 0.0, 0.0,
-                (double)X2C_max_real, 0.0, 0.0, (double)X2C_max_real,
-                (double)pc->mhz0, 0.0, 0.0, pc->gpssecond, frameno, pc->name,
-                 9ul, 0UL, 0UL, usercall, 11ul, 0UL);
+                (double)X2C_max_real, ozonval, pc->ozonTemp, pc->ozonPumpMA,
+                pc->ozonBatVolt, (double)X2C_max_real, (double)pc->mhz0, 0.0,
+                 0.0, pc->gpssecond, frameno, pc->name, 9ul, 0UL, 0UL,
+                usercall, 11ul, 0UL);
       pc->framesent = 1;
    }
 /*  IF verb THEN WrStrLn("") END;   */
@@ -2444,7 +2589,7 @@ static void udprx(void)
    unsigned long fromport;
    unsigned long ip;
    long len;
-   len = udpreceive(rxsock, chan[sondemod_LEFT].rxbuf, 320L, &fromport, &ip);
+   len = udpreceive(rxsock, chan[sondemod_LEFT].rxbuf, 520L, &fromport, &ip);
    systime = osic_time();
    if (len==240L) {
       /*
@@ -2458,13 +2603,13 @@ static void udprx(void)
       decodeframe(sondemod_LEFT, ip, fromport);
    }
    else if (len==22L) {
-      decodec34(chan[sondemod_LEFT].rxbuf, 320ul, ip, fromport);
+      decodec34(chan[sondemod_LEFT].rxbuf, 520ul, ip, fromport);
    }
    else if (len==37L) {
-      decodedfm6(chan[sondemod_LEFT].rxbuf, 320ul, ip, fromport);
+      decodedfm6(chan[sondemod_LEFT].rxbuf, 520ul, ip, fromport);
    }
-   else if (len==320L) {
-      decoders41(chan[sondemod_LEFT].rxbuf, 320ul, ip, fromport);
+   else if (len==520L) {
+      decoders41(chan[sondemod_LEFT].rxbuf, 520ul, ip, fromport);
    }
    else usleep(10000UL);
 } /* end udprx() */
