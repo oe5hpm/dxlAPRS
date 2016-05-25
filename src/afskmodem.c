@@ -2006,7 +2006,7 @@ static void demodbit(long m, char d)
       else if (anonym->rxstuffc>5UL) {
          /*flag*/
          /*flag*/
-         if (((!d && anonym->rxbitc==6UL) && anonym->rxp>=16UL)
+         if (((!d && anonym->rxbitc==6UL) && anonym->rxp>=10UL)
                 && anonym->rxp<339UL) {
             /*0111111x 0 is flag else abort*/
             /*bits modulo 8 ?*/
