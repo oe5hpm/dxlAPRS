@@ -1531,7 +1531,12 @@ static void sendaxudp2(unsigned long modem, unsigned long datalen,
 			(unsigned long)anonym->haddcd * 2UL +
 			(unsigned long)anonym->hadtxdata * 4UL);
          p = 2UL;
-         if (datalen>0UL) {
+         if (datalen == ~0UL) {
+		app(&i, &p, b, 'B', anonym->configbaud);
+		app(&i, &p, b, 't', anonym->configtxdel);
+		b[p] = 0; /* end of axudp2 header */
+		++p;
+         } else if (datalen>0UL) {
             /* with data */
             ff = (anonym->flags*1000UL)/anonym->configbaud;
             if (ff>0UL) app(&i, &p, b, 'T', (long)ff);
@@ -1605,7 +1610,7 @@ static void getudp(void)
                      StoBuf((long)i, p);
                   }
                   else if (udp2[1U]=='?' && udp2[2U]==0) {
-                     sendaxudp2(i, 0UL, "", 1ul);
+                     sendaxudp2(i, ~0UL, "", 1ul);
                 /* on axudp2 header only send dcd & txbuf status */
                   }
                }
