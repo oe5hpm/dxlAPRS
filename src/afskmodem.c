@@ -1526,8 +1526,10 @@ static void sendaxudp2(unsigned long modem, unsigned long datalen,
       struct MPAR * anonym = &modpar[modem];
       if (anonym->udpsocket>=0L) {
          b[0U] = '\001';
-         b[1U] = (char)(48UL+(unsigned long)
-                anonym->haddcd*2UL+(unsigned long)anonym->hadtxdata*4UL);
+         b[1U] = (char)(48UL+
+			(unsigned long)chan[anonym->ch].pttstate * 1UL +
+			(unsigned long)anonym->haddcd * 2UL +
+			(unsigned long)anonym->hadtxdata * 4UL);
          p = 2UL;
          if (datalen>0UL) {
             /* with data */
@@ -2433,13 +2435,14 @@ static char frames2tx(long modem)
 static void sendmodem(void)
 {
    short buf[4096];
-   long i;
+   long i, j;
    unsigned long clk;
    float samp;
    unsigned char c;
    struct CHAN * anonym;
    struct CHAN * anonym0;
    struct MPAR * anonym1;
+   struct MPAR *modem;
    struct CHAN * anonym2;
    unsigned char tmp;
    long tmp0;
@@ -2477,6 +2480,11 @@ static void sendmodem(void)
                   anonym->pttstate = 0; /* WrInt(ORD(c),1);
                 WrStrLn(" pttoff");*/ /* guess all sound buffers are sent*/
                   ptt(anonym->hptt, 0L);
+                  for (j = 0, modem = &modpar[0]; j < 8;
+                       j++, modem = &modpar[j])  {
+			if (modem->ch == c)
+				sendaxudp2(j, 0UL, "", 1);
+                  }
                }
             }
             else if (anonym->pttstate) {
@@ -2513,6 +2521,11 @@ static void sendmodem(void)
                   chan[c].pttstate = 1; /*WrInt(ORD(c),1); WrStrLn(" ptton");
                 */
                   ptt(chan[c].hptt, 1L);
+                  for (j = 0, modem = &modpar[0]; j < 8;
+                       j++, modem = &modpar[j])  {
+			if (modem->ch == c)
+				sendaxudp2(j, 0UL, "", 1);
+                  }
                   chan[c].gmcnt = chan[c].gmqtime;
                   anonym->pttsoundbufs = soundbufs+extraaudiodelay;
                   anonym->state = afskmodem_sendtxdel;
