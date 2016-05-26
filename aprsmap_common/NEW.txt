@@ -1321,7 +1321,11 @@
 
 
 
+25.5.2016 (Ver 0.61)
  
++ Objekte ohne Richtung und Geschwindigkeit zeichnen keinen Track mehr.
++ alle alternativ Symbole koennen Overlay Zeichen haben (a..z A..Z 0..9)
++ Hamnet Symbol in symbols.png
 
 
 

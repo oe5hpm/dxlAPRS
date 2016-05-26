@@ -3162,8 +3162,9 @@ extern void maptool_drawsym(maptool_pIMAGE image, char tab, char sym,
          }
       } /* end for */
    } /* end for */
-   if ((unsigned char)tab>='0' && (unsigned char)tab<='9' || (unsigned char)
-                tab>='A' && (unsigned char)tab<='Z') {
+   if (((unsigned char)tab>='0' && (unsigned char)tab<='9' || (unsigned char)
+                tab>='A' && (unsigned char)tab<='Z') || (unsigned char)
+                tab>='a' && (unsigned char)tab<='z') {
       maptool_Colset(&col0, 'W');
       maptool_drawchar(image, tab, x0r-4.0f,
                 y0r-((8.0f-(16.0f-(float)aprsdecode_lums.fontysize)*0.5f)
