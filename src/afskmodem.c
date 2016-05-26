@@ -81,7 +81,7 @@ static unsigned long afskmodem_CRCINIT = 0xFFFFUL;
 
 static unsigned long afskmodem_CRCRESULT = 0x9F0BUL;
 
-#define afskmodem_MINFLEN 16
+#define afskmodem_MINFLEN 9
 
 #define afskmodem_STUFFLEN 5
 
@@ -2006,7 +2006,7 @@ static void demodbit(long m, char d)
       else if (anonym->rxstuffc>5UL) {
          /*flag*/
          /*flag*/
-         if (((!d && anonym->rxbitc==6UL) && anonym->rxp>=10UL)
+         if (((!d && anonym->rxbitc==6UL) && anonym->rxp>=9UL)
                 && anonym->rxp<339UL) {
             /*0111111x 0 is flag else abort*/
             /*bits modulo 8 ?*/
