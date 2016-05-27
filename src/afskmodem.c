@@ -1512,7 +1512,7 @@ static void app(unsigned long * i, unsigned long * p, char b[501], char c,
 
 
 static void sendaxudp2(unsigned long modem, unsigned long datalen,
-                char data[], unsigned long data_len)
+                char parms, char data[], unsigned long data_len)
 {
    char b[501];
    long ret;
@@ -1526,17 +1526,17 @@ static void sendaxudp2(unsigned long modem, unsigned long datalen,
       struct MPAR * anonym = &modpar[modem];
       if (anonym->udpsocket>=0L) {
          b[0U] = '\001';
-         b[1U] = (char)(48UL+
-			(unsigned long)chan[anonym->ch].pttstate * 1UL +
-			(unsigned long)anonym->haddcd * 2UL +
-			(unsigned long)anonym->hadtxdata * 4UL);
+         b[1U] = (char)(48UL+(unsigned long)
+                anonym->haddcd*2UL+(unsigned long)
+                anonym->hadtxdata*4UL+(unsigned long)
+                chan[anonym->ch].pttstate);
          p = 2UL;
-         if (datalen == ~0UL) {
-		app(&i, &p, b, 'B', anonym->configbaud);
-		app(&i, &p, b, 't', anonym->configtxdel);
-		b[p] = 0; /* end of axudp2 header */
-		++p;
-         } else if (datalen>0UL) {
+         if (parms) {
+            app(&i, &p, b, 'D', (long)(unsigned long)(chan[anonym->ch].duplex==afskmodem_fullduplex));
+            app(&i, &p, b, 'B', (long)anonym->configbaud);
+            app(&i, &p, b, 't', (long)anonym->configtxdel);
+         }
+         if (datalen>0UL) {
             /* with data */
             ff = (anonym->flags*1000UL)/anonym->configbaud;
             if (ff>0UL) app(&i, &p, b, 'T', (long)ff);
@@ -1559,7 +1559,7 @@ static void sendaxudp2(unsigned long modem, unsigned long datalen,
             } while (i<datalen);
          }
          else {
-            b[2U] = 0;
+            b[p] = 0;
             ++p;
          }
          AppCRC(b, 501ul, (long)p);
@@ -1610,7 +1610,7 @@ static void getudp(void)
                      StoBuf((long)i, p);
                   }
                   else if (udp2[1U]=='?' && udp2[2U]==0) {
-                     sendaxudp2(i, ~0UL, "", 1ul);
+                     sendaxudp2(i, 0UL, 1, udp2, 100ul);
                 /* on axudp2 header only send dcd & txbuf status */
                   }
                }
@@ -1641,7 +1641,7 @@ static void sendkiss(char data[], unsigned long data_len, long len,
       { /* with */
          struct MPAR * anonym = &modpar[po];
          if (anonym->axudp2) {
-            sendaxudp2(po, (unsigned long)len, data, data_len);
+            sendaxudp2(po, (unsigned long)len, 0, data, data_len);
                 /* makes new crc */
          }
          else {
@@ -2373,7 +2373,7 @@ static void getadc(void)
             if (ndcd!=anonym0->haddcd) {
                anonym0->haddcd = ndcd;
                if (anonym0->dcdmsgs) {
-                  sendaxudp2((unsigned long)m, 0UL, "", 1ul);
+                  sendaxudp2((unsigned long)m, 0UL, 0, "", 1ul);
                }
             }
          }
@@ -2429,7 +2429,7 @@ static char frames2tx(long modem)
       txo = modpar[modem].hadtxdata;
       modpar[modem].hadtxdata = tx;
       if (txo && !tx) {
-         sendaxudp2((unsigned long)modem, 0UL, "", 1ul);
+         sendaxudp2((unsigned long)modem, 0UL, 0, "", 1ul);
                 /* send tx ready msg */
       }
    }
