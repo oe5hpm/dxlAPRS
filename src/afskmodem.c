@@ -1809,13 +1809,20 @@ static void ShowFrame(char f[], unsigned long f_len, unsigned long len,
    char d;
    char v;
    char tmp;
+   X2C_PCOPY((void **)&f,f_len);
    i = 0UL;
    while (!((unsigned long)(unsigned char)f[i]&1)) {
       ++i;
-      if (i>len) return;
+      if (i>len) goto label;
    }
    /* no address end mark found */
-   if (i%7UL!=6UL) return;
+   /*
+     IF i=1 THEN
+       flexmon(f, len);
+       i:=13;
+     END;
+   */
+   if (i%7UL!=6UL) goto label;
    /* address end not modulo 7 error */
    osi_WrStr((char *)(tmp = (char)((modem&7L)+48L),&tmp), 1u/1u);
    osi_WrStr(":fm ", 5ul);
@@ -1873,6 +1880,8 @@ static void ShowFrame(char f[], unsigned long f_len, unsigned long len,
       }
       if (d) osic_WrLn();
    }
+   label:;
+   X2C_PFREE(f);
 /*
 FOR i:=0 TO len-1 DO WrStr("\"); WrInt(ASH(ORD(f[i]), -6),1);
  IO.WrCard(ORD(f[i]) DIV 8 MOD 8,1);IO.WrCard(ORD(f[i]) MOD 8,1);
