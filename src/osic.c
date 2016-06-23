@@ -443,9 +443,11 @@ unsigned long *X2C_INCL(unsigned long *set, unsigned long i, unsigned long bits)
 }
 unsigned long *X2C_COMPLEMENT(unsigned long *res, unsigned long *a, unsigned long length)
 {
+	unsigned long *pres = res;
 	while (length--)
 		*res++ = ~(*a++);
-	return NULL;
+
+	return pres;
 }
 
 struct xrMM_Dynarr {
