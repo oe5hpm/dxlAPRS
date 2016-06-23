@@ -759,6 +759,30 @@ static char isvis(const unsigned char vismask)
    }
 } /* end isvis() */
 
+
+static char isdrivespeed(unsigned char inf)
+{
+   return inf>=10U && inf<100U;
+} /* end isdrivespeed() */
+
+
+static char IsTrackObj(aprsdecode_pOPHIST op)
+{
+   aprsdecode_pFRAMEHIST f;
+   struct aprsdecode_DAT dat;
+   if ((0x2U & op->drawhints)==0 || isdrivespeed(op->lastinftyp)) return 1;
+   f = op->frames;
+   while (f) {
+      if (aprsdecode_Decode(f->vardat->raw, 500ul,
+                &dat)>=0L && (dat.speed>0UL && dat.speed<X2C_max_longcard || dat.course>0UL)
+                ) return 1;
+      /* draw track if has any speed or course */
+      f = f->next;
+   }
+   return 0;
+/* object with no speed or course */
+} /* end IsTrackObj() */
+
 #define aprsmap_MAXDIST 5.E+5
 
 #define aprsmap_MINWPDIST 9.0
@@ -777,13 +801,18 @@ static void tracks(maptool_pIMAGE img, aprsdecode_pOPHIST op,
    struct aprspos_POSITION oldpos;
    struct aprsdecode_COLTYP col;
    signed char coln;
+   char otrk;
+   char nfilt;
    struct aprsdecode_VARDAT * anonym;
    aprsdecode_click.ops = op;
    if (!highlight0) aprsdecode_click.typ = aprsdecode_tTRACK;
+   nfilt = !useri_configon(useri_fTRACKFILT);
+   otrk = useri_configon(useri_fOBJTRACK);
    while (aprsdecode_click.ops) {
-      if (((isvis(0x18U) && aprsdecode_click.ops->trackcol<58)
+      if ((((isvis(0x18U) && aprsdecode_click.ops->trackcol<58)
                 && aprsdecode_click.ops->areasymb.typ==0)
-                && !aprsdecode_click.ops->poligon) {
+                && !aprsdecode_click.ops->poligon)
+                && (otrk || IsTrackObj(aprsdecode_click.ops))) {
          /* make a random track color */
          coln = (signed char)findfreecol(aprsdecode_click.ops);
          maptool_Colset(&col, (char)coln);
@@ -794,8 +823,7 @@ static void tracks(maptool_pIMAGE img, aprsdecode_pOPHIST op,
             { /* with */
                struct aprsdecode_VARDAT * anonym = aprsdecode_click.pf->vardat;
                 
-               if (((!useri_configon(useri_fTRACKFILT)
-                || !(aprsdecode_click.pf->nodraw&~0x1U))
+               if (((nfilt || !(aprsdecode_click.pf->nodraw&~0x1U))
                 && aprspos_posvalid(anonym->pos))
                 && maptool_vistime(aprsdecode_click.pf->time0)) {
                   if (aprspos_posvalid(oldpos)) {
@@ -956,8 +984,7 @@ static void symbols(aprsdecode_pOPHIST op, char objects, char highlight0,
             }
          }
          if (aprsdecode_click.ops->lastkmh>0) {
-            if (aprsdecode_click.ops->lastinftyp>=10U && aprsdecode_click.ops->lastinftyp<100U)
-                 {
+            if (isdrivespeed(aprsdecode_click.ops->lastinftyp)) {
                if (useri_configon(useri_fARROW)
                 && aprsdecode_click.ops->lasttime+aprsdecode_lums.kmhtime>aprsdecode_systime)
                  {

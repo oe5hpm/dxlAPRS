@@ -81,7 +81,7 @@ static unsigned long afskmodem_CRCINIT = 0xFFFFUL;
 
 static unsigned long afskmodem_CRCRESULT = 0x9F0BUL;
 
-#define afskmodem_MINFLEN 16
+#define afskmodem_MINFLEN 9
 
 #define afskmodem_STUFFLEN 5
 
@@ -1512,7 +1512,7 @@ static void app(unsigned long * i, unsigned long * p, char b[501], char c,
 
 
 static void sendaxudp2(unsigned long modem, unsigned long datalen,
-                char data[], unsigned long data_len)
+                char parms, char data[], unsigned long data_len)
 {
    char b[501];
    long ret;
@@ -1526,17 +1526,17 @@ static void sendaxudp2(unsigned long modem, unsigned long datalen,
       struct MPAR * anonym = &modpar[modem];
       if (anonym->udpsocket>=0L) {
          b[0U] = '\001';
-         b[1U] = (char)(48UL+
-			(unsigned long)chan[anonym->ch].pttstate * 1UL +
-			(unsigned long)anonym->haddcd * 2UL +
-			(unsigned long)anonym->hadtxdata * 4UL);
+         b[1U] = (char)(48UL+(unsigned long)
+                anonym->haddcd*2UL+(unsigned long)
+                anonym->hadtxdata*4UL+(unsigned long)
+                chan[anonym->ch].pttstate);
          p = 2UL;
-         if (datalen == ~0UL) {
-		app(&i, &p, b, 'B', anonym->configbaud);
-		app(&i, &p, b, 't', anonym->configtxdel);
-		b[p] = 0; /* end of axudp2 header */
-		++p;
-         } else if (datalen>0UL) {
+         if (parms) {
+            app(&i, &p, b, 'D', (long)(unsigned long)(chan[anonym->ch].duplex==afskmodem_fullduplex));
+            app(&i, &p, b, 'B', (long)anonym->configbaud);
+            app(&i, &p, b, 't', (long)anonym->configtxdel);
+         }
+         if (datalen>0UL) {
             /* with data */
             ff = (anonym->flags*1000UL)/anonym->configbaud;
             if (ff>0UL) app(&i, &p, b, 'T', (long)ff);
@@ -1559,7 +1559,7 @@ static void sendaxudp2(unsigned long modem, unsigned long datalen,
             } while (i<datalen);
          }
          else {
-            b[2U] = 0;
+            b[p] = 0;
             ++p;
          }
          AppCRC(b, 501ul, (long)p);
@@ -1610,7 +1610,7 @@ static void getudp(void)
                      StoBuf((long)i, p);
                   }
                   else if (udp2[1U]=='?' && udp2[2U]==0) {
-                     sendaxudp2(i, ~0UL, "", 1ul);
+                     sendaxudp2(i, 0UL, 1, udp2, 100ul);
                 /* on axudp2 header only send dcd & txbuf status */
                   }
                }
@@ -1641,7 +1641,7 @@ static void sendkiss(char data[], unsigned long data_len, long len,
       { /* with */
          struct MPAR * anonym = &modpar[po];
          if (anonym->axudp2) {
-            sendaxudp2(po, (unsigned long)len, data, data_len);
+            sendaxudp2(po, (unsigned long)len, 0, data, data_len);
                 /* makes new crc */
          }
          else {
@@ -1809,13 +1809,20 @@ static void ShowFrame(char f[], unsigned long f_len, unsigned long len,
    char d;
    char v;
    char tmp;
+   X2C_PCOPY((void **)&f,f_len);
    i = 0UL;
    while (!((unsigned long)(unsigned char)f[i]&1)) {
       ++i;
-      if (i>len) return;
+      if (i>len) goto label;
    }
    /* no address end mark found */
-   if (i%7UL!=6UL) return;
+   /*
+     IF i=1 THEN
+       flexmon(f, len);
+       i:=13;
+     END;
+   */
+   if (i%7UL!=6UL) goto label;
    /* address end not modulo 7 error */
    osi_WrStr((char *)(tmp = (char)((modem&7L)+48L),&tmp), 1u/1u);
    osi_WrStr(":fm ", 5ul);
@@ -1873,6 +1880,8 @@ static void ShowFrame(char f[], unsigned long f_len, unsigned long len,
       }
       if (d) osic_WrLn();
    }
+   label:;
+   X2C_PFREE(f);
 /*
 FOR i:=0 TO len-1 DO WrStr("\"); WrInt(ASH(ORD(f[i]), -6),1);
  IO.WrCard(ORD(f[i]) DIV 8 MOD 8,1);IO.WrCard(ORD(f[i]) MOD 8,1);
@@ -2006,7 +2015,7 @@ static void demodbit(long m, char d)
       else if (anonym->rxstuffc>5UL) {
          /*flag*/
          /*flag*/
-         if (((!d && anonym->rxbitc==6UL) && anonym->rxp>=10UL)
+         if (((!d && anonym->rxbitc==6UL) && anonym->rxp>=9UL)
                 && anonym->rxp<339UL) {
             /*0111111x 0 is flag else abort*/
             /*bits modulo 8 ?*/
@@ -2373,7 +2382,7 @@ static void getadc(void)
             if (ndcd!=anonym0->haddcd) {
                anonym0->haddcd = ndcd;
                if (anonym0->dcdmsgs) {
-                  sendaxudp2((unsigned long)m, 0UL, "", 1ul);
+                  sendaxudp2((unsigned long)m, 0UL, 0, "", 1ul);
                }
             }
          }
@@ -2429,7 +2438,7 @@ static char frames2tx(long modem)
       txo = modpar[modem].hadtxdata;
       modpar[modem].hadtxdata = tx;
       if (txo && !tx) {
-         sendaxudp2((unsigned long)modem, 0UL, "", 1ul);
+         sendaxudp2((unsigned long)modem, 0UL, 0, "", 1ul);
                 /* send tx ready msg */
       }
    }
@@ -2440,14 +2449,13 @@ static char frames2tx(long modem)
 static void sendmodem(void)
 {
    short buf[4096];
-   long i, j;
+   long i;
    unsigned long clk;
    float samp;
    unsigned char c;
    struct CHAN * anonym;
    struct CHAN * anonym0;
    struct MPAR * anonym1;
-   struct MPAR *modem;
    struct CHAN * anonym2;
    unsigned char tmp;
    long tmp0;
@@ -2482,13 +2490,12 @@ static void sendmodem(void)
                 END;
                */
                if (anonym->pttstate && anonym->pttsoundbufs==0UL) {
-                  anonym->pttstate = 0; /* WrInt(ORD(c),1);
-                WrStrLn(" pttoff");*/ /* guess all sound buffers are sent*/
+                  anonym->pttstate = 0;
                   ptt(anonym->hptt, 0L);
-                  for (j = 0, modem = &modpar[0]; j < 8;
-                       j++, modem = &modpar[j])  {
-			if (modem->ch == c)
-				sendaxudp2(j, 0UL, "", 1);
+                /* guess all sound buffers are sent*/
+                  if (modpar[anonym->actmodem].dcdmsgs) {
+                     sendaxudp2((unsigned long)anonym->actmodem, 0UL, 0, "",
+                1ul);
                   }
                }
             }
@@ -2526,10 +2533,9 @@ static void sendmodem(void)
                   chan[c].pttstate = 1; /*WrInt(ORD(c),1); WrStrLn(" ptton");
                 */
                   ptt(chan[c].hptt, 1L);
-                  for (j = 0, modem = &modpar[0]; j < 8;
-                       j++, modem = &modpar[j])  {
-			if (modem->ch == c)
-				sendaxudp2(j, 0UL, "", 1);
+                  if (modpar[anonym->actmodem].dcdmsgs) {
+                     sendaxudp2((unsigned long)anonym->actmodem, 0UL, 0, "",
+                1ul);
                   }
                   chan[c].gmcnt = chan[c].gmqtime;
                   anonym->pttsoundbufs = soundbufs+extraaudiodelay;

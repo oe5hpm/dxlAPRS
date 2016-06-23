@@ -39,6 +39,9 @@
 #include "aprstext.h"
 #endif
 
+aprsdecode_SET256 aprsdecode_SYMTABLE = {0x00000000UL,0x03FF8000UL,
+                0x17FFFFFEUL,0x07FFFFFEUL,0x00000000UL,0x00000000UL,
+                0x00000000UL,0x00000000UL};
 
 
 
@@ -167,8 +170,6 @@ struct xosi_PROCESSHANDLE aprsdecode_maploadpid;
 #define aprsdecode_DIRJUNC "#"
 
 #define aprsdecode_cMSGACK "{"
-
-typedef unsigned long SET256[8];
 
 typedef unsigned long CHSET[4];
 
@@ -1560,7 +1561,7 @@ static void beaconmacros(char s[], unsigned long s_len, const char path[],
             }
             else if (s[i]=='\\') aprsstr_Append(ns, 256ul, "\\\\", 3ul);
             else if (s[i]=='v') {
-               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.60", 17ul);
+               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.61", 17ul);
             }
             else if (s[i]=='l') {
                if (aprstext_getmypos(&pos)) {
@@ -2800,17 +2801,21 @@ extern void aprsdecode_modmultiline(unsigned long n)
 } /* end modmultiline() */
 
 /* === multiline */
-
-extern char aprsdecode_checksymb(char symt, char symb)
-/* true for bad symbol */
-{
-   return (symt!='/' && symt!='\\') && (aprsstr_InStr("#&0>AW^_acnsuvz",
-                16ul, (char *) &symb,
-                1u/1u)<0L || ((unsigned char)symt<'0' || (unsigned char)
-                symt>'9') && ((unsigned char)symt<'A' || (unsigned char)
-                symt>'Z'));
-} /* end checksymb() */
-
+/*
+PROCEDURE checksymb(symt, symb:CHAR):BOOLEAN;
+                (* true for bad symbol *)
+BEGIN
+(*
+  RETURN (symt<>"/") & (symt<>"\") & ((InStr("#&0>AW^_acnsuvz", symb)<0)
+  OR ((symt<"0") OR (symt>"9")) & ((symt<"A") OR (symt>"Z")))
+*)
+  RETURN (symt<>"/") & (symt<>"\") & (((symt<"0") OR (symt>"9"))
+  & ((symt<"A") OR (symt>"Z")) & ((symt<"a") OR (symt>"z")))
+END checksymb;
+*/
+static aprsdecode_SET256 _cnst = {0x00000000UL,0x03FF8000UL,0x17FFFFFEUL,
+                0x07FFFFFEUL,0x00000000UL,0x00000000UL,0x00000000UL,
+                0x00000000UL};
 
 extern long aprsdecode_Decode(char buf[], unsigned long buf_len,
                 struct aprsdecode_DAT * dat)
@@ -3048,7 +3053,7 @@ extern long aprsdecode_Decode(char buf[], unsigned long buf_len,
                 &dat->sym, &dat->symt, buf, buf_len, micedest, dat->payload,
                 dat->comment0, 256ul, &dat->postyp);
       aprspos_GetSym(dat->dstcall, 9ul, &dat->sym, &dat->symt);
-      if (aprsdecode_checksymb(dat->symt, dat->sym)) {
+      if (!X2C_INL((unsigned char)dat->symt,256,_cnst)) {
          dat->symt = 0; /* wrong symbol */
          dat->sym = 0;
       }
@@ -4743,9 +4748,7 @@ static char widefilt(void)
 #define aprsdecode_SAMETIME 27
 /* max time diff for merged in frames */
 
-static SET256 _cnst0 = {0x00000000UL,0x03FF8000UL,0x17FFFFFEUL,0x00000000UL,
-                0x00000000UL,0x00000000UL,0x00000000UL,0x00000000UL};
-static CHSET _cnst = {0x30000000UL,0x280086BAUL,0x80000001UL,0x00000001UL};
+static CHSET _cnst0 = {0x30000000UL,0x280086BAUL,0x80000001UL,0x00000001UL};
 
 extern long aprsdecode_Stoframe(aprsdecode_pOPHIST * optab, char rawbuf[],
                 unsigned long rawbuf_len, unsigned long stime, char logmode,
@@ -4933,9 +4936,9 @@ extern long aprsdecode_Stoframe(aprsdecode_pOPHIST * optab, char rawbuf[],
    }
    frame->vardat = same;
    frame->time0 = stime;
-   if (X2C_INL((long)(unsigned char)dat.typc,128,_cnst)) {
+   if (X2C_INL((long)(unsigned char)dat.typc,128,_cnst0)) {
       if (((X2C_INL((unsigned char)dat.symt,256,
-                _cnst0) && (unsigned char)dat.sym>' ') && (unsigned char)
+                _cnst) && (unsigned char)dat.sym>' ') && (unsigned char)
                 dat.sym<'\177') && op->sym.tab!='\001') {
          op->sym.tab = dat.symt;
          op->sym.pic = dat.sym;
@@ -5628,7 +5631,7 @@ static char tcpconn(aprsdecode_pTCPSOCK * sockchain, long f)
          aprsstr_Append(h, 512ul, s, 100ul);
       }
       aprsstr_Append(h, 512ul, " vers ", 7ul);
-      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.60", 17ul);
+      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.61", 17ul);
       appfilter(h, 512ul);
       /*    IF filter[0]<>0C THEN Append(h, " filter ");
                 Append(h, filter) END; */
@@ -6840,6 +6843,7 @@ extern void aprsdecode_BEGIN(void)
    static int aprsdecode_init = 0;
    if (aprsdecode_init) return;
    aprsdecode_init = 1;
+   if (sizeof(aprsdecode_SET256)!=32) X2C_ASSERT(0);
    if (sizeof(aprsdecode_MONCALL)!=9) X2C_ASSERT(0);
    if (sizeof(aprsdecode_FRAMEBUF)!=512) X2C_ASSERT(0);
    if (sizeof(aprsdecode_WWWB)!=1401) X2C_ASSERT(0);
@@ -6854,7 +6858,6 @@ extern void aprsdecode_BEGIN(void)
    if (sizeof(aprsdecode_TELEMETRY)!=14) X2C_ASSERT(0);
    if (sizeof(unsigned short)!=2) X2C_ASSERT(0);
    if (sizeof(aprsdecode_MAPNAME)!=41) X2C_ASSERT(0);
-   if (sizeof(SET256)!=32) X2C_ASSERT(0);
    if (sizeof(CHSET)!=16) X2C_ASSERT(0);
    if (sizeof(TICKERCALL)!=31) X2C_ASSERT(0);
    aprstext_BEGIN();

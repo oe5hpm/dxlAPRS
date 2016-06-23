@@ -20,6 +20,8 @@
 #endif
 
 /* connect to aprs-is gateway and decode data for archive and map by OE5DXL */
+typedef unsigned long aprsdecode_SET256[8];
+
 #define aprsdecode_CR "\015"
 
 #define aprsdecode_LF "\012"
@@ -58,7 +60,9 @@
 #define aprsdecode_MAXMULTILINES 40
 /* AE5PL limits to 23 multiline elements */
 
-#define aprsdecode_VERS "aprsmap(cu) 0.60"
+extern aprsdecode_SET256 aprsdecode_SYMTABLE;
+
+#define aprsdecode_VERS "aprsmap(cu) 0.61"
 
 typedef char aprsdecode_MONCALL[9];
 
@@ -695,9 +699,10 @@ extern void aprsdecode_getbeaconname(char [], unsigned long, char [],
 extern void aprsdecode_drawbeacon(char [], unsigned long);
 
 extern void aprsdecode_makelogfn(char [], unsigned long);
-
-extern char aprsdecode_checksymb(char, char);
-/* true for bad symbol */
+/*
+PROCEDURE checksymb(symt, symb:CHAR):BOOLEAN;
+                (* true for bad symbol *)
+*/
 
 extern void aprsdecode_appendmultiline(struct aprspos_POSITION);
 
