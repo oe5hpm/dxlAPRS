@@ -1512,13 +1512,13 @@ static void parms(void)
             }
             osi_NextArg(h, 4096ul);
             osic_alloc((X2C_ADDRESS *) &outsock0, sizeof(struct OUTPORT));
-            if (outsock0==0) Err("out of memory", 14ul);
+            if (outsock0==0) {
+               Err("out of memory", 14ul);
+            }
             { /* with */
                struct OUTPORT * anonym2 = outsock0;
                if (GetIp(h, 4096ul, &i, &anonym2->toip,
-                &anonym2->toport)<0L) {
-                  Err("wrong udp:port", 15ul);
-               }
+                &anonym2->toport)<0L) Err("wrong udp:port", 15ul);
                memcpy(anonym2->aprspass,actpass,32u);
                anonym2->echo = actecho;
                anonym2->digiparm = actdigi;
