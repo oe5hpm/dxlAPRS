@@ -198,9 +198,11 @@ void osic_WrBin(long fd, char buf[],
 		unsigned long buf_len,
 		unsigned long size)
 {
+	int rc;
 	if (size > (buf_len-1)+1)
 		size = (buf_len-1)+1;
-	write(fd, (char *)buf, size);
+	rc = write(fd, (char *)buf, size);
+	(void)rc;
 }
 
 void osic_Rename(char fname[], unsigned long fname_len,
