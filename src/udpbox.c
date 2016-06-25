@@ -1828,7 +1828,7 @@ static void showhex(long * n, long e, char in[], unsigned long in_len,
       tmp = *len-1L;
       i = 0L;
       if (i<=tmp) for (;; i++) {
-         osic_WrHex((unsigned long)(unsigned char)in[i], 3UL);
+         osi_WrHex((unsigned long)(unsigned char)in[i], 3UL);
          if (i==tmp) break;
       } /* end for */
       osic_WrLn();
@@ -1838,7 +1838,7 @@ static void showhex(long * n, long e, char in[], unsigned long in_len,
          *n = (long)((unsigned long)(unsigned char)in[i]/2UL);
          if (*n<32L) {
             osi_WrStr("<", 2ul);
-            osic_WrHex((unsigned long)*n, 1UL);
+            osi_WrHex((unsigned long)*n, 1UL);
             osi_WrStr(">", 2ul);
          }
          else osi_WrStr((char *)(tmp0 = (char)*n,&tmp0), 1u/1u);
