@@ -134,6 +134,8 @@ char X2C_INL(unsigned long i, unsigned long bits, unsigned long *set);
 
 unsigned long *X2C_INCL(unsigned long *set, unsigned long i, unsigned long bits);
 
+unsigned long *X2C_EXCL(unsigned long *set, unsigned long i, unsigned long bits);
+
 unsigned long *X2C_COMPLEMENT(unsigned long *res, unsigned long *a, unsigned long length);
 
 void X2C_DYNALLOCATE(char **a, size_t size, size_t lens[], size_t dims);
