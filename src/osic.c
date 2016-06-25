@@ -435,22 +435,18 @@ char X2C_INL(unsigned long i, unsigned long bits, unsigned long *set)
 	return 0;
 }
 
-unsigned long *X2C_INCL(unsigned long *set, unsigned long i, unsigned long bits)
+void X2C_INCL(unsigned long *set, unsigned long i, unsigned long bits)
 {
 	if (i >= bits)
 		assert(0);
 	set[(int)i / X2C_LSET_SIZE] |= 1L << ((int)i % X2C_LSET_SIZE);
-
-	return set;
 }
 
-unsigned long *X2C_EXCL(unsigned long *set, unsigned long i, unsigned long bits)
+void X2C_EXCL(unsigned long *set, unsigned long i, unsigned long bits)
 {
 	if (i >= bits)
 		assert(0);
 	set[(int)i / X2C_LSET_SIZE] &= ~1L << ((int)i % X2C_LSET_SIZE);
-
-	return set;
 }
 
 unsigned long *X2C_COMPLEMENT(unsigned long *res, unsigned long *a, unsigned long length)
