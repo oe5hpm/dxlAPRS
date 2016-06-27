@@ -1352,6 +1352,7 @@ static void parms(void)
    struct DIGIPARMS * anonym1;
    struct OUTPORT * anonym2;
    struct MSGHASH * anonym3;
+   SET256 tmp;
    msgusers = 0;
    actsock0 = 0;
    actcall = 0;
@@ -1446,16 +1447,17 @@ static void parms(void)
                ++i;
             }
             if (h[0U]=='d') {
-               /*
-                         actpass:=-actpass;  (* c translate problem *)
-               */
-               for (i = 0UL; i<=255UL; i++) {
-                  if (X2C_INL(i,256,actpass)) X2C_EXCL(actpass,i,256);
-                  else X2C_INCL(actpass,i,256);
-               } /* end for */
+               memcpy(actpass,X2C_COMPLEMENT(tmp,actpass,8),32u);
+                /* c translate problem */
             }
          }
          else if (lasth=='k') {
+            /*
+                      FOR i:=0 TO MAX(SET256) DO 
+                        IF i IN actpass THEN EXCL(actpass,
+                i) ELSE INCL(actpass, i) END;
+                      END;
+            */
             osi_NextArg(h, 4096ul);
             if (actsock0==0) Err("need input -M or -R before -k", 30ul);
             i = 0UL;
