@@ -331,9 +331,12 @@ static unsigned long udpgate4_CRCRESULT = 0x9F0BUL;
 
 static char mhperport;
 
+/* mh line for same call but different port */
+static char datafilter;
+
 static char verb;
 
-/* mh line for same call but different port */
+/* send no data to user with no filter set */
 static char callsrc;
 
 static pTCPSOCK tcpsocks;
@@ -803,6 +806,7 @@ static void parms(void)
    unsigned long tmp;
    err = 0;
    verb = 0;
+   datafilter = 0;
    gatecnt = 0UL;
    memcpy(ghost,_cnst,36u);
    keeptime = 0UL; /*600*/ /* default keep connected to gateway time */
@@ -1104,6 +1108,8 @@ static void parms(void)
          }
          else {
             if (lasth=='h') {
+               osi_WrStrLn(" -0             send no Data (only Messages and a\
+ck) to User with no Filter", 76ul);
                osi_WrStrLn(" -C <time>      connected (tcp) remember position\
  minutes (Min) (-C 1440)", 74ul);
                osi_WrStrLn(" -c             delete frames with no valid sourc\
@@ -1338,6 +1344,7 @@ rt GHOST* in otherwise false", 78ul);
                   if (h[i0]==',') ++i0;
                }
             }
+            else if (lasth=='0') datafilter = 1;
             else err = 1;
          }
       }
@@ -1452,7 +1459,7 @@ static char getudp(pUDPSOCK usock, FRAMEBUF buf, aprsstr_GHOSTSET ghost)
                   tmp0 = len-3L;
                   i0 = 0L;
                   if (i0<=tmp0) for (;; i0++) {
-                     osic_WrHex((unsigned long)(unsigned char)buf[i0], 3UL);
+                     osi_WrHex((unsigned long)(unsigned char)buf[i0], 3UL);
                      if (i0==tmp0) break;
                   } /* end for */
                   osic_WrLn();
@@ -1461,8 +1468,8 @@ static char getudp(pUDPSOCK usock, FRAMEBUF buf, aprsstr_GHOSTSET ghost)
                      if (i0>=len-3L) break;
                      if ((unsigned long)(unsigned char)buf[i0]/2UL<32UL) {
                         osi_WrStr("<", 2ul);
-                        osic_WrHex((unsigned long)(unsigned char)buf[i0]/2UL,
-                 1UL);
+                        osi_WrHex((unsigned long)(unsigned char)buf[i0]/2UL,
+                1UL);
                         osi_WrStr(">", 2ul);
                      }
                      else {
@@ -2170,7 +2177,7 @@ static char Filter(pTCPSOCK to, struct POSCALL posc, const char dat[],
                 && to->filters.edge.lat<=posc.pos.lat)
                 && to->filters.edge.long0>=posc.pos.long0;
    }
-   return 1;
+   return !datafilter;
 } /* end Filter() */
 
 
@@ -2315,7 +2322,9 @@ static void Sendall(const FRAMEBUF buf, long fromfd,
       t = tcpsocks;
       while (t) {
          if (((t->fd!=fromfd && t->service!='W') && t->connt>0UL)
-                && Filter(t, posc, buf, 512ul)) Sendtcp(t, buf);
+                && (t->service!='S' || Filter(t, posc, buf, 512ul))) {
+            Sendtcp(t, buf);
+         }
          t = t->next;
       }
       if ((fromfd>0L && aprspos_posvalid(home)) && aprspos_posvalid(posc.pos)
@@ -4255,7 +4264,7 @@ static long AprsIs(char buf[], unsigned long buf_len, unsigned char datafilt,
       if (callchk(&qpos, &unset, buf, buf_len, &p, &pssid, 0,
                 udpchan || callsrc)) return -3L;
       /* src call */
-      if (buf[p]!='>') return -1L;
+      if (buf[p]!='>') return -4L;
       i0 = 0UL;
       while (i0<9UL && i0<p) {
          poscall0->call[i0] = buf[i0];
@@ -4274,7 +4283,7 @@ static long AprsIs(char buf[], unsigned long buf_len, unsigned char datafilt,
          }
       }
       /* via calls */
-      if (buf[p]!=':') return -1L;
+      if (buf[p]!=':') return -4L;
       if (pins==0UL) pins = p;
       ++p;
       if (buf[p]!='}') break;
@@ -4284,7 +4293,7 @@ static long AprsIs(char buf[], unsigned long buf_len, unsigned char datafilt,
    qtext[0U] = 0;
    if (qpos>0UL) {
       /* qA */
-      if (X2C_CAP(buf[qpos])=='Z') return -3L;
+      if (X2C_CAP(buf[qpos])=='Z') return -5L;
       /* qAZ */
       if (X2C_CAP(buf[qpos])=='I') {
          aprsstr_Append(qtext, 32ul, ",", 2ul); /* qAI */
@@ -4309,7 +4318,7 @@ static long AprsIs(char buf[], unsigned long buf_len, unsigned char datafilt,
    */
    payload = p;
    poscall0->typ0 = buf[p];
-   if (buf[p]=='?') return -4L;
+   if (buf[p]=='?') return -5L;
    if (udpchan || valid) {
       Getmsg(buf, buf_len, udpchan, (unset&msgfilt)==0U, &ungat);
       if (ungat) return -6L;
@@ -6590,7 +6599,7 @@ extern int main(int argc, char **argv)
                         res = AprsIs(mbuf, 512ul, 0x3U, 0x17U,
                 acttcp->user.call, 10ul, 0UL, acttcp->valid, &poscall);
                      }
-                     if ((aprspos_posvalid(poscall.pos)
+                     if (((res>=-1L && aprspos_posvalid(poscall.pos))
                 && aprsstr_StrCmp(poscall.call, 10ul, acttcp->user.call,
                 10ul)) && X2C_INL((long)(unsigned char)poscall.typ0,128,
                 _cnst1)) {
