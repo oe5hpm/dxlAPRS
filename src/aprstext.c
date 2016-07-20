@@ -366,8 +366,8 @@ extern void aprstext_decode(char s[], unsigned long s_len,
          nl = 0;
          aprsstr_Append(s, s_len, "\375", 2ul);
          /*      Append(s, "Sym:"); */
-         aprstext_Apphex(s, s_len, (char *) &dat->symt, 1u/1u);
-         aprstext_Apphex(s, s_len, (char *) &dat->sym, 1u/1u);
+         aprstext_Apphex(s, s_len, (char *) &dat->symt, 1ul);
+         aprstext_Apphex(s, s_len, (char *) &dat->sym, 1ul);
       }
       if (dat->speed<X2C_max_longcard) {
          if (nl) {
@@ -620,7 +620,7 @@ extern void aprstext_decode(char s[], unsigned long s_len,
                   while (tn>1UL) {
                      aprsstr_Append(s, s_len,
                 (char *)(tmp = (char)((unsigned long)(char)(tn&1)+48UL),
-                &tmp), 1u/1u);
+                &tmp), 1ul);
                      tn = tn/2UL;
                   }
                }
@@ -833,7 +833,7 @@ extern void aprstext_listin(char r[], unsigned long r_len, char port,
    unsigned long j;
    unsigned long i;
    struct aprsdecode_DAT dat;
-   memset((char *) &vard,(char)0,sizeof(struct aprsdecode_VARDAT));
+   memset((char *) &vard,(char)0,516UL);
    i = 0UL;
    j = 0UL;
    while ((i<499UL && i<=r_len-1) && r[i]) {
@@ -842,7 +842,7 @@ extern void aprstext_listin(char r[], unsigned long r_len, char port,
       ++i;
    }
    vard.raw[j+1UL] = 0;
-   memset((char *) &pf,(char)0,sizeof(struct aprsdecode_FRAMEHIST));
+   memset((char *) &pf,(char)0,16UL);
    pf.vardat = &vard;
    aprstext_decode(s, 1000ul, 0, &pf, 0, 0UL, decoded, &dat);
    if (decoded) {
@@ -855,7 +855,7 @@ extern void aprstext_listin(char r[], unsigned long r_len, char port,
       s1[1U] = 0;
    }
    if (dir=='<') aprsstr_Append(s1, 1000ul, "\370<\376", 4ul);
-   else aprsstr_Append(s1, 1000ul, (char *) &dir, 1u/1u);
+   else aprsstr_Append(s1, 1000ul, (char *) &dir, 1ul);
    if (txd>0L || quali>0L) {
       aprsstr_Append(s1, 1000ul, "(", 2ul);
       if (txd>0L) aprsstr_IntToStr(txd, 3UL, s2, 1000ul);
@@ -1561,7 +1561,7 @@ static void getbeaconpos(struct aprspos_POSITION * pos, char * err)
       fd = osi_OpenRead(s, 1001ul);
       s[0U] = 0;
       if (osic_FdValid(fd)) {
-         len = osi_RdBin(fd, (char *)s, 1001u/1u, 1000UL);
+         len = osi_RdBin(fd, (char *)s, 1001ul, 1000UL);
          if (len<1L) {
             len = 0L;
             useri_say("beacon position file not readable", 34ul, 20UL, 'e');
@@ -1617,7 +1617,7 @@ extern void aprstext_encbeacon(char s[], unsigned long s_len,
    useri_confstr(useri_fRBTYP, s, s_len);
    typ = X2C_CAP(s[0UL]);
    bkn = (((typ!='O' && typ!='H') && typ!='P') && typ!='I') && typ!='J';
-   useri_confstr(useri_fRBPOSTYP, (char *) &postyp, 1u/1u);
+   useri_confstr(useri_fRBPOSTYP, (char *) &postyp, 1ul);
    useri_confstr(useri_fRBSYMB, symb, 2ul);
    areaobj = (typ=='O' && symb[0U]=='\\') && symb[1U]=='l';
    if (aprsstr_Length(symb, 2ul)!=2UL) {

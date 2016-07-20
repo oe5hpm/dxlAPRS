@@ -778,6 +778,7 @@ extern void aprspos_BEGIN(void)
    static int aprspos_init = 0;
    if (aprspos_init) return;
    aprspos_init = 1;
+   if (sizeof(struct aprspos_POSITION)!=8) X2C_ASSERT(0);
    osi_BEGIN();
 }
 

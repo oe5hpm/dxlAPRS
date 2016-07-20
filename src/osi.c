@@ -29,8 +29,8 @@
 static void h(unsigned long n)
 {
    char tmp;
-   if (n<10UL) osi_WrStr((char *)(tmp = (char)(n+48UL),&tmp), 1u/1u);
-   else osi_WrStr((char *)(tmp = (char)(n+55UL),&tmp), 1u/1u);
+   if (n<10UL) osi_WrStr((char *)(tmp = (char)(n+48UL),&tmp), 1ul);
+   else osi_WrStr((char *)(tmp = (char)(n+55UL),&tmp), 1ul);
 } /* end h() */
 
 
