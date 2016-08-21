@@ -1047,7 +1047,7 @@ extern void sondeaprs_senddata(double lat, double long0, double alt,
    struct CONTEXT * anonym;
    X2C_PCOPY((void **)&objname,objname_len);
    if (aprsstr_Length(usercall, usercall_len)<3UL) {
-      osi_WrStrLn("no tx witout <mycall>", 22ul);
+      osi_WrStrLn("no tx without <mycall>", 23ul);
       goto label;
    }
    if (aprsstr_Length(objname, objname_len)<3UL) {
