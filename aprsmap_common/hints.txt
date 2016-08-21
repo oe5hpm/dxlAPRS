@@ -434,8 +434,8 @@ Toggle on/off with "L" shortcut
 transmitted position joined by track lines
 
 |1508 Remove timed out Things from Image,
-data will stay in RAM until
-"Keep Data im Memory" in Config
+maximum Time and keep Data in RAM until
+"Data im RAM" in Config/Timers
 
 |1509 Give Objects/Tracks time to dissapear
 after "Full Bright Time"
@@ -619,7 +619,7 @@ Cursor up/down steps thru 10 lines of History.
 
 |2206 Snow
 |2207 Church
-
+|2220 HAMNET
 
 
 
