@@ -3169,9 +3169,10 @@ static void RfTimer(void)
                         mo = messages;
                         for (;;) {
                            if (mo==mp) break;
-                           if (aprsstr_StrCmp(mo->to, 10ul, anonym->to,
-                10ul) && (mo->ack[0U] && !mo->acked || mo->ack[0U]==0 && mo->retryc<1UL)
-                ) {
+                           if ((aprsstr_StrCmp(mo->to, 10ul, anonym->to,
+                10ul) && mo->gentime+msgsendtime>systime)
+                && (mo->ack[0U] && !mo->acked || mo->ack[0U]
+                ==0 && mo->retryc<1UL)) {
                               try0 = 0;
                               break;
                            }
@@ -3207,7 +3208,9 @@ static void RfTimer(void)
             }
             else if (anonym->acked) ht = purgeacked;
             else ht = purgemsg;
-            if (anonym->gentime+ht<systime) delmsg(mp);
+            if (anonym->gentime+ht<systime) {
+               delmsg(mp); /* purge message */
+            }
          }
          if (maxi>=maxatonce) break;
       }
@@ -5952,6 +5955,9 @@ etr</th><th>m>r</th><th>m>n</th><th>a>r</th><th>a>n</th><th>A</th><th>Ack</th\
                AppTime(wbuf, &wsock, mp->gentime, 1);
                if (mp->retryc>0UL && mp->txtime>0UL) {
                   AppTime(wbuf, &wsock, mp->txtime, 1);
+               }
+               else if (mp->gentime+msgsendtime<=systime) {
+                  Appwww(&wsock, wbuf, "<td>timed out</td>", 19ul);
                }
                else Appwww(&wsock, wbuf, "<td></td>", 10ul);
                AppInt(wbuf, &wsock, (long)mp->txport);

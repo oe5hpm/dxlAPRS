@@ -2456,7 +2456,8 @@ static void GetTLM(aprsdecode_TELEMETRY v, char b[], unsigned long b_len)
       }
       ++i;
    }
-   if ((((ib>0UL && b[ia]==0) && (ia-ib&1)) && ia-ib>=5UL) && ia-ib<=15UL) {
+   if (((ib>0UL && (ia-ib&1)) && ia-ib>=5UL) && ia-ib<=15UL) {
+      /*& (b[ia]=0C)*/
       i = 0UL;
       j = ib;
       do {
@@ -2471,7 +2472,8 @@ static void GetTLM(aprsdecode_TELEMETRY v, char b[], unsigned long b_len)
          v[ia] = t[ia]+1U;
          if (ia==tmp) break;
       } /* end for */
-      b[ib-1UL] = 0;
+      /*    b[ib-1]:=0C; */
+      aprsstr_Delstr(b, b_len, ib-1UL, (j-ib)+2UL);
    }
 } /* end GetTLM() */
 
