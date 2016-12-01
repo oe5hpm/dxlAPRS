@@ -38,6 +38,7 @@
 #endif
 
 /* decode RS92, RS41, SRS-C34 and DFM06 Radiosonde by OE5DXL */
+/*FROM rsc IMPORT initrsc, decodersc; */
 #define sondemod_CONTEXTLIFE 3600
 /* seconds till forget context after last heared */
 
@@ -220,6 +221,7 @@ struct CONTEXTR4 {
    double ozonBatVolt;
    double ozonPumpMA;
    double ozonExtVolt;
+   unsigned long burstKill;
 };
 /*
        ozon_id_ser           : ARRAY[0..8] OF CHAR;
@@ -432,7 +434,7 @@ static void Parms(void)
          }
          else {
             if (h[1U]=='h') {
-               osi_WrStr("sondemod(c) 0.7", 16ul);
+               osi_WrStr("sondemod(c) 0.8", 16ul);
                osi_WrStrLn(" multichannel decoder RS92, RS41, SRS-C34 Radioso\
 ndes", 54ul);
                osi_WrStrLn(" -A <meter>     at lower altitude use -B beacon t\
@@ -1208,93 +1210,30 @@ static void decodeframe(unsigned char m, unsigned long ip,
    struct CONTEXTR9 * anonym1;
    unsigned long tmp;
    /*
-   FOR try:=0 TO 21*0 DO
-     FOR i:=0 TO HIGH(b) DO b[i]:=CHR(0) END;
-   IF ODD(try DIV 4) THEN
-     FOR i:=6 TO 215 DO b[try DIV 16+(i-0)]:=chan[m].rxbuf[i] END;
-                (*209- 230- 21+*)
-   ELSE
-     FOR i:=6 TO 215 DO b[try DIV 16+(215-i)]:=chan[m].rxbuf[i] END;
-                (*209- 230- 21+*)
-   END;
-   IF ODD(try DIV 2) THEN
-     FOR i:=216 TO 239 DO b[231+(i-216)]:=CHR(ORD(chan[m].rxbuf[i])) END;
-                (*254- 231+*)
-   ELSE
-     FOR i:=216 TO 239 DO b[254-(i-216)]:=CHR(ORD(chan[m].rxbuf[i])) END;
-                (*254- 231+*)
-   END;
-   
-   IF ODD(try DIV 8) THEN
-     FOR i:=0 TO 254 DO b[i]:=CHR(255-ORD(b[i])) END;
-   END;
+   -- reedsolomon is done by sondeudp
+     FOR i:=0 TO HIGH(b) DO b[i]:=0C END;
+     FOR i:=0 TO 240-6-24-1 DO b[(255-24-1)-i]:=chan[m].rxbuf[i+6] END;
+     FOR i:=0 TO 24-1 DO b[(255-1)-i]:=chan[m].rxbuf[i+(240-24)] END;
    --  WrStrLn(" ecco: ");
    --  FOR i:=216 TO 239 DO WrHex(ORD(chan[m].rxbuf[i]), 4) END; WrStrLn("");
                  WrStrLn("");
-   IF ODD(try) THEN
-     FOR i:=0 TO HIGH(b) DO
-       j:=0;
-       FOR ic:=0 TO 7 DO
-         INC(j,j);
-         IF ic IN CAST(SET8, b[i]) THEN INC(j) END;
-       END;
-       b[i]:=CHR(j);
+   --bb:=b;
+     res:=decodersc(b, eraspos, 0);
+     IF res>0 THEN
+       FOR i:=0 TO 240-6-24-1 DO chan[m].rxbuf[i+6]:=b[(255-24-1)-i] END;
+       FOR i:=0 TO 24-1 DO chan[m].rxbuf[i+(240-24)]:=b[(255-1)-i] END;
+       IF verb THEN WrInt(res, 1); WrStr(" bytes corrected "); END;
      END;
-   END;
-   
-   
-   
-   --  encode(b, ecc);
-   --WrStrLn(" eccm: ");
-   --FOR i:=0 TO 23 DO WrHex(ORD(ecc[i]), 4) END; WrStrLn(""); WrStrLn("");
-   
-   --initialize_ecc();
-   --encode_data(b, 231, ecc);
-   --WrStrLn(" eccc: ");
-   --FOR i:=231 TO 231+23 DO WrHex(ORD(ecc[i]), 4) END; WrStrLn("");
-                WrStrLn("");
-   --FOR i:=210 TO 233 DO WrHex(ORD(ecc[i]), 4) END; WrStrLn("");
-                WrStrLn("");
-   
-   
-   --FOR i:=216 TO 239 DO b[254+216-i]:=chan[m].rxbuf[i] END;
-   --FOR i:=216 TO 239 DO b[231+i-216]:=chan[m].rxbuf[i] END;
-   --FOR i:=0 TO 23 DO b[231+i]:=ecc[i] END;
-   
-   
-   --FOR i:=0 TO HIGH(b) DO WrHex(ORD(b[i]), 4) END; WrStrLn(" before"); 
-   FOR i:=0 TO 23 DO eraspos[i]:=231+i END;
-     bb:=b;
-     res:=decode(b, eraspos, 12);
-     IF res<>-1 THEN
-       WrInt(try, 4); WrInt(res, 4); WrStrLn("=rs!!!!!!!!!!!!!!!!!!!!!!");
-   --    FOR i:=0 TO HIGH(b) DO WrHex(ORD(b[i]), 4) END; WrStrLn(" eraspos");
-       FOR i:=0 TO 254 DO
-         IF b[i]<>bb[i] THEN
-           WrInt(i, 4); WrStr(":");WrHex(ORD(bb[i]), 2); WrStr("-");
-                WrHex(ORD(b[i]), 2);
-         END;
-       END;
-       WrStrLn(" diffs");
-   
-     END;
-   END;
-   --IF res<>-1 THEN
-   --  b[32]:=0C;
-   --  b[26]:=1C;
-   
-   --  FOR i:=0 TO 255 DO WrHex(ORD(b[i]), 4) END; WrStrLn("");
-   --  WrInt(decode(b, eraspos, 0), 4); WrStrLn("");
-   --  FOR i:=0 TO 255 DO WrHex(ORD(b[i]), 4) END; WrStrLn("");
-   
-   --END;
    */
    /*
-   FOR i:=0 TO 239 DO
-    WrHex(ORD(chan[m].rxbuf[i]), 3);
-    IF i MOD 16=15 THEN WrStrLn("") END;
-   END;
-   WrStrLn("");
+     WrInt(res, 1); WrStrLn("=rs");
+     FOR i:=0 TO 254 DO
+       IF b[i]<>bb[i] THEN
+         WrInt(i, 4); WrStr(":");WrHex(ORD(bb[i]), 2); WrStr("-");
+                WrHex(ORD(b[i]), 2);
+       END;
+     END;
+     WrStrLn(" diffs");
    */
    for (i = 0UL; i<=255UL; i++) {
       b[i] = chan[m].rxbuf[i];
@@ -1455,7 +1394,9 @@ static void decodeframe(unsigned char m, unsigned long ip,
                      almanachage = gpstime-almage;
                   }
                   else almanachage = 0UL;
-                  if (almage+maxalmage>gpstime) anonym0->posok = 1;
+                  if (almage+maxalmage>gpstime) {
+                     anonym0->posok = 1;
+                  }
                   else if (almanachage>0UL) {
                      osic_WrINT32(almanachage/60UL, 10UL);
                      osi_WrStrLn(" Min (almanach too old)", 24ul);
@@ -1521,7 +1462,7 @@ static void decodeframe(unsigned char m, unsigned long ip,
                 (double)mhz, (double)anonym1->hrmsc, (double)anonym1->vrmsc,
                 (anonym1->timems/1000UL+86385UL)%86400UL, frameno, objname,
                 9ul, almanachage, anonym1->goodsats, usercall, 11ul,
-                calperc(anonym1->calibok));
+                calperc(anonym1->calibok), 0UL);
          anonym1->framesent = 1;
       }
       crdone = 1;
@@ -1836,7 +1777,7 @@ static void decodec34(const char rxb[], unsigned long rxb_len,
                 anonym->dir, anonym->clmb, 0.0, 0.0, stemp, 0.0, 0.0, 0.0,
                 0.0, anonym->dewp, 0.0, 0.0, 0.0,
                 ((systime-anonym->tgpstime)+anonym->gpstime)%86400UL, 0UL,
-                anonym->name, 9ul, 0UL, 0UL, usercall, 11ul, 0UL);
+                anonym->name, 9ul, 0UL, 0UL, usercall, 11ul, 0UL, 0UL);
             anonym->lastsent = systime;
          }
       }
@@ -2093,7 +2034,7 @@ static void decodedfm6(const char rxb[], unsigned long rxb_len,
                 anonym->dir, anonym->clmb, 0.0, 0.0, (double)X2C_max_real,
                 0.0, 0.0, 0.0, 0.0, (double)X2C_max_real, 0.0, 0.0, 0.0,
                 anonym->actrt%86400UL, 0UL, anonym->name, 9ul, 0UL, 0UL,
-                usercall, 11ul, 0UL);
+                usercall, 11ul, 0UL, 0UL);
                anonym->lastsent = systime;
             }
          }
@@ -2341,6 +2282,11 @@ static double calcOzone(double uA, double temp, double airpres)
 
 static unsigned short sondemod_POLYNOM0 = 0x1021U;
 
+static unsigned short sondemod_burstIndicatorBytes[12] = {2U,262U,276U,391U,
+                306U,0U,0U,0U,255U,255U,0U,0U};
+
+static unsigned short _cnst1[12] = {2U,262U,276U,391U,306U,0U,0U,0U,255U,
+                255U,0U,0U};
 
 static void decoders41(const char rxb[], unsigned long rxb_len,
                 unsigned long ip, unsigned long fromport)
@@ -2485,10 +2431,40 @@ static void decoders41(const char rxb[], unsigned long rxb_len,
             osi_WrStr(objname, 9ul);
             osic_WrINT32(pc->framenum, 0UL);
          }
+         /*i:=0;WHILE (i<=11) DO WrHex(ORD(rxb[p+23+i]), 3); INC(i) END; */
+         /* appended by SQ7BR BURST KILL CHECK */
+         i = 0UL;
+         while (i<=11UL && (_cnst1[i]>=256U || rxb[p+23UL+i]==(char)
+                _cnst1[i])) ++i;
+         if (i>11UL) {
+            pc->burstKill = ((unsigned long)(unsigned char)rxb[p+35UL]&1UL)
+                +1UL;
+            if (sondeaprs_verb) {
+               osi_WrStr(" BK=", 5ul);
+               osic_WrINT32(pc->burstKill-1UL, 1UL);
+            }
+         }
       }
       else if (typ=='z') {
       }
       else if (typ=='|') {
+         /*
+                 // 02 06 14 87 32 00 00 00 FF FF 00 00    01
+                    int bkSign=0;
+                   for (i = 0UL; i<=11UL;
+                i++) {         // 8 znakow nazwy od pozycji 61(59+2)
+                do 68(59+2+7)
+                      if ( rxb[p+23UL+i]== burstIndicatorBytes[i] ) bkSign++;
+                   } //for
+                   if (bkSign==12) {
+                     pc->burstKill =(unsigned long)
+                (rxb[p+23UL+12UL] && 0x01UL)+1UL;
+                     osi_WrStr(" BK=",5ul);
+                     osic_WrINT32(pc->burstKill, 1UL);
+                     osi_WrStrLn("",1ul);
+                   }
+         */
+         /* appended by SQ7BR */
          /*             WrStrLn("7A frame"); */
          /*             WrStrLn("7C frame"); */
          if (pc) {
@@ -2577,7 +2553,7 @@ static void decoders41(const char rxb[], unsigned long rxb_len,
                 (double)X2C_max_real, ozonval, pc->ozonTemp, pc->ozonPumpMA,
                 pc->ozonBatVolt, (double)X2C_max_real, (double)pc->mhz0, 0.0,
                  0.0, pc->gpssecond, frameno, pc->name, 9ul, 0UL, 0UL,
-                usercall, 11ul, 0UL);
+                usercall, 11ul, 0UL, pc->burstKill);
       pc->framesent = 1;
    }
 /*  IF verb THEN WrStrLn("") END;   */
@@ -2627,6 +2603,7 @@ extern int main(int argc, char **argv)
    aprsstr_BEGIN();
    osi_BEGIN();
    Parms();
+   /*  initrsc; */
    initcontext(&contextr9);
    pcontextc = 0;
    pcontextdfm6 = 0;

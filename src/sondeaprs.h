@@ -15,13 +15,14 @@
 
 typedef unsigned long sondeaprs_TIME;
 
-#define sondeaprs_VERSION "sondemod(c) 0.7"
+#define sondeaprs_VERSION "sondemod(c) 0.8"
 
 extern void sondeaprs_senddata(double, double, double, double, double,
                 double, double, double, double, double, double, double,
                 double, double, double, double, double, unsigned long,
                 unsigned long, char [], unsigned long, unsigned long,
-                unsigned long, char [], unsigned long, unsigned long);
+                unsigned long, char [], unsigned long, unsigned long,
+                unsigned long);
 
 extern long sondeaprs_GetIp(char [], unsigned long, unsigned long *,
                 unsigned long *, unsigned long *);

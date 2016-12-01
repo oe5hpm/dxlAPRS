@@ -262,7 +262,7 @@ static void comment0(char buf[], unsigned long buf_len, unsigned long uptime,
             }
             else if (fb[bol+1L]=='v') {
                /* insert version */
-               strncpy(fb," sondemod(c) 0.7",32768u);
+               strncpy(fb," sondemod(c) 0.8",32768u);
             }
             else if (fb[bol+1L]=='s') {
                /* insert sat count */
@@ -790,17 +790,18 @@ static void show(struct DATLINE d)
    }
    osic_WrINT32(truncr(d.hyg), 2UL);
    osi_WrStr("% ", 3ul);
-   osic_WrINT32((unsigned long)(long)X2C_TRUNCI(d.speed*3.6,X2C_min_longint,
-                X2C_max_longint), 3UL);
+   osic_WrINT32(truncr(d.speed*3.6), 3UL);
    osi_WrStr("km/h ", 6ul);
    osic_WrINT32(truncr(d.dir), 3UL);
    osi_WrStr("dir ", 5ul);
    WrDeg(d.lat, d.long0);
    osi_WrStr(" ", 2ul);
    /*WrFixed(d.gpsalt, 1, 8); WrStr("m "); */
-   osic_WrINT32((unsigned long)(long)X2C_TRUNCI(d.alt,X2C_min_longint,
+   if (d.alt>=(-2.E+4) && d.alt>=1.E+5) {
+      osic_WrINT32((unsigned long)(long)X2C_TRUNCI(d.alt,X2C_min_longint,
                 X2C_max_longint), 1UL);
-   osi_WrStr("m ", 3ul);
+      osi_WrStr("m ", 3ul);
+   }
    osic_WrFixed((float)d.clb, 1L, 5UL);
    osi_WrStr("m/s ", 5ul);
    aprsstr_TimeToStr(d.time0, s, 31ul);
@@ -1036,7 +1037,7 @@ extern void sondeaprs_senddata(double lat, double long0, double alt,
                 char objname[], unsigned long objname_len,
                 unsigned long almanachage, unsigned long goodsats,
                 char usercall[], unsigned long usercall_len,
-                unsigned long calperc)
+                unsigned long calperc, unsigned long burstKill)
 {
    unsigned char e;
    pCONTEXT ct;
@@ -1195,7 +1196,13 @@ extern void sondeaprs_senddata(double lat, double long0, double alt,
                aprsstr_Append(s, 251ul, h, 251ul);
                aprsstr_Append(s, 251ul, "MHz", 4ul);
             }
-            /*        highresstr(hrstr, dat, bt); */
+            /* appended by SQ7BR */
+            if (burstKill==1UL || burstKill==2UL) {
+               aprsstr_Append(s, 251ul, " BK=", 5ul);
+               if (burstKill==1UL) aprsstr_Append(s, 251ul, "Off", 4ul);
+               else aprsstr_Append(s, 251ul, "On", 3ul);
+            }
+            /* appended by SQ7BR */
             sendaprs(0UL, 0UL, sondeaprs_dao, anonym->dat[0U].time0, uptime,
                 usercall, usercall_len, sondeaprs_destcall, 100ul,
                 sondeaprs_via, 100ul, sondeaprs_sym, 2ul, objname,
