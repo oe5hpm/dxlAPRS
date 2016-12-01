@@ -133,11 +133,15 @@ OBJ_SONDEMOD	= \
 	yuma.o \
 	sondemod.o
 
-OBJ_SONDEUDP	= sondeudp.o
-OBJ_UDPBOX		= udpbox.o
+OBJ_SONDEUDP	= sondeudp.o \
+	rsc.o \
+	init_rs_char.o \
+	decode_rs_char.o
+
+OBJ_UDPBOX	= udpbox.o
 OBJ_UDPGATE4	= udpgate4.o
-OBJ_UDPFLEX		= udpflex.o
-OBJ_UDPHUB		= udphub.o
+OBJ_UDPFLEX	= udpflex.o
+OBJ_UDPHUB	= udphub.o
 OBJ_UDPRFNET	= udprfnet.o
 OBJ_APRSMAP	= \
 	aprsdecode.o \
