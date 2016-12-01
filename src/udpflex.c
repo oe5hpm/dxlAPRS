@@ -470,12 +470,14 @@ static void Parms(void)
          else {
             if (h[1U]=='h') {
                osic_WrLn();
+               osi_WrStrLn("bidirectional AXUDP <-> KISS/SMACK(tty/com/pipe) \
+or TCP-KISS(dire-wolf) Interface", 82ul);
+               osic_WrLn();
                osi_WrStrLn(" -a                                automatic swit\
 ch to KISS/FLEX/SMACK mode", 76ul);
                osi_WrStrLn("                                   (only with 1 P\
-orts)", 55ul);
-               osi_WrStrLn(" -r                                use rmnc-crc",
-                 48ul);
+ort)", 54ul);
+               osi_WrStrLn(" -h                                this", 40ul);
                osi_WrStrLn(" -i <filename>                     send this file\
  to tty to switch on kiss", 75ul);
                osi_WrStrLn(" -k                                tnc2 tf switch\
@@ -484,18 +486,20 @@ orts)", 55ul);
  1=txd, 2=p", 61ul);
                osi_WrStrLn("                                   3=slottime, 25\
 5:13 kiss exit", 64ul);
-               osi_WrStrLn("                                   (add 16 to cmd\
- for next Port)", 65ul);
+               osi_WrStrLn("                                   (add 16, 32 ..\
+. to cmd for next Port)", 73ul);
+               osi_WrStrLn(" -r                                use rmnc-crc",
+                 48ul);
                osi_WrStrLn(" -s                                SMACK (crc) on\
 ", 50ul);
                osi_WrStrLn(" -t <tty>:<baud>                   /dev/ttyS0:960\
-0", 51ul);
+0 or Pipe Filename", 68ul);
                osi_WrStrLn(" -T [ip]:[port]                    TCP-KISS -T 12\
 7.0.0.1:8001 (default)", 72ul);
-               osi_WrStrLn("                                   dire-wolf soun\
-dmodem -T :", 61ul);
-               osi_WrStrLn(" -U <x.x.x.x:destport:listenport>  axudp  destpor\
-t/listenport check ip", 71ul);
+               osi_WrStrLn("                                   local dire-wol\
+f soundmodem -T :", 67ul);
+               osi_WrStrLn(" -U <x.x.x.x:destport:listenport>  axudp \"ip:des\
+tport/listenport\" to check ipnum", 81ul);
                osi_WrStrLn("                                   (repeat for mo\
 re Ports)", 59ul);
                osi_WrStrLn(" -u                                retry until (r\
@@ -506,7 +510,6 @@ ror reinitialize kiss mode", 76ul);
 messages", 58ul);
                osi_WrStrLn(" -V                                verbous errors\
  and monitor data to stdout", 77ul);
-               osi_WrStrLn(" -h                                this", 40ul);
                osic_WrLn();
                X2C_ABORT();
             }
@@ -812,7 +815,7 @@ static void Showctl(unsigned long com, unsigned long cmd)
    else if (cm==0x43UL) osi_WrStr("DISC", 5ul);
    else if (cm==0x63UL) osi_WrStr("UA", 3ul);
    else if (cm==0x87UL) osi_WrStr("FRMR", 5ul);
-   else osic_WrHex(cmd, 1UL);
+   else osi_WrHex(cmd, 1UL);
    strncpy(PF,"v^-+",4u);
    if (com==0UL || com==3UL) osi_WrStr("v1", 3ul);
    else {
@@ -867,7 +870,7 @@ static void ShowFrame(char f[], unsigned long f_len, unsigned long len0,
    ++i0;
    if (i0<len0) {
       osi_WrStr(" pid ", 6ul);
-      osic_WrHex((unsigned long)(unsigned char)f[i0], 1UL);
+      osi_WrHex((unsigned long)(unsigned char)f[i0], 1UL);
    }
    ++i0;
    osic_WrLn();
