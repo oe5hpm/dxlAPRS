@@ -376,9 +376,7 @@ static long get4sats(const SATPOSES sats, const unsigned long satnum[],
    /*+K*sats[satnum[3]].drydelay*/
    /*WrFixed(rx_clock_bias, 2,12); WrStrLn("=bias"); */
    if (ret>500L) ret = 500L;
-   if ((long)X2C_TRUNCI(*heig,X2C_min_longint,X2C_max_longint)<-10000L) {
-      ret = 0L;
-   }
+   if (*heig<(-1.E+4)) ret = 0L;
    return ret;
 } /* end get4sats() */
 
