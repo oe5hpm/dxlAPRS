@@ -1437,8 +1437,8 @@ extern void useri_loadconfig(char verb)
    if (s[0U]==0) {
       useri_AddConfLine(useri_fMAPNAMES, 1U, "tiles -128", 11ul);
       useri_AddConfLine(useri_fMAPNAMES, 1U, "tiles_topo -128", 16ul);
+      useri_AddConfLine(useri_fMAPNAMES, 1U, "tiles_cyclemap -128", 20ul);
       useri_AddConfLine(useri_fMAPNAMES, 1U, "tiles_quest -128", 17ul);
-      useri_AddConfLine(useri_fMAPNAMES, 1U, "tiles_cyclemap 0", 17ul);
       useri_AddConfLine(useri_fMAPNAMES, 1U, "tiles_sat 0", 12ul);
    }
    /*  confstr(fDIGI, s); */
@@ -1877,23 +1877,57 @@ extern void useri_rdlums(void)
    if ((aprsdecode_lums.menucol.g&1)) --aprsdecode_lums.menucol.g;
 } /* end rdlums() */
 
-static aprsdecode_SET256 _cnst = {0x00000000UL,0x03FF8000UL,0x17FFFFFEUL,
+static aprsdecode_SET256 _cnst0 = {0x00000000UL,0x03FF8000UL,0x17FFFFFEUL,
                 0x07FFFFFEUL,0x00000000UL,0x00000000UL,0x00000000UL,
                 0x00000000UL};
+static aprsdecode_SYMBOLSET _cnst = {0x00000000UL,0x00000000UL,0x00000000UL,
+                0x00000000UL,0x00000000UL,0x00000000UL};
 
-extern void useri_rdonesymb(char on)
+extern void useri_rdonesymb(char on, char say)
+/* configline to symbol filter set*/
 {
-   char s[31];
-   if (on) {
-      useri_confstr(useri_fONESYMB, s, 31ul);
-      if (X2C_INL((unsigned char)s[0U],256,_cnst)) {
+   char s[100];
+   unsigned long cnt;
+   unsigned long b;
+   unsigned long n;
+   unsigned long j;
+   unsigned long i;
+   memcpy(aprsdecode_click.onesymbolset,_cnst,24u);
+   useri_confstr(useri_fONESYMB, s, 100ul);
+   cnt = 0UL;
+   if (aprsstr_Length(s, 100ul)>=50UL) {
+      memcpy(aprsdecode_click.onesymbolset,_cnst,24u);
+      b = 0UL;
+      for (i = 2UL; i<=49UL; i++) {
+         n = (unsigned long)(unsigned char)s[i];
+         if (n<48UL) n = 0UL;
+         else n -= 48UL;
+         if (n>9UL) n -= 7UL;
+         for (j = 0UL; j<=3UL; j++) {
+            if ((n&1)) {
+               X2C_INCL(aprsdecode_click.onesymbolset,b,192);
+               ++cnt;
+            }
+            ++b;
+            n = n/2UL;
+         } /* end for */
+      } /* end for */
+   }
+   if (cnt==0UL) {
+      if (X2C_INL((unsigned char)s[0U],256,_cnst0)) {
          aprsdecode_click.onesymbol.tab = s[0U];
          aprsdecode_click.onesymbol.pic = s[1U];
       }
+      else aprsdecode_click.onesymbol.tab = 0;
+      strncpy(s,"Show One Symbol",100u);
    }
-   else aprsdecode_click.onesymbol.tab = 0;
-   useri_sayonoff("Show One Symbol", 16ul,
-                aprsdecode_click.onesymbol.tab!=0);
+   else {
+      aprsdecode_click.onesymbol.tab = '*';
+      aprsdecode_click.onesymbol.pic = ' ';
+      strncpy(s,"Symbol Filter",100u);
+   }
+   if (!on) aprsdecode_click.onesymbol.tab = 0;
+   if (say) useri_sayonoff(s, 100ul, aprsdecode_click.onesymbol.tab!=0);
 } /* end rdonesymb() */
 
 
@@ -3925,7 +3959,7 @@ static void drawsymsquare(maptool_pIMAGE image, char tab, char sym, long x0,
                 long y00)
 {
    struct maptool_PIX col;
-   if (!X2C_INL((unsigned char)tab,256,_cnst)) {
+   if (!X2C_INL((unsigned char)tab,256,_cnst0)) {
       tab = '\\';
       sym = '?';
       useri_textautosize(0L, 0L, 6UL, 2UL, 'e', "illegal symbol", 15ul);
@@ -3955,10 +3989,11 @@ static void specialmapmenu(pMENU m)
    addline(m, " Rain Colourmap", 16ul, "W", 2ul, 8615UL);
    addline(m, " Dimm Notmover", 15ul, "m", 2ul, 8620UL);
    useri_confstr(useri_fONESYMB, s, 100ul);
+   s[2U] = 0;
    strncpy(h," Symbol |",100u);
    aprsstr_Append(h, 100ul, s, 100ul);
    addline(m, h, 100ul, "\325>", 3ul, 8625UL);
-   if (X2C_INL((unsigned char)s[0U],256,_cnst)) {
+   if (X2C_INL((unsigned char)s[0U],256,_cnst0)) {
       drawsymsquare(m->image, s[0U], s[1U], (long)(m->xsize-20UL),
                 (long)((m->oldknob-1UL)*m->yknob+m->yknob/2UL));
    }
@@ -3985,7 +4020,7 @@ static void helpmenu(void)
    newmenu(&menu, 150UL, aprsdecode_lums.fontysize+7UL, 3UL, useri_bTRANSP);
    /*  addline(menu, "Shortcuts", CMDSHORTCUTLIST, MINH*6); */
    addline(menu, "Helptext", 9ul, "\305", 2ul, 610UL);
-   addline(menu, "aprsmap(cu) 0.61 by OE5DXL ", 28ul, " ", 2ul, 605UL);
+   addline(menu, "aprsmap(cu) 0.62 by OE5DXL ", 28ul, " ", 2ul, 605UL);
    setunderbar(menu, 37L);
    menu->ysize = menu->oldknob*menu->yknob;
    menu->oldknob = 0UL;
@@ -4929,64 +4964,121 @@ static void movewin(pMENU pm, long dx, long dy)
    }
 } /* end movewin() */
 
-#define useri_SYMS 17
+static void dosymchoose(pMENU);
+
+#define useri_SYMS 18
 
 #define useri_YS 12
 
-#define useri_S "\370\367|"
+#define useri_S "\370\370|"
+
+#define useri_myorbeacon "\326"
 
 
-static void symchoose(char myorbeacon)
+static void dosymchoose(pMENU menu)
 /* draw symbol chart to select one */
 {
-   pMENU menu;
+   /* menu:pMENU; */
+   unsigned long yy;
+   unsigned long xx;
    unsigned long y;
    unsigned long x;
    char t;
    struct maptool_PIX * anonym;
-   maptool_pIMAGE anonym0;
-   unsigned long tmp;
+   struct maptool_PIX * anonym0;
+   struct maptool_PIX * anonym1;
+   maptool_pIMAGE anonym2;
+   maptool_pIMAGE anonym3;
+   maptool_pIMAGE anonym4;
+   char tmp;
    unsigned long tmp0;
-   newmenu(&menu, 275UL, 17UL, 12UL, useri_bCOLOR);
+   unsigned long tmp1;
+   menu->oldknob = 0UL;
+   /*  newmenu(menu, 16*SYMS+3, SYMS, YS, bCOLOR); */
    for (y = 0UL; y<=11UL; y++) {
-      addline(menu, "\370\367|\370\367|\370\367|\370\367|\370\367|\370\367|\37\
-0\367|\370\367|\370\367|\370\367|\370\367|\370\367|\370\367|\370\367|\370\367\
-|\370\367|", 49ul, (char *) &myorbeacon, 1ul, 2100UL+16UL*(11UL-y));
+      addline(menu, "\370\370|\370\370|\370\370|\370\370|\370\370|\370\370|\37\
+0\370|\370\370|\370\370|\370\370|\370\370|\370\370|\370\370|\370\370|\370\370\
+|\370\370|", 49ul, (char *)(tmp = (char)menu->scroll,&tmp), 1ul,
+                2100UL+16UL*(11UL-y));
    } /* end for */
-   tmp = menu->image->Len0-1;
+   tmp0 = menu->image->Len0-1;
    y = 0UL;
-   if (y<=tmp) for (;; y++) {
-      if (y%17UL) {
-         tmp0 = menu->image->Len1-1;
-         x = 0UL;
-         if (x<=tmp0) for (;; x++) {
-            if (x%17UL!=1UL) {
-               { /* with */
-                  struct maptool_PIX * anonym = (anonym0 = menu->image,
-                &anonym0->Adr[(x)*anonym0->Len0+y]);
-                  anonym->r = 200U;
-                  anonym->g = 200U;
-                  anonym->b = 200U;
-               }
+   if (y<=tmp0) for (;; y++) {
+      tmp1 = menu->image->Len1-1;
+      x = 0UL;
+      if (x<=tmp1) for (;; x++) {
+         if (x%18UL>1UL && (y+1UL)%18UL>1UL) {
+            { /* with */
+               struct maptool_PIX * anonym = (anonym2 = menu->image,
+                &anonym2->Adr[(x)*anonym2->Len0+y]);
+               anonym->r = 140U;
+               anonym->g = 140U;
+               anonym->b = 140U;
             }
-            if (x==tmp0) break;
-         } /* end for */
-      }
-      if (y==tmp) break;
+         }
+         else {
+            { /* with */
+               struct maptool_PIX * anonym0 = (anonym3 = menu->image,
+                &anonym3->Adr[(x)*anonym3->Len0+y]);
+               anonym0->r = 0U;
+               anonym0->g = 0U;
+               anonym0->b = 0U;
+            }
+         }
+         if (x==tmp1) break;
+      } /* end for */
+      if (y==tmp0) break;
    } /* end for */
    for (y = 0UL; y<=11UL; y++) {
       if (y<6UL) t = '/';
       else t = '\\';
       for (x = 0UL; x<=15UL; x++) {
          maptool_drawsym(menu->image, t, (char)(32UL+x+16UL*(y%6UL)), 0,
-                (float)(x*17UL+10UL), (float)((11UL-y)*17UL+9UL), 250UL);
+                (float)(x*18UL+10UL), (float)((11UL-y)*18UL+9UL), 250UL);
+         if ((char)menu->scroll=='\326' && X2C_INL(x+y*16UL,192,
+                aprsdecode_click.onesymbolset)) {
+            for (yy = 0UL; yy<=17UL; yy++) {
+               xx = 0UL;
+               do {
+                  { /* with */
+                     struct maptool_PIX * anonym1 = (anonym4 = menu->image,
+                &anonym4->Adr[(xx+x*18UL+1UL)*anonym4->Len0+(yy+(11UL-y)
+                *18UL)]);
+                     anonym1->r = (unsigned short)((xx+yy)*30UL);
+                     anonym1->g = 1000U;
+                     anonym1->b = 300U;
+                  }
+                  if (yy==0UL || yy==17UL) ++xx;
+                  else xx += 17UL;
+               } while (xx<18UL);
+            } /* end for */
+         }
       } /* end for */
    } /* end for */
+   menu->redrawproc = dosymchoose;
+   menu->hiknob = 0UL;
+   menu->notoverdraw = 1;
+/*  menu^.ysize:=menu^.oldknob*menu^.yknob; */
+/*  menu^.oldknob:=0; */
+} /* end dosymchoose() */
+
+#define useri_SYMS0 18
+
+#define useri_YS0 12
+
+
+static void symchoose(char myorbeacon)
+{
+   pMENU menu;
+   useri_rdonesymb(aprsdecode_click.onesymbol.tab!=0, 0);
+   newmenu(&menu, 290UL, 18UL, 12UL, useri_bCOLOR);
+   menu->scroll = (unsigned long)(unsigned char)myorbeacon;
+   dosymchoose(menu);
    menu->ysize = menu->oldknob*menu->yknob;
    menu->oldknob = 0UL;
 } /* end symchoose() */
 
-#define useri_SYMS0 17
+#define useri_SYMS1 17
 
 #define useri_S0 "\370\367|"
 
@@ -5192,7 +5284,7 @@ ose", 66ul, "\255", 2ul, 6800UL);
          else strncpy(h,"--:--:--",201u);
          aprsstr_Append(s, 201ul, h, 201ul);
          aprsstr_Append(s, 201ul, " |", 3ul);
-         if (pm->rej) strncpy(h,"REJECTED",201u);
+         if (pm->rej) strncpy(h,"\350REJECTED",201u);
          else if (pm->acknum==0UL) strncpy(h,"        ",201u);
          else if (pm->acktime>0UL) {
             aprsstr_TimeToStr(pm->acktime%86400UL, h, 201ul);
@@ -6970,6 +7062,64 @@ static void findtextpos(pMENU m, unsigned long xcl, unsigned long ycl,
 } /* end findtextpos() */
 
 
+static void decodelist(char text[], unsigned long text_len,
+                unsigned long time0)
+{
+   char t[1000];
+   char s[1000];
+   unsigned long h;
+   unsigned long j;
+   unsigned long i;
+   char c;
+   char col;
+   i = 0UL;
+   while (i<999UL && text[i]) {
+      t[i] = text[i]; /* textbuffer may not be value parameter because is allocated only till 0C not to HIGH() */
+      ++i;
+   }
+   t[i] = 0;
+   i = 0UL;
+   j = 0UL;
+   for (;;) {
+      /* reconstruct non-ascii */
+      c = t[i];
+      if (c==0) break;
+      if (c=='\371') {
+         ++i;
+         if (t[i]!='<') break;
+         t[j] = 0;
+         for (h = 0UL; h<=1UL; h++) {
+            ++i;
+            c = t[i];
+            if ((unsigned char)c>='0' && (unsigned char)c<='9') {
+               c = (char)((unsigned long)(unsigned char)c-48UL);
+            }
+            else if ((unsigned char)c>='A' && (unsigned char)c<='F') {
+               c = (char)((unsigned long)(unsigned char)c-55UL);
+            }
+            else goto loop_exit;
+            t[j] = (char)((unsigned long)(unsigned char)
+                t[j]*16UL+(unsigned long)(unsigned char)c);
+         } /* end for */
+         ++i;
+         if (t[i]==0) break;
+         ++i;
+         if (t[i]==0) break;
+      }
+      else t[j] = t[i];
+      ++i;
+      ++j;
+   }
+   loop_exit:;
+   t[j] = 0;
+   aprstext_decodelistline(s, 1000ul, t, 1000ul, time0);
+   col = 'm';
+   if (aprsstr_Length(s, 1000ul)>10UL) {
+      useri_textautosize(-3L, 0L, 2UL, 0UL, 'm', s, 1000ul);
+   }
+} /* end decodelist() */
+
+
 static void dolist(pMENU m, unsigned long xcl, unsigned long ycl)
 /* click on list win */
 {
@@ -7068,6 +7218,7 @@ static void dolist(pMENU m, unsigned long xcl, unsigned long ycl)
             }
             aprsdecode_click.cmd = 't';
          }
+         decodelist(bl->text, 501ul, bl->time0);
       }
    }
    useri_refresh = 1;
@@ -7812,7 +7963,7 @@ static void knobcol(maptool_pIMAGE img, long x0, long y00, long xs, long ys,
 
 typedef unsigned long sCONFSET[5];
 
-static sCONFSET _cnst0 = {0x00000000UL,0x00000000UL,0x0100BE80UL,
+static sCONFSET _cnst1 = {0x00000000UL,0x00000000UL,0x0100BE80UL,
                 0x0F000000UL,0x00780000UL};
 
 static void configman(unsigned long button, char * keycmd)
@@ -7833,7 +7984,7 @@ static void configman(unsigned long button, char * keycmd)
                 fKMHTIME,fTEMP,fWINDSYM,fRULER,fALTMIN,fCOLMAPTEXT,
                 fCOLOBJTEXT, fCOLMENUTEXT, fCOLMENUBACK, fCOLMARK1,
                 fCOLMARK2} */
-      if (X2C_INL((long)configedit,154,_cnst0)) *keycmd = ' ';
+      if (X2C_INL((long)configedit,154,_cnst1)) *keycmd = ' ';
       if (configs[configedit].typ<useri_cLIST) configedit = 0UL;
    }
    useri_killmenuid(229UL);
@@ -9679,13 +9830,43 @@ static void statusbar(void)
 /*  menu^.y0:=0; */
 } /* end statusbar() */
 
+/*
+PROCEDURE setsym(knob, subknob:CARDINAL; set:CONFSET; pm:pMENU; dest:CHAR);
+VAR s:ARRAY[0..2] OF CHAR;
+BEGIN
+  IF findmenuid(OVERLAYID)=pm THEN
+    confstr(set, s);
+    IF (knob>=4) & (knob<=5) THEN
+      IF subknob<=12 THEN s[0]:=CHR(ORD("a")+subknob+(5-knob)*13) END;
+    ELSIF (knob>=2) & (knob<=3) THEN
+      IF subknob<=12 THEN s[0]:=CHR(ORD("A")+subknob+(3-knob)*13) END;
+    ELSIF (knob=1) & (subknob<=9) THEN s[0]:=CHR(ORD("0")+subknob) END;
+    AddConfLine(set, 0, s);
+  ELSE
+    killmenuid(OVERLAYID);
+    IF knob>6 THEN s[0]:="/" ELSE s[0]:="\" END;
+    s[1]:=CHR(32+(12-knob) MOD 6*16+subknob);
+    s[2]:=0C;
+    AddConfLine(set, 0, s);
+    IF s[0]="\" THEN
+      updatemenus;
+      overlaychoose(dest);
+    END;
+  END;
+  updatemenus;
+END setsym;
+*/
 
 static void setsym(unsigned long knob, unsigned long subknob,
                 unsigned char set, pMENU pm, char dest)
 {
-   char s[3];
+   char s[100];
+   unsigned long n;
+   unsigned long j;
+   unsigned long i;
+   unsigned long ns;
    if (findmenuid(203UL)==pm) {
-      useri_confstr(set, s, 3ul);
+      useri_confstr(set, s, 100ul);
       if (knob>=4UL && knob<=5UL) {
          if (subknob<=12UL) s[0U] = (char)(97UL+subknob+(5UL-knob)*13UL);
       }
@@ -9693,19 +9874,55 @@ static void setsym(unsigned long knob, unsigned long subknob,
          if (subknob<=12UL) s[0U] = (char)(65UL+subknob+(3UL-knob)*13UL);
       }
       else if (knob==1UL && subknob<=9UL) s[0U] = (char)(48UL+subknob);
-      useri_AddConfLine(set, 0U, s, 3ul);
+      useri_AddConfLine(set, 0U, s, 100ul);
+      if (set==useri_fONESYMB) useri_rdonesymb(1, 0);
    }
    else {
-      useri_killmenuid(203UL);
-      if (knob>6UL) s[0U] = '/';
-      else s[0U] = '\\';
-      s[1U] = (char)(32UL+((12UL-knob)%6UL)*16UL+subknob);
-      s[2U] = 0;
-      useri_AddConfLine(set, 0U, s, 3ul);
-      if (s[0U]=='\\') {
-         updatemenus();
-         overlaychoose(dest);
+      ns = subknob+(12UL-knob)*16UL;
+      if (set==useri_fONESYMB) {
+         /* multisymbol choose */
+         useri_rdonesymb(1, 0);
+         if (X2C_INL(ns,192,aprsdecode_click.onesymbolset)) {
+            X2C_EXCL(aprsdecode_click.onesymbolset,ns,192);
+         }
+         else X2C_INCL(aprsdecode_click.onesymbolset,ns,192);
+         j = 0UL;
+         for (i = 0UL; i<=191UL; i++) {
+            if (X2C_INL(i,192,aprsdecode_click.onesymbolset)) ++j;
+         } /* end for */
+         n = 0UL;
+         for (i = 0UL; i<=191UL; i++) {
+            n = n/2UL+8UL*(unsigned long)X2C_INL(i,192,
+                aprsdecode_click.onesymbolset);
+            if ((i&3UL)==3UL) {
+               if (n<10UL) n += 48UL;
+               else n += 55UL;
+               s[2UL+i/4UL] = (char)n;
+               n = 0UL;
+            }
+         } /* end for */
+         s[50U] = 0;
+         if (j>=1UL) {
+            s[0U] = '*';
+            s[1U] = ' ';
+         }
+         else {
+            if (ns<96UL) s[0U] = '/';
+            else s[0U] = '\\';
+            s[1U] = (char)(32UL+ns%96UL);
+         }
+         ns = 192UL;
       }
+      if (ns<192UL) {
+         if (ns<96UL) s[0U] = '/';
+         else s[0U] = '\\';
+         s[1U] = (char)(32UL+ns%96UL);
+         s[2U] = 0;
+      }
+      useri_AddConfLine(set, 0U, s, 100ul);
+      useri_killmenuid(203UL);
+      updatemenus();
+      if (s[0U]=='\\') overlaychoose(dest);
    }
    updatemenus();
 } /* end setsym() */
@@ -10110,13 +10327,6 @@ static char hilitemenu(unsigned long px, unsigned long py, char kbdch,
             inv(pm, anonym->oldsub, anonym->hiknob);
          }
          hidemenu(0, 0);
-         /*WrInt(ORD(pm^.confidx[knob]), 5);WrInt(ORD(pm^.scrolling), 5);
-                WrInt(knob, 5);WrInt(pm^.helpindex[knob], 5);WrStrLn("=sc");
-                */
-         /*      hintnum:=pm^.helpindex[knob]+subknob; */
-         /*      IF pm^.scrolling THEN INC(hintnum, VAL(CARDINAL,
-                pm^.confidx[knob])*2) END; */
-         /*WrInt(hintnum, 5);WrInt(subknob, 5);WrStrLn("=hint2"); */
          return 1;
       }
       resizecursors(pm, posx, posy);
@@ -11214,7 +11424,7 @@ static void mouseleft(long mousx, long mousy)
       else if (c=='\244') setsym(knob, subknob, useri_fRBSYMB, menu, c);
       else if (c=='\326') {
          setsym(knob, subknob, useri_fONESYMB, menu, c);
-         useri_rdonesymb(1);
+         useri_rdonesymb(1, 0);
          /*      click.onesymbol.tab:=0C;
                       (* redraw *) */
          /*      click.cmd:="s"; */

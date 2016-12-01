@@ -62,7 +62,7 @@ typedef unsigned long aprsdecode_SET256[8];
 
 extern aprsdecode_SET256 aprsdecode_SYMTABLE;
 
-#define aprsdecode_VERS "aprsmap(cu) 0.61"
+#define aprsdecode_VERS "aprsmap(cu) 0.62"
 
 typedef char aprsdecode_MONCALL[9];
 
@@ -449,6 +449,8 @@ struct aprsdecode_CLICKOBJECT {
 
 typedef char aprsdecode_MAPNAME[41];
 
+typedef unsigned long aprsdecode_SYMBOLSET[6];
+
 extern unsigned long aprsdecode_systime;
 
 extern unsigned long aprsdecode_realtime;
@@ -476,6 +478,7 @@ struct aprsdecode__D0 {
    long min0;
    aprsdecode_MONCALL mhop;
    struct aprsdecode_SYMBOL onesymbol;
+   aprsdecode_SYMBOLSET onesymbolset;
    aprsdecode_pOPHIST ops;
    aprsdecode_pFRAMEHIST pf;
    aprsdecode_pFRAMEHIST pf0;

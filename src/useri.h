@@ -99,6 +99,9 @@
 #define useri_MULTILINEDEL 1
 /* subknob */
 
+#define useri_cMULTISYMBOL "*"
+/* if this ose symbol set */
+
 #define useri_SP1 "\360"
 /* micospaces for menu text */
 
@@ -366,7 +369,7 @@ extern void useri_allocimage(maptool_pIMAGE *, long, long, char);
 
 extern unsigned long useri_mainys(void);
 
-extern void useri_rdonesymb(char);
+extern void useri_rdonesymb(char, char);
 
 extern void useri_hoverinfo(struct aprsdecode_CLICKOBJECT);
 

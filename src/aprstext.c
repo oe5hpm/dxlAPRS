@@ -639,6 +639,32 @@ extern void aprstext_decode(char s[], unsigned long s_len,
 } /* end decode() */
 
 
+extern void aprstext_decodelistline(char s[], unsigned long s_len,
+                char text[], unsigned long text_len, unsigned long time0)
+{
+   unsigned long i;
+   struct aprsdecode_DAT dat;
+   struct aprsdecode_FRAMEHIST f;
+   struct aprsdecode_VARDAT vardat;
+   X2C_PCOPY((void **)&text,text_len);
+   i = 0UL;
+   while ((i<=text_len-1 && text[i]) && text[i]!='[') ++i;
+   if (i>text_len-1 || text[i]==0) i = 0UL;
+   aprsstr_Delstr(text, text_len, 0UL, i+1UL); /* remove port/time[ */
+   i = aprsstr_Length(text, text_len);
+   if (i>1UL) {
+      text[i-1UL] = 0; /* remove ] */
+      memset((char *) &vardat,(char)0,516UL);
+      aprsstr_Assign(vardat.raw, 500ul, text, text_len);
+      memset((char *) &f,(char)0,16UL);
+      f.vardat = &vardat;
+      f.time0 = time0;
+      aprstext_decode(s, s_len, 0, &f, 0, 0UL, 1, &dat);
+   }
+   X2C_PFREE(text);
+} /* end decodelistline() */
+
+
 extern void aprstext_setmark1(struct aprspos_POSITION pos, char overwrite,
                 long alt, unsigned long timestamp)
 {
@@ -694,11 +720,7 @@ extern void aprstext_optext(unsigned long typ,
    /*  islast:=last; */
    *last = 0;
    if (op && pf) {
-      if (typ==3UL) {
-      }
-      else if (typ==2UL) {
-         /*      setmarkalti(pf, op, FALSE); */
-         /*      click.marktime:=realtime; */
+      if (typ==2UL) {
          /* find last raw frame */
          pf = op->frames;
          if (pf) {
@@ -707,9 +729,6 @@ extern void aprstext_optext(unsigned long typ,
          }
       }
       else if (typ==1UL) {
-         /*        IF obj.typf<>tHOVER THEN setmarkalti(NIL, op, FALSE) END;
-                   (* not use last frame for marker because marker should be at symbol position but symbol is on last ERROR-FREE position *)
-                 */
          /* next frame */
          pf1 = pf;
          do {
@@ -725,8 +744,6 @@ extern void aprstext_optext(unsigned long typ,
          }
       }
       else if (typ==0UL) {
-         /*        setmarkalti(pf, op, FALSE); */
-         /*        click.marktime:=realtime; */
          /* back to last frame */
          pf1 = pf;
          pfe = pf;
@@ -737,17 +754,10 @@ extern void aprstext_optext(unsigned long typ,
             if (pfe->next==0) pfe = op->frames;
             else pfe = pfe->next;
          } while (pfe!=pf1);
-         /*
-               pf:=op^.frames;
-               IF pf=pf1 THEN pf1:=NIL END; 
-               WHILE (pf<>NIL) & (pf^.next<>pf1) DO pf:=pf^.next END;
-         */
          obj->pff0 = pf;
          obj->pff = pf;
          obj->typf = aprsdecode_tTRACK; /* set "track found" */
       }
-      /*      setmarkalti(pf, op, FALSE); */
-      /*      click.marktime:=realtime;  */
       /*    IF ((typ=1) OR (typ=0)) & lums.errorstep & (pf=pf1)
                 THEN Assign(s, "no more errors found"); */
       if ((aprsdecode_lums.errorstep && pf) && (pf->nodraw&~0x40U)==0U) {

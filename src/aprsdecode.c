@@ -334,8 +334,10 @@ static void alfanum(char s[], unsigned long s_len)
    j = 0UL;
    while (i<s_len-1 && s[i]) {
       c = X2C_CAP(s[i]);
-      if (((unsigned char)c>='A' && (unsigned char)c<='Z' || (unsigned char)
-                c>='0' && (unsigned char)c<='9') || c=='-') {
+      if ((((((((unsigned char)c>='A' && (unsigned char)
+                c<='Z' || (unsigned char)c>='0' && (unsigned char)c<='9')
+                || c=='-') || c=='+') || c=='_') || c=='(') || c==')')
+                || c=='=') {
          s[j] = c;
          ++j;
       }
@@ -1559,7 +1561,7 @@ static void beaconmacros(char s[], unsigned long s_len, const char path[],
             }
             else if (s[i]=='\\') aprsstr_Append(ns, 256ul, "\\\\", 3ul);
             else if (s[i]=='v') {
-               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.61", 17ul);
+               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.62", 17ul);
             }
             else if (s[i]=='l') {
                if (aprstext_getmypos(&pos)) {
@@ -5563,12 +5565,12 @@ static void Watchbeacon(aprsdecode_pTCPSOCK cp)
 } /* end Watchbeacon() */
 
 
-static void appfilter(char s[], unsigned long s_len)
+static void appfilter(char s[], unsigned long s_len, char nulltoo)
 /* build string "filter m/300" */
 {
    char h[1000];
    useri_confstr(useri_fSERVERFILT, h, 1000ul);
-   if (h[0U]) {
+   if (nulltoo || h[0U]) {
       aprsstr_Append(s, s_len, " filter ", 9ul);
       aprsstr_Append(s, s_len, h, 1000ul);
    }
@@ -5580,11 +5582,11 @@ static void updatefilters(aprsdecode_pTCPSOCK cp)
    char ok0;
    aprsdecode_FRAMEBUF s;
    strncpy(s,"#",512u);
-   appfilter(s, 512ul);
+   appfilter(s, 512ul, 1);
    aprsstr_Append(s, 512ul, "\015\012", 3ul);
    ok0 = Sendtcp(cp, s);
    strncpy(s,"Sent to Server",512u);
-   appfilter(s, 512ul);
+   appfilter(s, 512ul, 1);
    useri_textautosize(0L, 5L, 6UL, 4UL, 'b', s, 512ul);
 } /* end updatefilters() */
 
@@ -5627,8 +5629,8 @@ static char tcpconn(aprsdecode_pTCPSOCK * sockchain, long f)
          aprsstr_Append(h, 512ul, s, 100ul);
       }
       aprsstr_Append(h, 512ul, " vers ", 7ul);
-      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.61", 17ul);
-      appfilter(h, 512ul);
+      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.62", 17ul);
+      appfilter(h, 512ul, 0);
       /*    IF filter[0]<>0C THEN Append(h, " filter ");
                 Append(h, filter) END; */
       aprsstr_Append(h, 512ul, "\015\012", 3ul);
@@ -6879,7 +6881,8 @@ extern void aprsdecode_BEGIN(void)
    if (sizeof(struct aprsdecode_MOUNTAIN)!=48) X2C_ASSERT(0);
    if (sizeof(struct aprsdecode_CLICKOBJECT)!=16) X2C_ASSERT(0);
    if (sizeof(aprsdecode_MAPNAME)!=41) X2C_ASSERT(0);
-   if (sizeof(struct aprsdecode__D0)!=364) X2C_ASSERT(0);
+   if (sizeof(aprsdecode_SYMBOLSET)!=24) X2C_ASSERT(0);
+   if (sizeof(struct aprsdecode__D0)!=388) X2C_ASSERT(0);
    if (sizeof(struct aprsdecode__D1)!=424) X2C_ASSERT(0);
    if (sizeof(struct aprsdecode__D2)!=36) X2C_ASSERT(0);
    if (sizeof(struct aprsdecode__D3)!=518) X2C_ASSERT(0);

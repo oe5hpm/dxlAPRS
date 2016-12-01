@@ -79,6 +79,7 @@ struct VIEW {
    float zoom;
    aprsdecode_MONCALL mhop;
    struct aprsdecode_SYMBOL onesymbol;
+   aprsdecode_SYMBOLSET onesymbolset;
    long rf;
    unsigned char mhtxv;
    char wxcol;
@@ -1906,6 +1907,18 @@ static void bootreadlog(void)
 } /* end bootreadlog() */
 
 
+static char IsInbMultisymb(char tab, char pic)
+{
+   unsigned long t;
+   t = (unsigned long)(unsigned char)pic;
+   if (t<32UL) return 0;
+   t -= 32UL;
+   if (t>=192UL) return 0;
+   if (tab!='/') t += 96UL;
+   return X2C_INL(t,192,aprsdecode_click.onesymbolset);
+} /* end IsInbMultisymb() */
+
+
 static void markvisable(const aprsdecode_MONCALL singlecall)
 {
    aprsdecode_pOPHIST singleop;
@@ -1918,14 +1931,17 @@ static void markvisable(const aprsdecode_MONCALL singlecall)
    while (op) {
       { /* with */
          struct aprsdecode_OPHIST * anonym = op;
-         if (((aprspos_posvalid(anonym->lastpos)
+         if ((((aprspos_posvalid(anonym->lastpos)
                 && maptool_vistime(anonym->lasttime))
                 && (op==singleop || ((((singleop==0 && anonym->margin0.long0<=rightdown.long0)
                  && anonym->margin0.lat>=rightdown.lat)
                 && anonym->margin1.long0>=aprsdecode_mappos.long0)
                 && anonym->margin1.lat<=aprsdecode_mappos.lat)
-                && (aprsdecode_click.onesymbol.tab==0 || anonym->sym.pic==aprsdecode_click.onesymbol.pic && anonym->sym.tab==aprsdecode_click.onesymbol.tab)
-                )) && ((op==singleop || aprsdecode_lums.obj>0L)
+                && ((aprsdecode_click.onesymbol.tab==0 || aprsdecode_click.onesymbol.tab=='*'
+                ) || anonym->sym.pic==aprsdecode_click.onesymbol.pic && (anonym->sym.tab==aprsdecode_click.onesymbol.tab || aprsdecode_click.onesymbol.tab=='\\' && anonym->sym.tab!='/')
+                ))) && (aprsdecode_click.onesymbol.tab!='*' || IsInbMultisymb(anonym->sym.tab,
+                 anonym->sym.pic)))
+                && ((op==singleop || aprsdecode_lums.obj>0L)
                 || (0x2U & anonym->drawhints)==0)) anonym->drawhints |= 0x8U;
          else anonym->drawhints = anonym->drawhints&~0x18U;
          op = anonym->next;
@@ -2204,6 +2220,7 @@ BEGIN
   alttabview.zoom:=realzoom(initzoom, finezoom);
   alttabview.mhop:=click.mhop;
   alttabview.onesymbol:=click.onesymbol;
+  alttabview.onesymbolset:=click.onesymbolset;
   alttabview.rf:=lums.rf;
   alttabview.mhtx:=mhtx;
   alttabview.wxcol:=lums.wxcol;
@@ -2215,6 +2232,7 @@ BEGIN
     finezoom:=v.zoom-FLOAT(initzoom)+1.0;
     click.mhop:=v.mhop;
     click.onesymbol:=v.onesymbol;
+    click.onesymbolset:=v.onesymbolset;
     lums.rf:=v.rf;
     mhtx:=v.mhtx;
     lums.wxcol:=v.wxcol;
@@ -2248,6 +2266,7 @@ static void push(float newzoom)
             anonym0->zoom = newzoom;
             memcpy(anonym0->mhop,aprsdecode_click.mhop,9u);
             anonym0->onesymbol = aprsdecode_click.onesymbol;
+            memcpy(anonym0->onesymbolset,aprsdecode_click.onesymbolset,24u);
             anonym0->rf = aprsdecode_lums.rf;
             anonym0->lumtrack = aprsdecode_lums.track;
             anonym0->lumwaypoint = aprsdecode_lums.waypoint;
@@ -2302,6 +2321,7 @@ static void pop(void)
                 aprsdecode_initzoom)+1.0f;
             memcpy(aprsdecode_click.mhop,anonym0->mhop,9u);
             aprsdecode_click.onesymbol = anonym0->onesymbol;
+            memcpy(aprsdecode_click.onesymbolset,anonym0->onesymbolset,24u);
             aprsdecode_lums.rf = anonym0->rf;
             mhtx = anonym0->mhtxv;
             aprsdecode_lums.wxcol = anonym0->wxcol;
@@ -3105,7 +3125,7 @@ static void View(unsigned long n)
       if (aprspos_posvalid(pos)) centerpos(pos, &aprsdecode_mappos);
       pandone = 0;
       if (aprsdecode_click.mhop[0UL]) setshowall();
-      useri_rdonesymb(0); /* show all symbols */
+      useri_rdonesymb(0, 1); /* show all symbols */
    }
 } /* end View() */
 
@@ -4793,7 +4813,7 @@ static void MainEvent(void)
       else if (aprsdecode_click.cmd=='\237') MapPackage();
       else if (aprsdecode_click.cmd=='S') screenshot();
       else if (aprsdecode_click.cmd=='s') {
-         useri_rdonesymb(aprsdecode_click.onesymbol.tab==0);
+         useri_rdonesymb(aprsdecode_click.onesymbol.tab==0, 1);
                 /* toggle onesymbol */
       }
       else if (aprsdecode_click.cmd=='E') {
@@ -5195,8 +5215,8 @@ X2C_STACK_LIMIT(100000l)
 extern int main(int argc, char **argv)
 {
    X2C_BEGIN(&argc,argv,1,4000000l,1000000000l);
-   if (sizeof(struct VIEW)!=100) X2C_ASSERT(0);
-   if (sizeof(struct TABS)!=2008) X2C_ASSERT(0);
+   if (sizeof(struct VIEW)!=124) X2C_ASSERT(0);
+   if (sizeof(struct TABS)!=2488) X2C_ASSERT(0);
    if (sizeof(struct _0)!=84) X2C_ASSERT(0);
    aprstext_BEGIN();
    aprsstr_BEGIN();

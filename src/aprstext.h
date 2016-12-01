@@ -103,6 +103,9 @@ extern void aprstext_compressdata(struct aprspos_POSITION, unsigned long,
                 unsigned long, long, char [], unsigned long, char [],
                 unsigned long);
 
+extern void aprstext_decodelistline(char [], unsigned long, char [],
+                unsigned long, unsigned long);
+
 
 extern void aprstext_BEGIN(void);
 
