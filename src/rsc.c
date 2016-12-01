@@ -15,12 +15,13 @@
 
 #include <stdio.h>
 #include <string.h>
-/*
 #include "fec.h"
-*/
+
 #define N 255
 #define R 24
 #define K (N-R)
+
+void *init_rs_char(int symsize,int gfpoly,int fcr,int prim,int nroots,int pad);
 
 void *rs;
 
