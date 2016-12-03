@@ -135,8 +135,7 @@ OBJ_SONDEMOD	= \
 
 OBJ_SONDEUDP	= sondeudp.o \
 	rsc.o \
-	init_rs_char.o \
-	decode_rs_char.o
+	rsc_decode.o
 
 OBJ_UDPBOX	= udpbox.o
 OBJ_UDPGATE4	= udpgate4.o

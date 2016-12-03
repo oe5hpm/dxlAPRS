@@ -5,23 +5,13 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
-/*
-  ka9q-fec:
-    gcc -c init_rs_char.c
-    gcc -c encode_rs_char.c
-    gcc -c decode_rs_char.c
-  gcc init_rs_char.o encode_rs_char.o decode_rs_char.o ecc-rs_vaisala.c -o ecc-rs_vaisala
-*/
-
-#include <stdio.h>
-#include <string.h>
-#include "fec.h"
-
 #define N 255
 #define R 24
 #define K (N-R)
 
 void *init_rs_char(int symsize,int gfpoly,int fcr,int prim,int nroots,int pad);
+int decode_rs_char(void *arg,
+                   unsigned char *data, int *eras_pos, int no_eras);
 
 void *rs;
 
