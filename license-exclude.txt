@@ -37,11 +37,5 @@ beep.c
 jpgdec.c
 Select.c
 xosic.h
-char.h
-decode_rs.h
-decode_rs_char.c
-fec.h
-init_rs.h
-init_rs_char.c
-rs-common.h
+rsc_decode.c
 
