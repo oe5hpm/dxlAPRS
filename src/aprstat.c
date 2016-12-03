@@ -674,15 +674,13 @@ static void paper(maptool_pIMAGE * img, float yax0, float yax1,
    unsigned long tmp;
    unsigned long tmp0;
    X2C_PCOPY((void **)&name,name_len);
-   so = (long)X2C_TRUNCI(aprsdecode_floor(X2C_DIVR(yax0,(float)step)),
-                X2C_min_longint,X2C_max_longint);
+   so = aprsdecode_realint(aprsdecode_floor(X2C_DIVR(yax0,(float)step)));
    tmp = maxy-1UL;
    y = 0UL;
    if (y<=tmp) for (;; y++) {
       setpix(*img, (long)margin, (long)(y+margin), 200L, 1000L, 200L);
       v = yax0+(yax1-yax0)*(float)y*(X2C_DIVR(1.0f,(float)maxy));
-      s = (long)X2C_TRUNCI(aprsdecode_floor(X2C_DIVR(v,(float)step)),
-                X2C_min_longint,X2C_max_longint);
+      s = aprsdecode_realint(aprsdecode_floor(X2C_DIVR(v,(float)step)));
       tmp0 = (maxx-1UL)+margin;
       x = margin+1UL;
       if (x<=tmp0) for (;; x++) {
@@ -740,6 +738,7 @@ static void decodealt(float * way, unsigned long * beacons, float * resol,
    aprsdecode_pFRAMEHIST fr;
    struct aprspos_POSITION opos;
    float ognd;
+   float a3;
    float a2;
    float a1;
    float a;
@@ -754,6 +753,7 @@ static void decodealt(float * way, unsigned long * beacons, float * resol,
    xc = 1UL;
    a = (-1.E+4f);
    a2 = (-1.E+4f);
+   a3 = (-1.E+4f);
    ognd = (-1.E+4f);
    for (x = 0UL; x<=5759UL; x++) {
       alt[x] = (-1.E+4f);
@@ -808,6 +808,7 @@ static void decodealt(float * way, unsigned long * beacons, float * resol,
                      ognd = maptool_getsrtm(dat->pos, 0UL, resol);
                      if (ognd>=20000.0f) ognd = (-1.E+4f);
                   }
+                  a3 = a2;
                   a2 = a;
                   a = a1;
                }
@@ -819,7 +820,7 @@ static void decodealt(float * way, unsigned long * beacons, float * resol,
       fr = fr->next;
    } while (fr);
    *way = *waysum;
-   if (a2<=(-1.E+4f)) *waysum = 0.0f;
+   if (a3<=(-1.E+4f)) *waysum = 0.0f;
 } /* end decodealt() */
 
 static float aprstat_E0 = (-1.E+4f);
@@ -868,6 +869,7 @@ static void norm(float * hdiv, char * gndok, float ground[5760],
    *minaltd = 2.147483647E+9f;
    *maxaltd = (-2.147483648E+9f);
    for (i = 0UL; i<=5759UL; i++) {
+      /*IF alt[i]>E THEN WrFixed(alt[i], 10, 20); WrStrLn("=alt") END; */
       if (alt[i]>(-1.E+4f) && alt[i]<*minaltd) *minaltd = alt[i];
       if (alt[i]>*maxaltd) *maxaltd = alt[i];
       if (ground[i]>(-1.E+4f) && ground[i]<*minalt) *minalt = ground[i];
@@ -930,6 +932,8 @@ extern void aprstat_althist(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
    *acks = 0UL;
    *rejs = 0UL;
    gndok = 0;
+   minaltd = 0.0f;
+   maxaltd = 0.0f;
    if (op==0 || op->frames==0) {
       *test = 0;
       return;
@@ -970,12 +974,10 @@ extern void aprstat_althist(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
    aprsstr_FixToStr(waysum, 2UL, h, 256ul);
    aprsstr_Append(s, 256ul, h, 256ul);
    aprsstr_Append(s, 256ul, "km min=", 8ul);
-   aprsstr_IntToStr((long)X2C_TRUNCI(minaltd,X2C_min_longint,
-                X2C_max_longint), 1UL, h, 256ul);
+   aprsstr_IntToStr(aprsdecode_realint(minaltd), 1UL, h, 256ul);
    aprsstr_Append(s, 256ul, h, 256ul);
    aprsstr_Append(s, 256ul, "m max=", 7ul);
-   aprsstr_IntToStr((long)X2C_TRUNCI(maxaltd,X2C_min_longint,
-                X2C_max_longint), 1UL, h, 256ul);
+   aprsstr_IntToStr(aprsdecode_realint(maxaltd), 1UL, h, 256ul);
    aprsstr_Append(s, 256ul, h, 256ul);
    if (markalt>X2C_min_longint) {
       aprsstr_Append(s, 256ul, "m curs=", 8ul);

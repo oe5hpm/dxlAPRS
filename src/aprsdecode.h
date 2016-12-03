@@ -716,6 +716,10 @@ extern char aprsdecode_ismultiline(char);
 
 extern void aprsdecode_modmultiline(unsigned long);
 
+extern long aprsdecode_realint(float);
+
+extern unsigned long aprsdecode_realcard(float);
+
 
 extern void aprsdecode_BEGIN(void);
 

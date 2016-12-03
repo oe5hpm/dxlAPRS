@@ -182,6 +182,8 @@ struct R41 {
    unsigned long configbaud;
    unsigned long synp;
    char synbuf[64];
+   char fixbytes[520];
+   unsigned char fixcnt[520];
 };
 
 struct DFM6;
@@ -308,6 +310,8 @@ static char abortonsounderr;
 
 static char verb;
 
+static char verb2;
+
 static unsigned long getst;
 
 static unsigned long afin;
@@ -337,6 +341,8 @@ static unsigned long cfgchannels;
 static short adcbuf[4096];
 
 static unsigned long dfmnametyp;
+
+static unsigned short CRCTAB[256];
 
 
 static void Error(char text[], unsigned long text_len)
@@ -930,6 +936,10 @@ static void Parms(void)
             }
          }
          else if (h[1U]=='v') verb = 1;
+         else if (h[1U]=='V') {
+            verb = 1;
+            verb2 = 1;
+         }
          else {
             if (h[1U]=='h') {
                osi_WrStrLn("oss Mono/Stereo up to 32 Channel RS92, RS41, SRSC\
@@ -978,6 +988,8 @@ ndemod), -C <n> before sets", 77ul);
                osi_WrStrLn("                channel number, maybe repeated fo\
 r more destinations", 69ul);
                osi_WrStrLn(" -h             help", 21ul);
+               osi_WrStrLn(" -V             very verbous, with some hex dumps\
+", 50ul);
                osi_WrStrLn(" -v             verbous, (CRC-checked Sondename)",
                  49ul);
                osi_WrStrLn("example: sondeudp -f 16000 -o /dev/dsp -c 2 -C 0 \
@@ -1137,17 +1149,32 @@ static long reedsolomon92(char buf[], unsigned long buf_len)
    return res;
 } /* end reedsolomon92() */
 
+
+static char crcrs(const char frame[], unsigned long frame_len, long from,
+                long to)
+{
+   unsigned short crc;
+   long i;
+   long tmp;
+   crc = 0xFFFFU;
+   tmp = to-3L;
+   i = from;
+   if (i<=tmp) for (;; i++) {
+      crc = X2C_LSH(crc,16,-8)^CRCTAB[(unsigned long)((crc^(unsigned short)(unsigned char)frame[i])&0xFFU)];
+      if (i==tmp) break;
+   } /* end for */
+   return frame[to-1L]==(char)crc && frame[to-2L]==(char)X2C_LSH(crc,16,-8);
+} /* end crcrs() */
+
 static unsigned short sondeudp_POLYNOM = 0x1021U;
 
 
 static void decodeframe92(unsigned long m)
 {
-   unsigned long ic;
    unsigned long len;
    unsigned long p;
    unsigned long j;
    long corr;
-   unsigned short crc;
    struct CHAN * anonym;
    corr = reedsolomon92(chan[m].r92.rxbuf, 256ul);
    { /* with */
@@ -1168,30 +1195,13 @@ static void decodeframe92(unsigned long m)
          len = (unsigned long)(unsigned char)chan[m].r92.rxbuf[7U]*2UL+2UL;
                 /* +crc */
          ++p;
-         j = 0UL;
-         crc = 0xFFFFU;
-         while (j<len && 8UL+j<240UL) {
-            if (j+2UL<len) {
-               for (ic = 0UL; ic<=7UL; ic++) {
-                  if (((0x8000U & crc)!=0)!=X2C_IN(7UL-ic,8,
-                (unsigned char)(unsigned char)chan[m].r92.rxbuf[p+j])) {
-                     crc = X2C_LSH(crc,16,1)^0x1021U;
-                  }
-                  else crc = X2C_LSH(crc,16,1);
-               } /* end for */
-            }
-            ++j;
-         }
          if (maxchannels>0UL) {
             osic_WrINT32(m+1UL, 1UL);
             osi_WrStr(":", 2ul);
          }
          osi_WrStr("R92 ", 5ul);
-         if ((8UL+len>240UL || (char)crc!=chan[m].r92.rxbuf[(8UL+len)-2UL])
-                || (char)X2C_LSH(crc,16,
-                -8)!=chan[m].r92.rxbuf[(8UL+len)-1UL]) {
-            osi_WrStr("----  crc err ", 15ul);
-         }
+         if (8UL+len>240UL || !crcrs(chan[m].r92.rxbuf, 256ul, 8L,
+                (long)(8UL+len))) osi_WrStr("----  crc err ", 15ul);
          else {
             j = 4UL;
             while ((unsigned char)chan[m].r92.rxbuf[8UL+j]>=' ') {
@@ -1476,127 +1486,161 @@ static unsigned short sondeudp_POLYNOM0 = 0x1021U;
 
 static void decode41(unsigned long m)
 {
-   unsigned long ic;
+   unsigned long try0;
+   unsigned long posok;
+   unsigned long nameok;
    unsigned long len;
    unsigned long p;
-   unsigned long j;
    unsigned long i;
    char ch;
    char typ;
-   unsigned short crc;
-   char wrtyp;
-   char nameok;
+   char aux;
+   char allok;
+   long repl;
    long corr;
    struct R41 * anonym;
+   unsigned long tmp;
    { /* with */
       struct R41 * anonym = &chan[m].r41;
-      nameok = 0;
-      corr = reedsolomon41(anonym->rxbuf, 520ul, 131UL);
+      try0 = 0UL;
+      do {
+         allok = 1;
+         nameok = 0UL;
+         posok = 0UL;
+         corr = 0L;
+         repl = 0L;
+         if (try0>0UL) {
+            if (try0>1UL) {
+               for (i = 0UL; i<=519UL; i++) {
+                  if (anonym->fixcnt[i]>=10U) {
+                     /* replace stable bytes */
+                     anonym->rxbuf[i] = anonym->fixbytes[i];
+                     ++repl;
+                  }
+               } /* end for */
+            }
+            corr = reedsolomon41(anonym->rxbuf, 520ul, 131UL);
                 /* try short frame */
-      if (corr<0L) {
-         corr = reedsolomon41(anonym->rxbuf, 520ul, 230UL);
+            if (corr<0L) {
+               corr = reedsolomon41(anonym->rxbuf, 520ul, 230UL);
                 /* may bo long frame */
-      }
-      p = 57UL;
-      wrtyp = 0;
-      for (;;) {
-         if (p+4UL>=519UL) break;
-         typ = anonym->rxbuf[p];
-         ++p;
-         len = (unsigned long)(unsigned char)anonym->rxbuf[p]+2UL;
-         ++p;
-         if (p+len>=519UL) break;
-         /*
-         WrStrLn("");
-         FOR i:=0 TO len+1 DO WrHex(ORD(rxbuf[p+i-2]),3) ;
+            }
+         }
+         p = 57UL;
+         aux = 0;
+         for (;;) {
+            if (p+4UL>=519UL) break;
+            typ = anonym->rxbuf[p];
+            ++p;
+            len = (unsigned long)(unsigned char)anonym->rxbuf[p]+2UL;
+            ++p;
+            if (p+len>=519UL) break;
+            /*
+            WrStrLn("");
+            FOR i:=0 TO len+1 DO WrHex(ORD(rxbuf[p+i-2]),3) ;
                 IF i MOD 16=15 THEN WrStrLn(""); END; END;
-         WrStrLn("");
-         */
-         j = 0UL;
-         crc = 0xFFFFU;
-         while (j<len && p+j<519UL) {
-            if (j+2UL<len) {
-               for (ic = 0UL; ic<=7UL; ic++) {
-                  if (((0x8000U & crc)!=0)!=X2C_IN(7UL-ic,8,
-                (unsigned char)(unsigned char)anonym->rxbuf[p+j])) {
-                     crc = X2C_LSH(crc,16,1)^0x1021U;
-                  }
-                  else crc = X2C_LSH(crc,16,1);
-               } /* end for */
+            WrStrLn("");
+            */
+            if (!crcrs(anonym->rxbuf, 520ul, (long)p, (long)(p+len))) {
+               /* crc error */
+               allok = 0;
+               break;
             }
-            ++j;
-         }
-         if ((p+len>519UL || (char)crc!=anonym->rxbuf[(p+len)-2UL]) || (char)
-                X2C_LSH(crc,16,-8)!=anonym->rxbuf[(p+len)-1UL]) {
-            if (verb && wrtyp) osi_WrStr(" ----  crc err ", 16ul);
-            break;
-         }
-         if (typ=='y') {
-            /* ID with correct crc */
-            if (verb) {
-               if (!wrtyp) {
-                  if (maxchannels>0UL) {
-                     osic_WrINT32(m+1UL, 1UL);
-                     osi_WrStr(":", 2ul);
-                  }
-                  osi_WrStr("R41 ", 5ul);
-                  wrtyp = 1;
-               }
-               for (i = 0UL; i<=7UL; i++) {
-                  ch = anonym->rxbuf[p+2UL+i];
-                  if ((unsigned char)ch>' ' && (unsigned char)ch<'\177') {
-                     osi_WrStr((char *) &ch, 1u/1u);
-                  }
+            if (verb2) {
+               osi_WrStrLn("", 1ul);
+               osi_WrStrLn("", 1ul);
+               osi_WrStr("start ID length data... crc [", 30ul);
+               osi_WrHex((p-2UL)/256UL, 0UL);
+               osi_WrHex(p-2UL, 3UL);
+               osi_WrHex((unsigned long)(unsigned char)anonym->rxbuf[p-2UL],
+                3UL);
+               osi_WrHex((unsigned long)(unsigned char)anonym->rxbuf[p-1UL],
+                0UL);
+               osi_WrStrLn("]", 2ul);
+               tmp = len-1UL;
+               i = 0UL;
+               if (i<=tmp) for (;; i++) {
+                  osi_WrHex((unsigned long)(unsigned char)anonym->rxbuf[p+i],
+                 3UL);
+                  if ((i&15UL)==15UL) osi_WrStrLn("", 1ul);
+                  if (i==tmp) break;
                } /* end for */
-               osi_WrStr(" ", 2ul);
-               osic_WrINT32((unsigned long)getint16(anonym->rxbuf, 520ul, p),
-                 1UL);
-               if (anonym->rxbuf[p+23UL]==0) {
-                  osi_WrStr(" ", 2ul);
-                  osic_WrFixed((float)(getcard16(anonym->rxbuf, 520ul,
-                p+26UL)/64UL+40000UL)*0.01f, 2L, 1UL);
-                  osi_WrStr("MHz", 4ul);
-               }
+               osi_WrStrLn("", 1ul);
+               osi_WrStrLn("", 1ul);
             }
-            nameok = 1;
-         }
-         else if (typ=='z') {
-         }
-         else if (typ=='|') {
-         }
-         else if (typ=='}') {
-         }
-         else if (typ=='{') {
-            /*             WrStrLn("7A frame"); */
-            /*             WrStrLn("7C frame"); */
-            /*WrInt(getint32(rxbuf, p+2) DIV 1000 MOD 86400 , 10);
+            tmp = (p+len)-1UL;
+            i = p-2UL;
+            if (i<=tmp) for (;; i++) {
+               /* update fixbyte statistics */
+               if (anonym->fixbytes[i]==anonym->rxbuf[i]) {
+                  if (anonym->fixcnt[i]<255U) ++anonym->fixcnt[i];
+               }
+               else {
+                  anonym->fixbytes[i] = anonym->rxbuf[i];
+                  anonym->fixcnt[i] = 0U;
+               }
+               if (i==tmp) break;
+            } /* end for */
+            if (typ=='y') nameok = p;
+            else if (typ=='{') {
+               /*        ELSIF typ=CHR(7AH) THEN */
+               /*             WrStrLn("7A frame"); */
+               /*        ELSIF typ=CHR(7CH) THEN */
+               /*             WrStrLn("7C frame"); */
+               /*WrInt(getint32(rxbuf, p+2) DIV 1000 MOD 86400 , 10);
                 WrStr("=gpstime "); */
-            /*             WrStrLn("7D frame"); */
-            /*             WrStrLn("7B frame"); */
-            if (wrtyp && p+17UL<519UL) {
-               posrs41(anonym->rxbuf, 520ul, p);
+               /*        ELSIF typ=CHR(7DH) THEN */
+               /*             WrStrLn("7D frame"); */
+               posok = p;
             }
-         }
-         else if (typ=='~') osi_WrStr(" +Aux", 6ul);
-         else if (typ=='v') {
-         }
-         else {
+            else if (typ=='~') aux = 1;
+            /*        ELSIF typ=CHR(76H) THEN */
             /*             WrStrLn("76 frame"); */
-            break;
-         }
-         /*        WrInt(getint16(rxbuf, 3BH), 0); */
-         /*        WrStr(" ");WrHex(ORD(typ), 0);WrStr(" ");
+            /*        ELSE EXIT END; */
+            /*        WrInt(getint16(rxbuf, 3BH), 0); */
+            /*        WrStr(" ");WrHex(ORD(typ), 0);WrStr(" ");
                 WrHex(p DIV 256, 0);WrHex(p, 0); */
-         /*        WrStr(" "); */
-         if (typ=='v') break;
-         p += len;
-      }
-      if (wrtyp) {
+            /*        WrStr(" "); */
+            if (typ=='v') break;
+            p += len;
+         }
+         ++try0;
+      } while (!(allok || try0>2UL));
+      if (verb && nameok>0UL) {
+         if (maxchannels>0UL) {
+            osic_WrINT32(m+1UL, 1UL);
+            osi_WrStr(":", 2ul);
+         }
+         osi_WrStr("R41 ", 5ul);
+         for (i = 0UL; i<=7UL; i++) {
+            ch = anonym->rxbuf[nameok+2UL+i];
+            if ((unsigned char)ch>' ' && (unsigned char)ch<'\177') {
+               osi_WrStr((char *) &ch, 1u/1u);
+            }
+         } /* end for */
+         osi_WrStr(" ", 2ul);
+         osic_WrINT32((unsigned long)getint16(anonym->rxbuf, 520ul, nameok),
+                1UL);
+         if (posok>0UL) posrs41(anonym->rxbuf, 520ul, posok);
+         if (anonym->rxbuf[nameok+23UL]==0) {
+            osi_WrStr(" ", 2ul);
+            osic_WrFixed((float)(getcard16(anonym->rxbuf, 520ul,
+                nameok+26UL)/64UL+40000UL)*0.01f, 2L, 1UL);
+            osi_WrStr("MHz", 4ul);
+         }
+         if (aux) osi_WrStr(" +Aux", 6ul);
+         if (!((allok || posok>0UL) || aux)) {
+            osi_WrStr(" ----  crc err ", 16ul);
+         }
          WrdB(chan[m].adcmax);
          WrQ(anonym->bitlev0, anonym->noise0);
          /*WrStrLn(""); */
          /*FOR i:=0 TO HIGH(rxbuf) DO WrHex(ORD(rxbuf[i]),3) ;
                 IF i MOD 16=15 THEN WrStrLn(""); END; END;  */
+         if (repl>0L) {
+            osi_WrStr(" x", 3ul);
+            osic_WrINT32((unsigned long)repl, 1UL);
+         }
          if (corr<0L) osi_WrStr(" -R", 4ul);
          else if (corr>0L) {
             osi_WrStr(" +", 3ul);
@@ -1607,7 +1651,7 @@ static void decode41(unsigned long m)
          osi_WrStrLn("", 1ul);
       }
    }
-   if (nameok) sendrs41(m);
+   if (nameok>0UL) sendrs41(m);
 } /* end decode41() */
 
 /*
@@ -1746,7 +1790,7 @@ BEGIN
         IF e*SET8{0}<>SET8{} THEN INC(headerrs) END;
         e:=SHIFT(e, -1);
       END;
-      IF headerrs>0 THEN         (* allow 0 bit errors on first byte *) 
+      IF headerrs>rxp THEN         (* allow 0 bit errors on first byte *) 
         headerrs:=0;
         rxp:=0;
       ELSE INC(rxp) END;
@@ -2971,6 +3015,24 @@ static void getadc(void)
    } /* end for */
 } /* end getadc() */
 
+static unsigned short sondeudp_POLY = 0x1021U;
+
+
+static void Gencrctab(void)
+{
+   unsigned short j;
+   unsigned short i;
+   unsigned short crc;
+   for (i = 0U; i<=255U; i++) {
+      crc = (unsigned short)(i*256U);
+      for (j = 0U; j<=7U; j++) {
+         if ((0x8000U & crc)) crc = X2C_LSH(crc,16,1)^0x1021U;
+         else crc = X2C_LSH(crc,16,1);
+      } /* end for */
+      CRCTAB[i] = X2C_LSH(crc,16,-8)|X2C_LSH(crc,16,8);
+   } /* end for */
+} /* end Gencrctab() */
+
 
 X2C_STACK_LIMIT(100000l)
 extern int main(int argc, char **argv)
@@ -2980,7 +3042,7 @@ extern int main(int argc, char **argv)
    if (sizeof(CNAMESTR)!=9) X2C_ASSERT(0);
    aprsstr_BEGIN();
    osi_BEGIN();
-   /*  Gencrctab; */
+   Gencrctab();
    memset((char *)chan,(char)0,sizeof(struct CHAN [64]));
    Parms();
    initrsc();
