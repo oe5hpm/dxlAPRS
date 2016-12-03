@@ -137,19 +137,10 @@ static unsigned short chk;
 static unsigned long truncc(double r)
 {
    if (r<=0.0) return 0UL;
-   else if (r>=2.147483647E+9) return 2147483647UL;
+   else if (r>=2.E+9) return 2000000000UL;
    else return (unsigned long)X2C_TRUNCC(r,0UL,X2C_max_longcard);
    return 0;
 } /* end truncc() */
-
-
-static unsigned long truncr(double r)
-{
-   if (r<=0.0) return 0UL;
-   else if (r>=2.147483647E+9) return 2147483647UL;
-   else return (unsigned long)X2C_TRUNCC(r,0UL,X2C_max_longcard);
-   return 0;
-} /* end truncr() */
 
 
 extern long sondeaprs_GetIp(char h[], unsigned long h_len, unsigned long * p,
@@ -400,12 +391,12 @@ static void sendaprs(unsigned long comp0, unsigned long micessid, char dao,
       aprsstr_Append(b, 201ul, "h", 2ul);
       i = aprsstr_Length(b, 201ul);
       a = fabs(lat);
-      n = truncr(a);
+      n = osi_realcard((float)a);
       b[i] = num(n/10UL);
       ++i;
       b[i] = num(n);
       ++i;
-      n = truncr((a-(double)(float)n)*6000.0);
+      n = osi_realcard((float)((a-(double)(float)n)*6000.0));
       b[i] = num(n/1000UL);
       ++i;
       b[i] = num(n/100UL);
@@ -422,14 +413,14 @@ static void sendaprs(unsigned long comp0, unsigned long micessid, char dao,
       b[i] = sym[0UL];
       ++i;
       a = fabs(long0);
-      n = truncr(a);
+      n = osi_realcard((float)a);
       b[i] = num(n/100UL);
       ++i;
       b[i] = num(n/10UL);
       ++i;
       b[i] = num(n);
       ++i;
-      n = truncr((a-(double)(float)n)*6000.0);
+      n = osi_realcard((float)((a-(double)(float)n)*6000.0));
       b[i] = num(n/1000UL);
       ++i;
       b[i] = num(n/100UL);
@@ -446,7 +437,7 @@ static void sendaprs(unsigned long comp0, unsigned long micessid, char dao,
       b[i] = sym[1UL];
       ++i;
       if (speed>0.5) {
-         n = truncr(course+1.5);
+         n = osi_realcard((float)(course+1.5));
          b[i] = num(n/100UL);
          ++i;
          b[i] = num(n/10UL);
@@ -455,7 +446,7 @@ static void sendaprs(unsigned long comp0, unsigned long micessid, char dao,
          ++i;
          b[i] = '/';
          ++i;
-         n = truncr(speed*5.3996146834962E-1+0.5);
+         n = osi_realcard((float)(speed*5.3996146834962E-1+0.5));
          b[i] = num(n/100UL);
          ++i;
          b[i] = num(n/10UL);
@@ -470,7 +461,7 @@ static void sendaprs(unsigned long comp0, unsigned long micessid, char dao,
          ++i;
          b[i] = '=';
          ++i;
-         n = truncr(fabs(alt*3.2808398950131+0.5));
+         n = osi_realcard((float)fabs(alt*3.2808398950131+0.5));
          if (alt>=0.0) b[i] = num(n/100000UL);
          else b[i] = '-';
          ++i;
@@ -492,7 +483,7 @@ static void sendaprs(unsigned long comp0, unsigned long micessid, char dao,
       i = aprsstr_Length(b, 201ul);
       b[i] = sym[0UL];
       ++i;
-      if (lat<90.0) n = truncr((90.0-lat)*3.80926E+5);
+      if (lat<90.0) n = osi_realcard((float)((90.0-lat)*3.80926E+5));
       else n = 0UL;
       b[i] = (char)(33UL+n/753571UL);
       ++i;
@@ -502,7 +493,9 @@ static void sendaprs(unsigned long comp0, unsigned long micessid, char dao,
       ++i;
       b[i] = (char)(33UL+n%91UL);
       ++i;
-      if (long0>(-180.0)) n = truncr((180.0+long0)*1.90463E+5);
+      if (long0>(-180.0)) {
+         n = osi_realcard((float)((180.0+long0)*1.90463E+5));
+      }
       else n = 0UL;
       b[i] = (char)(33UL+n/753571UL);
       ++i;
@@ -515,18 +508,17 @@ static void sendaprs(unsigned long comp0, unsigned long micessid, char dao,
       b[i] = sym[1UL];
       ++i;
       if (speed>0.5) {
-         b[i] = (char)(33UL+truncr(course)/4UL);
+         b[i] = (char)(33UL+osi_realcard((float)course)/4UL);
          ++i;
-         b[i] = (char)(33UL+truncr((double)(osic_ln((float)
-                (speed*5.3996146834962E-1+1.0))*1.29935872129E+1f)));
+         b[i] = (char)(33UL+osi_realcard(osic_ln((float)
+                (speed*5.3996146834962E-1+1.0))*1.29935872129E+1f));
          ++i;
          b[i] = '_';
          ++i;
       }
       else if (alt>0.5) {
          if (alt*3.2808398950131>1.0) {
-            n = truncr((double)(osic_ln((float)(alt*3.2808398950131))*500.5f)
-                );
+            n = osi_realcard(osic_ln((float)(alt*3.2808398950131))*500.5f);
          }
          else n = 0UL;
          if (n>=8281UL) n = 8280UL;
@@ -552,7 +544,7 @@ static void sendaprs(unsigned long comp0, unsigned long micessid, char dao,
          ++i;
          b[i] = '=';
          ++i;
-         n = truncr(alt*3.2808398950131+0.5);
+         n = osi_realcard((float)(alt*3.2808398950131+0.5));
          if (alt>=0.0) b[i] = num(n/10000UL);
          else b[i] = '-';
          ++i;
@@ -572,13 +564,13 @@ static void sendaprs(unsigned long comp0, unsigned long micessid, char dao,
       /* mic-e */
       aprsstr_Append(b, 201ul, ":`", 3ul);
       i = micdest;
-      nl = truncr(fabs(long0));
-      n = truncr(fabs(lat));
+      nl = osi_realcard((float)fabs(long0));
+      n = osi_realcard((float)fabs(lat));
       b[i] = (char)(80UL+n/10UL);
       ++i;
       b[i] = (char)(80UL+n%10UL);
       ++i;
-      n = truncr((fabs(lat)-(double)(float)n)*6000.0);
+      n = osi_realcard((float)((fabs(lat)-(double)(float)n)*6000.0));
       b[i] = (char)(80UL+n/1000UL);
       ++i;
       b[i] = (char)(48UL+32UL*(unsigned long)(lat>=0.0)+(n/100UL)%10UL);
@@ -591,23 +583,24 @@ static void sendaprs(unsigned long comp0, unsigned long micessid, char dao,
       if (nl<10UL) b[i] = (char)(nl+118UL);
       else if (nl>=100UL) {
          if (nl<110UL) b[i] = (char)(nl+8UL);
-         else b[i] = (char)(nl-72UL);
+         else {
+            b[i] = (char)(nl-72UL);
+         }
       }
       else b[i] = (char)(nl+28UL);
       ++i;
-      nl = truncr((fabs(long0)-(double)(float)nl)*6000.0); /* long min*100 */
+      nl = osi_realcard((float)((fabs(long0)-(double)(float)nl)*6000.0));
+                /* long min*100 */
       n = nl/100UL;
-      if (n<10UL) {
-         n += 60UL;
-      }
+      if (n<10UL) n += 60UL;
       b[i] = (char)(n+28UL);
       ++i;
       b[i] = (char)(nl%100UL+28UL);
       ++i;
-      n = truncr(speed*5.3996146834962E-1+0.5);
+      n = osi_realcard((float)(speed*5.3996146834962E-1+0.5));
       b[i] = (char)(n/10UL+28UL);
       ++i;
-      nl = truncr(course);
+      nl = osi_realcard((float)course);
       b[i] = (char)(32UL+(n%10UL)*10UL+nl/100UL);
       ++i;
       b[i] = (char)(28UL+nl%100UL);
@@ -617,7 +610,7 @@ static void sendaprs(unsigned long comp0, unsigned long micessid, char dao,
       b[i] = sym[0UL];
       ++i;
       if (alt>0.5) {
-         if (alt>(-1.E+4)) n = truncr(alt+10000.5);
+         if (alt>(-1.E+4)) n = osi_realcard((float)(alt+10000.5));
          else n = 0UL;
          b[i] = (char)(33UL+(n/8281UL)%91UL);
          ++i;
@@ -686,7 +679,7 @@ static void degtostr(double d, char lat, char form, char s[],
    else s[i+1UL] = 'E';
    if (form=='2') {
       /* DDMM.MMNDDMM.MME */
-      n = truncr(d*3.4377467707849E+5+0.5);
+      n = osi_realcard((float)(d*3.4377467707849E+5+0.5));
       s[0UL] = (char)((n/600000UL)%10UL+48UL);
       i = (unsigned long)!lat;
       s[i] = (char)((n/60000UL)%10UL+48UL);
@@ -706,7 +699,7 @@ static void degtostr(double d, char lat, char form, char s[],
    }
    else if (form=='3') {
       /* DDMM.MMMNDDMM.MMME */
-      n = truncr(d*3.4377467707849E+6+0.5);
+      n = osi_realcard((float)(d*3.4377467707849E+6+0.5));
       s[0UL] = (char)((n/6000000UL)%10UL+48UL);
       i = (unsigned long)!lat;
       s[i] = (char)((n/600000UL)%10UL+48UL);
@@ -728,7 +721,7 @@ static void degtostr(double d, char lat, char form, char s[],
    }
    else {
       /* DDMMSS */
-      n = truncr(d*2.062648062471E+5+0.5);
+      n = osi_realcard((float)(d*2.062648062471E+5+0.5));
       s[0UL] = (char)((n/360000UL)%10UL+48UL);
       i = (unsigned long)!lat;
       s[i] = (char)((n/36000UL)%10UL+48UL);
@@ -788,18 +781,17 @@ static void show(struct DATLINE d)
       osic_WrFixed((float)d.temp, 1L, 5UL);
       osi_WrStr("C ", 3ul);
    }
-   osic_WrINT32(truncr(d.hyg), 2UL);
+   osic_WrINT32(osi_realcard((float)d.hyg), 2UL);
    osi_WrStr("% ", 3ul);
-   osic_WrINT32(truncr(d.speed*3.6), 3UL);
+   osic_WrINT32(osi_realcard((float)(d.speed*3.6)), 3UL);
    osi_WrStr("km/h ", 6ul);
-   osic_WrINT32(truncr(d.dir), 3UL);
+   osic_WrINT32(osi_realcard((float)d.dir), 3UL);
    osi_WrStr("dir ", 5ul);
    WrDeg(d.lat, d.long0);
    osi_WrStr(" ", 2ul);
    /*WrFixed(d.gpsalt, 1, 8); WrStr("m "); */
    if (d.alt>=(-2.E+4) && d.alt>=1.E+5) {
-      osic_WrINT32((unsigned long)(long)X2C_TRUNCI(d.alt,X2C_min_longint,
-                X2C_max_longint), 1UL);
+      osic_WrINT32((unsigned long)osi_realint((float)d.alt), 1UL);
       osi_WrStr("m ", 3ul);
    }
    osic_WrFixed((float)d.clb, 1L, 5UL);

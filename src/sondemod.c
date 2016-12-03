@@ -493,16 +493,6 @@ USE, not exact)", 65ul);
    if (!lowbeacon) sondeaprs_lowaltbeacontime = sondeaprs_beacontime;
 } /* end Parms() */
 
-/*
-PROCEDURE WrQuali(q:REAL);
-BEGIN
-  IF q>0.0 THEN
-    q:=100.5-q*200.0;
-    IF q<0.0 THEN q:=0.0 END;
-    WrStr(" q:"); WrInt(TRUNC(q), 1);
-  END;
-END WrQuali;
-*/
 /*  WrStr(" "); WrHex(n DIV 01000000H MOD 256, 2);
                 WrHex(n DIV 010000H MOD 256, 2);
                 WrHex(n DIV 0100H MOD 256, 2); WrHex(n MOD 256, 2);  */
@@ -530,8 +520,7 @@ static void degtostr(float d, char lat, char form, char s[],
    else s[i+1UL] = 'E';
    if (form=='2') {
       /* DDMM.MMNDDMM.MME */
-      n = (unsigned long)X2C_TRUNCC(d*3.4377467707849E+5f+0.5f,0UL,
-                X2C_max_longcard);
+      n = osi_realcard(d*3.4377467707849E+5f+0.5f);
       s[0UL] = (char)((n/600000UL)%10UL+48UL);
       i = (unsigned long)!lat;
       s[i] = (char)((n/60000UL)%10UL+48UL);
@@ -551,8 +540,7 @@ static void degtostr(float d, char lat, char form, char s[],
    }
    else if (form=='3') {
       /* DDMM.MMMNDDMM.MMME */
-      n = (unsigned long)X2C_TRUNCC(d*3.4377467707849E+6f+0.5f,0UL,
-                X2C_max_longcard);
+      n = osi_realcard(d*3.4377467707849E+6f+0.5f);
       s[0UL] = (char)((n/6000000UL)%10UL+48UL);
       i = (unsigned long)!lat;
       s[i] = (char)((n/600000UL)%10UL+48UL);
@@ -574,8 +562,7 @@ static void degtostr(float d, char lat, char form, char s[],
    }
    else {
       /* DDMMSS */
-      n = (unsigned long)X2C_TRUNCC(d*2.062648062471E+5f+0.5f,0UL,
-                X2C_max_longcard);
+      n = osi_realcard(d*2.062648062471E+5f+0.5f);
       s[0UL] = (char)((n/360000UL)%10UL+48UL);
       i = (unsigned long)!lat;
       s[i] = (char)((n/36000UL)%10UL+48UL);
@@ -926,6 +913,26 @@ static void domes(const char md[], unsigned long md_len, double * hp,
 /*WrStrLn(""); */
 } /* end domes() */
 
+static float sondemod_P[13] = {1000.0f,150.0f,100.0f,70.0f,60.0f,50.0f,40.0f,
+                30.0f,20.0f,15.0f,10.0f,8.0f,0.0f};
+
+static float sondemod_C[13] = {1.0f,1.0f,1.01f,1.022f,1.025f,1.035f,1.047f,
+                1.065f,1.092f,1.12f,1.17f,1.206f,1.3f};
+
+static float _cnst0[13] = {1.0f,1.0f,1.01f,1.022f,1.025f,1.035f,1.047f,
+                1.065f,1.092f,1.12f,1.17f,1.206f,1.3f};
+static float _cnst[13] = {1000.0f,150.0f,100.0f,70.0f,60.0f,50.0f,40.0f,
+                30.0f,20.0f,15.0f,10.0f,8.0f,0.0f};
+
+static double getOzoneCorr(double p)
+/* From from ftp://ftp.cpc.ncep.noaa.gov/ndacc/meta/sonde/cv_payerne_snd.txt */
+{
+   unsigned long i;
+   i = 12UL;
+   while (i>0UL && (double)_cnst[i]<p) --i;
+   return (double)_cnst0[i];
+} /* end getOzoneCorr() */
+
 /*
 03 03 00 00 00 00 00 00 00 00 B2 7D  no aux
 00 03 21 02 5C 5F 00 00 78 1C D4 C9  open input
@@ -954,8 +961,8 @@ ground 1..7mPa, stratosphere <25mPa
 /* mPa per uA */
 
 
-static void doozon(const char s[], unsigned long s_len, double * otemp,
-                double * ozon)
+static void doozon(const char s[], unsigned long s_len, const double airpres,
+                 double * otemp, double * ozon)
 {
    *otemp = (double)(float)((unsigned long)(unsigned char)
                 s[4UL]+(unsigned long)(unsigned char)s[5UL]*256UL);
@@ -963,6 +970,8 @@ static void doozon(const char s[], unsigned long s_len, double * otemp,
                 s[2UL]+(unsigned long)(unsigned char)s[3UL]*256UL);
    *otemp = (65535.0-*otemp)*1.3568521031208E-3-35.0;
    *ozon = (*ozon-550.0)*0.00124;
+   *ozon =  *ozon*(*otemp+273.15)*3.0769230769231E-3*getOzoneCorr(airpres);
+                /* temp and pressure correction */
    if (*ozon<=0.0) *ozon = 0.0;
    if (sondeaprs_verb) {
       osi_WrStr("ozon:", 6ul);
@@ -1422,7 +1431,8 @@ static void decodeframe(unsigned char m, unsigned long ip,
                   crdone = 1;
                }
                if (sf[0U]==0) {
-                  doozon(sf, 256ul, &contextr9.ozontemp, &contextr9.ozon);
+                  doozon(sf, 256ul, contextr9.hp, &contextr9.ozontemp,
+                &contextr9.ozon);
                   crdone = 1;
                }
             }
@@ -2227,30 +2237,16 @@ static void posrs41(const char b[], unsigned long b_len, unsigned long p,
    }
 } /* end posrs41() */
 
-static float sondemod_P[13] = {1000.0f,150.0f,100.0f,70.0f,60.0f,50.0f,40.0f,
-                30.0f,20.0f,15.0f,10.0f,8.0f,0.0f};
-
-static float sondemod_C[13] = {1.0f,1.0f,1.01f,1.022f,1.025f,1.035f,1.047f,
-                1.065f,1.092f,1.12f,1.17f,1.206f,1.3f};
-
-static float _cnst0[13] = {1.0f,1.0f,1.01f,1.022f,1.025f,1.035f,1.047f,
-                1.065f,1.092f,1.12f,1.17f,1.206f,1.3f};
-static float _cnst[13] = {1000.0f,150.0f,100.0f,70.0f,60.0f,50.0f,40.0f,
-                30.0f,20.0f,15.0f,10.0f,8.0f,0.0f};
-
-static double getOzoneCorr(double p)
-/* From from ftp://ftp.cpc.ncep.noaa.gov/ndacc/meta/sonde/cv_payerne_snd.txt */
-{
-   unsigned long i;
-   i = 12UL;
-   while (i>0UL && (double)_cnst[i]<p) --i;
-   return (double)_cnst0[i];
-} /* end getOzoneCorr() */
-
 
 static double altToPres(double a)
+/* meter to hPa */
 {
-   if (a<1000.0 || a>40000.0) return 0.0;
+   if (a<=0.0) return 1010.0;
+   else if (a>40000.0) return 0.0;
+   else if (a>15000.0) {
+      return (double)(osic_exp((float)(a*(-1.5873015873016E-4)+0.2629))
+                *1000.0f);
+   }
    else {
       return (double)(1010.0f*osic_exp(osic_ln((float)((293.0-0.0065*a)
                 *3.4129692832765E-3))*5.26f));

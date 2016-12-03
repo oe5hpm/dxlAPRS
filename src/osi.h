@@ -153,6 +153,10 @@ extern long osi_symblink(X2C_ADDRESS, X2C_ADDRESS);
 
 extern void osi_WrStrLn(char [], unsigned long);
 
+extern long osi_realint(float);
+
+extern unsigned long osi_realcard(float);
+
 
 extern void osi_BEGIN(void);
 

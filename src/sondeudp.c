@@ -1054,7 +1054,7 @@ static void WrQuali(float q)
       q = 100.5f-q*200.0f;
       if (q<0.0f) q = 0.0f;
       osi_WrStr(" q:", 4ul);
-      osic_WrINT32((unsigned long)X2C_TRUNCC(q,0UL,X2C_max_longcard), 1UL);
+      osic_WrINT32((unsigned long)osi_realint(q), 1UL);
    }
 } /* end WrQuali() */
 
@@ -1233,8 +1233,8 @@ static double latlong(unsigned long val)
 {
    double hf;
    double hr;
-   hr = (double)(X2C_DIVR((float)(val%0x080000000UL),1.E+6f));
-   hf = (double)(float)(unsigned long)X2C_TRUNCC(hr,0UL,X2C_max_longcard);
+   hr = X2C_DIVL((double)(val%0x080000000UL),1.E+6);
+   hf = (double)(unsigned long)X2C_TRUNCC(hr,0UL,X2C_max_longcard);
    hr = hf+X2C_DIVL(hr-hf,0.6);
    if (val>=0x080000000UL) hr = -hr;
    return hr;

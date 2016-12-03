@@ -45,6 +45,22 @@ extern void osi_WrHex(unsigned long n, unsigned long f)
 } /* end WrHex() */
 
 
+extern long osi_realint(float x)
+{
+   if (x>=2.E+9f) return 2000000000L;
+   if (x<=(-2.E+9f)) return -2000000000L;
+   return (long)X2C_TRUNCI(x,X2C_min_longint,X2C_max_longint);
+} /* end realint() */
+
+
+extern unsigned long osi_realcard(float x)
+{
+   if (x>=4.E+9f) return 0x0EE6B2800UL;
+   if (x<=0.0f) return 0UL;
+   return (unsigned long)X2C_TRUNCC(x,0UL,X2C_max_longcard);
+} /* end realcard() */
+
+
 extern long osi_OpenAppendLong(char fn[], unsigned long fn_len)
 {
    return osic_OpenAppendLong(fn, fn_len);

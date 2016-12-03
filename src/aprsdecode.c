@@ -260,26 +260,10 @@ extern unsigned long aprsdecode_trunc(float r)
 } /* end trunc() */
 
 
-extern long aprsdecode_realint(float x)
-{
-   if (x>=2.E+9f) x = 2.E+9f;
-   else if (x<=(-2.E+9f)) x = (-2.E+9f);
-   return (long)X2C_TRUNCI(x,X2C_min_longint,X2C_max_longint);
-} /* end realint() */
-
-
-extern unsigned long aprsdecode_realcard(float x)
-{
-   if (x>=4.E+9f) x = 4.E+9f;
-   else if (x<=0.0f) x = 0.0f;
-   return (unsigned long)X2C_TRUNCC(x,0UL,X2C_max_longcard);
-} /* end realcard() */
-
-
 extern float aprsdecode_floor(float r)
 {
    float f;
-   f = (float)aprsdecode_realint(r);
+   f = (float)osi_realint(r);
    if (f>r) f = f-1.0f;
    return f;
 } /* end floor() */

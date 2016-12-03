@@ -674,13 +674,13 @@ static void paper(maptool_pIMAGE * img, float yax0, float yax1,
    unsigned long tmp;
    unsigned long tmp0;
    X2C_PCOPY((void **)&name,name_len);
-   so = aprsdecode_realint(aprsdecode_floor(X2C_DIVR(yax0,(float)step)));
+   so = osi_realint(aprsdecode_floor(X2C_DIVR(yax0,(float)step)));
    tmp = maxy-1UL;
    y = 0UL;
    if (y<=tmp) for (;; y++) {
       setpix(*img, (long)margin, (long)(y+margin), 200L, 1000L, 200L);
       v = yax0+(yax1-yax0)*(float)y*(X2C_DIVR(1.0f,(float)maxy));
-      s = aprsdecode_realint(aprsdecode_floor(X2C_DIVR(v,(float)step)));
+      s = osi_realint(aprsdecode_floor(X2C_DIVR(v,(float)step)));
       tmp0 = (maxx-1UL)+margin;
       x = margin+1UL;
       if (x<=tmp0) for (;; x++) {
@@ -974,10 +974,10 @@ extern void aprstat_althist(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
    aprsstr_FixToStr(waysum, 2UL, h, 256ul);
    aprsstr_Append(s, 256ul, h, 256ul);
    aprsstr_Append(s, 256ul, "km min=", 8ul);
-   aprsstr_IntToStr(aprsdecode_realint(minaltd), 1UL, h, 256ul);
+   aprsstr_IntToStr(osi_realint(minaltd), 1UL, h, 256ul);
    aprsstr_Append(s, 256ul, h, 256ul);
    aprsstr_Append(s, 256ul, "m max=", 7ul);
-   aprsstr_IntToStr(aprsdecode_realint(maxaltd), 1UL, h, 256ul);
+   aprsstr_IntToStr(osi_realint(maxaltd), 1UL, h, 256ul);
    aprsstr_Append(s, 256ul, h, 256ul);
    if (markalt>X2C_min_longint) {
       aprsstr_Append(s, 256ul, "m curs=", 8ul);
