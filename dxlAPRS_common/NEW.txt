@@ -265,7 +265,11 @@ rf     qA?                                                            +
      Wie bei -g wird die Verbindung zur obersten funktionierenden Zeile gehalten.
      zB. nuremberg.aprs2.net:14580#m/250,p/OE,-t/t
 
+7.12.2016
 
+   Serverfilter neu: u/destcall/destcall/.... bis zu 8 calls und "*" wildcard.
+   -u/ wie ueblich zum wegfiltern.
+ 
 
 
 

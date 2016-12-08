@@ -43,9 +43,7 @@ FROM stat IMPORT fstat, stat_t;
 
 #define udpgate4_HASHSIZE 65536
 
-#define udpgate4_VERS "udpgate(c) 0.61"
-
-#define udpgate4_FEATURE " $IX^[V1]"
+#define udpgate4_VERS "udpgate(c) 0.63"
 
 #define udpgate4_TOCALL "APNL51"
 
@@ -109,6 +107,8 @@ struct FILTERS {
    char notentry;
    MONCALL prefixes[8];
    char notprefix;
+   MONCALL destcalls[8];
+   char notdestcall;
    char typs[13];
    char nottyps;
 };
@@ -600,6 +600,7 @@ static void FiltToStr(struct FILTERS f, char s[], unsigned long s_len)
       wrcalls(s, s_len, anonym->viacalls, 8ul, anonym->notvia, 'd');
       wrcalls(s, s_len, anonym->entrycalls, 8ul, anonym->notentry, 'e');
       wrcalls(s, s_len, anonym->prefixes, 8ul, anonym->notprefix, 'p');
+      wrcalls(s, s_len, anonym->destcalls, 8ul, anonym->notdestcall, 'u');
       if (anonym->typs[0U]) {
          aprsstr_Append(s, s_len, " ", 2ul);
          if (anonym->nottyps) aprsstr_Append(s, s_len, "-", 2ul);
@@ -2026,6 +2027,47 @@ static char prefix(char dat[], unsigned long dat_len, pTCPSOCK to)
 } /* end prefix() */
 
 
+static char destcallfilt(char dat[], unsigned long dat_len, pTCPSOCK to)
+{
+   unsigned long b;
+   unsigned long a;
+   unsigned long j;
+   unsigned long i0;
+   struct FILTERS * anonym;
+   if (to->filters.destcalls[0U][0U]==0) return 0;
+   a = 0UL;
+   while (dat[a]!='>') {
+      /* begin of dest call ">" */
+      if (a>=dat_len-1 || dat[a]==0) return 0;
+      /* not normal data */
+      ++a;
+   }
+   ++a;
+   b = a;
+   for (;;) {
+      if (b>dat_len-1 || dat[b]==0) return 0;
+      /* not normal data */
+      if (dat[b]==',' || dat[b]==':') break;
+      ++b;
+   }
+   b -= a; /* len of dest call */
+   j = 0UL;
+   { /* with */
+      struct FILTERS * anonym = &to->filters;
+      while (j<=7UL && anonym->destcalls[j][0U]) {
+         i0 = 0UL;
+         while (i0<b && (anonym->destcalls[j][i0]
+                =='*' || anonym->destcalls[j][i0]==dat[i0+a])) {
+            ++i0;
+            if (i0>9UL || anonym->destcalls[j][i0]==0) return 1;
+         }
+         ++j;
+      }
+   }
+   return 0;
+} /* end destcallfilt() */
+
+
 static char typ(struct POSCALL * posc, char dat[], unsigned long dat_len,
                 pTCPSOCK to, char * t)
 {
@@ -2130,6 +2172,10 @@ static char Filter(pTCPSOCK to, struct POSCALL posc, const char dat[],
    }
    if (entrypoint(dat, dat_len, to)) {
       if (to->filters.notentry) return 0;
+      pass = 1;
+   }
+   if (destcallfilt(dat, dat_len, to)) {
+      if (to->filters.notdestcall) return 0;
       pass = 1;
    }
    if (prefix(dat, dat_len, to)) {
@@ -2405,7 +2451,7 @@ static void beaconmacros(char s[], unsigned long s_len)
          }
          else if (s[i0]=='v') {
             /* insert version */
-            aprsstr_Append(ns, 256ul, "udpgate(c) 0.61", 16ul);
+            aprsstr_Append(ns, 256ul, "udpgate(c) 0.63", 16ul);
          }
          else if (s[i0]==':') {
             /* insert file */
@@ -3726,12 +3772,12 @@ static void Query(MONCALL fromcall, char msg[], unsigned long msg_len,
                  1, path);
    }
    else if (cmd=='S') {
-      Stomsg(servercall, fromcall, *(MSGTEXT *)memcpy(&tmp1,"udpgate(c) 0.61 \
+      Stomsg(servercall, fromcall, *(MSGTEXT *)memcpy(&tmp1,"udpgate(c) 0.63 \
 Msg S&F Relay",30u), *(ACKTEXT *)memcpy(&tmp0,"",1u), 0, 0, 1, path);
    }
    else if (cmd=='v') {
       Stomsg(servercall, fromcall, *(MSGTEXT *)memcpy(&tmp1,
-                "udpgate(c) 0.61",16u), *(ACKTEXT *)memcpy(&tmp0,"",1u), 0,
+                "udpgate(c) 0.63",16u), *(ACKTEXT *)memcpy(&tmp0,"",1u), 0,
                 0, 1, path);
    }
    else if (cmd=='h') {
@@ -4448,69 +4494,77 @@ static void GetFilters(struct FILTERS * filters, const char s[],
    char not;
    FRAMEBUF pongstr;
    skipblank(s, s_len, &p);
-   if (cmpfrom(s, s_len, p, "filter ", 8ul)) {
-      p += 7UL;
-      skipblank(s, s_len, &p);
+   if (cmpfrom(s, s_len, p, "filter", 7ul)) {
+      p += 6UL;
       not = 0;
       filters->typ0 = 0; /* re-init if new filter comes */
       memset((char *)filters->viacalls,(char)0,80UL);
       memset((char *)filters->entrycalls,(char)0,80UL);
       memset((char *)filters->prefixes,(char)0,80UL);
-      while ((unsigned char)s[p]>=' ') {
-         if (s[p]==' ') not = 0;
+      memset((char *)filters->typs,(char)0,13UL);
+      memset((char *)filters->destcalls,(char)0,80UL);
+      if (s[p]==' ') {
          skipblank(s, s_len, &p);
-         if (s[p]=='m') {
-            ++p;
-            if (getfix(&p, s, s_len, &filters->radius, 1.0f)) {
-               filters->typ0 = 'm';
+         while ((unsigned char)s[p]>=' ') {
+            if (s[p]==' ') not = 0;
+            skipblank(s, s_len, &p);
+            if (s[p]=='m') {
+               ++p;
+               if (getfix(&p, s, s_len, &filters->radius, 1.0f)) {
+                  filters->typ0 = 'm';
+               }
+               else return;
+            }
+            else if (s[p]=='r') {
+               ++p;
+               if (!getfix(&p, s, s_len, &filters->base.lat,
+                1.7453292519444E-2f)) return;
+               if (!getfix(&p, s, s_len, &filters->base.long0,
+                1.7453292519444E-2f)) return;
+               if (!getfix(&p, s, s_len, &filters->radius, 1.0f)) return;
+               if (!aprspos_posvalid(filters->base)) return;
+               filters->typ0 = 'r';
+            }
+            else if (s[p]=='a') {
+               ++p;
+               if (!getfix(&p, s, s_len, &filters->base.lat,
+                1.7453292519444E-2f)) return;
+               if (!getfix(&p, s, s_len, &filters->base.long0,
+                1.7453292519444E-2f)) return;
+               if (!getfix(&p, s, s_len, &filters->edge.lat,
+                1.7453292519444E-2f)) return;
+               if (!getfix(&p, s, s_len, &filters->edge.long0,
+                1.7453292519444E-2f)) return;
+               if (!aprspos_posvalid(filters->base)) return;
+               if (!aprspos_posvalid(filters->edge)) return;
+               filters->typ0 = 'a';
+            }
+            else if (s[p]=='d') {
+               getcalls(s, s_len, &p, filters->viacalls, 8ul);
+               filters->notvia = not;
+            }
+            else if (s[p]=='e') {
+               getcalls(s, s_len, &p, filters->entrycalls, 8ul);
+               filters->notentry = not;
+            }
+            else if (s[p]=='u') {
+               getcalls(s, s_len, &p, filters->destcalls, 8ul);
+               filters->notdestcall = not;
+            }
+            else if (s[p]=='p') {
+               getcalls(s, s_len, &p, filters->prefixes, 8ul);
+               filters->notprefix = not;
+            }
+            else if (s[p]=='t') {
+               gettyps(s, s_len, &p, filters->typs, 13ul);
+               filters->nottyps = not;
+            }
+            else if (s[p]=='-') {
+               not = 1;
+               ++p;
             }
             else return;
          }
-         else if (s[p]=='r') {
-            ++p;
-            if (!getfix(&p, s, s_len, &filters->base.lat,
-                1.7453292519444E-2f)) return;
-            if (!getfix(&p, s, s_len, &filters->base.long0,
-                1.7453292519444E-2f)) return;
-            if (!getfix(&p, s, s_len, &filters->radius, 1.0f)) return;
-            if (!aprspos_posvalid(filters->base)) return;
-            filters->typ0 = 'r';
-         }
-         else if (s[p]=='a') {
-            ++p;
-            if (!getfix(&p, s, s_len, &filters->base.lat,
-                1.7453292519444E-2f)) return;
-            if (!getfix(&p, s, s_len, &filters->base.long0,
-                1.7453292519444E-2f)) return;
-            if (!getfix(&p, s, s_len, &filters->edge.lat,
-                1.7453292519444E-2f)) return;
-            if (!getfix(&p, s, s_len, &filters->edge.long0,
-                1.7453292519444E-2f)) return;
-            if (!aprspos_posvalid(filters->base)) return;
-            if (!aprspos_posvalid(filters->edge)) return;
-            filters->typ0 = 'a';
-         }
-         else if (s[p]=='d') {
-            getcalls(s, s_len, &p, filters->viacalls, 8ul);
-            filters->notvia = not;
-         }
-         else if (s[p]=='e') {
-            getcalls(s, s_len, &p, filters->entrycalls, 8ul);
-            filters->notentry = not;
-         }
-         else if (s[p]=='p') {
-            getcalls(s, s_len, &p, filters->prefixes, 8ul);
-            filters->notprefix = not;
-         }
-         else if (s[p]=='t') {
-            gettyps(s, s_len, &p, filters->typs, 13ul);
-            filters->nottyps = not;
-         }
-         else if (s[p]=='-') {
-            not = 1;
-            ++p;
-         }
-         else return;
       }
    }
    else if (pongto && cmpfrom(s, s_len, p, "ping ", 6ul)) {
@@ -4556,7 +4610,7 @@ static char Auth(const char mbuf0[], unsigned long mbuf_len, pTCPSOCK pu)
       i0 = 0UL;
       while ((unsigned char)mbuf0[i0]<=' ') ++i0;
       if (mbuf0[i0]=='#') {
-         GetFilters(&anonym->filters, mbuf0, mbuf_len, 1UL, 0);
+         GetFilters(&anonym->filters, mbuf0, mbuf_len, i0+1UL, 0);
          return 1;
       }
       if (mbuf0[i0]!='u') return 0;
@@ -5606,7 +5660,7 @@ enter\"><H3>\015\012", 131ul);
       Appwww(wsock, wbuf, viacall, 10ul);
    }
    apppos(wbuf, wsock, home, 1);
-   Appwww(wsock, wbuf, " [udpgate(c) 0.61] http#", 25ul);
+   Appwww(wsock, wbuf, " [udpgate(c) 0.63] http#", 25ul);
    aprsstr_IntToStr((long)*cnt, 1UL, h, 32ul);
    Appwww(wsock, wbuf, h, 32ul);
    Appwww(wsock, wbuf, " Uptime ", 9ul);
@@ -5696,7 +5750,7 @@ gn:center\"><H3>\015\012", 131ul);
          Appwww(&wsock, wbuf, "  Port ", 8ul);
          Appwww(&wsock, wbuf, tcpbindport, 6ul);
       }
-      Appwww(&wsock, wbuf, " [udpgate(c) 0.61] Maxusers ", 29ul);
+      Appwww(&wsock, wbuf, " [udpgate(c) 0.63] Maxusers ", 29ul);
       aprsstr_IntToStr((long)maxusers, 1UL, h1, 256ul);
       Appwww(&wsock, wbuf, h1, 256ul);
       Appwww(&wsock, wbuf, " http#", 7ul);
@@ -5956,7 +6010,7 @@ etr</th><th>m>r</th><th>m>n</th><th>a>r</th><th>a>n</th><th>A</th><th>Ack</th\
                if (mp->retryc>0UL && mp->txtime>0UL) {
                   AppTime(wbuf, &wsock, mp->txtime, 1);
                }
-               else if (mp->gentime+msgsendtime<=systime) {
+               else if (!mp->acked && mp->gentime+msgsendtime<=systime) {
                   Appwww(&wsock, wbuf, "<td>timed out</td>", 19ul);
                }
                else Appwww(&wsock, wbuf, "<td></td>", 10ul);
@@ -6125,7 +6179,7 @@ static char tcpconn(pTCPSOCK * sockchain, long f, char cservice)
             aprsstr_Append(h, 512ul, passwd, 6ul);
          }
          aprsstr_Append(h, 512ul, " vers ", 7ul);
-         aprsstr_Append(h, 512ul, "udpgate(c) 0.61", 16ul);
+         aprsstr_Append(h, 512ul, "udpgate(c) 0.63", 16ul);
          if (actfilter[0U]) {
             aprsstr_Append(h, 512ul, " filter ", 9ul);
             aprsstr_Append(h, 512ul, actfilter, 256ul);
@@ -6156,7 +6210,7 @@ static char tcpconn(pTCPSOCK * sockchain, long f, char cservice)
          aprsstr_Append(h1, 512ul, h2, 512ul);
          logline(1L, h1, 512ul);
       }
-      aprsstr_Assign(h, 512ul, "# udpgate(c) 0.61\015\012", 20ul);
+      aprsstr_Assign(h, 512ul, "# udpgate(c) 0.63\015\012", 20ul);
       Sendtcp(cp, h);
    }
    return 1;
