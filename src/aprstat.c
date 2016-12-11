@@ -774,13 +774,13 @@ static void decodealt(float * way, unsigned long * beacons, float * resol,
          if (!useri_configon(useri_fTRACKFILT) || !(fr->nodraw&~0x1U)) {
             if (!aprspos_posvalid(dat->pos)) dat->pos = fr->vardat->pos;
             if (aprspos_posvalid(dat->pos)) {
+               x = aprsdecode_trunc( *waysum*wdiv);
                if (aprspos_posvalid(opos)) {
                   *waysum = *waysum+aprspos_distance(opos, dat->pos);
                }
                if (dat->altitude>-10000L && dat->altitude<=50000L) {
                   a1 = (float)dat->altitude;
                   if (do0) {
-                     x = aprsdecode_trunc( *waysum*wdiv);
                      if (x>5759UL) x = 5759UL;
                      if (a2>(-1.E+4f)) {
                         if (!useri_configon(useri_fTRACKFILT) || (float)
