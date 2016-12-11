@@ -728,11 +728,11 @@ static void paper(maptool_pIMAGE * img, float yax0, float yax1,
 static float aprstat_E = (-1.E+4f);
 
 
-static void decodealt(float * way, unsigned long * beacons, float * resol,
-                float wdiv, unsigned long * rejs, unsigned long * acks,
+static void decodealt(unsigned long * beacons, float * resol, float wdiv,
+                unsigned long * rejs, unsigned long * acks,
                 unsigned long * msgs, struct aprsdecode_DAT * dat,
-                float ground[5760], float alt[5760], float * waysum,
-                aprsdecode_pOPHIST op, long * markalt,
+                float ground[5760], float alt[5760], char * end,
+                float * waysum, aprsdecode_pOPHIST op, long * markalt,
                 unsigned long * markx1, unsigned long * markx, char do0)
 {
    aprsdecode_pFRAMEHIST fr;
@@ -755,13 +755,14 @@ static void decodealt(float * way, unsigned long * beacons, float * resol,
    a2 = (-1.E+4f);
    a3 = (-1.E+4f);
    ognd = (-1.E+4f);
+   *end = 0;
    for (x = 0UL; x<=5759UL; x++) {
       alt[x] = (-1.E+4f);
    } /* end for */
    for (x = 0UL; x<=5759UL; x++) {
       ground[x] = (-1.E+4f);
    } /* end for */
-   do {
+   for (;;) {
       /* sum up km driven */
       if (maptool_vistime(fr->time0) && aprsdecode_Decode(fr->vardat->raw,
                 500ul, dat)>=0L) {
@@ -808,18 +809,19 @@ static void decodealt(float * way, unsigned long * beacons, float * resol,
                      ognd = maptool_getsrtm(dat->pos, 0UL, resol);
                      if (ognd>=20000.0f) ognd = (-1.E+4f);
                   }
-                  a3 = a2;
+                  if (!*end) a3 = a2;
                   a2 = a;
                   a = a1;
                }
                opos = dat->pos;
             }
-            ++*beacons;
+            if (!*end) ++*beacons;
          }
       }
-      fr = fr->next;
-   } while (fr);
-   *way = *waysum;
+      if (*end) break;
+      if (fr->next) fr = fr->next;
+      else *end = 1;
+   }
    if (a3<=(-1.E+4f)) *waysum = 0.0f;
 } /* end decodealt() */
 
@@ -923,6 +925,7 @@ extern void aprstat_althist(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
    float resol;
    float waysum;
    long markalt;
+   char end;
    char gndok;
    size_t tmp[2];
    unsigned long tmp0;
@@ -939,8 +942,9 @@ extern void aprstat_althist(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
       return;
    }
    Maxx = dynmaxx(8UL, 400UL, 720UL);
-   decodealt(way, beacons, &resol, wdiv, rejs, acks, msgs, &dat, ground, alt,
-                 &waysum, op, &markalt, &markx1, &markx, 0);
+   decodealt(beacons, &resol, wdiv, rejs, acks, msgs, &dat, ground, alt,
+                &end, &waysum, op, &markalt, &markx1, &markx, 0);
+   *way = waysum;
    if (waysum<0.05f) {
       *test = 0; /* no altitudes or km */
       return;
@@ -955,8 +959,8 @@ extern void aprstat_althist(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
    }
    maptool_clr(*img);
    wdiv = X2C_DIVR((float)(Maxx*8UL-1UL),waysum);
-   decodealt(way, beacons, &resol, wdiv, rejs, acks, msgs, &dat, ground, alt,
-                 &waysum, op, &markalt, &markx1, &markx, 1);
+   decodealt(beacons, &resol, wdiv, rejs, acks, msgs, &dat, ground, alt,
+                &end, &waysum, op, &markalt, &markx1, &markx, 1);
    interpol(alt, 5760ul);
    interpol(ground, 5760ul);
    norm(&hdiv, &gndok, ground, alt, &maxaltd, &minaltd, &maxalt, &minalt);
