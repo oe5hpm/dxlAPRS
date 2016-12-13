@@ -1,0 +1,62 @@
+#!/bin/sh
+if [ -z $1 ]; then
+	echo "updateDXLaprs: missing architecture"
+	echo "Usage: updateDXLaprs ARCH"
+        echo "    Where ARCH may be: armv6, armv6tce, armv7hf, x86, ..."
+	exit 1
+fi
+
+SOURCE=http://dxlaprs.hamspirit.at
+FILE=dxlAPRS_$1-current
+
+DST=$HOME/dxlAPRS
+DSTMAP=$DST/aprsmap
+DSTAPRS=$DST/aprs
+
+# set up the destination directory structure
+[ -d $DSTMAP ] || mkdir -p $DSTMAP
+[ -d $DSTMAP/osm ] || mkdir -p $DSTMAP/osm
+[ -d $DSTMAP/logs ] || mkdir -p $DSTMAP/logs
+[ -d $DSTAPRS ] || mkdir -p $DSTAPRS
+
+# retrieve the image
+TMPDIR=$(mktemp -d)
+if [ $? -ne 0 ]; then
+	echo "Unable to create temporary directory."
+	exit 1
+fi
+cd $TMPDIR
+wget $SOURCE/$FILE.tgz
+
+# if successful then unpack and move files to their destinations
+if [ $? -eq 0 ] && [ -r $FILE.tgz ]; then
+	gunzip $FILE.tgz
+	tar -xf $FILE.tar
+	rm $FILE.tar
+	echo "Installation directory:" $DST 
+	echo "Installing aprsmap-components..."
+	mv -f aprsmap_common/poi.txt $DSTMAP/osm/
+	mv -f aprsmap_common/* $DSTMAP/
+	mv -f aprsmap $DSTMAP/
+	rm -r aprsmap_common
+	echo "Installing aprs-components..."
+	cp -r dxlAPRS_common/* $DSTAPRS/
+	rm -r dxlAPRS_common
+	cp -r scripts $DSTAPRS/
+	rm -r scripts
+	mv -f * $DSTAPRS/
+	
+# fixup file permissions and owners
+	cd $DSTAPRS
+	for f in $(\ls); do 
+		test -x $f && sudo chmod 0755 $f
+	done
+	sudo chown root afskmodem
+	sudo chmod +s afskmodem
+	rm -r $TMPDIR
+else
+# could not locate the image
+        echo "Unable to download image:" $SOURCE/$FILE.tgz
+	rm -r $TMPDIR
+	exit 1
+fi
