@@ -113,7 +113,6 @@ struct maptool__D0 {
    long tx;
    long ty;
    char run;
-   char overflow;
 };
 
 extern struct maptool__D0 maptool_mappack;

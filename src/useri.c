@@ -7871,6 +7871,7 @@ static void escmenus(void)
                 100L);
    aprsdecode_lums.moving = 0;
    aprsdecode_click.withradio = 0;
+   aprsdecode_click.chkmaps = 0;
    aprsdecode_click.onesymbol.tab = 0;
    if (panowin.on) closepano();
 } /* end escmenus() */

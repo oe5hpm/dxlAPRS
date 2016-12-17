@@ -3185,9 +3185,8 @@ static void MapPackage(void)
    aprsstr_Append(s, 1000ul, "\012From Zoom 1 to ", 17ul);
    aprsstr_IntToStr(maptool_mappack.tozoom, 1UL, s1, 1000ul);
    aprsstr_Append(s, 1000ul, s1, 1000ul);
-   if (maptool_mappack.overflow) {
-      aprsstr_Append(s, 1000ul, "\012Too Many Tiles, split into more Download\
-s!", 44ul);
+   if (!aprsdecode_click.chkmaps) {
+      aprsstr_Append(s, 1000ul, "\012Map Check aborted!", 20ul);
    }
    else {
       aprsstr_Append(s, 1000ul, "\012Total Tiles     : ", 20ul);

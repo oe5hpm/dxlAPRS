@@ -6882,7 +6882,7 @@ extern void aprsdecode_BEGIN(void)
    if (sizeof(struct aprsdecode_CLICKOBJECT)!=16) X2C_ASSERT(0);
    if (sizeof(aprsdecode_MAPNAME)!=41) X2C_ASSERT(0);
    if (sizeof(aprsdecode_SYMBOLSET)!=24) X2C_ASSERT(0);
-   if (sizeof(struct aprsdecode__D0)!=388) X2C_ASSERT(0);
+   if (sizeof(struct aprsdecode__D0)!=392) X2C_ASSERT(0);
    if (sizeof(struct aprsdecode__D1)!=424) X2C_ASSERT(0);
    if (sizeof(struct aprsdecode__D2)!=36) X2C_ASSERT(0);
    if (sizeof(struct aprsdecode__D3)!=518) X2C_ASSERT(0);
