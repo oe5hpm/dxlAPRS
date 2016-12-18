@@ -1,6 +1,6 @@
 #!/bin/sh
 # this script unpacks and installs remote installation images created
-# by packCurrent.sh script.
+# by the packCurrent.sh script.
 
 if [ -z $1 ]; then
 	echo "updateDXLaprs: missing architecture"
