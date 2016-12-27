@@ -153,6 +153,29 @@ static void addpix(maptool_pIMAGE img, float x, float y, unsigned long rr,
    }
 } /* end addpix() */
 
+#define aprstat_KL0 512
+
+
+static void fillpix(maptool_pIMAGE img, unsigned long x, unsigned long yfrom,
+                 float yto, unsigned long rr, unsigned long gg,
+                unsigned long bb)
+{
+   float fy;
+   unsigned long yy;
+   struct maptool_PIX * anonym;
+   yy = aprsdecode_trunc(yto);
+   fy = yto-(float)yy;
+   while (yfrom<=yy) {
+      { /* with */
+         struct maptool_PIX * anonym = &img->Adr[(x)*img->Len0+yfrom];
+         anonym->r += (unsigned short)rr;
+         anonym->g += (unsigned short)gg;
+         anonym->b += (unsigned short)bb;
+      }
+      ++yfrom;
+   }
+} /* end fillpix() */
+
 
 static unsigned long sfact(float y)
 {
@@ -1033,6 +1056,14 @@ extern void aprstat_althist(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
       }
       if (x==tmp0) break;
    } /* end for */
+   if (gndok) {
+      tmp0 = Maxx-1UL;
+      x = 0UL;
+      if (x<=tmp0) for (;; x++) {
+         fillpix(*img, x+8UL, 8UL, ground[x*8UL]+7.0f, 63UL, 38UL, 0UL);
+         if (x==tmp0) break;
+      } /* end for */
+   }
 } /* end althist() */
 
 #define aprstat_TIMESPAN 86400
