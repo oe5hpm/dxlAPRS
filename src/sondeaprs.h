@@ -13,6 +13,11 @@
 #include "X2C.h"
 #endif
 
+#ifndef RS41DATA_H_
+#include "rs41data.h"
+#endif
+
+
 typedef unsigned long sondeaprs_TIME;
 
 #define sondeaprs_VERSION "sondemod(c) 0.8"
@@ -23,6 +28,8 @@ extern void sondeaprs_senddata(double, double, double, double, double,
                 unsigned long, char [], unsigned long, unsigned long,
                 unsigned long, char [], unsigned long, unsigned long,
                 unsigned long);
+
+extern void sondeaprs_senddataRS41(char [],unsigned long,unsigned long,double,double,double,double,double,double,double,pCONTEXTR41);
 
 extern long sondeaprs_GetIp(char [], unsigned long, unsigned long *,
                 unsigned long *, unsigned long *);

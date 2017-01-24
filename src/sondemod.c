@@ -33,6 +33,10 @@
 #ifndef gpspos_H_
 #include "gpspos.h"
 #endif
+#ifndef RS41DATA_H_
+#include "rs41data.h"
+#endif
+
 #ifndef sondeaprs_H_
 #include "sondeaprs.h"
 #endif
@@ -84,9 +88,13 @@ static char sondemod_EMPTYAUX = '\003';
 #define sondemod_FASTALM 4
 /* reread almanach if old */
 
+
+#define sondemod_MIN_BURST_HEIGHT 20000
+#define sondemod_AFTER_BURST_OFF_TIMER 30600
+//37800(10.5h)-30600(8.5h)
+
 typedef char FILENAME[1024];
 
-typedef char OBJNAME[9];
 
 typedef char CALLSSID[11];
 
@@ -199,30 +207,8 @@ struct CONTEXTDFM6 {
    unsigned long poserr; /* count down after position jump */
 };
 
-struct CONTEXTR4;
+/*SQ7BR moved to own header file*/
 
-typedef struct CONTEXTR4 * pCONTEXTR4;
-
-
-struct CONTEXTR4 {
-   pCONTEXTR4 next;
-   OBJNAME name;
-   char posok;
-   char framesent;
-   float mhz0;
-   unsigned long gpssecond;
-   unsigned long framenum;
-   unsigned long tused;
-   double hp;
-   unsigned long ozonInstType;
-   unsigned long ozonInstNum;
-   double ozonTemp;
-   double ozonuA;
-   double ozonBatVolt;
-   double ozonPumpMA;
-   double ozonExtVolt;
-   unsigned long burstKill;
-};
 /*
        ozon_id_ser           : ARRAY[0..8] OF CHAR;
        ozon_id_diag          : INT16;
@@ -234,6 +220,10 @@ static FILENAME semfile;
 static FILENAME yumafile;
 
 static FILENAME rinexfile;
+
+static char sondeaprs_verbHex;
+
+static FILENAME sondeaprs_verbHexDir ;
 
 static unsigned long sendquick; /* 0 send if full calibrated, 1 with mhz, 2 always */
 
@@ -275,7 +265,9 @@ static pCONTEXTC34 pcontextc;
 
 static pCONTEXTDFM6 pcontextdfm6;
 
-static pCONTEXTR4 pcontextr4;
+static pCONTEXTR41 pcontextr4;
+
+static long testFHandle;
 
 
 static void Error(char text[], unsigned long text_len)
@@ -331,6 +323,9 @@ static void Parms(void)
    almrequest = 14400UL;
    sondeaprs_verb = 0;
    sondeaprs_verb2 = 0;
+   /*SQ7BR*/
+   sondeaprs_verbHex = 0;
+
    sendquick = 1UL;
    for (;;) {
       osi_NextArg(h, 1024ul);
@@ -432,6 +427,15 @@ static void Parms(void)
             sondeaprs_verb = 1;
             sondeaprs_verb2 = 1;
          }
+         /*SQ7BR*/
+         else if (h[1U]=='q') {
+             osi_NextArg(sondeaprs_verbHexDir, 1024ul);
+             if ((unsigned char)sondeaprs_verbHexDir[0U]<' ') {
+                Error("-q <hexDirName>", 14ul);
+             }
+        	 sondeaprs_verbHex =1;
+         }
+
          else {
             if (h[1U]=='h') {
                osi_WrStr("sondemod(c) 0.8", 16ul);
@@ -474,6 +478,11 @@ at (prefered)", 63ul);
 USE, not exact)", 65ul);
                osi_WrStrLn("example: sondemod -o 18000 -x almanach.txt -d -A \
 1500 -B 10 -I OE0AAA -r 127.0.0.1:9001", 88ul);
+
+               /*SQ7BR*/
+               osi_WrStrLn(" -q <hexDirName>   dump hex strings to file in dirna\
+me", 52ul);
+
                X2C_ABORT();
             }
             err = 1;
@@ -1155,6 +1164,8 @@ static void WrRinexfn(unsigned long t)
    }
    else osi_WrStrLn("can not write getalmanach file", 31ul);
 } /* end WrRinexfn() */
+
+
 
 
 static void getcall(const char b[], unsigned long b_len, char call[],
@@ -2179,6 +2190,22 @@ static unsigned long gethex(const char frame[], unsigned long frame_len,
 } /* end gethex() */
 
 
+/* SQ7BR */
+static void WrHexToFile(const long f,const char rxb[], unsigned long rxb_len)
+{
+   int i;
+   if (osic_FdValid(f)) {
+	   for (i=8;i<rxb_len;i++)
+		   osi_WrHexFd(f,rxb[i],3ul);
+	   osi_WrBin(f,"\r\n",3ul,2ul);
+   }
+   else osi_WrStrLn("can't write hex file", 31ul);
+} /* end WrHexToFile() */
+
+
+
+
+
 static void posrs41(const char b[], unsigned long b_len, unsigned long p,
                 double * lat, double * long0, double * heig, double * speed,
                 double * dir, double * clmb)
@@ -2301,9 +2328,9 @@ static void decoders41(const char rxb[], unsigned long rxb_len,
    char calok;
    unsigned short crc;
    char typ;
-   pCONTEXTR4 pc0;
-   pCONTEXTR4 pc1;
-   pCONTEXTR4 pc;
+   pCONTEXTR41 pc0;
+   pCONTEXTR41 pc1;
+   pCONTEXTR41 pc;
    double ozonval;
    double climb;
    double dir;
@@ -2312,6 +2339,24 @@ static void decoders41(const char rxb[], unsigned long rxb_len,
    double long0;
    double lat;
    unsigned long tmp;
+   /*SQ7BR*/
+   unsigned long bkValue;
+   char frameType;
+   char hwType[11]; //with zero end byte
+   char hwId[5];    //with zero end byte
+   char sondeType[8]; //with zero end byte
+   char serialNumber[6];
+   unsigned long firmwareVersion;
+   unsigned long version;
+   unsigned long subversionMajor;
+   unsigned long subversionMinor;
+
+   long fHandle;
+   char fName[1024]; //fileName
+   unsigned long systime;
+   char timeValue[11];
+
+
    calok = 0;
    nameok = 0;
    nam[0U] = 0;
@@ -2337,18 +2382,15 @@ static void decoders41(const char rxb[], unsigned long rxb_len,
    p = 57UL;
    if (sondeaprs_verb) osi_WrStr("R41 ", 5ul);
    for (;;) {
+	   //each block with own id, length, crc
       if (p+4UL>=rxb_len-1) break;
-      typ = rxb[p];
-      ++p;
-      len = (unsigned long)(unsigned char)rxb[p]+2UL;
-      ++p;
+      typ = rxb[p++];
+      //++p;
+      len = (unsigned long)(unsigned char)rxb[p++]+2UL;
+      //++p;
       if (p+len>=rxb_len-1) break;
-      /*
-      WrStrLn("");
-      FOR i:=0 TO len-1 DO WrHex(ORD(rxb[p+i]),3) ;
-                IF i MOD 16=15 THEN WrStrLn(""); END; END;
-      WrStrLn("");
-      */
+
+      //crc start
       j = 0UL;
       crc = 0xFFFFU;
       while (j<len && p+j<rxb_len-1) {
@@ -2366,9 +2408,11 @@ static void decoders41(const char rxb[], unsigned long rxb_len,
       if ((char)crc!=rxb[(p+len)-2UL] || (char)X2C_LSH(crc,16,
                 -8)!=rxb[(p+len)-1UL]) {
          if (sondeaprs_verb) osi_WrStr(" ----  crc err ", 16ul);
+
+      //crc end
          break;
       }
-      if (typ=='y') {
+      if (typ=='y') { //config
          nameok = 1;
          for (i = 0UL; i<=7UL; i++) {
             nam[i] = rxb[p+2UL+i];
@@ -2386,7 +2430,9 @@ static void decoders41(const char rxb[], unsigned long rxb_len,
                /* timed out */
                if (pc0==0) pcontextr4 = pc1;
                else pc0->next = pc1;
-               osic_free((X2C_ADDRESS *) &pc, sizeof(struct CONTEXTR4));
+               /*SQ7BR*/
+               osic_Close(pc->fileHex);
+               osic_free((X2C_ADDRESS *) &pc, sizeof(struct CONTEXTR41));
             }
             else {
                if (aprsstr_StrCmp(nam, 9ul, pc->name, 9ul)) break;
@@ -2395,14 +2441,38 @@ static void decoders41(const char rxb[], unsigned long rxb_len,
             pc = pc1;
          }
          if (pc==0) {
-            osic_alloc((X2C_ADDRESS *) &pc, sizeof(struct CONTEXTR4));
+            osic_alloc((X2C_ADDRESS *) &pc, sizeof(struct CONTEXTR41));
             if (pc==0) Error("allocate context out im memory", 31ul);
-            memset((X2C_ADDRESS)pc,(char)0,sizeof(struct CONTEXTR4));
+            memset((X2C_ADDRESS)pc,(char)0,sizeof(struct CONTEXTR41));
             pc->next = pcontextr4;
             pcontextr4 = pc;
             aprsstr_Assign(pc->name, 9ul, nam, 9ul);
             if (sondeaprs_verb) osi_WrStrLn("is new ", 8ul);
+            /*SQ7BR*/
+            if (sondeaprs_verbHex) {
+            	   systime=osic_time();
+                fName[0ul]=0ul;
+             	aprsstr_Append(fName,1024ul,sondeaprs_verbHexDir,1024ul);
+             	aprsstr_Append(fName,1024ul,"/digitalSonde_",15ul);
+             	aprsstr_DateToStr(systime,timeValue,21ul);
+             	aprsstr_Append(fName,1024ul,timeValue,10ul);
+             	aprsstr_Append(fName,1024ul,"_",2ul);
+             	aprsstr_Append(fName,1024ul,pc->name,9ul);
+             	aprsstr_Append(fName,1024ul,".txt",5ul);
+                 osi_WrStr("create file: ", 14ul);
+                 osi_WrStrLn(fName, 1024ul);
+                 osic_WrLn();
+
+             	//testFHandle=osi_OpenWrite("/home/pi/dxlAPRS/raw/L5120074.hex", 37ul);
+                 testFHandle=osi_OpenWrite(fName,1024ul);
+             	 if (osic_FdValid(testFHandle)){
+             		 pc->fileHex=testFHandle;
+             	 }else  		 osi_WrStrLn("couldn't create file", 21ul);
+
+
+            }
          }
+
          frameno = (unsigned long)getint16(rxb, rxb_len, p);
          if (frameno>pc->framenum) {
             /* new frame number */
@@ -2419,53 +2489,249 @@ static void decoders41(const char rxb[], unsigned long rxb_len,
             osi_WrStr(" expecting ", 12ul);
             osic_WrINT32(pc->framenum, 1UL);
          }
-         if (rxb[p+23UL]==0) {
-            pc->mhz0 = (float)(getcard16(rxb, rxb_len,
-                p+26UL)/64UL+40000UL)*0.01f+0.0005f;
-         }
+
          if (sondeaprs_verb) {
+         	osi_WrStr(pc->name, 9ul);
+         	osi_WrStr(" ", 2ul);
             osi_WrStr(objname, 9ul);
             osic_WrINT32(pc->framenum, 0UL);
          }
-         /*i:=0;WHILE (i<=11) DO WrHex(ORD(rxb[p+23+i]), 3); INC(i) END; */
-         /* appended by SQ7BR BURST KILL CHECK */
-         i = 0UL;
-         while (i<=11UL && (_cnst1[i]>=256U || rxb[p+23UL+i]==(char)
-                _cnst1[i])) ++i;
-         if (i>11UL) {
-            pc->burstKill = ((unsigned long)(unsigned char)rxb[p+35UL]&1UL)
-                +1UL;
-            if (sondeaprs_verb) {
-               osi_WrStr(" BK=", 5ul);
-               osic_WrINT32(pc->burstKill-1UL, 1UL);
-            }
-         }
+
+         /*SQ7BR*/
+
+          frameType=(char)(rxb[p+23UL]);
+          if (sondeaprs_verb) {
+                      osi_WrStr(", FrTpe=", 13ul);
+                      osic_WrUINT32(frameType, 0UL);
+                   }
+
+          switch (frameType){
+          case 0UL:
+              pc->mhz0 = (float)(getcard16(rxb, rxb_len,
+                  p+26UL)/64UL+40000UL)*0.01f+0.0005f;
+              if (sondeaprs_verb) {
+                 osi_WrStr(", Freq=", 9ul);
+                 osic_WrFixed(pc->mhz0, 3UL,7UL);
+              }
+
+        	                break;
+          case 1UL:
+        	  //serial number
+        	  nameok=1;
+			  for (i = 0UL; i<=4UL; i++) {
+						  serialNumber[i] = rxb[p+24UL+i];
+						  if ((unsigned char)serialNumber[i]<=' ' || (unsigned char)serialNumber[i]>'Z') {
+							  break;
+							  //nameok = 0;
+						  }
+					   } /* end for */
+					   serialNumber[i] = 0;
+			  if (nameok) {
+				  aprsstr_Assign(pc->serialNumber, 6ul, serialNumber, 6ul);
+			  }
+
+			  //firmware wersion
+               pc->swVersion=(unsigned long)(getcard16(rxb, rxb_len,p+29UL));
+
+              if (sondeaprs_verb) {
+            	 osi_WrStr(", SerNum=", 10ul);
+            	 osic_WrStr(pc->serialNumber,6ul);
+
+
+            	 version=pc->swVersion / 10000;
+            	 subversionMajor=(pc->swVersion-(version*10000)) / 100;
+            	 subversionMinor=pc->swVersion-(version*10000)-(subversionMajor*100);
+
+            	 osi_WrStr(", SwVersion=", 13ul);
+            	 if (version<10){
+            	      osi_WrStr("0", 2ul);
+            	      osic_WrUINT32(version,1ul);
+            	 } else osic_WrUINT32(version,2ul);
+            	 osi_WrStr(".", 2ul);
+
+            	 if (subversionMajor<10){
+            		 osi_WrStr("0", 2ul);
+            		 osic_WrUINT32(subversionMajor,1ul);
+            	 } else osic_WrUINT32(subversionMajor,2ul);
+            	 osi_WrStr(".", 2ul);
+
+            	 if (subversionMinor<10){
+            		 osi_WrStr("0", 2ul);
+            		 osic_WrUINT32(subversionMinor,1ul);
+            	 } else osic_WrUINT32(subversionMinor,2ul);
+              }
+   	        break;
+          case 2UL:
+        	  //killTimer
+        	  pc->killTimer = (unsigned long)(getcard16(rxb, rxb_len,
+                      p+31UL));
+
+        	  //burstKill
+               	 bkValue= ((unsigned long)(unsigned char)rxb[p+35UL]&1UL);
+                switch (bkValue) {
+                case 0:
+                	 pc->burstKill =bk_off;
+                	 break;
+                case 1:
+                	 pc->burstKill =bk_on;
+                	 break;
+               // default:
+                }
+
+
+
+
+              if (sondeaprs_verb) {
+            	  //killT
+                  osi_WrStr(", KillTimer=", 13ul);
+                  osic_WrHex(pc->killTimer, 0UL);
+
+            	  switch (pc->burstKill) {
+            	  case bk_off:
+            		  osi_WrStr(", BK=Off", 9ul);
+            		  break;
+            	  case bk_on:
+            	      osi_WrStr(", BK=On", 8ul);
+            	      break;
+            	  default:
+            		  osi_WrStr(", BK=NaN", 9ul);
+            		  break;
+            	  }
+              }
+                  	        break;
+          case 3UL:
+                  	        break;
+          case 4UL:
+                 	        break;
+          case 5UL:
+                  	        break;
+          case 6UL:
+                  	        break;
+          case 7UL:
+                  	        break;
+          case 8UL:
+                  	        break;
+          case 9UL:
+                  	        break;
+          case 10UL:
+                  	        break;
+          case 11UL:
+                  	        break;
+          case 12UL:
+                  	        break;
+          case 13UL:
+                  	        break;
+          case 14UL:
+                  	        break;
+          case 15UL:
+                  	        break;
+          case 16UL:
+                  	        break;
+          case 17UL:
+                  	        break;
+          case 18UL:
+                  	        break;
+          case 19UL:
+                  	        break;
+          case 20UL:
+                  	        break;
+          case 21UL:
+                  	        break;
+          case 22UL:
+                  	        break;
+          case 23UL:
+                  	        break;
+          case 24UL:
+                  	        break;
+          case 25UL:
+                  	        break;
+          case 26UL:
+                  	        break;
+          case 27UL:
+                  	        break;
+          case 28UL:
+                  	        break;
+          case 29UL:
+                  	        break;
+          case 30UL:
+                  	        break;
+          case 31UL:
+                  	        break;
+          case 32UL:
+                  	        break;
+          case 33UL:
+        	  //sondeType
+        	  nameok=1;
+			  for (i = 0UL; i<=6UL; i++) {
+						  sondeType[i] = rxb[p+32UL+i];
+						  if ((unsigned char)sondeType[i]<=' ' || (unsigned char)sondeType[i]>'Z') {
+							  break;
+							  //nameok = 0;
+						  }
+					   } /* end for */
+					   sondeType[i] = 0;
+			  if (nameok) {
+				  aprsstr_Assign(pc->sondeType, 8ul, sondeType, 7ul);
+			  }
+
+              if (sondeaprs_verb) {
+                 osi_WrStr(", SondeTpe=", 12ul);
+                 osic_WrStr(pc->sondeType, 8UL);
+              }
+   	          break;
+          case 34UL:
+        	  //HW Type , HW
+        	  nameok=1;
+        	  for (i = 0UL; i<=9UL; i++) {
+        	              hwType[i] = rxb[p+26UL+i];
+        	              if ((unsigned char)hwType[i]<=' ' || (unsigned char)hwType[i]>'Z') {
+        	                  break;
+        	            	  //nameok = 0;
+        	              }
+        	           } /* end for */
+        	           hwType[i] = 0;
+        	  if (nameok) {
+        		  aprsstr_Assign(pc->hwType, 11ul, hwType, 11ul);
+        	  }
+
+        	  nameok=1;
+			  for (i = 0UL; i<=3UL; i++) {
+						  hwId[i] = rxb[p+36UL+i];
+						  if ((unsigned char)hwId[i]<=' ' || (unsigned char)hwId[i]>'Z') {
+							  break;
+							  //nameok = 0;
+						  }
+					   } /* end for */
+					   hwId[i] = 0;
+			  if (nameok) {
+				  aprsstr_Assign(pc->hwId, 5ul, hwId, 5ul);
+			  }
+
+              if (sondeaprs_verb) {
+                 osi_WrStr(", HWTpe=", 9ul);
+                 osic_WrStr(pc->hwType, 11UL);
+                 osi_WrStr(", HWId=", 8ul);
+                 osic_WrStr(pc->hwId, 5UL);
+              }
+
+
+   	        break;
+
+          }
+
       }
       else if (typ=='z') {
       }
       else if (typ=='|') {
-         /*
-                 // 02 06 14 87 32 00 00 00 FF FF 00 00    01
-                    int bkSign=0;
-                   for (i = 0UL; i<=11UL;
-                i++) {         // 8 znakow nazwy od pozycji 61(59+2)
-                do 68(59+2+7)
-                      if ( rxb[p+23UL+i]== burstIndicatorBytes[i] ) bkSign++;
-                   } //for
-                   if (bkSign==12) {
-                     pc->burstKill =(unsigned long)
-                (rxb[p+23UL+12UL] && 0x01UL)+1UL;
-                     osi_WrStr(" BK=",5ul);
-                     osic_WrINT32(pc->burstKill, 1UL);
-                     osi_WrStrLn("",1ul);
-                   }
-         */
-         /* appended by SQ7BR */
-         /*             WrStrLn("7A frame"); */
-         /*             WrStrLn("7C frame"); */
          if (pc) {
             pc->gpssecond = (unsigned long)((getint32(rxb, rxb_len,
                 p+2UL)/1000L+86382L)%86400L); /* gps TOW */
+
+            if (sondeaprs_verb) {
+            	 osi_WrStr(", gpsSec=", 10ul);
+            	 osic_WrFixed(pc->gpssecond, 0L, 8UL);
+            }
+
          }
       }
       else if (typ=='}') {
@@ -2542,14 +2808,40 @@ static void decoders41(const char rxb[], unsigned long rxb_len,
       }
       if (typ=='v') break;
       p += len;
+   }  //for
+
+   if (
+		      pc->hwvwersion>202013
+		   && pc->burstKill==bk_on
+		   && pc->frameBurst==0
+		   && climb<0.0
+		   && heig>sondemod_MIN_BURST_HEIGHT
+      )  pc->frameBurst=pc->framenum;
+
+   if (pc->frameBurst>0ul) {
+	   //left=burstMoment+afterLimit-currentMoment
+	   pc->afterBurstTimerLeft=(long)(pc->frameBurst+sondemod_AFTER_BURST_OFF_TIMER-pc->framenum)/60;
    }
-   if (sondeaprs_verb) osi_WrStrLn("", 1ul);
+
+
+   if (sondeaprs_verb) {
+
+       if ( pc->frameBurst>0ul
+          ) {
+    	   osi_WrStr(" AfterBurstToOffLeft=", 22ul);
+    	   osic_WrFixed((float)(pc->afterBurstTimerLeft), 0UL,6ul);
+          }
+
+
+	   osi_WrStrLn("", 1ul);
+
+   }
+
+   	   	   /*sq7br*/
+   if (sondeaprs_verbHex) WrHexToFile(pc->fileHex,rxb,rxb_len);
+
    if ((((pc && nameok) && calok) && lat!=0.0) && long0!=0.0) {
-      sondeaprs_senddata(lat, long0, heig, speed, dir, climb, 0.0, 0.0,
-                (double)X2C_max_real, ozonval, pc->ozonTemp, pc->ozonPumpMA,
-                pc->ozonBatVolt, (double)X2C_max_real, (double)pc->mhz0, 0.0,
-                 0.0, pc->gpssecond, frameno, pc->name, 9ul, 0UL, 0UL,
-                usercall, 11ul, 0UL, pc->burstKill);
+      sondeaprs_senddataRS41(usercall,11ul,frameno,lat,long0,heig,speed,dir,climb,ozonval,pc);
       pc->framesent = 1;
    }
 /*  IF verb THEN WrStrLn("") END;   */

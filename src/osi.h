@@ -136,6 +136,8 @@ extern void osi_WrBin(long, char [], unsigned long, unsigned long);
 
 extern void osi_Werr(char [], unsigned long);
 
+extern void osi_WrHexFd(long fd, unsigned long, unsigned long);
+
 extern void osi_WrHex(unsigned long, unsigned long);
 /*PROCEDURE IsFifo(fd:File):BOOLEAN;*/
 
