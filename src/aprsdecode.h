@@ -467,6 +467,7 @@ struct aprsdecode__D0;
 struct aprsdecode__D0 {
    char dryrun;
    char withradio;
+   char chkmaps;
    char panorama;
    char altimap;
    char watchmhop;

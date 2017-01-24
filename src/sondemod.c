@@ -44,7 +44,7 @@
 
 #define sondemod_DAYSEC 86400
 
-#define sondemod_GPSTIMECORR 15
+#define sondemod_GPSTIMECORR 18
 
 #define sondemod_ADCBUFLEN 4096
 
@@ -1470,7 +1470,7 @@ static void decodeframe(unsigned char m, unsigned long ip,
                 anonym1->hyg, anonym1->temp, anonym1->ozon,
                 anonym1->ozontemp, 0.0, 0.0, (double)X2C_max_real,
                 (double)mhz, (double)anonym1->hrmsc, (double)anonym1->vrmsc,
-                (anonym1->timems/1000UL+86385UL)%86400UL, frameno, objname,
+                (anonym1->timems/1000UL+86382UL)%86400UL, frameno, objname,
                 9ul, almanachage, anonym1->goodsats, usercall, 11ul,
                 calperc(anonym1->calibok), 0UL);
          anonym1->framesent = 1;
@@ -2465,7 +2465,7 @@ static void decoders41(const char rxb[], unsigned long rxb_len,
          /*             WrStrLn("7C frame"); */
          if (pc) {
             pc->gpssecond = (unsigned long)((getint32(rxb, rxb_len,
-                p+2UL)/1000L+86385L)%86400L); /* gps TOW */
+                p+2UL)/1000L+86382L)%86400L); /* gps TOW */
          }
       }
       else if (typ=='}') {

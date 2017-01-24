@@ -119,8 +119,8 @@ maptool_pIMAGE useri_panoimage;
 #define useri_MOUSESHOWID 19
 /* win d mouseshow */
 
-#define useri_MAXKNOBS 30
-/* menu lines */
+#define useri_MAXKNOBS 60
+/* max menu lines */
 
 #define useri_CONFIGWIDTH 200
 
@@ -488,6 +488,8 @@ struct MENU;
 
 typedef struct MENU * pMENU;
 
+typedef unsigned long sMENULINES[2];
+
 
 struct MENU {
    pMENU next;
@@ -520,14 +522,14 @@ struct MENU {
    char fullclamp; /* clamp win for cursor scrolling */
    char saveimage;
    unsigned char background;
-   char submen[31];
-   char cmds[31];
-   unsigned short helpindex[31];
-   unsigned char confidx[31];
-   unsigned short subk[31][21];
-   unsigned long nohilite; /* use keyboard */
-   unsigned long noprop;
-   unsigned long clampkb;
+   char submen[61];
+   char cmds[61];
+   unsigned short helpindex[61];
+   unsigned char confidx[61];
+   unsigned short subk[61][21];
+   sMENULINES nohilite; /* use keyboard */
+   sMENULINES noprop;
+   sMENULINES clampkb;
 };
 
 struct LISTLINE;
@@ -1877,10 +1879,10 @@ extern void useri_rdlums(void)
    if ((aprsdecode_lums.menucol.g&1)) --aprsdecode_lums.menucol.g;
 } /* end rdlums() */
 
-static aprsdecode_SET256 _cnst0 = {0x00000000UL,0x03FF8000UL,0x17FFFFFEUL,
+static aprsdecode_SET256 _cnst1 = {0x00000000UL,0x03FF8000UL,0x17FFFFFEUL,
                 0x07FFFFFEUL,0x00000000UL,0x00000000UL,0x00000000UL,
                 0x00000000UL};
-static aprsdecode_SYMBOLSET _cnst = {0x00000000UL,0x00000000UL,0x00000000UL,
+static aprsdecode_SYMBOLSET _cnst0 = {0x00000000UL,0x00000000UL,0x00000000UL,
                 0x00000000UL,0x00000000UL,0x00000000UL};
 
 extern void useri_rdonesymb(char on, char say)
@@ -1892,11 +1894,11 @@ extern void useri_rdonesymb(char on, char say)
    unsigned long n;
    unsigned long j;
    unsigned long i;
-   memcpy(aprsdecode_click.onesymbolset,_cnst,24u);
+   memcpy(aprsdecode_click.onesymbolset,_cnst0,24u);
    useri_confstr(useri_fONESYMB, s, 100ul);
    cnt = 0UL;
    if (aprsstr_Length(s, 100ul)>=50UL) {
-      memcpy(aprsdecode_click.onesymbolset,_cnst,24u);
+      memcpy(aprsdecode_click.onesymbolset,_cnst0,24u);
       b = 0UL;
       for (i = 2UL; i<=49UL; i++) {
          n = (unsigned long)(unsigned char)s[i];
@@ -1914,7 +1916,7 @@ extern void useri_rdonesymb(char on, char say)
       } /* end for */
    }
    if (cnt==0UL) {
-      if (X2C_INL((unsigned char)s[0U],256,_cnst0)) {
+      if (X2C_INL((unsigned char)s[0U],256,_cnst1)) {
          aprsdecode_click.onesymbol.tab = s[0U];
          aprsdecode_click.onesymbol.pic = s[1U];
       }
@@ -2010,16 +2012,16 @@ static void subicon(maptool_pIMAGE img, long x0, long y00, long dir,
 static void allocmenu(pMENU * m, unsigned long xsize, unsigned long ysize,
                 char saveimage)
 {
-   osic_alloc((X2C_ADDRESS *)m, 1564UL);
-   useri_debugmem.req = 1564UL;
-   useri_debugmem.menus += 1564UL;
+   osic_alloc((X2C_ADDRESS *)m, 2988UL);
+   useri_debugmem.req = 2988UL;
+   useri_debugmem.menus += 2988UL;
    if (*m==0) {
       osi_WrStrLn("menu out of memory", 19ul);
       useri_wrheap();
       return;
    }
    /*INC(menucnt); WrInt(menucnt, 3);WrStrLn("=menus+"); */
-   memset((X2C_ADDRESS)*m,(char)0,1564UL);
+   memset((X2C_ADDRESS)*m,(char)0,2988UL);
    (*m)->saveimage = saveimage;
    if (xsize==0UL || ysize==0UL) (*m)->image = 0;
    else if (saveimage && useri_panoimage) {
@@ -2093,8 +2095,8 @@ static void killmenus(pMENU from)
          else disposeimg(&from->image);
       }
       /*  IF from=actmenu THEN actmenu:=NIL END;  */
-      useri_debugmem.menus -= 1564UL;
-      osic_free((X2C_ADDRESS *) &from, 1564UL);
+      useri_debugmem.menus -= 2988UL;
+      osic_free((X2C_ADDRESS *) &from, 2988UL);
       /*DEC(menucnt); WrInt(menucnt, 3);WrStrLn("=menus-"); */
       from = m;
    }
@@ -2275,7 +2277,7 @@ static void addline(pMENU m, const char s[], unsigned long s_len, char c[],
    dimm = 1000UL;
    highlitewholline = 0;
    mark = X2C_max_longcard;
-   m->nohilite &= ~(1UL<<m->oldknob);
+   X2C_EXCL(m->nohilite,m->oldknob,61);
    mmr = 200;
    mmg = 10;
    mmb = 10;
@@ -2291,8 +2293,8 @@ static void addline(pMENU m, const char s[], unsigned long s_len, char c[],
       }
       else if ((unsigned char)s[i]>=(unsigned char)'\346' && (unsigned char)
                 s[i]<=(unsigned char)'\357') {
-         if (s[i]=='\346') m->noprop |= (1UL<<m->oldknob);
-         else if (s[i]=='\351') m->nohilite |= (1UL<<m->oldknob);
+         if (s[i]=='\346') X2C_INCL(m->noprop,m->oldknob,61);
+         else if (s[i]=='\351') X2C_INCL(m->nohilite,m->oldknob,61);
          else if (s[i]=='\350') mark = si;
          else if (s[i]=='\352') mark = 0x0FFFFFFFEUL;
          else if (s[i]=='\347') {
@@ -2400,7 +2402,7 @@ static void addline(pMENU m, const char s[], unsigned long s_len, char c[],
             else x = (unsigned long)m->subk[m->oldknob][si-1UL];
             maptool_drawstri(m->image, h, 1001ul, (long)(x+1UL),
                 (long)(m->oldknob*m->yknob+knobtexty(m->yknob)), dimm, 1UL,
-                col, !X2C_IN(m->oldknob,31,m->noprop), 0);
+                col, !X2C_INL(m->oldknob,61,m->noprop), 0);
          }
          ++si;
          x = 0UL;
@@ -2641,6 +2643,7 @@ static void wrcolor(maptool_pIMAGE img, const char s[], unsigned long s_len,
 
 #define useri_TEXTLINESPACE 7
 
+static sMENULINES _cnst = {0xFFFFFFFFUL,0x1FFFFFFFUL};
 
 static void textwin(unsigned long xw, unsigned long lines, unsigned long xpo,
                  unsigned long ypo, unsigned long ident, unsigned long time0,
@@ -2726,7 +2729,7 @@ static void textwin(unsigned long xw, unsigned long lines, unsigned long xpo,
    menu->background = useri_bCOLOR;
    menu->x0 = xpo;
    menu->y00 = ypo;
-   menu->nohilite = 0x7FFFFFFFUL;
+   memcpy(menu->nohilite,_cnst,8u);
    tmp = menu->ysize-1UL;
    y = 0UL;
    if (y<=tmp) for (;; y++) {
@@ -2786,10 +2789,10 @@ static void textwin(unsigned long xw, unsigned long lines, unsigned long xpo,
       menu->yknob = aprsdecode_lums.fontysize+7UL;
       menu->oldknob = 0UL;
       addline(menu, mstr, mstr_len, cstr, cstr_len, 0UL);
-      for (i = 1UL; i<=30UL; i++) {
+      for (i = 1UL; i<=60UL; i++) {
          menu->cmds[i] = cstr[0UL];
       } /* end for */
-      menu->nohilite &= ~0x1UL;
+      X2C_EXCL(menu->nohilite,0U,61);
    }
    appendmenu(menu);
    if (ypo) menu->y00 = ypo;
@@ -3722,7 +3725,7 @@ extern void useri_mainpop(void)
    pMENU menu;
    long yh;
    useri_killallmenus();
-   newmenu(&menu, 94UL, aprsdecode_lums.fontysize+7UL, 30UL, useri_bTRANSP);
+   newmenu(&menu, 94UL, aprsdecode_lums.fontysize+7UL, 60UL, useri_bTRANSP);
    if (!aprsdecode_lums.headmenuy) {
       /* set popup mainmenue to not hide symbol and its texts */
       yh = (long)useri_mainys()-aprsdecode_click.y;
@@ -3959,7 +3962,7 @@ static void drawsymsquare(maptool_pIMAGE image, char tab, char sym, long x0,
                 long y00)
 {
    struct maptool_PIX col;
-   if (!X2C_INL((unsigned char)tab,256,_cnst0)) {
+   if (!X2C_INL((unsigned char)tab,256,_cnst1)) {
       tab = '\\';
       sym = '?';
       useri_textautosize(0L, 0L, 6UL, 2UL, 'e', "illegal symbol", 15ul);
@@ -3993,7 +3996,7 @@ static void specialmapmenu(pMENU m)
    strncpy(h," Symbol |",100u);
    aprsstr_Append(h, 100ul, s, 100ul);
    addline(m, h, 100ul, "\325>", 3ul, 8625UL);
-   if (X2C_INL((unsigned char)s[0U],256,_cnst0)) {
+   if (X2C_INL((unsigned char)s[0U],256,_cnst1)) {
       drawsymsquare(m->image, s[0U], s[1U], (long)(m->xsize-20UL),
                 (long)((m->oldknob-1UL)*m->yknob+m->yknob/2UL));
    }
@@ -4814,7 +4817,7 @@ static void keybknob(pMENU m, unsigned long knob, char withcurs,
    char s[1000];
    struct CONFIG * anonym;
    idx = m->confidx[knob];
-   if (idx<=useri_fEDITLINE && X2C_IN(knob,31,m->clampkb)) {
+   if (idx<=useri_fEDITLINE && X2C_INL(knob,61,m->clampkb)) {
       { /* with */
          struct CONFIG * anonym = &configs[idx];
          if (isbool(anonym->typ)) x = 17UL;
@@ -4924,8 +4927,8 @@ static void inv(pMENU m, unsigned long sub, unsigned long k)
    unsigned long x1;
    unsigned long y00;
    unsigned long x0;
-   if (!X2C_IN(k-1UL,31,m->nohilite)) {
-      if (X2C_IN(k,31,m->clampkb)) {
+   if (!X2C_INL(k-1UL,61,m->nohilite)) {
+      if (X2C_INL(k,61,m->clampkb)) {
          x0 = (unsigned long)m->subk[k-1UL][1U];
          x1 = m->xsize;
          if (sub==0UL && x0>0UL) {
@@ -5125,13 +5128,13 @@ static void AddEditLine(pMENU m, char cmd[], unsigned long cmd_len,
    ++m->scroll;
    if (text[0UL]==0) {
       addline(m, "", 1ul, cmd, cmd_len, help0);
-      m->clampkb |= (1UL<<m->scroll);
+      X2C_INCL(m->clampkb,m->scroll,61);
       m->confidx[m->scroll] = conf;
       keybknob(m, m->scroll, 0, 0UL);
    }
    else {
       addline(m, text, text_len, " ", 2ul, help0);
-      m->clampkb &= ~(1UL<<m->scroll);
+      X2C_EXCL(m->clampkb,m->scroll,61);
       m->confidx[m->scroll] = 0U;
    }
    X2C_PFREE(cmd);
@@ -5210,6 +5213,7 @@ static void sendmsg(void)
    }
    cnt = cntm;
    i = useri_mainys()/20UL;
+   if (i>=60UL) i = 60UL;
    if (i<7UL) i = 1UL;
    else i -= 6UL;
    if (cnt>i) cnt = i;
@@ -5243,12 +5247,12 @@ ose", 66ul, "\255", 2ul, 6800UL);
    ++m->scroll;
    addline(m, "", 1ul, "\255", 2ul, 6810UL);
    ++m->scroll;
-   m->clampkb |= 0x4UL;
+   X2C_INCL(m->clampkb,2U,61);
    m->confidx[2U] = 131U;
    keybknob(m, 2UL, 0, 0UL);
    addline(m, "", 1ul, "\255", 2ul, 6815UL);
    ++m->scroll;
-   m->clampkb |= 0x8UL;
+   X2C_INCL(m->clampkb,3U,61);
    m->confidx[3U] = 130U;
    keybknob(m, 3UL, 0, 0UL);
    useri_confstr(useri_fMSGPORT, s, 201ul);
@@ -5352,7 +5356,7 @@ Txt |Message", 60ul, " ", 2ul, 6805UL);
    setmenupos(m, i, 200UL);
    m->oldsub = ohs;
    if (m->hiknob>0UL) {
-      if (X2C_IN(m->hiknob,31,m->clampkb)) keybknob(m, m->hiknob, 1, 0UL);
+      if (X2C_INL(m->hiknob,61,m->clampkb)) keybknob(m, m->hiknob, 1, 0UL);
       inv(m, m->oldsub, m->hiknob);
    }
 /*  END; */
@@ -5476,6 +5480,7 @@ static void beaconeditor(void)
    }
    cnt = cntm;
    i = useri_mainys()/(aprsdecode_lums.fontysize+5UL);
+   if (i>=60UL) i = 60UL;
    if (i<16UL) i = 1UL;
    else if (useri_beaconed) i -= 15UL;
    if (cnt>i) cnt = i;
@@ -5648,7 +5653,7 @@ static void beaconeditor(void)
    */
    m->oldsub = ohs;
    if (m->hiknob>0UL && m->hiknob<=i) {
-      if (X2C_IN(m->hiknob,31,m->clampkb)) keybknob(m, m->hiknob, 1, 0UL);
+      if (X2C_INL(m->hiknob,61,m->clampkb)) keybknob(m, m->hiknob, 1, 0UL);
       inv(m, m->oldsub, m->hiknob);
    }
 } /* end beaconeditor() */
@@ -5921,7 +5926,7 @@ static void digieditor(void)
    /*  IF i<DIGIMLINES+1 THEN i:=1 ELSIF digied THEN DEC(i, DIGIMLINES) END;
                  */
    /*  IF cnt>i THEN cnt:=i END; */
-   if (cnt>=24UL) cnt = 24UL;
+   if (cnt>=54UL) cnt = 54UL;
    xw = 300UL;
    if (300UL>(unsigned long)maptool_xsize) xw = (unsigned long)maptool_xsize;
    m = findmenuid(224UL);
@@ -5992,7 +5997,7 @@ static void digieditor(void)
    setmenupos(m, xp, yp);
    m->oldsub = ohs;
    if (m->hiknob>0UL && m->hiknob<=i) {
-      if (X2C_IN(m->hiknob,31,m->clampkb)) keybknob(m, m->hiknob, 1, 0UL);
+      if (X2C_INL(m->hiknob,61,m->clampkb)) keybknob(m, m->hiknob, 1, 0UL);
       inv(m, m->oldsub, m->hiknob);
    }
 } /* end digieditor() */
@@ -6955,7 +6960,7 @@ static void makelistwin(struct LISTBUFFER * b)
    setmenupos(m, xp, yp);
    m->oldsub = ohs;
    if (m->hiknob>0UL && m->hiknob<=i) {
-      if (X2C_IN(m->hiknob,31,m->clampkb)) keybknob(m, m->hiknob, 1, 0UL);
+      if (X2C_INL(m->hiknob,61,m->clampkb)) keybknob(m, m->hiknob, 1, 0UL);
       inv(m, m->oldsub, m->hiknob);
    }
 } /* end makelistwin() */
@@ -7871,6 +7876,7 @@ static void escmenus(void)
                 100L);
    aprsdecode_lums.moving = 0;
    aprsdecode_click.withradio = 0;
+   aprsdecode_click.chkmaps = 0;
    aprsdecode_click.onesymbol.tab = 0;
    if (panowin.on) closepano();
 } /* end escmenus() */
@@ -7963,7 +7969,7 @@ static void knobcol(maptool_pIMAGE img, long x0, long y00, long xs, long ys,
 
 typedef unsigned long sCONFSET[5];
 
-static sCONFSET _cnst1 = {0x00000000UL,0x00000000UL,0x0100BE80UL,
+static sCONFSET _cnst2 = {0x00000000UL,0x00000000UL,0x0100BE80UL,
                 0x0F000000UL,0x00780000UL};
 
 static void configman(unsigned long button, char * keycmd)
@@ -7984,7 +7990,7 @@ static void configman(unsigned long button, char * keycmd)
                 fKMHTIME,fTEMP,fWINDSYM,fRULER,fALTMIN,fCOLMAPTEXT,
                 fCOLOBJTEXT, fCOLMENUTEXT, fCOLMENUBACK, fCOLMARK1,
                 fCOLMARK2} */
-      if (X2C_INL((long)configedit,154,_cnst1)) *keycmd = ' ';
+      if (X2C_INL((long)configedit,154,_cnst2)) *keycmd = ' ';
       if (configs[configedit].typ<useri_cLIST) configedit = 0UL;
    }
    useri_killmenuid(229UL);
@@ -9232,6 +9238,7 @@ static void configeditor(void)
       ph = ph->next;
    }
    i = useri_mainys()/(aprsdecode_lums.fontysize+5UL);
+   if (i>=60UL) i = 60UL;
    if (i<3UL) i = 1UL;
    else i -= 2UL;
    if (cnt>i) cnt = i;
@@ -9254,7 +9261,7 @@ static void configeditor(void)
    /*    IF cnt=1 THEN  AddConfLine(fEDITLINE, FALSE, pl^.line) END;  */
    /*    addline(m, 0C, " ", MINH*72); */
    addline(m, "", 1ul, "\320", 2ul, 7200UL);
-   m->clampkb |= 0x4UL;
+   X2C_INCL(m->clampkb,2U,61);
    m->confidx[2U] = 153U;
    keybknob(m, 2UL, 0, 0UL);
    m->oldknob = 2UL;
@@ -9319,7 +9326,7 @@ static void configeditor(void)
    */
    m->oldsub = ohs;
    if (m->hiknob>0UL && m->hiknob<=i) {
-      if (X2C_IN(m->hiknob,31,m->clampkb)) keybknob(m, m->hiknob, 1, 0UL);
+      if (X2C_INL(m->hiknob,61,m->clampkb)) keybknob(m, m->hiknob, 1, 0UL);
       inv(m, m->oldsub, m->hiknob);
    }
 } /* end configeditor() */
@@ -9424,7 +9431,7 @@ static void findopl(char folded)
    if (!folded) useri_killmenuid(0UL);
    newmenu(&menu, 220UL, aprsdecode_lums.fontysize+10UL, 1UL, useri_bCOLOR);
    addline(menu, "", 1ul, "\245", 2ul, 1990UL);
-   menu->clampkb |= 0x2UL;
+   X2C_INCL(menu->clampkb,1U,61);
    menu->confidx[1U] = 0U;
    clampedline = 0UL;
    keybknob(menu, 1UL, 0, 0UL);
@@ -9442,7 +9449,7 @@ static void fotofn(void)
    pMENU menu;
    newmenu(&menu, 400UL, aprsdecode_lums.fontysize+7UL, 1UL, useri_bCOLOR);
    addline(menu, "", 1ul, "S", 2ul, 1800UL);
-   menu->clampkb |= 0x2UL;
+   X2C_INCL(menu->clampkb,1U,61);
    menu->confidx[1U] = 6U;
    keybknob(menu, 1UL, 0, 0UL);
    menu->notoverdraw = 1;
@@ -9525,15 +9532,15 @@ static void importlog(pMENU menu)
                 44ul, "\216", 2ul, 6715UL);
    }
    addline(menu, "", 1ul, "\216", 2ul, 6710UL);
-   menu->clampkb |= 0x8UL;
+   X2C_INCL(menu->clampkb,3U,61);
    menu->confidx[3U] = 3U;
    keybknob(menu, 3UL, 0, 0UL);
    addline(menu, "", 1ul, "\216", 2ul, 6705UL);
-   menu->clampkb |= 0x10UL;
+   X2C_INCL(menu->clampkb,4U,61);
    menu->confidx[4U] = 5U;
    keybknob(menu, 4UL, 0, 0UL);
    addline(menu, "", 1ul, "\216", 2ul, 6700UL);
-   menu->clampkb |= 0x20UL;
+   X2C_INCL(menu->clampkb,5U,61);
    menu->confidx[5U] = 4U;
    keybknob(menu, 5UL, 0, 0UL);
    if (aprsdecode_lums.headmenuy && menu->y00<aprsdecode_lums.fontysize) {
@@ -9943,7 +9950,7 @@ static void downloadmenu(void)
       newmenu(&menu, 140UL, aprsdecode_lums.fontysize+7UL, 1UL,
                 useri_bCOLOR);
       addline(menu, "", 1ul, "\237", 2ul, 2301UL);
-      menu->clampkb |= 0x2UL;
+      X2C_INCL(menu->clampkb,1U,61);
       menu->confidx[1U] = 86U;
       keybknob(menu, 1UL, 0, 0UL);
    }
@@ -10007,7 +10014,7 @@ extern void useri_textbubble(struct aprspos_POSITION pos, char s[],
    menu->background = useri_bTRANSP;
    menu->x0 = (unsigned long)xp;
    menu->y00 = useri_mainys()-(unsigned long)yp;
-   menu->nohilite = 0x7FFFFFFFUL;
+   memcpy(menu->nohilite,_cnst,8u);
    tmp = menu->ysize-1UL;
    y = 0UL;
    if (y<=tmp) for (;; y++) {
@@ -10119,7 +10126,7 @@ static void knoblamp(pMENU menu, unsigned long knob)
    char typ;
    unsigned long i;
    typ = menu->cmds[knob];
-   for (i = 1UL; i<=30UL; i++) {
+   for (i = 1UL; i<=60UL; i++) {
       if (typ==menu->cmds[i]) {
          onoffm(menu->image, 6L, (long)((i-1UL)*menu->yknob+menu->yknob/2UL),
                  i==knob);
@@ -10191,7 +10198,7 @@ static void whichmenu(unsigned long px, unsigned long py, pMENU * m,
       }
       pm = pm->next;
    }
-   if (*knob>30UL) *knob = 30UL;
+   if (*knob>60UL) *knob = 60UL;
    *subknob = 0UL;
    if (*m && (*knob>0UL || (*m)->fullclamp)) {
       while ((*subknob<=20UL && (*m)->subk[*knob-1UL][*subknob]>0U)
@@ -10219,7 +10226,7 @@ static char hilitemenu(unsigned long px, unsigned long py, char kbdch,
    struct MENU * anonym;
    if (pm==0) {
       whichmenu(px, py, &pm, &knob, &subknob, &posx, &posy);
-      if (pm && !X2C_IN(knob,31,pm->clampkb)) clampedline = 0UL;
+      if (pm && !X2C_INL(knob,61,pm->clampkb)) clampedline = 0UL;
    }
    else {
       knob = pm->oldknob;
@@ -10230,7 +10237,7 @@ static char hilitemenu(unsigned long px, unsigned long py, char kbdch,
             /* find next text line */
             if (ki==0UL) break;
             --ki;
-            if (X2C_IN(ki,31,pm->clampkb)) {
+            if (X2C_INL(ki,61,pm->clampkb)) {
                knob = ki;
                break;
             }
@@ -10238,9 +10245,9 @@ static char hilitemenu(unsigned long px, unsigned long py, char kbdch,
       }
       else if (kbdch=='\005') {
          for (;;) {
-            if (ki>=30UL) break;
+            if (ki>=60UL) break;
             ++ki;
-            if (X2C_IN(ki,31,pm->clampkb)) {
+            if (X2C_INL(ki,61,pm->clampkb)) {
                knob = ki;
                break;
             }
@@ -10314,14 +10321,14 @@ static char hilitemenu(unsigned long px, unsigned long py, char kbdch,
             if (anonym->hiknob>0UL) {
                /* undo old hilite */
                inv(pm, anonym->oldsub, anonym->hiknob);
-               if (X2C_IN(anonym->hiknob,31,anonym->clampkb)) {
+               if (X2C_INL(anonym->hiknob,61,anonym->clampkb)) {
                   keybknob(pm, anonym->hiknob, 0, 0UL);
                }
             }
             anonym->oldknob = knob;
             anonym->oldsub = subknob;
             anonym->hiknob = knob;
-            if (X2C_IN(anonym->hiknob,31,anonym->clampkb)) {
+            if (X2C_INL(anonym->hiknob,61,anonym->clampkb)) {
                keybknob(pm, anonym->hiknob, 1, 0UL);
             }
             inv(pm, anonym->oldsub, anonym->hiknob);
@@ -10467,8 +10474,8 @@ static pMENU FindClampMenu(void)
 {
    pMENU pm;
    pm = menus; /* go thru menu chain till a clamp window */
-   while (pm && (pm->wid!=focuswid || !(pm->fullclamp || X2C_IN(pm->oldknob,
-                31,pm->clampkb)))) pm = pm->next;
+   while (pm && (pm->wid!=focuswid || !(pm->fullclamp || X2C_INL(pm->oldknob,
+                61,pm->clampkb)))) pm = pm->next;
    return pm;
 } /* end FindClampMenu() */
 
@@ -12162,7 +12169,8 @@ extern void useri_BEGIN(void)
    if (sizeof(struct CONFLINE)!=208) X2C_ASSERT(0);
    if (sizeof(struct CONFIG)!=48) X2C_ASSERT(0);
    if (sizeof(pMENU)!=4) X2C_ASSERT(0);
-   if (sizeof(struct MENU)!=1564) X2C_ASSERT(0);
+   if (sizeof(struct MENU)!=2988) X2C_ASSERT(0);
+   if (sizeof(sMENULINES)!=8) X2C_ASSERT(0);
    if (sizeof(pLISTLINE)!=4) X2C_ASSERT(0);
    if (sizeof(struct LISTLINE)!=552) X2C_ASSERT(0);
    if (sizeof(struct LISTBUFFER)!=48) X2C_ASSERT(0);

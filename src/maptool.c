@@ -1352,28 +1352,28 @@ extern long maptool_geoprofile(maptool_pIMAGE image,
 } /* end geoprofile() */
 
 
-static void progress(unsigned long startt, char s[], unsigned long s_len,
-                unsigned long perc)
+static void progress(unsigned long startt, const char s[],
+                unsigned long s_len, unsigned long perc, char final)
 {
    unsigned long rt;
    char ss1[101];
    char ss[101];
-   X2C_PCOPY((void **)&s,s_len);
    rt = osic_time();
-   if (rt!=aprsdecode_realtime) {
+   if (final || rt!=aprsdecode_realtime) {
       aprsdecode_realtime = rt;
-      if (startt+4UL<rt) {
+      if (final || startt+4UL<rt) {
          aprsdecode_click.cmd = 0;
          useri_refresh = 1;
          aprsstr_Assign(ss, 101ul, s, s_len);
-         aprsstr_IntToStr((long)perc, 3UL, ss1, 101ul);
-         aprsstr_Append(ss, 101ul, ss1, 101ul);
-         aprsstr_Append(ss, 101ul, "% ESC to abort", 15ul);
-         useri_textautosize(0L, 0L, 5UL, 0UL, 'g', ss, 101ul);
+         if (!final) {
+            aprsstr_IntToStr((long)perc, 3UL, ss1, 101ul);
+            aprsstr_Append(ss, 101ul, ss1, 101ul);
+            aprsstr_Append(ss, 101ul, "% (ESC to abort)", 17ul);
+         }
+         useri_textautosize(0L, 0L, 5UL, 6UL, 'g', ss, 101ul);
          xosi_Eventloop(1UL);
       }
    }
-   X2C_PFREE(s);
 } /* end progress() */
 
 
@@ -1746,7 +1746,7 @@ extern void maptool_Radiorange(maptool_pIMAGE image,
       strncpy(ss,"Radiorange",101u);
       if (colnr) aprsstr_Append(ss, 101ul, " 2", 3ul);
       progress(startt, ss, 101ul,
-                progr/(((image->Len0-1)+(image->Len1-1))*2UL));
+                progr/(((image->Len0-1)+(image->Len1-1))*2UL), 0);
       if (!aprsdecode_click.withradio) {
          *abort0 = 1;
          break;
@@ -1874,7 +1874,7 @@ extern char maptool_SimpleRelief(maptool_pIMAGE image)
       if (useri_debugmem.srtm>=maxcache) purgesrtm(0);
       ++yp;
       if (yp%20UL==0UL) {
-         progress(startt, "Geomap", 7ul, (yp*100UL)/(image->Len0-1));
+         progress(startt, "Geomap", 7ul, (yp*100UL)/(image->Len0-1), 0);
       }
    } while (!(yp>image->Len0-1 || !aprsdecode_click.withradio));
    min0 = 0L;
@@ -4952,8 +4952,6 @@ static char checktile(char fn[], unsigned long fn_len)
 
 #define maptool_MAXRETRYS 10
 
-#define maptool_MAXLOOKUP 500000
-
 
 extern void maptool_MapPackageJob(char dryrun)
 {
@@ -4962,25 +4960,46 @@ extern void maptool_MapPackageJob(char dryrun)
    long x;
    char rfn[4096];
    char fn[4096];
+   char s1[100];
+   char s[100];
+   unsigned long mapc;
    unsigned long rcnt;
+   unsigned long startt;
+   char done;
    struct maptool__D0 * anonym;
    { /* with */
       struct maptool__D0 * anonym = &maptool_mappack;
       if (dryrun) {
+         mapc = 0UL;
+         do {
+            ++mapc;
+         } while (inc(&anonym->tx, &anonym->ty, &anonym->zoom));
+         anonym->zoom = 0L; /* reinit counters */
+         startt = osic_time();
+         aprsdecode_click.chkmaps = 1;
          do {
             if (anonym->zoom>0L) {
                /* zoom 0 is init */
                mapname(anonym->tx, anonym->ty, anonym->zoom, fn, 4096ul, rfn,
                  4096ul);
-               if (!decodetile(fn, 4096ul, 0, 0L, 0L, 0L)) {
-                  ++anonym->needcnt;
-                  if (anonym->needcnt>500000UL) {
-                     anonym->overflow = 1; /* to long calculation time */
-                  }
-               }
+               if (!decodetile(fn, 4096ul, 0, 0L, 0L, 0L)) ++anonym->needcnt;
+               /*            IF needcnt>MAXLOOKUP THEN overflow:=TRUE END;
+                   (* to long calculation time *) */
                ++anonym->mapscnt;
             }
-         } while (!(!inc(&anonym->tx, &anonym->ty, &anonym->zoom) || anonym->overflow));
+            done = !inc(&anonym->tx, &anonym->ty, &anonym->zoom);
+            if (done || (anonym->mapscnt&15UL)==15UL) {
+               strncpy(s,"Checked Maps:",100u);
+               aprsstr_IntToStr((long)anonym->mapscnt, 0UL, s1, 100ul);
+               aprsstr_Append(s, 100ul, s1, 100ul);
+               aprsstr_Append(s, 100ul, "  missing:", 11ul);
+               aprsstr_IntToStr((long)anonym->needcnt, 0UL, s1, 100ul);
+               aprsstr_Append(s, 100ul, s1, 100ul);
+               progress(startt, s, 100ul, (100UL*anonym->mapscnt)/mapc,
+                done);
+            }
+         } while (!(done || !aprsdecode_click.chkmaps));
+         if (!aprsdecode_click.chkmaps) maptool_mappack.needcnt = 0UL;
          return;
       }
       if (!anonym->run) return;
