@@ -29,6 +29,7 @@ char sondeaprs_destcall[100];
 char sondeaprs_objname[100];
 char sondeaprs_commentfn[1025];
 char sondeaprs_sym[2];
+char sondeaprs_sym2[2];
 unsigned long sondeaprs_beacontime;
 unsigned long sondeaprs_lowaltbeacontime;
 unsigned long sondeaprs_lowalt;
@@ -121,6 +122,7 @@ struct CONTEXT {
    unsigned long lastused;
    unsigned long lastbeacon;
    unsigned long commentline;
+   unsigned long nextMsgIndx;
 };
 
 /*CRCL, CRCH: ARRAY[0..255] OF SET8;*/
@@ -1071,6 +1073,7 @@ extern void sondeaprs_senddata(double lat, double long0, double alt,
          /*    climb(dat); */
          Checkvals(anonym->dat, &chk);
          if (hrms>50.0 || vrms>500.0) chk |= 0x200U;
+
          if (sondeaprs_verb) {
             osi_WrStrLn("", 1ul);
             show(anonym->dat[0U]);
@@ -1195,6 +1198,7 @@ extern void sondeaprs_senddata(double lat, double long0, double alt,
                else aprsstr_Append(s, 251ul, "On", 3ul);
             }
             /* appended by SQ7BR */
+
             sendaprs(0UL, 0UL, sondeaprs_dao, anonym->dat[0U].time0, uptime,
                 usercall, usercall_len, sondeaprs_destcall, 100ul,
                 sondeaprs_via, 100ul, sondeaprs_sym, 2ul, objname,
@@ -1213,6 +1217,318 @@ extern void sondeaprs_senddata(double lat, double long0, double alt,
    X2C_PFREE(objname);
 } /* end senddata() */
 
+/*SQ7BR*/
+
+/*extern void sondeaprs_senddataRS41(double lat, double long0, double alt,
+                double speed, double dir, double clb, double hp, double hyg,
+                double temp, double ozon, double otemp, double pumpmA,
+                double pumpv, double dewp, double mhz, double hrms,
+                double vrms, unsigned long sattime, unsigned long uptime,
+                char objname[], unsigned long objname_len,
+                unsigned long almanachage, unsigned long goodsats,
+                char usercall[], unsigned long usercall_len,
+                unsigned long calperc, unsigned long burstKill)
+
+			  sondeaprs_senddataRS41(lat, long0, heig, speed, dir, climb,
+			  hp=0.0, hyg=0.0,temp= (double)X2C_max_real,
+			  ozonval, pc->ozonTemp, pc->ozonPumpMA,
+			  pc->ozonBatVolt,
+			  dewp= (double)X2C_max_real, (double)pc->mhz0, hrms=0.0,
+			  vrms= 0.0, pc->gpssecond, frameno, pc->name, 9ul,
+			  almanachage=0UL,goodsats 0UL,
+			  usercall, 11ul,calperc= 0UL, pc->burstKill);
+
+*/
+
+extern void sondeaprs_senddataRS41(
+		 	 	 	 	 	 	 	 char usercall[]
+		                            ,unsigned long usercall_len
+		                            ,unsigned long uptime
+		                            ,double lat
+		                            ,double long0
+		                            ,double alt
+		                            ,double speed
+		                            ,double dir
+		                            ,double clb
+		                            ,double ozon
+		                            ,pCONTEXTR41 pc)
+{
+   unsigned char e;
+   pCONTEXT ct;
+   char h[251];
+   char s[251];
+   unsigned long systime;
+   unsigned long bt;
+   struct CONTEXT * anonym;
+   //X2C_PCOPY((void **)&objname,objname_len);
+
+   unsigned long version;
+   unsigned long subversionMajor;
+   unsigned long subversionMinor;
+   unsigned long tmp;
+   char aprsSym[2];
+
+   if (aprsstr_Length(usercall, usercall_len)<3UL) {
+      osi_WrStrLn("no tx without <mycall>", 23ul);
+      goto label;
+   }
+   if (aprsstr_Length(pc->name, 9ul)<3UL) {
+      osi_WrStrLn("no tx witout <objectname>", 26ul);
+      goto label;
+   }
+   systime = osic_time();
+   ct = findcontext(pc->name, 9ul, systime);
+   if (ct) {
+      { /* with */
+         struct CONTEXT * anonym = ct;
+         shift(anonym->dat);
+         anonym->speedsum = anonym->speedsum+speed;
+         ++anonym->speedcnt;
+         anonym->dat[0U].hpa = pc->hp;
+         anonym->dat[0U].temp = pc->ozonTemp;
+         anonym->dat[0U].hyg = 0.0 ;
+         anonym->dat[0U].alt = alt;
+         anonym->dat[0U].speed = X2C_DIVL(anonym->speedsum,
+                (double)anonym->speedcnt);
+         anonym->dat[0U].dir = dir;
+         anonym->dat[0U].lat = X2C_DIVL(lat,1.7453292519943E-2);
+         anonym->dat[0U].long0 = X2C_DIVL(long0,1.7453292519943E-2);
+         /*    dat[0].time:=(sattime+DAYSEC-GPSTIMECORR) MOD DAYSEC; */
+         anonym->dat[0U].time0 = pc->gpssecond%86400UL;
+         anonym->dat[0U].uptime = pc->gpssecond%86400UL;
+         anonym->dat[0U].clb = clb;
+         /*    climb(dat); */
+         Checkvals(anonym->dat, &chk);
+         if (0.0>50.0 || 0.0>500.0) chk |= 0x200U;
+
+         if (sondeaprs_verb) {
+            osi_WrStrLn("", 1ul);
+            show(anonym->dat[0U]);
+            if (0ul) {
+               osi_WrStr(" AlmAge ", 9ul);
+               osic_WrFixed((float)(X2C_DIVL((double)0ul,3600.0)),
+                1L, 3UL);
+               osi_WrStrLn("h ", 3ul);
+            }
+            else osi_WrStrLn("", 1ul);
+
+
+            for (e = sondeaprs_ePRES;; e++) {
+               if (X2C_IN((long)e,10,chk)) {
+                  switch ((unsigned)e) {
+                  case sondeaprs_ePRES:
+                     osi_WrStr("p", 2ul);
+                     break;
+                  case sondeaprs_eTEMP:
+                     osi_WrStr("t", 2ul);
+                     break;
+                  case sondeaprs_eHYG:
+                     osi_WrStr("h", 2ul);
+                     break;
+                  case sondeaprs_eSPEED:
+                     osi_WrStr("v", 2ul);
+                     break;
+                  case sondeaprs_eDIR:
+                     osi_WrStr("d", 2ul);
+                     break;
+                  case sondeaprs_eLAT:
+                     osi_WrStr("y", 2ul);
+                     break;
+                  case sondeaprs_eLONG:
+                     osi_WrStr("x", 2ul);
+                     break;
+                  case sondeaprs_eALT:
+                     osi_WrStr("a", 2ul);
+                     break;
+                  case sondeaprs_eMISS:
+                     osi_WrStr("s", 2ul);
+                     break;
+                  case sondeaprs_eRMS: /*WrFixed(vrms, 1,5); WrStr(" ");
+                WrFixed(hrms, 1,5);*/
+                     osi_WrStr("r", 2ul);
+                     break;
+                  } /* end switch */
+               }
+               if (e==sondeaprs_eRMS) break;
+            } /* end for */
+         } //end verbose
+
+         if (clb<0.0 && anonym->dat[0U].alt<(double)sondeaprs_lowalt) {
+            bt = sondeaprs_lowaltbeacontime;
+         }
+         else bt = sondeaprs_beacontime;
+
+         if (clb<0.0) aprsstr_Assign(aprsSym,2ul,sondeaprs_sym2,2ul);
+         else aprsstr_Assign(aprsSym,2ul,sondeaprs_sym,2ul);
+
+
+         if ((bt>0UL && anonym->lastbeacon+bt<=systime)
+                && (sondeaprs_nofilter || (chk&0x3E0U)==0U)) {
+            strncpy(s,"Clb=",251u);
+            aprsstr_FixToStr((float)clb, 2UL, h, 251ul); /*dat[0].climb*/
+            aprsstr_Append(s, 251ul, h, 251ul);
+            aprsstr_Append(s, 251ul, "m/s", 4ul);
+            if ((0x1U & chk)==0 && anonym->dat[0U].hpa>=1.0) {
+               aprsstr_Append(s, 251ul, " p=", 4ul);
+               aprsstr_FixToStr((float)anonym->dat[0U].hpa, 2UL, h, 251ul);
+               aprsstr_Append(s, 251ul, h, 251ul);
+               aprsstr_Append(s, 251ul, "hPa", 4ul);
+            }
+            if ((0x2U & chk)==0) {
+               aprsstr_Append(s, 251ul, " t=", 4ul);
+               aprsstr_FixToStr((float)anonym->dat[0U].temp, 2UL, h, 251ul);
+               aprsstr_Append(s, 251ul, h, 251ul);
+               aprsstr_Append(s, 251ul, "C", 2ul);
+            }
+            if (0.0>=0.5 && (0x4U & chk)==0) {
+               aprsstr_Append(s, 251ul, " h=", 4ul);
+               aprsstr_IntToStr((long)truncc(anonym->dat[0U].hyg+0.5), 1UL,
+                h, 251ul);
+               aprsstr_Append(s, 251ul, h, 251ul);
+               aprsstr_Append(s, 251ul, "%", 2ul);
+            }
+            if (ozon>0.1) {
+               aprsstr_Append(s, 251ul, " o3=", 5ul);
+               aprsstr_FixToStr((float)ozon, 2UL, h, 251ul);
+               aprsstr_Append(s, 251ul, h, 251ul);
+               aprsstr_Append(s, 251ul, "mPa ti=", 8ul);
+               aprsstr_FixToStr((float)pc->ozonTemp, 2UL, h, 251ul);
+               aprsstr_Append(s, 251ul, h, 251ul);
+               aprsstr_Append(s, 251ul, "C", 2ul);
+               if (pc->ozonPumpMA>0.1) {
+                  aprsstr_Append(s, 251ul, " Pump=", 7ul);
+                  aprsstr_IntToStr((long)truncc(pc->ozonPumpMA), 1UL, h, 251ul);
+                  aprsstr_Append(s, 251ul, h, 251ul);
+                  aprsstr_Append(s, 251ul, "mA", 3ul);
+               }
+               if (pc->ozonBatVolt>0.1) {
+                  aprsstr_Append(s, 251ul, " ", 2ul);
+                  aprsstr_FixToStr((float)pc->ozonBatVolt, 2UL, h, 251ul);
+                  aprsstr_Append(s, 251ul, h, 251ul);
+                  aprsstr_Append(s, 251ul, "V", 2ul);
+               }
+            }
+            if ((double)X2C_max_real>(-100.0) && (double)X2C_max_real<100.0) {
+               aprsstr_Append(s, 251ul, " dp=", 5ul);
+               aprsstr_FixToStr((float)(double)X2C_max_real, 2UL, h, 251ul);
+               aprsstr_Append(s, 251ul, h, 251ul);
+               aprsstr_Append(s, 251ul, "C", 2ul);
+            }
+            if (0ul>0UL && 0ul<100UL) {
+               aprsstr_Append(s, 251ul, " calibration ", 14ul);
+               aprsstr_IntToStr((long)0ul, 1UL, h, 251ul);
+               aprsstr_Append(s, 251ul, h, 251ul);
+               aprsstr_Append(s, 251ul, "%", 2ul);
+            }
+
+            /*
+            aprsstr_Append(s, 251ul, " MsgIdx=", 9ul);
+            aprsstr_IntToStr(anonym->nextMsgIndx, 1UL, h, 251ul);
+            aprsstr_Append(s, 251ul, h, 251ul);
+            */
+
+            aprsstr_Append(s, 251ul, " FR=", 5ul);
+            aprsstr_IntToStr(pc->framenum, 6ul, h, 251ul);
+            aprsstr_Append(s, 251ul, h, 251ul);
+
+            if ( pc->frameBurst>0 ) {
+         	   aprsstr_Append(s, 251ul, " ToOff=", 6ul);
+         					  aprsstr_FixToStr((float)(pc->afterBurstTimerLeft), 4UL, h, 251ul);
+         					  aprsstr_Append(s, 251ul, h, 251ul);
+         					  aprsstr_Append(s, 251ul, " min.", 6ul);
+               }
+
+            switch (anonym->nextMsgIndx) {
+            case 0ul: //frequency
+					if (pc->mhz0>0.0) {
+					   aprsstr_Append(s, 251ul, " F=", 4ul);
+					   aprsstr_FixToStr((float)pc->mhz0, 3UL, h, 251ul);
+					   aprsstr_Append(s, 251ul, h, 251ul);
+					   //aprsstr_Append(s, 251ul, "MHz", 4ul);
+					}
+                  break;
+            case 1ul: //burst kill
+					switch (pc->burstKill) {
+					  case bk_off:
+						  aprsstr_Append(s, 251ul, " BK=Off", 9ul);
+						  break;
+					  case bk_on:
+						  aprsstr_Append(s, 251ul, " BK=On", 8ul);
+						  break;
+					  case bk_unknown:
+						  break;
+					  }
+				 break;
+			case 2ul: //SW Version
+				     if (pc->swVersion>0ul) {
+						 version=X2C_DIVL(pc->swVersion , 10000);
+						 subversionMajor=X2C_DIVL((pc->swVersion-(version*10000)) , 100);
+						 subversionMinor=pc->swVersion-(version*10000)-(subversionMajor*100);
+
+						 aprsstr_Append(s, 251ul, " SV=", 5ul);
+						 if (version<10){
+							 aprsstr_Append(s, 251ul, "0", 2ul);
+							 aprsstr_IntToStr(version,1ul,h,251ul);
+						 } else
+							 aprsstr_IntToStr(version,2ul,h,251ul);
+						     aprsstr_Append(s, 251ul, h, 251ul);
+						 aprsstr_Append(s, 251ul, ".", 2ul);
+
+						 if (subversionMajor<10){
+							 aprsstr_Append(s, 251ul, "0", 2ul);
+							 aprsstr_IntToStr(subversionMajor,1ul,h,251ul);
+						 } else aprsstr_IntToStr(subversionMajor,2ul,h,251ul);
+						 aprsstr_Append(s, 251ul, h, 251ul);
+						 aprsstr_Append(s, 251ul, ".", 2ul);
+
+						 if (subversionMinor<10){
+							 aprsstr_Append(s, 251ul, "0", 2ul);
+							 aprsstr_IntToStr(subversionMinor,1ul,h,251ul);
+						 } else aprsstr_IntToStr(subversionMinor,2ul,h,251ul);
+						 aprsstr_Append(s, 251ul, h, 251ul);
+
+				   }
+                   break;
+			case 3ul: //KillTimer
+                    if (pc->killTimer>0ul && pc->killTimer<65535ul) {
+                    	 aprsstr_Append(s, 251ul, " KT=", 5ul);
+                         aprsstr_IntToStr(pc->killTimer, 5UL, h, 251ul);
+                         aprsstr_Append(s, 251ul, h, 251ul);
+                    }
+				   break;
+			case 4ul: //sondeType
+				   if (aprsstr_Length(pc->sondeType, 8ul)>1UL) {
+					   aprsstr_Append(s, 251ul, " ST=", 12ul);
+					   tmp=aprsstr_Length(pc->sondeType, 8ul);
+					   aprsstr_Append(s, 251ul, pc->sondeType,tmp) ;
+				   }
+				break;
+			 default: //no more msgIndex -> reset to 0
+						anonym->nextMsgIndx=-1;
+						break;
+           } //case nextMsgIndx
+
+            sendaprs(0UL, 0UL, sondeaprs_dao, anonym->dat[0U].time0, uptime,
+                usercall, usercall_len, sondeaprs_destcall, 100ul,
+                sondeaprs_via, 100ul, aprsSym, 2ul, pc->name,
+                9ul, anonym->dat[0U].lat, anonym->dat[0U].long0,
+                anonym->dat[0U].alt,
+                (double)(float)(truncc(anonym->dat[0U].dir)%360UL),
+                anonym->dat[0U].speed*3.6, 0ul, 0.0, s, 251ul,
+                &anonym->commentline);
+            anonym->lastbeacon = systime;
+            anonym->speedcnt = 0UL;
+            anonym->speedsum = 0.0;
+            anonym->nextMsgIndx++;
+         }
+      }
+   }
+   label:;
+//   X2C_PFREE(objname);
+} /* end senddata() */
+
+
+
 
 extern void sondeaprs_BEGIN(void)
 {
@@ -1227,6 +1543,7 @@ extern void sondeaprs_BEGIN(void)
    strncpy(sondeaprs_destcall,"APLWS2",100u);
    sondeaprs_via[0UL] = 0;
    strncpy(sondeaprs_sym,"/O",2u);
+   strncpy(sondeaprs_sym2,"/@",2u);
    sondeaprs_objname[0UL] = 0;
    sondeaprs_beacontime = 30UL;
    sondeaprs_lowaltbeacontime = 0UL;

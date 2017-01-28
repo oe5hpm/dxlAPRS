@@ -125,7 +125,7 @@ long osic_OpenAppendLong(char fn[], unsigned long fn_len)
 {
 	if (FNLENCHECK && strnlen(fn, fn_len) > fn_len)
 		return -1;
-	return open(fn, O_WRONLY | O_APPEND | O_LARGEFILE);
+	return open(fn, O_WRONLY | O_APPEND | __O_LARGEFILE);
 }
 
 long osic_OpenAppend(char fn[], unsigned long fn_len)
@@ -146,7 +146,7 @@ long osic_OpenReadLong(char fn[], unsigned long fn_len)
 {
 	if (FNLENCHECK && strnlen(fn, fn_len) > fn_len)
 		return -1;
-	return open(fn, O_RDONLY | O_LARGEFILE);
+	return open(fn, O_RDONLY | __O_LARGEFILE);
 }
 
 long osic_OpenRead(char fn[], unsigned long fn_len)

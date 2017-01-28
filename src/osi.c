@@ -26,6 +26,26 @@
 
 /* os interface linux/win32 */
 
+
+static void hFd(long fd,unsigned long n)
+{
+   char tmp;
+   if (n<10UL) osic_WrBin(fd,(char *)(tmp = (char)(n+48UL),&tmp), 1ul,1ul);
+   else osic_WrBin(fd,(char *)(tmp = (char)(n+55UL),&tmp), 1ul,1ul);
+} /* end h() */
+
+
+extern void osi_WrHexFd(long fd,unsigned long n, unsigned long f)
+{
+   hFd(fd,n/16UL&15UL);
+   hFd(fd,n&15UL);
+   while (f>=3UL) {
+      osic_WrBin(fd," ", 2ul,1ul);
+      --f;
+   }
+} /* end WrHex() */
+
+
 static void h(unsigned long n)
 {
    char tmp;
