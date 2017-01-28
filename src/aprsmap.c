@@ -546,6 +546,7 @@ static void rdlog(aprsdecode_pOPHIST * optab, char fn[],
    long len;
    long rp;
    char ib[32768];
+   char s[100];
    unsigned long j;
    unsigned long i;
    unsigned long wp;
@@ -622,6 +623,14 @@ static void rdlog(aprsdecode_pOPHIST * optab, char fn[],
                   ret = aprsdecode_Stoframe(optab, mbuf, 512ul, start, 1,
                 &ot, dat);
                   ++*lines;
+                  if ( *lines%500L==0L && aprsdecode_realtime+2UL<osic_time()
+                ) {
+                     aprsdecode_realtime = osic_time();
+                     aprsstr_IntToStr(*lines, 1UL, s, 100ul);
+                     aprsstr_Append(s, 100ul, " Frames", 8ul);
+                     useri_textautosize(0L, 0L, 5UL, 6UL, 'b', s, 100ul);
+                     xosi_Eventloop(1UL);
+                  }
                   if (*firstread==0UL) *firstread = start;
                   *lastread = start;
                }
@@ -634,6 +643,8 @@ static void rdlog(aprsdecode_pOPHIST * optab, char fn[],
    }
    loop_exit:;
    if (fo) osic_Close(fc);
+   useri_textautosize(0L, 0L, 5UL, 6UL, 'b', "Check Tracks", 13ul);
+   xosi_Eventloop(1UL);
    op = *optab;
    while (op) {
       aprsdecode_Checktrack(op, 0);
@@ -1198,7 +1209,7 @@ static void rftracks(const aprsdecode_MONCALL opcall, char * clrimg)
                         maptool_clr(rfimg);
                         *clrimg = 0;
                      }
-                     lig = (unsigned long)(60U*(anonym->refcnt+1U));
+                     lig = 60UL*(anonym->refcnt+1UL);
                      maptool_vector(rfimg, x0, y00, x, y, (long)lig,
                 (long)lig, (long)lig, 256UL, 25.0f);
                   }
@@ -1254,7 +1265,7 @@ static void mhtracks(const aprsdecode_MONCALL hcall, char * clrimg)
                               maptool_clr(rfimg);
                               *clrimg = 0;
                            }
-                           lig = (unsigned long)(50U*(anonym->refcnt+1U));
+                           lig = 50UL*(anonym->refcnt+1UL);
                            maptool_vector(rfimg, x0, y00, x, y, (long)lig,
                 (long)lig, (long)lig, 256UL, 25.0f);
                         }

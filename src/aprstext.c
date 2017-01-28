@@ -654,7 +654,7 @@ extern void aprstext_decodelistline(char s[], unsigned long s_len,
    i = aprsstr_Length(text, text_len);
    if (i>1UL) {
       text[i-1UL] = 0; /* remove ] */
-      memset((char *) &vardat,(char)0,516UL);
+      memset((char *) &vardat,(char)0,520UL);
       aprsstr_Assign(vardat.raw, 500ul, text, text_len);
       memset((char *) &f,(char)0,16UL);
       f.vardat = &vardat;
@@ -843,7 +843,7 @@ extern void aprstext_listin(char r[], unsigned long r_len, char port,
    unsigned long j;
    unsigned long i;
    struct aprsdecode_DAT dat;
-   memset((char *) &vard,(char)0,516UL);
+   memset((char *) &vard,(char)0,520UL);
    i = 0UL;
    j = 0UL;
    while ((i<499UL && i<=r_len-1) && r[i]) {

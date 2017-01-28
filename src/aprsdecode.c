@@ -1561,7 +1561,7 @@ static void beaconmacros(char s[], unsigned long s_len, const char path[],
             }
             else if (s[i]=='\\') aprsstr_Append(ns, 256ul, "\\\\", 3ul);
             else if (s[i]=='v') {
-               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.62", 17ul);
+               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.63", 17ul);
             }
             else if (s[i]=='l') {
                if (aprstext_getmypos(&pos)) {
@@ -4449,7 +4449,7 @@ static char lookup(unsigned long * wridx, struct _0 table[4096],
             }
             ojp = jp;
             jp = table[jp].next;
-            if (jp>4095U || ojp<jp==((unsigned long)
+            if (jp>4095U || ojp<=jp==((unsigned long)
                 ojp<*wridx==(unsigned long)jp<*wridx)) {
                /*WrInt(ORD(jp>HIGH(table)), 2); WrInt(ojp, 6); WrInt(jp, 6);
                 WrInt(wridx, 6); WrStr("o"); */
@@ -4492,7 +4492,7 @@ extern void aprsdecode_Checktrack(aprsdecode_pOPHIST op,
       op->margin1.lat = 1.57079632675f;
       frame = op->frames;
       while (frame) {
-         frame->vardat->refcnt = 0U;
+         frame->vardat->refcnt = 0UL;
          frame = frame->next;
       }
       frame = op->frames;
@@ -4532,13 +4532,9 @@ extern void aprsdecode_Checktrack(aprsdecode_pOPHIST op,
                   anonym->margin1.lat = apos.lat;
                }
             }
-            /*        IF (op^.margin0.long<>op^.margin1.long)
-                OR (op^.margin0.lat<>op^.margin1.lat)
-                THEN   (* moving station *) */
             f->nodraw &= ~0x8U;
          }
          if (lookup(&wridx, table, index, f) && cmp) {
-            /*WrFixed(apos.lat, 10,5); WrFixed(apos.long, 10,5); WrLn; */
             if (apos.lat!=last.lat || apos.long0!=last.long0) {
                if (apos.lat!=last2.lat || apos.long0!=last2.long0) {
                   f->nodraw |= 0x8U;
@@ -4557,10 +4553,6 @@ extern void aprsdecode_Checktrack(aprsdecode_pOPHIST op,
       f = f->next;
    }
    joinchunk(op);
-/*WrInt(collis, 10);WrStrLn("=collisions"); */
-/*
-WrStr(op^.call); WrStr(op^.sym.tab);WrFixed(op^.lastpos.lat, 5,10);WrLn;
-*/
 } /* end Checktrack() */
 
 
@@ -4655,7 +4647,7 @@ static void inserthrt(const struct aprsdecode_DAT dat,
                aprsstr_Append(rb, 51ul, "]", 2ul);
             }
             else rb[0U] = 0;
-            len = 17UL+aprsstr_Length(rb, 51ul);
+            len = 21UL+aprsstr_Length(rb, 51ul);
             osic_alloc((X2C_ADDRESS *) &v, len);
             useri_debugmem.req = len;
             useri_debugmem.mon += len;
@@ -4859,8 +4851,9 @@ extern long aprsdecode_Stoframe(aprsdecode_pOPHIST * optab, char rawbuf[],
    same = 0;
    if (logmode) {
       /* refcnt used as raw string hash */
-      while (frame && (frame->vardat->refcnt!=hash || !strcmp0(frame->vardat->raw,
-                 500ul, rawbuf, rawbuf_len))) {
+      while (frame && (frame->vardat->refcnt!=(unsigned long)
+                hash || !strcmp0(frame->vardat->raw, 500ul, rawbuf,
+                rawbuf_len))) {
          lastf = frame;
          frame = frame->next;
       }
@@ -4903,7 +4896,7 @@ extern long aprsdecode_Stoframe(aprsdecode_pOPHIST * optab, char rawbuf[],
    memset((X2C_ADDRESS)frame,(char)0,16UL);
    if (same==0) {
       /* found new data */
-      len = 17UL+aprsstr_Length(rawbuf, rawbuf_len);
+      len = 21UL+aprsstr_Length(rawbuf, rawbuf_len);
       osic_alloc((X2C_ADDRESS *) &same, len);
       useri_debugmem.req = len;
       useri_debugmem.mon += len;
@@ -4926,7 +4919,7 @@ extern long aprsdecode_Stoframe(aprsdecode_pOPHIST * optab, char rawbuf[],
             anonym->raw[i] = rawbuf[i];
             ++i;
          } while (rawbuf[i]);
-         if (logmode) anonym->refcnt = hash;
+         if (logmode) anonym->refcnt = (unsigned long)hash;
       }
    }
    else if (!logmode) ++same->refcnt;
@@ -4991,7 +4984,7 @@ static char locked(aprsdecode_pOPHIST op)
 static void freevardat(aprsdecode_pVARDAT v)
 {
    unsigned long alen;
-   alen = 17UL+aprsstr_Length(v->raw, 500ul);
+   alen = 21UL+aprsstr_Length(v->raw, 500ul);
    osic_free((X2C_ADDRESS *) &v, alen);
    useri_debugmem.mon -= alen;
 } /* end freevardat() */
@@ -5089,7 +5082,7 @@ extern void aprsdecode_delwaypoint(aprsdecode_pOPHIST op,
          di = mi;
       }
       if (f->vardat==(*frame)->vardat) ++i;
-      f->vardat->refcnt = 0U;
+      f->vardat->refcnt = 0UL;
       ++mi;
       f = f->next;
    }
@@ -5100,7 +5093,7 @@ extern void aprsdecode_delwaypoint(aprsdecode_pOPHIST op,
    osic_free((X2C_ADDRESS *)frame, 16UL);
    f = op->frames;
    while (f) {
-      if (f->vardat->refcnt<65535U) ++f->vardat->refcnt;
+      if (f->vardat->refcnt<65535UL) ++f->vardat->refcnt;
       f->vardat->lastref = f;
       f->nodraw = 0U; /* mark errors new later */
       f = f->next;
@@ -5629,7 +5622,7 @@ static char tcpconn(aprsdecode_pTCPSOCK * sockchain, long f)
          aprsstr_Append(h, 512ul, s, 100ul);
       }
       aprsstr_Append(h, 512ul, " vers ", 7ul);
-      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.62", 17ul);
+      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.63", 17ul);
       appfilter(h, 512ul, 0);
       /*    IF filter[0]<>0C THEN Append(h, " filter ");
                 Append(h, filter) END; */
@@ -6861,7 +6854,7 @@ extern void aprsdecode_BEGIN(void)
    if (sizeof(aprsdecode_pFRAMEHIST)!=4) X2C_ASSERT(0);
    if (sizeof(struct aprsdecode_FRAMEHIST)!=16) X2C_ASSERT(0);
    if (sizeof(aprsdecode_pVARDAT)!=4) X2C_ASSERT(0);
-   if (sizeof(struct aprsdecode_VARDAT)!=516) X2C_ASSERT(0);
+   if (sizeof(struct aprsdecode_VARDAT)!=520) X2C_ASSERT(0);
    if (sizeof(aprsdecode_pOPHIST)!=4) X2C_ASSERT(0);
    if (sizeof(struct aprsdecode_OPHIST)!=84) X2C_ASSERT(0);
    if (sizeof(struct aprsdecode_WX)!=56) X2C_ASSERT(0);

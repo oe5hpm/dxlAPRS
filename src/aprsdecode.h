@@ -62,7 +62,7 @@ typedef unsigned long aprsdecode_SET256[8];
 
 extern aprsdecode_SET256 aprsdecode_SYMTABLE;
 
-#define aprsdecode_VERS "aprsmap(cu) 0.62"
+#define aprsdecode_VERS "aprsmap(cu) 0.63"
 
 typedef char aprsdecode_MONCALL[9];
 
@@ -214,7 +214,7 @@ struct aprsdecode_FRAMEHIST {
 struct aprsdecode_VARDAT {
    aprsdecode_pFRAMEHIST lastref;
    struct aprspos_POSITION pos;
-   unsigned short refcnt; /* starts at 0 */
+   unsigned long refcnt; /* starts at 0 */
    /*             altitude :INT16;*/
    unsigned char igatepos;
    unsigned char igatelen;
