@@ -73,6 +73,8 @@ static char sondemod_EMPTYAUX = '\003';
 
 #define sondemod_RAD 1.7453292519943E-2
 
+#define sondemod_EARTH 6370.0
+
 #define sondemod_MYLAT 8.4214719496019E-1
 /* only for show sat elevations if no pos decode */
 
@@ -150,10 +152,11 @@ struct CONTEXTC34 {
    double lat1;
    double lon1;
    double alt;
+   double vlon;
+   double vlat;
    double speed;
    double dir;
    double temp;
-   double dewp;
    unsigned long lastsent;
    unsigned long gpstime;
    unsigned long tgpstime;
@@ -165,7 +168,6 @@ struct CONTEXTC34 {
    unsigned long tspeed;
    unsigned long tdir;
    unsigned long ttemp;
-   unsigned long tdewp;
    unsigned long tused;
 };
 
@@ -298,6 +300,25 @@ static float pow0(float x, unsigned long y)
    }
    return z;
 } /* end pow() */
+
+
+static double atan20(double x, double y)
+{
+   double w;
+   if (fabs(x)>fabs(y)) {
+      w = (double)osic_arctan((float)(X2C_DIVL(y,x)));
+      if (x<0.0) {
+         if (y>0.0) w = 3.1415926535898+w;
+         else w = w-3.1415926535898;
+      }
+   }
+   else if (y!=0.0) {
+      w = (double)(1.5707963267949f-osic_arctan((float)(X2C_DIVL(x,y))));
+      if (y<0.0) w = w-3.1415926535898;
+   }
+   else w = 0.0;
+   return w;
+} /* end atan2() */
 
 
 static char GetNum(const char h[], unsigned long h_len, char eot,
@@ -434,7 +455,7 @@ static void Parms(void)
          }
          else {
             if (h[1U]=='h') {
-               osi_WrStr("sondemod(c) 0.8", 16ul);
+               osi_WrStr("sondemod(c) 0.9", 16ul);
                osi_WrStrLn(" multichannel decoder RS92, RS41, SRS-C34 Radioso\
 ndes", 54ul);
                osi_WrStrLn(" -A <meter>     at lower altitude use -B beacon t\
@@ -1468,11 +1489,11 @@ static void decodeframe(unsigned char m, unsigned long ip,
          sondeaprs_senddata(anonym1->lat, anonym1->long0, anonym1->heig,
                 anonym1->speed, anonym1->dir, anonym1->climb, anonym1->hp,
                 anonym1->hyg, anonym1->temp, anonym1->ozon,
-                anonym1->ozontemp, 0.0, 0.0, (double)X2C_max_real,
-                (double)mhz, (double)anonym1->hrmsc, (double)anonym1->vrmsc,
+                anonym1->ozontemp, 0.0, 0.0, (double)mhz,
+                (double)anonym1->hrmsc, (double)anonym1->vrmsc,
                 (anonym1->timems/1000UL+86382UL)%86400UL, frameno, objname,
                 9ul, almanachage, anonym1->goodsats, usercall, 11ul,
-                calperc(anonym1->calibok), 0UL);
+                calperc(anonym1->calibok), 0UL, sondeaprs_nofilter);
          anonym1->framesent = 1;
       }
       crdone = 1;
@@ -1483,45 +1504,69 @@ static void decodeframe(unsigned char m, unsigned long ip,
    }
 } /* end decodeframe() */
 
-/*------------------------------ C34 */
+/*------------------------------ C34 C50 */
 
-static double latlong(unsigned long val)
+static double latlong(unsigned long val, char c50)
 {
    double hf;
    double hr;
-   hr = (double)(X2C_DIVR((float)(val%0x080000000UL),1.E+6f));
+   hr = (double)(float)(val%0x080000000UL);
+   if (c50) hr = X2C_DIVL(hr,1.E+7);
+   else hr = X2C_DIVL(hr,1.E+6);
    hf = (double)(float)(unsigned long)X2C_TRUNCC(hr,0UL,X2C_max_longcard);
    hr = hf+X2C_DIVL(hr-hf,0.6);
    if (val>=0x080000000UL) hr = -hr;
    return hr;
 } /* end latlong() */
 
-#define sondemod_MAXEXTEND 4
+#define sondemod_MAXEXTEND 4.0
 /* limit extrapolation range */
 
-#define sondemod_MAXTIMESPAN 10
+#define sondemod_MAXTIMESPAN 15
 
-#define sondemod_MAXRANGE 4.7123889803847E-4
+#define sondemod_MAXRANGE 7.068583470577E-4
 /* max jump in rad */
 
 
 static double extrapolate(double yold, double y, unsigned long told,
                 unsigned long t, unsigned long systime0, char * good)
 {
+   double maxex;
+   double maxr;
    double dy;
    double k;
+   unsigned long maxt;
+   maxr = 7.068583470577E-4;
+   maxt = 15UL;
+   maxex = 4.0;
+   if (sondeaprs_nofilter) {
+      maxr = 2.8274333882308E-3;
+      maxt = 60UL;
+      maxex = 16.0;
+   }
    *good = 1;
    if (t>=systime0) return y;
+   /* point is just in time */
    if (told<t) {
       k = (double)(X2C_DIVR((float)(systime0-told),(float)(t-told)));
-      if (k>4.0 || told+10UL<systime0) *good = 0;
+      if (k>maxex || told+maxt<systime0) *good = 0;
       dy = y-yold;
-      if (fabs(dy)>4.7123889803847E-4) *good = 0;
+      if (fabs(dy)>maxr) *good = 0;
       return yold+dy*k;
    }
    *good = 0;
    return y;
 } /* end extrapolate() */
+
+
+static double dist(double a, double b)
+{
+   double d;
+   d = a-b;
+   if (d>3.1415926535898) d = d-6.2831853071796;
+   else if (d<(-3.1415926535898)) d = d+6.2831853071796;
+   return d;
+} /* end dist() */
 
 
 static void decodec34(const char rxb[], unsigned long rxb_len,
@@ -1543,12 +1588,17 @@ static void decodec34(const char rxb[], unsigned long rxb_len,
    pCONTEXTC34 pc1;
    pCONTEXTC34 pc;
    double stemp;
+   char c50;
    char latok;
    char lonok;
    char posok;
    struct CONTEXTC34 * anonym;
+   struct CONTEXTC34 * anonym0;
+   struct CONTEXTC34 * anonym1;
+   struct CONTEXTC34 * anonym2;
    if (rxb[0UL]!='S' || rxb[1UL]!='C') return;
    /* no srsc34 frame */
+   c50 = rxb[2UL]=='5'; /* is a sc50 */
    i = 0UL;
    do {
       nam[i] = rxb[i];
@@ -1630,151 +1680,273 @@ static void decodec34(const char rxb[], unsigned long rxb_len,
                 cb[1U]*16777216UL;
    hr = (double)*X2C_CAST(&val,unsigned long,float,float *);
    posok = 0;
-   switch ((unsigned)cb[0U]) {
-   case '\003':
-      /*
-          CHR(01H): IF (hr<99.9) & (hr>-99.9)
-                THEN       (* something magic with this value *)
-                      IF verb THEN WrStr("pres "); (* WrFixed(hr, 2, 0);
-                WrStr("hPa");*) END;
-                    END;
-      */
-      if (hr<99.9 && hr>(-99.9)) {
-         if (sondeaprs_verb) {
-            osi_WrStr("temp ", 6ul);
-            osic_WrFixed((float)hr, 1L, 0UL);
-            osi_WrStr("oC", 3ul);
+   if (c50) {
+      switch ((unsigned)cb[0U]) {
+      case '\003':
+         if (hr<99.9 && hr>(-99.9)) {
+            if (sondeaprs_verb) {
+               osi_WrStr("temp ", 6ul);
+               osic_WrFixed((float)hr, 1L, 0UL);
+               osi_WrStr("oC", 3ul);
+            }
+            pc->temp = hr;
+            pc->ttemp = systime;
          }
-         pc->temp = hr;
-         pc->ttemp = systime;
-      }
-      break;
-   case '\007':
-      if (hr<99.9 && hr>(-99.9)) {
+         break;
+      case '\024':
          if (sondeaprs_verb) {
-            osi_WrStr("dewp ", 6ul);
-            osic_WrFixed((float)hr, 1L, 0UL);
-            osi_WrStr("oC", 3ul);
+            osi_WrStr("date", 5ul);
+            aprsstr_IntToStr((long)(val%1000000UL+1000000UL), 1UL, s,
+                1001ul);
+            s[0U] = ' ';
+            osi_WrStr(s, 1001ul);
          }
-         pc->dewp = hr;
-         pc->tdewp = systime;
-      }
-      break;
-   case '\024':
-      if (sondeaprs_verb) {
-         osi_WrStr("date", 5ul);
-         aprsstr_IntToStr((long)(val%1000000UL+1000000UL), 1UL, s, 1001ul);
-         s[0U] = ' ';
-         osi_WrStr(s, 1001ul);
-      }
-      break;
-   case '\025':
-      pc->gpstime = (val/10000UL)*3600UL+((val%10000UL)/100UL)
+         break;
+      case '\025':
+         pc->gpstime = (val/10000UL)*3600UL+((val%10000UL)/100UL)
                 *60UL+val%100UL;
-      pc->tgpstime = systime;
-      if (sondeaprs_verb) {
-         aprsstr_TimeToStr(pc->gpstime, s, 1001ul);
-         osi_WrStr("time ", 6ul);
-         osi_WrStr(s, 1001ul);
-      }
-      break;
-   case '\026':
-      hr = latlong(val);
-      if (hr<89.9 && hr>(-89.9)) {
+         pc->tgpstime = systime;
          if (sondeaprs_verb) {
-            osi_WrStr("lati ", 6ul);
-            osic_WrFixed((float)hr, 5L, 0UL);
+            aprsstr_TimeToStr(pc->gpstime, s, 1001ul);
+            osi_WrStr("time ", 6ul);
+            osi_WrStr(s, 1001ul);
          }
-         if (pc->tlat!=systime) {
-            pc->lat1 = pc->lat;
-            pc->tlat1 = pc->tlat;
-            pc->lat = hr*1.7453292519943E-2;
-            pc->tlat = systime;
-            posok = 1;
+         break;
+      case '\026':
+         hr = latlong(val, c50);
+         if (hr<89.9 && hr>(-89.9)) {
+            if (sondeaprs_verb) {
+               osi_WrStr("lat  ", 6ul);
+               osic_WrFixed((float)hr, 5L, 0UL);
+            }
+            if (pc->tlat!=systime) {
+               { /* with */
+                  struct CONTEXTC34 * anonym = pc;
+                  anonym->lat1 = anonym->lat;
+                  anonym->tlat1 = anonym->tlat;
+                  anonym->lat = hr*1.7453292519943E-2;
+                  anonym->tlat = systime;
+                  if (anonym->tlat>anonym->tlat1) {
+                     /* south-north speed */
+                     anonym->vlat = anonym->vlat+(X2C_DIVL(dist(anonym->lat,
+                anonym->lat1),(double)(anonym->tlat-anonym->tlat1))-anonym->vlat)*0.25;
+                  }
+               }
+               posok = 1;
+            }
          }
-      }
-      break;
-   case '\027':
-      hr = latlong(val);
-      if (hr<180.0 && hr>(-180.0)) {
-         if (sondeaprs_verb) {
-            osi_WrStr("long ", 6ul);
-            osic_WrFixed((float)hr, 5L, 0UL);
+         break;
+      case '\027':
+         hr = latlong(val, c50);
+         if (hr<180.0 && hr>(-180.0)) {
+            if (sondeaprs_verb) {
+               osi_WrStr("long ", 6ul);
+               osic_WrFixed((float)hr, 5L, 0UL);
+            }
+            if (pc->tlon!=systime) {
+               { /* with */
+                  struct CONTEXTC34 * anonym0 = pc;
+                  anonym0->lon1 = anonym0->lon;
+                /* save 2 values for extrapolating */
+                  anonym0->tlon1 = anonym0->tlon;
+                  anonym0->lon = hr*1.7453292519943E-2;
+                  anonym0->tlon = systime;
+                  if (anonym0->tlat>0UL && anonym0->tlon>anonym0->tlon1) {
+                     /* east-west speed */
+                     anonym0->vlon = anonym0->vlon+(X2C_DIVL(dist(anonym0->lon,
+                 anonym0->lon1)*(double)osic_cos((float)anonym0->lat),
+                (double)(anonym0->tlon-anonym0->tlon1))-anonym0->vlon)*0.25;
+                  }
+               }
+               posok = 1;
+            }
          }
-         if (pc->tlon!=systime) {
-            pc->lon1 = pc->lon; /* save 2 values for extrapolating */
-            pc->tlon1 = pc->tlon;
-            pc->lon = hr*1.7453292519943E-2;
-            pc->tlon = systime;
-            posok = 1;
-         }
-      }
-      break;
-   case '\030':
-      hr = (double)((float)val*0.1f);
-      if (hr<50000.0) {
-         if (sondeaprs_verb) {
-            osi_WrStr("alti ", 6ul);
-            osic_WrFixed((float)hr, 1L, 0UL);
-            osi_WrStr("m", 2ul);
-         }
-         if (pc->talt<systime) {
-            pc->clmb = pc->clmb+(X2C_DIVL(hr-pc->alt,
+         break;
+      case '\030':
+         hr = (double)((float)val*0.1f);
+         if (hr<50000.0) {
+            if (sondeaprs_verb) {
+               osi_WrStr("alti ", 6ul);
+               osic_WrFixed((float)hr, 1L, 0UL);
+               osi_WrStr("m", 2ul);
+            }
+            if (pc->talt<systime) {
+               pc->clmb = pc->clmb+(X2C_DIVL(hr-pc->alt,
                 (double)(float)(systime-pc->talt))-pc->clmb)*0.25;
+            }
+            pc->alt = hr;
+            pc->talt = systime;
          }
-         pc->alt = hr;
-         pc->talt = systime;
+         break;
+      default:;
+         if (sondeaprs_verb) {
+            osi_WrHex((unsigned long)(unsigned char)cb[0U], 0UL);
+            osi_WrStr(" ", 2ul);
+            osi_WrHex((unsigned long)(unsigned char)cb[1U], 0UL);
+            osi_WrHex((unsigned long)(unsigned char)cb[2U], 0UL);
+            osi_WrHex((unsigned long)(unsigned char)cb[3U], 0UL);
+            osi_WrHex((unsigned long)(unsigned char)cb[4U], 0UL);
+            osic_WrFixed((float)hr, 2L, 10UL);
+         }
+         break;
+      } /* end switch */
+      { /* with */
+         struct CONTEXTC34 * anonym1 = pc;
+         anonym1->tspeed = systime;
+         anonym1->tdir = systime;
+         anonym1->speed = (double)(osic_sqrt((float)
+                (anonym1->vlon*anonym1->vlon+anonym1->vlat*anonym1->vlat))
+                *6.37E+6f); /* speed out of moved distance km/h */
+         anonym1->dir = atan20(anonym1->vlat, anonym1->vlon);
+         if (anonym1->dir<0.0) anonym1->dir = anonym1->dir+6.2831853071796;
+         anonym1->dir = anonym1->dir*5.7295779513082E+1;
       }
-      break;
-   case '\031':
-      hr = (double)((float)val*1.851984E-1f);
+   }
+   else {
+      /*WrStrLn(""); WrStr("vlat,vlon spd, dir:");
+                WrFixed(vlat*(EARTH*3600), 1,7); */
+      /*WrFixed(vlon*(EARTH*3600), 1,7); WrFixed(speed*3.6, 1,8);
+                WrFixed(dir, 1,9) ; WrFixed(alt, 1,9); */
+      /* SC34 */
+      switch ((unsigned)cb[0U]) {
+      case '\003':
+         if (hr<99.9 && hr>(-99.9)) {
+            if (sondeaprs_verb) {
+               osi_WrStr("temp ", 6ul);
+               osic_WrFixed((float)hr, 1L, 0UL);
+               osi_WrStr("oC", 3ul);
+            }
+            pc->temp = hr;
+            pc->ttemp = systime;
+         }
+         break;
+      case '\024':
+         /*
+              |CHR(07H): IF (hr<99.9) & (hr>-99.9) THEN 
+                           IF verb THEN WrStr("dewp "); WrFixed(hr, 1, 0);
+                WrStr("oC"); END;
+                           pc^.dewp:=hr;
+                           pc^.tdewp:=systime;
+                         END;
+         */
+         if (sondeaprs_verb) {
+            osi_WrStr("date", 5ul);
+            aprsstr_IntToStr((long)(val%1000000UL+1000000UL), 1UL, s,
+                1001ul);
+            s[0U] = ' ';
+            osi_WrStr(s, 1001ul);
+         }
+         break;
+      case '\025':
+         pc->gpstime = (val/10000UL)*3600UL+((val%10000UL)/100UL)
+                *60UL+val%100UL;
+         pc->tgpstime = systime;
+         if (sondeaprs_verb) {
+            aprsstr_TimeToStr(pc->gpstime, s, 1001ul);
+            osi_WrStr("time ", 6ul);
+            osi_WrStr(s, 1001ul);
+         }
+         break;
+      case '\026':
+         hr = latlong(val, c50);
+         if (hr<89.9 && hr>(-89.9)) {
+            if (sondeaprs_verb) {
+               osi_WrStr("lati ", 6ul);
+               osic_WrFixed((float)hr, 5L, 0UL);
+            }
+            if (pc->tlat!=systime) {
+               pc->lat1 = pc->lat;
+               pc->tlat1 = pc->tlat;
+               pc->lat = hr*1.7453292519943E-2;
+               pc->tlat = systime;
+               posok = 1;
+            }
+         }
+         break;
+      case '\027':
+         hr = latlong(val, c50);
+         if (hr<180.0 && hr>(-180.0)) {
+            if (sondeaprs_verb) {
+               osi_WrStr("long ", 6ul);
+               osic_WrFixed((float)hr, 5L, 0UL);
+            }
+            if (pc->tlon!=systime) {
+               pc->lon1 = pc->lon; /* save 2 values for extrapolating */
+               pc->tlon1 = pc->tlon;
+               pc->lon = hr*1.7453292519943E-2;
+               pc->tlon = systime;
+               posok = 1;
+            }
+         }
+         break;
+      case '\030':
+         hr = (double)((float)val*0.1f);
+         if (hr<50000.0) {
+            if (sondeaprs_verb) {
+               osi_WrStr("alti ", 6ul);
+               osic_WrFixed((float)hr, 1L, 0UL);
+               osi_WrStr("m", 2ul);
+            }
+            if (pc->talt<systime) {
+               pc->clmb = pc->clmb+(X2C_DIVL(hr-pc->alt,
+                (double)(float)(systime-pc->talt))-pc->clmb)*0.25;
+            }
+            pc->alt = hr;
+            pc->talt = systime;
+         }
+         break;
+      case '\031':
+         hr = (double)((float)val*1.851984E-1f);
                 /*1.609*/ /*1.852*/ /* guess knots or miles */
-      if (hr>=0.0 && hr<1000.0) {
-         if (sondeaprs_verb) {
-            osi_WrStr("wind ", 6ul);
-            osic_WrFixed((float)hr, 1L, 0UL);
-            osi_WrStr("km/h", 5ul);
+         if (hr>=0.0 && hr<1000.0) {
+            if (sondeaprs_verb) {
+               osi_WrStr("wind ", 6ul);
+               osic_WrFixed((float)hr, 1L, 0UL);
+               osi_WrStr("km/h", 5ul);
+            }
+            pc->speed = hr*2.7777777777778E-1;
+            pc->tspeed = systime;
          }
-         pc->speed = hr*2.7777777777778E-1;
-         pc->tspeed = systime;
-      }
-      break;
-   case '\032':
-      hr = (double)((float)val*0.1f);
-      if (hr>=0.0 && hr<=360.0) {
-         if (sondeaprs_verb) {
-            osi_WrStr("wdir ", 6ul);
-            osic_WrFixed((float)hr, 1L, 0UL);
-            osi_WrStr("deg", 4ul);
+         break;
+      case '\032':
+         hr = (double)((float)val*0.1f);
+         if (hr>=0.0 && hr<=360.0) {
+            if (sondeaprs_verb) {
+               osi_WrStr("wdir ", 6ul);
+               osic_WrFixed((float)hr, 1L, 0UL);
+               osi_WrStr("deg", 4ul);
+            }
+            pc->dir = hr;
+            pc->tdir = systime;
          }
-         pc->dir = hr;
-         pc->tdir = systime;
-      }
-      break;
-   default:;
-      if (sondeaprs_verb) {
-         osi_WrHex((unsigned long)(unsigned char)cb[0U], 0UL);
-         osi_WrStr(" ", 2ul);
-         osi_WrHex((unsigned long)(unsigned char)cb[1U], 0UL);
-         osi_WrHex((unsigned long)(unsigned char)cb[2U], 0UL);
-         osi_WrHex((unsigned long)(unsigned char)cb[3U], 0UL);
-         osi_WrHex((unsigned long)(unsigned char)cb[4U], 0UL);
-      }
-      break;
-   } /* end switch */
+         break;
+      default:;
+         if (sondeaprs_verb) {
+            osi_WrHex((unsigned long)(unsigned char)cb[0U], 0UL);
+            osi_WrStr(" ", 2ul);
+            osi_WrHex((unsigned long)(unsigned char)cb[1U], 0UL);
+            osi_WrHex((unsigned long)(unsigned char)cb[2U], 0UL);
+            osi_WrHex((unsigned long)(unsigned char)cb[3U], 0UL);
+            osi_WrHex((unsigned long)(unsigned char)cb[4U], 0UL);
+            osic_WrFixed((float)hr, 2L, 10UL);
+         }
+         break;
+      } /* end switch */
+   }
    { /* with */
-      struct CONTEXTC34 * anonym = pc;
-      if (((((((posok && anonym->lastsent!=systime)
-                && anonym->tlon+8UL>systime) && anonym->tlat+8UL>systime)
-                && anonym->talt+15UL>systime) && anonym->tspeed+15UL>systime)
-                 && anonym->tdir+15UL>systime)
-                && anonym->tgpstime+120UL>systime) {
-         if (anonym->ttemp+30UL>systime) stemp = anonym->temp;
+      struct CONTEXTC34 * anonym2 = pc;
+      if (posok && (sondeaprs_nofilter || (((((anonym2->lastsent!=systime && anonym2->tlon+15UL>systime)
+                 && anonym2->tlat+15UL>systime)
+                && anonym2->talt+30UL>systime)
+                && anonym2->tspeed+120UL>systime)
+                && anonym2->tdir+120UL>systime)
+                && anonym2->tgpstime+120UL>systime)) {
+         if (anonym2->ttemp+30UL>systime) stemp = anonym2->temp;
          else stemp = (double)X2C_max_real;
-         exlon = extrapolate(anonym->lon1, anonym->lon, anonym->tlon1,
-                anonym->tlon, systime, &lonok);
-         exlat = extrapolate(anonym->lat1, anonym->lat, anonym->tlat1,
-                anonym->tlat, systime, &latok);
+         exlon = extrapolate(anonym2->lon1, anonym2->lon, anonym2->tlon1,
+                anonym2->tlon, systime, &lonok);
+         exlat = extrapolate(anonym2->lat1, anonym2->lat, anonym2->tlat1,
+                anonym2->tlat, systime, &latok);
          /*
          IF lonok THEN WrStrLn("--good ") ELSE WrStrLn("--bad  ") END;
          WrInt(systime-tlon1, 10); WrInt(systime-tlon, 10);
@@ -1783,12 +1955,13 @@ static void decodec34(const char rxb[], unsigned long rxb_len,
          WrFixed(exlon/RAD, 5,0); WrStrLn("t1 t x1 x xext");
          */
          if (lonok && latok) {
-            sondeaprs_senddata(exlat, exlon, anonym->alt, anonym->speed,
-                anonym->dir, anonym->clmb, 0.0, 0.0, stemp, 0.0, 0.0, 0.0,
-                0.0, anonym->dewp, 0.0, 0.0, 0.0,
-                ((systime-anonym->tgpstime)+anonym->gpstime)%86400UL, 0UL,
-                anonym->name, 9ul, 0UL, 0UL, usercall, 11ul, 0UL, 0UL);
-            anonym->lastsent = systime;
+            sondeaprs_senddata(exlat, exlon, anonym2->alt, anonym2->speed,
+                anonym2->dir, anonym2->clmb, 0.0, 0.0, stemp, 0.0, 0.0, 0.0,
+                0.0, 0.0, 0.0, 0.0,
+                ((systime-anonym2->tgpstime)+anonym2->gpstime)%86400UL, 0UL,
+                anonym2->name, 9ul, 0UL, 0UL, usercall, 11ul, 0UL, 0UL,
+                sondeaprs_nofilter);
+            anonym2->lastsent = systime;
          }
       }
    }
@@ -2042,9 +2215,9 @@ static void decodedfm6(const char rxb[], unsigned long rxb_len,
             if ((lonok && latok) && (pc->poserr==0UL || sondeaprs_nofilter)) {
                sondeaprs_senddata(exlat, exlon, anonym->alt, anonym->speed,
                 anonym->dir, anonym->clmb, 0.0, 0.0, (double)X2C_max_real,
-                0.0, 0.0, 0.0, 0.0, (double)X2C_max_real, 0.0, 0.0, 0.0,
-                anonym->actrt%86400UL, 0UL, anonym->name, 9ul, 0UL, 0UL,
-                usercall, 11ul, 0UL, 0UL);
+                0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, anonym->actrt%86400UL,
+                0UL, anonym->name, 9ul, 0UL, 0UL, usercall, 11ul, 0UL, 0UL,
+                sondeaprs_nofilter);
                anonym->lastsent = systime;
             }
          }
@@ -2062,25 +2235,6 @@ static void WrChChk(char ch)
       osi_WrStr((char *) &ch, 1u/1u);
    }
 } /* end WrChChk() */
-
-
-static double atan20(double x, double y)
-{
-   double w;
-   if (fabs(x)>fabs(y)) {
-      w = (double)osic_arctan((float)(X2C_DIVL(y,x)));
-      if (x<0.0) {
-         if (y>0.0) w = 3.1415926535898+w;
-         else w = w-3.1415926535898;
-      }
-   }
-   else if (y!=0.0) {
-      w = (double)(1.5707963267949f-osic_arctan((float)(X2C_DIVL(x,y))));
-      if (y<0.0) w = w-3.1415926535898;
-   }
-   else w = 0.0;
-   return w;
-} /* end atan2() */
 
 #define sondemod_EARTHA 6.378137E+6
 
@@ -2547,9 +2701,9 @@ static void decoders41(const char rxb[], unsigned long rxb_len,
    if ((((pc && nameok) && calok) && lat!=0.0) && long0!=0.0) {
       sondeaprs_senddata(lat, long0, heig, speed, dir, climb, 0.0, 0.0,
                 (double)X2C_max_real, ozonval, pc->ozonTemp, pc->ozonPumpMA,
-                pc->ozonBatVolt, (double)X2C_max_real, (double)pc->mhz0, 0.0,
-                 0.0, pc->gpssecond, frameno, pc->name, 9ul, 0UL, 0UL,
-                usercall, 11ul, 0UL, pc->burstKill);
+                pc->ozonBatVolt, (double)pc->mhz0, 0.0, 0.0, pc->gpssecond,
+                frameno, pc->name, 9ul, 0UL, 0UL, usercall, 11ul, 0UL,
+                pc->burstKill, sondeaprs_nofilter);
       pc->framesent = 1;
    }
 /*  IF verb THEN WrStrLn("") END;   */

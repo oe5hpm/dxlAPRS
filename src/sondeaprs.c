@@ -253,7 +253,7 @@ static void comment0(char buf[], unsigned long buf_len, unsigned long uptime,
             }
             else if (fb[bol+1L]=='v') {
                /* insert version */
-               strncpy(fb," sondemod(c) 0.8",32768u);
+               strncpy(fb," sondemod(c) 0.9",32768u);
             }
             else if (fb[bol+1L]=='s') {
                /* insert sat count */
@@ -863,7 +863,7 @@ BEGIN
   d[0].climb:=-k/FLOAT(HIGH(d));
 END climb;
 */
-#define sondeaprs_MAXTIMESPAN 15
+#define sondeaprs_MAXTIMESPAN 20
 
 
 static void Checkvals(const DATS d, unsigned short * e)
@@ -937,7 +937,7 @@ static void Checkvals(const DATS d, unsigned short * e)
        ta:=d[i].time;
      END;
    */
-   if (((d[0U].time0+86400UL)-d[n].time0)%86400UL>15UL) *e |= 0x100U;
+   if (((d[0U].time0+86400UL)-d[n].time0)%86400UL>20UL) *e |= 0x100U;
 } /* end Checkvals() */
 
 
@@ -1024,12 +1024,12 @@ END highresstr;
 extern void sondeaprs_senddata(double lat, double long0, double alt,
                 double speed, double dir, double clb, double hp, double hyg,
                 double temp, double ozon, double otemp, double pumpmA,
-                double pumpv, double dewp, double mhz, double hrms,
-                double vrms, unsigned long sattime, unsigned long uptime,
-                char objname[], unsigned long objname_len,
-                unsigned long almanachage, unsigned long goodsats,
-                char usercall[], unsigned long usercall_len,
-                unsigned long calperc, unsigned long burstKill)
+                double pumpv, double mhz, double hrms, double vrms,
+                unsigned long sattime, unsigned long uptime, char objname[],
+                unsigned long objname_len, unsigned long almanachage,
+                unsigned long goodsats, char usercall[],
+                unsigned long usercall_len, unsigned long calperc,
+                unsigned long burstKill, char force)
 {
    unsigned char e;
    pCONTEXT ct;
@@ -1084,16 +1084,10 @@ extern void sondeaprs_senddata(double lat, double long0, double alt,
             for (e = sondeaprs_ePRES;; e++) {
                if (X2C_IN((long)e,10,chk)) {
                   switch ((unsigned)e) {
-                  case sondeaprs_ePRES:
-                     osi_WrStr("p", 2ul);
-                     break;
-                  case sondeaprs_eTEMP:
-                     osi_WrStr("t", 2ul);
-                     break;
-                  case sondeaprs_eHYG:
-                     osi_WrStr("h", 2ul);
-                     break;
                   case sondeaprs_eSPEED:
+                     /*              ePRES : WrStr("p"); */
+                     /*             |eTEMP : WrStr("t"); */
+                     /*             |eHYG  : WrStr("h"); */
                      osi_WrStr("v", 2ul);
                      break;
                   case sondeaprs_eDIR:
@@ -1170,12 +1164,13 @@ extern void sondeaprs_senddata(double lat, double long0, double alt,
                   aprsstr_Append(s, 251ul, "V", 2ul);
                }
             }
-            if (dewp>(-100.0) && dewp<100.0) {
-               aprsstr_Append(s, 251ul, " dp=", 5ul);
-               aprsstr_FixToStr((float)dewp, 2UL, h, 251ul);
-               aprsstr_Append(s, 251ul, h, 251ul);
-               aprsstr_Append(s, 251ul, "C", 2ul);
-            }
+            /*
+                    IF (dewp>-100.0) & (dewp<100.0) THEN
+                      Append(s, " dp=");
+                      FixToStr(dewp, 2, h); Append(s, h);
+                      Append(s, "C");
+                    END;
+            */
             if (calperc>0UL && calperc<100UL) {
                aprsstr_Append(s, 251ul, " calibration ", 14ul);
                aprsstr_IntToStr((long)calperc, 1UL, h, 251ul);
@@ -1195,6 +1190,7 @@ extern void sondeaprs_senddata(double lat, double long0, double alt,
                else aprsstr_Append(s, 251ul, "On", 3ul);
             }
             /* appended by SQ7BR */
+            if (force) aprsstr_Append(s, 251ul, " Unchecked-Data", 16ul);
             sendaprs(0UL, 0UL, sondeaprs_dao, anonym->dat[0U].time0, uptime,
                 usercall, usercall_len, sondeaprs_destcall, 100ul,
                 sondeaprs_via, 100ul, sondeaprs_sym, 2ul, objname,
