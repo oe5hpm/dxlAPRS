@@ -27,8 +27,6 @@
 #include <linux/ppdev.h>
 #include <unistd.h>
 
-#include "pp065mb.h"
-
 /*#define _DEBUG*/
 
 #ifdef _DEBUG
@@ -36,9 +34,6 @@
 #else
 # define DBG(...)
 #endif
-
-#define PP065_BUSYWAIT		(100 * 1000)
-#define PP065_BUSYLOOPS 	10
 
 struct ttydev_t {
 	char			*name;		/* name of tty */
@@ -98,67 +93,6 @@ static int tty_register(struct pttcmn_t *pInst, char *name, int fd)
 		return 0;
 
 	return -1;
-}
-
-static int ptt_pp065mb(struct ptt_t *pInst, int value)
-{
-	int switchval = (pInst->bit > 0 ? 0 : 1) ^ value;
-	int rc = -1;
-
-	unsigned int port;
-
-	if (pInst->fd < 0) {
-		printf("%s not open!\n", pInst->devname);
-	} else {
-		if (switchval)
-			port = 0x01 << (abs(pInst->bit)-1);
-		else
-			port = 0x01 << (abs(pInst->bit)-1+8);
-
-		rc = ioctl(pInst->fd, PARWR, port);
-	}
-
-	return rc;
-}
-
-static int ptt_pp065mbDestroy(struct ptt_t *pInst)
-{
-	unsigned int tmp;
-	int busycnt;
-
-	/* turn ptt off *
-	 * may not be the ultimative trick, because we afterwards reset the
-	 * device into original state.
-	 * Further kernel takes over control upon we've closed it.
-	 */
-	pInst->switchfct(pInst, 0);
-
-	/* restore original portstate */
-	tmp = 0x40000000;
-	busycnt = PP065_BUSYLOOPS;
-	while (busycnt--) {
-		if (ioctl(pInst->fd, PORTCFG, &tmp) == 0)
-			break;
-		usleep(PP065_BUSYWAIT);
-	}
-	if (busycnt <= 0) {
-		printf("fail: pp065mb port busy (reset-origstate)!\n");
-		return -1;
-	}
-
-	tmp = 0x80000000 | pInst->origportstate;
-	busycnt = PP065_BUSYLOOPS;
-	while (busycnt--) {
-		if (ioctl(pInst->fd, PORTCFG, &tmp) == 0)
-			break;
-		usleep(PP065_BUSYWAIT);
-	}
-	if (busycnt <= 0) {
-		printf("fail: pp065mb port busy (reset-origstate)!\n");
-		return -1;
-	}
-
-	return 0;
 }
 
 static int ptt_parport(struct ptt_t *pInst, int value)
@@ -342,7 +276,7 @@ void *pttinit(char *devname, int bit)
 			fd = open("/sys/class/gpio/export", O_WRONLY);
 			if (fd > 0) {
 				snprintf(buf, sizeof(buf),
-						 "%d", abs(pInst->bit)-1);
+					 "%d", abs(pInst->bit)-1);
 				write(fd, buf, strlen(buf));
 				close(fd);
 			} else {
@@ -358,52 +292,8 @@ void *pttinit(char *devname, int bit)
 			} else {
 				goto errorExit;
 			}
-
 			pInst->switchfct = &ptt_gpio;
 			pInst->destroyfct = &ptt_gpioDestroy;
-		} else if (strstr(devname, "pp065mb") != 0) {
-			if (pInst->bit > 8 || pInst->bit < -8) {
-				printf("fail: pp065 has only 8 gpio ports!\n");
-				goto errorExit;
-			}
-			pInst->fd = open(devname, O_RDWR);
-			if (pInst->fd > 0) {
-				tmp = 0x40000000;
-				busycnt = PP065_BUSYLOOPS;
-				while (busycnt--) {
-					if (ioctl(pInst->fd, PORTCFG, &tmp) == 0)
-						break;
-					usleep(PP065_BUSYWAIT);
-				}
-				if (busycnt <= 0) {
-					printf("fail: pp065mb port busy (setup)!\n");
-					goto errorExit;
-				}
-
-				busycnt = PP065_BUSYLOOPS;
-				while (busycnt--) {
-					if (ioctl(pInst->fd, PORTCFG, &tmp) == 0)
-						break;
-					usleep(PP065_BUSYWAIT);
-				}
-				if (busycnt <= 0) {
-					printf("fail: pp065mb port busy (setup)!\n");
-					goto errorExit;
-				}
-
-				pInst->origportstate = tmp;
-				tmp |= 0x3 << ((abs(pInst->bit)-1) * 2);
-				tmp |= 0x80000000;
-				if (ioctl(pInst->fd, PORTCFG, &tmp) != 0) {
-					printf("fail: pp065mb port Busy!\n");
-					goto errorExit;
-				}
-			} else {
-				printf("fail: cannot open %s !\n", devname);
-				goto errorExit;
-			}
-			pInst->switchfct = &ptt_pp065mb;
-			pInst->destroyfct = &ptt_pp065mbDestroy;
 		} else if (strstr(devname, "parport") != 0) {
 			if (pInst->bit > 8 || pInst->bit < -8) {
 				printf("fail: parport has only 8 bits!\n");
@@ -478,16 +368,13 @@ void pttHelp(char *str, unsigned int maxsize)
 	"  -p <devname> <pttbit>  pttport and bit to switch\n" \
 	"                         * /dev/ttyXX for serial\n" \
 	"                         * /dev/parport0 for parallel\n" \
-	"                         * /dev/pp065mb for pp065mb gpios\n" \
 	"                         * gpio for kernel gpio-interface\n" \
 	"                         choose value for <pttbit>:\n" \
 	"                         * tty: 0=RTS, 1=DTR\n" \
 	"                         * parport: 0...7 / -0...-7 (inverted)\n" \
-	"                         * pp065/gpio: 0...7 / -0...-7 (inverted)\n"\
 	"  -u                    close ptt-tty file between switch actions, " \
 				"may not work on USB tty";
 
 	strncpy(str, helptext, maxsize);
 }
-
 
