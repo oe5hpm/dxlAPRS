@@ -1640,7 +1640,7 @@ static void sendkiss(char data[], unsigned long data_len, long len,
    if (po<=7UL && modpar[po].udpsocket>=0L) {
       { /* with */
          struct MPAR * anonym = &modpar[po];
-         if (anonym->axudp2) {
+         if (anonym->axudp2 || anonym->dcdmsgs) {
             sendaxudp2(po, (unsigned long)len, 0, data, data_len);
                 /* makes new crc */
          }
