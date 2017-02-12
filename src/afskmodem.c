@@ -153,10 +153,11 @@ struct MPAR {
    char plld;
    char scramb;
    char data1;
-   char axudp2; /* axudp2 */
+   char axudp2;
    char dcdmsgs;
    char haddcd;
    char hadtxdata;
+   char haddcdrand;
    char flagbeg;
    unsigned long flagc; /* for statistic */
    unsigned long flags;
@@ -1527,7 +1528,7 @@ static void sendaxudp2(unsigned long modem, unsigned long datalen,
       if (anonym->udpsocket>=0L) {
          b[0U] = '\001';
          b[1U] = (char)(48UL+(unsigned long)
-                anonym->haddcd*2UL+(unsigned long)
+                anonym->haddcdrand*2UL+(unsigned long)
                 anonym->hadtxdata*4UL+(unsigned long)
                 chan[anonym->ch].pttstate);
          p = 2UL;
@@ -1640,7 +1641,7 @@ static void sendkiss(char data[], unsigned long data_len, long len,
    if (po<=7UL && modpar[po].udpsocket>=0L) {
       { /* with */
          struct MPAR * anonym = &modpar[po];
-         if (anonym->axudp2 || anonym->dcdmsgs) {
+         if (anonym->axudp2) {
             sendaxudp2(po, (unsigned long)len, 0, data, data_len);
                 /* makes new crc */
          }
@@ -2264,6 +2265,39 @@ BEGIN
 
 END Ptt;
 */
+
+static void startrandom(unsigned char ch)
+{
+   struct CHAN * anonym;
+   { /* with */
+      struct CHAN * anonym = &chan[ch];
+      anonym->addrandom = 2UL+(unsigned long)X2C_TRUNCC(osic_Random()
+                *(double)anonym->persist,0UL,X2C_max_longcard);
+                /* store ramdom wait */
+      anonym->dcdclock = clock0; /* start txwait after we sent */
+   }
+} /* end startrandom() */
+
+
+static char CheckRandom(long modem)
+{
+   unsigned long clk;
+   struct MPAR * anonym;
+   struct CHAN * anonym0;
+   { /* with */
+      struct MPAR * anonym = &modpar[modem];
+      { /* with */
+         struct CHAN * anonym0 = &chan[anonym->ch];
+         if (anonym0->duplex==afskmodem_shiftdigi) {
+            clk = modpar[modem].dcdclockm; /* use dcd of this modulation */
+         }
+         else clk = anonym0->dcdclock;
+         return anonym0->duplex!=afskmodem_fullduplex && (clock0-clk<=anonym0->addrandom || anonym0->duplex==afskmodem_onetx)
+                ;
+      }
+   }
+} /* end CheckRandom() */
+
 /* (usb) soundcard died */
 
 static void repairsound(void)
@@ -2356,17 +2390,6 @@ static void getadc(void)
       } /* end for */
       i += (long)((unsigned long)maxchannels+1UL);
    }
-   /*
-   WrFixed(noiselevel(0), 2, 10); WrStrLn(" nl");
-     FOR m:=0 TO HIGH(modpar) DO
-       WITH modpar[m] DO
-         IF configured & dcdmsgs & ((dcdclockm=clock)<>haddcd) THEN
-           haddcd:=NOT haddcd;
-           sendaxudp2(m, 0, "");
-         END;
-       END;
-     END;
-   */
    for (m = 0L; m<=7L; m++) {
       { /* with */
          struct MPAR * anonym0 = &modpar[m];
@@ -2380,7 +2403,12 @@ static void getadc(void)
                 /* modem wise dcd for shift digi*/
             }
             if (ndcd!=anonym0->haddcd) {
+               if (ndcd) startrandom(anonym0->ch);
                anonym0->haddcd = ndcd;
+            }
+            ndcd = CheckRandom(m);
+            if (ndcd!=anonym0->haddcdrand) {
+               anonym0->haddcdrand = ndcd;
                if (anonym0->dcdmsgs) {
                   sendaxudp2((unsigned long)m, 0UL, 0, "", 1ul);
                }
@@ -2450,7 +2478,6 @@ static void sendmodem(void)
 {
    short buf[4096];
    long i;
-   unsigned long clk;
    float samp;
    unsigned char c;
    struct CHAN * anonym;
@@ -2510,24 +2537,25 @@ static void sendmodem(void)
                /* data ptt off */
                anonym->tbytec = 0UL;
                anonym->state = afskmodem_slotwait;
-               anonym->addrandom = 2UL+(unsigned long)
-                X2C_TRUNCC(osic_Random()*(double)anonym->persist,0UL,
-                X2C_max_longcard); /* store ramdom wait */
-               anonym->dcdclock = clock0; /* start txwait after we sent */
+               startrandom(c);
             }
          }
          if (anonym->state==afskmodem_slotwait) {
-            if (anonym->duplex==afskmodem_shiftdigi) {
-               clk = modpar[anonym->actmodem].dcdclockm;
-                /* use dcd of this modulation */
-            }
-            else {
-               clk = anonym->dcdclock;
-                /* use dcd of latest heard modulation */
-            }
-            if (anonym->duplex==afskmodem_fullduplex || clock0-clk>anonym->addrandom && (anonym->duplex!=afskmodem_onetx || !chan[(unsigned long)
-                maxchannels-(unsigned long)c].pttstate)) {
+            if (!CheckRandom(anonym->actmodem) || !chan[(unsigned long)
+                maxchannels-(unsigned long)c].pttstate) {
                /* onetx: tx locks tx of other channel */
+               /*
+                       IF duplex=shiftdigi THEN 
+                         clk:=modpar[actmodem].dcdclockm;
+                (* use dcd of this modulation *)
+                       ELSE clk:=dcdclock END;
+                (* use dcd of latest heard modulation *)
+               
+                       IF (duplex=fullduplex) OR (clock-clk > addrandom)
+                       & ((duplex<>onetx) OR NOT chan[VAL(CHANNELS,
+                ORD(maxchannels)-ORD(c))].pttstate)
+                THEN  (* onetx: tx locks tx of other channel *)
+               */
                if (frames2tx(anonym->actmodem)) {
                   txmon(modpar[anonym->actmodem].txbufin);
                   chan[c].pttstate = 1; /*WrInt(ORD(c),1); WrStrLn(" ptton");
