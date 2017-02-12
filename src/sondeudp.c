@@ -2688,7 +2688,7 @@ static void demodframe34(unsigned long channel)
                break;
             case 'd': /* 66H 67H 68H 89H 6BH seem to be fixed too */
                strncpy(s,"SC50",101u);
-               s[4U] = hex(val/4096UL);
+               s[4U] = hex(val/4096UL&7UL);
                s[5U] = hex(val/256UL);
                s[6U] = hex(val/16UL);
                s[7U] = hex(val);
