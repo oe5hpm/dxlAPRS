@@ -20,7 +20,7 @@ install following packages:
 - libc-i386        (sudo apt-get install libc6-dev-i386)
 - libX11-dev       (sudo apt-get install libX11-dev:i386)
 - libXext-dev      (sudo apt-get install libXext-dev:i386)
-- libpng-dev	   (sudo apt-get install libpng-dev)
+- libpng-dev	   (sudo apt-get install libpng-dev:i386)
 - zlib1g-dev       (sudo apt-get install zlib1g-dev:i386)
 
 maybe you have also to install:

@@ -87,19 +87,17 @@ LFLAGS		+=
 # -------------------------- x86_64 specific -----------------------------------
 else ifeq ($(HOSTARCH), x86_64)
 EXTLIB		= lib_x86/
-XLIBS		= $(EXTLIB)libpng.a \
-			  $(EXTLIB)libz.a \
+XLIBS		= $(EXTLIB)libz.a \
 			  $(EXTLIB)libjpeg.a \
-			 -lXext -lX11
+			 -lpng -lXext -lX11
 CFLAGS		+= -m32
 LFLAGS		+= -m32
 # -------------------------- x86_32 (default) specific ------------------------
 else ifeq ($(HOSTARCH), x86)
 EXTLIB		= lib_x86/
-XLIBS		= $(EXTLIB)libpng.a \
-			  $(EXTLIB)libz.a \
+XLIBS		= $(EXTLIB)libz.a \
 			  $(EXTLIB)libjpeg.a \
-			  -lXext -lX11
+			  -lpng -lXext -lX11
 else
 XLIBS		+= -lpng -ljpeg -lXext -lX11
 endif
