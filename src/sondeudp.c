@@ -271,6 +271,7 @@ struct C34 {
    char plld;
    char c50;
    unsigned long rxbyte;
+   unsigned long rxbytec;
    unsigned long rxbitc;
    unsigned long rxp;
    char rxbuf[9];
@@ -771,9 +772,8 @@ static void Parms(void)
       { /* with */
          struct C34 * anonym2 = &chan[channel].c34;
          anonym2->enabled = 1;
-         anonym2->pllshift = 1024L;
-         anonym2->confignyquist = 75UL;
-         anonym2->pllshift = 1024L;
+         anonym2->pllshift = 4096L;
+         anonym2->confignyquist = 65UL;
          anonym2->afskhighpass = 0.0f;
          anonym2->configbaud = 2400UL;
          anonym2->configafskshift = 1800UL;
@@ -950,8 +950,8 @@ static void Parms(void)
          }
          else {
             if (h[1U]=='h') {
-               osi_WrStrLn("oss Mono/Stereo up to 32 Channel RS92, RS41, SRSC\
-34 Sonde Demodulator to raw Frames", 84ul);
+               osi_WrStrLn("oss Mono/Stereo up to 64 Channel RS92, RS41, C34,\
+ C50 Sonde Demodulator to raw Frames", 86ul);
                osi_WrStrLn("sent via UDP to \'sondemod\' decoder, more demodu\
 lators may send to same decoder", 79ul);
                osi_WrStrLn("Stereo used for 2 Rx for 2 Sondes or 1 Sonde with\
@@ -2641,6 +2641,15 @@ static void demodframe34(unsigned long channel)
                   }
                }
                break;
+            case '\020':
+               if (hr<=100.0 && hr>=0.0) {
+                  if (verb) {
+                     osi_WrStr("hum ", 5ul);
+                     osic_WrFixed((float)hr, 1L, 0UL);
+                     osi_WrStr("%", 2ul);
+                  }
+               }
+               break;
             case '\024':
                if (verb) {
                   osi_WrStr("date", 5ul);
@@ -2722,6 +2731,8 @@ static void demodframe34(unsigned long channel)
                if (verb2) {
                   /*WrStr("????");*/
                   osic_WrINT32(val, 12UL);
+                  osic_WrINT32(val/65536UL, 7UL);
+                  osic_WrINT32(val&65535UL, 7UL);
                   osic_WrFixed((float)hr, 2L, 10UL);
                   osi_WrStr(" ", 2ul);
                   for (i = 31UL;; i--) {
@@ -2928,83 +2939,44 @@ static void demodframe34(unsigned long channel)
 /* name(9) 0C call(5) playload(7) */
 } /* end demodframe34() */
 
-/*
-PROCEDURE demodbit34(channel:CARDINAL; d:BOOLEAN);
-BEGIN
-  d:=NOT d;
-
-  WITH chan[channel].c34 DO
-    IF rxbitc=0 THEN
-      IF NOT d THEN rxbitc:=1 END;   (* byte start *)
-    ELSIF rxbitc<=8 THEN             (* databits *)
-      rxbyte:=rxbyte DIV 2;
-      IF d THEN INC(rxbyte, 128) END;
-      INC(rxbitc);
-    ELSE                             (* byte ready *)
-      rxbitc:=0;
-      rxbuf[rxp]:=CHR(rxbyte);
-      IF rxp=0 THEN
-        IF rxbyte=0 THEN rxp:=1 END;
-      ELSIF rxp=1 THEN
-       IF rxbyte=255 THEN rxp:=2 ELSE rxp:=0 END;
-      ELSE
-        INC(rxp);
-        IF rxp>HIGH(rxbuf) THEN
-          demodframe34(channel);
-          rxp:=0;
-        END;
-      END;
-    END;
-
-  END;
-END demodbit34;
-*/
 
 static void demodbit34(unsigned long channel, char d)
 {
+   /*IF NOT verb THEN WrInt(ORD(d),1); END; */
    struct C34 * anonym;
    d = !d;
    { /* with */
       struct C34 * anonym = &chan[channel].c34;
-      if (anonym->rxp==0UL) {
-         anonym->rxbyte = anonym->rxbyte*2UL+(unsigned long)d;
-         if ((anonym->rxbyte&268435455UL)==234942462UL) {
-            /* c34 1110 0000 0000 1110 1111 1111 1110*/
-            anonym->c50 = 0;
-            anonym->rxp = 2UL;
-            anonym->rxbitc = 1UL;
-         }
-         else if ((anonym->rxbyte&2097151UL)==3070UL) {
-            /* c50 0 0000 0000 1011 1111 1110 */
-            anonym->c50 = 1;
-            anonym->rxp = 2UL;
-            anonym->rxbitc = 1UL;
-         }
-         else anonym->rxp = 0UL;
-      }
-      else if (anonym->rxbitc==0UL) {
-         if (!d) anonym->rxbitc = 1UL;
-      }
-      else if (anonym->rxbitc<=8UL) {
-         /* databits */
-         anonym->rxbyte = (anonym->rxbyte&255UL)/2UL;
-         if (d) anonym->rxbyte += 128UL;
-         ++anonym->rxbitc;
-      }
-      else {
-         /* byte ready */
+      anonym->rxbytec = anonym->rxbytec*2UL+(unsigned long)d;
+      if ((anonym->rxbytec&268435455UL)==234942462UL) {
+         /* c34 1110 0000 0000 1110 1111 1111 1110*/
+         anonym->c50 = 0;
+         anonym->rxp = 2UL;
          anonym->rxbitc = 0UL;
-         anonym->rxbuf[anonym->rxp] = (char)anonym->rxbyte;
-         if (anonym->rxp==0UL) {
-            if (anonym->rxbyte==0UL) anonym->rxp = 1UL;
+      }
+      else if ((anonym->rxbytec&2097151UL)==3070UL) {
+         /*IF NOT verb THEN WrStrLn(""); END; */
+         /* c50 0 0000 0000 1011 1111 1110 */
+         anonym->c50 = 1;
+         anonym->rxp = 2UL;
+         anonym->rxbitc = 0UL;
+      }
+      /*IF NOT verb THEN WrStrLn(""); END; */
+      if ((anonym->c50 || anonym->rxbitc) || !d) {
+         if (anonym->rxbitc<=8UL) {
+            /* databits */
+            anonym->rxbyte = (anonym->rxbyte&255UL)/2UL;
+            if (d) anonym->rxbyte += 128UL;
+            ++anonym->rxbitc;
          }
-         else if (anonym->rxp==1UL) {
-            if (anonym->rxbyte==255UL) anonym->rxp = 2UL;
-            else anonym->rxp = 0UL;
-         }
-         else {
+         else if (anonym->rxp>0UL) {
+            /* byte ready */
+            anonym->rxbitc = 0UL;
+            anonym->rxbuf[anonym->rxp] = (char)anonym->rxbyte;
+            /*WrHex(rxbyte, 3); */
             ++anonym->rxp;
             if (anonym->rxp>8UL) {
+               /*IF NOT verb THEN WrStr("*"); END; */
                demodframe34(channel);
                anonym->rxp = 0UL;
             }
