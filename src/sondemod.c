@@ -151,6 +151,8 @@ struct CONTEXTC34 {
    double lon;
    double lat1;
    double lon1;
+   double latv1;
+   double lonv1;
    double alt;
    double vlon;
    double vlat;
@@ -164,6 +166,8 @@ struct CONTEXTC34 {
    unsigned long tlon;
    unsigned long tlat1;
    unsigned long tlon1;
+   unsigned long tlatv1;
+   unsigned long tlonv1;
    unsigned long talt;
    unsigned long tspeed;
    unsigned long tdir;
@@ -1519,12 +1523,12 @@ static double latlong(unsigned long val, char c50)
    return hr;
 } /* end latlong() */
 
-#define sondemod_MAXEXTEND 4.0
+#define sondemod_MAXEXTEND 3.0
 /* limit extrapolation range */
 
-#define sondemod_MAXTIMESPAN 15
+#define sondemod_MAXTIMESPAN 10
 
-#define sondemod_MAXRANGE 7.068583470577E-4
+#define sondemod_MAXRANGE 4.7123889803847E-4
 /* max jump in rad */
 
 
@@ -1536,13 +1540,13 @@ static double extrapolate(double yold, double y, unsigned long told,
    double dy;
    double k;
    unsigned long maxt;
-   maxr = 7.068583470577E-4;
-   maxt = 15UL;
-   maxex = 4.0;
+   maxr = 4.7123889803847E-4;
+   maxt = 10UL;
+   maxex = 3.0;
    if (sondeaprs_nofilter) {
-      maxr = 2.8274333882308E-3;
-      maxt = 60UL;
-      maxex = 16.0;
+      maxr = 1.8849555921539E-3;
+      maxt = 40UL;
+      maxex = 12.0;
    }
    *good = 1;
    if (t>=systime0) return y;
@@ -1568,6 +1572,12 @@ static double dist(double a, double b)
    return d;
 } /* end dist() */
 
+#define sondemod_MINTV 8
+/* min seconds for speed out of positions */
+
+#define sondemod_VLIM 2.6164311878598E-5
+/* max speed */
+
 
 static void decodec34(const char rxb[], unsigned long rxb_len,
                 unsigned long ip, unsigned long fromport)
@@ -1581,6 +1591,7 @@ static void decodec34(const char rxb[], unsigned long rxb_len,
    unsigned long sum1;
    unsigned long j;
    unsigned long i;
+   double ve;
    double exlat;
    double exlon;
    double hr;
@@ -1726,10 +1737,21 @@ static void decodec34(const char rxb[], unsigned long rxb_len,
                   anonym->tlat1 = anonym->tlat;
                   anonym->lat = hr*1.7453292519943E-2;
                   anonym->tlat = systime;
-                  if (anonym->tlat>anonym->tlat1) {
+                  if (anonym->tlat<anonym->tlatv1) {
+                     anonym->tlatv1 = anonym->tlat;
+                /* repair back jumped time */
+                  }
+                  if (anonym->tlat>anonym->tlatv1+8UL) {
                      /* south-north speed */
-                     anonym->vlat = anonym->vlat+(X2C_DIVL(dist(anonym->lat,
-                anonym->lat1),(double)(anonym->tlat-anonym->tlat1))-anonym->vlat)*0.25;
+                     ve = X2C_DIVL(dist(anonym->lat, anonym->latv1),
+                (double)(anonym->tlat-anonym->tlatv1));
+                     /*WrStr(" ");WrFixed(ve*(EARTH*1000), 1, 9);
+                WrStr("VTn"); */
+                     if (fabs(ve)<=2.6164311878598E-5) {
+                        anonym->vlat = anonym->vlat+(ve-anonym->vlat)*0.5;
+                     }
+                     anonym->latv1 = anonym->lat;
+                     anonym->tlatv1 = anonym->tlat;
                   }
                }
                posok = 1;
@@ -1751,11 +1773,23 @@ static void decodec34(const char rxb[], unsigned long rxb_len,
                   anonym0->tlon1 = anonym0->tlon;
                   anonym0->lon = hr*1.7453292519943E-2;
                   anonym0->tlon = systime;
-                  if (anonym0->tlat>0UL && anonym0->tlon>anonym0->tlon1) {
+                  if (anonym0->tlon<anonym0->tlonv1) {
+                     anonym0->tlonv1 = anonym0->tlon;
+                /* repair back jumped time */
+                  }
+                  if (anonym0->tlat>0UL && anonym0->tlon>anonym0->tlonv1+8UL)
+                 {
                      /* east-west speed */
-                     anonym0->vlon = anonym0->vlon+(X2C_DIVL(dist(anonym0->lon,
-                 anonym0->lon1)*(double)osic_cos((float)anonym0->lat),
-                (double)(anonym0->tlon-anonym0->tlon1))-anonym0->vlon)*0.25;
+                     ve = X2C_DIVL(dist(anonym0->lon,
+                anonym0->lonv1)*(double)osic_cos((float)anonym0->lat),
+                (double)(anonym0->tlon-anonym0->tlonv1));
+                     /*WrStr(" ");WrFixed(ve*(EARTH*1000), 1, 9);
+                WrStr("VTe"); */
+                     if (fabs(ve)<=2.6164311878598E-5) {
+                        anonym0->vlon = anonym0->vlon+(ve-anonym0->vlon)*0.5;
+                     }
+                     anonym0->lonv1 = anonym0->lon;
+                     anonym0->tlonv1 = anonym0->tlon;
                   }
                }
                posok = 1;
@@ -1935,10 +1969,9 @@ static void decodec34(const char rxb[], unsigned long rxb_len,
    }
    { /* with */
       struct CONTEXTC34 * anonym2 = pc;
-      if (posok && (sondeaprs_nofilter || (((((anonym2->lastsent!=systime && anonym2->tlon+15UL>systime)
-                 && anonym2->tlat+15UL>systime)
-                && anonym2->talt+30UL>systime)
-                && anonym2->tspeed+120UL>systime)
+      if (posok && (sondeaprs_nofilter || (((((anonym2->lastsent!=systime && anonym2->tlon+8UL>systime)
+                 && anonym2->tlat+8UL>systime) && anonym2->talt+20UL>systime)
+                 && anonym2->tspeed+120UL>systime)
                 && anonym2->tdir+120UL>systime)
                 && anonym2->tgpstime+120UL>systime)) {
          if (anonym2->ttemp+30UL>systime) stemp = anonym2->temp;
