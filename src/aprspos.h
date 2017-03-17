@@ -13,7 +13,7 @@
 #include "X2C.h"
 #endif
 
-/* get aprs positon by OE5DXL */
+/* get aprs position by OE5DXL */
 #define aprspos_PI2 6.283185307
 
 #define aprspos_RAD 1.7453292519444E-2

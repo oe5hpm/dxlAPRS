@@ -1328,6 +1328,11 @@
 + Hamnet Symbol in symbols.png
 
 
+15.3.2017 (Ver 0.64)
+
++ Trackfilter geht bei mehr als 15000 Wegpunkten nimmer gegen Rechenzeit unendlich.
++ Trackfilter wird auch mit den kleinen Zappeleien bei Verzoegerungen unter 1Min fertig.
++ "Find Item Message" zeigt auch bei mehreren solchen Msgs die dazu passende Position. 
 
 
 

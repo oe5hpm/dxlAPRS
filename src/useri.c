@@ -2847,7 +2847,10 @@ extern void useri_textautomenu(long x0, long y00, unsigned long id,
                 menuimgy(aprsdecode_lums.fontysize, n+1UL)));
       }
       else if (x0<0L) x0 = (maptool_xsize-(long)xmax)/2L;
-      if (y00<0L) y00 = maptool_ysize/2L-28L;
+      if (y00<0L) {
+         y00 = (maptool_ysize/2L-(long)menuimgy(aprsdecode_lums.fontysize,
+                n+2UL))-10L;
+      }
       if (x0<0L) x0 = 0L;
       if (y00<0L) y00 = 0L;
       textwin(xmax+8UL, n, (unsigned long)x0, (unsigned long)y00, id, time0,
@@ -3214,9 +3217,15 @@ d Item",201u);
                strncpy(s1,"    Close  |     Next   |   Reply  |    Delete",
                 201u);
             }
+            i = 0L;
+            while (i<66L && anonym->txt[i]) {
+               if ((unsigned char)anonym->txt[i]<' ' || (unsigned char)
+                anonym->txt[i]>='\177') anonym->txt[i] = ' ';
+               ++i;
+            }
             aprsstr_Append(s, 201ul, anonym->txt, 67ul);
             aprsstr_Append(s, 201ul, "]", 2ul);
-            if (sndmsg) y00 = 20L;
+            if (sndmsg) y00 = 40L;
             else y00 = -1L;
             if (new0) col = 'r';
             else col = 'b';
@@ -3311,11 +3320,16 @@ static void delmsgfifo(void)
 } /* end delmsgfifo() */
 
 
-static void zoomtoitem(void)
+static void zoomtoitem(long msgnum)
 {
-   if (aprsdecode_msgfifo0 && aprspos_posvalid(aprsdecode_msgfifo0->itempos))
-                 {
-      aprstext_setmark1(aprsdecode_msgfifo0->itempos, 1, X2C_max_longint,
+   aprsdecode_pMSGFIFO pn;
+   pn = aprsdecode_msgfifo0;
+   while (pn && msgnum>1L) {
+      --msgnum;
+      pn = pn->next;
+   }
+   if (pn && aprspos_posvalid(pn->itempos)) {
+      aprstext_setmark1(pn->itempos, 1, X2C_max_longint,
                 aprsdecode_realtime);
    }
    /*  click.cmd:=CMDZOOMTOMARKS; */
@@ -4023,7 +4037,7 @@ static void helpmenu(void)
    newmenu(&menu, 150UL, aprsdecode_lums.fontysize+7UL, 3UL, useri_bTRANSP);
    /*  addline(menu, "Shortcuts", CMDSHORTCUTLIST, MINH*6); */
    addline(menu, "Helptext", 9ul, "\305", 2ul, 610UL);
-   addline(menu, "aprsmap(cu) 0.63 by OE5DXL ", 28ul, " ", 2ul, 605UL);
+   addline(menu, "aprsmap(cu) 0.64 by OE5DXL ", 28ul, " ", 2ul, 605UL);
    setunderbar(menu, 37L);
    menu->ysize = menu->oldknob*menu->yknob;
    menu->oldknob = 0UL;
@@ -6599,7 +6613,7 @@ static void makelistwin(struct LISTBUFFER * b)
    m->pullconf = b->xy; /* store extra position for normal size list or mon */
    m->sizeconf = b->size; /* store extra size for normal size list or mon */
    if (ys>(m->image->Len0-1)+1UL) ys = (m->image->Len0-1)+1UL;
-   xs = m->image->Len1-1;
+   xs = (m->image->Len1-1)+1UL;
    m->oldknob = 0UL;
    m->scroll = 0UL;
    m->fullclamp = 1;
@@ -8449,8 +8463,9 @@ static void netmenu(pMENU);
 
 static void netmenu(pMENU m)
 {
-   char s[4];
+   char s[100];
    char h[100];
+   unsigned long i;
    m->oldknob = 0UL;
    addonoff(m, "   |Allow Gate Rf>Net", 22ul, "\270", 2ul, 7445UL, 8L,
                 useri_configon(useri_fALLOWGATE));
@@ -8463,14 +8478,24 @@ static void netmenu(pMENU m)
    addline(m, " Passcode", 10ul, "\270", 2ul, 7420UL);
    addline(m, " Netbeacontext", 15ul, "\270", 2ul, 7415UL);
    addline(m, " My Position", 13ul, "\270", 2ul, 7410UL);
-   useri_confstr(useri_fMYSYM, s, 4ul);
+   useri_confstr(useri_fMYSYM, s, 100ul);
    strncpy(h," My Symbol ",100u);
-   aprsstr_Append(h, 100ul, s, 4ul);
+   aprsstr_Append(h, 100ul, s, 100ul);
    addline(m, h, 100ul, "\270>", 3ul, 7405UL);
    drawsymsquare(m->image, s[0U], s[1U], (long)(m->xsize-20UL),
                 (long)((m->oldknob-1UL)*m->yknob+m->yknob/2UL));
+   useri_confstr(useri_fMYCALL, h, 100ul);
+   i = 0UL;
+   s[0] = 0;
+   while (i<=99UL && h[i]) {
+      if ((unsigned char)h[i]<=' ' || (unsigned char)h[i]>='\177') {
+         aprsstr_Append(s, 100ul, "  ", 3ul);
+      }
+      else aprsstr_Append(s, 100ul, (char *) &h[i], 1ul);
+      ++i;
+   }
    strncpy(h," My Call ",100u);
-   useri_confappend(useri_fMYCALL, h, 100ul);
+   aprsstr_Append(h, 100ul, s, 100ul);
    addline(m, h, 100ul, "\270", 2ul, 7400UL);
    m->redrawproc = netmenu;
    m->hiknob = 0UL;
@@ -11488,7 +11513,7 @@ static void mouseleft(long mousx, long mousy)
             reply();
          }
          else if (subknob==3UL) delmsgfifo();
-         else if (subknob==4UL) zoomtoitem();
+         else if (subknob==4UL) zoomtoitem(labs(useri_nextmsg));
          useri_refresh = 1;
       }
       else if (c=='\277') {

@@ -1561,7 +1561,7 @@ static void beaconmacros(char s[], unsigned long s_len, const char path[],
             }
             else if (s[i]=='\\') aprsstr_Append(ns, 256ul, "\\\\", 3ul);
             else if (s[i]=='v') {
-               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.63", 17ul);
+               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.64", 17ul);
             }
             else if (s[i]=='l') {
                if (aprstext_getmypos(&pos)) {
@@ -1660,6 +1660,7 @@ static void SendNet(aprsdecode_pTCPSOCK cp, char mycall[],
    aprsdecode_FRAMEBUF s;
    char pass[51];
    char h[51];
+   unsigned long i;
    X2C_PCOPY((void **)&mycall,mycall_len);
    errtxt[0UL] = 0;
    if (!useri_configon(useri_fALLOWNETTX) || !useri_configon(useri_fCONNECT))
@@ -1672,8 +1673,15 @@ static void SendNet(aprsdecode_pTCPSOCK cp, char mycall[],
    }
    if (mycall[0UL]) aprsstr_Assign(s, 512ul, mycall, mycall_len);
    else useri_confstr(useri_fMYCALL, s, 512ul);
-   if (aprsstr_Length(s, 512ul)<3UL) {
-      aprsstr_Assign(errtxt, errtxt_len, "netbeacon: no mycall", 21ul);
+   i = 0UL;
+   while (i<511UL && s[i]) {
+      if ((unsigned char)s[i]<=' ' || (unsigned char)s[i]>='\177') {
+         s[0UL] = 0; /* check mycall */
+      }
+      ++i;
+   }
+   if (aprstext_callwrong(s, 512ul)) {
+      aprsstr_Assign(errtxt, errtxt_len, "netbeacon: no valid mycall", 27ul);
       goto label;
    }
    useri_confstr(useri_fMSGNETDEST, h, 51ul);
@@ -3194,7 +3202,12 @@ extern void aprsdecode_extractbeacon(char raw[], unsigned long raw_len,
       if (dat.type==aprsdecode_OBJ || dat.type==aprsdecode_ITEM) {
          aprsstr_Assign(s, 1000ul, dat.symcall, 9ul);
       }
-      else useri_confstr(useri_fMYCALL, s, 1000ul);
+      else {
+         useri_confstr(useri_fMYCALL, s, 1000ul);
+         if (aprstext_callwrong(s, 1000ul)) {
+            useri_xerrmsg("need legal \'My Call\' to build Beacon", 37ul);
+         }
+      }
       useri_AddConfLine(useri_fRBNAME, 1U, s, 1000ul);
       if (aprspos_posvalid(dat.pos)) {
          if (dat.postyp=='A' && dat.type==aprsdecode_OBJ) {
@@ -3247,9 +3260,7 @@ extern void aprsdecode_extractbeacon(char raw[], unsigned long raw_len,
       if (dat.type==aprsdecode_OBJ) {
          if (dat.timestamp=='h') s[0U] = 'H';
          else s[0U] = 'O';
-         if (dat.objkill=='1') {
-            s[0U] = 'P';
-         }
+         if (dat.objkill=='1') s[0U] = 'P';
       }
       else if (dat.type==aprsdecode_ITEM) {
          if (dat.objkill=='1') s[0U] = 'J';
@@ -3456,7 +3467,7 @@ static char sendtxmsg(unsigned long acknum, const aprsdecode_MONCALL to,
    errm[0UL] = 0;
    if (to[0UL]==0) return 0;
    useri_confstr(useri_fMYCALL, rfs, 512ul);
-   if (aprsstr_Length(rfs, 512ul)<3UL) {
+   if (aprstext_callwrong(rfs, 512ul)) {
       aprsstr_Assign(errm, errm_len, "Msg not sent (no valid Mycall)", 31ul);
       return 0;
    }
@@ -3766,7 +3777,7 @@ static void getmessage(aprsdecode_pTCPSOCK cp, unsigned long up,
    /*    my:MONCALL; */
    char ch0;
    useri_confstr(useri_fMYCALL, my, 100ul);
-   if (aprsstr_Length(my, 100ul)<3UL) return;
+   if (aprstext_callwrong(my, 100ul)) return;
    aprsstr_Assign(h, 100ul, dat.msgto, 9ul);
    fit = 0;
    i = 0UL;
@@ -4134,9 +4145,10 @@ static void timespeed(aprsdecode_pFRAMEHIST lastf,
 #define aprsdecode_MINHOP 20.0
 
 #define aprsdecode_HOPPART 0.5
+/*      MINSPIKE=0.02;                               (* min distance to mark as spike *) */
 
-#define aprsdecode_MINSPIKE 0.02
-/* min distance to mark as spike */
+#define aprsdecode_SPIKEANGLE 30.0
+/* min deg spanned by 3 waypoints for no SPIKE */
 
 
 /* 1 wayout, delete before, 2 wayout join last good with last else delete before */
@@ -4144,70 +4156,92 @@ static void joinchunk(aprsdecode_pOPHIST op)
 {
    aprsdecode_pFRAMEHIST lbad;
    aprsdecode_pFRAMEHIST bad;
+   aprsdecode_pFRAMEHIST lllpf;
    aprsdecode_pFRAMEHIST llpf;
    aprsdecode_pFRAMEHIST lpf;
    aprsdecode_pFRAMEHIST pf;
    aprsdecode_pVARDAT v;
-   float d;
-   float lastkm;
+   float kml;
    float km;
+   float ang;
    float waylen;
    waylen = (float)op->lastkmh*0.03f+20.0f;
-   lastkm = 0.0f;
+   lllpf = 0;
    llpf = 0;
    lpf = 0;
    pf = op->frames;
-   bad = 0;
    lbad = 0;
    while (pf) {
       v = pf->vardat;
       if (aprspos_posvalid(v->pos) && (pf->nodraw&0xCU)==0U) {
          if (lpf) {
             km = aprspos_distance(lpf->vardat->pos, v->pos);
-            if (aprsdecode_spikesens>0.0f && llpf) {
-               d = 0.02f+aprsdecode_spikesens*aprspos_distance(llpf->vardat->pos,
-                 v->pos);
-               if ((km>d && lastkm>d) && (0x8U & lpf->nodraw)==0) {
-                  lpf->nodraw = lpf->nodraw&~0x11U|0x2U;
+            if (llpf && km!=0.0f) {
+               /* we have 3 waypoints */
+               kml = aprspos_distance(lpf->vardat->pos, llpf->vardat->pos);
+               if (kml!=0.0f) {
+                  ang = (float)fabs(aprspos_azimuth(lpf->vardat->pos,
+                v->pos)-aprspos_azimuth(lpf->vardat->pos,
+                llpf->vardat->pos));
+                  if (ang>180.0f) ang = 360.0f-ang;
+                  if (ang<30.0f) {
+                     /* a spike */
+                     if (lllpf==0) {
+                        /* first spike */
+                        lpf->nodraw = lpf->nodraw&~0x10U|0x2U;
+                        pf->nodraw &= ~0x10U;
+                        lllpf = llpf;
+                     }
+                     else {
+                        /* second spike */
+                        if (km>aprspos_distance(llpf->vardat->pos, v->pos)) {
+                           lpf->nodraw = lpf->nodraw&~0x10U|0x2U;
+                           pf->nodraw &= ~0x10U;
+                           llpf->nodraw &= ~0x2U; /* the second is bad */
+                        }
+                        lllpf = 0;
+                     }
+                  }
+                  else lllpf = 0;
                }
             }
             if (aprsdecode_maxhop>0.0f) {
-               if ((0x2U & lpf->nodraw)) lbad = 0;
-               else if (lbad) bad = lbad;
-               if (((0x2U & lpf->nodraw)==0 && km>waylen)
-                && !(pf->nodraw&~0x1EU)) {
-                  /* & (lastkm<=waylen)*/
-                  pf->nodraw |= 0x1U;
-                  lbad = pf;
-               }
-               if (km<waylen && (pf->nodraw&0x1FU)==0U) {
+               if (km>waylen) lbad = pf;
+               else {
                   waylen = waylen+km*0.5f;
                   if (waylen>aprsdecode_maxhop) waylen = aprsdecode_maxhop;
                }
             }
-            lastkm = km;
          }
-         llpf = lpf;
-         lpf = pf;
+         if ((pf->nodraw&0xCU)==0U) {
+            llpf = lpf;
+            lpf = pf;
+         }
       }
       pf = pf->next;
    }
-   if (lbad) bad = lbad;
-   if (bad) {
+   if (lbad) {
+      /* there is a dist */
+      bad = 0;
+      lpf = 0;
       pf = op->frames;
       for (;;) {
-         if (pf) pf->nodraw |= 0x20U;
-         if (pf==bad) break;
+         if (pf==0) break;
+         if (aprspos_posvalid(pf->vardat->pos) && (pf->nodraw&0x1EU)==0U) {
+            if (lpf && aprspos_distance(lpf->vardat->pos,
+                pf->vardat->pos)>waylen) bad = pf;
+            lpf = pf;
+         }
+         if (lpf==lbad) break;
          pf = pf->next;
       }
-      if (pf) aprsdecode_posinval(&op->lastpos);
-      while (pf) {
-         /* maybe we have no pos now */
-         if ((!(pf->nodraw&~0x9U) || !aprspos_posvalid(op->lastpos))
-                && aprspos_posvalid(pf->vardat->pos)) {
-            op->lastpos = pf->vardat->pos;
+      if (bad) {
+         /* delete path until bad */
+         pf = op->frames;
+         while (pf!=bad) {
+            pf->nodraw |= 0x20U;
+            pf = pf->next;
          }
-         pf = pf->next;
       }
    }
 } /* end joinchunk() */
@@ -5613,6 +5647,9 @@ static char tcpconn(aprsdecode_pTCPSOCK * sockchain, long f)
    *sockchain = cp;
    useri_confstr(useri_fMYCALL, s, 100ul);
    if (s[0U]) {
+      if (aprstext_callwrong(s, 100ul)) {
+         useri_xerrmsg("illegal \'My Call\' in login", 27ul);
+      }
       aprsstr_Assign(h, 512ul, "user ", 6ul);
       aprsstr_Append(h, 512ul, s, 100ul);
       useri_confstr(useri_fPW, s, 100ul);
@@ -5622,7 +5659,7 @@ static char tcpconn(aprsdecode_pTCPSOCK * sockchain, long f)
          aprsstr_Append(h, 512ul, s, 100ul);
       }
       aprsstr_Append(h, 512ul, " vers ", 7ul);
-      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.63", 17ul);
+      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.64", 17ul);
       appfilter(h, 512ul, 0);
       /*    IF filter[0]<>0C THEN Append(h, " filter ");
                 Append(h, filter) END; */
@@ -6192,7 +6229,7 @@ static void digi(const aprsdecode_FRAMEBUF b, char fromrf,
       ssid = 0UL;
       viac = 0UL;
       useri_confstr(useri_fMYCALL, mycall, 31ul);
-      if (mycall[0U]==0) {
+      if (aprstext_callwrong(mycall, 31ul)) {
          useri_xerrmsg("Digi needs \'My Call\'", 21ul); /* no mycall */
          return;
       }
@@ -6377,8 +6414,8 @@ static void digitorf(const aprsdecode_FRAMEBUF b, unsigned long outport,
                 dat.type==aprsdecode_MSG)) return;
    /* -bps only msg */
    useri_confstr(useri_fMYCALL, tb, 512ul);
-   if (tb[0UL]==0) {
-      useri_xerrmsg("Gate to rf needs \'My Call\'", 27ul);
+   if (aprstext_callwrong(tb, 512ul)) {
+      useri_xerrmsg("Gate to rf needs valid \'My Call\'", 33ul);
       return;
    }
    aprsstr_Append(tb, 512ul, ">APLM01", 8ul);
