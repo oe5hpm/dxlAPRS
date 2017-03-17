@@ -5799,7 +5799,7 @@ TH><TH NOWRAP>bit/s</TH><TH>Up</TH></TR>", 524ul);
                if (us->maxbytes>0UL) {
                   aprsstr_IntToStr((long)us->maxbytes, 1UL, h1, 256ul);
                   Appwww(&wsock, wbuf, h1, 256ul);
-                  Appwww(&wsock, wbuf, "b/s", 4ul);
+                  Appwww(&wsock, wbuf, "B/s", 4ul);
                }
                Appwww(&wsock, wbuf, "</td>", 6ul);
             }
