@@ -42,6 +42,9 @@
 #define udpflex_SLEEPCONNTCP 2000
 /* wait before new tcp network kiss connect ms */
 
+enum MODE {udpflex_KISS, udpflex_FLEXKISS, udpflex_SMACK};
+
+
 static unsigned short udpflex_POLYNOM[256] = {3975U,7694U,11413U,15644U,
                 18851U,22570U,27313U,31544U,33743U,37446U,41181U,45396U,
                 50667U,54370U,59129U,63344U,7942U,3727U,15380U,11677U,22818U,
@@ -74,7 +77,7 @@ static unsigned short udpflex_POLYNOM[256] = {3975U,7694U,11413U,15644U,
                 56090U,51859U,48684U,44965U,40254U,36023U,29760U,26057U,
                 22354U,18139U,12900U,9197U,4470U,255U};
 
-static unsigned short udpflex_SMACK[256] = {0U,49345U,49537U,320U,49921U,
+static unsigned short udpflex_SMACKCRC[256] = {0U,49345U,49537U,320U,49921U,
                 960U,640U,49729U,50689U,1728U,1920U,51009U,1280U,50625U,
                 50305U,1088U,52225U,3264U,3456U,52545U,3840U,53185U,52865U,
                 3648U,2560U,51905U,52097U,2880U,51457U,2496U,2176U,51265U,
@@ -145,7 +148,9 @@ static unsigned long kissm;
 
 static unsigned long baud;
 
-static unsigned long flexmod;
+static unsigned long fend;
+
+static unsigned char flexmod;
 
 struct _0;
 
@@ -229,6 +234,8 @@ static void initfile(char fn[], unsigned long fn_len)
 
 static void inittnc(void)
 {
+   if (fend!=192UL) return;
+   /* TAPR mode */
    errtime = osic_time();
    initfile(ifn, 701ul);
    if (kisson) {
@@ -241,7 +248,6 @@ static void inittnc(void)
       osi_WrBin(tty, (char *)kbuf, 701u/1u, inilen);
    }
    if (verb) osi_WrStrLn("send init to tnc", 17ul);
-/*  kissm:=0; */
 } /* end inittnc() */
 
 
@@ -398,12 +404,17 @@ static void Parms(void)
          }
          else if (h[1U]=='r') {
             /* dummy for compatibility */
-            flexmod = 1UL; /* RMNC crc type */
+            flexmod = udpflex_FLEXKISS; /* RMNC crc type */
          }
-         else if (h[1U]=='s') flexmod = 2UL;
+         else if (h[1U]=='s') flexmod = udpflex_SMACK;
          else if (h[1U]=='a') {
             auto0 = 1;
             if (sockc>1UL) Error("-a only with 1 UDP socket, ", 28ul);
+         }
+         else if (h[1U]=='A') {
+            auto0 = 0;
+            fend = 13UL;
+            if (sockc>1UL) Error("-A only with 1 UDP socket, ", 28ul);
          }
          else if (h[1U]=='k') kisson = 1;
          else if (h[1U]=='p') {
@@ -473,6 +484,8 @@ static void Parms(void)
                osi_WrStrLn("bidirectional AXUDP <-> KISS/SMACK(tty/com/pipe) \
 or TCP-KISS(dire-wolf) Interface", 82ul);
                osic_WrLn();
+               osi_WrStrLn(" -A                                ASCII (TAPR) M\
+ode", 53ul);
                osi_WrStrLn(" -a                                automatic swit\
 ch to KISS/FLEX/SMACK mode", 76ul);
                osi_WrStrLn("                                   (only with 1 P\
@@ -525,7 +538,9 @@ messages", 58ul);
       }
       if (err) break;
    }
-   if (flexmod==1UL && sockc>1UL) Error("only 1 UDP with flexnet", 24ul);
+   if (flexmod==udpflex_FLEXKISS && sockc>1UL) {
+      Error("only 1 UDP with flexnet", 24ul);
+   }
    if (err) {
       osi_WrStr(">", 2ul);
       osi_WrStr(h, 1024ul);
@@ -891,11 +906,37 @@ static void ShowFrame(char f[], unsigned long f_len, unsigned long len0,
 /*  END; */
 } /* end ShowFrame() */
 
+
+static void tapr2u(char t[], unsigned long t_len, long l, char u[],
+                unsigned long u_len, long * len0)
+{
+   long i0;
+   long tmp;
+   X2C_PCOPY((void **)&t,t_len);
+   *len0 = 0L;
+   tmp = l-1L;
+   i0 = 0L;
+   if (i0<=tmp) for (;; i0++) {
+      if (t[i0]!='\012') {
+         t[*len0] = t[i0]; /* remove lf */
+         ++*len0;
+      }
+      if (i0==tmp) break;
+   } /* end for */
+   t[*len0] = 0;
+   aprsstr_mon2raw(t, t_len, u, u_len, len0);
+   if (*len0>=2L) *len0 -= 2L;
+   X2C_PFREE(t);
+} /* end tapr2u() */
+
 static unsigned long tncport;
 
 static unsigned long crc;
 
 /*testloop:CARDINAL; */
+static aprsstr_GHOSTSET _cnst1 = {0x00000000UL,0x00000000UL,0x00000000UL,
+                0x00000000UL,0x00000000UL,0x00000000UL,0x00000000UL,
+                0x00000000UL,0x00000000UL};
 
 X2C_STACK_LIMIT(100000l)
 extern int main(int argc, char **argv)
@@ -909,7 +950,7 @@ extern int main(int argc, char **argv)
    kisson = 0;
    verb = 0;
    hexdump = 0;
-   flexmod = 0UL;
+   flexmod = udpflex_KISS;
    usbrobust = 0;
    direwolf = 0;
    baud = 9600UL;
@@ -921,6 +962,7 @@ extern int main(int argc, char **argv)
    } /* end for */
    inilen = 0UL;
    tty = -1L;
+   fend = 192UL;
    Parms();
    Gencrctab();
    if (ttynamee[0U]) opentty();
@@ -928,6 +970,8 @@ extern int main(int argc, char **argv)
    /*WrInt(udpsock, 10); WrStrLn(" sock"); */
    errtime = 0UL;
    upos = 0L;
+   kissm = 0UL;
+   if (fend!=192UL) kissm = 1UL;
    for (;;) {
       if (errtime==0UL) inittnc();
       if (direwolf && tcpfd<0L) {
@@ -974,79 +1018,84 @@ extern int main(int argc, char **argv)
                c = tbuf[rp];
                /*WrStr(c); */
                if (kissm==0UL) {
-                  if (c=='\300') {
+                  if (c==(char)fend) {
                      upos = 0L;
                      kissm = 1UL;
                   }
                   else kisserr();
                }
                else if (kissm==1UL) {
-                  if (c=='\300') {
-                     if (upos==0L || flexmod==1UL) tncport = 0UL;
+                  if (c==(char)fend) {
+                     if ((upos==0L || flexmod==udpflex_FLEXKISS)
+                || fend!=192UL) tncport = 0UL;
                      else {
                         tncport = (unsigned long)(unsigned char)
                 ubuf[0U]/16UL&7UL;
                      }
-                     /*            IF hexdump & (upos>0) THEN */
-                     /*              IF ubuf[0]
-                =FLEXKISSBYTE THEN WrStr("FLEX") */
-                     /*              ELSIF ubuf[0]
-                =SMACKBYTE THEN WrStr("SMACK") */
-                     /*              ELSE WrStr("KISS") END; */
-                     /*              FOR i:=0 TO upos-1 DO WrHex(ORD(ubuf[i])
-                , 3) END; */
-                     /*              WrLn; */
-                     /*              ShowFrame(ubuf, upos,
-                CHR(tncport+ORD("0"))); */
-                     /*            END; */
                      if (upos>4L) {
                         if (auto0) {
                            if (ubuf[0U]==' ') {
-                              if (verb && flexmod!=1UL) {
+                              if (verb && flexmod!=udpflex_FLEXKISS) {
                                  osi_WrStrLn("switching to FLEXKISS", 22ul);
                               }
-                              flexmod = 1UL;
+                              flexmod = udpflex_FLEXKISS;
                            }
                            else if (ubuf[0U]=='\200') {
-                              if (verb && flexmod!=2UL) {
+                              if (verb && flexmod!=udpflex_SMACK) {
                                  osi_WrStrLn("switching to SMACK", 19ul);
                               }
-                              flexmod = 2UL;
+                              flexmod = udpflex_SMACK;
                            }
                            else {
                               if (verb && flexmod) {
                                  osi_WrStrLn("switching to KISS", 18ul);
                               }
-                              flexmod = 0UL;
+                              flexmod = udpflex_KISS;
                            }
                         }
-                        /*                IF (flexmod=0)
-                & (ubuf[0]<>FLEXKISSBYTE) & (ubuf[0]<>SMACKBYTE) */
-                        if ((flexmod==0UL || flexmod==1UL && flexcrc(ubuf,
-                701ul, 0UL, (unsigned long)(upos-1L))==28784UL) || flexmod==2UL && smackcrc(ubuf,
+                        if ((flexmod==udpflex_KISS || flexmod==udpflex_FLEXKISS && flexcrc(ubuf,
+                 701ul, 0UL, (unsigned long)(upos-1L))==28784UL) || flexmod==udpflex_SMACK && smackcrc(ubuf,
                  701ul, 0UL, (unsigned long)(upos-1L))==0UL) {
-                           if (flexmod>0UL) {
+                           if (flexmod>udpflex_KISS) {
                               upos -= 2L; /* remove crc */
                            }
-                           c = ubuf[0U];
-                           tmp0 = upos-2L;
-                           i = 0L;
-                           if (i<=tmp0) for (;; i++) {
-                              ubuf[i] = ubuf[i+1L]; /* remove port byte */
-                              if (i==tmp0) break;
-                           } /* end for */
-                           --upos;
-                           if (hexdump) {
-                              if (flexmod==1UL && c==' ') {
-                                 osi_WrStr("FLEX", 5ul);
-                              }
-                              else if ((unsigned char)c>=(unsigned char)
-                '\200') osi_WrStr("SMACK", 6ul);
-                              else osi_WrStr("KISS", 5ul);
-                              ShowFrame(ubuf, 701ul, (unsigned long)upos,
-                (char)(tncport+48UL));
+                           if (fend==192UL) {
+                              /* not TAPR */
+                              c = ubuf[0U];
+                              tmp0 = upos-2L;
+                              i = 0L;
+                              if (i<=tmp0) for (;; i++) {
+                                 ubuf[i] = ubuf[i+1L]; /* remove port byte */
+                                 if (i==tmp0) break;
+                              } /* end for */
+                              --upos;
                            }
-                           sendudp(ubuf, 701ul, upos, tncport);
+                           else {
+                              tapr2u(ubuf, 701ul, upos, ubuf, 701ul, &upos);
+                           }
+                           if (upos>0L) {
+                              if (hexdump) {
+                                 if (fend==192UL) {
+                                    /* not TAPR */
+                                    if (flexmod==udpflex_FLEXKISS && c==' ') {
+                                    osi_WrStr("FLEX", 5ul);
+                                    }
+                                    else if ((unsigned char)
+                c>=(unsigned char)'\200') {
+                                    osi_WrStr("SMACK", 6ul);
+                                    }
+                                    else {
+                                    osi_WrStr("KISS", 5ul);
+                                    }
+                                 }
+                                 else {
+                                    osi_WrStr("TAPR", 5ul);
+                                 }
+                                 ShowFrame(ubuf, 701ul, (unsigned long)upos,
+                (char)(tncport+48UL));
+                              }
+                              sendudp(ubuf, 701ul, upos, tncport);
+                           }
                         }
                         else if (verb) {
                            osi_WrStrLn("serialport-crc error", 21ul);
@@ -1058,9 +1107,7 @@ extern int main(int argc, char **argv)
                      upos = 0L;
                      kissm = 1UL;
                   }
-                  else if (c=='\333') {
-                     kissm = 2UL;
-                  }
+                  else if (c=='\333' && fend==192UL) kissm = 2UL;
                   else if (upos<700L) {
                      ubuf[upos] = c;
                      ++upos;
@@ -1094,72 +1141,78 @@ extern int main(int argc, char **argv)
                         ShowFrame(ubuf, 701ul, (unsigned long)(len-2L),
                 (char)(tncport+48UL));
                      }
-                     for (i = len; i>=1L; i--) {
-                        ubuf[i] = ubuf[i-1L];
-                     } /* end for */
-                     if (flexmod==1UL) ubuf[0U] = ' ';
-                     else if (flexmod==2UL) {
-                        ubuf[0U] = (char)(128UL+16UL*tncport);
-                     }
-                     else ubuf[0U] = (char)(16UL*tncport);
-                     --len;
-                     if (flexmod>0UL) {
-                        if (flexmod==1UL) {
-                           crc = flexcrc(ubuf, 701ul, 0UL,
+                     tpos = 0L;
+                     if (fend==192UL) {
+                        /* not TAPR */
+                        for (i = len; i>=1L; i--) {
+                           ubuf[i] = ubuf[i-1L];
+                        } /* end for */
+                        if (flexmod==udpflex_FLEXKISS) ubuf[0U] = ' ';
+                        else if (flexmod==udpflex_SMACK) {
+                           ubuf[0U] = (char)(128UL+16UL*tncport);
+                        }
+                        else ubuf[0U] = (char)(16UL*tncport);
+                        --len;
+                        if (flexmod>udpflex_KISS) {
+                           if (flexmod==udpflex_FLEXKISS) {
+                              crc = flexcrc(ubuf, 701ul, 0UL,
                 (unsigned long)(len-1L));
-                        }
-                        else {
-                           crc = smackcrc(ubuf, 701ul, 0UL,
+                           }
+                           else {
+                              crc = smackcrc(ubuf, 701ul, 0UL,
                 (unsigned long)(len-1L));
+                           }
+                           ubuf[len+1L] = (char)(crc&255UL);
+                           ubuf[len] = (char)(crc/256UL);
+                           len += 2L;
                         }
-                        ubuf[len+1L] = (char)(crc&255UL);
-                        ubuf[len] = (char)(crc/256UL);
-                        len += 2L;
+                        kbuf[0U] = '\300';
+                        tpos = 1L;
+                        tmp = len-1L;
+                        rp = 0L;
+                        if (rp<=tmp) for (;; rp++) {
+                           c = ubuf[rp];
+                           if (c=='\300') {
+                              kbuf[tpos] = '\333';
+                              ++tpos;
+                              c = '\334';
+                           }
+                           else if (c=='\333') {
+                              kbuf[tpos] = '\333';
+                              ++tpos;
+                              c = '\335';
+                           }
+                           kbuf[tpos] = c;
+                           ++tpos;
+                           if (rp==tmp) break;
+                        } /* end for */
+                        kbuf[tpos] = '\300';
                      }
-                     /*            IF hexdump THEN */
-                     /*              WrStr("UDP:");
-                WrStr(CHR(tncport+ORD("0"))); WrStr(" ");  */
-                     /*              FOR i:=0 TO len-1 DO WrHex(ORD(ubuf[i]),
-                 3) END; */
-                     /*              WrLn; */
-                     /*            END;  */
-                     kbuf[0U] = '\300';
-                     tpos = 1L;
-                     tmp = len-1L;
-                     rp = 0L;
-                     if (rp<=tmp) for (;; rp++) {
-                        c = ubuf[rp];
-                        if (c=='\300') {
-                           kbuf[tpos] = '\333';
-                           ++tpos;
-                           c = '\334';
-                        }
-                        else if (c=='\333') {
-                           kbuf[tpos] = '\333';
-                           ++tpos;
-                           c = '\335';
-                        }
-                        kbuf[tpos] = c;
-                        ++tpos;
-                        if (rp==tmp) break;
-                     } /* end for */
-                     kbuf[tpos] = '\300';
-                     if (direwolf) {
-                        if ((long)tcpfd>=0L) {
-                           if (sendsock(tcpfd, kbuf, tpos+1L)<0L) {
-                              /* disconnected */
-                              osic_CloseSock(tcpfd);
-                              tcpfd = -1L;
+                     else if (len>2L) {
+                        aprsstr_raw2mon(ubuf, 701ul, kbuf, 701ul,
+                (unsigned long)(len-2L), &crc, _cnst1);
+                        tpos = (long)aprsstr_Length(kbuf, 701ul);
+                        if (tpos>0L) kbuf[tpos] = '\015';
+                     }
+                     else tpos = 0L;
+                     if (tpos>0L) {
+                        /* frame valid */
+                        if (direwolf) {
+                           if ((long)tcpfd>=0L) {
+                              if (sendsock(tcpfd, kbuf, tpos+1L)<0L) {
+                                 /* disconnected */
+                                 osic_CloseSock(tcpfd);
+                                 tcpfd = -1L;
+                              }
                            }
                         }
-                     }
-                     else if (tty!=-1L) {
-                        osi_WrBin(tty, (char *)kbuf, 701u/1u,
+                        else if (tty!=-1L) {
+                           osi_WrBin(tty, (char *)kbuf, 701u/1u,
                 (unsigned long)(tpos+1L));
+                        }
                      }
                   }
                   else if (verb) {
-                     /*WrInt(tpos+1, 10); WrInt(dlen, 10); WrLn; */
                      if (len==-2L) osi_WrStrLn("axudp crc error", 16ul);
                      else if (len==-1L) {
                         osi_WrStrLn("axudp from wrong source ip", 27ul);
