@@ -201,6 +201,7 @@ struct CONTEXTDFM6 {
    unsigned long tdir;
    unsigned long actrt;
    unsigned long tused;
+   char d9;
    char posok;
    unsigned long poserr; /* count down after position jump */
 };
@@ -459,7 +460,7 @@ static void Parms(void)
          }
          else {
             if (h[1U]=='h') {
-               osi_WrStr("sondemod(c) 0.9", 16ul);
+               osi_WrStr("sondemod(c) 1.0", 16ul);
                osi_WrStrLn(" multichannel decoder RS92, RS41, SRS-C34 Radioso\
 ndes", 54ul);
                osi_WrStrLn(" -A <meter>     at lower altitude use -B beacon t\
@@ -1416,21 +1417,24 @@ static void decodeframe(unsigned char m, unsigned long ip,
                      else {
                         almread = 0UL;
                         almage = 0UL;
-                        osi_WrStr("almanach read error", 20ul);
+                        osi_WrStrLn("almanach read error", 20ul);
                      }
-                     if ((rinexfile[0U] && gpstime>almage)
-                && gpstime-almage>almrequest) {
-                        WrRinexfn(gpstime); /* request a new almanach */
+                     if (rinexfile[0U]
+                && (almage==0UL || gpstime>almage && gpstime-almage>almrequest)
+                ) {
+                        /* request a new almanach */
+                        if (gpstime==0UL) WrRinexfn(systime);
+                        else WrRinexfn(gpstime);
                      }
                      crdone = 0;
                   }
                   if (gpstime>0UL && gpstime>=almage) {
                      almanachage = gpstime-almage;
                   }
-                  else almanachage = 0UL;
-                  if (almage+maxalmage>gpstime) {
-                     anonym0->posok = 1;
+                  else {
+                     almanachage = 0UL;
                   }
+                  if (almage+maxalmage>gpstime) anonym0->posok = 1;
                   else if (almanachage>0UL) {
                      osic_WrINT32(almanachage/60UL, 10UL);
                      osi_WrStrLn(" Min (almanach too old)", 24ul);
@@ -2026,6 +2030,12 @@ static void jumpcheck(float p1, float p2, unsigned long * cnt)
    else if (*cnt>0UL) --*cnt;
 } /* end jumpcheck() */
 
+
+static void checkdf69(float long0, char * df9)
+{
+   *df9 = long0<30.0f; /* if long<30 it is df6 lat else is df9 long */
+} /* end checkdf69() */
+
 static unsigned long sondemod_MON[13] = {0UL,0UL,31UL,59UL,90UL,120UL,151UL,
                 181UL,212UL,243UL,273UL,304UL,334UL};
 
@@ -2038,76 +2048,167 @@ static void decodesub(const char b[], unsigned long b_len, pCONTEXTDFM6 pc,
    long vi;
    double vr;
    switch (bits2val(b, b_len, 48UL, 4UL)) {
-   case 2UL:
-      vi = (long)bits2val(b, b_len, 0UL, 32UL);
-      u = bits2val(b, b_len, 32UL, 16UL);
-      vr = (double)vi*1.E-7;
-      if (vr<89.9 && vr>(-89.9)) {
-         pc->lat1 = pc->lat;
-         pc->tlat1 = pc->tlat;
-         pc->lat = vr*1.7453292519943E-2;
-         pc->tlat = systime;
-         pc->posok = 1;
-         jumpcheck((float)pc->lat, (float)pc->lat1, &pc->poserr);
-      }
-      vr = (double)u*0.01;
-      if (vr<999.0) {
-         pc->speed = vr;
-         pc->tspeed = systime;
-      }
-      if (sondeaprs_verb) {
-         osi_WrStr(" Lat: ", 7ul);
-         osic_WrFixed((float)(X2C_DIVL(pc->lat,1.7453292519943E-2)), 5L,
-                0UL);
-         osi_WrStr(" ", 2ul);
-         osic_WrFixed((float)u*0.036f, 1L, 0UL);
-         osi_WrStr("km/h", 5ul);
+   case 0UL:
+      if (pc->d9) {
+         /* dfm09 speed */
+         u = bits2val(b, b_len, 32UL, 16UL);
+         vr = (double)u*0.01;
+         if (vr<999.0) {
+            pc->speed = vr;
+            pc->tspeed = systime;
+         }
+         if (sondeaprs_verb) {
+            osi_WrStr(" ", 2ul);
+            osic_WrFixed((float)u*0.036f, 1L, 0UL);
+            osi_WrStr("km/h", 5ul);
+         }
       }
       break;
-   case 3UL:
-      vi = (long)bits2val(b, b_len, 0UL, 32UL);
-      u = bits2val(b, b_len, 32UL, 16UL);
-      vr = (double)vi*1.E-7;
-      if (vr<180.0 && vr>(-180.0)) {
-         /*IF time() MOD 33=0 THEN vr:=vr+0.1 END; */
-         pc->lon1 = pc->lon; /* save 2 values for extrapolating */
-         pc->tlon1 = pc->tlon;
-         pc->lon = vr*1.7453292519943E-2;
-         pc->tlon = systime;
-         pc->posok = 1;
-         jumpcheck((float)pc->lon, (float)pc->lon1, &pc->poserr);
-      }
-      vr = (double)u*0.01;
-      if (vr<=360.0) {
-         pc->dir = vr;
-         pc->tdir = systime;
-      }
-      if (sondeaprs_verb) {
-         osi_WrStr(" Long:", 7ul);
-         osic_WrFixed((float)(X2C_DIVL(pc->lon,1.7453292519943E-2)), 5L,
+   case 1UL:
+      if (pc->d9) {
+         /* dfm09 lat, dir */
+         vi = (long)bits2val(b, b_len, 0UL, 32UL);
+         u = bits2val(b, b_len, 32UL, 16UL);
+         vr = (double)vi*1.E-7;
+         if (vr<89.9 && vr>(-89.9)) {
+            pc->lat1 = pc->lat;
+            pc->tlat1 = pc->tlat;
+            pc->lat = vr*1.7453292519943E-2;
+            pc->tlat = systime;
+            pc->posok = 1;
+            jumpcheck((float)pc->lat, (float)pc->lat1, &pc->poserr);
+         }
+         vr = (double)u*0.01;
+         if (vr<=360.0) {
+            pc->dir = vr;
+            pc->tdir = systime;
+         }
+         if (sondeaprs_verb) {
+            osi_WrStr(" Lat: ", 7ul);
+            osic_WrFixed((float)(X2C_DIVL(pc->lat,1.7453292519943E-2)), 5L,
                 0UL);
-         osi_WrStr(" ", 2ul);
-         osic_WrFixed((float)u*0.01f, 1L, 0UL);
-         osi_WrStr(" deg", 5ul);
+            osi_WrStr(" ", 2ul);
+            osic_WrFixed((float)u*0.01f, 1L, 0UL);
+            osi_WrStr(" deg", 5ul);
+         }
+      }
+      break;
+   case 2UL:
+      vi = (long)bits2val(b, b_len, 0UL, 32UL);
+      vr = (double)vi*1.E-7;
+      checkdf69((float)vr, &pc->d9); /* test if dfm6 or dfm9 */
+      if (pc->d9) {
+         /* dfm09 long clb */
+         if (vr<180.0 && vr>(-180.0)) {
+            pc->lon1 = pc->lon; /* save 2 values for extrapolating */
+            pc->tlon1 = pc->tlon;
+            pc->lon = vr*1.7453292519943E-2;
+            pc->tlon = systime;
+            pc->posok = 1;
+            jumpcheck((float)pc->lon, (float)pc->lon1, &pc->poserr);
+         }
+         vi = (long)bits2val(b, b_len, 32UL, 16UL);
+         if (vi>=32768L) vi -= 65536L;
+         vr = (double)vi*0.01;
+         if (vr<50.0 && vr>(-500.0)) pc->clmb = vr;
+         if (sondeaprs_verb) {
+            osi_WrStr(" Long:", 7ul);
+            osic_WrFixed((float)(X2C_DIVL(pc->lon,1.7453292519943E-2)), 5L,
+                0UL);
+            osic_WrFixed((float)pc->clmb, 1L, 0UL);
+            osi_WrStr(" m/s", 5ul);
+         }
+      }
+      else {
+         /* dfm06 lat speed */
+         u = bits2val(b, b_len, 32UL, 16UL);
+         if (vr<89.9 && vr>(-89.9)) {
+            pc->lat1 = pc->lat;
+            pc->tlat1 = pc->tlat;
+            pc->lat = vr*1.7453292519943E-2;
+            pc->tlat = systime;
+            pc->posok = 1;
+            jumpcheck((float)pc->lat, (float)pc->lat1, &pc->poserr);
+         }
+         vr = (double)u*0.01;
+         if (vr<999.0) {
+            pc->speed = vr;
+            pc->tspeed = systime;
+         }
+         if (sondeaprs_verb) {
+            osi_WrStr(" Lat: ", 7ul);
+            osic_WrFixed((float)(X2C_DIVL(pc->lat,1.7453292519943E-2)), 5L,
+                0UL);
+            osi_WrStr(" ", 2ul);
+            osic_WrFixed((float)u*0.036f, 1L, 0UL);
+            osi_WrStr("km/h", 5ul);
+         }
+      }
+      break;
+   case 3UL: /* dfm09 alt */
+      if (pc->d9) {
+         v = bits2val(b, b_len, 0UL, 32UL);
+         vr = (double)v*0.01;
+         if (vr<50000.0) {
+            pc->alt = vr;
+            pc->talt = systime;
+         }
+         if (sondeaprs_verb) {
+            osi_WrStr(" alti:", 7ul);
+            osic_WrFixed((float)pc->alt, 1L, 0UL);
+            osi_WrStr("m ", 3ul);
+         }
+      }
+      else {
+         /* dfm06 long, dir */
+         vi = (long)bits2val(b, b_len, 0UL, 32UL);
+         u = bits2val(b, b_len, 32UL, 16UL);
+         vr = (double)vi*1.E-7;
+         if (vr<180.0 && vr>(-180.0)) {
+            pc->lon1 = pc->lon; /* save 2 values for extrapolating */
+            pc->tlon1 = pc->tlon;
+            pc->lon = vr*1.7453292519943E-2;
+            pc->tlon = systime;
+            pc->posok = 1;
+            jumpcheck((float)pc->lon, (float)pc->lon1, &pc->poserr);
+         }
+         vr = (double)u*0.01;
+         if (vr<=360.0) {
+            pc->dir = vr;
+            pc->tdir = systime;
+         }
+         if (sondeaprs_verb) {
+            osi_WrStr(" Long:", 7ul);
+            osic_WrFixed((float)(X2C_DIVL(pc->lon,1.7453292519943E-2)), 5L,
+                0UL);
+            osi_WrStr(" ", 2ul);
+            osic_WrFixed((float)u*0.01f, 1L, 0UL);
+            osi_WrStr(" deg", 5ul);
+         }
       }
       break;
    case 4UL:
-      v = bits2val(b, b_len, 0UL, 32UL);
-      vi = (long)bits2val(b, b_len, 32UL, 16UL);
-      vr = (double)v*0.01;
-      if (vr<50000.0) {
-         pc->alt = vr;
-         pc->talt = systime;
+      if (pc->d9) {
       }
-      if (vi>=32768L) vi -= 65536L;
-      vr = (double)vi*0.01;
-      if (vr<50.0 && vr>(-500.0)) pc->clmb = vr;
-      if (sondeaprs_verb) {
-         osi_WrStr(" alti:", 7ul);
-         osic_WrFixed((float)pc->alt, 1L, 0UL);
-         osi_WrStr("m ", 3ul);
-         osic_WrFixed((float)pc->clmb, 1L, 0UL);
-         osi_WrStr(" m/s", 5ul);
+      else {
+         /* dfm06 alt, speed */
+         v = bits2val(b, b_len, 0UL, 32UL);
+         vi = (long)bits2val(b, b_len, 32UL, 16UL);
+         vr = (double)v*0.01;
+         if (vr<50000.0) {
+            pc->alt = vr;
+            pc->talt = systime;
+         }
+         if (vi>=32768L) vi -= 65536L;
+         vr = (double)vi*0.01;
+         if (vr<50.0 && vr>(-500.0)) pc->clmb = vr;
+         if (sondeaprs_verb) {
+            osi_WrStr(" alti:", 7ul);
+            osic_WrFixed((float)pc->alt, 1L, 0UL);
+            osi_WrStr("m ", 3ul);
+            osic_WrFixed((float)pc->clmb, 1L, 0UL);
+            osi_WrStr(" m/s", 5ul);
+         }
       }
       break;
    } /* end switch */

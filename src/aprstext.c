@@ -1595,6 +1595,18 @@ static void getbeaconpos(struct aprspos_POSITION * pos, char * err)
    }
 } /* end getbeaconpos() */
 
+
+extern char aprstext_callwrong(char s[], unsigned long s_len)
+{
+   unsigned long i;
+   i = 0UL;
+   while (i<=s_len-1 && s[i]) {
+      if ((unsigned char)s[i]<=' ' || (unsigned char)s[i]>='\177') return 1;
+      ++i;
+   }
+   return i<3UL || i>9UL;
+} /* end callwrong() */
+
 #define aprstext_RAD 3.4377467707849E+7
 
 

@@ -253,7 +253,7 @@ static void comment0(char buf[], unsigned long buf_len, unsigned long uptime,
             }
             else if (fb[bol+1L]=='v') {
                /* insert version */
-               strncpy(fb," sondemod(c) 0.9",32768u);
+               strncpy(fb," sondemod(c) 1.0",32768u);
             }
             else if (fb[bol+1L]=='s') {
                /* insert sat count */

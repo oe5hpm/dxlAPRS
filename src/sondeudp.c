@@ -221,6 +221,7 @@ struct DFM6 {
    char lastmanch;
    char wasdate;
    char txok;
+   char d9;
    unsigned long rxp;
    char rxbuf[264];
    AFIRTAB afirtab;
@@ -2052,6 +2053,13 @@ static void checkdfpos(float deg, float odeg, unsigned long m)
    }
 } /* end checkdfpos() */
 
+
+static void checkdf69(float long0, unsigned long m)
+{
+   chan[m].dfm6.d9 = long0<30.0f;
+                /* if long<30 it is df6 lat else is df9 long */
+} /* end checkdf69() */
+
 static unsigned long sondeudp_MON[13] = {0UL,0UL,31UL,59UL,90UL,120UL,151UL,
                 181UL,212UL,243UL,273UL,304UL,334UL};
 
@@ -2074,6 +2082,15 @@ static void decodesub(const char b[], unsigned long b_len, unsigned long m,
    unsigned long tmin;
    /* check name, if changed may be checksum error or 2 sondes on same frequency */
    struct DFM6 * anonym;
+   if (verb2) {
+      if (subnum==0UL) osi_WrStr(" Dat", 5ul);
+      else osi_WrStr(" dat", 5ul);
+      wh(bits2val(b, b_len, 48UL, 4UL));
+      osi_WrStr(":", 2ul);
+      for (u = 0UL; u<=5UL; u++) {
+         osi_WrHex(bits2val(b, b_len, u*8UL, 8UL), 0UL);
+      } /* end for */
+   }
    switch (bits2val(b, b_len, 48UL, 4UL)) {
    case 0UL: /* framecount */
       v = bits2val(b, b_len, 24UL, 8UL);
@@ -2113,7 +2130,8 @@ static void decodesub(const char b[], unsigned long b_len, unsigned long m,
                   osic_WrINT32(v, 0UL);
                }
                chan[m].dfm6.idnum = v;
-               strncpy(s,"DFM6",101u); /* build a name from 1/1000s */
+               if (chan[m].dfm6.d9) strncpy(s,"DFM9",101u);
+               else strncpy(s,"DFM6",101u);
                s[4U] = (char)((v/100UL)%10UL+48UL);
                s[5U] = (char)((v/10UL)%10UL+48UL);
                s[6U] = (char)(v%10UL+48UL);
@@ -2140,49 +2158,103 @@ static void decodesub(const char b[], unsigned long b_len, unsigned long m,
          }
          chan[m].dfm6.tused = osic_time();
       }
-      break;
-   case 2UL:
-      /*
-         |1: v:=bits2val(b, 16, 32);                        (* time ms *)
-             u:=v MOD 1000;
-      */
-      v = bits2val(b, b_len, 0UL, 32UL);
-      u = bits2val(b, b_len, 32UL, 16UL);
-      vr = (float)v*1.E-7f;
-      checkdfpos(vr, chan[m].dfm6.lastlat, m);
-      chan[m].dfm6.lastlat = vr;
-      if (verb) {
-         osi_WrStr(" lat: ", 7ul);
-         osic_WrFixed(vr, 5L, 0UL);
-         osi_WrStr(" ", 2ul);
-         osic_WrFixed((float)u*0.036f, 1L, 0UL);
-         osi_WrStr("km/h", 5ul);
+      if (chan[m].dfm6.d9) {
+         /* dfm09 speed */
+         v = bits2val(b, b_len, 32UL, 16UL);
+         if (verb) {
+            osic_WrFixed((float)v*0.036f, 1L, 0UL);
+            osi_WrStr(" km/h", 6ul);
+         }
       }
       break;
-   case 3UL:
+   case 1UL:
+      if (chan[m].dfm6.d9) {
+         /* dfm09 lat, dir */
+         v = bits2val(b, b_len, 0UL, 32UL);
+         u = bits2val(b, b_len, 32UL, 16UL);
+         vr = (float)v*1.E-7f;
+         checkdfpos(vr, chan[m].dfm6.lastlat, m);
+         chan[m].dfm6.lastlat = vr;
+         if (verb) {
+            osi_WrStr(" lat: ", 7ul);
+            osic_WrFixed(vr, 5L, 0UL);
+            osi_WrStr(" ", 2ul);
+            osic_WrFixed((float)u*0.01f, 1L, 0UL);
+            osi_WrStr(" deg", 5ul);
+         }
+      }
+      break;
+   case 2UL:
       v = bits2val(b, b_len, 0UL, 32UL);
-      u = bits2val(b, b_len, 32UL, 16UL);
       vr = (float)v*1.E-7f;
-      checkdfpos(vr, chan[m].dfm6.lastlong, m);
-      chan[m].dfm6.lastlong = vr;
-      if (verb) {
-         osi_WrStr(" long:", 7ul);
-         osic_WrFixed(vr, 5L, 0UL);
-         osi_WrStr(" ", 2ul);
-         osic_WrFixed((float)u*0.01f, 1L, 0UL);
-         osi_WrStr(" deg", 5ul);
+      checkdf69(vr, m); /* test if dfm6 or dfm9 */
+      if (chan[m].dfm6.d9) {
+         /* dfm09 long, clb */
+         ui = (long)bits2val(b, b_len, 32UL, 16UL);
+         if (ui>=32768L) ui -= 65536L;
+         checkdfpos(vr, chan[m].dfm6.lastlong, m);
+         chan[m].dfm6.lastlong = vr;
+         if (verb) {
+            osi_WrStr(" long:", 7ul);
+            osic_WrFixed(vr, 5L, 0UL);
+            osic_WrFixed((float)ui*0.01f, 1L, 0UL);
+            osi_WrStr(" m/s", 5ul);
+         }
+      }
+      else {
+         /* dfm06 lat, speed */
+         u = bits2val(b, b_len, 32UL, 16UL);
+         checkdfpos(vr, chan[m].dfm6.lastlat, m);
+         chan[m].dfm6.lastlat = vr;
+         if (verb) {
+            osi_WrStr(" lat: ", 7ul);
+            osic_WrFixed(vr, 5L, 0UL);
+            osi_WrStr(" ", 2ul);
+            osic_WrFixed((float)u*0.036f, 1L, 0UL);
+            osi_WrStr("km/h", 5ul);
+         }
+      }
+      break;
+   case 3UL: /* dfm09 alt */
+      if (chan[m].dfm6.d9) {
+         v = bits2val(b, b_len, 0UL, 32UL);
+         if (verb) {
+            osi_WrStr(" alti:", 7ul);
+            osic_WrFixed((float)v*0.01f, 1L, 0UL);
+            osi_WrStr("m ", 3ul);
+         }
+      }
+      else {
+         /* dfm06 long, dir */
+         v = bits2val(b, b_len, 0UL, 32UL);
+         u = bits2val(b, b_len, 32UL, 16UL);
+         vr = (float)v*1.E-7f;
+         checkdfpos(vr, chan[m].dfm6.lastlong, m);
+         chan[m].dfm6.lastlong = vr;
+         if (verb) {
+            osi_WrStr(" long:", 7ul);
+            osic_WrFixed(vr, 5L, 0UL);
+            osi_WrStr(" ", 2ul);
+            osic_WrFixed((float)u*0.01f, 1L, 0UL);
+            osi_WrStr(" deg", 5ul);
+         }
       }
       break;
    case 4UL:
-      v = bits2val(b, b_len, 0UL, 32UL);
-      ui = (long)bits2val(b, b_len, 32UL, 16UL);
-      if (ui>=32768L) ui -= 65536L;
-      if (verb) {
-         osi_WrStr(" alti:", 7ul);
-         osic_WrFixed((float)v*0.01f, 1L, 0UL);
-         osi_WrStr("m ", 3ul);
-         osic_WrFixed((float)ui*0.01f, 1L, 0UL);
-         osi_WrStr(" m/s", 5ul);
+      if (chan[m].dfm6.d9) {
+      }
+      else {
+         /* dfm06 ait, clb */
+         v = bits2val(b, b_len, 0UL, 32UL);
+         ui = (long)bits2val(b, b_len, 32UL, 16UL);
+         if (ui>=32768L) ui -= 65536L;
+         if (verb) {
+            osi_WrStr(" alti:", 7ul);
+            osic_WrFixed((float)v*0.01f, 1L, 0UL);
+            osi_WrStr("m ", 3ul);
+            osic_WrFixed((float)ui*0.01f, 1L, 0UL);
+            osi_WrStr(" m/s", 5ul);
+         }
       }
       break;
    case 8UL: /* date */
@@ -2246,7 +2318,7 @@ static void decodesub(const char b[], unsigned long b_len, unsigned long m,
       }
       break;
    default:;
-      if (verb) {
+      if (verb && !verb2) {
          if (subnum==0UL) osi_WrStr(" Dat", 5ul);
          else osi_WrStr(" dat", 5ul);
          wh(bits2val(b, b_len, 48UL, 4UL));
@@ -2303,7 +2375,8 @@ static void getdfname(const char b[], unsigned long b_len, unsigned long m,
       }
       if (dfidok(m)) {
          v = chan[m].dfm6.idnew;
-         strncpy(s,"DF6",101u);
+         if (chan[m].dfm6.d9) strncpy(s,"DF9",101u);
+         else strncpy(s,"DF6",101u);
          s[3U] = hex(v/65536UL);
          s[4U] = hex(v/4096UL);
          s[5U] = hex(v/256UL);
@@ -2346,6 +2419,7 @@ static void decodeframe6(unsigned long m)
             osi_WrStr(":", 2ul);
          }
          if (anonym->id[0U]) osi_WrStr(anonym->id, 9ul);
+         else if (chan[m].dfm6.d9) osi_WrStr("DF9", 4ul);
          else osi_WrStr("DF6", 4ul);
          WrdB(chan[m].adcmax);
          WrQ(chan[m].dfm6.bitlev, chan[m].dfm6.noise);
