@@ -751,11 +751,12 @@ displayed again on "Exit Logview"
 and import it. Works only with dayly Log
 
 |6710 Read data from this path/filename.
-The format is Timestamp in Seconds since 1.1.1970
+The format is Timestamp "yyyymmdd:hhmmss " in utc
 followed by AprsIs Line. The data is sorted at
 import by Time, indexed and all waypoints compared
-to each other for removing dupes for fast rendering
-images and stored in compressed form in RAM
+to each other for removing dupes and stored in
+compressed form in RAM. Append %d to filename
+for dayly logs.
 
 |6715 
 |6716 Reload Data from Writelog
