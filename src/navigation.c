@@ -249,6 +249,7 @@ int NAVIGATION_PerformClosedFormPositionSolution_FromPseuodrangeMeasurements(
   tmp3 = A[1][0]*A[2][1] - A[2][0]*A[1][1];
 
   detA = A[0][0]*tmp1 - A[0][1]*tmp2 + A[0][2]*tmp3;
+  if(detA==0) return FALSE;
 
   D[0][0] =  tmp1;
   D[1][0] = -tmp2;

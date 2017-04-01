@@ -351,11 +351,17 @@ static long get4sats(const SATPOSES sats, const unsigned long satnum[],
 {
    unsigned long i;
    double rx_clock_bias; /*, clock_drift, satVx,satVy,satVz,azimuth,elevation,doppler*/
+   long prn;
    long ret;
+   unsigned long chkmask;
    double dils[4];
-   /*WrStrLn(" satnums"); */
+   chkmask = 0UL;
    for (i = 0UL; i<=3UL; i++) {
-      dils[i] = 0.0; /* ;WrInt(satnum[i], 3);*/
+      dils[i] = 0.0;
+      prn = (long)(satnum[i]-1UL);
+      if ((prn<0L || prn>31L) || X2C_IN(prn,32,chkmask)) return -1L;
+      /* two times same sat */
+      chkmask |= (1UL<<prn);
    } /* end for */
    if (dil>0UL) dils[dil-1UL] = dilm;
    ret = NAVIGATION_PerformClosedFormPositionSolution_FromPseuodrangeMeasurements(sats[satnum[0UL]
@@ -598,7 +604,7 @@ static void killexo(struct RESULTS stats0[], unsigned long stats_len,
             }
             if (i==tmp) break;
          } /* end for */
-         if (c>2UL) stats0[im].res |= 0x1U;
+         if (max0>=0.0f && c>2UL) stats0[im].res |= 0x1U;
          *devhsum = X2C_DIVR(*devhsum,(float)c); /* median deviation rad^2*/
          if (max0> *devhsum*2.0f) ok0 = 0;
       }
@@ -637,7 +643,7 @@ static void killexo(struct RESULTS stats0[], unsigned long stats_len,
             }
             if (i==tmp) break;
          } /* end for */
-         if (c>2UL) stats0[im].res |= 0x4U;
+         if (max0>=0.0f && c>2UL) stats0[im].res |= 0x4U;
          *devvsum = X2C_DIVR(*devvsum,(float)c);
                 /* median alt deviation m^2 */
          if (max0> *devvsum*4.0f) ok0 = 0;
@@ -958,6 +964,12 @@ BEGIN
   END;
 END ionomodel;
 */
+
+static double PMUL(long n)
+{
+   return (double)(X2C_max_longint-n)*2.8618384385692E-1;
+} /* end PMUL() */
+
 #define gpspos_ZEROTIME 315964800
 
 #define gpspos_WEEK 604800
@@ -1064,9 +1076,10 @@ extern long gpspos_getposit(unsigned long weekms, unsigned long * systime,
             bit = 0UL;
             if (bit<=tmp0) for (;; bit++) {
                if (X2C_IN(bit,16,(unsigned short)comb)) {
-                  satspos[sats[bit].almidx].range = (double)(unsigned long)
-                (X2C_max_longint-sats[bit].rang)*2.8618384385692E-1;
-                  /*- (LFLOAT(ORD(ODD(weeks))*2)-1.0)
+                  satspos[sats[bit].almidx].range = PMUL(sats[bit].rang);
+                  /*            satspos[sats[bit].almidx].range:=VAL(REAL,
+                VAL(CARDINAL,MAX(INTEGER)-sats[bit].rang))*PRM; */
+                  /* (LFLOAT(ORD(ODD(weeks))*2)-1.0)
                 *satspos[sats[bit].almidx].ionocorr; */
                   satnums[cnt] = sats[bit].almidx;
                   ++cnt;

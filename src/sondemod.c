@@ -827,6 +827,7 @@ static void domes(const char md[], unsigned long md_len, double * hp,
                 (unsigned char)md[i*3UL+2UL]*65536UL);
    } /* end for */
    /* hygro 1 */
+   /*  IF verb THEN WrStr(" <h> ") END; */
    hr1 = extr((unsigned long)m[3U], (unsigned long)m[7U],
                 (unsigned long)m[1U], 40UL);
    hr2 = extr((unsigned long)m[3U], (unsigned long)m[7U],
@@ -1666,11 +1667,11 @@ static void decodec34(const char rxb[], unsigned long rxb_len,
    pc0 = 0;
    for (;;) {
       if (pc==0) break;
-      pc1 = pc->next;
+      pc1 = X2C_CHKNIL(pCONTEXTC34,pc)->next;
       if (pc->tused+3600UL<systime) {
          /* timed out */
          if (pc0==0) pcontextc = pc1;
-         else pc0->next = pc1;
+         else X2C_CHKNIL(pCONTEXTC34,pc0)->next = pc1;
          osic_free((X2C_ADDRESS *) &pc, sizeof(struct CONTEXTC34));
       }
       else {
@@ -1688,7 +1689,7 @@ static void decodec34(const char rxb[], unsigned long rxb_len,
       aprsstr_Assign(pc->name, 9ul, nam, 9ul);
       if (sondeaprs_verb) osi_WrStrLn("is new ", 8ul);
    }
-   pc->tused = systime;
+   X2C_CHKNIL(pCONTEXTC34,pc)->tused = systime;
    val = (unsigned long)(unsigned char)cb[4U]+(unsigned long)(unsigned char)
                 cb[3U]*256UL+(unsigned long)(unsigned char)
                 cb[2U]*65536UL+(unsigned long)(unsigned char)
@@ -2049,7 +2050,7 @@ static void decodesub(const char b[], unsigned long b_len, pCONTEXTDFM6 pc,
    double vr;
    switch (bits2val(b, b_len, 48UL, 4UL)) {
    case 0UL:
-      if (pc->d9) {
+      if (X2C_CHKNIL(pCONTEXTDFM6,pc)->d9) {
          /* dfm09 speed */
          u = bits2val(b, b_len, 32UL, 16UL);
          vr = (double)u*0.01;
@@ -2065,7 +2066,7 @@ static void decodesub(const char b[], unsigned long b_len, pCONTEXTDFM6 pc,
       }
       break;
    case 1UL:
-      if (pc->d9) {
+      if (X2C_CHKNIL(pCONTEXTDFM6,pc)->d9) {
          /* dfm09 lat, dir */
          vi = (long)bits2val(b, b_len, 0UL, 32UL);
          u = bits2val(b, b_len, 32UL, 16UL);
@@ -2096,7 +2097,8 @@ static void decodesub(const char b[], unsigned long b_len, pCONTEXTDFM6 pc,
    case 2UL:
       vi = (long)bits2val(b, b_len, 0UL, 32UL);
       vr = (double)vi*1.E-7;
-      checkdf69((float)vr, &pc->d9); /* test if dfm6 or dfm9 */
+      checkdf69((float)vr, &X2C_CHKNIL(pCONTEXTDFM6,pc)->d9);
+                /* test if dfm6 or dfm9 */
       if (pc->d9) {
          /* dfm09 long clb */
          if (vr<180.0 && vr>(-180.0)) {
@@ -2146,7 +2148,7 @@ static void decodesub(const char b[], unsigned long b_len, pCONTEXTDFM6 pc,
       }
       break;
    case 3UL: /* dfm09 alt */
-      if (pc->d9) {
+      if (X2C_CHKNIL(pCONTEXTDFM6,pc)->d9) {
          v = bits2val(b, b_len, 0UL, 32UL);
          vr = (double)v*0.01;
          if (vr<50000.0) {
@@ -2188,7 +2190,7 @@ static void decodesub(const char b[], unsigned long b_len, pCONTEXTDFM6 pc,
       }
       break;
    case 4UL:
-      if (pc->d9) {
+      if (X2C_CHKNIL(pCONTEXTDFM6,pc)->d9) {
       }
       else {
          /* dfm06 alt, speed */
@@ -2277,11 +2279,11 @@ static void decodedfm6(const char rxb[], unsigned long rxb_len,
    pc0 = 0;
    for (;;) {
       if (pc==0) break;
-      pc1 = pc->next;
+      pc1 = X2C_CHKNIL(pCONTEXTDFM6,pc)->next;
       if (pc->tused+3600UL<systime) {
          /* timed out */
          if (pc0==0) pcontextdfm6 = pc1;
-         else pc0->next = pc1;
+         else X2C_CHKNIL(pCONTEXTDFM6,pc0)->next = pc1;
          osic_free((X2C_ADDRESS *) &pc, sizeof(struct CONTEXTDFM6));
       }
       else {
@@ -2299,7 +2301,7 @@ static void decodedfm6(const char rxb[], unsigned long rxb_len,
       aprsstr_Assign(pc->name, 9ul, nam, 9ul);
       if (sondeaprs_verb) osi_WrStrLn("is new ", 8ul);
    }
-   if (rt+1UL>=pc->actrt) {
+   if (rt+1UL>=X2C_CHKNIL(pCONTEXTDFM6,pc)->actrt) {
       /* not an older frame */
       pc->tused = systime;
       pc->actrt = rt;
@@ -2322,7 +2324,7 @@ static void decodedfm6(const char rxb[], unsigned long rxb_len,
       } /* end for */
       decodesub(db, 56ul, pc, 1UL);
       { /* with */
-         struct CONTEXTDFM6 * anonym = pc;
+         struct CONTEXTDFM6 * anonym = X2C_CHKNIL(pCONTEXTDFM6,pc);
          if ((((((anonym->posok && anonym->lastsent!=systime)
                 && anonym->tlon+8UL>systime) && anonym->tlat+8UL>systime)
                 && anonym->talt+15UL>systime) && anonym->tspeed+15UL>systime)
@@ -2669,11 +2671,11 @@ static void decoders41(const char rxb[], unsigned long rxb_len,
          pc0 = 0;
          for (;;) {
             if (pc==0) break;
-            pc1 = pc->next;
+            pc1 = X2C_CHKNIL(pCONTEXTR4,pc)->next;
             if (pc->tused+3600UL<systime) {
                /* timed out */
                if (pc0==0) pcontextr4 = pc1;
-               else pc0->next = pc1;
+               else X2C_CHKNIL(pCONTEXTR4,pc0)->next = pc1;
                osic_free((X2C_ADDRESS *) &pc, sizeof(struct CONTEXTR4));
             }
             else {
@@ -2692,7 +2694,7 @@ static void decoders41(const char rxb[], unsigned long rxb_len,
             if (sondeaprs_verb) osi_WrStrLn("is new ", 8ul);
          }
          frameno = (unsigned long)getint16(rxb, rxb_len, p);
-         if (frameno>pc->framenum) {
+         if (frameno>X2C_CHKNIL(pCONTEXTR4,pc)->framenum) {
             /* new frame number */
             pc->framesent = 0;
             calok = 1;
@@ -2752,7 +2754,8 @@ static void decoders41(const char rxb[], unsigned long rxb_len,
          /*             WrStrLn("7A frame"); */
          /*             WrStrLn("7C frame"); */
          if (pc) {
-            pc->gpssecond = (unsigned long)((getint32(rxb, rxb_len,
+            X2C_CHKNIL(pCONTEXTR4,
+                pc)->gpssecond = (unsigned long)((getint32(rxb, rxb_len,
                 p+2UL)/1000L+86382L)%86400L); /* gps TOW */
          }
       }
@@ -2764,7 +2767,8 @@ static void decoders41(const char rxb[], unsigned long rxb_len,
          if (pc) {
             posrs41(rxb, rxb_len, p, &lat, &long0, &heig, &speed, &dir,
                 &climb);
-            pc->hp = altToPres(heig); /* make hPa out of gps alt for ozone */
+            X2C_CHKNIL(pCONTEXTR4,pc)->hp = altToPres(heig);
+                /* make hPa out of gps alt for ozone */
          }
       }
       else if (typ=='~') {
@@ -2776,7 +2780,7 @@ static void decoders41(const char rxb[], unsigned long rxb_len,
                /*          pc^.ozonInstNum:=gethex(rxb, p+3, 2); */
                res = (long)gethex(rxb, rxb_len, p+5UL, 4UL);
                if (res>=32768L) res = 32768L-res;
-               pc->ozonTemp = (double)res*0.01;
+               X2C_CHKNIL(pCONTEXTR4,pc)->ozonTemp = (double)res*0.01;
                pc->ozonuA = (double)gethex(rxb, rxb_len, p+9UL, 5UL)*0.0001;
                pc->ozonBatVolt = (double)gethex(rxb, rxb_len, p+14UL,
                 2UL)*0.1;
@@ -2834,10 +2838,14 @@ static void decoders41(const char rxb[], unsigned long rxb_len,
    if (sondeaprs_verb) osi_WrStrLn("", 1ul);
    if ((((pc && nameok) && calok) && lat!=0.0) && long0!=0.0) {
       sondeaprs_senddata(lat, long0, heig, speed, dir, climb, 0.0, 0.0,
-                (double)X2C_max_real, ozonval, pc->ozonTemp, pc->ozonPumpMA,
-                pc->ozonBatVolt, (double)pc->mhz0, 0.0, 0.0, pc->gpssecond,
-                frameno, pc->name, 9ul, 0UL, 0UL, usercall, 11ul, 0UL,
-                pc->burstKill, sondeaprs_nofilter);
+                (double)X2C_max_real, ozonval, X2C_CHKNIL(pCONTEXTR4,
+                pc)->ozonTemp, X2C_CHKNIL(pCONTEXTR4,pc)->ozonPumpMA,
+                X2C_CHKNIL(pCONTEXTR4,pc)->ozonBatVolt,
+                (double)X2C_CHKNIL(pCONTEXTR4,pc)->mhz0, 0.0, 0.0,
+                X2C_CHKNIL(pCONTEXTR4,pc)->gpssecond, frameno,
+                X2C_CHKNIL(pCONTEXTR4,pc)->name, 9ul, 0UL, 0UL, usercall,
+                11ul, 0UL, X2C_CHKNIL(pCONTEXTR4,pc)->burstKill,
+                sondeaprs_nofilter);
       pc->framesent = 1;
    }
 /*  IF verb THEN WrStrLn("") END;   */
