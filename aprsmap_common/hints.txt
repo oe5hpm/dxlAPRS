@@ -1589,9 +1589,12 @@ Object will be added
 
 |8525 Antenna 3 is used for Radio Range Map
 (shortcut R) as receiver for radiation
-of Antenna 1 and optional Antenna 2 for a
-Range 1 + Range 2 + Reflection Areas Map
-of optical sight (no fresnelzone)
+of Antenna 1 and optional Antenna 2 for
+a Reflection Areas Map of optical sight.
+Mixed Colour Areas show possible places
+for Repeaters. Set to 0m for natural
+Reflektors. Where areas Touch, there
+might be a Diffraction Line. 
 
 |8520 Frequency for Fresnelzone.
 The zone is calculated 3-dimensional
