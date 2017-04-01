@@ -155,6 +155,7 @@ OBJ_APRSMAP	= \
 
 OBJ_SDRTST		= tcpb.o sdr.o sdrtest.o
 OBJ_SDRRADIO	= tcpb.o sdr.o radio.o
+OBJ_L2CAT	= l2.o frameio.o deflate.o Execlogin.o cleanup.o l2cat.o
 
 TARGETS = \
 	afskmodem \
@@ -169,7 +170,8 @@ TARGETS = \
 	sondeudp \
 	aprsmap \
 	sdrtst \
-	sdrradio
+	sdrradio \
+	l2cat
 
 OBJS = \
 	$(OBJ_COMMON) \
@@ -185,7 +187,8 @@ OBJS = \
 	$(OBJ_UDPRFNET) \
 	$(OBJ_APRSMAP) \
 	$(OBJ_SDRTST) \
-	$(OBJ_SDRRADIO)
+	$(OBJ_SDRRADIO) \
+        $(OBJ_L2CAT)
 # ------------------- target make rules -------------------
 #                     -----------------
 %.o: %.c
@@ -250,6 +253,10 @@ sdrtst : $(OBJ_SDRTST) $(OBJ_COMMON)
 sdrradio : $(OBJ_SDRRADIO) $(OBJ_COMMON)
 	$(CC) $(LFLAGS) -o sdrradio $(OBJ_SDRRADIO) $(OBJ_COMMON) -lm
 	$(STRIP) sdrradio -s
+
+l2cat : $(OBJ_L2CAT) $(OBJ_COMMON)
+	$(CC) $(LFLAGS) -o l2cat $(OBJ_L2CAT) $(OBJ_COMMON) -lm
+	$(STRIP) l2cat -s
 
 diag:
 	echo $(HOSTARCH)

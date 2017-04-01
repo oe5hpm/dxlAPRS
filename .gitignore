@@ -15,6 +15,7 @@ src/sondemod
 src/sondeudp
 src/sdrtst
 src/sdrradio
+src/l2cat
 src/.settings
 xds/C/C/*.o
 xds/lib/C/libxds.a
