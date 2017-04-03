@@ -30,10 +30,20 @@ HOSTARCH := $(shell uname -m | \
 	    -e s/sh.*/sh/)
 export HOSTARCH
 
+HOSTOS := $(shell uname -s)
+export HOSTOS
+
+ifeq ($(HOSTOS),Darwin)
+# Using gcc as symlink to Mac's clan
+GCCVERSION_GE4 := true
+STRIPFLAGS =
+else
 GCCVERSION := $(shell $(CROSS_COMPILE)gcc --version | \
 	grep gcc | sed 's/.*gcc (.*) //g' | cut -d '.' -f 1)
 
 GCCVERSION_GE4 := $(shell [ $(GCCVERSION) -ge 4 ] && echo true)
+STRIPFLAGS = -s
+endif
 
 .SUFFIXES:
 	MAKEFLAGS += -r
@@ -50,8 +60,14 @@ CDEFS		= -Wall \
 else
 CDEFS		= -w
 endif
+
+ifeq ($(HOSTOS),Darwin)
+CFLAGS		= -I$(INCL) -c -O2 -fdata-sections -ffunction-sections -I/usr/X11/include -DMACOS
+LFLAGS		= -L/usr/X11/lib -lX11
+else
 CFLAGS		= -I$(INCL) -c -O2 -fdata-sections -ffunction-sections
 LFLAGS		= -Wl,--gc-sections
+endif
 # ---------------------- armv6 (raspberry pi 1) specific -----------------------
 ifeq ($(PLATFORM), armv6tce)
 EXTLIB  	= lib_armv6/
@@ -86,7 +102,11 @@ CFLAGS		+= -I$(EXTLIB)
 LFLAGS		+=
 # -------------------------- x86_64 specific -----------------------------------
 else ifeq ($(HOSTARCH), x86_64)
+ifeq ($(HOSTOS), Darwin)
+EXTLIB		= lib_x86mac/
+else
 EXTLIB		= lib_x86/
+endif
 XLIBS		= $(EXTLIB)libz.a \
 			  $(EXTLIB)libjpeg.a \
 			 -lpng -lXext -lX11
@@ -202,61 +222,61 @@ clean:
 
 afskmodem: $(OBJ_AFSKMODEM) $(OBJ_COMMON)
 	$(CC) $(LFLAGS) -o afskmodem $(OBJ_COMMON) $(OBJ_AFSKMODEM) -lm
-	$(STRIP) afskmodem -s
+	$(STRIP) afskmodem $(STRIPFLAGS)
 
 gps2aprs: $(OBJ_GPS2APRS) $(OBJ_COMMON)
 	$(CC) $(LFLAGS) -o gps2aprs $(OBJ_COMMON) $(OBJ_GPS2APRS) -lm
-	$(STRIP) gps2aprs -s
+	$(STRIP) gps2aprs $(STRIPFLAGS)
 
 gps2digipos: $(OBJ_GPS2DIGIPOS) $(OBJ_COMMON)
 	$(CC) $(LFLAGS) -o gps2digipos $(OBJ_COMMON) $(OBJ_GPS2DIGIPOS) -lm
-	$(STRIP) gps2digipos -s
+	$(STRIP) gps2digipos $(STRIPFLAGS)
 
 sondemod: $(OBJ_SONDEMOD) $(OBJ_COMMON)
 	$(CC) $(LFLAGS) -o sondemod $(OBJ_COMMON) $(OBJ_SONDEMOD) -lm
-	$(STRIP) sondemod -s
+	$(STRIP) sondemod $(STRIPFLAGS)
 
 sondeudp: $(OBJ_SONDEUDP) $(OBJ_COMMON)
 	$(CC) $(LFLAGS) -o sondeudp $(OBJ_COMMON) $(OBJ_SONDEUDP) -lm
-	$(STRIP) sondeudp -s
+	$(STRIP) sondeudp $(STRIPFLAGS)
 
 udpbox: $(OBJ_UDPBOX) $(OBJ_COMMON)
 	$(CC) $(LFLAGS) -o udpbox $(OBJ_COMMON) $(OBJ_UDPBOX) -lm
-	$(STRIP) udpbox -s
+	$(STRIP) udpbox $(STRIPFLAGS)
 
 udpgate4: $(OBJ_UDPGATE4) $(OBJ_COMMON)
 	$(CC) $(LFLAGS) -o udpgate4 $(OBJ_COMMON) $(OBJ_UDPGATE4) -lm
-	$(STRIP) udpgate4 -s
+	$(STRIP) udpgate4 $(STRIPFLAGS)
 
 udpflex: $(OBJ_UDPFLEX) $(OBJ_COMMON)
 	$(CC) $(LFLAGS) -o udpflex $(OBJ_COMMON) $(OBJ_UDPFLEX) -lm
-	$(STRIP) udpflex -s
+	$(STRIP) udpflex $(STRIPFLAGS)
 
 udphub: $(OBJ_UDPHUB) $(OBJ_COMMON)
 	$(CC) $(LFLAGS) -o udphub $(OBJ_COMMON) $(OBJ_UDPHUB) -lm
-	$(STRIP) udphub -s
+	$(STRIP) udphub $(STRIPFLAGS)
 
 udprfnet: $(OBJ_UDPRFNET) $(OBJ_COMMON)
 	$(CC) $(LFLAGS) -o udprfnet $(OBJ_COMMON) $(OBJ_UDPRFNET) -lm -lrt
-	$(STRIP) udprfnet -s
+	$(STRIP) udprfnet $(STRIPFLAGS)
 
 aprsmap : $(OBJ_APRSMAP) $(OBJ_COMMON)
 	$(CC) $(LFLAGS) -o aprsmap $(OBJ_APRSMAP) $(OBJ_COMMON) $(XLIBS) -lm
-	$(STRIP) aprsmap -s
+	$(STRIP) aprsmap $(STRIPFLAGS)
 aprsmap-cleanobj:
 	rm -f $(OBJ_APRSMAP)
 
 sdrtst : $(OBJ_SDRTST) $(OBJ_COMMON)
 	$(CC) $(LFLAGS) -o sdrtst $(OBJ_SDRTST) $(OBJ_COMMON) -lm
-	$(STRIP) sdrtst -s
+	$(STRIP) sdrtst $(STRIPFLAGS)
 
 sdrradio : $(OBJ_SDRRADIO) $(OBJ_COMMON)
 	$(CC) $(LFLAGS) -o sdrradio $(OBJ_SDRRADIO) $(OBJ_COMMON) -lm
-	$(STRIP) sdrradio -s
+	$(STRIP) sdrradio $(STRIPFLAGS)
 
 l2cat : $(OBJ_L2CAT) $(OBJ_COMMON)
 	$(CC) $(LFLAGS) -o l2cat $(OBJ_L2CAT) $(OBJ_COMMON) -lm
-	$(STRIP) l2cat -s
+	$(STRIP) l2cat $(STRIPFLAGS)
 
 diag:
 	echo $(HOSTARCH)
