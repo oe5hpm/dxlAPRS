@@ -53,13 +53,13 @@ void fdsetw(long n)
 
 unsigned issetr(long n)
 {
-  if FD_ISSET(n, &rset) return 1;
+  if (FD_ISSET(n, &rset)) return 1;
   return 0;
 }
 
 unsigned issetw(long n)
 {
-  if FD_ISSET(n, &wset) return 1;
+  if (FD_ISSET(n, &wset)) return 1;
   return 0;
 }
 
@@ -67,12 +67,39 @@ int selectrwt(long *sec, long *usec)
 {
   struct timeval tv;
   int ret;
+#ifdef MACOS
+  struct timespec spec1,spec2;
+  time_t s;
+  long us;
+  clock_gettime(CLOCK_REALTIME, &spec1);
+#endif
 
   tv.tv_sec  = *sec;
   tv.tv_usec = *usec;
   ret=select(maxfd+1, &rset, &wset, NULL, &tv);
+#ifdef MACOS
+  /* MacOS does not update tv value in select */
+  clock_gettime(CLOCK_REALTIME, &spec2);
+  s = spec2.tv_sec-spec1.tv_sec;
+  us = spec2.tv_nsec / 1000 - spec1.tv_nsec /1 000;
+  if (us < 0) {
+	  us += 1000000;
+	  s -= 1;
+  }
+  *sec -= s;
+  *usec -= us;
+  if (*usec < 0) {
+	  *usec += 1000000;
+	  *sec -= 1;
+  }
+  if (*sec < 0) {
+	  *sec = 0;
+	  *usec = 0;
+  }
+#else
   *sec = tv.tv_sec;
   *usec= tv.tv_usec;
+#endif
   return ret;
 }
 
