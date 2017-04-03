@@ -24,7 +24,9 @@
 #include <string.h>
 #include <sys/ioctl.h>
 #include <termios.h>
+#ifndef MACOS
 #include <linux/ppdev.h>
+#endif
 #include <unistd.h>
 
 /*#define _DEBUG*/
@@ -34,6 +36,8 @@
 #else
 # define DBG(...)
 #endif
+
+#ifndef MACOS
 
 struct ttydev_t {
 	char			*name;		/* name of tty */
@@ -377,4 +381,34 @@ void pttHelp(char *str, unsigned int maxsize)
 
 	strncpy(str, helptext, maxsize);
 }
+#else /* MACOS */
+static int ptt_ttyDestroy(struct ptt_t *pInst)
+{
+	return 0;
+}
 
+void *pttinit(char *devname, int bit)
+{
+	return NULL;
+}
+
+void pttDestroy(void *arg)
+{
+	return;
+}
+
+int ptt(void *arg, unsigned int val)
+{
+	return 0;
+}
+
+void pttSetclaim(void *arg, int val)
+{
+	return;
+}
+
+void pttHelp(char *str, unsigned int maxsize) {
+	char *helptext = "PTT not supported yet on MacOS";
+	strncpy(str, helptext, maxsize);
+}
+#endif
