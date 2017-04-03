@@ -18,6 +18,7 @@
 #include <math.h>
 #include <assert.h>
 #include <time.h>
+#include <errno.h>
 
 #include "osic.h"
 
@@ -29,6 +30,11 @@
 #endif
 
 #define FNLENCHECK	1
+
+/* Does not exist - and is not necessary - on MacOS */
+#ifndef O_LARGEFILE
+# define O_LARGEFILE 0
+#endif
 
 static int osic_argc, argc_delivered;
 static char **osic_argv;
@@ -108,7 +114,23 @@ void osic_WrHex(unsigned long n, unsigned long f)
 
 int osic_getptsname(int fd, char *name, int len)
 {
+#ifndef MACOS
 	return ptsname_r(fd, name, len);
+#else
+	{
+		/* MacOS does not have ptsname_r, emulate it with ptsname */
+		if (name == NULL)
+			return -EINVAL;
+		char *n = ptsname(fd);
+		if (n == NULL)
+			return -ENOTTY;
+		if (len < strlen(n))
+			return -ERANGE;
+		strncpy(name, n, len);
+
+		return 0;
+	}
+#endif
 }
 
 int osic_grantpts(int fd)
@@ -230,8 +252,14 @@ void osic_Seek(long fd, unsigned long pos)
 
 void osic_Seekcur(long fd, long rel)
 {
+#ifndef MACOS
 	if (lseek64(fd, rel, (unsigned long)SEEK_CUR) < 0)
 		lseek(fd, 0, SEEK_SET);
+#else
+	/* MacOS has no lseek64 */
+	if (lseek(fd, rel, (unsigned long)SEEK_CUR) < 0)
+		lseek(fd, 0, SEEK_SET);
+#endif
 }
 
 void osic_Remove(char fname[], unsigned long fname_len, char *done)
