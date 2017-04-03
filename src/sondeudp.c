@@ -501,6 +501,8 @@ static void OpenSound(void)
    soundfd = osi_OpenRW(soundfn, 1024ul);
    if (soundfd>=0L) {
       if (maxchannels<2UL) {
+#ifndef MACOS
+	/* soundcard not supported on MacOS, just reading from file */
          i = samplesize(soundfd, 16UL); /* 8, 16 */
          i = channels(soundfd, maxchannels+1UL); /* 1, 2  */
          i = setfragment(soundfd, fragmentsize); /* 2^bufsize * 65536*bufs*/
@@ -516,6 +518,7 @@ static void OpenSound(void)
             osic_WrINT32((unsigned long)s, 1UL);
             osi_WrStrLn("Hz!", 4ul);
          }
+#endif
       }
    }
    else if (abortonsounderr) {
