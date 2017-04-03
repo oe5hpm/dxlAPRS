@@ -18,6 +18,12 @@
 #include <unistd.h>
 #include <netinet/tcp.h>
 
+#ifndef MSG_MORE
+#define MSG_MORE 0
+#endif
+#ifndef MSG_NOSIGNAL
+#define MSG_NOSIGNAL 0
+#endif
 //--------------------
 
 int resolv(char *url, int *host)
