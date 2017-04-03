@@ -17,7 +17,7 @@
 #ifndef signal_H_
 #include "signal.h"
 #endif
-#include <wait.h>
+#include <sys/wait.h>
 #ifndef beep_H_
 #include "beep.h"
 #endif
