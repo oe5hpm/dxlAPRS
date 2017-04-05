@@ -187,8 +187,11 @@ TARGETS = \
 	sondeudp \
 	aprsmap \
 	sdrtst \
-	sdrradio \
-	l2cat
+	sdrradio
+
+ifneq ($(HOSTOS), Darwin)
+	TARGETS += l2cat
+endif
 
 OBJS = \
 	$(OBJ_COMMON) \
