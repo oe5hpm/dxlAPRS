@@ -16,7 +16,6 @@
 #				to axudp frames
 # - udphub		L2 AX25 switch to process many Packet Radio clients on one
 #				single AXUDP interface from Flexnet, XNET, ...
-# - udprfnet
 # - aprsmap		powerful APRS viewer based on Openstreetmap
 # ---------------------- common section ---------------------------------------
 HOSTARCH := $(shell uname -m | \
@@ -159,7 +158,6 @@ OBJ_UDPBOX	= udpbox.o
 OBJ_UDPGATE4	= udpgate4.o
 OBJ_UDPFLEX	= udpflex.o
 OBJ_UDPHUB	= udphub.o
-OBJ_UDPRFNET	= udprfnet.o
 OBJ_APRSMAP	= \
 	aprsdecode.o \
 	aprsmap.o \
@@ -185,7 +183,6 @@ TARGETS = \
 	udpgate4 \
 	udpflex \
 	udphub \
-	udprfnet \
 	sondemod \
 	sondeudp \
 	aprsmap \
@@ -204,7 +201,6 @@ OBJS = \
 	$(OBJ_UDPGATE4) \
 	$(OBJ_UDPFLEX) \
 	$(OBJ_UDPHUB) \
-	$(OBJ_UDPRFNET) \
 	$(OBJ_APRSMAP) \
 	$(OBJ_SDRTST) \
 	$(OBJ_SDRRADIO) \
@@ -255,10 +251,6 @@ udpflex: $(OBJ_UDPFLEX) $(OBJ_COMMON)
 udphub: $(OBJ_UDPHUB) $(OBJ_COMMON)
 	$(CC) $(LFLAGS) -o udphub $(OBJ_COMMON) $(OBJ_UDPHUB) -lm
 	$(STRIP) udphub $(STRIPFLAGS)
-
-udprfnet: $(OBJ_UDPRFNET) $(OBJ_COMMON)
-	$(CC) $(LFLAGS) -o udprfnet $(OBJ_COMMON) $(OBJ_UDPRFNET) -lm -lrt
-	$(STRIP) udprfnet $(STRIPFLAGS)
 
 aprsmap : $(OBJ_APRSMAP) $(OBJ_COMMON)
 	$(CC) $(LFLAGS) -o aprsmap $(OBJ_APRSMAP) $(OBJ_COMMON) $(XLIBS) -lm
