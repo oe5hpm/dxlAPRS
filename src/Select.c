@@ -81,7 +81,7 @@ int selectrwt(long *sec, long *usec)
   /* MacOS does not update tv value in select */
   clock_gettime(CLOCK_REALTIME, &spec2);
   s = spec2.tv_sec-spec1.tv_sec;
-  us = spec2.tv_nsec / 1000 - spec1.tv_nsec /1 000;
+  us = spec2.tv_nsec / 1000 - spec1.tv_nsec / 1000;
   if (us < 0) {
 	  us += 1000000;
 	  s -= 1;
