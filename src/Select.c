@@ -68,7 +68,7 @@ int selectrwt(long *sec, long *usec)
   struct timeval tv;
   int ret;
 #ifdef MACOS
-  struct timespec spec1,spec2;
+  struct timeval spec1, spec2;
   time_t s;
   long us;
   gettimeofday(&spec1, NULL);
@@ -81,7 +81,7 @@ int selectrwt(long *sec, long *usec)
   /* MacOS does not update tv value in select */
   gettimeofday(&spec2, NULL);
   s = spec2.tv_sec-spec1.tv_sec;
-  us = spec2.tv_nsec / 1000 - spec1.tv_nsec / 1000;
+  us = spec2.tv_usec - spec1.tv_usec;
   if (us < 0) {
 	  us += 1000000;
 	  s -= 1;
