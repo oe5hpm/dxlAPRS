@@ -1238,8 +1238,9 @@ extern void useri_saveconfig(void)
                 /* write temp file and rename later */
    fd = osi_OpenWrite(backupfn, 1000ul);
    if (!osic_FdValid(fd)) {
-      strncpy(h,"Can not write ",1000u);
+      strncpy(h,"\012Can not write ",1000u);
       aprsstr_Append(h, 1000ul, backupfn, 1000ul);
+      aprsstr_Append(h, 1000ul, "\012", 2ul);
       useri_textautosize(0L, 0L, 6UL, 4UL, 'e', h, 1000ul);
       useri_refresh = 1;
       return;
@@ -1428,8 +1429,9 @@ extern void useri_loadconfig(char verb)
       osic_Close(fd);
    }
    else {
-      strncpy(h,"Can not read ",1000u);
+      strncpy(h,"\012Can not read ",1000u);
       aprsstr_Append(h, 1000ul, aprsdecode_lums.configfn, 257ul);
+      aprsstr_Append(h, 1000ul, "\012", 2ul);
       useri_textautosize(0L, 0L, 6UL, 10UL, 'e', h, 1000ul);
       useri_refresh = 1;
       if (verb) osi_WrStrLn(h, 1000ul);
@@ -1819,8 +1821,14 @@ extern void useri_saveXYtocfg(unsigned char c, long x, long y)
 
 extern void useri_xerrmsg(char s[], unsigned long s_len)
 {
+   char h[2001];
    X2C_PCOPY((void **)&s,s_len);
-   useri_textautosize(0L, 0L, 6UL, 0UL, 'e', s, s_len);
+   if (s[0UL]) {
+      strncpy(h,"\012",2001u);
+      aprsstr_Append(h, 2001ul, s, s_len);
+      aprsstr_Append(h, 2001ul, "\012", 2ul);
+      useri_textautosize(0L, 0L, 6UL, 0UL, 'e', h, 2001ul);
+   }
    X2C_PFREE(s);
 } /* end xerrmsg() */
 
@@ -3979,7 +3987,8 @@ static void drawsymsquare(maptool_pIMAGE image, char tab, char sym, long x0,
    if (!X2C_INL((unsigned char)tab,256,_cnst1)) {
       tab = '\\';
       sym = '?';
-      useri_textautosize(0L, 0L, 6UL, 2UL, 'e', "illegal symbol", 15ul);
+      useri_textautosize(0L, 0L, 6UL, 2UL, 'e', "\012illegal symbol\012",
+                17ul);
    }
    col.r = 300U;
    col.g = 301U;
@@ -4037,7 +4046,7 @@ static void helpmenu(void)
    newmenu(&menu, 150UL, aprsdecode_lums.fontysize+7UL, 3UL, useri_bTRANSP);
    /*  addline(menu, "Shortcuts", CMDSHORTCUTLIST, MINH*6); */
    addline(menu, "Helptext", 9ul, "\305", 2ul, 610UL);
-   addline(menu, "aprsmap(cu) 0.64 by OE5DXL ", 28ul, " ", 2ul, 605UL);
+   addline(menu, "aprsmap(cu) 0.65 by OE5DXL ", 28ul, " ", 2ul, 605UL);
    setunderbar(menu, 37L);
    menu->ysize = menu->oldknob*menu->yknob;
    menu->oldknob = 0UL;
@@ -4595,14 +4604,21 @@ static void potimove(pMENU m, unsigned long potx, unsigned long knob)
       maxbright = aprsdecode_lums.purgetime;
       if (maxbright<3600UL) maxbright = 3600UL;
       v = aprsdecode_lums.firstdim;
+      if (v>aprsdecode_lums.purgetime) v = aprsdecode_lums.purgetime;
       if (potx>0UL) {
          v = (vp*maxbright)/220UL;
          aprsdecode_lums.firstdim = v;
       }
       strncpy(s,"Time full Bright",100u);
       useri_int2cfg(useri_fTFULL, (long)(v/60UL));
-      aprsstr_IntToStr((long)(v/3600UL), 0UL, h, 100ul);
-      aprsstr_Append(h, 100ul, "h", 2ul);
+      if (v<7200UL) {
+         aprsstr_IntToStr((long)(v/60UL), 0UL, h, 100ul);
+         aprsstr_Append(h, 100ul, "Min", 4ul);
+      }
+      else {
+         aprsstr_IntToStr((long)(v/3600UL), 0UL, h, 100ul);
+         aprsstr_Append(h, 100ul, "h", 2ul);
+      }
       vd = (v*220UL)/maxbright;
    }
    else if (knob==9UL) {
@@ -5251,7 +5267,8 @@ static void sendmsg(void)
             aprsstr_Delstr(s, 201ul, 0UL, (unsigned long)(ii+1L));
             icfg(useri_fMSGTEXT, s, 201ul);
             if (aprsstr_Length(s, 201ul)>=67UL) {
-               useri_say("Beacon does not fit in Msg!", 28ul, 4UL, 'e');
+               useri_say("\012Beacon does not fit in Msg!\012", 30ul, 4UL,
+                'e');
             }
          }
       }
@@ -9862,32 +9879,6 @@ static void statusbar(void)
 /*  menu^.y0:=0; */
 } /* end statusbar() */
 
-/*
-PROCEDURE setsym(knob, subknob:CARDINAL; set:CONFSET; pm:pMENU; dest:CHAR);
-VAR s:ARRAY[0..2] OF CHAR;
-BEGIN
-  IF findmenuid(OVERLAYID)=pm THEN
-    confstr(set, s);
-    IF (knob>=4) & (knob<=5) THEN
-      IF subknob<=12 THEN s[0]:=CHR(ORD("a")+subknob+(5-knob)*13) END;
-    ELSIF (knob>=2) & (knob<=3) THEN
-      IF subknob<=12 THEN s[0]:=CHR(ORD("A")+subknob+(3-knob)*13) END;
-    ELSIF (knob=1) & (subknob<=9) THEN s[0]:=CHR(ORD("0")+subknob) END;
-    AddConfLine(set, 0, s);
-  ELSE
-    killmenuid(OVERLAYID);
-    IF knob>6 THEN s[0]:="/" ELSE s[0]:="\" END;
-    s[1]:=CHR(32+(12-knob) MOD 6*16+subknob);
-    s[2]:=0C;
-    AddConfLine(set, 0, s);
-    IF s[0]="\" THEN
-      updatemenus;
-      overlaychoose(dest);
-    END;
-  END;
-  updatemenus;
-END setsym;
-*/
 
 static void setsym(unsigned long knob, unsigned long subknob,
                 unsigned char set, pMENU pm, char dest)

@@ -323,7 +323,7 @@ extern void aprspos_GetPos(struct aprspos_POSITION * pos,
             ok0 = 0;
          }
          *symb = buf[payload+7UL];
-         *symbt = Mapsym(buf[payload+8UL]);
+         *symbt = buf[payload+8UL];
       }
       compos = payload+9UL;
       i = payload+9UL;

@@ -806,6 +806,8 @@ copied to send Item as Message
 
 |6815 Destination Call with SSID
 (most in Capital Letters)
+BLN1 to BLN9 for sending
+Bulletins (send as Query)
 
 |6820 Send Message (if connected) to Net and
 first for tx enabled Rf Port. If You

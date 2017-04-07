@@ -1068,6 +1068,7 @@ S Screenshot bpm (win), png (linux)
 W Rain map (use topo or dark map)
 < > Step along Beacons/Waypoints of a selected User
 ( ) Map Brightness +- 5%
+[ ] View until max. Age of Data on Map +-
 / zoom to Marker 1-2 Square
 \ shortcut list
 ~ change track colour

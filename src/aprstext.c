@@ -1574,22 +1574,28 @@ static void getbeaconpos(struct aprspos_POSITION * pos, char * err)
          len = osi_RdBin(fd, (char *)s, 1001ul, 1000UL);
          if (len<1L) {
             len = 0L;
-            useri_say("beacon position file not readable", 34ul, 20UL, 'e');
+            useri_say("\012beacon position file not readable\012", 36ul,
+                20UL, 'e');
          }
          else if (len>1000L) len = 1000L;
          s[len] = 0;
          osic_Close(fd);
       }
-      else useri_say("beacon position file not found", 31ul, 20UL, 'e');
+      else {
+         useri_say("\012beacon position file not found\012", 33ul, 20UL,
+                'e');
+      }
    }
    if (s[0U]) {
       aprstext_deganytopos(s, 1001ul, pos);
       if (!aprspos_posvalid(*pos)) {
-         useri_say("object/item position wrong", 27ul, 4UL, 'e');
+         useri_say("\012beacon: object/item position wrong\012", 37ul, 4UL,
+                'e');
          *err = 1;
       }
    }
    else {
+      useri_say("\012beacon: no object/item position\012", 34ul, 4UL, 'e');
       *err = 1;
       aprsdecode_posinval(pos);
    }
@@ -1643,7 +1649,7 @@ extern void aprstext_encbeacon(char s[], unsigned long s_len,
    useri_confstr(useri_fRBSYMB, symb, 2ul);
    areaobj = (typ=='O' && symb[0U]=='\\') && symb[1U]=='l';
    if (aprsstr_Length(symb, 2ul)!=2UL) {
-      useri_say("no symbol", 10ul, 4UL, 'e');
+      useri_say("\012no symbol\012", 12ul, 4UL, 'e');
       err = 1;
    }
    dao = postyp=='G' || postyp=='M';
@@ -1655,9 +1661,12 @@ extern void aprstext_encbeacon(char s[], unsigned long s_len,
    /*WrInt(dir, 9); WrStrLn("defdir"); */
    if (dir<1000L) {
       if (!areaobj) {
-         if (dir>359L) useri_say("Direction <360", 15ul, 20UL, 'e');
+         if (dir>359L) {
+            useri_say("\012beacon: Direction <360\012", 25ul, 20UL, 'e');
+            err = 1;
+         }
          else if (knots==0L) {
-            useri_say("direction needs speed>0", 24ul, 20UL, 'e');
+            useri_say("\012direction needs speed>0\012", 26ul, 20UL, 'e');
          }
          if (dir==0L) dir = 360L;
       }
@@ -1676,15 +1685,16 @@ extern void aprstext_encbeacon(char s[], unsigned long s_len,
    if (bkn) {
       useri_confstr(useri_fRBNAME, h, 201ul);
       if ((unsigned char)h[0U]<=' ') {
-         useri_say("no beacon call?", 16ul, 4UL, 'e');
+         useri_say("\012no beacon call?\012", 18ul, 4UL, 'e');
       }
       if (useri_configon(useri_fMUSTBECALL) && !aprstext_isacall(h, 201ul)) {
-         useri_say("not valid callsign as beacon sender?", 37ul, 20UL, 'e');
+         useri_say("\012not valid callsign as beacon sender?\012", 39ul,
+                20UL, 'e');
       }
       aprsstr_Append(s, s_len, h, 201ul);
       if (aprstext_getmypos(&pos)) {
          if (!aprspos_posvalid(pos)) {
-            useri_say("net beacon position wrong", 26ul, 4UL, 'e');
+            useri_say("\012Net beacon position wrong\012", 28ul, 4UL, 'e');
             err = 1;
          }
       }
@@ -1693,8 +1703,8 @@ extern void aprstext_encbeacon(char s[], unsigned long s_len,
    else {
       useri_confstr(useri_fMYCALL, h, 201ul);
       if ((unsigned char)h[0U]<=' ') {
-         useri_say("object/item needs a Config/Online/My Call", 42ul, 4UL,
-                'e');
+         useri_say("\012object/item needs a Config/Online/My Call\012", 44ul,
+                 4UL, 'e');
       }
       aprsstr_Append(s, s_len, h, 201ul);
       getbeaconpos(&pos, &err);
@@ -1713,12 +1723,12 @@ extern void aprstext_encbeacon(char s[], unsigned long s_len,
    if (pos.lat<0.0f) lat = -lat;
    if (pos.long0<0.0f) long0 = -long0;
    aprsstr_Append(s, s_len, ">", 2ul);
-   if (X2C_CAP(postyp)=='M') micedest(lat, long0, h, 201ul);
+   if (X2C_CAP(postyp)=='M') {
+      micedest(lat, long0, h, 201ul);
+   }
    else {
       useri_confstr(useri_fRBDEST, h, 201ul);
-      if (h[0U]==0) {
-         strncpy(h,"APLM01",201u);
-      }
+      if (h[0U]==0) strncpy(h,"APLM01",201u);
       i = aprsstr_InStr(h, 201ul, "-", 2ul);
       if (i>0L) aprsstr_Delstr(h, 201ul, (unsigned long)i, 201UL);
    }
@@ -1738,7 +1748,8 @@ extern void aprstext_encbeacon(char s[], unsigned long s_len,
    if (!bkn) {
       useri_confstr(useri_fRBNAME, h, 201ul);
       if ((unsigned char)h[0U]<=' ') {
-         useri_say("no object/item name?", 21ul, 20UL, 'e');
+         useri_say("\012no object/item name?\012", 23ul, 20UL, 'e');
+         err = 1;
       }
       aprsstr_Append(h, 201ul, "         ", 10ul); /* fix size */
       h[9U] = 0;
@@ -1773,9 +1784,17 @@ extern void aprstext_encbeacon(char s[], unsigned long s_len,
       break;
    case 'C':
       if (feet<0L && feet>-10000L) {
-         useri_say("no negative altitude in compressed mode", 40ul, 20UL,
-                'e');
+         useri_say("\012no negative altitude in compressed mode\012", 42ul,
+                20UL, 'e');
          err = 1;
+      }
+      if ((unsigned char)symb[0U]>='a' && (unsigned char)symb[0U]<='j') {
+         useri_say("\012overlay character a..j not in compressed mode\012",
+                48ul, 20UL, 'e');
+         err = 1;
+      }
+      if ((unsigned char)symb[0U]>='0' && (unsigned char)symb[0U]<='9') {
+         symb[0U] = (char)((unsigned long)(unsigned char)symb[0U]+49UL);
       }
       aprstext_compressdata(pos, (unsigned long)knots, (unsigned long)dir,
                 feet, symb, 2ul, h, 201ul);
