@@ -264,6 +264,34 @@ static void mapbri(long v)
 } /* end mapbri() */
 
 
+static void fullbritime(char down)
+{
+   char h[100];
+   char s[100];
+   unsigned long n;
+   unsigned long d;
+   d = 1800UL;
+   if (aprsdecode_lums.firstdim<900UL) d = 60UL;
+   else if (aprsdecode_lums.firstdim<3600UL) d = 300UL;
+   else if (aprsdecode_lums.firstdim<10800UL) d = 900UL;
+   n = aprsdecode_lums.firstdim/d;
+   if (down) {
+      if (n>1UL) --n;
+   }
+   else ++n;
+   aprsdecode_lums.firstdim = n*d;
+   if (aprsdecode_lums.firstdim>aprsdecode_lums.purgetime) {
+      aprsdecode_lums.firstdim = aprsdecode_lums.purgetime;
+   }
+   useri_int2cfg(useri_fTFULL, (long)(aprsdecode_lums.firstdim/60UL));
+   strncpy(s,"Fullbright Time ",100u);
+   aprsstr_IntToStr((long)(aprsdecode_lums.firstdim/60UL), 1UL, h, 100ul);
+   aprsstr_Append(s, 100ul, h, 100ul);
+   aprsstr_Append(s, 100ul, "Min", 4ul);
+   useri_say(s, 100ul, 4UL, 'b');
+} /* end fullbritime() */
+
+
 static float movest(unsigned long width)
 {
    return osic_power(2.0f, -maptool_realzoom(aprsdecode_initzoom,
@@ -5024,6 +5052,8 @@ static void MainEvent(void)
       else if (aprsdecode_click.cmd=='\011') toggview();
       else if (aprsdecode_click.cmd=='(') mapbri(-5L);
       else if (aprsdecode_click.cmd==')') mapbri(5L);
+      else if (aprsdecode_click.cmd=='[') fullbritime(1);
+      else if (aprsdecode_click.cmd==']') fullbritime(0);
       makeimage(0);
       aprsdecode_click.cmd = 0;
       if ((useri_beaconediting && useri_beaconed)

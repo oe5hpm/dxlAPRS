@@ -1561,7 +1561,7 @@ static void beaconmacros(char s[], unsigned long s_len, const char path[],
             }
             else if (s[i]=='\\') aprsstr_Append(ns, 256ul, "\\\\", 3ul);
             else if (s[i]=='v') {
-               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.64", 17ul);
+               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.65", 17ul);
             }
             else if (s[i]=='l') {
                if (aprstext_getmypos(&pos)) {
@@ -4209,11 +4209,13 @@ static void joinchunk(aprsdecode_pOPHIST op)
                if (km>waylen) lbad = pf;
                else {
                   waylen = waylen+km*0.5f;
+                /* inc max hop if there are some steps */
                   if (waylen>aprsdecode_maxhop) waylen = aprsdecode_maxhop;
                }
             }
          }
          if ((pf->nodraw&0xCU)==0U) {
+            /* use only until now ok waypoints */
             llpf = lpf;
             lpf = pf;
          }
@@ -4226,6 +4228,7 @@ static void joinchunk(aprsdecode_pOPHIST op)
       lpf = 0;
       pf = op->frames;
       for (;;) {
+         /* find last long hop in track */
          if (pf==0) break;
          if (aprspos_posvalid(pf->vardat->pos) && (pf->nodraw&0x1EU)==0U) {
             if (lpf && aprspos_distance(lpf->vardat->pos,
@@ -4236,7 +4239,7 @@ static void joinchunk(aprsdecode_pOPHIST op)
          pf = pf->next;
       }
       if (bad) {
-         /* delete path until bad */
+         /* hide path until last bad */
          pf = op->frames;
          while (pf!=bad) {
             pf->nodraw |= 0x20U;
@@ -5659,7 +5662,7 @@ static char tcpconn(aprsdecode_pTCPSOCK * sockchain, long f)
          aprsstr_Append(h, 512ul, s, 100ul);
       }
       aprsstr_Append(h, 512ul, " vers ", 7ul);
-      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.64", 17ul);
+      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.65", 17ul);
       appfilter(h, 512ul, 0);
       /*    IF filter[0]<>0C THEN Append(h, " filter ");
                 Append(h, filter) END; */
@@ -6237,7 +6240,7 @@ static void digi(const aprsdecode_FRAMEBUF b, char fromrf,
                 /* ssid routing off */
       if (aprsstr_InStr(words, words_len, " xi", 4ul)<0L) {
          aprsstr_Append(words, words_len, " v", 3ul);
-                /* if not diabled append mycall for via */
+                /* if not disabled append mycall for via */
          aprsstr_Append(words, words_len, mycall, 31ul);
       }
       aprsstr_Append(words, words_len, " x", 3ul); /* mycall as badword */
@@ -6274,15 +6277,20 @@ static void digi(const aprsdecode_FRAMEBUF b, char fromrf,
          }
       }
       if (ssid==0UL || ssid>7UL) norout = 1;
-      if (!norout) --ssid;
+      n = p;
+      while (n<len && b[n]!='*') ++n;
+      if (n+1UL<len) norout = 1;
+      if (!norout) {
+         /* use ssid routing */
+         if (appendrest) --ssid;
+         else ssid = 0UL;
+      }
       if (ssid>0UL) {
          /* write old or new ssid */
          app0(&viac, tb, &tp, '-');
          if (ssid>=10UL) app0(&viac, tb, &tp, '1');
          app0(&viac, tb, &tp, (char)(ssid%10UL+48UL));
       }
-      n = p;
-      while (n<len && b[n]!='*') ++n;
       if (n<len) {
          if (directonly) return;
          /* not direct heard */
@@ -6308,7 +6316,9 @@ static void digi(const aprsdecode_FRAMEBUF b, char fromrf,
          if (((((((via(words, words_len, b, 'n', n, p-3UL) && num0(b, p-3UL,
                 &n1)) && n1>0UL) && n1<=7UL) && b[p-2UL]=='-') && num0(b,
                 p-1UL, &n2)) && n2>0UL) && n2<=n1) {
-            if (directonly && n1!=n2) return;
+            if (directonly && n1!=n2) {
+               return;
+            }
             /* not direct heard */
             if (appendrest && n2>1UL) {
                /* append not n-0 */
