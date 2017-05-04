@@ -71,10 +71,12 @@ typedef char MONCALL[10];
 typedef char FILENAME[1024];
 
 typedef char FRAMEBUF[512];
+
+typedef char FILTERST[256];
+
 /*
       FRAMEBUF=ARRAY[0..256+3+11*10] OF CHAR;
 */
-
 typedef unsigned long CHSET[4];
 
 
@@ -170,6 +172,7 @@ struct TCPSOCK {
    unsigned long losttxframes;
    unsigned long lostrxframes;
    struct FILTERS filters;
+   FILTERST outfilterst; /* for www show outconn filters */
    long rpos;
    long tlen;
    FRAMEBUF rbuf;
@@ -433,7 +436,7 @@ struct _1 {
    char port[6];
    unsigned long resolvtime;
    unsigned long connecttime;
-   char filterst[256];
+   FILTERST filterst;
 };
 
 static struct _1 gateways[21];
@@ -5913,7 +5916,7 @@ ign:center\" BGCOLOR=\"#D0C0C0\"><TD>out", 74ul);
                if (anonym2->service=='S') {
                   FiltToStr(anonym2->filters, h1, 256ul);
                }
-               else aprsstr_Assign(h1, 256ul, actfilter, 256ul);
+               else aprsstr_Assign(h1, 256ul, anonym2->outfilterst, 256ul);
                Appwww(&wsock, wbuf, h1, 256ul);
                Appwww(&wsock, wbuf, "</TD>", 6ul);
                wcard64(wbuf, &wsock, anonym2->txbytesh, anonym2->txbytes);
@@ -6293,6 +6296,8 @@ static void Gateconn(pTCPSOCK * cp)
                   if (tcpconn(cp, fd, 'G')) {
                      aprsstr_Assign((*cp)->ipnum, 64ul, anonym->url, 256ul);
                      aprsstr_Assign((*cp)->port, 6ul, anonym->port, 6ul);
+                     aprsstr_Assign((*cp)->outfilterst, 256ul,
+                anonym->filterst, 256ul);
                      (*cp)->gatepri = trygate;
                      strncpy(h,"T:connect to: ",512u);
                      aprsstr_Append(h, 512ul, anonym->url, 256ul);
@@ -6405,6 +6410,7 @@ extern int main(int argc, char **argv)
    if (sizeof(MONCALL)!=10) X2C_ASSERT(0);
    if (sizeof(FILENAME)!=1024) X2C_ASSERT(0);
    if (sizeof(FRAMEBUF)!=512) X2C_ASSERT(0);
+   if (sizeof(FILTERST)!=256) X2C_ASSERT(0);
    if (sizeof(WWWB)!=1401) X2C_ASSERT(0);
    if (sizeof(MSGTEXT)!=68) X2C_ASSERT(0);
    if (sizeof(ACKTEXT)!=5) X2C_ASSERT(0);
