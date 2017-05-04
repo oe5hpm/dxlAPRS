@@ -5112,7 +5112,7 @@ static void MainEvent(void)
       if (maptool_IsMapLoaded()) makeimage(0);
       else if (maptrys==20UL) tooltips('m');
    }
-   if (aprsdecode_click.bubblstr[0UL]) {
+   if (aprsdecode_click.bubblstr[0UL] && !xosi_pulling) {
       useri_textbubble(aprsdecode_click.bubblpos, aprsdecode_click.bubblstr,
                 50ul, aprsdecode_click.lastpoi);
       aprsdecode_click.bubblstr[0UL] = 0;
