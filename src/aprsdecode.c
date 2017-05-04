@@ -2052,8 +2052,9 @@ static void poplogerr(char fn[], unsigned long fn_len)
 {
    char h[1001];
    X2C_PCOPY((void **)&fn,fn_len);
-   strncpy(h,"logfile write error ",1001u);
+   strncpy(h,"\012logfile write error ",1001u);
    aprsstr_Append(h, 1001ul, fn, fn_len);
+   aprsstr_Append(h, 1001ul, "\012", 2ul);
    useri_textautosize(0L, 5L, 6UL, 4UL, 'e', h, 1001ul);
    X2C_PFREE(fn);
 } /* end poplogerr() */
@@ -3196,7 +3197,10 @@ extern void aprsdecode_extractbeacon(char raw[], unsigned long raw_len,
          useri_AddConfLine(useri_fRBTIME, 1U, s, 1000ul);
          useri_AddConfLine(useri_fRBPORT, 1U, (char *) &port, 1ul);
       }
-      else useri_say("beacon syntax wrong, delete line!", 34ul, 4UL, 'e');
+      else {
+         useri_say("\012beacon syntax wrong, delete line!\012", 36ul, 4UL,
+                'e');
+      }
    }
    if (aprsdecode_Decode(raw, raw_len, &dat)==0L) {
       if (dat.type==aprsdecode_OBJ || dat.type==aprsdecode_ITEM) {
@@ -5576,10 +5580,11 @@ extern void aprsdecode_tcpclose(aprsdecode_pTCPSOCK w, char fin)
       if ((long)anonym->fd>=0L) osic_CloseSock(anonym->fd);
       anonym->fd = -1L;
       aprsdecode_lasttcprx = 0UL;
-      strncpy(h,"TCP Close ",201u);
+      strncpy(h,"\012TCP Close ",201u);
       aprsstr_Append(h, 201ul, anonym->ipnum, 64ul);
       aprsstr_Append(h, 201ul, ":", 2ul);
       aprsstr_Append(h, 201ul, anonym->port, 6ul);
+      aprsstr_Append(h, 201ul, "\012", 2ul);
       useri_textautosize(0L, 5L, 6UL, 4UL, 'e', h, 201ul);
    }
 } /* end tcpclose() */
@@ -5985,7 +5990,8 @@ extern void aprsdecode_tcpjobs(void)
                      porttext((unsigned long)i, s, 1000ul);
                      aprsstr_Append(s, 1000ul, " Config Error <IPNumber:TxPor\
 t:RxPort>", 39ul);
-                     useri_textautosize(0L, 5L, 6UL, 10UL, 'e', s, 1000ul);
+                     /*              textautosize(0, 5, 6, 10, "e", s); */
+                     useri_xerrmsg(s, 1000ul);
                   }
                   else {
                      anonym0->fd = openudp();
@@ -5995,8 +6001,9 @@ t:RxPort>", 39ul);
                 anonym0->bindport)<0L) {
                         aprsstr_Append(s, 1000ul, " Bindport Error, Illegal (\
 Rx)Port or in Use", 44ul);
-                        useri_textautosize(0L, 5L, 6UL, 10UL, 'e', s,
-                1000ul);
+                        /*                textautosize(0, 5, 6, 10, "e", s);
+                */
+                        useri_xerrmsg(s, 1000ul);
                         osic_CloseSock(anonym0->fd);
                         anonym0->fd = -1L;
                      }
@@ -6011,7 +6018,8 @@ Rx)Port or in Use", 44ul);
                else {
                   porttext((unsigned long)i, s, 1000ul);
                   aprsstr_Append(s, 1000ul, " Not Configured", 16ul);
-                  useri_textautosize(0L, 5L, 6UL, 10UL, 'e', s, 1000ul);
+                  /*            textautosize(0, 5, 6, 10, "e", s); */
+                  useri_xerrmsg(s, 1000ul);
                }
                if (!ok0) {
                   useri_configbool((unsigned char)(36UL+(unsigned long)i),
@@ -6025,7 +6033,8 @@ Rx)Port or in Use", 44ul);
             anonym0->starttime = 0UL;
             porttext((unsigned long)i, s, 1000ul);
             aprsstr_Append(s, 1000ul, " Close", 7ul);
-            useri_textautosize(0L, 5L, 6UL, 4UL, 'e', s, 1000ul);
+            /*        textautosize(0, 5, 6, 4, "e", s); */
+            useri_xerrmsg(s, 1000ul);
          }
       }
    } /* end for */
