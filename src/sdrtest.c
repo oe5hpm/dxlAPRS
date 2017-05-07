@@ -77,6 +77,8 @@ struct SQUELCH {
    long wakeness;
    long pcmc;
    unsigned long nexttick;
+   unsigned long waterp;
+   unsigned long waterdat[16];
 };
 
 static long fd;
@@ -227,6 +229,7 @@ static void Parms(void)
    powersave = 0UL;
    maxrx = 63UL;
    nosquelch = 0;
+   /*  watermark:=FALSE; */
    maxwake = 2000UL;
    for (;;) {
       osi_NextArg(s, 1001ul);
@@ -761,7 +764,7 @@ static long mixright;
 static long levdiv2;
 
 
-static void sendaudio(long pcm0, char pcm80, char chan0)
+static void sendaudio(long pcm0, char pcm80, unsigned long ch)
 {
    if (pcm0>32767L) pcm0 = 32767L;
    else if (pcm0<-32767L) pcm0 = -32767L;
@@ -769,8 +772,26 @@ static void sendaudio(long pcm0, char pcm80, char chan0)
       sndbuf8[sndw] = (unsigned char)((unsigned long)(pcm0+32768L)/256UL);
    }
    else {
-      pcm0 = (long)((unsigned long)pcm0&0xFFFFFFFEUL);
-      if (chan0) ++pcm0;
+      /*
+      -- code data in watermark
+          IF watermark THEN
+            pcm:=CAST(INTEGER, CAST(SET32, pcm)*SET32{2..15}
+                );            (* use bit 1 *)
+            WITH squelchs[ch] DO
+              IF waterp>0 THEN                                            (* data to send *)
+                wb:=waterdat[waterp]
+                IF wb*SET32{0}<>SET32{}
+                ) THEN INC(pcm, 2) END;            (* send a 1 *)
+                wb:=SHIFT(wb, -1);
+                waterdat[waterp]:=wb;
+                IF wb=SET32{0}) THEN DEC(waterp) END;                     (* next 9 bit word *)
+              END;
+            END;
+          ELSE pcm:=CAST(INTEGER, CAST(SET32, pcm)*SET32{1..15}) END;
+          IF ch=0 THEN INC(pcm) END;
+                (* set bit 0 on chanel 0 *)
+      -- code data in watermark
+      */
       sndbuf[sndw] = (short)pcm0;
    }
    ++sndw;
@@ -790,27 +811,6 @@ static void userio(void)
    if (verb) showrssi();
 } /* end userio() */
 
-/*
-PROCEDURE schedule;
-VAR i,j:CARDINAL;
-BEGIN
-  i:=0;
-  IF freqc>0 THEN
-    j:=actch;
-    REPEAT
-      IF VAL(INTEGER, ticker-squelchs[j].nexttick)>=0 THEN 
-        squelchs[j].nexttick:=ticker;
-        prx[i]:=ADR(rxx[j]); 
-        INC(i);
-      END;
-      INC(j);
-      IF j>=freqc THEN j:=0 END;
-    UNTIL (i>maxrx) OR (j=actch);
-  END;
-  prx[i]:=NIL;
-  actch:=j;
-END schedule;
-*/
 
 static void schedule(void)
 {
@@ -991,24 +991,25 @@ extern int main(int argc, char **argv)
                         /* channel mixer */
                         if (mixto==0UL || rp==0UL) {
                            if (mixto==0UL || freqc==0UL) {
-                              sendaudio(pcm, pcm8, rp==0UL);
+                              sendaudio(pcm, pcm8, rp);
                            }
                            else {
-                              sendaudio(mixleft*levdiv2>>8, pcm8, rp==0UL);
+                              sendaudio(mixleft*levdiv2>>8, pcm8, rp);
                               if (mixto==2UL) {
-                                 sendaudio(mixright*levdiv2>>8, pcm8,
-                rp==0UL);
+                                 sendaudio(mixright*levdiv2>>8, pcm8, rp);
                               }
-                           }
-                           if (labs(mixleft)>32767L || labs(mixright)>32767L)
-                 {
-                              if (levdiv2>20L) {
-                                 --levdiv2;
+                              if (labs(mixleft)>32767L || labs(mixright)
+                >32767L) {
+                                 if (levdiv2>20L) {
+                                    --levdiv2;
+                                 }
                               }
+                              else if (levdiv2<256L) {
+                                 ++levdiv2;
+                              }
+                              mixleft = 0L;
+                              mixright = 0L;
                            }
-                           else if (levdiv2<256L) ++levdiv2;
-                           mixleft = 0L;
-                           mixright = 0L;
                         }
                         ++rp;
                      }
