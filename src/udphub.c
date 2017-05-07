@@ -256,7 +256,7 @@ static void Showctl(unsigned long com, unsigned long cmd)
    else if (cm==0x43UL) osi_WrStr("DISC", 5ul);
    else if (cm==0x63UL) osi_WrStr("UA", 3ul);
    else if (cm==0x87UL) osi_WrStr("FRMR", 5ul);
-   else osic_WrHex(cmd, 1UL);
+   else osi_WrHex(cmd, 1UL);
    strncpy(PF,"v^-+",4u);
    if (com==0UL || com==3UL) osi_WrStr("v1", 3ul);
    else {
@@ -304,7 +304,7 @@ static void ShowFrame(char f[], unsigned long f_len, unsigned long len,
    ++i;
    if (i<len) {
       osi_WrStr(" pid ", 6ul);
-      osic_WrHex((unsigned long)(unsigned char)f[i], 1UL);
+      osi_WrHex((unsigned long)(unsigned char)f[i], 1UL);
    }
    ++i;
    osic_WrLn();

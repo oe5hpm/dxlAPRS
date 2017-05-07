@@ -23,7 +23,6 @@
 #endif
 #include <osic.h>
 
-/* os interface */
 typedef long osi_File;
 
 typedef long osi_SOCKET;
@@ -137,7 +136,6 @@ extern void osi_WrBin(long, char [], unsigned long, unsigned long);
 extern void osi_Werr(char [], unsigned long);
 
 extern void osi_WrHex(unsigned long, unsigned long);
-/*PROCEDURE IsFifo(fd:File):BOOLEAN;*/
 
 extern void osi_NextArg(char [], unsigned long);
 

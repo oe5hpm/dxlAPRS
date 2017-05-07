@@ -324,8 +324,8 @@ extern void aprstat_btimehist(maptool_pIMAGE * img, aprsdecode_pOPHIST op)
       t[i] = (t[i]*150UL)/max0;
       if (i==tmp) break;
    } /* end for */
-   X2C_DYNALLOCATE((char **)img,6u,(tmp0[0] = xm+16UL,tmp0[1] = 166U,tmp0),
-                2u);
+   X2C_DYNALLOCATE((char **)img,sizeof(struct maptool_PIX),
+                (tmp0[0] = xm+16UL,tmp0[1] = 166U,tmp0),2u);
    useri_debugmem.screens += (*img)->Len1*(*img)->Size1;
    if (*img==0) {
       osi_WrStrLn("error image alloc", 18ul);
@@ -357,9 +357,7 @@ extern void aprstat_btimehist(maptool_pIMAGE * img, aprsdecode_pOPHIST op)
    } /* end for */
    for (i = 0UL; i<=149UL; i++) {
       setpix(*img, 7L, (long)((i+8UL)-1UL), 0L, 500L, 800L);
-      if (i%10UL==0UL) {
-         setpix(*img, 6L, (long)((i+8UL)-1UL), 0L, 500L, 800L);
-      }
+      if (i%10UL==0UL) setpix(*img, 6L, (long)((i+8UL)-1UL), 0L, 500L, 800L);
    } /* end for */
    strncpy(s," Beacons per Time ",256u);
    aprsstr_Append(s, 256ul, op->call, 9ul);
@@ -564,8 +562,8 @@ extern void aprstat_kmhist(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
       for (xi = 0UL; xi<=12719UL; xi++) {
          vt[xi] = vt[xi]*maxy; /* fit y in picture */
       } /* end for */
-      X2C_DYNALLOCATE((char **)img,6u,(tmp0[0] = maxx+16UL,tmp0[1] = 136U,
-                tmp0),2u);
+      X2C_DYNALLOCATE((char **)img,sizeof(struct maptool_PIX),
+                (tmp0[0] = maxx+16UL,tmp0[1] = 136U,tmp0),2u);
       useri_debugmem.screens += (*img)->Len1*(*img)->Size1;
       if (*img==0) {
          osi_WrStrLn("error image alloc", 18ul);
@@ -973,8 +971,8 @@ extern void aprstat_althist(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
       return;
    }
    if (*test) return;
-   X2C_DYNALLOCATE((char **)img,6u,(tmp[0] = Maxx+16UL,tmp[1] = 136U,tmp),
-                2u);
+   X2C_DYNALLOCATE((char **)img,sizeof(struct maptool_PIX),
+                (tmp[0] = Maxx+16UL,tmp[1] = 136U,tmp),2u);
    useri_debugmem.screens += (*img)->Len1*(*img)->Size1;
    if (*img==0) {
       osi_WrStrLn("error image alloc", 18ul);
@@ -1141,8 +1139,8 @@ static char newimg(unsigned long Maxx, maptool_pIMAGE * img)
 {
    size_t tmp[2];
    if (*img==0) {
-      X2C_DYNALLOCATE((char **)img,6u,(tmp[0] = Maxx+16UL,tmp[1] = 136U,tmp),
-                2u);
+      X2C_DYNALLOCATE((char **)img,sizeof(struct maptool_PIX),
+                (tmp[0] = Maxx+16UL,tmp[1] = 136U,tmp),2u);
       useri_debugmem.screens += (*img)->Len1*(*img)->Size1;
    }
    if (*img==0) return 0;
@@ -1189,7 +1187,7 @@ static void dots(float XStep, maptool_pIMAGE * img, float v[],
    float io;
    float k;
    float yo;
-   X2C_PCOPY((void **)&v,v_len*4u);
+   X2C_PCOPY((void **)&v,v_len*sizeof(float));
    yo = (-1.E+4f);
    io = 0.0f;
    i = 0UL;
@@ -1285,7 +1283,7 @@ extern void aprstat_wxgraph(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
    dirvalid = 0;
    min0.temp = X2C_max_real;
    min0.baro = X2C_max_real;
-   memset((char *)lastval,(char)0,40UL);
+   memset((char *)lastval,(char)0,sizeof(struct aprstat_LASTVAL));
    fr = op->frames;
    do {
       if (((fr->time0>stime-86400UL && fr->time0<=stime)
@@ -1493,7 +1491,6 @@ extern void aprstat_BEGIN(void)
    static int aprstat_init = 0;
    if (aprstat_init) return;
    aprstat_init = 1;
-   if (sizeof(struct aprstat_LASTVAL)!=40) X2C_ASSERT(0);
    aprstext_BEGIN();
    useri_BEGIN();
    aprspos_BEGIN();

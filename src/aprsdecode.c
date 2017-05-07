@@ -701,7 +701,7 @@ static char getudp(unsigned long usock, aprsdecode_FRAMEBUF buf,
                 ) {
       /*WrInt(udpsend(usock^.fd, buf, len, usock^.dport, usock^.ip), 1);
                 WrStrLn(" us"); */
-      memset((char *)modeminfo,(char)0,12UL);
+      memset((char *)modeminfo,(char)0,sizeof(struct UDPSET));
       buf[len] = 0;
       if (aprsdecode_udpsocks0[usock].rawread) {
          len -= 2L;
@@ -927,7 +927,7 @@ static void tickermon(const char port[], unsigned long port_len, char dir,
       aprsstr_Assign(h1, 31ul, port, port_len);
       h1[0U] = X2C_CAP(h1[0U]);
       aprsstr_Append(h2, 31ul, h1, 31ul);
-      aprsstr_Append(h2, 31ul, (char *) &dir, 1ul);
+      aprsstr_Append(h2, 31ul, (char *) &dir, 1u/1u);
       aprsstr_Append(h2, 31ul, dat.symcall, 9ul);
       if (dat.wx.temp!=1.E+6f) {
          aprsstr_FixToStr(aprstext_FtoC(dat.wx.temp), 2UL, h, 31ul);
@@ -1076,7 +1076,7 @@ static char Sendtcp(aprsdecode_pTCPSOCK to, const aprsdecode_FRAMEBUF buf)
    ok0 = 0;
    if (to) {
       if (to->connt>0UL) {
-         memset((char *) &modeminfo,(char)0,12UL);
+         memset((char *) &modeminfo,(char)0,sizeof(struct UDPSET));
          wrmon(0UL, '<', modeminfo, 1UL, buf, 512ul);
       }
       len = (long)aprsstr_Length(buf, 512ul);
@@ -1119,7 +1119,7 @@ static long Sendudp(const char s[], unsigned long s_len, unsigned long uport,
                 aprsdecode_udpsocks0[uport].dport,
                 aprsdecode_udpsocks0[uport].ip);
             if (len>0L) {
-               memset((char *) &modeminfo,(char)0,12UL);
+               memset((char *) &modeminfo,(char)0,sizeof(struct UDPSET));
                wrmon(uport+1UL, '<', modeminfo, 1UL, s, s_len);
                { /* with */
                   struct aprsdecode_UDPSOCK * anonym = &aprsdecode_udpsocks0[uport]
@@ -1247,7 +1247,7 @@ static void apd(char ws[], unsigned long ws_len, char c, float v,
    long d;
    long n;
    char tmp;
-   if (c) aprsstr_Append(ws, ws_len, (char *) &c, 1ul);
+   if (c) aprsstr_Append(ws, ws_len, (char *) &c, 1u/1u);
    n = (long)X2C_TRUNCI(v+0.5f,X2C_min_longint,X2C_max_longint);
    if (n<0L) {
       aprsstr_Append(ws, ws_len, "-", 2ul);
@@ -1261,7 +1261,7 @@ static void apd(char ws[], unsigned long ws_len, char c, float v,
    }
    do {
       aprsstr_Append(ws, ws_len, (char *)(tmp = (char)((n/d)%10L+48L),&tmp),
-                1ul);
+                1u/1u);
       d = d/10L;
    } while (d);
 } /* end apd() */
@@ -1295,7 +1295,7 @@ static void wxmacro(char ws[], unsigned long ws_len, char wms[],
          if (osic_FdValid(f)) {
             n = (unsigned long)osic_Size(f);
             if (n>1024UL) osic_Seek(f, n-1024UL);
-            len = osi_RdBin(f, (char *)cb, 1024ul, 1024UL);
+            len = osi_RdBin(f, (char *)cb, 1024u/1u, 1024UL);
          }
          if (len>0L) {
             while (len>0L && (unsigned char)cb[len-1L]<=' ') {
@@ -1520,20 +1520,20 @@ static void beaconmacros(char s[], unsigned long s_len, const char path[],
                fn[0U] = 0;
                ++i;
                while ((i<s_len-1 && s[i]) && s[i]!=rwc) {
-                  aprsstr_Append(fn, 1024ul, (char *) &s[i], 1ul);
+                  aprsstr_Append(fn, 1024ul, (char *) &s[i], 1u/1u);
                   ++i;
                }
                if (rw=='<' || rw=='[') {
                   /* read file */
                   f = osi_OpenRead(fn, 1024ul);
                   if (osic_FdValid(f)) {
-                     len = osi_RdBin(f, (char *)ds, 256ul, 255UL);
+                     len = osi_RdBin(f, (char *)ds, 256u/1u, 255UL);
                      osic_Close(f);
                      if (rw=='[') osi_Erase(fn, 1024ul, &ok0);
                      j = 0L;
                      while (((j<len && ds[j]!='\015') && ds[j]!='\012')
                 && ds[j]) {
-                        aprsstr_Append(ns, 256ul, (char *) &ds[j], 1ul);
+                        aprsstr_Append(ns, 256ul, (char *) &ds[j], 1u/1u);
                         ++j;
                      }
                   }
@@ -1581,10 +1581,10 @@ static void beaconmacros(char s[], unsigned long s_len, const char path[],
          }
          else {
             aprsstr_Append(ns, 256ul, "\\\\", 3ul);
-            aprsstr_Append(ns, 256ul, (char *) &s[i], 1ul);
+            aprsstr_Append(ns, 256ul, (char *) &s[i], 1u/1u);
          }
       }
-      else aprsstr_Append(ns, 256ul, (char *) &s[i], 1ul);
+      else aprsstr_Append(ns, 256ul, (char *) &s[i], 1u/1u);
       ++i;
    }
    aprsstr_Assign(s, s_len, ns, 256ul);
@@ -2026,7 +2026,7 @@ static char wrlog(const char b[], unsigned long b_len, unsigned long time0,
       } while (i<l);
       h[i+16UL] = '\012';
       ++i;
-      osi_WrBin(f, (char *)h, 1001ul, i+16UL);
+      osi_WrBin(f, (char *)h, 1001u/1u, i+16UL);
       osic_Close(f);
    }
    wrlog_ret = 1;
@@ -2287,7 +2287,8 @@ static void GetHRT(struct aprspos_POSITION * pos, long * altitude,
    wcnt = 0UL;
    dao.lat = 0.0f;
    dao.long0 = 0.0f;
-   memset((char *)hrtposes,(char)0,hrtposes_len*20u);
+   memset((char *)hrtposes,(char)0,
+                hrtposes_len*sizeof(struct aprsdecode_HRTPOS));
    crc = 0UL;
    for (;;) {
       cmd = buf[p];
@@ -2609,7 +2610,7 @@ static void app(char buf[], unsigned long buf_len, float d)
    d = d+78.5f;
    if (d>=33.0f && d<=209.0f) {
       aprsstr_Append(buf, buf_len, (char *)(tmp = (char)aprsdecode_trunc(d),
-                &tmp), 1ul);
+                &tmp), 1u/1u);
    }
 } /* end app() */
 
@@ -2661,10 +2662,10 @@ static void EncMultiline(char buf[], unsigned long buf_len,
          scale = 0.0f;
       }
       aprsstr_Assign(buf, buf_len, " }", 3ul);
-      aprsstr_Append(buf, buf_len, (char *) &md.linetyp, 1ul);
-      aprsstr_Append(buf, buf_len, (char *) &md.filltyp, 1ul);
+      aprsstr_Append(buf, buf_len, (char *) &md.linetyp, 1u/1u);
+      aprsstr_Append(buf, buf_len, (char *) &md.filltyp, 1u/1u);
       aprsstr_Append(buf, buf_len, (char *)(tmp = (char)(33UL+scaler),&tmp),
-                1ul);
+                1u/1u);
       i = 0UL;
       while (i<md.size) {
          app(buf, buf_len, (md.vec[i].lat-center->lat)*scale);
@@ -2840,7 +2841,7 @@ extern long aprsdecode_Decode(char buf[], unsigned long buf_len,
    unsigned long p;
    unsigned long i;
    char thirdparty;
-   memset((char *)dat,(char)0,1596UL);
+   memset((char *)dat,(char)0,sizeof(struct aprsdecode_DAT));
    dat->speed = X2C_max_longcard;
    dat->altitude = X2C_max_longint;
    NoWX(&dat->wx);
@@ -3166,8 +3167,8 @@ extern void aprsdecode_getbeaconname(char raw[], unsigned long raw_len,
       beaconmacros(raw, raw_len, "", 1ul, "", 1ul, 0);
       if (aprsdecode_Decode(raw, raw_len, &dat)==0L) {
          aprsstr_Assign(name, name_len, dat.symcall, 9ul);
-         aprsstr_Assign(symb, symb_len, (char *) &dat.symt, 1ul);
-         aprsstr_Append(symb, symb_len, (char *) &dat.sym, 1ul);
+         aprsstr_Assign(symb, symb_len, (char *) &dat.symt, 1u/1u);
+         aprsstr_Append(symb, symb_len, (char *) &dat.sym, 1u/1u);
          *isobj = dat.type==aprsdecode_OBJ || dat.type==aprsdecode_ITEM;
          *isdel = dat.objkill=='1';
          *isbad = (unsigned char)dat.symt<' ' || (unsigned char)
@@ -3195,7 +3196,7 @@ extern void aprsdecode_extractbeacon(char raw[], unsigned long raw_len,
          if (macros) beaconmacros(raw, raw_len, "", 1ul, "", 1ul, 0);
          aprsstr_IntToStr((long)time0, 0UL, s, 1000ul);
          useri_AddConfLine(useri_fRBTIME, 1U, s, 1000ul);
-         useri_AddConfLine(useri_fRBPORT, 1U, (char *) &port, 1ul);
+         useri_AddConfLine(useri_fRBPORT, 1U, (char *) &port, 1u/1u);
       }
       else {
          useri_say("\012beacon syntax wrong, delete line!\012", 36ul, 4UL,
@@ -3271,7 +3272,7 @@ extern void aprsdecode_extractbeacon(char raw[], unsigned long raw_len,
          else s[0U] = 'I';
       }
       useri_AddConfLine(useri_fRBTYP, 1U, s, 1000ul);
-      useri_AddConfLine(useri_fRBPOSTYP, 1U, (char *) &dat.postyp, 1ul);
+      useri_AddConfLine(useri_fRBPOSTYP, 1U, (char *) &dat.postyp, 1u/1u);
       if (withparm) {
          s[0U] = 0;
          j = aprsstr_InStr(dat.dstcall, 9ul, "-", 2ul);
@@ -3363,7 +3364,7 @@ static void popupmessage(const char from[], unsigned long from_len,
                 txt_len)) && aprsstr_StrCmp(pm->ack, 5ul, ack, ack_len)) {
          if (pl==0) aprsdecode_msgfifo0 = pm->next;
          else pl->next = pm->next;
-         osic_free((X2C_ADDRESS *) &pm, 120UL);
+         osic_free((X2C_ADDRESS *) &pm, sizeof(struct aprsdecode_MSGFIFO));
          pm = aprsdecode_msgfifo0;
          pl = 0;
       }
@@ -3372,7 +3373,7 @@ static void popupmessage(const char from[], unsigned long from_len,
          pm = pm->next;
       }
    }
-   osic_alloc((X2C_ADDRESS *) &pm, 120UL);
+   osic_alloc((X2C_ADDRESS *) &pm, sizeof(struct aprsdecode_MSGFIFO));
    if (pm==0) {
       osi_WrStrLn("msg out of memory", 18ul);
       return;
@@ -3489,7 +3490,7 @@ static char sendtxmsg(unsigned long acknum, const aprsdecode_MONCALL to,
       useri_confstr(useri_fMSGPATH, h, 51ul);
       if ((unsigned char)h[0U]>='1' && (unsigned char)h[0U]<='7') {
          aprsstr_Append(rfs, 512ul, "-", 2ul);
-         aprsstr_Append(rfs, 512ul, (char *) &h[0U], 1ul);
+         aprsstr_Append(rfs, 512ul, (char *) &h[0U], 1u/1u);
       }
       else if (h[0U]) {
          aprsstr_Append(rfs, 512ul, ",", 2ul);
@@ -3531,7 +3532,7 @@ static char sendtxmsg(unsigned long acknum, const aprsdecode_MONCALL to,
          aprsstr_Append(h, 51ul, " to ", 5ul);
          aprsstr_Append(h, 51ul, to, 9ul);
          aprsstr_Append(h, 51ul, " on Port ", 10ul);
-         aprsstr_Append(h, 51ul, (char *)(tmp = (char)(i+49UL),&tmp), 1ul);
+         aprsstr_Append(h, 51ul, (char *)(tmp = (char)(i+49UL),&tmp), 1u/1u);
          useri_say(h, 51ul, 2UL, 'b');
          return 1;
       }
@@ -3709,7 +3710,7 @@ static void showmsg(const char from[], unsigned long from_len,
       osi_WrStr("|", 2ul);
       osi_WrStr(ack, ack_len);
       osi_WrStr("|", 2ul);
-      osi_WrStr((char *) &port, 1ul);
+      osi_WrStr((char *) &port, 1u/1u);
       osic_WrLn();
    }
 } /* end showmsg() */
@@ -3854,9 +3855,10 @@ extern void aprsdecode_deltxmsg(unsigned long cmd, unsigned long n)
                useri_AddConfLine(useri_fMSGTEXT, 0U, pm->msgtext, 67ul);
                useri_AddConfLine(useri_fMSGTO, 0U, pm->to, 9ul);
                useri_AddConfLine(useri_fMSGPORT, 0U, (char *) &pm->port,
-                1ul);
+                1u/1u);
             }
-            osic_free((X2C_ADDRESS *) &pm, 104UL);
+            osic_free((X2C_ADDRESS *) &pm,
+                sizeof(struct aprsdecode_TXMESSAGE));
          }
       }
       else {
@@ -3874,7 +3876,7 @@ extern void aprsdecode_deltxmsg(unsigned long cmd, unsigned long n)
             }
             else if (cmd==3UL) pm->txtime = X2C_max_longcard;
             else if (cmd==2UL) {
-               useri_confstr(useri_fMSGPORT, (char *) &pm->port, 1ul);
+               useri_confstr(useri_fMSGPORT, (char *) &pm->port, 1u/1u);
             }
          }
       }
@@ -3895,7 +3897,7 @@ extern void aprsdecode_makemsg(char ack)
    struct aprsdecode_TXMESSAGE * anonym;
    long tmp;
    mes[0U] = 0;
-   useri_confstr(useri_fMSGPORT, (char *) &po, 1ul);
+   useri_confstr(useri_fMSGPORT, (char *) &po, 1u/1u);
    if (po==' ' || X2C_CAP(po)=='A') po = 'A';
    else if (X2C_CAP(po)=='N' || X2C_CAP(po)=='I') po = 'N';
    else if ((unsigned char)po<'0' || (unsigned char)po>'9') {
@@ -3924,9 +3926,9 @@ extern void aprsdecode_makemsg(char ack)
       pn = pn->next;
    }
    if (mes[0U]==0) {
-      osic_alloc((X2C_ADDRESS *) &pm, 104UL);
+      osic_alloc((X2C_ADDRESS *) &pm, sizeof(struct aprsdecode_TXMESSAGE));
       if (pm==0) Err("out of memory", 14ul);
-      memset((X2C_ADDRESS)pm,(char)0,104UL);
+      memset((X2C_ADDRESS)pm,(char)0,sizeof(struct aprsdecode_TXMESSAGE));
       { /* with */
          struct aprsdecode_TXMESSAGE * anonym = pm;
          anonym->port = po;
@@ -4467,8 +4469,8 @@ static char lookup(unsigned long * wridx, struct _0 table[4096],
       crca12((RAW) &dat.speed, 2L, &rem);
       crca12((RAW) &dat.course, 2L, &rem);
       crca12((RAW) &dat.altitude, 2L, &rem);
-      crca12((RAW) &dat.pos.lat, 4L, &rem);
-      crca12((RAW) &dat.pos.long0, 4L, &rem);
+      crca12((RAW) &dat.pos.lat, (long)sizeof(float), &rem);
+      crca12((RAW) &dat.pos.long0, (long)sizeof(float), &rem);
       sum = (unsigned long)(rem&0x1FFFU);
       ip = index[sum];
       /*WrInt(sum, 10);WrInt(ip, 10);WrStrLn("=ip"); */
@@ -4675,11 +4677,13 @@ static void inserthrt(const struct aprsdecode_DAT dat,
          }
          if (f==0 || f->time0!=stime) {
             /* not a redundant same time frame */
-            osic_alloc((X2C_ADDRESS *) &f, 16UL);
-            useri_debugmem.req = 16UL;
+            osic_alloc((X2C_ADDRESS *) &f,
+                sizeof(struct aprsdecode_FRAMEHIST));
+            useri_debugmem.req = sizeof(struct aprsdecode_FRAMEHIST);
             useri_debugmem.mon += useri_debugmem.req;
             if (f==0) return;
-            memset((X2C_ADDRESS)f,(char)0,16UL);
+            memset((X2C_ADDRESS)f,(char)0,
+                sizeof(struct aprsdecode_FRAMEHIST));
             if ((float)fabs(dat.hrtposes[ih].dalt)<2.147483646E+9f) {
                aprsstr_IntToStr((long)X2C_TRUNCI(dat.hrtposes[ih].dalt,
                 X2C_min_longint,X2C_max_longint), 0UL, s, 51ul);
@@ -4688,7 +4692,8 @@ static void inserthrt(const struct aprsdecode_DAT dat,
                aprsstr_Append(rb, 51ul, "]", 2ul);
             }
             else rb[0U] = 0;
-            len = 21UL+aprsstr_Length(rb, 51ul);
+            len = (sizeof(struct aprsdecode_VARDAT)-499UL)+aprsstr_Length(rb,
+                 51ul);
             osic_alloc((X2C_ADDRESS *) &v, len);
             useri_debugmem.req = len;
             useri_debugmem.mon += len;
@@ -4858,14 +4863,14 @@ extern long aprsdecode_Stoframe(aprsdecode_pOPHIST * optab, char rawbuf[],
       op = op->next;
    }
    if (op==0) {
-      osic_alloc((X2C_ADDRESS *) &op, 84UL);
-      useri_debugmem.req = 84UL;
+      osic_alloc((X2C_ADDRESS *) &op, sizeof(struct aprsdecode_OPHIST));
+      useri_debugmem.req = sizeof(struct aprsdecode_OPHIST);
       useri_debugmem.mon += useri_debugmem.req;
       if (op==0) {
          aprsdecode_Stoframe_ret = -2L;
          goto label;
       }
-      memset((X2C_ADDRESS)op,(char)0,84UL);
+      memset((X2C_ADDRESS)op,(char)0,sizeof(struct aprsdecode_OPHIST));
       memcpy(op->call,dat.symcall,9u);
       if (logmode || opo==0) {
          /* store it at begin of list for quick find */
@@ -4927,17 +4932,18 @@ extern long aprsdecode_Stoframe(aprsdecode_pOPHIST * optab, char rawbuf[],
       }
    }
    /* not insert same frame */
-   osic_alloc((X2C_ADDRESS *) &frame, 16UL);
-   useri_debugmem.req = 16UL;
+   osic_alloc((X2C_ADDRESS *) &frame, sizeof(struct aprsdecode_FRAMEHIST));
+   useri_debugmem.req = sizeof(struct aprsdecode_FRAMEHIST);
    useri_debugmem.mon += useri_debugmem.req;
    if (frame==0) {
       aprsdecode_Stoframe_ret = -2L;
       goto label;
    }
-   memset((X2C_ADDRESS)frame,(char)0,16UL);
+   memset((X2C_ADDRESS)frame,(char)0,sizeof(struct aprsdecode_FRAMEHIST));
    if (same==0) {
       /* found new data */
-      len = 21UL+aprsstr_Length(rawbuf, rawbuf_len);
+      len = (sizeof(struct aprsdecode_VARDAT)-499UL)+aprsstr_Length(rawbuf,
+                rawbuf_len);
       osic_alloc((X2C_ADDRESS *) &same, len);
       useri_debugmem.req = len;
       useri_debugmem.mon += len;
@@ -4999,9 +5005,7 @@ extern long aprsdecode_Stoframe(aprsdecode_pOPHIST * optab, char rawbuf[],
       aprsdecode_Checktrack(op, lastf);
       inwindow(op, rawbuf, rawbuf_len);
    }
-   if (!(frame->nodraw&~0x1U)) {
-      aprsdecode_Stoframe_ret = 0L;
-   }
+   if (!(frame->nodraw&~0x1U)) aprsdecode_Stoframe_ret = 0L;
    else aprsdecode_Stoframe_ret = -1L;
    label:;
    X2C_PFREE(rawbuf);
@@ -5025,7 +5029,8 @@ static char locked(aprsdecode_pOPHIST op)
 static void freevardat(aprsdecode_pVARDAT v)
 {
    unsigned long alen;
-   alen = 21UL+aprsstr_Length(v->raw, 500ul);
+   alen = (sizeof(struct aprsdecode_VARDAT)-499UL)+aprsstr_Length(v->raw,
+                500ul);
    osic_free((X2C_ADDRESS *) &v, alen);
    useri_debugmem.mon -= alen;
 } /* end freevardat() */
@@ -5075,8 +5080,9 @@ extern void aprsdecode_purge(aprsdecode_pOPHIST * ops, unsigned long oldt,
          else --v->refcnt;
          op->frames = frame->next;
          /*WrStr("(purge)"); */
-         useri_debugmem.mon -= 16UL;
-         osic_free((X2C_ADDRESS *) &frame, 16UL);
+         useri_debugmem.mon -= sizeof(struct aprsdecode_FRAMEHIST);
+         osic_free((X2C_ADDRESS *) &frame,
+                sizeof(struct aprsdecode_FRAMEHIST));
       }
       if (op->frames==0 && !locked(op)) {
          /* empty op */
@@ -5085,8 +5091,8 @@ extern void aprsdecode_purge(aprsdecode_pOPHIST * ops, unsigned long oldt,
          if (lastop==0) *ops = op;
          else lastop->next = op;
          /*WrStr(opx^.call); WrStrLn("(purgop) "); */
-         useri_debugmem.mon -= 84UL;
-         osic_free((X2C_ADDRESS *) &opx, 84UL);
+         useri_debugmem.mon -= sizeof(struct aprsdecode_OPHIST);
+         osic_free((X2C_ADDRESS *) &opx, sizeof(struct aprsdecode_OPHIST));
       }
       else {
          if (chk) {
@@ -5130,8 +5136,8 @@ extern void aprsdecode_delwaypoint(aprsdecode_pOPHIST op,
    if (i==1L) freevardat((*frame)->vardat);
    if (lf==0) op->frames = (*frame)->next;
    else lf->next = (*frame)->next;
-   useri_debugmem.mon -= 16UL;
-   osic_free((X2C_ADDRESS *)frame, 16UL);
+   useri_debugmem.mon -= sizeof(struct aprsdecode_FRAMEHIST);
+   osic_free((X2C_ADDRESS *)frame, sizeof(struct aprsdecode_FRAMEHIST));
    f = op->frames;
    while (f) {
       if (f->vardat->refcnt<65535UL) ++f->vardat->refcnt;
@@ -5635,15 +5641,15 @@ static char tcpconn(aprsdecode_pTCPSOCK * sockchain, long f)
    char s[100];
    struct aprsdecode_TCPSOCK * anonym;
    if ((long)f<0L) return 0;
-   osic_alloc((X2C_ADDRESS *) &cp, 1432UL);
-   useri_debugmem.req = 1432UL;
+   osic_alloc((X2C_ADDRESS *) &cp, sizeof(struct aprsdecode_TCPSOCK));
+   useri_debugmem.req = sizeof(struct aprsdecode_TCPSOCK);
    useri_debugmem.mon += useri_debugmem.req;
    if (cp==0) {
       osic_CloseSock(f);
       if (aprsdecode_verb) osi_WrStrLn("tcp conn out of memory", 23ul);
       return 0;
    }
-   memset((X2C_ADDRESS)cp,(char)0,1432UL);
+   memset((X2C_ADDRESS)cp,(char)0,sizeof(struct aprsdecode_TCPSOCK));
    { /* with */
       struct aprsdecode_TCPSOCK * anonym = cp;
       anonym->fd = f;
@@ -5887,7 +5893,7 @@ static void rfbeacons(void)
                            if (Sendudp(s, 512ul, i, 1UL)<0L) {
                               strncpy(says,"beacon: Rfport ",101u);
                               aprsstr_Append(says, 101ul,
-                (char *)(tmp = (char)(i+49UL),&tmp), 1ul);
+                (char *)(tmp = (char)(i+49UL),&tmp), 1u/1u);
                               aprsstr_Append(says, 101ul, " not configured to\
  send", 24ul);
                            }
@@ -5895,7 +5901,7 @@ static void rfbeacons(void)
                         else {
                            strncpy(says,"beacon: Rfport ",101u);
                            aprsstr_Append(says, 101ul,
-                (char *)(tmp = (char)(i+49UL),&tmp), 1ul);
+                (char *)(tmp = (char)(i+49UL),&tmp), 1u/1u);
                            aprsstr_Append(says, 101ul, " not enabled", 13ul);
                         }
                      }
@@ -5982,7 +5988,8 @@ extern void aprsdecode_tcpjobs(void)
                useri_confstr((unsigned char)(36UL+(unsigned long)i), s,
                 1000ul);
                if (s[0U]) {
-                  memset((char *) &aprsdecode_udpsocks0[i],(char)0,64UL);
+                  memset((char *) &aprsdecode_udpsocks0[i],(char)0,
+                sizeof(struct aprsdecode_UDPSOCK));
                   anonym0->fd = -1L;
                   if (aprsstr_GetIp2(s, 1000ul, &anonym0->ip,
                 &anonym0->dport, &anonym0->bindport, &anonym0->checkip)<0L) {
@@ -6127,7 +6134,7 @@ static void approxywarn(struct aprspos_POSITION pos, const char call[],
                 0UL, s, 31ul);
                         aprsstr_Append(h, 101ul, " p ", 4ul);
                         aprsstr_Append(h, 101ul, s, 31ul);
-                        osi_WrBin(fd, (char *)h, 101ul, aprsstr_Length(h,
+                        osi_WrBin(fd, (char *)h, 101u/1u, aprsstr_Length(h,
                 101ul));
                         osic_Close(fd);
                      }
@@ -6578,7 +6585,7 @@ static void storedata(aprsdecode_FRAMEBUF mb, aprsdecode_pTCPSOCK cp,
                 && udpch>0UL) {
          useri_confstr(useri_fALLOWGATE, s, 21ul);
          if (aprsstr_InStr(s, 21ul, (char *)(tmp = (char)(udpch+48UL),&tmp),
-                1ul)>=0L) {
+                1u/1u)>=0L) {
             tp = aprsdecode_tcpsocks;
             while (tp) {
                if (tp->lastping>0UL && (tp->waitpong==1U && tp->lastping+10UL<aprsdecode_realtime || tp->waitpong>1U)
@@ -6656,7 +6663,7 @@ extern void aprsdecode_drawbeacon(char raw[], unsigned long raw_len)
    if (getbeaconparm(b, 512ul, &time0, &port)) {
       beaconmacros(b, 512ul, "", 1ul, "", 1ul, 1);
       if (b[0UL]) {
-         memset((char *) &modeminfo,(char)0,12UL);
+         memset((char *) &modeminfo,(char)0,sizeof(struct UDPSET));
          storedata(b, 0, 0UL, modeminfo, 0, 1);
          if (aprsdecode_lums.logmode) {
             useri_say("drawn to Realtime Data not to imported Log!", 44ul,
@@ -6787,7 +6794,7 @@ extern void aprsdecode_tcpin(aprsdecode_pTCPSOCK acttcp)
          acttcp->watchtime = aprsdecode_realtime;
          /*    WrMon(mbuf); */
          if (mbuf[0UL]=='#') getpong(acttcp, mbuf, 512ul);
-         memset((char *) &modeminfo,(char)0,12UL);
+         memset((char *) &modeminfo,(char)0,sizeof(struct UDPSET));
          storedata(mbuf, acttcp, 0UL, modeminfo, 1, 0);
          aprsdecode_lasttcprx = aprsdecode_realtime;
       }
@@ -6800,8 +6807,10 @@ extern void aprsdecode_initparms(void)
    unsigned long i;
    struct aprsdecode__D1 * anonym;
    initcrc12();
-   memset((char *)aprsdecode_gateways,(char)0,5180UL);
-   memset((char *)aprsdecode_udpsocks0,(char)0,256UL);
+   memset((char *)aprsdecode_gateways,(char)0,
+                sizeof(struct aprsdecode__D3 [10]));
+   memset((char *)aprsdecode_udpsocks0,(char)0,
+                sizeof(struct aprsdecode_UDPSOCK [4]));
    for (i = 0UL; i<=3UL; i++) {
       aprsdecode_udpsocks0[i].fd = -1L;
    } /* end for */
@@ -6892,53 +6901,19 @@ extern void aprsdecode_BEGIN(void)
    if (sizeof(aprsdecode_FRAMEBUF)!=512) X2C_ASSERT(0);
    if (sizeof(aprsdecode_WWWB)!=1401) X2C_ASSERT(0);
    if (sizeof(aprsdecode_FILENAME)!=1024) X2C_ASSERT(0);
-   if (sizeof(struct aprsdecode_POSCALL)!=20) X2C_ASSERT(0);
-   if (sizeof(aprsdecode_pWWWBUF)!=4) X2C_ASSERT(0);
-   if (sizeof(struct aprsdecode_WWWBUF)!=1416) X2C_ASSERT(0);
-   if (sizeof(struct aprsdecode_QWatch)!=252) X2C_ASSERT(0);
-   if (sizeof(aprsdecode_pTCPSOCK)!=4) X2C_ASSERT(0);
-   if (sizeof(struct aprsdecode_TCPSOCK)!=1432) X2C_ASSERT(0);
    if (sizeof(aprsdecode_DUPETIMES)!=262144) X2C_ASSERT(0);
-   if (sizeof(struct aprsdecode_UDPSOCK)!=64) X2C_ASSERT(0);
    if (sizeof(aprsdecode_MSGTEXT)!=67) X2C_ASSERT(0);
    if (sizeof(aprsdecode_ACKTEXT)!=5) X2C_ASSERT(0);
    if (sizeof(aprsdecode_ACKREPTEXT)!=2) X2C_ASSERT(0);
    if (sizeof(unsigned char)!=1) X2C_ASSERT(0);
    if (sizeof(unsigned char)!=1) X2C_ASSERT(0);
-   if (sizeof(struct aprsdecode_SYMBOL)!=2) X2C_ASSERT(0);
-   if (sizeof(struct aprsdecode_AREASYMB)!=12) X2C_ASSERT(0);
-   if (sizeof(aprsdecode_pFRAMEHIST)!=4) X2C_ASSERT(0);
-   if (sizeof(struct aprsdecode_FRAMEHIST)!=16) X2C_ASSERT(0);
-   if (sizeof(aprsdecode_pVARDAT)!=4) X2C_ASSERT(0);
-   if (sizeof(struct aprsdecode_VARDAT)!=520) X2C_ASSERT(0);
-   if (sizeof(aprsdecode_pOPHIST)!=4) X2C_ASSERT(0);
-   if (sizeof(struct aprsdecode_OPHIST)!=84) X2C_ASSERT(0);
-   if (sizeof(struct aprsdecode_WX)!=56) X2C_ASSERT(0);
    if (sizeof(unsigned short)!=2) X2C_ASSERT(0);
-   if (sizeof(struct aprsdecode_HRTPOS)!=20) X2C_ASSERT(0);
-   if (sizeof(struct aprsdecode_MULTILINE)!=336) X2C_ASSERT(0);
    if (sizeof(aprsdecode_TELEMETRY)!=14) X2C_ASSERT(0);
-   if (sizeof(struct aprsdecode_DAT)!=1596) X2C_ASSERT(0);
    if (sizeof(unsigned short)!=2) X2C_ASSERT(0);
-   if (sizeof(aprsdecode_pTXMESSAGE)!=4) X2C_ASSERT(0);
-   if (sizeof(struct aprsdecode_TXMESSAGE)!=104) X2C_ASSERT(0);
-   if (sizeof(aprsdecode_pMSGFIFO)!=4) X2C_ASSERT(0);
-   if (sizeof(struct aprsdecode_MSGFIFO)!=120) X2C_ASSERT(0);
-   if (sizeof(struct aprsdecode_ZOOMFRAME)!=16) X2C_ASSERT(0);
-   if (sizeof(struct aprsdecode_COLTYP)!=12) X2C_ASSERT(0);
-   if (sizeof(aprsdecode_pMOUNTAIN)!=4) X2C_ASSERT(0);
-   if (sizeof(struct aprsdecode_MOUNTAIN)!=48) X2C_ASSERT(0);
-   if (sizeof(struct aprsdecode_CLICKOBJECT)!=16) X2C_ASSERT(0);
    if (sizeof(aprsdecode_MAPNAME)!=41) X2C_ASSERT(0);
    if (sizeof(aprsdecode_SYMBOLSET)!=24) X2C_ASSERT(0);
-   if (sizeof(struct aprsdecode__D0)!=392) X2C_ASSERT(0);
-   if (sizeof(struct aprsdecode__D1)!=424) X2C_ASSERT(0);
-   if (sizeof(struct aprsdecode__D2)!=36) X2C_ASSERT(0);
-   if (sizeof(struct aprsdecode__D3)!=518) X2C_ASSERT(0);
    if (sizeof(CHSET)!=16) X2C_ASSERT(0);
    if (sizeof(TICKERCALL)!=31) X2C_ASSERT(0);
-   if (sizeof(struct UDPSET)!=12) X2C_ASSERT(0);
-   if (sizeof(RAW)!=4) X2C_ASSERT(0);
    aprstext_BEGIN();
    useri_BEGIN();
    aprspos_BEGIN();
