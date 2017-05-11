@@ -79,7 +79,7 @@
 
 #define udpbox_STDINIP 0x0FFFFFFFF
 
-typedef unsigned long SET256[8];
+typedef uint32_t SET256[8];
 
 typedef char RAWCALL[7];
 
@@ -94,22 +94,22 @@ typedef struct DIGIPARMS * pDIGIPARMS;
 
 struct DIGIPARMS {
    RAWCALL digicall;
-   unsigned long pathcheck;
-   unsigned long duptime;
-   unsigned long messagetime;
-   unsigned long timehash[16384];
+   uint32_t pathcheck;
+   uint32_t duptime;
+   uint32_t messagetime;
+   uint32_t timehash[16384];
 };
 
 struct BEACON;
 
 
 struct BEACON {
-   unsigned long bintervall;
-   unsigned long piggytime; /* time send beacons earlier if sending some else */
+   uint32_t bintervall;
+   uint32_t piggytime; /* time send beacons earlier if sending some else */
    char piggyback; /* sent something so append beacon immediately */
    FILENAME bfile;
-   unsigned long btime;
-   unsigned long bline;
+   uint32_t btime;
+   uint32_t bline;
 };
 
 struct CALLS;
@@ -129,8 +129,8 @@ typedef struct OUTPORT * pOUTPORT;
 
 struct OUTPORT {
    pOUTPORT next;
-   unsigned long toip;
-   unsigned long toport;
+   uint32_t toip;
+   uint32_t toport;
    pCALLS filtercalls;
    char echo;
    char rawwrite;
@@ -142,7 +142,7 @@ struct OUTPORT {
    pDIGIPARMS digiparm;
    struct BEACON beacon0;
    struct aprspos_POSITION mypos;
-   long maxkm;
+   int32_t maxkm;
 };
 
 struct INSOCK;
@@ -152,11 +152,11 @@ typedef struct INSOCK * pINSOCK;
 
 struct INSOCK {
    pINSOCK next;
-   long fd;
+   int32_t fd;
    char rawread;
    MONCALL rflinkname;
-   unsigned long fromip;
-   unsigned long bindport;
+   uint32_t fromip;
+   uint32_t bindport;
    pOUTPORT outchain;
 };
 
@@ -168,9 +168,9 @@ struct _0;
 
 
 struct _0 {
-   unsigned long sums;
-   unsigned long ackcnt;
-   unsigned long acktime;
+   uint32_t sums;
+   uint32_t ackcnt;
+   uint32_t acktime;
    pINSOCK source;
    MONCALL froms;
    char acks[6];
@@ -181,7 +181,7 @@ struct MSGHASH {
    pMSGHASH next;
    MONCALL usercall;
    FILENAME msgfile;
-   unsigned long wpos;
+   uint32_t wpos;
    struct _0 hash[16];
 };
 
@@ -195,7 +195,7 @@ static char udpbox_BLANKH = '@';
 
 #define udpbox_ACKMSG "ack"
 
-static unsigned long udpbox_POLYNOM = 0x8408UL;
+static uint32_t udpbox_POLYNOM = 0x8408UL;
 
 #define udpbox_cFILTPASS "p"
 
@@ -228,20 +228,20 @@ static char show;
 
 static pINSOCK insocks;
 
-static unsigned long showip;
+static uint32_t showip;
 
-static unsigned long showport;
+static uint32_t showport;
 
 static pMSGHASH msgusers;
 
 static char ackpath[64];
 
-static unsigned long stdinpos;
+static uint32_t stdinpos;
 
 static char stdinbuf[256];
 
 
-static void Err(const char text[], unsigned long text_len)
+static void Err(const char text[], uint32_t text_len)
 {
    osi_WrStr("udpbox: ", 9ul);
    osi_WrStr(text, text_len);
@@ -250,15 +250,15 @@ static void Err(const char text[], unsigned long text_len)
 } /* end Err() */
 
 
-static void Stomsg(pMSGHASH user, const char from[], unsigned long from_len,
-                const char to[], unsigned long to_len, const char msg[],
-                unsigned long msg_len, const char ack[],
-                unsigned long ack_len, pINSOCK fromsock)
+static void Stomsg(pMSGHASH user, const char from[], uint32_t from_len,
+                 const char to[], uint32_t to_len,
+                const char msg[], uint32_t msg_len,
+                const char ack[], uint32_t ack_len, pINSOCK fromsock)
 {
-   unsigned long h;
-   unsigned long i;
-   unsigned long t;
-   long f;
+   uint32_t h;
+   uint32_t i;
+   uint32_t t;
+   int32_t f;
    char mb[256];
    struct MSGHASH * anonym;
    struct _0 * anonym0;
@@ -267,7 +267,7 @@ static void Stomsg(pMSGHASH user, const char from[], unsigned long from_len,
       i = 0UL;
       while (i<=msg_len-1 && msg[i]) ++i;
       t = osic_time();
-      h = aprsstr_Hash(msg, msg_len, 0L, (long)i)&16383UL;
+      h = aprsstr_Hash(msg, msg_len, 0L, (int32_t)i)&16383UL;
       i = 0UL;
       while (i<=15UL && !(((h==anonym->hash[i].sums && anonym->hash[i]
                 .acktime+600UL>=t) && aprsstr_StrCmp(ack, ack_len,
@@ -295,7 +295,8 @@ static void Stomsg(pMSGHASH user, const char from[], unsigned long from_len,
             f = osi_OpenAppend(anonym->msgfile, 1024ul);
             if (f<0L) f = osi_OpenWrite(anonym->msgfile, 1024ul);
             if (f>=0L) {
-               osi_WrBin(f, (char *)mb, 256u/1u, aprsstr_Length(mb, 256ul));
+               osi_WrBin(f, (char *)mb, 256u/1u, aprsstr_Length(mb,
+                256ul));
                osic_Close(f);
             }
          }
@@ -304,7 +305,7 @@ static void Stomsg(pMSGHASH user, const char from[], unsigned long from_len,
             anonym0->sums = h;
             aprsstr_Assign(anonym0->acks, 6ul, ack, ack_len);
             aprsstr_Assign(anonym0->froms, 9ul, from, from_len);
-            if ((unsigned char)ack[0UL]>' ') {
+            if ((uint8_t)ack[0UL]>' ') {
                anonym0->ackcnt = 4UL;
                anonym0->acktime = 0UL;
             }
@@ -329,11 +330,12 @@ static void Stomsg(pMSGHASH user, const char from[], unsigned long from_len,
 #define udpbox_USERACK "{"
 
 
-static char Usermsg(const char b[], unsigned long b_len, long len, long p,
-                pINSOCK fromsock, char * selfmsg)
+static char Usermsg(const char b[], uint32_t b_len,
+                int32_t len, int32_t p, pINSOCK fromsock,
+                char * selfmsg)
 {
-   long pf;
-   unsigned long j;
+   int32_t pf;
+   uint32_t j;
    pMSGHASH user;
    char to[9];
    char from[9];
@@ -367,7 +369,7 @@ static char Usermsg(const char b[], unsigned long b_len, long len, long p,
       ok0 = 0;
       for (j = 0UL; j<=8UL; j++) {
          /* message to */
-         to[j] = b[p+(long)j];
+         to[j] = b[p+(int32_t)j];
          if (to[j]!=from[j]) ok0 = 1;
       } /* end for */
       if (!ok0) {
@@ -405,7 +407,7 @@ static char Usermsg(const char b[], unsigned long b_len, long len, long p,
             msg[j] = 0;
             j = 0UL;
             for (;;) {
-               if ((unsigned char)"ack"[j]<=' ') return 0;
+               if ((uint8_t)"ack"[j]<=' ') return 0;
                /* "ack" in text field is not for delete */
                if ("ack"[j]!=msg[j]) break;
                ++j;
@@ -430,11 +432,11 @@ static char Usermsg(const char b[], unsigned long b_len, long len, long p,
 static char udpbox_WILDH = 'T';
 
 
-static char CallFilt(pCALLS calls, const char s[], unsigned long s_len,
-                long len)
+static char CallFilt(pCALLS calls, const char s[],
+                uint32_t s_len, int32_t len)
 {
-   long j;
-   long i;
+   int32_t j;
+   int32_t i;
    pCALLS c;
    char b;
    char ok0;
@@ -447,16 +449,15 @@ static char CallFilt(pCALLS calls, const char s[], unsigned long s_len,
             if (c->call[j]!='T' && c->call[j]!=s[i+j]) break;
             ++j;
             if (j>=6L) {
-               if (c->call[j] && ((unsigned char)(unsigned char)
-                c->call[j]&0x1EU)!=((unsigned char)(unsigned char)
-                s[i+j]&0x1EU)) break;
+               if (c->call[j] && ((uint8_t)(uint8_t)c->call[j]&0x1EU)
+                !=((uint8_t)(uint8_t)s[i+j]&0x1EU)) break;
                return 1;
             }
          }
          c = c->next;
       }
       i += 7L;
-   } while (!(i>=len || ((unsigned long)(unsigned char)s[i-1L]&1)));
+   } while (!(i>=len || ((uint32_t)(uint8_t)s[i-1L]&1)));
    i += 2L;
    if (s[i]=='}') {
       ++i;
@@ -470,8 +471,8 @@ static char CallFilt(pCALLS calls, const char s[], unsigned long s_len,
                b = s[i+j];
                if (((((i+j>=len || b=='*') || b==',') || b=='>') || b==':')
                 || b=='-') break;
-               if (j>=6L || c->call[j]!='T' && b!=(char)((unsigned long)
-                (unsigned char)c->call[j]>>1)) ok0 = 0;
+               if (j>=6L || c->call[j]!='T' && b!=(char)((uint32_t)
+                (uint8_t)c->call[j]>>1)) ok0 = 0;
                ++j;
             }
             if (ok0 && (j>=6L || c->call[j]=='@')) return 1;
@@ -489,31 +490,31 @@ static char CallFilt(pCALLS calls, const char s[], unsigned long s_len,
 } /* end CallFilt() */
 
 
-static long DistFilt(struct aprspos_POSITION mypos, char b[],
-                unsigned long b_len, unsigned long payload,
-                unsigned long len)
+static int32_t DistFilt(struct aprspos_POSITION mypos, char b[],
+                uint32_t b_len, uint32_t payload, uint32_t len)
 {
-   unsigned long course;
-   unsigned long speed;
-   unsigned long i;
+   uint32_t course;
+   uint32_t speed;
+   uint32_t i;
    char comment0[501];
-   long alt;
+   int32_t alt;
    char postyp;
    char symt;
    char sym;
    struct aprspos_POSITION pos;
-   long DistFilt_ret;
+   int32_t DistFilt_ret;
    X2C_PCOPY((void **)&b,b_len);
    for (i = 6UL;; i--) {
-      b[i+1UL] = (char)X2C_LSH((unsigned char)(unsigned char)b[i],8,-1);
+      b[i+1UL] = (char)X2C_LSH((uint8_t)(uint8_t)b[i],8,-1);
       if (i==0UL) break;
    } /* end for */
    b[len] = 0;
    aprspos_GetPos(&pos, &speed, &course, &alt, &sym, &symt, b, b_len, 1UL,
                 payload, comment0, 501ul, &postyp);
    if (aprspos_posvalid(pos)) {
-      DistFilt_ret = (long)(unsigned long)X2C_TRUNCC(aprspos_distance(mypos,
-                pos),0UL,X2C_max_longcard);
+      DistFilt_ret = (int32_t)(uint32_t)
+                X2C_TRUNCC(aprspos_distance(mypos, pos),0UL,
+                X2C_max_longcard);
    }
    else DistFilt_ret = -1L;
    X2C_PFREE(b);
@@ -521,11 +522,11 @@ static long DistFilt(struct aprspos_POSITION mypos, char b[],
 } /* end DistFilt() */
 
 
-static char Filter(const char b[], unsigned long b_len, long len,
-                pOUTPORT parm, pINSOCK fromsock)
+static char Filter(const char b[], uint32_t b_len,
+                int32_t len, pOUTPORT parm, pINSOCK fromsock)
 {
-   long i;
-   long km;
+   int32_t i;
+   int32_t km;
    char selfmsg;
    len -= 2L; /* crc */
    if (len<=0L) {
@@ -536,9 +537,9 @@ static char Filter(const char b[], unsigned long b_len, long len,
       else return 0;
    }
    i = 13L;
-   while (i<len && !((unsigned long)(unsigned char)b[i]&1)) i += 7L;
+   while (i<len && !((uint32_t)(uint8_t)b[i]&1)) i += 7L;
    i += 3L;
-   if (i>len || ((unsigned char)(unsigned char)b[i-2L]&~0x10U)!=0x3U) {
+   if (i>len || ((uint8_t)(uint8_t)b[i-2L]&~0x10U)!=0x3U) {
       if (show) osi_WrStr(" not UI ", 9ul);
       return parm->passnoUI;
    }
@@ -549,23 +550,22 @@ static char Filter(const char b[], unsigned long b_len, long len,
       if (show) osi_WrStrLn(" callfilter match", 18ul);
       return 0;
    }
-   if (!X2C_INL((unsigned char)b[i],256,
-                parm->aprspass) || selfmsg && !X2C_INL((long)84,256,
+   if (!X2C_INL((uint8_t)b[i],256,
+                parm->aprspass) || selfmsg && !X2C_INL((int32_t)84,256,
                 parm->aprspass)) {
       if (show) osi_WrStrLn(" message type filter", 21ul);
       return 0;
    }
    if (parm->maxkm>0L && (b[i]!=':' || b[i+10L]!=':')) {
       /* dist filter on and no user message */
-      km = DistFilt(parm->mypos, b, b_len, (unsigned long)i,
-                (unsigned long)len);
+      km = DistFilt(parm->mypos, b, b_len, (uint32_t)i, (uint32_t)len);
       if (km<0L) {
          if (show) osi_WrStrLn(" no pos", 8ul);
          return 0;
       }
       if (show) {
          osi_WrStrLn(" ", 2ul);
-         osic_WrINT32((unsigned long)km, 1UL);
+         osic_WrINT32((uint32_t)km, 1UL);
          osi_WrStr("km", 3ul);
       }
       if (km>=parm->maxkm) {
@@ -573,8 +573,8 @@ static char Filter(const char b[], unsigned long b_len, long len,
          return 0;
       }
    }
-   if ((parm->satgate && !((unsigned long)(unsigned char)b[13UL]&1))
-                && (unsigned char)b[20UL]<(unsigned char)'\200') {
+   if ((parm->satgate && !((uint32_t)(uint8_t)b[13UL]&1)) && (uint8_t)
+                b[20UL]<(uint8_t)'\200') {
       /* has >=1 vias and first via no h-bit */
       if (show) osi_WrStrLn(" sat gate and direct heard", 27ul);
       return 0;
@@ -583,7 +583,7 @@ static char Filter(const char b[], unsigned long b_len, long len,
 } /* end Filter() */
 
 
-static long getstdin(char buf[], unsigned long buf_len)
+static int32_t getstdin(char buf[], uint32_t buf_len)
 {
    char c;
    while (osi_RdBin(0L, (char *) &c, 1u/1u, 1UL)==1L) {
@@ -595,23 +595,23 @@ static long getstdin(char buf[], unsigned long buf_len)
       if (c==0) {
          aprsstr_Assign(buf, buf_len, stdinbuf, 256ul);
          stdinpos = 0UL;
-         return (long)aprsstr_Length(buf, buf_len);
+         return (int32_t)aprsstr_Length(buf, buf_len);
       }
    }
    return -1L;
 } /* end getstdin() */
 
 
-static long getudp(long fd, char buf[], unsigned long buf_len,
-                unsigned long fromip, char addcrc)
+static int32_t getudp(int32_t fd, char buf[], uint32_t buf_len,
+                uint32_t fromip, char addcrc)
 {
-   unsigned long fromport;
-   unsigned long ip;
+   uint32_t fromport;
+   uint32_t ip;
    char crc2;
    char crc1;
-   long len;
-   len = udpreceive(fd, buf, (long)(buf_len), &fromport, &ip);
-   if ((len>2L && len<(long)(buf_len)) && (fromip==0UL || fromip==ip)) {
+   int32_t len;
+   len = udpreceive(fd, buf, (int32_t)(buf_len), &fromport, &ip);
+   if ((len>2L && len<(int32_t)(buf_len)) && (fromip==0UL || fromip==ip)) {
       showip = ip;
       showport = fromport;
       if (!addcrc) return len;
@@ -631,14 +631,14 @@ static long getudp(long fd, char buf[], unsigned long buf_len,
 } /* end getudp() */
 
 
-static void checkhamnet(char b[], unsigned long b_len, long * len,
-                const char rflinkname[], unsigned long rflinkname_len,
+static void checkhamnet(char b[], uint32_t b_len, int32_t * len,
+                const char rflinkname[], uint32_t rflinkname_len,
                 RAWCALL hamup0)
 {
-   long j;
-   long i;
-   unsigned long s;
-   long tmp;
+   int32_t j;
+   int32_t i;
+   uint32_t s;
+   int32_t tmp;
    if (rflinkname[0UL]==0) return;
    hamup0[0U] = 0;
    i = 0L;
@@ -652,7 +652,7 @@ static void checkhamnet(char b[], unsigned long b_len, long * len,
    }
    ++i;
    j = 0L;
-   while (j<=(long)(rflinkname_len-1) && rflinkname[j]) {
+   while (j<=(int32_t)(rflinkname_len-1) && rflinkname[j]) {
       /* compare rflink name */
       if (b[i]!=rflinkname[j]) {
          *len = 0L;
@@ -666,7 +666,7 @@ static void checkhamnet(char b[], unsigned long b_len, long * len,
       j = 0L;
       while (((i<*len && b[i]!='-') && b[i]!=',') && b[i]!=':') {
          /* make rawcall of rflink uplink */
-         s = (unsigned long)(unsigned char)b[i]*2UL&255UL;
+         s = (uint32_t)(uint8_t)b[i]*2UL&255UL;
          if (s<=64UL) {
             *len = 0L;
             return;
@@ -686,8 +686,8 @@ static void checkhamnet(char b[], unsigned long b_len, long * len,
       s = 0UL;
       if (b[i]=='-') {
          ++i;
-         while ((unsigned char)b[i]>='0' && (unsigned char)b[i]<='9') {
-            s = (s*10UL+(unsigned long)(unsigned char)b[i])-48UL;
+         while ((uint8_t)b[i]>='0' && (uint8_t)b[i]<='9') {
+            s = (s*10UL+(uint32_t)(uint8_t)b[i])-48UL;
             ++i;
          }
          if (s>15UL) {
@@ -740,22 +740,22 @@ BEGIN
 END MakeDupeTime;
 */
 
-static char IsCall(const char raw[], unsigned long raw_len,
-                unsigned long pos, unsigned long div0)
+static char IsCall(const char raw[], uint32_t raw_len,
+                uint32_t pos, uint32_t div0)
 {
-   unsigned long i;
-   unsigned long nu;
-   unsigned long le;
+   uint32_t i;
+   uint32_t nu;
+   uint32_t le;
    char c;
-   unsigned long tmp;
+   uint32_t tmp;
    le = 0UL;
    nu = 0UL;
    tmp = pos+2UL;
    i = pos;
    if (i<=tmp) for (;; i++) {
-      c = (char)((unsigned long)(unsigned char)raw[i]/div0);
-      if ((unsigned char)c>='A' && (unsigned char)c<='Z') ++le;
-      if ((unsigned char)c>='0' && (unsigned char)c<='9') ++nu;
+      c = (char)((uint32_t)(uint8_t)raw[i]/div0);
+      if ((uint8_t)c>='A' && (uint8_t)c<='Z') ++le;
+      if ((uint8_t)c>='0' && (uint8_t)c<='9') ++nu;
       if (i==tmp) break;
    } /* end for */
    return (le>0UL && nu>0UL) && le+nu==3UL;
@@ -763,14 +763,13 @@ static char IsCall(const char raw[], unsigned long raw_len,
 } /* end IsCall() */
 
 
-static char Dup(const char raw[], unsigned long raw_len,
-                unsigned long pathlen, unsigned long rawlen,
-                unsigned long * sum)
+static char Dup(const char raw[], uint32_t raw_len,
+                uint32_t pathlen, uint32_t rawlen, uint32_t * sum)
 {
-   unsigned long i;
-   unsigned long len;
-   unsigned char hashh;
-   unsigned char hashl;
+   uint32_t i;
+   uint32_t len;
+   uint8_t hashh;
+   uint8_t hashl;
    char h[256];
    char ok0;
    /*
@@ -831,23 +830,22 @@ static char Dup(const char raw[], unsigned long raw_len,
       aprsstr_HashCh(raw[i], &hashl, &hashh);
       ++i;
    }
-   *sum = (unsigned long)(unsigned char)(char)hashl+(unsigned long)
-                (unsigned char)(char)hashh*256UL&16383UL;
+   *sum = (uint32_t)(uint8_t)(char)hashl+(uint32_t)(uint8_t)
+                (char)hashh*256UL&16383UL;
    if (raw[pathlen]!=':') return 0;
    return IsCall(raw, raw_len, pathlen+1UL, 1UL);
 /* if call it is user msg */
 } /* end Dup() */
 
 
-static char Cmp(const char s[], unsigned long s_len, unsigned long start,
-                const char word[], unsigned long word_len)
+static char Cmp(const char s[], uint32_t s_len,
+                uint32_t start, const char word[],
+                uint32_t word_len)
 {
-   unsigned long i;
+   uint32_t i;
    i = 0UL;
    while (word[i]) {
-      if (word[i]!=(char)((unsigned long)(unsigned char)s[start]/2UL)) {
-         return 0;
-      }
+      if (word[i]!=(char)((uint32_t)(uint8_t)s[start]/2UL)) return 0;
       ++i;
       ++start;
    }
@@ -855,45 +853,43 @@ static char Cmp(const char s[], unsigned long s_len, unsigned long start,
 } /* end Cmp() */
 
 
-static char ChkNN(unsigned long ssid, char c)
+static char ChkNN(uint32_t ssid, char c)
 {
-   c = (char)((unsigned long)(unsigned char)c/2UL);
-   return c==' ' && ssid==0UL || ((unsigned char)c>='1' && (unsigned char)
-                c<='7') && (unsigned char)c>=(unsigned char)(char)(48UL+ssid)
-                ;
+   c = (char)((uint32_t)(uint8_t)c/2UL);
+   return c==' ' && ssid==0UL || ((uint8_t)c>='1' && (uint8_t)c<='7')
+                && (uint8_t)c>=(uint8_t)(char)(48UL+ssid);
 } /* end ChkNN() */
 
 
-static char NeqN(unsigned long ssid, char c, long pos)
+static char NeqN(uint32_t ssid, char c, int32_t pos)
 {
-   return pos<=14L && (ssid+48UL==(unsigned long)(unsigned char)
+   return pos<=14L && (ssid+48UL==(uint32_t)(uint8_t)
                 c/2UL || ssid==0UL && c=='@');
 } /* end NeqN() */
 
 
-static void setSSID(char * c, unsigned long ssid)
+static void setSSID(char * c, uint32_t ssid)
 {
-   *c = (char)((unsigned char)(unsigned char)*c&~0x1EU|(unsigned char)
-                (ssid*2UL));
+   *c = (char)((uint8_t)(uint8_t)*c&~0x1EU|(uint8_t)(ssid*2UL));
 } /* end setSSID() */
 
 
-static unsigned long getSSID(char c)
+static uint32_t getSSID(char c)
 {
-   return (unsigned long)(unsigned char)c/2UL&15UL;
+   return (uint32_t)(uint8_t)c/2UL&15UL;
 } /* end getSSID() */
 
 
-static void killwide(long * startpath, long downpath, char s[],
-                unsigned long s_len)
+static void killwide(int32_t * startpath, int32_t downpath, char s[],
+                 uint32_t s_len)
 {
-   long j;
-   long i;
-   long tmp;
-   long tmp0;
+   int32_t j;
+   int32_t i;
+   int32_t tmp;
+   int32_t tmp0;
    tmp = downpath-1L;
    i = *startpath;
-   if (i<=tmp) for (tmp = (unsigned long)(tmp-i)/7L;;) {
+   if (i<=tmp) for (tmp = (uint32_t)(tmp-i)/7L;;) {
       if (((s[i]=='\256' && s[i+1L]=='\222') && s[i+2L]=='\210')
                 && s[i+3L]=='\212') {
          tmp0 = *startpath;
@@ -911,31 +907,31 @@ static void killwide(long * startpath, long downpath, char s[],
 } /* end killwide() */
 
 
-static void Digi(char raw[], unsigned long raw_len, char send[],
-                unsigned long send_len, long inlen0, long * outlen0,
+static void Digi(char raw[], uint32_t raw_len, char send[],
+                uint32_t send_len, int32_t inlen0, int32_t * outlen0,
                 const RAWCALL hamup0, pDIGIPARMS parm, char duponly)
 {
-   long goodpath;
-   long downpath;
-   long actdigi;
-   long startpath;
-   long pathlen;
-   long j;
-   long i;
-   unsigned long ssidroute;
-   unsigned long hash;
-   unsigned long ssid;
-   unsigned long tt;
-   unsigned long t;
+   int32_t goodpath;
+   int32_t downpath;
+   int32_t actdigi;
+   int32_t startpath;
+   int32_t pathlen;
+   int32_t j;
+   int32_t i;
+   uint32_t ssidroute;
+   uint32_t hash;
+   uint32_t ssid;
+   uint32_t tt;
+   uint32_t t;
    char noloop;
    char nodigicall;
    char ok0;
-   long tmp;
-   if ((unsigned char)parm->digicall[0U]<='@') duponly = 1;
+   int32_t tmp;
+   if ((uint8_t)parm->digicall[0U]<='@') duponly = 1;
    *outlen0 = 0L;
    inlen0 -= 2L; /* crc bytes */
    pathlen = 13L;
-   while (pathlen<inlen0 && !((unsigned long)(unsigned char)raw[pathlen]&1)) {
+   while (pathlen<inlen0 && !((uint32_t)(uint8_t)raw[pathlen]&1)) {
       pathlen += 7L; /* find end of path */
    }
    ++pathlen;
@@ -948,8 +944,8 @@ static void Digi(char raw[], unsigned long raw_len, char send[],
       noloop = 1;
       if ((0x8UL & parm->pathcheck)) {
          /* need not be first repeater */
-         while (actdigi<pathlen && (unsigned char)
-                raw[actdigi+6L]>=(unsigned char)'\200') {
+         while (actdigi<pathlen && (uint8_t)raw[actdigi+6L]>=(uint8_t)
+                '\200') {
             /* test if own digicall in path */
             ok0 = 0;
             for (i = 0L; i<=5L; i++) {
@@ -968,13 +964,14 @@ static void Digi(char raw[], unsigned long raw_len, char send[],
          nodigicall = 0;
          if ((0x80UL & parm->pathcheck)) downpath = pathlen;
          /* test for ssid routing*/
-         ssid = (unsigned long)(long)(parm->pathcheck&0x7UL);
+         ssid = (uint32_t)(int32_t)(parm->pathcheck&0x7UL);
                 /* limit ssid routing hopps */
          ssidroute = getSSID(raw[6UL]); /* destination call ssid */
          goodpath = 14L;
-         while ((goodpath<pathlen && (unsigned char)
-                raw[goodpath+6L]>=(unsigned char)'\200') && IsCall(raw,
-                raw_len, (unsigned long)goodpath, 2UL)) goodpath += 7L;
+         while ((goodpath<pathlen && (uint8_t)raw[goodpath+6L]>=(uint8_t)
+                '\200') && IsCall(raw, raw_len, (uint32_t)goodpath, 2UL)) {
+            goodpath += 7L; /* repeated via callsigns */
+         }
          if ((((ssidroute>0UL && ssid>0UL) && goodpath==pathlen)
                 && pathlen<49L) && ((0x8UL & parm->pathcheck)
                 || goodpath==14L)) {
@@ -999,9 +996,8 @@ static void Digi(char raw[], unsigned long raw_len, char send[],
             ssidroute = 0UL;
             if (goodpath<=14L) goodpath = 0L;
             if ((0x10UL & parm->pathcheck)) goodpath = actdigi;
-            ok0 = pathlen>actdigi && (unsigned char)
-                raw[actdigi+6L]<(unsigned char)'\200';
-                /* there are via calls & is not digipeated */
+            ok0 = pathlen>actdigi && (uint8_t)raw[actdigi+6L]<(uint8_t)
+                '\200'; /* there are via calls & is not digipeated */
             if (ok0) {
                ssid = getSSID(raw[actdigi+6L]);
                if ((0x400UL & parm->pathcheck)) ok0 = 0;
@@ -1018,11 +1014,11 @@ static void Digi(char raw[], unsigned long raw_len, char send[],
                   if (show) osi_WrStr(" via digicall ", 15ul);
                }
                else if ((0x800UL & parm->pathcheck)==0) {
-                  ok0 = Cmp(raw, raw_len, (unsigned long)actdigi, "RELAY ",
+                  ok0 = Cmp(raw, raw_len, (uint32_t)actdigi, "RELAY ",
                 7ul);
                   if (!ok0 && (0x80000UL & parm->pathcheck)) {
-                     ok0 = Cmp(raw, raw_len, (unsigned long)actdigi,
-                "ECHO  ", 7ul);
+                     ok0 = Cmp(raw, raw_len, (uint32_t)actdigi, "ECHO  ",
+                7ul);
                   }
                   if (ok0) {
                      if ((0x100UL & parm->pathcheck)) downpath = pathlen;
@@ -1031,8 +1027,8 @@ static void Digi(char raw[], unsigned long raw_len, char send[],
                }
                if (!ok0) {
                   if ((0x40000UL & parm->pathcheck)) {
-                     ok0 = Cmp(raw, raw_len, (unsigned long)actdigi,
-                "GATE  ", 7ul);
+                     ok0 = Cmp(raw, raw_len, (uint32_t)actdigi, "GATE  ",
+                7ul);
                      if (ok0) {
                         if ((0x100UL & parm->pathcheck)) {
                            downpath = pathlen;
@@ -1043,12 +1039,12 @@ static void Digi(char raw[], unsigned long raw_len, char send[],
                }
                if (!ok0) {
                   if ((((0x1000UL & parm->pathcheck)==0 && Cmp(raw, raw_len,
-                (unsigned long)actdigi, "TRACE", 6ul)) && ChkNN(ssid,
+                (uint32_t)actdigi, "TRACE", 6ul)) && ChkNN(ssid,
                 raw[actdigi+5L])) && (goodpath==actdigi || NeqN(ssid,
                 raw[actdigi+5L], actdigi))) {
                      ok0 = 1;
-                     if (ssid>(unsigned long)((0x10000UL & parm->pathcheck)
-                ==0) && (0x20UL & parm->pathcheck)) {
+                     if (ssid>(uint32_t)((0x10000UL & parm->pathcheck)==0)
+                && (0x20UL & parm->pathcheck)) {
                         setSSID(&raw[actdigi+6L], ssid-1UL);
                 /* dec(N) of WIDEn-N */
                         startpath = actdigi;
@@ -1061,7 +1057,7 @@ static void Digi(char raw[], unsigned long raw_len, char send[],
                }
                if (!ok0) {
                   if (((((0x2000UL & parm->pathcheck)==0 && Cmp(raw, raw_len,
-                 (unsigned long)actdigi, "WIDE",
+                 (uint32_t)actdigi, "WIDE",
                 5ul)) && raw[actdigi+5L]=='@') && ChkNN(ssid,
                 raw[actdigi+4L])) && (goodpath==actdigi || NeqN(ssid,
                 raw[actdigi+4L], actdigi))) {
@@ -1070,8 +1066,8 @@ static void Digi(char raw[], unsigned long raw_len, char send[],
                         if ((0x4000UL & parm->pathcheck)
                 || goodpath!=actdigi && !NeqN(ssid, raw[actdigi+4L],
                 actdigi)) nodigicall = 1;
-                        if (ssid>(unsigned long)
-                ((0x10000UL & parm->pathcheck)==0)) {
+                        if (ssid>(uint32_t)((0x10000UL & parm->pathcheck)
+                ==0)) {
                            setSSID(&raw[actdigi+6L], ssid-1UL);
                            startpath = actdigi;
                         }
@@ -1100,8 +1096,9 @@ static void Digi(char raw[], unsigned long raw_len, char send[],
                 IO.WrStr(">>> ");
       */
       tt = parm->duptime;
-      if (Dup(raw, raw_len, (unsigned long)pathlen, (unsigned long)inlen0,
-                &hash)) tt = parm->messagetime;
+      if (Dup(raw, raw_len, (uint32_t)pathlen, (uint32_t)inlen0, &hash)) {
+         tt = parm->messagetime;
+      }
       t = osic_time(); /* time in s */
       if (parm->timehash[hash]+tt<=t) {
          /* not a duplicate */
@@ -1120,7 +1117,7 @@ static void Digi(char raw[], unsigned long raw_len, char send[],
             /* digipeater */
             i = 0L;
             while (i<actdigi) {
-               send[i] = (char)((unsigned char)(unsigned char)raw[i]&0xFEU);
+               send[i] = (char)((uint8_t)(uint8_t)raw[i]&0xFEU);
                 /* copy from-to and clear address end bit */
                ++i;
             }
@@ -1161,8 +1158,8 @@ static void Digi(char raw[], unsigned long raw_len, char send[],
                ++i;
                ++j;
             }
-            send[i-1L] = (char)((unsigned char)(unsigned char)
-                send[i-1L]|0x1U); /* set address end bit */
+            send[i-1L] = (char)((uint8_t)(uint8_t)send[i-1L]|0x1U);
+                /* set address end bit */
             tmp = inlen0-1L;
             j = pathlen;
             if (j<=tmp) for (;; j++) {
@@ -1183,13 +1180,13 @@ static void Digi(char raw[], unsigned long raw_len, char send[],
 } /* end Digi() */
 
 
-static long GetIp(char h[], unsigned long h_len, unsigned long * p,
-                unsigned long * ip, unsigned long * port)
+static int32_t GetIp(char h[], uint32_t h_len, uint32_t * p,
+                uint32_t * ip, uint32_t * port)
 {
-   unsigned long n;
-   unsigned long i;
+   uint32_t n;
+   uint32_t i;
    char ok0;
-   long GetIp_ret;
+   int32_t GetIp_ret;
    X2C_PCOPY((void **)&h,h_len);
    *p = 0UL;
    h[h_len-1] = 0;
@@ -1197,9 +1194,9 @@ static long GetIp(char h[], unsigned long h_len, unsigned long * p,
    for (i = 0UL; i<=4UL; i++) {
       n = 0UL;
       ok0 = 0;
-      while ((unsigned char)h[*p]>='0' && (unsigned char)h[*p]<='9') {
+      while ((uint8_t)h[*p]>='0' && (uint8_t)h[*p]<='9') {
          ok0 = 1;
-         n = (n*10UL+(unsigned long)(unsigned char)h[*p])-48UL;
+         n = (n*10UL+(uint32_t)(uint8_t)h[*p])-48UL;
          ++*p;
       }
       if (!ok0) {
@@ -1234,18 +1231,18 @@ static long GetIp(char h[], unsigned long h_len, unsigned long * p,
 } /* end GetIp() */
 
 
-static long GetSec(char h[], unsigned long h_len, unsigned long * p,
-                unsigned long * n)
+static int32_t GetSec(char h[], uint32_t h_len, uint32_t * p,
+                uint32_t * n)
 {
    char ok0;
-   long GetSec_ret;
+   int32_t GetSec_ret;
    X2C_PCOPY((void **)&h,h_len);
    h[h_len-1] = 0;
    *n = 0UL;
    ok0 = 0;
-   while ((unsigned char)h[*p]>='0' && (unsigned char)h[*p]<='9') {
+   while ((uint8_t)h[*p]>='0' && (uint8_t)h[*p]<='9') {
       ok0 = 1;
-      *n = ( *n*10UL+(unsigned long)(unsigned char)h[*p])-48UL;
+      *n = ( *n*10UL+(uint32_t)(uint8_t)h[*p])-48UL;
       ++*p;
    }
    if (!ok0) {
@@ -1262,16 +1259,16 @@ static long GetSec(char h[], unsigned long h_len, unsigned long * p,
 } /* end GetSec() */
 
 
-static void MakeRawCall(RAWCALL c, char s[], unsigned long s_len,
-                unsigned long j)
+static void MakeRawCall(RAWCALL c, char s[], uint32_t s_len,
+                uint32_t j)
 {
-   unsigned long n;
-   unsigned long i;
+   uint32_t n;
+   uint32_t i;
    X2C_PCOPY((void **)&s,s_len);
    i = 0UL;
    while (i<6UL) {
       if ((s[j] && s[j]!=',') && s[j]!='-') {
-         c[i] = (char)((unsigned long)(unsigned char)s[j]*2UL);
+         c[i] = (char)((uint32_t)(uint8_t)s[j]*2UL);
          ++j;
       }
       else c[i] = '@';
@@ -1280,8 +1277,8 @@ static void MakeRawCall(RAWCALL c, char s[], unsigned long s_len,
    n = 0UL;
    if (s[j]=='-') {
       ++j;
-      while ((unsigned char)s[j]>='0' && (unsigned char)s[j]<='9') {
-         n = (n*10UL+(unsigned long)(unsigned char)s[j])-48UL;
+      while ((uint8_t)s[j]>='0' && (uint8_t)s[j]<='9') {
+         n = (n*10UL+(uint32_t)(uint8_t)s[j])-48UL;
          ++j;
       }
    }
@@ -1292,7 +1289,7 @@ static void MakeRawCall(RAWCALL c, char s[], unsigned long s_len,
 } /* end MakeRawCall() */
 
 
-static void Ackpath(const char h[], unsigned long h_len)
+static void Ackpath(const char h[], uint32_t h_len)
 {
    aprsstr_Assign(ackpath, 64ul, ">", 2ul);
    aprsstr_Append(ackpath, 64ul, "APNL01", 7ul);
@@ -1304,13 +1301,13 @@ static void Ackpath(const char h[], unsigned long h_len)
 } /* end Ackpath() */
 
 
-static char getfix(float * x, const char s[], unsigned long s_len,
-                unsigned long * p)
+static char getfix(float * x, const char s[], uint32_t s_len,
+                 uint32_t * p)
 {
-   unsigned long i;
+   uint32_t i;
    char h[256];
    i = 0UL;
-   while (((unsigned char)s[*p]>' ' && s[*p]!='/') && i<255UL) {
+   while (((uint8_t)s[*p]>' ' && s[*p]!='/') && i<255UL) {
       h[i] = s[*p];
       ++i;
       ++*p;
@@ -1338,9 +1335,9 @@ static void parms(void)
    pOUTPORT outsock0;
    SET256 actpass;
    pDIGIPARMS actdigi;
-   unsigned long nold;
-   unsigned long n;
-   unsigned long i;
+   uint32_t nold;
+   uint32_t n;
+   uint32_t i;
    struct BEACON actbeacon;
    pMSGHASH user;
    pCALLS callnext;
@@ -1384,7 +1381,7 @@ static void parms(void)
             actbeacon.bintervall = 0UL;
             actbeacon.piggytime = 0UL;
             actbeacon.piggyback = 0;
-            osic_alloc((X2C_ADDRESS *) &actsock0, sizeof(struct INSOCK));
+            osic_alloc((char * *) &actsock0, sizeof(struct INSOCK));
             if (actsock0==0) Err("out of memory", 14ul);
             { /* with */
                struct INSOCK * anonym = actsock0;
@@ -1428,8 +1425,8 @@ static void parms(void)
             nold = 256UL;
             for (;;) {
                if (i>=4095UL) break;
-               if ((unsigned char)h[i]>='0' && (unsigned char)h[i]<='9') {
-                  n = (n*10UL+(unsigned long)(unsigned char)h[i])-48UL;
+               if ((uint8_t)h[i]>='0' && (uint8_t)h[i]<='9') {
+                  n = (n*10UL+(uint32_t)(uint8_t)h[i])-48UL;
                }
                else {
                   for (;;) {
@@ -1496,7 +1493,7 @@ static void parms(void)
          else if (lasth=='d') {
             osi_NextArg(h, 4096ul);
             if (actsock0==0) Err("need input -M or -R before -d", 30ul);
-            osic_alloc((X2C_ADDRESS *) &actdigi, sizeof(struct DIGIPARMS));
+            osic_alloc((char * *) &actdigi, sizeof(struct DIGIPARMS));
             if (actdigi==0) Err("out of memory", 14ul);
             { /* with */
                struct DIGIPARMS * anonym1 = actdigi;
@@ -1518,7 +1515,7 @@ static void parms(void)
                Err("need input -M or -R before -r or -m or -c", 42ul);
             }
             osi_NextArg(h, 4096ul);
-            osic_alloc((X2C_ADDRESS *) &outsock0, sizeof(struct OUTPORT));
+            osic_alloc((char * *) &outsock0, sizeof(struct OUTPORT));
             if (outsock0==0) {
                Err("out of memory", 14ul);
             }
@@ -1540,7 +1537,7 @@ static void parms(void)
                anonym2->filtercalls = actcall;
                anonym2->mypos.lat = actpos.lat*1.7453292519444E-2f;
                anonym2->mypos.long0 = actpos.long0*1.7453292519444E-2f;
-               anonym2->maxkm = (long)(unsigned long)X2C_TRUNCC(actkm,0UL,
+               anonym2->maxkm = (int32_t)(uint32_t)X2C_TRUNCC(actkm,0UL,
                 X2C_max_longcard);
             }
             actdigi = 0;
@@ -1703,7 +1700,7 @@ t 1800,28 -r 192.168.1.24:9400", 80ul);
             }
             else if (lasth=='u') {
                osi_NextArg(h, 4096ul);
-               osic_alloc((X2C_ADDRESS *) &user, sizeof(struct MSGHASH));
+               osic_alloc((char * *) &user, sizeof(struct MSGHASH));
                if (user==0) Err("out of memory", 14ul);
                { /* with */
                   struct MSGHASH * anonym3 = user;
@@ -1743,16 +1740,14 @@ t 1800,28 -r 192.168.1.24:9400", 80ul);
                if (actsock0==0) Err("need input -M or -R before -x", 30ul);
                i = 0UL;
                for (;;) {
-                  osic_alloc((X2C_ADDRESS *) &callnext,
+                  osic_alloc((char * *) &callnext,
                 sizeof(struct CALLS));
                   if (callnext==0) Err("out of memory", 14ul);
                   MakeRawCall(callnext->call, h, 4096ul, i);
                   callnext->next = actcall;
                   actcall = callnext;
                   while (h[i]!=',') {
-                     if (i>=4095UL || (unsigned char)h[i]<=' ') {
-                        goto loop_exit;
-                     }
+                     if (i>=4095UL || (uint8_t)h[i]<=' ') goto loop_exit;
                      ++i;
                   }
                   ++i;
@@ -1779,7 +1774,7 @@ t 1800,28 -r 192.168.1.24:9400", 80ul);
 } /* end parms() */
 
 
-static void showpip(unsigned long ip, unsigned long port)
+static void showpip(uint32_t ip, uint32_t port)
 {
    osic_WrINT32(ip/16777216UL, 1UL);
    osi_WrStr(".", 2ul);
@@ -1823,11 +1818,12 @@ BEGIN
 END showstr;
 */
 
-static void showhex(long * n, long e, char in[], unsigned long in_len,
-                long * len, const char s[], unsigned long s_len)
+static void showhex(int32_t * n, int32_t e, char in[],
+                uint32_t in_len, int32_t * len, const char s[],
+                uint32_t s_len)
 {
-   long i;
-   long tmp;
+   int32_t i;
+   int32_t tmp;
    char tmp0;
    if (show) {
       osic_WrLn();
@@ -1835,17 +1831,17 @@ static void showhex(long * n, long e, char in[], unsigned long in_len,
       tmp = *len-1L;
       i = 0L;
       if (i<=tmp) for (;; i++) {
-         osi_WrHex((unsigned long)(unsigned char)in[i], 3UL);
+         osi_WrHex((uint32_t)(uint8_t)in[i], 3UL);
          if (i==tmp) break;
       } /* end for */
       osic_WrLn();
       tmp = e-1L;
       i = 0L;
       if (i<=tmp) for (;; i++) {
-         *n = (long)((unsigned long)(unsigned char)in[i]/2UL);
+         *n = (int32_t)((uint32_t)(uint8_t)in[i]/2UL);
          if (*n<32L) {
             osi_WrStr("<", 2ul);
-            osi_WrHex((unsigned long)*n, 1UL);
+            osi_WrHex((uint32_t)*n, 1UL);
             osi_WrStr(">", 2ul);
          }
          else osi_WrStr((char *)(tmp0 = (char)*n,&tmp0), 1u/1u);
@@ -1857,27 +1853,27 @@ static void showhex(long * n, long e, char in[], unsigned long in_len,
 } /* end showhex() */
 
 
-static void cpraw(char in[], unsigned long in_len, char out[],
-                unsigned long out_len, long * len)
+static void cpraw(char in[], uint32_t in_len, char out[],
+                uint32_t out_len, int32_t * len)
 {
-   long e;
-   long n;
-   long i;
+   int32_t e;
+   int32_t n;
+   int32_t i;
    char c;
    char h;
-   long tmp;
+   int32_t tmp;
    e = 0L;
    tmp = *len-1L;
    i = 0L;
    if (i<=tmp) for (;; i++) {
       c = in[i];
       out[i] = c;
-      if (e==0L && ((unsigned long)(unsigned char)c&1)) e = i+1L;
+      if (e==0L && ((uint32_t)(uint8_t)c&1)) e = i+1L;
       if (i==tmp) break;
    } /* end for */
    if (*len==2L) return;
    /* crc only, maybe there is a axudp2 head*/
-   if (((unsigned long)e%7UL || e<14L) || e>70L) {
+   if (((uint32_t)e%7UL || e<14L) || e>70L) {
       showhex(&n, e, in, in_len, len,
                 " bad raw format, no address end found", 38ul);
       *len = 0L;
@@ -1886,8 +1882,8 @@ static void cpraw(char in[], unsigned long in_len, char out[],
       h = 1;
       tmp = e-1L;
       i = 20L;
-      if (i<=tmp) for (tmp = (unsigned long)(tmp-i)/7L;;) {
-         if ((unsigned long)(unsigned char)in[i]>=128UL) {
+      if (i<=tmp) for (tmp = (uint32_t)(tmp-i)/7L;;) {
+         if ((uint32_t)(uint8_t)in[i]>=128UL) {
             if (!h) {
                showhex(&n, e, in, in_len, len, " bad H bit in raw frame",
                 24ul);
@@ -1921,15 +1917,15 @@ static void cpraw(char in[], unsigned long in_len, char out[],
 #define udpbox_DELFNNEND ")"
 
 
-static void beaconmacros(char s[], unsigned long s_len, char * del)
+static void beaconmacros(char s[], uint32_t s_len, char * del)
 {
-   unsigned long i;
-   long j;
-   long len;
+   uint32_t i;
+   int32_t j;
+   int32_t len;
    char ns[256];
    char ds[256];
    char fn[1024];
-   long f;
+   int32_t f;
    char fnend;
    char voidok;
    *del = 0;
@@ -2022,16 +2018,16 @@ static void beaconmacros(char s[], unsigned long s_len, char * del)
 } /* end beaconmacros() */
 
 
-static void beacon(pINSOCK insock, char buf[], unsigned long buf_len,
-                long * len, pOUTPORT * outsock0)
+static void beacon(pINSOCK insock, char buf[], uint32_t buf_len,
+                int32_t * len, pOUTPORT * outsock0)
 {
-   long lc;
-   long eol;
-   long bol;
-   long i;
-   long f;
+   int32_t lc;
+   int32_t eol;
+   int32_t bol;
+   int32_t i;
+   int32_t f;
    char fb[32768];
-   unsigned long t;
+   uint32_t t;
    char ok0;
    char del;
    struct BEACON * anonym;
@@ -2055,7 +2051,7 @@ static void beacon(pINSOCK insock, char buf[], unsigned long buf_len,
             if (f>=0L) {
                *len = osi_RdBin(f, (char *)fb, 32768u/1u, 32767UL);
                osic_Close(f);
-               while (*len>0L && (unsigned char)fb[*len-1L]<=' ') {
+               while (*len>0L && (uint8_t)fb[*len-1L]<=' ') {
                   --*len; /* remove junk from eof */
                }
                if (*len>0L && *len<32767L) {
@@ -2063,7 +2059,7 @@ static void beacon(pINSOCK insock, char buf[], unsigned long buf_len,
                   ++*len;
                }
                do {
-                  lc = (long)anonym->bline;
+                  lc = (int32_t)anonym->bline;
                   eol = 0L;
                   for (;;) {
                      bol = eol;
@@ -2119,15 +2115,15 @@ static void beacon(pINSOCK insock, char buf[], unsigned long buf_len,
 #define udpbox_ACKTIME 30
 
 
-static void sendack(char buf[], unsigned long buf_len, long * len,
+static void sendack(char buf[], uint32_t buf_len, int32_t * len,
                 pINSOCK fromsock)
 {
-   long m;
-   unsigned long j;
-   unsigned long i;
+   int32_t m;
+   uint32_t j;
+   uint32_t i;
    pMSGHASH user;
    char fb[256];
-   unsigned long t;
+   uint32_t t;
    struct MSGHASH * anonym;
    struct _0 * anonym0;
    user = msgusers;
@@ -2145,13 +2141,13 @@ static void sendack(char buf[], unsigned long buf_len, long * len,
                   anonym0->acktime = t+30UL;
                   j = 0UL;
                   i = 0UL;
-                  while (i<=8UL && (unsigned char)anonym->usercall[i]>' ') {
+                  while (i<=8UL && (uint8_t)anonym->usercall[i]>' ') {
                      fb[j] = anonym->usercall[i];
                      ++j;
                      ++i;
                   }
                   i = 0UL;
-                  while ((unsigned char)ackpath[i]>' ') {
+                  while ((uint8_t)ackpath[i]>' ') {
                      fb[j] = ackpath[i];
                      ++j;
                      ++i;
@@ -2163,7 +2159,7 @@ static void sendack(char buf[], unsigned long buf_len, long * len,
                   fb[j] = ':';
                   ++j;
                   i = 0UL;
-                  while ((unsigned char)"ack"[i]>' ') {
+                  while ((uint8_t)"ack"[i]>' ') {
                      fb[j] = "ack"[i];
                      ++j;
                      ++i;
@@ -2173,7 +2169,7 @@ static void sendack(char buf[], unsigned long buf_len, long * len,
                 IO.WrStrLn(">");
                   */
                   i = 0UL;
-                  while ((unsigned char)anonym0->acks[i]>' ') {
+                  while ((uint8_t)anonym0->acks[i]>' ') {
                      fb[j] = anonym0->acks[i];
                      ++j;
                      ++i;
@@ -2197,13 +2193,13 @@ static void sendack(char buf[], unsigned long buf_len, long * len,
 } /* end sendack() */
 
 
-static void appudp2(char ob[], unsigned long ob_len, unsigned long * olen,
-                const char ud[], unsigned long ud_len, const char ib[],
-                unsigned long ib_len, long len)
+static void appudp2(char ob[], uint32_t ob_len, uint32_t * olen,
+                const char ud[], uint32_t ud_len, const char ib[],
+                uint32_t ib_len, int32_t len)
 /* append axudp2 header */
 {
-   long j;
-   long i;
+   int32_t j;
+   int32_t i;
    i = 0L;
    j = 0L;
    while (ud[i]) {
@@ -2220,7 +2216,7 @@ static void appudp2(char ob[], unsigned long ob_len, unsigned long * olen,
       ++i;
       ++j;
    }
-   *olen = (unsigned long)(i+2L);
+   *olen = (uint32_t)(i+2L);
    aprsstr_AppCRC(ob, ob_len, i);
 } /* end appudp2() */
 
@@ -2236,13 +2232,13 @@ static char udp2[64]; /* axudp2 header */
 
 static char mbuf[512];
 
-static long inlen;
+static int32_t inlen;
 
-static long outlen;
+static int32_t outlen;
 
-static long res;
+static int32_t res;
 
-static unsigned long monlen;
+static uint32_t monlen;
 
 static pINSOCK actsock;
 
@@ -2281,7 +2277,7 @@ extern int main(int argc, char **argv)
       while (actsock) {
          { /* with */
             struct INSOCK * anonym = actsock;
-            if (anonym->fd>=0L) fdsetr((unsigned long)anonym->fd);
+            if (anonym->fd>=0L) fdsetr((uint32_t)anonym->fd);
             actsock = anonym->next;
          }
       }
@@ -2291,7 +2287,7 @@ extern int main(int argc, char **argv)
             do {
                piggy = 0;
                inlen = 0L;
-               if (actsock->fd>=0L && issetr((unsigned long)actsock->fd)) {
+               if (actsock->fd>=0L && issetr((uint32_t)actsock->fd)) {
                   inlen = getudp(actsock->fd, ibuf, 338ul, actsock->fromip,
                 actsock->rawread);
                }
@@ -2333,11 +2329,11 @@ extern int main(int argc, char **argv)
                if (inlen>=2L) {
                   if (show && inlen>2L) {
                      aprsstr_raw2mon(rawbuf, 338ul, mbuf, 512ul,
-                (unsigned long)(inlen-2L), &monlen, _cnst1);
+                (uint32_t)(inlen-2L), &monlen, _cnst1);
                      osic_WrLn();
                      showpip(showip, showport);
                      osi_WrStr("(", 2ul);
-                     osic_WrINT32((unsigned long)inlen, 1UL);
+                     osic_WrINT32((uint32_t)inlen, 1UL);
                      osi_WrStr(")", 2ul);
                      osi_WrStr(":", 2ul);
                      if (monlen<=0UL) osi_WrStr("<raw to mon error>", 19ul);
@@ -2375,7 +2371,7 @@ extern int main(int argc, char **argv)
                                  appudp2(mbuf, 512ul, &monlen, udp2, 64ul,
                 rawout, 338ul, outlen);
                                  res = udpsend(actsock->fd, mbuf,
-                (long)monlen, outsock->toport, outsock->toip);
+                (int32_t)monlen, outsock->toport, outsock->toip);
                               }
                               else {
                                  aprsstr_AppCRC(rawout, 338ul, outlen-2L);
@@ -2388,7 +2384,7 @@ extern int main(int argc, char **argv)
                            }
                            else {
                               aprsstr_raw2mon(rawout, 338ul, mbuf, 512ul,
-                (unsigned long)(outlen-2L), &monlen, _cnst1);
+                (uint32_t)(outlen-2L), &monlen, _cnst1);
                               if (monlen>0UL) {
                                  if (outsock->crlfwrite) {
                                     mbuf[monlen-1UL] = '\015';
@@ -2396,7 +2392,7 @@ extern int main(int argc, char **argv)
                                     ++monlen;
                                  }
                                  res = udpsend(actsock->fd, mbuf,
-                (long)monlen, outsock->toport, outsock->toip);
+                (int32_t)monlen, outsock->toport, outsock->toip);
                                  if (show) {
                                     osi_WrStrLn(" mon", 5ul);
                                  }

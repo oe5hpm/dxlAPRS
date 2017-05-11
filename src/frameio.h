@@ -22,12 +22,12 @@ struct frameio_UDPSOCK;
 
 
 struct frameio_UDPSOCK {
-   long fd;
-   unsigned long ipnum;
-   unsigned long fromport;
-   unsigned long toport;
-   unsigned long dcdretry;
-   unsigned long txbufretry;
+   int32_t fd;
+   uint32_t ipnum;
+   uint32_t fromport;
+   uint32_t toport;
+   uint32_t dcdretry;
+   uint32_t txbufretry;
    char checkip;
    char dcd;
    char hastxdata;
@@ -37,16 +37,16 @@ extern char frameio_crcok;
 
 extern struct frameio_UDPSOCK frameio_udpsocks0[15];
 
-extern char frameio_GetFrame(unsigned long);
+extern char frameio_GetFrame(uint32_t);
 
-extern void frameio_SendFrame(unsigned long, unsigned long, char [],
-                unsigned long, unsigned long, l2_pDATA);
+extern void frameio_SendFrame(uint32_t, uint32_t, char [],
+                uint32_t, uint32_t, l2_pDATA);
 
-extern char frameio_Sending(unsigned long);
+extern char frameio_Sending(uint32_t);
 
-extern char frameio_DCD(unsigned long);
+extern char frameio_DCD(uint32_t);
 
-extern void frameio_Modempoll(unsigned long);
+extern void frameio_Modempoll(uint32_t);
 
 extern void frameio_Init(void);
 

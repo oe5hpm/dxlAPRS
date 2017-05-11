@@ -46,8 +46,8 @@ struct xosi__D0 xosi_gammalut[1024];
 
 
 
-unsigned long xosi_newxsize;
-unsigned long xosi_newysize;
+uint32_t xosi_newxsize;
+uint32_t xosi_newysize;
 
 
 struct xosi__D1 xosi_xmouse;
@@ -66,25 +66,25 @@ struct XWIN;
 
 struct XWIN {
    XSizeHints myhint;
-   unsigned long win; /* My window */
+   uint32_t win; /* My window */
    PtrVisual pvis;
    PtrXImage ximage0;
-   unsigned long redmask;
-   unsigned long greenmask;
-   unsigned long bluemask;
-   long redshift;
-   long greenshift;
-   long blueshift;
-   unsigned long Black;
-   unsigned long White;
-   unsigned long bitperpixel;
+   uint32_t redmask;
+   uint32_t greenmask;
+   uint32_t bluemask;
+   int32_t redshift;
+   int32_t greenshift;
+   int32_t blueshift;
+   uint32_t Black;
+   uint32_t White;
+   uint32_t bitperpixel;
    GC gc;
-   unsigned long pixmap;
-   long screen; /* Default screen number */
+   uint32_t pixmap;
+   int32_t screen; /* Default screen number */
    PtrScreen screenp;
    XFontStruct fontinfo;
-   unsigned long xsizen;
-   unsigned long ysizen;
+   uint32_t xsizen;
+   uint32_t ysizen;
 };
 
 
@@ -95,36 +95,36 @@ struct _0 {
 
 static struct _0 * xbuf016;
 
-static long xbuf0size;
+static int32_t xbuf0size;
 
-static unsigned long xbufxsize;
+static uint32_t xbufxsize;
 
-static unsigned long xbufysize;
+static uint32_t xbufysize;
 
 static struct XWIN mainwin;
 
 static PtrDisplay dis; /* Connection to the X server */
 
-static long disfd;
+static int32_t disfd;
 
 static union _XEvent event;
 
-static unsigned long mykey;
+static uint32_t mykey;
 
 static struct _XComposeStatus mystat;
 
-static unsigned long timesum;
+static uint32_t timesum;
 
-static unsigned long cursor;
+static uint32_t cursor;
 
 static char cursorset;
 
 
-static unsigned long Gamma(unsigned long c, float g)
+static uint32_t Gamma(uint32_t c, float g)
 {
    if (c==0UL) return 0UL;
    if (c<1024UL) {
-      return (unsigned long)X2C_TRUNCC(osic_exp(X2C_DIVR(osic_ln(X2C_DIVR((float)
+      return (uint32_t)X2C_TRUNCC(osic_exp(X2C_DIVR(osic_ln(X2C_DIVR((float)
                 c,1024.0f)),g))*255.5f,0UL,X2C_max_longcard);
    }
    return 255UL;
@@ -133,8 +133,8 @@ static unsigned long Gamma(unsigned long c, float g)
 
 extern void xosi_Gammatab(float g)
 {
-   unsigned long ga;
-   unsigned long i;
+   uint32_t ga;
+   uint32_t i;
    struct XWIN * anonym;
    struct xosi__D0 * anonym0;
    { /* with */
@@ -143,11 +143,11 @@ extern void xosi_Gammatab(float g)
          ga = Gamma(i, g);
          { /* with */
             struct xosi__D0 * anonym0 = &xosi_gammalut[i];
-            anonym0->r = X2C_LSH((unsigned long)ga,32,
+            anonym0->r = X2C_LSH((uint32_t)ga,32,
                 anonym->redshift)&anonym->redmask;
-            anonym0->g = X2C_LSH((unsigned long)ga,32,
+            anonym0->g = X2C_LSH((uint32_t)ga,32,
                 anonym->greenshift)&anonym->greenmask;
-            anonym0->b = X2C_LSH((unsigned long)ga,32,
+            anonym0->b = X2C_LSH((uint32_t)ga,32,
                 anonym->blueshift)&anonym->bluemask;
          }
       } /* end for */
@@ -162,10 +162,10 @@ static void WrHeadline(void)
    if (dis) {
       if ((unsigned char)xosi_headmh[0UL]<' ') {
          strncpy(s,"aprsmap by oe5dxl ",61u);
-         aprsstr_IntToStr((long)xbufxsize, 1UL, h, 61ul);
+         aprsstr_IntToStr((int32_t)xbufxsize, 1UL, h, 61ul);
          aprsstr_Append(s, 61ul, h, 61ul);
          aprsstr_Append(s, 61ul, "x", 2ul);
-         aprsstr_IntToStr((long)xbufysize, 1UL, h, 61ul);
+         aprsstr_IntToStr((int32_t)xbufysize, 1UL, h, 61ul);
          aprsstr_Append(s, 61ul, h, 61ul);
          XStoreName(dis, mainwin.win, s);
       }
@@ -175,17 +175,17 @@ static void WrHeadline(void)
 } /* end WrHeadline() */
 
 
-static long MaxBit(unsigned long colmask)
+static int32_t MaxBit(uint32_t colmask)
 {
-   long i;
+   int32_t i;
    i = 31L;
    while (i>0L && !X2C_IN(i,32,colmask)) --i;
    return i+1L;
 } /* end MaxBit() */
 
 
-static void allocxbufw(struct XWIN * w, unsigned long xsizeh,
-                unsigned long ysizeh)
+static void allocxbufw(struct XWIN * w, uint32_t xsizeh,
+                uint32_t ysizeh)
 {
    struct XWIN * anonym;
    /*WrInt(xsizeh, 1);WrStr(" x ");WrInt(ysizeh, 1); WrLn; */
@@ -194,16 +194,16 @@ static void allocxbufw(struct XWIN * w, unsigned long xsizeh,
       xbufxsize = xsizeh;
       xbufysize = ysizeh;
       if (anonym->ximage0) {
-         useri_debugmem.screens -= (unsigned long)xbuf0size;
-         osic_free((X2C_ADDRESS *) &xbuf016, (unsigned long)xbuf0size);
+         useri_debugmem.screens -= (uint32_t)xbuf0size;
+         osic_free((X2C_ADDRESS *) &xbuf016, (uint32_t)xbuf0size);
          xbuf016 = 0;
          anonym->ximage0->data = 0;
          XDestroyImage(anonym->ximage0); /* xbuf0 deallocated too */
       }
-      xbuf0size = (long)(2UL*ysizeh*xsizeh);
+      xbuf0size = (int32_t)(2UL*ysizeh*xsizeh);
       if (anonym->bitperpixel>16UL) xbuf0size = xbuf0size*2L;
-      osic_alloc((X2C_ADDRESS *) &xbuf016, (unsigned long)xbuf0size);
-      useri_debugmem.req = (unsigned long)xbuf0size;
+      osic_alloc((X2C_ADDRESS *) &xbuf016, (uint32_t)xbuf0size);
+      useri_debugmem.req = (uint32_t)xbuf0size;
       useri_debugmem.screens += useri_debugmem.req;
       if (xbuf016==0) {
          osi_WrStrLn("initx: out of memory", 21ul);
@@ -229,24 +229,24 @@ static void allocxbufw(struct XWIN * w, unsigned long xsizeh,
 } /* end allocxbufw() */
 
 
-extern void xosi_allocxbuf(unsigned long xsize, unsigned long ysize)
+extern void xosi_allocxbuf(uint32_t xsize, uint32_t ysize)
 {
    allocxbufw(&mainwin, xsize, ysize);
 } /* end allocxbuf() */
 
 
-static long MakeMainWin(char winname[], unsigned long winname_len,
-                char iconname[], unsigned long iconname_len,
-                unsigned long xsizeh, unsigned long ysizeh)
+static int32_t MakeMainWin(char winname[], uint32_t winname_len,
+                char iconname[], uint32_t iconname_len,
+                uint32_t xsizeh, uint32_t ysizeh)
 {
    struct XWIN * anonym;
-   long MakeMainWin_ret;
+   int32_t MakeMainWin_ret;
    X2C_PCOPY((void **)&winname,winname_len);
    X2C_PCOPY((void **)&iconname,iconname_len);
    { /* with */
       struct XWIN * anonym = &mainwin;
-      anonym->myhint.height = (long)ysizeh;
-      anonym->myhint.width = (long)xsizeh;
+      anonym->myhint.height = (int32_t)ysizeh;
+      anonym->myhint.width = (int32_t)xsizeh;
       anonym->myhint.x = 1L;
       anonym->myhint.y = 1L;
       anonym->myhint.flags = 0xCUL;
@@ -265,8 +265,8 @@ static long MakeMainWin(char winname[], unsigned long winname_len,
       /* Create a window */
       anonym->win = XCreateSimpleWindow(dis, DefaultRootWindow(dis),
                 anonym->myhint.x, anonym->myhint.y,
-                (unsigned long)anonym->myhint.width,
-                (unsigned long)anonym->myhint.height, 1UL, 0UL, 0UL);
+                (uint32_t)anonym->myhint.width,
+                (uint32_t)anonym->myhint.height, 1UL, 0UL, 0UL);
       if (anonym->win==0UL) {
          osi_WrStrLn("Couldnt open window", 20ul);
          MakeMainWin_ret = -1L;
@@ -284,13 +284,13 @@ static long MakeMainWin(char winname[], unsigned long winname_len,
        (* Create a graphic context *)
         gc:= XCreateGC(dis, win, 0, NIL);
       */
-      anonym->redmask = (unsigned long)anonym->pvis->red_mask;
-      anonym->greenmask = (unsigned long)anonym->pvis->green_mask;
-      anonym->bluemask = (unsigned long)anonym->pvis->blue_mask;
+      anonym->redmask = (uint32_t)anonym->pvis->red_mask;
+      anonym->greenmask = (uint32_t)anonym->pvis->green_mask;
+      anonym->bluemask = (uint32_t)anonym->pvis->blue_mask;
       anonym->redshift = MaxBit(anonym->redmask)-8L;
       anonym->greenshift = MaxBit(anonym->greenmask)-8L;
       anonym->blueshift = MaxBit(anonym->bluemask)-8L;
-      anonym->bitperpixel = (unsigned long)
+      anonym->bitperpixel = (uint32_t)
                 MaxBit(anonym->redmask|anonym->greenmask|anonym->bluemask);
       /*
         xbuf0size:=SIZE(XPIX)*ysizeh*xsizeh;
@@ -342,11 +342,11 @@ extern void xosi_closewin(void)
 } /* end closewin() */
 
 
-extern long xosi_InitX(char winname[], unsigned long winname_len,
-                char iconname[], unsigned long iconname_len,
-                unsigned long xsizeh, unsigned long ysizeh)
+extern int32_t xosi_InitX(char winname[], uint32_t winname_len,
+                char iconname[], uint32_t iconname_len,
+                uint32_t xsizeh, uint32_t ysizeh)
 {
-   long xosi_InitX_ret;
+   int32_t xosi_InitX_ret;
    X2C_PCOPY((void **)&winname,winname_len);
    X2C_PCOPY((void **)&iconname,iconname_len);
    xbuf016 = 0;
@@ -364,8 +364,8 @@ extern long xosi_InitX(char winname[], unsigned long winname_len,
 } /* end InitX() */
 
 
-extern void xosi_getscreenbuf(X2C_ADDRESS * adr, unsigned long * xsize,
-                unsigned long * ysize, unsigned long * incadr)
+extern void xosi_getscreenbuf(X2C_ADDRESS * adr, uint32_t * xsize,
+                uint32_t * ysize, uint32_t * incadr)
 {
    *adr = (X2C_ADDRESS)xbuf016;
    *xsize = xbufxsize;
@@ -382,14 +382,14 @@ extern void xosi_rgbtoscreen(void)
 } /* end rgbtoscreen() */
 
 
-extern void xosi_beep(long lev, unsigned long hz, unsigned long ms)
+extern void xosi_beep(int32_t lev, uint32_t hz, uint32_t ms)
 {
    XKeyboardControl val;
    if (hz>0UL && ms>0UL) {
-      if (cbell((long)hz, (long)ms)<0L && dis) {
-         val.bell_pitch = (long)hz;
-         val.bell_duration = (long)(ms/2UL);
-         XChangeKeyboardControl(dis, (unsigned long)0xCUL,
+      if (cbell((int32_t)hz, (int32_t)ms)<0L && dis) {
+         val.bell_pitch = (int32_t)hz;
+         val.bell_duration = (int32_t)(ms/2UL);
+         XChangeKeyboardControl(dis, (uint32_t)0xCUL,
                 (PAXKeyboardControl) &val);
          XBell(dis, lev);
       }
@@ -397,10 +397,10 @@ extern void xosi_beep(long lev, unsigned long hz, unsigned long ms)
 } /* end beep() */
 
 
-extern void xosi_Umlaut(char c[], unsigned long c_len)
+extern void xosi_Umlaut(char c[], uint32_t c_len)
 /* umlaut converter */
 {
-   switch ((unsigned long)(unsigned char)c[0UL]) {
+   switch ((uint32_t)(unsigned char)c[0UL]) {
    case 228UL:
       c[0UL] = 'a';
       c[1UL] = 'e';
@@ -442,9 +442,9 @@ extern void xosi_Umlaut(char c[], unsigned long c_len)
 
 extern void xosi_paste(void)
 {
-   long i;
-   unsigned long cw;
-   unsigned long pa;
+   int32_t i;
+   uint32_t cw;
+   uint32_t pa;
    /*
      pb:=Xlib.XFetchBytes(dis, len);
      IF pb<>NIL THEN
@@ -476,7 +476,7 @@ typedef unsigned char * CP;
 static void sendcopypasteevent(XSelectionRequestEvent xreq)
 {
    XSelectionEvent ev;
-   long ret;
+   int32_t ret;
    CP cp;
    /*WrInt(xreq.requestor, 15); WrInt(xreq.selection, 15); */
    /*WrInt(xreq.target, 15); WrInt(xreq.property, 15); WrInt(xreq.time, 15);
@@ -484,7 +484,7 @@ static void sendcopypasteevent(XSelectionRequestEvent xreq)
    if (xreq.target==XInternAtom(dis, "STRING", 0) || xreq.target==294UL) {
       cp = (CP)xosi_cutbuffer.text;
       XChangeProperty(dis, xreq.requestor, xreq.property, xreq.target, 8L,
-                0L, cp, (long)xosi_cutbuffer.cutlen);
+                0L, cp, (int32_t)xosi_cutbuffer.cutlen);
       ev.property = xreq.property;
    }
    else ev.property = 0UL;
@@ -510,10 +510,10 @@ BEGIN
 END pulloff;
 */
 
-extern void xosi_setxwinsize(long x, long y)
+extern void xosi_setxwinsize(int32_t x, int32_t y)
 {
-   XMoveResizeWindow(dis, mainwin.win, 0L, 0L, (unsigned long)x,
-                (unsigned long)y);
+   XMoveResizeWindow(dis, mainwin.win, 0L, 0L, (uint32_t)x,
+                (uint32_t)y);
 } /* end setxwinsize() */
 
 
@@ -527,7 +527,7 @@ static void maximize(void)
 
 extern void xosi_sethand(unsigned char t)
 {
-   long curs;
+   int32_t curs;
    if (t) {
       if (!cursorset) {
          switch ((unsigned)t) {
@@ -556,7 +556,7 @@ extern void xosi_sethand(unsigned char t)
             curs = 68L;
             break;
          } /* end switch */
-         cursor = XCreateFontCursor(dis, (unsigned long)curs);
+         cursor = XCreateFontCursor(dis, (uint32_t)curs);
          XDefineCursor(dis, mainwin.win, cursor);
          cursorset = 1;
       }
@@ -572,15 +572,15 @@ extern void xosi_sethand(unsigned char t)
 static void checkbuttons(void)
 {
    /* check mouse buttons if lost events */
-   unsigned long c;
-   unsigned long r;
-   long wy;
-   long wx;
-   long y;
-   long x;
-   unsigned long m;
+   uint32_t c;
+   uint32_t r;
+   int32_t wy;
+   int32_t wx;
+   int32_t y;
+   int32_t x;
+   uint32_t m;
    if ((xosi_pulling && XQueryPointer(dis, mainwin.win, &r, &c, &x, &y, &wx,
-                &wy, &m)) && ((unsigned long)m&0x300UL)==0UL) {
+                &wy, &m)) && ((uint32_t)m&0x300UL)==0UL) {
       xosi_sethand(xosi_cOFF);
    }
 } /* end checkbuttons() */
@@ -590,14 +590,14 @@ extern void xosi_xevent(void)
 {
    char h[256];
    XWindowAttributes attr;
-   long res;
+   int32_t res;
    char cmd;
-   long ii;
-   unsigned long nc;
-   unsigned long nn;
-   unsigned long atom1;
+   int32_t ii;
+   uint32_t nc;
+   uint32_t nn;
+   uint32_t atom1;
    PAUChar pstr;
-   long tmp;
+   int32_t tmp;
    while (XPending(dis)) {
       XNextEvent(dis, &event);
       /*IF event.type<>6 THEN WrInt(event.type, 10); WrStrLn(" event") END;
@@ -681,7 +681,7 @@ extern void xosi_xevent(void)
                 event.xselection.property, 0L, 64L, 0L, 0UL, &atom1, &ii,
                 &nn, &nc, &pstr);
          if ((X2C_ADDRESS)pstr) {
-            tmp = (long)nn-1L;
+            tmp = (int32_t)nn-1L;
             res = 0L;
             if (res<=tmp) for (;; res++) {
                cmd = pstr[res];
@@ -703,20 +703,20 @@ extern void xosi_xevent(void)
 } /* end xevent() */
 
 
-static void addsock(long fd, char wtoo)
+static void addsock(int32_t fd, char wtoo)
 /* insert socket in fdset for select */
 {
    if (fd>=0L) {
-      fdsetr((unsigned long)fd);
-      if (wtoo) fdsetw((unsigned long)fd);
+      fdsetr((uint32_t)fd);
+      if (wtoo) fdsetw((uint32_t)fd);
    }
 } /* end addsock() */
 
 
 extern void xosi_CheckProg(struct xosi_PROCESSHANDLE * chpid)
 {
-   long ret;
-   long stat;
+   int32_t ret;
+   int32_t stat;
    if (chpid->runs) {
       ret = waitpid(chpid->pid, &stat, WNOHANG);
       if (ret==chpid->pid) chpid->exitcode = stat;
@@ -729,19 +729,19 @@ extern void xosi_CheckProg(struct xosi_PROCESSHANDLE * chpid)
 #define xosi_QUOTT "\""
 
 
-extern void xosi_StartProg(char name[], unsigned long name_len,
+extern void xosi_StartProg(char name[], uint32_t name_len,
                 struct xosi_PROCESSHANDLE * chpid)
 {
-   long e;
+   int32_t e;
    char pgmname[1025];
    char argt[100][1025];
    X2C_pCHAR * args;
    X2C_ADDRESS arga[100];
    char quot;
-   unsigned long a;
-   unsigned long len;
-   unsigned long j;
-   unsigned long i;
+   uint32_t a;
+   uint32_t len;
+   uint32_t j;
+   uint32_t i;
    X2C_PCOPY((void **)&name,name_len);
    /*WrStr("start: "); WrStrLn(name); */
    chpid->pid = fork();
@@ -803,15 +803,15 @@ extern void xosi_StopProg(struct xosi_PROCESSHANDLE * chpid)
 } /* end StopProg() */
 
 
-extern void xosi_Eventloop(unsigned long timeout)
+extern void xosi_Eventloop(uint32_t timeout)
 {
    aprsdecode_pTCPSOCK acttmp;
    aprsdecode_pTCPSOCK acttcp;
-   long i;
-   long ret;
-   unsigned long tus;
-   unsigned long ts;
-   unsigned long t;
+   int32_t i;
+   int32_t ret;
+   uint32_t tus;
+   uint32_t ts;
+   uint32_t t;
    fdclr(); /* clear select bitset */
    for (i = 0L; i<=3L; i++) {
       addsock(aprsdecode_udpsocks0[i].fd, 0); /* set udp ports */
@@ -840,17 +840,17 @@ extern void xosi_Eventloop(unsigned long timeout)
    else ++aprsdecode_rxidle;
    aprsdecode_lastlooped = t;
    for (i = 0L; i<=3L; i++) {
-      if (aprsdecode_udpsocks0[i].fd>=0L && issetr((unsigned long)
+      if (aprsdecode_udpsocks0[i].fd>=0L && issetr((uint32_t)
                 aprsdecode_udpsocks0[i].fd)) {
-         aprsdecode_udpin((unsigned long)i);
+         aprsdecode_udpin((uint32_t)i);
       }
    } /* end for */
    acttcp = aprsdecode_tcpsocks;
    while (acttcp) {
-      if (acttcp->fd>=0L && issetw((unsigned long)acttcp->fd)) {
+      if (acttcp->fd>=0L && issetw((uint32_t)acttcp->fd)) {
          ret = aprsdecode_tcpout(acttcp);
       }
-      if (acttcp->fd>=0L && issetr((unsigned long)acttcp->fd)) {
+      if (acttcp->fd>=0L && issetr((uint32_t)acttcp->fd)) {
          aprsdecode_tcpin(acttcp);
       }
       if (acttcp->fd<0L) {

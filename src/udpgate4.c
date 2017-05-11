@@ -77,13 +77,13 @@ typedef char FILTERST[256];
 /*
       FRAMEBUF=ARRAY[0..256+3+11*10] OF CHAR;
 */
-typedef unsigned long CHSET[4];
+typedef uint32_t CHSET[4];
 
 
 struct BEACON {
-   unsigned long bintervall;
+   uint32_t bintervall;
    FILENAME bfile;
-   unsigned long btime;
+   uint32_t btime;
 };
 
 struct POSCALL;
@@ -124,7 +124,7 @@ typedef struct WWWBUF * pWWWBUF;
 
 struct WWWBUF {
    WWWB buf;
-   long tlen;
+   int32_t tlen;
    char push;
    pWWWBUF next;
 };
@@ -133,10 +133,10 @@ struct QWatch;
 
 
 struct QWatch {
-   unsigned long lasttb;
-   long qsize;
-   long lastqb;
-   long txbyte[60];
+   uint32_t lasttb;
+   int32_t qsize;
+   int32_t lastqb;
+   int32_t txbyte[60];
 };
 
 struct TCPSOCK;
@@ -146,35 +146,35 @@ typedef struct TCPSOCK * pTCPSOCK;
 
 struct TCPSOCK {
    pTCPSOCK next;
-   long fd;
-   unsigned long beacont;
-   unsigned long connt;
-   unsigned long pongtime;
+   int32_t fd;
+   uint32_t beacont;
+   uint32_t connt;
+   uint32_t pongtime;
    char slowlink;
    char valid;
    char pingout; /* ping timeout state */
    char service;
-   unsigned long gatepri;
+   uint32_t gatepri;
    char ipnum[64];
    char port[6];
    struct POSCALL user;
    char vers[21];
-   unsigned long wwwst;
-   unsigned long reload;
+   uint32_t wwwst;
+   uint32_t reload;
    char sortby[2];
    struct QWatch qwatch;
-   unsigned long txframes;
-   unsigned long txbytes;
-   unsigned long txbytesh;
-   unsigned long rxframes;
-   unsigned long rxbytes;
-   unsigned long rxbytesh;
-   unsigned long losttxframes;
-   unsigned long lostrxframes;
+   uint32_t txframes;
+   uint32_t txbytes;
+   uint32_t txbytesh;
+   uint32_t rxframes;
+   uint32_t rxbytes;
+   uint32_t rxbytesh;
+   uint32_t losttxframes;
+   uint32_t lostrxframes;
    struct FILTERS filters;
    FILTERST outfilterst; /* for www show outconn filters */
-   long rpos;
-   long tlen;
+   int32_t rpos;
+   int32_t tlen;
    FRAMEBUF rbuf;
    char tbuf[1024];
    char get[256];
@@ -189,31 +189,31 @@ struct _0;
 
 
 struct _0 {
-   unsigned long uip;
-   unsigned long uport;
-   unsigned long rxframes;
-   unsigned long rxbytes;
-   unsigned long utime;
-   unsigned long dtime;
+   uint32_t uip;
+   uint32_t uport;
+   uint32_t rxframes;
+   uint32_t rxbytes;
+   uint32_t utime;
+   uint32_t dtime;
 };
 
 
 struct UDPSOCK {
    pUDPSOCK next;
-   long fd;
+   int32_t fd;
    aprsstr_GHOSTSET ghosts;
    char rawread;
    char checkip;
-   unsigned long ip;
-   unsigned long bindport;
-   unsigned long dport;
-   unsigned long lasttxtime; /* for net to rf bit/s limit */
-   unsigned long laststat;
+   uint32_t ip;
+   uint32_t bindport;
+   uint32_t dport;
+   uint32_t lasttxtime; /* for net to rf bit/s limit */
+   uint32_t laststat;
    float torfradius; /* radius 0 no gateing */
-   unsigned long maxbytes; /* byte/s tx */
-   unsigned long lasttxbytes; /* for tx byte/s limit */
-   unsigned long txframes;
-   unsigned long txbytes;
+   uint32_t maxbytes; /* byte/s tx */
+   uint32_t lasttxbytes; /* for tx byte/s limit */
+   uint32_t txframes;
+   uint32_t txbytes;
    char allpathkey[10]; /* keyword on comment for allpath */
    char portname[10];
    struct _0 stat[16];
@@ -263,17 +263,17 @@ typedef struct MESSAGE * pMESSAGE;
 
 struct MESSAGE {
    pMESSAGE next;
-   unsigned long chkt;
-   unsigned long txtime;
-   unsigned long gentime;
-   unsigned long txport;
-   unsigned long msg2rf;
-   unsigned long msg2net;
-   unsigned long ack2rf;
-   unsigned long ack2net;
-   unsigned long retryc;
-   unsigned char acksrc;
-   unsigned char src;
+   uint32_t chkt;
+   uint32_t txtime;
+   uint32_t gentime;
+   uint32_t txport;
+   uint32_t msg2rf;
+   uint32_t msg2net;
+   uint32_t ack2rf;
+   uint32_t ack2net;
+   uint32_t retryc;
+   uint8_t acksrc;
+   uint8_t src;
    char reject;
    char acked;
    char ackackt;
@@ -292,31 +292,31 @@ typedef struct HEARD * pHEARD;
 
 struct HEARD {
    pHEARD next;
-   unsigned long fromrx;
-   unsigned long time0;
+   uint32_t fromrx;
+   uint32_t time0;
    MONCALL call;
-   unsigned long cntt;
+   uint32_t cntt;
    struct aprspos_POSITION position;
    char sym;
    char symt;
-   unsigned short cnt[49];
+   uint16_t cnt[49];
    char head[41];
    char datatyp;
    float data;
    double sortval; /* sort value inserted depending on sort by */
    char ungate; /* flag set by user to not igate this direct heard */
-   unsigned short txd;
-   unsigned char quali;
+   uint16_t txd;
+   uint8_t quali;
    signed char level;
 };
 
-static unsigned long msgsendtime;
+static uint32_t msgsendtime;
 
-static unsigned long udpgate4_POLYNOM = 0x8408UL;
+static uint32_t udpgate4_POLYNOM = 0x8408UL;
 
-static unsigned long udpgate4_CRCINIT = 0xFFFFUL;
+static uint32_t udpgate4_CRCINIT = 0xFFFFUL;
 
-static unsigned long udpgate4_CRCRESULT = 0x9F0BUL;
+static uint32_t udpgate4_CRCRESULT = 0x9F0BUL;
 
 #define udpgate4_CR "\015"
 
@@ -344,27 +344,27 @@ static char callsrc;
 
 static pTCPSOCK tcpsocks;
 
-static unsigned long showip1;
+static uint32_t showip1;
 
-static unsigned long showport1;
+static uint32_t showport1;
 
-static unsigned long systime;
+static uint32_t systime;
 
-static unsigned long keeptime;
+static uint32_t keeptime;
 
 static char ungates[6][11];
 
-static unsigned long timehash[65536];
+static uint32_t timehash[65536];
 
-static unsigned long realtime;
+static uint32_t realtime;
 
-static unsigned long udpdonetime;
+static uint32_t udpdonetime;
 
-static unsigned long maxpongtime;
+static uint32_t maxpongtime;
 
-static unsigned long dupetime;
+static uint32_t dupetime;
 
-static unsigned long uptime;
+static uint32_t uptime;
 
 static FILENAME rawlogname;
 
@@ -372,33 +372,33 @@ static FILENAME netbeaconfn;
 
 static FILENAME logframename;
 
-static unsigned long lastdnstime;
+static uint32_t lastdnstime;
 
-static unsigned long gateconndelay;
+static uint32_t gateconndelay;
 
-static unsigned long netbeaconintervall;
+static uint32_t netbeaconintervall;
 
-static unsigned long vcourse;
+static uint32_t vcourse;
 
-static unsigned long vspeed;
+static uint32_t vspeed;
 
-static unsigned long qas;
+static uint32_t qas;
 
-static unsigned long qasc;
+static uint32_t qasc;
 
-static unsigned long maxusers;
+static uint32_t maxusers;
 
-static unsigned long httpcount;
+static uint32_t httpcount;
 
 static char vsym;
 
 static char vsymt;
 
-static long valt;
+static int32_t valt;
 
-static long wwwsizelimit;
+static int32_t wwwsizelimit;
 
-static long logframes;
+static int32_t logframes;
 
 static MONCALL showid;
 
@@ -422,9 +422,9 @@ static char nettorfpath[81];
 
 static pUDPSOCK udpsocks;
 
-static unsigned long trygate;
+static uint32_t trygate;
 
-static long qmaxtime;
+static int32_t qmaxtime;
 
 static FILENAME gatesfn; /* filename with gateway table */
 
@@ -434,8 +434,8 @@ struct _1;
 struct _1 {
    char url[256];
    char port[6];
-   unsigned long resolvtime;
-   unsigned long connecttime;
+   uint32_t resolvtime;
+   uint32_t connecttime;
    FILTERST filterst;
 };
 
@@ -447,37 +447,37 @@ static MONCALL netdestcall;
 
 static MONCALL viacall;
 
-static unsigned long netmhin;
+static uint32_t netmhin;
 
-static unsigned long netmhout;
+static uint32_t netmhout;
 
-static unsigned long msghttpcount;
+static uint32_t msghttpcount;
 
-static unsigned long mhhttpcount;
+static uint32_t mhhttpcount;
 
-static unsigned long maxmsg;
+static uint32_t maxmsg;
 
-static unsigned long maxatonce;
+static uint32_t maxatonce;
 
-static unsigned long lastrfsent;
+static uint32_t lastrfsent;
 
-static unsigned long purgeunack;
+static uint32_t purgeunack;
 
-static unsigned long purgemsg;
+static uint32_t purgemsg;
 
-static unsigned long purgeacked;
+static uint32_t purgeacked;
 
-static unsigned long purgeunacksent;
+static uint32_t purgeunacksent;
 
-static unsigned long rfquiet;
+static uint32_t rfquiet;
 
-static unsigned long heardtimevia;
+static uint32_t heardtimevia;
 
-static unsigned long heardtimew;
+static uint32_t heardtimew;
 
-static unsigned long heardtimetcp;
+static uint32_t heardtimetcp;
 
-static unsigned long heardtime;
+static uint32_t heardtime;
 
 static pMESSAGE messages;
 
@@ -491,7 +491,7 @@ static char sendnetmsg;
 
 static MONCALL netmh[100];
 
-static unsigned long mhfilelines;
+static uint32_t mhfilelines;
 
 static FILENAME mhfilename;
 
@@ -501,8 +501,8 @@ static char udp2[100];
 static void spintime(void)
 {
    /* make monotonic systime out of jumping realtime */
-   unsigned long dt;
-   unsigned long t;
+   uint32_t dt;
+   uint32_t t;
    t = osic_time();
    dt = t-realtime;
    realtime = t;
@@ -517,7 +517,7 @@ BEGIN
 END Rename;
 */
 
-static void Err(const char text[], unsigned long text_len)
+static void Err(const char text[], uint32_t text_len)
 {
    osi_WrStr("udpgate: ", 10ul);
    osi_WrStr(text, text_len);
@@ -526,7 +526,7 @@ static void Err(const char text[], unsigned long text_len)
 } /* end Err() */
 
 
-static unsigned long Max(unsigned long a, unsigned long b)
+static uint32_t Max(uint32_t a, uint32_t b)
 {
    if (a>b) return a;
    else return b;
@@ -534,7 +534,7 @@ static unsigned long Max(unsigned long a, unsigned long b)
 } /* end Max() */
 
 
-static unsigned long Min(unsigned long a, unsigned long b)
+static uint32_t Min(uint32_t a, uint32_t b)
 {
    if (a<b) return a;
    else return b;
@@ -542,14 +542,13 @@ static unsigned long Min(unsigned long a, unsigned long b)
 } /* end Min() */
 
 
-static void skipblank(const char s[], unsigned long s_len,
-                unsigned long * p)
+static void skipblank(const char s[], uint32_t s_len, uint32_t * p)
 {
    while (*p<s_len-1 && s[*p]==' ') ++*p;
 } /* end skipblank() */
 
 
-static void app(char s[], unsigned long s_len, float x, char rad)
+static void app(char s[], uint32_t s_len, float x, char rad)
 {
    char h[30];
    aprsstr_Append(s, s_len, "/", 2ul);
@@ -559,10 +558,10 @@ static void app(char s[], unsigned long s_len, float x, char rad)
 } /* end app() */
 
 
-static void wrcalls(char s[], unsigned long s_len, const MONCALL tab[],
-                unsigned long tab_len, char not, char sym)
+static void wrcalls(char s[], uint32_t s_len, const MONCALL tab[],
+                uint32_t tab_len, char not, char sym)
 {
-   unsigned long j;
+   uint32_t j;
    if (tab[0UL][0U]) {
       if (s[0UL]) aprsstr_Append(s, s_len, " ", 2ul);
       if (not) aprsstr_Append(s, s_len, "-", 2ul);
@@ -577,7 +576,7 @@ static void wrcalls(char s[], unsigned long s_len, const MONCALL tab[],
 } /* end wrcalls() */
 
 
-static void FiltToStr(struct FILTERS f, char s[], unsigned long s_len)
+static void FiltToStr(struct FILTERS f, char s[], uint32_t s_len)
 {
    struct FILTERS * anonym;
    s[0UL] = 0;
@@ -614,9 +613,9 @@ static void FiltToStr(struct FILTERS f, char s[], unsigned long s_len)
 } /* end FiltToStr() */
 
 
-static char Watchclock(unsigned long * t, unsigned long intervall)
+static char Watchclock(uint32_t * t, uint32_t intervall)
 {
-   unsigned long tn;
+   uint32_t tn;
    if (intervall>0UL || *t==0UL) {
       /* send once */
       tn = systime;
@@ -629,36 +628,36 @@ static char Watchclock(unsigned long * t, unsigned long intervall)
    return 0;
 } /* end Watchclock() */
 
-static unsigned long udpgate4_ROOT = 0x73E2UL;
+static uint32_t udpgate4_ROOT = 0x73E2UL;
 
 
-static unsigned long call2pass(const char c[], unsigned long c_len)
+static uint32_t call2pass(const char c[], uint32_t c_len)
 {
-   unsigned long i0;
-   unsigned long s;
+   uint32_t i0;
+   uint32_t s;
    s = 0x73E2UL;
    i0 = 0UL;
    while ((i0<=c_len-1 && c[i0]) && c[i0]!='-') {
-      s = s^X2C_LSH((unsigned long)(unsigned long)(unsigned char)
-                X2C_CAP(c[i0]),32,(long)!(i0&1)*8L);
+      s = s^X2C_LSH((uint32_t)(uint32_t)(uint8_t)X2C_CAP(c[i0]),32,
+                (int32_t)!(i0&1)*8L);
       ++i0;
    }
-   return (unsigned long)(s&0x7FFFUL);
+   return (uint32_t)(s&0x7FFFUL);
 } /* end call2pass() */
 
 
-static long GetSec(char h[], unsigned long h_len, unsigned long * p,
-                unsigned long * n)
+static int32_t GetSec(char h[], uint32_t h_len, uint32_t * p,
+                uint32_t * n)
 {
    char ok0;
-   long GetSec_ret;
+   int32_t GetSec_ret;
    X2C_PCOPY((void **)&h,h_len);
    h[h_len-1] = 0;
    *n = 0UL;
    ok0 = 0;
-   while ((unsigned char)h[*p]>='0' && (unsigned char)h[*p]<='9') {
+   while ((uint8_t)h[*p]>='0' && (uint8_t)h[*p]<='9') {
       ok0 = 1;
-      *n = ( *n*10UL+(unsigned long)(unsigned char)h[*p])-48UL;
+      *n = ( *n*10UL+(uint32_t)(uint8_t)h[*p])-48UL;
       ++*p;
    }
    if (!ok0) {
@@ -675,19 +674,19 @@ static long GetSec(char h[], unsigned long h_len, unsigned long * p,
 } /* end GetSec() */
 
 
-static char callok(const char h[], unsigned long h_len)
+static char callok(const char h[], uint32_t h_len)
 {
-   unsigned long lit;
-   unsigned long num;
-   unsigned long i0;
+   uint32_t lit;
+   uint32_t num;
+   uint32_t i0;
    char c;
    num = 0UL;
    lit = 0UL;
    i0 = 0UL;
    for (;;) {
       c = h[i0];
-      if ((unsigned char)c>='0' && (unsigned char)c<='9') ++num;
-      else if ((unsigned char)c>='A' && (unsigned char)c<='Z') ++lit;
+      if ((uint8_t)c>='0' && (uint8_t)c<='9') ++num;
+      else if ((uint8_t)c>='A' && (uint8_t)c<='Z') ++lit;
       else break;
       ++i0;
    }
@@ -696,10 +695,10 @@ static char callok(const char h[], unsigned long h_len)
       ++i0;
       if (h[i0]=='1') {
          ++i0;
-         if ((unsigned char)h[i0]>='0' && (unsigned char)h[i0]<='5') ++i0;
+         if ((uint8_t)h[i0]>='0' && (uint8_t)h[i0]<='5') ++i0;
       }
       else {
-         if ((unsigned char)h[i0]<'1' || (unsigned char)h[i0]>'9') return 0;
+         if ((uint8_t)h[i0]<'1' || (uint8_t)h[i0]>'9') return 0;
          ++i0;
       }
    }
@@ -707,13 +706,13 @@ static char callok(const char h[], unsigned long h_len)
 } /* end callok() */
 
 
-static void readurlsfile(const char gatesfn0[], unsigned long gatesfn_len)
+static void readurlsfile(const char gatesfn0[], uint32_t gatesfn_len)
 {
-   unsigned long i0;
-   unsigned long n;
-   long ii;
-   long len;
-   long fd;
+   uint32_t i0;
+   uint32_t n;
+   int32_t ii;
+   int32_t len;
+   int32_t fd;
    FILENAME h;
    memset((char *)gateways,(char)0,sizeof(struct _1 [21]));
    fd = osi_OpenRead(gatesfn0, gatesfn_len);
@@ -797,17 +796,17 @@ static void parms(void)
    aprsstr_GHOSTSET ghost;
    char err;
    char lasth;
-   unsigned long n;
-   unsigned long i0;
-   unsigned long gatecnt;
-   long len;
-   long fd;
+   uint32_t n;
+   uint32_t i0;
+   uint32_t gatecnt;
+   int32_t len;
+   int32_t fd;
    pUDPSOCK ush;
    pUDPSOCK usock;
-   long ii;
+   int32_t ii;
    char allkey[10];
    struct UDPSOCK * anonym;
-   unsigned long tmp;
+   uint32_t tmp;
    err = 0;
    verb = 0;
    datafilter = 0;
@@ -822,9 +821,9 @@ static void parms(void)
          lasth = h[1U];
          if (lasth=='R' || lasth=='M') {
             osi_NextArg(h, 4096ul);
-            osic_alloc((X2C_ADDRESS *) &usock, sizeof(struct UDPSOCK));
+            osic_alloc((char * *) &usock, sizeof(struct UDPSOCK));
             if (usock==0) Err("out of memory", 14ul);
-            memset((X2C_ADDRESS)usock,(char)0,sizeof(struct UDPSOCK));
+            memset((char *)usock,(char)0,sizeof(struct UDPSOCK));
             { /* with */
                struct UDPSOCK * anonym = usock;
                if (aprsstr_GetIp2(h, 4096ul, &anonym->ip, &anonym->dport,
@@ -840,7 +839,7 @@ static void parms(void)
                len = socknonblock(anonym->fd);
                ii = aprsstr_InStr(h, 4096ul, "+", 2ul);
                if (ii>0L) {
-                  i0 = (unsigned long)(ii+1L);
+                  i0 = (uint32_t)(ii+1L);
                   if (GetSec(h, 4096ul, &i0, &n)>=0L) {
                      anonym->maxbytes = n;
                      ++i0;
@@ -882,9 +881,9 @@ static void parms(void)
          }
          else if (lasth=='p') {
             osi_NextArg(h, 4096ul);
-            if ((unsigned char)h[0U]>='0' && (unsigned char)h[0U]<='9') {
+            if ((uint8_t)h[0U]>='0' && (uint8_t)h[0U]<='9') {
                i0 = 0UL;
-               while (i0<=5UL && (unsigned char)h[i0]>=' ') {
+               while (i0<=5UL && (uint8_t)h[i0]>=' ') {
                   passwd[i0] = h[i0];
                   ++i0;
                }
@@ -899,8 +898,9 @@ static void parms(void)
             }
             passwd[5U] = 0;
             i0 = 0UL;
-            while ((unsigned char)passwd[i0]>='0' && (unsigned char)
-                passwd[i0]<='9') ++i0;
+            while ((uint8_t)passwd[i0]>='0' && (uint8_t)passwd[i0]<='9') {
+               ++i0;
+            }
             if (i0==0UL || passwd[i0]) Err("-p invalid passcode", 20ul);
          }
          else if (lasth=='m') {
@@ -969,7 +969,7 @@ static void parms(void)
             osi_NextArg(h, 4096ul);
             i0 = 0UL;
             if (GetSec(h, 4096ul, &i0, &n)>=0L && h[i0]==':') {
-               logframes = (long)n;
+               logframes = (int32_t)n;
                ++i0;
                for (n = 0UL; n<=1023UL; n++) {
                   if (i0<=4095UL) {
@@ -977,7 +977,7 @@ static void parms(void)
                      ++i0;
                   }
                } /* end for */
-               if ((unsigned char)logframename[0U]<=' ') {
+               if ((uint8_t)logframename[0U]<=' ') {
                   Err("-l loglevel:filename", 21ul);
                }
             }
@@ -985,7 +985,7 @@ static void parms(void)
          }
          else if (lasth=='r') {
             osi_NextArg(rawlogname, 1024ul);
-            if ((unsigned char)rawlogname[0U]<=' ') {
+            if ((uint8_t)rawlogname[0U]<=' ') {
                Err("-r rawlogfilename", 18ul);
             }
          }
@@ -1001,7 +1001,7 @@ static void parms(void)
                      ++i0;
                   }
                } /* end for */
-               if ((unsigned char)mhfilename[0U]<=' ') {
+               if ((uint8_t)mhfilename[0U]<=' ') {
                   Err("-F MHfilename", 14ul);
                }
             }
@@ -1019,7 +1019,7 @@ static void parms(void)
                      ++i0;
                   }
                } /* end for */
-               if ((unsigned char)netbeaconfn[0U]<=' ') {
+               if ((uint8_t)netbeaconfn[0U]<=' ') {
                   Err("-n netbeacon filename", 22ul);
                }
             }
@@ -1316,7 +1316,7 @@ rt GHOST* in otherwise false", 78ul);
             else if (lasth=='T') {
                osi_NextArg(h, 4096ul);
                i0 = 0UL;
-               if (GetSec(h, 4096ul, &i0, &n)>=0L) qmaxtime = (long)n;
+               if (GetSec(h, 4096ul, &i0, &n)>=0L) qmaxtime = (int32_t)n;
                else Err("-T seconds", 11ul);
                if (qmaxtime>59L) qmaxtime = 59L;
             }
@@ -1335,7 +1335,7 @@ rt GHOST* in otherwise false", 78ul);
                osi_NextArg(h, 4096ul);
                i0 = 0UL;
                if (GetSec(h, 4096ul, &i0, &n)>=0L) {
-                  wwwsizelimit = (long)(n*1024UL);
+                  wwwsizelimit = (int32_t)(n*1024UL);
                }
                else Err("-W kbytes", 10ul);
             }
@@ -1375,7 +1375,7 @@ rt GHOST* in otherwise false", 78ul);
 } /* end parms() */
 
 
-static pUDPSOCK porttosock(unsigned long p)
+static pUDPSOCK porttosock(uint32_t p)
 {
    pUDPSOCK s;
    if (p==0UL) return 0;
@@ -1388,9 +1388,9 @@ static pUDPSOCK porttosock(unsigned long p)
 } /* end porttosock() */
 
 
-static void Sendudp(const FRAMEBUF s, unsigned long totx, char unlimit)
+static void Sendudp(const FRAMEBUF s, uint32_t totx, char unlimit)
 {
-   long len;
+   int32_t len;
    FRAMEBUF raw;
    pUDPSOCK us;
    struct UDPSOCK * anonym;
@@ -1400,16 +1400,16 @@ static void Sendudp(const FRAMEBUF s, unsigned long totx, char unlimit)
                 *us->maxbytes>us->lasttxbytes)) {
       if (us->rawread) aprsstr_mon2raw(s, 512ul, raw, 512ul, &len);
       else {
-         len = (long)(aprsstr_Length(s, 512ul)+1UL);
+         len = (int32_t)(aprsstr_Length(s, 512ul)+1UL);
          memcpy(raw,s,512u);
       }
       if (len>1L) {
          { /* with */
             struct UDPSOCK * anonym = us;
-            anonym->lasttxbytes = (unsigned long)len;
+            anonym->lasttxbytes = (uint32_t)len;
             anonym->lasttxtime = systime;
             ++anonym->txframes;
-            anonym->txbytes += (unsigned long)len;
+            anonym->txbytes += (uint32_t)len;
          }
          len = udpsend(us->fd, raw, len, us->dport, us->ip);
       }
@@ -1418,24 +1418,25 @@ static void Sendudp(const FRAMEBUF s, unsigned long totx, char unlimit)
 } /* end Sendudp() */
 
 
-static char getudp(pUDPSOCK usock, FRAMEBUF buf, aprsstr_GHOSTSET ghost)
+static char getudp(pUDPSOCK usock, FRAMEBUF buf,
+                aprsstr_GHOSTSET ghost)
 {
-   unsigned long fromport;
-   unsigned long ipn;
+   uint32_t fromport;
+   uint32_t ipn;
    char crc2;
    /*    len, i       : INTEGER; */
    char crc1;
-   long oldi;
-   long i0;
-   long len;
-   unsigned long mlen;
+   int32_t oldi;
+   int32_t i0;
+   int32_t len;
+   uint32_t mlen;
    FRAMEBUF mbuf0;
-   unsigned long oldt;
+   uint32_t oldt;
    struct _0 * anonym;
    aprsstr_GHOSTSET tmp;
-   long tmp0;
+   int32_t tmp0;
    char tmp1;
-   ghost = (unsigned long *)memcpy(tmp,ghost,36u);
+   ghost = (uint32_t *)memcpy(tmp,ghost,36u);
    for (;;) {
       len = udpreceive(usock->fd, buf, 512L, &fromport, &ipn);
       if ((len<=2L || len>=512L) || usock->checkip && usock->ip!=ipn) {
@@ -1457,30 +1458,29 @@ static char getudp(pUDPSOCK usock, FRAMEBUF buf, aprsstr_GHOSTSET ghost)
             }
             if (len>2L) {
                aprsstr_raw2mon(buf, 512ul, mbuf0, 512ul,
-                (unsigned long)(len-2L), &mlen, ghost);
+                (uint32_t)(len-2L), &mlen, ghost);
                if (mbuf0[0U]==0 && verb) {
                   osi_WrStrLn(" axudp frame decode error", 26ul);
                   tmp0 = len-3L;
                   i0 = 0L;
                   if (i0<=tmp0) for (;; i0++) {
-                     osi_WrHex((unsigned long)(unsigned char)buf[i0], 3UL);
+                     osi_WrHex((uint32_t)(uint8_t)buf[i0], 3UL);
                      if (i0==tmp0) break;
                   } /* end for */
                   osic_WrLn();
                   i0 = 0L;
                   for (;;) {
                      if (i0>=len-3L) break;
-                     if ((unsigned long)(unsigned char)buf[i0]/2UL<32UL) {
+                     if ((uint32_t)(uint8_t)buf[i0]/2UL<32UL) {
                         osi_WrStr("<", 2ul);
-                        osi_WrHex((unsigned long)(unsigned char)buf[i0]/2UL,
-                1UL);
+                        osi_WrHex((uint32_t)(uint8_t)buf[i0]/2UL, 1UL);
                         osi_WrStr(">", 2ul);
                      }
                      else {
-                        osi_WrStr((char *)(tmp1 = (char)((unsigned long)
-                (unsigned char)buf[i0]/2UL),&tmp1), 1u/1u);
+                        osi_WrStr((char *)(tmp1 = (char)((uint32_t)
+                (uint8_t)buf[i0]/2UL),&tmp1), 1u/1u);
                      }
-                     if (((unsigned long)(unsigned char)buf[i0]&1)) break;
+                     if (((uint32_t)(uint8_t)buf[i0]&1)) break;
                      if (i0%7L==6L) osi_WrStr(",", 2ul);
                      ++i0;
                   }
@@ -1489,7 +1489,7 @@ static char getudp(pUDPSOCK usock, FRAMEBUF buf, aprsstr_GHOSTSET ghost)
                memcpy(buf,mbuf0,512u);
             }
             else buf[0U] = 0;
-            len = (long)aprsstr_Length(buf, 512ul); /* for statistic */
+            len = (int32_t)aprsstr_Length(buf, 512ul); /* for statistic */
          }
       }
       /*-    udpstat(usock, len, fromport, ipn); */
@@ -1519,9 +1519,9 @@ static char getudp(pUDPSOCK usock, FRAMEBUF buf, aprsstr_GHOSTSET ghost)
                      anonym->rxbytes = 0UL;
                   }
                   ++anonym->rxframes;
-                  anonym->rxbytes += (unsigned long)len;
+                  anonym->rxbytes += (uint32_t)len;
                   anonym->utime = systime;
-                  usock->laststat = (unsigned long)oldi;
+                  usock->laststat = (uint32_t)oldi;
                }
                break;
             }
@@ -1538,12 +1538,13 @@ static char getudp(pUDPSOCK usock, FRAMEBUF buf, aprsstr_GHOSTSET ghost)
 } /* end getudp() */
 
 
-static long Gettcp(long fd, FRAMEBUF line, FRAMEBUF buf, long * pos)
+static int32_t Gettcp(int32_t fd, FRAMEBUF line, FRAMEBUF buf,
+                int32_t * pos)
 {
-   long j;
-   long i0;
-   long len;
-   long tmp;
+   int32_t j;
+   int32_t i0;
+   int32_t len;
+   int32_t tmp;
    i0 = *pos;
    if (i0>=512L) i0 = 0L;
    /*
@@ -1609,23 +1610,23 @@ static long Gettcp(long fd, FRAMEBUF line, FRAMEBUF buf, long * pos)
 } /* end Gettcp() */
 
 
-static void showpip(unsigned long ip, unsigned long port, char s[],
-                unsigned long s_len)
+static void showpip(uint32_t ip, uint32_t port, char s[],
+                uint32_t s_len)
 {
    char h[21];
-   aprsstr_IntToStr((long)(ip/16777216UL), 1UL, s, s_len);
+   aprsstr_IntToStr((int32_t)(ip/16777216UL), 1UL, s, s_len);
    aprsstr_Append(s, s_len, ".", 2ul);
-   aprsstr_IntToStr((long)(ip/65536UL&255UL), 1UL, h, 21ul);
+   aprsstr_IntToStr((int32_t)(ip/65536UL&255UL), 1UL, h, 21ul);
    aprsstr_Append(s, s_len, h, 21ul);
    aprsstr_Append(s, s_len, ".", 2ul);
-   aprsstr_IntToStr((long)(ip/256UL&255UL), 1UL, h, 21ul);
+   aprsstr_IntToStr((int32_t)(ip/256UL&255UL), 1UL, h, 21ul);
    aprsstr_Append(s, s_len, h, 21ul);
    aprsstr_Append(s, s_len, ".", 2ul);
-   aprsstr_IntToStr((long)(ip&255UL), 1UL, h, 21ul);
+   aprsstr_IntToStr((int32_t)(ip&255UL), 1UL, h, 21ul);
    aprsstr_Append(s, s_len, h, 21ul);
    if (port) {
       aprsstr_Append(s, s_len, ":", 2ul);
-      aprsstr_IntToStr((long)port, 1UL, h, 21ul);
+      aprsstr_IntToStr((int32_t)port, 1UL, h, 21ul);
       aprsstr_Append(s, s_len, h, 21ul);
    }
 } /* end showpip() */
@@ -1642,11 +1643,11 @@ BEGIN
 END clrstr;
 */
 
-static void logline(long r, char s[], unsigned long s_len)
+static void logline(int32_t r, char s[], uint32_t s_len)
 {
    char h[512];
-   long fd;
-   unsigned long i0;
+   int32_t fd;
+   uint32_t i0;
    X2C_PCOPY((void **)&s,s_len);
    if (logframename[0U] && logframes+r>1L) {
       fd = osi_OpenAppend(logframename, 1024ul);
@@ -1680,11 +1681,11 @@ static void writerawlog(const FRAMEBUF b)
 {
    char h[512];
    FILENAME fn;
-   unsigned long i0;
-   unsigned long l;
-   long f;
+   uint32_t i0;
+   uint32_t l;
+   int32_t f;
    l = aprsstr_Length(b, 512ul);
-   while (l>0UL && (unsigned char)b[l-1UL]<='\015') --l;
+   while (l>0UL && (uint8_t)b[l-1UL]<='\015') --l;
    if (l>0UL) {
       aprsstr_DateToStr(osic_time(), h, 512ul);
       h[4U] = h[5U];
@@ -1724,8 +1725,9 @@ static void writerawlog(const FRAMEBUF b)
 } /* end writerawlog() */
 
 
-static void showframe(long r, pTCPSOCK sp, pUDPSOCK su, const char buf[],
-                unsigned long buf_len, struct aprspos_POSITION pos)
+static void showframe(int32_t r, pTCPSOCK sp, pUDPSOCK su,
+                const char buf[], uint32_t buf_len,
+                struct aprspos_POSITION pos)
 {
    char s[512];
    char h[512];
@@ -1768,7 +1770,7 @@ static void showframe(long r, pTCPSOCK sp, pUDPSOCK su, const char buf[],
          strncpy(h,"--->",512u);
       }
       else {
-         aprsstr_IntToStr((long)(unsigned long)
+         aprsstr_IntToStr((int32_t)(uint32_t)
                 X2C_TRUNCC(0.5f+aprspos_distance(home, pos),0UL,
                 X2C_max_longcard), 3UL, h, 512ul);
          aprsstr_Append(h, 512ul, ">", 2ul);
@@ -1802,8 +1804,8 @@ static void showframe(long r, pTCPSOCK sp, pUDPSOCK su, const char buf[],
 } /* end showframe() */
 
 
-static void appkib(char s[], unsigned long s_len, unsigned long h,
-                unsigned long l)
+static void appkib(char s[], uint32_t s_len, uint32_t h,
+                uint32_t l)
 {
    char b[41];
    if (h>0UL) {
@@ -1818,18 +1820,17 @@ static void appkib(char s[], unsigned long s_len, unsigned long h,
 } /* end appkib() */
 
 
-static unsigned long bitsec64(unsigned long h, unsigned long l,
-                unsigned long t)
+static uint32_t bitsec64(uint32_t h, uint32_t l, uint32_t t)
 {
    float r;
    r = X2C_DIVR(((float)h*4.294967296E+9f+(float)l)*8.0f,(float)t);
    if (r>2.E+9f) return 2000000000UL;
-   return (unsigned long)X2C_TRUNCC(r,0UL,X2C_max_longcard);
+   return (uint32_t)X2C_TRUNCC(r,0UL,X2C_max_longcard);
 } /* end bitsec64() */
 
 
-static void Statist(pTCPSOCK cp, unsigned long t, char s[],
-                unsigned long s_len)
+static void Statist(pTCPSOCK cp, uint32_t t, char s[],
+                uint32_t s_len)
 {
    char h[256];
    struct TCPSOCK * anonym;
@@ -1893,12 +1894,12 @@ static void showlogout(pTCPSOCK sp)
 } /* end showlogout() */
 
 
-static char vias(char dat[], unsigned long dat_len, pTCPSOCK to)
+static char vias(char dat[], uint32_t dat_len, pTCPSOCK to)
 {
-   unsigned long j;
-   unsigned long i0;
-   unsigned long b;
-   unsigned long a;
+   uint32_t j;
+   uint32_t i0;
+   uint32_t b;
+   uint32_t a;
    struct FILTERS * anonym;
    if (to->filters.viacalls[0U][0U]==0 || dat[0UL]==0) return 0;
    b = 0UL;
@@ -1946,12 +1947,13 @@ static char vias(char dat[], unsigned long dat_len, pTCPSOCK to)
 } /* end vias() */
 
 
-static char entrypoint(char dat[], unsigned long dat_len, pTCPSOCK to)
+static char entrypoint(char dat[], uint32_t dat_len,
+                pTCPSOCK to)
 {
-   unsigned long j;
-   unsigned long i0;
-   unsigned long b;
-   unsigned long a;
+   uint32_t j;
+   uint32_t i0;
+   uint32_t b;
+   uint32_t a;
    struct FILTERS * anonym;
    if (to->filters.entrycalls[0U][0U]==0) return 0;
    i0 = 0UL;
@@ -2008,10 +2010,10 @@ static char entrypoint(char dat[], unsigned long dat_len, pTCPSOCK to)
 } /* end entrypoint() */
 
 
-static char prefix(char dat[], unsigned long dat_len, pTCPSOCK to)
+static char prefix(char dat[], uint32_t dat_len, pTCPSOCK to)
 {
-   unsigned long j;
-   unsigned long i0;
+   uint32_t j;
+   uint32_t i0;
    struct FILTERS * anonym;
    if (to->filters.prefixes[0U][0U]==0) return 0;
    j = 0UL;
@@ -2030,12 +2032,13 @@ static char prefix(char dat[], unsigned long dat_len, pTCPSOCK to)
 } /* end prefix() */
 
 
-static char destcallfilt(char dat[], unsigned long dat_len, pTCPSOCK to)
+static char destcallfilt(char dat[], uint32_t dat_len,
+                pTCPSOCK to)
 {
-   unsigned long b;
-   unsigned long a;
-   unsigned long j;
-   unsigned long i0;
+   uint32_t b;
+   uint32_t a;
+   uint32_t j;
+   uint32_t i0;
    struct FILTERS * anonym;
    if (to->filters.destcalls[0U][0U]==0) return 0;
    a = 0UL;
@@ -2071,12 +2074,12 @@ static char destcallfilt(char dat[], unsigned long dat_len, pTCPSOCK to)
 } /* end destcallfilt() */
 
 
-static char typ(struct POSCALL * posc, char dat[], unsigned long dat_len,
-                pTCPSOCK to, char * t)
+static char typ(struct POSCALL * posc, char dat[],
+                uint32_t dat_len, pTCPSOCK to, char * t)
 {
-   unsigned long ii;
-   unsigned long j;
-   unsigned long i0;
+   uint32_t ii;
+   uint32_t j;
+   uint32_t i0;
    char c;
    if (to->filters.typs[0U]==0) return 0;
    i0 = 0UL;
@@ -2145,14 +2148,13 @@ p", 2ul)>=0L) return 1;
       if (c=='_') return 1;
       /* positionless wx */
       if (c=='!' || c=='=') {
-         if ((unsigned char)dat[i0]>='0' && (unsigned char)dat[i0]<='9') {
-            j = i0+18UL;
-         }
+         if ((uint8_t)dat[i0]>='0' && (uint8_t)dat[i0]<='9') j = i0+18UL;
          else j = i0+9UL;
       }
       else if (c=='/' || c=='@') {
-         if ((unsigned char)dat[i0+7UL]>='0' && (unsigned char)
-                dat[i0+7UL]<='9') j = i0+25UL;
+         if ((uint8_t)dat[i0+7UL]>='0' && (uint8_t)dat[i0+7UL]<='9') {
+            j = i0+25UL;
+         }
          else j = i0+16UL;
       }
       else if (c==';') j = i0+35UL;
@@ -2164,8 +2166,8 @@ p", 2ul)>=0L) return 1;
 } /* end typ() */
 
 
-static char Filter(pTCPSOCK to, struct POSCALL posc, const char dat[],
-                unsigned long dat_len)
+static char Filter(pTCPSOCK to, struct POSCALL posc,
+                const char dat[], uint32_t dat_len)
 {
    char pass;
    pass = 0;
@@ -2232,10 +2234,10 @@ static char Filter(pTCPSOCK to, struct POSCALL posc, const char dat[],
 
 static void sendtcpbuf(pTCPSOCK to)
 {
-   long i0;
-   long res0;
+   int32_t i0;
+   int32_t res0;
    struct TCPSOCK * anonym;
-   long tmp;
+   int32_t tmp;
    { /* with */
       struct TCPSOCK * anonym = to;
       res0 = sendsock(anonym->fd, anonym->tbuf, anonym->tlen);
@@ -2254,11 +2256,11 @@ static void sendtcpbuf(pTCPSOCK to)
 
 static void Sendtcp(pTCPSOCK to, const FRAMEBUF buf)
 {
-   long i0;
-   long len;
+   int32_t i0;
+   int32_t len;
    struct TCPSOCK * anonym;
-   long tmp;
-   len = (long)aprsstr_Length(buf, 512ul);
+   int32_t tmp;
+   len = (int32_t)aprsstr_Length(buf, 512ul);
    { /* with */
       struct TCPSOCK * anonym = to;
       if (anonym->tlen+len>=1024L) sendtcpbuf(to);
@@ -2271,8 +2273,8 @@ static void Sendtcp(pTCPSOCK to, const FRAMEBUF buf)
             if (i0==tmp) break;
          } /* end for */
          ++anonym->txframes;
-         anonym->txbytes += (unsigned long)len; /* 32 bit overflow */
-         if (anonym->txbytes<(unsigned long)len) ++anonym->txbytesh;
+         anonym->txbytes += (uint32_t)len; /* 32 bit overflow */
+         if (anonym->txbytes<(uint32_t)len) ++anonym->txbytesh;
       }
       else {
          ++anonym->losttxframes;
@@ -2282,31 +2284,30 @@ static void Sendtcp(pTCPSOCK to, const FRAMEBUF buf)
 } /* end Sendtcp() */
 
 
-static char filt(long outer, char b[], unsigned long b_len, const char s[],
-                unsigned long s_len)
+static char filt(int32_t outer, char b[], uint32_t b_len,
+                const char s[], uint32_t s_len)
 {
-   long n;
+   int32_t n;
    n = aprsstr_InStr(b, b_len, s, s_len);
    return n>=0L && n<outer;
 } /* end filt() */
 
 
-static void NetToRf(const char b[], unsigned long b_len,
-                unsigned long rfport)
+static void NetToRf(const char b[], uint32_t b_len, uint32_t rfport)
 /* send as 3rd party frame to rf */
 {
    FRAMEBUF tb;
-   unsigned long viaused;
-   unsigned long viaend;
-   unsigned long len;
-   unsigned long i0;
-   long ii;
-   long outer;
+   uint32_t viaused;
+   uint32_t viaend;
+   uint32_t len;
+   uint32_t i0;
+   int32_t ii;
+   int32_t outer;
    outer = aprsstr_InStr(b, b_len, ":", 2ul);
                 /* test if gate to rf allowed */
    if (outer<0L || filt(outer, b, b_len, "qAX", 4ul)) return;
-   viaend = (unsigned long)outer;
-   while (outer<(long)(b_len-1) && (b[outer]!=':' || b[outer+1L]=='}')) {
+   viaend = (uint32_t)outer;
+   while (outer<(int32_t)(b_len-1) && (b[outer]!=':' || b[outer+1L]=='}')) {
       ++outer;
    }
    if ((filt(outer, b, b_len, "TCPXX", 6ul) || filt(outer, b, b_len,
@@ -2323,7 +2324,7 @@ static void NetToRf(const char b[], unsigned long b_len,
    viaused = 0UL;
    while (viaused<viaend && b[viaused]!=',') ++viaused;
    ii = aprsstr_InStr(b, b_len, ",TCPIP", 7ul);
-   if (ii<0L || ii>(long)viaend) {
+   if (ii<0L || ii>(int32_t)viaend) {
       /* remove all via if via TCPIP */
       i0 = viaused;
       while (i0<viaend && b[i0]!='*') ++i0;
@@ -2358,12 +2359,12 @@ static void NetToRf(const char b[], unsigned long b_len,
 } /* end NetToRf() */
 
 
-static void Sendall(const FRAMEBUF buf, long fromfd,
+static void Sendall(const FRAMEBUF buf, int32_t fromfd,
                 const struct POSCALL posc)
 {
    pTCPSOCK t;
    pUDPSOCK u;
-   unsigned long uport;
+   uint32_t uport;
    /*
        len:INTEGER;
    */
@@ -2398,10 +2399,10 @@ static void Sendall(const FRAMEBUF buf, long fromfd,
 } /* end Sendall() */
 
 
-static char cmpfrom(const char a[], unsigned long a_len, unsigned long from,
-                const char b[], unsigned long b_len)
+static char cmpfrom(const char a[], uint32_t a_len,
+                uint32_t from, const char b[], uint32_t b_len)
 {
-   unsigned long i0;
+   uint32_t i0;
    i0 = 0UL;
    while (from<=a_len-1 && b[i0]) {
       if (a[from]!=b[i0]) return 0;
@@ -2414,15 +2415,15 @@ static char cmpfrom(const char a[], unsigned long a_len, unsigned long from,
 #define udpgate4_MSYM "\\"
 
 
-static void beaconmacros(char s[], unsigned long s_len)
+static void beaconmacros(char s[], uint32_t s_len)
 {
-   unsigned long i0;
-   long j;
-   long len;
+   uint32_t i0;
+   int32_t j;
+   int32_t len;
    char ns[256];
    char ds[256];
    char fn[1024];
-   long f;
+   int32_t f;
    i0 = 0UL;
    ns[0U] = 0;
    while (i0<s_len-1 && s[i0]) {
@@ -2500,8 +2501,8 @@ static void beaconmacros(char s[], unsigned long s_len)
 } /* end beaconmacros() */
 
 
-static void AppQ(char h[], unsigned long h_len, const char q[],
-                unsigned long q_len, char appcall)
+static void AppQ(char h[], uint32_t h_len, const char q[],
+                uint32_t q_len, char appcall)
 {
    aprsstr_Append(h, h_len, ">APNL51,", 9ul);
    aprsstr_Append(h, h_len, q, q_len);
@@ -2510,16 +2511,16 @@ static void AppQ(char h[], unsigned long h_len, const char q[],
 } /* end AppQ() */
 
 
-static void Netbeacon(char h[], unsigned long h_len, char qai,
+static void Netbeacon(char h[], uint32_t h_len, char qai,
                 char withpath)
 {
-   long valt0;
-   long i0;
-   long f;
+   int32_t valt0;
+   int32_t i0;
+   int32_t f;
    FRAMEBUF h1;
-   unsigned long j;
-   unsigned long vspeed0;
-   unsigned long vcourse0;
+   uint32_t j;
+   uint32_t vspeed0;
+   uint32_t vcourse0;
    char vsymt0;
    char vsym0;
    char postyp;
@@ -2531,7 +2532,7 @@ static void Netbeacon(char h[], unsigned long h_len, char qai,
          if (i0>=0L) {
             h1[i0] = 0;
             i0 = 0L;
-            while ((unsigned char)h1[i0]>=' ') ++i0;
+            while ((uint8_t)h1[i0]>=' ') ++i0;
             h1[i0] = 0;
             beaconmacros(h1, 512ul);
             if (withpath) {
@@ -2630,7 +2631,7 @@ static void Showmsg(pMESSAGE m)
    { /* with */
       struct MESSAGE * anonym = m;
       osic_WrINT32(anonym->retryc, 3UL);
-      osic_WrINT32((unsigned long)anonym->acked, 1UL);
+      osic_WrINT32((uint32_t)anonym->acked, 1UL);
       if (anonym->txtime) osic_WrINT32(systime-anonym->txtime, 5UL);
       else osi_WrStr(" notx", 6ul);
       osi_WrStr(":", 2ul);
@@ -2647,11 +2648,11 @@ static void Showmsg(pMESSAGE m)
 } /* end Showmsg() */
 
 
-static void cpcall(char s[], unsigned long s_len, const char h[],
-                unsigned long h_len, unsigned long pr)
+static void cpcall(char s[], uint32_t s_len, const char h[],
+                uint32_t h_len, uint32_t pr)
 {
    char c;
-   unsigned long i0;
+   uint32_t i0;
    i0 = 0UL;
    for (;;) {
       c = h[pr];
@@ -2665,16 +2666,16 @@ static void cpcall(char s[], unsigned long s_len, const char h[],
 } /* end cpcall() */
 
 
-static void SendMsg(pMESSAGE mp, unsigned long torf)
+static void SendMsg(pMESSAGE mp, uint32_t torf)
 {
    FRAMEBUF s;
-   unsigned long i0;
+   uint32_t i0;
    MONCALL h;
    /*
        tcp:BOOLEAN;
    */
    struct POSCALL poscall0;
-   unsigned char srcpath;
+   uint8_t srcpath;
    pUDPSOCK uds;
    struct MESSAGE * anonym;
    /* rf: OE2XZR-10>RFONLY,OE2XZR-10:}
@@ -2737,8 +2738,8 @@ static void SendMsg(pMESSAGE mp, unsigned long torf)
          while (i0<=67UL && anonym->text[i0]) {
             /* blank not allowed chars */
             if (((anonym->text[i0]=='|' || anonym->text[i0]=='~')
-                || anonym->text[i0]=='{') || (unsigned char)
-                anonym->text[i0]<' ') anonym->text[i0] = ' ';
+                || anonym->text[i0]=='{') || (uint8_t)anonym->text[i0]<' ')
+                 anonym->text[i0] = ' ';
             ++i0;
          }
          aprsstr_Append(s, 512ul, anonym->text, 68ul);
@@ -2774,8 +2775,8 @@ static void SendMsg(pMESSAGE mp, unsigned long torf)
 } /* end SendMsg() */
 
 
-static unsigned long FindUserHeard(pHEARD * ph, const MONCALL c,
-                unsigned long * rfport)
+static uint32_t FindUserHeard(pHEARD * ph, const MONCALL c,
+                uint32_t * rfport)
 /* never heard or too long = 0 else time+1 */
 {
    while (*ph && (*ph)->time0+heardtime>systime) {
@@ -2792,20 +2793,19 @@ static unsigned long FindUserHeard(pHEARD * ph, const MONCALL c,
 } /* end FindUserHeard() */
 
 
-static unsigned long FindHeard(pHEARD ph, const MONCALL c,
-                unsigned long * rfport)
+static uint32_t FindHeard(pHEARD ph, const MONCALL c, uint32_t * rfport)
 /* never heard or too long = 0 else time+1 */
 {
    return FindUserHeard(&ph, c, rfport);
 } /* end FindHeard() */
 
 
-static char Heard(const char b[], unsigned long b_len, MONCALL from,
+static char Heard(const char b[], uint32_t b_len, MONCALL from,
                 char * trust)
 {
-   unsigned long len;
-   unsigned long i0;
-   unsigned long p;
+   uint32_t len;
+   uint32_t i0;
+   uint32_t p;
    /* from>to,path,gate:...*/
    p = 0UL;
    while (p<9UL && b[p]!='>') {
@@ -2839,7 +2839,7 @@ static char Heard(const char b[], unsigned long b_len, MONCALL from,
       while (p<len && b[p]!=',') ++p;
       if (b[p-1UL]=='*') return 0;
       /* is repeated */
-      if (((unsigned char)b[p-1UL]>='0' && (unsigned char)b[p-1UL]<='9')
+      if (((uint8_t)b[p-1UL]>='0' && (uint8_t)b[p-1UL]<='9')
                 && b[p-1UL]!=b[p-3UL]) return 0;
       /* WIDEn-x with n<>x */
       /*
@@ -2865,9 +2865,9 @@ static char Heard(const char b[], unsigned long b_len, MONCALL from,
 } /* end Heard() */
 
 
-static void IncHeard(pHEARD ph, char up, unsigned long livetime)
+static void IncHeard(pHEARD ph, char up, uint32_t livetime)
 {
-   unsigned long t;
+   uint32_t t;
    struct HEARD * anonym;
    if (livetime>0UL) {
       { /* with */
@@ -2887,30 +2887,30 @@ static void IncHeard(pHEARD ph, char up, unsigned long livetime)
 } /* end IncHeard() */
 
 
-static void Wx(float * data, char * typ0, char b[], unsigned long b_len,
-                unsigned long p)
+static void Wx(float * data, char * typ0, char b[],
+                uint32_t b_len, uint32_t p)
 {
-   long t;
+   int32_t t;
    char sig;
    if (((b[p]!='/' && b[p]!='@') && b[p]!='!') && b[p]!='=') return;
    if (b[p]=='/' || b[p]=='@') p += 7UL;
    ++p;
-   if ((unsigned char)b[p]>='0' && (unsigned char)b[p]<='9') p += 30UL;
-   else if ((unsigned char)b[p]>='/') p += 17UL;
+   if ((uint8_t)b[p]>='0' && (uint8_t)b[p]<='9') p += 30UL;
+   else if ((uint8_t)b[p]>='/') p += 17UL;
    if (b[p]!='t') return;
    t = 0L;
    sig = 0;
    if (b[p+1UL]=='-') sig = 1;
-   else if ((unsigned char)b[p+1UL]>='0' && (unsigned char)b[p+1UL]<='9') {
-      t = (long)(((unsigned long)(unsigned char)b[p+1UL]-48UL)*100UL);
+   else if ((uint8_t)b[p+1UL]>='0' && (uint8_t)b[p+1UL]<='9') {
+      t = (int32_t)(((uint32_t)(uint8_t)b[p+1UL]-48UL)*100UL);
    }
    else return;
-   if ((unsigned char)b[p+2UL]>='0' && (unsigned char)b[p+2UL]<='9') {
-      t += (long)(((unsigned long)(unsigned char)b[p+2UL]-48UL)*10UL);
+   if ((uint8_t)b[p+2UL]>='0' && (uint8_t)b[p+2UL]<='9') {
+      t += (int32_t)(((uint32_t)(uint8_t)b[p+2UL]-48UL)*10UL);
    }
    else return;
-   if ((unsigned char)b[p+3UL]>='0' && (unsigned char)b[p+3UL]<='9') {
-      t += (long)((unsigned long)(unsigned char)b[p+3UL]-48UL);
+   if ((uint8_t)b[p+3UL]>='0' && (uint8_t)b[p+3UL]<='9') {
+      t += (int32_t)((uint32_t)(uint8_t)b[p+3UL]-48UL);
    }
    else return;
    if (sig) t = -t;
@@ -2919,12 +2919,12 @@ static void Wx(float * data, char * typ0, char b[], unsigned long b_len,
 } /* end Wx() */
 
 
-static void DirectPos(const char b[], unsigned long b_len,
-                struct aprspos_POSITION * pos, char * sym, char * symt,
-                char * typ0, float * data)
+static void DirectPos(const char b[], uint32_t b_len,
+                struct aprspos_POSITION * pos, char * sym,
+                char * symt, char * typ0, float * data)
 {
-   unsigned long m;
-   unsigned long p;
+   uint32_t m;
+   uint32_t p;
    struct aprspos_POSITION posn;
    char symt1;
    char sym1;
@@ -2966,10 +2966,10 @@ static void DirectPos(const char b[], unsigned long b_len,
 } /* end DirectPos() */
 
 
-static unsigned long MHcount(pHEARD ph, unsigned long maxtime)
+static uint32_t MHcount(pHEARD ph, uint32_t maxtime)
 {
-   unsigned long i0;
-   unsigned long ci;
+   uint32_t i0;
+   uint32_t ci;
    /* clean count array */
    struct HEARD * anonym;
    IncHeard(ph, 0, maxtime);
@@ -2977,39 +2977,39 @@ static unsigned long MHcount(pHEARD ph, unsigned long maxtime)
       struct HEARD * anonym = ph;
       ci = 0UL;
       for (i0 = 0UL; i0<=48UL; i0++) {
-         ci += (unsigned long)anonym->cnt[i0];
+         ci += (uint32_t)anonym->cnt[i0];
       } /* end for */
    }
    return ci;
 } /* end MHcount() */
 
 
-static void getval(const char s[], unsigned long s_len, unsigned long * i0,
-                long * v)
+static void getval(const char s[], uint32_t s_len, uint32_t * i0,
+                int32_t * v)
 {
    char m;
    ++*i0;
    *v = 0L;
    m = s[*i0]=='-';
    if (m) ++*i0;
-   while ((*i0<s_len-1 && (unsigned char)s[*i0]>='0') && (unsigned char)
-                s[*i0]<='9') {
-      *v =  *v*10L+(long)((unsigned long)(unsigned char)s[*i0]-48UL);
+   while ((*i0<s_len-1 && (uint8_t)s[*i0]>='0') && (uint8_t)s[*i0]<='9') {
+      *v =  *v*10L+(int32_t)((uint32_t)(uint8_t)s[*i0]-48UL);
       ++*i0;
    }
-   while (*i0<s_len-1 && (unsigned char)s[*i0]>' ') ++*i0;
+   while (*i0<s_len-1 && (uint8_t)s[*i0]>' ') ++*i0;
    while (*i0<s_len-1 && s[*i0]==' ') ++*i0;
    if (m) *v = -*v;
 } /* end getval() */
 
 
-static void AddHeard(pHEARD * table, unsigned long maxtime,
-                const MONCALL from, unsigned long fromport, const char buf[],
-                 unsigned long buf_len, char * ungat, char setungat)
+static void AddHeard(pHEARD * table, uint32_t maxtime, const MONCALL from,
+                uint32_t fromport, const char buf[],
+                uint32_t buf_len, char * ungat,
+                char setungat)
 {
-   unsigned long j;
-   unsigned long i0;
-   long res0;
+   uint32_t j;
+   uint32_t i0;
+   int32_t res0;
    pHEARD po;
    pHEARD ph;
    struct HEARD * anonym;
@@ -3051,7 +3051,7 @@ static void AddHeard(pHEARD * table, unsigned long maxtime,
          else ph = 0;
       }
       if (ph==0) {
-         osic_alloc((X2C_ADDRESS *) &ph, sizeof(struct HEARD));
+         osic_alloc((char * *) &ph, sizeof(struct HEARD));
          if (ph==0 && po) {
             ph = po->next;
             po->next = 0;
@@ -3114,7 +3114,7 @@ static void AddHeard(pHEARD * table, unsigned long maxtime,
                   switch ((unsigned)udp2[i0]) {
                   case 'T':
                      getval(udp2, 100ul, &i0, &res0);
-                     anonym0->txd = (unsigned short)res0;
+                     anonym0->txd = (uint16_t)res0;
                      break;
                   case 'V':
                      getval(udp2, 100ul, &i0, &res0);
@@ -3122,7 +3122,7 @@ static void AddHeard(pHEARD * table, unsigned long maxtime,
                      break;
                   case 'Q':
                      getval(udp2, 100ul, &i0, &res0);
-                     anonym0->quali = (unsigned char)res0;
+                     anonym0->quali = (uint8_t)res0;
                      break;
                   default:;
                      getval(udp2, 100ul, &i0, &res0);
@@ -3156,15 +3156,15 @@ static void delmsg(pMESSAGE md)
       osi_WrStrLn("---delete:", 11ul);
       Showmsg(md);
    }
-   osic_free((X2C_ADDRESS *) &md, sizeof(struct MESSAGE));
+   osic_free((char * *) &md, sizeof(struct MESSAGE));
 } /* end delmsg() */
 
 
-static unsigned long exp0(unsigned long n)
+static uint32_t exp0(uint32_t n)
 {
    if (n>0UL) --n;
    if (n>9UL) n = 9UL;
-   return (unsigned long)(1UL<<n);
+   return (uint32_t)(1UL<<n);
 } /* end exp() */
 
 
@@ -3173,10 +3173,10 @@ static void RfTimer(void)
    pMESSAGE mp;
    pMESSAGE mo;
    char try0;
-   unsigned long ht;
-   unsigned long oldest;
-   unsigned long totx;
-   unsigned long maxi;
+   uint32_t ht;
+   uint32_t oldest;
+   uint32_t totx;
+   uint32_t maxi;
    struct MESSAGE * anonym;
    if (lastrfsent+rfquiet<=systime) {
       maxi = 0UL;
@@ -3300,7 +3300,7 @@ static void SendNet(void)
 } /* end SendNet() */
 
 
-static void Stoack(pMESSAGE mp, char rej, unsigned char path)
+static void Stoack(pMESSAGE mp, char rej, uint8_t path)
 {
    struct MESSAGE * anonym;
    { /* with */
@@ -3345,8 +3345,8 @@ static void Ackback(pMESSAGE tomp)
 static char cmpmsg(MSGTEXT a, MSGTEXT b)
 /* compare visable characters */
 {
-   unsigned long j;
-   unsigned long i0;
+   uint32_t j;
+   uint32_t i0;
    MSGTEXT tmp;
    MSGTEXT tmp0;
    a = (char *)memcpy(tmp,a,68u);
@@ -3354,7 +3354,7 @@ static char cmpmsg(MSGTEXT a, MSGTEXT b)
    i0 = 0UL;
    j = 0UL;
    while (i0<=67UL && a[i0]) {
-      if ((unsigned char)a[i0]>' ') {
+      if ((uint8_t)a[i0]>' ') {
          a[j] = a[i0];
          ++j;
       }
@@ -3364,7 +3364,7 @@ static char cmpmsg(MSGTEXT a, MSGTEXT b)
    i0 = 0UL;
    j = 0UL;
    while (i0<=67UL && b[i0]) {
-      if ((unsigned char)b[i0]>' ') {
+      if ((uint8_t)b[i0]>' ') {
          b[j] = b[i0];
          ++j;
       }
@@ -3378,12 +3378,12 @@ static char cmpmsg(MSGTEXT a, MSGTEXT b)
 
 
 static void Stomsg(MONCALL fromcall, MONCALL tocall, MSGTEXT msg,
-                ACKTEXT ackt, char isak, char rej, char query,
-                unsigned char path)
+                ACKTEXT ackt, char isak, char rej,
+                char query, uint8_t path)
 {
    pMESSAGE mi;
    pMESSAGE mp;
-   unsigned long cnt;
+   uint32_t cnt;
    REPLYACK rack;
    struct MESSAGE * anonym;
    struct MESSAGE * anonym0;
@@ -3454,7 +3454,7 @@ static void Stomsg(MONCALL fromcall, MONCALL tocall, MSGTEXT msg,
    if (mp==0) {
       /* new msg */
       if (cnt<maxmsg) {
-         osic_alloc((X2C_ADDRESS *) &mp, sizeof(struct MESSAGE));
+         osic_alloc((char * *) &mp, sizeof(struct MESSAGE));
       }
       if (mp==0 && messages) {
          mp = messages; /* recycle oldest */
@@ -3462,7 +3462,7 @@ static void Stomsg(MONCALL fromcall, MONCALL tocall, MSGTEXT msg,
       }
       if (mp) {
          /* append to end of list */
-         memset((X2C_ADDRESS)mp,(char)0,sizeof(struct MESSAGE));
+         memset((char *)mp,(char)0,sizeof(struct MESSAGE));
          mp->next = 0;
          if (messages==0) messages = mp;
          else {
@@ -3478,9 +3478,7 @@ static void Stomsg(MONCALL fromcall, MONCALL tocall, MSGTEXT msg,
             memcpy(anonym0->ack,ackt,5u);
             memcpy(anonym0->replyack,rack,2u);
             anonym0->gentime = systime;
-            if (path==udpgate4_DIR) {
-               anonym0->txtime = systime;
-            }
+            if (path==udpgate4_DIR) anonym0->txtime = systime;
             else anonym0->txtime = 0UL;
             anonym0->acked = isak;
             anonym0->reject = rej;
@@ -3506,19 +3504,19 @@ static void Stomsg(MONCALL fromcall, MONCALL tocall, MSGTEXT msg,
 } /* end Stomsg() */
 
 
-static void postoloc(char loc[], unsigned long loc_len,
+static void postoloc(char loc[], uint32_t loc_len,
                 struct aprspos_POSITION pos)
 {
-   unsigned long bc;
-   unsigned long lc;
+   uint32_t bc;
+   uint32_t lc;
    float br;
    float lr;
    lr = (pos.long0*5.7295779513082E+1f+180.0f)*2880.0f;
    if (lr<=0.0f) lr = 0.0f;
-   lc = (unsigned long)X2C_TRUNCC(lr,0UL,X2C_max_longcard);
+   lc = (uint32_t)X2C_TRUNCC(lr,0UL,X2C_max_longcard);
    br = (pos.lat*5.7295779513082E+1f+90.0f)*5760.0f;
    if (br<=0.0f) br = 0.0f;
-   bc = (unsigned long)X2C_TRUNCC(br,0UL,X2C_max_longcard);
+   bc = (uint32_t)X2C_TRUNCC(br,0UL,X2C_max_longcard);
    loc[0UL] = (char)(65UL+lc/57600UL);
    loc[1UL] = (char)(65UL+bc/57600UL);
    loc[2UL] = (char)(48UL+(lc/5760UL)%10UL);
@@ -3533,10 +3531,10 @@ static void postoloc(char loc[], unsigned long loc_len,
 } /* end postoloc() */
 
 
-static void degtostr(char s[], unsigned long s_len, float d, char posc,
-                char negc)
+static void degtostr(char s[], uint32_t s_len, float d,
+                char posc, char negc)
 {
-   unsigned long n;
+   uint32_t n;
    char c;
    char tmp;
    d = X2C_DIVR(d,1.7453292519444E-2f);
@@ -3545,18 +3543,19 @@ static void degtostr(char s[], unsigned long s_len, float d, char posc,
       c = negc;
    }
    else c = posc;
-   n = (unsigned long)X2C_TRUNCC(d,0UL,X2C_max_longcard);
-   aprsstr_IntToStr((long)n, 1UL, s, s_len);
+   n = (uint32_t)X2C_TRUNCC(d,0UL,X2C_max_longcard);
+   aprsstr_IntToStr((int32_t)n, 1UL, s, s_len);
    aprsstr_Append(s, s_len, ".", 2ul);
-   n = (unsigned long)X2C_TRUNCC((d-(float)n)*3600.0f,0UL,X2C_max_longcard);
-   aprsstr_Append(s, s_len, (char *)(tmp = (char)(48UL+n/600UL),&tmp),
-                1u/1u);
-   aprsstr_Append(s, s_len, (char *)(tmp = (char)(48UL+(n%600UL)/60UL),&tmp),
+   n = (uint32_t)X2C_TRUNCC((d-(float)n)*3600.0f,0UL,X2C_max_longcard);
+   aprsstr_Append(s, s_len, (char *)(tmp = (char)(48UL+n/600UL),
+                &tmp), 1u/1u);
+   aprsstr_Append(s, s_len, (char *)(tmp = (char)(48UL+(n%600UL)/60UL),
+                &tmp), 1u/1u);
+   aprsstr_Append(s, s_len, ".", 2ul);
+   aprsstr_Append(s, s_len, (char *)(tmp = (char)(48UL+(n%60UL)/10UL),
+                &tmp), 1u/1u);
+   aprsstr_Append(s, s_len, (char *)(tmp = (char)(48UL+n%10UL),&tmp),
                  1u/1u);
-   aprsstr_Append(s, s_len, ".", 2ul);
-   aprsstr_Append(s, s_len, (char *)(tmp = (char)(48UL+(n%60UL)/10UL),&tmp),
-                1u/1u);
-   aprsstr_Append(s, s_len, (char *)(tmp = (char)(48UL+n%10UL),&tmp), 1u/1u);
    aprsstr_Append(s, s_len, (char *) &c, 1u/1u);
 } /* end degtostr() */
 
@@ -3564,11 +3563,11 @@ static void degtostr(char s[], unsigned long s_len, float d, char posc,
 
 
 static void Ungate(const MONCALL mycall, const char msg[],
-                unsigned long msg_len, unsigned char path)
+                uint32_t msg_len, uint8_t path)
 {
-   unsigned long p;
-   unsigned long n;
-   unsigned long i0;
+   uint32_t p;
+   uint32_t n;
+   uint32_t i0;
    MONCALL hn;
    MONCALL h;
    MSGTEXT answ;
@@ -3597,8 +3596,8 @@ static void Ungate(const MONCALL mycall, const char msg[],
       if (n>0UL) {
          aprsstr_Append(h, 10ul, "-", 2ul);
          if (n>=10UL) aprsstr_Append(h, 10ul, "1", 2ul);
-         aprsstr_Append(h, 10ul, (char *)(tmp = (char)(n%10UL+48UL),&tmp),
-                1u/1u);
+         aprsstr_Append(h, 10ul, (char *)(tmp = (char)(n%10UL+48UL),
+                &tmp), 1u/1u);
       }
       AddHeard(&hearddir, Max(heardtime, heardtimew), h, 0UL, "", 1ul, &un,
                 1);
@@ -3606,7 +3605,7 @@ static void Ungate(const MONCALL mycall, const char msg[],
    else {
       n = aprsstr_Length(msg, msg_len);
       i0 = 0UL;
-      while ((i0<=9UL && p<n) && (unsigned char)msg[p]>' ') {
+      while ((i0<=9UL && p<n) && (uint8_t)msg[p]>' ') {
          hn[i0] = msg[p];
          ++i0;
          ++p;
@@ -3642,16 +3641,16 @@ static void Ungate(const MONCALL mycall, const char msg[],
 } /* end Ungate() */
 
 
-static void Query(MONCALL fromcall, char msg[], unsigned long msg_len,
-                const char buf[], unsigned long buf_len, unsigned char path)
+static void Query(MONCALL fromcall, char msg[], uint32_t msg_len,
+                const char buf[], uint32_t buf_len, uint8_t path)
 {
    pMESSAGE mp;
    char no;
    MSGTEXT s;
    MSGTEXT mh;
    MONCALL callh;
-   unsigned long len;
-   unsigned long i0;
+   uint32_t len;
+   uint32_t i0;
    pHEARD hn;
    pHEARD hp;
    char cmd;
@@ -3763,7 +3762,7 @@ static void Query(MONCALL fromcall, char msg[], unsigned long msg_len,
          degtostr(s, 68ul, hn->position.long0, 'E', 'W');
          aprsstr_Append(mh, 68ul, s, 68ul);
          aprsstr_Append(mh, 68ul, " ", 2ul);
-         aprsstr_IntToStr((long)(unsigned long)X2C_TRUNCC(maxdist+0.5f,0UL,
+         aprsstr_IntToStr((int32_t)(uint32_t)X2C_TRUNCC(maxdist+0.5f,0UL,
                 X2C_max_longcard), 1UL, s, 68ul);
          aprsstr_Append(mh, 68ul, s, 68ul);
          aprsstr_Append(mh, 68ul, "km ", 4ul);
@@ -3798,12 +3797,12 @@ Msg S&F Relay",30u), *(ACKTEXT *)memcpy(&tmp0,"",1u), 0, 0, 1, path);
 } /* end Query() */
 
 
-static void gatetoviaheard(const char b[], unsigned long b_len,
+static void gatetoviaheard(const char b[], uint32_t b_len,
                 const MONCALL fromcall, const MONCALL tocall)
 {
    pUDPSOCK u;
-   unsigned long void0;
-   unsigned long po;
+   uint32_t void0;
+   uint32_t po;
    if (!aprsstr_StrCmp(fromcall, 10ul, tocall, 10ul) && FindHeard(heardvia,
                 tocall, &po)>0UL) {
       u = porttosock(po);
@@ -3813,18 +3812,19 @@ static void gatetoviaheard(const char b[], unsigned long b_len,
 } /* end gatetoviaheard() */
 
 
-static char iscall(const char b[], unsigned long b_len, unsigned long p)
+static char iscall(const char b[], uint32_t b_len,
+                uint32_t p)
 {
-   unsigned long i0;
-   unsigned long nu;
-   unsigned long li;
+   uint32_t i0;
+   uint32_t nu;
+   uint32_t li;
    char c;
    li = 0UL;
    nu = 0UL;
    for (i0 = 0UL; i0<=2UL; i0++) {
       c = b[p+i0];
-      if ((unsigned char)c>='A' && (unsigned char)c<='Z') ++li;
-      else if ((unsigned char)c>='0' && (unsigned char)c<='9') {
+      if ((uint8_t)c>='A' && (uint8_t)c<='Z') ++li;
+      else if ((uint8_t)c>='0' && (uint8_t)c<='9') {
          if (i0==0UL) ++li;
          else ++nu;
       }
@@ -3836,13 +3836,13 @@ static char iscall(const char b[], unsigned long b_len, unsigned long p)
 } /* end iscall() */
 
 
-static void getack(const char s[], unsigned long s_len, unsigned long p,
+static void getack(const char s[], uint32_t s_len, uint32_t p,
                 ACKTEXT a)
 {
-   unsigned long i0;
+   uint32_t i0;
    i0 = 0UL;
-   while ((p<=s_len-1 && (unsigned char)s[p]>' ') && (unsigned char)
-                s[p]<(unsigned char)'\200') {
+   while ((p<=s_len-1 && (uint8_t)s[p]>' ') && (uint8_t)s[p]<(uint8_t)
+                '\200') {
       a[i0] = s[p];
       ++p;
       ++i0;
@@ -3860,16 +3860,16 @@ static void getack(const char s[], unsigned long s_len, unsigned long p,
 #define udpgate4_NOARCHIVE "!x!"
 
 
-static void Getmsg(const char b[], unsigned long b_len, unsigned long rxport,
-                 char goodpath, char * ungate)
+static void Getmsg(const char b[], uint32_t b_len, uint32_t rxport,
+                char goodpath, char * ungate)
 /* get user msg and ack out of aprsis stream */
 {
-   unsigned long po;
-   unsigned long void0;
-   unsigned long p;
-   unsigned long len;
-   unsigned long pf;
-   unsigned long pm;
+   uint32_t po;
+   uint32_t void0;
+   uint32_t p;
+   uint32_t len;
+   uint32_t pf;
+   uint32_t pm;
    MSGTEXT msg;
    ACKTEXT ack;
    MONCALL hfrom;
@@ -3881,7 +3881,7 @@ static void Getmsg(const char b[], unsigned long b_len, unsigned long rxport,
    char trust;
    char isrej;
    char isack;
-   unsigned char path;
+   uint8_t path;
    *ungate = 0;
    if ((b[0UL]==0 || rxport && !iscall(b, b_len, 0UL)) || aprsstr_InStr(b,
                 b_len, "!x!", 4ul)>=0L) return;
@@ -3929,7 +3929,7 @@ static void Getmsg(const char b[], unsigned long b_len, unsigned long rxport,
          for (;;) {
             if (pm>=len) break;
             c = b[pm];
-            if ((p>=67UL || (unsigned char)c<' ') || c=='{') break;
+            if ((p>=67UL || (uint8_t)c<' ') || c=='{') break;
             msg[p] = c;
             ++p;
             ++pm;
@@ -3974,7 +3974,7 @@ static void Getmsg(const char b[], unsigned long b_len, unsigned long rxport,
          osi_WrStr(" <", 3ul);
          p = 0UL;
          while (p<b_len-1 && b[p]) {
-            if ((unsigned char)b[p]>=' ') {
+            if ((uint8_t)b[p]>=' ') {
                osi_WrStr((char *) &b[p], 1u/1u);
             }
             ++p;
@@ -3990,11 +3990,11 @@ static void Getmsg(const char b[], unsigned long b_len, unsigned long rxport,
 } /* end Getmsg() */
 
 
-static void getportname(unsigned long n, char s[], unsigned long s_len)
+static void getportname(uint32_t n, char s[], uint32_t s_len)
 /* if not found return port number */
 {
    pUDPSOCK u;
-   unsigned long i0;
+   uint32_t i0;
    if (n==0UL) aprsstr_Assign(s, s_len, "TCPIP", 6ul);
    else {
       u = udpsocks;
@@ -4004,7 +4004,7 @@ static void getportname(unsigned long n, char s[], unsigned long s_len)
          u = u->next;
       }
       if (u==0 || u->portname[0U]==0) {
-         aprsstr_IntToStr((long)n, 1UL, s, s_len);
+         aprsstr_IntToStr((int32_t)n, 1UL, s, s_len);
       }
       else aprsstr_Assign(s, s_len, u->portname, 10ul);
    }
@@ -4023,10 +4023,10 @@ static void getportname(unsigned long n, char s[], unsigned long s_len)
 /* fill up lines to equal size */
 
 
-static void App(unsigned long * p, char h[256], char s[],
-                unsigned long s_len)
+static void App(uint32_t * p, char h[256], char s[],
+                uint32_t s_len)
 {
-   unsigned long i0;
+   uint32_t i0;
    X2C_PCOPY((void **)&s,s_len);
    i0 = 0UL;
    while (i0<=s_len-1 && s[i0]) {
@@ -4045,10 +4045,10 @@ static void MHtoFile(void)
    char h1[16];
    FILENAME fn;
    pHEARD hn;
-   unsigned long t;
-   long fd;
-   unsigned long cnt;
-   unsigned long p;
+   uint32_t t;
+   int32_t fd;
+   uint32_t cnt;
+   uint32_t p;
    aprsstr_Assign(fn, 1024ul, mhfilename, 1024ul);
    aprsstr_Append(fn, 1024ul, "~", 2ul);
    fd = osi_OpenWrite(fn, 1024ul);
@@ -4073,11 +4073,11 @@ static void MHtoFile(void)
          t = hn->time0;
          if (systime<t || t==0UL) t = 0UL;
          else t = systime-t;
-         aprsstr_IntToStr((long)t, 1UL, h1, 16ul);
+         aprsstr_IntToStr((int32_t)t, 1UL, h1, 16ul);
          App(&p, h, h1, 16ul);
          h[p] = '|';
          ++p;
-         aprsstr_IntToStr((long)MHcount(hn, heardtimew), 1UL, h1, 16ul);
+         aprsstr_IntToStr((int32_t)MHcount(hn, heardtimew), 1UL, h1, 16ul);
          App(&p, h, h1, 16ul);
          h[p] = '|';
          ++p;
@@ -4153,16 +4153,17 @@ END finddupe;
 
 */
 
-static long callchk(unsigned long * qpos, unsigned char * unset, char buf[],
-                unsigned long buf_len, unsigned long * p,
-                unsigned long * pssid, char withstar, char iscall0)
+static int32_t callchk(uint32_t * qpos, uint8_t * unset,
+                char buf[], uint32_t buf_len, uint32_t * p,
+                uint32_t * pssid, char withstar,
+                char iscall0)
 {
-   unsigned long lit;
-   unsigned long num;
-   unsigned long j;
-   unsigned long i0;
+   uint32_t lit;
+   uint32_t num;
+   uint32_t j;
+   uint32_t i0;
    char c;
-   unsigned char u;
+   uint8_t u;
    *pssid = 0UL;
    for (u = udpgate4_gUNGATE;; u++) {
       j = 0UL;
@@ -4179,13 +4180,13 @@ static long callchk(unsigned long * qpos, unsigned char * unset, char buf[],
       num = 0UL;
       lit = 0UL;
       c = buf[*p];
-      if ((unsigned char)c>='A' && (unsigned char)c<='Z') ++lit;
-      else if ((unsigned char)c<'0' || (unsigned char)c>'9') return -1L;
+      if ((uint8_t)c>='A' && (uint8_t)c<='Z') ++lit;
+      else if ((uint8_t)c<'0' || (uint8_t)c>'9') return -1L;
       ++*p;
       for (;;) {
          c = buf[*p];
-         if ((unsigned char)c>='0' && (unsigned char)c<='9') ++num;
-         else if ((unsigned char)c>='A' && (unsigned char)c<='Z') ++lit;
+         if ((uint8_t)c>='0' && (uint8_t)c<='9') ++num;
+         else if ((uint8_t)c>='A' && (uint8_t)c<='Z') ++lit;
          else break;
          ++*p;
       }
@@ -4195,19 +4196,15 @@ static long callchk(unsigned long * qpos, unsigned char * unset, char buf[],
          ++*p;
          if (buf[*p]=='1') {
             ++*p;
-            if ((unsigned char)buf[*p]>='0' && (unsigned char)buf[*p]<='5') {
-               ++*p;
-            }
+            if ((uint8_t)buf[*p]>='0' && (uint8_t)buf[*p]<='5') ++*p;
          }
          else {
-            if ((unsigned char)buf[*p]<'1' || (unsigned char)buf[*p]>'9') {
-               return -1L;
-            }
+            if ((uint8_t)buf[*p]<'1' || (uint8_t)buf[*p]>'9') return -1L;
             ++*p;
          }
       }
    }
-   else if ((buf[*p]=='q' && buf[*p+1UL]=='A') && (unsigned char)
+   else if ((buf[*p]=='q' && buf[*p+1UL]=='A') && (uint8_t)
                 buf[*p+2UL]>='A') {
       /* qAx */
       *qpos = *p+2UL;
@@ -4218,8 +4215,8 @@ static long callchk(unsigned long * qpos, unsigned char * unset, char buf[],
       for (;;) {
          c = buf[*p];
          if (c=='-') *pssid = *p;
-         if (((((unsigned char)c<=' ' || c=='>') || c=='*') || c==',')
-                || c==':') break;
+         if (((((uint8_t)c<=' ' || c=='>') || c=='*') || c==',') || c==':')
+                 break;
          ++*p;
       }
    }
@@ -4229,13 +4226,13 @@ static long callchk(unsigned long * qpos, unsigned char * unset, char buf[],
 } /* end callchk() */
 
 
-static void Iconstruct(char qtext[32], unsigned long * pins, char logcall[],
-                unsigned long logcall_len, char buf[], unsigned long buf_len,
-                 unsigned long * p)
+static void Iconstruct(char qtext[32], uint32_t * pins,
+                char logcall[], uint32_t logcall_len, char buf[],
+                uint32_t buf_len, uint32_t * p)
 {
-   unsigned long k;
-   unsigned long j;
-   unsigned long i0;
+   uint32_t k;
+   uint32_t j;
+   uint32_t i0;
    if (*p<=4UL || buf[*p-2UL]!='I') return;
    /* ,CALL,I: */
    i0 = *p-4UL;
@@ -4273,31 +4270,32 @@ OE0AAA-9>T8SV40,WIDE1-1,qAR,DB0WGS:test
 } /* end Iconstruct() */
 
 
-static long AprsIs(char buf[], unsigned long buf_len, unsigned char datafilt,
-                 unsigned char msgfilt, const char logcall[],
-                unsigned long logcall_len, unsigned long udpchan, char valid,
-                 struct POSCALL * poscall0)
+static int32_t AprsIs(char buf[], uint32_t buf_len,
+                uint8_t datafilt, uint8_t msgfilt,
+                const char logcall[], uint32_t logcall_len,
+                uint32_t udpchan, char valid,
+                struct POSCALL * poscall0)
 {
-   unsigned long qpos;
-   unsigned long micedest;
-   unsigned long payload;
-   unsigned long ha;
-   unsigned long ilen;
-   unsigned long psum1;
-   unsigned long psum0;
-   unsigned long pssid;
-   unsigned long pins;
-   unsigned long len;
-   unsigned long p;
-   unsigned long i0;
-   unsigned char hashh;
-   unsigned char hashl;
+   uint32_t qpos;
+   uint32_t micedest;
+   uint32_t payload;
+   uint32_t ha;
+   uint32_t ilen;
+   uint32_t psum1;
+   uint32_t psum0;
+   uint32_t pssid;
+   uint32_t pins;
+   uint32_t len;
+   uint32_t p;
+   uint32_t i0;
+   uint8_t hashh;
+   uint8_t hashl;
    char qtext[32];
    char ungat;
    char postyp;
-   unsigned char unset;
+   uint8_t unset;
    FRAMEBUF com;
-   unsigned long tmp;
+   uint32_t tmp;
    hashl = 0U;
    hashh = 0U;
    p = 0UL;
@@ -4386,8 +4384,8 @@ static long AprsIs(char buf[], unsigned long buf_len, unsigned char datafilt,
       aprsstr_HashCh(buf[p], &hashl, &hashh);
       ++p;
    }
-   ha = (unsigned long)(unsigned char)(char)hashl+(unsigned long)
-                (unsigned char)(char)hashh*256UL&65535UL;
+   ha = (uint32_t)(uint8_t)(char)hashl+(uint32_t)(uint8_t)
+                (char)hashh*256UL&65535UL;
    if (timehash[ha]+dupetime>systime) return -5L;
    /* a duplicate */
    if (udpchan || valid) timehash[ha] = systime;
@@ -4417,15 +4415,15 @@ static long AprsIs(char buf[], unsigned long buf_len, unsigned char datafilt,
 } /* end AprsIs() */
 
 
-static char getfix(unsigned long * p, char s[], unsigned long s_len,
+static char getfix(uint32_t * p, char s[], uint32_t s_len,
                 float * x, float mul)
 {
-   unsigned long i0;
+   uint32_t i0;
    FRAMEBUF h;
    if (s[*p]=='/') {
       ++*p;
       i0 = 0UL;
-      while (((unsigned char)s[*p]>' ' && s[*p]!='/') && i0<511UL) {
+      while (((uint8_t)s[*p]>' ' && s[*p]!='/') && i0<511UL) {
          h[i0] = s[*p];
          ++i0;
          ++*p;
@@ -4444,17 +4442,17 @@ static char getfix(unsigned long * p, char s[], unsigned long s_len,
 } /* end getfix() */
 
 
-static void getcalls(char s[], unsigned long s_len, unsigned long * p,
-                MONCALL table[], unsigned long table_len)
+static void getcalls(char s[], uint32_t s_len, uint32_t * p,
+                MONCALL table[], uint32_t table_len)
 {
-   unsigned long j;
-   unsigned long i0;
+   uint32_t j;
+   uint32_t i0;
    ++*p;
    j = 0UL;
    while (s[*p]=='/') {
       ++*p;
       i0 = 0UL;
-      while ((*p<=s_len-1 && (unsigned char)s[*p]>' ') && s[*p]!='/') {
+      while ((*p<=s_len-1 && (uint8_t)s[*p]>' ') && s[*p]!='/') {
          if (j<=table_len-1 && i0<=9UL) table[j][i0] = s[*p];
          ++*p;
          ++i0;
@@ -4463,22 +4461,22 @@ static void getcalls(char s[], unsigned long s_len, unsigned long * p,
    }
 } /* end getcalls() */
 
-typedef unsigned long CHSET0[4];
+typedef uint32_t CHSET0[4];
 
 static CHSET0 _cnst0 = {0x00000000UL,0x00080000UL,0x00000000UL,0x00BBE200UL}
                 ;
 
-static void gettyps(char s[], unsigned long s_len, unsigned long * p,
-                char t[], unsigned long t_len)
+static void gettyps(char s[], uint32_t s_len, uint32_t * p,
+                char t[], uint32_t t_len)
 {
-   unsigned long j;
+   uint32_t j;
    ++*p;
    j = 0UL;
    t[0UL] = 0;
    if (s[*p]=='/') {
       ++*p;
-      while ((j<t_len-1 && *p<=s_len-1) && (unsigned char)s[*p]>' ') {
-         if (X2C_INL((long)(unsigned char)s[*p],128,
+      while ((j<t_len-1 && *p<=s_len-1) && (uint8_t)s[*p]>' ') {
+         if (X2C_INL((int32_t)(uint8_t)s[*p],128,
                 _cnst0) && aprsstr_InStr(t, t_len, (char *) &s[*p],
                 1u/1u)<0L) {
             t[j] = s[*p];
@@ -4492,7 +4490,7 @@ static void gettyps(char s[], unsigned long s_len, unsigned long * p,
 
 
 static void GetFilters(struct FILTERS * filters, const char s[],
-                unsigned long s_len, unsigned long p, pTCPSOCK pongto)
+                uint32_t s_len, uint32_t p, pTCPSOCK pongto)
 {
    char not;
    FRAMEBUF pongstr;
@@ -4508,7 +4506,7 @@ static void GetFilters(struct FILTERS * filters, const char s[],
       memset((char *)filters->destcalls,(char)0,80UL);
       if (s[p]==' ') {
          skipblank(s, s_len, &p);
-         while ((unsigned char)s[p]>=' ') {
+         while ((uint8_t)s[p]>=' ') {
             if (s[p]==' ') not = 0;
             skipblank(s, s_len, &p);
             if (s[p]=='m') {
@@ -4573,7 +4571,9 @@ static void GetFilters(struct FILTERS * filters, const char s[],
    else if (pongto && cmpfrom(s, s_len, p, "ping ", 6ul)) {
       aprsstr_Assign(pongstr, 512ul, s, s_len);
       pongstr[p+1UL] = 'o'; /* ping -> pong */
-      while (p<513UL && (unsigned char)pongstr[p]>=' ') ++p;
+      while (p<513UL && (uint8_t)pongstr[p]>=' ') {
+         ++p;
+      }
       pongstr[p] = '\015';
       pongstr[p+1UL] = '\012';
       pongstr[p+2UL] = 0;
@@ -4591,7 +4591,7 @@ static void saypongout(pTCPSOCK pt)
    FRAMEBUF h;
    FRAMEBUF s;
    strncpy(s,"# ping timeout ",512u);
-   aprsstr_IntToStr((long)((systime+maxpongtime)-pt->pongtime), 0UL, h,
+   aprsstr_IntToStr((int32_t)((systime+maxpongtime)-pt->pongtime), 0UL, h,
                 512ul);
    aprsstr_Append(s, 512ul, h, 512ul);
    aprsstr_Append(s, 512ul, "s - data forwarding stopped\015\012", 30ul);
@@ -4599,11 +4599,12 @@ static void saypongout(pTCPSOCK pt)
 } /* end saypongout() */
 
 
-static char Auth(const char mbuf0[], unsigned long mbuf_len, pTCPSOCK pu)
+static char Auth(const char mbuf0[], uint32_t mbuf_len,
+                pTCPSOCK pu)
 {
-   unsigned long vport;
-   unsigned long j;
-   unsigned long i0;
+   uint32_t vport;
+   uint32_t j;
+   uint32_t i0;
    FRAMEBUF h1;
    FRAMEBUF h;
    pHEARD pmh;
@@ -4611,7 +4612,7 @@ static char Auth(const char mbuf0[], unsigned long mbuf_len, pTCPSOCK pu)
    { /* with */
       struct TCPSOCK * anonym = pu;
       i0 = 0UL;
-      while ((unsigned char)mbuf0[i0]<=' ') ++i0;
+      while ((uint8_t)mbuf0[i0]<=' ') ++i0;
       if (mbuf0[i0]=='#') {
          GetFilters(&anonym->filters, mbuf0, mbuf_len, i0+1UL, 0);
          return 1;
@@ -4622,7 +4623,7 @@ static char Auth(const char mbuf0[], unsigned long mbuf_len, pTCPSOCK pu)
          i0 += 5UL;
          skipblank(mbuf0, mbuf_len, &i0);
          j = 0UL;
-         while (j<9UL && (unsigned char)mbuf0[i0]>' ') {
+         while (j<9UL && (uint8_t)mbuf0[i0]>' ') {
             anonym->user.call[j] = X2C_CAP(mbuf0[i0]);
             ++i0;
             ++j;
@@ -4633,9 +4634,9 @@ static char Auth(const char mbuf0[], unsigned long mbuf_len, pTCPSOCK pu)
             i0 += 5UL;
             skipblank(mbuf0, mbuf_len, &i0);
             j = 0UL;
-            while (((unsigned char)mbuf0[i0]>='0' && (unsigned char)
-                mbuf0[i0]<='9') && j<32768UL) {
-               j = (j*10UL+(unsigned long)(unsigned char)mbuf0[i0])-48UL;
+            while (((uint8_t)mbuf0[i0]>='0' && (uint8_t)mbuf0[i0]<='9')
+                && j<32768UL) {
+               j = (j*10UL+(uint32_t)(uint8_t)mbuf0[i0])-48UL;
                ++i0;
             }
             anonym->valid = aprsstr_Length(anonym->user.call,
@@ -4646,8 +4647,8 @@ static char Auth(const char mbuf0[], unsigned long mbuf_len, pTCPSOCK pu)
             i0 += 5UL;
             skipblank(mbuf0, mbuf_len, &i0);
             j = 0UL;
-            while ((unsigned char)mbuf0[i0]>=' ' && !cmpfrom(mbuf0, mbuf_len,
-                 i0, "filter", 7ul)) {
+            while ((uint8_t)mbuf0[i0]>=' ' && !cmpfrom(mbuf0, mbuf_len, i0,
+                 "filter", 7ul)) {
                if (j<20UL) {
                   anonym->vers[j] = mbuf0[i0];
                   ++j;
@@ -4699,7 +4700,7 @@ static void closetcp(pTCPSOCK * w, char fin)
          /*
          IO.WrStrLn("deallocw");
          */
-         osic_free((X2C_ADDRESS *) &pb, sizeof(struct WWWBUF));
+         osic_free((char * *) &pb, sizeof(struct WWWBUF));
          if (!fin && anonym->txbuf) return;
       }
       if (anonym->fd>=0L) osic_Close(anonym->fd);
@@ -4708,7 +4709,7 @@ static void closetcp(pTCPSOCK * w, char fin)
 } /* end closetcp() */
 
 
-static void sendwww(pTCPSOCK * w, WWWB b, long len, char push)
+static void sendwww(pTCPSOCK * w, WWWB b, int32_t len, char push)
 {
    pWWWBUF pp;
    pWWWBUF pb;
@@ -4716,7 +4717,7 @@ static void sendwww(pTCPSOCK * w, WWWB b, long len, char push)
    /*
    IO.WrStrLn("allocw");
    */
-   osic_alloc((X2C_ADDRESS *) &pb, sizeof(struct WWWBUF));
+   osic_alloc((char * *) &pb, sizeof(struct WWWBUF));
    if (pb==0) return;
    memcpy(pb->buf,b,1401u);
    pb->tlen = len;
@@ -4750,11 +4751,11 @@ static void sendwww(pTCPSOCK * w, WWWB b, long len, char push)
 
 
 static void Appwww(pTCPSOCK * wsock, WWWB wbuf, const char s[],
-                unsigned long s_len)
+                uint32_t s_len)
 {
-   unsigned long i0;
-   unsigned long slen;
-   unsigned long wlen;
+   uint32_t i0;
+   uint32_t slen;
+   uint32_t wlen;
    /*
        len:=Length(wbuf);
        IF len+Length(s)>=HIGH(wbuf) THEN
@@ -4768,7 +4769,7 @@ static void Appwww(pTCPSOCK * wsock, WWWB wbuf, const char s[],
    i0 = 0UL;
    while (i0<slen) {
       if (wlen>=1400UL) {
-         sendwww(wsock, wbuf, (long)wlen, 0);
+         sendwww(wsock, wbuf, (int32_t)wlen, 0);
          wlen = 0UL;
       }
       wbuf[wlen] = s[i0];
@@ -4780,20 +4781,20 @@ static void Appwww(pTCPSOCK * wsock, WWWB wbuf, const char s[],
 
 
 static void AppCall(WWWB wbuf, pTCPSOCK * wsock, char c[],
-                unsigned long c_len, char ungate, char center,
-                const char link[], unsigned long link_len)
+                uint32_t c_len, char ungate, char center,
+                const char link[], uint32_t link_len)
 {
    char b[4096];
-   unsigned long k;
-   unsigned long j;
-   unsigned long i0;
+   uint32_t k;
+   uint32_t j;
+   uint32_t i0;
    X2C_PCOPY((void **)&c,c_len);
    Appwww(wsock, wbuf, "<TD style=text-align:", 22ul);
    if (center) Appwww(wsock, wbuf, "center>", 8ul);
    else Appwww(wsock, wbuf, "left>", 6ul);
    j = 0UL;
    i0 = 0UL;
-   while ((unsigned char)link[i0]>=' ') {
+   while ((uint8_t)link[i0]>=' ') {
       if (link[i0]=='$') {
          ++i0;
          if (link[i0]=='c') {
@@ -4831,7 +4832,8 @@ static void AppCall(WWWB wbuf, pTCPSOCK * wsock, char c[],
 } /* end AppCall() */
 
 
-static void AppTime(WWWB wbuf, pTCPSOCK * wsock, unsigned long t, char tab)
+static void AppTime(WWWB wbuf, pTCPSOCK * wsock, uint32_t t,
+                char tab)
 {
    char h1[256];
    if (tab) Appwww(wsock, wbuf, "<td>", 5ul);
@@ -4843,7 +4845,7 @@ static void AppTime(WWWB wbuf, pTCPSOCK * wsock, unsigned long t, char tab)
 } /* end AppTime() */
 
 
-static void AppMinSec(WWWB wbuf, pTCPSOCK * wsock, unsigned long t)
+static void AppMinSec(WWWB wbuf, pTCPSOCK * wsock, uint32_t t)
 {
    char h1[21];
    /*
@@ -4852,18 +4854,18 @@ static void AppMinSec(WWWB wbuf, pTCPSOCK * wsock, unsigned long t)
    if (systime<t || t==0UL) t = 0UL;
    else t = systime-t;
    if (t/3600UL>0UL) {
-      aprsstr_IntToStr((long)(t/3600UL), 1UL, h1, 21ul);
+      aprsstr_IntToStr((int32_t)(t/3600UL), 1UL, h1, 21ul);
       Appwww(wsock, wbuf, h1, 21ul);
       Appwww(wsock, wbuf, "h", 2ul);
       t = t%3600UL;
    }
    if (t/60UL>0UL) {
-      aprsstr_IntToStr((long)(t/60UL), 1UL, h1, 21ul);
+      aprsstr_IntToStr((int32_t)(t/60UL), 1UL, h1, 21ul);
       Appwww(wsock, wbuf, h1, 21ul);
       Appwww(wsock, wbuf, "m", 2ul);
       t = t%60UL;
    }
-   aprsstr_IntToStr((long)t, 1UL, h1, 21ul);
+   aprsstr_IntToStr((int32_t)t, 1UL, h1, 21ul);
    if (h1[1U]==0) {
       Appwww(wsock, wbuf, "&nbsp;", 7ul);
    }
@@ -4875,7 +4877,7 @@ static void AppMinSec(WWWB wbuf, pTCPSOCK * wsock, unsigned long t)
 } /* end AppMinSec() */
 
 
-static void AppInt(WWWB wbuf, pTCPSOCK * wsock, long n)
+static void AppInt(WWWB wbuf, pTCPSOCK * wsock, int32_t n)
 {
    char h1[256];
    Appwww(wsock, wbuf, "<td>", 5ul);
@@ -4886,15 +4888,14 @@ static void AppInt(WWWB wbuf, pTCPSOCK * wsock, long n)
 
 
 static void AppTxt(WWWB wbuf, pTCPSOCK * wsock, const char style[],
-                unsigned long style_len, const char s[],
-                unsigned long s_len)
+                uint32_t style_len, const char s[], uint32_t s_len)
 {
    char c;
-   long i0;
+   int32_t i0;
    char h1[256];
-   long tmp;
+   int32_t tmp;
    Appwww(wsock, wbuf, style, style_len);
-   tmp = (long)aprsstr_Length(s, s_len)-1L;
+   tmp = (int32_t)aprsstr_Length(s, s_len)-1L;
    i0 = 0L;
    if (i0<=tmp) for (;; i0++) {
       c = s[i0];
@@ -5001,7 +5002,7 @@ static void AppTxt(WWWB wbuf, pTCPSOCK * wsock, const char style[],
          break;
       default:;
          Appwww(wsock, wbuf, "&#", 3ul);
-         aprsstr_IntToStr((long)(unsigned long)(unsigned char)c, 1UL, h1,
+         aprsstr_IntToStr((int32_t)(uint32_t)(uint8_t)c, 1UL, h1,
                 256ul);
          Appwww(wsock, wbuf, h1, 256ul);
          Appwww(wsock, wbuf, ";", 2ul);
@@ -5013,14 +5014,14 @@ static void AppTxt(WWWB wbuf, pTCPSOCK * wsock, const char style[],
 } /* end AppTxt() */
 
 
-static char hex(unsigned long n)
+static char hex(uint32_t n)
 {
    if (n>9UL) n += 7UL;
    return (char)(n+48UL);
 } /* end hex() */
 
 
-static void setcol(char h1[256], unsigned long c, unsigned long n)
+static void setcol(char h1[256], uint32_t c, uint32_t n)
 {
    if (n>100UL) n = 100UL;
    n += 155UL;
@@ -5029,35 +5030,35 @@ static void setcol(char h1[256], unsigned long c, unsigned long n)
 } /* end setcol() */
 
 
-static void redgreen(char h1[256], long c)
+static void redgreen(char h1[256], int32_t c)
 {
    if (c<0L) c = 0L;
    if (c<100L) {
-      setcol(h1, 0UL, (unsigned long)c);
+      setcol(h1, 0UL, (uint32_t)c);
       setcol(h1, 2UL, 100UL);
    }
    else {
       if (c>200L) c = 200L;
       setcol(h1, 0UL, 100UL);
-      setcol(h1, 2UL, (unsigned long)(200L-c));
+      setcol(h1, 2UL, (uint32_t)(200L-c));
    }
 } /* end redgreen() */
 
 
-static void green(char h1[256], unsigned long cnt, unsigned long maxt,
+static void green(char h1[256], uint32_t cnt, uint32_t maxt,
                 char driving)
 {
-   unsigned long t;
+   uint32_t t;
    t = systime-uptime;
    if (t>maxt) t = maxt;
    if (driving) cnt = cnt*2000UL;
    else cnt = cnt*20000UL;
-   redgreen(h1, (long)(cnt/(t+300UL)));
+   redgreen(h1, (int32_t)(cnt/(t+300UL)));
 } /* end green() */
 
 
-static void wcard64(WWWB wbuf, pTCPSOCK * wsock, unsigned long hi,
-                unsigned long lo)
+static void wcard64(WWWB wbuf, pTCPSOCK * wsock, uint32_t hi,
+                uint32_t lo)
 {
    char h1[16];
    if (hi>0UL) {
@@ -5071,7 +5072,7 @@ static void wcard64(WWWB wbuf, pTCPSOCK * wsock, unsigned long hi,
 } /* end wcard64() */
 
 
-static void wint(WWWB wbuf, pTCPSOCK * wsock, long n)
+static void wint(WWWB wbuf, pTCPSOCK * wsock, int32_t n)
 {
    char h1[16];
    aprsstr_IntToStr(n, 1UL, h1, 16ul);
@@ -5081,7 +5082,7 @@ static void wint(WWWB wbuf, pTCPSOCK * wsock, long n)
 } /* end wint() */
 
 
-static void wintint(WWWB wbuf, pTCPSOCK * wsock, long n, long k)
+static void wintint(WWWB wbuf, pTCPSOCK * wsock, int32_t n, int32_t k)
 {
    char h1[16];
    aprsstr_IntToStr(n, 1UL, h1, 16ul);
@@ -5094,15 +5095,15 @@ static void wintint(WWWB wbuf, pTCPSOCK * wsock, long n, long k)
 } /* end wintint() */
 
 
-static char openfile(char fn[], unsigned long fn_len, long * fd,
-                long * flen)
+static char openfile(char fn[], uint32_t fn_len, int32_t * fd,
+                 int32_t * flen)
 {
    char h[4097];
    char hh[2];
    /*
          s:stat_t;
    */
-   unsigned long i0;
+   uint32_t i0;
    char openfile_ret;
    X2C_PCOPY((void **)&fn,fn_len);
    if (fn[0UL]=='/') {
@@ -5112,8 +5113,7 @@ static char openfile(char fn[], unsigned long fn_len, long * fd,
    i0 = 0UL;
    for (;;) {
       if (i0+2UL>=fn_len-1 || fn[i0]==0) break;
-      if ((unsigned char)fn[i0]<=' ' || (unsigned char)
-                fn[i0]>=(unsigned char)'\200') {
+      if ((uint8_t)fn[i0]<=' ' || (uint8_t)fn[i0]>=(uint8_t)'\200') {
          openfile_ret = 0;
          goto label;
       }
@@ -5150,7 +5150,7 @@ static char openfile(char fn[], unsigned long fn_len, long * fd,
 
 
 static void appsorturl(WWWB wbuf, pTCPSOCK * wsock, const char sortby[],
-                unsigned long sortby_len)
+                uint32_t sortby_len)
 {
    char h[3];
    if (sortby[0UL]) {
@@ -5163,19 +5163,19 @@ static void appsorturl(WWWB wbuf, pTCPSOCK * wsock, const char sortby[],
 } /* end appsorturl() */
 
 
-static void appreloadurl(WWWB wbuf, pTCPSOCK * wsock, unsigned long time0)
+static void appreloadurl(WWWB wbuf, pTCPSOCK * wsock, uint32_t time0)
 {
    char h[32];
    if (time0) {
       Appwww(wsock, wbuf, "?reload=", 9ul);
-      aprsstr_IntToStr((long)time0, 1UL, h, 32ul);
+      aprsstr_IntToStr((int32_t)time0, 1UL, h, 32ul);
       Appwww(wsock, wbuf, h, 32ul);
    }
 } /* end appreloadurl() */
 
 
 static void klick(WWWB wbuf, pTCPSOCK * wsock, char path[],
-                unsigned long path_len, char text[], unsigned long text_len,
+                uint32_t path_len, char text[], uint32_t text_len,
                 char sort)
 {
    char s[2];
@@ -5204,15 +5204,15 @@ static void klick(WWWB wbuf, pTCPSOCK * wsock, char path[],
 } /* end klick() */
 
 
-static char iconf(char sym, char symt, char fn[], unsigned long fn_len,
-                char * overlay)
+static char iconf(char sym, char symt, char fn[],
+                uint32_t fn_len, char * overlay)
 {
    char h[256];
-   unsigned long i0;
-   i0 = (unsigned long)(unsigned char)sym;
+   uint32_t i0;
+   i0 = (uint32_t)(uint8_t)sym;
    if (i0<33UL || i0>127UL) return 0;
    aprsstr_Assign(fn, fn_len, "icon/", 6ul);
-   aprsstr_IntToStr((long)(i0+67UL), 3UL, h, 256ul);
+   aprsstr_IntToStr((int32_t)(i0+67UL), 3UL, h, 256ul);
    *overlay = 0;
    switch ((unsigned)symt) {
    case '0':
@@ -5270,12 +5270,12 @@ static char iconf(char sym, char symt, char fn[], unsigned long fn_len,
 } /* end iconf() */
 
 
-static void sortindex(pHEARD ph, unsigned long maxtime, const char sortby[],
-                unsigned long sortby_len, char * withqual)
+static void sortindex(pHEARD ph, uint32_t maxtime, const char sortby[],
+                 uint32_t sortby_len, char * withqual)
 /* make LONGREAL of sort key */
 {
    char homevalid;
-   unsigned long i0;
+   uint32_t i0;
    char c;
    char s;
    double xs;
@@ -5292,7 +5292,7 @@ static void sortindex(pHEARD ph, unsigned long maxtime, const char sortby[],
          xs = 0.0;
          for (i0 = 0UL; i0<=9UL; i0++) {
             c = ph->call[i0];
-            xs = xs*128.0+(double)(float)(unsigned long)(unsigned char)c;
+            xs = xs*128.0+(double)(float)(uint32_t)(uint8_t)c;
          } /* end for */
          break;
       case 'p': /* sort by port */
@@ -5316,11 +5316,11 @@ static void sortindex(pHEARD ph, unsigned long maxtime, const char sortby[],
 } /* end sortindex() */
 
 
-static void getlinkfile(char b[], unsigned long b_len, const char fn[],
-                unsigned long fn_len)
+static void getlinkfile(char b[], uint32_t b_len, const char fn[],
+                uint32_t fn_len)
 {
-   long len;
-   long fd;
+   int32_t len;
+   int32_t fd;
    aprsstr_Assign(b, b_len, wwwdir, 1024ul);
    aprsstr_Append(b, b_len, fn, fn_len);
    fd = osi_OpenRead(b, b_len);
@@ -5357,14 +5357,14 @@ static void apppos(WWWB wbuf, pTCPSOCK * wsock, struct aprspos_POSITION pos,
 
 
 static void showmh(WWWB wbuf, pTCPSOCK * wsock, char h1[256], pHEARD ph0,
-                char dir, char net, unsigned long maxtime, char title0[],
-                unsigned long title_len, const char sortby[],
-                unsigned long sortby_len)
+                 char dir, char net, uint32_t maxtime,
+                char title0[], uint32_t title_len,
+                const char sortby[], uint32_t sortby_len)
 {
    char withqual;
    char withicon;
    char withport;
-   unsigned long ci;
+   uint32_t ci;
    char hch;
    pHEARD phs;
    pHEARD ph;
@@ -5380,18 +5380,18 @@ static void showmh(WWWB wbuf, pTCPSOCK * wsock, char h1[256], pHEARD ph0,
    Appwww(wsock, wbuf, "<table id=mheard border=0 align=center CELLPADDING=3 \
 CELLSPACING=1 BGCOLOR=#FFFFFF><tr class=tab-mh-titel BGCOLOR=#A9EEFF><th cols\
 pan=", 135ul);
-   aprsstr_IntToStr((long)(6UL+(unsigned long)withicon+(unsigned long)
-                withport+(unsigned long)(dir && withqual)*3UL+(unsigned long)
-                net), 1UL, h1, 256ul);
+   aprsstr_IntToStr((int32_t)(6UL+(uint32_t)withicon+(uint32_t)
+                withport+(uint32_t)(dir && withqual)*3UL+(uint32_t)net),
+                1UL, h1, 256ul);
    Appwww(wsock, wbuf, h1, 256ul);
    Appwww(wsock, wbuf, ">", 2ul);
    Appwww(wsock, wbuf, title0, title_len);
    if (maxtime%3600UL==0UL) {
-      aprsstr_IntToStr((long)(maxtime/3600UL), 1UL, h1, 256ul);
+      aprsstr_IntToStr((int32_t)(maxtime/3600UL), 1UL, h1, 256ul);
       aprsstr_Append(h1, 256ul, "h", 2ul);
    }
    else {
-      aprsstr_IntToStr((long)(maxtime/60UL), 1UL, h1, 256ul);
+      aprsstr_IntToStr((int32_t)(maxtime/60UL), 1UL, h1, 256ul);
       aprsstr_Append(h1, 256ul, "min", 4ul);
    }
    Appwww(wsock, wbuf, h1, 256ul);
@@ -5469,11 +5469,11 @@ n:right\">", 56ul);
             /* txdel */
             Appwww(wsock, wbuf, "<td style=\"background-color:#", 30ul);
             strncpy(h1,"80FF80",256u);
-            redgreen(h1, (long)ph->txd-50L);
+            redgreen(h1, (int32_t)ph->txd-50L);
             Appwww(wsock, wbuf, h1, 256ul);
             Appwww(wsock, wbuf, "\">", 3ul);
             if (ph->txd) {
-               aprsstr_IntToStr((long)ph->txd, 1UL, h1, 256ul);
+               aprsstr_IntToStr((int32_t)ph->txd, 1UL, h1, 256ul);
                Appwww(wsock, wbuf, h1, 256ul);
             }
             Appwww(wsock, wbuf, "</td>", 6ul);
@@ -5481,20 +5481,20 @@ n:right\">", 56ul);
             Appwww(wsock, wbuf, "<td style=\"background-color:#", 30ul);
             strncpy(h1,"80FF80",256u);
             if (ph->level) {
-               redgreen(h1, ((long)Min((unsigned long)(unsigned char)abs(ph->level+15),
+               redgreen(h1, ((int32_t)Min((uint32_t)(uint8_t)abs(ph->level+15),
                  15UL)-5L)*10L);
             }
             Appwww(wsock, wbuf, h1, 256ul);
             Appwww(wsock, wbuf, "\">", 3ul);
             if (ph->level) {
-               aprsstr_IntToStr((long)ph->level, 1UL, h1, 256ul);
+               aprsstr_IntToStr((int32_t)ph->level, 1UL, h1, 256ul);
                Appwww(wsock, wbuf, h1, 256ul);
             }
             Appwww(wsock, wbuf, "</td>", 6ul);
             /*quality */
             Appwww(wsock, wbuf, "<td>", 5ul);
             if (ph->quali) {
-               aprsstr_IntToStr((long)ph->quali, 1UL, h1, 256ul);
+               aprsstr_IntToStr((int32_t)ph->quali, 1UL, h1, 256ul);
                Appwww(wsock, wbuf, h1, 256ul);
             }
             Appwww(wsock, wbuf, "</td>", 6ul);
@@ -5509,7 +5509,7 @@ n:right\">", 56ul);
          green(h1, ci, maxtime, ph->datatyp=='S');
          Appwww(wsock, wbuf, h1, 256ul);
          Appwww(wsock, wbuf, "\">", 3ul);
-         aprsstr_IntToStr((long)ci, 1UL, h1, 256ul);
+         aprsstr_IntToStr((int32_t)ci, 1UL, h1, 256ul);
          Appwww(wsock, wbuf, h1, 256ul);
          Appwww(wsock, wbuf, "</td>", 6ul);
          h1[0U] = 0;
@@ -5542,21 +5542,20 @@ n:right\">", 56ul);
 } /* end showmh() */
 
 
-static void getreload(char s[], unsigned long s_len, unsigned long * r)
+static void getreload(char s[], uint32_t s_len, uint32_t * r)
 {
-   long len;
-   long j;
-   long i0;
-   unsigned long n;
+   int32_t len;
+   int32_t j;
+   int32_t i0;
+   uint32_t n;
    n = 0UL;
    i0 = aprsstr_InStr(s, s_len, "?reload=", 9ul);
    if (i0>=0L) {
-      len = (long)aprsstr_Length(s, s_len);
+      len = (int32_t)aprsstr_Length(s, s_len);
       j = i0;
-      i0 += (long)aprsstr_Length("?reload=", 9ul);
-      while ((i0<len && (unsigned char)s[i0]>='0') && (unsigned char)
-                s[i0]<='9') {
-         n = (n*10UL+(unsigned long)(unsigned char)s[i0])-48UL;
+      i0 += (int32_t)aprsstr_Length("?reload=", 9ul);
+      while ((i0<len && (uint8_t)s[i0]>='0') && (uint8_t)s[i0]<='9') {
+         n = (n*10UL+(uint32_t)(uint8_t)s[i0])-48UL;
          ++i0;
       }
       while (i0<=len) {
@@ -5569,19 +5568,19 @@ static void getreload(char s[], unsigned long s_len, unsigned long * r)
 } /* end getreload() */
 
 
-static void getmh(char s[], unsigned long s_len, char sortby[],
-                unsigned long sortby_len)
+static void getmh(char s[], uint32_t s_len, char sortby[],
+                uint32_t sortby_len)
 {
-   long len;
-   long j;
-   long i0;
+   int32_t len;
+   int32_t j;
+   int32_t i0;
    sortby[0UL] = 0;
    sortby[1UL] = 0;
    i0 = aprsstr_InStr(s, s_len, "?sort=", 7ul);
    if (i0>=0L) {
-      len = (long)aprsstr_Length(s, s_len);
+      len = (int32_t)aprsstr_Length(s, s_len);
       j = i0;
-      i0 += (long)aprsstr_Length("?sort=", 7ul);
+      i0 += (int32_t)aprsstr_Length("?sort=", 7ul);
       sortby[0UL] = s[i0];
       ++i0;
       sortby[1UL] = s[i0];
@@ -5595,12 +5594,12 @@ static void getmh(char s[], unsigned long s_len, char sortby[],
 } /* end getmh() */
 
 
-static void appreload(WWWB wbuf, pTCPSOCK * wsock, unsigned long time0)
+static void appreload(WWWB wbuf, pTCPSOCK * wsock, uint32_t time0)
 {
    char h[32];
    if (time0) {
       Appwww(wsock, wbuf, "<meta http-equiv=\"refresh\" content=\"", 37ul);
-      aprsstr_IntToStr((long)(time0*60UL), 1UL, h, 32ul);
+      aprsstr_IntToStr((int32_t)(time0*60UL), 1UL, h, 32ul);
       Appwww(wsock, wbuf, h, 32ul);
       Appwww(wsock, wbuf, "\">", 3ul);
    }
@@ -5614,7 +5613,7 @@ static void reloadklick(WWWB wbuf, pTCPSOCK * wsock)
        Appwww('<form method="get">reload min:<input type="text" value="');
    */
    Appwww(wsock, wbuf, "Reload (min):<input type=\"text\" value=\"", 40ul);
-   aprsstr_IntToStr((long)(*wsock)->reload, 1UL, h1, 16ul);
+   aprsstr_IntToStr((int32_t)(*wsock)->reload, 1UL, h1, 16ul);
    Appwww(wsock, wbuf, h1, 16ul);
    Appwww(wsock, wbuf, "\" name=\"reload\" size=\"4\" maxlength=\"3\"><input \
 type=\"submit\" value=\"set reload time\"/></form>", 93ul);
@@ -5641,7 +5640,7 @@ static void conthead(pTCPSOCK * wsock, WWWB wbuf)
 {
    strncpy(wbuf,"HTTP/1.0 200 OK\015\012Content-Type: text/html; charset=iso-\
 8859-1\015\012\015\012",1401u);
-   sendwww(wsock, wbuf, (long)aprsstr_Length(wbuf, 1401ul), 1);
+   sendwww(wsock, wbuf, (int32_t)aprsstr_Length(wbuf, 1401ul), 1);
    strncpy(wbuf,"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//\
 EN\"\015\012\"http://www.w3.org/TR/html4/loose.dtd\">\015\012<HTML><HEAD>",
                 1401u);
@@ -5649,7 +5648,7 @@ EN\"\015\012\"http://www.w3.org/TR/html4/loose.dtd\">\015\012<HTML><HEAD>",
 } /* end conthead() */
 
 
-static void title(WWWB wbuf, pTCPSOCK * wsock, unsigned long * cnt)
+static void title(WWWB wbuf, pTCPSOCK * wsock, uint32_t * cnt)
 {
    char h[32];
    ++*cnt;
@@ -5664,7 +5663,7 @@ enter\"><H3>\015\012", 131ul);
    }
    apppos(wbuf, wsock, home, 1);
    Appwww(wsock, wbuf, " [udpgate(c) 0.63] http#", 25ul);
-   aprsstr_IntToStr((long)*cnt, 1UL, h, 32ul);
+   aprsstr_IntToStr((int32_t)*cnt, 1UL, h, 32ul);
    Appwww(wsock, wbuf, h, 32ul);
    Appwww(wsock, wbuf, " Uptime ", 9ul);
    AppTime(wbuf, wsock, uptime, 0);
@@ -5676,17 +5675,17 @@ static void Www(pTCPSOCK wsock)
 {
    WWWB wbuf;
    char h1[256];
-   long res0;
-   long flen;
-   long fdw;
-   unsigned long ut;
-   unsigned long tt;
+   int32_t res0;
+   int32_t flen;
+   int32_t fdw;
+   uint32_t ut;
+   uint32_t tt;
    pTCPSOCK ss;
    pUDPSOCK us;
-   unsigned long i0;
+   uint32_t i0;
    char serverlink[1024];
    pMESSAGE mp;
-   unsigned char tp;
+   uint8_t tp;
    char hok;
    struct TCPSOCK * anonym;
    struct TCPSOCK * anonym0;
@@ -5696,7 +5695,7 @@ static void Www(pTCPSOCK wsock)
    res0 = readsock(wsock->fd, wbuf, 1401L);
    i0 = 0UL;
    for (;;) {
-      if ((long)i0>=res0) {
+      if ((int32_t)i0>=res0) {
          if (res0<=0L) {
             osic_Close(wsock->fd);
             wsock->fd = -1L;
@@ -5729,7 +5728,7 @@ static void Www(pTCPSOCK wsock)
    { /* with */
       struct TCPSOCK * anonym0 = wsock;
       i0 = 5UL;
-      while (i0<=255UL && (unsigned char)anonym0->get[i0]>' ') {
+      while (i0<=255UL && (uint8_t)anonym0->get[i0]>' ') {
          anonym0->get[i0-5UL] = anonym0->get[i0];
          ++i0;
       }
@@ -5754,10 +5753,10 @@ gn:center\"><H3>\015\012", 131ul);
          Appwww(&wsock, wbuf, tcpbindport, 6ul);
       }
       Appwww(&wsock, wbuf, " [udpgate(c) 0.63] Maxusers ", 29ul);
-      aprsstr_IntToStr((long)maxusers, 1UL, h1, 256ul);
+      aprsstr_IntToStr((int32_t)maxusers, 1UL, h1, 256ul);
       Appwww(&wsock, wbuf, h1, 256ul);
       Appwww(&wsock, wbuf, " http#", 7ul);
-      aprsstr_IntToStr((long)httpcount, 1UL, h1, 256ul);
+      aprsstr_IntToStr((int32_t)httpcount, 1UL, h1, 256ul);
       Appwww(&wsock, wbuf, h1, 256ul);
       /*
           IF QWatch.qsize>0 THEN
@@ -5786,32 +5785,32 @@ TH><TH NOWRAP>bit/s</TH><TH>Up</TH></TR>", 524ul);
 =\"text-align:center\">\015\012<TD>udp</TD><TD>", 83ul);
             Appwww(&wsock, wbuf, h1, 256ul);
             Appwww(&wsock, wbuf, "</TD>", 6ul);
-            wint(wbuf, &wsock, (long)us->dport);
+            wint(wbuf, &wsock, (int32_t)us->dport);
             Appwww(&wsock, wbuf, "<TD style=\"text-align:left\">T:", 31ul);
             Appwww(&wsock, wbuf, us->portname, 10ul);
             Appwww(&wsock, wbuf, "</TD><TD></TD><TD></TD>", 24ul);
             if (us->torfradius>=1.0f || us->maxbytes>0UL) {
                Appwww(&wsock, wbuf, "<td>", 5ul);
                if (us->torfradius>=1.0f) {
-                  aprsstr_IntToStr((long)(unsigned long)
+                  aprsstr_IntToStr((int32_t)(uint32_t)
                 X2C_TRUNCC(us->torfradius,0UL,X2C_max_longcard), 1UL, h1,
                 256ul);
                   Appwww(&wsock, wbuf, h1, 256ul);
                   Appwww(&wsock, wbuf, "km ", 4ul);
                }
                if (us->maxbytes>0UL) {
-                  aprsstr_IntToStr((long)us->maxbytes, 1UL, h1, 256ul);
+                  aprsstr_IntToStr((int32_t)us->maxbytes, 1UL, h1, 256ul);
                   Appwww(&wsock, wbuf, h1, 256ul);
                   Appwww(&wsock, wbuf, "B/s", 4ul);
                }
                Appwww(&wsock, wbuf, "</td>", 6ul);
             }
             else Appwww(&wsock, wbuf, "<TD></TD>", 10ul);
-            wint(wbuf, &wsock, (long)us->txbytes);
-            wint(wbuf, &wsock, (long)us->txframes);
+            wint(wbuf, &wsock, (int32_t)us->txbytes);
+            wint(wbuf, &wsock, (int32_t)us->txframes);
             if (uptime<systime) ut = systime-uptime;
             else ut = 1UL;
-            wint(wbuf, &wsock, (long)((us->txbytes*8UL)/ut));
+            wint(wbuf, &wsock, (int32_t)((us->txbytes*8UL)/ut));
             wint(wbuf, &wsock, 0L);
             wint(wbuf, &wsock, 0L);
             wint(wbuf, &wsock, 0L);
@@ -5829,7 +5828,7 @@ TH><TH NOWRAP>bit/s</TH><TH>Up</TH></TR>", 524ul);
  style=\"text-align:center\">\015\012<TD>udp</TD><TD>", 83ul);
                   Appwww(&wsock, wbuf, h1, 256ul);
                   Appwww(&wsock, wbuf, "</TD>", 6ul);
-                  wint(wbuf, &wsock, (long)anonym1->uport);
+                  wint(wbuf, &wsock, (int32_t)anonym1->uport);
                   Appwww(&wsock, wbuf, "<TD style=\"text-align:left\">R:",
                 31ul);
                   Appwww(&wsock, wbuf, us->portname, 10ul);
@@ -5840,9 +5839,9 @@ TH><TH NOWRAP>bit/s</TH><TH>Up</TH></TR>", 524ul);
                   if (anonym1->dtime<systime) ut = systime-anonym1->dtime;
                   else ut = 1UL;
                   wint(wbuf, &wsock, 0L);
-                  wint(wbuf, &wsock, (long)anonym1->rxbytes);
-                  wint(wbuf, &wsock, (long)anonym1->rxframes);
-                  wint(wbuf, &wsock, (long)((anonym1->rxbytes*8UL)/ut));
+                  wint(wbuf, &wsock, (int32_t)anonym1->rxbytes);
+                  wint(wbuf, &wsock, (int32_t)anonym1->rxframes);
+                  wint(wbuf, &wsock, (int32_t)((anonym1->rxbytes*8UL)/ut));
                   Appwww(&wsock, wbuf, "<TD>", 5ul);
                   aprsstr_TimeToStr(ut, h1, 256ul);
                   Appwww(&wsock, wbuf, h1, 256ul);
@@ -5903,9 +5902,7 @@ ign:center\" BGCOLOR=\"#D0C0C0\"><TD>out", 74ul);
                }
                Appwww(&wsock, wbuf, "</TD><TD>", 10ul);
                if (anonym2->connt>0UL) {
-                  if (anonym2->valid) {
-                     Appwww(&wsock, wbuf, "v", 2ul);
-                  }
+                  if (anonym2->valid) Appwww(&wsock, wbuf, "v", 2ul);
                   if (aprspos_posvalid(anonym2->user.pos)) {
                      Appwww(&wsock, wbuf, "p", 2ul);
                   }
@@ -5921,19 +5918,19 @@ ign:center\" BGCOLOR=\"#D0C0C0\"><TD>out", 74ul);
                Appwww(&wsock, wbuf, "</TD>", 6ul);
                wcard64(wbuf, &wsock, anonym2->txbytesh, anonym2->txbytes);
                if (anonym2->losttxframes>0UL) {
-                  wintint(wbuf, &wsock, (long)anonym2->txframes,
-                -(long)anonym2->losttxframes);
+                  wintint(wbuf, &wsock, (int32_t)anonym2->txframes,
+                -(int32_t)anonym2->losttxframes);
                }
-               else wint(wbuf, &wsock, (long)anonym2->txframes);
-               wint(wbuf, &wsock, (long)bitsec64(anonym2->txbytesh,
+               else wint(wbuf, &wsock, (int32_t)anonym2->txframes);
+               wint(wbuf, &wsock, (int32_t)bitsec64(anonym2->txbytesh,
                 anonym2->txbytes, tt));
                wcard64(wbuf, &wsock, anonym2->rxbytesh, anonym2->rxbytes);
                if (anonym2->lostrxframes>0UL) {
-                  wintint(wbuf, &wsock, (long)anonym2->rxframes,
-                -(long)anonym2->lostrxframes);
+                  wintint(wbuf, &wsock, (int32_t)anonym2->rxframes,
+                -(int32_t)anonym2->lostrxframes);
                }
-               else wint(wbuf, &wsock, (long)anonym2->rxframes);
-               wint(wbuf, &wsock, (long)bitsec64(anonym2->rxbytesh,
+               else wint(wbuf, &wsock, (int32_t)anonym2->rxframes);
+               wint(wbuf, &wsock, (int32_t)bitsec64(anonym2->rxbytesh,
                 anonym2->rxbytes, tt));
                Appwww(&wsock, wbuf, "<TD>", 5ul);
                if (anonym2->connt>0UL) {
@@ -5972,7 +5969,9 @@ ected Stations Since Last ", 39ul, wsock->sortby, 2ul);
          Appwww(&wsock, wbuf, "<table id=msg border=0 align=center CELLPADDIN\
 G=3 CELLSPACING=1 BGCOLOR=\"#FFFFFF\">", 83ul);
          if (viacall[0U]==0) {
-            if (tp==udpgate4_DIR) strncpy(h1,"Heard Messages (tx off)",256u);
+            if (tp==udpgate4_DIR) {
+               strncpy(h1,"Heard Messages (tx off)",256u);
+            }
             else if (tp==udpgate4_INDIR) {
                strncpy(h1,"Via Digi Heard Messages (tx off)",256u);
             }
@@ -6017,12 +6016,12 @@ etr</th><th>m>r</th><th>m>n</th><th>a>r</th><th>a>n</th><th>A</th><th>Ack</th\
                   Appwww(&wsock, wbuf, "<td>timed out</td>", 19ul);
                }
                else Appwww(&wsock, wbuf, "<td></td>", 10ul);
-               AppInt(wbuf, &wsock, (long)mp->txport);
-               AppInt(wbuf, &wsock, (long)mp->retryc);
-               AppInt(wbuf, &wsock, (long)mp->msg2rf);
-               AppInt(wbuf, &wsock, (long)mp->msg2net);
-               AppInt(wbuf, &wsock, (long)mp->ack2rf);
-               AppInt(wbuf, &wsock, (long)mp->ack2net);
+               AppInt(wbuf, &wsock, (int32_t)mp->txport);
+               AppInt(wbuf, &wsock, (int32_t)mp->retryc);
+               AppInt(wbuf, &wsock, (int32_t)mp->msg2rf);
+               AppInt(wbuf, &wsock, (int32_t)mp->msg2net);
+               AppInt(wbuf, &wsock, (int32_t)mp->ack2rf);
+               AppInt(wbuf, &wsock, (int32_t)mp->ack2net);
                Appwww(&wsock, wbuf, "<td>", 5ul);
                if (mp->acked) {
                   if (mp->acksrc==udpgate4_DIR) strncpy(h1,"D",256u);
@@ -6031,8 +6030,7 @@ etr</th><th>m>r</th><th>m>n</th><th>a>r</th><th>a>n</th><th>A</th><th>Ack</th\
                   else strncpy(h1,"X",256u);
                   if (mp->reject) aprsstr_Append(h1, 256ul, "R", 2ul);
                   if (!mp->ackackt) {
-                     h1[0U] = (char)((unsigned long)(unsigned char)
-                h1[0U]+32UL);
+                     h1[0U] = (char)((uint32_t)(uint8_t)h1[0U]+32UL);
                   }
                   Appwww(&wsock, wbuf, h1, 256ul);
                }
@@ -6060,7 +6058,7 @@ etr</th><th>m>r</th><th>m>n</th><th>a>r</th><th>a>n</th><th>A</th><th>Ack</th\
       aprsstr_IntToStr(flen, 1UL, h1, 256ul);
       aprsstr_Append(wbuf, 1401ul, h1, 256ul);
       aprsstr_Append(wbuf, 1401ul, "\015\012\015\012", 5ul);
-      sendwww(&wsock, wbuf, (long)aprsstr_Length(wbuf, 1401ul), 1);
+      sendwww(&wsock, wbuf, (int32_t)aprsstr_Length(wbuf, 1401ul), 1);
       while (flen>0L) {
          res0 = osi_RdBin(fdw, (char *)wbuf, 1401u/1u, 1401UL);
          if (res0>0L) {
@@ -6074,17 +6072,17 @@ etr</th><th>m>r</th><th>m>n</th><th>a>r</th><th>a>n</th><th>A</th><th>Ack</th\
    }
    else strncpy(wbuf,"HTTP/1.1 404\015\012",1401u);
    if (wbuf[0U]) {
-      sendwww(&wsock, wbuf, (long)aprsstr_Length(wbuf, 1401ul), 0);
+      sendwww(&wsock, wbuf, (int32_t)aprsstr_Length(wbuf, 1401ul), 0);
    }
 } /* end Www() */
 
 
 static void Wwwtx(pTCPSOCK * w)
 {
-   long i0;
-   long len;
+   int32_t i0;
+   int32_t len;
    struct TCPSOCK * anonym;
-   long tmp;
+   int32_t tmp;
    { /* with */
       struct TCPSOCK * anonym = *w;
       if (anonym->txbuf) {
@@ -6114,12 +6112,12 @@ static void Wwwtx(pTCPSOCK * w)
 } /* end Wwwtx() */
 
 
-static void saybusy(long * fd, char s[], unsigned long s_len)
+static void saybusy(int32_t * fd, char s[], uint32_t s_len)
 {
-   long res0;
+   int32_t res0;
    X2C_PCOPY((void **)&s,s_len);
    if (*fd>=0L) {
-      res0 = sendsock(*fd, s, (long)aprsstr_Length(s, s_len));
+      res0 = sendsock(*fd, s, (int32_t)aprsstr_Length(s, s_len));
       osic_Close(*fd);
       *fd = -1L;
    }
@@ -6147,22 +6145,23 @@ static void KillDoubleUser(pTCPSOCK u)
 } /* end KillDoubleUser() */
 
 
-static char tcpconn(pTCPSOCK * sockchain, long f, char cservice)
+static char tcpconn(pTCPSOCK * sockchain, int32_t f,
+                char cservice)
 {
    pTCPSOCK cp;
    FRAMEBUF h2;
    FRAMEBUF h1;
    FRAMEBUF h;
-   long res0;
+   int32_t res0;
    struct TCPSOCK * anonym;
    if (f<0L) return 0;
-   osic_alloc((X2C_ADDRESS *) &cp, sizeof(struct TCPSOCK));
+   osic_alloc((char * *) &cp, sizeof(struct TCPSOCK));
    if (cp==0) {
       osic_Close(f);
       if (verb) osi_WrStrLn("tcp conn out of memory", 23ul);
       return 0;
    }
-   memset((X2C_ADDRESS)cp,(char)0,sizeof(struct TCPSOCK));
+   memset((char *)cp,(char)0,sizeof(struct TCPSOCK));
    { /* with */
       struct TCPSOCK * anonym = cp;
       anonym->fd = f;
@@ -6222,14 +6221,14 @@ static char tcpconn(pTCPSOCK * sockchain, long f, char cservice)
 
 static void Gateconn(pTCPSOCK * cp)
 {
-   long fd;
+   int32_t fd;
    pTCPSOCK kill;
    pTCPSOCK try0;
    pTCPSOCK act;
    pTCPSOCK p;
    FRAMEBUF h;
    char hh[21];
-   unsigned long max0;
+   uint32_t max0;
    struct _1 * anonym;
    act = 0;
    try0 = 0;
@@ -6277,7 +6276,8 @@ static void Gateconn(pTCPSOCK * cp)
                anonym->resolvtime = systime-lastdnstime;
                if (anonym->resolvtime>5UL) {
                   strncpy(h,"T:slow DNS ",512u);
-                  aprsstr_IntToStr((long)anonym->resolvtime, 1UL, hh, 21ul);
+                  aprsstr_IntToStr((int32_t)anonym->resolvtime, 1UL, hh,
+                21ul);
                   aprsstr_Append(h, 512ul, hh, 21ul);
                   aprsstr_Append(h, 512ul, "s", 2ul);
                   logline(1L, h, 512ul);
@@ -6316,16 +6316,16 @@ static void Gateconn(pTCPSOCK * cp)
 
 static void WatchTXQ(pTCPSOCK sock)
 {
-   long sent;
-   long j;
-   long i0;
-   long rb;
-   long acked;
-   long qb;
+   int32_t sent;
+   int32_t j;
+   int32_t i0;
+   int32_t rb;
+   int32_t acked;
+   int32_t qb;
    char rest;
-   long tmp;
+   int32_t tmp;
    qb = getunack(sock->fd); /* tcp unack sendqueue in byte */
-   sent = (long)(sock->txbytes-sock->qwatch.lasttb);
+   sent = (int32_t)(sock->txbytes-sock->qwatch.lasttb);
                 /* last second sent bytes */
    if (qb<=0L || sent<0L) sock->qwatch.qsize = 0L;
    else {
@@ -6361,15 +6361,15 @@ static void WatchTXQ(pTCPSOCK sock)
    sock->qwatch.lasttb = sock->txbytes;
 } /* end WatchTXQ() */
 
-static long listensock;
+static int32_t listensock;
 
-static long wwwsock;
+static int32_t wwwsock;
 
 static FRAMEBUF mbuf;
 
-static long res;
+static int32_t res;
 
-static long i;
+static int32_t i;
 
 static pTCPSOCK acttcp;
 
@@ -6377,9 +6377,9 @@ static pTCPSOCK acttmp;
 
 static pUDPSOCK actudp;
 
-static unsigned long usercnt;
+static uint32_t usercnt;
 
-static unsigned long lenh;
+static uint32_t lenh;
 
 static struct POSCALL poscall;
 
@@ -6387,17 +6387,17 @@ static char voidungate;
 
 static char rfhered;
 
-static unsigned long keepconn;
+static uint32_t keepconn;
 
-static unsigned long lasttime;
+static uint32_t lasttime;
 
 
-static void addsock(long fd, char wtoo)
+static void addsock(int32_t fd, char wtoo)
 /* insert socket in fdset for select */
 {
    if (fd>=0L) {
-      fdsetr((unsigned long)fd);
-      if (wtoo) fdsetw((unsigned long)fd);
+      fdsetr((uint32_t)fd);
+      if (wtoo) fdsetw((uint32_t)fd);
    }
 } /* end addsock() */
 
@@ -6565,7 +6565,7 @@ extern int main(int argc, char **argv)
       }
       mbuf[0U] = 0;
       res = selectrw(2UL, 0UL);
-      if (listensock>=0L && issetr((unsigned long)listensock)) {
+      if (listensock>=0L && issetr((uint32_t)listensock)) {
          res = 512L;
          res = acceptconnect(listensock, mbuf, &res);
          if (res>=0L) {
@@ -6574,7 +6574,7 @@ extern int main(int argc, char **argv)
             }
          }
       }
-      if (wwwsock>=0L && issetr((unsigned long)wwwsock)) {
+      if (wwwsock>=0L && issetr((uint32_t)wwwsock)) {
          res = 512L;
          res = acceptconnect(wwwsock, mbuf, &res);
          if (res>=0L) {
@@ -6587,12 +6587,12 @@ extern int main(int argc, char **argv)
       actudp = udpsocks;
       i = 1L;
       while (actudp) {
-         if (issetr((unsigned long)actudp->fd)) {
+         if (issetr((uint32_t)actudp->fd)) {
             while (getudp(actudp, mbuf, actudp->ghosts)) {
                if (systime<udpdonetime+5UL) {
                   /* last time all data read is no too long */
                   res = AprsIs(mbuf, 512ul, 0x3FU, 0x3FU, "", 1ul,
-                (unsigned long)i, 0, &poscall);
+                (uint32_t)i, 0, &poscall);
                   if (res>=0L) {
                      Sendall(mbuf, 0L, poscall);
                      keepconn = systime+keeptime; /* connect to gateway */
@@ -6619,7 +6619,7 @@ extern int main(int argc, char **argv)
       udpdonetime = systime; /* store fresh time of last all read input */
       acttcp = tcpsocks;
       while (acttcp) {
-         if (acttcp->fd>=0L && issetw((unsigned long)acttcp->fd)) {
+         if (acttcp->fd>=0L && issetw((uint32_t)acttcp->fd)) {
             { /* with */
                struct TCPSOCK * anonym0 = acttcp;
                if (anonym0->service=='W') Wwwtx(&acttcp);
@@ -6629,7 +6629,7 @@ extern int main(int argc, char **argv)
                }
             }
          }
-         if (acttcp->fd>=0L && issetr((unsigned long)acttcp->fd)) {
+         if (acttcp->fd>=0L && issetr((uint32_t)acttcp->fd)) {
             if (acttcp->service=='W') Www(acttcp);
             else {
                for (;;) {
@@ -6667,7 +6667,7 @@ extern int main(int argc, char **argv)
                      }
                      if (((res>=-1L && aprspos_posvalid(poscall.pos))
                 && aprsstr_StrCmp(poscall.call, 10ul, acttcp->user.call,
-                10ul)) && X2C_INL((long)(unsigned char)poscall.typ0,128,
+                10ul)) && X2C_INL((int32_t)(uint8_t)poscall.typ0,128,
                 _cnst1)) {
                         acttcp->user.pos = poscall.pos;
                         if (heardtimetcp>0UL) {
@@ -6697,7 +6697,7 @@ extern int main(int argc, char **argv)
                while (acttmp->next!=acttcp) acttmp = acttmp->next;
                acttmp->next = acttcp->next;
             }
-            osic_free((X2C_ADDRESS *) &acttcp, sizeof(struct TCPSOCK));
+            osic_free((char * *) &acttcp, sizeof(struct TCPSOCK));
             acttcp = tcpsocks;
          }
          else acttcp = acttcp->next;

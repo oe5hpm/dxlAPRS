@@ -80,8 +80,8 @@ struct JUNKBUF;
 
 struct JUNKBUF {
    IOBUF buf;
-   long len;
-   long time0;
+   int32_t len;
+   int32_t time0;
 };
 
 struct DEFLATBUF;
@@ -89,13 +89,13 @@ struct DEFLATBUF;
 
 struct DEFLATBUF {
    char outbuf[20001]; /* 20000 */
-   long outlen;
+   int32_t outlen;
    char xoutbuf[4096];
    char pppbuf[4096];
-   long ppplen;
-   long xoutlen;
-   long inp0;
-   long xinp;
+   int32_t ppplen;
+   int32_t xoutlen;
+   int32_t inp0;
+   int32_t xinp;
    char pppstate;
    struct deflate_CONTEXT deflatcontext;
    struct deflate_XCONTEXT expandcontext;
@@ -112,18 +112,18 @@ struct TASK {
    pTASK next;
    IOBUF inbuf;
    IOBUF outbuf;
-   long inlen;
-   long outlen;
+   int32_t inlen;
+   int32_t outlen;
    struct JUNKBUF junkbuf;
    struct l2_GETADRESS l2addr;
    l2_pLINK link0;
-   unsigned short events;
-   long infd;
-   long outfd;
-   unsigned char state;
-   unsigned long crlfmode;
-   unsigned long detectdone;
-   unsigned long inignor;
+   uint16_t events;
+   int32_t infd;
+   int32_t outfd;
+   uint8_t state;
+   uint32_t crlfmode;
+   uint32_t detectdone;
+   uint32_t inignor;
    struct DEFLATBUF * pcdeflat;
 };
 
@@ -143,23 +143,23 @@ static char autodet;
 
 static pTASK tasks;
 
-static unsigned long sockc;
+static uint32_t sockc;
 
-static unsigned long convlfcr;
+static uint32_t convlfcr;
 
-static unsigned long convtopipe;
+static uint32_t convtopipe;
 
-static unsigned long montyp;
+static uint32_t montyp;
 
-static unsigned long recontime;
+static uint32_t recontime;
 
-static unsigned long minrecontime;
+static uint32_t minrecontime;
 
-static unsigned long maxrecontime;
+static uint32_t maxrecontime;
 
-static long timesum;
+static int32_t timesum;
 
-static long pppdiscard;
+static int32_t pppdiscard;
 
 static char mycall[113];
 
@@ -175,9 +175,9 @@ struct _0;
 
 
 struct _0 {
-   long port;
-   long parmnum;
-   long val;
+   int32_t port;
+   int32_t parmnum;
+   int32_t val;
 };
 
 static struct _0 numpar[256];
@@ -185,7 +185,7 @@ static struct _0 numpar[256];
 static l2_pLINK pmon;
 
 
-static void Error(char text[], unsigned long text_len)
+static void Error(char text[], uint32_t text_len)
 {
    X2C_PCOPY((void **)&text,text_len);
    osi_Werr(text, text_len);
@@ -199,10 +199,10 @@ static void Error(char text[], unsigned long text_len)
 #define l2cat_SEP " "
 
 
-static void NextArgs(char s[], unsigned long s_len)
+static void NextArgs(char s[], uint32_t s_len)
 {
    char h[65536];
-   long l;
+   int32_t l;
    s[0UL] = 0;
    l = 0L;
    do {
@@ -214,10 +214,10 @@ static void NextArgs(char s[], unsigned long s_len)
             return;
          }
       }
-      l = (long)aprsstr_Length(h, 65536ul);
+      l = (int32_t)aprsstr_Length(h, 65536ul);
       if (l==0L) return;
       if (h[l-1L]=='\"') {
-         aprsstr_Delstr(h, 65536ul, (unsigned long)(l-1L), 1UL);
+         aprsstr_Delstr(h, 65536ul, (uint32_t)(l-1L), 1UL);
          l = 0L;
       }
       aprsstr_Append(s, s_len, " ", 2ul);
@@ -226,23 +226,27 @@ static void NextArgs(char s[], unsigned long s_len)
 } /* end NextArgs() */
 
 
-static void Whex(char hd[], unsigned long hd_len, const char bu[],
-                unsigned long bu_len, long len)
+static void Whex(char hd[], uint32_t hd_len, const char bu[],
+                uint32_t bu_len, int32_t len)
 {
-   long i0;
-   unsigned long b;
-   long tmp;
+   int32_t i0;
+   uint32_t b;
+   int32_t tmp;
    char tmp0;
    X2C_PCOPY((void **)&hd,hd_len);
    osi_Werr(hd, hd_len);
    tmp = len-1L;
    i0 = 0L;
    if (i0<=tmp) for (;; i0++) {
-      b = (unsigned long)(unsigned char)bu[i0]/16UL;
-      if (b>=10UL) osi_Werr((char *)(tmp0 = (char)(b+55UL),&tmp0), 1u/1u);
+      b = (uint32_t)(uint8_t)bu[i0]/16UL;
+      if (b>=10UL) {
+         osi_Werr((char *)(tmp0 = (char)(b+55UL),&tmp0), 1u/1u);
+      }
       else osi_Werr((char *)(tmp0 = (char)(b+48UL),&tmp0), 1u/1u);
-      b = (unsigned long)(unsigned char)bu[i0]&15UL;
-      if (b>=10UL) osi_Werr((char *)(tmp0 = (char)(b+55UL),&tmp0), 1u/1u);
+      b = (uint32_t)(uint8_t)bu[i0]&15UL;
+      if (b>=10UL) {
+         osi_Werr((char *)(tmp0 = (char)(b+55UL),&tmp0), 1u/1u);
+      }
       else osi_Werr((char *)(tmp0 = (char)(b+48UL),&tmp0), 1u/1u);
       if ((i0&31L)==31L) osi_Werr("\012", 2ul);
       else osi_Werr(" ", 2ul);
@@ -253,11 +257,11 @@ static void Whex(char hd[], unsigned long hd_len, const char bu[],
 } /* end Whex() */
 
 
-static void CallStr(char c[], unsigned long c_len, unsigned long n,
-                char withssid, char s[], unsigned long s_len)
+static void CallStr(char c[], uint32_t c_len, uint32_t n,
+                char withssid, char s[], uint32_t s_len)
 {
-   unsigned long p;
-   unsigned long i0;
+   uint32_t p;
+   uint32_t i0;
    X2C_PCOPY((void **)&c,c_len);
    n = n*7UL;
    p = 0UL;
@@ -269,7 +273,7 @@ static void CallStr(char c[], unsigned long c_len, unsigned long n,
    } /* end for */
    s[p] = 0;
    if (withssid) {
-      i0 = (unsigned long)(unsigned char)c[n+6UL]&15UL;
+      i0 = (uint32_t)(uint8_t)c[n+6UL]&15UL;
       if (i0) {
          s[p] = '-';
          ++p;
@@ -296,15 +300,15 @@ static void WerrCall(pTASK task)
 } /* end WerrCall() */
 
 
-static void GetCall(const char from[], unsigned long from_len,
-                unsigned long * p, l2_pSTRING to)
+static void GetCall(const char from[], uint32_t from_len,
+                uint32_t * p, l2_pSTRING to)
 {
-   unsigned short len;
-   unsigned short i0;
-   len = (unsigned short)aprsstr_Length(from, from_len);
-   while (*p<(unsigned long)len && (unsigned char)from[*p]<=' ') ++*p;
+   uint16_t len;
+   uint16_t i0;
+   len = (uint16_t)aprsstr_Length(from, from_len);
+   while (*p<(uint32_t)len && (uint8_t)from[*p]<=' ') ++*p;
    for (i0 = 0U; i0<=5U; i0++) {
-      if ((*p<(unsigned long)len && from[*p]!='-') && from[*p]!=' ') {
+      if ((*p<(uint32_t)len && from[*p]!='-') && from[*p]!=' ') {
          to[i0] = X2C_CAP(from[*p]);
          ++*p;
       }
@@ -313,38 +317,38 @@ static void GetCall(const char from[], unsigned long from_len,
    i0 = 0U;
    if (from[*p]=='-') {
       ++*p;
-      if ((unsigned char)from[*p]>='0' && (unsigned char)from[*p]<='9') {
-         i0 = (unsigned short)((unsigned long)(unsigned char)from[*p]-48UL);
+      if ((uint8_t)from[*p]>='0' && (uint8_t)from[*p]<='9') {
+         i0 = (uint16_t)((uint32_t)(uint8_t)from[*p]-48UL);
          ++*p;
       }
-      if ((unsigned char)from[*p]>='0' && (unsigned char)from[*p]<='9') {
-         i0 = (unsigned short)(((unsigned long)(i0*10U)+(unsigned long)
-                (unsigned char)from[*p])-48UL);
+      if ((uint8_t)from[*p]>='0' && (uint8_t)from[*p]<='9') {
+         i0 = (uint16_t)(((uint32_t)(i0*10U)+(uint32_t)(uint8_t)
+                from[*p])-48UL);
          ++*p;
       }
    }
    to[6U] = (char)((i0&15U)+48U);
 } /* end GetCall() */
 
-static void Event(X2C_ADDRESS *, l2_pLINK, unsigned char);
+static void Event(char * *, l2_pLINK, uint8_t);
 
 
-static void Event(X2C_ADDRESS * atask, l2_pLINK link0, unsigned char event)
+static void Event(char * * atask, l2_pLINK link0, uint8_t event)
 {
    struct l2_GETADRESS gadr;
    pTASK ntask;
    struct l2_CONNECT connect;
    pTASK ptask;
    if (event==l2_eCONNREQ) {
-      osic_alloc((X2C_ADDRESS *) &ntask, sizeof(struct TASK));
+      osic_alloc((char * *) &ntask, sizeof(struct TASK));
       if (ntask==0) return;
-      memset((X2C_ADDRESS)ntask,(char)0,sizeof(struct TASK));
+      memset((char *)ntask,(char)0,sizeof(struct TASK));
       ntask->infd = -1L;
       ntask->outfd = -1L;
       ntask->link0 = link0;
       ntask->state = 1U;
       ntask->crlfmode = convlfcr;
-      ntask->detectdone = (unsigned long)autodet;
+      ntask->detectdone = (uint32_t)autodet;
       l2_GetAdress0(link0, &ntask->l2addr);
       memset((char *) &connect,(char)0,sizeof(struct l2_CONNECT));
       connect.port = ntask->l2addr.port;
@@ -352,7 +356,7 @@ static void Event(X2C_ADDRESS * atask, l2_pLINK link0, unsigned char event)
       connect.cpid = 240U;
       connect.l2adr = (l2_pSTRING)ntask->l2addr.adress;
       connect.typ = l2_cCONNAK;
-      ntask->link0 = l2_Connect0((X2C_ADDRESS)ntask, &connect);
+      ntask->link0 = l2_Connect0((char *)ntask, &connect);
       ntask->next = tasks;
       tasks = ntask;
       if (verb) {
@@ -383,11 +387,11 @@ static void Event(X2C_ADDRESS * atask, l2_pLINK link0, unsigned char event)
 } /* end Event() */
 
 
-static void GetWord(char s[], unsigned long s_len, char w[],
-                unsigned long w_len)
+static void GetWord(char s[], uint32_t s_len, char w[],
+                uint32_t w_len)
 {
-   unsigned long j;
-   unsigned long i0;
+   uint32_t j;
+   uint32_t i0;
    char e;
    i0 = 0UL;
    j = 0UL;
@@ -414,16 +418,16 @@ static void GetWord(char s[], unsigned long s_len, char w[],
 } /* end GetWord() */
 
 
-static void taskparms(char s[], unsigned long s_len, char argbuf[],
-                unsigned long argbuf_len, X2C_ADDRESS argwords[],
-                unsigned long argwords_len)
+static void taskparms(char s[], uint32_t s_len, char argbuf[],
+                uint32_t argbuf_len, char * argwords[],
+                uint32_t argwords_len)
 {
-   unsigned long i0;
-   unsigned long argc;
-   unsigned long argp;
+   uint32_t i0;
+   uint32_t argc;
+   uint32_t argp;
    char h[1024];
    X2C_PCOPY((void **)&s,s_len);
-   memset((char *)argwords,(char)0,argwords_len*sizeof(X2C_ADDRESS));
+   memset((char *)argwords,(char)0,argwords_len*sizeof(char *));
    argc = 0UL;
    argp = 0UL;
    for (;;) {
@@ -456,10 +460,10 @@ static void taskparms(char s[], unsigned long s_len, char argbuf[],
 #define l2cat_M "%"
 
 
-static void Makros(char c[], unsigned long c_len, char a[],
-                unsigned long a_len, char s[], unsigned long s_len)
+static void Makros(char c[], uint32_t c_len, char a[],
+                uint32_t a_len, char s[], uint32_t s_len)
 {
-   unsigned long i0;
+   uint32_t i0;
    char h[16];
    char m;
    X2C_PCOPY((void **)&c,c_len);
@@ -497,12 +501,12 @@ static void Makros(char c[], unsigned long c_len, char a[],
 } /* end Makros() */
 
 
-static void Login(long * fd, char l2adr[], unsigned long l2adr_len)
+static void Login(int32_t * fd, char l2adr[], uint32_t l2adr_len)
 {
    struct Execlogin_tEXEC cmdvec;
    char argstr[8192];
    char argbuf[8192];
-   X2C_ADDRESS argwords[65];
+   char * argwords[65];
    X2C_PCOPY((void **)&l2adr,l2adr_len);
    /*args:="/bin/login login"; */
    Makros(cmdline, 4096ul, l2adr, l2adr_len, argstr, 8192ul);
@@ -543,12 +547,12 @@ static void Login(long * fd, char l2adr[], unsigned long l2adr_len)
 } /* end Login() */
 
 
-static char GetNum(const char h[], unsigned long h_len, char eot,
-                unsigned long * p, unsigned long * n)
+static char GetNum(const char h[], uint32_t h_len, char eot,
+                 uint32_t * p, uint32_t * n)
 {
    *n = 0UL;
-   while ((unsigned char)h[*p]>='0' && (unsigned char)h[*p]<='9') {
-      *n = ( *n*10UL+(unsigned long)(unsigned char)h[*p])-48UL;
+   while ((uint8_t)h[*p]>='0' && (uint8_t)h[*p]<='9') {
+      *n = ( *n*10UL+(uint32_t)(uint8_t)h[*p])-48UL;
       ++*p;
    }
    return h[*p]==eot;
@@ -560,11 +564,11 @@ static void Parms(void)
    char err;
    char hh[1024];
    char h[1024];
-   unsigned long l2parcnt;
-   unsigned long p;
-   unsigned long k;
-   unsigned long j;
-   unsigned long i0;
+   uint32_t l2parcnt;
+   uint32_t p;
+   uint32_t k;
+   uint32_t j;
+   uint32_t i0;
    struct frameio_UDPSOCK * anonym;
    err = 0;
    sockc = 0UL;
@@ -637,7 +641,7 @@ static void Parms(void)
                err = 1;
                osi_WrStrLn("-D <0..1500>", 13ul);
             }
-            pppdiscard = (long)j;
+            pppdiscard = (int32_t)j;
          }
          else if (h[1U]=='r') {
             /* -j <num> convert cr lf to pipe */
@@ -716,9 +720,9 @@ static void Parms(void)
             }
             if (!err) {
                if (l2parcnt>255UL) Error("parameter table full", 21ul);
-               numpar[l2parcnt].port = (long)p;
-               numpar[l2parcnt].parmnum = (long)j;
-               numpar[l2parcnt].val = (long)k;
+               numpar[l2parcnt].port = (int32_t)p;
+               numpar[l2parcnt].parmnum = (int32_t)j;
+               numpar[l2parcnt].val = (int32_t)k;
                ++l2parcnt;
             }
          }
@@ -735,7 +739,8 @@ static void Parms(void)
                if (anonym->fd<0L || bindudp(anonym->fd,
                 anonym->fromport)<0L) {
                   strncpy(h,"-U cannot open udp port ",1024u);
-                  aprsstr_IntToStr((long)anonym->fromport, 0UL, hh, 1024ul);
+                  aprsstr_IntToStr((int32_t)anonym->fromport, 0UL, hh,
+                1024ul);
                   aprsstr_Append(h, 1024ul, hh, 1024ul);
                   Error(h, 1024ul);
                }
@@ -848,9 +853,9 @@ static void Connectto(void)
 {
    pTASK ntask;
    struct l2_CONNECT connect;
-   osic_alloc((X2C_ADDRESS *) &ntask, sizeof(struct TASK));
+   osic_alloc((char * *) &ntask, sizeof(struct TASK));
    if (ntask==0) return;
-   memset((X2C_ADDRESS)ntask,(char)0,sizeof(struct TASK));
+   memset((char *)ntask,(char)0,sizeof(struct TASK));
    ntask->infd = -1L;
    ntask->outfd = -1L;
    /*  GetAdress(link, ADR(ntask^.l2addr)); */
@@ -861,17 +866,17 @@ static void Connectto(void)
    connect.l2adr = (l2_pSTRING)connectto0;
    connect.l3adr = 0;
    connect.typ = l2_cNORMAL;
-   ntask->link0 = l2_Connect0((X2C_ADDRESS)ntask, &connect);
+   ntask->link0 = l2_Connect0((char *)ntask, &connect);
    ntask->state = 5U;
    ntask->next = tasks;
    ntask->crlfmode = convlfcr;
    tasks = ntask;
 } /* end Connectto() */
 
-static void killdisc(long);
+static void killdisc(int32_t);
 
 
-static void killdisc(long signum)
+static void killdisc(int32_t signum)
 {
    if (verb) osi_Werr("sigint\012", 8ul);
    /*  IF (tasks<>NIL) & (tasks^.state=2) THEN WrStrLn("disc!");
@@ -885,7 +890,7 @@ static void killdisc(long signum)
 static void initcompress(pTASK pt0)
 {
    /*IntToStr(SIZE(pt^.pcdeflat^), 1, deb); Werr(deb);Werr("=mem"); */
-   osic_alloc((X2C_ADDRESS *) &pt0->pcdeflat, sizeof(struct DEFLATBUF));
+   osic_alloc((char * *) &pt0->pcdeflat, sizeof(struct DEFLATBUF));
    if (pt0->pcdeflat==0) Error("alloc compres memory", 21ul);
    deflate_Initdeflate(&pt0->pcdeflat->deflatcontext);
    deflate_Initexpand(&pt0->pcdeflat->expandcontext);
@@ -900,7 +905,7 @@ static void initcompress(pTASK pt0)
 } /* end initcompress() */
 
 
-static char pppcrc(char b[], unsigned long b_len, long len)
+static char pppcrc(char b[], uint32_t b_len, int32_t len)
 {
    char crc2;
    char crc1;
@@ -919,9 +924,9 @@ static char pppcrc(char b[], unsigned long b_len, long len)
 
 static void compress(pTASK pt0)
 {
-   long i0;
+   int32_t i0;
    struct TASK * anonym;
-   long tmp;
+   int32_t tmp;
    { /* with */
       struct TASK * anonym = pt0;
       if (anonym->pcdeflat->pppframing) {
@@ -988,8 +993,8 @@ static void compress(pTASK pt0)
             }
             else if (anonym->pcdeflat->pppstate=='\002') {
                /* stuffed byte */
-               anonym->pcdeflat->pppbuf[anonym->pcdeflat->ppplen] = (char)
-                ((unsigned char)(unsigned char)
+               anonym->pcdeflat->pppbuf[anonym->pcdeflat->ppplen]
+                = (char)((uint8_t)(uint8_t)
                 anonym->inbuf[anonym->pcdeflat->inp0]^0x20U);
                if (anonym->pcdeflat->ppplen<4095L) {
                   ++anonym->pcdeflat->ppplen;
@@ -1026,11 +1031,11 @@ static void expand(pTASK pt0)
 {
    char done;
    char pb[3001];
-   long j;
-   long i0;
+   int32_t j;
+   int32_t i0;
    struct TASK * anonym;
    /*ShowHex(outbuf, outlen); */
-   long tmp;
+   int32_t tmp;
    { /* with */
       struct TASK * anonym = pt0;
       for (;;) {
@@ -1064,12 +1069,12 @@ static void expand(pTASK pt0)
                i0 = 0L;
                if (i0<=tmp) for (;; i0++) {
                   if ((anonym->pcdeflat->xoutbuf[i0]
-                =='~' || anonym->pcdeflat->xoutbuf[i0]=='}')
-                || (unsigned char)anonym->pcdeflat->xoutbuf[i0]<' ') {
+                =='~' || anonym->pcdeflat->xoutbuf[i0]=='}') || (uint8_t)
+                anonym->pcdeflat->xoutbuf[i0]<' ') {
                      /* stuff */
                      pb[j] = '}';
                      if (j<3000L) ++j;
-                     pb[j] = (char)((unsigned char)(unsigned char)
+                     pb[j] = (char)((uint8_t)(uint8_t)
                 anonym->pcdeflat->xoutbuf[i0]^0x20U);
                   }
                   else pb[j] = anonym->pcdeflat->xoutbuf[i0];
@@ -1102,13 +1107,14 @@ static void expand(pTASK pt0)
 } /* end expand() */
 
 
-static void wrpipe(long fd, char b[], unsigned long b_len, long * blen)
+static void wrpipe(int32_t fd, char b[], uint32_t b_len,
+                int32_t * blen)
 {
-   long i0;
-   long len;
-   long tmp;
+   int32_t i0;
+   int32_t len;
+   int32_t tmp;
    /*WrStrLn("");WrStr("P:"); ShowHex(b, blen); WrStrLn(""); */
-   len = write(fd, (char *)b, (unsigned long)*blen);
+   len = write(fd, (char *)b, (uint32_t)*blen);
    if (len>*blen) len = *blen;
    if (len>0L) {
       *blen -= len;
@@ -1126,18 +1132,19 @@ static void wrpipe(long fd, char b[], unsigned long b_len, long * blen)
 static void sendjunk(l2_pLINK link0, struct JUNKBUF * junk)
 {
    if (junk->len==256L || junk->len>=0L && junk->time0<=0L) {
-      if (l2_SendStr(link0, (unsigned short)junk->len,
-                (l2_pSTRING)junk->buf)) junk->len = 0L;
+      if (l2_SendStr(link0, (uint16_t)junk->len, (l2_pSTRING)junk->buf)) {
+         junk->len = 0L;
+      }
    }
 } /* end sendjunk() */
 
 
-static void wrl2(l2_pLINK link0, char b[], unsigned long b_len, long * blen,
-                struct JUNKBUF * junk)
+static void wrl2(l2_pLINK link0, char b[], uint32_t b_len,
+                int32_t * blen, struct JUNKBUF * junk)
 {
-   long j;
-   long i0;
-   long len;
+   int32_t j;
+   int32_t i0;
+   int32_t len;
    /*WrStr("L:"); WrInt(blen, 1); WrStr(" "); */
    if (*blen==0L) return;
    if (junk->len<256L) {
@@ -1161,7 +1168,7 @@ static void wrl2(l2_pLINK link0, char b[], unsigned long b_len, long * blen,
 } /* end wrl2() */
 
 
-static void wrclose(pTASK pt0, long fd, char c[], unsigned long c_len)
+static void wrclose(pTASK pt0, int32_t fd, char c[], uint32_t c_len)
 {
    char s[100];
    X2C_PCOPY((void **)&c,c_len);
@@ -1174,11 +1181,11 @@ static void wrclose(pTASK pt0, long fd, char c[], unsigned long c_len)
 } /* end wrclose() */
 
 
-static void crlf(char b[], unsigned long b_len, long * len,
-                unsigned long mode)
+static void crlf(char b[], uint32_t b_len, int32_t * len,
+                uint32_t mode)
 {
-   long j;
-   long i0;
+   int32_t j;
+   int32_t i0;
    if (mode>0UL) {
       /* convert LF to pr */
       i0 = 0L;
@@ -1201,12 +1208,12 @@ static void crlf(char b[], unsigned long b_len, long * len,
 } /* end crlf() */
 
 
-static void crlfp(char b[], unsigned long b_len, long * len,
-                unsigned long mode)
+static void crlfp(char b[], uint32_t b_len, int32_t * len,
+                uint32_t mode)
 /*1 del lf, 2 del lf cr>lf, 3 cr>lf, 4 del cr, 5 del cr lf>cr, 6 lf>cr */
 {
-   long j;
-   long i0;
+   int32_t j;
+   int32_t i0;
    if (mode>0UL) {
       /* convert LF to pr */
       i0 = 0L;
@@ -1264,8 +1271,8 @@ static void crlfp(char b[], unsigned long b_len, long * len,
 static void detect(pTASK pt0)
 /* startet task first sends command on stdout */
 {
-   long j;
-   long i0;
+   int32_t j;
+   int32_t i0;
    struct TASK * anonym;
    { /* with */
       struct TASK * anonym = pt0;
@@ -1320,7 +1327,7 @@ static void detect(pTASK pt0)
 } /* end detect() */
 
 
-static void AppendTime(char s[], unsigned long s_len)
+static void AppendTime(char s[], uint32_t s_len)
 {
    char h[31];
    aprsstr_TimeToStr(osic_time()%86400UL, h, 31ul);
@@ -1328,23 +1335,23 @@ static void AppendTime(char s[], unsigned long s_len)
    aprsstr_Append(s, s_len, h, 31ul);
 } /* end AppendTime() */
 
-static unsigned short l2cat_UA = 0x63U;
+static uint16_t l2cat_UA = 0x63U;
 
-static unsigned short l2cat_DM = 0xFU;
+static uint16_t l2cat_DM = 0xFU;
 
-static unsigned short l2cat_SABM = 0x2FU;
+static uint16_t l2cat_SABM = 0x2FU;
 
-static unsigned short l2cat_DISC = 0x43U;
+static uint16_t l2cat_DISC = 0x43U;
 
-static unsigned short l2cat_FRMR = 0x87U;
+static uint16_t l2cat_FRMR = 0x87U;
 
-static unsigned short l2cat_UI = 0x3U;
+static uint16_t l2cat_UI = 0x3U;
 
-static unsigned short l2cat_RR = 0x1U;
+static uint16_t l2cat_RR = 0x1U;
 
-static unsigned short l2cat_REJ = 0x9U;
+static uint16_t l2cat_REJ = 0x9U;
 
-static unsigned short l2cat_RNR = 0x5U;
+static uint16_t l2cat_RNR = 0x5U;
 
 #define l2cat_LF0 "\015"
 
@@ -1353,33 +1360,33 @@ static unsigned short l2cat_RNR = 0x5U;
 static char l2cat_oneline = 0;
 
 
-static void Nibble(long * p, char rxbuf[2048], unsigned short n)
+static void Nibble(int32_t * p, char rxbuf[2048], uint16_t n)
 {
-   rxbuf[*p] = (char)((unsigned long)(48U+n)+7UL*(unsigned long)(n>9U));
+   rxbuf[*p] = (char)((uint32_t)(48U+n)+7UL*(uint32_t)(n>9U));
    ++*p;
 } /* end Nibble() */
 
 
-static void WriteHex(char rxbuf[2048], long * p, char c)
+static void WriteHex(char rxbuf[2048], int32_t * p, char c)
 {
-   Nibble(p, rxbuf, (unsigned short)((unsigned long)(unsigned char)c/16UL));
-   Nibble(p, rxbuf, (unsigned short)((unsigned long)(unsigned char)c&15UL));
+   Nibble(p, rxbuf, (uint16_t)((uint32_t)(uint8_t)c/16UL));
+   Nibble(p, rxbuf, (uint16_t)((uint32_t)(uint8_t)c&15UL));
 } /* end WriteHex() */
 
 
-static void ShowCall(long * p, char rxbuf[2048],
-                struct l2_GETADRESS * getadress, unsigned short cp,
+static void ShowCall(int32_t * p, char rxbuf[2048],
+                struct l2_GETADRESS * getadress, uint16_t cp,
                 char hbit)
 {
-   unsigned long i0;
+   uint32_t i0;
    char c;
-   unsigned long tmp;
-   tmp = (unsigned long)(cp+5U);
-   i0 = (unsigned long)cp;
+   uint32_t tmp;
+   tmp = (uint32_t)(cp+5U);
+   i0 = (uint32_t)cp;
    if (i0<=tmp) for (;; i0++) {
       c = getadress->adress[i0];
       if (c!=' ') {
-         if ((unsigned char)c>' ') {
+         if ((uint8_t)c>' ') {
             rxbuf[*p] = c;
             ++*p;
          }
@@ -1387,7 +1394,7 @@ static void ShowCall(long * p, char rxbuf[2048],
       }
       if (i0==tmp) break;
    } /* end for */
-   i0 = (unsigned long)(unsigned char)getadress->adress[cp+6U]&15UL;
+   i0 = (uint32_t)(uint8_t)getadress->adress[cp+6U]&15UL;
    if (i0) {
       rxbuf[*p] = '-';
       ++*p;
@@ -1398,7 +1405,7 @@ static void ShowCall(long * p, char rxbuf[2048],
       rxbuf[*p] = (char)(48UL+i0%10UL);
       ++*p;
    }
-   if (hbit && (0x40U & (unsigned short)(unsigned long)(unsigned char)
+   if (hbit && (0x40U & (uint16_t)(uint32_t)(uint8_t)
                 getadress->adress[cp+6U])) {
       rxbuf[*p] = '*';
       ++*p;
@@ -1407,23 +1414,23 @@ static void ShowCall(long * p, char rxbuf[2048],
 
 
 static void MonHead(char rxbuf[2048], struct l2_GETADRESS * getadress,
-                l2_pLINK l, long ilen, const char info[],
-                unsigned long info_len)
+                l2_pLINK l, int32_t ilen, const char info[],
+                uint32_t info_len)
 {
-   long p;
-   long i0;
-   unsigned long com;
-   unsigned short cmd;
+   int32_t p;
+   int32_t i0;
+   uint32_t com;
+   uint16_t cmd;
    char cr;
    char pf;
    char PF0[4];
    char s[21];
    /*    udp2:ARRAY[0..99] OF CHAR; */
-   long tmp;
+   int32_t tmp;
    l2_GetAdress0(l, getadress);
-   aprsstr_IntToStr((long)getadress->port, 1UL, rxbuf, 2048ul);
+   aprsstr_IntToStr((int32_t)getadress->port, 1UL, rxbuf, 2048ul);
    aprsstr_Append(rxbuf, 2048ul, ":fm ", 5ul);
-   p = (long)aprsstr_Length(rxbuf, 2048ul);
+   p = (int32_t)aprsstr_Length(rxbuf, 2048ul);
    ShowCall(&p, rxbuf, getadress, 7U, 0);
    rxbuf[p] = ' ';
    ++p;
@@ -1448,7 +1455,7 @@ static void MonHead(char rxbuf[2048], struct l2_GETADRESS * getadress,
          rxbuf[p] = ' ';
          ++p;
       }
-      ShowCall(&p, rxbuf, getadress, (unsigned short)i0, 1);
+      ShowCall(&p, rxbuf, getadress, (uint16_t)i0, 1);
       rxbuf[p] = ' ';
       ++p;
       i0 += 7L;
@@ -1461,29 +1468,29 @@ static void MonHead(char rxbuf[2048], struct l2_GETADRESS * getadress,
    ++p;
    rxbuf[p] = ' ';
    ++p;
-   cmd = (unsigned short)getadress->my;
-   com = (unsigned long)((0x40U & (unsigned short)(unsigned long)
-                (unsigned char)getadress->adress[6U])!=0)+2UL*(unsigned long)
-                ((0x40U & (unsigned short)(unsigned long)(unsigned char)
+   cmd = (uint16_t)getadress->my;
+   com = (uint32_t)((0x40U & (uint16_t)(uint32_t)(uint8_t)
+                getadress->adress[6U])!=0)+2UL*(uint32_t)
+                ((0x40U & (uint16_t)(uint32_t)(uint8_t)
                 getadress->adress[13U])!=0);
    pf = (0x10U & cmd)!=0;
    cmd = cmd&~0x10U;
    if ((cmd&0xFU)==0x1U) {
       strncpy(PF0,"RR  ",4u);
-      PF0[2U] = (char)(48U+(unsigned short)cmd/32U);
+      PF0[2U] = (char)(48U+(uint16_t)cmd/32U);
    }
    else if ((cmd&0xFU)==0x5U) {
       strncpy(PF0,"RNR ",4u);
-      PF0[3U] = (char)(48U+(unsigned short)cmd/32U);
+      PF0[3U] = (char)(48U+(uint16_t)cmd/32U);
    }
    else if ((cmd&0xFU)==0x9U) {
       strncpy(PF0,"REJ ",4u);
-      PF0[3U] = (char)(48U+(unsigned short)cmd/32U);
+      PF0[3U] = (char)(48U+(uint16_t)cmd/32U);
    }
    else if ((cmd&0x1U)==0U) {
       strncpy(PF0,"I   ",4u);
-      PF0[2U] = (char)(48U+((unsigned short)cmd/2U&7U));
-      PF0[1U] = (char)(48U+(unsigned short)cmd/32U);
+      PF0[2U] = (char)(48U+((uint16_t)cmd/2U&7U));
+      PF0[1U] = (char)(48U+(uint16_t)cmd/32U);
    }
    else if (cmd==0x3U) strncpy(PF0,"UI  ",4u);
    else if (cmd==0xFU) strncpy(PF0,"DM  ",4u);
@@ -1507,7 +1514,7 @@ static void MonHead(char rxbuf[2048], struct l2_GETADRESS * getadress,
       ++p;
    }
    else {
-      rxbuf[p] = PF0[(com&1UL)+2UL*(unsigned long)pf];
+      rxbuf[p] = PF0[(com&1UL)+2UL*(uint32_t)pf];
       ++p;
    }
    if (getadress->cpid<=255U) {
@@ -1523,8 +1530,8 @@ static void MonHead(char rxbuf[2048], struct l2_GETADRESS * getadress,
       ++p;
       WriteHex(rxbuf, &p, (char)getadress->cpid);
    }
-   if ((0x10U & (unsigned short)(unsigned long)(unsigned char)
-                getadress->adress[13U])==0) {
+   if ((0x10U & (uint16_t)(uint32_t)(uint8_t)getadress->adress[13U])
+                ==0) {
       rxbuf[p] = ' ';
       ++p;
       rxbuf[p] = 'd';
@@ -1557,13 +1564,13 @@ static void MonHead(char rxbuf[2048], struct l2_GETADRESS * getadress,
    }
    AppendTime(rxbuf, 2048ul);
    if (ilen>0L && montyp>1UL) {
-      p = (long)aprsstr_Length(rxbuf, 2048ul);
+      p = (int32_t)aprsstr_Length(rxbuf, 2048ul);
       rxbuf[p] = '\012';
       ++p;
       tmp = ilen-1L;
       i0 = 0L;
       if (i0<=tmp) for (;; i0++) {
-         if ((unsigned char)info[i0]>=' ' && (unsigned char)info[i0]<'\177') {
+         if ((uint8_t)info[i0]>=' ' && (uint8_t)info[i0]<'\177') {
             rxbuf[p] = info[i0];
          }
          else rxbuf[p] = '.';
@@ -1581,11 +1588,11 @@ static void Monitor(void)
 {
    char rxbuf[2048];
    struct l2_GETADRESS getadress;
-   long ilen;
+   int32_t ilen;
    char ibuf[300];
    if (pmon==0) pmon = l2_GetMon();
    if (pmon) {
-      ilen = (long)l2_GetStr(pmon, 256U, (l2_pSTRING)ibuf);
+      ilen = (int32_t)l2_GetStr(pmon, 256U, (l2_pSTRING)ibuf);
       MonHead(rxbuf, &getadress, pmon, ilen, ibuf, 300ul);
       l2_Disconnect(&pmon, 1); /*release buffer*/
    }
@@ -1597,7 +1604,7 @@ static void sleeprecon(void)
    char s[21];
    if (!terminate) {
       if (verb) {
-         aprsstr_IntToStr((long)(recontime/1000UL), 1UL, s, 21ul);
+         aprsstr_IntToStr((int32_t)(recontime/1000UL), 1UL, s, 21ul);
          osi_Werr(" delay ", 8ul);
          osi_Werr(s, 21ul);
          osi_Werr("ms before next connect\012", 24ul);
@@ -1608,13 +1615,13 @@ static void sleeprecon(void)
    else recontime = recontime*2UL;
 } /* end sleeprecon() */
 
-static unsigned long i;
+static uint32_t i;
 
-static unsigned long ts;
+static uint32_t ts;
 
-static unsigned long timeout;
+static uint32_t timeout;
 
-static long ret;
+static int32_t ret;
 
 static l2_CALLBACKPROC eventproc;
 
@@ -1622,17 +1629,17 @@ static pTASK pt;
 
 static pTASK pth;
 
-static long pp0;
+static int32_t pp0;
 
-static long pp1;
+static int32_t pp1;
 
-static unsigned short sockset;
+static uint16_t sockset;
 
 
 X2C_STACK_LIMIT(100000l)
 extern int main(int argc, char **argv)
 {
-   unsigned long tmp;
+   uint32_t tmp;
    X2C_BEGIN(&argc,argv,1,4000000l,8000000l);
    if (sizeof(IOBUF)!=256) X2C_ASSERT(0);
    deflate_BEGIN();
@@ -1684,7 +1691,7 @@ extern int main(int argc, char **argv)
    l2_Parm(&parms);
    for (i = 0UL; i<=255UL; i++) {
       parms.test = 0;
-      parms.port = (unsigned short)i;
+      parms.port = (uint16_t)i;
       parms.parm = 10U;
       parms.val = montyp;
       l2_Parm(&parms);
@@ -1699,14 +1706,14 @@ extern int main(int argc, char **argv)
          }
          do {
             parms.test = 0;
-            parms.port = (unsigned short)pp0;
-            parms.parm = (unsigned short)numpar[i].parmnum;
-            parms.val = (unsigned long)numpar[i].val;
+            parms.port = (uint16_t)pp0;
+            parms.parm = (uint16_t)numpar[i].parmnum;
+            parms.val = (uint32_t)numpar[i].val;
             if (verb2) {
                osi_WrStr("set port ", 10ul);
-               osic_WrINT32((unsigned long)parms.port, 1UL);
+               osic_WrINT32((uint32_t)parms.port, 1UL);
                osi_WrStr(" parmnum ", 10ul);
-               osic_WrINT32((unsigned long)parms.parm, 1UL);
+               osic_WrINT32((uint32_t)parms.parm, 1UL);
                osi_WrStr(" to value ", 11ul);
                osic_WrINT32(parms.val, 1UL);
                osi_WrStrLn("", 1ul);
@@ -1782,7 +1789,7 @@ extern int main(int argc, char **argv)
                if (cmdline[0U]==0 && connectto0[0U]==0) X2C_ABORT();
             }
             if ((pt->infd>=0L && pt->inlen==0L) && pt->inignor==0UL) {
-               fdsetr((unsigned long)pt->infd);
+               fdsetr((uint32_t)pt->infd);
             }
             if (pt->inignor>0UL) --pt->inignor;
          }
@@ -1825,10 +1832,10 @@ extern int main(int argc, char **argv)
                   pth->next = pt->next;
                }
                if (pt->pcdeflat) {
-                  osic_free((X2C_ADDRESS *) &pt->pcdeflat,
+                  osic_free((char * *) &pt->pcdeflat,
                 sizeof(struct DEFLATBUF));
                }
-               osic_free((X2C_ADDRESS *) &pt, sizeof(struct TASK));
+               osic_free((char * *) &pt, sizeof(struct TASK));
                pt = 0;
                if (tasks==0) {
                   if (!keepconnected) terminate = 1;
@@ -1842,7 +1849,7 @@ extern int main(int argc, char **argv)
       ts = 0UL;
       timeout = 10000UL;
       ret = selectrwt(&ts, &timeout);
-      timesum += (long)(10000UL-timeout);
+      timesum += (int32_t)(10000UL-timeout);
       if (timesum>=10000L) {
          /*    IF timeout<=0 THEN */
          l2_Layer2();
@@ -1853,7 +1860,7 @@ extern int main(int argc, char **argv)
       while (pt) {
          if (pt->state==2U && pt->infd>=0L) {
             /*WrInt(pt^.state, 1); WrStrLn(" st"); */
-            if (issetr((unsigned long)pt->infd)) {
+            if (issetr((uint32_t)pt->infd)) {
                if (pt->inlen==0L) {
                   if (!terminate) {
                      /* read blocks after a SIGINT - why ever */
@@ -1931,7 +1938,7 @@ extern int main(int argc, char **argv)
                      }
                   }
                   if (pt->outlen==0L) {
-                     pt->outlen = (long)l2_GetStr(pt->link0, 256U,
+                     pt->outlen = (int32_t)l2_GetStr(pt->link0, 256U,
                 (l2_pSTRING)pt->outbuf);
                      if (pt->outlen<=0L) break;
                   }

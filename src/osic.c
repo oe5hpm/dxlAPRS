@@ -57,7 +57,7 @@ void osic_WerrLn(void)
 	fflush(stderr);
 }
 
-void osic_WrStr(char s[], unsigned long s_len)
+void osic_WrStr(char s[], uint32_t s_len)
 {
 	size_t len;
 
@@ -65,7 +65,7 @@ void osic_WrStr(char s[], unsigned long s_len)
 	fprintf(stdout, "%.*s", len, s);
 }
 
-void osic_WrStrLn(char s[], unsigned long s_len)
+void osic_WrStrLn(char s[], uint32_t s_len)
 {
 	size_t len;
 
@@ -74,7 +74,7 @@ void osic_WrStrLn(char s[], unsigned long s_len)
 	osic_WrLn();
 }
 
-void osic_WerrStr(char s[], unsigned long s_len)
+void osic_WerrStr(char s[], uint32_t s_len)
 {
 	size_t len;
 
@@ -82,7 +82,7 @@ void osic_WerrStr(char s[], unsigned long s_len)
 	fprintf(stderr, "%.*s", len, s);
 }
 
-void osic_WerrStrLn(char s[], unsigned long s_len)
+void osic_WerrStrLn(char s[], uint32_t s_len)
 {
 	size_t len;
 
@@ -91,22 +91,22 @@ void osic_WerrStrLn(char s[], unsigned long s_len)
 	osic_WrLn();
 }
 
-void osic_WrUINT32(uint32_t x, unsigned long witdh)
+void osic_WrUINT32(uint32_t x, uint32_t witdh)
 {
 	fprintf(stdout, "%*d", (int)witdh, x);
 }
 
-void osic_WrINT32(int32_t x, unsigned long witdh)
+void osic_WrINT32(int32_t x, uint32_t witdh)
 {
 	fprintf(stdout, "%*d", (int)witdh, x);
 }
 
-void osic_WrFixed(float x, long place, unsigned long witdh)
+void osic_WrFixed(float x, int32_t place, uint32_t witdh)
 {
 	fprintf(stdout, "%*.*f", (int)witdh, (int)place, x);
 }
 
-void osic_WrHex(unsigned long n, unsigned long f)
+void osic_WrHex(uint32_t n, uint32_t f)
 {
 	fprintf(stdout, "%*X", (int)f, (uint32_t)n);
 	fflush(stdout);
@@ -143,82 +143,82 @@ int osic_unlockpts(int fd)
 	return unlockpt(fd);
 }
 
-long osic_OpenAppendLong(char fn[], unsigned long fn_len)
+int32_t osic_OpenAppendLong(char fn[], uint32_t fn_len)
 {
 	if (FNLENCHECK && strnlen(fn, fn_len) > fn_len)
 		return -1;
 	return open(fn, O_WRONLY | O_APPEND | O_LARGEFILE);
 }
 
-long osic_OpenAppend(char fn[], unsigned long fn_len)
+int32_t osic_OpenAppend(char fn[], uint32_t fn_len)
 {
 	if (FNLENCHECK && strnlen(fn, fn_len) > fn_len)
 		return -1;
 	return open(fn, O_WRONLY | O_APPEND);
 }
 
-long osic_OpenWrite(char fn[], unsigned long fn_len)
+int32_t osic_OpenWrite(char fn[], uint32_t fn_len)
 {
 	if (FNLENCHECK && strnlen(fn, fn_len) > fn_len)
 		return -1;
 	return creat(fn, 0664);
 }
 
-long osic_OpenReadLong(char fn[], unsigned long fn_len)
+int32_t osic_OpenReadLong(char fn[], uint32_t fn_len)
 {
 	if (FNLENCHECK && strnlen(fn, fn_len) > fn_len)
 		return -1;
 	return open(fn, O_RDONLY | O_LARGEFILE);
 }
 
-long osic_OpenRead(char fn[], unsigned long fn_len)
+int32_t osic_OpenRead(char fn[], uint32_t fn_len)
 {
 	if (FNLENCHECK && strnlen(fn, fn_len) > fn_len)
 		return -1;
 	return open(fn, O_RDONLY);
 }
 
-long osic_OpenRW(char fn[], unsigned long fn_len)
+int32_t osic_OpenRW(char fn[], uint32_t fn_len)
 {
 	if (FNLENCHECK && strnlen(fn, fn_len) > fn_len)
 		return -1;
 	return open(fn, O_RDWR);
 }
 
-long osic_OpenNONBLOCK(char fn[], unsigned long fn_len)
+int32_t osic_OpenNONBLOCK(char fn[], uint32_t fn_len)
 {
 	if (FNLENCHECK && strnlen(fn, fn_len) > fn_len)
 		return -1;
 	return open(fn, O_RDWR | O_NONBLOCK);
 }
 
-char osic_FdValid(long fd)
+char osic_FdValid(int32_t fd)
 {
 	return (fd >= 0);
 }
 
-void osic_Close(long fd)
+void osic_Close(int32_t fd)
 {
 	close(fd);
 }
 
-void osic_CloseSock(long fd)
+void osic_CloseSock(int32_t fd)
 {
 	close(fd);
 }
 
-long osic_RdBin(long fd,
-		char buf[], unsigned long buf_len,
-		unsigned long size)
+int32_t osic_RdBin(int32_t fd,
+		char buf[], uint32_t buf_len,
+		uint32_t size)
 {
 	if (size > (buf_len-1) + 1)
 		size = (buf_len-1)+1;
 	return read(fd, (char *)buf, size);
 }
 
-void osic_WrBin(long fd, char buf[],
-		unsigned long buf_len,
-		unsigned long size)
+void osic_WrBin(int32_t fd, char buf[],
+		uint32_t buf_len,
+		uint32_t size)
 {
 	int rc;
 	if (size > (buf_len-1)+1)
@@ -227,8 +227,8 @@ void osic_WrBin(long fd, char buf[],
 	(void)rc;
 }
 
-void osic_Rename(char fname[], unsigned long fname_len,
-		 char newname[], unsigned long newname_len)
+void osic_Rename(char fname[], uint32_t fname_len,
+		 char newname[], uint32_t newname_len)
 {
 	if (FNLENCHECK && strnlen(fname, fname_len) >= fname_len)
 		return;
@@ -245,24 +245,24 @@ int osic_Size(int fd)
 	return st.st_size;
 }
 
-void osic_Seek(long fd, unsigned long pos)
+void osic_Seek(int32_t fd, uint32_t pos)
 {
-	lseek(fd, (long)pos, SEEK_SET);
+	lseek(fd, (int32_t)pos, SEEK_SET);
 }
 
-void osic_Seekcur(long fd, long rel)
+void osic_Seekcur(int32_t fd, int32_t rel)
 {
 #ifndef MACOS
-	if (lseek64(fd, rel, (unsigned long)SEEK_CUR) < 0)
+	if (lseek64(fd, rel, (uint32_t)SEEK_CUR) < 0)
 		lseek(fd, 0, SEEK_SET);
 #else
 	/* MacOS has no lseek64 */
-	if (lseek(fd, rel, (unsigned long)SEEK_CUR) < 0)
+	if (lseek(fd, rel, (uint32_t)SEEK_CUR) < 0)
 		lseek(fd, 0, SEEK_SET);
 #endif
 }
 
-void osic_Remove(char fname[], unsigned long fname_len, char *done)
+void osic_Remove(char fname[], uint32_t fname_len, char *done)
 {
 	int rc;
 
@@ -273,7 +273,7 @@ void osic_Remove(char fname[], unsigned long fname_len, char *done)
 		*done = 0;
 }
 
-char osic_Exists(char fname[], unsigned long fname_len)
+char osic_Exists(char fname[], uint32_t fname_len)
 {
 	if (access(fname, F_OK) != -1)
 		return 1;
@@ -285,7 +285,7 @@ int osic_symblink(char *existing, char *newname)
 	return symlink(existing, newname);
 }
 
-void osic_NextArg(char s[], unsigned long s_len)
+void osic_NextArg(char s[], uint32_t s_len)
 {
 	if (argc_delivered >= osic_argc-1) {
 		s[0] = 0;
@@ -295,7 +295,7 @@ void osic_NextArg(char s[], unsigned long s_len)
 	argc_delivered++;
 }
 
-void osic_Fill(char *buf, unsigned long len, char byte)
+void osic_Fill(char *buf, uint32_t len, char byte)
 {
 	memset(buf, byte, len);
 }
@@ -306,7 +306,7 @@ double osic_Random(void)
 }
 
 void X2C_BEGIN(int *argc, char *argv[],
-	       int gc_auto, long gc_threshold, long heap_limit)
+	       int gc_auto, int32_t gc_threshold, int32_t heap_limit)
 {
 	if (osic_argc != 0)
 		return;
@@ -325,13 +325,13 @@ void X2C_PCOPY(void **ppcpy, size_t size)
 	*ppcpy = pnew;
 }
 
-long X2C_TRUNCI(double x, long min0, long max0)
+int32_t X2C_TRUNCI(double x, int32_t min0, int32_t max0)
 {
-	long i;
+	int32_t i;
 
 	if (x < (double)min0 || x > (double)max0)
 		assert(0);
-	i = (long)x;
+	i = (int32_t)x;
 	if (x > 0.0) {
 		if ((double)i > x)
 			--i;
@@ -341,16 +341,16 @@ long X2C_TRUNCI(double x, long min0, long max0)
 	return i;
 }
 
-unsigned long X2C_TRUNCC(double x, unsigned long min0, unsigned long max0)
+uint32_t X2C_TRUNCC(double x, uint32_t min0, uint32_t max0)
 {
-	unsigned long i;
+	uint32_t i;
 
 	if (x < (double)min0)
-		i = (unsigned long)min0;
+		i = (uint32_t)min0;
 	if (x > (double)max0)
-		i = (unsigned long)max0;
+		i = (uint32_t)max0;
 
-	i = (unsigned long)x;
+	i = (uint32_t)x;
 	if ((double)i > x)
 		--i;
 	return i;
@@ -411,7 +411,7 @@ float osic_floor(float x)
 	return floorf(x);
 }
 
-void osic_alloc(X2C_ADDRESS *p, unsigned long size)
+void osic_alloc(X2C_ADDRESS *p, uint32_t size)
 {
 	void *pmem;
 
@@ -421,65 +421,65 @@ void osic_alloc(X2C_ADDRESS *p, unsigned long size)
 	*p = pmem;
 }
 
-void osic_free(X2C_ADDRESS *a, unsigned long size)
+void osic_free(X2C_ADDRESS *a, uint32_t size)
 {
 	assert(*a);
 	free(*a);
 }
 
-unsigned long osic_time(void)
+uint32_t osic_time(void)
 {
 	return time(NULL);
 }
 
-unsigned long X2C_LSH(unsigned long a, long length, long n)
+uint32_t X2C_LSH(uint32_t a, int32_t length, int32_t n)
 {
-	unsigned long m;
+	uint32_t m;
 
 	m = 0;
 	m = (length == 32) ? 0xFFFFFFFFl : (1 << length) - 1;
 	if (n > 0) {
-		if (n >= (long)length)
+		if (n >= (int32_t)length)
 			return 0;
 		return (a << n) & m;
 	}
 
-	if (n <= (long)-length)
+	if (n <= (int32_t)-length)
 		return 0;
 	return (a >> -n) & m;
 }
 
-char X2C_IN(unsigned long i, unsigned long bits, unsigned long set)
+char X2C_IN(uint32_t i, uint32_t bits, uint32_t set)
 {
 	if (i < bits)
 		return (((1 << (int)i) & set) != 0);
 	return 0;
 }
 
-char X2C_INL(unsigned long i, unsigned long bits, unsigned long *set)
+char X2C_INL(uint32_t i, uint32_t bits, uint32_t *set)
 {
 	if (i < bits)
 		return (set[(int)i / X2C_LSET_SIZE] & (1 << ((int)i % X2C_LSET_SIZE))) != 0;
 	return 0;
 }
 
-void X2C_INCL(unsigned long *set, unsigned long i, unsigned long bits)
+void X2C_INCL(uint32_t *set, uint32_t i, uint32_t bits)
 {
 	if (i >= bits)
 		assert(0);
 	set[(int)i / X2C_LSET_SIZE] |= 1L << ((int)i % X2C_LSET_SIZE);
 }
 
-void X2C_EXCL(unsigned long *set, unsigned long i, unsigned long bits)
+void X2C_EXCL(uint32_t *set, uint32_t i, uint32_t bits)
 {
 	if (i >= bits)
 		assert(0);
 	set[(int)i / X2C_LSET_SIZE] &= ~(1L << ((int)i % X2C_LSET_SIZE));
 }
 
-unsigned long *X2C_COMPLEMENT(unsigned long *res, unsigned long *a, unsigned long length)
+uint32_t *X2C_COMPLEMENT(uint32_t *res, uint32_t *a, uint32_t length)
 {
-	unsigned long *pres = res;
+	uint32_t *pres = res;
 	while (length--)
 		*res++ = ~(*a++);
 
@@ -498,8 +498,8 @@ size_t xrMM_DynarrDescSize(size_t i)
 
 void X2C_InitDesc(struct xrMM_Dynarr *d, size_t *size, size_t lens[], size_t dims)
 {
-	unsigned long i;
-	unsigned long tmp;
+	uint32_t i;
+	uint32_t tmp;
 
 	d->n[(dims - 1) * 2] = lens[0];
 	tmp = dims - 1;

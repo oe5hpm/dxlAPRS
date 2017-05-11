@@ -29,9 +29,9 @@ struct sdr_TAP;
 
 
 struct sdr_TAP {
-   long uc1;
-   long uc2;
-   long il;
+   int32_t uc1;
+   int32_t uc2;
+   int32_t il;
    float ucr1;
    float ucr2;
    float ilr;
@@ -52,29 +52,29 @@ struct sdr_RX;
 
 
 struct sdr_RX {
-   unsigned long df;
-   unsigned long dffrac;
-   unsigned long width;
-   unsigned long agc;
-   unsigned long idx;
-   long maxafc;
+   uint32_t df;
+   uint32_t dffrac;
+   uint32_t width;
+   uint32_t agc;
+   uint32_t idx;
+   int32_t maxafc;
    char squelch;
    char modulation;
    sdr_pAUDIOSAMPLE samples;
-   unsigned long phase;
-   unsigned long bfo;
-   unsigned long fine;
+   uint32_t phase;
+   uint32_t bfo;
+   uint32_t fine;
    struct sdr_TAP tapre;
    struct sdr_TAP tapim;
-   long median;
-   long afckhz;
+   int32_t median;
+   int32_t afckhz;
    float w1;
    float lastlev;
    float rssi;
    float sqsum;
    float a1;
-   unsigned long fracphase;
-   unsigned long bfophase;
+   uint32_t fracphase;
+   uint32_t bfophase;
    struct sdr_SSBTAP ssbre;
    struct sdr_SSBTAP ssbim;
    float ssbfgq;
@@ -84,12 +84,12 @@ struct sdr_RX {
 
 typedef struct sdr_RX * sdr_pRX;
 
-extern long sdr_getsdr(unsigned long, sdr_pRX [], unsigned long);
+extern int32_t sdr_getsdr(uint32_t, sdr_pRX [], uint32_t);
 
-extern void sdr_setparm(unsigned long, unsigned long);
+extern void sdr_setparm(uint32_t, uint32_t);
 
-extern char sdr_startsdr(char [], unsigned long, char [], unsigned long,
-                unsigned long, unsigned long, char);
+extern char sdr_startsdr(char [], uint32_t, char [],
+                uint32_t, uint32_t, uint32_t, char);
 
 
 extern void sdr_BEGIN(void);

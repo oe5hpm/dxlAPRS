@@ -38,11 +38,11 @@
 #define aprstext_PI 3.1415926535898
 
 
-extern void aprstext_strcp(char from[], unsigned long from_len,
-                unsigned long p, unsigned long l, char to[],
-                unsigned long to_len)
+extern void aprstext_strcp(char from[], uint32_t from_len,
+                uint32_t p, uint32_t l, char to[],
+                uint32_t to_len)
 {
-   unsigned long i;
+   uint32_t i;
    i = 0UL;
    while (l>0UL && i<=to_len-1) {
       to[i] = from[p];
@@ -56,11 +56,11 @@ extern void aprstext_strcp(char from[], unsigned long from_len,
 #define aprstext_DAY 86400
 
 
-extern void aprstext_DateLocToStr(unsigned long time0, char s[],
-                unsigned long s_len)
+extern void aprstext_DateLocToStr(uint32_t time0, char s[],
+                uint32_t s_len)
 /* append (+localtime) to time */
 {
-   unsigned long lo;
+   uint32_t lo;
    char h[10];
    lo = useri_localtime();
    if (time0+86400UL<aprsdecode_realtime) {
@@ -68,7 +68,7 @@ extern void aprstext_DateLocToStr(unsigned long time0, char s[],
    }
    else aprsstr_TimeToStr((time0+lo)%86400UL, s, s_len);
    if (lo) {
-      aprsstr_IntToStr((long)lo/3600L, 0UL, h, 10ul);
+      aprsstr_IntToStr((int32_t)lo/3600L, 0UL, h, 10ul);
       aprsstr_Append(s, s_len, "(", 2ul);
       aprsstr_Append(s, s_len, h, 10ul);
       aprsstr_Append(s, s_len, ")", 2ul);
@@ -83,14 +83,14 @@ static char IsBulletin(const struct aprsdecode_DAT dat)
 } /* end IsBulletin() */
 
 
-extern void aprstext_logfndate(unsigned long time0, char fn[],
-                unsigned long fn_len)
+extern void aprstext_logfndate(uint32_t time0, char fn[],
+                uint32_t fn_len)
 /* replace %d by date */
 {
-   long p;
+   int32_t p;
    char s[16];
    p = aprsstr_InStr(fn, fn_len, "%d", 3ul);
-   if (p>=0L && p+2L==(long)aprsstr_Length(fn, fn_len)) {
+   if (p>=0L && p+2L==(int32_t)aprsstr_Length(fn, fn_len)) {
       aprsstr_DateToStr(time0, s, 16ul);
       fn[p] = s[0U];
       ++p;
@@ -125,19 +125,19 @@ extern float aprstext_CtoF(float tempc)
 } /* end CtoF() */
 
 
-extern char aprstext_isacall(char s[], unsigned long s_len)
+extern char aprstext_isacall(char s[], uint32_t s_len)
 {
-   unsigned long p;
-   unsigned long lit;
-   unsigned long num0;
+   uint32_t p;
+   uint32_t lit;
+   uint32_t num0;
    char c1;
    p = 0UL;
    num0 = 0UL;
    lit = 0UL;
    for (;;) {
       c1 = s[p];
-      if ((unsigned char)c1>='0' && (unsigned char)c1<='9') ++num0;
-      else if ((unsigned char)c1>='A' && (unsigned char)c1<='Z') ++lit;
+      if ((uint8_t)c1>='0' && (uint8_t)c1<='9') ++num0;
+      else if ((uint8_t)c1>='A' && (uint8_t)c1<='Z') ++lit;
       else break;
       ++p;
       if (p>5UL) break;
@@ -147,10 +147,10 @@ extern char aprstext_isacall(char s[], unsigned long s_len)
       ++p;
       if (s[p]=='1') {
          ++p;
-         if ((unsigned char)s[p]>='0' && (unsigned char)s[p]<='5') ++p;
+         if ((uint8_t)s[p]>='0' && (uint8_t)s[p]<='5') ++p;
       }
       else {
-         if ((unsigned char)s[p]<'1' || (unsigned char)s[p]>'9') return 0;
+         if ((uint8_t)s[p]<'1' || (uint8_t)s[p]>'9') return 0;
          ++p;
       }
    }
@@ -158,7 +158,7 @@ extern char aprstext_isacall(char s[], unsigned long s_len)
 } /* end isacall() */
 
 
-extern void aprstext_sievert2str(float v, char s[], unsigned long s_len)
+extern void aprstext_sievert2str(float v, char s[], uint32_t s_len)
 {
    if (v<1.E-6f) {
       aprsstr_FixToStr(v*1.E+9f+0.5f, 0UL, s, s_len);
@@ -176,13 +176,13 @@ extern void aprstext_sievert2str(float v, char s[], unsigned long s_len)
 } /* end sievert2str() */
 
 
-static void Errtxt(char s[], unsigned long s_len, aprsdecode_pFRAMEHIST pf,
+static void Errtxt(char s[], uint32_t s_len, aprsdecode_pFRAMEHIST pf,
                 aprsdecode_pFRAMEHIST frame)
 {
    char hh[100];
    char h[100];
-   unsigned long l;
-   unsigned char e;
+   uint32_t l;
+   uint8_t e;
    if (frame) {
       e = frame->nodraw;
       if ((frame->vardat && frame->vardat->lastref)
@@ -196,8 +196,8 @@ static void Errtxt(char s[], unsigned long s_len, aprsdecode_pFRAMEHIST pf,
       if ((0x8U & e)) {
          aprsstr_Append(h, 100ul, "DUPE,", 6ul);
          if (pf) {
-            aprsstr_IntToStr((long)aprsdecode_finddup(pf, frame), 0UL, hh,
-                100ul);
+            aprsstr_IntToStr((int32_t)aprsdecode_finddup(pf, frame), 0UL,
+                hh, 100ul);
             aprsstr_Append(h, 100ul, hh, 100ul);
             aprsstr_Append(h, 100ul, "s,", 3ul);
          }
@@ -214,7 +214,7 @@ static void Errtxt(char s[], unsigned long s_len, aprsdecode_pFRAMEHIST pf,
 } /* end Errtxt() */
 
 
-static char Hex(unsigned long d)
+static char Hex(uint32_t d)
 {
    d = d&15UL;
    if (d>9UL) d += 7UL;
@@ -222,23 +222,23 @@ static char Hex(unsigned long d)
 } /* end Hex() */
 
 
-extern void aprstext_Apphex(char s[], unsigned long s_len, char h[],
-                unsigned long h_len)
+extern void aprstext_Apphex(char s[], uint32_t s_len, char h[],
+                uint32_t h_len)
 {
-   unsigned long j;
-   unsigned long i;
+   uint32_t j;
+   uint32_t i;
    i = 0UL;
    j = aprsstr_Length(s, s_len);
    while ((i<=h_len-1 && h[i]) && j+10UL<s_len-1) {
       if (h[i]!='\015') {
-         if ((unsigned char)h[i]<' ' || (unsigned char)h[i]>='\177') {
+         if ((uint8_t)h[i]<' ' || (uint8_t)h[i]>='\177') {
             s[j] = '\371';
             ++j;
             s[j] = '<';
             ++j;
-            s[j] = Hex((unsigned long)(unsigned char)h[i]/16UL);
+            s[j] = Hex((uint32_t)(uint8_t)h[i]/16UL);
             ++j;
-            s[j] = Hex((unsigned long)(unsigned char)h[i]);
+            s[j] = Hex((uint32_t)(uint8_t)h[i]);
             ++j;
             s[j] = '>';
             ++j;
@@ -255,7 +255,7 @@ extern void aprstext_Apphex(char s[], unsigned long s_len, char h[],
 #define aprstext_TAB "\012 "
 
 
-static void rfdist(aprsdecode_pVARDAT v, char h[], unsigned long h_len)
+static void rfdist(aprsdecode_pVARDAT v, char h[], uint32_t h_len)
 {
    aprsdecode_MONCALL digi;
    aprsdecode_pOPHIST ig;
@@ -264,8 +264,8 @@ static void rfdist(aprsdecode_pVARDAT v, char h[], unsigned long h_len)
    { /* with */
       struct aprsdecode_VARDAT * anonym = v;
       if (anonym->igatelen==0U || !aprspos_posvalid(anonym->pos)) return;
-      aprstext_strcp(anonym->raw, 500ul, (unsigned long)anonym->igatepos,
-                (unsigned long)anonym->igatelen, digi, 9ul);
+      aprstext_strcp(anonym->raw, 500ul, (uint32_t)anonym->igatepos,
+                (uint32_t)anonym->igatelen, digi, 9ul);
       ig = aprsdecode_ophist0;
       while (ig && X2C_STRCMP(ig->call,9u,digi,9u)) ig = ig->next;
       if (ig==0 || !aprspos_posvalid(ig->lastpos)) return;
@@ -280,19 +280,17 @@ static void rfdist(aprsdecode_pVARDAT v, char h[], unsigned long h_len)
 } /* end rfdist() */
 
 
-static void objitem(char s[], unsigned long s_len,
+static void objitem(char s[], uint32_t s_len,
                 struct aprsdecode_DAT * dat)
 {
    if (dat->type==aprsdecode_OBJ || dat->type==aprsdecode_ITEM) {
       aprsstr_Append(s, s_len, "\012 ", 3ul);
       if (dat->objkill=='1') aprsstr_Append(s, s_len, "Killed ", 8ul);
-      if (dat->type==aprsdecode_OBJ && (unsigned char)dat->areasymb.typ>='0')
-                 {
-         if ((unsigned char)dat->areasymb.typ>='5') {
+      if (dat->type==aprsdecode_OBJ && (uint8_t)dat->areasymb.typ>='0') {
+         if ((uint8_t)dat->areasymb.typ>='5') {
             aprsstr_Append(s, s_len, "filled ", 8ul);
          }
-         switch (((unsigned long)(unsigned char)dat->areasymb.typ-48UL)%5UL)
-                {
+         switch (((uint32_t)(uint8_t)dat->areasymb.typ-48UL)%5UL) {
          case 0UL:
             aprsstr_Append(s, s_len, "Circle", 7ul);
             break;
@@ -323,17 +321,17 @@ static void objitem(char s[], unsigned long s_len,
 } /* end objitem() */
 
 
-extern void aprstext_decode(char s[], unsigned long s_len,
+extern void aprstext_decode(char s[], uint32_t s_len,
                 aprsdecode_pFRAMEHIST pf0, aprsdecode_pFRAMEHIST pf,
-                aprsdecode_pVARDAT oldvar, unsigned long odate, char decoded,
-                 struct aprsdecode_DAT * dat)
+                aprsdecode_pVARDAT oldvar, uint32_t odate,
+                char decoded, struct aprsdecode_DAT * dat)
 {
    char h[512];
    char colalt;
    char nl;
-   long ret;
-   long og;
-   unsigned long tn;
+   int32_t ret;
+   int32_t og;
+   uint32_t tn;
    float resol;
    char tmp;
    if (pf->time0>0UL) {
@@ -357,11 +355,11 @@ extern void aprstext_decode(char s[], unsigned long s_len,
          maptool_postoloc(h, 512ul, dat->pos);
          aprsstr_Append(s, s_len, h, 512ul);
          aprsstr_Append(s, s_len, ") ", 3ul);
-         og = (long)X2C_TRUNCI(maptool_getsrtm(dat->pos, 0UL, &resol),
+         og = (int32_t)X2C_TRUNCI(maptool_getsrtm(dat->pos, 0UL, &resol),
                 X2C_min_longint,X2C_max_longint);
       }
       nl = 1;
-      if ((unsigned char)dat->symt>' ' && (unsigned char)dat->sym>' ') {
+      if ((uint8_t)dat->symt>' ' && (uint8_t)dat->sym>' ') {
          aprsstr_Append(s, s_len, "\012 ", 3ul);
          nl = 0;
          aprsstr_Append(s, s_len, "\375", 2ul);
@@ -383,7 +381,7 @@ extern void aprstext_decode(char s[], unsigned long s_len,
          aprsstr_Append(s, s_len, "km/h\376", 6ul);
          if (dat->course>0UL) {
             aprsstr_Append(s, s_len, " dir:", 6ul);
-            aprsstr_IntToStr((long)(dat->course%360UL), 1UL, h, 512ul);
+            aprsstr_IntToStr((int32_t)(dat->course%360UL), 1UL, h, 512ul);
             aprsstr_Append(s, s_len, h, 512ul);
             aprsstr_Append(s, s_len, "deg", 4ul);
          }
@@ -430,7 +428,7 @@ extern void aprstext_decode(char s[], unsigned long s_len,
          }
          else aprsstr_Append(s, s_len, " ", 2ul);
          aprsstr_Append(s, s_len, "since ", 7ul);
-         aprsstr_IntToStr((long)(pf->time0-odate), 1UL, h, 512ul);
+         aprsstr_IntToStr((int32_t)(pf->time0-odate), 1UL, h, 512ul);
          aprsstr_Append(s, s_len, h, 512ul);
          aprsstr_Append(s, s_len, "s", 2ul);
       }
@@ -463,7 +461,7 @@ extern void aprstext_decode(char s[], unsigned long s_len,
                nl = 0;
             }
             aprsstr_Append(s, s_len, " Hum:", 6ul);
-            aprsstr_IntToStr((long)X2C_TRUNCI(dat->wx.hygro+0.5f,
+            aprsstr_IntToStr((int32_t)X2C_TRUNCI(dat->wx.hygro+0.5f,
                 X2C_min_longint,X2C_max_longint), 1UL, h, 512ul);
             aprsstr_Append(s, s_len, h, 512ul);
             aprsstr_Append(s, s_len, "%", 2ul);
@@ -609,18 +607,18 @@ extern void aprstext_decode(char s[], unsigned long s_len,
          for (;;) {
             if (dat->tlmvalues[ret]) {
                if (ret!=6L) {
-                  aprsstr_IntToStr((long)(dat->tlmvalues[ret]-1U), 1UL, h,
-                512ul);
+                  aprsstr_IntToStr((int32_t)(dat->tlmvalues[ret]-1U), 1UL,
+                h, 512ul);
                   aprsstr_Append(s, s_len, h, 512ul);
                }
                else {
-                  tn = (unsigned long)(dat->tlmvalues[ret]-1U);
+                  tn = (uint32_t)(dat->tlmvalues[ret]-1U);
                   if (tn>=256UL) tn = (tn&8191UL)+8192UL;
                   else tn = (tn&255UL)+256UL;
                   while (tn>1UL) {
                      aprsstr_Append(s, s_len,
-                (char *)(tmp = (char)((unsigned long)(char)(tn&1)+48UL),
-                &tmp), 1u/1u);
+                (char *)(tmp = (char)((uint32_t)(char)(tn&1)
+                +48UL),&tmp), 1u/1u);
                      tn = tn/2UL;
                   }
                }
@@ -639,10 +637,10 @@ extern void aprstext_decode(char s[], unsigned long s_len,
 } /* end decode() */
 
 
-extern void aprstext_decodelistline(char s[], unsigned long s_len,
-                char text[], unsigned long text_len, unsigned long time0)
+extern void aprstext_decodelistline(char s[], uint32_t s_len,
+                char text[], uint32_t text_len, uint32_t time0)
 {
-   unsigned long i;
+   uint32_t i;
    struct aprsdecode_DAT dat;
    struct aprsdecode_FRAMEHIST f;
    struct aprsdecode_VARDAT vardat;
@@ -654,9 +652,11 @@ extern void aprstext_decodelistline(char s[], unsigned long s_len,
    i = aprsstr_Length(text, text_len);
    if (i>1UL) {
       text[i-1UL] = 0; /* remove ] */
-      memset((char *) &vardat,(char)0,sizeof(struct aprsdecode_VARDAT));
+      memset((char *) &vardat,(char)0,
+                sizeof(struct aprsdecode_VARDAT));
       aprsstr_Assign(vardat.raw, 500ul, text, text_len);
-      memset((char *) &f,(char)0,sizeof(struct aprsdecode_FRAMEHIST));
+      memset((char *) &f,(char)0,
+                sizeof(struct aprsdecode_FRAMEHIST));
       f.vardat = &vardat;
       f.time0 = time0;
       aprstext_decode(s, s_len, 0, &f, 0, 0UL, 1, &dat);
@@ -665,8 +665,8 @@ extern void aprstext_decodelistline(char s[], unsigned long s_len,
 } /* end decodelistline() */
 
 
-extern void aprstext_setmark1(struct aprspos_POSITION pos, char overwrite,
-                long alt, unsigned long timestamp)
+extern void aprstext_setmark1(struct aprspos_POSITION pos,
+                char overwrite, int32_t alt, uint32_t timestamp)
 {
    if ((overwrite || !aprspos_posvalid(aprsdecode_click.markpos))
                 || aprsdecode_click.marktime) {
@@ -683,9 +683,9 @@ extern void aprstext_setmarkalti(aprsdecode_pFRAMEHIST pf,
                 aprsdecode_pOPHIST op, char overwrite)
 {
    struct aprsdecode_DAT dat;
-   long alt;
+   int32_t alt;
    struct aprspos_POSITION pos;
-   unsigned long t;
+   uint32_t t;
    aprsdecode_posinval(&pos);
    alt = X2C_max_longint;
    t = aprsdecode_realtime;
@@ -694,22 +694,24 @@ extern void aprstext_setmarkalti(aprsdecode_pFRAMEHIST pf,
       pos = dat.pos;
       t = pf->time0;
    }
-   else if (op && op->lastinftyp<100U) alt = (long)op->lasttempalt+22768L;
+   else if (op && op->lastinftyp<100U) {
+      alt = (int32_t)op->lasttempalt+22768L;
+   }
    if (!aprspos_posvalid(pos) && op) pos = op->lastpos;
    aprstext_setmark1(pos, overwrite, alt, t);
 } /* end setmarkalti() */
 
 
-extern void aprstext_optext(unsigned long typ,
-                struct aprsdecode_CLICKOBJECT * obj, char * last, char s[],
-                unsigned long s_len)
+extern void aprstext_optext(uint32_t typ,
+                struct aprsdecode_CLICKOBJECT * obj, char * last,
+                char s[], uint32_t s_len)
 {
    aprsdecode_pOPHIST op;
    aprsdecode_pFRAMEHIST pfe;
    aprsdecode_pFRAMEHIST pf1;
    aprsdecode_pFRAMEHIST pf;
-   unsigned long cn;
-   unsigned long cx;
+   uint32_t cn;
+   uint32_t cx;
    char ss[1000];
    struct aprsdecode_DAT dat;
    /*    islast:BOOLEAN; */
@@ -775,9 +777,9 @@ extern void aprstext_optext(unsigned long typ,
             if (pf1->next==pf) pfe = pf1;
             pf1 = pf1->next;
          }
-         aprsstr_IntToStr((long)cx, 0UL, s, s_len);
+         aprsstr_IntToStr((int32_t)cx, 0UL, s, s_len);
          aprsstr_Append(s, s_len, "/", 2ul);
-         aprsstr_IntToStr((long)cn, 0UL, ss, 1000ul);
+         aprsstr_IntToStr((int32_t)cn, 0UL, ss, 1000ul);
          aprsstr_Append(s, s_len, ss, 1000ul);
          aprsstr_Append(s, s_len, " ", 2ul);
          if (pfe==0) {
@@ -810,7 +812,7 @@ extern void aprstext_listop(char decoded)
    aprsdecode_pOPHIST op;
    aprsdecode_pFRAMEHIST pf;
    aprsdecode_pVARDAT oldv;
-   unsigned long oldt;
+   uint32_t oldt;
    char s[1000];
    struct aprsdecode_DAT dat;
    op = aprsdecode_click.table[aprsdecode_click.selected].opf;
@@ -832,16 +834,17 @@ extern void aprstext_listop(char decoded)
 } /* end listop() */
 
 
-extern void aprstext_listin(char r[], unsigned long r_len, char port,
-                char dir, char decoded, long quali, long txd, long level)
+extern void aprstext_listin(char r[], uint32_t r_len, char port,
+                char dir, char decoded, int32_t quali,
+                int32_t txd, int32_t level)
 {
    char s2[1000];
    char s1[1000];
    char s[1000];
    struct aprsdecode_VARDAT vard;
    struct aprsdecode_FRAMEHIST pf;
-   unsigned long j;
-   unsigned long i;
+   uint32_t j;
+   uint32_t i;
    struct aprsdecode_DAT dat;
    memset((char *) &vard,(char)0,sizeof(struct aprsdecode_VARDAT));
    i = 0UL;
@@ -889,8 +892,8 @@ extern void aprstext_listin(char r[], unsigned long r_len, char port,
 /* 20m */
 
 
-extern void aprstext_listtyps(char typ, char decod, char oneop[],
-                unsigned long oneop_len)
+extern void aprstext_listtyps(char typ, char decod,
+                char oneop[], uint32_t oneop_len)
 {
    aprsdecode_pOPHIST op;
    aprsdecode_pFRAMEHIST pf;
@@ -1046,11 +1049,11 @@ extern void aprstext_listtyps(char typ, char decod, char oneop[],
 #define aprstext_Z 48
 
 
-static void degtostr(float d, char lat, char form, char s[],
-                unsigned long s_len)
+static void degtostr(float d, char lat, char form,
+                char s[], uint32_t s_len)
 {
-   unsigned long i;
-   unsigned long n;
+   uint32_t i;
+   uint32_t n;
    if (s_len-1<11UL) {
       s[0UL] = 0;
       return;
@@ -1065,7 +1068,7 @@ static void degtostr(float d, char lat, char form, char s[],
    }
    else if (lat) s[i] = 'N';
    else s[i+1UL] = 'E';
-   i = (unsigned long)!lat;
+   i = (uint32_t)!lat;
    if (form=='2') {
       /* DDMM.MMNDDMM.MME */
       /*    n:=trunc(d*(6000*180/PI)+0.5); */
@@ -1136,7 +1139,7 @@ static void degtostr(float d, char lat, char form, char s[],
 
 
 extern void aprstext_postostr(struct aprspos_POSITION pos, char form,
-                char s[], unsigned long s_len)
+                char s[], uint32_t s_len)
 {
    char h[32];
    degtostr(pos.lat, 1, form, s, s_len);
@@ -1146,17 +1149,17 @@ extern void aprstext_postostr(struct aprspos_POSITION pos, char form,
 } /* end postostr() */
 
 
-static long myround(float x)
+static int32_t myround(float x)
 {
    if (x>=0.0f) x = x+0.5f;
    else x = x-0.5f;
-   return (long)X2C_TRUNCI(x,X2C_min_longint,X2C_max_longint);
+   return (int32_t)X2C_TRUNCI(x,X2C_min_longint,X2C_max_longint);
 } /* end myround() */
 
 
 extern void aprstext_measure(struct aprspos_POSITION pos0,
-                struct aprspos_POSITION pos1, char s[], unsigned long s_len,
-                char sum)
+                struct aprspos_POSITION pos1, char s[], uint32_t s_len,
+                 char sum)
 {
    char h[32];
    if (aprspos_posvalid(pos0) && aprspos_posvalid(pos1)) {
@@ -1186,10 +1189,10 @@ extern void aprstext_measure(struct aprspos_POSITION pos0,
 } /* end measure() */
 
 
-static unsigned long c(char * err, char ch)
+static uint32_t c(char * err, char ch)
 {
-   unsigned long n;
-   if ((unsigned char)ch>='0') n = (unsigned long)(unsigned char)ch-48UL;
+   uint32_t n;
+   if ((uint8_t)ch>='0') n = (uint32_t)(uint8_t)ch-48UL;
    else {
       n = 0UL;
       *err = 1;
@@ -1199,12 +1202,12 @@ static unsigned long c(char * err, char ch)
 } /* end c() */
 
 
-extern void aprstext_degtopos(char s[], unsigned long s_len,
+extern void aprstext_degtopos(char s[], uint32_t s_len,
                 struct aprspos_POSITION * pos)
 /* DDMM.MMNDDDMM.MME */
 {
    char err;
-   unsigned long d;
+   uint32_t d;
    X2C_PCOPY((void **)&s,s_len);
    err = 0;
    d = c(&err, s[0UL])*60000UL+c(&err, s[1UL])*6000UL+c(&err,
@@ -1221,21 +1224,21 @@ extern void aprstext_degtopos(char s[], unsigned long s_len,
    if (pos->long0>=3.1415926535898f) err = 1;
    if (X2C_CAP(s[17UL])=='W') pos->long0 = -pos->long0;
    else if (X2C_CAP(s[17UL])!='E') err = 1;
-   if (((unsigned char)s[2UL]>='6' || (unsigned char)s[12UL]>='6') || err) {
+   if (((uint8_t)s[2UL]>='6' || (uint8_t)s[12UL]>='6') || err) {
       aprsdecode_posinval(pos);
    }
    X2C_PFREE(s);
 } /* end degtopos() */
 
 
-static char c0(unsigned long * d, unsigned long * i, char s[],
-                unsigned long s_len, unsigned long mul)
+static char c0(uint32_t * d, uint32_t * i, char s[],
+                uint32_t s_len, uint32_t mul)
 {
-   unsigned long n;
+   uint32_t n;
    char ch;
    ch = s[*i];
    if (mul>0UL) {
-      if ((unsigned char)ch>='0') n = (unsigned long)(unsigned char)ch-48UL;
+      if ((uint8_t)ch>='0') n = (uint32_t)(uint8_t)ch-48UL;
       else return 0;
       if (n>9UL) return 0;
       *d += n*mul;
@@ -1246,14 +1249,14 @@ static char c0(unsigned long * d, unsigned long * i, char s[],
 } /* end c() */
 
 
-extern void aprstext_deghtopos(char s[], unsigned long s_len,
+extern void aprstext_deghtopos(char s[], uint32_t s_len,
                 struct aprspos_POSITION * pos)
 /* DDMM.MMMNDDDMM.MMME */
 {
    char e;
    char err;
-   unsigned long i;
-   unsigned long d;
+   uint32_t i;
+   uint32_t d;
    X2C_PCOPY((void **)&s,s_len);
    err = 0;
    d = 0UL;
@@ -1278,16 +1281,16 @@ extern void aprstext_deghtopos(char s[], unsigned long s_len,
    if (pos->long0>=3.1415926535898f) err = 1;
    if (s[i]=='W') pos->long0 = -pos->long0;
    else if (s[i]!='E') err = 1;
-   if (((unsigned char)s[2UL]>='6' || (unsigned char)s[13UL]>='6') || err) {
+   if (((uint8_t)s[2UL]>='6' || (uint8_t)s[13UL]>='6') || err) {
       aprsdecode_posinval(pos);
    }
    X2C_PFREE(s);
 } /* end deghtopos() */
 
 
-static void cleanposstr(char s[], unsigned long s_len)
+static void cleanposstr(char s[], uint32_t s_len)
 {
-   unsigned long i;
+   uint32_t i;
    i = 0UL;
    while (i<=s_len-1 && s[i]) {
       if ((s[i]==',' || s[i]=='/') || s[i]=='\\') s[i] = ' ';
@@ -1296,7 +1299,7 @@ static void cleanposstr(char s[], unsigned long s_len)
 } /* end cleanposstr() */
 
 
-extern void aprstext_degdeztopos(char s[], unsigned long s_len,
+extern void aprstext_degdeztopos(char s[], uint32_t s_len,
                 struct aprspos_POSITION * pos)
 /* lat long in float deg */
 {
@@ -1320,7 +1323,7 @@ extern void aprstext_degdeztopos(char s[], unsigned long s_len,
 } /* end degdeztopos() */
 
 
-extern void aprstext_deganytopos(char s[], unsigned long s_len,
+extern void aprstext_deganytopos(char s[], uint32_t s_len,
                 struct aprspos_POSITION * pos)
 /* lat long any format in float deg */
 {
@@ -1341,67 +1344,69 @@ extern char aprstext_getmypos(struct aprspos_POSITION * pos)
 } /* end getmypos() */
 
 
-static char num(long n)
+static char num(int32_t n)
 {
    return (char)(labs(n)%10L+48L);
 } /* end num() */
 
 
-static unsigned long dao91(unsigned long x)
+static uint32_t dao91(uint32_t x)
 /* 33 + radix91(xx/1.1) of dddmm.mmxx */
 {
    return 33UL+(x*20UL+11UL)/22UL;
 } /* end dao91() */
 
 
-static void daostr(long latd, long longd, char s[], unsigned long s_len)
+static void daostr(int32_t latd, int32_t longd, char s[],
+                uint32_t s_len)
 {
    s[0UL] = '!';
    s[1UL] = 'w';
-   s[2UL] = (char)dao91((unsigned long)latd);
-   s[3UL] = (char)dao91((unsigned long)longd);
+   s[2UL] = (char)dao91((uint32_t)latd);
+   s[3UL] = (char)dao91((uint32_t)longd);
    s[4UL] = '!';
    s[5UL] = 0;
 } /* end daostr() */
 
 
-static void micedest(long lat, long long0, char s[], unsigned long s_len)
+static void micedest(int32_t lat, int32_t long0, char s[],
+                uint32_t s_len)
 {
-   unsigned long nl;
-   unsigned long nb;
-   nl = (unsigned long)(labs(long0)/6000L);
-   nb = (unsigned long)(labs(lat)/6000L);
+   uint32_t nl;
+   uint32_t nb;
+   nl = (uint32_t)(labs(long0)/6000L);
+   nb = (uint32_t)(labs(lat)/6000L);
    s[0UL] = (char)(80UL+nb/10UL);
    s[1UL] = (char)(80UL+nb%10UL);
-   nb = (unsigned long)labs(lat)-nb*6000UL;
+   nb = (uint32_t)labs(lat)-nb*6000UL;
    s[2UL] = (char)(80UL+nb/1000UL);
-   s[3UL] = (char)(48UL+32UL*(unsigned long)(lat>=0L)+(nb/100UL)%10UL);
-   s[4UL] = (char)(48UL+32UL*(unsigned long)(nl<10UL || nl>=100UL)+(nb/10UL)
+   s[3UL] = (char)(48UL+32UL*(uint32_t)(lat>=0L)+(nb/100UL)%10UL);
+   s[4UL] = (char)(48UL+32UL*(uint32_t)(nl<10UL || nl>=100UL)+(nb/10UL)
                 %10UL);
-   s[5UL] = (char)(48UL+32UL*(unsigned long)(long0<0L)+nb%10UL);
+   s[5UL] = (char)(48UL+32UL*(uint32_t)(long0<0L)+nb%10UL);
    s[6UL] = 0;
 } /* end micedest() */
 
 
-static void micedata(long lat, long long0, unsigned long knots,
-                unsigned long dir, long alt, char sym[],
-                unsigned long sym_len, char s[], unsigned long s_len)
+static void micedata(int32_t lat, int32_t long0, uint32_t knots,
+                uint32_t dir, int32_t alt, char sym[],
+                uint32_t sym_len, char s[], uint32_t s_len)
 {
-   unsigned long n;
-   unsigned long nl;
+   uint32_t n;
+   uint32_t nl;
    X2C_PCOPY((void **)&sym,sym_len);
    dir = dir%360UL;
    /*IF dir>0 THEN DEC(dir) END; */
    /*IF dir>359 THEN dir:=359 END; */
    if (knots>799UL) knots = 0UL;
-   nl = (unsigned long)(labs(long0)/6000L);
+   nl = (uint32_t)(labs(long0)/6000L);
    if (nl<10UL) s[0UL] = (char)(nl+118UL);
    else if (nl>=100UL) {
       if (nl<110UL) s[0UL] = (char)(nl+8UL);
       else s[0UL] = (char)(nl-72UL);
    }
    else s[0UL] = (char)(nl+28UL);
-   nl = (unsigned long)labs(long0)-nl*6000UL; /* long min*100 */
+   nl = (uint32_t)labs(long0)-nl*6000UL; /* long min*100 */
    n = nl/100UL;
    if (n<10UL) n += 60UL;
    s[1UL] = (char)(n+28UL);
@@ -1412,7 +1417,7 @@ static void micedata(long lat, long long0, unsigned long knots,
    s[6UL] = sym[1UL];
    s[7UL] = sym[0UL];
    if (alt>-10000L) {
-      n = (unsigned long)(alt+10000L);
+      n = (uint32_t)(alt+10000L);
       s[8UL] = (char)(33UL+(n/8281UL)%91UL);
       s[9UL] = (char)(33UL+(n/91UL)%91UL);
       s[10UL] = (char)(33UL+n%91UL);
@@ -1424,7 +1429,7 @@ static void micedata(long lat, long long0, unsigned long knots,
 } /* end micedata() */
 
 
-static void alt2str(long feet, char s[], unsigned long s_len)
+static void alt2str(int32_t feet, char s[], uint32_t s_len)
 {
    if (feet>-100000L) {
       s[0UL] = '/';
@@ -1446,8 +1451,8 @@ static void alt2str(long feet, char s[], unsigned long s_len)
 } /* end alt2str() */
 
 
-static void speeddir2str(long knots, long dir, char areaobj, char s[],
-                unsigned long s_len)
+static void speeddir2str(int32_t knots, int32_t dir, char areaobj,
+                 char s[], uint32_t s_len)
 {
    if (areaobj || dir>0L && dir<=360L) {
       /*    IF dir=0 THEN dir:=360 END; */
@@ -1470,18 +1475,18 @@ static void speeddir2str(long knots, long dir, char areaobj, char s[],
 
 
 extern void aprstext_compressdata(struct aprspos_POSITION pos,
-                unsigned long knots, unsigned long dir, long feet,
-                char sym[], unsigned long sym_len, char s[],
-                unsigned long s_len)
+                uint32_t knots, uint32_t dir, int32_t feet,
+                char sym[], uint32_t sym_len, char s[],
+                uint32_t s_len)
 {
-   long n;
+   int32_t n;
    char h[201];
    X2C_PCOPY((void **)&sym,sym_len);
    pos.lat = pos.lat*5.7295779513082E+1f;
    pos.long0 = pos.long0*5.7295779513082E+1f;
    s[0UL] = sym[0UL];
    if (pos.lat<90.0f) {
-      n = (long)aprsdecode_trunc((90.0f-pos.lat)*3.80926E+5f);
+      n = (int32_t)aprsdecode_trunc((90.0f-pos.lat)*3.80926E+5f);
    }
    else n = 0L;
    s[1UL] = (char)(33L+n/753571L);
@@ -1489,7 +1494,7 @@ extern void aprstext_compressdata(struct aprspos_POSITION pos,
    s[3UL] = (char)(33L+(n/91L)%91L);
    s[4UL] = (char)(33L+n%91L);
    if (pos.long0>(-180.0f)) {
-      n = (long)aprsdecode_trunc((180.0f+pos.long0)*1.90463E+5f);
+      n = (int32_t)aprsdecode_trunc((180.0f+pos.long0)*1.90463E+5f);
    }
    else n = 0L;
    s[5UL] = (char)(33L+n/753571L);
@@ -1500,12 +1505,12 @@ extern void aprstext_compressdata(struct aprspos_POSITION pos,
    if (knots>0UL) {
       if (dir>=360UL) dir = 0UL;
       s[10UL] = (char)(33UL+dir/4UL);
-      s[11UL] = (char)(33UL+aprsdecode_trunc(osic_ln((float)(knots+1UL))
-                *1.29935872129E+1f));
+      s[11UL] = (char)(33UL+aprsdecode_trunc(osic_ln((float)
+                (knots+1UL))*1.29935872129E+1f));
       s[12UL] = '_';
    }
    else if (feet>0L) {
-      n = (long)aprsdecode_trunc(osic_ln((float)feet)*500.5f+0.5f);
+      n = (int32_t)aprsdecode_trunc(osic_ln((float)feet)*500.5f+0.5f);
       if (n>=8281L) n = 8280L;
       s[10UL] = (char)(33L+n/91L);
       s[11UL] = (char)(33L+n%91L);
@@ -1527,7 +1532,8 @@ extern void aprstext_compressdata(struct aprspos_POSITION pos,
 #define aprstext_Z0 48
 
 
-static void deg2str(long lat, long long0, char s[], unsigned long s_len)
+static void deg2str(int32_t lat, int32_t long0, char s[],
+                uint32_t s_len)
 /* DDMM.MMNDDDMM.MME */
 {
    if (lat<0L) {
@@ -1561,8 +1567,8 @@ static void deg2str(long lat, long long0, char s[], unsigned long s_len)
 
 static void getbeaconpos(struct aprspos_POSITION * pos, char * err)
 {
-   long fd;
-   long len;
+   int32_t fd;
+   int32_t len;
    char s[1001];
    useri_confstr(useri_fRBPOS, s, 1001ul);
    if (s[0U]==':') {
@@ -1602,12 +1608,12 @@ static void getbeaconpos(struct aprspos_POSITION * pos, char * err)
 } /* end getbeaconpos() */
 
 
-extern char aprstext_callwrong(char s[], unsigned long s_len)
+extern char aprstext_callwrong(char s[], uint32_t s_len)
 {
-   unsigned long i;
+   uint32_t i;
    i = 0UL;
    while (i<=s_len-1 && s[i]) {
-      if ((unsigned char)s[i]<=' ' || (unsigned char)s[i]>='\177') return 1;
+      if ((uint8_t)s[i]<=' ' || (uint8_t)s[i]>='\177') return 1;
       ++i;
    }
    return i<3UL || i>9UL;
@@ -1616,8 +1622,8 @@ extern char aprstext_callwrong(char s[], unsigned long s_len)
 #define aprstext_RAD 3.4377467707849E+7
 
 
-extern void aprstext_encbeacon(char s[], unsigned long s_len,
-                unsigned long * len)
+extern void aprstext_encbeacon(char s[], uint32_t s_len,
+                uint32_t * len)
 /* assemble beacon string */
 {
    char h[201];
@@ -1630,16 +1636,16 @@ extern void aprstext_encbeacon(char s[], unsigned long s_len,
    char dao;
    char bkn;
    struct aprspos_POSITION pos;
-   long i;
-   long longd;
-   long latd;
-   long long0;
-   long lat;
-   long alt;
-   long feet;
-   long knots;
-   long dir;
-   unsigned long datastart;
+   int32_t i;
+   int32_t longd;
+   int32_t latd;
+   int32_t long0;
+   int32_t lat;
+   int32_t alt;
+   int32_t feet;
+   int32_t knots;
+   int32_t dir;
+   uint32_t datastart;
    err = 0;
    *len = 16UL; /* ax.25 address + UI + PID */
    useri_confstr(useri_fRBTYP, s, s_len);
@@ -1655,7 +1661,8 @@ extern void aprstext_encbeacon(char s[], unsigned long s_len,
    dao = postyp=='G' || postyp=='M';
    knots = useri_conf2int(useri_fRBSPEED, 0UL, 0L, 32767L, 0L);
    if (!areaobj) {
-      knots = (long)aprsdecode_trunc((float)knots*5.3995680345572E-1f+0.5f);
+      knots = (int32_t)aprsdecode_trunc((float)
+                knots*5.3995680345572E-1f+0.5f);
    }
    dir = useri_conf2int(useri_fRBDIR, 0UL, 0L, 1000L, 1000L);
    /*WrInt(dir, 9); WrStrLn("defdir"); */
@@ -1673,7 +1680,7 @@ extern void aprstext_encbeacon(char s[], unsigned long s_len,
    }
    else dir = 0L;
    alt = useri_conf2int(useri_fRBALT, 0UL, -10000L, 1000000L, -32768L);
-   feet = (long)aprsdecode_trunc((float)fabs(X2C_DIVR((float)alt,
+   feet = (int32_t)aprsdecode_trunc((float)fabs(X2C_DIVR((float)alt,
                 0.3048f)+0.5f));
    if (alt<0L) feet = -feet;
    useri_confstr(useri_fRBPORT, s, s_len); /* port */
@@ -1684,7 +1691,7 @@ extern void aprstext_encbeacon(char s[], unsigned long s_len,
    aprsstr_Append(s, s_len, ":", 2ul);
    if (bkn) {
       useri_confstr(useri_fRBNAME, h, 201ul);
-      if ((unsigned char)h[0U]<=' ') {
+      if ((uint8_t)h[0U]<=' ') {
          useri_say("\012no beacon call?\012", 18ul, 4UL, 'e');
       }
       if (useri_configon(useri_fMUSTBECALL) && !aprstext_isacall(h, 201ul)) {
@@ -1702,18 +1709,19 @@ extern void aprstext_encbeacon(char s[], unsigned long s_len,
    }
    else {
       useri_confstr(useri_fMYCALL, h, 201ul);
-      if ((unsigned char)h[0U]<=' ') {
+      if ((uint8_t)h[0U]<=' ') {
          useri_say("\012object/item needs a Config/Online/My Call\012", 44ul,
                  4UL, 'e');
       }
       aprsstr_Append(s, s_len, h, 201ul);
       getbeaconpos(&pos, &err);
    }
-   lat = (long)aprsdecode_trunc((float)fabs(pos.lat)*3.4377467707849E+7f);
-   long0 = (long)aprsdecode_trunc((float)fabs(pos.long0)*3.4377467707849E+7f)
-                ;
-   latd = (long)((unsigned long)lat%100UL);
-   longd = (long)((unsigned long)long0%100UL);
+   lat = (int32_t)aprsdecode_trunc((float)fabs(pos.lat)
+                *3.4377467707849E+7f);
+   long0 = (int32_t)aprsdecode_trunc((float)fabs(pos.long0)
+                *3.4377467707849E+7f);
+   latd = (int32_t)((uint32_t)lat%100UL);
+   longd = (int32_t)((uint32_t)long0%100UL);
    if (dao) {
       lat -= latd;
       long0 -= longd;
@@ -1721,20 +1729,20 @@ extern void aprstext_encbeacon(char s[], unsigned long s_len,
    lat = lat/100L;
    long0 = long0/100L;
    if (pos.lat<0.0f) lat = -lat;
-   if (pos.long0<0.0f) long0 = -long0;
-   aprsstr_Append(s, s_len, ">", 2ul);
-   if (X2C_CAP(postyp)=='M') {
-      micedest(lat, long0, h, 201ul);
+   if (pos.long0<0.0f) {
+      long0 = -long0;
    }
+   aprsstr_Append(s, s_len, ">", 2ul);
+   if (X2C_CAP(postyp)=='M') micedest(lat, long0, h, 201ul);
    else {
       useri_confstr(useri_fRBDEST, h, 201ul);
       if (h[0U]==0) strncpy(h,"APLM01",201u);
       i = aprsstr_InStr(h, 201ul, "-", 2ul);
-      if (i>0L) aprsstr_Delstr(h, 201ul, (unsigned long)i, 201UL);
+      if (i>0L) aprsstr_Delstr(h, 201ul, (uint32_t)i, 201UL);
    }
    aprsstr_Append(s, s_len, h, 201ul);
    useri_confstr(useri_fRBPATH, h, 201ul);
-   if ((unsigned char)h[0U]>' ') {
+   if ((uint8_t)h[0U]>' ') {
       if (h[0U]!='-') aprsstr_Append(s, s_len, ",", 2ul);
       aprsstr_Append(s, s_len, h, 201ul); /* dest ssid + via path */
       i = 0L;
@@ -1747,7 +1755,7 @@ extern void aprstext_encbeacon(char s[], unsigned long s_len,
    datastart = aprsstr_Length(s, s_len); /* rest of line for byte count */
    if (!bkn) {
       useri_confstr(useri_fRBNAME, h, 201ul);
-      if ((unsigned char)h[0U]<=' ') {
+      if ((uint8_t)h[0U]<=' ') {
          useri_say("\012no object/item name?\012", 23ul, 20UL, 'e');
          err = 1;
       }
@@ -1764,7 +1772,7 @@ extern void aprstext_encbeacon(char s[], unsigned long s_len,
       else {
          aprsstr_Append(s, s_len, ")", 2ul); /* item */
          i = 3L;
-         while ((unsigned char)h[i]>' ') ++i;
+         while ((uint8_t)h[i]>' ') ++i;
          h[i] = 0; /* item size 3..9 */
          aprsstr_Append(s, s_len, h, 201ul);
          if (typ=='J') aprsstr_Append(s, s_len, "_", 2ul);
@@ -1778,8 +1786,8 @@ extern void aprstext_encbeacon(char s[], unsigned long s_len,
    }
    switch ((unsigned)X2C_CAP(postyp)) {
    case 'M':
-      micedata(lat, long0, (unsigned long)knots, (unsigned long)dir, alt,
-                symb, 2ul, h, 201ul);
+      micedata(lat, long0, (uint32_t)knots, (uint32_t)dir, alt, symb,
+                2ul, h, 201ul);
       aprsstr_Append(s, s_len, h, 201ul);
       break;
    case 'C':
@@ -1788,16 +1796,16 @@ extern void aprstext_encbeacon(char s[], unsigned long s_len,
                 20UL, 'e');
          err = 1;
       }
-      if ((unsigned char)symb[0U]>='a' && (unsigned char)symb[0U]<='j') {
+      if ((uint8_t)symb[0U]>='a' && (uint8_t)symb[0U]<='j') {
          useri_say("\012overlay character a..j not in compressed mode\012",
                 48ul, 20UL, 'e');
          err = 1;
       }
-      if ((unsigned char)symb[0U]>='0' && (unsigned char)symb[0U]<='9') {
-         symb[0U] = (char)((unsigned long)(unsigned char)symb[0U]+49UL);
+      if ((uint8_t)symb[0U]>='0' && (uint8_t)symb[0U]<='9') {
+         symb[0U] = (char)((uint32_t)(uint8_t)symb[0U]+49UL);
       }
-      aprstext_compressdata(pos, (unsigned long)knots, (unsigned long)dir,
-                feet, symb, 2ul, h, 201ul);
+      aprstext_compressdata(pos, (uint32_t)knots, (uint32_t)dir, feet,
+                symb, 2ul, h, 201ul);
       aprsstr_Append(s, s_len, h, 201ul);
       break;
    default:;

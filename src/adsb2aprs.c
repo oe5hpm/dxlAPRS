@@ -65,10 +65,10 @@ struct FLY {
    float alt;
    float speed;
    float dir;
-   unsigned long speedtime;
-   unsigned long postime;
-   unsigned long lasttime;
-   unsigned long lastbeacon;
+   uint32_t speedtime;
+   uint32_t postime;
+   uint32_t lasttime;
+   uint32_t lastbeacon;
    char newpos;
 };
 
@@ -82,24 +82,24 @@ static char verb;
 
 static char verb2;
 
-static long fd;
+static int32_t fd;
 
 static pFLY dbase;
 
-static unsigned long btime;
+static uint32_t btime;
 
 static char mycall[10];
 
 static char symbol[2];
 
-static long udpsock;
+static int32_t udpsock;
 
-static unsigned long ipnum;
+static uint32_t ipnum;
 
-static unsigned long toport;
+static uint32_t toport;
 
 
-static void Error(char text[], unsigned long text_len)
+static void Error(char text[], uint32_t text_len)
 {
    X2C_PCOPY((void **)&text,text_len);
    osi_Werr(text, text_len);
@@ -109,43 +109,43 @@ static void Error(char text[], unsigned long text_len)
 } /* end Error() */
 
 
-static char GetNum(const char h[], unsigned long h_len, char eot,
-                unsigned long * p, unsigned long * n)
+static char GetNum(const char h[], uint32_t h_len, char eot,
+                 uint32_t * p, uint32_t * n)
 {
    *n = 0UL;
-   while ((unsigned char)h[*p]>='0' && (unsigned char)h[*p]<='9') {
-      *n = ( *n*10UL+(unsigned long)(unsigned char)h[*p])-48UL;
+   while ((uint8_t)h[*p]>='0' && (uint8_t)h[*p]<='9') {
+      *n = ( *n*10UL+(uint32_t)(uint8_t)h[*p])-48UL;
       ++*p;
    }
    return h[*p]==eot;
 } /* end GetNum() */
 
 
-static unsigned long truncc(double r)
+static uint32_t truncc(double r)
 {
    if (r<=0.0) return 0UL;
    else if (r>=2.147483647E+9) return 2147483647UL;
-   else return (unsigned long)X2C_TRUNCC(r,0UL,X2C_max_longcard);
+   else return (uint32_t)X2C_TRUNCC(r,0UL,X2C_max_longcard);
    return 0;
 } /* end truncc() */
 
 
-static unsigned long truncr(float r)
+static uint32_t truncr(float r)
 {
    if (r<=0.0f) return 0UL;
    else if (r>=2.147483647E+9f) return 2147483647UL;
-   else return (unsigned long)X2C_TRUNCC(r,0UL,X2C_max_longcard);
+   else return (uint32_t)X2C_TRUNCC(r,0UL,X2C_max_longcard);
    return 0;
 } /* end truncr() */
 
 
-static long GetIp(char h[], unsigned long h_len, unsigned long * p,
-                unsigned long * ip0, unsigned long * port0)
+static int32_t GetIp(char h[], uint32_t h_len, uint32_t * p,
+                uint32_t * ip0, uint32_t * port0)
 {
-   unsigned long n;
-   unsigned long i;
+   uint32_t n;
+   uint32_t i;
    char ok0;
-   long GetIp_ret;
+   int32_t GetIp_ret;
    X2C_PCOPY((void **)&h,h_len);
    *p = 0UL;
    h[h_len-1] = 0;
@@ -153,9 +153,9 @@ static long GetIp(char h[], unsigned long h_len, unsigned long * p,
    for (i = 0UL; i<=4UL; i++) {
       n = 0UL;
       ok0 = 0;
-      while ((unsigned char)h[*p]>='0' && (unsigned char)h[*p]<='9') {
+      while ((uint8_t)h[*p]>='0' && (uint8_t)h[*p]<='9') {
          ok0 = 1;
-         n = (n*10UL+(unsigned long)(unsigned char)h[*p])-48UL;
+         n = (n*10UL+(uint32_t)(uint8_t)h[*p])-48UL;
          ++*p;
       }
       if (!ok0) {
@@ -193,8 +193,8 @@ static long GetIp(char h[], unsigned long h_len, unsigned long * p,
 static void Parms(void)
 {
    char s[1001];
-   unsigned long n;
-   unsigned long m;
+   uint32_t n;
+   uint32_t m;
    reconn = 0;
    verb = 0;
    verb2 = 0;
@@ -289,16 +289,17 @@ e udpgate4 or aprsmap as receiver", 86ul);
 } /* end Parms() */
 
 
-static void decodeline(const char line0[], unsigned long line_len, CSV csv0)
+static void decodeline(const char line0[], uint32_t line_len,
+                CSV csv0)
 {
-   unsigned long j;
-   unsigned long w;
-   unsigned long i;
+   uint32_t j;
+   uint32_t w;
+   uint32_t i;
    memset((char *)csv0,(char)0,2100UL);
    i = 0UL;
    j = 0UL;
    w = 0UL;
-   while (i<=line_len-1 && (unsigned char)line0[i]>=' ') {
+   while (i<=line_len-1 && (uint8_t)line0[i]>=' ') {
       if (line0[i]!=',') {
          if (w<=99UL && j<=20UL) {
             csv0[w][j] = line0[i];
@@ -314,37 +315,37 @@ static void decodeline(const char line0[], unsigned long line_len, CSV csv0)
 } /* end decodeline() */
 
 
-static char num(unsigned long n)
+static char num(uint32_t n)
 {
    return (char)(n%10UL+48UL);
 } /* end num() */
 
 
-static unsigned long dao91(double x)
+static uint32_t dao91(double x)
 /* radix91(xx/1.1) of dddmm.mmxx */
 {
    double a;
    a = fabs(x);
-   return ((truncc((a-(double)(float)truncc(a))*6.E+5)%100UL)*20UL+11UL)
-                /22UL;
+   return ((truncc((a-(double)(float)truncc(a))*6.E+5)%100UL)
+                *20UL+11UL)/22UL;
 } /* end dao91() */
 
 
-static void sendaprs(char dao, unsigned long time0, char mycall0[],
-                unsigned long mycall_len, char destcall[],
-                unsigned long destcall_len, char via[],
-                unsigned long via_len, char sym[], unsigned long sym_len,
-                char obj[], unsigned long obj_len, double lat, double long0,
-                double alt, double course, double speed, char comm[],
-                unsigned long comm_len)
+static void sendaprs(char dao, uint32_t time0, char mycall0[],
+                uint32_t mycall_len, char destcall[],
+                uint32_t destcall_len, char via[], uint32_t via_len,
+                char sym[], uint32_t sym_len, char obj[],
+                uint32_t obj_len, double lat, double long0,
+                double alt, double course, double speed,
+                char comm[], uint32_t comm_len)
 {
    char ds[201];
    char h[201];
    char b[201];
    char raw[361];
-   long rp;
-   unsigned long n;
-   unsigned long i;
+   int32_t rp;
+   uint32_t n;
+   uint32_t i;
    float a;
    X2C_PCOPY((void **)&mycall0,mycall_len);
    X2C_PCOPY((void **)&destcall,destcall_len);
@@ -496,8 +497,9 @@ static void aprs(const struct FLY f)
    h[9U] = 0;
    while (aprsstr_Length(h, 31ul)<9UL) aprsstr_Append(h, 31ul, " ", 2ul);
    sendaprs(0, f.postime, mycall, 10ul, "APLFR1", 7ul, "", 1ul, "/^", 3ul, h,
-                 31ul, (double)f.lat, (double)f.long0, (double)f.alt,
-                (double)f.dir, (double)(f.speed*1.852f), "", 1ul);
+                 31ul, (double)f.lat, (double)f.long0,
+                (double)f.alt, (double)f.dir,
+                (double)(f.speed*1.852f), "", 1ul);
 } /* end aprs() */
 
 
@@ -506,8 +508,8 @@ static void store(const CSV csv0)
    pFLY f0;
    pFLY f1;
    pFLY f;
-   unsigned long msg;
-   unsigned long t;
+   uint32_t msg;
+   uint32_t t;
    float oalt;
    float olong;
    float olat;
@@ -526,18 +528,18 @@ static void store(const CSV csv0)
                osi_WrStr("purge ", 7ul);
                osi_WrStrLn(f->hex, 6ul);
             }
-            osic_free((X2C_ADDRESS *) &f, sizeof(struct FLY));
+            osic_free((char * *) &f, sizeof(struct FLY));
          }
          else f0 = f;
          f = f1;
       }
       if (f==0) {
-         osic_alloc((X2C_ADDRESS *) &f, sizeof(struct FLY));
+         osic_alloc((char * *) &f, sizeof(struct FLY));
          if (f==0) {
             osi_WerrLn("Out of Memory", 14ul);
             return;
          }
-         memset((X2C_ADDRESS)f,(char)0,sizeof(struct FLY));
+         memset((char *)f,(char)0,sizeof(struct FLY));
          f->next = dbase;
          dbase = f;
          aprsstr_Assign(f->hex, 6ul, csv0[4U], 21ul);
@@ -590,9 +592,9 @@ static char ibuf[100];
 
 static char line[100];
 
-static unsigned long ip;
+static uint32_t ip;
 
-static unsigned long lp;
+static uint32_t lp;
 
 static CSV csv;
 
@@ -618,7 +620,7 @@ extern int main(int argc, char **argv)
          }
          else {
             for (ip = 0UL; ip<=99UL; ip++) {
-               if ((unsigned char)ibuf[ip]<' ') {
+               if ((uint8_t)ibuf[ip]<' ') {
                   if (lp<99UL) line[lp] = 0;
                   if (verb) osi_WrStrLn(line, 100ul);
                   decodeline(line, 100ul, csv);

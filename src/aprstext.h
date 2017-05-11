@@ -36,47 +36,49 @@
 
 #define aprstext_TEXTINSERTSYMBOL "\375"
 
-extern void aprstext_decode(char [], unsigned long, aprsdecode_pFRAMEHIST,
-                aprsdecode_pFRAMEHIST, aprsdecode_pVARDAT, unsigned long,
+extern void aprstext_decode(char [], uint32_t, aprsdecode_pFRAMEHIST,
+                aprsdecode_pFRAMEHIST, aprsdecode_pVARDAT, uint32_t,
                 char, struct aprsdecode_DAT *);
 
-extern void aprstext_strcp(char [], unsigned long, unsigned long,
-                unsigned long, char [], unsigned long);
+extern void aprstext_strcp(char [], uint32_t, uint32_t, uint32_t,
+                char [], uint32_t);
 
-extern void aprstext_optext(unsigned long, struct aprsdecode_CLICKOBJECT *,
-                char *, char [], unsigned long);
+extern void aprstext_optext(uint32_t, struct aprsdecode_CLICKOBJECT *,
+                char *, char [], uint32_t);
 
 extern void aprstext_measure(struct aprspos_POSITION,
-                struct aprspos_POSITION, char [], unsigned long, char);
+                struct aprspos_POSITION, char [], uint32_t,
+                char);
 
 extern void aprstext_postostr(struct aprspos_POSITION, char, char [],
-                unsigned long);
+                 uint32_t);
 
-extern void aprstext_degtopos(char [], unsigned long,
+extern void aprstext_degtopos(char [], uint32_t,
                 struct aprspos_POSITION *);
 
-extern void aprstext_deghtopos(char [], unsigned long,
+extern void aprstext_deghtopos(char [], uint32_t,
                 struct aprspos_POSITION *);
 
-extern void aprstext_degdeztopos(char [], unsigned long,
+extern void aprstext_degdeztopos(char [], uint32_t,
                 struct aprspos_POSITION *);
 
-extern void aprstext_deganytopos(char [], unsigned long,
+extern void aprstext_deganytopos(char [], uint32_t,
                 struct aprspos_POSITION *);
 
 extern char aprstext_getmypos(struct aprspos_POSITION *);
 
 extern void aprstext_listop(char);
 
-extern void aprstext_listtyps(char, char, char [], unsigned long);
+extern void aprstext_listtyps(char, char, char [],
+                uint32_t);
 
-extern void aprstext_listin(char [], unsigned long, char, char, char, long,
-                long, long);
+extern void aprstext_listin(char [], uint32_t, char, char,
+                char, int32_t, int32_t, int32_t);
 
-extern void aprstext_DateLocToStr(unsigned long, char [], unsigned long);
+extern void aprstext_DateLocToStr(uint32_t, char [], uint32_t);
 /* append (+localtime) to time */
 
-extern void aprstext_encbeacon(char [], unsigned long, unsigned long *);
+extern void aprstext_encbeacon(char [], uint32_t, uint32_t *);
 
 extern float aprstext_FtoC(float);
 /* fahrenheit to celsius */
@@ -88,25 +90,26 @@ extern aprsdecode_pOPHIST aprstext_oppo(aprsdecode_MONCALL);
 extern void aprstext_setmarkalti(aprsdecode_pFRAMEHIST, aprsdecode_pOPHIST,
                 char);
 
-extern void aprstext_setmark1(struct aprspos_POSITION, char, long,
-                unsigned long);
+extern void aprstext_setmark1(struct aprspos_POSITION, char,
+                int32_t, uint32_t);
 
-extern void aprstext_Apphex(char [], unsigned long, char [], unsigned long);
+extern void aprstext_Apphex(char [], uint32_t, char [],
+                uint32_t);
 
-extern char aprstext_isacall(char [], unsigned long);
+extern char aprstext_isacall(char [], uint32_t);
 
-extern void aprstext_logfndate(unsigned long, char [], unsigned long);
+extern void aprstext_logfndate(uint32_t, char [], uint32_t);
 
-extern void aprstext_sievert2str(float, char [], unsigned long);
+extern void aprstext_sievert2str(float, char [], uint32_t);
 
-extern void aprstext_compressdata(struct aprspos_POSITION, unsigned long,
-                unsigned long, long, char [], unsigned long, char [],
-                unsigned long);
+extern void aprstext_compressdata(struct aprspos_POSITION, uint32_t,
+                uint32_t, int32_t, char [], uint32_t, char [],
+                uint32_t);
 
-extern void aprstext_decodelistline(char [], unsigned long, char [],
-                unsigned long, unsigned long);
+extern void aprstext_decodelistline(char [], uint32_t, char [],
+                uint32_t, uint32_t);
 
-extern char aprstext_callwrong(char [], unsigned long);
+extern char aprstext_callwrong(char [], uint32_t);
 
 
 extern void aprstext_BEGIN(void);

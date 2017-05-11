@@ -33,37 +33,37 @@
 
 #define deflate_FLUSHQUICK "\001"
 
-typedef unsigned char deflate_SET8;
+typedef uint8_t deflate_SET8;
 
-typedef unsigned long deflate_SET32;
+typedef uint32_t deflate_SET32;
 
 struct deflate_CONTEXT;
 
 
 struct deflate_CONTEXT {
    char ring[32768];
-   unsigned long fill;
-   unsigned short hashchain[32768];
-   unsigned long fill1;
-   unsigned short hash[4096];
-   unsigned long fill2;
+   uint32_t fill;
+   uint16_t hashchain[32768];
+   uint32_t fill1;
+   uint16_t hash[4096];
+   uint32_t fill2;
    char matchbuf[257];
-   unsigned long combuf[2048];
-   unsigned long txbitbuf;
-   unsigned long txbitc;
-   unsigned long lastidx;
-   unsigned long wp;
-   unsigned long savep;
-   unsigned long flen;
-   unsigned long fdist;
-   unsigned long mlen;
-   unsigned long rawr;
-   unsigned long comr;
-   unsigned long raww;
-   unsigned long rawwo;
-   unsigned long comw;
-   long of;
-   long sizedif;
+   uint32_t combuf[2048];
+   uint32_t txbitbuf;
+   uint32_t txbitc;
+   uint32_t lastidx;
+   uint32_t wp;
+   uint32_t savep;
+   uint32_t flen;
+   uint32_t fdist;
+   uint32_t mlen;
+   uint32_t rawr;
+   uint32_t comr;
+   uint32_t raww;
+   uint32_t rawwo;
+   uint32_t comw;
+   int32_t of;
+   int32_t sizedif;
    char wascomp;
 };
 
@@ -72,12 +72,12 @@ struct deflate_XCONTEXT;
 
 struct deflate_XCONTEXT {
    char ring[32768];
-   unsigned long wp;
-   unsigned long rxbitbuf;
-   unsigned long lencode;
-   unsigned long distcode;
-   unsigned long rxbits;
-   long rawlen;
+   uint32_t wp;
+   uint32_t rxbitbuf;
+   uint32_t lencode;
+   uint32_t distcode;
+   uint32_t rxbits;
+   int32_t rawlen;
    char compdata;
 };
 
@@ -85,11 +85,11 @@ extern void deflate_Initexpand(struct deflate_XCONTEXT *);
 
 extern void deflate_Initdeflate(struct deflate_CONTEXT *);
 
-extern void deflate_Deflatbyte(struct deflate_CONTEXT *, char, char, char [],
-                 unsigned long, long *);
+extern void deflate_Deflatbyte(struct deflate_CONTEXT *, char, char,
+                char [], uint32_t, int32_t *);
 
-extern void deflate_Expandbyte(struct deflate_XCONTEXT *, char, char [],
-                unsigned long, long *, char *);
+extern void deflate_Expandbyte(struct deflate_XCONTEXT *, char,
+                char [], uint32_t, int32_t *, char *);
 
 
 extern void deflate_BEGIN(void);

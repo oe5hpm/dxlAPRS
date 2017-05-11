@@ -99,9 +99,9 @@ struct CHAN;
 
 
 struct CHAN {
-   unsigned long rxbyte;
-   unsigned long rxbitc;
-   unsigned long rxp;
+   uint32_t rxbyte;
+   uint32_t rxbitc;
+   uint32_t rxp;
    char rxbuf[520];
 };
 
@@ -110,7 +110,7 @@ struct CONTEXTR9;
 
 struct CONTEXTR9 {
    char calibdata[512];
-   unsigned long calibok;
+   uint32_t calibok;
    char mesok;
    char posok;
    char framesent;
@@ -133,9 +133,9 @@ struct CONTEXTR9 {
    double temp;
    double ozontemp;
    double ozon;
-   unsigned long goodsats;
-   unsigned long timems;
-   unsigned long framenum;
+   uint32_t goodsats;
+   uint32_t timems;
+   uint32_t framenum;
 };
 
 struct CONTEXTC34;
@@ -159,20 +159,20 @@ struct CONTEXTC34 {
    double speed;
    double dir;
    double temp;
-   unsigned long lastsent;
-   unsigned long gpstime;
-   unsigned long tgpstime;
-   unsigned long tlat;
-   unsigned long tlon;
-   unsigned long tlat1;
-   unsigned long tlon1;
-   unsigned long tlatv1;
-   unsigned long tlonv1;
-   unsigned long talt;
-   unsigned long tspeed;
-   unsigned long tdir;
-   unsigned long ttemp;
-   unsigned long tused;
+   uint32_t lastsent;
+   uint32_t gpstime;
+   uint32_t tgpstime;
+   uint32_t tlat;
+   uint32_t tlon;
+   uint32_t tlat1;
+   uint32_t tlon1;
+   uint32_t tlatv1;
+   uint32_t tlonv1;
+   uint32_t talt;
+   uint32_t tspeed;
+   uint32_t tdir;
+   uint32_t ttemp;
+   uint32_t tused;
 };
 
 struct CONTEXTDFM6;
@@ -191,19 +191,19 @@ struct CONTEXTDFM6 {
    double alt;
    double speed;
    double dir;
-   unsigned long lastsent;
-   unsigned long tlat;
-   unsigned long tlon;
-   unsigned long tlat1;
-   unsigned long tlon1;
-   unsigned long talt;
-   unsigned long tspeed;
-   unsigned long tdir;
-   unsigned long actrt;
-   unsigned long tused;
+   uint32_t lastsent;
+   uint32_t tlat;
+   uint32_t tlon;
+   uint32_t tlat1;
+   uint32_t tlon1;
+   uint32_t talt;
+   uint32_t tspeed;
+   uint32_t tdir;
+   uint32_t actrt;
+   uint32_t tused;
    char d9;
    char posok;
-   unsigned long poserr; /* count down after position jump */
+   uint32_t poserr; /* count down after position jump */
 };
 
 struct CONTEXTR4;
@@ -217,18 +217,18 @@ struct CONTEXTR4 {
    char posok;
    char framesent;
    float mhz0;
-   unsigned long gpssecond;
-   unsigned long framenum;
-   unsigned long tused;
+   uint32_t gpssecond;
+   uint32_t framenum;
+   uint32_t tused;
    double hp;
-   unsigned long ozonInstType;
-   unsigned long ozonInstNum;
+   uint32_t ozonInstType;
+   uint32_t ozonInstNum;
    double ozonTemp;
    double ozonuA;
    double ozonBatVolt;
    double ozonPumpMA;
    double ozonExtVolt;
-   unsigned long burstKill;
+   uint32_t burstKill;
 };
 /*
        ozon_id_ser           : ARRAY[0..8] OF CHAR;
@@ -242,17 +242,17 @@ static FILENAME yumafile;
 
 static FILENAME rinexfile;
 
-static unsigned long sendquick; /* 0 send if full calibrated, 1 with mhz, 2 always */
+static uint32_t sendquick; /* 0 send if full calibrated, 1 with mhz, 2 always */
 
-static unsigned long almread;
+static uint32_t almread;
 
 /* time last almanach read */
-static unsigned long almrequest;
+static uint32_t almrequest;
 
 /* seconds rinex age to request new */
-static unsigned long almage;
+static uint32_t almage;
 
-static unsigned long systime;
+static uint32_t systime;
 
 static FILENAME soundfn;
 
@@ -266,13 +266,13 @@ static float mhz;
 
 static OBJNAME objname;
 
-static long rxsock;
+static int32_t rxsock;
 
-static unsigned long maxalmage;
+static uint32_t maxalmage;
 
-static unsigned long lastip;
+static uint32_t lastip;
 
-static unsigned long lastport;
+static uint32_t lastport;
 
 static char mycall[100];
 
@@ -285,7 +285,7 @@ static pCONTEXTDFM6 pcontextdfm6;
 static pCONTEXTR4 pcontextr4;
 
 
-static void Error(char text[], unsigned long text_len)
+static void Error(char text[], uint32_t text_len)
 {
    X2C_PCOPY((void **)&text,text_len);
    osi_WrStr(text, text_len);
@@ -295,7 +295,7 @@ static void Error(char text[], unsigned long text_len)
 } /* end Error() */
 
 
-static float pow0(float x, unsigned long y)
+static float pow0(float x, uint32_t y)
 {
    float z;
    z = x;
@@ -318,7 +318,8 @@ static double atan20(double x, double y)
       }
    }
    else if (y!=0.0) {
-      w = (double)(1.5707963267949f-osic_arctan((float)(X2C_DIVL(x,y))));
+      w = (double)(1.5707963267949f-osic_arctan((float)(X2C_DIVL(x,
+                y))));
       if (y<0.0) w = w-3.1415926535898;
    }
    else w = 0.0;
@@ -326,12 +327,12 @@ static double atan20(double x, double y)
 } /* end atan2() */
 
 
-static char GetNum(const char h[], unsigned long h_len, char eot,
-                unsigned long * p, unsigned long * n)
+static char GetNum(const char h[], uint32_t h_len, char eot,
+                 uint32_t * p, uint32_t * n)
 {
    *n = 0UL;
-   while ((unsigned char)h[*p]>='0' && (unsigned char)h[*p]<='9') {
-      *n = ( *n*10UL+(unsigned long)(unsigned char)h[*p])-48UL;
+   while ((uint8_t)h[*p]>='0' && (uint8_t)h[*p]<='9') {
+      *n = ( *n*10UL+(uint32_t)(uint8_t)h[*p])-48UL;
       ++*p;
    }
    return h[*p]==eot;
@@ -343,8 +344,8 @@ static void Parms(void)
    char err;
    char lowbeacon;
    FILENAME h;
-   unsigned long cnum;
-   unsigned long i;
+   uint32_t cnum;
+   uint32_t i;
    mycall[0U] = 0;
    semfile[0] = 0;
    yumafile[0] = 0;
@@ -405,7 +406,7 @@ static void Parms(void)
          }
          else if (h[1U]=='w') {
             osi_NextArg(sondeaprs_via, 100ul);
-            if ((unsigned char)sondeaprs_via[0UL]<=' ') {
+            if ((uint8_t)sondeaprs_via[0UL]<=' ') {
                Error("-m vias like RELAY,WIDE1-1", 27ul);
             }
          }
@@ -433,25 +434,21 @@ static void Parms(void)
          }
          else if (h[1U]=='I') {
             osi_NextArg(mycall, 100ul);
-            if ((unsigned char)mycall[0U]<' ') {
+            if ((uint8_t)mycall[0U]<' ') {
                Error("-I <mycall>", 12ul);
             }
          }
          else if (h[1U]=='s') {
             osi_NextArg(semfile, 1024ul);
-            if ((unsigned char)semfile[0U]<' ') Error("-s <filename>", 14ul);
+            if ((uint8_t)semfile[0U]<' ') Error("-s <filename>", 14ul);
          }
          else if (h[1U]=='x') {
             osi_NextArg(rinexfile, 1024ul);
-            if ((unsigned char)rinexfile[0U]<' ') {
-               Error("-x <filename>", 14ul);
-            }
+            if ((uint8_t)rinexfile[0U]<' ') Error("-x <filename>", 14ul);
          }
          else if (h[1U]=='y') {
             osi_NextArg(yumafile, 1024ul);
-            if ((unsigned char)yumafile[0U]<' ') {
-               Error("-y <filename>", 14ul);
-            }
+            if ((uint8_t)yumafile[0U]<' ') Error("-y <filename>", 14ul);
          }
          else if (h[1U]=='v') sondeaprs_verb = 1;
          else if (h[1U]=='V') {
@@ -505,9 +502,7 @@ USE, not exact)", 65ul);
             err = 1;
          }
       }
-      else {
-         err = 1;
-      }
+      else err = 1;
       if (err) break;
    }
    if (err) {
@@ -525,11 +520,11 @@ USE, not exact)", 65ul);
 #define sondemod_Z 48
 
 
-static void degtostr(float d, char lat, char form, char s[],
-                unsigned long s_len)
+static void degtostr(float d, char lat, char form,
+                char s[], uint32_t s_len)
 {
-   unsigned long i;
-   unsigned long n;
+   uint32_t i;
+   uint32_t n;
    if (s_len-1<11UL) {
       s[0UL] = 0;
       return;
@@ -548,7 +543,7 @@ static void degtostr(float d, char lat, char form, char s[],
       /* DDMM.MMNDDMM.MME */
       n = osi_realcard(d*3.4377467707849E+5f+0.5f);
       s[0UL] = (char)((n/600000UL)%10UL+48UL);
-      i = (unsigned long)!lat;
+      i = (uint32_t)!lat;
       s[i] = (char)((n/60000UL)%10UL+48UL);
       ++i;
       s[i] = (char)((n/6000UL)%10UL+48UL);
@@ -568,7 +563,7 @@ static void degtostr(float d, char lat, char form, char s[],
       /* DDMM.MMMNDDMM.MMME */
       n = osi_realcard(d*3.4377467707849E+6f+0.5f);
       s[0UL] = (char)((n/6000000UL)%10UL+48UL);
-      i = (unsigned long)!lat;
+      i = (uint32_t)!lat;
       s[i] = (char)((n/600000UL)%10UL+48UL);
       ++i;
       s[i] = (char)((n/60000UL)%10UL+48UL);
@@ -590,7 +585,7 @@ static void degtostr(float d, char lat, char form, char s[],
       /* DDMMSS */
       n = osi_realcard(d*2.062648062471E+5f+0.5f);
       s[0UL] = (char)((n/360000UL)%10UL+48UL);
-      i = (unsigned long)!lat;
+      i = (uint32_t)!lat;
       s[i] = (char)((n/36000UL)%10UL+48UL);
       ++i;
       s[i] = (char)((n/3600UL)%10UL+48UL);
@@ -623,15 +618,15 @@ static void initcontext(struct CONTEXTR9 * cont)
 } /* end initcontext() */
 
 
-static void dogps(const char sf[], unsigned long sf_len,
-                struct CONTEXTR9 * cont, unsigned long * timems,
-                unsigned long * gpstime)
+static void dogps(const char sf[], uint32_t sf_len,
+                struct CONTEXTR9 * cont, uint32_t * timems,
+                uint32_t * gpstime)
 {
-   unsigned long i;
+   uint32_t i;
    gpspos_SATS sats;
-   long res;
-   long d1;
-   long d;
+   int32_t res;
+   int32_t d1;
+   int32_t d;
    char h[100];
    struct CONTEXTR9 * anonym;
    cont->lat = 0.0;
@@ -641,10 +636,9 @@ static void dogps(const char sf[], unsigned long sf_len,
    cont->dir = 0.0;
    /*WrStrLn("gps:"); */
    /*FOR i:=0 TO 121 DO WrHex(ORD(sf[i]), 3) END; WrStrLn(""); */
-   *timems = (unsigned long)(unsigned char)sf[0UL]+(unsigned long)
-                (unsigned char)sf[1UL]*256UL+(unsigned long)(unsigned char)
-                sf[2UL]*65536UL+(unsigned long)(unsigned char)
-                sf[3UL]*16777216UL;
+   *timems = (uint32_t)(uint8_t)sf[0UL]+(uint32_t)(uint8_t)
+                sf[1UL]*256UL+(uint32_t)(uint8_t)
+                sf[2UL]*65536UL+(uint32_t)(uint8_t)sf[3UL]*16777216UL;
    if (sondeaprs_verb2) {
       aprsstr_TimeToStr(( *timems/1000UL)%86400UL, h, 100ul);
       osi_WrStr("time ms day: ", 14ul);
@@ -656,12 +650,11 @@ static void dogps(const char sf[], unsigned long sf_len,
    /*  WrInt(ORD(sf[4]), 4); WrInt(ORD(sf[5]), 4); WrStrLn(""); */
    /*  FILL(ADR(sats), 0C, SIZE(sats)); */
    for (i = 0UL; i<=3UL; i++) {
-      sats[i*3UL].prn = (unsigned long)(unsigned char)sf[i*2UL+6UL]&31UL;
-      sats[i*3UL+1UL].prn = (unsigned long)(unsigned char)
-                sf[i*2UL+6UL]/32UL+(unsigned long)(unsigned char)
+      sats[i*3UL].prn = (uint32_t)(uint8_t)sf[i*2UL+6UL]&31UL;
+      sats[i*3UL+1UL].prn = (uint32_t)(uint8_t)
+                sf[i*2UL+6UL]/32UL+(uint32_t)(uint8_t)
                 sf[i*2UL+7UL]*8UL&31UL;
-      sats[i*3UL+2UL].prn = (unsigned long)(unsigned char)
-                sf[i*2UL+7UL]/4UL&31UL;
+      sats[i*3UL+2UL].prn = (uint32_t)(uint8_t)sf[i*2UL+7UL]/4UL&31UL;
    } /* end for */
    if (sondeaprs_verb2) {
       osi_WrStr("prn:", 5ul);
@@ -671,33 +664,33 @@ static void dogps(const char sf[], unsigned long sf_len,
       osi_WrStrLn("", 1ul);
       osi_WrStr("sig: ", 6ul);
       for (i = 0UL; i<=11UL; i++) {
-         osi_WrHex((unsigned long)(unsigned char)sf[i+14UL], 3UL);
+         osi_WrHex((uint32_t)(uint8_t)sf[i+14UL], 3UL);
       } /* end for */
       osi_WrStrLn("", 1ul);
       osi_WrStrLn("rang:", 6ul);
    }
    for (i = 0UL; i<=11UL; i++) {
       if (sats[i].prn>0UL) {
-         sats[i].rang = (long)((unsigned long)(unsigned char)
-                sf[i*8UL+26UL]+(unsigned long)(unsigned char)
-                sf[i*8UL+27UL]*256UL+(unsigned long)(unsigned char)
-                sf[i*8UL+28UL]*65536UL+(unsigned long)(unsigned char)
+         sats[i].rang = (int32_t)((uint32_t)(uint8_t)
+                sf[i*8UL+26UL]+(uint32_t)(uint8_t)
+                sf[i*8UL+27UL]*256UL+(uint32_t)(uint8_t)
+                sf[i*8UL+28UL]*65536UL+(uint32_t)(uint8_t)
                 sf[i*8UL+29UL]*16777216UL);
-         sats[i].rang1 = (long)((unsigned long)(unsigned char)
-                sf[i*8UL+30UL]+(unsigned long)(unsigned char)
-                sf[i*8UL+31UL]*256UL+(unsigned long)(unsigned char)
+         sats[i].rang1 = (int32_t)((uint32_t)(uint8_t)
+                sf[i*8UL+30UL]+(uint32_t)(uint8_t)
+                sf[i*8UL+31UL]*256UL+(uint32_t)(uint8_t)
                 sf[i*8UL+32UL]*65536UL);
          sats[i].rang1 = sats[i].rang1&8388607L;
-         sats[i].rang3 = (long)(signed char)(unsigned char)sf[i*8UL+33UL];
+         sats[i].rang3 = (int32_t)(signed char)(uint8_t)sf[i*8UL+33UL];
          d = sats[i].rang-lastsat[i].rang;
          d1 = sats[i].rang1-lastsat[i].rang1;
          if (sondeaprs_verb2) {
             osic_WrINT32(sats[i].prn, 3UL);
-            osic_WrINT32((unsigned long)sats[i].rang, 12UL);
-            osic_WrINT32((unsigned long)sats[i].rang1, 12UL);
-            osic_WrINT32((unsigned long)sats[i].rang3, 5UL);
-            osic_WrINT32((unsigned long)d, 12UL);
-            osic_WrINT32((unsigned long)(d-lastsat[i].lastd), 12UL);
+            osic_WrINT32((uint32_t)sats[i].rang, 12UL);
+            osic_WrINT32((uint32_t)sats[i].rang1, 12UL);
+            osic_WrINT32((uint32_t)sats[i].rang3, 5UL);
+            osic_WrINT32((uint32_t)d, 12UL);
+            osic_WrINT32((uint32_t)(d-lastsat[i].lastd), 12UL);
             osi_WrStrLn("", 1ul);
          }
          sats[i].lastd = d;
@@ -753,21 +746,21 @@ static void dogps(const char sf[], unsigned long sf_len,
 } /* end dogps() */
 
 
-static void decodecalib(const char cd[], unsigned long cd_len)
+static void decodecalib(const char cd[], uint32_t cd_len)
 {
-   unsigned long n;
-   unsigned long i;
-   unsigned long cr;
-   unsigned long tmp;
+   uint32_t n;
+   uint32_t i;
+   uint32_t cr;
+   uint32_t tmp;
    memset((char *)coeff,(char)0,sizeof(float [256]));
    i = 64UL;
    for (tmp = 88UL;;) {
-      n = (unsigned long)(unsigned char)cd[i];
-      cr = (unsigned long)(unsigned char)cd[i+1UL]+(unsigned long)
-                (unsigned char)cd[i+2UL]*256UL+(unsigned long)(unsigned char)
-                cd[i+3UL]*65536UL+(unsigned long)(unsigned char)
+      n = (uint32_t)(uint8_t)cd[i];
+      cr = (uint32_t)(uint8_t)cd[i+1UL]+(uint32_t)(uint8_t)
+                cd[i+2UL]*256UL+(uint32_t)(uint8_t)
+                cd[i+3UL]*65536UL+(uint32_t)(uint8_t)
                 cd[i+4UL]*16777216UL;
-      coeff[n] = *X2C_CAST(&cr,unsigned long,float,float *);
+      coeff[n] = *X2C_CAST(&cr,uint32_t,float,float *);
       if (!tmp) break;
       --tmp;
       i += 5UL;
@@ -786,14 +779,14 @@ static float coef(float ref, float u, float c)
 } /* end coef() */
 
 
-static float extr(unsigned long hi, unsigned long lo, unsigned long u,
-                unsigned long idx)
+static float extr(uint32_t hi, uint32_t lo, uint32_t u,
+                uint32_t idx)
 {
    float f;
    float x;
    float v;
-   unsigned long i;
-   unsigned long tmp;
+   uint32_t i;
+   uint32_t tmp;
    if (hi<=lo || u<=lo) return 0.0f;
    v = coef((float)(hi-lo), (float)(u-lo), coeff[idx+7UL]);
    x = 0.0f;
@@ -810,11 +803,11 @@ static float extr(unsigned long hi, unsigned long lo, unsigned long u,
 } /* end extr() */
 
 
-static void domes(const char md[], unsigned long md_len, double * hp,
+static void domes(const char md[], uint32_t md_len, double * hp,
                 double * hyg, double * temp)
 {
-   unsigned long i;
-   long m[8];
+   uint32_t i;
+   int32_t m[8];
    float d5;
    float d4;
    float d3;
@@ -822,31 +815,28 @@ static void domes(const char md[], unsigned long md_len, double * hp,
    float hr2;
    float hr1;
    for (i = 0UL; i<=7UL; i++) {
-      m[i] = (long)((unsigned long)(unsigned char)md[i*3UL]+(unsigned long)
-                (unsigned char)md[i*3UL+1UL]*256UL+(unsigned long)
-                (unsigned char)md[i*3UL+2UL]*65536UL);
+      m[i] = (int32_t)((uint32_t)(uint8_t)md[i*3UL]+(uint32_t)
+                (uint8_t)md[i*3UL+1UL]*256UL+(uint32_t)(uint8_t)
+                md[i*3UL+2UL]*65536UL);
    } /* end for */
    /* hygro 1 */
    /*  IF verb THEN WrStr(" <h> ") END; */
-   hr1 = extr((unsigned long)m[3U], (unsigned long)m[7U],
-                (unsigned long)m[1U], 40UL);
-   hr2 = extr((unsigned long)m[3U], (unsigned long)m[7U],
-                (unsigned long)m[2U], 50UL);
+   hr1 = extr((uint32_t)m[3U], (uint32_t)m[7U], (uint32_t)m[1U], 40UL);
+   hr2 = extr((uint32_t)m[3U], (uint32_t)m[7U], (uint32_t)m[2U], 50UL);
    if (hr2>hr1) hr1 = hr2;
    if (hr1<2.0f) hr1 = 0.0f;
    else if (hr1>100.0f) hr1 = 100.0f;
    *hyg = (double)hr1;
    /* temp */
-   *temp = (double)extr((unsigned long)m[3U], (unsigned long)m[7U],
-                (unsigned long)m[0U], 30UL);
+   *temp = (double)extr((uint32_t)m[3U], (uint32_t)m[7U],
+                (uint32_t)m[0U], 30UL);
    /* baro */
    d3 = (float)(m[3U]-m[7U]);
    d4 = (float)(m[4U]-m[7U]);
    d5 = (float)(m[5U]-m[7U]);
-   p = extr((unsigned long)m[3U], (unsigned long)m[7U], (unsigned long)m[5U],
-                 10UL)+coeff[60U]*extr((unsigned long)m[3U],
-                (unsigned long)m[7U], (unsigned long)m[4U],
-                20UL)+X2C_DIVR(coeff[61U]*coeff[20U]*d3,
+   p = extr((uint32_t)m[3U], (uint32_t)m[7U], (uint32_t)m[5U],
+                10UL)+coeff[60U]*extr((uint32_t)m[3U], (uint32_t)m[7U],
+                (uint32_t)m[4U], 20UL)+X2C_DIVR(coeff[61U]*coeff[20U]*d3,
                 d5)+X2C_DIVR(coeff[61U]*coeff[21U]*coef(d3, d4,
                 coeff[27U])*d3,d5)+X2C_DIVR(coeff[61U]*coeff[22U]*pow0(coef(d3,
                  d4, coeff[27U]), 2UL)*d3,
@@ -924,7 +914,7 @@ static void domes(const char md[], unsigned long md_len, double * hp,
       osi_WrStr("mes:", 5ul);
       if (sondeaprs_verb2) {
          for (i = 0UL; i<=7UL; i++) {
-            osic_WrINT32((unsigned long)m[i], 7UL);
+            osic_WrINT32((uint32_t)m[i], 7UL);
             osi_WrStr(" ", 2ul);
          } /* end for */
          osi_WrStrLn("", 1ul);
@@ -940,11 +930,11 @@ static void domes(const char md[], unsigned long md_len, double * hp,
 /*WrStrLn(""); */
 } /* end domes() */
 
-static float sondemod_P[13] = {1000.0f,150.0f,100.0f,70.0f,60.0f,50.0f,40.0f,
-                30.0f,20.0f,15.0f,10.0f,8.0f,0.0f};
+static float sondemod_P[13] = {1000.0f,150.0f,100.0f,70.0f,60.0f,50.0f,
+                40.0f,30.0f,20.0f,15.0f,10.0f,8.0f,0.0f};
 
-static float sondemod_C[13] = {1.0f,1.0f,1.01f,1.022f,1.025f,1.035f,1.047f,
-                1.065f,1.092f,1.12f,1.17f,1.206f,1.3f};
+static float sondemod_C[13] = {1.0f,1.0f,1.01f,1.022f,1.025f,1.035f,
+                1.047f,1.065f,1.092f,1.12f,1.17f,1.206f,1.3f};
 
 static float _cnst0[13] = {1.0f,1.0f,1.01f,1.022f,1.025f,1.035f,1.047f,
                 1.065f,1.092f,1.12f,1.17f,1.206f,1.3f};
@@ -954,7 +944,7 @@ static float _cnst[13] = {1000.0f,150.0f,100.0f,70.0f,60.0f,50.0f,40.0f,
 static double getOzoneCorr(double p)
 /* From from ftp://ftp.cpc.ncep.noaa.gov/ndacc/meta/sonde/cv_payerne_snd.txt */
 {
-   unsigned long i;
+   uint32_t i;
    i = 12UL;
    while (i>0UL && (double)_cnst[i]<p) --i;
    return (double)_cnst0[i];
@@ -988,13 +978,14 @@ ground 1..7mPa, stratosphere <25mPa
 /* mPa per uA */
 
 
-static void doozon(const char s[], unsigned long s_len, const double airpres,
-                 double * otemp, double * ozon)
+static void doozon(const char s[], uint32_t s_len,
+                const double airpres, double * otemp,
+                double * ozon)
 {
-   *otemp = (double)(float)((unsigned long)(unsigned char)
-                s[4UL]+(unsigned long)(unsigned char)s[5UL]*256UL);
-   *ozon = (double)(float)((unsigned long)(unsigned char)
-                s[2UL]+(unsigned long)(unsigned char)s[3UL]*256UL);
+   *otemp = (double)(float)((uint32_t)(uint8_t)
+                s[4UL]+(uint32_t)(uint8_t)s[5UL]*256UL);
+   *ozon = (double)(float)((uint32_t)(uint8_t)
+                s[2UL]+(uint32_t)(uint8_t)s[3UL]*256UL);
    *otemp = (65535.0-*otemp)*1.3568521031208E-3-35.0;
    *ozon = (*ozon-550.0)*0.00124;
    *ozon =  *ozon*(*otemp+273.15)*3.0769230769231E-3*getOzoneCorr(airpres);
@@ -1011,16 +1002,16 @@ static void doozon(const char s[], unsigned long s_len, const double airpres,
 } /* end doozon() */
 
 
-static void calibfn(char obj[], unsigned long obj_len, char fn[],
-                unsigned long fn_len)
+static void calibfn(char obj[], uint32_t obj_len, char fn[],
+                uint32_t fn_len)
 {
-   unsigned long i;
+   uint32_t i;
    X2C_PCOPY((void **)&obj,obj_len);
    aprsstr_Assign(fn, fn_len, obj, obj_len);
    i = 0UL;
    while (i<=fn_len-1 && fn[i]) {
-      if (((unsigned char)fn[i]<'0' || (unsigned char)fn[i]>'9')
-                && ((unsigned char)fn[i]<'A' || (unsigned char)fn[i]>'Z')) {
+      if (((uint8_t)fn[i]<'0' || (uint8_t)fn[i]>'9') && ((uint8_t)
+                fn[i]<'A' || (uint8_t)fn[i]>'Z')) {
          fn[0UL] = 0;
          goto label;
       }
@@ -1033,19 +1024,18 @@ static void calibfn(char obj[], unsigned long obj_len, char fn[],
 
 
 static void readcontext(struct CONTEXTR9 * cont, char objname0[],
-                unsigned long objname_len)
+                uint32_t objname_len)
 {
    char fn[1024];
-   long fd;
+   int32_t fd;
    X2C_PCOPY((void **)&objname0,objname_len);
    initcontext(cont);
    calibfn(objname0, objname_len, fn, 1024ul);
    fd = osi_OpenRead(fn, 1024ul);
    if (fd>=0L) {
       if (osi_RdBin(fd, (char *)cont, sizeof(struct CONTEXTR9)/1u,
-                sizeof(struct CONTEXTR9))!=(long)sizeof(struct CONTEXTR9)) {
-         initcontext(cont);
-      }
+                sizeof(struct CONTEXTR9))!=(int32_t)
+                sizeof(struct CONTEXTR9)) initcontext(cont);
       osic_Close(fd);
    }
    X2C_PFREE(objname0);
@@ -1053,10 +1043,10 @@ static void readcontext(struct CONTEXTR9 * cont, char objname0[],
 
 
 static void wrcontext(struct CONTEXTR9 * cont, char objname0[],
-                unsigned long objname_len)
+                uint32_t objname_len)
 {
    char fn[1024];
-   long fd;
+   int32_t fd;
    X2C_PCOPY((void **)&objname0,objname_len);
    calibfn(objname0, objname_len, fn, 1024ul);
    if (fn[0U]) {
@@ -1071,13 +1061,14 @@ static void wrcontext(struct CONTEXTR9 * cont, char objname0[],
 } /* end wrcontext() */
 
 
-static void docalib(const char sf[], unsigned long sf_len, char objname0[],
-                unsigned long objname_len, struct CONTEXTR9 * cont,
-                float * mhz0, unsigned long * frameno)
+static void docalib(const char sf[], uint32_t sf_len,
+                char objname0[], uint32_t objname_len,
+                struct CONTEXTR9 * cont, float * mhz0,
+                uint32_t * frameno)
 {
-   unsigned long idx;
-   unsigned long j;
-   unsigned long i;
+   uint32_t idx;
+   uint32_t j;
+   uint32_t i;
    char new0;
    *mhz0 = 0.0f;
    new0 = 0;
@@ -1086,7 +1077,7 @@ static void docalib(const char sf[], unsigned long sf_len, char objname0[],
       /* object name */
       /*    IF (1 IN cont.calibok) & (sf[j]<>cont.calibdata[j+20])
                 THEN cont.calibok:=SET32{} END; */
-      if (i<=objname_len-1 && (unsigned char)sf[j]>' ') {
+      if (i<=objname_len-1 && (uint8_t)sf[j]>' ') {
          if (objname0[i]!=sf[j]) new0 = 1;
          objname0[i] = sf[j];
          ++i;
@@ -1094,8 +1085,8 @@ static void docalib(const char sf[], unsigned long sf_len, char objname0[],
    } /* end for */
    if (i<=objname_len-1) objname0[i] = 0;
    if (new0) readcontext(cont, objname0, objname_len);
-   *frameno = (unsigned long)(unsigned char)sf[0UL]+(unsigned long)
-                (unsigned char)sf[1UL]*256UL;
+   *frameno = (uint32_t)(uint8_t)sf[0UL]+(uint32_t)(uint8_t)
+                sf[1UL]*256UL;
    if (sondeaprs_verb) {
       if (new0) osi_WrStr("new ", 5ul);
       osic_WrINT32(*frameno, 1UL); /* frame no */
@@ -1103,7 +1094,7 @@ static void docalib(const char sf[], unsigned long sf_len, char objname0[],
       osi_WrStr(objname0, objname_len); /*WrStr(" bat:");
                 WrHex(ORD(sf[12]), 2);*/
    }
-   idx = (unsigned long)(unsigned char)sf[15UL];
+   idx = (uint32_t)(uint8_t)sf[15UL];
    if (idx<32UL) {
       j = idx*16UL;
       for (i = 16UL; i<=31UL; i++) {
@@ -1121,8 +1112,8 @@ static void docalib(const char sf[], unsigned long sf_len, char objname0[],
       }
       /*    INCL(cont.calibok, idx); */
       if ((0x1UL & cont->calibok)) {
-         *mhz0 = (float)(400000UL+((unsigned long)(unsigned char)
-                cont->calibdata[2U]+(unsigned long)(unsigned char)
+         *mhz0 = (float)(400000UL+((uint32_t)(uint8_t)
+                cont->calibdata[2U]+(uint32_t)(uint8_t)
                 cont->calibdata[3U]*256UL)*10UL)*0.001f;
          if (sondeaprs_verb) {
             osi_WrStr(" ", 2ul);
@@ -1146,10 +1137,10 @@ static void docalib(const char sf[], unsigned long sf_len, char objname0[],
 } /* end docalib() */
 
 
-static unsigned long calperc(unsigned long cs)
+static uint32_t calperc(uint32_t cs)
 {
-   unsigned long n;
-   unsigned long i;
+   uint32_t n;
+   uint32_t i;
    n = 0UL;
    for (i = 0UL; i<=31UL; i++) {
       if (X2C_IN(i,32,cs)) ++n;
@@ -1158,12 +1149,12 @@ static unsigned long calperc(unsigned long cs)
 } /* end calperc() */
 
 
-static void WrRinexfn(unsigned long t)
+static void WrRinexfn(uint32_t t)
 {
    char fn[31];
-   unsigned long y;
-   unsigned long d;
-   long f;
+   uint32_t y;
+   uint32_t d;
+   int32_t f;
    /*DateToStr(t, fn); WrStrLn(fn); */
    d = 25568UL+t/86400UL;
    y = (d*4UL)/1461UL;
@@ -1184,18 +1175,18 @@ static void WrRinexfn(unsigned long t)
 } /* end WrRinexfn() */
 
 
-static void getcall(const char b[], unsigned long b_len, char call[],
-                unsigned long call_len)
+static void getcall(const char b[], uint32_t b_len, char call[],
+                uint32_t call_len)
 {
-   unsigned long c;
-   unsigned long n;
-   unsigned long i;
+   uint32_t c;
+   uint32_t n;
+   uint32_t i;
    char tmp;
    call[0UL] = 0;
-   n = (unsigned long)(unsigned char)b[0UL]*16777216UL+(unsigned long)
-                (unsigned char)b[1UL]*65536UL+(unsigned long)(unsigned char)
-                b[2UL]*256UL+(unsigned long)(unsigned char)b[3UL];
-   if (n>0UL && (unsigned long)(unsigned char)b[4UL]<=15UL) {
+   n = (uint32_t)(uint8_t)b[0UL]*16777216UL+(uint32_t)(uint8_t)
+                b[1UL]*65536UL+(uint32_t)(uint8_t)
+                b[2UL]*256UL+(uint32_t)(uint8_t)b[3UL];
+   if (n>0UL && (uint32_t)(uint8_t)b[4UL]<=15UL) {
       for (i = 5UL;; i--) {
          c = n%37UL;
          if (c==0UL) call[i] = 0;
@@ -1205,35 +1196,34 @@ static void getcall(const char b[], unsigned long b_len, char call[],
          if (i==0UL) break;
       } /* end for */
       call[6UL] = 0;
-      c = (unsigned long)(unsigned char)b[4UL];
+      c = (uint32_t)(uint8_t)b[4UL];
       if (c>0UL) {
          aprsstr_Append(call, call_len, "-", 2ul);
          if (c>=10UL) {
             aprsstr_Append(call, call_len, "1", 2ul);
             c = c%10UL;
          }
-         aprsstr_Append(call, call_len, (char *)(tmp = (char)(c+48UL),&tmp),
-                1u/1u);
+         aprsstr_Append(call, call_len,
+                (char *)(tmp = (char)(c+48UL),&tmp), 1u/1u);
       }
    }
 /*WrStr("usercall:");WrStrLn(call); */
 } /* end getcall() */
 
-static unsigned short sondemod_POLYNOM = 0x1021U;
+static uint16_t sondemod_POLYNOM = 0x1021U;
 
 
-static void decodeframe(unsigned char m, unsigned long ip,
-                unsigned long fromport)
+static void decodeframe(uint8_t m, uint32_t ip, uint32_t fromport)
 {
-   unsigned long gpstime;
-   unsigned long frameno;
-   unsigned long len;
-   unsigned long ic;
-   unsigned long p;
-   unsigned long j;
-   unsigned long i;
-   unsigned long almanachage;
-   unsigned short crc;
+   uint32_t gpstime;
+   uint32_t frameno;
+   uint32_t len;
+   uint32_t ic;
+   uint32_t p;
+   uint32_t j;
+   uint32_t i;
+   uint32_t almanachage;
+   uint16_t crc;
    char typ;
    char sf[256];
    char bb[256];
@@ -1244,7 +1234,7 @@ static void decodeframe(unsigned char m, unsigned long ip,
    struct CONTEXTR9 * anonym;
    struct CONTEXTR9 * anonym0;
    struct CONTEXTR9 * anonym1;
-   unsigned long tmp;
+   uint32_t tmp;
    /*
    -- reedsolomon is done by sondeudp
      FOR i:=0 TO HIGH(b) DO b[i]:=0C END;
@@ -1326,13 +1316,13 @@ static void decodeframe(unsigned char m, unsigned long ip,
       else {
          osi_WrStr("R92 end ", 9ul);
          if (sondeaprs_verb) {
-            osi_WrHex((unsigned long)(unsigned char)typ, 4UL);
+            osi_WrHex((uint32_t)(uint8_t)typ, 4UL);
             crdone = 0;
          }
          break;
       }
       ++p;
-      len = (unsigned long)(unsigned char)b[p]*2UL+2UL; /* +crc */
+      len = (uint32_t)(uint8_t)b[p]*2UL+2UL; /* +crc */
       if (len>=240UL) {
          if (sondeaprs_verb) {
             osi_WrStr("RS92 Frame too long ", 21ul);
@@ -1350,7 +1340,7 @@ static void decodeframe(unsigned char m, unsigned long ip,
          if (j+2UL<len) {
             for (ic = 0UL; ic<=7UL; ic++) {
                if (((0x8000U & crc)!=0)!=X2C_IN(7UL-ic,8,
-                (unsigned char)(unsigned char)b[p])) {
+                (uint8_t)(uint8_t)b[p])) {
                   crc = X2C_LSH(crc,16,1)^0x1021U;
                }
                else crc = X2C_LSH(crc,16,1);
@@ -1365,7 +1355,8 @@ static void decodeframe(unsigned char m, unsigned long ip,
          }
       }
       crdone = 0;
-      if ((char)crc!=sf[len-2UL] || (char)X2C_LSH(crc,16,-8)!=sf[len-1UL]) {
+      if ((char)crc!=sf[len-2UL] || (char)X2C_LSH(crc,16,
+                -8)!=sf[len-1UL]) {
          if (sondeaprs_verb) osi_WrStrLn("********* crc error", 20ul);
       }
       else {
@@ -1454,7 +1445,7 @@ static void decodeframe(unsigned char m, unsigned long ip,
                   tmp = len-1UL;
                   j = 0UL;
                   if (j<=tmp) for (;; j++) {
-                     osi_WrHex((unsigned long)(unsigned char)sf[j], 3UL);
+                     osi_WrHex((uint32_t)(uint8_t)sf[j], 3UL);
                      if (j==tmp) break;
                   } /* end for */
                   osi_WrStrLn("", 1ul);
@@ -1471,7 +1462,7 @@ static void decodeframe(unsigned char m, unsigned long ip,
             tmp = len-1UL;
             j = 0UL;
             if (j<=tmp) for (;; j++) {
-               osi_WrHex((unsigned long)(unsigned char)sf[j], 3UL);
+               osi_WrHex((uint32_t)(uint8_t)sf[j], 3UL);
                if (j==tmp) break;
             } /* end for */
             crdone = 0;
@@ -1515,14 +1506,15 @@ static void decodeframe(unsigned char m, unsigned long ip,
 
 /*------------------------------ C34 C50 */
 
-static double latlong(unsigned long val, char c50)
+static double latlong(uint32_t val, char c50)
 {
    double hf;
    double hr;
    hr = (double)(float)(val%0x080000000UL);
    if (c50) hr = X2C_DIVL(hr,1.E+7);
    else hr = X2C_DIVL(hr,1.E+6);
-   hf = (double)(float)(unsigned long)X2C_TRUNCC(hr,0UL,X2C_max_longcard);
+   hf = (double)(float)(uint32_t)X2C_TRUNCC(hr,0UL,
+                X2C_max_longcard);
    hr = hf+X2C_DIVL(hr-hf,0.6);
    if (val>=0x080000000UL) hr = -hr;
    return hr;
@@ -1537,14 +1529,15 @@ static double latlong(unsigned long val, char c50)
 /* max jump in rad */
 
 
-static double extrapolate(double yold, double y, unsigned long told,
-                unsigned long t, unsigned long systime0, char * good)
+static double extrapolate(double yold, double y,
+                uint32_t told, uint32_t t, uint32_t systime0,
+                char * good)
 {
    double maxex;
    double maxr;
    double dy;
    double k;
-   unsigned long maxt;
+   uint32_t maxt;
    maxr = 4.7123889803847E-4;
    maxt = 10UL;
    maxex = 3.0;
@@ -1557,7 +1550,8 @@ static double extrapolate(double yold, double y, unsigned long told,
    if (t>=systime0) return y;
    /* point is just in time */
    if (told<t) {
-      k = (double)(X2C_DIVR((float)(systime0-told),(float)(t-told)));
+      k = (double)(X2C_DIVR((float)(systime0-told),
+                (float)(t-told)));
       if (k>maxex || told+maxt<systime0) *good = 0;
       dy = y-yold;
       if (fabs(dy)>maxr) *good = 0;
@@ -1584,18 +1578,18 @@ static double dist(double a, double b)
 /* max speed */
 
 
-static void decodec34(const char rxb[], unsigned long rxb_len,
-                unsigned long ip, unsigned long fromport)
+static void decodec34(const char rxb[], uint32_t rxb_len,
+                uint32_t ip, uint32_t fromport)
 {
    OBJNAME nam;
    char cb[10];
    char s[1001];
    CALLSSID usercall;
-   unsigned long val;
-   unsigned long sum2;
-   unsigned long sum1;
-   unsigned long j;
-   unsigned long i;
+   uint32_t val;
+   uint32_t sum2;
+   uint32_t sum1;
+   uint32_t j;
+   uint32_t i;
    double ve;
    double exlat;
    double exlon;
@@ -1640,13 +1634,13 @@ static void decodec34(const char rxb[], unsigned long rxb_len,
    sum1 = 0UL;
    sum2 = 65791UL;
    for (i = 0UL; i<=4UL; i++) {
-      sum1 += (unsigned long)(unsigned char)cb[i];
-      sum2 -= (unsigned long)(unsigned char)cb[i]*(5UL-i);
+      sum1 += (uint32_t)(uint8_t)cb[i];
+      sum2 -= (uint32_t)(uint8_t)cb[i]*(5UL-i);
    } /* end for */
    sum1 = sum1&255UL;
    sum2 = sum2&255UL;
-   if (sum1!=(unsigned long)(unsigned char)cb[5U] || sum2!=(unsigned long)
-                (unsigned char)cb[6U]) return;
+   if (sum1!=(uint32_t)(uint8_t)cb[5U] || sum2!=(uint32_t)(uint8_t)
+                cb[6U]) return;
    /* chesum error */
    if (sondeaprs_verb && fromport>0UL) {
       osi_WrStr("UDP:", 5ul);
@@ -1672,7 +1666,7 @@ static void decodec34(const char rxb[], unsigned long rxb_len,
          /* timed out */
          if (pc0==0) pcontextc = pc1;
          else X2C_CHKNIL(pCONTEXTC34,pc0)->next = pc1;
-         osic_free((X2C_ADDRESS *) &pc, sizeof(struct CONTEXTC34));
+         osic_free((char * *) &pc, sizeof(struct CONTEXTC34));
       }
       else {
          if (aprsstr_StrCmp(nam, 9ul, pc->name, 9ul)) break;
@@ -1681,20 +1675,19 @@ static void decodec34(const char rxb[], unsigned long rxb_len,
       pc = pc1;
    }
    if (pc==0) {
-      osic_alloc((X2C_ADDRESS *) &pc, sizeof(struct CONTEXTC34));
+      osic_alloc((char * *) &pc, sizeof(struct CONTEXTC34));
       if (pc==0) Error("allocate context out im memory", 31ul);
-      memset((X2C_ADDRESS)pc,(char)0,sizeof(struct CONTEXTC34));
+      memset((char *)pc,(char)0,sizeof(struct CONTEXTC34));
       pc->next = pcontextc;
       pcontextc = pc;
       aprsstr_Assign(pc->name, 9ul, nam, 9ul);
       if (sondeaprs_verb) osi_WrStrLn("is new ", 8ul);
    }
    X2C_CHKNIL(pCONTEXTC34,pc)->tused = systime;
-   val = (unsigned long)(unsigned char)cb[4U]+(unsigned long)(unsigned char)
-                cb[3U]*256UL+(unsigned long)(unsigned char)
-                cb[2U]*65536UL+(unsigned long)(unsigned char)
-                cb[1U]*16777216UL;
-   hr = (double)*X2C_CAST(&val,unsigned long,float,float *);
+   val = (uint32_t)(uint8_t)cb[4U]+(uint32_t)(uint8_t)
+                cb[3U]*256UL+(uint32_t)(uint8_t)
+                cb[2U]*65536UL+(uint32_t)(uint8_t)cb[1U]*16777216UL;
+   hr = (double)*X2C_CAST(&val,uint32_t,float,float *);
    posok = 0;
    if (c50) {
       switch ((unsigned)cb[0U]) {
@@ -1712,7 +1705,7 @@ static void decodec34(const char rxb[], unsigned long rxb_len,
       case '\024':
          if (sondeaprs_verb) {
             osi_WrStr("date", 5ul);
-            aprsstr_IntToStr((long)(val%1000000UL+1000000UL), 1UL, s,
+            aprsstr_IntToStr((int32_t)(val%1000000UL+1000000UL), 1UL, s,
                 1001ul);
             s[0U] = ' ';
             osi_WrStr(s, 1001ul);
@@ -1786,8 +1779,8 @@ static void decodec34(const char rxb[], unsigned long rxb_len,
                  {
                      /* east-west speed */
                      ve = X2C_DIVL(dist(anonym0->lon,
-                anonym0->lonv1)*(double)osic_cos((float)anonym0->lat),
-                (double)(anonym0->tlon-anonym0->tlonv1));
+                anonym0->lonv1)*(double)osic_cos((float)
+                anonym0->lat),(double)(anonym0->tlon-anonym0->tlonv1));
                      /*WrStr(" ");WrFixed(ve*(EARTH*1000), 1, 9);
                 WrStr("VTe"); */
                      if (fabs(ve)<=2.6164311878598E-5) {
@@ -1819,12 +1812,12 @@ static void decodec34(const char rxb[], unsigned long rxb_len,
          break;
       default:;
          if (sondeaprs_verb) {
-            osi_WrHex((unsigned long)(unsigned char)cb[0U], 0UL);
+            osi_WrHex((uint32_t)(uint8_t)cb[0U], 0UL);
             osi_WrStr(" ", 2ul);
-            osi_WrHex((unsigned long)(unsigned char)cb[1U], 0UL);
-            osi_WrHex((unsigned long)(unsigned char)cb[2U], 0UL);
-            osi_WrHex((unsigned long)(unsigned char)cb[3U], 0UL);
-            osi_WrHex((unsigned long)(unsigned char)cb[4U], 0UL);
+            osi_WrHex((uint32_t)(uint8_t)cb[1U], 0UL);
+            osi_WrHex((uint32_t)(uint8_t)cb[2U], 0UL);
+            osi_WrHex((uint32_t)(uint8_t)cb[3U], 0UL);
+            osi_WrHex((uint32_t)(uint8_t)cb[4U], 0UL);
             osic_WrFixed((float)hr, 2L, 10UL);
          }
          break;
@@ -1870,7 +1863,7 @@ static void decodec34(const char rxb[], unsigned long rxb_len,
          */
          if (sondeaprs_verb) {
             osi_WrStr("date", 5ul);
-            aprsstr_IntToStr((long)(val%1000000UL+1000000UL), 1UL, s,
+            aprsstr_IntToStr((int32_t)(val%1000000UL+1000000UL), 1UL, s,
                 1001ul);
             s[0U] = ' ';
             osi_WrStr(s, 1001ul);
@@ -1961,12 +1954,12 @@ static void decodec34(const char rxb[], unsigned long rxb_len,
          break;
       default:;
          if (sondeaprs_verb) {
-            osi_WrHex((unsigned long)(unsigned char)cb[0U], 0UL);
+            osi_WrHex((uint32_t)(uint8_t)cb[0U], 0UL);
             osi_WrStr(" ", 2ul);
-            osi_WrHex((unsigned long)(unsigned char)cb[1U], 0UL);
-            osi_WrHex((unsigned long)(unsigned char)cb[2U], 0UL);
-            osi_WrHex((unsigned long)(unsigned char)cb[3U], 0UL);
-            osi_WrHex((unsigned long)(unsigned char)cb[4U], 0UL);
+            osi_WrHex((uint32_t)(uint8_t)cb[1U], 0UL);
+            osi_WrHex((uint32_t)(uint8_t)cb[2U], 0UL);
+            osi_WrHex((uint32_t)(uint8_t)cb[3U], 0UL);
+            osi_WrHex((uint32_t)(uint8_t)cb[4U], 0UL);
             osic_WrFixed((float)hr, 2L, 10UL);
          }
          break;
@@ -2008,13 +2001,13 @@ static void decodec34(const char rxb[], unsigned long rxb_len,
 
 /*------------------------------ DFM06 */
 
-static unsigned long bits2val(const char b[], unsigned long b_len,
-                unsigned long from, unsigned long len)
+static uint32_t bits2val(const char b[], uint32_t b_len,
+                uint32_t from, uint32_t len)
 {
-   unsigned long n;
+   uint32_t n;
    n = 0UL;
    while (len>0UL) {
-      n = n*2UL+(unsigned long)b[from];
+      n = n*2UL+(uint32_t)b[from];
       ++from;
       --len;
    }
@@ -2025,7 +2018,7 @@ static unsigned long bits2val(const char b[], unsigned long b_len,
 /*km*/
 
 
-static void jumpcheck(float p1, float p2, unsigned long * cnt)
+static void jumpcheck(float p1, float p2, uint32_t * cnt)
 {
    if (p2!=0.0f && (float)fabs(p1-p2)>1.5707963267949E-3f) *cnt = 30UL;
    else if (*cnt>0UL) --*cnt;
@@ -2037,16 +2030,16 @@ static void checkdf69(float long0, char * df9)
    *df9 = long0<30.0f; /* if long<30 it is df6 lat else is df9 long */
 } /* end checkdf69() */
 
-static unsigned long sondemod_MON[13] = {0UL,0UL,31UL,59UL,90UL,120UL,151UL,
+static uint32_t sondemod_MON[13] = {0UL,0UL,31UL,59UL,90UL,120UL,151UL,
                 181UL,212UL,243UL,273UL,304UL,334UL};
 
 
-static void decodesub(const char b[], unsigned long b_len, pCONTEXTDFM6 pc,
-                unsigned long subnum)
+static void decodesub(const char b[], uint32_t b_len,
+                pCONTEXTDFM6 pc, uint32_t subnum)
 {
-   unsigned long u;
-   unsigned long v;
-   long vi;
+   uint32_t u;
+   uint32_t v;
+   int32_t vi;
    double vr;
    switch (bits2val(b, b_len, 48UL, 4UL)) {
    case 0UL:
@@ -2068,7 +2061,7 @@ static void decodesub(const char b[], unsigned long b_len, pCONTEXTDFM6 pc,
    case 1UL:
       if (X2C_CHKNIL(pCONTEXTDFM6,pc)->d9) {
          /* dfm09 lat, dir */
-         vi = (long)bits2val(b, b_len, 0UL, 32UL);
+         vi = (int32_t)bits2val(b, b_len, 0UL, 32UL);
          u = bits2val(b, b_len, 32UL, 16UL);
          vr = (double)vi*1.E-7;
          if (vr<89.9 && vr>(-89.9)) {
@@ -2086,8 +2079,8 @@ static void decodesub(const char b[], unsigned long b_len, pCONTEXTDFM6 pc,
          }
          if (sondeaprs_verb) {
             osi_WrStr(" Lat: ", 7ul);
-            osic_WrFixed((float)(X2C_DIVL(pc->lat,1.7453292519943E-2)), 5L,
-                0UL);
+            osic_WrFixed((float)(X2C_DIVL(pc->lat,1.7453292519943E-2)),
+                5L, 0UL);
             osi_WrStr(" ", 2ul);
             osic_WrFixed((float)u*0.01f, 1L, 0UL);
             osi_WrStr(" deg", 5ul);
@@ -2095,7 +2088,7 @@ static void decodesub(const char b[], unsigned long b_len, pCONTEXTDFM6 pc,
       }
       break;
    case 2UL:
-      vi = (long)bits2val(b, b_len, 0UL, 32UL);
+      vi = (int32_t)bits2val(b, b_len, 0UL, 32UL);
       vr = (double)vi*1.E-7;
       checkdf69((float)vr, &X2C_CHKNIL(pCONTEXTDFM6,pc)->d9);
                 /* test if dfm6 or dfm9 */
@@ -2109,14 +2102,14 @@ static void decodesub(const char b[], unsigned long b_len, pCONTEXTDFM6 pc,
             pc->posok = 1;
             jumpcheck((float)pc->lon, (float)pc->lon1, &pc->poserr);
          }
-         vi = (long)bits2val(b, b_len, 32UL, 16UL);
+         vi = (int32_t)bits2val(b, b_len, 32UL, 16UL);
          if (vi>=32768L) vi -= 65536L;
          vr = (double)vi*0.01;
          if (vr<50.0 && vr>(-500.0)) pc->clmb = vr;
          if (sondeaprs_verb) {
             osi_WrStr(" Long:", 7ul);
-            osic_WrFixed((float)(X2C_DIVL(pc->lon,1.7453292519943E-2)), 5L,
-                0UL);
+            osic_WrFixed((float)(X2C_DIVL(pc->lon,1.7453292519943E-2)),
+                5L, 0UL);
             osic_WrFixed((float)pc->clmb, 1L, 0UL);
             osi_WrStr(" m/s", 5ul);
          }
@@ -2139,8 +2132,8 @@ static void decodesub(const char b[], unsigned long b_len, pCONTEXTDFM6 pc,
          }
          if (sondeaprs_verb) {
             osi_WrStr(" Lat: ", 7ul);
-            osic_WrFixed((float)(X2C_DIVL(pc->lat,1.7453292519943E-2)), 5L,
-                0UL);
+            osic_WrFixed((float)(X2C_DIVL(pc->lat,1.7453292519943E-2)),
+                5L, 0UL);
             osi_WrStr(" ", 2ul);
             osic_WrFixed((float)u*0.036f, 1L, 0UL);
             osi_WrStr("km/h", 5ul);
@@ -2163,7 +2156,7 @@ static void decodesub(const char b[], unsigned long b_len, pCONTEXTDFM6 pc,
       }
       else {
          /* dfm06 long, dir */
-         vi = (long)bits2val(b, b_len, 0UL, 32UL);
+         vi = (int32_t)bits2val(b, b_len, 0UL, 32UL);
          u = bits2val(b, b_len, 32UL, 16UL);
          vr = (double)vi*1.E-7;
          if (vr<180.0 && vr>(-180.0)) {
@@ -2181,8 +2174,8 @@ static void decodesub(const char b[], unsigned long b_len, pCONTEXTDFM6 pc,
          }
          if (sondeaprs_verb) {
             osi_WrStr(" Long:", 7ul);
-            osic_WrFixed((float)(X2C_DIVL(pc->lon,1.7453292519943E-2)), 5L,
-                0UL);
+            osic_WrFixed((float)(X2C_DIVL(pc->lon,1.7453292519943E-2)),
+                5L, 0UL);
             osi_WrStr(" ", 2ul);
             osic_WrFixed((float)u*0.01f, 1L, 0UL);
             osi_WrStr(" deg", 5ul);
@@ -2195,7 +2188,7 @@ static void decodesub(const char b[], unsigned long b_len, pCONTEXTDFM6 pc,
       else {
          /* dfm06 alt, speed */
          v = bits2val(b, b_len, 0UL, 32UL);
-         vi = (long)bits2val(b, b_len, 32UL, 16UL);
+         vi = (int32_t)bits2val(b, b_len, 32UL, 16UL);
          vr = (double)v*0.01;
          if (vr<50000.0) {
             pc->alt = vr;
@@ -2217,10 +2210,10 @@ static void decodesub(const char b[], unsigned long b_len, pCONTEXTDFM6 pc,
 } /* end decodesub() */
 
 
-static void decodedfm6(const char rxb[], unsigned long rxb_len,
-                unsigned long ip, unsigned long fromport)
+static void decodedfm6(const char rxb[], uint32_t rxb_len,
+                uint32_t ip, uint32_t fromport)
 {
-   unsigned long rt;
+   uint32_t rt;
    char db[56];
    pCONTEXTDFM6 pc0;
    pCONTEXTDFM6 pc1;
@@ -2229,9 +2222,9 @@ static void decodedfm6(const char rxb[], unsigned long rxb_len,
    char cb[10];
    char s[1001];
    CALLSSID usercall;
-   unsigned long ib;
-   unsigned long j;
-   unsigned long i;
+   uint32_t ib;
+   uint32_t j;
+   uint32_t i;
    double exlat;
    double exlon;
    char latok;
@@ -2257,7 +2250,7 @@ static void decodedfm6(const char rxb[], unsigned long rxb_len,
    if (usercall[0U]==0) aprsstr_Assign(usercall, 11ul, mycall, 100ul);
    rt = 0UL;
    for (j = 0UL; j<=3UL; j++) {
-      rt = rt*256UL+(unsigned long)(unsigned char)rxb[i]; /* realtime */
+      rt = rt*256UL+(uint32_t)(uint8_t)rxb[i]; /* realtime */
       ++i;
    } /* end for */
    if (sondeaprs_verb && fromport>0UL) {
@@ -2284,7 +2277,7 @@ static void decodedfm6(const char rxb[], unsigned long rxb_len,
          /* timed out */
          if (pc0==0) pcontextdfm6 = pc1;
          else X2C_CHKNIL(pCONTEXTDFM6,pc0)->next = pc1;
-         osic_free((X2C_ADDRESS *) &pc, sizeof(struct CONTEXTDFM6));
+         osic_free((char * *) &pc, sizeof(struct CONTEXTDFM6));
       }
       else {
          if (aprsstr_StrCmp(nam, 9ul, pc->name, 9ul)) break;
@@ -2293,9 +2286,9 @@ static void decodedfm6(const char rxb[], unsigned long rxb_len,
       pc = pc1;
    }
    if (pc==0) {
-      osic_alloc((X2C_ADDRESS *) &pc, sizeof(struct CONTEXTDFM6));
+      osic_alloc((char * *) &pc, sizeof(struct CONTEXTDFM6));
       if (pc==0) Error("allocate context out im memory", 31ul);
-      memset((X2C_ADDRESS)pc,(char)0,sizeof(struct CONTEXTDFM6));
+      memset((char *)pc,(char)0,sizeof(struct CONTEXTDFM6));
       pc->next = pcontextdfm6;
       pcontextdfm6 = pc;
       aprsstr_Assign(pc->name, 9ul, nam, 9ul);
@@ -2309,16 +2302,14 @@ static void decodedfm6(const char rxb[], unsigned long rxb_len,
       i += 4UL;
       for (j = 0UL; j<=6UL; j++) {
          for (ib = 0UL; ib<=7UL; ib++) {
-            db[ib+8UL*j] = X2C_IN(7UL-ib,8,
-                (unsigned char)(unsigned char)rxb[i]);
+            db[ib+8UL*j] = X2C_IN(7UL-ib,8,(uint8_t)(uint8_t)rxb[i]);
          } /* end for */
          ++i;
       } /* end for */
       decodesub(db, 56ul, pc, 0UL);
       for (j = 0UL; j<=6UL; j++) {
          for (ib = 0UL; ib<=7UL; ib++) {
-            db[ib+8UL*j] = X2C_IN(7UL-ib,8,
-                (unsigned char)(unsigned char)rxb[i]);
+            db[ib+8UL*j] = X2C_IN(7UL-ib,8,(uint8_t)(uint8_t)rxb[i]);
          } /* end for */
          ++i;
       } /* end for */
@@ -2350,10 +2341,10 @@ static void decodedfm6(const char rxb[], unsigned long rxb_len,
             }
             if ((lonok && latok) && (pc->poserr==0UL || sondeaprs_nofilter)) {
                sondeaprs_senddata(exlat, exlon, anonym->alt, anonym->speed,
-                anonym->dir, anonym->clmb, 0.0, 0.0, (double)X2C_max_real,
-                0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, anonym->actrt%86400UL,
-                0UL, anonym->name, 9ul, 0UL, 0UL, usercall, 11ul, 0UL, 0UL,
-                sondeaprs_nofilter);
+                anonym->dir, anonym->clmb, 0.0, 0.0,
+                (double)X2C_max_real, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                0.0, anonym->actrt%86400UL, 0UL, anonym->name, 9ul, 0UL, 0UL,
+                 usercall, 11ul, 0UL, 0UL, sondeaprs_nofilter);
                anonym->lastsent = systime;
             }
          }
@@ -2367,7 +2358,7 @@ static void decodedfm6(const char rxb[], unsigned long rxb_len,
 
 static void WrChChk(char ch)
 {
-   if ((unsigned char)ch>=' ' && (unsigned char)ch<'\177') {
+   if ((uint8_t)ch>=' ' && (uint8_t)ch<'\177') {
       osi_WrStr((char *) &ch, 1u/1u);
    }
 } /* end WrChChk() */
@@ -2381,8 +2372,9 @@ static void WrChChk(char ch)
 #define sondemod_EARTHAB 4.2841311513312E+4
 
 
-static void wgs84r(double x, double y, double z, double * lat,
-                double * long0, double * heig)
+static void wgs84r(double x, double y, double z,
+                double * lat, double * long0,
+                double * heig)
 {
    double sl;
    double ct;
@@ -2397,7 +2389,8 @@ static void wgs84r(double x, double y, double z, double * lat,
       xh = x+rh;
       *long0 = atan20(xh, y)*2.0;
       if (*long0>3.1415926535898) *long0 = *long0-6.2831853071796;
-      t = (double)osic_arctan((float)(X2C_DIVL(z*1.003364089821,rh)));
+      t = (double)osic_arctan((float)(X2C_DIVL(z*1.003364089821,
+                rh)));
       st = (double)osic_sin((float)t);
       ct = (double)osic_cos((float)t);
       *lat = (double)osic_arctan((float)
@@ -2415,49 +2408,49 @@ static void wgs84r(double x, double y, double z, double * lat,
 } /* end wgs84r() */
 
 
-static long getint32(const char frame[], unsigned long frame_len,
-                unsigned long p)
+static int32_t getint32(const char frame[], uint32_t frame_len,
+                uint32_t p)
 {
-   unsigned long n;
-   unsigned long i;
+   uint32_t n;
+   uint32_t i;
    n = 0UL;
    for (i = 3UL;; i--) {
-      n = n*256UL+(unsigned long)(unsigned char)frame[p+i];
+      n = n*256UL+(uint32_t)(uint8_t)frame[p+i];
       if (i==0UL) break;
    } /* end for */
-   return (long)n;
+   return (int32_t)n;
 } /* end getint32() */
 
 
-static unsigned long getcard16(const char frame[], unsigned long frame_len,
-                unsigned long p)
+static uint32_t getcard16(const char frame[], uint32_t frame_len,
+                uint32_t p)
 {
-   return (unsigned long)(unsigned char)frame[p]+256UL*(unsigned long)
-                (unsigned char)frame[p+1UL];
+   return (uint32_t)(uint8_t)frame[p]+256UL*(uint32_t)(uint8_t)
+                frame[p+1UL];
 } /* end getcard16() */
 
 
-static long getint16(const char frame[], unsigned long frame_len,
-                unsigned long p)
+static int32_t getint16(const char frame[], uint32_t frame_len,
+                uint32_t p)
 {
-   unsigned long n;
-   n = (unsigned long)(unsigned char)frame[p]+256UL*(unsigned long)
-                (unsigned char)frame[p+1UL];
-   if (n>=32768UL) return (long)(n-65536UL);
-   return (long)n;
+   uint32_t n;
+   n = (uint32_t)(uint8_t)frame[p]+256UL*(uint32_t)(uint8_t)
+                frame[p+1UL];
+   if (n>=32768UL) return (int32_t)(n-65536UL);
+   return (int32_t)n;
 } /* end getint16() */
 
 
-static unsigned long gethex(const char frame[], unsigned long frame_len,
-                unsigned long p, unsigned long nibb)
+static uint32_t gethex(const char frame[], uint32_t frame_len,
+                uint32_t p, uint32_t nibb)
 {
-   unsigned long c;
-   unsigned long n;
+   uint32_t c;
+   uint32_t n;
    n = 0UL;
    while (nibb>0UL) {
       n = n*16UL;
       /*WrStr("<<"); WrStr(frame[p]); WrStr(">>"); */
-      c = (unsigned long)(unsigned char)frame[p];
+      c = (uint32_t)(uint8_t)frame[p];
       if (c>=48UL && c<=57UL) n += c-48UL;
       else if (c>=65UL && c<=70UL) n += c-55UL;
       else return 0UL;
@@ -2469,8 +2462,9 @@ static unsigned long gethex(const char frame[], unsigned long frame_len,
 } /* end gethex() */
 
 
-static void posrs41(const char b[], unsigned long b_len, unsigned long p,
-                double * lat, double * long0, double * heig, double * speed,
+static void posrs41(const char b[], uint32_t b_len, uint32_t p,
+                double * lat, double * long0,
+                double * heig, double * speed,
                 double * dir, double * clmb)
 {
    double vu;
@@ -2504,13 +2498,15 @@ static void posrs41(const char b[], unsigned long b_len, unsigned long p,
    vx = (double)getint16(b, b_len, p+12UL)*0.01;
    vy = (double)getint16(b, b_len, p+14UL)*0.01;
    vz = (double)getint16(b, b_len, p+16UL)*0.01;
-   vn = (-(vx*(double)osic_sin((float)*lat)*(double)osic_cos((float)*long0))
-                -vy*(double)osic_sin((float)*lat)*(double)osic_sin((float)
+   vn = (-(vx*(double)osic_sin((float)*lat)*(double)
+                osic_cos((float)*long0))-vy*(double)
+                osic_sin((float)*lat)*(double)osic_sin((float)
                 *long0))+vz*(double)osic_cos((float)*lat);
-   ve = -(vx*(double)osic_sin((float)*long0))+vy*(double)osic_cos((float)
-                *long0);
-   vu = vx*(double)osic_cos((float)*lat)*(double)osic_cos((float)*long0)
-                +vy*(double)osic_cos((float)*lat)*(double)osic_sin((float)
+   ve = -(vx*(double)osic_sin((float)*long0))+vy*(double)
+                osic_cos((float)*long0);
+   vu = vx*(double)osic_cos((float)*lat)*(double)
+                osic_cos((float)*long0)+vy*(double)
+                osic_cos((float)*lat)*(double)osic_sin((float)
                 *long0)+vz*(double)osic_sin((float)*lat);
    *dir = X2C_DIVL(atan20(vn, ve),1.7453292519943E-2);
    if (*dir<0.0) *dir = 360.0+*dir;
@@ -2534,18 +2530,19 @@ static double altToPres(double a)
    if (a<=0.0) return 1010.0;
    else if (a>40000.0) return 0.0;
    else if (a>15000.0) {
-      return (double)(osic_exp((float)(a*(-1.5873015873016E-4)+0.2629))
-                *1000.0f);
+      return (double)(osic_exp((float)(a*(-1.5873015873016E-4)
+                +0.2629))*1000.0f);
    }
    else {
-      return (double)(1010.0f*osic_exp(osic_ln((float)((293.0-0.0065*a)
-                *3.4129692832765E-3))*5.26f));
+      return (double)(1010.0f*osic_exp(osic_ln((float)
+                ((293.0-0.0065*a)*3.4129692832765E-3))*5.26f));
    }
    return 0;
 } /* end altToPres() */
 
 
-static double calcOzone(double uA, double temp, double airpres)
+static double calcOzone(double uA, double temp,
+                double airpres)
 {
    return 4.307E-4*uA*(temp+273.15)*28.57*getOzoneCorr(airpres);
 /*
@@ -2566,30 +2563,30 @@ static double calcOzone(double uA, double temp, double airpres)
 */
 } /* end calcOzone() */
 
-static unsigned short sondemod_POLYNOM0 = 0x1021U;
+static uint16_t sondemod_POLYNOM0 = 0x1021U;
 
-static unsigned short sondemod_burstIndicatorBytes[12] = {2U,262U,276U,391U,
-                306U,0U,0U,0U,255U,255U,0U,0U};
+static uint16_t sondemod_burstIndicatorBytes[12] = {2U,262U,276U,391U,306U,
+                0U,0U,0U,255U,255U,0U,0U};
 
-static unsigned short _cnst1[12] = {2U,262U,276U,391U,306U,0U,0U,0U,255U,
-                255U,0U,0U};
+static uint16_t _cnst1[12] = {2U,262U,276U,391U,306U,0U,0U,0U,255U,255U,0U,
+                0U};
 
-static void decoders41(const char rxb[], unsigned long rxb_len,
-                unsigned long ip, unsigned long fromport)
+static void decoders41(const char rxb[], uint32_t rxb_len,
+                uint32_t ip, uint32_t fromport)
 {
    OBJNAME nam;
-   long res;
+   int32_t res;
    char s[1001];
    CALLSSID usercall;
-   unsigned long frameno;
-   unsigned long len;
-   unsigned long p;
-   unsigned long ic;
-   unsigned long j;
-   unsigned long i;
+   uint32_t frameno;
+   uint32_t len;
+   uint32_t p;
+   uint32_t ic;
+   uint32_t j;
+   uint32_t i;
    char nameok;
    char calok;
-   unsigned short crc;
+   uint16_t crc;
    char typ;
    pCONTEXTR4 pc0;
    pCONTEXTR4 pc1;
@@ -2601,7 +2598,7 @@ static void decoders41(const char rxb[], unsigned long rxb_len,
    double heig;
    double long0;
    double lat;
-   unsigned long tmp;
+   uint32_t tmp;
    calok = 0;
    nameok = 0;
    nam[0U] = 0;
@@ -2630,7 +2627,7 @@ static void decoders41(const char rxb[], unsigned long rxb_len,
       if (p+4UL>=rxb_len-1) break;
       typ = rxb[p];
       ++p;
-      len = (unsigned long)(unsigned char)rxb[p]+2UL;
+      len = (uint32_t)(uint8_t)rxb[p]+2UL;
       ++p;
       if (p+len>=rxb_len-1) break;
       /*
@@ -2645,7 +2642,7 @@ static void decoders41(const char rxb[], unsigned long rxb_len,
          if (j+2UL<len) {
             for (ic = 0UL; ic<=7UL; ic++) {
                if (((0x8000U & crc)!=0)!=X2C_IN(7UL-ic,8,
-                (unsigned char)(unsigned char)rxb[p+j])) {
+                (uint8_t)(uint8_t)rxb[p+j])) {
                   crc = X2C_LSH(crc,16,1)^0x1021U;
                }
                else crc = X2C_LSH(crc,16,1);
@@ -2662,9 +2659,7 @@ static void decoders41(const char rxb[], unsigned long rxb_len,
          nameok = 1;
          for (i = 0UL; i<=7UL; i++) {
             nam[i] = rxb[p+2UL+i];
-            if ((unsigned char)nam[i]<=' ' || (unsigned char)nam[i]>'Z') {
-               nameok = 0;
-            }
+            if ((uint8_t)nam[i]<=' ' || (uint8_t)nam[i]>'Z') nameok = 0;
          } /* end for */
          nam[8U] = 0;
          pc = pcontextr4;
@@ -2676,7 +2671,7 @@ static void decoders41(const char rxb[], unsigned long rxb_len,
                /* timed out */
                if (pc0==0) pcontextr4 = pc1;
                else X2C_CHKNIL(pCONTEXTR4,pc0)->next = pc1;
-               osic_free((X2C_ADDRESS *) &pc, sizeof(struct CONTEXTR4));
+               osic_free((char * *) &pc, sizeof(struct CONTEXTR4));
             }
             else {
                if (aprsstr_StrCmp(nam, 9ul, pc->name, 9ul)) break;
@@ -2685,15 +2680,15 @@ static void decoders41(const char rxb[], unsigned long rxb_len,
             pc = pc1;
          }
          if (pc==0) {
-            osic_alloc((X2C_ADDRESS *) &pc, sizeof(struct CONTEXTR4));
+            osic_alloc((char * *) &pc, sizeof(struct CONTEXTR4));
             if (pc==0) Error("allocate context out im memory", 31ul);
-            memset((X2C_ADDRESS)pc,(char)0,sizeof(struct CONTEXTR4));
+            memset((char *)pc,(char)0,sizeof(struct CONTEXTR4));
             pc->next = pcontextr4;
             pcontextr4 = pc;
             aprsstr_Assign(pc->name, 9ul, nam, 9ul);
             if (sondeaprs_verb) osi_WrStrLn("is new ", 8ul);
          }
-         frameno = (unsigned long)getint16(rxb, rxb_len, p);
+         frameno = (uint32_t)getint16(rxb, rxb_len, p);
          if (frameno>X2C_CHKNIL(pCONTEXTR4,pc)->framenum) {
             /* new frame number */
             pc->framesent = 0;
@@ -2723,8 +2718,7 @@ static void decoders41(const char rxb[], unsigned long rxb_len,
          while (i<=11UL && (_cnst1[i]>=256U || rxb[p+23UL+i]==(char)
                 _cnst1[i])) ++i;
          if (i>11UL) {
-            pc->burstKill = ((unsigned long)(unsigned char)rxb[p+35UL]&1UL)
-                +1UL;
+            pc->burstKill = ((uint32_t)(uint8_t)rxb[p+35UL]&1UL)+1UL;
             if (sondeaprs_verb) {
                osi_WrStr(" BK=", 5ul);
                osic_WrINT32(pc->burstKill-1UL, 1UL);
@@ -2755,7 +2749,7 @@ static void decoders41(const char rxb[], unsigned long rxb_len,
          /*             WrStrLn("7C frame"); */
          if (pc) {
             X2C_CHKNIL(pCONTEXTR4,
-                pc)->gpssecond = (unsigned long)((getint32(rxb, rxb_len,
+                pc)->gpssecond = (uint32_t)((getint32(rxb, rxb_len,
                 p+2UL)/1000L+86382L)%86400L); /* gps TOW */
          }
       }
@@ -2778,13 +2772,17 @@ static void decoders41(const char rxb[], unsigned long rxb_len,
             if (pc) {
                /*          pc^.ozonInstType:=gethex(rxb, p+1, 2); */
                /*          pc^.ozonInstNum:=gethex(rxb, p+3, 2); */
-               res = (long)gethex(rxb, rxb_len, p+5UL, 4UL);
-               if (res>=32768L) res = 32768L-res;
+               res = (int32_t)gethex(rxb, rxb_len, p+5UL, 4UL);
+               if (res>=32768L) {
+                  res = 32768L-res;
+               }
                X2C_CHKNIL(pCONTEXTR4,pc)->ozonTemp = (double)res*0.01;
-               pc->ozonuA = (double)gethex(rxb, rxb_len, p+9UL, 5UL)*0.0001;
+               pc->ozonuA = (double)gethex(rxb, rxb_len, p+9UL,
+                5UL)*0.0001;
                pc->ozonBatVolt = (double)gethex(rxb, rxb_len, p+14UL,
                 2UL)*0.1;
-               pc->ozonPumpMA = (double)gethex(rxb, rxb_len, p+16UL, 3UL);
+               pc->ozonPumpMA = (double)gethex(rxb, rxb_len, p+16UL,
+                3UL);
                pc->ozonExtVolt = (double)gethex(rxb, rxb_len, p+19UL,
                 2UL)*0.1;
                ozonval = calcOzone(pc->ozonuA, pc->ozonTemp, pc->hp);
@@ -2816,12 +2814,12 @@ static void decoders41(const char rxb[], unsigned long rxb_len,
                   WrChChk(rxb[i]);
                   if (i==tmp) break;
                } /* end for */
-               if (((unsigned long)(unsigned char)rxb[17UL]&1)) {
+               if (((uint32_t)(uint8_t)rxb[17UL]&1)) {
                   osi_WrStr(" NotCal", 8ul);
                }
                osi_WrStr(" V:", 4ul);
                osic_WrFixed((float)gethex(rxb, rxb_len, p+18UL, 2UL)*0.1f,
-                1L, 1UL);
+                 1L, 1UL);
                osi_WrStr(")", 2ul);
             }
          }
@@ -2854,9 +2852,9 @@ static void decoders41(const char rxb[], unsigned long rxb_len,
 
 static void udprx(void)
 {
-   unsigned long fromport;
-   unsigned long ip;
-   long len;
+   uint32_t fromport;
+   uint32_t ip;
+   int32_t len;
    len = udpreceive(rxsock, chan[sondemod_LEFT].rxbuf, 520L, &fromport, &ip);
    systime = osic_time();
    if (len==240L) {

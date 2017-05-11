@@ -5,7 +5,7 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
-/* "@(#)frameio.c Feb 12  4:40:42 2017" */
+/* "@(#)frameio.c May 10 23:20:08 2017" */
 
 
 #define X2C_int32
@@ -33,11 +33,11 @@ char frameio_crcok;
 struct frameio_UDPSOCK frameio_udpsocks0[15];
 #define frameio_DCDRETRIES 500
 
-static unsigned long size;
+static uint32_t size;
 
-static unsigned long from;
+static uint32_t from;
 
-static unsigned long udppos;
+static uint32_t udppos;
 
 static char axv2;
 
@@ -45,10 +45,10 @@ static char udpbuf[1601];
 
 
 struct _0 {
-   unsigned long lastBaud; /*insert flags if baud change*/
-   unsigned long oldi; /*last received frame index from hardware*/
-   unsigned long nextfrom; /*read next frame from hardware*/
-   unsigned long txakku; /*send next frame to hardware*/
+   uint32_t lastBaud; /*insert flags if baud change*/
+   uint32_t oldi; /*last received frame index from hardware*/
+   uint32_t nextfrom; /*read next frame from hardware*/
+   uint32_t txakku; /*send next frame to hardware*/
    char twoflags;
 };
 
@@ -102,13 +102,13 @@ END opensock;
 
 static void rmnc(void)
 {
-   unsigned long k;
-   unsigned long j;
+   uint32_t k;
+   uint32_t j;
    char cmd;
    l2_adress[14U] = l2_adress[7U];
    l2_asize = 15U;
-   k = (unsigned long)(unsigned char)l2_adress[0U]*128UL+(unsigned long)
-                (unsigned char)l2_adress[1U]/2UL;
+   k = (uint32_t)(uint8_t)l2_adress[0U]*128UL+(uint32_t)(uint8_t)
+                l2_adress[1U]/2UL;
    cmd = (char)(k&1);
    k = k/2UL;
    j = 12UL;
@@ -119,28 +119,28 @@ static void rmnc(void)
    } while (j!=6UL);
    if (cmd) l2_adress[13U] = '`';
    else l2_adress[13U] = '\340';
-   j = (unsigned long)(unsigned char)l2_adress[2U];
+   j = (uint32_t)(uint8_t)l2_adress[2U];
    l2_adress[0U] = (char)((j/4UL)*2UL+64UL);
-   k = (unsigned long)(unsigned char)l2_adress[3U];
+   k = (uint32_t)(uint8_t)l2_adress[3U];
    l2_adress[1U] = (char)(((j&3UL)*16UL+k/16UL+32UL)*2UL);
-   j = (unsigned long)(unsigned char)l2_adress[4U];
+   j = (uint32_t)(uint8_t)l2_adress[4U];
    l2_adress[2U] = (char)(((k&15UL)*4UL+j/64UL+32UL)*2UL);
    l2_adress[3U] = (char)(((j&63UL)+32UL)*2UL);
-   j = (unsigned long)(unsigned char)l2_adress[5U];
+   j = (uint32_t)(uint8_t)l2_adress[5U];
    l2_adress[4U] = (char)((j/4UL)*2UL+64UL);
-   k = (unsigned long)(unsigned char)l2_adress[6U];
+   k = (uint32_t)(uint8_t)l2_adress[6U];
    l2_adress[5U] = (char)(((j&3UL)*16UL+k/16UL+32UL)*2UL);
-   l2_adress[6U] = (char)(((k&15UL)+48UL)*2UL+(unsigned long)cmd*128UL);
+   l2_adress[6U] = (char)(((k&15UL)+48UL)*2UL+(uint32_t)cmd*128UL);
 } /* end rmnc() */
 
 
-static char GetAField(unsigned long port)
+static char GetAField(uint32_t port)
 {
-   unsigned long a;
-   unsigned long j;
-   unsigned long i;
+   uint32_t a;
+   uint32_t j;
+   uint32_t i;
    char c;
-   unsigned long tmp;
+   uint32_t tmp;
    if (size>=10UL) {
       if (size>=70UL) a = 70UL;
       else a = size;
@@ -151,7 +151,7 @@ static char GetAField(unsigned long port)
          c = udpbuf[udppos];
          ++udppos;
          l2_adress[i] = c;
-         if (((unsigned long)(unsigned char)c&1)) {
+         if (((uint32_t)(uint8_t)c&1)) {
             /*address end mark*/
             if (i==1UL) {
                for (j = 2UL; j<=6UL; j++) {
@@ -160,14 +160,14 @@ static char GetAField(unsigned long port)
                } /* end for */
                l2_asize = 7U;
             }
-            else l2_asize = (unsigned short)(i+1UL);
+            else l2_asize = (uint16_t)(i+1UL);
             /*WrInt(asize, 4); WrStrLn("=as"); */
-            if ((l2_asize>=7U && l2_asize%7U==0U) && (unsigned long)
+            if ((l2_asize>=7U && l2_asize%7U==0U) && (uint32_t)
                 l2_asize<=size) {
                l2_adress[l2_asize] = udpbuf[udppos]; /*command*/
                ++udppos;
                ++l2_asize;
-               size -= (unsigned long)l2_asize;
+               size -= (uint32_t)l2_asize;
                /*WrInt(size, 4); WrStrLn("=saf"); */
                /*FOR j:=0 TO asize-1 DO WrInt(ORD(adress[j]), 4); END;
                 WrStrLn("=af"); */
@@ -184,15 +184,15 @@ static char GetAField(unsigned long port)
 
 static char GetDField(void)
 {
-   long i;
+   int32_t i;
    struct l2_DFIELD * anonym;
-   long tmp;
+   int32_t tmp;
    if (size<=257UL) {
       { /* with */
          struct l2_DFIELD * anonym = l2_dbuf;
-         anonym->len = (unsigned short)size;
+         anonym->len = (uint16_t)size;
          /*WrInt(len, 4); WrStrLn("=ilen"); */
-         tmp = (long)size-1L;
+         tmp = (int32_t)size-1L;
          i = 0L;
          if (i<=tmp) for (;; i++) {
             anonym->info[i] = udpbuf[udppos];
@@ -215,18 +215,18 @@ static char GetDField(void)
 } /* end GetDField() */
 
 
-static void getudp(unsigned long usock, char buf[], unsigned long buf_len,
-                long * len)
+static void getudp(uint32_t usock, char buf[], uint32_t buf_len,
+                int32_t * len)
 {
-   unsigned long fromport;
-   unsigned long ipn;
+   uint32_t fromport;
+   uint32_t ipn;
    char crc2;
    char crc1;
    *len = -1L;
-   if ((long)frameio_udpsocks0[usock].fd<0L) return;
-   *len = udpreceive(frameio_udpsocks0[usock].fd, buf, (long)(buf_len),
+   if ((int32_t)frameio_udpsocks0[usock].fd<0L) return;
+   *len = udpreceive(frameio_udpsocks0[usock].fd, buf, (int32_t)(buf_len),
                 &fromport, &ipn);
-   if ((*len>2L && *len<(long)(buf_len))
+   if ((*len>2L && *len<(int32_t)(buf_len))
                 && (!frameio_udpsocks0[usock]
                 .checkip || frameio_udpsocks0[usock].ipnum==ipn)) {
       /*WrInt(udpsend(usock^.fd, buf, len, usock^.dport, usock^.ip), 1);
@@ -243,10 +243,10 @@ static void getudp(unsigned long usock, char buf[], unsigned long buf_len,
       if (buf[0UL]=='\001') {
          aprsstr_extrudp2(buf, buf_len, l2_udp2buf, 100ul, len);
          if (l2_udp2buf[1U]!='?') {
-            frameio_udpsocks0[usock].dcd = ((unsigned char)(unsigned char)
+            frameio_udpsocks0[usock].dcd = ((uint8_t)(uint8_t)
                 l2_udp2buf[1U]&0x2U)!=0U;
-            frameio_udpsocks0[usock].hastxdata = ((unsigned char)
-                (unsigned char)l2_udp2buf[1U]&0x4U)!=0U;
+            frameio_udpsocks0[usock].hastxdata = ((uint8_t)(uint8_t)
+                l2_udp2buf[1U]&0x4U)!=0U;
          }
          if (*len==0L) *len = -1L;
          axv2 = 1;
@@ -263,24 +263,24 @@ static void getudp(unsigned long usock, char buf[], unsigned long buf_len,
 } /* end getudp() */
 
 
-extern char frameio_GetFrame(unsigned long port)
+extern char frameio_GetFrame(uint32_t port)
 {
-   long i;
+   int32_t i;
    if (port==0UL) return 0;
    getudp(port-1UL, udpbuf, 1601ul, &i);
    if (i<0L) return 0;
    /*WrInt(i, 5); WrStrLn("=udpin");   */
-   size = (unsigned long)i;
+   size = (uint32_t)i;
    from = 0UL;
    if (GetAField(port) && GetDField()) return 1;
    return 0;
 } /* end GetFrame() */
 
 
-extern void frameio_Modempoll(unsigned long tport)
+extern void frameio_Modempoll(uint32_t tport)
 {
    char b[100];
-   long ret;
+   int32_t ret;
    /*WrStrLn("send ?"); */
    struct frameio_UDPSOCK * anonym;
    if (tport==0UL || tport>15UL) return;
@@ -295,7 +295,7 @@ extern void frameio_Modempoll(unsigned long tport)
 } /* end Modempoll() */
 
 
-extern char frameio_DCD(unsigned long port)
+extern char frameio_DCD(uint32_t port)
 {
    struct frameio_UDPSOCK * anonym;
    if (port==0UL || port-1UL>14UL) return 0;
@@ -315,7 +315,7 @@ extern char frameio_DCD(unsigned long port)
 } /* end DCD() */
 
 
-extern char frameio_Sending(unsigned long port)
+extern char frameio_Sending(uint32_t port)
 {
    struct frameio_UDPSOCK * anonym;
    if (port==0UL || port-1UL>14UL) return 0;
@@ -338,16 +338,16 @@ extern char frameio_Sending(unsigned long port)
 } /* end Sending() */
 
 
-extern void frameio_SendFrame(unsigned long tport, unsigned long Baud,
-                char Adress[], unsigned long Adress_len,
-                unsigned long AdrLen, l2_pDATA dp)
+extern void frameio_SendFrame(uint32_t tport, uint32_t Baud,
+                char Adress[], uint32_t Adress_len, uint32_t AdrLen,
+                l2_pDATA dp)
 {
-   unsigned long j;
-   unsigned long i;
+   uint32_t j;
+   uint32_t i;
    char b[351];
-   long ret;
+   int32_t ret;
    struct frameio_UDPSOCK * anonym;
-   unsigned long tmp;
+   uint32_t tmp;
    if ((tport==0UL || tport>15UL) || AdrLen>=350UL) return;
    --tport;
    j = 0UL;
@@ -359,7 +359,7 @@ extern void frameio_SendFrame(unsigned long tport, unsigned long Baud,
       if (i==tmp) break;
    } /* end for */
    if (dp) {
-      tmp = (unsigned long)(dp->len-1U);
+      tmp = (uint32_t)(dp->len-1U);
       i = 0UL;
       if (i<=tmp) for (;; i++) {
          b[j] = dp->info[i];
@@ -367,10 +367,10 @@ extern void frameio_SendFrame(unsigned long tport, unsigned long Baud,
          if (i==tmp) break;
       } /* end for */
    }
-   aprsstr_AppCRC(b, 351ul, (long)j);
+   aprsstr_AppCRC(b, 351ul, (int32_t)j);
    { /* with */
       struct frameio_UDPSOCK * anonym = &frameio_udpsocks0[tport];
-      ret = udpsend(anonym->fd, b, (long)(j+2UL), anonym->toport,
+      ret = udpsend(anonym->fd, b, (int32_t)(j+2UL), anonym->toport,
                 anonym->ipnum);
       anonym->hastxdata = axv2;
    }

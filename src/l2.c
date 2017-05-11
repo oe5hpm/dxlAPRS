@@ -5,7 +5,7 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
-/* "@(#)l2.c Apr  1  4:30:20 2017" */
+/* "@(#)l2.c May 11  0:15:23 2017" */
 
 
 #define X2C_int32
@@ -22,22 +22,22 @@
 #endif
 #include <osic.h>
 
-unsigned short l2_UA = 0x63U;
-unsigned short l2_DM = 0xFU;
-unsigned short l2_SABM = 0x2FU;
-unsigned short l2_DISC = 0x43U;
-unsigned short l2_FRMR = 0x87U;
-unsigned short l2_UI = 0x3U;
-unsigned short l2_RR = 0x1U;
-unsigned short l2_REJ = 0x9U;
-unsigned short l2_RNR = 0x5U;
+uint16_t l2_UA = 0x63U;
+uint16_t l2_DM = 0xFU;
+uint16_t l2_SABM = 0x2FU;
+uint16_t l2_DISC = 0x43U;
+uint16_t l2_FRMR = 0x87U;
+uint16_t l2_UI = 0x3U;
+uint16_t l2_RR = 0x1U;
+uint16_t l2_REJ = 0x9U;
+uint16_t l2_RNR = 0x5U;
 
 
 char l2_L2Lock;
-unsigned short l2_LostINT;
+uint16_t l2_LostINT;
 l2_pDATA l2_dbuf;
 l2_AFIELD l2_adress;
-unsigned short l2_asize;
+uint16_t l2_asize;
 char l2_udp2buf[100];
 
 
@@ -154,9 +154,9 @@ Callback:
 
 */
 /* (C)OE5DXL 1993-2015, GPL3 */
-static unsigned short l2_SSIDMASK = 0x5EU;
+static uint16_t l2_SSIDMASK = 0x5EU;
 
-static unsigned short l2_DAMARR = 0x20U;
+static uint16_t l2_DAMARR = 0x20U;
 
 #define l2_RESP 0
 
@@ -166,9 +166,9 @@ static unsigned short l2_DAMARR = 0x20U;
 
 #define l2_POLL 3
 
-static unsigned short l2_NULL = 0x8000U;
+static uint16_t l2_NULL = 0x8000U;
 
-static unsigned short l2_DAMAIDLE = 0x4000U;
+static uint16_t l2_DAMAIDLE = 0x4000U;
 
 #define l2_SENDQUES 3
 
@@ -216,22 +216,22 @@ struct LINK;
 
 
 struct LINK {
-   unsigned long Magic; /*magic number*/
-   unsigned short State; /*0 = host is owner of the record*/
-   unsigned short mycall; /*0=via, MAX(CARD16)=downlink*/
-   unsigned short Baud; /*downlink baud*/
-   unsigned short Uplinkport;
-   unsigned char cCONNtyp; /*normal or link is for UI transfer only*/
-   unsigned short IsInQue; /*link is in this send-que*/
+   uint32_t Magic; /*magic number*/
+   uint16_t State; /*0 = host is owner of the record*/
+   uint16_t mycall; /*0=via, MAX(CARD16)=downlink*/
+   uint16_t Baud; /*downlink baud*/
+   uint16_t Uplinkport;
+   uint8_t cCONNtyp; /*normal or link is for UI transfer only*/
+   uint16_t IsInQue; /*link is in this send-que*/
    l2_pLINK SendQuenext; /*sendque-chain*/
    l2_pLINK SendQueprev;
-   unsigned short Hash;
+   uint16_t Hash;
    l2_pLINK Hashnext; /*address-hash-chain*/
    l2_pLINK Hashprev;
-   unsigned short Qtime; /*time since forced disc*/
-   unsigned short T3out; /*Second for next T3 end or T3OFF for T1 running */
-   unsigned short damasecond; /*last slice in absolut time*/
-   unsigned short T1out; /*second when T1 will run out*/
+   uint16_t Qtime; /*time since forced disc*/
+   uint16_t T3out; /*Second for next T3 end or T3OFF for T1 running */
+   uint16_t damasecond; /*last slice in absolut time*/
+   uint16_t T1out; /*second when T1 will run out*/
    l2_pLINK Timernext; /*timer-chain*/
    l2_pLINK Timerprev;
    char highspeed; /*for prefered queing*/
@@ -245,40 +245,40 @@ struct LINK {
    char flexback; /* flex backlink say no DM if SABM */
    char haschains; /* link has chains else simple dealloc */
    char rembusy; /*the other is busy*/
-   unsigned short busy; /*0=not busy*/
-   unsigned short retry; /*increments after timeout-polls*/
-   unsigned short ns; /*send-sequence-number*/
-   unsigned short lowsent; /*till here info is acknowled*/
-   unsigned short highsent; /*till here -1 info is sent*/
-   unsigned short sentnr; /*last physically sent nr*/
-   unsigned short nr; /*receive sequence number*/
+   uint16_t busy; /*0=not busy*/
+   uint16_t retry; /*increments after timeout-polls*/
+   uint16_t ns; /*send-sequence-number*/
+   uint16_t lowsent; /*till here info is acknowled*/
+   uint16_t highsent; /*till here -1 info is sent*/
+   uint16_t sentnr; /*last physically sent nr*/
+   uint16_t nr; /*receive sequence number*/
    char pid; /*PID for this link*/
    l2_pDATA sammler[8];
-   unsigned short summs[8];
+   uint16_t summs[8];
    l2_AFIELD Adress; /*adress field + command byte*/
-   unsigned short AdrLen; /*length of adress + command byte*/
-   unsigned short cp; /*send response, final, command or poll*/
-   unsigned short sendcmd;
+   uint16_t AdrLen; /*length of adress + command byte*/
+   uint16_t cp; /*send response, final, command or poll*/
+   uint16_t sendcmd;
    l2_pDATA sendinfo; /*parallel to ns running info-pointer*/
    l2_pDATA txInfoIn; /*entry pointer to transmit buffer*/
    l2_pDATA txInfoOut; /*end of transmit data*/
-   unsigned short txbuffers; /*used send-buffers*/
+   uint16_t txbuffers; /*used send-buffers*/
    char txfull; /*tx buffer full, for message or clearbusy*/
    char modifylast; /*last buffer not sent, so modifyable*/
    l2_pLINK nudel; /*the downlink, else NIL*/
-   unsigned short exitch; /*switch linked links back to host*/
-   X2C_ADDRESS host; /*to there the messages are sent*/
+   uint16_t exitch; /*switch linked links back to host*/
+   char * host; /*to there the messages are sent*/
    char saiddisc; /*send only 1 disc message to host*/
    l2_pDATA rxInfoIn; /*entry pointer to receive buffer*/
    l2_pDATA rxInfoOut; /*end of receive data*/
-   unsigned short rxbuffers; /*used buffers*/
-   unsigned short readp; /*getchar readpointer*/
+   uint16_t rxbuffers; /*used buffers*/
+   uint16_t readp; /*getchar readpointer*/
    l2_pDATA SABMinfo; /*extention, SABM with info*/
    /*statistics*/
-   unsigned long SentBytes;
-   unsigned long AckBytes;
-   unsigned long RcvdBytes;
-   unsigned long Started; /*for statistics: starttime of link*/
+   uint32_t SentBytes;
+   uint32_t AckBytes;
+   uint32_t RcvdBytes;
+   uint32_t Started; /*for statistics: starttime of link*/
    char udp2info[31]; /* axudp2 frame infos from modem */
 };
 
@@ -295,14 +295,14 @@ struct _1 {
 
 
 struct _0 {
-   unsigned char sendstate;
+   uint8_t sendstate;
    char damat1;
    char dama; /*dama slave*/
    char dcd; /*all diversity ports set it*/
-   unsigned short dcdguard; /*ignore dcd if it lasts too long*/
-   unsigned short txwait; /*set while sending, reset when receiving*/
-   unsigned short Ticker; /* change synchron to main clock */
-   unsigned short QTicker; /* change only while not send or dcd */
+   uint16_t dcdguard; /*ignore dcd if it lasts too long*/
+   uint16_t txwait; /*set while sending, reset when receiving*/
+   uint16_t Ticker; /* change synchron to main clock */
+   uint16_t QTicker; /* change only while not send or dcd */
    char lookinque; /*to decide quick if sendques are empty*/
    l2_pLINK damaloop;
    l2_pLINK T1In; /*timer-chain, each link has always a timer*/
@@ -316,37 +316,37 @@ static l2_pLINK AdrHash[16]; /*hashtable for calls*/
 
 static l2_CALLTYP MyCalls[17]; /*mycall[0] is digipeat*/
 
-static unsigned short maxrxbuffers;
+static uint16_t maxrxbuffers;
 
-static unsigned short maxtxbuffers;
+static uint16_t maxtxbuffers;
 
-static unsigned short DMTIME; /*save downlinks for sending DM*/
+static uint16_t DMTIME; /*save downlinks for sending DM*/
 
-static unsigned short QTIME;
+static uint16_t QTIME;
 
 /*time for discing links with unackn. data*/
-static unsigned short memory; /*used memory*/
+static uint16_t memory; /*used memory*/
 
-static unsigned short DAMAMAXTIME; /*longest time till next slot*/
+static uint16_t DAMAMAXTIME; /*longest time till next slot*/
 
-static unsigned short DAMAFASTPOLLS;
+static uint16_t DAMAFASTPOLLS;
 
 /*slots which have fast intervall*/
-static unsigned long Time; /* seconds counting */
+static uint32_t Time; /* seconds counting */
 
-static unsigned long AbsTime;
+static uint32_t AbsTime;
 
-static unsigned short Second;
+static uint16_t Second;
 
-static unsigned short monbufs;
+static uint16_t monbufs;
 
-static unsigned short maxmonbufs;
+static uint16_t maxmonbufs;
 
-static unsigned short Minute5;
+static uint16_t Minute5;
 
-static unsigned short ticker5;
+static uint16_t ticker5;
 
-static X2C_ADDRESS * Freechain;
+static char * * Freechain;
 
 static l2_CALLTYP DNot[9];
 
@@ -356,14 +356,14 @@ static l2_pLINK monBufOut;
 
 static l2_pLINK monBufIn;
 
-static unsigned short hosts;
+static uint16_t hosts;
 
-static unsigned long tick10;
+static uint32_t tick10;
 
 static l2_CALLBACKPROC Event;
 
 
-static unsigned short Min(unsigned short a, unsigned short b)
+static uint16_t Min(uint16_t a, uint16_t b)
 {
    if (a>=b) return b;
    else return a;
@@ -371,24 +371,24 @@ static unsigned short Min(unsigned short a, unsigned short b)
 } /* end Min() */
 
 
-static char Alloc(X2C_ADDRESS * p, unsigned short reserv)
+static char Alloc(char * * p, uint16_t reserv)
 {
    if (memory<=reserv || Freechain==0) return 0;
-   *p = (X2C_ADDRESS)Freechain;
-   Freechain = (X2C_ADDRESS *)(*Freechain);
+   *p = (char *)Freechain;
+   Freechain = (char * *)(*Freechain);
    --memory;
    return 1;
 } /* end Alloc() */
 
 
-static void Dealloc(X2C_ADDRESS * p)
+static void Dealloc(char * * p)
 {
-   X2C_ADDRESS * unnedig;
+   char * * unnedig;
    /*WrInt(memory, 6); WrStrLn(" before dealloc "); */
    if (*p==0) return;
-   unnedig = (X2C_ADDRESS *)*p;
-   *unnedig = (X2C_ADDRESS)Freechain;
-   Freechain = (X2C_ADDRESS *)*p;
+   unnedig = (char * *)*p;
+   *unnedig = (char *)Freechain;
+   Freechain = (char * *)*p;
    ++memory;
    *p = 0;
 } /* end Dealloc() */
@@ -404,13 +404,13 @@ static void Unlock(void)
 } /* end Unlock() */
 
 
-static unsigned short Minut5(void)
+static uint16_t Minut5(void)
 {
-   return (unsigned short)((Time/300UL)%13UL);
+   return (uint16_t)((Time/300UL)%13UL);
 } /* end Minut5() */
 
 
-static void CheckParms(unsigned short port)
+static void CheckParms(uint16_t port)
 {
    struct l2__D2 * anonym;
    { /* with */
@@ -425,23 +425,21 @@ static void CheckParms(unsigned short port)
 } /* end CheckParms() */
 
 
-static void call(l2_pPARMS p, l2_CALLTYP list[], unsigned long list_len)
+static void call(l2_pPARMS p, l2_CALLTYP list[], uint32_t list_len)
 {
-   unsigned short k;
-   unsigned short j;
-   unsigned short i;
-   unsigned short tmp;
+   uint16_t k;
+   uint16_t j;
+   uint16_t i;
+   uint16_t tmp;
    k = 0U;
-   tmp = (unsigned short)((list_len-1)-1UL);
+   tmp = (uint16_t)((list_len-1)-1UL);
    i = 0U;
    if (i<=tmp) for (;; i++) {
       for (j = 0U; j<=6U; j++) {
          if (p->test) {
-            p->str[k] = (char)((unsigned long)(unsigned char)list[i][j]/2UL);
+            p->str[k] = (char)((uint32_t)(uint8_t)list[i][j]/2UL);
          }
-         else {
-            list[i][j] = (char)((unsigned long)(unsigned char)p->str[k]*2UL);
-         }
+         else list[i][j] = (char)((uint32_t)(uint8_t)p->str[k]*2UL);
          ++k;
       } /* end for */
       if (i==tmp) break;
@@ -450,23 +448,23 @@ static void call(l2_pPARMS p, l2_CALLTYP list[], unsigned long list_len)
 } /* end call() */
 
 
-static void value(l2_pPARMS p, unsigned short * x)
+static void value(l2_pPARMS p, uint16_t * x)
 {
-   if (p->test) p->val = (unsigned long)*x;
-   else *x = (unsigned short)p->val;
+   if (p->test) p->val = (uint32_t)*x;
+   else *x = (uint16_t)p->val;
 } /* end value() */
 
 
 static void bool(l2_pPARMS p, char * b)
 {
-   if (p->test) p->val = (unsigned long)*b;
+   if (p->test) p->val = (uint32_t)*b;
    else *b = p->val!=0UL;
 } /* end bool() */
 
 
 extern void l2_Parm(l2_pPARMS p)
 {
-   unsigned short i;
+   uint16_t i;
    struct l2_PARMS0 * anonym;
    struct l2__D2 * anonym0;
    { /* with */
@@ -483,7 +481,7 @@ extern void l2_Parm(l2_pPARMS p)
             call(p, DNot, 9ul);
             break;
          case 2U:
-            X2C_MOVE((X2C_ADDRESS)anonym->str,(char *)mfrom,7UL);
+            X2C_MOVE((char *)anonym->str,(char *)mfrom,7UL);
             break;
          case 3U:
             value(p, &DMTIME);
@@ -517,12 +515,12 @@ extern void l2_Parm(l2_pPARMS p)
             break;
          case 13U:
             if (anonym->test) {
-               X2C_MOVE((char *)anonym0->SendBauds,(X2C_ADDRESS)anonym->str,
-                17UL);
+               X2C_MOVE((char *)anonym0->SendBauds,
+                (char *)anonym->str,17UL);
             }
             else {
                for (i = 0U; i<=16U; i++) {
-                  if ((unsigned char)anonym->str[i]>='0' && (unsigned char)
+                  if ((uint8_t)anonym->str[i]>='0' && (uint8_t)
                 anonym->str[i]<='7') anonym0->SendBauds[i] = anonym->str[i];
                } /* end for */
             }
@@ -540,16 +538,16 @@ extern void l2_Parm(l2_pPARMS p)
 } /* end Parm() */
 
 
-extern void l2_Getudp2info(l2_pLINK l, char s[], unsigned long s_len)
+extern void l2_Getudp2info(l2_pLINK l, char s[], uint32_t s_len)
 {
-   unsigned short j;
-   unsigned short i;
+   uint16_t j;
+   uint16_t i;
    s[0UL] = 0;
    if (((struct LINK *)l && ((struct LINK *)l)->udp2info[0U])
                 && ((struct LINK *)l)->udp2info[1U]) {
       j = 0U;
       i = 2U;
-      while ((unsigned long)j<s_len-1 && ((struct LINK *)l)->udp2info[i]) {
+      while ((uint32_t)j<s_len-1 && ((struct LINK *)l)->udp2info[i]) {
          s[j] = ((struct LINK *)l)->udp2info[i];
          ++j;
          ++i;
@@ -561,11 +559,11 @@ extern void l2_Getudp2info(l2_pLINK l, char s[], unsigned long s_len)
 
 extern void l2_GetAdress0(l2_pLINK l, l2_pGETADRESS p)
 {
-   unsigned short len;
-   unsigned short i;
+   uint16_t len;
+   uint16_t i;
    struct l2_GETADRESS * anonym;
    struct LINK * anonym0;
-   unsigned short tmp;
+   uint16_t tmp;
    { /* with */
       struct l2_GETADRESS * anonym = p;
       { /* with */
@@ -576,13 +574,13 @@ extern void l2_GetAdress0(l2_pLINK l, l2_pGETADRESS p)
          tmp = len;
          i = 0U;
          if (i<=tmp) for (;; i++) {
-            anonym->adress[i] = (char)((unsigned long)(unsigned char)
+            anonym->adress[i] = (char)((uint32_t)(uint8_t)
                 anonym0->Adress[i]/2UL);
             if (i==tmp) break;
          } /* end for */
          anonym->adress[len] = 0;
          if (anonym0->rxInfoOut && anonym0->rxInfoOut->len) {
-            anonym->cpid = (unsigned short)(unsigned char)
+            anonym->cpid = (uint16_t)(uint8_t)
                 anonym0->rxInfoOut->info[0U];
          }
          else anonym->cpid = 65535U;
@@ -593,11 +591,11 @@ extern void l2_GetAdress0(l2_pLINK l, l2_pGETADRESS p)
 
 extern void l2_GetStat0(l2_pGETSTAT p)
 {
-   unsigned short v;
-   unsigned short i;
+   uint16_t v;
+   uint16_t i;
    struct l2_GETSTAT * anonym;
    struct LINK * anonym0;
-   unsigned short tmp;
+   uint16_t tmp;
    l2_L2Lock = 1;
    { /* with */
       struct l2_GETSTAT * anonym = p;
@@ -638,7 +636,7 @@ extern void l2_GetStat0(l2_pGETSTAT p)
             tmp = Min(71U, anonym0->AdrLen);
             i = 0U;
             if (i<=tmp) for (;; i++) {
-               anonym->adress[i] = (char)((unsigned long)(unsigned char)
+               anonym->adress[i] = (char)((uint32_t)(uint8_t)
                 anonym0->Adress[i]/2UL);
                if (i==tmp) break;
             } /* end for */
@@ -656,13 +654,13 @@ extern void l2_GetStat0(l2_pGETSTAT p)
 
 extern char l2_PortStat0(l2_pPORTSTAT p)
 {
-   unsigned short j;
-   unsigned short i;
+   uint16_t j;
+   uint16_t i;
    struct l2_PORTSTAT * anonym;
    struct l2__D0 * anonym0;
    /*prev intervall*/
    struct l2__D1 * anonym1;
-   unsigned short tmp;
+   uint16_t tmp;
    { /* with */
       struct l2_PORTSTAT * anonym = p;
       memset((char *)anonym->sums,(char)0,28UL);
@@ -680,16 +678,16 @@ extern char l2_PortStat0(l2_pPORTSTAT p)
                else --j;
                { /* with */
                   struct l2__D1 * anonym1 = &anonym0->Flows[j];
-                  anonym->sums[0U] += (unsigned long)anonym1->Igot;
-                  anonym->sums[1U] += (unsigned long)anonym1->Isent;
-                  anonym->sums[2U] += (unsigned long)anonym1->Iack;
+                  anonym->sums[0U] += (uint32_t)anonym1->Igot;
+                  anonym->sums[1U] += (uint32_t)anonym1->Isent;
+                  anonym->sums[2U] += (uint32_t)anonym1->Iack;
                   anonym->sums[3U] += anonym1->Bytegot;
                   anonym->sums[4U] += anonym1->Bytesent;
                }
                if (i==tmp) break;
             } /* end for */
-            anonym->sums[5U] = (unsigned long)anonym0->Links;
-            anonym->sums[6U] = (unsigned long)anonym0->MaxLinks;
+            anonym->sums[5U] = (uint32_t)anonym0->Links;
+            anonym->sums[6U] = (uint32_t)anonym0->MaxLinks;
          }
       }
       else return 0;
@@ -698,7 +696,7 @@ extern char l2_PortStat0(l2_pPORTSTAT p)
 } /* end PortStat() */
 
 
-static void ToSendQue(l2_pLINK l, unsigned short why, unsigned short c)
+static void ToSendQue(l2_pLINK l, uint16_t why, uint16_t c)
 {
    /*for safety*/
    struct LINK * anonym;
@@ -763,9 +761,9 @@ static void Appendtx(l2_pLINK link, l2_pDATA data)
          /*append to previous buffer*/
          X2C_MOVE((char *) &data->info[1U],
                 (char *) &anonym->txInfoIn->info[anonym->txInfoIn->len],
-                (unsigned long)(data->len-1U));
+                (uint32_t)(data->len-1U));
          anonym->txInfoIn->len += data->len-1U;
-         Dealloc((X2C_ADDRESS *) &data);
+         Dealloc((char * *) &data);
          return;
       }
       data->next = 0;
@@ -798,7 +796,7 @@ static void CopyI(l2_pLINK from, l2_pLINK to, char reconn)
                /*shift info to begin of buffer*/
                X2C_MOVE((char *) &anonym0->info[anonym->readp+1U],
                 (char *) &anonym0->info[1U],
-                (unsigned long)((anonym0->len-anonym->readp)-1U));
+                (uint32_t)((anonym0->len-anonym->readp)-1U));
                anonym0->len -= anonym->readp;
                anonym->readp = 0U;
             }
@@ -821,7 +819,7 @@ static void CopyI(l2_pLINK from, l2_pLINK to, char reconn)
 
 
 extern void l2_Circuit(l2_pLINK * l1, l2_pLINK * l20, char reconn1,
-                char reconn2, unsigned short exitchar)
+                char reconn2, uint16_t exitchar)
 {
    l2_L2Lock = 1;
    if (((((struct LINK *)*l1)->Magic==2091827346UL && ((struct LINK *)*l20)
@@ -837,7 +835,7 @@ extern void l2_Circuit(l2_pLINK * l1, l2_pLINK * l20, char reconn1,
 } /* end Circuit() */
 
 
-extern char l2_SendStr(l2_pLINK l, unsigned short size, l2_pSTRING buf)
+extern char l2_SendStr(l2_pLINK l, uint16_t size, l2_pSTRING buf)
 {
    l2_pDATA b;
    struct LINK * anonym;
@@ -853,16 +851,16 @@ extern char l2_SendStr(l2_pLINK l, unsigned short size, l2_pSTRING buf)
             /*      IF (txInfoOut<>NIL)
                 & modifylast & (txInfoIn^.len+size<=257) & (cCONNtyp=cNORMAL)
                  THEN */
-            X2C_MOVE((X2C_ADDRESS)buf,
+            X2C_MOVE((char *)buf,
                 (char *) &anonym->txInfoIn->info[anonym->txInfoIn->len],
-                (unsigned long)size); /*append to previous buffer*/
+                (uint32_t)size); /*append to previous buffer*/
             anonym->txInfoIn->len += size;
          }
-         else if (anonym->txbuffers<=maxtxbuffers && Alloc((X2C_ADDRESS *)
+         else if (anonym->txbuffers<=maxtxbuffers && Alloc((char * *)
                 &b, 20U)) {
             b->info[0U] = anonym->pid;
-            X2C_MOVE((X2C_ADDRESS)buf,(char *) &b->info[1U],
-                (unsigned long)size);
+            X2C_MOVE((char *)buf,(char *) &b->info[1U],
+                (uint32_t)size);
             b->len = size+1U;
             Appendtx(l, b);
          }
@@ -933,8 +931,8 @@ static void StartTimer(l2_pLINK l)
 
 static void MakePoll(l2_pLINK linkp)
 {
-   unsigned short cmd;
-   unsigned short r;
+   uint16_t cmd;
+   uint16_t r;
    struct LINK * anonym;
    { /* with */
       struct LINK * anonym = (struct LINK *)linkp;
@@ -1030,12 +1028,12 @@ extern void l2_Disconnect(l2_pLINK * l, char dealloc)
             while (anonym->rxInfoOut) {
                /*deallocate rx-info*/
                ip = anonym->rxInfoOut->next;
-               Dealloc((X2C_ADDRESS *) &anonym->rxInfoOut);
+               Dealloc((char * *) &anonym->rxInfoOut);
                anonym->rxInfoOut = ip;
             }
             anonym->Magic = 0UL;
             /*WrStr("L2: state:"); WrInt(State, 5); WrStrLn(""); */
-            if (anonym->State==0U) Dealloc((X2C_ADDRESS *)l);
+            if (anonym->State==0U) Dealloc((char * *)l);
             else {
                /*WrStrLn("l2:dealloc"); */
                anonym->host = 0;
@@ -1066,7 +1064,7 @@ static void Cut(l2_pLINK l)
 static void DisposeLink(l2_pLINK l, char immediate)
 {
    l2_pDATA ip;
-   unsigned short i;
+   uint16_t i;
    /*throw away bufferd data*/
    struct LINK * anonym;
    /*remove link from sendque*/
@@ -1078,14 +1076,14 @@ static void DisposeLink(l2_pLINK l, char immediate)
       { /* with */
          struct LINK * anonym = (struct LINK *)l;
          for (i = 0U; i<=7U; i++) {
-            Dealloc((X2C_ADDRESS *) &anonym->sammler[i]);
+            Dealloc((char * *) &anonym->sammler[i]);
          } /* end for */
          while (anonym->txInfoOut) {
             ip = anonym->txInfoOut->next;
-            Dealloc((X2C_ADDRESS *) &anonym->txInfoOut);
+            Dealloc((char * *) &anonym->txInfoOut);
             anonym->txInfoOut = ip;
          }
-         Dealloc((X2C_ADDRESS *) &anonym->SABMinfo);
+         Dealloc((char * *) &anonym->SABMinfo);
          /*send the (sad or lucky) message to host*/
          if (anonym->host && !anonym->saiddisc) {
             /*do it only once*/
@@ -1156,7 +1154,7 @@ static void DisposeLink(l2_pLINK l, char immediate)
          else {
             /*WrStrLn("disposedealloc"); */
             ((struct LINK *)l)->Magic = 0UL;
-            Dealloc((X2C_ADDRESS *) &l);
+            Dealloc((char * *) &l);
          }
       }
    }
@@ -1194,7 +1192,7 @@ static void StartT3(l2_pLINK l)
 } /* end StartT3() */
 
 
-static unsigned short T3resttime(l2_pLINK l)
+static uint16_t T3resttime(l2_pLINK l)
 {
    short th;
    if (((struct LINK *)l)->T3out==65535U) return 0U;
@@ -1202,7 +1200,7 @@ static unsigned short T3resttime(l2_pLINK l)
    if (th<0) th += 20000;
    if (th>10000) return 0U;
    /* T3 ran out */
-   return (unsigned short)th;
+   return (uint16_t)th;
 } /* end T3resttime() */
 
 
@@ -1268,7 +1266,8 @@ static void Timeout(l2_pLINK l)
 } /* end Timeout() */
 
 
-extern char l2_GetChar(l2_pLINK l, char delete0, char * char0)
+extern char l2_GetChar(l2_pLINK l, char delete0,
+                char * char0)
 {
    l2_pDATA ip;
    char ok0;
@@ -1285,7 +1284,7 @@ extern char l2_GetChar(l2_pLINK l, char delete0, char * char0)
          anonym->readp = 0U;
          l2_L2Lock = 1;
          ip = anonym->rxInfoOut->next;
-         Dealloc((X2C_ADDRESS *) &anonym->rxInfoOut);
+         Dealloc((char * *) &anonym->rxInfoOut);
          anonym->rxInfoOut = ip;
          --anonym->rxbuffers;
          if (anonym->rxbuffers<=maxrxbuffers && memory>=20U) ClearBusy(l);
@@ -1297,12 +1296,11 @@ extern char l2_GetChar(l2_pLINK l, char delete0, char * char0)
 } /* end GetChar() */
 
 
-extern unsigned short l2_GetStr(l2_pLINK l, unsigned short size,
-                l2_pSTRING buf)
+extern uint16_t l2_GetStr(l2_pLINK l, uint16_t size, l2_pSTRING buf)
 {
    l2_pDATA ip;
-   unsigned short n;
-   unsigned short retsize;
+   uint16_t n;
+   uint16_t retsize;
    struct LINK * anonym;
    retsize = 0U;
    { /* with */
@@ -1313,8 +1311,9 @@ extern unsigned short l2_GetStr(l2_pLINK l, unsigned short size,
             if (n>1U) {
                --n; /*pid*/
                if (n+retsize>size) n = size-retsize;
-               X2C_MOVE((char *) &anonym->rxInfoOut->info[anonym->readp+1U],
-                (char *) &buf[retsize],(unsigned long)n);
+               X2C_MOVE((char *)
+                &anonym->rxInfoOut->info[anonym->readp+1U],
+                (char *) &buf[retsize],(uint32_t)n);
                retsize += n;
                anonym->readp += n;
             }
@@ -1322,7 +1321,7 @@ extern unsigned short l2_GetStr(l2_pLINK l, unsigned short size,
                anonym->readp = 0U;
                l2_L2Lock = 1;
                ip = anonym->rxInfoOut->next;
-               Dealloc((X2C_ADDRESS *) &anonym->rxInfoOut);
+               Dealloc((char * *) &anonym->rxInfoOut);
                anonym->rxInfoOut = ip;
                --anonym->rxbuffers;
                if (anonym->rxbuffers<=maxrxbuffers && memory>=20U) {
@@ -1337,12 +1336,11 @@ extern unsigned short l2_GetStr(l2_pLINK l, unsigned short size,
 } /* end GetStr() */
 
 
-static unsigned short CP(void)
+static uint16_t CP(void)
 {
-   return (unsigned short)(2UL*(unsigned long)((unsigned char)
-                l2_adress[6U]>=(unsigned char)'\200')+(unsigned long)
-                ((0x10U & (unsigned short)(unsigned long)(unsigned char)
-                l2_adress[l2_asize-1U])!=0));
+   return (uint16_t)(2UL*(uint32_t)((uint8_t)l2_adress[6U]>=(uint8_t)
+                '\200')+(uint32_t)((0x10U & (uint16_t)(uint32_t)
+                (uint8_t)l2_adress[l2_asize-1U])!=0));
 } /* end CP() */
 /*p/f bit*/
 /*command bit*/
@@ -1356,8 +1354,8 @@ static void Appendrx(l2_pLINK linkp, l2_pDATA b)
    { /* with */
       struct LINK * anonym = (struct LINK *)linkp;
       ++l2_PortSt[anonym->Uplinkport].Flows[Minute5].Igot;
-      anonym->RcvdBytes = anonym->RcvdBytes+(unsigned long)b->len;
-      if ((unsigned long)(unsigned char)b->info[1U]==(unsigned long)
+      anonym->RcvdBytes = anonym->RcvdBytes+(uint32_t)b->len;
+      if ((uint32_t)(uint8_t)b->info[1U]==(uint32_t)
                 anonym->exitch && anonym->host) Cut(linkp);
       if ((struct LINK *)anonym->nudel) {
          Appendtx(anonym->nudel, b);
@@ -1378,12 +1376,12 @@ static void Appendrx(l2_pLINK linkp, l2_pDATA b)
                 l2_eRXDATA);
          }
       }
-      else Dealloc((X2C_ADDRESS *) &b);
+      else Dealloc((char * *) &b);
    }
 } /* end Appendrx() */
 
 
-static char Ack(l2_pLINK linkp, unsigned short n, char resend)
+static char Ack(l2_pLINK linkp, uint16_t n, char resend)
 {
    l2_pDATA dp;
    /*ackowlege my sent info*/
@@ -1402,10 +1400,10 @@ static char Ack(l2_pLINK linkp, unsigned short n, char resend)
             /*only for safety*/
             if (anonym->ns==anonym->lowsent) resend = 1;
             dp = anonym->txInfoOut->next;
-            anonym->AckBytes = anonym->AckBytes+(unsigned long)
+            anonym->AckBytes = anonym->AckBytes+(uint32_t)
                 anonym->txInfoOut->len;
             ++l2_PortSt[anonym->Uplinkport].Flows[Minute5].Iack;
-            Dealloc((X2C_ADDRESS *) &anonym->txInfoOut);
+            Dealloc((char * *) &anonym->txInfoOut);
             anonym->txInfoOut = dp;
             --anonym->txbuffers;
          }
@@ -1441,26 +1439,25 @@ static char Ack(l2_pLINK linkp, unsigned short n, char resend)
 
 static void Uselink(l2_pLINK linkp)
 {
-   unsigned short compoll;
-   unsigned short i;
-   unsigned short sum;
-   unsigned short n;
+   uint16_t compoll;
+   uint16_t i;
+   uint16_t sum;
+   uint16_t n;
    l2_pDATA ip;
-   long j;
-   unsigned short cmd;
+   int32_t j;
+   uint16_t cmd;
    char wasbusy;
    char slave;
    struct LINK * anonym;
-   long tmp;
+   int32_t tmp;
    /*analyse (addressed to me) frames and reply*/
    /*WrStrLn("uselink"); */
    { /* with */
       struct LINK * anonym = (struct LINK *)linkp;
-      slave = !l2_Parms[anonym->Uplinkport-1U]
-                .DamaMaster && ((unsigned short)(unsigned long)
-                (unsigned char)l2_adress[13U]&0x20U)==0U;
-      cmd = 0xEFU&(unsigned short)(unsigned long)(unsigned char)
-                l2_adress[l2_asize-1U]; /*command field without p/f-bit*/
+      slave = !l2_Parms[anonym->Uplinkport-1U].DamaMaster && ((uint16_t)
+                (uint32_t)(uint8_t)l2_adress[13U]&0x20U)==0U;
+      cmd = 0xEFU&(uint16_t)(uint32_t)(uint8_t)l2_adress[l2_asize-1U];
+                /*command field without p/f-bit*/
       compoll = CP(); /*response, final, command or poll*/
       if (anonym->cCONNtyp==l2_cNORMAL) {
          if (anonym->T3out!=65535U) StartT3(linkp);
@@ -1468,20 +1465,19 @@ static void Uselink(l2_pLINK linkp)
             /*I-frame                         */
             if (anonym->State==5U) {
                /*info transfer                   */
-               n = (unsigned short)cmd/2U&7U;
+               n = (uint16_t)cmd/2U&7U;
                 /*send sequence number            */
-               if (Ack(linkp, (unsigned short)cmd/32U&7U, slave)) {
+               if (Ack(linkp, (uint16_t)cmd/32U&7U, slave)) {
                   /*acknols my frames*/
                   if (anonym->State==5U) {
                      /*maybe disc after all acknolled  */
                      i = l2_dbuf->len;
                      if (i>5U) i = 5U;
                      sum = 0U;
-                     tmp = (long)i-1L;
+                     tmp = (int32_t)i-1L;
                      j = 0L;
                      if (j<=tmp) for (;; j++) {
-                        sum += (unsigned short)(unsigned char)
-                l2_dbuf->info[j];
+                        sum += (uint16_t)(uint8_t)l2_dbuf->info[j];
                         if (j==tmp) break;
                      } /* end for */
                      if (n==anonym->nr && anonym->busy<8U) {
@@ -1490,7 +1486,7 @@ static void Uselink(l2_pLINK linkp)
                            /*check windowsize  */
                            anonym->summs[n] = sum; /*mark it as old    */
                            ip = anonym->sammler[n];
-                           if (ip || Alloc((X2C_ADDRESS *) &ip, 10U)) {
+                           if (ip || Alloc((char * *) &ip, 10U)) {
                               /*do not say rnr with an*/
                               Appendrx(linkp, l2_dbuf);
                 /*empty downlink buffer,*/
@@ -1523,7 +1519,7 @@ static void Uselink(l2_pLINK linkp)
                            anonym->summs[n] = sum;
                 /*so put it into sammler     */
                            ip = anonym->sammler[n];
-                           if (ip || Alloc((X2C_ADDRESS *) &ip, 20U)) {
+                           if (ip || Alloc((char * *) &ip, 20U)) {
                               anonym->sammler[n] = l2_dbuf;
                               l2_dbuf = ip;
                            }
@@ -1531,7 +1527,7 @@ static void Uselink(l2_pLINK linkp)
                         anonym->rejsent = compoll!=3U;
                 /*say not rej on i-poll      */
                      }
-                     ToSendQue(linkp, 0x1U, (unsigned short)(compoll==3U));
+                     ToSendQue(linkp, 0x1U, (uint16_t)(compoll==3U));
                 /*make final on poll    */
                   }
                }
@@ -1550,7 +1546,7 @@ static void Uselink(l2_pLINK linkp)
             if (compoll==3U) anonym->busyend = 0;
             /*      IF wasbusy & NOT rembusy THEN T3out:=T3OFF END;
                 restart T1   */
-            if (anonym->State!=5U || Ack(linkp, (unsigned short)cmd/32U&7U,
+            if (anonym->State!=5U || Ack(linkp, (uint16_t)cmd/32U&7U,
                 ((slave || compoll==1U) || anonym->rejgot)
                 || wasbusy && !anonym->rembusy)) {
                if (compoll==3U) {
@@ -1566,7 +1562,7 @@ static void Uselink(l2_pLINK linkp)
          }
          else if (cmd==0x2FU && compoll==3U) {
             /*only SABM.Poll accepted*/
-            Dealloc((X2C_ADDRESS *) &anonym->SABMinfo);
+            Dealloc((char * *) &anonym->SABMinfo);
             if ((anonym->State!=2U && anonym->mycall==65535U)
                 && anonym->twoway) {
                /*mycall=MAX is a downlink*/
@@ -1575,7 +1571,7 @@ static void Uselink(l2_pLINK linkp)
                if (anonym->flexback) DisposeLink(linkp, 1);
                else ToSendQue(linkp, 0xFU, 1U);
             }
-            else if (anonym->State==2U || anonym->State==1U && Alloc((X2C_ADDRESS *)
+            else if (anonym->State==2U || anonym->State==1U && Alloc((char * *)
                  &ip, 0U)) {
                if (anonym->host) --hosts;
                X2C_CHKPROC(l2_CALLBACKPROC,Event)(&anonym->host, linkp,
@@ -1587,7 +1583,7 @@ static void Uselink(l2_pLINK linkp)
                      Appendrx(linkp, l2_dbuf);
                      l2_dbuf = ip;
                   }
-                  else Dealloc((X2C_ADDRESS *) &ip);
+                  else Dealloc((char * *) &ip);
                }
                if (anonym->host) {
                   /*host accepts that connect*/
@@ -1618,7 +1614,7 @@ static void Uselink(l2_pLINK linkp)
          }
          else if (cmd==0x63U && compoll==1U) {
             /*only UA.Final because i send SABM.P*/
-            Dealloc((X2C_ADDRESS *) &anonym->SABMinfo);
+            Dealloc((char * *) &anonym->SABMinfo);
             if (anonym->State==2U) {
                if (anonym->host) --hosts;
                X2C_CHKPROC(l2_CALLBACKPROC,Event)(&anonym->host, linkp,
@@ -1686,7 +1682,7 @@ static void Uselink(l2_pLINK linkp)
          /*WrStrLn("uselink back"); */
          if (cmd==0x2FU && compoll==3U) {
             /*only SABM.Poll accepted*/
-            Dealloc((X2C_ADDRESS *) &anonym->SABMinfo);
+            Dealloc((char * *) &anonym->SABMinfo);
             /*WrStrLn("dispose15"); */
             DisposeLink(linkp, 1);
          }
@@ -1710,10 +1706,10 @@ static void Uselink(l2_pLINK linkp)
 #define l2_WILD "T"
 
 
-static void Mon(unsigned short port, l2_AFIELD adr, unsigned short alen,
+static void Mon(uint16_t port, l2_AFIELD adr, uint16_t alen,
                 l2_pDATA info)
 {
-   unsigned short i;
+   uint16_t i;
    l2_pLINK lp;
    struct LINK * anonym;
    if (mfrom[0U]) {
@@ -1725,16 +1721,16 @@ static void Mon(unsigned short port, l2_AFIELD adr, unsigned short alen,
          } /* end for */
       }
    }
-   if (monbufs<maxmonbufs && Alloc((X2C_ADDRESS *) &lp, 5U)) {
+   if (monbufs<maxmonbufs && Alloc((char * *) &lp, 5U)) {
       { /* with */
          struct LINK * anonym = (struct LINK *)lp;
-         memset((X2C_ADDRESS)lp,(char)0,sizeof(struct LINK)); /*State:=0;
+         memset((char *)lp,(char)0,sizeof(struct LINK)); /*State:=0;
                 readp:=0*/
          anonym->rxInfoOut = 0;
          anonym->Magic = 2091827346UL;
          memcpy(anonym->Adress,adr,71u);
          anonym->AdrLen = alen;
-         anonym->mycall = (unsigned short)(unsigned char)adr[alen-1U];
+         anonym->mycall = (uint16_t)(uint8_t)adr[alen-1U];
          anonym->Uplinkport = port;
          i = 0U; /* axuudp2 info to monitor */
          do {
@@ -1742,7 +1738,7 @@ static void Mon(unsigned short port, l2_AFIELD adr, unsigned short alen,
             ++i;
          } while (!((i>=30U || i>=99U) || l2_udp2buf[i]==0));
          anonym->udp2info[i] = 0;
-         if (info && Alloc((X2C_ADDRESS *) &anonym->rxInfoOut, 0U)) {
+         if (info && Alloc((char * *) &anonym->rxInfoOut, 0U)) {
             *anonym->rxInfoOut = *info;
             anonym->rxInfoOut->next = 0;
             anonym->rxbuffers = 1U;
@@ -1772,15 +1768,14 @@ extern l2_pLINK l2_GetMon(void)
 } /* end GetMon() */
 
 
-static void SendBufferd(unsigned short port, unsigned short baud,
-                unsigned short cmd)
+static void SendBufferd(uint16_t port, uint16_t baud, uint16_t cmd)
 /*send a frame with no link*/
 {
    l2_pLINK linkp;
    struct LINK * anonym;
    /*succeeds only if there is enough memory*/
-   if (Alloc((X2C_ADDRESS *) &linkp, 6U)) {
-      memset((X2C_ADDRESS)linkp,(char)0,sizeof(struct LINK));
+   if (Alloc((char * *) &linkp, 6U)) {
+      memset((char *)linkp,(char)0,sizeof(struct LINK));
       { /* with */
          struct LINK * anonym = (struct LINK *)linkp;
          anonym->IsInQue = 3U;
@@ -1794,8 +1789,8 @@ static void SendBufferd(unsigned short port, unsigned short baud,
          anonym->AdrLen = l2_asize;
          if (l2_dbuf->len) {
             anonym->sendinfo = l2_dbuf;
-            if (!Alloc((X2C_ADDRESS *) &l2_dbuf, 5U)) {
-               Dealloc((X2C_ADDRESS *) &linkp); /*so forget it all*/
+            if (!Alloc((char * *) &l2_dbuf, 5U)) {
+               Dealloc((char * *) &linkp); /*so forget it all*/
             }
          }
          else anonym->sendinfo = 0;
@@ -1816,8 +1811,8 @@ extern void l2_SendRaw(l2_pSENDUI p)
                 && l2_Parms[anonym->port-1U]._._0.Diversity>0U) {
          l2_asize = 0U;
          while (l2_asize<70U && anonym->path[l2_asize]) {
-            l2_adress[l2_asize] = (char)((unsigned long)(unsigned char)
-                anonym->path[l2_asize]*2UL+(unsigned long)
+            l2_adress[l2_asize] = (char)((uint32_t)(uint8_t)
+                anonym->path[l2_asize]*2UL+(uint32_t)
                 (anonym->path[l2_asize+1U]==0));
             ++l2_asize;
          }
@@ -1827,8 +1822,8 @@ extern void l2_SendRaw(l2_pSENDUI p)
             struct l2_DFIELD * anonym0 = l2_dbuf;
             anonym0->len = anonym->datalen;
             if (anonym0->len>257U) anonym0->len = 257U;
-            X2C_MOVE((X2C_ADDRESS)anonym->data,(char *)anonym0->info,
-                (unsigned long)anonym0->len);
+            X2C_MOVE((char *)anonym->data,(char *)anonym0->info,
+                (uint32_t)anonym0->len);
          }
          SendBufferd(anonym->port, anonym->baud, 0x8000U);
       }
@@ -1837,13 +1832,13 @@ extern void l2_SendRaw(l2_pSENDUI p)
 } /* end SendRaw() */
 
 
-static char Initlink(l2_pLINK * linkp, unsigned short hash,
-                unsigned short Uport, unsigned short baud)
+static char Initlink(l2_pLINK * linkp, uint16_t hash,
+                uint16_t Uport, uint16_t baud)
 {
    struct l2__D0 * anonym; /*statistics*/
    struct LINK * anonym0;
-   if (Alloc((X2C_ADDRESS *)linkp, 6U)) {
-      memset((X2C_ADDRESS)*linkp,(char)0,sizeof(struct LINK));
+   if (Alloc((char * *)linkp, 6U)) {
+      memset((char *)*linkp,(char)0,sizeof(struct LINK));
       { /* with */
          struct l2__D0 * anonym = &l2_PortSt[Uport];
          ++anonym->Links;
@@ -1877,37 +1872,35 @@ static char Initlink(l2_pLINK * linkp, unsigned short hash,
 } /* end Initlink() */
 
 
-static void Hashf(unsigned short * hash, unsigned short port)
+static void Hashf(uint16_t * hash, uint16_t port)
 {
-   unsigned short i;
+   uint16_t i;
    *hash = 0U;
    for (i = 0U; i<=5U; i++) {
-      *hash += (unsigned short)((unsigned long)(unsigned char)
-                l2_adress[i]+(unsigned long)(unsigned char)l2_adress[i+7U]);
-                /*hash function*/
+      *hash += (uint16_t)((uint32_t)(uint8_t)l2_adress[i]+(uint32_t)
+                (uint8_t)l2_adress[i+7U]); /*hash function*/
    } /* end for */
    *hash =  *hash/2U+port&15U;
 } /* end Hashf() */
 
 
-static char CallComp(unsigned short p, AFIELDPO adr, unsigned short pp)
+static char CallComp(uint16_t p, AFIELDPO adr, uint16_t pp)
 {
-   unsigned short i;
+   uint16_t i;
    for (i = 5U;; i--) {
       if (l2_adress[p+i]!=adr[pp+i]) return 0;
       if (i==0U) break;
    } /* end for */
-   return ((unsigned short)(unsigned long)(unsigned char)
-                l2_adress[p+6U]&0x5EU)==((unsigned short)(unsigned long)
-                (unsigned char)adr[pp+6U]&0x5EU);
+   return ((uint16_t)(uint32_t)(uint8_t)l2_adress[p+6U]&0x5EU)
+                ==((uint16_t)(uint32_t)(uint8_t)adr[pp+6U]&0x5EU);
 } /* end CallComp() */
 
 
-extern l2_pLINK l2_Connect0(X2C_ADDRESS mp, l2_pCONNECT p)
+extern l2_pLINK l2_Connect0(char * mp, l2_pCONNECT p)
 /*NIL if no link*/
 {
    l2_pLINK linkp;
-   unsigned short hash;
+   uint16_t hash;
    l2_pDATA sabmi;
    struct l2_CONNECT * anonym;
    struct l2_DFIELD * anonym0;
@@ -1919,8 +1912,8 @@ extern l2_pLINK l2_Connect0(X2C_ADDRESS mp, l2_pCONNECT p)
       l2_L2Lock = 1;
       l2_asize = 0U; /*uses static adress buffer, so not reentrant*/
       while (l2_asize<70U && anonym->l2adr[l2_asize]) {
-         l2_adress[l2_asize] = (char)((unsigned long)(unsigned char)
-                anonym->l2adr[l2_asize]*2UL+(unsigned long)
+         l2_adress[l2_asize] = (char)((uint32_t)(uint8_t)
+                anonym->l2adr[l2_asize]*2UL+(uint32_t)
                 (anonym->l2adr[l2_asize+1U]==0));
          ++l2_asize;
       }
@@ -1950,7 +1943,7 @@ extern l2_pLINK l2_Connect0(X2C_ADDRESS mp, l2_pCONNECT p)
       /*extention, SABM with info*/
       sabmi = 0;
       if (anonym->l3adr && anonym->l3adr[0U]) {
-         if (Alloc((X2C_ADDRESS *) &sabmi, 5U)) {
+         if (Alloc((char * *) &sabmi, 5U)) {
             { /* with */
                struct l2_DFIELD * anonym0 = sabmi;
                anonym0->len = 0U;
@@ -1966,7 +1959,7 @@ extern l2_pLINK l2_Connect0(X2C_ADDRESS mp, l2_pCONNECT p)
          }
       }
       if (Initlink(&linkp, hash, anonym->port,
-                (unsigned short)((unsigned long)(unsigned char)
+                (uint16_t)((uint32_t)(uint8_t)
                 l2_Parms[anonym->port-1U].SendBauds[0U]-48UL))) {
          { /* with */
             struct LINK * anonym1 = (struct LINK *)linkp;
@@ -1988,8 +1981,8 @@ extern l2_pLINK l2_Connect0(X2C_ADDRESS mp, l2_pCONNECT p)
             anonym1->AdrLen = l2_asize;
             memcpy(anonym1->Adress,l2_adress,71u);
             if (l2_Parms[anonym->port-1U].DamaMaster) {
-               anonym1->Adress[13U] = (char)((unsigned short)(unsigned long)
-                (unsigned char)anonym1->Adress[13U]&~0x20U);
+               anonym1->Adress[13U] = (char)((uint16_t)(uint32_t)
+                (uint8_t)anonym1->Adress[13U]&~0x20U);
             }
             MakePoll(linkp); /*SABM ...*/
             if (anonym1->host) ++hosts;
@@ -1998,7 +1991,7 @@ extern l2_pLINK l2_Connect0(X2C_ADDRESS mp, l2_pCONNECT p)
          return linkp;
       }
       else {
-         if (sabmi) Dealloc((X2C_ADDRESS *) &sabmi);
+         if (sabmi) Dealloc((char * *) &sabmi);
          Unlock();
          return 0;
       }
@@ -2007,35 +2000,34 @@ extern l2_pLINK l2_Connect0(X2C_ADDRESS mp, l2_pCONNECT p)
 } /* end Connect() */
 
 
-static void CopyCall(l2_pLINK linkp, unsigned short to, unsigned short from)
+static void CopyCall(l2_pLINK linkp, uint16_t to, uint16_t from)
 /*and clean ssid from additional bits*/
 {
-   unsigned short i;
+   uint16_t i;
    struct LINK * anonym;
    { /* with */
       struct LINK * anonym = (struct LINK *)linkp;
       for (i = 0U; i<=5U; i++) {
          anonym->Adress[to+i] = l2_adress[from+i];
       } /* end for */
-      anonym->Adress[to+6U] = (char)((unsigned short)(unsigned long)
-                (unsigned char)l2_adress[from+6U]&0x7EU);
+      anonym->Adress[to+6U] = (char)((uint16_t)(uint32_t)(uint8_t)
+                l2_adress[from+6U]&0x7EU);
    }
 } /* end CopyCall() */
 
 
 static void invertpath(l2_pLINK linkp, char master, char flex)
 {
-   unsigned short j;
-   unsigned short i;
+   uint16_t j;
+   uint16_t i;
    struct LINK * anonym;
    CopyCall(linkp, 0U, 7U); /*invert direction*/
    CopyCall(linkp, 7U, 0U);
    { /* with */
       struct LINK * anonym = (struct LINK *)linkp;
       if (master) {
-         anonym->Adress[13U] = (char)((unsigned short)(unsigned long)
-                (unsigned char)anonym->Adress[13U]&~0x20U);
-                /*set master bit*/
+         anonym->Adress[13U] = (char)((uint16_t)(uint32_t)(uint8_t)
+                anonym->Adress[13U]&~0x20U); /*set master bit*/
       }
       i = 14U; /*invert digi-path*/
       j = l2_asize-8U;
@@ -2045,22 +2037,22 @@ static void invertpath(l2_pLINK linkp, char master, char flex)
          j -= 7U;
       }
       if (flex) {
-         anonym->Adress[20U] = (char)((unsigned char)(unsigned char)
+         anonym->Adress[20U] = (char)((uint8_t)(uint8_t)
                 anonym->Adress[20U]|0x80U); /* set h-bit for pseudodigi */
       }
-      anonym->Adress[i-1U] = (char)((unsigned long)(unsigned char)
+      anonym->Adress[i-1U] = (char)((uint32_t)(uint8_t)
                 anonym->Adress[i-1U]+1UL); /*set address-end-bit*/
       anonym->AdrLen = i+1U;
    }
 } /* end invertpath() */
 
 
-static void rx(unsigned short Port)
+static void rx(uint16_t Port)
 /*analyse address-field*/
 {
-   unsigned short hash;
-   unsigned short j;
-   unsigned short i;
+   uint16_t hash;
+   uint16_t j;
+   uint16_t i;
    l2_pLINK linkp;
    char poll;
    char v2;
@@ -2076,21 +2068,18 @@ static void rx(unsigned short Port)
    struct LINK * anonym2;
    { /* with */
       struct l2__D1 * anonym = &l2_PortSt[Port].Flows[Minute5];
-      anonym->Bytegot = anonym->Bytegot+(unsigned long)
-                l2_asize+(unsigned long)l2_dbuf->len+3UL;
-                /* + fcs + 1 flag */
+      anonym->Bytegot = anonym->Bytegot+(uint32_t)l2_asize+(uint32_t)
+                l2_dbuf->len+3UL; /* + fcs + 1 flag */
    }
-   digisdone = l2_asize<22U || (unsigned char)
-                l2_adress[l2_asize-2U]>=(unsigned char)'\200';
-                /* no digis or last with h-bit */
-   v2 = (unsigned char)l2_adress[6U]>=(unsigned char)'\200'==(unsigned char)
-                l2_adress[13U]<(unsigned char)'\200';
+   digisdone = l2_asize<22U || (uint8_t)l2_adress[l2_asize-2U]>=(uint8_t)
+                '\200'; /* no digis or last with h-bit */
+   v2 = (uint8_t)l2_adress[6U]>=(uint8_t)'\200'==(uint8_t)
+                l2_adress[13U]<(uint8_t)'\200';
    poll = CP()==3U;
-   sabm = (v2 && poll) && (0xEFU&(unsigned short)(unsigned long)
-                (unsigned char)l2_adress[l2_asize-1U])==0x2FU;
-                /* SABM.P v2.0 */
-   isflex = (!digisdone && (l2_asize<29U || (unsigned char)
-                l2_adress[l2_asize-9U]>=(unsigned char)'\200'))
+   sabm = (v2 && poll) && (0xEFU&(uint16_t)(uint32_t)(uint8_t)
+                l2_adress[l2_asize-1U])==0x2FU; /* SABM.P v2.0 */
+   isflex = (!digisdone && (l2_asize<29U || (uint8_t)
+                l2_adress[l2_asize-9U]>=(uint8_t)'\200'))
                 && CallComp(l2_asize-8U, (AFIELDPO)MyCalls[0U], 0U);
                 /* min 1 digi & last h-bit not set */
    /* 1 digi or second last h-bit set */
@@ -2108,16 +2097,16 @@ static void rx(unsigned short Port)
                 (AFIELDPO)anonym0->Adress, 0U)) {
             i = 14U;
             j = l2_asize-8U; /*all pseudodigis are compared too*/
-            while (((j>=14U && (unsigned char)
-                anonym0->Adress[i+6U]>=(unsigned char)'\200')
-                && (unsigned char)l2_adress[j+6U]<(unsigned char)'\200')
+            while (((j>=14U && (uint8_t)anonym0->Adress[i+6U]>=(uint8_t)
+                '\200') && (uint8_t)l2_adress[j+6U]<(uint8_t)'\200')
                 && CallComp(j, (AFIELDPO)anonym0->Adress, i)) {
                i += 7U;
                j -= 7U;
             }
-            if (j<14U || (unsigned char)anonym0->Adress[i+6U]<(unsigned char)
-                '\200' && (unsigned char)l2_adress[j+6U]>=(unsigned char)
-                '\200') break;
+            if (j<14U || (uint8_t)anonym0->Adress[i+6U]<(uint8_t)
+                '\200' && (uint8_t)l2_adress[j+6U]>=(uint8_t)'\200') {
+               break;
+            }
          }
          linkp = anonym0->Hashnext;
                 /*there may be more entries with same hash*/
@@ -2133,7 +2122,7 @@ static void rx(unsigned short Port)
       for (;;) {
          if (MyCalls[i][0U]==0) break;
          if (CallComp(0U, (AFIELDPO)MyCalls[i], 0U) && Initlink(&linkp, hash,
-                 Port, (unsigned short)((unsigned long)(unsigned char)l2_Parms[Port-1U].SendBauds[i]-48UL))) {
+                 Port, (uint16_t)((uint32_t)(uint8_t)l2_Parms[Port-1U].SendBauds[i]-48UL))) {
             /*fitting mycall found*/
             { /* with */
                struct LINK * anonym1 = (struct LINK *)linkp;
@@ -2317,7 +2306,7 @@ static void tx(l2_pLINK * SendQueIn, l2_pLINK * SendQueOut)
                 && anonym->sendinfo->len<=l2_Parms[anonym->Uplinkport-1U]
                 ._._0.IPoll) && !anonym->rembusy) && anonym->retry<=10U) {
                   /*& ((ns+9) MOD 8<>highsent)*/
-                  anonym->sendcmd = (unsigned short)
+                  anonym->sendcmd = (uint16_t)
                 (2U*anonym->ns+32U*anonym->nr); /*I.P instead of RR.P*/
                   anonym->sentnr = anonym->nr;
                 /*only for later check of windowsize*/
@@ -2330,11 +2319,11 @@ static void tx(l2_pLINK * SendQueIn, l2_pLINK * SendQueOut)
                      /*there is info to send*/
                      if (sendi==anonym->txInfoIn) anonym->modifylast = 0;
                      ++l2_PortSt[anonym->Uplinkport].Flows[Minute5].Isent;
-                     anonym->SentBytes = anonym->SentBytes+(unsigned long)
+                     anonym->SentBytes = anonym->SentBytes+(uint32_t)
                 sendi->len;
                      if (anonym->sendinfo) anonym->ns = anonym->ns+1U&7U;
                      anonym->sendinfo = sendi;
-                     anonym->sendcmd = (unsigned short)
+                     anonym->sendcmd = (uint16_t)
                 (2U*anonym->ns+32U*anonym->nr); /*I-frame*/
                      anonym->sentnr = anonym->nr;
                 /*only for later check of windowsize*/
@@ -2355,7 +2344,7 @@ static void tx(l2_pLINK * SendQueIn, l2_pLINK * SendQueOut)
                sendi = anonym->SABMinfo; /*extention, SABM with info*/
             }
             else if (anonym->sendcmd==0x87U) {
-               if (Alloc((X2C_ADDRESS *) &sendi, 1U)) {
+               if (Alloc((char * *) &sendi, 1U)) {
                   { /* with */
                      struct l2_DFIELD * anonym0 = sendi;
                      anonym0->info[0U] = anonym->pid;
@@ -2376,36 +2365,37 @@ static void tx(l2_pLINK * SendQueIn, l2_pLINK * SendQueOut)
          }
          if (anonym->sendcmd!=0x8000U) {
             if (anonym->sendcmd==0x1U) {
-               anonym->sendcmd = (unsigned short)((unsigned long)
-                (unsigned short)anonym->sendcmd+4UL*(unsigned long)
-                (anonym->busy!=0U)+8UL*(unsigned long)
-                (anonym->rejsent && anonym->busy==0U)+(unsigned long)
-                (32U*anonym->nr));
+               anonym->sendcmd = (uint16_t)((uint32_t)(uint16_t)
+                anonym->sendcmd+4UL*(uint32_t)(anonym->busy!=0U)
+                +8UL*(uint32_t)(anonym->rejsent && anonym->busy==0U)
+                +(uint32_t)(32U*anonym->nr));
                anonym->sentnr = anonym->nr;
                 /*only for later check of windowsize*/
             }
-            anonym->Adress[anonym->AdrLen-1U] = (char)((unsigned long)
-                (unsigned short)anonym->sendcmd+16UL*(unsigned long)(char)
+            anonym->Adress[anonym->AdrLen-1U] = (char)((uint32_t)
+                (uint16_t)anonym->sendcmd+16UL*(uint32_t)(char)
                 (anonym->cp&1)); /*p/f bits*/
-            anonym->Adress[6U] = (char)(128UL*(unsigned long)(anonym->cp>=2U)
-                +((unsigned long)(unsigned char)anonym->Adress[6U]&127UL));
-            anonym->Adress[13U] = (char)(128UL*(unsigned long)(anonym->cp<2U)
-                +((unsigned long)(unsigned char)anonym->Adress[13U]&127UL));
+            anonym->Adress[6U] = (char)(128UL*(uint32_t)
+                (anonym->cp>=2U)+((uint32_t)(uint8_t)
+                anonym->Adress[6U]&127UL));
+            anonym->Adress[13U] = (char)(128UL*(uint32_t)
+                (anonym->cp<2U)+((uint32_t)(uint8_t)
+                anonym->Adress[13U]&127UL));
          }
          if (anonym->mycall==0U || anonym->sendcmd!=0x8000U) {
-            frameio_SendFrame((unsigned long)
+            frameio_SendFrame((uint32_t)
                 l2_Parms[anonym->Uplinkport-1U]._._0.SendPort,
-                (unsigned long)anonym->Baud, anonym->Adress, 71ul,
-                (unsigned long)anonym->AdrLen, sendi);
+                (uint32_t)anonym->Baud, anonym->Adress, 71ul,
+                (uint32_t)anonym->AdrLen, sendi);
             /*WrStr("F:"); */
             /*IF sendi<>NIL THEN WrInt(sendi^.len,1) END; */
             { /* with */
                struct l2__D1 * anonym1 = &l2_PortSt[anonym->Uplinkport]
                 .Flows[Minute5];
-               anonym1->Bytesent = anonym1->Bytesent+(unsigned long)
+               anonym1->Bytesent = anonym1->Bytesent+(uint32_t)
                 anonym->AdrLen+3UL; /* + fcs and 1 flag*/
                if (sendi) {
-                  anonym1->Bytesent = anonym1->Bytesent+(unsigned long)
+                  anonym1->Bytesent = anonym1->Bytesent+(uint32_t)
                 sendi->len;
                }
             }
@@ -2414,7 +2404,7 @@ static void tx(l2_pLINK * SendQueIn, l2_pLINK * SendQueOut)
                 anonym->Adress, anonym->AdrLen, sendi);
             }
          }
-         if (dealloc) Dealloc((X2C_ADDRESS *) &sendi);
+         if (dealloc) Dealloc((char * *) &sendi);
          anonym->IsInQue = 3U;
          last = *SendQueOut;
          if ((struct LINK *)*SendQueOut==(struct LINK *)*SendQueIn) {
@@ -2425,7 +2415,7 @@ static void tx(l2_pLINK * SendQueIn, l2_pLINK * SendQueOut)
       { /* with */
          struct LINK * anonym2 = (struct LINK *)last;
          if (!anonym2->haschains) {
-            Dealloc((X2C_ADDRESS *) &last);
+            Dealloc((char * *) &last);
                 /*simple dealloc, there are no chains*/
          }
          else {
@@ -2458,8 +2448,8 @@ static void tx(l2_pLINK * SendQueIn, l2_pLINK * SendQueOut)
 static void inctime(void)
 {
    /* make always forward going time */
-   unsigned long t;
-   unsigned long i;
+   uint32_t t;
+   uint32_t i;
    t = osic_time();
    if (AbsTime!=t) {
       AbsTime = t;
@@ -2630,8 +2620,8 @@ END Layer2;
 extern void l2_Layer2(void)
 {
    /*started by ticker*/
-   unsigned short i;
-   unsigned short port;
+   uint16_t i;
+   uint16_t port;
    char test1;
    char norx;
    struct l2__D2 * anonym;
@@ -2648,8 +2638,7 @@ extern void l2_Layer2(void)
                   /*port is enabled*/
                   test1 = PortL2[anonym->_._0.Diversity-1U].dcd;
                   PortL2[anonym->_._0.Diversity-1U].dcd = 0;
-                  if (anonym->HalfDuplex && frameio_DCD((unsigned long)port))
-                 {
+                  if (anonym->HalfDuplex && frameio_DCD((uint32_t)port)) {
                      if (anonym0->dcdguard<anonym->_._0.DCDIGNOR) {
                         PortL2[anonym->_._0.Diversity-1U].dcd = 1;
                         ++anonym0->dcdguard;
@@ -2658,7 +2647,7 @@ extern void l2_Layer2(void)
                   else anonym0->dcdguard = 0U;
                   /*IF PortL2[Diversity].dcd<>test1 THEN WrStr("d");
                 WrInt(ORD(PortL2[Diversity].dcd),1) END; */
-                  if (frameio_GetFrame((unsigned long)port)) {
+                  if (frameio_GetFrame((uint32_t)port)) {
                      /*WrStr("R"); */
                      if (anonym->monitor && (frameio_crcok || anonym->passall)
                 ) Mon(port, l2_adress, l2_asize, l2_dbuf);
@@ -2676,7 +2665,7 @@ extern void l2_Layer2(void)
                   /*this ports has a sender*/
                   if (anonym0->Ticker!=Second) {
                      if (!(PortL2[anonym->_._0.Diversity-1U]
-                .dcd || frameio_Sending((unsigned long)port))) {
+                .dcd || frameio_Sending((uint32_t)port))) {
                         /*timer is running*/
                         if ((struct LINK *)
                 anonym0->T1Out==0 || ((struct LINK *)anonym0->T1Out)
@@ -2717,11 +2706,11 @@ extern void l2_Layer2(void)
 } /* end Layer2() */
 
 
-extern void l2_L2Init(unsigned short bufs, unsigned short portset,
+extern void l2_L2Init(uint16_t bufs, uint16_t portset,
                 l2_CALLBACKPROC callback)
 {
-   unsigned short j;
-   unsigned short i;
+   uint16_t j;
+   uint16_t i;
    struct l2__D2 * anonym;
    struct _0 * anonym0;
    /* init with default parameters */
@@ -2750,20 +2739,21 @@ extern void l2_L2Init(unsigned short bufs, unsigned short portset,
    Minute5 = 0U;
    memory = 0U;
    Freechain = 0;
-   i = (unsigned short)sizeof(struct l2_DFIELD);
-   if (sizeof(struct LINK)>(unsigned long)i) {
-      i = (unsigned short)sizeof(struct LINK);
+   i = (uint16_t)sizeof(struct l2_DFIELD);
+   if (sizeof(struct LINK)>(uint32_t)i) {
+      i = (uint16_t)sizeof(struct LINK);
    }
    for (;;) {
-      osic_alloc((X2C_ADDRESS *) &l2_dbuf, (unsigned long)i);
+      osic_alloc((char * *) &l2_dbuf, (uint32_t)i);
       if (memory>=bufs) break;
-      Dealloc((X2C_ADDRESS *) &l2_dbuf);
+      Dealloc((char * *) &l2_dbuf);
    }
    /*WrInt(SIZE(dbuf^), 10); WrInt(SIZE(monBufOut^), 10); WrStrLn(" d,l"); */
    for (i = 1U; i<=15U; i++) {
       { /* with */
          struct l2__D2 * anonym = &l2_Parms[i-1U];
-         memset((char *) &l2_Parms[i-1U],(char)0,sizeof(struct l2__D2));
+         memset((char *) &l2_Parms[i-1U],(char)0,
+                sizeof(struct l2__D2));
          /*defaults*/
          anonym->_._0.T1 = 20U;
          anonym->_._0.T3 = 1800U;
@@ -2776,7 +2766,7 @@ extern void l2_L2Init(unsigned short bufs, unsigned short portset,
          anonym->_._0.DCDlevel = 27000U;
          anonym->_._0.SendPort = i;
          /*    IF (i>=8) & (i<12) THEN  Diversity:=i; END;*/
-         if (X2C_IN((long)i,16,portset)) anonym->_._0.Diversity = i;
+         if (X2C_IN((int32_t)i,16,portset)) anonym->_._0.Diversity = i;
          anonym->_._0.Retries = 25U;
          anonym->HalfDuplex = 1;
          anonym->DamaMaster = 0;
@@ -2815,8 +2805,8 @@ extern void l2_BEGIN(void)
    static int l2_init = 0;
    if (l2_init) return;
    l2_init = 1;
-   if (sizeof(unsigned short)!=2) X2C_ASSERT(0);
-   if (sizeof(unsigned char)!=1) X2C_ASSERT(0);
+   if (sizeof(uint16_t)!=2) X2C_ASSERT(0);
+   if (sizeof(uint8_t)!=1) X2C_ASSERT(0);
    if (sizeof(l2_CALLTYP)!=7) X2C_ASSERT(0);
    if (sizeof(l2_AFIELD)!=71) X2C_ASSERT(0);
    if (sizeof(l2_SUMMS)!=28) X2C_ASSERT(0);

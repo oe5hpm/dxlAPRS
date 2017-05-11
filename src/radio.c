@@ -29,7 +29,7 @@ struct STICKPARM;
 
 
 struct STICKPARM {
-   unsigned long val;
+   uint32_t val;
    char ok0;
 };
 
@@ -39,9 +39,9 @@ struct STICKPARM {
 #define radio_DEEMPHASIS 0.05
 /* check value ... */
 
-static long fd;
+static int32_t fd;
 
-static unsigned long sndw;
+static uint32_t sndw;
 
 static short sndbuf[1024];
 
@@ -63,14 +63,14 @@ static char verb;
 
 static char isstereo;
 
-static unsigned long afc;
+static uint32_t afc;
 
-static unsigned long tune;
+static uint32_t tune;
 
 static struct STICKPARM stickparm[256];
 
 
-static void Usage(char text[], unsigned long text_len)
+static void Usage(char text[], uint32_t text_len)
 {
    X2C_PCOPY((void **)&text,text_len);
    osi_WrStr(" usage: ", 9ul);
@@ -80,21 +80,20 @@ static void Usage(char text[], unsigned long text_len)
 } /* end Usage() */
 
 
-static void fix(const char s[], unsigned long s_len, unsigned long * p,
+static void fix(const char s[], uint32_t s_len, uint32_t * p,
                 float * x, char * ok0)
 {
    float m;
    m = 1.0f;
    *ok0 = 0;
    *x = 0.0f;
-   while ((unsigned char)s[*p]>='0' && (unsigned char)
-                s[*p]<='9' || s[*p]=='.') {
+   while ((uint8_t)s[*p]>='0' && (uint8_t)s[*p]<='9' || s[*p]=='.') {
       if (s[*p]=='.') m = 0.1f;
       else if (m==1.0f) {
-         *x =  *x*10.0f+(float)((unsigned long)(unsigned char)s[*p]-48UL);
+         *x =  *x*10.0f+(float)((uint32_t)(uint8_t)s[*p]-48UL);
       }
       else {
-         *x = *x+(float)((unsigned long)(unsigned char)s[*p]-48UL)*m;
+         *x = *x+(float)((uint32_t)(uint8_t)s[*p]-48UL)*m;
          m = m*0.1f;
       }
       *ok0 = 1;
@@ -107,9 +106,9 @@ static void Parms(void)
 {
    char s[1001];
    float fr;
-   unsigned long n;
-   unsigned long m;
-   long ni;
+   uint32_t n;
+   uint32_t m;
+   int32_t ni;
    char ok0;
    mono = 0;
    verb = 0;
@@ -152,11 +151,11 @@ static void Parms(void)
             fix(s, 1001ul, &n, &fr, &ok0);
             if (ok0) {
                if (fr>2000.0f && fr<=4.294967295E+9f) {
-                  tune = (unsigned long)X2C_TRUNCC(fr+0.5f,0UL,
+                  tune = (uint32_t)X2C_TRUNCC(fr+0.5f,0UL,
                 X2C_max_longcard);
                }
                else if (fr>1.0f && fr<=4294.0f) {
-                  tune = (unsigned long)X2C_TRUNCC(fr*1.E+6f+0.5f,0UL,
+                  tune = (uint32_t)X2C_TRUNCC(fr*1.E+6f+0.5f,0UL,
                 X2C_max_longcard);
                }
                else Usage(" -f <mhz> or -f <hz>", 21ul);
@@ -168,7 +167,7 @@ static void Parms(void)
             if (aprsstr_StrToCard(s, 1001ul, &m) && m<256UL) {
                osi_NextArg(s, 1001ul);
                if (aprsstr_StrToInt(s, 1001ul, &ni)) {
-                  stickparm[m].val = (unsigned long)ni; /* stick parameter */
+                  stickparm[m].val = (uint32_t)ni; /* stick parameter */
                   stickparm[m].ok0 = 1;
                }
                else Usage(" -p <cmd> <value>", 18ul);
@@ -279,17 +278,17 @@ static short lim(float v)
    return 0;
 } /* end lim() */
 
-static long sp;
+static int32_t sp;
 
-static long sn;
+static int32_t sn;
 
-static unsigned long pc;
+static uint32_t pc;
 
 static float left;
 
 static float right;
 
-static unsigned long tshow;
+static uint32_t tshow;
 
 static char recon;
 
@@ -315,7 +314,7 @@ static float deem2;
 X2C_STACK_LIMIT(100000l)
 extern int main(int argc, char **argv)
 {
-   long tmp;
+   int32_t tmp;
    X2C_BEGIN(&argc,argv,1,4000000l,8000000l);
    sdr_BEGIN();
    aprsstr_BEGIN();
@@ -328,7 +327,7 @@ extern int main(int argc, char **argv)
    { /* with */
       struct sdr_RX * anonym = &rxx;
       anonym->df = 100UL;
-      anonym->maxafc = (long)afc;
+      anonym->maxafc = (int32_t)afc;
       anonym->width = 192000UL;
       anonym->modulation = 'f';
       anonym->samples = (sdr_pAUDIOSAMPLE)sampx;
@@ -353,7 +352,8 @@ extern int main(int argc, char **argv)
                tmp = sn-1L;
                sp = 0L;
                if (sp<=tmp) for (;; sp++) {
-                  left = (float)X2C_CHKNIL(sdr_pAUDIOSAMPLE,rxx.samples)[sp];
+                  left = (float)X2C_CHKNIL(sdr_pAUDIOSAMPLE,
+                rxx.samples)[sp];
                   if (mono) right = left;
                   else stereo(left, &left, &right);
                   u11 = u11+((left-u11)-il1)*lp; /* lowpass 14khz */

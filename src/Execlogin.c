@@ -40,9 +40,10 @@
  * on successfull function return, fd will contain the file descriptor,
  * and PtyName the absolute path to the master-pty in the file system */
 
-static long GetNewTty(long * fd, char ptsname[], unsigned long ptsname_len)
+static int32_t GetNewTty(int32_t * fd, char ptsname[],
+                uint32_t ptsname_len)
 {
-   long res;
+   int32_t res;
    struct termios term;
    *fd = open("/dev/ptmx", O_RDWR+O_NONBLOCK);
    if (*fd<0L) osi_WrStrLn("error /dev/ptmx open", 21ul);
@@ -64,13 +65,13 @@ static long GetNewTty(long * fd, char ptsname[], unsigned long ptsname_len)
  * finalle make it our controlling terminal.
  * return: 0=success, -1=failure */
 
-static long GetSlavePty(char name[], unsigned long name_len)
+static int32_t GetSlavePty(char name[], uint32_t name_len)
 {
-   long fd;
-   long res;
+   int32_t fd;
+   int32_t res;
    struct termios term;
    struct termios * anonym;
-   long GetSlavePty_ret;
+   int32_t GetSlavePty_ret;
    X2C_PCOPY((void **)&name,name_len);
    res = chown((char *)name, 0L, 0L);
    res = chmod((char *)name, 384L);
@@ -85,11 +86,10 @@ static long GetSlavePty(char name[], unsigned long name_len)
    res = tcgetattr(fd, &term);
    { /* with */
       struct termios * anonym = &term;
-      anonym->c_lflag = (unsigned long)((unsigned long)
-                anonym->c_lflag|0x8UL|0x2UL);
-      anonym->c_oflag = (unsigned long)((unsigned long)anonym->c_oflag|0x4UL)
+      anonym->c_lflag = (uint32_t)((uint32_t)anonym->c_lflag|0x8UL|0x2UL)
                 ;
-      anonym->c_iflag = (unsigned long)(((unsigned long)
+      anonym->c_oflag = (uint32_t)((uint32_t)anonym->c_oflag|0x4UL);
+      anonym->c_iflag = (uint32_t)(((uint32_t)
                 anonym->c_iflag|0x100UL|0x1UL)&~0x1000UL);
    }
    /*          c_cflag := CARDINAL( BITSET(c_cflag)-BITSET(CLOCAL)); */
@@ -125,10 +125,10 @@ static long GetSlavePty(char name[], unsigned long name_len)
  * 'passwd' can be set TRUE to force skipping the password authentication.
  *        This requires 'name' to be non-empty. */
 
-extern long Execlogin_StartLogin(struct Execlogin_tEXEC * cmd)
+extern int32_t Execlogin_StartLogin(struct Execlogin_tEXEC * cmd)
 {
-   long res;
-   long PtyFd;
+   int32_t res;
+   int32_t PtyFd;
    char PtyName[1024];
    if (GetNewTty(&PtyFd, PtyName, 1024ul)<0L) return -1L;
    res = fork();

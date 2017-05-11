@@ -14,7 +14,7 @@
 #endif
 
 /* grafical os interface */
-typedef long xosi_PROCHANDLE;
+typedef int32_t xosi_PROCHANDLE;
 
 #define xosi_WHITELEVEL 1024
 
@@ -23,9 +23,9 @@ struct xosi__D0;
 
 /*+OVERSHOOT*/
 struct xosi__D0 {
-   unsigned long r;
-   unsigned long g;
-   unsigned long b;
+   uint32_t r;
+   uint32_t g;
+   uint32_t b;
 };
 
 extern struct xosi__D0 xosi_gammalut[1024];
@@ -34,10 +34,10 @@ struct xosi_PROCESSHANDLE;
 
 
 struct xosi_PROCESSHANDLE {
-   long pid;
+   int32_t pid;
    char started;
    char runs;
-   long exitcode;
+   int32_t exitcode;
 };
 
 enum xosi_CURSORTYP {xosi_cOFF, xosi_cPULL4, xosi_cPULLLEFT, xosi_cPULLRIGHT,
@@ -50,20 +50,20 @@ struct xosi_CUTBUF;
 
 struct xosi_CUTBUF {
    char * text;
-   unsigned long cutlen;
-   unsigned long cutpos;
+   uint32_t cutlen;
+   uint32_t cutpos;
 };
 
-extern unsigned long xosi_newxsize;
+extern uint32_t xosi_newxsize;
 
-extern unsigned long xosi_newysize;
+extern uint32_t xosi_newysize;
 
 struct xosi__D1;
 
 
 struct xosi__D1 {
-   unsigned long x;
-   unsigned long y;
+   uint32_t x;
+   uint32_t y;
 };
 
 extern struct xosi__D1 xosi_xmouse;
@@ -78,40 +78,40 @@ extern char xosi_headmh[251];
 
 extern struct xosi_CUTBUF xosi_cutbuffer;
 
-extern long xosi_InitX(char [], unsigned long, char [], unsigned long,
-                unsigned long, unsigned long);
+extern int32_t xosi_InitX(char [], uint32_t, char [], uint32_t,
+                 uint32_t, uint32_t);
 
 extern void xosi_Gammatab(float);
 
-extern void xosi_getscreenbuf(X2C_ADDRESS *, unsigned long *,
-                unsigned long *, unsigned long *);
+extern void xosi_getscreenbuf(char * *, uint32_t *, uint32_t *,
+                uint32_t *);
 
 extern void xosi_rgbtoscreen(void);
 
-extern void xosi_allocxbuf(unsigned long, unsigned long);
+extern void xosi_allocxbuf(uint32_t, uint32_t);
 
 extern void xosi_cutpaste(void);
 
 extern void xosi_paste(void);
 
-extern void xosi_beep(long, unsigned long, unsigned long);
+extern void xosi_beep(int32_t, uint32_t, uint32_t);
 
 extern void xosi_xevent(void);
 
-extern void xosi_Eventloop(unsigned long);
+extern void xosi_Eventloop(uint32_t);
 
-extern void xosi_sethand(unsigned char);
+extern void xosi_sethand(uint8_t);
 
-extern void xosi_StartProg(char [], unsigned long,
+extern void xosi_StartProg(char [], uint32_t,
                 struct xosi_PROCESSHANDLE *);
 
 extern void xosi_CheckProg(struct xosi_PROCESSHANDLE *);
 
 extern void xosi_StopProg(struct xosi_PROCESSHANDLE *);
 
-extern void xosi_Umlaut(char [], unsigned long);
+extern void xosi_Umlaut(char [], uint32_t);
 
-extern void xosi_setxwinsize(long, long);
+extern void xosi_setxwinsize(int32_t, int32_t);
 
 extern void xosi_closewin(void);
 

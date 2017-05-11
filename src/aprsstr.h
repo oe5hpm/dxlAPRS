@@ -13,85 +13,88 @@
 #include "X2C.h"
 #endif
 
-typedef unsigned long aprsstr_TIME;
+/* string lib by oe5dxl */
+typedef uint32_t aprsstr_TIME;
 
-typedef unsigned long aprsstr_IPNUM;
+typedef uint32_t aprsstr_IPNUM;
 
-typedef unsigned long aprsstr_UDPPORT;
+typedef uint32_t aprsstr_UDPPORT;
 
-typedef unsigned char aprsstr_SET8;
+typedef uint8_t aprsstr_SET8;
 
-typedef unsigned long aprsstr_GHOSTSET[9];
+typedef uint32_t aprsstr_GHOSTSET[9];
 
 #define aprsstr_CALLLEN 7
 
 #define aprsstr_HBIT 128
 
-extern void aprsstr_Assign(char [], unsigned long, char [], unsigned long);
+extern void aprsstr_Assign(char [], uint32_t, char [], uint32_t);
 
-extern void aprsstr_Append(char [], unsigned long, char [], unsigned long);
+extern void aprsstr_Append(char [], uint32_t, char [], uint32_t);
 
-extern void aprsstr_Delstr(char [], unsigned long, unsigned long,
-                unsigned long);
+extern void aprsstr_Delstr(char [], uint32_t, uint32_t, uint32_t);
 
-extern void aprsstr_Extractword(char [], unsigned long, char [],
-                unsigned long);
+extern void aprsstr_Extractword(char [], uint32_t, char [],
+                uint32_t);
 
-extern unsigned long aprsstr_Length(char [], unsigned long);
+extern uint32_t aprsstr_Length(char [], uint32_t);
 
-extern void aprsstr_IntToStr(long, unsigned long, char [], unsigned long);
+extern void aprsstr_IntToStr(int32_t, uint32_t, char [], uint32_t);
 
-extern void aprsstr_CardToStr(unsigned long, unsigned long, char [],
-                unsigned long);
+extern void aprsstr_CardToStr(uint32_t, uint32_t, char [],
+                uint32_t);
 
-extern void aprsstr_FixToStr(float, unsigned long, char [], unsigned long);
+extern void aprsstr_FixToStr(float, uint32_t, char [], uint32_t);
 
-extern char aprsstr_StrToCard(char [], unsigned long, unsigned long *);
+extern char aprsstr_StrToCard(char [], uint32_t, uint32_t *);
 
-extern char aprsstr_StrToInt(char [], unsigned long, long *);
+extern char aprsstr_StrToInt(char [], uint32_t, int32_t *);
 
-extern char aprsstr_StrToFix(float *, char [], unsigned long);
+extern char aprsstr_StrToFix(float *, char [], uint32_t);
 
-extern char aprsstr_StrCmp(char [], unsigned long, char [], unsigned long);
+extern char aprsstr_StrCmp(char [], uint32_t, char [],
+                uint32_t);
 
-extern long aprsstr_InStr(char [], unsigned long, char [], unsigned long);
+extern int32_t aprsstr_InStr(char [], uint32_t, char [],
+                uint32_t);
 
-extern void aprsstr_TimeToStr(unsigned long, char [], unsigned long);
+extern void aprsstr_TimeToStr(uint32_t, char [], uint32_t);
 
-extern void aprsstr_DateToStr(unsigned long, char [], unsigned long);
+extern void aprsstr_DateToStr(uint32_t, char [], uint32_t);
 
-extern char aprsstr_StrToTime(char [], unsigned long, unsigned long *);
+extern char aprsstr_StrToTime(char [], uint32_t, uint32_t *);
 
-extern void aprsstr_CtrlHex(char [], unsigned long);
+extern void aprsstr_CtrlHex(char [], uint32_t);
 
-extern long aprsstr_GetIp2(char [], unsigned long, unsigned long *,
-                unsigned long *, unsigned long *, char *);
+extern int32_t aprsstr_GetIp2(char [], uint32_t, uint32_t *,
+                uint32_t *, uint32_t *, char *);
 
-extern void aprsstr_ipv4tostr(unsigned long, char [], unsigned long);
+extern void aprsstr_ipv4tostr(uint32_t, char [], uint32_t);
 
-extern char aprsstr_Call2Str(char [], unsigned long, char [], unsigned long,
-                unsigned long, unsigned long *);
+extern char aprsstr_Call2Str(char [], uint32_t, char [],
+                uint32_t, uint32_t, uint32_t *);
 
-extern void aprsstr_mon2raw(char [], unsigned long, char [], unsigned long,
-                long *);
+extern void aprsstr_mon2raw(char [], uint32_t, char [], uint32_t,
+                 int32_t *);
 
-extern void aprsstr_raw2mon(char [], unsigned long, char [], unsigned long,
-                unsigned long, unsigned long *, aprsstr_GHOSTSET);
+extern void aprsstr_raw2mon(char [], uint32_t, char [], uint32_t,
+                 uint32_t, uint32_t *, aprsstr_GHOSTSET);
 
-extern void aprsstr_extrudp2(char [], unsigned long, char [], unsigned long,
-                long *);
+extern void aprsstr_extrudp2(char [], uint32_t, char [],
+                uint32_t, int32_t *);
 
-extern void aprsstr_AppCRC(char [], unsigned long, long);
+extern void aprsstr_AppCRC(char [], uint32_t, int32_t);
 
-extern void aprsstr_HashCh(char, unsigned char *, unsigned char *);
+extern void aprsstr_HashCh(char, uint8_t *, uint8_t *);
 
-extern unsigned long aprsstr_Hash(char [], unsigned long, long, long);
+extern uint32_t aprsstr_Hash(char [], uint32_t, int32_t,
+                int32_t);
 
-extern void aprsstr_cleanfilename(char [], unsigned long);
+extern void aprsstr_cleanfilename(char [], uint32_t);
 
-extern void aprsstr_Caps(char [], unsigned long);
+extern void aprsstr_Caps(char [], uint32_t);
 
-extern void aprsstr_rightbound(char [], unsigned long, unsigned long);
+extern void aprsstr_rightbound(char [], uint32_t, uint32_t);
 
 
 extern void aprsstr_BEGIN(void);

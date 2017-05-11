@@ -88,23 +88,23 @@ struct RESULTS {
    double dheig[4];
    double qsumv;
    double qsumh;
-   unsigned short satset;
-   unsigned short res;
+   uint16_t satset;
+   uint16_t res;
 };
 
 struct COMMONALMANACH;
 
 
 struct COMMONALMANACH {
-   unsigned long treal;
-   unsigned long toa; /* almanac time of applicability (reference time [s]*/
-   unsigned short week; /* 10 bit gps week 0-1023 (user must account for week rollover) [week]*/
-   unsigned short prn; /* GPS prn number */
-   unsigned short reserved; /* reserved */
-   unsigned short svn; /* Satellite vehicle number */
-   unsigned char ura; /* User Range Accuracy lookup code, [0-15], see p. 83 GPSICD200C, 0 is*/
-   unsigned char health; /* 0=healthy, unhealthy otherwise  [], subframe 4 and 5, page 25 six-b*/
-   unsigned char config_code; /* configuration code   [], if >=9 Anti-Spoofing is on */
+   uint32_t treal;
+   uint32_t toa; /* almanac time of applicability (reference time [s]*/
+   uint16_t week; /* 10 bit gps week 0-1023 (user must account for week rollover) [week]*/
+   uint16_t prn; /* GPS prn number */
+   uint16_t reserved; /* reserved */
+   uint16_t svn; /* Satellite vehicle number */
+   uint8_t ura; /* User Range Accuracy lookup code, [0-15], see p. 83 GPSICD200C, 0 is*/
+   uint8_t health; /* 0=healthy, unhealthy otherwise  [], subframe 4 and 5, page 25 six-b*/
+   uint8_t config_code; /* configuration code   [], if >=9 Anti-Spoofing is on */
    /* this inicator is not part of the SEM standard but is added by the user if known */
    char is_af0_af1_high_precision;
                 /* indicates precision of af0 and af1 [1=high precision,
@@ -119,18 +119,18 @@ struct COMMONALMANACH {
    double af0; /* polynomial clock correction coefficient (clock bias)         [s],   Note: pa*/
    double af1;
    double af2; /* polynomial clock correction coefficient (clock drift)        [s/s], Note: pa*/
-   unsigned long toe; /* reference time ephemeris (0-604800) */
-   unsigned long toc; /* reference time (clock)   (0-604800) */
-   unsigned short iodc; /* 10 bit issue of data (clock) */
+   uint32_t toe; /* reference time ephemeris (0-604800) */
+   uint32_t toc; /* reference time (clock)   (0-604800) */
+   uint16_t iodc; /* 10 bit issue of data (clock) */
    char iode; /* 8 bit  issue of data (ephemeris) */
    char alert_flag; /* 1 = URA may be worse than indicated */
    char anti_spoof; /* anti-spoof flag from 0=off, 1=on */
    char code_on_L2; /* 0=reserved, 1=P code on L2, 2=C/A on L2 */
    char L2_P_data_flag; /* flag indicating if P is on L2 1=true */
    char fit_interval_flag; /* fit interval flag (four hour interval or longer) 0=4 fours */
-   unsigned short age_of_data_offset; /* age of data offset */
-   unsigned short tow_week; /* The week corresponding to tow (0-1024+). Can be one week l */
-   unsigned long tow; /* The time of week derived formt the Z-count in the Hand Ove */
+   uint16_t age_of_data_offset; /* age of data offset */
+   uint16_t tow_week; /* The week corresponding to tow (0-1024+). Can be one week l */
+   uint32_t tow; /* The time of week derived formt the Z-count in the Hand Ove */
    /* clock parameters */
    double tgd; /* group delay */
    /* ephemeris parameters */
@@ -148,12 +148,12 @@ struct structEphemeris;
 
 
 struct structEphemeris {
-   unsigned long toe; /* reference time ephemeris (0-604800) */
-   unsigned long toc; /* reference time (clock)   (0-604800) */
-   unsigned short prn; /* GPS PRN number */
-   unsigned short week; /* 10 bit gps week 0-1023 (user must account for week rollove */
-   unsigned short iodc; /* 10 bit issue of data (clock) */
-   unsigned short reserved1; /* reserved bytes */
+   uint32_t toe; /* reference time ephemeris (0-604800) */
+   uint32_t toc; /* reference time (clock)   (0-604800) */
+   uint16_t prn; /* GPS PRN number */
+   uint16_t week; /* 10 bit gps week 0-1023 (user must account for week rollove */
+   uint16_t iodc; /* 10 bit issue of data (clock) */
+   uint16_t reserved1; /* reserved bytes */
    char iode; /* 8 bit  issue of data (ephemeris) */
    char health; /* 6 bit health parameter, 0 if healthy, unhealth othersize */
    char alert_flag; /* 1 = URA may be worse than indicated */
@@ -162,9 +162,9 @@ struct structEphemeris {
    char L2_P_data_flag; /* flag indicating if P is on L2 1=true */
    char fit_interval_flag; /* fit interval flag (four hour interval or longer) 0=4 fours */
    char ura; /* User Range Accuracy lookup code, 0 is excellent, 15 is use */
-   unsigned short age_of_data_offset; /* age of data offset */
-   unsigned short tow_week; /* The week corresponding to tow (0-1024+). Can be one week l */
-   unsigned long tow; /* The time of week derived formt the Z-count in the Hand Ove */
+   uint16_t age_of_data_offset; /* age of data offset */
+   uint16_t tow_week; /* The week corresponding to tow (0-1024+). Can be one week l */
+   uint32_t tow; /* The time of week derived formt the Z-count in the Hand Ove */
    /* clock parameters */
    double tgd; /* group delay */
    double af2; /* polynomial clock correction coefficient (rate of clock drift) */
@@ -192,9 +192,9 @@ struct structKlobuchar;
 
 
 struct structKlobuchar {
-   unsigned short isValid; /* Is this structure valid for use 1=YES, 0=NO.*/
-   unsigned short week; /* The GPS week corresponding to the correction parameters [weeks]. */
-   unsigned long tow; /* The GPS time of week corresponding to the correction parameters [s]. */
+   uint16_t isValid; /* Is this structure valid for use 1=YES, 0=NO.*/
+   uint16_t week; /* The GPS week corresponding to the correction parameters [weeks]. */
+   uint32_t tow; /* The GPS time of week corresponding to the correction parameters [s]. */
    double alpha0; /* coefficients of a cubic equation representing the amplitude of the ve */
    double alpha1; /* coefficients of a cubic equation representing the amplitude of the ve */
    double alpha2; /* coefficients of a cubic equation representing the amplitude of the ve */
@@ -226,11 +226,11 @@ static double sqr(double x)
 #define gpspos_Z 48
 
 
-static void degtostr(float d, char lat, char form, char s[],
-                unsigned long s_len)
+static void degtostr(float d, char lat, char form,
+                char s[], uint32_t s_len)
 {
-   unsigned long i;
-   unsigned long n;
+   uint32_t i;
+   uint32_t n;
    if (s_len-1<11UL) {
       s[0UL] = 0;
       return;
@@ -247,10 +247,10 @@ static void degtostr(float d, char lat, char form, char s[],
    else s[i+1UL] = 'E';
    if (form=='2') {
       /* DDMM.MMNDDMM.MME */
-      n = (unsigned long)X2C_TRUNCC(d*3.4377467707849E+5f+0.5f,0UL,
+      n = (uint32_t)X2C_TRUNCC(d*3.4377467707849E+5f+0.5f,0UL,
                 X2C_max_longcard);
       s[0UL] = (char)((n/600000UL)%10UL+48UL);
-      i = (unsigned long)!lat;
+      i = (uint32_t)!lat;
       s[i] = (char)((n/60000UL)%10UL+48UL);
       ++i;
       s[i] = (char)((n/6000UL)%10UL+48UL);
@@ -268,10 +268,10 @@ static void degtostr(float d, char lat, char form, char s[],
    }
    else if (form=='3') {
       /* DDMM.MMMNDDMM.MMME */
-      n = (unsigned long)X2C_TRUNCC(d*3.4377467707849E+6f+0.5f,0UL,
+      n = (uint32_t)X2C_TRUNCC(d*3.4377467707849E+6f+0.5f,0UL,
                 X2C_max_longcard);
       s[0UL] = (char)((n/6000000UL)%10UL+48UL);
-      i = (unsigned long)!lat;
+      i = (uint32_t)!lat;
       s[i] = (char)((n/600000UL)%10UL+48UL);
       ++i;
       s[i] = (char)((n/60000UL)%10UL+48UL);
@@ -291,10 +291,10 @@ static void degtostr(float d, char lat, char form, char s[],
    }
    else {
       /* DDMMSS */
-      n = (unsigned long)X2C_TRUNCC(d*2.062648062471E+5f+0.5f,0UL,
+      n = (uint32_t)X2C_TRUNCC(d*2.062648062471E+5f+0.5f,0UL,
                 X2C_max_longcard);
       s[0UL] = (char)((n/360000UL)%10UL+48UL);
-      i = (unsigned long)!lat;
+      i = (uint32_t)!lat;
       s[i] = (char)((n/36000UL)%10UL+48UL);
       ++i;
       s[i] = (char)((n/3600UL)%10UL+48UL);
@@ -327,8 +327,8 @@ static void degtostr(float d, char lat, char form, char s[],
 #define gpspos_E 8.1819190842522E-2
 
 
-static void wgs84(double lat, double long0, double heig, double * x,
-                double * y, double * z)
+static void wgs84(double lat, double long0, double heig,
+                double * x, double * y, double * z)
 /* wgs84 ecef */
 {
    double h;
@@ -345,20 +345,21 @@ static void wgs84(double lat, double long0, double heig, double * x,
 #define gpspos_K 0.0
 
 
-static long get4sats(const SATPOSES sats, const unsigned long satnum[],
-                unsigned long satnum_len, unsigned long dil, double dilm,
-                double * lat, double * long0, double * heig)
+static int32_t get4sats(const SATPOSES sats, const uint32_t satnum[],
+                uint32_t satnum_len, uint32_t dil, double dilm,
+                double * lat, double * long0,
+                double * heig)
 {
-   unsigned long i;
+   uint32_t i;
    double rx_clock_bias; /*, clock_drift, satVx,satVy,satVz,azimuth,elevation,doppler*/
-   long prn;
-   long ret;
-   unsigned long chkmask;
+   int32_t prn;
+   int32_t ret;
+   uint32_t chkmask;
    double dils[4];
    chkmask = 0UL;
    for (i = 0UL; i<=3UL; i++) {
       dils[i] = 0.0;
-      prn = (long)(satnum[i]-1UL);
+      prn = (int32_t)(satnum[i]-1UL);
       if ((prn<0L || prn>31L) || X2C_IN(prn,32,chkmask)) return -1L;
       /* two times same sat */
       chkmask |= (1UL<<prn);
@@ -396,9 +397,9 @@ static double qdist(double dlat, double dlong)
 } /* end qdist() */
 
 
-static void satposit(struct SATPOS * sat, unsigned long satnum, double myx,
-                double myy, double myz, unsigned long userweek,
-                unsigned long weekms)
+static void satposit(struct SATPOS * sat, uint32_t satnum,
+                double myx, double myy, double myz,
+                uint32_t userweek, uint32_t weekms)
 {
    double satVz;
    double satVy;
@@ -411,7 +412,7 @@ static void satposit(struct SATPOS * sat, unsigned long satnum, double myx,
          struct COMMONALMANACH * anonym = &calm[satnum];
          if (rinexok) {
             GPS_ComputeSatellitePositionVelocityAzimuthElevationDoppler_BasedOnEphmerisData(myx,
-                 myy, myz, (unsigned short)userweek, (double)weekms*0.001,
+                 myy, myz, (uint16_t)userweek, (double)weekms*0.001,
                 anonym->tow_week&1023U, anonym->toe, anonym->toc,
                 anonym->af0, anonym->af1, anonym->af2, anonym->tgd,
                 anonym->m0, anonym->delta_n, anonym->ecc, anonym->sqrta,
@@ -425,12 +426,12 @@ static void satposit(struct SATPOS * sat, unsigned long satnum, double myx,
             /*WrInt(ORD(fit_interval_flag), 4); WrInt(tow, 10);
                 WrInt(weekms DIV 1000, 10); WrStrLn("=fit tow tsat"); */
             GPS_ComputeSatellitePositionVelocityAzimuthElevationDoppler_BasedOnAlmanacData(myx,
-                 myy, myz, (unsigned short)userweek, (double)weekms*0.001,
-                (double)(float)anonym->toa, anonym->week, anonym->prn,
-                anonym->ecc, anonym->i0, anonym->omegadot, anonym->sqrta,
-                anonym->omega0, anonym->w, anonym->m0, anonym->af0,
-                anonym->af1, &sat->clk, &clock_drift, &sat->x, &sat->y,
-                &sat->z, &satVx, &satVy, &satVz, &sat->azimuth0,
+                 myy, myz, (uint16_t)userweek, (double)weekms*0.001,
+                (double)(float)anonym->toa, anonym->week,
+                anonym->prn, anonym->ecc, anonym->i0, anonym->omegadot,
+                anonym->sqrta, anonym->omega0, anonym->w, anonym->m0,
+                anonym->af0, anonym->af1, &sat->clk, &clock_drift, &sat->x,
+                &sat->y, &sat->z, &satVx, &satVy, &satVz, &sat->azimuth0,
                 &sat->elevation, &sat->doppler);
          }
       }
@@ -467,10 +468,10 @@ static double lowele(double e)
 } /* end lowele() */
 
 
-static char stat4sats(SATPOSES sats, const unsigned long satnums[],
-                unsigned long satnums_len, unsigned long try0)
+static char stat4sats(SATPOSES sats, const uint32_t satnums[],
+                uint32_t satnums_len, uint32_t try0)
 {
-   unsigned long i;
+   uint32_t i;
    double azi;
    double ele;
    double dil;
@@ -509,10 +510,10 @@ static char stat4sats(SATPOSES sats, const unsigned long satnums[],
 } /* end stat4sats() */
 
 
-static void satposits(SATPOSES satsp, double myx, double myy, double myz,
-                unsigned long userweek, unsigned long weekms)
+static void satposits(SATPOSES satsp, double myx, double myy,
+                double myz, uint32_t userweek, uint32_t weekms)
 {
-   unsigned long i;
+   uint32_t i;
    memset((char *)satsp,(char)0,sizeof(SATPOSES));
    for (i = 0UL; i<=31UL; i++) {
       satposit(&satsp[i], i, myx, myy, myz, userweek, weekms);
@@ -550,19 +551,19 @@ END tropomodel;
 #define gpspos_MAXVMUL 4.0
 
 
-static void killexo(struct RESULTS stats0[], unsigned long stats_len,
-                unsigned long probs, float * devhsum, float * devvsum)
+static void killexo(struct RESULTS stats0[], uint32_t stats_len,
+                uint32_t probs, float * devhsum, float * devvsum)
 {
-   unsigned long i;
-   unsigned long im;
-   unsigned long c;
+   uint32_t i;
+   uint32_t im;
+   uint32_t c;
    double dy;
    double dx;
    float cosy;
    float max0;
    float dev;
    char ok0;
-   unsigned long tmp;
+   uint32_t tmp;
    do {
       ok0 = 1;
       c = 0UL;
@@ -591,9 +592,9 @@ static void killexo(struct RESULTS stats0[], unsigned long stats_len,
          if (i<=tmp) for (;; i++) {
             /* deviation and find badest */
             if ((stats0[i].res&0x9U)==0U) {
-               dev = (float)(sqr((double)((float)(stats0[i].long0-dx)*cosy))
-                +sqr((double)(float)(stats0[i].lat-dy)));
-                /* error distance ^2 */
+               dev = (float)(sqr((double)((float)
+                (stats0[i].long0-dx)*cosy))+sqr((double)(float)
+                (stats0[i].lat-dy))); /* error distance ^2 */
                /*WrFixed(sqrt(dev)/RAD/360.0*40000000.0, 1,6);
                 WrStrLn("=dev"); */
                *devhsum = *devhsum+dev;
@@ -605,13 +606,14 @@ static void killexo(struct RESULTS stats0[], unsigned long stats_len,
             if (i==tmp) break;
          } /* end for */
          if (max0>=0.0f && c>2UL) stats0[im].res |= 0x1U;
-         *devhsum = X2C_DIVR(*devhsum,(float)c); /* median deviation rad^2*/
+         *devhsum = X2C_DIVR(*devhsum,(float)c);
+                /* median deviation rad^2*/
          if (max0> *devhsum*2.0f) ok0 = 0;
       }
    } while (!ok0);
    if (*devhsum>0.0f) {
       *devhsum = (float)(sqrt((double)*devhsum)*6.3661977236758E+6);
-                /* meter */
+                 /* meter */
    }
    do {
       ok0 = 1;
@@ -634,7 +636,8 @@ static void killexo(struct RESULTS stats0[], unsigned long stats_len,
          i = 0UL;
          if (i<=tmp) for (;; i++) {
             if ((stats0[i].res&0x14U)==0U) {
-               dev = (float)sqr((double)(float)(stats0[i].heig-dx));
+               dev = (float)sqr((double)(float)
+                (stats0[i].heig-dx));
                *devvsum = *devvsum+dev;
                if (dev>max0) {
                   max0 = dev;
@@ -653,11 +656,11 @@ static void killexo(struct RESULTS stats0[], unsigned long stats_len,
 } /* end killexo() */
 
 
-static void killdop(struct RESULTS stats0[], unsigned long stats_len,
-                unsigned long probs)
+static void killdop(struct RESULTS stats0[], uint32_t stats_len,
+                uint32_t probs)
 {
-   unsigned long i;
-   unsigned long tmp;
+   uint32_t i;
+   uint32_t tmp;
    tmp = probs-1UL;
    i = 0UL;
    if (i<=tmp) for (;; i++) {
@@ -668,13 +671,13 @@ static void killdop(struct RESULTS stats0[], unsigned long stats_len,
 } /* end killdop() */
 
 
-static void median(const struct RESULTS stats0[], unsigned long stats_len,
-                unsigned long tries, double * lat, double * long0,
-                double * heig, unsigned long * cnt)
+static void median(const struct RESULTS stats0[], uint32_t stats_len,
+                uint32_t tries, double * lat, double * long0,
+                double * heig, uint32_t * cnt)
 {
-   unsigned long cz;
-   unsigned long i;
-   unsigned long tmp;
+   uint32_t cz;
+   uint32_t i;
+   uint32_t tmp;
    *lat = 0.0;
    *long0 = 0.0;
    *heig = 0.0;
@@ -707,14 +710,14 @@ static void median(const struct RESULTS stats0[], unsigned long stats_len,
 } /* end median() */
 
 
-static void showstats(const struct RESULTS stats0[], unsigned long stats_len,
-                 unsigned long probs, float errh, float errv,
-                unsigned long restcnt, char full)
+static void showstats(const struct RESULTS stats0[], uint32_t stats_len,
+                uint32_t probs, float errh, float errv,
+                uint32_t restcnt, char full)
 {
-   unsigned long p;
-   unsigned long i;
+   uint32_t p;
+   uint32_t i;
    char h[31];
-   unsigned long tmp;
+   uint32_t tmp;
    if (full) {
       osi_WrStr(" probs:", 8ul);
       osic_WrINT32(probs, 1UL);
@@ -723,7 +726,7 @@ static void showstats(const struct RESULTS stats0[], unsigned long stats_len,
       p = 0UL;
       if (p<=tmp) for (;; p++) {
          for (i = 0UL; i<=11UL; i++) {
-            osic_WrINT32((unsigned long)X2C_IN(i,16,stats0[p].satset), 1UL);
+            osic_WrINT32((uint32_t)X2C_IN(i,16,stats0[p].satset), 1UL);
          } /* end for */
          osi_WrStr(" ", 2ul);
          degtostr((float)stats0[p].lat, 1, '2', h, 31ul);
@@ -731,7 +734,7 @@ static void showstats(const struct RESULTS stats0[], unsigned long stats_len,
          osi_WrStr(" ", 2ul);
          degtostr((float)stats0[p].long0, 0, '2', h, 31ul);
          osi_WrStr(h, 31ul);
-         osic_WrINT32((unsigned long)(long)X2C_TRUNCI(stats0[p].heig,
+         osic_WrINT32((uint32_t)(int32_t)X2C_TRUNCI(stats0[p].heig,
                 X2C_min_longint,X2C_max_longint), 7UL);
          for (i = 0UL; i<=3UL; i++) {
             osic_WrFixed((float)stats0[p].hd[i], 0L, 5UL);
@@ -742,7 +745,7 @@ static void showstats(const struct RESULTS stats0[], unsigned long stats_len,
          osi_WrStr(" ", 2ul);
          /*    WrFixed(stats[p].minele/RAD, 0, 3); WrStr(" "); */
          for (i = 0UL; i<=4UL; i++) {
-            osic_WrINT32((unsigned long)X2C_IN(i,16,stats0[p].res), 1UL);
+            osic_WrINT32((uint32_t)X2C_IN(i,16,stats0[p].res), 1UL);
          } /* end for */
          osi_WrStrLn("", 1ul);
          if (p==tmp) break;
@@ -772,14 +775,14 @@ static void showstats(const struct RESULTS stats0[], unsigned long stats_len,
 } /* end showstats() */
 
 
-static double median0(gpspos_SATS sats, unsigned long satcnt,
-                unsigned long bad)
+static double median0(gpspos_SATS sats, uint32_t satcnt,
+                uint32_t bad)
 /* median except from bad and badspeeds */
 {
-   unsigned long n;
-   unsigned long i;
+   uint32_t n;
+   uint32_t i;
    double m;
-   unsigned long tmp;
+   uint32_t tmp;
    m = 0.0;
    n = 0UL;
    tmp = satcnt-1UL;
@@ -796,15 +799,15 @@ static double median0(gpspos_SATS sats, unsigned long satcnt,
 } /* end median() */
 
 
-static unsigned long peak(gpspos_SATS sats, unsigned long satcnt, double med,
-                 unsigned long bad)
+static uint32_t peak(gpspos_SATS sats, uint32_t satcnt, double med,
+                 uint32_t bad)
 /* max deviation except from bad and badspeeds */
 {
-   unsigned long b;
-   unsigned long i;
+   uint32_t b;
+   uint32_t i;
    double a;
    double m;
-   unsigned long tmp;
+   uint32_t tmp;
    m = 0.0;
    b = X2C_max_longcard;
    tmp = satcnt-1UL;
@@ -827,18 +830,18 @@ static unsigned long peak(gpspos_SATS sats, unsigned long satcnt, double med,
 #define gpspos_MAXSPEED0 200
 
 
-static void speedrange(gpspos_SATS sats, unsigned long satcnt,
+static void speedrange(gpspos_SATS sats, uint32_t satcnt,
                 SATPOSES satspos)
 /* shift ranges with speed */
 {
-   unsigned long goodsats;
-   unsigned long bad1;
-   unsigned long bad;
-   unsigned long i;
+   uint32_t goodsats;
+   uint32_t bad1;
+   uint32_t bad;
+   uint32_t i;
    double med1;
    double med;
    struct gpspos_SAT * anonym;
-   unsigned long tmp;
+   uint32_t tmp;
    if (satcnt>=4UL) {
       tmp = satcnt-1UL;
       i = 0UL;
@@ -889,7 +892,8 @@ static void speedrange(gpspos_SATS sats, unsigned long satcnt,
 } /* end speedrange() */
 
 
-static double neardist(double lat1, double long1, double lat2, double long2)
+static double neardist(double lat1, double long1,
+                double lat2, double long2)
 {
    double y;
    double x;
@@ -899,7 +903,8 @@ static double neardist(double lat1, double long1, double lat2, double long2)
 } /* end neardist() */
 
 
-static double azimuth(double lat1, double long1, double lat2, double long2)
+static double azimuth(double lat1, double long1,
+                double lat2, double long2)
 /* degrees */
 {
    double cl2;
@@ -925,7 +930,7 @@ static double azimuth(double lat1, double long1, double lat2, double long2)
 } /* end azimuth() */
 
 
-static void dirmed(double * dirsum, double dir, unsigned long cnt)
+static void dirmed(double * dirsum, double dir, uint32_t cnt)
 /* angle median in degrees */
 {
    double d;
@@ -965,10 +970,18 @@ BEGIN
 END ionomodel;
 */
 
-static double PMUL(long n)
+static double PMUL(int32_t n)
 {
    return (double)(X2C_max_longint-n)*2.8618384385692E-1;
 } /* end PMUL() */
+
+
+static void wrdate(uint32_t t)
+{
+   char s[31];
+   aprsstr_DateToStr(t, s, 31ul);
+   osi_WrStr(s, 31ul);
+} /* end wrdate() */
 
 #define gpspos_ZEROTIME 315964800
 
@@ -977,11 +990,13 @@ static double PMUL(long n)
 #define gpspos_HALFWEEK 302400
 
 
-extern long gpspos_getposit(unsigned long weekms, unsigned long * systime,
-                gpspos_SATS sats, double mylat, double mylong, double myhigh,
-                 double * lat, double * long0, double * heig, double * speed,
-                 double * dir, double * climb, float * hrms, float * vrms,
-                unsigned long * goodsats)
+extern int32_t gpspos_getposit(uint32_t weekms, uint32_t * systime,
+                gpspos_SATS sats, double mylat, double mylong,
+                double myhigh, double * lat,
+                double * long0, double * heig,
+                double * speed, double * dir,
+                double * climb, float * hrms, float * vrms,
+                uint32_t * goodsats)
 {
    double aa;
    double vheig;
@@ -997,24 +1012,24 @@ extern long gpspos_getposit(unsigned long weekms, unsigned long * systime,
    double myz;
    double myy;
    double myx;
-   unsigned long satnums[4];
-   long ret;
-   unsigned long restcnt;
-   unsigned long speeds;
-   unsigned long tries;
-   unsigned long satcnt;
-   unsigned long bit;
-   unsigned long j;
-   unsigned long i;
-   unsigned long cnt;
-   unsigned long weeks;
-   unsigned long userweek;
-   unsigned long gpstime;
-   unsigned short comb;
+   uint32_t satnums[4];
+   int32_t ret;
+   uint32_t restcnt;
+   uint32_t speeds;
+   uint32_t tries;
+   uint32_t satcnt;
+   uint32_t bit;
+   uint32_t j;
+   uint32_t i;
+   uint32_t cnt;
+   uint32_t weeks;
+   uint32_t userweek;
+   uint32_t gpstime;
+   uint16_t comb;
    SATPOSES satspos;
    gpspos_SATS tmp;
-   unsigned long tmp0;
-   unsigned long tmp1;
+   uint32_t tmp0;
+   uint32_t tmp1;
    sats = (struct gpspos_SAT *)memcpy(tmp,sats,sizeof(gpspos_SATS));
    weeks = (weekms/1000UL)%604800UL; /* second in week from gps */
    gpstime = *systime-315964800UL; /* absolute gps time from system clock */
@@ -1036,7 +1051,7 @@ extern long gpspos_getposit(unsigned long weekms, unsigned long * systime,
       if (sats[i].prn && sats[i].rang<X2C_max_longint) {
          j = 0UL;
          for (;;) {
-            if ((unsigned long)calm[j].prn==sats[i].prn) {
+            if ((uint32_t)calm[j].prn==sats[i].prn) {
                sats[satcnt] = sats[i];
                sats[satcnt].almidx = j;
                /*
@@ -1067,7 +1082,7 @@ extern long gpspos_getposit(unsigned long weekms, unsigned long * systime,
          tmp0 = satcnt-1UL;
          bit = 0UL;
          if (bit<=tmp0) for (;; bit++) {
-            if (X2C_IN(bit,16,(unsigned short)comb)) ++cnt;
+            if (X2C_IN(bit,16,(uint16_t)comb)) ++cnt;
             if (bit==tmp0) break;
          } /* end for */
          if (cnt==4UL) {
@@ -1075,7 +1090,7 @@ extern long gpspos_getposit(unsigned long weekms, unsigned long * systime,
             tmp0 = satcnt-1UL;
             bit = 0UL;
             if (bit<=tmp0) for (;; bit++) {
-               if (X2C_IN(bit,16,(unsigned short)comb)) {
+               if (X2C_IN(bit,16,(uint16_t)comb)) {
                   satspos[sats[bit].almidx].range = PMUL(sats[bit].rang);
                   /*            satspos[sats[bit].almidx].range:=VAL(REAL,
                 VAL(CARDINAL,MAX(INTEGER)-sats[bit].rang))*PRM; */
@@ -1099,14 +1114,16 @@ extern long gpspos_getposit(unsigned long weekms, unsigned long * systime,
                      stats[tries].qsumv = 0.0;
                   }
                } /* end for */
-               stats[tries].satset = (unsigned short)comb;
+               stats[tries].satset = (uint16_t)comb;
                ++tries;
             }
          }
          ++comb;
-      } while (!X2C_IN(satcnt,16,(unsigned short)comb));
+      } while (!X2C_IN(satcnt,16,(uint16_t)comb));
    }
-   osic_WrINT32(satcnt, 2UL);
+   osi_WrStr(" ", 2ul);
+   wrdate(*systime);
+   osic_WrINT32(satcnt, 3UL);
    osi_WrStr("=sats", 6ul);
    osic_WrINT32(tries, 5UL);
    osi_WrStr("=tries ", 8ul);
@@ -1142,8 +1159,8 @@ extern long gpspos_getposit(unsigned long weekms, unsigned long * systime,
             bit = 0UL;
             if (bit<=tmp1) for (;; bit++) {
                if (X2C_IN(bit,16,stats[i].satset) && !sats[bit].badspeed) {
-                  satspos[sats[bit].almidx].range = (double)(unsigned long)
-                (X2C_max_longint-sats[bit].rang)
+                  satspos[sats[bit].almidx].range = (double)
+                (uint32_t)(X2C_max_longint-sats[bit].rang)
                 *2.8618384385692E-1+sats[bit].userspeed;
                   satnums[cnt] = sats[bit].almidx;
                   ++cnt;
@@ -1191,7 +1208,7 @@ extern long gpspos_getposit(unsigned long weekms, unsigned long * systime,
                 1.7453292519943E-2)), 1L, 6UL);
             osic_WrFixed((float)satspos[j].clk, 0L, 10UL);
             osic_WrFixed((float)satspos[j].doppler, 1L, 10UL);
-            osic_WrINT32((unsigned long)sats[i-1UL].rang1, 8UL);
+            osic_WrINT32((uint32_t)sats[i-1UL].rang1, 8UL);
             /*        WrFixed(LFLOAT(sats[i-1].freq0)*(WAVLEN/256.0), 3, 10);
                  */
             aa = (double)sats[i-1UL].rang1*7.4333465936861E-4-satspos[j].doppler;
@@ -1207,14 +1224,6 @@ extern long gpspos_getposit(unsigned long weekms, unsigned long * systime,
    return ret;
 } /* end getposit() */
 
-
-static void wrdate(unsigned long t)
-{
-   char s[31];
-   aprsstr_DateToStr(t, s, 31ul);
-   osi_WrStr(s, 31ul);
-} /* end wrdate() */
-
 #define gpspos_MAXTRUST 21600
 /* seconds from oldest to newest entry */
 
@@ -1224,14 +1233,14 @@ struct SEM_structAlmanac;
 
 
 struct SEM_structAlmanac {
-   unsigned long toa; /* almanac time of applicability (reference time [s]*/
-   unsigned short week; /* 10 bit gps week 0-1023 (user must account for week rollover) [week] */
-   unsigned short prn; /* GPS prn number */
-   unsigned short reserved; /* reserved */
-   unsigned short svn; /* Satellite vehicle number */
-   unsigned char ura; /* User Range Accuracy lookup code, [0-15], see p. 83 GPSICD200C, 0 is excellent, 15 is use at own risk */
-   unsigned char health; /* 0=healthy, unhealthy otherwise  [], subframe 4 and 5, page 25 six-bit health code */
-   unsigned char config_code; /* configuration code   [], if >=9 Anti-Spoofing is on */
+   uint32_t toa; /* almanac time of applicability (reference time [s]*/
+   uint16_t week; /* 10 bit gps week 0-1023 (user must account for week rollover) [week] */
+   uint16_t prn; /* GPS prn number */
+   uint16_t reserved; /* reserved */
+   uint16_t svn; /* Satellite vehicle number */
+   uint8_t ura; /* User Range Accuracy lookup code, [0-15], see p. 83 GPSICD200C, 0 is excellent, 15 is use at own risk */
+   uint8_t health; /* 0=healthy, unhealthy otherwise  [], subframe 4 and 5, page 25 six-bit health code */
+   uint8_t config_code; /* configuration code   [], if >=9 Anti-Spoofing is on */
    /* this inicator is not part of the SEM standard but is added by the user if known */
    char is_af0_af1_high_precision;
                 /* indicates precision of af0 and af1 [1=high precision,
@@ -1253,10 +1262,10 @@ struct YUMA_structAlmanac;
 
 
 struct YUMA_structAlmanac {
-   unsigned short reserved1;
-   unsigned short week; /* 10 bit gps week 0-1023 (user must account for week rollover) [week] */
-   unsigned short prn; /* GPS prn number */
-   unsigned char health; /* 0=healthy, unhealthy otherwise  [], subframe 4 and 5, page 25 six-bit health code */
+   uint16_t reserved1;
+   uint16_t week; /* 10 bit gps week 0-1023 (user must account for week rollover) [week] */
+   uint16_t prn; /* GPS prn number */
+   uint8_t health; /* 0=healthy, unhealthy otherwise  [], subframe 4 and 5, page 25 six-bit health code */
    double ecc; /* eccentricity */
    double toa; /* time of applicability */
    double i0; /* orbital inclination at reference time                        [rad] */
@@ -1270,32 +1279,35 @@ struct YUMA_structAlmanac {
 };
 
 
-extern char gpspos_readalmanach(char fnsem[], unsigned long fnsem_len,
-                char fnyuma[], unsigned long fnyuma_len, char fnrinex[],
-                unsigned long fnrinex_len, unsigned long secondinweek,
-                unsigned long * tilltime, char verb)
+extern char gpspos_readalmanach(char fnsem[],
+                uint32_t fnsem_len, char fnyuma[],
+                uint32_t fnyuma_len, char fnrinex[],
+                uint32_t fnrinex_len, uint32_t secondinweek,
+                uint32_t * tilltime, char verb)
 {
-   unsigned char cnt;
-   unsigned long nearmed;
-   unsigned long ti;
-   unsigned long ri;
-   unsigned long j;
-   unsigned long i;
+   uint8_t cnt;
+   uint32_t nearmed;
+   uint32_t ti;
+   uint32_t ri;
+   uint32_t j;
+   uint32_t i;
    struct SEM_structAlmanac alm[32];
    struct YUMA_structAlmanac yumaalm[32];
    struct structEphemeris rinexalm[3072];
-   unsigned long min0[32];
-   unsigned long tmp;
+   uint32_t min0[32];
+   uint32_t tmp;
    char gpspos_readalmanach_ret;
    X2C_PCOPY((void **)&fnsem,fnsem_len);
    X2C_PCOPY((void **)&fnyuma,fnyuma_len);
    X2C_PCOPY((void **)&fnrinex,fnrinex_len);
    memset((char *)alm,(char)0,sizeof(struct SEM_structAlmanac [32]));
    memset((char *)calm,(char)0,sizeof(struct COMMONALMANACH [32]));
-   memset((char *)yumaalm,(char)0,sizeof(struct YUMA_structAlmanac [32]));
-   memset((char *)rinexalm,(char)0,sizeof(struct structEphemeris [3072]));
-   semok = fnsem[0UL] && SEM_ReadAlmanacDataFromFile(fnsem, (char *)alm, 32U,
-                 &cnt);
+   memset((char *)yumaalm,(char)0,
+                sizeof(struct YUMA_structAlmanac [32]));
+   memset((char *)rinexalm,(char)0,
+                sizeof(struct structEphemeris [3072]));
+   semok = fnsem[0UL] && SEM_ReadAlmanacDataFromFile(fnsem, (char *)alm,
+                 32U, &cnt);
    if (semok) {
       for (i = 0UL; i<=31UL; i++) {
          alm[i].i0 = alm[i].i0+9.4247779607694E-1;
@@ -1304,7 +1316,8 @@ extern char gpspos_readalmanach(char fnsem[], unsigned long fnsem_len,
    yumaok = fnyuma[0UL] && YUMA_ReadAlmanacDataFromFile(fnyuma,
                 (char *)yumaalm, 32U, &cnt);
    rinexok = fnrinex[0UL] && RINEX_DecodeGPSNavigationFile(fnrinex,
-                (char *) &rinexklobuchar, (char *)rinexalm, 3071UL, &ri);
+                (char *) &rinexklobuchar, (char *)rinexalm, 3071UL,
+                 &ri);
    if (rinexok && ri>0UL) {
       if (verb) {
          osic_WrINT32(ri, 1UL);
@@ -1322,7 +1335,7 @@ extern char gpspos_readalmanach(char fnsem[], unsigned long fnsem_len,
       tmp = ri-1UL;
       j = 0UL;
       if (j<=tmp) for (;; j++) {
-         i = (unsigned long)rinexalm[j].prn;
+         i = (uint32_t)rinexalm[j].prn;
          ti = ((rinexalm[j].tow+604800UL)-secondinweek)%604800UL;
          if (((i>0UL && i<=32UL) && ti>302400UL) && min0[i-1UL]<ti) {
             --i;
@@ -1358,7 +1371,7 @@ extern char gpspos_readalmanach(char fnsem[], unsigned long fnsem_len,
             calm[i].crs = rinexalm[j].crs;
             calm[i].cic = rinexalm[j].cic;
             calm[i].cis = rinexalm[j].cis;
-            calm[i].treal = calm[i].tow+(unsigned long)
+            calm[i].treal = calm[i].tow+(uint32_t)
                 calm[i].week*604800UL+315964800UL;
          }
          if (j==tmp) break;
@@ -1371,7 +1384,7 @@ extern char gpspos_readalmanach(char fnsem[], unsigned long fnsem_len,
          for (i = 0UL; i<=31UL; i++) {
             if (calm[j].treal<calm[i].treal) ++ti;
          } /* end for */
-         ti = (unsigned long)labs(15L-(long)ti);
+         ti = (uint32_t)labs(15L-(int32_t)ti);
          if (ti<nearmed) {
             nearmed = ti;
             *tilltime = calm[j].treal;
@@ -1472,7 +1485,7 @@ extern char gpspos_readalmanach(char fnsem[], unsigned long fnsem_len,
       */
       /*      END; */
       for (i = 0UL; i<=31UL; i++) {
-         calm[i].toa = (unsigned long)X2C_TRUNCC(yumaalm[i].toa,0UL,
+         calm[i].toa = (uint32_t)X2C_TRUNCC(yumaalm[i].toa,0UL,
                 X2C_max_longcard);
          calm[i].week = yumaalm[i].week;
          calm[i].prn = yumaalm[i].prn;

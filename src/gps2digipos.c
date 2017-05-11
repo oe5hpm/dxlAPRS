@@ -42,9 +42,9 @@ static char ttynamee[1024];
 static char basefilename[1024];
 /*    symt, symb:CHAR; */
 
-static unsigned long baud;
+static uint32_t baud;
 
-static long tty;
+static int32_t tty;
 
 static char verb;
 
@@ -56,15 +56,15 @@ static char sumoff;
 
 static char withalti;
 
-static unsigned long comptyp;
+static uint32_t comptyp;
 
-static unsigned long comintval;
+static uint32_t comintval;
 
-static unsigned long comcnt;
+static uint32_t comcnt;
 
-static unsigned long mediantime;
+static uint32_t mediantime;
 
-static unsigned long medians;
+static uint32_t medians;
 
 static struct termios saved;
 
@@ -95,7 +95,7 @@ struct _0 {
 static struct _0 median[500];
 
 
-static void Error(char text[], unsigned long text_len)
+static void Error(char text[], uint32_t text_len)
 {
    X2C_PCOPY((void **)&text,text_len);
    osi_WrStr("agps2digipos: ", 15ul);
@@ -106,19 +106,20 @@ static void Error(char text[], unsigned long text_len)
 } /* end Error() */
 
 
-static unsigned long truncc(double r)
+static uint32_t truncc(double r)
 {
    if (r<=0.0) return 0UL;
    else if (r>=2.147483647E+9) return 2147483647UL;
-   else return (unsigned long)X2C_TRUNCC(r,0UL,X2C_max_longcard);
+   else return (uint32_t)X2C_TRUNCC(r,0UL,X2C_max_longcard);
    return 0;
 } /* end truncc() */
 
 
-static char SetStatLine(long fd, char rts, char dtr)
+static char SetStatLine(int32_t fd, char rts,
+                char dtr)
 {
-   unsigned long arg[256];
-   long r;
+   uint32_t arg[256];
+   int32_t r;
    arg[0U] = 4UL;
    if (rts) r = ioctl(fd, 21526L, (char *)arg);
    else r = ioctl(fd, 21527L, (char *)arg);
@@ -131,11 +132,11 @@ static char SetStatLine(long fd, char rts, char dtr)
 } /* end SetStatLine() */
 
 
-static void SetComMode(long fd, unsigned long baud0)
+static void SetComMode(int32_t fd, uint32_t baud0)
 {
    struct termios term;
-   long res;
-   unsigned long bd;
+   int32_t res;
+   uint32_t bd;
    struct termios * anonym;
    if (baud0==1200UL) bd = 9UL;
    else if (baud0==2400UL) bd = 11UL;
@@ -177,12 +178,12 @@ static void opentty(void)
 } /* end opentty() */
 
 
-static char GetNum(const char h[], unsigned long h_len, char eot,
-                unsigned long * p, unsigned long * n)
+static char GetNum(const char h[], uint32_t h_len, char eot,
+                 uint32_t * p, uint32_t * n)
 {
    *n = 0UL;
-   while ((unsigned char)h[*p]>='0' && (unsigned char)h[*p]<='9') {
-      *n = ( *n*10UL+(unsigned long)(unsigned char)h[*p])-48UL;
+   while ((uint8_t)h[*p]>='0' && (uint8_t)h[*p]<='9') {
+      *n = ( *n*10UL+(uint32_t)(uint8_t)h[*p])-48UL;
       ++*p;
    }
    return h[*p]==eot;
@@ -193,7 +194,7 @@ static void Parms(void)
 {
    char err;
    char h[1024];
-   unsigned long i;
+   uint32_t i;
    err = 0;
    for (;;) {
       osi_NextArg(h, 1024ul);
@@ -297,19 +298,19 @@ l open removable USB tty", 74ul);
 } /* end Parms() */
 
 
-static void skip(const char b[], unsigned long b_len, unsigned long * p,
-                unsigned long len0)
+static void skip(const char b[], uint32_t b_len, uint32_t * p,
+                uint32_t len0)
 {
    while (*p<len0 && b[*p]!=',') ++*p;
    if (*p<len0) ++*p;
 } /* end skip() */
 
 
-static char getnum(const char b[], unsigned long b_len, unsigned long * p,
-                unsigned long len0, unsigned long * n)
+static char getnum(const char b[], uint32_t b_len,
+                uint32_t * p, uint32_t len0, uint32_t * n)
 {
-   if ((*p<len0 && (unsigned char)b[*p]>='0') && (unsigned char)b[*p]<='9') {
-      *n = (unsigned long)(unsigned char)b[*p]-48UL;
+   if ((*p<len0 && (uint8_t)b[*p]>='0') && (uint8_t)b[*p]<='9') {
+      *n = (uint32_t)(uint8_t)b[*p]-48UL;
       ++*p;
       return 1;
    }
@@ -318,11 +319,11 @@ static char getnum(const char b[], unsigned long b_len, unsigned long * p,
 } /* end getnum() */
 
 
-static void decodeline(const char b[], unsigned long b_len,
-                unsigned long len0)
+static void decodeline(const char b[], uint32_t b_len,
+                uint32_t len0)
 {
-   unsigned long n;
-   unsigned long i;
+   uint32_t n;
+   uint32_t i;
    double div0;
    char sign;
    if ((b[0UL]=='$' && b[1UL]=='G') && b[2UL]=='P') {
@@ -335,9 +336,13 @@ static void decodeline(const char b[], unsigned long b_len,
          skip(b, b_len, &i, len0);
          if (b[i]!='A') return;
          skip(b, b_len, &i, len0);
-         if (getnum(b, b_len, &i, len0, &n)) lat = (double)(float)(n*10UL);
+         if (getnum(b, b_len, &i, len0, &n)) {
+            lat = (double)(float)(n*10UL);
+         }
          else return;
-         if (getnum(b, b_len, &i, len0, &n)) lat = lat+(double)(float)n;
+         if (getnum(b, b_len, &i, len0, &n)) {
+            lat = lat+(double)(float)n;
+         }
          else return;
          if (getnum(b, b_len, &i, len0, &n)) {
             lat = lat+(double)(X2C_DIVR((float)n,6.0f));
@@ -375,7 +380,9 @@ static void decodeline(const char b[], unsigned long b_len,
             long0 = long0+(double)(float)(n*10UL);
          }
          else return;
-         if (getnum(b, b_len, &i, len0, &n)) long0 = long0+(double)(float)n;
+         if (getnum(b, b_len, &i, len0, &n)) {
+            long0 = long0+(double)(float)n;
+         }
          else return;
          if (getnum(b, b_len, &i, len0, &n)) {
             long0 = long0+(double)(X2C_DIVR((float)n,6.0f));
@@ -471,7 +478,7 @@ static void decodeline(const char b[], unsigned long b_len,
 } /* end decodeline() */
 
 
-static char Hex(unsigned long d)
+static char Hex(uint32_t d)
 {
    d = d&15UL;
    if (d>9UL) d += 7UL;
@@ -479,36 +486,35 @@ static char Hex(unsigned long d)
 } /* end Hex() */
 
 
-static char checksum(const char b[], unsigned long b_len,
-                unsigned long len0)
+static char checksum(const char b[], uint32_t b_len,
+                uint32_t len0)
 {
-   unsigned long i;
-   unsigned char cs;
+   uint32_t i;
+   uint8_t cs;
    char ok0;
    ok0 = 1;
    i = 1UL;
    cs = 0U;
    while (i<len0 && b[i]!='*') {
-      cs = cs^(unsigned char)(unsigned char)b[i];
+      cs = cs^(uint8_t)(uint8_t)b[i];
       ++i;
    }
    if (i+2UL>=len0) ok0 = 0;
    if (ok0) {
-      if (b[i+1UL]!=Hex((unsigned long)cs/16UL)
-                || b[i+2UL]!=Hex((unsigned long)cs&15UL)) ok0 = 0;
+      if (b[i+1UL]!=Hex((uint32_t)cs/16UL) || b[i+2UL]!=Hex((uint32_t)
+                cs&15UL)) ok0 = 0;
    }
    if (verb && !ok0) osi_WrStrLn("GPS Checksum Error", 19ul);
    return ok0;
 } /* end checksum() */
 
 
-static void showline(const char b[], unsigned long b_len,
-                unsigned long len0)
+static void showline(const char b[], uint32_t b_len, uint32_t len0)
 {
-   unsigned long i;
+   uint32_t i;
    i = 0UL;
    while (i<len0) {
-      if ((unsigned char)b[i]<' ') {
+      if ((uint8_t)b[i]<' ') {
          if (b[i]=='\012') osic_WrLn();
          else osi_WrStr(".", 2ul);
       }
@@ -519,11 +525,11 @@ static void showline(const char b[], unsigned long b_len,
 } /* end showline() */
 
 
-static void wrfile(char b[], unsigned long b_len, unsigned long len0,
-                char ext[], unsigned long ext_len)
+static void wrfile(char b[], uint32_t b_len, uint32_t len0,
+                char ext[], uint32_t ext_len)
 {
    char s[2001];
-   long f;
+   int32_t f;
    X2C_PCOPY((void **)&b,b_len);
    X2C_PCOPY((void **)&ext,ext_len);
    aprsstr_Assign(s, 2001ul, basefilename, 1024ul);
@@ -538,17 +544,18 @@ static void wrfile(char b[], unsigned long b_len, unsigned long len0,
 } /* end wrfile() */
 
 
-static char num(unsigned long n)
+static char num(uint32_t n)
 {
    return (char)(n%10UL+48UL);
 } /* end num() */
 
 
-static void wrpos(double lat0, double long1, double alt0, char withalt)
+static void wrpos(double lat0, double long1, double alt0,
+                char withalt)
 {
    char b[201];
-   unsigned long n;
-   unsigned long i;
+   uint32_t n;
+   uint32_t i;
    double a;
    /* "4805.44N" "01333.64E" "/A=000000"*/
    i = 0UL;
@@ -628,7 +635,8 @@ static void wrpos(double lat0, double long1, double alt0, char withalt)
 } /* end wrpos() */
 
 
-static void medianpos(double lat0, double long1, double alt0)
+static void medianpos(double lat0, double long1,
+                double alt0)
 {
    struct _0 * anonym;
    if (medians<=499UL) {
@@ -643,14 +651,15 @@ static void medianpos(double lat0, double long1, double alt0)
 } /* end medianpos() */
 
 
-static void getmedian(double * lat0, double * long1, double * alt0)
+static void getmedian(double * lat0, double * long1,
+                double * alt0)
 {
-   unsigned long by;
-   unsigned long ay;
-   unsigned long bx;
-   unsigned long ax;
-   unsigned long j;
-   unsigned long i;
+   uint32_t by;
+   uint32_t ay;
+   uint32_t bx;
+   uint32_t ax;
+   uint32_t j;
+   uint32_t i;
    double maxy;
    double miny;
    double maxx;
@@ -658,7 +667,7 @@ static void getmedian(double * lat0, double * long1, double * alt0)
    struct _0 * anonym;
    struct _0 * anonym0;
    struct _0 * anonym1;
-   unsigned long tmp;
+   uint32_t tmp;
    if (medians==0UL) Error("no positions got", 17ul);
    j = medians/10UL;
    tmp = medians-1UL;
@@ -737,7 +746,7 @@ static void getmedian(double * lat0, double * long1, double * alt0)
             osic_WrFixed((float)anonym1->mlat, 8L, 14UL);
             osic_WrFixed((float)anonym1->mlong, 8L, 14UL);
             osic_WrFixed((float)anonym1->malt, 1L, 14UL);
-            osic_WrINT32((unsigned long)anonym1->ok0, 2UL);
+            osic_WrINT32((uint32_t)anonym1->ok0, 2UL);
             osi_WrStrLn("", 1ul);
          }
       }
@@ -751,11 +760,11 @@ static void getmedian(double * lat0, double * long1, double * alt0)
 
 static char c;
 
-static long len;
+static int32_t len;
 
-static long rp;
+static int32_t rp;
 
-static unsigned long gpsp;
+static uint32_t gpsp;
 
 static char gpsb[100];
 
@@ -763,7 +772,7 @@ static char gpsb[100];
 X2C_STACK_LIMIT(100000l)
 extern int main(int argc, char **argv)
 {
-   long tmp;
+   int32_t tmp;
    X2C_BEGIN(&argc,argv,1,4000000l,8000000l);
    aprsstr_BEGIN();
    osi_BEGIN();
@@ -830,7 +839,7 @@ extern int main(int argc, char **argv)
                }
                gpsp = 0UL;
             }
-            else if ((unsigned char)c>' ' && gpsp<99UL) {
+            else if ((uint8_t)c>' ' && gpsp<99UL) {
                gpsb[gpsp] = c;
                ++gpsp;
             }

@@ -13,18 +13,20 @@
 #include "X2C.h"
 #endif
 
-typedef unsigned long sondeaprs_TIME;
+typedef uint32_t sondeaprs_TIME;
 
 #define sondeaprs_VERSION "sondemod(c) 1.0"
 
-extern void sondeaprs_senddata(double, double, double, double, double,
-                double, double, double, double, double, double, double,
-                double, double, double, double, unsigned long, unsigned long,
-                 char [], unsigned long, unsigned long, unsigned long,
-                char [], unsigned long, unsigned long, unsigned long, char);
+extern void sondeaprs_senddata(double, double, double,
+                double, double, double, double,
+                double, double, double, double,
+                double, double, double, double,
+                double, uint32_t, uint32_t, char [],
+                uint32_t, uint32_t, uint32_t, char [], uint32_t,
+                uint32_t, uint32_t, char);
 
-extern long sondeaprs_GetIp(char [], unsigned long, unsigned long *,
-                unsigned long *, unsigned long *);
+extern int32_t sondeaprs_GetIp(char [], uint32_t, uint32_t *,
+                uint32_t *, uint32_t *);
 
 extern char sondeaprs_via[100];
 
@@ -36,15 +38,15 @@ extern char sondeaprs_commentfn[1025];
 
 extern char sondeaprs_sym[2];
 
-extern unsigned long sondeaprs_beacontime;
+extern uint32_t sondeaprs_beacontime;
 
-extern unsigned long sondeaprs_lowaltbeacontime;
+extern uint32_t sondeaprs_lowaltbeacontime;
 
-extern unsigned long sondeaprs_lowalt;
+extern uint32_t sondeaprs_lowalt;
 
-extern unsigned long sondeaprs_toport;
+extern uint32_t sondeaprs_toport;
 
-extern unsigned long sondeaprs_ipnum;
+extern uint32_t sondeaprs_ipnum;
 
 extern char sondeaprs_verb;
 
@@ -52,11 +54,11 @@ extern char sondeaprs_verb2;
 
 extern char sondeaprs_nofilter;
 
-extern long sondeaprs_comptyp;
+extern int32_t sondeaprs_comptyp;
 
-extern long sondeaprs_micessid;
+extern int32_t sondeaprs_micessid;
 
-extern long sondeaprs_udpsock;
+extern int32_t sondeaprs_udpsock;
 
 extern char sondeaprs_anyip;
 

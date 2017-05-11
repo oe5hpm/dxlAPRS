@@ -20,7 +20,7 @@
 #endif
 
 /* connect to aprs-is gateway and decode data for archive and map by OE5DXL */
-typedef unsigned long aprsdecode_SET256[8];
+typedef uint32_t aprsdecode_SET256[8];
 
 #define aprsdecode_CR "\015"
 
@@ -88,7 +88,7 @@ typedef struct aprsdecode_WWWBUF * aprsdecode_pWWWBUF;
 
 struct aprsdecode_WWWBUF {
    aprsdecode_WWWB buf;
-   long tlen;
+   int32_t tlen;
    char push;
    aprsdecode_pWWWBUF next;
 };
@@ -97,10 +97,10 @@ struct aprsdecode_QWatch;
 
 
 struct aprsdecode_QWatch {
-   unsigned long lasttb;
-   long qsize;
-   long lastqb;
-   long txbyte[60];
+   uint32_t lasttb;
+   int32_t qsize;
+   int32_t lastqb;
+   int32_t txbyte[60];
 };
 
 struct aprsdecode_TCPSOCK;
@@ -110,52 +110,52 @@ typedef struct aprsdecode_TCPSOCK * aprsdecode_pTCPSOCK;
 
 struct aprsdecode_TCPSOCK {
    aprsdecode_pTCPSOCK next;
-   long fd;
-   unsigned long watchtime;
-   unsigned long beacont;
-   unsigned long connt;
-   unsigned long gatepri;
+   int32_t fd;
+   uint32_t watchtime;
+   uint32_t beacont;
+   uint32_t connt;
+   uint32_t gatepri;
    char ipnum[64];
    char port[6];
    struct aprsdecode_POSCALL user;
-   unsigned long txframes;
-   unsigned long txbytes;
-   unsigned long rxframes;
-   unsigned long rxbytes;
-   long rpos;
-   long tlen;
+   uint32_t txframes;
+   uint32_t txbytes;
+   uint32_t rxframes;
+   uint32_t rxbytes;
+   int32_t rpos;
+   int32_t tlen;
    aprsdecode_FRAMEBUF rbuf;
    aprsdecode_FRAMEBUF tbuf;
    struct aprsdecode_QWatch qwatch;
-   unsigned char waitpong;
-   unsigned long lastpong;
-   unsigned long lastping;
-   unsigned long windoofwatch;
+   uint8_t waitpong;
+   uint32_t lastpong;
+   uint32_t lastping;
+   uint32_t windoofwatch;
 };
 
-typedef unsigned long aprsdecode_DUPETIMES[65536];
+typedef uint32_t aprsdecode_DUPETIMES[65536];
 
 struct aprsdecode_UDPSOCK;
 
 
 struct aprsdecode_UDPSOCK {
-   long fd;
+   int32_t fd;
    char rawread;
    char checkip;
-   unsigned long ip;
-   unsigned long bindport;
-   unsigned long dport;
-   long chan; /* channel number 1.. */
-   unsigned long lastudprx;
-   unsigned long lastudptx;
-   unsigned long starttime;
-   unsigned long bpstime;
-   unsigned long rxframes;
-   unsigned long rxbytes;
-   unsigned long txframes;
-   unsigned long txbytes; /* for tx bit/s limiter */
-   unsigned long uip;
-   unsigned long * pdupetimes;
+   uint32_t ip;
+   uint32_t bindport;
+   uint32_t dport;
+   int32_t chan; /* channel number 1.. */
+   uint32_t lastudprx;
+   uint32_t lastudptx;
+   uint32_t starttime;
+   uint32_t bpstime;
+   uint32_t rxframes;
+   uint32_t rxbytes;
+   uint32_t txframes;
+   uint32_t txbytes; /* for tx bit/s limiter */
+   uint32_t uip;
+   uint32_t * pdupetimes;
 };
 
 typedef char aprsdecode_MSGTEXT[67];
@@ -169,13 +169,13 @@ enum aprsdecode_ERRFLAGS {aprsdecode_eDIST, aprsdecode_eSPIKE,
                 aprsdecode_eNODRAW, aprsdecode_eNOPOS};
 
 
-typedef unsigned char aprsdecode_ERRSET;
+typedef uint8_t aprsdecode_ERRSET;
 
 enum aprsdecode_DRAWHINTS {aprsdecode_MIRRORSYM, aprsdecode_ISOBJECT,
                 aprsdecode_HIDE, aprsdecode_MARKED, aprsdecode_MOVES};
 
 
-typedef unsigned char aprsdecode_sDRAWHINTS;
+typedef uint8_t aprsdecode_sDRAWHINTS;
 
 struct aprsdecode_SYMBOL;
 
@@ -190,7 +190,7 @@ struct aprsdecode_AREASYMB;
 
 struct aprsdecode_AREASYMB {
    char typ;
-   unsigned char color;
+   uint8_t color;
    struct aprspos_POSITION dpos;
 };
 
@@ -205,19 +205,19 @@ typedef struct aprsdecode_VARDAT * aprsdecode_pVARDAT;
 
 struct aprsdecode_FRAMEHIST {
    aprsdecode_pFRAMEHIST next;
-   unsigned long time0;
+   uint32_t time0;
    aprsdecode_pVARDAT vardat;
-   unsigned char nodraw;
+   uint8_t nodraw;
 };
 
 
 struct aprsdecode_VARDAT {
    aprsdecode_pFRAMEHIST lastref;
    struct aprspos_POSITION pos;
-   unsigned long refcnt; /* starts at 0 */
+   uint32_t refcnt; /* starts at 0 */
    /*             altitude :INT16;*/
-   unsigned char igatepos;
-   unsigned char igatelen;
+   uint8_t igatepos;
+   uint8_t igatelen;
    char raw[500]; /* last part allocatet with real size */
 };
 
@@ -232,18 +232,18 @@ struct aprsdecode_OPHIST {
    struct aprspos_POSITION margin0; /* movement frame for quick draw */
    struct aprspos_POSITION margin1;
    struct aprspos_POSITION lastpos;
-   unsigned long lasttime;
-   unsigned long temptime;
+   uint32_t lasttime;
+   uint32_t temptime;
    short lastkmh; /* drive kmh, wx kmh */
    short lasttempalt; /* drive altitude, wx temp */
    float framerate; /* thruput frames/s */
    aprsdecode_MONCALL call;
    struct aprsdecode_SYMBOL sym;
-   unsigned char drawhints;
+   uint8_t drawhints;
    signed char trackcol;
    signed char textpos;
    signed char valuepos;
-   unsigned char lastinftyp; /*0 no inf, 10..99 drive dir, 100 wx no dir 110..199 wind dir*/
+   uint8_t lastinftyp; /*0 no inf, 10..99 drive dir, 100 wx no dir 110..199 wind dir*/
    char lastrxport; /* for msg routing, in future remove if port is seen in rawframes */
    struct aprsdecode_AREASYMB areasymb; /* area object data */
    char poligon;
@@ -266,7 +266,7 @@ struct aprsdecode_WX {
    float raintoday;
    float lum;
    float sievert;
-   unsigned char storm;
+   uint8_t storm;
    float sustaind;
    float radiushurr;
    float radiusstorm;
@@ -279,7 +279,7 @@ enum aprsdecode_TYPES {aprsdecode_UNKNOWN, aprsdecode_MICE, aprsdecode_POS,
                 aprsdecode_STAT, aprsdecode_TELE, aprsdecode_QUERY};
 
 
-typedef unsigned short aprsdecode_TYPSET;
+typedef uint16_t aprsdecode_TYPSET;
 
 enum aprsdecode_ACKREJ {aprsdecode_MSGMSG, aprsdecode_MSGACK,
                 aprsdecode_MSGREJ};
@@ -292,7 +292,7 @@ struct aprsdecode_HRTPOS {
    float dlong;
    float dlat;
    float dalt;
-   unsigned long dtime;
+   uint32_t dtime;
    char notinterpolated;
 };
 
@@ -300,13 +300,13 @@ struct aprsdecode_MULTILINE;
 
 
 struct aprsdecode_MULTILINE {
-   unsigned long size;
+   uint32_t size;
    char linetyp;
    char filltyp;
    struct aprspos_POSITION vec[41];
 };
 
-typedef unsigned short aprsdecode_TELEMETRY[7];
+typedef uint16_t aprsdecode_TELEMETRY[7];
 
 struct aprsdecode_DAT;
 
@@ -318,35 +318,35 @@ struct aprsdecode_DAT {
    aprsdecode_MONCALL viacalls[10];
    aprsdecode_MONCALL msgto;
    aprsdecode_MONCALL objectfrom;
-   unsigned long hbitp;
-   unsigned long igaterawp;
-   unsigned long igatelen;
-   unsigned long igatep;
-   unsigned long payload;
+   uint32_t hbitp;
+   uint32_t igaterawp;
+   uint32_t igatelen;
+   uint32_t igatep;
+   uint32_t payload;
    char postyp;
    char typc;
    struct aprsdecode_AREASYMB areasymb;
    struct aprspos_POSITION pos;
-   unsigned long speed;
-   unsigned long course;
-   long altitude;
+   uint32_t speed;
+   uint32_t course;
+   int32_t altitude;
    char sym;
    char symt;
    char timestamp;
    char objkill;
    char lastrxport;
    struct aprsdecode_WX wx;
-   unsigned char type;
+   uint8_t type;
    float moved;
    /*
                stack      : CARDINAL;
    */
    aprsdecode_MSGTEXT msgtext;
    aprsdecode_ACKTEXT acktext;
-   unsigned char ackrej;
+   uint8_t ackrej;
    struct aprsdecode_HRTPOS hrtposes[32];
-   unsigned long hrtlen;
-   unsigned long hrttime; /* if non zero is hrt defined */
+   uint32_t hrtlen;
+   uint32_t hrttime; /* if non zero is hrt defined */
    struct aprsdecode_MULTILINE multiline;
    aprsdecode_TELEMETRY tlmvalues;
                 /* 5 analog and if all 5 valid the sixth is bitset, 0 undef,
@@ -360,7 +360,7 @@ enum aprsdecode_WXSET {aprsdecode_wTEMP, aprsdecode_wBARO, aprsdecode_wHYG,
                 aprsdecode_wAHIST, aprsdecode_wSIEV};
 
 
-typedef unsigned short aprsdecode_sWXSET;
+typedef uint16_t aprsdecode_sWXSET;
 
 enum aprsdecode_CLICKTYPS {aprsdecode_tTEXT, aprsdecode_tTRACK,
                 aprsdecode_tSYMBOL, aprsdecode_tMAP, aprsdecode_tOBJECT,
@@ -376,13 +376,13 @@ typedef struct aprsdecode_TXMESSAGE * aprsdecode_pTXMESSAGE;
 
 struct aprsdecode_TXMESSAGE {
    aprsdecode_pTXMESSAGE next;
-   unsigned long txtime;
-   unsigned long acktime;
-   unsigned long txcnt;
+   uint32_t txtime;
+   uint32_t acktime;
+   uint32_t txcnt;
    char port;
    aprsdecode_MONCALL to;
    aprsdecode_MSGTEXT msgtext;
-   unsigned long acknum;
+   uint32_t acknum;
    char heard;
    char rej;
 };
@@ -394,7 +394,7 @@ typedef struct aprsdecode_MSGFIFO * aprsdecode_pMSGFIFO;
 
 struct aprsdecode_MSGFIFO {
    aprsdecode_pMSGFIFO next;
-   unsigned long time0;
+   uint32_t time0;
    char port;
    aprsdecode_MONCALL itemname;
    aprsdecode_MONCALL from;
@@ -410,19 +410,19 @@ struct aprsdecode_ZOOMFRAME;
 
 
 struct aprsdecode_ZOOMFRAME {
-   long x0;
-   long y00;
-   long x1;
-   long y1;
+   int32_t x0;
+   int32_t y00;
+   int32_t x1;
+   int32_t y1;
 };
 
 struct aprsdecode_COLTYP;
 
 
 struct aprsdecode_COLTYP {
-   unsigned long r;
-   unsigned long g;
-   unsigned long b;
+   uint32_t r;
+   uint32_t g;
+   uint32_t b;
 };
 
 struct aprsdecode_MOUNTAIN;
@@ -444,20 +444,20 @@ struct aprsdecode_CLICKOBJECT {
    aprsdecode_pOPHIST opf;
    aprsdecode_pFRAMEHIST pff;
    aprsdecode_pFRAMEHIST pff0;
-   unsigned char typf;
+   uint8_t typf;
 };
 
 typedef char aprsdecode_MAPNAME[41];
 
-typedef unsigned long aprsdecode_SYMBOLSET[6];
+typedef uint32_t aprsdecode_SYMBOLSET[6];
 
-extern unsigned long aprsdecode_systime;
+extern uint32_t aprsdecode_systime;
 
-extern unsigned long aprsdecode_realtime;
+extern uint32_t aprsdecode_realtime;
 
-extern unsigned long aprsdecode_lastlooped;
+extern uint32_t aprsdecode_lastlooped;
 
-extern unsigned long aprsdecode_rxidle;
+extern uint32_t aprsdecode_rxidle;
 
 extern char aprsdecode_verb;
 
@@ -474,18 +474,18 @@ struct aprsdecode__D0 {
    char lastpoi;
    char insreplaceline;
    char watchlast;
-   long x;
-   long y;
-   long min0;
+   int32_t x;
+   int32_t y;
+   int32_t min0;
    aprsdecode_MONCALL mhop;
    struct aprsdecode_SYMBOL onesymbol;
    aprsdecode_SYMBOLSET onesymbolset;
    aprsdecode_pOPHIST ops;
    aprsdecode_pFRAMEHIST pf;
    aprsdecode_pFRAMEHIST pf0;
-   long zoomtox;
-   long zoomtoy;
-   unsigned char typ;
+   int32_t zoomtox;
+   int32_t zoomtoy;
+   uint8_t typ;
    char cmd;
    char cmdatt;
    struct aprspos_POSITION pullpos;
@@ -494,35 +494,35 @@ struct aprsdecode__D0 {
    struct aprspos_POSITION squerpos1;
    struct aprspos_POSITION measurepos;
    struct aprspos_POSITION markpos;
-   unsigned long markpost; /* waypoint time to markpos to make uniqe */
-   unsigned long marktime; /* delete marker if no set by set marker */
-   long markalti; /* for geoprofile */
+   uint32_t markpost; /* waypoint time to markpos to make uniqe */
+   uint32_t marktime; /* delete marker if no set by set marker */
+   int32_t markalti; /* for geoprofile */
    struct aprspos_POSITION sumpos; /* store last clickpos for waysum */
    float waysum; /* sum up marker set distances */
-   unsigned short graphset; /* update graphs if marked last waypoint */
-   unsigned long selected;
-   unsigned long entries;
+   uint16_t graphset; /* update graphs if marked last waypoint */
+   uint32_t selected;
+   uint32_t entries;
    struct aprspos_POSITION bubblpos; /* found position of POI */
    char bubblstr[50]; /* found text of POI */
    struct aprsdecode_CLICKOBJECT table[10];
-   unsigned long polilinecursor; /* edit which edge of polinine object */
+   uint32_t polilinecursor; /* edit which edge of polinine object */
 };
 
 extern struct aprsdecode__D0 aprsdecode_click;
 
 extern struct aprspos_POSITION aprsdecode_mappos;
 
-extern long aprsdecode_inittilex;
+extern int32_t aprsdecode_inittilex;
 
-extern long aprsdecode_inittiley;
+extern int32_t aprsdecode_inittiley;
 
-extern long aprsdecode_initxsize;
+extern int32_t aprsdecode_initxsize;
 
-extern long aprsdecode_initysize;
+extern int32_t aprsdecode_initysize;
 
-extern long aprsdecode_parmzoom;
+extern int32_t aprsdecode_parmzoom;
 
-extern long aprsdecode_initzoom;
+extern int32_t aprsdecode_initzoom;
 
 extern float aprsdecode_finezoom;
 
@@ -543,28 +543,28 @@ struct aprsdecode__D1 {
    char headmenuy;
    aprsdecode_MAPNAME mapname;
    char configfn[257];
-   long maplumcorr;
-   long map;
-   long rf;
-   long rfbri;
-   long track;
-   long waypoint;
-   long sym;
-   long obj;
-   long text;
-   long nomov;
-   long centering;
-   long fps;
-   long actfps;
-   unsigned long fontysize;
+   int32_t maplumcorr;
+   int32_t map;
+   int32_t rf;
+   int32_t rfbri;
+   int32_t track;
+   int32_t waypoint;
+   int32_t sym;
+   int32_t obj;
+   int32_t text;
+   int32_t nomov;
+   int32_t centering;
+   int32_t fps;
+   int32_t actfps;
+   uint32_t fontysize;
    char wxcol;
-   unsigned long movestep;
-   unsigned long dupemaxtime;
-   unsigned long kmhtime;
-   unsigned long purgetime;
-   unsigned long purgetimeobj;
-   unsigned long firstdim;
-   unsigned long maxdim;
+   uint32_t movestep;
+   uint32_t dupemaxtime;
+   uint32_t kmhtime;
+   uint32_t purgetime;
+   uint32_t purgetimeobj;
+   uint32_t firstdim;
+   uint32_t maxdim;
    float gamma;
    char menutransp;
    struct aprsdecode_COLTYP menubackcol;
@@ -580,7 +580,7 @@ struct aprsdecode__D2 {
    struct aprspos_POSITION winpos0;
    struct aprspos_POSITION winpos1;
    aprsdecode_MONCALL call;
-   unsigned long winevent;
+   uint32_t winevent;
    char follow;
    char beep;
 };
@@ -617,13 +617,13 @@ extern aprsdecode_pTCPSOCK aprsdecode_tcpsocks;
 
 extern struct aprsdecode_UDPSOCK aprsdecode_udpsocks0[4];
 
-extern unsigned long aprsdecode_lasttcptx;
+extern uint32_t aprsdecode_lasttcptx;
 
-extern unsigned long aprsdecode_lastanyudprx;
+extern uint32_t aprsdecode_lastanyudprx;
 
-extern unsigned long aprsdecode_lastpurge;
+extern uint32_t aprsdecode_lastpurge;
 
-extern unsigned long aprsdecode_lasttcprx;
+extern uint32_t aprsdecode_lasttcprx;
 
 extern aprsdecode_FRAMEBUF aprsdecode_testbeaconbuf;
                 /* fill with port:time:beacon then sent once */
@@ -634,31 +634,30 @@ extern struct xosi_PROCESSHANDLE aprsdecode_serialpid2;
 
 extern struct xosi_PROCESSHANDLE aprsdecode_maploadpid;
 
-extern long aprsdecode_Decode(char [], unsigned long,
+extern int32_t aprsdecode_Decode(char [], uint32_t,
                 struct aprsdecode_DAT *);
 
-extern long aprsdecode_Stoframe(aprsdecode_pOPHIST *, char [], unsigned long,
-                 unsigned long, char, unsigned long *,
+extern int32_t aprsdecode_Stoframe(aprsdecode_pOPHIST *, char [],
+                uint32_t, uint32_t, char, uint32_t *,
                 struct aprsdecode_DAT);
 
 extern void aprsdecode_Checktrack(aprsdecode_pOPHIST, aprsdecode_pFRAMEHIST);
 
-extern void aprsdecode_purge(aprsdecode_pOPHIST *, unsigned long,
-                unsigned long);
+extern void aprsdecode_purge(aprsdecode_pOPHIST *, uint32_t, uint32_t);
 
-extern long aprsdecode_knottokmh(long);
+extern int32_t aprsdecode_knottokmh(int32_t);
 
 extern void aprsdecode_posinval(struct aprspos_POSITION *);
 
-extern unsigned long aprsdecode_trunc(float);
+extern uint32_t aprsdecode_trunc(float);
 
 extern float aprsdecode_floor(float);
 
-extern long aprsdecode_tcpout(aprsdecode_pTCPSOCK);
+extern int32_t aprsdecode_tcpout(aprsdecode_pTCPSOCK);
 
 extern void aprsdecode_tcpin(aprsdecode_pTCPSOCK);
 
-extern void aprsdecode_udpin(unsigned long);
+extern void aprsdecode_udpin(uint32_t);
 
 extern void aprsdecode_tcpclose(aprsdecode_pTCPSOCK, char);
 
@@ -669,40 +668,43 @@ extern void aprsdecode_initparms(void);
 extern void aprsdecode_delwaypoint(aprsdecode_pOPHIST,
                 aprsdecode_pFRAMEHIST *);
 
-extern unsigned long aprsdecode_finddup(aprsdecode_pFRAMEHIST,
+extern uint32_t aprsdecode_finddup(aprsdecode_pFRAMEHIST,
                 aprsdecode_pFRAMEHIST);
 
 extern void aprsdecode_savetrack(void);
 
 extern void aprsdecode_makemsg(char);
 
-extern void aprsdecode_deltxmsg(unsigned long, unsigned long);
+extern void aprsdecode_deltxmsg(uint32_t, uint32_t);
 
-extern void aprsdecode_acknumstr(char [], unsigned long, unsigned long);
+extern void aprsdecode_acknumstr(char [], uint32_t, uint32_t);
 
-extern void aprsdecode_getactack(aprsdecode_MONCALL, char [], unsigned long);
+extern void aprsdecode_getactack(aprsdecode_MONCALL, char [],
+                uint32_t);
 
-extern void aprsdecode_objsender(aprsdecode_pOPHIST, char [], unsigned long);
+extern void aprsdecode_objsender(aprsdecode_pOPHIST, char [],
+                uint32_t);
 
 extern aprsdecode_pOPHIST aprsdecode_selop(void);
 
-extern void aprsdecode_tcpconnstat(char [], unsigned long);
+extern void aprsdecode_tcpconnstat(char [], uint32_t);
 
-extern void aprsdecode_udpconnstat(unsigned long, char [], unsigned long);
+extern void aprsdecode_udpconnstat(uint32_t, char [], uint32_t);
 
-extern void aprsdecode_beeplim(long, unsigned long, unsigned long);
+extern void aprsdecode_beeplim(int32_t, uint32_t, uint32_t);
 
 extern void aprsdecode_importbeacon(void);
 
-extern void aprsdecode_extractbeacon(char [], unsigned long, char, char);
+extern void aprsdecode_extractbeacon(char [], uint32_t, char,
+                char);
 
-extern void aprsdecode_getbeaconname(char [], unsigned long, char [],
-                unsigned long, char [], unsigned long, char *, char *,
-                char *);
+extern void aprsdecode_getbeaconname(char [], uint32_t, char [],
+                uint32_t, char [], uint32_t, char *,
+                char *, char *);
 
-extern void aprsdecode_drawbeacon(char [], unsigned long);
+extern void aprsdecode_drawbeacon(char [], uint32_t);
 
-extern void aprsdecode_makelogfn(char [], unsigned long);
+extern void aprsdecode_makelogfn(char [], uint32_t);
 /*
 PROCEDURE checksymb(symt, symb:CHAR):BOOLEAN;
                 (* true for bad symbol *)
@@ -710,12 +712,12 @@ PROCEDURE checksymb(symt, symb:CHAR):BOOLEAN;
 
 extern void aprsdecode_appendmultiline(struct aprspos_POSITION);
 
-extern void aprsdecode_GetMultiline(char [], unsigned long, unsigned long *,
+extern void aprsdecode_GetMultiline(char [], uint32_t, uint32_t *,
                 struct aprsdecode_MULTILINE *);
 
 extern char aprsdecode_ismultiline(char);
 
-extern void aprsdecode_modmultiline(unsigned long);
+extern void aprsdecode_modmultiline(uint32_t);
 
 
 extern void aprsdecode_BEGIN(void);

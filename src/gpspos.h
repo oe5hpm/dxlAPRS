@@ -17,29 +17,30 @@ struct gpspos_SAT;
 
 
 struct gpspos_SAT {
-   unsigned long prn;
-   unsigned long almidx;
-   long rang;
-   long rang1;
-   long rang3;
-   long rangabs;
-   long lastd;
-   long lastd1;
-   long freq0;
+   uint32_t prn;
+   uint32_t almidx;
+   int32_t rang;
+   int32_t rang1;
+   int32_t rang3;
+   int32_t rangabs;
+   int32_t lastd;
+   int32_t lastd1;
+   int32_t freq0;
    double userspeed;
    char badspeed;
 };
 
 typedef struct gpspos_SAT gpspos_SATS[12];
 
-extern long gpspos_getposit(unsigned long, unsigned long *, gpspos_SATS,
-                double, double, double, double *, double *, double *,
-                double *, double *, double *, float *, float *,
-                unsigned long *);
+extern int32_t gpspos_getposit(uint32_t, uint32_t *, gpspos_SATS,
+                double, double, double, double *,
+                double *, double *, double *,
+                double *, double *, float *, float *,
+                uint32_t *);
 
-extern char gpspos_readalmanach(char [], unsigned long, char [],
-                unsigned long, char [], unsigned long, unsigned long,
-                unsigned long *, char);
+extern char gpspos_readalmanach(char [], uint32_t, char [],
+                uint32_t, char [], uint32_t, uint32_t,
+                uint32_t *, char);
 
 
 extern void gpspos_BEGIN(void);

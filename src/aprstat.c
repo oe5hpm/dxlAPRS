@@ -42,48 +42,48 @@
 #define aprstat_KMHTIME 600
 
 
-static void setpix(maptool_pIMAGE img, long x, long y, long rr, long gg,
-                long bb)
+static void setpix(maptool_pIMAGE img, int32_t x, int32_t y,
+                int32_t rr, int32_t gg, int32_t bb)
 {
    struct maptool_PIX * anonym;
    { /* with */
       struct maptool_PIX * anonym = &img->Adr[(x)*img->Len0+y];
-      anonym->r = (unsigned short)rr;
-      anonym->g = (unsigned short)gg;
-      anonym->b = (unsigned short)bb;
+      anonym->r = (uint16_t)rr;
+      anonym->g = (uint16_t)gg;
+      anonym->b = (uint16_t)bb;
    }
 } /* end setpix() */
 
 
-static void str(maptool_pIMAGE img, unsigned long x, unsigned long y,
-                char s[], unsigned long s_len)
+static void str(maptool_pIMAGE img, uint32_t x, uint32_t y, char s[],
+                 uint32_t s_len)
 {
-   unsigned long i;
-   unsigned long l;
-   long inc;
+   uint32_t i;
+   uint32_t l;
+   int32_t inc;
    struct aprsdecode_COLTYP col;
    X2C_PCOPY((void **)&s,s_len);
    l = aprsstr_Length(s, s_len);
    i = 0UL;
    maptool_Colset(&col, 'W');
    while (i<l) {
-      maptool_drawchar(img, s[i], (float)x, (float)y, &inc, 700UL, 1UL, col,
-                0);
-      x += (unsigned long)inc;
+      maptool_drawchar(img, s[i], (float)x, (float)y, &inc, 700UL, 1UL,
+                 col, 0);
+      x += (uint32_t)inc;
       ++i;
    }
    X2C_PFREE(s);
 } /* end str() */
 
 
-static void num(maptool_pIMAGE img, long x, long y, long n, char h[],
-                unsigned long h_len)
+static void num(maptool_pIMAGE img, int32_t x, int32_t y, int32_t n,
+                char h[], uint32_t h_len)
 {
    char s[51];
    X2C_PCOPY((void **)&h,h_len);
    aprsstr_IntToStr(n, 1UL, s, 51ul);
    aprsstr_Append(s, 51ul, h, h_len);
-   str(img, (unsigned long)x, (unsigned long)y, s, 51ul);
+   str(img, (uint32_t)x, (uint32_t)y, s, 51ul);
    X2C_PFREE(h);
 } /* end num() */
 
@@ -94,7 +94,7 @@ static float sq(float x)
 } /* end sq() */
 
 
-static unsigned long pixl(float x, float y)
+static uint32_t pixl(float x, float y)
 {
    x = x*x+y*y;
    if (x<=0.0f) return 0UL;
@@ -107,14 +107,14 @@ BEGIN RETURN TRUNC(256.0*(ABS(x) + ABS(y))) END pixl;
 #define aprstat_KL 512
 
 
-static void addpix(maptool_pIMAGE img, float x, float y, unsigned long rr,
-                unsigned long gg, unsigned long bb)
+static void addpix(maptool_pIMAGE img, float x, float y, uint32_t rr,
+                 uint32_t gg, uint32_t bb)
 {
    float fy;
    float fx;
-   unsigned long l;
-   unsigned long yy;
-   unsigned long xx;
+   uint32_t l;
+   uint32_t yy;
+   uint32_t xx;
    struct maptool_PIX * anonym;
    struct maptool_PIX * anonym0;
    struct maptool_PIX * anonym1;
@@ -126,61 +126,60 @@ static void addpix(maptool_pIMAGE img, float x, float y, unsigned long rr,
    l = pixl(1.0f-fx, 1.0f-fy);
    { /* with */
       struct maptool_PIX * anonym = &img->Adr[(xx)*img->Len0+yy];
-      anonym->r += (unsigned short)((rr*l)/512UL);
-      anonym->g += (unsigned short)((gg*l)/512UL);
-      anonym->b += (unsigned short)((bb*l)/512UL);
+      anonym->r += (uint16_t)((rr*l)/512UL);
+      anonym->g += (uint16_t)((gg*l)/512UL);
+      anonym->b += (uint16_t)((bb*l)/512UL);
    }
    l = pixl(fx, 1.0f-fy);
    { /* with */
       struct maptool_PIX * anonym0 = &img->Adr[(xx+1UL)*img->Len0+yy];
-      anonym0->r += (unsigned short)((rr*l)/512UL);
-      anonym0->g += (unsigned short)((gg*l)/512UL);
-      anonym0->b += (unsigned short)((bb*l)/512UL);
+      anonym0->r += (uint16_t)((rr*l)/512UL);
+      anonym0->g += (uint16_t)((gg*l)/512UL);
+      anonym0->b += (uint16_t)((bb*l)/512UL);
    }
    l = pixl(1.0f-fx, fy);
    { /* with */
       struct maptool_PIX * anonym1 = &img->Adr[(xx)*img->Len0+(yy+1UL)];
-      anonym1->r += (unsigned short)((rr*l)/512UL);
-      anonym1->g += (unsigned short)((gg*l)/512UL);
-      anonym1->b += (unsigned short)((bb*l)/512UL);
+      anonym1->r += (uint16_t)((rr*l)/512UL);
+      anonym1->g += (uint16_t)((gg*l)/512UL);
+      anonym1->b += (uint16_t)((bb*l)/512UL);
    }
    l = pixl(fx, fy);
    { /* with */
       struct maptool_PIX * anonym2 = &img->Adr[(xx+1UL)*img->Len0+(yy+1UL)];
-      anonym2->r += (unsigned short)((rr*l)/512UL);
-      anonym2->g += (unsigned short)((gg*l)/512UL);
-      anonym2->b += (unsigned short)((bb*l)/512UL);
+      anonym2->r += (uint16_t)((rr*l)/512UL);
+      anonym2->g += (uint16_t)((gg*l)/512UL);
+      anonym2->b += (uint16_t)((bb*l)/512UL);
    }
 } /* end addpix() */
 
 #define aprstat_KL0 512
 
 
-static void fillpix(maptool_pIMAGE img, unsigned long x, unsigned long yfrom,
-                 float yto, unsigned long rr, unsigned long gg,
-                unsigned long bb)
+static void fillpix(maptool_pIMAGE img, uint32_t x, uint32_t yfrom,
+                float yto, uint32_t rr, uint32_t gg, uint32_t bb)
 {
    float fy;
-   unsigned long yy;
+   uint32_t yy;
    struct maptool_PIX * anonym;
    yy = aprsdecode_trunc(yto);
    fy = yto-(float)yy;
    while (yfrom<=yy) {
       { /* with */
          struct maptool_PIX * anonym = &img->Adr[(x)*img->Len0+yfrom];
-         anonym->r += (unsigned short)rr;
-         anonym->g += (unsigned short)gg;
-         anonym->b += (unsigned short)bb;
+         anonym->r += (uint16_t)rr;
+         anonym->g += (uint16_t)gg;
+         anonym->b += (uint16_t)bb;
       }
       ++yfrom;
    }
 } /* end fillpix() */
 
 
-static unsigned long sfact(float y)
+static uint32_t sfact(float y)
 {
-   unsigned long m;
-   unsigned long s;
+   uint32_t m;
+   uint32_t s;
    s = 1UL;
    m = 2UL;
    while (X2C_DIVR(y,(float)s)>X2C_DIVR(200.0f,
@@ -193,12 +192,12 @@ static unsigned long sfact(float y)
 } /* end sfact() */
 
 
-static unsigned long dynmaxx(unsigned long margin, unsigned long min0,
-                unsigned long max0)
+static uint32_t dynmaxx(uint32_t margin, uint32_t min0,
+                uint32_t max0)
 {
-   if (max0+margin*2UL>(unsigned long)maptool_xsize) {
-      if ((unsigned long)maptool_xsize>min0) {
-         max0 = (unsigned long)maptool_xsize-margin*2UL;
+   if (max0+margin*2UL>(uint32_t)maptool_xsize) {
+      if ((uint32_t)maptool_xsize>min0) {
+         max0 = (uint32_t)maptool_xsize-margin*2UL;
       }
       else max0 = min0-margin*2UL;
    }
@@ -220,20 +219,20 @@ static unsigned long dynmaxx(unsigned long margin, unsigned long min0,
 
 extern void aprstat_btimehist(maptool_pIMAGE * img, aprsdecode_pOPHIST op)
 {
-   unsigned long t[7200];
+   uint32_t t[7200];
    aprsdecode_pFRAMEHIST pf;
-   unsigned long textd;
-   unsigned long textx;
-   unsigned long max0;
-   unsigned long expand;
-   unsigned long scale0;
-   unsigned long xm;
-   unsigned long sum;
-   unsigned long y;
-   unsigned long i;
-   unsigned long dt;
+   uint32_t textd;
+   uint32_t textx;
+   uint32_t max0;
+   uint32_t expand;
+   uint32_t scale0;
+   uint32_t xm;
+   uint32_t sum;
+   uint32_t y;
+   uint32_t i;
+   uint32_t dt;
    char s[256];
-   unsigned long tmp;
+   uint32_t tmp;
    size_t tmp0[2];
    if (op==0) return;
    for (i = 0UL; i<=7199UL; i++) {
@@ -335,35 +334,39 @@ extern void aprstat_btimehist(maptool_pIMAGE * img, aprsdecode_pOPHIST op)
    tmp = xm-1UL;
    i = 0UL;
    if (i<=tmp) for (;; i++) {
-      setpix(*img, (long)(i+8UL), 7L, 0L, 500L, 800L);
+      setpix(*img, (int32_t)(i+8UL), 7L, 0L, 500L, 800L);
       if ((i/expand)%10UL==0UL) {
-         setpix(*img, (long)(i+8UL), 6L, 0L, 500L, 800L);
+         setpix(*img, (int32_t)(i+8UL), 6L, 0L, 500L, 800L);
       }
       if ((i/expand)%textd==0UL) {
-         setpix(*img, (long)(i+8UL), 5L, 0L, 500L, 800L);
-         setpix(*img, (long)(i+8UL), 4L, 0L, 500L, 800L);
+         setpix(*img, (int32_t)(i+8UL), 5L, 0L, 500L, 800L);
+         setpix(*img, (int32_t)(i+8UL), 4L, 0L, 500L, 800L);
       }
       for (y = 0UL; y<=149UL; y++) {
-         setpix(*img, (long)(i+8UL), (long)(y+8UL), 50L,
-                (long)(20UL*(unsigned long)(char)((i/expand)/10UL&1)+30UL),
-                30L);
+         setpix(*img, (int32_t)(i+8UL), (int32_t)(y+8UL), 50L,
+                (int32_t)(20UL*(uint32_t)(char)((i/expand)/10UL&1)
+                +30UL), 30L);
       } /* end for */
       y = 0UL;
       while (y<t[i/expand]) {
-         setpix(*img, (long)(i+8UL), (long)(y+8UL), 500L, 500L, 0L);
+         setpix(*img, (int32_t)(i+8UL), (int32_t)(y+8UL), 500L, 500L,
+                0L);
          ++y;
       }
       if (i==tmp) break;
    } /* end for */
    for (i = 0UL; i<=149UL; i++) {
-      setpix(*img, 7L, (long)((i+8UL)-1UL), 0L, 500L, 800L);
-      if (i%10UL==0UL) setpix(*img, 6L, (long)((i+8UL)-1UL), 0L, 500L, 800L);
+      setpix(*img, 7L, (int32_t)((i+8UL)-1UL), 0L, 500L, 800L);
+      if (i%10UL==0UL) {
+         setpix(*img, 6L, (int32_t)((i+8UL)-1UL), 0L, 500L, 800L);
+      }
    } /* end for */
    strncpy(s," Beacons per Time ",256u);
    aprsstr_Append(s, 256ul, op->call, 9ul);
-   num(*img, 10L, (long)((166UL-aprsdecode_lums.fontysize)-1UL), (long)max0,
-                s, 256ul);
-   num(*img, (long)((expand*textd+8UL)-12UL), 8L, (long)textx, "m", 2ul);
+   num(*img, 10L, (int32_t)((166UL-aprsdecode_lums.fontysize)-1UL),
+                (int32_t)max0, s, 256ul);
+   num(*img, (int32_t)((expand*textd+8UL)-12UL), 8L, (int32_t)textx, "m",
+                 2ul);
 /*
   DISPOSE(img);
 */
@@ -398,19 +401,19 @@ extern void aprstat_kmhist(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
    aprsdecode_pFRAMEHIST fto;
    aprsdecode_pFRAMEHIST ffrom;
    aprsdecode_pFRAMEHIST fr;
-   unsigned long ot;
-   unsigned long t1;
-   unsigned long t0;
-   unsigned long markkm;
-   unsigned long markx;
-   unsigned long maxx;
-   unsigned long maxkm10;
-   unsigned long maxkm;
-   unsigned long tf;
-   unsigned long sp;
-   unsigned long i;
-   unsigned long xi;
-   unsigned long xt;
+   uint32_t ot;
+   uint32_t t1;
+   uint32_t t0;
+   uint32_t markkm;
+   uint32_t markx;
+   uint32_t maxx;
+   uint32_t maxkm10;
+   uint32_t maxkm;
+   uint32_t tf;
+   uint32_t sp;
+   uint32_t i;
+   uint32_t xi;
+   uint32_t xt;
    float ys;
    float dy;
    float maxy;
@@ -419,9 +422,9 @@ extern void aprstat_kmhist(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
    struct aprspos_POSITION po;
    float vt[12720];
    char marks[1584];
-   unsigned long tops[5];
+   uint32_t tops[5];
    struct aprsdecode_DAT dat;
-   unsigned long tmp;
+   uint32_t tmp;
    size_t tmp0[2];
    if (op==0 || op->frames==0) {
       *test = 0;
@@ -508,7 +511,7 @@ extern void aprstat_kmhist(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
       if ((!(fr->nodraw&~0x1U) && aprsdecode_Decode(fr->vardat->raw, 500ul,
                 &dat)>=0L) && (!useri_configon(useri_fTRACKFILT)
                 || dat.speed<tops[0U])) {
-         dy = (float)aprsdecode_knottokmh((long)dat.speed)+0.5f;
+         dy = (float)aprsdecode_knottokmh((int32_t)dat.speed)+0.5f;
          if (dy>1000.0f) dy = 1000.0f;
          if (fr->time0>ot+300UL) tf = 48UL;
          xt = aprsdecode_trunc((X2C_DIVR((float)(fr->time0-t0),
@@ -530,7 +533,7 @@ extern void aprstat_kmhist(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
          if ((dat.pos.lat==aprsdecode_click.markpos.lat && dat.pos.long0==aprsdecode_click.markpos.long0)
                  && aprsdecode_click.markpost==ot) {
             markx = xi/8UL;
-            markkm = (unsigned long)aprsdecode_knottokmh((long)dat.speed);
+            markkm = (uint32_t)aprsdecode_knottokmh((int32_t)dat.speed);
          }
       }
       if (fr==fto) break;
@@ -586,18 +589,19 @@ extern void aprstat_kmhist(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
       sp = 0UL;
       do {
          /* draw y scale and paper and waypoints*/
-         for (i = 6UL-2UL*(unsigned long)(sp%5UL==0UL); i<=8UL; i++) {
-            setpix(*img, (long)i, (long)(aprsdecode_trunc(ys+0.5f)+8UL),
-                200L, 1000L, 200L);
+         for (i = 6UL-2UL*(uint32_t)(sp%5UL==0UL); i<=8UL; i++) {
+            setpix(*img, (int32_t)i,
+                (int32_t)(aprsdecode_trunc(ys+0.5f)+8UL), 200L, 1000L,
+                200L);
          } /* end for */
          ys = ys+dy;
          while (xt<aprsdecode_trunc(ys) && xt<120UL) {
             tmp = (maxx+8UL)-1UL;
             xi = 8UL;
             if (xi<=tmp) for (;; xi++) {
-               setpix(*img, (long)xi, (long)(xt+8UL), 20L,
-                (long)(30UL+50UL*(unsigned long)(char)(sp&1)),
-                (long)(60UL+200UL*(unsigned long)marks[xi-8UL]));
+               setpix(*img, (int32_t)xi, (int32_t)(xt+8UL), 20L,
+                (int32_t)(30UL+50UL*(uint32_t)(char)(sp&1)),
+                (int32_t)(60UL+200UL*(uint32_t)marks[xi-8UL]));
                if (xi==tmp) break;
             } /* end for */
             ++xt;
@@ -607,40 +611,41 @@ extern void aprstat_kmhist(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
       tmp = maxx-1UL;
       xi = 0UL;
       if (xi<=tmp) for (;; xi++) {
-         setpix(*img, (long)(xi+8UL), 8L, 200L, 1000L, 200L);
+         setpix(*img, (int32_t)(xi+8UL), 8L, 200L, 1000L, 200L);
          if (xi==tmp) break;
       } /* end for */
       for (xi = 0UL; xi<=120UL; xi++) {
-         setpix(*img, 8L, (long)(xi+8UL), 200L, 1000L, 200L);
+         setpix(*img, 8L, (int32_t)(xi+8UL), 200L, 1000L, 200L);
       } /* end for */
       sp = t0/3600UL+1UL;
       ot = sp*3600UL;
       ys = X2C_DIVR((float)(maxx*(ot-t0)),(float)(t1-t0));
                 /* x of first full hour */
-      dy = X2C_DIVR((float)(maxx*3600UL),(float)(t1-t0)); /* x size of 1h */
+      dy = X2C_DIVR((float)(maxx*3600UL),(float)(t1-t0));
+                /* x size of 1h */
       if (dy>20.0f && ys<=(float)maxx) {
          if (ys-dy*0.5f>0.0f) {
             /* draw 1/2 h mark */
             for (i = 6UL; i<=7UL; i++) {
-               setpix(*img, (long)(aprsdecode_trunc(ys-dy*0.5f)+8UL),
-                (long)i, 200L, 1000L, 200L);
+               setpix(*img, (int32_t)(aprsdecode_trunc(ys-dy*0.5f)+8UL),
+                (int32_t)i, 200L, 1000L, 200L);
             } /* end for */
          }
          sp = sp+24UL+useri_localtime()/3600UL;
          do {
             /* draw h and rest of 1/2h marks */
             for (i = 4UL; i<=7UL; i++) {
-               setpix(*img, (long)(aprsdecode_trunc(ys)+8UL), (long)i, 200L,
-                1000L, 200L);
+               setpix(*img, (int32_t)(aprsdecode_trunc(ys)+8UL),
+                (int32_t)i, 200L, 1000L, 200L);
             } /* end for */
             if (ys+dy*0.5f<=(float)maxx) {
                for (i = 6UL; i<=7UL; i++) {
-                  setpix(*img, (long)(aprsdecode_trunc(ys+dy*0.5f)+8UL),
-                (long)i, 200L, 1000L, 200L);
+                  setpix(*img, (int32_t)(aprsdecode_trunc(ys+dy*0.5f)+8UL),
+                 (int32_t)i, 200L, 1000L, 200L);
                } /* end for */
             }
-            num(*img, (long)((aprsdecode_trunc(ys)+8UL)-6UL), 8L,
-                (long)(sp%24UL), "h", 2ul);
+            num(*img, (int32_t)((aprsdecode_trunc(ys)+8UL)-6UL), 8L,
+                (int32_t)(sp%24UL), "h", 2ul);
             ++sp;
             ys = ys+dy;
          } while (ys<=(float)maxx);
@@ -648,7 +653,8 @@ extern void aprstat_kmhist(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
       if (markx>3UL) {
          markx -= 3UL;
          for (xi = 8UL; xi<=128UL; xi++) {
-            setpix(*img, (long)(markx+8UL), (long)xi, 500L, 200L, 50L);
+            setpix(*img, (int32_t)(markx+8UL), (int32_t)xi, 500L, 200L,
+                50L);
          } /* end for */
       }
       tmp = maxx*8UL-1UL;
@@ -658,23 +664,24 @@ extern void aprstat_kmhist(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
          dy = vt[xi];
          if (dy>=0.1f) {
             if (dy>120.0f) dy = 120.0f;
-            addpix(*img, (float)xi*0.125f+8.0f, dy+8.0f, 125UL, 125UL, 12UL);
+            addpix(*img, (float)xi*0.125f+8.0f, dy+8.0f, 125UL, 125UL,
+                12UL);
          }
          if (xi==tmp) break;
       } /* end for */
       strncpy(s,"  ",256u);
       aprsstr_Append(s, 256ul, op->call, 9ul);
       aprsstr_Append(s, 256ul, " max=", 6ul);
-      aprsstr_IntToStr((long)maxkm, 1UL, h, 256ul);
+      aprsstr_IntToStr((int32_t)maxkm, 1UL, h, 256ul);
       aprsstr_Append(s, 256ul, h, 256ul);
       if (markx>0UL) {
          aprsstr_Append(s, 256ul, " cursor=", 9ul);
-         aprsstr_IntToStr((long)markkm, 1UL, h, 256ul);
+         aprsstr_IntToStr((int32_t)markkm, 1UL, h, 256ul);
          aprsstr_Append(s, 256ul, h, 256ul);
       }
       aprsstr_Append(s, 256ul, "km/h", 5ul);
-      num(*img, 10L, (long)((136UL-aprsdecode_lums.fontysize)-1UL),
-                (long)maxkm10, s, 256ul);
+      num(*img, 10L, (int32_t)((136UL-aprsdecode_lums.fontysize)-1UL),
+                (int32_t)maxkm10, s, 256ul);
    }
 /*
   IF img<>NIL THEN DISPOSE(img) END;
@@ -683,23 +690,24 @@ extern void aprstat_kmhist(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
 
 
 static void paper(maptool_pIMAGE * img, float yax0, float yax1,
-                unsigned long step, unsigned long margin, unsigned long maxx,
-                 unsigned long maxy, char name[], unsigned long name_len)
+                uint32_t step, uint32_t margin, uint32_t maxx,
+                uint32_t maxy, char name[], uint32_t name_len)
 {
-   unsigned long y;
-   unsigned long x;
-   long so;
-   long s;
+   uint32_t y;
+   uint32_t x;
+   int32_t so;
+   int32_t s;
    float v;
    struct maptool_PIX * anonym;
-   unsigned long tmp;
-   unsigned long tmp0;
+   uint32_t tmp;
+   uint32_t tmp0;
    X2C_PCOPY((void **)&name,name_len);
    so = osi_realint(aprsdecode_floor(X2C_DIVR(yax0,(float)step)));
    tmp = maxy-1UL;
    y = 0UL;
    if (y<=tmp) for (;; y++) {
-      setpix(*img, (long)margin, (long)(y+margin), 200L, 1000L, 200L);
+      setpix(*img, (int32_t)margin, (int32_t)(y+margin), 200L, 1000L,
+                200L);
       v = yax0+(yax1-yax0)*(float)y*(X2C_DIVR(1.0f,(float)maxy));
       s = osi_realint(aprsdecode_floor(X2C_DIVR(v,(float)step)));
       tmp0 = (maxx-1UL)+margin;
@@ -709,7 +717,7 @@ static void paper(maptool_pIMAGE * img, float yax0, float yax1,
             struct maptool_PIX * anonym = &(*img)->Adr[(x)*(*img)
                 ->Len0+(y+margin)];
             anonym->r += 60U;
-            anonym->g += (unsigned short)(50UL+40UL*(unsigned long)(char)
+            anonym->g += (uint16_t)(50UL+40UL*(uint32_t)(char)
                 (s&1));
             anonym->b += 60U;
          }
@@ -719,11 +727,12 @@ static void paper(maptool_pIMAGE * img, float yax0, float yax1,
          tmp0 = margin-1UL;
          x = margin-3UL;
          if (x<=tmp0) for (;; x++) {
-            setpix(*img, (long)x, (long)(y+margin), 200L, 1000L, 200L);
+            setpix(*img, (int32_t)x, (int32_t)(y+margin), 200L, 1000L,
+                200L);
             if (x==tmp0) break;
          } /* end for */
-         num(*img, (long)(margin+1UL), (long)((y+margin)-6UL), s*(long)step, \
-"", 1ul);
+         num(*img, (int32_t)(margin+1UL), (int32_t)((y+margin)-6UL),
+                s*(int32_t)step, "", 1ul);
          so = s;
       }
       if (y==tmp) break;
@@ -749,12 +758,12 @@ static void paper(maptool_pIMAGE * img, float yax0, float yax1,
 static float aprstat_E = (-1.E+4f);
 
 
-static void decodealt(unsigned long * beacons, float * resol, float wdiv,
-                unsigned long * rejs, unsigned long * acks,
-                unsigned long * msgs, struct aprsdecode_DAT * dat,
-                float ground[5760], float alt[5760], char * end,
-                float * waysum, aprsdecode_pOPHIST op, long * markalt,
-                unsigned long * markx1, unsigned long * markx, char do0)
+static void decodealt(uint32_t * beacons, float * resol, float wdiv,
+                uint32_t * rejs, uint32_t * acks, uint32_t * msgs,
+                struct aprsdecode_DAT * dat, float ground[5760],
+                float alt[5760], char * end, float * waysum,
+                aprsdecode_pOPHIST op, int32_t * markalt,
+                uint32_t * markx1, uint32_t * markx, char do0)
 {
    aprsdecode_pFRAMEHIST fr;
    struct aprspos_POSITION opos;
@@ -763,8 +772,8 @@ static void decodealt(unsigned long * beacons, float * resol, float wdiv,
    float a2;
    float a1;
    float a;
-   unsigned long xc;
-   unsigned long x;
+   uint32_t xc;
+   uint32_t x;
    *markx = 0UL;
    *markx1 = 0UL;
    *markalt = X2C_min_longint;
@@ -849,10 +858,10 @@ static void decodealt(unsigned long * beacons, float * resol, float wdiv,
 static float aprstat_E0 = (-1.E+4f);
 
 
-static void interpol(float a[], unsigned long a_len)
+static void interpol(float a[], uint32_t a_len)
 {
-   unsigned long j;
-   unsigned long i;
+   uint32_t j;
+   uint32_t i;
    float k;
    float y;
    i = 0UL;
@@ -883,10 +892,10 @@ static float aprstat_E1 = (-1.E+4f);
 
 
 static void norm(float * hdiv, char * gndok, float ground[5760],
-                float alt[5760], float * maxaltd, float * minaltd,
+                 float alt[5760], float * maxaltd, float * minaltd,
                 float * maxalt, float * minalt)
 {
-   unsigned long i;
+   uint32_t i;
    *minalt = 2.147483647E+9f;
    *maxalt = (-2.147483648E+9f);
    *minaltd = 2.147483647E+9f;
@@ -922,9 +931,8 @@ static void norm(float * hdiv, char * gndok, float ground[5760],
 
 
 extern void aprstat_althist(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
-                char * test, float * way, unsigned long * beacons,
-                unsigned long * msgs, unsigned long * acks,
-                unsigned long * rejs)
+                char * test, float * way, uint32_t * beacons,
+                uint32_t * msgs, uint32_t * acks, uint32_t * rejs)
 {
    char h[256];
    char s[256];
@@ -936,20 +944,20 @@ extern void aprstat_althist(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
    float alt[5760];
    float hdiv;
    float wdiv;
-   unsigned long markx1;
-   unsigned long markx;
-   unsigned long xc;
-   unsigned long sc;
-   unsigned long x;
-   unsigned long Maxx;
+   uint32_t markx1;
+   uint32_t markx;
+   uint32_t xc;
+   uint32_t sc;
+   uint32_t x;
+   uint32_t Maxx;
    struct aprsdecode_DAT dat;
    float resol;
    float waysum;
-   long markalt;
+   int32_t markalt;
    char end;
    char gndok;
    size_t tmp[2];
-   unsigned long tmp0;
+   uint32_t tmp0;
    *way = 0.0f;
    *beacons = 0UL;
    *msgs = 0UL;
@@ -1014,7 +1022,7 @@ extern void aprstat_althist(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
    tmp0 = Maxx+8UL;
    x = 5UL;
    if (x<=tmp0) for (;; x++) {
-      setpix(*img, (long)x, 8L, 200L, 1000L, 200L);
+      setpix(*img, (int32_t)x, 8L, 200L, 1000L, 200L);
       if (x==tmp0) break;
    } /* end for */
    strncpy(h,"km",256u);
@@ -1028,12 +1036,12 @@ extern void aprstat_althist(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
    xc = 0UL;
    do {
       for (x = 5UL; x<=7UL; x++) {
-         setpix(*img, (long)(aprsdecode_trunc(wdiv)+8UL), (long)x, 200L,
-                1000L, 200L);
+         setpix(*img, (int32_t)(aprsdecode_trunc(wdiv)+8UL), (int32_t)x,
+                200L, 1000L, 200L);
       } /* end for */
       if (xc>0UL && aprsdecode_trunc(wdiv)<Maxx-10UL) {
-         num(*img, (long)((aprsdecode_trunc(wdiv)+8UL)-6UL), 8L, (long)xc, h,
-                 256ul);
+         num(*img, (int32_t)((aprsdecode_trunc(wdiv)+8UL)-6UL), 8L,
+                (int32_t)xc, h, 256ul);
          h[0U] = 0;
       }
       xc += sc;
@@ -1041,7 +1049,7 @@ extern void aprstat_althist(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
    } while (aprsdecode_trunc(wdiv)<=Maxx);
    if (markx>0UL) {
       for (x = 8UL; x<=128UL; x++) {
-         setpix(*img, (long)(markx+8UL), (long)x, 50L, 400L, 500L);
+         setpix(*img, (int32_t)(markx+8UL), (int32_t)x, 50L, 400L, 500L);
       } /* end for */
    }
    tmp0 = Maxx*8UL-1UL;
@@ -1050,7 +1058,8 @@ extern void aprstat_althist(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
       /* draw graph */
       addpix(*img, (float)x*0.125f+8.0f, alt[x]+8.0f, 62UL, 75UL, 87UL);
       if (gndok) {
-         addpix(*img, (float)x*0.125f+8.0f, ground[x]+8.0f, 31UL, 18UL, 0UL);
+         addpix(*img, (float)x*0.125f+8.0f, ground[x]+8.0f, 31UL, 18UL,
+                0UL);
       }
       if (x==tmp0) break;
    } /* end for */
@@ -1101,15 +1110,15 @@ struct WX {
 #define aprstat_F 0.9
 
 
-static void scale(float v[], unsigned long v_len, float min0, float max0,
-                float ysize, float maxamp, float * smin, float * smax,
-                unsigned long * step)
+static void scale(float v[], uint32_t v_len, float min0,
+                float max0, float ysize, float maxamp,
+                float * smin, float * smax, uint32_t * step)
 {
-   unsigned long i;
+   uint32_t i;
    float d;
    float a;
    float k;
-   unsigned long tmp;
+   uint32_t tmp;
    if (min0==(-1.E+4f)) {
       min0 = 0.0f;
       d = max0;
@@ -1135,7 +1144,7 @@ static void scale(float v[], unsigned long v_len, float min0, float max0,
 } /* end scale() */
 
 
-static char newimg(unsigned long Maxx, maptool_pIMAGE * img)
+static char newimg(uint32_t Maxx, maptool_pIMAGE * img)
 {
    size_t tmp[2];
    if (*img==0) {
@@ -1149,28 +1158,30 @@ static char newimg(unsigned long Maxx, maptool_pIMAGE * img)
 } /* end newimg() */
 
 
-static void timeline(unsigned long stime, maptool_pIMAGE * img,
-                unsigned long Maxx)
+static void timeline(uint32_t stime, maptool_pIMAGE * img,
+                uint32_t Maxx)
 {
-   unsigned long y;
-   unsigned long x;
-   unsigned long to;
-   unsigned long t;
-   unsigned long tmp;
+   uint32_t y;
+   uint32_t x;
+   uint32_t to;
+   uint32_t t;
+   uint32_t tmp;
    to = 0UL;
    tmp = Maxx-1UL;
    x = 0UL;
    if (x<=tmp) for (;; x++) {
-      setpix(*img, (long)(x+8UL), 8L, 200L, 1000L, 200L);
+      setpix(*img, (int32_t)(x+8UL), 8L, 200L, 1000L, 200L);
       t = ((stime+useri_localtime())-(((Maxx-1UL)-x)*86400UL)/Maxx)/3600UL;
       if (to==0UL) to = t;
       if (to!=t) {
          to = t;
          for (y = 5UL; y<=7UL; y++) {
-            setpix(*img, (long)(x+8UL), (long)y, 200L, 1000L, 200L);
+            setpix(*img, (int32_t)(x+8UL), (int32_t)y, 200L, 1000L,
+                200L);
          } /* end for */
          if (x>28UL && t%3UL==0UL) {
-            num(*img, (long)((x+8UL)-6UL), 8L, (long)(t%24UL), "h", 2ul);
+            num(*img, (int32_t)((x+8UL)-6UL), 8L, (int32_t)(t%24UL), "h",
+                 2ul);
          }
       }
       if (x==tmp) break;
@@ -1179,10 +1190,10 @@ static void timeline(unsigned long stime, maptool_pIMAGE * img,
 
 
 static void dots(float XStep, maptool_pIMAGE * img, float v[],
-                unsigned long v_len, char join, unsigned long r,
-                unsigned long g, unsigned long b)
+                uint32_t v_len, char join, uint32_t r,
+                uint32_t g, uint32_t b)
 {
-   unsigned long i;
+   uint32_t i;
    float dx;
    float io;
    float k;
@@ -1194,7 +1205,7 @@ static void dots(float XStep, maptool_pIMAGE * img, float v[],
    do {
       if (v[i]!=(-1.E+4f)) {
          maptool_waypoint(*img, (float)i*XStep+8.0f+0.5f, v[i]+8.0f, 2.0f,
-                (long)r, (long)g, (long)b);
+                 (int32_t)r, (int32_t)g, (int32_t)b);
          if (((join && yo!=(-1.E+4f)) && i>aprsdecode_trunc(io))
                 && aprsdecode_trunc(io)+65UL>=i) {
             k = X2C_DIVR(v[i]-yo,((float)i-io)+1.0f);
@@ -1206,7 +1217,7 @@ static void dots(float XStep, maptool_pIMAGE * img, float v[],
             while (aprsdecode_trunc(io)<=i) {
                yo = yo+k;
                maptool_waypoint(*img, io*XStep+8.0f, yo+8.0f, 1.2f,
-                (long)(r/2UL), (long)(g/2UL), (long)(b/2UL));
+                (int32_t)(r/2UL), (int32_t)(g/2UL), (int32_t)(b/2UL));
                io = io+dx;
             }
          }
@@ -1220,14 +1231,14 @@ static void dots(float XStep, maptool_pIMAGE * img, float v[],
 
 
 extern void aprstat_wxgraph(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
-                unsigned long stime, unsigned short * what,
+                uint32_t stime, uint16_t * what,
                 struct aprstat_LASTVAL * lastval)
 {
    aprsdecode_pFRAMEHIST fr;
-   unsigned long Maxx;
-   unsigned long step;
-   unsigned long xt;
-   unsigned long xi;
+   uint32_t Maxx;
+   uint32_t step;
+   uint32_t xt;
+   uint32_t xi;
    float XStep;
    float yax1;
    float yax0;
@@ -1248,7 +1259,7 @@ extern void aprstat_wxgraph(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
    float rain24[1440];
    float rain0[1440];
    float lumi[1440];
-   unsigned short have;
+   uint16_t have;
    char dirvalid;
    struct WX * anonym;
    if (op==0 || op->frames==0) {

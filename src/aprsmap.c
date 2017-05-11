@@ -80,15 +80,15 @@ struct VIEW {
    aprsdecode_MONCALL mhop;
    struct aprsdecode_SYMBOL onesymbol;
    aprsdecode_SYMBOLSET onesymbolset;
-   long rf;
-   unsigned char mhtxv;
+   int32_t rf;
+   uint8_t mhtxv;
    char wxcol;
-   long lumtrack;
-   long lumwaypoint;
-   long lummap;
-   long lumsym;
-   long lumobj;
-   long lumtext;
+   int32_t lumtrack;
+   int32_t lumwaypoint;
+   int32_t lummap;
+   int32_t lumsym;
+   int32_t lumobj;
+   int32_t lumtext;
    aprsdecode_MAPNAME mapname;
    /*            altimap, */
    char focus;
@@ -98,8 +98,8 @@ struct TABS;
 
 
 struct TABS {
-   unsigned long stkpo;
-   unsigned long stktop;
+   uint32_t stkpo;
+   uint32_t stktop;
    struct VIEW posstk[20];
 };
 
@@ -113,30 +113,30 @@ static maptool_pIMAGE rfimg;
 
 static char withx;
 
-static unsigned long lastxupdate;
+static uint32_t lastxupdate;
 
-static unsigned long maptime;
+static uint32_t maptime;
 
-static unsigned long laststatref;
+static uint32_t laststatref;
 
-static unsigned long realday;
+static uint32_t realday;
 
-static unsigned long cycleorder;
+static uint32_t cycleorder;
 
-static unsigned long maptrys;
+static uint32_t maptrys;
 
-static unsigned long uptime;
+static uint32_t uptime;
 
 static struct aprspos_POSITION newpos0;
 
 static struct aprspos_POSITION newpos1;
 /*    squerpos: RECORD pos0, pos1:POSITION END; */
 
-static long videofd;
+static int32_t videofd;
 
 static char gammatab[1024];
 
-static unsigned char mhtx;
+static uint8_t mhtx;
 
 static char pandone;
 
@@ -159,14 +159,14 @@ struct _0 {
    struct aprspos_POSITION markpos;
    struct aprspos_POSITION measurepos;
    struct aprspos_POSITION mappos;
-   long initzoom;
+   int32_t initzoom;
    float finezoom;
-   long ant1;
-   long ant2;
-   long ant3;
-   long bri;
-   long contr;
-   long qual;
+   int32_t ant1;
+   int32_t ant2;
+   int32_t ant3;
+   int32_t bri;
+   int32_t contr;
+   int32_t qual;
    struct aprsdecode_COLTYP c1;
    struct aprsdecode_COLTYP c2;
 };
@@ -176,7 +176,7 @@ static struct _0 radio;
 static struct aprspos_POSITION clickwatchpos;
 
 
-static void Error(char text0[], unsigned long text_len)
+static void Error(char text0[], uint32_t text_len)
 {
    X2C_PCOPY((void **)&text0,text_len);
    osi_WrStr(text0, text_len);
@@ -194,7 +194,7 @@ static float sqr(float x)
 #define aprsmap_GAMMA 4.5454545454545E-1
 
 
-static unsigned long gammac(unsigned long c)
+static uint32_t gammac(uint32_t c)
 {
    if (c==0UL) return 0UL;
    if (c<1024UL) {
@@ -207,7 +207,7 @@ static unsigned long gammac(unsigned long c)
 
 static void makegammatab(void)
 {
-   unsigned long i;
+   uint32_t i;
    for (i = 0UL; i<=1023UL; i++) {
       gammatab[i] = (char)gammac(i);
    } /* end for */
@@ -247,11 +247,11 @@ static void tooltips(char typ)
 } /* end tooltips() */
 
 
-static void mapbri(long v)
+static void mapbri(int32_t v)
 {
    char h[100];
    char s[100];
-   v += (long)((unsigned long)aprsdecode_lums.map/10UL);
+   v += (int32_t)((uint32_t)aprsdecode_lums.map/10UL);
    if (v<0L) v = 0L;
    else if (v>100L) v = 100L;
    aprsdecode_lums.map = v*10L;
@@ -268,8 +268,8 @@ static void fullbritime(char down)
 {
    char h[100];
    char s[100];
-   unsigned long n;
-   unsigned long d;
+   uint32_t n;
+   uint32_t d;
    d = 1800UL;
    if (aprsdecode_lums.firstdim<900UL) d = 60UL;
    else if (aprsdecode_lums.firstdim<3600UL) d = 300UL;
@@ -283,16 +283,17 @@ static void fullbritime(char down)
    if (aprsdecode_lums.firstdim>aprsdecode_lums.purgetime) {
       aprsdecode_lums.firstdim = aprsdecode_lums.purgetime;
    }
-   useri_int2cfg(useri_fTFULL, (long)(aprsdecode_lums.firstdim/60UL));
+   useri_int2cfg(useri_fTFULL, (int32_t)(aprsdecode_lums.firstdim/60UL));
    strncpy(s,"Fullbright Time ",100u);
-   aprsstr_IntToStr((long)(aprsdecode_lums.firstdim/60UL), 1UL, h, 100ul);
+   aprsstr_IntToStr((int32_t)(aprsdecode_lums.firstdim/60UL), 1UL, h,
+                100ul);
    aprsstr_Append(s, 100ul, h, 100ul);
    aprsstr_Append(s, 100ul, "Min", 4ul);
    useri_say(s, 100ul, 4UL, 'b');
 } /* end fullbritime() */
 
 
-static float movest(unsigned long width)
+static float movest(uint32_t width)
 {
    return osic_power(2.0f, -maptool_realzoom(aprsdecode_initzoom,
                 aprsdecode_finezoom))*(float)width*(float)
@@ -309,19 +310,19 @@ static float shiftfine(void)
    return s;
 } /* end shiftfine() */
 
-static unsigned long aprsmap_MON[13] = {0UL,0UL,31UL,59UL,90UL,120UL,151UL,
+static uint32_t aprsmap_MON[13] = {0UL,0UL,31UL,59UL,90UL,120UL,151UL,
                 181UL,212UL,243UL,273UL,304UL,334UL};
 
-static unsigned long _cnst[13] = {0UL,0UL,31UL,59UL,90UL,120UL,151UL,181UL,
+static uint32_t _cnst[13] = {0UL,0UL,31UL,59UL,90UL,120UL,151UL,181UL,
                 212UL,243UL,273UL,304UL,334UL};
 
-static char rdlogdate(const char s[], unsigned long s_len, unsigned long * t,
-                 unsigned long * p)
+static char rdlogdate(const char s[], uint32_t s_len,
+                uint32_t * t, uint32_t * p)
 /* 20130526:235959 */
 {
-   unsigned long i;
-   unsigned long y;
-   unsigned long d;
+   uint32_t i;
+   uint32_t y;
+   uint32_t d;
    char c;
    char dt; /* second since 1970 or yyyymmdd:hhmmss */
    dt = s[8UL]==':';
@@ -329,8 +330,8 @@ static char rdlogdate(const char s[], unsigned long s_len, unsigned long * t,
    d = 0UL;
    for (;;) {
       c = s[i];
-      if ((unsigned char)c<'0' || (unsigned char)c>'9') break;
-      d = (d*10UL+(unsigned long)(unsigned char)c)-48UL;
+      if ((uint8_t)c<'0' || (uint8_t)c>'9') break;
+      d = (d*10UL+(uint32_t)(uint8_t)c)-48UL;
       ++i;
       if (dt) {
          if (i==4UL) {
@@ -377,10 +378,10 @@ static char rdlogdate(const char s[], unsigned long s_len, unsigned long * t,
 } /* end rdlogdate() */
 
 
-static char cmpcall(const char a[], unsigned long a_len, unsigned long i,
-                const char b[], unsigned long b_len)
+static char cmpcall(const char a[], uint32_t a_len,
+                uint32_t i, const char b[], uint32_t b_len)
 {
-   unsigned long j;
+   uint32_t j;
    j = 0UL;
    do {
       if (a[i]!=b[j]) return 0;
@@ -400,18 +401,18 @@ static char cmpcall(const char a[], unsigned long a_len, unsigned long i,
 /* if unsort file break binary search */
 
 
-static void binseek(unsigned long * i, long fc, unsigned long * wp,
-                unsigned long time0, char bof, unsigned long * first,
-                unsigned long * last)
+static void binseek(uint32_t * i, int32_t fc, uint32_t * wp,
+                uint32_t time0, char bof, uint32_t * first,
+                uint32_t * last)
 {
-   long seekstep;
-   long len;
-   long rp;
+   int32_t seekstep;
+   int32_t len;
+   int32_t rp;
    char sb[1024];
    aprsdecode_FRAMEBUF mbuf;
-   unsigned long retry;
-   unsigned long lfc;
-   unsigned long ftime;
+   uint32_t retry;
+   uint32_t lfc;
+   uint32_t ftime;
    retry = 0UL;
    *first = 0UL;
    *last = 0UL;
@@ -476,25 +477,25 @@ static void binseek(unsigned long * i, long fc, unsigned long * wp,
 
 
 static void rdlonglog(aprsdecode_pOPHIST * optab, char fn[],
-                unsigned long fn_len, unsigned long from, unsigned long to,
-                unsigned long * firstread, unsigned long * lastread,
-                long * lines)
+                uint32_t fn_len, uint32_t from, uint32_t to,
+                uint32_t * firstread, uint32_t * lastread,
+                int32_t * lines)
 {
-   long fc;
-   long ret;
-   long len;
-   long rp;
+   int32_t fc;
+   int32_t ret;
+   int32_t len;
+   int32_t rp;
    char ib[32768];
-   unsigned long j;
-   unsigned long i;
-   unsigned long wp;
+   uint32_t j;
+   uint32_t i;
+   uint32_t wp;
    aprsdecode_FRAMEBUF mbuf;
-   unsigned long ot;
-   unsigned long end;
-   unsigned long start;
+   uint32_t ot;
+   uint32_t end;
+   uint32_t start;
    aprsdecode_pOPHIST op;
    struct aprsdecode_DAT dat;
-   unsigned long lfc;
+   uint32_t lfc;
    X2C_PCOPY((void **)&fn,fn_len);
    *lines = 0L;
    aprsstr_cleanfilename(fn, fn_len);
@@ -564,26 +565,26 @@ static void rdlonglog(aprsdecode_pOPHIST * optab, char fn[],
 
 
 static void rdlog(aprsdecode_pOPHIST * optab, char fn[],
-                unsigned long fn_len, unsigned long from, unsigned long to,
-                char find0[], unsigned long find_len,
-                unsigned long * firstread, unsigned long * lastread,
-                long * lines)
+                uint32_t fn_len, uint32_t from, uint32_t to,
+                char find0[], uint32_t find_len,
+                uint32_t * firstread, uint32_t * lastread,
+                int32_t * lines)
 {
-   long fc;
-   long ret;
-   long len;
-   long rp;
+   int32_t fc;
+   int32_t ret;
+   int32_t len;
+   int32_t rp;
    char ib[32768];
    char s[100];
-   unsigned long j;
-   unsigned long i;
-   unsigned long wp;
+   uint32_t j;
+   uint32_t i;
+   uint32_t wp;
    aprsdecode_FRAMEBUF mbuf;
    aprsdecode_pOPHIST op;
    struct aprsdecode_DAT dat;
-   unsigned long ot;
-   unsigned long start;
-   unsigned long t;
+   uint32_t ot;
+   uint32_t start;
+   uint32_t t;
    aprsdecode_FILENAME fnd;
    aprsdecode_FILENAME fnn;
    char fo;
@@ -599,8 +600,8 @@ static void rdlog(aprsdecode_pOPHIST * optab, char fn[],
    aprstext_logfndate(from, fnd, 1024ul);
    if (X2C_STRCMP(fnd,1024u,fnn,1024u)==0) {
       if (find0[0UL]) {
-         useri_textautosize(0L, 0L, 5UL, 6UL, 'e', "Call search only in dayly\
--Log Mode", 35ul);
+         useri_textautosize(0L, 0L, 5UL, 6UL, 'e', "\012Call search only in d\
+ayly-Log Mode\012", 37ul);
       }
       rdlonglog(optab, fn, fn_len, from, to, firstread, lastread, lines);
                 /* single log file mode */
@@ -697,11 +698,11 @@ static char moving(aprsdecode_pOPHIST op)
 } /* end moving() */
 
 
-static unsigned long fade(unsigned long t1, aprsdecode_pOPHIST op)
+static uint32_t fade(uint32_t t1, aprsdecode_pOPHIST op)
 {
-   unsigned long l;
-   unsigned long t0;
-   if (!moving(op)) return (unsigned long)aprsdecode_lums.nomov;
+   uint32_t l;
+   uint32_t t0;
+   if (!moving(op)) return (uint32_t)aprsdecode_lums.nomov;
    t0 = aprsdecode_systime-aprsdecode_lums.firstdim;
    if (t0<t1) t1 = t0;
    t0 -= t1;
@@ -727,17 +728,17 @@ BEGIN
 END runanway;
 */
 
-static unsigned long findfreecol(aprsdecode_pOPHIST opn)
+static uint32_t findfreecol(aprsdecode_pOPHIST opn)
 {
-   unsigned long n;
-   unsigned long imax;
-   unsigned long max1;
-   unsigned long c;
-   unsigned long i;
-   unsigned long cs;
+   uint32_t n;
+   uint32_t imax;
+   uint32_t max1;
+   uint32_t c;
+   uint32_t i;
+   uint32_t cs;
    aprsdecode_pOPHIST op;
    struct aprspos_POSITION pos;
-   c = (unsigned long)(unsigned char)opn->trackcol;
+   c = (uint32_t)(uint8_t)opn->trackcol;
    if (c<48UL) {
       pos = opn->lastpos;
       cs = 0UL;
@@ -754,7 +755,7 @@ static unsigned long findfreecol(aprsdecode_pOPHIST opn)
       c = 0UL;
       i = 0UL;
       while (i<=8UL && opn->call[i]) {
-         c += (unsigned long)(unsigned char)opn->call[i];
+         c += (uint32_t)(uint8_t)opn->call[i];
          ++i;
       }
       c = c%10UL; /* checksum default color */
@@ -787,7 +788,7 @@ static void changecolor(aprsdecode_pOPHIST op)
 } /* end changecolor() */
 
 
-static char isvis(const unsigned char vismask)
+static char isvis(const uint8_t vismask)
 {
    struct aprsdecode_OPHIST * anonym;
    { /* with */
@@ -800,7 +801,7 @@ static char isvis(const unsigned char vismask)
 } /* end isvis() */
 
 
-static char isdrivespeed(unsigned char inf)
+static char isdrivespeed(uint8_t inf)
 {
    return inf>=10U && inf<100U;
 } /* end isdrivespeed() */
@@ -830,14 +831,14 @@ static char IsTrackObj(aprsdecode_pOPHIST op)
 
 
 static void tracks(maptool_pIMAGE img, aprsdecode_pOPHIST op,
-                char highlight0, unsigned long tilltime)
+                char highlight0, uint32_t tilltime)
 {
    float y1;
    float x1;
    float y00;
    float x0;
-   unsigned long ligw;
-   unsigned long lig;
+   uint32_t ligw;
+   uint32_t lig;
    struct aprspos_POSITION oldpos;
    struct aprsdecode_COLTYP col;
    signed char coln;
@@ -877,16 +878,16 @@ static void tracks(maptool_pIMAGE img, aprsdecode_pOPHIST op,
                 &y1)>=-1L) && sqr(x0-x1)+sqr(y00-y1)>=9.0f) {
                         /* collect short tracks to 1 */
                         aprsdecode_click.ops->trackcol = coln;
-                        ligw = (lig*(unsigned long)aprsdecode_lums.waypoint)
+                        ligw = (lig*(uint32_t)aprsdecode_lums.waypoint)
                 /1024UL;
-                        lig = (lig*(unsigned long)aprsdecode_lums.track)
-                /1024UL;
+                        lig = (lig*(uint32_t)aprsdecode_lums.track)/1024UL;
                         maptool_vector(img, x0, y00, x1, y1,
-                (long)((lig*col.r)/256UL), (long)((lig*col.g)/256UL),
-                (long)((lig*col.b)/256UL), 450UL, 0.0f);
+                (int32_t)((lig*col.r)/256UL),
+                (int32_t)((lig*col.g)/256UL),
+                (int32_t)((lig*col.b)/256UL), 450UL, 0.0f);
                         if (!aprsdecode_click.dryrun) {
-                           maptool_waypoint(img, x0, y00, 1.5f, (long)ligw,
-                (long)ligw, (long)ligw);
+                           maptool_waypoint(img, x0, y00, 1.5f,
+                (int32_t)ligw, (int32_t)ligw, (int32_t)ligw);
                         }
                         oldpos = anonym->pos;
                         aprsdecode_click.pf0 = aprsdecode_click.pf;
@@ -910,7 +911,8 @@ static void tracks(maptool_pIMAGE img, aprsdecode_pOPHIST op,
 
 
 static void stormcicle(maptool_pIMAGE image0, struct aprspos_POSITION center,
-                 float hurr, float storm, float whole, unsigned long lig)
+                 float hurr, float storm, float whole,
+                uint32_t lig)
 {
    struct aprsdecode_AREASYMB asymb;
    asymb.dpos.long0 = 0.0f;
@@ -946,7 +948,8 @@ static void tolastframe(aprsdecode_pFRAMEHIST * pfm)
 #define aprsmap_HOVERDIST 64
 
 
-static void symbols(aprsdecode_pOPHIST op, char objects, char highlight0,
+static void symbols(aprsdecode_pOPHIST op, char objects,
+                char highlight0,
                 struct aprsdecode_CLICKOBJECT * hoverobj)
 {
    float hovery;
@@ -955,7 +958,7 @@ static void symbols(aprsdecode_pOPHIST op, char objects, char highlight0,
    float hd;
    float y;
    float x;
-   unsigned long lig;
+   uint32_t lig;
    struct aprsdecode_COLTYP col;
    struct aprsdecode_DAT dat;
    aprsdecode_pFRAMEHIST pfm;
@@ -991,8 +994,8 @@ static void symbols(aprsdecode_pOPHIST op, char objects, char highlight0,
          else {
             lig = fade(aprsdecode_click.ops->lasttime, aprsdecode_click.ops);
          }
-         if (objects) lig = (lig*(unsigned long)aprsdecode_lums.obj)/1024UL;
-         else lig = (lig*(unsigned long)aprsdecode_lums.sym)/1024UL;
+         if (objects) lig = (lig*(uint32_t)aprsdecode_lums.obj)/1024UL;
+         else lig = (lig*(uint32_t)aprsdecode_lums.sym)/1024UL;
          if (aprsdecode_click.ops->areasymb.typ) {
             if (pfm==0) {
                maptool_drawareasym(image, aprsdecode_click.ops->lastpos,
@@ -1012,7 +1015,8 @@ static void symbols(aprsdecode_pOPHIST op, char objects, char highlight0,
          else {
             maptool_drawsym(image, aprsdecode_click.ops->sym.tab,
                 aprsdecode_click.ops->sym.pic,
-                (0x1U & aprsdecode_click.ops->drawhints)!=0, x, y, lig);
+                (0x1U & aprsdecode_click.ops->drawhints)!=0, osic_floor(x),
+                osic_floor(y), lig);
             if (aprsdecode_click.ops->sym.pic=='@') {
                /* storm circles */
                tolastframe(&pfm);
@@ -1046,8 +1050,8 @@ static void symbols(aprsdecode_pOPHIST op, char objects, char highlight0,
                   maptool_drawarrow(image, x, y, 19.0f,
                 (float)(aprsdecode_click.ops->lastinftyp-110U)
                 *(-6.9813170079773E-2f),
-                (unsigned long)(unsigned short)aprsdecode_click.ops->lastkmh,
-                 lig, col);
+                (uint32_t)(uint16_t)aprsdecode_click.ops->lastkmh, lig,
+                col);
                }
             }
          }
@@ -1058,13 +1062,14 @@ static void symbols(aprsdecode_pOPHIST op, char objects, char highlight0,
 } /* end symbols() */
 
 
-static void text(aprsdecode_pOPHIST op, char yesno, char objmove,
-                char highlight0, char withvalues)
+static void text(aprsdecode_pOPHIST op, char yesno,
+                char objmove, char highlight0,
+                char withvalues)
 {
    float y;
    float x;
-   unsigned long lumtext;
-   unsigned long lig;
+   uint32_t lumtext;
+   uint32_t lig;
    char s1[256];
    char s[256];
    struct aprsdecode_COLTYP colo;
@@ -1076,7 +1081,7 @@ static void text(aprsdecode_pOPHIST op, char yesno, char objmove,
    temponly = aprsdecode_lums.wxcol && aprsdecode_lums.text==0L;
                 /* labels off but wxonly */
    if (temponly) lumtext = 700UL;
-   else lumtext = (unsigned long)aprsdecode_lums.text;
+   else lumtext = (uint32_t)aprsdecode_lums.text;
    aprsdecode_click.ops = op;
    useri_ColConfset(&colw, useri_fCOLMAPTEXT);
    useri_ColConfset(&colo, useri_fCOLOBJTEXT);
@@ -1088,8 +1093,8 @@ static void text(aprsdecode_pOPHIST op, char yesno, char objmove,
          lig = (fade(aprsdecode_click.ops->lasttime,
                 aprsdecode_click.ops)*lumtext)/256UL;
          if (object) {
-            if (lig>(unsigned long)aprsdecode_lums.obj) {
-               lig = (unsigned long)aprsdecode_lums.obj;
+            if (lig>(uint32_t)aprsdecode_lums.obj) {
+               lig = (uint32_t)aprsdecode_lums.obj;
             }
             col = colo;
          }
@@ -1104,7 +1109,7 @@ static void text(aprsdecode_pOPHIST op, char yesno, char objmove,
          if (!temponly) {
             maptool_drawstr(image, s, 256ul, osic_floor(x+7.0f),
                 osic_floor(y-(float)(aprsdecode_lums.fontysize/2UL)), lig,
-                1UL, col, &aprsdecode_click.ops->textpos, 3UL, fix,
+                 1UL, col, &aprsdecode_click.ops->textpos, 3UL, fix,
                 aprsdecode_click.dryrun);
          }
          if (withvalues) {
@@ -1116,8 +1121,8 @@ static void text(aprsdecode_pOPHIST op, char yesno, char objmove,
                 && aprsdecode_click.ops->temptime+3600UL>aprsdecode_systime) {
                   if (object) aprsdecode_click.typ = aprsdecode_tDEGREEOBJ;
                   else aprsdecode_click.typ = aprsdecode_tDEGREE;
-                  aprsstr_IntToStr((long)aprsdecode_click.ops->lasttempalt,
-                1UL, s, 256ul);
+                  aprsstr_IntToStr((int32_t)
+                aprsdecode_click.ops->lasttempalt, 1UL, s, 256ul);
                   aprsstr_Append(s, 256ul, "\177C", 3ul);
                   if (aprsdecode_click.ops->lasttempalt<0) {
                      col.r = 20UL;
@@ -1133,7 +1138,7 @@ static void text(aprsdecode_pOPHIST op, char yesno, char objmove,
                 */
                   maptool_drawstr(image, s, 256ul, osic_floor(x+6.0f),
                 osic_floor(y-(float)(aprsdecode_lums.fontysize/2UL)), lig,
-                0UL, col, &aprsdecode_click.ops->valuepos, 4UL, fix,
+                 0UL, col, &aprsdecode_click.ops->valuepos, 4UL, fix,
                 aprsdecode_click.dryrun);
                }
             }
@@ -1148,15 +1153,15 @@ static void text(aprsdecode_pOPHIST op, char yesno, char objmove,
                   if ((aprsdecode_click.ops->lastinftyp>0U && aprsdecode_click.ops->lastkmh>0)
                  && aprsdecode_click.ops->lasttime+aprsdecode_lums.kmhtime>aprsdecode_systime)
                  {
-                     aprsstr_IntToStr((long)aprsdecode_click.ops->lastkmh,
-                1UL, s, 256ul);
+                     aprsstr_IntToStr((int32_t)
+                aprsdecode_click.ops->lastkmh, 1UL, s, 256ul);
                      useri_confappend(useri_fKMH, s, 256ul);
                   }
                }
-               if ((long)aprsdecode_click.ops->lasttempalt+22768L>useri_conf2int(useri_fALTMIN,
+               if ((int32_t)aprsdecode_click.ops->lasttempalt+22768L>useri_conf2int(useri_fALTMIN,
                  0UL, -10000L, 65535L, -10000L)) {
                   if (s[0U]) aprsstr_Append(s, 256ul, " ", 2ul);
-                  aprsstr_IntToStr((long)
+                  aprsstr_IntToStr((int32_t)
                 aprsdecode_click.ops->lasttempalt+22768L, 1UL, s1, 256ul);
                   aprsstr_Append(s, 256ul, s1, 256ul);
                   aprsstr_Append(s, 256ul, "m", 2ul);
@@ -1165,7 +1170,7 @@ static void text(aprsdecode_pOPHIST op, char yesno, char objmove,
                   maptool_Colset(&col, 'Y');
                   maptool_drawstr(image, s, 256ul, osic_floor(x+7.0f),
                 osic_floor(y-(float)(aprsdecode_lums.fontysize/2UL)), lig,
-                0UL, col, &aprsdecode_click.ops->valuepos, 4UL, fix,
+                 0UL, col, &aprsdecode_click.ops->valuepos, 4UL, fix,
                 aprsdecode_click.dryrun);
                }
             }
@@ -1184,15 +1189,15 @@ static char getgate(aprsdecode_pVARDAT v, aprsdecode_pOPHIST * gate)
    { /* with */
       struct aprsdecode_VARDAT * anonym = v;
       if (anonym->igatelen==0U) return 0;
-      aprstext_strcp(anonym->raw, 500ul, (unsigned long)anonym->igatepos,
-                (unsigned long)anonym->igatelen, digi, 9ul);
+      aprstext_strcp(anonym->raw, 500ul, (uint32_t)anonym->igatepos,
+                (uint32_t)anonym->igatelen, digi, 9ul);
       *gate = aprsdecode_ophist0;
       while (*gate && X2C_STRCMP((*gate)->call,9u,digi,9u)) {
          *gate = (*gate)->next;
       }
       if (((*gate==0 || !maptool_vistime((*gate)->lasttime))
-                || !aprspos_posvalid((*gate)->lastpos)) || (unsigned char)
-                (*gate)->sym.tab<=' ') return 0;
+                || !aprspos_posvalid((*gate)->lastpos)) || (uint8_t)(*gate)
+                ->sym.tab<=' ') return 0;
    }
    return 1;
 } /* end getgate() */
@@ -1206,7 +1211,7 @@ static void rftracks(const aprsdecode_MONCALL opcall, char * clrimg)
    float x;
    float y00;
    float x0;
-   unsigned long lig;
+   uint32_t lig;
    /* track filter off */
    char trk; /* show no waypoints so show no rfpath to this */
    char nofilt;
@@ -1238,8 +1243,8 @@ static void rftracks(const aprsdecode_MONCALL opcall, char * clrimg)
                         *clrimg = 0;
                      }
                      lig = 60UL*(anonym->refcnt+1UL);
-                     maptool_vector(rfimg, x0, y00, x, y, (long)lig,
-                (long)lig, (long)lig, 256UL, 25.0f);
+                     maptool_vector(rfimg, x0, y00, x, y, (int32_t)lig,
+                (int32_t)lig, (int32_t)lig, 256UL, 25.0f);
                   }
                }
             }
@@ -1256,7 +1261,7 @@ static void mhtracks(const aprsdecode_MONCALL hcall, char * clrimg)
    float x;
    float y00;
    float x0;
-   unsigned long lig;
+   uint32_t lig;
    aprsdecode_MONCALL digi;
    aprsdecode_pOPHIST hop;
    /* track filter off */
@@ -1272,7 +1277,7 @@ static void mhtracks(const aprsdecode_MONCALL hcall, char * clrimg)
    while (aprsdecode_click.ops) {
       if (((0x2U & aprsdecode_click.ops->drawhints)
                 ==0 && (0x8U & aprsdecode_click.ops->drawhints))
-                && (unsigned char)aprsdecode_click.ops->sym.tab>' ') {
+                && (uint8_t)aprsdecode_click.ops->sym.tab>' ') {
          aprsdecode_click.pf = aprsdecode_click.ops->frames;
          while (aprsdecode_click.pf) {
             if ((trk || aprsdecode_click.pf->next==0)
@@ -1285,8 +1290,8 @@ static void mhtracks(const aprsdecode_MONCALL hcall, char * clrimg)
                      if (anonym->igatelen>0U && maptool_mapxy(anonym->pos,
                 &x0, &y00)>=0L) {
                         aprstext_strcp(anonym->raw, 500ul,
-                (unsigned long)anonym->igatepos,
-                (unsigned long)anonym->igatelen, digi, 9ul);
+                (uint32_t)anonym->igatepos, (uint32_t)anonym->igatelen,
+                digi, 9ul);
                         if (X2C_STRCMP(hop->call,9u,digi,
                 9u)==0 && maptool_mapxy(hop->lastpos, &x, &y)>=-1L) {
                            if (*clrimg) {
@@ -1294,8 +1299,9 @@ static void mhtracks(const aprsdecode_MONCALL hcall, char * clrimg)
                               *clrimg = 0;
                            }
                            lig = 50UL*(anonym->refcnt+1UL);
-                           maptool_vector(rfimg, x0, y00, x, y, (long)lig,
-                (long)lig, (long)lig, 256UL, 25.0f);
+                           maptool_vector(rfimg, x0, y00, x, y,
+                (int32_t)lig, (int32_t)lig, (int32_t)lig, 256UL,
+                25.0f);
                         }
                      }
                   }
@@ -1316,18 +1322,18 @@ static void mhtracks(const aprsdecode_MONCALL hcall, char * clrimg)
 
 #define aprsmap_WXNIL 10000.0
 
-static long aprsmap_RED[39] = {33L,63L,112L,156L,199L,47L,104L,156L,255L,
-                255L,7L,7L,7L,7L,7L,0L,0L,0L,0L,0L,255L,255L,255L,255L,255L,
-                255L,255L,255L,255L,219L,156L,128L,104L,82L,63L,43L,26L,13L,
-                4L};
+static int32_t aprsmap_RED[39] = {33L,63L,112L,156L,199L,47L,104L,156L,
+                255L,255L,7L,7L,7L,7L,7L,0L,0L,0L,0L,0L,255L,255L,255L,255L,
+                255L,255L,255L,255L,255L,219L,156L,128L,104L,82L,63L,43L,26L,
+                13L,4L};
 
-static long aprsmap_GRN[39] = {33L,63L,112L,156L,199L,7L,7L,7L,7L,82L,0L,33L,
-                82L,156L,255L,47L,81L,128L,186L,255L,255L,219L,186L,156L,
-                128L,104L,82L,47L,0L,0L,0L,0L,0L,0L,0L,0L,0L,0L,0L};
+static int32_t aprsmap_GRN[39] = {33L,63L,112L,156L,199L,7L,7L,7L,7L,82L,
+                0L,33L,82L,156L,255L,47L,81L,128L,186L,255L,255L,219L,186L,
+                156L,128L,104L,82L,47L,0L,0L,0L,0L,0L,0L,0L,0L,0L,0L,0L};
 
-static long aprsmap_BLU[39] = {33L,63L,112L,156L,199L,47L,104L,156L,255L,
-                255L,156L,255L,255L,255L,255L,0L,0L,0L,0L,0L,7L,7L,7L,7L,7L,
-                0L,0L,0L,0L,0L,0L,0L,0L,0L,0L,0L,0L,0L,0L};
+static int32_t aprsmap_BLU[39] = {33L,63L,112L,156L,199L,47L,104L,156L,
+                255L,255L,156L,255L,255L,255L,255L,0L,0L,0L,0L,0L,7L,7L,7L,
+                7L,7L,0L,0L,0L,0L,0L,0L,0L,0L,0L,0L,0L,0L,0L,0L};
 
 #define aprsmap_MAX24 50.0
 
@@ -1336,13 +1342,13 @@ static long aprsmap_BLU[39] = {33L,63L,112L,156L,199L,47L,104L,156L,255L,
 #define aprsmap_TIMESPAN 3600
 
 
-static long getrain(char what, aprsdecode_pOPHIST op)
+static int32_t getrain(char what, aprsdecode_pOPHIST op)
 {
    aprsdecode_pFRAMEHIST f;
    struct aprsdecode_DAT dat;
    float max1;
    float r;
-   long ret;
+   int32_t ret;
    ret = 0L;
    f = op->frames;
    while (f) {
@@ -1361,7 +1367,8 @@ static long getrain(char what, aprsdecode_pOPHIST op)
             if (r>200.0f) r = 0.0f;
             if (r>max1) r = max1;
             if (r>=0.1f) {
-               ret = (long)aprsdecode_trunc((X2C_DIVR(r,max1))*32767.0f);
+               ret = (int32_t)aprsdecode_trunc((X2C_DIVR(r,
+                max1))*32767.0f);
             }
          }
       }
@@ -1371,10 +1378,10 @@ static long getrain(char what, aprsdecode_pOPHIST op)
 } /* end getrain() */
 
 
-static long gettemp(aprsdecode_pOPHIST op)
+static int32_t gettemp(aprsdecode_pOPHIST op)
 {
-   long t;
-   t = (long)op->lasttempalt;
+   int32_t t;
+   t = (int32_t)op->lasttempalt;
    if (t>=-30L && t<=50L || (t>=-80L && t<80L)
                 && !useri_configon(useri_fTRACKFILT)) {
       /* show or not garbage */
@@ -1386,15 +1393,16 @@ static long gettemp(aprsdecode_pOPHIST op)
    return t;
 } /* end gettemp() */
 
-static long _cnst2[39] = {33L,63L,112L,156L,199L,47L,104L,156L,255L,255L,
-                156L,255L,255L,255L,255L,0L,0L,0L,0L,0L,7L,7L,7L,7L,7L,0L,0L,
-                0L,0L,0L,0L,0L,0L,0L,0L,0L,0L,0L,0L};
-static long _cnst1[39] = {33L,63L,112L,156L,199L,7L,7L,7L,7L,82L,0L,33L,82L,
-                156L,255L,47L,81L,128L,186L,255L,255L,219L,186L,156L,128L,
-                104L,82L,47L,0L,0L,0L,0L,0L,0L,0L,0L,0L,0L,0L};
-static long _cnst0[39] = {33L,63L,112L,156L,199L,47L,104L,156L,255L,255L,7L,
-                7L,7L,7L,7L,0L,0L,0L,0L,0L,255L,255L,255L,255L,255L,255L,
-                255L,255L,255L,219L,156L,128L,104L,82L,63L,43L,26L,13L,4L};
+static int32_t _cnst2[39] = {33L,63L,112L,156L,199L,47L,104L,156L,255L,
+                255L,156L,255L,255L,255L,255L,0L,0L,0L,0L,0L,7L,7L,7L,7L,7L,
+                0L,0L,0L,0L,0L,0L,0L,0L,0L,0L,0L,0L,0L,0L};
+static int32_t _cnst1[39] = {33L,63L,112L,156L,199L,7L,7L,7L,7L,82L,0L,33L,
+                82L,156L,255L,47L,81L,128L,186L,255L,255L,219L,186L,156L,
+                128L,104L,82L,47L,0L,0L,0L,0L,0L,0L,0L,0L,0L,0L,0L};
+static int32_t _cnst0[39] = {33L,63L,112L,156L,199L,47L,104L,156L,255L,
+                255L,7L,7L,7L,7L,7L,0L,0L,0L,0L,0L,255L,255L,255L,255L,255L,
+                255L,255L,255L,255L,219L,156L,128L,104L,82L,63L,43L,26L,13L,
+                4L};
 
 static void metercolor(char what)
 {
@@ -1404,24 +1412,24 @@ static void metercolor(char what)
    float qq;
    float y;
    float x;
-   long xii;
-   long rbr;
-   long radius;
-   long q;
-   long y00;
-   long x0;
-   long my;
-   long mx;
-   long yi;
-   long xi;
-   long t;
-   unsigned long gb1;
-   unsigned long gb;
+   int32_t xii;
+   int32_t rbr;
+   int32_t radius;
+   int32_t q;
+   int32_t y00;
+   int32_t x0;
+   int32_t my;
+   int32_t mx;
+   int32_t yi;
+   int32_t xi;
+   int32_t t;
+   uint32_t gb1;
+   uint32_t gb;
    struct maptool_PIX * anonym;
    struct maptool_PIX * anonym0;
-   long tmp;
-   long tmp0;
-   radius = (long)aprsdecode_trunc(osic_power(2.0f,
+   int32_t tmp;
+   int32_t tmp0;
+   radius = (int32_t)aprsdecode_trunc(osic_power(2.0f,
                 maptool_realzoom(aprsdecode_initzoom,
                 aprsdecode_finezoom)+0.2f));
    if (radius>1000L) radius = 1000L;
@@ -1431,16 +1439,16 @@ static void metercolor(char what)
    aprsdecode_click.ops = aprsdecode_ophist0;
    aprsdecode_click.typ = aprsdecode_tMETEOCOLOR;
    while (aprsdecode_click.ops) {
-      if ((((((aprspos_posvalid(aprsdecode_click.ops->lastpos)
-                && (unsigned char)aprsdecode_click.ops->sym.tab>' ')
+      if ((((((aprspos_posvalid(aprsdecode_click.ops->lastpos) && (uint8_t)
+                aprsdecode_click.ops->sym.tab>' ')
                 && (aprsdecode_lums.obj>0L || (0x2U & aprsdecode_click.ops->drawhints)
                 ==0)) && maptool_vistime(aprsdecode_click.ops->lasttime))
                 && maptool_mapxy(aprsdecode_click.ops->lastpos, &x,
                 &y)>=-1L) && aprsdecode_click.ops->temptime+3600UL>aprsdecode_systime)
                  && ((aprsdecode_click.ops->lastinftyp>=100U || what=='1')
                 || what=='R')) {
-         x0 = (long)X2C_TRUNCI(x,X2C_min_longint,X2C_max_longint);
-         y00 = (long)X2C_TRUNCI(y,X2C_min_longint,X2C_max_longint);
+         x0 = (int32_t)X2C_TRUNCI(x,X2C_min_longint,X2C_max_longint);
+         y00 = (int32_t)X2C_TRUNCI(y,X2C_min_longint,X2C_max_longint);
          if (((x0>-radius && x0<maptool_xsize+radius) && y00>-radius)
                 && y00<maptool_ysize+radius) {
             /* test for speed */
@@ -1467,19 +1475,19 @@ static void metercolor(char what)
                 *rfimg->Len0+my];
                                  gb = aprsdecode_trunc(f*1.E+7f)+1UL;
                                  if (what=='T' && anonym->r==0U) {
-                                    anonym->r = (unsigned short)t;
+                                    anonym->r = (uint16_t)t;
                                  }
                                  else {
-                                    gb1 = (unsigned long)
-                anonym->g+(unsigned long)anonym->b*65536UL;
+                                    gb1 = (uint32_t)anonym->g+(uint32_t)
+                anonym->b*65536UL;
                                     f1 = (float)gb1*1.E-7f;
                                     if (what=='T') {
-                                    anonym->r = (unsigned short)(long)
-                X2C_TRUNCI(X2C_DIVR((float)t*f+(float)anonym->r*f1,f+f1),
-                X2C_min_longint,X2C_max_longint);
+                                    anonym->r = (uint16_t)(int32_t)
+                X2C_TRUNCI(X2C_DIVR((float)t*f+(float)anonym->r*f1,
+                f+f1),X2C_min_longint,X2C_max_longint);
                                     }
                                     else {
-                                    anonym->r = (unsigned short)(long)
+                                    anonym->r = (uint16_t)(int32_t)
                 X2C_TRUNCI(X2C_DIVR((float)t*f*(1.0f-X2C_DIVR((float)q,
                 (float)rbr))+(float)anonym->r*f1,f+f1),X2C_min_longint,
                 X2C_max_longint);
@@ -1489,10 +1497,10 @@ static void metercolor(char what)
                                     }
                                     gb += gb1;
                                  }
-                                 anonym->g = (unsigned short)((unsigned long)
+                                 anonym->g = (uint16_t)((uint32_t)
                 gb&0xFFFFUL);
-                                 anonym->b = (unsigned short)
-                X2C_LSH((unsigned long)gb,32,-16);
+                                 anonym->b = (uint16_t)X2C_LSH((uint32_t)
+                gb,32,-16);
                               }
                            }
                         }
@@ -1521,22 +1529,22 @@ static void metercolor(char what)
             struct maptool_PIX * anonym0 = &rfimg->Adr[(xi)*rfimg->Len0+yi];
             if (anonym0->r>0U) {
                if (what=='T') {
-                  t = (long)(((unsigned long)anonym0->r*80UL)/32768UL);
+                  t = (int32_t)(((uint32_t)anonym0->r*80UL)/32768UL);
                   t = t/2L;
                   if (t<0L) t = 0L;
                   else if (t>38L) t = 38L;
-                  anonym0->r = (unsigned short)(_cnst0[t]*2L);
-                  anonym0->g = (unsigned short)(_cnst1[t]*2L);
-                  anonym0->b = (unsigned short)(_cnst2[t]*2L);
+                  anonym0->r = (uint16_t)(_cnst0[t]*2L);
+                  anonym0->g = (uint16_t)(_cnst1[t]*2L);
+                  anonym0->b = (uint16_t)(_cnst2[t]*2L);
                }
                else if (what=='1') {
-                  anonym0->r = (unsigned short)((((unsigned long)
+                  anonym0->r = (uint16_t)((((uint32_t)
                 anonym0->r*1000UL+1048576UL)/2097152UL)*64UL);
                   anonym0->b = 0U;
                   anonym0->g = 0U;
                }
                else {
-                  anonym0->b = (unsigned short)((((unsigned long)
+                  anonym0->b = (uint16_t)((((uint32_t)
                 anonym0->r*1000UL+1048576UL)/2097152UL)*64UL);
                   anonym0->r = 0U;
                   anonym0->g = anonym0->b;
@@ -1573,15 +1581,15 @@ static char deletelogfile(char all)
 {
    aprsdecode_FILENAME fn;
    aprsdecode_FILENAME fnd;
-   unsigned long days;
-   unsigned long t;
-   unsigned long cnt;
+   uint32_t days;
+   uint32_t t;
+   uint32_t cnt;
    char ok0;
    char s[101];
    t = aprsdecode_realtime;
    if (!all) {
-      days = (unsigned long)useri_conf2int(useri_fLOGDAYS, 0UL, 0L, 1000000L,
-                 31L);
+      days = (uint32_t)useri_conf2int(useri_fLOGDAYS, 0UL, 0L, 1000000L,
+                31L);
       if (days==0UL) return 0;
       /* keep files forever */
       if (t>days*86400UL) t -= days*86400UL;
@@ -1602,7 +1610,7 @@ static char deletelogfile(char all)
    } while (t>=1388534400UL);
    /* oldest possible file */
    if (cnt>0UL) {
-      aprsstr_IntToStr((long)cnt, 1UL, s, 101ul);
+      aprsstr_IntToStr((int32_t)cnt, 1UL, s, 101ul);
       aprsstr_Append(s, 101ul, " Rawlog(s) Deleted", 19ul);
       useri_textautosize(0L, 0L, 5UL, 6UL, 'b', s, 101ul);
    }
@@ -1632,9 +1640,9 @@ static char deletelogfile(char all)
 #define aprsmap_DAY0 86400
 
 
-static void toend(long * logredcnt, unsigned long * lastread,
-                unsigned long * logstarttime, char find0[13], char fn[1025],
-                unsigned long * fromto)
+static void toend(int32_t * logredcnt, uint32_t * lastread,
+                uint32_t * logstarttime, char find0[13],
+                char fn[1025], uint32_t * fromto)
 {
    *fromto = aprsdecode_realtime;
    do {
@@ -1647,9 +1655,9 @@ static void toend(long * logredcnt, unsigned long * lastread,
 } /* end toend() */
 
 
-static void tobegin(long * logredcnt, unsigned long * lastread,
-                unsigned long * logstarttime, char find0[13], char fn[1025],
-                unsigned long * fromto)
+static void tobegin(int32_t * logredcnt, uint32_t * lastread,
+                uint32_t * logstarttime, char find0[13],
+                char fn[1025], uint32_t * fromto)
 {
    *fromto = 1388534400UL;
    for (;;) {
@@ -1697,17 +1705,17 @@ static void importlog(char cmd)
   END deldaylylog;
 */
 {
-   unsigned long th;
-   unsigned long logstarttime;
-   unsigned long lastread;
-   unsigned long fromto;
+   uint32_t th;
+   uint32_t logstarttime;
+   uint32_t lastread;
+   uint32_t fromto;
    char h1[1025];
    char h[1025];
    char fn[1025];
    char find0[13];
    char color;
    char ok0;
-   long logredcnt;
+   int32_t logredcnt;
    char tmp;
    h[0U] = 0;
    find0[0U] = 0;
@@ -1859,14 +1867,14 @@ static void importlog(char cmd)
          aprsstr_IntToStr(logredcnt, 1UL, h, 1025ul);
          aprsstr_Append(h, 1025ul, " Lines ", 8ul);
          th = (aprsdecode_systime-logstarttime)/60UL;
-         aprsstr_IntToStr((long)(th/60UL), 1UL, h1, 1025ul);
+         aprsstr_IntToStr((int32_t)(th/60UL), 1UL, h1, 1025ul);
          aprsstr_Append(h, 1025ul, h1, 1025ul);
          aprsstr_Append(h, 1025ul, "h", 2ul);
          th = th%60UL;
-         aprsstr_Append(h, 1025ul, (char *)(tmp = (char)(th/10UL+48UL),&tmp),
-                 1u/1u);
-         aprsstr_Append(h, 1025ul, (char *)(tmp = (char)(th%10UL+48UL),&tmp),
-                 1u/1u);
+         aprsstr_Append(h, 1025ul,
+                (char *)(tmp = (char)(th/10UL+48UL),&tmp), 1u/1u);
+         aprsstr_Append(h, 1025ul,
+                (char *)(tmp = (char)(th%10UL+48UL),&tmp), 1u/1u);
          aprsstr_Append(h, 1025ul, "m from\012", 8ul);
          aprstext_DateLocToStr(logstarttime, h1, 1025ul);
          aprsstr_Append(h, 1025ul, h1, 1025ul);
@@ -1905,9 +1913,9 @@ static void bootreadlog(void)
 {
    char fn[1000];
    char s[1000];
-   unsigned long lastt;
-   unsigned long logt;
-   long logredcnt;
+   uint32_t lastt;
+   uint32_t logt;
+   int32_t logredcnt;
    useri_confstr(useri_fLOGWFN, fn, 1000ul);
    if (!useri_configon(useri_fLOGWFN) || fn[0U]==0) {
       useri_say("No Log File Enabled", 20ul, 5UL, 'b');
@@ -1948,8 +1956,8 @@ static void bootreadlog(void)
 
 static char IsInbMultisymb(char tab, char pic)
 {
-   unsigned long t;
-   t = (unsigned long)(unsigned char)pic;
+   uint32_t t;
+   t = (uint32_t)(uint8_t)pic;
    if (t<32UL) return 0;
    t -= 32UL;
    if (t>=192UL) return 0;
@@ -1991,14 +1999,14 @@ static void markvisable(const aprsdecode_MONCALL singlecall)
 } /* end markvisable() */
 
 
-static aprsdecode_pOPHIST findop(const char call[], unsigned long call_len,
+static aprsdecode_pOPHIST findop(const char call[], uint32_t call_len,
                 char totable)
 {
    aprsdecode_pOPHIST opfound;
    aprsdecode_pOPHIST op;
    aprsdecode_MONCALL Mc;
    aprsdecode_MONCALL mc0;
-   unsigned long i;
+   uint32_t i;
    char c;
    c = 0;
    for (i = 0UL; i<=8UL; i++) {
@@ -2083,9 +2091,9 @@ static void findsize(struct aprspos_POSITION * pos0,
    aprsdecode_pVARDAT v;
    aprsdecode_pOPHIST op;
    aprsdecode_pOPHIST ig;
-   unsigned long gl;
-   unsigned long j;
-   unsigned long i;
+   uint32_t gl;
+   uint32_t j;
+   uint32_t i;
    struct aprsdecode_DAT dat;
    char nofilt;
    char trk;
@@ -2151,9 +2159,9 @@ static void findsize(struct aprspos_POSITION * pos0,
                         if (((((trk || f->next==0)
                 && maptool_vistime(anonym0->time0))
                 && aprspos_posvalid(anonym0->vardat->pos))
-                && (nofilt || !(f->nodraw&~0x9U))) && (unsigned long)
+                && (nofilt || !(f->nodraw&~0x9U))) && (uint32_t)
                 anonym0->vardat->igatelen==gl) {
-                           j = (unsigned long)anonym0->vardat->igatepos;
+                           j = (uint32_t)anonym0->vardat->igatepos;
                            i = 0UL;
                            while (anonym0->vardat->raw[j]==op->call[i]) {
                               ++j;
@@ -2202,10 +2210,10 @@ static void findsize(struct aprspos_POSITION * pos0,
          ig = ig->next;
       }
    }
-   if ((((float)fabs(pos0->lat)>1.5707963267949f || (float)fabs(pos1->lat)
-                >1.5707963267949f) || (float)fabs(pos0->long0)
-                >3.1415926535898f) || (float)fabs(pos1->long0)
-                >3.1415926535898f) {
+   if ((((float)fabs(pos0->lat)>1.5707963267949f || (float)
+                fabs(pos1->lat)>1.5707963267949f) || (float)
+                fabs(pos0->long0)>3.1415926535898f) || (float)
+                fabs(pos1->long0)>3.1415926535898f) {
       aprsdecode_posinval(pos0);
       aprsdecode_posinval(pos1);
    }
@@ -2286,18 +2294,18 @@ END toggview;
 
 static void push(float newzoom)
 {
-   unsigned long i;
+   uint32_t i;
    struct TABS * anonym;
    struct VIEW * anonym0;
-   unsigned long tmp;
+   uint32_t tmp;
    { /* with */
       struct TABS * anonym = &tabview;
       if (((anonym->stkpo==0UL || anonym->posstk[anonym->stkpo-1UL]
                 .pos.lat!=aprsdecode_mappos.lat)
                 || anonym->posstk[anonym->stkpo-1UL]
-                .pos.long0!=aprsdecode_mappos.long0) || (long)
+                .pos.long0!=aprsdecode_mappos.long0) || (int32_t)
                 X2C_TRUNCI(anonym->posstk[anonym->stkpo-1UL].zoom*10.0f,
-                X2C_min_longint,X2C_max_longint)!=(long)X2C_TRUNCI(newzoom*10.0f,
+                X2C_min_longint,X2C_max_longint)!=(int32_t)X2C_TRUNCI(newzoom*10.0f,
                 X2C_min_longint,X2C_max_longint)) {
          { /* with */
             struct VIEW * anonym0 = &anonym->posstk[anonym->stkpo];
@@ -2345,17 +2353,17 @@ static void pop(void)
          if (((anonym->stkpo>0UL && anonym->posstk[anonym->stkpo]
                 .pos.lat==aprsdecode_mappos.lat)
                 && anonym->posstk[anonym->stkpo]
-                .pos.long0==aprsdecode_mappos.long0) && (long)
+                .pos.long0==aprsdecode_mappos.long0) && (int32_t)
                 X2C_TRUNCI(anonym->posstk[anonym->stkpo].zoom*10.0f,
-                X2C_min_longint,X2C_max_longint)==(long)X2C_TRUNCI(maptool_realzoom(aprsdecode_initzoom,
+                X2C_min_longint,X2C_max_longint)==(int32_t)X2C_TRUNCI(maptool_realzoom(aprsdecode_initzoom,
                  aprsdecode_finezoom)*10.0f,X2C_min_longint,
                 X2C_max_longint)) --anonym->stkpo;
          { /* with */
             struct VIEW * anonym0 = &anonym->posstk[anonym->stkpo];
             aprsdecode_mappos = anonym0->pos;
             aprsdecode_finezoom = anonym0->zoom;
-            aprsdecode_initzoom = (long)aprsdecode_trunc(aprsdecode_finezoom)
-                ;
+            aprsdecode_initzoom = (int32_t)
+                aprsdecode_trunc(aprsdecode_finezoom);
             aprsdecode_finezoom = (aprsdecode_finezoom-(float)
                 aprsdecode_initzoom)+1.0f;
             memcpy(aprsdecode_click.mhop,anonym0->mhop,9u);
@@ -2424,7 +2432,7 @@ static void toggview(void)
 } /* end toggview() */
 
 
-static long getant(unsigned char a)
+static int32_t getant(uint8_t a)
 {
    return useri_conf2int(a, 0UL, -1000000L, 100000L, -1000000L);
 } /* end getant() */
@@ -2439,7 +2447,7 @@ static void closeradio(void)
 
 
 static void measureline(maptool_pIMAGE img, struct aprspos_POSITION pos0,
-                struct aprspos_POSITION pos1, long pos0alt)
+                struct aprspos_POSITION pos1, int32_t pos0alt)
 {
    float el2;
    float el1;
@@ -2451,10 +2459,10 @@ static void measureline(maptool_pIMAGE img, struct aprspos_POSITION pos0,
    float x1;
    float y00;
    float x0;
-   long ret;
-   long wave;
-   long ant2;
-   long ant1;
+   int32_t ret;
+   int32_t wave;
+   int32_t ant2;
+   int32_t ant1;
    char vec;
    char altok;
    char ant1obj;
@@ -2473,7 +2481,9 @@ static void measureline(maptool_pIMAGE img, struct aprspos_POSITION pos0,
          ant2 = getant(useri_fANT2);
          mhz = useri_conf2real(useri_fFRESNELL, 0UL, 0.0f, X2C_max_real,
                 0.0f);
-         if (mhz>=0.1f) wave = (long)aprsdecode_trunc(X2C_DIVR(3.E+5f,mhz));
+         if (mhz>=0.1f) {
+            wave = (int32_t)aprsdecode_trunc(X2C_DIVR(3.E+5f,mhz));
+         }
          else wave = 0L;
          if ((ant1>-1000000L && ant2>-1000000L)
                 && useri_configon(useri_fGEOPROFIL)) {
@@ -2502,11 +2512,11 @@ static void measureline(maptool_pIMAGE img, struct aprspos_POSITION pos0,
             aprsstr_Append(s, 100ul, "km ", 4ul);
             if (altok) {
                aprsstr_Append(s, 100ul, "\367", 2ul);
-               aprsstr_IntToStr((long)X2C_TRUNCI(a1,X2C_min_longint,
+               aprsstr_IntToStr((int32_t)X2C_TRUNCI(a1,X2C_min_longint,
                 X2C_max_longint), 0UL, h, 100ul);
                aprsstr_Append(s, 100ul, h, 100ul);
                aprsstr_Append(s, 100ul, "m/", 3ul);
-               aprsstr_IntToStr((long)X2C_TRUNCI(a2,X2C_min_longint,
+               aprsstr_IntToStr((int32_t)X2C_TRUNCI(a2,X2C_min_longint,
                 X2C_max_longint), 0UL, h, 100ul);
                aprsstr_Append(s, 100ul, h, 100ul);
                aprsstr_Append(s, 100ul, "m \376", 4ul);
@@ -2544,13 +2554,13 @@ static void measureline(maptool_pIMAGE img, struct aprspos_POSITION pos0,
 } /* end measureline() */
 
 
-static long geobri(void)
+static int32_t geobri(void)
 {
    return useri_conf2int(useri_fGEOBRIGHTNESS, 0UL, 0L, 100L, 30L);
 } /* end geobri() */
 
 
-static long geocontr(void)
+static int32_t geocontr(void)
 {
    return useri_conf2int(useri_fGEOCONTRAST, 0UL, 0L, 10000L, 0L);
 } /* end geocontr() */
@@ -2575,21 +2585,21 @@ END panorama;
 
 
 static void radioimage(maptool_pIMAGE img, struct aprspos_POSITION pos,
-                unsigned long colnum, char * abo)
+                uint32_t colnum, char * abo)
 {
-   long qual;
-   long ant3;
-   long ant2;
-   long ant1;
+   int32_t qual;
+   int32_t ant3;
+   int32_t ant2;
+   int32_t ant1;
    if (aprspos_posvalid(pos)) {
       ant1 = getant(useri_fANT1);
       ant2 = getant(useri_fANT2);
       ant3 = getant(useri_fANT3);
       if (colnum && ant2>-10000L) ant1 = ant2;
       if (ant1>-10000L && ant3>-10000L) {
-         qual = (long)useri_confflags(useri_fSRTMCACHE, 0UL);
-         maptool_Radiorange(img, pos, ant1, ant3, (unsigned long)geocontr(),
-                (unsigned long)(colnum!=0UL), (unsigned long)qual, abo);
+         qual = (int32_t)useri_confflags(useri_fSRTMCACHE, 0UL);
+         maptool_Radiorange(img, pos, ant1, ant3, (uint32_t)geocontr(),
+                (uint32_t)(colnum!=0UL), (uint32_t)qual, abo);
       }
       else {
          useri_textautosize(0L, 0L, 3UL, 2UL, 'r', "Radiolink: need Antenna h\
@@ -2599,29 +2609,29 @@ igths", 31ul);
 } /* end radioimage() */
 
 
-static void getgeocol(unsigned char c, long bri, unsigned long dr,
-                unsigned long dg, unsigned long db,
+static void getgeocol(uint8_t c, int32_t bri, uint32_t dr,
+                uint32_t dg, uint32_t db,
                 struct aprsdecode_COLTYP * col)
 {
-   col->r = (unsigned long)((useri_conf2int(c, 0UL, 0L, 100L,
-                (long)dr)*bri)/100L);
-   col->g = (unsigned long)((useri_conf2int(c, 1UL, 0L, 100L,
-                (long)dg)*bri)/100L);
-   col->b = (unsigned long)((useri_conf2int(c, 2UL, 0L, 100L,
-                (long)db)*bri)/100L);
+   col->r = (uint32_t)((useri_conf2int(c, 0UL, 0L, 100L,
+                (int32_t)dr)*bri)/100L);
+   col->g = (uint32_t)((useri_conf2int(c, 1UL, 0L, 100L,
+                (int32_t)dg)*bri)/100L);
+   col->b = (uint32_t)((useri_conf2int(c, 2UL, 0L, 100L,
+                (int32_t)db)*bri)/100L);
 } /* end getgeocol() */
 
 
 static void reliefcolors(maptool_pIMAGE img, char color)
 {
-   unsigned long bri2;
-   unsigned long bri;
-   long def;
-   unsigned long y;
-   unsigned long x;
+   uint32_t bri2;
+   uint32_t bri;
+   int32_t def;
+   uint32_t y;
+   uint32_t x;
    struct maptool_PIX * anonym;
-   unsigned long tmp;
-   unsigned long tmp0;
+   uint32_t tmp;
+   uint32_t tmp0;
    def = geobri();
    getgeocol(useri_fCOLMARK1, def, 100UL, 0UL, 0UL, &radio.c1);
                 /* marker 1 defaults to red */
@@ -2636,21 +2646,21 @@ static void reliefcolors(maptool_pIMAGE img, char color)
          { /* with */
             struct maptool_PIX * anonym = &img->Adr[(x)*img->Len0+y];
             if (color) {
-               bri = (unsigned long)anonym->r;
-               bri2 = (unsigned long)anonym->g;
-               anonym->r = (unsigned short)((radio.c1.r*bri+radio.c2.r*bri2)
+               bri = (uint32_t)anonym->r;
+               bri2 = (uint32_t)anonym->g;
+               anonym->r = (uint16_t)((radio.c1.r*bri+radio.c2.r*bri2)
                 /100UL);
-               anonym->g = (unsigned short)((radio.c1.g*bri+radio.c2.g*bri2)
+               anonym->g = (uint16_t)((radio.c1.g*bri+radio.c2.g*bri2)
                 /100UL);
-               anonym->b = (unsigned short)((radio.c1.b*bri+radio.c2.b*bri2)
+               anonym->b = (uint16_t)((radio.c1.b*bri+radio.c2.b*bri2)
                 /100UL);
             }
             else {
                /*        ELSE r:=r*bri DIV 100; g:=r; b:=r END; */
-               bri = (unsigned long)(((long)anonym->r*def)/100L);
-               anonym->r = (unsigned short)bri;
-               anonym->g = (unsigned short)bri;
-               anonym->b = (unsigned short)bri;
+               bri = (uint32_t)(((int32_t)anonym->r*def)/100L);
+               anonym->r = (uint16_t)bri;
+               anonym->g = (uint16_t)bri;
+               anonym->b = (uint16_t)bri;
             }
          }
          if (x==tmp0) break;
@@ -2702,7 +2712,7 @@ static void centerpos(struct aprspos_POSITION centpos,
 
 
 static void mapzoom(struct aprspos_POSITION pos0,
-                struct aprspos_POSITION pos1, unsigned long maxz,
+                struct aprspos_POSITION pos1, uint32_t maxz,
                 char withmargin)
 {
    float wmax;
@@ -2716,8 +2726,8 @@ static void mapzoom(struct aprspos_POSITION pos0,
    char blown;
    char nofit;
    char done;
-   long testty;
-   long testtx;
+   int32_t testty;
+   int32_t testtx;
    float steps;
    float testshy;
    float testshx;
@@ -2740,7 +2750,7 @@ static void mapzoom(struct aprspos_POSITION pos0,
    pos2.long0 = pos1.long0+wmax*0.07f;
    pos2.lat = pos1.lat-wmax*0.025f;
    /* zoom to fit in integer zoom*/
-   aprsdecode_initzoom = (long)maxz;
+   aprsdecode_initzoom = (int32_t)maxz;
    aprsdecode_finezoom = 1.0f;
    nofit = 0;
    for (;;) {
@@ -2768,7 +2778,7 @@ static void mapzoom(struct aprspos_POSITION pos0,
                 */
       --aprsdecode_initzoom;
    }
-   if (aprsdecode_initzoom!=(long)maxz) tooltips('b');
+   if (aprsdecode_initzoom!=(int32_t)maxz) tooltips('b');
    /* fine zoom */
    aprsdecode_finezoom = 1.0f;
    /*IF initzoom<MAXZOOMOBJ THEN */
@@ -2807,11 +2817,11 @@ static void drawsquer(maptool_pIMAGE img)
       col.r = 0UL;
       col.g = 60UL;
       col.b = 0UL;
-      maptool_area(img, (long)X2C_TRUNCI(x0,X2C_min_longint,X2C_max_longint),
-                 (long)X2C_TRUNCI(y00,X2C_min_longint,X2C_max_longint),
-                (long)X2C_TRUNCI(x1,X2C_min_longint,X2C_max_longint),
-                (long)X2C_TRUNCI(y1,X2C_min_longint,X2C_max_longint), col,
-                1);
+      maptool_area(img, (int32_t)X2C_TRUNCI(x0,X2C_min_longint,
+                X2C_max_longint), (int32_t)X2C_TRUNCI(y00,X2C_min_longint,
+                X2C_max_longint), (int32_t)X2C_TRUNCI(x1,X2C_min_longint,
+                X2C_max_longint), (int32_t)X2C_TRUNCI(y1,X2C_min_longint,
+                X2C_max_longint), col, 1);
    }
 } /* end drawsquer() */
 
@@ -2848,7 +2858,7 @@ static void drawzoomsquer(maptool_pIMAGE img)
 #define aprsmap_FIELD 7.272205216643E-4
 
 
-static char qth(char loc[], unsigned long loc_len)
+static char qth(char loc[], uint32_t loc_len)
 {
    struct aprspos_POSITION pos1;
    struct aprspos_POSITION pos;
@@ -2860,10 +2870,12 @@ static char qth(char loc[], unsigned long loc_len)
       goto label;
    }
    aprstext_setmark1(pos, 1, X2C_max_longint, 0UL);
-   pos.long0 = (X2C_DIVR((float)aprsdecode_trunc((pos.long0*5.7295779513082E+1f+180.0f)
+   pos.long0 = (X2C_DIVR((float)
+                aprsdecode_trunc((pos.long0*5.7295779513082E+1f+180.0f)
                 *12.0f),12.0f)-1.7995833333333E+2f)*1.7453292519943E-2f;
-   pos.lat = (X2C_DIVR((float)aprsdecode_trunc((pos.lat*5.7295779513082E+1f+90.0f)
-                *24.0f),24.0f)-8.9979166666667E+1f)*1.7453292519943E-2f;
+   pos.lat = (X2C_DIVR((float)
+                aprsdecode_trunc((pos.lat*5.7295779513082E+1f+90.0f)*24.0f),
+                24.0f)-8.9979166666667E+1f)*1.7453292519943E-2f;
    maptool_limpos(&pos);
    aprsdecode_click.squerpos0.lat = pos.lat+3.6361026083215E-4f;
    aprsdecode_click.squerpos1.lat = pos.lat-3.6361026083215E-4f;
@@ -2877,7 +2889,7 @@ static char qth(char loc[], unsigned long loc_len)
    pos.long0 = pos.long0-1.4544410433286E-3f;
    maptool_limpos(&pos);
    maptool_limpos(&pos1);
-   mapzoom(pos, pos1, (unsigned long)useri_conf2int(useri_fDEFZOOM, 0UL, 1L,
+   mapzoom(pos, pos1, (uint32_t)useri_conf2int(useri_fDEFZOOM, 0UL, 1L,
                 18L, 14L), 1);
    centerpos(aprsdecode_click.markpos, &aprsdecode_mappos);
    qth_ret = 1;
@@ -2889,17 +2901,18 @@ static char qth(char loc[], unsigned long loc_len)
 
 static void midscreenpos(struct aprspos_POSITION * pos)
 {
-   maptool_xytodeg((float)maptool_xsize*0.5f, (float)maptool_ysize*0.5f,
-                pos);
+   maptool_xytodeg((float)maptool_xsize*0.5f,
+                (float)maptool_ysize*0.5f, pos);
 } /* end midscreenpos() */
 
 
-static void zoominout(char in, char fine, char allowrev)
+static void zoominout(char in, char fine,
+                char allowrev)
 {
    float fz;
    float z;
    struct aprspos_POSITION mid;
-   long maxz;
+   int32_t maxz;
    z = maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom);
    midscreenpos(&mid);
    mid.lat = mid.lat+(-6.E-7f);
@@ -2995,12 +3008,13 @@ static void find(void)
                   err = 1;
                   aprsstr_Append(h, 201ul, " No valid Position!", 20ul);
                }
-               if ((unsigned char)op->sym.tab<' ') {
+               if ((uint8_t)op->sym.tab<' ') {
                   err = 1;
                   aprsstr_Append(h, 201ul, " No valid Symbol!", 18ul);
                   if (aprspos_posvalid(op->lastpos)) {
                      /* set marker instead of missing symbol */
-                     aprstext_setmark1(op->lastpos, 0, X2C_max_longint, 0UL);
+                     aprstext_setmark1(op->lastpos, 0, X2C_max_longint,
+                aprsdecode_realtime);
                   }
                }
                /*              click.markpos:=op^.lastpos; */
@@ -3020,8 +3034,8 @@ static void find(void)
                pandone = 0;
             }
             else {
-               useri_textautosize(0L, 0L, 3UL, 10UL, 'e', "not found!",
-                11ul);
+               useri_textautosize(0L, 0L, 3UL, 10UL, 'e', "\012not found!\012\
+", 13ul);
             }
          }
       }
@@ -3033,16 +3047,16 @@ static void internstat(void)
 {
    aprsdecode_pOPHIST op;
    aprsdecode_pFRAMEHIST fr;
-   unsigned long bytec;
-   unsigned long varc;
-   unsigned long frc;
-   unsigned long opc;
-   unsigned long newest;
-   unsigned long oldest;
+   uint32_t bytec;
+   uint32_t varc;
+   uint32_t frc;
+   uint32_t opc;
+   uint32_t newest;
+   uint32_t oldest;
    char s[10001];
    char h[31];
-   unsigned long ut;
-   unsigned long i;
+   uint32_t ut;
+   uint32_t i;
    newest = 0UL;
    oldest = X2C_max_longcard;
    opc = 0UL;
@@ -3073,20 +3087,20 @@ static void internstat(void)
       aprsstr_Append(s, 10001ul, h, 31ul);
    }
    aprsstr_Append(s, 10001ul, "\012Objects:", 10ul);
-   aprsstr_IntToStr((long)opc, 1UL, h, 31ul);
+   aprsstr_IntToStr((int32_t)opc, 1UL, h, 31ul);
    aprsstr_Append(s, 10001ul, h, 31ul);
    aprsstr_Append(s, 10001ul, "\012Frames:", 9ul);
-   aprsstr_IntToStr((long)frc, 1UL, h, 31ul);
+   aprsstr_IntToStr((int32_t)frc, 1UL, h, 31ul);
    aprsstr_Append(s, 10001ul, h, 31ul);
    aprsstr_Append(s, 10001ul, "\012Different Frames:", 19ul);
-   aprsstr_IntToStr((long)varc, 1UL, h, 31ul);
+   aprsstr_IntToStr((int32_t)varc, 1UL, h, 31ul);
    aprsstr_Append(s, 10001ul, h, 31ul);
    aprsstr_Append(s, 10001ul, "\012Rawdata Bytes:", 16ul);
-   aprsstr_IntToStr((long)bytec, 1UL, h, 31ul);
+   aprsstr_IntToStr((int32_t)bytec, 1UL, h, 31ul);
    aprsstr_Append(s, 10001ul, h, 31ul);
    if (frc>0UL) {
       aprsstr_Append(s, 10001ul, "\012Compressed to:", 16ul);
-      aprsstr_IntToStr((long)((100UL*varc)/frc), 1UL, h, 31ul);
+      aprsstr_IntToStr((int32_t)((100UL*varc)/frc), 1UL, h, 31ul);
       aprsstr_Append(s, 10001ul, h, 31ul);
       aprsstr_Append(s, 10001ul, "%", 2ul);
    }
@@ -3099,16 +3113,16 @@ static void internstat(void)
       aprsstr_Append(s, 10001ul, h, 31ul);
    }
    aprsstr_Append(s, 10001ul, "\012Heap Rawdata:", 15ul);
-   aprsstr_IntToStr((long)useri_debugmem.mon, 1UL, h, 31ul);
+   aprsstr_IntToStr((int32_t)useri_debugmem.mon, 1UL, h, 31ul);
    aprsstr_Append(s, 10001ul, h, 31ul);
    aprsstr_Append(s, 10001ul, "\012Heap Screen: ", 15ul);
-   aprsstr_IntToStr((long)useri_debugmem.screens, 1UL, h, 31ul);
+   aprsstr_IntToStr((int32_t)useri_debugmem.screens, 1UL, h, 31ul);
    aprsstr_Append(s, 10001ul, h, 31ul);
    aprsstr_Append(s, 10001ul, "\012Heap Menus:  ", 15ul);
-   aprsstr_IntToStr((long)useri_debugmem.menus, 1UL, h, 31ul);
+   aprsstr_IntToStr((int32_t)useri_debugmem.menus, 1UL, h, 31ul);
    aprsstr_Append(s, 10001ul, h, 31ul);
    aprsstr_Append(s, 10001ul, "\012Srtm Cache:  ", 15ul);
-   aprsstr_IntToStr((long)useri_debugmem.srtm, 1UL, h, 31ul);
+   aprsstr_IntToStr((int32_t)useri_debugmem.srtm, 1UL, h, 31ul);
    aprsstr_Append(s, 10001ul, h, 31ul);
    aprsdecode_tcpconnstat(s, 10001ul);
    for (i = 0UL; i<=3UL; i++) {
@@ -3128,7 +3142,7 @@ static void setshowall(void)
 } /* end setshowall() */
 
 
-static void View(unsigned long n)
+static void View(uint32_t n)
 {
    float z;
    struct aprspos_POSITION mid;
@@ -3142,7 +3156,7 @@ static void View(unsigned long n)
       aprsstr_Append(s, 101ul, " ", 2ul);
       aprstext_postostr(mid, '2', h, 101ul);
       aprsstr_Append(s, 101ul, h, 101ul);
-      useri_setview((long)n, s, 101ul);
+      useri_setview((int32_t)n, s, 101ul);
       useri_killallmenus();
       useri_say("View stored!", 13ul, 4UL, 'r');
    }
@@ -3154,7 +3168,7 @@ static void View(unsigned long n)
       if (z!=0.0f) {
          midscreenpos(&mid);
          mid.lat = mid.lat+(-6.E-7f);
-         aprsdecode_initzoom = (long)aprsdecode_trunc(z);
+         aprsdecode_initzoom = (int32_t)aprsdecode_trunc(z);
          aprsdecode_finezoom = (1.0f+z)-(float)aprsdecode_initzoom;
          maptool_shiftmap(maptool_xsize/2L, maptool_ysize/2L, maptool_ysize,
                 maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom),
@@ -3190,9 +3204,9 @@ static void follow(void)
       }
       if (aprsdecode_tracenew.beep && useri_configon(useri_fBEEPWATCH)) {
          aprsdecode_beeplim(100L,
-                (unsigned long)useri_conf2int(useri_fBEEPWATCH, 0UL, 20L,
-                8000L, 800L), (unsigned long)useri_conf2int(useri_fBEEPWATCH,
-                 1UL, 0L, 5000L, 100L));
+                (uint32_t)useri_conf2int(useri_fBEEPWATCH, 0UL, 20L, 8000L,
+                 800L), (uint32_t)useri_conf2int(useri_fBEEPWATCH, 1UL, 0L,
+                 5000L, 100L));
       }
       clickwatchpos = op->lastpos;
       useri_popwatchcall(aprsdecode_tracenew.call, 9ul);
@@ -3229,10 +3243,10 @@ static void MapPackage(void)
    }
    else {
       aprsstr_Append(s, 1000ul, "\012Total Tiles     : ", 20ul);
-      aprsstr_IntToStr((long)maptool_mappack.mapscnt, 1UL, s1, 1000ul);
+      aprsstr_IntToStr((int32_t)maptool_mappack.mapscnt, 1UL, s1, 1000ul);
       aprsstr_Append(s, 1000ul, s1, 1000ul);
       aprsstr_Append(s, 1000ul, "\012Download Tiles: ", 18ul);
-      aprsstr_IntToStr((long)maptool_mappack.needcnt, 1UL, s1, 1000ul);
+      aprsstr_IntToStr((int32_t)maptool_mappack.needcnt, 1UL, s1, 1000ul);
       aprsstr_Append(s, 1000ul, s1, 1000ul);
       aprsstr_Append(s, 1000ul, "\012Estimated ", 12ul);
       aprsstr_FixToStr((float)maptool_mappack.needcnt*0.018f, 3UL, s1,
@@ -3265,8 +3279,8 @@ static void zoomtomarks(struct aprspos_POSITION mpos,
          mpos.long0 = clickpos.long0;
          clickpos.long0 = h;
       }
-      mapzoom(mpos, clickpos, (unsigned long)useri_conf2int(useri_fMAXZOOM,
-                0UL, 1L, 18L, 18L), 1);
+      mapzoom(mpos, clickpos, (uint32_t)useri_conf2int(useri_fMAXZOOM, 0UL,
+                 1L, 18L, 18L), 1);
    }
 } /* end zoomtomarks() */
 
@@ -3280,8 +3294,8 @@ static void zoomtosquare(void)
    if (aprsdecode_click.zoomtox>=0L && (labs(aprsdecode_click.x-aprsdecode_click.zoomtox)
                 >5L || labs(aprsdecode_click.y-aprsdecode_click.zoomtoy)>5L))
                  {
-      maptool_xytodeg((float)aprsdecode_click.x, (float)aprsdecode_click.y,
-                &p1);
+      maptool_xytodeg((float)aprsdecode_click.x,
+                (float)aprsdecode_click.y, &p1);
       maptool_xytodeg((float)aprsdecode_click.zoomtox,
                 (float)aprsdecode_click.zoomtoy, &p2);
       zoomtomarks(p1, p2);
@@ -3294,25 +3308,25 @@ static void zoomtosquare(void)
 
 static void highlight(void)
 {
-   unsigned long entc;
-   long texth;
+   uint32_t entc;
+   int32_t texth;
    struct aprsdecode_CLICKOBJECT hoverobj;
    struct aprsdecode_OPHIST * anonym;
    entc = aprsdecode_click.entries;
    if (entc>0UL) {
       --entc;
       if (aprsdecode_click.table[entc].opf) {
-         texth = (long)(aprsdecode_lums.fontysize-3UL);
+         texth = (int32_t)(aprsdecode_lums.fontysize-3UL);
          { /* with */
             struct aprsdecode_OPHIST * anonym = aprsdecode_click.table[entc]
                 .opf;
-            if ((long)abs(anonym->textpos-anonym->valuepos)<texth) {
+            if ((int32_t)abs(anonym->textpos-anonym->valuepos)<texth) {
                if (anonym->textpos<anonym->valuepos) {
-                  anonym->valuepos = (signed char)((long)
+                  anonym->valuepos = (signed char)((int32_t)
                 anonym->textpos+texth);
                }
                else {
-                  anonym->valuepos = (signed char)((long)
+                  anonym->valuepos = (signed char)((int32_t)
                 anonym->textpos-texth);
                }
             }
@@ -3354,10 +3368,10 @@ static void screenshot(void)
    char h[1000];
    char s[1000];
    char c;
-   unsigned long n;
-   unsigned long j;
-   unsigned long i;
-   long ok0;
+   uint32_t n;
+   uint32_t j;
+   uint32_t i;
+   int32_t ok0;
    useri_confstr(useri_fFOTOFN, s, 1000ul);
    s[999U] = 0;
    memcpy(h,s,1000u);
@@ -3370,9 +3384,7 @@ static void screenshot(void)
          aprsstr_DateToStr(osic_time()+useri_localtime(), hh, 1000ul);
          n = 0UL;
          while (hh[n]) {
-            if ((unsigned char)hh[n]<'0' || (unsigned char)hh[n]>'9') {
-               hh[n] = '-';
-            }
+            if ((uint8_t)hh[n]<'0' || (uint8_t)hh[n]>'9') hh[n] = '-';
             ++n;
          }
          aprsstr_Append(s, 1000ul, hh, 1000ul);
@@ -3403,8 +3415,8 @@ static void screenshot(void)
       useri_killallmenus(); /* dump panorama image pointer */
       if (useri_panoimage) {
          ok0 = maptool_saveppm(s, 1000ul, useri_panoimage,
-                (long)((useri_panoimage->Len1-1)+1UL),
-                (long)((useri_panoimage->Len0-1)+1UL));
+                (int32_t)((useri_panoimage->Len1-1)+1UL),
+                (int32_t)((useri_panoimage->Len0-1)+1UL));
       }
       else {
          ok0 = maptool_saveppm(s, 1000ul, image, maptool_xsize,
@@ -3420,10 +3432,12 @@ static void screenshot(void)
       }
       useri_textautosize(0L, 0L, 6UL, 0UL, c, s, 1000ul);
    }
-   else useri_textautosize(0L, 0L, 6UL, 0UL, 'e', "no filename", 12ul);
+   else {
+      useri_textautosize(0L, 0L, 6UL, 0UL, 'e', "\012no filename\012", 14ul);
+   }
 } /* end screenshot() */
 
-typedef unsigned long sCHGEN[2];
+typedef uint32_t sCHGEN[2];
 
 static sCHGEN aprsmap_CHGEN[13] = {{0xA318C62EUL,0x00000003UL}
                 ,{0x884214C4UL,0x00000003UL},{0xC444422EUL,0x00000007UL}
@@ -3447,32 +3461,32 @@ static sCHGEN _cnst3[13] = {{0xA318C62EUL,0x00000003UL}
                 ,{0xA10F462EUL,0x00000003UL},{0x40000000UL,0x00000000UL}
                 ,{0x02000400UL,0x00000000UL},{0x00000000UL,0x00000000UL}};
 
-static void drawtime(maptool_pIMAGE img, unsigned long t, long fast)
+static void drawtime(maptool_pIMAGE img, uint32_t t, int32_t fast)
 {
    char s[32];
-   unsigned long ch;
+   uint32_t ch;
    struct aprsdecode_COLTYP col;
-   unsigned long l;
-   unsigned long px;
-   unsigned long y;
-   unsigned long x;
-   unsigned long i;
+   uint32_t l;
+   uint32_t px;
+   uint32_t y;
+   uint32_t x;
+   uint32_t i;
    float lum;
    struct maptool_PIX * anonym;
-   unsigned long tmp;
+   uint32_t tmp;
    aprsstr_DateToStr(t+useri_localtime(), s, 32ul);
    s[16U] = 0; /* strip off seconds */
    if (fast<0L) fast = 0L;
    else if (fast>200L) fast = 200L;
    fast = fast*4L;
    col.r = 1000UL;
-   col.g = (unsigned long)(1000L-fast);
-   col.b = (unsigned long)(200L+fast);
+   col.g = (uint32_t)(1000L-fast);
+   col.b = (uint32_t)(200L+fast);
    l = 0UL;
    i = 0UL;
    px = 4UL;
-   while ((unsigned char)s[i]>0) {
-      ch = (unsigned long)(unsigned char)s[i];
+   while ((uint8_t)s[i]>0) {
+      ch = (uint32_t)(uint8_t)s[i];
       if (ch>=48UL && ch<=57UL) ch -= 48UL;
       else if (ch==46UL) ch = 10UL;
       else if (ch==58UL) ch = 11UL;
@@ -3491,15 +3505,15 @@ static void drawtime(maptool_pIMAGE img, unsigned long t, long fast)
       if (x<=tmp) for (;; x++) {
          { /* with */
             struct maptool_PIX * anonym = &img->Adr[(x)*img->Len0+y];
-            lum = (float)((unsigned long)anonym->r*87UL+(unsigned long)
-                anonym->g*140UL+(unsigned long)anonym->b*28UL);
+            lum = (float)((uint32_t)anonym->r*87UL+(uint32_t)
+                anonym->g*140UL+(uint32_t)anonym->b*28UL);
             if (lum>51200.0f) {
                lum = X2C_DIVR(51200.0f,lum);
-               anonym->r = (unsigned short)aprsdecode_trunc((float)
+               anonym->r = (uint16_t)aprsdecode_trunc((float)
                 anonym->r*lum);
-               anonym->g = (unsigned short)aprsdecode_trunc((float)
+               anonym->g = (uint16_t)aprsdecode_trunc((float)
                 anonym->g*lum);
-               anonym->b = (unsigned short)aprsdecode_trunc((float)
+               anonym->b = (uint16_t)aprsdecode_trunc((float)
                 anonym->b*lum);
             }
          }
@@ -3509,13 +3523,14 @@ static void drawtime(maptool_pIMAGE img, unsigned long t, long fast)
    px = 4UL;
    i = 0UL;
    while (i<l) {
-      ch = (unsigned long)(unsigned char)s[i];
+      ch = (uint32_t)(uint8_t)s[i];
       for (y = 0UL; y<=6UL; y++) {
          for (x = 0UL; x<=4UL; x++) {
             if (X2C_INL(x+y*5UL,35,_cnst3[ch])) {
-               maptool_waypoint(img, (float)(x*2UL+px+5UL)-(float)y*0.25f,
-                (float)(18UL-y*2UL), 1.4f, (long)col.r, (long)col.g,
-                (long)col.b);
+               maptool_waypoint(img,
+                (float)(x*2UL+px+5UL)-(float)y*0.25f,
+                (float)(18UL-y*2UL), 1.4f, (int32_t)col.r,
+                (int32_t)col.g, (int32_t)col.b);
             }
          } /* end for */
       } /* end for */
@@ -3581,26 +3596,26 @@ static void clickdelwaypoint(void)
 #define aprsmap_LF "\012"
 
 
-static long flo(short c)
+static int32_t flo(short c)
 {
-   if (c<=1023) return (long)(unsigned long)(unsigned char)gammatab[c];
+   if (c<=1023) return (int32_t)(uint32_t)(uint8_t)gammatab[c];
    else return 255L;
    return 0;
 } /* end flo() */
 
 
-static void savevideo420(maptool_pIMAGE img, char fn[], unsigned long fn_len,
-                 char format, float * bytecnt)
+static void savevideo420(maptool_pIMAGE img, char fn[],
+                uint32_t fn_len, char format, float * bytecnt)
 {
-   long y;
-   long x;
-   long bb;
-   long gg;
-   long rr;
-   long ww;
-   unsigned long pb;
-   unsigned long pr;
-   unsigned long pw;
+   int32_t y;
+   int32_t x;
+   int32_t bb;
+   int32_t gg;
+   int32_t rr;
+   int32_t ww;
+   uint32_t pb;
+   uint32_t pr;
+   uint32_t pw;
    char s[256];
    char h[256];
    struct maptool_PIX * anonym;
@@ -3608,7 +3623,7 @@ static void savevideo420(maptool_pIMAGE img, char fn[], unsigned long fn_len,
    struct maptool_PIX * anonym1;
    struct maptool_PIX * anonym2;
    struct maptool_PIX * anonym3;
-   long tmp;
+   int32_t tmp;
    X2C_PCOPY((void **)&fn,fn_len);
    if (!osic_FdValid(videofd)) {
       /*
@@ -3629,10 +3644,9 @@ static void savevideo420(maptool_pIMAGE img, char fn[], unsigned long fn_len,
       }
    }
    if (vidbuf==0) {
-      osic_alloc((X2C_ADDRESS *) &vidbuf,
-                (unsigned long)((maptool_xsize*maptool_ysize*3L)/2L));
-      useri_debugmem.req = (unsigned long)((maptool_xsize*maptool_ysize*3L)
-                /2L);
+      osic_alloc((char * *) &vidbuf,
+                (uint32_t)((maptool_xsize*maptool_ysize*3L)/2L));
+      useri_debugmem.req = (uint32_t)((maptool_xsize*maptool_ysize*3L)/2L);
       useri_debugmem.screens += useri_debugmem.req;
       if (vidbuf==0) Error("video buffer alloc", 19ul);
    }
@@ -3641,7 +3655,7 @@ static void savevideo420(maptool_pIMAGE img, char fn[], unsigned long fn_len,
       osi_WrBin(videofd, (char *)h, 256u/1u, 6UL);
    }
    pw = 0UL;
-   pb = (unsigned long)(maptool_xsize*maptool_ysize);
+   pb = (uint32_t)(maptool_xsize*maptool_ysize);
    pr = pb+pb/4UL;
    for (y = maptool_ysize-1L; y>=0L; y--) {
       tmp = maptool_xsize-1L;
@@ -3650,13 +3664,13 @@ static void savevideo420(maptool_pIMAGE img, char fn[], unsigned long fn_len,
          { /* with */
             struct maptool_PIX * anonym = &img->Adr[(x)*img->Len0+y];
             if (format=='M') {
-               vidbuf[pw] = (char)flo((short)(((unsigned long)
-                anonym->r*76UL+(unsigned long)anonym->g*150UL+(unsigned long)
+               vidbuf[pw] = (char)flo((short)(((uint32_t)
+                anonym->r*76UL+(uint32_t)anonym->g*150UL+(uint32_t)
                 anonym->b*29UL)/256UL));
             }
             else {
-               vidbuf[pw] = (char)((flo((short)(((unsigned long)
-                anonym->r*76UL+(unsigned long)anonym->g*150UL+(unsigned long)
+               vidbuf[pw] = (char)((flo((short)(((uint32_t)
+                anonym->r*76UL+(uint32_t)anonym->g*150UL+(uint32_t)
                 anonym->b*29UL)/256UL))*219L)/256L+16L);
             }
             ++pw;
@@ -3664,29 +3678,29 @@ static void savevideo420(maptool_pIMAGE img, char fn[], unsigned long fn_len,
          if ((y&1) && (x&1)) {
             { /* with */
                struct maptool_PIX * anonym0 = &img->Adr[(x-1L)*img->Len0+y];
-               rr = (long)anonym0->r;
-               gg = (long)anonym0->g;
-               bb = (long)anonym0->b;
+               rr = (int32_t)anonym0->r;
+               gg = (int32_t)anonym0->g;
+               bb = (int32_t)anonym0->b;
             }
             { /* with */
                struct maptool_PIX * anonym1 = &img->Adr[(x)*img->Len0+y];
-               rr += (long)anonym1->r;
-               gg += (long)anonym1->g;
-               bb += (long)anonym1->b;
+               rr += (int32_t)anonym1->r;
+               gg += (int32_t)anonym1->g;
+               bb += (int32_t)anonym1->b;
             }
             { /* with */
                struct maptool_PIX * anonym2 = &img->Adr[(x-1L)
                 *img->Len0+(y-1L)];
-               rr += (long)anonym2->r;
-               gg += (long)anonym2->g;
-               bb += (long)anonym2->b;
+               rr += (int32_t)anonym2->r;
+               gg += (int32_t)anonym2->g;
+               bb += (int32_t)anonym2->b;
             }
             { /* with */
                struct maptool_PIX * anonym3 = &img->Adr[(x)*img->Len0+(y-1L)
                 ];
-               rr += (long)anonym3->r;
-               gg += (long)anonym3->g;
-               bb += (long)anonym3->b;
+               rr += (int32_t)anonym3->r;
+               gg += (int32_t)anonym3->g;
+               bb += (int32_t)anonym3->b;
             }
             rr = flo((short)(rr/4L));
             gg = flo((short)(gg/4L));
@@ -3713,7 +3727,7 @@ static void savevideo420(maptool_pIMAGE img, char fn[], unsigned long fn_len,
       } /* end for */
    } /* end for */
    osi_WrBin(videofd, (char *)vidbuf, 10000001u/1u,
-                (unsigned long)((maptool_xsize*maptool_ysize*3L)/2L));
+                (uint32_t)((maptool_xsize*maptool_ysize*3L)/2L));
    *bytecnt = *bytecnt+(float)((maptool_xsize*maptool_ysize*3L)/2L);
    label:;
    X2C_PFREE(fn);
@@ -3767,23 +3781,25 @@ static void wrvidsize(float b)
 } /* end wrvidsize() */
 
 
-static void copy(struct maptool_PIX dest[], unsigned long dest_len,
-                unsigned long dest_len0, struct maptool_PIX src[],
-                unsigned long src_len, unsigned long src_len0)
+static void copy(struct maptool_PIX dest[], uint32_t dest_len,
+                uint32_t dest_len0, struct maptool_PIX src[],
+                uint32_t src_len, uint32_t src_len0)
 {
-   unsigned long x;
-   unsigned long tmp;
+   uint32_t x;
+   uint32_t tmp;
    tmp = dest_len-1;
    x = 0UL;
    if (x<=tmp) for (;; x++) {
-      X2C_MOVE((char *)(src+(x)*src_len0),(char *)(dest+(x)*dest_len0),
+      X2C_MOVE((char *)(src+(x)*src_len0),
+                (char *)(dest+(x)*dest_len0),
                 dest_len0*sizeof(struct maptool_PIX));
       if (x==tmp) break;
    } /* end for */
 } /* end copy() */
 
 
-static char cmpcol(struct aprsdecode_COLTYP c1, struct aprsdecode_COLTYP c2)
+static char cmpcol(struct aprsdecode_COLTYP c1,
+                struct aprsdecode_COLTYP c2)
 {
    return (c1.r!=c2.r || c1.g!=c2.g) || c1.b!=c2.b;
 } /* end cmpcol() */
@@ -3814,8 +3830,8 @@ static void addradio(void)
                 || radio.ant3!=getant(useri_fANT3)) || radio.bri!=geobri())
                 || radio.contr!=geocontr()) || cmpcol(radio.c1,
                 c1)) || cmpcol(radio.c2,
-                c2)) || radio.qual!=(long)useri_confflags(useri_fSRTMCACHE,
-                0UL)) {
+                c2)) || radio.qual!=(int32_t)
+                useri_confflags(useri_fSRTMCACHE, 0UL)) {
          abort0 = 0;
          maptool_clr(rfimg);
          if (aprspos_posvalid(aprsdecode_click.markpos)) {
@@ -3823,7 +3839,7 @@ static void addradio(void)
          }
          if (!abort0 && aprspos_posvalid(aprsdecode_click.measurepos)) {
             radioimage(rfimg, aprsdecode_click.measurepos,
-                (unsigned long)aprspos_posvalid(aprsdecode_click.markpos),
+                (uint32_t)aprspos_posvalid(aprsdecode_click.markpos),
                 &abort0);
          }
          /*      IF (lums.map>0) & posvalid(click.measurepos)
@@ -3842,7 +3858,7 @@ static void addradio(void)
          radio.contr = geocontr();
          radio.c1 = c1;
          radio.c2 = c2;
-         radio.qual = (long)useri_confflags(useri_fSRTMCACHE, 0UL);
+         radio.qual = (int32_t)useri_confflags(useri_fSRTMCACHE, 0UL);
          reliefcolors(rfimg, aprspos_posvalid(aprsdecode_click.measurepos) && aprspos_posvalid(aprsdecode_click.markpos));
          if (abort0) {
             useri_textautosize(0L, 0L, 5UL, 2UL, 'r', "radiorange aborted",
@@ -3891,7 +3907,7 @@ static void xytomark(void)
    struct aprspos_POSITION pos;
    /*  xytodeg(VAL(REAL,click.x), VAL(REAL,click.y), pos); */
    maptool_xytodeg((float)useri_xmouse.x,
-                (float)((long)useri_mainys()-useri_xmouse.y), &pos);
+                (float)((int32_t)useri_mainys()-useri_xmouse.y), &pos);
    aprstext_setmark1(pos, 1, X2C_max_longint, 0UL);
    useri_postoconfig(pos);
    aprsdecode_click.waysum = 0.0f;
@@ -3902,7 +3918,7 @@ static void xytomark2(void)
 {
    struct aprspos_POSITION pos;
    maptool_xytodeg((float)useri_xmouse.x,
-                (float)((long)useri_mainys()-useri_xmouse.y), &pos);
+                (float)((int32_t)useri_mainys()-useri_xmouse.y), &pos);
    if (aprspos_posvalid(pos)) aprsdecode_click.measurepos = pos;
 } /* end xytomark2() */
 
@@ -3917,7 +3933,7 @@ static void centermouse(char shortcut)
    aprsdecode_posinval(&pos);
    if (shortcut) {
       maptool_xytodeg((float)useri_xmouse.x,
-                (float)((long)useri_mainys()-useri_xmouse.y), &pos);
+                (float)((int32_t)useri_mainys()-useri_xmouse.y), &pos);
       if ((((aprspos_posvalid(aprsdecode_click.bubblpos)
                 && maptool_mapxy(aprsdecode_click.bubblpos, &x0,
                 &y00)>=-1L) && aprspos_posvalid(pos)) && maptool_mapxy(pos,
@@ -3940,17 +3956,6 @@ static void centermouse(char shortcut)
    }
 } /* end centermouse() */
 
-/*
-PROCEDURE clicktomark;
-VAR pos:POSITION;
-BEGIN
-  IF (click.entries>0) & (click.table[click.selected].opf<>NIL)
-  & posvalid(click.table[click.selected].opf^.lastpos)
-  THEN pos:=click.table[click.selected]
-                .opf^.lastpos ELSE pos:=click.clickpos END;
-  setmark1(pos, TRUE, MAX(INTEGER), 0);
-END clicktomark;
-*/
 
 static void clicktomark(void)
 {
@@ -3969,10 +3974,10 @@ static void clicktomark(void)
 #define aprsmap_ADDDELAY 55
 
 
-static unsigned long slowupdate(void)
+static uint32_t slowupdate(void)
 /* add image update time on cpu intensiv options */
 {
-   return (unsigned long)((aprsdecode_lums.wxcol=='R' || aprsdecode_lums.wxcol=='W')
+   return (uint32_t)((aprsdecode_lums.wxcol=='R' || aprsdecode_lums.wxcol=='W')
                  || aprsdecode_click.withradio)*55UL;
 } /* end slowupdate() */
 
@@ -4004,24 +4009,24 @@ static void addrftracks(char dryrun, char tx)
 /* steps at end of move till video end */
 
 
-static void animate(const aprsdecode_MONCALL singlecall, unsigned long step,
-                char tofile[], unsigned long tofile_len)
+static void animate(const aprsdecode_MONCALL singlecall, uint32_t step,
+                char tofile[], uint32_t tofile_len)
 {
    aprsdecode_pOPHIST singleop;
    aprsdecode_pOPHIST op;
    aprsdecode_pFRAMEHIST pf1;
    aprsdecode_pFRAMEHIST pf;
-   unsigned char efil;
-   unsigned long fractime;
-   unsigned long showt;
-   unsigned long stime;
-   unsigned long endtime;
-   unsigned long vtime;
-   unsigned long nextmov;
-   long fastdelay;
-   long fast;
-   unsigned long ii;
-   unsigned long skip;
+   uint8_t efil;
+   uint32_t fractime;
+   uint32_t showt;
+   uint32_t stime;
+   uint32_t endtime;
+   uint32_t vtime;
+   uint32_t nextmov;
+   int32_t fastdelay;
+   int32_t fast;
+   uint32_t ii;
+   uint32_t skip;
    float nomove;
    float y;
    float x;
@@ -4037,7 +4042,7 @@ static void animate(const aprsdecode_MONCALL singlecall, unsigned long step,
    float bytew;
    char s1[41];
    char s[41];
-   long minalt;
+   int32_t minalt;
    struct aprsdecode_DAT dat1;
    struct aprsdecode_DAT dat;
    struct aprsdecode_CLICKOBJECT hoverobj;
@@ -4053,8 +4058,8 @@ static void animate(const aprsdecode_MONCALL singlecall, unsigned long step,
    singleop = aprstext_oppo(singlecall);
    if (!pandone) {
       findsize(&newpos0, &newpos1, aprsdecode_click.mhop, 'T');
-      mapzoom(newpos0, newpos1, (unsigned long)useri_conf2int(useri_fDEFZOOM,
-                 0UL, 1L, 18L, 14L), 1);
+      mapzoom(newpos0, newpos1, (uint32_t)useri_conf2int(useri_fDEFZOOM,
+                0UL, 1L, 18L, 14L), 1);
       pandone = 1;
       maptool_mercator(aprsdecode_mappos.long0, aprsdecode_mappos.lat,
                 aprsdecode_initzoom, &aprsdecode_inittilex,
@@ -4229,7 +4234,7 @@ static void animate(const aprsdecode_MONCALL singlecall, unsigned long step,
                            }
                         }
                         maptool_drawpoligon(rfimg, ipos, dat.multiline,
-                dat.symt, dat.sym, (unsigned long)(aprsdecode_lums.sym/4L));
+                dat.symt, dat.sym, (uint32_t)(aprsdecode_lums.sym/4L));
                      }
                      else if (op->areasymb.typ && aprsdecode_Decode(pf->vardat->raw,
                  500ul, &dat)>=0L) {
@@ -4244,11 +4249,11 @@ static void animate(const aprsdecode_MONCALL singlecall, unsigned long step,
                            }
                         }
                         maptool_drawareasym(rfimg, ipos, dat.areasymb,
-                (unsigned long)(aprsdecode_lums.obj/4L));
+                (uint32_t)(aprsdecode_lums.obj/4L));
                      }
                      else {
                         maptool_drawsym(rfimg, op->sym.tab, op->sym.pic, dir,
-                 x, y, (unsigned long)(aprsdecode_lums.sym/4L));
+                 x, y, (uint32_t)(aprsdecode_lums.sym/4L));
                         if (op->sym.pic=='@'
                 && aprsdecode_Decode(pf->vardat->raw, 500ul, &dat)>=0L) {
                            if (itime>0.0f && aprsdecode_Decode(pf1->vardat->raw,
@@ -4264,7 +4269,7 @@ static void animate(const aprsdecode_MONCALL singlecall, unsigned long step,
                 dat.wx.radiushurr*iitime+dat1.wx.radiushurr*itime,
                 dat.wx.radiusstorm*iitime+dat1.wx.radiusstorm*itime,
                 dat.wx.wholegale*iitime+dat1.wx.wholegale*itime,
-                (unsigned long)(aprsdecode_lums.sym/4L));
+                (uint32_t)(aprsdecode_lums.sym/4L));
                            }
                         }
                      }
@@ -4274,8 +4279,8 @@ static void animate(const aprsdecode_MONCALL singlecall, unsigned long step,
                         if (dat.speed>0UL && dat.speed<2147483647UL) {
                            useri_confstr(useri_fKMH, s1, 41ul);
                            if (s1[0U]) {
-                              aprsstr_IntToStr((long)aprsdecode_trunc((float)
-                dat.speed*1.852f), 1UL, s, 41ul);
+                              aprsstr_IntToStr((int32_t)
+                aprsdecode_trunc((float)dat.speed*1.852f), 1UL, s, 41ul);
                               aprsstr_Append(s, 41ul, s1, 41ul);
                            }
                         }
@@ -4293,21 +4298,21 @@ static void animate(const aprsdecode_MONCALL singlecall, unsigned long step,
                            textpos = -8;
                            maptool_drawstr(rfimg, s, 41ul, x+7.0f,
                 y-(float)(aprsdecode_lums.fontysize+3UL),
-                (unsigned long)aprsdecode_lums.text, 0UL, col, &textpos, 0UL,
-                 1, aprsdecode_click.dryrun);
+                (uint32_t)aprsdecode_lums.text, 0UL, col, &textpos, 0UL, 1,
+                 aprsdecode_click.dryrun);
                         }
                      }
                      maptool_Colset(&col, 'W');
                      textpos = 0;
                      maptool_drawstr(rfimg, op->call, 9ul, x+8.0f,
                 y-(float)(aprsdecode_lums.fontysize/2UL),
-                (unsigned long)aprsdecode_lums.text, 0UL, col, &textpos, 0UL,
-                 1, aprsdecode_click.dryrun);
+                (uint32_t)aprsdecode_lums.text, 0UL, col, &textpos, 0UL, 1,
+                 aprsdecode_click.dryrun);
                   }
                   if ((pf1 && X2C_DIVR(aprspos_distance(pf->vardat->pos,
                 pf1->vardat->pos),
-                (float)(pf1->time0-pf->time0))>nomove) && pf1->time0<nextmov)
-                 nextmov = pf1->time0;
+                (float)(pf1->time0-pf->time0))>nomove)
+                && pf1->time0<nextmov) nextmov = pf1->time0;
                }
             }
          }
@@ -4328,8 +4333,9 @@ static void animate(const aprsdecode_MONCALL singlecall, unsigned long step,
             col.g = 800UL;
             col.b = 1000UL;
             maptool_area(rfimg, 0L, 1L,
-                (long)aprsdecode_trunc(X2C_DIVR((float)maptool_xsize*(float)
-                (vtime-stime),(float)(endtime-stime))), 3L, col, 0);
+                (int32_t)aprsdecode_trunc(X2C_DIVR((float)
+                maptool_xsize*(float)(vtime-stime),
+                (float)(endtime-stime))), 3L, col, 0);
          }
          if (tofile[0UL]) {
             savevideo420(rfimg, tofile, tofile_len, 'M', &bytew);
@@ -4346,10 +4352,10 @@ static void animate(const aprsdecode_MONCALL singlecall, unsigned long step,
             for (;;) {
                /* while stop pressed */
                if (useri_refresh) useri_redraw(rfimg);
-               aprsdecode_lums.actfps = (long)step;
+               aprsdecode_lums.actfps = (int32_t)step;
                 /* for faster/slower button */
                xosi_Eventloop(1000UL);
-               step = (unsigned long)aprsdecode_lums.actfps;
+               step = (uint32_t)aprsdecode_lums.actfps;
                if (aprsdecode_click.cmd==' ') {
                   if (stop) {
                      stop = 0;
@@ -4366,7 +4372,7 @@ static void animate(const aprsdecode_MONCALL singlecall, unsigned long step,
             }
          }
          if (fast>250L) fast = 250L;
-         if (fast>0L) skip = (unsigned long)(fast/25L);
+         if (fast>0L) skip = (uint32_t)(fast/25L);
          else skip = 0UL;
       }
       else --skip;
@@ -4384,10 +4390,10 @@ static void animate(const aprsdecode_MONCALL singlecall, unsigned long step,
       useri_say("map.y4m Saved", 14ul, 0UL, 'b');
    }
    if (vidbuf) {
-      useri_debugmem.screens -= (unsigned long)
-                ((maptool_xsize*maptool_ysize*3L)/2L);
-      osic_free((X2C_ADDRESS *) &vidbuf,
-                (unsigned long)((maptool_xsize*maptool_ysize*3L)/2L));
+      useri_debugmem.screens -= (uint32_t)((maptool_xsize*maptool_ysize*3L)
+                /2L);
+      osic_free((char * *) &vidbuf,
+                (uint32_t)((maptool_xsize*maptool_ysize*3L)/2L));
       vidbuf = 0;
    }
    X2C_PFREE(tofile);
@@ -4412,8 +4418,8 @@ static void makeimage(char dryrun)
    }
    else findsize(&newpos0, &newpos1, aprsdecode_click.mhop, 'T');
    if (!pandone) {
-      mapzoom(newpos0, newpos1, (unsigned long)useri_conf2int(useri_fDEFZOOM,
-                 0UL, 1L, 18L, 14L), 1);
+      mapzoom(newpos0, newpos1, (uint32_t)useri_conf2int(useri_fDEFZOOM,
+                0UL, 1L, 18L, 14L), 1);
       pandone = 1;
       aprsdecode_lums.moving = 0;
    }
@@ -4558,8 +4564,8 @@ static void MainEvent(void)
          aprsdecode_click.table[cycleorder] = aprsdecode_click.table[9UL];
       }
       mestxt[0U] = 0;
-      maptool_xytodeg((float)aprsdecode_click.x, (float)aprsdecode_click.y,
-                &aprsdecode_click.clickpos);
+      maptool_xytodeg((float)aprsdecode_click.x,
+                (float)aprsdecode_click.y, &aprsdecode_click.clickpos);
       if (aprsdecode_click.entries>=1UL) aprsdecode_lums.errorstep = 0;
       aprsdecode_click.cmd = 0;
       if (xosi_Shift) aprsdecode_click.cmd = 'X';
@@ -4738,29 +4744,29 @@ static void MainEvent(void)
       /*WrInt(ORD(click.cmd), 1); WrStrLn(click.cmd); */
       maptool_startmapdelay();
       if (aprsdecode_click.cmd=='\030') {
-         aprsdecode_mappos.lat = aprsdecode_mappos.lat-movest((unsigned long)
+         aprsdecode_mappos.lat = aprsdecode_mappos.lat-movest((uint32_t)
                 maptool_ysize)*shiftfine();
          maptool_limpos(&aprsdecode_mappos);
       }
       else if (aprsdecode_click.cmd=='\005') {
-         aprsdecode_mappos.lat = aprsdecode_mappos.lat+movest((unsigned long)
+         aprsdecode_mappos.lat = aprsdecode_mappos.lat+movest((uint32_t)
                 maptool_ysize)*shiftfine();
          maptool_limpos(&aprsdecode_mappos);
       }
       else if (aprsdecode_click.cmd=='\023') {
-         aprsdecode_mappos.long0 = aprsdecode_mappos.long0-movest((unsigned long)
+         aprsdecode_mappos.long0 = aprsdecode_mappos.long0-movest((uint32_t)
                 maptool_xsize)*shiftfine();
          maptool_limpos(&aprsdecode_mappos);
       }
       else if (aprsdecode_click.cmd=='\004') {
-         aprsdecode_mappos.long0 = aprsdecode_mappos.long0+movest((unsigned long)
+         aprsdecode_mappos.long0 = aprsdecode_mappos.long0+movest((uint32_t)
                 maptool_xsize)*shiftfine();
          maptool_limpos(&aprsdecode_mappos);
       }
       else if (aprsdecode_click.cmd=='T') {
          if (aprspos_posvalid(newpos0) && aprspos_posvalid(newpos1)) {
             mapzoom(newpos0, newpos1,
-                (unsigned long)useri_conf2int(useri_fDEFZOOM, 0UL, 1L, 18L,
+                (uint32_t)useri_conf2int(useri_fDEFZOOM, 0UL, 1L, 18L,
                 14L), 1);
          }
       }
@@ -4823,8 +4829,8 @@ static void MainEvent(void)
             }
             pandone = 0;
          }
-         animate(aprsdecode_click.mhop, (unsigned long)aprsdecode_lums.fps, "\
-", 1ul);
+         animate(aprsdecode_click.mhop, (uint32_t)aprsdecode_lums.fps, "",
+                1ul);
       }
       else if (aprsdecode_click.cmd=='0') setshowall();
       else if (aprsdecode_click.cmd=='1' || aprsdecode_click.cmd=='\001') {
@@ -4915,7 +4921,7 @@ static void MainEvent(void)
                 100L, 100L);
             if (aprsdecode_lums.obj<30L) {
                /* switch on objects but are too dark */
-               useri_AddConfLine(useri_fLOBJ, 0U, "70", 3ul);
+               useri_AddConfLine(useri_fLOBJ, 0U, "90", 3ul);
                 /* set to default brightness */
                aprsdecode_lums.obj = 10L*useri_conf2int(useri_fLOBJ, 0UL, 0L,
                  100L, 100L);
@@ -5024,13 +5030,13 @@ static void MainEvent(void)
          changecolor(aprsdecode_click.table[aprsdecode_click.selected].opf);
       }
       else if (aprsdecode_click.cmd=='A') {
-         animate(aprsdecode_click.mhop, (unsigned long)aprsdecode_lums.fps, "\
-", 1ul);
+         animate(aprsdecode_click.mhop, (uint32_t)aprsdecode_lums.fps, "",
+                1ul);
       }
       else if (aprsdecode_click.cmd=='\312') {
          useri_say("Saving map.y4m", 15ul, 0UL, 'b');
-         animate(aprsdecode_click.mhop,
-                (unsigned long)aprsdecode_lums.actfps, "map.y4m", 8ul);
+         animate(aprsdecode_click.mhop, (uint32_t)aprsdecode_lums.actfps, "\
+map.y4m", 8ul);
       }
       else if (aprsdecode_click.cmd=='I') internstat();
       else if (aprsdecode_click.cmd=='\245') {
@@ -5084,12 +5090,12 @@ static void MainEvent(void)
       if ((useri_newxsize&1)) --useri_newxsize;
       if ((useri_newysize&1)) --useri_newysize;
       xosi_allocxbuf(useri_newxsize, useri_newysize);
-      useri_allocimage(&image, (long)useri_newxsize, (long)useri_newysize,
-                0);
-      useri_allocimage(&rfimg, (long)useri_newxsize, (long)useri_newysize,
-                0);
-      maptool_xsize = (long)useri_newxsize;
-      maptool_ysize = (long)useri_newysize;
+      useri_allocimage(&image, (int32_t)useri_newxsize,
+                (int32_t)useri_newysize, 0);
+      useri_allocimage(&rfimg, (int32_t)useri_newxsize,
+                (int32_t)useri_newysize, 0);
+      maptool_xsize = (int32_t)useri_newxsize;
+      maptool_ysize = (int32_t)useri_newysize;
       if (!useri_maximized) {
          useri_saveXYtocfg(useri_fXYSIZE, maptool_xsize, maptool_ysize);
       }
@@ -5137,7 +5143,7 @@ static void getinitview(void)
    z = 0.0f;
    useri_getview(useri_fVIEW, 0UL, &z, &aprsdecode_mappos);
    if (z!=0.0f) {
-      aprsdecode_initzoom = (long)aprsdecode_trunc(z);
+      aprsdecode_initzoom = (int32_t)aprsdecode_trunc(z);
       aprsdecode_finezoom = (1.0f+z)-(float)aprsdecode_initzoom;
    }
    maptool_limpos(&aprsdecode_mappos);
@@ -5149,16 +5155,16 @@ static void getinitview(void)
    else if (aprsdecode_initzoom>18L) aprsdecode_initzoom = 18L;
 } /* end getinitview() */
 
-static void killsave(long);
+static void killsave(int32_t);
 
 
-static void killsave(long signum)
+static void killsave(int32_t signum)
 {
    if (!quit && useri_configon(useri_fAUTOSAVE)) useri_saveconfig();
    osi_WrStr("exit ", 6ul);
-   osic_WrINT32((unsigned long)signum, 0UL);
+   osic_WrINT32((uint32_t)signum, 0UL);
    osi_WrStrLn("!", 2ul);
-   X2C_HALT((unsigned long)signum);
+   X2C_HALT((uint32_t)signum);
 } /* end killsave() */
 
 /*
@@ -5313,8 +5319,7 @@ extern int main(int argc, char **argv)
    logdone = 0;
    uptime = osic_time();
    withx = xosi_InitX("Aprsmap", 8ul, "Aprsmap", 8ul,
-                (unsigned long)maptool_xsize,
-                (unsigned long)maptool_ysize)>=0L;
+                (uint32_t)maptool_xsize, (uint32_t)maptool_ysize)>=0L;
    if (!withx) {
       osi_WrStrLn("cannot open xwindow, image generation only", 43ul);
    }

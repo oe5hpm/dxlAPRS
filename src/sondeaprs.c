@@ -29,17 +29,17 @@ char sondeaprs_destcall[100];
 char sondeaprs_objname[100];
 char sondeaprs_commentfn[1025];
 char sondeaprs_sym[2];
-unsigned long sondeaprs_beacontime;
-unsigned long sondeaprs_lowaltbeacontime;
-unsigned long sondeaprs_lowalt;
-unsigned long sondeaprs_toport;
-unsigned long sondeaprs_ipnum;
+uint32_t sondeaprs_beacontime;
+uint32_t sondeaprs_lowaltbeacontime;
+uint32_t sondeaprs_lowalt;
+uint32_t sondeaprs_toport;
+uint32_t sondeaprs_ipnum;
 char sondeaprs_verb;
 char sondeaprs_verb2;
 char sondeaprs_nofilter;
-long sondeaprs_comptyp;
-long sondeaprs_micessid;
-long sondeaprs_udpsock;
+int32_t sondeaprs_comptyp;
+int32_t sondeaprs_micessid;
+int32_t sondeaprs_udpsock;
 char sondeaprs_anyip;
 char sondeaprs_sendmon;
 char sondeaprs_dao;
@@ -93,8 +93,8 @@ struct DATLINE {
    double long0;
    /*-       climb, */
    double clb;
-   unsigned long time0;
-   unsigned long uptime;
+   uint32_t time0;
+   uint32_t uptime;
 };
 
 struct POSITION;
@@ -117,10 +117,10 @@ struct CONTEXT {
    char name[12];
    DATS dat;
    double speedsum;
-   unsigned long speedcnt;
-   unsigned long lastused;
-   unsigned long lastbeacon;
-   unsigned long commentline;
+   uint32_t speedcnt;
+   uint32_t lastused;
+   uint32_t lastbeacon;
+   uint32_t commentline;
 };
 
 /*CRCL, CRCH: ARRAY[0..255] OF SET8;*/
@@ -129,27 +129,27 @@ static pCONTEXT contexts;
 
 /*    speedsum:LONGREAL; */
 /*    speedcnt:CARDINAL; */
-static unsigned short chk;
+static uint16_t chk;
 
 /*    systime, lastbeacon:TIME; */
 /*    commentline:CARDINAL; */
 
-static unsigned long truncc(double r)
+static uint32_t truncc(double r)
 {
    if (r<=0.0) return 0UL;
    else if (r>=2.E+9) return 2000000000UL;
-   else return (unsigned long)X2C_TRUNCC(r,0UL,X2C_max_longcard);
+   else return (uint32_t)X2C_TRUNCC(r,0UL,X2C_max_longcard);
    return 0;
 } /* end truncc() */
 
 
-extern long sondeaprs_GetIp(char h[], unsigned long h_len, unsigned long * p,
-                 unsigned long * ip, unsigned long * port)
+extern int32_t sondeaprs_GetIp(char h[], uint32_t h_len,
+                uint32_t * p, uint32_t * ip, uint32_t * port)
 {
-   unsigned long n;
-   unsigned long i;
+   uint32_t n;
+   uint32_t i;
    char ok0;
-   long sondeaprs_GetIp_ret;
+   int32_t sondeaprs_GetIp_ret;
    X2C_PCOPY((void **)&h,h_len);
    *p = 0UL;
    h[h_len-1] = 0;
@@ -157,9 +157,9 @@ extern long sondeaprs_GetIp(char h[], unsigned long h_len, unsigned long * p,
    for (i = 0UL; i<=4UL; i++) {
       n = 0UL;
       ok0 = 0;
-      while ((unsigned char)h[*p]>='0' && (unsigned char)h[*p]<='9') {
+      while ((uint8_t)h[*p]>='0' && (uint8_t)h[*p]<='9') {
          ok0 = 1;
-         n = (n*10UL+(unsigned long)(unsigned char)h[*p])-48UL;
+         n = (n*10UL+(uint32_t)(uint8_t)h[*p])-48UL;
          ++*p;
       }
       if (!ok0) {
@@ -194,15 +194,15 @@ extern long sondeaprs_GetIp(char h[], unsigned long h_len, unsigned long * p,
 } /* end GetIp() */
 
 
-static void comment0(char buf[], unsigned long buf_len, unsigned long uptime,
-                 unsigned long sats, double hrms, unsigned long * linec)
+static void comment0(char buf[], uint32_t buf_len, uint32_t uptime,
+                uint32_t sats, double hrms, uint32_t * linec)
 {
-   long len;
-   long lc;
-   long eol;
-   long bol;
-   long i;
-   long f;
+   int32_t len;
+   int32_t lc;
+   int32_t eol;
+   int32_t bol;
+   int32_t i;
+   int32_t f;
    char fb[32768];
    char h[100];
    buf[0UL] = 0;
@@ -212,13 +212,13 @@ static void comment0(char buf[], unsigned long buf_len, unsigned long uptime,
       if (f>=0L) {
          len = osi_RdBin(f, (char *)fb, 32768u/1u, 32767UL);
          osic_Close(f);
-         while (len>0L && (unsigned char)fb[len-1L]<=' ') --len;
+         while (len>0L && (uint8_t)fb[len-1L]<=' ') --len;
          if (len>0L && len<32767L) {
             fb[len] = '\012';
             ++len;
          }
          do {
-            lc = (long)*linec;
+            lc = (int32_t)*linec;
             eol = 0L;
             for (;;) {
                bol = eol;
@@ -259,7 +259,7 @@ static void comment0(char buf[], unsigned long buf_len, unsigned long uptime,
                /* insert sat count */
                if (sats>0UL) {
                   strncpy(fb," Sats ",32768u);
-                  aprsstr_IntToStr((long)sats, 1UL, h, 100ul);
+                  aprsstr_IntToStr((int32_t)sats, 1UL, h, 100ul);
                   aprsstr_Append(fb, 32768ul, h, 100ul);
                }
                else fb[0] = 0;
@@ -276,10 +276,10 @@ static void comment0(char buf[], unsigned long buf_len, unsigned long uptime,
             }
             else fb[0] = 0;
             bol = 0L;
-            eol = (long)aprsstr_Length(fb, 32768ul);
+            eol = (int32_t)aprsstr_Length(fb, 32768ul);
          }
          i = 0L;
-         while (bol<eol && i<(long)(buf_len-1)) {
+         while (bol<eol && i<(int32_t)(buf_len-1)) {
             buf[i] = fb[bol];
             ++i;
             ++bol;
@@ -291,9 +291,9 @@ static void comment0(char buf[], unsigned long buf_len, unsigned long uptime,
 } /* end comment() */
 
 
-static void sendudp(char buf[], unsigned long buf_len, long len)
+static void sendudp(char buf[], uint32_t buf_len, int32_t len)
 {
-   long i;
+   int32_t i;
    /*  crc:CARDINAL;  */
    X2C_PCOPY((void **)&buf,buf_len);
    /*
@@ -314,41 +314,41 @@ FOR i:=0 TO upos-2 DO IO.WrHex(ORD(buf[i]), 3) END; IO.WrLn;
 } /* end sendudp() */
 
 
-static char num(unsigned long n)
+static char num(uint32_t n)
 {
    return (char)(n%10UL+48UL);
 } /* end num() */
 
 
-static unsigned long dao91(double x)
+static uint32_t dao91(double x)
 /* radix91(xx/1.1) of dddmm.mmxx */
 {
    double a;
    a = fabs(x);
-   return ((truncc((a-(double)(float)truncc(a))*6.E+5)%100UL)*20UL+11UL)
-                /22UL;
+   return ((truncc((a-(double)(float)truncc(a))*6.E+5)%100UL)
+                *20UL+11UL)/22UL;
 } /* end dao91() */
 
 
-static void sendaprs(unsigned long comp0, unsigned long micessid, char dao,
-                unsigned long time0, unsigned long uptime, char mycall[],
-                unsigned long mycall_len, char destcall[],
-                unsigned long destcall_len, char via[],
-                unsigned long via_len, char sym[], unsigned long sym_len,
-                char obj[], unsigned long obj_len, double lat, double long0,
+static void sendaprs(uint32_t comp0, uint32_t micessid, char dao,
+                uint32_t time0, uint32_t uptime, char mycall[],
+                uint32_t mycall_len, char destcall[],
+                uint32_t destcall_len, char via[], uint32_t via_len,
+                char sym[], uint32_t sym_len, char obj[],
+                uint32_t obj_len, double lat, double long0,
                 double alt, double course, double speed,
-                unsigned long goodsats, double hrms, char comm[],
-                unsigned long comm_len, unsigned long * commentcnt)
+                uint32_t goodsats, double hrms, char comm[],
+                uint32_t comm_len, uint32_t * commentcnt)
 {
    char ds[201];
    char h[201];
    char b[201];
    char raw[361];
-   long rp;
-   unsigned long micdest;
-   unsigned long nl;
-   unsigned long n;
-   unsigned long i;
+   int32_t rp;
+   uint32_t micdest;
+   uint32_t nl;
+   uint32_t n;
+   uint32_t i;
    double a;
    char tmp;
    X2C_PCOPY((void **)&mycall,mycall_len);
@@ -364,8 +364,8 @@ static void sendaprs(unsigned long comp0, unsigned long micessid, char dao,
    aprsstr_Append(b, 201ul, destcall, destcall_len);
    if (micessid>0UL) {
       aprsstr_Append(b, 201ul, "-", 2ul);
-      aprsstr_Append(b, 201ul, (char *)(tmp = (char)(micessid+48UL),&tmp),
-                1u/1u);
+      aprsstr_Append(b, 201ul, (char *)(tmp = (char)(micessid+48UL),
+                &tmp), 1u/1u);
    }
    if (via[0UL]) {
       aprsstr_Append(b, 201ul, ",", 2ul);
@@ -518,7 +518,8 @@ static void sendaprs(unsigned long comp0, unsigned long micessid, char dao,
       }
       else if (alt>0.5) {
          if (alt*3.2808398950131>1.0) {
-            n = osi_realcard(osic_ln((float)(alt*3.2808398950131))*500.5f);
+            n = osi_realcard(osic_ln((float)(alt*3.2808398950131))*500.5f)
+                ;
          }
          else n = 0UL;
          if (n>=8281UL) n = 8280UL;
@@ -570,27 +571,26 @@ static void sendaprs(unsigned long comp0, unsigned long micessid, char dao,
       ++i;
       b[i] = (char)(80UL+n%10UL);
       ++i;
-      n = osi_realcard((float)((fabs(lat)-(double)(float)n)*6000.0));
+      n = osi_realcard((float)((fabs(lat)-(double)(float)n)
+                *6000.0));
       b[i] = (char)(80UL+n/1000UL);
       ++i;
-      b[i] = (char)(48UL+32UL*(unsigned long)(lat>=0.0)+(n/100UL)%10UL);
+      b[i] = (char)(48UL+32UL*(uint32_t)(lat>=0.0)+(n/100UL)%10UL);
       ++i;
-      b[i] = (char)(48UL+32UL*(unsigned long)(nl<10UL || nl>=100UL)+(n/10UL)
+      b[i] = (char)(48UL+32UL*(uint32_t)(nl<10UL || nl>=100UL)+(n/10UL)
                 %10UL);
       ++i;
-      b[i] = (char)(48UL+32UL*(unsigned long)(long0<0.0)+n%10UL);
+      b[i] = (char)(48UL+32UL*(uint32_t)(long0<0.0)+n%10UL);
       i = aprsstr_Length(b, 201ul);
       if (nl<10UL) b[i] = (char)(nl+118UL);
       else if (nl>=100UL) {
          if (nl<110UL) b[i] = (char)(nl+8UL);
-         else {
-            b[i] = (char)(nl-72UL);
-         }
+         else b[i] = (char)(nl-72UL);
       }
       else b[i] = (char)(nl+28UL);
       ++i;
-      nl = osi_realcard((float)((fabs(long0)-(double)(float)nl)*6000.0));
-                /* long min*100 */
+      nl = osi_realcard((float)((fabs(long0)-(double)(float)nl)
+                *6000.0)); /* long min*100 */
       n = nl/100UL;
       if (n<10UL) n += 60UL;
       b[i] = (char)(n+28UL);
@@ -644,7 +644,7 @@ static void sendaprs(unsigned long comp0, unsigned long micessid, char dao,
          aprsstr_mon2raw(b, 201ul, raw, 361ul, &rp);
          if (rp>0L) sendudp(raw, 361ul, rp);
       }
-      else sendudp(b, 201ul, (long)(aprsstr_Length(b, 201ul)+1UL));
+      else sendudp(b, 201ul, (int32_t)(aprsstr_Length(b, 201ul)+1UL));
    }
    if (sondeaprs_verb) osi_WrStrLn(b, 201ul);
    X2C_PFREE(mycall);
@@ -658,11 +658,11 @@ static void sendaprs(unsigned long comp0, unsigned long micessid, char dao,
 #define sondeaprs_Z 48
 
 
-static void degtostr(double d, char lat, char form, char s[],
-                unsigned long s_len)
+static void degtostr(double d, char lat, char form,
+                char s[], uint32_t s_len)
 {
-   unsigned long i;
-   unsigned long n;
+   uint32_t i;
+   uint32_t n;
    if (s_len-1<11UL) {
       s[0UL] = 0;
       return;
@@ -681,7 +681,7 @@ static void degtostr(double d, char lat, char form, char s[],
       /* DDMM.MMNDDMM.MME */
       n = osi_realcard((float)(d*3.4377467707849E+5+0.5));
       s[0UL] = (char)((n/600000UL)%10UL+48UL);
-      i = (unsigned long)!lat;
+      i = (uint32_t)!lat;
       s[i] = (char)((n/60000UL)%10UL+48UL);
       ++i;
       s[i] = (char)((n/6000UL)%10UL+48UL);
@@ -701,7 +701,7 @@ static void degtostr(double d, char lat, char form, char s[],
       /* DDMM.MMMNDDMM.MMME */
       n = osi_realcard((float)(d*3.4377467707849E+6+0.5));
       s[0UL] = (char)((n/6000000UL)%10UL+48UL);
-      i = (unsigned long)!lat;
+      i = (uint32_t)!lat;
       s[i] = (char)((n/600000UL)%10UL+48UL);
       ++i;
       s[i] = (char)((n/60000UL)%10UL+48UL);
@@ -723,7 +723,7 @@ static void degtostr(double d, char lat, char form, char s[],
       /* DDMMSS */
       n = osi_realcard((float)(d*2.062648062471E+5+0.5));
       s[0UL] = (char)((n/360000UL)%10UL+48UL);
-      i = (unsigned long)!lat;
+      i = (uint32_t)!lat;
       s[i] = (char)((n/36000UL)%10UL+48UL);
       ++i;
       s[i] = (char)((n/3600UL)%10UL+48UL);
@@ -749,7 +749,7 @@ static void degtostr(double d, char lat, char form, char s[],
 
 
 static void postostr(struct POSITION pos, char form, char s[],
-                unsigned long s_len)
+                uint32_t s_len)
 {
    char h[32];
    degtostr(pos.lat, 1, form, s, s_len);
@@ -791,7 +791,7 @@ static void show(struct DATLINE d)
    osi_WrStr(" ", 2ul);
    /*WrFixed(d.gpsalt, 1, 8); WrStr("m "); */
    if (d.alt>=(-2.E+4) && d.alt>=1.E+5) {
-      osic_WrINT32((unsigned long)osi_realint((float)d.alt), 1UL);
+      osic_WrINT32((uint32_t)osi_realint((float)d.alt), 1UL);
       osi_WrStr("m ", 3ul);
    }
    osic_WrFixed((float)d.clb, 1L, 5UL);
@@ -801,15 +801,16 @@ static void show(struct DATLINE d)
 } /* end show() */
 
 
-static char Checkval(const double a[], unsigned long a_len,
-                const unsigned long t[], unsigned long t_len, double err,
-                double min0, double max0, double unitspers)
+static char Checkval(const double a[], uint32_t a_len,
+                const uint32_t t[], uint32_t t_len, double err,
+                double min0, double max0,
+                double unitspers)
 {
-   unsigned long i;
+   uint32_t i;
    double y;
    double m;
    double k;
-   unsigned long tmp;
+   uint32_t tmp;
    tmp = a_len-1;
    i = 0UL;
    if (i<=tmp) for (;; i++) {
@@ -866,13 +867,13 @@ END climb;
 #define sondeaprs_MAXTIMESPAN 20
 
 
-static void Checkvals(const DATS d, unsigned short * e)
+static void Checkvals(const DATS d, uint16_t * e)
 {
-   unsigned long n;
-   unsigned long i;
+   uint32_t n;
+   uint32_t i;
    double v[4];
-   unsigned long t[4];
-   unsigned long tmp;
+   uint32_t t[4];
+   uint32_t tmp;
    *e = 0U;
    n = 3UL;
    for (i = 0UL; i<=3UL; i++) {
@@ -943,14 +944,14 @@ static void Checkvals(const DATS d, unsigned short * e)
 
 static void shift(DATS d)
 {
-   unsigned long i;
+   uint32_t i;
    for (i = 59UL; i>=1UL; i--) {
       d[i] = d[i-1UL];
    } /* end for */
 } /* end shift() */
 
 
-static pCONTEXT findcontext(char n[], unsigned long n_len, unsigned long t)
+static pCONTEXT findcontext(char n[], uint32_t n_len, uint32_t t)
 {
    pCONTEXT p;
    pCONTEXT c;
@@ -965,15 +966,15 @@ static pCONTEXT findcontext(char n[], unsigned long n_len, unsigned long t)
          c = X2C_CHKNIL(pCONTEXT,c)->next;
       }
       if (c==0) {
-         osic_alloc((X2C_ADDRESS *) &c, sizeof(struct CONTEXT));
-         memset((X2C_ADDRESS)c,(char)0,sizeof(struct CONTEXT));
+         osic_alloc((char * *) &c, sizeof(struct CONTEXT));
+         memset((char *)c,(char)0,sizeof(struct CONTEXT));
          c->next = contexts;
          contexts = c;
       }
       else {
          /* reuse old context */
          p = X2C_CHKNIL(pCONTEXT,c)->next;
-         memset((X2C_ADDRESS)c,(char)0,sizeof(struct CONTEXT));
+         memset((char *)c,(char)0,sizeof(struct CONTEXT));
          c->next = p;
       }
       aprsstr_Assign(c->name, 12ul, n, n_len);
@@ -1024,22 +1025,24 @@ BEGIN
 END highresstr;
 */
 
-extern void sondeaprs_senddata(double lat, double long0, double alt,
-                double speed, double dir, double clb, double hp, double hyg,
-                double temp, double ozon, double otemp, double pumpmA,
-                double pumpv, double mhz, double hrms, double vrms,
-                unsigned long sattime, unsigned long uptime, char objname[],
-                unsigned long objname_len, unsigned long almanachage,
-                unsigned long goodsats, char usercall[],
-                unsigned long usercall_len, unsigned long calperc,
-                unsigned long burstKill, char force)
+extern void sondeaprs_senddata(double lat, double long0,
+                double alt, double speed, double dir,
+                double clb, double hp, double hyg,
+                double temp, double ozon, double otemp,
+                double pumpmA, double pumpv, double mhz,
+                double hrms, double vrms, uint32_t sattime,
+                uint32_t uptime, char objname[],
+                uint32_t objname_len, uint32_t almanachage,
+                uint32_t goodsats, char usercall[],
+                uint32_t usercall_len, uint32_t calperc,
+                uint32_t burstKill, char force)
 {
-   unsigned char e;
+   uint8_t e;
    pCONTEXT ct;
    char h[251];
    char s[251];
-   unsigned long systime;
-   unsigned long bt;
+   uint32_t systime;
+   uint32_t bt;
    struct CONTEXT * anonym;
    X2C_PCOPY((void **)&objname,objname_len);
    if (aprsstr_Length(usercall, usercall_len)<3UL) {
@@ -1079,13 +1082,13 @@ extern void sondeaprs_senddata(double lat, double long0, double alt,
             show(anonym->dat[0U]);
             if (almanachage) {
                osi_WrStr(" AlmAge ", 9ul);
-               osic_WrFixed((float)(X2C_DIVL((double)almanachage,3600.0)),
-                1L, 3UL);
+               osic_WrFixed((float)(X2C_DIVL((double)almanachage,
+                3600.0)), 1L, 3UL);
                osi_WrStrLn("h ", 3ul);
             }
             else osi_WrStrLn("", 1ul);
             for (e = sondeaprs_ePRES;; e++) {
-               if (X2C_IN((long)e,10,chk)) {
+               if (X2C_IN((int32_t)e,10,chk)) {
                   switch ((unsigned)e) {
                   case sondeaprs_eSPEED:
                      /*              ePRES : WrStr("p"); */
@@ -1129,20 +1132,22 @@ extern void sondeaprs_senddata(double lat, double long0, double alt,
             aprsstr_Append(s, 251ul, "m/s", 4ul);
             if ((0x1U & chk)==0 && anonym->dat[0U].hpa>=1.0) {
                aprsstr_Append(s, 251ul, " p=", 4ul);
-               aprsstr_FixToStr((float)anonym->dat[0U].hpa, 2UL, h, 251ul);
+               aprsstr_FixToStr((float)anonym->dat[0U].hpa, 2UL, h,
+                251ul);
                aprsstr_Append(s, 251ul, h, 251ul);
                aprsstr_Append(s, 251ul, "hPa", 4ul);
             }
             if ((0x2U & chk)==0) {
                aprsstr_Append(s, 251ul, " t=", 4ul);
-               aprsstr_FixToStr((float)anonym->dat[0U].temp, 2UL, h, 251ul);
+               aprsstr_FixToStr((float)anonym->dat[0U].temp, 2UL, h,
+                251ul);
                aprsstr_Append(s, 251ul, h, 251ul);
                aprsstr_Append(s, 251ul, "C", 2ul);
             }
             if (hyg>=0.5 && (0x4U & chk)==0) {
                aprsstr_Append(s, 251ul, " h=", 4ul);
-               aprsstr_IntToStr((long)truncc(anonym->dat[0U].hyg+0.5), 1UL,
-                h, 251ul);
+               aprsstr_IntToStr((int32_t)truncc(anonym->dat[0U].hyg+0.5),
+                1UL, h, 251ul);
                aprsstr_Append(s, 251ul, h, 251ul);
                aprsstr_Append(s, 251ul, "%", 2ul);
             }
@@ -1156,7 +1161,7 @@ extern void sondeaprs_senddata(double lat, double long0, double alt,
                aprsstr_Append(s, 251ul, "C", 2ul);
                if (pumpmA>0.1) {
                   aprsstr_Append(s, 251ul, " Pump=", 7ul);
-                  aprsstr_IntToStr((long)truncc(pumpmA), 1UL, h, 251ul);
+                  aprsstr_IntToStr((int32_t)truncc(pumpmA), 1UL, h, 251ul);
                   aprsstr_Append(s, 251ul, h, 251ul);
                   aprsstr_Append(s, 251ul, "mA", 3ul);
                }
@@ -1176,7 +1181,7 @@ extern void sondeaprs_senddata(double lat, double long0, double alt,
             */
             if (calperc>0UL && calperc<100UL) {
                aprsstr_Append(s, 251ul, " calibration ", 14ul);
-               aprsstr_IntToStr((long)calperc, 1UL, h, 251ul);
+               aprsstr_IntToStr((int32_t)calperc, 1UL, h, 251ul);
                aprsstr_Append(s, 251ul, h, 251ul);
                aprsstr_Append(s, 251ul, "%", 2ul);
             }

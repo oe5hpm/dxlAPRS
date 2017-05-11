@@ -34,9 +34,9 @@
 
 #define udphub_MINLEN 17
 
-static unsigned long udphub_POLYNOM = 0x8408UL;
+static uint32_t udphub_POLYNOM = 0x8408UL;
 
-static unsigned long udphub_CRCINIT = 0xFFFFUL;
+static uint32_t udphub_CRCINIT = 0xFFFFUL;
 
 #define udphub_SOURCECALL 7
 
@@ -62,8 +62,8 @@ typedef char RAWCALL[7];
 
 
 struct TIMEVAL {
-   long tvsec;
-   long tvusec;
+   int32_t tvsec;
+   int32_t tvusec;
 };
 
 struct USER;
@@ -74,20 +74,20 @@ typedef struct USER * pUSER;
 struct USER {
    pUSER next;
    RAWCALL call;
-   unsigned long uip;
-   unsigned long dport;
+   uint32_t uip;
+   uint32_t dport;
    char datagot; /* not send same data twice to same ip/port */
    char bcin; /* broadcast in accept */
    char bcout; /* broadcast out allowed */
    char willall; /* like host send all to */
    char nopurge; /* entry from file no purge */
    char nospoof; /* not overwrite ip:port */
-   unsigned long htime;
+   uint32_t htime;
 };
 
-static unsigned char CRCL[256];
+static uint8_t CRCL[256];
 
-static unsigned char CRCH[256];
+static uint8_t CRCH[256];
 
 static char noinf;
 
@@ -107,24 +107,24 @@ static char checkdigiip;
 
 static pUSER users;
 
-static unsigned long alllifetime;
+static uint32_t alllifetime;
 
-static unsigned long systime;
+static uint32_t systime;
 
 /* time for all/unknown ssid */
-static unsigned long lifetime;
+static uint32_t lifetime;
 
-static unsigned long touserport;
+static uint32_t touserport;
 
-static unsigned long todigiport;
+static uint32_t todigiport;
 
-static unsigned long digiip;
+static uint32_t digiip;
 
-static long digisock;
+static int32_t digisock;
 
-static long usersock;
+static int32_t usersock;
 
-static unsigned long maxentries;
+static uint32_t maxentries;
 
 static char initfn[1025];
 
@@ -137,7 +137,7 @@ PROCEDURE ["C"] / select(n: INTEGER; readfds: ADDRESS; writefds: ADDRESS;
 */
 
 
-static void Err(const char text[], unsigned long text_len)
+static void Err(const char text[], uint32_t text_len)
 {
    osi_WrStr("udphub: ", 9ul);
    osi_WrStr(text, text_len);
@@ -150,19 +150,17 @@ static void Err(const char text[], unsigned long text_len)
 
 static void Gencrctab(void)
 {
-   unsigned long c;
-   unsigned long crc;
-   unsigned long i;
+   uint32_t c;
+   uint32_t crc;
+   uint32_t i;
    for (c = 0UL; c<=255UL; c++) {
       crc = 255UL-c;
       for (i = 0UL; i<=7UL; i++) {
-         if ((crc&1)) {
-            crc = (unsigned long)((unsigned long)(crc>>1)^0x8408UL);
-         }
+         if ((crc&1)) crc = (uint32_t)((uint32_t)(crc>>1)^0x8408UL);
          else crc = crc>>1;
       } /* end for */
-      CRCL[c] = (unsigned char)crc;
-      CRCH[c] = (unsigned char)(255UL-(crc>>8));
+      CRCL[c] = (uint8_t)crc;
+      CRCH[c] = (uint8_t)(255UL-(crc>>8));
    } /* end for */
 } /* end Gencrctab() */
 
@@ -170,19 +168,17 @@ static void Gencrctab(void)
 static void WCh(char c)
 {
    if (c!='\015') {
-      if ((unsigned char)c<' ' || (unsigned char)c>='\177') {
-         osi_WrStr(".", 2ul);
-      }
+      if ((uint8_t)c<' ' || (uint8_t)c>='\177') osi_WrStr(".", 2ul);
       else osi_WrStr((char *) &c, 1u/1u);
    }
 } /* end WCh() */
 
 
-static void ShowCall(char f[], unsigned long f_len, unsigned long pos)
+static void ShowCall(char f[], uint32_t f_len, uint32_t pos)
 {
-   unsigned long e;
-   unsigned long i;
-   unsigned long tmp;
+   uint32_t e;
+   uint32_t i;
+   uint32_t tmp;
    char tmp0;
    e = pos;
    tmp = pos+5UL;
@@ -194,45 +190,46 @@ static void ShowCall(char f[], unsigned long f_len, unsigned long pos)
    tmp = e;
    i = pos;
    if (i<=tmp) for (;; i++) {
-      WCh((char)((unsigned long)(unsigned char)f[i]>>1));
+      WCh((char)((uint32_t)(uint8_t)f[i]>>1));
       if (i==tmp) break;
    } /* end for */
-   i = (unsigned long)(unsigned char)f[pos+6UL]>>1&15UL;
+   i = (uint32_t)(uint8_t)f[pos+6UL]>>1&15UL;
    if (i) {
       osi_WrStr("-", 2ul);
       if (i>=10UL) {
-         osi_WrStr((char *)(tmp0 = (char)(i/10UL+48UL),&tmp0), 1u/1u);
+         osi_WrStr((char *)(tmp0 = (char)(i/10UL+48UL),&tmp0),
+                1u/1u);
       }
       osi_WrStr((char *)(tmp0 = (char)(i%10UL+48UL),&tmp0), 1u/1u);
    }
 } /* end ShowCall() */
 
-static unsigned long udphub_UA = 0x63UL;
+static uint32_t udphub_UA = 0x63UL;
 
-static unsigned long udphub_DM = 0xFUL;
+static uint32_t udphub_DM = 0xFUL;
 
-static unsigned long udphub_SABM = 0x2FUL;
+static uint32_t udphub_SABM = 0x2FUL;
 
-static unsigned long udphub_DISC = 0x43UL;
+static uint32_t udphub_DISC = 0x43UL;
 
-static unsigned long udphub_FRMR = 0x87UL;
+static uint32_t udphub_FRMR = 0x87UL;
 
-static unsigned long udphub_UI = 0x3UL;
+static uint32_t udphub_UI = 0x3UL;
 
-static unsigned long udphub_RR = 0x1UL;
+static uint32_t udphub_RR = 0x1UL;
 
-static unsigned long udphub_REJ = 0x9UL;
+static uint32_t udphub_REJ = 0x9UL;
 
-static unsigned long udphub_RNR = 0x5UL;
+static uint32_t udphub_RNR = 0x5UL;
 
 
-static void Showctl(unsigned long com, unsigned long cmd)
+static void Showctl(uint32_t com, uint32_t cmd)
 {
-   unsigned long cm;
+   uint32_t cm;
    char PF[4];
    char tmp;
    osi_WrStr(" ctl ", 6ul);
-   cm = (unsigned long)cmd&~0x10UL;
+   cm = (uint32_t)cmd&~0x10UL;
    if ((cm&0xFUL)==0x1UL) {
       osi_WrStr("RR", 3ul);
       osi_WrStr((char *)(tmp = (char)(48UL+(cmd>>5)),&tmp), 1u/1u);
@@ -248,7 +245,8 @@ static void Showctl(unsigned long com, unsigned long cmd)
    else if ((cm&0x1UL)==0UL) {
       osi_WrStr("I", 2ul);
       osi_WrStr((char *)(tmp = (char)(48UL+(cmd>>5)),&tmp), 1u/1u);
-      osi_WrStr((char *)(tmp = (char)(48UL+(cmd>>1&7UL)),&tmp), 1u/1u);
+      osi_WrStr((char *)(tmp = (char)(48UL+(cmd>>1&7UL)),&tmp),
+                1u/1u);
    }
    else if (cm==0x3UL) osi_WrStr("UI", 3ul);
    else if (cm==0xFUL) osi_WrStr("DM", 3ul);
@@ -260,20 +258,20 @@ static void Showctl(unsigned long com, unsigned long cmd)
    strncpy(PF,"v^-+",4u);
    if (com==0UL || com==3UL) osi_WrStr("v1", 3ul);
    else {
-      osi_WrStr((char *) &PF[(com&1UL)+2UL*(unsigned long)
-                ((0x10UL & (unsigned long)cmd)!=0)], 1u/1u);
+      osi_WrStr((char *) &PF[(com&1UL)+2UL*(uint32_t)
+                ((0x10UL & (uint32_t)cmd)!=0)], 1u/1u);
    }
 } /* end Showctl() */
 
 
-static void ShowFrame(char f[], unsigned long f_len, unsigned long len,
+static void ShowFrame(char f[], uint32_t f_len, uint32_t len,
                 char noinfo)
 {
-   unsigned long i;
+   uint32_t i;
    char d;
    char v;
    i = 0UL;
-   while (!((unsigned long)(unsigned char)f[i]&1)) {
+   while (!((uint32_t)(uint8_t)f[i]&1)) {
       ++i;
       if (i>len) return;
    }
@@ -286,25 +284,26 @@ static void ShowFrame(char f[], unsigned long f_len, unsigned long len,
    ShowCall(f, f_len, 0UL);
    i = 14UL;
    v = 1;
-   while (i+6UL<len && !((unsigned long)(unsigned char)f[i-1UL]&1)) {
+   while (i+6UL<len && !((uint32_t)(uint8_t)f[i-1UL]&1)) {
       if (v) {
          osi_WrStr(" via", 5ul);
          v = 0;
       }
       osi_WrStr(" ", 2ul);
       ShowCall(f, f_len, i);
-      if ((unsigned long)(unsigned char)f[i+6UL]>=128UL && (((unsigned long)
-                (unsigned char)f[i+6UL]&1) || (unsigned long)(unsigned char)
-                f[i+13UL]<128UL)) osi_WrStr("*", 2ul);
+      if ((uint32_t)(uint8_t)f[i+6UL]>=128UL && (((uint32_t)(uint8_t)
+                f[i+6UL]&1) || (uint32_t)(uint8_t)f[i+13UL]<128UL)) {
+         osi_WrStr("*", 2ul);
+      }
       i += 7UL;
    }
-   Showctl((unsigned long)((0x80U & (unsigned char)(unsigned char)f[6UL])!=0)
-                +2UL*(unsigned long)((0x80U & (unsigned char)(unsigned char)
-                f[13UL])!=0), (unsigned long)(unsigned char)f[i]);
+   Showctl((uint32_t)((0x80U & (uint8_t)(uint8_t)f[6UL])!=0)
+                +2UL*(uint32_t)((0x80U & (uint8_t)(uint8_t)f[13UL])!=0)
+                , (uint32_t)(uint8_t)f[i]);
    ++i;
    if (i<len) {
       osi_WrStr(" pid ", 6ul);
-      osi_WrHex((unsigned long)(unsigned char)f[i], 1UL);
+      osi_WrHex((uint32_t)(uint8_t)f[i], 1UL);
    }
    ++i;
    osic_WrLn();
@@ -326,19 +325,20 @@ static void ShowFrame(char f[], unsigned long f_len, unsigned long len,
 } /* end ShowFrame() */
 
 
-static char testCRC(char frame[], unsigned long frame_len, long size)
+static char testCRC(char frame[], uint32_t frame_len,
+                int32_t size)
 {
-   unsigned char h;
-   unsigned char l;
-   unsigned char b;
-   long i;
-   long tmp;
+   uint8_t h;
+   uint8_t l;
+   uint8_t b;
+   int32_t i;
+   int32_t tmp;
    l = 0U;
    h = 0U;
    tmp = size-3L;
    i = 0L;
    if (i<=tmp) for (;; i++) {
-      b = (unsigned char)((unsigned char)(unsigned char)frame[i]^l);
+      b = (uint8_t)((uint8_t)(uint8_t)frame[i]^l);
       l = CRCL[b]^h;
       h = CRCH[b];
       if (i==tmp) break;
@@ -392,14 +392,14 @@ BEGIN
 END GetIp1;
 */
 
-static long GetIp1(char h[], unsigned long h_len, unsigned long * ip,
-                unsigned long * port)
+static int32_t GetIp1(char h[], uint32_t h_len, uint32_t * ip,
+                uint32_t * port)
 {
-   unsigned long p;
-   unsigned long n;
-   unsigned long i;
+   uint32_t p;
+   uint32_t n;
+   uint32_t i;
    char ok0;
-   long GetIp1_ret;
+   int32_t GetIp1_ret;
    X2C_PCOPY((void **)&h,h_len);
    p = 0UL;
    h[h_len-1] = 0;
@@ -407,9 +407,9 @@ static long GetIp1(char h[], unsigned long h_len, unsigned long * ip,
    for (i = 0UL; i<=4UL; i++) {
       n = 0UL;
       ok0 = 0;
-      while ((unsigned char)h[p]>='0' && (unsigned char)h[p]<='9') {
+      while ((uint8_t)h[p]>='0' && (uint8_t)h[p]<='9') {
          ok0 = 1;
-         n = (n*10UL+(unsigned long)(unsigned char)h[p])-48UL;
+         n = (n*10UL+(uint32_t)(uint8_t)h[p])-48UL;
          ++p;
       }
       if (!ok0) {
@@ -444,13 +444,13 @@ static long GetIp1(char h[], unsigned long h_len, unsigned long * ip,
 } /* end GetIp1() */
 
 
-static long getudp(long fd, char buf[], unsigned long buf_len,
-                unsigned long * fromip0, unsigned long * fromport,
+static int32_t getudp(int32_t fd, char buf[], uint32_t buf_len,
+                uint32_t * fromip0, uint32_t * fromport,
                 char checkip)
 {
-   unsigned long ip;
-   long len;
-   len = udpreceive(fd, buf, (long)(buf_len), fromport, &ip);
+   uint32_t ip;
+   int32_t len;
+   len = udpreceive(fd, buf, (int32_t)(buf_len), fromport, &ip);
    if (len<2L || !testCRC(buf, buf_len, len)) {
       if (show) osi_WrStrLn(" axudp crc error ", 18ul);
       return -1L;
@@ -461,14 +461,15 @@ static long getudp(long fd, char buf[], unsigned long buf_len,
 } /* end getudp() */
 
 
-static char Call2Str(const char r[], unsigned long r_len, char t[],
-                unsigned long t_len, unsigned long pos, unsigned long * len)
+static char Call2Str(const char r[], uint32_t r_len,
+                char t[], uint32_t t_len, uint32_t pos,
+                uint32_t * len)
 {
-   unsigned long ssid;
-   unsigned long e;
-   unsigned long i;
+   uint32_t ssid;
+   uint32_t e;
+   uint32_t i;
    char c;
-   unsigned long tmp;
+   uint32_t tmp;
    e = pos;
    tmp = pos+5UL;
    i = pos;
@@ -479,8 +480,8 @@ static char Call2Str(const char r[], unsigned long r_len, char t[],
    tmp = e;
    i = pos;
    if (i<=tmp) for (;; i++) {
-      c = (char)((unsigned long)(unsigned char)r[i]>>1);
-      if ((unsigned char)c<=' ') {
+      c = (char)((uint32_t)(uint8_t)r[i]>>1);
+      if ((uint8_t)c<=' ') {
          t[*len] = 0;
          *len = 0UL;
          return 0;
@@ -489,7 +490,7 @@ static char Call2Str(const char r[], unsigned long r_len, char t[],
       ++*len;
       if (i==tmp) break;
    } /* end for */
-   ssid = (unsigned long)(unsigned char)r[pos+6UL]>>1&15UL;
+   ssid = (uint32_t)(uint8_t)r[pos+6UL]>>1&15UL;
    if (ssid>0UL) {
       t[*len] = '-';
       ++*len;
@@ -506,16 +507,16 @@ static char Call2Str(const char r[], unsigned long r_len, char t[],
 #define udphub_SSID "-"
 
 
-static char Str2Call(char s[], unsigned long s_len, unsigned long * i,
-                unsigned long p, char cb[], unsigned long cb_len)
+static char Str2Call(char s[], uint32_t s_len, uint32_t * i,
+                uint32_t p, char cb[], uint32_t cb_len)
 {
-   unsigned long j;
+   uint32_t j;
    char Str2Call_ret;
    X2C_PCOPY((void **)&s,s_len);
    j = p;
-   while ((*i<=s_len-1 && (unsigned char)s[*i]>' ') && s[*i]!='-') {
+   while ((*i<=s_len-1 && (uint8_t)s[*i]>' ') && s[*i]!='-') {
       if (j<p+6UL) {
-         cb[j] = (char)((unsigned long)(unsigned char)s[*i]*2UL);
+         cb[j] = (char)((uint32_t)(uint8_t)s[*i]*2UL);
          ++j;
       }
       ++*i;
@@ -528,12 +529,12 @@ static char Str2Call(char s[], unsigned long s_len, unsigned long * i,
    if (s[*i]=='-') {
       ++*i;
       j = 16UL;
-      if ((unsigned char)s[*i]>='0' && (unsigned char)s[*i]<='9') {
-         j = (unsigned long)(unsigned char)s[*i]-48UL;
+      if ((uint8_t)s[*i]>='0' && (uint8_t)s[*i]<='9') {
+         j = (uint32_t)(uint8_t)s[*i]-48UL;
          ++*i;
       }
-      if ((unsigned char)s[*i]>='0' && (unsigned char)s[*i]<='9') {
-         j = (j*10UL+(unsigned long)(unsigned char)s[*i])-48UL;
+      if ((uint8_t)s[*i]>='0' && (uint8_t)s[*i]<='9') {
+         j = (j*10UL+(uint32_t)(uint8_t)s[*i])-48UL;
          ++*i;
       }
    }
@@ -544,11 +545,11 @@ static char Str2Call(char s[], unsigned long s_len, unsigned long * i,
 } /* end Str2Call() */
 
 
-static long GetIp(char h[], unsigned long h_len, unsigned long * ip,
-                unsigned long * dp, unsigned long * lp, long * fd,
+static int32_t GetIp(char h[], uint32_t h_len, uint32_t * ip,
+                uint32_t * dp, uint32_t * lp, int32_t * fd,
                 char * check)
 {
-   long GetIp_ret;
+   int32_t GetIp_ret;
    X2C_PCOPY((void **)&h,h_len);
    if (aprsstr_GetIp2(h, h_len, ip, dp, lp, check)<0L) {
       GetIp_ret = -1L;
@@ -567,13 +568,14 @@ static long GetIp(char h[], unsigned long h_len, unsigned long * ip,
 } /* end GetIp() */
 
 
-static char GetNum(const char h[], unsigned long h_len, unsigned long * n)
+static char GetNum(const char h[], uint32_t h_len,
+                uint32_t * n)
 {
-   unsigned long i;
+   uint32_t i;
    *n = 0UL;
    i = 0UL;
-   while ((unsigned char)h[i]>='0' && (unsigned char)h[i]<='9') {
-      *n = ( *n*10UL+(unsigned long)(unsigned char)h[i])-48UL;
+   while ((uint8_t)h[i]>='0' && (uint8_t)h[i]<='9') {
+      *n = ( *n*10UL+(uint32_t)(uint8_t)h[i])-48UL;
       ++i;
    }
    return h[i]==0;
@@ -584,8 +586,8 @@ static void parms(void)
 {
    char err0;
    char h[1024];
-   unsigned long i;
-   unsigned long fromdigiport;
+   uint32_t i;
+   uint32_t fromdigiport;
    err0 = 0;
    for (;;) {
       osi_NextArg(h, 1024ul);
@@ -741,29 +743,29 @@ i port routes to destinationcall", 80ul);
 } /* end parms() */
 
 
-static void ip2str(unsigned long ip, unsigned long port, char s[],
-                unsigned long s_len)
+static void ip2str(uint32_t ip, uint32_t port, char s[],
+                uint32_t s_len)
 {
    char h[21];
    s[0UL] = 0;
-   aprsstr_IntToStr((long)(ip/16777216UL), 1UL, h, 21ul);
+   aprsstr_IntToStr((int32_t)(ip/16777216UL), 1UL, h, 21ul);
    aprsstr_Append(s, s_len, h, 21ul);
    aprsstr_Append(s, s_len, ".", 2ul);
-   aprsstr_IntToStr((long)(ip/65536UL&255UL), 1UL, h, 21ul);
+   aprsstr_IntToStr((int32_t)(ip/65536UL&255UL), 1UL, h, 21ul);
    aprsstr_Append(s, s_len, h, 21ul);
    aprsstr_Append(s, s_len, ".", 2ul);
-   aprsstr_IntToStr((long)(ip/256UL&255UL), 1UL, h, 21ul);
+   aprsstr_IntToStr((int32_t)(ip/256UL&255UL), 1UL, h, 21ul);
    aprsstr_Append(s, s_len, h, 21ul);
    aprsstr_Append(s, s_len, ".", 2ul);
-   aprsstr_IntToStr((long)(ip&255UL), 1UL, h, 21ul);
+   aprsstr_IntToStr((int32_t)(ip&255UL), 1UL, h, 21ul);
    aprsstr_Append(s, s_len, h, 21ul);
    aprsstr_Append(s, s_len, ":", 2ul);
-   aprsstr_IntToStr((long)port, 1UL, h, 21ul);
+   aprsstr_IntToStr((int32_t)port, 1UL, h, 21ul);
    aprsstr_Append(s, s_len, h, 21ul);
 } /* end ip2str() */
 
 
-static void showpip(unsigned long ip, unsigned long port)
+static void showpip(uint32_t ip, uint32_t port)
 {
    char h[51];
    ip2str(ip, port, h, 51ul);
@@ -771,11 +773,10 @@ static void showpip(unsigned long ip, unsigned long port)
 } /* end showpip() */
 
 
-static void showcall(const char b[], unsigned long b_len,
-                unsigned long start)
+static void showcall(const char b[], uint32_t b_len, uint32_t start)
 {
    char h[16];
-   unsigned long l;
+   uint32_t l;
    l = 0UL;
    if (Call2Str(b, b_len, h, 16ul, start, &l)) {
       h[l] = 0;
@@ -784,14 +785,14 @@ static void showcall(const char b[], unsigned long b_len,
 } /* end showcall() */
 
 
-static void listtab(char fn[], unsigned long fn_len)
+static void listtab(char fn[], uint32_t fn_len)
 {
-   long fd;
+   int32_t fd;
    pUSER u;
    char s[201];
    char h[201];
-   unsigned long j;
-   unsigned long i;
+   uint32_t j;
+   uint32_t i;
    X2C_PCOPY((void **)&fn,fn_len);
    fd = osi_OpenWrite(fn, fn_len);
    if (osic_FdValid(fd)) {
@@ -860,7 +861,7 @@ C in\012A gets all\012",201u);
          aprsstr_Append(h, 201ul, " broadcast destination\012", 24ul);
          osi_WrBin(fd, (char *)h, 201u/1u, aprsstr_Length(h, 201ul));
       }
-      aprsstr_IntToStr((long)touserport, 0UL, h, 201ul);
+      aprsstr_IntToStr((int32_t)touserport, 0UL, h, 201ul);
       aprsstr_Append(h, 201ul, " user UDP port\012", 16ul);
       osi_WrBin(fd, (char *)h, 201u/1u, aprsstr_Length(h, 201ul));
       osic_Close(fd);
@@ -870,21 +871,21 @@ C in\012A gets all\012",201u);
 } /* end listtab() */
 
 
-static char cmpcall(const RAWCALL c, const char b[], unsigned long b_len,
-                unsigned long start, char withssid)
+static char cmpcall(const RAWCALL c, const char b[],
+                uint32_t b_len, uint32_t start, char withssid)
 {
-   unsigned long i;
+   uint32_t i;
    for (i = 0UL; i<=5UL; i++) {
       if (c[i]!=b[i+start]) return 0;
    } /* end for */
-   return !withssid || ((unsigned long)(unsigned char)c[6U]/2UL&15UL)
-                ==((unsigned long)(unsigned char)b[start+6UL]/2UL&15UL);
+   return !withssid || ((uint32_t)(uint8_t)c[6U]/2UL&15UL)==((uint32_t)
+                (uint8_t)b[start+6UL]/2UL&15UL);
 } /* end cmpcall() */
 
 
 static pUSER Realloc(char alloc)
 {
-   unsigned long cnt;
+   uint32_t cnt;
    pUSER new0;
    pUSER last;
    pUSER u;
@@ -903,7 +904,7 @@ static pUSER Realloc(char alloc)
             osic_WrLn();
          }
          if (alloc && new0==0) new0 = u;
-         else osic_free((X2C_ADDRESS *) &u, sizeof(struct USER));
+         else osic_free((char * *) &u, sizeof(struct USER));
          if (last==0) u = users;
          else u = last->next;
          modified = 1;
@@ -915,14 +916,14 @@ static pUSER Realloc(char alloc)
       }
    }
    if (alloc && new0==0) {
-      osic_alloc((X2C_ADDRESS *) &new0, sizeof(struct USER));
+      osic_alloc((char * *) &new0, sizeof(struct USER));
    }
    /*  IF show THEN WrStr(" Table entries="); WrInt(cnt, 1); WrLn; END; */
    return new0;
 } /* end Realloc() */
 
 
-static void showu(unsigned long dp, pUSER u)
+static void showu(uint32_t dp, pUSER u)
 {
    if (u->nospoof) osi_WrStr(" writeprotected", 16ul);
    if (u->bcout) osi_WrStr(" bc-out", 8ul);
@@ -934,19 +935,21 @@ static void showu(unsigned long dp, pUSER u)
 } /* end showu() */
 
 
-static void AddIp(unsigned long ip, unsigned long dp, char fix, char nspoof,
-                char * hasbcin, char defbcin, char defbcout, char getsall,
-                const char buf[], unsigned long buf_len)
+static void AddIp(uint32_t ip, uint32_t dp, char fix,
+                char nspoof, char * hasbcin,
+                char defbcin, char defbcout,
+                char getsall, const char buf[],
+                uint32_t buf_len)
 {
    pUSER last;
-   unsigned long i;
+   uint32_t i;
    pUSER u;
    /* for fast find, rechain to first position */
    struct USER * anonym;
    struct USER * anonym0;
    *hasbcin = 0;
-   if (!((unsigned long)(unsigned char)buf[13UL]&1) && (unsigned char)
-                buf[20UL]>=(unsigned char)'\200') return;
+   if (!((uint32_t)(uint8_t)buf[13UL]&1) && (uint8_t)
+                buf[20UL]>=(uint8_t)'\200') return;
    /* via digi, store only direct heard */
    u = users;
    last = 0;
@@ -988,7 +991,7 @@ static void AddIp(unsigned long ip, unsigned long dp, char fix, char nspoof,
             for (i = 0UL; i<=6UL; i++) {
                anonym0->call[i] = buf[7UL+i];
             } /* end for */
-            anonym0->call[6U] = (char)(((unsigned long)(unsigned char)
+            anonym0->call[6U] = (char)(((uint32_t)(uint8_t)
                 anonym0->call[6U]/2UL&15UL)*2UL); /* extract pure ssid */
             anonym0->uip = ip;
             anonym0->dport = dp;
@@ -1012,29 +1015,29 @@ static void AddIp(unsigned long ip, unsigned long dp, char fix, char nspoof,
 } /* end AddIp() */
 
 
-static char sendtouser(char ubuf0[], unsigned long ubuf_len, long blen0,
-                char fromdigi, char bcin, unsigned long fromip0,
-                unsigned long fromport)
+static char sendtouser(char ubuf0[], uint32_t ubuf_len,
+                int32_t blen0, char fromdigi, char bcin,
+                uint32_t fromip0, uint32_t fromport)
 {
    pUSER uu;
    pUSER u;
    pUSER exactu;
-   long ci;
-   long res0;
+   int32_t ci;
+   int32_t res0;
    char ok0;
    char broadcast;
    char topeer;
    ok0 = 0;
    ci = 7L;
-   if (((unsigned long)(unsigned char)ubuf0[13UL]&1)) ci = 0L;
+   if (((uint32_t)(uint8_t)ubuf0[13UL]&1)) ci = 0L;
    else {
       /* find first not done via */
       for (;;) {
          ci += 7L;
          if (ci>63L || ci+7L>=blen0) return 0;
          /* no valid frame */
-         if ((unsigned char)ubuf0[ci+6L]<(unsigned char)'\200') break;
-         if (((unsigned long)(unsigned char)ubuf0[ci+6L]&1)) {
+         if ((uint8_t)ubuf0[ci+6L]<(uint8_t)'\200') break;
+         if (((uint32_t)(uint8_t)ubuf0[ci+6L]&1)) {
             ci = 0L; /* all h-bits set */
             break;
          }
@@ -1047,7 +1050,7 @@ static char sendtouser(char ubuf0[], unsigned long ubuf_len, long blen0,
    if (topeer) {
       exactu = users;
       while (exactu && !cmpcall(exactu->call, ubuf0, ubuf_len,
-                (unsigned long)ci, 1)) {
+                (uint32_t)ci, 1)) {
          /* conpare with ssid */
          exactu = exactu->next; /* find call + ssid match */
       }
@@ -1060,7 +1063,7 @@ static char sendtouser(char ubuf0[], unsigned long ubuf_len, long blen0,
       if ((u->dport>0UL && ((fromdigi || fromip0!=u->uip)
                 || fromport!=u->dport)) && (((u->willall || u==exactu)
                 || broadcast && u->bcout) || (topeer && exactu==0)
-                && cmpcall(u->call, ubuf0, ubuf_len, (unsigned long)ci, 0))) {
+                && cmpcall(u->call, ubuf0, ubuf_len, (uint32_t)ci, 0))) {
          /* user enabled */
          /* send never same way back */
          /* try all same call without ssid match */
@@ -1095,14 +1098,14 @@ static char sendtouser(char ubuf0[], unsigned long ubuf_len, long blen0,
 } /* end sendtouser() */
 
 
-static void err(char h[], unsigned long h_len, char fn[],
-                unsigned long fn_len, unsigned long lc)
+static void err(char h[], uint32_t h_len, char fn[],
+                uint32_t fn_len, uint32_t lc)
 {
    char s[4001];
    X2C_PCOPY((void **)&h,h_len);
    X2C_PCOPY((void **)&fn,fn_len);
    osi_WrStr("Error in line ", 15ul);
-   aprsstr_IntToStr((long)lc, 1UL, s, 4001ul);
+   aprsstr_IntToStr((int32_t)lc, 1UL, s, 4001ul);
    aprsstr_Append(s, 4001ul, ":[", 3ul);
    aprsstr_Append(s, 4001ul, fn, fn_len);
    aprsstr_Append(s, 4001ul, "] ", 3ul);
@@ -1113,21 +1116,21 @@ static void err(char h[], unsigned long h_len, char fn[],
 } /* end err() */
 
 
-static void initroutes(char fn[], unsigned long fn_len)
+static void initroutes(char fn[], uint32_t fn_len)
 {
-   long fd;
+   int32_t fd;
    char call[201];
    char b[201];
-   unsigned long lc;
-   unsigned long j;
-   unsigned long i;
+   uint32_t lc;
+   uint32_t j;
+   uint32_t i;
    char dbcin0;
    char all;
    char bci;
    char bco;
    char spoof;
-   unsigned long ip;
-   unsigned long dp;
+   uint32_t ip;
+   uint32_t dp;
    X2C_PCOPY((void **)&fn,fn_len);
    fd = osi_OpenRead(fn, fn_len);
    if (osic_FdValid(fd)) {
@@ -1135,7 +1138,9 @@ static void initroutes(char fn[], unsigned long fn_len)
       for (;;) {
          i = 0UL;
          do {
-            if (osi_RdBin(fd, (char *) &b[i], 1u/1u, 1UL)<1L) goto loop_exit;
+            if (osi_RdBin(fd, (char *) &b[i], 1u/1u, 1UL)<1L) {
+               goto loop_exit;
+            }
             ++i;
          } while (!(i>=200UL || b[i-1UL]=='\012'));
          b[i] = 0;
@@ -1159,7 +1164,7 @@ static void initroutes(char fn[], unsigned long fn_len)
                 fn_len, lc);
             }
             j = 0UL;
-            while ((unsigned char)b[i]>' ' && b[i]!='#') {
+            while ((uint8_t)b[i]>' ' && b[i]!='#') {
                b[j] = b[i];
                ++j;
                ++i;
@@ -1183,15 +1188,15 @@ static void initroutes(char fn[], unsigned long fn_len)
 
 static char ubuf[338];
 
-static long blen;
+static int32_t blen;
 
-static long res;
+static int32_t res;
 
-static unsigned long fromip;
+static uint32_t fromip;
 
-static unsigned long userdport;
+static uint32_t userdport;
 
-static unsigned long lastlist;
+static uint32_t lastlist;
 
 static char dbcin;
 
@@ -1231,10 +1236,10 @@ extern int main(int argc, char **argv)
    systime = osic_time();
    for (;;) {
       fdclr();
-      if (digisock>=0L) fdsetr((unsigned long)digisock);
-      fdsetr((unsigned long)usersock);
+      if (digisock>=0L) fdsetr((uint32_t)digisock);
+      fdsetr((uint32_t)usersock);
       if (selectrw(15UL, 0UL)>0L) {
-         if (digisock>=0L && issetr((unsigned long)digisock)) {
+         if (digisock>=0L && issetr((uint32_t)digisock)) {
             /* data from digi */
             fromip = digiip;
             blen = getudp(digisock, ubuf, 338ul, &fromip, &userdport,
@@ -1242,7 +1247,7 @@ extern int main(int argc, char **argv)
             if (blen>=17L) {
                if (show) {
                   osi_WrStr("> from digi", 12ul);
-                  ShowFrame(ubuf, 338ul, (unsigned long)(blen-2L), noinf);
+                  ShowFrame(ubuf, 338ul, (uint32_t)(blen-2L), noinf);
                }
                if (!sendtouser(ubuf, 338ul, blen, 1, 1, digiip,
                 userdport) && show) {
@@ -1251,7 +1256,7 @@ extern int main(int argc, char **argv)
                if (show) osi_WrStrLn("-----", 6ul);
             }
          }
-         if (issetr((unsigned long)usersock)) {
+         if (issetr((uint32_t)usersock)) {
             /* data from user */
             fromip = 0UL;
             blen = getudp(usersock, ubuf, 338ul, &fromip, &userdport, 0);
@@ -1259,7 +1264,7 @@ extern int main(int argc, char **argv)
                if (show) {
                   osi_WrStr("> from user ", 13ul);
                   showpip(fromip, userdport);
-                  ShowFrame(ubuf, 338ul, (unsigned long)(blen-2L), noinf);
+                  ShowFrame(ubuf, 338ul, (uint32_t)(blen-2L), noinf);
                }
                AddIp(fromip, userdport, 0, 0, &dbcin, defaultbcin,
                 defaultbcout, 0, ubuf, 338ul);

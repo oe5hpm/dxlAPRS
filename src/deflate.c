@@ -23,18 +23,17 @@
 
 /* data compressor simplified deflate-lz77 with low overhead for stream and blocks */
 
-static unsigned long Hash(char a, char b, char c)
+static uint32_t Hash(char a, char b, char c)
 {
-   return (unsigned long)(unsigned char)a+131UL*(unsigned long)
-                (unsigned char)b+851UL*(unsigned long)(unsigned char)
-                c&4095UL;
+   return (uint32_t)(uint8_t)a+131UL*(uint32_t)(uint8_t)
+                b+851UL*(uint32_t)(uint8_t)c&4095UL;
 } /* end Hash() */
 /* 131 831 */
 
 
 extern void deflate_Initexpand(struct deflate_XCONTEXT * c)
 {
-   unsigned long i;
+   uint32_t i;
    for (i = 0UL; i<=32767UL; i++) {
       c->ring[i] = 0;
    } /* end for */
@@ -48,10 +47,10 @@ extern void deflate_Initexpand(struct deflate_XCONTEXT * c)
 
 extern void deflate_Initdeflate(struct deflate_CONTEXT * c)
 {
-   unsigned long i;
+   uint32_t i;
    for (i = 0UL; i<=32767UL; i++) {
       c->ring[i] = 0;
-      c->hashchain[i] = (unsigned short)i;
+      c->hashchain[i] = (uint16_t)i;
    } /* end for */
    for (i = 0UL; i<=4095UL; i++) {
       c->hash[i] = 32768U;
@@ -78,14 +77,14 @@ BEGIN RETURN Hash(c.ring[p], c.ring[(p+1) MOD BSIZE],
                 c.ring[(p+2) MOD BSIZE]) END Hashring;
 */
 
-static void findmatch(struct deflate_CONTEXT * c, unsigned long * dist,
-                unsigned long * len)
+static void findmatch(struct deflate_CONTEXT * c, uint32_t * dist,
+                uint32_t * len)
 {
-   unsigned long do0;
-   unsigned long d;
-   unsigned long i;
-   unsigned long rp;
-   unsigned long hp;
+   uint32_t do0;
+   uint32_t d;
+   uint32_t i;
+   uint32_t rp;
+   uint32_t hp;
    *len = 0UL;
    do0 = 0UL;
    if (c->lastidx>=32768UL) {
@@ -105,7 +104,7 @@ static void findmatch(struct deflate_CONTEXT * c, unsigned long * dist,
          }
          if (i>=c->mlen) return;
       } /* end for */
-      hp = (unsigned long)c->hash[Hash(c->matchbuf[0UL], c->matchbuf[1UL],
+      hp = (uint32_t)c->hash[Hash(c->matchbuf[0UL], c->matchbuf[1UL],
                 c->matchbuf[2UL])]; /* start hash chain */
    }
    else hp = c->lastidx;
@@ -136,7 +135,7 @@ static void findmatch(struct deflate_CONTEXT * c, unsigned long * dist,
             }
          }
       }
-      hp = (unsigned long)c->hashchain[hp]; /* go on in hash chain */
+      hp = (uint32_t)c->hashchain[hp]; /* go on in hash chain */
    }
 } /* end findmatch() */
 
@@ -144,18 +143,17 @@ static void findmatch(struct deflate_CONTEXT * c, unsigned long * dist,
 static void stohash(struct deflate_CONTEXT * c)
 {
    short hi;
-   unsigned long p;
+   uint32_t p;
    p = c->wp+32765UL&32767UL;
    hi = (short)Hash(c->ring[p], c->ring[p+1UL&32767UL],
                 c->ring[p+2UL&32767UL]);
    if (c->hash[hi]<32768U) c->hashchain[p] = c->hash[hi];
-   c->hash[hi] = (unsigned short)p;
+   c->hash[hi] = (uint16_t)p;
 } /* end stohash() */
 
 
-static void codelen(unsigned long len, unsigned long dist,
-                unsigned long * clen, unsigned long * nlen,
-                unsigned long * dlen, unsigned long * nd)
+static void codelen(uint32_t len, uint32_t dist, uint32_t * clen,
+                uint32_t * nlen, uint32_t * dlen, uint32_t * nd)
 {
    switch (len) {
    case 3UL:
@@ -828,13 +826,12 @@ static void codelen(unsigned long len, unsigned long dist,
 } /* end codelen() */
 
 
-static void txbits(struct deflate_CONTEXT * c, unsigned long b,
-                unsigned long len, char dbuf[], unsigned long dbuf_len,
-                long * outlen)
+static void txbits(struct deflate_CONTEXT * c, uint32_t b, uint32_t len,
+                char dbuf[], uint32_t dbuf_len, int32_t * outlen)
 {
    /*  c.txbitbuf:=c.txbitbuf<<len + b; */
-   c->txbitbuf = (unsigned long)X2C_LSH((unsigned long)c->txbitbuf,32,
-                (long)len)+b;
+   c->txbitbuf = (uint32_t)X2C_LSH((uint32_t)c->txbitbuf,32,
+                (int32_t)len)+b;
    c->txbitc += len;
    if (len==0UL) {
       /* flush */
@@ -848,10 +845,10 @@ static void txbits(struct deflate_CONTEXT * c, unsigned long b,
    /*WrStrLn("txbit-flush");  */
    if (*outlen>=0L) {
       while (c->txbitc>=8UL) {
-         dbuf[*outlen] = (char)(unsigned long)X2C_LSH((unsigned long)
-                c->txbitbuf,32,8L-(long)c->txbitc);
+         dbuf[*outlen] = (char)(uint32_t)X2C_LSH((uint32_t)
+                c->txbitbuf,32,8L-(int32_t)c->txbitc);
          ++*outlen;
-         if (*outlen>(long)(dbuf_len-1)) *outlen = -2L;
+         if (*outlen>(int32_t)(dbuf_len-1)) *outlen = -2L;
          c->txbitc -= 8UL;
       }
    }
@@ -859,27 +856,27 @@ static void txbits(struct deflate_CONTEXT * c, unsigned long b,
 
 
 static void wrrawblock(struct deflate_CONTEXT * c, char dbuf[],
-                unsigned long dbuf_len, long * outlen)
+                uint32_t dbuf_len, int32_t * outlen)
 {
-   unsigned long b;
-   unsigned long n;
-   unsigned long i;
-   unsigned long tmp;
+   uint32_t b;
+   uint32_t n;
+   uint32_t i;
+   uint32_t tmp;
    txbits(c, 1UL, 1UL, dbuf, dbuf_len, outlen); /* switch to raw */
    if (c->txbitc==0UL) b = 8UL;
    else b = 16UL-c->txbitc;
    n = (c->rawwo+32768UL)-c->rawr&32767UL;
    i = 1UL;
    /*  i:=i<<b; */
-   i = (unsigned long)X2C_LSH(0x1UL,32,(long)b);
+   i = (uint32_t)X2C_LSH(0x1UL,32,(int32_t)b);
    if (i<n) n = i;
    txbits(c, n-1UL, b, dbuf, dbuf_len, outlen);
    tmp = n-1UL;
    i = 0UL;
    if (i<=tmp) for (;; i++) {
       /* send all raw data */
-      txbits(c, (unsigned long)(unsigned char)c->ring[c->rawr], 8UL, dbuf,
-                dbuf_len, outlen);
+      txbits(c, (uint32_t)(uint8_t)c->ring[c->rawr], 8UL, dbuf, dbuf_len,
+                 outlen);
       c->rawr = c->rawr+1UL&32767UL;
       if (i==tmp) break;
    } /* end for */
@@ -887,14 +884,14 @@ static void wrrawblock(struct deflate_CONTEXT * c, char dbuf[],
 
 
 static void wrcomp(struct deflate_CONTEXT * c, char dbuf[],
-                unsigned long dbuf_len, long * outlen)
+                uint32_t dbuf_len, int32_t * outlen)
 {
-   unsigned long dl;
-   unsigned long ll;
-   unsigned long d;
-   unsigned long l;
-   unsigned long dist;
-   unsigned long len;
+   uint32_t dl;
+   uint32_t ll;
+   uint32_t d;
+   uint32_t l;
+   uint32_t dist;
+   uint32_t len;
    while (c->comr!=c->comw) {
       /* send all compressed data */
       len = c->combuf[c->comr]&65535UL;
@@ -929,8 +926,8 @@ static void wrcomp(struct deflate_CONTEXT * c, char dbuf[],
 } /* end wrcomp() */
 
 
-static void endcomp(struct deflate_CONTEXT * c, char finish, char dbuf[],
-                unsigned long dbuf_len, long * outlen)
+static void endcomp(struct deflate_CONTEXT * c, char finish,
+                char dbuf[], uint32_t dbuf_len, int32_t * outlen)
 {
    txbits(c, 0UL, 7UL, dbuf, dbuf_len, outlen);
    if (finish) txbits(c, 0UL, 1UL, dbuf, dbuf_len, outlen);
@@ -940,8 +937,8 @@ static void endcomp(struct deflate_CONTEXT * c, char finish, char dbuf[],
 } /* end endcomp() */
 
 
-static void checkbufs(struct deflate_CONTEXT * c, char flush, char dbuf[],
-                unsigned long dbuf_len, long * outlen)
+static void checkbufs(struct deflate_CONTEXT * c, char flush,
+                char dbuf[], uint32_t dbuf_len, int32_t * outlen)
 {
    /*WrStr("(");WrInt(c.sizedif, 1);WrStr(")");   */
    if (c->sizedif>=0L) {
@@ -1002,10 +999,10 @@ static void checkbufs(struct deflate_CONTEXT * c, char flush, char dbuf[],
 
 
 static void sendchar(struct deflate_CONTEXT * c, char dbuf[],
-                unsigned long dbuf_len, long * outlen)
+                uint32_t dbuf_len, int32_t * outlen)
 {
-   unsigned long code;
-   code = (unsigned long)(unsigned char)c->ring[c->savep];
+   uint32_t code;
+   code = (uint32_t)(uint8_t)c->ring[c->savep];
    c->combuf[c->comw] = code;
    c->comw = c->comw+1UL&2047UL;
    c->raww = c->savep+1UL&32767UL;
@@ -1014,17 +1011,16 @@ static void sendchar(struct deflate_CONTEXT * c, char dbuf[],
 } /* end sendchar() */
 
 
-static void send(struct deflate_CONTEXT * c, unsigned long len,
-                unsigned long dist, char dbuf[], unsigned long dbuf_len,
-                long * outlen)
+static void send(struct deflate_CONTEXT * c, uint32_t len, uint32_t dist,
+                 char dbuf[], uint32_t dbuf_len, int32_t * outlen)
 {
-   unsigned long nl;
-   unsigned long nd;
-   unsigned long dlen;
-   unsigned long clen;
-   unsigned long p1;
-   unsigned long p0;
-   unsigned long p;
+   uint32_t nl;
+   uint32_t nd;
+   uint32_t dlen;
+   uint32_t clen;
+   uint32_t p1;
+   uint32_t p0;
+   uint32_t p;
    checkbufs(c, 0, dbuf, dbuf_len, outlen);
    c->combuf[c->comw] = len+65536UL*dist;
    c->comw = c->comw+1UL&2047UL;
@@ -1043,19 +1039,19 @@ static void send(struct deflate_CONTEXT * c, unsigned long len,
       if (p==p1) p = p0;
       --len;
    }
-   c->sizedif -= (long)(clen+dlen);
+   c->sizedif -= (int32_t)(clen+dlen);
 } /* end send() */
 
 
 extern void deflate_Deflatbyte(struct deflate_CONTEXT * c, char ch,
-                char flush, char dbuf[], unsigned long dbuf_len,
-                long * outlen)
+                char flush, char dbuf[], uint32_t dbuf_len,
+                int32_t * outlen)
 /* 1C send no blockend, 2C send it */
 {
-   unsigned long len;
-   unsigned long dist;
-   unsigned long i;
-   unsigned long tmp;
+   uint32_t len;
+   uint32_t dist;
+   uint32_t i;
+   uint32_t tmp;
    if (flush==0) {
       c->matchbuf[c->mlen] = ch;
       ++c->mlen;
@@ -1156,9 +1152,9 @@ extern void deflate_Deflatbyte(struct deflate_CONTEXT * c, char ch,
 
 
 static void xsend(struct deflate_XCONTEXT * c, char ch, char dbuf[],
-                unsigned long dbuf_len, long * outlen)
+                uint32_t dbuf_len, int32_t * outlen)
 {
-   if (*outlen<0L || *outlen>(long)(dbuf_len-1)) *outlen = -1L;
+   if (*outlen<0L || *outlen>(int32_t)(dbuf_len-1)) *outlen = -1L;
    else {
       c->ring[c->wp] = ch;
       c->wp = c->wp+1UL&32767UL;
@@ -1384,22 +1380,21 @@ WrStrLn(" LIBDONE1 ");
   END;
 END Expandbyte;
 */
-static unsigned long deflate_DISTAB[32] = {1UL,2UL,3UL,4UL,5UL,7UL,9UL,13UL,
+static uint32_t deflate_DISTAB[32] = {1UL,2UL,3UL,4UL,5UL,7UL,9UL,13UL,
                 17UL,25UL,33UL,49UL,65UL,97UL,129UL,193UL,257UL,385UL,513UL,
                 769UL,1025UL,1537UL,2049UL,3073UL,4097UL,6145UL,8193UL,
                 12289UL,16385UL,24577UL,0UL,0UL};
 
-static unsigned long deflate_LENTAB[32] = {0UL,3UL,4UL,5UL,6UL,7UL,8UL,9UL,
-                10UL,11UL,13UL,15UL,17UL,19UL,23UL,27UL,31UL,35UL,43UL,51UL,
-                59UL,67UL,83UL,99UL,115UL,131UL,163UL,195UL,227UL,285UL,0UL,
-                0UL};
+static uint32_t deflate_LENTAB[32] = {0UL,3UL,4UL,5UL,6UL,7UL,8UL,9UL,10UL,
+                11UL,13UL,15UL,17UL,19UL,23UL,27UL,31UL,35UL,43UL,51UL,59UL,
+                67UL,83UL,99UL,115UL,131UL,163UL,195UL,227UL,285UL,0UL,0UL};
 
 
-static void copystr(char dbuf[], unsigned long dbuf_len, long * outlen,
-                struct deflate_XCONTEXT * c)
+static void copystr(char dbuf[], uint32_t dbuf_len, int32_t * outlen,
+                 struct deflate_XCONTEXT * c)
 {
-   unsigned long n;
-   unsigned long i;
+   uint32_t n;
+   uint32_t i;
    if (c->lencode<3UL) *outlen = -2L;
    n = c->wp;
    i = (n+32768UL)-c->distcode&32767UL; /* start in ring */
@@ -1411,28 +1406,28 @@ static void copystr(char dbuf[], unsigned long dbuf_len, long * outlen,
    }
 } /* end copystr() */
 
-static unsigned long _cnst0[32] = {1UL,2UL,3UL,4UL,5UL,7UL,9UL,13UL,17UL,
-                25UL,33UL,49UL,65UL,97UL,129UL,193UL,257UL,385UL,513UL,769UL,
+static uint32_t _cnst0[32] = {1UL,2UL,3UL,4UL,5UL,7UL,9UL,13UL,17UL,25UL,
+                33UL,49UL,65UL,97UL,129UL,193UL,257UL,385UL,513UL,769UL,
                 1025UL,1537UL,2049UL,3073UL,4097UL,6145UL,8193UL,12289UL,
                 16385UL,24577UL,0UL,0UL};
-static unsigned long _cnst[32] = {0UL,3UL,4UL,5UL,6UL,7UL,8UL,9UL,10UL,11UL,
+static uint32_t _cnst[32] = {0UL,3UL,4UL,5UL,6UL,7UL,8UL,9UL,10UL,11UL,
                 13UL,15UL,17UL,19UL,23UL,27UL,31UL,35UL,43UL,51UL,59UL,67UL,
                 83UL,99UL,115UL,131UL,163UL,195UL,227UL,285UL,0UL,0UL};
 
 extern void deflate_Expandbyte(struct deflate_XCONTEXT * c, char ch,
-                char dbuf[], unsigned long dbuf_len, long * outlen,
+                char dbuf[], uint32_t dbuf_len, int32_t * outlen,
                 char * done)
 {
-   unsigned long w;
-   unsigned long n;
-   c->rxbitbuf = c->rxbitbuf*256UL+(unsigned long)(unsigned char)ch;
+   uint32_t w;
+   uint32_t n;
+   c->rxbitbuf = c->rxbitbuf*256UL+(uint32_t)(uint8_t)ch;
                 /* append new bits */
    c->rxbits += 8UL;
    *done = 0;
    for (;;) {
-      c->rxbitbuf = (unsigned long)((unsigned long)
-                c->rxbitbuf&X2C_LSH(0xFFFFFFFFUL,32,(long)c->rxbits-32L));
-                /* strip old bits */
+      c->rxbitbuf = (uint32_t)((uint32_t)
+                c->rxbitbuf&X2C_LSH(0xFFFFFFFFUL,32,
+                (int32_t)c->rxbits-32L)); /* strip old bits */
       if (c->rawlen==0L) n = 1UL;
       else if (c->rawlen==-1L) {
          /* get raw len */
@@ -1452,8 +1447,8 @@ extern void deflate_Expandbyte(struct deflate_XCONTEXT * c, char ch,
       }
       else n = 8UL;
       if (c->rxbits<n) break;
-      w = (unsigned long)X2C_LSH((unsigned long)c->rxbitbuf,32,
-                (long)n-(long)c->rxbits);
+      w = (uint32_t)X2C_LSH((uint32_t)c->rxbitbuf,32,
+                (int32_t)n-(int32_t)c->rxbits);
       if (c->rawlen>0L) {
          /* in uncompressed mode */
          xsend(c, (char)w, dbuf, dbuf_len, outlen);
@@ -1479,7 +1474,7 @@ extern void deflate_Expandbyte(struct deflate_XCONTEXT * c, char ch,
       }
       else if (c->rawlen==-1L) {
          /* get raw len */
-         c->rawlen = (long)(w+1UL);
+         c->rawlen = (int32_t)(w+1UL);
          c->rxbits -= n;
          c->compdata = 0;
       }
@@ -1569,8 +1564,8 @@ extern void deflate_BEGIN(void)
    static int deflate_init = 0;
    if (deflate_init) return;
    deflate_init = 1;
-   if (sizeof(unsigned char)!=1) X2C_ASSERT(0);
-   if (sizeof(unsigned long)!=4) X2C_ASSERT(0);
+   if (sizeof(uint8_t)!=1) X2C_ASSERT(0);
+   if (sizeof(uint32_t)!=4) X2C_ASSERT(0);
    osi_BEGIN();
 }
 

@@ -22,7 +22,7 @@ struct Execlogin_tEXEC {
    X2C_pCHAR * args;
 };
 
-extern long Execlogin_StartLogin(struct Execlogin_tEXEC *);
+extern int32_t Execlogin_StartLogin(struct Execlogin_tEXEC *);
 
 
 extern void Execlogin_BEGIN(void);

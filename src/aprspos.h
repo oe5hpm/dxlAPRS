@@ -69,12 +69,12 @@ extern float aprspos_distance(struct aprspos_POSITION,
 extern float aprspos_azimuth(struct aprspos_POSITION,
                 struct aprspos_POSITION);
 
-extern void aprspos_GetPos(struct aprspos_POSITION *, unsigned long *,
-                unsigned long *, long *, char *, char *, char [],
-                unsigned long, unsigned long, unsigned long, char [],
-                unsigned long, char *);
+extern void aprspos_GetPos(struct aprspos_POSITION *, uint32_t *,
+                uint32_t *, int32_t *, char *, char *,
+                char [], uint32_t, uint32_t, uint32_t, char [],
+                 uint32_t, char *);
 
-extern void aprspos_GetSym(char [], unsigned long, char *, char *);
+extern void aprspos_GetSym(char [], uint32_t, char *, char *);
 /* symbol out of destination call */
 
 

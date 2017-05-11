@@ -49,8 +49,8 @@
 
 
 
-long maptool_xsize;
-long maptool_ysize;
+int32_t maptool_xsize;
+int32_t maptool_ysize;
 float maptool_shiftx;
 float maptool_shifty;
 
@@ -101,9 +101,9 @@ struct PIX8;
 
 
 struct PIX8 {
-   unsigned char r8;
-   unsigned char g8;
-   unsigned char b8;
+   uint8_t r8;
+   uint8_t g8;
+   uint8_t b8;
 };
 
 typedef struct PIX8 ROWS0[256];
@@ -125,9 +125,9 @@ typedef struct SRTMTILE * pSRTMTILE;
 
 
 struct SRTMTILE {
-   unsigned char typ;
-   long fd;
-   unsigned char used[3][3600];
+   uint8_t typ;
+   int32_t fd;
+   uint8_t used[3][3600];
    pSRTMSTRIP strips[3][3600];
 };
 
@@ -141,7 +141,7 @@ struct _0;
 
 
 struct _0 {
-   long fd;
+   int32_t fd;
    char havefile; /* have tried to open file */
 };
 /* srtm */
@@ -156,28 +156,28 @@ struct _1;
 
 
 struct _1 {
-   unsigned char char0[19][8];
-   unsigned short mask[21];
-   unsigned char width;
+   uint8_t char0[19][8];
+   uint16_t mask[21];
+   uint8_t width;
 };
 
 static struct _1 font[97];
 
 static char gammatab[1024];
 
-static unsigned long maploadstart;
+static uint32_t maploadstart;
 
 static char mapnamesbuf[4096]; /* tile name buffer */
 
-static unsigned char mapnamesdone;
+static uint8_t mapnamesdone;
 
 /* tile names written to file */
-static unsigned long lastmapreq; /* time of last map requested */
+static uint32_t lastmapreq; /* time of last map requested */
 
-static unsigned long maploopcnt;
+static uint32_t maploopcnt;
 
 /* count same tile requests */
-static unsigned long mapdelay; /* delay map load start on map moves */
+static uint32_t mapdelay; /* delay map load start on map moves */
 
 static SRTMLONG srtmcache;
 
@@ -185,7 +185,7 @@ static pSRTMTILE srtmmiss; /* cache no file info with pointer to here */
 
 static SRTM30FD srtm30fd; /* open srtm30 files */
 
-static unsigned long lastpoinum;
+static uint32_t lastpoinum;
 
 /*open, miss, hit:CARDINAL; */
 
@@ -199,7 +199,7 @@ static float sqr(float x)
 
 static void makegammatab(void)
 {
-   unsigned long c;
+   uint32_t c;
    gammatab[0U] = 0;
    for (c = 1UL; c<=1023UL; c++) {
       gammatab[c] = (char)aprsdecode_trunc(osic_exp(osic_ln(X2C_DIVR((float)
@@ -210,8 +210,8 @@ static void makegammatab(void)
 
 extern void maptool_clr(maptool_pIMAGE img)
 {
-   unsigned long x;
-   unsigned long tmp;
+   uint32_t x;
+   uint32_t tmp;
    tmp = img->Len1-1;
    x = 0UL;
    if (x<=tmp) for (;; x++) {
@@ -221,7 +221,7 @@ extern void maptool_clr(maptool_pIMAGE img)
 } /* end clr() */
 
 
-extern char maptool_vistime(unsigned long t)
+extern char maptool_vistime(uint32_t t)
 {
    return aprsdecode_systime<t+aprsdecode_lums.maxdim+aprsdecode_lums.firstdim;
                 
@@ -239,17 +239,17 @@ extern void maptool_limpos(struct aprspos_POSITION * pos)
 
 extern void maptool_startmapdelay(void)
 {
-   mapdelay = (unsigned long)useri_conf2int(useri_fDELAYGETMAP, 0UL, 0L, 60L,
-                 0L);
+   mapdelay = (uint32_t)useri_conf2int(useri_fDELAYGETMAP, 0UL, 0L, 60L,
+                0L);
    lastmapreq = aprsdecode_realtime;
    maploopcnt = 0UL; /* operator moves map */
 } /* end startmapdelay() */
 
 
-static void findinfo(long nx, long ny)
+static void findinfo(int32_t nx, int32_t ny)
 {
-   long d;
-   unsigned long i;
+   int32_t d;
+   uint32_t i;
    struct aprsdecode__D0 * anonym;
    { /* with */
       struct aprsdecode__D0 * anonym = &aprsdecode_click;
@@ -273,15 +273,16 @@ static void findinfo(long nx, long ny)
 } /* end findinfo() */
 
 
-extern void maptool_area(maptool_pIMAGE img, long x0, long y00, long x1,
-                long y1, struct aprsdecode_COLTYP col0, char add)
+extern void maptool_area(maptool_pIMAGE img, int32_t x0, int32_t y00,
+                int32_t x1, int32_t y1, struct aprsdecode_COLTYP col0,
+                char add)
 {
-   long h;
-   long yy;
-   long xx;
+   int32_t h;
+   int32_t yy;
+   int32_t xx;
    struct maptool_PIX * anonym;
-   long tmp;
-   long tmp0;
+   int32_t tmp;
+   int32_t tmp0;
    if (x0>x1) {
       h = x0;
       x0 = x1;
@@ -296,10 +297,10 @@ extern void maptool_area(maptool_pIMAGE img, long x0, long y00, long x1,
    if (x1<0L) x1 = 0L;
    if (y00<0L) y00 = 0L;
    if (y1<0L) y1 = 0L;
-   if (x0>(long)(img->Len1-1)) x0 = (long)(img->Len1-1);
-   if (x1>(long)(img->Len1-1)) x1 = (long)(img->Len1-1);
-   if (y00>(long)(img->Len0-1)) y00 = (long)(img->Len0-1);
-   if (y1>(long)(img->Len0-1)) y1 = (long)(img->Len0-1);
+   if (x0>(int32_t)(img->Len1-1)) x0 = (int32_t)(img->Len1-1);
+   if (x1>(int32_t)(img->Len1-1)) x1 = (int32_t)(img->Len1-1);
+   if (y00>(int32_t)(img->Len0-1)) y00 = (int32_t)(img->Len0-1);
+   if (y1>(int32_t)(img->Len0-1)) y1 = (int32_t)(img->Len0-1);
    tmp = y1;
    yy = y00;
    if (yy<=tmp) for (;; yy++) {
@@ -309,14 +310,14 @@ extern void maptool_area(maptool_pIMAGE img, long x0, long y00, long x1,
          { /* with */
             struct maptool_PIX * anonym = &img->Adr[(xx)*img->Len0+yy];
             if (add) {
-               anonym->r += (unsigned short)col0.r;
-               anonym->g += (unsigned short)col0.g;
-               anonym->b += (unsigned short)col0.b;
+               anonym->r += (uint16_t)col0.r;
+               anonym->g += (uint16_t)col0.g;
+               anonym->b += (uint16_t)col0.b;
             }
             else {
-               anonym->r = (unsigned short)col0.r;
-               anonym->g = (unsigned short)col0.g;
-               anonym->b = (unsigned short)col0.b;
+               anonym->r = (uint16_t)col0.r;
+               anonym->g = (uint16_t)col0.g;
+               anonym->b = (uint16_t)col0.b;
             }
          }
          if (xx==tmp0) break;
@@ -326,21 +327,22 @@ extern void maptool_area(maptool_pIMAGE img, long x0, long y00, long x1,
 } /* end area() */
 
 
-extern float maptool_realzoom(long zi, float zf)
+extern float maptool_realzoom(int32_t zi, float zf)
 {
    return ((float)zi+zf)-1.0f;
 } /* end realzoom() */
 
 
-static float expzoom(long z)
+static float expzoom(int32_t z)
 {
-   return (float)(unsigned long)X2C_LSH(0x1UL,32,z);
+   return (float)(uint32_t)X2C_LSH(0x1UL,32,z);
 } /* end expzoom() */
 
 
-extern void maptool_xytodeg(float x, float y, struct aprspos_POSITION * pos)
+extern void maptool_xytodeg(float x, float y,
+                struct aprspos_POSITION * pos)
 {
-   long zi;
+   int32_t zi;
    float ysf;
    float zoom;
    float pixrad;
@@ -353,9 +355,9 @@ extern void maptool_xytodeg(float x, float y, struct aprspos_POSITION * pos)
       aprsdecode_posinval(pos);
       return;
    }
-   zi = (long)aprsdecode_trunc(zoom);
+   zi = (int32_t)aprsdecode_trunc(zoom);
    pixrad = X2C_DIVR(6.2831853071796f,
-                ((1.0f+zoom)-(float)zi)*256.0f*expzoom((long)
+                ((1.0f+zoom)-(float)zi)*256.0f*expzoom((int32_t)
                 aprsdecode_trunc(zoom)));
    pos->long0 = aprsdecode_mappos.long0+pixrad*x;
    pos->lat = 2.0f*osic_arctan(osic_exp(osic_ln(osic_tan(aprsdecode_mappos.lat)
@@ -364,13 +366,13 @@ extern void maptool_xytodeg(float x, float y, struct aprspos_POSITION * pos)
 } /* end xytodeg() */
 
 
-extern void maptool_shiftmap(long x, long y, long ysize, float zoom,
-                struct aprspos_POSITION * pos)
+extern void maptool_shiftmap(int32_t x, int32_t y, int32_t ysize,
+                float zoom, struct aprspos_POSITION * pos)
 {
-   long zi;
+   int32_t zi;
    float pixrad;
-   zi = (long)aprsdecode_trunc(zoom);
-   pixrad = ((1.0f+zoom)-(float)zi)*256.0f*expzoom((long)
+   zi = (int32_t)aprsdecode_trunc(zoom);
+   pixrad = ((1.0f+zoom)-(float)zi)*256.0f*expzoom((int32_t)
                 aprsdecode_trunc(zoom));
    pos->long0 = pos->long0-(X2C_DIVR(6.2831853071796f,pixrad))*(float)x;
    pos->lat = 2.0f*osic_arctan(osic_exp(osic_ln(osic_tan(pos->lat)
@@ -380,14 +382,14 @@ extern void maptool_shiftmap(long x, long y, long ysize, float zoom,
 } /* end shiftmap() */
 
 
-extern void maptool_center(long xsize, long ysize, float zoom,
+extern void maptool_center(int32_t xsize, int32_t ysize, float zoom,
                 struct aprspos_POSITION centpos,
                 struct aprspos_POSITION * pos)
 {
-   long zi;
+   int32_t zi;
    float pixrad;
-   zi = (long)aprsdecode_trunc(zoom);
-   pixrad = ((1.0f+zoom)-(float)zi)*256.0f*expzoom((long)
+   zi = (int32_t)aprsdecode_trunc(zoom);
+   pixrad = ((1.0f+zoom)-(float)zi)*256.0f*expzoom((int32_t)
                 aprsdecode_trunc(zoom));
    pos->long0 = centpos.long0-(X2C_DIVR(6.2831853071796f,
                 pixrad))*(float)(xsize/2L);
@@ -400,8 +402,9 @@ extern void maptool_center(long xsize, long ysize, float zoom,
 #define maptool_TOL 0.0001
 
 
-extern void maptool_mercator(float lon, float lat, long zoom, long * tilex,
-                long * tiley, float * x, float * y)
+extern void maptool_mercator(float lon, float lat, int32_t zoom,
+                int32_t * tilex, int32_t * tiley, float * x,
+                float * y)
 {
    float z;
    if (lat>1.484f) lat = 1.484f;
@@ -412,17 +415,18 @@ extern void maptool_mercator(float lon, float lat, long zoom, long * tilex,
    z = expzoom(zoom);
    *x = (0.5f+lon*1.591549430919E-1f)*z;
    *y = (0.5f-lat*1.591549430919E-1f)*z;
-   *tilex = (long)aprsdecode_trunc(*x);
-   *tiley = (long)aprsdecode_trunc(*y);
+   *tilex = (int32_t)aprsdecode_trunc(*x);
+   *tiley = (int32_t)aprsdecode_trunc(*y);
    *x = (*x-(float)*tilex)*256.0f;
    *y = (*y-(float)*tiley)*256.0f;
 } /* end mercator() */
 
 
-extern long maptool_mapxy(struct aprspos_POSITION pos, float * x, float * y)
+extern int32_t maptool_mapxy(struct aprspos_POSITION pos, float * x,
+                float * y)
 {
-   long tiley;
-   long tilex;
+   int32_t tiley;
+   int32_t tilex;
    float ys;
    float xs;
    if (aprspos_posvalid(pos)) {
@@ -431,8 +435,8 @@ extern long maptool_mapxy(struct aprspos_POSITION pos, float * x, float * y)
       tilex -= aprsdecode_inittilex;
       tiley -= aprsdecode_inittiley;
       *x = ((*x+(float)(tilex*256L))-maptool_shiftx)*aprsdecode_finezoom;
-      *y = (float)maptool_ysize-(((float)(tiley*256L)+*y)-maptool_shifty)
-                *aprsdecode_finezoom;
+      *y = (float)maptool_ysize-(((float)(tiley*256L)+*y)
+                -maptool_shifty)*aprsdecode_finezoom;
       /*WrFixed(x, 5, 10); WrFixed(FLOAT(xsize), 5, 10); WrFixed(y, 5, 10);
                 WrFixed(FLOAT(ysize), 5, 10); WrLn; */
       /*doreorder error:    IF (x>=0.0) & (x<=FLOAT(xsize)) & (y>=0.0)
@@ -445,10 +449,10 @@ extern long maptool_mapxy(struct aprspos_POSITION pos, float * x, float * y)
 } /* end mapxy() */
 
 
-extern void maptool_pullmap(long x, long y, char init)
+extern void maptool_pullmap(int32_t x, int32_t y, char init)
 {
    struct aprspos_POSITION top;
-   unsigned long i;
+   uint32_t i;
    if (init) {
       maptool_xytodeg((float)x, (float)y, &aprsdecode_click.pullpos);
       xosi_sethand(xosi_cPULL4);
@@ -468,10 +472,10 @@ extern void maptool_pullmap(long x, long y, char init)
 
 
 extern void maptool_loctopos(struct aprspos_POSITION * pos, char loc[],
-                unsigned long loc_len)
+                uint32_t loc_len)
 {
-   unsigned long l;
-   unsigned long i;
+   uint32_t l;
+   uint32_t i;
    char ok0;
    X2C_PCOPY((void **)&loc,loc_len);
    ok0 = 0;
@@ -481,38 +485,36 @@ extern void maptool_loctopos(struct aprspos_POSITION * pos, char loc[],
       loc[i] = X2C_CAP(loc[i]);
       ++i;
    }
-   if ((((((((((((l>=6UL && (unsigned char)loc[0UL]>='A') && (unsigned char)
-                loc[0UL]<='R') && (unsigned char)loc[1UL]>='A')
-                && (unsigned char)loc[1UL]<='R') && (unsigned char)
-                loc[2UL]>='0') && (unsigned char)loc[2UL]<='9')
-                && (unsigned char)loc[3UL]>='0') && (unsigned char)
-                loc[3UL]<='9') && (unsigned char)loc[4UL]>='A')
-                && (unsigned char)loc[4UL]<='X') && (unsigned char)
-                loc[5UL]>='A') && (unsigned char)loc[5UL]<='X') {
-      pos->long0 = (float)((unsigned long)(unsigned char)loc[0UL]-65UL)
-                *20.0f+(float)((unsigned long)(unsigned char)loc[2UL]-48UL)
-                *2.0f+X2C_DIVR((float)((unsigned long)(unsigned char)
+   if ((((((((((((l>=6UL && (uint8_t)loc[0UL]>='A') && (uint8_t)
+                loc[0UL]<='R') && (uint8_t)loc[1UL]>='A') && (uint8_t)
+                loc[1UL]<='R') && (uint8_t)loc[2UL]>='0') && (uint8_t)
+                loc[2UL]<='9') && (uint8_t)loc[3UL]>='0') && (uint8_t)
+                loc[3UL]<='9') && (uint8_t)loc[4UL]>='A') && (uint8_t)
+                loc[4UL]<='X') && (uint8_t)loc[5UL]>='A') && (uint8_t)
+                loc[5UL]<='X') {
+      pos->long0 = (float)((uint32_t)(uint8_t)loc[0UL]-65UL)
+                *20.0f+(float)((uint32_t)(uint8_t)loc[2UL]-48UL)
+                *2.0f+X2C_DIVR((float)((uint32_t)(uint8_t)
                 loc[4UL]-65UL)+0.5f,12.0f);
-      pos->lat = (float)((unsigned long)(unsigned char)loc[1UL]-65UL)
-                *10.0f+(float)((unsigned long)(unsigned char)loc[3UL]-48UL)
-                +X2C_DIVR((float)((unsigned long)(unsigned char)
-                loc[5UL]-65UL)+0.5f,24.0f);
+      pos->lat = (float)((uint32_t)(uint8_t)loc[1UL]-65UL)
+                *10.0f+(float)((uint32_t)(uint8_t)loc[3UL]-48UL)
+                +X2C_DIVR((float)((uint32_t)(uint8_t)loc[5UL]-65UL)
+                +0.5f,24.0f);
       if (l==6UL) ok0 = 1;
-      if ((((l>=8UL && (unsigned char)loc[6UL]>='0') && (unsigned char)
-                loc[6UL]<='9') && (unsigned char)loc[7UL]>='0')
-                && (unsigned char)loc[7UL]<='9') {
-         pos->long0 = (pos->long0+X2C_DIVR((float)((unsigned long)
-                (unsigned char)loc[6UL]-48UL),120.0f))-0.0375f;
-         pos->lat = (pos->lat+X2C_DIVR((float)((unsigned long)(unsigned char)
+      if ((((l>=8UL && (uint8_t)loc[6UL]>='0') && (uint8_t)loc[6UL]<='9')
+                 && (uint8_t)loc[7UL]>='0') && (uint8_t)loc[7UL]<='9') {
+         pos->long0 = (pos->long0+X2C_DIVR((float)((uint32_t)(uint8_t)
+                loc[6UL]-48UL),120.0f))-0.0375f;
+         pos->lat = (pos->lat+X2C_DIVR((float)((uint32_t)(uint8_t)
                 loc[7UL]-48UL),240.0f))-0.01875f;
          if (l==8UL) ok0 = 1;
       }
-      if ((((l>=10UL && (unsigned char)loc[8UL]>='A') && (unsigned char)
-                loc[8UL]<='R') && (unsigned char)loc[9UL]>='A')
-                && (unsigned char)loc[9UL]<='R') {
-         pos->long0 = (pos->long0+X2C_DIVR((float)((unsigned long)
-                (unsigned char)loc[8UL]-65UL),2880.0f))-3.9930555555556E-3f;
-         pos->lat = (pos->lat+X2C_DIVR((float)((unsigned long)(unsigned char)
+      if ((((l>=10UL && (uint8_t)loc[8UL]>='A') && (uint8_t)
+                loc[8UL]<='R') && (uint8_t)loc[9UL]>='A') && (uint8_t)
+                loc[9UL]<='R') {
+         pos->long0 = (pos->long0+X2C_DIVR((float)((uint32_t)(uint8_t)
+                loc[8UL]-65UL),2880.0f))-3.9930555555556E-3f;
+         pos->lat = (pos->lat+X2C_DIVR((float)((uint32_t)(uint8_t)
                 loc[9UL]-65UL),5760.0f))-1.9965277777778E-3f;
          if (l==10UL) ok0 = 1;
       }
@@ -526,11 +528,11 @@ extern void maptool_loctopos(struct aprspos_POSITION * pos, char loc[],
 } /* end loctopos() */
 
 
-extern void maptool_postoloc(char loc[], unsigned long loc_len,
+extern void maptool_postoloc(char loc[], uint32_t loc_len,
                 struct aprspos_POSITION pos)
 {
-   unsigned long bc;
-   unsigned long lc;
+   uint32_t bc;
+   uint32_t lc;
    float br;
    float lr;
    maptool_limpos(&pos);
@@ -561,16 +563,15 @@ extern void maptool_postoloc(char loc[], unsigned long loc_len,
 
 
 /* === srtm lib */
-static long opensrtm(unsigned char t, unsigned long tlat,
-                unsigned long tlong)
+static int32_t opensrtm(uint8_t t, uint32_t tlat, uint32_t tlong)
 {
    char s[21];
    FN path;
-   unsigned long xd;
-   unsigned long yi;
-   unsigned long xi;
-   unsigned long n;
-   long f;
+   uint32_t xd;
+   uint32_t yi;
+   uint32_t xi;
+   uint32_t n;
+   int32_t f;
    useri_confstr(useri_fOSMDIR, path, 1024ul);
    if (t==3U) aprsstr_Append(path, 1024ul, "/srtm3/", 8ul);
    else if (t==1U) aprsstr_Append(path, 1024ul, "/srtm1/", 8ul);
@@ -660,11 +661,11 @@ static long opensrtm(unsigned char t, unsigned long tlat,
 
 static void purgesrtm(char all)
 {
-   unsigned long asize;
-   unsigned long y;
-   unsigned long x;
-   unsigned long yd;
-   unsigned long xd;
+   uint32_t asize;
+   uint32_t y;
+   uint32_t x;
+   uint32_t yd;
+   uint32_t xd;
    pSRTMTILE pt;
    pSRTMLAT pl;
    pSRTMSTRIP pb;
@@ -687,7 +688,7 @@ static void purgesrtm(char all)
                            if (all || anonym->used[x][y]==0U) {
                               asize = 2400UL;
                               if (pt->typ>3U) asize = 240UL;
-                              osic_free((X2C_ADDRESS *) &pb, asize);
+                              osic_free((char * *) &pb, asize);
                               useri_debugmem.srtm -= asize;
                               anonym->strips[x][y] = 0;
                            }
@@ -697,14 +698,14 @@ static void purgesrtm(char all)
                }
                if (all) {
                   if (pt->fd!=-1L) osic_Close(pt->fd);
-                  osic_free((X2C_ADDRESS *) &pt, sizeof(struct SRTMTILE));
+                  osic_free((char * *) &pt, sizeof(struct SRTMTILE));
                   useri_debugmem.srtm -= sizeof(struct SRTMTILE);
                   pl[yd] = 0;
                }
             }
          } /* end for */
          if (all) {
-            osic_free((X2C_ADDRESS *) &pl, sizeof(SRTMLAT));
+            osic_free((char * *) &pl, sizeof(SRTMLAT));
             useri_debugmem.srtm -= sizeof(SRTMLAT);
             srtmcache[xd] = 0;
          }
@@ -725,36 +726,36 @@ static void purgesrtm(char all)
 #define maptool_NOALT0 32767.0
 
 
-static float getsrtm1(unsigned long ilat, unsigned long ilong,
-                unsigned long * div0)
+static float getsrtm1(uint32_t ilat, uint32_t ilong,
+                uint32_t * div0)
 /* 1 pixel altitude */
 {
-   unsigned long rdsize;
-   unsigned long xdeg;
-   unsigned long ydeg;
-   unsigned long xx;
-   unsigned long y;
-   unsigned long x;
-   unsigned long i;
-   long seek;
-   long f;
+   uint32_t rdsize;
+   uint32_t xdeg;
+   uint32_t ydeg;
+   uint32_t xx;
+   uint32_t y;
+   uint32_t x;
+   uint32_t i;
+   int32_t seek;
+   int32_t f;
    pSRTMTILE pt;
    pSRTMSTRIP pb;
-   long a;
-   unsigned char t;
+   int32_t a;
+   uint8_t t;
    struct SRTMTILE * anonym;
    struct SRTMTILE * anonym0;
-   unsigned long tmp;
+   uint32_t tmp;
    ydeg = ilat/3600UL;
    xdeg = ilong/3600UL;
    if (xdeg>359UL || ydeg>179UL) return 32767.0f;
    if (srtmcache[xdeg]==0) {
       /* empty lat array */
-      osic_alloc((X2C_ADDRESS *) &srtmcache[xdeg], sizeof(SRTMLAT));
+      osic_alloc((char * *) &srtmcache[xdeg], sizeof(SRTMLAT));
       if (srtmcache[xdeg]==0) return 32767.0f;
       /* out of memory */
       useri_debugmem.srtm += sizeof(SRTMLAT);
-      memset((X2C_ADDRESS)srtmcache[xdeg],(char)0,sizeof(SRTMLAT));
+      memset((char *)srtmcache[xdeg],(char)0,sizeof(SRTMLAT));
    }
    else if (srtmcache[xdeg][ydeg]==srtmmiss) return 32767.0f;
    /* tile file not avaliable */
@@ -775,13 +776,14 @@ static float getsrtm1(unsigned long ilat, unsigned long ilong,
          }
       }
       /*INC(open); */
-      osic_alloc((X2C_ADDRESS *) &pt, sizeof(struct SRTMTILE));
+      osic_alloc((char * *) &pt, sizeof(struct SRTMTILE));
                 /* a new 1x1 deg buffer */
       if (pt==0) return 32767.0f;
       useri_debugmem.srtm += sizeof(struct SRTMTILE);
       { /* with */
          struct SRTMTILE * anonym = pt;
-         memset((char *)anonym->strips,(char)0,sizeof(pSRTMSTRIP [3][3600]));
+         memset((char *)anonym->strips,(char)0,
+                sizeof(pSRTMSTRIP [3][3600]));
          memset((char *)anonym->used,(char)0,10800UL);
          anonym->typ = t;
          anonym->fd = f;
@@ -790,7 +792,7 @@ static float getsrtm1(unsigned long ilat, unsigned long ilong,
    }
    { /* with */
       struct SRTMTILE * anonym0 = pt;
-      *div0 = (unsigned long)anonym0->typ;
+      *div0 = (uint32_t)anonym0->typ;
       if (anonym0->typ==1U) {
          y = ilat%3600UL;
          x = ilong%3600UL;
@@ -810,15 +812,15 @@ static float getsrtm1(unsigned long ilat, unsigned long ilong,
       pb = anonym0->strips[xx][y];
       if (pb==0) {
          if (anonym0->typ==1U) {
-            seek = (long)((3599UL-y)*7202UL+xx*2400UL);
+            seek = (int32_t)((3599UL-y)*7202UL+xx*2400UL);
             rdsize = 2400UL;
          }
          else if (anonym0->typ==3U) {
-            seek = (long)((1199UL-y)*2402UL);
+            seek = (int32_t)((1199UL-y)*2402UL);
             rdsize = 2400UL;
          }
          else {
-            seek = (long)((xdeg%40UL)*240UL-(ilat/30UL)*9600UL);
+            seek = (int32_t)((xdeg%40UL)*240UL-(ilat/30UL)*9600UL);
             if (ydeg>=130UL) seek += 207350400L;
             else if (ydeg>=90UL) seek += 149750400L;
             else if (ydeg>=50UL) seek += 103670400L;
@@ -826,13 +828,13 @@ static float getsrtm1(unsigned long ilat, unsigned long ilong,
             rdsize = 240UL; /* fill 1/10 buffer */
          }
          /*INC(miss); */
-         osic_alloc((X2C_ADDRESS *) &pb, rdsize);
+         osic_alloc((char * *) &pb, rdsize);
          if (pb==0) return 32767.0f;
          useri_debugmem.srtm += rdsize;
          anonym0->strips[xx][y] = pb;
-         osic_Seek(anonym0->fd, (unsigned long)seek);
+         osic_Seek(anonym0->fd, (uint32_t)seek);
          if (osi_RdBin(anonym0->fd, (char *)pb, 2400u/1u,
-                rdsize)!=(long)rdsize) return 32767.0f;
+                rdsize)!=(int32_t)rdsize) return 32767.0f;
          /*
          c-translator frissts nicht
                FOR i:=0 TO rdsize DIV 2-1 DO pb^[i]:=pb^[i]<<8 + pb^[i]
@@ -841,15 +843,15 @@ static float getsrtm1(unsigned long ilat, unsigned long ilong,
          tmp = rdsize/2UL-1UL;
          i = 0UL;
          if (i<=tmp) for (;; i++) {
-            pb[i] = (short)(X2C_LSH((unsigned short)pb[i],16,
-                8)|X2C_LSH((unsigned short)pb[i],16,-8));
+            pb[i] = (short)(X2C_LSH((uint16_t)pb[i],16,
+                8)|X2C_LSH((uint16_t)pb[i],16,-8));
             if (i==tmp) break;
          } /* end for */
       }
       /* motorola format */
       /*ELSE INC(hit); */
       anonym0->used[xx][y] = 10U;
-      a = (long)pb[x];
+      a = (int32_t)pb[x];
       if (a>30000L || a<-30000L) return 32767.0f;
       return (float)a;
    }
@@ -861,12 +863,12 @@ static float getsrtm1(unsigned long ilat, unsigned long ilong,
 
 
 extern float maptool_getsrtm(struct aprspos_POSITION pos,
-                unsigned long quality, float * resolution)
+                uint32_t quality, float * resolution)
 {
-   unsigned long d;
-   unsigned long div0;
-   unsigned long ilong;
-   unsigned long ilat;
+   uint32_t d;
+   uint32_t div0;
+   uint32_t ilong;
+   uint32_t ilat;
    float vy;
    float vx;
    float a3;
@@ -929,8 +931,8 @@ extern float maptool_getsrtm(struct aprspos_POSITION pos,
 
 static void initsrtm(void)
 {
-   unsigned long yi;
-   unsigned long xi;
+   uint32_t yi;
+   uint32_t xi;
    /*open:=0; miss:=0; hit:=0; */
    memset((char *)srtmcache,(char)0,sizeof(SRTMLONG));
    for (xi = 0UL; xi<=8UL; xi++) {
@@ -970,8 +972,8 @@ BEGIN
 END wgs84;
 */
 
-static void wgs84s(float lat, float long0, float nn, float * x, float * y,
-                float * z)
+static void wgs84s(float lat, float long0, float nn, float * x,
+                float * y, float * z)
 /* km */
 {
    float c;
@@ -984,8 +986,8 @@ static void wgs84s(float lat, float long0, float nn, float * x, float * y,
 } /* end wgs84s() */
 
 
-static void wgs84r(float x, float y, float z, float * lat, float * long0,
-                float * heig)
+static void wgs84r(float x, float y, float z, float * lat,
+                float * long0, float * heig)
 /* km */
 {
    float h;
@@ -1016,8 +1018,8 @@ static float fresnel(float a, float b, float lambda)
 #define maptool_M 700
 
 
-static void frescol(float a, unsigned short * r, unsigned short * g,
-                unsigned short * b)
+static void frescol(float a, uint16_t * r, uint16_t * g,
+                uint16_t * b)
 {
    *b = 700U;
    *r = 0U;
@@ -1031,18 +1033,18 @@ static void frescol(float a, unsigned short * r, unsigned short * g,
       *b = 0U;
       if (a<0.5f) {
          *r = 700U;
-         *g = (unsigned short)aprsdecode_trunc(a*1400.0f);
+         *g = (uint16_t)aprsdecode_trunc(a*1400.0f);
       }
       else {
          *g = 700U;
-         *r = (unsigned short)aprsdecode_trunc((1.0f-a)*1400.0f);
+         *r = (uint16_t)aprsdecode_trunc((1.0f-a)*1400.0f);
       }
    }
 } /* end frescol() */
 
 
-static void elevation(float x0, float y00, float z0, float x1, float y1,
-                float z1, float * e0, float * e1)
+static void elevation(float x0, float y00, float z0, float x1,
+                float y1, float z1, float * e0, float * e1)
 {
    float r;
    float s;
@@ -1068,16 +1070,16 @@ static void elevation(float x0, float y00, float z0, float x1, float y1,
 } /* end elevation() */
 
 
-static void ruler(maptool_pIMAGE image, float m, float x, float y, char over,
-                 char right)
+static void ruler(maptool_pIMAGE image, float m, float x, float y,
+                char over, char right)
 /* write meter to largest heigth */
 {
    signed char void0;
    char s[21];
    struct aprsdecode_COLTYP c;
-   unsigned long l;
-   aprsstr_IntToStr((long)X2C_TRUNCI(m,X2C_min_longint,X2C_max_longint), 0UL,
-                 s, 21ul);
+   uint32_t l;
+   aprsstr_IntToStr((int32_t)X2C_TRUNCI(m,X2C_min_longint,X2C_max_longint),
+                 0UL, s, 21ul);
    aprsstr_Append(s, 21ul, "m", 2ul);
    l = aprsstr_Length(s, 21ul)*6UL;
    c.r = 400UL;
@@ -1113,15 +1115,15 @@ struct HTAB {
 };
 
 
-extern long maptool_geoprofile(maptool_pIMAGE image,
+extern int32_t maptool_geoprofile(maptool_pIMAGE image,
                 struct aprspos_POSITION pos0, struct aprspos_POSITION pos1,
-                float lambda, char ant1nn, long ant1, long ant2,
-                float * dist, float * a1, float * a2, float * ele1,
-                float * ele2)
+                float lambda, char ant1nn, int32_t ant1,
+                int32_t ant2, float * dist, float * a1,
+                float * a2, float * ele1, float * ele2)
 {
-   long fstep;
-   long fs;
-   long nn;
+   int32_t fstep;
+   int32_t fs;
+   int32_t nn;
    float yproj;
    float xproj;
    float ysh;
@@ -1159,20 +1161,20 @@ extern long maptool_geoprofile(maptool_pIMAGE image,
    float x0;
    struct aprspos_POSITION posf;
    struct aprspos_POSITION pos;
-   unsigned short red;
-   unsigned short green;
-   unsigned short blue;
+   uint16_t red;
+   uint16_t green;
+   uint16_t blue;
    pHTAB phmax;
    pHTAB pht;
    pHTAB phtab;
-   unsigned long maxcache;
-   long tmp;
-   maxcache = (unsigned long)(useri_conf2int(useri_fSRTMCACHE, 0UL, 0L,
-                2000L, 20L)*1000000L);
+   uint32_t maxcache;
+   int32_t tmp;
+   maxcache = (uint32_t)(useri_conf2int(useri_fSRTMCACHE, 0UL, 0L, 2000L,
+                20L)*1000000L);
    *dist = 0.0f;
    if (ant1nn) nn = 0L;
    else {
-      nn = (long)X2C_TRUNCI(maptool_getsrtm(pos0, 0UL, &resol),
+      nn = (int32_t)X2C_TRUNCI(maptool_getsrtm(pos0, 0UL, &resol),
                 X2C_min_longint,X2C_max_longint);
       if (nn>=30000L) {
          maptool_closesrtmfile();
@@ -1181,8 +1183,8 @@ extern long maptool_geoprofile(maptool_pIMAGE image,
    }
    *a1 = (float)(nn+ant1);
    wgs84s(pos0.lat, pos0.long0,  *a1*0.001f, &x0, &y00, &z0);
-   nn = (long)X2C_TRUNCI(maptool_getsrtm(pos1, 0UL, &resol),X2C_min_longint,
-                X2C_max_longint);
+   nn = (int32_t)X2C_TRUNCI(maptool_getsrtm(pos1, 0UL, &resol),
+                X2C_min_longint,X2C_max_longint);
    if (nn>=30000L) {
       maptool_closesrtmfile();
       return -1L;
@@ -1225,7 +1227,7 @@ extern long maptool_geoprofile(maptool_pIMAGE image,
          hmid = hmid*1000.0f-(d-d*d)*refrac;
          fressum = 0.0f;
          fullsum = 0.0f;
-         fstep = (long)aprsdecode_trunc(X2C_DIVR(fres*0.5f,resol));
+         fstep = (int32_t)aprsdecode_trunc(X2C_DIVR(fres*0.5f,resol));
          tmp = fstep;
          fs = -fstep;
          if (fs<=tmp) for (;; fs++) {
@@ -1233,8 +1235,8 @@ extern long maptool_geoprofile(maptool_pIMAGE image,
             posf.lat = pos.lat+kf*osic_sin(nv);
             posf.long0 = pos.long0-kf*osic_cos(nv);
             dh = sqr(fres*0.5f)-sqr((float)fs*resol);
-            nn = (long)X2C_TRUNCI(maptool_getsrtm(posf, 0UL, &resol)+0.5f,
-                X2C_min_longint,X2C_max_longint);
+            nn = (int32_t)X2C_TRUNCI(maptool_getsrtm(posf, 0UL,
+                &resol)+0.5f,X2C_min_longint,X2C_max_longint);
             if (nn>=30000L) h = (-2.E+4f);
             else h = (float)nn;
             if (dh>0.0f) {
@@ -1267,8 +1269,8 @@ extern long maptool_geoprofile(maptool_pIMAGE image,
                else {
                   frescol(fresmin, &red, &green, &blue);
                   maptool_waypoint(image, x, y, 1.25f+X2C_DIVR(1.25f*fres,
-                maxfres), (long)red, (long)green, (long)blue);
-                  osic_alloc((X2C_ADDRESS *) &pht, sizeof(struct HTAB));
+                maxfres), (int32_t)red, (int32_t)green, (int32_t)blue);
+                  osic_alloc((char * *) &pht, sizeof(struct HTAB));
                 /* store headroom values for scaling later */
                   if (pht) {
                      pht->next = phtab;
@@ -1296,8 +1298,8 @@ extern long maptool_geoprofile(maptool_pIMAGE image,
       for (;;) {
          /* find maximum for scaling */
          if ((float)fabs(pht->alt)>a) a = (float)fabs(pht->alt);
-         h = (float)fabs((float)(image->Len1-1)*0.5f-pht->tx)+(float)
-                fabs((float)(image->Len0-1)*0.5f-pht->ty);
+         h = (float)fabs((float)(image->Len1-1)*0.5f-pht->tx)
+                +(float)fabs((float)(image->Len0-1)*0.5f-pht->ty);
          if (h<d) {
             phmax = pht;
             d = h;
@@ -1343,24 +1345,25 @@ extern long maptool_geoprofile(maptool_pIMAGE image,
             red = 150U;
             green = 200U;
          }
-         maptool_vector(image, phtab->tx, phtab->ty, xsh, ysh, (long)red,
-                (long)green, (long)blue, 256UL, 0.0f); /* headroom line */
-         maptool_waypoint(image, xsh, ysh, 1.5f, (long)(red*3U),
-                (long)(green*3U), (long)(blue*3U));
+         maptool_vector(image, phtab->tx, phtab->ty, xsh, ysh,
+                (int32_t)red, (int32_t)green, (int32_t)blue, 256UL,
+                0.0f); /* headroom line */
+         maptool_waypoint(image, xsh, ysh, 1.5f, (int32_t)(red*3U),
+                (int32_t)(green*3U), (int32_t)(blue*3U));
                 /* thicken end of headroom line */
          pht = phtab;
          phtab = phtab->next;
-         osic_free((X2C_ADDRESS *) &pht, sizeof(struct HTAB));
+         osic_free((char * *) &pht, sizeof(struct HTAB));
       }
    }
    return 0L;
 } /* end geoprofile() */
 
 
-static void progress(unsigned long startt, const char s[],
-                unsigned long s_len, unsigned long perc, char final)
+static void progress(uint32_t startt, const char s[], uint32_t s_len,
+                 uint32_t perc, char final)
 {
-   unsigned long rt;
+   uint32_t rt;
    char ss1[101];
    char ss[101];
    rt = osic_time();
@@ -1371,7 +1374,7 @@ static void progress(unsigned long startt, const char s[],
          useri_refresh = 1;
          aprsstr_Assign(ss, 101ul, s, s_len);
          if (!final) {
-            aprsstr_IntToStr((long)perc, 3UL, ss1, 101ul);
+            aprsstr_IntToStr((int32_t)perc, 3UL, ss1, 101ul);
             aprsstr_Append(ss, 101ul, ss1, 101ul);
             aprsstr_Append(ss, 101ul, "% (ESC to abort)", 17ul);
          }
@@ -1382,15 +1385,15 @@ static void progress(unsigned long startt, const char s[],
 } /* end progress() */
 
 
-static void postfilter(maptool_pIMAGE image, unsigned long colnr)
+static void postfilter(maptool_pIMAGE image, uint32_t colnr)
 /* set missing pixels with median of neighbours */
 {
-   unsigned long y;
-   unsigned long x;
-   unsigned short c;
+   uint32_t y;
+   uint32_t x;
+   uint16_t c;
    struct maptool_PIX * anonym;
-   unsigned long tmp;
-   unsigned long tmp0;
+   uint32_t tmp;
+   uint32_t tmp0;
    tmp = (image->Len0-1)-1UL;
    y = 1UL;
    if (y<=tmp) for (;; y++) {
@@ -1447,8 +1450,7 @@ static float meterperpix(maptool_pIMAGE image)
 } /* end meterperpix() */
 
 
-static void setcol(unsigned short bri, unsigned long colnr,
-                struct maptool_PIX * p)
+static void setcol(uint16_t bri, uint32_t colnr, struct maptool_PIX * p)
 {
    if (colnr==0UL) {
       if (bri>p->r) p->r = bri;
@@ -1476,19 +1478,19 @@ static void setcol(unsigned short bri, unsigned long colnr,
 
 
 extern void maptool_Radiorange(maptool_pIMAGE image,
-                struct aprspos_POSITION txpos, long ant1, long ant2,
-                unsigned long smooth, unsigned long colnr,
-                unsigned long qualnum, char * abort0)
+                struct aprspos_POSITION txpos, int32_t ant1,
+                int32_t ant2, uint32_t smooth, uint32_t colnr,
+                uint32_t qualnum, char * abort0)
 {
-   unsigned short bri;
-   unsigned long progr;
-   unsigned long qual;
-   unsigned long maxcache;
-   unsigned long frame;
-   unsigned long yp;
-   unsigned long xp;
-   long void0;
-   long nn;
+   uint16_t bri;
+   uint32_t progr;
+   uint32_t qual;
+   uint32_t maxcache;
+   uint32_t frame;
+   uint32_t yp;
+   uint32_t xp;
+   int32_t void0;
+   int32_t nn;
    float alt1;
    float dyimag;
    float dximag;
@@ -1534,10 +1536,10 @@ extern void maptool_Radiorange(maptool_pIMAGE image,
    struct aprspos_POSITION pos1;
    struct aprspos_POSITION pos0;
    struct aprspos_POSITION pos;
-   unsigned long startt;
+   uint32_t startt;
    char ss[101];
    startt = osic_time();
-   nn = (long)X2C_TRUNCI(maptool_getsrtm(txpos, 0UL, &resoltx),
+   nn = (int32_t)X2C_TRUNCI(maptool_getsrtm(txpos, 0UL, &resoltx),
                 X2C_min_longint,X2C_max_longint);
                 /* altitude of tx an map resolution in m here */
    if (nn>=30000L) {
@@ -1551,8 +1553,8 @@ extern void maptool_Radiorange(maptool_pIMAGE image,
    yi = 0.0f;
    nn = maptool_mapxy(txpos, &xtx, &ytx);
    frame = 0UL;
-   maxcache = (unsigned long)(useri_conf2int(useri_fSRTMCACHE, 0UL, 0L,
-                2000L, 100L)*1000000L);
+   maxcache = (uint32_t)(useri_conf2int(useri_fSRTMCACHE, 0UL, 0L, 2000L,
+                100L)*1000000L);
    mperpix = meterperpix(image); /* meter per pixel */
    if (mperpix<1.0f) {
       maptool_closesrtmfile();
@@ -1560,26 +1562,26 @@ extern void maptool_Radiorange(maptool_pIMAGE image,
    }
    if (qualnum==0UL) {
       framestep = 2.2f; /* pixel step along corner of image */
-      qual = (unsigned long)X2C_TRUNCC(mperpix,0UL,X2C_max_longcard);
+      qual = (uint32_t)X2C_TRUNCC(mperpix,0UL,X2C_max_longcard);
       smooth = (smooth*22UL)/10UL;
    }
    else if (qualnum==1UL) {
       framestep = 1.5f;
-      qual = (unsigned long)X2C_TRUNCC(mperpix*0.5f,0UL,X2C_max_longcard);
+      qual = (uint32_t)X2C_TRUNCC(mperpix*0.5f,0UL,X2C_max_longcard);
       smooth = (smooth*15UL)/10UL;
    }
    else {
       framestep = 1.0f;
-      qual = (unsigned long)X2C_TRUNCC(mperpix*0.25f,0UL,X2C_max_longcard);
+      qual = (uint32_t)X2C_TRUNCC(mperpix*0.25f,0UL,X2C_max_longcard);
    }
    if (smooth>0UL) osmooth = X2C_DIVR(1000.0f,(float)smooth);
    else osmooth = 1000.0f;
    progr = 0UL;
    for (;;) {
       maptool_xytodeg(xi, yi, &pos); /* screen frame pos */
-      if (((frame==0UL && ytx>0.0f || frame==2UL && ytx<(float)maptool_ysize)
-                 || frame==1UL && xtx>0.0f) || frame==3UL && xtx<(float)
-                maptool_xsize) {
+      if (((frame==0UL && ytx>0.0f || frame==2UL && ytx<(float)
+                maptool_ysize) || frame==1UL && xtx>0.0f)
+                || frame==3UL && xtx<(float)maptool_xsize) {
          wgs84s(pos.lat, pos.long0, atx*0.001f, &x1, &y1, &z1);
                 /* screen frame xyz at ant1 alt */
          dx = x1-x0;
@@ -1654,29 +1656,27 @@ extern void maptool_Radiorange(maptool_pIMAGE image,
                         if (pixstep==0.0f) {
                            pixstep = mperpix*oodist*framestep;
                         }
-                        xp = (unsigned long)X2C_TRUNCC(x,0UL,
-                X2C_max_longcard);
-                        yp = (unsigned long)X2C_TRUNCC(y,0UL,
-                X2C_max_longcard);
+                        xp = (uint32_t)X2C_TRUNCC(x,0UL,X2C_max_longcard);
+                        yp = (uint32_t)X2C_TRUNCC(y,0UL,X2C_max_longcard);
                         if (xp<image->Len1-1 && yp<image->Len0-1) {
                            /* 1 pixel room for large low res pixel */
                            lum = sight*osmooth;
                 /* luma is equal to riseing higth */
                            if (lum>1000.0f) lum = 1000.0f;
-                           bri = (unsigned short)(unsigned long)
-                X2C_TRUNCC(lum,0UL,X2C_max_longcard);
+                           bri = (uint16_t)(uint32_t)X2C_TRUNCC(lum,0UL,
+                X2C_max_longcard);
                            if (colnr==0UL) {
                               image->Adr[(xp)
-                *image->Len0+yp].r = (unsigned short)(unsigned long)
-                X2C_TRUNCC(lum,0UL,X2C_max_longcard);
+                *image->Len0+yp].r = (uint16_t)(uint32_t)X2C_TRUNCC(lum,
+                0UL,X2C_max_longcard);
                            }
                            else {
                               image->Adr[(xp)
-                *image->Len0+yp].g = (unsigned short)(unsigned long)
-                X2C_TRUNCC(lum,0UL,X2C_max_longcard);
+                *image->Len0+yp].g = (uint16_t)(uint32_t)X2C_TRUNCC(lum,
+                0UL,X2C_max_longcard);
                            }
                            if (qualnum<=1UL) {
-                              bri = (unsigned short)(unsigned long)
+                              bri = (uint16_t)(uint32_t)
                 X2C_TRUNCC(lum*0.8f,0UL,X2C_max_longcard);
                               setcol(bri, colnr,
                 &image->Adr[(xp+1UL)*image->Len0+yp]);
@@ -1687,7 +1687,7 @@ extern void maptool_Radiorange(maptool_pIMAGE image,
                               setcol(bri, colnr,
                 &image->Adr[(xp)*image->Len0+(yp-1UL)]);
                               if (qualnum==0UL) {
-                                 bri = (unsigned short)(unsigned long)
+                                 bri = (uint16_t)(uint32_t)
                 X2C_TRUNCC(lum*0.5f,0UL,X2C_max_longcard);
                                  setcol(bri, colnr,
                 &image->Adr[(xp-1UL)*image->Len0+(yp+1UL)]);
@@ -1776,13 +1776,13 @@ extern void maptool_Radiorange(maptool_pIMAGE image,
 
 extern char maptool_SimpleRelief(maptool_pIMAGE image)
 {
-   unsigned long sum;
-   unsigned long jump;
-   unsigned long qual;
-   unsigned long maxcache;
-   unsigned long xi;
-   unsigned long yp;
-   unsigned long xp;
+   uint32_t sum;
+   uint32_t jump;
+   uint32_t qual;
+   uint32_t maxcache;
+   uint32_t xi;
+   uint32_t yp;
+   uint32_t xp;
    float jm;
    float jd;
    float jr;
@@ -1791,37 +1791,35 @@ extern char maptool_SimpleRelief(maptool_pIMAGE image)
    float resol;
    struct aprspos_POSITION pos1;
    struct aprspos_POSITION pos;
-   long bri;
-   long mul;
-   long max0;
-   long min0;
-   long h;
-   unsigned long startt;
+   int32_t bri;
+   int32_t mul;
+   int32_t max0;
+   int32_t min0;
+   int32_t h;
+   uint32_t startt;
    char ok0;
-   unsigned long hist[10000];
+   uint32_t hist[10000];
    struct maptool_PIX lut[1024];
    struct maptool_PIX * anonym;
    struct maptool_PIX * anonym0;
-   unsigned long tmp;
-   unsigned long tmp0;
+   uint32_t tmp;
+   uint32_t tmp0;
    startt = osic_time();
-   maxcache = (unsigned long)(useri_conf2int(useri_fSRTMCACHE, 0UL, 0L,
-                2000L, 100L)*1000000L);
+   maxcache = (uint32_t)(useri_conf2int(useri_fSRTMCACHE, 0UL, 0L, 2000L,
+                100L)*1000000L);
    for (xi = 0UL; xi<=1023UL; xi++) {
       { /* with */
          struct maptool_PIX * anonym = &lut[xi];
-         if (xi<400UL) {
-            anonym->r = (unsigned short)(((400UL-xi)*900UL)/400UL);
-         }
-         else anonym->r = (unsigned short)(((xi-400UL)*900UL)/624UL);
-         if (xi<200UL) anonym->g = (unsigned short)((xi*900UL)/200UL);
+         if (xi<400UL) anonym->r = (uint16_t)(((400UL-xi)*900UL)/400UL);
+         else anonym->r = (uint16_t)(((xi-400UL)*900UL)/624UL);
+         if (xi<200UL) anonym->g = (uint16_t)((xi*900UL)/200UL);
          else if (xi<640UL) {
-            anonym->g = (unsigned short)(((640UL-xi)*900UL)/440UL);
+            anonym->g = (uint16_t)(((640UL-xi)*900UL)/440UL);
          }
-         else anonym->g = (unsigned short)(((xi-640UL)*900UL)/372UL);
+         else anonym->g = (uint16_t)(((xi-640UL)*900UL)/372UL);
          if (xi<320UL) anonym->b = 0U;
          else if (xi<640UL) {
-            anonym->b = (unsigned short)(((xi-320UL)*900UL)/320UL);
+            anonym->b = (uint16_t)(((xi-320UL)*900UL)/320UL);
          }
          else anonym->b = 900U;
       }
@@ -1836,7 +1834,7 @@ extern char maptool_SimpleRelief(maptool_pIMAGE image)
       maptool_closesrtmfile();
       return 0;
    }
-   qual = (unsigned long)X2C_TRUNCC(mperpix*0.25f,0UL,X2C_max_longcard);
+   qual = (uint32_t)X2C_TRUNCC(mperpix*0.25f,0UL,X2C_max_longcard);
    jump = 1UL+aprsdecode_trunc(X2C_DIVR(6000.0f,mperpix));
    memset((char *)hist,(char)0,40000UL);
    yp = 0UL;
@@ -1856,16 +1854,16 @@ extern char maptool_SimpleRelief(maptool_pIMAGE image)
          do {
             hr = maptool_getsrtm(pos, qual, &resol);
             if (hr<10000.0f) {
-               h = (long)aprsdecode_trunc(1000.0f+hr);
+               h = (int32_t)aprsdecode_trunc(1000.0f+hr);
                 /* ground over NN in m */
-               image->Adr[(xi)*image->Len0+yp].r = (unsigned short)h;
+               image->Adr[(xi)*image->Len0+yp].r = (uint16_t)h;
                /*        IF xi=0 THEN ho:=h END; */
                /*        image^[xi][yp].g:=h-ho+10000; */
                /*        ho:=h; */
                if (xi>0UL && yp>0UL) {
-                  image->Adr[(xi)*image->Len0+yp].g = (unsigned short)
-                (((h*3L-(long)image->Adr[(xi-1UL)*image->Len0+yp].r*2L)
-                -(long)image->Adr[(xi)*image->Len0+(yp-1UL)].r)+10000L);
+                  image->Adr[(xi)*image->Len0+yp].g = (uint16_t)
+                (((h*3L-(int32_t)image->Adr[(xi-1UL)*image->Len0+yp].r*2L)
+                -(int32_t)image->Adr[(xi)*image->Len0+(yp-1UL)].r)+10000L);
                }
                else image->Adr[(xi)*image->Len0+yp].g = 0U;
                if (h<=9999L) ++hist[h];
@@ -1910,7 +1908,7 @@ extern char maptool_SimpleRelief(maptool_pIMAGE image)
          tmp0 = image->Len1-1;
          xp = 0UL;
          if (xp<=tmp0) for (;; xp++) {
-            h = (long)image->Adr[(xp)*image->Len0+yp].r;
+            h = (int32_t)image->Adr[(xp)*image->Len0+yp].r;
             if (h) {
                h -= min0;
                /*          dif:=(VAL(INTEGER,
@@ -1930,13 +1928,13 @@ extern char maptool_SimpleRelief(maptool_pIMAGE image)
                   jd = jd*(float)bri*0.01f;
                   jr = (float)lut[h].r*jd;
                   if (jr<0.0f) jr = 0.0f;
-                  anonym0->r = (unsigned short)aprsdecode_trunc(jr);
+                  anonym0->r = (uint16_t)aprsdecode_trunc(jr);
                   jr = (float)lut[h].g*jd;
                   if (jr<0.0f) jr = 0.0f;
-                  anonym0->g = (unsigned short)aprsdecode_trunc(jr);
+                  anonym0->g = (uint16_t)aprsdecode_trunc(jr);
                   jr = (float)lut[h].b*jd;
                   if (jr<0.0f) jr = 0.0f;
-                  anonym0->b = (unsigned short)aprsdecode_trunc(jr);
+                  anonym0->b = (uint16_t)aprsdecode_trunc(jr);
                }
             }
             if (xp==tmp0) break;
@@ -1969,9 +1967,10 @@ END normvector;
 #define maptool_TESTDIST 30.0
 
 
-static void raytrace(float minqual, float x0, float y00, float z0, float dx,
-                float dy, float dz, float maxdist, float * dist, float * lum,
-                 float * h, float * alt, float * subpix,
+static void raytrace(float minqual, float x0, float y00,
+                float z0, float dx, float dy, float dz,
+                float maxdist, float * dist, float * lum,
+                float * h, float * alt, float * subpix,
                 struct aprspos_POSITION * pos)
 {
    float deltah;
@@ -2077,9 +2076,9 @@ static void rotvector(float * a, float * b, float cw, float sw)
 static void Panofind(char find, const struct maptool_PANOWIN panpar,
                 float * res, struct aprspos_POSITION * pos)
 {
-   unsigned long yi;
-   unsigned long xi;
-   long nn;
+   uint32_t yi;
+   uint32_t xi;
+   int32_t nn;
    float azi;
    float cazi;
    float sazi;
@@ -2128,7 +2127,7 @@ static void Panofind(char find, const struct maptool_PANOWIN panpar,
    float og;
    float or;
    char heaven;
-   unsigned long startt;
+   uint32_t startt;
    struct aprsdecode_COLTYP col0;
    struct maptool_PIX * anonym;
    startt = osic_time();
@@ -2144,18 +2143,18 @@ static void Panofind(char find, const struct maptool_PANOWIN panpar,
    /*maxdist:=FLOAT(conf2int(fANT2, 1, 1, 150, 20))*1000.0; */
    /*WrFixed(yzoom, 4,15); WrFixed(maxdist, 4,15); WrStrLn("yzoom dist"); */
    if (!find) {
-      col0.r = (unsigned long)useri_conf2int(useri_fCOLMARK1, 0UL, 0L, 100L,
+      col0.r = (uint32_t)useri_conf2int(useri_fCOLMARK1, 0UL, 0L, 100L,
                 0L);
-      col0.g = (unsigned long)useri_conf2int(useri_fCOLMARK1, 1UL, 0L, 100L,
+      col0.g = (uint32_t)useri_conf2int(useri_fCOLMARK1, 1UL, 0L, 100L,
                 0L);
-      col0.b = (unsigned long)useri_conf2int(useri_fCOLMARK1, 2UL, 0L, 100L,
+      col0.b = (uint32_t)useri_conf2int(useri_fCOLMARK1, 2UL, 0L, 100L,
                 100L);
       hr = (float)col0.r*0.01f;
       hg = (float)col0.g*0.01f;
       hb = (float)col0.b*0.01f;
       lummul = X2C_DIVR(1000.0f,maxdist);
    }
-   nn = (long)X2C_TRUNCI(maptool_getsrtm(panpar.eye, 0UL, &resoltx),
+   nn = (int32_t)X2C_TRUNCI(maptool_getsrtm(panpar.eye, 0UL, &resoltx),
                 X2C_min_longint,X2C_max_longint);
                 /* altitude of tx an map resolution in m here */
    if (nn>=30000L) {
@@ -2182,7 +2181,7 @@ static void Panofind(char find, const struct maptool_PANOWIN panpar,
                 WrStrLn(" adi0 azid"); */
    /*WrFixed(panpar.elevation*RAD/azid, 4, 12); WrStrLn(" adi0 azid"); */
    xi = 0UL;
-   if (find) xi = (unsigned long)panpar.hx;
+   if (find) xi = (uint32_t)panpar.hx;
    do {
       /*    wx:=panpar.angle*RAD*(FLOAT(xi)-FLOAT(HIGH(panpar.image^)+1)*0.5)
                 /FLOAT(HIGH(panpar.image^)+1); */
@@ -2190,7 +2189,8 @@ static void Panofind(char find, const struct maptool_PANOWIN panpar,
       if (panpar.flatscreen) wx = osic_arctan(wx);
       yi = 0UL;
       if (find) {
-         yi = (unsigned long)((long)((panpar.image->Len0-1)+1UL)-panpar.hy);
+         yi = (uint32_t)((int32_t)((panpar.image->Len0-1)+1UL)-panpar.hy)
+                ;
       }
       d = 0.0f;
       dlum = 0.0f;
@@ -2277,27 +2277,24 @@ static void Panofind(char find, const struct maptool_PANOWIN panpar,
                if (hc<0.0f) hc = 0.0f;
                else if (hc>1.0f) hc = 1.0f;
                hc1 = 1.0f-hc;
-               anonym->r = (unsigned short)
-                aprsdecode_trunc(lum*hc1+lum*hr*hc);
-               anonym->g = (unsigned short)
-                aprsdecode_trunc(lum*hc1+lum*hg*hc);
-               anonym->b = (unsigned short)
-                aprsdecode_trunc(lum*hc1+lum*hb*hc);
+               anonym->r = (uint16_t)aprsdecode_trunc(lum*hc1+lum*hr*hc);
+               anonym->g = (uint16_t)aprsdecode_trunc(lum*hc1+lum*hg*hc);
+               anonym->b = (uint16_t)aprsdecode_trunc(lum*hc1+lum*hb*hc);
             }
             else {
-               anonym->r = (unsigned short)aprsdecode_trunc(lr);
-               anonym->g = (unsigned short)aprsdecode_trunc(lg);
-               anonym->b = (unsigned short)aprsdecode_trunc(lb);
+               anonym->r = (uint16_t)aprsdecode_trunc(lr);
+               anonym->g = (uint16_t)aprsdecode_trunc(lg);
+               anonym->b = (uint16_t)aprsdecode_trunc(lb);
             }
             or = (float)anonym->r;
             og = (float)anonym->g;
             ob = (float)anonym->b;
             if (yi>1UL) {
-               anonym->r = (unsigned short)
+               anonym->r = (uint16_t)
                 aprsdecode_trunc(or*space+oor*(1.0f-space));
-               anonym->g = (unsigned short)
+               anonym->g = (uint16_t)
                 aprsdecode_trunc(og*space+oog*(1.0f-space));
-               anonym->b = (unsigned short)
+               anonym->b = (uint16_t)
                 aprsdecode_trunc(ob*space+oob*(1.0f-space));
             }
             oor = or;
@@ -2325,13 +2322,14 @@ extern void maptool_Panorama(maptool_pIMAGE testimg,
 
 
 extern void maptool_findpanopos(struct maptool_PANOWIN panpar,
-                struct aprspos_POSITION * pos, float * dist, long * alt)
+                struct aprspos_POSITION * pos, float * dist,
+                int32_t * alt)
 {
    float resol;
    float res;
    Panofind(1, panpar, &res, pos);
    if (aprspos_posvalid(*pos)) {
-      *alt = (long)X2C_TRUNCI(maptool_getsrtm(*pos, 0UL, &resol)+0.5f,
+      *alt = (int32_t)X2C_TRUNCI(maptool_getsrtm(*pos, 0UL, &resol)+0.5f,
                 X2C_min_longint,X2C_max_longint);
       *dist = aprspos_distance(panpar.eye, *pos);
    }
@@ -2351,11 +2349,11 @@ soft change wood-rock
 /*Panorama */
 
 extern void maptool_xytoloc(struct aprspos_POSITION mpos, char s[],
-                unsigned long s_len)
+                uint32_t s_len)
 /* lat/long + locator string of pos */
 {
    char h[101];
-   long nn;
+   int32_t nn;
    float resol;
    /*  xytodeg(VAL(REAL,x), VAL(REAL,y), mpos); */
    aprstext_postostr(mpos, '3', s, s_len);
@@ -2372,7 +2370,7 @@ extern void maptool_xytoloc(struct aprspos_POSITION mpos, char s[],
    maptool_postoloc(h, 101ul, mpos);
    aprsstr_Append(s, s_len, h, 101ul);
    aprsstr_Append(s, s_len, "\376", 2ul);
-   nn = (long)X2C_TRUNCI(maptool_getsrtm(mpos, 0UL, &resol)+0.5f,
+   nn = (int32_t)X2C_TRUNCI(maptool_getsrtm(mpos, 0UL, &resol)+0.5f,
                 X2C_min_longint,X2C_max_longint);
    if (nn<30000L) {
       aprsstr_IntToStr(nn, 0UL, h, 101ul);
@@ -2398,7 +2396,7 @@ extern void maptool_xytoloc(struct aprspos_POSITION mpos, char s[],
 
 
 extern void maptool_POIname(struct aprspos_POSITION * mpos, char s[],
-                unsigned long s_len)
+                uint32_t s_len)
 /* get name of nearest POI */
 {
    char h[101];
@@ -2433,7 +2431,7 @@ extern void maptool_POIname(struct aprspos_POSITION * mpos, char s[],
       aprsstr_Assign(s, s_len, pmin->name, 32ul);
       if (pmin->alt>0) {
          aprsstr_Append(s, s_len, " ", 2ul);
-         aprsstr_IntToStr((long)pmin->alt, 0UL, h, 101ul);
+         aprsstr_IntToStr((int32_t)pmin->alt, 0UL, h, 101ul);
          aprsstr_Append(s, s_len, h, 101ul);
          aprsstr_Append(s, s_len, "m", 2ul);
       }
@@ -2448,12 +2446,12 @@ extern void maptool_POIname(struct aprspos_POSITION * mpos, char s[],
 
 
 static void POIfindfrom(struct aprspos_POSITION * mpos, char s[],
-                unsigned long s_len)
+                uint32_t s_len)
 /* get position of POI name */
 {
-   unsigned long cnt;
-   unsigned long ls;
-   unsigned long i;
+   uint32_t cnt;
+   uint32_t ls;
+   uint32_t i;
    aprsdecode_pMOUNTAIN pmax;
    aprsdecode_pMOUNTAIN pm;
    struct aprsdecode_MOUNTAIN * anonym;
@@ -2495,7 +2493,7 @@ static void POIfindfrom(struct aprspos_POSITION * mpos, char s[],
 
 
 extern void maptool_POIfind(struct aprspos_POSITION * mpos, char s[],
-                unsigned long s_len)
+                uint32_t s_len)
 /* get position of POI name */
 {
    if (lastpoinum==0UL) POIfindfrom(mpos, s, s_len);
@@ -2586,50 +2584,50 @@ extern void maptool_Colset(struct aprsdecode_COLTYP * c, char w)
 } /* end Colset() */
 
 
-static void addcol(struct maptool_PIX * pixel, long rr, long gg, long bb,
-                long f)
+static void addcol(struct maptool_PIX * pixel, int32_t rr, int32_t gg,
+                int32_t bb, int32_t f)
 {
-   long fh;
+   int32_t fh;
    struct maptool_PIX * anonym;
    { /* with */
       struct maptool_PIX * anonym = pixel;
-      fh = (long)anonym->r+(rr*f)/256L;
+      fh = (int32_t)anonym->r+(rr*f)/256L;
       if (fh<0L) fh = 0L;
       else if (fh>30000L) fh = 30000L;
-      anonym->r = (unsigned short)fh;
-      fh = (long)anonym->g+(gg*f)/256L;
+      anonym->r = (uint16_t)fh;
+      fh = (int32_t)anonym->g+(gg*f)/256L;
       if (fh<0L) fh = 0L;
       else if (fh>30000L) fh = 30000L;
-      anonym->g = (unsigned short)fh;
-      fh = (long)anonym->b+(bb*f)/256L;
+      anonym->g = (uint16_t)fh;
+      fh = (int32_t)anonym->b+(bb*f)/256L;
       if (fh<0L) fh = 0L;
       else if (fh>30000L) fh = 30000L;
-      anonym->b = (unsigned short)fh;
+      anonym->b = (uint16_t)fh;
    }
 } /* end addcol() */
 
 
-extern void maptool_waypoint(maptool_pIMAGE image, float x, float y, float r,
-                 long rr, long gg, long bb)
+extern void maptool_waypoint(maptool_pIMAGE image, float x, float y,
+                float r, int32_t rr, int32_t gg, int32_t bb)
 {
-   long ri;
-   long ty;
-   long tx;
-   long yi;
-   long xi;
+   int32_t ri;
+   int32_t ty;
+   int32_t tx;
+   int32_t yi;
+   int32_t xi;
    float h;
    float my;
    float mx;
    float fy;
    float fx;
-   long tmp;
-   long tmp0;
+   int32_t tmp;
+   int32_t tmp0;
    if (((x>r && x<(float)((image->Len1-1)+1UL)-r) && y>r) && y<(float)
                 ((image->Len0-1)+1UL)-r) {
-      ri = (long)(aprsdecode_trunc(r)+1UL);
-      tx = (long)aprsdecode_trunc(x);
+      ri = (int32_t)(aprsdecode_trunc(r)+1UL);
+      tx = (int32_t)aprsdecode_trunc(x);
       fx = x-(float)tx;
-      ty = (long)aprsdecode_trunc(y);
+      ty = (int32_t)aprsdecode_trunc(y);
       fy = y-(float)ty;
       tmp = ri;
       yi = -ri;
@@ -2645,7 +2643,7 @@ extern void maptool_waypoint(maptool_pIMAGE image, float x, float y, float r,
             if (h>0.0f) {
                if (h>1.0f) h = 1.0f;
                addcol(&image->Adr[(tx+xi)*image->Len0+(ty+yi)], rr, gg, bb,
-                (long)aprsdecode_trunc(h*256.0f));
+                (int32_t)aprsdecode_trunc(h*256.0f));
             }
             if (xi==tmp0) break;
          } /* end for */
@@ -2660,30 +2658,30 @@ extern void maptool_waypoint(maptool_pIMAGE image, float x, float y, float r,
 
 
 extern void maptool_vector(maptool_pIMAGE image, float x0, float y00,
-                float x1, float y1, long rr, long gg, long bb,
-                unsigned long width, float glow)
+                float x1, float y1, int32_t rr, int32_t gg,
+                int32_t bb, uint32_t width, float glow)
 {
    float ro;
    float w2;
    float w1;
    float r;
    float h;
-   unsigned long f1;
-   unsigned long iw2;
-   unsigned long e1;
-   unsigned long de0;
-   unsigned long e0;
-   unsigned long n0;
-   unsigned long n;
-   unsigned long yb;
-   unsigned long ya;
-   unsigned long yie;
-   unsigned long yi;
-   unsigned long xi;
-   long fgg;
-   long fbb;
-   long frr;
-   long k;
+   uint32_t f1;
+   uint32_t iw2;
+   uint32_t e1;
+   uint32_t de0;
+   uint32_t e0;
+   uint32_t n0;
+   uint32_t n;
+   uint32_t yb;
+   uint32_t ya;
+   uint32_t yie;
+   uint32_t yi;
+   uint32_t xi;
+   int32_t fgg;
+   int32_t fbb;
+   int32_t frr;
+   int32_t k;
    char mirr;
    char mirror;
    char flip;
@@ -2731,13 +2729,21 @@ extern void maptool_vector(maptool_pIMAGE image, float x0, float y00,
    }
    /*scissoring*/
    if (x0<2.0f) x0 = 2.0f;
-   if (x0>(float)((image->Len1-1)-1UL)) x0 = (float)((image->Len1-1)-1UL);
+   if (x0>(float)((image->Len1-1)-1UL)) {
+      x0 = (float)((image->Len1-1)-1UL);
+   }
    if (y00<2.0f) y00 = 2.0f;
-   if (y00>(float)((image->Len0-1)-1UL)) y00 = (float)((image->Len0-1)-1UL);
+   if (y00>(float)((image->Len0-1)-1UL)) {
+      y00 = (float)((image->Len0-1)-1UL);
+   }
    if (x1<2.0f) x1 = 2.0f;
-   if (x1>(float)((image->Len1-1)-1UL)) x1 = (float)((image->Len1-1)-1UL);
+   if (x1>(float)((image->Len1-1)-1UL)) {
+      x1 = (float)((image->Len1-1)-1UL);
+   }
    if (y1<2.0f) y1 = 2.0f;
-   if (y1>(float)((image->Len0-1)-1UL)) y1 = (float)((image->Len0-1)-1UL);
+   if (y1>(float)((image->Len0-1)-1UL)) {
+      y1 = (float)((image->Len0-1)-1UL);
+   }
    w1 = X2C_DIVR((float)width,512.0f);
    if (x1-x0<(float)fabs(y1-y00)) {
       h = x0;
@@ -2777,7 +2783,7 @@ extern void maptool_vector(maptool_pIMAGE image, float x0, float y00,
       de0 = aprsdecode_trunc(X2C_DIVR((float)e0,(float)fabs(r)*2.0f));
    }
    else de0 = e0;
-   k = (long)X2C_TRUNCI(h*65536.0f,X2C_min_longint,X2C_max_longint);
+   k = (int32_t)X2C_TRUNCI(h*65536.0f,X2C_min_longint,X2C_max_longint);
    n = aprsdecode_trunc((x1-(float)xi)+(float)fabs(r));
    mirr = y00>y1;
    if (aprsdecode_click.dryrun) ya = (ya+yb)/2UL;
@@ -2788,14 +2794,14 @@ extern void maptool_vector(maptool_pIMAGE image, float x0, float y00,
       if (aprsdecode_click.dryrun) {
          yi = ya/65536UL;
          if (flip) {
-            findinfo((long)(yi-1UL), (long)xi);
-            findinfo((long)yi, (long)xi);
-            findinfo((long)(yi+1UL), (long)xi);
+            findinfo((int32_t)(yi-1UL), (int32_t)xi);
+            findinfo((int32_t)yi, (int32_t)xi);
+            findinfo((int32_t)(yi+1UL), (int32_t)xi);
          }
          else {
-            findinfo((long)xi, (long)(yi-1UL));
-            findinfo((long)xi, (long)yi);
-            findinfo((long)xi, (long)(yi+1UL));
+            findinfo((int32_t)xi, (int32_t)(yi-1UL));
+            findinfo((int32_t)xi, (int32_t)yi);
+            findinfo((int32_t)xi, (int32_t)(yi+1UL));
          }
       }
       else {
@@ -2803,9 +2809,9 @@ extern void maptool_vector(maptool_pIMAGE image, float x0, float y00,
          else h = (float)(n0-n);
          if (h<glow) {
             h = X2C_DIVR(h,glow);
-            frr = (long)aprsdecode_trunc((float)rr*(1.125f-h)*6.0f);
-            fgg = (long)aprsdecode_trunc((float)gg*h);
-            fbb = (long)aprsdecode_trunc((float)bb*h);
+            frr = (int32_t)aprsdecode_trunc((float)rr*(1.125f-h)*6.0f);
+            fgg = (int32_t)aprsdecode_trunc((float)gg*h);
+            fbb = (int32_t)aprsdecode_trunc((float)bb*h);
          }
          else {
             frr = rr;
@@ -2835,11 +2841,11 @@ extern void maptool_vector(maptool_pIMAGE image, float x0, float y00,
          do {
             if (flip) {
                addcol(&image->Adr[(yi/65536UL)*image->Len0+xi], frr, fgg,
-                fbb, (long)f1);
+                fbb, (int32_t)f1);
             }
             else {
                addcol(&image->Adr[(xi)*image->Len0+yi/65536UL], frr, fgg,
-                fbb, (long)f1);
+                fbb, (int32_t)f1);
             }
             yi += 65536UL;
             f1 = 256UL;
@@ -2847,17 +2853,17 @@ extern void maptool_vector(maptool_pIMAGE image, float x0, float y00,
          f1 = ((65536UL+yie)-yi&65535UL)/256UL;
          if (flip) {
             addcol(&image->Adr[(yi/65536UL)*image->Len0+xi], frr, fgg, fbb,
-                (long)f1);
+                (int32_t)f1);
          }
          else {
             addcol(&image->Adr[(xi)*image->Len0+yi/65536UL], frr, fgg, fbb,
-                (long)f1);
+                (int32_t)f1);
          }
          /*      INC(yb, k); */
-         yb = (unsigned long)((long)yb+k);
+         yb = (uint32_t)((int32_t)yb+k);
       }
       /*    INC(ya, k); */
-      ya = (unsigned long)((long)ya+k);
+      ya = (uint32_t)((int32_t)ya+k);
       ++xi;
       --n;
    }
@@ -2867,7 +2873,7 @@ extern void maptool_vector(maptool_pIMAGE image, float x0, float y00,
 extern void maptool_setmark(maptool_pIMAGE image,
                 struct aprspos_POSITION pos, char hard)
 {
-   long i;
+   int32_t i;
    float y;
    float x;
    struct aprsdecode_COLTYP col0;
@@ -2880,10 +2886,10 @@ extern void maptool_setmark(maptool_pIMAGE image,
          col0.b = 0UL;
       }
       for (i = -6L; i<=6L; i++) {
-         maptool_waypoint(image, x+(float)(i*3L), y, 1.3f, (long)col0.r,
-                (long)col0.g, (long)col0.b);
-         maptool_waypoint(image, x, y+(float)(i*3L), 1.3f, (long)col0.r,
-                (long)col0.g, (long)col0.b);
+         maptool_waypoint(image, x+(float)(i*3L), y, 1.3f,
+                (int32_t)col0.r, (int32_t)col0.g, (int32_t)col0.b);
+         maptool_waypoint(image, x, y+(float)(i*3L), 1.3f,
+                (int32_t)col0.r, (int32_t)col0.g, (int32_t)col0.b);
       } /* end for */
    }
 } /* end setmark() */
@@ -2893,68 +2899,68 @@ extern void maptool_setmark(maptool_pIMAGE image,
 #define maptool_WHITE 1023
 
 
-static void dim(float dimmlev, maptool_pIMAGE img, long x, long y)
+static void dim(float dimmlev, maptool_pIMAGE img, int32_t x,
+                int32_t y)
 {
    float lum;
    struct maptool_PIX * anonym;
-   if (((x<0L || x>=(long)(img->Len1-1)) || y<0L) || y>=(long)(img->Len0-1)) {
-      return;
-   }
+   if (((x<0L || x>=(int32_t)(img->Len1-1)) || y<0L) || y>=(int32_t)
+                (img->Len0-1)) return;
    { /* with */
       struct maptool_PIX * anonym = &img->Adr[(x)*img->Len0+y];
-      lum = (float)((unsigned long)anonym->r*87UL+(unsigned long)
-                anonym->g*140UL+(unsigned long)anonym->b*28UL);
+      lum = (float)((uint32_t)anonym->r*87UL+(uint32_t)
+                anonym->g*140UL+(uint32_t)anonym->b*28UL);
       if (lum>dimmlev) {
          lum = X2C_DIVR(dimmlev,lum);
-         anonym->r = (unsigned short)aprsdecode_trunc((float)anonym->r*lum);
-         anonym->g = (unsigned short)aprsdecode_trunc((float)anonym->g*lum);
-         anonym->b = (unsigned short)aprsdecode_trunc((float)anonym->b*lum);
+         anonym->r = (uint16_t)aprsdecode_trunc((float)anonym->r*lum);
+         anonym->g = (uint16_t)aprsdecode_trunc((float)anonym->g*lum);
+         anonym->b = (uint16_t)aprsdecode_trunc((float)anonym->b*lum);
       }
    }
 } /* end dim() */
 
 
 extern void maptool_drawchar(maptool_pIMAGE img, char ch, float x0r,
-                float y0r, long * inc0, unsigned long bri,
-                unsigned long contrast, struct aprsdecode_COLTYP col0,
+                float y0r, int32_t * inc0, uint32_t bri,
+                uint32_t contrast, struct aprsdecode_COLTYP col0,
                 char dryrun)
 {
-   long fine;
-   long yy;
-   long xx;
-   long y00;
-   long x0;
-   long y;
-   long x;
-   unsigned long cn;
-   unsigned long cf;
-   unsigned long c;
-   unsigned long fy;
-   unsigned long fx;
+   int32_t fine;
+   int32_t yy;
+   int32_t xx;
+   int32_t y00;
+   int32_t x0;
+   int32_t y;
+   int32_t x;
+   uint32_t cn;
+   uint32_t cf;
+   uint32_t c;
+   uint32_t fy;
+   uint32_t fx;
    float dimmlev;
    struct _1 * anonym;
    struct maptool_PIX * anonym0;
    struct maptool_PIX * anonym1;
    struct maptool_PIX * anonym2;
    struct maptool_PIX * anonym3;
-   long tmp;
-   if (((unsigned char)ch>=' ' && x0r>=0.0f) && y0r>=0.0f) {
-      cn = (unsigned long)(unsigned char)ch-32UL;
+   int32_t tmp;
+   if (((uint8_t)ch>=' ' && x0r>=0.0f) && y0r>=0.0f) {
+      cn = (uint32_t)(uint8_t)ch-32UL;
       if (cn>96UL) cn = 0UL;
       dimmlev = 20480.0f;
       if (contrast==1UL) {
          dimmlev = (float)((col0.r*87UL+col0.g*140UL+col0.b*28UL)*bri)
                 *0.002f;
       }
-      x0 = (long)aprsdecode_trunc(x0r);
-      y00 = (long)aprsdecode_trunc(y0r);
+      x0 = (int32_t)aprsdecode_trunc(x0r);
+      y00 = (int32_t)aprsdecode_trunc(y0r);
       fx = aprsdecode_trunc((x0r-(float)x0)*256.0f);
       fy = aprsdecode_trunc((y0r-(float)y00)*256.0f);
-      fine = (long)(unsigned long)(fx || fy);
+      fine = (int32_t)(uint32_t)(fx || fy);
       { /* with */
          struct _1 * anonym = &font[cn];
          if (contrast>0UL && !dryrun) {
-            tmp = (long)(aprsdecode_lums.fontysize-1UL);
+            tmp = (int32_t)(aprsdecode_lums.fontysize-1UL);
             y = 0L;
             if (y<=tmp) for (;; y++) {
                for (x = 0L; x<=15L; x++) {
@@ -2969,25 +2975,25 @@ extern void maptool_drawchar(maptool_pIMAGE img, char ch, float x0r,
                if (y==tmp) break;
             } /* end for */
          }
-         tmp = (long)(aprsdecode_lums.fontysize-3UL);
+         tmp = (int32_t)(aprsdecode_lums.fontysize-3UL);
          y = 0L;
          if (y<=tmp) for (;; y++) {
             yy = y00+y+1L;
             for (x = 0L; x<=7L; x++) {
                xx = x0+x+1L;
-               c = ((unsigned long)anonym->char0[y][x]*bri)/256UL;
-               if ((((c>0UL && xx>=0L) && xx+1L<(long)(img->Len1-1))
-                && yy>=0L) && yy+1L<(long)(img->Len0-1)) {
+               c = ((uint32_t)anonym->char0[y][x]*bri)/256UL;
+               if ((((c>0UL && xx>=0L) && xx+1L<(int32_t)(img->Len1-1))
+                && yy>=0L) && yy+1L<(int32_t)(img->Len0-1)) {
                   if (dryrun) findinfo(xx, yy);
                   else {
                      cf = (c*(256UL-fx)*(256UL-fy))/65536UL;
                      { /* with */
                         struct maptool_PIX * anonym0 = &img->Adr[(xx)
                 *img->Len0+yy];
-                        anonym0->r += (unsigned short)((cf*col0.r)/256UL);
-                        anonym0->g += (unsigned short)((cf*col0.g)/256UL);
-                        anonym0->b += (unsigned short)((cf*col0.b)/256UL);
-                        if (((unsigned long)anonym0->g+col0.g&1)) {
+                        anonym0->r += (uint16_t)((cf*col0.r)/256UL);
+                        anonym0->g += (uint16_t)((cf*col0.g)/256UL);
+                        anonym0->b += (uint16_t)((cf*col0.b)/256UL);
+                        if (((uint32_t)anonym0->g+col0.g&1)) {
                            --anonym0->g; /* even is invert enable */
                         }
                      }
@@ -2997,25 +3003,25 @@ extern void maptool_drawchar(maptool_pIMAGE img, char ch, float x0r,
                         { /* with */
                            struct maptool_PIX * anonym1 = &img->Adr[(xx+1L)
                 *img->Len0+yy];
-                           anonym1->r += (unsigned short)((cf*col0.r)/256UL);
-                           anonym1->g += (unsigned short)((cf*col0.g)/256UL);
-                           anonym1->b += (unsigned short)((cf*col0.b)/256UL);
+                           anonym1->r += (uint16_t)((cf*col0.r)/256UL);
+                           anonym1->g += (uint16_t)((cf*col0.g)/256UL);
+                           anonym1->b += (uint16_t)((cf*col0.b)/256UL);
                         }
                         cf = (c*(256UL-fx)*fy)/65536UL;
                         { /* with */
                            struct maptool_PIX * anonym2 = &img->Adr[(xx)
                 *img->Len0+(yy+1L)];
-                           anonym2->r += (unsigned short)((cf*col0.r)/256UL);
-                           anonym2->g += (unsigned short)((cf*col0.g)/256UL);
-                           anonym2->b += (unsigned short)((cf*col0.b)/256UL);
+                           anonym2->r += (uint16_t)((cf*col0.r)/256UL);
+                           anonym2->g += (uint16_t)((cf*col0.g)/256UL);
+                           anonym2->b += (uint16_t)((cf*col0.b)/256UL);
                         }
                         cf = (c*fx*fy)/65536UL;
                         { /* with */
                            struct maptool_PIX * anonym3 = &img->Adr[(xx+1L)
                 *img->Len0+(yy+1L)];
-                           anonym3->r += (unsigned short)((cf*col0.r)/256UL);
-                           anonym3->g += (unsigned short)((cf*col0.g)/256UL);
-                           anonym3->b += (unsigned short)((cf*col0.b)/256UL);
+                           anonym3->r += (uint16_t)((cf*col0.r)/256UL);
+                           anonym3->g += (uint16_t)((cf*col0.g)/256UL);
+                           anonym3->b += (uint16_t)((cf*col0.b)/256UL);
                         }
                      }
                   }
@@ -3023,19 +3029,19 @@ extern void maptool_drawchar(maptool_pIMAGE img, char ch, float x0r,
             } /* end for */
             if (y==tmp) break;
          } /* end for */
-         *inc0 = (long)(anonym->width+1U);
+         *inc0 = (int32_t)(anonym->width+1U);
       }
    }
 } /* end drawchar() */
 
 
-extern unsigned long maptool_charwidth0(char ch)
+extern uint32_t maptool_charwidth0(char ch)
 {
-   unsigned long cn;
-   if ((unsigned char)ch>=' ') {
-      cn = (unsigned long)(unsigned char)ch-32UL;
+   uint32_t cn;
+   if ((uint8_t)ch>=' ') {
+      cn = (uint32_t)(uint8_t)ch-32UL;
       if (cn>96UL) cn = 0UL;
-      return (unsigned long)(font[cn].width+1U);
+      return (uint32_t)(font[cn].width+1U);
    }
    return 0UL;
 } /* end charwidth() */
@@ -3046,26 +3052,27 @@ extern unsigned long maptool_charwidth0(char ch)
 
 
 extern void maptool_drawsym(maptool_pIMAGE image, char tab, char sym,
-                char mirror, float x0r, float y0r, unsigned long bri)
+                 char mirror, float x0r, float y0r,
+                uint32_t bri)
 {
-   long sx;
-   long xi;
-   long y00;
-   long x0;
-   long y;
-   long x;
-   unsigned long b;
-   unsigned long br0d;
-   unsigned long br1d;
-   unsigned long br0c;
-   unsigned long br1c;
-   unsigned long br0b;
-   unsigned long br1b;
-   unsigned long br0a;
-   unsigned long br1a;
+   int32_t sx;
+   int32_t xi;
+   int32_t y00;
+   int32_t x0;
+   int32_t y;
+   int32_t x;
+   uint32_t b;
+   uint32_t br0d;
+   uint32_t br1d;
+   uint32_t br0c;
+   uint32_t br1c;
+   uint32_t br0b;
+   uint32_t br1b;
+   uint32_t br0a;
+   uint32_t br1a;
    struct aprsdecode_COLTYP col0;
-   unsigned long fy;
-   unsigned long fx;
+   uint32_t fy;
+   uint32_t fx;
    struct PIX8 * anonym;
    struct maptool_PIX * anonym0;
    /* save cpu */
@@ -3073,15 +3080,15 @@ extern void maptool_drawsym(maptool_pIMAGE image, char tab, char sym,
    struct maptool_PIX * anonym2;
    struct maptool_PIX * anonym3;
    if (bri==0UL) return;
-   sx = (long)(unsigned char)sym-32L;
+   sx = (int32_t)(uint8_t)sym-32L;
    if (((((sx<=0L || sx>=96L) || x0r<(-16.0f)) || y0r<(-16.0f))
                 || x0r>(float)((image->Len1-1)+16UL)) || y0r>(float)
                 ((image->Len0-1)+16UL)) return;
    if (tab!='/') sx += 96L;
    sx = sx*16L;
    if (bri>255UL) bri = 255UL;
-   x0 = (long)X2C_TRUNCI(x0r,X2C_min_longint,X2C_max_longint);
-   y00 = (long)X2C_TRUNCI(y0r,X2C_min_longint,X2C_max_longint);
+   x0 = (int32_t)X2C_TRUNCI(x0r,X2C_min_longint,X2C_max_longint);
+   y00 = (int32_t)X2C_TRUNCI(y0r,X2C_min_longint,X2C_max_longint);
    if (x0<0L) fx = 0UL;
    else fx = aprsdecode_trunc((x0r-(float)x0)*256.0f);
    if (y00<0L) fy = 0UL;
@@ -3105,8 +3112,8 @@ extern void maptool_drawsym(maptool_pIMAGE image, char tab, char sym,
    }
    for (y = 0L; y<=15L; y++) {
       for (x = 0L; x<=15L; x++) {
-         if (((x0+x>=0L && y00+y>=0L) && x+x0+1L<(long)(image->Len1-1))
-                && y+y00+1L<(long)(image->Len0-1)) {
+         if (((x0+x>=0L && y00+y>=0L) && x+x0+1L<(int32_t)(image->Len1-1))
+                && y+y00+1L<(int32_t)(image->Len0-1)) {
             if (mirror) xi = (15L-x)+sx;
             else xi = x+sx;
             { /* with */
@@ -3117,43 +3124,43 @@ extern void maptool_drawsym(maptool_pIMAGE image, char tab, char sym,
                      { /* with */
                         struct maptool_PIX * anonym0 = &image->Adr[(x+x0)
                 *image->Len0+(y+y00)];
-                        anonym0->r = (unsigned short)(((unsigned long)
-                anonym0->r*br1a+(unsigned long)anonym->r8*br0a)/256UL);
-                        anonym0->g = (unsigned short)(((unsigned long)
-                anonym0->g*br1a+(unsigned long)anonym->g8*br0a)/256UL);
-                        anonym0->b = (unsigned short)(((unsigned long)
-                anonym0->b*br1a+(unsigned long)anonym->b8*br0a)/256UL);
+                        anonym0->r = (uint16_t)(((uint32_t)
+                anonym0->r*br1a+(uint32_t)anonym->r8*br0a)/256UL);
+                        anonym0->g = (uint16_t)(((uint32_t)
+                anonym0->g*br1a+(uint32_t)anonym->g8*br0a)/256UL);
+                        anonym0->b = (uint16_t)(((uint32_t)
+                anonym0->b*br1a+(uint32_t)anonym->b8*br0a)/256UL);
                      }
                      if (fx || fy) {
                         { /* with */
                            struct maptool_PIX * anonym1 = &image->Adr[(x+x0+1L)
                 *image->Len0+(y+y00)];
-                           anonym1->r = (unsigned short)(((unsigned long)
-                anonym1->r*br1b+(unsigned long)anonym->r8*br0b)/256UL);
-                           anonym1->g = (unsigned short)(((unsigned long)
-                anonym1->g*br1b+(unsigned long)anonym->g8*br0b)/256UL);
-                           anonym1->b = (unsigned short)(((unsigned long)
-                anonym1->b*br1b+(unsigned long)anonym->b8*br0b)/256UL);
+                           anonym1->r = (uint16_t)(((uint32_t)
+                anonym1->r*br1b+(uint32_t)anonym->r8*br0b)/256UL);
+                           anonym1->g = (uint16_t)(((uint32_t)
+                anonym1->g*br1b+(uint32_t)anonym->g8*br0b)/256UL);
+                           anonym1->b = (uint16_t)(((uint32_t)
+                anonym1->b*br1b+(uint32_t)anonym->b8*br0b)/256UL);
                         }
                         { /* with */
                            struct maptool_PIX * anonym2 = &image->Adr[(x+x0)
                 *image->Len0+(y+y00+1L)];
-                           anonym2->r = (unsigned short)(((unsigned long)
-                anonym2->r*br1c+(unsigned long)anonym->r8*br0c)/256UL);
-                           anonym2->g = (unsigned short)(((unsigned long)
-                anonym2->g*br1c+(unsigned long)anonym->g8*br0c)/256UL);
-                           anonym2->b = (unsigned short)(((unsigned long)
-                anonym2->b*br1c+(unsigned long)anonym->b8*br0c)/256UL);
+                           anonym2->r = (uint16_t)(((uint32_t)
+                anonym2->r*br1c+(uint32_t)anonym->r8*br0c)/256UL);
+                           anonym2->g = (uint16_t)(((uint32_t)
+                anonym2->g*br1c+(uint32_t)anonym->g8*br0c)/256UL);
+                           anonym2->b = (uint16_t)(((uint32_t)
+                anonym2->b*br1c+(uint32_t)anonym->b8*br0c)/256UL);
                         }
                         { /* with */
                            struct maptool_PIX * anonym3 = &image->Adr[(x+x0+1L)
                 *image->Len0+(y+y00+1L)];
-                           anonym3->r = (unsigned short)(((unsigned long)
-                anonym3->r*br1d+(unsigned long)anonym->r8*br0d)/256UL);
-                           anonym3->g = (unsigned short)(((unsigned long)
-                anonym3->g*br1d+(unsigned long)anonym->g8*br0d)/256UL);
-                           anonym3->b = (unsigned short)(((unsigned long)
-                anonym3->b*br1d+(unsigned long)anonym->b8*br0d)/256UL);
+                           anonym3->r = (uint16_t)(((uint32_t)
+                anonym3->r*br1d+(uint32_t)anonym->r8*br0d)/256UL);
+                           anonym3->g = (uint16_t)(((uint32_t)
+                anonym3->g*br1d+(uint32_t)anonym->g8*br0d)/256UL);
+                           anonym3->b = (uint16_t)(((uint32_t)
+                anonym3->b*br1d+(uint32_t)anonym->b8*br0d)/256UL);
                         }
                      }
                   }
@@ -3162,9 +3169,9 @@ extern void maptool_drawsym(maptool_pIMAGE image, char tab, char sym,
          }
       } /* end for */
    } /* end for */
-   if (((unsigned char)tab>='0' && (unsigned char)tab<='9' || (unsigned char)
-                tab>='A' && (unsigned char)tab<='Z') || (unsigned char)
-                tab>='a' && (unsigned char)tab<='z') {
+   if (((uint8_t)tab>='0' && (uint8_t)tab<='9' || (uint8_t)
+                tab>='A' && (uint8_t)tab<='Z') || (uint8_t)
+                tab>='a' && (uint8_t)tab<='z') {
       maptool_Colset(&col0, 'W');
       maptool_drawchar(image, tab, x0r-4.0f,
                 y0r-((8.0f-(16.0f-(float)aprsdecode_lums.fontysize)*0.5f)
@@ -3175,9 +3182,9 @@ extern void maptool_drawsym(maptool_pIMAGE image, char tab, char sym,
 #define maptool_FILLLUM 30
 
 
-static unsigned long lim(float x, unsigned long m)
+static uint32_t lim(float x, uint32_t m)
 {
-   unsigned long r;
+   uint32_t r;
    if (x<=0.0f) return 0UL;
    r = aprsdecode_trunc(x);
    if (r>m) return m;
@@ -3185,12 +3192,13 @@ static unsigned long lim(float x, unsigned long m)
 } /* end lim() */
 
 
-static void arc(unsigned long b, unsigned long g, unsigned long r,
-                maptool_pIMAGE image, char fill, float xh, float * y1,
-                float yh, float * y00, unsigned long yi0, float * x0,
-                float * x1, unsigned long i, char oct, float * xhh)
+static void arc(uint32_t b, uint32_t g, uint32_t r,
+                maptool_pIMAGE image, char fill, float xh,
+                float * y1, float yh, float * y00, uint32_t yi0,
+                float * x0, float * x1, uint32_t i, char oct,
+                float * xhh)
 {
-   unsigned long lum;
+   uint32_t lum;
    if (*xhh>(-1.0f)) {
       if (oct) {
          *xhh = 1.0f-sqr(X2C_DIVR((float)i-*x1,*x1-*x0));
@@ -3202,21 +3210,21 @@ static void arc(unsigned long b, unsigned long g, unsigned long r,
       *xhh = (1.5f-(float)fabs(*xhh+1.5f))*1.7066666666667E+2f;
    }
    if (*xhh>0.0f) {
-      if (aprsdecode_click.dryrun) findinfo((long)i, (long)yi0);
+      if (aprsdecode_click.dryrun) findinfo((int32_t)i, (int32_t)yi0);
       lum = aprsdecode_trunc(*xhh);
    }
    else if (fill) lum = 30UL;
    else lum = 0UL;
-   addcol(&image->Adr[(i)*image->Len0+yi0], (long)r, (long)g, (long)b,
-                (long)lum);
+   addcol(&image->Adr[(i)*image->Len0+yi0], (int32_t)r, (int32_t)g,
+                (int32_t)b, (int32_t)lum);
 } /* end arc() */
 
 
 extern void maptool_drawareasym(maptool_pIMAGE image,
                 struct aprspos_POSITION pm, struct aprsdecode_AREASYMB area,
-                unsigned long bri)
+                uint32_t bri)
 {
-   long ret;
+   int32_t ret;
    struct aprspos_POSITION p1;
    struct aprspos_POSITION p0;
    float xho;
@@ -3227,18 +3235,18 @@ extern void maptool_drawareasym(maptool_pIMAGE image,
    float x1;
    float y00;
    float x0;
-   unsigned long xm;
-   unsigned long i;
-   unsigned long yi1;
-   unsigned long xi1;
-   unsigned long yi0;
-   unsigned long xi0;
+   uint32_t xm;
+   uint32_t i;
+   uint32_t yi1;
+   uint32_t xi1;
+   uint32_t yi0;
+   uint32_t xi0;
    char oct;
    char fill;
-   unsigned long b;
-   unsigned long g;
-   unsigned long r;
-   unsigned long tmp;
+   uint32_t b;
+   uint32_t g;
+   uint32_t r;
+   uint32_t tmp;
    switch ((unsigned)(area.color&7U)) {
    case 0U: /* we have no black so make gray */
       r = 128UL;
@@ -3297,8 +3305,8 @@ extern void maptool_drawareasym(maptool_pIMAGE image,
       p1.long0 = pm.long0+area.dpos.long0;
       ret = maptool_mapxy(p0, &x0, &y00);
       ret = maptool_mapxy(p1, &x1, &y1);
-      maptool_vector(image, x0, y00, x1, y1, (long)r, (long)g, (long)b,
-                300UL, 0.0f);
+      maptool_vector(image, x0, y00, x1, y1, (int32_t)r, (int32_t)g,
+                (int32_t)b, 300UL, 0.0f);
    }
    else if (area.typ=='4' || area.typ=='9') {
       /* box */
@@ -3308,23 +3316,23 @@ extern void maptool_drawareasym(maptool_pIMAGE image,
       p1.long0 = pm.long0+area.dpos.long0;
       ret = maptool_mapxy(p0, &x0, &y00);
       ret = maptool_mapxy(p1, &x1, &y1);
-      maptool_vector(image, x0, y00, x1, y1, (long)r, (long)g, (long)b,
-                200UL, 0.0f);
+      maptool_vector(image, x0, y00, x1, y1, (int32_t)r, (int32_t)g,
+                (int32_t)b, 200UL, 0.0f);
       p0.lat = pm.lat-area.dpos.lat;
       p0.long0 = pm.long0+area.dpos.long0;
       ret = maptool_mapxy(p0, &x0, &y00);
-      maptool_vector(image, x0, y00, x1, y1, (long)r, (long)g, (long)b,
-                200UL, 0.0f);
+      maptool_vector(image, x0, y00, x1, y1, (int32_t)r, (int32_t)g,
+                (int32_t)b, 200UL, 0.0f);
       p1.lat = pm.lat-area.dpos.lat;
       p1.long0 = pm.long0-area.dpos.long0;
       ret = maptool_mapxy(p1, &x1, &y1);
-      maptool_vector(image, x0, y00, x1, y1, (long)r, (long)g, (long)b,
-                200UL, 0.0f);
+      maptool_vector(image, x0, y00, x1, y1, (int32_t)r, (int32_t)g,
+                (int32_t)b, 200UL, 0.0f);
       p0.lat = pm.lat+area.dpos.lat;
       p0.long0 = pm.long0-area.dpos.long0;
       ret = maptool_mapxy(p0, &x0, &y00);
-      maptool_vector(image, x0, y00, x1, y1, (long)r, (long)g, (long)b,
-                200UL, 0.0f);
+      maptool_vector(image, x0, y00, x1, y1, (int32_t)r, (int32_t)g,
+                (int32_t)b, 200UL, 0.0f);
       if (area.typ=='9') {
          /* fill */
          p0.lat = pm.lat-area.dpos.lat;
@@ -3341,8 +3349,8 @@ extern void maptool_drawareasym(maptool_pIMAGE image,
             tmp = xi1;
             i = xi0;
             if (i<=tmp) for (;; i++) {
-               addcol(&image->Adr[(i)*image->Len0+yi0], (long)r, (long)g,
-                (long)b, 30L);
+               addcol(&image->Adr[(i)*image->Len0+yi0], (int32_t)r,
+                (int32_t)g, (int32_t)b, 30L);
                if (i==tmp) break;
             } /* end for */
             ++yi0;
@@ -3357,17 +3365,17 @@ extern void maptool_drawareasym(maptool_pIMAGE image,
       p1.long0 = pm.long0-area.dpos.long0;
       ret = maptool_mapxy(p0, &x0, &y00);
       ret = maptool_mapxy(p1, &x1, &y1);
-      maptool_vector(image, x0, y00, x1, y1, (long)r, (long)g, (long)b,
-                200UL, 0.0f);
+      maptool_vector(image, x0, y00, x1, y1, (int32_t)r, (int32_t)g,
+                (int32_t)b, 200UL, 0.0f);
       p1.long0 = pm.long0+area.dpos.long0;
       ret = maptool_mapxy(p1, &x1, &y1);
-      maptool_vector(image, x0, y00, x1, y1, (long)r, (long)g, (long)b,
-                200UL, 0.0f);
+      maptool_vector(image, x0, y00, x1, y1, (int32_t)r, (int32_t)g,
+                (int32_t)b, 200UL, 0.0f);
       p0.lat = pm.lat-area.dpos.lat;
       p0.long0 = pm.long0-area.dpos.long0;
       ret = maptool_mapxy(p0, &x0, &y00);
-      maptool_vector(image, x0, y00, x1, y1, (long)r, (long)g, (long)b,
-                200UL, 0.0f);
+      maptool_vector(image, x0, y00, x1, y1, (int32_t)r, (int32_t)g,
+                (int32_t)b, 200UL, 0.0f);
       if (area.typ=='8') {
          /* fill */
          p0.lat = pm.lat-area.dpos.lat;
@@ -3386,8 +3394,8 @@ extern void maptool_drawareasym(maptool_pIMAGE image,
                tmp = lim(x1+xh, image->Len1-1);
                i = lim(x1-xh, image->Len1-1);
                if (i<=tmp) for (;; i++) {
-                  addcol(&image->Adr[(i)*image->Len0+yi0], (long)r, (long)g,
-                (long)b, 30L);
+                  addcol(&image->Adr[(i)*image->Len0+yi0], (int32_t)r,
+                (int32_t)g, (int32_t)b, 30L);
                   if (i==tmp) break;
                } /* end for */
                ++yi0;
@@ -3441,9 +3449,10 @@ extern void maptool_drawareasym(maptool_pIMAGE image,
 } /* end drawareasym() */
 
 
-static void dashvec(maptool_pIMAGE image, float x0, float y00, float x1,
-                float y1, unsigned long r, unsigned long g, unsigned long b,
-                float double0, unsigned long len, unsigned long wid)
+static void dashvec(maptool_pIMAGE image, float x0, float y00,
+                float x1, float y1, uint32_t r, uint32_t g,
+                uint32_t b, float double0, uint32_t len,
+                uint32_t wid)
 {
    float dy;
    float dx;
@@ -3453,9 +3462,9 @@ static void dashvec(maptool_pIMAGE image, float x0, float y00, float x1,
    float k;
    float y;
    float x;
-   unsigned long d;
-   unsigned long i;
-   unsigned long tmp;
+   uint32_t d;
+   uint32_t i;
+   uint32_t tmp;
    x = x1-x0;
    y = y1-y00;
    k = x*x+y*y;
@@ -3470,14 +3479,15 @@ static void dashvec(maptool_pIMAGE image, float x0, float y00, float x1,
    k = X2C_DIVR(1.0f,(float)d);
    tmp = d-1UL;
    i = 0UL;
-   if (i<=tmp) for (tmp = (unsigned long)(tmp-i)/2UL;;) {
+   if (i<=tmp) for (tmp = (uint32_t)(tmp-i)/2UL;;) {
       m0 = k*(float)i;
       m1 = k*(float)(i+1UL);
-      maptool_vector(image, x0+x*m0, y00+y*m0, x0+x*m1, y00+y*m1, (long)r,
-                (long)g, (long)b, wid, 0.0f);
+      maptool_vector(image, x0+x*m0, y00+y*m0, x0+x*m1, y00+y*m1,
+                (int32_t)r, (int32_t)g, (int32_t)b, wid, 0.0f);
       if (double0!=0.0f) {
          maptool_vector(image, x0+x*m0+dx, y00+y*m0+dy, x0+x*m1+dx,
-                y00+y*m1+dy, (long)r, (long)g, (long)b, wid, 0.0f);
+                y00+y*m1+dy, (int32_t)r, (int32_t)g, (int32_t)b, wid,
+                0.0f);
       }
       if (!tmp) break;
       --tmp;
@@ -3486,8 +3496,8 @@ static void dashvec(maptool_pIMAGE image, float x0, float y00, float x1,
 } /* end dashvec() */
 
 
-static void policolor(unsigned long c, unsigned long bri, unsigned long * r,
-                unsigned long * g, unsigned long * b)
+static void policolor(uint32_t c, uint32_t bri, uint32_t * r,
+                uint32_t * g, uint32_t * b)
 /* colour for poliline object */
 {
    c = c&3UL;
@@ -3519,41 +3529,39 @@ struct _2;
 
 
 struct _2 {
-   long xi;
-   long yi;
+   int32_t xi;
+   int32_t yi;
 };
 
 
 static void fillpoligon(maptool_pIMAGE image, struct aprspos_POSITION pm,
-                const struct aprsdecode_MULTILINE md, unsigned long bri)
+                const struct aprsdecode_MULTILINE md, uint32_t bri)
 {
-   unsigned long hachuresize;
-   unsigned long nc;
-   unsigned long nv;
-   unsigned long j;
-   unsigned long i;
-   unsigned long bf;
-   unsigned long gf;
-   unsigned long rf;
-   long miny;
-   long maxy;
-   long minx;
-   long maxx;
-   long x;
-   long ret;
+   uint32_t hachuresize;
+   uint32_t nc;
+   uint32_t nv;
+   uint32_t j;
+   uint32_t i;
+   uint32_t bf;
+   uint32_t gf;
+   uint32_t rf;
+   int32_t miny;
+   int32_t maxy;
+   int32_t minx;
+   int32_t maxx;
+   int32_t x;
+   int32_t ret;
    struct _2 vert[41];
-   long cross[41];
+   int32_t cross[41];
    struct aprspos_POSITION p;
    float yr;
    float xr;
    char done;
    struct _2 * anonym;
    struct maptool_PIX * anonym0;
-   long tmp;
-   if ((unsigned char)md.filltyp<'2' || (unsigned char)md.filltyp>'9') {
-      return;
-   }
-   i = (unsigned long)(unsigned char)md.filltyp-50UL;
+   int32_t tmp;
+   if ((uint8_t)md.filltyp<'2' || (uint8_t)md.filltyp>'9') return;
+   i = (uint32_t)(uint8_t)md.filltyp-50UL;
    if (i<4UL) {
       hachuresize = 0UL;
       bri = bri/6UL;
@@ -3577,8 +3585,10 @@ static void fillpoligon(maptool_pIMAGE image, struct aprspos_POSITION pm,
       { /* with */
          struct _2 * anonym = &vert[i];
          ret = maptool_mapxy(p, &xr, &yr);
-         anonym->xi = (long)X2C_TRUNCI(xr,X2C_min_longint,X2C_max_longint);
-         anonym->yi = (long)X2C_TRUNCI(yr,X2C_min_longint,X2C_max_longint);
+         anonym->xi = (int32_t)X2C_TRUNCI(xr,X2C_min_longint,
+                X2C_max_longint);
+         anonym->yi = (int32_t)X2C_TRUNCI(yr,X2C_min_longint,
+                X2C_max_longint);
          if (anonym->xi>maxx) maxx = anonym->xi;
          if (anonym->xi<minx) minx = anonym->xi;
          if (anonym->yi>maxy) maxy = anonym->yi;
@@ -3587,13 +3597,15 @@ static void fillpoligon(maptool_pIMAGE image, struct aprspos_POSITION pm,
       ++i;
    }
    if (miny<0L) miny = 0L;
-   if (maxy>(long)(image->Len0-1)) maxy = (long)(image->Len0-1);
+   if (maxy>(int32_t)(image->Len0-1)) maxy = (int32_t)(image->Len0-1);
    if (minx<0L) minx = 0L;
-   if (maxx>(long)(image->Len1-1)) maxx = (long)(image->Len1-1);
+   if (maxx>(int32_t)(image->Len1-1)) maxx = (int32_t)(image->Len1-1);
    if (hachuresize>0UL) {
       /* modify hachure with image size */
       x = ((maxx-minx)+maxy)-miny;
-      if (x>0L) hachuresize += aprsdecode_trunc(0.35f*osic_sqrt((float)x));
+      if (x>0L) {
+         hachuresize += aprsdecode_trunc(0.35f*osic_sqrt((float)x));
+      }
    }
    while (maxy>miny) {
       nc = 0UL;
@@ -3602,7 +3614,7 @@ static void fillpoligon(maptool_pIMAGE image, struct aprspos_POSITION pm,
          /* find all crossings to scanline */
          if (vert[i].yi>maxy!=vert[i+1UL].yi>maxy) {
             /* vector crosses scanline */
-            x = vert[i].xi+(long)X2C_TRUNCI(X2C_DIVR((float)
+            x = vert[i].xi+(int32_t)X2C_TRUNCI(X2C_DIVR((float)
                 (vert[i+1UL].xi-vert[i].xi)*(float)(vert[i].yi-maxy),
                 (float)(vert[i].yi-vert[i+1UL].yi)),X2C_min_longint,
                 X2C_max_longint);
@@ -3638,14 +3650,14 @@ static void fillpoligon(maptool_pIMAGE image, struct aprspos_POSITION pm,
                done = !done;
                ++j;
             }
-            if (done && (hachuresize==0UL || (unsigned long)(maxy+x)
+            if (done && (hachuresize==0UL || (uint32_t)(maxy+x)
                 %hachuresize==0UL)) {
                { /* with */
                   struct maptool_PIX * anonym0 = &image->Adr[(x)
                 *image->Len0+maxy];
-                  anonym0->r += (unsigned short)rf;
-                  anonym0->g += (unsigned short)gf;
-                  anonym0->b += (unsigned short)bf;
+                  anonym0->r += (uint16_t)rf;
+                  anonym0->g += (uint16_t)gf;
+                  anonym0->b += (uint16_t)bf;
                }
             }
             if (x==tmp) break;
@@ -3658,29 +3670,29 @@ static void fillpoligon(maptool_pIMAGE image, struct aprspos_POSITION pm,
 
 extern void maptool_drawpoligon(maptool_pIMAGE image,
                 struct aprspos_POSITION pm, struct aprsdecode_MULTILINE md,
-                char tab, char sym, unsigned long bri)
+                char tab, char sym, uint32_t bri)
 {
-   long ret;
+   int32_t ret;
    struct aprspos_POSITION p;
    float y1;
    float x1;
    float y00;
    float x0;
-   unsigned long j;
-   unsigned long i;
-   unsigned long sz;
-   unsigned long widt;
-   unsigned long col0;
-   unsigned long b;
-   unsigned long g;
-   unsigned long r;
-   if ((unsigned char)md.linetyp<'a' || md.size<=1UL) return;
-   col0 = (unsigned long)(unsigned char)md.linetyp-97UL;
+   uint32_t j;
+   uint32_t i;
+   uint32_t sz;
+   uint32_t widt;
+   uint32_t col0;
+   uint32_t b;
+   uint32_t g;
+   uint32_t r;
+   if ((uint8_t)md.linetyp<'a' || md.size<=1UL) return;
+   col0 = (uint32_t)(uint8_t)md.linetyp-97UL;
    policolor(col0/3UL&3UL, bri, &r, &g, &b);
    i = 0UL;
    widt = 300UL;
-   if ((unsigned char)md.filltyp>'1') widt = 160UL;
-   sz = md.size+(unsigned long)(md.filltyp!='1'); /* closed poligon */
+   if ((uint8_t)md.filltyp>'1') widt = 160UL;
+   sz = md.size+(uint32_t)(md.filltyp!='1'); /* closed poligon */
    while (i<sz) {
       j = i%md.size;
       p.lat = pm.lat+md.vec[j].lat;
@@ -3689,8 +3701,8 @@ extern void maptool_drawpoligon(maptool_pIMAGE image,
       if (i>0UL) {
          switch (col0%3UL) {
          case 0UL:
-            maptool_vector(image, x0, y00, x1, y1, (long)r, (long)g, (long)b,
-                 widt, 0.0f);
+            maptool_vector(image, x0, y00, x1, y1, (int32_t)r,
+                (int32_t)g, (int32_t)b, widt, 0.0f);
             break;
          case 1UL:
             dashvec(image, x0, y00, x1, y1, r, g, b, 0.0f, 8UL, widt);
@@ -3716,7 +3728,7 @@ extern void maptool_drawpoliobj(maptool_pIMAGE image)
    char cs[251];
    struct aprsdecode_MULTILINE ml;
    struct aprspos_POSITION center;
-   unsigned long i;
+   uint32_t i;
    useri_confstr(useri_fRBPOS, cs, 251ul);
    aprstext_deganytopos(cs, 251ul, &center);
    if (!aprspos_posvalid(center)) return;
@@ -3733,8 +3745,8 @@ extern char maptool_findmultiline(struct aprspos_POSITION pos,
    char cs[251];
    struct aprsdecode_MULTILINE ml;
    struct aprspos_POSITION center;
-   unsigned long mini;
-   unsigned long i;
+   uint32_t mini;
+   uint32_t i;
    float d;
    float mind;
    useri_confstr(useri_fRBPOS, cs, 251ul);
@@ -3768,39 +3780,39 @@ extern char maptool_findmultiline(struct aprspos_POSITION pos,
 #define maptool_MARGIN 2
 
 
-static void OptTextPlace(maptool_pIMAGE img, char s[], unsigned long s_len,
-                long * xt, long * yt)
+static void OptTextPlace(maptool_pIMAGE img, char s[], uint32_t s_len,
+                int32_t * xt, int32_t * yt)
 {
-   unsigned long cn;
-   unsigned long i;
+   uint32_t cn;
+   uint32_t i;
    /*max,*/
-   long fonty;
-   long n;
-   long ymin;
-   long min0;
-   long lb;
-   long lg;
-   long lr;
-   long cont;
-   long yh;
-   long y;
-   long x;
-   long wid;
-   long ct[54];
+   int32_t fonty;
+   int32_t n;
+   int32_t ymin;
+   int32_t min0;
+   int32_t lb;
+   int32_t lg;
+   int32_t lr;
+   int32_t cont;
+   int32_t yh;
+   int32_t y;
+   int32_t x;
+   int32_t wid;
+   int32_t ct[54];
    struct maptool_PIX * anonym;
-   long tmp;
-   long tmp0;
+   int32_t tmp;
+   int32_t tmp0;
    X2C_PCOPY((void **)&s,s_len);
-   fonty = (long)(aprsdecode_lums.fontysize-3UL);
-   if (((*xt<0L || *xt>=(long)(img->Len1-1)) || *yt<-fonty) || *yt>=(long)
-                (img->Len0-1)+fonty) goto label;
+   fonty = (int32_t)(aprsdecode_lums.fontysize-3UL);
+   if (((*xt<0L || *xt>=(int32_t)(img->Len1-1)) || *yt<-fonty)
+                || *yt>=(int32_t)(img->Len0-1)+fonty) goto label;
    i = 0UL;
    wid = 0L;
    while (i<=s_len-1 && s[i]) {
-      if ((unsigned char)s[i]>=' ') {
-         cn = (unsigned long)(unsigned char)s[i]-32UL;
+      if ((uint8_t)s[i]>=' ') {
+         cn = (uint32_t)(uint8_t)s[i]-32UL;
          if (cn>96UL) cn = 0UL;
-         wid += (long)font[cn].width;
+         wid += (int32_t)font[cn].width;
       }
       ++i;
    }
@@ -3810,7 +3822,7 @@ static void OptTextPlace(maptool_pIMAGE img, char s[], unsigned long s_len,
    y = 0L;
    if (y<=tmp) for (;; y++) {
       yh = (*yt+y)-fonty;
-      if (yh>=2L && yh<(long)((img->Len0-1)+1UL)-2L) {
+      if (yh>=2L && yh<(int32_t)((img->Len0-1)+1UL)-2L) {
          /* never place text outside drawable */
          cont = 0L;
          lr = 0L;
@@ -3819,14 +3831,14 @@ static void OptTextPlace(maptool_pIMAGE img, char s[], unsigned long s_len,
          tmp0 = (*xt+wid)-1L;
          x = *xt;
          if (x<=tmp0) for (;; x++) {
-            if (x<(long)((img->Len1-1)-1UL)) {
+            if (x<(int32_t)((img->Len1-1)-1UL)) {
                { /* with */
                   struct maptool_PIX * anonym = &img->Adr[(x)*img->Len0+yh];
-                  cont += labs((long)anonym->r-lr)+labs((long)anonym->g-lg)
-                +labs((long)anonym->b-lb);
-                  lr = (long)anonym->r;
-                  lg = (long)anonym->g;
-                  lb = (long)anonym->b;
+                  cont += labs((int32_t)anonym->r-lr)+labs((int32_t)
+                anonym->g-lg)+labs((int32_t)anonym->b-lb);
+                  lr = (int32_t)anonym->r;
+                  lg = (int32_t)anonym->g;
+                  lb = (int32_t)anonym->b;
                }
             }
             if (x==tmp0) break;
@@ -3852,22 +3864,22 @@ static void OptTextPlace(maptool_pIMAGE img, char s[], unsigned long s_len,
 
 
 extern void maptool_drawstr(maptool_pIMAGE image, char s[],
-                unsigned long s_len, float xr, float yr, unsigned long bri,
-                unsigned long contrast, struct aprsdecode_COLTYP col0,
-                signed char * pos, unsigned long slide, char fixpos,
+                uint32_t s_len, float xr, float yr, uint32_t bri,
+                uint32_t contrast, struct aprsdecode_COLTYP col0,
+                signed char * pos, uint32_t slide, char fixpos,
                 char dryrun)
 {
-   unsigned long i;
-   long y;
-   long x;
-   long inc0;
-   long dy;
+   uint32_t i;
+   int32_t y;
+   int32_t x;
+   int32_t inc0;
+   int32_t dy;
    if (bri==0UL) return;
    if (slide>0UL) {
       if (fixpos) yr = yr+(float)*pos;
       else {
-         y = (long)X2C_TRUNCI(yr,X2C_min_longint,X2C_max_longint);
-         x = (long)X2C_TRUNCI(xr,X2C_min_longint,X2C_max_longint);
+         y = (int32_t)X2C_TRUNCI(yr,X2C_min_longint,X2C_max_longint);
+         x = (int32_t)X2C_TRUNCI(xr,X2C_min_longint,X2C_max_longint);
          dy = y;
          OptTextPlace(image, s, s_len, &x, &y);
          y = (y/2L)*2L+1L; /* not odd lines for better 420 color conversion */
@@ -3888,26 +3900,23 @@ extern void maptool_drawstr(maptool_pIMAGE image, char s[],
 
 
 extern void maptool_drawstri(maptool_pIMAGE image, char s[],
-                unsigned long s_len, long xr, long yr, unsigned long bri,
-                unsigned long contrast, struct aprsdecode_COLTYP col0,
+                uint32_t s_len, int32_t xr, int32_t yr, uint32_t bri,
+                 uint32_t contrast, struct aprsdecode_COLTYP col0,
                 char proportional, char dryrun)
 {
-   unsigned long i;
-   long inc0;
+   uint32_t i;
+   int32_t inc0;
    char c;
    i = 0UL;
    for (;;) {
       if (i>s_len-1) break;
       c = s[i];
       if (c==0) break;
-      if ((unsigned char)c>=(unsigned char)'\360' && (unsigned char)
-                c<=(unsigned char)'\370') {
-         xr += (long)((unsigned long)(unsigned char)c-239UL);
-                /* microspaces */
-      }
+      if ((uint8_t)c>=(uint8_t)'\360' && (uint8_t)c<=(uint8_t)'\370')
+                 xr += (int32_t)((uint32_t)(uint8_t)c-239UL);
       else {
-         maptool_drawchar(image, s[i], (float)xr, (float)yr, &inc0, bri,
-                contrast, col0, dryrun);
+         maptool_drawchar(image, s[i], (float)xr, (float)yr, &inc0,
+                bri, contrast, col0, dryrun);
          if (proportional) xr += inc0;
          else xr += 6L;
       }
@@ -3932,14 +3941,14 @@ extern void maptool_drawstri(maptool_pIMAGE image, char s[],
 #define maptool_W (-1.25)
 
 
-extern void maptool_drawarrow(maptool_pIMAGE image, float x0, float y00,
-                float len, float ang, unsigned long wind, unsigned long bri,
-                struct aprsdecode_COLTYP col0)
+extern void maptool_drawarrow(maptool_pIMAGE image, float x0,
+                float y00, float len, float ang, uint32_t wind,
+                uint32_t bri, struct aprsdecode_COLTYP col0)
 {
-   long wi;
-   long b;
-   long g;
-   long r;
+   int32_t wi;
+   int32_t b;
+   int32_t g;
+   int32_t r;
    float c1;
    float s1;
    float l;
@@ -3950,9 +3959,9 @@ extern void maptool_drawarrow(maptool_pIMAGE image, float x0, float y00,
    /*WrInt(wind, 10);WrStrLn("=w"); */
    s = osic_sin(ang);
    c = osic_cos(ang);
-   r = (long)((bri*col0.r)/256UL);
-   g = (long)((bri*col0.g)/256UL);
-   b = (long)((bri*col0.b)/256UL);
+   r = (int32_t)((bri*col0.r)/256UL);
+   g = (int32_t)((bri*col0.g)/256UL);
+   b = (int32_t)((bri*col0.b)/256UL);
    if (wind==0UL) {
       maptool_vector(image, x0, y00, x0-(len-5.0f)*s, y00+(len-5.0f)*c, r, g,
                  b, 400UL, 0.0f);
@@ -3970,7 +3979,7 @@ extern void maptool_drawarrow(maptool_pIMAGE image, float x0, float y00,
                 0.0f);
       s1 = osic_sin(ang+(-1.25f));
       c1 = osic_cos(ang+(-1.25f));
-      wi = (long)wind;
+      wi = (int32_t)wind;
       if (wi<20L) wi = 20L;
       else if (wi>250L) wi = 250L;
       do {
@@ -3987,8 +3996,7 @@ extern void maptool_drawarrow(maptool_pIMAGE image, float x0, float y00,
 } /* end drawarrow() */
 
 
-extern void maptool_cc(maptool_pIMAGE img, unsigned long from,
-                unsigned long to)
+extern void maptool_cc(maptool_pIMAGE img, uint32_t from, uint32_t to)
 {
    struct aprsdecode_COLTYP col0;
    char h[1024];
@@ -4012,8 +4020,8 @@ extern void maptool_cc(maptool_pIMAGE img, unsigned long from,
    }
    maptool_Colset(&col0, 'G');
    aprsstr_Append(s, 1024ul, " Zoom:", 7ul);
-   aprsstr_FixToStr(((float)aprsdecode_initzoom-0.995f)+aprsdecode_finezoom,
-                3UL, h, 1024ul);
+   aprsstr_FixToStr(((float)aprsdecode_initzoom-0.995f)
+                +aprsdecode_finezoom, 3UL, h, 1024ul);
    aprsstr_Append(s, 1024ul, h, 1024ul);
    maptool_drawstr(img, s, 1024ul, 5.0f,
                 (float)(((img->Len0-1)-aprsdecode_lums.fontysize)-30UL),
@@ -4036,8 +4044,8 @@ extern void maptool_ruler(maptool_pIMAGE img)
    float e;
    float d;
    float r;
-   unsigned long w;
-   unsigned long m;
+   uint32_t w;
+   uint32_t m;
    signed char pos;
    struct aprsdecode_COLTYP col0;
    if (300L>maptool_xsize || aprsdecode_initzoom<6L) return;
@@ -4065,13 +4073,13 @@ extern void maptool_ruler(maptool_pIMAGE img)
    m = m*aprsdecode_trunc(r);
    w = m;
    if (w>=1000UL) w = w/1000UL;
-   aprsstr_IntToStr((long)w, 1UL, h, 101ul);
+   aprsstr_IntToStr((int32_t)w, 1UL, h, 101ul);
    if (m>=1000UL) aprsstr_Append(h, 101ul, "km", 3ul);
    else aprsstr_Append(h, 101ul, "m", 2ul);
    maptool_Colset(&col0, 'G');
    aprsstr_Append(h, 101ul, " [", 3ul);
-   aprsstr_FixToStr(((float)aprsdecode_initzoom-0.95f)+aprsdecode_finezoom,
-                2UL, s, 101ul);
+   aprsstr_FixToStr(((float)aprsdecode_initzoom-0.95f)
+                +aprsdecode_finezoom, 2UL, s, 101ul);
    aprsstr_Append(h, 101ul, s, 101ul);
    aprsstr_Append(h, 101ul, "]", 2ul);
    maptool_drawstr(img, h, 101ul, (20.0f+e*0.5f)-21.0f, 10.0f, 250UL, 0UL,
@@ -4083,28 +4091,28 @@ extern void maptool_ruler(maptool_pIMAGE img)
 #define maptool_PEAK 1000.0
 
 
-static long smoo(float ex, long x)
+static int32_t smoo(float ex, int32_t x)
 {
    if (x<=0L) return x;
    else {
-      return (long)aprsdecode_trunc(osic_exp(osic_ln(X2C_DIVR((float)x,
-                80.0f))*ex)*80.0f);
+      return (int32_t)aprsdecode_trunc(osic_exp(osic_ln(X2C_DIVR((float)
+                x,80.0f))*ex)*80.0f);
    }
    return 0;
 } /* end smoo() */
 
 /*BEGIN RETURN trunc(FLOAT(x)/FLOAT(max)*5000.0) END smoo; */
 
-extern void maptool_shine(maptool_pIMAGE image, long lum)
+extern void maptool_shine(maptool_pIMAGE image, int32_t lum)
 {
-   long max0;
-   long y;
-   long x;
-   unsigned long bb;
-   unsigned long gg;
-   unsigned long rr;
-   unsigned long c;
-   unsigned long f;
+   int32_t max0;
+   int32_t y;
+   int32_t x;
+   uint32_t bb;
+   uint32_t gg;
+   uint32_t rr;
+   uint32_t c;
+   uint32_t f;
    char done;
    float ex;
    struct maptool_PIX * anonym;
@@ -4123,18 +4131,18 @@ extern void maptool_shine(maptool_pIMAGE image, long lum)
    struct maptool_PIX * anonym12;
    struct maptool_PIX * anonym13;
    struct maptool_PIX * anonym14;
-   long tmp;
-   long tmp0;
-   max0 = (long)(aprsdecode_trunc(80.0f)+1UL);
-   tmp = (long)(image->Len0-1);
+   int32_t tmp;
+   int32_t tmp0;
+   max0 = (int32_t)(aprsdecode_trunc(80.0f)+1UL);
+   tmp = (int32_t)(image->Len0-1);
    y = 0L;
    if (y<=tmp) for (;; y++) {
-      tmp0 = (long)(image->Len1-1);
+      tmp0 = (int32_t)(image->Len1-1);
       x = 0L;
       if (x<=tmp0) for (;; x++) {
          { /* with */
             struct maptool_PIX * anonym = &image->Adr[(x)*image->Len0+y];
-            if ((long)anonym->g>max0) max0 = (long)anonym->g;
+            if ((int32_t)anonym->g>max0) max0 = (int32_t)anonym->g;
          }
          if (x==tmp0) break;
       } /* end for */
@@ -4143,17 +4151,17 @@ extern void maptool_shine(maptool_pIMAGE image, long lum)
    ex = X2C_DIVR(osic_ln(12.5f),osic_ln(X2C_DIVR((float)max0,80.0f)));
    if (ex>1.5f) ex = 1.5f;
    /*WrInt(max, 10);WrFixed(ex, 3,10);WrLn; */
-   tmp = (long)(image->Len0-1);
+   tmp = (int32_t)(image->Len0-1);
    y = 0L;
    if (y<=tmp) for (;; y++) {
-      tmp0 = (long)(image->Len1-1);
+      tmp0 = (int32_t)(image->Len1-1);
       x = 0L;
       if (x<=tmp0) for (;; x++) {
          { /* with */
             struct maptool_PIX * anonym0 = &image->Adr[(x)*image->Len0+y];
-            anonym0->r = (unsigned short)smoo(ex, (long)anonym0->r);
-            anonym0->g = (unsigned short)smoo(ex, (long)anonym0->g);
-            anonym0->b = (unsigned short)smoo(ex, (long)anonym0->b);
+            anonym0->r = (uint16_t)smoo(ex, (int32_t)anonym0->r);
+            anonym0->g = (uint16_t)smoo(ex, (int32_t)anonym0->g);
+            anonym0->b = (uint16_t)smoo(ex, (int32_t)anonym0->b);
          }
          if (x==tmp0) break;
       } /* end for */
@@ -4161,125 +4169,121 @@ extern void maptool_shine(maptool_pIMAGE image, long lum)
    } /* end for */
    do {
       done = 1;
-      tmp = (long)((image->Len0-1)-2UL);
+      tmp = (int32_t)((image->Len0-1)-2UL);
       y = 2L;
       if (y<=tmp) for (;; y++) {
-         tmp0 = (long)((image->Len1-1)-2UL);
+         tmp0 = (int32_t)((image->Len1-1)-2UL);
          x = 2L;
          if (x<=tmp0) for (;; x++) {
             { /* with */
                struct maptool_PIX * anonym1 = &image->Adr[(x)*image->Len0+y];
                 
-               c = (unsigned long)(anonym1->r/2U);
-               if ((unsigned long)anonym1->g>c) {
-                  c = (unsigned long)anonym1->g;
-               }
-               if ((unsigned long)anonym1->b>c) {
-                  c = (unsigned long)anonym1->b;
-               }
+               c = (uint32_t)(anonym1->r/2U);
+               if ((uint32_t)anonym1->g>c) c = (uint32_t)anonym1->g;
+               if ((uint32_t)anonym1->b>c) c = (uint32_t)anonym1->b;
                if (c>=256UL) {
                   rr = 0UL;
                   gg = 0UL;
                   bb = 0UL;
                   f = 65535UL/c;
-                  c = ((unsigned long)anonym1->r*f)/256UL;
-                  if ((unsigned long)anonym1->r>c) {
-                     rr = ((unsigned long)anonym1->r-c)/10UL;
+                  c = ((uint32_t)anonym1->r*f)/256UL;
+                  if ((uint32_t)anonym1->r>c) {
+                     rr = ((uint32_t)anonym1->r-c)/10UL;
                   }
-                  anonym1->r = (unsigned short)c;
-                  c = ((unsigned long)anonym1->g*f)/256UL;
-                  if ((unsigned long)anonym1->g>c) {
-                     gg = ((unsigned long)anonym1->g-c)/12UL;
+                  anonym1->r = (uint16_t)c;
+                  c = ((uint32_t)anonym1->g*f)/256UL;
+                  if ((uint32_t)anonym1->g>c) {
+                     gg = ((uint32_t)anonym1->g-c)/12UL;
                   }
-                  anonym1->g = (unsigned short)c;
-                  c = ((unsigned long)anonym1->b*f)/256UL;
-                  if ((unsigned long)anonym1->b>c) {
-                     bb = ((unsigned long)anonym1->b-c)/12UL;
+                  anonym1->g = (uint16_t)c;
+                  c = ((uint32_t)anonym1->b*f)/256UL;
+                  if ((uint32_t)anonym1->b>c) {
+                     bb = ((uint32_t)anonym1->b-c)/12UL;
                   }
-                  anonym1->b = (unsigned short)c;
+                  anonym1->b = (uint16_t)c;
                   { /* with */
                      struct maptool_PIX * anonym2 = &image->Adr[(x-1L)
                 *image->Len0+(y-1L)];
-                     anonym2->r += (unsigned short)rr;
-                     anonym2->g += (unsigned short)gg;
-                     anonym2->b += (unsigned short)bb;
+                     anonym2->r += (uint16_t)rr;
+                     anonym2->g += (uint16_t)gg;
+                     anonym2->b += (uint16_t)bb;
                   }
                   { /* with */
                      struct maptool_PIX * anonym3 = &image->Adr[(x-1L)
                 *image->Len0+y];
-                     anonym3->r += (unsigned short)rr;
-                     anonym3->g += (unsigned short)gg;
-                     anonym3->b += (unsigned short)bb;
+                     anonym3->r += (uint16_t)rr;
+                     anonym3->g += (uint16_t)gg;
+                     anonym3->b += (uint16_t)bb;
                   }
                   { /* with */
                      struct maptool_PIX * anonym4 = &image->Adr[(x-1L)
                 *image->Len0+(y+1L)];
-                     anonym4->r += (unsigned short)rr;
-                     anonym4->g += (unsigned short)gg;
-                     anonym4->b += (unsigned short)bb;
+                     anonym4->r += (uint16_t)rr;
+                     anonym4->g += (uint16_t)gg;
+                     anonym4->b += (uint16_t)bb;
                   }
                   { /* with */
                      struct maptool_PIX * anonym5 = &image->Adr[(x+1L)
                 *image->Len0+(y-1L)];
-                     anonym5->r += (unsigned short)rr;
-                     anonym5->g += (unsigned short)gg;
-                     anonym5->b += (unsigned short)bb;
+                     anonym5->r += (uint16_t)rr;
+                     anonym5->g += (uint16_t)gg;
+                     anonym5->b += (uint16_t)bb;
                   }
                   { /* with */
                      struct maptool_PIX * anonym6 = &image->Adr[(x+1L)
                 *image->Len0+y];
-                     anonym6->r += (unsigned short)rr;
-                     anonym6->g += (unsigned short)gg;
-                     anonym6->b += (unsigned short)bb;
+                     anonym6->r += (uint16_t)rr;
+                     anonym6->g += (uint16_t)gg;
+                     anonym6->b += (uint16_t)bb;
                   }
                   { /* with */
                      struct maptool_PIX * anonym7 = &image->Adr[(x+1L)
                 *image->Len0+(y+1L)];
-                     anonym7->r += (unsigned short)rr;
-                     anonym7->g += (unsigned short)gg;
-                     anonym7->b += (unsigned short)bb;
+                     anonym7->r += (uint16_t)rr;
+                     anonym7->g += (uint16_t)gg;
+                     anonym7->b += (uint16_t)bb;
                   }
                   { /* with */
                      struct maptool_PIX * anonym8 = &image->Adr[(x)
                 *image->Len0+(y+1L)];
-                     anonym8->r += (unsigned short)rr;
-                     anonym8->g += (unsigned short)gg;
-                     anonym8->b += (unsigned short)bb;
+                     anonym8->r += (uint16_t)rr;
+                     anonym8->g += (uint16_t)gg;
+                     anonym8->b += (uint16_t)bb;
                   }
                   { /* with */
                      struct maptool_PIX * anonym9 = &image->Adr[(x)
                 *image->Len0+(y-1L)];
-                     anonym9->r += (unsigned short)rr;
-                     anonym9->g += (unsigned short)gg;
-                     anonym9->b += (unsigned short)bb;
+                     anonym9->r += (uint16_t)rr;
+                     anonym9->g += (uint16_t)gg;
+                     anonym9->b += (uint16_t)bb;
                   }
                   { /* with */
                      struct maptool_PIX * anonym10 = &image->Adr[(x-2L)
                 *image->Len0+y];
-                     anonym10->r += (unsigned short)(rr/2UL);
-                     anonym10->g += (unsigned short)(gg/2UL);
-                     anonym10->b += (unsigned short)(bb/2UL);
+                     anonym10->r += (uint16_t)(rr/2UL);
+                     anonym10->g += (uint16_t)(gg/2UL);
+                     anonym10->b += (uint16_t)(bb/2UL);
                   }
                   { /* with */
                      struct maptool_PIX * anonym11 = &image->Adr[(x+2L)
                 *image->Len0+y];
-                     anonym11->r += (unsigned short)(rr/2UL);
-                     anonym11->g += (unsigned short)(gg/2UL);
-                     anonym11->b += (unsigned short)(bb/2UL);
+                     anonym11->r += (uint16_t)(rr/2UL);
+                     anonym11->g += (uint16_t)(gg/2UL);
+                     anonym11->b += (uint16_t)(bb/2UL);
                   }
                   { /* with */
                      struct maptool_PIX * anonym12 = &image->Adr[(x)
                 *image->Len0+(y-2L)];
-                     anonym12->r += (unsigned short)(rr/2UL);
-                     anonym12->g += (unsigned short)(gg/2UL);
-                     anonym12->b += (unsigned short)(bb/2UL);
+                     anonym12->r += (uint16_t)(rr/2UL);
+                     anonym12->g += (uint16_t)(gg/2UL);
+                     anonym12->b += (uint16_t)(bb/2UL);
                   }
                   { /* with */
                      struct maptool_PIX * anonym13 = &image->Adr[(x)
                 *image->Len0+(y+2L)];
-                     anonym13->r += (unsigned short)(rr/2UL);
-                     anonym13->g += (unsigned short)(gg/2UL);
-                     anonym13->b += (unsigned short)(bb/2UL);
+                     anonym13->r += (uint16_t)(rr/2UL);
+                     anonym13->g += (uint16_t)(gg/2UL);
+                     anonym13->b += (uint16_t)(bb/2UL);
                   }
                   done = 0;
                }
@@ -4289,17 +4293,17 @@ extern void maptool_shine(maptool_pIMAGE image, long lum)
          if (y==tmp) break;
       } /* end for */
    } while (!done);
-   tmp = (long)(image->Len0-1);
+   tmp = (int32_t)(image->Len0-1);
    y = 0L;
    if (y<=tmp) for (;; y++) {
-      tmp0 = (long)(image->Len1-1);
+      tmp0 = (int32_t)(image->Len1-1);
       x = 0L;
       if (x<=tmp0) for (;; x++) {
          { /* with */
             struct maptool_PIX * anonym14 = &image->Adr[(x)*image->Len0+y];
-            anonym14->r = (unsigned short)(((long)anonym14->r*lum)/512L);
-            anonym14->g = (unsigned short)(((long)anonym14->g*lum)/512L);
-            anonym14->b = (unsigned short)(((long)anonym14->b*lum)/512L);
+            anonym14->r = (uint16_t)(((int32_t)anonym14->r*lum)/512L);
+            anonym14->g = (uint16_t)(((int32_t)anonym14->g*lum)/512L);
+            anonym14->b = (uint16_t)(((int32_t)anonym14->b*lum)/512L);
          }
          if (x==tmp0) break;
       } /* end for */
@@ -4310,12 +4314,12 @@ extern void maptool_shine(maptool_pIMAGE image, long lum)
 
 extern void maptool_makebw(maptool_pIMAGE p)
 {
-   unsigned long w;
-   unsigned long y;
-   unsigned long x;
+   uint32_t w;
+   uint32_t y;
+   uint32_t x;
    struct maptool_PIX * anonym;
-   unsigned long tmp;
-   unsigned long tmp0;
+   uint32_t tmp;
+   uint32_t tmp0;
    tmp = p->Len0-1;
    y = 0UL;
    if (y<=tmp) for (;; y++) {
@@ -4324,11 +4328,11 @@ extern void maptool_makebw(maptool_pIMAGE p)
       if (x<=tmp0) for (;; x++) {
          { /* with */
             struct maptool_PIX * anonym = &p->Adr[(x)*p->Len0+y];
-            w = ((unsigned long)anonym->r*340UL+(unsigned long)
-                anonym->g*550UL+(unsigned long)anonym->b*110UL)/1000UL;
-            anonym->r = (unsigned short)w;
-            anonym->g = (unsigned short)w;
-            anonym->b = (unsigned short)w;
+            w = ((uint32_t)anonym->r*340UL+(uint32_t)
+                anonym->g*550UL+(uint32_t)anonym->b*110UL)/1000UL;
+            anonym->r = (uint16_t)w;
+            anonym->g = (uint16_t)w;
+            anonym->b = (uint16_t)w;
          }
          if (x==tmp0) break;
       } /* end for */
@@ -4356,14 +4360,14 @@ static void addpix(struct maptool_PIX * s, struct maptool_PIX * a)
 
 extern void maptool_addmap(maptool_pIMAGE image, maptool_pIMAGE map)
 {
-   long y;
-   long x;
-   long tmp;
-   long tmp0;
-   tmp = (long)(image->Len1-1);
+   int32_t y;
+   int32_t x;
+   int32_t tmp;
+   int32_t tmp0;
+   tmp = (int32_t)(image->Len1-1);
    x = 0L;
    if (x<=tmp) for (;; x++) {
-      tmp0 = (long)(image->Len0-1);
+      tmp0 = (int32_t)(image->Len0-1);
       y = 0L;
       if (y<=tmp0) for (;; y++) {
          addpix(&image->Adr[(x)*image->Len0+y], &map->Adr[(x)*map->Len0+y]);
@@ -4406,8 +4410,8 @@ BEGIN
 END openppm; 
 */
 
-static void mapname(long x, long y, long zoom, char fn[],
-                unsigned long fn_len, char reqn[], unsigned long reqn_len)
+static void mapname(int32_t x, int32_t y, int32_t zoom, char fn[],
+                uint32_t fn_len, char reqn[], uint32_t reqn_len)
 {
    char hh[21];
    char path[1001];
@@ -4447,9 +4451,9 @@ static void mapname(long x, long y, long zoom, char fn[],
 } /* end mapname() */
 
 
-static unsigned long squaredelay(unsigned long c)
+static uint32_t squaredelay(uint32_t c)
 {
-   unsigned long n;
+   uint32_t n;
    n = 1UL;
    while (c>0UL) {
       n += n;
@@ -4459,15 +4463,16 @@ static unsigned long squaredelay(unsigned long c)
 } /* end squaredelay() */
 
 
-static char decodetile(const char fn[], unsigned long fn_len,
-                pPNGBUF ppngbuf, long maxx, long maxy, long maxxbyte)
+static char decodetile(const char fn[], uint32_t fn_len,
+                pPNGBUF ppngbuf, int32_t maxx, int32_t maxy,
+                int32_t maxxbyte)
 {
    char s[100];
    aprsstr_Assign(s, 100ul, fn, fn_len);
    aprsstr_Append(s, 100ul, ".png", 5ul);
    if (ppngbuf) {
-      if (readpng(s, (X2C_ADDRESS *)ppngbuf, &maxx, &maxy,
-                &maxxbyte)>=0L || readjpg(s, (X2C_ADDRESS *)ppngbuf, &maxx,
+      if (readpng(s, (char * *)ppngbuf, &maxx, &maxy,
+                &maxxbyte)>=0L || readjpg(s, (char * *)ppngbuf, &maxx,
                 &maxy, &maxxbyte)>=0L) {
          /* normal png in .png */
          return 1;
@@ -4480,7 +4485,7 @@ static char decodetile(const char fn[], unsigned long fn_len,
    aprsstr_Assign(s, 100ul, fn, fn_len);
    aprsstr_Append(s, 100ul, ".jpg", 5ul);
    if (ppngbuf) {
-      return readjpg(s, (X2C_ADDRESS *)ppngbuf, &maxx, &maxy, &maxxbyte)>=0L;
+      return readjpg(s, (char * *)ppngbuf, &maxx, &maxy, &maxxbyte)>=0L;
                 
    }
    /* jpg in .jpg */
@@ -4502,13 +4507,13 @@ END existsimg;
 #define maptool_MINSPACE 80
 
 
-static void reqmap(char wfn[], unsigned long wfn_len, char byop)
+static void reqmap(char wfn[], uint32_t wfn_len, char byop)
 /* append filename of missing tiles to file, 0C is flush */
 {
    char h[1000];
    char s[1000];
-   long fd;
-   unsigned long lb;
+   int32_t fd;
+   uint32_t lb;
    X2C_PCOPY((void **)&wfn,wfn_len);
    /*WrStr(">");WrStr(wfn); */
    if (!byop) mapdelay = 0UL;
@@ -4604,91 +4609,92 @@ wnloader", 27ul);
 
 static void zoommap(float fzoom, maptool_pIMAGE map)
 {
-   long yim;
-   long yi;
-   long mum;
-   long mul;
-   long bb;
-   long gg;
-   long rr;
-   long y00;
-   long y;
-   long x;
+   int32_t yim;
+   int32_t yi;
+   int32_t mum;
+   int32_t mul;
+   int32_t bb;
+   int32_t gg;
+   int32_t rr;
+   int32_t y00;
+   int32_t y;
+   int32_t x;
    float r;
-   unsigned long tr;
+   uint32_t tr;
    struct maptool_PIX * anonym;
    struct maptool_PIX * anonym0;
    struct maptool_PIX * anonym1;
    struct maptool_PIX * anonym2;
    struct maptool_PIX * anonym3;
    struct maptool_PIX * anonym4;
-   long tmp;
-   long tmp0;
-   y00 = (long)((map->Len0-1)+1UL)-(long)X2C_TRUNCI(X2C_DIVR((float)
-                ((map->Len0-1)+1UL),fzoom),X2C_min_longint,X2C_max_longint);
-   for (x = (long)(map->Len1-1); x>=0L; x--) {
+   int32_t tmp;
+   int32_t tmp0;
+   y00 = (int32_t)((map->Len0-1)+1UL)-(int32_t)
+                X2C_TRUNCI(X2C_DIVR((float)((map->Len0-1)+1UL),fzoom),
+                X2C_min_longint,X2C_max_longint);
+   for (x = (int32_t)(map->Len1-1); x>=0L; x--) {
       r = X2C_DIVR((float)x,fzoom);
       tr = aprsdecode_trunc(r);
-      mul = (long)X2C_TRUNCI(256.0f*(r-(float)tr),X2C_min_longint,
+      mul = (int32_t)X2C_TRUNCI(256.0f*(r-(float)tr),X2C_min_longint,
                 X2C_max_longint);
       mum = 256L-mul;
       tmp = y00;
-      y = (long)(map->Len0-1);
+      y = (int32_t)(map->Len0-1);
       if (y>=tmp) for (;; y--) {
          { /* with */
             struct maptool_PIX * anonym = &map->Adr[(tr+1UL)*map->Len0+y];
-            rr = (long)anonym->r*mul;
-            gg = (long)anonym->g*mul;
-            bb = (long)anonym->b*mul;
+            rr = (int32_t)anonym->r*mul;
+            gg = (int32_t)anonym->g*mul;
+            bb = (int32_t)anonym->b*mul;
          }
          { /* with */
             struct maptool_PIX * anonym0 = &map->Adr[(tr)*map->Len0+y];
-            rr += (long)anonym0->r*mum;
-            gg += (long)anonym0->g*mum;
-            bb += (long)anonym0->b*mum;
+            rr += (int32_t)anonym0->r*mum;
+            gg += (int32_t)anonym0->g*mum;
+            bb += (int32_t)anonym0->b*mum;
          }
          { /* with */
             struct maptool_PIX * anonym1 = &map->Adr[(x)*map->Len0+y];
-            anonym1->r = (unsigned short)(rr/256L);
-            anonym1->g = (unsigned short)(gg/256L);
-            anonym1->b = (unsigned short)(bb/256L);
+            anonym1->r = (uint16_t)(rr/256L);
+            anonym1->g = (uint16_t)(gg/256L);
+            anonym1->b = (uint16_t)(bb/256L);
          }
          if (y==tmp) break;
       } /* end for */
    } /* end for */
-   tmp = (long)(map->Len0-1);
+   tmp = (int32_t)(map->Len0-1);
    y = 0L;
    if (y<=tmp) for (;; y++) {
-      r = X2C_DIVR((float)((long)(map->Len0-1)-y),fzoom);
+      r = X2C_DIVR((float)((int32_t)(map->Len0-1)-y),fzoom);
       /*      yi:=VAL(INTEGER,HIGH(map^[0]))-VAL(INTEGER, r);  */
       /*      tr:=TRUNC(r); */
       tr = aprsdecode_trunc(r);
-      yi = (long)((map->Len0-1)-tr);
-      mul = (long)X2C_TRUNCI(256.0f*(r-(float)tr),X2C_min_longint,
+      yi = (int32_t)((map->Len0-1)-tr);
+      mul = (int32_t)X2C_TRUNCI(256.0f*(r-(float)tr),X2C_min_longint,
                 X2C_max_longint);
       mum = 256L-mul;
       if (yi>0L) yim = yi-1L;
       else yim = 0L;
-      tmp0 = (long)(map->Len1-1);
+      tmp0 = (int32_t)(map->Len1-1);
       x = 0L;
       if (x<=tmp0) for (;; x++) {
          { /* with */
             struct maptool_PIX * anonym2 = &map->Adr[(x)*map->Len0+yim];
-            rr = (long)anonym2->r*mul;
-            gg = (long)anonym2->g*mul;
-            bb = (long)anonym2->b*mul;
+            rr = (int32_t)anonym2->r*mul;
+            gg = (int32_t)anonym2->g*mul;
+            bb = (int32_t)anonym2->b*mul;
          }
          { /* with */
             struct maptool_PIX * anonym3 = &map->Adr[(x)*map->Len0+yi];
-            rr += (long)anonym3->r*mum;
-            gg += (long)anonym3->g*mum;
-            bb += (long)anonym3->b*mum;
+            rr += (int32_t)anonym3->r*mum;
+            gg += (int32_t)anonym3->g*mum;
+            bb += (int32_t)anonym3->b*mum;
          }
          { /* with */
             struct maptool_PIX * anonym4 = &map->Adr[(x)*map->Len0+y];
-            anonym4->r = (unsigned short)(rr/256L);
-            anonym4->g = (unsigned short)(gg/256L);
-            anonym4->b = (unsigned short)(bb/256L);
+            anonym4->r = (uint16_t)(rr/256L);
+            anonym4->g = (uint16_t)(gg/256L);
+            anonym4->b = (uint16_t)(bb/256L);
          }
          if (x==tmp0) break;
       } /* end for */
@@ -4697,34 +4703,34 @@ static void zoommap(float fzoom, maptool_pIMAGE map)
 } /* end zoommap() */
 
 
-static unsigned short col(long c)
+static uint16_t col(int32_t c)
 {
    c += aprsdecode_lums.maplumcorr;
    if (c<0L) c = 0L;
-   return (unsigned short)(((unsigned long)c*(unsigned long)
-                aprsdecode_lums.map)/256UL);
+   return (uint16_t)(((uint32_t)c*(uint32_t)aprsdecode_lums.map)/256UL)
+                ;
 /*
       RETURN (c)*VAL(CARDINAL,lums.map) DIV 256;
 */
 } /* end col() */
 
 
-static char loadtile(maptool_pIMAGE map, char * done, char dryrun,
-                const char h[], unsigned long h_len, const char wfn[],
-                unsigned long wfn_len, long dx, long dy, unsigned long doubx,
-                 unsigned long douby)
+static char loadtile(maptool_pIMAGE map, char * done,
+                char dryrun, const char h[], uint32_t h_len,
+                const char wfn[], uint32_t wfn_len, int32_t dx,
+                int32_t dy, uint32_t doubx, uint32_t douby)
 {
-   long iy;
-   long ix;
-   long yy;
-   long xx;
-   long y;
-   long x;
+   int32_t iy;
+   int32_t ix;
+   int32_t yy;
+   int32_t xx;
+   int32_t y;
+   int32_t x;
    struct maptool_PIX * anonym;
    struct maptool_PIX * anonym0;
    /*          IF add THEN */
-   long tmp;
-   long tmp0;
+   int32_t tmp;
+   int32_t tmp0;
    if (dryrun) {
       if (decodetile(h, h_len, 0, 0L, 0L, 0L)) return 1;
       else {
@@ -4751,8 +4757,8 @@ static char loadtile(maptool_pIMAGE map, char * done, char dryrun,
          tmp0 = (dx+256L)-1L;
          x = dx;
          if (x<=tmp0) for (;; x++) {
-            if (((x>=0L && x<(long)((map->Len1-1)+1UL)) && y>=0L) && y<(long)
-                ((map->Len0-1)+1UL)) {
+            if (((x>=0L && x<(int32_t)((map->Len1-1)+1UL)) && y>=0L)
+                && y<(int32_t)((map->Len0-1)+1UL)) {
                { /* with */
                   struct maptool_PIX * anonym = &map->Adr[(x)*map->Len0+y];
                   anonym->r = 100U;
@@ -4800,17 +4806,17 @@ static char loadtile(maptool_pIMAGE map, char * done, char dryrun,
       yy = (255L-y)+dy;
       for (x = 0L; x<=255L; x++) {
          xx = x+dx;
-         if (((xx>=0L && xx<(long)((map->Len1-1)+1UL)) && yy>=0L)
-                && yy<(long)((map->Len0-1)+1UL)) {
+         if (((xx>=0L && xx<(int32_t)((map->Len1-1)+1UL)) && yy>=0L)
+                && yy<(int32_t)((map->Len0-1)+1UL)) {
             { /* with */
                struct maptool_PIX * anonym0 = &map->Adr[(xx)*map->Len0+yy];
                /*            INC(r, col(pngbuf[y]^[x].r8)); */
                /*            INC(g, col(pngbuf[y]^[x].g8)); */
                /*            INC(b, col(pngbuf[y]^[x].b8)); */
                /*          ELSE */
-               anonym0->r = col((long)pngbuf[y][x].r8);
-               anonym0->g = col((long)pngbuf[y][x].g8);
-               anonym0->b = col((long)pngbuf[y][x].b8);
+               anonym0->r = col((int32_t)pngbuf[y][x].r8);
+               anonym0->g = col((int32_t)pngbuf[y][x].g8);
+               anonym0->b = col((int32_t)pngbuf[y][x].b8);
             }
          }
       } /* end for */
@@ -4820,29 +4826,30 @@ static char loadtile(maptool_pIMAGE map, char * done, char dryrun,
 } /* end loadtile() */
 
 
-extern void maptool_loadmap(maptool_pIMAGE map, long tx, long ty, long zoom,
-                float fzoom, float shftx, float shfty, char * done,
-                char * blown, char blow, char dryrun)
+extern void maptool_loadmap(maptool_pIMAGE map, int32_t tx, int32_t ty,
+                int32_t zoom, float fzoom, float shftx,
+                float shfty, char * done, char * blown,
+                char blow, char dryrun)
 {
-   long yh;
-   long xh;
-   long dy;
-   long dx;
-   long maxtil;
-   long y;
-   long x;
+   int32_t yh;
+   int32_t xh;
+   int32_t dy;
+   int32_t dx;
+   int32_t maxtil;
+   int32_t y;
+   int32_t x;
    char wfn[4096];
    char fnn[4096];
    char ok0;
-   long tmp;
-   long tmp0;
+   int32_t tmp;
+   int32_t tmp0;
    *done = 1;
    *blown = 0;
    /*  FILL(map, 0C, SIZE(PIX)*xsize*ysize); */
-   maxtil = (long)(aprsdecode_trunc(expzoom(zoom))-1UL);
-   yh = (long)X2C_TRUNCI(X2C_DIVR((float)(map->Len0-1),fzoom)+shfty,
+   maxtil = (int32_t)(aprsdecode_trunc(expzoom(zoom))-1UL);
+   yh = (int32_t)X2C_TRUNCI(X2C_DIVR((float)(map->Len0-1),fzoom)+shfty,
                 X2C_min_longint,X2C_max_longint)/256L;
-   xh = (long)X2C_TRUNCI(X2C_DIVR((float)(map->Len1-1),fzoom)+shftx,
+   xh = (int32_t)X2C_TRUNCI(X2C_DIVR((float)(map->Len1-1),fzoom)+shftx,
                 X2C_min_longint,X2C_max_longint)/256L;
    /*  IF ((tx+1>=maxtil) OR (ty+1>=maxtil)) & NOT dryrun THEN clr(map) END;
                 */
@@ -4858,17 +4865,16 @@ extern void maptool_loadmap(maptool_pIMAGE map, long tx, long ty, long zoom,
       if (x<=tmp0) for (;; x++) {
          if (tx+x<=maxtil && ty+y<=maxtil) {
             mapname(tx+x, ty+y, zoom, fnn, 4096ul, wfn, 4096ul);
-            dx = x*256L-(long)X2C_TRUNCI(shftx,X2C_min_longint,
+            dx = x*256L-(int32_t)X2C_TRUNCI(shftx,X2C_min_longint,
                 X2C_max_longint);
-            dy = (((long)((map->Len0-1)+1UL)-256L)-y*256L)+(long)
+            dy = (((int32_t)((map->Len0-1)+1UL)-256L)-y*256L)+(int32_t)
                 X2C_TRUNCI(shfty,X2C_min_longint,X2C_max_longint);
             if (((!loadtile(map, done, dryrun, fnn, 4096ul, wfn, 4096ul, dx,
                 dy, 0UL, 0UL) && zoom>4L) && !dryrun) && blow) {
                mapname((tx+x)/2L, (ty+y)/2L, zoom-1L, fnn, 4096ul, wfn,
                 4096ul);
                ok0 = loadtile(map, done, dryrun, fnn, 4096ul, "", 1ul, dx,
-                dy, (unsigned long)((tx+x&1L)+1L),
-                (unsigned long)((ty+y&1L)+1L));
+                dy, (uint32_t)((tx+x&1L)+1L), (uint32_t)((ty+y&1L)+1L));
                if (ok0) *blown = 1;
             }
          }
@@ -4891,9 +4897,10 @@ extern char maptool_IsMapLoaded(void)
 } /* end IsMapLoaded() */
 
 
-static void margin(long * ty1, long * tx1, long * ty0, long * tx0, long * z)
+static void margin(int32_t * ty1, int32_t * tx1, int32_t * ty0,
+                int32_t * tx0, int32_t * z)
 {
-   long maxtil;
+   int32_t maxtil;
    float py;
    float px;
    struct maptool__D0 * anonym;
@@ -4903,7 +4910,7 @@ static void margin(long * ty1, long * tx1, long * ty0, long * tx0, long * z)
                 ty0, &px, &py);
       maptool_mercator(anonym->rightdown.long0, anonym->rightdown.lat, *z,
                 tx1, ty1, &px, &py);
-      maxtil = (long)(aprsdecode_trunc(expzoom(*z))-1UL);
+      maxtil = (int32_t)(aprsdecode_trunc(expzoom(*z))-1UL);
       if (*tx0>maxtil) *tx0 = maxtil;
       if (*tx1>maxtil) *tx1 = maxtil;
       if (*ty0>maxtil) *ty0 = maxtil;
@@ -4912,12 +4919,12 @@ static void margin(long * ty1, long * tx1, long * ty0, long * tx0, long * z)
 } /* end margin() */
 
 
-static char inc(long * x, long * y, long * z)
+static char inc(int32_t * x, int32_t * y, int32_t * z)
 {
-   long ty1;
-   long ty0;
-   long tx1;
-   long tx0;
+   int32_t ty1;
+   int32_t ty0;
+   int32_t tx1;
+   int32_t tx0;
    if (*z==0L) {
       *z = 1L;
       margin(&ty1, &tx1, &ty0, &tx0, z);
@@ -4943,7 +4950,7 @@ static char inc(long * x, long * y, long * z)
 } /* end inc() */
 
 
-static char checktile(char fn[], unsigned long fn_len)
+static char checktile(char fn[], uint32_t fn_len)
 {
    char checktile_ret;
    X2C_PCOPY((void **)&fn,fn_len);
@@ -4960,16 +4967,16 @@ static char checktile(char fn[], unsigned long fn_len)
 
 extern void maptool_MapPackageJob(char dryrun)
 {
-   long z;
-   long y;
-   long x;
+   int32_t z;
+   int32_t y;
+   int32_t x;
    char rfn[4096];
    char fn[4096];
    char s1[100];
    char s[100];
-   unsigned long mapc;
-   unsigned long rcnt;
-   unsigned long startt;
+   uint32_t mapc;
+   uint32_t rcnt;
+   uint32_t startt;
    char done;
    struct maptool__D0 * anonym;
    { /* with */
@@ -4995,10 +5002,10 @@ extern void maptool_MapPackageJob(char dryrun)
             done = !inc(&anonym->tx, &anonym->ty, &anonym->zoom);
             if (done || (anonym->mapscnt&15UL)==15UL) {
                strncpy(s,"Checked Maps:",100u);
-               aprsstr_IntToStr((long)anonym->mapscnt, 0UL, s1, 100ul);
+               aprsstr_IntToStr((int32_t)anonym->mapscnt, 0UL, s1, 100ul);
                aprsstr_Append(s, 100ul, s1, 100ul);
                aprsstr_Append(s, 100ul, "  missing:", 11ul);
-               aprsstr_IntToStr((long)anonym->needcnt, 0UL, s1, 100ul);
+               aprsstr_IntToStr((int32_t)anonym->needcnt, 0UL, s1, 100ul);
                aprsstr_Append(s, 100ul, s1, 100ul);
                progress(startt, s, 100ul, (100UL*anonym->mapscnt)/mapc,
                 done);
@@ -5057,10 +5064,12 @@ extern void maptool_MapPackageJob(char dryrun)
 
 
 extern void maptool_StartMapPackage(struct aprspos_POSITION lu,
-                struct aprspos_POSITION rd, long tillzoom, char dryrun)
+                struct aprspos_POSITION rd, int32_t tillzoom,
+                char dryrun)
 {
    struct maptool__D0 * anonym;
-   memset((char *) &maptool_mappack,(char)0,sizeof(struct maptool__D0));
+   memset((char *) &maptool_mappack,(char)0,
+                sizeof(struct maptool__D0));
    { /* with */
       struct maptool__D0 * anonym = &maptool_mappack;
       anonym->leftup = lu;
@@ -5074,15 +5083,15 @@ extern void maptool_StartMapPackage(struct aprspos_POSITION lu,
 typedef struct PIX8 * pROWS1;
 
 
-static void loadsym(char h[], unsigned long h_len)
+static void loadsym(char h[], uint32_t h_len)
 {
-   unsigned long y;
-   unsigned long x;
+   uint32_t y;
+   uint32_t x;
    pROWS1 rows[16];
-   long res;
-   long maxxbyte;
-   long maxy;
-   long maxx;
+   int32_t res;
+   int32_t maxxbyte;
+   int32_t maxy;
+   int32_t maxx;
    char bu[16][9216];
    struct PIX8 * anonym;
    X2C_PCOPY((void **)&h,h_len);
@@ -5092,11 +5101,11 @@ static void loadsym(char h[], unsigned long h_len)
    maxx = 3072L;
    maxy = 16L;
    maxxbyte = maxx*3L;
-   res = readpng(h, (X2C_ADDRESS *)rows, &maxx, &maxy, &maxxbyte);
+   res = readpng(h, (char * *)rows, &maxx, &maxy, &maxxbyte);
    if (res<0L) {
       osi_WrStr(h, h_len);
       osi_WrStrLn(" file read error ", 18ul);
-      osic_WrINT32((unsigned long)res, 1UL);
+      osic_WrINT32((uint32_t)res, 1UL);
       osi_WrStrLn("", 1ul);
       goto label;
    }
@@ -5116,7 +5125,7 @@ static void loadsym(char h[], unsigned long h_len)
 } /* end loadsym() */
 
 
-static float sinc(float x, unsigned long w)
+static float sinc(float x, uint32_t w)
 /* sin(x)/x with hann windown */
 {
    float win;
@@ -5147,33 +5156,33 @@ typedef char * pROWS;
 
 extern void maptool_loadfont(void)
 {
-   unsigned long higth;
-   unsigned long i;
-   unsigned long fonty;
-   unsigned long y1;
-   unsigned long y00;
-   unsigned long xshift;
-   unsigned long y;
-   unsigned long x;
-   unsigned long c;
-   unsigned short m;
-   long res;
-   long maxxbyte;
-   long maxy;
-   long maxx;
+   uint32_t higth;
+   uint32_t i;
+   uint32_t fonty;
+   uint32_t y1;
+   uint32_t y00;
+   uint32_t xshift;
+   uint32_t y;
+   uint32_t x;
+   uint32_t c;
+   uint16_t m;
+   int32_t res;
+   int32_t maxxbyte;
+   int32_t maxy;
+   int32_t maxx;
    pROWS rows[24];
    char bu[24][600];
-   unsigned long xhist[6];
-   unsigned long yhist[24];
+   uint32_t xhist[6];
+   uint32_t yhist[24];
    float fir[31];
    float yr;
    float sum;
-   unsigned long nin;
+   uint32_t nin;
    char fn[1025];
    struct _1 * anonym;
-   unsigned long tmp;
-   unsigned long tmp0;
-   higth = (unsigned long)useri_conf2int(useri_fFONTSIZE, 0UL, 7L, 18L, 10L);
+   uint32_t tmp;
+   uint32_t tmp0;
+   higth = (uint32_t)useri_conf2int(useri_fFONTSIZE, 0UL, 7L, 18L, 10L);
    memset((char *)font,(char)0,sizeof(struct _1 [97]));
    for (y = 0UL; y<=23UL; y++) {
       rows[y] = (pROWS) &bu[y][0U];
@@ -5182,9 +5191,9 @@ extern void maptool_loadfont(void)
    maxy = 24L;
    maxxbyte = maxx;
    strncpy(fn,"font.png",1025u);
-   res = readpng(fn, (X2C_ADDRESS *)rows, &maxx, &maxy, &maxxbyte);
+   res = readpng(fn, (char * *)rows, &maxx, &maxy, &maxxbyte);
    if ((((res<0L || maxx<1L) || maxx>600L) || maxy<1L) || maxy>24L) {
-      osic_WrINT32((unsigned long)res, 1UL);
+      osic_WrINT32((uint32_t)res, 1UL);
       osi_WrStrLn(" fontfile read error", 21ul);
       aprsdecode_lums.fontysize = higth+3UL;
       return;
@@ -5195,15 +5204,15 @@ extern void maptool_loadfont(void)
    for (y = 0UL; y<=23UL; y++) {
       yhist[y] = 0UL;
    } /* end for */
-   tmp = (unsigned long)(maxx-1L);
+   tmp = (uint32_t)(maxx-1L);
    x = 0UL;
    if (x<=tmp) for (;; x++) {
       /* make column histogram to find char position in font file */
-      tmp0 = (unsigned long)(maxy-1L);
+      tmp0 = (uint32_t)(maxy-1L);
       y = 0UL;
       if (y<=tmp0) for (;; y++) {
-         xhist[x%6UL] += (unsigned long)(unsigned char)rows[y][x];
-         yhist[y] += (unsigned long)(unsigned char)rows[y][x];
+         xhist[x%6UL] += (uint32_t)(uint8_t)rows[y][x];
+         yhist[y] += (uint32_t)(uint8_t)rows[y][x];
          if (y==tmp0) break;
       } /* end for */
       if (x==tmp) break;
@@ -5245,8 +5254,7 @@ extern void maptool_loadfont(void)
       tmp = nin-1UL;
       y = 0UL;
       if (y<=tmp) for (;; y++) {
-         fir[y+3UL] = (float)(unsigned long)(unsigned char)
-                rows[y00+y][x+xshift];
+         fir[y+3UL] = (float)(uint32_t)(uint8_t)rows[y00+y][x+xshift];
          if (y==tmp) break;
       } /* end for */
       /*FOR y:=0 TO HIGH(fir) DO WrInt(trunc(fir[y]), 8); END; WrLn; */
@@ -5257,15 +5265,15 @@ extern void maptool_loadfont(void)
             yr = X2C_DIVR((float)(y*nin),(float)higth);
             sum = 0.0f;
             for (i = 1UL; i<=6UL; i++) {
-               sum = sum+sinc(((float)i-3.0f)-(yr-(float)aprsdecode_trunc(yr)
-                ), 3UL)*fir[i+aprsdecode_trunc(yr)];
+               sum = sum+sinc(((float)i-3.0f)-(yr-(float)
+                aprsdecode_trunc(yr)), 3UL)*fir[i+aprsdecode_trunc(yr)];
             } /* end for */
          }
          else sum = fir[y+3UL];
          if (sum<=0.0f) c = 0UL;
          else if (sum>255.9f) c = 255UL;
          else c = aprsdecode_trunc(sum);
-         font[x/6UL].char0[(fonty-y)-3UL][x%6UL] = (unsigned char)c;
+         font[x/6UL].char0[(fonty-y)-3UL][x%6UL] = (uint8_t)c;
          if (y==tmp) break;
       } /* end for */
    } /* end for */
@@ -5289,7 +5297,7 @@ extern void maptool_loadfont(void)
                if (anonym->char0[y][x]>=90U) {
                   /* 128 */
                   if (c) {
-                     m = X2C_LSH(0x1FU,16,(long)x-1L)&0xFEU;
+                     m = X2C_LSH(0x1FU,16,(int32_t)x-1L)&0xFEU;
                      anonym->mask[y] = anonym->mask[y]|m;
                      if (y+1UL<=20UL) {
                         anonym->mask[y+1UL] = anonym->mask[y+1UL]|m;
@@ -5298,8 +5306,8 @@ extern void maptool_loadfont(void)
                         anonym->mask[y+2UL] = anonym->mask[y+2UL]|m;
                      }
                   }
-                  if (x>(unsigned long)anonym->width) {
-                     anonym->width = (unsigned char)x;
+                  if (x>(uint32_t)anonym->width) {
+                     anonym->width = (uint8_t)x;
                   }
                }
             } /* end for */
@@ -5312,11 +5320,11 @@ extern void maptool_loadfont(void)
 #define maptool_BMPHLEN 54
 
 
-static void numh(char h[256], unsigned long n, unsigned long pos,
-                unsigned long size)
+static void numh(char h[256], uint32_t n, uint32_t pos,
+                uint32_t size)
 {
-   unsigned long i;
-   unsigned long tmp;
+   uint32_t i;
+   uint32_t tmp;
    tmp = size-1UL;
    i = 0UL;
    if (i<=tmp) for (;; i++) {
@@ -5327,8 +5335,8 @@ static void numh(char h[256], unsigned long n, unsigned long pos,
 } /* end numh() */
 
 
-static void wr(long fd, unsigned long * len, char b[32768],
-                unsigned short c)
+static void wr(int32_t fd, uint32_t * len, char b[32768],
+                uint16_t c)
 {
    if (c<=1023U) b[*len] = gammatab[c];
    else b[*len] = '\377';
@@ -5340,7 +5348,7 @@ static void wr(long fd, unsigned long * len, char b[32768],
 } /* end wr() */
 
 
-static unsigned char pngc(unsigned short c)
+static uint8_t pngc(uint16_t c)
 {
    if (c<=1023U) return gammatab[c];
    else return 255U;
@@ -5348,24 +5356,24 @@ static unsigned char pngc(unsigned short c)
 } /* end pngc() */
 
 
-extern long maptool_saveppm(char fn[], unsigned long fn_len,
-                maptool_pIMAGE image, long xsize, long ysize)
+extern int32_t maptool_saveppm(char fn[], uint32_t fn_len,
+                maptool_pIMAGE image, int32_t xsize, int32_t ysize)
 {
-   long fd;
+   int32_t fd;
    char h[256];
-   long y;
-   long x;
+   int32_t y;
+   int32_t x;
    char b[32768];
-   unsigned long len;
+   uint32_t len;
    struct PNGPIXMAP pngimg;
-   long ret;
+   int32_t ret;
    struct maptool_PIX * anonym;
    struct maptool_PIX * anonym0;
    struct PNGPIXEL * anonym1;
    struct maptool_PIX * anonym2;
-   long tmp;
-   long tmp0;
-   long maptool_saveppm_ret;
+   int32_t tmp;
+   int32_t tmp0;
+   int32_t maptool_saveppm_ret;
    X2C_PCOPY((void **)&fn,fn_len);
    aprsstr_cleanfilename(fn, fn_len);
    fd = osi_OpenWrite(fn, fn_len);
@@ -5381,12 +5389,12 @@ extern long maptool_saveppm(char fn[], unsigned long fn_len,
       memset((char *)h,(char)0,256UL);
       h[0U] = 'B';
       h[1U] = 'M';
-      numh(h, (unsigned long)(((xsize*3L+4L)/4L)*4L*ysize+54L), 2UL, 4UL);
+      numh(h, (uint32_t)(((xsize*3L+4L)/4L)*4L*ysize+54L), 2UL, 4UL);
                 /* file len pad lines to x4 byte */
       numh(h, 54UL, 10UL, 4UL); /* headerlen */
       numh(h, 40UL, 14UL, 4UL); /* DWORD   biSize */
-      numh(h, (unsigned long)xsize, 18UL, 4UL); /* LONG    biWidth */
-      numh(h, (unsigned long)ysize, 22UL, 4UL); /* LONG    biHeight */
+      numh(h, (uint32_t)xsize, 18UL, 4UL); /* LONG    biWidth */
+      numh(h, (uint32_t)ysize, 22UL, 4UL); /* LONG    biHeight */
       numh(h, 1UL, 26UL, 2UL); /* WORD    biPlanes */
       numh(h, 24UL, 28UL, 2UL); /* WORD    biBitCount */
       numh(h, 0UL, 30UL, 4UL); /* DWORD   biCompression */
@@ -5418,8 +5426,8 @@ extern long maptool_saveppm(char fn[], unsigned long fn_len,
       /* make PNG */
       ret = -1L;
       osic_Close(fd);
-      osic_alloc((X2C_ADDRESS *) &pngimg.image,
-                (unsigned long)(xsize*ysize*3L));
+      osic_alloc((char * *) &pngimg.image,
+                (uint32_t)(xsize*ysize*3L));
       if (pngimg.image) {
          tmp = ysize-1L;
          y = 0L;
@@ -5441,11 +5449,11 @@ extern long maptool_saveppm(char fn[], unsigned long fn_len,
             } /* end for */
             if (y==tmp) break;
          } /* end for */
-         pngimg.width = (unsigned long)xsize;
-         pngimg.height = (unsigned long)ysize;
+         pngimg.width = (uint32_t)xsize;
+         pngimg.height = (uint32_t)ysize;
          ret = writepng(fn, &pngimg);
-         osic_free((X2C_ADDRESS *) &pngimg.image,
-                (unsigned long)(xsize*ysize*3L));
+         osic_free((char * *) &pngimg.image,
+                (uint32_t)(xsize*ysize*3L));
       }
       else osi_WrStrLn("png write out of memory", 24ul);
    }
@@ -5489,7 +5497,7 @@ extern long maptool_saveppm(char fn[], unsigned long fn_len,
 
 static void allocpngbuf(void)
 {
-   unsigned long i;
+   uint32_t i;
    for (i = 0UL; i<=255UL; i++) {
       osic_alloc((char **) &pngbuf[i], sizeof(ROWS0));
       useri_debugmem.req = sizeof(pROWS0);
@@ -5503,7 +5511,8 @@ static void allocpngbuf(void)
 } /* end allocpngbuf() */
 
 
-static char getch(char b[4096], long fd, long * len, long * p)
+static char getch(char b[4096], int32_t fd, int32_t * len,
+                int32_t * p)
 {
    if (*p>=*len) {
       *len = osi_RdBin(fd, (char *)b, 4096u/1u, 4096UL);
@@ -5515,10 +5524,10 @@ static char getch(char b[4096], long fd, long * len, long * p)
 } /* end getch() */
 
 
-static long getword(long * p, long * len, long fd, char b[4096], char s[],
-                unsigned long s_len)
+static int32_t getword(int32_t * p, int32_t * len, int32_t fd,
+                char b[4096], char s[], uint32_t s_len)
 {
-   unsigned long i;
+   uint32_t i;
    i = 0UL;
    for (;;) {
       s[i] = getch(b, fd, len, p);
@@ -5531,19 +5540,20 @@ static long getword(long * p, long * len, long fd, char b[4096], char s[],
          s[i] = 0;
          return 1L;
       }
-      if (i<s_len-1 && (unsigned char)s[i]>=' ') ++i;
+      if (i<s_len-1 && (uint8_t)s[i]>=' ') ++i;
    }
    return 0;
 } /* end getword() */
 
 
-extern void maptool_rdmountains(char fn[], unsigned long fn_len, char add)
+extern void maptool_rdmountains(char fn[], uint32_t fn_len,
+                char add)
 /* import csv file with mountain name, pos, altitude */
 {
-   long r;
-   long len;
-   long p;
-   long fd;
+   int32_t r;
+   int32_t len;
+   int32_t p;
+   int32_t fd;
    aprsdecode_pMOUNTAIN pm;
    struct aprspos_POSITION pos;
    float alt;
@@ -5559,7 +5569,7 @@ extern void maptool_rdmountains(char fn[], unsigned long fn_len, char add)
       while (aprsdecode_mountains) {
          pm = aprsdecode_mountains;
          aprsdecode_mountains = pm->next;
-         osic_free((X2C_ADDRESS *) &pm, sizeof(struct aprsdecode_MOUNTAIN));
+         osic_free((char * *) &pm, sizeof(struct aprsdecode_MOUNTAIN));
          useri_debugmem.srtm -= sizeof(struct aprsdecode_MOUNTAIN);
       }
    }
@@ -5597,7 +5607,7 @@ extern void maptool_rdmountains(char fn[], unsigned long fn_len, char add)
       if ((((com[0U]!='#' && name[0U]) && aprsstr_StrToFix(&pos.lat, lat,
                 100ul)) && aprsstr_StrToFix(&pos.long0, long0,
                 100ul)) && aprspos_posvalid(pos)) {
-         osic_alloc((X2C_ADDRESS *) &pm, sizeof(struct aprsdecode_MOUNTAIN));
+         osic_alloc((char * *) &pm, sizeof(struct aprsdecode_MOUNTAIN));
          if (pm==0) break;
          useri_debugmem.srtm += sizeof(struct aprsdecode_MOUNTAIN);
          aprsstr_Assign(pm->name, 32ul, name, 100ul);
@@ -5641,7 +5651,7 @@ extern void maptool_BEGIN(void)
    lastmapreq = 0UL;
    mapdelay = 0UL;
    lastpoinum = 0UL;
-   osic_alloc((X2C_ADDRESS *) &srtmmiss, 1UL);
+   osic_alloc((char * *) &srtmmiss, 1UL);
                 /* make empty tile for fast nofile hint */
    initsrtm();
 }

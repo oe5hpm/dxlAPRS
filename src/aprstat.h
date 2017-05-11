@@ -35,16 +35,17 @@ struct aprstat_LASTVAL {
    float siev;
 };
 
-extern void aprstat_kmhist(maptool_pIMAGE *, aprsdecode_pOPHIST, char *);
+extern void aprstat_kmhist(maptool_pIMAGE *, aprsdecode_pOPHIST,
+                char *);
 
-extern void aprstat_althist(maptool_pIMAGE *, aprsdecode_pOPHIST, char *,
-                float *, unsigned long *, unsigned long *, unsigned long *,
-                unsigned long *);
+extern void aprstat_althist(maptool_pIMAGE *, aprsdecode_pOPHIST,
+                char *, float *, uint32_t *, uint32_t *,
+                uint32_t *, uint32_t *);
 
 extern void aprstat_btimehist(maptool_pIMAGE *, aprsdecode_pOPHIST);
 
-extern void aprstat_wxgraph(maptool_pIMAGE *, aprsdecode_pOPHIST,
-                unsigned long, unsigned short *, struct aprstat_LASTVAL *);
+extern void aprstat_wxgraph(maptool_pIMAGE *, aprsdecode_pOPHIST, uint32_t,
+                 uint16_t *, struct aprstat_LASTVAL *);
 
 
 extern void aprstat_BEGIN(void);

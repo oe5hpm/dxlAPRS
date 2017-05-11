@@ -100,12 +100,12 @@ static char sondeudp_DATAFRAME = 'i';
 #define sondeudp_RHEAD41 "000010000110110101010011100010000100010001101001010\
 0100000011111"
 
-static unsigned char sondeudp_EXOR41[64] = {150U,131U,62U,81U,177U,73U,8U,
-                152U,50U,5U,89U,14U,249U,68U,198U,38U,33U,96U,194U,234U,121U,
-                93U,109U,161U,84U,105U,71U,12U,220U,232U,92U,241U,247U,118U,
-                130U,127U,7U,153U,162U,44U,147U,124U,48U,99U,245U,16U,46U,
-                97U,208U,188U,180U,182U,6U,170U,244U,35U,120U,110U,59U,174U,
-                191U,123U,76U,193U};
+static uint8_t sondeudp_EXOR41[64] = {150U,131U,62U,81U,177U,73U,8U,152U,
+                50U,5U,89U,14U,249U,68U,198U,38U,33U,96U,194U,234U,121U,93U,
+                109U,161U,84U,105U,71U,12U,220U,232U,92U,241U,247U,118U,130U,
+                127U,7U,153U,162U,44U,147U,124U,48U,99U,245U,16U,46U,97U,
+                208U,188U,180U,182U,6U,170U,244U,35U,120U,110U,59U,174U,191U,
+                123U,76U,193U};
 
 typedef char FILENAME[1024];
 
@@ -124,9 +124,9 @@ typedef struct UDPTX * pUDPTX;
 
 struct UDPTX {
    pUDPTX next;
-   unsigned long ip;
-   unsigned long destport;
-   long udpfd;
+   uint32_t ip;
+   uint32_t destport;
+   int32_t udpfd;
 };
 
 struct R92;
@@ -134,9 +134,9 @@ struct R92;
 
 struct R92 {
    char enabled;
-   long pllshift;
-   long baudfine;
-   long manchestd;
+   int32_t pllshift;
+   int32_t baudfine;
+   int32_t manchestd;
    float noise;
    float bitlev;
    float lastu;
@@ -144,15 +144,15 @@ struct R92 {
    char oldd;
    char plld;
    char lastmanch;
-   unsigned long rxbyte;
-   unsigned long rxbitc;
-   unsigned long rxp;
-   unsigned long headerrs;
+   uint32_t rxbyte;
+   uint32_t rxbitc;
+   uint32_t rxp;
+   uint32_t headerrs;
    char rxbuf[256];
    AFIRTAB afirtab;
-   long asynst[10];
-   unsigned long demodbaud;
-   unsigned long configbaud;
+   int32_t asynst[10];
+   uint32_t demodbaud;
+   uint32_t configbaud;
 };
 
 struct R41;
@@ -160,8 +160,8 @@ struct R41;
 
 struct R41 {
    char enabled;
-   long pllshift;
-   long baudfine;
+   int32_t pllshift;
+   int32_t baudfine;
    float noise0;
    float bitlev0;
    float noise;
@@ -171,17 +171,17 @@ struct R41 {
    char plld;
    char rev;
    char headok;
-   unsigned long rxbyte;
-   unsigned long rxbitc;
-   unsigned long rxp;
+   uint32_t rxbyte;
+   uint32_t rxbitc;
+   uint32_t rxp;
    char rxbuf[520];
    AFIRTAB afirtab;
-   unsigned long demodbaud;
-   unsigned long configbaud;
-   unsigned long synp;
+   uint32_t demodbaud;
+   uint32_t configbaud;
+   uint32_t synp;
    char synbuf[64];
    char fixbytes[520];
-   unsigned char fixcnt[520];
+   uint8_t fixcnt[520];
 };
 
 struct DFM6;
@@ -191,26 +191,26 @@ struct DFM6 {
    char enabled;
    CNAMESTR id;
    CNAMESTR idcheck;
-   unsigned long idtime;
-   unsigned long idcnt;
-   unsigned long timediff;
-   unsigned long actdate;
-   unsigned long lastdate;
-   unsigned long tused;
-   unsigned long idnum;
-   unsigned long num;
-   unsigned long numcnt;
-   unsigned long lastnum;
+   uint32_t idtime;
+   uint32_t idcnt;
+   uint32_t timediff;
+   uint32_t actdate;
+   uint32_t lastdate;
+   uint32_t tused;
+   uint32_t idnum;
+   uint32_t num;
+   uint32_t numcnt;
+   uint32_t lastnum;
    /* check name */
-   unsigned long idcnt0;
-   unsigned long idcnt1;
-   unsigned long idnew;
+   uint32_t idcnt0;
+   uint32_t idcnt1;
+   uint32_t idnew;
    float lastlat;
    float lastlong;
    /* check name */
-   long pllshift;
-   long baudfine;
-   long manchestd;
+   int32_t pllshift;
+   int32_t baudfine;
+   int32_t manchestd;
    float noise;
    float bitlev;
    float lastu;
@@ -222,18 +222,18 @@ struct DFM6 {
    char wasdate;
    char txok;
    char d9;
-   unsigned long rxp;
+   uint32_t rxp;
    char rxbuf[264];
    AFIRTAB afirtab;
-   unsigned long synword;
+   uint32_t synword;
    char cb[56];
    char ch[56];
    char db1[104];
    char db2[104];
    char dh1[104];
    char dh2[104];
-   unsigned long demodbaud;
-   unsigned long configbaud;
+   uint32_t demodbaud;
+   uint32_t configbaud;
 };
 
 struct SCID;
@@ -242,8 +242,8 @@ struct SCID;
 struct SCID {
    CNAMESTR id;
    CNAMESTR idcheck;
-   unsigned long idtime;
-   unsigned long idcnt;
+   uint32_t idtime;
+   uint32_t idcnt;
 };
 
 struct C34;
@@ -253,11 +253,11 @@ struct C34 {
    char enabled;
    struct SCID id34;
    struct SCID id50;
-   unsigned long idtime;
-   unsigned long idcnt;
-   long pllshift;
-   long baudfine;
-   long leveldcd;
+   uint32_t idtime;
+   uint32_t idcnt;
+   int32_t pllshift;
+   int32_t baudfine;
+   int32_t leveldcd;
    float sqmed[2];
    float afskhighpass;
    float freq;
@@ -271,38 +271,38 @@ struct C34 {
    char oldd;
    char plld;
    char c50;
-   unsigned long rxbyte;
-   unsigned long rxbytec;
-   unsigned long rxbitc;
-   unsigned long rxp;
+   uint32_t rxbyte;
+   uint32_t rxbytec;
+   uint32_t rxbitc;
+   uint32_t rxp;
    char rxbuf[9];
    AFIRTAB afirtab;
-   long asynst[10];
+   int32_t asynst[10];
    DFIRTAB dfirtab;
    DFIR dfir;
-   unsigned long dfin;
-   unsigned long confignyquist;
-   unsigned long configafskshift;
-   unsigned long configafskmid;
-   unsigned long demodbaud;
-   unsigned long configbaud;
-   unsigned long txbaud;
-   unsigned long dcdclock;
+   uint32_t dfin;
+   uint32_t confignyquist;
+   uint32_t configafskshift;
+   uint32_t configafskmid;
+   uint32_t demodbaud;
+   uint32_t configbaud;
+   uint32_t txbaud;
+   uint32_t dcdclock;
    float hipasscap;
-   unsigned long tused;
+   uint32_t tused;
 };
 
 struct CHAN;
 
 
 struct CHAN {
-   long adcmax;
-   long adcdc;
+   int32_t adcmax;
+   int32_t adcdc;
    float afir[32];
-   long configequalizer;
+   int32_t configequalizer;
    pUDPTX udptx;
-   unsigned long squelch;
-   unsigned long mycallc;
+   uint32_t squelch;
+   uint32_t mycallc;
    char myssid;
    struct R92 r92;
    struct R41 r41;
@@ -310,9 +310,9 @@ struct CHAN {
    struct C34 c34;
 };
 
-static long soundfd;
+static int32_t soundfd;
 
-static long debfd;
+static int32_t debfd;
 
 static char abortonsounderr;
 
@@ -320,40 +320,42 @@ static char verb;
 
 static char verb2;
 
-static unsigned long getst;
+static uint32_t dfmidchg;
 
-static unsigned long afin;
+static uint32_t getst;
 
-static unsigned long soundbufs;
+static uint32_t afin;
 
-static unsigned long adcrate;
+static uint32_t soundbufs;
 
-static unsigned long adcbuflen;
+static uint32_t adcrate;
 
-static unsigned long adcbufrd;
+static uint32_t adcbuflen;
 
-static unsigned long adcbufsamps;
+static uint32_t adcbufrd;
 
-static unsigned long fragmentsize;
+static uint32_t adcbufsamps;
+
+static uint32_t fragmentsize;
 
 static FILENAME soundfn;
 
 static struct CHAN chan[64];
 
-static unsigned long adcbufsampx;
+static uint32_t adcbufsampx;
 
-static unsigned long maxchannels;
+static uint32_t maxchannels;
 
-static unsigned long cfgchannels;
+static uint32_t cfgchannels;
 
 static short adcbuf[4096];
 
-static unsigned long dfmnametyp;
+static uint32_t dfmnametyp;
 
-static unsigned short CRCTAB[256];
+static uint16_t CRCTAB[256];
 
 
-static void Error(char text[], unsigned long text_len)
+static void Error(char text[], uint32_t text_len)
 {
    X2C_PCOPY((void **)&text,text_len);
    osi_WrStr(text, text_len);
@@ -363,38 +365,38 @@ static void Error(char text[], unsigned long text_len)
 } /* end Error() */
 
 
-static void Hamming(float f[], unsigned long f_len)
+static void Hamming(float f[], uint32_t f_len)
 {
-   unsigned long i;
-   unsigned long tmp;
+   uint32_t i;
+   uint32_t tmp;
    tmp = f_len-1;
    i = 0UL;
    if (i<=tmp) for (;; i++) {
-      f[i] = f[i]*(0.54f+0.46f*osic_cos(3.1415926535898f*(X2C_DIVR((float)i,
-                (float)(1UL+(f_len-1))))));
+      f[i] = f[i]*(0.54f+0.46f*osic_cos(3.1415926535898f*(X2C_DIVR((float)
+                i,(float)(1UL+(f_len-1))))));
       if (i==tmp) break;
    } /* end for */
 } /* end Hamming() */
 
 
-static void initdfir(DFIRTAB dfirtab, unsigned long fg)
+static void initdfir(DFIRTAB dfirtab, uint32_t fg)
 {
-   unsigned long f;
-   unsigned long i;
+   uint32_t f;
+   uint32_t i;
    float t[512];
    float e;
    float f1;
-   unsigned long tmp;
+   uint32_t tmp;
    for (i = 0UL; i<=511UL; i++) {
       t[i] = 0.5f;
    } /* end for */
    f1 = X2C_DIVR((float)(fg*64UL),(float)adcrate);
-   tmp = (unsigned long)X2C_TRUNCC(f1,0UL,X2C_max_longcard)+1UL;
+   tmp = (uint32_t)X2C_TRUNCC(f1,0UL,X2C_max_longcard)+1UL;
    f = 1UL;
    if (f<=tmp) for (;; f++) {
       e = 1.0f;
-      if (f==(unsigned long)X2C_TRUNCC(f1,0UL,X2C_max_longcard)+1UL) {
-         e = f1-(float)(unsigned long)X2C_TRUNCC(f1,0UL,X2C_max_longcard);
+      if (f==(uint32_t)X2C_TRUNCC(f1,0UL,X2C_max_longcard)+1UL) {
+         e = f1-(float)(uint32_t)X2C_TRUNCC(f1,0UL,X2C_max_longcard);
       }
       for (i = 0UL; i<=511UL; i++) {
          t[i] = t[i]+e*osic_cos(X2C_DIVR(3.1415926535898f*(float)(i*f),
@@ -404,8 +406,8 @@ static void initdfir(DFIRTAB dfirtab, unsigned long fg)
    } /* end for */
    Hamming(t, 512ul);
    for (i = 0UL; i<=511UL; i++) {
-      t[i] = t[i]*(0.54f+0.46f*osic_cos(3.1415926535898f*(X2C_DIVR((float)i,
-                512.0f))));
+      t[i] = t[i]*(0.54f+0.46f*osic_cos(3.1415926535898f*(X2C_DIVR((float)
+                i,512.0f))));
    } /* end for */
    for (i = 0UL; i<=511UL; i++) {
       dfirtab[511UL+i] = t[i];
@@ -414,23 +416,23 @@ static void initdfir(DFIRTAB dfirtab, unsigned long fg)
 } /* end initdfir() */
 
 
-static void initafir(AFIRTAB atab, unsigned long F0, unsigned long F1,
+static void initafir(AFIRTAB atab, uint32_t F0, uint32_t F1,
                 float eq)
 {
-   unsigned long f;
-   unsigned long i;
+   uint32_t f;
+   uint32_t i;
    float t[256];
    float f10;
    float f00;
    float e;
-   unsigned long tmp;
+   uint32_t tmp;
    f00 = X2C_DIVR((float)(F0*32UL),(float)adcrate);
    f10 = X2C_DIVR((float)(F1*32UL),(float)adcrate);
    for (i = 0UL; i<=255UL; i++) {
       t[i] = 0.0f;
    } /* end for */
-   tmp = (unsigned long)X2C_TRUNCC(f10,0UL,X2C_max_longcard)+1UL;
-   f = (unsigned long)X2C_TRUNCC(f00,0UL,X2C_max_longcard);
+   tmp = (uint32_t)X2C_TRUNCC(f10,0UL,X2C_max_longcard)+1UL;
+   f = (uint32_t)X2C_TRUNCC(f00,0UL,X2C_max_longcard);
    if (f<=tmp) for (;; f++) {
       e = 1.0f+eq*((X2C_DIVR((float)f,X2C_DIVR((float)((F0+F1)*32UL),
                 (float)adcrate)))*2.0f-1.0f);
@@ -438,12 +440,12 @@ static void initafir(AFIRTAB atab, unsigned long F0, unsigned long F1,
           e:=1.0 + eq*(FLOAT(f)/FLOAT((F0+F1)*AFIRLEN DIV adcrate)*2.0-1.0);
       */
       if (e<0.0f) e = 0.0f;
-      if (f==(unsigned long)X2C_TRUNCC(f00,0UL,X2C_max_longcard)) {
-         e = e*(1.0f-(f00-(float)(unsigned long)X2C_TRUNCC(f00,0UL,
+      if (f==(uint32_t)X2C_TRUNCC(f00,0UL,X2C_max_longcard)) {
+         e = e*(1.0f-(f00-(float)(uint32_t)X2C_TRUNCC(f00,0UL,
                 X2C_max_longcard)));
       }
-      if (f==(unsigned long)X2C_TRUNCC(f10,0UL,X2C_max_longcard)+1UL) {
-         e = e*(f10-(float)(unsigned long)X2C_TRUNCC(f10,0UL,
+      if (f==(uint32_t)X2C_TRUNCC(f10,0UL,X2C_max_longcard)+1UL) {
+         e = e*(f10-(float)(uint32_t)X2C_TRUNCC(f10,0UL,
                 X2C_max_longcard));
       }
       /*
@@ -496,29 +498,26 @@ END;
 
 static void OpenSound(void)
 {
-   long s;
-   long i;
+   int32_t s;
+   int32_t i;
    soundfd = osi_OpenRW(soundfn, 1024ul);
    if (soundfd>=0L) {
       if (maxchannels<2UL) {
-#ifndef MACOS
-	/* soundcard not supported on MacOS, just reading from file */
          i = samplesize(soundfd, 16UL); /* 8, 16 */
          i = channels(soundfd, maxchannels+1UL); /* 1, 2  */
          i = setfragment(soundfd, fragmentsize); /* 2^bufsize * 65536*bufs*/
          if (i) {
             osi_WrStr("sound setfragment returns ", 27ul);
-            osic_WrINT32((unsigned long)i, 1UL);
+            osic_WrINT32((uint32_t)i, 1UL);
             osic_WrLn();
          }
          i = sampelrate(soundfd, adcrate); /* 8000..48000 */
-         s = (long)getsampelrate(soundfd);
-         if (s!=(long)adcrate) {
+         s = (int32_t)getsampelrate(soundfd);
+         if (s!=(int32_t)adcrate) {
             osi_WrStr("sound device returns ", 22ul);
-            osic_WrINT32((unsigned long)s, 1UL);
+            osic_WrINT32((uint32_t)s, 1UL);
             osi_WrStrLn("Hz!", 4ul);
          }
-#endif
       }
    }
    else if (abortonsounderr) {
@@ -528,12 +527,12 @@ static void OpenSound(void)
 } /* end OpenSound() */
 
 
-static char packcall(char cs[], unsigned long cs_len, unsigned long * cc,
-                char * ssid)
+static char packcall(char cs[], uint32_t cs_len,
+                uint32_t * cc, char * ssid)
 {
-   unsigned long s;
-   unsigned long j;
-   unsigned long i;
+   uint32_t s;
+   uint32_t j;
+   uint32_t i;
    char c;
    char packcall_ret;
    X2C_PCOPY((void **)&cs,cs_len);
@@ -544,12 +543,12 @@ static char packcall(char cs[], unsigned long cs_len, unsigned long * cc,
    for (j = 0UL; j<=5UL; j++) {
       *cc =  *cc*37UL;
       c = cs[i];
-      if ((unsigned char)c>='A' && (unsigned char)c<='Z') {
-         *cc += ((unsigned long)(unsigned char)c-65UL)+1UL;
+      if ((uint8_t)c>='A' && (uint8_t)c<='Z') {
+         *cc += ((uint32_t)(uint8_t)c-65UL)+1UL;
          ++i;
       }
-      else if ((unsigned char)c>='0' && (unsigned char)c<='9') {
-         *cc += ((unsigned long)(unsigned char)c-48UL)+27UL;
+      else if ((uint8_t)c>='0' && (uint8_t)c<='9') {
+         *cc += ((uint32_t)(uint8_t)c-48UL)+27UL;
          ++i;
       }
       else if (c && c!='-') {
@@ -561,12 +560,12 @@ static char packcall(char cs[], unsigned long cs_len, unsigned long * cc,
       /* ssid */
       ++i;
       c = cs[i];
-      if ((unsigned char)c>='0' && (unsigned char)c<='9') {
-         s += (unsigned long)(unsigned char)c-48UL;
+      if ((uint8_t)c>='0' && (uint8_t)c<='9') {
+         s += (uint32_t)(uint8_t)c-48UL;
          ++i;
          c = cs[i];
-         if ((unsigned char)c>='0' && (unsigned char)c<='9') {
-            s = (s*10UL+(unsigned long)(unsigned char)c)-48UL;
+         if ((uint8_t)c>='0' && (uint8_t)c<='9') {
+            s = (s*10UL+(uint32_t)(uint8_t)c)-48UL;
          }
       }
       if (s>15UL) {
@@ -586,14 +585,14 @@ static char packcall(char cs[], unsigned long cs_len, unsigned long * cc,
 } /* end packcall() */
 
 
-static long GetIp(char h[], unsigned long h_len, unsigned long * ip,
-                unsigned long * port)
+static int32_t GetIp(char h[], uint32_t h_len, uint32_t * ip,
+                uint32_t * port)
 {
-   unsigned long p;
-   unsigned long n;
-   unsigned long i;
+   uint32_t p;
+   uint32_t n;
+   uint32_t i;
    char ok0;
-   long GetIp_ret;
+   int32_t GetIp_ret;
    X2C_PCOPY((void **)&h,h_len);
    p = 0UL;
    h[h_len-1] = 0;
@@ -601,9 +600,9 @@ static long GetIp(char h[], unsigned long h_len, unsigned long * ip,
    for (i = 0UL; i<=4UL; i++) {
       n = 0UL;
       ok0 = 0;
-      while ((unsigned char)h[p]>='0' && (unsigned char)h[p]<='9') {
+      while ((uint8_t)h[p]>='0' && (uint8_t)h[p]<='9') {
          ok0 = 1;
-         n = (n*10UL+(unsigned long)(unsigned char)h[p])-48UL;
+         n = (n*10UL+(uint32_t)(uint8_t)h[p])-48UL;
          ++p;
       }
       if (!ok0) {
@@ -640,8 +639,8 @@ static long GetIp(char h[], unsigned long h_len, unsigned long * ip,
 
 static void Config(void)
 {
-   unsigned long c;
-   unsigned long i;
+   uint32_t c;
+   uint32_t i;
    struct R92 * anonym;
    struct R41 * anonym0;
    struct DFM6 * anonym1;
@@ -701,8 +700,8 @@ static void Config(void)
          struct C34 * anonym2 = &chan[c].c34;
          anonym2->txbaud = (anonym2->configbaud*65536UL)/adcrate;
          anonym2->demodbaud = anonym2->txbaud*2UL;
-         anonym2->afskmidfreq = X2C_DIVR((float)anonym2->configafskmid*2.0f,
-                (float)adcrate);
+         anonym2->afskmidfreq = X2C_DIVR((float)
+                anonym2->configafskmid*2.0f,(float)adcrate);
          initafir(anonym2->afirtab,
                 (anonym2->configafskmid-anonym2->configafskshift/2UL)
                 -anonym2->configbaud/4UL,
@@ -729,14 +728,14 @@ static void Parms(void)
    FILENAME mixfn;
    FILENAME h1;
    FILENAME h;
-   unsigned long ch;
-   unsigned long cnum;
-   long inum;
-   unsigned long channel;
+   uint32_t ch;
+   uint32_t cnum;
+   int32_t inum;
+   uint32_t channel;
    pUDPTX utx;
    char chanset;
    char mycall[11];
-   unsigned long myc;
+   uint32_t myc;
    char mys;
    struct R92 * anonym;
    struct R41 * anonym0;
@@ -755,6 +754,7 @@ static void Parms(void)
    debfd = -1L;
    chanset = 0;
    dfmnametyp = 0UL;
+   dfmidchg = 2UL; /* minutes no tx if dfm name change */
    for (channel = 0UL; channel<=63UL; channel++) {
       { /* with */
          struct R92 * anonym = &chan[channel].r92;
@@ -901,6 +901,10 @@ static void Parms(void)
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
             chan[channel].c34.configafskmid = cnum;
          }
+         else if (h[1U]=='G') {
+            osi_NextArg(h, 1024ul);
+            if (!aprsstr_StrToCard(h, 1024ul, &dfmidchg)) err = 1;
+         }
          else if (h[1U]=='l') {
             osi_NextArg(h, 1024ul);
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
@@ -930,7 +934,7 @@ static void Parms(void)
          }
          else if (h[1U]=='u') {
             osi_NextArg(h, 1024ul);
-            osic_alloc((X2C_ADDRESS *) &utx, sizeof(struct UDPTX));
+            osic_alloc((char * *) &utx, sizeof(struct UDPTX));
             if (utx==0) Error("udp socket out of memory", 25ul);
             utx->udpfd = GetIp(h, 1024ul, &utx->ip, &utx->destport);
             if (utx->udpfd<0L) Error("cannot open udp socket", 23ul);
@@ -984,6 +988,9 @@ ighpass (-999..999)", 69ul);
 ber", 53ul);
                osi_WrStrLn(" -f <num>       adcrate (22050) (8000..96000)",
                 46ul);
+               osi_WrStrLn(" -G <minutes>   no tx if DFMxx Name changes (2)",
+                 48ul);
+               osi_WrStrLn(" -h             help", 21ul);
                osi_WrStrLn(" -I <call>      mycall + ssid (use -C before to s\
 elect 1 channel)", 66ul);
                osi_WrStrLn(" -l <num>       adcbuflen (256)", 32ul);
@@ -999,7 +1006,6 @@ wav audio file or pipe /dev/stdin", 83ul);
 ndemod), -C <n> before sets", 77ul);
                osi_WrStrLn("                channel number, maybe repeated fo\
 r more destinations", 69ul);
-               osi_WrStrLn(" -h             help", 21ul);
                osi_WrStrLn(" -V             very verbous, with some hex dumps\
 ", 50ul);
                osi_WrStrLn(" -v             verbous, (CRC-checked Sondename)",
@@ -1028,17 +1034,17 @@ r more destinations", 69ul);
 } /* end Parms() */
 
 
-static void sendudp(char data[], unsigned long data_len, long len,
-                unsigned long ip, unsigned long destport, long udpfd)
+static void sendudp(char data[], uint32_t data_len, int32_t len,
+                uint32_t ip, uint32_t destport, int32_t udpfd)
 {
-   long i;
+   int32_t i;
    X2C_PCOPY((void **)&data,data_len);
    i = udpsend(udpfd, data, len, destport, ip);
    X2C_PFREE(data);
 } /* end sendudp() */
 
 
-static void WrdB(long volt)
+static void WrdB(int32_t volt)
 {
    if (volt>0L) {
       osic_WrFixed(osic_ln((float)volt)*8.685889638f-96.4f, 1L, 6UL);
@@ -1053,7 +1059,7 @@ static void WrQ(float lev, float noise)
       noise = X2C_DIVR(noise*200.0f,lev);
       if (noise>100.0f) noise = 100.0f;
       else if (noise<=0.0f) noise = 0.0f;
-      osic_WrINT32((unsigned long)(100L-(long)X2C_TRUNCI(noise,
+      osic_WrINT32((uint32_t)(100L-(int32_t)X2C_TRUNCI(noise,
                 X2C_min_longint,X2C_max_longint)), 3UL);
       osi_WrStr("%", 2ul);
    }
@@ -1066,26 +1072,26 @@ static void WrQuali(float q)
       q = 100.5f-q*200.0f;
       if (q<0.0f) q = 0.0f;
       osi_WrStr(" q:", 4ul);
-      osic_WrINT32((unsigned long)osi_realint(q), 2UL);
+      osic_WrINT32((uint32_t)osi_realint(q), 2UL);
    }
 } /* end WrQuali() */
 
 
-static void Wrtune(long volt, long max0)
+static void Wrtune(int32_t volt, int32_t max0)
 {
-   long u;
+   int32_t u;
    if (max0>0L && max0>labs(volt)) {
       u = (volt*100L)/max0;
       if (labs(u)>0L) {
          osi_WrStr(" f:", 4ul);
-         osic_WrINT32((unsigned long)u, 2UL);
+         osic_WrINT32((uint32_t)u, 2UL);
       }
       else osi_WrStr("     ", 6ul);
    }
 } /* end Wrtune() */
 
 
-static float noiselevel(unsigned long channel)
+static float noiselevel(uint32_t channel)
 /* 0.0 perfect, ~0.25 noise only*/
 {
    struct C34 * anonym;
@@ -1101,12 +1107,12 @@ static float noiselevel(unsigned long channel)
 } /* end noiselevel() */
 
 
-static float Fir(unsigned long in, unsigned long sub, unsigned long step,
-                float fir[], unsigned long fir_len, float firtab[],
-                unsigned long firtab_len)
+static float Fir(uint32_t in, uint32_t sub, uint32_t step,
+                float fir[], uint32_t fir_len, float firtab[],
+                uint32_t firtab_len)
 {
    float s;
-   unsigned long i;
+   uint32_t i;
    s = 0.0f;
    i = sub;
    do {
@@ -1119,13 +1125,13 @@ static float Fir(unsigned long in, unsigned long sub, unsigned long step,
 } /* end Fir() */
 
 
-static void alludp(pUDPTX utx, unsigned long len, char buf[],
-                unsigned long buf_len)
+static void alludp(pUDPTX utx, uint32_t len, char buf[],
+                uint32_t buf_len)
 {
    X2C_PCOPY((void **)&buf,buf_len);
    while (utx) {
       if (utx->udpfd>=0L) {
-         sendudp(buf, buf_len, (long)len, utx->ip, utx->destport,
+         sendudp(buf, buf_len, (int32_t)len, utx->ip, utx->destport,
                 utx->udpfd);
       }
       utx = utx->next;
@@ -1134,12 +1140,12 @@ static void alludp(pUDPTX utx, unsigned long len, char buf[],
 } /* end alludp() */
 
 
-static long reedsolomon92(char buf[], unsigned long buf_len)
+static int32_t reedsolomon92(char buf[], uint32_t buf_len)
 {
-   unsigned long i;
-   long res;
+   uint32_t i;
+   int32_t res;
    char b[256];
-   unsigned long eraspos[24];
+   uint32_t eraspos[24];
    for (i = 0UL; i<=255UL; i++) {
       b[i] = 0;
    } /* end for */
@@ -1162,31 +1168,32 @@ static long reedsolomon92(char buf[], unsigned long buf_len)
 } /* end reedsolomon92() */
 
 
-static char crcrs(const char frame[], unsigned long frame_len, long from,
-                long to)
+static char crcrs(const char frame[], uint32_t frame_len,
+                int32_t from, int32_t to)
 {
-   unsigned short crc;
-   long i;
-   long tmp;
+   uint16_t crc;
+   int32_t i;
+   int32_t tmp;
    crc = 0xFFFFU;
    tmp = to-3L;
    i = from;
    if (i<=tmp) for (;; i++) {
-      crc = X2C_LSH(crc,16,-8)^CRCTAB[(unsigned long)((crc^(unsigned short)(unsigned char)frame[i])&0xFFU)];
+      crc = X2C_LSH(crc,16,-8)^CRCTAB[(uint32_t)((crc^(uint16_t)(uint8_t)frame[i])&0xFFU)];
       if (i==tmp) break;
    } /* end for */
-   return frame[to-1L]==(char)crc && frame[to-2L]==(char)X2C_LSH(crc,16,-8);
+   return frame[to-1L]==(char)crc && frame[to-2L]==(char)X2C_LSH(crc,
+                16,-8);
 } /* end crcrs() */
 
-static unsigned short sondeudp_POLYNOM = 0x1021U;
+static uint16_t sondeudp_POLYNOM = 0x1021U;
 
 
-static void decodeframe92(unsigned long m)
+static void decodeframe92(uint32_t m)
 {
-   unsigned long len;
-   unsigned long p;
-   unsigned long j;
-   long corr;
+   uint32_t len;
+   uint32_t p;
+   uint32_t j;
+   int32_t corr;
    struct CHAN * anonym;
    corr = reedsolomon92(chan[m].r92.rxbuf, 256ul);
    { /* with */
@@ -1204,7 +1211,7 @@ static void decodeframe92(unsigned long m)
       p = 6UL;
       if (chan[m].r92.rxbuf[6U]=='e') {
          ++p;
-         len = (unsigned long)(unsigned char)chan[m].r92.rxbuf[7U]*2UL+2UL;
+         len = (uint32_t)(uint8_t)chan[m].r92.rxbuf[7U]*2UL+2UL;
                 /* +crc */
          ++p;
          if (maxchannels>0UL) {
@@ -1213,16 +1220,16 @@ static void decodeframe92(unsigned long m)
          }
          osi_WrStr("R92 ", 5ul);
          if (8UL+len>240UL || !crcrs(chan[m].r92.rxbuf, 256ul, 8L,
-                (long)(8UL+len))) osi_WrStr("----  crc err ", 15ul);
+                (int32_t)(8UL+len))) osi_WrStr("----  crc err ", 15ul);
          else {
             j = 4UL;
-            while ((unsigned char)chan[m].r92.rxbuf[8UL+j]>=' ') {
+            while ((uint8_t)chan[m].r92.rxbuf[8UL+j]>=' ') {
                osi_WrStr((char *) &chan[m].r92.rxbuf[8UL+j], 1u/1u);
                ++j;
             }
             osi_WrStr(" ", 2ul);
-            osic_WrINT32((unsigned long)(unsigned char)
-                chan[m].r92.rxbuf[8U]+(unsigned long)(unsigned char)
+            osic_WrINT32((uint32_t)(uint8_t)
+                chan[m].r92.rxbuf[8U]+(uint32_t)(uint8_t)
                 chan[m].r92.rxbuf[9U]*256UL, 4UL);
          }
          /*      IF m>0 THEN WrStr("             ") END; */
@@ -1231,7 +1238,7 @@ static void decodeframe92(unsigned long m)
          if (corr<0L) osi_WrStr(" -R", 4ul);
          else if (corr>0L && corr<=12L) {
             osi_WrStr(" +", 3ul);
-            osic_WrINT32((unsigned long)corr, 1UL);
+            osic_WrINT32((uint32_t)corr, 1UL);
             osi_WrStr("R", 2ul);
          }
          Wrtune(chan[m].adcdc, chan[m].adcmax);
@@ -1241,21 +1248,21 @@ static void decodeframe92(unsigned long m)
 } /* end decodeframe92() */
 
 
-static double latlong(unsigned long val, char c50)
+static double latlong(uint32_t val, char c50)
 {
    double hf;
    double hr;
    hr = (double)(val%0x080000000UL);
    if (c50) hr = X2C_DIVL(hr,1.E+7);
    else hr = X2C_DIVL(hr,1.E+6);
-   hf = (double)(unsigned long)X2C_TRUNCC(hr,0UL,X2C_max_longcard);
+   hf = (double)(uint32_t)X2C_TRUNCC(hr,0UL,X2C_max_longcard);
    hr = hf+X2C_DIVL(hr-hf,0.6);
    if (val>=0x080000000UL) hr = -hr;
    return hr;
 } /* end latlong() */
 
 
-static char hex(unsigned long n)
+static char hex(uint32_t n)
 {
    n = n&15UL;
    if (n<10UL) return (char)(n+48UL);
@@ -1265,7 +1272,7 @@ static char hex(unsigned long n)
 
 /*------------------------------ RS41 */
 
-static void sendrs41(unsigned long m)
+static void sendrs41(uint32_t m)
 {
    struct CHAN * anonym;
    { /* with */
@@ -1295,7 +1302,8 @@ static double atang2(double x, double y)
       }
    }
    else if (y!=0.0) {
-      w = (double)(1.5707963267949f-osic_arctan((float)(X2C_DIVL(x,y))));
+      w = (double)(1.5707963267949f-osic_arctan((float)(X2C_DIVL(x,
+                y))));
       if (y<0.0) w = w-3.1415926535898;
    }
    else w = 0.0;
@@ -1311,8 +1319,9 @@ static double atang2(double x, double y)
 #define sondeudp_EARTHAB 4.2841311513312E+4
 
 
-static void wgs84r(double x, double y, double z, double * lat,
-                double * long0, double * heig)
+static void wgs84r(double x, double y, double z,
+                double * lat, double * long0,
+                double * heig)
 {
    double sl;
    double ct;
@@ -1327,7 +1336,8 @@ static void wgs84r(double x, double y, double z, double * lat,
       xh = x+rh;
       *long0 = atang2(xh, y)*2.0;
       if (*long0>3.1415926535898) *long0 = *long0-6.2831853071796;
-      t = (double)osic_arctan((float)(X2C_DIVL(z*1.003364089821,rh)));
+      t = (double)osic_arctan((float)(X2C_DIVL(z*1.003364089821,
+                rh)));
       st = (double)osic_sin((float)t);
       ct = (double)osic_cos((float)t);
       *lat = (double)osic_arctan((float)
@@ -1347,40 +1357,40 @@ static void wgs84r(double x, double y, double z, double * lat,
 } /* end wgs84r() */
 
 
-static long getint32(const char frame[], unsigned long frame_len,
-                unsigned long p)
+static int32_t getint32(const char frame[], uint32_t frame_len,
+                uint32_t p)
 {
-   unsigned long n;
-   unsigned long i;
+   uint32_t n;
+   uint32_t i;
    n = 0UL;
    for (i = 3UL;; i--) {
-      n = n*256UL+(unsigned long)(unsigned char)frame[p+i];
+      n = n*256UL+(uint32_t)(uint8_t)frame[p+i];
       if (i==0UL) break;
    } /* end for */
-   return (long)n;
+   return (int32_t)n;
 } /* end getint32() */
 
 
-static unsigned long getcard16(const char frame[], unsigned long frame_len,
-                unsigned long p)
+static uint32_t getcard16(const char frame[], uint32_t frame_len,
+                uint32_t p)
 {
-   return (unsigned long)(unsigned char)frame[p]+256UL*(unsigned long)
-                (unsigned char)frame[p+1UL];
+   return (uint32_t)(uint8_t)frame[p]+256UL*(uint32_t)(uint8_t)
+                frame[p+1UL];
 } /* end getcard16() */
 
 
-static long getint16(const char frame[], unsigned long frame_len,
-                unsigned long p)
+static int32_t getint16(const char frame[], uint32_t frame_len,
+                uint32_t p)
 {
-   unsigned long n;
-   n = (unsigned long)(unsigned char)frame[p]+256UL*(unsigned long)
-                (unsigned char)frame[p+1UL];
-   if (n>=32768UL) return (long)(n-65536UL);
-   return (long)n;
+   uint32_t n;
+   n = (uint32_t)(uint8_t)frame[p]+256UL*(uint32_t)(uint8_t)
+                frame[p+1UL];
+   if (n>=32768UL) return (int32_t)(n-65536UL);
+   return (int32_t)n;
 } /* end getint16() */
 
 
-static void posrs41(const char b[], unsigned long b_len, unsigned long p)
+static void posrs41(const char b[], uint32_t b_len, uint32_t p)
 {
    double dir;
    double vu;
@@ -1410,13 +1420,15 @@ static void posrs41(const char b[], unsigned long b_len, unsigned long p)
    vx = (double)getint16(b, b_len, p+12UL)*0.01;
    vy = (double)getint16(b, b_len, p+14UL)*0.01;
    vz = (double)getint16(b, b_len, p+16UL)*0.01;
-   vn = (-(vx*(double)osic_sin((float)lat)*(double)osic_cos((float)long0))
-                -vy*(double)osic_sin((float)lat)*(double)osic_sin((float)
+   vn = (-(vx*(double)osic_sin((float)lat)*(double)
+                osic_cos((float)long0))-vy*(double)
+                osic_sin((float)lat)*(double)osic_sin((float)
                 long0))+vz*(double)osic_cos((float)lat);
-   ve = -(vx*(double)osic_sin((float)long0))+vy*(double)osic_cos((float)
-                long0);
-   vu = vx*(double)osic_cos((float)lat)*(double)osic_cos((float)long0)
-                +vy*(double)osic_cos((float)lat)*(double)osic_sin((float)
+   ve = -(vx*(double)osic_sin((float)long0))+vy*(double)
+                osic_cos((float)long0);
+   vu = vx*(double)osic_cos((float)lat)*(double)
+                osic_cos((float)long0)+vy*(double)
+                osic_cos((float)lat)*(double)osic_sin((float)
                 long0)+vz*(double)osic_sin((float)lat);
    dir = X2C_DIVL(atang2(vn, ve),1.7453292519943E-2);
    if (dir<0.0) dir = 360.0+dir;
@@ -1430,17 +1442,17 @@ static void posrs41(const char b[], unsigned long b_len, unsigned long p)
 } /* end posrs41() */
 
 
-static long reedsolomon41(char buf[], unsigned long buf_len,
-                unsigned long len2)
+static int32_t reedsolomon41(char buf[], uint32_t buf_len,
+                uint32_t len2)
 {
-   unsigned long i;
-   long res1;
+   uint32_t i;
+   int32_t res1;
    /*tb1, */
-   long res;
+   int32_t res;
    char b1[256];
    char b[256];
-   unsigned long eraspos[24];
-   unsigned long tmp;
+   uint32_t eraspos[24];
+   uint32_t tmp;
    for (i = 0UL; i<=255UL; i++) {
       b[i] = 0;
       b1[i] = 0;
@@ -1495,25 +1507,25 @@ static long reedsolomon41(char buf[], unsigned long buf_len,
    return 0;
 } /* end reedsolomon41() */
 
-static unsigned short sondeudp_POLYNOM0 = 0x1021U;
+static uint16_t sondeudp_POLYNOM0 = 0x1021U;
 
 
-static void decode41(unsigned long m)
+static void decode41(uint32_t m)
 {
-   unsigned long try0;
-   unsigned long posok;
-   unsigned long nameok;
-   unsigned long len;
-   unsigned long p;
-   unsigned long i;
+   uint32_t try0;
+   uint32_t posok;
+   uint32_t nameok;
+   uint32_t len;
+   uint32_t p;
+   uint32_t i;
    char ch;
    char typ;
    char aux;
    char allok;
-   long repl;
-   long corr;
+   int32_t repl;
+   int32_t corr;
    struct R41 * anonym;
-   unsigned long tmp;
+   uint32_t tmp;
    { /* with */
       struct R41 * anonym = &chan[m].r41;
       try0 = 0UL;
@@ -1546,7 +1558,7 @@ static void decode41(unsigned long m)
             if (p+4UL>=519UL) break;
             typ = anonym->rxbuf[p];
             ++p;
-            len = (unsigned long)(unsigned char)anonym->rxbuf[p]+2UL;
+            len = (uint32_t)(uint8_t)anonym->rxbuf[p]+2UL;
             ++p;
             if (p+len>=519UL) break;
             /*
@@ -1555,7 +1567,8 @@ static void decode41(unsigned long m)
                 IF i MOD 16=15 THEN WrStrLn(""); END; END;
             WrStrLn("");
             */
-            if (!crcrs(anonym->rxbuf, 520ul, (long)p, (long)(p+len))) {
+            if (!crcrs(anonym->rxbuf, 520ul, (int32_t)p,
+                (int32_t)(p+len))) {
                /* crc error */
                allok = 0;
                break;
@@ -1566,16 +1579,13 @@ static void decode41(unsigned long m)
                osi_WrStr("start ID length data... crc [", 30ul);
                osi_WrHex((p-2UL)/256UL, 0UL);
                osi_WrHex(p-2UL, 3UL);
-               osi_WrHex((unsigned long)(unsigned char)anonym->rxbuf[p-2UL],
-                3UL);
-               osi_WrHex((unsigned long)(unsigned char)anonym->rxbuf[p-1UL],
-                0UL);
+               osi_WrHex((uint32_t)(uint8_t)anonym->rxbuf[p-2UL], 3UL);
+               osi_WrHex((uint32_t)(uint8_t)anonym->rxbuf[p-1UL], 0UL);
                osi_WrStrLn("]", 2ul);
                tmp = len-1UL;
                i = 0UL;
                if (i<=tmp) for (;; i++) {
-                  osi_WrHex((unsigned long)(unsigned char)anonym->rxbuf[p+i],
-                 3UL);
+                  osi_WrHex((uint32_t)(uint8_t)anonym->rxbuf[p+i], 3UL);
                   if ((i&15UL)==15UL) osi_WrStrLn("", 1ul);
                   if (i==tmp) break;
                } /* end for */
@@ -1628,12 +1638,12 @@ static void decode41(unsigned long m)
          osi_WrStr("R41 ", 5ul);
          for (i = 0UL; i<=7UL; i++) {
             ch = anonym->rxbuf[nameok+2UL+i];
-            if ((unsigned char)ch>' ' && (unsigned char)ch<'\177') {
+            if ((uint8_t)ch>' ' && (uint8_t)ch<'\177') {
                osi_WrStr((char *) &ch, 1u/1u);
             }
          } /* end for */
          osi_WrStr(" ", 2ul);
-         osic_WrINT32((unsigned long)getint16(anonym->rxbuf, 520ul, nameok),
+         osic_WrINT32((uint32_t)getint16(anonym->rxbuf, 520ul, nameok),
                 1UL);
          if (posok>0UL) posrs41(anonym->rxbuf, 520ul, posok);
          if (anonym->rxbuf[nameok+23UL]==0) {
@@ -1653,12 +1663,12 @@ static void decode41(unsigned long m)
                 IF i MOD 16=15 THEN WrStrLn(""); END; END;  */
          if (repl>0L) {
             osi_WrStr(" x", 3ul);
-            osic_WrINT32((unsigned long)repl, 1UL);
+            osic_WrINT32((uint32_t)repl, 1UL);
          }
          if (corr<0L) osi_WrStr(" -R", 4ul);
          else if (corr>0L) {
             osi_WrStr(" +", 3ul);
-            osic_WrINT32((unsigned long)corr, 1UL);
+            osic_WrINT32((uint32_t)corr, 1UL);
             osi_WrStr("R", 2ul);
          }
          Wrtune(chan[m].adcdc, chan[m].adcmax);
@@ -1670,19 +1680,19 @@ static void decode41(unsigned long m)
 
 #define sondeudp_MAXHEADERR 4
 
-static unsigned char _cnst[64] = {150U,131U,62U,81U,177U,73U,8U,152U,50U,5U,
-                89U,14U,249U,68U,198U,38U,33U,96U,194U,234U,121U,93U,109U,
-                161U,84U,105U,71U,12U,220U,232U,92U,241U,247U,118U,130U,127U,
-                7U,153U,162U,44U,147U,124U,48U,99U,245U,16U,46U,97U,208U,
-                188U,180U,182U,6U,170U,244U,35U,120U,110U,59U,174U,191U,123U,
-                76U,193U};
+static uint8_t _cnst[64] = {150U,131U,62U,81U,177U,73U,8U,152U,50U,5U,89U,
+                14U,249U,68U,198U,38U,33U,96U,194U,234U,121U,93U,109U,161U,
+                84U,105U,71U,12U,220U,232U,92U,241U,247U,118U,130U,127U,7U,
+                153U,162U,44U,147U,124U,48U,99U,245U,16U,46U,97U,208U,188U,
+                180U,182U,6U,170U,244U,35U,120U,110U,59U,174U,191U,123U,76U,
+                193U};
 
-static void demodbyte41(unsigned long m, char d)
+static void demodbyte41(uint32_t m, char d)
 {
-   unsigned long j;
-   unsigned long i;
-   unsigned long revc;
-   unsigned long normc;
+   uint32_t j;
+   uint32_t i;
+   uint32_t revc;
+   uint32_t normc;
    /*WrStr(CHR(ORD(d)+48)); */
    struct R41 * anonym;
    { /* with */
@@ -1709,12 +1719,12 @@ static void demodbyte41(unsigned long m, char d)
          anonym->rxbitc = 0UL;
       }
       else {
-         anonym->rxbyte = anonym->rxbyte/2UL+128UL*(unsigned long)
+         anonym->rxbyte = anonym->rxbyte/2UL+128UL*(uint32_t)
                 (d!=anonym->rev);
          ++anonym->rxbitc;
          if (anonym->rxbitc>=8UL) {
-            anonym->rxbuf[anonym->rxp] = (char)((unsigned char)
-                anonym->rxbyte^(unsigned char)_cnst[anonym->rxp&63UL]);
+            anonym->rxbuf[anonym->rxp] = (char)((uint8_t)
+                anonym->rxbyte^(uint8_t)_cnst[anonym->rxp&63UL]);
             ++anonym->rxp;
             if (anonym->rxp>=519UL) {
                decode41(m);
@@ -1732,7 +1742,7 @@ static void demodbyte41(unsigned long m, char d)
 } /* end demodbyte41() */
 
 
-static void demodbit41(unsigned long m, float u)
+static void demodbit41(uint32_t m, float u)
 {
    char d;
    float ua;
@@ -1776,7 +1786,7 @@ BEGIN
 END stobyte92;
 */
 
-static void stobyte92(unsigned long m, char b)
+static void stobyte92(uint32_t m, char b)
 {
    struct R92 * anonym;
    { /* with */
@@ -1792,16 +1802,16 @@ static void stobyte92(unsigned long m, char b)
 } /* end stobyte92() */
 
 
-static void demodbyte92(unsigned long m, char d)
+static void demodbyte92(uint32_t m, char d)
 {
-   unsigned long maxi;
-   unsigned long i;
-   long max0;
-   long n;
+   uint32_t maxi;
+   uint32_t i;
+   int32_t max0;
+   int32_t n;
    struct R92 * anonym;
    { /* with */
       struct R92 * anonym = &chan[m].r92;
-      anonym->rxbyte = anonym->rxbyte/2UL+256UL*(unsigned long)d;
+      anonym->rxbyte = anonym->rxbyte/2UL+256UL*(uint32_t)d;
       max0 = 0L;
       maxi = 0UL;
       for (i = 0UL; i<=9UL; i++) {
@@ -1813,8 +1823,7 @@ static void demodbyte92(unsigned long m, char d)
       } /* end for */
       if (anonym->rxbitc==maxi) {
          if (max0<0L) {
-            anonym->rxbyte = (unsigned long)((unsigned long)
-                anonym->rxbyte^0xFFUL);
+            anonym->rxbyte = (uint32_t)((uint32_t)anonym->rxbyte^0xFFUL);
          }
          stobyte92(m, (char)(anonym->rxbyte&255UL));
       }
@@ -1832,7 +1841,7 @@ static void demodbyte92(unsigned long m, char d)
 } /* end demodbyte92() */
 
 
-static void demodbit92(unsigned long m, float u, float u0)
+static void demodbit92(uint32_t m, float u, float u0)
 {
    char d;
    float ua;
@@ -1853,14 +1862,15 @@ static void demodbit92(unsigned long m, float u, float u0)
          /*quality*/
          ua = (float)fabs(u-u0)-anonym->bitlev;
          anonym->bitlev = anonym->bitlev+ua*0.005f;
-         anonym->noise = anonym->noise+((float)fabs(ua)-anonym->noise)*0.02f;
+         anonym->noise = anonym->noise+((float)fabs(ua)-anonym->noise)
+                *0.02f;
       }
    }
 /*quality*/
 } /* end demodbit92() */
 
 
-static void demod92(float u, unsigned long m)
+static void demod92(float u, uint32_t m)
 {
    char d;
    struct R92 * anonym;
@@ -1896,18 +1906,18 @@ static void demod92(float u, unsigned long m)
 } /* end demod92() */
 
 
-static void Fsk(unsigned long m)
+static void Fsk(uint32_t m)
 {
    float ff;
-   long lim;
+   int32_t lim;
    struct R92 * anonym;
    { /* with */
       struct R92 * anonym = &chan[m].r92;
-      lim = (long)anonym->demodbaud;
+      lim = (int32_t)anonym->demodbaud;
       for (;;) {
          if (anonym->baudfine>=65536L) {
             anonym->baudfine -= 65536L;
-            ff = Fir(afin, (unsigned long)((anonym->baudfine&65535L)/4096L),
+            ff = Fir(afin, (uint32_t)((anonym->baudfine&65535L)/4096L),
                 16UL, chan[m].afir, 32ul, anonym->afirtab, 512ul);
             demod92(ff, m);
          }
@@ -1920,13 +1930,13 @@ static void Fsk(unsigned long m)
 
 /*------------------------------ DFM06 */
 
-static void deinterleave(const char b[], unsigned long b_len,
-                unsigned long base, unsigned long len, char db[],
-                unsigned long db_len)
+static void deinterleave(const char b[], uint32_t b_len,
+                uint32_t base, uint32_t len, char db[],
+                uint32_t db_len)
 {
-   unsigned long j;
-   unsigned long i;
-   unsigned long tmp;
+   uint32_t j;
+   uint32_t i;
+   uint32_t tmp;
    for (j = 0UL; j<=7UL; j++) {
       tmp = len-1UL;
       i = 0UL;
@@ -1938,33 +1948,31 @@ static void deinterleave(const char b[], unsigned long b_len,
 } /* end deinterleave() */
 
 
-static char hamcorr(char b[], unsigned long b_len, unsigned long d,
-                unsigned long h)
+static char hamcorr(char b[], uint32_t b_len, uint32_t d,
+                uint32_t h)
 {
-   unsigned long e;
-   e = (unsigned long)((b[d]==b[d+2UL])!=(b[h]==b[h+2UL]))
-                +2UL*(unsigned long)((b[d+1UL]==b[d+2UL])
-                !=(b[h+1UL]==b[h+2UL]))+4UL*(unsigned long)((b[d+3UL]==b[h])
-                !=(b[h+1UL]==b[h+2UL]));
+   uint32_t e;
+   e = (uint32_t)((b[d]==b[d+2UL])!=(b[h]==b[h+2UL]))+2UL*(uint32_t)
+                ((b[d+1UL]==b[d+2UL])!=(b[h+1UL]==b[h+2UL]))+4UL*(uint32_t)
+                ((b[d+3UL]==b[h])!=(b[h+1UL]==b[h+2UL]));
    /* hamming matrix multiplication */
    if (e>4UL) b[(h+e)-4UL] = !b[(h+e)-4UL];
    else if (e>0UL) b[(d+e)-1UL] = !b[(d+e)-1UL];
    /*  IF e<>0 THEN WrStr("<");WrInt(e, 1);WrStr(">") END; */
-   e = (unsigned long)b[d]+(unsigned long)b[d+1UL]+(unsigned long)
-                b[d+2UL]+(unsigned long)b[d+3UL]+(unsigned long)
-                b[h]+(unsigned long)b[h+1UL]+(unsigned long)
-                b[h+2UL]+(unsigned long)b[h+3UL];
+   e = (uint32_t)b[d]+(uint32_t)b[d+1UL]+(uint32_t)
+                b[d+2UL]+(uint32_t)b[d+3UL]+(uint32_t)b[h]+(uint32_t)
+                b[h+1UL]+(uint32_t)b[h+2UL]+(uint32_t)b[h+3UL];
    return !(e&1);
 /* 1 bit checksum */
 } /* end hamcorr() */
 
 
-static char hamming(const char b[], unsigned long b_len, unsigned long len,
-                char db[], unsigned long db_len)
+static char hamming(const char b[], uint32_t b_len,
+                uint32_t len, char db[], uint32_t db_len)
 {
-   unsigned long j;
-   unsigned long i;
-   unsigned long tmp;
+   uint32_t j;
+   uint32_t i;
+   uint32_t tmp;
    tmp = db_len-1;
    i = 0UL;
    if (i<=tmp) for (;; i++) {
@@ -2005,13 +2013,13 @@ static char hamming(const char b[], unsigned long b_len, unsigned long len,
 } /* end hamming() */
 
 
-static unsigned long bits2val(const char b[], unsigned long b_len,
-                unsigned long from, unsigned long len)
+static uint32_t bits2val(const char b[], uint32_t b_len,
+                uint32_t from, uint32_t len)
 {
-   unsigned long n;
+   uint32_t n;
    n = 0UL;
    while (len>0UL) {
-      n = n*2UL+(unsigned long)b[from];
+      n = n*2UL+(uint32_t)b[from];
       ++from;
       --len;
    }
@@ -2019,7 +2027,7 @@ static unsigned long bits2val(const char b[], unsigned long b_len,
 } /* end bits2val() */
 
 
-static void wh(unsigned long x)
+static void wh(uint32_t x)
 {
    char tmp;
    x = x&15UL;
@@ -2028,7 +2036,7 @@ static void wh(unsigned long x)
 } /* end wh() */
 
 
-static void killdfid(unsigned long m)
+static void killdfid(uint32_t m)
 /* reset dfm06 name */
 {
    chan[m].dfm6.idcnt0 = 0UL;
@@ -2038,16 +2046,14 @@ static void killdfid(unsigned long m)
    chan[m].dfm6.idnew = 0UL;
 } /* end killdfid() */
 
-#define sondeudp_IDOK 2
 
-
-static char dfidok(unsigned long m)
+static char dfidok(uint32_t m)
 {
-   return chan[m].dfm6.idcnt0>=2UL && chan[m].dfm6.idcnt1>=2UL;
+   return chan[m].dfm6.idcnt0>=dfmidchg && chan[m].dfm6.idcnt1>=dfmidchg;
 } /* end dfidok() */
 
 
-static void checkdfpos(float deg, float odeg, unsigned long m)
+static void checkdfpos(float deg, float odeg, uint32_t m)
 /* reset dfm06 name on pos jump */
 {
    if ((float)fabs(deg-odeg)>0.25f) {
@@ -2057,32 +2063,32 @@ static void checkdfpos(float deg, float odeg, unsigned long m)
 } /* end checkdfpos() */
 
 
-static void checkdf69(float long0, unsigned long m)
+static void checkdf69(float long0, uint32_t m)
 {
    chan[m].dfm6.d9 = long0<30.0f;
                 /* if long<30 it is df6 lat else is df9 long */
 } /* end checkdf69() */
 
-static unsigned long sondeudp_MON[13] = {0UL,0UL,31UL,59UL,90UL,120UL,151UL,
+static uint32_t sondeudp_MON[13] = {0UL,0UL,31UL,59UL,90UL,120UL,151UL,
                 181UL,212UL,243UL,273UL,304UL,334UL};
 
-static unsigned long _cnst0[13] = {0UL,0UL,31UL,59UL,90UL,120UL,151UL,181UL,
+static uint32_t _cnst0[13] = {0UL,0UL,31UL,59UL,90UL,120UL,151UL,181UL,
                 212UL,243UL,273UL,304UL,334UL};
 
-static void decodesub(const char b[], unsigned long b_len, unsigned long m,
-                unsigned long subnum)
+static void decodesub(const char b[], uint32_t b_len, uint32_t m,
+                uint32_t subnum)
 {
-   unsigned long u;
-   unsigned long v;
+   uint32_t u;
+   uint32_t v;
    float vr;
-   long ui;
+   int32_t ui;
    char s[101];
-   unsigned long tt;
-   unsigned long tyear;
-   unsigned long tmon;
-   unsigned long tday;
-   unsigned long thour;
-   unsigned long tmin;
+   uint32_t tt;
+   uint32_t tyear;
+   uint32_t tmon;
+   uint32_t tday;
+   uint32_t thour;
+   uint32_t tmin;
    /* check name, if changed may be checksum error or 2 sondes on same frequency */
    struct DFM6 * anonym;
    if (verb2) {
@@ -2116,7 +2122,7 @@ static void decodesub(const char b[], unsigned long b_len, unsigned long m,
          chan[m].dfm6.txok = u<=1UL; /* max +-1s tolerance of num */
          if (verb) {
             osi_WrStr(" [", 3ul);
-            aprsstr_IntToStr((long)u, 0UL, s, 101ul);
+            aprsstr_IntToStr((int32_t)u, 0UL, s, 101ul);
             if (chan[m].dfm6.txok) aprsstr_Append(s, 101ul, "s seq]", 7ul);
             else aprsstr_Append(s, 101ul, "s OUT OF seq - NO TX]", 22ul);
             osi_WrStr(s, 101ul);
@@ -2193,7 +2199,7 @@ static void decodesub(const char b[], unsigned long b_len, unsigned long m,
       checkdf69(vr, m); /* test if dfm6 or dfm9 */
       if (chan[m].dfm6.d9) {
          /* dfm09 long, clb */
-         ui = (long)bits2val(b, b_len, 32UL, 16UL);
+         ui = (int32_t)bits2val(b, b_len, 32UL, 16UL);
          if (ui>=32768L) ui -= 65536L;
          checkdfpos(vr, chan[m].dfm6.lastlong, m);
          chan[m].dfm6.lastlong = vr;
@@ -2249,7 +2255,7 @@ static void decodesub(const char b[], unsigned long b_len, unsigned long m,
       else {
          /* dfm06 ait, clb */
          v = bits2val(b, b_len, 0UL, 32UL);
-         ui = (long)bits2val(b, b_len, 32UL, 16UL);
+         ui = (int32_t)bits2val(b, b_len, 32UL, 16UL);
          if (ui>=32768L) ui -= 65536L;
          if (verb) {
             osi_WrStr(" alti:", 7ul);
@@ -2304,19 +2310,19 @@ static void decodesub(const char b[], unsigned long b_len, unsigned long m,
       chan[m].dfm6.actdate = tt;
       if (verb) {
          osi_WrStr(" ", 2ul);
-         aprsstr_IntToStr((long)tyear, 0UL, s, 101ul);
+         aprsstr_IntToStr((int32_t)tyear, 0UL, s, 101ul);
          aprsstr_Append(s, 101ul, "-", 2ul);
          osi_WrStr(s, 101ul);
-         aprsstr_IntToStr((long)tmon, 0UL, s, 101ul);
+         aprsstr_IntToStr((int32_t)tmon, 0UL, s, 101ul);
          aprsstr_Append(s, 101ul, "-", 2ul);
          osi_WrStr(s, 101ul);
-         aprsstr_IntToStr((long)tday, 0UL, s, 101ul);
+         aprsstr_IntToStr((int32_t)tday, 0UL, s, 101ul);
          aprsstr_Append(s, 101ul, " ", 2ul);
          osi_WrStr(s, 101ul);
-         aprsstr_IntToStr((long)thour, 0UL, s, 101ul);
+         aprsstr_IntToStr((int32_t)thour, 0UL, s, 101ul);
          aprsstr_Append(s, 101ul, ":", 2ul);
          osi_WrStr(s, 101ul);
-         aprsstr_IntToStr((long)tmin, 0UL, s, 101ul);
+         aprsstr_IntToStr((int32_t)tmin, 0UL, s, 101ul);
          osi_WrStr(s, 101ul);
       }
       break;
@@ -2335,12 +2341,12 @@ static void decodesub(const char b[], unsigned long b_len, unsigned long m,
 } /* end decodesub() */
 
 
-static void getdfname(const char b[], unsigned long b_len, unsigned long m,
-                unsigned long startbyte)
+static void getdfname(const char b[], uint32_t b_len, uint32_t m,
+                uint32_t startbyte)
 {
-   unsigned long n;
-   unsigned long u;
-   unsigned long v;
+   uint32_t n;
+   uint32_t u;
+   uint32_t v;
    char s[101];
    v = bits2val(b, b_len, 0UL, 8UL);
    if (v==startbyte) {
@@ -2358,7 +2364,7 @@ static void getdfname(const char b[], unsigned long b_len, unsigned long m,
             killdfid(m);
             if (verb) osi_WrStr(" NEW ID LOW ", 13ul);
          }
-         chan[m].dfm6.idnew = (unsigned long)((unsigned long)
+         chan[m].dfm6.idnew = (uint32_t)((uint32_t)
                 chan[m].dfm6.idnew&0xFFFF0000UL)+v;
       }
       else if (u==0UL) {
@@ -2373,7 +2379,7 @@ static void getdfname(const char b[], unsigned long b_len, unsigned long m,
             killdfid(m);
             if (verb) osi_WrStr(" NEW ID HIGH ", 14ul);
          }
-         chan[m].dfm6.idnew = (unsigned long)((unsigned long)
+         chan[m].dfm6.idnew = (uint32_t)((uint32_t)
                 chan[m].dfm6.idnew&0xFFFFUL)+v*65536UL;
       }
       if (dfidok(m)) {
@@ -2399,11 +2405,11 @@ static void getdfname(const char b[], unsigned long b_len, unsigned long m,
 } /* end getdfname() */
 
 
-static void decodeframe6(unsigned long m)
+static void decodeframe6(uint32_t m)
 {
-   unsigned long j;
-   unsigned long i;
-   unsigned long rt;
+   uint32_t j;
+   uint32_t i;
+   uint32_t rt;
    char s[101];
    char tx;
    struct DFM6 * anonym;
@@ -2509,13 +2515,13 @@ static void decodeframe6(unsigned long m)
 } /* end decodeframe6() */
 
 
-static void demodbyte6(unsigned long m, char d)
+static void demodbyte6(uint32_t m, char d)
 {
    /*  WrInt(ORD(d),1); */
    struct DFM6 * anonym;
    { /* with */
       struct DFM6 * anonym = &chan[m].dfm6;
-      anonym->synword = anonym->synword*2UL+(unsigned long)d;
+      anonym->synword = anonym->synword*2UL+(uint32_t)d;
       if (anonym->rxp>=264UL) {
          if ((anonym->synword&65535UL)==17871UL) anonym->rxp = 0UL;
          else if ((anonym->synword&65535UL)==47664UL) {
@@ -2533,7 +2539,7 @@ static void demodbyte6(unsigned long m, char d)
 } /* end demodbyte6() */
 
 
-static void demodbit6(unsigned long m, float u, float u0)
+static void demodbit6(uint32_t m, float u, float u0)
 {
    char d;
    float ua;
@@ -2553,14 +2559,15 @@ static void demodbit6(unsigned long m, float u, float u0)
          /*quality*/
          ua = (float)fabs(u-u0)-anonym->bitlev;
          anonym->bitlev = anonym->bitlev+ua*0.005f;
-         anonym->noise = anonym->noise+((float)fabs(ua)-anonym->noise)*0.02f;
+         anonym->noise = anonym->noise+((float)fabs(ua)-anonym->noise)
+                *0.02f;
       }
    }
 /*quality*/
 } /* end demodbit6() */
 
 
-static void demod6(float u, unsigned long m)
+static void demod6(float u, uint32_t m)
 {
    char d;
    struct DFM6 * anonym;
@@ -2588,18 +2595,18 @@ static void demod6(float u, unsigned long m)
 } /* end demod6() */
 
 
-static void Fsk6(unsigned long m)
+static void Fsk6(uint32_t m)
 {
    float ff;
-   long lim;
+   int32_t lim;
    struct DFM6 * anonym;
    { /* with */
       struct DFM6 * anonym = &chan[m].dfm6;
-      lim = (long)anonym->demodbaud;
+      lim = (int32_t)anonym->demodbaud;
       for (;;) {
          if (anonym->baudfine>=65536L) {
             anonym->baudfine -= 65536L;
-            ff = Fir(afin, (unsigned long)((anonym->baudfine&65535L)/4096L),
+            ff = Fir(afin, (uint32_t)((anonym->baudfine&65535L)/4096L),
                 16UL, chan[m].afir, 32ul, anonym->afirtab, 512ul);
             demod6(ff, m);
          }
@@ -2612,12 +2619,12 @@ static void Fsk6(unsigned long m)
 
 /*------------------------------ C34 C50 */
 
-static void demodframe34(unsigned long channel)
+static void demodframe34(uint32_t channel)
 {
-   unsigned long val;
-   unsigned long sum2;
-   unsigned long sum1;
-   unsigned long i;
+   uint32_t val;
+   uint32_t sum2;
+   uint32_t sum1;
+   uint32_t i;
    double hr;
    char s[101];
    char ok0;
@@ -2629,13 +2636,13 @@ static void demodframe34(unsigned long channel)
       sum1 = 0UL;
       sum2 = 65791UL;
       for (i = 2UL; i<=6UL; i++) {
-         sum1 += (unsigned long)(unsigned char)anonym->rxbuf[i];
-         sum2 -= (unsigned long)(unsigned char)anonym->rxbuf[i]*(7UL-i);
+         sum1 += (uint32_t)(uint8_t)anonym->rxbuf[i];
+         sum2 -= (uint32_t)(uint8_t)anonym->rxbuf[i]*(7UL-i);
       } /* end for */
       sum1 = sum1&255UL;
       sum2 = sum2&255UL;
-      ok0 = sum1==(unsigned long)(unsigned char)
-                anonym->rxbuf[7U] && sum2==(unsigned long)(unsigned char)
+      ok0 = sum1==(uint32_t)(uint8_t)
+                anonym->rxbuf[7U] && sum2==(uint32_t)(uint8_t)
                 anonym->rxbuf[8U];
       if (anonym->tused+3600UL<osic_time()) {
          anonym->id34.id[0U] = 0; /* timed out context */
@@ -2658,25 +2665,24 @@ static void demodframe34(unsigned long channel)
          WrQuali(noiselevel(channel));
          Wrtune(chan[channel].adcdc, chan[channel].adcmax);
          osi_WrStr(" [", 3ul);
-         osi_WrHex((unsigned long)(unsigned char)anonym->rxbuf[2U], 2UL);
+         osi_WrHex((uint32_t)(uint8_t)anonym->rxbuf[2U], 2UL);
          osi_WrStr(" ", 2ul);
-         osi_WrHex((unsigned long)(unsigned char)anonym->rxbuf[3U], 2UL);
-         osi_WrHex((unsigned long)(unsigned char)anonym->rxbuf[4U], 2UL);
-         osi_WrHex((unsigned long)(unsigned char)anonym->rxbuf[5U], 2UL);
-         osi_WrHex((unsigned long)(unsigned char)anonym->rxbuf[6U], 2UL);
+         osi_WrHex((uint32_t)(uint8_t)anonym->rxbuf[3U], 2UL);
+         osi_WrHex((uint32_t)(uint8_t)anonym->rxbuf[4U], 2UL);
+         osi_WrHex((uint32_t)(uint8_t)anonym->rxbuf[5U], 2UL);
+         osi_WrHex((uint32_t)(uint8_t)anonym->rxbuf[6U], 2UL);
          osi_WrStr(" ", 2ul);
-         osi_WrHex((unsigned long)(unsigned char)anonym->rxbuf[7U], 2UL);
-         osi_WrHex((unsigned long)(unsigned char)anonym->rxbuf[8U], 2UL);
+         osi_WrHex((uint32_t)(uint8_t)anonym->rxbuf[7U], 2UL);
+         osi_WrHex((uint32_t)(uint8_t)anonym->rxbuf[8U], 2UL);
          osi_WrStr("] ", 3ul);
       }
       if (ok0) {
          /* chksum ok */
-         val = (unsigned long)(unsigned char)
-                anonym->rxbuf[6U]+(unsigned long)(unsigned char)
-                anonym->rxbuf[5U]*256UL+(unsigned long)(unsigned char)
-                anonym->rxbuf[4U]*65536UL+(unsigned long)(unsigned char)
+         val = (uint32_t)(uint8_t)anonym->rxbuf[6U]+(uint32_t)
+                (uint8_t)anonym->rxbuf[5U]*256UL+(uint32_t)(uint8_t)
+                anonym->rxbuf[4U]*65536UL+(uint32_t)(uint8_t)
                 anonym->rxbuf[3U]*16777216UL;
-         hr = (double)*X2C_CAST(&val,unsigned long,float,float *);
+         hr = (double)*X2C_CAST(&val,uint32_t,float,float *);
          if (anonym->c50) {
             if (anonym->id50.idtime+3600UL<osic_time()) {
                anonym->id50.id[0U] = 0;
@@ -2730,8 +2736,8 @@ static void demodframe34(unsigned long channel)
             case '\024':
                if (verb) {
                   osi_WrStr("date", 5ul);
-                  aprsstr_IntToStr((long)(val%1000000UL+1000000UL), 1UL, s,
-                101ul);
+                  aprsstr_IntToStr((int32_t)(val%1000000UL+1000000UL), 1UL,
+                 s, 101ul);
                   s[0U] = ' ';
                   osi_WrStr(s, 101ul);
                }
@@ -2813,8 +2819,9 @@ static void demodframe34(unsigned long channel)
                   osic_WrFixed((float)hr, 2L, 10UL);
                   osi_WrStr(" ", 2ul);
                   for (i = 31UL;; i--) {
-                     osi_WrStr((char *)(tmp = (char)(48UL+(unsigned long)
-                X2C_IN(i,32,(unsigned long)val)),&tmp), 1u/1u);
+                     osi_WrStr((char *)(tmp = (char)
+                (48UL+(uint32_t)X2C_IN(i,32,(uint32_t)val)),&tmp),
+                1u/1u);
                      if (i==0UL) break;
                   } /* end for */
                }
@@ -2851,8 +2858,8 @@ static void demodframe34(unsigned long channel)
             case '\024':
                if (verb) {
                   osi_WrStr("date", 5ul);
-                  aprsstr_IntToStr((long)(val%1000000UL+1000000UL), 1UL, s,
-                101ul);
+                  aprsstr_IntToStr((int32_t)(val%1000000UL+1000000UL), 1UL,
+                 s, 101ul);
                   s[0U] = ' ';
                   osi_WrStr(s, 101ul);
                }
@@ -3017,14 +3024,14 @@ static void demodframe34(unsigned long channel)
 } /* end demodframe34() */
 
 
-static void demodbit34(unsigned long channel, char d)
+static void demodbit34(uint32_t channel, char d)
 {
    /*IF NOT verb THEN WrInt(ORD(d),1); END; */
    struct C34 * anonym;
    d = !d;
    { /* with */
       struct C34 * anonym = &chan[channel].c34;
-      anonym->rxbytec = anonym->rxbytec*2UL+(unsigned long)d;
+      anonym->rxbytec = anonym->rxbytec*2UL+(uint32_t)d;
       if ((anonym->rxbytec&268435455UL)==234942462UL) {
          /* c34 1110 0000 0000 1110 1111 1111 1110*/
          anonym->c50 = 0;
@@ -3063,7 +3070,7 @@ static void demodbit34(unsigned long channel, char d)
 } /* end demodbit34() */
 
 
-static void demod34(float u, unsigned long channel)
+static void demod34(float u, uint32_t channel)
 {
    char d;
    struct C34 * anonym;
@@ -3091,7 +3098,7 @@ static void demod34(float u, unsigned long channel)
 } /* end demod34() */
 
 
-static void Afsk(unsigned long channel)
+static void Afsk(uint32_t channel)
 {
    float ff;
    float b;
@@ -3106,13 +3113,13 @@ static void Afsk(unsigned long channel)
                  512ul);
       if (anonym->left<0.0f!=right<0.0f) {
          d = X2C_DIVR(anonym->left,anonym->left-right);
-         a = (float)(unsigned long)X2C_TRUNCC(d*16.0f+0.5f,0UL,
+         a = (float)(uint32_t)X2C_TRUNCC(d*16.0f+0.5f,0UL,
                 X2C_max_longcard);
          b = a*0.0625f;
-         if ((unsigned long)X2C_TRUNCC(a,0UL,
-                X2C_max_longcard)>0UL && (unsigned long)X2C_TRUNCC(a,0UL,
+         if ((uint32_t)X2C_TRUNCC(a,0UL,
+                X2C_max_longcard)>0UL && (uint32_t)X2C_TRUNCC(a,0UL,
                 X2C_max_longcard)<16UL) {
-            mid = Fir(afin, 16UL-(unsigned long)X2C_TRUNCC(a,0UL,
+            mid = Fir(afin, 16UL-(uint32_t)X2C_TRUNCC(a,0UL,
                 X2C_max_longcard), 16UL, chan[channel].afir, 32ul,
                 anonym->afirtab, 512ul);
             if (anonym->left<0.0f!=mid<0.0f) {
@@ -3129,14 +3136,13 @@ static void Afsk(unsigned long channel)
       anonym->left = right;
       anonym->dfir[anonym->dfin] = anonym->freq-anonym->afskmidfreq;
       anonym->dfin = anonym->dfin+1UL&63UL;
-      anonym->baudfine += (long)anonym->demodbaud;
+      anonym->baudfine += (int32_t)anonym->demodbaud;
       if (anonym->baudfine>=65536L) {
          anonym->baudfine -= 65536L;
          if (anonym->baudfine<65536L) {
             /* normal alway true */
-            ff = Fir(anonym->dfin,
-                (unsigned long)(16L-anonym->baudfine/4096L), 16UL,
-                anonym->dfir, 64ul, anonym->dfirtab, 1024ul);
+            ff = Fir(anonym->dfin, (uint32_t)(16L-anonym->baudfine/4096L),
+                16UL, anonym->dfir, 64ul, anonym->dfirtab, 1024ul);
             demod34(ff, channel);
          }
       }
@@ -3146,14 +3152,14 @@ static void Afsk(unsigned long channel)
 
 static void getadc(void)
 {
-   long sl;
-   long l;
-   long max0[64];
-   long min0[64];
-   unsigned long ch;
-   unsigned long c;
+   int32_t sl;
+   int32_t l;
+   int32_t max0[64];
+   int32_t min0[64];
+   uint32_t ch;
+   uint32_t c;
    struct CHAN * anonym;
-   unsigned long tmp;
+   uint32_t tmp;
    c = 0UL;
    do {
       if (adcbufrd>=adcbufsamps) {
@@ -3170,7 +3176,7 @@ static void getadc(void)
             }
          }
          if (l<2L) return;
-         adcbufsamps = (unsigned long)(l/2L);
+         adcbufsamps = (uint32_t)(l/2L);
          if (debfd>=0L) {
             osi_WrBin(debfd, (char *)adcbuf, 8192u/1u, adcbufsamps*2UL);
          }
@@ -3186,7 +3192,7 @@ static void getadc(void)
          } /* end for */
          adcbufsampx = X2C_max_longcard;
       }
-      sl = (long)adcbuf[adcbufrd];
+      sl = (int32_t)adcbuf[adcbufrd];
       if (cfgchannels==0UL && (sl&1)) {
          /* auto channels channel 0 */
          /*WrInt(lastc, 1); WrStrLn(" ch1"); */
@@ -3207,7 +3213,7 @@ static void getadc(void)
          adcbufsampx = adcbufrd;
          c = 0UL;
       }
-      sl = (long)((unsigned long)sl&0xFFFFFFFEUL);
+      sl = (int32_t)((uint32_t)sl&0xFFFFFFFEUL);
       if (sl==0L) ++chan[c].squelch;
       else chan[c].squelch = 0UL;
       sl -= chan[c].adcdc;
@@ -3234,16 +3240,16 @@ static void getadc(void)
    } /* end for */
 } /* end getadc() */
 
-static unsigned short sondeudp_POLY = 0x1021U;
+static uint16_t sondeudp_POLY = 0x1021U;
 
 
 static void Gencrctab(void)
 {
-   unsigned short j;
-   unsigned short i;
-   unsigned short crc;
+   uint16_t j;
+   uint16_t i;
+   uint16_t crc;
    for (i = 0U; i<=255U; i++) {
-      crc = (unsigned short)(i*256U);
+      crc = (uint16_t)(i*256U);
       for (j = 0U; j<=7U; j++) {
          if ((0x8000U & crc)) crc = X2C_LSH(crc,16,1)^0x1021U;
          else crc = X2C_LSH(crc,16,1);
