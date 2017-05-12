@@ -1197,7 +1197,8 @@ red Button during this Mode
 |7905 If a selected object gets to be zoomed to
 fit in screen, zooming is done as far as
 Maps in full resolution are in Cache else 
-You get a black map and download starts
+You get a black map and, if enabled,
+download starts
 
 |7900 Enable to get a message if an object
 approaches and is in the configured
