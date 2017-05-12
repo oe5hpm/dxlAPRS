@@ -101,16 +101,7 @@ CFLAGS		+= -I$(EXTLIB)
 LFLAGS		+=
 # -------------------------- x86_64 specific -----------------------------------
 else ifeq ($(HOSTARCH), x86_64)
-ifeq ($(HOSTOS), Darwin)
-EXTLIB		= lib_x86mac/
-else
-EXTLIB		= lib_x86/
-endif
-XLIBS		= $(EXTLIB)libz.a \
-			  $(EXTLIB)libjpeg.a \
-			 -lpng -lXext -lX11
-CFLAGS		+= -m32
-LFLAGS		+= -m32
+XLIBS		= -lpng -ljpeg -lXext -lX11
 # -------------------------- x86_32 (default) specific ------------------------
 else ifeq ($(HOSTARCH), x86)
 EXTLIB		= lib_x86/
