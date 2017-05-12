@@ -47,15 +47,15 @@ endif
 .SUFFIXES:
 	MAKEFLAGS += -r
 
-CC			= $(CROSS_COMPILE)gcc
+CC		= $(CROSS_COMPILE)gcc
 STRIP		= $(CROSS_COMPILE)strip
 INCL		= .
 ifeq ($(GCCVERSION_GE4),true)
 CDEFS		= -Wall \
-			  -Wno-unused-variable -Wno-parentheses -Wno-pointer-sign \
-			  -Wno-format -Wno-return-type -Wno-char-subscripts \
-			  -Wno-uninitialized \
-			  -Werror=implicit-function-declaration
+		  -Wno-unused-variable -Wno-parentheses -Wno-pointer-sign \
+		  -Wno-format -Wno-return-type -Wno-char-subscripts \
+		  -Wno-uninitialized \
+		  -Werror=implicit-function-declaration
 else
 CDEFS		= -w
 endif
@@ -71,20 +71,20 @@ endif
 ifeq ($(PLATFORM), armv6tce)
 EXTLIB  	= lib_armv6/
 XLIBS		= $(EXTLIB)libpng15/libpng.a \
-			  $(EXTLIB)libz.a \
-			  $(EXTLIB)libjpeg.a \
-			  $(EXTLIB)libxcb.so.1 $(EXTLIB)libXdmcp.so.6 $(EXTLIB)libXau.so.6 \
-			  -L$(EXTLIB) -lXext -lX11
+		  $(EXTLIB)libz.a \
+		  $(EXTLIB)libjpeg.a \
+		  $(EXTLIB)libxcb.so.1 $(EXTLIB)libXdmcp.so.6 $(EXTLIB)libXau.so.6 \
+		  -L$(EXTLIB) -lXext -lX11
 CFLAGS		+= -march=armv6zk -mfpu=vfp -mfloat-abi=hard -mcpu=arm1176jzf-s
 CFLAGS		+= -Ilib_armv6/libpng15/ -I$(EXTLIB) -I.
 LFLAGS		+=
 else ifeq ($(PLATFORM), armv6)
 EXTLIB  	= lib_armv6/
 XLIBS		= $(EXTLIB)libpng16/libpng.a \
-			  $(EXTLIB)libz.a \
-			  $(EXTLIB)libjpeg.a \
-			  $(EXTLIB)libxcb.so.1 $(EXTLIB)libXdmcp.so.6 $(EXTLIB)libXau.so.6 \
-			  -L$(EXTLIB) -lXext -lX11
+		  $(EXTLIB)libz.a \
+		  $(EXTLIB)libjpeg.a \
+		  $(EXTLIB)libxcb.so.1 $(EXTLIB)libXdmcp.so.6 $(EXTLIB)libXau.so.6 \
+		  -L$(EXTLIB) -lXext -lX11
 CFLAGS		+= -march=armv6zk -mfpu=vfp -mfloat-abi=hard -mcpu=arm1176jzf-s
 CFLAGS		+= -Ilib_armv6/libpng16/ -I$(EXTLIB) -I.
 LFLAGS		+=
@@ -92,10 +92,10 @@ LFLAGS		+=
 else ifeq ($(PLATFORM), armv7hf)
 EXTLIB		= lib_armv7hf/
 XLIBS		= $(EXTLIB)libpng.a \
-			  $(EXTLIB)libz.a \
-			  $(EXTLIB)libjpeg.a \
-			  $(EXTLIB)libxcb.so $(EXTLIB)libXdmcp.so $(EXTLIB)libXau.so \
-			  -L$(EXTLIB) -lXext -lX11
+		  $(EXTLIB)libz.a \
+		  $(EXTLIB)libjpeg.a \
+		  $(EXTLIB)libxcb.so $(EXTLIB)libXdmcp.so $(EXTLIB)libXau.so \
+		  -L$(EXTLIB) -lXext -lX11
 CFLAGS		+= -march=armv7-a -mfpu=neon -mfloat-abi=hard
 CFLAGS		+= -I$(EXTLIB)
 LFLAGS		+=
@@ -106,8 +106,8 @@ XLIBS		= -lpng -ljpeg -lXext -lX11
 else ifeq ($(HOSTARCH), x86)
 EXTLIB		= lib_x86/
 XLIBS		= $(EXTLIB)libz.a \
-			  $(EXTLIB)libjpeg.a \
-			  -lpng -lXext -lX11
+		  $(EXTLIB)libjpeg.a \
+		  -lpng -lXext -lX11
 else
 XLIBS		+= -lpng -ljpeg -lXext -lX11
 endif
@@ -162,7 +162,7 @@ OBJ_APRSMAP	= \
 	useri.o \
 	xosi.o
 
-OBJ_SDRTST		= tcpb.o sdr.o sdrtest.o
+OBJ_SDRTST	= tcpb.o sdr.o sdrtest.o
 OBJ_SDRRADIO	= tcpb.o sdr.o radio.o
 OBJ_L2CAT	= l2.o frameio.o deflate.o Execlogin.o cleanup.o l2cat.o
 
