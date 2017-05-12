@@ -1,7 +1,7 @@
 
 #include <png.h>
 
-int readpng(char *fn, png_bytep *row_pointers, int *maxx, int *maxy, int *maxxbyte)  /* file is already open */
+int32_t readpng(char *fn, png_bytep *row_pointers, int32_t *maxx, int32_t *maxy, int32_t *maxxbyte)  /* file is already open */
 {
    png_structp png_ptr;
    png_infop info_ptr;

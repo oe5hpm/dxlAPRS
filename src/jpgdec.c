@@ -6,6 +6,7 @@
  * SPDX-License-Identifier:	GPL-2.0+
  */
 #include <stdio.h>
+#include <stdlib.h>
 #include "jpeglib.h"
 #include <setjmp.h>
 #include <string.h>
@@ -31,7 +32,7 @@ METHODDEF(void) my_error_exit (j_common_ptr cinfo)
   longjmp(myerr->setjmp_buffer, 1);
 }
 
-int readjpg(char *fn, JSAMPARRAY *row_pointers, int *maxx, int *maxy, int *maxxbyte)
+int32_t readjpg(char *fn, JSAMPARRAY *row_pointers, int32_t *maxx, int32_t *maxy, int32_t *maxxbyte)
 {
   struct jpeg_decompress_struct cinfo;
   struct my_error_mgr jerr;

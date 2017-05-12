@@ -9,7 +9,7 @@
 #define jpgdec_H_
 #include "X2C.h"
 
-extern long readjpg(char [], X2C_ADDRESS [], long *, long *, long *);
+extern int32_t readjpg(char [], X2C_ADDRESS [], int32_t *, int32_t *, int32_t *);
 
 
 #endif /* jpgdec_H_ */
