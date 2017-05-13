@@ -1,5 +1,6 @@
 
 #include <png.h>
+#include <stdint.h>
 
 int32_t readpng(char *fn, png_bytep *row_pointers, int32_t *maxx, int32_t *maxy, int32_t *maxxbyte)  /* file is already open */
 {
