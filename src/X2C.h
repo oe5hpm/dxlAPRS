@@ -22,7 +22,7 @@
 
 #define X2C_ADDRESS			char *
 #define X2C_pCHAR			char *
-#define X2C_LSET_SIZE			(sizeof(unsigned long) * 8)
+#define X2C_LSET_SIZE			(sizeof(uint32_t) * 8)
 
 #define X2C_max_longint			0x7FFFFFFFL
 #define X2C_min_longint			(-0x7FFFFFFFL-1)
