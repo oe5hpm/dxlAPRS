@@ -9,7 +9,7 @@
 #define pngread_H_
 #include "X2C.h"
 
-extern int32_t readpng(char [], X2C_ADDRESS [], int32_t *, int32_t *, int32_t *);
+extern int32_t readpng(char [], X2C_ADDRESS [], int32_t *, int32_t  *, int32_t  *);
 
 
 #endif /* pngread_H_ */

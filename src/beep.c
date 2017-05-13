@@ -25,12 +25,12 @@ int ret;
 
 #ifndef MACOS
   /* Not supported on MacOS */
-  if (ioctl(fd, KIOCSOUND, 1193180/hz)>=0) 
+  if (ioctl(fd, KIOCSOUND, 1193180/hz)>=0)
     {
-     usleep(ms*1000); 
+     usleep(ms*1000);
      ioctl(fd, KIOCSOUND, 0);
      ret=0;
-    } 
+    }
 #endif
   close(fd);
   return ret;

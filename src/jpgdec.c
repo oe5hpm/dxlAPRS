@@ -5,8 +5,8 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
+#include "X2C.h"
 #include <stdio.h>
-#include <stdlib.h>
 #include "jpeglib.h"
 #include <setjmp.h>
 #include <string.h>

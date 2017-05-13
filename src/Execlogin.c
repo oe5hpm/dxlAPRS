@@ -5,7 +5,7 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
-/* "@(#)Execlogin.c Jan  5 21:54:45 2017" */
+/* "@(#)Execlogin.c May 11  0:17:50 2017" */
 
 
 #define X2C_int32

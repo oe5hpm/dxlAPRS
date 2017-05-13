@@ -83,18 +83,18 @@ int selectrwt(long *sec, long *usec)
   s = spec2.tv_sec-spec1.tv_sec;
   us = spec2.tv_usec - spec1.tv_usec;
   if (us < 0) {
-	  us += 1000000;
-	  s -= 1;
+          us += 1000000;
+          s -= 1;
   }
   *sec -= s;
   *usec -= us;
   if (*usec < 0) {
-	  *usec += 1000000;
-	  *sec -= 1;
+          *usec += 1000000;
+          *sec -= 1;
   }
   if (*sec < 0) {
-	  *sec = 0;
-	  *usec = 0;
+          *sec = 0;
+          *usec = 0;
   }
 #else
   *sec = tv.tv_sec;
