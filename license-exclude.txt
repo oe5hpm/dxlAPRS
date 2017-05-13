@@ -38,4 +38,18 @@ jpgdec.c
 Select.c
 xosic.h
 rsc_decode.c
+Select.h
+beep.h
+cleanup.c
+cleanup.h
+jpgdec.h
+pngread.h
+pngwrite.h
+tcp.h
+udp.h
+udprfnet.c
+soundctl.h
+rsc.c
+rsc.h
+mlib.h
 
