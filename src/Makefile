@@ -102,12 +102,19 @@ LFLAGS		+=
 # -------------------------- x86_64 specific -----------------------------------
 else ifeq ($(HOSTARCH), x86_64)
 XLIBS		= -lpng -ljpeg -lXext -lX11
+APRSMAP_STATIC	= aprsmap-$(HOSTARCH)
+ifeq ($(PLATFORM), x86_32)
+	CFLAGS	+= -m32
+	LFLAGS	+= -m32
+	APRSMAP_STATIC	= aprsmap-x86
+endif
 # -------------------------- x86_32 (default) specific ------------------------
 else ifeq ($(HOSTARCH), x86)
 EXTLIB		= lib_x86/
 XLIBS		= $(EXTLIB)libz.a \
 		  $(EXTLIB)libjpeg.a \
 		  -lpng -lXext -lX11
+APRSMAP_STATIC	= aprsmap-$(HOSTARCH)
 else
 XLIBS		+= -lpng -ljpeg -lXext -lX11
 endif
@@ -246,11 +253,16 @@ udphub: $(OBJ_UDPHUB) $(OBJ_COMMON)
 	$(CC) $(LFLAGS) -o udphub $(OBJ_COMMON) $(OBJ_UDPHUB) -lm
 	$(STRIP) udphub $(STRIPFLAGS)
 
+aprsmap-static: $(OBJ_APRSMAP) $(OBJ_COMMON)
+	$(CC) $(LFLAGS) -o $(APRSMAP_STATIC) $(OBJ_APRSMAP) $(OBJ_COMMON) \
+	$(XLIBS) -lpthread -lxcb -lXau -lXdmcp -lm -lpthread -ldl -lz \
+	-static
+	$(STRIP) $(APRSMAP_STATIC) $(STRIPFLAGS)
 aprsmap : $(OBJ_APRSMAP) $(OBJ_COMMON)
 	$(CC) $(LFLAGS) -o aprsmap $(OBJ_APRSMAP) $(OBJ_COMMON) $(XLIBS) -lm
 	$(STRIP) aprsmap $(STRIPFLAGS)
 aprsmap-cleanobj:
-	rm -f $(OBJ_APRSMAP)
+	rm -f $(OBJ_APRSMAP) $(OBJ_COMMON)
 
 sdrtst : $(OBJ_SDRTST) $(OBJ_COMMON)
 	$(CC) $(LFLAGS) -o sdrtst $(OBJ_SDRTST) $(OBJ_COMMON) -lm

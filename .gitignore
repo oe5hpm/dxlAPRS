@@ -9,6 +9,8 @@ src/udphub
 src/udpflex
 src/gps2aprs
 src/aprsmap
+src/aprsmap-x86
+src/aprsmap-x86_64
 src/udprfnet
 src/gps2digipos
 src/sondemod
