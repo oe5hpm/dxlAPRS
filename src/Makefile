@@ -184,6 +184,7 @@ TARGETS = \
 	sondemod \
 	sondeudp \
 	aprsmap \
+	aprsmap-static \
 	sdrtst \
 	sdrradio
 
