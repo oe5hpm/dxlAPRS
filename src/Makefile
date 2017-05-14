@@ -101,6 +101,7 @@ CFLAGS		+= -I$(EXTLIB)
 LFLAGS		+=
 # -------------------------- x86_64 specific -----------------------------------
 else ifeq ($(HOSTARCH), x86_64)
+TARGETS		= aprsmap-static
 XLIBS		= -lpng -ljpeg -lXext -lX11
 APRSMAP_STATIC	= aprsmap-$(HOSTARCH)
 ifeq ($(PLATFORM), x86_32)
@@ -110,6 +111,7 @@ ifeq ($(PLATFORM), x86_32)
 endif
 # -------------------------- x86_32 (default) specific ------------------------
 else ifeq ($(HOSTARCH), x86)
+TARGETS		= aprsmap-static
 EXTLIB		= lib_x86/
 XLIBS		= $(EXTLIB)libz.a \
 		  $(EXTLIB)libjpeg.a \
@@ -173,7 +175,7 @@ OBJ_SDRTST	= tcpb.o sdr.o sdrtest.o
 OBJ_SDRRADIO	= tcpb.o sdr.o radio.o
 OBJ_L2CAT	= l2.o frameio.o deflate.o Execlogin.o cleanup.o l2cat.o
 
-TARGETS = \
+TARGETS += \
 	afskmodem \
 	gps2aprs \
 	gps2digipos \
@@ -184,7 +186,6 @@ TARGETS = \
 	sondemod \
 	sondeudp \
 	aprsmap \
-	aprsmap-static \
 	sdrtst \
 	sdrradio
 
