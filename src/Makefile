@@ -216,7 +216,7 @@ OBJS = \
 all: $(TARGETS)
 
 clean:
-	rm -f $(OBJS) $(TARGETS)
+	rm -f $(OBJS) $(TARGETS) aprsmap-x86 aprsmap-x86_64
 
 afskmodem: $(OBJ_AFSKMODEM) $(OBJ_COMMON)
 	$(CC) $(LFLAGS) -o afskmodem $(OBJ_COMMON) $(OBJ_AFSKMODEM) -lm
