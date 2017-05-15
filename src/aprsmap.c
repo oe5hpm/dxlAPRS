@@ -105,8 +105,6 @@ struct TABS {
 
 static char logdone;
 
-static char quit;
-
 static maptool_pIMAGE image;
 
 static maptool_pIMAGE rfimg;
@@ -5049,7 +5047,7 @@ map.y4m", 8ul);
       else if (aprsdecode_click.cmd=='7') useri_Setmap(0UL);
       else if (aprsdecode_click.cmd=='8') useri_Setmap(1UL);
       else if (aprsdecode_click.cmd=='9') useri_Setmap(2UL);
-      else if (aprsdecode_click.cmd=='Q') quit = 1;
+      else if (aprsdecode_click.cmd=='Q') aprsdecode_quit = 1;
       else if (aprsdecode_click.cmd=='e') aprsdecode_click.dryrun = 0;
       else if (aprsdecode_click.cmd=='\216' && aprsdecode_click.cmdatt) {
          importlog(aprsdecode_click.cmdatt);
@@ -5160,7 +5158,9 @@ static void killsave(int32_t);
 
 static void killsave(int32_t signum)
 {
-   if (!quit && useri_configon(useri_fAUTOSAVE)) useri_saveconfig();
+   if (!aprsdecode_quit && useri_configon(useri_fAUTOSAVE)) {
+      useri_saveconfig();
+   }
    osi_WrStr("exit ", 6ul);
    osic_WrINT32((uint32_t)signum, 0UL);
    osi_WrStrLn("!", 2ul);
@@ -5326,7 +5326,7 @@ extern int main(int argc, char **argv)
    xosi_Gammatab(aprsdecode_lums.gamma);
    aprsdecode_realtime = osic_time();
    useri_initmenus();
-   quit = 0;
+   aprsdecode_quit = 0;
    aprsdecode_tracenew.winevent = 1UL;
    aprsdecode_posinval(&newpos0);
    aprsdecode_posinval(&newpos1);
@@ -5338,7 +5338,7 @@ extern int main(int argc, char **argv)
       aprsdecode_rxidle = 0UL;
       useri_refresh = 1;
       aprsdecode_lastlooped = aprsdecode_realtime;
-      while (!quit) {
+      while (!aprsdecode_quit) {
          MainEvent();
          xosi_Eventloop(250000UL);
       }

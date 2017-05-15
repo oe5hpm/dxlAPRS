@@ -86,6 +86,7 @@ uint32_t aprsdecode_systime;
 uint32_t aprsdecode_realtime;
 uint32_t aprsdecode_lastlooped;
 uint32_t aprsdecode_rxidle;
+char aprsdecode_quit;
 char aprsdecode_verb;
 
 
