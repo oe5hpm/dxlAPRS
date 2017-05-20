@@ -174,6 +174,7 @@ OBJ_APRSMAP	= \
 OBJ_SDRTST	= tcpb.o sdr.o sdrtest.o
 OBJ_SDRRADIO	= tcpb.o sdr.o radio.o
 OBJ_L2CAT	= l2.o frameio.o deflate.o Execlogin.o cleanup.o l2cat.o
+OBJ_ADSB2APRS	= adsb2aprs.o tcpb.o
 
 TARGETS += \
 	afskmodem \
@@ -187,7 +188,8 @@ TARGETS += \
 	sondeudp \
 	aprsmap \
 	sdrtst \
-	sdrradio
+	sdrradio \
+	adsb2aprs
 
 ifneq ($(HOSTOS), Darwin)
 	TARGETS += l2cat
@@ -207,7 +209,9 @@ OBJS = \
 	$(OBJ_APRSMAP) \
 	$(OBJ_SDRTST) \
 	$(OBJ_SDRRADIO) \
-        $(OBJ_L2CAT)
+        $(OBJ_L2CAT)	\
+        $(OBJ_ADSB2APRS)
+
 # ------------------- target make rules -------------------
 #                     -----------------
 %.o: %.c
@@ -277,6 +281,10 @@ sdrradio : $(OBJ_SDRRADIO) $(OBJ_COMMON)
 l2cat : $(OBJ_L2CAT) $(OBJ_COMMON)
 	$(CC) $(LFLAGS) -o l2cat $(OBJ_L2CAT) $(OBJ_COMMON) -lm
 	$(STRIP) l2cat $(STRIPFLAGS)
+
+adsb2aprs: $(OBJ_ADSB2APRS) $(OBJ_COMMON)
+	$(CC) $(LFLAGS) -o adsb2aprs $(OBJ_ADSB2APRS) $(OBJ_COMMON) -lm
+	$(STRIP) adsb2aprs $(STRIPFLAGS)
 
 diag:
 	echo $(HOSTARCH)
