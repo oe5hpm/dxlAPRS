@@ -766,8 +766,8 @@ static void sendaudio(int32_t pcm0, char pcm80, uint32_t ch)
    else if (pcm0<-32767L) pcm0 = -32767L;
    if (pcm80) sndbuf8[sndw] = (uint8_t)((uint32_t)(pcm0+32768L)/256UL);
    else {
+      /* code data in watermark */
       /*
-      -- code data in watermark
           IF watermark THEN
             pcm:=CAST(INTEGER, CAST(SET32, pcm)*SET32{2..15}
                 );            (* use bit 1 *)
@@ -781,11 +781,14 @@ static void sendaudio(int32_t pcm0, char pcm80, uint32_t ch)
                 IF wb=SET32{0}) THEN DEC(waterp) END;                     (* next 9 bit word *)
               END;
             END;
-          ELSE pcm:=CAST(INTEGER, CAST(SET32, pcm)*SET32{1..15}) END;
-          IF ch=0 THEN INC(pcm) END;
-                (* set bit 0 on chanel 0 *)
-      -- code data in watermark
+          ELSE
       */
+      pcm0 = (int32_t)((uint32_t)pcm0&0xFFFEUL);
+      /*
+          END;
+      */
+      if (ch==0UL) ++pcm0;
+      /* code data in watermark */
       sndbuf[sndw] = (short)pcm0;
    }
    ++sndw;
