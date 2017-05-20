@@ -11176,7 +11176,10 @@ static void mouseleft(int32_t mousx, int32_t mousy)
          useri_killallmenus();
       }
       else if (c=='o') aprsdecode_click.cmd = c;
-      else if (c=='Q') aprsdecode_click.cmd = c;
+      else if (c=='Q') {
+         aprsdecode_click.cmd = c;
+         aprsdecode_quit = 1;
+      }
       else if (c=='\010') aprsdecode_click.cmd = c;
       else if (c=='X') aprsdecode_click.cmd = c;
       else if (c=='Y') aprsdecode_click.cmd = c;
@@ -11295,9 +11298,7 @@ static void mouseleft(int32_t mousx, int32_t mousy)
          else if (knob==3UL) {
             toggcfg(useri_fCLICKSYM, 'C', "uA+CFGHEARD+XY.=", 17ul);
          }
-         else if (knob==4UL) {
-            toggcfg(useri_fCLICKSYM, 'u', "AC", 3ul);
-         }
+         else if (knob==4UL) toggcfg(useri_fCLICKSYM, 'u', "AC", 3ul);
          else if (knob==5UL) toggcfg(useri_fCLICKSYM, 'A', "", 1ul);
          else if (knob==6UL) {
             toggcfg(useri_fCLICKSYM, '.', "AC+CFGHEARD+XY=", 16ul);
@@ -11527,7 +11528,9 @@ static void mouseleft(int32_t mousx, int32_t mousy)
                expandtogg();
                aprsdecode_click.cmd = ' ';
             }
-            else maploadtogg();
+            else {
+               maploadtogg();
+            }
          }
          else if (subknob==8UL) {
             configtogg(useri_fTRACKFILT);
@@ -12104,12 +12107,6 @@ extern void useri_timerevent(void)
    checkserial(&aprsdecode_serialpid2, useri_fSERIALTASK2);
    if (useri_refresh) useri_refreshwin();
 } /* end timerevent() */
-
-
-extern void useri_Quit(void)
-{
-   aprsdecode_click.cmd = 'Q';
-} /* end Quit() */
 
 
 extern void useri_wrheap(void)

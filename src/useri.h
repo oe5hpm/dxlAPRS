@@ -276,8 +276,6 @@ extern void useri_timerevent(void);
 
 extern void useri_refreshwin(void);
 
-extern void useri_Quit(void);
-
 extern void useri_mouserelease(void);
 
 extern void useri_mousemiddle(int32_t, int32_t);

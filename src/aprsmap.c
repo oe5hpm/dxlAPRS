@@ -627,6 +627,7 @@ ayly-Log Mode\012", 37ul);
             fo = 1;
             if (*lines<0L) *lines = 0L;
          }
+         useri_say(fnd, 1024ul, 0UL, 'b');
          len = osi_RdBin(fc, (char *)ib, 32768u/1u, 32768UL);
          rp = 0L;
       }
@@ -657,6 +658,7 @@ ayly-Log Mode\012", 37ul);
                      aprsstr_Append(s, 100ul, " Frames", 8ul);
                      useri_textautosize(0L, 0L, 5UL, 6UL, 'b', s, 100ul);
                      xosi_Eventloop(1UL);
+                     if (aprsdecode_quit) break;
                   }
                   if (*firstread==0UL) *firstread = start;
                   *lastread = start;
@@ -670,12 +672,14 @@ ayly-Log Mode\012", 37ul);
    }
    loop_exit:;
    if (fo) osic_Close(fc);
-   useri_textautosize(0L, 0L, 5UL, 6UL, 'b', "Check Tracks", 13ul);
-   xosi_Eventloop(1UL);
-   op = *optab;
-   while (op) {
-      aprsdecode_Checktrack(op, 0);
-      op = op->next;
+   if (!aprsdecode_quit) {
+      useri_textautosize(0L, 0L, 5UL, 6UL, 'b', "Check Tracks", 13ul);
+      xosi_Eventloop(1UL);
+      op = *optab;
+      while (op) {
+         aprsdecode_Checktrack(op, 0);
+         op = op->next;
+      }
    }
    label:;
    X2C_PFREE(fn);
@@ -1643,13 +1647,15 @@ static void toend(int32_t * logredcnt, uint32_t * lastread,
                 char fn[1025], uint32_t * fromto)
 {
    *fromto = aprsdecode_realtime;
-   do {
+   for (;;) {
+      if (aprsdecode_quit) break;
       *fromto -= aprsdecode_lums.firstdim;
       rdlog(&aprsdecode_ophist0, fn, 1025ul, *fromto,
                 *fromto+aprsdecode_lums.firstdim, find0, 13ul, logstarttime,
                 lastread, logredcnt);
       if (*logredcnt<0L) *fromto = ( *fromto/86400UL)*86400UL;
-   } while (!(*logredcnt>0L || *fromto<1388534400UL));
+      if (*logredcnt>0L || *fromto<1388534400UL) break;
+   }
 } /* end toend() */
 
 
@@ -1659,6 +1665,7 @@ static void tobegin(int32_t * logredcnt, uint32_t * lastread,
 {
    *fromto = 1388534400UL;
    for (;;) {
+      if (aprsdecode_quit) break;
       rdlog(&aprsdecode_ophist0, fn, 1025ul, *fromto,
                 *fromto+aprsdecode_lums.firstdim, find0, 13ul, logstarttime,
                 lastread, logredcnt);
@@ -1683,25 +1690,6 @@ static void clrstk(void)
 
 
 static void importlog(char cmd)
-/*
-  PROCEDURE deldaylylog(fname-:ARRAY OF CHAR):BOOLEAN;
-  VAR fnd,fn:FILENAME;
-    t:TIME;
-    ok:BOOLEAN;
-  BEGIN
-    Assign(fn, fname);
-    t:=realtime;
-    REPEAT
-      fnd:=fn;
-      logfndate(t, fnd);
-      IF fnd=fn THEN RETURN FALSE END;                 (* not dayly log *)
-
-      Erase(fnd, ok);
-      DEC(t, 3600*24);
-    UNTIL t<1388534400;                                (* oldest possible file *)
-    RETURN TRUE
-  END deldaylylog;
-*/
 {
    uint32_t th;
    uint32_t logstarttime;
@@ -1816,13 +1804,15 @@ static void importlog(char cmd)
                 &fromto);
          }
          else if (cmd=='\002') {
-            do {
+            for (;;) {
+               if (aprsdecode_quit) break;
                fromto -= aprsdecode_lums.firstdim;
                rdlog(&aprsdecode_ophist0, fn, 1025ul, fromto,
                 fromto+aprsdecode_lums.firstdim, find0, 13ul, &logstarttime,
                 &lastread, &logredcnt);
                if (logredcnt<0L) fromto = (fromto/86400UL)*86400UL;
-            } while (!(logredcnt>0L || fromto<1388534400UL));
+               if (logredcnt>0L || fromto<1388534400UL) break;
+            }
             if (logredcnt<=0L) {
                tobegin(&logredcnt, &lastread, &logstarttime, find0, fn,
                 &fromto);
@@ -1832,12 +1822,14 @@ static void importlog(char cmd)
             toend(&logredcnt, &lastread, &logstarttime, find0, fn, &fromto);
          }
          else if (cmd=='\004') {
-            do {
+            for (;;) {
+               if (aprsdecode_quit) break;
                fromto += aprsdecode_lums.firstdim;
                rdlog(&aprsdecode_ophist0, fn, 1025ul, fromto,
                 fromto+aprsdecode_lums.firstdim, find0, 13ul, &logstarttime,
                 &lastread, &logredcnt);
-            } while (!(logredcnt>0L || fromto>aprsdecode_realtime));
+               if (logredcnt>0L || fromto>aprsdecode_realtime) break;
+            }
             if (logredcnt<=0L) {
                toend(&logredcnt, &lastread, &logstarttime, find0, fn,
                 &fromto);
