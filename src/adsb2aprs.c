@@ -588,9 +588,9 @@ static void store(const CSV csv0)
    }
 } /* end store() */
 
-static char ibuf[100];
+static char ibuf[201];
 
-static char line[100];
+static char line[201];
 
 static uint32_t ip;
 
@@ -613,21 +613,21 @@ extern int main(int argc, char **argv)
    lp = 0UL;
    for (;;) {
       if (fd>=0L) {
-         if (readsockb(fd, (char *)ibuf, 100L)<0L) {
+         if (readsockb(fd, (char *)ibuf, 201L)<0L) {
             /* connect lost */
             osic_Close(fd);
             fd = -1L;
          }
          else {
-            for (ip = 0UL; ip<=99UL; ip++) {
+            for (ip = 0UL; ip<=200UL; ip++) {
                if ((uint8_t)ibuf[ip]<' ') {
-                  if (lp<99UL) line[lp] = 0;
-                  if (verb) osi_WrStrLn(line, 100ul);
-                  decodeline(line, 100ul, csv);
+                  if (lp<200UL) line[lp] = 0;
+                  if (verb) osi_WrStrLn(line, 201ul);
+                  decodeline(line, 201ul, csv);
                   store(csv);
                   lp = 0UL;
                }
-               else if (lp<99UL) {
+               else if (lp<200UL) {
                   line[lp] = ibuf[ip];
                   ++lp;
                }
