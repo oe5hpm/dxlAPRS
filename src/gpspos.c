@@ -665,7 +665,7 @@ static void killdop(struct RESULTS stats0[], uint32_t stats_len,
    i = 0UL;
    if (i<=tmp) for (;; i++) {
       if (stats0[i].qsumh>1.E+5) stats0[i].res |= 0x8U;
-      if (stats0[i].qsumv>1.E+5) stats0[i].res |= 0x10U;
+      if (stats0[i].qsumv>4.E+5) stats0[i].res |= 0x10U;
       if (i==tmp) break;
    } /* end for */
 } /* end killdop() */
