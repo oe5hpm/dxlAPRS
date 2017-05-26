@@ -595,9 +595,9 @@ static void Parms(void)
          else if (h[1U]=='c') {
             /* -c comand line */
             NextArgs(cmdline, 4096ul);
-            keepconnected = 1;
          }
          else if (h[1U]=='p') {
+            /*        keepconnected:=TRUE; */
             /* -p pipe */
             osi_NextArg(pipename, 4096ul);
          }
@@ -824,6 +824,8 @@ lay each conn try till \"-R\"  (", 82ul);
                osi_WrStrLn(")", 2ul);
                osi_WrStrLn(" -U <x.x.x.x:destport:listenport>  axudp (autodet\
 ect axudp2)", 61ul);
+               osi_WrStrLn("                                     listenport=0\
+ uses a free port", 67ul);
                osi_WrStrLn("                                     repeat -U fo\
 r more ports", 62ul);
                osi_WrStrLn(" -v                                verbous",
