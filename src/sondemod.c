@@ -2709,8 +2709,9 @@ static void decoders41(const char rxb[], uint32_t rxb_len,
                 p+26UL)/64UL+40000UL)*0.01f+0.0005f;
          }
          if (sondeaprs_verb) {
-            osi_WrStr(objname, 9ul);
-            osic_WrINT32(pc->framenum, 0UL);
+            osi_WrStr(pc->name, 9ul);
+            osi_WrStr(" ", 2ul);
+            osic_WrINT32(pc->framenum, 1UL);
          }
          /*i:=0;WHILE (i<=11) DO WrHex(ORD(rxb[p+23+i]), 3); INC(i) END; */
          /* appended by SQ7BR BURST KILL CHECK */
