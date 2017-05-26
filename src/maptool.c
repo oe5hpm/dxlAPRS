@@ -4082,8 +4082,8 @@ extern void maptool_ruler(maptool_pIMAGE img)
                 +aprsdecode_finezoom, 2UL, s, 101ul);
    aprsstr_Append(h, 101ul, s, 101ul);
    aprsstr_Append(h, 101ul, "]", 2ul);
-   maptool_drawstr(img, h, 101ul, (20.0f+e*0.5f)-21.0f, 10.0f, 250UL, 0UL,
-                col0, &pos, 0UL, 1, aprsdecode_click.dryrun);
+   maptool_drawstr(img, h, 101ul, osic_floor((20.0f+e*0.5f)-21.0f), 10.0f,
+                250UL, 0UL, col0, &pos, 0UL, 1, aprsdecode_click.dryrun);
 } /* end ruler() */
 
 #define maptool_VIS 80.0

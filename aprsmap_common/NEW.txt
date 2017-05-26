@@ -1344,6 +1344,12 @@
 
 
 
+25.5.2017 (Ver 0.66)
+
++ Kontrast der Symbole verbessert.
++ Fenster zu klicken sollte bei vielen Linux-Fenstermachern wieder geeordnet abstellen.
++ Linux 64bit Version.
+
 
 
 
