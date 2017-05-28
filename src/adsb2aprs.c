@@ -98,6 +98,8 @@ static uint32_t ipnum;
 
 static uint32_t toport;
 
+static float altcorr;
+
 
 static void Error(char text[], uint32_t text_len)
 {
@@ -203,6 +205,7 @@ static void Parms(void)
    mycall[0] = 0;
    btime = 20UL;
    strncpy(symbol,"/^",2u);
+   altcorr = 0.0f;
    for (;;) {
       osi_NextArg(s, 1001ul);
       if (s[0U]==0) break;
@@ -229,6 +232,12 @@ static void Parms(void)
             }
          }
          else if (s[1U]=='k') reconn = 1;
+         else if (s[1U]=='a') {
+            osi_NextArg(s, 1001ul);
+            if (!aprsstr_StrToFix(&altcorr, s, 1001ul)) {
+               Error("-a <meter>", 11ul);
+            }
+         }
          else if (s[1U]=='b') {
             osi_NextArg(s, 1001ul);
             n = 0UL;
@@ -264,6 +273,8 @@ static void Parms(void)
             osi_WrStrLn("dump1090 basestation format tcp output to aprs objec\
 t beacon", 61ul);
             osi_WrStrLn("", 1ul);
+            osi_WrStrLn(" -a <meter>          correct altitude -a 50 (0)",
+                48ul);
             osi_WrStrLn(" -b <seconds>        aprs minimum send intervall -b \
 10 (20)", 60ul);
             osi_WrStrLn(" -h                  help", 26ul);
@@ -496,7 +507,7 @@ static void aprs(const struct FLY f)
    aprsstr_Assign(h, 31ul, f.name, 21ul);
    h[9U] = 0;
    while (aprsstr_Length(h, 31ul)<9UL) aprsstr_Append(h, 31ul, " ", 2ul);
-   sendaprs(0, f.postime, mycall, 10ul, "APLFR1", 7ul, "", 1ul, "/^", 3ul, h,
+   sendaprs(1, f.postime, mycall, 10ul, "APLFR1", 7ul, "", 1ul, "/^", 3ul, h,
                  31ul, (double)f.lat, (double)f.long0,
                 (double)f.alt, (double)f.dir,
                 (double)(f.speed*1.852f), "", 1ul);
@@ -516,7 +527,8 @@ static void store(const CSV csv0)
    t = osic_time();
    if ((((csv0[0U][0U]=='M' && csv0[0U][1U]=='S') && csv0[0U][2U]=='G')
                 && aprsstr_StrToCard(csv0[1U], 21ul,
-                &msg)) && ((msg==1UL || msg==3UL) || msg==4UL)) {
+                &msg)) && (((msg==1UL || msg==2UL) || msg==3UL) || msg==4UL))
+                 {
       f = dbase;
       f0 = 0;
       while (f && !aprsstr_StrCmp(f->hex, 6ul, csv0[4U], 21ul)) {
@@ -563,9 +575,10 @@ static void store(const CSV csv0)
                 21ul) && aprsstr_StrToFix(&f->dir, csv0[13U],
                 21ul)) && f->dir>=0.0f) && f->dir<=360.0f) f->speedtime = t;
       }
-      else if (msg==3UL) {
-         if (((((((aprsstr_StrToFix(&oalt, csv0[11U],
-                21ul) && aprsstr_StrToFix(&olat, csv0[14U],
+      else if (msg==3UL || msg==2UL) {
+         oalt = 0.0f;
+         if ((((((((msg==2UL || aprsstr_StrToFix(&oalt, csv0[11U],
+                21ul)) && aprsstr_StrToFix(&olat, csv0[14U],
                 21ul)) && olat>(-90.0f)) && olat<90.0f)
                 && aprsstr_StrToFix(&olong, csv0[15U],
                 21ul)) && olong>(-180.0f)) && olong<180.0f)
@@ -574,12 +587,14 @@ static void store(const CSV csv0)
             f->newpos = 1;
             f->lat = olat;
             f->long0 = olong;
-            f->alt = oalt*0.3048f;
+            if (oalt!=0.0f) f->alt = oalt*0.3048f+altcorr;
+            else f->alt = 0.0f;
+            if (msg==2UL) f->speedtime = t;
          }
       }
       if (f->lastbeacon>t) f->lastbeacon = t;
       if (((((((f->newpos && f->name[0U]) && f->postime+20UL>=t)
-                && f->speedtime+20UL>=t) && f->speed>0.0f) && f->lat!=0.0f)
+                && f->speedtime+20UL>=t) && f->speed>=0.0f) && f->lat!=0.0f)
                 && f->long0!=0.0f) && f->lastbeacon+btime<t) {
          aprs(*f);
          f->newpos = 0;
