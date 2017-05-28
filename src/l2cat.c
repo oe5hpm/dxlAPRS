@@ -848,6 +848,7 @@ r more ports", 62ul);
       if (mycall[7U]==0) Error("need -i <call> for -C ", 23ul);
       X2C_MOVE((char *) &mycall[7U],(char *) &connectto0[7U],7UL);
    }
+   else keepconnected = 1;
 } /* end Parms() */
 
 
