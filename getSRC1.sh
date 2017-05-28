@@ -10,7 +10,7 @@ rm $EXCL
 rm -r -f lib_x86
 rm -r -f lib_x86_64
 git checkout -- pngread.c
-git checokut -- osic.c
+git checkout -- osic.c
 cd ..
 ./license-add.sh
 git status
