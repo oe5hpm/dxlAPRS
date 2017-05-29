@@ -112,10 +112,7 @@ endif
 # -------------------------- x86_32 (default) specific ------------------------
 else ifeq ($(HOSTARCH), x86)
 TARGETS		= aprsmap-static
-EXTLIB		= lib_x86/
-XLIBS		= $(EXTLIB)libz.a \
-		  $(EXTLIB)libjpeg.a \
-		  -lpng -lXext -lX11
+XLIBS		= -lpng -ljpeg -lXext -lX11
 APRSMAP_STATIC	= aprsmap-$(HOSTARCH)
 else
 XLIBS		+= -lpng -ljpeg -lXext -lX11
