@@ -10,6 +10,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <time.h> 
+#include <stdint.h>
 
 static fd_set rset, wset;
 static unsigned maxfd;
@@ -63,7 +64,7 @@ unsigned issetw(long n)
   return 0;
 }
 
-int selectrwt(long *sec, long *usec)
+int selectrwt(uint32_t *sec, uint32_t *usec)
 {
   struct timeval tv;
   int ret;

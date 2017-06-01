@@ -23,7 +23,7 @@ extern void fdsetw(unsigned long);
 
 extern char issetw(unsigned long);
 
-extern long selectrwt(unsigned long *, unsigned long *);
+extern long selectrwt(uint32_t *, uint32_t *);
 
 
 #endif /* Select_H_ */
