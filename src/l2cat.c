@@ -73,6 +73,9 @@ FROM mlib IMPORT tcsetattr, tcgetattr, tcflag_t,
 
 #define l2cat_RCTIMEBASE 1000
 
+#define l2cat_FLUSHDELAY 4
+/* LOOPTIMES wait sending out rest of buffer */
+
 typedef char IOBUF[256];
 
 struct JUNKBUF;
@@ -902,9 +905,13 @@ static void initcompress(pTASK pt0)
    pt0->pcdeflat->inp0 = 0L;
    pt0->pcdeflat->xinp = 0L;
    pt0->pcdeflat->done = 0;
-   if (pppmode) pt0->pcdeflat->pppframing = 1;
+   if (pppmode) {
+      /* ppp per comand line */
+      pt0->pcdeflat->pppframing = 1;
+      if (verb) osi_Werr("init ppp + compression\012", 24ul);
+   }
+   else if (verb) osi_Werr("init compression\012", 18ul);
    pt0->pcdeflat->pppstate = 0;
-   if (verb) osi_Werr("init compression\012", 18ul);
 } /* end initcompress() */
 
 
@@ -1888,6 +1895,7 @@ extern int main(int argc, char **argv)
                   if (pt->pcdeflat->outlen==0L) compress(pt);
                   wrl2(pt->link0, pt->pcdeflat->outbuf, 20001ul,
                 &pt->pcdeflat->outlen, &pt->junkbuf);
+                  if (pt->pcdeflat->pppframing) pt->junkbuf.time0 = 0L;
                }
                else {
                   crlf(pt->inbuf, 256ul, &pt->inlen, pt->crlfmode);
@@ -1940,7 +1948,8 @@ extern int main(int argc, char **argv)
                         wrpipe(pt->outfd, pt->outbuf, 256ul, &pt->outlen);
                      }
                   }
-                  if (pt->outlen==0L) {
+                  if (pt->outlen==0L && pt->detectdone==0UL) {
+                     /* protokoll detect must be done */
                      pt->outlen = (int32_t)l2_GetStr(pt->link0, 256U,
                 (l2_pSTRING)pt->outbuf);
                      if (pt->outlen<=0L) break;
