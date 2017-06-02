@@ -14,11 +14,9 @@ extern long bindudp(long, unsigned long);
 
 extern long socknonblock(long);
 
-extern long udpreceive(long, char [], long, unsigned long *,
-                unsigned long *);
+extern long udpreceive(long, char [], long, uint32_t *, uint32_t *);
 
-extern long udpreceiveblock(long, char [], long, unsigned long *,
-                unsigned long *);
+extern long udpreceiveblock(long, char [], long, uint32_t *, uint32_t *);
 
 extern long udpsend(long, char [], long, unsigned long, unsigned long);
 

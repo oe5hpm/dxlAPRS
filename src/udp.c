@@ -46,7 +46,7 @@ int socknonblock(int fd)
 }
 
 
-int udpreceive(int fd, char *buf, int blen, int *fromport, int *fromip)
+int udpreceive(int fd, char *buf, int blen, uint32_t *fromport, uint32_t *fromip)
 {
 int adrlen, len;
 struct sockaddr_in addr;
@@ -58,7 +58,7 @@ len=recvfrom(fd, buf, blen, MSG_DONTWAIT, (struct sockaddr *) &addr, &adrlen);
 return len;
 }
 
-int udpreceiveblock(int fd, char *buf, int blen, int *fromport, int *fromip)
+int udpreceiveblock(int fd, char *buf, int blen, uint32_t *fromport, uint32_t *fromip)
 {
 int adrlen, len;
 struct sockaddr_in addr;
