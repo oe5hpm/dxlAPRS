@@ -2,6 +2,7 @@ src/*.o
 src/*.a
 src/.cproject
 src/.project
+src/adsb2aprs
 src/afskmodem
 src/udpbox
 src/udpgate4
