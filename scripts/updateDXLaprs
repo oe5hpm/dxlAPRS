@@ -1,11 +1,15 @@
 #!/bin/sh
-# this script unpacks and installs remote installation images created
+# this script unpacks and installs remote or local installation archive images created
 # by the packCurrent.sh script.
 
 if [ -z $1 ]; then
-	echo "updateDXLaprs: missing architecture"
-	echo "Usage: updateDXLaprs ARCH"
-        echo "    Where ARCH may be: armv6, armv6tce, armv7hf, x86, ..."
+	echo "updateDXLaprs: missing architecture or local image file"
+	echo "Usage: updateDXLaprs ARCH | file"
+	echo "    Where ARCH may be: armv6, armv6tce, armv7hf, x86_32, x86_64, ..."
+	echo ""
+	echo "    If a local file is specified instead of one of the architectures above,"
+	echo "    then this file will be used for performing the installation. The local"
+	echo "    file must be a file that was created by the packCurrent.sh script."
 	exit 1
 fi
 
@@ -28,11 +32,24 @@ if [ $? -ne 0 ]; then
 	echo "Unable to create temporary directory."
 	exit 1
 fi
-cd $TMPDIR
-wget $SOURCE/$FILE.tgz
 
-# if successful then unpack and move files to their destinations
-if [ $? -eq 0 ] && [ -r $FILE.tgz ]; then
+# if a file exists simply assume it's a local packCurrent image else try to download
+if [ -f $1 ]; then
+	FILE=$(basename $1 .tgz)
+	cp -r $1 $TMPDIR
+	cd $TMPDIR
+else
+	cd $TMPDIR
+	wget $SOURCE/$FILE.tgz
+	if [ $? -ne 0 ]; then
+		echo "Unable to download image:" $SOURCE/$FILE.tgz
+		rm -r $TMPDIR
+		exit 1
+	fi
+fi
+
+# if image file exists then unpack and move files to their destinations
+if [ -r $FILE.tgz ]; then
 	gunzip $FILE.tgz
 	tar -xf $FILE.tar
 	rm $FILE.tar
@@ -51,15 +68,15 @@ if [ $? -eq 0 ] && [ -r $FILE.tgz ]; then
 	
 # fixup file permissions and owners
 	cd $DSTAPRS
-	for f in $(\ls); do 
+	for f in $(ls); do 
 		test -x $f && sudo chmod 0755 $f
 	done
 	sudo chown root afskmodem
 	sudo chmod +s afskmodem
 	rm -r $TMPDIR
 else
-# could not locate the image
-        echo "Unable to download image:" $SOURCE/$FILE.tgz
+# either cp or wget failed above somehow to get an image into TMPDIR
+	echo "Unable to locate temporary copy of image:" $FILE.tgz
 	rm -r $TMPDIR
 	exit 1
 fi
