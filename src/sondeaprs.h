@@ -15,7 +15,7 @@
 
 typedef uint32_t sondeaprs_TIME;
 
-#define sondeaprs_VERSION "sondemod(c) 1.0"
+#define sondeaprs_VERSION "sondemod(c) 1.1"
 
 extern void sondeaprs_senddata(double, double, double,
                 double, double, double, double,
@@ -23,7 +23,8 @@ extern void sondeaprs_senddata(double, double, double,
                 double, double, double, double,
                 double, uint32_t, uint32_t, char [],
                 uint32_t, uint32_t, uint32_t, char [], uint32_t,
-                uint32_t, uint32_t, char);
+                uint32_t, uint32_t, char, char [],
+                uint32_t);
 
 extern int32_t sondeaprs_GetIp(char [], uint32_t, uint32_t *,
                 uint32_t *, uint32_t *);

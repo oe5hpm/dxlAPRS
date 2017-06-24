@@ -37,7 +37,7 @@
 #include "sondeaprs.h"
 #endif
 
-/* decode RS92, RS41, SRS-C34 and DFM06 Radiosonde by OE5DXL */
+/* decode RS92, RS41, SRS-C34, DFM06, M10 Radiosonde by OE5DXL */
 /*FROM rsc IMPORT initrsc, decodersc; */
 #define sondemod_CONTEXTLIFE 3600
 /* seconds till forget context after last heared */
@@ -236,6 +236,22 @@ struct CONTEXTR4 {
        ozon_id_version       : REAL;  
 */
 
+struct CONTEXTM10;
+
+typedef struct CONTEXTM10 * pCONTEXTM10;
+
+
+struct CONTEXTM10 {
+   pCONTEXTM10 next;
+   OBJNAME name;
+   char posok;
+   char framesent;
+   float mhz0;
+   uint32_t gpssecond;
+   uint32_t framenum;
+   uint32_t tused;
+};
+
 static FILENAME semfile;
 
 static FILENAME yumafile;
@@ -283,6 +299,8 @@ static pCONTEXTC34 pcontextc;
 static pCONTEXTDFM6 pcontextdfm6;
 
 static pCONTEXTR4 pcontextr4;
+
+static pCONTEXTM10 pcontextm10;
 
 
 static void Error(char text[], uint32_t text_len)
@@ -457,9 +475,9 @@ static void Parms(void)
          }
          else {
             if (h[1U]=='h') {
-               osi_WrStr("sondemod(c) 1.0", 16ul);
-               osi_WrStrLn(" multichannel decoder RS92, RS41, SRS-C34 Radioso\
-ndes", 54ul);
+               osi_WrStr("sondemod(c) 1.1", 16ul);
+               osi_WrStrLn(" multichannel decoder RS92, RS41, SRS-C34 DFM0x, \
+M10 Radiosondes", 65ul);
                osi_WrStrLn(" -A <meter>     at lower altitude use -B beacon t\
 ime (meter) -A 1000", 69ul);
                osi_WrStrLn(" -B <seconds>   low altitude send intervall -B 10\
@@ -1493,7 +1511,8 @@ static void decodeframe(uint8_t m, uint32_t ip, uint32_t fromport)
                 (double)anonym1->hrmsc, (double)anonym1->vrmsc,
                 (anonym1->timems/1000UL+86382UL)%86400UL, frameno, objname,
                 9ul, almanachage, anonym1->goodsats, usercall, 11ul,
-                calperc(anonym1->calibok), 0UL, sondeaprs_nofilter);
+                calperc(anonym1->calibok), 0UL, sondeaprs_nofilter, "RS92",
+                5ul);
          anonym1->framesent = 1;
       }
       crdone = 1;
@@ -1584,6 +1603,7 @@ static void decodec34(const char rxb[], uint32_t rxb_len,
    OBJNAME nam;
    char cb[10];
    char s[1001];
+   char tstr[51];
    CALLSSID usercall;
    uint32_t val;
    uint32_t sum2;
@@ -1986,12 +2006,14 @@ static void decodec34(const char rxb[], uint32_t rxb_len,
          WrFixed(exlon/RAD, 5,0); WrStrLn("t1 t x1 x xext");
          */
          if (lonok && latok) {
+            if (c50) strncpy(tstr,"SRSC50",51u);
+            else strncpy(tstr,"SRSC34",51u);
             sondeaprs_senddata(exlat, exlon, anonym2->alt, anonym2->speed,
                 anonym2->dir, anonym2->clmb, 0.0, 0.0, stemp, 0.0, 0.0, 0.0,
                 0.0, 0.0, 0.0, 0.0,
                 ((systime-anonym2->tgpstime)+anonym2->gpstime)%86400UL, 0UL,
                 anonym2->name, 9ul, 0UL, 0UL, usercall, 11ul, 0UL, 0UL,
-                sondeaprs_nofilter);
+                sondeaprs_nofilter, tstr, 51ul);
             anonym2->lastsent = systime;
          }
       }
@@ -2344,7 +2366,7 @@ static void decodedfm6(const char rxb[], uint32_t rxb_len,
                 anonym->dir, anonym->clmb, 0.0, 0.0,
                 (double)X2C_max_real, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                 0.0, anonym->actrt%86400UL, 0UL, anonym->name, 9ul, 0UL, 0UL,
-                 usercall, 11ul, 0UL, 0UL, sondeaprs_nofilter);
+                 usercall, 11ul, 0UL, 0UL, sondeaprs_nofilter, "DFM06", 6ul);
                anonym->lastsent = systime;
             }
          }
@@ -2844,11 +2866,208 @@ static void decoders41(const char rxb[], uint32_t rxb_len,
                 X2C_CHKNIL(pCONTEXTR4,pc)->gpssecond, frameno,
                 X2C_CHKNIL(pCONTEXTR4,pc)->name, 9ul, 0UL, 0UL, usercall,
                 11ul, 0UL, X2C_CHKNIL(pCONTEXTR4,pc)->burstKill,
-                sondeaprs_nofilter);
+                sondeaprs_nofilter, "RS41", 5ul);
       pc->framesent = 1;
    }
 /*  IF verb THEN WrStrLn("") END;   */
 } /* end decoders41() */
+
+/*------------------------------ M10 */
+
+static uint16_t crcm10(int32_t from, int32_t len, const char buf[],
+                 uint32_t buf_len)
+{
+   int32_t i;
+   uint16_t s;
+   uint16_t t;
+   uint16_t b;
+   uint16_t cs;
+   int32_t tmp;
+   cs = 0U;
+   tmp = (from+len)-1L;
+   i = from;
+   if (i<=tmp) for (;; i++) {
+      /*WrHex(ORD(buf[i]), 3); */
+      b = (uint16_t)(uint32_t)(uint8_t)buf[i];
+      b = X2C_LSH(b,16,-1)|X2C_LSH(b&0x1U,16,7);
+      b = b^X2C_LSH(b,16,-2)&0xFFU;
+      t = cs&0x3FU|X2C_LSH((cs^X2C_LSH(cs,16,-2)^X2C_LSH(cs,16,-4))&0x1U,16,
+                6)|X2C_LSH((X2C_LSH(cs,16,-1)^X2C_LSH(cs,16,-3)^X2C_LSH(cs,
+                16,-5))&0x1U,16,7);
+      s = X2C_LSH(cs,16,-7)&0xFFU;
+      s = (s^X2C_LSH(s,16,-2))&0xFFU;
+      cs = X2C_LSH(cs&0xFFU,16,8)|b^t^s;
+      if (i==tmp) break;
+   } /* end for */
+   return (uint16_t)cs;
+} /* end crcm10() */
+
+
+static uint32_t m10card(const char b[], uint32_t b_len,
+                int32_t pos, int32_t len)
+{
+   int32_t i;
+   uint32_t n;
+   int32_t tmp;
+   n = 0UL;
+   tmp = len-1L;
+   i = 0L;
+   if (i<=tmp) for (;; i++) {
+      n = n*256UL+(uint32_t)(uint8_t)b[pos+i];
+      if (i==tmp) break;
+   } /* end for */
+   return n;
+} /* end m10card() */
+
+#define sondemod_FH 16
+/* size of header before payload */
+
+static float sondemod_DEGMUL = 8.3819036711397E-8f;
+
+#define sondemod_VMUL 0.01
+
+
+static void decodem10(const char rxb[], uint32_t rxb_len,
+                uint32_t ip, uint32_t fromport)
+{
+   uint32_t week;
+   uint32_t tow;
+   uint32_t cs;
+   uint32_t i;
+   int32_t ci;
+   double dir;
+   double v;
+   double vv;
+   double vn;
+   double ve;
+   double alt;
+   double lon;
+   double lat;
+   uint32_t time0;
+   OBJNAME nam;
+   char s[1001];
+   CALLSSID usercall;
+   uint32_t frameno;
+   char nameok;
+   char calok;
+   pCONTEXTM10 pc0;
+   pCONTEXTM10 pc1;
+   pCONTEXTM10 pc;
+   calok = 0;
+   nameok = 0;
+   pc = 0;
+   lat = 0.0;
+   lon = 0.0;
+   getcall(rxb, rxb_len, usercall, 11ul);
+   if (usercall[0U]==0) aprsstr_Assign(usercall, 11ul, mycall, 100ul);
+   if (sondeaprs_verb && fromport>0UL) {
+      osi_WrStr("UDP:", 5ul);
+      aprsstr_ipv4tostr(ip, s, 1001ul);
+      osi_WrStr(s, 1001ul);
+      osi_WrStr(":", 2ul);
+      osic_WrINT32(fromport, 1UL);
+      if (usercall[0U]) {
+         osi_WrStr(" (", 3ul);
+         osi_WrStr(usercall, 11ul);
+         osi_WrStr(")", 2ul);
+      }
+      osi_WrStrLn("", 1ul);
+   }
+   if (sondeaprs_verb) osi_WrStr("M10 ", 5ul);
+   cs = (uint32_t)crcm10(16L, 99L, rxb, rxb_len);
+   if (cs==m10card(rxb, rxb_len, 115L, 2L)) {
+      /* crc ok */
+      nameok = 1;
+      for (i = 0UL; i<=7UL; i++) {
+         nam[i] = rxb[7UL+i];
+         if ((uint8_t)nam[i]<=' ' || (uint8_t)nam[i]>'Z') nameok = 0;
+      } /* end for */
+      nam[8U] = 0;
+      pc = pcontextm10;
+      pc0 = 0;
+      for (;;) {
+         if (pc==0) break;
+         pc1 = X2C_CHKNIL(pCONTEXTM10,pc)->next;
+         if (pc->tused+3600UL<systime) {
+            /* timed out */
+            if (pc0==0) pcontextm10 = pc1;
+            else X2C_CHKNIL(pCONTEXTM10,pc0)->next = pc1;
+            osic_free((char * *) &pc, sizeof(struct CONTEXTM10));
+         }
+         else {
+            if (aprsstr_StrCmp(nam, 9ul, pc->name, 9ul)) break;
+            pc0 = pc;
+         }
+         pc = pc1;
+      }
+      if (pc==0) {
+         osic_alloc((char * *) &pc, sizeof(struct CONTEXTM10));
+         if (pc==0) Error("allocate context out im memory", 31ul);
+         memset((char *)pc,(char)0,sizeof(struct CONTEXTM10));
+         pc->next = pcontextm10;
+         pcontextm10 = pc;
+         aprsstr_Assign(pc->name, 9ul, nam, 9ul);
+         if (sondeaprs_verb) osi_WrStrLn("is new ", 8ul);
+      }
+      tow = m10card(rxb, rxb_len, 26L, 4L);
+      week = m10card(rxb, rxb_len, 48L, 2L);
+      time0 = tow/1000UL+week*604800UL+315964800UL;
+      frameno = time0;
+      X2C_CHKNIL(pCONTEXTM10,pc)->gpssecond = time0+86382UL;
+      if (frameno>pc->framenum) {
+         /* new frame number */
+         pc->framesent = 0;
+         calok = 1;
+         pc->framenum = frameno;
+         pc->tused = systime;
+      }
+      else if (pc->framenum==frameno && !pc->framesent) calok = 1;
+      lat = (double)m10card(rxb, rxb_len, 30L, 4L)*8.3819036711397E-8;
+      lon = (double)m10card(rxb, rxb_len, 34L, 4L)*8.3819036711397E-8;
+      alt = (double)m10card(rxb, rxb_len, 38L, 4L)*0.001;
+      ci = (int32_t)m10card(rxb, rxb_len, 20L, 2L);
+      if (ci>32767L) ci -= 65536L;
+      ve = (double)ci*0.01;
+      ci = (int32_t)m10card(rxb, rxb_len, 22L, 2L);
+      if (ci>32767L) ci -= 65536L;
+      vn = (double)ci*0.01;
+      ci = (int32_t)m10card(rxb, rxb_len, 24L, 2L);
+      if (ci>32767L) ci -= 65536L;
+      vv = (double)ci*0.01;
+      v = (double)osic_sqrt((float)(ve*ve+vn*vn)); /* hor speed */
+      dir = atan20(vn, ve)*5.7295779513082E+1;
+      if (dir<0.0) {
+         dir = 360.0+dir;
+      }
+      if (sondeaprs_verb) {
+         osi_WrStr(nam, 9ul);
+         osi_WrStr(" ", 2ul);
+         osic_WrFixed((float)lat, 5L, 1UL);
+         osi_WrStr(" ", 2ul);
+         osic_WrFixed((float)lon, 5L, 1UL);
+         osi_WrStr(" ", 2ul);
+         osic_WrFixed((float)alt, 1L, 1UL);
+         osi_WrStr("m ", 3ul);
+         osic_WrFixed((float)v, 1L, 1UL);
+         osi_WrStr("km/h ", 6ul);
+         osic_WrFixed((float)dir, 0L, 1UL);
+         osi_WrStr("deg ", 5ul);
+         osic_WrFixed((float)vv, 1L, 1UL);
+         osi_WrStr("m/s ", 5ul);
+      }
+   }
+   else if (sondeaprs_verb) osi_WrStr("crc error", 10ul);
+   if (sondeaprs_verb) osi_WrStrLn("", 1ul);
+   if ((((pc && nameok) && calok) && lat!=0.0) && lon!=0.0) {
+      sondeaprs_senddata(lat*1.7453292519943E-2, lon*1.7453292519943E-2, alt,
+                 v, dir, vv, 0.0, 0.0, (double)X2C_max_real, 0.0, 0.0,
+                0.0, 0.0, 0.0, 0.0, 0.0, X2C_CHKNIL(pCONTEXTM10,
+                pc)->gpssecond, frameno, X2C_CHKNIL(pCONTEXTM10,pc)->name,
+                9ul, 0UL, 0UL, usercall, 11ul, 0UL, 0UL, sondeaprs_nofilter, \
+"M10", 4ul);
+      pc->framesent = 1;
+   }
+} /* end decodem10() */
 
 
 static void udprx(void)
@@ -2878,7 +3097,13 @@ static void udprx(void)
    else if (len==520L) {
       decoders41(chan[sondemod_LEFT].rxbuf, 520ul, ip, fromport);
    }
-   else usleep(10000UL);
+   else if (len==117L) {
+      decodem10(chan[sondemod_LEFT].rxbuf, 520ul, ip, fromport);
+   }
+   else {
+      /*WrInt(len, 10); WrStrLn("=len");*/
+      usleep(10000UL);
+   }
 } /* end udprx() */
 
 
@@ -2899,6 +3124,7 @@ extern int main(int argc, char **argv)
    pcontextc = 0;
    pcontextdfm6 = 0;
    pcontextr4 = 0;
+   pcontextm10 = 0;
    objname[0] = 0;
    almread = 0UL;
    almage = 0UL;
