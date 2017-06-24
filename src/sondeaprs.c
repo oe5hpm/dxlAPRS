@@ -253,7 +253,7 @@ static void comment0(char buf[], uint32_t buf_len, uint32_t uptime,
             }
             else if (fb[bol+1L]=='v') {
                /* insert version */
-               strncpy(fb," sondemod(c) 1.0",32768u);
+               strncpy(fb," sondemod(c) 1.1",32768u);
             }
             else if (fb[bol+1L]=='s') {
                /* insert sat count */
@@ -1035,7 +1035,8 @@ extern void sondeaprs_senddata(double lat, double long0,
                 uint32_t objname_len, uint32_t almanachage,
                 uint32_t goodsats, char usercall[],
                 uint32_t usercall_len, uint32_t calperc,
-                uint32_t burstKill, char force)
+                uint32_t burstKill, char force, char typstr[],
+                uint32_t typstr_len)
 {
    uint8_t e;
    pCONTEXT ct;
@@ -1190,6 +1191,10 @@ extern void sondeaprs_senddata(double lat, double long0,
                aprsstr_FixToStr((float)mhz, 3UL, h, 251ul);
                aprsstr_Append(s, 251ul, h, 251ul);
                aprsstr_Append(s, 251ul, "MHz", 4ul);
+            }
+            if (typstr[0UL]) {
+               aprsstr_Append(s, 251ul, " Type=", 7ul);
+               aprsstr_Append(s, 251ul, typstr, typstr_len);
             }
             /* appended by SQ7BR */
             if (burstKill==1UL || burstKill==2UL) {

@@ -510,8 +510,8 @@ extern void maptool_loctopos(struct aprspos_POSITION * pos, char loc[],
          if (l==8UL) ok0 = 1;
       }
       if ((((l>=10UL && (uint8_t)loc[8UL]>='A') && (uint8_t)
-                loc[8UL]<='R') && (uint8_t)loc[9UL]>='A') && (uint8_t)
-                loc[9UL]<='R') {
+                loc[8UL]<='X') && (uint8_t)loc[9UL]>='A') && (uint8_t)
+                loc[9UL]<='X') {
          pos->long0 = (pos->long0+X2C_DIVR((float)((uint32_t)(uint8_t)
                 loc[8UL]-65UL),2880.0f))-3.9930555555556E-3f;
          pos->lat = (pos->lat+X2C_DIVR((float)((uint32_t)(uint8_t)
@@ -5599,6 +5599,7 @@ extern void maptool_rdmountains(char fn[], uint32_t fn_len,
                      }
                      while (r>0L) r = getword(&p, &len, fd, b, s, 1024ul);
                   }
+                  else alt = 0.0f;
                }
             }
          }
