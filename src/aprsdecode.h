@@ -62,7 +62,7 @@ typedef uint32_t aprsdecode_SET256[8];
 
 extern aprsdecode_SET256 aprsdecode_SYMTABLE;
 
-#define aprsdecode_VERS "aprsmap(cu) 0.66"
+#define aprsdecode_VERS "aprsmap(cu) 0.67"
 
 typedef char aprsdecode_MONCALL[9];
 
@@ -494,6 +494,8 @@ struct aprsdecode__D0 {
    struct aprspos_POSITION clickpos;
    struct aprspos_POSITION squerpos0;
    struct aprspos_POSITION squerpos1;
+   struct aprspos_POSITION squerspos0;
+   struct aprspos_POSITION squerspos1;
    struct aprspos_POSITION measurepos;
    struct aprspos_POSITION markpos;
    uint32_t markpost; /* waypoint time to markpos to make uniqe */

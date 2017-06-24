@@ -4049,7 +4049,7 @@ static void helpmenu(void)
    newmenu(&menu, 150UL, aprsdecode_lums.fontysize+7UL, 3UL, useri_bTRANSP);
    /*  addline(menu, "Shortcuts", CMDSHORTCUTLIST, MINH*6); */
    addline(menu, "Helptext", 9ul, "\305", 2ul, 610UL);
-   addline(menu, "aprsmap(cu) 0.66 by OE5DXL ", 28ul, " ", 2ul, 605UL);
+   addline(menu, "aprsmap(cu) 0.67 by OE5DXL ", 28ul, " ", 2ul, 605UL);
    setunderbar(menu, 37L);
    menu->ysize = menu->oldknob*menu->yknob;
    menu->oldknob = 0UL;
@@ -8836,6 +8836,7 @@ extern void useri_resetimgparms(void)
    aprsdecode_posinval(&aprsdecode_click.markpos);
    aprsdecode_posinval(&aprsdecode_click.measurepos);
    aprsdecode_posinval(&aprsdecode_click.squerpos0);
+   aprsdecode_posinval(&aprsdecode_click.squerspos0);
    aprsdecode_click.waysum = 0.0f;
    useri_say("Reset most Image/Mouse Parameters to Default", 45ul, 4UL, 'b');
 } /* end resetimgparms() */
@@ -8867,6 +8868,7 @@ static void domap(uint32_t knob, uint32_t sub)
        posinval(click.markpos);
        posinval(click.measurepos);
        posinval(click.squerpos0);
+       posinval(click.squerspos0);
        click.waysum:=0.0;
        say("Reset most Image/Mouse Parameters to Default", 4, "b");
    
@@ -11659,6 +11661,7 @@ static void mouseleft(int32_t mousx, int32_t mousy)
             aprsdecode_posinval(&aprsdecode_click.markpos);
             aprsdecode_click.waysum = 0.0f;
             aprsdecode_posinval(&aprsdecode_click.squerpos0);
+            aprsdecode_posinval(&aprsdecode_click.squerspos0);
          }
          else aprsdecode_posinval(&aprsdecode_click.measurepos);
          aprsdecode_click.cmd = ' ';
@@ -11704,12 +11707,15 @@ extern void useri_keychar(char ch, char ispasted,
    if (ispasted) ch = 0;
    /*WrInt(ORD(ch), 1); WrStrLn("kbd"); */
    if (ch=='R') aprsdecode_click.cmd = '\022';
-   else if (ch=='\022') {
-      /*ELSIF ch=CURSPAGEUP THEN WrStrLn("cup"); */
-      /*ELSIF ch=CURSPAGEDOWN THEN WrStrLn("cdown"); */
-      ch = 0;
-   }
+   else if (ch=='\022') ch = 0;
    else if (ch=='\320') configman(0UL, &aprsdecode_click.cmd);
+   else if (ch=='r') {
+      /* toggle radio path */
+      configtogg(useri_fGEOPROFIL);
+      useri_sayonoff("Geoprofile", 11ul, useri_configon(useri_fGEOPROFIL));
+      aprsdecode_click.cmd = ' ';
+      useri_refresh = 1;
+   }
    else if (((((((ch!='b' && ch!='m') && ch!='f') && ch!='u') && ch!='d')
                 && ch!='p') && ch!='s') && ch!='h') {
       aprsdecode_click.cmd = X2C_CAP(ch);
@@ -11770,8 +11776,6 @@ extern void useri_keychar(char ch, char ispasted,
    }
    else if (aprsdecode_click.cmd=='d') maploadtogg();
    else if (aprsdecode_click.cmd=='p') domap(11UL, 0UL);
-/*  ELSIF click.cmd="D" THEN domap(RESETTODEFAULT, 0); */
-/*  IF refresh THEN redrawpop(redrawimg) END; */
 } /* end keychar() */
 
 
