@@ -114,6 +114,8 @@ static uint32_t msgtyp;
 
 static uint32_t btimeN;
 
+static uint32_t btimenavi;
+
 static double lat;
 
 static double long0;
@@ -362,6 +364,11 @@ static void Parms(void)
             i = 0UL;
             if (!GetNum(h, 1024ul, 0, &i, &btimedrive)) Error("-b <s>", 7ul);
          }
+         else if (h[1U]=='n') {
+            osi_NextArg(h, 1024ul);
+            i = 0UL;
+            if (!GetNum(h, 1024ul, 0, &i, &btimenavi)) Error("-n <s>", 7ul);
+         }
          else if (h[1U]=='0') {
             osi_NextArg(h, 1024ul);
             i = 0UL;
@@ -436,6 +443,8 @@ s send one with Comment", 73ul);
 P format :port for localhost", 78ul);
                osi_WrStrLn(" -N <x.x.x.x:destport>             send Position \
 AXUDP every 2s eg. to aprsmap", 79ul);
+               osi_WrStrLn(" -n <s>                            Beacon Time in\
+ Seconds to -N destination (2)", 80ul);
                osi_WrStrLn(" -r <x.x.x.x:destport>             use AXUDP (to \
 Soundmodem)", 61ul);
                osi_WrStrLn(" -s                                GPS Checksum c\
@@ -1210,6 +1219,7 @@ extern int main(int argc, char **argv)
    ipnum = 2130706433UL;
    toport2 = 0UL;
    ipnum2 = 0UL;
+   btimenavi = 2UL;
    useaxudp = 1;
    Parms();
    if (aprsstr_Length(mycall, 100ul)<3UL) {
@@ -1244,7 +1254,7 @@ extern int main(int argc, char **argv)
                         if (verb) showline(gpsb, 100ul, gpsp);
                         if (posok) {
                            ++btime;
-                           if (truncc(speed)>drivekm) {
+                           if (truncc(speed)>=drivekm) {
                               if (btime>=btimedrive) {
                                  btime = 0UL;
                               }
@@ -1262,7 +1272,7 @@ extern int main(int argc, char **argv)
                            if (toport2>0UL) {
                               /* second (fast) beacon to map */
                               ++btimeN;
-                              if (btimeN>=2UL) {
+                              if (btimeN>=btimenavi) {
                                  sendaprs(lat, long0, alt, course, speed,
                 0UL, 1, altok, 1, 0, "", 1ul, 1, ipnum2, toport2);
                                  btimeN = 0UL;
