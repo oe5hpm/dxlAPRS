@@ -1116,7 +1116,7 @@ static void sendudp(char data[], uint32_t data_len, int32_t len,
 static void WrdB(int32_t volt)
 {
    if (volt>0L) {
-      osic_WrFixed(osic_ln((float)volt)*8.685889638f-102.4f, 1L, 6UL);
+      osic_WrFixed(osic_ln((float)volt)*8.685889638f-96.4f, 1L, 6UL);
       osi_WrStr("dB", 3ul);
    }
 } /* end WrdB() */
@@ -1167,6 +1167,15 @@ static float noiselevel(float bitlev, float noise)
    else return X2C_DIVR(noise,bitlev);
    return 0;
 } /* end noiselevel() */
+
+
+static void WrChan(int32_t c)
+{
+   if (maxchannels>0UL) {
+      osic_WrINT32((uint32_t)(c+1L), 1UL);
+      osi_WrStr(":", 2ul);
+   }
+} /* end WrChan() */
 
 
 static float Fir(uint32_t in, uint32_t sub, uint32_t step,
@@ -1276,10 +1285,7 @@ static void decodeframe92(uint32_t m)
          len = (uint32_t)(uint8_t)chan[m].r92.rxbuf[7U]*2UL+2UL;
                 /* +crc */
          ++p;
-         if (maxchannels>0UL) {
-            osic_WrINT32(m+1UL, 1UL);
-            osi_WrStr(":", 2ul);
-         }
+         WrChan((int32_t)m);
          osi_WrStr("R92 ", 5ul);
          if (8UL+len>240UL || !crcrs(chan[m].r92.rxbuf, 256ul, 8L,
                 (int32_t)(8UL+len))) osi_WrStr("----  crc err ", 15ul);
@@ -1693,10 +1699,7 @@ static void decode41(uint32_t m)
          ++try0;
       } while (!(allok || try0>2UL));
       if (verb && nameok>0UL) {
-         if (maxchannels>0UL) {
-            osic_WrINT32(m+1UL, 1UL);
-            osi_WrStr(":", 2ul);
-         }
+         WrChan((int32_t)m);
          osi_WrStr("R41 ", 5ul);
          for (i = 0UL; i<=7UL; i++) {
             ch = anonym->rxbuf[nameok+2UL+i];
@@ -2488,10 +2491,7 @@ static void decodeframe6(uint32_t m)
                 104ul) && hamming(anonym->dh2, 104ul, 13UL, anonym->db2,
                 104ul)) {
          if (verb) {
-            if (maxchannels>0UL) {
-               osic_WrINT32(m+1UL, 1UL);
-               osi_WrStr(":", 2ul);
-            }
+            WrChan((int32_t)m);
             if (anonym->id[0U]) osi_WrStr(anonym->id, 9ul);
             else if (chan[m].dfm6.d9) osi_WrStr("DF9", 4ul);
             else osi_WrStr("DF6", 4ul);
@@ -3264,11 +3264,11 @@ static float sondeudp_DEGMUL = 8.3819036711397E-8f;
 
 #define sondeudp_VMUL 0.01
 
-static SET256 sondeudp_HSET = {0x03FFFFF7UL,0x00000003UL,0xE0000000UL,
-                0x0000001BUL,0x00000000UL,0x00000000UL,0x00000000UL,
+static SET256 sondeudp_HSET = {0x03FFFFF0UL,0x00000003UL,0x00000000UL,
+                0x00000018UL,0x00000000UL,0x00000000UL,0x00000000UL,
                 0x00000000UL}; /* not hexlist known bytes */
 
-static SET256 _cnst1 = {0x03FFFFF7UL,0x00000003UL,0xE0000000UL,0x0000001BUL,
+static SET256 _cnst1 = {0x03FFFFF0UL,0x00000003UL,0x00000000UL,0x00000018UL,
                 0x00000000UL,0x00000000UL,0x00000000UL,0x00000000UL};
 
 static void decodeframe10(uint32_t m)
@@ -3335,15 +3335,12 @@ static void decodeframe10(uint32_t m)
             id = id/10UL;
             --i;
          } while (i!=1UL);
-         ids[i] = 'A';
+         ids[i] = 'E';
          --i;
          ids[i] = 'M';
          /* get ID */
          if (verb) {
-            if (maxchannels>0UL) {
-               osic_WrINT32(m+1UL, 1UL);
-               osi_WrStr(":", 2ul);
-            }
+            WrChan((int32_t)m);
             osi_WrStr("M10 ", 5ul);
             osi_WrStr(ids, 201ul);
             osi_WrStr(" ", 2ul);
@@ -3382,6 +3379,7 @@ static void decodeframe10(uint32_t m)
       }
       else if (verb) {
          /*build tx frame */
+         WrChan((int32_t)m);
          osi_WrStr("M10 crc error", 14ul);
       }
       if (verb) {
