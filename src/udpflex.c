@@ -193,7 +193,11 @@ static char usbrobust;
 
 static char direwolf;
 
+static char direwolfserver;
+
 static uint32_t errtime;
+
+static int32_t tcplistenfd;
 
 static int32_t tcpfd;
 
@@ -254,7 +258,7 @@ static void inittnc(void)
 static void SetComMode(int32_t fd, uint32_t baud0)
 {
    struct termios term;
-   int32_t res;
+   int32_t res0;
    uint32_t bd;
    struct termios * anonym;
    if (baud0==1200UL) bd = 9UL;
@@ -268,8 +272,8 @@ static void SetComMode(int32_t fd, uint32_t baud0)
    else if (baud0==230400UL) bd = 4099UL;
    else if (baud0==460800UL) bd = 4100UL;
    else Error("unknown baudrate", 17ul);
-   res = tcgetattr(fd, &saved);
-   res = tcgetattr(fd, &term);
+   res0 = tcgetattr(fd, &saved);
+   res0 = tcgetattr(fd, &term);
    { /* with */
       struct termios * anonym = &term;
       anonym->c_lflag = 0UL;
@@ -278,7 +282,7 @@ static void SetComMode(int32_t fd, uint32_t baud0)
       /*  cfmakeraw(&termios);*/
       anonym->c_cflag = 2224UL+bd; /*+CRTSCTS*/ /*0800018B2H*/
    }
-   res = tcsetattr(fd, 2L, &term);
+   res0 = tcsetattr(fd, 2L, &term);
 } /* end SetComMode() */
 
 
@@ -472,6 +476,8 @@ static void Parms(void)
             osi_NextArg(h, 1024ul);
             urlport(direwolfurl, 2048ul, direwolfport, 11ul, h, 1024ul);
             direwolf = 1;
+            direwolfserver = aprsstr_StrCmp(direwolfurl, 2048ul, "0.0.0.0",
+                8ul);
          }
          else if (h[1U]=='v') verb = 1;
          else if (h[1U]=='V') {
@@ -511,6 +517,8 @@ ort)", 54ul);
 7.0.0.1:8001 (default)", 72ul);
                osi_WrStrLn("                                   local dire-wol\
 f soundmodem -T :", 67ul);
+               osi_WrStrLn(" -T 0.0.0.0:<tcpport>              listen on <tcp\
+ port> for TCP-KISS connect", 77ul);
                osi_WrStrLn(" -U <x.x.x.x:destport:listenport>  axudp \"ip:des\
 tport/listenport\" to check ipnum", 81ul);
                osi_WrStrLn("                                   (repeat for mo\
@@ -697,8 +705,10 @@ static void sendudp(char buf[], uint32_t buf_len, int32_t len0,
    buf[len0+1L] = (char)(crc0/256UL);
    { /* with */
       struct _0 * anonym = &udpsocks[port];
-      i0 = udpsend(anonym->sock, buf, len0+2L, anonym->toport,
+      if (anonym->sock>=0L) {
+         i0 = udpsend(anonym->sock, buf, len0+2L, anonym->toport,
                 anonym->ipnum);
+      }
    }
    X2C_PFREE(buf);
 /*
@@ -729,11 +739,11 @@ static int32_t getudp(int32_t fd, char buf[], uint32_t buf_len,
 static void conntcp(int32_t * fd, char url[], uint32_t url_len,
                 char port[], uint32_t port_len)
 {
-   int32_t res;
+   int32_t res0;
    X2C_PCOPY((void **)&url,url_len);
    X2C_PCOPY((void **)&port,port_len);
    *fd = connectto(url, port);
-   if ((int32_t)*fd>=0L) res = socknonblock(*fd);
+   if ((int32_t)*fd>=0L) res0 = socknonblock(*fd);
    X2C_PFREE(url);
    X2C_PFREE(port);
 } /* end conntcp() */
@@ -927,9 +937,31 @@ static void tapr2u(char t[], uint32_t t_len, int32_t l, char u[],
    X2C_PFREE(t);
 } /* end tapr2u() */
 
+
+static void wripnum(int32_t tcpfd0)
+{
+   char p[2048];
+   char n[2048];
+   char h[2048];
+   int32_t res0;
+   res0 = 2048L;
+   res0 = getpeeripnum(tcpfd0, h, &res0);
+   if (res0>=0L) {
+      ipnumport2str(h, 2048UL, n, 2048UL, p, 2048UL);
+      osi_WrStr("tcpkiss connect ", 17ul);
+      osi_WrStr(n, 2048ul);
+      osi_WrStr(":", 2ul);
+      osi_WrStrLn(p, 2048ul);
+   }
+} /* end wripnum() */
+
 static uint32_t tncport;
 
 static uint32_t crc;
+
+static uint32_t wake;
+
+static int32_t res;
 
 /*testloop:CARDINAL; */
 static aprsstr_GHOSTSET _cnst1 = {0x00000000UL,0x00000000UL,0x00000000UL,
@@ -951,10 +983,12 @@ extern int main(int argc, char **argv)
    flexmod = udpflex_KISS;
    usbrobust = 0;
    direwolf = 0;
+   direwolfserver = 0;
    baud = 9600UL;
    ttynamee[0] = 0;
    ifn[0] = 0;
    tcpfd = -1L;
+   tcplistenfd = -1L;
    for (tncport = 0UL; tncport<=7UL; tncport++) {
       udpsocks[tncport].sock = -1L;
    } /* end for */
@@ -973,17 +1007,35 @@ extern int main(int argc, char **argv)
    for (;;) {
       if (errtime==0UL) inittnc();
       if (direwolf && tcpfd<0L) {
-         if (verb) {
-            osi_WrStr("connect ", 9ul);
-            osi_WrStr(direwolfurl, 2048ul);
-            osi_WrStr(":", 2ul);
-            osi_WrStrLn(direwolfport, 11ul);
+         if (direwolfserver) {
+            if (tcplistenfd<0L) {
+               if (verb) {
+                  osi_WrStr("open tcpkiss listen port ", 26ul);
+                  osi_WrStrLn(direwolfport, 11ul);
+               }
+               tcplistenfd = waitconnect(direwolfport, 1UL);
+               if (tcplistenfd<0L) {
+                  osi_WrStr("cant bind to port ", 19ul);
+                  osi_WrStrLn(direwolfport, 11ul);
+               }
+            }
          }
-         conntcp(&tcpfd, direwolfurl, 2048ul, direwolfport, 11ul);
+         else {
+            if (verb) {
+               osi_WrStr("connect ", 9ul);
+               osi_WrStr(direwolfurl, 2048ul);
+               osi_WrStr(":", 2ul);
+               osi_WrStrLn(direwolfport, 11ul);
+            }
+            conntcp(&tcpfd, direwolfurl, 2048ul, direwolfport, 11ul);
+         }
       }
       fdclr();
+      wake = 0UL;
       if (direwolf) {
          if (tcpfd>=0L) fdsetr((uint32_t)tcpfd);
+         else if (tcplistenfd>=0L) fdsetr((uint32_t)tcplistenfd);
+         else wake = 2UL;
       }
       else if (tty!=-1L) fdsetr((uint32_t)tty);
       for (tncport = 0UL; tncport<=7UL; tncport++) {
@@ -991,16 +1043,33 @@ extern int main(int argc, char **argv)
             fdsetr((uint32_t)udpsocks[tncport].sock);
          }
       } /* end for */
-      if (selectr(0UL, 0UL)>=0L) {
-         if ((direwolf && tcpfd>=0L) && issetr((uint32_t)tcpfd)
+      if (selectr(wake, 0UL)>=0L) {
+         if (direwolf && (tcpfd>=0L && issetr((uint32_t)tcpfd)
+                || tcplistenfd>=0L && issetr((uint32_t)tcplistenfd))
                 || (!direwolf && tty!=-1L) && issetr((uint32_t)tty)) {
             if (direwolf) {
-               len = readsock(tcpfd, tbuf, 701L);
-               if (len<0L) {
-                  osic_CloseSock(tcpfd);
-                  tcpfd = -1L;
-                  len = 0L;
-                  usleep(2000000UL);
+               if (tcpfd<0L) {
+                  /* look for tnc inbound connect */
+                  if (tcplistenfd>=0L && issetr((uint32_t)tcplistenfd)) {
+                     /* tcp listensocket has news */
+                     res = 2048L;
+                     tcpfd = acceptconnect(tcplistenfd, direwolfurl, &res);
+                     if (tcpfd>=0L) {
+                        /* a new www connect */
+                        /*                res:=socknonblock(tcpfd); */
+                        if (verb) wripnum(tcpfd);
+                     }
+                  }
+               }
+               else {
+                  len = readsock(tcpfd, tbuf, 701L);
+                  if (len<0L) {
+                     osic_CloseSock(tcpfd);
+                     tcpfd = -1L;
+                     len = 0L;
+                     if (verb) osi_WrStrLn("tcpkiss disconnect", 19ul);
+                     usleep(2000000UL);
+                  }
                }
             }
             else if (tty!=-1L) {
@@ -1140,7 +1209,9 @@ extern int main(int argc, char **argv)
                         for (i = len; i>=1L; i--) {
                            ubuf[i] = ubuf[i-1L];
                         } /* end for */
-                        if (flexmod==udpflex_FLEXKISS) ubuf[0U] = ' ';
+                        if (flexmod==udpflex_FLEXKISS) {
+                           ubuf[0U] = ' ';
+                        }
                         else if (flexmod==udpflex_SMACK) {
                            ubuf[0U] = (char)(128UL+16UL*tncport);
                         }

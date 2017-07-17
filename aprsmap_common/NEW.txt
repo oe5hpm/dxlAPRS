@@ -1351,6 +1351,13 @@
 + Linux 64bit Version.
 
 
+5.7.2017 (Ver 0.67)
+
++ langen Locator suchen korrigiert und Kleinfeld Darstellung
++ udpflex (linux) tcpkiss server
+
+
+
 
 
 

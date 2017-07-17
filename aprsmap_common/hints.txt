@@ -197,7 +197,8 @@ Modify Start time with "Time full Bright" Knob
 |515 Remove Marker 1 and 2, the Measure
 Line and QTH Locator Area
 
-|517 toggle radio link calculation on/off
+|517 toggle Geoprofile (radio link)
+calculation on/off (shortcut "r")
 
 |518 Enter antenna 1 and 2 over ground in meters and
 frequency and if altitude datafile (srtm) is
