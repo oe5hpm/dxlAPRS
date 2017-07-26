@@ -525,7 +525,7 @@ static void Login(int32_t * fd, char l2adr[], uint32_t l2adr_len)
       osi_Werr(cmdline, 4096ul);
       osi_Werr("\012", 2ul);
    }
-   *fd = Execlogin_StartLogin(&cmdvec);
+   if (cmdvec.cmdfn) *fd = Execlogin_StartLogin(&cmdvec);
    /*
      IF fd>=0 THEN
        ret:=tcgetattr(fd, tio);
@@ -852,6 +852,7 @@ r more ports", 62ul);
       X2C_MOVE((char *) &mycall[7U],(char *) &connectto0[7U],7UL);
    }
    else keepconnected = 1;
+   if (sockc==0UL) Error("need at least one -U ...", 25ul);
 } /* end Parms() */
 
 
