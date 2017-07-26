@@ -1062,6 +1062,29 @@ static void symbols(aprsdecode_pOPHIST op, char objects,
    }
 } /* end symbols() */
 
+#define aprsmap_MINUP 240
+
+#define aprsmap_MINDOWN 160
+
+
+static void clbcolset(struct aprsdecode_COLTYP * c, int32_t clb)
+/* show more red/green altitude text on "Clb=" */
+{
+   c->b = 0UL;
+   c->r = 256UL;
+   c->g = 256UL; /* yellow no clb */
+   if (clb>0L) {
+      clb = clb*10L;
+      if (clb>240L) clb = 240L;
+      c->r = (uint32_t)(240L-clb);
+   }
+   else if (clb<0L) {
+      clb = -clb;
+      if (clb>160L) clb = 160L;
+      c->g = (uint32_t)(160L-clb);
+   }
+} /* end clbcolset() */
+
 
 static void text(aprsdecode_pOPHIST op, char yesno,
                 char objmove, char highlight0,
@@ -1167,8 +1190,16 @@ static void text(aprsdecode_pOPHIST op, char yesno,
                   aprsstr_Append(s, 256ul, s1, 256ul);
                   aprsstr_Append(s, 256ul, "m", 2ul);
                }
+               if (aprsdecode_click.ops->clb && labs((int32_t)
+                aprsdecode_click.ops->clb)<127L) {
+                  if (s[0U]) aprsstr_Append(s, 256ul, " ", 2ul);
+                  aprsstr_IntToStr((int32_t)aprsdecode_click.ops->clb, 1UL,
+                 s1, 256ul);
+                  aprsstr_Append(s, 256ul, s1, 256ul);
+                  aprsstr_Append(s, 256ul, "m/s", 4ul);
+               }
                if (s[0U]) {
-                  maptool_Colset(&col, 'Y');
+                  clbcolset(&col, (int32_t)aprsdecode_click.ops->clb);
                   maptool_drawstr(image, s, 256ul, osic_floor(x+7.0f),
                 osic_floor(y-(float)(aprsdecode_lums.fontysize/2UL)), lig,
                  0UL, col, &aprsdecode_click.ops->valuepos, 4UL, fix,

@@ -62,7 +62,7 @@ typedef uint32_t aprsdecode_SET256[8];
 
 extern aprsdecode_SET256 aprsdecode_SYMTABLE;
 
-#define aprsdecode_VERS "aprsmap(cu) 0.67"
+#define aprsdecode_VERS "aprsmap(cu) 0.68"
 
 typedef char aprsdecode_MONCALL[9];
 
@@ -221,6 +221,8 @@ struct aprsdecode_VARDAT {
    char raw[500]; /* last part allocatet with real size */
 };
 
+typedef signed char aprsdecode_CLBTYP;
+
 struct aprsdecode_OPHIST;
 
 typedef struct aprsdecode_OPHIST * aprsdecode_pOPHIST;
@@ -240,6 +242,7 @@ struct aprsdecode_OPHIST {
    aprsdecode_MONCALL call;
    struct aprsdecode_SYMBOL sym;
    uint8_t drawhints;
+   signed char clb;
    signed char trackcol;
    signed char textpos;
    signed char valuepos;
@@ -329,6 +332,7 @@ struct aprsdecode_DAT {
    struct aprspos_POSITION pos;
    uint32_t speed;
    uint32_t course;
+   int32_t climb;
    int32_t altitude;
    char sym;
    char symt;

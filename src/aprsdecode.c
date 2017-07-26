@@ -1567,7 +1567,7 @@ static void beaconmacros(char s[], uint32_t s_len,
                aprsstr_Append(ns, 256ul, "\\\\", 3ul);
             }
             else if (s[i]=='v') {
-               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.67", 17ul);
+               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.68", 17ul);
             }
             else if (s[i]=='l') {
                if (aprstext_getmypos(&pos)) {
@@ -2489,6 +2489,29 @@ static void GetTLM(aprsdecode_TELEMETRY v, char b[], uint32_t b_len)
    }
 } /* end GetTLM() */
 
+
+static void GetClb(int32_t * clb, char com[], uint32_t com_len)
+{
+   int32_t i;
+   char sig;
+   *clb = 0L;
+   i = aprsstr_InStr(com, com_len, "Clb=", 5ul);
+   if (i>=0L) {
+      i += 4L;
+      sig = 0;
+      if (com[i]=='-') {
+         sig = 1;
+         ++i;
+      }
+      while (((i<=(int32_t)(com_len-1) && *clb<1000L) && (uint8_t)
+                com[i]>='0') && (uint8_t)com[i]<='9') {
+         *clb =  *clb*10L+(int32_t)((uint32_t)(uint8_t)com[i]-48UL);
+         ++i;
+      }
+      if (sig) *clb = -*clb;
+   }
+} /* end GetClb() */
+
 /* === multiline */
 
 extern void aprsdecode_GetMultiline(char buf[], uint32_t buf_len,
@@ -3097,6 +3120,7 @@ extern int32_t aprsdecode_Decode(char buf[], uint32_t buf_len,
       GetHRT(&dat->pos, &dat->altitude, &dat->speed, dat->comment0, 256ul,
                 dat->hrtposes, 32ul, &dat->hrtlen, &dat->hrttime);
       GetTLM(dat->tlmvalues, dat->comment0, 256ul);
+      GetClb(&dat->climb, dat->comment0, 256ul);
    }
    else {
       i = 0UL;
@@ -4776,6 +4800,9 @@ static void settempspeed(aprsdecode_pOPHIST op,
       }
       else op->lasttempalt = -32768;
    }
+   if (dat.climb<-128L) op->clb = -128;
+   else if (dat.climb>127L) op->clb = 127;
+   else op->clb = (signed char)dat.climb;
 } /* end settempspeed() */
 
 
@@ -5676,7 +5703,7 @@ static char tcpconn(aprsdecode_pTCPSOCK * sockchain, int32_t f)
          aprsstr_Append(h, 512ul, s, 100ul);
       }
       aprsstr_Append(h, 512ul, " vers ", 7ul);
-      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.67", 17ul);
+      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.68", 17ul);
       appfilter(h, 512ul, 0);
       /*    IF filter[0]<>0C THEN Append(h, " filter ");
                 Append(h, filter) END; */
