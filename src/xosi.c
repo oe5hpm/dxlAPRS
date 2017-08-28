@@ -6,7 +6,6 @@
  * SPDX-License-Identifier:	GPL-2.0+
  */
 
-
 #define X2C_int32
 #define X2C_index32
 #ifndef xosi_H_
@@ -602,6 +601,9 @@ extern void xosi_xevent(void)
    uint32_t atom1;
    PAUChar pstr;
    int32_t tmp;
+
+   Atom wmDeleteMessage = XInternAtom(dis, "WM_DELETE_WINDOW", False);
+
    while (XPending(dis)) {
       XNextEvent(dis, &event);
       /*IF event.type<>6 THEN WrInt(event.type, 10); WrStrLn(" event") END;
@@ -703,9 +705,11 @@ extern void xosi_xevent(void)
       case 29L:
          useri_clrcpmarks();
          break;
-      case 33L: /* window close event */
-         aprsdecode_quit = 1;
-         osi_WrStrLn("Main Window Close", 18ul);
+      case ClientMessage:
+         if (event.xclient.data.l[0] == wmDeleteMessage) {
+         	aprsdecode_quit = 1;
+         	osi_WrStrLn("Main Window Close", 18ul);
+         }
          break;
       } /* end switch */
    }
