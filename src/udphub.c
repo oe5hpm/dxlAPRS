@@ -1051,7 +1051,7 @@ static char sendtouser(char ubuf0[], uint32_t ubuf_len,
       exactu = users;
       while (exactu && !cmpcall(exactu->call, ubuf0, ubuf_len,
                 (uint32_t)ci, 1)) {
-         /* conpare with ssid */
+         /* compare with ssid */
          exactu = exactu->next; /* find call + ssid match */
       }
    }
