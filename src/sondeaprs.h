@@ -15,7 +15,7 @@
 
 typedef uint32_t sondeaprs_TIME;
 
-#define sondeaprs_VERSION "sondemod(c) 1.1"
+#define sondeaprs_VERSION "sondemod(c) 1.2"
 
 extern void sondeaprs_senddata(double, double, double,
                 double, double, double, double,

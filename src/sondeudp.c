@@ -2257,6 +2257,13 @@ static void decodesub(const char b[], uint32_t b_len, uint32_t m,
             osi_WrStr(" deg", 5ul);
          }
       }
+      else {
+         u = bits2val(b, b_len, 24UL, 16UL);
+         if (verb) {
+            osi_WrStr(" ms: ", 6ul);
+            osic_WrINT32(u, 0UL);
+         }
+      }
       break;
    case 2UL:
       v = bits2val(b, b_len, 0UL, 32UL);
@@ -2321,7 +2328,9 @@ static void decodesub(const char b[], uint32_t b_len, uint32_t m,
          /* dfm06 ait, clb */
          v = bits2val(b, b_len, 0UL, 32UL);
          ui = (int32_t)bits2val(b, b_len, 32UL, 16UL);
-         if (ui>=32768L) ui -= 65536L;
+         if (ui>=32768L) {
+            ui -= 65536L; /* signed 16 */
+         }
          if (verb) {
             osi_WrStr(" alti:", 7ul);
             osic_WrFixed((float)v*0.01f, 1L, 0UL);
@@ -2679,6 +2688,16 @@ static void Fsk6(uint32_t m)
 
 /*------------------------------ C34 C50 */
 
+static float SaveReal(uint32_t c)
+{
+   uint32_t e;
+   e = c/16777216UL;
+   if (e==127UL) return X2C_max_real;
+   if (e==255UL) return X2C_min_real;
+   return *X2C_CAST(&c,uint32_t,float,float *);
+} /* end SaveReal() */
+
+
 static void demodframe34(uint32_t channel)
 {
    uint32_t val;
@@ -2743,7 +2762,8 @@ static void demodframe34(uint32_t channel)
                 (uint8_t)anonym->rxbuf[5U]*256UL+(uint32_t)(uint8_t)
                 anonym->rxbuf[4U]*65536UL+(uint32_t)(uint8_t)
                 anonym->rxbuf[3U]*16777216UL;
-         hr = (double)*X2C_CAST(&val,uint32_t,float,float *);
+         hr = (double)SaveReal(val);
+         /*WrFixed(hr, 10, 20); */
          if (anonym->c50) {
             if (anonym->id50.idtime+3600UL<osic_time()) {
                anonym->id50.id[0U] = 0;
@@ -2753,12 +2773,6 @@ static void demodframe34(uint32_t channel)
             /* remove old id */
             switch ((unsigned)anonym->rxbuf[2U]) {
             case '\003':
-               /*
-                         CHR(02H): hr:=CAST(REAL, CAST(SET32,
-                val)/SET32{0..31});
-                                   IF verb THEN WrStr("baro ");
-                WrFixed(hr, 2, 0); WrStr(""); END;
-               */
                if (hr<99.9 && hr>(-99.9)) {
                   if (verb) {
                      osi_WrStr("tmp1 ", 6ul);
@@ -3262,7 +3276,7 @@ typedef uint32_t SET256[8];
 
 static float sondeudp_DEGMUL = 8.3819036711397E-8f;
 
-#define sondeudp_VMUL 0.01
+#define sondeudp_VMUL 0.005
 
 static SET256 sondeudp_HSET = {0x03FFFFF0UL,0x00000003UL,0x00000000UL,
                 0x00000018UL,0x00000000UL,0x00000000UL,0x00000000UL,
@@ -3300,7 +3314,12 @@ static void decodeframe10(uint32_t m)
          tow = m10card(anonym->rxbuf, 101ul, 10L, 4L);
          week = m10card(anonym->rxbuf, 101ul, 32L, 2L);
          time0 = tow/1000UL+week*604800UL+315964800UL;
-         /*WrStr(" ");DateToStr(time, s); WrStr(s); WrStr(" "); */
+         if (verb2) {
+            osi_WrStr(" ", 2ul);
+            aprsstr_DateToStr(time0, s, 201ul);
+            osi_WrStr(s, 201ul);
+            osi_WrStr(" ", 2ul);
+         }
          lat = (double)m10card(anonym->rxbuf, 101ul, 14L,
                 4L)*8.3819036711397E-8;
          lon = (double)m10card(anonym->rxbuf, 101ul, 18L,
@@ -3308,13 +3327,13 @@ static void decodeframe10(uint32_t m)
          alt = (double)m10card(anonym->rxbuf, 101ul, 22L, 4L)*0.001;
          ci = (int32_t)m10card(anonym->rxbuf, 101ul, 4L, 2L);
          if (ci>32767L) ci -= 65536L;
-         ve = (double)ci*0.01;
+         ve = (double)ci*0.005;
          ci = (int32_t)m10card(anonym->rxbuf, 101ul, 6L, 2L);
          if (ci>32767L) ci -= 65536L;
-         vn = (double)ci*0.01;
+         vn = (double)ci*0.005;
          ci = (int32_t)m10card(anonym->rxbuf, 101ul, 8L, 2L);
          if (ci>32767L) ci -= 65536L;
-         vv = (double)ci*0.01;
+         vv = (double)ci*0.005;
          v = (double)osic_sqrt((float)(ve*ve+vn*vn));
                 /* hor speed */
          dir = atang2(vn, ve)*5.7295779513082E+1;
@@ -3350,7 +3369,7 @@ static void decodeframe10(uint32_t m)
             osi_WrStr(" ", 2ul);
             osic_WrFixed((float)alt, 1L, 1UL);
             osi_WrStr("m ", 3ul);
-            osic_WrFixed((float)v, 1L, 1UL);
+            osic_WrFixed((float)(v*3.6), 1L, 1UL);
             osi_WrStr("km/h ", 6ul);
             osic_WrFixed((float)dir, 0L, 1UL);
             osi_WrStr("deg ", 5ul);
@@ -3388,6 +3407,12 @@ static void decodeframe10(uint32_t m)
          Wrtune(chan[m].admax+chan[m].admin, chan[m].admax-chan[m].admin);
       }
       if (verb2) {
+         for (i = 0UL; i<=23UL; i++) {
+            if (i%10UL==0UL) osi_WrStrLn("", 1ul);
+            osic_WrINT32(m10card(anonym->rxbuf, 101ul,
+                (int32_t)(48UL+i*2UL), 2L), 6UL);
+            osi_WrStr(" ", 2ul);
+         } /* end for */
          for (i = 0UL; i<=100UL; i++) {
             if (i%24UL==0UL) osi_WrStrLn("", 1ul);
             if (X2C_INL(i,256,_cnst1)) osi_WrStr(" . ", 4ul);

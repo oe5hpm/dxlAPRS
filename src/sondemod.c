@@ -345,6 +345,16 @@ static double atan20(double x, double y)
 } /* end atan2() */
 
 
+static float SaveReal(uint32_t c)
+{
+   uint32_t e;
+   e = c/16777216UL;
+   if (e==127UL) return X2C_max_real;
+   if (e==255UL) return X2C_min_real;
+   return *X2C_CAST(&c,uint32_t,float,float *);
+} /* end SaveReal() */
+
+
 static char GetNum(const char h[], uint32_t h_len, char eot,
                  uint32_t * p, uint32_t * n)
 {
@@ -475,7 +485,7 @@ static void Parms(void)
          }
          else {
             if (h[1U]=='h') {
-               osi_WrStr("sondemod(c) 1.1", 16ul);
+               osi_WrStr("sondemod(c) 1.2", 16ul);
                osi_WrStrLn(" multichannel decoder RS92, RS41, SRS-C34 DFM0x, \
 M10 Radiosondes", 65ul);
                osi_WrStrLn(" -A <meter>     at lower altitude use -B beacon t\
@@ -778,7 +788,7 @@ static void decodecalib(const char cd[], uint32_t cd_len)
                 cd[i+2UL]*256UL+(uint32_t)(uint8_t)
                 cd[i+3UL]*65536UL+(uint32_t)(uint8_t)
                 cd[i+4UL]*16777216UL;
-      coeff[n] = *X2C_CAST(&cr,uint32_t,float,float *);
+      coeff[n] = SaveReal(cr);
       if (!tmp) break;
       --tmp;
       i += 5UL;
@@ -1707,7 +1717,7 @@ static void decodec34(const char rxb[], uint32_t rxb_len,
    val = (uint32_t)(uint8_t)cb[4U]+(uint32_t)(uint8_t)
                 cb[3U]*256UL+(uint32_t)(uint8_t)
                 cb[2U]*65536UL+(uint32_t)(uint8_t)cb[1U]*16777216UL;
-   hr = (double)*X2C_CAST(&val,uint32_t,float,float *);
+   hr = (double)SaveReal(val);
    posok = 0;
    if (c50) {
       switch ((unsigned)cb[0U]) {
@@ -2924,7 +2934,7 @@ static uint32_t m10card(const char b[], uint32_t b_len,
 
 static float sondemod_DEGMUL = 8.3819036711397E-8f;
 
-#define sondemod_VMUL 0.01
+#define sondemod_VMUL 0.005
 
 
 static void decodem10(const char rxb[], uint32_t rxb_len,
@@ -3021,26 +3031,35 @@ static void decodem10(const char rxb[], uint32_t rxb_len,
          pc->framenum = frameno;
          pc->tused = systime;
       }
-      else if (pc->framenum==frameno && !pc->framesent) calok = 1;
+      else if (pc->framenum==frameno) {
+         if (!pc->framesent) calok = 1;
+      }
+      else if (sondeaprs_verb) {
+         osi_WrStr(" got old frame ", 16ul);
+         osic_WrINT32(frameno, 1UL);
+         osi_WrStr(" expected> ", 12ul);
+         osic_WrINT32(pc->framenum, 1UL);
+         osi_WrStr(" ", 2ul);
+      }
       lat = (double)m10card(rxb, rxb_len, 30L, 4L)*8.3819036711397E-8;
       lon = (double)m10card(rxb, rxb_len, 34L, 4L)*8.3819036711397E-8;
       alt = (double)m10card(rxb, rxb_len, 38L, 4L)*0.001;
       ci = (int32_t)m10card(rxb, rxb_len, 20L, 2L);
       if (ci>32767L) ci -= 65536L;
-      ve = (double)ci*0.01;
+      ve = (double)ci*0.005;
       ci = (int32_t)m10card(rxb, rxb_len, 22L, 2L);
       if (ci>32767L) ci -= 65536L;
-      vn = (double)ci*0.01;
+      vn = (double)ci*0.005;
       ci = (int32_t)m10card(rxb, rxb_len, 24L, 2L);
       if (ci>32767L) ci -= 65536L;
-      vv = (double)ci*0.01;
+      vv = (double)ci*0.005;
       v = (double)osic_sqrt((float)(ve*ve+vn*vn)); /* hor speed */
       dir = atan20(vn, ve)*5.7295779513082E+1;
-      if (dir<0.0) {
-         dir = 360.0+dir;
-      }
+      if (dir<0.0) dir = 360.0+dir;
       if (sondeaprs_verb) {
          osi_WrStr(nam, 9ul);
+         osi_WrStr(" ", 2ul);
+         osic_WrINT32(frameno, 1UL);
          osi_WrStr(" ", 2ul);
          osic_WrFixed((float)lat, 5L, 1UL);
          osi_WrStr(" ", 2ul);
@@ -3048,7 +3067,7 @@ static void decodem10(const char rxb[], uint32_t rxb_len,
          osi_WrStr(" ", 2ul);
          osic_WrFixed((float)alt, 1L, 1UL);
          osi_WrStr("m ", 3ul);
-         osic_WrFixed((float)v, 1L, 1UL);
+         osic_WrFixed((float)(v*3.6), 1L, 1UL);
          osi_WrStr("km/h ", 6ul);
          osic_WrFixed((float)dir, 0L, 1UL);
          osi_WrStr("deg ", 5ul);
@@ -3062,9 +3081,9 @@ static void decodem10(const char rxb[], uint32_t rxb_len,
       sondeaprs_senddata(lat*1.7453292519943E-2, lon*1.7453292519943E-2, alt,
                  v, dir, vv, 0.0, 0.0, (double)X2C_max_real, 0.0, 0.0,
                 0.0, 0.0, 0.0, 0.0, 0.0, X2C_CHKNIL(pCONTEXTM10,
-                pc)->gpssecond, frameno, X2C_CHKNIL(pCONTEXTM10,pc)->name,
-                9ul, 0UL, 0UL, usercall, 11ul, 0UL, 0UL, sondeaprs_nofilter, \
-"M10", 4ul);
+                pc)->gpssecond, 0UL, X2C_CHKNIL(pCONTEXTM10,pc)->name, 9ul,
+                0UL, 0UL, usercall, 11ul, 0UL, 0UL, sondeaprs_nofilter,
+                "M10", 4ul);
       pc->framesent = 1;
    }
 } /* end decodem10() */
