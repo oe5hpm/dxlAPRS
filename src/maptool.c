@@ -834,19 +834,28 @@ static float getsrtm1(uint32_t ilat, uint32_t ilong,
          anonym0->strips[xx][y] = pb;
          osic_Seek(anonym0->fd, (uint32_t)seek);
          if (osi_RdBin(anonym0->fd, (char *)pb, 2400u/1u,
-                rdsize)!=(int32_t)rdsize) return 32767.0f;
-         /*
-         c-translator frissts nicht
-               FOR i:=0 TO rdsize DIV 2-1 DO pb^[i]:=pb^[i]<<8 + pb^[i]
+                rdsize)!=(int32_t)rdsize) {
+            tmp = rdsize/2UL-1UL;
+            i = 0UL;
+            if (i<=tmp) for (;; i++) {
+               pb[i] = 32767;
+               if (i==tmp) break;
+            } /* end for */
+         }
+         else {
+            /*
+            c-translator frissts nicht
+                    FOR i:=0 TO rdsize DIV 2-1 DO pb^[i]:=pb^[i]<<8 + pb^[i]
                 >>8 END;  (* motorola format *)  
-         */
-         tmp = rdsize/2UL-1UL;
-         i = 0UL;
-         if (i<=tmp) for (;; i++) {
-            pb[i] = (short)(X2C_LSH((uint16_t)pb[i],16,
+            */
+            tmp = rdsize/2UL-1UL;
+            i = 0UL;
+            if (i<=tmp) for (;; i++) {
+               pb[i] = (short)(X2C_LSH((uint16_t)pb[i],16,
                 8)|X2C_LSH((uint16_t)pb[i],16,-8));
-            if (i==tmp) break;
-         } /* end for */
+               if (i==tmp) break;
+            } /* end for */
+         }
       }
       /* motorola format */
       /*ELSE INC(hit); */
