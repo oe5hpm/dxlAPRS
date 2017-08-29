@@ -120,6 +120,8 @@ static uint32_t cursor;
 
 static char cursorset;
 
+static uint32_t wclose;
+
 
 static uint32_t Gamma(uint32_t c, float g)
 {
@@ -240,7 +242,6 @@ static int32_t MakeMainWin(char winname[], uint32_t winname_len,
                 char iconname[], uint32_t iconname_len,
                 uint32_t xsizeh, uint32_t ysizeh)
 {
-   uint32_t wclose;
    struct XWIN * anonym;
    int32_t MakeMainWin_ret;
    X2C_PCOPY((void **)&winname,winname_len);
@@ -443,6 +444,11 @@ extern void xosi_Umlaut(char c[], uint32_t c_len)
    } /* end switch */
 } /* end Umlaut() */
 
+/*
+    pb:POINTER TO ARRAY[0..1000000] OF CHAR;
+    len:INTEGER;
+    cmd:CHAR;
+*/
 
 extern void xosi_paste(void)
 {
@@ -601,9 +607,6 @@ extern void xosi_xevent(void)
    uint32_t atom1;
    PAUChar pstr;
    int32_t tmp;
-
-   Atom wmDeleteMessage = XInternAtom(dis, "WM_DELETE_WINDOW", False);
-
    while (XPending(dis)) {
       XNextEvent(dis, &event);
       /*IF event.type<>6 THEN WrInt(event.type, 10); WrStrLn(" event") END;
@@ -705,10 +708,10 @@ extern void xosi_xevent(void)
       case 29L:
          useri_clrcpmarks();
          break;
-      case ClientMessage:
-         if (event.xclient.data.l[0] == wmDeleteMessage) {
-         	aprsdecode_quit = 1;
-         	osi_WrStrLn("Main Window Close", 18ul);
+      case 33L:
+         if ((uint32_t)event.xclient.data.l[0U]==wclose) {
+            aprsdecode_quit = 1;
+            osi_WrStrLn("Main Window Close", 18ul); /* window close event */
          }
          break;
       } /* end switch */
