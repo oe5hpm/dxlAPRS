@@ -5,7 +5,7 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
-/* "@(#)l2.c May 11  0:15:23 2017" */
+/* "@(#)l2.c Aug 27 20:27:14 2017" */
 
 
 #define X2C_int32
@@ -38,6 +38,8 @@ uint16_t l2_LostINT;
 l2_pDATA l2_dbuf;
 l2_AFIELD l2_adress;
 uint16_t l2_asize;
+char l2_l2verb;
+uint32_t l2_dupchk;
 char l2_udp2buf[100];
 
 
@@ -2714,6 +2716,8 @@ extern void l2_L2Init(uint16_t bufs, uint16_t portset,
    struct l2__D2 * anonym;
    struct _0 * anonym0;
    /* init with default parameters */
+   l2_l2verb = 0;
+   l2_dupchk = 0UL;
    Event = callback;
    hosts = 0U;
    monbufs = 0U;

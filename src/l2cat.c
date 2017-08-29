@@ -73,7 +73,7 @@ FROM mlib IMPORT tcsetattr, tcgetattr, tcflag_t,
 
 #define l2cat_RCTIMEBASE 1000
 
-#define l2cat_FLUSHDELAY 4
+#define l2cat_FLUSHDELAY 3
 /* LOOPTIMES wait sending out rest of buffer */
 
 typedef char IOBUF[256];
@@ -153,6 +153,8 @@ static uint32_t convlfcr;
 static uint32_t convtopipe;
 
 static uint32_t montyp;
+
+static uint32_t axudpchk;
 
 static uint32_t recontime;
 
@@ -636,6 +638,15 @@ static void Parms(void)
                osi_WrStrLn("-m <0..1>", 10ul);
             }
          }
+         else if (h[1U]=='w') {
+            /* -w <num> check axudp dupes *10ms */
+            osi_NextArg(h, 1024ul);
+            i0 = 0UL;
+            if (!GetNum(h, 1024ul, 0, &i0, &axudpchk) || axudpchk>31UL) {
+               err = 1;
+               osi_WrStrLn("-w <0..31>", 11ul);
+            }
+         }
          else if (h[1U]=='D') {
             /* -D <n> discard frame len */
             osi_NextArg(h, 1024ul);
@@ -665,9 +676,7 @@ static void Parms(void)
                err = 1;
                osi_WrStrLn("-R <ms> (max 4000000)", 22ul);
             }
-            else {
-               maxrecontime = j*1000UL;
-            }
+            else maxrecontime = j*1000UL;
             keepconnected = 1;
          }
          else if (h[1U]=='n') {
@@ -756,9 +765,7 @@ static void Parms(void)
             usedeflat = 1;
          }
          else if (h[1U]=='d') usedeflat = 1;
-         else if (h[1U]=='v') {
-            verb = 1;
-         }
+         else if (h[1U]=='v') verb = 1;
          else if (h[1U]=='V') {
             verb = 1;
             verb2 = 1;
@@ -835,6 +842,8 @@ r more ports", 62ul);
                 43ul);
                osi_WrStrLn(" -V                                more verbous",
                  48ul);
+               osi_WrStrLn(" -w <n>                            check dupe axu\
+dp frames last n frames or n*10ms", 83ul);
                osic_WrLn();
                X2C_ABORT();
             }
@@ -1173,7 +1182,7 @@ static void wrl2(l2_pLINK link0, char b[], uint32_t b_len,
          ++i0;
       }
       *blen -= len;
-      junk->time0 = 4L;
+      junk->time0 = 3L;
    }
    sendjunk(link0, junk);
 } /* end wrl2() */
@@ -1646,6 +1655,8 @@ static int32_t pp1;
 
 static uint16_t sockset;
 
+static char l2tick;
+
 
 X2C_STACK_LIMIT(100000l)
 extern int main(int argc, char **argv)
@@ -1678,6 +1689,7 @@ extern int main(int argc, char **argv)
    montyp = 0UL;
    minrecontime = 2000000UL;
    maxrecontime = 120000000UL;
+   axudpchk = 0UL;
    Parms();
    pmon = 0;
    eventproc = Event;
@@ -1689,6 +1701,8 @@ extern int main(int argc, char **argv)
       if (i==tmp) break;
    } /* end for */
    l2_L2Init(1000U, sockset, eventproc);
+   l2_l2verb = verb;
+   l2_dupchk = axudpchk;
    signal(SIGCHLD, cleanup); /*CleanWho*/
    /*
      MOVE(ADR(mycall), ADR(hc[0*7]), 7);          (* via call *)
@@ -1866,7 +1880,9 @@ extern int main(int argc, char **argv)
          l2_Layer2();
          if (montyp>0UL) Monitor();
          timesum -= 10000L;
+         l2tick = 1;
       }
+      else l2tick = 0;
       pt = tasks;
       while (pt) {
          if (pt->state==2U && pt->infd>=0L) {
@@ -1896,9 +1912,10 @@ extern int main(int argc, char **argv)
                   if (pt->pcdeflat->outlen==0L) compress(pt);
                   wrl2(pt->link0, pt->pcdeflat->outbuf, 20001ul,
                 &pt->pcdeflat->outlen, &pt->junkbuf);
-                  if (pt->pcdeflat->pppframing) pt->junkbuf.time0 = 0L;
                }
                else {
+                  /*            IF pt^.pcdeflat^.pppframing THEN pt^.junkbuf.time:=0 END;
+                 */
                   crlf(pt->inbuf, 256ul, &pt->inlen, pt->crlfmode);
                   wrl2(pt->link0, pt->inbuf, 256ul, &pt->inlen,
                 &pt->junkbuf);
@@ -1959,7 +1976,7 @@ extern int main(int argc, char **argv)
                }
             }
          }
-         if (pt->junkbuf.len>0L) {
+         if (l2tick && pt->junkbuf.len>0L) {
             if (pt->junkbuf.time0>0L) --pt->junkbuf.time0;
             else sendjunk(pt->link0, &pt->junkbuf);
          }

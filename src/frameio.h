@@ -31,6 +31,8 @@ struct frameio_UDPSOCK {
    char checkip;
    char dcd;
    char hastxdata;
+   uint32_t dupcnt; /* circular write pointer */
+   uint32_t dupcrcs[32]; /* circular crc of frames buffer*/
 };
 
 extern char frameio_crcok;

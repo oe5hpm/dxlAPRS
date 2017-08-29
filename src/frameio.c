@@ -5,7 +5,7 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
-/* "@(#)frameio.c May 11  0:15:23 2017" */
+/* "@(#)frameio.c Aug 27 20:27:14 2017" */
 
 
 #define X2C_int32
@@ -215,6 +215,32 @@ static char GetDField(void)
 } /* end GetDField() */
 
 
+static char isdupe(char crc1, char crc2, uint32_t usock)
+{
+   uint32_t c;
+   uint32_t n;
+   uint32_t i;
+   struct frameio_UDPSOCK * anonym;
+   { /* with */
+      struct frameio_UDPSOCK * anonym = &frameio_udpsocks0[usock];
+      c = (uint32_t)(uint8_t)crc1+(uint32_t)(uint8_t)
+                crc2*256UL+65536UL;
+      n = anonym->dupcnt;
+      i = l2_dupchk;
+      while (i>0UL && anonym->dupcrcs[n]!=c) {
+         --i;
+         if (n>0UL) --n;
+         else n = 31UL;
+      }
+      if (i>0UL) c = 0UL;
+      ++anonym->dupcnt;
+      if (anonym->dupcnt>31UL) anonym->dupcnt = 0UL;
+      anonym->dupcrcs[anonym->dupcnt] = c;
+   }
+   return i>0UL;
+} /* end isdupe() */
+
+
 static void getudp(uint32_t usock, char buf[], uint32_t buf_len,
                 int32_t * len)
 {
@@ -234,9 +260,14 @@ static void getudp(uint32_t usock, char buf[], uint32_t buf_len,
       *len -= 2L;
       crc1 = buf[*len];
       crc2 = buf[*len+1L];
+      if (l2_dupchk>0UL && isdupe(crc1, crc2, usock)) {
+         if (l2_l2verb) osi_WrStrLn("axudp dupe deleted", 19ul);
+         *len = -1L;
+         return;
+      }
       aprsstr_AppCRC(buf, buf_len, *len);
       if (crc1!=buf[*len] || crc2!=buf[*len+1L]) {
-         osi_WrStrLn(" axudp crc error", 17ul);
+         if (l2_l2verb) osi_WrStrLn(" axudp crc error", 17ul);
          *len = -1L;
          return;
       }

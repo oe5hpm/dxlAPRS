@@ -74,6 +74,10 @@ extern l2_AFIELD l2_adress; /*static adress field*/
 
 extern uint16_t l2_asize; /*length of static adress*/
 
+extern char l2_l2verb;
+
+extern uint32_t l2_dupchk;
+
 extern char l2_udp2buf[100]; /* axudp2 header after Getframe */
 
 struct l2__D0;
