@@ -90,6 +90,7 @@ struct VIEW {
    int32_t lumobj;
    int32_t lumtext;
    aprsdecode_MAPNAME mapname;
+   int32_t maplumcorr;
    /*            altimap, */
    char focus;
 };
@@ -2344,6 +2345,7 @@ static void push(float newzoom)
             anonym0->wxcol = aprsdecode_lums.wxcol;
             anonym0->lumtext = aprsdecode_lums.text;
             memcpy(anonym0->mapname,aprsdecode_lums.mapname,41u);
+            anonym0->maplumcorr = aprsdecode_lums.maplumcorr;
             /*        altimap:=click.altimap; */
             anonym0->focus = aprsdecode_click.watchmhop;
          }
@@ -2417,6 +2419,7 @@ static void pop(void)
                useri_int2cfg(useri_fLOBJ, anonym0->lumobj/10L);
             }
             memcpy(aprsdecode_lums.mapname,anonym0->mapname,41u);
+            aprsdecode_lums.maplumcorr = anonym0->maplumcorr;
             /*        click.altimap:=altimap; */
             aprsdecode_click.watchmhop = anonym0->focus;
          }
