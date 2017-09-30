@@ -220,15 +220,15 @@ Files into or where You have a set of
 downloaded Maps
 
 |538 Manage Map Types.
-The Lines are typnames like "tiles_topo -128"
-the optional value is a brightness correction
-(range -255 to 255), darker with - values. 
+The Lines are typnames like "tiles_topo 0.25"
+the optional value is gamma of the images,
+0.45 is normal, 0.25 for more contrast. 
 The names use subdirectories in "map directory"
 and are passed to the map downloader where URLs
 to the names are associated. First entry is used
 at program start. Sort entries by "Edit" and "Add".
-Use first 3 lines by shortcut "7" "8" "9" else
-"Tools > Choose Map"
+Use first 4 lines by shortcut "6" "7" "8" "9"
+else "Tools > Choose Map"
 
 |540 Choose Maptype, Reload Map You see
 or Prepare offline Map Collections

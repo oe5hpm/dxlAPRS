@@ -1567,7 +1567,7 @@ static void beaconmacros(char s[], uint32_t s_len,
                aprsstr_Append(ns, 256ul, "\\\\", 3ul);
             }
             else if (s[i]=='v') {
-               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.68", 17ul);
+               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.69", 17ul);
             }
             else if (s[i]=='l') {
                if (aprstext_getmypos(&pos)) {
@@ -5703,7 +5703,7 @@ static char tcpconn(aprsdecode_pTCPSOCK * sockchain, int32_t f)
          aprsstr_Append(h, 512ul, s, 100ul);
       }
       aprsstr_Append(h, 512ul, " vers ", 7ul);
-      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.68", 17ul);
+      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.69", 17ul);
       appfilter(h, 512ul, 0);
       /*    IF filter[0]<>0C THEN Append(h, " filter ");
                 Append(h, filter) END; */
@@ -6880,7 +6880,7 @@ extern void aprsdecode_initparms(void)
       anonym->fps = 0L;
       /*  mapmode:=REFLATER; */
       strncpy(anonym->mapname,"tiles",41u);
-      anonym->maplumcorr = -128L;
+      useri_Tilegamma0(0.45f);
       anonym->gamma = 2.2f;
       anonym->centering = 40L;
       anonym->movestep = 10UL;
@@ -6940,6 +6940,7 @@ extern void aprsdecode_BEGIN(void)
    if (sizeof(uint16_t)!=2) X2C_ASSERT(0);
    if (sizeof(aprsdecode_MAPNAME)!=41) X2C_ASSERT(0);
    if (sizeof(aprsdecode_SYMBOLSET)!=24) X2C_ASSERT(0);
+   if (sizeof(aprsdecode_MAPGAMMATAB)!=1028) X2C_ASSERT(0);
    if (sizeof(CHSET)!=16) X2C_ASSERT(0);
    if (sizeof(TICKERCALL)!=31) X2C_ASSERT(0);
    aprstext_BEGIN();

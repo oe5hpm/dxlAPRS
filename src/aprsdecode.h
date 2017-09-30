@@ -62,7 +62,7 @@ typedef uint32_t aprsdecode_SET256[8];
 
 extern aprsdecode_SET256 aprsdecode_SYMTABLE;
 
-#define aprsdecode_VERS "aprsmap(cu) 0.68"
+#define aprsdecode_VERS "aprsmap(cu) 0.69"
 
 typedef char aprsdecode_MONCALL[9];
 
@@ -455,6 +455,8 @@ typedef char aprsdecode_MAPNAME[41];
 
 typedef uint32_t aprsdecode_SYMBOLSET[6];
 
+typedef uint32_t aprsdecode_MAPGAMMATAB[257];
+
 extern uint32_t aprsdecode_systime;
 
 extern uint32_t aprsdecode_realtime;
@@ -551,7 +553,7 @@ struct aprsdecode__D1 {
    char headmenuy;
    aprsdecode_MAPNAME mapname;
    char configfn[257];
-   int32_t maplumcorr;
+   aprsdecode_MAPGAMMATAB maplumcorr;
    int32_t map;
    int32_t rf;
    int32_t rfbri;

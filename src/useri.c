@@ -631,6 +631,25 @@ static struct maptool_PANOWIN panowin;
 static char digiedline[201];
 
 
+extern void useri_Tilegamma0(float gamma)
+{
+   uint32_t i;
+   float v;
+   if (gamma<0.01f) gamma = 0.01f;
+   else if (gamma>50.0f) gamma = 50.0f;
+   for (i = 0UL; i<=256UL; i++) {
+      if (i==0UL) v = 0.0f;
+      else {
+         v = osic_exp(X2C_DIVR(osic_ln(X2C_DIVR((float)i,256.0f)),
+                gamma))*1024.5f;
+      }
+      if (v<=0.0f) v = 0.0f;
+      else if (v>1024.0f) v = 1024.0f;
+      aprsdecode_lums.maplumcorr[i] = aprsdecode_trunc(v);
+   } /* end for */
+} /* end Tilegamma() */
+
+
 static int32_t inclim(int32_t n, int32_t d, int32_t min0)
 /* inc CARD INT with limit to min */
 {
@@ -1438,11 +1457,11 @@ extern void useri_loadconfig(char verb)
    useri_rdlums();
    useri_confstr(useri_fMAPNAMES, s, 1000ul);
    if (s[0U]==0) {
-      useri_AddConfLine(useri_fMAPNAMES, 1U, "tiles -128", 11ul);
-      useri_AddConfLine(useri_fMAPNAMES, 1U, "tiles_topo -128", 16ul);
-      useri_AddConfLine(useri_fMAPNAMES, 1U, "tiles_cyclemap -128", 20ul);
-      useri_AddConfLine(useri_fMAPNAMES, 1U, "tiles_quest -128", 17ul);
-      useri_AddConfLine(useri_fMAPNAMES, 1U, "tiles_sat 0", 12ul);
+      useri_AddConfLine(useri_fMAPNAMES, 1U, "tiles 0.25", 11ul);
+      useri_AddConfLine(useri_fMAPNAMES, 1U, "tiles_topo 0.25", 16ul);
+      useri_AddConfLine(useri_fMAPNAMES, 1U, "tiles_cyclemap 0.25", 20ul);
+      useri_AddConfLine(useri_fMAPNAMES, 1U, "tiles_sat 0.45", 15ul);
+      useri_AddConfLine(useri_fMAPNAMES, 1U, "tiles_quest 0.25", 17ul);
    }
    /*  confstr(fDIGI, s); */
    /*  IF s[0]=0C THEN AddConfLine(fDIGI, 0,
@@ -1794,11 +1813,10 @@ extern void useri_Setmap(uint32_t n)
       aprsdecode_lums.mapname[i] = 0;
       while (i<100UL && s[i]==' ') ++i;
       aprsstr_Delstr(s, 101ul, 0UL, i);
-      if (aprsstr_StrToFix(&lu, s, 101ul) && (float)fabs(lu)<256.0f) {
-         aprsdecode_lums.maplumcorr = (int32_t)X2C_TRUNCI(lu,
-                X2C_min_longint,X2C_max_longint);
+      if ((!aprsstr_StrToFix(&lu, s, 101ul) || lu>10.0f) || lu<0.01f) {
+         lu = 0.45f;
       }
-      else aprsdecode_lums.maplumcorr = -128L;
+      useri_Tilegamma0(lu);
    }
 } /* end Setmap() */
 
@@ -4049,7 +4067,7 @@ static void helpmenu(void)
    newmenu(&menu, 150UL, aprsdecode_lums.fontysize+7UL, 3UL, useri_bTRANSP);
    /*  addline(menu, "Shortcuts", CMDSHORTCUTLIST, MINH*6); */
    addline(menu, "Helptext", 9ul, "\305", 2ul, 610UL);
-   addline(menu, "aprsmap(cu) 0.68 by OE5DXL ", 28ul, " ", 2ul, 605UL);
+   addline(menu, "aprsmap(cu) 0.69 by OE5DXL ", 28ul, " ", 2ul, 605UL);
    setunderbar(menu, 37L);
    menu->ysize = menu->oldknob*menu->yknob;
    menu->oldknob = 0UL;
@@ -4059,6 +4077,8 @@ static void helpmenu(void)
 
 #define useri_MAXBUTT 20
 
+#define useri_MTAB "7896"
+
 
 static void mapchoose(void)
 {
@@ -4067,7 +4087,6 @@ static void mapchoose(void)
    uint32_t n;
    uint32_t i;
    char s[101];
-   char tmp;
    newmenu(&menu, 100UL, aprsdecode_lums.fontysize+7UL, 20UL, useri_bTRANSP);
    m = 0UL;
    for (n = 17UL;; n--) {
@@ -4076,13 +4095,12 @@ static void mapchoose(void)
          i = 0UL;
          while (i<100UL && (uint8_t)s[i]>' ') ++i;
          s[i] = 0;
-         if (m<3UL) {
+         if (m<4UL) {
             aprsstr_Append(s, 101ul, " [", 3ul);
-            aprsstr_Append(s, 101ul, (char *)(tmp = (char)(m+55UL),
-                &tmp), 1u/1u);
+            aprsstr_Append(s, 101ul, (char *) &"7896"[m], 1u/1u);
             aprsstr_Append(s, 101ul, "]", 2ul);
-            ++m;
          }
+         ++m;
          addline(menu, s, 101ul, "\302", 2ul, 710UL);
       }
       if (n==0UL) break;
@@ -11454,6 +11472,7 @@ static void mouseleft(int32_t mousx, int32_t mousy)
          if (knob==1UL) aprsdecode_click.cmd = '7';
          else if (knob==2UL) aprsdecode_click.cmd = '8';
          else if (knob==3UL) aprsdecode_click.cmd = '9';
+         else if (knob==4UL) aprsdecode_click.cmd = '6';
          else {
             useri_Setmap(knob-1UL);
             aprsdecode_click.cmd = ' ';

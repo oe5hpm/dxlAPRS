@@ -90,7 +90,7 @@ struct VIEW {
    int32_t lumobj;
    int32_t lumtext;
    aprsdecode_MAPNAME mapname;
-   int32_t maplumcorr;
+   aprsdecode_MAPGAMMATAB maplumcorr;
    /*            altimap, */
    char focus;
 };
@@ -2345,7 +2345,7 @@ static void push(float newzoom)
             anonym0->wxcol = aprsdecode_lums.wxcol;
             anonym0->lumtext = aprsdecode_lums.text;
             memcpy(anonym0->mapname,aprsdecode_lums.mapname,41u);
-            anonym0->maplumcorr = aprsdecode_lums.maplumcorr;
+            memcpy(anonym0->maplumcorr,aprsdecode_lums.maplumcorr,1028u);
             /*        altimap:=click.altimap; */
             anonym0->focus = aprsdecode_click.watchmhop;
          }
@@ -2419,7 +2419,7 @@ static void pop(void)
                useri_int2cfg(useri_fLOBJ, anonym0->lumobj/10L);
             }
             memcpy(aprsdecode_lums.mapname,anonym0->mapname,41u);
-            aprsdecode_lums.maplumcorr = anonym0->maplumcorr;
+            memcpy(aprsdecode_lums.maplumcorr,anonym0->maplumcorr,1028u);
             /*        click.altimap:=altimap; */
             aprsdecode_click.watchmhop = anonym0->focus;
          }
@@ -4196,7 +4196,12 @@ static void animate(const aprsdecode_MONCALL singlecall, uint32_t step,
        text(ophist, TRUE, FALSE, FALSE);
      END;
    */
-   if (aprsdecode_lums.sym>0L) symbols(aprsdecode_ophist0, 0, 0, &hoverobj);
+   if (aprsdecode_lums.sym>0L) {
+      if (aprsdecode_lums.obj>0L) {
+         symbols(aprsdecode_ophist0, 1, 0, &hoverobj);
+      }
+      symbols(aprsdecode_ophist0, 0, 0, &hoverobj);
+   }
    if (aprsdecode_lums.text>0L) {
       text(aprsdecode_ophist0, 0, 0, 0, 1); /* first draw dimmed */
       text(aprsdecode_ophist0, 1, 0, 0, 1); /* overdraw dimmed */
@@ -5089,6 +5094,7 @@ map.y4m", 8ul);
       else if (aprsdecode_click.cmd=='7') useri_Setmap(0UL);
       else if (aprsdecode_click.cmd=='8') useri_Setmap(1UL);
       else if (aprsdecode_click.cmd=='9') useri_Setmap(2UL);
+      else if (aprsdecode_click.cmd=='6') useri_Setmap(3UL);
       else if (aprsdecode_click.cmd=='Q') aprsdecode_quit = 1;
       else if (aprsdecode_click.cmd=='e') aprsdecode_click.dryrun = 0;
       else if (aprsdecode_click.cmd=='\216' && aprsdecode_click.cmdatt) {

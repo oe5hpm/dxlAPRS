@@ -339,6 +339,12 @@ static float expzoom(int32_t z)
 } /* end expzoom() */
 
 
+static float latproj(float l)
+{
+   return osic_ln(X2C_DIVR(osic_sin(l)+1.0f,osic_cos(l)));
+} /* end latproj() */
+
+
 extern void maptool_xytodeg(float x, float y,
                 struct aprspos_POSITION * pos)
 {
@@ -360,8 +366,8 @@ extern void maptool_xytodeg(float x, float y,
                 ((1.0f+zoom)-(float)zi)*256.0f*expzoom((int32_t)
                 aprsdecode_trunc(zoom)));
    pos->long0 = aprsdecode_mappos.long0+pixrad*x;
-   pos->lat = 2.0f*osic_arctan(osic_exp(osic_ln(osic_tan(aprsdecode_mappos.lat)
-                +X2C_DIVR(1.0f,osic_cos(aprsdecode_mappos.lat)))-pixrad*y))-1.5707963267949f;
+   pos->lat = 2.0f*osic_arctan(osic_exp(latproj(aprsdecode_mappos.lat)
+                -pixrad*y))-1.5707963267949f;
    maptool_limpos(pos);
 } /* end xytodeg() */
 
@@ -375,8 +381,8 @@ extern void maptool_shiftmap(int32_t x, int32_t y, int32_t ysize,
    pixrad = ((1.0f+zoom)-(float)zi)*256.0f*expzoom((int32_t)
                 aprsdecode_trunc(zoom));
    pos->long0 = pos->long0-(X2C_DIVR(6.2831853071796f,pixrad))*(float)x;
-   pos->lat = 2.0f*osic_arctan(osic_exp(osic_ln(osic_tan(pos->lat)
-                +X2C_DIVR(1.0f,osic_cos(pos->lat)))+(X2C_DIVR(6.2831853071796f,
+   pos->lat = 2.0f*osic_arctan(osic_exp(latproj(pos->lat)
+                +(X2C_DIVR(6.2831853071796f,
                 pixrad))*(float)(ysize-y)))-1.5707963267949f;
    maptool_limpos(pos);
 } /* end shiftmap() */
@@ -393,8 +399,8 @@ extern void maptool_center(int32_t xsize, int32_t ysize, float zoom,
                 aprsdecode_trunc(zoom));
    pos->long0 = centpos.long0-(X2C_DIVR(6.2831853071796f,
                 pixrad))*(float)(xsize/2L);
-   pos->lat = 2.0f*osic_arctan(osic_exp(osic_ln(osic_tan(centpos.lat)
-                +X2C_DIVR(1.0f,osic_cos(centpos.lat)))+(X2C_DIVR(6.2831853071796f,
+   pos->lat = 2.0f*osic_arctan(osic_exp(latproj(centpos.lat)
+                +(X2C_DIVR(6.2831853071796f,
                 pixrad))*(float)(ysize/2L)))-1.5707963267949f;
    maptool_limpos(pos);
 } /* end center() */
@@ -411,10 +417,9 @@ extern void maptool_mercator(float lon, float lat, int32_t zoom,
    else if (lat<(-1.484f)) lat = (-1.484f);
    if (lon>3.1414926535898f) lon = 3.1414926535898f;
    else if (lon<(-3.1414926535898f)) lon = (-3.1414926535898f);
-   lat = osic_ln(osic_tan(lat)+X2C_DIVR(1.0f,osic_cos(lat)));
    z = expzoom(zoom);
    *x = (0.5f+lon*1.591549430919E-1f)*z;
-   *y = (0.5f-lat*1.591549430919E-1f)*z;
+   *y = (0.5f-latproj(lat)*1.591549430919E-1f)*z;
    *tilex = (int32_t)aprsdecode_trunc(*x);
    *tiley = (int32_t)aprsdecode_trunc(*y);
    *x = (*x-(float)*tilex)*256.0f;
@@ -4714,13 +4719,8 @@ static void zoommap(float fzoom, maptool_pIMAGE map)
 
 static uint16_t col(int32_t c)
 {
-   c += aprsdecode_lums.maplumcorr;
-   if (c<0L) c = 0L;
-   return (uint16_t)(((uint32_t)c*(uint32_t)aprsdecode_lums.map)/256UL)
-                ;
-/*
-      RETURN (c)*VAL(CARDINAL,lums.map) DIV 256;
-*/
+   return (uint16_t)((aprsdecode_lums.maplumcorr[c]*(uint32_t)
+                aprsdecode_lums.map)/1024UL);
 } /* end col() */
 
 
@@ -4737,7 +4737,6 @@ static char loadtile(maptool_pIMAGE map, char * done,
    int32_t x;
    struct maptool_PIX * anonym;
    struct maptool_PIX * anonym0;
-   /*          IF add THEN */
    int32_t tmp;
    int32_t tmp0;
    if (dryrun) {
@@ -4819,10 +4818,6 @@ static char loadtile(maptool_pIMAGE map, char * done,
                 && yy<(int32_t)((map->Len0-1)+1UL)) {
             { /* with */
                struct maptool_PIX * anonym0 = &map->Adr[(xx)*map->Len0+yy];
-               /*            INC(r, col(pngbuf[y]^[x].r8)); */
-               /*            INC(g, col(pngbuf[y]^[x].g8)); */
-               /*            INC(b, col(pngbuf[y]^[x].b8)); */
-               /*          ELSE */
                anonym0->r = col((int32_t)pngbuf[y][x].r8);
                anonym0->g = col((int32_t)pngbuf[y][x].g8);
                anonym0->b = col((int32_t)pngbuf[y][x].b8);
@@ -4830,7 +4825,6 @@ static char loadtile(maptool_pIMAGE map, char * done,
          }
       } /* end for */
    } /* end for */
-   /*          END; */
    return 1;
 } /* end loadtile() */
 

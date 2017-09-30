@@ -121,7 +121,8 @@
 
 #define useri_SP9 "\370"
 
-#define useri_TILEBRIGHTNESS (-128)
+#define useri_TILEGAMMA 0.45
+/* make gamma off */
 
 #define useri_MINMHZ 0.1
 
@@ -377,6 +378,8 @@ extern void useri_int2cfg(uint8_t, int32_t);
 extern void useri_resetimgparms(void);
 
 extern void useri_poligonmenu(void);
+
+extern void useri_Tilegamma0(float);
 
 
 extern void useri_BEGIN(void);
