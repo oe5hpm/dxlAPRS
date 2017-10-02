@@ -53,22 +53,22 @@ if [ -r $FILE.tgz ]; then
 	gunzip $FILE.tgz
 	tar -xf $FILE.tar
 	rm $FILE.tar
-	echo "Installation directory:" $DST 
+	echo "Installation directory:" $DST
 	echo "Installing aprsmap-components..."
 	mv -f aprsmap_common/poi.txt $DSTMAP/osm/
 	mv -f aprsmap_common/* $DSTMAP/
-	mv -f aprsmap $DSTMAP/
 	rm -r aprsmap_common
+	mv -f aprsmap* $DSTMAP/
 	echo "Installing aprs-components..."
 	cp -r dxlAPRS_common/* $DSTAPRS/
 	rm -r dxlAPRS_common
 	cp -r scripts $DSTAPRS/
 	rm -r scripts
 	mv -f * $DSTAPRS/
-	
+
 # fixup file permissions and owners
 	cd $DSTAPRS
-	for f in $(ls); do 
+	for f in $(ls); do
 		test -x $f && sudo chmod 0755 $f
 	done
 	sudo chown root afskmodem
