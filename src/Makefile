@@ -101,7 +101,9 @@ CFLAGS		+= -I$(EXTLIB)
 LFLAGS		+=
 # -------------------------- x86_64 specific -----------------------------------
 else ifeq ($(HOSTARCH), x86_64)
+ifneq ($(HOSTOS),Darwin)
 TARGETS		= aprsmap-static
+endif
 XLIBS		= -lpng -ljpeg -lXext -lX11
 APRSMAP_STATIC	= aprsmap-$(HOSTARCH)
 ifeq ($(PLATFORM), x86_32)
