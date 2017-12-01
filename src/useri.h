@@ -121,6 +121,8 @@
 
 #define useri_SP9 "\370"
 
+#define useri_SPS "\371"
+
 #define useri_TILEGAMMA 0.45
 /* make gamma off */
 
@@ -304,7 +306,8 @@ extern float useri_conf2real(uint8_t, uint32_t, float, float,
 
 extern void useri_confstr(uint8_t, char [], uint32_t);
 
-extern void useri_conf2str(uint8_t, uint32_t, char [], uint32_t);
+extern void useri_conf2str(uint8_t, uint32_t, uint32_t, char,
+                char [], uint32_t);
 
 extern void useri_confstrings(uint8_t, uint32_t, char,
                 char [], uint32_t);
@@ -380,6 +383,8 @@ extern void useri_resetimgparms(void);
 extern void useri_poligonmenu(void);
 
 extern void useri_Tilegamma0(float);
+
+extern void useri_mapbritocfg(void);
 
 
 extern void useri_BEGIN(void);

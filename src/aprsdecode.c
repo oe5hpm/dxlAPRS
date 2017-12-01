@@ -1567,7 +1567,7 @@ static void beaconmacros(char s[], uint32_t s_len,
                aprsstr_Append(ns, 256ul, "\\\\", 3ul);
             }
             else if (s[i]=='v') {
-               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.69", 17ul);
+               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.70", 17ul);
             }
             else if (s[i]=='l') {
                if (aprstext_getmypos(&pos)) {
@@ -5548,7 +5548,7 @@ extern void aprsdecode_udpconnstat(uint32_t port, char s[],
             aprsstr_Append(s, s_len, ":", 2ul);
             i = 1UL;
             for (;;) {
-               useri_conf2str((uint8_t)(36UL+port), i, h, 51ul);
+               useri_conf2str((uint8_t)(36UL+port), 0UL, i, 1, h, 51ul);
                if (h[0U]==0) break;
                if (i>1UL) aprsstr_Append(s, s_len, " ", 2ul);
                aprsstr_Append(s, s_len, h, 51ul);
@@ -5703,7 +5703,7 @@ static char tcpconn(aprsdecode_pTCPSOCK * sockchain, int32_t f)
          aprsstr_Append(h, 512ul, s, 100ul);
       }
       aprsstr_Append(h, 512ul, " vers ", 7ul);
-      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.69", 17ul);
+      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.70", 17ul);
       appfilter(h, 512ul, 0);
       /*    IF filter[0]<>0C THEN Append(h, " filter ");
                 Append(h, filter) END; */
@@ -6724,7 +6724,7 @@ static void getghostset(uint32_t port, aprsstr_GHOSTSET g)
    memcpy(g,_cnst1,36u);
    i = 0UL;
    for (;;) {
-      useri_conf2str(useri_fFINGERPRINT, i, s, 11ul);
+      useri_conf2str(useri_fFINGERPRINT, 0UL, i, 1, s, 11ul);
       if (s[0U]==0) break;
       if (s[0U]==p) {
          if (s[1U]==':') {

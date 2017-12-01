@@ -486,6 +486,14 @@ uint32_t *X2C_COMPLEMENT(uint32_t *res, uint32_t *a, uint32_t length)
 	return pres;
 }
 
+uint32_t X2C_SET(uint32_t a, uint32_t b, uint16_t bits)
+{
+	if ((a > b || a >= (uint32_t)bits) || b >= (uint32_t)bits)
+		return 0;
+
+	return ((uint32_t)((2<<(int)b) - (1<<(int)a)));
+}
+
 struct xrMM_Dynarr {
 	char *a;
 	size_t n[15];

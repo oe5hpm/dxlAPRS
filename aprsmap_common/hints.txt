@@ -220,9 +220,9 @@ Files into or where You have a set of
 downloaded Maps
 
 |538 Manage Map Types.
-The Lines are typnames like "tiles_topo 0.25"
+The Lines are typnames like "tiles_topo 0.3"
 the optional value is gamma of the images,
-0.45 is normal, 0.25 for more contrast. 
+0.45 is normal, 0.3 for more contrast. 
 The names use subdirectories in "map directory"
 and are passed to the map downloader where URLs
 to the names are associated. First entry is used
@@ -1574,7 +1574,12 @@ Set 2 markers above Map and enter "R". More
 Contrast with Brightness of OSM-map near 0
 
 
-|8440 Enter Fontsize, Range 8..18 Pixel
+|8440 Enter Fonthight, Range 8..24 Pixel
+Fontwidth Range 6..12 if "fontX.png" 
+is avaliable or enter Filename like
+"20 font-bold.png"
+symbolsX.png will be loaded as
+avaliable according to Fontheight
 
 
 |8435 Toggle on/off Transparent Menus

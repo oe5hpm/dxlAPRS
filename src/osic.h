@@ -138,6 +138,8 @@ void X2C_EXCL(uint32_t *set, uint32_t i, uint32_t bits);
 
 uint32_t *X2C_COMPLEMENT(uint32_t *res, uint32_t *a, uint32_t length);
 
+uint32_t X2C_SET(uint32_t a, uint32_t b, uint16_t bits);
+
 void X2C_DYNALLOCATE(char **a, size_t size, size_t lens[], size_t dims);
 
 void X2C_DYNDEALLOCATE(char **a);

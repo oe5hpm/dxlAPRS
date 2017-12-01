@@ -2720,7 +2720,7 @@ static void decoders41(const char rxb[], uint32_t rxb_len,
             aprsstr_Assign(pc->name, 9ul, nam, 9ul);
             if (sondeaprs_verb) osi_WrStrLn("is new ", 8ul);
          }
-         frameno = (uint32_t)getint16(rxb, rxb_len, p);
+         frameno = getcard16(rxb, rxb_len, p);
          if (frameno>X2C_CHKNIL(pCONTEXTR4,pc)->framenum) {
             /* new frame number */
             pc->framesent = 0;

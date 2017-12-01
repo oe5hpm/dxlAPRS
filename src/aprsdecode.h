@@ -62,7 +62,7 @@ typedef uint32_t aprsdecode_SET256[8];
 
 extern aprsdecode_SET256 aprsdecode_SYMTABLE;
 
-#define aprsdecode_VERS "aprsmap(cu) 0.69"
+#define aprsdecode_VERS "aprsmap(cu) 0.70"
 
 typedef char aprsdecode_MONCALL[9];
 
@@ -482,6 +482,7 @@ struct aprsdecode__D0 {
    char lastpoi;
    char insreplaceline;
    char watchlast;
+   char abort0;
    int32_t x;
    int32_t y;
    int32_t min0;
@@ -552,6 +553,7 @@ struct aprsdecode__D1 {
    char logmode;
    char headmenuy;
    aprsdecode_MAPNAME mapname;
+   uint32_t mapnum;
    char configfn[257];
    aprsdecode_MAPGAMMATAB maplumcorr;
    int32_t map;
@@ -566,6 +568,8 @@ struct aprsdecode__D1 {
    int32_t centering;
    int32_t fps;
    int32_t actfps;
+   uint32_t symsize;
+   uint32_t fontxsize;
    uint32_t fontysize;
    char wxcol;
    uint32_t movestep;

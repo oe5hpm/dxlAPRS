@@ -56,6 +56,7 @@ float maptool_shifty;
 
 
 struct maptool__D0 maptool_mappack;
+char maptool_fontloadmsg[71];
 /* aprs tracks on osm map by oe5dxl */
 /*FROM TimeConv IMPORT time; */
 /*FROM Storage IMPORT ALLOCATE, DEALLOCATE; */
@@ -63,22 +64,36 @@ struct maptool__D0 maptool_mappack;
 
 #define maptool_MAXCOL 30000
 
-#define maptool_SYMX 16
-
-#define maptool_SYMY 16
-
 #define maptool_SYMN 192
+/* number of symbols */
+
+#define maptool_MAXSYMSIZE 32
+/* maximal symbol size */
+
+#define maptool_MINSYMSIZE 16
 
 #define maptool_MAPGETFN "gettiles"
 /* tiles request filename */
 
-#define maptool_MAXFONTY 18
+#define maptool_MAXFONTY 24
 
 #define maptool_MINFONTY 7
 
-#define maptool_DEFAULTFONTY 10
+#define maptool_DEFAULTFONTY 12
 
-#define maptool_FONTFN "font.png"
+#define maptool_MAXFONTX 12
+
+#define maptool_MINFONTX 6
+
+#define maptool_DEFAULTFONTX 8
+
+#define maptool_FONTFN "font"
+
+#define maptool_FONTEXT ".png"
+
+#define maptool_SYMFN "symbols"
+
+#define maptool_SYMEXT ".png"
 
 #define maptool_PNGEXT ".png"
 
@@ -104,6 +119,16 @@ struct PIX8 {
    uint8_t r8;
    uint8_t g8;
    uint8_t b8;
+};
+
+struct PIX8A;
+
+
+struct PIX8A {
+   uint8_t r8; /* colour pixel with alpha */
+   uint8_t g8;
+   uint8_t b8;
+   uint8_t alpha;
 };
 
 typedef struct PIX8 ROWS0[256];
@@ -148,7 +173,7 @@ struct _0 {
 
 typedef struct _0 SRTM30FD[9][4];
 
-static struct PIX8 symbols[3072][17];
+static struct PIX8A symbols[6144][32];
 
 static PNGBUF pngbuf;
 
@@ -156,12 +181,12 @@ struct _1;
 
 
 struct _1 {
-   uint8_t char0[19][8];
-   uint16_t mask[21];
+   uint8_t char0[25][14];
+   uint16_t mask[27];
    uint8_t width;
 };
 
-static struct _1 font[97];
+static struct _1 font[99];
 
 static char gammatab[1024];
 
@@ -966,25 +991,6 @@ extern void maptool_closesrtmfile(void)
 } /* end closesrtmfile() */
 
 /* === srtm lib */
-/*
-PROCEDURE wgs84(lat, long, heig:REAL; VAR x,y,z:REAL);       (* wgs84 ecef *)
-CONST
-      A=6378137;
---      B=6356752;
---      F=(A-B)/A;
---      E=2*F-F*F;
-      E=0.081819190842522;
-
-VAR n,sl,h:REAL;
-BEGIN
-  sl:=sin(lat);
-  n:=A/sqrt(1.0-E*E*sl*sl);
-  h:=heig+n;
-  z:=(n*(1.0-E*E)+heig)*sl;
-  y:=h*sin(long)*cos(lat);
-  x:=h*cos(long)*cos(lat);
-END wgs84;
-*/
 
 static void wgs84s(float lat, float long0, float nn, float * x,
                 float * y, float * z)
@@ -1095,7 +1101,7 @@ static void ruler(maptool_pIMAGE image, float m, float x, float y,
    aprsstr_IntToStr((int32_t)X2C_TRUNCI(m,X2C_min_longint,X2C_max_longint),
                  0UL, s, 21ul);
    aprsstr_Append(s, 21ul, "m", 2ul);
-   l = aprsstr_Length(s, 21ul)*6UL;
+   l = aprsstr_Length(s, 21ul)*aprsdecode_lums.fontxsize;
    c.r = 400UL;
    c.g = 400UL;
    c.b = 400UL;
@@ -2636,6 +2642,8 @@ extern void maptool_waypoint(maptool_pIMAGE image, float x, float y,
    float fx;
    int32_t tmp;
    int32_t tmp0;
+   x = x-0.5f;
+   y = y-0.5f;
    if (((x>r && x<(float)((image->Len1-1)+1UL)-r) && y>r) && y<(float)
                 ((image->Len0-1)+1UL)-r) {
       ri = (int32_t)(aprsdecode_trunc(r)+1UL);
@@ -2887,11 +2895,13 @@ extern void maptool_vector(maptool_pIMAGE image, float x0, float y00,
 extern void maptool_setmark(maptool_pIMAGE image,
                 struct aprspos_POSITION pos, char hard)
 {
+   int32_t d;
    int32_t i;
    float y;
    float x;
    struct aprsdecode_COLTYP col0;
    if (aprspos_posvalid(pos) && maptool_mapxy(pos, &x, &y)>=0L) {
+      d = (int32_t)(aprsdecode_lums.fontysize/3UL);
       col0.r = 0UL;
       col0.g = 1000UL;
       col0.b = 1000UL;
@@ -2900,10 +2910,14 @@ extern void maptool_setmark(maptool_pIMAGE image,
          col0.b = 0UL;
       }
       for (i = -6L; i<=6L; i++) {
-         maptool_waypoint(image, x+(float)(i*3L), y, 1.3f,
-                (int32_t)col0.r, (int32_t)col0.g, (int32_t)col0.b);
-         maptool_waypoint(image, x, y+(float)(i*3L), 1.3f,
-                (int32_t)col0.r, (int32_t)col0.g, (int32_t)col0.b);
+         if (i) {
+            maptool_waypoint(image, x+(float)(i*d), y,
+                (float)aprsdecode_lums.fontysize*0.12f, (int32_t)col0.r,
+                 (int32_t)col0.g, (int32_t)col0.b);
+            maptool_waypoint(image, x, y+(float)(i*d),
+                (float)aprsdecode_lums.fontysize*0.12f, (int32_t)col0.r,
+                 (int32_t)col0.g, (int32_t)col0.b);
+         }
       } /* end for */
    }
 } /* end setmark() */
@@ -2960,7 +2974,7 @@ extern void maptool_drawchar(maptool_pIMAGE img, char ch, float x0r,
    int32_t tmp;
    if (((uint8_t)ch>=' ' && x0r>=0.0f) && y0r>=0.0f) {
       cn = (uint32_t)(uint8_t)ch-32UL;
-      if (cn>96UL) cn = 0UL;
+      if (cn>98UL) cn = 0UL;
       dimmlev = 20480.0f;
       if (contrast==1UL) {
          dimmlev = (float)((col0.r*87UL+col0.g*140UL+col0.b*28UL)*bri)
@@ -2993,7 +3007,7 @@ extern void maptool_drawchar(maptool_pIMAGE img, char ch, float x0r,
          y = 0L;
          if (y<=tmp) for (;; y++) {
             yy = y00+y+1L;
-            for (x = 0L; x<=7L; x++) {
+            for (x = 0L; x<=13L; x++) {
                xx = x0+x+1L;
                c = ((uint32_t)anonym->char0[y][x]*bri)/256UL;
                if ((((c>0UL && xx>=0L) && xx+1L<(int32_t)(img->Len1-1))
@@ -3049,20 +3063,20 @@ extern void maptool_drawchar(maptool_pIMAGE img, char ch, float x0r,
 } /* end drawchar() */
 
 
-extern uint32_t maptool_charwidth0(char ch)
+extern uint32_t maptool_charwidth(char ch)
 {
    uint32_t cn;
    if ((uint8_t)ch>=' ') {
       cn = (uint32_t)(uint8_t)ch-32UL;
-      if (cn>96UL) cn = 0UL;
+      if (cn>98UL) cn = 0UL;
       return (uint32_t)(font[cn].width+1U);
    }
    return 0UL;
 } /* end charwidth() */
 
-#define maptool_ALPHA0 220
+#define maptool_MINVIS 3
 
-#define maptool_WHITELEV 250
+#define maptool_MAXVIS 250
 
 
 extern void maptool_drawsym(maptool_pIMAGE image, char tab, char sym,
@@ -3075,7 +3089,13 @@ extern void maptool_drawsym(maptool_pIMAGE image, char tab, char sym,
    int32_t x0;
    int32_t y;
    int32_t x;
-   uint32_t b;
+   uint32_t sb;
+   uint32_t sg;
+   uint32_t sr;
+   uint32_t br2d;
+   uint32_t br2c;
+   uint32_t br2b;
+   uint32_t br2a;
    uint32_t br0d;
    uint32_t br1d;
    uint32_t br0c;
@@ -3087,19 +3107,22 @@ extern void maptool_drawsym(maptool_pIMAGE image, char tab, char sym,
    struct aprsdecode_COLTYP col0;
    uint32_t fy;
    uint32_t fx;
-   struct PIX8 * anonym;
+   struct PIX8A * anonym;
    struct maptool_PIX * anonym0;
-   /* save cpu */
    struct maptool_PIX * anonym1;
    struct maptool_PIX * anonym2;
    struct maptool_PIX * anonym3;
+   int32_t tmp;
+   int32_t tmp0;
    if (bri==0UL) return;
    sx = (int32_t)(uint8_t)sym-32L;
-   if (((((sx<=0L || sx>=96L) || x0r<(-16.0f)) || y0r<(-16.0f))
-                || x0r>(float)((image->Len1-1)+16UL)) || y0r>(float)
-                ((image->Len0-1)+16UL)) return;
+   if (((((sx<=0L || sx>=96L) || x0r<-(float)aprsdecode_lums.symsize)
+                || y0r<-(float)aprsdecode_lums.symsize) || x0r>(float)
+                ((image->Len1-1)+aprsdecode_lums.symsize)) || y0r>(float)
+                ((image->Len0-1)+aprsdecode_lums.symsize)) return;
+   /* symbol not inside image*/
    if (tab!='/') sx += 96L;
-   sx = sx*16L;
+   sx = sx*(int32_t)aprsdecode_lums.symsize;
    if (bri>255UL) bri = 255UL;
    x0 = (int32_t)X2C_TRUNCI(x0r,X2C_min_longint,X2C_max_longint);
    y00 = (int32_t)X2C_TRUNCI(y0r,X2C_min_longint,X2C_max_longint);
@@ -3107,89 +3130,101 @@ extern void maptool_drawsym(maptool_pIMAGE image, char tab, char sym,
    else fx = aprsdecode_trunc((x0r-(float)x0)*256.0f);
    if (y00<0L) fy = 0UL;
    else fy = aprsdecode_trunc((y0r-(float)y00)*256.0f);
-   x0 -= 8L;
-   y00 -= 8L;
-   b = (bri*(256UL-fx)*(256UL-fy))/65536UL;
-   br1a = 256UL-b;
-   br0a = (b*256000UL)/65536UL;
+   x0 -= (int32_t)(aprsdecode_lums.symsize/2UL);
+   y00 -= (int32_t)(aprsdecode_lums.symsize/2UL);
+   br0a = (bri*(256UL-fx)*(256UL-fy))/65536UL;
    if (fx || fy) {
       /* save cpu */
-      b = (bri*fx*(256UL-fy))/65536UL;
-      br1b = 256UL-b;
-      br0b = (b*256000UL)/65536UL;
-      b = (bri*(256UL-fx)*fy)/65536UL;
-      br1c = 256UL-b;
-      br0c = (b*256000UL)/65536UL;
-      b = (bri*fx*fy)/65536UL;
-      br1d = 256UL-b;
-      br0d = (b*256000UL)/65536UL;
+      br0b = (bri*fx*(256UL-fy))/65536UL;
+      br0c = (bri*(256UL-fx)*fy)/65536UL;
+      br0d = (bri*fx*fy)/65536UL;
    }
-   for (y = 0L; y<=15L; y++) {
-      for (x = 0L; x<=15L; x++) {
+   tmp = (int32_t)aprsdecode_lums.symsize-1L;
+   y = 0L;
+   if (y<=tmp) for (;; y++) {
+      tmp0 = (int32_t)aprsdecode_lums.symsize-1L;
+      x = 0L;
+      if (x<=tmp0) for (;; x++) {
          if (((x0+x>=0L && y00+y>=0L) && x+x0+1L<(int32_t)(image->Len1-1))
                 && y+y00+1L<(int32_t)(image->Len0-1)) {
-            if (mirror) xi = (15L-x)+sx;
+            if (mirror) xi = (((int32_t)aprsdecode_lums.symsize-1L)-x)+sx;
             else xi = x+sx;
             { /* with */
-               struct PIX8 * anonym = &symbols[xi][y];
-               if ((anonym->r8<220U || anonym->g8<220U) || anonym->b8<220U) {
+               struct PIX8A * anonym = &symbols[xi][y];
+               if (anonym->alpha>=3U) {
                   if (aprsdecode_click.dryrun) findinfo(x+x0, y+y00);
                   else {
+                     sr = (uint32_t)anonym->r8*4UL;
+                     sg = (uint32_t)anonym->g8*4UL;
+                     sb = (uint32_t)anonym->b8*4UL;
+                     /*              sa:=VAL(CARDINAL, visable); */
+                     br2a = (br0a*(uint32_t)anonym->alpha)/256UL;
+                     br1a = 256UL-br2a;
                      { /* with */
                         struct maptool_PIX * anonym0 = &image->Adr[(x+x0)
                 *image->Len0+(y+y00)];
                         anonym0->r = (uint16_t)(((uint32_t)
-                anonym0->r*br1a+(uint32_t)anonym->r8*br0a)/256UL);
+                anonym0->r*br1a+sr*br2a)/256UL);
                         anonym0->g = (uint16_t)(((uint32_t)
-                anonym0->g*br1a+(uint32_t)anonym->g8*br0a)/256UL);
+                anonym0->g*br1a+sg*br2a)/256UL);
                         anonym0->b = (uint16_t)(((uint32_t)
-                anonym0->b*br1a+(uint32_t)anonym->b8*br0a)/256UL);
+                anonym0->b*br1a+sb*br2a)/256UL);
                      }
                      if (fx || fy) {
+                        /* save cpu */
+                        br2b = (br0b*(uint32_t)anonym->alpha)/256UL;
+                        br1b = 256UL-br2b;
+                        br2c = (br0c*(uint32_t)anonym->alpha)/256UL;
+                        br1c = 256UL-br2c;
+                        br2d = (br0d*(uint32_t)anonym->alpha)/256UL;
+                        br1d = 256UL-br2d;
                         { /* with */
                            struct maptool_PIX * anonym1 = &image->Adr[(x+x0+1L)
                 *image->Len0+(y+y00)];
                            anonym1->r = (uint16_t)(((uint32_t)
-                anonym1->r*br1b+(uint32_t)anonym->r8*br0b)/256UL);
+                anonym1->r*br1b+sr*br2b)/256UL);
                            anonym1->g = (uint16_t)(((uint32_t)
-                anonym1->g*br1b+(uint32_t)anonym->g8*br0b)/256UL);
+                anonym1->g*br1b+sg*br2b)/256UL);
                            anonym1->b = (uint16_t)(((uint32_t)
-                anonym1->b*br1b+(uint32_t)anonym->b8*br0b)/256UL);
+                anonym1->b*br1b+sb*br2b)/256UL);
                         }
                         { /* with */
                            struct maptool_PIX * anonym2 = &image->Adr[(x+x0)
                 *image->Len0+(y+y00+1L)];
                            anonym2->r = (uint16_t)(((uint32_t)
-                anonym2->r*br1c+(uint32_t)anonym->r8*br0c)/256UL);
+                anonym2->r*br1c+sr*br2c)/256UL);
                            anonym2->g = (uint16_t)(((uint32_t)
-                anonym2->g*br1c+(uint32_t)anonym->g8*br0c)/256UL);
+                anonym2->g*br1c+sg*br2c)/256UL);
                            anonym2->b = (uint16_t)(((uint32_t)
-                anonym2->b*br1c+(uint32_t)anonym->b8*br0c)/256UL);
+                anonym2->b*br1c+sb*br2c)/256UL);
                         }
                         { /* with */
                            struct maptool_PIX * anonym3 = &image->Adr[(x+x0+1L)
                 *image->Len0+(y+y00+1L)];
                            anonym3->r = (uint16_t)(((uint32_t)
-                anonym3->r*br1d+(uint32_t)anonym->r8*br0d)/256UL);
+                anonym3->r*br1d+sr*br2d)/256UL);
                            anonym3->g = (uint16_t)(((uint32_t)
-                anonym3->g*br1d+(uint32_t)anonym->g8*br0d)/256UL);
+                anonym3->g*br1d+sg*br2d)/256UL);
                            anonym3->b = (uint16_t)(((uint32_t)
-                anonym3->b*br1d+(uint32_t)anonym->b8*br0d)/256UL);
+                anonym3->b*br1d+sb*br2d)/256UL);
                         }
                      }
                   }
                }
             }
          }
+         if (x==tmp0) break;
       } /* end for */
+      if (y==tmp) break;
    } /* end for */
    if (((uint8_t)tab>='0' && (uint8_t)tab<='9' || (uint8_t)
                 tab>='A' && (uint8_t)tab<='Z') || (uint8_t)
                 tab>='a' && (uint8_t)tab<='z') {
       maptool_Colset(&col0, 'W');
-      maptool_drawchar(image, tab, x0r-4.0f,
-                y0r-((8.0f-(16.0f-(float)aprsdecode_lums.fontysize)*0.5f)
-                +0.5f), &sx, bri*2UL, 1UL, col0, aprsdecode_click.dryrun);
+      maptool_drawchar(image, tab,
+                x0r-(float)(aprsdecode_lums.fontxsize/2UL+1UL),
+                (y0r-(float)aprsdecode_lums.fontysize*0.5f)-1.5f, &sx,
+                bri*2UL, 1UL, col0, aprsdecode_click.dryrun);
    }
 } /* end drawsym() */
 
@@ -3789,7 +3824,7 @@ extern char maptool_findmultiline(struct aprspos_POSITION pos,
    return 0;
 } /* end findmultiline() */
 
-#define maptool_HY 18
+#define maptool_HY 24
 
 #define maptool_MARGIN 2
 
@@ -3812,7 +3847,7 @@ static void OptTextPlace(maptool_pIMAGE img, char s[], uint32_t s_len,
    int32_t y;
    int32_t x;
    int32_t wid;
-   int32_t ct[54];
+   int32_t ct[72];
    struct maptool_PIX * anonym;
    int32_t tmp;
    int32_t tmp0;
@@ -3825,7 +3860,7 @@ static void OptTextPlace(maptool_pIMAGE img, char s[], uint32_t s_len,
    while (i<=s_len-1 && s[i]) {
       if ((uint8_t)s[i]>=' ') {
          cn = (uint32_t)(uint8_t)s[i]-32UL;
-         if (cn>96UL) cn = 0UL;
+         if (cn>98UL) cn = 0UL;
          wid += (int32_t)font[cn].width;
       }
       ++i;
@@ -3907,7 +3942,7 @@ extern void maptool_drawstr(maptool_pIMAGE image, char s[],
       maptool_drawchar(image, s[i], xr, yr, &inc0, bri, contrast, col0,
                 dryrun);
       xr = xr+(float)inc0;
-      /*    xr:=xr + CHARWIDTH; */
+      /*    xr:=xr + lums.fontxsize; */
       ++i;
    }
 } /* end drawstr() */
@@ -3932,7 +3967,7 @@ extern void maptool_drawstri(maptool_pIMAGE image, char s[],
          maptool_drawchar(image, s[i], (float)xr, (float)yr, &inc0,
                 bri, contrast, col0, dryrun);
          if (proportional) xr += inc0;
-         else xr += 6L;
+         else xr += (int32_t)aprsdecode_lums.fontxsize;
       }
       ++i;
    }
@@ -3978,19 +4013,21 @@ extern void maptool_drawarrow(maptool_pIMAGE image, float x0,
    b = (int32_t)((bri*col0.b)/256UL);
    if (wind==0UL) {
       maptool_vector(image, x0, y00, x0-(len-5.0f)*s, y00+(len-5.0f)*c, r, g,
-                 b, 400UL, 0.0f);
+                 b, 25UL*aprsdecode_lums.symsize, 0.0f);
       x1 = x0-len*s;
       y1 = y00+len*c;
       l = len-7.0f;
       maptool_vector(image, x1, y1, x0-l*osic_sin(ang+0.12f),
-                y00+l*osic_cos(ang+0.12f), r, g, b, 200UL, 0.0f);
+                y00+l*osic_cos(ang+0.12f), r, g, b,
+                14UL*aprsdecode_lums.symsize, 0.0f);
       maptool_vector(image, x1, y1, x0-l*osic_sin(ang-0.12f),
-                y00+l*osic_cos(ang-0.12f), r, g, b, 200UL, 0.0f);
+                y00+l*osic_cos(ang-0.12f), r, g, b,
+                14UL*aprsdecode_lums.symsize, 0.0f);
    }
    else {
       len = len+(float)((4UL*wind)/20UL);
-      maptool_vector(image, x0, y00, x0-len*s, y00+len*c, r, g, b, 250UL,
-                0.0f);
+      maptool_vector(image, x0, y00, x0-len*s, y00+len*c, r, g, b,
+                16UL*aprsdecode_lums.symsize, 0.0f);
       s1 = osic_sin(ang+(-1.25f));
       c1 = osic_cos(ang+(-1.25f));
       wi = (int32_t)wind;
@@ -4001,8 +4038,8 @@ extern void maptool_drawarrow(maptool_pIMAGE image, float x0,
          y1 = y00+len*c; /*+c1*/
          l = 8.0f;
          if (wi<20L) l = X2C_DIVR(8.0f*(float)wi,20.0f);
-         maptool_vector(image, x1, y1, x1-l*s1, y1+l*c1, r, g, b, 250UL,
-                0.0f);
+         maptool_vector(image, x1, y1, x1-l*s1, y1+l*c1, r, g, b,
+                16UL*aprsdecode_lums.symsize, 0.0f);
          wi -= 20L;
          len = len-4.0f;
       } while (wi>0L);
@@ -4046,7 +4083,29 @@ extern void maptool_cc(maptool_pIMAGE img, uint32_t from, uint32_t to)
 
 #define maptool_RULERX0 20
 
-#define maptool_RULERX1 300
+#define maptool_MINBRI 256
+
+
+static uint32_t mapbri(maptool_pIMAGE img, int32_t x0, int32_t x1,
+                int32_t y)
+{
+   int32_t g;
+   int32_t x;
+   int32_t tmp;
+   if ((x0>=maptool_xsize || x1>=maptool_xsize) || y>=maptool_ysize) {
+      return 0UL;
+   }
+   g = 0L;
+   tmp = x1;
+   x = x0;
+   if (x<=tmp) for (;; x++) {
+      if (g<(int32_t)img->Adr[(x)*img->Len0+y].g) {
+         g = (int32_t)img->Adr[(x)*img->Len0+y].g;
+      }
+      if (x==tmp) break;
+   } /* end for */
+   return (uint32_t)g;
+} /* end mapbri() */
 
 
 extern void maptool_ruler(maptool_pIMAGE img)
@@ -4058,13 +4117,16 @@ extern void maptool_ruler(maptool_pIMAGE img)
    float e;
    float d;
    float r;
+   uint32_t rulerx1;
    uint32_t w;
    uint32_t m;
    signed char pos;
+   uint32_t bri;
    struct aprsdecode_COLTYP col0;
-   if (300L>maptool_xsize || aprsdecode_initzoom<6L) return;
+   rulerx1 = aprsdecode_lums.fontxsize*50UL;
+   if ((int32_t)rulerx1>maptool_xsize || aprsdecode_initzoom<6L) return;
    maptool_xytodeg(20.0f, 10.0f, &lpos);
-   maptool_xytodeg(300.0f, 10.0f, &rpos);
+   maptool_xytodeg((float)rulerx1, 10.0f, &rpos);
    d = 1000.0f*aprspos_distance(lpos, rpos);
    if (d==0.0f) return;
    r = d;
@@ -4077,13 +4139,21 @@ extern void maptool_ruler(maptool_pIMAGE img)
    if (r>=5.0f) r = 5.0f;
    else if (r>=2.0f) r = 2.0f;
    else r = 1.0f;
-   e = (X2C_DIVR(r,e))*280.0f;
-   maptool_vector(img, 20.0f, 10.0f, 20.0f+e, 10.0f, 0L, 120L, 100L, 200UL,
-                0.0f);
-   maptool_vector(img, 20.0f, 7.0f, 20.0f, 13.0f, 0L, 120L, 100L, 200UL,
-                0.0f);
-   maptool_vector(img, 20.0f+e, 7.0f, 20.0f+e, 13.0f, 0L, 120L, 100L, 200UL,
-                0.0f);
+   e = (X2C_DIVR(r,e))*(float)(rulerx1-20UL);
+   bri = mapbri(img, 20L, (int32_t)(20UL+(uint32_t)X2C_TRUNCC(e,0UL,
+                X2C_max_longcard)), 10L);
+   col0.r = 0UL;
+   col0.g = 120UL+bri;
+   col0.b = 100UL+bri;
+   maptool_vector(img, 20.0f, 10.0f, 20.0f+e, 10.0f, (int32_t)col0.r,
+                (int32_t)col0.g, (int32_t)col0.b,
+                aprsdecode_lums.fontysize*20UL, 0.0f);
+   maptool_vector(img, 20.0f, 7.0f, 20.0f, 13.0f, (int32_t)col0.r,
+                (int32_t)col0.g, (int32_t)col0.b,
+                aprsdecode_lums.fontysize*20UL, 0.0f);
+   maptool_vector(img, 20.0f+e, 7.0f, 20.0f+e, 13.0f, (int32_t)col0.r,
+                (int32_t)col0.g, (int32_t)col0.b,
+                aprsdecode_lums.fontysize*20UL, 0.0f);
    m = m*aprsdecode_trunc(r);
    w = m;
    if (w>=1000UL) w = w/1000UL;
@@ -4096,8 +4166,10 @@ extern void maptool_ruler(maptool_pIMAGE img)
                 +aprsdecode_finezoom, 2UL, s, 101ul);
    aprsstr_Append(h, 101ul, s, 101ul);
    aprsstr_Append(h, 101ul, "]", 2ul);
-   maptool_drawstr(img, h, 101ul, osic_floor((20.0f+e*0.5f)-21.0f), 10.0f,
-                250UL, 0UL, col0, &pos, 0UL, 1, aprsdecode_click.dryrun);
+   maptool_drawstr(img, h, 101ul,
+                osic_floor((20.0f+e*0.5f)-(float)
+                aprsdecode_lums.fontxsize*3.5f), 10.0f, bri+250UL, 0UL, col0,
+                 &pos, 0UL, 1, aprsdecode_click.dryrun);
 } /* end ruler() */
 
 #define maptool_VIS 80.0
@@ -4396,33 +4468,6 @@ extern void maptool_addmap(maptool_pIMAGE image, maptool_pIMAGE map)
 */
 } /* end addmap() */
 
-/*
-PROCEDURE openppm(fn:ARRAY OF CHAR; verb:BOOLEAN):File;
-VAR fd:File;
-    line:INTEGER;
-    ch, cho:CHAR;
-BEGIN
-  cleanfilename(fn);
-  fd:=OpenRead(fn);
-  IF NOT FdValid(fd) THEN 
-    IF verb THEN WrStr(fn); WrStrLn(" not found"); END;
-    RETURN InvalidFd;
-  END;
- 
-  line:=0;
-  cho:=0C;
-  LOOP
-    IF RdBin(fd, ch, 1)<>1 THEN 
-      WrStr(fn); WrStrLn(" read error"); Close(fd); RETURN InvalidFd
-    END;
-    IF ch=LF THEN INC(line) END; 
-    IF line=3 THEN EXIT END;
-    IF (ch="#") & (cho=LF) THEN DEC(line) END;
-    cho:=ch;
-  END;
-  RETURN fd
-END openppm; 
-*/
 
 static void mapname(int32_t x, int32_t y, int32_t zoom, char fn[],
                 uint32_t fn_len, char reqn[], uint32_t reqn_len)
@@ -5083,85 +5128,277 @@ extern void maptool_StartMapPackage(struct aprspos_POSITION lu,
    if (dryrun) maptool_MapPackageJob(1);
 } /* end StartMapPackage() */
 
-typedef struct PIX8 * pROWS1;
+#define maptool_PI 3.1415926535
 
 
-static void loadsym(char h[], uint32_t h_len)
+static float sinc(float x, uint32_t w)
+/* sin(x)/x with hamming windown */
 {
+   float c;
+   float r;
+   if ((float)fabs(x)<0.001f) return 1.0f;
+   c = X2C_DIVR(x,(float)w);
+   if (c>0.5f) c = 0.5f;
+   else if (c<(-0.5f)) c = (-0.5f);
+   r = x*3.1415926535f;
+   return (X2C_DIVR(osic_sin(r),r))*(0.54f+0.46f*osic_cos(3.1415926535f*c));
+} /* end sinc() */
+
+#define maptool_ALPHAWHITE 230
+/* brihgtness tolerance of alpha value*/
+
+#define maptool_FIRLEN0 5
+
+#define maptool_FINESTEPS0 32
+/* fir interpolation steps */
+
+#define maptool_COLOURS 4
+/* with alpha channel */
+
+#define maptool_SYMPERCENT 140
+/* symbols size to font higth */
+
+#define maptool_MAXINSIZE 48
+/* max input symbol size */
+
+#define maptool_BYTESPERPIX 4
+
+typedef struct PIX8A * pROWS1;
+
+
+static void loadsym(int32_t defy, char msg[], uint32_t msg_len)
+{
+   uint32_t alphax;
+   uint32_t firlen;
+   uint32_t tr;
+   uint32_t fi;
+   uint32_t col0;
+   uint32_t outsize;
+   uint32_t insize;
+   uint32_t sym;
    uint32_t y;
    uint32_t x;
-   pROWS1 rows[16];
+   pROWS1 rows[48];
    int32_t res;
    int32_t maxxbyte;
    int32_t maxy;
    int32_t maxx;
-   char bu[16][9216];
-   struct PIX8 * anonym;
-   X2C_PCOPY((void **)&h,h_len);
-   for (y = 0UL; y<=15UL; y++) {
+   char (* bu)[36864];
+   char fnn[1024];
+   char fn[1024];
+   float fr;
+   float r;
+   float mr;
+   float mag;
+   float sum;
+   uint8_t c;
+   float fir[4][58];
+   float sa[4][58][32];
+   float firtab[320];
+   struct PIX8A * anonym;
+   struct PIX8A * anonym0;
+   uint32_t tmp;
+   uint32_t tmp0;
+   uint32_t tmp1;
+   aprsdecode_lums.symsize = 16UL;
+   memset((char *)symbols,(char)0,sizeof(struct PIX8A [6144][32]));
+   osic_alloc((char * *) &bu, 1769472UL);
+   if (bu==0) {
+      osi_WrStrLn("symbols load out of memory", 27ul);
+      return;
+   }
+   for (y = 0UL; y<=47UL; y++) {
       rows[y] = (pROWS1) &bu[y][0U];
    } /* end for */
-   maxx = 3072L;
-   maxy = 16L;
-   maxxbyte = maxx*3L;
-   res = readpng(h, (char * *)rows, &maxx, &maxy, &maxxbyte);
-   if (res<0L) {
-      osi_WrStr(h, h_len);
+   defy = (defy*140L)/100L;
+   if (defy>32L) defy = 32L;
+   if (defy<16L) defy = 16L;
+   fi = (uint32_t)defy;
+   do {
+      strncpy(fn,"symbols",1024u);
+      if (fi>1UL) {
+         aprsstr_IntToStr((int32_t)fi, 0UL, fnn, 1024ul);
+         aprsstr_Append(fn, 1024ul, fnn, 1024ul);
+         fi = 1UL;
+      }
+      else fi = 0UL;
+      aprsstr_Append(fn, 1024ul, ".png", 5ul);
+      maxx = 9216L;
+      maxy = 48L;
+      maxxbyte = maxx*4L; /* maxxbyte = maxx*4: switch on alpha channel */
+      osi_WrStr("try symbols file:", 18ul);
+      osi_WrStrLn(fn, 1024ul);
+      res = readpng(fn, (char * *)rows, &maxx, &maxy, &maxxbyte);
+   } while (!(res>=0L || fi==0UL));
+   if (res>=0L) {
+      insize = (uint32_t)((maxx+1L)/192L);
+      if (insize<=48UL) {
+         outsize = (uint32_t)defy;
+         alphax = 0UL;
+         c = rows[0U][0U].alpha;
+         tmp = (uint32_t)(maxy-1L);
+         y = 0UL;
+         if (y<=tmp) for (;; y++) {
+            /* test if there is any alpha channel info */
+            tmp0 = (uint32_t)(maxx-1L);
+            x = 0UL;
+            if (x<=tmp0) for (;; x++) {
+               if (c!=rows[y][x].alpha) ++alphax;
+               c = rows[y][x].alpha;
+               if (x==tmp0) break;
+            } /* end for */
+            if (y==tmp) break;
+         } /* end for */
+         if (rows[0U][0U].alpha>0U && rows[0U][0U].g8>128U) {
+            alphax = 0UL; /* use white as transparent */
+         }
+         mag = X2C_DIVR((float)outsize,(float)insize);
+         mr = mag;
+         firlen = 5UL;
+         if (mr>1.0f) {
+            mr = 1.0f;
+            firlen = 2UL;
+         }
+         for (x = 0UL; x<=319UL; x++) {
+            /* generate fir table */
+            firtab[x] = mr*sinc((float)((int32_t)x-(int32_t)
+                (firlen*32UL))*0.03125f, firlen*2UL);
+         } /* end for */
+         memset((char *)fir,(char)0U,sizeof(float [4][58]));
+         for (sym = 0UL; sym<=191UL; sym++) {
+            memset((char *)sa,(char)0U,sizeof(float [4][58][32]));
+            tmp = insize-1UL;
+            y = 0UL;
+            if (y<=tmp) for (;; y++) {
+               tmp0 = insize-1UL;
+               x = 0UL;
+               if (x<=tmp0) for (;; x++) {
+                  { /* with */
+                     struct PIX8A * anonym = &rows[y][x+sym*insize];
+                     fir[0U][x+firlen] = (float)anonym->r8;
+                     fir[1U][x+firlen] = (float)anonym->g8;
+                     fir[2U][x+firlen] = (float)anonym->b8;
+                     c = anonym->alpha;
+                     if (alphax==0UL) {
+                        /* use white as alpha */
+                        c = 0U;
+                        if ((anonym->r8<230U || anonym->g8<230U)
+                || anonym->b8<230U) c = 255U;
+                     }
+                     fir[3U][x+firlen] = (float)c;
+                  }
+                  if (x==tmp0) break;
+               } /* end for */
+               tmp0 = outsize-1UL;
+               x = 0UL;
+               if (x<=tmp0) for (;; x++) {
+                  r = X2C_DIVR((float)x,mag);
+                  tr = aprsdecode_trunc(r);
+                  fr = (r-(float)tr)*32.0f;
+                  for (col0 = 0UL; col0<=3UL; col0++) {
+                     if (outsize!=insize) {
+                        sum = 0.0f;
+                        tmp1 = firlen*2UL-1UL;
+                        fi = 0UL;
+                        if (fi<=tmp1) for (;; fi++) {
+                           sum = sum+firtab[aprsdecode_trunc(((float)
+                firlen*32.0f+(float)((int32_t)fi-(int32_t)firlen)
+                *32.0f*mr)-fr)]*fir[col0][fi+tr];
+                           if (fi==tmp1) break;
+                        } /* end for */
+                     }
+                     else sum = fir[col0][firlen+x];
+                     sa[col0][y+firlen][x] = sum;
+                  } /* end for */
+                  if (x==tmp0) break;
+               } /* end for */
+               if (y==tmp) break;
+            } /* end for */
+            tmp = outsize-1UL;
+            x = 0UL;
+            if (x<=tmp) for (;; x++) {
+               tmp0 = outsize-1UL;
+               y = 0UL;
+               if (y<=tmp0) for (;; y++) {
+                  r = X2C_DIVR((float)y,mag);
+                  tr = aprsdecode_trunc(r);
+                  fr = (r-(float)tr)*32.0f;
+                  for (col0 = 0UL; col0<=3UL; col0++) {
+                     if (outsize!=insize) {
+                        sum = 0.0f;
+                        tmp1 = firlen*2UL-1UL;
+                        fi = 0UL;
+                        if (fi<=tmp1) for (;; fi++) {
+                           sum = sum+firtab[aprsdecode_trunc(((float)
+                firlen*32.0f+(float)((int32_t)fi-(int32_t)firlen)
+                *32.0f*mr)-fr)]*sa[col0][fi+tr][x];
+                           if (fi==tmp1) break;
+                        } /* end for */
+                     }
+                     else sum = sa[col0][firlen+y][x];
+                     if (sum<=0.0f) c = 0U;
+                     else if (sum>=255.9f) c = 255U;
+                     else c = (uint8_t)aprsdecode_trunc(sum);
+                     { /* with */
+                        struct PIX8A * anonym0 = &symbols[x+sym*outsize]
+                [(outsize-1UL)-y];
+                        if (col0==0UL) anonym0->r8 = c;
+                        else if (col0==1UL) anonym0->g8 = c;
+                        else if (col0==2UL) anonym0->b8 = c;
+                        else anonym0->alpha = c;
+                     }
+                  } /* end for */
+                  if (y==tmp0) break;
+               } /* end for */
+               if (x==tmp) break;
+            } /* end for */
+         } /* end for */
+         aprsdecode_lums.symsize = outsize;
+         aprsstr_Append(msg, msg_len, " [", 3ul);
+         aprsstr_Append(msg, msg_len, fn, 1024ul);
+         aprsstr_Append(msg, msg_len, "]", 2ul);
+      }
+      else {
+         osi_WrStr(fn, 1024ul);
+         osi_WrStrLn(" symbols too big error ", 24ul);
+         osic_WrINT32(aprsdecode_lums.symsize, 1UL);
+         osi_WrStrLn("", 1ul);
+         aprsdecode_lums.symsize = 16UL;
+      }
+   }
+   else {
+      osi_WrStr(fn, 1024ul);
       osi_WrStrLn(" file read error ", 18ul);
       osic_WrINT32((uint32_t)res, 1UL);
       osi_WrStrLn("", 1ul);
-      goto label;
+      aprsstr_Append(msg, msg_len, " Symbolfile read Error", 23ul);
    }
-   memset((char *)symbols,(char)0,sizeof(struct PIX8 [3072][17]));
-   for (y = 0UL; y<=15UL; y++) {
-      for (x = 0UL; x<=3071UL; x++) {
-         { /* with */
-            struct PIX8 * anonym = &symbols[x][15UL-y];
-            anonym->r8 = rows[y][x].r8;
-            anonym->g8 = rows[y][x].g8;
-            anonym->b8 = rows[y][x].b8;
-         }
-      } /* end for */
-   } /* end for */
-   label:;
-   X2C_PFREE(h);
+   osic_free((char * *) &bu, 1769472UL);
 } /* end loadsym() */
 
-
-static float sinc(float x, uint32_t w)
-/* sin(x)/x with hann windown */
-{
-   float win;
-   if ((float)fabs(x)<0.001f) return 1.0f;
-   win = X2C_DIVR(3.1415926535f*x,(float)w);
-   x = x*3.1415926535f;
-   return X2C_DIVR((X2C_DIVR(osic_sin(x),x))*osic_sin(win),win);
-} /* end sinc() */
-
-#define maptool_MAXY 24
+#define maptool_MAXY 32
 /* font image max y size */
 
-#define maptool_MAXX 600
+#define maptool_MAXX 1188
 /* font image max x size */
 
-#define maptool_CHARX 6
-/* chars x size pixel */
-
-#define maptool_MINWIDTH 3
-
-#define maptool_GARBAGE 500
+#define maptool_GARBAGE 1000
 /* sum of pixels outside y font image */
 
 #define maptool_FIRLEN 3
+
+#define maptool_FINESTEPS 64
+/* fir interpolation steps */
 
 typedef char * pROWS;
 
 
 extern void maptool_loadfont(void)
 {
+   uint32_t charx;
+   uint32_t width;
    uint32_t higth;
    uint32_t i;
-   uint32_t fonty;
    uint32_t y1;
    uint32_t y00;
    uint32_t xshift;
@@ -5169,42 +5406,118 @@ extern void maptool_loadfont(void)
    uint32_t x;
    uint32_t c;
    uint16_t m;
+   int32_t wj;
+   int32_t wi;
    int32_t res;
    int32_t maxxbyte;
    int32_t maxy;
    int32_t maxx;
-   pROWS rows[24];
-   char bu[24][600];
-   uint32_t xhist[6];
-   uint32_t yhist[24];
-   float fir[31];
+   pROWS rows[32];
+   char bu[32][1188];
+   uint32_t xhist[12];
+   uint32_t yhist[32];
+   float fir[39];
+   float yt;
+   float ym;
    float yr;
    float sum;
+   uint32_t ytt;
    uint32_t nin;
+   char fnn[1025];
    char fn[1025];
+   float firtab[384];
+   /* build contrast mask */
    struct _1 * anonym;
    uint32_t tmp;
    uint32_t tmp0;
-   higth = (uint32_t)useri_conf2int(useri_fFONTSIZE, 0UL, 7L, 18L, 10L);
-   memset((char *)font,(char)0,sizeof(struct _1 [97]));
-   for (y = 0UL; y<=23UL; y++) {
+   maptool_fontloadmsg[0] = 0;
+   higth = (uint32_t)useri_conf2int(useri_fFONTSIZE, 0UL, 7L, 24L, 12L);
+   width = (uint32_t)useri_conf2int(useri_fFONTSIZE, 1UL, 0L, 12L, 0L);
+   if (width==0UL) useri_conf2str(useri_fFONTSIZE, 0UL, 1UL, 1, fn, 1025ul);
+   else fn[0] = 0;
+   memset((char *)font,(char)0,sizeof(struct _1 [99]));
+   aprsdecode_lums.fontysize = higth+3UL;
+   aprsdecode_lums.fontxsize = 6UL;
+   for (y = 0UL; y<=31UL; y++) {
       rows[y] = (pROWS) &bu[y][0U];
    } /* end for */
-   maxx = 600L;
-   maxy = 24L;
-   maxxbyte = maxx;
-   strncpy(fn,"font.png",1025u);
-   res = readpng(fn, (char * *)rows, &maxx, &maxy, &maxxbyte);
-   if ((((res<0L || maxx<1L) || maxx>600L) || maxy<1L) || maxy>24L) {
+   /*
+     i:=width;
+     LOOP
+       IF fn[0]<>0C THEN
+         res:=rdfont();
+         IF res>=0 THEN EXIT END;           (* full filename in config *)
+   
+       END;
+       fn:=FONTFN;
+       IF i>0 THEN IntToStr(i, 0, fnn); Append(fn, fnn); END;
+                (* width defined *)
+       Append(fn, FONTEXT);
+       res:=rdfont();
+       IF (res>=0) OR (i=0) THEN EXIT END;
+   
+       fn:="";
+       i:=0;
+     END;
+   */
+   if (fn[0U]) wj = 0L;
+   else wj = -1L;
+   wi = (int32_t)width;
+   for (;;) {
+      if (wj) {
+         /* filename not defined */
+         strncpy(fn,"font",1025u);
+         if (wi>=6L) {
+            aprsstr_IntToStr(wi, 0UL, fnn, 1025ul); /* width defined */
+            aprsstr_Append(fn, 1025ul, fnn, 1025ul);
+         }
+         aprsstr_Append(fn, 1025ul, ".png", 5ul);
+      }
+      osi_WrStr("try fontfile:", 14ul);
+      osi_WrStrLn(fn, 1025ul);
+      maxx = 1188L;
+      maxy = 32L;
+      maxxbyte = maxx;
+      res = readpng(fn, (char * *)rows, &maxx, &maxy, &maxxbyte);
+      if (res>=0L) break;
+      if (wj==0L) wj = -1L;
+      if (wi<5L) {
+         wj = 1L;
+         wi = (int32_t)(width+1UL);
+         if (wi<5L) wi = 5L;
+      }
+      else wi += wj;
+      if (wi>12L) break;
+   }
+   if (res<0L) {
       osic_WrINT32((uint32_t)res, 1UL);
-      osi_WrStrLn(" fontfile read error", 21ul);
-      aprsdecode_lums.fontysize = higth+3UL;
+      osi_WrStrLn(" fontfile read error ", 22ul);
+      /*    WrStrLn(fn); */
       return;
    }
-   for (x = 0UL; x<=5UL; x++) {
+   if (maxx<582L || maxx>1188L) {
+      osic_WrINT32((uint32_t)maxx, 1UL);
+      osi_WrStr(" x-size fontfile error", 23ul);
+      osi_WrStrLn(fn, 1025ul);
+      return;
+   }
+   if (maxy<1L || maxy>32L) {
+      osic_WrINT32((uint32_t)maxy, 1UL);
+      osi_WrStr(" y-size fontfile error", 23ul);
+      osi_WrStrLn(fn, 1025ul);
+      return;
+   }
+   charx = (uint32_t)((maxx+1L)/97L); /* guess char width in font file */
+   if (width<=charx) aprsdecode_lums.fontxsize = charx;
+   else if (width>=6UL) aprsdecode_lums.fontxsize = width;
+   else aprsdecode_lums.fontxsize = 6UL;
+   tmp = charx-1UL;
+   x = 0UL;
+   if (x<=tmp) for (;; x++) {
       xhist[x] = 0UL;
+      if (x==tmp) break;
    } /* end for */
-   for (y = 0UL; y<=23UL; y++) {
+   for (y = 0UL; y<=31UL; y++) {
       yhist[y] = 0UL;
    } /* end for */
    tmp = (uint32_t)(maxx-1L);
@@ -5214,24 +5527,27 @@ extern void maptool_loadfont(void)
       tmp0 = (uint32_t)(maxy-1L);
       y = 0UL;
       if (y<=tmp0) for (;; y++) {
-         xhist[x%6UL] += (uint32_t)(uint8_t)rows[y][x];
+         xhist[x%charx] += (uint32_t)(uint8_t)rows[y][x];
          yhist[y] += (uint32_t)(uint8_t)rows[y][x];
          if (y==tmp0) break;
       } /* end for */
       if (x==tmp) break;
    } /* end for */
    c = X2C_max_longcard;
-   for (x = 0UL; x<=5UL; x++) {
+   tmp = charx-1UL;
+   x = 0UL;
+   if (x<=tmp) for (;; x++) {
       if (xhist[x]<c) {
          c = xhist[x]; /* find space between chars */
          xshift = x;
       }
+      if (x==tmp) break;
    } /* end for */
    y00 = 0UL;
    y1 = 0UL;
-   for (y = 0UL; y<=23UL; y++) {
+   for (y = 0UL; y<=31UL; y++) {
       /* find y position and size */
-      if (yhist[y]>500UL) {
+      if (yhist[y]>1000UL) {
          if (y00==0UL) y00 = y;
          y1 = y;
       }
@@ -5240,72 +5556,73 @@ extern void maptool_loadfont(void)
       osi_WrStrLn(" font too small error", 22ul);
       return;
    }
-   /*
-     fonty:=y1-y0+3;
-     IF fonty>MAXFONTY THEN
-       WrStrLn(" font too high");
-       fonty:=MAXFONTY; 
-     END;
-   */
    nin = (y1-y00)+1UL;
-   /*WrInt(y0, 10); WrInt(y1, 10); WrLn; */
-   fonty = higth+3UL;
-   for (y = 0UL; y<=30UL; y++) {
+   ym = X2C_DIVR((float)higth,(float)nin);
+   yr = ym;
+   if (yr>1.0f) yr = 1.0f;
+   for (x = 0UL; x<=383UL; x++) {
+      /* generate fir table */
+      firtab[x] = sinc((float)((int32_t)x-192L)*1.5625E-2f, 3UL);
+   } /* end for */
+   /*WrFixed(firtab[x]/yr, 2, 6); */
+   /*WrStr(","); */
+   /*WrFixed(ym, 3, 8); WrStr(" ym"); WrFixed(yr, 3, 8); WrStrLn(" yr"); */
+   for (y = 0UL; y<=38UL; y++) {
       fir[y] = 0.0f;
    } /* end for */
-   for (x = 0UL; x<=581UL; x++) {
-      tmp = nin-1UL;
+   tmp = 97UL*charx-1UL;
+   x = 0UL;
+   if (x<=tmp) for (;; x++) {
+      tmp0 = nin-1UL;
       y = 0UL;
-      if (y<=tmp) for (;; y++) {
+      if (y<=tmp0) for (;; y++) {
          fir[y+3UL] = (float)(uint32_t)(uint8_t)rows[y00+y][x+xshift];
-         if (y==tmp) break;
+         if (y==tmp0) break;
       } /* end for */
-      /*FOR y:=0 TO HIGH(fir) DO WrInt(trunc(fir[y]), 8); END; WrLn; */
-      tmp = higth-1UL;
+      tmp0 = higth-1UL;
       y = 0UL;
-      if (y<=tmp) for (;; y++) {
+      if (y<=tmp0) for (;; y++) {
          if (higth!=nin) {
-            yr = X2C_DIVR((float)(y*nin),(float)higth);
             sum = 0.0f;
-            for (i = 1UL; i<=6UL; i++) {
-               sum = sum+sinc(((float)i-3.0f)-(yr-(float)
-                aprsdecode_trunc(yr)), 3UL)*fir[i+aprsdecode_trunc(yr)];
+            yt = X2C_DIVR((float)y,ym);
+            ytt = (uint32_t)X2C_TRUNCC(yt,0UL,X2C_max_longcard);
+            for (i = 0UL; i<=5UL; i++) {
+               sum = sum+yr*firtab[aprsdecode_trunc((192.0f+(float)
+                ((int32_t)i-3L)*64.0f*yr)-64.0f*(yt-(float)ytt))
+                ]*fir[i+ytt];
             } /* end for */
          }
          else sum = fir[y+3UL];
          if (sum<=0.0f) c = 0UL;
          else if (sum>255.9f) c = 255UL;
          else c = aprsdecode_trunc(sum);
-         font[x/6UL].char0[(fonty-y)-3UL][x%6UL] = (uint8_t)c;
-         if (y==tmp) break;
+         font[x/charx].char0[higth-y][x%charx] = (uint8_t)c;
+         if (y==tmp0) break;
       } /* end for */
+      if (x==tmp) break;
    } /* end for */
-   /*
-     FOR y:=0 TO fonty-3 DO
-       FOR x:=0 TO CHARS*CHARX-1 DO
-         WITH font[x DIV CHARX] DO char[fonty-y-3][x MOD 6]:=ORD(rows[y0+y]
-                ^[x+xshift]) END;
-       END; 
-     END;
-   */
-   aprsdecode_lums.fontysize = fonty;
-   for (c = 0UL; c<=96UL; c++) {
+   aprsdecode_lums.fontysize = higth+3UL;
+   for (c = 0UL; c<=98UL; c++) {
       { /* with */
          struct _1 * anonym = &font[c];
-         anonym->width = 3U;
-         tmp = fonty-3UL;
+         anonym->width = (uint8_t)(aprsdecode_lums.fontxsize/2UL);
+         tmp = higth;
          y = 0UL;
          if (y<=tmp) for (;; y++) {
-            for (x = 0UL; x<=7UL; x++) {
+            tmp0 = aprsdecode_lums.fontxsize+1UL;
+            x = 0UL;
+            if (x<=tmp0) for (;; x++) {
                if (anonym->char0[y][x]>=90U) {
                   /* 128 */
                   if (c) {
-                     m = X2C_LSH(0x1FU,16,(int32_t)x-1L)&0xFEU;
+                     m = X2C_LSH(X2C_SET(0U,aprsdecode_lums.fontxsize-2UL,
+                16),16,(int32_t)x-1L)&(X2C_SET(1U,
+                aprsdecode_lums.fontxsize+1UL,16));
                      anonym->mask[y] = anonym->mask[y]|m;
-                     if (y+1UL<=20UL) {
+                     if (y+1UL<=26UL) {
                         anonym->mask[y+1UL] = anonym->mask[y+1UL]|m;
                      }
-                     if (y+2UL<=20UL) {
+                     if (y+2UL<=26UL) {
                         anonym->mask[y+2UL] = anonym->mask[y+2UL]|m;
                      }
                   }
@@ -5313,11 +5630,23 @@ extern void maptool_loadfont(void)
                      anonym->width = (uint8_t)x;
                   }
                }
+               if (x==tmp0) break;
             } /* end for */
             if (y==tmp) break;
          } /* end for */
       }
    } /* end for */
+   strncpy(maptool_fontloadmsg,"[",71u);
+   aprsstr_Append(maptool_fontloadmsg, 71ul, fn, 1025ul);
+   aprsstr_Append(maptool_fontloadmsg, 71ul, "] ", 3ul);
+   aprsstr_IntToStr((int32_t)(aprsdecode_lums.fontysize-3UL), 0UL, fnn,
+                1025ul);
+   aprsstr_Append(maptool_fontloadmsg, 71ul, fnn, 1025ul);
+   aprsstr_Append(maptool_fontloadmsg, 71ul, "x", 2ul);
+   aprsstr_IntToStr((int32_t)aprsdecode_lums.fontxsize, 0UL, fnn, 1025ul);
+   aprsstr_Append(maptool_fontloadmsg, 71ul, fnn, 1025ul);
+   aprsstr_Append(maptool_fontloadmsg, 71ul, " Font Loaded", 13ul);
+   loadsym((int32_t)aprsdecode_lums.fontysize, maptool_fontloadmsg, 71ul);
 } /* end loadfont() */
 
 #define maptool_BMPHLEN 54
@@ -5645,7 +5974,6 @@ extern void maptool_BEGIN(void)
    aprsdecode_BEGIN();
    aprsdecode_maploadpid.runs = 0;
    maploadstart = 0UL;
-   loadsym("symbols.png", 12ul);
    /*  loadfont; */
    makegammatab();
    allocpngbuf();
