@@ -260,7 +260,7 @@ extern void aprstat_btimehist(maptool_pIMAGE * img, aprsdecode_pOPHIST op)
       ++xm;
    } while (!(xm>=7199UL || y>=sum));
    ++xm;
-   if (xm<120UL) xm = 120UL;
+   if (xm<200UL) xm = 200UL;
    for (i = xm+1UL; i<=7199UL; i++) {
       t[xm] += t[i]; /* add not shown rest to last shown element */
    } /* end for */
@@ -731,13 +731,14 @@ static void paper(maptool_pIMAGE * img, float yax0, float yax1,
                 200L);
             if (x==tmp0) break;
          } /* end for */
-         num(*img, (int32_t)(margin+1UL), (int32_t)((y+margin)-6UL),
+         num(*img, (int32_t)(margin+1UL),
+                (int32_t)(((y+margin)-aprsdecode_lums.fontysize/2UL)-2UL),
                 s*(int32_t)step, "", 1ul);
          so = s;
       }
       if (y==tmp) break;
    } /* end for */
-   str(*img, margin+50UL, ((maxy+margin*2UL)-aprsdecode_lums.fontysize)-1UL,
+   str(*img, margin+50UL, ((maxy+margin*2UL)-aprsdecode_lums.fontysize)-2UL,
                 name, name_len);
    X2C_PFREE(name);
 } /* end paper() */

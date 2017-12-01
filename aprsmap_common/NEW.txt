@@ -1358,6 +1358,13 @@
 
 
 
+29.9.2017 (Ver 0.69)
+
++ Helligkeitskorrektur (Tools > Add Maptypes) als Gamma Werte statt +- Helligkeit.
+  Bei Bildschirm-Gamma (Config > Brightness) 2.2 entspricht 0.45 original und 0.3
+  etwa dem bisherigen -128. Die Werte werden nun bei Kontextumschaltung mit TAB
+  mit dem Kartentyp gespeichert.
+
 
 
 

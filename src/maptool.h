@@ -30,12 +30,8 @@
 
 #define maptool_MAXZOOM 18
 
-#define maptool_CHARWIDTH 6
-
 #define maptool_MAXCHAR 129
 /* highest font chars */
-
-#define maptool_SYMSIZE 16
 
 struct maptool_PIX;
 
@@ -116,6 +112,8 @@ struct maptool__D0 {
 };
 
 extern struct maptool__D0 maptool_mappack;
+
+extern char maptool_fontloadmsg[71];
 
 extern void maptool_Colset(struct aprsdecode_COLTYP *, char);
 
@@ -205,7 +203,7 @@ extern void maptool_POIname(struct aprspos_POSITION *, char [],
 extern void maptool_POIfind(struct aprspos_POSITION *, char [],
                 uint32_t);
 
-extern uint32_t maptool_charwidth0(char);
+extern uint32_t maptool_charwidth(char);
 
 extern char maptool_vistime(uint32_t);
 

@@ -86,12 +86,15 @@ maptool_pIMAGE useri_panoimage;
 
 #define useri_DEFAULTYSIZE 400
 
-#define useri_COLOURS 100
+#define useri_COLOURSZ 17
 /* colour chooser size */
 
 #define useri_COLOURSFRAME 5
 
 #define useri_COLOURLUMA 10
+
+#define useri_DEFAULTBRI 25
+/* defaul map brightness */
 
 #define useri_ONLINESETUPURL 5
 /* menu line */
@@ -151,11 +154,7 @@ maptool_pIMAGE useri_panoimage;
 
 #define useri_POTIOFF 8
 
-#define useri_POTWIDTH 220
-
-#define useri_WDIV 4
-
-#define useri_TDIV 409
+#define useri_POTWIDTH 37
 
 #define useri_CONFIGLINES 9
 
@@ -176,9 +175,6 @@ maptool_pIMAGE useri_panoimage;
 
 #define useri_DEFLOBJ 70
 /* default objects luminance */
-
-#define useri_DEFLMAP 30
-/* default map luminance */
 
 #define useri_DEFLTRACK 80
 /* default tracks luminance */
@@ -243,6 +239,8 @@ maptool_pIMAGE useri_panoimage;
 
 #define useri_STATUSHINT 17
 
+#define useri_SYMCHFRAME "\361"
+
 /*      OVERSHOOT=WHITELEVEL*3;            (* fast white level limiter via table *) */
 #define useri_TRANSPARENCE 65535
 
@@ -250,7 +248,7 @@ maptool_pIMAGE useri_panoimage;
 
 #define useri_POTIFPS 10
 
-#define useri_TOOLBARX 187
+#define useri_TOOLBARX 31
 
 #define useri_TOOLBARID 255
 
@@ -1091,7 +1089,8 @@ f 22050 -C 0 -p /dev/ttyS0 0 -M 0 -t 250 -T 6 -L 127.0.0.1:9002:9001 -m 0",
                 0, 295UL);
    initc(useri_fVIDEOFAST, "Video Accel Delay", 18ul, useri_cLINE, "0", 2ul,
                 0, 300UL);
-   initc(useri_fFONTSIZE, "Fontsize", 9ul, useri_cLINE, "10", 3ul, 0, 302UL);
+   initc(useri_fFONTSIZE, "Fontsize", 9ul, useri_cLINE, "13 8", 5ul, 0,
+                302UL);
    initc(useri_fVIEW, "View", 5ul, useri_cLIST, "", 1ul, 0, 305UL);
    initc(useri_fMAXZOOM, "Max Zoom", 9ul, useri_cLINE, "18", 3ul, 0, 310UL);
    initc(useri_fDOWNLOADZOOM, "Download to Zoom", 17ul, useri_cLINE, "", 1ul,
@@ -1457,11 +1456,11 @@ extern void useri_loadconfig(char verb)
    useri_rdlums();
    useri_confstr(useri_fMAPNAMES, s, 1000ul);
    if (s[0U]==0) {
-      useri_AddConfLine(useri_fMAPNAMES, 1U, "tiles 0.25", 11ul);
-      useri_AddConfLine(useri_fMAPNAMES, 1U, "tiles_topo 0.25", 16ul);
-      useri_AddConfLine(useri_fMAPNAMES, 1U, "tiles_cyclemap 0.25", 20ul);
-      useri_AddConfLine(useri_fMAPNAMES, 1U, "tiles_sat 0.45", 15ul);
-      useri_AddConfLine(useri_fMAPNAMES, 1U, "tiles_quest 0.25", 17ul);
+      useri_AddConfLine(useri_fMAPNAMES, 1U, "tiles 0.25 25", 14ul);
+      useri_AddConfLine(useri_fMAPNAMES, 1U, "tiles_topo 0.25 25", 19ul);
+      useri_AddConfLine(useri_fMAPNAMES, 1U, "tiles_cyclemap 0.25 25", 23ul);
+      useri_AddConfLine(useri_fMAPNAMES, 1U, "tiles_sat 0.45 100", 19ul);
+      useri_AddConfLine(useri_fMAPNAMES, 1U, "tiles_quest 0.25 25", 20ul);
    }
    /*  confstr(fDIGI, s); */
    /*  IF s[0]=0C THEN AddConfLine(fDIGI, 0,
@@ -1616,11 +1615,12 @@ extern void useri_postoconfig(struct aprspos_POSITION pos)
 } /* end postoconfig() */
 
 
-extern void useri_conf2str(uint8_t v, uint32_t valnum, char s[],
+extern void useri_conf2str(uint8_t v, uint32_t linenum,
+                uint32_t valnum, char all, char s[],
                 uint32_t s_len)
 {
    uint32_t i;
-   useri_confstr(v, s, s_len);
+   useri_confstrings(v, linenum, all, s, s_len);
    for (;;) {
       while (s[0UL]==' ') aprsstr_Delstr(s, s_len, 0UL, 1UL);
       i = 0UL;
@@ -1641,7 +1641,7 @@ extern int32_t useri_conf2int(uint8_t v, uint32_t valnum,
    float rval;
    int32_t n;
    char s[51];
-   useri_conf2str(v, valnum, s, 51ul);
+   useri_conf2str(v, 0UL, valnum, 1, s, 51ul);
    if (aprsstr_StrToFix(&rval, s, 51ul)) {
       n = (int32_t)aprsdecode_trunc((float)fabs(rval));
       if (rval<0.0f) n = -n;
@@ -1658,7 +1658,7 @@ extern float useri_conf2real(uint8_t v, uint32_t valnum,
 {
    float r;
    char s[51];
-   useri_conf2str(v, valnum, s, 51ul);
+   useri_conf2str(v, 0UL, valnum, 1, s, 51ul);
    if (!aprsstr_StrToFix(&r, s, 51ul)) r = default0;
    if (r<min0) return min0;
    if (r>max0) return max0;
@@ -1666,13 +1666,13 @@ extern float useri_conf2real(uint8_t v, uint32_t valnum,
 } /* end conf2real() */
 
 
-static uint32_t cntconfigs(uint8_t v)
+static uint32_t cntconfigs(uint8_t v, char all)
 {
    uint32_t n;
    char s[201];
    n = 0UL;
    for (;;) {
-      useri_confstrings(v, n, 1, s, 201ul);
+      useri_confstrings(v, n, all, s, 201ul);
       if (s[0U]==0) break;
       ++n;
    }
@@ -1791,32 +1791,82 @@ extern void useri_getview(uint8_t v, uint32_t n, float * zoom,
 } /* end getview() */
 
 
-extern void useri_Setmap(uint32_t n)
+static float getingamma(void)
 {
    char s[101];
+   float lu;
+   useri_conf2str(useri_fMAPNAMES, aprsdecode_lums.mapnum, 1UL, 0, s, 101ul);
+   if ((!aprsstr_StrToFix(&lu, s, 101ul) || lu>10.0f) || lu<0.01f) {
+      lu = 0.45f;
+   }
+   return lu;
+} /* end getingamma() */
+
+
+extern void useri_mapbritocfg(void)
+{
+   char h[101];
+   char s[101];
+   useri_conf2str(useri_fMAPNAMES, aprsdecode_lums.mapnum, 0UL, 0, s, 101ul);
+                 /* map name */
+   aprsstr_Append(s, 101ul, " ", 2ul);
+   aprsstr_FixToStr(getingamma(), 3UL, h, 101ul); /* map gamma */
+   aprsstr_Append(s, 101ul, h, 101ul);
+   aprsstr_Append(s, 101ul, " ", 2ul);
+   aprsstr_CardToStr((uint32_t)useri_conf2int(useri_fLMAP, 0UL, 0L, 100L,
+                25L), 0UL, h, 101ul); /* map brightness */
+   aprsstr_Append(s, 101ul, h, 101ul);
+   confreplace(useri_fMAPNAMES, aprsdecode_lums.mapnum, 0, s, 101ul);
+} /* end mapbritocfg() */
+
+
+extern void useri_Setmap(uint32_t n)
+/* MAX(INT) is use next */
+{
+   char hh[101];
+   char h[101];
+   char s[101];
+   uint32_t li;
    uint32_t i;
    float lu;
-   i = 0UL;
-   for (;;) {
-      /* count lines for reverse sort access */
-      useri_confstrings(useri_fMAPNAMES, i, 0, s, 101ul);
-      if (s[0U]==0) break;
-      ++i;
+   i = cntconfigs(useri_fMAPNAMES, 0);
+                /* count lines for reverse sort access */
+   if (n>=2147483647UL) {
+      /* cycle thru maps */
+      n = aprsdecode_lums.mapnum;
+      if (n) n = i-n;
    }
    if (n<i) {
-      useri_confstrings(useri_fMAPNAMES, (i-n)-1UL, 0, s, 101ul);
+      /* name */
+      aprsdecode_lums.mapnum = (i-n)-1UL;
+      useri_conf2str(useri_fMAPNAMES, aprsdecode_lums.mapnum, 0UL, 0, s,
+                101ul);
       i = 0UL;
       while ((i<100UL && i<40UL) && (uint8_t)s[i]>' ') {
          aprsdecode_lums.mapname[i] = s[i];
          ++i;
       }
       aprsdecode_lums.mapname[i] = 0;
-      while (i<100UL && s[i]==' ') ++i;
-      aprsstr_Delstr(s, 101ul, 0UL, i);
-      if ((!aprsstr_StrToFix(&lu, s, 101ul) || lu>10.0f) || lu<0.01f) {
-         lu = 0.45f;
-      }
+      strncpy(h,"Map:[",101u);
+      aprsstr_Append(h, 101ul, aprsdecode_lums.mapname, 41ul);
+      /* gamma */
+      lu = getingamma();
       useri_Tilegamma0(lu);
+      aprsstr_Append(h, 101ul, "] Gamma:", 9ul);
+      aprsstr_FixToStr(lu, 3UL, hh, 101ul);
+      aprsstr_Append(h, 101ul, hh, 101ul);
+      /* bright */
+      useri_conf2str(useri_fMAPNAMES, aprsdecode_lums.mapnum, 2UL, 0, s,
+                101ul);
+      if ((!aprsstr_StrToCard(s, 101ul, &li) || li<0UL) || li>100UL) {
+         li = 25UL;
+      }
+      useri_int2cfg(useri_fLMAP, (int32_t)li);
+      aprsstr_Append(h, 101ul, " Brightness:", 13ul);
+      aprsstr_IntToStr((int32_t)li, 0UL, hh, 101ul);
+      aprsstr_Append(h, 101ul, hh, 101ul);
+      useri_say(h, 101ul, 4UL, 'b');
+      useri_rdlums();
    }
 } /* end Setmap() */
 
@@ -1850,7 +1900,7 @@ extern void useri_xerrmsg(char s[], uint32_t s_len)
 extern void useri_rdlums(void)
 {
    uint32_t n;
-   aprsdecode_lums.map = 10L*useri_conf2int(useri_fLMAP, 0UL, 0L, 100L, 30L);
+   aprsdecode_lums.map = 10L*useri_conf2int(useri_fLMAP, 0UL, 0L, 100L, 25L);
    aprsdecode_lums.rfbri = 10L*useri_conf2int(useri_fLRF, 0UL, 0L, 100L,
                 30L);
    aprsdecode_lums.track = 10L*useri_conf2int(useri_fLTRACK, 0UL, 0L, 100L,
@@ -1956,9 +2006,15 @@ extern void useri_rdonesymb(char on, char say)
 static void onoffm(maptool_pIMAGE img, int32_t x0, int32_t y00,
                 char on)
 {
+   int32_t yc;
+   int32_t xc;
+   int32_t ww;
+   int32_t w;
    int32_t y;
    int32_t x;
    struct maptool_PIX col;
+   int32_t tmp;
+   int32_t tmp0;
    if (on) {
       col.r = 100U;
       col.g = 999U;
@@ -1973,10 +2029,25 @@ static void onoffm(maptool_pIMAGE img, int32_t x0, int32_t y00,
       x0 = -x0;
       col = img->Adr[(x0-5L)*img->Len0+(y00-5L)];
    }
-   for (y = -5L; y<=5L; y++) {
-      for (x = -5L; x<=5L; x++) {
-         if (x*x+y*y<25L) img->Adr[(x0+x)*img->Len0+(y00+y)] = col;
+   w = (int32_t)(aprsdecode_lums.fontxsize/2UL+3UL);
+   ww = w*w;
+   tmp = w;
+   y = -w;
+   if (y<=tmp) for (;; y++) {
+      tmp0 = w;
+      x = -w;
+      if (x<=tmp0) for (;; x++) {
+         if (x*x+y*y<ww) {
+            xc = x0+x;
+            yc = y00+y;
+            if (((xc>=0L && xc<(int32_t)(img->Len1-1)) && yc>=0L)
+                && yc<(int32_t)(img->Len0-1)) {
+               img->Adr[(xc)*img->Len0+yc] = col;
+            }
+         }
+         if (x==tmp0) break;
       } /* end for */
+      if (y==tmp) break;
    } /* end for */
 } /* end onoffm() */
 
@@ -1997,6 +2068,8 @@ static void onoff(pMENU m, int32_t x0, char on)
 static void subicon(maptool_pIMAGE img, int32_t x0, int32_t y00,
                 int32_t dir, int32_t size)
 {
+   int32_t yc;
+   int32_t xc;
    int32_t h;
    int32_t yy;
    int32_t xx;
@@ -2022,7 +2095,12 @@ static void subicon(maptool_pIMAGE img, int32_t x0, int32_t y00,
             xx = yy;
             yy = h;
          }
-         img->Adr[(x0+xx)*img->Len0+(y00+yy)] = col;
+         xc = x0+xx;
+         yc = y00+yy;
+         if (((xc>=0L && xc<(int32_t)(img->Len1-1)) && yc>=0L)
+                && yc<(int32_t)(img->Len0-1)) {
+            img->Adr[(xc)*img->Len0+yc] = col;
+         }
          if (x==tmp0) break;
       } /* end for */
       if (y==tmp) break;
@@ -2129,7 +2207,6 @@ extern void useri_killallmenus(void)
 {
    killmenus(menus);
    aprsdecode_click.watchlast = 0;
-/*  IF newfont THEN loadfont; newfont:=FALSE END; */
 } /* end killallmenus() */
 
 
@@ -2255,6 +2332,26 @@ static void appendmenu(pMENU menu)
 } /* end appendmenu() */
 
 
+static int32_t microspace(const char c[], uint32_t c_len)
+{
+   uint32_t x;
+   uint32_t i;
+   x = 0UL;
+   i = 0UL;
+   while (i<=c_len-1 && c[i]) {
+      if ((uint8_t)c[i]>=(uint8_t)'\360' && (uint8_t)c[i]<=(uint8_t)
+                '\370') {
+         x += (((uint32_t)(uint8_t)c[i]-239UL)
+                *aprsdecode_lums.fontxsize+5UL)/6UL;
+      }
+      else if (c[i]=='\371') x += aprsdecode_lums.symsize;
+      else x += aprsdecode_lums.fontxsize;
+      ++i;
+   }
+   return (int32_t)x;
+} /* end microspace() */
+
+
 static uint32_t knobtexty(uint32_t yk)
 {
    if (yk<=aprsdecode_lums.fontysize) return 0UL;
@@ -2307,13 +2404,12 @@ static void addline(pMENU m, const char s[], uint32_t s_len,
          m->subk[m->oldknob][si] = (uint16_t)x;
          ++si;
       }
-      else if ((uint8_t)s[i]>=(uint8_t)'\360' && (uint8_t)
-                s[i]<=(uint8_t)'\370') {
-         /*WrInt(x,10);WrInt(si,10);WrStr(s);WrStrLn(" x-si"); */
-         x += (uint32_t)(uint8_t)s[i]-239UL;
-      }
       else if ((uint8_t)s[i]>=(uint8_t)'\346' && (uint8_t)
                 s[i]<=(uint8_t)'\357') {
+         /*  ELSIF (s[i]>=SP1) & (s[i]<=SP9) THEN INC(x,
+                (ORD(s[i])-(ORD(SP1)-1))*CHARWIDTH DIV 6); */
+         /*  ELSIF s[i]=SPS THEN INC(x, lums.symsize);
+                (* space symbol size *)  */
          if (s[i]=='\346') X2C_INCL(m->noprop,m->oldknob,61);
          else if (s[i]=='\351') X2C_INCL(m->nohilite,m->oldknob,61);
          else if (s[i]=='\350') mark = si;
@@ -2331,7 +2427,8 @@ static void addline(pMENU m, const char s[], uint32_t s_len,
          else if (s[i]=='\356') dimm = 400UL;
          else if (s[i]=='\357') highlitewholline = 1;
       }
-      else x += 6UL;
+      else x += (uint32_t)microspace((char *) &s[i], 1u/1u);
+      /*  ELSE INC(x, CHARWIDTH) END; */
       ++i;
    }
    if (si<=20UL) m->subk[m->oldknob][si] = 0U;
@@ -2445,7 +2542,8 @@ static void addline(pMENU m, const char s[], uint32_t s_len,
    ++m->oldknob;
    if ((c_len-1>0UL && c[0UL]) && c[1UL]) {
       m->submen[m->oldknob] = 1;
-      subicon(m->image, (int32_t)(m->xsize-9UL), midy(m), 0L, 5L);
+      subicon(m->image, (int32_t)((m->xsize-aprsdecode_lums.fontxsize)-3UL),
+                 midy(m), 0L, (int32_t)(aprsdecode_lums.fontxsize-1UL));
    }
    m->helpindex[m->oldknob] = (uint16_t)hint;
    X2C_PFREE(c);
@@ -2647,15 +2745,16 @@ static void wrcolor(maptool_pIMAGE img, const char s[], uint32_t s_len,
          col = colw; /*Colset(col, "W");*/
       }
       else if (s[i]=='\375') {
-         maptool_drawsym(img, s[i+1UL], s[i+2UL], 0, (float)(x+8UL),
-                (float)((*y+8UL)-1UL), 1000UL);
-         x += 16UL;
+         maptool_drawsym(img, s[i+1UL], s[i+2UL], 0,
+                (float)(x+aprsdecode_lums.symsize/2UL),
+                (float)((*y+aprsdecode_lums.symsize/2UL)-1UL), 1000UL);
+         x += aprsdecode_lums.symsize;
       }
       else {
          maptool_drawchar(img, s[i], (float)x, (float)*y, &inc, bri,
                 1UL, col, 0);
          if (prop) x += (uint32_t)inc;
-         else x += 6UL;
+         else x += aprsdecode_lums.fontxsize;
       }
       ++i;
    }
@@ -2855,9 +2954,9 @@ extern void useri_textautomenu(int32_t x0, int32_t y00, uint32_t id,
             ++n;
             x = 0UL;
          }
-         else if (s[i]=='\375') x += 16UL;
+         else if (s[i]=='\375') x += aprsdecode_lums.symsize;
          else if ((uint8_t)s[i]<=(uint8_t)'\201') {
-            x += maptool_charwidth0(s[i]);
+            x += maptool_charwidth(s[i]);
             if (x>xmax) xmax = x;
          }
          if (i==tmp) break;
@@ -2865,7 +2964,7 @@ extern void useri_textautomenu(int32_t x0, int32_t y00, uint32_t id,
       i = 0L;
       x = 0UL;
       while (i<=(int32_t)(mtext_len-1) && mtext[i]) {
-         x += maptool_charwidth0(mtext[i]);
+         x += maptool_charwidth(mtext[i]);
          ++i;
       }
       if (x>xmax) xmax = x;
@@ -3038,7 +3137,7 @@ extern void useri_helptext(uint32_t line, uint32_t sub,
          px = 4UL;
          for (;;) {
             c = rh(fb, fd, &fl, &fp);
-            if (tp==0UL && c!='|') px += maptool_charwidth0(c);
+            if (tp==0UL && c!='|') px += maptool_charwidth(c);
             if (c=='|') {
                if (tp==0UL) {
                   helpscroll[helpdepth][0U] = '|';
@@ -3058,7 +3157,7 @@ extern void useri_helptext(uint32_t line, uint32_t sub,
                      tp = 0UL;
                      goto loop_exit;
                   }
-                  if (c!=':') px += maptool_charwidth0(c);
+                  if (c!=':') px += maptool_charwidth(c);
                } while (c!=':');
                /* link text end */
                if (px>=xclick) break;
@@ -3681,12 +3780,15 @@ static void domainpop(pMENU);
 
 static void domainpop(pMENU m)
 {
+   uint32_t i;
    uint32_t oldk;
    uint32_t olds;
    int32_t entc;
    char s[101];
    struct aprsdecode_OPHIST * anonym;
-   char tmp;
+   /*        s:=SP6+SP7+"|"+SP1+SPS+"|"; Append(s, call); */
+   uint32_t tmp;
+   char tmp0;
    oldk = m->oldknob;
    olds = m->oldsub;
    m->oldknob = 0UL;
@@ -3695,12 +3797,20 @@ static void domainpop(pMENU m)
          { /* with */
             struct aprsdecode_OPHIST * anonym = aprsdecode_click.table[entc]
                 .opf;
-            strncpy(s,"\365\366|\365\365\367",101u);
+            strncpy(s,"\346\365\366|",101u);
+            tmp = aprsdecode_lums.symsize/aprsdecode_lums.fontxsize;
+            i = 0UL;
+            if (i<=tmp) for (;; i++) {
+               aprsstr_Append(s, 101ul, " ", 2ul);
+               if (i==tmp) break;
+            } /* end for */
             aprsstr_Append(s, 101ul, anonym->call, 9ul);
-            addonoff(m, s, 101ul, "?", 2ul, 101UL, 6L,
+            addonoff(m, s, 101ul, "?", 2ul, 101UL,
+                (int32_t)aprsdecode_lums.fontxsize,
                 entc==(int32_t)aprsdecode_click.selected);
             maptool_drawsym(m->image, anonym->sym.tab, anonym->sym.pic, 0,
-                24.0f, (float)((m->oldknob-1UL)*m->yknob+m->yknob/2UL),
+                (float)(aprsdecode_lums.symsize/2UL+aprsdecode_lums.fontxsize*2UL+3UL)
+                , (float)((m->oldknob-1UL)*m->yknob+m->yknob/2UL),
                 1000UL);
          }
       }
@@ -3741,16 +3851,19 @@ static void domainpop(pMENU m)
                 && aprspos_posvalid(aprsdecode_click.measurepos)) {
       addline(m, " Zoom to Markers", 17ul, "/", 2ul, 120UL);
    }
-   addline(m, "  -  |     \363|   +", 18ul, (char *)(tmp = '\030',&tmp),
-                1u/1u, 130UL);
-   subicon(m->image, 47L, midy(m)+2L, 3L, 7L);
-   addline(m, "    |\363Center\364|", 15ul, (char *)(tmp = '\023',&tmp),
-                1u/1u, 133UL);
-   subicon(m->image, 13L, midy(m), 1L, 7L);
-   subicon(m->image, (int32_t)(m->xsize-13UL), midy(m), 2L, 7L);
-   addline(m, " <<  |     \363|   X", 18ul, (char *)(tmp = '\005',&tmp),
-                1u/1u, 136UL);
-   subicon(m->image, 47L, midy(m)-2L, 4L, 7L);
+   addline(m, "  -  |     \363|   +", 18ul, (char *)(tmp0 = '\030',
+                &tmp0), 1u/1u, 130UL);
+   subicon(m->image, (int32_t)(aprsdecode_lums.fontxsize*8UL), midy(m)+2L,
+                3L, (int32_t)aprsdecode_lums.fontxsize);
+   addline(m, "    |\363Center\363|", 15ul, (char *)(tmp0 = '\023',
+                &tmp0), 1u/1u, 133UL);
+   subicon(m->image, 13L, midy(m), 1L, (int32_t)aprsdecode_lums.fontxsize);
+   subicon(m->image, (int32_t)(m->xsize-13UL), midy(m), 2L,
+                (int32_t)aprsdecode_lums.fontxsize);
+   addline(m, " <<  |     \363|   X", 18ul, (char *)(tmp0 = '\005',
+                &tmp0), 1u/1u, 136UL);
+   subicon(m->image, (int32_t)(aprsdecode_lums.fontxsize*8UL), midy(m)-2L,
+                4L, (int32_t)aprsdecode_lums.fontxsize);
    m->ysize = m->oldknob*m->yknob;
    m->redrawproc = domainpop;
    m->hiknob = 0UL;
@@ -3768,7 +3881,8 @@ extern void useri_mainpop(void)
    pMENU menu;
    int32_t yh;
    useri_killallmenus();
-   newmenu(&menu, 94UL, aprsdecode_lums.fontysize+7UL, 60UL, useri_bTRANSP);
+   newmenu(&menu, aprsdecode_lums.fontxsize*14UL+16UL,
+                aprsdecode_lums.fontysize+7UL, 60UL, useri_bTRANSP);
    if (!aprsdecode_lums.headmenuy) {
       /* set popup mainmenue to not hide symbol and its texts */
       yh = (int32_t)useri_mainys()-aprsdecode_click.y;
@@ -3792,7 +3906,8 @@ extern void useri_mainpop(void)
 static void toolbar(void)
 {
    pMENU menu;
-   newmenu(&menu, 187UL, aprsdecode_lums.fontysize, 1UL, useri_bTRANSP);
+   newmenu(&menu, 31UL*aprsdecode_lums.fontxsize+1UL,
+                aprsdecode_lums.fontysize+1UL, 1UL, useri_bTRANSP);
    addline(menu, " File |Config\362| Zoom | Tools | Help ", 37ul, "\206",
                 2ul, 200UL);
    menu->ysize = menu->oldknob*menu->yknob;
@@ -3810,7 +3925,8 @@ static void dofilemenu(pMENU menu)
    menu->oldknob = 0UL;
    addline(menu, " Quit", 6ul, "Q", 2ul, 300UL);
    addline(menu, " Keep Log Days", 15ul, "\323", 2ul, 309UL);
-   addonoff(menu, "   |Write Log", 14ul, "\323", 2ul, 307UL, 8L,
+   addonoff(menu, "   |Write Log", 14ul, "\323", 2ul, 307UL,
+                (int32_t)(aprsdecode_lums.fontxsize+4UL),
                 useri_configon(useri_fLOGWFN));
    addline(menu, " Make Video", 12ul, "\312", 2ul, 301UL);
    addline(menu, " Screenshot", 12ul, "\233>", 3ul, 302UL);
@@ -3823,7 +3939,8 @@ static void dofilemenu(pMENU menu)
 static void filemenu(void)
 {
    pMENU menu;
-   newmenu(&menu, 82UL, aprsdecode_lums.fontysize+7UL, 10UL, useri_bTRANSP);
+   newmenu(&menu, aprsdecode_lums.fontxsize*13UL+4UL,
+                aprsdecode_lums.fontysize+7UL, 10UL, useri_bTRANSP);
    dofilemenu(menu);
    setunderbar(menu, 0L);
    menu->ysize = menu->oldknob*menu->yknob;
@@ -3871,7 +3988,8 @@ static void listmenu(pMENU m)
 static void listmen(void)
 {
    pMENU menu;
-   newmenu(&menu, 140UL, aprsdecode_lums.fontysize+7UL, 10UL, useri_bTRANSP);
+   newmenu(&menu, aprsdecode_lums.fontxsize*23UL+4UL,
+                aprsdecode_lums.fontysize+7UL, 10UL, useri_bTRANSP);
    listmenu(menu);
    menu->ysize = menu->oldknob*menu->yknob;
    menu->oldknob = 0UL;
@@ -3922,22 +4040,14 @@ static void dotoolsmenu(pMENU menu)
 {
    menu->oldknob = 0UL;
    addline(menu, " Animate", 9ul, "A", 2ul, 505UL);
-   /*  IF click.mhop[0]<>0C THEN addline(menu, " Show All", "0",
-                MINH*5+10) END; */
    if (aprsdecode_lums.headmenuy && aprspos_posvalid(aprsdecode_click.markpos)
                 ) addline(menu, " Clear Markers", 15ul, ":", 2ul, 515UL);
-   /*  addonoff(menu, "   |Radiolink", CMDGEOPROFIL, MINH*5+17, 8,
-                configon(fGEOPROFIL)); */
-   /*
-     addline(menu, " WXonly|  All ", CMDRAIN, MINH*5+20);
-     addline(menu, " Temp  |  Rain", "W", MINH*5+25);
-     addline(menu, " Dimm Notmover", "m", MINH*5+30);
-   */
    addline(menu, " Send Message", 14ul, "\256", 2ul, 535UL);
    addline(menu, " Map directory", 15ul, "\303", 2ul, 536UL);
    addline(menu, " Add Maptypes", 14ul, "\301", 2ul, 538UL);
    addline(menu, " Select Data", 13ul, "\324>", 3ul, 522UL);
-   addonoff(menu, "   |Radiolink", 14ul, "\313>", 3ul, 517UL, 8L,
+   addonoff(menu, "   |Radiolink", 14ul, "\313>", 3ul, 517UL,
+                (int32_t)(aprsdecode_lums.fontxsize+4UL),
                 useri_configon(useri_fGEOPROFIL));
    addline(menu, " Find", 6ul, "F>", 3ul, 500UL);
    addline(menu, " Choose Maps", 13ul, "c>", 3ul, 540UL);
@@ -3965,7 +4075,8 @@ static void dotoolsmenu(pMENU menu)
 static void toolsmenu(void)
 {
    pMENU menu;
-   newmenu(&menu, 88UL, aprsdecode_lums.fontysize+5UL, 16UL, useri_bTRANSP);
+   newmenu(&menu, aprsdecode_lums.fontxsize*14UL+4UL,
+                aprsdecode_lums.fontysize+5UL, 16UL, useri_bTRANSP);
    dotoolsmenu(menu);
    /*  menu^.ysize:=menu^.oldknob*menu^.yknob; */
    menu->oldknob = 0UL;
@@ -4014,11 +4125,10 @@ static void drawsymsquare(maptool_pIMAGE image, char tab, char sym,
    col.r = 300U;
    col.g = 301U;
    col.b = 300U;
-   /*  FOR y:=-(SYMSIZE DIV 2) TO SYMSIZE DIV 2 DO */
-   /*    FOR x:=-(SYMSIZE DIV 2) TO SYMSIZE DIV 2 DO image^[x0+x][y0+y]:=col END;
-                 */
-   /*  END; */
-   drawsquare(image, col, x0-8L, y00-8L, x0+8L, y00+8L);
+   drawsquare(image, col, x0-(int32_t)(aprsdecode_lums.symsize/2UL),
+                y00-(int32_t)(aprsdecode_lums.symsize/2UL),
+                x0+(int32_t)(aprsdecode_lums.symsize/2UL),
+                y00+(int32_t)(aprsdecode_lums.symsize/2UL));
    maptool_drawsym(image, tab, sym, 0, (float)x0, (float)y00, 1000UL);
 } /* end drawsymsquare() */
 
@@ -4041,7 +4151,9 @@ static void specialmapmenu(pMENU m)
    aprsstr_Append(h, 100ul, s, 100ul);
    addline(m, h, 100ul, "\325>", 3ul, 8625UL);
    if (X2C_INL((uint8_t)s[0U],256,_cnst1)) {
-      drawsymsquare(m->image, s[0U], s[1U], (int32_t)(m->xsize-20UL),
+      drawsymsquare(m->image, s[0U], s[1U],
+                (int32_t)(((m->xsize-aprsdecode_lums.symsize/2UL)
+                -aprsdecode_lums.fontxsize)-8UL),
                 (int32_t)((m->oldknob-1UL)*m->yknob+m->yknob/2UL));
    }
    m->redrawproc = specialmapmenu;
@@ -4052,7 +4164,8 @@ static void specialmapmenu(pMENU m)
 static void specialmap(void)
 {
    pMENU menu;
-   newmenu(&menu, 100UL, aprsdecode_lums.fontysize+7UL, 10UL, useri_bTRANSP);
+   newmenu(&menu, aprsdecode_lums.fontxsize*17UL+4UL,
+                aprsdecode_lums.fontysize+7UL, 10UL, useri_bTRANSP);
    specialmapmenu(menu);
    menu->ysize = menu->oldknob*menu->yknob;
    menu->oldknob = 0UL;
@@ -4064,10 +4177,11 @@ static void specialmap(void)
 static void helpmenu(void)
 {
    pMENU menu;
-   newmenu(&menu, 150UL, aprsdecode_lums.fontysize+7UL, 3UL, useri_bTRANSP);
+   newmenu(&menu, aprsdecode_lums.fontxsize*25UL+4UL,
+                aprsdecode_lums.fontysize+7UL, 3UL, useri_bTRANSP);
    /*  addline(menu, "Shortcuts", CMDSHORTCUTLIST, MINH*6); */
    addline(menu, "Helptext", 9ul, "\305", 2ul, 610UL);
-   addline(menu, "aprsmap(cu) 0.69 by OE5DXL ", 28ul, " ", 2ul, 605UL);
+   addline(menu, "aprsmap(cu) 0.70 by OE5DXL ", 28ul, " ", 2ul, 605UL);
    setunderbar(menu, 37L);
    menu->ysize = menu->oldknob*menu->yknob;
    menu->oldknob = 0UL;
@@ -4077,7 +4191,7 @@ static void helpmenu(void)
 
 #define useri_MAXBUTT 20
 
-#define useri_MTAB "7896"
+#define useri_MTAB "789"
 
 
 static void mapchoose(void)
@@ -4087,7 +4201,8 @@ static void mapchoose(void)
    uint32_t n;
    uint32_t i;
    char s[101];
-   newmenu(&menu, 100UL, aprsdecode_lums.fontysize+7UL, 20UL, useri_bTRANSP);
+   newmenu(&menu, aprsdecode_lums.fontxsize*17UL+4UL,
+                aprsdecode_lums.fontysize+7UL, 20UL, useri_bTRANSP);
    m = 0UL;
    for (n = 17UL;; n--) {
       useri_confstrings(useri_fMAPNAMES, n, 0, s, 101ul);
@@ -4095,9 +4210,9 @@ static void mapchoose(void)
          i = 0UL;
          while (i<100UL && (uint8_t)s[i]>' ') ++i;
          s[i] = 0;
-         if (m<4UL) {
+         if (m<3UL) {
             aprsstr_Append(s, 101ul, " [", 3ul);
-            aprsstr_Append(s, 101ul, (char *) &"7896"[m], 1u/1u);
+            aprsstr_Append(s, 101ul, (char *) &"789"[m], 1u/1u);
             aprsstr_Append(s, 101ul, "]", 2ul);
          }
          ++m;
@@ -4116,7 +4231,8 @@ static void mapchoose(void)
 static void nextclick(void)
 {
    pMENU menu;
-   newmenu(&menu, 80UL, aprsdecode_lums.fontysize+7UL, 10UL, useri_bTRANSP);
+   newmenu(&menu, aprsdecode_lums.fontxsize*13UL+4UL,
+                aprsdecode_lums.fontysize+7UL, 10UL, useri_bTRANSP);
    addline(menu, "Symbol Hover", 13ul, "\276>", 3ul, 905UL);
    addline(menu, "To Map", 7ul, "\276>", 3ul, 900UL);
    addline(menu, "To Text", 8ul, "\276>", 3ul, 901UL);
@@ -4133,16 +4249,17 @@ static void mapclick(void)
 {
    pMENU menu;
    char s[100];
-   newmenu(&menu, 100UL, aprsdecode_lums.fontysize+7UL, 10UL, useri_bTRANSP);
+   newmenu(&menu, aprsdecode_lums.fontxsize*17UL+4UL,
+                aprsdecode_lums.fontysize+7UL, 10UL, useri_bTRANSP);
    useri_confstr(useri_fCLICKMAP, s, 100ul);
-   addonoff(menu, "\365\365|Center", 10ul, "\201", 2ul, 1000UL, 6L,
-                s[0U]=='C');
-   addonoff(menu, "\365\365|Set Marker 1", 16ul, "\201", 2ul, 1005UL, 6L,
-                s[0U]=='X');
-   addonoff(menu, "\365\365|Set Marker 2", 16ul, "\201", 2ul, 1010UL, 6L,
-                s[0U]=='Y');
-   addonoff(menu, "\365\365|Marker 1 then 2", 19ul, "\201", 2ul, 1015UL, 6L,
-                s[0U]=='2');
+   addonoff(menu, "\365\365|Center", 10ul, "\201", 2ul, 1000UL,
+                (int32_t)(aprsdecode_lums.fontxsize+2UL), s[0U]=='C');
+   addonoff(menu, "\365\365|Set Marker 1", 16ul, "\201", 2ul, 1005UL,
+                (int32_t)(aprsdecode_lums.fontxsize+2UL), s[0U]=='X');
+   addonoff(menu, "\365\365|Set Marker 2", 16ul, "\201", 2ul, 1010UL,
+                (int32_t)(aprsdecode_lums.fontxsize+2UL), s[0U]=='Y');
+   addonoff(menu, "\365\365|Marker 1 then 2", 19ul, "\201", 2ul, 1015UL,
+                (int32_t)(aprsdecode_lums.fontxsize+2UL), s[0U]=='2');
    if (!aprsdecode_lums.headmenuy) {
       addline(menu, "\365\365|Menu", 8ul, "\201", 2ul, 1020UL);
    }
@@ -4151,9 +4268,6 @@ static void mapclick(void)
    menu->oldknob = 0UL;
 } /* end mapclick() */
 
-#define useri_OX 6
-/*      OY=8; */
-
 
 static void wxonoff(pMENU menu)
 {
@@ -4161,29 +4275,38 @@ static void wxonoff(pMENU menu)
    uint16_t wset;
    getwxset(useri_fCLICKWXSYM, &ch, &wset);
    menu->oldknob = 0UL;
-   addonoff(menu, "\365\365|Center", 10ul, "\232", 2ul, 1100UL, 6L, ch=='C');
-   addonoff(menu, "\365\365|Zoom To", 11ul, "\232", 2ul, 1101UL, 6L,
-                ch=='.');
-   addonoff(menu, "\365\365|Show Rf", 11ul, "\232", 2ul, 1102UL, 6L,
-                ch=='=');
-   addonoff(menu, "\365\365|Heard", 9ul, "\232", 2ul, 1103UL, 6L, ch=='H');
-   addonoff(menu, "\365\365|Beacon Hist", 15ul, "\232", 2ul, 1104UL, 6L,
-                ch=='b');
-   addonoff(menu, "\365\365|Raw+Decoded", 15ul, "\232", 2ul, 1105UL, 6L,
-                ch=='u');
-   addonoff(menu, "\365\365|Luminosity", 14ul, "\232", 2ul, 1106UL, 6L,
+   addonoff(menu, "\365\365|Center", 10ul, "\232", 2ul, 1100UL,
+                (int32_t)(aprsdecode_lums.fontxsize+1UL), ch=='C');
+   addonoff(menu, "\365\365|Zoom To", 11ul, "\232", 2ul, 1101UL,
+                (int32_t)(aprsdecode_lums.fontxsize+1UL), ch=='.');
+   addonoff(menu, "\365\365|Show Rf", 11ul, "\232", 2ul, 1102UL,
+                (int32_t)(aprsdecode_lums.fontxsize+1UL), ch=='=');
+   addonoff(menu, "\365\365|Heard", 9ul, "\232", 2ul, 1103UL,
+                (int32_t)(aprsdecode_lums.fontxsize+1UL), ch=='H');
+   addonoff(menu, "\365\365|Beacon Hist", 15ul, "\232", 2ul, 1104UL,
+                (int32_t)(aprsdecode_lums.fontxsize+1UL), ch=='b');
+   addonoff(menu, "\365\365|Raw+Decoded", 15ul, "\232", 2ul, 1105UL,
+                (int32_t)(aprsdecode_lums.fontxsize+1UL), ch=='u');
+   addonoff(menu, "\365\365|Luminosity", 14ul, "\232", 2ul, 1106UL,
+                (int32_t)(aprsdecode_lums.fontxsize+1UL),
                 (0x40U & wset)!=0);
-   addonoff(menu, "\365\365|Rain", 8ul, "\232", 2ul, 1107UL, 6L,
+   addonoff(menu, "\365\365|Rain", 8ul, "\232", 2ul, 1107UL,
+                (int32_t)(aprsdecode_lums.fontxsize+1UL),
                 (0x20U & wset)!=0);
-   addonoff(menu, "\365\365|Wind Dir", 12ul, "\232", 2ul, 1108UL, 6L,
+   addonoff(menu, "\365\365|Wind Dir", 12ul, "\232", 2ul, 1108UL,
+                (int32_t)(aprsdecode_lums.fontxsize+1UL),
                 (0x10U & wset)!=0);
-   addonoff(menu, "\365\365|Wind", 8ul, "\232", 2ul, 1109UL, 6L,
+   addonoff(menu, "\365\365|Wind", 8ul, "\232", 2ul, 1109UL,
+                (int32_t)(aprsdecode_lums.fontxsize+1UL),
                 (0x8U & wset)!=0);
-   addonoff(menu, "\365\365|Hygro", 9ul, "\232", 2ul, 1110UL, 6L,
+   addonoff(menu, "\365\365|Humidity", 12ul, "\232", 2ul, 1110UL,
+                (int32_t)(aprsdecode_lums.fontxsize+1UL),
                 (0x4U & wset)!=0);
-   addonoff(menu, "\365\365|Barometer", 13ul, "\232", 2ul, 1111UL, 6L,
+   addonoff(menu, "\365\365|Barometer", 13ul, "\232", 2ul, 1111UL,
+                (int32_t)(aprsdecode_lums.fontxsize+1UL),
                 (0x2U & wset)!=0);
-   addonoff(menu, "\365\365|Temp", 8ul, "\232", 2ul, 1112UL, 6L,
+   addonoff(menu, "\365\365|Temp", 8ul, "\232", 2ul, 1112UL,
+                (int32_t)(aprsdecode_lums.fontxsize+1UL),
                 (0x1U & wset)!=0);
    addline(menu, "\365\365|Menu", 8ul, "\232", 2ul, 1113UL);
    menu->ysize = menu->oldknob*menu->yknob;
@@ -4195,12 +4318,10 @@ static void wxonoff(pMENU menu)
 static void wxclick(void)
 {
    pMENU menu;
-   newmenu(&menu, 100UL, aprsdecode_lums.fontysize+3UL, 20UL, useri_bTRANSP);
+   newmenu(&menu, aprsdecode_lums.fontxsize*17UL+4UL,
+                aprsdecode_lums.fontysize+3UL, 20UL, useri_bTRANSP);
    wxonoff(menu);
 } /* end wxclick() */
-
-#define useri_OX0 6
-/*      OY=8; */
 
 
 static void hoveronoff(pMENU menu)
@@ -4209,21 +4330,28 @@ static void hoveronoff(pMENU menu)
    uint16_t wset;
    getwxset(useri_fHOVERSET, &ch, &wset);
    menu->oldknob = 0UL;
-   addonoff(menu, "\365\365|Raw+Decoded", 15ul, "\327", 2ul, 1151UL, 6L,
-                ch=='u');
-   addonoff(menu, "\365\365|Luminosity", 14ul, "\327", 2ul, 1152UL, 6L,
+   addonoff(menu, "\365\365|Raw+Decoded", 15ul, "\327", 2ul, 1151UL,
+                (int32_t)(aprsdecode_lums.fontxsize+1UL), ch=='u');
+   addonoff(menu, "\365\365|Luminosity", 14ul, "\327", 2ul, 1152UL,
+                (int32_t)(aprsdecode_lums.fontxsize+1UL),
                 (0x40U & wset)!=0);
-   addonoff(menu, "\365\365|Rain", 8ul, "\327", 2ul, 1153UL, 6L,
+   addonoff(menu, "\365\365|Rain", 8ul, "\327", 2ul, 1153UL,
+                (int32_t)(aprsdecode_lums.fontxsize+1UL),
                 (0x20U & wset)!=0);
-   addonoff(menu, "\365\365|Wind Dir", 12ul, "\327", 2ul, 1154UL, 6L,
+   addonoff(menu, "\365\365|Wind Dir", 12ul, "\327", 2ul, 1154UL,
+                (int32_t)(aprsdecode_lums.fontxsize+1UL),
                 (0x10U & wset)!=0);
-   addonoff(menu, "\365\365|Wind", 8ul, "\327", 2ul, 1155UL, 6L,
+   addonoff(menu, "\365\365|Wind", 8ul, "\327", 2ul, 1155UL,
+                (int32_t)(aprsdecode_lums.fontxsize+1UL),
                 (0x8U & wset)!=0);
-   addonoff(menu, "\365\365|Hygro", 9ul, "\327", 2ul, 1156UL, 6L,
+   addonoff(menu, "\365\365|Humidity", 12ul, "\327", 2ul, 1156UL,
+                (int32_t)(aprsdecode_lums.fontxsize+1UL),
                 (0x4U & wset)!=0);
-   addonoff(menu, "\365\365|Barometer", 13ul, "\327", 2ul, 1157UL, 6L,
+   addonoff(menu, "\365\365|Barometer", 13ul, "\327", 2ul, 1157UL,
+                (int32_t)(aprsdecode_lums.fontxsize+1UL),
                 (0x2U & wset)!=0);
-   addonoff(menu, "\365\365|Temp", 8ul, "\327", 2ul, 1158UL, 6L,
+   addonoff(menu, "\365\365|Temp", 8ul, "\327", 2ul, 1158UL,
+                (int32_t)(aprsdecode_lums.fontxsize+1UL),
                 (0x1U & wset)!=0);
    addline(menu, "\365\365|Hover OFf", 13ul, "\327", 2ul, 1159UL);
    menu->ysize = menu->oldknob*menu->yknob;
@@ -4235,7 +4363,8 @@ static void hoveronoff(pMENU menu)
 static void hoverclick(void)
 {
    pMENU menu;
-   newmenu(&menu, 100UL, aprsdecode_lums.fontysize+3UL, 20UL, useri_bTRANSP);
+   newmenu(&menu, aprsdecode_lums.fontxsize*17UL+4UL,
+                aprsdecode_lums.fontysize+3UL, 20UL, useri_bTRANSP);
    hoveronoff(menu);
 } /* end hoverclick() */
 
@@ -4246,21 +4375,29 @@ static void trackonoff(pMENU menu, char on, uint8_t v)
    useri_confstr(v, w, 100ul);
    menu->oldknob = 0UL;
    addonoff(menu, "\365\365|Del Waypoint", 16ul, (char *) &on, 1u/1u,
-                1208UL, 6L, aprsstr_InStr(w, 100ul, "q", 2ul)>=0L);
+                1208UL, (int32_t)(aprsdecode_lums.fontxsize+1UL),
+                aprsstr_InStr(w, 100ul, "q", 2ul)>=0L);
    addonoff(menu, "\365\365|Altitude", 12ul, (char *) &on, 1u/1u, 1207UL,
-                 6L, aprsstr_InStr(w, 100ul, "n", 2ul)>=0L);
+                 (int32_t)(aprsdecode_lums.fontxsize+1UL), aprsstr_InStr(w,
+                 100ul, "n", 2ul)>=0L);
    addonoff(menu, "\365\365|Speed Hist", 14ul, (char *) &on, 1u/1u,
-                1200UL, 6L, aprsstr_InStr(w, 100ul, "s", 2ul)>=0L);
+                1200UL, (int32_t)(aprsdecode_lums.fontxsize+1UL),
+                aprsstr_InStr(w, 100ul, "s", 2ul)>=0L);
    addonoff(menu, "\365\365|Animate", 11ul, (char *) &on, 1u/1u, 1201UL,
-                6L, aprsstr_InStr(w, 100ul, "A", 2ul)>=0L);
+                (int32_t)(aprsdecode_lums.fontxsize+1UL), aprsstr_InStr(w,
+                100ul, "A", 2ul)>=0L);
    addonoff(menu, "\365\365|Zoom To", 11ul, (char *) &on, 1u/1u, 1202UL,
-                6L, aprsstr_InStr(w, 100ul, ".", 2ul)>=0L);
+                (int32_t)(aprsdecode_lums.fontxsize+1UL), aprsstr_InStr(w,
+                100ul, ".", 2ul)>=0L);
    addonoff(menu, "\365\365|Show Rf", 11ul, (char *) &on, 1u/1u, 1203UL,
-                6L, aprsstr_InStr(w, 100ul, "=", 2ul)>=0L);
+                (int32_t)(aprsdecode_lums.fontxsize+1UL), aprsstr_InStr(w,
+                100ul, "=", 2ul)>=0L);
    addonoff(menu, "\365\365|Beacon Hist", 15ul, (char *) &on, 1u/1u,
-                1204UL, 6L, aprsstr_InStr(w, 100ul, "b", 2ul)>=0L);
+                1204UL, (int32_t)(aprsdecode_lums.fontxsize+1UL),
+                aprsstr_InStr(w, 100ul, "b", 2ul)>=0L);
    addonoff(menu, "\365\365|Raw+Decoded", 15ul, (char *) &on, 1u/1u,
-                1205UL, 6L, aprsstr_InStr(w, 100ul, "u", 2ul)>=0L);
+                1205UL, (int32_t)(aprsdecode_lums.fontxsize+1UL),
+                aprsstr_InStr(w, 100ul, "u", 2ul)>=0L);
    addline(menu, "\365\365|Menu", 8ul, (char *) &on, 1u/1u, 1206UL);
    menu->ysize = menu->oldknob*menu->yknob;
    menu->oldknob = 0UL;
@@ -4271,12 +4408,10 @@ static void trackonoff(pMENU menu, char on, uint8_t v)
 static void trackclick(void)
 {
    pMENU menu;
-   newmenu(&menu, 100UL, aprsdecode_lums.fontysize+3UL, 20UL, useri_bTRANSP);
+   newmenu(&menu, aprsdecode_lums.fontxsize*17UL+4UL,
+                aprsdecode_lums.fontysize+3UL, 20UL, useri_bTRANSP);
    trackonoff(menu, '\204', useri_fCLICKTRACK);
 } /* end trackclick() */
-
-#define useri_OX1 6
-/*      OY=8; */
 
 
 static void symbolonoff(pMENU menu, char on, uint8_t v)
@@ -4285,27 +4420,38 @@ static void symbolonoff(pMENU menu, char on, uint8_t v)
    useri_confstr(v, w, 31ul);
    menu->oldknob = 0UL;
    addonoff(menu, "\365\365|Set Marker 2", 16ul, (char *) &on, 1u/1u,
-                1300UL, 6L, aprsstr_InStr(w, 31ul, "Y", 2ul)>=0L);
+                1300UL, (int32_t)(aprsdecode_lums.fontxsize+1UL),
+                aprsstr_InStr(w, 31ul, "Y", 2ul)>=0L);
    addonoff(menu, "\365\365|Set Marker 1", 16ul, (char *) &on, 1u/1u,
-                1301UL, 6L, aprsstr_InStr(w, 31ul, "X", 2ul)>=0L);
+                1301UL, (int32_t)(aprsdecode_lums.fontxsize+1UL),
+                aprsstr_InStr(w, 31ul, "X", 2ul)>=0L);
    addonoff(menu, "\365\365|Center", 10ul, (char *) &on, 1u/1u, 1302UL,
-                6L, aprsstr_InStr(w, 31ul, "C", 2ul)>=0L);
+                (int32_t)(aprsdecode_lums.fontxsize+1UL), aprsstr_InStr(w,
+                31ul, "C", 2ul)>=0L);
    addonoff(menu, "\365\365|Raw+Decoded", 15ul, (char *) &on, 1u/1u,
-                1303UL, 6L, aprsstr_InStr(w, 31ul, "u", 2ul)>=0L);
+                1303UL, (int32_t)(aprsdecode_lums.fontxsize+1UL),
+                aprsstr_InStr(w, 31ul, "u", 2ul)>=0L);
    addonoff(menu, "\365\365|Animate", 11ul, (char *) &on, 1u/1u, 1304UL,
-                6L, aprsstr_InStr(w, 31ul, "A", 2ul)>=0L);
+                (int32_t)(aprsdecode_lums.fontxsize+1UL), aprsstr_InStr(w,
+                31ul, "A", 2ul)>=0L);
    addonoff(menu, "\365\365|Zoom To", 11ul, (char *) &on, 1u/1u, 1305UL,
-                6L, aprsstr_InStr(w, 31ul, ".", 2ul)>=0L);
+                (int32_t)(aprsdecode_lums.fontxsize+1UL), aprsstr_InStr(w,
+                31ul, ".", 2ul)>=0L);
    addonoff(menu, "\365\365|Show Rf", 11ul, (char *) &on, 1u/1u, 1306UL,
-                6L, aprsstr_InStr(w, 31ul, "=", 2ul)>=0L);
-   addonoff(menu, "\365\365|Heard", 9ul, (char *) &on, 1u/1u, 1307UL, 6L,
-                 aprsstr_InStr(w, 31ul, "H", 2ul)>=0L);
+                (int32_t)(aprsdecode_lums.fontxsize+1UL), aprsstr_InStr(w,
+                31ul, "=", 2ul)>=0L);
+   addonoff(menu, "\365\365|Heard", 9ul, (char *) &on, 1u/1u, 1307UL,
+                (int32_t)(aprsdecode_lums.fontxsize+1UL), aprsstr_InStr(w,
+                31ul, "H", 2ul)>=0L);
    addonoff(menu, "\365\365|Beacon Hist", 15ul, (char *) &on, 1u/1u,
-                1308UL, 6L, aprsstr_InStr(w, 31ul, "b", 2ul)>=0L);
+                1308UL, (int32_t)(aprsdecode_lums.fontxsize+1UL),
+                aprsstr_InStr(w, 31ul, "b", 2ul)>=0L);
    addonoff(menu, "\365\365|Speed Hist", 14ul, (char *) &on, 1u/1u,
-                1309UL, 6L, aprsstr_InStr(w, 31ul, "s", 2ul)>=0L);
+                1309UL, (int32_t)(aprsdecode_lums.fontxsize+1UL),
+                aprsstr_InStr(w, 31ul, "s", 2ul)>=0L);
    addonoff(menu, "\365\365|Altitude", 12ul, (char *) &on, 1u/1u, 1310UL,
-                 6L, aprsstr_InStr(w, 31ul, "n", 2ul)>=0L);
+                 (int32_t)(aprsdecode_lums.fontxsize+1UL), aprsstr_InStr(w,
+                 31ul, "n", 2ul)>=0L);
    addline(menu, "\365\365|Menue", 9ul, (char *) &on, 1u/1u, 1311UL);
    menu->ysize = menu->oldknob*menu->yknob;
    menu->oldknob = 0UL;
@@ -4316,7 +4462,8 @@ static void symbolonoff(pMENU menu, char on, uint8_t v)
 static void symbolclick(char on, uint8_t v)
 {
    pMENU menu;
-   newmenu(&menu, 100UL, aprsdecode_lums.fontysize+3UL, 20UL, useri_bTRANSP);
+   newmenu(&menu, aprsdecode_lums.fontxsize*17UL+4UL,
+                aprsdecode_lums.fontysize+3UL, 20UL, useri_bTRANSP);
    symbolonoff(menu, on, v);
 } /* end symbolclick() */
 
@@ -4539,7 +4686,8 @@ static void infosdo(pMENU menu)
 static void infos(void)
 {
    pMENU menu;
-   newmenu(&menu, 125UL, aprsdecode_lums.fontysize+5UL, 24UL, useri_bTRANSP);
+   newmenu(&menu, aprsdecode_lums.fontxsize*21UL+4UL,
+                aprsdecode_lums.fontysize+5UL, 24UL, useri_bTRANSP);
    infosdo(menu);
    /*  menu^.ysize:=menu^.oldknob*menu^.yknob; */
    menu->oldknob = 0UL;
@@ -4554,9 +4702,9 @@ static void infos(void)
 #define useri_MAXFPS 5000
 
 
-static void perc(uint32_t * vd, char h[100], char s[100],
-                uint32_t vw, uint32_t potx, uint8_t cfg,
-                uint32_t def, int32_t * lum)
+static void perc(uint32_t * vd, uint32_t potwidth, char h[100],
+                char s[100], uint32_t vw, uint32_t potx,
+                uint8_t cfg, uint32_t def, int32_t * lum)
 {
    uint32_t v;
    v = (uint32_t)useri_conf2int(cfg, 0UL, 0L, 100L, (int32_t)def);
@@ -4568,7 +4716,7 @@ static void perc(uint32_t * vd, char h[100], char s[100],
    useri_int2cfg(cfg, (int32_t)v);
    aprsstr_IntToStr((int32_t)v, 0UL, h, 100ul);
    aprsstr_Append(h, 100ul, "%", 2ul);
-   *vd = (v*220UL)/100UL;
+   *vd = (v*potwidth)/100UL;
 } /* end perc() */
 
 
@@ -4576,6 +4724,7 @@ static void potimove(pMENU m, uint32_t potx, uint32_t knob)
 {
    char h[100];
    char s[100];
+   uint32_t potwidth;
    uint32_t tx1;
    uint32_t vd;
    uint32_t vw;
@@ -4583,26 +4732,31 @@ static void potimove(pMENU m, uint32_t potx, uint32_t knob)
    uint32_t v;
    uint32_t maxbright;
    float gam;
+   potwidth = 37UL*aprsdecode_lums.fontxsize;
    aprsdecode_lums.moving = 0;
    if (potx<8UL) vp = 0UL;
    else vp = potx-8UL;
-   if (vp>220UL) vp = 220UL;
-   tx1 = 180UL;
-   vw = (vp*1024UL)/220UL;
+   if (vp>potwidth) vp = potwidth;
+   tx1 = potwidth-40UL;
+   vw = (vp*1024UL)/potwidth;
    vd = 0UL;
    if (knob==1UL) {
-      perc(&vd, h, s, vw, potx, useri_fLOBJ, 70UL, &aprsdecode_lums.obj);
+      perc(&vd, potwidth, h, s, vw, potx, useri_fLOBJ, 70UL,
+                &aprsdecode_lums.obj);
    }
    else if (knob==2UL) {
-      perc(&vd, h, s, vw, potx, useri_fLMAP, 30UL, &aprsdecode_lums.map);
+      perc(&vd, potwidth, h, s, vw, potx, useri_fLMAP, 25UL,
+                &aprsdecode_lums.map);
+      useri_mapbritocfg();
    }
    else if (knob==3UL) {
-      perc(&vd, h, s, vw, potx, useri_fLTRACK, 80UL, &aprsdecode_lums.track);
+      perc(&vd, potwidth, h, s, vw, potx, useri_fLTRACK, 80UL,
+                &aprsdecode_lums.track);
    }
    else if (knob==4UL) {
       gam = aprsdecode_lums.gamma;
       if (potx>0UL) {
-         gam = X2C_DIVR((float)vp*10.0f,220.0f);
+         gam = X2C_DIVR((float)vp*10.0f,(float)potwidth);
          if (gam<0.2f) gam = 0.2f;
          aprsdecode_lums.gamma = gam;
       }
@@ -4610,16 +4764,18 @@ static void potimove(pMENU m, uint32_t potx, uint32_t knob)
       strncpy(s,"Gamma",100u);
       aprsstr_FixToStr(gam+0.05f, 2UL, h, 100ul);
       icfg(useri_fGAMMA, h, 100ul);
-      vd = aprsdecode_trunc(X2C_DIVR(gam*220.0f,10.0f));
+      vd = aprsdecode_trunc(X2C_DIVR(gam*(float)potwidth,10.0f));
    }
    else if (knob==5UL) {
-      perc(&vd, h, s, vw, potx, useri_fLSYM, 90UL, &aprsdecode_lums.sym);
+      perc(&vd, potwidth, h, s, vw, potx, useri_fLSYM, 90UL,
+                &aprsdecode_lums.sym);
    }
    else if (knob==6UL) {
-      perc(&vd, h, s, vw, potx, useri_fLTEXT, 80UL, &aprsdecode_lums.text);
+      perc(&vd, potwidth, h, s, vw, potx, useri_fLTEXT, 80UL,
+                &aprsdecode_lums.text);
    }
    else if (knob==7UL) {
-      perc(&vd, h, s, vw, potx, useri_fLWAY, 70UL,
+      perc(&vd, potwidth, h, s, vw, potx, useri_fLWAY, 70UL,
                 &aprsdecode_lums.waypoint);
    }
    else if (knob==8UL) {
@@ -4628,7 +4784,7 @@ static void potimove(pMENU m, uint32_t potx, uint32_t knob)
       v = aprsdecode_lums.firstdim;
       if (v>aprsdecode_lums.purgetime) v = aprsdecode_lums.purgetime;
       if (potx>0UL) {
-         v = (vp*maxbright)/220UL;
+         v = (vp*maxbright)/potwidth;
          aprsdecode_lums.firstdim = v;
       }
       strncpy(s,"Time full Bright",100u);
@@ -4641,36 +4797,36 @@ static void potimove(pMENU m, uint32_t potx, uint32_t knob)
          aprsstr_IntToStr((int32_t)(v/3600UL), 0UL, h, 100ul);
          aprsstr_Append(h, 100ul, "h", 2ul);
       }
-      vd = (v*220UL)/maxbright;
+      vd = (v*potwidth)/maxbright;
    }
    else if (knob==9UL) {
       v = aprsdecode_lums.maxdim;
       if (potx>0UL) {
-         v = (vp*36000UL)/220UL;
+         v = (vp*36000UL)/potwidth;
          aprsdecode_lums.maxdim = v;
       }
       strncpy(s,"Time Fade Out",100u);
       aprsstr_IntToStr((int32_t)(v/60UL), 0UL, h, 100ul);
       icfg(useri_fTFADE, h, 100ul);
       aprsstr_Append(h, 100ul, "Min", 4ul);
-      vd = (v*220UL)/36000UL;
+      vd = (v*potwidth)/36000UL;
    }
    else if (knob==10UL) {
       /*
           v:=lums.actfps;
-          IF potx>0 THEN v:=vp*MAXFPS DIV POTWIDTH; lums.actfps:=v  END;
+          IF potx>0 THEN v:=vp*MAXFPS DIV potwidth; lums.actfps:=v  END;
           IF lums.actfps=0 THEN lums.actfps:=1 END;
           s:="s/Frame";
           IntToStr(v, 0, h);
-          vd:=v*POTWIDTH DIV MAXFPS;
+          vd:=v*potwidth DIV MAXFPS;
       */
       v = (uint32_t)aprsdecode_lums.actfps;
-      if (potx>0UL) v = (vp*vp*5000UL)/48400UL;
+      if (potx>0UL) v = (vp*vp*5000UL)/(potwidth*potwidth);
       if (v==0UL) v = 1UL;
       aprsdecode_lums.actfps = (int32_t)v;
       strncpy(s,"s/Frame",100u);
       aprsstr_IntToStr((int32_t)v, 0UL, h, 100ul);
-      vd = (uint32_t)X2C_TRUNCC(osic_sqrt((float)((v*220UL*220UL)
+      vd = (uint32_t)X2C_TRUNCC(osic_sqrt((float)((v*potwidth*potwidth)
                 /5000UL)),0UL,X2C_max_longcard);
       tx1 = 90UL;
       knob = 1UL;
@@ -4696,7 +4852,8 @@ static void potisonoff(pMENU menu)
 static void potis(void)
 {
    pMENU menu;
-   newmenu(&menu, 236UL, aprsdecode_lums.fontysize+9UL, 10UL, useri_bCOLOR);
+   newmenu(&menu, 37UL*aprsdecode_lums.fontxsize+16UL,
+                aprsdecode_lums.fontysize+9UL, 10UL, useri_bCOLOR);
    potisonoff(menu);
 } /* end potis() */
 
@@ -4717,7 +4874,8 @@ static void abortpop(void)
 {
    pMENU menu;
    useri_killallmenus();
-   newmenu(&menu, 240UL, aprsdecode_lums.fontysize+7UL, 4UL, useri_bTRANSP);
+   newmenu(&menu, aprsdecode_lums.fontxsize*40UL+4UL,
+                aprsdecode_lums.fontysize+7UL, 4UL, useri_bTRANSP);
    abortpoponoff(menu);
 } /* end abortpop() */
 
@@ -4777,17 +4935,17 @@ static void linewr(pMENU m, uint32_t knob, uint32_t x0, uint32_t curs,
    if (i<=tmp) for (;; i++) {
       maptool_drawchar(m->image, s[i-1UL], (float)x, (float)y, &inc,
                 1000UL, 1UL, col, 0);
-      inc = 6L;
+      inc = (int32_t)aprsdecode_lums.fontxsize;
       x += (uint32_t)inc;
       if (i==tmp) break;
    } /* end for */
-   x1 = x+6UL;
+   x1 = x+aprsdecode_lums.fontxsize;
    /*title */
    /*text */
    if (width>0UL) {
       i = m->xsize-4UL;
       /*  IF width>0 THEN */
-      iw = x1+width*6UL+2UL;
+      iw = x1+width*aprsdecode_lums.fontxsize+2UL;
       if (iw<i) i = iw;
       /*  END; */
       tmp = m->yknob-3UL;
@@ -4807,21 +4965,21 @@ static void linewr(pMENU m, uint32_t knob, uint32_t x0, uint32_t curs,
          } /* end for */
          if (y1==tmp) break;
       } /* end for */
-      x = (curs+2UL)*6UL+x1+4UL;
-      if (x>m->xsize) i = (x-m->xsize)/6UL;
+      x = (curs+2UL)*aprsdecode_lums.fontxsize+x1+4UL;
+      if (x>m->xsize) i = (x-m->xsize)/aprsdecode_lums.fontxsize;
       else i = 0UL;
       x = x1;
       for (;;) {
-         inc = 6L;
+         inc = (int32_t)aprsdecode_lums.fontxsize;
          if (i<aprsstr_Length(s1, s1_len)) {
-            if (x<(m->xsize-4UL)-6UL) {
+            if (x<(m->xsize-4UL)-aprsdecode_lums.fontxsize) {
                maptool_drawchar(m->image, s1[i], (float)x, (float)y,
                 &inc, 1000UL, 1UL, col, 0);
-               inc = 6L;
+               inc = (int32_t)aprsdecode_lums.fontxsize;
             }
          }
          if (curson && i==curs) {
-            if (i<curs) x += (curs-i)*6UL;
+            if (i<curs) x += (curs-i)*aprsdecode_lums.fontxsize;
             do {
                if (x+4UL<m->xsize) {
                   for (ic = 0UL; ic<=1UL; ic++) {
@@ -4872,7 +5030,7 @@ static void keybknob(pMENU m, uint32_t knob, char withcurs,
          if (isbool(anonym->typ)) x = 17UL;
          else x = 4UL;
          if (posx>x) {
-            posx = (posx-x)/6UL;
+            posx = (posx-x)/aprsdecode_lums.fontxsize;
             l = aprsstr_Length(anonym->title, 31ul)+1UL;
             if (clampedline==knob && posx>=l) {
                /*        IF posx>=l THEN  */
@@ -5018,19 +5176,15 @@ static void movewin(pMENU pm, int32_t dx, int32_t dy)
 
 static void dosymchoose(pMENU);
 
-#define useri_SYMS 18
-
 #define useri_YS 12
 
-#define useri_S "\370\370|"
-
-#define useri_myorbeacon "\326"
+#define useri_S "\361\371|"
 
 
 static void dosymchoose(pMENU menu)
 /* draw symbol chart to select one */
 {
-   /* menu:pMENU; */
+   uint32_t wi;
    uint32_t yy;
    uint32_t xx;
    uint32_t y;
@@ -5046,11 +5200,11 @@ static void dosymchoose(pMENU menu)
    uint32_t tmp0;
    uint32_t tmp1;
    menu->oldknob = 0UL;
-   /*  newmenu(menu, 16*SYMS+3, SYMS, YS, bCOLOR); */
+   wi = (uint32_t)microspace("\361", 2ul);
    for (y = 0UL; y<=11UL; y++) {
-      addline(menu, "\370\370|\370\370|\370\370|\370\370|\370\370|\370\370|\37\
-0\370|\370\370|\370\370|\370\370|\370\370|\370\370|\370\370|\370\370|\370\370\
-|\370\370|", 49ul, (char *)(tmp = (char)menu->scroll,&tmp), 1u/1u,
+      addline(menu, "\361\371|\361\371|\361\371|\361\371|\361\371|\361\371|\36\
+1\371|\361\371|\361\371|\361\371|\361\371|\361\371|\361\371|\361\371|\361\371\
+|\361\371|", 49ul, (char *)(tmp = (char)menu->scroll,&tmp), 1u/1u,
                 2100UL+16UL*(11UL-y));
    } /* end for */
    tmp0 = menu->image->Len0-1;
@@ -5059,7 +5213,8 @@ static void dosymchoose(pMENU menu)
       tmp1 = menu->image->Len1-1;
       x = 0UL;
       if (x<=tmp1) for (;; x++) {
-         if (x%18UL>1UL && (y+1UL)%18UL>1UL) {
+         if (x%(aprsdecode_lums.symsize+wi)>1UL && (y+1UL)
+                %(aprsdecode_lums.symsize+2UL)>1UL) {
             { /* with */
                struct maptool_PIX * anonym = (anonym2 = menu->image,
                 &anonym2->Adr[(x)*anonym2->Len0+y]);
@@ -5086,24 +5241,30 @@ static void dosymchoose(pMENU menu)
       else t = '\\';
       for (x = 0UL; x<=15UL; x++) {
          maptool_drawsym(menu->image, t, (char)(32UL+x+16UL*(y%6UL)), 0,
-                (float)(x*18UL+10UL), (float)((11UL-y)*18UL+9UL),
-                250UL);
+                (float)(x*(aprsdecode_lums.symsize+wi)
+                +(aprsdecode_lums.symsize+2UL)/2UL+1UL),
+                (float)((11UL-y)*(aprsdecode_lums.symsize+2UL)
+                +(aprsdecode_lums.symsize+2UL)/2UL), 250UL);
          if ((char)menu->scroll=='\326' && X2C_INL(x+y*16UL,192,
                 aprsdecode_click.onesymbolset)) {
-            for (yy = 0UL; yy<=17UL; yy++) {
+            tmp0 = aprsdecode_lums.symsize+1UL;
+            yy = 0UL;
+            if (yy<=tmp0) for (;; yy++) {
                xx = 0UL;
                do {
                   { /* with */
                      struct maptool_PIX * anonym1 = (anonym4 = menu->image,
-                &anonym4->Adr[(xx+x*18UL+1UL)*anonym4->Len0+(yy+(11UL-y)
-                *18UL)]);
+                &anonym4->Adr[(xx+x*(aprsdecode_lums.symsize+wi)+1UL)
+                *anonym4->Len0+(yy+(11UL-y)*(aprsdecode_lums.symsize+2UL))]);
+                
                      anonym1->r = (uint16_t)((xx+yy)*30UL);
                      anonym1->g = 1000U;
                      anonym1->b = 300U;
                   }
-                  if (yy==0UL || yy==17UL) ++xx;
-                  else xx += 17UL;
-               } while (xx<18UL);
+                  if (yy==0UL || yy==aprsdecode_lums.symsize+1UL) ++xx;
+                  else xx += aprsdecode_lums.symsize+1UL;
+               } while (xx<aprsdecode_lums.symsize+2UL);
+               if (yy==tmp0) break;
             } /* end for */
          }
       } /* end for */
@@ -5115,31 +5276,30 @@ static void dosymchoose(pMENU menu)
 /*  menu^.oldknob:=0; */
 } /* end dosymchoose() */
 
-#define useri_SYMS0 18
-
 #define useri_YS0 12
 
 
 static void symchoose(char myorbeacon)
 {
    pMENU menu;
+   uint32_t wi;
    useri_rdonesymb(aprsdecode_click.onesymbol.tab!=0, 0);
-   newmenu(&menu, 290UL, 18UL, 12UL, useri_bCOLOR);
+   wi = (uint32_t)microspace("\361", 2ul);
+   newmenu(&menu, 16UL*(aprsdecode_lums.symsize+wi)+2UL,
+                aprsdecode_lums.symsize+2UL, 12UL, useri_bCOLOR);
    menu->scroll = (uint32_t)(uint8_t)myorbeacon;
    dosymchoose(menu);
    menu->ysize = menu->oldknob*menu->yknob;
    menu->oldknob = 0UL;
 } /* end symchoose() */
 
-#define useri_SYMS1 17
-
-#define useri_S0 "\370\367|"
-
 
 static void overlaychoose(char myorbeacon)
+/*CONST S=SP9+SP8+"|"; */
 {
    pMENU menu;
-   newmenu(&menu, 156UL, aprsdecode_lums.fontysize+5UL, 5UL, useri_bCOLOR);
+   newmenu(&menu, 12UL*(aprsdecode_lums.fontxsize*2UL+1UL),
+                aprsdecode_lums.fontysize+5UL, 5UL, useri_bCOLOR);
    addline(menu, "0 |1 |2 |3 |4 |5 |6 |7 |8 |9 |", 31ul,
                 (char *) &myorbeacon, 1u/1u, 4100UL);
    addline(menu, "N |O |P |Q |R |S |T |U |V |W |X |Y |Z |", 40ul,
@@ -5194,7 +5354,8 @@ static void AddEditLine(pMENU m, char cmd[], uint32_t cmd_len,
 static void managemsg(uint32_t scroll, uint32_t num)
 {
    pMENU menu;
-   newmenu(&menu, 50UL, aprsdecode_lums.fontysize+5UL, 6UL, useri_bCOLOR);
+   newmenu(&menu, aprsdecode_lums.fontxsize*8UL+4UL,
+                aprsdecode_lums.fontysize+5UL, 6UL, useri_bCOLOR);
    menu->scroll = scroll-num;
    addline(menu, "Edit", 5ul, "\260", 2ul, 6900UL);
    addline(menu, "Set Port", 9ul, "\260", 2ul, 6901UL);
@@ -5218,8 +5379,6 @@ static void setmsgport(uint32_t p)
 
 #define useri_YKNOB 20
 
-#define useri_XSIZE 462
-
 #define useri_YPOS 200
 
 #define useri_MLINES 6
@@ -5235,12 +5394,11 @@ static void setmsgport(uint32_t p)
 
 #define useri_REJECTED "REJECTED"
 
-#define useri_XCHAR 77
-
 
 static void sendmsg(void)
 {
    pMENU m;
+   uint32_t xchar;
    uint32_t i;
    uint32_t cnt;
    uint32_t cntm;
@@ -5267,8 +5425,9 @@ static void sendmsg(void)
    if (i<7UL) i = 1UL;
    else i -= 6UL;
    if (cnt>i) cnt = i;
-   xw = 462UL;
-   if (462UL>(uint32_t)maptool_xsize) xw = (uint32_t)maptool_xsize;
+   xw = aprsdecode_lums.fontxsize*77UL;
+   if (xw>(uint32_t)maptool_xsize) xw = (uint32_t)maptool_xsize;
+   xchar = xw/aprsdecode_lums.fontxsize;
    m = findmenuid(228UL);
    refrmenu(&m, xw, aprsdecode_lums.fontysize+7UL, cnt+6UL, useri_bCOLOR, 0);
    oks = m->oldknob;
@@ -5341,7 +5500,9 @@ ose", 66ul, "\255", 2ul, 6800UL);
          aprsstr_Append(s, 201ul, h, 201ul);
          aprsstr_Append(s, 201ul, " |", 3ul);
          if (pm->rej) strncpy(h,"\350REJECTED",201u);
-         else if (pm->acknum==0UL) strncpy(h,"        ",201u);
+         else if (pm->acknum==0UL) {
+            strncpy(h,"        ",201u);
+         }
          else if (pm->acktime>0UL) {
             aprsstr_TimeToStr(pm->acktime%86400UL, h, 201ul);
          }
@@ -5378,8 +5539,8 @@ ose", 66ul, "\255", 2ul, 6800UL);
          else aprsstr_Append(s, 201ul, "-----", 6ul);
          aprsstr_Append(s, 201ul, "  |", 4ul);
          aprsstr_Append(s, 201ul, pm->msgtext, 67ul);
-         if (aprsstr_Length(s, 201ul)>77UL) {
-            s[77U] = 0;
+         if (aprsstr_Length(s, 201ul)>xchar) {
+            s[xchar] = 0;
             aprsstr_Append(s, 201ul, "...", 4ul);
          }
          addline(m, s, 201ul, "\257>", 3ul, 6804UL);
@@ -5481,9 +5642,6 @@ static char isbkn(char typ)
    return (((typ!='O' && typ!='H') && typ!='P') && typ!='I') && typ!='J';
 } /* end isbkn() */
 
-#define useri_XSIZE0 300
-/*      YPOS=140; */
-
 #define useri_MLINES0 15
 /* static menu lines */
 
@@ -5515,6 +5673,7 @@ static void beaconeditor(void)
    uint32_t hks;
    uint32_t oks;
    char tmp;
+   uint32_t tmp0;
    useri_confstr(useri_fRBNAME, ename, 9ul);
    replace = 0;
    cntm = 0UL;
@@ -5533,8 +5692,8 @@ static void beaconeditor(void)
    if (i<16UL) i = 1UL;
    else if (useri_beaconed) i -= 15UL;
    if (cnt>i) cnt = i;
-   xw = 300UL;
-   if (300UL>(uint32_t)maptool_xsize) xw = (uint32_t)maptool_xsize;
+   xw = aprsdecode_lums.fontxsize*50UL;
+   if (xw>(uint32_t)maptool_xsize) xw = (uint32_t)maptool_xsize;
    m = findmenuid(226UL);
    /*IF m=NIL THEN beaconed:=TRUE END; */
    refrmenu(&m, xw, aprsdecode_lums.fontysize+5UL, cnt+15UL+1UL,
@@ -5594,7 +5753,9 @@ static void beaconeditor(void)
       }
       addline(m, h, 201ul, "\223>", 3ul, 8138UL);
       ++m->scroll;
-      drawsymsquare(m->image, s[0U], s[1U], (int32_t)(m->xsize-25UL),
+      drawsymsquare(m->image, s[0U], s[1U],
+                (int32_t)(((m->xsize-aprsdecode_lums.symsize)
+                -aprsdecode_lums.fontxsize)-8UL),
                 (int32_t)((m->oldknob-1UL)*m->yknob+m->yknob/2UL));
       strncpy(s,"\355",201u);
       AppBlueButton(s, 201ul, " Beacon |", 10ul, bkn);
@@ -5637,29 +5798,42 @@ static void beaconeditor(void)
       useri_confstrings(useri_fRBTEXT, cntm, 1, h, 201ul);
       aprsdecode_getbeaconname(h, 201ul, name, 9ul, symb, 3ul, &isobj,
                 &isdel, &isbad);
+      /*
+            IF isbad THEN
+              IF symb[0]<" " THEN s:=MOP4+MOP5+"     ?? " ELSE s:=MOP4+MOP5+"        " END;
+            ELSIF beaconed & StrCmp(name, ename) THEN s:=MOP8+"        ";
+      --      ELSIF isbad THEN 
+      --        IF symb[0]<" " THEN s:=MOP4+MOP5+"     ?? " ELSE s:=MOP4+MOP5+"        " END;
+            ELSIF isdel       THEN s:=MOP4+MOP1+"        ";
+            ELSE s:="        "; END;       
+      */
       if (isbad) {
-         if ((uint8_t)symb[0U]<' ') strncpy(s,"\352\353     ?? ",201u);
-         else strncpy(s,"\352\353        ",201u);
+         if ((uint8_t)symb[0U]<' ') strncpy(s,"\346\352\353  ?? ",201u);
+         else strncpy(s,"\346\352\353  ",201u);
       }
       else if (useri_beaconed && aprsstr_StrCmp(name, 9ul, ename, 9ul)) {
-         strncpy(s,"\356        ",201u);
+         strncpy(s,"\346\356  ",201u);
       }
       else if (isdel) {
-         /*      ELSIF isbad THEN  */
-         /*        IF symb[0]<" " THEN s:=MOP4+MOP5+"     ?? " ELSE s:=MOP4+MOP5+"        " END;
-                 */
-         strncpy(s,"\352\347        ",201u);
+         strncpy(s,"\346\352\347  ",201u);
       }
-      else strncpy(s,"        ",201u);
+      else strncpy(s,"\346  ",201u);
+      tmp0 = aprsdecode_lums.symsize/aprsdecode_lums.fontxsize;
+      i = 0UL;
+      if (i<=tmp0) for (;; i++) {
+         aprsstr_Append(s, 201ul, " ", 2ul);
+         if (i==tmp0) break;
+      } /* end for */
       aprsstr_Append(s, 201ul, h, 201ul);
-      if (aprsstr_Length(s, 201ul)>=54UL) {
-         s[53U] = 0;
+      if (aprsstr_Length(s, 201ul)>=49UL) {
+         s[46U] = 0;
          aprsstr_Append(s, 201ul, "...", 4ul);
       }
       addline(m, s, 201ul, "\223>", 3ul, 8170UL);
       if ((uint8_t)symb[0U]>=' ') {
-         drawsymsquare(m->image, symb[0U], symb[1U], 24L,
-                (int32_t)((m->oldknob-1UL)*m->yknob+m->yknob/2UL));
+         drawsymsquare(m->image, symb[0U], symb[1U],
+                (int32_t)(aprsdecode_lums.symsize/2UL+aprsdecode_lums.fontxsize+10UL)
+                , (int32_t)((m->oldknob-1UL)*m->yknob+m->yknob/2UL));
       }
       onoff(m, 8L, configson(useri_fRBTEXT, cntm));
       ++cntm;
@@ -5781,8 +5955,8 @@ static void managebeacon(uint32_t scroll, uint32_t knob,
    }
    else if (!useri_beaconed || knob>14UL) {
       if (folded) {
-         newmenu(&menu, 55UL, aprsdecode_lums.fontysize+5UL, 8UL,
-                useri_bTRANSP);
+         newmenu(&menu, aprsdecode_lums.fontxsize*9UL+4UL,
+                aprsdecode_lums.fontysize+5UL, 8UL, useri_bTRANSP);
          menu->scroll = knob-scroll;
          addline(menu, "Edit Cut", 9ul, "\213", 2ul, 8180UL);
          addline(menu, "Send now", 9ul, "\213", 2ul, 8182UL);
@@ -5937,15 +6111,18 @@ static void extractdigi(char s[], uint32_t s_len, char vv[],
    X2C_PFREE(s);
 } /* end extractdigi() */
 
-#define useri_XSIZE1 300
-
 #define useri_DIGIMLINES 6
 /* static menu lines digi config */
+
+#define useri_S1 "   |   |   "
+
+#define useri_S2 "   |   |   |     "
 
 
 static void digieditor(void)
 {
    pMENU m;
+   uint32_t xchar;
    uint32_t radius;
    uint32_t duptime;
    uint32_t yp;
@@ -5968,15 +6145,16 @@ static void digieditor(void)
    uint32_t oks;
    /*  confstr(fDIGI, ename); */
    /*  replace:=FALSE; */
-   cntm = cntconfigs(useri_fDIGI);
+   cntm = cntconfigs(useri_fDIGI, 1);
    cnt = cntm;
    /*  i:=mainys() DIV (lums.fontysize+5); */
    /*  IF i<DIGIMLINES+1 THEN i:=1 ELSIF digied THEN DEC(i, DIGIMLINES) END;
                  */
    /*  IF cnt>i THEN cnt:=i END; */
    if (cnt>=54UL) cnt = 54UL;
-   xw = 300UL;
-   if (300UL>(uint32_t)maptool_xsize) xw = (uint32_t)maptool_xsize;
+   xw = aprsdecode_lums.fontxsize*60UL;
+   if (xw>(uint32_t)maptool_xsize) xw = (uint32_t)maptool_xsize;
+   xchar = xw/aprsdecode_lums.fontxsize;
    m = findmenuid(224UL);
    if (m==0) digiedline[0U] = 0;
    refrmenu(&m, xw, aprsdecode_lums.fontysize+5UL, cnt+6UL+1UL, useri_bCOLOR,
@@ -6014,14 +6192,15 @@ static void digieditor(void)
       aprsstr_Extractword(h, 201ul, vv, 201ul);
       aprsstr_Extractword(h, 201ul, vv, 201ul);
       aprsstr_Append(s, 201ul, h, 201ul);
-      if (aprsstr_Length(s, 201ul)>=54UL) {
-         s[53U] = 0;
+      if (aprsstr_Length(s, 201ul)>xchar) {
+         s[xchar] = 0;
          aprsstr_Append(s, 201ul, "...", 4ul);
       }
       addline(m, s, 201ul, "\314>", 3ul, 8335UL);
-      onoff(m, 8L, configson(useri_fDIGI, cntm));
-      onoff(m, 72L, direct);
-      onoff(m, 105L, cutpath);
+      onoff(m, (int32_t)(aprsdecode_lums.fontxsize+3UL),
+                configson(useri_fDIGI, cntm));
+      onoff(m, microspace("   |   |   ", 12ul), direct);
+      onoff(m, microspace("   |   |   |     ", 18ul), cutpath);
       ++cntm;
       --cnt;
    }
@@ -6096,8 +6275,8 @@ static void dodigi(uint32_t scroll, uint32_t knob, uint32_t subknob,
    if (caller==2U) {
       if (subknob==5UL) {
          /* fold submenu */
-         newmenu(&menu, 55UL, aprsdecode_lums.fontysize+5UL, 3UL,
-                useri_bTRANSP);
+         newmenu(&menu, aprsdecode_lums.fontxsize*9UL+4UL,
+                aprsdecode_lums.fontysize+5UL, 3UL, useri_bTRANSP);
          menu->scroll = knob-scroll;
          addline(menu, "Edit", 5ul, "\315", 2ul, 8360UL);
          addline(menu, "Delete", 7ul, "\315", 2ul, 8365UL);
@@ -6301,12 +6480,15 @@ static void drawarrow(maptool_pIMAGE img, int32_t x, int32_t y,
             ii = j;
          }
          else jj = j;
-         { /* with */
-            struct maptool_PIX * anonym = &img->Adr[(x+ii)*img->Len0+(y+jj)];
-                
-            anonym->r = 600U;
-            anonym->g = 600U;
-            anonym->b = 600U;
+         if (((x+ii<=(int32_t)(img->Len1-1) && y+jj<=(int32_t)
+                (img->Len0-1)) && x+ii>=0L) && y+jj>=0L) {
+            { /* with */
+               struct maptool_PIX * anonym = &img->Adr[(x+ii)
+                *img->Len0+(y+jj)];
+               anonym->r = 600U;
+               anonym->g = 600U;
+               anonym->b = 600U;
+            }
          }
          if (j==tmp0) break;
       } /* end for */
@@ -6544,8 +6726,8 @@ static void cpinv(maptool_pIMAGE im, int32_t x, int32_t y,
    int32_t x1;
    int32_t x0;
    if (from<to) {
-      x0 = (x-1L)+(from-xshift)*6L;
-      x1 = x+2L+(to-xshift)*6L;
+      x0 = (x-1L)+(from-xshift)*(int32_t)aprsdecode_lums.fontxsize;
+      x1 = x+2L+(to-xshift)*(int32_t)aprsdecode_lums.fontxsize;
       if (x1>0L && x0<(int32_t)(im->Len1-1)) {
          if (x0<0L) x0 = 0L;
          if (x1>(int32_t)(im->Len1-1)) x1 = (int32_t)(im->Len1-1);
@@ -6629,7 +6811,8 @@ static void makelistwin(struct LISTBUFFER * b)
       ys = useri_mainys()-linehi;
    }
    else if (isicon=='I') {
-      xw = linehi*3UL+4UL+aprsstr_Length(b->listwintitle, 31ul)*6UL;
+      xw = linehi*3UL+4UL+aprsstr_Length(b->listwintitle,
+                31ul)*aprsdecode_lums.fontxsize;
       ys = linehi;
    }
    else {
@@ -6720,11 +6903,12 @@ static void makelistwin(struct LISTBUFFER * b)
          }
          if (i==tmp) break;
       } /* end for */
-      m->scrxsize = xch*6UL;
+      m->scrxsize = xch*aprsdecode_lums.fontxsize;
       x0 = (uint32_t)(limscrbar(m->scrx, (int32_t)(xs-linehi*3UL),
                 (int32_t)m->scrxsize)/256L);
-      xp = (x0+5UL)/6UL;
-      x0 = (6UL-x0%6UL)%6UL;
+      xp = (x0+(aprsdecode_lums.fontxsize-1UL))/aprsdecode_lums.fontxsize;
+      x0 = (aprsdecode_lums.fontxsize-x0%aprsdecode_lums.fontxsize)
+                %aprsdecode_lums.fontxsize;
       yp = linehi-yp;
       tmp = cnt;
       lc = 1UL;
@@ -6770,8 +6954,8 @@ static void makelistwin(struct LISTBUFFER * b)
                      col.b = 500U;
                   }
                   drawsquare(m->image, col, (int32_t)(x0+2UL),
-                (int32_t)yp, (int32_t)(x0+9UL),
-                (int32_t)(yp+(linehi-1UL)));
+                (int32_t)yp, (int32_t)(x0+3UL+aprsdecode_lums.fontxsize),
+                 (int32_t)(yp+(linehi-1UL)));
                }
                colorfind(s, 1001ul);
                wrcolor(m->image, s, 1001ul, x0+2UL, 1000UL, 0, &yp);
@@ -6997,7 +7181,7 @@ static void makelistwin(struct LISTBUFFER * b)
       aprsstr_Append(s, 1001ul, " (", 3ul);
       aprsstr_Append(s, 1001ul, s1, 1001ul);
       aprsstr_Append(s, 1001ul, ")", 2ul);
-      lc = aprsstr_Length(s, 1001ul)*6UL;
+      lc = aprsstr_Length(s, 1001ul)*aprsdecode_lums.fontxsize;
       if (xs>lc+linehi*6UL) {
          wrcolor(m->image, s, 1001ul, (xs-lc)/2UL, 700UL, 0, &i);
       }
@@ -7116,7 +7300,7 @@ static void findtextpos(pMENU m, uint32_t xcl, uint32_t ycl,
                 (int32_t)(m->xsize-aprsdecode_lums.fontysize*3UL),
                 (int32_t)m->scrxsize)/256UL);
    if (n<0L) n = 0L;
-   *xch = (uint32_t)n/6UL;
+   *xch = (uint32_t)n/aprsdecode_lums.fontxsize;
 } /* end findtextpos() */
 
 
@@ -7223,7 +7407,7 @@ static void dolist(pMENU m, uint32_t xcl, uint32_t ycl)
             if (isicon=='I') isicon = 0;
             else isicon = 'I';
          }
-         else if (xcl<=aprsdecode_lums.fontysize+24UL && xcl>aprsdecode_lums.fontysize)
+         else if (xcl<=aprsdecode_lums.fontysize+aprsdecode_lums.fontxsize*4UL && xcl>aprsdecode_lums.fontysize)
                  {
             if (useri_listwin=='M') freelist(&monbuffer, 0UL);
             if (useri_listwin=='L') {
@@ -7678,10 +7862,10 @@ static void listcursmove(pMENU m, char * ch)
                  */
    switch ((unsigned)cc) {
    case '\023':
-      m->scrx += -1536L;
+      m->scrx += -((int32_t)aprsdecode_lums.fontxsize*256L);
       break;
    case '\004':
-      m->scrx += 1536L;
+      m->scrx += (int32_t)aprsdecode_lums.fontxsize*256L;
       break;
    case '\005':
    case '\310':
@@ -7758,7 +7942,7 @@ static void makepanwin(void)
    uint32_t ohs;
    uint32_t oks;
    if (panowin.isicon) {
-      xw = 64UL;
+      xw = 4UL+10UL*aprsdecode_lums.fontxsize;
       ys = aprsdecode_lums.fontysize;
    }
    else {
@@ -7883,7 +8067,7 @@ static void dopano(pMENU m, uint32_t xcl, uint32_t ycl)
          if (xdiv==1UL) isicon = 'M';
          else if (xdiv==2UL) isicon = 'I';
          else {
-            xcl<=aprsdecode_lums.fontysize+24UL && xcl>aprsdecode_lums.fontysize;
+            xcl<=aprsdecode_lums.fontysize+aprsdecode_lums.fontxsize*4UL && xcl>aprsdecode_lums.fontysize;
          }
          if ((uint32_t)m->minnormmax>0UL) {
             icfg(m->minnormmax, (char *) &isicon, 1u/1u);
@@ -7933,6 +8117,7 @@ static void escmenus(void)
    aprsdecode_click.withradio = 0;
    aprsdecode_click.chkmaps = 0;
    aprsdecode_click.onesymbol.tab = 0;
+   aprsdecode_click.abort0 = 1;
    if (panowin.on) closepano();
 } /* end escmenus() */
 
@@ -7967,32 +8152,6 @@ static void filesetup(uint32_t knob, uint32_t sub)
    copytoed();
    updatemenus();
 } /* end filesetup() */
-
-
-static void statuscol(maptool_pIMAGE img, int32_t x0, int32_t xwide,
-                struct maptool_PIX c)
-{
-   int32_t y;
-   int32_t x;
-   struct maptool_PIX col;
-   int32_t tmp;
-   int32_t tmp0;
-   tmp = (int32_t)aprsdecode_lums.fontysize-2L;
-   y = 1L;
-   if (y<=tmp) for (;; y++) {
-      tmp0 = xwide;
-      x = -xwide;
-      if (x<=tmp0) for (;; x++) {
-         col = img->Adr[(x0+x)*img->Len0+y];
-         col.r += c.r;
-         col.g += c.g;
-         col.b += c.b;
-         img->Adr[(x0+x)*img->Len0+y] = col;
-         if (x==tmp0) break;
-      } /* end for */
-      if (y==tmp) break;
-   } /* end for */
-} /* end statuscol() */
 
 
 static void knobcol(maptool_pIMAGE img, int32_t x0, int32_t y00,
@@ -8039,7 +8198,11 @@ static void configman(uint32_t button, char * keycmd)
          configs[configedit].updated = 1;
       }
       useri_AddConfLine((uint8_t)configedit, 1U, s, 1001ul);
-      if ((uint8_t)configedit==useri_fFONTSIZE) maptool_loadfont();
+      if ((uint8_t)configedit==useri_fFONTSIZE) {
+         maptool_loadfont();
+         useri_killallmenus();
+         useri_say(maptool_fontloadmsg, 71ul, 6UL, 'b');
+      }
       /*    IF VAL(CONFSET, configedit) IN sCONFSET{fFONTSIZE, fANT1, fANT2,
                 fANT3, fFRESNELL,fGEOBRIGHTNESS, fGEOCONTRAST, fARROW,fKMH,
                 fKMHTIME,fTEMP,fWINDSYM,fRULER,fALTMIN,fCOLMAPTEXT,
@@ -8152,7 +8315,8 @@ static void dogeoprofil(pMENU m)
       c.r = 500U;
    }
    addline(m, s, 100ul, "\022", 2ul, 8535UL);
-   knobcol(m->image, 2L, (int32_t)((m->oldknob-1UL)*m->yknob), 16L,
+   knobcol(m->image, 2L, (int32_t)((m->oldknob-1UL)*m->yknob),
+                (int32_t)(aprsdecode_lums.fontxsize*3UL-2UL),
                 (int32_t)(m->yknob-1UL), c);
    m->redrawproc = dogeoprofil;
    m->hiknob = 0UL;
@@ -8165,7 +8329,8 @@ static void dogeoprofil(pMENU m)
 static void geoprofil(void)
 {
    pMENU m;
-   newmenu(&m, 145UL, aprsdecode_lums.fontysize+7UL, 11UL, useri_bTRANSP);
+   newmenu(&m, aprsdecode_lums.fontxsize*24UL+4UL,
+                aprsdecode_lums.fontysize+7UL, 11UL, useri_bTRANSP);
    dogeoprofil(m);
    m->ysize = m->oldknob*m->yknob;
    m->oldknob = 0UL;
@@ -8202,11 +8367,9 @@ static void docolours(pMENU m)
    addline(m, " Object/Item Text", 18ul, "\316>", 3ul, 8407UL);
    addline(m, " Menus Text", 12ul, "\316>", 3ul, 8410UL);
    addline(m, " Menus Background", 18ul, "\316>", 3ul, 8415UL);
-   /*  addline(m, " Rf Range Marker 1", CMDCOLOURS+">", MINH*84+20); */
-   /*  addline(m, " Rf Range Marker 2", CMDCOLOURS+">", MINH*84+25); */
    addline(m, " Brightness Rfpath", 19ul, "\316", 2ul, 8430UL);
-   /*  addline(m, " Menu transparency", CMDCOLOURS, MINH*84+35); */
-   addonoff(m, "   |Menu transparency", 22ul, "\316", 2ul, 8435UL, 8L,
+   addonoff(m, "   |Menu transparency", 22ul, "\316", 2ul, 8435UL,
+                (int32_t)(aprsdecode_lums.fontxsize+2UL),
                 useri_configon(useri_fTRANSP));
    addline(m, " Font Size", 11ul, "\316", 2ul, 8440UL);
    m->redrawproc = docolours;
@@ -8218,7 +8381,7 @@ static void docolours(pMENU m)
 PROCEDURE colours;
 VAR m:pMENU;
 BEGIN
-  newmenu(m, 115, lums.fontysize+7, 9, bTRANSP);
+  newmenu(m, lums.fontxsize*19+4, lums.fontysize+7, 9, bTRANSP);
   docolours(m);
   m^.ysize:=m^.oldknob*m^.yknob+1;
   m^.oldknob:=0;
@@ -8274,8 +8437,6 @@ static void normcol(uint32_t m, uint32_t * r, uint32_t * g,
 
 #define useri_CMUL 1000
 
-#define useri_S1 100
-
 #define useri_PI0 3.1415926536
 
 
@@ -8289,8 +8450,9 @@ static char xytocolor(uint32_t x, uint32_t y, uint32_t * r,
    float h;
    float ya;
    float xa;
-   xa = 2.0f*(X2C_DIVR((float)x,100.0f)-0.5f);
-   ya = 2.0f*(X2C_DIVR((float)y,100.0f)-0.5f);
+   ra = (float)(aprsdecode_lums.fontxsize*17UL);
+   xa = 2.0f*(X2C_DIVR((float)x,ra)-0.5f);
+   ya = 2.0f*(X2C_DIVR((float)y,ra)-0.5f);
    ra = osic_sqrt(xa*xa+ya*ya);
    if (ra>1.0f) return 0;
    /* out of circle */
@@ -8329,6 +8491,7 @@ static void docolourchoose(pMENU);
 
 static void docolourchoose(pMENU menu)
 {
+   uint32_t colorsz;
    uint32_t alias;
    uint32_t min0;
    uint32_t bo;
@@ -8360,6 +8523,7 @@ static void docolourchoose(pMENU menu)
    bo = (uint32_t)useri_conf2int((uint8_t)((147UL+menu->scroll)-1UL),
                 2UL, 0L, 100L, 0L);
    normcol(1000UL, &ro, &go, &bo);
+   colorsz = 17UL*aprsdecode_lums.fontxsize;
    xo = 0UL;
    yo = 0UL;
    min0 = X2C_max_longcard;
@@ -8372,7 +8536,7 @@ static void docolourchoose(pMENU menu)
          { /* with */
             struct maptool_PIX * anonym = (anonym1 = menu->image,
                 &anonym1->Adr[(x)*anonym1->Len0+y]);
-            if (((y<5UL || y>105UL) || x<5UL) || x>105UL) {
+            if (((y<5UL || y>colorsz+5UL) || x<5UL) || x>colorsz+5UL) {
                anonym->r = 300U;
                anonym->g = 300U;
                anonym->b = 300U;
@@ -8410,11 +8574,11 @@ static void docolourchoose(pMENU menu)
    else if (xo>=(menu->image->Len1-1)-1UL) xo = (menu->image->Len1-1)-1UL;
    if (yo<1UL) yo = 1UL;
    else if (yo>=(menu->image->Len0-1)-1UL) yo = (menu->image->Len0-1)-1UL;
-   tmp = yo+1UL;
-   y = yo-1UL;
+   tmp = yo+2UL;
+   y = yo-2UL;
    if (y<=tmp) for (;; y++) {
-      tmp0 = xo+1UL;
-      x = xo-1UL;
+      tmp0 = xo+2UL;
+      x = xo-2UL;
       if (x<=tmp0) for (;; x++) {
          { /* with */
             struct maptool_PIX * anonym0 = (anonym2 = menu->image,
@@ -8439,7 +8603,10 @@ static void docolourchoose(pMENU menu)
 static void colourchoose(uint32_t knob)
 {
    pMENU menu;
-   newmenu(&menu, 110UL, 110UL+aprsdecode_lums.fontysize, 1UL, useri_bCOLOR);
+   uint32_t colorsz;
+   colorsz = 17UL*aprsdecode_lums.fontxsize;
+   newmenu(&menu, colorsz+10UL, colorsz+10UL+aprsdecode_lums.fontysize, 1UL,
+                useri_bCOLOR);
    menu->scroll = knob;
    docolourchoose(menu);
    menu->ysize = menu->oldknob*menu->yknob;
@@ -8450,7 +8617,10 @@ static void colourchoose(uint32_t knob)
 static void colourchoosegeo(uint32_t knob)
 {
    pMENU menu;
-   newmenu(&menu, 110UL, 110UL+aprsdecode_lums.fontysize, 1UL, useri_bCOLOR);
+   uint32_t colorsz;
+   colorsz = 17UL*aprsdecode_lums.fontxsize;
+   newmenu(&menu, colorsz+10UL, colorsz+10UL+aprsdecode_lums.fontysize, 1UL,
+                useri_bCOLOR);
    if (knob==1UL) menu->scroll = 6UL;
    else menu->scroll = 5UL;
    docolourchoose(menu);
@@ -8467,16 +8637,18 @@ static void setcolour(uint32_t knob, uint32_t cx, uint32_t cy)
    uint32_t r;
    char h[101];
    char s[101];
+   uint32_t colorsz;
    /*WrInt(knob, 10);WrInt(cx, 10); WrInt(cy, 10); */
+   colorsz = 17UL*aprsdecode_lums.fontxsize;
    if (cx>=5UL) cx -= 5UL;
    else cx = 0UL;
    if (cy>=5UL+aprsdecode_lums.fontysize) {
       cy -= 5UL+aprsdecode_lums.fontysize;
    }
    else cy = 0UL;
-   if (cx>100UL) cx = 100UL;
-   if (cy>100UL) cy = 100UL;
-   if (xytocolor(cx, 100UL-cy, &r, &g, &b, &alias)) {
+   if (cx>colorsz) cx = colorsz;
+   if (cy>colorsz) cy = colorsz;
+   if (xytocolor(cx, colorsz-cy, &r, &g, &b, &alias)) {
       g = g/10UL;
       if (g>100UL) g = 100UL;
       b = b/10UL;
@@ -8499,8 +8671,6 @@ static void setcolour(uint32_t knob, uint32_t cx, uint32_t cy)
 /* colour chooser */
 static void netmenu(pMENU);
 
-#define useri_OX2 8
-
 
 static void netmenu(pMENU m)
 {
@@ -8508,11 +8678,14 @@ static void netmenu(pMENU m)
    char h[100];
    uint32_t i;
    m->oldknob = 0UL;
-   addonoff(m, "   |Allow Gate Rf>Net", 22ul, "\270", 2ul, 7445UL, 8L,
+   addonoff(m, "   |Allow Gate Rf>Net", 22ul, "\270", 2ul, 7445UL,
+                (int32_t)(aprsdecode_lums.fontxsize+2UL),
                 useri_configon(useri_fALLOWGATE));
-   addonoff(m, "    Allow Tx to Net", 20ul, "\270", 2ul, 7440UL, 8L,
+   addonoff(m, "    Allow Tx to Net", 20ul, "\270", 2ul, 7440UL,
+                (int32_t)(aprsdecode_lums.fontxsize+2UL),
                 useri_configon(useri_fALLOWNETTX));
-   addonoff(m, "    Connect Server", 19ul, "\270", 2ul, 7435UL, 8L,
+   addonoff(m, "    Connect Server", 19ul, "\270", 2ul, 7435UL,
+                (int32_t)(aprsdecode_lums.fontxsize+2UL),
                 useri_configon(useri_fCONNECT));
    addline(m, " Serverfilter", 14ul, "\270", 2ul, 7430UL);
    addline(m, " Server url", 12ul, "\270", 2ul, 7425UL);
@@ -8523,7 +8696,9 @@ static void netmenu(pMENU m)
    strncpy(h," My Symbol ",100u);
    aprsstr_Append(h, 100ul, s, 100ul);
    addline(m, h, 100ul, "\270>", 3ul, 7405UL);
-   drawsymsquare(m->image, s[0U], s[1U], (int32_t)(m->xsize-20UL),
+   drawsymsquare(m->image, s[0U], s[1U],
+                (int32_t)(((m->xsize-aprsdecode_lums.symsize/2UL)
+                -aprsdecode_lums.fontxsize)-8UL),
                 (int32_t)((m->oldknob-1UL)*m->yknob+m->yknob/2UL));
    useri_confstr(useri_fMYCALL, h, 100ul);
    i = 0UL;
@@ -8545,36 +8720,37 @@ static void netmenu(pMENU m)
 
 static void rfmenu(pMENU);
 
-#define useri_OX3 9
-
 
 static void rfmenu(pMENU m)
 {
    m->oldknob = 0UL;
-   /*  addline(m, " Query Keywords", CMDRF, MINH*75+60); */
-   /*  addline(m, " Msg Destination", CMDRF, MINH*75+55); */
-   /*  addline(m, " Msg Path", CMDRF, MINH*75+50); */
    addline(m, " Config Rx Messages", 20ul, "\271>", 3ul, 7550UL);
    addline(m, " Beacons Shift Time", 20ul, "\271", 2ul, 7545UL);
    addline(m, " Beacons + Objects", 19ul, "\271", 2ul, 7540UL);
    addline(m, " Digipeater", 12ul, "\271", 2ul, 7537UL);
-   /*  addonoff(m, "   |Digipeater", CMDRF, MINH*75+47, OX, configon(fDIGI));
-                 */
-   addonoff(m, "   |Monitor Headline", 21ul, "\271", 2ul, 7535UL, 9L,
+   addonoff(m, "   |Monitor Headline", 21ul, "\271", 2ul, 7535UL,
+                (int32_t)(aprsdecode_lums.fontxsize+2UL),
                 useri_configon(useri_fWRTICKER));
-   addonoff(m, "   |Call Check", 15ul, "\271", 2ul, 7530UL, 9L,
+   addonoff(m, "   |Call Check", 15ul, "\271", 2ul, 7530UL,
+                (int32_t)(aprsdecode_lums.fontxsize+2UL),
                 useri_configon(useri_fMUSTBECALL));
-   addonoff(m, "   |Serial Interface2", 22ul, "\271", 2ul, 7525UL, 9L,
+   addonoff(m, "   |Serial Interface2", 22ul, "\271", 2ul, 7525UL,
+                (int32_t)(aprsdecode_lums.fontxsize+2UL),
                 useri_configon(useri_fSERIALTASK2));
-   addonoff(m, "   |Serial Interface1", 22ul, "\271", 2ul, 7520UL, 9L,
+   addonoff(m, "   |Serial Interface1", 22ul, "\271", 2ul, 7520UL,
+                (int32_t)(aprsdecode_lums.fontxsize+2UL),
                 useri_configon(useri_fSERIALTASK));
-   addonoff(m, "   |RF-Port 4", 14ul, "\271", 2ul, 7515UL, 9L,
+   addonoff(m, "   |RF-Port 4", 14ul, "\271", 2ul, 7515UL,
+                (int32_t)(aprsdecode_lums.fontxsize+2UL),
                 useri_configon(useri_fUDP4));
-   addonoff(m, "   |RF-Port 3", 14ul, "\271", 2ul, 7510UL, 9L,
+   addonoff(m, "   |RF-Port 3", 14ul, "\271", 2ul, 7510UL,
+                (int32_t)(aprsdecode_lums.fontxsize+2UL),
                 useri_configon(useri_fUDP3));
-   addonoff(m, "   |RF-Port 2", 14ul, "\271", 2ul, 7505UL, 9L,
+   addonoff(m, "   |RF-Port 2", 14ul, "\271", 2ul, 7505UL,
+                (int32_t)(aprsdecode_lums.fontxsize+2UL),
                 useri_configon(useri_fUDP2));
-   addonoff(m, "   |RF-Port 1", 14ul, "\271", 2ul, 7500UL, 9L,
+   addonoff(m, "   |RF-Port 1", 14ul, "\271", 2ul, 7500UL,
+                (int32_t)(aprsdecode_lums.fontxsize+2UL),
                 useri_configon(useri_fUDP1));
    m->redrawproc = rfmenu;
    m->hiknob = 0UL;
@@ -8654,8 +8830,6 @@ static void dorfcfg(uint32_t knob, uint32_t sub)
 
 static void domsgmenu(pMENU);
 
-#define useri_OX4 9
-
 
 static void domsgmenu(pMENU m)
 {
@@ -8663,11 +8837,14 @@ static void domsgmenu(pMENU m)
    addline(m, " Query Keywords", 16ul, "\254", 2ul, 8200UL);
    addline(m, " Msg Destination", 17ul, "\254", 2ul, 8205UL);
    addline(m, " Msg Path", 10ul, "\254", 2ul, 8210UL);
-   addonoff(m, "    Msg Popup Window", 21ul, "\254", 2ul, 8215UL, 9L,
+   addonoff(m, "    Msg Popup Window", 21ul, "\254", 2ul, 8215UL,
+                (int32_t)(aprsdecode_lums.fontxsize+2UL),
                 useri_configon(useri_fPOPUPMSG));
-   addonoff(m, "    Show all SSID Msg", 22ul, "\254", 2ul, 8220UL, 9L,
+   addonoff(m, "    Show all SSID Msg", 22ul, "\254", 2ul, 8220UL,
+                (int32_t)(aprsdecode_lums.fontxsize+2UL),
                 useri_configon(useri_fMSGALLSSID));
-   addonoff(m, "    Show Msg to Myself", 23ul, "\254", 2ul, 8225UL, 9L,
+   addonoff(m, "    Show Msg to Myself", 23ul, "\254", 2ul, 8225UL,
+                (int32_t)(aprsdecode_lums.fontxsize+2UL),
                 useri_configon(useri_fPASSSELFMSG));
    m->redrawproc = domsgmenu;
    m->hiknob = 0UL;
@@ -8701,7 +8878,8 @@ static void domsgcfg(uint32_t knob)
 static void msgmenu(void)
 {
    pMENU menu;
-   newmenu(&menu, 115UL, aprsdecode_lums.fontysize+7UL, 10UL, useri_bTRANSP);
+   newmenu(&menu, aprsdecode_lums.fontxsize*19UL+4UL,
+                aprsdecode_lums.fontysize+7UL, 10UL, useri_bTRANSP);
    domsgmenu(menu);
    menu->ysize = menu->oldknob*menu->yknob;
    menu->oldknob = 0UL;
@@ -8730,8 +8908,6 @@ static void expandtogg(void)
 } /* end expandtogg() */
 
 static void timercfg(pMENU);
-
-#define useri_OX5 7
 
 
 static void timercfg(pMENU m)
@@ -8807,34 +8983,36 @@ static void dotimers(uint32_t knob)
 
 static void mapcfg(pMENU);
 
-#define useri_OX6 7
-
 
 static void mapcfg(pMENU m)
 {
    m->oldknob = 0UL;
-   /*  addline(m, " Colours", CMDDOMAP+">", MINH*78+2); */
-   /*  addline(m, " Menu transparency", CMDDOMAP, MINH*78+5); */
-   /*  addline(m, " Font Size", CMDDOMAP, MINH*78+7); */
-   /*  addline(m, " Brightness Rfpath", CMDDOMAP, MINH*78+10); */
    addline(m, " Reset to Default", 18ul, "\014", 2ul, 7810UL);
    addline(m, " Brightness notmover", 21ul, "\274", 2ul, 7815UL);
    addline(m, " Show Altitude min m", 21ul, "\274", 2ul, 7820UL);
-   addonoff(m, "   |km/h text", 14ul, "\274", 2ul, 7825UL, 7L,
+   addonoff(m, "   |km/h text", 14ul, "\274", 2ul, 7825UL,
+                (int32_t)(aprsdecode_lums.fontxsize+2UL),
                 useri_configon(useri_fKMH));
-   addonoff(m, "   |Load Map Program", 21ul, "\274", 2ul, 7850UL, 7L,
+   addonoff(m, "   |Load Map Program", 21ul, "\274", 2ul, 7850UL,
+                (int32_t)(aprsdecode_lums.fontxsize+2UL),
                 useri_configon(useri_fGETMAPS));
-   addonoff(m, "    Show Temp", 14ul, "\274", 2ul, 7830UL, 7L,
+   addonoff(m, "    Show Temp", 14ul, "\274", 2ul, 7830UL,
+                (int32_t)(aprsdecode_lums.fontxsize+2UL),
                 useri_configon(useri_fTEMP));
-   addonoff(m, "    Show Windvane", 18ul, "\274", 2ul, 7835UL, 7L,
+   addonoff(m, "    Show Windvane", 18ul, "\274", 2ul, 7835UL,
+                (int32_t)(aprsdecode_lums.fontxsize+2UL),
                 useri_configon(useri_fWINDSYM));
-   addonoff(m, "    Show Course Arrow", 22ul, "\274", 2ul, 7840UL, 7L,
+   addonoff(m, "    Show Course Arrow", 22ul, "\274", 2ul, 7840UL,
+                (int32_t)(aprsdecode_lums.fontxsize+2UL),
                 useri_configon(useri_fARROW));
-   addonoff(m, "    Show Scaler", 16ul, "\274", 2ul, 7845UL, 7L,
+   addonoff(m, "    Show Scaler", 16ul, "\274", 2ul, 7845UL,
+                (int32_t)(aprsdecode_lums.fontxsize+2UL),
                 useri_configon(useri_fRULER));
-   addonoff(m, "    Trackfilter", 16ul, "\274", 2ul, 7855UL, 7L,
+   addonoff(m, "    Trackfilter", 16ul, "\274", 2ul, 7855UL,
+                (int32_t)(aprsdecode_lums.fontxsize+2UL),
                 useri_configon(useri_fTRACKFILT));
-   addonoff(m, "   |Show Loc of Mouse", 22ul, "\274", 2ul, 7860UL, 7L,
+   addonoff(m, "   |Show Loc of Mouse", 22ul, "\274", 2ul, 7860UL,
+                (int32_t)(aprsdecode_lums.fontxsize+2UL),
                 useri_configon(useri_fMOUSELOC));
    m->redrawproc = mapcfg;
    m->hiknob = 0UL;
@@ -8863,34 +9041,6 @@ extern void useri_resetimgparms(void)
 static void domap(uint32_t knob, uint32_t sub)
 {
    configs[useri_fEDITLINE].width = 200U;
-   /*
-     IF knob=RESETTODEFAULT THEN
-       configs[fEDITLINE].title:="Menu transparency";
-       configedit:=ORD(fTRANSP);
-     ELSIF knob=3 THEN
-       configs[fEDITLINE].title:="Font Size";
-       configedit:=ORD(fFONTSIZE);
-     ELSIF knob=4 THEN
-       configs[fEDITLINE].title:="Brightness Rfpath";
-       configedit:=ORD(fLRF);
-   */
-   /*
-     IF knob=RESETTODEFAULT THEN
-       initconfig1;
-       rdlums;
-       Setmap(0);
-       escmenus;
-       lums.headmenuy:=TRUE;
-       lums.errorstep:=FALSE;
-       lums.moving:=FALSE;
-       posinval(click.markpos);
-       posinval(click.measurepos);
-       posinval(click.squerpos0);
-       posinval(click.squerspos0);
-       click.waysum:=0.0;
-       say("Reset most Image/Mouse Parameters to Default", 4, "b");
-   
-     ELS*/
    if (knob==2UL) {
       strncpy(configs[useri_fEDITLINE].title,"Brightness notmover",31u);
       configedit = 62UL;
@@ -8939,19 +9089,21 @@ static void domap(uint32_t knob, uint32_t sub)
 
 static void mapmove(pMENU);
 
-#define useri_OX7 7
-
 
 static void mapmove(pMENU m)
 {
    m->oldknob = 0UL;
-   addonoff(m, "   |Approx Warn km", 19ul, "\275", 2ul, 7900UL, 7L,
+   addonoff(m, "   |Approx Warn km", 19ul, "\275", 2ul, 7900UL,
+                (int32_t)(aprsdecode_lums.fontxsize+2UL),
                 useri_configon(useri_fAPPROXY));
-   addonoff(m, "    Zoom as have Maps", 22ul, "\275", 2ul, 7905UL, 7L,
+   addonoff(m, "    Zoom as have Maps", 22ul, "\275", 2ul, 7905UL,
+                (int32_t)(aprsdecode_lums.fontxsize+2UL),
                 useri_configon(useri_fZOOMMISS));
-   addonoff(m, "    Expand Map ", 16ul, "\275", 2ul, 7910UL, 7L,
+   addonoff(m, "    Expand Map ", 16ul, "\275", 2ul, 7910UL,
+                (int32_t)(aprsdecode_lums.fontxsize+2UL),
                 useri_configon(useri_fALLOWEXP));
-   addonoff(m, "    Swap map move dir", 22ul, "\275", 2ul, 7915UL, 7L,
+   addonoff(m, "    Swap map move dir", 22ul, "\275", 2ul, 7915UL,
+                (int32_t)(aprsdecode_lums.fontxsize+2UL),
                 useri_configon(useri_fINVMOV));
    addline(m, " Bell/Sound", 12ul, "\275>", 3ul, 7917UL);
    addline(m, " Start Window x y", 18ul, "\275", 2ul, 7920UL);
@@ -9031,8 +9183,8 @@ static void maincfg(uint32_t knob, char fromstatus)
    pMENU menu;
    if (knob==11UL) potis();
    else {
-      newmenu(&menu, 120UL, aprsdecode_lums.fontysize+3UL, 20UL,
-                useri_bTRANSP);
+      newmenu(&menu, aprsdecode_lums.fontxsize*20UL+4UL,
+                aprsdecode_lums.fontysize+3UL, 20UL, useri_bTRANSP);
       if (fromstatus) setunderbar(menu, useri_xmouse.x-10L);
       if (knob==4UL) {
          addline(menu, " Bad Paths Ports", 17ul, "\265", 2ul, 7301UL);
@@ -9189,7 +9341,8 @@ static void onlinesetup(uint32_t knob, uint32_t sub)
 static void configdel(uint32_t knob)
 {
    pMENU menu;
-   newmenu(&menu, 42UL, aprsdecode_lums.fontysize+7UL, 2UL, useri_bTRANSP);
+   newmenu(&menu, aprsdecode_lums.fontxsize*7UL,
+                aprsdecode_lums.fontysize+7UL, 2UL, useri_bTRANSP);
    menu->scroll = knob-2UL;
    addline(menu, "On/Off", 7ul, "\267", 2ul, 7695UL);
    addline(menu, "Edit", 5ul, "\267", 2ul, 7696UL);
@@ -9243,17 +9396,18 @@ static void docfgbeep(uint32_t knob, uint32_t sub)
 
 static void cfgbeep(pMENU);
 
-#define useri_OX8 7
-
 
 static void cfgbeep(pMENU m)
 {
    m->oldknob = 0UL;
-   addonoff(m, "   |Approxy Beep", 17ul, "\304", 2ul, 8010UL, 7L,
+   addonoff(m, "   |Approxy Beep", 17ul, "\304", 2ul, 8010UL,
+                (int32_t)(aprsdecode_lums.fontxsize+2UL),
                 useri_configon(useri_fBEEPPROX));
-   addonoff(m, "   |Watchcall Beep", 19ul, "\304", 2ul, 8015UL, 7L,
+   addonoff(m, "   |Watchcall Beep", 19ul, "\304", 2ul, 8015UL,
+                (int32_t)(aprsdecode_lums.fontxsize+2UL),
                 useri_configon(useri_fBEEPWATCH));
-   addonoff(m, "   |Message Beep", 17ul, "\304", 2ul, 8020UL, 7L,
+   addonoff(m, "   |Message Beep", 17ul, "\304", 2ul, 8020UL,
+                (int32_t)(aprsdecode_lums.fontxsize+2UL),
                 useri_configon(useri_fBEEPMSG));
    m->redrawproc = cfgbeep;
    m->ysize = m->oldknob*m->yknob;
@@ -9264,12 +9418,11 @@ static void cfgbeep(pMENU m)
 static void configbeep(void)
 {
    pMENU m;
-   newmenu(&m, 100UL, aprsdecode_lums.fontysize+7UL, 3UL, useri_bTRANSP);
+   newmenu(&m, aprsdecode_lums.fontxsize*17UL+4UL,
+                aprsdecode_lums.fontysize+7UL, 3UL, useri_bTRANSP);
    cfgbeep(m);
    m->oldknob = 0UL;
 } /* end configbeep() */
-
-#define useri_XSIZE2 400
 
 #define useri_YPOS0 240
 
@@ -9309,8 +9462,8 @@ static void configeditor(void)
    if (i<3UL) i = 1UL;
    else i -= 2UL;
    if (cnt>i) cnt = i;
-   xw = 400UL;
-   if (400UL>(uint32_t)maptool_xsize) xw = (uint32_t)maptool_xsize;
+   xw = aprsdecode_lums.fontxsize*67UL;
+   if (xw>(uint32_t)maptool_xsize) xw = (uint32_t)maptool_xsize;
    m = findmenuid(229UL);
    refrmenu(&m, xw, aprsdecode_lums.fontysize+5UL, cnt+2UL, useri_bCOLOR, 0);
    oks = m->oldknob;
@@ -9337,7 +9490,7 @@ static void configeditor(void)
    onof = isbool(configs[configedit].typ);
    if (more) strncpy(cmd,"\266>",2u);
    else strncpy(cmd," ",2u);
-   i = xw/6UL;
+   i = xw/aprsdecode_lums.fontxsize;
    while (cnt>0UL) {
       if (onof) strncpy(s,"\346    ",201u);
       else strncpy(s,"\346 ",201u);
@@ -9453,13 +9606,12 @@ static void watchdo(uint32_t knob, uint32_t sub)
 
 static void configmain(pMENU);
 
-#define useri_OX9 8
-
 
 static void configmain(pMENU m)
 {
    m->oldknob = 0UL;
-   addonoff(m, "   |Save Config", 16ul, "\264", 2ul, 7000UL, 8L,
+   addonoff(m, "   |Save Config", 16ul, "\264", 2ul, 7000UL,
+                (int32_t)(aprsdecode_lums.fontxsize+4UL),
                 useri_configon(useri_fAUTOSAVE));
    addline(m, " Reload Config", 15ul, "\264", 2ul, 7005UL);
    addline(m, " Watch Calls", 13ul, "\264", 2ul, 7010UL);
@@ -9479,7 +9631,8 @@ static void configmain(pMENU m)
 static void configmenu2(void)
 {
    pMENU menu;
-   newmenu(&menu, 90UL, aprsdecode_lums.fontysize+7UL, 20UL, useri_bTRANSP);
+   newmenu(&menu, aprsdecode_lums.fontxsize*15UL,
+                aprsdecode_lums.fontysize+7UL, 20UL, useri_bTRANSP);
    configmain(menu);
    menu->ysize = menu->oldknob*menu->yknob;
    menu->oldknob = 0UL;
@@ -9494,7 +9647,8 @@ static void findopl(char folded)
    pMENU menu;
    /*  IF NOT folded THEN killallmenus END; */
    if (!folded) useri_killmenuid(0UL);
-   newmenu(&menu, 220UL, aprsdecode_lums.fontysize+10UL, 1UL, useri_bCOLOR);
+   newmenu(&menu, aprsdecode_lums.fontxsize*37UL+4UL,
+                aprsdecode_lums.fontysize+10UL, 1UL, useri_bCOLOR);
    addline(menu, "", 1ul, "\245", 2ul, 1990UL);
    X2C_INCL(menu->clampkb,1U,61);
    menu->confidx[1U] = 0U;
@@ -9512,7 +9666,8 @@ static void findopl(char folded)
 static void fotofn(void)
 {
    pMENU menu;
-   newmenu(&menu, 400UL, aprsdecode_lums.fontysize+7UL, 1UL, useri_bCOLOR);
+   newmenu(&menu, aprsdecode_lums.fontxsize*67UL,
+                aprsdecode_lums.fontysize+7UL, 1UL, useri_bCOLOR);
    addline(menu, "", 1ul, "S", 2ul, 1800UL);
    X2C_INCL(menu->clampkb,1U,61);
    menu->confidx[1U] = 6U;
@@ -9562,8 +9717,8 @@ static void importlog(pMENU menu)
    char fn[4096];
    redraw = menu!=0;
    if (!redraw) {
-      newmenu(&menu, 256UL, aprsdecode_lums.fontysize+7UL, 6UL,
-                useri_bCOLOR);
+      newmenu(&menu, aprsdecode_lums.fontxsize*43UL+4UL,
+                aprsdecode_lums.fontysize+7UL, 6UL, useri_bCOLOR);
       dellog = 0UL;
    }
    menu->oldknob = 0UL;
@@ -9629,6 +9784,35 @@ extern void useri_refrlog(void)
 } /* end refrlog() */
 
 
+static void statuscol(maptool_pIMAGE img, int32_t x0, int32_t xwide,
+                struct maptool_PIX c)
+{
+   int32_t ym;
+   int32_t y;
+   int32_t x;
+   struct maptool_PIX col;
+   int32_t tmp;
+   int32_t tmp0;
+   ym = (int32_t)(aprsdecode_lums.fontysize-2UL);
+   if (ym>(int32_t)(img->Len0-1)) ym = (int32_t)(img->Len0-1);
+   tmp = ym;
+   y = 1L;
+   if (y<=tmp) for (;; y++) {
+      tmp0 = xwide-2L;
+      x = 1L;
+      if (x<=tmp0) for (;; x++) {
+         col = img->Adr[(x0+x)*img->Len0+y];
+         col.r += c.r;
+         col.g += c.g;
+         col.b += c.b;
+         img->Adr[(x0+x)*img->Len0+y] = col;
+         if (x==tmp0) break;
+      } /* end for */
+      if (y==tmp) break;
+   } /* end for */
+} /* end statuscol() */
+
+
 static float rt(uint32_t t)
 {
    if (t>60UL) t = 60UL;
@@ -9636,11 +9820,12 @@ static float rt(uint32_t t)
 } /* end rt() */
 
 
-static void statuscoly(maptool_pIMAGE img, int32_t x0, uint32_t tx,
-                uint32_t tr, char on)
+static void statuscoly(maptool_pIMAGE img, int32_t x0, int32_t xw,
+                uint32_t tx, uint32_t tr, char on)
 {
    int32_t in;
    int32_t ir;
+   int32_t ym;
    int32_t y;
    int32_t x;
    float v;
@@ -9652,6 +9837,7 @@ static void statuscoly(maptool_pIMAGE img, int32_t x0, uint32_t tx,
    struct maptool_PIX cn;
    struct maptool_PIX * anonym;
    int32_t tmp;
+   int32_t tmp0;
    if (on) {
       cn.r = 300U;
       cn.g = 0U;
@@ -9678,10 +9864,14 @@ static void statuscoly(maptool_pIMAGE img, int32_t x0, uint32_t tx,
    v = (float)(aprsdecode_lums.fontysize-1UL);
    ir = (int32_t)X2C_TRUNCI(ur*v,X2C_min_longint,X2C_max_longint);
    in = (int32_t)X2C_TRUNCI(un*v,X2C_min_longint,X2C_max_longint);
-   tmp = (int32_t)aprsdecode_lums.fontysize-2L;
+   ym = (int32_t)(aprsdecode_lums.fontysize-2UL);
+   if (ym>(int32_t)(img->Len0-1)) ym = (int32_t)(img->Len0-1);
+   tmp = ym;
    y = 1L;
    if (y<=tmp) for (;; y++) {
-      for (x = -5L; x<=5L; x++) {
+      tmp0 = xw-2L;
+      x = 1L;
+      if (x<=tmp0) for (;; x++) {
          { /* with */
             struct maptool_PIX * anonym = &img->Adr[(x0+x)*img->Len0+y];
             if (y>in) {
@@ -9700,36 +9890,12 @@ static void statuscoly(maptool_pIMAGE img, int32_t x0, uint32_t tx,
                anonym->b += cr.b;
             }
          }
+         if (x==tmp0) break;
       } /* end for */
       if (y==tmp) break;
    } /* end for */
 } /* end statuscoly() */
 
-/*
-PROCEDURE timecolor(t:TIME; VAR c:PIX);
-CONST M=300;
-      T=60;
-BEGIN
-  IF t>T THEN t:=T END;
-  t:=t*(M*2) DIV T;
-  c.b:=0;
-  IF t>M*2 THEN t:=M*2 END;
-  IF t<=M THEN c.r:=t; c.g:=M
-  ELSE c.r:=M; c.g:=M*2-t END
-END timecolor;
-*/
-/*
-PROCEDURE timecolor(t:TIME; VAR c:PIX);
-                (* button background color from time *)
-CONST M=300;
-      T=60;
-BEGIN
-  IF t>T THEN t:=T END;
-  c.r:=t*M DIV T;
-  c.b:=c.r;
-  c.g:=M;
-END timecolor;
-*/
 
 static void tcpstat(void)
 {
@@ -9748,12 +9914,7 @@ static void udpstat(uint32_t port)
    useri_say(s, 1001ul, 4UL, 'b');
 } /* end udpstat() */
 
-#define useri_XKNOB 13
-
 #define useri_KNOBS 10
-
-#define useri_MAXEXTRALEN 84
-/* dynamic message field width */
 
 #define useri_XKNOBC 5
 /* color field x */
@@ -9764,6 +9925,8 @@ static void statusbar(void)
    pMENU menu;
    char redraw;
    struct maptool_PIX c;
+   uint32_t maxextralen;
+   uint32_t xknob;
    uint32_t elen;
    uint32_t okn;
    uint32_t osub;
@@ -9772,6 +9935,8 @@ static void statusbar(void)
    char e[100];
    char s[100];
    char ch;
+   maxextralen = aprsdecode_lums.fontxsize*14UL;
+                /* dynamic message field width */
    e[0U] = 0;
    if (aprsdecode_lums.wxcol=='R') aprsstr_Append(e, 100ul, "Rain Map", 9ul);
    else if (aprsdecode_lums.wxcol=='W') {
@@ -9796,21 +9961,23 @@ static void statusbar(void)
       aprsstr_Append(e, 100ul, (char *) &aprsdecode_click.onesymbol.pic,
                 1u/1u);
    }
-   elen = aprsstr_Length(e, 100ul)*6UL;
+   elen = aprsstr_Length(e, 100ul)*aprsdecode_lums.fontxsize;
    if (elen>0UL) {
-      elen += 4UL;
-      if (elen>84UL) elen = 84UL;
+      elen += aprsdecode_lums.fontxsize-2UL;
+      if (elen>maxextralen) elen = maxextralen;
    }
+   xknob = (uint32_t)microspace("\360 \365", 4ul);
    menu = findmenuid(254UL);
    redraw = menu!=0;
    if (!redraw) {
-      newmenu(&menu, 214UL, aprsdecode_lums.fontysize, 1UL, useri_bBLACK);
+      newmenu(&menu, xknob*10UL+maxextralen, aprsdecode_lums.fontysize+1UL,
+                1UL, useri_bBLACK);
    }
    okn = menu->oldknob;
    osub = menu->oldsub;
    menu->oldknob = 0UL;
-   menu->xsize = 130UL+elen;
-   strncpy(s,"\346\360N\365|\3601\365|\3602\365|\3603\365|\3604\365|\360L\365\
+   menu->xsize = xknob*10UL+elen;
+   strncpy(s,"\346\361N\364|\3601\365|\3602\365|\3603\365|\3604\365|\360L\365\
 |\360M\365|\360",100u);
    if (aprsdecode_maploadpid.runs) ch = 'd';
    else ch = 'e';
@@ -9823,12 +9990,13 @@ static void statusbar(void)
       aprsstr_Append(s, 100ul, e, 100ul);
    }
    addline(menu, s, 100ul, "\277", 2ul, 1700UL);
-   statuscoly(menu->image, 6L, aprsdecode_realtime-aprsdecode_lasttcptx,
+   statuscoly(menu->image, 0L, (int32_t)xknob,
+                aprsdecode_realtime-aprsdecode_lasttcptx,
                 aprsdecode_realtime-aprsdecode_lasttcprx,
                 useri_configon(useri_fCONNECT));
    kx = 0UL;
    for (i = useri_fUDP1; i<=useri_fUDP4; i++) {
-      statuscoly(menu->image, (int32_t)(6UL+13UL*(kx+1UL)),
+      statuscoly(menu->image, (int32_t)(xknob*(kx+1UL)), (int32_t)xknob,
                 aprsdecode_realtime-aprsdecode_udpsocks0[kx].lastudptx,
                 aprsdecode_realtime-aprsdecode_udpsocks0[kx].lastudprx,
                 useri_configon(i));
@@ -9839,20 +10007,22 @@ static void statusbar(void)
    c.g = 0U;
    if (aprsdecode_lums.logmode) c.b = 700U;
    else c.b = 0U;
-   statuscol(menu->image, (int32_t)(6UL+13UL*kx), 5L, c);
+   statuscol(menu->image, (int32_t)(xknob*kx), (int32_t)xknob, c);
    ++kx;
    if (aprsdecode_msgfifo0) c.r = 300U;
    else c.r = 0U;
    c.g = 0U;
    c.b = 0U;
-   statuscol(menu->image, (int32_t)(6UL+13UL*kx), 5L, c);
+   statuscol(menu->image, (int32_t)(xknob*kx), (int32_t)xknob, c);
    ++kx;
    c.r = 0U;
    c.g = 0U;
    c.b = 0U;
-   if (useri_isblown) c.r = 400U;
+   if (useri_isblown) {
+      c.r = 400U;
+   }
    else if (useri_configon(useri_fALLOWEXP)) c.g = 300U;
-   statuscol(menu->image, (int32_t)(6UL+13UL*kx), 5L, c);
+   statuscol(menu->image, (int32_t)(xknob*kx), (int32_t)xknob, c);
    ++kx;
    if (useri_configon(useri_fTRACKFILT)) {
       c.g = 300U;
@@ -9863,7 +10033,7 @@ static void statusbar(void)
       c.b = 0U;
    }
    c.r = 0U;
-   statuscol(menu->image, (int32_t)(6UL+13UL*kx), 5L, c);
+   statuscol(menu->image, (int32_t)(xknob*kx), (int32_t)xknob, c);
    ++kx;
    if (aprsdecode_lums.obj>0L) {
       c.g = 100U;
@@ -9874,14 +10044,13 @@ static void statusbar(void)
       c.b = 0U;
    }
    c.r = 0U;
-   statuscol(menu->image, (int32_t)(6UL+13UL*kx), 5L, c);
+   statuscol(menu->image, (int32_t)(xknob*kx), (int32_t)xknob, c);
    ++kx;
    if (elen>0UL) {
       c.r = 300U;
       c.g = 100U;
       c.b = 0U;
-      statuscol(menu->image, (int32_t)(elen/2UL+13UL*kx),
-                (int32_t)(elen/2UL), c);
+      statuscol(menu->image, (int32_t)(xknob*kx), (int32_t)elen, c);
    }
    menu->wid = 254UL;
    menu->hiknob = 0UL;
@@ -9889,7 +10058,7 @@ static void statusbar(void)
       menu->ysize = menu->oldknob*menu->yknob;
       menu->oldknob = 0UL;
    }
-   if (aprsdecode_lums.headmenuy) kx = 188UL;
+   if (aprsdecode_lums.headmenuy) kx = 31UL*aprsdecode_lums.fontxsize+2UL;
    else kx = 0UL;
    menu->pullconf = useri_fMENUXYSTATUS;
    menu->pullyknob = 8UL;
@@ -9897,7 +10066,6 @@ static void statusbar(void)
                 32767L, (int32_t)kx),
                 (uint32_t)useri_conf2int(useri_fMENUXYSTATUS, 1UL, 0L,
                 32767L, 0L));
-   /*  IF lums.headmenuy THEN menu^.x0:=TOOLBARX+1 ELSE menu^.x0:=0 END; */
    menu->oldknob = okn;
    menu->oldsub = osub;
 /*  menu^.y0:=0; */
@@ -9979,16 +10147,16 @@ static void downloadmenu(void)
 {
    pMENU menu;
    if (maptool_mappack.run) {
-      newmenu(&menu, 100UL, aprsdecode_lums.fontysize+7UL, 1UL,
-                useri_bCOLOR);
+      newmenu(&menu, aprsdecode_lums.fontxsize*17UL+4UL,
+                aprsdecode_lums.fontysize+7UL, 1UL, useri_bCOLOR);
       addline(menu, "Stop Download", 14ul, "\240", 2ul, 2300UL);
    }
    else {
       /*    IF NOT configon(fGETMAPS) */
       /*    THEN textautosize(0, 0, 20, 5, "r",
                 'Enable "Load Map Program" in Config/Map Parameter') END;  */
-      newmenu(&menu, 140UL, aprsdecode_lums.fontysize+7UL, 1UL,
-                useri_bCOLOR);
+      newmenu(&menu, aprsdecode_lums.fontxsize*23UL+4UL,
+                aprsdecode_lums.fontysize+7UL, 1UL, useri_bCOLOR);
       addline(menu, "", 1ul, "\237", 2ul, 2301UL);
       X2C_INCL(menu->clampkb,1U,61);
       menu->confidx[1U] = 86U;
@@ -10037,7 +10205,7 @@ extern void useri_textbubble(struct aprspos_POSITION pos, char s[],
    i = 0UL;
    xw = 23UL;
    while (i<=s_len-1 && s[i]) {
-      xw += maptool_charwidth0(s[i]); /* x size of text */
+      xw += maptool_charwidth(s[i]); /* x size of text */
       ++i;
    }
    yw = aprsdecode_lums.fontysize+8UL;
@@ -11472,8 +11640,8 @@ static void mouseleft(int32_t mousx, int32_t mousy)
          if (knob==1UL) aprsdecode_click.cmd = '7';
          else if (knob==2UL) aprsdecode_click.cmd = '8';
          else if (knob==3UL) aprsdecode_click.cmd = '9';
-         else if (knob==4UL) aprsdecode_click.cmd = '6';
          else {
+            /*      ELSIF knob=4 THEN click.cmd:="6"; */
             useri_Setmap(knob-1UL);
             aprsdecode_click.cmd = ' ';
          }
