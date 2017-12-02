@@ -1367,6 +1367,59 @@
 
 
 
+01.12.2017 (Ver 0.70)
+
++ Kartentypen mit Gamma-Korrektur statt Helligkeitskorrektur. (Tools > Add Maptypes)
+  solang ein hellikeitswert konfiguriert ist, wird default 0.25 angewendet.
+  (Sinn der Sache: Sat Map von Sentinel2)
+
++ Eingestellte Karten Helligkeiten werden individuell fuer Kartentype gespeichert.
+  (Sat Maps sind bei 100% ok, OSM karten eher bei 20 bis 40%)
+
++ "6" schaltet alle aktiven Kartentypen im kreisrum durch.
+
++ Font von 7x6 bis 24x12 und zoombare Symbole 16 bis 32 aus symbol file 16 bis 48
+  Track und Wegpunkte werden mit angepasst.
+  (Zweck: hochaufloesende Bildschirme)
+
++ Neue Fontfiles und Symbolfile mit teiltransparenten Symbolen
+  (wird noch verschoenbessert ...)
+  beim Symbol Zoom wird erst versucht ein zur groesse passendes symbolsXX.png zu laden
+  falls nicht vorhanden wird "symbols.png" gezoomt.
+
++ Weicher Alpha-Kanal (Transparenz) bei den Symbolen (win: neue "pngm.dll")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -4,24 +4,25 @@ FN="gettiles"
 DIR="osm"
 
 # 2 sec timeout, 2 retrys
-WGETCMDBASE="wget -q -T 3 -w 3 -t 1 "
+WGETCMDBASE="wget -q -T 3 -t 1 "
 
 
 OSMSERVERS="\
+             http://osm.oe2xzr.ampr.at/osm/tiles \
              http://c.tile.openstreetmap.org \
              http://b.tile.openstreetmap.org \
              http://a.tile.openstreetmap.org \
              http://a.www.toolserver.org/tiles/osm \
              http://b.www.toolserver.org/tiles/osm \
-             http://osm.oe2xzr.ampr.at/osm/tiles \
             "
 
 
 OSMSERVERSTOPO="\
              http://osm.oe2xzr.ampr.at/osm/tiles_topo \
-             http://a.tile.thunderforest.com/landscape \
-             http://b.tile.thunderforest.com/landscape \
+             http://a.tile.opencyclemap.org/cycle \
+             http://b.tile.opencyclemap.org/cycle \
             "
+
 
 
 OSMSERVERSSAT="\
@@ -31,9 +32,9 @@ OSMSERVERSSAT="\
 
 
 OSMSERVERSCYCLE="\
+             http://osm.oe2xzr.ampr.at/osm/tiles_cyclemap \
              http://a.tile.opencyclemap.org/cycle \
              http://b.tile.opencyclemap.org/cycle \
-             http://osm.oe2xzr.ampr.at/osm/tiles_cyclemap \
             "
 
 
@@ -110,13 +111,13 @@ fi
 			echo "loading tile: $MAPFILE ..."
 			for OSMSERVER in $SERVERS ; do
 				echo -n "-> from $OSMSERVER - "
-				$WGETCMDBASE -O $MAPFILE "$OSMSERVER/$mapb/$mapc/$mapd.$EXTENT"
+				$WGETCMDBASE -O $MAPFILE "$OSMSERVER/$mapb/$mapc/$mapd.png"
 				if [ -s $MAPFILE ] ; then
 					echo "done."
-#if [ jpg = $EXTENT ]; then
-#  jpegtopnm $MAPFILE | pnmtopng > $DIR/$mapa/$mapb/$mapc/$mapd.png
-#  rm -f $MAPFILE
-#fi
+if [ jpg = $EXTENT ]; then
+  jpegtopnm $MAPFILE | pnmtopng > $DIR/$mapa/$mapb/$mapc/$mapd.png
+  rm -f $MAPFILE
+fi
 					break
 				else
 #					rm $MAPFILE
