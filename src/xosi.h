@@ -115,6 +115,8 @@ extern void xosi_setxwinsize(int32_t, int32_t);
 
 extern void xosi_closewin(void);
 
+extern void xosi_WrHeadline(void);
+
 #define xosi_BYTEPIXEL 4
 /* WIN32 screen rgb */
 

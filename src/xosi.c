@@ -158,23 +158,9 @@ extern void xosi_Gammatab(float g)
 } /* end Gammatab() */
 
 
-static void WrHeadline(void)
+extern void xosi_WrHeadline(void)
 {
-   char h[61];
-   char s[61];
-   if (dis) {
-      if ((uint8_t)xosi_headmh[0UL]<' ') {
-         strncpy(s,"aprsmap by oe5dxl ",61u);
-         aprsstr_IntToStr((int32_t)xbufxsize, 1UL, h, 61ul);
-         aprsstr_Append(s, 61ul, h, 61ul);
-         aprsstr_Append(s, 61ul, "x", 2ul);
-         aprsstr_IntToStr((int32_t)xbufysize, 1UL, h, 61ul);
-         aprsstr_Append(s, 61ul, h, 61ul);
-         XStoreName(dis, mainwin.win, s);
-      }
-      else XStoreName(dis, mainwin.win, xosi_headmh);
-      xosi_headmh[0UL] = 0;
-   }
+   if (dis) XStoreName(dis, mainwin.win, xosi_headmh);
 } /* end WrHeadline() */
 
 
@@ -227,7 +213,6 @@ static void allocxbufw(struct XWIN * w, uint32_t xsizeh,
           Xlib.XStoreName(dis, win, s);
       */
       xosi_headmh[0UL] = 0;
-      WrHeadline();
    }
 } /* end allocxbufw() */
 
@@ -844,7 +829,6 @@ extern void xosi_Eventloop(uint32_t timeout)
    timesum += timeout-tus;
    if (timesum>=timeout) {
       useri_timerevent();
-      if (xosi_headmh[0UL]) WrHeadline();
       timesum = 0UL;
    }
    /*  IF issetr(disfd) THEN xevent END;

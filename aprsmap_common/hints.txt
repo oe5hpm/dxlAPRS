@@ -1577,8 +1577,8 @@ Contrast with Brightness of OSM-map near 0
 |8440 Enter Fonthight, Range 8..24 Pixel
 Fontwidth Range 6..12 if "fontX.png" 
 is avaliable or enter Filename like
-"20 font-bold.png"
-symbolsX.png will be loaded as
+"14 8" or "20 font-bold.png"
+symbolsX.png will be loaded as File
 avaliable according to Fontheight
 
 

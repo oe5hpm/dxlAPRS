@@ -1027,7 +1027,7 @@ W grafische Regenkarte rot: letzte Stunde, blau: 24h
 = wie . aber mit Funkstrecken
 0 Zeige alle Stationen
 1,2,3,4 Zoom/Pan auf vorgespeicherte Views
-6,7,8,9 Benutze Kartentyp 4 1 2 3 aus der Kartenliste
+7,8,9 Benutze Kartentyp 1 2 3, 6 Typen durch zappen
 ESC schliesse Menues
 Cursor up/down/left/right Karte bewegen
 SHIFT mit up/down/left/right/[zoom+]/[zoom-] kleine Schritte
@@ -1077,7 +1077,7 @@ W Rain map (use topo or dark map)
 = same as . but with radio tracks
 0 show all (and radio tracks off)
 1,2,3,4 Zoom/Pan to stored Views
-6,7,8,9 use map type as configured
+7,8,9 use map type as configured, 6 cycle thru types
 ESC close menus
 Cursor up/down/left/right move map, same as click near margin
 SHIFT with up/down/left/right/[zoom+]/[zoom-] in smaller steps

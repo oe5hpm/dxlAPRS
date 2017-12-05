@@ -1115,7 +1115,7 @@ f 22050 -C 0 -p /dev/ttyS0 0 -M 0 -t 250 -T 6 -L 127.0.0.1:9002:9001 -m 0",
    initc(useri_fKMH, "Km/h Text", 10ul, useri_cBLINE, "km/h", 5ul, 1, 385UL);
    initc(useri_fWRINCOM, "Monitor InOut", 14ul, useri_cLINE, "1234", 5ul, 0,
                 388UL);
-   initc(useri_fWRTICKER, "Show Headline", 14ul, useri_cBLINE, "0", 2ul, 1,
+   initc(useri_fWRTICKER, "Show Headline", 14ul, useri_cBLINE, "0", 2ul, 0,
                 390UL);
    initc(useri_fLOCALTIME, "Local Time h", 13ul, useri_cLINE, "0", 2ul, 0,
                 395UL);
@@ -1834,6 +1834,7 @@ extern void useri_Setmap(uint32_t n)
    if (n>=2147483647UL) {
       /* cycle thru maps */
       n = aprsdecode_lums.mapnum;
+      if (n>=i) n = 0UL;
       if (n) n = i-n;
    }
    if (n<i) {

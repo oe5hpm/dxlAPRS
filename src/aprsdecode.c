@@ -969,6 +969,7 @@ static void tickermon(const char port[], uint32_t port_len,
             if (i==tmp) break;
          } /* end for */
          tickertime = aprsdecode_realtime;
+         xosi_WrHeadline();
       }
    }
 } /* end tickermon() */
@@ -979,6 +980,7 @@ static void Stopticker(void)
    aprsstr_Assign(xosi_headmh, 251ul, "\015", 2ul);
    tickertime = 0x0FFFFFFC3UL;
    memset((char *)frameticker,(char)0,620UL);
+   xosi_WrHeadline();
 } /* end Stopticker() */
 
 

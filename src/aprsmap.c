@@ -3986,6 +3986,34 @@ static void addrftracks(char dryrun, char tx)
    }
 } /* end addrftracks() */
 
+
+static void updateframetext(void)
+{
+   char h[61];
+   char s[61];
+   char * xbufa;
+   uint32_t xbufysize;
+   uint32_t xbufxsize;
+   uint32_t inca;
+   xosi_getscreenbuf(&xbufa, &xbufxsize, &xbufysize, &inca);
+   strncpy(s,"aprsmap by oe5dxl ",61u);
+   aprsstr_IntToStr((int32_t)xbufxsize, 1UL, h, 61ul);
+   aprsstr_Append(s, 61ul, h, 61ul);
+   aprsstr_Append(s, 61ul, "x", 2ul);
+   aprsstr_IntToStr((int32_t)xbufysize, 1UL, h, 61ul);
+   aprsstr_Append(s, 61ul, h, 61ul);
+   aprsstr_Append(s, 61ul, " Map:[", 7ul);
+   aprsstr_Append(s, 61ul, aprsdecode_lums.mapname, 41ul);
+   aprsstr_Append(s, 61ul, "] Zoom:", 8ul);
+   aprsstr_FixToStr(((float)aprsdecode_initzoom-0.95f)
+                +aprsdecode_finezoom, 2UL, h, 61ul);
+   aprsstr_Append(s, 61ul, h, 61ul);
+   if (!aprsstr_StrCmp(s, 61ul, xosi_headmh, 251ul)) {
+      aprsstr_Assign(xosi_headmh, 251ul, s, 61ul);
+      xosi_WrHeadline();
+   }
+} /* end updateframetext() */
+
 #define aprsmap_QUICKMOV 10
 /* faster if nothing visable moves */
 
@@ -4498,6 +4526,7 @@ static void makeimage(char dryrun)
       }
       maptool_cc(image, osic_time(), 0UL);
       if (useri_configon(useri_fRULER)) maptool_ruler(image);
+      updateframetext();
       drawzoomsquer(image);
       if (aprsdecode_click.withradio) {
          if (aprsdecode_click.altimap) altitudemap();
