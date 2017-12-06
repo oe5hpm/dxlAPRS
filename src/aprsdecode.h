@@ -733,6 +733,8 @@ extern char aprsdecode_ismultiline(char);
 
 extern void aprsdecode_modmultiline(uint32_t);
 
+extern void aprsdecode_Stopticker(void);
+
 
 extern void aprsdecode_BEGIN(void);
 

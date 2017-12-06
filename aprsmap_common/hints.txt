@@ -1574,12 +1574,12 @@ Set 2 markers above Map and enter "R". More
 Contrast with Brightness of OSM-map near 0
 
 
-|8440 Enter Fonthight, Range 8..24 Pixel
-Fontwidth Range 6..12 if "fontX.png" 
-is avaliable or enter Filename like
-"14 8" or "20 font-bold.png"
-symbolsX.png will be loaded as File
-avaliable according to Fontheight
+|8440 Enter Fontheight, Range 7..24 Pixel Fontwidth
+Range 6..12 if File "font[width].png" is
+avaliable. "14 8" will load font8.png and
+zoom it to heigth 14.
+Or enter Heigth and Your Fontfile like
+"20 font-bold.png"
 
 
 |8435 Toggle on/off Transparent Menus

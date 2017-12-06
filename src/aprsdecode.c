@@ -128,8 +128,6 @@ struct xosi_PROCESSHANDLE aprsdecode_serialpid;
 struct xosi_PROCESSHANDLE aprsdecode_serialpid2;
 struct xosi_PROCESSHANDLE aprsdecode_maploadpid;
 /* connect to aprs-is gateway and decode data for archive and map by OE5DXL */
-/*FROM Storage IMPORT ALLOCATE, DEALLOCATE; */
-/*FROM TimeConv IMPORT time;  */
 #define aprsdecode_CALLLEN 7
 
 #define aprsdecode_HASHSIZE 65536
@@ -975,12 +973,33 @@ static void tickermon(const char port[], uint32_t port_len,
 } /* end tickermon() */
 
 
-static void Stopticker(void)
+extern void aprsdecode_Stopticker(void)
 {
-   aprsstr_Assign(xosi_headmh, 251ul, "\015", 2ul);
+   char h[61];
+   char s[61];
+   char * xbufa;
+   uint32_t xbufysize;
+   uint32_t xbufxsize;
+   uint32_t inca;
+   xosi_getscreenbuf(&xbufa, &xbufxsize, &xbufysize, &inca);
+   strncpy(s,"aprsmap by oe5dxl ",61u);
+   aprsstr_IntToStr((int32_t)xbufxsize, 1UL, h, 61ul);
+   aprsstr_Append(s, 61ul, h, 61ul);
+   aprsstr_Append(s, 61ul, "x", 2ul);
+   aprsstr_IntToStr((int32_t)xbufysize, 1UL, h, 61ul);
+   aprsstr_Append(s, 61ul, h, 61ul);
+   aprsstr_Append(s, 61ul, " Map:[", 7ul);
+   aprsstr_Append(s, 61ul, aprsdecode_lums.mapname, 41ul);
+   aprsstr_Append(s, 61ul, "] Zoom:", 8ul);
+   aprsstr_FixToStr(((float)aprsdecode_initzoom-0.95f)
+                +aprsdecode_finezoom, 2UL, h, 61ul);
+   aprsstr_Append(s, 61ul, h, 61ul);
+   if (!aprsstr_StrCmp(s, 61ul, xosi_headmh, 251ul)) {
+      aprsstr_Assign(xosi_headmh, 251ul, s, 61ul);
+      xosi_WrHeadline();
+   }
    tickertime = 0x0FFFFFFC3UL;
    memset((char *)frameticker,(char)0,620UL);
-   xosi_WrHeadline();
 } /* end Stopticker() */
 
 
@@ -6078,7 +6097,7 @@ Rx)Port or in Use", 44ul);
    startserial(&aprsdecode_serialpid2, useri_fSERIALTASK2);
    sendmsg();
    /*WrInt(tickertime, 15); WrInt(realtime, 15); WrLn; */
-   if (tickertime+60UL<aprsdecode_realtime) Stopticker();
+   if (tickertime+60UL<aprsdecode_realtime) aprsdecode_Stopticker();
 } /* end tcpjobs() */
 
 
@@ -6911,7 +6930,7 @@ extern void aprsdecode_initparms(void)
    strncpy(ungate[5U],"q",9u);
    ungate[6U][0] = 0;
    aprsdecode_tcpsocks = 0;
-   Stopticker();
+   aprsdecode_Stopticker();
    tickertime = 0UL;
    sentemptymsg = 0;
    beaconrandomstart = osic_time();
