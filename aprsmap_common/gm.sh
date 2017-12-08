@@ -22,8 +22,8 @@ if [ -z $3 ] ; then
     MAPLIST=$MAPFN
 fi
 
-# 5 sec timeout
-WGETCMDBASE="wget -q -T 5 "
+# 5 sec timeout, 1 retry
+WGETCMDBASE="wget -q -T 5 -t 1 "
 
 #------------------------------------------------------------------------------
 
