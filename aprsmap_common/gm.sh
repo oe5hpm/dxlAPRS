@@ -47,7 +47,7 @@ if [ -d $DIR ] ; then
                 mkdir $DIR/$mapname/$mapz/$mapx
             fi
 
-# try to match the requested map tile with a server in the map list file
+# try to match the requested map name with a server in the map list file
 	    if [ -r $MAPLIST ] ; then
 		while read tileid tileformat tileurl tileapikey tilecomment ; do
 		    if [ $tileid = $mapname ] ; then
