@@ -1,0 +1,14 @@
+# Map Name	Format	Tile Server URL					API Key ?apikey=... or ?access_token=...	Comments
+# -------------	-------	-----------------------------------------------	-----------------------------------------------	--------------------------------------------
+tiles		png	http://osm.oe2xzr.ampr.at/osm/tiles								OSM tiles via Hamnet oe2xzr tile server
+tiles_topo	png	http://osm.oe2xzr.ampr.at/osm/tiles_topo							Topo tiles via Hamnet oe2xzr tile server
+tiles_sat	jpg	http://osm.oe2xzr.ampr.at/osm/tiles_sat								Satellite tiles via Hamnet oe2xzr tile server
+tiles_cyclemap	png	http://osm.oe2xzr.ampr.at/osm/tiles_cyclemap							CycleMap tiles via Hamnet oe2xzr tile server
+
+# Map Name - this name matches the Map Name defined in aprsmap
+# Format - this is the format & file extenstion of the downloaded map tile
+# Tile Server URL - in most cases, all mirrors actually resolve to the same IP address or resolve to a closest geo server
+# API Key - this optional enrtry is used to define the access key required by some tile servers and MUST have the format:
+#     ?apikey=<your api key>
+#     ?access_token=<your access token>
+# Comments - optional
