@@ -7,7 +7,7 @@ tiles_fr	zxy	png	http://a.tile.openstreetmap.fr/osmfr      							OSM French sty
 tiles_topo	zxy	png	http://tile.opentopomap.org									OpenTopoMap
 tiles_hikebike	zxy	png	http://tiles.wmflabs.org/hikebike								OSM Hike & Bike Map
 tiles_humanitarian zxy	png	http://a.tile.openstreetmap.fr/hot								OSM Humanitarian style
-tiles_ersisat	zyx	jpg	http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile		ArcGIS ERSI Satellite World Imagery
+tiles_esrisat	zyx	jpg	http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile		ArcGIS ESRI Satellite World Imagery
 tiles_transport	zxy	png	http://tile.thunderforest.com/transport		<insert_api_key_here>				Thunderforest Transport (requires API key)
 tiles_landscape	zxy	png	http://tile.thunderforest.com/landscape		<insert_api_key_here>				Thunderforest Landscape (requires API key)
 tiles_outdoors	zxy	png	http://tile.thunderforest.com/outdoors		<insert_api_key_here>				Thunderforest Outdoors (requires API key)
