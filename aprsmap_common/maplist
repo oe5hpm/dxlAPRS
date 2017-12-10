@@ -12,10 +12,10 @@ tiles_transport	zxy	png	http://tile.thunderforest.com/transport		<insert_api_key
 tiles_landscape	zxy	png	http://tile.thunderforest.com/landscape		<insert_api_key_here>				Thunderforest Landscape (requires API key)
 tiles_outdoors	zxy	png	http://tile.thunderforest.com/outdoors		<insert_api_key_here>				Thunderforest Outdoors (requires API key)
 tiles_cycle	zxy	png	http://tile.thunderforest.com/cycle		<insert_api_key_here>				Thunderforest OpenCycleMap (requires API key)
-tiles_mapboxstr zxy	jpg	https://api.mapbox.com/v4/mapbox.streets	<insert_access_token_here>			Mapbox Streets (requires access token)
+tiles_mapboxstr zxy	png	https://api.mapbox.com/v4/mapbox.streets	<insert_access_token_here>			Mapbox Streets (requires access token)
 tiles_mapboxsat zxy	jpg	https://api.mapbox.com/v4/mapbox.satellite	<insert_access_token_here>			Mapbox Satellite (requires access token)
-tiles_mapboxstrsat zyx	jpg	https://api.mapbox.com/v4/mapbox.streets-satellite <insert_access_token_here>			Mapbox Streets-Satellite (requires access token)
-tiles_mapboxrbh zxy	jpg	https://api.mapbox.com/v4/mapbox.run-bike-hike	<insert_access_token_here>			Mapbox Run-Bike-Hike (requires access token)
+tiles_mapboxstrsat zxy	jpg	https://api.mapbox.com/v4/mapbox.streets-satellite <insert_access_token_here>			Mapbox Streets-Satellite (requires access token)
+tiles_mapboxrbh zxy	png	https://api.mapbox.com/v4/mapbox.run-bike-hike	<insert_access_token_here>			Mapbox Run-Bike-Hike (requires access token)
 xzr_tiles	zxy	png	http://osm.oe2xzr.ampr.at/osm/tiles								OSM tiles via Hamnet oe2xzr tile server
 xzr_tiles_topo	zxy	png	http://osm.oe2xzr.ampr.at/osm/tiles_topo							Topo tiles via Hamnet oe2xzr tile server
 xzr_tiles_sat	zxy	jpg	http://osm.oe2xzr.ampr.at/osm/tiles_sat								Satellite tiles via Hamnet oe2xzr tile server
