@@ -6,8 +6,22 @@ ORIGFN="gettiles"
 # filename of default list of maps
 MAPFN="maplist"
 
+# 5 sec timeout, 1 retry
+WGETCMDBASE="wget -q -T 5 -t 1 "
+
+#------------------------------------------------------------------------------
+
 # map directory path specified by aprsmap
 DIR=$2
+
+# use user-specified maplist if passed via command line, else use default
+if [ -z $3 ] ; then
+    MAPLIST=$MAPFN
+else
+    MAPLIST=$3
+fi
+
+#------------------------------------------------------------------------------
 
 # move the original file to a temporary file to prevent a race condition where
 # aprsmap seems to attempt to continue writing to the original file before
@@ -15,15 +29,6 @@ DIR=$2
 FN=$(mktemp)
 #mv $ORIGFN $FN
 cp $ORIGFN $FN
-
-# use user-specified maplist if passed via command line, else use default
-MAPLIST=$3
-if [ -z $3 ] ; then
-    MAPLIST=$MAPFN
-fi
-
-# 5 sec timeout, 1 retry
-WGETCMDBASE="wget -q -T 5 -t 1 "
 
 #------------------------------------------------------------------------------
 
@@ -48,42 +53,58 @@ if [ -d $DIR ] ; then
             fi
 
 # try to match the requested map name with a server in the map list file
-	    if [ -r $MAPLIST ] ; then
-		while read tileid tileformat tileurl tileapikey tilecomment ; do
-		    if [ $tileid = $mapname ] ; then
-			SERVER=$tileurl
-			EXTENT=$tileformat
-			break;
-		    fi
-		done < $MAPLIST
-		if [ -z $SERVER ] ; then
-		    echo "Unable to find map named \"$mapname\" in map file: $MAPLIST"
-		    exit 1;
-		fi
-	    else
-		echo "Unable to access map file: $MAPLIST"
-		exit 1
-	    fi
+            if [ -r $MAPLIST ] ; then
+                while read tileid tileorder tileformat tileurl tileapikey tilecomment ; do
+                    if [ $tileid = $mapname ] ; then
+                        ORDER=$tileorder
+                        EXTENT=$tileformat
+                        SERVER=$tileurl
+                        break;
+                    fi
+                done < $MAPLIST
+                if [ -z $SERVER ] ; then
+                    echo "Unable to find map named \"$mapname\" in map file: $MAPLIST"
+                    rm -f $FN
+                    exit 1;
+                fi
+            else
+                echo "Unable to access map file: $MAPLIST"
+                rm -f $FN
+                exit 1
+            fi
 
 # if an api key or access token is present
-	    if [ $(echo $tileapikey | cut -c1-8) = "?apikey=" ] ||
-	       [ $(echo $tileapikey | cut -c1-14) = "?access_token=" ] ; then
-		APIKEY=$tileapikey
-	    fi
+            if ! [ -z $tileapikey ] ; then
+                if [ $(echo $tileapikey | cut -c1-8) = "?apikey=" ] ||
+                   [ $(echo $tileapikey | cut -c1-14) = "?access_token=" ] ; then
+                    APIKEY=$tileapikey
+                fi
+            fi
+
+# tile server coordinate system ordering may be different from aprsmap
+            MAPFILE=$mapz/$mapx/$mapy.$EXTENT
+            if [ "zxy" = $tileorder ] ; then
+                GETTILE=$MAPFILE
+            elif [ "zyx" = $tileorder ] ; then
+                GETTILE=$mapz/$mapy/$mapx.$EXTENT
+            else
+                echo "Unexpected tile server coordinate ordering"
+                rm -f $FN
+                exit 1
+            fi
 
 #------------------------------------------------------------------------------
 
-# so far so good, then initiate the retrieval of all tiles
-            MAPFILE=$mapz/$mapx/$mapy.$EXTENT
+# so far so good, initiate retrieval of the tile
             echo "Loading tile: $MAPFILE ..."
             echo -n "-> from $SERVER - "
-            $WGETCMDBASE -O $DIR/$mapname/$MAPFILE $SERVER/$MAPFILE$APIKEY &
+            $WGETCMDBASE -O $DIR/$mapname/$MAPFILE $SERVER/$GETTILE$APIKEY &
             echo "initiated download."
         done < $FN
         rm -f $FN
     else
-	echo "Unable to access tiles file: $FN"
-	exit 1
+        echo "Unable to access tiles file: $FN"
+        exit 1
     fi
 else
     echo "Directory $DIR not found."
