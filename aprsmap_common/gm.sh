@@ -55,7 +55,7 @@ if [ -d $DIR ] ; then
 # try to match the requested map name with a server in the map list file
             if [ -r $MAPLIST ] ; then
                 while read tileid tileorder tileformat tileurl tileapikey tilecomment ; do
-                    if [ $tileid = $mapname ] ; then
+                    if [ "$tileid" = "$mapname" ] ; then
                         ORDER=$tileorder
                         EXTENT=$tileformat
                         SERVER=$tileurl
