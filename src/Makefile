@@ -291,7 +291,7 @@ adsb2aprs: $(OBJ_ADSB2APRS) $(OBJ_COMMON)
 	$(STRIP) adsb2aprs $(STRIPFLAGS)
 
 profile : $(OBJ_PROFILE) $(OBJ_COMMON)
-	$(CC) $(LFLAGS) -o profile $(OBJ_PROFILE) $(OBJ_COMMON) -lm $(EXTLIB)libpng.a $(EXTLIB)libz.a
+	$(CC) $(LFLAGS) -o profile $(OBJ_PROFILE) $(OBJ_COMMON) $(XLIBS) -lm
 	$(STRIP) profile $(STRIPFLAGS)
 
 diag:
