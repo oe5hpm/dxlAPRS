@@ -12,8 +12,8 @@
 #ifndef X2C_H_
 #include "X2C.h"
 #endif
-#ifndef aprspos_H_
-#include "aprspos.h"
+#ifndef aprsstr_H_
+#include "aprsstr.h"
 #endif
 #ifndef xosi_H_
 #include "xosi.h"
@@ -62,7 +62,7 @@ typedef uint32_t aprsdecode_SET256[8];
 
 extern aprsdecode_SET256 aprsdecode_SYMTABLE;
 
-#define aprsdecode_VERS "aprsmap(cu) 0.70"
+#define aprsdecode_VERS "aprsmap(cu) 0.71"
 
 typedef char aprsdecode_MONCALL[9];
 
@@ -78,7 +78,7 @@ struct aprsdecode_POSCALL;
 struct aprsdecode_POSCALL {
    aprsdecode_MONCALL call;
    char typ;
-   struct aprspos_POSITION pos;
+   struct aprsstr_POSITION pos;
 };
 
 struct aprsdecode_WWWBUF;
@@ -191,7 +191,7 @@ struct aprsdecode_AREASYMB;
 struct aprsdecode_AREASYMB {
    char typ;
    uint8_t color;
-   struct aprspos_POSITION dpos;
+   struct aprsstr_POSITION dpos;
 };
 
 struct aprsdecode_FRAMEHIST;
@@ -213,7 +213,7 @@ struct aprsdecode_FRAMEHIST {
 
 struct aprsdecode_VARDAT {
    aprsdecode_pFRAMEHIST lastref;
-   struct aprspos_POSITION pos;
+   struct aprsstr_POSITION pos;
    uint32_t refcnt; /* starts at 0 */
    /*             altitude :INT16;*/
    uint8_t igatepos;
@@ -231,9 +231,9 @@ typedef struct aprsdecode_OPHIST * aprsdecode_pOPHIST;
 struct aprsdecode_OPHIST {
    aprsdecode_pOPHIST next;
    aprsdecode_pFRAMEHIST frames;
-   struct aprspos_POSITION margin0; /* movement frame for quick draw */
-   struct aprspos_POSITION margin1;
-   struct aprspos_POSITION lastpos;
+   struct aprsstr_POSITION margin0; /* movement frame for quick draw */
+   struct aprsstr_POSITION margin1;
+   struct aprsstr_POSITION lastpos;
    uint32_t lasttime;
    uint32_t temptime;
    short lastkmh; /* drive kmh, wx kmh */
@@ -306,7 +306,7 @@ struct aprsdecode_MULTILINE {
    uint32_t size;
    char linetyp;
    char filltyp;
-   struct aprspos_POSITION vec[41];
+   struct aprsstr_POSITION vec[41];
 };
 
 typedef uint16_t aprsdecode_TELEMETRY[7];
@@ -329,7 +329,7 @@ struct aprsdecode_DAT {
    char postyp;
    char typc;
    struct aprsdecode_AREASYMB areasymb;
-   struct aprspos_POSITION pos;
+   struct aprsstr_POSITION pos;
    uint32_t speed;
    uint32_t course;
    int32_t climb;
@@ -407,7 +407,7 @@ struct aprsdecode_MSGFIFO {
    aprsdecode_ACKTEXT ack;
    char query;
    char deleteitem;
-   struct aprspos_POSITION itempos;
+   struct aprsstr_POSITION itempos;
 };
 
 struct aprsdecode_ZOOMFRAME;
@@ -436,7 +436,7 @@ typedef struct aprsdecode_MOUNTAIN * aprsdecode_pMOUNTAIN;
 
 struct aprsdecode_MOUNTAIN {
    aprsdecode_pMOUNTAIN next;
-   struct aprspos_POSITION pos;
+   struct aprsstr_POSITION pos;
    short alt;
    char name[32];
 };
@@ -497,23 +497,23 @@ struct aprsdecode__D0 {
    uint8_t typ;
    char cmd;
    char cmdatt;
-   struct aprspos_POSITION pullpos;
-   struct aprspos_POSITION clickpos;
-   struct aprspos_POSITION squerpos0;
-   struct aprspos_POSITION squerpos1;
-   struct aprspos_POSITION squerspos0;
-   struct aprspos_POSITION squerspos1;
-   struct aprspos_POSITION measurepos;
-   struct aprspos_POSITION markpos;
+   struct aprsstr_POSITION pullpos;
+   struct aprsstr_POSITION clickpos;
+   struct aprsstr_POSITION squerpos0;
+   struct aprsstr_POSITION squerpos1;
+   struct aprsstr_POSITION squerspos0;
+   struct aprsstr_POSITION squerspos1;
+   struct aprsstr_POSITION measurepos;
+   struct aprsstr_POSITION markpos;
    uint32_t markpost; /* waypoint time to markpos to make uniqe */
    uint32_t marktime; /* delete marker if no set by set marker */
    int32_t markalti; /* for geoprofile */
-   struct aprspos_POSITION sumpos; /* store last clickpos for waysum */
+   struct aprsstr_POSITION sumpos; /* store last clickpos for waysum */
    float waysum; /* sum up marker set distances */
    uint16_t graphset; /* update graphs if marked last waypoint */
    uint32_t selected;
    uint32_t entries;
-   struct aprspos_POSITION bubblpos; /* found position of POI */
+   struct aprsstr_POSITION bubblpos; /* found position of POI */
    char bubblstr[50]; /* found text of POI */
    struct aprsdecode_CLICKOBJECT table[10];
    uint32_t polilinecursor; /* edit which edge of polinine object */
@@ -521,7 +521,7 @@ struct aprsdecode__D0 {
 
 extern struct aprsdecode__D0 aprsdecode_click;
 
-extern struct aprspos_POSITION aprsdecode_mappos;
+extern struct aprsstr_POSITION aprsdecode_mappos;
 
 extern int32_t aprsdecode_inittilex;
 
@@ -591,8 +591,8 @@ struct aprsdecode__D2;
 
 
 struct aprsdecode__D2 {
-   struct aprspos_POSITION winpos0;
-   struct aprspos_POSITION winpos1;
+   struct aprsstr_POSITION winpos0;
+   struct aprsstr_POSITION winpos1;
    aprsdecode_MONCALL call;
    uint32_t winevent;
    char follow;
@@ -661,8 +661,6 @@ extern void aprsdecode_purge(aprsdecode_pOPHIST *, uint32_t, uint32_t);
 
 extern int32_t aprsdecode_knottokmh(int32_t);
 
-extern void aprsdecode_posinval(struct aprspos_POSITION *);
-
 extern uint32_t aprsdecode_trunc(float);
 
 extern float aprsdecode_floor(float);
@@ -724,7 +722,7 @@ PROCEDURE checksymb(symt, symb:CHAR):BOOLEAN;
                 (* true for bad symbol *)
 */
 
-extern void aprsdecode_appendmultiline(struct aprspos_POSITION);
+extern void aprsdecode_appendmultiline(struct aprsstr_POSITION);
 
 extern void aprsdecode_GetMultiline(char [], uint32_t, uint32_t *,
                 struct aprsdecode_MULTILINE *);

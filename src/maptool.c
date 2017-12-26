@@ -13,8 +13,8 @@
 #include "maptool.h"
 #endif
 #define maptool_C_
-#ifndef aprspos_H_
-#include "aprspos.h"
+#ifndef aprsstr_H_
+#include "aprsstr.h"
 #endif
 #ifndef aprsdecode_H_
 #include "aprsdecode.h"
@@ -26,9 +26,6 @@
 #include "osi.h"
 #endif
 #include <osic.h>
-#ifndef aprsstr_H_
-#include "aprsstr.h"
-#endif
 #ifndef pngread_H_
 #include "pngread.h"
 #endif
@@ -38,11 +35,17 @@
 #ifndef jpgdec_H_
 #include "jpgdec.h"
 #endif
+#ifndef aprspos_H_
+#include "aprspos.h"
+#endif
 #ifndef useri_H_
 #include "useri.h"
 #endif
 #ifndef aprstext_H_
 #include "aprstext.h"
+#endif
+#ifndef libsrtm_H_
+#include "libsrtm.h"
 #endif
 
 
@@ -139,14 +142,8 @@ typedef pROWS0 PNGBUF[256];
 
 typedef pROWS0 * pPNGBUF;
 
-typedef char FN[1024];
-
 /* srtm */
 typedef short * pSRTMSTRIP;
-
-struct SRTMTILE;
-
-typedef struct SRTMTILE * pSRTMTILE;
 
 
 struct SRTMTILE {
@@ -156,22 +153,12 @@ struct SRTMTILE {
    pSRTMSTRIP strips[3][3600];
 };
 
-typedef pSRTMTILE SRTMLAT[180];
-
-typedef pSRTMTILE * pSRTMLAT;
-
-typedef pSRTMLAT SRTMLONG[360];
-
-struct _0;
-
 
 struct _0 {
    int32_t fd;
    char havefile; /* have tried to open file */
 };
 /* srtm */
-
-typedef struct _0 SRTM30FD[9][4];
 
 static struct PIX8A symbols[6144][32];
 
@@ -204,12 +191,8 @@ static uint32_t maploopcnt;
 /* count same tile requests */
 static uint32_t mapdelay; /* delay map load start on map moves */
 
-static SRTMLONG srtmcache;
-
-static pSRTMTILE srtmmiss; /* cache no file info with pointer to here */
-
-static SRTM30FD srtm30fd; /* open srtm30 files */
-
+/*  srtmmiss    :pSRTMTILE;                                (* cache no file info with pointer to here *)  */
+/* open srtm30 files */
 static uint32_t lastpoinum;
 
 /*open, miss, hit:CARDINAL; */
@@ -253,7 +236,7 @@ extern char maptool_vistime(uint32_t t)
 } /* end vistime() */
 
 
-extern void maptool_limpos(struct aprspos_POSITION * pos)
+extern void maptool_limpos(struct aprsstr_POSITION * pos)
 {
    if (pos->long0>3.1415926535898f) pos->long0 = 3.1415926535898f;
    else if (pos->long0<(-3.1415926535898f)) pos->long0 = (-3.1415926535898f);
@@ -371,7 +354,7 @@ static float latproj(float l)
 
 
 extern void maptool_xytodeg(float x, float y,
-                struct aprspos_POSITION * pos)
+                struct aprsstr_POSITION * pos)
 {
    int32_t zi;
    float ysf;
@@ -383,7 +366,7 @@ extern void maptool_xytodeg(float x, float y,
    if (y<0.0f) y = 0.0f;
    else if (y>ysf) y = ysf;
    if ((float)fabs(aprsdecode_mappos.lat)>1.484f) {
-      aprsdecode_posinval(pos);
+      aprsstr_posinval(pos);
       return;
    }
    zi = (int32_t)aprsdecode_trunc(zoom);
@@ -398,7 +381,7 @@ extern void maptool_xytodeg(float x, float y,
 
 
 extern void maptool_shiftmap(int32_t x, int32_t y, int32_t ysize,
-                float zoom, struct aprspos_POSITION * pos)
+                float zoom, struct aprsstr_POSITION * pos)
 {
    int32_t zi;
    float pixrad;
@@ -414,8 +397,8 @@ extern void maptool_shiftmap(int32_t x, int32_t y, int32_t ysize,
 
 
 extern void maptool_center(int32_t xsize, int32_t ysize, float zoom,
-                struct aprspos_POSITION centpos,
-                struct aprspos_POSITION * pos)
+                struct aprsstr_POSITION centpos,
+                struct aprsstr_POSITION * pos)
 {
    int32_t zi;
    float pixrad;
@@ -452,7 +435,7 @@ extern void maptool_mercator(float lon, float lat, int32_t zoom,
 } /* end mercator() */
 
 
-extern int32_t maptool_mapxy(struct aprspos_POSITION pos, float * x,
+extern int32_t maptool_mapxy(struct aprsstr_POSITION pos, float * x,
                 float * y)
 {
    int32_t tiley;
@@ -481,7 +464,7 @@ extern int32_t maptool_mapxy(struct aprspos_POSITION pos, float * x,
 
 extern void maptool_pullmap(int32_t x, int32_t y, char init)
 {
-   struct aprspos_POSITION top;
+   struct aprsstr_POSITION top;
    uint32_t i;
    if (init) {
       maptool_xytodeg((float)x, (float)y, &aprsdecode_click.pullpos);
@@ -499,533 +482,6 @@ extern void maptool_pullmap(int32_t x, int32_t y, char init)
       } /* end for */
    }
 } /* end pullmap() */
-
-
-extern void maptool_loctopos(struct aprspos_POSITION * pos, char loc[],
-                uint32_t loc_len)
-{
-   uint32_t l;
-   uint32_t i;
-   char ok0;
-   X2C_PCOPY((void **)&loc,loc_len);
-   ok0 = 0;
-   l = aprsstr_Length(loc, loc_len);
-   i = 0UL;
-   while (i<l) {
-      loc[i] = X2C_CAP(loc[i]);
-      ++i;
-   }
-   if ((((((((((((l>=6UL && (uint8_t)loc[0UL]>='A') && (uint8_t)
-                loc[0UL]<='R') && (uint8_t)loc[1UL]>='A') && (uint8_t)
-                loc[1UL]<='R') && (uint8_t)loc[2UL]>='0') && (uint8_t)
-                loc[2UL]<='9') && (uint8_t)loc[3UL]>='0') && (uint8_t)
-                loc[3UL]<='9') && (uint8_t)loc[4UL]>='A') && (uint8_t)
-                loc[4UL]<='X') && (uint8_t)loc[5UL]>='A') && (uint8_t)
-                loc[5UL]<='X') {
-      pos->long0 = (float)((uint32_t)(uint8_t)loc[0UL]-65UL)
-                *20.0f+(float)((uint32_t)(uint8_t)loc[2UL]-48UL)
-                *2.0f+X2C_DIVR((float)((uint32_t)(uint8_t)
-                loc[4UL]-65UL)+0.5f,12.0f);
-      pos->lat = (float)((uint32_t)(uint8_t)loc[1UL]-65UL)
-                *10.0f+(float)((uint32_t)(uint8_t)loc[3UL]-48UL)
-                +X2C_DIVR((float)((uint32_t)(uint8_t)loc[5UL]-65UL)
-                +0.5f,24.0f);
-      if (l==6UL) ok0 = 1;
-      if ((((l>=8UL && (uint8_t)loc[6UL]>='0') && (uint8_t)loc[6UL]<='9')
-                 && (uint8_t)loc[7UL]>='0') && (uint8_t)loc[7UL]<='9') {
-         pos->long0 = (pos->long0+X2C_DIVR((float)((uint32_t)(uint8_t)
-                loc[6UL]-48UL),120.0f))-0.0375f;
-         pos->lat = (pos->lat+X2C_DIVR((float)((uint32_t)(uint8_t)
-                loc[7UL]-48UL),240.0f))-0.01875f;
-         if (l==8UL) ok0 = 1;
-      }
-      if ((((l>=10UL && (uint8_t)loc[8UL]>='A') && (uint8_t)
-                loc[8UL]<='X') && (uint8_t)loc[9UL]>='A') && (uint8_t)
-                loc[9UL]<='X') {
-         pos->long0 = (pos->long0+X2C_DIVR((float)((uint32_t)(uint8_t)
-                loc[8UL]-65UL),2880.0f))-3.9930555555556E-3f;
-         pos->lat = (pos->lat+X2C_DIVR((float)((uint32_t)(uint8_t)
-                loc[9UL]-65UL),5760.0f))-1.9965277777778E-3f;
-         if (l==10UL) ok0 = 1;
-      }
-   }
-   if (ok0) {
-      pos->long0 = (pos->long0-180.0f)*1.7453292519943E-2f;
-      pos->lat = (pos->lat-90.0f)*1.7453292519943E-2f;
-   }
-   else aprsdecode_posinval(pos);
-   X2C_PFREE(loc);
-} /* end loctopos() */
-
-
-extern void maptool_postoloc(char loc[], uint32_t loc_len,
-                struct aprspos_POSITION pos)
-{
-   uint32_t bc;
-   uint32_t lc;
-   float br;
-   float lr;
-   maptool_limpos(&pos);
-   lr = (pos.long0*5.7295779513082E+1f+180.0f)*2880.0f;
-   if (lr<0.0f) lr = 0.0f;
-   lc = aprsdecode_trunc(lr);
-   br = (pos.lat*5.7295779513082E+1f+90.0f)*5760.0f;
-   if (br<0.0f) br = 0.0f;
-   bc = aprsdecode_trunc(br);
-   loc[0UL] = (char)(65UL+lc/57600UL);
-   loc[1UL] = (char)(65UL+bc/57600UL);
-   loc[2UL] = (char)(48UL+(lc/5760UL)%10UL);
-   loc[3UL] = (char)(48UL+(bc/5760UL)%10UL);
-   loc[4UL] = (char)(65UL+(lc/240UL)%24UL);
-   loc[5UL] = (char)(65UL+(bc/240UL)%24UL);
-   loc[6UL] = (char)(48UL+(lc/24UL)%10UL);
-   loc[7UL] = (char)(48UL+(bc/24UL)%10UL);
-   loc[8UL] = (char)(65UL+lc%24UL);
-   loc[9UL] = (char)(65UL+bc%24UL);
-   loc[10UL] = 0;
-} /* end postoloc() */
-
-#define maptool_SRTM3DIR "srtm3"
-
-#define maptool_SRTM1DIR "srtm1"
-
-#define maptool_SRTM30DIR "srtm30"
-
-
-/* === srtm lib */
-static int32_t opensrtm(uint8_t t, uint32_t tlat, uint32_t tlong)
-{
-   char s[21];
-   FN path;
-   uint32_t xd;
-   uint32_t yi;
-   uint32_t xi;
-   uint32_t n;
-   int32_t f;
-   useri_confstr(useri_fOSMDIR, path, 1024ul);
-   if (t==3U) aprsstr_Append(path, 1024ul, "/srtm3/", 8ul);
-   else if (t==1U) aprsstr_Append(path, 1024ul, "/srtm1/", 8ul);
-   if (t<=3U) {
-      if (tlat<90UL) {
-         s[0U] = 'S';
-         n = 90UL-tlat;
-      }
-      else {
-         s[0U] = 'N';
-         n = tlat-90UL;
-      }
-      s[1U] = (char)(n/10UL+48UL);
-      s[2U] = (char)(n%10UL+48UL);
-      if (tlong<180UL) {
-         s[3U] = 'W';
-         n = 180UL-tlong;
-      }
-      else {
-         s[3U] = 'E';
-         n = tlong-180UL;
-      }
-      s[4U] = (char)(n/100UL+48UL);
-      s[5U] = (char)((n/10UL)%10UL+48UL);
-      s[6U] = (char)(n%10UL+48UL);
-      s[7U] = '.';
-      s[8U] = 'h';
-      s[9U] = 'g';
-      s[10U] = 't';
-      s[11U] = 0;
-      aprsstr_Append(path, 1024ul, s, 21ul);
-      return osi_OpenRead(path, 1024ul);
-   }
-   else {
-      aprsstr_Append(path, 1024ul, "/srtm30/", 9ul);
-      xi = tlong/40UL;
-      xd = xi*40UL;
-      if (xd<180UL) {
-         s[0U] = 'W';
-         n = 180UL-xd;
-      }
-      else {
-         s[0U] = 'E';
-         n = xd-180UL;
-      }
-      s[1U] = (char)(n/100UL+48UL);
-      s[2U] = (char)((n/10UL)%10UL+48UL);
-      s[3U] = (char)(n%10UL+48UL);
-      if (tlat>=130UL) {
-         s[4U] = 'N';
-         s[5U] = '9';
-         yi = 3UL;
-      }
-      else if (tlat>=90UL) {
-         s[4U] = 'N';
-         s[5U] = '4';
-         yi = 2UL;
-      }
-      else if (tlat>=50UL) {
-         s[4U] = 'S';
-         s[5U] = '0';
-         yi = 1UL;
-      }
-      else {
-         s[4U] = 'S';
-         s[5U] = '4';
-         yi = 0UL;
-      }
-      if (srtm30fd[xi][yi].havefile && srtm30fd[xi][yi].fd!=-1L) {
-         return srtm30fd[xi][yi].fd;
-      }
-      s[6U] = '0';
-      s[7U] = '.';
-      s[8U] = 'D';
-      s[9U] = 'E';
-      s[10U] = 'M';
-      s[11U] = 0;
-      aprsstr_Append(path, 1024ul, s, 21ul);
-      f = osi_OpenRead(path, 1024ul);
-      srtm30fd[xi][yi].fd = f;
-      srtm30fd[xi][yi].havefile = 1;
-      return f;
-   }
-   return 0;
-} /* end opensrtm() */
-
-
-static void purgesrtm(char all)
-{
-   uint32_t asize;
-   uint32_t y;
-   uint32_t x;
-   uint32_t yd;
-   uint32_t xd;
-   pSRTMTILE pt;
-   pSRTMLAT pl;
-   pSRTMSTRIP pb;
-   struct SRTMTILE * anonym;
-   for (xd = 0UL; xd<=359UL; xd++) {
-      pl = srtmcache[xd];
-      if (pl) {
-         for (yd = 0UL; yd<=179UL; yd++) {
-            pt = pl[yd];
-            if (pt && pt!=srtmmiss) {
-               { /* with */
-                  struct SRTMTILE * anonym = pt;
-                  for (y = 0UL; y<=3599UL; y++) {
-                     for (x = 0UL; x<=2UL; x++) {
-                        pb = anonym->strips[x][y];
-                        if (pb) {
-                           if (anonym->used[x][y]>0U) {
-                              --anonym->used[x][y];
-                           }
-                           if (all || anonym->used[x][y]==0U) {
-                              asize = 2400UL;
-                              if (pt->typ>3U) asize = 240UL;
-                              osic_free((char * *) &pb, asize);
-                              useri_debugmem.srtm -= asize;
-                              anonym->strips[x][y] = 0;
-                           }
-                        }
-                     } /* end for */
-                  } /* end for */
-               }
-               if (all) {
-                  if (pt->fd!=-1L) osic_Close(pt->fd);
-                  osic_free((char * *) &pt, sizeof(struct SRTMTILE));
-                  useri_debugmem.srtm -= sizeof(struct SRTMTILE);
-                  pl[yd] = 0;
-               }
-            }
-         } /* end for */
-         if (all) {
-            osic_free((char * *) &pl, sizeof(SRTMLAT));
-            useri_debugmem.srtm -= sizeof(SRTMLAT);
-            srtmcache[xd] = 0;
-         }
-      }
-   } /* end for */
-   if (all) {
-      for (x = 0UL; x<=8UL; x++) {
-         for (y = 0UL; y<=3UL; y++) {
-            if (srtm30fd[x][y].havefile && srtm30fd[x][y].fd!=-1L) {
-               osic_Close(srtm30fd[x][y].fd);
-               srtm30fd[x][y].fd = -1L;
-            }
-         } /* end for */
-      } /* end for */
-   }
-} /* end purgesrtm() */
-
-#define maptool_NOALT0 32767.0
-
-
-static float getsrtm1(uint32_t ilat, uint32_t ilong,
-                uint32_t * div0)
-/* 1 pixel altitude */
-{
-   uint32_t rdsize;
-   uint32_t xdeg;
-   uint32_t ydeg;
-   uint32_t xx;
-   uint32_t y;
-   uint32_t x;
-   uint32_t i;
-   int32_t seek;
-   int32_t f;
-   pSRTMTILE pt;
-   pSRTMSTRIP pb;
-   int32_t a;
-   uint8_t t;
-   struct SRTMTILE * anonym;
-   struct SRTMTILE * anonym0;
-   uint32_t tmp;
-   ydeg = ilat/3600UL;
-   xdeg = ilong/3600UL;
-   if (xdeg>359UL || ydeg>179UL) return 32767.0f;
-   if (srtmcache[xdeg]==0) {
-      /* empty lat array */
-      osic_alloc((char * *) &srtmcache[xdeg], sizeof(SRTMLAT));
-      if (srtmcache[xdeg]==0) return 32767.0f;
-      /* out of memory */
-      useri_debugmem.srtm += sizeof(SRTMLAT);
-      memset((char *)srtmcache[xdeg],(char)0,sizeof(SRTMLAT));
-   }
-   else if (srtmcache[xdeg][ydeg]==srtmmiss) return 32767.0f;
-   /* tile file not avaliable */
-   pt = srtmcache[xdeg][ydeg];
-   if (pt==0) {
-      t = 1U;
-      f = opensrtm(1U, ydeg, xdeg);
-      if (f==-1L) {
-         t = 3U;
-         f = opensrtm(3U, ydeg, xdeg);
-         if (f==-1L) {
-            t = 30U;
-            f = opensrtm(30U, ydeg, xdeg);
-            if (f==-1L) {
-               srtmcache[xdeg][ydeg] = srtmmiss;
-               return 32767.0f;
-            }
-         }
-      }
-      /*INC(open); */
-      osic_alloc((char * *) &pt, sizeof(struct SRTMTILE));
-                /* a new 1x1 deg buffer */
-      if (pt==0) return 32767.0f;
-      useri_debugmem.srtm += sizeof(struct SRTMTILE);
-      { /* with */
-         struct SRTMTILE * anonym = pt;
-         memset((char *)anonym->strips,(char)0,
-                sizeof(pSRTMSTRIP [3][3600]));
-         memset((char *)anonym->used,(char)0,10800UL);
-         anonym->typ = t;
-         anonym->fd = f;
-      }
-      srtmcache[xdeg][ydeg] = pt;
-   }
-   { /* with */
-      struct SRTMTILE * anonym0 = pt;
-      *div0 = (uint32_t)anonym0->typ;
-      if (anonym0->typ==1U) {
-         y = ilat%3600UL;
-         x = ilong%3600UL;
-         xx = x/1200UL;
-         x = x%1200UL;
-      }
-      else if (anonym0->typ==3U) {
-         y = (ilat%3600UL)/3UL;
-         x = (ilong%3600UL)/3UL;
-         xx = 0UL;
-      }
-      else {
-         y = (ilat%3600UL)/30UL;
-         x = (ilong%3600UL)/30UL;
-         xx = 0UL;
-      }
-      pb = anonym0->strips[xx][y];
-      if (pb==0) {
-         if (anonym0->typ==1U) {
-            seek = (int32_t)((3599UL-y)*7202UL+xx*2400UL);
-            rdsize = 2400UL;
-         }
-         else if (anonym0->typ==3U) {
-            seek = (int32_t)((1199UL-y)*2402UL);
-            rdsize = 2400UL;
-         }
-         else {
-            seek = (int32_t)((xdeg%40UL)*240UL-(ilat/30UL)*9600UL);
-            if (ydeg>=130UL) seek += 207350400L;
-            else if (ydeg>=90UL) seek += 149750400L;
-            else if (ydeg>=50UL) seek += 103670400L;
-            else seek += 57590400L;
-            rdsize = 240UL; /* fill 1/10 buffer */
-         }
-         /*INC(miss); */
-         osic_alloc((char * *) &pb, rdsize);
-         if (pb==0) return 32767.0f;
-         useri_debugmem.srtm += rdsize;
-         anonym0->strips[xx][y] = pb;
-         osic_Seek(anonym0->fd, (uint32_t)seek);
-         if (osi_RdBin(anonym0->fd, (char *)pb, 2400u/1u,
-                rdsize)!=(int32_t)rdsize) {
-            tmp = rdsize/2UL-1UL;
-            i = 0UL;
-            if (i<=tmp) for (;; i++) {
-               pb[i] = 32767;
-               if (i==tmp) break;
-            } /* end for */
-         }
-         else {
-            /*
-            c-translator frissts nicht
-                    FOR i:=0 TO rdsize DIV 2-1 DO pb^[i]:=pb^[i]<<8 + pb^[i]
-                >>8 END;  (* motorola format *)  
-            */
-            tmp = rdsize/2UL-1UL;
-            i = 0UL;
-            if (i<=tmp) for (;; i++) {
-               pb[i] = (short)(X2C_LSH((uint16_t)pb[i],16,
-                8)|X2C_LSH((uint16_t)pb[i],16,-8));
-               if (i==tmp) break;
-            } /* end for */
-         }
-      }
-      /* motorola format */
-      /*ELSE INC(hit); */
-      anonym0->used[xx][y] = 10U;
-      a = (int32_t)pb[x];
-      if (a>30000L || a<-30000L) return 32767.0f;
-      return (float)a;
-   }
-} /* end getsrtm1() */
-
-#define maptool_NOALT 32767.0
-
-#define maptool_ERRALT 30000.0
-
-
-extern float maptool_getsrtm(struct aprspos_POSITION pos,
-                uint32_t quality, float * resolution)
-{
-   uint32_t d;
-   uint32_t div0;
-   uint32_t ilong;
-   uint32_t ilat;
-   float vy;
-   float vx;
-   float a3;
-   float a2;
-   float a1;
-   float a0;
-   /*limpos(pos); */
-   pos.lat = 3.24E+5f+pos.lat*2.0626480625299E+5f;
-   pos.long0 = 6.48E+5f+pos.long0*2.0626480625299E+5f;
-   ilat = aprsdecode_trunc(pos.lat);
-   ilong = aprsdecode_trunc(pos.long0);
-   a0 = getsrtm1(ilat, ilong, &div0);
-   if (div0==1UL) {
-      *resolution = 30.0f;
-      if (quality>29UL) return a0;
-   }
-   else if (div0==3UL) {
-      *resolution = 90.0f;
-      if (quality>60UL) return a0;
-   }
-   else {
-      *resolution = 900.0f;
-      if (quality>300UL) return a0;
-   }
-   /*interpolate 4 dots */
-   a1 = getsrtm1(ilat, ilong+div0, &d);
-   a2 = getsrtm1(ilat+div0, ilong, &d);
-   a3 = getsrtm1(ilat+div0, ilong+div0, &d);
-   if (a0>30000.0f) {
-      /* ignore missing pixels */
-      a0 = a1;
-      if (a0>30000.0f) {
-         a0 = a2;
-         if (a0>30000.0f) {
-            a0 = a3;
-            if (a0>30000.0f) return 32767.0f;
-         }
-      }
-   }
-   if (a1>30000.0f) a1 = a0;
-   if (a2>30000.0f) a2 = a0;
-   if (a3>30000.0f) a3 = a0;
-   if (div0==1UL) {
-      /* interpolation wights */
-      vx = pos.long0-(float)ilong;
-      vy = pos.lat-(float)ilat;
-   }
-   else if (div0==3UL) {
-      vx = (pos.long0-(float)((ilong/3UL)*3UL))*3.3333333333333E-1f;
-      vy = (pos.lat-(float)((ilat/3UL)*3UL))*3.3333333333333E-1f;
-   }
-   else {
-      vx = (pos.long0-(float)((ilong/30UL)*30UL))*3.3333333333333E-2f;
-      vy = (pos.lat-(float)((ilat/30UL)*30UL))*3.3333333333333E-2f;
-   }
-   return (a0*(1.0f-vx)+a1*vx)*(1.0f-vy)+(a2*(1.0f-vx)+a3*vx)*vy;
-/* wighted median of 4 pixels*/
-} /* end getsrtm() */
-
-
-static void initsrtm(void)
-{
-   uint32_t yi;
-   uint32_t xi;
-   /*open:=0; miss:=0; hit:=0; */
-   memset((char *)srtmcache,(char)0,sizeof(SRTMLONG));
-   for (xi = 0UL; xi<=8UL; xi++) {
-      for (yi = 0UL; yi<=3UL; yi++) {
-         srtm30fd[xi][yi].havefile = 0;
-      } /* end for */
-   } /* end for */
-} /* end initsrtm() */
-
-
-extern void maptool_closesrtmfile(void)
-{
-   purgesrtm(1);
-   /*WrInt(open, 10); WrInt(miss, 10); WrInt(hit, 10);
-                WrStrLn(" open miss hit"); */
-   initsrtm();
-} /* end closesrtmfile() */
-
-/* === srtm lib */
-
-static void wgs84s(float lat, float long0, float nn, float * x,
-                float * y, float * z)
-/* km */
-{
-   float c;
-   float h;
-   h = nn+6370.0f;
-   *z = h*osic_sin(lat);
-   c = osic_cos(lat);
-   *y = h*osic_sin(long0)*c;
-   *x = h*osic_cos(long0)*c;
-} /* end wgs84s() */
-
-
-static void wgs84r(float x, float y, float z, float * lat,
-                float * long0, float * heig)
-/* km */
-{
-   float h;
-   h = x*x+y*y;
-   if ((float)fabs(x)>(float)fabs(y)) {
-      *long0 = osic_arctan(X2C_DIVR(y,x));
-      if (x<0.0f) {
-         if (y>0.0f) *long0 = 3.1415926535898f+*long0;
-         else *long0 = *long0-3.1415926535898f;
-      }
-   }
-   else {
-      *long0 = 1.5707963267949f-osic_arctan(X2C_DIVR(x,y));
-      if (y<0.0f) *long0 = *long0-3.1415926535898f;
-   }
-   *lat = osic_arctan(X2C_DIVR(z,osic_sqrt(h)));
-   *heig = osic_sqrt(h+z*z)-6370.0f;
-} /* end wgs84r() */
 
 
 static float fresnel(float a, float b, float lambda)
@@ -1090,6 +546,13 @@ static void elevation(float x0, float y00, float z0, float x1,
 } /* end elevation() */
 
 
+static void setsrtmcache(void)
+{
+   libsrtm_srtmmaxmem = (uint32_t)(useri_conf2int(useri_fSRTMCACHE, 0UL,
+                0L, 2000L, 20L)*1000000L);
+} /* end setsrtmcache() */
+
+
 static void ruler(maptool_pIMAGE image, float m, float x, float y,
                 char over, char right)
 /* write meter to largest heigth */
@@ -1136,7 +599,7 @@ struct HTAB {
 
 
 extern int32_t maptool_geoprofile(maptool_pIMAGE image,
-                struct aprspos_POSITION pos0, struct aprspos_POSITION pos1,
+                struct aprsstr_POSITION pos0, struct aprsstr_POSITION pos1,
                 float lambda, char ant1nn, int32_t ant1,
                 int32_t ant2, float * dist, float * a1,
                 float * a2, float * ele1, float * ele2)
@@ -1179,49 +642,47 @@ extern int32_t maptool_geoprofile(maptool_pIMAGE image,
    float z0;
    float y00;
    float x0;
-   struct aprspos_POSITION posf;
-   struct aprspos_POSITION pos;
+   struct aprsstr_POSITION posf;
+   struct aprsstr_POSITION pos;
    uint16_t red;
    uint16_t green;
    uint16_t blue;
    pHTAB phmax;
    pHTAB pht;
    pHTAB phtab;
-   uint32_t maxcache;
    int32_t tmp;
-   maxcache = (uint32_t)(useri_conf2int(useri_fSRTMCACHE, 0UL, 0L, 2000L,
-                20L)*1000000L);
+   setsrtmcache();
    *dist = 0.0f;
    if (ant1nn) nn = 0L;
    else {
-      nn = (int32_t)X2C_TRUNCI(maptool_getsrtm(pos0, 0UL, &resol),
+      nn = (int32_t)X2C_TRUNCI(libsrtm_getsrtm(pos0, 0UL, &resol),
                 X2C_min_longint,X2C_max_longint);
       if (nn>=30000L) {
-         maptool_closesrtmfile();
+         libsrtm_closesrtmfile();
          return -1L;
       }
    }
    *a1 = (float)(nn+ant1);
-   wgs84s(pos0.lat, pos0.long0,  *a1*0.001f, &x0, &y00, &z0);
-   nn = (int32_t)X2C_TRUNCI(maptool_getsrtm(pos1, 0UL, &resol),
+   aprspos_wgs84s(pos0.lat, pos0.long0,  *a1*0.001f, &x0, &y00, &z0);
+   nn = (int32_t)X2C_TRUNCI(libsrtm_getsrtm(pos1, 0UL, &resol),
                 X2C_min_longint,X2C_max_longint);
    if (nn>=30000L) {
-      maptool_closesrtmfile();
+      libsrtm_closesrtmfile();
       return -1L;
    }
    *a2 = (float)(nn+ant2);
-   wgs84s(pos1.lat, pos1.long0,  *a2*0.001f, &x1, &y1, &z1);
+   aprspos_wgs84s(pos1.lat, pos1.long0,  *a2*0.001f, &x1, &y1, &z1);
    elevation(x0, y00, z0, x1, y1, z1, ele1, ele2);
    x1 = x1-x0;
    y1 = y1-y00;
    z1 = z1-z0;
    *dist = osic_sqrt(x1*x1+y1*y1+z1*z1)*1000.0f;
    if (*dist<1.0f) {
-      maptool_closesrtmfile();
+      libsrtm_closesrtmfile();
       return -3L;
    }
    if (*dist>1.E+6f) {
-      maptool_closesrtmfile();
+      libsrtm_closesrtmfile();
       return -2L;
    }
    refrac = (6.37E+6f-osic_sqrt(4.05769E+13f+ *dist* *dist*0.25f))
@@ -1242,7 +703,7 @@ extern int32_t maptool_geoprofile(maptool_pIMAGE image,
       dx = x0+x1*d;
       dy = y00+y1*d;
       dz = z0+z1*d;
-      wgs84r(dx, dy, dz, &pos.lat, &pos.long0, &hmid);
+      aprspos_wgs84r(dx, dy, dz, &pos.lat, &pos.long0, &hmid);
       if (maptool_mapxy(pos, &x, &y)>=0L) {
          hmid = hmid*1000.0f-(d-d*d)*refrac;
          fressum = 0.0f;
@@ -1255,7 +716,7 @@ extern int32_t maptool_geoprofile(maptool_pIMAGE image,
             posf.lat = pos.lat+kf*osic_sin(nv);
             posf.long0 = pos.long0-kf*osic_cos(nv);
             dh = sqr(fres*0.5f)-sqr((float)fs*resol);
-            nn = (int32_t)X2C_TRUNCI(maptool_getsrtm(posf, 0UL,
+            nn = (int32_t)X2C_TRUNCI(libsrtm_getsrtm(posf, 0UL,
                 &resol)+0.5f,X2C_min_longint,X2C_max_longint);
             if (nn>=30000L) h = (-2.E+4f);
             else h = (float)nn;
@@ -1308,8 +769,8 @@ extern int32_t maptool_geoprofile(maptool_pIMAGE image,
          }
       }
       d = d+resol*odist;
-      if (useri_debugmem.srtm>=maxcache) purgesrtm(0);
    } while (d<=1.0f);
+   /*    IF srtmmem>=maxcache THEN purgesrtm(FALSE) END; */
    if (phtab) {
       phmax = 0;
       pht = phtab;
@@ -1457,15 +918,22 @@ static void postfilter(maptool_pIMAGE image, uint32_t colnr)
    } /* end for */
 } /* end postfilter() */
 
+#define maptool_PART 0.2
+
 
 static float meterperpix(maptool_pIMAGE image)
 {
-   struct aprspos_POSITION pos1;
-   struct aprspos_POSITION pos;
-   maptool_xytodeg(0.0f, 0.0f, &pos);
-   maptool_xytodeg((float)(image->Len1-1), 0.0f, &pos1);
-   return X2C_DIVR(aprspos_distance(pos, pos1)*1000.0f,
-                (float)(image->Len1-1));
+   struct aprsstr_POSITION pos1;
+   struct aprsstr_POSITION pos;
+   float y;
+   float x;
+   float d;
+   x = (float)(image->Len1-1)*0.5f;
+   y = (float)(image->Len0-1)*0.5f;
+   d = x*0.2f;
+   maptool_xytodeg(x-d, y, &pos);
+   maptool_xytodeg(x+d, y, &pos1);
+   return X2C_DIVR(aprspos_distance(pos, pos1)*500.0f,d);
 /* meter per pixel */
 } /* end meterperpix() */
 
@@ -1498,14 +966,13 @@ static void setcol(uint16_t bri, uint32_t colnr, struct maptool_PIX * p)
 
 
 extern void maptool_Radiorange(maptool_pIMAGE image,
-                struct aprspos_POSITION txpos, int32_t ant1,
+                struct aprsstr_POSITION txpos, int32_t ant1,
                 int32_t ant2, uint32_t smooth, uint32_t colnr,
                 uint32_t qualnum, char * abort0)
 {
    uint16_t bri;
    uint32_t progr;
    uint32_t qual;
-   uint32_t maxcache;
    uint32_t frame;
    uint32_t yp;
    uint32_t xp;
@@ -1552,32 +1019,31 @@ extern void maptool_Radiorange(maptool_pIMAGE image,
    float z0;
    float y00;
    float x0;
-   struct aprspos_POSITION dpos;
-   struct aprspos_POSITION pos1;
-   struct aprspos_POSITION pos0;
-   struct aprspos_POSITION pos;
+   struct aprsstr_POSITION dpos;
+   struct aprsstr_POSITION pos1;
+   struct aprsstr_POSITION pos0;
+   struct aprsstr_POSITION pos;
    uint32_t startt;
    char ss[101];
    startt = osic_time();
-   nn = (int32_t)X2C_TRUNCI(maptool_getsrtm(txpos, 0UL, &resoltx),
+   nn = (int32_t)X2C_TRUNCI(libsrtm_getsrtm(txpos, 0UL, &resoltx),
                 X2C_min_longint,X2C_max_longint);
                 /* altitude of tx an map resolution in m here */
    if (nn>=30000L) {
-      maptool_closesrtmfile();
+      libsrtm_closesrtmfile();
       return;
    }
+   setsrtmcache();
    atx = (float)(nn+ant1); /* ant1 over NN */
-   wgs84s(txpos.lat, txpos.long0, atx*0.001f, &x0, &y00, &z0);
+   aprspos_wgs84s(txpos.lat, txpos.long0, atx*0.001f, &x0, &y00, &z0);
    arx = (float)ant2; /* ant2 over ground */
    xi = 0.0f;
    yi = 0.0f;
    nn = maptool_mapxy(txpos, &xtx, &ytx);
    frame = 0UL;
-   maxcache = (uint32_t)(useri_conf2int(useri_fSRTMCACHE, 0UL, 0L, 2000L,
-                100L)*1000000L);
    mperpix = meterperpix(image); /* meter per pixel */
    if (mperpix<1.0f) {
-      maptool_closesrtmfile();
+      libsrtm_closesrtmfile();
       return;
    }
    if (qualnum==0UL) {
@@ -1602,7 +1068,7 @@ extern void maptool_Radiorange(maptool_pIMAGE image,
       if (((frame==0UL && ytx>0.0f || frame==2UL && ytx<(float)
                 maptool_ysize) || frame==1UL && xtx>0.0f)
                 || frame==3UL && xtx<(float)maptool_xsize) {
-         wgs84s(pos.lat, pos.long0, atx*0.001f, &x1, &y1, &z1);
+         aprspos_wgs84s(pos.lat, pos.long0, atx*0.001f, &x1, &y1, &z1);
                 /* screen frame xyz at ant1 alt */
          dx = x1-x0;
          dy = y1-y00;
@@ -1625,11 +1091,11 @@ extern void maptool_Radiorange(maptool_pIMAGE image,
                   if (dnext>1.0f) dnext = 1.0f;
                   dd = dnext-d;
                   if (dd!=0.0f) {
-                     wgs84r(x0+dx*d, y00+dy*d, z0+dz*d, &pos1.lat,
+                     aprspos_wgs84r(x0+dx*d, y00+dy*d, z0+dz*d, &pos1.lat,
                 &pos1.long0, &alt1);
                      alt1 = alt1*1000.0f;
-                     wgs84r(x0+dx*dnext, y00+dy*dnext, z0+dz*dnext, &pos.lat,
-                 &pos.long0, &alt);
+                     aprspos_wgs84r(x0+dx*dnext, y00+dy*dnext, z0+dz*dnext,
+                &pos.lat, &pos.long0, &alt);
                      alt = alt*1000.0f;
                      dpos.lat = X2C_DIVR(pos.lat-pos1.lat,dd);
                      dpos.long0 = X2C_DIVR(pos.long0-pos1.long0,dd);
@@ -1642,7 +1108,7 @@ extern void maptool_Radiorange(maptool_pIMAGE image,
                pos.lat = pos0.lat+dpos.lat*d;
                pos.long0 = pos0.long0+dpos.long0*d;
                alt = alt0+dalt*d;
-               h = maptool_getsrtm(pos, qual, &resol);
+               h = libsrtm_getsrtm(pos, qual, &resol);
                 /* ground over NN in m */
                if (h<30000.0f) {
                   /* srtm valid */
@@ -1657,10 +1123,10 @@ extern void maptool_Radiorange(maptool_pIMAGE image,
                         if (dpnext>1.0f) dpnext = 1.0f;
                         dd = dpnext-d;
                         if (dd!=0.0f) {
-                           wgs84r(x0+dx*d, y00+dy*d, z0+dz*d, &pos1.lat,
-                &pos1.long0, &alt1);
-                           wgs84r(x0+dx*dpnext, y00+dy*dpnext, z0+dz*dpnext,
-                &pos.lat, &pos.long0, &alt);
+                           aprspos_wgs84r(x0+dx*d, y00+dy*d, z0+dz*d,
+                &pos1.lat, &pos1.long0, &alt1);
+                           aprspos_wgs84r(x0+dx*dpnext, y00+dy*dpnext,
+                z0+dz*dpnext, &pos.lat, &pos.long0, &alt);
                            void0 = maptool_mapxy(pos, &x, &y);
                            void0 = maptool_mapxy(pos1, &px0, &py0);
                            dximag = X2C_DIVR(x-px0,dd);
@@ -1776,9 +1242,10 @@ extern void maptool_Radiorange(maptool_pIMAGE image,
          *abort0 = 1;
          break;
       }
-      if (useri_debugmem.srtm>=maxcache) purgesrtm(0);
    }
    loop_exit:;
+   /*    IF srtmmem>=maxcache THEN purgesrtm(FALSE) END;
+                (* cache grown too large *) */
    postfilter(image, colnr); /* fill in missing pixels */
    useri_killmenuid(5UL);
 } /* end Radiorange() */
@@ -1799,7 +1266,6 @@ extern char maptool_SimpleRelief(maptool_pIMAGE image)
    uint32_t sum;
    uint32_t jump;
    uint32_t qual;
-   uint32_t maxcache;
    uint32_t xi;
    uint32_t yp;
    uint32_t xp;
@@ -1809,8 +1275,8 @@ extern char maptool_SimpleRelief(maptool_pIMAGE image)
    float hr;
    float mperpix;
    float resol;
-   struct aprspos_POSITION pos1;
-   struct aprspos_POSITION pos;
+   struct aprsstr_POSITION pos1;
+   struct aprsstr_POSITION pos;
    int32_t bri;
    int32_t mul;
    int32_t max0;
@@ -1825,8 +1291,7 @@ extern char maptool_SimpleRelief(maptool_pIMAGE image)
    uint32_t tmp;
    uint32_t tmp0;
    startt = osic_time();
-   maxcache = (uint32_t)(useri_conf2int(useri_fSRTMCACHE, 0UL, 0L, 2000L,
-                100L)*1000000L);
+   setsrtmcache();
    for (xi = 0UL; xi<=1023UL; xi++) {
       { /* with */
          struct maptool_PIX * anonym = &lut[xi];
@@ -1851,10 +1316,10 @@ extern char maptool_SimpleRelief(maptool_pIMAGE image)
    */
    mperpix = meterperpix(image);
    if (mperpix<1.0f) {
-      maptool_closesrtmfile();
+      libsrtm_closesrtmfile();
       return 0;
    }
-   qual = (uint32_t)X2C_TRUNCC(mperpix*0.25f,0UL,X2C_max_longcard);
+   qual = aprsdecode_trunc(mperpix*0.25f);
    jump = 1UL+aprsdecode_trunc(X2C_DIVR(6000.0f,mperpix));
    memset((char *)hist,(char)0,40000UL);
    yp = 0UL;
@@ -1872,7 +1337,7 @@ extern char maptool_SimpleRelief(maptool_pIMAGE image)
          pos1.lat = X2C_DIVR(pos1.lat-pos.lat,jr);
          pos1.long0 = X2C_DIVR(pos1.long0-pos.long0,jr);
          do {
-            hr = maptool_getsrtm(pos, qual, &resol);
+            hr = libsrtm_getsrtm(pos, qual, &resol);
             if (hr<10000.0f) {
                h = (int32_t)aprsdecode_trunc(1000.0f+hr);
                 /* ground over NN in m */
@@ -1894,7 +1359,8 @@ extern char maptool_SimpleRelief(maptool_pIMAGE image)
             ++xi;
          } while (xi<xp);
       }
-      if (useri_debugmem.srtm>=maxcache) purgesrtm(0);
+      /*    IF srtmmem>=maxcache THEN purgesrtm(FALSE) END;
+                (* cache grown too large *) */
       ++yp;
       if (yp%20UL==0UL) {
          progress(startt, "Geomap", 7ul, (yp*100UL)/(image->Len0-1), 0);
@@ -1914,7 +1380,9 @@ extern char maptool_SimpleRelief(maptool_pIMAGE image)
    }
    if (aprsdecode_click.withradio && max0>0L) {
       h = max0-min0;
-      if (h<10L) h = 10L;
+      if (h<10L) {
+         h = 10L;
+      }
       bri = useri_conf2int(useri_fGEOBRIGHTNESS, 0UL, 0L, 100L, 50L);
       mul = 1024000L/h;
       /*    difmul:=trunc(20000000.0/((FLOAT(h)*sqrt(mperpix))));
@@ -1991,7 +1459,7 @@ static void raytrace(float minqual, float x0, float y00,
                 float z0, float dx, float dy, float dz,
                 float maxdist, float * dist, float * lum,
                 float * h, float * alt, float * subpix,
-                struct aprspos_POSITION * pos)
+                struct aprsstr_POSITION * pos)
 {
    float deltah;
    float minsp;
@@ -2001,28 +1469,28 @@ static void raytrace(float minqual, float x0, float y00,
    float h1;
    float resol;
    float qual;
-   struct aprspos_POSITION pos1;
+   struct aprsstr_POSITION pos1;
    *lum = 1.0f;
    qual = minqual;
    minsp = 0.0f;
    if (*dist==0.0f) lastsp = 0.0f;
    else lastsp = X2C_max_real;
    deltah = *alt;
-   wgs84r(x0+dx* *dist, y00+dy* *dist, z0+dz* *dist, &pos->lat, &pos->long0,
-                alt);
+   aprspos_wgs84r(x0+dx* *dist, y00+dy* *dist, z0+dz* *dist, &pos->lat,
+                &pos->long0, alt);
    *alt =  *alt*1000.0f;
    deltah = *alt-deltah;
    /*WrStr("next:"); WrFixed(deltah, 2, 12); */
    *subpix = 0.0f;
    do {
-      wgs84r(x0+dx* *dist, y00+dy* *dist, z0+dz* *dist, &pos->lat,
+      aprspos_wgs84r(x0+dx* *dist, y00+dy* *dist, z0+dz* *dist, &pos->lat,
                 &pos->long0, alt);
       *alt =  *alt*1000.0f;
       /*
       IF mapxy(pos, xtt, ytt)>=-1 THEN
       waypoint(testimg, xtt,ytt,1.0, 255,255,100); END;
       */
-      *h = maptool_getsrtm(*pos, aprsdecode_trunc(qual), &resol);
+      *h = libsrtm_getsrtm(*pos, aprsdecode_trunc(qual), &resol);
                 /* ground over NN in m */
       /*WrFixed(dist, 1,15); WrFixed(alt, 1,15); WrFixed(h, 1,15);
                 WrStr(" =d alt h"); */
@@ -2040,11 +1508,11 @@ static void raytrace(float minqual, float x0, float y00,
             /* hit earth */
             pos1.lat = pos->lat+4.7123889803847E-6f;
             pos1.long0 = pos->long0;
-            h1 = maptool_getsrtm(pos1, 1UL, &resol);
+            h1 = libsrtm_getsrtm(pos1, 1UL, &resol);
             pos1.long0 = pos->long0+X2C_DIVR(4.7123889803847E-6f,
                 osic_cos(pos->lat));
             pos1.lat = pos->lat;
-            h2 = maptool_getsrtm(pos1, 1UL, &resol);
+            h2 = libsrtm_getsrtm(pos1, 1UL, &resol);
             *lum = osic_cos(osic_arctan((h1-*h)*3.3333333333333E-2f))
                 *osic_cos(osic_arctan((h2-*h)*3.3333333333333E-2f));
             /*        lum:=1.0-ABS(h-h1)*(2.0/TESTDIST); */
@@ -2084,7 +1552,7 @@ static void rotvector(float * a, float * b, float cw, float sw)
    *a = h;
 } /* end rotvector() */
 
-#define maptool_ERRALT0 30000
+#define maptool_ERRALT 30000
 
 #define maptool_FULLUM0 1000.0
 /* full bright in image */
@@ -2094,7 +1562,7 @@ static void rotvector(float * a, float * b, float cw, float sw)
 
 
 static void Panofind(char find, const struct maptool_PANOWIN panpar,
-                float * res, struct aprspos_POSITION * pos)
+                float * res, struct aprsstr_POSITION * pos)
 {
    uint32_t yi;
    uint32_t xi;
@@ -2150,9 +1618,10 @@ static void Panofind(char find, const struct maptool_PANOWIN panpar,
    uint32_t startt;
    struct aprsdecode_COLTYP col0;
    struct maptool_PIX * anonym;
+   setsrtmcache();
    startt = osic_time();
    if ((!aprspos_posvalid(panpar.eye) || !aprspos_posvalid(panpar.horizon))
-                || maptool_getsrtm(panpar.horizon, 0UL, &resoltx)>=30000.0f) {
+                || libsrtm_getsrtm(panpar.horizon, 0UL, &resoltx)>=30000.0f) {
       return;
    }
    /* no alt at horizon */
@@ -2174,15 +1643,16 @@ static void Panofind(char find, const struct maptool_PANOWIN panpar,
       hb = (float)col0.b*0.01f;
       lummul = X2C_DIVR(1000.0f,maxdist);
    }
-   nn = (int32_t)X2C_TRUNCI(maptool_getsrtm(panpar.eye, 0UL, &resoltx),
+   nn = (int32_t)X2C_TRUNCI(libsrtm_getsrtm(panpar.eye, 0UL, &resoltx),
                 X2C_min_longint,X2C_max_longint);
                 /* altitude of tx an map resolution in m here */
    if (nn>=30000L) {
-      maptool_closesrtmfile();
+      libsrtm_closesrtmfile();
       return;
    }
    atx = (float)(nn+panpar.eyealt); /* ant1 over NN */
-   wgs84s(panpar.eye.lat, panpar.eye.long0, atx*0.001f, &x0, &y00, &z0);
+   aprspos_wgs84s(panpar.eye.lat, panpar.eye.long0, atx*0.001f, &x0, &y00,
+                &z0);
    azi = aprspos_azimuth(panpar.eye, panpar.horizon)*1.7453292519444E-2f;
    azi0 = -(panpar.angle*0.5f)*1.7453292519444E-2f;
    azid = X2C_DIVR(panpar.angle*1.7453292519444E-2f,
@@ -2236,7 +1706,7 @@ static void Panofind(char find, const struct maptool_PANOWIN panpar,
                 maxdist, &d, &light, &oldh, &lasth, &space, pos);
             if (d>maxdist) heaven = 1;
             if (find) {
-               if (heaven) aprsdecode_posinval(pos);
+               if (heaven) aprsstr_posinval(pos);
                return;
             }
          }
@@ -2336,20 +1806,20 @@ extern void maptool_Panorama(maptool_pIMAGE testimg,
                 struct maptool_PANOWIN panpar, char * abort0)
 {
    float res;
-   struct aprspos_POSITION pos;
+   struct aprsstr_POSITION pos;
    Panofind(0, panpar, &res, &pos);
 } /* end Panorama() */
 
 
 extern void maptool_findpanopos(struct maptool_PANOWIN panpar,
-                struct aprspos_POSITION * pos, float * dist,
+                struct aprsstr_POSITION * pos, float * dist,
                 int32_t * alt)
 {
    float resol;
    float res;
    Panofind(1, panpar, &res, pos);
    if (aprspos_posvalid(*pos)) {
-      *alt = (int32_t)X2C_TRUNCI(maptool_getsrtm(*pos, 0UL, &resol)+0.5f,
+      *alt = (int32_t)X2C_TRUNCI(libsrtm_getsrtm(*pos, 0UL, &resol)+0.5f,
                 X2C_min_longint,X2C_max_longint);
       *dist = aprspos_distance(panpar.eye, *pos);
    }
@@ -2368,7 +1838,7 @@ soft change wood-rock
 */
 /*Panorama */
 
-extern void maptool_xytoloc(struct aprspos_POSITION mpos, char s[],
+extern void maptool_xytoloc(struct aprsstr_POSITION mpos, char s[],
                 uint32_t s_len)
 /* lat/long + locator string of pos */
 {
@@ -2387,10 +1857,11 @@ extern void maptool_xytoloc(struct aprspos_POSITION mpos, char s[],
    aprsstr_FixToStr(X2C_DIVR(mpos.long0,1.7453292519444E-2f), 6UL, h, 101ul);
    aprsstr_Append(s, s_len, h, 101ul);
    aprsstr_Append(s, s_len, " \373", 3ul);
-   maptool_postoloc(h, 101ul, mpos);
+   maptool_limpos(&mpos);
+   aprsstr_postoloc(h, 101ul, mpos);
    aprsstr_Append(s, s_len, h, 101ul);
    aprsstr_Append(s, s_len, "\376", 2ul);
-   nn = (int32_t)X2C_TRUNCI(maptool_getsrtm(mpos, 0UL, &resol)+0.5f,
+   nn = (int32_t)X2C_TRUNCI(libsrtm_getsrtm(mpos, 0UL, &resol)+0.5f,
                 X2C_min_longint,X2C_max_longint);
    if (nn<30000L) {
       aprsstr_IntToStr(nn, 0UL, h, 101ul);
@@ -2415,7 +1886,7 @@ extern void maptool_xytoloc(struct aprspos_POSITION mpos, char s[],
 #define maptool_MOUNTAINDIST 10.0
 
 
-extern void maptool_POIname(struct aprspos_POSITION * mpos, char s[],
+extern void maptool_POIname(struct aprsstr_POSITION * mpos, char s[],
                 uint32_t s_len)
 /* get name of nearest POI */
 {
@@ -2465,7 +1936,7 @@ extern void maptool_POIname(struct aprspos_POSITION * mpos, char s[],
 #define maptool_WILD "?"
 
 
-static void POIfindfrom(struct aprspos_POSITION * mpos, char s[],
+static void POIfindfrom(struct aprsstr_POSITION * mpos, char s[],
                 uint32_t s_len)
 /* get position of POI name */
 {
@@ -2507,12 +1978,12 @@ static void POIfindfrom(struct aprspos_POSITION * mpos, char s[],
       aprsdecode_click.lastpoi = lastpoinum==0UL;
       lastpoinum = cnt+1UL; /* next time goon from this entry */
    }
-   else aprsdecode_posinval(mpos);
+   else aprsstr_posinval(mpos);
    X2C_PFREE(s);
 } /* end POIfindfrom() */
 
 
-extern void maptool_POIfind(struct aprspos_POSITION * mpos, char s[],
+extern void maptool_POIfind(struct aprsstr_POSITION * mpos, char s[],
                 uint32_t s_len)
 /* get position of POI name */
 {
@@ -2893,7 +2364,7 @@ extern void maptool_vector(maptool_pIMAGE image, float x0, float y00,
 
 
 extern void maptool_setmark(maptool_pIMAGE image,
-                struct aprspos_POSITION pos, char hard)
+                struct aprsstr_POSITION pos, char hard)
 {
    int32_t d;
    int32_t i;
@@ -3270,12 +2741,12 @@ static void arc(uint32_t b, uint32_t g, uint32_t r,
 
 
 extern void maptool_drawareasym(maptool_pIMAGE image,
-                struct aprspos_POSITION pm, struct aprsdecode_AREASYMB area,
+                struct aprsstr_POSITION pm, struct aprsdecode_AREASYMB area,
                 uint32_t bri)
 {
    int32_t ret;
-   struct aprspos_POSITION p1;
-   struct aprspos_POSITION p0;
+   struct aprsstr_POSITION p1;
+   struct aprsstr_POSITION p0;
    float xho;
    float yh;
    float xhh;
@@ -3583,7 +3054,7 @@ struct _2 {
 };
 
 
-static void fillpoligon(maptool_pIMAGE image, struct aprspos_POSITION pm,
+static void fillpoligon(maptool_pIMAGE image, struct aprsstr_POSITION pm,
                 const struct aprsdecode_MULTILINE md, uint32_t bri)
 {
    uint32_t hachuresize;
@@ -3602,7 +3073,7 @@ static void fillpoligon(maptool_pIMAGE image, struct aprspos_POSITION pm,
    int32_t ret;
    struct _2 vert[41];
    int32_t cross[41];
-   struct aprspos_POSITION p;
+   struct aprsstr_POSITION p;
    float yr;
    float xr;
    char done;
@@ -3718,11 +3189,11 @@ static void fillpoligon(maptool_pIMAGE image, struct aprspos_POSITION pm,
 
 
 extern void maptool_drawpoligon(maptool_pIMAGE image,
-                struct aprspos_POSITION pm, struct aprsdecode_MULTILINE md,
+                struct aprsstr_POSITION pm, struct aprsdecode_MULTILINE md,
                 char tab, char sym, uint32_t bri)
 {
    int32_t ret;
-   struct aprspos_POSITION p;
+   struct aprsstr_POSITION p;
    float y1;
    float x1;
    float y00;
@@ -3776,7 +3247,7 @@ extern void maptool_drawpoliobj(maptool_pIMAGE image)
 {
    char cs[251];
    struct aprsdecode_MULTILINE ml;
-   struct aprspos_POSITION center;
+   struct aprsstr_POSITION center;
    uint32_t i;
    useri_confstr(useri_fRBPOS, cs, 251ul);
    aprstext_deganytopos(cs, 251ul, &center);
@@ -3788,12 +3259,12 @@ extern void maptool_drawpoliobj(maptool_pIMAGE image)
 } /* end drawpoliobj() */
 
 
-extern char maptool_findmultiline(struct aprspos_POSITION pos,
-                struct aprspos_POSITION * foundpos)
+extern char maptool_findmultiline(struct aprsstr_POSITION pos,
+                struct aprsstr_POSITION * foundpos)
 {
    char cs[251];
    struct aprsdecode_MULTILINE ml;
-   struct aprspos_POSITION center;
+   struct aprsstr_POSITION center;
    uint32_t mini;
    uint32_t i;
    float d;
@@ -4110,8 +3581,8 @@ static uint32_t mapbri(maptool_pIMAGE img, int32_t x0, int32_t x1,
 
 extern void maptool_ruler(maptool_pIMAGE img)
 {
-   struct aprspos_POSITION rpos;
-   struct aprspos_POSITION lpos;
+   struct aprsstr_POSITION rpos;
+   struct aprsstr_POSITION lpos;
    char s[101];
    char h[101];
    float e;
@@ -5111,8 +4582,8 @@ extern void maptool_MapPackageJob(char dryrun)
 } /* end MapPackageJob() */
 
 
-extern void maptool_StartMapPackage(struct aprspos_POSITION lu,
-                struct aprspos_POSITION rd, int32_t tillzoom,
+extern void maptool_StartMapPackage(struct aprsstr_POSITION lu,
+                struct aprsstr_POSITION rd, int32_t tillzoom,
                 char dryrun)
 {
    struct maptool__D0 * anonym;
@@ -5887,7 +5358,7 @@ extern void maptool_rdmountains(char fn[], uint32_t fn_len,
    int32_t p;
    int32_t fd;
    aprsdecode_pMOUNTAIN pm;
-   struct aprspos_POSITION pos;
+   struct aprsstr_POSITION pos;
    float alt;
    char b[4096];
    char s[1024];
@@ -5902,7 +5373,7 @@ extern void maptool_rdmountains(char fn[], uint32_t fn_len,
          pm = aprsdecode_mountains;
          aprsdecode_mountains = pm->next;
          osic_free((char * *) &pm, sizeof(struct aprsdecode_MOUNTAIN));
-         useri_debugmem.srtm -= sizeof(struct aprsdecode_MOUNTAIN);
+         useri_debugmem.poi -= sizeof(struct aprsdecode_MOUNTAIN);
       }
    }
    b[0U] = 0;
@@ -5942,7 +5413,7 @@ extern void maptool_rdmountains(char fn[], uint32_t fn_len,
                 100ul)) && aprspos_posvalid(pos)) {
          osic_alloc((char * *) &pm, sizeof(struct aprsdecode_MOUNTAIN));
          if (pm==0) break;
-         useri_debugmem.srtm += sizeof(struct aprsdecode_MOUNTAIN);
+         useri_debugmem.poi += sizeof(struct aprsdecode_MOUNTAIN);
          aprsstr_Assign(pm->name, 32ul, name, 100ul);
          pm->pos.lat = pos.lat*1.7453292519444E-2f;
          pm->pos.long0 = pos.long0*1.7453292519444E-2f;
@@ -5964,12 +5435,12 @@ extern void maptool_BEGIN(void)
    static int maptool_init = 0;
    if (maptool_init) return;
    maptool_init = 1;
-   if (sizeof(FN)!=1024) X2C_ASSERT(0);
+   libsrtm_BEGIN();
    aprstext_BEGIN();
    useri_BEGIN();
+   aprspos_BEGIN();
    xosi_BEGIN();
    osi_BEGIN();
-   aprspos_BEGIN();
    aprsstr_BEGIN();
    aprsdecode_BEGIN();
    aprsdecode_maploadpid.runs = 0;
@@ -5983,8 +5454,8 @@ extern void maptool_BEGIN(void)
    lastmapreq = 0UL;
    mapdelay = 0UL;
    lastpoinum = 0UL;
-   osic_alloc((char * *) &srtmmiss, 1UL);
-                /* make empty tile for fast nofile hint */
-   initsrtm();
+   /*  ALLOCATE(srtmmiss, 1);                        (* make empty tile for fast nofile hint *) */
+   /*  initsrtm; */
+   libsrtm_srtmdir[0] = 0;
 }
 

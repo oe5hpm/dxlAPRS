@@ -16,9 +16,6 @@
 #ifndef aprsdecode_H_
 #include "aprsdecode.h"
 #endif
-#ifndef aprspos_H_
-#include "aprspos.h"
-#endif
 #ifndef aprsstr_H_
 #include "aprsstr.h"
 #endif
@@ -28,6 +25,12 @@
 #include <osic.h>
 #ifndef maptool_H_
 #include "maptool.h"
+#endif
+#ifndef libsrtm_H_
+#include "libsrtm.h"
+#endif
+#ifndef aprspos_H_
+#include "aprspos.h"
 #endif
 #ifndef useri_H_
 #include "useri.h"
@@ -352,10 +355,10 @@ extern void aprstext_decode(char s[], uint32_t s_len,
          aprsstr_Append(s, s_len, " \367", 3ul);
          aprsstr_Append(s, s_len, h, 512ul);
          aprsstr_Append(s, s_len, "\376 (", 4ul);
-         maptool_postoloc(h, 512ul, dat->pos);
+         aprsstr_postoloc(h, 512ul, dat->pos);
          aprsstr_Append(s, s_len, h, 512ul);
          aprsstr_Append(s, s_len, ") ", 3ul);
-         og = (int32_t)X2C_TRUNCI(maptool_getsrtm(dat->pos, 0UL, &resol),
+         og = (int32_t)X2C_TRUNCI(libsrtm_getsrtm(dat->pos, 0UL, &resol),
                 X2C_min_longint,X2C_max_longint);
       }
       nl = 1;
@@ -665,7 +668,7 @@ extern void aprstext_decodelistline(char s[], uint32_t s_len,
 } /* end decodelistline() */
 
 
-extern void aprstext_setmark1(struct aprspos_POSITION pos,
+extern void aprstext_setmark1(struct aprsstr_POSITION pos,
                 char overwrite, int32_t alt, uint32_t timestamp)
 {
    if ((overwrite || !aprspos_posvalid(aprsdecode_click.markpos))
@@ -684,9 +687,9 @@ extern void aprstext_setmarkalti(aprsdecode_pFRAMEHIST pf,
 {
    struct aprsdecode_DAT dat;
    int32_t alt;
-   struct aprspos_POSITION pos;
+   struct aprsstr_POSITION pos;
    uint32_t t;
-   aprsdecode_posinval(&pos);
+   aprsstr_posinval(&pos);
    alt = X2C_max_longint;
    t = aprsdecode_realtime;
    if (pf && aprsdecode_Decode(pf->vardat->raw, 500ul, &dat)==0L) {
@@ -1138,7 +1141,7 @@ static void degtostr(float d, char lat, char form,
 } /* end degtostr() */
 
 
-extern void aprstext_postostr(struct aprspos_POSITION pos, char form,
+extern void aprstext_postostr(struct aprsstr_POSITION pos, char form,
                 char s[], uint32_t s_len)
 {
    char h[32];
@@ -1157,15 +1160,15 @@ static int32_t myround(float x)
 } /* end myround() */
 
 
-extern void aprstext_measure(struct aprspos_POSITION pos0,
-                struct aprspos_POSITION pos1, char s[], uint32_t s_len,
+extern void aprstext_measure(struct aprsstr_POSITION pos0,
+                struct aprsstr_POSITION pos1, char s[], uint32_t s_len,
                  char sum)
 {
    char h[32];
    if (aprspos_posvalid(pos0) && aprspos_posvalid(pos1)) {
       aprstext_postostr(pos1, '3', s, s_len);
       aprsstr_Append(s, s_len, " [", 3ul);
-      maptool_postoloc(h, 32ul, pos1);
+      aprsstr_postoloc(h, 32ul, pos1);
       aprsstr_Append(s, s_len, h, 32ul);
       aprsstr_Append(s, s_len, "] ", 3ul);
       aprsstr_FixToStr(aprspos_distance(pos0, pos1), 4UL, h, 32ul);
@@ -1203,7 +1206,7 @@ static uint32_t c(char * err, char ch)
 
 
 extern void aprstext_degtopos(char s[], uint32_t s_len,
-                struct aprspos_POSITION * pos)
+                struct aprsstr_POSITION * pos)
 /* DDMM.MMNDDDMM.MME */
 {
    char err;
@@ -1225,7 +1228,7 @@ extern void aprstext_degtopos(char s[], uint32_t s_len,
    if (X2C_CAP(s[17UL])=='W') pos->long0 = -pos->long0;
    else if (X2C_CAP(s[17UL])!='E') err = 1;
    if (((uint8_t)s[2UL]>='6' || (uint8_t)s[12UL]>='6') || err) {
-      aprsdecode_posinval(pos);
+      aprsstr_posinval(pos);
    }
    X2C_PFREE(s);
 } /* end degtopos() */
@@ -1250,7 +1253,7 @@ static char c0(uint32_t * d, uint32_t * i, char s[],
 
 
 extern void aprstext_deghtopos(char s[], uint32_t s_len,
-                struct aprspos_POSITION * pos)
+                struct aprsstr_POSITION * pos)
 /* DDMM.MMMNDDDMM.MMME */
 {
    char e;
@@ -1282,7 +1285,7 @@ extern void aprstext_deghtopos(char s[], uint32_t s_len,
    if (s[i]=='W') pos->long0 = -pos->long0;
    else if (s[i]!='E') err = 1;
    if (((uint8_t)s[2UL]>='6' || (uint8_t)s[13UL]>='6') || err) {
-      aprsdecode_posinval(pos);
+      aprsstr_posinval(pos);
    }
    X2C_PFREE(s);
 } /* end deghtopos() */
@@ -1300,7 +1303,7 @@ static void cleanposstr(char s[], uint32_t s_len)
 
 
 extern void aprstext_degdeztopos(char s[], uint32_t s_len,
-                struct aprspos_POSITION * pos)
+                struct aprsstr_POSITION * pos)
 /* lat long in float deg */
 {
    float d;
@@ -1317,14 +1320,14 @@ extern void aprstext_degdeztopos(char s[], uint32_t s_len,
                 fabs(pos->lat)<=1.484f) goto label;
       }
    }
-   aprsdecode_posinval(pos);
+   aprsstr_posinval(pos);
    label:;
    X2C_PFREE(s);
 } /* end degdeztopos() */
 
 
 extern void aprstext_deganytopos(char s[], uint32_t s_len,
-                struct aprspos_POSITION * pos)
+                struct aprsstr_POSITION * pos)
 /* lat long any format in float deg */
 {
    X2C_PCOPY((void **)&s,s_len);
@@ -1335,7 +1338,7 @@ extern void aprstext_deganytopos(char s[], uint32_t s_len,
 } /* end deganytopos() */
 
 
-extern char aprstext_getmypos(struct aprspos_POSITION * pos)
+extern char aprstext_getmypos(struct aprsstr_POSITION * pos)
 {
    char s[51];
    useri_confstr(useri_fMYPOS, s, 51ul);
@@ -1474,7 +1477,7 @@ static void speeddir2str(int32_t knots, int32_t dir, char areaobj,
 } /* end speeddir2str() */
 
 
-extern void aprstext_compressdata(struct aprspos_POSITION pos,
+extern void aprstext_compressdata(struct aprsstr_POSITION pos,
                 uint32_t knots, uint32_t dir, int32_t feet,
                 char sym[], uint32_t sym_len, char s[],
                 uint32_t s_len)
@@ -1565,7 +1568,7 @@ static void deg2str(int32_t lat, int32_t long0, char s[],
 } /* end deg2str() */
 
 
-static void getbeaconpos(struct aprspos_POSITION * pos, char * err)
+static void getbeaconpos(struct aprsstr_POSITION * pos, char * err)
 {
    int32_t fd;
    int32_t len;
@@ -1603,7 +1606,7 @@ static void getbeaconpos(struct aprspos_POSITION * pos, char * err)
    else {
       useri_say("\012beacon: no object/item position\012", 34ul, 4UL, 'e');
       *err = 1;
-      aprsdecode_posinval(pos);
+      aprsstr_posinval(pos);
    }
 } /* end getbeaconpos() */
 
@@ -1635,7 +1638,7 @@ extern void aprstext_encbeacon(char s[], uint32_t s_len,
    char err;
    char dao;
    char bkn;
-   struct aprspos_POSITION pos;
+   struct aprsstr_POSITION pos;
    int32_t i;
    int32_t longd;
    int32_t latd;
@@ -1847,9 +1850,10 @@ extern void aprstext_BEGIN(void)
    aprstext_init = 1;
    useri_BEGIN();
    osi_BEGIN();
+   aprspos_BEGIN();
+   libsrtm_BEGIN();
    maptool_BEGIN();
    aprsdecode_BEGIN();
    aprsstr_BEGIN();
-   aprspos_BEGIN();
 }
 

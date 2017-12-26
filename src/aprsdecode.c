@@ -13,8 +13,8 @@
 #include "aprsdecode.h"
 #endif
 #define aprsdecode_C_
-#ifndef aprspos_H_
-#include "aprspos.h"
+#ifndef aprsstr_H_
+#include "aprsstr.h"
 #endif
 #ifndef xosi_H_
 #include "xosi.h"
@@ -29,8 +29,8 @@
 #ifndef udp_H_
 #include "udp.h"
 #endif
-#ifndef aprsstr_H_
-#include "aprsstr.h"
+#ifndef aprspos_H_
+#include "aprspos.h"
 #endif
 #ifndef useri_H_
 #include "useri.h"
@@ -91,7 +91,7 @@ char aprsdecode_verb;
 
 
 struct aprsdecode__D0 aprsdecode_click;
-struct aprspos_POSITION aprsdecode_mappos;
+struct aprsstr_POSITION aprsdecode_mappos;
 int32_t aprsdecode_inittilex;
 int32_t aprsdecode_inittiley;
 int32_t aprsdecode_initxsize;
@@ -272,13 +272,6 @@ static float sqr(float x)
 {
    return x*x;
 } /* end sqr() */
-
-
-extern void aprsdecode_posinval(struct aprspos_POSITION * pos)
-{
-   pos->long0 = 0.0f;
-   pos->lat = 0.0f;
-} /* end posinval() */
 
 
 static char Watchclock(uint32_t * t, uint32_t intervall)
@@ -1501,7 +1494,7 @@ static void beaconmacros(char s[], uint32_t s_len,
    char ok0;
    char rwc;
    char rw;
-   struct aprspos_POSITION pos;
+   struct aprsstr_POSITION pos;
    X2C_PCOPY((void **)&wdata,wdata_len);
    i = 0UL;
    ns[0U] = 0;
@@ -1588,7 +1581,7 @@ static void beaconmacros(char s[], uint32_t s_len,
                aprsstr_Append(ns, 256ul, "\\\\", 3ul);
             }
             else if (s[i]=='v') {
-               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.70", 17ul);
+               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.71", 17ul);
             }
             else if (s[i]=='l') {
                if (aprstext_getmypos(&pos)) {
@@ -1623,7 +1616,7 @@ static void beaconmacros(char s[], uint32_t s_len,
 static void BuildNetBeacon(char h[], uint32_t h_len)
 /* "!ddmm.mmNsdddmm.mms....." */
 {
-   struct aprspos_POSITION mypos;
+   struct aprsstr_POSITION mypos;
    char h3[301];
    char h2[301];
    char h1[301];
@@ -2253,7 +2246,7 @@ static uint32_t corrtime(uint32_t syst, uint32_t mt, uint32_t span)
 /* 1/100000 deg = 1.1111m*/
 
 
-static void GetHRT(struct aprspos_POSITION * pos, int32_t * altitude,
+static void GetHRT(struct aprsstr_POSITION * pos, int32_t * altitude,
                 uint32_t * speed, const char buf[], uint32_t buf_len,
                  struct aprsdecode_HRTPOS hrtposes[],
                 uint32_t hrtposes_len, uint32_t * hrtlen,
@@ -2268,8 +2261,8 @@ static void GetHRT(struct aprspos_POSITION * pos, int32_t * altitude,
    float r;
    float unit;
    uint32_t ts;
-   struct aprspos_POSITION posh;
-   struct aprspos_POSITION dao;
+   struct aprsstr_POSITION posh;
+   struct aprsstr_POSITION dao;
    char newcompos;
    struct aprsdecode_HRTPOS * anonym;
    uint32_t tmp;
@@ -2661,16 +2654,16 @@ static void app(char buf[], uint32_t buf_len, float d)
 
 
 static void EncMultiline(char buf[], uint32_t buf_len,
-                struct aprspos_POSITION * center,
+                struct aprsstr_POSITION * center,
                 struct aprsdecode_MULTILINE md)
 {
    uint32_t i;
    uint32_t scaler;
    float scale;
-   struct aprspos_POSITION max0;
-   struct aprspos_POSITION min0;
+   struct aprsstr_POSITION max0;
+   struct aprsstr_POSITION min0;
    /* find size */
-   struct aprspos_POSITION * anonym;
+   struct aprsstr_POSITION * anonym;
    char tmp;
    min0.lat = 6.283185307f;
    min0.long0 = 6.283185307f;
@@ -2679,7 +2672,7 @@ static void EncMultiline(char buf[], uint32_t buf_len,
    i = 0UL;
    while (i<md.size) {
       { /* with */
-         struct aprspos_POSITION * anonym = &md.vec[i];
+         struct aprsstr_POSITION * anonym = &md.vec[i];
          if (anonym->lat<min0.lat) min0.lat = anonym->lat;
          if (anonym->lat>max0.lat) max0.lat = anonym->lat;
          if (anonym->long0<min0.long0) min0.long0 = anonym->long0;
@@ -2737,20 +2730,20 @@ static void EncMultiline(char buf[], uint32_t buf_len,
 } /* end EncMultiline() */
 
 
-extern void aprsdecode_appendmultiline(struct aprspos_POSITION pos)
+extern void aprsdecode_appendmultiline(struct aprsstr_POSITION pos)
 {
    char h[251];
    char cso[251];
    char cs[251];
    struct aprsdecode_MULTILINE ml;
-   struct aprspos_POSITION center;
+   struct aprsstr_POSITION center;
    uint32_t i;
    char msgc;
    /* make absolute */
-   struct aprspos_POSITION * anonym;
+   struct aprsstr_POSITION * anonym;
    useri_confstr(useri_fRBPOS, cs, 251ul);
    if (cs[0U]) aprstext_deganytopos(cs, 251ul, &center);
-   else aprsdecode_posinval(&center);
+   else aprsstr_posinval(&center);
    useri_confstr(useri_fRBCOMMENT, cso, 251ul);
    aprsdecode_GetMultiline(cso, 251ul, &i, &ml);
    if (i<=250UL) cso[i] = 0;
@@ -2759,7 +2752,7 @@ extern void aprsdecode_appendmultiline(struct aprspos_POSITION pos)
    i = 0UL;
    while (i<ml.size) {
       { /* with */
-         struct aprspos_POSITION * anonym = &ml.vec[i];
+         struct aprsstr_POSITION * anonym = &ml.vec[i];
          anonym->lat = anonym->lat+center.lat;
          anonym->long0 = anonym->long0+center.long0;
       }
@@ -2814,14 +2807,14 @@ extern void aprsdecode_appendmultiline(struct aprspos_POSITION pos)
 
 extern void aprsdecode_modmultiline(uint32_t n)
 {
-   struct aprspos_POSITION pos;
+   struct aprsstr_POSITION pos;
    struct aprsdecode_MULTILINE ml;
    uint32_t i;
    char s[251];
    uint32_t v;
    if (n==1UL) {
       /* del line */
-      aprsdecode_posinval(&pos);
+      aprsstr_posinval(&pos);
       aprsdecode_appendmultiline(pos);
    }
    else {
@@ -3395,7 +3388,7 @@ static void popupmessage(const char from[], uint32_t from_len,
                  uint32_t txt_len, const char ack[],
                 uint32_t ack_len, uint32_t time0, char port,
                 char isquery0, char kill,
-                struct aprspos_POSITION pos, const char item[],
+                struct aprsstr_POSITION pos, const char item[],
                 uint32_t item_len)
 {
    aprsdecode_pMSGFIFO pl;
@@ -3615,14 +3608,14 @@ ort)", 44ul);
 
 static void iteminmsg(const char from[], uint32_t from_len,
                 const char to[], uint32_t to_len, const char txt[],
-                 uint32_t txt_len, struct aprspos_POSITION * pos,
+                 uint32_t txt_len, struct aprsstr_POSITION * pos,
                 char name[], uint32_t name_len, char * del)
 /* test for and draw item in a message */
 {
    char h[1000];
    char s[1000];
    struct aprsdecode_DAT dat;
-   aprsdecode_posinval(pos);
+   aprsstr_posinval(pos);
    aprsstr_Assign(s, 1000ul, from, from_len);
    aprsstr_Append(s, 1000ul, ">", 2ul);
    aprsstr_Append(s, 1000ul, to, to_len);
@@ -3695,7 +3688,7 @@ static void showmsg(const char from[], uint32_t from_len,
    aprsdecode_ACKTEXT rep;
    aprsdecode_MONCALL call;
    struct aprsdecode_DAT dat;
-   struct aprspos_POSITION itempos;
+   struct aprsstr_POSITION itempos;
    aprsdecode_MONCALL itemname;
    char delitem;
    char s[501];
@@ -4179,7 +4172,7 @@ extern void aprsdecode_objsender(aprsdecode_pOPHIST op, char s[],
 
 
 static void timespeed(aprsdecode_pFRAMEHIST lastf,
-                struct aprspos_POSITION pos1, uint32_t time1,
+                struct aprsstr_POSITION pos1, uint32_t time1,
                 uint8_t * err)
 {
    float d;
@@ -4329,7 +4322,7 @@ static void inwindow(aprsdecode_pOPHIST op, const char rawbuf[],
    aprsdecode_FILENAME fn;
    aprsdecode_pVARDAT pv;
    uint8_t doset;
-   struct aprspos_POSITION * anonym;
+   struct aprsstr_POSITION * anonym;
    in = 0;
    aprsdecode_tracenew.call[0UL] = 0;
    doset = 0U;
@@ -4341,7 +4334,7 @@ static void inwindow(aprsdecode_pOPHIST op, const char rawbuf[],
          pv = pf->vardat;
          if (aprspos_posvalid(pv->pos)) {
             { /* with */
-               struct aprspos_POSITION * anonym = &pv->pos;
+               struct aprsstr_POSITION * anonym = &pv->pos;
                if (((anonym->long0>aprsdecode_tracenew.winpos0.long0 && anonym->lat<aprsdecode_tracenew.winpos0.lat)
                  && anonym->long0<aprsdecode_tracenew.winpos1.long0)
                 && anonym->lat>aprsdecode_tracenew.winpos1.lat) in = 1;
@@ -4414,7 +4407,7 @@ extern uint32_t aprsdecode_finddup(aprsdecode_pFRAMEHIST pf,
                 aprsdecode_pFRAMEHIST frame)
 /* return delay time if dupe found */
 {
-   struct aprspos_POSITION apos;
+   struct aprsstr_POSITION apos;
    uint32_t ret;
    uint32_t dupedelay;
    uint32_t speed;
@@ -4566,9 +4559,9 @@ extern void aprsdecode_Checktrack(aprsdecode_pOPHIST op,
 {
    aprsdecode_pFRAMEHIST f;
    aprsdecode_pFRAMEHIST frame;
-   struct aprspos_POSITION last2;
-   struct aprspos_POSITION last;
-   struct aprspos_POSITION apos;
+   struct aprsstr_POSITION last2;
+   struct aprsstr_POSITION last;
+   struct aprsstr_POSITION apos;
    uint32_t starttime;
    char cmp;
    uint32_t wridx;
@@ -4601,8 +4594,8 @@ extern void aprsdecode_Checktrack(aprsdecode_pOPHIST op,
    wridx = 0UL;
    lastf = 0;
    cmp = 0;
-   aprsdecode_posinval(&last);
-   aprsdecode_posinval(&last2);
+   aprsstr_posinval(&last);
+   aprsstr_posinval(&last2);
    while (f) {
       if (f==frame) cmp = 1;
       apos = f->vardat->pos;
@@ -5724,7 +5717,7 @@ static char tcpconn(aprsdecode_pTCPSOCK * sockchain, int32_t f)
          aprsstr_Append(h, 512ul, s, 100ul);
       }
       aprsstr_Append(h, 512ul, " vers ", 7ul);
-      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.70", 17ul);
+      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.71", 17ul);
       appfilter(h, 512ul, 0);
       /*    IF filter[0]<>0C THEN Append(h, " filter ");
                 Append(h, filter) END; */
@@ -6122,7 +6115,7 @@ static void beepprox(float d, float km)
 /* last s look if nearest pos is last */
 
 
-static void approxywarn(struct aprspos_POSITION pos, const char call[],
+static void approxywarn(struct aprsstr_POSITION pos, const char call[],
                 uint32_t call_len)
 {
    char s[31];
@@ -6131,7 +6124,7 @@ static void approxywarn(struct aprspos_POSITION pos, const char call[],
    float mino;
    float mind;
    float km;
-   struct aprspos_POSITION mypos;
+   struct aprsstr_POSITION mypos;
    aprsdecode_pOPHIST op;
    aprsdecode_pFRAMEHIST pf;
    int32_t fd;
@@ -6285,7 +6278,7 @@ static void digi(const aprsdecode_FRAMEBUF b, char fromrf,
    /*    hashl, hashh:SET8; */
    uint32_t dt;
    char norout;
-   struct aprspos_POSITION mypos;
+   struct aprsstr_POSITION mypos;
    char s2[31];
    char s1[31];
    char mycall[31];
@@ -6878,7 +6871,7 @@ extern void aprsdecode_initparms(void)
    aprsdecode_initysize = 0L;
    aprsdecode_initzoom = 0L;
    aprsdecode_finezoom = 1.0f;
-   aprsdecode_posinval(&aprsdecode_mappos);
+   aprsstr_posinval(&aprsdecode_mappos);
    aprsdecode_spikesens = 2.0f;
    aprsdecode_maxhop = 100.0f;
    maxspeed = 1000.0f;

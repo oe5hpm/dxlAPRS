@@ -19,8 +19,8 @@
 #ifndef maptool_H_
 #include "maptool.h"
 #endif
-#ifndef aprspos_H_
-#include "aprspos.h"
+#ifndef aprsstr_H_
+#include "aprsstr.h"
 #endif
 #ifndef aprsdecode_H_
 #include "aprsdecode.h"
@@ -32,15 +32,19 @@
 #include "osi.h"
 #endif
 #include <osic.h>
-#ifndef aprsstr_H_
-#include "aprsstr.h"
+#ifndef aprspos_H_
+#include "aprspos.h"
 #endif
 #ifndef aprstext_H_
 #include "aprstext.h"
 #endif
+#ifndef libsrtm_H_
+#include "libsrtm.h"
+#endif
 #include <signal.h>
 
 /* aprs tracks on osm map by oe5dxl */
+/*closesrtmfile, */
 #define aprsmap_MINLIG 60
 
 #define aprsmap_MAXZOOMOBJ 14
@@ -78,7 +82,7 @@ struct VIEW;
 
 
 struct VIEW {
-   struct aprspos_POSITION pos;
+   struct aprsstr_POSITION pos;
    float zoom;
    aprsdecode_MONCALL mhop;
    struct aprsdecode_SYMBOL onesymbol;
@@ -129,9 +133,9 @@ static uint32_t maptrys;
 
 static uint32_t uptime;
 
-static struct aprspos_POSITION newpos0;
+static struct aprsstr_POSITION newpos0;
 
-static struct aprspos_POSITION newpos1;
+static struct aprsstr_POSITION newpos1;
 
 static int32_t videofd;
 
@@ -157,9 +161,9 @@ struct _0;
 struct _0 {
    char wasaltimap;
    char wasradio;
-   struct aprspos_POSITION markpos;
-   struct aprspos_POSITION measurepos;
-   struct aprspos_POSITION mappos;
+   struct aprsstr_POSITION markpos;
+   struct aprsstr_POSITION measurepos;
+   struct aprsstr_POSITION mappos;
    int32_t initzoom;
    float finezoom;
    int32_t ant1;
@@ -174,7 +178,7 @@ struct _0 {
 
 static struct _0 radio;
 
-static struct aprspos_POSITION clickwatchpos;
+static struct aprsstr_POSITION clickwatchpos;
 
 
 static void Error(char text0[], uint32_t text_len)
@@ -218,7 +222,7 @@ static void makegammatab(void)
 static void tooltips(char typ)
 {
    char s[21];
-   struct aprspos_POSITION pos;
+   struct aprsstr_POSITION pos;
    if (typ==' ') {
       if (aprsdecode_initzoom<=1L && uptime+2UL==aprsdecode_realtime) {
          useri_starthint(10005UL, 1);
@@ -744,7 +748,7 @@ static uint32_t findfreecol(aprsdecode_pOPHIST opn)
    uint32_t i;
    uint32_t cs;
    aprsdecode_pOPHIST op;
-   struct aprspos_POSITION pos;
+   struct aprsstr_POSITION pos;
    c = (uint32_t)(uint8_t)opn->trackcol;
    if (c<48UL) {
       pos = opn->lastpos;
@@ -849,7 +853,7 @@ static void tracks(maptool_pIMAGE img, aprsdecode_pOPHIST op,
    uint32_t thick;
    uint32_t ligw;
    uint32_t lig;
-   struct aprspos_POSITION oldpos;
+   struct aprsstr_POSITION oldpos;
    struct aprsdecode_COLTYP col;
    signed char coln;
    char otrk;
@@ -872,7 +876,7 @@ static void tracks(maptool_pIMAGE img, aprsdecode_pOPHIST op,
          maptool_Colset(&col, (char)coln);
          aprsdecode_click.pf0 = 0;
          aprsdecode_click.pf = aprsdecode_click.ops->frames;
-         aprsdecode_posinval(&oldpos);
+         aprsstr_posinval(&oldpos);
          while (aprsdecode_click.pf && aprsdecode_click.pf->time0<=tilltime) {
             { /* with */
                struct aprsdecode_VARDAT * anonym = aprsdecode_click.pf->vardat;
@@ -919,7 +923,7 @@ static void tracks(maptool_pIMAGE img, aprsdecode_pOPHIST op,
 } /* end tracks() */
 
 
-static void stormcicle(maptool_pIMAGE image0, struct aprspos_POSITION center,
+static void stormcicle(maptool_pIMAGE image0, struct aprsstr_POSITION center,
                  float hurr, float storm, float whole,
                 uint32_t lig)
 {
@@ -1994,7 +1998,7 @@ static void markvisable(const aprsdecode_MONCALL singlecall)
 {
    aprsdecode_pOPHIST singleop;
    aprsdecode_pOPHIST op;
-   struct aprspos_POSITION rightdown;
+   struct aprsstr_POSITION rightdown;
    struct aprsdecode_OPHIST * anonym;
    singleop = aprstext_oppo(singlecall);
    maptool_xytodeg((float)maptool_xsize, 0.0f, &rightdown);
@@ -2085,8 +2089,8 @@ static aprsdecode_pOPHIST findop(const char call[], uint32_t call_len,
 } /* end findop() */
 
 
-static void reset(struct aprspos_POSITION * pos1,
-                struct aprspos_POSITION * pos0)
+static void reset(struct aprsstr_POSITION * pos1,
+                struct aprsstr_POSITION * pos0)
 {
    pos0->lat = (-10.0f);
    pos0->long0 = 10.0f;
@@ -2095,8 +2099,8 @@ static void reset(struct aprspos_POSITION * pos1,
 } /* end reset() */
 
 
-static void max0(struct aprspos_POSITION * pos1,
-                struct aprspos_POSITION * pos0, struct aprspos_POSITION p)
+static void max0(struct aprsstr_POSITION * pos1,
+                struct aprsstr_POSITION * pos0, struct aprsstr_POSITION p)
 {
    if (aprspos_posvalid(p)) {
       if (pos0->lat<p.lat) pos0->lat = p.lat;
@@ -2107,8 +2111,8 @@ static void max0(struct aprspos_POSITION * pos1,
 } /* end max() */
 
 
-static void findsize(struct aprspos_POSITION * pos0,
-                struct aprspos_POSITION * pos1,
+static void findsize(struct aprsstr_POSITION * pos0,
+                struct aprsstr_POSITION * pos1,
                 const aprsdecode_MONCALL opcall, char typ)
 {
    aprsdecode_pFRAMEHIST f;
@@ -2238,8 +2242,8 @@ static void findsize(struct aprspos_POSITION * pos0,
                 fabs(pos1->lat)>1.5707963267949f) || (float)
                 fabs(pos0->long0)>3.1415926535898f) || (float)
                 fabs(pos1->long0)>3.1415926535898f) {
-      aprsdecode_posinval(pos0);
-      aprsdecode_posinval(pos1);
+      aprsstr_posinval(pos0);
+      aprsstr_posinval(pos1);
    }
    maptool_limpos(pos0);
    maptool_limpos(pos1);
@@ -2255,8 +2259,8 @@ WrLn;
 
 static void pantoop(aprsdecode_pOPHIST op)
 {
-   struct aprspos_POSITION p;
-   struct aprspos_POSITION rightdown;
+   struct aprsstr_POSITION p;
+   struct aprsstr_POSITION rightdown;
    float cf;
    float m;
    if (op && aprspos_posvalid(op->lastpos)) {
@@ -2466,14 +2470,14 @@ static int32_t getant(uint8_t a)
 
 static void closeradio(void)
 {
-   if (aprsdecode_click.withradio) maptool_closesrtmfile();
+   if (aprsdecode_click.withradio) libsrtm_closesrtmfile();
    aprsdecode_click.withradio = 0;
    aprsdecode_click.panorama = 0;
 } /* end closeradio() */
 
 
-static void measureline(maptool_pIMAGE img, struct aprspos_POSITION pos0,
-                struct aprspos_POSITION pos1, int32_t pos0alt)
+static void measureline(maptool_pIMAGE img, struct aprsstr_POSITION pos0,
+                struct aprsstr_POSITION pos1, int32_t pos0alt)
 {
    float el2;
    float el1;
@@ -2611,7 +2615,7 @@ END panorama;
 #define aprsmap_ALTINVAL (-10000)
 
 
-static void radioimage(maptool_pIMAGE img, struct aprspos_POSITION pos,
+static void radioimage(maptool_pIMAGE img, struct aprsstr_POSITION pos,
                 uint32_t colnum, char * abo)
 {
    int32_t qual;
@@ -2697,7 +2701,7 @@ static void reliefcolors(maptool_pIMAGE img, char color)
 } /* end reliefcolors() */
 
 
-static void copypastepos(struct aprspos_POSITION pos)
+static void copypastepos(struct aprsstr_POSITION pos)
 /* in decimal deg */
 {
    char h[101];
@@ -2725,8 +2729,8 @@ END testlist;
 } /* end copypastepos() */
 
 
-static void centerpos(struct aprspos_POSITION centpos,
-                struct aprspos_POSITION * newpos)
+static void centerpos(struct aprsstr_POSITION centpos,
+                struct aprsstr_POSITION * newpos)
 {
    maptool_center(maptool_xsize, maptool_ysize,
                 maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom),
@@ -2738,18 +2742,18 @@ static void centerpos(struct aprspos_POSITION centpos,
 #define aprsmap_YMARGIN 0.025
 
 
-static void mapzoom(struct aprspos_POSITION pos0,
-                struct aprspos_POSITION pos1, uint32_t maxz,
+static void mapzoom(struct aprsstr_POSITION pos0,
+                struct aprsstr_POSITION pos1, uint32_t maxz,
                 char withmargin)
 {
    float wmax;
    float wy;
    float wx;
    float fo;
-   struct aprspos_POSITION testpos;
-   struct aprspos_POSITION pos2;
-   struct aprspos_POSITION mid;
-   struct aprspos_POSITION mo;
+   struct aprsstr_POSITION testpos;
+   struct aprsstr_POSITION pos2;
+   struct aprsstr_POSITION mid;
+   struct aprsstr_POSITION mo;
    char blown;
    char nofit;
    char done;
@@ -2829,8 +2833,8 @@ static void mapzoom(struct aprspos_POSITION pos0,
 } /* end mapzoom() */
 
 
-static void drawsquer(maptool_pIMAGE img, const struct aprspos_POSITION p0,
-                const struct aprspos_POSITION p1, int32_t r, int32_t g,
+static void drawsquer(maptool_pIMAGE img, const struct aprsstr_POSITION p0,
+                const struct aprsstr_POSITION p1, int32_t r, int32_t g,
                 int32_t b)
 {
    float y1;
@@ -2888,11 +2892,11 @@ static void drawzoomsquer(maptool_pIMAGE img)
 
 static char qth(char loc[], uint32_t loc_len)
 {
-   struct aprspos_POSITION pos1;
-   struct aprspos_POSITION pos;
+   struct aprsstr_POSITION pos1;
+   struct aprsstr_POSITION pos;
    char qth_ret;
    X2C_PCOPY((void **)&loc,loc_len);
-   maptool_loctopos(&pos, loc, loc_len);
+   aprsstr_loctopos(&pos, loc, loc_len);
    if (!aprspos_posvalid(pos)) {
       qth_ret = 0;
       goto label;
@@ -2943,7 +2947,7 @@ static char qth(char loc[], uint32_t loc_len)
 } /* end qth() */
 
 
-static void midscreenpos(struct aprspos_POSITION * pos)
+static void midscreenpos(struct aprsstr_POSITION * pos)
 {
    maptool_xytodeg((float)maptool_xsize*0.5f,
                 (float)maptool_ysize*0.5f, pos);
@@ -2955,7 +2959,7 @@ static void zoominout(char in, char fine,
 {
    float fz;
    float z;
-   struct aprspos_POSITION mid;
+   struct aprsstr_POSITION mid;
    int32_t maxz;
    z = maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom);
    midscreenpos(&mid);
@@ -3011,8 +3015,8 @@ static void find(void)
    aprsdecode_MONCALL hm;
    char err;
    aprsdecode_pOPHIST op;
-   struct aprspos_POSITION pos1;
-   struct aprspos_POSITION pos;
+   struct aprsstr_POSITION pos1;
+   struct aprsstr_POSITION pos;
    useri_confstr(useri_fFIND, h, 201ul);
    if (!qth(h, 201ul)) {
       /* not a locator */
@@ -3167,7 +3171,10 @@ static void internstat(void)
    aprsstr_IntToStr((int32_t)useri_debugmem.menus, 1UL, h, 31ul);
    aprsstr_Append(s, 10001ul, h, 31ul);
    aprsstr_Append(s, 10001ul, "\012Srtm Cache:  ", 15ul);
-   aprsstr_IntToStr((int32_t)useri_debugmem.srtm, 1UL, h, 31ul);
+   aprsstr_IntToStr((int32_t)libsrtm_srtmmem, 1UL, h, 31ul);
+   aprsstr_Append(s, 10001ul, h, 31ul);
+   aprsstr_Append(s, 10001ul, "\012POI Cache:   ", 15ul);
+   aprsstr_IntToStr((int32_t)useri_debugmem.poi, 1UL, h, 31ul);
    aprsstr_Append(s, 10001ul, h, 31ul);
    aprsdecode_tcpconnstat(s, 10001ul);
    for (i = 0UL; i<=3UL; i++) {
@@ -3190,8 +3197,8 @@ static void setshowall(void)
 static void View(uint32_t n)
 {
    float z;
-   struct aprspos_POSITION mid;
-   struct aprspos_POSITION pos;
+   struct aprsstr_POSITION mid;
+   struct aprsstr_POSITION pos;
    char h[101];
    char s[101];
    if (xosi_Shift) {
@@ -3207,7 +3214,7 @@ static void View(uint32_t n)
    }
    else {
       z = 0.0f;
-      aprsdecode_posinval(&pos);
+      aprsstr_posinval(&pos);
       useri_getview(useri_fVIEW, n, &z, &pos);
       push(maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom));
       if (z!=0.0f) {
@@ -3264,8 +3271,8 @@ static void follow(void)
 
 static void MapPackage(void)
 {
-   struct aprspos_POSITION rd;
-   struct aprspos_POSITION lu;
+   struct aprsstr_POSITION rd;
+   struct aprsstr_POSITION lu;
    char s1[1000];
    char s[1000];
    maptool_xytodeg(0.0f, (float)maptool_ysize, &lu);
@@ -3308,8 +3315,8 @@ ownload", 23ul, "\242", 2ul);
 } /* end MapPackage() */
 
 
-static void zoomtomarks(struct aprspos_POSITION mpos,
-                struct aprspos_POSITION clickpos)
+static void zoomtomarks(struct aprsstr_POSITION mpos,
+                struct aprsstr_POSITION clickpos)
 {
    float h;
    if (aprspos_posvalid(mpos)) {
@@ -3334,8 +3341,8 @@ static void zoomtomarks(struct aprspos_POSITION mpos,
 
 static void zoomtosquare(void)
 {
-   struct aprspos_POSITION p2;
-   struct aprspos_POSITION p1;
+   struct aprsstr_POSITION p2;
+   struct aprsstr_POSITION p1;
    if (aprsdecode_click.zoomtox>=0L && (labs(aprsdecode_click.x-aprsdecode_click.zoomtox)
                 >5L || labs(aprsdecode_click.y-aprsdecode_click.zoomtoy)>5L))
                  {
@@ -3531,8 +3538,8 @@ static void drawtime(maptool_pIMAGE img, uint32_t t, int32_t fast)
 static void nearwaypoint(void)
 {
    /* find nearest waypoint on click to track */
-   struct aprspos_POSITION oldpos;
-   struct aprspos_POSITION clickpos;
+   struct aprsstr_POSITION oldpos;
+   struct aprsstr_POSITION clickpos;
    aprsdecode_pFRAMEHIST pf;
    float d1;
    float d0;
@@ -3891,7 +3898,7 @@ static void altitudemap(void)
 
 static void xytomark(void)
 {
-   struct aprspos_POSITION pos;
+   struct aprsstr_POSITION pos;
    /*  xytodeg(VAL(REAL,click.x), VAL(REAL,click.y), pos); */
    maptool_xytodeg((float)useri_xmouse.x,
                 (float)((int32_t)useri_mainys()-useri_xmouse.y), &pos);
@@ -3903,7 +3910,7 @@ static void xytomark(void)
 
 static void xytomark2(void)
 {
-   struct aprspos_POSITION pos;
+   struct aprsstr_POSITION pos;
    maptool_xytodeg((float)useri_xmouse.x,
                 (float)((int32_t)useri_mainys()-useri_xmouse.y), &pos);
    if (aprspos_posvalid(pos)) {
@@ -3915,12 +3922,12 @@ static void xytomark2(void)
 
 static void centermouse(char shortcut)
 {
-   struct aprspos_POSITION pos;
+   struct aprsstr_POSITION pos;
    float y1;
    float y00;
    float x1;
    float x0;
-   aprsdecode_posinval(&pos);
+   aprsstr_posinval(&pos);
    if (shortcut) {
       maptool_xytodeg((float)useri_xmouse.x,
                 (float)((int32_t)useri_mainys()-useri_xmouse.y), &pos);
@@ -4026,7 +4033,7 @@ static void animate(const aprsdecode_MONCALL singlecall, uint32_t step,
    char blown;
    char mapok;
    char dir;
-   struct aprspos_POSITION ipos;
+   struct aprsstr_POSITION ipos;
    float iitime;
    float itime;
    float bytew;
@@ -4038,10 +4045,10 @@ static void animate(const aprsdecode_MONCALL singlecall, uint32_t step,
    struct aprsdecode_CLICKOBJECT hoverobj;
    struct aprsdecode_OPHIST * anonym;
    struct aprsdecode_VARDAT * anonym0;
-   struct aprspos_POSITION * anonym1;
+   struct aprsstr_POSITION * anonym1;
    /* interpolate areasymbol form */
-   struct aprspos_POSITION * anonym2;
-   struct aprspos_POSITION * anonym3;
+   struct aprsstr_POSITION * anonym2;
+   struct aprsstr_POSITION * anonym3;
    aprsdecode_MONCALL tmp;
    X2C_PCOPY((void **)&tofile,tofile_len);
    closeradio();
@@ -4210,7 +4217,7 @@ static void animate(const aprsdecode_MONCALL singlecall, uint32_t step,
                            ii = 0UL;
                            while (ii<dat.multiline.size) {
                               { /* with */
-                                 struct aprspos_POSITION * anonym1 = &dat.multiline.vec[ii]
+                                 struct aprsstr_POSITION * anonym1 = &dat.multiline.vec[ii]
                 ;
                                  anonym1->lat = anonym1->lat*iitime+dat1.multiline.vec[ii]
                 .lat*itime;
@@ -4229,7 +4236,7 @@ static void animate(const aprsdecode_MONCALL singlecall, uint32_t step,
                         if (itime>0.0f && aprsdecode_Decode(pf1->vardat->raw,
                  500ul, &dat1)>=0L) {
                            { /* with */
-                              struct aprspos_POSITION * anonym2 = &dat.areasymb.dpos;
+                              struct aprsstr_POSITION * anonym2 = &dat.areasymb.dpos;
                 
                               anonym2->lat = anonym2->lat*iitime+dat1.areasymb.dpos.lat*itime;
                               anonym2->long0 = anonym2->long0*iitime+dat1.areasymb.dpos.long0*itime;
@@ -4247,7 +4254,7 @@ static void animate(const aprsdecode_MONCALL singlecall, uint32_t step,
                  500ul, &dat1)>=0L) {
                               /* interpolate storm areas */
                               { /* with */
-                                 struct aprspos_POSITION * anonym3 = &dat.areasymb.dpos;
+                                 struct aprsstr_POSITION * anonym3 = &dat.areasymb.dpos;
                 
                                  anonym3->lat = anonym3->lat*iitime+dat1.areasymb.dpos.lat*itime;
                                  anonym3->long0 = anonym3->long0*iitime+dat1.areasymb.dpos.long0*itime;
@@ -4392,7 +4399,7 @@ static void animate(const aprsdecode_MONCALL singlecall, uint32_t step,
 static void makeimage(char dryrun)
 {
    char mapok;
-   struct aprspos_POSITION mpos;
+   struct aprsstr_POSITION mpos;
    struct aprsdecode_CLICKOBJECT hoverobj;
    hoverobj.opf = 0;
    markvisable(aprsdecode_click.mhop);
@@ -4990,11 +4997,11 @@ static void MainEvent(void)
       }
       else if (aprsdecode_click.cmd=='\307') zoomtosquare();
       else if (aprsdecode_click.cmd==':') {
-         aprsdecode_posinval(&aprsdecode_click.markpos);
-         aprsdecode_posinval(&aprsdecode_click.measurepos);
+         aprsstr_posinval(&aprsdecode_click.markpos);
+         aprsstr_posinval(&aprsdecode_click.measurepos);
          aprsdecode_click.waysum = 0.0f;
-         aprsdecode_posinval(&aprsdecode_click.squerpos0);
-         aprsdecode_posinval(&aprsdecode_click.squerspos0);
+         aprsstr_posinval(&aprsdecode_click.squerpos0);
+         aprsstr_posinval(&aprsdecode_click.squerspos0);
          useri_killallmenus();
          useri_sayonoff("Markers", 8ul, 0);
       }
@@ -5066,7 +5073,7 @@ map.y4m", 8ul);
       if (aprsdecode_click.watchlast) useri_refrinfo();
       if (!(aprsdecode_click.withradio || aprspos_posvalid(aprsdecode_click.markpos)
                  && aprspos_posvalid(aprsdecode_click.measurepos))) {
-         maptool_closesrtmfile();
+         libsrtm_closesrtmfile();
       }
       makeimage(0);
    }
@@ -5087,7 +5094,7 @@ map.y4m", 8ul);
       useri_newxsize = 0UL;
       useri_newysize = 0UL;
       radio.wasradio = 0;
-      aprsdecode_posinval(&radio.mappos);
+      aprsstr_posinval(&radio.mappos);
       makeimage(0);
    }
    else if ((aprsdecode_lasttcprx+60UL>aprsdecode_realtime || aprsdecode_lastanyudprx+60UL>aprsdecode_realtime)
@@ -5248,6 +5255,7 @@ X2C_STACK_LIMIT(100000l)
 extern int main(int argc, char **argv)
 {
    X2C_BEGIN(&argc,argv,1,4000000l,1000000000l);
+   libsrtm_BEGIN();
    aprstext_BEGIN();
    aprsstr_BEGIN();
    aprspos_BEGIN();
@@ -5259,7 +5267,7 @@ extern int main(int argc, char **argv)
    memset((char *) &useri_debugmem,(char)0,sizeof(struct useri__D0));
    useri_clrconfig();
    aprsdecode_initparms();
-   aprsdecode_posinval(&aprsdecode_click.markpos);
+   aprsstr_posinval(&aprsdecode_click.markpos);
    aprsdecode_mountains = 0;
    useri_loadconfig(0);
    maptool_loadfont();
@@ -5280,7 +5288,7 @@ extern int main(int argc, char **argv)
    rfimg = 0;
    useri_allocimage(&image, maptool_xsize, maptool_ysize, 0);
    useri_allocimage(&rfimg, maptool_xsize, maptool_ysize, 0);
-   aprsdecode_posinval(&clickwatchpos);
+   aprsstr_posinval(&clickwatchpos);
    tabview.stkpo = 0UL;
    tabview.stktop = 0UL;
    alttabview.stkpo = 0UL;
@@ -5293,9 +5301,9 @@ extern int main(int argc, char **argv)
    aprsdecode_click.mhop[0UL] = 0;
    aprsdecode_click.onesymbol.tab = 0;
    aprsdecode_click.zoomtox = -1L;
-   aprsdecode_posinval(&aprsdecode_click.squerpos0);
-   aprsdecode_posinval(&aprsdecode_click.squerspos0);
-   aprsdecode_posinval(&aprsdecode_click.measurepos);
+   aprsstr_posinval(&aprsdecode_click.squerpos0);
+   aprsstr_posinval(&aprsdecode_click.squerspos0);
+   aprsstr_posinval(&aprsdecode_click.measurepos);
    memset((char *) &aprsdecode_tracenew,(char)0,
                 sizeof(struct aprsdecode__D2));
    pandone = 1;
@@ -5316,8 +5324,8 @@ extern int main(int argc, char **argv)
    useri_initmenus();
    aprsdecode_quit = 0;
    aprsdecode_tracenew.winevent = 1UL;
-   aprsdecode_posinval(&newpos0);
-   aprsdecode_posinval(&newpos1);
+   aprsstr_posinval(&newpos0);
+   aprsstr_posinval(&newpos1);
    signal(SIGTERM, killsave);
    signal(SIGINT, killsave);
    signal(SIGPIPE, killsave);

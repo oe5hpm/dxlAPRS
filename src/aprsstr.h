@@ -24,6 +24,14 @@ typedef uint8_t aprsstr_SET8;
 
 typedef uint32_t aprsstr_GHOSTSET[9];
 
+struct aprsstr_POSITION;
+
+
+struct aprsstr_POSITION {
+   float long0;
+   float lat;
+};
+
 #define aprsstr_CALLLEN 7
 
 #define aprsstr_HBIT 128
@@ -95,6 +103,14 @@ extern void aprsstr_cleanfilename(char [], uint32_t);
 extern void aprsstr_Caps(char [], uint32_t);
 
 extern void aprsstr_rightbound(char [], uint32_t, uint32_t);
+
+extern void aprsstr_loctopos(struct aprsstr_POSITION *, char [],
+                uint32_t);
+
+extern void aprsstr_postoloc(char [], uint32_t,
+                struct aprsstr_POSITION);
+
+extern void aprsstr_posinval(struct aprsstr_POSITION *);
 
 
 extern void aprsstr_BEGIN(void);

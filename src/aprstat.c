@@ -19,15 +19,18 @@
 #ifndef aprsdecode_H_
 #include "aprsdecode.h"
 #endif
-#ifndef aprspos_H_
-#include "aprspos.h"
+#ifndef aprsstr_H_
+#include "aprsstr.h"
 #endif
 #ifndef osi_H_
 #include "osi.h"
 #endif
 #include <osic.h>
-#ifndef aprsstr_H_
-#include "aprsstr.h"
+#ifndef libsrtm_H_
+#include "libsrtm.h"
+#endif
+#ifndef aprspos_H_
+#include "aprspos.h"
 #endif
 #ifndef useri_H_
 #include "useri.h"
@@ -419,7 +422,7 @@ extern void aprstat_kmhist(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
    float maxy;
    char h[256];
    char s[256];
-   struct aprspos_POSITION po;
+   struct aprsstr_POSITION po;
    float vt[12720];
    char marks[1584];
    uint32_t tops[5];
@@ -767,7 +770,7 @@ static void decodealt(uint32_t * beacons, float * resol, float wdiv,
                 uint32_t * markx1, uint32_t * markx, char do0)
 {
    aprsdecode_pFRAMEHIST fr;
-   struct aprspos_POSITION opos;
+   struct aprsstr_POSITION opos;
    float ognd;
    float a3;
    float a2;
@@ -779,7 +782,7 @@ static void decodealt(uint32_t * beacons, float * resol, float wdiv,
    *markx1 = 0UL;
    *markalt = X2C_min_longint;
    fr = op->frames;
-   aprsdecode_posinval(&opos);
+   aprsstr_posinval(&opos);
    *waysum = 0.0f;
    xc = 1UL;
    a = (-1.E+4f);
@@ -837,7 +840,7 @@ static void decodealt(uint32_t * beacons, float * resol, float wdiv,
                         *markalt = dat->altitude;
                      }
                      ground[x] = ognd; /* delay same as gps filter */
-                     ognd = maptool_getsrtm(dat->pos, 0UL, resol);
+                     ognd = libsrtm_getsrtm(dat->pos, 0UL, resol);
                      if (ognd>=20000.0f) ognd = (-1.E+4f);
                   }
                   if (!*end) a3 = a2;
@@ -1506,6 +1509,7 @@ extern void aprstat_BEGIN(void)
    aprstext_BEGIN();
    useri_BEGIN();
    aprspos_BEGIN();
+   libsrtm_BEGIN();
    osi_BEGIN();
    aprsdecode_BEGIN();
    aprsstr_BEGIN();

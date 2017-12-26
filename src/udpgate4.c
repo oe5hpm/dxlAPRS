@@ -92,7 +92,7 @@ struct POSCALL;
 struct POSCALL {
    MONCALL call;
    char typ0;
-   struct aprspos_POSITION pos;
+   struct aprsstr_POSITION pos;
 };
 
 struct FILTERS;
@@ -100,8 +100,8 @@ struct FILTERS;
 
 struct FILTERS {
    char typ0;
-   struct aprspos_POSITION base;
-   struct aprspos_POSITION edge;
+   struct aprsstr_POSITION base;
+   struct aprsstr_POSITION edge;
    float radius;
    MONCALL viacalls[8];
    char notvia;
@@ -296,7 +296,7 @@ struct HEARD {
    uint32_t time0;
    MONCALL call;
    uint32_t cntt;
-   struct aprspos_POSITION position;
+   struct aprsstr_POSITION position;
    char sym;
    char symt;
    uint16_t cnt[49];
@@ -404,7 +404,7 @@ static MONCALL showid;
 
 static MONCALL servercall;
 
-static struct aprspos_POSITION home; /* own position */
+static struct aprsstr_POSITION home; /* own position */
 
 static char passwd[6];
 
@@ -1727,7 +1727,7 @@ static void writerawlog(const FRAMEBUF b)
 
 static void showframe(int32_t r, pTCPSOCK sp, pUDPSOCK su,
                 const char buf[], uint32_t buf_len,
-                struct aprspos_POSITION pos)
+                struct aprsstr_POSITION pos)
 {
    char s[512];
    char h[512];
@@ -2920,12 +2920,12 @@ static void Wx(float * data, char * typ0, char b[],
 
 
 static void DirectPos(const char b[], uint32_t b_len,
-                struct aprspos_POSITION * pos, char * sym,
+                struct aprsstr_POSITION * pos, char * sym,
                 char * symt, char * typ0, float * data)
 {
    uint32_t m;
    uint32_t p;
-   struct aprspos_POSITION posn;
+   struct aprsstr_POSITION posn;
    char symt1;
    char sym1;
    char postyp;
@@ -3505,7 +3505,7 @@ static void Stomsg(MONCALL fromcall, MONCALL tocall, MSGTEXT msg,
 
 
 static void postoloc(char loc[], uint32_t loc_len,
-                struct aprspos_POSITION pos)
+                struct aprsstr_POSITION pos)
 {
    uint32_t bc;
    uint32_t lc;
@@ -5334,7 +5334,7 @@ static void getlinkfile(char b[], uint32_t b_len, const char fn[],
 } /* end getlinkfile() */
 
 
-static void apppos(WWWB wbuf, pTCPSOCK * wsock, struct aprspos_POSITION pos,
+static void apppos(WWWB wbuf, pTCPSOCK * wsock, struct aprsstr_POSITION pos,
                 char withloc)
 {
    char h[32];
@@ -6506,6 +6506,9 @@ extern int main(int argc, char **argv)
          if (wwwsock<0L && wwwbindport[0U]) {
             /* open listensocket www connects */
             wwwsock = waitconnect(wwwbindport, 16UL);
+            /*        IF (wwwsock>=0) & (tcp.sockreuse(wwwsock)<0)
+                & verb THEN WrStr("cant set sockopts to port ");
+                WrStrLn(wwwbindport) END;   */
             if (verb && wwwsock<0L) {
                osi_WrStr("cant bind to port ", 19ul);
                osi_WrStrLn(wwwbindport, 6ul);

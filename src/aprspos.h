@@ -12,8 +12,13 @@
 #ifndef X2C_H_
 #include "X2C.h"
 #endif
+#ifndef aprsstr_H_
+#include "aprsstr.h"
+#endif
 
 /* get aprs position by OE5DXL */
+#define aprspos_PI 3.1415926535
+
 #define aprspos_PI2 6.283185307
 
 #define aprspos_RAD 1.7453292519444E-2
@@ -51,31 +56,31 @@
 #define aprspos_AREASYM "l"
 /* area object symbol */
 
-struct aprspos_POSITION;
-
-
-struct aprspos_POSITION {
-   float long0;
-   float lat;
-};
-
 extern float aprspos_rad0(float);
 
-extern char aprspos_posvalid(struct aprspos_POSITION);
+extern char aprspos_posvalid(struct aprsstr_POSITION);
 
-extern float aprspos_distance(struct aprspos_POSITION,
-                struct aprspos_POSITION);
+extern float aprspos_distance(struct aprsstr_POSITION,
+                struct aprsstr_POSITION);
 
-extern float aprspos_azimuth(struct aprspos_POSITION,
-                struct aprspos_POSITION);
+extern float aprspos_azimuth(struct aprsstr_POSITION,
+                struct aprsstr_POSITION);
 
-extern void aprspos_GetPos(struct aprspos_POSITION *, uint32_t *,
+extern void aprspos_GetPos(struct aprsstr_POSITION *, uint32_t *,
                 uint32_t *, int32_t *, char *, char *,
                 char [], uint32_t, uint32_t, uint32_t, char [],
                  uint32_t, char *);
 
 extern void aprspos_GetSym(char [], uint32_t, char *, char *);
 /* symbol out of destination call */
+
+extern void aprspos_wgs84s(float, float, float, float *,
+                float *, float *);
+/* km */
+
+extern void aprspos_wgs84r(float, float, float, float *,
+                float *, float *);
+/* km */
 
 
 extern void aprspos_BEGIN(void);

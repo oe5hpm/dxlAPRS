@@ -16,8 +16,8 @@
 #ifndef maptool_H_
 #include "maptool.h"
 #endif
-#ifndef aprspos_H_
-#include "aprspos.h"
+#ifndef aprsstr_H_
+#include "aprsstr.h"
 #endif
 #ifndef aprsdecode_H_
 #include "aprsdecode.h"
@@ -29,14 +29,17 @@
 #include "osi.h"
 #endif
 #include <osic.h>
-#ifndef aprsstr_H_
-#include "aprsstr.h"
+#ifndef aprspos_H_
+#include "aprspos.h"
 #endif
 #ifndef aprstext_H_
 #include "aprstext.h"
 #endif
 #ifndef aprstat_H_
 #include "aprstat.h"
+#endif
+#ifndef libsrtm_H_
+#include "libsrtm.h"
 #endif
 
 
@@ -57,6 +60,7 @@ char useri_isblown;
 int32_t useri_nextmsg;
 maptool_pIMAGE useri_panoimage;
 /* aprsmap user interface */
+/* closesrtmfile,*/
 #define useri_MAPLOADER "gm.sh"
 
 #define useri_SHOTFORMATS "(.ppm/.png)"
@@ -537,7 +541,7 @@ typedef struct LISTLINE * pLISTLINE;
 
 struct LISTLINE {
    pLISTLINE next;
-   struct aprspos_POSITION position; /* to show marker on map */
+   struct aprsstr_POSITION position; /* to show marker on map */
    aprsdecode_MONCALL call; /* to sort by call */
    uint32_t time0; /* to sort by time */
    char withport; /* first char is a port to colorize */
@@ -1477,7 +1481,7 @@ extern void useri_loadconfig(char verb)
    }
    useri_confstr(useri_fMARKPOS, s, 1000ul);
    aprstext_deghtopos(s, 1000ul, &aprsdecode_click.markpos);
-   maptool_closesrtmfile(); /* to reread possibly updated files */
+   libsrtm_closesrtmfile(); /* to reread possibly updated files */
    maptool_rdmountains("poi.txt", 8ul, 0);
                 /* to reread possibly updated file */
    maptool_rdmountains("mypoi.txt", 10ul, 1);
@@ -1597,7 +1601,7 @@ extern void useri_copypaste(char s[], uint32_t s_len)
 } /* end copypaste() */
 
 
-extern void useri_postoconfig(struct aprspos_POSITION pos)
+extern void useri_postoconfig(struct aprsstr_POSITION pos)
 /* copy position to editline */
 {
    char s[100];
@@ -1750,10 +1754,10 @@ extern uint32_t useri_localtime(void)
 
 
 extern void useri_getview(uint8_t v, uint32_t n, float * zoom,
-                struct aprspos_POSITION * pos)
+                struct aprsstr_POSITION * pos)
 {
    float rval;
-   struct aprspos_POSITION rpos;
+   struct aprsstr_POSITION rpos;
    char h[101];
    char s[101];
    uint32_t j;
@@ -1777,7 +1781,7 @@ extern void useri_getview(uint8_t v, uint32_t n, float * zoom,
          ++i;
       }
       s[j] = 0;
-      maptool_loctopos(&rpos, h, 101ul);
+      aprsstr_loctopos(&rpos, h, 101ul);
       if (!aprspos_posvalid(rpos)) aprstext_degtopos(h, 101ul, &rpos);
       if (!aprspos_posvalid(rpos)) {
          if (aprsstr_StrToFix(&rval, h, 101ul)) {
@@ -1948,6 +1952,7 @@ extern void useri_rdlums(void)
    if ((aprsdecode_lums.menubackcol.g&1)) --aprsdecode_lums.menubackcol.g;
    useri_ColConfset(&aprsdecode_lums.menucol, useri_fCOLMENUTEXT);
    if ((aprsdecode_lums.menucol.g&1)) --aprsdecode_lums.menucol.g;
+   useri_confstr(useri_fOSMDIR, libsrtm_srtmdir, 1024ul);
 } /* end rdlums() */
 
 static aprsdecode_SET256 _cnst1 = {0x00000000UL,0x03FF8000UL,0x17FFFFFEUL,
@@ -3661,7 +3666,7 @@ static void updatemenus(void)
 
 static void Viewline(char s[], uint32_t s_len)
 {
-   struct aprspos_POSITION pos;
+   struct aprsstr_POSITION pos;
    float zoom;
    uint32_t i;
    char h[101];
@@ -3669,7 +3674,7 @@ static void Viewline(char s[], uint32_t s_len)
    i = 0UL;
    do {
       zoom = 0.0f;
-      aprsdecode_posinval(&pos);
+      aprsstr_posinval(&pos);
       useri_getview(useri_fVIEW, i, &zoom, &pos);
       if (zoom==0.0f) {
          strncpy(h,"P ",101u);
@@ -4182,7 +4187,7 @@ static void helpmenu(void)
                 aprsdecode_lums.fontysize+7UL, 3UL, useri_bTRANSP);
    /*  addline(menu, "Shortcuts", CMDSHORTCUTLIST, MINH*6); */
    addline(menu, "Helptext", 9ul, "\305", 2ul, 610UL);
-   addline(menu, "aprsmap(cu) 0.70 by OE5DXL ", 28ul, " ", 2ul, 605UL);
+   addline(menu, "aprsmap(cu) 0.71 by OE5DXL ", 28ul, " ", 2ul, 605UL);
    setunderbar(menu, 37L);
    menu->ysize = menu->oldknob*menu->yknob;
    menu->oldknob = 0UL;
@@ -5669,7 +5674,7 @@ static void beaconeditor(void)
    char isbad;
    char isdel;
    char isobj;
-   struct aprspos_POSITION mypos;
+   struct aprsstr_POSITION mypos;
    uint32_t ohs;
    uint32_t hks;
    uint32_t oks;
@@ -7470,7 +7475,7 @@ static void dolist(pMENU m, uint32_t xcl, uint32_t ycl)
 
 
 static void wrlist(struct LISTBUFFER * b, char s[], uint32_t s_len,
-                const aprsdecode_MONCALL opcall, struct aprspos_POSITION pos,
+                const aprsdecode_MONCALL opcall, struct aprsstr_POSITION pos,
                  uint32_t t, char port)
 /* append a line to list window buffer */
 {
@@ -7523,7 +7528,7 @@ static void wrlist(struct LISTBUFFER * b, char s[], uint32_t s_len,
 
 
 extern void useri_wrstrlist(char s[], uint32_t s_len,
-                aprsdecode_MONCALL opcall, struct aprspos_POSITION pos,
+                aprsdecode_MONCALL opcall, struct aprsstr_POSITION pos,
                 uint32_t t)
 {
    wrlist(&listbuffer, s, s_len, opcall, pos, t, 0);
@@ -7531,7 +7536,7 @@ extern void useri_wrstrlist(char s[], uint32_t s_len,
 
 
 extern void useri_wrstrmon(char s[], uint32_t s_len,
-                struct aprspos_POSITION pos)
+                struct aprsstr_POSITION pos)
 {
    char isicon;
    aprsdecode_MONCALL tmp;
@@ -9030,10 +9035,10 @@ extern void useri_resetimgparms(void)
    aprsdecode_lums.headmenuy = 1;
    aprsdecode_lums.errorstep = 0;
    aprsdecode_lums.moving = 0;
-   aprsdecode_posinval(&aprsdecode_click.markpos);
-   aprsdecode_posinval(&aprsdecode_click.measurepos);
-   aprsdecode_posinval(&aprsdecode_click.squerpos0);
-   aprsdecode_posinval(&aprsdecode_click.squerspos0);
+   aprsstr_posinval(&aprsdecode_click.markpos);
+   aprsstr_posinval(&aprsdecode_click.measurepos);
+   aprsstr_posinval(&aprsdecode_click.squerpos0);
+   aprsstr_posinval(&aprsdecode_click.squerspos0);
    aprsdecode_click.waysum = 0.0f;
    useri_say("Reset most Image/Mouse Parameters to Default", 45ul, 4UL, 'b');
 } /* end resetimgparms() */
@@ -10178,7 +10183,7 @@ extern void useri_killbubble(void)
 #define useri_MARGIN 20
 
 
-extern void useri_textbubble(struct aprspos_POSITION pos, char s[],
+extern void useri_textbubble(struct aprsstr_POSITION pos, char s[],
                 uint32_t s_len, char last)
 {
    pMENU menu;
@@ -10279,13 +10284,13 @@ static void mouseshow(uint32_t x, uint32_t y)
 {
    char s[151];
    char h[21];
-   struct aprspos_POSITION pos1;
-   struct aprspos_POSITION pos;
+   struct aprsstr_POSITION pos1;
+   struct aprsstr_POSITION pos;
    float dist;
    int32_t alt;
    /*WrInt(panowin.hx,10); WrInt(panowin.hy,10); WrStrLn(" pan"); */
    struct maptool_PANOWIN * anonym;
-   aprsdecode_posinval(&pos);
+   aprsstr_posinval(&pos);
    dist = 0.0f;
    alt = -30000L;
    if (panowin.hover) {
@@ -11846,12 +11851,12 @@ static void mouseleft(int32_t mousx, int32_t mousy)
          if (subknob==0UL) setmarks(1, 1);
          else if (subknob==3UL) setmarks(0, 1);
          else if (subknob==1UL) {
-            aprsdecode_posinval(&aprsdecode_click.markpos);
+            aprsstr_posinval(&aprsdecode_click.markpos);
             aprsdecode_click.waysum = 0.0f;
-            aprsdecode_posinval(&aprsdecode_click.squerpos0);
-            aprsdecode_posinval(&aprsdecode_click.squerspos0);
+            aprsstr_posinval(&aprsdecode_click.squerpos0);
+            aprsstr_posinval(&aprsdecode_click.squerspos0);
          }
-         else aprsdecode_posinval(&aprsdecode_click.measurepos);
+         else aprsstr_posinval(&aprsdecode_click.measurepos);
          aprsdecode_click.cmd = ' ';
       }
       else if (c=='\301') mapadd();
@@ -12364,12 +12369,13 @@ extern void useri_BEGIN(void)
    if (useri_init) return;
    useri_init = 1;
    if (sizeof(sMENULINES)!=8) X2C_ASSERT(0);
+   libsrtm_BEGIN();
    aprstat_BEGIN();
    aprstext_BEGIN();
+   aprspos_BEGIN();
    xosi_BEGIN();
    osi_BEGIN();
    maptool_BEGIN();
-   aprspos_BEGIN();
    aprsstr_BEGIN();
    aprsdecode_BEGIN();
 }

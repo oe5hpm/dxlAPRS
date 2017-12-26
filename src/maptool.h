@@ -12,8 +12,8 @@
 #ifndef X2C_H_
 #include "X2C.h"
 #endif
-#ifndef aprspos_H_
-#include "aprspos.h"
+#ifndef aprsstr_H_
+#include "aprsstr.h"
 #endif
 #ifndef aprsdecode_H_
 #include "aprsdecode.h"
@@ -67,8 +67,8 @@ struct maptool_PANOWIN {
    char hover;
    char on;
    char flatscreen;
-   struct aprspos_POSITION eye;
-   struct aprspos_POSITION horizon;
+   struct aprsstr_POSITION eye;
+   struct aprsstr_POSITION horizon;
    int32_t eyealt;
    float angle;
    float elevation;
@@ -95,8 +95,8 @@ struct maptool__D0;
 
 
 struct maptool__D0 {
-   struct aprspos_POSITION leftup;
-   struct aprspos_POSITION rightdown;
+   struct aprsstr_POSITION leftup;
+   struct aprsstr_POSITION rightdown;
    int32_t tozoom;
    uint32_t retrys;
    uint32_t givups;
@@ -156,10 +156,10 @@ extern void maptool_addmap(maptool_pIMAGE, maptool_pIMAGE);
 extern void maptool_mercator(float, float, int32_t, int32_t *,
                 int32_t *, float *, float *);
 
-extern int32_t maptool_mapxy(struct aprspos_POSITION, float *,
+extern int32_t maptool_mapxy(struct aprsstr_POSITION, float *,
                 float *);
 
-extern void maptool_xytodeg(float, float, struct aprspos_POSITION *);
+extern void maptool_xytodeg(float, float, struct aprsstr_POSITION *);
 
 extern int32_t maptool_saveppm(char [], uint32_t, maptool_pIMAGE,
                 int32_t, int32_t);
@@ -167,25 +167,19 @@ extern int32_t maptool_saveppm(char [], uint32_t, maptool_pIMAGE,
 extern void maptool_area(maptool_pIMAGE, int32_t, int32_t, int32_t,
                 int32_t, struct aprsdecode_COLTYP, char);
 
-extern void maptool_postoloc(char [], uint32_t,
-                struct aprspos_POSITION);
-
-extern void maptool_loctopos(struct aprspos_POSITION *, char [],
-                uint32_t);
-
 extern void maptool_shiftmap(int32_t, int32_t, int32_t, float,
-                struct aprspos_POSITION *);
+                struct aprsstr_POSITION *);
 
 extern void maptool_center(int32_t, int32_t, float,
-                struct aprspos_POSITION, struct aprspos_POSITION *);
+                struct aprsstr_POSITION, struct aprsstr_POSITION *);
 
-extern void maptool_limpos(struct aprspos_POSITION *);
+extern void maptool_limpos(struct aprsstr_POSITION *);
 
 extern void maptool_makebw(maptool_pIMAGE);
 
 extern float maptool_realzoom(int32_t, float);
 
-extern void maptool_setmark(maptool_pIMAGE, struct aprspos_POSITION,
+extern void maptool_setmark(maptool_pIMAGE, struct aprsstr_POSITION,
                 char);
 
 extern void maptool_cc(maptool_pIMAGE, uint32_t, uint32_t);
@@ -194,21 +188,21 @@ extern void maptool_ruler(maptool_pIMAGE);
 
 extern void maptool_clr(maptool_pIMAGE);
 
-extern void maptool_xytoloc(struct aprspos_POSITION, char [],
+extern void maptool_xytoloc(struct aprsstr_POSITION, char [],
                 uint32_t);
 
-extern void maptool_POIname(struct aprspos_POSITION *, char [],
+extern void maptool_POIname(struct aprsstr_POSITION *, char [],
                 uint32_t);
 
-extern void maptool_POIfind(struct aprspos_POSITION *, char [],
+extern void maptool_POIfind(struct aprsstr_POSITION *, char [],
                 uint32_t);
 
 extern uint32_t maptool_charwidth(char);
 
 extern char maptool_vistime(uint32_t);
 
-extern void maptool_StartMapPackage(struct aprspos_POSITION,
-                struct aprspos_POSITION, int32_t, char);
+extern void maptool_StartMapPackage(struct aprsstr_POSITION,
+                struct aprsstr_POSITION, int32_t, char);
 
 extern void maptool_MapPackageJob(char);
 
@@ -218,15 +212,16 @@ extern void maptool_startmapdelay(void);
 
 extern void maptool_pullmap(int32_t, int32_t, char);
 
-extern int32_t maptool_geoprofile(maptool_pIMAGE, struct aprspos_POSITION,
-                struct aprspos_POSITION, float, char, int32_t,
+extern int32_t maptool_geoprofile(maptool_pIMAGE, struct aprsstr_POSITION,
+                struct aprsstr_POSITION, float, char, int32_t,
                 int32_t, float *, float *, float *, float *,
                 float *);
 
-extern float maptool_getsrtm(struct aprspos_POSITION, uint32_t,
-                float *);
-
-extern void maptool_Radiorange(maptool_pIMAGE, struct aprspos_POSITION,
+/*
+PROCEDURE getsrtm(pos:POSITION; quality:CARDINAL; VAR resolution:REAL):REAL;
+PROCEDURE closesrtmfile;
+*/
+extern void maptool_Radiorange(maptool_pIMAGE, struct aprsstr_POSITION,
                 int32_t, int32_t, uint32_t, uint32_t, uint32_t,
                 char *);
 
@@ -236,22 +231,20 @@ extern void maptool_Panorama(maptool_pIMAGE, struct maptool_PANOWIN,
 extern char maptool_SimpleRelief(maptool_pIMAGE);
 
 extern void maptool_findpanopos(struct maptool_PANOWIN,
-                struct aprspos_POSITION *, float *, int32_t *);
-
-extern void maptool_closesrtmfile(void);
+                struct aprsstr_POSITION *, float *, int32_t *);
 
 extern void maptool_rdmountains(char [], uint32_t, char);
 
-extern void maptool_drawareasym(maptool_pIMAGE, struct aprspos_POSITION,
+extern void maptool_drawareasym(maptool_pIMAGE, struct aprsstr_POSITION,
                 struct aprsdecode_AREASYMB, uint32_t);
 
-extern void maptool_drawpoligon(maptool_pIMAGE, struct aprspos_POSITION,
+extern void maptool_drawpoligon(maptool_pIMAGE, struct aprsstr_POSITION,
                 struct aprsdecode_MULTILINE, char, char, uint32_t);
 
 extern void maptool_drawpoliobj(maptool_pIMAGE);
 
-extern char maptool_findmultiline(struct aprspos_POSITION,
-                struct aprspos_POSITION *);
+extern char maptool_findmultiline(struct aprsstr_POSITION,
+                struct aprsstr_POSITION *);
 
 
 extern void maptool_BEGIN(void);

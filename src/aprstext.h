@@ -15,8 +15,8 @@
 #ifndef aprsdecode_H_
 #include "aprsdecode.h"
 #endif
-#ifndef aprspos_H_
-#include "aprspos.h"
+#ifndef aprsstr_H_
+#include "aprsstr.h"
 #endif
 
 /* aprs tracks on osm map by oe5dxl */
@@ -46,26 +46,26 @@ extern void aprstext_strcp(char [], uint32_t, uint32_t, uint32_t,
 extern void aprstext_optext(uint32_t, struct aprsdecode_CLICKOBJECT *,
                 char *, char [], uint32_t);
 
-extern void aprstext_measure(struct aprspos_POSITION,
-                struct aprspos_POSITION, char [], uint32_t,
+extern void aprstext_measure(struct aprsstr_POSITION,
+                struct aprsstr_POSITION, char [], uint32_t,
                 char);
 
-extern void aprstext_postostr(struct aprspos_POSITION, char, char [],
+extern void aprstext_postostr(struct aprsstr_POSITION, char, char [],
                  uint32_t);
 
 extern void aprstext_degtopos(char [], uint32_t,
-                struct aprspos_POSITION *);
+                struct aprsstr_POSITION *);
 
 extern void aprstext_deghtopos(char [], uint32_t,
-                struct aprspos_POSITION *);
+                struct aprsstr_POSITION *);
 
 extern void aprstext_degdeztopos(char [], uint32_t,
-                struct aprspos_POSITION *);
+                struct aprsstr_POSITION *);
 
 extern void aprstext_deganytopos(char [], uint32_t,
-                struct aprspos_POSITION *);
+                struct aprsstr_POSITION *);
 
-extern char aprstext_getmypos(struct aprspos_POSITION *);
+extern char aprstext_getmypos(struct aprsstr_POSITION *);
 
 extern void aprstext_listop(char);
 
@@ -90,7 +90,7 @@ extern aprsdecode_pOPHIST aprstext_oppo(aprsdecode_MONCALL);
 extern void aprstext_setmarkalti(aprsdecode_pFRAMEHIST, aprsdecode_pOPHIST,
                 char);
 
-extern void aprstext_setmark1(struct aprspos_POSITION, char,
+extern void aprstext_setmark1(struct aprsstr_POSITION, char,
                 int32_t, uint32_t);
 
 extern void aprstext_Apphex(char [], uint32_t, char [],
@@ -102,7 +102,7 @@ extern void aprstext_logfndate(uint32_t, char [], uint32_t);
 
 extern void aprstext_sievert2str(float, char [], uint32_t);
 
-extern void aprstext_compressdata(struct aprspos_POSITION, uint32_t,
+extern void aprstext_compressdata(struct aprsstr_POSITION, uint32_t,
                 uint32_t, int32_t, char [], uint32_t, char [],
                 uint32_t);
 

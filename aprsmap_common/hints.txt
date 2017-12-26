@@ -80,7 +80,7 @@ configurable Stepwidth
 |134 Center before Leftclicked Position on Map
 
 |136 Step back in Zoom/Pan History, same
-as "b" BACKSPACE or Rightlick
+as "b" BACKSPACE or Rightclick
 
 |138 close this menu
 
@@ -212,7 +212,9 @@ shaped.
 choose a Symbol and show Stations with this.
 Use TAB-Key to toggle 2 Map Views.
 
-|535 Manage Sent Messages (Shortcut M)
+|535 Manage Sent Messages (Shortcut M).
+(Re)view received Messages with
+Click to "M" on Statusbar.
 
 |536 Enter Root directory path of Map-Cache
 where the Map Downoad Task writes Map
@@ -777,8 +779,8 @@ will get filled. On TCP, the Msg is sent
 once and, if not acked, resent as the next
 Beacon of the Destination arrives.
 Modern Igates, gating msg to Rf, will
-take care of efficient resening to mobile
-destinations.
+take care of efficient resending to
+mobile destinations.
 
 |6801 Send Message with no Acknowledge.
 Used for Querys like "?APRSH" "?HELP"

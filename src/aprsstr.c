@@ -17,9 +17,12 @@
 #include "osi.h"
 #endif
 
+
+
 /* string lib by oe5dxl */
 /* needed by hpm-libs */
-/*FROM osi IMPORT WrInt, WrStrLn; */
+#define aprsstr_pi 3.1415926535898
+
 static uint8_t CRCL[256];
 
 static uint8_t CRCH[256];
@@ -1156,6 +1159,97 @@ static void Gencrctab(void)
       CRCH[c] = (uint8_t)(255UL-(crc>>8));
    } /* end for */
 } /* end Gencrctab() */
+
+
+extern void aprsstr_loctopos(struct aprsstr_POSITION * pos, char loc[],
+                uint32_t loc_len)
+{
+   uint32_t l;
+   uint32_t i;
+   char ok0;
+   X2C_PCOPY((void **)&loc,loc_len);
+   ok0 = 0;
+   l = aprsstr_Length(loc, loc_len);
+   i = 0UL;
+   while (i<l) {
+      loc[i] = X2C_CAP(loc[i]);
+      ++i;
+   }
+   if ((((((((((((l>=6UL && (uint8_t)loc[0UL]>='A') && (uint8_t)
+                loc[0UL]<='R') && (uint8_t)loc[1UL]>='A') && (uint8_t)
+                loc[1UL]<='R') && (uint8_t)loc[2UL]>='0') && (uint8_t)
+                loc[2UL]<='9') && (uint8_t)loc[3UL]>='0') && (uint8_t)
+                loc[3UL]<='9') && (uint8_t)loc[4UL]>='A') && (uint8_t)
+                loc[4UL]<='X') && (uint8_t)loc[5UL]>='A') && (uint8_t)
+                loc[5UL]<='X') {
+      pos->long0 = (float)((uint32_t)(uint8_t)loc[0UL]-65UL)
+                *20.0f+(float)((uint32_t)(uint8_t)loc[2UL]-48UL)
+                *2.0f+X2C_DIVR((float)((uint32_t)(uint8_t)
+                loc[4UL]-65UL)+0.5f,12.0f);
+      pos->lat = (float)((uint32_t)(uint8_t)loc[1UL]-65UL)
+                *10.0f+(float)((uint32_t)(uint8_t)loc[3UL]-48UL)
+                +X2C_DIVR((float)((uint32_t)(uint8_t)loc[5UL]-65UL)
+                +0.5f,24.0f);
+      if (l==6UL) ok0 = 1;
+      if ((((l>=8UL && (uint8_t)loc[6UL]>='0') && (uint8_t)loc[6UL]<='9')
+                 && (uint8_t)loc[7UL]>='0') && (uint8_t)loc[7UL]<='9') {
+         pos->long0 = (pos->long0+X2C_DIVR((float)((uint32_t)(uint8_t)
+                loc[6UL]-48UL),120.0f))-0.0375f;
+         pos->lat = (pos->lat+X2C_DIVR((float)((uint32_t)(uint8_t)
+                loc[7UL]-48UL),240.0f))-0.01875f;
+         if (l==8UL) ok0 = 1;
+      }
+      if ((((l>=10UL && (uint8_t)loc[8UL]>='A') && (uint8_t)
+                loc[8UL]<='X') && (uint8_t)loc[9UL]>='A') && (uint8_t)
+                loc[9UL]<='X') {
+         pos->long0 = (pos->long0+X2C_DIVR((float)((uint32_t)(uint8_t)
+                loc[8UL]-65UL),2880.0f))-3.9930555555556E-3f;
+         pos->lat = (pos->lat+X2C_DIVR((float)((uint32_t)(uint8_t)
+                loc[9UL]-65UL),5760.0f))-1.9965277777778E-3f;
+         if (l==10UL) ok0 = 1;
+      }
+   }
+   if (ok0) {
+      pos->long0 = (pos->long0-180.0f)*1.7453292519943E-2f;
+      pos->lat = (pos->lat-90.0f)*1.7453292519943E-2f;
+   }
+   else aprsstr_posinval(pos);
+   X2C_PFREE(loc);
+} /* end loctopos() */
+
+
+extern void aprsstr_postoloc(char loc[], uint32_t loc_len,
+                struct aprsstr_POSITION pos)
+{
+   uint32_t bc;
+   uint32_t lc;
+   float br;
+   float lr;
+   lr = (pos.long0*5.7295779513082E+1f+180.0f)*2880.0f;
+   if (lr<0.0f) lr = 0.0f;
+   lc = (uint32_t)X2C_TRUNCC(lr,0UL,X2C_max_longcard);
+   br = (pos.lat*5.7295779513082E+1f+90.0f)*5760.0f;
+   if (br<0.0f) br = 0.0f;
+   bc = (uint32_t)X2C_TRUNCC(br,0UL,X2C_max_longcard);
+   loc[0UL] = (char)(65UL+lc/57600UL);
+   loc[1UL] = (char)(65UL+bc/57600UL);
+   loc[2UL] = (char)(48UL+(lc/5760UL)%10UL);
+   loc[3UL] = (char)(48UL+(bc/5760UL)%10UL);
+   loc[4UL] = (char)(65UL+(lc/240UL)%24UL);
+   loc[5UL] = (char)(65UL+(bc/240UL)%24UL);
+   loc[6UL] = (char)(48UL+(lc/24UL)%10UL);
+   loc[7UL] = (char)(48UL+(bc/24UL)%10UL);
+   loc[8UL] = (char)(65UL+lc%24UL);
+   loc[9UL] = (char)(65UL+bc%24UL);
+   loc[10UL] = 0;
+} /* end postoloc() */
+
+
+extern void aprsstr_posinval(struct aprsstr_POSITION * pos)
+{
+   pos->long0 = 0.0f;
+   pos->lat = 0.0f;
+} /* end posinval() */
 
 
 extern void aprsstr_BEGIN(void)

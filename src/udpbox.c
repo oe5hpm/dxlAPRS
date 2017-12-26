@@ -141,7 +141,7 @@ struct OUTPORT {
    SET256 aprspass;
    pDIGIPARMS digiparm;
    struct BEACON beacon0;
-   struct aprspos_POSITION mypos;
+   struct aprsstr_POSITION mypos;
    int32_t maxkm;
 };
 
@@ -490,7 +490,7 @@ static char CallFilt(pCALLS calls, const char s[],
 } /* end CallFilt() */
 
 
-static int32_t DistFilt(struct aprspos_POSITION mypos, char b[],
+static int32_t DistFilt(struct aprsstr_POSITION mypos, char b[],
                 uint32_t b_len, uint32_t payload, uint32_t len)
 {
    uint32_t course;
@@ -501,7 +501,7 @@ static int32_t DistFilt(struct aprspos_POSITION mypos, char b[],
    char postyp;
    char symt;
    char sym;
-   struct aprspos_POSITION pos;
+   struct aprsstr_POSITION pos;
    int32_t DistFilt_ret;
    X2C_PCOPY((void **)&b,b_len);
    for (i = 6UL;; i--) {
@@ -1343,7 +1343,7 @@ static void parms(void)
    pCALLS callnext;
    pCALLS actcall;
    float actkm;
-   struct aprspos_POSITION actpos;
+   struct aprsstr_POSITION actpos;
    struct INSOCK * anonym;
    struct BEACON * anonym0;
    struct DIGIPARMS * anonym1;

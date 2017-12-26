@@ -15,8 +15,8 @@
 #ifndef maptool_H_
 #include "maptool.h"
 #endif
-#ifndef aprspos_H_
-#include "aprspos.h"
+#ifndef aprsstr_H_
+#include "aprsstr.h"
 #endif
 #ifndef aprsdecode_H_
 #include "aprsdecode.h"
@@ -215,7 +215,7 @@ struct useri__D0 {
    uint32_t mon;
    uint32_t screens;
    uint32_t req;
-   uint32_t srtm;
+   uint32_t poi;
 };
 
 extern struct useri__D0 useri_debugmem;
@@ -255,7 +255,7 @@ extern void useri_loadconfig(char);
 
 extern void useri_saveconfig(void);
 
-extern void useri_postoconfig(struct aprspos_POSITION);
+extern void useri_postoconfig(struct aprsstr_POSITION);
 
 extern void useri_rdlums(void);
 
@@ -290,7 +290,7 @@ extern void useri_wrheap(void);
 extern void useri_sayonoff(char [], uint32_t, char);
 
 extern void useri_getview(uint8_t, uint32_t, float *,
-                struct aprspos_POSITION *);
+                struct aprsstr_POSITION *);
 
 extern void useri_refrinfo(void);
 
@@ -342,9 +342,9 @@ extern void useri_clrmsgtext(char [], uint32_t);
 extern void useri_getstartxysize(int32_t *, int32_t *);
 
 extern void useri_wrstrlist(char [], uint32_t, aprsdecode_MONCALL,
-                struct aprspos_POSITION, uint32_t);
+                struct aprsstr_POSITION, uint32_t);
 
-extern void useri_wrstrmon(char [], uint32_t, struct aprspos_POSITION);
+extern void useri_wrstrmon(char [], uint32_t, struct aprsstr_POSITION);
 
 extern void useri_clrcpmarks(void);
 
@@ -360,7 +360,7 @@ extern void useri_ColConfset(struct aprsdecode_COLTYP *, uint8_t);
 
 extern char useri_gpsalt(uint8_t);
 
-extern void useri_textbubble(struct aprspos_POSITION, char [],
+extern void useri_textbubble(struct aprsstr_POSITION, char [],
                 uint32_t, char);
 
 extern void useri_killbubble(void);

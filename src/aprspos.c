@@ -13,12 +13,13 @@
 #include "aprspos.h"
 #endif
 #define aprspos_C_
+#ifndef aprsstr_H_
+#include "aprsstr.h"
+#endif
 #ifndef osi_H_
 #include "osi.h"
 #endif
 #include <osic.h>
-
-
 
 /* get aprs position by OE5DXL */
 /*CONST arccos=acos; */
@@ -31,14 +32,50 @@ extern float aprspos_rad0(float w)
 } /* end rad() */
 
 
-extern char aprspos_posvalid(struct aprspos_POSITION pos)
+extern char aprspos_posvalid(struct aprsstr_POSITION pos)
 {
    return pos.lat!=0.0f || pos.long0!=0.0f;
 } /* end posvalid() */
 
 
-extern float aprspos_distance(struct aprspos_POSITION home,
-                struct aprspos_POSITION dist)
+extern void aprspos_wgs84s(float lat, float long0, float nn,
+                float * x, float * y, float * z)
+/* km */
+{
+   float c;
+   float h;
+   h = nn+6370.0f;
+   *z = h*osic_sin(lat);
+   c = osic_cos(lat);
+   *y = h*osic_sin(long0)*c;
+   *x = h*osic_cos(long0)*c;
+} /* end wgs84s() */
+
+
+extern void aprspos_wgs84r(float x, float y, float z,
+                float * lat, float * long0, float * heig)
+/* km */
+{
+   float h;
+   h = x*x+y*y;
+   if ((float)fabs(x)>(float)fabs(y)) {
+      *long0 = osic_arctan(X2C_DIVR(y,x));
+      if (x<0.0f) {
+         if (y>0.0f) *long0 = 3.1415926535f+*long0;
+         else *long0 = *long0-3.1415926535f;
+      }
+   }
+   else {
+      *long0 = 1.57079632675f-osic_arctan(X2C_DIVR(x,y));
+      if (y<0.0f) *long0 = *long0-3.1415926535f;
+   }
+   *lat = osic_arctan(X2C_DIVR(z,osic_sqrt(h)));
+   *heig = osic_sqrt(h+z*z)-6370.0f;
+} /* end wgs84r() */
+
+
+extern float aprspos_distance(struct aprsstr_POSITION home,
+                struct aprsstr_POSITION dist)
 {
    float y;
    float x;
@@ -62,8 +99,8 @@ extern float aprspos_distance(struct aprspos_POSITION home,
 } /* end distance() */
 
 
-extern float aprspos_azimuth(struct aprspos_POSITION home,
-                struct aprspos_POSITION dist)
+extern float aprspos_azimuth(struct aprsstr_POSITION home,
+                struct aprsstr_POSITION dist)
 {
    float ldiff;
    float h;
@@ -223,7 +260,7 @@ static CHSET _cnst1 = {0x00000000UL,0x00000080UL,0x00000000UL,0x00000001UL};
 static CHSET _cnst0 = {0x00000000UL,0x40000000UL,0x20000000UL,0x00000000UL};
 static CHSET _cnst = {0x20000000UL,0x40000080UL,0x20100000UL,0x00000001UL};
 
-extern void aprspos_GetPos(struct aprspos_POSITION * pos, uint32_t * speed,
+extern void aprspos_GetPos(struct aprsstr_POSITION * pos, uint32_t * speed,
                  uint32_t * course, int32_t * altitude, char * symb,
                 char * symbt, char buf[], uint32_t buf_len,
                 uint32_t micedest, uint32_t payload, char coment[],
@@ -774,5 +811,6 @@ extern void aprspos_BEGIN(void)
    if (aprspos_init) return;
    aprspos_init = 1;
    osi_BEGIN();
+   aprsstr_BEGIN();
 }
 
