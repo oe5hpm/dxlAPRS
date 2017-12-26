@@ -17,6 +17,7 @@
 # - udphub		L2 AX25 switch to process many Packet Radio clients on one
 #				single AXUDP interface from Flexnet, XNET, ...
 # - aprsmap		powerful APRS viewer based on Openstreetmap
+# - profile		makes png Image with Geo-Profile of 2 Positions using srtm-datafiles
 # ---------------------- common section ---------------------------------------
 HOSTARCH := $(shell uname -m | \
 	sed -e s/i.86/x86/ \
@@ -168,12 +169,14 @@ OBJ_APRSMAP	= \
 	pngwrite.o \
 	jpgdec.o \
 	useri.o \
-	xosi.o
+	xosi.o \
+        libsrtm.o
 
 OBJ_SDRTST	= tcpb.o sdr.o sdrtest.o
 OBJ_SDRRADIO	= tcpb.o sdr.o radio.o
 OBJ_L2CAT	= l2.o frameio.o deflate.o Execlogin.o cleanup.o l2cat.o
 OBJ_ADSB2APRS	= adsb2aprs.o tcpb.o
+OBJ_PROFILE	= profile.o imagetext.o libsrtm.o pngwrite.o
 
 TARGETS += \
 	afskmodem \
@@ -188,7 +191,8 @@ TARGETS += \
 	aprsmap \
 	sdrtst \
 	sdrradio \
-	adsb2aprs
+	adsb2aprs \
+	profile
 
 ifneq ($(HOSTOS), Darwin)
 	TARGETS += l2cat
@@ -209,7 +213,8 @@ OBJS = \
 	$(OBJ_SDRTST) \
 	$(OBJ_SDRRADIO) \
         $(OBJ_L2CAT)	\
-        $(OBJ_ADSB2APRS)
+        $(OBJ_ADSB2APRS) \
+        $(OBJ_PROFILE)
 
 # ------------------- target make rules -------------------
 #                     -----------------
@@ -284,6 +289,10 @@ l2cat : $(OBJ_L2CAT) $(OBJ_COMMON)
 adsb2aprs: $(OBJ_ADSB2APRS) $(OBJ_COMMON)
 	$(CC) $(LFLAGS) -o adsb2aprs $(OBJ_ADSB2APRS) $(OBJ_COMMON) -lm
 	$(STRIP) adsb2aprs $(STRIPFLAGS)
+
+profile : $(OBJ_PROFILE) $(OBJ_COMMON)
+	$(CC) $(LFLAGS) -o profile $(OBJ_PROFILE) $(OBJ_COMMON) -lm $(EXTLIB)libpng.a $(EXTLIB)libz.a
+	$(STRIP) profile $(STRIPFLAGS)
 
 diag:
 	echo $(HOSTARCH)
