@@ -229,7 +229,8 @@ The names use subdirectories in "map directory"
 and are passed to the map downloader where URLs
 to the names are associated. First entry is used
 at program start. Sort entries by "Edit" and "Add".
-Use first 4 lines by shortcut "6" "7" "8" "9"
+First enabled  3 lines by shortcut "7" "8" "9"
+Rotate through enabled Maps wit "6".
 else "Tools > Choose Map"
 
 |540 Choose Maptype, Reload Map You see
@@ -1232,8 +1233,8 @@ To start Beaconing by timer, enable the line
 with On/Off-button.
 
 |8101 Draw on local Map for testing. Hold Shift
-and click to Map to change Position. Delete
-on Map with click to symbol and DEL-Key.
+and click to Map to change Position or press "x".
+Delete on Map with click to symbol and DEL-Key.
 
 |8102 Send edited Beacon immediately to Rf or
 Net Port as configured. Use for sending
@@ -1262,7 +1263,8 @@ or D.DDDDD or :File containing Position or
 simply hold SHIFT Key and click on the Map.
 To quick reposit Objects: "B" to open Beacon
 Editor, Click to Symbol on Map, "DEL" to remove,
-SHIFT-Click to new position, "Draw" or "Send"
+SHIFT-Click or press "x" to new position,
+"Draw" or "Send"
 
 |8122 Text with Macros
 \\z insert day of month and time DDHHMMz
@@ -1582,9 +1584,12 @@ avaliable. "14 8" will load font8.png and
 zoom it to heigth 14.
 Or enter Heigth and Your Fontfile like
 "20 font-bold.png"
+A third percent value zooms Symbols according
+to Fontheight (default 140)
 
 
 |8435 Toggle on/off Transparent Menus
+
 |8436 1..100 black to maximum transparency
 or if transparency off then background
 luminance. try for best readability

@@ -62,7 +62,7 @@ typedef uint32_t aprsdecode_SET256[8];
 
 extern aprsdecode_SET256 aprsdecode_SYMTABLE;
 
-#define aprsdecode_VERS "aprsmap(cu) 0.71"
+#define aprsdecode_VERS "aprsmap(cu) 0.72"
 
 typedef char aprsdecode_MONCALL[9];
 
@@ -229,8 +229,10 @@ typedef struct aprsdecode_OPHIST * aprsdecode_pOPHIST;
 
 
 struct aprsdecode_OPHIST {
-   aprsdecode_pOPHIST next;
-   aprsdecode_pFRAMEHIST frames;
+   aprsdecode_pOPHIST next; /* symbol call chain */
+   aprsdecode_pFRAMEHIST frames; /* beacons with this call */
+   aprsdecode_pFRAMEHIST lastfrp;
+                /* log import quick write pointer, no compress */
    struct aprsstr_POSITION margin0; /* movement frame for quick draw */
    struct aprsstr_POSITION margin1;
    struct aprsstr_POSITION lastpos;
@@ -571,6 +573,7 @@ struct aprsdecode__D1 {
    uint32_t symsize;
    uint32_t fontxsize;
    uint32_t fontysize;
+   uint32_t fontsymbolpercent;
    char wxcol;
    uint32_t movestep;
    uint32_t dupemaxtime;

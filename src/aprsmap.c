@@ -664,7 +664,8 @@ ayly-Log Mode\012", 37ul);
                 ) {
                      aprsdecode_realtime = osic_time();
                      aprsstr_IntToStr(*lines, 1UL, s, 100ul);
-                     aprsstr_Append(s, 100ul, " Frames", 8ul);
+                     aprsstr_Append(s, 100ul, " Frames (ESC to abort)",
+                23ul);
                      useri_textautosize(0L, 0L, 5UL, 6UL, 'b', s, 100ul);
                      xosi_Eventloop(1UL);
                      if (aprsdecode_quit || aprsdecode_click.abort0) break;
@@ -1950,7 +1951,7 @@ static void bootreadlog(void)
       useri_redraw(image);
    }
    else {
-      useri_say("Reading Log ...", 16ul, 0UL, 'b');
+      useri_say("Reading Log (ESC to abort) ...", 31ul, 0UL, 'b');
       useri_redraw(image);
       aprsdecode_realtime = osic_time();
       logt = aprsdecode_realtime-aprsdecode_lums.purgetime;
@@ -1962,12 +1963,12 @@ static void bootreadlog(void)
          aprsstr_IntToStr(logredcnt, 1UL, s, 1000ul);
          aprsstr_Append(s, 1000ul, " lines \'", 9ul);
          aprsstr_Append(s, 1000ul, fn, 1000ul);
-         aprsstr_Append(s, 1000ul, "\' imported", 11ul);
+         aprsstr_Append(s, 1000ul, "\' imported ", 12ul);
          useri_say(s, 1000ul, 4UL, 'b');
          useri_redraw(image);
       }
       else {
-         strncpy(s,"logile \'",1000u);
+         strncpy(s,"logfile \'",1000u);
          aprsstr_Append(s, 1000ul, fn, 1000ul);
          aprsstr_Append(s, 1000ul, "\' not found", 12ul);
          useri_say(s, 1000ul, 6UL, 'r');

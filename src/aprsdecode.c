@@ -148,6 +148,9 @@ struct xosi_PROCESSHANDLE aprsdecode_maploadpid;
 #define aprsdecode_TICKEROFFTIME 60
 /* switch off window headline ticker after no data*/
 
+#define aprsdecode_COMPRESSLIMIT 4000
+/* beacons then switch off compression in log read */
+
 #define aprsdecode_cUSERMESSAGE ":"
 
 #define aprsdecode_cTHIRDPARTY "}"
@@ -1581,7 +1584,7 @@ static void beaconmacros(char s[], uint32_t s_len,
                aprsstr_Append(ns, 256ul, "\\\\", 3ul);
             }
             else if (s[i]=='v') {
-               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.71", 17ul);
+               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.72", 17ul);
             }
             else if (s[i]=='l') {
                if (aprstext_getmypos(&pos)) {
@@ -4942,11 +4945,22 @@ extern int32_t aprsdecode_Stoframe(aprsdecode_pOPHIST * optab,
    same = 0;
    if (logmode) {
       /* refcnt used as raw string hash */
-      while (frame && (frame->vardat->refcnt!=(uint32_t)
+      if (op->lastfrp) {
+         /* quick write no compress mode */
+         frame = 0;
+         lastf = op->lastfrp;
+      }
+      else {
+         /* look for same frame */
+         i = 0UL;
+         while (frame && (frame->vardat->refcnt!=(uint32_t)
                 hash || !strcmp0(frame->vardat->raw, 500ul, rawbuf,
                 rawbuf_len))) {
-         lastf = frame;
-         frame = frame->next;
+            lastf = frame;
+            frame = frame->next;
+            ++i;
+         }
+         if (i>4000UL) op->lastfrp = lastf;
       }
    }
    else {
@@ -5044,9 +5058,7 @@ extern int32_t aprsdecode_Stoframe(aprsdecode_pOPHIST * optab,
       frame->next = lastf->next; /* not nil if insert older frame */
       lastf->next = frame; /* append waypoint */
    }
-   if (dat.hrtlen>0UL) {
-      inserthrt(dat, &op, frame->nodraw);
-   }
+   if (dat.hrtlen>0UL) inserthrt(dat, &op, frame->nodraw);
    if (!logmode) {
       /* read log check whole track at end */
       aprsdecode_Checktrack(op, lastf);
@@ -5106,7 +5118,6 @@ extern void aprsdecode_purge(aprsdecode_pOPHIST * ops, uint32_t oldt,
    op = *ops;
    lastop = 0;
    while (op) {
-      /*WrStr("op:"); WrStr(op^.call); WrStr("         "); */
       if (op->sym.tab=='\001') old = X2C_max_longcard;
       else if ((0x2U & op->drawhints) && op->lastinftyp<100U) {
          old = oldobj; /* object but no wx obj for wx graphs */
@@ -5126,6 +5137,7 @@ extern void aprsdecode_purge(aprsdecode_pOPHIST * ops, uint32_t oldt,
          if (v->lastref==frame) freevardat(v);
          else --v->refcnt;
          op->frames = frame->next;
+         op->lastfrp = 0;
          /*WrStr("(purge)"); */
          useri_debugmem.mon -= sizeof(struct aprsdecode_FRAMEHIST);
          osic_free((char * *) &frame,
@@ -5717,7 +5729,7 @@ static char tcpconn(aprsdecode_pTCPSOCK * sockchain, int32_t f)
          aprsstr_Append(h, 512ul, s, 100ul);
       }
       aprsstr_Append(h, 512ul, " vers ", 7ul);
-      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.71", 17ul);
+      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.72", 17ul);
       appfilter(h, 512ul, 0);
       /*    IF filter[0]<>0C THEN Append(h, " filter ");
                 Append(h, filter) END; */

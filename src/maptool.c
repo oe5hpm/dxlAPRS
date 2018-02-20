@@ -4603,7 +4603,26 @@ extern void maptool_StartMapPackage(struct aprsstr_POSITION lu,
 
 
 static float sinc(float x, uint32_t w)
-/* sin(x)/x with hamming windown */
+/* sin(x)/x with windown */
+{
+   float c;
+   float r;
+   if ((float)fabs(x)<0.001f) return 1.0f;
+   c = X2C_DIVR(x,(float)w);
+   /*  IF c>0.5 THEN c:=0.5 ELSIF c<-0.5 THEN c:=-0.5 END; */
+   r = x*3.1415926535f;
+   /*  RETURN sin(r)/r*(0.54+0.46*cos(PI*c));
+                (* hamming *) */
+   return (X2C_DIVR(osic_sin(r),r))*((0.42f-0.5f*osic_cos(6.283185307f*(c+0.5f)))+0.08f*osic_cos(1.2566370614E+1f*(c+0.5f)));
+                
+/* blackmann */
+} /* end sinc() */
+
+#define maptool_PI0 3.1415926535
+
+
+static float sinc1(float x, uint32_t w)
+/* sin(x)/x with windown */
 {
    float c;
    float r;
@@ -4613,21 +4632,21 @@ static float sinc(float x, uint32_t w)
    else if (c<(-0.5f)) c = (-0.5f);
    r = x*3.1415926535f;
    return (X2C_DIVR(osic_sin(r),r))*(0.54f+0.46f*osic_cos(3.1415926535f*c));
-} /* end sinc() */
+/* hamming */
+/*  RETURN sin(r)/r*(0.42-0.5*cos(PI*2*(c+0.5))+0.08*cos(PI*4*(c+0.5)));
+                (* blackmann *) */
+} /* end sinc1() */
 
 #define maptool_ALPHAWHITE 230
 /* brihgtness tolerance of alpha value*/
 
-#define maptool_FIRLEN0 5
+#define maptool_FIRLEN0 9
 
 #define maptool_FINESTEPS0 32
 /* fir interpolation steps */
 
 #define maptool_COLOURS 4
 /* with alpha channel */
-
-#define maptool_SYMPERCENT 140
-/* symbols size to font higth */
 
 #define maptool_MAXINSIZE 48
 /* max input symbol size */
@@ -4663,9 +4682,9 @@ static void loadsym(int32_t defy, char msg[], uint32_t msg_len)
    float mag;
    float sum;
    uint8_t c;
-   float fir[4][58];
-   float sa[4][58][32];
-   float firtab[320];
+   float fir[4][66];
+   float sa[4][66][32];
+   float firtab[576];
    struct PIX8A * anonym;
    struct PIX8A * anonym0;
    uint32_t tmp;
@@ -4681,7 +4700,7 @@ static void loadsym(int32_t defy, char msg[], uint32_t msg_len)
    for (y = 0UL; y<=47UL; y++) {
       rows[y] = (pROWS1) &bu[y][0U];
    } /* end for */
-   defy = (defy*140L)/100L;
+   defy = (defy*(int32_t)aprsdecode_lums.fontsymbolpercent)/100L;
    if (defy>32L) defy = 32L;
    if (defy<16L) defy = 16L;
    fi = (uint32_t)defy;
@@ -4725,19 +4744,19 @@ static void loadsym(int32_t defy, char msg[], uint32_t msg_len)
          }
          mag = X2C_DIVR((float)outsize,(float)insize);
          mr = mag;
-         firlen = 5UL;
+         firlen = 9UL;
          if (mr>1.0f) {
             mr = 1.0f;
             firlen = 2UL;
          }
-         for (x = 0UL; x<=319UL; x++) {
+         for (x = 0UL; x<=575UL; x++) {
             /* generate fir table */
             firtab[x] = mr*sinc((float)((int32_t)x-(int32_t)
                 (firlen*32UL))*0.03125f, firlen*2UL);
          } /* end for */
-         memset((char *)fir,(char)0U,sizeof(float [4][58]));
+         memset((char *)fir,(char)0U,sizeof(float [4][66]));
          for (sym = 0UL; sym<=191UL; sym++) {
-            memset((char *)sa,(char)0U,sizeof(float [4][58][32]));
+            memset((char *)sa,(char)0U,sizeof(float [4][66][32]));
             tmp = insize-1UL;
             y = 0UL;
             if (y<=tmp) for (;; y++) {
@@ -4906,6 +4925,8 @@ extern void maptool_loadfont(void)
    width = (uint32_t)useri_conf2int(useri_fFONTSIZE, 1UL, 0L, 12L, 0L);
    if (width==0UL) useri_conf2str(useri_fFONTSIZE, 0UL, 1UL, 1, fn, 1025ul);
    else fn[0] = 0;
+   aprsdecode_lums.fontsymbolpercent = (uint32_t)
+                useri_conf2int(useri_fFONTSIZE, 2UL, 50L, 200L, 140L);
    memset((char *)font,(char)0,sizeof(struct _1 [99]));
    aprsdecode_lums.fontysize = higth+3UL;
    aprsdecode_lums.fontxsize = 6UL;
@@ -5033,11 +5054,8 @@ extern void maptool_loadfont(void)
    if (yr>1.0f) yr = 1.0f;
    for (x = 0UL; x<=383UL; x++) {
       /* generate fir table */
-      firtab[x] = sinc((float)((int32_t)x-192L)*1.5625E-2f, 3UL);
+      firtab[x] = sinc1((float)((int32_t)x-192L)*1.5625E-2f, 3UL);
    } /* end for */
-   /*WrFixed(firtab[x]/yr, 2, 6); */
-   /*WrStr(","); */
-   /*WrFixed(ym, 3, 8); WrStr(" ym"); WrFixed(yr, 3, 8); WrStrLn(" yr"); */
    for (y = 0UL; y<=38UL; y++) {
       fir[y] = 0.0f;
    } /* end for */

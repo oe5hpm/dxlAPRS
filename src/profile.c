@@ -40,13 +40,28 @@
 
 #define profile_MINM 20
 
-#define profile_NOALT 10000
+#define profile_NOALT 20000
 
 #define profile_PI 3.1415926535
 
 #define profile_PI2 6.283185307
 
 #define profile_LF "\012"
+
+#define profile_ERRORFONT 10
+
+#define profile_MAXAIRSHADOW 0.5
+/* full red dB */
+
+#define profile_MINAIRSHADOW 0.1
+/* begin red dB */
+
+#define profile_MINDIST 0.2
+
+#define profile_DEFMAXDIST 600.0
+
+#define profile_LEFTSPACE 3
+/* begin of texts from left image margin */
 
 struct POSITIONL;
 
@@ -126,6 +141,8 @@ static double dist;
 static double igamma;
 
 static double treesize;
+
+static double maxdist;
 
 static pPATH path;
 
@@ -216,6 +233,121 @@ static char StrToFixl(double * x, const char s[],
 } /* end StrToFixl() */
 
 
+static void makegammatab(void)
+{
+   uint32_t c;
+   double g;
+   g = X2C_DIVL(1.0,igamma);
+   gammatab[0U] = 0;
+   for (c = 1UL; c<=1023UL; c++) {
+      gammatab[c] = (char)(uint32_t)X2C_TRUNCC(exp(log((double)
+                (X2C_DIVR((float)c,1024.0f)))*g)*255.5,0UL,
+                X2C_max_longcard);
+   } /* end for */
+} /* end makegammatab() */
+
+
+static uint8_t pngc(uint16_t c)
+{
+   if (c<=1023U) return gammatab[c];
+   else return 255U;
+   return 0;
+} /* end pngc() */
+
+
+static void wrpng(void)
+{
+   struct PNGPIXMAP pngimg;
+   int32_t ret;
+   int32_t y;
+   int32_t x;
+   struct imagetext_PIX * anonym;
+   struct PNGPIXEL * anonym0;
+   int32_t tmp;
+   int32_t tmp0;
+   osic_alloc((char * *) &pngimg.image, (uint32_t)(xsize*ysize*3L));
+   if (pngimg.image) {
+      makegammatab();
+      tmp = ysize-1L;
+      y = 0L;
+      if (y<=tmp) for (;; y++) {
+         tmp0 = xsize-1L;
+         x = 0L;
+         if (x<=tmp0) for (;; x++) {
+            { /* with */
+               struct imagetext_PIX * anonym = &image->Adr[(x)
+                *image->Len0+((ysize-1L)-y)];
+               { /* with */
+                  struct PNGPIXEL * anonym0 = &pngimg.image[x+y*xsize];
+                  anonym0->red = pngc(anonym->r);
+                  anonym0->green = pngc(anonym->g);
+                  anonym0->blue = pngc(anonym->b);
+               }
+            }
+            if (x==tmp0) break;
+         } /* end for */
+         if (y==tmp) break;
+      } /* end for */
+      pngimg.width = (uint32_t)xsize;
+      pngimg.height = (uint32_t)ysize;
+      ret = writepng(imagefn, &pngimg);
+      osic_free((char * *) &pngimg.image, (uint32_t)(xsize*ysize*3L));
+   }
+   else osi_Werr("png write out of memory\012", 25ul);
+} /* end wrpng() */
+
+
+static void background(void)
+{
+   /* 20:80:220 */
+   int32_t gg;
+   int32_t rr;
+   int32_t y;
+   int32_t i;
+   struct imagetext_PIX * anonym;
+   int32_t tmp;
+   int32_t tmp0;
+   tmp = ysize-1L;
+   y = 0L;
+   if (y<=tmp) for (;; y++) {
+      rr = 20L+(40L*(ysize-y))/ysize;
+      gg = 40L+(70L*(ysize-y))/ysize;
+      tmp0 = xsize-1L;
+      i = 0L;
+      if (i<=tmp0) for (;; i++) {
+         { /* with */
+            struct imagetext_PIX * anonym = &image->Adr[(i)*image->Len0+y];
+            anonym->r = (uint16_t)rr;
+            anonym->g = (uint16_t)gg;
+            anonym->b = 180U;
+         }
+         if (i==tmp0) break;
+      } /* end for */
+      if (y==tmp) break;
+   } /* end for */
+} /* end background() */
+
+
+static void errorimg(const char errmsg[], uint32_t errmsg_len)
+{
+   int32_t x;
+   size_t tmp[2];
+   if (image==0) {
+      X2C_DYNALLOCATE((char **) &image,sizeof(struct imagetext_PIX),
+                (tmp[0] = (size_t)xsize,tmp[1] = (size_t)ysize,tmp),2u);
+      if (image==0) Error("out of memory", 14ul);
+   }
+   x = (xsize-(int32_t)imagetext_strsize(10UL, errmsg, errmsg_len))/2L;
+   if (x<0L) x = 0L;
+   background();
+   imagetext_writestr(image, (uint32_t)x,
+                (uint32_t)((ysize-(int32_t)imagetext_fontsizey(10UL))/2L)
+                , 10UL, 900UL, 100UL, 0UL, errmsg, errmsg_len);
+   wrpng();
+   Error(errmsg, errmsg_len);
+} /* end errorimg() */
+
+
 static void Parms(void)
 {
    char err;
@@ -251,7 +383,7 @@ static void Parms(void)
          else if (h[1U]=='p') {
             osi_NextArg(libsrtm_srtmdir, 1024ul);
             if (libsrtm_srtmdir[0U]==0 || libsrtm_srtmdir[0U]=='-') {
-               Error("-p <osm-folder-path>", 21ul);
+               Error("-p <srtm-folder-path>", 22ul);
             }
          }
          else if (h[1U]=='a') {
@@ -294,14 +426,14 @@ static void Parms(void)
          }
          else if (h[1U]=='A') {
             osi_NextArg(h, 1024ul);
-            if ((!StrToFixl(&anta, h, 1024ul) || anta<0.0) || anta>10000.0) {
-               Error("-A <meter> (0..10000)", 22ul);
+            if ((!StrToFixl(&anta, h, 1024ul) || anta<0.0) || anta>20000.0) {
+               Error("-A <meter> (0..20000)", 22ul);
             }
          }
          else if (h[1U]=='B') {
             osi_NextArg(h, 1024ul);
-            if ((!StrToFixl(&antb, h, 1024ul) || antb<0.0) || antb>10000.0) {
-               Error("-B <meter> (0..10000)", 22ul);
+            if ((!StrToFixl(&antb, h, 1024ul) || antb<0.0) || antb>20000.0) {
+               Error("-B <meter> (0..20000)", 22ul);
             }
          }
          else if (X2C_CAP(h[1U])=='R') {
@@ -330,6 +462,13 @@ static void Parms(void)
             if ((!StrToFixl(&igamma, h,
                 1024ul) || igamma<0.01) || igamma>10.0) {
                Error("-g <gamma> [0.1..10]", 21ul);
+            }
+         }
+         else if (h[1U]=='M') {
+            osi_NextArg(h, 1024ul);
+            if ((!StrToFixl(&maxdist, h,
+                1024ul) || maxdist<=0.2) || maxdist>1000.0) {
+               Error("-N <km>", 8ul);
             }
          }
          else if (h[1U]=='w') {
@@ -400,6 +539,18 @@ utput", 55ul);
 } /* end Parms() */
 
 
+static float azimuthl(struct POSITIONL posa0, struct POSITIONL posb0)
+{
+   struct aprsstr_POSITION posbr;
+   struct aprsstr_POSITION posar;
+   posar.lat = (float)posa0.lat;
+   posar.long0 = (float)posa0.long0;
+   posbr.lat = (float)posb0.lat;
+   posbr.long0 = (float)posb0.long0;
+   return aprspos_azimuth(posar, posbr);
+} /* end azimuthl() */
+
+
 static double fresnel(double a, double b,
                 double lambda)
 {
@@ -432,6 +583,8 @@ static void calcpath(void)
    int32_t maxsteps;
    int32_t j;
    int32_t i;
+   char errb[100];
+   char erra[100];
    struct PATH * anonym;
    struct PATH * anonym0;
    int32_t tmp;
@@ -439,11 +592,11 @@ static void calcpath(void)
    posr.lat = (float)posa.lat;
    posr.long0 = (float)posa.long0;
    alta = (double)libsrtm_getsrtm(posr, 1UL, &res);
-   if (alta>=10000.0) Error("no altitude at antanna A", 25ul);
+   if (alta>=20000.0) errorimg("No Altitude Data at Antanna A", 30ul);
    posr.lat = (float)posb.lat;
    posr.long0 = (float)posb.long0;
    altb = (double)libsrtm_getsrtm(posr, 1UL, &res);
-   if (altb>=10000.0) Error("no altitude at antanna B", 25ul);
+   if (altb>=20000.0) errorimg("No Altitude Data at Antanna B", 30ul);
    alta = alta+anta;
    altb = altb+antb;
    /*
@@ -462,8 +615,25 @@ static void calcpath(void)
    stepm = dist*ks*1000.0;
    maxsteps = (int32_t)(1UL+(uint32_t)
                 X2C_TRUNCC(stepm*3.3333333333333E-2,0UL,X2C_max_longcard));
-   if (dist<0.2) Error("distance too less", 18ul);
-   if (dist>600.0) Error("distance too long", 18ul);
+   strncpy(erra,"Distance (",100u);
+   aprsstr_FixToStr((float)dist, 3UL, errb, 100ul);
+   aprsstr_Append(erra, 100ul, errb, 100ul);
+   aprsstr_Append(erra, 100ul, "km) ", 5ul);
+   if (dist<0.2) {
+      aprsstr_Append(erra, 100ul, "too less (>", 12ul);
+      aprsstr_FixToStr(0.2f, 3UL, errb, 100ul);
+      aprsstr_Append(erra, 100ul, errb, 100ul);
+      aprsstr_Append(erra, 100ul, "km)", 4ul);
+      errorimg(erra, 100ul);
+   }
+   if (dist>maxdist) {
+      aprsstr_Append(erra, 100ul, "too long (<", 12ul);
+      aprsstr_IntToStr((int32_t)X2C_TRUNCI(maxdist,X2C_min_longint,
+                X2C_max_longint), 1UL, errb, 100ul);
+      aprsstr_Append(erra, 100ul, errb, 100ul);
+      aprsstr_Append(erra, 100ul, "km)", 4ul);
+      errorimg(erra, 100ul);
+   }
    refrac = -((6370.0-sqrt(4.05769E+7+dist*dist*0.25))*4000.0);
    lambda = X2C_DIVL(300.0,mhz);
    tmp = linksize-1L;
@@ -516,70 +686,6 @@ static void calcpath(void)
       if (i==tmp) break;
    } /* end for */
 } /* end calcpath() */
-
-
-static void makegammatab(void)
-{
-   uint32_t c;
-   double g;
-   g = X2C_DIVL(1.0,igamma);
-   gammatab[0U] = 0;
-   for (c = 1UL; c<=1023UL; c++) {
-      gammatab[c] = (char)(uint32_t)X2C_TRUNCC(exp(log((double)
-                (X2C_DIVR((float)c,1024.0f)))*g)*255.5,0UL,
-                X2C_max_longcard);
-   } /* end for */
-} /* end makegammatab() */
-
-
-static uint8_t pngc(uint16_t c)
-{
-   if (c<=1023U) return gammatab[c];
-   else return 255U;
-   return 0;
-} /* end pngc() */
-
-
-static void wrpng(void)
-{
-   struct PNGPIXMAP pngimg;
-   int32_t ret;
-   int32_t y;
-   int32_t x;
-   struct imagetext_PIX * anonym;
-   struct PNGPIXEL * anonym0;
-   int32_t tmp;
-   int32_t tmp0;
-   osic_alloc((char * *) &pngimg.image, (uint32_t)(xsize*ysize*3L));
-   if (pngimg.image) {
-      makegammatab();
-      tmp = ysize-1L;
-      y = 0L;
-      if (y<=tmp) for (;; y++) {
-         tmp0 = xsize-1L;
-         x = 0L;
-         if (x<=tmp0) for (;; x++) {
-            { /* with */
-               struct imagetext_PIX * anonym = &image->Adr[(x)
-                *image->Len0+((ysize-1L)-y)];
-               { /* with */
-                  struct PNGPIXEL * anonym0 = &pngimg.image[x+y*xsize];
-                  anonym0->red = pngc(anonym->r);
-                  anonym0->green = pngc(anonym->g);
-                  anonym0->blue = pngc(anonym->b);
-               }
-            }
-            if (x==tmp0) break;
-         } /* end for */
-         if (y==tmp) break;
-      } /* end for */
-      pngimg.width = (uint32_t)xsize;
-      pngimg.height = (uint32_t)ysize;
-      ret = writepng(imagefn, &pngimg);
-      osic_free((char * *) &pngimg.image, (uint32_t)(xsize*ysize*3L));
-   }
-   else osi_Werr("png write out of memory\012", 25ul);
-} /* end wrpng() */
 
 
 static void fresnelfree(double * airshadow, double * woodshadow)
@@ -667,11 +773,11 @@ static void drawcolon(int32_t x, double y00, double y1,
 } /* end drawcolon() */
 
 
-static int32_t leftbound(const char s[], uint32_t s_len)
+static int32_t rightbound(const char s[], uint32_t s_len)
 {
    return (xsize-(int32_t)imagetext_strsize((uint32_t)fonttyp, s,
                 s_len))-2L;
-} /* end leftbound() */
+} /* end rightbound() */
 
 
 static int32_t Scale125(double pix0)
@@ -845,49 +951,32 @@ static void drawimage(void)
    char ss[100];
    char s[100];
    struct imagetext_PIX * anonym;
-   struct imagetext_PIX * anonym0;
-   struct PATH * anonym1;
+   struct PATH * anonym0;
    /* fill earth */
-   struct imagetext_PIX * anonym2;
-   struct imagetext_PIX * anonym3; /* fill fresnel area */
+   struct imagetext_PIX * anonym1;
+   struct imagetext_PIX * anonym2; /* fill fresnel area */
    /* vertical scale line left */
-   struct imagetext_PIX * anonym4;
+   struct imagetext_PIX * anonym3;
    /* vertical scale line right */
-   struct imagetext_PIX * anonym5;
+   struct imagetext_PIX * anonym4;
    /* meter lines */
-   struct imagetext_PIX * anonym6;
+   struct imagetext_PIX * anonym5;
    /* km lines */
-   struct imagetext_PIX * anonym7;
+   struct imagetext_PIX * anonym6;
    int32_t tmp;
    int32_t tmp0;
    fresnelfree(&airshadow, &woodshadow);
-   /*** background ***/
-   tmp = xsize-1L;
-   i = 0L;
-   if (i<=tmp) for (;; i++) {
-      tmp0 = ysize-1L;
-      y = 0L;
-      if (y<=tmp0) for (;; y++) {
-         { /* with */
-            struct imagetext_PIX * anonym = &image->Adr[(i)*image->Len0+y];
-            anonym->r = 20U;
-            anonym->g = 80U;
-            anonym->b = 220U;
-         }
-         if (y==tmp0) break;
-      } /* end for */
-      if (i==tmp) break;
-   } /* end for */
+   background();
    /*** bottom line ***/
    tmp = (xsize-1L)-5L;
    i = framexl;
    if (i<=tmp) for (;; i++) {
       { /* with */
-         struct imagetext_PIX * anonym0 = &image->Adr[(i)
+         struct imagetext_PIX * anonym = &image->Adr[(i)
                 *image->Len0+frameyd];
-         anonym0->r = 800U;
-         anonym0->g = 500U;
-         anonym0->b = 200U;
+         anonym->r = 800U;
+         anonym->g = 500U;
+         anonym->b = 200U;
       }
       if (i==tmp) break;
    } /* end for */
@@ -899,27 +988,27 @@ static void drawimage(void)
    i = 1L;
    if (i<=tmp) for (;; i++) {
       { /* with */
-         struct PATH * anonym1 = &path->Adr[i];
-         anonym1->optalt = anonym1->optalt+anonym1->refrm;
+         struct PATH * anonym0 = &path->Adr[i];
+         anonym0->optalt = anonym0->optalt+anonym0->refrm;
          if (opt) {
-            anonym1->alt = anonym1->alt+anonym1->zero;
-            anonym1->optalt = anonym1->optalt+anonym1->zero;
+            anonym0->alt = anonym0->alt+anonym0->zero;
+            anonym0->optalt = anonym0->optalt+anonym0->zero;
          }
-         if (anonym1->alt>anonym1->optalt+anonym1->fresm) {
-            anonym1->wood = 0.0;
+         if (anonym0->alt>anonym0->optalt+anonym0->fresm) {
+            anonym0->wood = 0.0;
          }
-         if (anonym1->alt<10000.0) {
-            if (anonym1->alt<min0) min0 = anonym1->alt;
-            if (anonym1->alt>max0) max0 = anonym1->alt;
-            if (anonym1->alt+anonym1->wood>maxw) {
-               maxw = anonym1->alt+anonym1->wood;
+         if (anonym0->alt<20000.0) {
+            if (anonym0->alt<min0) min0 = anonym0->alt;
+            if (anonym0->alt>max0) max0 = anonym0->alt;
+            if (anonym0->alt+anonym0->wood>maxw) {
+               maxw = anonym0->alt+anonym0->wood;
             }
          }
-         if (anonym1->optalt+anonym1->fresm>max0) {
-            max0 = anonym1->optalt+anonym1->fresm;
+         if (anonym0->optalt+anonym0->fresm>max0) {
+            max0 = anonym0->optalt+anonym0->fresm;
          }
-         if (anonym1->optalt-anonym1->fresm<min0) {
-            min0 = anonym1->optalt-anonym1->fresm;
+         if (anonym0->optalt-anonym0->fresm<min0) {
+            min0 = anonym0->optalt-anonym0->fresm;
          }
       }
       if (i==tmp) break;
@@ -937,7 +1026,7 @@ static void drawimage(void)
    if (i<=tmp) for (;; i++) {
       a0 = path->Adr[i].alt;
       a1 = path->Adr[i+1L].alt;
-      if (a0<10000.0 && a1<10000.0) {
+      if (a0<20000.0 && a1<20000.0) {
          ah = sc(scale, min0, a0);
          drawcolon(i+framexl, ah, sc(scale, min0, a1), 80L, 250L, 0L);
          tmp0 = (int32_t)X2C_TRUNCI(ah,X2C_min_longint,X2C_max_longint)-1L;
@@ -945,11 +1034,11 @@ static void drawimage(void)
          y = frameyd+1L;
          if (y<=tmp0) for (;; y++) {
             { /* with */
-               struct imagetext_PIX * anonym2 = &image->Adr[(i+framexl)
+               struct imagetext_PIX * anonym1 = &image->Adr[(i+framexl)
                 *image->Len0+y];
-               anonym2->r += 200U;
-               anonym2->g += 120U;
-               anonym2->b += 0U;
+               anonym1->r += 200U;
+               anonym1->g += 120U;
+               anonym1->b += 0U;
             }
             if (y==tmp0) break;
          } /* end for */
@@ -984,11 +1073,11 @@ static void drawimage(void)
                 X2C_min_longint,X2C_max_longint)+1L;
       if (y<=tmp0) for (;; y++) {
          { /* with */
-            struct imagetext_PIX * anonym3 = &image->Adr[(i+framexl)
+            struct imagetext_PIX * anonym2 = &image->Adr[(i+framexl)
                 *image->Len0+y];
-            anonym3->r += 240U;
-            anonym3->g += 80U;
-            anonym3->b += 0U;
+            anonym2->r += 240U;
+            anonym2->g += 80U;
+            anonym2->b += 0U;
          }
          if (y==tmp0) break;
       } /* end for */
@@ -1011,11 +1100,11 @@ static void drawimage(void)
    y = frameyd;
    if (y<=tmp) for (;; y++) {
       { /* with */
-         struct imagetext_PIX * anonym4 = &image->Adr[(framexl)
+         struct imagetext_PIX * anonym3 = &image->Adr[(framexl)
                 *image->Len0+y];
-         anonym4->r += 600U;
-         anonym4->g += 600U;
-         anonym4->b += 500U;
+         anonym3->r += 600U;
+         anonym3->g += 600U;
+         anonym3->b += 500U;
       }
       if (y==tmp) break;
    } /* end for */
@@ -1025,11 +1114,11 @@ static void drawimage(void)
    y = frameyd;
    if (y<=tmp) for (;; y++) {
       { /* with */
-         struct imagetext_PIX * anonym5 = &image->Adr[(linksize+(framexl-1L))
+         struct imagetext_PIX * anonym4 = &image->Adr[(linksize+(framexl-1L))
                 *image->Len0+y];
-         anonym5->r += 600U;
-         anonym5->g += 600U;
-         anonym5->b += 500U;
+         anonym4->r += 600U;
+         anonym4->g += 600U;
+         anonym4->b += 500U;
       }
       if (y==tmp) break;
    } /* end for */
@@ -1039,7 +1128,9 @@ static void drawimage(void)
       y = frameyd+(int32_t)X2C_TRUNCI(X2C_DIVL((double)(st*i+m)-min0,
                 mpp)+0.5,X2C_min_longint,X2C_max_longint);
       if (y>=(int32_t)X2C_TRUNCI(sc(scale, min0, path->Adr[maxi].optalt),
-                X2C_min_longint,X2C_max_longint)) break;
+                X2C_min_longint,X2C_max_longint)) {
+         break;
+      }
       tmp = linksize-2L;
       x = 1L;
       if (x<=tmp) for (;; x++) {
@@ -1052,7 +1143,7 @@ static void drawimage(void)
             a1 = a0;
          }
          if ((a0>(double)(float)frameyd && a0<sc(scale, min0,
-                path->Adr[x].alt)) && path->Adr[x].alt<10000.0) {
+                path->Adr[x].alt)) && path->Adr[x].alt<20000.0) {
             drawcolon(x+framexl, a0, a1, 25L, 25L, 25L);
          }
          if (x==tmp) break;
@@ -1062,17 +1153,17 @@ static void drawimage(void)
          x = framexl-2L;
          if (x<=tmp) for (;; x++) {
             { /* with */
-               struct imagetext_PIX * anonym6 = &image->Adr[(x)
+               struct imagetext_PIX * anonym5 = &image->Adr[(x)
                 *image->Len0+y];
-               anonym6->r += 600U;
-               anonym6->g += 600U;
-               anonym6->b += 600U;
+               anonym5->r += 600U;
+               anonym5->g += 600U;
+               anonym5->b += 600U;
             }
             if (x==tmp) break;
          } /* end for */
          aprsstr_IntToStr(st*i+m, 4UL, s, 100ul);
          aprsstr_Append(s, 100ul, "m", 2ul);
-         imagetext_writestr(image, 0UL, (uint32_t)(y-fonty/2L),
+         imagetext_writestr(image, 3UL, (uint32_t)(y-fonty/2L),
                 (uint32_t)fonttyp, 700UL, 700UL, 500UL, s, 100ul);
       }
       ++i;
@@ -1093,10 +1184,10 @@ static void drawimage(void)
       y = frameyd-2L;
       if (y<=tmp0) for (;; y++) {
          { /* with */
-            struct imagetext_PIX * anonym7 = &image->Adr[(n)*image->Len0+y];
-            anonym7->r += 600U;
-            anonym7->g += 600U;
-            anonym7->b += 600U;
+            struct imagetext_PIX * anonym6 = &image->Adr[(n)*image->Len0+y];
+            anonym6->r += 600U;
+            anonym6->g += 600U;
+            anonym6->b += 600U;
          }
          if (y==tmp0) break;
       } /* end for */
@@ -1119,8 +1210,11 @@ static void drawimage(void)
                  700UL, 500UL, s, 100ul);
       if (i==tmp) break;
    } /* end for */
-   aprsstr_Assign(s, 100ul, labela, 100ul);
-   aprsstr_Append(s, 100ul, " [", 3ul);
+   if (labela[0]) {
+      aprsstr_Assign(s, 100ul, labela, 100ul);
+      aprsstr_Append(s, 100ul, " [", 3ul);
+   }
+   else aprsstr_Assign(s, 100ul, "[", 2ul);
    aprsstr_IntToStr((int32_t)X2C_TRUNCI(alta-anta,X2C_min_longint,
                 X2C_max_longint), 0UL, ss, 100ul);
    aprsstr_Append(s, 100ul, ss, 100ul);
@@ -1128,8 +1222,13 @@ static void drawimage(void)
    aprsstr_IntToStr((int32_t)X2C_TRUNCI(anta,X2C_min_longint,
                 X2C_max_longint), 0UL, ss, 100ul);
    aprsstr_Append(s, 100ul, ss, 100ul);
-   aprsstr_Append(s, 100ul, "m]", 3ul);
-   imagetext_writestr(image, 0UL, (uint32_t)(ysize-(fonty*12L)/10L),
+   aprsstr_Append(s, 100ul, "m", 2ul);
+   aprsstr_Append(s, 100ul, " ", 2ul);
+   aprsstr_FixToStr(azimuthl(posa, posb), 2UL, ss, 100ul);
+   aprsstr_Append(s, 100ul, ss, 100ul);
+   aprsstr_Append(s, 100ul, "\177", 2ul);
+   aprsstr_Append(s, 100ul, "]", 2ul);
+   imagetext_writestr(image, 3UL, (uint32_t)(ysize-(fonty*12L)/10L),
                 (uint32_t)fonttyp, 800UL, 700UL, 100UL, s, 100ul);
    strncpy(s,"[",100u);
    aprsstr_FixToStr((float)(X2C_DIVL(posa.lat,1.7453292519444E-2)), 6UL,
@@ -1140,16 +1239,15 @@ static void drawimage(void)
    aprsstr_Append(s, 100ul, "/", 2ul);
    aprsstr_Append(s, 100ul, ss, 100ul);
    aprsstr_Append(s, 100ul, "]", 2ul);
-   imagetext_writestr(image, 0UL, (uint32_t)(ysize-(fonty*24L)/10L),
+   imagetext_writestr(image, 3UL, (uint32_t)(ysize-(fonty*24L)/10L),
                 (uint32_t)fonttyp, 700UL, 700UL, 500UL, s, 100ul);
    aprsstr_FixToStr((float)mhz, 2UL*(uint32_t)(mhz<30.0), s, 100ul);
    aprsstr_Append(s, 100ul, "MHz Refrac=", 12ul);
    aprsstr_FixToStr((float)refraction, 3UL, ss, 100ul);
    aprsstr_Append(s, 100ul, ss, 100ul);
-   imagetext_writestr(image, 0UL, (uint32_t)(ysize-(fonty*36L)/10L),
+   imagetext_writestr(image, 3UL, (uint32_t)(ysize-(fonty*36L)/10L),
                 (uint32_t)fonttyp, 700UL, 700UL, 500UL, s, 100ul);
-   aprsstr_Assign(s, 100ul, labelb, 100ul);
-   aprsstr_Append(s, 100ul, " [", 3ul);
+   aprsstr_Assign(s, 100ul, "[", 2ul);
    aprsstr_IntToStr((int32_t)X2C_TRUNCI(altb-antb,X2C_min_longint,
                 X2C_max_longint), 0UL, ss, 100ul);
    aprsstr_Append(s, 100ul, ss, 100ul);
@@ -1157,8 +1255,17 @@ static void drawimage(void)
    aprsstr_IntToStr((int32_t)X2C_TRUNCI(antb,X2C_min_longint,
                 X2C_max_longint), 0UL, ss, 100ul);
    aprsstr_Append(s, 100ul, ss, 100ul);
-   aprsstr_Append(s, 100ul, "m]", 3ul);
-   imagetext_writestr(image, (uint32_t)leftbound(s, 100ul),
+   aprsstr_Append(s, 100ul, "m", 2ul);
+   aprsstr_Append(s, 100ul, " ", 2ul);
+   aprsstr_FixToStr(azimuthl(posb, posa), 2UL, ss, 100ul);
+   aprsstr_Append(s, 100ul, ss, 100ul);
+   aprsstr_Append(s, 100ul, "\177", 2ul);
+   aprsstr_Append(s, 100ul, "]", 2ul);
+   if (labelb[0]) {
+      aprsstr_Append(s, 100ul, " ", 2ul);
+      aprsstr_Append(s, 100ul, labelb, 100ul);
+   }
+   imagetext_writestr(image, (uint32_t)rightbound(s, 100ul),
                 (uint32_t)(ysize-(fonty*12L)/10L), (uint32_t)fonttyp,
                 800UL, 700UL, 100UL, s, 100ul);
    strncpy(s,"[",100u);
@@ -1170,27 +1277,34 @@ static void drawimage(void)
    aprsstr_Append(s, 100ul, "/", 2ul);
    aprsstr_Append(s, 100ul, ss, 100ul);
    aprsstr_Append(s, 100ul, "]", 2ul);
-   imagetext_writestr(image, (uint32_t)leftbound(s, 100ul),
+   imagetext_writestr(image, (uint32_t)rightbound(s, 100ul),
                 (uint32_t)(ysize-(fonty*24L)/10L), (uint32_t)fonttyp,
                 700UL, 700UL, 500UL, s, 100ul);
-   /*  s:="fl="; */
+   /*  s:="fspl="; */
    aprsstr_FixToStr((float)(32.2+8.685889638065*log(dist*mhz)), 2UL, sss,
                 100ul);
-   aprsstr_Append(sss, 100ul, "dBi", 4ul);
+   aprsstr_Append(sss, 100ul, "dB", 3ul);
    cr = 700L;
    cg = 700L;
    cb = 700L;
-   if (airshadow>0.2) {
-      cr = 800L; /* ground shadow*/
-      cg = 100L;
+   if (airshadow>0.1) {
+      /* ground shadow*/
+      cr = 800L;
+      if (airshadow>0.5) cg = 0L;
+      else {
+         cg = (int32_t)X2C_TRUNCI((0.5-airshadow)*(0.5-airshadow)*5000.0,
+                X2C_min_longint,X2C_max_longint);
+         if (cg<0L) cg = 0L;
+         else if (cg>800L) cg = 800L;
+      }
+      cb = cg;
+   }
+   if (airshadow<0.2 && woodshadow>0.2) {
+      cr = 800L; /* wood shadow */
+      cg = 800L;
       cb = 0L;
    }
-   else if (woodshadow>0.2) {
-      cr = 700L; /* wood shadow */
-      cg = 700L;
-      cb = 0L;
-   }
-   imagetext_writestr(image, (uint32_t)leftbound(sss, 100ul),
+   imagetext_writestr(image, (uint32_t)rightbound(sss, 100ul),
                 (uint32_t)(ysize-(fonty*36L)/10L), (uint32_t)fonttyp,
                 (uint32_t)cr, (uint32_t)cg, (uint32_t)cb, sss, 100ul);
    if (treedrawn) {
@@ -1200,7 +1314,7 @@ static void drawimage(void)
       aprsstr_Append(s, 100ul, "m", 2ul);
       aprsstr_Append(sss, 100ul, s, 100ul);
       aprsstr_Append(sss, 100ul, " ", 2ul);
-      imagetext_writestr(image, (uint32_t)leftbound(sss, 100ul),
+      imagetext_writestr(image, (uint32_t)rightbound(sss, 100ul),
                 (uint32_t)(ysize-(fonty*36L)/10L), (uint32_t)fonttyp,
                 700UL, 700UL, 700UL, s, 100ul);
    }
@@ -1216,7 +1330,7 @@ static void wralt(void)
    posr.lat = (float)posa.lat;
    posr.long0 = (float)posa.long0;
    a = libsrtm_getsrtm(posr, 1UL, &res);
-   if (a>=10000.0f) Error("no altitude for this position", 30ul);
+   if (a>=20000.0f) Error("no altitude for this position", 30ul);
    osic_WrINT32((uint32_t)(int32_t)X2C_TRUNCI(a+0.5f,X2C_min_longint,
                 X2C_max_longint), 1UL);
 } /* end wralt() */
@@ -1234,6 +1348,7 @@ extern int main(int argc, char **argv)
    libsrtm_BEGIN();
    osi_BEGIN();
    imagefn[0] = 0;
+   image = 0;
    xsize = 600L;
    ysize = 400L;
    posinval(&posa);
@@ -1248,10 +1363,11 @@ extern int main(int argc, char **argv)
    fonttyp = 6L;
    labela[0] = 0;
    labelb[0] = 0;
+   maxdist = 600.0;
    Parms();
    fontx = (int32_t)imagetext_fontsizex((uint32_t)fonttyp);
    fonty = (int32_t)imagetext_fontsizey((uint32_t)fonttyp);
-   framexl = fontx*5L+2L;
+   framexl = fontx*5L+2L+3L;
    frameyd = fonty+5L;
    frameyu = (fonty*39L)/10L;
    treedrawn = 0;

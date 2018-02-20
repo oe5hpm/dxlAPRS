@@ -1390,10 +1390,26 @@
 + Weicher Alpha-Kanal (Transparenz) bei den Symbolen (win: neue "pngm.dll")
 
 
+09.12.2017 (Ver 0.71)
+
++ win: jpegm.dll  damit werden auch OSM Karten im jpeg Format gelesen
+  (auch mit Filename *.png).
+
++ win: getosm.exe (dank an oe5krn) neu mit "getosm.org" start Datei im zip und 
+  ohne "getosm.ini" damit bei Programmupdate OSM-urls nimmer ueberschrieben werden.
+
++ Urls mit .jpg hinten koennen eingegeben werden.
+
++ Konvertierung auf png kann abgeschaltet bleiben, spart Plattenspeicher.
 
 
 
+12.02.2018 (Ver 0.72)
 
++ Logfile laden (besonders mit 270000 Baken Track drin) verschnellert.
+ 
++ Symbole-Zoom verbessert und % Eingabe als 3. Parameter bei Config>Font>Fontsize
+  fuer Symbolgroesse/Texthoehe Verhaeltnis
 
 
 

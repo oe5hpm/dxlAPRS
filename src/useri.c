@@ -1093,7 +1093,7 @@ f 22050 -C 0 -p /dev/ttyS0 0 -M 0 -t 250 -T 6 -L 127.0.0.1:9002:9001 -m 0",
                 0, 295UL);
    initc(useri_fVIDEOFAST, "Video Accel Delay", 18ul, useri_cLINE, "0", 2ul,
                 0, 300UL);
-   initc(useri_fFONTSIZE, "Fontsize", 9ul, useri_cLINE, "13 8", 5ul, 0,
+   initc(useri_fFONTSIZE, "Fontsize", 9ul, useri_cLINE, "13 8 140", 9ul, 0,
                 302UL);
    initc(useri_fVIEW, "View", 5ul, useri_cLIST, "", 1ul, 0, 305UL);
    initc(useri_fMAXZOOM, "Max Zoom", 9ul, useri_cLINE, "18", 3ul, 0, 310UL);
@@ -4187,7 +4187,7 @@ static void helpmenu(void)
                 aprsdecode_lums.fontysize+7UL, 3UL, useri_bTRANSP);
    /*  addline(menu, "Shortcuts", CMDSHORTCUTLIST, MINH*6); */
    addline(menu, "Helptext", 9ul, "\305", 2ul, 610UL);
-   addline(menu, "aprsmap(cu) 0.71 by OE5DXL ", 28ul, " ", 2ul, 605UL);
+   addline(menu, "aprsmap(cu) 0.72 by OE5DXL ", 28ul, " ", 2ul, 605UL);
    setunderbar(menu, 37L);
    menu->ysize = menu->oldknob*menu->yknob;
    menu->oldknob = 0UL;
@@ -10956,7 +10956,7 @@ static void deletop(void)
                if (X2C_STRCMP(anonym->opf->call,9u,aprsdecode_click.mhop,
                 9u)==0) aprsdecode_click.mhop[0UL] = 0;
                aprsdecode_click.entries = 0UL;
-               aprsdecode_lastpurge = 0UL; /* starte a purge */
+               aprsdecode_lastpurge = 0UL; /* start a purge */
             }
             aprsstr_Append(s, 100ul, " Deleted", 9ul);
             useri_say(s, 100ul, 4UL, 'r');
@@ -12009,7 +12009,7 @@ extern void useri_resizewin(int32_t newx, int32_t newy, char f11)
 
 extern void useri_refreshwin(void)
 {
-   if (useri_newxsize==0UL) useri_redraw(redrawimg);
+   useri_redraw(redrawimg);
 } /* end refreshwin() */
 
 
