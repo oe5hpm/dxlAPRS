@@ -4666,7 +4666,7 @@ static char Auth(const char mbuf0[], uint32_t mbuf_len,
          }
          aprsstr_Assign(h, 512ul, "# logresp ", 11ul);
          aprsstr_Append(h, 512ul, anonym->user.call, 10ul);
-         if (anonym->valid) aprsstr_Append(h, 512ul, " verified", 10ul);
+         if (anonym->valid) aprsstr_Append(h, 512ul, " verified,", 11ul);
          aprsstr_Append(h, 512ul, " server ", 9ul);
          aprsstr_Append(h, 512ul, servercall, 10ul);
          FiltToStr(anonym->filters, h1, 512ul);
