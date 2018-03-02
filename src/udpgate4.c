@@ -43,7 +43,7 @@ FROM stat IMPORT fstat, stat_t;
 
 #define udpgate4_HASHSIZE 65536
 
-#define udpgate4_VERS "udpgate(c) 0.63"
+#define udpgate4_VERS "udpgate(c) 0.64"
 
 #define udpgate4_TOCALL "APNL51"
 
@@ -2455,7 +2455,7 @@ static void beaconmacros(char s[], uint32_t s_len)
          }
          else if (s[i0]=='v') {
             /* insert version */
-            aprsstr_Append(ns, 256ul, "udpgate(c) 0.63", 16ul);
+            aprsstr_Append(ns, 256ul, "udpgate(c) 0.64", 16ul);
          }
          else if (s[i0]==':') {
             /* insert file */
@@ -3774,12 +3774,12 @@ static void Query(MONCALL fromcall, char msg[], uint32_t msg_len,
                  1, path);
    }
    else if (cmd=='S') {
-      Stomsg(servercall, fromcall, *(MSGTEXT *)memcpy(&tmp1,"udpgate(c) 0.63 \
+      Stomsg(servercall, fromcall, *(MSGTEXT *)memcpy(&tmp1,"udpgate(c) 0.64 \
 Msg S&F Relay",30u), *(ACKTEXT *)memcpy(&tmp0,"",1u), 0, 0, 1, path);
    }
    else if (cmd=='v') {
       Stomsg(servercall, fromcall, *(MSGTEXT *)memcpy(&tmp1,
-                "udpgate(c) 0.63",16u), *(ACKTEXT *)memcpy(&tmp0,"",1u), 0,
+                "udpgate(c) 0.64",16u), *(ACKTEXT *)memcpy(&tmp0,"",1u), 0,
                 0, 1, path);
    }
    else if (cmd=='h') {
@@ -5662,7 +5662,7 @@ enter\"><H3>\015\012", 131ul);
       Appwww(wsock, wbuf, viacall, 10ul);
    }
    apppos(wbuf, wsock, home, 1);
-   Appwww(wsock, wbuf, " [udpgate(c) 0.63] http#", 25ul);
+   Appwww(wsock, wbuf, " [udpgate(c) 0.64] http#", 25ul);
    aprsstr_IntToStr((int32_t)*cnt, 1UL, h, 32ul);
    Appwww(wsock, wbuf, h, 32ul);
    Appwww(wsock, wbuf, " Uptime ", 9ul);
@@ -5752,7 +5752,7 @@ gn:center\"><H3>\015\012", 131ul);
          Appwww(&wsock, wbuf, "  Port ", 8ul);
          Appwww(&wsock, wbuf, tcpbindport, 6ul);
       }
-      Appwww(&wsock, wbuf, " [udpgate(c) 0.63] Maxusers ", 29ul);
+      Appwww(&wsock, wbuf, " [udpgate(c) 0.64] Maxusers ", 29ul);
       aprsstr_IntToStr((int32_t)maxusers, 1UL, h1, 256ul);
       Appwww(&wsock, wbuf, h1, 256ul);
       Appwww(&wsock, wbuf, " http#", 7ul);
@@ -6181,7 +6181,7 @@ static char tcpconn(pTCPSOCK * sockchain, int32_t f,
             aprsstr_Append(h, 512ul, passwd, 6ul);
          }
          aprsstr_Append(h, 512ul, " vers ", 7ul);
-         aprsstr_Append(h, 512ul, "udpgate(c) 0.63", 16ul);
+         aprsstr_Append(h, 512ul, "udpgate(c) 0.64", 16ul);
          if (actfilter[0U]) {
             aprsstr_Append(h, 512ul, " filter ", 9ul);
             aprsstr_Append(h, 512ul, actfilter, 256ul);
@@ -6212,7 +6212,7 @@ static char tcpconn(pTCPSOCK * sockchain, int32_t f,
          aprsstr_Append(h1, 512ul, h2, 512ul);
          logline(1L, h1, 512ul);
       }
-      aprsstr_Assign(h, 512ul, "# udpgate(c) 0.63\015\012", 20ul);
+      aprsstr_Assign(h, 512ul, "# udpgate(c) 0.64\015\012", 20ul);
       Sendtcp(cp, h);
    }
    return 1;
