@@ -88,6 +88,7 @@ struct PATH {
    double zero;
    double wood;
    double alt;
+   float resol;
 };
 
 
@@ -660,7 +661,8 @@ static void calcpath(void)
             posr.lat = (float)anonym->pos.lat;
             posr.long0 = (float)anonym->pos.long0;
             a = (double)libsrtm_getsrtm(posr,
-                (uint32_t)X2C_TRUNCC(stepm,0UL,X2C_max_longcard), &res);
+                (uint32_t)X2C_TRUNCC(stepm,0UL,X2C_max_longcard),
+                &anonym->resol);
             if (a>anonym->alt) anonym->alt = a;
          }
          if (j==tmp0) break;
@@ -968,15 +970,26 @@ static void drawimage(void)
    fresnelfree(&airshadow, &woodshadow);
    background();
    /*** bottom line ***/
+   mpp = X2C_DIVL(dist*1000.0,(double)(((xsize-1L)-5L)-framexl));
+   w = 0.0;
    tmp = (xsize-1L)-5L;
    i = framexl;
    if (i<=tmp) for (;; i++) {
       { /* with */
          struct imagetext_PIX * anonym = &image->Adr[(i)
                 *image->Len0+frameyd];
-         anonym->r = 800U;
-         anonym->g = 500U;
-         anonym->b = 200U;
+         w = w+mpp;
+         if (w>(double)path->Adr[i-framexl].resol) {
+            w = 0.0;
+            anonym->r = 600U;
+            anonym->g = 500U;
+            anonym->b = 500U;
+         }
+         else {
+            anonym->r = 300U;
+            anonym->g = 0U;
+            anonym->b = 0U;
+         }
       }
       if (i==tmp) break;
    } /* end for */
@@ -1122,15 +1135,15 @@ static void drawimage(void)
       }
       if (y==tmp) break;
    } /* end for */
-   if (opt) i = -3L;
+   if (opt) {
+      i = -3L;
+   }
    else i = 0L;
    for (;;) {
       y = frameyd+(int32_t)X2C_TRUNCI(X2C_DIVL((double)(st*i+m)-min0,
                 mpp)+0.5,X2C_min_longint,X2C_max_longint);
       if (y>=(int32_t)X2C_TRUNCI(sc(scale, min0, path->Adr[maxi].optalt),
-                X2C_min_longint,X2C_max_longint)) {
-         break;
-      }
+                X2C_min_longint,X2C_max_longint)) break;
       tmp = linksize-2L;
       x = 1L;
       if (x<=tmp) for (;; x++) {
