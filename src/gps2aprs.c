@@ -934,7 +934,7 @@ static void sendaprs(double lat0, double long1,
       ++i;
       b[i] = num(n);
       ++i;
-      if (lat0>=0.0) b[i] = 'E';
+      if (long1>=0.0) b[i] = 'E';
       else b[i] = 'W';
       ++i;
       b[i] = symb;

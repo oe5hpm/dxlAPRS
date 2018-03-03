@@ -431,7 +431,7 @@ static void sendaprs(uint32_t comp0, uint32_t micessid, char dao,
       ++i;
       b[i] = num(n);
       ++i;
-      if (lat>=0.0) b[i] = 'E';
+      if (long0>=0.0) b[i] = 'E';
       else b[i] = 'W';
       ++i;
       b[i] = sym[1UL];
