@@ -285,6 +285,13 @@ int osic_symblink(char *existing, char *newname)
 	return symlink(existing, newname);
 }
 
+char osic_mkdir(char path[], uint32_t fname_len, uint32_t perm)
+{
+        if (mkdir(path, perm) != -1);
+                return 1;
+        return 0;
+}
+
 void osic_NextArg(char s[], uint32_t s_len)
 {
 	if (argc_delivered >= osic_argc-1) {

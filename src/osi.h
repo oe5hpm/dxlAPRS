@@ -23,7 +23,6 @@
 #endif
 #include <osic.h>
 
-/* os interface */
 typedef int32_t osi_File;
 
 typedef int32_t osi_SOCKET;
@@ -137,7 +136,6 @@ extern void osi_WrBin(int32_t, char [], uint32_t, uint32_t);
 extern void osi_Werr(char [], uint32_t);
 
 extern void osi_WrHex(uint32_t, uint32_t);
-/*PROCEDURE IsFifo(fd:File):BOOLEAN;*/
 
 extern void osi_NextArg(char [], uint32_t);
 
@@ -150,6 +148,8 @@ extern char osi_Exists(char [], uint32_t);
 extern int32_t osi_getptsname(int32_t, char *, uint32_t);
 
 extern int32_t osi_symblink(char *, char *);
+
+extern char osi_CreateDir(char [], uint32_t, uint32_t);
 
 extern void osi_WrStrLn(char [], uint32_t);
 

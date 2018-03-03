@@ -85,6 +85,8 @@ char osic_Exists(char fname[], uint32_t fname_len);
 
 int osic_symblink(char *existing, char *newname);
 
+char osic_mkdir(char fname[], uint32_t fname_len, uint32_t perm);
+
 void osic_NextArg(char s[], uint32_t s_len);
 
 void osic_Fill(char *buf, uint32_t len, char byte);
