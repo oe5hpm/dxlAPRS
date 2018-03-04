@@ -817,7 +817,7 @@ Bulletins (send as Query)
 first for tx enabled Rf Port. If You
 have more than 1 open Port, select the
 Port to send NEXT Msg. 
-To change Port for a pending Msg, klick
+To change Port for a pending Msg, click
 to Port and then to "Set Port" at the
 Stored Msg Line's Pulldown menu 
      
@@ -826,12 +826,12 @@ Messages to Net are sent immediately
 1 time and, if not acked, resent again
 when a beacon of the destination is
 received.
-To change Port for a Pending Msg, klick
+To change Port for a Pending Msg, click
 to Port and then to "Set Port" at the
 Stored Msg Line's Pulldown menu
 
 |6822 Send Message to Radio Port 1
-To change Port for a Pending Msg, klick
+To change Port for a Pending Msg, click
 to Port and then to "Set Port" at the
 Stored Msg Line's Pulldown menu.
 Msgs (with ack) on Rf Ports are resent
@@ -839,17 +839,17 @@ in increasing interval until ack'ed or
 deleted or holded
 
 |6823 Send Message to Radio Port 2
-To change Port for a Pending Msg, klick
+To change Port for a Pending Msg, click
 to Port and then to "Set Port" at the
 Stored Msg Line's Pulldown menu
 
 |6824 Send Message to Radio Port 3
-To change Port for a Pending Msg, klick
+To change Port for a Pending Msg, click
 to Port and then to "Set Port" at the
 Stored Msg Line's Pulldown menu
 
 |6825 Send Message to Radio Port 4
-To change Port for a Pending Msg, klick
+To change Port for a Pending Msg, click
 to Port and then to "Set Port" at the
 Stored Msg Line's Pulldown menu
 
@@ -863,7 +863,7 @@ Stored Msg Line's Pulldown menu
 until Kick or Restart
 
 |6901 First set the (blue) Button to a Port
-then klick this Button to redirect Msg
+then click this Button to redirect Msg
 
 |6900 Edit the Message and requeue
 
@@ -993,6 +993,7 @@ and ghost-tracks on Maps.
 
 |7446 Choose Rf-Ports to be gated to
 Internet if gateing is Enabled
+e.g. 124
 
 |7500 Enable/Disable Rf Port 1
 
@@ -1598,7 +1599,7 @@ luminance. try for best readability
 
 |8529 Antenna at Marker 1 Altitude over Ground.
 If " A" is appended like "10 A", the
-Altitude (if avaliable) from a klicked
+Altitude (if avaliable) from a clicked
 Object will be added
 
 |8527 Antenna at Marker 2 Altitude over Ground.
