@@ -18,6 +18,8 @@
 #				single AXUDP interface from Flexnet, XNET, ...
 # - aprsmap		powerful APRS viewer based on Openstreetmap
 # - profile		makes png Image with Geo-Profile of 2 Positions using srtm-datafiles
+# - radiorange		makes png Image/tiles with radio illumintion of 1 or 2 Positions
+#                               using srtm-datafiles
 # ---------------------- common section ---------------------------------------
 HOSTARCH := $(shell uname -m | \
 	sed -e s/i.86/x86/ \
@@ -177,6 +179,7 @@ OBJ_SDRRADIO	= tcpb.o sdr.o radio.o
 OBJ_L2CAT	= l2.o frameio.o deflate.o Execlogin.o cleanup.o l2cat.o
 OBJ_ADSB2APRS	= adsb2aprs.o tcpb.o
 OBJ_PROFILE	= profile.o imagetext.o libsrtm.o pngwrite.o
+OBJ_RADIORANGE	= radiorange.o pngwritepalette.o libsrtm.o
 
 TARGETS += \
 	afskmodem \
@@ -192,7 +195,8 @@ TARGETS += \
 	sdrtst \
 	sdrradio \
 	adsb2aprs \
-	profile
+	profile \
+	radiorange
 
 ifneq ($(HOSTOS), Darwin)
 	TARGETS += l2cat
@@ -214,7 +218,8 @@ OBJS = \
 	$(OBJ_SDRRADIO) \
         $(OBJ_L2CAT)	\
         $(OBJ_ADSB2APRS) \
-        $(OBJ_PROFILE)
+        $(OBJ_PROFILE) \
+        $(OBJ_RADIORANGE)
 
 # ------------------- target make rules -------------------
 #                     -----------------
@@ -293,6 +298,10 @@ adsb2aprs: $(OBJ_ADSB2APRS) $(OBJ_COMMON)
 profile : $(OBJ_PROFILE) $(OBJ_COMMON)
 	$(CC) $(LFLAGS) -o profile $(OBJ_PROFILE) $(OBJ_COMMON) $(XLIBS) -lm
 	$(STRIP) profile $(STRIPFLAGS)
+
+radiorange: $(OBJ_RADIORANGE) $(OBJ_COMMON)
+	$(CC) $(LFLAGS) -o radiorange $(OBJ_RADIORANGE) $(OBJ_COMMON) -lm -lpng
+	$(STRIP) radiorange $(STRIPFLAGS)
 
 diag:
 	echo $(HOSTARCH)

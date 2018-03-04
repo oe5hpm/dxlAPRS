@@ -20,6 +20,7 @@ src/sdrtst
 src/sdrradio
 src/l2cat
 src/profile
+src/radiorange
 src/.settings
 xds/C/C/*.o
 xds/lib/C/libxds.a
