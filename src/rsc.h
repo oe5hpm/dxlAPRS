@@ -12,7 +12,7 @@
 
 extern void initrsc(void);
 
-extern long decodersc(char [], unsigned long [], long);
+extern long decodersc(char [], int [], int);
 
 
 #endif /* rsc_H_ */

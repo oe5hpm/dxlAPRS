@@ -110,7 +110,7 @@ static int32_t disfd;
 
 static union _XEvent event;
 
-static uint32_t mykey;
+static KeySym mykey;
 
 static struct _XComposeStatus mystat;
 
@@ -120,7 +120,7 @@ static uint32_t cursor;
 
 static char cursorset;
 
-static uint32_t wclose;
+static Atom wclose;
 
 
 static uint32_t Gamma(uint32_t c, float g)
@@ -566,8 +566,8 @@ extern void xosi_sethand(uint8_t t)
 static void checkbuttons(void)
 {
    /* check mouse buttons if lost events */
-   uint32_t c;
-   uint32_t r;
+   Window c;
+   Window r;
    int32_t wy;
    int32_t wx;
    int32_t y;
@@ -586,10 +586,10 @@ extern void xosi_xevent(void)
    XWindowAttributes attr;
    int32_t res;
    char cmd;
-   int32_t ii;
-   uint32_t nc;
-   uint32_t nn;
-   uint32_t atom1;
+   int ii;
+   long nc;
+   long nn;
+   Atom atom1;
    PAUChar pstr;
    int32_t tmp;
    while (XPending(dis)) {
