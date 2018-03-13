@@ -9,36 +9,21 @@
 #include <sys/types.h>
 #include <stdint.h>
    
-    
-typedef struct  {
-    char *pixels;
-    uint32_t width;
-    uint32_t height;
-    png_color *palette;
-    uint32_t xbytes;
-    uint32_t palettelen;
-    uint32_t palettedepth;
-    char *transparency;
-} bitmap_t;
-    
-/* Given "bitmap", this returns the pixel of bitmap at the point 
-   ("x", "y"). */
-
-static char * pixel_at (bitmap_t * bitmap, int x, int y)
-{
-    return bitmap->pixels + bitmap->xbytes*y + x;
-}
-    
 /* Write "bitmap" to a PNG file specified by "path"; returns 0 on
    success, non-zero on error. */
 
-int writepng(const char *path, bitmap_t *bitmap)
+int writepng(const char *path, char **rowpointers, uint32_t width, uint32_t height,
+    png_color *palette, uint32_t palettelen,  uint32_t palettedepth,
+    char *transparency
+    )
 {
     FILE * fp;
     png_structp png_ptr = NULL;
     png_infop info_ptr = NULL;
     size_t x, y;
+
     png_byte ** row_pointers = NULL;
+
     /* "status" contains the return value of this function. At first
        it is set to a value which means 'failure'. When the routine
        has finished its work, it is set to a value which means
@@ -48,7 +33,7 @@ int writepng(const char *path, bitmap_t *bitmap)
        see where it it is documented in the libpng manual.
     */
     int pixel_size = 1;
-    
+
     fp = fopen (path, "wb");
     if (! fp) {
         goto fopen_failed;
@@ -74,9 +59,9 @@ int writepng(const char *path, bitmap_t *bitmap)
 
     png_set_IHDR (png_ptr,
                   info_ptr,
-                  bitmap->width,
-                  bitmap->height,
-                  bitmap->palettedepth,
+                  width,
+                  height,
+                  palettedepth,
                   PNG_COLOR_TYPE_PALETTE,
                   PNG_INTERLACE_NONE,
                   PNG_COMPRESSION_TYPE_DEFAULT,
@@ -84,24 +69,20 @@ int writepng(const char *path, bitmap_t *bitmap)
     
     /* Initialize rows of PNG. */
 
-    row_pointers = png_malloc (png_ptr, bitmap->height * sizeof (png_byte *));
-    for (y = 0; y < bitmap->height; ++y) {
-        png_byte *row = 
-            png_malloc (png_ptr, bitmap->xbytes);
-        row_pointers[y] = row;
-        for (x = 0; x < bitmap->xbytes; ++x) {
-            *row++ = *pixel_at (bitmap, x, y);
-        }
-    }
+    
+    row_pointers = png_malloc (png_ptr, height * sizeof (png_byte *));
+    for (y = 0; y < height; ++y)
+        row_pointers[y] = rowpointers[y];
+    
     
     /* Write the image data to "fp". */
 
     png_init_io (png_ptr, fp);
     png_set_rows (png_ptr, info_ptr, row_pointers);
 
-    png_set_PLTE (png_ptr, info_ptr, bitmap->palette, bitmap->palettelen);
+    png_set_PLTE (png_ptr, info_ptr, palette, palettelen);
 
-    png_set_tRNS (png_ptr, info_ptr, bitmap->transparency, bitmap->palettelen, NULL);
+    png_set_tRNS (png_ptr, info_ptr, transparency, palettelen, NULL);
 
 
     png_write_png (png_ptr, info_ptr, PNG_TRANSFORM_IDENTITY, NULL);
@@ -111,9 +92,11 @@ int writepng(const char *path, bitmap_t *bitmap)
 
     status = 0;
     
+/*
     for (y = 0; y < bitmap->height; y++) {
         png_free (png_ptr, row_pointers[y]);
     }
+*/
     png_free (png_ptr, row_pointers);
     
  png_failure:

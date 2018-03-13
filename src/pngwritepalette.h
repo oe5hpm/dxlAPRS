@@ -8,7 +8,6 @@
 #ifndef pngwritepalette_H_
 #define pngwritepalette_H_
 #include "X2C.h"
-#include <sys/types.h>
 
 struct PNGPALETTE;
 
@@ -19,45 +18,28 @@ struct PNGPALETTE {
    uint8_t b;
 };
 
+typedef uint8_t * pLINE;
+
+typedef pLINE * pROWPOINTERS;
+
 typedef struct PNGPALETTE * pPNGPALETTE;
 
 
 struct pngwritepalette__D0 {
    struct PNGPALETTE * Adr;
-   uint32_t Len0;
-};
-
-typedef uint8_t * pIMAGE;
-
-
-struct pngwritepalette__D1 {
-   uint8_t * Adr;
-   uint32_t Len0;
+   size_t Len0;
 };
 
 typedef uint8_t * pRNS;
 
 
-struct pngwritepalette__D2 {
+struct pngwritepalette__D1 {
    uint8_t * Adr;
-   uint32_t Len0;
+   size_t Len0;
 };
 
-struct PNGPIXMAP;
-
-
-struct PNGPIXMAP {
-   pIMAGE image;
-   uint32_t width;
-   uint32_t height;
-   pPNGPALETTE palette;
-   uint32_t xbytes;
-   uint32_t palettelen;
-   uint32_t palettedepth;
-   pRNS trns;
-};
-
-extern int32_t writepng(char [], struct PNGPIXMAP *);
+extern int32_t writepng(char [], pROWPOINTERS, uint32_t, uint32_t,
+                pPNGPALETTE, uint32_t, uint32_t, pRNS);
 
 
 #endif /* pngwritepalette_H_ */

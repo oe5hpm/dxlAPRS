@@ -52,6 +52,8 @@
 
 #define radiorange_PALETTELEN 256
 
+#define radiorange_NL "\012"
+
 
 struct IMAGE {
    uint8_t * Adr;
@@ -60,13 +62,16 @@ struct IMAGE {
    size_t Len1;
 };
 
-typedef struct IMAGE * pIMAGE0;
+typedef struct IMAGE * pIMAGE;
 
 typedef int32_t COLOUR[5];
 
-static pIMAGE0 image;
+static pIMAGE image;
 
-static pIMAGE0 image2;
+static pIMAGE image2;
+
+static pIMAGE tileimg;
+/*    tileimg:POINTER TO ARRAY OF CARD8; */
 
 static char imagefn[1024];
 
@@ -100,6 +105,8 @@ static int32_t lasttilezoom;
 
 static int32_t lasttiledir;
 
+static int32_t draft;
+
 static COLOUR colour1;
 
 static COLOUR colour2;
@@ -112,6 +119,8 @@ static struct aprsstr_POSITION posb;
 
 static struct aprsstr_POSITION mappos;
 
+static struct aprsstr_POSITION mappos2;
+
 static float refraction;
 
 static float finezoom;
@@ -121,6 +130,10 @@ static float shiftx;
 static float shifty;
 
 static float igamma;
+
+static float xs2;
+
+static float ys2;
 
 static uint8_t gammatab[256];
 
@@ -132,6 +145,10 @@ static uint8_t clut[65536];
 
 static char writeempty;
 
+static char verb;
+
+static char srtminterpol;
+
 
 static void Error(char text[], uint32_t text_len)
 {
@@ -141,6 +158,14 @@ static void Error(char text[], uint32_t text_len)
    X2C_ABORT();
    X2C_PFREE(text);
 } /* end Error() */
+
+
+static void Werrint(int32_t n)
+{
+   char s[100];
+   aprsstr_IntToStr(n, 0UL, s, 100ul);
+   osi_Werr(s, 100ul);
+} /* end Werrint() */
 
 
 static uint32_t truncc(float r)
@@ -322,20 +347,20 @@ static void Parms(void)
          else if (h[1U]=='x') {
             osi_NextArg(h, 1024ul);
             if ((!aprsstr_StrToInt(h, 1024ul,
-                &xsize) || xsize<32L) || xsize>=16384L) {
+                &xsize) || xsize<32L) || xsize>32000L) {
                Error("-x <size>", 10ul);
             }
-            xsize += 2L;
          }
          else if (h[1U]=='y') {
+            /*         INC(xsize,2); */
             osi_NextArg(h, 1024ul);
             if ((!aprsstr_StrToInt(h, 1024ul,
-                &ysize) || ysize<32L) || ysize>=16384L) {
+                &ysize) || ysize<32L) || ysize>32000L) {
                Error("-y <size>", 10ul);
             }
-            ysize += 2L;
          }
          else if (h[1U]=='c') {
+            /*        INC(ysize,2); */
             osi_NextArg(h, 1024ul);
             if ((!aprsstr_StrToInt(h, 1024ul,
                 &contrast) || contrast<0L) || contrast>=1000L) {
@@ -399,12 +424,36 @@ static void Parms(void)
                mappos.long0 = mappos.long0*1.7453292519444E-2f;
             }
          }
+         else if (h[1U]=='n') {
+            osi_NextArg(h, 1024ul);
+            aprsstr_loctopos(&mappos2, h, 1024ul);
+            if (!posvalid(mappos2)) {
+               if (!aprsstr_StrToFix(&mappos2.lat, h,
+                1024ul) || (float)fabs(mappos2.lat)>=90.0f) {
+                  Error("-n <lat> <long> or <locator>", 29ul);
+               }
+               osi_NextArg(h, 1024ul);
+               if (!aprsstr_StrToFix(&mappos2.long0, h,
+                1024ul) || (float)fabs(mappos2.long0)>180.0f) {
+                  Error("-n <lat> <long> or <locator>", 29ul);
+               }
+               mappos2.lat = mappos2.lat*1.7453292519444E-2f;
+               mappos2.long0 = mappos2.long0*1.7453292519444E-2f;
+            }
+         }
          else if (h[1U]=='M') {
             osi_NextArg(h, 1024ul);
             if (!aprsstr_StrToInt(h, 1024ul, &n) || n<0L) {
                Error("-M <bytes>", 11ul);
             }
             libsrtm_srtmmaxmem = (uint32_t)n;
+         }
+         else if (h[1U]=='q') {
+            osi_NextArg(h, 1024ul);
+            if ((!aprsstr_StrToInt(h, 1024ul,
+                &draft) || draft<0L) || draft>3L) {
+               Error("-q <quality> 0=fast 3=best (2)", 31ul);
+            }
          }
          else if (h[1U]=='W') {
             for (n = 0L; n<=4L; n++) {
@@ -492,6 +541,8 @@ static void Parms(void)
                Error("-g <gamma> [0.1..10.0]", 23ul);
             }
          }
+         else if (h[1U]=='v') verb = 1;
+         else if (h[1U]=='Q') srtminterpol = 0;
          else {
             if (h[1U]=='h') {
                osi_WrStrLn("", 1ul);
@@ -512,23 +563,33 @@ for smooth area margin (3)", 76ul);
 ts/pixel 1,2,4,8 (1)", 70ul);
                osi_WrStrLn(" -g <gamma>                        image gamma 0.\
 1..10.0 (2.2)", 63ul);
+               osi_WrStrLn(" -h                                this", 40ul);
                osi_WrStrLn(" -i <filename>                     enable fullsiz\
 e image with Image File Name", 78ul);
-               osi_WrStrLn(" -h                                this", 40ul);
                osi_WrStrLn(" -M <bytes>                        srtmcache size\
  (200000000)", 62ul);
                osi_WrStrLn(" -m <lat> <long> | [locator]       left up positi\
 on of image", 61ul);
+               osi_WrStrLn(" -n <lat> <long> | [locator]       alternate to -\
+x -y: right down position of image", 84ul);
+               osi_WrStrLn("                                       set -x -y \
+too as size limit", 67ul);
                osi_WrStrLn(" -o <path>                         enable tiles w\
 ith Path Name", 63ul);
                osi_WrStrLn(" -p <path>                         srtm directory\
  path", 55ul);
+               osi_WrStrLn(" -Q                                srtm interpola\
+tion off (on)", 63ul);
+               osi_WrStrLn(" -q <quality>                      0=fast 3=best \
+(2)", 53ul);
                osi_WrStrLn(" -R <refraction>                   0.0(vacuum), 1\
 .0(earth is a disk) (0.25)", 76ul);
                osi_WrStrLn(" -U <red> <green> <blue> <transp>  colour antenna\
  1", 52ul);
                osi_WrStrLn(" -V <red> <green> <blue> <transp>  colour antenna\
  2", 52ul);
+               osi_WrStrLn(" -v                                verbous",
+                43ul);
                osi_WrStrLn(" -W <red> <green> <blue> <transp> <blacktransp>",
                  48ul);
                osi_WrStrLn("                                   (0..255) colou\
@@ -620,14 +681,115 @@ BEGIN
 
 END wrpng;
 */
+/*
+PROCEDURE wrpng(imagefn-:ARRAY OF CHAR; depth:INTEGER;
+                x0, y0, xw, yw, scale:INTEGER):INTEGER;
+
+VAR pngimg:pngwritepalette.PNGPIXMAP;
+    x, y, i, xi, yi, is, ret, palettelen, d8:INTEGER;
+    c, cc:CARDINAL;
+    notempty:BOOLEAN;
+BEGIN
+  palettelen:=CAST(INTEGER,BITSET{depth});
+  pngimg.palette:=ADR(palette);
+  pngimg.palettelen:=palettelen;
+  pngimg.palettedepth:=depth;
+  pngimg.xbytes:=(xw*VAL(INTEGER, depth)+8) DIV 8;
+  pngimg.trns:=ADR(transpaency);
+  d8:=8 DIV depth;
+  ALLOCATE(pngimg.image, VAL(CARDINAL, yw)*pngimg.xbytes);
+--  FILL(pngimg.image, 0C, VAL(CARDINAL, yw)*pngimg.xbytes);
+  notempty:=FALSE;
+  IF pngimg.image<>NIL THEN
+    FOR y:=0 TO yw-1 DO
+      yi:=VAL(INTEGER,HIGH(image^[0]))-(y+y0)*scale;
+      FOR x:=0 TO VAL(INTEGER,pngimg.xbytes)-1 DO
+        xi:=x*d8+x0;
+        FOR i:=xi TO xi+d8-1 DO
+          is:=i*scale;
+          cc:=0;
+          IF (yi>=0) & (yi<=VAL(INTEGER,HIGH(image^[0])))
+          & (is>=0) & (is<=VAL(INTEGER,
+                HIGH(image^))) THEN cc:=image^[is][yi] END;
+          c:=CAST(CARDINAL, SHIFT(CAST(BITSET,c), depth)) + cc;
+        END;
+        pngimg.image^[x+y*VAL(INTEGER, pngimg.xbytes)]:=c;
+        IF c<>0 THEN notempty:=TRUE END;
+      END;
+    END;
+    IF writeempty OR notempty THEN
+      pngimg.width:=xw;
+      pngimg.height:=yw;
+      ret:=pngwritepalette.writepng(imagefn, pngimg);
+      IF ret<0 THEN Werr("png write failed"+LF) END;
+    END;
+    DEALLOCATE(pngimg.image, VAL(CARDINAL,yw)*pngimg.xbytes);
+  ELSE Werr("png write out of memory"+LF) END;
+
+  RETURN 0
+END wrpng;
+*/
+/*
+PROCEDURE wrpng(imagefn-:ARRAY OF CHAR; depth:INTEGER;
+                x0, y0, xw, yw, scale:INTEGER):INTEGER;
+
+VAR pngimg:pngwritepalette.PNGPIXMAP;
+    x, y, i, xi, yi, is, ret, palettelen, d8, xbytes:INTEGER;
+    c, cc:CARDINAL;
+    notempty:BOOLEAN;
+himage:POINTER TO ARRAY[0..02FFFFFFFH] OF CARD8;
+
+BEGIN
+  palettelen:=CAST(INTEGER,BITSET{depth});
+  pngimg.palette:=ADR(palette);
+  pngimg.palettelen:=palettelen;
+  pngimg.palettedepth:=depth;
+  xbytes:=(xw*VAL(INTEGER, depth)+8) DIV 8;
+  pngimg.trns:=ADR(transpaency);
+  d8:=8 DIV depth;
+  ALLOCATE(himage, yw*xbytes); IF himage=NIL THEN Werr("png write out of memory"+LF) END;
+  ALLOCATE(pngimg.image, VAL(INTEGER,SIZE(pngwritepalette.pLINE))*yw);
+                IF pngimg.image=NIL THEN Werr("png write out of memory"+LF)
+                END; 
+
+--  FILL(pngimg.image, 0C, VAL(CARDINAL, yw)*pngimg.xbytes);
+  notempty:=FALSE;
+  FOR y:=0 TO yw-1 DO
+    pngimg.image^[y]:=ADR(himage^[y*xbytes]);
+    yi:=VAL(INTEGER,HIGH(image^[0]))-(y+y0)*scale;
+    FOR x:=0 TO xbytes-1 DO
+      xi:=x*d8+x0;
+      FOR i:=xi TO xi+d8-1 DO
+        is:=i*scale;
+        cc:=0;
+        IF (yi>=0) & (yi<=VAL(INTEGER,HIGH(image^[0])))
+        & (is>=0) & (is<=VAL(INTEGER,
+                HIGH(image^))) THEN cc:=image^[is][yi] END;
+        c:=CAST(CARDINAL, SHIFT(CAST(BITSET,c), depth)) + cc;
+      END;
+      himage^[x+y*xbytes]:=c;
+      IF c<>0 THEN notempty:=TRUE END;
+    END;
+  END;
+  IF writeempty OR notempty THEN
+    pngimg.width:=xw;
+    pngimg.height:=yw;
+    ret:=pngwritepalette.writepng(imagefn, pngimg);
+    IF ret<0 THEN Werr("png write failed"+LF) END;
+  END;
+  DEALLOCATE(himage, yw*xbytes);
+  DEALLOCATE(pngimg.image, yw*xbytes);
+
+  RETURN 0
+END wrpng;
+*/
 
 static int32_t wrpng(const char imagefn0[], uint32_t imagefn_len,
                 int32_t depth, int32_t x0, int32_t y00, int32_t xw,
                 int32_t yw, int32_t scale)
 {
-   struct PNGPIXMAP pngimg;
+   int32_t xbytes;
    int32_t d8;
-   int32_t palettelen;
    int32_t ret0;
    int32_t is;
    int32_t yi;
@@ -638,60 +800,72 @@ static int32_t wrpng(const char imagefn0[], uint32_t imagefn_len,
    uint32_t cc;
    uint32_t c;
    char notempty;
+   pROWPOINTERS pimage;
+   pPNGPALETTE ppalette;
+   uint32_t palettedepth;
+   uint32_t palettelen;
+   pRNS trns;
    int32_t tmp;
    int32_t tmp0;
    int32_t tmp1;
-   palettelen = (int32_t)(1UL<<depth);
-   pngimg.palette = (pPNGPALETTE)palette;
-   pngimg.palettelen = (uint32_t)palettelen;
-   pngimg.palettedepth = (uint32_t)depth;
-   pngimg.xbytes = (uint32_t)((xw*depth+8L)/8L);
-   pngimg.trns = (pRNS)transpaency;
+   palettelen = (uint32_t)(int32_t)(1UL<<depth);
+   ppalette = (pPNGPALETTE)palette;
+   palettedepth = (uint32_t)depth;
+   xbytes = (xw*depth+7L)/8L;
+   trns = (pRNS)transpaency;
    d8 = 8L/depth;
-   osic_alloc((char * *) &pngimg.image, (uint32_t)yw*pngimg.xbytes);
-   /*  FILL(pngimg.image, 0C, VAL(CARDINAL, yw)*pngimg.xbytes); */
+   osic_alloc((char * *) &pimage,
+                (uint32_t)((int32_t)sizeof(pLINE)*yw));
+   if (pimage==0) osi_Werr("png write out of memory\012", 25ul);
+   /*FILL(pngimg.image, 0C, VAL(CARDINAL, yw)*pngimg.xbytes); */
    notempty = 0;
-   if (pngimg.image) {
-      tmp = yw-1L;
-      y = 0L;
-      if (y<=tmp) for (;; y++) {
-         yi = (int32_t)(image->Len0-1)-(y+y00)*scale;
-         tmp0 = (int32_t)pngimg.xbytes-1L;
-         x = 0L;
-         if (x<=tmp0) for (;; x++) {
-            xi = x*d8+x0;
-            tmp1 = (xi+d8)-1L;
-            i = xi;
-            if (i<=tmp1) for (;; i++) {
-               is = i*scale;
-               cc = 0UL;
-               if (((yi>=0L && yi<=(int32_t)(image->Len0-1)) && is>=0L)
-                && is<=(int32_t)(image->Len1-1)) {
-                  cc = (uint32_t)image->Adr[(is)*image->Len0+yi];
-               }
-               c = (uint32_t)X2C_LSH((uint32_t)c,32,depth)+cc;
-               if (i==tmp1) break;
-            } /* end for */
-            pngimg.image[x+y*(int32_t)pngimg.xbytes] = (uint8_t)c;
-            if (c) notempty = 1;
-            if (x==tmp0) break;
-         } /* end for */
-         if (y==tmp) break;
-      } /* end for */
-      if (writeempty || notempty) {
-         pngimg.width = (uint32_t)xw;
-         pngimg.height = (uint32_t)yw;
-         ret0 = writepng(imagefn0, &pngimg);
-         if (ret0<0L) osi_Werr("png write failed\012", 18ul);
+   tmp = yw-1L;
+   y = 0L;
+   if (y<=tmp) for (;; y++) {
+      /*  pngimg.image^[y]:=ADR(himage^[y*xbytes]); */
+      yi = (y+y00)*scale;
+      if (tileimg==0) {
+         pimage[y] = (pLINE) &image->Adr[((yw-y)-1L)*image->Len0+0UL];
       }
-      osic_free((char * *) &pngimg.image, (uint32_t)yw*pngimg.xbytes);
+      else {
+         pimage[y] = (pLINE) &tileimg->Adr[(y)*tileimg->Len0+0UL];
+         yi = (int32_t)(image->Len1-1)-yi;
+      }
+      tmp0 = xbytes-1L;
+      x = 0L;
+      if (x<=tmp0) for (;; x++) {
+         xi = x*d8+x0;
+         tmp1 = (xi+d8)-1L;
+         i = xi;
+         if (i<=tmp1) for (;; i++) {
+            is = i*scale;
+            cc = 0UL;
+            if (((yi>=0L && yi<=(int32_t)(image->Len1-1)) && is>=0L)
+                && is<=(int32_t)(image->Len0-1)) {
+               cc = (uint32_t)image->Adr[(yi)*image->Len0+is];
+            }
+            c = (uint32_t)X2C_LSH((uint32_t)c,32,depth)+cc;
+            if (i==tmp1) break;
+         } /* end for */
+         if (tileimg==0) image->Adr[(y)*image->Len0+x] = (uint8_t)c;
+         else tileimg->Adr[(y)*tileimg->Len0+x] = (uint8_t)c;
+         if (c) notempty = 1;
+         if (x==tmp0) break;
+      } /* end for */
+      if (y==tmp) break;
+   } /* end for */
+   if (writeempty || notempty) {
+      ret0 = writepng(imagefn0, pimage, (uint32_t)xw, (uint32_t)yw,
+                ppalette, palettelen, palettedepth, trns);
+      if (ret0<0L) osi_Werr("png write failed\012", 18ul);
    }
-   else osi_Werr("png write out of memory\012", 25ul);
+   osic_free((char * *) &pimage,
+                (uint32_t)((int32_t)sizeof(pLINE)*yw));
    return 0L;
 } /* end wrpng() */
 
 
-static void postfilter(pIMAGE0 image0)
+static void postfilter(pIMAGE image0)
 /* set missing pixels with median of neighbours */
 {
    uint32_t y;
@@ -699,22 +873,22 @@ static void postfilter(pIMAGE0 image0)
    uint16_t c;
    uint32_t tmp;
    uint32_t tmp0;
-   tmp = (image0->Len0-1)-1UL;
+   tmp = (image0->Len1-1)-1UL;
    y = 1UL;
    if (y<=tmp) for (;; y++) {
-      tmp0 = (image0->Len1-1)-1UL;
+      tmp0 = (image0->Len0-1)-1UL;
       x = 1UL;
       if (x<=tmp0) for (;; x++) {
-         if (image0->Adr[(x)*image0->Len0+y]==0U) {
-            c = (uint16_t)image0->Adr[(x+1UL)*image0->Len0+y];
-            c += (uint16_t)image0->Adr[(x)*image0->Len0+(y+1UL)];
-            c += (uint16_t)image0->Adr[(x-1UL)*image0->Len0+y];
-            c += (uint16_t)image0->Adr[(x)*image0->Len0+(y-1UL)];
-            image0->Adr[(x)*image0->Len0+(y-1UL)] = (uint8_t)(c/4U);
+         if (image0->Adr[(y)*image0->Len0+x]==0U) {
+            c = (uint16_t)image0->Adr[(y)*image0->Len0+(x+1UL)];
+            c += (uint16_t)image0->Adr[(y+1UL)*image0->Len0+x];
+            c += (uint16_t)image0->Adr[(y)*image0->Len0+(x-1UL)];
+            c += (uint16_t)image0->Adr[(y-1UL)*image0->Len0+x];
+            image0->Adr[(y-1UL)*image0->Len0+x] = (uint8_t)(c/4U);
          }
          else {
-            image0->Adr[(x)*image0->Len0+(y-1UL)] = image0->Adr[(x)
-                *image0->Len0+y];
+            image0->Adr[(y-1UL)*image0->Len0+x] = image0->Adr[(y)
+                *image0->Len0+x];
          }
          if (x==tmp0) break;
       } /* end for */
@@ -725,15 +899,15 @@ static void postfilter(pIMAGE0 image0)
 #define radiorange_PART 0.2
 
 
-static float meterperpix(pIMAGE0 image0)
+static float meterperpix(pIMAGE image0)
 {
    struct aprsstr_POSITION pos1;
    struct aprsstr_POSITION pos;
    float y;
    float x;
    float d;
-   x = (float)(image0->Len1-1)*0.5f;
-   y = (float)(image0->Len0-1)*0.5f;
+   x = (float)(image0->Len0-1)*0.5f;
+   y = (float)(image0->Len1-1)*0.5f;
    d = x*0.2f;
    xytodeg(x-d, y, &pos);
    xytodeg(x+d, y, &pos1);
@@ -766,7 +940,7 @@ static void setcol(uint8_t bri, uint8_t * p)
 } /* end setcol() */
 
 
-static void Radiorange(pIMAGE0 image0, struct aprsstr_POSITION txpos,
+static void Radiorange(pIMAGE image0, struct aprsstr_POSITION txpos,
                 int32_t ant1, int32_t ant2, uint32_t smooth,
                 uint32_t qualnum, float refrac)
 {
@@ -845,22 +1019,28 @@ static void Radiorange(pIMAGE0 image0, struct aprsstr_POSITION txpos,
    }
    if (qualnum==0UL) {
       framestep = 2.2f; /* pixel step along corner of image */
-      qual = (uint32_t)X2C_TRUNCC(mperpix,0UL,X2C_max_longcard);
+      qual = (uint32_t)X2C_TRUNCC(mperpix*2.0f,0UL,X2C_max_longcard);
       smooth = (smooth*22UL)/10UL;
    }
    else if (qualnum==1UL) {
       framestep = 1.5f;
-      qual = (uint32_t)X2C_TRUNCC(mperpix*0.5f,0UL,X2C_max_longcard);
+      qual = (uint32_t)X2C_TRUNCC(mperpix,0UL,X2C_max_longcard);
       smooth = (smooth*15UL)/10UL;
    }
-   else {
+   else if (qualnum==2UL) {
       framestep = 1.0f;
-      qual = (uint32_t)X2C_TRUNCC(mperpix*0.25f,0UL,X2C_max_longcard);
+      qual = (uint32_t)X2C_TRUNCC(mperpix*0.5f,0UL,X2C_max_longcard);
    }
+   else {
+      framestep = 0.95f;
+      qual = 0UL;
+   }
+   if (!srtminterpol) qual = 1000UL;
    if (smooth>0UL) osmooth = X2C_DIVR(255.0f,(float)smooth);
    else osmooth = 255.0f;
    refr = refrac*0.0785f;
    for (;;) {
+      sight = 0.0f;
       xytodeg(xi, yi, &pos); /* screen frame pos */
       if (((frame==0UL && ytx>0.0f || frame==2UL && ytx<(float)ysize)
                 || frame==1UL && xtx>0.0f) || frame==3UL && xtx<(float)
@@ -907,8 +1087,9 @@ static void Radiorange(pIMAGE0 image0, struct aprsstr_POSITION txpos,
                pos.long0 = pos0.long0+dpos.long0*d;
                alt = (alt0+dalt*d)-d*d*dm;
                 /* -dist(km)^2 * refrac * 0.0785 */
-               h = libsrtm_getsrtm(pos, qual, &resol);
-                /* ground over NN in m */
+               h = libsrtm_getsrtm(pos,
+                (uint32_t)X2C_TRUNCC((float)fabs(sight)+1.0f,0UL,
+                X2C_max_longcard)*qual, &resol); /* ground over NN in m */
                if (h<10000.0f) {
                   /* srtm valid */
                   h = h-alt; /* m ground over searchpath */
@@ -942,38 +1123,39 @@ static void Radiorange(pIMAGE0 image0, struct aprsstr_POSITION txpos,
                            pixstep = mperpix*oodist*framestep;
                         }
                         xp = (uint32_t)X2C_TRUNCC(x,0UL,X2C_max_longcard);
-                        yp = (uint32_t)X2C_TRUNCC(y,0UL,X2C_max_longcard);
-                        if (xp<image0->Len1-1 && yp<image0->Len0-1) {
+                        yp = (uint32_t)X2C_TRUNCC(y,0UL,
+                X2C_max_longcard)+1UL; /* postfilter shifts 1 down */
+                        if (xp<image0->Len0-1 && yp<image0->Len1-1) {
                            /* 1 pixel room for large low res pixel */
                            lum = sight*osmooth;
                 /* luma is equal to riseing higth */
                            if (lum>255.0f) lum = 255.0f;
                            bri = (uint8_t)(uint32_t)X2C_TRUNCC(lum,0UL,
                 X2C_max_longcard);
-                           image0->Adr[(xp)*image0->Len0+yp] = (uint8_t)
+                           image0->Adr[(yp)*image0->Len0+xp] = (uint8_t)
                 (uint32_t)X2C_TRUNCC(lum,0UL,X2C_max_longcard);
                            if (qualnum<=1UL) {
                               bri = (uint8_t)(uint32_t)
                 X2C_TRUNCC(lum*0.8f,0UL,X2C_max_longcard);
                               setcol(bri,
-                &image0->Adr[(xp+1UL)*image0->Len0+yp]);
+                &image0->Adr[(yp)*image0->Len0+(xp+1UL)]);
                               setcol(bri,
-                &image0->Adr[(xp)*image0->Len0+(yp+1UL)]);
+                &image0->Adr[(yp+1UL)*image0->Len0+xp]);
                               setcol(bri,
-                &image0->Adr[(xp-1UL)*image0->Len0+(yp+1UL)]);
+                &image0->Adr[(yp+1UL)*image0->Len0+(xp-1UL)]);
                               setcol(bri,
-                &image0->Adr[(xp)*image0->Len0+(yp-1UL)]);
+                &image0->Adr[(yp-1UL)*image0->Len0+xp]);
                               if (qualnum==0UL) {
                                  bri = (uint8_t)(uint32_t)
                 X2C_TRUNCC(lum*0.5f,0UL,X2C_max_longcard);
                                  setcol(bri,
-                &image0->Adr[(xp-1UL)*image0->Len0+(yp+1UL)]);
+                &image0->Adr[(yp+1UL)*image0->Len0+(xp-1UL)]);
                                  setcol(bri,
-                &image0->Adr[(xp-1UL)*image0->Len0+(yp-1UL)]);
+                &image0->Adr[(yp-1UL)*image0->Len0+(xp-1UL)]);
                                  setcol(bri,
-                &image0->Adr[(xp+1UL)*image0->Len0+(yp+1UL)]);
+                &image0->Adr[(yp+1UL)*image0->Len0+(xp+1UL)]);
                                  setcol(bri,
-                &image0->Adr[(xp+1UL)*image0->Len0+(yp-1UL)]);
+                &image0->Adr[(yp-1UL)*image0->Len0+(xp+1UL)]);
                               }
                            }
                         }
@@ -998,22 +1180,22 @@ static void Radiorange(pIMAGE0 image0, struct aprsstr_POSITION txpos,
       switch (frame) {
       case 0UL:
          xi = xi+goonframe(framestep, xi, xtx, yi, ytx);
-         if (xi>=(float)(image0->Len1-1)) {
+         if (xi>=(float)(image0->Len0-1)) {
             xi = 0.0f;
             ++frame;
          }
          break;
       case 1UL:
          yi = yi+goonframe(framestep, yi, ytx, xi, xtx);
-         if (yi>=(float)(image0->Len0-1)) {
-            yi = (float)(image0->Len0-1);
+         if (yi>=(float)(image0->Len1-1)) {
+            yi = (float)(image0->Len1-1);
             ++frame;
          }
          break;
       case 2UL:
          xi = xi+goonframe(framestep, xi, xtx, yi, ytx);
-         if (xi>=(float)(image0->Len1-1)) {
-            xi = (float)(image0->Len1-1);
+         if (xi>=(float)(image0->Len0-1)) {
+            xi = (float)(image0->Len0-1);
             ++frame;
          }
          break;
@@ -1044,6 +1226,7 @@ static void wrtiles(struct aprsstr_POSITION mpos, int32_t zoom,
    char s[256];
    char fn[256];
    char ok0;
+   size_t tmp[2];
    /*
      scale:=1;
      REPEAT
@@ -1086,6 +1269,8 @@ static void wrtiles(struct aprsstr_POSITION mpos, int32_t zoom,
        INC(scale, scale);
      UNTIL zoom<tozoom;
    */
+   X2C_DYNALLOCATE((char **) &tileimg,1u,(tmp[0] = 256U,tmp[1] = 256U,
+                tmp),2u);
    scale = 1L;
    do {
       mercator(mpos.long0, mpos.lat, zoom, &tx, &ty0, &xr, &yr);
@@ -1108,7 +1293,10 @@ static void wrtiles(struct aprsstr_POSITION mpos, int32_t zoom,
             aprsstr_IntToStr(ty, 0UL, s, 256ul);
             aprsstr_Append(fn, 256ul, s, 256ul);
             aprsstr_Append(fn, 256ul, ".png", 5ul);
-            osi_WrStrLn(fn, 256ul);
+            if (verb) {
+               osi_Werr(fn, 256ul);
+               osi_Werr("\012", 2ul);
+            }
             ret0 = wrpng(fn, 256ul, pngdepth, x0, y, 256L, 256L, scale);
             ++ty;
             y += 256L;
@@ -1119,7 +1307,17 @@ static void wrtiles(struct aprsstr_POSITION mpos, int32_t zoom,
       --zoom;
       scale += scale;
    } while (zoom>=tozoom0);
+   X2C_DYNDEALLOCATE((char **) &tileimg);
+   tileimg = 0;
 } /* end wrtiles() */
+
+
+static uint32_t lim(uint32_t n, uint32_t d, uint32_t l)
+{
+   n = n/d;
+   if (n>l) return l;
+   return n;
+} /* end lim() */
 
 
 static void genpalette(void)
@@ -1134,7 +1332,7 @@ static void genpalette(void)
       for (i = 0UL; i<=255UL; i++) {
          transpaency[i] = (uint8_t)colour1[3U];
          if (pngdepth==1L) {
-            clut[i] = (uint8_t)(i/128UL);
+            clut[i] = (uint8_t)lim(i+100UL, 128UL, 1UL);
             palette[0U].r = 0U;
             palette[0U].g = 0U;
             palette[0U].b = 0U;
@@ -1143,7 +1341,8 @@ static void genpalette(void)
             palette[1U].b = (uint8_t)colour1[2U];
          }
          else if (pngdepth==2L) {
-            clut[i] = (uint8_t)(i/64UL);
+            if (draft==0L) clut[i] = (uint8_t)lim(i+60UL, 64UL, 3UL);
+            else clut[i] = (uint8_t)lim(i+32UL, 64UL, 3UL);
             if (i<4UL) {
                palette[i].r = (uint8_t)(((int32_t)
                 gammatab[i*85UL]*colour1[0U])/256L);
@@ -1154,7 +1353,7 @@ static void genpalette(void)
             }
          }
          else if (pngdepth==4L) {
-            clut[i] = (uint8_t)(i/16UL);
+            clut[i] = (uint8_t)lim(i+8UL, 16UL, 15UL);
             if (i<16UL) {
                palette[i].r = (uint8_t)(((int32_t)
                 gammatab[i*16UL]*colour1[0U])/256L);
@@ -1180,8 +1379,8 @@ static void genpalette(void)
       if (pngdepth<2L) osi_Werr("2 antennas need png depth 2, 4 or 8", 36ul);
       for (i = 0UL; i<=65535UL; i++) {
          if (pngdepth==2L) {
-            clut[i] = (uint8_t)(2UL*(uint32_t)(i>=256UL)+(uint32_t)
-                ((i&255UL)>0UL));
+            clut[i] = (uint8_t)(2UL*lim(i/256UL+100UL, 128UL,
+                1UL)+lim((i&255UL)+100UL, 128UL, 1UL));
             palette[0U].r = 0U;
             palette[0U].g = 0U;
             palette[0U].b = 0U;
@@ -1199,9 +1398,9 @@ static void genpalette(void)
             transpaency[3U] = (uint8_t)colour1[3U];
          }
          else if (pngdepth==4L) {
-            if (i/256UL==0UL) clut[i] = (uint8_t)(i/43UL);
+            if (i<256UL) clut[i] = (uint8_t)lim(i+25UL, 43UL, 5UL);
             else if ((i&255UL)==0UL) {
-               clut[i] = (uint8_t)(6UL+(i/256UL)/43UL);
+               clut[i] = (uint8_t)(6UL+lim(i/256UL+25UL, 43UL, 5UL));
             }
             else clut[i] = (uint8_t)(12UL+(i/256UL+(i&255UL))/171UL);
             /*      ELSE clut[i]:=10+(((i DIV 256)*(i MOD 256))+7224)
@@ -1272,36 +1471,36 @@ static void genpalette(void)
 } /* end genpalette() */
 
 
-static void joincolours(pIMAGE0 image0, pIMAGE0 image20)
+static void joincolours(pIMAGE image0, pIMAGE image20)
 {
    uint32_t y;
    uint32_t x;
    uint32_t tmp;
    uint32_t tmp0;
    if (image20==0) {
-      tmp = image0->Len0-1;
+      tmp = image0->Len1-1;
       y = 0UL;
       if (y<=tmp) for (;; y++) {
-         tmp0 = image0->Len1-1;
+         tmp0 = image0->Len0-1;
          x = 0UL;
          if (x<=tmp0) for (;; x++) {
-            image0->Adr[(x)*image0->Len0+y] = clut[image0->Adr[(x)
-                *image0->Len0+y]];
+            image0->Adr[(y)*image0->Len0+x] = clut[image0->Adr[(y)
+                *image0->Len0+x]];
             if (x==tmp0) break;
          } /* end for */
          if (y==tmp) break;
       } /* end for */
    }
    else {
-      tmp = image0->Len0-1;
+      tmp = image0->Len1-1;
       y = 0UL;
       if (y<=tmp) for (;; y++) {
-         tmp0 = image0->Len1-1;
+         tmp0 = image0->Len0-1;
          x = 0UL;
          if (x<=tmp0) for (;; x++) {
-            image0->Adr[(x)*image0->Len0+y] = clut[(uint32_t)
-                image0->Adr[(x)*image0->Len0+y]+(uint32_t)image20->Adr[(x)
-                *image20->Len0+y]*256UL];
+            image0->Adr[(y)*image0->Len0+x] = clut[(uint32_t)
+                image0->Adr[(y)*image0->Len0+x]+(uint32_t)image20->Adr[(y)
+                *image20->Len0+x]*256UL];
             if (x==tmp0) break;
          } /* end for */
          if (y==tmp) break;
@@ -1322,8 +1521,8 @@ extern int main(int argc, char **argv)
    osi_BEGIN();
    imagefn[0] = 0;
    osmdir[0] = 0;
-   xsize = 602L;
-   ysize = 402L;
+   xsize = 600L;
+   ysize = 400L;
    posinval(&posa);
    posinval(&posb);
    anta = 10L;
@@ -1337,6 +1536,8 @@ extern int main(int argc, char **argv)
    finezoom = 1.0f;
    mappos.long0 = 0.0f;
    mappos.lat = 0.0f;
+   mappos2.long0 = 0.0f;
+   mappos2.lat = 0.0f;
    contrast = 3L;
    pngdepth = 1L;
    writeempty = 0;
@@ -1355,12 +1556,31 @@ extern int main(int argc, char **argv)
    colour3[2U] = 255L;
    colour3[3U] = 128L;
    colour3[4U] = 0L;
+   verb = 0;
+   draft = 2L;
+   srtminterpol = 1;
    Parms();
    lasttilezoom = -1L;
    lasttiledir = -1L;
+   tileimg = 0;
    mercator(mappos.long0, mappos.lat, initzoom, &inittilex, &inittiley,
                 &shiftx, &shifty);
    if (posa.lat==0.0f && posa.long0==0.0f) Error("need Position A", 16ul);
+   if (mappos2.long0!=0.0f || mappos2.lat!=0.0f) {
+      /* 2 corners defined */
+      if (mapxy(mappos2, &xs2, &ys2)<0L) {
+         Error("right down map position outsize image x y limits", 49ul);
+      }
+      xsize = (int32_t)X2C_TRUNCI(xs2,X2C_min_longint,X2C_max_longint);
+      ysize -= (int32_t)X2C_TRUNCI(ys2,X2C_min_longint,X2C_max_longint);
+      if (verb) {
+         osi_Werr("x=", 3ul);
+         Werrint(xsize);
+         osi_Werr(" y=", 4ul);
+         Werrint(ysize);
+         osi_Werr("\012", 2ul);
+      }
+   }
    if (imagefn[0U]==0 && osmdir[0U]==0) {
       Error("need Image Filename or Tile Path", 33ul);
    }
@@ -1369,32 +1589,35 @@ extern int main(int argc, char **argv)
    if (ysize<32L) Error("ysize too less", 15ul);
    genpalette();
    image2 = 0;
-   X2C_DYNALLOCATE((char **) &image,1u,(tmp[0] = (size_t)xsize,
-                tmp[1] = (size_t)ysize,tmp),2u);
+   X2C_DYNALLOCATE((char **) &image,1u,(tmp[0] = (size_t)ysize,
+                tmp[1] = (size_t)xsize,tmp),2u);
    if (image==0) Error("out of memory", 14ul);
    if (antc>=0L) {
-      osi_WrStrLn("ant1", 5ul);
-      Radiorange(image, posa, anta, antc, (uint32_t)contrast, 2UL,
-                refraction);
-      X2C_DYNALLOCATE((char **) &image2,1u,(tmp[0] = (size_t)xsize,
-                tmp[1] = (size_t)ysize,tmp),2u);
+      if (verb) osi_Werr("antenna 1\012", 11ul);
+      Radiorange(image, posa, anta, antc, (uint32_t)contrast,
+                (uint32_t)draft, refraction);
+      X2C_DYNALLOCATE((char **) &image2,1u,(tmp[0] = (size_t)ysize,
+                tmp[1] = (size_t)xsize,tmp),2u);
       if (image2==0) Error("out of memory", 14ul);
-      osi_WrStrLn("ant2", 5ul);
-      Radiorange(image2, posb, antb, antc, (uint32_t)contrast, 2UL,
-                refraction);
-      osi_WrStrLn("join", 5ul);
+      if (verb) osi_Werr("antenna 2\012", 11ul);
+      Radiorange(image2, posb, antb, antc, (uint32_t)contrast,
+                (uint32_t)draft, refraction);
+      if (verb) osi_Werr("join images\012", 13ul);
    }
    else {
-      Radiorange(image, posa, anta, antb, (uint32_t)contrast, 2UL,
-                refraction);
+      if (pngdepth>=4L && draft>=2L) ++draft;
+      Radiorange(image, posa, anta, antb, (uint32_t)contrast,
+                (uint32_t)draft, refraction);
    }
    libsrtm_closesrtmfile(); /* free srtm cache */
    joincolours(image, image2);
-   if (image2) X2C_DYNDEALLOCATE((char **) &image2);
-   osi_WrStrLn("png...", 7ul);
+   if (image2) {
+      X2C_DYNDEALLOCATE((char **) &image2);
+   }
+   if (verb) osi_Werr("make png\012", 10ul);
    if (osmdir[0U]) wrtiles(mappos, initzoom, tozoom);
    if (imagefn[0U]) {
-      ret = wrpng(imagefn, 1024ul, pngdepth, 1L, 0L, xsize-2L, ysize-2L, 1L);
+      ret = wrpng(imagefn, 1024ul, pngdepth, 0L, 0L, xsize, ysize, 1L);
    }
    X2C_EXIT();
    return 0;
