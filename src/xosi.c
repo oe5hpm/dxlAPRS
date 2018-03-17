@@ -37,13 +37,11 @@
 #ifndef useri_H_
 #include "useri.h"
 #endif
-#ifndef pastewrapper_H_
-#include "pastewrapper.h"
-#endif
 
 #include <X11/Xlib.h>
 
 #include "xosic.h"
+#include "pastewrapper.h"
 
 
 struct xosi__D0 xosi_gammalut[1024];
