@@ -279,6 +279,7 @@ static float getsrtm1(uint32_t ilat, uint32_t ilong,
    struct SRTMTILE * anonym;
    struct SRTMTILE * anonym0;
    uint32_t tmp;
+   *div0 = 1UL;
    ydeg = ilat/3600UL;
    xdeg = ilong/3600UL;
    if (xdeg>359UL || ydeg>179UL) return 32767.0f;

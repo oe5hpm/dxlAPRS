@@ -965,10 +965,18 @@ static void setcol(uint16_t bri, uint32_t colnr, struct maptool_PIX * p)
 /* m jump pixels linear interpolated */
 
 
+static float goonframe(float framestep, float x, float tx,
+                float y, float ty)
+{
+   if (y!=ty) return (1.0f+(float)fabs(X2C_DIVR(x-tx,y-ty)))*framestep;
+   return X2C_max_real;
+} /* end goonframe() */
+
+
 extern void maptool_Radiorange(maptool_pIMAGE image,
                 struct aprsstr_POSITION txpos, int32_t ant1,
                 int32_t ant2, uint32_t smooth, uint32_t colnr,
-                uint32_t qualnum, char * abort0)
+                uint32_t qualnum, char * abort0, float refrac)
 {
    uint16_t bri;
    uint32_t progr;
@@ -978,6 +986,8 @@ extern void maptool_Radiorange(maptool_pIMAGE image,
    uint32_t xp;
    int32_t void0;
    int32_t nn;
+   float refr;
+   float dm;
    float alt1;
    float dyimag;
    float dximag;
@@ -1062,6 +1072,7 @@ extern void maptool_Radiorange(maptool_pIMAGE image,
    }
    if (smooth>0UL) osmooth = X2C_DIVR(1000.0f,(float)smooth);
    else osmooth = 1000.0f;
+   refr = refrac*0.0785f;
    progr = 0UL;
    for (;;) {
       maptool_xytodeg(xi, yi, &pos); /* screen frame pos */
@@ -1075,6 +1086,7 @@ extern void maptool_Radiorange(maptool_pIMAGE image,
          dz = z1-z0;
          oodist = dx*dx+dy*dy+dz*dz;
          if (oodist>1.E-6f) {
+            dm = oodist*refr; /* full dist^2 */
             oodist = X2C_DIVR(0.001f,osic_sqrt(oodist));
                 /* 1/sight line length in m */
             pixstep = 0.0f;
@@ -1107,7 +1119,7 @@ extern void maptool_Radiorange(maptool_pIMAGE image,
                }
                pos.lat = pos0.lat+dpos.lat*d;
                pos.long0 = pos0.long0+dpos.long0*d;
-               alt = alt0+dalt*d;
+               alt = (alt0+dalt*d)-d*d*dm;
                h = libsrtm_getsrtm(pos, qual, &resol);
                 /* ground over NN in m */
                if (h<30000.0f) {
@@ -1206,31 +1218,29 @@ extern void maptool_Radiorange(maptool_pIMAGE image,
       /* go along next side of image */
       switch (frame) {
       case 0UL:
-         xi = xi+(1.0f+(float)fabs(X2C_DIVR(xi-xtx,yi-ytx)))*framestep;
+         xi = xi+goonframe(framestep, xi, xtx, yi, ytx);
          if (xi>=(float)(image->Len1-1)) {
             xi = 0.0f;
             ++frame;
          }
          break;
       case 1UL:
-         yi = yi+(1.0f+(float)fabs(X2C_DIVR(yi-ytx,xi-xtx)))*framestep;
+         yi = yi+goonframe(framestep, yi, ytx, xi, xtx);
          if (yi>=(float)(image->Len0-1)) {
             yi = (float)(image->Len0-1);
             ++frame;
          }
          break;
       case 2UL:
-         xi = xi+(1.0f+(float)fabs(X2C_DIVR(xi-xtx,yi-ytx)))*framestep;
+         xi = xi+goonframe(framestep, xi, xtx, yi, ytx);
          if (xi>=(float)(image->Len1-1)) {
             xi = (float)(image->Len1-1);
             ++frame;
          }
          break;
       default:;
-         if (yi>0.0f) {
-            yi = yi-(1.0f+(float)fabs(X2C_DIVR(yi-ytx,xi-xtx)))*framestep;
-         }
-         else goto loop_exit;
+         if (yi<0.0f) goto loop_exit;
+         yi = yi-goonframe(framestep, yi, ytx, xi, xtx);
          break;
       } /* end switch */
       progr += 100UL;

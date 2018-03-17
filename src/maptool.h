@@ -223,7 +223,7 @@ PROCEDURE closesrtmfile;
 */
 extern void maptool_Radiorange(maptool_pIMAGE, struct aprsstr_POSITION,
                 int32_t, int32_t, uint32_t, uint32_t, uint32_t,
-                char *);
+                char *, float);
 
 extern void maptool_Panorama(maptool_pIMAGE, struct maptool_PANOWIN,
                 char *);

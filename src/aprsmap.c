@@ -172,6 +172,7 @@ struct _0 {
    int32_t bri;
    int32_t contr;
    int32_t qual;
+   float refrac;
    struct aprsdecode_COLTYP c1;
    struct aprsdecode_COLTYP c2;
 };
@@ -2613,6 +2614,12 @@ BEGIN
   END;
 END panorama;
 */
+
+static float getrefrac(void)
+{
+   return useri_conf2real(useri_fREFRACT, 0UL, 0.0f, 1.0f, 0.0f);
+} /* end getrefrac() */
+
 #define aprsmap_ALTINVAL (-10000)
 
 
@@ -2631,7 +2638,8 @@ static void radioimage(maptool_pIMAGE img, struct aprsstr_POSITION pos,
       if (ant1>-10000L && ant3>-10000L) {
          qual = (int32_t)useri_confflags(useri_fSRTMCACHE, 0UL);
          maptool_Radiorange(img, pos, ant1, ant3, (uint32_t)geocontr(),
-                (uint32_t)(colnum!=0UL), (uint32_t)qual, abo);
+                (uint32_t)(colnum!=0UL), (uint32_t)qual, abo,
+                getrefrac());
       }
       else {
          useri_textautosize(0L, 0L, 3UL, 2UL, 'r', "Radiolink: need Antenna h\
@@ -2955,16 +2963,30 @@ static void midscreenpos(struct aprsstr_POSITION * pos)
 } /* end midscreenpos() */
 
 
-static void zoominout(char in, char fine,
-                char allowrev)
+static void zoominout(char in, char fine, char allowrev,
+                 char mouseismiddle)
 {
    float fz;
    float z;
    struct aprsstr_POSITION mid;
+   int32_t my;
+   int32_t mx;
    int32_t maxz;
    z = maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom);
-   midscreenpos(&mid);
-   mid.lat = mid.lat+(-6.E-7f);
+   mx = maptool_xsize/2L;
+   my = maptool_ysize/2L;
+   /*
+     IF mouseismiddle THEN 
+       xytodeg(VAL(REAL,xmouse.x), VAL(REAL, VAL(INTEGER,mainys())-xmouse.y),
+                 mid);
+     ELSE midscreenpos(mid) END;
+   */
+   if (mouseismiddle) {
+      mx = useri_xmouse.x;
+      my = (int32_t)useri_mainys()-useri_xmouse.y;
+   }
+   maptool_xytodeg((float)mx, (float)my, &mid);
+   mid.lat = mid.lat+(-6.E-7f); /* compensate position drift due to float precision */
    if (fine) {
       fz = useri_conf2real(useri_fZOOMSTEP, 0UL, (-1.0f), 1.0f, 0.1f);
       if (!allowrev) fz = (float)fabs(fz);
@@ -3004,8 +3026,8 @@ static void zoominout(char in, char fine,
       aprsdecode_finezoom = 1.0f;
    }
    z = maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom);
-   maptool_shiftmap(maptool_xsize/2L, maptool_ysize/2L, maptool_ysize, z,
-                &mid);
+   /*  shiftmap(xsize DIV 2, ysize DIV 2, ysize, z, mid); */
+   maptool_shiftmap(mx, my, maptool_ysize, z, &mid);
    aprsdecode_mappos = mid;
 } /* end zoominout() */
 
@@ -3811,7 +3833,7 @@ static void addradio(void)
       aprsdecode_lums.rf = 0L;
       getgeocol(useri_fCOLMARK1, geobri(), 100UL, 0UL, 0UL, &c1);
       getgeocol(useri_fCOLMARK2, geobri(), 0UL, 100UL, 0UL, &c2);
-      if (((((((((((((((((!radio.wasradio || radio.wasaltimap)
+      if ((((((((((((((((((!radio.wasradio || radio.wasaltimap)
                 || radio.markpos.lat!=aprsdecode_click.markpos.lat)
                 || radio.markpos.long0!=aprsdecode_click.markpos.long0)
                 || radio.measurepos.lat!=aprsdecode_click.measurepos.lat)
@@ -3826,7 +3848,8 @@ static void addradio(void)
                 || radio.contr!=geocontr()) || cmpcol(radio.c1,
                 c1)) || cmpcol(radio.c2,
                 c2)) || radio.qual!=(int32_t)
-                useri_confflags(useri_fSRTMCACHE, 0UL)) {
+                useri_confflags(useri_fSRTMCACHE,
+                0UL)) || radio.refrac!=getrefrac()) {
          abort0 = 0;
          maptool_clr(rfimg);
          if (aprspos_posvalid(aprsdecode_click.markpos)) {
@@ -3854,6 +3877,7 @@ static void addradio(void)
          radio.c1 = c1;
          radio.c2 = c2;
          radio.qual = (int32_t)useri_confflags(useri_fSRTMCACHE, 0UL);
+         radio.refrac = getrefrac();
          reliefcolors(rfimg, aprspos_posvalid(aprsdecode_click.measurepos) && aprspos_posvalid(aprsdecode_click.markpos));
          if (abort0) {
             useri_textautosize(0L, 0L, 5UL, 2UL, 'r', "radiorange aborted",
@@ -4846,10 +4870,10 @@ static void MainEvent(void)
          push(maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom));
          useri_resetimgparms();
       }
-      else if (aprsdecode_click.cmd=='+') zoominout(1, xosi_Shift, 0);
-      else if (aprsdecode_click.cmd=='-') zoominout(0, xosi_Shift, 0);
-      else if (aprsdecode_click.cmd=='\310') zoominout(1, 1, 1);
-      else if (aprsdecode_click.cmd=='\311') zoominout(0, 1, 1);
+      else if (aprsdecode_click.cmd=='+') zoominout(1, xosi_Shift, 0, 0);
+      else if (aprsdecode_click.cmd=='-') zoominout(0, xosi_Shift, 0, 0);
+      else if (aprsdecode_click.cmd=='\310') zoominout(1, 1, 1, 1);
+      else if (aprsdecode_click.cmd=='\311') zoominout(0, 1, 1, 1);
       else if (aprsdecode_click.cmd=='\237') MapPackage();
       else if (aprsdecode_click.cmd=='S') screenshot();
       else if (aprsdecode_click.cmd=='s') {
