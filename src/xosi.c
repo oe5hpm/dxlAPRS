@@ -6,6 +6,7 @@
  * SPDX-License-Identifier:	GPL-2.0+
  */
 
+
 #define X2C_int32
 #define X2C_index32
 #ifndef xosi_H_
@@ -446,11 +447,11 @@ extern void xosi_paste(void)
    /*
      pb:=Xlib.XFetchBytes(dis, len);
      IF pb<>NIL THEN
-       FOR i:=0 TO len-1 DO 
+       FOR i:=0 TO len-1 DO
          cmd:=pb^[i];
          keychar(cmd, TRUE, FALSE);
        END;
-     END; 
+     END;
    */
    cw = XGetSelectionOwner(dis, 1UL);
    if (cw) {
@@ -658,7 +659,7 @@ extern void xosi_xevent(void)
          useri_resizewin(attr.width, attr.height, 0);
          break;
       case 12L:
-         useri_refreshwin();
+         if (xosi_newxsize==0UL) useri_refreshwin();
          break;
       case 6L:
          /*          Pull(event.xmotion.x, event.xmotion.y, 1); */
@@ -668,12 +669,7 @@ extern void xosi_xevent(void)
          useri_mouserelease();
          break;
       case 31L:
-         /*        pulloff; */
-         /*          res:=Xlib.XConvertSelection(dis, 1, 31, 31, mainwin.win,
-                 CurrentTime); */
-         res = XGetWindowProperty(dis, mainwin.win,
-                event.xselection.property, 0L, 64L, 0L, 0UL, &atom1, &ii,
-                &nn, &nc, &pstr);
+         pasteget(dis, mainwin.win, event.xselection.property, &nn, &pstr);
          if ((char *)pstr) {
             tmp = (int32_t)nn-1L;
             res = 0L;
