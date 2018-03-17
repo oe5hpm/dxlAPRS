@@ -48,7 +48,7 @@
 #define radiorange_FULLUM 255
 /* full bright in image */
 
-#define radiorange_DIRPERM 504
+#define radiorange_DIRPERM 493
 
 #define radiorange_PALETTELEN 256
 
@@ -940,7 +940,7 @@ static void setcol(uint8_t bri, uint8_t * p)
 } /* end setcol() */
 
 
-static void Radiorange(pIMAGE image0, struct aprsstr_POSITION txpos,
+static int32_t Radiorange(pIMAGE image0, struct aprsstr_POSITION txpos,
                 int32_t ant1, int32_t ant2, uint32_t smooth,
                 uint32_t qualnum, float refrac)
 {
@@ -1003,7 +1003,7 @@ static void Radiorange(pIMAGE image0, struct aprsstr_POSITION txpos,
                 /* altitude of tx and map resolution in m here */
    if (nn>=10000L) {
       libsrtm_closesrtmfile();
-      return;
+      return -1L;
    }
    atx = (float)(nn+ant1); /* ant1 over NN */
    wgs84s(txpos.lat, txpos.long0, atx*0.001f, &x0, &y00, &z0);
@@ -1015,7 +1015,7 @@ static void Radiorange(pIMAGE image0, struct aprsstr_POSITION txpos,
    mperpix = meterperpix(image0); /* meter per pixel */
    if (mperpix<1.0f) {
       libsrtm_closesrtmfile();
-      return;
+      return -2L;
    }
    if (qualnum==0UL) {
       framestep = 2.2f; /* pixel step along corner of image */
@@ -1207,6 +1207,7 @@ static void Radiorange(pIMAGE image0, struct aprsstr_POSITION txpos,
    }
    loop_exit:;
    postfilter(image0); /* fill in missing pixels */
+   return 0L;
 } /* end Radiorange() */
 
 
@@ -1284,11 +1285,11 @@ static void wrtiles(struct aprsstr_POSITION mpos, int32_t zoom,
             aprsstr_Append(fn, 256ul, "/", 2ul);
             aprsstr_IntToStr(zoom, 0UL, s, 256ul);
             aprsstr_Append(fn, 256ul, s, 256ul);
-            ok0 = osi_CreateDir(fn, 256ul, 504UL);
+            ok0 = osi_CreateDir(fn, 256ul, 493UL);
             aprsstr_Append(fn, 256ul, "/", 2ul);
             aprsstr_IntToStr(tx, 0UL, s, 256ul);
             aprsstr_Append(fn, 256ul, s, 256ul);
-            ok0 = osi_CreateDir(fn, 256ul, 504UL);
+            ok0 = osi_CreateDir(fn, 256ul, 493UL);
             aprsstr_Append(fn, 256ul, "/", 2ul);
             aprsstr_IntToStr(ty, 0UL, s, 256ul);
             aprsstr_Append(fn, 256ul, s, 256ul);
@@ -1587,6 +1588,7 @@ extern int main(int argc, char **argv)
    if (libsrtm_srtmdir[0U]==0) Error("need SRTM Directory Path", 25ul);
    if (xsize<32L) Error("xsize too less", 15ul);
    if (ysize<32L) Error("ysize too less", 15ul);
+   if (antc>=0L && !posvalid(posb)) Error("-C needs -b", 12ul);
    genpalette();
    image2 = 0;
    X2C_DYNALLOCATE((char **) &image,1u,(tmp[0] = (size_t)ysize,
@@ -1594,26 +1596,29 @@ extern int main(int argc, char **argv)
    if (image==0) Error("out of memory", 14ul);
    if (antc>=0L) {
       if (verb) osi_Werr("antenna 1\012", 11ul);
-      Radiorange(image, posa, anta, antc, (uint32_t)contrast,
+      ret = Radiorange(image, posa, anta, antc, (uint32_t)contrast,
                 (uint32_t)draft, refraction);
+      if (ret==-1L) Error("no altitude at antenne A", 25ul);
       X2C_DYNALLOCATE((char **) &image2,1u,(tmp[0] = (size_t)ysize,
                 tmp[1] = (size_t)xsize,tmp),2u);
       if (image2==0) Error("out of memory", 14ul);
       if (verb) osi_Werr("antenna 2\012", 11ul);
-      Radiorange(image2, posb, antb, antc, (uint32_t)contrast,
+      ret = Radiorange(image2, posb, antb, antc, (uint32_t)contrast,
                 (uint32_t)draft, refraction);
+      if (ret==-1L) Error("no altitude at antenne B", 25ul);
       if (verb) osi_Werr("join images\012", 13ul);
    }
    else {
-      if (pngdepth>=4L && draft>=2L) ++draft;
-      Radiorange(image, posa, anta, antb, (uint32_t)contrast,
+      if (pngdepth>=4L && draft>=2L) {
+         ++draft;
+      }
+      ret = Radiorange(image, posa, anta, antb, (uint32_t)contrast,
                 (uint32_t)draft, refraction);
+      if (ret==-1L) Error("no altitude at antenne A", 25ul);
    }
    libsrtm_closesrtmfile(); /* free srtm cache */
    joincolours(image, image2);
-   if (image2) {
-      X2C_DYNDEALLOCATE((char **) &image2);
-   }
+   if (image2) X2C_DYNDEALLOCATE((char **) &image2);
    if (verb) osi_Werr("make png\012", 10ul);
    if (osmdir[0U]) wrtiles(mappos, initzoom, tozoom);
    if (imagefn[0U]) {
