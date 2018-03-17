@@ -36,6 +36,9 @@
 #ifndef useri_H_
 #include "useri.h"
 #endif
+#ifndef pastewrapper_H_
+#include "pastewrapper.h"
+#endif
 
 #include <X11/Xlib.h>
 
@@ -586,10 +589,7 @@ extern void xosi_xevent(void)
    XWindowAttributes attr;
    int32_t res;
    char cmd;
-   int ii;
-   long nc;
-   long nn;
-   Atom atom1;
+   uint32_t nn;
    PAUChar pstr;
    int32_t tmp;
    while (XPending(dis)) {

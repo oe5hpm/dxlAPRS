@@ -172,7 +172,8 @@ OBJ_APRSMAP	= \
 	jpgdec.o \
 	useri.o \
 	xosi.o \
-        libsrtm.o
+        libsrtm.o \
+	pastewrapper.o
 
 OBJ_SDRTST	= tcpb.o sdr.o sdrtest.o
 OBJ_SDRRADIO	= tcpb.o sdr.o radio.o
