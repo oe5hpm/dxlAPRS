@@ -52,4 +52,6 @@ soundctl.h
 rsc.c
 rsc.h
 mlib.h
+pastewrapper.h
+pastewrapper.c
 
