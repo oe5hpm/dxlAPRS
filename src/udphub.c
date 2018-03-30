@@ -83,6 +83,8 @@ struct USER {
    char nopurge; /* entry from file no purge */
    char nospoof; /* not overwrite ip:port */
    uint32_t htime;
+   uint32_t framesin;
+   uint32_t framesout;
 };
 
 static uint8_t CRCL[256];
@@ -106,13 +108,13 @@ static char show;
 static char checkdigiip;
 
 static pUSER users;
-
-static uint32_t alllifetime;
+/*  alllifetime,                                       (* time for all/unknown ssid *) */
 
 static uint32_t systime;
 
-/* time for all/unknown ssid */
 static uint32_t lifetime;
+
+static uint32_t uptime;
 
 static uint32_t touserport;
 
@@ -131,10 +133,24 @@ static char initfn[1025];
 static char wrfn[1025];
 
 static RAWCALL broadcastdest;
-/*
-PROCEDURE ["C"] / select(n: INTEGER; readfds: ADDRESS; writefds: ADDRESS;
-                         exceptfds: ADDRESS; timeout: ADDRESS) : INTEGER;
-*/
+
+static uint32_t framecnt;
+
+static uint32_t dupecnt;
+
+static uint32_t dupewp;
+
+static uint32_t maxdupetime;
+
+struct _0;
+
+
+struct _0 {
+   uint16_t crc;
+   uint32_t time0;
+};
+
+static struct _0 dupetab[64];
 
 
 static void Err(const char text[], uint32_t text_len)
@@ -346,51 +362,6 @@ static char testCRC(char frame[], uint32_t frame_len,
    return frame[size-2L]==(char)l && frame[size-1L]==(char)h;
 } /* end testCRC() */
 
-/*
-PROCEDURE GetIp1(h:ARRAY OF CHAR; VAR ip:IPNUM; VAR dp:UDPPORT):INTEGER;
-CONST PORTSEP=":";
-      DEFAULTIP=7F000001H;
-
-VAR i, p, n:CARDINAL;
-    ok:BOOLEAN;
-BEGIN
-  p:=0;
-  h[HIGH(h)]:=0C;
-  ip:=0;
-  FOR i:=0 TO 4 DO
-    IF (i>=3) OR (h[0]<>PORTSEP) THEN
-      n:=0;
-      ok:=FALSE;
-      WHILE (h[p]>="0") & (h[p]<="9") DO
-        ok:=TRUE;
-        n:=n*10+ORD(h[p])-ORD("0");
-        INC(p);
-      END;
-      IF NOT ok THEN RETURN -1 END;
-
-    END;
-    IF i<3 THEN
-      IF h[0]<>PORTSEP THEN
-        IF (h[p]<>".") OR (n>255) THEN RETURN -1 END;
-
-        ip:=ip*256+n;
-      END;
-
-    ELSIF i=3 THEN
-      IF h[0]<>PORTSEP THEN
-        ip:=ip*256+n;
-        IF (h[p]<>PORTSEP) OR (n>255) THEN RETURN -1 END;
-
-      ELSE p:=0; ip:=DEFAULTIP END;
-
-    ELSIF n>65535 THEN RETURN -1 END;
-
-    dp:=n;
-    INC(p);
-  END;
-  RETURN 0
-END GetIp1;
-*/
 
 static int32_t GetIp1(char h[], uint32_t h_len, uint32_t * ip,
                 uint32_t * port)
@@ -598,12 +569,15 @@ static void parms(void)
             if (!GetNum(h, 1024ul, &i)) Err("-l minutes", 11ul);
             lifetime = i*60UL;
          }
-         else if (h[1U]=='L') {
-            osi_NextArg(h, 1024ul);
-            if (!GetNum(h, 1024ul, &i)) Err("-L minutes", 11ul);
-            alllifetime = i*60UL;
+         else if (h[1U]=='a') {
+            /*
+                  ELSIF h[1]="L" THEN
+                    NextArg(h);
+                    IF NOT GetNum(h, i) THEN Err("-L minutes") END;
+                    alllifetime:=i*60;
+            */
+            peertopeer = 1;
          }
-         else if (h[1U]=='a') peertopeer = 1;
          else if (h[1U]=='I') defaultbcin = 1;
          else if (h[1U]=='O') defaultbcout = 1;
          else if (h[1U]=='b') {
@@ -637,6 +611,12 @@ static void parms(void)
                Err("cannot open digi udp socket", 28ul);
             }
          }
+         else if (h[1U]=='d') {
+            osi_NextArg(h, 1024ul);
+            if (!GetNum(h, 1024ul, &maxdupetime)) {
+               Err("-d maxdupetime", 15ul);
+            }
+         }
          else if (h[1U]=='v') show = 1;
          else if (h[1U]=='V') {
             show = 1;
@@ -649,13 +629,15 @@ static void parms(void)
 digi AND user-to-user", 71ul);
                osi_WrStrLn(" -b <call>                         broadcast dest\
 ination call", 62ul);
+               osi_WrStrLn(" -d <ms>                           dupefilter, in\
+ milliseconds intervall discard frames with same CRC", 102ul);
                osi_WrStrLn(" -h                                this", 40ul);
                osi_WrStrLn(" -I                                for new user: \
 broadcast INPUT on", 68ul);
                osi_WrStrLn(" -i <file>                         init routes fr\
 om file", 57ul);
-               osi_WrStrLn(" -L <time>                         minutes route \
-to all ssid\'s (default 10 min)", 80ul);
+               /*      WrStrLn(" -L <time>                         minutes route to all ssid'
+                s (default 10 min)"); */
                osi_WrStrLn("                                   0 no all ssid \
 routing", 57ul);
                osi_WrStrLn(" -l <time>                         minutes lifeti\
@@ -690,8 +672,8 @@ le to file (only if new entries and max. every 15s)", 101ul);
                osi_WrStrLn("(-l) time old table entries will be purged except\
  those from init file", 71ul);
                osic_WrLn();
-               osi_WrStrLn("Source: AX.25 Source Call makes table entry with \
-call/ip/sourceport/date", 73ul);
+               osi_WrStrLn("Source: AX.25 Source Call or last Digi with H-bit\
+ makes table entry with call/ip/sourceport/date", 97ul);
                osi_WrStrLn("        Exception: Protected entry updates Date o\
 nly", 53ul);
                osic_WrLn();
@@ -741,6 +723,30 @@ i port routes to destinationcall", 80ul);
       X2C_ABORT();
    }
 } /* end parms() */
+
+
+static char isdupe(const char ubuf0[], uint32_t ubuf_len,
+                int32_t blen0, uint32_t tms0)
+{
+   uint16_t c;
+   uint32_t i;
+   if (maxdupetime==0UL) return 0;
+   c = (uint16_t)((uint32_t)(uint8_t)ubuf0[blen0]+(uint32_t)
+                (uint8_t)ubuf0[blen0+1L]*256UL);
+   i = dupewp;
+   for (;;) {
+      if (tms0-dupetab[i].time0>=maxdupetime) break;
+      if (dupetab[i].crc==c) return 1;
+      if (i>0UL) --i;
+      else i = 63UL;
+      if (i==dupewp) break;
+   }
+   ++dupewp;
+   if (dupewp>63UL) dupewp = 0UL;
+   dupetab[dupewp].crc = c;
+   dupetab[dupewp].time0 = tms0;
+   return 0;
+} /* end isdupe() */
 
 
 static void ip2str(uint32_t ip, uint32_t port, char s[],
@@ -834,22 +840,42 @@ static void listtab(char fn[], uint32_t fn_len)
          }
          ip2str(u->uip, u->dport, s, 201ul);
          aprsstr_Append(h, 201ul, s, 201ul);
-         if (u->htime>0UL) {
+         if ((u->htime>0UL || u->framesin>0UL) || u->framesout>0UL) {
             i = aprsstr_Length(h, 201ul);
             while (i<36UL) {
                h[i] = ' ';
                ++i;
             }
             h[i] = 0;
-            aprsstr_DateToStr(u->htime, s, 201ul);
+            if (u->htime>0UL) {
+               aprsstr_DateToStr(u->htime, s, 201ul);
+               aprsstr_Append(h, 201ul, s, 201ul);
+               aprsstr_Append(h, 201ul, " ", 2ul);
+            }
+            aprsstr_Append(h, 201ul, "i=", 3ul);
+            aprsstr_CardToStr(u->framesin, 1UL, s, 201ul);
+            aprsstr_Append(h, 201ul, s, 201ul);
+            aprsstr_Append(h, 201ul, " o=", 4ul);
+            aprsstr_CardToStr(u->framesout, 1UL, s, 201ul);
             aprsstr_Append(h, 201ul, s, 201ul);
          }
          aprsstr_Append(h, 201ul, "\012", 2ul);
          osi_WrBin(fd, (char *)h, 201u/1u, aprsstr_Length(h, 201ul));
          u = u->next;
       }
-      strncpy(h,"f from init file, \012p ip/port protected\012B BC out\012b B\
-C in\012A gets all\012",201u);
+      strncpy(h,"dupetime:",201u);
+      aprsstr_CardToStr(maxdupetime, 0UL, s, 201ul);
+      aprsstr_Append(h, 201ul, s, 201ul);
+      aprsstr_Append(h, 201ul, "ms  frames:", 12ul);
+      aprsstr_CardToStr(framecnt, 0UL, s, 201ul);
+      aprsstr_Append(h, 201ul, s, 201ul);
+      aprsstr_Append(h, 201ul, "  dupes:", 9ul);
+      aprsstr_CardToStr(dupecnt, 0UL, s, 201ul);
+      aprsstr_Append(h, 201ul, s, 201ul);
+      aprsstr_Append(h, 201ul, "\012", 2ul);
+      osi_WrBin(fd, (char *)h, 201u/1u, aprsstr_Length(h, 201ul));
+      strncpy(h,"f from init file\012p ip/port protected\012B BC out\012b BC \
+in\012A gets all\012",201u);
       osi_WrBin(fd, (char *)h, 201u/1u, aprsstr_Length(h, 201ul));
       if (peertopeer) {
          strncpy(h,"peer-to-peer routing on\012",201u);
@@ -863,6 +889,11 @@ C in\012A gets all\012",201u);
       }
       aprsstr_IntToStr((int32_t)touserport, 0UL, h, 201ul);
       aprsstr_Append(h, 201ul, " user UDP port\012", 16ul);
+      osi_WrBin(fd, (char *)h, 201u/1u, aprsstr_Length(h, 201ul));
+      strncpy(h,"Uptime: ",201u);
+      aprsstr_TimeToStr(systime-uptime, s, 201ul);
+      aprsstr_Append(h, 201ul, s, 201ul);
+      aprsstr_Append(h, 201ul, "\012", 2ul);
       osi_WrBin(fd, (char *)h, 201u/1u, aprsstr_Length(h, 201ul));
       osic_Close(fd);
    }
@@ -942,40 +973,35 @@ static void AddIp(uint32_t ip, uint32_t dp, char fix,
                 uint32_t buf_len)
 {
    pUSER last;
+   uint32_t cp;
    uint32_t i;
    pUSER u;
    /* for fast find, rechain to first position */
    struct USER * anonym;
    struct USER * anonym0;
+   struct USER * anonym1;
    *hasbcin = 0;
-   if (!((uint32_t)(uint8_t)buf[13UL]&1) && (uint8_t)
-                buf[20UL]>=(uint8_t)'\200') return;
-   /* via digi, store only direct heard */
+   cp = 7UL;
+   while ((cp<=56UL && !((uint32_t)(uint8_t)buf[cp+6UL]&1))
+                && (uint8_t)buf[cp+13UL]>=(uint8_t)'\200') cp += 7UL;
    u = users;
    last = 0;
-   while (u) {
-      if (cmpcall(u->call, buf, buf_len, 7UL, 1)) {
-         if (last) {
+   for (;;) {
+      if (u==0) break;
+      if (cmpcall(u->call, buf, buf_len, cp, 1)) {
+         if (!fix && last) {
             last->next = u->next;
             u->next = users;
             users = u;
          }
          { /* with */
             struct USER * anonym = u;
-            anonym->htime = systime;
-            *hasbcin = anonym->bcin;
             if (!anonym->nospoof) {
                anonym->uip = ip; /* store if ip changed */
                anonym->dport = dp;
             }
          }
-         /*
-               IF show THEN
-                 WrStr("Found User "); showcall(buf, SOURCECALL);
-                 showu(u);
-               END;
-         */
-         return;
+         break;
       }
       last = u;
       u = u->next;
@@ -989,27 +1015,38 @@ static void AddIp(uint32_t ip, uint32_t dp, char fix,
          { /* with */
             struct USER * anonym0 = u;
             for (i = 0UL; i<=6UL; i++) {
-               anonym0->call[i] = buf[7UL+i];
+               anonym0->call[i] = buf[cp+i];
             } /* end for */
             anonym0->call[6U] = (char)(((uint32_t)(uint8_t)
                 anonym0->call[6U]/2UL&15UL)*2UL); /* extract pure ssid */
             anonym0->uip = ip;
             anonym0->dport = dp;
-            anonym0->htime = systime;
-            anonym0->nospoof = nspoof;
-            anonym0->nopurge = fix;
-            anonym0->bcin = defbcin;
-            anonym0->bcout = defbcout;
-            anonym0->willall = getsall;
+            anonym0->htime = 0UL;
+            anonym0->framesout = 0UL;
+            anonym0->framesin = 0UL;
          }
-         *hasbcin = defbcin;
          if (show) {
             osi_WrStr("Add User ", 10ul);
-            showcall(buf, buf_len, 7UL);
+            showcall(buf, buf_len, cp);
             showu(dp, u);
          }
          u->next = users;
          users = u;
+      }
+   }
+   if (u) {
+      { /* with */
+         struct USER * anonym1 = u;
+         if (!fix) {
+            anonym1->htime = systime;
+            ++anonym1->framesin;
+         }
+         anonym1->nospoof = nspoof;
+         anonym1->nopurge = fix;
+         anonym1->bcin = defbcin;
+         anonym1->bcout = defbcout;
+         anonym1->willall = getsall;
+         *hasbcin = anonym1->bcin;
       }
    }
 } /* end AddIp() */
@@ -1074,6 +1111,7 @@ static char sendtouser(char ubuf0[], uint32_t ubuf_len,
             /* have not sent jet to ip/port */
             u->datagot = 1;
             res0 = udpsend(usersock, ubuf0, blen0, u->dport, u->uip);
+            ++u->framesout;
             if (show) {
                osi_WrStr("< send to user ", 16ul);
                showcall(u->call, 7ul, 0UL);
@@ -1131,9 +1169,15 @@ static void initroutes(char fn[], uint32_t fn_len)
    char spoof;
    uint32_t ip;
    uint32_t dp;
+   pUSER pu;
    X2C_PCOPY((void **)&fn,fn_len);
    fd = osi_OpenRead(fn, fn_len);
    if (osic_FdValid(fd)) {
+      pu = users;
+      while (pu) {
+         pu->nopurge = 0;
+         pu = pu->next;
+      }
       lc = 1UL;
       for (;;) {
          i = 0UL;
@@ -1200,7 +1244,15 @@ static uint32_t lastlist;
 
 static char dbcin;
 
+static char dupe;
+
 static pUSER voidu;
+
+static uint32_t ts;
+
+static uint32_t tus;
+
+static uint32_t tms;
 
 
 X2C_STACK_LIMIT(100000l)
@@ -1220,11 +1272,16 @@ extern int main(int argc, char **argv)
    digisock = -1L;
    maxentries = 1000UL;
    lifetime = 604800UL;
-   alllifetime = 600UL;
+   /*  alllifetime:=60*10; */
    users = 0;
    initfn[0U] = 0;
    wrfn[0U] = 0;
    broadcastdest[0U] = 0;
+   framecnt = 0UL;
+   dupecnt = 0UL;
+   dupewp = 0UL;
+   maxdupetime = 0UL;
+   memset((char *)dupetab,(char)0,sizeof(struct _0 [64]));
    parms();
    if (initfn[0U]) initroutes(initfn, 1025ul);
    modified = 1;
@@ -1234,38 +1291,46 @@ extern int main(int argc, char **argv)
       Err("cannot bind userport (-p userport)", 35ul);
    }
    systime = osic_time();
+   uptime = systime;
    for (;;) {
       fdclr();
       if (digisock>=0L) fdsetr((uint32_t)digisock);
       fdsetr((uint32_t)usersock);
-      if (selectrw(15UL, 0UL)>0L) {
-         if (digisock>=0L && issetr((uint32_t)digisock)) {
-            /* data from digi */
-            fromip = digiip;
-            blen = getudp(digisock, ubuf, 338ul, &fromip, &userdport,
+      tus = 0UL;
+      ts = 15UL;
+      res = selectrwt(&ts, &tus);
+      tms += ((15UL-ts)*1000UL-tus/1000UL)+1UL;
+      if (digisock>=0L && issetr((uint32_t)digisock)) {
+         /* data from digi */
+         fromip = digiip;
+         blen = getudp(digisock, ubuf, 338ul, &fromip, &userdport,
                 checkdigiip);
-            if (blen>=17L) {
-               if (show) {
-                  osi_WrStr("> from digi", 12ul);
-                  ShowFrame(ubuf, 338ul, (uint32_t)(blen-2L), noinf);
-               }
-               if (!sendtouser(ubuf, 338ul, blen, 1, 1, digiip,
-                userdport) && show) {
-                  osi_WrStrLn(" digi out user not found", 25ul);
-               }
-               if (show) osi_WrStrLn("-----", 6ul);
+         if (blen>=17L) {
+            if (show) {
+               osi_WrStr("> from digi", 12ul);
+               ShowFrame(ubuf, 338ul, (uint32_t)(blen-2L), noinf);
             }
+            if (!sendtouser(ubuf, 338ul, blen, 1, 1, digiip,
+                userdport) && show) {
+               osi_WrStrLn(" digi out user not found", 25ul);
+            }
+            if (show) osi_WrStrLn("-----", 6ul);
          }
-         if (issetr((uint32_t)usersock)) {
-            /* data from user */
-            fromip = 0UL;
-            blen = getudp(usersock, ubuf, 338ul, &fromip, &userdport, 0);
-            if (blen>=17L) {
-               if (show) {
-                  osi_WrStr("> from user ", 13ul);
-                  showpip(fromip, userdport);
-                  ShowFrame(ubuf, 338ul, (uint32_t)(blen-2L), noinf);
-               }
+         ++framecnt;
+      }
+      if (issetr((uint32_t)usersock)) {
+         /* data from user */
+         fromip = 0UL;
+         blen = getudp(usersock, ubuf, 338ul, &fromip, &userdport, 0);
+         if (blen>=17L) {
+            dupe = isdupe(ubuf, 338ul, blen-2L, tms);
+            if (show) {
+               if (dupe) osi_WrStr("[dupe]", 7ul);
+               osi_WrStr("> from user ", 13ul);
+               showpip(fromip, userdport);
+               ShowFrame(ubuf, 338ul, (uint32_t)(blen-2L), noinf);
+            }
+            if (!dupe) {
                AddIp(fromip, userdport, 0, 0, &dbcin, defaultbcin,
                 defaultbcout, 0, ubuf, 338ul);
                modified = 1;
@@ -1276,13 +1341,18 @@ extern int main(int argc, char **argv)
                 userdport) && show) {
                   osi_WrStrLn(" peer-to-peer no user found", 28ul);
                }
-               if (show) osi_WrStrLn("-----", 6ul);
             }
+            else ++dupecnt;
+            if (show) osi_WrStrLn("-----", 6ul);
          }
+         ++framecnt;
       }
       systime = osic_time();
       if (lastlist+15UL<systime || lastlist>systime) {
-         voidu = Realloc(0); /* cyclic purge */
+         if (initfn[0U]) {
+            initroutes(initfn, 1025ul);
+         }
+         voidu = Realloc(0);
          if (modified && wrfn[0U]) {
             listtab(wrfn, 1025ul);
             modified = 0;
