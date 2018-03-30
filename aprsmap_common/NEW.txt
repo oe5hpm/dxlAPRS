@@ -1414,6 +1414,12 @@
 
 
 
+15.03.2018 (Ver 0.72)
+
++ Linux 64bit Copy/Paste Absturz behoben (hoffentlich)
+
++ Refraction Parameter wirkt auch bei Radiolink Ausleuchtung
+
 
 
 
