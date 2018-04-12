@@ -5047,7 +5047,7 @@ map.y4m", 8ul);
       if ((useri_beaconediting && useri_beaconed)
                 && aprsdecode_ismultiline(1)) useri_poligonmenu();
    }
-   else if ((aprsdecode_tracenew.call[0UL] && lastxupdate+2UL+slowupdate()
+   else if ((aprsdecode_tracenew.call[0UL] && lastxupdate+slowupdate()
                 <=aprsdecode_realtime)
                 && !(aprsdecode_click.withradio && (aprspos_posvalid(aprsdecode_click.markpos)
                  || aprspos_posvalid(aprsdecode_click.measurepos)))) {

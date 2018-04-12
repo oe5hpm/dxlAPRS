@@ -84,7 +84,7 @@ maptool_pIMAGE useri_panoimage;
 
 #define useri_MINXSIZE 100
 
-#define useri_MINYSIZE 50
+#define useri_MINYSIZE 70
 
 #define useri_DEFAULTXSIZE 600
 
@@ -11975,7 +11975,7 @@ extern void useri_keychar(char ch, char ispasted,
 extern void useri_getstartxysize(int32_t * newx, int32_t * newy)
 {
    *newx = useri_conf2int(useri_fXYSIZE, 0UL, 100L, 32000L, 600L);
-   *newy = useri_conf2int(useri_fXYSIZE, 1UL, 50L, 32000L, 400L);
+   *newy = useri_conf2int(useri_fXYSIZE, 1UL, 70L, 32000L, 400L);
 } /* end getstartxysize() */
 
 
@@ -11994,7 +11994,7 @@ extern void useri_resizewin(int32_t newx, int32_t newy, char f11)
       useri_newysize = (uint32_t)newy;
       if (useri_newxsize<100UL) useri_newxsize = 100UL;
       else if (useri_newxsize>32000UL) useri_newxsize = 32000UL;
-      if (useri_newysize<50UL) useri_newysize = 50UL;
+      if (useri_newysize<70UL) useri_newysize = 70UL;
       else if (useri_newysize>32000UL) useri_newysize = 32000UL;
       if (f11) {
          xosi_setxwinsize((int32_t)useri_newxsize,
