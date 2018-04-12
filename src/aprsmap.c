@@ -2288,39 +2288,6 @@ static void pantoop(aprsdecode_pOPHIST op)
    }
 } /* end pantoop() */
 
-/*
-PROCEDURE toggview;                (* save view and restore alternate *)
-VAR v:VIEW;
-BEGIN
-  v:=alttabview;
-  alttabview.pos:=mappos;
-  alttabview.zoom:=realzoom(initzoom, finezoom);
-  alttabview.mhop:=click.mhop;
-  alttabview.onesymbol:=click.onesymbol;
-  alttabview.onesymbolset:=click.onesymbolset;
-  alttabview.rf:=lums.rf;
-  alttabview.mhtx:=mhtx;
-  alttabview.wxcol:=lums.wxcol;
-  alttabview.lumtext:=lums.text;
-  alttabview.focus:=click.watchmhop;
-  IF posvalid(v.pos) THEN
-    mappos:=v.pos;
-    initzoom:=trunc(v.zoom);
-    finezoom:=v.zoom-FLOAT(initzoom)+1.0;
-    click.mhop:=v.mhop;
-    click.onesymbol:=v.onesymbol;
-    click.onesymbolset:=v.onesymbolset;
-    lums.rf:=v.rf;
-    mhtx:=v.mhtx;
-    lums.wxcol:=v.wxcol;
-    lums.text:=v.lumtext;
-    click.watchmhop:=v.focus;
-    lums.moving:=FALSE;
-    IF click.watchmhop & (click.mhop[0]<>0C) THEN pantoop(findop(click.mhop,
-                FALSE)) END;
-  END;
-END toggview;
-*/
 
 static void push(float newzoom)
 {
@@ -3271,8 +3238,6 @@ static void follow(void)
       WrInt(ORD(tracenew.beep), 2);
       WrStrLn(" follow");
       */
-      /*    IF tracenew.follow & (click.mhop[0]=0C) OR (click.mhop=op^.call)
-                THEN pantoop(op) END; */
       if (aprsdecode_tracenew.follow && (aprsdecode_click.mhop[0UL]
                 ==0 || X2C_STRCMP(aprsdecode_click.mhop,9u,op->call,9u)==0)) {
          pantoop(op);
@@ -5186,95 +5151,6 @@ static void killsave(int32_t signum)
    X2C_HALT((uint32_t)signum);
 } /* end killsave() */
 
-/*
-PROCEDURE rdmountains(fn:ARRAY OF CHAR);
-                (* import csv file with mountain name, pos, altitude *)
-VAR p,len,r:INTEGER;
-    fd:File;
-    pm:pMOUNTAIN;
-    pos:POSITION;
-    alt:REAL;
-    b:ARRAY[0..4095] OF CHAR;
-    s:ARRAY[0..1023] OF CHAR;
-    com, lat, long, name:ARRAY[0..99] OF CHAR;
-
-
-  PROCEDURE getch():CHAR;
-  BEGIN
-    IF p>=len THEN
-      len:=RdBin(fd, b, SIZE(b));
-      IF len<=0 THEN RETURN 0C END;
-
-      p:=0; 
-    END;
-    INC(p);
-    RETURN b[p-1]
-  END getch;
-
-  PROCEDURE getword(VAR s:ARRAY OF CHAR):INTEGER;
-  VAR i:CARDINAL;
-  BEGIN
-    i:=0;
-    LOOP
-      s[i]:=getch();
-      IF s[i]=0C THEN RETURN -1 END;
-      IF s[i]=LF THEN s[i]:=0C; RETURN 0 END;
-      IF s[i]="," THEN s[i]:=0C; RETURN 1 END;
-      IF (i<HIGH(s)) & (s[i]>=" ") THEN INC(i) END;
-    END;
-  END getword; 
-
-BEGIN
-  b[0]:=0C;
-  confstr(fOSMDIR, s);
-  Append(b, s);
-  Append(b, DIRSEP);
-  Append(b, fn);
-
-  fd:=OpenRead(b);
-  IF NOT FdValid(fd) THEN RETURN END;
-
-  p:=0;
-  len:=0;
-  LOOP          
-    r:=getword(com);
-    IF r>0 THEN
-      r:=getword(name);
-      IF r>0 THEN
-        r:=getword(s);
-        IF r>0 THEN
-          r:=getword(lat);
-          IF r>0 THEN
-            r:=getword(long);
-            IF r>0 THEN
-              r:=getword(s);
-              IF (r<0) OR NOT StrToFix(alt, s) THEN alt:=0.0 END;  
-              WHILE r>0 DO r:=getword(s) END;
-            END;
-          END;
-        END;
-      END;
-    END;
-    IF r<0 THEN EXIT END;
-
-    IF (com[0]<>"#") & (name[0]<>0C) & StrToFix(pos.lat, lat)
-    & StrToFix(pos.long, long) & posvalid(pos) THEN
-      ALLOCATE(pm, SIZE(pm^));
-      IF pm=NIL THEN EXIT END;
-
-      INC(debugmem.srtm, SIZE(pm^));
-      Assign(pm^.name, name);
-      pm^.pos.lat:= pos.lat * RAD;
-      pm^.pos.long:=pos.long* RAD;
-      IF (alt<0.0) OR (alt>9999.0) THEN alt:=0.0 END;
-      pm^.alt:=trunc(alt);
-      pm^.next:=mountains;
-      mountains:=pm;
-    END;
-  END;
-  Close(fd);
-END rdmountains;
-*/
 
 X2C_STACK_LIMIT(100000l)
 extern int main(int argc, char **argv)
