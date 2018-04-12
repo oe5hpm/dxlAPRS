@@ -1184,7 +1184,7 @@ of maps not really needed
 
 |7925 % of screen to center hold watched objects in
 0: the object moves to margin before map is shifted
-100: the object is alway centered
+100: the object is always centered
 
 |7920 window size used on next program start
 updated as window size is changed
