@@ -23,7 +23,7 @@
 
 
 
-int connecttob(char *url, char *port)
+int32_t connecttob(char *url, char *port)
 {
   struct addrinfo hints, *res, *rp;
   int sockfd;
@@ -68,7 +68,7 @@ int connecttob(char *url, char *port)
 }
 
 
-int readsockb(int fd, char *buf, int len)
+int32_t readsockb(int fd, char *buf, int len)
 {
   int res=recv(fd, buf, len, MSG_WAITALL);
   if (res==0) return -1;

@@ -9,9 +9,9 @@
 #define tcpb_H_
 #include "X2C.h"
 
-extern long connecttob(char [], char []);
+extern int32_t connecttob(char [], char []);
 
-extern long readsockb(long, char [], long);
+extern int32_t readsockb(long, char [], long);
 
 
 #endif /* tcpb_H_ */
