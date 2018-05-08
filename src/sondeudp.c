@@ -99,11 +99,15 @@ static char sondeudp_DATAFRAME = 'i';
 
 #define sondeudp_M10SYN 0x649F20 
 /* M10 sync */
+
+#define sondeudp_M10SYN1 0x644900 
+/*11111000 01100100 01001001 0000xxxx -syn1-  */
+
+/*11111000 01100100 10011111 00100000 -syn-  */
 /*
   rs41x 0x86, 0x35, 0xf4, 0x40, 0x93, 0xdf, 0x1a, 0x60
   rs41  0x10, 0xB6, 0xCA, 0x11, 0x22, 0x96, 0x12, 0xF8
 */
-
 #define sondeudp_RHEAD41 "000010000110110101010011100010000100010001101001010\
 0100000011111"
 
@@ -258,11 +262,14 @@ struct M10 {
    char oldd;
    char plld;
    char lastmanch;
+   char alternativ;
    char txok;
    uint32_t rxb;
    uint32_t rxp;
    char rxbuf[101];
    AFIRTAB afirtab;
+   uint32_t timefn;
+   uint32_t synword1;
    uint32_t synword;
    uint32_t demodbaud;
    uint32_t configbaud;
@@ -733,7 +740,7 @@ static void Config(void)
          struct M10 * anonym2 = &chan[c].m10;
          anonym2->configbaud = 9600UL;
          anonym2->demodbaud = (2UL*anonym2->configbaud*65536UL)/adcrate;
-         initafir(anonym2->afirtab, 0UL, 5200UL,
+         initafir(anonym2->afirtab, 0UL, 5000UL,
                 X2C_DIVR((float)chan[c].configequalizer,100.0f));
          anonym2->baudfine = 0L;
          anonym2->noise = 0.0f;
@@ -1708,8 +1715,7 @@ static void decode41(uint32_t m)
             }
          } /* end for */
          osi_WrStr(" ", 2ul);
-         osic_WrINT32((uint32_t)getint16(anonym->rxbuf, 520ul, nameok),
-                1UL);
+         osic_WrUINT32(getcard16(anonym->rxbuf, 520ul, nameok), 1UL);
          if (posok>0UL) posrs41(anonym->rxbuf, 520ul, posok);
          if (anonym->rxbuf[nameok+23UL]==0) {
             osi_WrStr(" ", 2ul);
@@ -3272,27 +3278,37 @@ static uint32_t m10card(const char b[], uint32_t b_len,
    return n;
 } /* end m10card() */
 
+
+static void wrtime(uint32_t t)
+{
+   char s[31];
+   aprsstr_TimeToStr(t, s, 31ul);
+   osi_WrStr(s, 31ul);
+} /* end wrtime() */
+
 typedef uint32_t SET256[8];
 
 static float sondeudp_DEGMUL = 8.3819036711397E-8f;
 
 #define sondeudp_VMUL 0.005
 
-static SET256 sondeudp_HSET = {0x03FFFFF0UL,0x00000003UL,0x00000000UL,
-                0x00000018UL,0x00000000UL,0x00000000UL,0x00000000UL,
+static SET256 sondeudp_HSET = {0x03FFFFF7UL,0x00000003UL,0xE0000000UL,
+                0x0000001BUL,0x00000000UL,0x00000000UL,0x00000000UL,
                 0x00000000UL}; /* not hexlist known bytes */
 
-static SET256 _cnst1 = {0x03FFFFF0UL,0x00000003UL,0x00000000UL,0x00000018UL,
+static SET256 _cnst1 = {0x03FFFFF7UL,0x00000003UL,0xE0000000UL,0x0000001BUL,
                 0x00000000UL,0x00000000UL,0x00000000UL,0x00000000UL};
 
 static void decodeframe10(uint32_t m)
 {
+   uint32_t tab;
    uint32_t week;
    uint32_t tow;
    uint32_t cs;
    uint32_t i;
    int32_t ci;
    double dir;
+   /*    time:TIME; */
    double v;
    double vv;
    double vn;
@@ -3300,7 +3316,6 @@ static void decodeframe10(uint32_t m)
    double alt;
    double lon;
    double lat;
-   uint32_t time0;
    uint32_t id;
    char ids[201];
    char s[201];
@@ -3308,36 +3323,10 @@ static void decodeframe10(uint32_t m)
    struct CHAN * anonym0; /* call if set */
    { /* with */
       struct M10 * anonym = &chan[m].m10;
+      anonym->txok = 0;
       cs = (uint32_t)crcm10(99L, anonym->rxbuf, 101ul);
       if (cs==m10card(anonym->rxbuf, 101ul, 99L, 2L)) {
          /* crc ok */
-         tow = m10card(anonym->rxbuf, 101ul, 10L, 4L);
-         week = m10card(anonym->rxbuf, 101ul, 32L, 2L);
-         time0 = tow/1000UL+week*604800UL+315964800UL;
-         if (verb2) {
-            osi_WrStr(" ", 2ul);
-            aprsstr_DateToStr(time0, s, 201ul);
-            osi_WrStr(s, 201ul);
-            osi_WrStr(" ", 2ul);
-         }
-         lat = (double)m10card(anonym->rxbuf, 101ul, 14L,
-                4L)*8.3819036711397E-8;
-         lon = (double)m10card(anonym->rxbuf, 101ul, 18L,
-                4L)*8.3819036711397E-8;
-         alt = (double)m10card(anonym->rxbuf, 101ul, 22L, 4L)*0.001;
-         ci = (int32_t)m10card(anonym->rxbuf, 101ul, 4L, 2L);
-         if (ci>32767L) ci -= 65536L;
-         ve = (double)ci*0.005;
-         ci = (int32_t)m10card(anonym->rxbuf, 101ul, 6L, 2L);
-         if (ci>32767L) ci -= 65536L;
-         vn = (double)ci*0.005;
-         ci = (int32_t)m10card(anonym->rxbuf, 101ul, 8L, 2L);
-         if (ci>32767L) ci -= 65536L;
-         vv = (double)ci*0.005;
-         v = (double)osic_sqrt((float)(ve*ve+vn*vn));
-                /* hor speed */
-         dir = atang2(vn, ve)*5.7295779513082E+1;
-         if (dir<0.0) dir = 360.0+dir;
          /* get ID    */
          id = (uint32_t)(((uint32_t)((uint32_t)(uint8_t)
                 anonym->rxbuf[97U]+256UL*(uint32_t)(uint8_t)
@@ -3358,43 +3347,85 @@ static void decodeframe10(uint32_t m)
          --i;
          ids[i] = 'M';
          /* get ID */
-         if (verb) {
-            WrChan((int32_t)m);
-            osi_WrStr("M10 ", 5ul);
-            osi_WrStr(ids, 201ul);
-            osi_WrStr(" ", 2ul);
-            osic_WrFixed((float)lat, 5L, 1UL);
-            osi_WrStr(" ", 2ul);
-            osic_WrFixed((float)lon, 5L, 1UL);
-            osi_WrStr(" ", 2ul);
-            osic_WrFixed((float)alt, 1L, 1UL);
-            osi_WrStr("m ", 3ul);
-            osic_WrFixed((float)(v*3.6), 1L, 1UL);
-            osi_WrStr("km/h ", 6ul);
-            osic_WrFixed((float)dir, 0L, 1UL);
-            osi_WrStr("deg ", 5ul);
-            osic_WrFixed((float)vv, 1L, 1UL);
-            osi_WrStr("m/s ", 5ul);
+         if (anonym->alternativ) {
+            if (verb) {
+               WrChan((int32_t)m);
+               osi_WrStr("M10 ", 5ul);
+               osi_WrStr(ids, 201ul);
+               osi_WrStr(" ", 2ul);
+               wrtime(anonym->timefn%86400UL);
+               osi_WrStr(" typ=", 6ul);
+               osic_WrINT32(m10card(anonym->rxbuf, 101ul, 2L, 1L), 1UL);
+               osi_WrStr(" ", 2ul);
+            }
+         }
+         else {
+            tow = m10card(anonym->rxbuf, 101ul, 10L, 4L);
+            week = m10card(anonym->rxbuf, 101ul, 32L, 2L);
+            anonym->timefn = tow/1000UL+week*604800UL+315964800UL;
+            /*        IF verb2 THEN WrStr(" ");DateToStr(time, s); WrStr(s);
+                WrStr(" ") END; */
+            lat = (double)m10card(anonym->rxbuf, 101ul, 14L,
+                4L)*8.3819036711397E-8;
+            lon = (double)m10card(anonym->rxbuf, 101ul, 18L,
+                4L)*8.3819036711397E-8;
+            alt = (double)m10card(anonym->rxbuf, 101ul, 22L, 4L)*0.001;
+            ci = (int32_t)m10card(anonym->rxbuf, 101ul, 4L, 2L);
+            if (ci>32767L) ci -= 65536L;
+            ve = (double)ci*0.005;
+            ci = (int32_t)m10card(anonym->rxbuf, 101ul, 6L, 2L);
+            if (ci>32767L) ci -= 65536L;
+            vn = (double)ci*0.005;
+            ci = (int32_t)m10card(anonym->rxbuf, 101ul, 8L, 2L);
+            if (ci>32767L) ci -= 65536L;
+            vv = (double)ci*0.005;
+            v = (double)osic_sqrt((float)(ve*ve+vn*vn));
+                /* hor speed */
+            dir = atang2(vn, ve)*5.7295779513082E+1;
+            if (dir<0.0) dir = 360.0+dir;
+            anonym->txok = 1;
+            if (verb) {
+               WrChan((int32_t)m);
+               osi_WrStr("M10 ", 5ul);
+               osi_WrStr(ids, 201ul);
+               osi_WrStr(" ", 2ul);
+               wrtime(anonym->timefn%86400UL);
+               osi_WrStr(" ", 2ul);
+               osic_WrFixed((float)lat, 5L, 1UL);
+               osi_WrStr(" ", 2ul);
+               osic_WrFixed((float)lon, 5L, 1UL);
+               osi_WrStr(" ", 2ul);
+               osic_WrFixed((float)alt, 1L, 1UL);
+               osi_WrStr("m ", 3ul);
+               osic_WrFixed((float)(v*3.6), 1L, 1UL);
+               osi_WrStr("km/h ", 6ul);
+               osic_WrFixed((float)dir, 0L, 1UL);
+               osi_WrStr("deg ", 5ul);
+               osic_WrFixed((float)vv, 1L, 1UL);
+               osi_WrStr("m/s ", 5ul);
+            }
          }
          /* build tx frame */
-         for (i = 0UL; i<=8UL; i++) {
-            s[i+7UL] = ids[i];
-         } /* end for */
-         { /* with */
-            struct CHAN * anonym0 = &chan[m];
-            s[0U] = (char)(anonym0->mycallc/16777216UL);
-            s[1U] = (char)(anonym0->mycallc/65536UL&255UL);
-            s[2U] = (char)(anonym0->mycallc/256UL&255UL);
-            s[3U] = (char)(anonym0->mycallc&255UL);
-            if (anonym0->mycallc>0UL) s[4U] = anonym0->myssid;
-            else s[4U] = '\020';
-            s[5U] = 0;
-            s[6U] = 0;
+         if (anonym->txok) {
+            for (i = 0UL; i<=8UL; i++) {
+               s[i+7UL] = ids[i];
+            } /* end for */
+            { /* with */
+               struct CHAN * anonym0 = &chan[m];
+               s[0U] = (char)(anonym0->mycallc/16777216UL);
+               s[1U] = (char)(anonym0->mycallc/65536UL&255UL);
+               s[2U] = (char)(anonym0->mycallc/256UL&255UL);
+               s[3U] = (char)(anonym0->mycallc&255UL);
+               if (anonym0->mycallc>0UL) s[4U] = anonym0->myssid;
+               else s[4U] = '\020';
+               s[5U] = 0;
+               s[6U] = 0;
+            }
+            for (i = 0UL; i<=100UL; i++) {
+               s[i+16UL] = anonym->rxbuf[i]; /* payload */
+            } /* end for */
+            alludp(chan[m].udptx, 117UL, s, 201ul);
          }
-         for (i = 0UL; i<=100UL; i++) {
-            s[i+16UL] = anonym->rxbuf[i]; /* payload */
-         } /* end for */
-         alludp(chan[m].udptx, 117UL, s, 201ul);
       }
       else if (verb) {
          /*build tx frame */
@@ -3407,18 +3438,48 @@ static void decodeframe10(uint32_t m)
          Wrtune(chan[m].admax+chan[m].admin, chan[m].admax-chan[m].admin);
       }
       if (verb2) {
-         for (i = 0UL; i<=23UL; i++) {
-            if (i%10UL==0UL) osi_WrStrLn("", 1ul);
-            osic_WrINT32(m10card(anonym->rxbuf, 101ul,
-                (int32_t)(48UL+i*2UL), 2L), 6UL);
-            osi_WrStr(" ", 2ul);
-         } /* end for */
+         /*
+               FOR i:=0 TO 23 DO
+                 IF i MOD 10=0 THEN WrStrLn("") END;
+                 WrInt(m10card(rxbuf, 48+i*2, 2), 6); WrStr(" ");
+               END;
+         */
+         tab = 0UL;
          for (i = 0UL; i<=100UL; i++) {
-            if (i%24UL==0UL) osi_WrStrLn("", 1ul);
-            if (X2C_INL(i,256,_cnst1)) osi_WrStr(" . ", 4ul);
-            else osi_WrHex((uint32_t)(uint8_t)anonym->rxbuf[i], 3UL);
+            if (anonym->alternativ || !X2C_INL(i,256,_cnst1)) {
+               if (tab%12UL==0UL) osi_WrStrLn("", 1ul);
+               osic_WrINT32(i, 3UL);
+               osi_WrStr(":", 2ul);
+               osi_WrHex((uint32_t)(int32_t)m10card(anonym->rxbuf, 101ul,
+                 (int32_t)i, 1L), 3UL);
+               ++tab;
+            }
          } /* end for */
       }
+      /*i:=ORD(rxbuf[89]) + ORD(rxbuf[88])*0100H + ORD(rxbuf[87])
+                *010000H +ORD(rxbuf[86])*01000000H; */
+      /*WrStr(" "); WrInt(i, 12); WrStr(" ");  WrFixed(SaveReal(i), 10, 10);
+                */
+      /*89 90  63 64 */
+      /*WrStrLn(""); WrInt(CAST(INT16, m10rcard(rxbuf, 63, 4)), 6);
+                WrInt(CAST(INT16, m10rcard(rxbuf, 89, 4)), 6);  WrStrLn("");
+                 */
+      /*
+            FOR i:=0 TO HIGH(rxbuf) DO
+              IF i MOD 24=0 THEN WrStrLn(""); WrInt(i, 2); WrStr(":"); END; 
+              IF i IN HSET THEN WrStr(" . ") ELSE WrHex(ORD(rxbuf[i]),
+                3) END;
+      --        WrHex(ORD(rxbuf[i]), 3);
+            END;
+      */
+      /*
+            FOR i:=0 TO HIGH(rxbuf) DO
+              IF i MOD 24=0 THEN WrStrLn(""); WrInt(i, 2); WrStr(":"); END;
+              IF rxbuf[i]=diffb[i] THEN WrStr(" . ") ELSE WrHex(ORD(rxbuf[i])
+                , 3) END;
+            END;
+      diffb:=rxbuf;
+      */
       if (verb) osi_WrStrLn("", 1ul);
    }
 } /* end decodeframe10() */
@@ -3429,19 +3490,35 @@ static void demodbyte10(uint32_t m, char d)
    struct M10 * anonym;
    { /* with */
       struct M10 * anonym = &chan[m].m10;
-      /*WrInt(ORD(d),1); Flush(); */
+      /*WrInt(ORD(d),1);  */
+      /*WrInt(rxp, 4); WrStrLn(""); */
+      anonym->synword1 = anonym->synword1*2UL+(uint32_t)(((uint32_t)
+                anonym->synword&0x800000UL)!=0UL);
       anonym->synword = anonym->synword*2UL+(uint32_t)d;
       if (anonym->rxp>=101UL) {
-         if ((anonym->synword&16777215UL)==6594336UL) {
-            anonym->rxp = 3UL;
-            anonym->rxb = 0UL;
-            anonym->rxbuf[0U] = 'd';
-            anonym->rxbuf[1U] = '\237';
-            anonym->rxbuf[2U] = ' ';
+         if (((uint32_t)anonym->synword1&0xFFC7UL)==0xC0UL) {
+            /* unique frame sync */
+            /*WrStr(" -fsyn- ");WrHex(frsyn, 15); WrHex(synword, 15); */
+            if (((uint32_t)anonym->synword&0xFFFFFFUL)==0x649F20UL) {
+               anonym->rxp = 3UL;
+               anonym->alternativ = 0;
+            }
+            else if (((uint32_t)anonym->synword&0xFFFFF0UL)==0x644900UL) {
+               /*WrStr(" -syn- "); WrHex(synword1 DIV 256, 10);
+                WrHex(synword1, 15); */
+               anonym->rxp = 3UL;
+               anonym->alternativ = 1;
+            }
+            /*WrStr(" -syn1- "); */
+            if (anonym->rxp==3UL) {
+               anonym->rxb = 0UL;
+               anonym->rxbuf[0U] = (char)(anonym->synword/65536UL);
+               anonym->rxbuf[1U] = (char)(anonym->synword/256UL&255UL);
+               anonym->rxbuf[2U] = (char)(anonym->synword&255UL);
+            }
          }
       }
       else {
-         /*WrStr(" -syn- "); */
          ++anonym->rxb;
          if (anonym->rxb>=8UL) {
             anonym->rxbuf[anonym->rxp] = (char)(anonym->synword&255UL);

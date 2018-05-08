@@ -958,13 +958,10 @@ static pCONTEXT findcontext(char n[], uint32_t n_len, uint32_t t)
    pCONTEXT findcontext_ret;
    X2C_PCOPY((void **)&n,n_len);
    c = contexts;
-   while (c && !aprsstr_StrCmp(X2C_CHKNIL(pCONTEXT,c)->name, 12ul, n,
-                n_len)) c = X2C_CHKNIL(pCONTEXT,c)->next;
+   while (c && !aprsstr_StrCmp(c->name, 12ul, n, n_len)) c = c->next;
    if (c==0) {
       c = contexts;
-      while (c && X2C_CHKNIL(pCONTEXT,c)->lastused+86400UL>t) {
-         c = X2C_CHKNIL(pCONTEXT,c)->next;
-      }
+      while (c && c->lastused+86400UL>t) c = c->next;
       if (c==0) {
          osic_alloc((char * *) &c, sizeof(struct CONTEXT));
          memset((char *)c,(char)0,sizeof(struct CONTEXT));
@@ -973,13 +970,13 @@ static pCONTEXT findcontext(char n[], uint32_t n_len, uint32_t t)
       }
       else {
          /* reuse old context */
-         p = X2C_CHKNIL(pCONTEXT,c)->next;
+         p = c->next;
          memset((char *)c,(char)0,sizeof(struct CONTEXT));
          c->next = p;
       }
       aprsstr_Assign(c->name, 12ul, n, n_len);
    }
-   if (c) X2C_CHKNIL(pCONTEXT,c)->lastused = t;
+   if (c) c->lastused = t;
    findcontext_ret = c;
    X2C_PFREE(n);
    return findcontext_ret;
@@ -1058,7 +1055,7 @@ extern void sondeaprs_senddata(double lat, double long0,
    ct = findcontext(objname, objname_len, systime);
    if (ct) {
       { /* with */
-         struct CONTEXT * anonym = X2C_CHKNIL(pCONTEXT,ct);
+         struct CONTEXT * anonym = ct;
          shift(anonym->dat);
          anonym->speedsum = anonym->speedsum+speed;
          ++anonym->speedcnt;
