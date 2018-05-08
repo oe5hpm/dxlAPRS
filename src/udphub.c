@@ -82,6 +82,7 @@ struct USER {
    char willall; /* like host send all to */
    char nopurge; /* entry from file no purge */
    char nospoof; /* not overwrite ip:port */
+   char allssid; /* fits with any ssid */
    uint32_t htime;
    uint32_t framesin;
    uint32_t framesout;
@@ -434,7 +435,7 @@ static int32_t getudp(int32_t fd, char buf[], uint32_t buf_len,
 
 static char Call2Str(const char r[], uint32_t r_len,
                 char t[], uint32_t t_len, uint32_t pos,
-                uint32_t * len)
+                uint32_t * len, char zerossid)
 {
    uint32_t ssid;
    uint32_t e;
@@ -462,7 +463,7 @@ static char Call2Str(const char r[], uint32_t r_len,
       if (i==tmp) break;
    } /* end for */
    ssid = (uint32_t)(uint8_t)r[pos+6UL]>>1&15UL;
-   if (ssid>0UL) {
+   if (zerossid || ssid>0UL) {
       t[*len] = '-';
       ++*len;
       if (ssid>9UL) {
@@ -479,11 +480,13 @@ static char Call2Str(const char r[], uint32_t r_len,
 
 
 static char Str2Call(char s[], uint32_t s_len, uint32_t * i,
-                uint32_t p, char cb[], uint32_t cb_len)
+                uint32_t p, char cb[], uint32_t cb_len,
+                char * hasssid)
 {
    uint32_t j;
    char Str2Call_ret;
    X2C_PCOPY((void **)&s,s_len);
+   *hasssid = 0;
    j = p;
    while ((*i<=s_len-1 && (uint8_t)s[*i]>' ') && s[*i]!='-') {
       if (j<p+6UL) {
@@ -498,6 +501,7 @@ static char Str2Call(char s[], uint32_t s_len, uint32_t * i,
    }
    j = 0UL;
    if (s[*i]=='-') {
+      *hasssid = 1;
       ++*i;
       j = 16UL;
       if ((uint8_t)s[*i]>='0' && (uint8_t)s[*i]<='9') {
@@ -555,6 +559,7 @@ static char GetNum(const char h[], uint32_t h_len,
 
 static void parms(void)
 {
+   char ssid;
    char err0;
    char h[1024];
    uint32_t i;
@@ -584,7 +589,7 @@ static void parms(void)
             osi_NextArg(h, 1024ul);
             if (h[0U]==0) Err("-b call", 8ul);
             i = 0UL;
-            if (!Str2Call(h, 1024ul, &i, 0UL, broadcastdest, 7ul)) {
+            if (!Str2Call(h, 1024ul, &i, 0UL, broadcastdest, 7ul, &ssid)) {
                Err("-b wrong SSID", 14ul);
             }
          }
@@ -692,10 +697,10 @@ destination call is used", 74ul);
                  49ul);
                osi_WrStrLn("  OR destinationcall with ssid equals user",
                 43ul);
-               osi_WrStrLn("  OR destinationcall with ssid fits to no user in\
+               osi_WrStrLn("  OR destinationcall but not ssid fits to user in\
  table", 56ul);
-               osi_WrStrLn("     but destinationcall without ssid equals user\
- seen since -L time", 69ul);
+               osi_WrStrLn("     if user is added from heard frames or vom in\
+it file with no ssid (-0 is with ssid)", 88ul);
                osi_WrStrLn("  exception 1: data never sent (back) to ip/port \
 where came from", 65ul);
                osi_WrStrLn("  exception 2: data sent only one time to ip/port\
@@ -784,7 +789,7 @@ static void showcall(const char b[], uint32_t b_len, uint32_t start)
    char h[16];
    uint32_t l;
    l = 0UL;
-   if (Call2Str(b, b_len, h, 16ul, start, &l)) {
+   if (Call2Str(b, b_len, h, 16ul, start, &l, 1)) {
       h[l] = 0;
       osi_WrStr(h, 16ul);
    }
@@ -805,7 +810,7 @@ static void listtab(char fn[], uint32_t fn_len)
       u = users;
       while (u) {
          i = 0UL;
-         if (Call2Str(u->call, 7ul, h, 201ul, 0UL, &i)) {
+         if (Call2Str(u->call, 7ul, h, 201ul, 0UL, &i, !u->allssid)) {
             while (i<10UL) {
                h[i] = ' ';
                ++i;
@@ -882,7 +887,7 @@ in\012A gets all\012",201u);
          osi_WrBin(fd, (char *)h, 201u/1u, aprsstr_Length(h, 201ul));
       }
       i = 0UL;
-      if (Call2Str(broadcastdest, 7ul, h, 201ul, 0UL, &i)) {
+      if (Call2Str(broadcastdest, 7ul, h, 201ul, 0UL, &i, 0)) {
          h[i] = 0;
          aprsstr_Append(h, 201ul, " broadcast destination\012", 24ul);
          osi_WrBin(fd, (char *)h, 201u/1u, aprsstr_Length(h, 201ul));
@@ -969,8 +974,8 @@ static void showu(uint32_t dp, pUSER u)
 static void AddIp(uint32_t ip, uint32_t dp, char fix,
                 char nspoof, char * hasbcin,
                 char defbcin, char defbcout,
-                char getsall, const char buf[],
-                uint32_t buf_len)
+                char getsall, char defssid,
+                const char buf[], uint32_t buf_len)
 {
    pUSER last;
    uint32_t cp;
@@ -1047,6 +1052,7 @@ static void AddIp(uint32_t ip, uint32_t dp, char fix,
          anonym1->bcout = defbcout;
          anonym1->willall = getsall;
          *hasbcin = anonym1->bcin;
+         anonym1->allssid = !defssid;
       }
    }
 } /* end AddIp() */
@@ -1099,8 +1105,9 @@ static char sendtouser(char ubuf0[], uint32_t ubuf_len,
       u->datagot = 0;
       if ((u->dport>0UL && ((fromdigi || fromip0!=u->uip)
                 || fromport!=u->dport)) && (((u->willall || u==exactu)
-                || broadcast && u->bcout) || (topeer && exactu==0)
-                && cmpcall(u->call, ubuf0, ubuf_len, (uint32_t)ci, 0))) {
+                || broadcast && u->bcout) || ((u->allssid && topeer)
+                && exactu==0) && cmpcall(u->call, ubuf0, ubuf_len,
+                (uint32_t)ci, 0))) {
          /* user enabled */
          /* send never same way back */
          /* try all same call without ssid match */
@@ -1167,6 +1174,7 @@ static void initroutes(char fn[], uint32_t fn_len)
    char bci;
    char bco;
    char spoof;
+   char ssid;
    uint32_t ip;
    uint32_t dp;
    pUSER pu;
@@ -1190,7 +1198,7 @@ static void initroutes(char fn[], uint32_t fn_len)
          b[i] = 0;
          if (b[0U]!='#') {
             i = 0UL;
-            if (!Str2Call(b, 201ul, &i, 7UL, call, 201ul)) {
+            if (!Str2Call(b, 201ul, &i, 7UL, call, 201ul, &ssid)) {
                err("wrong SSID in Init File", 24ul, fn, fn_len, lc);
             }
             while (b[i]==' ') ++i;
@@ -1218,7 +1226,8 @@ static void initroutes(char fn[], uint32_t fn_len)
                err("wrong IP:PORT in Init File", 27ul, fn, fn_len, lc);
             }
             else {
-               AddIp(ip, dp, 1, spoof, &dbcin0, bci, bco, all, call, 201ul);
+               AddIp(ip, dp, 1, spoof, &dbcin0, bci, bco, all, ssid, call,
+                201ul);
             }
          }
          ++lc;
@@ -1332,7 +1341,7 @@ extern int main(int argc, char **argv)
             }
             if (!dupe) {
                AddIp(fromip, userdport, 0, 0, &dbcin, defaultbcin,
-                defaultbcout, 0, ubuf, 338ul);
+                defaultbcout, 0, 0, ubuf, 338ul);
                modified = 1;
                if (digisock>=0L) {
                   res = udpsend(digisock, ubuf, blen, todigiport, digiip);
