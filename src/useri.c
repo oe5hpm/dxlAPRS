@@ -8002,7 +8002,7 @@ static void startpano(void)
       if (aprspos_posvalid(aprsdecode_click.markpos)
                 && aprspos_posvalid(aprsdecode_click.measurepos)) {
          panowin.eyealt = useri_conf2int(useri_fANT2, 0UL, -1000000L,
-                1000000L, -1000000L);
+                50000000L, -1000000L);
          if (panowin.eyealt>-1000000L) {
             panowin.eye = aprsdecode_click.markpos;
             panowin.horizon = aprsdecode_click.measurepos;
@@ -8278,7 +8278,7 @@ static void dogeoprofil(pMENU m)
    aprsstr_Append(s, 100ul, "] MHz", 6ul);
    addline(m, s, 100ul, "\321", 2ul, 8520UL);
    strncpy(s,"Antenna 3   [",100u);
-   nn = useri_conf2int(useri_fANT3, 0UL, -1000000L, 100000L, -1000000L);
+   nn = useri_conf2int(useri_fANT3, 0UL, -1000000L, 50000000L, -1000000L);
    if (nn!=-1000000L) {
       aprsstr_IntToStr(nn, 1UL, h, 100ul);
       aprsstr_Append(s, 100ul, h, 100ul);
@@ -8286,7 +8286,7 @@ static void dogeoprofil(pMENU m)
    aprsstr_Append(s, 100ul, "] m", 4ul);
    addline(m, s, 100ul, "\321", 2ul, 8525UL);
    strncpy(s,"Antenna 2   [",100u);
-   nn = useri_conf2int(useri_fANT2, 0UL, -1000000L, 100000L, -1000000L);
+   nn = useri_conf2int(useri_fANT2, 0UL, -1000000L, 50000000L, -1000000L);
    if (nn!=-1000000L) {
       aprsstr_IntToStr(nn, 1UL, h, 100ul);
       aprsstr_Append(s, 100ul, h, 100ul);
@@ -8294,7 +8294,7 @@ static void dogeoprofil(pMENU m)
    aprsstr_Append(s, 100ul, "] m", 4ul);
    addline(m, s, 100ul, "\321", 2ul, 8527UL);
    strncpy(s,"Antenna 1   [",100u);
-   nn = useri_conf2int(useri_fANT1, 0UL, -1000000L, 100000L, -1000000L);
+   nn = useri_conf2int(useri_fANT1, 0UL, -1000000L, 50000000L, -1000000L);
    if (nn!=-1000000L) {
       aprsstr_IntToStr(nn, 1UL, h, 100ul);
       aprsstr_Append(s, 100ul, h, 100ul);

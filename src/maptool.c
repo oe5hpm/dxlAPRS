@@ -585,6 +585,8 @@ static void ruler(maptool_pIMAGE image, float m, float x, float y,
 
 #define maptool_ER 6.37E+6
 
+#define maptool_NOALT 30000
+
 struct HTAB;
 
 typedef struct HTAB * pHTAB;
@@ -606,6 +608,7 @@ extern int32_t maptool_geoprofile(maptool_pIMAGE image,
 {
    int32_t fstep;
    int32_t fs;
+   int32_t nn2;
    int32_t nn;
    float yproj;
    float xproj;
@@ -657,20 +660,14 @@ extern int32_t maptool_geoprofile(maptool_pIMAGE image,
    else {
       nn = (int32_t)X2C_TRUNCI(libsrtm_getsrtm(pos0, 0UL, &resol),
                 X2C_min_longint,X2C_max_longint);
-      if (nn>=30000L) {
-         libsrtm_closesrtmfile();
-         return -1L;
-      }
    }
-   *a1 = (float)(nn+ant1);
+   if (nn<30000L) *a1 = (float)(nn+ant1);
+   else *a1 = (float)ant1;
    aprspos_wgs84s(pos0.lat, pos0.long0,  *a1*0.001f, &x0, &y00, &z0);
-   nn = (int32_t)X2C_TRUNCI(libsrtm_getsrtm(pos1, 0UL, &resol),
+   nn2 = (int32_t)X2C_TRUNCI(libsrtm_getsrtm(pos1, 0UL, &resol),
                 X2C_min_longint,X2C_max_longint);
-   if (nn>=30000L) {
-      libsrtm_closesrtmfile();
-      return -1L;
-   }
-   *a2 = (float)(nn+ant2);
+   if (nn2<30000L) *a2 = (float)(nn2+ant2);
+   else *a2 = (float)ant2;
    aprspos_wgs84s(pos1.lat, pos1.long0,  *a2*0.001f, &x1, &y1, &z1);
    elevation(x0, y00, z0, x1, y1, z1, ele1, ele2);
    x1 = x1-x0;
@@ -680,6 +677,10 @@ extern int32_t maptool_geoprofile(maptool_pIMAGE image,
    if (*dist<1.0f) {
       libsrtm_closesrtmfile();
       return -3L;
+   }
+   if (nn>=30000L || nn2>=30000L) {
+      libsrtm_closesrtmfile();
+      return -1L;
    }
    if (*dist>1.E+6f) {
       libsrtm_closesrtmfile();

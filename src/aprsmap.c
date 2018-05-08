@@ -2433,7 +2433,7 @@ static void toggview(void)
 
 static int32_t getant(uint8_t a)
 {
-   return useri_conf2int(a, 0UL, -1000000L, 100000L, -1000000L);
+   return useri_conf2int(a, 0UL, -1000000L, 50000000L, -1000000L);
 } /* end getant() */
 
 
@@ -2462,10 +2462,11 @@ static void measureline(maptool_pIMAGE img, struct aprsstr_POSITION pos0,
    int32_t wave;
    int32_t ant2;
    int32_t ant1;
-   char vec;
    char altok;
+   char vec;
    char ant1obj;
    char ok0;
+   char se[100];
    char h[100];
    char s[100];
    if ((((aprspos_posvalid(pos0) && aprspos_posvalid(pos1))
@@ -2473,7 +2474,6 @@ static void measureline(maptool_pIMAGE img, struct aprsstr_POSITION pos0,
                 && maptool_mapxy(pos0, &x0,
                 &y00)>=-1L) && maptool_mapxy(pos1, &x1, &y1)>=-1L) {
       vec = 1;
-      ok0 = 0;
       altok = 0;
       if (!aprsdecode_click.withradio || aprsdecode_click.altimap) {
          ant1 = getant(useri_fANT1);
@@ -2484,9 +2484,10 @@ static void measureline(maptool_pIMAGE img, struct aprsstr_POSITION pos0,
             wave = (int32_t)aprsdecode_trunc(X2C_DIVR(3.E+5f,mhz));
          }
          else wave = 0L;
+         se[0] = 0;
          if ((ant1>-1000000L && ant2>-1000000L)
                 && useri_configon(useri_fGEOPROFIL)) {
-            ant1obj = (useri_gpsalt(useri_fANT1) && pos0alt<100000L)
+            ant1obj = (useri_gpsalt(useri_fANT1) && pos0alt<50000000L)
                 && pos0alt>-10000L; /* take alt from waypoint NN */
             if (ant1obj) ant1 += pos0alt;
             ret = maptool_geoprofile(img, pos0, pos1, (float)wave*0.001f,
@@ -2497,54 +2498,55 @@ static void measureline(maptool_pIMAGE img, struct aprsstr_POSITION pos0,
                altok = 1;
             }
             else if (ret==-1L) {
-               strncpy(s,"Radiolink: need altitude data on Marker Positions",
+               strncpy(se,"Radiolink: need altitude data on Marker Positions",
                 100u);
             }
-            else strncpy(s,"Radiolink: distance too long",100u);
+            else {
+               altok = 1;
+               strncpy(se,"Radiolink: distance too long",100u);
+            }
          }
          else {
             dist = aprspos_distance(pos0, pos1)*1000.0f;
             ok0 = 1;
          }
-         if (ok0) {
-            aprsstr_FixToStr(dist*0.001f, 4UL, s, 100ul);
-            aprsstr_Append(s, 100ul, "km ", 4ul);
-            if (altok) {
-               aprsstr_Append(s, 100ul, "\367", 2ul);
-               aprsstr_IntToStr((int32_t)X2C_TRUNCI(a1,X2C_min_longint,
+         aprsstr_FixToStr(dist*0.001f, 4UL, s, 100ul);
+         aprsstr_Append(s, 100ul, "km ", 4ul);
+         if (altok) {
+            aprsstr_Append(s, 100ul, "\367", 2ul);
+            aprsstr_IntToStr((int32_t)X2C_TRUNCI(a1,X2C_min_longint,
                 X2C_max_longint), 0UL, h, 100ul);
-               aprsstr_Append(s, 100ul, h, 100ul);
-               aprsstr_Append(s, 100ul, "m/", 3ul);
-               aprsstr_IntToStr((int32_t)X2C_TRUNCI(a2,X2C_min_longint,
+            aprsstr_Append(s, 100ul, h, 100ul);
+            aprsstr_Append(s, 100ul, "m/", 3ul);
+            aprsstr_IntToStr((int32_t)X2C_TRUNCI(a2,X2C_min_longint,
                 X2C_max_longint), 0UL, h, 100ul);
-               aprsstr_Append(s, 100ul, h, 100ul);
-               aprsstr_Append(s, 100ul, "m \376", 4ul);
-            }
-            aprsstr_Append(s, 100ul, "az:", 4ul);
-            aprsstr_FixToStr(aprspos_azimuth(pos0, pos1), 2UL, h, 100ul);
+            aprsstr_Append(s, 100ul, h, 100ul);
+            aprsstr_Append(s, 100ul, "m \376", 4ul);
+         }
+         aprsstr_Append(s, 100ul, "az:", 4ul);
+         aprsstr_FixToStr(aprspos_azimuth(pos0, pos1), 2UL, h, 100ul);
+         aprsstr_Append(s, 100ul, h, 100ul);
+         aprsstr_Append(s, 100ul, "\177/", 3ul);
+         aprsstr_FixToStr(aprspos_azimuth(pos1, pos0), 2UL, h, 100ul);
+         aprsstr_Append(s, 100ul, h, 100ul);
+         aprsstr_Append(s, 100ul, "\177 ", 3ul);
+         if (altok) {
+            aprsstr_Append(s, 100ul, "\367ele:", 6ul);
+            aprsstr_FixToStr(el1, 2UL, h, 100ul);
             aprsstr_Append(s, 100ul, h, 100ul);
             aprsstr_Append(s, 100ul, "\177/", 3ul);
-            aprsstr_FixToStr(aprspos_azimuth(pos1, pos0), 2UL, h, 100ul);
+            aprsstr_FixToStr(el2, 2UL, h, 100ul);
             aprsstr_Append(s, 100ul, h, 100ul);
-            aprsstr_Append(s, 100ul, "\177 ", 3ul);
-            if (altok) {
-               aprsstr_Append(s, 100ul, "\367ele:", 6ul);
-               aprsstr_FixToStr(el1, 2UL, h, 100ul);
-               aprsstr_Append(s, 100ul, h, 100ul);
-               aprsstr_Append(s, 100ul, "\177/", 3ul);
-               aprsstr_FixToStr(el2, 2UL, h, 100ul);
-               aprsstr_Append(s, 100ul, h, 100ul);
-               aprsstr_Append(s, 100ul, "\177 \376", 4ul);
-            }
-            if (mhz>=0.1f) {
-               aprsstr_FixToStr(32.2f+8.685889638065f*osic_ln(dist*0.001f*mhz)
-                , 2UL, h, 100ul);
-               aprsstr_Append(s, 100ul, h, 100ul);
-               aprsstr_Append(s, 100ul, "dBi", 4ul);
-            }
-            useri_textautosize(-3L, 0L, 7UL, 20UL, 'h', s, 100ul);
+            aprsstr_Append(s, 100ul, "\177 \376", 4ul);
          }
-         else useri_textautosize(-3L, 0L, 3UL, 2UL, 'r', s, 100ul);
+         if (mhz>=0.1f) {
+            aprsstr_FixToStr(32.2f+8.685889638065f*osic_ln(dist*0.001f*mhz),
+                2UL, h, 100ul);
+            aprsstr_Append(s, 100ul, h, 100ul);
+            aprsstr_Append(s, 100ul, "dB", 3ul);
+         }
+         useri_textautosize(-3L, 0L, 7UL, 20UL, 'h', s, 100ul);
+         if (se[0U]) useri_textautosize(-3L, 0L, 3UL, 2UL, 'r', se, 100ul);
       }
       if (vec) {
          maptool_vector(img, x0, y00, x1, y1, 20L, 220L, 20L,

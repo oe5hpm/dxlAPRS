@@ -135,6 +135,9 @@
 #define useri_BRIMUL 10
 /* lums percent to 0..1000 */
 
+#define useri_MAXANTALT 50000000
+/* max antenna higth m */
+
 struct useri_MOUSEPOS;
 
 
