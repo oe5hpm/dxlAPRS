@@ -21,6 +21,8 @@
 
 #define sdr_mAM "a"
 
+#define sdr_mSCAN "S"
+
 typedef short sdr_AUDIOSAMPLE[65536];
 
 typedef short * sdr_pAUDIOSAMPLE;

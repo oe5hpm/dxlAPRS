@@ -61,6 +61,8 @@ struct Complex {
 
 static int32_t fd;
 
+static char isfile;
+
 static uint32_t audiohz;
 
 static uint32_t rtlhz;
@@ -774,7 +776,6 @@ static short getsamp(sdr_pRX rx, char notfirst)
                 &0x7FFUL)]);
    }
    /* fine shift rest of full 1khz */
-   /* additional IF fir */
    if (rx->modulation=='s') {
       /* ssb */
       /* additional IF fir */
@@ -803,6 +804,8 @@ static short getsamp(sdr_pRX rx, char notfirst)
       l = lev-rx->rssi;
       rx->rssi = rx->rssi+l*0.001f;
       /* rssi */
+      /*  IF rx^.modulation=mSCAN THEN af:=sqrt(lev)*0.01; */
+      /*  ELSE */
       /* complex to phase */
       abs0.Re = (float)fabs(u.Re);
       abs0.Im = (float)fabs(u.Im);
@@ -852,6 +855,7 @@ static short getsamp(sdr_pRX rx, char notfirst)
          af = af*7.9577471545948E+3f;
       }
    }
+   /*  END; */
    if (af>32000.0f) af = 32000.0f;
    else if (af<(-3.2E+4f)) af = (-3.2E+4f);
    return (short)X2C_TRUNCI(af,-32768,32767);
@@ -877,12 +881,21 @@ extern int32_t sdr_getsdr(uint32_t samps, sdr_pRX rx[],
    uint32_t tmp;
    if (reconnect && fd<0L) {
       usleep(1000000UL);
-      fd = connecttob(url, port);
+      if (isfile) fd = osi_OpenRead(url, 1001ul);
+      else fd = connecttob(url, port);
    }
    if (fd>=0L) {
       sampsum = sampsum&1023UL; /* partial sample reminder of last block */
       if (samps*(sampsize+1UL)>32768UL) samps = 32768UL/(sampsize+1UL);
-      if (readsockb(fd, (char *)iqbuf,
+      if (isfile) {
+         if (osi_RdBin(fd, (char *)iqbuf, 65536u/1u,
+                ((samps*reduce+sampsum)/1024UL)*2UL)<=0L) {
+            osic_Close(fd);
+            fd = -1L;
+            return -1L;
+         }
+      }
+      else if (readsockb(fd, (char *)iqbuf,
                 (int32_t)(((samps*reduce+sampsum)/1024UL)*2UL))<0L) {
          /* connect lost */
          osic_Close(fd);
@@ -951,9 +964,7 @@ extern int32_t sdr_getsdr(uint32_t samps, sdr_pRX rx[],
                anonym0->median = anonym0->median-(anonym0->afckhz*(int32_t)
                 samps*1024L)/anonym0->maxafc; /* weak pull to middle */
                if (anonym0->median>400000000L) {
-                  if (anonym0->afckhz<anonym0->maxafc) {
-                     ++anonym0->afckhz;
-                  }
+                  if (anonym0->afckhz<anonym0->maxafc) ++anonym0->afckhz;
                   anonym0->median = 0L;
                }
                else if (anonym0->median<-400000000L) {
@@ -997,9 +1008,13 @@ extern char sdr_startsdr(char ip[], uint32_t ip_len,
    if (outhz>0UL) audiohz = outhz;
    reduce = (1024UL*rtlhz+audiohz/2UL)/audiohz; /* sample reduction * 1024 */
    sampsize = reduce/1024UL; /* input samples per output sample, trunc */
-   if (fd<0L) fd = connecttob(url, port);
+   isfile = port[0U]=='0' && port[1U]==0;
+   if (fd<0L) {
+      if (isfile) fd = osi_OpenRead(url, 1001ul);
+      else fd = connecttob(url, port);
+   }
    if (fd>=0L) {
-      sdr_setparm(2UL, rtlhz);
+      if (!isfile) sdr_setparm(2UL, rtlhz);
       if (inhz>=2048000UL) initdds(2048UL);
       else initdds(1024UL);
       initssbdds(SSBDDS, 2048ul);
