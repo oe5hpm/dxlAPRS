@@ -1084,6 +1084,12 @@ static void wrcontext(struct CONTEXTR9 * cont, char objname0[],
                 sizeof(struct CONTEXTR9));
          osic_Close(fd);
       }
+      else {
+         osic_WrLn();
+         osi_WrStr("can not write ", 15ul);
+         osi_WrStr(fn, 1024ul);
+         osi_WrStrLn(" calibration file", 18ul);
+      }
    }
    X2C_PFREE(objname0);
 } /* end wrcontext() */
@@ -2717,7 +2723,7 @@ static void decoders41(const char rxb[], uint32_t rxb_len,
             pc->next = pcontextr4;
             pcontextr4 = pc;
             aprsstr_Assign(pc->name, 9ul, nam, 9ul);
-            if (sondeaprs_verb) osi_WrStrLn("is new ", 8ul);
+            if (sondeaprs_verb) osi_WrStrLn(" is new ", 9ul);
          }
          frameno = getcard16(rxb, rxb_len, p);
          if (frameno>pc->framenum) {
