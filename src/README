@@ -6,8 +6,8 @@ build on some native ARM machine (like raspbian on rpi)
 ================================================================================
 install following packages:
 - build-essential  (sudo apt-get install build-essential)
-- libX11-dev       (sudo apt-get install libX11-dev)
-- libXext-dev      (sudo apt-get install libXext-dev)
+- libx11-dev       (sudo apt-get install libx11-dev)
+- libxext-dev      (sudo apt-get install libxext-dev)
 - libpng-dev       (sudo apt-get install libpng-dev)
 - libjpeg-dev      (sudo apt-get install libjpeg-dev)
 
