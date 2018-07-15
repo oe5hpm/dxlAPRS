@@ -62,7 +62,9 @@ typedef uint32_t aprsdecode_SET256[8];
 
 extern aprsdecode_SET256 aprsdecode_SYMTABLE;
 
-#define aprsdecode_VERS "aprsmap(cu) 0.73"
+#define aprsdecode_VERSNUM "0.74"
+
+#define aprsdecode_VERS "aprsmap(cu) 0.74"
 
 typedef char aprsdecode_MONCALL[9];
 
@@ -644,6 +646,8 @@ extern uint32_t aprsdecode_lasttcprx;
 
 extern aprsdecode_FRAMEBUF aprsdecode_testbeaconbuf;
                 /* fill with port:time:beacon then sent once */
+
+extern struct xosi_PROCESSHANDLE aprsdecode_checkversion;
 
 extern struct xosi_PROCESSHANDLE aprsdecode_serialpid;
 

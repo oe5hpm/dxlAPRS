@@ -124,6 +124,7 @@ uint32_t aprsdecode_lastanyudprx;
 uint32_t aprsdecode_lastpurge;
 uint32_t aprsdecode_lasttcprx;
 aprsdecode_FRAMEBUF aprsdecode_testbeaconbuf;
+struct xosi_PROCESSHANDLE aprsdecode_checkversion;
 struct xosi_PROCESSHANDLE aprsdecode_serialpid;
 struct xosi_PROCESSHANDLE aprsdecode_serialpid2;
 struct xosi_PROCESSHANDLE aprsdecode_maploadpid;
@@ -1584,7 +1585,7 @@ static void beaconmacros(char s[], uint32_t s_len,
                aprsstr_Append(ns, 256ul, "\\\\", 3ul);
             }
             else if (s[i]=='v') {
-               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.73", 17ul);
+               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.74", 17ul);
             }
             else if (s[i]=='l') {
                if (aprstext_getmypos(&pos)) {
@@ -5729,7 +5730,7 @@ static char tcpconn(aprsdecode_pTCPSOCK * sockchain, int32_t f)
          aprsstr_Append(h, 512ul, s, 100ul);
       }
       aprsstr_Append(h, 512ul, " vers ", 7ul);
-      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.73", 17ul);
+      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.74", 17ul);
       appfilter(h, 512ul, 0);
       /*    IF filter[0]<>0C THEN Append(h, " filter ");
                 Append(h, filter) END; */

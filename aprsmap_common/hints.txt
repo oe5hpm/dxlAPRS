@@ -252,6 +252,10 @@ Open as Popup on Click to Map
 
 |575 Switch on Static Toolbar
 
+|607 starts command from file chkvers.txt
+"$" inserts program version like
+"chkvers.bat $"    
+
 |700 Define Area and Resolution for Downloading
 a Complete OSM Map Collection for Offline usage.
 Higher Zoom gives more Details but Storage/Network

@@ -1423,6 +1423,9 @@
 
 
 
++ Neue-Version-Check Funktion mit shell/BAT script falls wer einen dazu passenden
+  www-server baut.
+
 
 
 

@@ -78,6 +78,8 @@ maptool_pIMAGE useri_panoimage;
 
 #define useri_MYPOIFILENAME "mypoi.txt"
 
+#define useri_CHECKVERSFN "chkvers.txt"
+
 #define useri_MAXXSIZE 32000
 
 #define useri_MAXYSIZE 32000
@@ -631,6 +633,65 @@ static struct LISTBUFFER monbuffer;
 static struct maptool_PANOWIN panowin;
 
 static char digiedline[201];
+
+
+static void startcheckvers(void)
+{
+   char h[1024];
+   char s[1024];
+   int32_t fd;
+   int32_t i;
+   if (aprsdecode_checkversion.runs) {
+      xosi_CheckProg(&aprsdecode_checkversion);
+      /*WrInt(checkversion.exitcode, 1); WrInt(ORD(checkversion.runs), 2);
+                WrStrLn(" exc0"); */
+      if (aprsdecode_checkversion.runs) {
+         xosi_CheckProg(&aprsdecode_checkversion);
+         /*WrInt(checkversion.exitcode, 1); WrInt(ORD(checkversion.runs), 2);
+                 WrStrLn(" exc1"); */
+         if (aprsdecode_checkversion.runs) {
+            useri_xerrmsg("Check Version in Progress", 26ul);
+         }
+      }
+   }
+   if (!aprsdecode_checkversion.runs) {
+      h[0] = 0;
+      fd = osi_OpenRead("chkvers.txt", 12ul);
+      if (osic_FdValid(fd)) {
+         i = osi_RdBin(fd, (char *)h, 1024u/1u, 1024UL);
+         osic_Close(fd);
+         if (i<0L) {
+            h[0] = 0;
+            useri_xerrmsg("Can not read [chkvers.txt]", 27ul);
+         }
+         else if (i<=1023L) h[i] = 0;
+      }
+      else useri_xerrmsg("File [chkvers.txt] not found", 29ul);
+      s[0] = 0;
+      i = 0L;
+      while (i<=1023L && h[i]) {
+         if (h[i]=='$') aprsstr_Append(s, 1024ul, "0.74", 5ul);
+         else aprsstr_Append(s, 1024ul, (char *) &h[i], 1u/1u);
+         ++i;
+      }
+      /*WrStrLn(s); */
+      xosi_StartProg(s, 1024ul, &aprsdecode_checkversion);
+      if (aprsdecode_checkversion.runs) {
+         xosi_CheckProg(&aprsdecode_checkversion);
+         /*WrInt(checkversion.exitcode, 1); WrInt(ORD(checkversion.runs), 2);
+                 WrStrLn(" exc2"); */
+         if (aprsdecode_checkversion.exitcode) {
+            strncpy(h,"Cannot Start [",1024u);
+            aprsstr_Append(h, 1024ul, s, 1024ul);
+            aprsstr_Append(h, 1024ul, "] exit code:", 13ul);
+            aprsstr_IntToStr(aprsdecode_checkversion.exitcode, 0UL, s,
+                1024ul);
+            aprsstr_Append(h, 1024ul, s, 1024ul);
+            useri_xerrmsg(h, 1024ul);
+         }
+      }
+   }
+} /* end startcheckvers() */
 
 
 extern void useri_Tilegamma0(float gamma)
@@ -11860,7 +11921,10 @@ static void mouseleft(int32_t mousx, int32_t mousy)
          aprsdecode_click.cmd = ' ';
       }
       else if (c=='\301') mapadd();
-      else if (c=='\305') useri_helptext(0UL, 0UL, 0UL, 0UL, "index", 6ul);
+      else if (c=='\305') {
+         if (knob==1UL) startcheckvers();
+         else useri_helptext(0UL, 0UL, 0UL, 0UL, "index", 6ul);
+      }
       else if (c=='\306') useri_helptext(knob, subknob, potx, poty, "", 1ul);
       else if (c=='\223') managebeacon(menu->scroll, knob, subknob, 0);
       else if (c=='\213') dobeacon(menu->scroll, knob);
@@ -12359,6 +12423,7 @@ extern void useri_initmenus(void)
    hoveropen = 0;
    /*  clampedline:=0; */
    /*  FILL(ADR(menupullpos), 0C, SIZE(menupullpos)); */
+   aprsdecode_checkversion.runs = 0;
    useri_Setmap(0UL);
 } /* end initmenus() */
 
