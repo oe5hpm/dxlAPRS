@@ -94,7 +94,6 @@ struct DATLINE {
    /*-       climb, */
    double clb;
    uint32_t time0;
-   uint32_t uptime;
 };
 
 struct POSITION;
@@ -1070,7 +1069,7 @@ extern void sondeaprs_senddata(double lat, double long0,
          anonym->dat[0U].long0 = X2C_DIVL(long0,1.7453292519943E-2);
          /*    dat[0].time:=(sattime+DAYSEC-GPSTIMECORR) MOD DAYSEC; */
          anonym->dat[0U].time0 = sattime%86400UL;
-         anonym->dat[0U].uptime = sattime%86400UL;
+         /*    dat[0].uptime:=sattime MOD DAYSEC; */
          anonym->dat[0U].clb = clb;
          /*    climb(dat); */
          Checkvals(anonym->dat, &chk);

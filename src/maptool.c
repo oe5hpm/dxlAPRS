@@ -115,6 +115,9 @@ char maptool_fontloadmsg[71];
 
 #define maptool_STRIPS 3
 
+#define maptool_GAINS 360
+/* antenna diagram values */
+
 struct PIX8;
 
 
@@ -191,11 +194,32 @@ static uint32_t maploopcnt;
 /* count same tile requests */
 static uint32_t mapdelay; /* delay map load start on map moves */
 
-/*  srtmmiss    :pSRTMTILE;                                (* cache no file info with pointer to here *)  */
 /* open srtm30 files */
 static uint32_t lastpoinum;
 
-/*open, miss, hit:CARDINAL; */
+struct _2;
+
+
+struct _2 {
+   char on;
+   char cacheok;
+   char rotate;
+   float lastele;
+   float mindB;
+   float maxdB;
+   float dBmul;
+   float logmul;
+   float lpower;
+   float mhz;
+   float azimuth;
+   float elevation0;
+   float cachegain;
+   float hgain[360];
+   float vgain[360];
+};
+
+static struct _2 diagram;
+
 
 static float sqr(float x)
 {
@@ -867,6 +891,142 @@ static void progress(uint32_t startt, const char s[], uint32_t s_len,
 } /* end progress() */
 
 
+static float antdiagram(float azi, float ele)
+/* interpolate gain table azi 0..359, ele -90..90 */
+{
+   uint32_t a;
+   float azv;
+   float e;
+   float f;
+   float gv;
+   float gvh;
+   float gh;
+   if (ele>90.0f) {
+      ele = 180.0f-ele;
+      azi = azi+180.0f;
+   }
+   else if (ele<(-90.0f)) {
+      ele = 180.0f+ele;
+      azi = azi+180.0f;
+   }
+   if (azi>=360.0f) azi = azi-360.0f;
+   a = (uint32_t)X2C_TRUNCC(azi,0UL,X2C_max_longcard);
+   f = azi-(float)a;
+   gh = diagram.hgain[a]*(1.0f-f)+diagram.hgain[(a+1UL)%360UL]*f;
+                /* interpolated hor */
+   azv = (float)fabs(azi*5.5555555555556E-3f-1.0f); /* front/back wight */
+   e = ele+90.0f;
+   a = (uint32_t)X2C_TRUNCC(e,0UL,X2C_max_longcard);
+   f = e-(float)a;
+   gv = diagram.vgain[a]*(1.0f-f)+diagram.vgain[a+1UL]*f;
+                /* interpolate vert front */
+   gvh = (diagram.vgain[(360UL-a)%360UL]*(1.0f-f)+diagram.vgain[359UL-a]*f)
+                -diagram.vgain[270U];
+   /* vert back */
+   gv = gv*azv+gvh*(1.0f-azv); /* front/back wighted vert */
+   gh = gh*(1.0f-(float)fabs(ele*0.0f)); /* vert wighted hor */
+   return osic_sqrt(gh*gh+gv*gv);
+/* dB */
+/* geometric hor vert sum */
+} /* end antdiagram() */
+
+#define maptool_TENOVERLOGTEN 4.342944819
+
+
+static void readantenna(const char fn[], uint32_t fn_len,
+                float gain)
+{
+   int32_t fd;
+   char fb[10001];
+   char b[101];
+   int32_t n;
+   int32_t p;
+   int32_t i;
+   int32_t len;
+   float r;
+   diagram.dBmul = X2C_DIVR(1.0f,diagram.maxdB-diagram.mindB);
+   diagram.logmul = 4.342944819f*diagram.dBmul;
+   diagram.lpower = (((gain-(-27.8f))-osic_ln(diagram.mhz)*4.342944819f*2.0f)
+                -diagram.mindB)*diagram.dBmul;
+   /* -60db till meters^2 not km distance */
+   fd = osi_OpenRead(fn, fn_len);
+   len = 0L;
+   if (!osic_FdValid(fd)) {
+      strncpy(fb,"Antenna Gain file [",10001u);
+      aprsstr_Append(fb, 10001ul, fn, fn_len);
+      aprsstr_Append(fb, 10001ul, "] not found", 12ul);
+      useri_say(fb, 10001ul, 5UL, 'e');
+   }
+   else {
+      len = osi_RdBin(fd, (char *)fb, 10001u/1u, 10001UL);
+      if (len<=0L) {
+         strncpy(fb,"Antenna Gain file [",10001u);
+         aprsstr_Append(fb, 10001ul, fn, fn_len);
+         aprsstr_Append(fb, 10001ul, "] not readable", 15ul);
+         useri_say(fb, 10001ul, 5UL, 'e');
+      }
+   }
+   p = 0L;
+   n = 0L;
+   memset((char *)diagram.hgain,(char)0,sizeof(float [360]));
+   memset((char *)diagram.vgain,(char)0,sizeof(float [360]));
+   do {
+      i = 0L;
+      while (p<len && (uint8_t)fb[p]<=' ') ++p;
+      while ((p<len && i<100L) && (uint8_t)fb[p]>' ') {
+         b[i] = fb[p];
+         ++i;
+         ++p;
+      }
+      b[i] = 0;
+      if (i>0L && aprsstr_StrToFix(&r, b, 101ul)) {
+         r = (float)fabs(r);
+         if (r>200.0f) r = 200.0f;
+         if (diagram.rotate) {
+            if (n<360L) diagram.vgain[(n+90L)%360L] = r;
+            else diagram.hgain[359L-(n+630L)%360L] = r;
+         }
+         else if (n<360L) diagram.hgain[359L-n] = r;
+         else diagram.vgain[((900L-n)-1L)%360L] = r;
+      }
+      ++n;
+   } while (n<720L);
+   diagram.cacheok = 0;
+} /* end readantenna() */
+
+
+static float antgain(float azi, float alt, float oomaxdist,
+                float * ddist)
+{
+   float dist;
+   float ele;
+   float db;
+   dist = X2C_DIVR(*ddist,oomaxdist);
+   ele = X2C_DIVR(alt,dist);
+   if (diagram.cacheok && (float)fabs(ele-diagram.lastele)>(float)
+                fabs(ele)*0.01f) diagram.cacheok = 0;
+   if (!diagram.cacheok) {
+      diagram.lastele = ele;
+      azi = diagram.azimuth-azi;
+      if (azi<0.0f) azi = azi+360.0f;
+      ele = osic_arctan(ele)*5.7295779513082E+1f;
+      ele = ele-diagram.elevation0*osic_cos(azi*1.7453292519943E-2f);
+      diagram.cachegain = antdiagram(azi, ele)*diagram.dBmul;
+      diagram.cacheok = 1;
+   }
+   db = diagram.lpower-osic_ln(dist*dist+alt*alt)*diagram.logmul;
+                /* with 0dBi antenna */
+   if (db<0.0f) {
+      *ddist = 1000.0f; /* abort sigthline on distance loss */
+      return 0.0f;
+   }
+   db = db-diagram.cachegain; /* apply antenna diagram */
+   if (db<0.0f) db = 0.0f;
+   else if (db>1.0f) db = 1.0f;
+   return db;
+} /* end antgain() */
+
+
 static void postfilter(maptool_pIMAGE image, uint32_t colnr)
 /* set missing pixels with median of neighbours */
 {
@@ -939,6 +1099,38 @@ static float meterperpix(maptool_pIMAGE image)
 } /* end meterperpix() */
 
 
+static void antparm(uint32_t ab)
+{
+   char s[1001];
+   uint8_t ant;
+   struct _2 * anonym;
+   if (ab==0UL) ant = useri_fANT1;
+   else ant = useri_fANT2;
+   useri_conf2str(ant, 0UL, 4UL, 1, s, 1001ul);
+   { /* with */
+      struct _2 * anonym = &diagram;
+      anonym->on = s[0U]!=0;
+      anonym->mindB = useri_conf2real(useri_fFRESNELL, 1UL, (-200.0f),
+                200.0f, (-90.0f));
+      anonym->maxdB = useri_conf2real(useri_fFRESNELL, 2UL, (-200.0f),
+                200.0f, (-60.0f));
+      anonym->mhz = useri_conf2real(useri_fFRESNELL, 0UL, 0.1f, 1.E+7f,
+                2400.0f);
+      anonym->azimuth = useri_conf2real(ant, 1UL, (-360.0f), 360.0f, 0.0f);
+      anonym->elevation0 = useri_conf2real(ant, 2UL, (-90.0f), 90.0f, 0.0f);
+      anonym->rotate = anonym->azimuth<0.0f;
+      anonym->azimuth = (float)fabs(anonym->azimuth);
+      if (anonym->mindB+0.1f>=anonym->maxdB) {
+         anonym->mindB = anonym->maxdB-30.0f;
+      }
+      if (anonym->on) {
+         readantenna(s, 1001ul, useri_conf2real(ant, 3UL, (-100.0f), 200.0f,
+                57.0f));
+      }
+   }
+} /* end antparm() */
+
+
 static void setcol(uint16_t bri, uint32_t colnr, struct maptool_PIX * p)
 {
    if (colnr==0UL) {
@@ -987,6 +1179,9 @@ extern void maptool_Radiorange(maptool_pIMAGE image,
    uint32_t xp;
    int32_t void0;
    int32_t nn;
+   float antdiff;
+   float hgnd;
+   float azi;
    float refr;
    float dm;
    float alt1;
@@ -1044,10 +1239,13 @@ extern void maptool_Radiorange(maptool_pIMAGE image,
       libsrtm_closesrtmfile();
       return;
    }
+   memset((char *) &diagram,(char)0,sizeof(struct _2));
+   antparm(colnr);
    setsrtmcache();
    atx = (float)(nn+ant1); /* ant1 over NN */
    aprspos_wgs84s(txpos.lat, txpos.long0, atx*0.001f, &x0, &y00, &z0);
    arx = (float)ant2; /* ant2 over ground */
+   antdiff = arx-atx;
    xi = 0.0f;
    yi = 0.0f;
    nn = maptool_mapxy(txpos, &xtx, &ytx);
@@ -1082,6 +1280,10 @@ extern void maptool_Radiorange(maptool_pIMAGE image,
                 || frame==3UL && xtx<(float)maptool_xsize) {
          aprspos_wgs84s(pos.lat, pos.long0, atx*0.001f, &x1, &y1, &z1);
                 /* screen frame xyz at ant1 alt */
+         if (diagram.on) {
+            azi = aprspos_azimuth(txpos, pos); /* for antenna diagram */
+            diagram.cacheok = 0; /* so no need to check azi too */
+         }
          dx = x1-x0;
          dy = y1-y00;
          dz = z1-z0;
@@ -1121,11 +1323,11 @@ extern void maptool_Radiorange(maptool_pIMAGE image,
                pos.lat = pos0.lat+dpos.lat*d;
                pos.long0 = pos0.long0+dpos.long0*d;
                alt = (alt0+dalt*d)-d*d*dm;
-               h = libsrtm_getsrtm(pos, qual, &resol);
+               hgnd = libsrtm_getsrtm(pos, qual, &resol);
                 /* ground over NN in m */
-               if (h<30000.0f) {
+               if (hgnd<30000.0f) {
                   /* srtm valid */
-                  h = h-alt; /* m ground over searchpath */
+                  h = hgnd-alt; /* m ground over searchpath */
                   hs = rais*d; /* h sight line m over searchpath */
                   sight = (h+arx)-hs;
                   if (sight>0.0f) {
@@ -1162,17 +1364,20 @@ extern void maptool_Radiorange(maptool_pIMAGE image,
                            lum = sight*osmooth;
                 /* luma is equal to riseing higth */
                            if (lum>1000.0f) lum = 1000.0f;
+                           if (diagram.on) {
+                              lum = lum*antgain(azi, hgnd+antdiff, oodist,
+                &d);
+                              if (lum>1000.0f) {
+                                 lum = 1000.0f;
+                              }
+                           }
                            bri = (uint16_t)(uint32_t)X2C_TRUNCC(lum,0UL,
                 X2C_max_longcard);
                            if (colnr==0UL) {
-                              image->Adr[(xp)
-                *image->Len0+yp].r = (uint16_t)(uint32_t)X2C_TRUNCC(lum,
-                0UL,X2C_max_longcard);
+                              image->Adr[(xp)*image->Len0+yp].r = bri;
                            }
                            else {
-                              image->Adr[(xp)
-                *image->Len0+yp].g = (uint16_t)(uint32_t)X2C_TRUNCC(lum,
-                0UL,X2C_max_longcard);
+                              image->Adr[(xp)*image->Len0+yp].g = bri;
                            }
                            if (qualnum<=1UL) {
                               bri = (uint16_t)(uint32_t)
@@ -3056,10 +3261,10 @@ static void policolor(uint32_t c, uint32_t bri, uint32_t * r,
    *b = ( *b*bri)/64UL;
 } /* end policolor() */
 
-struct _2;
+struct _3;
 
 
-struct _2 {
+struct _3 {
    int32_t xi;
    int32_t yi;
 };
@@ -3082,13 +3287,13 @@ static void fillpoligon(maptool_pIMAGE image, struct aprsstr_POSITION pm,
    int32_t maxx;
    int32_t x;
    int32_t ret;
-   struct _2 vert[41];
+   struct _3 vert[41];
    int32_t cross[41];
    struct aprsstr_POSITION p;
    float yr;
    float xr;
    char done;
-   struct _2 * anonym;
+   struct _3 * anonym;
    struct maptool_PIX * anonym0;
    int32_t tmp;
    if ((uint8_t)md.filltyp<'2' || (uint8_t)md.filltyp>'9') return;
@@ -3114,7 +3319,7 @@ static void fillpoligon(maptool_pIMAGE image, struct aprsstr_POSITION pm,
       p.lat = pm.lat+md.vec[j].lat;
       p.long0 = pm.long0+md.vec[j].long0;
       { /* with */
-         struct _2 * anonym = &vert[i];
+         struct _3 * anonym = &vert[i];
          ret = maptool_mapxy(p, &xr, &yr);
          anonym->xi = (int32_t)X2C_TRUNCI(xr,X2C_min_longint,
                 X2C_max_longint);

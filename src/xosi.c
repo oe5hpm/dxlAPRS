@@ -57,6 +57,7 @@ struct xosi__D1 xosi_xmouse;
 char xosi_zooming;
 char xosi_pulling;
 char xosi_Shift;
+char xosi_Ctrl;
 char xosi_headmh[251];
 struct xosi_CUTBUF xosi_cutbuffer;
 /* graphical os interface linux/win32 */
@@ -348,6 +349,7 @@ extern int32_t xosi_InitX(char winname[], uint32_t winname_len,
       goto label;
    }
    xosi_Shift = 0;
+   xosi_Ctrl = 0;
    xosi_InitX_ret = 0L;
    label:;
    X2C_PFREE(winname);
@@ -640,6 +642,7 @@ extern void xosi_xevent(void)
             else if (mykey==65379UL) cmd = '\017';
             else if (mykey==65480UL) maximize();
             else if (mykey==65505UL || mykey==65506UL) xosi_Shift = 1;
+            else if (mykey==65507UL || mykey==65508UL) xosi_Ctrl = 1;
          }
          if (cmd=='\026') xosi_paste();
          else if (cmd) useri_keychar(cmd, 0, 0);
@@ -648,6 +651,7 @@ extern void xosi_xevent(void)
          res = XLookupString(&event.xkey, (PChar)h, 256L, &mykey, &mystat);
          if (res==0L) {
             if (mykey==65505UL || mykey==65506UL) xosi_Shift = 0;
+            else if (mykey==65507UL || mykey==65508UL) xosi_Ctrl = 0;
          }
          break;
       case 22L:

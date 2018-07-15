@@ -74,6 +74,8 @@ extern char xosi_pulling;
 
 extern char xosi_Shift;
 
+extern char xosi_Ctrl;
+
 extern char xosi_headmh[251];
 
 extern struct xosi_CUTBUF xosi_cutbuffer;

@@ -4245,10 +4245,11 @@ static void helpmenu(void)
 {
    pMENU menu;
    newmenu(&menu, aprsdecode_lums.fontxsize*25UL+4UL,
-                aprsdecode_lums.fontysize+7UL, 3UL, useri_bTRANSP);
+                aprsdecode_lums.fontysize+7UL, 4UL, useri_bTRANSP);
    /*  addline(menu, "Shortcuts", CMDSHORTCUTLIST, MINH*6); */
+   addline(menu, "Check Version", 14ul, "\305", 2ul, 607UL);
    addline(menu, "Helptext", 9ul, "\305", 2ul, 610UL);
-   addline(menu, "aprsmap(cu) 0.73 by OE5DXL ", 28ul, " ", 2ul, 605UL);
+   addline(menu, "aprsmap(cu) 0.74 by OE5DXL ", 28ul, " ", 2ul, 605UL);
    setunderbar(menu, 37L);
    menu->ysize = menu->oldknob*menu->yknob;
    menu->oldknob = 0UL;
@@ -8288,7 +8289,7 @@ static void configman(uint32_t button, char * keycmd)
 extern char useri_gpsalt(uint8_t a)
 {
    char h[100];
-   useri_confstr(a, h, 100ul);
+   useri_conf2str(a, 0UL, 1UL, 1, h, 100ul);
    return aprsstr_InStr(h, 100ul, "A", 2ul)>=0L || aprsstr_InStr(h, 100ul, "a\
 ", 2ul)>=0L;
 } /* end gpsalt() */
@@ -10028,6 +10029,9 @@ static void statusbar(void)
       aprsstr_Append(e, 100ul, (char *) &aprsdecode_click.onesymbol.pic,
                 1u/1u);
    }
+   else if (useri_configon(useri_fGEOPROFIL)) {
+      aprsstr_Append(e, 100ul, "Geo Profile", 12ul);
+   }
    elen = aprsstr_Length(e, 100ul)*aprsdecode_lums.fontxsize;
    if (elen>0UL) {
       elen += aprsdecode_lums.fontxsize-2UL;
@@ -10085,9 +10089,7 @@ static void statusbar(void)
    c.r = 0U;
    c.g = 0U;
    c.b = 0U;
-   if (useri_isblown) {
-      c.r = 400U;
-   }
+   if (useri_isblown) c.r = 400U;
    else if (useri_configon(useri_fALLOWEXP)) c.g = 300U;
    statuscol(menu->image, (int32_t)(xknob*kx), (int32_t)xknob, c);
    ++kx;
@@ -12022,7 +12024,9 @@ extern void useri_keychar(char ch, char ispasted,
       useri_refresh = 1;
       aprsdecode_click.cmd = ' ';
    }
-   else if (aprsdecode_click.cmd=='F') findopl(0);
+   else if (aprsdecode_click.cmd=='F' || aprsdecode_click.cmd=='\006') {
+      findopl(0);
+   }
    else if (aprsdecode_click.cmd=='u') {
       if (useri_listwin!='M') startmon(1);
       else closelist();

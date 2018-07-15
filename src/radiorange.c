@@ -54,6 +54,10 @@
 
 #define radiorange_NL "\012"
 
+#define radiorange_GAINS 360
+
+#define radiorange_ROTATECHAR "v"
+
 
 struct IMAGE {
    uint8_t * Adr;
@@ -65,6 +69,18 @@ struct IMAGE {
 typedef struct IMAGE * pIMAGE;
 
 typedef int32_t COLOUR[5];
+
+struct _0;
+
+
+struct _0 {
+   uint32_t r;
+   uint32_t g;
+   uint32_t b;
+   uint32_t t;
+};
+
+typedef struct _0 COLTAB[256];
 
 static pIMAGE image;
 
@@ -148,6 +164,38 @@ static char writeempty;
 static char verb;
 
 static char srtminterpol;
+
+struct _1;
+
+
+struct _1 {
+   char on;
+   char cacheok;
+   char rotate;
+   char rotate2;
+   float lastele;
+   float mindB;
+   float maxdB;
+   float dBmul;
+   float logmul;
+   float lpower;
+   float mhz;
+   float azimuth;
+   float elevation;
+   float azimuth2;
+   float elevation2;
+   float gainA;
+   float gainB;
+   float cachegain;
+   float hgain[360];
+   float vgain[360];
+   char coltabfn[1024];
+   char gainfn[1024];
+   char gainfn2[1024];
+   uint32_t colours;
+};
+
+static struct _1 diagram;
 
 
 static void Error(char text[], uint32_t text_len)
@@ -323,6 +371,84 @@ static void xytodeg(float x, float y, struct aprsstr_POSITION * pos)
    limpos(pos);
 } /* end xytodeg() */
 
+#define radiorange_TENOVERLOGTEN 4.342944819
+
+
+static void readantenna(const char fn[], uint32_t fn_len,
+                float gain)
+{
+   int32_t fd;
+   char fb[10001];
+   char b[101];
+   int32_t n;
+   int32_t p;
+   int32_t i;
+   int32_t len;
+   float r;
+   float round;
+   if (verb) {
+      Werrint((int32_t)diagram.colours);
+      osi_Werr(" colours\012", 10ul);
+   }
+   if (diagram.azimuth<0.0f) {
+      Error("need Antenne Azimuth and Elevation", 35ul);
+   }
+   round = X2C_DIVR(0.5f,(float)(diagram.colours+1UL));
+   diagram.dBmul = X2C_DIVR(1.0f-round,diagram.maxdB-diagram.mindB);
+   diagram.logmul = 4.342944819f*diagram.dBmul;
+   diagram.lpower = (float)((((double)(gain-(-27.8f))
+                -log((double)diagram.mhz)*4.342944819*2.0)
+                -(double)diagram.mindB)*(double)
+                diagram.dBmul+(double)round);
+   /* -60db till meters^2 not km distance */
+   fd = osi_OpenRead(fn, fn_len);
+   len = 0L;
+   if (fd<0L) {
+      osi_Werr("Antenna Gain file [", 20ul);
+      osi_Werr(fn, fn_len);
+      osi_Werr("] not found\012", 13ul);
+   }
+   if (fd>=0L) {
+      len = osi_RdBin(fd, (char *)fb, 10001u/1u, 10001UL);
+      if (len<=0L) {
+         osi_Werr("Antenna Gain file [", 20ul);
+         osi_Werr(fn, fn_len);
+         osi_Werr("] not readable\012", 16ul);
+      }
+   }
+   p = 0L;
+   n = 0L;
+   memset((char *)diagram.hgain,(char)0,sizeof(float [360]));
+   memset((char *)diagram.vgain,(char)0,sizeof(float [360]));
+   do {
+      i = 0L;
+      while (p<len && (uint8_t)fb[p]<=' ') ++p;
+      while ((p<len && i<100L) && (uint8_t)fb[p]>' ') {
+         b[i] = fb[p];
+         ++i;
+         ++p;
+      }
+      b[i] = 0;
+      if (i>0L && aprsstr_StrToFix(&r, b, 101ul)) {
+         r = (float)fabs(r);
+         if (r>200.0f) r = 200.0f;
+         if (diagram.rotate) {
+            if (n<360L) diagram.vgain[(n+90L)%360L] = r;
+            else diagram.hgain[359L-(n+630L)%360L] = r;
+         }
+         else if (n<360L) diagram.hgain[359L-n] = r;
+         else diagram.vgain[(899L-n)%360L] = r;
+      }
+      ++n;
+   } while (n<720L);
+   diagram.cacheok = 0;
+} /* end readantenna() */
+
+#define radiorange_PERR "-P <MHz> <mindBm> <maxdBm> <RGBTfile>|-"
+
+#define radiorange_AERR "<m> <azimuth 0..360> [v]<elevation -90..90> <gain su\
+m dBm> <RGBTfilename>"
+
 
 static void Parms(void)
 {
@@ -486,12 +612,71 @@ static void Parms(void)
                 &anta) || anta<0L) || anta>10000L) {
                Error("-A <meter> (0..10000)", 22ul);
             }
+            if (diagram.on) {
+               osi_NextArg(h, 1024ul);
+               if ((!aprsstr_StrToFix(&diagram.azimuth, h,
+                1024ul) || diagram.azimuth<0.0f) || diagram.azimuth>360.0f) {
+                  Error("-A<m> <azimuth 0..360> [v]<elevation -90..90> <gain \
+sum dBm> <RGBTfilename>", 76ul);
+               }
+               osi_NextArg(h, 1024ul);
+               if (h[0U]=='v') {
+                  aprsstr_Delstr(h, 1024ul, 0UL, 1UL);
+                  diagram.rotate = 1;
+               }
+               if (!aprsstr_StrToFix(&diagram.elevation, h,
+                1024ul) || (float)fabs(diagram.elevation)>90.0f) {
+                  Error("-A<m> <azimuth 0..360> [v]<elevation -90..90> <gain \
+sum dBm> <RGBTfilename>", 76ul);
+               }
+               osi_NextArg(h, 1024ul);
+               if (!aprsstr_StrToFix(&diagram.gainA, h,
+                1024ul) || (float)fabs(diagram.gainA)>200.0f) {
+                  Error("-A<m> <azimuth 0..360> [v]<elevation -90..90> <gain \
+sum dBm> <RGBTfilename>", 76ul);
+               }
+               osi_NextArg(diagram.gainfn, 1024ul);
+               if (diagram.gainfn[0U]=='-') {
+                  Error("-A<m> <azimuth 0..360> [v]<elevation -90..90> <gain \
+sum dBm> <RGBTfilename>", 76ul);
+               }
+            }
          }
          else if (h[1U]=='B') {
             osi_NextArg(h, 1024ul);
             if ((!aprsstr_StrToInt(h, 1024ul,
                 &antb) || antb<0L) || antb>10000L) {
                Error("-B <meter> (0..10000)", 22ul);
+            }
+            if (diagram.on) {
+               osi_NextArg(h, 1024ul);
+               if ((!aprsstr_StrToFix(&diagram.azimuth2, h,
+                1024ul) || diagram.azimuth2<0.0f) || diagram.azimuth2>360.0f)
+                 {
+                  Error("-B<m> <azimuth 0..360> [v]<elevation -90..90> <gain \
+sum dBm> <RGBTfilename>", 76ul);
+               }
+               osi_NextArg(h, 1024ul);
+               if (h[0U]=='v') {
+                  aprsstr_Delstr(h, 1024ul, 0UL, 1UL);
+                  diagram.rotate2 = 1;
+               }
+               if (!aprsstr_StrToFix(&diagram.elevation2, h,
+                1024ul) || (float)fabs(diagram.elevation2)>90.0f) {
+                  Error("-B<m> <azimuth 0..360> [v]<elevation -90..90> <gain \
+sum dBm> <RGBTfilename>", 76ul);
+               }
+               osi_NextArg(h, 1024ul);
+               if (!aprsstr_StrToFix(&diagram.gainB, h,
+                1024ul) || (float)fabs(diagram.gainB)>200.0f) {
+                  Error("-B<m> <azimuth 0..360> [v]<elevation -90..90> <gain \
+sum dBm> <RGBTfilename>", 76ul);
+               }
+               osi_NextArg(diagram.gainfn2, 1024ul);
+               if (diagram.gainfn2[0U]=='-') {
+                  Error("-B<m> <azimuth 0..360> [v]<elevation -90..90> <gain \
+sum dBm> <RGBTfilename>", 76ul);
+               }
             }
          }
          else if (h[1U]=='C') {
@@ -541,6 +726,39 @@ static void Parms(void)
                Error("-g <gamma> [0.1..10.0]", 23ul);
             }
          }
+         else if (h[1U]=='P') {
+            osi_NextArg(h, 1024ul);
+            if (!aprsstr_StrToFix(&diagram.mhz, h,
+                1024ul) || diagram.mhz<0.001f) {
+               Error("-P <MHz> <mindBm> <maxdBm> <RGBTfile>|-", 40ul);
+            }
+            osi_NextArg(h, 1024ul);
+            if (!aprsstr_StrToFix(&diagram.mindB, h, 1024ul)) {
+               Error("-P <MHz> <mindBm> <maxdBm> <RGBTfile>|-", 40ul);
+            }
+            osi_NextArg(h, 1024ul);
+            if (!aprsstr_StrToFix(&diagram.maxdB, h, 1024ul)) {
+               Error("-P <MHz> <mindBm> <maxdBm> <RGBTfile>|-", 40ul);
+            }
+            osi_NextArg(diagram.coltabfn, 1024ul);
+            if (diagram.coltabfn[0U]==0 || diagram.coltabfn[0U]
+                =='-' && diagram.coltabfn[1U]) {
+               Error("-P <MHz> <mindBm> <maxdBm> <RGBTfile>|-", 40ul);
+            }
+            diagram.on = 1;
+            if ((float)fabs(diagram.mindB)>200.0f) {
+               diagram.mindB = (-90.0f);
+               osi_Werr("dBm > 200dBm ?\012", 16ul);
+            }
+            if ((float)fabs(diagram.maxdB)>200.0f) {
+               diagram.maxdB = (-60.0f);
+               osi_Werr("dBm > 200dBm ?\012", 16ul);
+            }
+            if (diagram.maxdB<=diagram.mindB+0.001f) {
+               diagram.mindB = diagram.maxdB-30.0f;
+               osi_Werr("from >= to dBm ?\012", 18ul);
+            }
+         }
          else if (h[1U]=='v') verb = 1;
          else if (h[1U]=='Q') srtminterpol = 0;
          else {
@@ -549,10 +767,24 @@ static void Parms(void)
                osi_WrStrLn("Radiorange from 1 or 2 Position(s)", 35ul);
                osi_WrStrLn(" -A <m>                            Antenna A over\
  ground [m] (10)", 66ul);
+               osi_WrStrLn(" -A <m> <azimuth> [v]<elevation> <gain sum dBm> <\
+gainfilename> if -P defined before", 84ul);
+               osi_WrStrLn("                                   v before eleva\
+tion for H/V polarisation swap", 80ul);
+               osi_WrStrLn("                                   sum of tx-powe\
+r, tx1 and rx antenna gain dBm", 80ul);
                osi_WrStrLn(" -a <lat> <long> | [locator]       Position A lat\
  long (degrees) or qth locator", 80ul);
                osi_WrStrLn(" -B <m>                            Antenna B over\
  ground [m] (10)", 66ul);
+               osi_WrStrLn(" -B <m> <azimuth> [v]<elevation> <gain  sum dBm> \
+<gainfilename> if -P defined before", 85ul);
+               osi_WrStrLn("                                   v before eleva\
+tion for H/V polarisation swap", 80ul);
+               osi_WrStrLn("                                   sum of tx-powe\
+r, tx2 and rx antenna gain dBm", 80ul);
+               osi_WrStrLn("                                   set -B <m> bef\
+ore -P for no antenna gains", 77ul);
                osi_WrStrLn(" -b <lat> <long> | [locator]       Position B lat\
  long (degrees) or qth locator", 80ul);
                osi_WrStrLn(" -C <m>                            0 for ground e\
@@ -576,6 +808,28 @@ x -y: right down position of image", 84ul);
 too as size limit", 67ul);
                osi_WrStrLn(" -o <path>                         enable tiles w\
 ith Path Name", 63ul);
+               osi_WrStrLn(" -P <MHz> <min dBm> <max dBm> <RGBfile>|-",
+                42ul);
+               osi_WrStrLn("                                   show dBm range\
+ colours min..max eg. -90..-60", 80ul);
+               osi_WrStrLn("                                   RGBTfile or - \
+for standard colours (1 Antenna)", 82ul);
+               osi_WrStrLn("                                   RGBTfile: line\
+s of <r> <g> <b> <transparency>", 81ul);
+               osi_WrStrLn("                                     line 1: no s\
+ight, last line: maximum gain", 79ul);
+               osi_WrStrLn("                                   2 Antennas: li\
+ne 1: no sight, line 2: min Ant A", 83ul);
+               osi_WrStrLn("                                     line n: max \
+Ant A, line n+1: Both have sight", 82ul);
+               osi_WrStrLn("                                     line n+2: mi\
+n Ant B, last line: max Ant B", 79ul);
+               osi_WrStrLn("                                     use same num\
+ber of colours per antenna", 76ul);
+               osi_WrStrLn("                                     set -d <dept\
+h> fitting to colours", 71ul);
+               osi_WrStrLn("                                     -U -V -W -g \
+ignored", 57ul);
                osi_WrStrLn(" -p <path>                         srtm directory\
  path", 55ul);
                osi_WrStrLn(" -Q                                srtm interpola\
@@ -865,6 +1119,80 @@ static int32_t wrpng(const char imagefn0[], uint32_t imagefn_len,
 } /* end wrpng() */
 
 
+static float antdiagram(float azi, float ele)
+/* interpolate gain table azi 0..359, ele -90..90 */
+{
+   uint32_t a;
+   float azv;
+   float e;
+   float f;
+   float gv;
+   float gvh;
+   float gh;
+   if (ele>90.0f) {
+      ele = 180.0f-ele;
+      azi = azi+180.0f;
+   }
+   else if (ele<(-90.0f)) {
+      ele = 180.0f+ele;
+      azi = azi+180.0f;
+   }
+   if (azi>=360.0f) azi = azi-360.0f;
+   a = (uint32_t)X2C_TRUNCC(azi,0UL,X2C_max_longcard);
+   f = azi-(float)a;
+   gh = diagram.hgain[a]*(1.0f-f)+diagram.hgain[(a+1UL)%360UL]*f;
+                /* interpolated hor */
+   azv = (float)fabs(azi*5.5555555555556E-3f-1.0f); /* front/back wight */
+   e = ele+90.0f;
+   a = (uint32_t)X2C_TRUNCC(e,0UL,X2C_max_longcard);
+   f = e-(float)a;
+   gv = diagram.vgain[a]*(1.0f-f)+diagram.vgain[a+1UL]*f;
+                /* interpolate vert front */
+   gvh = (diagram.vgain[(360UL-a)%360UL]*(1.0f-f)+diagram.vgain[359UL-a]*f)
+                -diagram.vgain[270U]; /* vert back */
+   gv = gv*azv+gvh*(1.0f-azv); /* front/back wighted vert */
+   gh = gh*(1.0f-(float)fabs(ele*0.0f)); /* vert wighted hor */
+   return (float)sqrt((double)(gh*gh+gv*gv));
+/* dB */
+/* geometric hor vert sum */
+} /* end antdiagram() */
+
+
+static float antgain(float azi, float alt, float oomaxdist,
+                float * ddist)
+{
+   float dist;
+   float ele;
+   float db;
+   dist = X2C_DIVR(*ddist,oomaxdist);
+   ele = X2C_DIVR(alt,dist);
+   if (diagram.cacheok && (float)fabs(ele-diagram.lastele)>(float)
+                fabs(ele)*0.01f) diagram.cacheok = 0;
+   if (!diagram.cacheok) {
+      diagram.lastele = ele;
+      azi = diagram.azimuth-azi;
+      if (azi<0.0f) azi = azi+360.0f;
+      ele = (float)(atan((double)ele)*5.729577951472E+1);
+      ele = (float)((double)ele-(double)
+                diagram.elevation*cos((double)(azi*1.7453292519444E-2f)
+                ));
+      diagram.cachegain = antdiagram(azi, ele)*diagram.dBmul;
+      diagram.cacheok = 1;
+   }
+   db = (float)((double)diagram.lpower-log((double)
+                (dist*dist+alt*alt))*(double)diagram.logmul);
+                /* with 0dBi antenna */
+   if (db<0.0f) {
+      *ddist = 1000.0f; /* abort sigthline on distance loss */
+      return 0.0f;
+   }
+   db = db-diagram.cachegain; /* apply antenna diagram */
+   if (db<0.0f) db = 0.0f;
+   else if (db>1.0f) db = 1.0f;
+   return db;
+} /* end antgain() */
+
+
 static void postfilter(pIMAGE image0)
 /* set missing pixels with median of neighbours */
 {
@@ -951,6 +1279,9 @@ static int32_t Radiorange(pIMAGE image0, struct aprsstr_POSITION txpos,
    uint8_t bri;
    int32_t void0;
    int32_t nn;
+   float antdiff;
+   float azi;
+   float hgnd;
    float refr;
    float dm;
    float alt1;
@@ -1008,6 +1339,7 @@ static int32_t Radiorange(pIMAGE image0, struct aprsstr_POSITION txpos,
    atx = (float)(nn+ant1); /* ant1 over NN */
    wgs84s(txpos.lat, txpos.long0, atx*0.001f, &x0, &y00, &z0);
    arx = (float)ant2; /* ant2 over ground */
+   antdiff = arx-atx;
    xi = 0.0f;
    yi = 0.0f;
    nn = mapxy(txpos, &xtx, &ytx);
@@ -1047,12 +1379,16 @@ static int32_t Radiorange(pIMAGE image0, struct aprsstr_POSITION txpos,
                 xsize) {
          wgs84s(pos.lat, pos.long0, atx*0.001f, &x1, &y1, &z1);
                 /* screen frame xyz at ant1 alt */
+         if (diagram.on) {
+            azi = aprspos_azimuth(txpos, pos); /* for antenna diagram */
+            diagram.cacheok = 0; /* so no need to check azi too */
+         }
          dx = x1-x0;
          dy = y1-y00;
          dz = z1-z0;
          oodist = dx*dx+dy*dy+dz*dz;
          if (oodist>1.E-6f) {
-            dm = oodist*refr; /* full dist^2 */
+            dm = oodist*refr; /* oodist full dist^2 */
             oodist = (float)(X2C_DIVL(0.001,sqrt((double)oodist)));
                 /* 1/sight line length in m */
             pixstep = 0.0f;
@@ -1087,12 +1423,12 @@ static int32_t Radiorange(pIMAGE image0, struct aprsstr_POSITION txpos,
                pos.long0 = pos0.long0+dpos.long0*d;
                alt = (alt0+dalt*d)-d*d*dm;
                 /* -dist(km)^2 * refrac * 0.0785 */
-               h = libsrtm_getsrtm(pos,
+               hgnd = libsrtm_getsrtm(pos,
                 (uint32_t)X2C_TRUNCC((float)fabs(sight)+1.0f,0UL,
                 X2C_max_longcard)*qual, &resol); /* ground over NN in m */
-               if (h<10000.0f) {
+               if (hgnd<10000.0f) {
                   /* srtm valid */
-                  h = h-alt; /* m ground over searchpath */
+                  h = hgnd-alt; /* m ground over searchpath */
                   hs = rais*d; /* h sight line m over searchpath */
                   sight = (h+arx)-hs;
                   if (sight>0.0f) {
@@ -1130,8 +1466,12 @@ static int32_t Radiorange(pIMAGE image0, struct aprsstr_POSITION txpos,
                            lum = sight*osmooth;
                 /* luma is equal to riseing higth */
                            if (lum>255.0f) lum = 255.0f;
-                           bri = (uint8_t)(uint32_t)X2C_TRUNCC(lum,0UL,
-                X2C_max_longcard);
+                           if (diagram.on) {
+                              lum = lum*antgain(azi, hgnd+antdiff, oodist,
+                &d);
+                              if (lum>255.0f) lum = 255.0f;
+                           }
+                           /*                bri:=TRUNC(lum); */
                            image0->Adr[(yp)*image0->Len0+xp] = (uint8_t)
                 (uint32_t)X2C_TRUNCC(lum,0UL,X2C_max_longcard);
                            if (qualnum<=1UL) {
@@ -1246,7 +1586,7 @@ static void wrtiles(struct aprsstr_POSITION mpos, int32_t zoom,
            IntToStr(zoom, 0, s); Append(fn, s);
            IF lasttilezoom<>zoom THEN                    (* make dir once *)
              ok:=CreateDir(fn, DIRPERM);
-              lasttilezoom:=zoom;
+             lasttilezoom:=zoom;
            END;
            Append(fn, DIRSEP);
            IntToStr(tx, 0, s); Append(fn, s);
@@ -1313,6 +1653,62 @@ static void wrtiles(struct aprsstr_POSITION mpos, int32_t zoom,
 } /* end wrtiles() */
 
 
+static uint32_t readcolourfile(COLTAB col, const char fn[],
+                uint32_t fn_len)
+{
+   int32_t fd;
+   char fb[10001];
+   char b[101];
+   int32_t j;
+   int32_t n;
+   int32_t p;
+   int32_t i;
+   int32_t len;
+   int32_t x;
+   fd = osi_OpenRead(fn, fn_len);
+   if (fd<0L) Error("Colourtable file not found", 27ul);
+   len = osi_RdBin(fd, (char *)fb, 10001u/1u, 10001UL);
+   if (len<=0L) Error("Colourtable file not readable", 30ul);
+   p = 0L;
+   n = 0L;
+   j = 0L;
+   memset((char *)col,(char)0,sizeof(COLTAB));
+   for (;;) {
+      i = 0L;
+      while (p<len && (uint8_t)fb[p]<=' ') ++p;
+      while ((p<len && i<100L) && (uint8_t)fb[p]>' ') {
+         b[i] = fb[p];
+         ++i;
+         ++p;
+      }
+      b[i] = 0;
+      if ((n<=255L && i>0L) && aprsstr_StrToInt(b, 101ul, &x)) {
+         if (x<0L) x = 0L;
+         else if (x>255L) x = 255L;
+         if (j==0L) {
+            col[n].r = (uint32_t)x;
+            ++j;
+         }
+         else if (j==1L) {
+            col[n].g = (uint32_t)x;
+            ++j;
+         }
+         else if (j==2L) {
+            col[n].b = (uint32_t)x;
+            ++j;
+         }
+         else {
+            col[n].t = (uint32_t)x;
+            j = 0L;
+            ++n;
+         }
+      }
+      else break;
+   }
+   return (uint32_t)n;
+} /* end readcolourfile() */
+
+
 static uint32_t lim(uint32_t n, uint32_t d, uint32_t l)
 {
    n = n/d;
@@ -1323,13 +1719,114 @@ static uint32_t lim(uint32_t n, uint32_t d, uint32_t l)
 
 static void genpalette(void)
 {
+   uint32_t cc;
    uint32_t m;
    uint32_t i;
+   COLTAB col;
    if (((pngdepth!=1L && pngdepth!=2L) && pngdepth!=4L) && pngdepth!=8L) {
-      osi_Werr("png depth 1, 2, 4 or 8 needed", 30ul);
+      osi_Werr("png depth 1, 2, 4 or 8 needed\012", 31ul);
    }
    makegammatab();
-   if (antc<0L) {
+   if (diagram.on) {
+      if ((pngdepth!=2L && pngdepth!=4L) && pngdepth!=8L) {
+         osi_Werr("png depth 2, 4 or 8 needed+LF", 30ul);
+      }
+      if (diagram.coltabfn[0U] && diagram.coltabfn[0U]!='-') {
+         /* read colours from file */
+         m = readcolourfile(col, diagram.coltabfn, 1024ul);
+         if (antc>=0L) m = m/2UL;
+         if (m==0UL) Error("no values in colour table", 26ul);
+         if (pngdepth==2L && m>4UL || pngdepth==4L && m>16UL) {
+            Error("too much colours for specified png size", 40ul);
+         }
+         for (i = 0UL; i<=255UL; i++) {
+            clut[i] = (uint8_t)lim(i, 256UL/m, m-1UL);
+            if (i<m) {
+               transpaency[i] = (uint8_t)col[i].t;
+               palette[i].r = (uint8_t)col[i].r;
+               palette[i].g = (uint8_t)col[i].g;
+               palette[i].b = (uint8_t)col[i].b;
+            }
+         } /* end for */
+         if (antc>=0L) {
+            /* 2 antennas */
+            if (((pngdepth<2L || pngdepth==2L && m>2UL)
+                || pngdepth==4L && m>8UL) || m>128UL) {
+               Error("too much colours for specified png size", 40ul);
+            }
+            for (i = 0UL; i<=65535UL; i++) {
+               clut[i] = clut[i&255UL]; /* ant A values */
+            } /* end for */
+            for (i = 0UL; i<=65535UL; i++) {
+               if (clut[i]==0U) {
+                  /* ant A no sight */
+                  cc = lim(i, 65536UL/m, m-1UL);
+                  if (cc) clut[i] = (uint8_t)(cc+m);
+               }
+               else if (cc) clut[i] = (uint8_t)m;
+               if (i<m) {
+                  transpaency[i+m] = (uint8_t)col[i+m].t;
+                  palette[i+m].r = (uint8_t)col[i+m].r;
+                  palette[i+m].g = (uint8_t)col[i+m].g;
+                  palette[i+m].b = (uint8_t)col[i+m].b;
+               }
+            } /* end for */
+         }
+      }
+      else {
+         for (i = 0UL; i<=255UL; i++) {
+            transpaency[i] = (uint8_t)colour1[3U];
+            if (pngdepth==2L) {
+               m = 4UL;
+               clut[i] = (uint8_t)lim(i+32UL, 64UL, 3UL);
+               if (i<4UL) {
+                  palette[i].r = 0U;
+                  palette[i].g = 0U;
+                  palette[i].b = 0U;
+                  if (i==1UL) {
+                     palette[i].r = gammatab[255U];
+                     palette[i].g = gammatab[0U];
+                  }
+                  else if (i==2UL) {
+                     palette[i].r = gammatab[255U];
+                     palette[i].g = gammatab[255U];
+                  }
+                  else if (i==3UL) {
+                     palette[i].r = gammatab[0U];
+                     palette[i].g = gammatab[255U];
+                  }
+               }
+            }
+            else if (pngdepth==4L) {
+               m = 16UL;
+               clut[i] = (uint8_t)lim(i, 16UL, 15UL);
+               if (i<16UL) {
+                  palette[i].r = 0U;
+                  palette[i].g = 0U;
+                  palette[i].b = 0U;
+                  if (i>0UL) {
+                     palette[i].r = gammatab[lim(480UL-i*32UL, 1UL, 255UL)];
+                     palette[i].g = gammatab[lim(i*32UL, 1UL, 255UL)];
+                  }
+               }
+            }
+            else {
+               /* pngdepth 8 */
+               m = 256UL;
+               clut[i] = (uint8_t)i;
+               palette[i].r = 0U;
+               palette[i].g = 0U;
+               palette[i].b = 0U;
+               if (i>0UL) {
+                  palette[i].r = gammatab[lim(511UL-i*2UL, 1UL, 255UL)];
+                  palette[i].g = gammatab[lim(i*2UL, 1UL, 255UL)];
+               }
+            }
+         } /* end for */
+      }
+      diagram.colours = m;
+   }
+   else if (antc<0L) {
       for (i = 0UL; i<=255UL; i++) {
          transpaency[i] = (uint8_t)colour1[3U];
          if (pngdepth==1L) {
@@ -1375,9 +1872,12 @@ static void genpalette(void)
                 /256L);
          }
       } /* end for */
+      transpaency[0U] = (uint8_t)colour1[4U];
    }
    else {
-      if (pngdepth<2L) osi_Werr("2 antennas need png depth 2, 4 or 8", 36ul);
+      if (pngdepth<2L) {
+         osi_Werr("2 antennas need png depth 2, 4 or 8\012", 37ul);
+      }
       for (i = 0UL; i<=65535UL; i++) {
          if (pngdepth==2L) {
             clut[i] = (uint8_t)(2UL*lim(i/256UL+100UL, 128UL,
@@ -1467,8 +1967,8 @@ static void genpalette(void)
             }
          }
       } /* end for */
+      transpaency[0U] = (uint8_t)colour1[4U];
    }
-   transpaency[0U] = (uint8_t)colour1[4U];
 } /* end genpalette() */
 
 
@@ -1560,7 +2060,15 @@ extern int main(int argc, char **argv)
    verb = 0;
    draft = 2L;
    srtminterpol = 1;
+   memset((char *) &diagram,(char)0,sizeof(struct _1));
+   diagram.maxdB = (-60.0f);
+   diagram.mindB = (-90.0f);
+   diagram.mhz = 2400.0f;
+   diagram.azimuth = (-1.0f);
+   diagram.azimuth2 = (-1.0f);
    Parms();
+   genpalette();
+   if (diagram.on) readantenna(diagram.gainfn, 1024ul, diagram.gainA);
    lasttilezoom = -1L;
    lasttiledir = -1L;
    tileimg = 0;
@@ -1589,7 +2097,6 @@ extern int main(int argc, char **argv)
    if (xsize<32L) Error("xsize too less", 15ul);
    if (ysize<32L) Error("ysize too less", 15ul);
    if (antc>=0L && !posvalid(posb)) Error("-C needs -b", 12ul);
-   genpalette();
    image2 = 0;
    X2C_DYNALLOCATE((char **) &image,1u,(tmp[0] = (size_t)ysize,
                 tmp[1] = (size_t)xsize,tmp),2u);
@@ -1602,16 +2109,22 @@ extern int main(int argc, char **argv)
       X2C_DYNALLOCATE((char **) &image2,1u,(tmp[0] = (size_t)ysize,
                 tmp[1] = (size_t)xsize,tmp),2u);
       if (image2==0) Error("out of memory", 14ul);
-      if (verb) osi_Werr("antenna 2\012", 11ul);
+      if (verb) {
+         osi_Werr("antenna 2\012", 11ul);
+      }
+      if (diagram.on) {
+         diagram.azimuth = diagram.azimuth2;
+         diagram.elevation = diagram.elevation2;
+         diagram.rotate = diagram.rotate2;
+         readantenna(diagram.gainfn2, 1024ul, diagram.gainB);
+      }
       ret = Radiorange(image2, posb, antb, antc, (uint32_t)contrast,
                 (uint32_t)draft, refraction);
       if (ret==-1L) Error("no altitude at antenne B", 25ul);
       if (verb) osi_Werr("join images\012", 13ul);
    }
    else {
-      if (pngdepth>=4L && draft>=2L) {
-         ++draft;
-      }
+      if (pngdepth>=4L && draft>=2L) ++draft;
       ret = Radiorange(image, posa, anta, antb, (uint32_t)contrast,
                 (uint32_t)draft, refraction);
       if (ret==-1L) Error("no altitude at antenne A", 25ul);

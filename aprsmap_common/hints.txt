@@ -1605,8 +1605,14 @@ luminance. try for best readability
 If " A" is appended like "10 A", the
 Altitude (if avaliable) from a clicked
 Object will be added
+For calculating RF-Illumination apply a Line:
+<m> <azimuth 0..360> <elevation -90..90>
+<sum of tx,rx Antenna Gain + tx Power in dBi>
+<Antennadiagram Filename>
+eg. "10 270 0 74 antennas/myantenne.ant"
 
 |8527 Antenna at Marker 2 Altitude over Ground.
+3 Antenna-RF-Illumination like Marker 1
 
 |8525 Antenna 3 is used for Radio Range Map
 (shortcut R) as receiver for radiation
@@ -1621,6 +1627,9 @@ might be a Diffraction Line.
 The zone is calculated 3-dimensional
 to see obstacles under and beside of
 Radiation
+For calculating RF-Illumination apply
+the Line: <MHz> <min dBi> <max dBi>
+eg. "2400 -90 -60"
 
 |8518 Refraction Factor of Atmosphere
 0.00 in Vacuum

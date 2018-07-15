@@ -3182,6 +3182,7 @@ static void setshowall(void)
    aprsdecode_click.onesymbol.tab = 0;
    aprsdecode_click.watchmhop = 0;
    aprsdecode_lums.wxcol = 0;
+   useri_configbool(useri_fGEOPROFIL, 0);
    useri_say("Show All", 9ul, 2UL, 'g');
 } /* end setshowall() */
 
@@ -4837,8 +4838,12 @@ static void MainEvent(void)
          push(maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom));
          useri_resetimgparms();
       }
-      else if (aprsdecode_click.cmd=='+') zoominout(1, xosi_Shift, 0, 0);
-      else if (aprsdecode_click.cmd=='-') zoominout(0, xosi_Shift, 0, 0);
+      else if (aprsdecode_click.cmd=='+') {
+         zoominout(1, xosi_Shift || xosi_Ctrl, 0, 0);
+      }
+      else if (aprsdecode_click.cmd=='-') {
+         zoominout(0, xosi_Shift || xosi_Ctrl, 0, 0);
+      }
       else if (aprsdecode_click.cmd=='\310') zoominout(1, 1, 1, 1);
       else if (aprsdecode_click.cmd=='\311') zoominout(0, 1, 1, 1);
       else if (aprsdecode_click.cmd=='\237') MapPackage();
@@ -4967,7 +4972,9 @@ static void MainEvent(void)
          if (aprsdecode_click.mhop[0UL]) setshowall();
       }
       else if (aprsdecode_click.cmd=='c') centermouse(0);
-      else if (aprsdecode_click.cmd=='X') xytomark();
+      else if (aprsdecode_click.cmd=='X') {
+         xytomark(); /* set marker 1 to map pos */
+      }
       else if (aprsdecode_click.cmd=='x') {
          /* set marker 1 to object lastpos */
          clicktomark();
@@ -5037,9 +5044,7 @@ map.y4m", 8ul);
          importlog(aprsdecode_click.cmdatt);
          aprsdecode_click.cmdatt = 0;
       }
-      else if (aprsdecode_click.cmd=='\011') {
-         toggview();
-      }
+      else if (aprsdecode_click.cmd=='\011') toggview();
       else if (aprsdecode_click.cmd=='(') mapbri(-5L);
       else if (aprsdecode_click.cmd==')') mapbri(5L);
       else if (aprsdecode_click.cmd=='[') fullbritime(1);
