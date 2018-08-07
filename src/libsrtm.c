@@ -510,6 +510,80 @@ extern void libsrtm_closesrtmfile(void)
 } /* end closesrtmfile() */
 
 /* === srtm lib */
+/* === geoid lib */
+#define libsrtm_GEOIDFN "WW15MGH.DAC"
+
+#define libsrtm_RESOL 4
+/* 1/deg */
+
+#define libsrtm_LONGS 1440
+/* values in file around a latitude */
+
+
+static float rdgeoid(int32_t fd, int32_t lat, int32_t long0,
+                char * ok0)
+{
+   char b[2];
+   int32_t n;
+   osic_Seek(fd, (uint32_t)((lat*1440L+long0)*2L));
+   if (osi_RdBin(fd, (char *)b, 2u/1u, 2UL)!=2L) {
+      n = 0L; /* no data in file */
+      n = 0L;
+      *ok0 = 0;
+   }
+   else {
+      n = (int32_t)((uint32_t)(uint8_t)b[1U]+(uint32_t)(uint8_t)
+                b[0U]*256UL);
+      if (n>=32768L) n -= 65536L;
+   }
+   return (float)n;
+} /* end rdgeoid() */
+
+
+extern float libsrtm_egm96(struct aprsstr_POSITION pos,
+                char * ok0)
+/* read and interpolate geoid correction from datafile */
+{
+   int32_t ilong;
+   int32_t ilat;
+   int32_t fd;
+   float g;
+   float flong;
+   float flat;
+   char path[1025];
+   aprsstr_Assign(path, 1025ul, libsrtm_srtmdir, 1024ul);
+   if (path[0]) aprsstr_Append(path, 1025ul, "/", 2ul);
+   aprsstr_Append(path, 1025ul, "WW15MGH.DAC", 12ul);
+   fd = osi_OpenRead(path, 1025ul);
+   *ok0 = fd>=0L;
+   g = 0.0f;
+   if (*ok0) {
+      pos.lat = 90.0f-pos.lat*5.729577951472E+1f;
+      pos.long0 = pos.long0*5.729577951472E+1f;
+      if (pos.long0<0.0f) pos.long0 = 360.0f+pos.long0;
+      pos.lat = pos.lat*4.0f;
+      pos.long0 = pos.long0*4.0f;
+      if (pos.lat>=0.0f) {
+         ilat = (int32_t)(uint32_t)X2C_TRUNCC(pos.lat,0UL,
+                X2C_max_longcard);
+      }
+      else ilat = 0L;
+      if (pos.long0>=0.0f) {
+         ilong = (int32_t)(uint32_t)X2C_TRUNCC(pos.long0,0UL,
+                X2C_max_longcard);
+      }
+      else ilong = 0L;
+      flat = pos.lat-(float)ilat;
+      flong = pos.long0-(float)ilong;
+      g = ((rdgeoid(fd, ilat, ilong, ok0)*(1.0f-flat)+rdgeoid(fd, ilat+1L,
+                ilong, ok0)*flat)*(1.0f-flong)+(rdgeoid(fd, ilat, ilong+1L,
+                ok0)*(1.0f-flat)+rdgeoid(fd, ilat+1L, ilong+1L,
+                ok0)*flat)*flong)*0.01f;
+      osic_Close(fd);
+   }
+   return g;
+} /* end egm96() */
+
 
 extern void libsrtm_BEGIN(void)
 {

@@ -150,7 +150,8 @@ OBJ_SONDEMOD	= \
 	sondeaprs.o \
 	time_conversion.o \
 	yuma.o \
-	sondemod.o
+	sondemod.o \
+	libsrtm.o
 
 OBJ_SONDEUDP	= sondeudp.o \
 	rsc.o \

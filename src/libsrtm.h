@@ -31,6 +31,8 @@ extern void libsrtm_initsrtm(void);
 
 extern void libsrtm_closesrtmfile(void);
 
+extern float libsrtm_egm96(struct aprsstr_POSITION, char *);
+
 
 extern void libsrtm_BEGIN(void);
 

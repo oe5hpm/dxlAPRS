@@ -1762,6 +1762,10 @@ static void getpong(aprsdecode_pTCPSOCK tp, const char mb[],
                 uint32_t mb_len)
 {
    char s[21];
+   int32_t i;
+   /*# logresp AA0AAA verified, server AA0AAA-10 */
+   i = aprsstr_InStr(mb, mb_len, "logresp ", 9ul);
+   if (i>0L && i<=2L) useri_textautosize(0L, 5L, 6UL, 10UL, 'b', mb, mb_len);
    makeping(tp->lastping, 1, s, 21ul);
    if (aprsdecode_realtime<=tp->lastping+10UL && aprsstr_InStr(mb, mb_len, s,
                  21ul)>=1L) {

@@ -23,11 +23,15 @@
 #ifndef udp_H_
 #include "udp.h"
 #endif
+#ifndef libsrtm_H_
+#include "libsrtm.h"
+#endif
 
 char sondeaprs_via[100];
 char sondeaprs_destcall[100];
 char sondeaprs_objname[100];
 char sondeaprs_commentfn[1025];
+char sondeaprs_csvfilename[1025];
 char sondeaprs_sym[2];
 uint32_t sondeaprs_beacontime;
 uint32_t sondeaprs_lowaltbeacontime;
@@ -44,9 +48,6 @@ char sondeaprs_anyip;
 char sondeaprs_sendmon;
 char sondeaprs_dao;
 /* encode demodulated sonde to aprs axudp by OE5DXL */
-/*FROM TimeConv IMPORT time; */
-/*FROM RealMath IMPORT ln; */
-/*FROM Storage IMPORT ALLOCATE; */
 #define sondeaprs_CR "\015"
 
 #define sondeaprs_LF "\012"
@@ -124,14 +125,9 @@ struct CONTEXT {
 
 /*CRCL, CRCH: ARRAY[0..255] OF SET8;*/
 static pCONTEXT contexts;
-/*    dat     :ARRAY[0..LINESBUF-1] OF DATLINE; */
 
-/*    speedsum:LONGREAL; */
-/*    speedcnt:CARDINAL; */
 static uint16_t chk;
 
-/*    systime, lastbeacon:TIME; */
-/*    commentline:CARDINAL; */
 
 static uint32_t truncc(double r)
 {
@@ -193,6 +189,151 @@ extern int32_t sondeaprs_GetIp(char h[], uint32_t h_len,
 } /* end GetIp() */
 
 
+static void wrcsv(uint32_t sattime, const char typstr[],
+                uint32_t typstr_len, char objname[],
+                uint32_t objname_len, double lat, double long0,
+                 double alt, double speed, double dir,
+                double clb, double og, double mhz,
+                uint32_t goodsats, uint32_t burstKill, uint32_t uptime,
+                 double hp, double hyg, double temp,
+                double ozon, double otemp, double pumpmA,
+                double pumpv)
+{
+   int32_t fd;
+   char h[1000];
+   char s[1000];
+   X2C_PCOPY((void **)&objname,objname_len);
+   fd = osi_OpenAppend(sondeaprs_csvfilename, 1025ul);
+   if (fd<0L) {
+      fd = osi_OpenWrite(sondeaprs_csvfilename, 1025ul);
+      strncpy(s,"Time,Type,Name,lat,long,alt,speed,dir,clb,og,mhz,sats,bk,upt\
+ime,hPa,hum,temp,ozon,ozont,pumpmA,pumpV\012",1000u);
+   }
+   else s[0] = 0;
+   if (fd<0L) {
+      osi_WrStrLn("cannot write csv-file", 22ul);
+      goto label;
+   }
+   if (s[0U]) {
+      osi_WrBin(fd, (char *)s, 1000u/1u, aprsstr_Length(s, 1000ul));
+                /* csv headline */
+   }
+   aprsstr_TimeToStr(sattime, s, 1000ul);
+   aprsstr_Append(s, 1000ul, ",", 2ul);
+   aprsstr_Append(s, 1000ul, typstr, typstr_len);
+   aprsstr_Append(s, 1000ul, ",", 2ul);
+   aprsstr_Append(s, 1000ul, objname, objname_len);
+   aprsstr_Append(s, 1000ul, ",", 2ul);
+   aprsstr_FixToStr((float)(lat*5.7295779513082E+1), 6UL, h, 1000ul);
+   aprsstr_Append(s, 1000ul, h, 1000ul);
+   aprsstr_Append(s, 1000ul, ",", 2ul);
+   aprsstr_FixToStr((float)(long0*5.7295779513082E+1), 6UL, h, 1000ul);
+   aprsstr_Append(s, 1000ul, h, 1000ul);
+   aprsstr_Append(s, 1000ul, ",", 2ul);
+   aprsstr_IntToStr((int32_t)X2C_TRUNCI(alt,X2C_min_longint,
+                X2C_max_longint), 1UL, h, 1000ul);
+   aprsstr_Append(s, 1000ul, h, 1000ul);
+   aprsstr_Append(s, 1000ul, ",", 2ul);
+   aprsstr_FixToStr((float)(speed*3.6), 2UL, h, 1000ul);
+   aprsstr_Append(s, 1000ul, h, 1000ul);
+   aprsstr_Append(s, 1000ul, ",", 2ul);
+   aprsstr_IntToStr((int32_t)X2C_TRUNCI(dir,X2C_min_longint,
+                X2C_max_longint), 1UL, h, 1000ul);
+   aprsstr_Append(s, 1000ul, h, 1000ul);
+   aprsstr_Append(s, 1000ul, ",", 2ul);
+   aprsstr_FixToStr((float)clb, 2UL, h, 1000ul);
+   aprsstr_Append(s, 1000ul, h, 1000ul);
+   aprsstr_Append(s, 1000ul, ",", 2ul);
+   if (og>(-1.E+4) && og<1.E+5) {
+      aprsstr_IntToStr((int32_t)X2C_TRUNCI(og,X2C_min_longint,
+                X2C_max_longint), 1UL, h, 1000ul);
+      aprsstr_Append(s, 1000ul, h, 1000ul);
+   }
+   aprsstr_Append(s, 1000ul, ",", 2ul);
+   if (mhz>0.1) {
+      aprsstr_FixToStr((float)mhz, 3UL, h, 1000ul);
+      aprsstr_Append(s, 1000ul, h, 1000ul);
+   }
+   aprsstr_Append(s, 1000ul, ",", 2ul);
+   if (goodsats>0UL) {
+      aprsstr_IntToStr((int32_t)goodsats, 1UL, h, 1000ul);
+      aprsstr_Append(s, 1000ul, h, 1000ul);
+   }
+   aprsstr_Append(s, 1000ul, ",", 2ul);
+   if (burstKill>0UL) {
+      aprsstr_IntToStr((int32_t)(burstKill-1UL), 1UL, h, 1000ul);
+      aprsstr_Append(s, 1000ul, h, 1000ul);
+   }
+   aprsstr_Append(s, 1000ul, ",", 2ul);
+   if (uptime>0UL) {
+      aprsstr_TimeToStr(uptime, h, 1000ul);
+      aprsstr_Append(s, 1000ul, h, 1000ul);
+   }
+   aprsstr_Append(s, 1000ul, ",", 2ul);
+   if (hp>0.1 && hp<2000.0) {
+      aprsstr_FixToStr((float)hp, 2UL, h, 1000ul);
+      aprsstr_Append(s, 1000ul, h, 1000ul);
+   }
+   aprsstr_Append(s, 1000ul, ",", 2ul);
+   if (hyg>0.1 && hyg<=100.0) {
+      aprsstr_IntToStr((int32_t)X2C_TRUNCI(hyg,X2C_min_longint,
+                X2C_max_longint), 1UL, h, 1000ul);
+      aprsstr_Append(s, 1000ul, h, 1000ul);
+   }
+   aprsstr_Append(s, 1000ul, ",", 2ul);
+   if (temp>(-1000.0) && temp<1000.0) {
+      aprsstr_FixToStr((float)temp, 2UL, h, 1000ul);
+      aprsstr_Append(s, 1000ul, h, 1000ul);
+   }
+   aprsstr_Append(s, 1000ul, ",", 2ul);
+   if (ozon>0.1) {
+      aprsstr_FixToStr((float)ozon, 2UL, h, 1000ul);
+      aprsstr_Append(s, 1000ul, h, 1000ul);
+   }
+   aprsstr_Append(s, 1000ul, ",", 2ul);
+   if (ozon>0.1) {
+      aprsstr_FixToStr((float)otemp, 2UL, h, 1000ul);
+      aprsstr_Append(s, 1000ul, h, 1000ul);
+   }
+   aprsstr_Append(s, 1000ul, ",", 2ul);
+   if (ozon>0.1 && pumpmA>0.1) {
+      aprsstr_FixToStr((float)pumpmA, 2UL, h, 1000ul);
+      aprsstr_Append(s, 1000ul, h, 1000ul);
+   }
+   aprsstr_Append(s, 1000ul, ",", 2ul);
+   if (ozon>0.1 && pumpv>0.1) {
+      aprsstr_FixToStr((float)pumpv, 3UL, h, 1000ul);
+      aprsstr_Append(s, 1000ul, h, 1000ul);
+   }
+   aprsstr_Append(s, 1000ul, "\012", 2ul);
+   osi_WrBin(fd, (char *)s, 1000u/1u, aprsstr_Length(s, 1000ul));
+   osic_Close(fd);
+   label:;
+   X2C_PFREE(objname);
+} /* end wrcsv() */
+
+
+static double getoverground(double lat, double long0,
+                double alt)
+{
+   struct aprsstr_POSITION pos;
+   float resolution;
+   double srtm;
+   char ok0;
+   libsrtm_srtmmaxmem = 1000000UL;
+   pos.lat = (float)(lat*1.7453292519943E-2);
+   pos.long0 = (float)(long0*1.7453292519943E-2);
+   srtm = (double)libsrtm_getsrtm(pos, 1UL, &resolution);
+   if (srtm<10000.0) {
+      alt = (alt-(double)libsrtm_egm96(pos, &ok0))-srtm;
+      if (ok0) return alt;
+      if (sondeaprs_verb) osi_WrStrLn("---no EGM96 data", 17ul);
+   }
+   else if (sondeaprs_verb) osi_WrStrLn("---no SRTM data", 16ul);
+   return (-1.E+5);
+} /* end getoverground() */
+
+
 static void comment0(char buf[], uint32_t buf_len, uint32_t uptime,
                 uint32_t sats, double hrms, uint32_t * linec)
 {
@@ -252,7 +393,7 @@ static void comment0(char buf[], uint32_t buf_len, uint32_t uptime,
             }
             else if (fb[bol+1L]=='v') {
                /* insert version */
-               strncpy(fb," sondemod(c) 1.2",32768u);
+               strncpy(fb," sondemod(c) 1.21",32768u);
             }
             else if (fb[bol+1L]=='s') {
                /* insert sat count */
@@ -1040,8 +1181,15 @@ extern void sondeaprs_senddata(double lat, double long0,
    char s[251];
    uint32_t systime;
    uint32_t bt;
+   double og;
    struct CONTEXT * anonym;
    X2C_PCOPY((void **)&objname,objname_len);
+   og = getoverground(lat*5.7295779513082E+1, long0*5.7295779513082E+1, alt);
+   if (sondeaprs_csvfilename[0UL]) {
+      wrcsv(sattime, typstr, typstr_len, objname, objname_len, lat, long0,
+                alt, speed, dir, clb, og, mhz, goodsats, burstKill, uptime,
+                hp, hyg, temp, ozon, otemp, pumpmA, pumpv);
+   }
    if (aprsstr_Length(usercall, usercall_len)<3UL) {
       osi_WrStrLn("no tx without <mycall>", 23ul);
       goto label;
@@ -1065,8 +1213,8 @@ extern void sondeaprs_senddata(double lat, double long0,
          anonym->dat[0U].speed = X2C_DIVL(anonym->speedsum,
                 (double)anonym->speedcnt);
          anonym->dat[0U].dir = dir;
-         anonym->dat[0U].lat = X2C_DIVL(lat,1.7453292519943E-2);
-         anonym->dat[0U].long0 = X2C_DIVL(long0,1.7453292519943E-2);
+         anonym->dat[0U].lat = lat*5.7295779513082E+1;
+         anonym->dat[0U].long0 = long0*5.7295779513082E+1;
          /*    dat[0].time:=(sattime+DAYSEC-GPSTIMECORR) MOD DAYSEC; */
          anonym->dat[0U].time0 = sattime%86400UL;
          /*    dat[0].uptime:=sattime MOD DAYSEC; */
@@ -1192,6 +1340,13 @@ extern void sondeaprs_senddata(double lat, double long0,
                aprsstr_Append(s, 251ul, " Type=", 7ul);
                aprsstr_Append(s, 251ul, typstr, typstr_len);
             }
+            if (og>=0.0 && og<=(double)sondeaprs_lowalt) {
+               aprsstr_Append(s, 251ul, " OG=", 5ul);
+               aprsstr_IntToStr((int32_t)X2C_TRUNCI(og,X2C_min_longint,
+                X2C_max_longint), 1UL, h, 251ul);
+               aprsstr_Append(s, 251ul, h, 251ul);
+               aprsstr_Append(s, 251ul, "m", 2ul);
+            }
             /* appended by SQ7BR */
             if (burstKill==1UL || burstKill==2UL) {
                aprsstr_Append(s, 251ul, " BK=", 5ul);
@@ -1224,11 +1379,13 @@ extern void sondeaprs_BEGIN(void)
    static int sondeaprs_init = 0;
    if (sondeaprs_init) return;
    sondeaprs_init = 1;
+   libsrtm_BEGIN();
    osi_BEGIN();
    aprsstr_BEGIN();
    contexts = 0;
    sondeaprs_udpsock = -1L;
    sondeaprs_commentfn[0UL] = 0;
+   sondeaprs_csvfilename[0UL] = 0;
    strncpy(sondeaprs_destcall,"APLWS2",100u);
    sondeaprs_via[0UL] = 0;
    strncpy(sondeaprs_sym,"/O",2u);

@@ -36,9 +36,11 @@
 #ifndef sondeaprs_H_
 #include "sondeaprs.h"
 #endif
+#ifndef libsrtm_H_
+#include "libsrtm.h"
+#endif
 
 /* decode RS92, RS41, SRS-C34, DFM06, M10 Radiosonde by OE5DXL */
-/*FROM rsc IMPORT initrsc, decodersc; */
 #define sondemod_CONTEXTLIFE 3600
 /* seconds till forget context after last heared */
 
@@ -421,6 +423,8 @@ static void Parms(void)
             sendquick = cnum;
          }
          else if (h[1U]=='t') osi_NextArg(sondeaprs_commentfn, 1025ul);
+         else if (h[1U]=='S') osi_NextArg(libsrtm_srtmdir, 1024ul);
+         else if (h[1U]=='C') osi_NextArg(sondeaprs_csvfilename, 1025ul);
          else if (h[1U]=='m' || h[1U]=='r') {
             sondeaprs_sendmon = h[1U]!='r';
             osi_NextArg(h, 1024ul);
@@ -462,9 +466,7 @@ static void Parms(void)
          }
          else if (h[1U]=='I') {
             osi_NextArg(mycall, 100ul);
-            if ((uint8_t)mycall[0U]<' ') {
-               Error("-I <mycall>", 12ul);
-            }
+            if ((uint8_t)mycall[0U]<' ') Error("-I <mycall>", 12ul);
          }
          else if (h[1U]=='s') {
             osi_NextArg(semfile, 1024ul);
@@ -485,7 +487,7 @@ static void Parms(void)
          }
          else {
             if (h[1U]=='h') {
-               osi_WrStr("sondemod(c) 1.2", 16ul);
+               osi_WrStr("sondemod(c) 1.21", 17ul);
                osi_WrStrLn(" multichannel decoder RS92, RS41, SRS-C34 DFM0x, \
 M10 Radiosondes", 65ul);
                osi_WrStrLn(" -A <meter>     at lower altitude use -B beacon t\
@@ -494,6 +496,8 @@ ime (meter) -A 1000", 69ul);
 ", 50ul);
                osi_WrStrLn(" -b <seconds>   high altitude minimum send interv\
 all -b 20", 59ul);
+               osi_WrStrLn(" -C <filename>  write decoded data in csv-format \
+to this file", 62ul);
                osi_WrStrLn(" -d             dao extension for 20cm APRS resol\
 ution instead of 18m", 70ul);
                osi_WrStrLn(" -F             trackfilter off, DO NOT USE THIS \
@@ -511,6 +515,10 @@ minutes if receiving gps (-R 240)", 83ul);
 ipt to download", 63ul);
                osi_WrStrLn(" -r <ip>:<port> send AXUDP -r 127.0.0.1:9001 use \
 udpgate4 or aprsmap as receiver", 81ul);
+               osi_WrStrLn(" -S <pathname>  directory with SRTM(1/3/30) Data \
+and WW15MGH.DAC file (egm96-Geoid)", 84ul);
+               osi_WrStrLn("                  for Overground Calculation belo\
+w -A <altitude>", 65ul);
                osi_WrStrLn(" -s <filename>  gps almanach sem format (DO NOT U\
 SE, not exact)", 64ul);
                osi_WrStrLn(" -T <minutes>   stop sending data after almanach \
@@ -3132,6 +3140,7 @@ extern int main(int argc, char **argv)
    if (sizeof(FILENAME)!=1024) X2C_ASSERT(0);
    if (sizeof(OBJNAME)!=9) X2C_ASSERT(0);
    if (sizeof(CALLSSID)!=11) X2C_ASSERT(0);
+   libsrtm_BEGIN();
    sondeaprs_BEGIN();
    gpspos_BEGIN();
    aprsstr_BEGIN();

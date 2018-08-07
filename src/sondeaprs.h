@@ -15,7 +15,7 @@
 
 typedef uint32_t sondeaprs_TIME;
 
-#define sondeaprs_VERSION "sondemod(c) 1.2"
+#define sondeaprs_VERSION "sondemod(c) 1.21"
 
 extern void sondeaprs_senddata(double, double, double,
                 double, double, double, double,
@@ -36,6 +36,8 @@ extern char sondeaprs_destcall[100];
 extern char sondeaprs_objname[100];
 
 extern char sondeaprs_commentfn[1025];
+
+extern char sondeaprs_csvfilename[1025];
 
 extern char sondeaprs_sym[2];
 
