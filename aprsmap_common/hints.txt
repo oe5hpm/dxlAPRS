@@ -933,9 +933,8 @@ Aprs tools, each should have a different
 SSID at Your Call like -1 -2 ...
  
 
-|7405 If You want overay Symbols Choose the
-Symbol and then click to edit and change
-the \ to the desired overlay character
+|7405 Choose a Symbol, avoid storm, fire and
+other alarm symbols as static beacon 
 
 |7406 choose a Symbol on the
 Table and click to enter
@@ -997,7 +996,7 @@ and ghost-tracks on Maps.
 
 |7446 Choose Rf-Ports to be gated to
 Internet if gateing is Enabled
-e.g. 124
+e.g. 124 for Port 1 2 and 4
 
 |7500 Enable/Disable Rf Port 1
 
@@ -1060,7 +1059,7 @@ Linux hint:Some Windowmakers seem to not
 free memory of old headline entries so,
 if RAM is small, use 0 or option off. 
 
-|7537 Configure Rf to Rf Digipeating
+|7537 Configure Rf to Rf and Net to Rf Digipeating
 
 |7540 Beacon/Object editor 
 
@@ -1575,12 +1574,6 @@ or modify and Restore or Add for a New digi Line.
 
 |8430 1st Value: Brightness of white Lines showing Rf-Paths
 in "Heard" and "+Rf" Mode.
-More Values may be applied for Altitude (srtm) Maps: 
-2nd: default Brightness of Radiorange "R" Image
-3rd: Contrast, 0 hard shaped, 30 flat area till 200
-for mountain area.
-Set 2 markers above Map and enter "R". More
-Contrast with Brightness of OSM-map near 0
 
 
 |8440 Enter Fontheight, Range 7..24 Pixel Fontwidth
