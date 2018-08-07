@@ -93,6 +93,8 @@ static char imagefn[1024];
 
 static char osmdir[1024];
 
+static char percentfn[1024];
+
 static int32_t xsize;
 
 static int32_t ysize;
@@ -122,6 +124,10 @@ static int32_t lasttilezoom;
 static int32_t lasttiledir;
 
 static int32_t draft;
+
+static int32_t lastpercent;
+
+static int32_t percenttyp;
 
 static COLOUR colour1;
 
@@ -499,6 +505,12 @@ static void Parms(void)
                Error("-p <srtm-folder-path>", 22ul);
             }
          }
+         else if (h[1U]=='X') {
+            osi_NextArg(percentfn, 1024ul);
+            if (percentfn[0U]==0 || percentfn[0U]=='-') {
+               Error("-X <progress-percent-filename>", 31ul);
+            }
+         }
          else if (h[1U]=='a') {
             osi_NextArg(h, 1024ul);
             aprsstr_loctopos(&posa, h, 1024ul);
@@ -848,6 +860,8 @@ tion off (on)", 63ul);
                  48ul);
                osi_WrStrLn("                                   (0..255) colou\
 r antenna 1 or reflection", 75ul);
+               osi_WrStrLn(" -X <filename>                     write % of com\
+pletion in this file", 70ul);
                osi_WrStrLn(" -x <size>                         Image size (60\
 0)", 52ul);
                osi_WrStrLn(" -y <size>                         Image size (40\
@@ -872,6 +886,12 @@ e empty tiles too", 67ul);
       X2C_ABORT();
    }
 } /* end Parms() */
+
+
+static char TwoTx(void)
+{
+   return antc>=0L;
+} /* end TwoTx() */
 
 
 static void makegammatab(void)
@@ -1142,7 +1162,8 @@ static float antdiagram(float azi, float ele)
    f = azi-(float)a;
    gh = diagram.hgain[a]*(1.0f-f)+diagram.hgain[(a+1UL)%360UL]*f;
                 /* interpolated hor */
-   azv = (float)fabs(azi*5.5555555555556E-3f-1.0f); /* front/back wight */
+   azv = (float)fabs(azi*5.5555555555556E-3f-1.0f);
+                /* front/back weight */
    e = ele+90.0f;
    a = (uint32_t)X2C_TRUNCC(e,0UL,X2C_max_longcard);
    f = e-(float)a;
@@ -1223,6 +1244,32 @@ static void postfilter(pIMAGE image0)
       if (y==tmp) break;
    } /* end for */
 } /* end postfilter() */
+
+
+static void percent(float t, float tmax, uint32_t frame)
+{
+   float p;
+   int32_t i;
+   int32_t fd;
+   char s[11];
+   p = X2C_DIVR(t,tmax)+(float)frame;
+   if (percenttyp==0L) p = p*25.0f;
+   else {
+      p = p*12.5f; /* two images */
+      if (percenttyp==2L) p = p+50.0f;
+   }
+   i = (int32_t)truncc(p);
+   if (i!=lastpercent) {
+      lastpercent = i;
+      fd = osi_OpenWrite(percentfn, 1024ul);
+      if (fd>=0L) {
+         aprsstr_IntToStr(lastpercent, 0UL, s, 11ul);
+         osi_WrBin(fd, (char *)s, 11u/1u, aprsstr_Length(s, 11ul));
+         osic_Close(fd);
+      }
+   }
+/*    WrInt(lastpercent, 3); WrStrLn("%"); */
+} /* end percent() */
 
 #define radiorange_PART 0.2
 
@@ -1520,6 +1567,7 @@ static int32_t Radiorange(pIMAGE image0, struct aprsstr_POSITION txpos,
       switch (frame) {
       case 0UL:
          xi = xi+goonframe(framestep, xi, xtx, yi, ytx);
+         percent(xi, (float)(image0->Len0-1), frame);
          if (xi>=(float)(image0->Len0-1)) {
             xi = 0.0f;
             ++frame;
@@ -1527,6 +1575,7 @@ static int32_t Radiorange(pIMAGE image0, struct aprsstr_POSITION txpos,
          break;
       case 1UL:
          yi = yi+goonframe(framestep, yi, ytx, xi, xtx);
+         percent(yi, (float)(image0->Len1-1), frame);
          if (yi>=(float)(image0->Len1-1)) {
             yi = (float)(image0->Len1-1);
             ++frame;
@@ -1534,6 +1583,7 @@ static int32_t Radiorange(pIMAGE image0, struct aprsstr_POSITION txpos,
          break;
       case 2UL:
          xi = xi+goonframe(framestep, xi, xtx, yi, ytx);
+         percent(xi, (float)(image0->Len0-1), frame);
          if (xi>=(float)(image0->Len0-1)) {
             xi = (float)(image0->Len0-1);
             ++frame;
@@ -1541,6 +1591,8 @@ static int32_t Radiorange(pIMAGE image0, struct aprsstr_POSITION txpos,
          break;
       default:;
          if (yi<0.0f) goto loop_exit;
+         percent((float)(image0->Len1-1)-yi, (float)(image0->Len1-1),
+                frame);
          yi = yi-goonframe(framestep, yi, ytx, xi, xtx);
          break;
       } /* end switch */
@@ -1734,7 +1786,7 @@ static void genpalette(void)
       if (diagram.coltabfn[0U] && diagram.coltabfn[0U]!='-') {
          /* read colours from file */
          m = readcolourfile(col, diagram.coltabfn, 1024ul);
-         if (antc>=0L) m = m/2UL;
+         if (TwoTx()) m = m/2UL;
          if (m==0UL) Error("no values in colour table", 26ul);
          if (pngdepth==2L && m>4UL || pngdepth==4L && m>16UL) {
             Error("too much colours for specified png size", 40ul);
@@ -1748,7 +1800,7 @@ static void genpalette(void)
                palette[i].b = (uint8_t)col[i].b;
             }
          } /* end for */
-         if (antc>=0L) {
+         if (TwoTx()) {
             /* 2 antennas */
             if (((pngdepth<2L || pngdepth==2L && m>2UL)
                 || pngdepth==4L && m>8UL) || m>128UL) {
@@ -2022,6 +2074,7 @@ extern int main(int argc, char **argv)
    osi_BEGIN();
    imagefn[0] = 0;
    osmdir[0] = 0;
+   percentfn[0] = 0;
    xsize = 600L;
    ysize = 400L;
    posinval(&posa);
@@ -2067,6 +2120,8 @@ extern int main(int argc, char **argv)
    diagram.azimuth = (-1.0f);
    diagram.azimuth2 = (-1.0f);
    Parms();
+   lastpercent = 0L;
+   percenttyp = 0L;
    genpalette();
    if (diagram.on) readantenna(diagram.gainfn, 1024ul, diagram.gainA);
    lasttilezoom = -1L;
@@ -2096,22 +2151,24 @@ extern int main(int argc, char **argv)
    if (libsrtm_srtmdir[0U]==0) Error("need SRTM Directory Path", 25ul);
    if (xsize<32L) Error("xsize too less", 15ul);
    if (ysize<32L) Error("ysize too less", 15ul);
-   if (antc>=0L && !posvalid(posb)) Error("-C needs -b", 12ul);
+   if (TwoTx() && !posvalid(posb)) Error("-C needs -b", 12ul);
    image2 = 0;
    X2C_DYNALLOCATE((char **) &image,1u,(tmp[0] = (size_t)ysize,
                 tmp[1] = (size_t)xsize,tmp),2u);
    if (image==0) Error("out of memory", 14ul);
-   if (antc>=0L) {
+   if (TwoTx()) {
+      percenttyp = 1L;
       if (verb) osi_Werr("antenna 1\012", 11ul);
       ret = Radiorange(image, posa, anta, antc, (uint32_t)contrast,
                 (uint32_t)draft, refraction);
       if (ret==-1L) Error("no altitude at antenne A", 25ul);
       X2C_DYNALLOCATE((char **) &image2,1u,(tmp[0] = (size_t)ysize,
                 tmp[1] = (size_t)xsize,tmp),2u);
-      if (image2==0) Error("out of memory", 14ul);
-      if (verb) {
-         osi_Werr("antenna 2\012", 11ul);
+      percenttyp = 2L;
+      if (image2==0) {
+         Error("out of memory", 14ul);
       }
+      if (verb) osi_Werr("antenna 2\012", 11ul);
       if (diagram.on) {
          diagram.azimuth = diagram.azimuth2;
          diagram.elevation = diagram.elevation2;
