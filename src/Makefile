@@ -302,7 +302,8 @@ profile : $(OBJ_PROFILE) $(OBJ_COMMON)
 	$(STRIP) profile $(STRIPFLAGS)
 
 radiorange: $(OBJ_RADIORANGE) $(OBJ_COMMON)
-	$(CC) $(LFLAGS) -o radiorange $(OBJ_RADIORANGE) $(OBJ_COMMON) -lm -lpng
+	$(CC) $(LFLAGS) -o radiorange $(OBJ_RADIORANGE) $(OBJ_COMMON) \
+	$(XLIBS) -lm
 	$(STRIP) radiorange $(STRIPFLAGS)
 
 diag:
