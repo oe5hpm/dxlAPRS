@@ -173,7 +173,7 @@ OBJ_APRSMAP	= \
 	jpgdec.o \
 	useri.o \
 	xosi.o \
-        libsrtm.o \
+	libsrtm.o \
 	pastewrapper.o
 
 OBJ_SDRTST	= tcpb.o sdr.o sdrtest.o
@@ -218,10 +218,10 @@ OBJS = \
 	$(OBJ_APRSMAP) \
 	$(OBJ_SDRTST) \
 	$(OBJ_SDRRADIO) \
-        $(OBJ_L2CAT)	\
-        $(OBJ_ADSB2APRS) \
-        $(OBJ_PROFILE) \
-        $(OBJ_RADIORANGE)
+	$(OBJ_L2CAT)	\
+	$(OBJ_ADSB2APRS) \
+	$(OBJ_PROFILE) \
+	$(OBJ_RADIORANGE)
 
 # ------------------- target make rules -------------------
 #                     -----------------
