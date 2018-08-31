@@ -1,0 +1,141 @@
+stages:
+  - build
+  - deploy
+
+before_script:
+
+linux_x86-32_build:
+    stage: build
+    image: hpm/ubuntu:xenial-16.04-32
+    tags:
+    - linux
+    before_script:
+    - apt-get update
+    - apt-get -y install libx11-dev libxext-dev zlib1g-dev libjpeg-dev libpng-dev
+    script:
+    - cd src
+    - PLATFORM=x86_32 make
+    artifacts:
+      paths:
+      - out-x86_32/*
+      expire_in: 2 week
+
+linux_x86-64_build:
+    stage: build
+    image: hpm/ubuntu:xenial-16.04-64
+    tags:
+    - linux
+    before_script:
+    - apt-get update
+    - apt-get -y install libx11-dev libxext-dev zlib1g-dev libjpeg-dev libpng-dev
+    script:
+    - cd src
+    - make
+    artifacts:
+      paths:
+      - out-x86_64/*
+      expire_in: 2 week
+
+linux_armv7_build:
+    stage: build
+    image: hpm/ubuntu:xenial-16.04-64
+    tags:
+    - linux
+    script:
+    - cd src
+    - CROSS_COMPILE=/opt/gcc-linaro-7.2.1-2017.11-x86_64_arm-linux-gnueabihf/bin/arm-linux-gnueabihf- PLATFORM=armv7hf make
+    artifacts:
+      paths:
+      - out-armv7hf/*
+      expire_in: 2 week
+
+linux_armv6_build:
+    stage: build
+    image: hpm/ubuntu:xenial-16.04-32
+    tags:
+    - linux
+    script:
+    - cd src
+    - CROSS_COMPILE=/opt/rpi-tools/arm-bcm2708/arm-bcm2708hardfp-linux-gnueabi/bin/arm-bcm2708hardfp-linux-gnueabi- PLATFORM=armv6 make
+    artifacts:
+      paths:
+      - out-armv6/*
+      expire_in: 2 week
+
+linux_armv6tce_build:
+    stage: build
+    image: hpm/ubuntu:xenial-16.04-32
+    tags:
+    - linux
+    script:
+    - cd src
+    - CROSS_COMPILE=/opt/rpi-tools/arm-bcm2708/arm-bcm2708hardfp-linux-gnueabi/bin/arm-bcm2708hardfp-linux-gnueabi- PLATFORM=armv6tce make
+    artifacts:
+      paths:
+      - out-armv6tce/*
+      expire_in: 2 week
+
+deploy-hamspirit.at:
+  stage: deploy
+  image: hpm/ubuntu:xenial-16.04-64
+  tags:
+    - linux
+  before_script:
+    - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
+    - mkdir -p ~/.ssh
+    - eval $(ssh-agent -s)
+    - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
+    - ssh-add <(echo "$STAGING_PRIVATE_KEY")
+  script:
+    - ci/deploy.sh
+  environment:
+    name: dxlaprs.hamspirit.at {production}
+    url: http://dxlaprs.hamspirit.at/branch-$CI_COMMIT_REF_NAME
+  only:
+    - master
+
+deploy-dev-hamspirit.at:
+  stage: deploy
+  image: hpm/ubuntu:xenial-16.04-64
+  tags:
+    - linux
+  before_script:
+    - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
+    - mkdir -p ~/.ssh
+    - eval $(ssh-agent -s)
+    - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
+    - ssh-add <(echo "$STAGING_PRIVATE_KEY")
+  script:
+    - ci/deploy.sh
+  environment:
+    name: dxlaprs.hamspirit.at {dev branch $CI_COMMIT_REF_NAME}
+    url: http://dxlaprs.hamspirit.at/branch-$CI_COMMIT_REF_NAME
+    on_stop: stop_dev-hamspirit.at
+  except:
+    - master
+  when: manual
+
+stop_dev-hamspirit.at:
+  stage: deploy
+  image: hpm/ubuntu:xenial-16.04-64
+  dependencies: []
+  variables:
+    GIT_STRATEGY: none
+  tags:
+    - linux
+  before_script:
+    - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
+    - mkdir -p ~/.ssh
+    - eval $(ssh-agent -s)
+    - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
+    - ssh-add <(echo "$STAGING_PRIVATE_KEY")
+  script:
+    - ssh -p 10022 aprsbuild@hamspirit.at "rm -r -f /home/aprsbuild/public_html/branch-$CI_COMMIT_REF_NAME"
+  when: manual
+  except:
+    - master
+  environment:
+    name: dxlaprs.hamspirit.at {dev branch $CI_COMMIT_REF_NAME}
+    url: http://dxlaprs.hamspirit.at/branch-$CI_COMMIT_REF_NAME
+    action: stop
+
