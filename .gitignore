@@ -1,5 +1,3 @@
-src/*.o
-src/*.a
 src/.cproject
 src/.project
 src/adsb2aprs
@@ -34,4 +32,4 @@ dxlAPRS_*.tgz
 src/arm-linux-*
 buildAll.sh
 intel-debug.tgz
-
+out-*/
