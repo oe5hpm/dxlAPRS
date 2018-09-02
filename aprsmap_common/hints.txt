@@ -230,7 +230,7 @@ and are passed to the map downloader where URLs
 to the names are associated. First entry is used
 at program start. Sort entries by "Edit" and "Add".
 First enabled  3 lines by shortcut "7" "8" "9"
-Rotate through enabled Maps wit "6".
+Rotate through enabled Maps with "6".
 else "Tools > Choose Map"
 
 |540 Choose Maptype, Reload Map You see
@@ -1600,7 +1600,7 @@ Altitude (if avaliable) from a clicked
 Object will be added
 For calculating RF-Illumination apply a Line:
 <m> <azimuth 0..360> <elevation -90..90>
-<sum of tx,rx Antenna Gain + tx Power in dBi>
+<sum of tx,rx Antenna Gain + tx Power in dBm>
 <Antennadiagram Filename>
 eg. "10 270 0 74 antennas/myantenne.ant"
 
