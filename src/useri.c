@@ -1198,7 +1198,7 @@ f 22050 -C 0 -p /dev/ttyS0 0 -M 0 -t 250 -T 6 -L 127.0.0.1:9002:9001 -m 0",
                 0, 417UL);
    initc(useri_fRAWFILT, "Raw Frame Filter", 17ul, useri_cBLIST, "", 1ul, 0,
                 418UL);
-   initc(useri_fMUSTBECALL, "Callcheck", 10ul, useri_cBOOL, "", 1ul, 1,
+   initc(useri_fMUSTBECALL, "Callcheck", 10ul, useri_cBOOL, "", 1ul, 0,
                 420UL);
    initc(useri_fGEOBRIGHTNESS, "Brightness", 11ul, useri_cLINE, "30", 3ul, 0,
                  422UL);
