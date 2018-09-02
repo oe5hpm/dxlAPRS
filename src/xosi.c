@@ -226,107 +226,80 @@ extern void xosi_allocxbuf(uint32_t xsize, uint32_t ysize)
 } /* end allocxbuf() */
 
 
-static int32_t MakeMainWin(char winname[], uint32_t winname_len,
-                char iconname[], uint32_t iconname_len,
-                uint32_t xsizeh, uint32_t ysizeh)
+static int32_t MakeMainWin(
+		char winname[], uint32_t winname_len,
+		char iconname[], uint32_t iconname_len,
+		uint32_t xsizeh, uint32_t ysizeh)
 {
-   struct XWIN * anonym;
-   int32_t MakeMainWin_ret;
-   X2C_PCOPY((void **)&winname,winname_len);
-   X2C_PCOPY((void **)&iconname,iconname_len);
-   { /* with */
-      struct XWIN * anonym = &mainwin;
-      anonym->myhint.height = (int32_t)ysizeh;
-      anonym->myhint.width = (int32_t)xsizeh;
-      anonym->myhint.x = 1L;
-      anonym->myhint.y = 1L;
-      anonym->myhint.flags = 0xCUL;
-      /* Connect to the X server */
-      dis = XOpenDisplay("");
-      if (dis==0) {
-         osi_WrStrLn("Couldnt open display", 21ul);
-         MakeMainWin_ret = -1L;
-         goto label;
-      }
-      anonym->screen = DefaultScreen(dis);
-      /*
-         Black:= Xlib.BlackPixel(dis, screen);
-         White:= Xlib.WhitePixel(dis, screen);
-      */
-      /* Create a window */
-      anonym->win = XCreateSimpleWindow(dis, DefaultRootWindow(dis),
-                anonym->myhint.x, anonym->myhint.y,
-                (uint32_t)anonym->myhint.width,
-                (uint32_t)anonym->myhint.height, 1UL, 0UL, 0UL);
-      if (anonym->win==0UL) {
-         osi_WrStrLn("Couldnt open window", 20ul);
-         MakeMainWin_ret = -1L;
-         goto label;
-      }
-      wclose = XInternAtom(dis, "WM_DELETE_WINDOW", 0);
-      XSetWMProtocols(dis, anonym->win, &wclose, 1L);
-      anonym->pvis = DefaultVisual(dis, 0L);
-      if (anonym->pvis==0) {
-         osi_WrStrLn("no visual", 10ul);
-         MakeMainWin_ret = -1L;
-         goto label;
-      }
-      XSetStandardProperties(dis, anonym->win, winname, iconname, 0UL, 0, 0L,
-                 &anonym->myhint);
-      /*
-       (* Create a graphic context *)
-        gc:= XCreateGC(dis, win, 0, NIL);
-      */
-      anonym->redmask = (uint32_t)anonym->pvis->red_mask;
-      anonym->greenmask = (uint32_t)anonym->pvis->green_mask;
-      anonym->bluemask = (uint32_t)anonym->pvis->blue_mask;
-      anonym->redshift = MaxBit(anonym->redmask)-8L;
-      anonym->greenshift = MaxBit(anonym->greenmask)-8L;
-      anonym->blueshift = MaxBit(anonym->bluemask)-8L;
-      anonym->bitperpixel = (uint32_t)
-                MaxBit(anonym->redmask|anonym->greenmask|anonym->bluemask);
-      /*
-        xbuf0size:=SIZE(XPIX)*ysizeh*xsizeh;
-        IF bitperpixel>16 THEN xbuf0size:=xbuf0size*2 END;
-        ALLOCATE(xbuf0, xbuf0size);
-        IF xbuf0=NIL THEN WrStrLn("initx: out of memory"); RETURN -1 END;
-      */
-      anonym->ximage0 = 0;
-      allocxbufw(&mainwin, xsizeh, ysizeh);
-      /*
-        ximage0:=Xlib.XCreateImage(dis, pvis, bitperpixel, ZPixmap, 0, xbuf0,
-                 xsizeh, ysizeh, 32, 0);
-      */
-      /*
-      WrHex(pvis^.blue_mask,9);
-      WrHex(pvis^.green_mask,9);
-      WrHex(pvis^.red_mask,9);
-      WrCard(pvis^.bits_per_rgb,9);
-      WrCard(bitperpixel,4);
-      WrCard(xsizeh,9);
-      WrCard(ysizeh,9);
-      WrLn;
-      */
-      /*Xlib.XSelectInput(dis, Xlib.RootWindow(dis, mainwin.screen),
-                StructureNotifyMask); */
-      XSelectInput(dis, anonym->win, 0x2804FUL);
-      XMapWindow(dis, anonym->win);
-      /* Bring the window to the front */
-      /*    Xlib.XMapRaised(dis, win); */
-      /*
-        XSync(dis, 0);
-        XClearArea(dis,win,0,0,xsizeh+1,ysizeh+1,FALSE);
-      */
-      disfd = ConnectionNumber(dis);
-      xosi_pulling = 0;
-      cursorset = 0;
-      MakeMainWin_ret = 0L;
-   }
-   label:;
-   X2C_PFREE(winname);
-   X2C_PFREE(iconname);
-   return MakeMainWin_ret;
-} /* end MakeMainWin() */
+	int32_t MakeMainWin_ret;
+	X2C_PCOPY((void **)&winname,winname_len);
+	X2C_PCOPY((void **)&iconname,iconname_len);
+	struct XWIN *anonym = &mainwin;
+
+	anonym->myhint.height = (int32_t)ysizeh;
+	anonym->myhint.width = (int32_t)xsizeh;
+	anonym->myhint.x = 1L;
+	anonym->myhint.y = 1L;
+	anonym->myhint.flags = 0xCUL;
+
+	/* Connect to the X server */
+	dis = XOpenDisplay("");
+	if (dis == 0) {
+		osi_WrStrLn("Couldnt open display", 21ul);
+		MakeMainWin_ret = -1L;
+		goto label;
+	}
+	anonym->screen = DefaultScreen(dis);
+
+	/* Create a window */
+	anonym->win = XCreateSimpleWindow(dis, DefaultRootWindow(dis),
+	anonym->myhint.x, anonym->myhint.y,
+	(uint32_t)anonym->myhint.width,
+	(uint32_t)anonym->myhint.height, 1UL, 0UL, 0UL);
+	if (anonym->win==0UL) {
+		osi_WrStrLn("Couldnt open window", 20ul);
+		MakeMainWin_ret = -1L;
+		goto label;
+	}
+	wclose = XInternAtom(dis, "WM_DELETE_WINDOW", 0);
+	XSetWMProtocols(dis, anonym->win, &wclose, 1L);
+	anonym->pvis = DefaultVisual(dis, 0L);
+	if (anonym->pvis == 0) {
+		osi_WrStrLn("no visual", 10ul);
+		MakeMainWin_ret = -1L;
+		goto label;
+	}
+	XSetStandardProperties(dis,
+			       anonym->win,
+			       winname, iconname,
+			       0UL, 0, 0L,
+			       &anonym->myhint);
+
+	anonym->redmask = (uint32_t)anonym->pvis->red_mask;
+	anonym->greenmask = (uint32_t)anonym->pvis->green_mask;
+	anonym->bluemask = (uint32_t)anonym->pvis->blue_mask;
+	anonym->redshift = MaxBit(anonym->redmask)-8L;
+	anonym->greenshift = MaxBit(anonym->greenmask)-8L;
+	anonym->blueshift = MaxBit(anonym->bluemask)-8L;
+	anonym->bitperpixel = (uint32_t)MaxBit(anonym->redmask |
+					       anonym->greenmask |
+					       anonym->bluemask);
+	anonym->ximage0 = 0;
+	allocxbufw(&mainwin, xsizeh, ysizeh);
+	XSelectInput(dis, anonym->win, 0x2804FUL);
+	XMapWindow(dis, anonym->win);
+
+	disfd = ConnectionNumber(dis);
+	xosi_pulling = 0;
+	cursorset = 0;
+	MakeMainWin_ret = 0L;
+
+	label:;
+	X2C_PFREE(winname);
+	X2C_PFREE(iconname);
+
+	return MakeMainWin_ret;
+}
 
 
 extern void xosi_closewin(void)
