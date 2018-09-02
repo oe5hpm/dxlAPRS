@@ -409,8 +409,7 @@ extern void xosi_Umlaut(char c[], uint32_t c_len)
 
 extern void xosi_paste(void)
 {
-   int32_t i;
-   uint32_t cw;
+   Window cw;
    uint32_t pa;
    /*
      pb:=Xlib.XFetchBytes(dis, len);
@@ -424,7 +423,7 @@ extern void xosi_paste(void)
    cw = XGetSelectionOwner(dis, 1UL);
    if (cw) {
       pa = XInternAtom(dis, "STRING", 0);
-      i = XConvertSelection(dis, 1UL, pa, pa, mainwin.win, 0UL);
+      XConvertSelection(dis, 1UL, pa, pa, mainwin.win, 0UL);
    }
 } /* end paste() */
 
@@ -443,7 +442,6 @@ typedef uint8_t * CP;
 static void sendcopypasteevent(XSelectionRequestEvent xreq)
 {
    XSelectionEvent ev;
-   int32_t ret;
    CP cp;
    /*WrInt(xreq.requestor, 15); WrInt(xreq.selection, 15); */
    /*WrInt(xreq.target, 15); WrInt(xreq.property, 15); WrInt(xreq.time, 15);
@@ -463,7 +461,7 @@ static void sendcopypasteevent(XSelectionRequestEvent xreq)
    ev.selection = xreq.selection;
    ev.target = xreq.target;
    ev.time = xreq.time;
-   ret = XSendEvent(xreq.display, xreq.requestor, 1L, 0L, (PtrXEvent) &ev);
+   XSendEvent(xreq.display, xreq.requestor, 1L, 0L, (PtrXEvent) &ev);
 } /* end sendcopypasteevent() */
 
 /*
@@ -699,7 +697,6 @@ extern void xosi_CheckProg(struct xosi_PROCESSHANDLE * chpid)
 extern void xosi_StartProg(char name[], uint32_t name_len,
                 struct xosi_PROCESSHANDLE * chpid)
 {
-   int32_t e;
    char pgmname[1025];
    char argt[100][1025];
    X2C_pCHAR * args;
@@ -754,7 +751,7 @@ extern void xosi_StartProg(char name[], uint32_t name_len,
       } /* end for */
       /*WrStrLn("child start"); */
       args = (X2C_pCHAR *)arga;
-      e = execv(pgmname, args);
+      execv(pgmname, args);
       /*WrStrLn("child end"); */
       X2C_ABORT();
    }
@@ -775,7 +772,6 @@ extern void xosi_Eventloop(uint32_t timeout)
    aprsdecode_pTCPSOCK acttmp;
    aprsdecode_pTCPSOCK acttcp;
    int32_t i;
-   int32_t ret;
    uint32_t tus;
    uint32_t ts;
    uint32_t t;
@@ -791,7 +787,7 @@ extern void xosi_Eventloop(uint32_t timeout)
    }
    ts = 0UL;
    tus = timeout;
-   ret = selectrwt(&ts, &tus);
+   selectrwt(&ts, &tus);
    timesum += timeout-tus;
    if (timesum>=timeout) {
       useri_timerevent();
@@ -812,7 +808,7 @@ extern void xosi_Eventloop(uint32_t timeout)
    acttcp = aprsdecode_tcpsocks;
    while (acttcp) {
       if (acttcp->fd>=0L && issetw((uint32_t)acttcp->fd)) {
-         ret = aprsdecode_tcpout(acttcp);
+         aprsdecode_tcpout(acttcp);
       }
       if (acttcp->fd>=0L && issetr((uint32_t)acttcp->fd)) {
          aprsdecode_tcpin(acttcp);
