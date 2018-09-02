@@ -428,6 +428,10 @@ If one or more Messages click to view
 not transmitting at this position but set there
 from another Station. Dimm to 0 to switch off. 
 
+|1502 Brightness of Map is stored for each Map-Type.
+Gamma (Contrast) of each Map-Type may be modified
+in Tools/Add Maptypes [mapname gamma brightness]
+
 |1503 Dimm to 1% to show waypoints only
 
 |1504 Fit image output to Your Monitor,
@@ -1621,8 +1625,10 @@ The zone is calculated 3-dimensional
 to see obstacles under and beside of
 Radiation
 For calculating RF-Illumination apply
-the Line: <MHz> <min dBi> <max dBi>
-eg. "2400 -90 -60"
+the Line: <MHz> <min dBm> <max dBm>
+so min to max dBm at rx antenna will
+be mapped to min..max white or colour
+luminosity. eg. "2400 -90 -60"
 
 |8518 Refraction Factor of Atmosphere
 0.00 in Vacuum
