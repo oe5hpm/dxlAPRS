@@ -5,7 +5,10 @@ body {
 	/*background:-moz-linear-gradient(top,#DDD,#FFF); /* Firefox */
 	/*background:-webkit-gradient(linear,left top,left bottom,from(#DDD),to(#FFF)); /* Chrome, Safari */
 	/*filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#EEEEEE',endColorstr='#FFFFFF'); /* Internet Explorer */
-	background-repeat:no-repeat;
+	background-repeat: no-repeat;
+	background-color: #FFF;
+	color: #000;
+	background-image: url(bg.png);
 }
 
 
@@ -26,15 +29,53 @@ h3 {
 	-webkit-border-radius: 5px;
 	border: 1px solid #999999;
 	color: #DDD;
-	font-size: 10px;
-	padding-top: 5px;
-	padding-bottom: 5px;
+	font-size: 16px;
+	padding-top: 10px;
+	padding-bottom: 10px;
 	margin-top: 5px;
-	margin-bottom: 5px;
+	margin-bottom: 10px;
 }
 
 table {
-	font-size: 10px;
+	font-size: 11px;
+}
+table a {
+	color: #009;
+}
+
+table td a[target="_blank"]:after {
+    /*content: url("external.gif");*/
+    margin: 0 0 0 5px;
+}
+th {
+	text-shadow: 0px -1px 1px #333;
+	text-align: left;
+	background-color: #D5C0B5;
+	background: -moz-linear-gradient(top,
+  #FFFFFF 0,
+  #D5C0B5 40%,
+  #D5C0B5 100%);
+	background: -webkit-gradient(linear,
+  left top, left bottom,
+  color-stop(0, #FFFFFF),
+  color-stop(0.4, #D5C0B5),
+  color-stop(1, #D5C0B5));
+	border-radius: 5px;
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
+	border: 1px solid #999999;
+	color: #fff;
+	font-size: 13px;
+	font-weight: bold;
+	height: 20px;
+	margin: 0;
+}
+th a {
+	color: #FFC;
+	text-decoration: none;
+}
+th a:hover {
+	text-decoration: underline;
 }
 
 #mheard td {
@@ -44,35 +85,35 @@ table {
 	padding-bottom: 2px;
 }
 #mheard table {
-	width: 780px;
+	width: 900px;
 }
 .nav {
 	font-size: 11px;
 	background-color: #EFEFEF;
 	padding-top: 4px;
 	font-weight: bold;
-	padding-bottom: 3px;
-	margin-bottom: 3px;
+	padding-bottom: 4px;
+	margin-bottom: 5px;
 }
 .nav a:link ,.nav a:visited{
 	color: #036;
 	background-color: #DDD;
 	border: 1px dotted #999;
-	margin-right: 10px;
+	margin-right: 15px;
 	text-decoration: none;
 	padding-top: 3px;
-	padding-right: 5px;
+	padding-right: 8px;
 	padding-bottom: 3px;
-	padding-left: 5px;
+	padding-left: 8px;
 }
 .nav a:active ,.nav a:hover {
 	color: #03C;
 	background-color: #EEE;
 	text-decoration: underline;
 	padding-top: 3px;
-	padding-right: 5px;
+	padding-right: 8px;
 	padding-bottom: 3px;
-	padding-left: 5px;
+	padding-left: 8px;
 }
 #connections {
 	background-color: #FFF;
@@ -107,14 +148,14 @@ table {
   color-stop(0, #FFFFFF),
   color-stop(0.4, #D5C0B5),
   color-stop(1, #D5C0B5));
-	border-radius: 3px;
-	-moz-border-radius: 3px;
-	-webkit-border-radius: 3px;
+	border-radius: 5px;
+	-moz-border-radius: 5px;
+	-webkit-border-radius: 5px;
 	border: 1px solid #999999;
 	color: #fff;
-	font-size: 11px;
+	font-size: 14px;
 	font-weight: bold;
-	height: 15px;
+	height: 30px;
 	text-indent: 5px; margin: 0;
 }
 .tab-con-udp {
@@ -150,9 +191,9 @@ table {
 	-webkit-border-radius: 5px;
 	border: 1px solid #999999;
 	color: #fff;
-	font-size: 11px;
+	font-size: 14px;
 	font-weight: bold;
-	height: 15px;
+	height: 30px;
 	text-indent: 5px; margin: 0;
 }
 .tab-msg-body {
@@ -181,10 +222,8 @@ table {
 	-webkit-border-radius: 5px;
 	border: 1px solid #999999;
 	color: #fff;
-	font-size: 11px;
+	font-size: 14px;
 	font-weight: bold;
-	height: 15px;
+	height: 30px;
 	text-indent: 5px; margin: 0;
 }
-
-
