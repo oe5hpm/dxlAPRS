@@ -98,6 +98,8 @@ deploy-github:
   stage: deploy
   image: hpm/ubuntu:xenial-16.04-64
   dependencies: []
+  variables:
+    GIT_STRATEGY: clone
   tags:
     - linux
   before_script:
