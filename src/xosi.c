@@ -404,7 +404,7 @@ static void sendcopypasteevent(XSelectionRequestEvent xreq)
 		ev.property = 0;
 	}
 
-	ev.type = 31;
+	ev.type = SelectionNotify;
 	ev.serial = xreq.serial;
 	ev.send_event = 1;
 	ev.display = xreq.display;
