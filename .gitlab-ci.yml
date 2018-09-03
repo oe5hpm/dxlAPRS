@@ -93,6 +93,7 @@ deploy-hamspirit.at:
     url: http://dxlaprs.hamspirit.at/branch-$CI_COMMIT_REF_NAME
   only:
     - master
+  when: manual
 
 deploy-github:
   stage: deploy
