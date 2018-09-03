@@ -94,6 +94,28 @@ deploy-hamspirit.at:
   only:
     - master
 
+deploy-github:
+  stage: deploy
+  image: hpm/ubuntu:xenial-16.04-64
+  dependencies: []
+  tags:
+    - linux
+  before_script:
+    - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
+    - mkdir -p ~/.ssh
+    - eval $(ssh-agent -s)
+    - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
+    - ssh-add <(echo "$GITHUB_PRIVATE_KEY")
+  script:
+    - git remote add github git@github.com:oe5hpm/dxlAPRS.git
+    - git push github master
+  environment:
+    name: dxlaprs.hamspirit.at {production}
+    url: https://github.com/oe5hpm/dxlAPRS
+  only:
+    - master
+  when: manual
+
 deploy-dev-hamspirit.at:
   stage: deploy
   image: hpm/ubuntu:xenial-16.04-64
