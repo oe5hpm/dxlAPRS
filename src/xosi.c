@@ -79,12 +79,7 @@ struct XWIN {
 	uint32_t ysizen;
 };
 
-struct _0 {
-	uint16_t *Adr;
-	size_t Len0;
-};
-
-static struct _0 *xbuf016;
+static void *paintbuf;
 static int32_t xbuf0size;
 static uint32_t xbufxsize;
 static uint32_t xbufysize;
@@ -151,8 +146,9 @@ static void allocxbufw(struct XWIN *w, uint32_t xsizeh, uint32_t ysizeh)
 
 	if (w->ximage0) {
 		useri_debugmem.screens -= (uint32_t)xbuf0size;
-		osic_free((char **)&xbuf016, (uint32_t)xbuf0size);
-		xbuf016 = 0;
+		if (paintbuf)
+			free(paintbuf);
+		paintbuf = NULL;
 		w->ximage0->data = 0;
 		XDestroyImage(w->ximage0); /* xbuf0 deallocated too */
 	}
@@ -160,20 +156,19 @@ static void allocxbufw(struct XWIN *w, uint32_t xsizeh, uint32_t ysizeh)
 	xbuf0size = 2 * ysizeh * xsizeh;
 	if (w->bitperpixel > 16)
 		xbuf0size = xbuf0size * 2;
-	osic_alloc((char **)&xbuf016, (uint32_t)xbuf0size);
-
-	useri_debugmem.req = (uint32_t)xbuf0size;
-	useri_debugmem.screens += useri_debugmem.req;
-	if (xbuf016 == 0) {
+	paintbuf = malloc(xbuf0size);
+	if (paintbuf == NULL) {
 		fprintf(stderr, "initx: out of memory!\n");
 		useri_wrheap();
 		X2C_ABORT();
 	}
+	useri_debugmem.req = (uint32_t)xbuf0size;
+	useri_debugmem.screens += useri_debugmem.req;
 	w->ximage0 = XCreateImage(dis,
 				  w->pvis,
 				  w->bitperpixel,
 				  2, 0,
-				  (char *)xbuf016, xsizeh, ysizeh,
+				  paintbuf, xsizeh, ysizeh,
 				  32, 0);
 	if (w->ximage0 == 0) {
 		fprintf(stderr, "XCreateImage failed!\n");
@@ -277,7 +272,7 @@ extern int32_t xosi_InitX(
 {
 	int rc;
 
-	xbuf016 = 0;
+	paintbuf = NULL;
 	rc = MakeMainWin(winname,
 			 winname_len, iconname, iconname_len,
 			 xsizeh, ysizeh);
@@ -294,7 +289,7 @@ extern void xosi_getscreenbuf(
 		char **adr,
 		uint32_t *xsize, uint32_t *ysize, uint32_t *incadr)
 {
-	*adr = (char *)xbuf016;
+	*adr = (char *)paintbuf;
 	*xsize = xbufxsize;
 	*ysize = xbufysize;
 	if (mainwin.bitperpixel <= 16)
