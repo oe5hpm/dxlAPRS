@@ -215,7 +215,7 @@ TARGETS += \
 	$(OUT)radiorange
 
 ifneq ($(HOSTOS), Darwin)
-	$(OUT)TARGETS += l2cat
+	TARGETS += $(OUT)l2cat
 endif
 
 OBJS = \
