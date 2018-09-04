@@ -9,5 +9,5 @@ wget http://oe5dxl.ampr.at/aprs/osm-mapper/bin/NEW.txt -O aprsmap_common/NEW.txt
 wget http://oe5dxl.ampr.at/aprs/udpbox.txt -O dxlAPRS_common/udpbox.txt
 wget http://oe5dxl.ampr.at/aprs/osm-mapper/bin/hints.txt -O aprsmap_common/hints.txt
 wget http://oe5dxl.ampr.at/aprs/osm-mapper/bin/help.txt -O aprsmap_common/help.txt
-wget http://oe5dxl.ampr.at/aprs/osm-mapper/bin/osm/poi.txt -O aprsmap_common/poi.txt
+wget http://oe5dxl.ampr.at/aprs/osm-mapper/bin/osm/poi.txt -O aprsmap_common/osm/poi.txt
 
