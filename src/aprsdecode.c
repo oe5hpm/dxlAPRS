@@ -1585,7 +1585,7 @@ static void beaconmacros(char s[], uint32_t s_len,
                aprsstr_Append(ns, 256ul, "\\\\", 3ul);
             }
             else if (s[i]=='v') {
-               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.74", 17ul);
+               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.75", 17ul);
             }
             else if (s[i]=='l') {
                if (aprstext_getmypos(&pos)) {
@@ -3296,15 +3296,18 @@ extern void aprsdecode_extractbeacon(char raw[], uint32_t raw_len,
          aprsstr_IntToStr((int32_t)aprsdecode_trunc((float)
                 dat.speed*1.852f), 1UL, s, 1000ul);
          useri_AddConfLine(useri_fRBSPEED, 1U, s, 1000ul);
-         if (dat.course>0UL) {
+         s[0] = 0;
+         if (dat.course>0UL && dat.course<=360UL) {
             aprsstr_IntToStr((int32_t)(dat.course%360UL), 1UL, s, 1000ul);
-            useri_AddConfLine(useri_fRBDIR, 1U, s, 1000ul);
          }
+         useri_AddConfLine(useri_fRBDIR, 1U, s, 1000ul);
       }
       if (dat.altitude<X2C_max_longint) {
          aprsstr_IntToStr(dat.altitude, 1UL, s, 1000ul);
       }
-      else s[0U] = 0;
+      else {
+         s[0U] = 0;
+      }
       useri_AddConfLine(useri_fRBALT, 1U, s, 1000ul);
       s[1U] = 0;
       s[0U] = 'b';
@@ -4793,7 +4796,7 @@ static void settempspeed(aprsdecode_pOPHIST op,
          op->temptime = aprsdecode_systime;
          op->lastinftyp = 100U;
       }
-      if (dat.course>=1UL && dat.course<=360UL) {
+      if (dat.course>0UL && dat.course<=360UL) {
          op->lastinftyp = (uint8_t)(110UL+(dat.course%360UL)/4UL);
          op->temptime = aprsdecode_systime;
       }
@@ -4811,7 +4814,7 @@ static void settempspeed(aprsdecode_pOPHIST op,
                 -32768,32767);
       if (dat.speed>0UL && dat.course>180UL) op->drawhints |= 0x1U;
       if (dat.course<=360UL) {
-         op->lastinftyp = (uint8_t)(10UL+dat.course/4UL);
+         op->lastinftyp = (uint8_t)(10UL+(dat.course%360UL)/4UL);
       }
       else op->lastinftyp = 1U;
    }
@@ -4950,6 +4953,7 @@ extern int32_t aprsdecode_Stoframe(aprsdecode_pOPHIST * optab,
    same = 0;
    if (logmode) {
       /* refcnt used as raw string hash */
+      if (op->lastfrp && op->lastfrp->time0>=stime) op->lastfrp = 0;
       if (op->lastfrp) {
          /* quick write no compress mode */
          frame = 0;
@@ -5063,6 +5067,7 @@ extern int32_t aprsdecode_Stoframe(aprsdecode_pOPHIST * optab,
       frame->next = lastf->next; /* not nil if insert older frame */
       lastf->next = frame; /* append waypoint */
    }
+   if (op->lastfrp) op->lastfrp = frame;
    if (dat.hrtlen>0UL) inserthrt(dat, &op, frame->nodraw);
    if (!logmode) {
       /* read log check whole track at end */
@@ -5734,7 +5739,7 @@ static char tcpconn(aprsdecode_pTCPSOCK * sockchain, int32_t f)
          aprsstr_Append(h, 512ul, s, 100ul);
       }
       aprsstr_Append(h, 512ul, " vers ", 7ul);
-      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.74", 17ul);
+      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.75", 17ul);
       appfilter(h, 512ul, 0);
       /*    IF filter[0]<>0C THEN Append(h, " filter ");
                 Append(h, filter) END; */

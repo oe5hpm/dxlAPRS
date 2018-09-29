@@ -62,9 +62,9 @@ typedef uint32_t aprsdecode_SET256[8];
 
 extern aprsdecode_SET256 aprsdecode_SYMTABLE;
 
-#define aprsdecode_VERSNUM "0.74"
+#define aprsdecode_VERSNUM "0.75"
 
-#define aprsdecode_VERS "aprsmap(cu) 0.74"
+#define aprsdecode_VERS "aprsmap(cu) 0.75"
 
 typedef char aprsdecode_MONCALL[9];
 

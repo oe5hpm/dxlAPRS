@@ -555,7 +555,7 @@ extern float libsrtm_egm96(struct aprsstr_POSITION pos,
    if (path[0]) aprsstr_Append(path, 1025ul, "/", 2ul);
    aprsstr_Append(path, 1025ul, "WW15MGH.DAC", 12ul);
    fd = osi_OpenRead(path, 1025ul);
-   *ok0 = fd>=0L;
+   *ok0 = fd!=-1L;
    g = 0.0f;
    if (*ok0) {
       pos.lat = 90.0f-pos.lat*5.729577951472E+1f;

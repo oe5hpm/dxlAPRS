@@ -1433,7 +1433,10 @@
 
 
 
+12.07.2018 (Ver 0.75)
 
++ Fehler beim Logfile importieren und nach Uhrzeit sortieren behoben.
+ 
 
 
 

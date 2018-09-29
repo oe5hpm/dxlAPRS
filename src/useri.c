@@ -670,7 +670,7 @@ static void startcheckvers(void)
       s[0] = 0;
       i = 0L;
       while (i<=1023L && h[i]) {
-         if (h[i]=='$') aprsstr_Append(s, 1024ul, "0.74", 5ul);
+         if (h[i]=='$') aprsstr_Append(s, 1024ul, "0.75", 5ul);
          else aprsstr_Append(s, 1024ul, (char *) &h[i], 1u/1u);
          ++i;
       }
@@ -4249,7 +4249,7 @@ static void helpmenu(void)
    /*  addline(menu, "Shortcuts", CMDSHORTCUTLIST, MINH*6); */
    addline(menu, "Check Version", 14ul, "\305", 2ul, 607UL);
    addline(menu, "Helptext", 9ul, "\305", 2ul, 610UL);
-   addline(menu, "aprsmap(cu) 0.74 by OE5DXL ", 28ul, " ", 2ul, 605UL);
+   addline(menu, "aprsmap(cu) 0.75 by OE5DXL ", 28ul, " ", 2ul, 605UL);
    setunderbar(menu, 37L);
    menu->ysize = menu->oldknob*menu->yknob;
    menu->oldknob = 0UL;
@@ -8186,6 +8186,7 @@ static void escmenus(void)
    aprsdecode_click.chkmaps = 0;
    aprsdecode_click.onesymbol.tab = 0;
    aprsdecode_click.abort0 = 1;
+   useri_configbool(useri_fGEOPROFIL, 0);
    if (panowin.on) closepano();
 } /* end escmenus() */
 
