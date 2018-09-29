@@ -101,6 +101,8 @@ typedef struct _0 * pPATH;
 
 static imagetext_pIMAGE image;
 
+static char csvfn[1024];
+
 static char imagefn[1024];
 
 static int32_t xsize;
@@ -367,6 +369,12 @@ static void Parms(void)
                Error("-i <imagefilename>", 19ul);
             }
          }
+         else if (h[1U]=='c') {
+            osi_NextArg(csvfn, 1024ul);
+            if (csvfn[0U]==0 || csvfn[0U]=='-') {
+               Error("-i <csv-filename>", 18ul);
+            }
+         }
          else if (h[1U]=='x') {
             osi_NextArg(h, 1024ul);
             if ((!aprsstr_StrToInt(h, 1024ul,
@@ -497,6 +505,8 @@ static void Parms(void)
  ground [m] (10)", 66ul);
                osi_WrStrLn(" -b <lat> <long> | [locator]       Position B lat\
  long (degrees) or qth locator", 80ul);
+               osi_WrStrLn(" -c <filename>                     csv File Name",
+                 49ul);
                osi_WrStrLn(" -F <font>                         Font Size (1) \
 1: 6x10, 2: 8x14, 3: 10x20", 76ul);
                osi_WrStrLn(" -f <MHz>                          Frequency for \
@@ -538,6 +548,48 @@ utput", 55ul);
       X2C_ABORT();
    }
 } /* end Parms() */
+
+
+static void wrcsv(void)
+{
+   int32_t i;
+   int32_t f;
+   char sl[1024];
+   char s[1024];
+   struct PATH * anonym;
+   int32_t tmp;
+   f = osi_OpenWrite(csvfn, 1024ul);
+   if (f<0L) {
+      strncpy(s,"Cannot write ",1024u);
+      aprsstr_Append(s, 1024ul, csvfn, 1024ul);
+      Error(s, 1024ul);
+   }
+   tmp = linksize-1L;
+   i = 0L;
+   if (i<=tmp) for (;; i++) {
+      { /* with */
+         struct PATH * anonym = &path->Adr[i];
+         aprsstr_IntToStr(framexl+i, 1UL, sl, 1024ul);
+         aprsstr_Append(sl, 1024ul, ",", 2ul);
+         aprsstr_FixToStr((float)(X2C_DIVL(anonym->pos.lat,
+                1.7453292519444E-2)), 6UL, s, 1024ul);
+         aprsstr_Append(sl, 1024ul, s, 1024ul);
+         aprsstr_Append(sl, 1024ul, ",", 2ul);
+         aprsstr_FixToStr((float)(X2C_DIVL(anonym->pos.long0,
+                1.7453292519444E-2)), 6UL, s, 1024ul);
+         aprsstr_Append(sl, 1024ul, s, 1024ul);
+         aprsstr_Append(sl, 1024ul, ",", 2ul);
+         aprsstr_IntToStr((int32_t)
+                X2C_TRUNCI(((anonym->optalt+anonym->refrm)-anonym->alt)+0.5,
+                X2C_min_longint,X2C_max_longint), 1UL, s, 1024ul);
+         aprsstr_Append(sl, 1024ul, s, 1024ul);
+         aprsstr_Append(sl, 1024ul, "\012", 2ul);
+         osi_WrBin(f, (char *)sl, 1024u/1u, aprsstr_Length(sl, 1024ul));
+      }
+      if (i==tmp) break;
+   } /* end for */
+   osic_Close(f);
+} /* end wrcsv() */
 
 
 static float azimuthl(struct POSITIONL posa0, struct POSITIONL posb0)
@@ -669,7 +721,7 @@ static void calcpath(void)
       } /* end for */
       { /* with */
          struct PATH * anonym0 = &path->Adr[i];
-         k = (double)(X2C_DIVR((float)i,(float)(linksize-1L)));
+         k = (double)(X2C_DIVR((float)i+1.0f,(float)linksize));
          anonym0->optalt = anonym0->optalt*1000.0;
          anonym0->zero = (k-k*k)*refrac;
          anonym0->refrm = anonym0->zero*refraction;
@@ -1320,17 +1372,21 @@ static void drawimage(void)
    imagetext_writestr(image, (uint32_t)rightbound(sss, 100ul),
                 (uint32_t)(ysize-(fonty*36L)/10L), (uint32_t)fonttyp,
                 (uint32_t)cr, (uint32_t)cg, (uint32_t)cb, sss, 100ul);
+   s[0] = 0;
    if (treedrawn) {
       strncpy(s,"Trees=",100u);
       aprsstr_FixToStr((float)treesize, 0UL, ss, 100ul);
       aprsstr_Append(s, 100ul, ss, 100ul);
-      aprsstr_Append(s, 100ul, "m", 2ul);
-      aprsstr_Append(sss, 100ul, s, 100ul);
-      aprsstr_Append(sss, 100ul, " ", 2ul);
-      imagetext_writestr(image, (uint32_t)rightbound(sss, 100ul),
+      aprsstr_Append(s, 100ul, "m ", 3ul);
+   }
+   aprsstr_FixToStr((float)dist, 2UL, ss, 100ul);
+   aprsstr_Append(s, 100ul, ss, 100ul);
+   aprsstr_Append(s, 100ul, "km", 3ul);
+   aprsstr_Append(sss, 100ul, s, 100ul);
+   aprsstr_Append(sss, 100ul, " ", 2ul);
+   imagetext_writestr(image, (uint32_t)rightbound(sss, 100ul),
                 (uint32_t)(ysize-(fonty*36L)/10L), (uint32_t)fonttyp,
                 700UL, 700UL, 700UL, s, 100ul);
-   }
 /*WrFixed(airshadow,2, 9);WrFixed(woodshadow,2, 9);WrStrLn(" air wood"); */
 } /* end drawimage() */
 
@@ -1361,6 +1417,7 @@ extern int main(int argc, char **argv)
    libsrtm_BEGIN();
    osi_BEGIN();
    imagefn[0] = 0;
+   csvfn[0] = 0;
    image = 0;
    xsize = 600L;
    ysize = 400L;
@@ -1390,7 +1447,9 @@ extern int main(int argc, char **argv)
       else Error("need Position B", 16ul);
    }
    else {
-      if (imagefn[0U]==0) Error("need Image Filename", 20ul);
+      if (imagefn[0U]==0 && csvfn[0U]==0) {
+         Error("need Image and/or csv Filename", 31ul);
+      }
       if (xsize<framexl+5L+30L) Error("xsize too less", 15ul);
       if (ysize<30L) Error("ysize too less", 15ul);
       linksize = xsize-(framexl+5L);
@@ -1399,11 +1458,14 @@ extern int main(int argc, char **argv)
       if (path==0) Error("out of memory", 14ul);
       calcpath();
       libsrtm_closesrtmfile(); /* free srtm cache */
-      X2C_DYNALLOCATE((char **) &image,sizeof(struct imagetext_PIX),
+      if (csvfn[0U]) wrcsv();
+      if (imagefn[0U]) {
+         X2C_DYNALLOCATE((char **) &image,sizeof(struct imagetext_PIX),
                 (tmp0[0] = (size_t)xsize,tmp0[1] = (size_t)ysize,tmp0),2u);
-      if (image==0) Error("out of memory", 14ul);
-      drawimage();
-      wrpng();
+         if (image==0) Error("out of memory", 14ul);
+         drawimage();
+         wrpng();
+      }
    }
    X2C_EXIT();
    return 0;
