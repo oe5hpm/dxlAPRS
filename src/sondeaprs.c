@@ -84,6 +84,8 @@ struct DATLINE;
 
 
 struct DATLINE {
+   double hrms;
+   double vrms;
    double hpa;
    double temp;
    double hyg;
@@ -1072,6 +1074,14 @@ static void Checkvals(const DATS d, uint16_t * e)
       if (i==tmp) break;
    } /* end for */
    if (!Checkval(v, 4ul, t, 4ul, 100.0, 5.0, 60000.0, 1000.0)) *e |= 0x80U;
+   tmp = n;
+   i = 0UL;
+   if (i<=tmp) for (;; i++) {
+      if (d[i].hrms>50.0) *e |= 0x200U;
+      if (d[i].vrms>500.0) *e |= 0x200U;
+      if (d[i].lat==0.0 && d[i].long0==0.0) *e |= 0x200U;
+      if (i==tmp) break;
+   } /* end for */
    /*
      FOR i:=0 TO n DO 
        IF (i>0) & (ta<>(d[i].time+1) MOD (3600*24)) THEN INCL(e, eMISS) END;
@@ -1215,13 +1225,14 @@ extern void sondeaprs_senddata(double lat, double long0,
          anonym->dat[0U].dir = dir;
          anonym->dat[0U].lat = lat*5.7295779513082E+1;
          anonym->dat[0U].long0 = long0*5.7295779513082E+1;
-         /*    dat[0].time:=(sattime+DAYSEC-GPSTIMECORR) MOD DAYSEC; */
          anonym->dat[0U].time0 = sattime%86400UL;
-         /*    dat[0].uptime:=sattime MOD DAYSEC; */
          anonym->dat[0U].clb = clb;
+         anonym->dat[0U].hrms = hrms;
+         anonym->dat[0U].vrms = vrms;
          /*    climb(dat); */
          Checkvals(anonym->dat, &chk);
-         if (hrms>50.0 || vrms>500.0) chk |= 0x200U;
+         /*    IF (hrms>MAXHRMS) OR (vrms>MAXVRMS) THEN INCL(chk, eRMS) END;
+                */
          if (sondeaprs_verb) {
             osi_WrStrLn("", 1ul);
             show(anonym->dat[0U]);

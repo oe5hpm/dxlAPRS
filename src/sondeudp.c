@@ -60,6 +60,9 @@
 
 #define sondeudp_RAD 1.7453292519943E-2
 
+#define sondeudp_FRAMELIFETIME 3
+/* max seconds from frame sync to sending frame */
+
 #define sondeudp_DFIRLEN 64
 
 #define sondeudp_AFIRLEN 32
@@ -325,7 +328,6 @@ struct C34 {
    uint32_t demodbaud;
    uint32_t configbaud;
    uint32_t txbaud;
-   uint32_t dcdclock;
    float hipasscap;
    uint32_t tused;
 };
@@ -341,6 +343,7 @@ struct CHAN {
    pUDPTX udptx;
    uint32_t squelch;
    uint32_t mycallc;
+   uint32_t framestarttime;
    char myssid;
    struct R92 r92;
    struct R41 r41;
@@ -1786,7 +1789,10 @@ static void demodbyte41(uint32_t m, char d)
          } while (!(j==24UL || normc>4UL && revc>4UL));
          anonym->headok = normc==0UL || revc==0UL;
          anonym->rev = normc<revc;
-         if (j==24UL) anonym->rxp = 7UL;
+         if (j==24UL) {
+            anonym->rxp = 7UL;
+            chan[m].framestarttime = osic_time();
+         }
          anonym->rxbitc = 0UL;
       }
       else {
@@ -1798,7 +1804,7 @@ static void demodbyte41(uint32_t m, char d)
                 anonym->rxbyte^(uint8_t)_cnst[anonym->rxp&63UL]);
             ++anonym->rxp;
             if (anonym->rxp>=519UL) {
-               decode41(m);
+               if (chan[m].framestarttime+3UL>=osic_time()) decode41(m);
                anonym->rxp = 0UL;
             }
             if (anonym->rxp==200UL) {
@@ -1831,31 +1837,6 @@ static void demodbit41(uint32_t m, float u)
 } /* end demodbit41() */
 
 /*------------------------------ RS92 */
-/*
-PROCEDURE stobyte92(m:CARDINAL; b:CHAR);
-VAR e:SET8;
-BEGIN
-  WITH chan[m].r92 DO
-    rxbuf[rxp]:=b;
-    IF rxp<5 THEN
-      e:=CAST(SET8, b)/CAST(SET8, 2AH);
-      WHILE e<>SET8{} DO
-        IF e*SET8{0}<>SET8{} THEN INC(headerrs) END;
-        e:=SHIFT(e, -1);
-      END;
-      IF headerrs>rxp THEN         (* allow 0 bit errors on first byte *) 
-        headerrs:=0;
-        rxp:=0;
-      ELSE INC(rxp) END;
-    ELSE INC(rxp) END;
-    IF rxp>=240 THEN
-      headerrs:=0;
-      rxp:=0;
-      decodeframe92(m);
-    END;
-  END;
-END stobyte92;
-*/
 
 static void stobyte92(uint32_t m, char b)
 {
@@ -1865,9 +1846,10 @@ static void stobyte92(uint32_t m, char b)
       anonym->rxbuf[anonym->rxp] = b;
       if (anonym->rxp>=5UL || b=='*') ++anonym->rxp;
       else anonym->rxp = 0UL;
+      if (anonym->rxp==5UL) chan[m].framestarttime = osic_time();
       if (anonym->rxp>=240UL) {
          anonym->rxp = 0UL;
-         decodeframe92(m);
+         if (chan[m].framestarttime+3UL>=osic_time()) decodeframe92(m);
       }
    }
 } /* end stobyte92() */
@@ -2331,7 +2313,7 @@ static void decodesub(const char b[], uint32_t b_len, uint32_t m,
       if (chan[m].dfm6.d9) {
       }
       else {
-         /* dfm06 ait, clb */
+         /* dfm06 alt, clb */
          v = bits2val(b, b_len, 0UL, 32UL);
          ui = (int32_t)bits2val(b, b_len, 32UL, 16UL);
          if (ui>=32768L) {
@@ -2603,11 +2585,14 @@ static void demodbyte6(uint32_t m, char d)
             anonym->polarity = !anonym->polarity;
             anonym->rxp = 0UL;
          }
+         if (anonym->rxp==0UL) chan[m].framestarttime = osic_time();
       }
       else {
          anonym->rxbuf[anonym->rxp] = d;
          ++anonym->rxp;
-         if (anonym->rxp==264UL) decodeframe6(m);
+         if (anonym->rxp==264UL && chan[m].framestarttime+3UL>=osic_time()) {
+            decodeframe6(m);
+         }
       }
    }
 } /* end demodbyte6() */
@@ -3107,7 +3092,6 @@ static void demodframe34(uint32_t channel)
 
 static void demodbit34(uint32_t channel, char d)
 {
-   /*IF NOT verb THEN WrInt(ORD(d),1); END; */
    struct C34 * anonym;
    d = !d;
    { /* with */
@@ -3118,15 +3102,15 @@ static void demodbit34(uint32_t channel, char d)
          anonym->c50 = 0;
          anonym->rxp = 2UL;
          anonym->rxbitc = 0UL;
+         chan[channel].framestarttime = osic_time();
       }
       else if ((anonym->rxbytec&2097151UL)==3070UL) {
-         /*IF NOT verb THEN WrStrLn(""); END; */
          /* c50 0 0000 0000 1011 1111 1110 */
          anonym->c50 = 1;
          anonym->rxp = 2UL;
          anonym->rxbitc = 0UL;
+         chan[channel].framestarttime = osic_time();
       }
-      /*IF NOT verb THEN WrStrLn(""); END; */
       if ((anonym->c50 || anonym->rxbitc) || !d) {
          if (anonym->rxbitc<=8UL) {
             /* databits */
@@ -3138,11 +3122,11 @@ static void demodbit34(uint32_t channel, char d)
             /* byte ready */
             anonym->rxbitc = 0UL;
             anonym->rxbuf[anonym->rxp] = (char)anonym->rxbyte;
-            /*WrHex(rxbyte, 3); */
             ++anonym->rxp;
             if (anonym->rxp>8UL) {
-               /*IF NOT verb THEN WrStr("*"); END; */
-               demodframe34(channel);
+               if (chan[channel].framestarttime+3UL>=osic_time()) {
+                  demodframe34(channel);
+               }
                anonym->rxp = 0UL;
             }
          }
@@ -3515,6 +3499,7 @@ static void demodbyte10(uint32_t m, char d)
                anonym->rxbuf[0U] = (char)(anonym->synword/65536UL);
                anonym->rxbuf[1U] = (char)(anonym->synword/256UL&255UL);
                anonym->rxbuf[2U] = (char)(anonym->synword&255UL);
+               chan[m].framestarttime = osic_time();
             }
          }
       }
@@ -3524,7 +3509,8 @@ static void demodbyte10(uint32_t m, char d)
             anonym->rxbuf[anonym->rxp] = (char)(anonym->synword&255UL);
             anonym->rxb = 0UL;
             ++anonym->rxp;
-            if (anonym->rxp==101UL) decodeframe10(m);
+            if (anonym->rxp==101UL && chan[m].framestarttime+3UL>=osic_time()
+                ) decodeframe10(m);
          }
       }
    }
