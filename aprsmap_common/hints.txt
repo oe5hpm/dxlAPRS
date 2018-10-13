@@ -351,7 +351,19 @@ on Mouse Over Wx Symbol
 on Mouse Over Wx Symbol
 |1160 Swith off Mouse Over 
 
+|1303 Center Symbol to middle of screen
 
+|1304 Show Info of last Beacon. Step thru Beacons
+with < > Key or More Infos/< > Button
+
+|1306 Zoom Map so Track fits on it. Maximum
+as in Config/Map Moving/Default Zoom
+
+|1307 Show Rf Paths to Igates
+
+|1308 Show Stations the Igate Heard
+
+|1309 Show Beacon Timer Intervall Histogram
 
 |1310 Show driving speed over time as data
 avaliable, out of sense values are not shown
@@ -1307,7 +1319,7 @@ zero bytes overhead.
 
 |8128 Enter Altitude in m over NN or negative
 for below. Only positive values in
-Commpressed Mode. This will take some
+Compressed Mode. This will take some
 Bytes more except in Compressed Mode
 with no speed/direction.
 

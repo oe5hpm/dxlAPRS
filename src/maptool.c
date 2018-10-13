@@ -1670,12 +1670,14 @@ END normvector;
 */
 #define maptool_TESTDIST 30.0
 
+#define maptool_ER0 6.37E+6
+
 
 static void raytrace(float minqual, float x0, float y00,
                 float z0, float dx, float dy, float dz,
                 float maxdist, float * dist, float * lum,
                 float * h, float * alt, float * subpix,
-                struct aprsstr_POSITION * pos)
+                struct aprsstr_POSITION * pos, float refrac)
 {
    float deltah;
    float minsp;
@@ -1701,7 +1703,7 @@ static void raytrace(float minqual, float x0, float y00,
    do {
       aprspos_wgs84r(x0+dx* *dist, y00+dy* *dist, z0+dz* *dist, &pos->lat,
                 &pos->long0, alt);
-      *alt =  *alt*1000.0f;
+      *alt =  *alt*1000.0f- *dist* *dist*refrac;
       /*
       IF mapxy(pos, xtt, ytt)>=-1 THEN
       waypoint(testimg, xtt,ytt,1.0, 255,255,100); END;
@@ -1783,6 +1785,27 @@ static void Panofind(char find, const struct maptool_PANOWIN panpar,
    uint32_t yi;
    uint32_t xi;
    int32_t nn;
+   float refrac;
+   float oob;
+   float oog;
+   float oor;
+   float ob;
+   float og;
+   float or;
+   float clat;
+   float slat;
+   float wy;
+   float wx;
+   float tree;
+   float light;
+   float llum;
+   float lum;
+   float lastlum;
+   float dlum;
+   float lummul;
+   float atx;
+   float oldh;
+   float d;
    float azi;
    float cazi;
    float sazi;
@@ -1810,26 +1833,6 @@ static void Panofind(char find, const struct maptool_PANOWIN panpar,
    float y00;
    float x0;
    float azi0;
-   float clat;
-   float slat;
-   float wy;
-   float wx;
-   float tree;
-   float light;
-   float llum;
-   float lum;
-   float lastlum;
-   float dlum;
-   float lummul;
-   float atx;
-   float oldh;
-   float d;
-   float oob;
-   float oog;
-   float oor;
-   float ob;
-   float og;
-   float or;
    char heaven;
    uint32_t startt;
    struct aprsdecode_COLTYP col0;
@@ -1888,6 +1891,8 @@ static void Panofind(char find, const struct maptool_PANOWIN panpar,
    /*WrFixed(panpar.elevation*RAD/azid, 4, 12); WrStrLn(" adi0 azid"); */
    xi = 0UL;
    if (find) xi = (uint32_t)panpar.hx;
+   refrac = useri_conf2real(useri_fREFRACT, 0UL, (-10.0f), 10.0f,
+                0.0f)*7.85E-8f;
    do {
       /*    wx:=panpar.angle*RAD*(FLOAT(xi)-FLOAT(HIGH(panpar.image^)+1)*0.5)
                 /FLOAT(HIGH(panpar.image^)+1); */
@@ -1919,7 +1924,7 @@ static void Panofind(char find, const struct maptool_PANOWIN panpar,
             /*IF (ABS(wy)>0.5) & (d>maxdist*0.1) THEN d:=d-maxdist*0.1 END;
                 (* jump back if sight from above *) */
             raytrace(5.0f, x0, y00, z0, xn*0.001f, yn*0.001f, zn*0.001f,
-                maxdist, &d, &light, &oldh, &lasth, &space, pos);
+                maxdist, &d, &light, &oldh, &lasth, &space, pos, refrac);
             if (d>maxdist) heaven = 1;
             if (find) {
                if (heaven) aprsstr_posinval(pos);
