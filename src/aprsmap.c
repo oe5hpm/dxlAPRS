@@ -571,6 +571,35 @@ static void rdlonglog(aprsdecode_pOPHIST * optab, char fn[],
 } /* end rdlonglog() */
 
 
+static void filepath(char s[], uint32_t s_len)
+/* get path out of path + filename */
+{
+   uint32_t j;
+   uint32_t i;
+   i = 0UL;
+   j = 0UL;
+   while (i<s_len-1 && s[i]) {
+      if (s[i]=='/' || s[i]=='/') j = i;
+      ++i;
+   }
+   s[j] = 0;
+} /* end filepath() */
+
+
+static void logpathok(char fn[], uint32_t fn_len, char s[],
+                uint32_t s_len)
+{
+   X2C_PCOPY((void **)&fn,fn_len);
+   filepath(fn, fn_len);
+   if (fn[0] && !osi_Exists(fn, fn_len)) {
+      aprsstr_Assign(s, s_len, "Directory [", 12ul);
+      aprsstr_Append(s, s_len, fn, fn_len);
+      aprsstr_Append(s, s_len, "] not found or readable", 24ul);
+   }
+   X2C_PFREE(fn);
+} /* end logpathok() */
+
+
 static void rdlog(aprsdecode_pOPHIST * optab, char fn[],
                 uint32_t fn_len, uint32_t from, uint32_t to,
                 char find0[], uint32_t find_len,
@@ -1679,35 +1708,54 @@ static char deletelogfile(char all)
 
 #define aprsmap_DAY0 86400
 
+#define aprsmap_AYEAR 31622400
+
 
 static void toend(int32_t * logredcnt, uint32_t * lastread,
                 uint32_t * logstarttime, char find0[13],
-                char fn[1025], uint32_t * fromto)
+                char fn[1025], char h[1025], uint32_t * fromto)
 {
    *fromto = aprsdecode_realtime;
    for (;;) {
-      if (aprsdecode_quit || aprsdecode_click.abort0) break;
+      if (aprsdecode_quit || aprsdecode_click.abort0) {
+         strncpy(h,"Aborted",1025u);
+         break;
+      }
       *fromto -= aprsdecode_lums.firstdim;
       rdlog(&aprsdecode_ophist0, fn, 1025ul, *fromto,
                 *fromto+aprsdecode_lums.firstdim, find0, 13ul, logstarttime,
                 lastread, logredcnt);
-      if (*logredcnt<0L) *fromto = ( *fromto/86400UL)*86400UL;
-      if (*logredcnt>0L || *fromto<1388534400UL) break;
+      if (*logredcnt<0L) {
+         *fromto = ((*fromto-1UL)/86400UL)*86400UL-aprsdecode_lums.firstdim;
+                /* day file not found*/
+      }
+      if (*logredcnt>0L) break;
+      if (*fromto<aprsdecode_realtime-31622400UL) {
+         strncpy(h,"No Data since 1 Year",1025u);
+         break;
+      }
    }
 } /* end toend() */
 
 
 static void tobegin(int32_t * logredcnt, uint32_t * lastread,
                 uint32_t * logstarttime, char find0[13],
-                char fn[1025], uint32_t * fromto)
+                char fn[1025], char h[1025], uint32_t * fromto)
 {
-   *fromto = 1388534400UL;
+   *fromto = aprsdecode_realtime-31622400UL;
    for (;;) {
-      if (aprsdecode_quit || aprsdecode_click.abort0) break;
+      if (aprsdecode_quit || aprsdecode_click.abort0) {
+         strncpy(h,"Aborted",1025u);
+         break;
+      }
       rdlog(&aprsdecode_ophist0, fn, 1025ul, *fromto,
                 *fromto+aprsdecode_lums.firstdim, find0, 13ul, logstarttime,
                 lastread, logredcnt);
-      if (*logredcnt>0L || *fromto>aprsdecode_realtime) break;
+      if (*logredcnt>0L) break;
+      if (*fromto>aprsdecode_realtime) {
+         strncpy(h,"No Data since 1 Year",1025u);
+         break;
+      }
       if (find0[0U] && *logredcnt>=0L) {
          /* look for call so read whole day */
          *fromto += aprsdecode_lums.firstdim;
@@ -1821,6 +1869,8 @@ static void importlog(char cmd)
       }
       else {
          useri_confstr(useri_fLOGFN, fn, 1025ul);
+         h[0] = 0;
+         logpathok(fn, 1025ul, h, 1025ul);
          if (aprsdecode_lums.logmode) {
             clrstk();
             aprsdecode_purge(&aprsdecode_ophist0, X2C_max_longcard,
@@ -1831,68 +1881,91 @@ static void importlog(char cmd)
             aprsdecode_ophist0 = 0;
             aprsdecode_lums.logmode = 1;
          }
-         useri_confstr(useri_fLOGDATE, h, 1025ul);
-         if (!aprsstr_StrToTime(h, 1025ul, &fromto)) fromto = 0UL;
-         else if (fromto>useri_localtime()) fromto -= useri_localtime();
-         logredcnt = 0L;
-         if (fromto>aprsdecode_realtime) fromto = aprsdecode_realtime;
-         else if (fromto<1388534400UL) fromto = 1388534400UL;
-         useri_confstr(useri_fLOGFIND, find0, 13ul); /* find call in log */
-         if (cmd=='\001') {
-            tobegin(&logredcnt, &lastread, &logstarttime, find0, fn,
+         if (h[0]==0) {
+            useri_confstr(useri_fLOGDATE, h, 1025ul);
+            if (!aprsstr_StrToTime(h, 1025ul, &fromto)) fromto = 0UL;
+            else if (fromto>useri_localtime()) fromto -= useri_localtime();
+            logredcnt = 0L;
+            if (fromto>aprsdecode_realtime) fromto = aprsdecode_realtime;
+            else if (fromto<aprsdecode_realtime-31622400UL) {
+               fromto = aprsdecode_realtime-31622400UL;
+            }
+            useri_confstr(useri_fLOGFIND, find0, 13ul);
+                /* find call in log */
+            if (cmd=='\001') {
+               tobegin(&logredcnt, &lastread, &logstarttime, find0, fn, h,
                 &fromto);
-         }
-         else if (cmd=='\002') {
-            for (;;) {
-               if (aprsdecode_quit || aprsdecode_click.abort0) break;
-               fromto -= aprsdecode_lums.firstdim;
+            }
+            else if (cmd=='\002') {
+               for (;;) {
+                  if (aprsdecode_quit || aprsdecode_click.abort0) {
+                     strncpy(h,"Aborted",1025u);
+                     break;
+                  }
+                  fromto -= aprsdecode_lums.firstdim;
+                  rdlog(&aprsdecode_ophist0, fn, 1025ul, fromto,
+                fromto+aprsdecode_lums.firstdim, find0, 13ul, &logstarttime,
+                &lastread, &logredcnt);
+                  if (logredcnt<0L) {
+                     fromto = ((fromto-1UL)/86400UL)
+                *86400UL-aprsdecode_lums.firstdim;
+                  }
+                  if (logredcnt>0L) break;
+                  if (fromto<aprsdecode_realtime-31622400UL) {
+                     strncpy(h,"No Data since 1 Year",1025u);
+                     break;
+                  }
+               }
+            }
+            else if (cmd=='\005') {
+               /*          IF logredcnt<=0 THEN tobegin END; */
+               toend(&logredcnt, &lastread, &logstarttime, find0, fn, h,
+                &fromto);
+            }
+            else if (cmd=='\004') {
+               for (;;) {
+                  if (aprsdecode_quit || aprsdecode_click.abort0) {
+                     strncpy(h,"Aborted",1025u);
+                     break;
+                  }
+                  fromto += aprsdecode_lums.firstdim;
+                  rdlog(&aprsdecode_ophist0, fn, 1025ul, fromto,
+                fromto+aprsdecode_lums.firstdim, find0, 13ul, &logstarttime,
+                &lastread, &logredcnt);
+                  if (logredcnt>0L) break;
+                  if (fromto>aprsdecode_realtime) {
+                     strncpy(h,"No more Data",1025u);
+                     break;
+                  }
+               }
+               if (logredcnt<=0L) {
+                  toend(&logredcnt, &lastread, &logstarttime, find0, fn, h,
+                &fromto);
+               }
+            }
+            else if (cmd=='\003') {
                rdlog(&aprsdecode_ophist0, fn, 1025ul, fromto,
                 fromto+aprsdecode_lums.firstdim, find0, 13ul, &logstarttime,
                 &lastread, &logredcnt);
-               if (logredcnt<0L) fromto = (fromto/86400UL)*86400UL;
-               if (logredcnt>0L || fromto<1388534400UL) break;
+               if (logredcnt<=0L) {
+                  strncpy(h,"No Data at this Date",1025u);
+               }
             }
-            if (logredcnt<=0L) {
-               tobegin(&logredcnt, &lastread, &logstarttime, find0, fn,
-                &fromto);
-            }
-         }
-         else if (cmd=='\005') {
-            toend(&logredcnt, &lastread, &logstarttime, find0, fn, &fromto);
-         }
-         else if (cmd=='\004') {
-            for (;;) {
-               if (aprsdecode_quit || aprsdecode_click.abort0) break;
-               fromto += aprsdecode_lums.firstdim;
-               rdlog(&aprsdecode_ophist0, fn, 1025ul, fromto,
-                fromto+aprsdecode_lums.firstdim, find0, 13ul, &logstarttime,
-                &lastread, &logredcnt);
-               if (logredcnt>0L || fromto>aprsdecode_realtime) break;
-            }
-            if (logredcnt<=0L) {
-               toend(&logredcnt, &lastread, &logstarttime, find0, fn,
-                &fromto);
-            }
-         }
-         else if (cmd=='\003') {
-            rdlog(&aprsdecode_ophist0, fn, 1025ul, fromto,
-                fromto+aprsdecode_lums.firstdim, find0, 13ul, &logstarttime,
-                &lastread, &logredcnt);
-         }
-         if (logredcnt>0L) {
-            aprsdecode_systime = lastread;
-            revert();
-            aprsdecode_purge(&aprsdecode_ophist0,
+            if (logredcnt>0L) {
+               aprsdecode_systime = lastread;
+               revert();
+               aprsdecode_purge(&aprsdecode_ophist0,
                 aprsdecode_systime-aprsdecode_lums.purgetime,
                 aprsdecode_systime-aprsdecode_lums.purgetime);
-            lastread = fromto;
+               lastread = fromto;
+            }
          }
          aprsdecode_tracenew.winevent = 0UL;
       }
-      aprsstr_DateToStr(lastread+useri_localtime(), h, 1025ul);
-      h[16U] = 0;
-      useri_AddConfLine(useri_fLOGDATE, 0U, h, 1025ul);
       if (logredcnt>0L) {
+         aprsstr_DateToStr(lastread+useri_localtime(), h, 1025ul);
+         h[16U] = 0;
+         useri_AddConfLine(useri_fLOGDATE, 0U, h, 1025ul);
          aprsstr_IntToStr(logredcnt, 1UL, h, 1025ul);
          aprsstr_Append(h, 1025ul, " Lines ", 8ul);
          th = (aprsdecode_systime-logstarttime)/60UL;
@@ -1930,7 +2003,7 @@ static void importlog(char cmd)
             aprsstr_Append(h, 1025ul, ")", 2ul);
          }
       }
-      else if (fn[0U]) strncpy(h,"no Data found",1025u);
+      else if (fn[0U] && h[0]==0) strncpy(h,"no Data found",1025u);
       if (cmd=='\006') strncpy(h,"back to Realtime",1025u);
    }
    useri_say(h, 1025ul, 0UL, color);

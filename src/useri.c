@@ -10077,8 +10077,11 @@ static void statusbar(void)
    ++kx;
    c.r = 0U;
    c.g = 0U;
-   if (aprsdecode_lums.logmode) c.b = 700U;
-   else c.b = 0U;
+   c.b = 0U;
+   if (aprsdecode_lums.logmode) {
+      c.r = 500U;
+      c.g = 300U;
+   }
    statuscol(menu->image, (int32_t)(xknob*kx), (int32_t)xknob, c);
    ++kx;
    if (aprsdecode_msgfifo0) c.r = 300U;
