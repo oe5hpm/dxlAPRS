@@ -1970,6 +1970,7 @@ static void GetWX(struct aprsdecode_WX * wx, uint32_t * course,
             break;
          case 'h':
             wpar(&p, buf, buf_len, &wx->hygro, 2L, 3L);
+            if (wx->hygro==0.0f) wx->hygro = 100.0f;
             break;
          case 'b':
             wpar(&p, buf, buf_len, &wx->baro, 5L, 5L);
