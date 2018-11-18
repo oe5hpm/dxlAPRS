@@ -160,6 +160,8 @@ extern int32_t osi_getptsname(int32_t, char *, uint32_t);
 
 extern int32_t osi_symblink(char *, char *);
 
+extern char osi_CreateDir(char [], uint32_t, uint32_t);
+
 extern void osi_WrStrLn(char [], uint32_t);
 
 extern int32_t osi_realint(float);

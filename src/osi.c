@@ -216,6 +216,13 @@ extern int32_t osi_symblink(char * fname, char * newname)
 } /* end symblink() */
 
 
+extern char osi_CreateDir(char path[], uint32_t path_len,
+                uint32_t perm)
+{
+   return osic_mkdir(path, path_len, perm);
+} /* end CreateDir() */
+
+
 extern void osi_BEGIN(void)
 {
    static int osi_init = 0;
