@@ -991,7 +991,7 @@ TALK:\\>filename<Message Sayd     schreibt ein File
 @ reset <On Next Click> auf Menu Mode
 a Animate (auf Karte klicken zum Werte einstellen)
 b oder <Backspace> zurueck in Zoom/Pan History
-c Zentriere auf Maus Position
+c Zentriere Karte auf Maus Position
 d fehlende Landkarten laden ein/aus
 e Nur Errors/Alle Wegpunkte zeigen bei <>
 f Track Filter ein/aus
@@ -1007,9 +1007,10 @@ s ein/aus nur Stationen mit einem ausgewaehlten Symbol
 u Tx/Rx-Monitor Fenster ein/aus
 w WX-Stationen (mit l nur Temperatur ohne Calls) 
 ww grafische Temperaturverteilung
-x setze Marker 1 auf Mausposition
-y setze Marker 2 und Linie/Gelaendeschnitt zu Marker 1
+x setze Marker 1 auf Mausposition, X mit Lock zum nahen POI, c/p in deg.min
+y setze Marker 2 und Linie/Gelaendeschnitt zu Marker 1, Y mit Lock, c/p in deg
 B Baken Editor oeffnen/schliessen
+C Eingabe der Auswahl die auf die Karte gezeichnet werden soll
 D Digi Konfiguration oeffnen/schliessen
 F Finde Call (mit Wildcards * ?), Lokator, Breite/Laenge, POI
 H Farbdarstellung der Hoehendaten (sofern vorhanden)
@@ -1056,9 +1057,10 @@ r toggle Radio tracks on/off
 s toggle show only stations with a selected symbol
 u toggle tx/rx-Monitor window on/off
 w toggle WX stations and Temperature
-x set Marker 1 to mouse position
-y set Marker 2 and Line to Marker 1
+x set Marker 1 to mouse position, X with lock to next POI, c/p in deg.min
+y set Marker 2 and Line to Marker 1, Y with lock to next POI, c/p in deg
 B Beacon editor open/close
+C Enter Category of POI to be drawn on map
 D Digi Config open/close
 F Find Call (with wildcards * ?), Locator, Latitude/Longitude
 H Altitude Colour Map (if srtm-Data avaliable)

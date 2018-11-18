@@ -143,6 +143,8 @@ extern void maptool_drawsym(maptool_pIMAGE, char, char, char,
 extern void maptool_drawarrow(maptool_pIMAGE, float, float, float,
                 float, uint32_t, uint32_t, struct aprsdecode_COLTYP);
 
+extern void maptool_drawpois(maptool_pIMAGE);
+
 extern void maptool_shine(maptool_pIMAGE, int32_t);
 
 extern void maptool_loadmap(maptool_pIMAGE, int32_t, int32_t, int32_t,
@@ -192,10 +194,10 @@ extern void maptool_xytoloc(struct aprsstr_POSITION, char [],
                 uint32_t);
 
 extern void maptool_POIname(struct aprsstr_POSITION *, char [],
-                uint32_t);
+                uint32_t, char [], uint32_t);
 
-extern void maptool_POIfind(struct aprsstr_POSITION *, char [],
-                uint32_t);
+extern void maptool_POIfind(struct aprsstr_POSITION *, char,
+                char [], uint32_t);
 
 extern uint32_t maptool_charwidth(char);
 
@@ -232,8 +234,9 @@ extern char maptool_SimpleRelief(maptool_pIMAGE);
 
 extern void maptool_findpanopos(struct maptool_PANOWIN,
                 struct aprsstr_POSITION *, float *, int32_t *);
-
-extern void maptool_rdmountains(char [], uint32_t, char);
+/*
+PROCEDURE rdmountains(fn:ARRAY OF CHAR; add:BOOLEAN);
+*/
 
 extern void maptool_drawareasym(maptool_pIMAGE, struct aprsstr_POSITION,
                 struct aprsdecode_AREASYMB, uint32_t);
@@ -245,6 +248,10 @@ extern void maptool_drawpoliobj(maptool_pIMAGE);
 
 extern char maptool_findmultiline(struct aprsstr_POSITION,
                 struct aprsstr_POSITION *);
+
+extern void maptool_readpoifiles(void);
+
+extern char maptool_poisactiv(void);
 
 
 extern void maptool_BEGIN(void);

@@ -104,10 +104,13 @@ char aprsdecode_mapdir[1025];
 aprsdecode_pMOUNTAIN aprsdecode_mountains;
 
 
-struct aprsdecode__D1 aprsdecode_lums;
+struct aprsdecode__D1 aprsdecode_poifiles[30];
 
 
-struct aprsdecode__D2 aprsdecode_tracenew;
+struct aprsdecode__D2 aprsdecode_lums;
+
+
+struct aprsdecode__D3 aprsdecode_tracenew;
 aprsdecode_pTXMESSAGE aprsdecode_txmessages;
 aprsdecode_pMSGFIFO aprsdecode_msgfifo0;
 float aprsdecode_spikesens;
@@ -116,7 +119,7 @@ aprsdecode_pOPHIST aprsdecode_ophist2;
 aprsdecode_pOPHIST aprsdecode_ophist0;
 
 
-struct aprsdecode__D3 aprsdecode_gateways[10];
+struct aprsdecode__D4 aprsdecode_gateways[10];
 aprsdecode_pTCPSOCK aprsdecode_tcpsocks;
 struct aprsdecode_UDPSOCK aprsdecode_udpsocks0[4];
 uint32_t aprsdecode_lasttcptx;
@@ -1585,7 +1588,7 @@ static void beaconmacros(char s[], uint32_t s_len,
                aprsstr_Append(ns, 256ul, "\\\\", 3ul);
             }
             else if (s[i]=='v') {
-               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.75", 17ul);
+               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.76", 17ul);
             }
             else if (s[i]=='l') {
                if (aprstext_getmypos(&pos)) {
@@ -3570,7 +3573,7 @@ static char sendtxmsg(uint32_t acknum, const aprsdecode_MONCALL to,
    aprsstr_Append(rfs, 512ul, s, 512ul);
    for (i = 0UL; i<=3UL; i++) {
       /* try the rf ports */
-      if ((useri_configon((uint8_t)(36UL+i))
+      if ((useri_configon((uint8_t)(37UL+i))
                 && (port=='A' || port==(char)(i+49UL))) && Sendudp(rfs,
                 512ul, i, 0UL)>0L) {
          memcpy(h,am,51u);
@@ -5585,7 +5588,7 @@ extern void aprsdecode_udpconnstat(uint32_t port, char s[],
             aprsstr_Append(s, s_len, ":", 2ul);
             i = 1UL;
             for (;;) {
-               useri_conf2str((uint8_t)(36UL+port), 0UL, i, 1, h, 51ul);
+               useri_conf2str((uint8_t)(37UL+port), 0UL, i, 1, h, 51ul);
                if (h[0U]==0) break;
                if (i>1UL) aprsstr_Append(s, s_len, " ", 2ul);
                aprsstr_Append(s, s_len, h, 51ul);
@@ -5740,7 +5743,7 @@ static char tcpconn(aprsdecode_pTCPSOCK * sockchain, int32_t f)
          aprsstr_Append(h, 512ul, s, 100ul);
       }
       aprsstr_Append(h, 512ul, " vers ", 7ul);
-      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.75", 17ul);
+      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.76", 17ul);
       appfilter(h, 512ul, 0);
       /*    IF filter[0]<>0C THEN Append(h, " filter ");
                 Append(h, filter) END; */
@@ -5752,68 +5755,6 @@ static char tcpconn(aprsdecode_pTCPSOCK * sockchain, int32_t f)
    return 1;
 } /* end tcpconn() */
 
-/*
-PROCEDURE Gateconn(VAR cp:pTCPSOCK);
-VAR fd:SOCKET;
-    p, act, try, kill:pTCPSOCK;
-    max:CARDINAL;
-BEGIN
---WrStrLn(" gateconn");
-(*
-  IF cp<>NIL THEN
-    IF (cp^.fd<>CAST(SOCKET,-1)) & NOT configon(fSERVERURL) THEN
-      saybusy(kill^.fd, "");  
-    END;
-  ELSIF 
-*)
-  act:=NIL;
-  try:=NIL;
-  p:=cp;
-  WHILE p<>NIL DO
-    IF p^.connt>0 THEN                                            (* we have gate connect *)
-      IF act<>NIL THEN                                            (* we have 2 connects *)
-        IF act^.gatepri>p^.gatepri THEN (* stop second best *)
-          kill:=act; 
-          act:=p;
-        ELSE kill:=p END;                                         (* stop second best *)
-        saybusy(kill^.fd, "# remove double connect"+CR+LF)  
-      ELSE act:=p END;
-    ELSE try:=p END;                                              (* trying to connect *)
-    p:=p^.next;
-  END;
-  IF (try=NIL) & Watchclock(connecttime,
-                GATECONNDELAY) THEN                                                   (* no trials *)
-    IF act=NIL THEN max:=HIGH(gateways) ELSE max:=act^.gatepri END;
-                (* try only better *)
-    IF (trygate>=max) OR (trygate>HIGH(gateways)) 
-    OR (gateways[trygate].url[0]=0C) THEN trygate:=0 END;
-                (* loop thru table *) 
-
-    IF trygate<max THEN
-      WITH gateways[trygate] DO
-        IF url[0]<>0C THEN
-          fd:=connectto(url, port);
---WrInt(fd, 1);WrStrLn(" connfd");
-
-          IF CAST(INTEGER,fd)>=0 THEN
-            IF tcpconn(cp, fd, filterst) THEN
-              Assign(cp^.ipnum, url);
-              Assign(cp^.port, port);
-              cp^.gatepri:=trygate;
---            Assign(h, servercall);
---            Append(h, " connected to "); Append(h, url); Append(h, ":");
-                Append(h, port);
---            xerrmsg(h);
-            END;
-          END; 
-        END;
-      END;
-    END;
-    INC(trygate);
-
-  END;
-END Gateconn;
-*/
 
 static void urlport(char s[], uint32_t s_len, char url[],
                 uint32_t url_len, char port[], uint32_t port_len)
@@ -5955,7 +5896,7 @@ static void rfbeacons(void)
                   else if ((uint8_t)port>='1') {
                      if (s[0UL]) {
                         i = (uint32_t)(uint8_t)port-49UL;
-                        if (i<4UL && useri_configon((uint8_t)(36UL+i))) {
+                        if (i<4UL && useri_configon((uint8_t)(37UL+i))) {
                            if (Sendudp(s, 512ul, i, 1UL)<0L) {
                               strncpy(says,"beacon: Rfport ",101u);
                               aprsstr_Append(says, 101ul,
@@ -6047,11 +5988,11 @@ extern void aprsdecode_tcpjobs(void)
    for (i = 0L; i<=3L; i++) {
       { /* with */
          struct aprsdecode_UDPSOCK * anonym0 = &aprsdecode_udpsocks0[i];
-         if (useri_configon((uint8_t)(36UL+(uint32_t)i))
-                && !useri_isupdated((uint8_t)(36UL+(uint32_t)i))) {
+         if (useri_configon((uint8_t)(37UL+(uint32_t)i))
+                && !useri_isupdated((uint8_t)(37UL+(uint32_t)i))) {
             if ((int32_t)anonym0->fd<0L) {
                ok0 = 0;
-               useri_confstr((uint8_t)(36UL+(uint32_t)i), s, 1000ul);
+               useri_confstr((uint8_t)(37UL+(uint32_t)i), s, 1000ul);
                if (s[0U]) {
                   memset((char *) &aprsdecode_udpsocks0[i],(char)0,
                 sizeof(struct aprsdecode_UDPSOCK));
@@ -6094,7 +6035,7 @@ Rx)Port or in Use", 44ul);
                   useri_xerrmsg(s, 1000ul);
                }
                if (!ok0) {
-                  useri_configbool((uint8_t)(36UL+(uint32_t)i), 0);
+                  useri_configbool((uint8_t)(37UL+(uint32_t)i), 0);
                }
             }
          }
@@ -6870,10 +6811,10 @@ extern void aprsdecode_tcpin(aprsdecode_pTCPSOCK acttcp)
 extern void aprsdecode_initparms(void)
 {
    uint32_t i;
-   struct aprsdecode__D1 * anonym;
+   struct aprsdecode__D2 * anonym;
    initcrc12();
    memset((char *)aprsdecode_gateways,(char)0,
-                sizeof(struct aprsdecode__D3 [10]));
+                sizeof(struct aprsdecode__D4 [10]));
    memset((char *)aprsdecode_udpsocks0,(char)0,
                 sizeof(struct aprsdecode_UDPSOCK [4]));
    for (i = 0UL; i<=3UL; i++) {
@@ -6900,7 +6841,7 @@ extern void aprsdecode_initparms(void)
    maxspeed = 1000.0f;
    nextbeep = 0UL;
    { /* with */
-      struct aprsdecode__D1 * anonym = &aprsdecode_lums;
+      struct aprsdecode__D2 * anonym = &aprsdecode_lums;
       anonym->map = 350L;
       anonym->rfbri = 350L;
       anonym->track = 1000L;

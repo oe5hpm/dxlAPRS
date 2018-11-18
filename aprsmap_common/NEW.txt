@@ -1444,6 +1444,23 @@
 + "P" rechnet mit Refrac (0.13 Licht, 0.25 Funk)
 
 
+17.11.2018 (Ver 0.76)
+
++ Poi-Files mit beliebigen Namen in osm/poi/
+
++ Darstellung eines Info-Fensters bei Maus nahe einem Poi sofern Info enthalten.
+
++ Auswahlmenue "C" oder "Tools/Select Data/Show POI" zum Zeichen von
+  einstellbaren Symbolen eines oder mehrere Poi Files.
+  "l" (= kleines "L") schaltet Labels ein/aus.
+  Dazu Text-Filter im Namen oder Infofeld zum eingrenzen der Auswahl mit "*" und "?"
+
++ Marker setzen mit Fangen der Position des nahen Poi mit "X" und "Y", ohne Fangen "x" "y".
+
+
+
+
+
 
 
 

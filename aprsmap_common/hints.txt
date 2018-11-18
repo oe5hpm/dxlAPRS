@@ -209,7 +209,7 @@ half fresnelzone till red for whole fresnelzone
 shaped.
 
 |522 Show Maps with selected Data like Wx-Maps or
-choose a Symbol and show Stations with this.
+choose Symbol(s) and show Stations with this.
 Use TAB-Key to toggle 2 Map Views.
 
 |535 Manage Sent Messages (Shortcut M).
@@ -950,7 +950,9 @@ SSID at Your Call like -1 -2 ...
  
 
 |7405 Choose a Symbol, avoid storm, fire and
-other alarm symbols as static beacon 
+other alarm symbols as static beacon.
+For Overlay Symbol an additional
+Character or Number may be choosed
 
 |7406 choose a Symbol on the
 Table and click to enter
@@ -1700,7 +1702,16 @@ yet, switch off "Config>Mapmoving>Zoom as have Maps"
 
 |8600 Switch off all Selections and show all
 (Shortcut "0" or ESC)
- 
+
+|8603 Switch on/off drawing POI-File on Map and choose a Symbol.
+If mouse is neer a POI a short info is shown if zoomlevel
+>=Config/Map Parameter/Show Loc of Mouse. To show full
+info of 3rd csv field go nearer to the position. To
+lock marker1 and 2 to a POI use "X" "Y" key. Drawing
+labels may take long time, "l" toggles Labels on/off.
+Config/Reload Config to re-scan avaliable poi-files
+in "osm/poi/" Directory. Shortcut "C"
+
 |8605 Show Stations with last Beacon has Wx-Data
 (Shortcut w)
 Off with "Show All" "0" oder ESC
@@ -1722,6 +1733,16 @@ be shown. This may be toggled on/off here or
 with "s"-Key. Use TAB-Key to toggle between
 2 Map configurations.
 
-|8626 Select a Symbol, for Overlay Symbols an
-additional Character or Number may be choosed
- 
+|8626 Select one or more Symbols, toggle on/off
+
+|8680 Switch on/off drawing this
+POI-File on Map and choose
+a Symbol. Value in [] is sum
+of POIs file. Shortcut "C"
+
+|8681 Show only poi Symbols with matching
+(case insensitive) Text in Name or
+Info. "?" is any Character "*" any
+String eg. "*hoch*alm*"
+Click to find and step through.
+

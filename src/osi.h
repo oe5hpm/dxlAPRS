@@ -21,11 +21,15 @@
 #ifndef mlib_H_
 #include "mlib.h"
 #endif
+#include <dirent.h>
 #include <osic.h>
 
+/* os interface */
 typedef int32_t osi_File;
 
 typedef int32_t osi_SOCKET;
+
+typedef DIR * osi_DIRCONTEXT;
 
 #define osi_pi 3.1415926535898
 
@@ -137,6 +141,13 @@ extern void osi_Werr(char [], uint32_t);
 
 extern void osi_WrHex(uint32_t, uint32_t);
 
+extern int32_t osi_OpenDir(char [], uint32_t, osi_DIRCONTEXT *);
+
+extern void osi_ReadDirLine(char [], uint32_t, osi_DIRCONTEXT);
+
+extern void osi_CloseDir(osi_DIRCONTEXT);
+
+/*PROCEDURE IsFifo(fd:File):BOOLEAN;*/
 extern void osi_NextArg(char [], uint32_t);
 
 extern void osi_WrStr(char [], uint32_t);
@@ -148,8 +159,6 @@ extern char osi_Exists(char [], uint32_t);
 extern int32_t osi_getptsname(int32_t, char *, uint32_t);
 
 extern int32_t osi_symblink(char *, char *);
-
-extern char osi_CreateDir(char [], uint32_t, uint32_t);
 
 extern void osi_WrStrLn(char [], uint32_t);
 

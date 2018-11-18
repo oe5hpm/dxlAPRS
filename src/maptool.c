@@ -2108,19 +2108,22 @@ extern void maptool_xytoloc(struct aprsstr_POSITION mpos, char s[],
 
 
 extern void maptool_POIname(struct aprsstr_POSITION * mpos, char s[],
-                uint32_t s_len)
+                uint32_t s_len, char info[], uint32_t info_len)
 /* get name of nearest POI */
 {
    char h[101];
+   float infodist;
    float mindist;
    float d;
    aprsdecode_pMOUNTAIN pmin;
    aprsdecode_pMOUNTAIN pm;
    struct aprsdecode_MOUNTAIN * anonym;
+   aprsstr_Assign(info, info_len, "", 1ul);
    pm = aprsdecode_mountains;
    mindist = 2560.0f*osic_power(2.0f, -maptool_realzoom(aprsdecode_initzoom,
                 aprsdecode_finezoom));
    if (mindist>10.0f) mindist = 10.0f;
+   infodist = mindist*0.25f; /* neerer to poi to show info */
    /*WrFixed(mpos.lat, 4, 8);WrFixed(mpos.long, 4, 8); WrStrLn(""); */
    pmin = 0;
    while (pm) {
@@ -2147,46 +2150,115 @@ extern void maptool_POIname(struct aprsstr_POSITION * mpos, char s[],
          aprsstr_Append(s, s_len, h, 101ul);
          aprsstr_Append(s, s_len, "m", 2ul);
       }
+      if (pmin->pinfo && mindist<=infodist) {
+         aprsstr_Assign(info, info_len, pmin->pinfo, 65536ul);
+      }
+      else aprsdecode_click.bubblinfo[0] = 0;
       *mpos = pmin->pos;
    }
    else s[0UL] = 0;
 } /* end POIname() */
 
-#define maptool_WILDCARD "*"
 
-#define maptool_WILD "?"
+static uint32_t instr(uint32_t * i, uint32_t k, const char a[],
+                uint32_t a_len, const char b[], uint32_t b_len)
+{
+   uint32_t i0;
+   uint32_t j;
+   j = k;
+   i0 = *i;
+   for (;;) {
+      if (*i>a_len-1 || a[*i]==0) return j;
+      /* j=0 is no * before */
+      if ((j>b_len-1 || b[j]==0) || b[j]=='*') {
+         if (b[j]=='*') return j;
+         else return 0UL;
+      }
+      if (b[j]!='?' && X2C_CAP(a[*i])!=b[j]) {
+         if (k==0UL) return 0UL;
+         /* no * so search from begin */
+         ++i0;
+         *i = i0;
+         j = k;
+      }
+      else {
+         ++j;
+         ++*i;
+      }
+   }
+   return 0;
+} /* end instr() */
 
 
-static void POIfindfrom(struct aprsstr_POSITION * mpos, char s[],
+static char cmpwild(const char a[], uint32_t a_len,
+                const char b[], uint32_t b_len)
+{
+   uint32_t j;
+   uint32_t i;
+   i = 0UL;
+   j = 0UL;
+   for (;;) {
+      if (j>b_len-1 || b[j]==0) return 1;
+      if (b[j]=='*') ++j;
+      if (j>b_len-1 || b[j]==0) return 1;
+      /* * at end fits to rest */
+      j = instr(&i, j, a, a_len, b, b_len);
+      if (j==0UL) return 0;
+      if (i>a_len-1 || a[i]==0) return (j>b_len-1 || b[j]==0) || b[j]=='*';
+      if (j>b_len-1 || b[j]==0) return 0;
+   }
+   return 0;
+} /* end cmpwild() */
+
+
+static char cmppoi(aprsdecode_pMOUNTAIN p, const char s[],
                 uint32_t s_len)
+{
+   return p && (cmpwild(p->name, 32ul, s,
+                s_len) || p->pinfo && cmpwild(p->pinfo, 65536ul, s, s_len));
+} /* end cmppoi() */
+
+
+static void cleanfind(char s[], uint32_t s_len)
+/* make caps and remove multi * or *? */
+{
+   uint32_t j;
+   uint32_t i;
+   i = 0UL;
+   j = 0UL;
+   while (i<=s_len-1 && s[i]) {
+      s[j] = X2C_CAP(s[i]);
+      if (s[i]=='*') {
+         while ((i+1UL<=s_len-1 && s[i+1UL])
+                && (s[i+1UL]=='?' || s[i+1UL]=='*')) ++i;
+      }
+      ++i;
+      ++j;
+   }
+} /* end cleanfind() */
+
+
+static void POIfindfrom(struct aprsstr_POSITION * mpos, char all,
+                char s[], uint32_t s_len)
 /* get position of POI name */
 {
    uint32_t cnt;
-   uint32_t ls;
-   uint32_t i;
    aprsdecode_pMOUNTAIN pmax;
    aprsdecode_pMOUNTAIN pm;
    struct aprsdecode_MOUNTAIN * anonym;
    X2C_PCOPY((void **)&s,s_len);
    pm = aprsdecode_mountains;
    pmax = 0;
-   if (31UL<s_len-1) s[31UL] = 0;
-   s[s_len-1] = 0;
-   ls = aprsstr_Length(s, s_len);
+   cleanfind(s, s_len);
    cnt = 0UL;
    for (;;) {
       if (pm==0) break;
       { /* with */
          struct aprsdecode_MOUNTAIN * anonym = pm;
-         if (cnt>=lastpoinum) {
-            /* start from last time */
-            i = 0UL;
-            while (i<ls && (s[i]=='?' || X2C_CAP(anonym->name[i])
-                ==X2C_CAP(s[i]))) ++i;
-            if (i>=ls && anonym->name[i]==0 || s[i]=='*') {
-               pmax = pm; /* fit */
-               break;
-            }
+         if ((cnt>=lastpoinum && (all || aprsdecode_poifiles[pm->index].on))
+                && cmppoi(pm, s, s_len)) {
+            pmax = pm; /* start from last time */
+            break;
          }
          ++cnt;
          pm = anonym->next;
@@ -2196,6 +2268,11 @@ static void POIfindfrom(struct aprsstr_POSITION * mpos, char s[],
       *mpos = pmax->pos;
       aprsdecode_click.bubblpos = pmax->pos;
       aprsstr_Assign(aprsdecode_click.bubblstr, 50ul, pmax->name, 32ul);
+      if (pmax->pinfo) {
+         aprsstr_Assign(aprsdecode_click.bubblinfo, 4096ul, pmax->pinfo,
+                65536ul);
+      }
+      else aprsdecode_click.bubblinfo[0] = 0;
       aprsdecode_click.lastpoi = lastpoinum==0UL;
       lastpoinum = cnt+1UL; /* next time goon from this entry */
    }
@@ -2204,16 +2281,16 @@ static void POIfindfrom(struct aprsstr_POSITION * mpos, char s[],
 } /* end POIfindfrom() */
 
 
-extern void maptool_POIfind(struct aprsstr_POSITION * mpos, char s[],
-                uint32_t s_len)
+extern void maptool_POIfind(struct aprsstr_POSITION * mpos, char all,
+                char s[], uint32_t s_len)
 /* get position of POI name */
 {
-   if (lastpoinum==0UL) POIfindfrom(mpos, s, s_len);
+   if (lastpoinum==0UL) POIfindfrom(mpos, all, s, s_len);
    else {
-      POIfindfrom(mpos, s, s_len); /* find next */
+      POIfindfrom(mpos, all, s, s_len); /* find next */
       if (!aprspos_posvalid(*mpos)) {
          lastpoinum = 0UL;
-         POIfindfrom(mpos, s, s_len); /* else try again from start */
+         POIfindfrom(mpos, all, s, s_len); /* else try again from start */
       }
    }
 } /* end POIfind() */
@@ -3737,6 +3814,64 @@ extern void maptool_drawarrow(maptool_pIMAGE image, float x0,
       } while (wi>0L);
    }
 } /* end drawarrow() */
+
+
+extern char maptool_poisactiv(void)
+{
+   uint32_t i;
+   i = 0UL;
+   while (i<=29UL && !aprsdecode_poifiles[i].on) ++i;
+   return i<=29UL;
+} /* end poisactiv() */
+
+
+extern void maptool_drawpois(maptool_pIMAGE image)
+/* draw poi symbols with fitting category */
+{
+   uint32_t bri;
+   struct aprsdecode_COLTYP col0;
+   struct aprsstr_POSITION leftup;
+   struct aprsstr_POSITION rightdown;
+   float y;
+   float x;
+   aprsdecode_pMOUNTAIN pm;
+   signed char void0;
+   char fs[101];
+   struct aprsdecode_MOUNTAIN * anonym;
+   if (!maptool_poisactiv()) return;
+   /* normal state, quick done */
+   useri_confstr(useri_fPOIFILTER, fs, 101ul);
+   cleanfind(fs, 101ul);
+   maptool_xytodeg((float)maptool_xsize, 0.0f, &rightdown);
+   maptool_xytodeg(0.0f, (float)maptool_ysize, &leftup);
+   useri_ColConfset(&col0, useri_fCOLOBJTEXT);
+   bri = (uint32_t)((aprsdecode_lums.sym*256L)/1000L);
+   pm = aprsdecode_mountains;
+   while (pm) {
+      { /* with */
+         struct aprsdecode_MOUNTAIN * anonym = pm;
+         if ((((((aprsdecode_poifiles[pm->index]
+                .on && anonym->pos.lat>rightdown.lat)
+                && anonym->pos.lat<leftup.lat)
+                && anonym->pos.long0<rightdown.long0)
+                && anonym->pos.long0>leftup.long0)
+                && maptool_mapxy(anonym->pos, &x,
+                &y)>=0L) && (fs[0]==0 || cmppoi(pm, fs, 101ul))) {
+            maptool_drawsym(image,
+                aprsdecode_poifiles[pm->index].symbol[0UL],
+                aprsdecode_poifiles[pm->index].symbol[1UL], 0, x, y, bri);
+            if (aprsdecode_lums.text>0L) {
+               maptool_drawstr(image, anonym->name, 32ul,
+                osic_floor(x+(float)(aprsdecode_lums.symsize/2UL-1UL)),
+                osic_floor(y-(float)(aprsdecode_lums.fontysize/2UL)),
+                (uint32_t)aprsdecode_lums.text, 1UL, col0, &void0, 4UL, 0,
+                0);
+            }
+         }
+         pm = anonym->next;
+      }
+   }
+} /* end drawpois() */
 
 
 extern void maptool_cc(maptool_pIMAGE img, uint32_t from, uint32_t to)
@@ -5570,7 +5705,9 @@ static int32_t getword(int32_t * p, int32_t * len, int32_t fd,
                 char b[4096], char s[], uint32_t s_len)
 {
    uint32_t i;
+   char inqu;
    i = 0UL;
+   inqu = 0;
    for (;;) {
       s[i] = getch(b, fd, len, p);
       if (s[i]==0) return -1L;
@@ -5578,20 +5715,24 @@ static int32_t getword(int32_t * p, int32_t * len, int32_t fd,
          s[i] = 0;
          return 0L;
       }
-      if (s[i]==',') {
+      if (!inqu && s[i]==',') {
          s[i] = 0;
          return 1L;
       }
-      if (i<s_len-1 && (uint8_t)s[i]>=' ') ++i;
+      if (s[i]=='\"') inqu = !inqu;
+      else if ((i<s_len-1 && (uint8_t)s[i]>=' ') && (uint8_t)
+                s[i]<(uint8_t)'\200') ++i;
    }
    return 0;
 } /* end getword() */
 
 
-extern void maptool_rdmountains(char fn[], uint32_t fn_len,
-                char add)
+static void rdmountains(char fn[], uint32_t fn_len, char add,
+                uint32_t idx, uint32_t * cnt)
 /* import csv file with mountain name, pos, altitude */
 {
+   int32_t si;
+   int32_t sl;
    int32_t r;
    int32_t len;
    int32_t p;
@@ -5601,26 +5742,29 @@ extern void maptool_rdmountains(char fn[], uint32_t fn_len,
    float alt;
    char b[4096];
    char s[1024];
+   char text[4097];
    char name[100];
    char long0[100];
    char lat[100];
    char com[100];
+   int32_t tmp;
    X2C_PCOPY((void **)&fn,fn_len);
+   *cnt = 0UL;
    if (!add) {
       /* delete data */
       while (aprsdecode_mountains) {
          pm = aprsdecode_mountains;
+         if (pm->pinfo) {
+            sl = (int32_t)(aprsstr_Length(pm->pinfo, 65536ul)+1UL);
+            osic_free((char * *) &pm->pinfo, (uint32_t)sl);
+            useri_debugmem.poi -= (uint32_t)sl;
+         }
          aprsdecode_mountains = pm->next;
          osic_free((char * *) &pm, sizeof(struct aprsdecode_MOUNTAIN));
          useri_debugmem.poi -= sizeof(struct aprsdecode_MOUNTAIN);
       }
    }
-   b[0U] = 0;
-   useri_confstr(useri_fOSMDIR, s, 1024ul);
-   aprsstr_Append(b, 4096ul, s, 1024ul);
-   aprsstr_Append(b, 4096ul, "/", 2ul);
-   aprsstr_Append(b, 4096ul, fn, fn_len);
-   fd = osi_OpenRead(b, 4096ul);
+   fd = osi_OpenRead(fn, fn_len);
    if (!osic_FdValid(fd)) goto label;
    p = 0L;
    len = 0L;
@@ -5629,7 +5773,7 @@ extern void maptool_rdmountains(char fn[], uint32_t fn_len,
       if (r>0L) {
          r = getword(&p, &len, fd, b, name, 100ul);
          if (r>0L) {
-            r = getword(&p, &len, fd, b, s, 1024ul);
+            r = getword(&p, &len, fd, b, text, 4097ul);
             if (r>0L) {
                r = getword(&p, &len, fd, b, lat, 100ul);
                if (r>0L) {
@@ -5654,19 +5798,89 @@ extern void maptool_rdmountains(char fn[], uint32_t fn_len,
          if (pm==0) break;
          useri_debugmem.poi += sizeof(struct aprsdecode_MOUNTAIN);
          aprsstr_Assign(pm->name, 32ul, name, 100ul);
+         aprsstr_Assign(pm->category, 10ul, com, 100ul);
          pm->pos.lat = pos.lat*1.7453292519444E-2f;
          pm->pos.long0 = pos.long0*1.7453292519444E-2f;
          if (alt<0.0f || alt>9999.0f) alt = 0.0f;
+         sl = (int32_t)aprsstr_Length(text, 4097ul);
+         if (sl>0L) {
+            if (sl>=4096L) sl = 4096L;
+            text[sl] = 0;
+            ++sl;
+            osic_alloc((char * *) &pm->pinfo, (uint32_t)sl);
+            if (pm->pinfo==0) break;
+            useri_debugmem.poi += (uint32_t)sl;
+            X2C_MOVE((char *)text,(char *)pm->pinfo,
+                (uint32_t)sl);
+            tmp = sl-1L;
+            si = 0L;
+            if (si<=tmp) for (;; si++) {
+               if (pm->pinfo[si]==',') pm->pinfo[si] = '\012';
+               if (si==tmp) break;
+            } /* end for */
+         }
+         else pm->pinfo = 0;
          pm->alt = (short)aprsdecode_trunc(alt);
          pm->next = aprsdecode_mountains;
+         pm->index = (uint16_t)idx;
          aprsdecode_mountains = pm;
+         ++*cnt;
       }
    }
-   /*WrInt(pm^.alt, 10); WrStrLn(pm^.name); */
    osic_Close(fd);
    label:;
    X2C_PFREE(fn);
 } /* end rdmountains() */
+
+
+extern void maptool_readpoifiles(void)
+{
+   osi_DIRCONTEXT pdir;
+   char fullname[4096];
+   char path[4096];
+   char fn[4096];
+   char add;
+   uint32_t filenum;
+   int32_t i;
+   memset((char *)aprsdecode_poifiles,(char)0,
+                sizeof(struct aprsdecode__D1 [30]));
+   useri_confstr(useri_fOSMDIR, path, 4096ul);
+   aprsstr_Append(path, 4096ul, "/poi", 5ul);
+   if (osi_OpenDir(path, 4096ul, &pdir)>=0L) {
+      filenum = 0UL;
+      add = 0;
+      aprsstr_Append(path, 4096ul, "/", 2ul);
+      for (;;) {
+         osi_ReadDirLine(fn, 4096ul, pdir);
+         if (fn[0U]==0 || filenum>29UL) break;
+         /*WrStrLn(fn); */
+         if (fn[0U]!='.') {
+            /* not "." ".." files */
+            aprsstr_Assign(fullname, 4096ul, path, 4096ul);
+            aprsstr_Append(fullname, 4096ul, fn, 4096ul);
+            rdmountains(fullname, 4096ul, add, filenum,
+                &aprsdecode_poifiles[filenum].count);
+            add = 1;
+            if (aprsdecode_poifiles[filenum].count>0UL) {
+               /* only files with content */
+               aprsstr_Assign(aprsdecode_poifiles[filenum].name, 10ul, fn,
+                4096ul);
+               i = aprsstr_InStr(aprsdecode_poifiles[filenum].name, 10ul,
+                ".", 2ul);
+               if (i>=0L) {
+                  aprsdecode_poifiles[filenum].name[i] = 0;
+                /* name without extention */
+               }
+               strncpy(aprsdecode_poifiles[filenum].symbol,"//",2u);
+                /* default poi symbol */
+               /*WrStrLn(poifiles[filenum].name); */
+               ++filenum;
+            }
+         }
+      }
+      osi_CloseDir(pdir);
+   }
+} /* end readpoifiles() */
 
 
 extern void maptool_BEGIN(void)

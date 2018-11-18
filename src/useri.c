@@ -60,7 +60,7 @@ char useri_isblown;
 int32_t useri_nextmsg;
 maptool_pIMAGE useri_panoimage;
 /* aprsmap user interface */
-/* closesrtmfile,*/
+/*rdmountains, closesrtmfile,*/
 #define useri_MAPLOADER "gm.sh"
 
 #define useri_SHOTFORMATS "(.ppm/.png)"
@@ -73,10 +73,6 @@ maptool_pIMAGE useri_panoimage;
 
 #define useri_TICKERHEADLINE "0"
 /* some window managers do not free window headline mem */
-
-#define useri_POIFILENAME "poi.txt"
-
-#define useri_MYPOIFILENAME "mypoi.txt"
 
 #define useri_CHECKVERSFN "chkvers.txt"
 
@@ -271,16 +267,16 @@ maptool_pIMAGE useri_panoimage;
 
 #define useri_BUBBLWINID 201
 
+#define useri_PANOWINID 202
+
+#define useri_OVERLAYID 203
+/* overlay symbol chooser id */
+
 #define useri_DIGIEDITID 224
 
 #define useri_BEACONEDITID 226
 
 #define useri_LISTWINID 225
-
-#define useri_PANOWINID 202
-
-#define useri_OVERLAYID 203
-/* overlay symbol chooser id */
 /*      ZOOMTO=7C;  */
 
 /*      BLOWOK=11C; */
@@ -456,6 +452,11 @@ maptool_pIMAGE useri_panoimage;
 
 #define useri_CMDCLONE "\332"
 
+#define useri_CONFPOISYM "\333"
+
+#define useri_CHOOSECONFPOISYM "\334"
+/*      CONFPOISYMFIND=335C; (* in def *) */
+
 struct CONFLINE;
 
 typedef struct CONFLINE * pCONFLINE;
@@ -600,6 +601,8 @@ static uint32_t configedit;
 
 static uint32_t mouseshowcnt;
 
+static uint32_t poinameline;
+
 static pMENU menus;
 
 static uint32_t hinttime;
@@ -611,7 +614,7 @@ static uint32_t hintnum;
 
 static char helpscroll[11][41];
 
-static struct CONFIG configs[154];
+static struct CONFIG configs[155];
 
 static char pullmenuwhat;
 
@@ -670,7 +673,7 @@ static void startcheckvers(void)
       s[0] = 0;
       i = 0L;
       while (i<=1023L && h[i]) {
-         if (h[i]=='$') aprsstr_Append(s, 1024ul, "0.75", 5ul);
+         if (h[i]=='$') aprsstr_Append(s, 1024ul, "0.76", 5ul);
          else aprsstr_Append(s, 1024ul, (char *) &h[i], 1u/1u);
          ++i;
       }
@@ -911,7 +914,7 @@ extern void useri_int2cfg(uint8_t cfg, int32_t v)
 
 extern void useri_clrconfig(void)
 {
-   memset((char *)configs,(char)0,sizeof(struct CONFIG [154]));
+   memset((char *)configs,(char)0,sizeof(struct CONFIG [155]));
 } /* end clrconfig() */
 
 
@@ -1252,6 +1255,7 @@ f 22050 -C 0 -p /dev/ttyS0 0 -M 0 -t 250 -T 6 -L 127.0.0.1:9002:9001 -m 0",
                 485UL);
    initc(useri_fMENUSIZEMON, "Monwindow size", 15ul, useri_cLINE, "300 100",
                 8ul, 0, 490UL);
+   initc(useri_fPOIFILTER, "Filter", 7ul, useri_cLIST, "", 1ul, 0, 490UL);
    initc(useri_fAUTOSAVE, "Save Config On Quit", 20ul, useri_cBOOL, "", 1ul,
                 1, 495UL);
    initc(useri_fEDITLINE, "", 1ul, useri_cLINE, " ", 2ul, 0, 499UL);
@@ -1543,9 +1547,10 @@ extern void useri_loadconfig(char verb)
    useri_confstr(useri_fMARKPOS, s, 1000ul);
    aprstext_deghtopos(s, 1000ul, &aprsdecode_click.markpos);
    libsrtm_closesrtmfile(); /* to reread possibly updated files */
-   maptool_rdmountains("poi.txt", 8ul, 0);
-                /* to reread possibly updated file */
-   maptool_rdmountains("mypoi.txt", 10ul, 1);
+   /*  rdmountains(POIFILENAME, FALSE);
+                (* to reread possibly updated file *) */
+   /*  rdmountains(MYPOIFILENAME, TRUE); */
+   maptool_readpoifiles();
 } /* end loadconfig() */
 
 
@@ -2573,7 +2578,7 @@ static void addline(pMENU m, const char s[], uint32_t s_len,
    col = colc;
    i = 0UL;
    for (;;) {
-      if ((s[i]!='|' && s[i]) && i<=s_len-1) {
+      if ((i<=s_len-1 && s[i]!='|') && s[i]) {
          h[x] = s[i];
          if (s[i]=='\353') maptool_Colset(&col, 'R');
          else if (s[i]=='\354') maptool_Colset(&col, 'Y');
@@ -2591,7 +2596,7 @@ static void addline(pMENU m, const char s[], uint32_t s_len,
          }
          ++si;
          x = 0UL;
-         if ((si>20UL || s[i]==0) || i>s_len-1) break;
+         if ((si>20UL || i>s_len-1) || s[i]==0) break;
          /*      INC(y); */
          col = colc;
       }
@@ -2897,6 +2902,11 @@ static void textwin(uint32_t xw, uint32_t lines, uint32_t xpo,
       gg = 190L;
       bb = 100L;
       break;
+   case 'w':
+      rr = 110L;
+      gg = 100L;
+      bb = 100L;
+      break;
    default:;
       rr = 250L;
       gg = 250L;
@@ -2966,9 +2976,7 @@ static void textwin(uint32_t xw, uint32_t lines, uint32_t xpo,
                 &anonym2->Adr[(x)*anonym2->Len0+y]);
                anonym0->r = (uint16_t)rr;
                anonym0->g = (uint16_t)gg;
-               if (xe*xe+ye*ye<64UL) {
-                  anonym0->b = (uint16_t)bb;
-               }
+               if (xe*xe+ye*ye<64UL) anonym0->b = (uint16_t)bb;
                else anonym0->b = 65535U;
             }
          }
@@ -4207,7 +4215,8 @@ static void specialmapmenu(pMENU m)
    char h[100];
    char s[100];
    m->oldknob = 0UL;
-   addline(m, " Show All ", 11ul, "\300", 2ul, 8600UL);
+   addline(m, " Show All", 10ul, "\300", 2ul, 8600UL);
+   addline(m, " Show POI", 10ul, "C>", 3ul, 8603UL);
    addline(m, " WX Stations", 13ul, "\300", 2ul, 8605UL);
    addline(m, " Temp Colourmap", 16ul, "W", 2ul, 8610UL);
    addline(m, " Rain Colourmap", 16ul, "W", 2ul, 8615UL);
@@ -4249,7 +4258,7 @@ static void helpmenu(void)
    /*  addline(menu, "Shortcuts", CMDSHORTCUTLIST, MINH*6); */
    addline(menu, "Check Version", 14ul, "\305", 2ul, 607UL);
    addline(menu, "Helptext", 9ul, "\305", 2ul, 610UL);
-   addline(menu, "aprsmap(cu) 0.75 by OE5DXL ", 28ul, " ", 2ul, 605UL);
+   addline(menu, "aprsmap(cu) 0.76 by OE5DXL ", 28ul, " ", 2ul, 605UL);
    setunderbar(menu, 37L);
    menu->ysize = menu->oldknob*menu->yknob;
    menu->oldknob = 0UL;
@@ -4321,7 +4330,7 @@ static void mapclick(void)
                 aprsdecode_lums.fontysize+7UL, 10UL, useri_bTRANSP);
    useri_confstr(useri_fCLICKMAP, s, 100ul);
    addonoff(menu, "\365\365|Center", 10ul, "\201", 2ul, 1000UL,
-                (int32_t)(aprsdecode_lums.fontxsize+2UL), s[0U]=='C');
+                (int32_t)(aprsdecode_lums.fontxsize+2UL), s[0U]=='c');
    addonoff(menu, "\365\365|Set Marker 1", 16ul, "\201", 2ul, 1005UL,
                 (int32_t)(aprsdecode_lums.fontxsize+2UL), s[0U]=='X');
    addonoff(menu, "\365\365|Set Marker 2", 16ul, "\201", 2ul, 1010UL,
@@ -5526,12 +5535,12 @@ ose", 66ul, "\255", 2ul, 6800UL);
    addline(m, "", 1ul, "\255", 2ul, 6810UL);
    ++m->scroll;
    X2C_INCL(m->clampkb,2U,61);
-   m->confidx[2U] = 131U;
+   m->confidx[2U] = 132U;
    keybknob(m, 2UL, 0, 0UL);
    addline(m, "", 1ul, "\255", 2ul, 6815UL);
    ++m->scroll;
    X2C_INCL(m->clampkb,3U,61);
-   m->confidx[3U] = 130U;
+   m->confidx[3U] = 131U;
    keybknob(m, 3UL, 0, 0UL);
    useri_confstr(useri_fMSGPORT, s, 201ul);
    po = X2C_CAP(s[0U]);
@@ -5654,7 +5663,7 @@ static void configdelman(uint8_t cfg, uint32_t num, uint32_t n)
    pCONFLINE po;
    pCONFLINE pl;
    pl = 0;
-   if ((uint32_t)cfg<=153UL) pl = configs[cfg].lines;
+   if ((uint32_t)cfg<=154UL) pl = configs[cfg].lines;
    po = 0;
    while (n>1UL && pl) {
       po = pl;
@@ -8252,8 +8261,8 @@ static void knobcol(maptool_pIMAGE img, int32_t x0, int32_t y00,
 
 typedef uint32_t sCONFSET[5];
 
-static sCONFSET _cnst2 = {0x00000000UL,0x00000000UL,0x0100BE80UL,
-                0x0F000000UL,0x00780000UL};
+static sCONFSET _cnst2 = {0x00000000UL,0x00000000UL,0x02017D00UL,
+                0x1E000000UL,0x00F00000UL};
 
 static void configman(uint32_t button, char * keycmd)
 {
@@ -8277,7 +8286,7 @@ static void configman(uint32_t button, char * keycmd)
                 fKMHTIME,fTEMP,fWINDSYM,fRULER,fALTMIN,fCOLMAPTEXT,
                 fCOLOBJTEXT, fCOLMENUTEXT, fCOLMENUBACK, fCOLMARK1,
                 fCOLMARK2} */
-      if (X2C_INL((int32_t)configedit,154,_cnst2)) *keycmd = ' ';
+      if (X2C_INL((int32_t)configedit,155,_cnst2)) *keycmd = ' ';
       if (configs[configedit].typ<useri_cLIST) configedit = 0UL;
    }
    useri_killmenuid(229UL);
@@ -8409,16 +8418,16 @@ static void geoprofil(void)
 static void coloureditgeo(uint32_t knob, uint32_t sub)
 {
    configs[useri_fEDITLINE].width = 200U;
-   if (knob==1UL) configedit = 152UL;
-   else if (knob==2UL) configedit = 151UL;
-   else if (knob==3UL) configedit = 124UL;
-   else if (knob==4UL) configedit = 117UL;
-   else if (knob==5UL) configedit = 118UL;
-   else if (knob==6UL) configedit = 119UL;
-   else if (knob==7UL) configedit = 120UL;
-   else if (knob==8UL) configedit = 123UL;
-   else if (knob==9UL) configedit = 122UL;
-   else configedit = 121UL;
+   if (knob==1UL) configedit = 153UL;
+   else if (knob==2UL) configedit = 152UL;
+   else if (knob==3UL) configedit = 125UL;
+   else if (knob==4UL) configedit = 118UL;
+   else if (knob==5UL) configedit = 119UL;
+   else if (knob==6UL) configedit = 120UL;
+   else if (knob==7UL) configedit = 121UL;
+   else if (knob==8UL) configedit = 124UL;
+   else if (knob==9UL) configedit = 123UL;
+   else configedit = 122UL;
    memcpy(configs[useri_fEDITLINE].title,configs[configedit].title,31u);
    copytoed();
    useri_rdlums();
@@ -8460,13 +8469,13 @@ END colours;
 static void colouredit(uint32_t knob, uint32_t sub)
 {
    configs[useri_fEDITLINE].width = 200U;
-   if (knob==7UL) configedit = 88UL;
+   if (knob==7UL) configedit = 89UL;
    else if (knob==6UL) {
       if (sub==0UL) configtogg(useri_fTRANSP);
-      else configedit = 54UL;
+      else configedit = 55UL;
    }
-   else if (knob==5UL) configedit = 61UL;
-   else configedit = (147UL+knob)-1UL;
+   else if (knob==5UL) configedit = 62UL;
+   else configedit = (148UL+knob)-1UL;
    memcpy(configs[useri_fEDITLINE].title,configs[configedit].title,31u);
    copytoed();
    useri_rdlums();
@@ -8585,11 +8594,11 @@ static void docolourchoose(pMENU menu)
    uint32_t tmp0;
    menu->oldknob = 0UL;
    addline(menu, "", 1ul, "\317", 2ul, 8450UL);
-   ro = (uint32_t)useri_conf2int((uint8_t)((147UL+menu->scroll)-1UL),
+   ro = (uint32_t)useri_conf2int((uint8_t)((148UL+menu->scroll)-1UL),
                 0UL, 0L, 100L, 0L);
-   go = (uint32_t)useri_conf2int((uint8_t)((147UL+menu->scroll)-1UL),
+   go = (uint32_t)useri_conf2int((uint8_t)((148UL+menu->scroll)-1UL),
                 1UL, 0L, 100L, 0L);
-   bo = (uint32_t)useri_conf2int((uint8_t)((147UL+menu->scroll)-1UL),
+   bo = (uint32_t)useri_conf2int((uint8_t)((148UL+menu->scroll)-1UL),
                 2UL, 0L, 100L, 0L);
    normcol(1000UL, &ro, &go, &bo);
    colorsz = 17UL*aprsdecode_lums.fontxsize;
@@ -8661,7 +8670,7 @@ static void docolourchoose(pMENU menu)
       if (y==tmp) break;
    } /* end for */
    maptool_Colset(&col, 'W');
-   maptool_drawstri(menu->image, configs[(menu->scroll-1UL)+147UL].title,
+   maptool_drawstri(menu->image, configs[(menu->scroll-1UL)+148UL].title,
                 31ul, 3L, (int32_t)(((menu->image->Len0-1)-5UL)-aprsdecode_lums.fontysize),
                  1000UL, 1UL, col, 0, 0);
    menu->redrawproc = docolourchoose;
@@ -8731,7 +8740,7 @@ static void setcolour(uint32_t knob, uint32_t cx, uint32_t cy)
       aprsstr_Append(s, 101ul, " ", 2ul);
       aprsstr_CardToStr(b, 0UL, h, 101ul);
       aprsstr_Append(s, 101ul, h, 101ul);
-      icfg((uint8_t)((147UL+knob)-1UL), s, 101ul);
+      icfg((uint8_t)((148UL+knob)-1UL), s, 101ul);
    }
    useri_rdlums();
    updatemenus();
@@ -8832,7 +8841,7 @@ static void dorfcfg(uint32_t knob, uint32_t sub)
    configs[useri_fEDITLINE].width = 200U;
    if (knob==2UL) {
       strncpy(configs[useri_fEDITLINE].title,"Beacons Time Shift (s)",31u);
-      configedit = 13UL;
+      configedit = 14UL;
    }
    else if (knob==3UL) {
       strncpy(configs[useri_fEDITLINE].title,"Beacons",31u);
@@ -8847,7 +8856,7 @@ static void dorfcfg(uint32_t knob, uint32_t sub)
       if (sub==0UL) configtogg(useri_fWRTICKER);
       else {
          strncpy(configs[useri_fEDITLINE].title,"Calls in Headline",31u);
-         configedit = 105UL;
+         configedit = 106UL;
       }
    }
    else if (knob==6UL) configtogg(useri_fMUSTBECALL);
@@ -8855,42 +8864,42 @@ static void dorfcfg(uint32_t knob, uint32_t sub)
       if (sub==0UL) configtogg(useri_fSERIALTASK2);
       else {
          strncpy(configs[useri_fEDITLINE].title,"Serial Interface2",31u);
-         configedit = 29UL;
+         configedit = 30UL;
       }
    }
    else if (knob==8UL) {
       if (sub==0UL) configtogg(useri_fSERIALTASK);
       else {
          strncpy(configs[useri_fEDITLINE].title,"Serial Interface1",31u);
-         configedit = 28UL;
+         configedit = 29UL;
       }
    }
    else if (knob==9UL) {
       if (sub==0UL) configtogg(useri_fUDP4);
       else {
          strncpy(configs[useri_fEDITLINE].title,"RF-Port 4",31u);
-         configedit = 39UL;
+         configedit = 40UL;
       }
    }
    else if (knob==10UL) {
       if (sub==0UL) configtogg(useri_fUDP3);
       else {
          strncpy(configs[useri_fEDITLINE].title,"RF-Port 3",31u);
-         configedit = 38UL;
+         configedit = 39UL;
       }
    }
    else if (knob==11UL) {
       if (sub==0UL) configtogg(useri_fUDP2);
       else {
          strncpy(configs[useri_fEDITLINE].title,"RF-Port 2",31u);
-         configedit = 37UL;
+         configedit = 38UL;
       }
    }
    else if (knob==12UL) {
       if (sub==0UL) configtogg(useri_fUDP1);
       else {
          strncpy(configs[useri_fEDITLINE].title,"RF-Port 1",31u);
-         configedit = 36UL;
+         configedit = 37UL;
       }
    }
    copytoed();
@@ -8925,16 +8934,16 @@ static void domsgcfg(uint32_t knob)
    configs[useri_fEDITLINE].width = 200U;
    if (knob==1UL) {
       strncpy(configs[useri_fEDITLINE].title,"Query:Action",31u);
-      configedit = 107UL;
+      configedit = 108UL;
    }
    else if (knob==2UL) {
       strncpy(configs[useri_fEDITLINE].title,"Msg Path",31u);
-      configedit = 98UL;
+      configedit = 99UL;
       configs[useri_fEDITLINE].width = 9U;
    }
    else if (knob==3UL) {
       strncpy(configs[useri_fEDITLINE].title,"Msg Path",31u);
-      configedit = 100UL;
+      configedit = 101UL;
    }
    else if (knob==4UL) configtogg(useri_fPOPUPMSG);
    else if (knob==5UL) configtogg(useri_fMSGALLSSID);
@@ -9004,47 +9013,47 @@ static void dotimers(uint32_t knob)
    configs[useri_fEDITLINE].width = 200U;
    if (knob==11UL) {
       strncpy(configs[useri_fEDITLINE].title,"Netbeacon time (s)",31u);
-      configedit = 12UL;
+      configedit = 13UL;
    }
    else if (knob==10UL) {
       strncpy(configs[useri_fEDITLINE].title,"Delay Start Mapload (s)",31u);
-      configedit = 53UL;
+      configedit = 54UL;
    }
    else if (knob==9UL) {
       strncpy(configs[useri_fEDITLINE].title,"Objects in RAM (Min)",31u);
-      configedit = 52UL;
+      configedit = 53UL;
    }
    else if (knob==8UL) {
       strncpy(configs[useri_fEDITLINE].title,"Data in RAM (Min)",31u);
-      configedit = 51UL;
+      configedit = 52UL;
    }
    else if (knob==7UL) {
       strncpy(configs[useri_fEDITLINE].title,"Fullbright time (Min)",31u);
-      configedit = 50UL;
+      configedit = 51UL;
    }
    else if (knob==6UL) {
       strncpy(configs[useri_fEDITLINE].title,"Fade out time (Min)",31u);
-      configedit = 49UL;
+      configedit = 50UL;
    }
    else if (knob==5UL) {
       strncpy(configs[useri_fEDITLINE].title,"Show km/h (s)",31u);
-      configedit = 74UL;
+      configedit = 75UL;
    }
    else if (knob==4UL) {
       strncpy(configs[useri_fEDITLINE].title,"Dupes lookback (Min)",31u);
-      configedit = 70UL;
+      configedit = 71UL;
    }
    else if (knob==3UL) {
       strncpy(configs[useri_fEDITLINE].title,"Animation Speed",31u);
-      configedit = 82UL;
+      configedit = 83UL;
    }
    else if (knob==2UL) {
       strncpy(configs[useri_fEDITLINE].title,"Nomove skip delay",31u);
-      configedit = 83UL;
+      configedit = 84UL;
    }
    else if (knob==1UL) {
       strncpy(configs[useri_fEDITLINE].title,"Local time (+-h)",31u);
-      configedit = 106UL;
+      configedit = 107UL;
    }
    copytoed();
    updatemenus();
@@ -9112,24 +9121,24 @@ static void domap(uint32_t knob, uint32_t sub)
    configs[useri_fEDITLINE].width = 200U;
    if (knob==2UL) {
       strncpy(configs[useri_fEDITLINE].title,"Brightness notmover",31u);
-      configedit = 62UL;
+      configedit = 63UL;
    }
    else if (knob==3UL) {
       strncpy(configs[useri_fEDITLINE].title,"Show Altitude min m",31u);
-      configedit = 79UL;
+      configedit = 80UL;
    }
    else if (knob==4UL) {
       if (sub==0UL) configtogg(useri_fKMH);
       else {
          strncpy(configs[useri_fEDITLINE].title,"km/h text",31u);
-         configedit = 73UL;
+         configedit = 74UL;
       }
    }
    else if (knob==5UL) {
       if (sub==0UL) maploadtogg();
       else {
          strncpy(configs[useri_fEDITLINE].title,"Start Maploader",31u);
-         configedit = 87UL;
+         configedit = 88UL;
       }
    }
    else if (knob==6UL) configtogg(useri_fTEMP);
@@ -9149,7 +9158,7 @@ static void domap(uint32_t knob, uint32_t sub)
       else {
          strncpy(configs[useri_fEDITLINE].title,"show POIs from zoomlevel",
                 31u);
-         configedit = 67UL;
+         configedit = 68UL;
       }
    }
    copytoed();
@@ -9194,7 +9203,7 @@ static void domapmove(uint32_t knob, uint32_t sub)
       if (sub==0UL) configtogg(useri_fAPPROXY);
       else {
          strncpy(configs[useri_fEDITLINE].title,"Approximation Warn km",31u);
-         configedit = 135UL;
+         configedit = 136UL;
       }
    }
    else if (knob==2UL) configtogg(useri_fZOOMMISS);
@@ -9206,23 +9215,23 @@ static void domapmove(uint32_t knob, uint32_t sub)
    }
    else if (knob==7UL) {
       strncpy(configs[useri_fEDITLINE].title,"Center Watchcall",31u);
-      configedit = 63UL;
+      configedit = 64UL;
    }
    else if (knob==8UL) {
       strncpy(configs[useri_fEDITLINE].title,"Default Zoom",31u);
-      configedit = 81UL;
+      configedit = 82UL;
    }
    else if (knob==9UL) {
       strncpy(configs[useri_fEDITLINE].title,"Max Zoom",31u);
-      configedit = 85UL;
+      configedit = 86UL;
    }
    else if (knob==10UL) {
       strncpy(configs[useri_fEDITLINE].title,"Map Move Step",31u);
-      configedit = 90UL;
+      configedit = 91UL;
    }
    else if (knob==11UL) {
       strncpy(configs[useri_fEDITLINE].title,"Fine Zoom Step",31u);
-      configedit = 91UL;
+      configedit = 92UL;
    }
    copytoed();
    updatemenus();
@@ -9233,7 +9242,7 @@ static void mapadd(void)
 {
    configs[useri_fEDITLINE].width = 200U;
    strncpy(configs[useri_fEDITLINE].title,"Mapname brightness",31u);
-   configedit = 68UL;
+   configedit = 69UL;
    copytoed();
 } /* end mapadd() */
 
@@ -9242,7 +9251,7 @@ static void mapdir(void)
 {
    configs[useri_fEDITLINE].width = 200U;
    strncpy(configs[useri_fEDITLINE].title,"Map directory path",31u);
-   configedit = 48UL;
+   configedit = 49UL;
    copytoed();
 } /* end mapdir() */
 
@@ -9285,38 +9294,38 @@ static void callfiltsetup(uint32_t knob)
    if (knob==1UL) {
       strncpy(configs[useri_fEDITLINE].title,"Bad Paths Ports",31u);
       configs[useri_fEDITLINE].width = 200U;
-      configedit = 114UL;
+      configedit = 115UL;
       copytoed();
    }
    else if (knob==2UL) {
       strncpy(configs[useri_fEDITLINE].title,"Raw Frame",31u);
       configs[useri_fEDITLINE].width = 50U;
-      configedit = 113UL;
+      configedit = 114UL;
    }
    else if (knob==3UL) {
       strncpy(configs[useri_fEDITLINE].title,"Destination Call",31u);
       configs[useri_fEDITLINE].width = 9U;
-      configedit = 112UL;
+      configedit = 113UL;
    }
    else if (knob==4UL) {
       strncpy(configs[useri_fEDITLINE].title,"Word in Comment",31u);
       configs[useri_fEDITLINE].width = 50U;
-      configedit = 108UL;
+      configedit = 109UL;
    }
    else if (knob==5UL) {
       strncpy(configs[useri_fEDITLINE].title,"Sender of Object",31u);
       configs[useri_fEDITLINE].width = 9U;
-      configedit = 109UL;
+      configedit = 110UL;
    }
    else if (knob==6UL) {
       strncpy(configs[useri_fEDITLINE].title,"Via Igate Call",31u);
       configs[useri_fEDITLINE].width = 9U;
-      configedit = 110UL;
+      configedit = 111UL;
    }
    else if (knob==7UL) {
       strncpy(configs[useri_fEDITLINE].title,"Call of Symbol",31u);
       configs[useri_fEDITLINE].width = 9U;
-      configedit = 111UL;
+      configedit = 112UL;
    }
    useri_refresh = 1;
 } /* end callfiltsetup() */
@@ -9326,23 +9335,12 @@ static void watchcallsetup(void)
 {
    strncpy(configs[useri_fEDITLINE].title,"Watch Call",31u);
    configs[useri_fEDITLINE].width = 10U;
-   configedit = 134UL;
+   configedit = 135UL;
    configs[useri_fEDITLINE].curspos = 0U;
    clreditline();
    useri_refresh = 1;
 } /* end watchcallsetup() */
 
-/*
-PROCEDURE editonesymbol;
-BEGIN
-  configs[fEDITLINE].title:="Symbol Tab+Picture";
-  configs[fEDITLINE].width:=3;
-  configedit:=ORD(fONESYMB);
-  copytoed;
-  updatemenus;
-  rdonesymb(TRUE);
-END editonesymbol;
-*/
 
 static void onlinesetup(uint32_t knob, uint32_t sub)
 {
@@ -9353,7 +9351,7 @@ static void onlinesetup(uint32_t knob, uint32_t sub)
       else {
          strncpy(configs[useri_fEDITLINE].title,"Rf Ports",31u);
          configs[useri_fEDITLINE].width = 4U;
-         configedit = 35UL;
+         configedit = 36UL;
       }
       copytoed();
    }
@@ -9362,25 +9360,25 @@ static void onlinesetup(uint32_t knob, uint32_t sub)
    else if (knob==4UL) {
       strncpy(configs[useri_fEDITLINE].title,"Server Filter",31u);
       configs[useri_fEDITLINE].width = 99U;
-      configedit = 31UL;
+      configedit = 32UL;
       copytoed();
    }
    else if (knob==5UL) {
       strncpy(configs[useri_fEDITLINE].title,"Server URL",31u);
       configs[useri_fEDITLINE].width = 99U;
-      configedit = 30UL;
+      configedit = 31UL;
       copytoed();
    }
    else if (knob==6UL) {
       strncpy(configs[useri_fEDITLINE].title,"Passcode",31u);
       configs[useri_fEDITLINE].width = 99U;
-      configedit = 32UL;
+      configedit = 33UL;
       copytoed();
    }
    else if (knob==7UL) {
       strncpy(configs[useri_fEDITLINE].title,"Netbeacon Text",31u);
       configs[useri_fEDITLINE].width = 99U;
-      configedit = 10UL;
+      configedit = 11UL;
       copytoed();
    }
    else if (knob==8UL) {
@@ -9438,7 +9436,7 @@ static void docfgbeep(uint32_t knob, uint32_t sub)
       else {
          strncpy(configs[useri_fEDITLINE].title,"Beep far/near Hz ms Hz ms",
                 31u);
-         configedit = 127UL;
+         configedit = 128UL;
       }
       testbeep(useri_fBEEPPROX);
    }
@@ -9446,7 +9444,7 @@ static void docfgbeep(uint32_t knob, uint32_t sub)
       if (sub==0UL) configtogg(useri_fBEEPWATCH);
       else {
          strncpy(configs[useri_fEDITLINE].title,"Watchcall Beep Hz ms",31u);
-         configedit = 128UL;
+         configedit = 129UL;
       }
       testbeep(useri_fBEEPWATCH);
    }
@@ -9455,7 +9453,7 @@ static void docfgbeep(uint32_t knob, uint32_t sub)
       else {
          strncpy(configs[useri_fEDITLINE].title,"Message Beep rx/ack Hz ms Hz\
  ms",31u);
-         configedit = 129UL;
+         configedit = 130UL;
       }
       testbeep(useri_fBEEPMSG);
    }
@@ -9520,7 +9518,7 @@ static void configeditor(void)
    uint32_t oks;
    cnt = 0UL;
    pl = 0;
-   if (configedit<=153UL) pl = configs[configedit].lines;
+   if (configedit<=154UL) pl = configs[configedit].lines;
    ph = pl;
    while (ph) {
       ++cnt;
@@ -9551,7 +9549,7 @@ static void configeditor(void)
    /*    addline(m, 0C, " ", MINH*72); */
    addline(m, "", 1ul, "\320", 2ul, 7200UL);
    X2C_INCL(m->clampkb,2U,61);
-   m->confidx[2U] = 153U;
+   m->confidx[2U] = 154U;
    keybknob(m, 2UL, 0, 0UL);
    m->oldknob = 2UL;
    more = configs[configedit].typ>=useri_cLIST;
@@ -9565,7 +9563,7 @@ static void configeditor(void)
       else strncpy(s,"\346 ",201u);
       m->scroll = cnt;
       aprsstr_Append(s, 201ul, pl->line, 201ul);
-      if (configedit==134UL) {
+      if (configedit==135UL) {
          aprsstr_Append(s, 201ul, "           ", 12ul);
          s[12U] = 0;
          strncpy(cmd,"\253",2u);
@@ -9714,7 +9712,6 @@ static void configmenu2(void)
 static void findopl(char folded)
 {
    pMENU menu;
-   /*  IF NOT folded THEN killallmenus END; */
    if (!folded) useri_killmenuid(0UL);
    newmenu(&menu, aprsdecode_lums.fontxsize*37UL+4UL,
                 aprsdecode_lums.fontysize+10UL, 1UL, useri_bCOLOR);
@@ -9730,6 +9727,86 @@ static void findopl(char folded)
       menu->y00 = (uint32_t)useri_xmouse.y;
    }
 } /* end findopl() */
+
+
+static uint32_t cntpoifiles(void)
+{
+   uint32_t i;
+   i = 0UL;
+   while (i<=29UL && aprsdecode_poifiles[i].count>0UL) ++i;
+   return i;
+} /* end cntpoifiles() */
+
+static void doshowpoicategory(pMENU);
+
+
+static void doshowpoicategory(pMENU menu)
+{
+   uint32_t oldk;
+   uint32_t olds;
+   uint32_t cnt;
+   uint32_t i;
+   char sc[31];
+   char s[31];
+   uint32_t tmp;
+   cnt = cntpoifiles();
+   if (cnt>0UL) {
+      oldk = menu->oldknob;
+      olds = menu->oldsub;
+      menu->oldknob = 0UL;
+      tmp = cnt-1UL;
+      i = 0UL;
+      if (i<=tmp) for (;; i++) {
+         strncpy(s,"    ",31u);
+         aprsstr_Append(s, 31ul, aprsdecode_poifiles[i].name, 10ul);
+         aprsstr_IntToStr((int32_t)aprsdecode_poifiles[i].count, 1UL, sc,
+                31ul);
+         aprsstr_Append(s, 31ul, "[", 2ul);
+         aprsstr_Append(s, 31ul, sc, 31ul);
+         aprsstr_Append(s, 31ul, "]", 2ul);
+         addonoff(menu, s, 31ul, "\333>", 3ul, 8680UL,
+                (int32_t)(aprsdecode_lums.fontxsize+2UL),
+                aprsdecode_poifiles[i].on);
+         drawsymsquare(menu->image, aprsdecode_poifiles[i].symbol[0UL],
+                aprsdecode_poifiles[i].symbol[1UL],
+                (int32_t)(((menu->xsize-aprsdecode_lums.symsize/2UL)
+                -aprsdecode_lums.fontxsize)-8UL),
+                (int32_t)((menu->oldknob-1UL)*menu->yknob+menu->yknob/2UL))
+                ;
+         if (i==tmp) break;
+      } /* end for */
+      ++cnt;
+      addline(menu, "", 1ul, "\335", 2ul, 8681UL);
+      X2C_INCL(menu->clampkb,cnt,61);
+      menu->confidx[cnt] = 10U;
+      clampedline = 0UL;
+      keybknob(menu, cnt, 0, 0UL);
+      menu->redrawproc = doshowpoicategory;
+      menu->ysize = menu->oldknob*menu->yknob;
+      menu->oldknob = oldk;
+      menu->oldsub = olds;
+   }
+} /* end doshowpoicategory() */
+
+
+static void showpoicategory(char folded)
+{
+   pMENU menu;
+   uint32_t cnt;
+   cnt = cntpoifiles();
+   if (!folded) useri_killallmenus();
+   if (cnt>0UL) {
+      newmenu(&menu, aprsdecode_lums.fontxsize*23UL+4UL,
+                aprsdecode_lums.fontysize+10UL, cnt+1UL, useri_bTRANSP);
+      if (!folded) {
+         menu->x0 = (uint32_t)useri_xmouse.x;
+         menu->y00 = (uint32_t)useri_xmouse.y;
+      }
+      doshowpoicategory(menu);
+      menu->oldknob = 0UL;
+   }
+   else if (!folded) useri_say("No PoiFiles found", 18ul, 4UL, 'e');
+} /* end showpoicategory() */
 
 
 static void fotofn(void)
@@ -10232,7 +10309,7 @@ static void downloadmenu(void)
                 aprsdecode_lums.fontysize+7UL, 1UL, useri_bCOLOR);
       addline(menu, "", 1ul, "\237", 2ul, 2301UL);
       X2C_INCL(menu->clampkb,1U,61);
-      menu->confidx[1U] = 86U;
+      menu->confidx[1U] = 87U;
       keybknob(menu, 1UL, 0, 0UL);
    }
    menu->ysize = menu->oldknob*menu->yknob;
@@ -10351,6 +10428,7 @@ static void mouseshow(uint32_t x, uint32_t y)
 {
    char s[151];
    char h[21];
+   char info[4096];
    struct aprsstr_POSITION pos1;
    struct aprsstr_POSITION pos;
    float dist;
@@ -10375,7 +10453,10 @@ static void mouseshow(uint32_t x, uint32_t y)
       s[0U] = 0;
       pos1 = pos;
       if (dist!=0.0f || !poioff && aprsdecode_initzoom>=useri_conf2int(useri_fMOUSELOC,
-                 0UL, 1L, 18L, 9L)) maptool_POIname(&pos, s, 151ul);
+                 0UL, 1L, 18L, 9L)) {
+         maptool_POIname(&pos, s, 151ul, info, 4096ul);
+                /* no pois on mouse over menu */
+      }
       if (dist!=0.0f) {
          /* pos from panorama */
          pos = pos1; /* not lock to POI on panorama */
@@ -10394,6 +10475,7 @@ static void mouseshow(uint32_t x, uint32_t y)
          aprsdecode_click.bubblpos = pos;
          aprsdecode_click.lastpoi = 0;
          aprsstr_Assign(aprsdecode_click.bubblstr, 50ul, s, 151ul);
+         aprsstr_Assign(aprsdecode_click.bubblinfo, 4096ul, info, 4096ul);
       }
    }
 /*    textbubble(pos, s, FALSE); */
@@ -10550,9 +10632,10 @@ static char hilitemenu(uint32_t px, uint32_t py, char kbdch,
                infos();
             }
             else if (c=='F') findopl(1);
+            else if (c=='C') showpoicategory(1);
             else if (c=='K') {
                useri_confstr(useri_fCLICKMAP, s, 21ul);
-               if (((s[0U]=='C' || s[0U]=='X') || s[0U]=='Y') || s[0U]=='2') {
+               if (((s[0U]=='c' || s[0U]=='X') || s[0U]=='Y') || s[0U]=='2') {
                   mapclick();
                }
                else nextclick();
@@ -10585,12 +10668,14 @@ static char hilitemenu(uint32_t px, uint32_t py, char kbdch,
             else if (c=='\325') {
                if (subknob>0UL) symchoose('\326');
             }
+            else if (c=='\333') {
+               poinameline = knob;
+               symchoose('\334');
+            }
             else if (c=='\275') {
                if (knob==5UL) configbeep();
             }
-            else if (c=='\271') {
-               msgmenu();
-            }
+            else if (c=='\271') msgmenu();
             else if (c=='\316') colourchoose(knob);
             else if (c=='\313') geoprofil();
             else if (c=='\321') colourchoosegeo(knob);
@@ -10879,7 +10964,7 @@ static void kbtomenu(char * ch)
    while ((uint8_t)uml[0U]>0) {
       *ch = uml[0U];
       idx = (uint32_t)pm->confidx[pm->oldknob];
-      if (idx<=153UL) {
+      if (idx<=154UL) {
          { /* with */
             struct CONFIG * anonym = &configs[idx];
             if (anonym->lines==0) icfg((uint8_t)idx, " ", 2ul);
@@ -10965,7 +11050,7 @@ static void kbtomenu(char * ch)
                if (anonym0->line[i]==' ') anonym0->line[i] = 0;
                anonym0->line[le] = 0;
             }
-            if (idx==23UL || idx==26UL) beaconlen();
+            if (idx==24UL || idx==27UL) beaconlen();
          }
       }
       aprsstr_Delstr(uml, 10ul, 0UL, 1UL);
@@ -11283,6 +11368,23 @@ static void setmarks(char marker1, char frommap)
 } /* end setmarks() */
 
 
+static void setpoisym(uint32_t line, uint32_t knob, uint32_t subknob)
+{
+   uint32_t ns;
+   struct aprsdecode__D1 * anonym;
+   if (line>0UL && line<=30UL) {
+      { /* with */
+         struct aprsdecode__D1 * anonym = &aprsdecode_poifiles[line-1UL];
+         ns = subknob+(12UL-knob)*16UL;
+         if (ns>=96UL) anonym->symbol[0UL] = '\\';
+         else anonym->symbol[0UL] = '/';
+         anonym->symbol[1UL] = (char)(32UL+ns%96UL);
+      }
+   }
+   updatemenus();
+} /* end setpoisym() */
+
+
 static void mouseleft(int32_t mousx, int32_t mousy)
 {
    pMENU menu;
@@ -11389,7 +11491,7 @@ static void mouseleft(int32_t mousx, int32_t mousy)
       }
       else if (c=='\023') {
          if (subknob==0UL) aprsdecode_click.cmd = '\023';
-         else if (subknob==1UL) aprsdecode_click.cmd = 'c';
+         else if (subknob==1UL) aprsdecode_click.cmd = '\313';
          else aprsdecode_click.cmd = '\004';
          aprsdecode_click.dryrun = 0;
          useri_refresh = 1;
@@ -11474,7 +11576,7 @@ static void mouseleft(int32_t mousx, int32_t mousy)
              ELSIF c=CMDRAIN THEN click.cmd:="w";
          */
          aprsdecode_click.cmd = ' ';
-         if (knob==3UL) aprsdecode_lums.wxcol = 'W';
+         if (knob==4UL) aprsdecode_lums.wxcol = 'W';
          else aprsdecode_lums.wxcol = 'R';
          aprsdecode_click.mhop[0UL] = 0;
          aprsdecode_click.onesymbol.tab = 0;
@@ -11482,7 +11584,7 @@ static void mouseleft(int32_t mousx, int32_t mousy)
       }
       else if (c=='\300') {
          aprsdecode_click.cmd = ' ';
-         if (knob==2UL) aprsdecode_lums.wxcol = 'w';
+         if (knob==3UL) aprsdecode_lums.wxcol = 'w';
          else aprsdecode_lums.wxcol = 0;
          aprsdecode_click.mhop[0UL] = 0;
          aprsdecode_click.onesymbol.tab = 0;
@@ -11540,7 +11642,7 @@ static void mouseleft(int32_t mousx, int32_t mousy)
       else if (c=='\310') aprsdecode_click.cmd = '\310';
       else if (c=='\237') aprsdecode_click.cmd = '\237';
       else if (c=='\201') {
-         if (knob==1UL) icfg(useri_fCLICKMAP, "C", 2ul);
+         if (knob==1UL) icfg(useri_fCLICKMAP, "c", 2ul);
          else if (knob==2UL) icfg(useri_fCLICKMAP, "X", 2ul);
          else if (knob==3UL) icfg(useri_fCLICKMAP, "Y", 2ul);
          else if (knob==4UL) icfg(useri_fCLICKMAP, "2", 2ul);
@@ -11705,6 +11807,15 @@ static void mouseleft(int32_t mousx, int32_t mousy)
       else if (c=='\325') {
          if (subknob==0UL) aprsdecode_click.cmd = 's';
       }
+      else if (c=='\334') setpoisym(poinameline, knob, subknob);
+      else if (c=='\333') {
+         if (knob-1UL<=29UL) {
+            aprsdecode_poifiles[knob-1UL].on = !aprsdecode_poifiles[knob-1UL]
+                .on;
+            updatemenus();
+         }
+      }
+      else if (c=='\335') aprsdecode_click.cmd = '\335';
       else if (c=='\236') {
          useri_reloadmap = 1;
          aprsdecode_click.cmd = ' ';
@@ -11781,7 +11892,9 @@ static void mouseleft(int32_t mousx, int32_t mousy)
             aprsdecode_click.cmdatt = '\006';
          }
          else if (subknob==6UL) {
-            if (useri_nextmsg==0L) useri_nextmsg = 1L;
+            if (useri_nextmsg==0L) {
+               useri_nextmsg = 1L;
+            }
             aprsdecode_click.cmd = ' ';
          }
          else if (subknob==7UL) {
@@ -11790,9 +11903,7 @@ static void mouseleft(int32_t mousx, int32_t mousy)
                expandtogg();
                aprsdecode_click.cmd = ' ';
             }
-            else {
-               maploadtogg();
-            }
+            else maploadtogg();
          }
          else if (subknob==8UL) {
             configtogg(useri_fTRACKFILT);
@@ -11979,8 +12090,15 @@ extern void useri_keychar(char ch, char ispasted,
       aprsdecode_click.cmd = ' ';
       useri_refresh = 1;
    }
-   else if (((((((ch!='b' && ch!='m') && ch!='f') && ch!='u') && ch!='d')
-                && ch!='p') && ch!='s') && ch!='h') {
+   else if (ch=='X') {
+      /*  ELSIF (ch<>"b") & (ch<>"m") & (ch<>"f") & (ch<>"u") & (ch<>"d")
+                & (ch<>"p") */
+      /*  & (ch<>"s") & (ch<>"h") THEN click.cmd:=CAP(ch)
+                ELSE click.cmd:=ch END; */
+      aprsdecode_click.cmd = '\314';
+   }
+   else if (ch=='Y') aprsdecode_click.cmd = '\315';
+   else if (aprsstr_InStr("bcdfhmpsu", 10ul, (char *) &ch, 1u/1u)<0L) {
       aprsdecode_click.cmd = X2C_CAP(ch);
    }
    else aprsdecode_click.cmd = ch;
@@ -12031,6 +12149,7 @@ extern void useri_keychar(char ch, char ispasted,
    else if (aprsdecode_click.cmd=='F' || aprsdecode_click.cmd=='\006') {
       findopl(0);
    }
+   else if (aprsdecode_click.cmd=='C') showpoicategory(0);
    else if (aprsdecode_click.cmd=='u') {
       if (useri_listwin!='M') startmon(1);
       else closelist();

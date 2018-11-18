@@ -13,6 +13,7 @@
 #include "osi.h"
 #endif
 #define osi_C_
+#include <dirent.h>
 #include <osic.h>
 #ifndef mlib_H_
 #include "mlib.h"
@@ -59,6 +60,40 @@ extern uint32_t osi_realcard(float x)
    if (x<=0.0f) return 0UL;
    return (uint32_t)X2C_TRUNCC(x,0UL,X2C_max_longcard);
 } /* end realcard() */
+
+
+extern int32_t osi_OpenDir(char path[], uint32_t path_len,
+                osi_DIRCONTEXT * dir)
+{
+   *dir = (osi_DIRCONTEXT)opendir(path);
+   if (*dir==0) return -1L;
+   return 0L;
+} /* end OpenDir() */
+
+
+extern void osi_ReadDirLine(char filename[], uint32_t filename_len,
+                osi_DIRCONTEXT dir)
+{
+   uint32_t i;
+   struct dirent * dire;
+   filename[0UL] = 0;
+   dire = (struct dirent *)readdir(dir);
+   if (dire==0) return;
+   /* no (more) entries */
+   i = 0UL;
+   while ((i<=filename_len-1 && i<=255UL) && dire->d_name[i]) {
+      filename[i] = dire->d_name[i];
+      ++i;
+   }
+   if (i<=filename_len-1) filename[i] = 0;
+} /* end ReadDirLine() */
+
+
+extern void osi_CloseDir(osi_DIRCONTEXT dir)
+{
+   int32_t i;
+   i = closedir(dir);
+} /* end CloseDir() */
 
 
 extern int32_t osi_OpenAppendLong(char fn[], uint32_t fn_len)
@@ -179,13 +214,6 @@ extern int32_t osi_symblink(char * fname, char * newname)
 {
    return osic_symblink((pSTR)fname, (pSTR)newname);
 } /* end symblink() */
-
-
-extern char osi_CreateDir(char path[], uint32_t path_len,
-                uint32_t perm)
-{
-   return osic_mkdir(path, path_len, perm);
-} /* end CreateDir() */
 
 
 extern void osi_BEGIN(void)

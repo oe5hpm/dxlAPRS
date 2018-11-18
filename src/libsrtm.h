@@ -16,6 +16,7 @@
 #include "aprsstr.h"
 #endif
 
+/* get altitude out of srtm files directory tree by oe5dxl */
 extern uint32_t libsrtm_srtmmem;
 
 extern uint32_t libsrtm_srtmmaxmem;
@@ -32,6 +33,7 @@ extern void libsrtm_initsrtm(void);
 extern void libsrtm_closesrtmfile(void);
 
 extern float libsrtm_egm96(struct aprsstr_POSITION, char *);
+/* read and interpolate geoid correction from datafile */
 
 
 extern void libsrtm_BEGIN(void);

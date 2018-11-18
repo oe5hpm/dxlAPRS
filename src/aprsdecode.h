@@ -62,9 +62,11 @@ typedef uint32_t aprsdecode_SET256[8];
 
 extern aprsdecode_SET256 aprsdecode_SYMTABLE;
 
-#define aprsdecode_VERSNUM "0.75"
+#define aprsdecode_POIINFOSIZE 4096
 
-#define aprsdecode_VERS "aprsmap(cu) 0.75"
+#define aprsdecode_VERSNUM "0.76"
+
+#define aprsdecode_VERS "aprsmap(cu) 0.76"
 
 typedef char aprsdecode_MONCALL[9];
 
@@ -433,6 +435,8 @@ struct aprsdecode_COLTYP {
    uint32_t b;
 };
 
+typedef char * aprsdecode_pMOUNTAININFO;
+
 struct aprsdecode_MOUNTAIN;
 
 typedef struct aprsdecode_MOUNTAIN * aprsdecode_pMOUNTAIN;
@@ -440,9 +444,12 @@ typedef struct aprsdecode_MOUNTAIN * aprsdecode_pMOUNTAIN;
 
 struct aprsdecode_MOUNTAIN {
    aprsdecode_pMOUNTAIN next;
+   aprsdecode_pMOUNTAININFO pinfo;
    struct aprsstr_POSITION pos;
    short alt;
+   uint16_t index;
    char name[32];
+   char category[10];
 };
 
 struct aprsdecode_CLICKOBJECT;
@@ -519,6 +526,7 @@ struct aprsdecode__D0 {
    uint32_t entries;
    struct aprsstr_POSITION bubblpos; /* found position of POI */
    char bubblstr[50]; /* found text of POI */
+   char bubblinfo[4096]; /* found additional info of POI */
    struct aprsdecode_CLICKOBJECT table[10];
    uint32_t polilinecursor; /* edit which edge of polinine object */
 };
@@ -551,6 +559,18 @@ struct aprsdecode__D1;
 
 
 struct aprsdecode__D1 {
+   uint32_t count;
+   char on;
+   char symbol[2];
+   char name[10];
+};
+
+extern struct aprsdecode__D1 aprsdecode_poifiles[30];
+
+struct aprsdecode__D2;
+
+
+struct aprsdecode__D2 {
    char moving;
    char moded;
    char errorstep;
@@ -590,12 +610,12 @@ struct aprsdecode__D1 {
    struct aprsdecode_COLTYP menucol;
 };
 
-extern struct aprsdecode__D1 aprsdecode_lums;
+extern struct aprsdecode__D2 aprsdecode_lums;
 
-struct aprsdecode__D2;
+struct aprsdecode__D3;
 
 
-struct aprsdecode__D2 {
+struct aprsdecode__D3 {
    struct aprsstr_POSITION winpos0;
    struct aprsstr_POSITION winpos1;
    aprsdecode_MONCALL call;
@@ -604,7 +624,7 @@ struct aprsdecode__D2 {
    char beep;
 };
 
-extern struct aprsdecode__D2 aprsdecode_tracenew;
+extern struct aprsdecode__D3 aprsdecode_tracenew;
 
 extern aprsdecode_pTXMESSAGE aprsdecode_txmessages;
 
@@ -618,10 +638,10 @@ extern aprsdecode_pOPHIST aprsdecode_ophist2;
 
 extern aprsdecode_pOPHIST aprsdecode_ophist0;
 
-struct aprsdecode__D3;
+struct aprsdecode__D4;
 
 
-struct aprsdecode__D3 {
+struct aprsdecode__D4 {
    char url[256];
    char port[6];
    char filterst[256];
@@ -630,7 +650,7 @@ struct aprsdecode__D3 {
     servercall            : MONCALL;
 */
 
-extern struct aprsdecode__D3 aprsdecode_gateways[10];
+extern struct aprsdecode__D4 aprsdecode_gateways[10];
 
 extern aprsdecode_pTCPSOCK aprsdecode_tcpsocks;
 
