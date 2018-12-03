@@ -119,8 +119,6 @@ struct TABS {
    struct VIEW posstk[20];
 };
 
-static char logdone;
-
 static maptool_pIMAGE image;
 
 static maptool_pIMAGE rfimg;
@@ -134,6 +132,8 @@ static uint32_t maptime;
 static uint32_t laststatref;
 
 static uint32_t realday;
+
+static uint32_t makeimagetime;
 
 static uint32_t cycleorder;
 
@@ -508,7 +508,6 @@ static void rdlonglog(aprsdecode_pOPHIST * optab, char fn[],
    uint32_t ot;
    uint32_t end;
    uint32_t start;
-   aprsdecode_pOPHIST op;
    struct aprsdecode_DAT dat;
    uint32_t lfc;
    X2C_PCOPY((void **)&fn,fn_len);
@@ -569,11 +568,14 @@ static void rdlonglog(aprsdecode_pOPHIST * optab, char fn[],
       ++rp;
    }
    osic_Close(fc);
-   op = *optab;
-   while (op) {
-      aprsdecode_Checktrack(op, 0);
-      op = op->next;
-   }
+   /*
+     op:=optab;
+     WHILE op<>NIL DO
+       Checktrack(op, NIL);
+       op:=op^.next;
+     END;
+   */
+   aprsdecode_Checktracks();
    label:;
    X2C_PFREE(fn);
 } /* end rdlonglog() */
@@ -624,7 +626,6 @@ static void rdlog(aprsdecode_pOPHIST * optab, char fn[],
    uint32_t i;
    uint32_t wp;
    aprsdecode_FRAMEBUF mbuf;
-   aprsdecode_pOPHIST op;
    struct aprsdecode_DAT dat;
    uint32_t ot;
    uint32_t start;
@@ -723,11 +724,14 @@ ayly-Log Mode\012", 37ul);
    if (!aprsdecode_quit) {
       useri_textautosize(0L, 0L, 5UL, 6UL, 'b', "Check Tracks", 13ul);
       xosi_Eventloop(1UL);
-      op = *optab;
-      while (op) {
-         aprsdecode_Checktrack(op, 0);
-         op = op->next;
-      }
+      /*
+          op:=optab;
+          WHILE op<>NIL DO
+            Checktrack(op, NIL);
+            op:=op^.next;
+          END;
+      */
+      aprsdecode_Checktracks();
    }
    label:;
    X2C_PFREE(fn);
@@ -2061,7 +2065,7 @@ static void bootreadlog(void)
    aprsdecode_purge(&aprsdecode_ophist0,
                 osic_time()-aprsdecode_lums.purgetime,
                 osic_time()-aprsdecode_lums.purgetimeobj);
-   logdone = 1;
+   aprsdecode_logdone = 1;
 } /* end bootreadlog() */
 
 
@@ -3100,8 +3104,10 @@ static void find(char allpoi)
       }
       if (aprspos_posvalid(pos)) {
          /* lat / long */
-         aprsdecode_click.mhop[0UL] = 0;
-         aprsdecode_click.onesymbol.tab = 0;
+         if (allpoi) {
+            aprsdecode_click.mhop[0UL] = 0;
+            aprsdecode_click.onesymbol.tab = 0;
+         }
          push(maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom), 1);
          aprstext_setmark1(pos, 1, X2C_max_longint, 0UL);
          /*    click.markpos:=pos;  click.marktime:=0;
@@ -4071,14 +4077,20 @@ static void setmarklockpoi(char marker2)
    else useri_say("Not Locked", 11ul, 4UL, 'r');
 } /* end setmarklockpoi() */
 
-#define aprsmap_ADDDELAY 55
-
+/*
+PROCEDURE slowupdate():TIME;   (* add image update time on cpu intensiv options *)
+CONST ADDDELAY=55;
+BEGIN RETURN ORD((lums.wxcol="R") OR (lums.wxcol="W") OR click.withradio)
+                *ADDDELAY END slowupdate;
+*/
 
 static uint32_t slowupdate(void)
 /* add image update time on cpu intensiv options */
 {
-   return (uint32_t)((aprsdecode_lums.wxcol=='R' || aprsdecode_lums.wxcol=='W')
-                 || aprsdecode_click.withradio)*55UL;
+   uint32_t t;
+   t = makeimagetime;
+   if (t>20UL) t = 20UL;
+   return t*2UL;
 } /* end slowupdate() */
 
 
@@ -4504,6 +4516,8 @@ static void makeimage(char dryrun)
    char mapok;
    struct aprsstr_POSITION mpos;
    struct aprsdecode_CLICKOBJECT hoverobj;
+   uint32_t testtime;
+   testtime = osic_time();
    hoverobj.opf = 0;
    markvisable(aprsdecode_click.mhop);
    if (aprsdecode_click.mhop[0UL] && mhtx==aprsmap_OPHEARD) {
@@ -4582,10 +4596,10 @@ static void makeimage(char dryrun)
          symbols(aprsdecode_ophist0, 1, &hoverobj);
          text(aprsdecode_ophist0, 1, 1, 1);
       }
-      if (aprsdecode_lums.sym>0L) symbols(aprsdecode_ophist0, 0, &hoverobj);
-      if (!dryrun) {
-         maptool_drawpois(image);
+      if (aprsdecode_lums.sym>0L) {
+         symbols(aprsdecode_ophist0, 0, &hoverobj);
       }
+      if (!dryrun) maptool_drawpois(image);
       if (aprsdecode_lums.text>0L || aprsdecode_lums.wxcol) {
          text(aprsdecode_ophist0, 0, 1, 1);
       }
@@ -4638,7 +4652,9 @@ static void makeimage(char dryrun)
    }
    if (useri_beaconediting && useri_beaconed) maptool_drawpoliobj(image);
    useri_refresh = 1;
+   aprsdecode_realtime = osic_time();
    lastxupdate = aprsdecode_realtime;
+   makeimagetime = aprsdecode_realtime-testtime;
 } /* end makeimage() */
 
 
@@ -5189,7 +5205,7 @@ map.y4m", 8ul);
       }
    }
    else if (aprsdecode_tracenew.winevent>1000UL || (aprsdecode_tracenew.winevent>0UL || maptool_poisactiv()
-                ) && lastxupdate+3UL+slowupdate()<=aprsdecode_realtime) {
+                ) && lastxupdate+2UL+slowupdate()<=aprsdecode_realtime) {
       aprsdecode_tracenew.winevent = 0UL;
       if (aprsdecode_click.watchlast) useri_refrinfo();
       if (!(aprsdecode_click.withradio || aprspos_posvalid(aprsdecode_click.markpos)
@@ -5246,7 +5262,7 @@ map.y4m", 8ul);
       aprsdecode_click.bubblinfo[0UL] = 0;
    }
    if (useri_refresh) useri_redraw(image);
-   if (!logdone) {
+   if (!aprsdecode_logdone) {
       bootreadlog();
       ++aprsdecode_tracenew.winevent;
    }
@@ -5335,6 +5351,7 @@ extern int main(int argc, char **argv)
    alttabview.stkpo = 0UL;
    alttabview.stktop = 0UL;
    maptrys = 0UL;
+   makeimagetime = 0UL;
    memset((char *) &aprsdecode_serialpid,(char)0,
                 sizeof(struct xosi_PROCESSHANDLE));
    memset((char *) &aprsdecode_serialpid2,(char)0,
@@ -5353,7 +5370,7 @@ extern int main(int argc, char **argv)
    cycleorder = 0UL;
    realday = 0UL;
    onetipp = 0;
-   logdone = 0;
+   aprsdecode_logdone = 0;
    uptime = osic_time();
    withx = xosi_InitX("Aprsmap", 8ul, "Aprsmap", 8ul,
                 (uint32_t)maptool_xsize, (uint32_t)maptool_ysize)>=0L;
@@ -5379,7 +5396,9 @@ extern int main(int argc, char **argv)
          MainEvent();
          xosi_Eventloop(250000UL);
       }
-      if (useri_configon(useri_fAUTOSAVE)) useri_saveconfig();
+      if (useri_configon(useri_fAUTOSAVE)) {
+         useri_saveconfig();
+      }
       xosi_StopProg(&aprsdecode_maploadpid);
       xosi_StopProg(&aprsdecode_serialpid);
       xosi_StopProg(&aprsdecode_serialpid2);

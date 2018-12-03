@@ -64,9 +64,11 @@ extern aprsdecode_SET256 aprsdecode_SYMTABLE;
 
 #define aprsdecode_POIINFOSIZE 4096
 
-#define aprsdecode_VERSNUM "0.76"
+#define aprsdecode_VERSNUM "0.77"
 
-#define aprsdecode_VERS "aprsmap(cu) 0.76"
+#define aprsdecode_DEFAULTPOISYMBOL "//"
+
+#define aprsdecode_VERS "aprsmap(cu) 0.77"
 
 typedef char aprsdecode_MONCALL[9];
 
@@ -256,6 +258,7 @@ struct aprsdecode_OPHIST {
    char lastrxport; /* for msg routing, in future remove if port is seen in rawframes */
    struct aprsdecode_AREASYMB areasymb; /* area object data */
    char poligon;
+   char dirty; /* Checktrack not done */
 };
 
 enum aprsdecode_STORM {aprsdecode_WXNOWX, aprsdecode_WXNORMAL,
@@ -480,6 +483,8 @@ extern char aprsdecode_quit;
 
 extern char aprsdecode_verb;
 
+extern char aprsdecode_logdone;
+
 struct aprsdecode__D0;
 
 
@@ -682,7 +687,10 @@ extern int32_t aprsdecode_Stoframe(aprsdecode_pOPHIST *, char [],
                 uint32_t, uint32_t, char, uint32_t *,
                 struct aprsdecode_DAT);
 
-extern void aprsdecode_Checktrack(aprsdecode_pOPHIST, aprsdecode_pFRAMEHIST);
+/*
+PROCEDURE Checktrack(op:pOPHIST; lastf:pFRAMEHIST);
+*/
+extern void aprsdecode_Checktracks(void);
 
 extern void aprsdecode_purge(aprsdecode_pOPHIST *, uint32_t, uint32_t);
 

@@ -159,7 +159,7 @@ struct useri_MOUSEPOS {
 enum useri_CONFSET {useri_fFIND, useri_fLOGWFN, useri_fLOGDAYS, useri_fLOGFN,
                  useri_fLOGDATE, useri_fLOGFIND, useri_fFOTOFN,
                 useri_fXYSIZE, 
-   useri_fMYCALL, useri_fMYPOS, useri_fPOIFILTER, 
+   useri_fMYCALL, useri_fMYPOS, useri_fPOIFILTER, useri_fPOISMBOLS, 
    useri_fNBTEXT, useri_fMYSYM, useri_fNETBTIME, useri_fRFBTSHIFT, 
    useri_fRBTEXT, useri_fRBTYP, useri_fRBNAME, useri_fRBSYMB, useri_fRBPOS,
                 useri_fRBPOSTYP, useri_fRBALT, 

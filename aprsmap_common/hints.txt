@@ -551,6 +551,7 @@ In File "poi.txt" (in osm-directory) Repeat Find
 to step through matches "g?iss*".
 Cursor up/down steps thru 10 lines of History.
 
+|2100 No valid Symbol
 |2101 Police, Sheriff
 |2102 Reserved (Had Been Rain)
 |2103 DIGI (White Center)
@@ -638,6 +639,7 @@ Cursor up/down steps thru 10 lines of History.
 |2189 Yagi At QTH
 
 |2197 Emergency (!)
+|2196 No valid Symbol
 |2198 Rain
 |2199 Numbered Star (Green)
 |2200 Bank or ATM (Green Box)
@@ -780,7 +782,7 @@ followed by AprsIs Line. The data is sorted at
 import by Time, indexed and all waypoints compared
 to each other for removing dupes and stored in
 compressed form in RAM. Append %d to filename
-for dayly logs.
+for dayly logs, "logs/rawlog%d"
 
 |6715 
 |6716 Reload Data from Writelog
@@ -1738,11 +1740,11 @@ with "s"-Key. Use TAB-Key to toggle between
 |8680 Switch on/off drawing this
 POI-File on Map and choose
 a Symbol. Value in [] is sum
-of POIs file. Shortcut "C"
+of POIs in file. Shortcut "C"
 
 |8681 Show only poi Symbols with matching
 (case insensitive) Text in Name or
 Info. "?" is any Character "*" any
-String eg. "*hoch*alm*"
+String eg. "*oe3*99.9*"
 Click to find and step through.
 

@@ -88,6 +88,7 @@ uint32_t aprsdecode_lastlooped;
 uint32_t aprsdecode_rxidle;
 char aprsdecode_quit;
 char aprsdecode_verb;
+char aprsdecode_logdone;
 
 
 struct aprsdecode__D0 aprsdecode_click;
@@ -152,8 +153,8 @@ struct xosi_PROCESSHANDLE aprsdecode_maploadpid;
 #define aprsdecode_TICKEROFFTIME 60
 /* switch off window headline ticker after no data*/
 
-#define aprsdecode_COMPRESSLIMIT 4000
-/* beacons then switch off compression in log read */
+#define aprsdecode_COMPRESSLIMIT 20
+/* different beacons then switch off compression in log read */
 
 #define aprsdecode_cUSERMESSAGE ":"
 
@@ -736,14 +737,6 @@ static int32_t Gettcp(int32_t fd, aprsdecode_FRAMEBUF line,
    int32_t tmp;
    i = *pos;
    if (i>=512L) i = 0L;
-   /*
-     len:=RdBin(fd, line, SIZE(line)-i);
-     IF len<=0 THEN RETURN -1 END;
-                (* disconnected *)
-   */
-   /*
-     IF len<0 THEN len:=0 END;
-   */
    len = readsock(fd, line, 512L-i);
    if (len<0L) return -1L;
    if (*pos>=512L) {
@@ -1588,7 +1581,7 @@ static void beaconmacros(char s[], uint32_t s_len,
                aprsstr_Append(ns, 256ul, "\\\\", 3ul);
             }
             else if (s[i]=='v') {
-               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.76", 17ul);
+               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.77", 17ul);
             }
             else if (s[i]=='l') {
                if (aprstext_getmypos(&pos)) {
@@ -1672,9 +1665,11 @@ static void SendNetBeacon(aprsdecode_pTCPSOCK cp,
                 aprsdecode_realtime, 0, &t, dat);
    }
    else {
+      /*IF logdone THEN*/
       ret = aprsdecode_Stoframe(&aprsdecode_ophist0, b, 512ul,
                 aprsdecode_realtime, 0, &t, dat);
    }
+   if (aprsdecode_logdone) aprsdecode_Checktracks();
 } /* end SendNetBeacon() */
 
 
@@ -3573,7 +3568,7 @@ static char sendtxmsg(uint32_t acknum, const aprsdecode_MONCALL to,
    aprsstr_Append(rfs, 512ul, s, 512ul);
    for (i = 0UL; i<=3UL; i++) {
       /* try the rf ports */
-      if ((useri_configon((uint8_t)(37UL+i))
+      if ((useri_configon((uint8_t)(38UL+i))
                 && (port=='A' || port==(char)(i+49UL))) && Sendudp(rfs,
                 512ul, i, 0UL)>0L) {
          memcpy(h,am,51u);
@@ -4569,8 +4564,7 @@ static char lookup(uint32_t * wridx, struct _0 table[4096],
 } /* end lookup() */
 
 
-extern void aprsdecode_Checktrack(aprsdecode_pOPHIST op,
-                aprsdecode_pFRAMEHIST lastf)
+static void Checktrack(aprsdecode_pOPHIST op, aprsdecode_pFRAMEHIST lastf)
 {
    aprsdecode_pFRAMEHIST f;
    aprsdecode_pFRAMEHIST frame;
@@ -4862,16 +4856,13 @@ extern int32_t aprsdecode_Stoframe(aprsdecode_pOPHIST * optab,
    uint32_t len;
    uint32_t i;
    uint16_t ch0;
-   uint16_t hash;
    struct aprsdecode_VARDAT * anonym;
    int32_t aprsdecode_Stoframe_ret;
    X2C_PCOPY((void **)&rawbuf,rawbuf_len);
    *oldtime = 1UL; /* say not "new user" if filtered out */
    i = 0UL;
-   hash = 0U;
    do {
       ch0 = (uint16_t)(uint8_t)rawbuf[i];
-      hash += ch0;
       ++i;
    } while (ch0);
    do {
@@ -4879,7 +4870,6 @@ extern int32_t aprsdecode_Stoframe(aprsdecode_pOPHIST * optab,
    } while (!(i==0UL || (rawbuf[i]!='\015' && rawbuf[i]!='\012') && rawbuf[i]));
    rawbuf[i+1UL] = 0; /* remove trailing CR LF */
    /*FOR len:=0 TO i DO WrInt(ORD(rawbuf[len]), 4) END; WrLn; */
-   /*  IF NOT logmode THEN */
    if (dat.igatep>0UL && dat.igatep<=9UL) {
       memcpy(igate,dat.viacalls[dat.igatep],9u);
    }
@@ -4905,7 +4895,6 @@ extern int32_t aprsdecode_Stoframe(aprsdecode_pOPHIST * optab,
          goto label;
       }
    }
-   /*  END; */
    *oldtime = 0UL;
    cnt = 0UL; /* check for 2 WIDE chunk */
    if (widefilt()) {
@@ -4955,35 +4944,41 @@ extern int32_t aprsdecode_Stoframe(aprsdecode_pOPHIST * optab,
    frame = op->frames;
    lastf = 0;
    same = 0;
-   if (logmode) {
-      /* refcnt used as raw string hash */
-      if (op->lastfrp && op->lastfrp->time0>=stime) op->lastfrp = 0;
-      if (op->lastfrp) {
-         /* quick write no compress mode */
-         frame = 0;
-         lastf = op->lastfrp;
-      }
-      else {
-         /* look for same frame */
-         i = 0UL;
-         while (frame && (frame->vardat->refcnt!=(uint32_t)
-                hash || !strcmp0(frame->vardat->raw, 500ul, rawbuf,
-                rawbuf_len))) {
-            lastf = frame;
-            frame = frame->next;
-            ++i;
-         }
-         if (i>4000UL) op->lastfrp = lastf;
-      }
+   /*
+   
+     IF logmode THEN                                              (* refcnt used as raw string hash *)
+       IF (op^.lastfrp<>NIL) & (op^.lastfrp^.time>=stime)
+                THEN op^.lastfrp:=NIL END; 
+       IF op^.lastfrp<>NIL THEN                                   (* quick write no compress mode *)
+         frame:=NIL;
+         lastf:=op^.lastfrp;
+       ELSE                                                       (* look for same frame *)
+                 
+         i:=0;
+         WHILE (frame<>NIL) & ((frame^.vardat^.refcnt<>hash) 
+         OR NOT strcmp(frame^.vardat^.raw, rawbuf)) DO
+           lastf:=frame;
+           frame:=frame^.next;
+           INC(i);
+         END;
+         IF i>COMPRESSLIMIT THEN op^.lastfrp:=lastf END;
+                (* switch to compress off *)
+       END;
+     ELSE                                                         (* online data find without hash *)
+                 
+       WHILE (frame<>NIL) & NOT strcmp(frame^.vardat^.raw, rawbuf) 
+       DO lastf:=frame; frame:=frame^.next END;      
+     END; 
+   */
+   if (op->lastfrp && op->lastfrp->time0>stime) op->lastfrp = 0;
+   if (op->lastfrp) frame = op->lastfrp;
+   i = 0UL;
+   while (frame && !strcmp0(frame->vardat->raw, 500ul, rawbuf, rawbuf_len)) {
+      lastf = frame;
+      frame = frame->next;
+      ++i;
    }
-   else {
-      /* online data find without hash */
-      while (frame && !strcmp0(frame->vardat->raw, 500ul, rawbuf,
-                rawbuf_len)) {
-         lastf = frame;
-         frame = frame->next;
-      }
-   }
+   if (i>20UL) op->lastfrp = lastf;
    if (frame) {
       /* found same frame */
       same = frame->vardat;
@@ -5038,10 +5033,9 @@ extern int32_t aprsdecode_Stoframe(aprsdecode_pOPHIST * optab,
             anonym->raw[i] = rawbuf[i];
             ++i;
          } while (rawbuf[i]);
-         if (logmode) anonym->refcnt = (uint32_t)hash;
       }
    }
-   else if (!logmode) ++same->refcnt;
+   else ++same->refcnt;
    if (same->lastref==0 || same->lastref->time0<=stime) {
       same->lastref = frame;
    }
@@ -5075,15 +5069,31 @@ extern int32_t aprsdecode_Stoframe(aprsdecode_pOPHIST * optab,
    if (dat.hrtlen>0UL) inserthrt(dat, &op, frame->nodraw);
    if (!logmode) {
       /* read log check whole track at end */
-      aprsdecode_Checktrack(op, lastf);
+      /*    Checktrack(op, lastf); */
       inwindow(op, rawbuf, rawbuf_len);
    }
+   op->dirty = 1; /* Checktrack must follow */
    if (!(frame->nodraw&~0x1U)) aprsdecode_Stoframe_ret = 0L;
    else aprsdecode_Stoframe_ret = -1L;
    label:;
    X2C_PFREE(rawbuf);
    return aprsdecode_Stoframe_ret;
 } /* end Stoframe() */
+
+
+extern void aprsdecode_Checktracks(void)
+{
+   aprsdecode_pOPHIST op;
+   if (aprsdecode_lums.logmode) op = aprsdecode_ophist2;
+   else op = aprsdecode_ophist0;
+   while (op) {
+      if (op->dirty) {
+         Checktrack(op, 0);
+         op->dirty = 0;
+      }
+      op = op->next;
+   }
+} /* end Checktracks() */
 
 
 static char locked(aprsdecode_pOPHIST op)
@@ -5132,6 +5142,7 @@ extern void aprsdecode_purge(aprsdecode_pOPHIST * ops, uint32_t oldt,
    op = *ops;
    lastop = 0;
    while (op) {
+      if (op->dirty) Checktrack(op, 0);
       if (op->sym.tab=='\001') old = X2C_max_longcard;
       else if ((0x2U & op->drawhints) && op->lastinftyp<100U) {
          old = oldobj; /* object but no wx obj for wx graphs */
@@ -5169,7 +5180,7 @@ extern void aprsdecode_purge(aprsdecode_pOPHIST * ops, uint32_t oldt,
       }
       else {
          if (chk) {
-            aprsdecode_Checktrack(op, 0); /*WrStr(op^.call); WrStr(" ")*/
+            Checktrack(op, 0); /*WrStr(op^.call); WrStr(" ")*/
          }
          lastop = op;
          op = op->next;
@@ -5218,7 +5229,7 @@ extern void aprsdecode_delwaypoint(aprsdecode_pOPHIST op,
       f->nodraw = 0U; /* mark errors new later */
       f = f->next;
    }
-   aprsdecode_Checktrack(op, 0);
+   Checktrack(op, 0);
    i = 0L; /* set new marker to the nearest from deleted with error */
    mi = X2C_max_longint;
    *frame = 0;
@@ -5588,7 +5599,7 @@ extern void aprsdecode_udpconnstat(uint32_t port, char s[],
             aprsstr_Append(s, s_len, ":", 2ul);
             i = 1UL;
             for (;;) {
-               useri_conf2str((uint8_t)(37UL+port), 0UL, i, 1, h, 51ul);
+               useri_conf2str((uint8_t)(38UL+port), 0UL, i, 1, h, 51ul);
                if (h[0U]==0) break;
                if (i>1UL) aprsstr_Append(s, s_len, " ", 2ul);
                aprsstr_Append(s, s_len, h, 51ul);
@@ -5743,7 +5754,7 @@ static char tcpconn(aprsdecode_pTCPSOCK * sockchain, int32_t f)
          aprsstr_Append(h, 512ul, s, 100ul);
       }
       aprsstr_Append(h, 512ul, " vers ", 7ul);
-      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.76", 17ul);
+      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.77", 17ul);
       appfilter(h, 512ul, 0);
       /*    IF filter[0]<>0C THEN Append(h, " filter ");
                 Append(h, filter) END; */
@@ -5896,7 +5907,7 @@ static void rfbeacons(void)
                   else if ((uint8_t)port>='1') {
                      if (s[0UL]) {
                         i = (uint32_t)(uint8_t)port-49UL;
-                        if (i<4UL && useri_configon((uint8_t)(37UL+i))) {
+                        if (i<4UL && useri_configon((uint8_t)(38UL+i))) {
                            if (Sendudp(s, 512ul, i, 1UL)<0L) {
                               strncpy(says,"beacon: Rfport ",101u);
                               aprsstr_Append(says, 101ul,
@@ -5988,11 +5999,11 @@ extern void aprsdecode_tcpjobs(void)
    for (i = 0L; i<=3L; i++) {
       { /* with */
          struct aprsdecode_UDPSOCK * anonym0 = &aprsdecode_udpsocks0[i];
-         if (useri_configon((uint8_t)(37UL+(uint32_t)i))
-                && !useri_isupdated((uint8_t)(37UL+(uint32_t)i))) {
+         if (useri_configon((uint8_t)(38UL+(uint32_t)i))
+                && !useri_isupdated((uint8_t)(38UL+(uint32_t)i))) {
             if ((int32_t)anonym0->fd<0L) {
                ok0 = 0;
-               useri_confstr((uint8_t)(37UL+(uint32_t)i), s, 1000ul);
+               useri_confstr((uint8_t)(38UL+(uint32_t)i), s, 1000ul);
                if (s[0U]) {
                   memset((char *) &aprsdecode_udpsocks0[i],(char)0,
                 sizeof(struct aprsdecode_UDPSOCK));
@@ -6035,7 +6046,7 @@ Rx)Port or in Use", 44ul);
                   useri_xerrmsg(s, 1000ul);
                }
                if (!ok0) {
-                  useri_configbool((uint8_t)(37UL+(uint32_t)i), 0);
+                  useri_configbool((uint8_t)(38UL+(uint32_t)i), 0);
                }
             }
          }
@@ -6543,13 +6554,13 @@ static void digipeat(const aprsdecode_FRAMEBUF b, uint32_t udpch)
    }
 } /* end digipeat() */
 
-#define aprsdecode_PURGEINTERVALL 10
+#define aprsdecode_PURGEINTERVALL 20
 /* seconds+1 with no purge */
 
 
 static void storedata(aprsdecode_FRAMEBUF mb, aprsdecode_pTCPSOCK cp,
                 uint32_t udpch, const struct UDPSET modeminfo,
-                char valid, char local)
+                char valid, char local, char withchk)
 {
    int32_t res;
    char fn[1000];
@@ -6562,7 +6573,7 @@ static void storedata(aprsdecode_FRAMEBUF mb, aprsdecode_pTCPSOCK cp,
    char dir;
    uint32_t otime;
    char tmp;
-   if (aprsdecode_lastpurge!=aprsdecode_realtime/10UL) {
+   if (aprsdecode_lastpurge!=aprsdecode_realtime/20UL) {
       if (aprsdecode_lums.logmode) {
          aprsdecode_purge(&aprsdecode_ophist2,
                 aprsdecode_realtime-aprsdecode_lums.purgetime,
@@ -6573,7 +6584,7 @@ static void storedata(aprsdecode_FRAMEBUF mb, aprsdecode_pTCPSOCK cp,
                 aprsdecode_realtime-aprsdecode_lums.purgetime,
                 aprsdecode_realtime-aprsdecode_lums.purgetimeobj);
       }
-      aprsdecode_lastpurge = aprsdecode_realtime/10UL;
+      aprsdecode_lastpurge = aprsdecode_realtime/20UL;
    }
    if (cp) memcpy(server,cp->user.call,9u);
    else server[0UL] = 0;
@@ -6633,9 +6644,11 @@ temporarily", 56ul);
                 aprsdecode_realtime, 0, &otime, dat);
       }
       else {
+         /*IF logdone THEN*/
          res = aprsdecode_Stoframe(&aprsdecode_ophist0, mb, 512ul,
                 aprsdecode_realtime, 0, &otime, dat);
       }
+      if (withchk && aprsdecode_logdone) aprsdecode_Checktracks();
       if (!local) {
          if (useri_configon(useri_fLOGWFN)) {
             useri_confstr(useri_fLOGWFN, fn, 1000ul);
@@ -6670,14 +6683,15 @@ extern void aprsdecode_drawbeacon(char raw[], uint32_t raw_len)
       beaconmacros(b, 512ul, "", 1ul, "", 1ul, 1);
       if (b[0UL]) {
          memset((char *) &modeminfo,(char)0,sizeof(struct UDPSET));
-         storedata(b, 0, 0UL, modeminfo, 0, 1);
          if (aprsdecode_lums.logmode) {
-            useri_say("drawn to Realtime Data not to imported Log!", 44ul,
-                5UL, 'r');
+            useri_say("Not Drawn to imported Log!", 27ul, 5UL, 'r');
          }
-         else if (aprsdecode_click.mhop[0UL]) {
-            useri_say("switch to \"show all\" to see new object", 39ul, 5UL,
-                'r');
+         else {
+            storedata(b, 0, 0UL, modeminfo, 0, 1, 1);
+            if (aprsdecode_click.mhop[0UL]) {
+               useri_say("switch to \"show all\" to see new object", 39ul,
+                5UL, 'r');
+            }
          }
       }
    }
@@ -6738,7 +6752,7 @@ extern void aprsdecode_udpin(uint32_t port)
             }
          }
          aprsdecode_lastanyudprx = aprsdecode_realtime;
-         storedata(mbuf, 0, port+1UL, modeminfo, 0, 0);
+         storedata(mbuf, 0, port+1UL, modeminfo, 0, 0, 1);
       }
       else if (aprsdecode_verb) osi_WrStrLn("axudp decode error", 19ul);
    }
@@ -6784,7 +6798,9 @@ extern void aprsdecode_tcpin(aprsdecode_pTCPSOCK acttcp)
    int32_t res;
    aprsdecode_FRAMEBUF mbuf;
    struct UDPSET modeminfo;
+   uint32_t tlim;
    if ((int32_t)acttcp->fd>=0L) {
+      tlim = aprsdecode_realtime;
       for (;;) {
          res = Gettcp(acttcp->fd, mbuf, acttcp->rbuf, &acttcp->rpos);
          /*WrInt(res, 1);WrStrLn(" gettcp"); */
@@ -6797,13 +6813,16 @@ extern void aprsdecode_tcpin(aprsdecode_pTCPSOCK acttcp)
          if (res<=0L) break;
          ++acttcp->rxframes;
          acttcp->rxbytes += aprsstr_Length(mbuf, 512ul);
+         aprsdecode_realtime = osic_time();
          acttcp->watchtime = aprsdecode_realtime;
          /*    WrMon(mbuf); */
          if (mbuf[0UL]=='#') getpong(acttcp, mbuf, 512ul);
          memset((char *) &modeminfo,(char)0,sizeof(struct UDPSET));
-         storedata(mbuf, acttcp, 0UL, modeminfo, 1, 0);
+         storedata(mbuf, acttcp, 0UL, modeminfo, 1, 0, 0);
          aprsdecode_lasttcprx = aprsdecode_realtime;
+         if (tlim+6UL<aprsdecode_realtime) break;
       }
+      if (aprsdecode_logdone) aprsdecode_Checktracks();
    }
 } /* end tcpin() */
 

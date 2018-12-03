@@ -5833,6 +5833,28 @@ static void rdmountains(char fn[], uint32_t fn_len, char add,
 } /* end rdmountains() */
 
 
+static void getpoisym(char sym[], uint32_t sym_len,
+                const char name[], uint32_t name_len)
+{
+   uint32_t i;
+   char sy[1000];
+   char s[1000];
+   i = 0UL;
+   for (;;) {
+      useri_confstrings(useri_fPOISMBOLS, i, 1, s, 1000ul);
+      if (s[0U]==0) break;
+      memcpy(sy,s,1000u);
+      aprsstr_Delstr(s, 1000ul, 0UL, 2UL);
+      if (aprsstr_StrCmp(s, 1000ul, name, name_len)) {
+         sym[0UL] = sy[0U];
+         sym[1UL] = sy[1U];
+         break;
+      }
+      ++i;
+   }
+} /* end getpoisym() */
+
+
 extern void maptool_readpoifiles(void)
 {
    osi_DIRCONTEXT pdir;
@@ -5873,6 +5895,8 @@ extern void maptool_readpoifiles(void)
                }
                strncpy(aprsdecode_poifiles[filenum].symbol,"//",2u);
                 /* default poi symbol */
+               getpoisym(aprsdecode_poifiles[filenum].symbol, 2ul,
+                aprsdecode_poifiles[filenum].name, 10ul);
                /*WrStrLn(poifiles[filenum].name); */
                ++filenum;
             }

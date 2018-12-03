@@ -1657,7 +1657,7 @@ extern void aprstext_encbeacon(char s[], uint32_t s_len,
    useri_confstr(useri_fRBPOSTYP, (char *) &postyp, 1u/1u);
    useri_confstr(useri_fRBSYMB, symb, 2ul);
    areaobj = (typ=='O' && symb[0U]=='\\') && symb[1U]=='l';
-   if (aprsstr_Length(symb, 2ul)!=2UL) {
+   if (aprsstr_Length(symb, 2ul)!=2UL || (uint8_t)symb[1U]<=' ') {
       useri_say("\012no symbol\012", 12ul, 4UL, 'e');
       err = 1;
    }

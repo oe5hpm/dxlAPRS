@@ -1452,7 +1452,7 @@ extern void aprstat_wxgraph(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
          scale(hyg, 1440ul, (-1.E+4f), 100.0f, 120.0f, 101.0f, &yax0, &yax1,
                 &step);
          aprsstr_FixToStr(lastval->hyg, 0UL, s, 256ul);
-         aprsstr_Append(s, 256ul, "% Humidty ", 11ul);
+         aprsstr_Append(s, 256ul, "% Humidity ", 12ul);
          aprsstr_Append(s, 256ul, h, 256ul);
          paper(img, yax0, yax1, step, 8UL, Maxx, 120UL, s, 256ul);
          timeline(stime, img, Maxx);
