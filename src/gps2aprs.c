@@ -54,6 +54,8 @@ static char tbuf[1024];
 
 static char ttynamee[1024];
 
+static char logfilename[1024];
+
 static char mycall[100];
 
 static char via[100];
@@ -359,6 +361,7 @@ static void Parms(void)
                }
             }
          }
+         else if (h[1U]=='L') osi_NextArg(logfilename, 1024ul);
          else if (h[1U]=='b') {
             osi_NextArg(h, 1024ul);
             i = 0UL;
@@ -384,7 +387,9 @@ static void Parms(void)
          else if (h[1U]=='l') {
             osi_NextArg(h, 1024ul);
             i = 0UL;
-            if (!GetNum(h, 1024ul, 0, &i, &comintval)) Error("-l <n>", 7ul);
+            if (!GetNum(h, 1024ul, 0, &i, &comintval)) {
+               Error("-l <n>", 7ul);
+            }
          }
          else if (h[1U]=='f') {
             osi_NextArg(h, 1024ul);
@@ -439,6 +444,8 @@ ID like NOCALL-15", 67ul);
 FF (not in mic-e)", 67ul);
                osi_WrStrLn(" -l <n>                            every n Beacon\
 s send one with Comment", 73ul);
+               osi_WrStrLn(" -L <filename>                     Append raw GPS\
+ text to this File", 68ul);
                osi_WrStrLn(" -m <x.x.x.x:destport>             use Monitor UD\
 P format :port for localhost", 78ul);
                osi_WrStrLn(" -N <x.x.x.x:destport>             send Position \
@@ -1178,6 +1185,8 @@ static uint32_t gpsp;
 
 static char gpsb[100];
 
+static int32_t logfd;
+
 
 X2C_STACK_LIMIT(100000l)
 extern int main(int argc, char **argv)
@@ -1195,6 +1204,7 @@ extern int main(int argc, char **argv)
    usbrobust = 1;
    baud = 4800UL;
    strncpy(ttynamee,"/dev/ttyS0",1024u);
+   logfilename[0] = 0;
    udpsock = -1L;
    gpsp = 0UL;
    mycall[0U] = 0;
@@ -1246,6 +1256,24 @@ extern int main(int argc, char **argv)
                      if (gpsp>0UL) {
                         if (sumoff || checksum(gpsb, 100ul, gpsp)) {
                            decodeline(gpsb, 100ul, gpsp);
+                           if (logfilename[0U]) {
+                              logfd = osi_OpenAppend(logfilename, 1024ul);
+                              if (!osic_FdValid(logfd)) {
+                                 logfd = osi_OpenWrite(logfilename, 1024ul);
+                              }
+                              if (osic_FdValid(logfd)) {
+                                 osi_WrBin(logfd, (char *)gpsb, 100u/1u,
+                gpsp);
+                                 osi_WrBin(logfd, (char *)"\012", 2u/1u,
+                1UL);
+                                 osic_Close(logfd);
+                              }
+                              else {
+                                 osi_WrStr("cannot write [", 15ul);
+                                 osi_WrStr(logfilename, 1024ul);
+                                 osi_WrStrLn("]", 2ul);
+                              }
+                           }
                         }
                         else {
                            altok = 0;
@@ -1259,7 +1287,9 @@ extern int main(int argc, char **argv)
                                  btime = 0UL;
                               }
                            }
-                           else if (btime>btime0) btime = 0UL;
+                           else if (btime>btime0) {
+                              btime = 0UL;
+                           }
                            if (btime==0UL) {
                               sendaprs(lat, long0, alt, course, speed,
                 comptyp, withspeed, withalti && altok, withdao, comcnt==0UL,
