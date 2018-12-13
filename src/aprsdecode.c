@@ -4788,11 +4788,13 @@ static void settempspeed(aprsdecode_pOPHIST op,
    if (dat.sym=='_') {
       op->lastinftyp = 0U;
       op->lasttempalt = -32768;
-      rv = aprstext_FtoC(dat.wx.temp);
-      if (rv>=(-99.0f) && rv<=99.0f) {
-         op->lasttempalt = (short)X2C_TRUNCI(rv,-32768,32767);
-         op->temptime = aprsdecode_systime;
-         op->lastinftyp = 100U;
+      if (dat.wx.temp!=1.E+6f) {
+         rv = aprstext_FtoC(dat.wx.temp);
+         if (rv>=(-99.0f) && rv<=99.0f) {
+            op->lasttempalt = (short)X2C_TRUNCI(rv,-32768,32767);
+            op->temptime = aprsdecode_systime;
+            op->lastinftyp = 100U;
+         }
       }
       if (dat.course>0UL && dat.course<=360UL) {
          op->lastinftyp = (uint8_t)(110UL+(dat.course%360UL)/4UL);
@@ -5065,7 +5067,7 @@ extern int32_t aprsdecode_Stoframe(aprsdecode_pOPHIST * optab,
       frame->next = lastf->next; /* not nil if insert older frame */
       lastf->next = frame; /* append waypoint */
    }
-   if (op->lastfrp) op->lastfrp = frame;
+   /*  IF op^.lastfrp<>NIL THEN op^.lastfrp:=frame END; */
    if (dat.hrtlen>0UL) inserthrt(dat, &op, frame->nodraw);
    if (!logmode) {
       /* read log check whole track at end */
@@ -5202,6 +5204,7 @@ extern void aprsdecode_delwaypoint(aprsdecode_pOPHIST op,
    int32_t i;
    struct aprsdecode_DAT dat;
    if (op==0 || *frame==0) return;
+   op->lastfrp = 0;
    i = 0L;
    di = 0L;
    mi = 0L;
