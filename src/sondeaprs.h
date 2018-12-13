@@ -12,10 +12,31 @@
 #ifndef X2C_H_
 #include "X2C.h"
 #endif
+#ifndef aprsstr_H_
+#include "aprsstr.h"
+#endif
 
 typedef uint32_t sondeaprs_TIME;
 
-#define sondeaprs_VERSION "sondemod(c) 1.21"
+struct sondeaprs_SDRBLOCK;
+
+
+struct sondeaprs_SDRBLOCK {
+   uint32_t freq;
+   uint32_t maxafc;
+   uint32_t db;
+   int32_t afc;
+   char name[4];
+   char valid;
+};
+
+#define sondeaprs_VERSION "sondemod 1.32"
+
+#define sondeaprs_minusG "G"
+
+#define sondeaprs_minusE "E"
+
+#define sondeaprs_minusP "P"
 
 extern void sondeaprs_senddata(double, double, double,
                 double, double, double, double,
@@ -23,8 +44,8 @@ extern void sondeaprs_senddata(double, double, double,
                 double, double, double, double,
                 double, uint32_t, uint32_t, char [],
                 uint32_t, uint32_t, uint32_t, char [], uint32_t,
-                uint32_t, uint32_t, char, char [],
-                uint32_t);
+                uint32_t, uint32_t, char, char [], uint32_t,
+                 struct sondeaprs_SDRBLOCK);
 
 extern int32_t sondeaprs_GetIp(char [], uint32_t, uint32_t *,
                 uint32_t *, uint32_t *);
@@ -49,6 +70,10 @@ extern uint32_t sondeaprs_lowalt;
 
 extern uint32_t sondeaprs_toport;
 
+extern uint32_t sondeaprs_maxsenddistance;
+
+extern uint32_t sondeaprs_expire;
+
 extern uint32_t sondeaprs_ipnum;
 
 extern char sondeaprs_verb;
@@ -68,6 +93,10 @@ extern char sondeaprs_anyip;
 extern char sondeaprs_sendmon;
 
 extern char sondeaprs_dao;
+
+extern struct aprsstr_POSITION sondeaprs_mypos;
+
+extern float sondeaprs_myalt;
 
 
 extern void sondeaprs_BEGIN(void);

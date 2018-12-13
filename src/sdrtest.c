@@ -44,6 +44,8 @@
 #define sdrtest_DEFAULTOFFSET 10000
 /* shift tune frequency to where is no rx if possible */
 
+#define sdrtest_NL "\012"
+
 struct FREQTAB;
 
 
@@ -76,13 +78,16 @@ struct SQUELCH {
    float il;
    float medmed;
    float mutlev;
+   float peakrssi;
    int32_t sqsave;
    int32_t wakeness;
    int32_t pcmc;
+   uint32_t hz10;
    uint32_t nexttick;
+   uint32_t waterp;
+   uint32_t waterend;
+   uint8_t waterdat[35];
 };
-/*     waterp:CARDINAL; */
-/*     waterdat:ARRAY[0..15] OF SET32; */
 
 static int32_t fd;
 
@@ -143,6 +148,8 @@ static char pcm8;
 
 static char nosquelch;
 
+static char watermark;
+
 static double offset;
 
 struct _0;
@@ -156,6 +163,8 @@ struct _0 {
 
 static struct _0 scan[512];
 
+static uint32_t CRC32TAB[256];
+
 
 static void Error(char text[], uint32_t text_len)
 {
@@ -165,6 +174,29 @@ static void Error(char text[], uint32_t text_len)
    X2C_ABORT();
    X2C_PFREE(text);
 } /* end Error() */
+
+static uint32_t sdrtest_POLY = 0x4C11DB7UL;
+
+
+static void GenCRC32tab(void)
+{
+   uint32_t j;
+   uint32_t i;
+   uint32_t crc;
+   uint32_t revpoly;
+   revpoly = 0UL;
+   for (i = 0UL; i<=31UL; i++) {
+      if (X2C_IN(i,32,0x4C11DB7UL)) revpoly |= (1UL<<31UL-i);
+   } /* end for */
+   for (i = 0UL; i<=255UL; i++) {
+      crc = i;
+      for (j = 0UL; j<=7UL; j++) {
+         if ((crc&1)) crc = (uint32_t)((uint32_t)(crc/2UL)^revpoly);
+         else crc = crc/2UL;
+      } /* end for */
+      CRC32TAB[255UL-i] = (uint32_t)crc^0xFF000000UL;
+   } /* end for */
+} /* end GenCRC32tab() */
 
 
 static void card(const char s[], uint32_t s_len, uint32_t * p,
@@ -250,7 +282,7 @@ static void Parms(void)
    powersave = 0UL;
    maxrx = 63UL;
    nosquelch = 0;
-   /*  watermark:=FALSE; */
+   watermark = 0;
    maxwake = 2000UL;
    for (;;) {
       osi_NextArg(s, 1001ul);
@@ -273,7 +305,7 @@ static void Parms(void)
             if (!ok0) Error(" -o <MHz>", 10ul);
          }
          else if (s[1U]=='T') {
-            /* offset */
+            /* tune manual */
             osi_NextArg(s, 1001ul);
             n = 0UL;
             fix(s, 1001ul, &n, &fr, &ok0);
@@ -349,6 +381,7 @@ static void Parms(void)
          }
          else if (s[1U]=='v') verb = 1;
          else if (s[1U]=='k') reconn = 1;
+         else if (s[1U]=='e') watermark = 1;
          else if (s[1U]=='w') {
             /* maximum wake time */
             osi_NextArg(s, 1001ul);
@@ -382,7 +415,7 @@ static void Parms(void)
             if (s[1U]=='h') {
                osi_WrStrLn("", 1ul);
                osi_WrStrLn("AM/FM/SSB Multirx from rtl_tcp (8 bit IQ via tcpi\
-p) to audio channel(s) 8/16 bit PCM", 85ul);
+p or file) to audio channel(s) 8/16 bit PCM by oe5dxl", 103ul);
                osi_WrStrLn(" -a <number>         maximum active rx to limit c\
 pu load, if number is reached,", 80ul);
                osi_WrStrLn("                      no more inactive rx will li\
@@ -391,6 +424,8 @@ sten to become active", 71ul);
 le (sdrcfg.txt)", 65ul);
                osi_WrStrLn(" -d <ratio>          downsample output (1)",
                 43ul);
+               osi_WrStrLn(" -e                  enable sending SDR Data hidd\
+en in audio channels (tune/afc/rssi..)", 88ul);
                osi_WrStrLn(" -h                  help", 26ul);
                osi_WrStrLn(" -i <Hz>             input sampelrate Hz 1024000 \
 or 2048000..2500000 (2048000)", 79ul);
@@ -416,7 +451,7 @@ rx IF-width", 61ul);
                osi_WrStrLn(" -S <soundfilename>  8bit unsigned n-channel soun\
 d stream/pipe", 63ul);
                osi_WrStrLn(" -T <mhz>            Tune manual to center of iq-\
-band (0)", 58ul);
+band (for iq-data from file) (0)", 82ul);
                osi_WrStrLn(" -t <url:port>       connect rtl_tcp server (127.\
 0.0.1:1234)", 61ul);
                osi_WrStrLn(" -t <filename:0>     read iq-data from file",
@@ -431,8 +466,16 @@ tive rx if squelch closed (-z 100)", 84ul);
 udio quieting for sending", 75ul);
                osi_WrStrLn("                      to decoders and not human e\
 ars", 53ul);
-               osi_WrStrLn("example: -m 1 -d 2 -S /dev/dsp -t 127.0.0.1:1234 \
--p 5 72 -p 8 1 -v", 67ul);
+               osi_WrStrLn("example: ./sdrtst -k -s /dev/stdout -t 127.0.0.1:\
+1234 -c up.txt -i 2048000 -r 16000 -m 2 -v | sox -t raw -r 16000 -c 2 -b 16 -\
+s - -t alsa", 138ul);
+               osi_WrStrLn("         will mix up/down any channels to stereo \
+and play on alsa", 66ul);
+               osi_WrStrLn("         ./sdrtst -k -s /dev/stdout -t 127.0.0.1:\
+1234 -c up.txt -i 2048000 -r 16000 -v | ./afskmodem -o /dev/stdin -s 16000 -c\
+ 2 -M 0 -c 0 -M 1 -c 1", 149ul);
+               osi_WrStrLn("         with 2 frequencies in up.txt will listen\
+ to PR/APRS on 2 channels", 75ul);
                osi_WrStrLn("", 1ul);
                osi_WrStrLn("config file: (re-read every some seconds and may \
 be modified any time)", 71ul);
@@ -469,7 +512,7 @@ udio lowpass, 12khz IF)", 73ul);
                osi_WrStrLn("", 1ul);
                osi_WrStrLn("  will generate 3 channel 16bit PCM stream (up to\
  64 channels with -z or -Z)", 77ul);
-               osi_WrStrLn("  use max. 95% of -i span. Rtl-stick will be tune\
+               osi_WrStrLn("  use max. 95% of -i span. rtl-stick will be tune\
 d to center of the span", 73ul);
                osi_WrStrLn("  rx in center of band will be +-10khz relocated \
 to avoid ADC-DC offset pseudo", 79ul);
@@ -600,6 +643,9 @@ static void centerfreq(const struct FREQTAB freq[], uint32_t freq_len)
       i = 0UL;
       while (i<freqc) {
          /*    FILL(ADR(rxx[i]), 0C, SIZE(rxx[0])); */
+         squelchs[i].hz10 = (uint32_t)((int32_t)(freq[i].hz/10UL)
+                -(int32_t)X2C_TRUNCI(offset*1.E+5,X2C_min_longint,
+                X2C_max_longint));
          prx[i] = &rxx[i];
          rxx[i].squelch = squelchs[i].lev!=0.0f;
          rxx[i].modulation = freq[i].modulation;
@@ -719,7 +765,8 @@ static void rdconfig(void)
                }
                i = 0UL;
             }
-            else if (((mo=='F' || mo=='A') || mo=='U') || mo=='L') {
+            else if ((((mo=='F' || mo=='A') || mo=='U') || mo=='L')
+                || mo=='W') {
                if (mo=='A') freq[freqc].modulation = 'a';
                else if (mo=='F') freq[freqc].modulation = 'f';
                else if (mo=='U') freq[freqc].modulation = 's';
@@ -759,10 +806,10 @@ static void rdconfig(void)
                skip(li, 256ul, &i);
                card(li, 256ul, &i, &wid, &ok0);
                if (!ok0) {
-                  if (freq[freqc].modulation=='s') wid = 2800UL;
-                  else if (freq[freqc].modulation=='a') {
-                     wid = 6000UL;
+                  if (freq[freqc].modulation=='s') {
+                     wid = 2800UL;
                   }
+                  else if (freq[freqc].modulation=='a') wid = 6000UL;
                   else wid = 12000UL;
                }
                if (wid>1000000UL) wid = 1000000UL;
@@ -834,6 +881,86 @@ static void showrssi(void)
    osic_flush();
 } /* end showrssi() */
 
+/*------ watermark data */
+#define sdrtest_CRCINIT 0x0FFFFFFFF
+
+
+static uint32_t crc32(const uint8_t b[], uint32_t b_len,
+                uint32_t from, uint32_t to)
+{
+   uint32_t crc;
+   crc = 0xFFFFFFFFUL;
+   while (from<to) {
+      crc = X2C_LSH(crc,32,-8)^CRC32TAB[(uint32_t)((crc^(uint32_t)b[from])&0xFFUL)];
+      ++from;
+   }
+   return (uint32_t)crc;
+} /* end crc32() */
+
+
+static void card32send(uint8_t b[], uint32_t b_len, uint32_t pos,
+                uint32_t v)
+{
+   b[pos] = (uint8_t)v;
+   b[pos+1UL] = (uint8_t)(v/256UL);
+   b[pos+2UL] = (uint8_t)(v/65536UL);
+   b[pos+3UL] = (uint8_t)(v/16777216UL);
+} /* end card32send() */
+
+#define sdrtest_WBSTART 0xA5 
+
+#define sdrtest_WWSTART 0x0CA55F047
+
+#define sdrtest_WBCRC 0x7F 
+
+
+static void sendwater(void)
+{
+   uint32_t p;
+   uint32_t j;
+   uint32_t i;
+   int32_t v;
+   struct SQUELCH * anonym;
+   i = 0UL;
+   while (prx[i]) {
+      if (prx[i]->modulation!='S') {
+         j = prx[i]->idx;
+         { /* with */
+            struct SQUELCH * anonym = &squelchs[j];
+            anonym->waterp = 0UL;
+            anonym->waterdat[0U] = 0xA5U;
+            card32send(anonym->waterdat, 35ul, 1UL, 0x0CA55F047UL);
+            p = 5UL;
+            anonym->waterdat[5U] = *(uint8_t *)"f";
+            card32send(anonym->waterdat, 35ul, 6UL, squelchs[j].hz10);
+            p += 5UL;
+            anonym->waterdat[10U] = *(uint8_t *)"a";
+            card32send(anonym->waterdat, 35ul, 11UL,
+                (uint32_t)(X2C_LSH((uint32_t)rxx[j].maxafc,32,
+                16)|(uint32_t)rxx[j].afckhz&0xFFFFUL));
+            p += 5UL;
+            anonym->waterdat[15U] = *(uint8_t *)"r";
+            /*      v:=VAL(INTEGER,
+                ln((rxx[j].rssi+1.0)*(1.0/32768.0))*(8.685889638*5.0)); */
+            v = (int32_t)X2C_TRUNCI(osic_ln((anonym->peakrssi+0.001f)
+                *3.0517578125E-5f)*4.342944819E+1f,X2C_min_longint,
+                X2C_max_longint);
+            anonym->peakrssi = 0.0f;
+            if (v<0L) v = 0L;
+            card32send(anonym->waterdat, 35ul, 16UL, (uint32_t)v);
+            p += 5UL;
+            anonym->waterdat[20U] = 0x7FU;
+            card32send(anonym->waterdat, 35ul, 21UL, crc32(anonym->waterdat,
+                35ul, 5UL, 20UL));
+            p += 5UL;
+            anonym->waterend = 200UL;
+         }
+      }
+      ++i;
+   }
+} /* end sendwater() */
+
+/*------ watermark data */
 static int32_t sp;
 
 static int32_t sn;
@@ -863,33 +990,28 @@ static int32_t levdiv2;
 
 static void sendaudio(int32_t pcm0, char pcm80, uint32_t ch)
 {
+   /* with start pattern and crc32 in dynamic count of 8+32bit type+value word units */
+   struct SQUELCH * anonym;
    if (pcm0>32767L) pcm0 = 32767L;
    else if (pcm0<-32767L) pcm0 = -32767L;
    if (pcm80) sndbuf8[sndw] = (uint8_t)((uint32_t)(pcm0+32768L)/256UL);
    else {
-      /* code data in watermark */
-      /*
-          IF watermark THEN
-            pcm:=CAST(INTEGER, CAST(SET32, pcm)*SET32{2..15}
-                );            (* use bit 1 *)
-            WITH squelchs[ch] DO
-              IF waterp>0 THEN                                            (* data to send *)
-                wb:=waterdat[waterp]
-                IF wb*SET32{0}<>SET32{}
-                ) THEN INC(pcm, 2) END;            (* send a 1 *)
-                wb:=SHIFT(wb, -1);
-                waterdat[waterp]:=wb;
-                IF wb=SET32{0}) THEN DEC(waterp) END;                     (* next 9 bit word *)
-              END;
-            END;
-          ELSE
-      */
-      pcm0 = (int32_t)((uint32_t)pcm0&0xFFFEUL);
-      /*
-          END;
-      */
+      /* code data as watermark, bit 1 of pcm serialized datablock with start sequence and crc32 */
+      /* to be compatible with normal pcm code data as silent audio bit 1 of pcm serialized datablock */
+      { /* with */
+         struct SQUELCH * anonym = &squelchs[ch];
+         if (anonym->waterp<anonym->waterend) {
+            pcm0 = (int32_t)((uint32_t)pcm0&0xFFFCUL);
+            if (X2C_IN(anonym->waterp&7UL,8,
+                anonym->waterdat[anonym->waterp/8UL])) {
+               pcm0 += 2L; /* bit 1 is serial data stream */
+            }
+            ++anonym->waterp;
+         }
+         else pcm0 = (int32_t)((uint32_t)pcm0&0xFFFCUL);
+      }
       if (ch==0UL) ++pcm0;
-      /* code data in watermark */
+      /* code data as watermark */
       sndbuf[sndw] = (short)pcm0;
    }
    ++sndw;
@@ -907,6 +1029,7 @@ static void userio(void)
    setparms(recon);
    recon = 0;
    if (verb) showrssi();
+   if (watermark) sendwater();
 } /* end userio() */
 
 /*
@@ -986,6 +1109,7 @@ extern int main(int argc, char **argv)
    memset((char *)squelchs,(char)0,sizeof(struct SQUELCH [65]));
    memset((char *)scan,(char)0,sizeof(struct _0 [512]));
    Parms();
+   GenCRC32tab();
    /*
    --scanner
      FOR scanidx:=0 TO HIGH(scan)
@@ -1076,6 +1200,10 @@ extern int main(int argc, char **argv)
                               anonym->mutlev = 1.0f;
                            }
                         }
+                     }
+                     if (anonym->peakrssi<rxx[ix].rssi) {
+                        anonym->peakrssi = rxx[ix].rssi;
+                /* store rssi peak till readout */
                      }
                   }
                   rxx[ix].sqsum = 0.0f;

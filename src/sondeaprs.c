@@ -26,6 +26,11 @@
 #ifndef libsrtm_H_
 #include "libsrtm.h"
 #endif
+#ifndef aprspos_H_
+#include "aprspos.h"
+#endif
+
+
 
 char sondeaprs_via[100];
 char sondeaprs_destcall[100];
@@ -37,6 +42,8 @@ uint32_t sondeaprs_beacontime;
 uint32_t sondeaprs_lowaltbeacontime;
 uint32_t sondeaprs_lowalt;
 uint32_t sondeaprs_toport;
+uint32_t sondeaprs_maxsenddistance;
+uint32_t sondeaprs_expire;
 uint32_t sondeaprs_ipnum;
 char sondeaprs_verb;
 char sondeaprs_verb2;
@@ -47,6 +54,8 @@ int32_t sondeaprs_udpsock;
 char sondeaprs_anyip;
 char sondeaprs_sendmon;
 char sondeaprs_dao;
+struct aprsstr_POSITION sondeaprs_mypos;
+float sondeaprs_myalt;
 /* encode demodulated sonde to aprs axudp by OE5DXL */
 #define sondeaprs_CR "\015"
 
@@ -130,6 +139,10 @@ static pCONTEXT contexts;
 
 static uint16_t chk;
 
+static char egmoff;
+
+static char mhzfromsonde;
+
 
 static uint32_t truncc(double r)
 {
@@ -195,11 +208,13 @@ static void wrcsv(uint32_t sattime, const char typstr[],
                 uint32_t typstr_len, char objname[],
                 uint32_t objname_len, double lat, double long0,
                  double alt, double speed, double dir,
-                double clb, double og, double mhz,
-                uint32_t goodsats, uint32_t burstKill, uint32_t uptime,
-                 double hp, double hyg, double temp,
-                double ozon, double otemp, double pumpmA,
-                double pumpv)
+                double clb, double egmalt, double og,
+                double mhz, uint32_t goodsats, uint32_t burstKill,
+                uint32_t uptime, double hp, double hyg,
+                double temp, double ozon, double otemp,
+                double pumpmA, double pumpv,
+                const struct sondeaprs_SDRBLOCK sdr, double dist,
+                double azi, double ele)
 {
    int32_t fd;
    char h[1000];
@@ -208,8 +223,9 @@ static void wrcsv(uint32_t sattime, const char typstr[],
    fd = osi_OpenAppend(sondeaprs_csvfilename, 1025ul);
    if (fd<0L) {
       fd = osi_OpenWrite(sondeaprs_csvfilename, 1025ul);
-      strncpy(s,"Time,Type,Name,lat,long,alt,speed,dir,clb,og,mhz,sats,bk,upt\
-ime,hPa,hum,temp,ozon,ozont,pumpmA,pumpV\012",1000u);
+      strncpy(s,"Date,Time,Type,Name,lat,long,alt,speed,dir,clb,egmalt,og,mhz\
+,sats,bk,uptime,hPa,hum,temp,ozon,ozont,pumpmA,pumpV,RxMHz,AFC,maxAFC,rssi,de\
+v,dist,azimuth,elevation\012",1000u);
    }
    else s[0] = 0;
    if (fd<0L) {
@@ -220,7 +236,16 @@ ime,hPa,hum,temp,ozon,ozont,pumpmA,pumpV\012",1000u);
       osi_WrBin(fd, (char *)s, 1000u/1u, aprsstr_Length(s, 1000ul));
                 /* csv headline */
    }
-   aprsstr_TimeToStr(sattime, s, 1000ul);
+   s[0] = 0;
+   if (sattime>=86400UL) {
+      aprsstr_DateToStr(sattime, s, 1000ul);
+      s[10U] = 0;
+   }
+   aprsstr_Append(s, 1000ul, ",", 2ul);
+   if (sattime>0UL) {
+      aprsstr_TimeToStr(sattime%86400UL, h, 1000ul);
+      aprsstr_Append(s, 1000ul, h, 1000ul);
+   }
    aprsstr_Append(s, 1000ul, ",", 2ul);
    aprsstr_Append(s, 1000ul, typstr, typstr_len);
    aprsstr_Append(s, 1000ul, ",", 2ul);
@@ -246,6 +271,12 @@ ime,hPa,hum,temp,ozon,ozont,pumpmA,pumpV\012",1000u);
    aprsstr_FixToStr((float)clb, 2UL, h, 1000ul);
    aprsstr_Append(s, 1000ul, h, 1000ul);
    aprsstr_Append(s, 1000ul, ",", 2ul);
+   if (egmalt>(-1.E+4) && egmalt<1.E+5) {
+      aprsstr_IntToStr((int32_t)X2C_TRUNCI(egmalt,X2C_min_longint,
+                X2C_max_longint), 1UL, h, 1000ul);
+      aprsstr_Append(s, 1000ul, h, 1000ul);
+   }
+   aprsstr_Append(s, 1000ul, ",", 2ul);
    if (og>(-1.E+4) && og<1.E+5) {
       aprsstr_IntToStr((int32_t)X2C_TRUNCI(og,X2C_min_longint,
                 X2C_max_longint), 1UL, h, 1000ul);
@@ -253,7 +284,7 @@ ime,hPa,hum,temp,ozon,ozont,pumpmA,pumpV\012",1000u);
    }
    aprsstr_Append(s, 1000ul, ",", 2ul);
    if (mhz>0.1) {
-      aprsstr_FixToStr((float)mhz, 3UL, h, 1000ul);
+      aprsstr_FixToStr((float)(mhz+0.005), 3UL, h, 1000ul);
       aprsstr_Append(s, 1000ul, h, 1000ul);
    }
    aprsstr_Append(s, 1000ul, ",", 2ul);
@@ -307,6 +338,43 @@ ime,hPa,hum,temp,ozon,ozont,pumpmA,pumpV\012",1000u);
       aprsstr_FixToStr((float)pumpv, 3UL, h, 1000ul);
       aprsstr_Append(s, 1000ul, h, 1000ul);
    }
+   aprsstr_Append(s, 1000ul, ",", 2ul);
+   if (sdr.freq) {
+      aprsstr_FixToStr((float)sdr.freq*0.00001f+0.0005f, 4UL, h, 1000ul);
+      aprsstr_Append(s, 1000ul, h, 1000ul);
+   }
+   aprsstr_Append(s, 1000ul, ",", 2ul);
+   if (sdr.maxafc) {
+      aprsstr_IntToStr(sdr.afc, 1UL, h, 1000ul);
+      aprsstr_Append(s, 1000ul, h, 1000ul);
+   }
+   aprsstr_Append(s, 1000ul, ",", 2ul);
+   if (sdr.maxafc) {
+      aprsstr_IntToStr((int32_t)sdr.maxafc, 1UL, h, 1000ul);
+      aprsstr_Append(s, 1000ul, h, 1000ul);
+   }
+   aprsstr_Append(s, 1000ul, ",", 2ul);
+   if (sdr.db) {
+      aprsstr_FixToStr((float)sdr.db*0.1f, 2UL, h, 1000ul);
+      aprsstr_Append(s, 1000ul, h, 1000ul);
+   }
+   aprsstr_Append(s, 1000ul, ",", 2ul);
+   if (sdr.name[0UL]) aprsstr_Append(s, 1000ul, sdr.name, 4ul);
+   aprsstr_Append(s, 1000ul, ",", 2ul);
+   if (dist>=0.0) {
+      aprsstr_FixToStr((float)dist, 4UL, h, 1000ul);
+      aprsstr_Append(s, 1000ul, h, 1000ul);
+   }
+   aprsstr_Append(s, 1000ul, ",", 2ul);
+   if (azi>=0.0) {
+      aprsstr_FixToStr((float)azi, 2UL, h, 1000ul);
+      aprsstr_Append(s, 1000ul, h, 1000ul);
+   }
+   aprsstr_Append(s, 1000ul, ",", 2ul);
+   if (ele>=(-90.0)) {
+      aprsstr_FixToStr((float)ele, 3UL, h, 1000ul);
+      aprsstr_Append(s, 1000ul, h, 1000ul);
+   }
    aprsstr_Append(s, 1000ul, "\012", 2ul);
    osi_WrBin(fd, (char *)s, 1000u/1u, aprsstr_Length(s, 1000ul));
    osic_Close(fd);
@@ -315,29 +383,47 @@ ime,hPa,hum,temp,ozon,ozont,pumpmA,pumpV\012",1000u);
 } /* end wrcsv() */
 
 
+static double egm96corr(double lat, double long0,
+                double alt)
+{
+   struct aprsstr_POSITION pos;
+   char ok0;
+   pos.lat = (float)lat;
+   pos.long0 = (float)long0;
+   alt = alt-(double)libsrtm_egm96(pos, &ok0);
+   if (ok0) return alt;
+   if (sondeaprs_verb) {
+      osi_WrStrLn("--- no EGM96 data - only raw Sonde Altitudes", 45ul);
+   }
+   egmoff = 1;
+   return (-1.E+5);
+} /* end egm96corr() */
+
+
 static double getoverground(double lat, double long0,
                 double alt)
 {
    struct aprsstr_POSITION pos;
    float resolution;
    double srtm;
-   char ok0;
    libsrtm_srtmmaxmem = 1000000UL;
-   pos.lat = (float)(lat*1.7453292519943E-2);
-   pos.long0 = (float)(long0*1.7453292519943E-2);
+   pos.lat = (float)lat;
+   pos.long0 = (float)long0;
    srtm = (double)libsrtm_getsrtm(pos, 1UL, &resolution);
    if (srtm<10000.0) {
-      alt = (alt-(double)libsrtm_egm96(pos, &ok0))-srtm;
-      if (ok0) return alt;
-      if (sondeaprs_verb) osi_WrStrLn("---no EGM96 data", 17ul);
+      if (alt<=(-3.E+4)) return srtm;
+      /* srtm request */
+      return alt-srtm;
    }
-   else if (sondeaprs_verb) osi_WrStrLn("---no SRTM data", 16ul);
+   /*  ELSIF verb THEN WrStrLn("---no SRTM data"); */
    return (-1.E+5);
 } /* end getoverground() */
 
 
 static void comment0(char buf[], uint32_t buf_len, uint32_t uptime,
-                uint32_t sats, double hrms, uint32_t * linec)
+                uint32_t sats, double hrms, uint32_t * linec,
+                const struct sondeaprs_SDRBLOCK sdr, double myazi,
+                double myele, double mydist)
 {
    int32_t len;
    int32_t lc;
@@ -346,7 +432,8 @@ static void comment0(char buf[], uint32_t buf_len, uint32_t uptime,
    int32_t i;
    int32_t f;
    char fb[32768];
-   char h[100];
+   char hb[120];
+   char h[120];
    buf[0UL] = 0;
    len = 0L;
    if (sondeaprs_commentfn[0UL]) {
@@ -383,44 +470,111 @@ static void comment0(char buf[], uint32_t buf_len, uint32_t uptime,
                ++eol;
             }
          } while (lc);
-         if (eol+2L>=bol && fb[bol]=='%') {
+         hb[0] = 0;
+         while (eol+2L>=bol && fb[bol]=='%') {
             if (fb[bol+1L]=='u') {
                /* insert uptime */
                if (uptime>0UL) {
-                  strncpy(fb," powerup h:m:s ",32768u);
-                  aprsstr_TimeToStr(uptime, h, 100ul);
-                  aprsstr_Append(fb, 32768ul, h, 100ul);
+                  aprsstr_Append(hb, 120ul, " powerup h:m:s ", 16ul);
+                  aprsstr_TimeToStr(uptime, h, 120ul);
+                  aprsstr_Append(hb, 120ul, h, 120ul);
                }
-               else fb[0] = 0;
+            }
+            else if (fb[bol+1L]=='n') {
+               /* insert framenumber */
+               if (uptime>0UL) {
+                  aprsstr_Append(hb, 120ul, " FN=", 5ul);
+                  aprsstr_IntToStr((int32_t)uptime, 1UL, h, 120ul);
+                  aprsstr_Append(hb, 120ul, h, 120ul);
+               }
             }
             else if (fb[bol+1L]=='v') {
                /* insert version */
-               strncpy(fb," sondemod(c) 1.21",32768u);
+               aprsstr_Append(hb, 120ul, " sondemod 1.32", 15ul);
             }
             else if (fb[bol+1L]=='s') {
                /* insert sat count */
                if (sats>0UL) {
-                  strncpy(fb," Sats ",32768u);
-                  aprsstr_IntToStr((int32_t)sats, 1UL, h, 100ul);
-                  aprsstr_Append(fb, 32768ul, h, 100ul);
+                  aprsstr_Append(hb, 120ul, " Sats=", 7ul);
+                  aprsstr_IntToStr((int32_t)sats, 1UL, h, 120ul);
+                  aprsstr_Append(hb, 120ul, h, 120ul);
                }
-               else fb[0] = 0;
             }
             else if (fb[bol+1L]=='r') {
                /* hrms +3m from tropomodel */
                if (sats>4UL) {
-                  strncpy(fb," hdil=",32768u);
-                  aprsstr_FixToStr((float)(hrms+3.0), 2UL, h, 100ul);
-                  aprsstr_Append(fb, 32768ul, h, 100ul);
-                  aprsstr_Append(fb, 32768ul, "m", 2ul);
+                  aprsstr_Append(hb, 120ul, " hdil=", 7ul);
+                  aprsstr_FixToStr((float)(hrms+3.0), 2UL, h, 120ul);
+                  aprsstr_Append(hb, 120ul, h, 120ul);
+                  aprsstr_Append(hb, 120ul, "m", 2ul);
                }
                else fb[0] = 0;
             }
-            else fb[0] = 0;
-            bol = 0L;
-            eol = (int32_t)aprsstr_Length(fb, 32768ul);
+            else if (X2C_CAP(fb[bol+1L])=='F') {
+               /* sdr freq and afc */
+               if ((sdr.valid && (!mhzfromsonde || fb[bol+1L]=='F'))
+                && sdr.freq) {
+                  aprsstr_Append(hb, 120ul, " rx=", 5ul);
+                  aprsstr_IntToStr((int32_t)(sdr.freq/100UL), 1UL, h,
+                120ul);
+                  aprsstr_Append(hb, 120ul, h, 120ul);
+                  if (sdr.maxafc) {
+                     aprsstr_Append(hb, 120ul, "(", 2ul);
+                     if (sdr.afc>=0L) aprsstr_Append(hb, 120ul, "+", 2ul);
+                     aprsstr_IntToStr(sdr.afc, 1UL, h, 120ul);
+                     aprsstr_Append(hb, 120ul, h, 120ul);
+                     aprsstr_Append(hb, 120ul, "/", 2ul);
+                     aprsstr_IntToStr((int32_t)sdr.maxafc, 1UL, h, 120ul);
+                     aprsstr_Append(hb, 120ul, h, 120ul);
+                     aprsstr_Append(hb, 120ul, ")", 2ul);
+                  }
+               }
+            }
+            else if (fb[bol+1L]=='d') {
+               /* rssi */
+               if (sdr.valid && sdr.db) {
+                  aprsstr_Append(hb, 120ul, " rssi=", 7ul);
+                  aprsstr_FixToStr((float)sdr.db*0.1f, 2UL, h, 120ul);
+                  aprsstr_Append(hb, 120ul, h, 120ul);
+                  aprsstr_Append(hb, 120ul, "dB", 3ul);
+               }
+            }
+            else if (fb[bol+1L]=='l') {
+               /* label */
+               if (sdr.valid && sdr.name[0UL]) {
+                  aprsstr_Append(hb, 120ul, " dev=", 6ul);
+                  aprsstr_Append(hb, 120ul, sdr.name, 4ul);
+               }
+            }
+            else if (fb[bol+1L]=='D') {
+               /* distance */
+               if (mydist>=0.0) {
+                  aprsstr_Append(hb, 120ul, " dist=", 7ul);
+                  aprsstr_FixToStr((float)mydist, 4UL, h, 120ul);
+                  aprsstr_Append(hb, 120ul, h, 120ul);
+               }
+            }
+            else if (fb[bol+1L]=='A') {
+               /* azimuth */
+               if (myazi>=0.0) {
+                  aprsstr_Append(hb, 120ul, " azimuth=", 10ul);
+                  aprsstr_IntToStr((int32_t)X2C_TRUNCI(myazi,
+                X2C_min_longint,X2C_max_longint), 1UL, h, 120ul);
+                  aprsstr_Append(hb, 120ul, h, 120ul);
+               }
+            }
+            else if (fb[bol+1L]=='E') {
+               /* elevation */
+               if (myele>=0.0) {
+                  aprsstr_Append(hb, 120ul, " elevation=", 12ul);
+                  aprsstr_FixToStr((float)myele, 3UL, h, 120ul);
+                  aprsstr_Append(hb, 120ul, h, 120ul);
+               }
+            }
+            bol += 2L;
          }
-         i = 0L;
+         aprsstr_Assign(buf, buf_len, hb, 120ul);
+         i = (int32_t)aprsstr_Length(buf, buf_len);
          while (bol<eol && i<(int32_t)(buf_len-1)) {
             buf[i] = fb[bol];
             ++i;
@@ -480,7 +634,9 @@ static void sendaprs(uint32_t comp0, uint32_t micessid, char dao,
                 uint32_t obj_len, double lat, double long0,
                 double alt, double course, double speed,
                 uint32_t goodsats, double hrms, char comm[],
-                uint32_t comm_len, uint32_t * commentcnt)
+                uint32_t comm_len, uint32_t * commentcnt,
+                const struct sondeaprs_SDRBLOCK sdr, double myazi,
+                double myele, double mydist)
 {
    char ds[201];
    char h[201];
@@ -778,7 +934,8 @@ static void sendaprs(uint32_t comp0, uint32_t micessid, char dao,
    }
    b[i] = 0;
    aprsstr_Append(b, 201ul, comm, comm_len);
-   comment0(h, 201ul, uptime, goodsats, hrms, commentcnt);
+   comment0(h, 201ul, uptime, goodsats, hrms, commentcnt, sdr, myazi, myele,
+                mydist);
    aprsstr_Append(b, 201ul, h, 201ul);
    /*  Append(b, CR+LF); */
    if (aprsstr_Length(mycall, mycall_len)>=3UL) {
@@ -995,17 +1152,6 @@ static char Checkval(const double a[], uint32_t a_len,
    return m<err;
 } /* end Checkval() */
 
-/*
-PROCEDURE climb(VAR d:DATS);
-VAR i:CARDINAL;
-    k:REAL;
-BEGIN
-  k:=0.0;
-  FOR i:=0 TO HIGH(d)-1 DO k:=k+d[i+1].alt-d[i].alt END;
-                (* median slope *)
-  d[0].climb:=-k/FLOAT(HIGH(d));
-END climb;
-*/
 #define sondeaprs_MAXTIMESPAN 20
 
 
@@ -1172,6 +1318,49 @@ BEGIN
 END highresstr;
 */
 
+static void elevation(double * el, double * c,
+                struct aprsstr_POSITION home, double homealt,
+                struct aprsstr_POSITION dist, double distalt)
+{
+   float z1;
+   float y1;
+   float x1;
+   float z0;
+   float y00;
+   float x0;
+   float sb;
+   float r;
+   float s;
+   float b;
+   float a;
+   *el = (-1000.0);
+   aprspos_wgs84s(home.lat, home.long0, (float)(homealt*0.001), &x0, &y00,
+                 &z0);
+   aprspos_wgs84s(dist.lat, dist.long0, (float)(distalt*0.001), &x1, &y1,
+                &z1);
+   a = osic_sqrt(x0*x0+y00*y00+z0*z0);
+   b = osic_sqrt(x1*x1+y1*y1+z1*z1);
+   x1 = x1-x0;
+   y1 = y1-y00;
+   z1 = z1-z0;
+   *c = (double)osic_sqrt(x1*x1+y1*y1+z1*z1);
+   /* halbwinkelsatz */
+   s = (float)(((double)(a+b)+*c)*0.5);
+   if (s==0.0f) return;
+   r = (float)(X2C_DIVL((double)((s-a)*(s-b))*((double)s-*c),
+                (double)s));
+   if (r<=0.0f) return;
+   r = osic_sqrt(r);
+   sb = s-b;
+   if (sb==0.0f) *el = 90.0;
+   else {
+      /*  el:=(360.0/PI)*arctan(r/(s-a))-90.0; */
+      *el = (double)(1.1459155902616E+2f*osic_arctan(X2C_DIVR(r,
+                sb))-90.0f);
+   }
+} /* end elevation() */
+
+
 extern void sondeaprs_senddata(double lat, double long0,
                 double alt, double speed, double dir,
                 double clb, double hp, double hyg,
@@ -1183,7 +1372,7 @@ extern void sondeaprs_senddata(double lat, double long0,
                 uint32_t goodsats, char usercall[],
                 uint32_t usercall_len, uint32_t calperc,
                 uint32_t burstKill, char force, char typstr[],
-                uint32_t typstr_len)
+                uint32_t typstr_len, struct sondeaprs_SDRBLOCK sdr)
 {
    uint8_t e;
    pCONTEXT ct;
@@ -1191,14 +1380,63 @@ extern void sondeaprs_senddata(double lat, double long0,
    char s[251];
    uint32_t systime;
    uint32_t bt;
+   double btalt;
    double og;
+   double egmalt;
+   struct aprsstr_POSITION dpos;
+   double mygrounddist;
+   double mydist;
+   double myele;
+   double myazi;
    struct CONTEXT * anonym;
    X2C_PCOPY((void **)&objname,objname_len);
-   og = getoverground(lat*5.7295779513082E+1, long0*5.7295779513082E+1, alt);
+   btalt = alt;
+   if (!egmoff) {
+      egmalt = egm96corr(lat, long0, alt);
+                /* make NN out of wgs84 altitude */
+      if (egmalt>(-2.E+4)) {
+         og = getoverground(lat, long0, egmalt);
+         btalt = og;
+      }
+      else og = (-3.2E+4);
+   }
+   /*- azimuth elevation distance */
+   myazi = (-2.E+4);
+   myele = (-2.E+4);
+   mydist = (-2.E+4);
+   mygrounddist = 0.0;
+   dpos.lat = (float)lat;
+   dpos.long0 = (float)long0;
+   if (aprspos_posvalid(sondeaprs_mypos) && aprspos_posvalid(dpos)) {
+      if (sondeaprs_myalt<(-2.E+5f)) {
+         /* try to get own alt from srtm */
+         sondeaprs_myalt = (float)getoverground((double)
+                sondeaprs_mypos.lat, (double)sondeaprs_mypos.long0,
+                (-1.E+5));
+         if ((sondeaprs_verb && sondeaprs_myalt>(-2.E+4f))
+                && sondeaprs_myalt<20000.0f) {
+            osi_WrStrLn("", 1ul);
+            osi_WrStr("got Your altitude from SRTM as ", 32ul);
+            osic_WrINT32((uint32_t)(int32_t)X2C_TRUNCI(sondeaprs_myalt,
+                X2C_min_longint,X2C_max_longint), 1UL);
+            osi_WrStrLn("m or overwrite with -N", 23ul);
+         }
+      }
+      myazi = (double)aprspos_azimuth(sondeaprs_mypos, dpos);
+      mygrounddist = (double)aprspos_distance(sondeaprs_mypos, dpos);
+      if (mygrounddist>2.E+7) mygrounddist = 2.E+7;
+      if ((egmalt>=(-2.E+4) && sondeaprs_myalt>=(-2.E+4f))
+                && sondeaprs_myalt<=20000.0f) {
+         elevation(&myele, &mydist, sondeaprs_mypos,
+                (double)sondeaprs_myalt, dpos, egmalt);
+      }
+   }
+   /*- azimuth elevation distance */
    if (sondeaprs_csvfilename[0UL]) {
       wrcsv(sattime, typstr, typstr_len, objname, objname_len, lat, long0,
-                alt, speed, dir, clb, og, mhz, goodsats, burstKill, uptime,
-                hp, hyg, temp, ozon, otemp, pumpmA, pumpv);
+                alt, speed, dir, clb, egmalt, og, mhz, goodsats, burstKill,
+                uptime, hp, hyg, temp, ozon, otemp, pumpmA, pumpv, sdr,
+                mydist, myazi, myele);
    }
    if (aprsstr_Length(usercall, usercall_len)<3UL) {
       osi_WrStrLn("no tx without <mycall>", 23ul);
@@ -1209,6 +1447,7 @@ extern void sondeaprs_senddata(double lat, double long0,
       goto label;
    }
    systime = osic_time();
+   mhzfromsonde = 0;
    ct = findcontext(objname, objname_len, systime);
    if (ct) {
       { /* with */
@@ -1225,7 +1464,10 @@ extern void sondeaprs_senddata(double lat, double long0,
          anonym->dat[0U].dir = dir;
          anonym->dat[0U].lat = lat*5.7295779513082E+1;
          anonym->dat[0U].long0 = long0*5.7295779513082E+1;
-         anonym->dat[0U].time0 = sattime%86400UL;
+         if (sattime>=86400UL) anonym->dat[0U].time0 = sattime%86400UL;
+         else {
+            anonym->dat[0U].time0 = osic_time()%86400UL;
+         }
          anonym->dat[0U].clb = clb;
          anonym->dat[0U].hrms = hrms;
          anonym->dat[0U].vrms = vrms;
@@ -1276,7 +1518,7 @@ extern void sondeaprs_senddata(double lat, double long0,
                if (e==sondeaprs_eRMS) break;
             } /* end for */
          }
-         if (clb<0.0 && anonym->dat[0U].alt<(double)sondeaprs_lowalt) {
+         if (clb<(-0.25) && btalt<(double)sondeaprs_lowalt) {
             bt = sondeaprs_lowaltbeacontime;
          }
          else bt = sondeaprs_beacontime;
@@ -1346,6 +1588,7 @@ extern void sondeaprs_senddata(double lat, double long0,
                aprsstr_FixToStr((float)mhz, 3UL, h, 251ul);
                aprsstr_Append(s, 251ul, h, 251ul);
                aprsstr_Append(s, 251ul, "MHz", 4ul);
+               mhzfromsonde = 1; /* mhz sent so do not with %f */
             }
             if (typstr[0UL]) {
                aprsstr_Append(s, 251ul, " Type=", 7ul);
@@ -1365,15 +1608,38 @@ extern void sondeaprs_senddata(double lat, double long0,
                else aprsstr_Append(s, 251ul, "On", 3ul);
             }
             /* appended by SQ7BR */
-            if (force) aprsstr_Append(s, 251ul, " Unchecked-Data", 16ul);
-            sendaprs(0UL, 0UL, sondeaprs_dao, anonym->dat[0U].time0, uptime,
-                usercall, usercall_len, sondeaprs_destcall, 100ul,
+            if (force) {
+               aprsstr_Append(s, 251ul, " Unchecked-Data", 16ul);
+            }
+            if (sondeaprs_expire>0UL && (systime>sattime+sondeaprs_expire || systime+sondeaprs_expire<sattime)
+                ) {
+               if (sondeaprs_verb) {
+                  aprsstr_IntToStr((int32_t)(sattime-systime), 1UL, h,
+                251ul);
+                  osi_WrStr(h, 251ul);
+                  osi_WrStrLn("s ----------- GPStime-SystemTime NO DATA SENT \
+(-E ... )", 56ul);
+               }
+            }
+            else if (sondeaprs_maxsenddistance>0UL && (double)
+                sondeaprs_maxsenddistance<mygrounddist) {
+               if (sondeaprs_verb) {
+                  aprsstr_FixToStr((float)mygrounddist, 4UL, h, 251ul);
+                  osi_WrStr(h, 251ul);
+                  osi_WrStrLn("km,  ---------- NO SEND (Out of Radius -G ... \
+)", 48ul);
+               }
+            }
+            else {
+               sendaprs(0UL, 0UL, sondeaprs_dao, anonym->dat[0U].time0,
+                uptime, usercall, usercall_len, sondeaprs_destcall, 100ul,
                 sondeaprs_via, 100ul, sondeaprs_sym, 2ul, objname,
                 objname_len, anonym->dat[0U].lat, anonym->dat[0U].long0,
                 anonym->dat[0U].alt,
                 (double)(float)(truncc(anonym->dat[0U].dir)%360UL),
                 anonym->dat[0U].speed*3.6, goodsats, hrms, s, 251ul,
-                &anonym->commentline);
+                &anonym->commentline, sdr, myazi, myele, mydist);
+            }
             anonym->lastbeacon = systime;
             anonym->speedcnt = 0UL;
             anonym->speedsum = 0.0;
@@ -1390,6 +1656,7 @@ extern void sondeaprs_BEGIN(void)
    static int sondeaprs_init = 0;
    if (sondeaprs_init) return;
    sondeaprs_init = 1;
+   aprspos_BEGIN();
    libsrtm_BEGIN();
    osi_BEGIN();
    aprsstr_BEGIN();
@@ -1405,6 +1672,7 @@ extern void sondeaprs_BEGIN(void)
    sondeaprs_lowaltbeacontime = 0UL;
    sondeaprs_lowalt = 1000UL;
    sondeaprs_nofilter = 0;
+   egmoff = 0;
 /*  FILL(ADR(dat), 0C, SIZE(dat)); */
 /*  lastbeacon:=0; */
 /*  commentline:=0; */

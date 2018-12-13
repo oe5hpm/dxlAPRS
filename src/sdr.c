@@ -13,18 +13,18 @@
 #include "sdr.h"
 #endif
 #define sdr_C_
+#ifndef tcpb_H_
+#include "tcpb.h"
+#endif
+#ifndef tcp_H_
+#include "tcp.h"
+#endif
 #ifndef osi_H_
 #include "osi.h"
 #endif
 #include <osic.h>
 #ifndef mlib_H_
 #include "mlib.h"
-#endif
-#ifndef tcp_H_
-#include "tcp.h"
-#endif
-#ifndef tcpb_H_
-#include "tcpb.h"
 #endif
 #ifndef aprsstr_H_
 #include "aprsstr.h"
