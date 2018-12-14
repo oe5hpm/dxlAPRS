@@ -490,7 +490,7 @@ static void comment0(char buf[], uint32_t buf_len, uint32_t uptime,
             }
             else if (fb[bol+1L]=='v') {
                /* insert version */
-               aprsstr_Append(hb, 120ul, " sondemod 1.32", 15ul);
+               aprsstr_Append(hb, 120ul, " sondemod 1.33", 15ul);
             }
             else if (fb[bol+1L]=='s') {
                /* insert sat count */
@@ -502,7 +502,7 @@ static void comment0(char buf[], uint32_t buf_len, uint32_t uptime,
             }
             else if (fb[bol+1L]=='r') {
                /* hrms +3m from tropomodel */
-               if (sats>4UL) {
+               if (sats>4UL && hrms>=0.0) {
                   aprsstr_Append(hb, 120ul, " hdil=", 7ul);
                   aprsstr_FixToStr((float)(hrms+3.0), 2UL, h, 120ul);
                   aprsstr_Append(hb, 120ul, h, 120ul);

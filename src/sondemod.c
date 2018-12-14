@@ -91,6 +91,8 @@ static char sondemod_EMPTYAUX = '\003';
 #define sondemod_FASTALM 4
 /* reread almanach if old */
 
+typedef uint32_t SET51[2];
+
 typedef char FILENAME[1024];
 
 typedef char OBJNAME[9];
@@ -236,6 +238,8 @@ struct CONTEXTR4 {
    double ozonPumpMA;
    double ozonExtVolt;
    uint32_t burstKill;
+   char calibdata[816];
+   SET51 calibok;
 };
 /*
        ozon_id_ser           : ARRAY[0..8] OF CHAR;
@@ -533,7 +537,7 @@ static void Parms(void)
          }
          else {
             if (h[1U]=='h') {
-               osi_WrStr("sondemod 1.32", 14ul);
+               osi_WrStr("sondemod 1.33", 14ul);
                osi_WrStrLn(" multichannel decoder RS92, RS41, SRS-C34/50, DFM\
 , M10 Radiosondes", 67ul);
                osi_WrStrLn(" -A <meter>     at lower altitude use -B beacon t\
@@ -2686,7 +2690,7 @@ static uint32_t gethex(const char frame[], uint32_t frame_len,
 static void posrs41(const char b[], uint32_t b_len, uint32_t p,
                 double * lat, double * long0,
                 double * heig, double * speed,
-                double * dir, double * clmb)
+                double * dir, double * clmb, uint32_t * sats)
 {
    double vu;
    double ve;
@@ -2733,6 +2737,7 @@ static void posrs41(const char b[], uint32_t b_len, uint32_t p,
    if (*dir<0.0) *dir = 360.0+*dir;
    *speed = (double)osic_sqrt((float)(vn*vn+ve*ve));
    *clmb = vu;
+   *sats = getcard16(b, b_len, p+18UL)&255UL;
    if (sondeaprs_verb) {
       osi_WrStr(" ", 2ul);
       osic_WrFixed((float)( *speed*3.6), 2L, 1UL);
@@ -2740,7 +2745,8 @@ static void posrs41(const char b[], uint32_t b_len, uint32_t p,
       osic_WrFixed((float)*dir, 1L, 1UL);
       osi_WrStr("deg ", 5ul);
       osic_WrFixed((float)vu, 1L, 1UL);
-      osi_WrStr("m/s", 4ul);
+      osi_WrStr("m/s Sats:", 10ul);
+      osic_WrINT32(*sats, 1UL);
    }
 } /* end posrs41() */
 
@@ -2784,6 +2790,118 @@ static double calcOzone(double uA, double temp,
 */
 } /* end calcOzone() */
 
+#define sondemod_CALT10 89
+
+#define sondemod_CALT11 93
+
+#define sondemod_CALT12 97
+
+#define sondemod_CALRf1 61
+
+#define sondemod_CALRf2 65
+
+#define sondemod_Ca (-3.9083E-3)
+
+#define sondemod_Cb (-5.775E-7)
+
+#define sondemod_Cc (-4.183E-12)
+
+
+static float getcal(pCONTEXTR4 pc, uint32_t p)
+{
+   uint32_t i;
+   uint32_t n;
+   n = 0UL;
+   for (i = 3UL;; i--) {
+      n = n*256UL;
+      n += (uint32_t)(uint8_t)pc->calibdata[p+i];
+      if (i==0UL) break;
+   } /* end for */
+   return SaveReal(n);
+} /* end getcal() */
+
+
+static uint32_t getcard(char rxb[], uint32_t rxb_len, uint32_t p,
+                uint32_t bytes)
+{
+   uint32_t i;
+   uint32_t n;
+   n = 0UL;
+   for (i = bytes-1UL;; i--) {
+      n = n*256UL;
+      n += (uint32_t)(uint8_t)rxb[p+i];
+      if (i==0UL) break;
+   } /* end for */
+   return n;
+} /* end getcard() */
+
+
+static void ptu41(pCONTEXTR4 pc, uint32_t pb, const char rxb[],
+                uint32_t rxb_len, double * tmp)
+{
+   uint32_t i;
+   float r;
+   float f2;
+   float f1;
+   float f;
+   float Ra;
+   float Rf2;
+   float Rf1;
+   uint32_t meas[12];
+   if (sondeaprs_verb) {
+      if (X2C_INL((int32_t)33,51,pc->calibok)) {
+         osi_WrStr(" [", 3ul);
+         for (i = 536UL; i<=543UL; i++) {
+            osi_WrStr((char *) &pc->calibdata[i], 1u/1u);
+         } /* end for */
+         osi_WrStr("]", 2ul);
+      }
+   }
+   for (i = 0UL; i<=11UL; i++) {
+      meas[i] = getcard(rxb, rxb_len, pb+i*3UL, 3UL);
+   } /* end for */
+   if ((((X2C_INL((int32_t)5,51,pc->calibok) && X2C_INL((int32_t)5,51,
+                pc->calibok)) && X2C_INL((int32_t)6,51,
+                pc->calibok)) && X2C_INL((int32_t)3,51,
+                pc->calibok)) && X2C_INL((int32_t)4,51,pc->calibok)) {
+      /* needed calibs valid */
+      f = (float)meas[0U];
+      f1 = (float)meas[1U];
+      f2 = (float)meas[2U];
+      Rf1 = getcal(pc, 61UL);
+      Rf2 = getcal(pc, 65UL);
+      r = f2-f1;
+      if (r!=0.0f) {
+         r = X2C_DIVR(1.0f,r);
+         Ra = f*(Rf2-Rf1)*r-(f1*Rf2-f2*Rf1)*r;
+         r = Ra*0.001f*(0.8024f*getcal(pc, 89UL)+0.0176f)+0.0705f*getcal(pc,
+                93UL)+0.0011f;
+         r = 1.527480889E-5f+(-2.31E-6f)*(r-1.0f);
+         if (r>0.0f) {
+            r = X2C_DIVR((-3.9083E-3f)+osic_sqrt(r),(-1.155E-6f));
+            if ((float)fabs(r)<99.0f) *tmp = (double)r;
+         }
+      }
+   }
+/*
+WrStrLn("");WrStr("cal:");
+FOR i:=0 TO 37 DO WrHex(ORD(rxb[pb+i]), 3); END;
+WrStrLn("");
+ 
+FOR i:=0 TO HIGH(pc^.calibdata) DO 
+ IF i MOD 16=0 THEN WrStrLn(""); WrInt(i, 3); WrStr(":"); END;
+ WrHex(ORD(pc^.calibdata[i]), 3);
+END;
+
+WrStrLn("");
+FOR i:=0 TO HIGH(pc^.calibdata) DO
+ IF (pc^.calibdata[i]>=" ") & (pc^.calibdata[i]<CHR(127))
+                THEN WrStr(pc^.calibdata[i]) END;
+END;
+WrStrLn("");
+*/
+} /* end ptu41() */
+
 static uint16_t sondemod_POLYNOM0 = 0x1021U;
 
 static uint16_t sondemod_burstIndicatorBytes[12] = {2U,262U,276U,391U,306U,
@@ -2799,6 +2917,7 @@ static void decoders41(const char rxb[], uint32_t rxb_len,
    CALLSSID usercall;
    uint32_t frameno;
    uint32_t len;
+   uint32_t sats;
    uint32_t p;
    uint32_t ic;
    uint32_t j;
@@ -2810,6 +2929,7 @@ static void decoders41(const char rxb[], uint32_t rxb_len,
    pCONTEXTR4 pc0;
    pCONTEXTR4 pc1;
    pCONTEXTR4 pc;
+   double temperature;
    double ozonval;
    double climb;
    double dir;
@@ -2825,6 +2945,8 @@ static void decoders41(const char rxb[], uint32_t rxb_len,
    lat = 0.0;
    long0 = 0.0;
    ozonval = 0.0;
+   temperature = (double)X2C_max_real;
+   sats = 0UL;
    getcall(rxb, rxb_len, usercall, 11ul);
    if (usercall[0U]==0) aprsstr_Assign(usercall, 11ul, mycall, 100ul);
    if (sondeaprs_verb && fromport>0UL) {
@@ -2845,6 +2967,7 @@ static void decoders41(const char rxb[], uint32_t rxb_len,
    for (;;) {
       if (p+4UL>=rxb_len-1) break;
       typ = rxb[p];
+      /*WrStr("TYP============="); WrHex(ORD(typ), 3); WrStr(" "); */
       ++p;
       len = (uint32_t)(uint8_t)rxb[p]+2UL;
       ++p;
@@ -2907,6 +3030,23 @@ static void decoders41(const char rxb[], uint32_t rxb_len,
             aprsstr_Assign(pc->name, 9ul, nam, 9ul);
             if (sondeaprs_verb) osi_WrStrLn(" is new ", 9ul);
          }
+         j = (uint32_t)(uint8_t)rxb[p+23UL]; /* calib frame number */
+         if (j<=50UL) {
+            if (!X2C_INL(j,51,pc->calibok)) {
+               X2C_INCL(pc->calibok,j,51);
+               for (i = 0UL; i<=15UL; i++) {
+                  pc->calibdata[j*16UL+i] = rxb[p+24UL+i];
+               } /* end for */
+               if (sondeaprs_verb) {
+                  osi_WrStr(" Cal:[", 7ul);
+                  for (i = 0UL; i<=50UL; i++) {
+                     if (X2C_INL(i,51,pc->calibok)) osi_WrStr("+", 2ul);
+                     else osi_WrStr("-", 2ul);
+                  } /* end for */
+                  osi_WrStr("] ", 3ul);
+               }
+            }
+         }
          frameno = getcard16(rxb, rxb_len, p);
          if (frameno>pc->framenum) {
             /* new frame number */
@@ -2915,9 +3055,7 @@ static void decoders41(const char rxb[], uint32_t rxb_len,
             pc->framenum = frameno;
             pc->tused = systime;
          }
-         else if (pc->framenum==frameno && !pc->framesent) {
-            calok = 1;
-         }
+         else if (pc->framenum==frameno && !pc->framesent) calok = 1;
          else if (frameno<pc->framenum && sondeaprs_verb) {
             osi_WrStrLn("", 1ul);
             osi_WrStr("got out of order frame number ", 31ul);
@@ -2936,8 +3074,6 @@ static void decoders41(const char rxb[], uint32_t rxb_len,
          }
       }
       else if (typ=='z') {
-      }
-      else if (typ=='|') {
          /*i:=0;WHILE (i<=11) DO WrHex(ORD(rxb[p+23+i]), 3); INC(i) END; */
          /*
          --seems not works any longer
@@ -2968,6 +3104,14 @@ static void decoders41(const char rxb[], uint32_t rxb_len,
          *)
          --appended by SQ7BR
          */
+         ptu41(pc, p, rxb, rxb_len, &temperature);
+         if (sondeaprs_verb && fabs(temperature)<100.0) {
+            osi_WrStr(" t=", 4ul);
+            osic_WrFixed((float)temperature, 1L, 1UL);
+            osi_WrStr("C", 2ul);
+         }
+      }
+      else if (typ=='|') {
          /*             WrStrLn("7A frame"); */
          /*             WrStrLn("7C frame"); */
          if (pc) {
@@ -2984,7 +3128,7 @@ static void decoders41(const char rxb[], uint32_t rxb_len,
          /*             WrStrLn("7B frame"); */
          if (pc) {
             posrs41(rxb, rxb_len, p, &lat, &long0, &heig, &speed, &dir,
-                &climb);
+                &climb, &sats);
             pc->hp = altToPres(heig); /* make hPa out of gps alt for ozone */
          }
       }
@@ -2996,9 +3140,7 @@ static void decoders41(const char rxb[], uint32_t rxb_len,
                /*          pc^.ozonInstType:=gethex(rxb, p+1, 2); */
                /*          pc^.ozonInstNum:=gethex(rxb, p+3, 2); */
                res = (int32_t)gethex(rxb, rxb_len, p+5UL, 4UL);
-               if (res>=32768L) {
-                  res = 32768L-res;
-               }
+               if (res>=32768L) res = 32768L-res;
                pc->ozonTemp = (double)res*0.01;
                pc->ozonuA = (double)gethex(rxb, rxb_len, p+9UL,
                 5UL)*0.0001;
@@ -3062,11 +3204,11 @@ static void decoders41(const char rxb[], uint32_t rxb_len,
    }
    if ((((pc && nameok) && calok) && lat!=0.0) && long0!=0.0) {
       sondeaprs_senddata(lat, long0, heig, speed, dir, climb, 0.0, 0.0,
-                (double)X2C_max_real, ozonval, pc->ozonTemp,
-                pc->ozonPumpMA, pc->ozonBatVolt, (double)pc->mhz0, 0.0,
-                 0.0, pc->gpssecond, frameno, pc->name, 9ul, 0UL, 0UL,
-                usercall, 11ul, 0UL, pc->burstKill, sondeaprs_nofilter, "RS41\
-", 5ul, sdrblock);
+                temperature, ozonval, pc->ozonTemp, pc->ozonPumpMA,
+                pc->ozonBatVolt, (double)pc->mhz0, (-1.0), 0.0,
+                pc->gpssecond, frameno, pc->name, 9ul, 0UL, sats, usercall,
+                11ul, 0UL, pc->burstKill, sondeaprs_nofilter, "RS41", 5ul,
+                sdrblock);
       pc->framesent = 1;
    }
 /*  IF verb THEN WrStrLn("") END;   */
@@ -3454,6 +3596,7 @@ X2C_STACK_LIMIT(100000l)
 extern int main(int argc, char **argv)
 {
    X2C_BEGIN(&argc,argv,1,4000000l,8000000l);
+   if (sizeof(SET51)!=8) X2C_ASSERT(0);
    if (sizeof(FILENAME)!=1024) X2C_ASSERT(0);
    if (sizeof(OBJNAME)!=9) X2C_ASSERT(0);
    if (sizeof(CALLSSID)!=11) X2C_ASSERT(0);
