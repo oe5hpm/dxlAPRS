@@ -1390,6 +1390,7 @@ extern void sondeaprs_senddata(double lat, double long0,
    double myazi;
    struct CONTEXT * anonym;
    X2C_PCOPY((void **)&objname,objname_len);
+   og = (-3.2E+4);
    btalt = alt;
    if (!egmoff) {
       egmalt = egm96corr(lat, long0, alt);
@@ -1398,7 +1399,6 @@ extern void sondeaprs_senddata(double lat, double long0,
          og = getoverground(lat, long0, egmalt);
          btalt = og;
       }
-      else og = (-3.2E+4);
    }
    /*- azimuth elevation distance */
    myazi = (-2.E+4);
