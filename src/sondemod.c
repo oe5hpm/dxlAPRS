@@ -569,6 +569,8 @@ Elevation to sonde output", 75ul);
 port from \'sondeudp -u ...\'", 77ul);
                osi_WrStrLn(" -P <lat> <long> or <locator>  my Position for Di\
 stance/Azimuth/Elevation", 74ul);
+               osi_WrStrLn("                 eg. -P JQ50AB12CD or -P 70.0506 \
+10.0092", 57ul);
                osi_WrStrLn(" -p <num>       0 send if weather data ready, 1 i\
 f MHz known, 2 send immediatly (1)", 84ul);
                osi_WrStrLn(" -R <minutes>   request new rinex almanach after \
@@ -581,6 +583,14 @@ udpgate4 or aprsmap as receiver", 81ul);
 and WW15MGH.DAC file (egm96-Geoid)", 84ul);
                osi_WrStrLn("                  for Overground Calculation belo\
 w -A <altitude>", 65ul);
+               osi_WrStrLn("                  example with: -S /home/pi",
+                44ul);
+               osi_WrStrLn("                  /home/pi/WW15MGH.DAC         (2\
+076480Byte, covers whole World)", 81ul);
+               osi_WrStrLn("                  /home/pi/srtm1/N48E014.hgt  (25\
+934402Byte, not SRTM3!)", 73ul);
+               osi_WrStrLn("                  /home/pi/srtm1/N48E015.hgt",
+                45ul);
                osi_WrStrLn(" -s <filename>  gps almanach sem format (DO NOT U\
 SE, not exact)", 64ul);
                osi_WrStrLn(" -T <minutes>   stop sending data after almanach \
@@ -597,8 +607,8 @@ eeded too)", 60ul);
 eeded too with EGM96)", 71ul);
                osi_WrStrLn("                  %F same as \"f\" but send alway\
 s", 49ul);
-               osi_WrStrLn("                  %f sdr freq+AFC if from sdrtst \
--e and not (yet) got MHz from sonde", 85ul);
+               osi_WrStrLn("                  %f sdr freq+AFC from sdrtst wit\
+h -e and not (yet) got MHz from sonde", 87ul);
                osi_WrStrLn("                  %l label given in sondeudp -L e\
 g. \"omni\" \"west\" \"rx1\"", 72ul);
                osi_WrStrLn("                  %n frame number if avaliable",
