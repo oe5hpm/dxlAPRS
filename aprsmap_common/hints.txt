@@ -374,7 +374,8 @@ avaliable, out of sense values are not shown
 
 |1400 Show info to Waypoint or Beacon and go back in time
 
-|1401 Toggle show All or Waypoints with Error Flags
+|1401 Toggle step through All or waypoints
+with Error flags. Shortcut "e"
 
 |1402 Show info to Waypoint or Beacon and go forward in time
 
@@ -421,11 +422,13 @@ off watching this Call.
 
 |1438 Show Objects of this Sender on Map
 
-|1440 Delete the first Waypoint nearest to Click
-continued Hits to this Button deletes
-Waypoints with error markers. If clicked
-to Symbol or Text the whole User will be
-deleted (only in RAM not in Logfile)  
+|1440 Delete marked Symbol or Waypoint. Continued
+hits to this Button (or DEL-Key) delete next
+Waypoints. If toggled "Waypoint" Button to
+"Errors", only Waypoints with an error-flag
+will be Deleted. To Delete last Waypoint,
+Click Symbol, go 1 step back and force "<" ">"
+before. Deletion is done in RAM not in Logfile.  
 
 |1445 Cycle through avaliable Track Colours incl Invisable
 
