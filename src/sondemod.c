@@ -2917,6 +2917,10 @@ static uint16_t sondemod_POLYNOM0 = 0x1021U;
 static uint16_t sondemod_burstIndicatorBytes[12] = {2U,262U,276U,391U,306U,
                 0U,0U,0U,255U,255U,0U,0U};
 
+/* constant for SQ7BR BURST KILL CHECK 
+   restored by SP6TKT 27.12.2018 */
+static unsigned short _cnstbk[12] = {2U,262U,276U,391U,306U,0U,0U,0U,255U,
+                255U,0U,0U};
 
 static void decoders41(const char rxb[], uint32_t rxb_len,
                 uint32_t ip, uint32_t fromport)
@@ -3082,38 +3086,23 @@ static void decoders41(const char rxb[], uint32_t rxb_len,
             osi_WrStr(" ", 2ul);
             osic_WrINT32(pc->framenum, 1UL);
          }
+
+         /* appended by SQ7BR BURST KILL CHECK 
+            restored by SP6TKT 27.12.2018 */
+         i = 0UL;
+         while (i<=11UL && (_cnstbk[i]>=256U || rxb[p+23UL+i]==(char)
+                _cnstbk[i])) ++i;
+         if (i>11UL) {
+            pc->burstKill = ((unsigned long)(unsigned char)rxb[p+35UL]&1UL)
+                +1UL;
+            if (sondeaprs_verb) {
+               osi_WrStr(" BK=", 5ul);
+               osic_WrINT32(pc->burstKill-1UL, 1UL);
+            }
+         }
+
       }
       else if (typ=='z') {
-         /*i:=0;WHILE (i<=11) DO WrHex(ORD(rxb[p+23+i]), 3); INC(i) END; */
-         /*
-         --seems not works any longer
-         --appended by SQ7BR BURST KILL CHECK
-                 i:=0;
-                 WHILE (i<=11) & ((burstIndicatorBytes[i]>=256)
-                 OR (rxb[p+23+i]=CHR(burstIndicatorBytes[i]))) DO INC(i) END;
-         
-                 IF i>11 THEN
-                   pc^.burstKill:=ORD(rxb[p+(23+12)]) MOD 2+1;
-                   IF verb THEN WrStr(" BK="); WrInt(pc^.burstKill-1,1) END;
-                 END;
-         (*
-                 // 02 06 14 87 32 00 00 00 FF FF 00 00    01
-                    int bkSign=0;
-                   for (i = 0UL; i<=11UL;
-                i++) {         // 8 znakow nazwy od pozycji 61(59+2)
-                do 68(59+2+7)
-                      if ( rxb[p+23UL+i]== burstIndicatorBytes[i] ) bkSign++;
-                   } //for
-                   if (bkSign==12) {
-                     pc->burstKill =(unsigned long)
-                (rxb[p+23UL+12UL] && 0x01UL)+1UL;
-                     osi_WrStr(" BK=",5ul);
-                     osic_WrINT32(pc->burstKill, 1UL);
-                     osi_WrStrLn("",1ul);
-                   }
-         *)
-         --appended by SQ7BR
-         */
          ptu41(pc, p, rxb, rxb_len, &temperature);
          if (sondeaprs_verb && fabs(temperature)<100.0) {
             osi_WrStr(" t=", 4ul);
