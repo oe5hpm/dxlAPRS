@@ -243,6 +243,8 @@ $(OUT)%.o: %.c
 	@echo [compiling] $@
 	@$(CC) $(CDEFS) $(CFLAGS) -o $@ $<
 
+.PHONY: all
+
 all: prepare $(TARGETS)
 
 clean:
