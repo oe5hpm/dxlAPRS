@@ -351,6 +351,10 @@ $(OUT)radiorange: $(OBJ_RADIORANGE) $(OBJ_COMMON)
 	$(XLIBS) -lm
 	@$(STRIP) $(OUT)radiorange $(STRIPFLAGS)
 
+%:
+	make prepare
+	make $(OUT)$@
+
 diag:
 	@echo "Hostarch    : $(HOSTARCH)"
 	@echo "BuildOutput : $(OUT)"
