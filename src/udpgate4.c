@@ -5443,7 +5443,7 @@ n:right\">", 56ul);
          if (withicon) {
             Appwww(wsock, wbuf, "<td", 4ul);
             if (iconf(ph->sym, ph->symt, h1, 256ul, &hch)) {
-               Appwww(wsock, wbuf, " style=\"background-image:url(/", 31ul);
+               Appwww(wsock, wbuf, " style=\"background-image:url(", 30ul);
                Appwww(wsock, wbuf, h1, 256ul);
                Appwww(wsock, wbuf, "); background-repeat:no-repeat;background\
 -position:center center;", 66ul);
