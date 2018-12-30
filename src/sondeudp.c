@@ -282,6 +282,8 @@ struct M10 {
    uint32_t rxb;
    uint32_t rxp;
    char rxbuf[101];
+   char fixbytes[101];
+   uint8_t fixcnt[101];
    AFIRTAB afirtab;
    uint32_t timefn;
    uint32_t synword1;
@@ -1724,7 +1726,9 @@ static void posrs41(const char b[], uint32_t b_len, uint32_t p)
                 X2C_max_longint), 1UL);
    osi_WrStr("deg ", 5ul);
    osic_WrFixed((float)vu, 1L, 1UL);
-   osi_WrStr("m/s", 4ul);
+   osi_WrStr("m/s ", 5ul);
+   osic_WrINT32(getcard16(b, b_len, p+18UL)&255UL, 1UL);
+   osi_WrStr("Sats", 5ul);
 } /* end posrs41() */
 
 
@@ -3553,30 +3557,38 @@ static float sondeudp_DEGMUL = 8.3819036711397E-8f;
 
 #define sondeudp_VMUL 0.005
 
+#define sondeudp_CRCPOS 99
+
 static SET256 sondeudp_HSET = {0x03FFFFF7UL,0x00000003UL,0xE0000000UL,
                 0x0000001BUL,0x00000000UL,0x00000000UL,0x00000000UL,
                 0x00000000UL}; /* not hexlist known bytes */
+
+static SET256 sondeudp_VARSET = {0x03BBBBF0UL,0x80600000UL,0x06A001A0UL,
+                0x0000001CUL,0x00000000UL,0x00000000UL,0x00000000UL,
+                0x00000000UL}; /* known as variable */
 
 static float sondeudp_Rs[3] = {12100.0f,36500.0f,4.75E+5f};
 
 static float sondeudp_Rp[3] = {1.21E-16f,1.1060606E-1f,1.5833333E-1f};
 
-static SET256 _cnst3 = {0x03FFFFF7UL,0x00000003UL,0xE0000000UL,0x0000001BUL,
+static SET256 _cnst4 = {0x03FFFFF7UL,0x00000003UL,0xE0000000UL,0x0000001BUL,
                 0x00000000UL,0x00000000UL,0x00000000UL,0x00000000UL};
-static float _cnst2[3] = {12100.0f,36500.0f,4.75E+5f};
-static float _cnst1[3] = {1.21E-16f,1.1060606E-1f,1.5833333E-1f};
+static float _cnst3[3] = {12100.0f,36500.0f,4.75E+5f};
+static float _cnst2[3] = {1.21E-16f,1.1060606E-1f,1.5833333E-1f};
+static SET256 _cnst1 = {0x03BBBBF0UL,0x80600000UL,0x06A001A0UL,0x0000001CUL,
+                0x00000000UL,0x00000000UL,0x00000000UL,0x00000000UL};
 
 static void decodeframe10(uint32_t m)
 {
+   uint32_t repl;
+   uint32_t id;
    uint32_t flen;
    uint32_t tab;
    uint32_t week;
    uint32_t tow;
-   uint32_t cs;
    uint32_t i;
    int32_t ci;
    double dir;
-   /*    time:TIME; */
    double v;
    double vv;
    double vn;
@@ -3584,10 +3596,11 @@ static void decodeframe10(uint32_t m)
    double alt;
    double lon;
    double lat;
-   uint32_t id;
    uint32_t sct;
    float rt;
+   char crcok;
    char tok;
+   uint8_t repairstep;
    char ids[201];
    char s[201];
    struct M10 * anonym;
@@ -3595,9 +3608,36 @@ static void decodeframe10(uint32_t m)
    { /* with */
       struct M10 * anonym = &chan[m].m10;
       anonym->txok = 0;
-      cs = (uint32_t)crcm10(99L, anonym->rxbuf, 101ul);
-      if (cs==m10card(anonym->rxbuf, 101ul, 99L, 2L)) {
-         /* crc ok */
+      repairstep = 16U;
+      repl = 0UL;
+      for (;;) {
+         crcok = (uint32_t)crcm10(99L, anonym->rxbuf,
+                101ul)==m10card(anonym->rxbuf, 101ul, 99L, 2L);
+         if (repairstep==0U || crcok) break;
+         repl = 0UL;
+         for (i = 0UL; i<=98UL; i++) {
+            if (!X2C_INL(i,256,_cnst1) && anonym->fixcnt[i]>=repairstep) {
+               /* replace stable bytes */
+               if (anonym->rxbuf[i]!=anonym->fixbytes[i]) {
+                  ++repl;
+                  anonym->rxbuf[i] = anonym->fixbytes[i];
+               }
+            }
+         } /* end for */
+         repairstep = repairstep/2U; /* make second crc check */
+      }
+      if (crcok) {
+         /* update fixbyte statistics */
+         for (i = 0UL; i<=98UL; i++) {
+            if (anonym->fixbytes[i]==anonym->rxbuf[i]) {
+               if (anonym->fixcnt[i]<255U) ++anonym->fixcnt[i];
+            }
+            else {
+               anonym->fixbytes[i] = anonym->rxbuf[i];
+               anonym->fixcnt[i] = 0U;
+            }
+         } /* end for */
+         /* update fixbyte statistics */
          /* get ID    */
          id = (uint32_t)(((uint32_t)((uint32_t)(uint8_t)
                 anonym->rxbuf[97U]+256UL*(uint32_t)(uint8_t)
@@ -3642,7 +3682,9 @@ static void decodeframe10(uint32_t m)
                 4L)*8.3819036711397E-8;
             alt = (double)m10card(anonym->rxbuf, 101ul, 22L, 4L)*0.001;
             ci = (int32_t)m10card(anonym->rxbuf, 101ul, 4L, 2L);
-            if (ci>32767L) ci -= 65536L;
+            if (ci>32767L) {
+               ci -= 65536L;
+            }
             ve = (double)ci*0.005;
             ci = (int32_t)m10card(anonym->rxbuf, 101ul, 6L, 2L);
             if (ci>32767L) ci -= 65536L;
@@ -3663,9 +3705,9 @@ static void decodeframe10(uint32_t m)
                     tcal0:=m10rcard(rxbuf, 65, 2);
                     tcal1:=m10rcard(rxbuf, 67, 2);
             */
-            rt = X2C_DIVR(4095.0f-rt,rt)-_cnst1[sct];
+            rt = X2C_DIVR(4095.0f-rt,rt)-_cnst2[sct];
             if (rt>0.0f && sct<3UL) {
-               rt = X2C_DIVR(_cnst2[sct],rt);
+               rt = X2C_DIVR(_cnst3[sct],rt);
                if (rt>0.0f) {
                   rt = osic_ln(rt);
                   rt = X2C_DIVR(1.0f,
@@ -3674,7 +3716,7 @@ static void decodeframe10(uint32_t m)
                   tok = rt>(-99.0f) && rt<50.0f;
                }
             }
-            /*- m10 temp */
+            /*- m10 hum */
             if (verb) {
                WrChan((int32_t)m);
                osi_WrStr("M10 ", 5ul);
@@ -3739,6 +3781,12 @@ static void decodeframe10(uint32_t m)
       if (verb) {
          WrdB(chan[m].admax-chan[m].admin);
          WrQuali(noiselevel(anonym->bitlev, anonym->noise));
+         if (repl>0UL) {
+            osi_WrStr(" +r", 4ul);
+            osic_WrINT32(repl, 1UL);
+            osi_WrStr("/", 2ul);
+            osic_WrINT32((uint32_t)repairstep, 1UL);
+         }
          Wrtune(chan[m].admax+chan[m].admin, chan[m].admax-chan[m].admin);
          appendsdr(m);
       }
@@ -3751,7 +3799,7 @@ static void decodeframe10(uint32_t m)
          */
          tab = 0UL;
          for (i = 0UL; i<=100UL; i++) {
-            if (anonym->alternativ || !X2C_INL(i,256,_cnst3)) {
+            if (anonym->alternativ || !X2C_INL(i,256,_cnst4)) {
                if (tab%12UL==0UL) osi_WrStrLn("", 1ul);
                osic_WrINT32(i, 3UL);
                osi_WrStr(":", 2ul);
