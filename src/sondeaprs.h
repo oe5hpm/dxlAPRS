@@ -84,8 +84,6 @@ extern char sondeaprs_nofilter;
 
 extern int32_t sondeaprs_comptyp;
 
-extern int32_t sondeaprs_micessid;
-
 extern int32_t sondeaprs_udpsock;
 
 extern char sondeaprs_anyip;

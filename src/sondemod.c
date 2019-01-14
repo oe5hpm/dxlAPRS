@@ -1584,6 +1584,7 @@ static void decodeframe(uint8_t m, uint32_t ip, uint32_t fromport)
                osic_WrINT32(frameno, 1UL);
                osi_WrStr(" expecting ", 12ul);
                osic_WrINT32(contextr9.framenum, 1UL);
+               osi_WrStr(" ", 2ul);
                crdone = 0;
             }
          }
@@ -1628,9 +1629,7 @@ static void decodeframe(uint8_t m, uint32_t ip, uint32_t fromport)
                   if (gpstime>0UL && gpstime>=almage) {
                      almanachage = gpstime-almage;
                   }
-                  else {
-                     almanachage = 0UL;
-                  }
+                  else almanachage = 0UL;
                   if (almage+maxalmage>gpstime) anonym0->posok = 1;
                   else if (almanachage>0UL) {
                      osic_WrINT32(almanachage/60UL, 10UL);
@@ -2582,7 +2581,14 @@ static void decodedfm6(const char rxb[], uint32_t rxb_len,
          }
       }
    }
-   else if (sondeaprs_verb) osi_WrStr(" got old frame ", 16ul);
+   else if (sondeaprs_verb) {
+      if (rt==0UL) osi_WrStr(" got no date", 13ul);
+      else {
+         osi_WrStr(" frame delayed ", 16ul);
+         osic_WrINT32(pc->actrt-rt, 1UL);
+         osi_WrStr("s", 2ul);
+      }
+   }
    if (sondeaprs_verb) {
       wrsdr();
       osi_WrStrLn("", 1ul);
@@ -3072,6 +3078,7 @@ static void decoders41(const char rxb[], uint32_t rxb_len,
             osic_WrINT32(frameno, 1UL);
             osi_WrStr(" expecting ", 12ul);
             osic_WrINT32(pc->framenum, 1UL);
+            osi_WrStr(" ", 2ul);
          }
          if (rxb[p+23UL]==0) {
             pc->mhz0 = (float)(getcard16(rxb, rxb_len,

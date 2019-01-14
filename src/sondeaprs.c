@@ -49,7 +49,6 @@ char sondeaprs_verb;
 char sondeaprs_verb2;
 char sondeaprs_nofilter;
 int32_t sondeaprs_comptyp;
-int32_t sondeaprs_micessid;
 int32_t sondeaprs_udpsock;
 char sondeaprs_anyip;
 char sondeaprs_sendmon;
@@ -1614,11 +1613,15 @@ extern void sondeaprs_senddata(double lat, double long0,
             if (sondeaprs_expire>0UL && (systime>sattime+sondeaprs_expire || systime+sondeaprs_expire<sattime)
                 ) {
                if (sondeaprs_verb) {
-                  aprsstr_IntToStr((int32_t)(sattime-systime), 1UL, h,
+                  if (sattime==0UL) strncpy(h,"got no Time",251u);
+                  else {
+                     aprsstr_IntToStr((int32_t)(sattime-systime), 1UL, h,
                 251ul);
+                     aprsstr_Append(h, 251ul, "s", 2ul);
+                  }
                   osi_WrStr(h, 251ul);
-                  osi_WrStrLn("s ----------- GPStime-SystemTime NO DATA SENT \
-(-E ... )", 56ul);
+                  osi_WrStrLn(" ----------- GPStime-SystemTime NO DATA SENT (\
+-E ... )", 55ul);
                }
             }
             else if (sondeaprs_maxsenddistance>0UL && (double)

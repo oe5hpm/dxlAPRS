@@ -198,13 +198,13 @@ struct R41 {
    uint32_t rxbitc;
    uint32_t rxp;
    char rxbuf[560];
+   char fixbytes[560];
+   uint8_t fixcnt[560];
    AFIRTAB afirtab;
    uint32_t demodbaud;
    uint32_t configbaud;
    uint32_t synp;
    char synbuf[64];
-   char fixbytes[520];
-   uint8_t fixcnt[520];
 };
 
 struct DFM6;
@@ -2615,16 +2615,17 @@ static void decodesub(const char b[], uint32_t b_len, uint32_t m,
       chan[m].dfm6.wasdate = 1;
       chan[m].dfm6.lastdate = chan[m].dfm6.actdate;
       chan[m].dfm6.actdate = tt;
+      th = osic_time();
       if (chan[m].dfm6.lastdate+60UL==chan[m].dfm6.actdate) {
          /* minute jump */
-         th = osic_time();
-         if (chan[m].dfm6.frametimeok) thh = 2UL;
-         else thh = 3UL;
-         if (chan[m].dfm6.lastdatesystime+2UL+thh>=th) {
+         if (chan[m].dfm6.frametimeok) thh = 3UL;
+         else thh = 4UL;
+         if (chan[m].dfm6.lastdatesystime+thh>=th) {
             /* in timespan */
             chan[m].dfm6.frametime = chan[m].dfm6.actdate-th;
                 /* sonde realtime - systime */
             chan[m].dfm6.frametimeok = 1;
+            if (verb) osi_WrStr(" got SECOND", 12ul);
          }
       }
       chan[m].dfm6.lastdatesystime = th;
@@ -3613,7 +3614,7 @@ static void decodeframe10(uint32_t m)
       for (;;) {
          crcok = (uint32_t)crcm10(99L, anonym->rxbuf,
                 101ul)==m10card(anonym->rxbuf, 101ul, 99L, 2L);
-         if (repairstep==0U || crcok) break;
+         if ((anonym->alternativ || crcok) || repairstep==0U) break;
          repl = 0UL;
          for (i = 0UL; i<=98UL; i++) {
             if (!X2C_INL(i,256,_cnst1) && anonym->fixcnt[i]>=repairstep) {
@@ -3624,7 +3625,7 @@ static void decodeframe10(uint32_t m)
                }
             }
          } /* end for */
-         repairstep = repairstep/2U; /* make second crc check */
+         repairstep = repairstep/2U; /* make next crc check */
       }
       if (crcok) {
          /* update fixbyte statistics */
