@@ -2272,7 +2272,7 @@ static void startrandom(uint8_t ch)
 } /* end startrandom() */
 
 
-static char CheckRandom(int32_t modem)
+static char CheckRandom(int32_t modem, uint8_t pttch)
 {
    uint32_t clk;
    struct MPAR * anonym;
@@ -2285,10 +2285,11 @@ static char CheckRandom(int32_t modem)
             clk = modpar[modem].dcdclockm; /* use dcd of this modulation */
          }
          else clk = anonym0->dcdclock;
-         return anonym0->duplex!=afskmodem_fullduplex && (clock0-clk<=anonym0->addrandom || anonym0->duplex==afskmodem_onetx)
-                ;
+         return anonym0->duplex!=afskmodem_fullduplex && (clock0-clk<=anonym0->addrandom || anonym0->duplex==afskmodem_onetx && chan[(uint32_t)
+                maxchannels-(uint32_t)pttch].pttstate);
       }
    }
+/* onetx: tx locks tx of other channel */
 } /* end CheckRandom() */
 
 /* (usb) soundcard died */
@@ -2401,7 +2402,7 @@ static void getadc(void)
                if (ndcd) startrandom(anonym0->ch);
                anonym0->haddcd = ndcd;
             }
-            ndcd = CheckRandom(m);
+            ndcd = CheckRandom(m, anonym0->ch);
             if (ndcd!=anonym0->haddcdrand) {
                anonym0->haddcdrand = ndcd;
                if (anonym0->dcdmsgs) {
@@ -2536,9 +2537,7 @@ static void sendmodem(void)
             }
          }
          if (anonym->state==afskmodem_slotwait) {
-            if (!CheckRandom(anonym->actmodem) || !chan[(uint32_t)
-                maxchannels-(uint32_t)c].pttstate) {
-               /* onetx: tx locks tx of other channel */
+            if (!CheckRandom(anonym->actmodem, c)) {
                /*
                        IF duplex=shiftdigi THEN 
                          clk:=modpar[actmodem].dcdclockm;
@@ -2625,7 +2624,9 @@ static void sendmodem(void)
                            ++anonym0->tbytec;
                         }
                         if (anonym0->tbytec>=modpar[anonym0->actmodem].txdel)
-                 anonym0->tbyte = 126UL;
+                 {
+                           anonym0->tbyte = 126UL; /* 1 flag minimum */
+                        }
                         if (anonym0->tbytec>modpar[anonym0->actmodem].txdel) {
                            anonym0->state = afskmodem_senddata;
                            anonym0->tbytec = 0UL;
