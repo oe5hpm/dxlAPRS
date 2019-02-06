@@ -63,6 +63,16 @@
 #define profile_LEFTSPACE 3
 /* begin of texts from left image margin */
 
+#define profile_FRESPERC 0.6
+/* kernel diameter of fresnel zone */
+
+enum COLS {profile_cEARTH, profile_cHEAVEN, profile_cFRESIN,
+                profile_cFRESOUT, profile_cOPTALT, profile_cSCALERS,
+                profile_cMLINES, profile_cFRESLINE, 
+   profile_cMEADOW, profile_cTEXT1, profile_cTEXT2, profile_cTEXT3,
+                profile_cTEXTSCALE, profile_cBRANCH, profile_cTRUNC};
+
+
 struct POSITIONL;
 
 
@@ -147,6 +157,8 @@ static double treesize;
 
 static double maxdist;
 
+static double kernel;
+
 static pPATH path;
 
 static char gammatab[1024];
@@ -158,6 +170,17 @@ static char labelb[100];
 static char opt;
 
 static char treedrawn;
+
+struct _1;
+
+
+struct _1 {
+   uint32_t r;
+   uint32_t g;
+   uint32_t b;
+};
+
+static struct _1 colours[15];
 
 
 static void Error(char text[], uint32_t text_len)
@@ -313,8 +336,8 @@ static void background(void)
    tmp = ysize-1L;
    y = 0L;
    if (y<=tmp) for (;; y++) {
-      rr = 20L+(40L*(ysize-y))/ysize;
-      gg = 40L+(70L*(ysize-y))/ysize;
+      rr = (int32_t)colours[profile_cHEAVEN].r+(40L*(ysize-y))/ysize;
+      gg = (int32_t)colours[profile_cHEAVEN].g+(70L*(ysize-y))/ysize;
       tmp0 = xsize-1L;
       i = 0L;
       if (i<=tmp0) for (;; i++) {
@@ -322,7 +345,7 @@ static void background(void)
             struct imagetext_PIX * anonym = &image->Adr[(i)*image->Len0+y];
             anonym->r = (uint16_t)rr;
             anonym->g = (uint16_t)gg;
-            anonym->b = 180U;
+            anonym->b = (uint16_t)colours[profile_cHEAVEN].b;
          }
          if (i==tmp0) break;
       } /* end for */
@@ -351,12 +374,123 @@ static void errorimg(const char errmsg[], uint32_t errmsg_len)
 } /* end errorimg() */
 
 
+static void card(const char s[], uint32_t s_len, uint32_t * p,
+                uint32_t * res, uint32_t len, char * ok0)
+{
+   uint32_t n;
+   *ok0 = 0;
+   n = 0UL;
+   while (*p<len && s[*p]==' ') ++*p;
+   while ((*p<len && (uint8_t)s[*p]>='0') && (uint8_t)s[*p]<='9') {
+      n = (n*10UL+(uint32_t)(uint8_t)s[*p])-48UL;
+      *ok0 = 1;
+      ++*p;
+   }
+   if (n>1023UL) *ok0 = 0;
+   if (*ok0) *res = n;
+} /* end card() */
+
+
+static void readcolours(char fn[], uint32_t fn_len)
+{
+   int32_t len;
+   int32_t fd;
+   uint32_t lc;
+   uint32_t p;
+   uint8_t ci;
+   char ok0;
+   char s[5001];
+   char h[101];
+   X2C_PCOPY((void **)&fn,fn_len);
+   fd = osi_OpenRead(fn, fn_len);
+   if (fd<0L) {
+      strncpy(s,"[",5001u);
+      aprsstr_Append(s, 5001ul, fn, fn_len);
+      aprsstr_Append(s, 5001ul, "] colour file not found", 24ul);
+      Error(s, 5001ul);
+   }
+   len = osi_RdBin(fd, (char *)s, 5001u/1u, 5000UL);
+   osic_Close(fd);
+   if (len>=0L) s[len] = 0;
+   lc = 1UL;
+   p = 0UL;
+   ci = profile_cEARTH;
+   for (;;) {
+      while ((int32_t)p<len && (uint8_t)s[p]<' ') ++p;
+      if ((int32_t)p<len && s[p]!='#') {
+         card(s, 5001ul, &p, &colours[ci].r, (uint32_t)len, &ok0);
+         if (ok0) card(s, 5001ul, &p, &colours[ci].g, (uint32_t)len, &ok0);
+         if (ok0) card(s, 5001ul, &p, &colours[ci].b, (uint32_t)len, &ok0);
+         if (!ok0) {
+            aprsstr_IntToStr((int32_t)lc, 1UL, h, 101ul);
+            aprsstr_Append(h, 101ul, ": colour file syntax error\012", 28ul);
+            osi_Werr(h, 101ul);
+            break;
+         }
+         if (ci>=profile_cTRUNC) break;
+         ++ci;
+      }
+      while ((int32_t)p<len && (uint8_t)s[p]>=' ') ++p;
+      ++lc;
+      if ((int32_t)p>=len) break;
+   }
+   X2C_PFREE(fn);
+} /* end readcolours() */
+
+
 static void Parms(void)
 {
    char err;
    char h[1024];
    struct aprsstr_POSITION posr;
    uint32_t label;
+   /* default colours */
+   memset((char *)colours,(char)0,sizeof(struct _1 [15]));
+   colours[profile_cEARTH].r = 200UL;
+   colours[profile_cEARTH].g = 120UL;
+   colours[profile_cEARTH].b = 0UL;
+   colours[profile_cHEAVEN].r = 20UL;
+   colours[profile_cHEAVEN].g = 40UL;
+   colours[profile_cHEAVEN].b = 180UL;
+   colours[profile_cFRESIN].r = 290UL;
+   colours[profile_cFRESIN].g = 80UL;
+   colours[profile_cFRESIN].b = 0UL;
+   colours[profile_cFRESOUT].r = 120UL;
+   colours[profile_cFRESOUT].g = 180UL;
+   colours[profile_cFRESOUT].b = 20UL;
+   colours[profile_cOPTALT].r = 90UL;
+   colours[profile_cOPTALT].g = 150UL;
+   colours[profile_cOPTALT].b = 150UL;
+   colours[profile_cSCALERS].r = 600UL;
+   colours[profile_cSCALERS].g = 600UL;
+   colours[profile_cSCALERS].b = 500UL;
+   colours[profile_cMLINES].r = 25UL;
+   colours[profile_cMLINES].g = 25UL;
+   colours[profile_cMLINES].b = 25UL;
+   colours[profile_cFRESLINE].r = 130UL;
+   colours[profile_cFRESLINE].g = 130UL;
+   colours[profile_cFRESLINE].b = 0UL;
+   colours[profile_cMEADOW].r = 80UL;
+   colours[profile_cMEADOW].g = 250UL;
+   colours[profile_cMEADOW].b = 0UL;
+   colours[profile_cTEXT1].r = 800UL;
+   colours[profile_cTEXT1].g = 700UL;
+   colours[profile_cTEXT1].b = 100UL;
+   colours[profile_cTEXT2].r = 800UL;
+   colours[profile_cTEXT2].g = 700UL;
+   colours[profile_cTEXT2].b = 500UL;
+   colours[profile_cTEXT3].r = 800UL;
+   colours[profile_cTEXT3].g = 700UL;
+   colours[profile_cTEXT3].b = 500UL;
+   colours[profile_cTEXTSCALE].r = 700UL;
+   colours[profile_cTEXTSCALE].g = 700UL;
+   colours[profile_cTEXTSCALE].b = 700UL;
+   colours[profile_cBRANCH].r = 0UL;
+   colours[profile_cBRANCH].g = 500UL;
+   colours[profile_cBRANCH].b = 0UL;
+   colours[profile_cTRUNC].r = 300UL;
+   colours[profile_cTRUNC].g = 200UL;
+   colours[profile_cTRUNC].b = 0UL;
    err = 0;
    label = 0UL;
    for (;;) {
@@ -372,8 +506,13 @@ static void Parms(void)
          else if (h[1U]=='c') {
             osi_NextArg(csvfn, 1024ul);
             if (csvfn[0U]==0 || csvfn[0U]=='-') {
-               Error("-i <csv-filename>", 18ul);
+               Error("-c <csv-filename>", 18ul);
             }
+         }
+         else if (h[1U]=='C') {
+            osi_NextArg(h, 1024ul);
+            if (h[0U]==0 || h[0U]=='-') Error("-C <colours-filename>", 22ul);
+            readcolours(h, 1024ul);
          }
          else if (h[1U]=='x') {
             osi_NextArg(h, 1024ul);
@@ -473,6 +612,13 @@ static void Parms(void)
                Error("-g <gamma> [0.1..10]", 21ul);
             }
          }
+         else if (h[1U]=='k') {
+            osi_NextArg(h, 1024ul);
+            if ((!StrToFixl(&kernel, h,
+                1024ul) || kernel<0.0) || kernel>0.999) {
+               Error("-k <factor> [0.0..0.99]", 24ul);
+            }
+         }
          else if (h[1U]=='M') {
             osi_NextArg(h, 1024ul);
             if ((!StrToFixl(&maxdist, h,
@@ -505,6 +651,8 @@ static void Parms(void)
  ground [m] (10)", 66ul);
                osi_WrStrLn(" -b <lat> <long> | [locator]       Position B lat\
  long (degrees) or qth locator", 80ul);
+               osi_WrStrLn(" -C <filename>                     Colours File N\
+ame (red green blue 0..1023)", 78ul);
                osi_WrStrLn(" -c <filename>                     csv File Name",
                  49ul);
                osi_WrStrLn(" -F <font>                         Font Size (1) \
@@ -515,6 +663,8 @@ Fresnelzone (145)", 67ul);
 1..10 (2.2)", 61ul);
                osi_WrStrLn(" -i <filename>                     Image File Nam\
 e", 51ul);
+               osi_WrStrLn(" -k <factor>                       Kernel diamete\
+r of fresnel zone to full diameter (0.6)", 90ul);
                osi_WrStrLn(" -h                                this", 40ul);
                osi_WrStrLn(" -L <text>                         Label, apply a\
 fter -a and -b", 64ul);
@@ -581,6 +731,10 @@ static void wrcsv(void)
          aprsstr_Append(sl, 1024ul, ",", 2ul);
          aprsstr_IntToStr((int32_t)
                 X2C_TRUNCI(((anonym->optalt+anonym->refrm)-anonym->alt)+0.5,
+                X2C_min_longint,X2C_max_longint), 1UL, s, 1024ul);
+         aprsstr_Append(sl, 1024ul, s, 1024ul);
+         aprsstr_Append(sl, 1024ul, ",", 2ul);
+         aprsstr_IntToStr((int32_t)X2C_TRUNCI(anonym->fresm+0.5,
                 X2C_min_longint,X2C_max_longint), 1UL, s, 1024ul);
          aprsstr_Append(sl, 1024ul, s, 1024ul);
          aprsstr_Append(sl, 1024ul, "\012", 2ul);
@@ -726,7 +880,7 @@ static void calcpath(void)
          anonym0->zero = (k-k*k)*refrac;
          anonym0->refrm = anonym0->zero*refraction;
          anonym0->fresm = fresnel(dist*1000.0*k, dist*1000.0*(1.0-k),
-                lambda)*0.5;
+                lambda);
          anonym0->wood = 0.0;
          if (anonym0->alt>=1.0) {
             if (anonym0->alt>=1000.0) {
@@ -763,9 +917,9 @@ static void fresnelfree(double * airshadow, double * woodshadow)
    if (i<=tmp) for (;; i++) {
       { /* with */
          struct PATH * anonym = &path->Adr[i];
-         fz = (anonym->optalt+anonym->refrm)-anonym->fresm;
+         fz = (anonym->optalt+anonym->refrm)-anonym->fresm*kernel;
          gnd = anonym->alt;
-         fs = anonym->fresm*2.0;
+         fs = anonym->fresm*2.0*kernel;
          if (fs<1.0) fs = 1.0;
          as = X2C_DIVL(gnd-fz,fs);
          if (i>=wd && i<linksize-wd) {
@@ -882,11 +1036,15 @@ static void drawtree(int32_t x, double dalt, double treesize0)
       { /* with */
          struct imagetext_PIX * anonym = &image->Adr[(x+framexl)
                 *image->Len0+bty];
-         anonym->r += (uint16_t)(int32_t)X2C_TRUNCI(300.0*treelum,
-                X2C_min_longint,X2C_max_longint);
-         anonym->g += (uint16_t)(int32_t)X2C_TRUNCI(200.0*treelum,
-                X2C_min_longint,X2C_max_longint);
-         anonym->b += 0U;
+         anonym->r += (uint16_t)(int32_t)X2C_TRUNCI((double)
+                (float)colours[profile_cTRUNC].r*treelum,X2C_min_longint,
+                X2C_max_longint);
+         anonym->g += (uint16_t)(int32_t)X2C_TRUNCI((double)
+                (float)colours[profile_cTRUNC].g*treelum,X2C_min_longint,
+                X2C_max_longint);
+         anonym->b += (uint16_t)(int32_t)X2C_TRUNCI((double)
+                (float)colours[profile_cTRUNC].b*treelum,X2C_min_longint,
+                X2C_max_longint);
       }
       wty = 1.0+(double)(float)y*(0.2+X2C_DIVL(2.0,treesize0));
       i = 1L;
@@ -902,22 +1060,36 @@ static void drawtree(int32_t x, double dalt, double treesize0)
                { /* with */
                   struct imagetext_PIX * anonym0 = &image->Adr[((x-i)
                 +framexl)*image->Len0+bty];
-                  anonym0->r += 0U;
-                  anonym0->g += (uint16_t)(int32_t)
-                X2C_TRUNCI(500.0*treelum*wtt,X2C_min_longint,
+                  anonym0->r += (uint16_t)(int32_t)
+                X2C_TRUNCI((double)(float)
+                colours[profile_cBRANCH].r*treelum*wtt,X2C_min_longint,
                 X2C_max_longint);
-                  anonym0->b += 0U;
+                  anonym0->g += (uint16_t)(int32_t)
+                X2C_TRUNCI((double)(float)
+                colours[profile_cBRANCH].g*treelum*wtt,X2C_min_longint,
+                X2C_max_longint);
+                  anonym0->b += (uint16_t)(int32_t)
+                X2C_TRUNCI((double)(float)
+                colours[profile_cBRANCH].b*treelum*wtt,X2C_min_longint,
+                X2C_max_longint);
                }
             }
             if (x+i<xsize-framexl) {
                { /* with */
                   struct imagetext_PIX * anonym1 = &image->Adr[(x+i+framexl)
                 *image->Len0+bty];
-                  anonym1->r += 0U;
-                  anonym1->g += (uint16_t)(int32_t)
-                X2C_TRUNCI(500.0*treelum*wtt,X2C_min_longint,
+                  anonym1->r += (uint16_t)(int32_t)
+                X2C_TRUNCI((double)(float)
+                colours[profile_cBRANCH].r*treelum*wtt,X2C_min_longint,
                 X2C_max_longint);
-                  anonym1->b += 0U;
+                  anonym1->g += (uint16_t)(int32_t)
+                X2C_TRUNCI((double)(float)
+                colours[profile_cBRANCH].g*treelum*wtt,X2C_min_longint,
+                X2C_max_longint);
+                  anonym1->b += (uint16_t)(int32_t)
+                X2C_TRUNCI((double)(float)
+                colours[profile_cBRANCH].b*treelum*wtt,X2C_min_longint,
+                X2C_max_longint);
                }
             }
          }
@@ -947,9 +1119,9 @@ static void placetree(int32_t * x, double treesize0)
    while (ix<linksize && (ff==0L || ix-ff<mindist)) {
       { /* with */
          struct PATH * anonym = &path->Adr[ix];
-         if ((((anonym->alt>=1.0 && anonym->alt<anonym->optalt+anonym->fresm)
-                 && anonym->alt+anonym->wood>anonym->optalt-anonym->fresm)
-                && anonym->wood>anonym->fresm*0.5)
+         if ((((anonym->alt>=1.0 && anonym->alt<anonym->optalt+anonym->fresm*kernel)
+                 && anonym->alt+anonym->wood>anonym->optalt-anonym->fresm*kernel)
+                 && anonym->wood>anonym->fresm*kernel*0.5)
                 && anonym->alt-anonym->optalt>max0) {
             /* tree is in fresnel zone and 1/4 as high */
             m = ix;
@@ -1093,7 +1265,10 @@ static void drawimage(void)
       a1 = path->Adr[i+1L].alt;
       if (a0<20000.0 && a1<20000.0) {
          ah = sc(scale, min0, a0);
-         drawcolon(i+framexl, ah, sc(scale, min0, a1), 80L, 250L, 0L);
+         drawcolon(i+framexl, ah, sc(scale, min0, a1),
+                (int32_t)colours[profile_cMEADOW].r,
+                (int32_t)colours[profile_cMEADOW].g,
+                (int32_t)colours[profile_cMEADOW].b);
          tmp0 = (int32_t)X2C_TRUNCI(ah,X2C_min_longint,X2C_max_longint)-1L;
                 
          y = frameyd+1L;
@@ -1101,15 +1276,16 @@ static void drawimage(void)
             { /* with */
                struct imagetext_PIX * anonym1 = &image->Adr[(i+framexl)
                 *image->Len0+y];
-               anonym1->r += 200U;
-               anonym1->g += 120U;
-               anonym1->b += 0U;
+               anonym1->r += (uint16_t)colours[profile_cEARTH].r;
+               anonym1->g += (uint16_t)colours[profile_cEARTH].g;
+               anonym1->b += (uint16_t)colours[profile_cEARTH].b;
             }
             if (y==tmp0) break;
          } /* end for */
-         if (((mhz>=30.0 && a0<path->Adr[i].optalt+path->Adr[i].fresm)
-                && a0+path->Adr[i].wood>path->Adr[i].optalt-path->Adr[i]
-                .fresm) && path->Adr[i].wood>path->Adr[i].fresm*0.5) {
+         if (((mhz>=30.0 && a0<path->Adr[i].optalt+path->Adr[i].fresm*kernel)
+                 && a0+path->Adr[i].wood>path->Adr[i].optalt-path->Adr[i]
+                .fresm*kernel) && path->Adr[i].wood>path->Adr[i].fresm*0.5*kernel)
+                 {
             /* tree is in fresnel zone and 1/4 as high */
             w = path->Adr[i].wood*scale; /* tree size in pixel */
             if (w>4.0 && i>=lasttree) {
@@ -1125,24 +1301,50 @@ static void drawimage(void)
       }
       ao = path->Adr[i].optalt;
       drawcolon(i+framexl, sc(scale, min0, ao), sc(scale, min0,
-                path->Adr[i+1L].optalt), 90L, 150L, 150L);
+                path->Adr[i+1L].optalt),
+                (int32_t)colours[profile_cOPTALT].r,
+                (int32_t)colours[profile_cOPTALT].g,
+                (int32_t)colours[profile_cOPTALT].b);
+      /*** fresnel as definined ***/
       drawcolon(i+framexl, sc(scale, min0, ao+path->Adr[i].fresm), sc(scale,
-                min0, path->Adr[i+1L].optalt+path->Adr[i+1L].fresm), 190L,
-                100L, 0L);
+                min0, path->Adr[i+1L].optalt+path->Adr[i+1L].fresm),
+                (int32_t)colours[profile_cFRESLINE].r,
+                (int32_t)colours[profile_cFRESLINE].g,
+                (int32_t)colours[profile_cFRESLINE].b);
       drawcolon(i+framexl, sc(scale, min0, ao-path->Adr[i].fresm), sc(scale,
-                min0, path->Adr[i+1L].optalt-path->Adr[i+1L].fresm), 190L,
-                100L, 0L);
+                min0, path->Adr[i+1L].optalt-path->Adr[i+1L].fresm),
+                (int32_t)colours[profile_cFRESLINE].r,
+                (int32_t)colours[profile_cFRESLINE].g,
+                (int32_t)colours[profile_cFRESLINE].b);
+      /*
+      (*** fresnel as effects ***)
+          drawcolon(i+framexl, sc(ao+path^[i].fresm*kernel),
+                sc(path^[i+1].optalt+path^[i+1].fresm*kernel), 140, 100, 0);
+          drawcolon(i+framexl, sc(ao-path^[i].fresm*kernel),
+                sc(path^[i+1].optalt-path^[i+1].fresm*kernel), 140, 100, 0);
+      */
       tmp0 = (int32_t)X2C_TRUNCI(sc(scale, min0, ao+path->Adr[i].fresm),
-                X2C_min_longint,X2C_max_longint)-1L;
+                X2C_min_longint,X2C_max_longint);
       y = (int32_t)X2C_TRUNCI(sc(scale, min0, ao-path->Adr[i].fresm),
                 X2C_min_longint,X2C_max_longint)+1L;
       if (y<=tmp0) for (;; y++) {
          { /* with */
             struct imagetext_PIX * anonym2 = &image->Adr[(i+framexl)
                 *image->Len0+y];
-            anonym2->r += 240U;
-            anonym2->g += 80U;
-            anonym2->b += 0U;
+            if (y<(int32_t)X2C_TRUNCI(sc(scale, min0,
+                ao-path->Adr[i].fresm*kernel),X2C_min_longint,
+                X2C_max_longint)+1L || y>(int32_t)X2C_TRUNCI(sc(scale,
+                min0, ao+path->Adr[i].fresm*kernel),X2C_min_longint,
+                X2C_max_longint)+1L) {
+               anonym2->r += (uint16_t)colours[profile_cFRESOUT].r;
+               anonym2->g += (uint16_t)colours[profile_cFRESOUT].g;
+               anonym2->b += (uint16_t)colours[profile_cFRESOUT].b;
+            }
+            else {
+               anonym2->r += (uint16_t)colours[profile_cFRESIN].r;
+               anonym2->g += (uint16_t)colours[profile_cFRESIN].g;
+               anonym2->b += (uint16_t)colours[profile_cFRESIN].b;
+            }
          }
          if (y==tmp0) break;
       } /* end for */
@@ -1167,9 +1369,9 @@ static void drawimage(void)
       { /* with */
          struct imagetext_PIX * anonym3 = &image->Adr[(framexl)
                 *image->Len0+y];
-         anonym3->r += 600U;
-         anonym3->g += 600U;
-         anonym3->b += 500U;
+         anonym3->r += (uint16_t)colours[profile_cSCALERS].r;
+         anonym3->g += (uint16_t)colours[profile_cSCALERS].g;
+         anonym3->b += (uint16_t)colours[profile_cSCALERS].b;
       }
       if (y==tmp) break;
    } /* end for */
@@ -1181,15 +1383,13 @@ static void drawimage(void)
       { /* with */
          struct imagetext_PIX * anonym4 = &image->Adr[(linksize+(framexl-1L))
                 *image->Len0+y];
-         anonym4->r += 600U;
-         anonym4->g += 600U;
-         anonym4->b += 500U;
+         anonym4->r += (uint16_t)colours[profile_cSCALERS].r;
+         anonym4->g += (uint16_t)colours[profile_cSCALERS].g;
+         anonym4->b += (uint16_t)colours[profile_cSCALERS].b;
       }
       if (y==tmp) break;
    } /* end for */
-   if (opt) {
-      i = -3L;
-   }
+   if (opt) i = -3L;
    else i = 0L;
    for (;;) {
       y = frameyd+(int32_t)X2C_TRUNCI(X2C_DIVL((double)(st*i+m)-min0,
@@ -1207,9 +1407,12 @@ static void drawimage(void)
             a0 = (double)(float)y;
             a1 = a0;
          }
-         if ((a0>(double)(float)frameyd && a0<sc(scale, min0,
+         if ((a0>(double)(float)(frameyd+1L) && a0<sc(scale, min0,
                 path->Adr[x].alt)) && path->Adr[x].alt<20000.0) {
-            drawcolon(x+framexl, a0, a1, 25L, 25L, 25L);
+            drawcolon(x+framexl, a0, a1,
+                (int32_t)colours[profile_cMLINES].r,
+                (int32_t)colours[profile_cMLINES].g,
+                (int32_t)colours[profile_cMLINES].b);
          }
          if (x==tmp) break;
       } /* end for */
@@ -1220,16 +1423,18 @@ static void drawimage(void)
             { /* with */
                struct imagetext_PIX * anonym5 = &image->Adr[(x)
                 *image->Len0+y];
-               anonym5->r += 600U;
-               anonym5->g += 600U;
-               anonym5->b += 600U;
+               anonym5->r += (uint16_t)colours[profile_cSCALERS].r;
+               anonym5->g += (uint16_t)colours[profile_cSCALERS].g;
+               anonym5->b += (uint16_t)colours[profile_cSCALERS].b;
             }
             if (x==tmp) break;
          } /* end for */
          aprsstr_IntToStr(st*i+m, 4UL, s, 100ul);
          aprsstr_Append(s, 100ul, "m", 2ul);
          imagetext_writestr(image, 3UL, (uint32_t)(y-fonty/2L),
-                (uint32_t)fonttyp, 700UL, 700UL, 500UL, s, 100ul);
+                (uint32_t)fonttyp, colours[profile_cTEXTSCALE].r,
+                colours[profile_cTEXTSCALE].g, colours[profile_cTEXTSCALE].b,
+                 s, 100ul);
       }
       ++i;
    }
@@ -1250,9 +1455,9 @@ static void drawimage(void)
       if (y<=tmp0) for (;; y++) {
          { /* with */
             struct imagetext_PIX * anonym6 = &image->Adr[(n)*image->Len0+y];
-            anonym6->r += 600U;
-            anonym6->g += 600U;
-            anonym6->b += 600U;
+            anonym6->r += (uint16_t)colours[profile_cSCALERS].r;
+            anonym6->g += (uint16_t)colours[profile_cSCALERS].g;
+            anonym6->b += (uint16_t)colours[profile_cSCALERS].b;
          }
          if (y==tmp0) break;
       } /* end for */
@@ -1271,8 +1476,9 @@ static void drawimage(void)
                 100ul))-2L;
       }
       imagetext_writestr(image, (uint32_t)dk,
-                (uint32_t)((frameyd-fonty)-3L), (uint32_t)fonttyp, 700UL,
-                 700UL, 500UL, s, 100ul);
+                (uint32_t)((frameyd-fonty)-3L), (uint32_t)fonttyp,
+                colours[profile_cTEXTSCALE].r, colours[profile_cTEXTSCALE].g,
+                 colours[profile_cTEXTSCALE].b, s, 100ul);
       if (i==tmp) break;
    } /* end for */
    if (labela[0]) {
@@ -1294,7 +1500,9 @@ static void drawimage(void)
    aprsstr_Append(s, 100ul, "\177", 2ul);
    aprsstr_Append(s, 100ul, "]", 2ul);
    imagetext_writestr(image, 3UL, (uint32_t)(ysize-(fonty*12L)/10L),
-                (uint32_t)fonttyp, 800UL, 700UL, 100UL, s, 100ul);
+                (uint32_t)fonttyp, colours[profile_cTEXT1].r,
+                colours[profile_cTEXT1].g, colours[profile_cTEXT1].b, s,
+                100ul);
    strncpy(s,"[",100u);
    aprsstr_FixToStr((float)(X2C_DIVL(posa.lat,1.7453292519444E-2)), 6UL,
                 ss, 100ul);
@@ -1305,13 +1513,17 @@ static void drawimage(void)
    aprsstr_Append(s, 100ul, ss, 100ul);
    aprsstr_Append(s, 100ul, "]", 2ul);
    imagetext_writestr(image, 3UL, (uint32_t)(ysize-(fonty*24L)/10L),
-                (uint32_t)fonttyp, 700UL, 700UL, 500UL, s, 100ul);
+                (uint32_t)fonttyp, colours[profile_cTEXT2].r,
+                colours[profile_cTEXT2].g, colours[profile_cTEXT2].b, s,
+                100ul);
    aprsstr_FixToStr((float)mhz, 2UL*(uint32_t)(mhz<30.0), s, 100ul);
    aprsstr_Append(s, 100ul, "MHz Refrac=", 12ul);
    aprsstr_FixToStr((float)refraction, 3UL, ss, 100ul);
    aprsstr_Append(s, 100ul, ss, 100ul);
    imagetext_writestr(image, 3UL, (uint32_t)(ysize-(fonty*36L)/10L),
-                (uint32_t)fonttyp, 700UL, 700UL, 500UL, s, 100ul);
+                (uint32_t)fonttyp, colours[profile_cTEXT3].r,
+                colours[profile_cTEXT3].g, colours[profile_cTEXT3].b, s,
+                100ul);
    aprsstr_Assign(s, 100ul, "[", 2ul);
    aprsstr_IntToStr((int32_t)X2C_TRUNCI(altb-antb,X2C_min_longint,
                 X2C_max_longint), 0UL, ss, 100ul);
@@ -1332,7 +1544,8 @@ static void drawimage(void)
    }
    imagetext_writestr(image, (uint32_t)rightbound(s, 100ul),
                 (uint32_t)(ysize-(fonty*12L)/10L), (uint32_t)fonttyp,
-                800UL, 700UL, 100UL, s, 100ul);
+                colours[profile_cTEXT1].r, colours[profile_cTEXT1].g,
+                colours[profile_cTEXT1].b, s, 100ul);
    strncpy(s,"[",100u);
    aprsstr_FixToStr((float)(X2C_DIVL(posb.lat,1.7453292519444E-2)), 6UL,
                 ss, 100ul);
@@ -1344,14 +1557,15 @@ static void drawimage(void)
    aprsstr_Append(s, 100ul, "]", 2ul);
    imagetext_writestr(image, (uint32_t)rightbound(s, 100ul),
                 (uint32_t)(ysize-(fonty*24L)/10L), (uint32_t)fonttyp,
-                700UL, 700UL, 500UL, s, 100ul);
+                colours[profile_cTEXT2].r, colours[profile_cTEXT2].g,
+                colours[profile_cTEXT2].b, s, 100ul);
    /*  s:="fspl="; */
    aprsstr_FixToStr((float)(32.2+8.685889638065*log(dist*mhz)), 2UL, sss,
                 100ul);
    aprsstr_Append(sss, 100ul, "dB", 3ul);
-   cr = 700L;
-   cg = 700L;
-   cb = 700L;
+   cr = (int32_t)colours[profile_cTEXT3].r;
+   cg = (int32_t)colours[profile_cTEXT3].g;
+   cb = (int32_t)colours[profile_cTEXT3].b;
    if (airshadow>0.1) {
       /* ground shadow*/
       cr = 800L;
@@ -1386,7 +1600,8 @@ static void drawimage(void)
    aprsstr_Append(sss, 100ul, " ", 2ul);
    imagetext_writestr(image, (uint32_t)rightbound(sss, 100ul),
                 (uint32_t)(ysize-(fonty*36L)/10L), (uint32_t)fonttyp,
-                700UL, 700UL, 700UL, s, 100ul);
+                colours[profile_cTEXT3].r, colours[profile_cTEXT3].g,
+                colours[profile_cTEXT3].b, s, 100ul);
 /*WrFixed(airshadow,2, 9);WrFixed(woodshadow,2, 9);WrStrLn(" air wood"); */
 } /* end drawimage() */
 
@@ -1434,6 +1649,7 @@ extern int main(int argc, char **argv)
    labela[0] = 0;
    labelb[0] = 0;
    maxdist = 600.0;
+   kernel = 0.6;
    Parms();
    fontx = (int32_t)imagetext_fontsizex((uint32_t)fonttyp);
    fonty = (int32_t)imagetext_fontsizey((uint32_t)fonttyp);
