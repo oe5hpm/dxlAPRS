@@ -20,6 +20,8 @@
 # - profile		makes png Image with Geo-Profile of 2 Positions using srtm-datafiles
 # - radiorange		makes png Image/tiles with radio illumintion of 1 or 2 Positions
 #                               using srtm-datafiles
+# - panorama		makes png Image + csv-file from landscape with poi markers
+#                               using srtm-datafiles
 # ---------------------- common section ---------------------------------------
 HOSTARCH := $(shell uname -m | \
 	sed -e s/i.86/x86/ \
@@ -196,6 +198,11 @@ OBJ_PROFILE	= $(OUT)profile.o \
 OBJ_RADIORANGE	= $(OUT)radiorange.o \
 	$(OUT)pngwritepalette.o \
 	$(OUT)libsrtm.o
+OBJ_PANORAMA = $(OUT)panorama.o\
+	$(OUT)imagetext.o \
+	$(OUT)libsrtm.o \
+	$(OUT)pngwrite.o \
+	$(OUT)pngread.o
 
 TARGETS += \
 	$(OUT)afskmodem \
@@ -235,7 +242,8 @@ OBJS = \
 	$(OBJ_L2CAT)	\
 	$(OBJ_ADSB2APRS) \
 	$(OBJ_PROFILE) \
-	$(OBJ_RADIORANGE)
+	$(OBJ_RADIORANGE) \
+	$(OBJ_PANORAMA)
 
 # ------------------- target make rules -------------------
 #                     -----------------
@@ -353,6 +361,11 @@ $(OUT)radiorange: $(OBJ_RADIORANGE) $(OBJ_COMMON)
 	$(XLIBS) -lm
 	@$(STRIP) $(OUT)radiorange $(STRIPFLAGS)
 
+$(OUT)panorama: $(OBJ_PANORAMA) $(OBJ_COMMON)
+	$(CC) $(LFLAGS) -o $@ $(OBJ_PANORAMA) $(OBJ_COMMON) \
+	$(XLIBS) -lm
+	$(STRIP) $@ $(STRIPFLAGS)
+
 %:
 	make prepare
 	make $(OUT)$@
@@ -362,4 +375,3 @@ diag:
 	@echo "BuildOutput : $(OUT)"
 	@echo "Platform    : $(PLATFORM)"
 # end of makefile
-
