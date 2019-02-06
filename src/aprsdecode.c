@@ -5774,16 +5774,53 @@ static void urlport(char s[], uint32_t s_len, char url[],
                 uint32_t url_len, char port[], uint32_t port_len)
 /* url:port to url port */
 {
-   int32_t i;
+   int32_t ii;
+   uint32_t j;
+   uint32_t i;
    X2C_PCOPY((void **)&s,s_len);
-   aprsstr_Assign(url, url_len, s, s_len);
-   i = aprsstr_InStr(url, url_len, ":", 2ul);
-   if (i>0L) {
-      url[i] = 0;
-      aprsstr_Delstr(s, s_len, 0UL, (uint32_t)(i+1L));
-      aprsstr_Assign(port, port_len, s, s_len);
+   url[0UL] = 0;
+   port[0UL] = 0;
+   i = 0UL;
+   while (i<=s_len-1 && s[i]==' ') ++i;
+   if (i<=s_len-1 && s[i]=='[') {
+      /* ipv6 url */
+      j = 0UL;
+      ++i;
+      while ((i<=s_len-1 && s[i]) && s[i]!=']') {
+         if (j<=url_len-1) {
+            url[j] = s[i];
+            ++j;
+         }
+         ++i;
+      }
+      if (j<=url_len-1) url[j] = 0;
+      if (i<=s_len-1 && s[i]==']') {
+         ++i;
+         if (i<=s_len-1 && s[i]==':') {
+            /* ipv6 port */
+            j = 0UL;
+            ++i;
+            while (i<=s_len-1 && (uint8_t)s[i]>' ') {
+               if (j<=port_len-1) {
+                  port[j] = s[i];
+                  ++j;
+               }
+               ++i;
+            }
+            if (j<=port_len-1) port[j] = 0;
+         }
+      }
    }
-   else port[0UL] = 0;
+   else {
+      /* ipv4 */
+      aprsstr_Assign(url, url_len, s, s_len);
+      ii = aprsstr_InStr(url, url_len, ":", 2ul);
+      if (ii>0L) {
+         url[ii] = 0;
+         aprsstr_Delstr(s, s_len, 0UL, (uint32_t)(ii+1L));
+         aprsstr_Assign(port, port_len, s, s_len);
+      }
+   }
    X2C_PFREE(s);
 } /* end urlport() */
 
