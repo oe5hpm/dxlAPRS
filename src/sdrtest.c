@@ -17,6 +17,9 @@
 #include "osi.h"
 #endif
 #include <osic.h>
+#ifndef udp_H_
+#include "udp.h"
+#endif
 #ifndef aprsstr_H_
 #include "aprsstr.h"
 #endif
@@ -46,15 +49,33 @@
 
 #define sdrtest_NL "\012"
 
+#define sdrtest_cFM "F"
+
+#define sdrtest_cAM "A"
+
+#define sdrtest_cUSB "U"
+
+#define sdrtest_cLSB "L"
+
+#define sdrtest_cSCAN "S"
+
+#define sdrtest_SCANHEADER 12
+
+#define sdrtest_MAXSCANSLOTS 1400
+
+#define sdrtest_SOUNDBUF 1024
+
+enum CODEC {sdrtest_S16, sdrtest_U8, sdrtest_ALAW};
+
+
 struct FREQTAB;
 
 
 struct FREQTAB {
-   /*     khz, */
    uint32_t hz;
    uint32_t width;
+   uint32_t afc;
    uint32_t agc;
-   int32_t afc;
    char modulation;
 };
 
@@ -82,14 +103,33 @@ struct SQUELCH {
    int32_t sqsave;
    int32_t wakeness;
    int32_t pcmc;
+   int32_t lastpcm;
    uint32_t hz10;
    uint32_t nexttick;
+   double scanlo;
+   double scanstep;
+   uint32_t scanslot;
+   uint32_t scanslots;
+   int32_t scanduty;
+   char scandb[1412];
+   char scansq[1412];
    uint32_t waterp;
    uint32_t waterend;
    uint8_t waterdat[35];
 };
 
-static int32_t fd;
+struct UDPTX;
+
+typedef struct UDPTX * pUDPTX;
+
+
+struct UDPTX {
+   pUDPTX next;
+   uint32_t ip;
+   uint32_t destport;
+};
+
+static int32_t soundfd;
 
 static uint32_t sndw;
 
@@ -104,6 +144,8 @@ static uint32_t downsamp;
 static uint32_t mixto;
 
 static uint32_t powersave;
+
+static uint32_t soundbufsize;
 
 static short sndbuf[1024];
 
@@ -130,7 +172,6 @@ static uint32_t maxwake;
 static uint32_t tuneoffset;
 
 static uint32_t tuneto;
-/*, scanstep, scanidx*/
 
 static char url[1001];
 
@@ -144,26 +185,29 @@ static char verb;
 
 static char reconn;
 
-static char pcm8;
-
 static char nosquelch;
 
 static char watermark;
 
+static uint8_t pcm8;
+
 static double offset;
 
-struct _0;
+static pUDPTX udplev;
 
+static pUDPTX udpsq;
 
-struct _0 {
-   int32_t f;
-   uint32_t lev;
-   char valid;
-};
+static pUDPTX udpsounds;
 
-static struct _0 scan[512];
+static int32_t udpsendfd;
+
+static int32_t cfgfd;
+
+static uint32_t cfgip;
 
 static uint32_t CRC32TAB[256];
+
+static uint8_t ALAWTAB[4096];
 
 
 static void Error(char text[], uint32_t text_len)
@@ -174,6 +218,78 @@ static void Error(char text[], uint32_t text_len)
    X2C_ABORT();
    X2C_PFREE(text);
 } /* end Error() */
+
+
+static void G711TAB(void)
+{
+   uint32_t j;
+   uint32_t i;
+   for (i = 0UL; i<=2047UL; i++) {
+      if (i<32UL) j = i;
+      else if (i<64UL) j = 16UL+i/2UL;
+      else if (i<128UL) j = 32UL+i/4UL;
+      else if (i<256UL) j = 48UL+i/8UL;
+      else if (i<512UL) j = 64UL+i/16UL;
+      else if (i<1024UL) j = 80UL+i/32UL;
+      else j = 96UL+i/64UL;
+      j = (uint32_t)(uint8_t)((uint8_t)j^0x55U);
+      ALAWTAB[2048UL-i] = (uint8_t)j;
+      ALAWTAB[2048UL+i] = (uint8_t)(j+128UL);
+   } /* end for */
+   ALAWTAB[0U] = ALAWTAB[1U];
+} /* end G711TAB() */
+
+
+static int32_t GetIp(char h[], uint32_t h_len, uint32_t * ip,
+                uint32_t * port0)
+{
+   uint32_t p;
+   uint32_t n;
+   uint32_t i;
+   char ok0;
+   int32_t GetIp_ret;
+   X2C_PCOPY((void **)&h,h_len);
+   p = 0UL;
+   h[h_len-1] = 0;
+   *ip = 0UL;
+   for (i = 0UL; i<=4UL; i++) {
+      n = 0UL;
+      ok0 = 0;
+      while ((uint8_t)h[p]>='0' && (uint8_t)h[p]<='9') {
+         ok0 = 1;
+         n = (n*10UL+(uint32_t)(uint8_t)h[p])-48UL;
+         ++p;
+      }
+      if (!ok0) {
+         GetIp_ret = -1L;
+         goto label;
+      }
+      if (i<3UL) {
+         if (h[p]!='.' || n>255UL) {
+            GetIp_ret = -1L;
+            goto label;
+         }
+         *ip =  *ip*256UL+n;
+      }
+      else if (i==3UL) {
+         *ip =  *ip*256UL+n;
+         if (h[p]!=':' || n>255UL) {
+            GetIp_ret = -1L;
+            goto label;
+         }
+      }
+      else if (n>65535UL) {
+         GetIp_ret = -1L;
+         goto label;
+      }
+      *port0 = n;
+      ++p;
+   } /* end for */
+   GetIp_ret = 0L;
+   label:;
+   X2C_PFREE(h);
+   return GetIp_ret;
+} /* end GetIp() */
 
 static uint32_t sdrtest_POLY = 0x4C11DB7UL;
 
@@ -210,6 +326,38 @@ static void card(const char s[], uint32_t s_len, uint32_t * p,
       ++*p;
    }
 } /* end card() */
+
+
+static void sendudp(const char data[], uint32_t data_len, int32_t len,
+                 pUDPTX pu)
+{
+   int32_t i;
+   char * pc;
+   pc = (char *)data;
+   while (pu) {
+      i = udpsend(udpsendfd, pc, len, pu->destport, pu->ip);
+      pu = pu->next;
+   }
+} /* end sendudp() */
+
+
+static char dBbyte(float v)
+{
+   v = osic_ln((v+1.0f)*9.5367431640625E-7f)*8.685889638f; /* 0.5 dB step */
+   if (v<0.0f) v = 0.0f;
+   else if (v>255.9f) v = 255.0f;
+   return (char)(uint32_t)X2C_TRUNCC(v,0UL,X2C_max_longcard);
+} /* end dBbyte() */
+
+
+static char sqbyte(float s, float n)
+{
+   if (s>n) {
+      return (char)(uint32_t)X2C_TRUNCC(X2C_DIVR(255.0f*n,s),0UL,
+                X2C_max_longcard);
+   }
+   return '\377';
+} /* end sqbyte() */
 
 
 static void int0(const char s[], uint32_t s_len, uint32_t * p,
@@ -257,6 +405,26 @@ static void fix(const char s[], uint32_t s_len, uint32_t * p,
 } /* end fix() */
 
 
+static pUDPTX openudptx(const char s[], uint32_t s_len,
+                int32_t * fd)
+{
+   pUDPTX utx;
+   uint32_t ip;
+   uint32_t port0;
+   if (GetIp(s, s_len, &ip, &port0)>=0L) {
+      if (*fd<0L) *fd = openudp();
+      if (*fd<0L) Error("cannot open udp send socket", 28ul);
+   }
+   else return 0;
+   osic_alloc((char * *) &utx, sizeof(struct UDPTX));
+   if (utx==0) Error("out of memory", 14ul);
+   utx->ip = ip;
+   utx->destport = port0;
+   utx->next = 0;
+   return utx;
+} /* end openudptx() */
+
+
 static void Parms(void)
 {
    char s[1001];
@@ -265,12 +433,13 @@ static void Parms(void)
    uint32_t m;
    int32_t ni;
    char ok0;
+   pUDPTX utx;
+   uint32_t cfgport;
    tuneoffset = 10000UL;
    tuneto = 0UL;
    reconn = 0;
    verb = 0;
-   pcm8 = 0;
-   downsamp = 0UL;
+   pcm8 = sdrtest_S16;
    mixto = 0UL;
    strncpy(url,"127.0.0.1",1001u);
    strncpy(port,"1234",1001u);
@@ -284,19 +453,42 @@ static void Parms(void)
    nosquelch = 0;
    watermark = 0;
    maxwake = 2000UL;
+   udplev = 0;
+   udpsq = 0;
+   udpsounds = 0;
+   downsamp = 0UL;
+   udpsendfd = -1L;
    for (;;) {
       osi_NextArg(s, 1001ul);
       if (s[0U]==0) break;
       if ((s[0U]=='-' && s[1U]) && s[2U]==0) {
-         if (s[1U]=='s') {
+         if ((s[1U]=='s' || s[1U]=='S') || s[1U]=='A') {
+            if (s[1U]=='S') pcm8 = sdrtest_U8;
+            else if (s[1U]=='A') pcm8 = sdrtest_ALAW;
             osi_NextArg(soundfn, 1001ul);
-            pcm8 = 0;
+            utx = openudptx(soundfn, 1001ul, &udpsendfd);
+            if (utx) {
+               /* send sound via udp */
+               soundfn[0U] = 0;
+               utx->next = udpsounds;
+               udpsounds = utx;
+            }
          }
-         else if (s[1U]=='S') {
-            osi_NextArg(soundfn, 1001ul);
-            pcm8 = 1;
+         else if (s[1U]=='c') {
+            osi_NextArg(s, 1001ul);
+            parmfn[0] = 0;
+            if (GetIp(s, 1001ul, &cfgip, &cfgport)>=0L) {
+               cfgfd = openudp();
+               if (cfgfd>=0L && bindudp(cfgfd, cfgport)<0L) {
+                  Error("-c cannot bind inport", 22ul);
+               }
+               ni = socknonblock(cfgfd);
+            }
+            else {
+               cfgfd = -1L;
+               aprsstr_Assign(parmfn, 1001ul, s, 1001ul);
+            }
          }
-         else if (s[1U]=='c') osi_NextArg(parmfn, 1001ul);
          else if (s[1U]=='o') {
             /* offset */
             osi_NextArg(s, 1001ul);
@@ -309,17 +501,17 @@ static void Parms(void)
             osi_NextArg(s, 1001ul);
             n = 0UL;
             fix(s, 1001ul, &n, &fr, &ok0);
-            if (!ok0) Error(" -T <MHz>", 10ul);
+            fr = fr*1.E+6+0.5;
+            if (!ok0 || fr>4.294967295E+9) Error(" -T <MHz>", 10ul);
             tuneto = (uint32_t)X2C_TRUNCC(fr*1.E+6+0.5,0UL,
                 X2C_max_longcard);
          }
          else if (s[1U]=='d') {
             /* sampelrate to output divide */
             osi_NextArg(s, 1001ul);
-            if (!aprsstr_StrToCard(s, 1001ul, &downsamp) || downsamp<1UL) {
-               Error(" -p <ratio>", 12ul);
+            if (!aprsstr_StrToCard(s, 1001ul, &downsamp)) {
+               Error(" -d <outputsampelrate>", 23ul);
             }
-            --downsamp;
          }
          else if (s[1U]=='m') {
             /* downmix to */
@@ -335,6 +527,15 @@ static void Parms(void)
             if (!aprsstr_StrToCard(s, 1001ul, &maxrx)) {
                Error(" -a <number>", 13ul);
             }
+         }
+         else if (s[1U]=='B') {
+            /* size of sound samples sent once */
+            osi_NextArg(s, 1001ul);
+            if (!aprsstr_StrToCard(s, 1001ul,
+                &soundbufsize) || soundbufsize>1024UL) {
+               Error(" -B <number>", 13ul);
+            }
+            soundbufsize = (soundbufsize/2UL)*2UL; /* make even for stereo */
          }
          else if (s[1U]=='t') {
             osi_NextArg(s, 1001ul); /* url */
@@ -390,12 +591,6 @@ static void Parms(void)
             }
          }
          else if (s[1U]=='z') {
-            /*        
-                  ELSIF s[1]="W" THEN                                   (* maximum scan steps *)
-                    NextArg(s);
-                    IF NOT StrToCard(s,
-                scanstep) THEN Error(" -W <khz>") END;
-            */
             /* powersave time */
             osi_NextArg(s, 1001ul);
             if (!aprsstr_StrToCard(s, 1001ul, &powersave)) {
@@ -411,31 +606,67 @@ static void Parms(void)
             }
             nosquelch = 1;
          }
+         else if (s[1U]=='L') {
+            /* udp send scanners dBs */
+            osi_NextArg(s, 1001ul);
+            utx = openudptx(s, 1001ul, &udpsendfd);
+            if (utx==0) Error("-L ip:port", 11ul);
+            /*
+                    ALLOCATE(utx, SIZE(utx^));
+                    IF utx=NIL THEN Error("udp socket out of memory") END;
+            
+                    IF GetIp(s, utx^.ip, utx^.destport)>=0 THEN
+                      IF udpsendfd<0 THEN udpsendfd:=udp.openudp() END;
+                      IF udpsendfd<0 THEN Error("cannot open udp send socket"
+                ) END;
+                    ELSE Error("-L ip:port") END;
+            */
+            utx->next = udplev;
+            udplev = utx;
+         }
+         else if (s[1U]=='N') {
+            /* udp send scanners squelchs */
+            osi_NextArg(s, 1001ul);
+            utx = openudptx(s, 1001ul, &udpsendfd);
+            if (utx==0) Error("-N ip:port", 11ul);
+            utx->next = udpsq;
+            udpsq = utx;
+         }
          else {
             if (s[1U]=='h') {
                osi_WrStrLn("", 1ul);
                osi_WrStrLn("AM/FM/SSB Multirx from rtl_tcp (8 bit IQ via tcpi\
 p or file) to audio channel(s) 8/16 bit PCM by oe5dxl", 103ul);
+               osi_WrStrLn(" -A <soundfilename> or <ip:port> ALAW (G.711) n-c\
+hannel sound stream/pipe/UDP", 78ul);
                osi_WrStrLn(" -a <number>         maximum active rx to limit c\
 pu load, if number is reached,", 80ul);
-               osi_WrStrLn("                      no more inactive rx will li\
-sten to become active", 71ul);
+               osi_WrStrLn("                       no more inactive rx will l\
+isten to become active", 72ul);
+               osi_WrStrLn(" -B <samples>        sound samples sent at once. \
+With UDP take care: double number of bytes with 16bit PCM", 107ul);
                osi_WrStrLn(" -c <configfilename> read channels config from fi\
 le (sdrcfg.txt)", 65ul);
-               osi_WrStrLn(" -d <ratio>          downsample output (1)",
-                43ul);
+               osi_WrStrLn(" -c <ip:port>        read channels config from UD\
+P, if ip=0.0.0.0 aaccept any ip", 81ul);
+               osi_WrStrLn(" -d <Hz>             downsample output to Hz",
+                45ul);
                osi_WrStrLn(" -e                  enable sending SDR Data hidd\
 en in audio channels (tune/afc/rssi..)", 88ul);
                osi_WrStrLn(" -h                  help", 26ul);
                osi_WrStrLn(" -i <Hz>             input sampelrate Hz 1024000 \
 or 2048000..2500000 (2048000)", 79ul);
-               osi_WrStrLn("                      if >2048000, AM/FM-IF-width\
- will increase proportional", 77ul);
+               osi_WrStrLn("                       if >2048000, AM/FM-IF-widt\
+h will increase proportional", 78ul);
                osi_WrStrLn(" -k                  keep connection", 37ul);
+               osi_WrStrLn(" -L <x.x.x.x:destport> send Level table in UDP to\
+ Waterfall Viewers (may be repeatet)", 86ul);
                osi_WrStrLn(" -m <audiochannels>  mix up/down all rx channels \
 to 1 or 2 audiochannels (mono/stereo)", 87ul);
                osi_WrStrLn("                      for 2 channels the rx audio\
 s will be arranged from left to right", 87ul);
+               osi_WrStrLn(" -N <x.x.x.x:destport> send Noise (Squelch) table\
+ in UDP to Scanner Scripts (may be repeatet)", 94ul);
                osi_WrStrLn(" -O <Hz>             moves center freq. away from\
  used band to avoid ADC-DC-offset noise (10000)", 97ul);
                osi_WrStrLn(" -o <mhz>            offset for entered frequenci\
@@ -446,10 +677,10 @@ es if Converters are used", 75ul);
  channels 8000..192000 (16000)", 80ul);
                osi_WrStrLn("                       for FM min. 25% more than \
 rx IF-width", 61ul);
-               osi_WrStrLn(" -s <soundfilename>  16bit signed n-channel sound\
- stream/pipe", 62ul);
-               osi_WrStrLn(" -S <soundfilename>  8bit unsigned n-channel soun\
-d stream/pipe", 63ul);
+               osi_WrStrLn(" -s <soundfilename> or <ip:port> 16bit signed n-c\
+hannel sound stream/pipe/UDP", 78ul);
+               osi_WrStrLn(" -S <soundfilename> or <ip:port> 8bit unsigned n-\
+channel sound stream/pipe/UDP", 79ul);
                osi_WrStrLn(" -T <mhz>            Tune manual to center of iq-\
 band (for iq-data from file) (0)", 82ul);
                osi_WrStrLn(" -t <url:port>       connect rtl_tcp server (127.\
@@ -520,7 +751,7 @@ to avoid ADC-DC offset pseudo", 79ul);
  to avoid inexact tuning steps", 80ul);
                osi_WrStrLn("", 1ul);
                osi_WrStrLn("    f 100.1 0 0 15 96000          (WFM with \"-r \
-192000 -d 4\" for 1 channnel 48khz", 82ul);
+192000 -d 44100\" for 1 channnel 44100hz", 88ul);
                osi_WrStrLn("", 1ul);
                X2C_ABORT();
             }
@@ -544,6 +775,8 @@ to avoid ADC-DC offset pseudo", 79ul);
    }
    powersave = (powersave*samphz)/32000UL;
    maxwake = (maxwake*samphz)/32000UL;
+   if (downsamp==0UL) downsamp = samphz;
+   if (downsamp>samphz) Error(" -d <hz> must be less than -r <hz>", 35ul);
 } /* end Parms() */
 
 
@@ -584,6 +817,16 @@ static void setstickparm(uint32_t cmd, uint32_t value)
 } /* end setstickparm() */
 
 
+static void card32str(char b[], uint32_t b_len, uint32_t pos,
+                uint32_t v)
+{
+   b[pos+0UL] = (char)(v&255UL);
+   b[pos+1UL] = (char)(v/256UL&255UL);
+   b[pos+2UL] = (char)(v/65536UL&255UL);
+   b[pos+3UL] = (char)(v/16777216UL&255UL);
+} /* end card32str() */
+
+
 static void centerfreq(const struct FREQTAB freq[], uint32_t freq_len)
 {
    uint32_t max0;
@@ -592,6 +835,7 @@ static void centerfreq(const struct FREQTAB freq[], uint32_t freq_len)
    int32_t nomid;
    char ssb;
    double rem;
+   double fhzo;
    double fhz;
    double khz;
    midfreq = 0UL;
@@ -600,9 +844,11 @@ static void centerfreq(const struct FREQTAB freq[], uint32_t freq_len)
    min0 = X2C_max_longcard;
    while (i<freqc) {
       /*WrStr("rx"); WrInt(i+1, 0); WrInt(freq[i].khz, 0); WrStrLn("kHz"); */
-      if (freq[i].modulation!='S') {
-         if (freq[i].hz>max0) max0 = freq[i].hz;
-         if (freq[i].hz<min0) min0 = freq[i].hz;
+      if (freq[i].hz>max0) max0 = freq[i].hz;
+      if (freq[i].hz<min0) min0 = freq[i].hz;
+      if (freq[i].modulation=='S') {
+         if (freq[i].afc>max0) max0 = freq[i].afc;
+         if (freq[i].afc<min0) min0 = freq[i].afc;
       }
       ++i;
    }
@@ -649,43 +895,49 @@ static void centerfreq(const struct FREQTAB freq[], uint32_t freq_len)
          prx[i] = &rxx[i];
          rxx[i].squelch = squelchs[i].lev!=0.0f;
          rxx[i].modulation = freq[i].modulation;
+         khz = 1.0;
+         if (iqrate>2048000UL) khz = X2C_DIVL(2.048E+6,(double)iqrate);
+         fhz = (double)((int32_t)freq[i].hz-(int32_t)midfreq)*khz;
          if (freq[i].modulation!='S') {
-            khz = 1.0;
-            if (iqrate>2048000UL) {
-               khz = X2C_DIVL(2.048E+6,(double)iqrate);
-            }
-            fhz = (double)((int32_t)freq[i].hz-(int32_t)midfreq)
-                *khz;
             rxx[i].df = (uint32_t)((int32_t)X2C_TRUNCI(fhz,
                 X2C_min_longint,X2C_max_longint)/1000L);
             rem = fhz-(double)(((int32_t)X2C_TRUNCI(fhz,
                 X2C_min_longint,X2C_max_longint)/1000L)*1000L);
             rxx[i].dffrac = (uint32_t)X2C_TRUNCC(X2C_DIVL(rem,khz)+0.5,0UL,
                 X2C_max_longcard);
-            /*      rxx[i].df:=(freq[i].hz DIV 1000 - midfreq DIV 1000); */
-            /*      rxx[i].dffrac:=(freq[i].hz-rxx[i].df*1000) MOD 1000; */
             /*WrInt(nomid, 15);WrInt(midfreq, 15);WrInt(freq[i].hz, 15);
                 WrInt(rxx[i].df, 15); WrInt(rxx[i].dffrac, 15);
                 WrStrLn("n m h d fr"); */
-            rxx[i].maxafc = freq[i].afc;
-            rxx[i].width = freq[i].width;
+            rxx[i].maxafc = (int32_t)freq[i].afc;
             rxx[i].agc = freq[i].agc;
          }
          else {
-            /* scanner rx */
+            /*scanner */
+            fhzo = (double)((int32_t)freq[i].afc-(int32_t)midfreq)
+                *khz;
+            squelchs[i].scanlo = fhz; /* scan from */
             rxx[i].dffrac = 0UL;
-            rxx[i].maxafc = 0L;
-            rxx[i].width = 3000UL;
-            /*      IF scanstep>3 THEN rxx[i]
-                .width:=6000 ELSIF scanstep>6 THEN rxx[i].width:=12000 END;
-                */
-            rxx[i].agc = 0UL;
+            squelchs[i].scanslot = 0UL;
+            squelchs[i].scanslots = (uint32_t)X2C_TRUNCC(X2C_DIVL(fhzo-fhz,
+                squelchs[i].scanstep),0UL,X2C_max_longcard);
+            if (squelchs[i].scanslots>1400UL) squelchs[i].scanslots = 1400UL;
+            card32str(squelchs[i].scandb, 1412ul, 4UL, freq[i].hz/1000UL);
+            card32str(squelchs[i].scandb, 1412ul, 8UL,
+                (uint32_t)X2C_TRUNCC(squelchs[i].scanstep,0UL,
+                X2C_max_longcard));
+            strncpy(squelchs[i].scandb,"SDR",1412u);
+            X2C_MOVE((char *)squelchs[i].scandb,
+                (char *)squelchs[i].scansq,12UL);
+            squelchs[i].scandb[3U] = 'L';
+            squelchs[i].scansq[3U] = 'N';
          }
+         /*scanner */
+         rxx[i].width = freq[i].width;
          ++i;
       }
       prx[i] = 0;
    }
-   if (midfreq<20000000UL) osi_WerrLn("no valid frequency", 19ul);
+   if (midfreq<500000UL) osi_WerrLn("no valid frequency", 19ul);
    else if (midfreq!=lastmidfreq) {
       setstickparm(1UL, midfreq);
       /*WrStr("set ");WrInt(midfreq, 0); WrStrLn("kHz"); */
@@ -700,10 +952,8 @@ static void skip(const char s[], uint32_t s_len, uint32_t * p)
 } /* end skip() */
 
 
-static void rdconfig(void)
+static void setconfig(const char b[], uint32_t b_len, int32_t len)
 {
-   int32_t len;
-   int32_t fd0;
    uint32_t sq;
    uint32_t wid;
    uint32_t lpp;
@@ -713,80 +963,94 @@ static void rdconfig(void)
    uint32_t i;
    int32_t ssbsh;
    int32_t m;
+   double y;
    double x;
    char ok0;
-   char b[10001];
    char li[256];
    struct FREQTAB freq[64];
    char mo;
-   freqc = 0UL;
    /*
-   --scanner
-     IF scanstep>0 THEN                                    (* set up 1 rx for scanning *)
-       squelchs[freqc].lev:=0.0;
-       freq[freqc].modulation:=mSCAN;
-       squelchs[freqc].lp:=0.0;
-       INC(freqc);
+     IF cfgfd>=0 THEN                                                (* await cfg via udp *)
+       len:=udp.udpreceive(cfgfd, b, SIZE(b), ckport, ckip);
+       IF len<=0 THEN RETURN END; 
+   
+       IF (cfgip<>0) & (cfgip<>ckip)
+                THEN                            (* ip check on *)
+         IF verb THEN WrStrLn("got config udp from wrong ip") END;
+         RETURN
+   
+       END;
+       freqc:=0;
+     ELSE      
+       freqc:=0;
+       fd:=OpenRead(parmfn);
+       IF fd<0 THEN Error("config file not readable") END;
+   
+       len:=RdBin(fd, b, SIZE(b));
+       Close(fd);
      END;
-   --scanner
    */
-   fd0 = osi_OpenRead(parmfn, 1001ul);
-   if (fd0>=0L) {
-      len = osi_RdBin(fd0, (char *)b, 10001u/1u, 10001UL);
-      /*    IF (len>0) & (len<HIGH(b)) & (b[len-1]>=" ")
-                THEN b[len-1]:=0C END; */
-      p = 0UL;
-      lino = 1UL;
-      i = 0UL;
-      while ((int32_t)p<=len) {
-         if ((int32_t)p<len && (uint8_t)b[p]>=' ') {
-            if (i<255UL) {
-               li[i] = b[p];
-               ++i;
-            }
+   freqc = 0UL;
+   /*  IF (len>0) & (len<HIGH(b)) & (b[len-1]>=" ") THEN b[len-1]:=0C END; */
+   p = 0UL;
+   lino = 1UL;
+   i = 0UL;
+   while ((int32_t)p<=len) {
+      if ((int32_t)p<len && (uint8_t)b[p]>=' ') {
+         if (i<255UL) {
+            li[i] = b[p];
+            ++i;
          }
-         else if (i>0UL) {
-            li[i] = 0;
-            i = 0UL;
+      }
+      else if (i>0UL) {
+         li[i] = 0;
+         i = 0UL;
+         skip(li, 256ul, &i);
+         mo = X2C_CAP(li[i]);
+         if (mo=='P') {
+            ++i;
             skip(li, 256ul, &i);
-            mo = X2C_CAP(li[i]);
-            if (mo=='P') {
-               ++i;
-               skip(li, 256ul, &i);
-               card(li, 256ul, &i, &n, &ok0);
-               if (n>255UL || !ok0) {
-                  osi_WerrLn("wrong parameter number", 23ul);
-               }
-               else {
-                  skip(li, 256ul, &i);
-                  int0(li, 256ul, &i, &m, &ok0);
-                  if (!ok0) osi_WerrLn("wrong value", 12ul);
-                  else setstickparm(n, (uint32_t)m);
-               }
-               i = 0UL;
-            }
-            else if ((((mo=='F' || mo=='A') || mo=='U') || mo=='L')
-                || mo=='W') {
-               if (mo=='A') freq[freqc].modulation = 'a';
-               else if (mo=='F') freq[freqc].modulation = 'f';
-               else if (mo=='U') freq[freqc].modulation = 's';
-               else if (mo=='L') freq[freqc].modulation = 's';
-               else if (mo=='W') {
-                  /*scanner */
-                  freq[freqc].modulation = 'S';
-               }
-               else {
-                  /*scanner */
-                  freq[freqc].modulation = 'f';
-               }
-               ++i;
-               skip(li, 256ul, &i);
-               fix(li, 256ul, &i, &x, &ok0);
-               if (!ok0) osi_WerrLn("wrong MHz", 10ul);
+            card(li, 256ul, &i, &n, &ok0);
+            if (n>255UL || !ok0) osi_WerrLn("wrong parameter number", 23ul);
+            else {
                skip(li, 256ul, &i);
                int0(li, 256ul, &i, &m, &ok0);
+               if (!ok0) osi_WerrLn("wrong value", 12ul);
+               else setstickparm(n, (uint32_t)m);
+            }
+            i = 0UL;
+         }
+         else if ((((mo=='F' || mo=='A') || mo=='U') || mo=='L') || mo=='S') {
+            if (mo=='A') freq[freqc].modulation = 'a';
+            else if (mo=='U') freq[freqc].modulation = 's';
+            else if (mo=='L') freq[freqc].modulation = 's';
+            else if (mo=='S') {
+               /*scanner */
+               freq[freqc].modulation = 'S';
+            }
+            else {
+               /*scanner */
+               freq[freqc].modulation = 'f';
+            }
+            ++i;
+            skip(li, 256ul, &i);
+            fix(li, 256ul, &i, &x, &ok0);
+            if (!ok0) osi_WerrLn("wrong MHz", 10ul);
+            skip(li, 256ul, &i);
+            ssbsh = 0L;
+            /*scanner */
+            if (mo=='S') {
+               fix(li, 256ul, &i, &y, &ok0);
+               if (!ok0 || y<x) {
+                  osi_WerrLn("scan from..TO MHz", 18ul);
+                  y = x;
+               }
+            }
+            else {
+               /*scanner */
+               y = 0.0;
+               int0(li, 256ul, &i, &m, &ok0);
                if (!ok0) m = 0L;
-               ssbsh = 0L;
                if (mo=='U') {
                   m += 1500L;
                   ssbsh = m;
@@ -795,55 +1059,73 @@ static void rdconfig(void)
                   m -= 1500L;
                   ssbsh = m;
                }
-               skip(li, 256ul, &i);
-               card(li, 256ul, &i, &sq, &ok0);
-               if (!ok0) sq = 0UL;
-               if (sq>200UL) sq = 200UL;
-               skip(li, 256ul, &i);
-               card(li, 256ul, &i, &lpp, &ok0);
-               if (!ok0) lpp = 0UL;
-               if (freq[freqc].modulation!='s' && lpp>100UL) lpp = 100UL;
-               skip(li, 256ul, &i);
-               card(li, 256ul, &i, &wid, &ok0);
-               if (!ok0) {
-                  if (freq[freqc].modulation=='s') {
-                     wid = 2800UL;
-                  }
-                  else if (freq[freqc].modulation=='a') wid = 6000UL;
-                  else wid = 12000UL;
+            }
+            skip(li, 256ul, &i);
+            card(li, 256ul, &i, &sq, &ok0); /* or scan step hz */
+            if (!ok0) sq = 0UL;
+            if (mo!='S' && sq>200UL) sq = 200UL;
+            skip(li, 256ul, &i);
+            card(li, 256ul, &i, &lpp, &ok0); /* or scan duty */
+            if (!ok0) lpp = 0UL;
+            if (freq[freqc].modulation!='s' && lpp>100UL) lpp = 100UL;
+            skip(li, 256ul, &i);
+            card(li, 256ul, &i, &wid, &ok0);
+            if (!ok0) {
+               if (freq[freqc].modulation=='s') wid = 2800UL;
+               else if (freq[freqc].modulation=='a') wid = 6000UL;
+               else wid = 12000UL;
+            }
+            if (wid>1000000UL) wid = 1000000UL;
+            if (freqc>63UL) osi_WerrLn("freq table full", 16ul);
+            else {
+               x = x+offset;
+               if (x<=0.0 || x>=2.147483E+6) {
+                  osi_WerrLn("freq out of range", 18ul);
+                  x = 0.0;
                }
-               if (wid>1000000UL) wid = 1000000UL;
-               if (freqc>63UL) osi_WerrLn("freq table full", 16ul);
-               else {
-                  x = x+offset;
-                  if (x<=0.0 || x>=2.147483E+6) {
-                     osi_WerrLn("freq out of range", 18ul);
-                     x = 0.0;
-                  }
-                  x = x*1.E+6+(double)ssbsh;
-                  freq[freqc].hz = (uint32_t)X2C_TRUNCC(x+0.5,0UL,
+               x = x*1.E+6+(double)ssbsh;
+               freq[freqc].hz = (uint32_t)X2C_TRUNCC(x+0.5,0UL,
                 X2C_max_longcard);
-                  freq[freqc].afc = m;
-                  freq[freqc].width = wid;
-                  freq[freqc].agc = lpp;
+               /*scanner */
+               if (mo=='S') {
+                  y = y+offset;
+                  if (y<=0.0 || y>=2.147483E+6) {
+                     osi_WerrLn("scan to freq out of range", 26ul);
+                     y = 0.0;
+                  }
+                  freq[freqc].afc = (uint32_t)X2C_TRUNCC(y*1.E+6+0.5,0UL,
+                X2C_max_longcard);
+                  if (sq<1000UL) sq = 1000UL;
+                  squelchs[freqc].scanstep = (double)sq;
+                /* scan step */
+                  squelchs[freqc].scanduty = (int32_t)lpp; /* scan duty */
+               }
+               else {
+                  /*scanner */
+                  freq[freqc].afc = (uint32_t)m;
                   squelchs[freqc].lev = X2C_DIVR((float)sq*32.0f,200.0f);
                   if (freq[freqc].modulation=='s') squelchs[freqc].lp = 0.0f;
-                  else squelchs[freqc].lp = X2C_DIVR((float)lpp,200.0f);
-                  ++freqc;
+                  else {
+                     lpp = (lpp*downsamp)/samphz;
+                     squelchs[freqc].lp = X2C_DIVR((float)lpp,200.0f);
+                  }
                }
-               i = 0UL;
+               freq[freqc].agc = lpp;
+               freq[freqc].width = wid;
+               ++freqc;
             }
-            else if (mo=='#' || (uint8_t)mo<=' ') i = 0UL;
-            else osi_WerrLn("unkown command", 15ul);
-            ++lino;
+            i = 0UL;
          }
-         ++p;
+         else if (mo=='#' || (uint8_t)mo<=' ') i = 0UL;
+         else osi_WerrLn("unkown command", 15ul);
+         ++lino;
       }
-      osic_Close(fd0);
+      ++p;
    }
-   else Error("config file not readable", 25ul);
+   /*  Close(fd); */
+   /*ELSE Error("config file not readable") END;   */
    centerfreq(freq, 64ul);
-} /* end rdconfig() */
+} /* end setconfig() */
 
 
 static void showrssi(void)
@@ -973,6 +1255,8 @@ static uint32_t ticker;
 
 static uint32_t ix;
 
+static float ri;
+
 static uint32_t tshow;
 
 static uint32_t dsamp;
@@ -988,13 +1272,18 @@ static int32_t mixright;
 static int32_t levdiv2;
 
 
-static void sendaudio(int32_t pcm0, char pcm80, uint32_t ch)
+static void sendaudio(int32_t pcm0, uint8_t codec, uint32_t ch)
 {
    /* with start pattern and crc32 in dynamic count of 8+32bit type+value word units */
    struct SQUELCH * anonym;
    if (pcm0>32767L) pcm0 = 32767L;
    else if (pcm0<-32767L) pcm0 = -32767L;
-   if (pcm80) sndbuf8[sndw] = (uint8_t)((uint32_t)(pcm0+32768L)/256UL);
+   if (codec==sdrtest_U8) {
+      sndbuf8[sndw] = (uint8_t)((uint32_t)(pcm0+32768L)/256UL);
+   }
+   else if (codec==sdrtest_ALAW) {
+      sndbuf8[sndw] = ALAWTAB[(uint32_t)(pcm0+32768L)/16UL];
+   }
    else {
       /* code data as watermark, bit 1 of pcm serialized datablock with start sequence and crc32 */
       /* to be compatible with normal pcm code data as silent audio bit 1 of pcm serialized datablock */
@@ -1015,38 +1304,60 @@ static void sendaudio(int32_t pcm0, char pcm80, uint32_t ch)
       sndbuf[sndw] = (short)pcm0;
    }
    ++sndw;
-   if (sndw>1023UL) {
-      if (pcm80) osi_WrBin(fd, (char *)sndbuf8, 1024u/1u, sndw);
-      else osi_WrBin(fd, (char *)sndbuf, 2048u/1u, sndw*2UL);
+   if (sndw>=soundbufsize) {
+      if (codec) {
+         if (udpsounds) {
+            sendudp((char *)sndbuf8, 1024u/1u, (int32_t)sndw,
+                udpsounds);
+         }
+         else osi_WrBin(soundfd, (char *)sndbuf8, 1024u/1u, sndw);
+      }
+      else if (udpsounds) {
+         sendudp((char *)sndbuf, 2048u/1u, (int32_t)(sndw*2UL),
+                udpsounds);
+      }
+      else osi_WrBin(soundfd, (char *)sndbuf, 2048u/1u, sndw*2UL);
       sndw = 0UL;
    }
 } /* end sendaudio() */
 
 
-static void userio(void)
+static void userio(char all)
 {
-   rdconfig();
-   setparms(recon);
-   recon = 0;
-   if (verb) showrssi();
-   if (watermark) sendwater();
+   int32_t len;
+   int32_t fd;
+   char b[10001];
+   uint32_t ckip;
+   uint32_t ckport;
+   len = 0L;
+   if (cfgfd>=0L) {
+      /* await cfg via udp */
+      len = udpreceive(cfgfd, b, 10001L, &ckport, &ckip);
+      if ((len>0L && cfgip) && cfgip!=ckip) {
+         /* ip check on */
+         if (verb) osi_WrStrLn("got config udp from wrong ip", 29ul);
+         len = 0L; /* discard info */
+      }
+   }
+   else if (all && parmfn[0U]) {
+      fd = osi_OpenRead(parmfn, 1001ul);
+      if (fd>=0L) {
+         len = osi_RdBin(fd, (char *)b, 10001u/1u, 10001UL);
+         osic_Close(fd);
+      }
+      else if (verb) osi_WrStrLn("config file not readable", 25ul);
+   }
+   if (len>0L) {
+      setconfig(b, 10001ul, len);
+      setparms(recon);
+   }
+   if (all) {
+      recon = 0;
+      if (verb) showrssi();
+      if (watermark) sendwater();
+   }
 } /* end userio() */
 
-/*
-PROCEDURE sendscan;
-VAR i:CARDINAL;
-BEGIN
-  IF scancnt>0 THEN
-    i:=0;
-    WHILE scan[i].valid DO
-      WrInt(scan[i] DIV scancnt, 6);
-      scan[i]:=0; 
-      INC(i);
-    END;
-  END; 
-WrStrLn("scan");
-END sendscan;
-*/
 
 static void schedule(void)
 {
@@ -1058,17 +1369,6 @@ static void schedule(void)
       /* first append wake rx */
       if (squelchs[j].wakeness<=0L) {
          /* rx awake */
-         /*
-         --scanner
-               IF rxx[j].modulation=mSCAN THEN
-                 INC(rxx[j].df, rxx[j].maxafc);
-                 IF rxx[j].df>=iqrate DIV 2000 THEN
-                   rxx[j].df:=-iqrate DIV 2000;
-                   sendscan;
-                 END;
-               END;
-         --scanner
-         */
          squelchs[j].nexttick = ticker;
          prx[i] = &rxx[j];
          ++i;
@@ -1102,44 +1402,34 @@ extern int main(int argc, char **argv)
    midfreq = 0UL;
    lastmidfreq = 0UL;
    tshow = 0UL;
-   levdiv2 = 256L;
-   /*  scanstep:=0; */
+   levdiv2 = 4096L;
+   soundfd = -1L;
+   cfgfd = -1L;
+   soundbufsize = 512UL;
    memset((char *)rxx,(char)0,sizeof(struct sdr_RX [64]));
    memset((char *)stickparm,(char)0,sizeof(struct STICKPARM [256]));
    memset((char *)squelchs,(char)0,sizeof(struct SQUELCH [65]));
-   memset((char *)scan,(char)0,sizeof(struct _0 [512]));
+   G711TAB();
    Parms();
    GenCRC32tab();
-   /*
-   --scanner
-     FOR scanidx:=0 TO HIGH(scan)
-                -1 DO                        (* init scanner table *)
-       WITH scan[scanidx] DO
-         f:=scanidx*scanstep-iqrate DIV 2000;
-         valid:=f<VAL(INTEGER, iqrate DIV 2000);
-       END;
-     END;
-     scanidx:=0;
-   --scanner
-   */
    actch = 0UL;
    ticker = 0UL;
    prx[0U] = 0;
+   dsamp = 0UL;
    for (freqc = 0UL; freqc<=63UL; freqc++) {
       rxx[freqc].samples = (sdr_pAUDIOSAMPLE)sampx[freqc];
       rxx[freqc].idx = freqc;
    } /* end for */
    if (sdr_startsdr(url, 1001ul, port, 1001ul, iqrate, samphz, reconn)) {
-      rdconfig();
+      /*    rdconfig; */
+      tshow = 0UL;
       sndw = 0UL;
-      fd = osi_OpenWrite(soundfn, 1001ul);
-      if (fd>=0L) {
+      if (soundfn[0U]) soundfd = osi_OpenWrite(soundfn, 1001ul);
+      if (soundfd>=0L || udpsounds) {
          recon = 1;
          for (;;) {
-            if (tshow==0UL) {
-               userio();
-               tshow = samphz/32UL;
-            }
+            if ((tshow&15UL)==0UL) userio(tshow==0UL);
+            if (tshow==0UL) tshow = samphz/32UL;
             else --tshow;
             schedule();
             sn = sdr_getsdr(32UL, prx, 65ul);
@@ -1159,7 +1449,39 @@ extern int main(int argc, char **argv)
                   ix = prx[rp]->idx;
                   { /* with */
                      struct SQUELCH * anonym = &squelchs[ix];
-                     if (anonym->lev==0.0f || prx[rp]->modulation=='s') {
+                     /*- scanner */
+                     if (prx[rp]->modulation=='S') {
+                        anonym->wakeness = squelchs[ix].scanduty;
+                        anonym->nexttick = ticker+(uint32_t)
+                anonym->wakeness;
+                        anonym->scandb[12UL+anonym->scanslot]
+                = dBbyte(rxx[ix].rssi);
+                        anonym->scansq[12UL+anonym->scanslot]
+                = sqbyte(rxx[ix].rssi, rxx[ix].sqsum);
+                        /*WrInt(rxx[ix].df, 1); WrStr(" "); */
+                        /*WrFixed(ln((rxx[ix].rssi+1.0)*(1.0/32768.0/32.0))
+                *(8.685889638*0.5), 1,0);WrStr("!"); */
+                        /*
+                        IF rxx[ix].df=50 THEN
+                        WrInt(ORD(sqbyte(rxx[ix].rssi, rxx[ix].sqsum)),4);
+                        WrInt(ORD(dBbyte(rxx[ix].rssi)),4);WrStrLn("");
+                        END;
+                        */
+                        rxx[ix].df = (uint32_t)(int32_t)
+                X2C_TRUNCI((anonym->scanlo+(double)
+                anonym->scanslot*anonym->scanstep)*0.001,X2C_min_longint,
+                X2C_max_longint);
+                        ++anonym->scanslot;
+                        if (anonym->scanslot>=anonym->scanslots) {
+                           anonym->scanslot = 0UL;
+                           sendudp((char *)anonym->scandb, 1412u/1u,
+                (int32_t)(12UL+anonym->scanslots), udplev);
+                           sendudp((char *)anonym->scansq, 1412u/1u,
+                (int32_t)(12UL+anonym->scanslots), udpsq);
+                        }
+                     }
+                     else if (anonym->lev==0.0f || prx[rp]->modulation=='s') {
+                        /*- scanner */
                         squelchs[ix].mutlev = 1.0f;
                      }
                      else {
@@ -1182,7 +1504,7 @@ extern int main(int argc, char **argv)
                               ++anonym->sqsave;
                            }
                            if (anonym->wakeness>-100L) {
-                              --anonym->wakeness;
+                              --anonym->wakeness; /* max stay wake limit */
                            }
                         }
                         if (nosquelch || rxx[ix].modulation=='s') {
@@ -1217,80 +1539,91 @@ extern int main(int argc, char **argv)
                      ix = prx[rp]->idx;
                      { /* with */
                         struct SQUELCH * anonym0 = &squelchs[ix];
-                        anonym0->pcmc = (int32_t)rxx[ix].samples[sp];
-                        /*
-                                        IF rxx[ix]
-                .modulation=mSCAN THEN INC(scan[scanidx], pcmc);
-                                        ELSE
-                        */
-                        if (!nosquelch) {
-                           anonym0->pcmc = (int32_t)(short)
+                        if (rxx[ix].modulation!='S') {
+                           anonym0->lastpcm = anonym0->pcmc;
+                           anonym0->pcmc = (int32_t)rxx[ix].samples[sp];
+                /* save for interpolation */
+                           if (!nosquelch) {
+                              anonym0->pcmc = (int32_t)(short)
                 X2C_TRUNCI((float)anonym0->pcmc*anonym0->mutlev,-32768,
                 32767);
-                        }
-                        /* lowpass */
-                        if (anonym0->lp!=0.0f) {
-                           anonym0->u1 = anonym0->u1+(((float)
+                           }
+                           /* lowpass */
+                           if (anonym0->lp!=0.0f) {
+                              anonym0->u1 = anonym0->u1+(((float)
                 (anonym0->pcmc*2L)-anonym0->u1)-anonym0->il)*anonym0->lp;
-                           anonym0->u2 = anonym0->u2+(anonym0->il-anonym0->u2)
+                              anonym0->u2 = anonym0->u2+(anonym0->il-anonym0->u2)
                 *anonym0->lp;
-                           anonym0->il = anonym0->il+(anonym0->u1-anonym0->u2)
+                              anonym0->il = anonym0->il+(anonym0->u1-anonym0->u2)
                 *anonym0->lp*2.0f;
-                           anonym0->pcmc = (int32_t)X2C_TRUNCI(anonym0->u2,
-                X2C_min_longint,X2C_max_longint);
+                              anonym0->pcmc = (int32_t)
+                X2C_TRUNCI(anonym0->u2,X2C_min_longint,X2C_max_longint);
+                           }
                         }
                      }
                      /* lowpass */
-                     /*              END; */
                      ++rp;
                   }
-                  if (dsamp==0UL) {
+                  dsamp += downsamp;
+                  if (dsamp>=samphz) {
                      rp = 0UL;
-                     if (rxx[0U].modulation=='S') rp = 1UL;
                      while (rp<freqc) {
-                        pcm = squelchs[rp].pcmc;
-                        squelchs[rp].pcmc = 0L;
-                        /* channel mixer */
-                        if (mixto==1UL) mixleft += pcm;
-                        else if (mixto==2UL) {
-                           if (freqc<=1UL) {
-                              mixleft = pcm;
-                              mixright = pcm;
+                        if (rxx[rp].modulation!='S') {
+                           pcm = squelchs[rp].pcmc;
+                           /* interpolate 2 samples */
+                           if (dsamp>samphz) {
+                              /* do sampel interpolating */
+                              ri = X2C_DIVR((float)(dsamp-samphz),
+                (float)downsamp);
+                              pcm = (int32_t)X2C_TRUNCI((float)
+                pcm*(1.0f-ri)+(float)squelchs[rp].lastpcm*ri,
+                X2C_min_longint,X2C_max_longint);
                            }
-                           else {
-                              mixleft += pcm*(int32_t)rp;
-                              mixright += pcm*(int32_t)((freqc-rp)-1UL);
-                           }
-                        }
-                        /* channel mixer */
-                        if (mixto==0UL || rp==0UL) {
-                           if (mixto==0UL || freqc==0UL) {
-                              sendaudio(pcm, pcm8, rp);
-                           }
-                           else {
-                              sendaudio(mixleft*levdiv2>>8, pcm8, rp);
-                              if (mixto==2UL) {
-                                 sendaudio(mixright*levdiv2>>8, pcm8, rp);
+                           /* interpolate 2 samples */
+                           squelchs[rp].pcmc = 0L;
+                           /* channel mixer */
+                           if (mixto==1UL) mixleft += pcm;
+                           else if (mixto==2UL) {
+                              if (freqc<=1UL) {
+                                 mixleft = pcm;
+                                 mixright = pcm;
                               }
-                              if (labs(mixleft)>32767L || labs(mixright)
-                >32767L) {
-                                 /* mix channel peak level limiter */
-                                 if (levdiv2>20L) {
-                                    --levdiv2;
+                              else {
+                                 mixleft += pcm*(int32_t)rp;
+                                 mixright += pcm*(int32_t)((freqc-rp)-1UL);
+                              }
+                           }
+                           /* channel mixer */
+                           if (mixto==0UL || rp==0UL) {
+                              if (mixto==0UL || freqc==0UL) {
+                                 sendaudio(pcm, pcm8, rp);
+                              }
+                              else {
+                                 mixleft = mixleft*levdiv2>>12;
+                                 sendaudio(mixleft, pcm8, rp);
+                                 if (mixto==2UL) {
+                                    mixright = mixright*levdiv2>>12;
+                                    sendaudio(mixright, pcm8, rp);
                                  }
+                                 if (labs(mixleft)>30000L || labs(mixright)
+                >30000L) {
+                                    /* mix channel peak level limiter */
+                                    if (levdiv2>300L) {
+                                    levdiv2 -= 64L; /* agc down fast */
+                                    }
+                                 }
+                                 else if (levdiv2<4096L) {
+                                    ++levdiv2; /* agc up */
+                                 }
+                                 mixleft = 0L;
+                                 mixright = 0L;
                               }
-                              else if (levdiv2<256L) {
-                                 ++levdiv2;
-                              }
-                              mixleft = 0L;
-                              mixright = 0L;
                            }
                         }
                         ++rp;
                      }
-                     dsamp = downsamp;
+                     dsamp -= samphz;
                   }
-                  else --dsamp;
                   if (sp==tmp) break;
                } /* end for */
             }
