@@ -409,7 +409,7 @@ static double getoverground(double lat, double long0,
    pos.lat = (float)lat;
    pos.long0 = (float)long0;
    srtm = (double)libsrtm_getsrtm(pos, 1UL, &resolution);
-   if (srtm<10000.0) {
+   if (srtm<10000.0 && srtm>(-1000.0)) {
       if (alt<=(-3.E+4)) return srtm;
       /* srtm request */
       return alt-srtm;
@@ -1394,9 +1394,13 @@ extern void sondeaprs_senddata(double lat, double long0,
    if (!egmoff) {
       egmalt = egm96corr(lat, long0, alt);
                 /* make NN out of wgs84 altitude */
-      if (egmalt>(-2.E+4)) {
+      if (egmalt>(-1000.0)) {
          og = getoverground(lat, long0, egmalt);
-         btalt = og;
+         if (og>=0.0) btalt = og;
+      }
+      else if (fabs(egmalt-alt)>250.0) {
+         osic_WrFixed((float)(egmalt-alt), 2L, 1UL);
+         osi_WrStrLn("m egm96 correction?", 20ul);
       }
    }
    /*- azimuth elevation distance */
@@ -1464,9 +1468,7 @@ extern void sondeaprs_senddata(double lat, double long0,
          anonym->dat[0U].lat = lat*5.7295779513082E+1;
          anonym->dat[0U].long0 = long0*5.7295779513082E+1;
          if (sattime>=86400UL) anonym->dat[0U].time0 = sattime%86400UL;
-         else {
-            anonym->dat[0U].time0 = osic_time()%86400UL;
-         }
+         else anonym->dat[0U].time0 = osic_time()%86400UL;
          anonym->dat[0U].clb = clb;
          anonym->dat[0U].hrms = hrms;
          anonym->dat[0U].vrms = vrms;
@@ -1603,13 +1605,13 @@ extern void sondeaprs_senddata(double lat, double long0,
             /* appended by SQ7BR */
             if (burstKill==1UL || burstKill==2UL) {
                aprsstr_Append(s, 251ul, " BK=", 5ul);
-               if (burstKill==1UL) aprsstr_Append(s, 251ul, "Off", 4ul);
+               if (burstKill==1UL) {
+                  aprsstr_Append(s, 251ul, "Off", 4ul);
+               }
                else aprsstr_Append(s, 251ul, "On", 3ul);
             }
             /* appended by SQ7BR */
-            if (force) {
-               aprsstr_Append(s, 251ul, " Unchecked-Data", 16ul);
-            }
+            if (force) aprsstr_Append(s, 251ul, " Unchecked-Data", 16ul);
             if (sondeaprs_expire>0UL && (systime>sattime+sondeaprs_expire || systime+sondeaprs_expire<sattime)
                 ) {
                if (sondeaprs_verb) {
