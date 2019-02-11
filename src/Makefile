@@ -219,7 +219,8 @@ TARGETS += \
 	$(OUT)sdrradio \
 	$(OUT)adsb2aprs \
 	$(OUT)profile \
-	$(OUT)radiorange
+	$(OUT)radiorange \
+	$(OUT)panorama
 
 ifneq ($(HOSTOS), Darwin)
 	TARGETS += $(OUT)l2cat
