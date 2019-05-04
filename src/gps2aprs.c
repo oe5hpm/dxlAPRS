@@ -427,6 +427,8 @@ ddhhmm: \\\\z", 61ul);
       : \\\\:filename:", 70ul);
                osi_WrStrLn("                                     insert \\\\ \
         : \\\\\\", 61ul);
+               osi_WrStrLn("                                     double all \\
+\ to pass thru bash eg. \\\\\\\\h", 78ul);
                osi_WrStrLn(" -d <x>                            Destination Ca\
 ll SSID 0..7", 62ul);
                osi_WrStrLn(" -D                                DAO Extension \
