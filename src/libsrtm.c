@@ -24,15 +24,26 @@
 #include "aprspos.h"
 #endif
 
+
+
 uint32_t libsrtm_srtmmem;
 uint32_t libsrtm_srtmmaxmem;
 char libsrtm_srtmdir[1024];
+char libsrtm_bicubic;
 /* get altitude out of srtm files directory tree by oe5dxl */
 #define libsrtm_SRTMXY 3600
 
 #define libsrtm_STRIPS 3
 
 #define libsrtm_AGELEVELS 5
+
+#define libsrtm_ATTRSUB 10000
+/* segment altitude to add metadata */
+
+#define libsrtm_ATTRNEG 1000
+/* max under see level */
+
+#define libsrtm_NOALT 32767
 
 typedef short * pSRTMSTRIP;
 
@@ -70,6 +81,8 @@ static pSRTMTILE srtmmiss;
 
 /* cache no file info with pointer to here */
 static SRTM30FD srtm30fd; /* open srtm30 files */
+
+static char errflag;
 
 #define libsrtm_SRTM3DIR "srtm3"
 
@@ -256,10 +269,8 @@ static void purgesrtm(char all)
    }
 } /* end purgesrtm() */
 
-#define libsrtm_NOALT0 32767.0
 
-
-static float getsrtm1(uint32_t ilat, uint32_t ilong,
+static int32_t getsrtm1(uint32_t ilat, uint32_t ilong,
                 uint32_t * div0)
 /* 1 pixel altitude */
 {
@@ -282,16 +293,16 @@ static float getsrtm1(uint32_t ilat, uint32_t ilong,
    *div0 = 1UL;
    ydeg = ilat/3600UL;
    xdeg = ilong/3600UL;
-   if (xdeg>359UL || ydeg>179UL) return 32767.0f;
+   if (xdeg>359UL || ydeg>179UL) return 32767L;
    if (srtmcache[xdeg]==0) {
       /* empty lat array */
       osic_alloc((char * *) &srtmcache[xdeg], sizeof(SRTMLAT));
-      if (srtmcache[xdeg]==0) return 32767.0f;
+      if (srtmcache[xdeg]==0) return 32767L;
       /* out of memory */
       libsrtm_srtmmem += sizeof(SRTMLAT);
       memset((char *)srtmcache[xdeg],(char)0,sizeof(SRTMLAT));
    }
-   else if (srtmcache[xdeg][ydeg]==srtmmiss) return 32767.0f;
+   else if (srtmcache[xdeg][ydeg]==srtmmiss) return 32767L;
    /* tile file not avaliable */
    pt = srtmcache[xdeg][ydeg];
    if (pt==0) {
@@ -305,14 +316,14 @@ static float getsrtm1(uint32_t ilat, uint32_t ilong,
             f = libsrtm_opensrtm(30U, ydeg, xdeg);
             if (f==-1L) {
                srtmcache[xdeg][ydeg] = srtmmiss;
-               return 32767.0f;
+               return 32767L;
             }
          }
       }
       /*INC(open); */
       osic_alloc((char * *) &pt, sizeof(struct SRTMTILE));
                 /* a new 1x1 deg buffer */
-      if (pt==0) return 32767.0f;
+      if (pt==0) return 32767L;
       libsrtm_srtmmem += sizeof(struct SRTMTILE);
       { /* with */
          struct SRTMTILE * anonym = pt;
@@ -359,12 +370,12 @@ static float getsrtm1(uint32_t ilat, uint32_t ilong,
             if (ydeg>=130UL) seek += 207350400L;
             else if (ydeg>=80UL) seek += 149750400L;
             else if (ydeg>=30UL) seek += 92150400L;
-            else return 32767.0f;
+            else return 32767L;
             rdsize = 240UL; /* fill 1/10 buffer */
          }
          /*INC(miss); */
          osic_alloc((char * *) &pb, rdsize);
-         if (pb==0) return 32767.0f;
+         if (pb==0) return 32767L;
          libsrtm_srtmmem += rdsize;
          anonym0->strips[xx][y] = pb;
          osic_Seek(anonym0->fd, (uint32_t)seek);
@@ -397,91 +408,274 @@ static float getsrtm1(uint32_t ilat, uint32_t ilong,
       /*    IF used[xx][y]<AGELEVELS THEN INC(used[xx][y]) END; */
       anonym0->used[xx][y] = 5U;
       a = (int32_t)pb[x];
-      if (a>30000L || a<-30000L) return 32767.0f;
-      return (float)a;
+      if (a>32000L || a<-32000L) return 32767L;
+      return a;
    }
 } /* end getsrtm1() */
 
-#define libsrtm_NOALT 32767.0
 
-#define libsrtm_ERRALT 30000.0
+static float qint(float a, float b, float c, float v)
+/* spline interpolator */
+{
+   a = (a-b)*0.5f;
+   c = (c-b)*0.5f;
+   return b+(v*v+0.25f)*(a+c)+v*(c-a);
+} /* end qint() */
 
 
-extern float libsrtm_getsrtm(struct aprsstr_POSITION pos,
-                uint32_t quality, float * resolution)
+static float qintd(float a, float b, float c, float v)
+/* spline interpolator and normalvector */
+{
+   return v*((a+c)-b*2.0f)+(c-a)*0.5f;
+} /* end qintd() */
+
+/*
+PROCEDURE qintd(a,b,c,v:REAL; VAR nv:REAL):REAL;
+                (* spline interpolator and normalvector *)
+VAR ca, ac:REAL;
+BEGIN
+  a:=(a-b)*0.5;
+  c:=(c-b)*0.5;
+  ca:=c-a;
+  ac:=a+c;
+  nv:=2.0*v*ac + ca;
+  RETURN b + (v*v+0.25)*ac + v*ca
+END qintd;
+*/
+
+static uint32_t chkmeta(int32_t * a)
+{
+   return (uint32_t)(*a+41000L)/10000UL;
+} /* end chkmeta() */
+
+
+static float resmeta(int32_t a)
+{
+   return (float)((int32_t)((uint32_t)(a+41000L)%10000UL)-1000L);
+} /* end resmeta() */
+
+
+static float am(uint32_t ilat, uint32_t ilong)
 {
    uint32_t d;
+   int32_t a;
+   a = getsrtm1(ilat, ilong, &d);
+   if (a>=32767L) errflag = 1;
+   return resmeta(a);
+} /* end am() */
+
+
+static float int4(float a0, float a1, float a2, float a3,
+                float vx, float vy)
+{
+   return (a1*vx+a0*(1.0f-vx))*(1.0f-vy)+(a3*vx+a2*(1.0f-vx))*vy;
+} /* end int4() */
+/*BEGIN RETURN (a0*(1.0-vx) + a1*vx)*(1.0-vy) + (a2*(1.0-vx) + a3*vx)
+                *vy END int4; */
+
+
+extern float libsrtm_getsrtmlong(double lat, double long0,
+                uint32_t quality, char bicubic,
+                float * resolution, uint8_t * att0,
+                libsrtm_pMETAINFO pmeta)
+{
+   uint32_t d;
+   uint32_t div2;
    uint32_t div0;
    uint32_t ilong;
    uint32_t ilat;
-   float vy;
-   float vx;
+   uint32_t ilongdd;
+   uint32_t ilongd;
+   uint32_t ilatdd;
+   uint32_t ilatd;
+   float a8;
+   float a7;
+   float a6;
+   float a5;
+   float a4;
    float a3;
    float a2;
    float a1;
    float a0;
-   /*limpos(pos); */
+   int32_t i3;
+   int32_t i2;
+   int32_t i1;
+   int32_t i0;
+   float vy5;
+   float vx5;
+   float vy;
+   float vx;
+   float dx2;
+   float dx1;
+   float dx0;
+   uint8_t att;
+   /* want attibute interpolation */
+   struct libsrtm_METAINFO * anonym;
    if (libsrtm_srtmmaxmem>0UL && libsrtm_srtmmem>libsrtm_srtmmaxmem) {
-      /*WrInt(srtmmem, 15); */
       purgesrtm(0);
    }
-   /*WrInt(srtmmem, 15);WrStrLn(" purged");  */
-   pos.lat = 3.24E+5f+pos.lat*2.0626480625299E+5f;
-   pos.long0 = 6.48E+5f+pos.long0*2.0626480625299E+5f;
-   if (pos.lat>=0.0f) {
-      ilat = (uint32_t)X2C_TRUNCC(pos.lat,0UL,X2C_max_longcard);
-   }
+   lat = 3.24E+5+lat*2.0626480625299E+5;
+   long0 = 6.48E+5+long0*2.0626480625299E+5;
+   if (lat>=0.0) ilat = (uint32_t)X2C_TRUNCC(lat,0UL,X2C_max_longcard);
    else ilat = 0UL;
-   if (pos.long0>=0.0f) {
-      ilong = (uint32_t)X2C_TRUNCC(pos.long0,0UL,X2C_max_longcard);
+   if (long0>=0.0) {
+      ilong = (uint32_t)X2C_TRUNCC(long0,0UL,X2C_max_longcard);
    }
    else ilong = 0UL;
-   a0 = getsrtm1(ilat, ilong, &div0);
+   i0 = getsrtm1(ilat, ilong, &div0);
+   *att0 = (uint8_t)chkmeta(&i0);
+   /*
+     IF pmeta<>NIL THEN
+       pmeta^.slantx:=0.0;
+       pmeta^.slanty:=0.0;
+       FILL(ADR(pmeta^.attrweights[0]), 0C, SIZE(pmeta^.attrweights));
+     END;
+   */
+   if (i0>=32767L) return 32767.0f;
+   a0 = resmeta(i0);
+   if (pmeta) quality = 0UL;
    if (div0==1UL) {
       *resolution = 30.0f;
       if (quality>29UL) return a0;
+      vx = (float)(long0-(double)ilong);
+      vy = (float)(lat-(double)ilat);
    }
    else if (div0==3UL) {
       *resolution = 90.0f;
       if (quality>60UL) return a0;
+      vx = (float)((long0-(double)((ilong/3UL)*3UL))
+                *3.3333333333333E-1);
+      vy = (float)((lat-(double)((ilat/3UL)*3UL))
+                *3.3333333333333E-1);
    }
    else {
       *resolution = 900.0f;
       if (quality>300UL) return a0;
+      vx = (float)((long0-(double)((ilong/30UL)*30UL))
+                *3.3333333333333E-2);
+      vy = (float)((lat-(double)((ilat/30UL)*30UL))
+                *3.3333333333333E-2);
    }
-   /*interpolate 4 dots */
-   a1 = getsrtm1(ilat, ilong+div0, &d);
-   a2 = getsrtm1(ilat+div0, ilong, &d);
-   a3 = getsrtm1(ilat+div0, ilong+div0, &d);
-   if (a0>30000.0f) {
-      /* ignore missing pixels */
-      a0 = a1;
-      if (a0>30000.0f) {
-         a0 = a2;
-         if (a0>30000.0f) {
-            a0 = a3;
-            if (a0>30000.0f) return 32767.0f;
-         }
+   if (vx<0.5f) {
+      if (ilong>=div0) ilong -= div0;
+   }
+   else vx = vx-1.0f;
+   if (vy<0.5f) ilat -= div0;
+   else vy = vy-1.0f;
+   vx5 = vx+0.5f;
+   vy5 = vy+0.5f;
+   ilatd = ilat+div0;
+   ilongd = ilong+div0;
+   i0 = getsrtm1(ilat, ilong, &d);
+   i1 = getsrtm1(ilat, ilongd, &d);
+   i2 = getsrtm1(ilatd, ilong, &d);
+   i3 = getsrtm1(ilatd, ilongd, &d);
+   if (((i0>=32767L || i1>=32767L) || i2>=32767L) || i3>=32767L) return a0;
+   if (pmeta && pmeta->aliasattr) {
+      { /* with */
+         struct libsrtm_METAINFO * anonym = pmeta;
+         memset((char *) &anonym->attrweights[0U],(char)0,
+                sizeof(float [8]));
+         att = (uint8_t)chkmeta(&i0);
+         anonym->attrweights[att] = anonym->attrweights[att]+(1.0f-vx5)
+                *(1.0f-vy5);
+         att = (uint8_t)chkmeta(&i1);
+         anonym->attrweights[att] = anonym->attrweights[att]+vx5*(1.0f-vy5);
+         att = (uint8_t)chkmeta(&i2);
+         anonym->attrweights[att] = anonym->attrweights[att]+(1.0f-vx5)*vy5;
+         att = (uint8_t)chkmeta(&i3);
+         anonym->attrweights[att] = anonym->attrweights[att]+vx5*vy5;
       }
    }
-   if (a1>30000.0f) a1 = a0;
-   if (a2>30000.0f) a2 = a0;
-   if (a3>30000.0f) a3 = a0;
-   if (div0==1UL) {
-      /* interpolation wights */
-      vx = pos.long0-(float)ilong;
-      vy = pos.lat-(float)ilat;
-   }
-   else if (div0==3UL) {
-      vx = (pos.long0-(float)((ilong/3UL)*3UL))*3.3333333333333E-1f;
-      vy = (pos.lat-(float)((ilat/3UL)*3UL))*3.3333333333333E-1f;
+   a0 = resmeta(i0);
+   a1 = resmeta(i1);
+   a2 = resmeta(i2);
+   a3 = resmeta(i3);
+   /*interpolate 4 dots */
+   if (!bicubic) {
+      /* bilinear */
+      if (pmeta && pmeta->withslant) {
+         /* bilinear slants */
+         pmeta->slantx = X2C_DIVR((a1-a0)*(1.0f-vy5)+(a3-a2)*vy5,
+                *resolution);
+         pmeta->slanty = X2C_DIVR((a2-a0)*(1.0f-vx5)+(a3-a1)*vx5,
+                *resolution);
+      }
+      return int4(a0, a1, a2, a3, vx5, vy5);
    }
    else {
-      vx = (pos.long0-(float)((ilong/30UL)*30UL))*3.3333333333333E-2f;
-      vy = (pos.lat-(float)((ilat/30UL)*30UL))*3.3333333333333E-2f;
+      /* wighted median of 4 pixels*/
+      /* biqubic */
+      /*    IF vx<0.5 THEN IF ilong>=div THEN DEC(ilong, div) END; */
+      /*    ELSE vx:=vx-1.0 END; */
+      /*    IF vy<0.5 THEN DEC(ilat,  div) ELSE vy:=vy-1.0 END; */
+      div2 = div0*2UL;
+      ilatdd = ilat+div2;
+      ilongdd = ilong+div2;
+      errflag = 0;
+      if (pmeta && pmeta->withslant) {
+         /* cubic interpolate and slants */
+         a4 = am(ilat, ilongdd);
+         a5 = am(ilatd, ilongdd);
+         a6 = am(ilatdd, ilong);
+         a7 = am(ilatdd, ilongd);
+         a8 = am(ilatdd, ilongdd);
+         dx0 = qint(a0, a1, a4, vx);
+         dx1 = qint(a2, a3, a5, vx);
+         dx2 = qint(a6, a7, a8, vx);
+         pmeta->slanty = X2C_DIVR(qintd(dx0, dx1, dx2, vy),*resolution);
+         dx0 = qint(a0, a2, a6, vy);
+         dx1 = qint(a1, a3, a7, vy);
+         dx2 = qint(a4, a5, a8, vy);
+         pmeta->slantx = X2C_DIVR(qintd(dx0, dx1, dx2, vx),*resolution);
+         a1 = qint(dx0, dx1, dx2, vx);
+         if (errflag) return a0;
+         else return a1;
+      }
+      else {
+         a1 = qint(qint(a0, a1, am(ilat, ilongdd), vx), qint(a2, a3,
+                am(ilatd, ilongdd), vx), qint(am(ilatdd, ilong), am(ilatdd,
+                ilongd), am(ilatdd, ilongdd), vx), vy);
+         if (errflag) return a0;
+         else return a1;
+      }
    }
-   return (a0*(1.0f-vx)+a1*vx)*(1.0f-vy)+(a2*(1.0f-vx)+a3*vx)*vy;
-/* wighted median of 4 pixels*/
+   return 0;
+} /* end getsrtmlong() */
+
+/*
+PROCEDURE getsrtm(pos:POSITION; quality:CARDINAL; VAR resolution:REAL):REAL;
+VAR attr:CARD8;
+BEGIN RETURN getsrtmlong(pos.lat, pos.long, quality, FALSE, resolution, attr,
+                 NIL) END getsrtm;
+*/
+/*
+PROCEDURE getsrtm(pos:POSITION; quality:CARDINAL; VAR resolution:REAL):REAL;
+VAR attr:CARD8;
+    a:REAL;
+BEGIN
+  a:=getsrtmlong(pos.lat, pos.long, quality, bicubic, resolution, attr, NIL);
+  IF attr=3 THEN a:=32000.0 END;
+  RETURN a
+END getsrtm;
+*/
+
+extern float libsrtm_getsrtm(struct aprsstr_POSITION pos,
+                uint32_t quality, float * resolution)
+{
+   uint8_t attr;
+   float a;
+   struct libsrtm_METAINFO at;
+   at.withslant = 1;
+   at.aliasattr = 1;
+   a = libsrtm_getsrtmlong((double)pos.lat, (double)pos.long0,
+                quality, 0, resolution, &attr, &at);
+   /*  IF (attr=3) OR (at.attr2=4) & ((attr=3) = (at.attrweight<0.5))
+                THEN a:=32000.0 END; */
+   /*IF attr=2 THEN a:=32000.0 END; */
+   /*  IF at.attrweights[2]>0.5 THEN a:=32000.0 END; */
+   /*  a:=1000.0+at.slanty*2.0; */
+   return a;
 } /* end getsrtm() */
 
 
@@ -599,5 +793,6 @@ extern void libsrtm_BEGIN(void)
    libsrtm_srtmmem = 0UL;
    libsrtm_srtmmaxmem = 0UL; /* 0 no auto purge */
    libsrtm_srtmdir[0] = 0;
+   libsrtm_bicubic = 0;
 }
 
