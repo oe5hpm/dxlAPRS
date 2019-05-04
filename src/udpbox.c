@@ -119,7 +119,7 @@ typedef struct CALLS * pCALLS;
 
 struct CALLS {
    pCALLS next;
-   RAWCALL call;
+   MONCALL call;
 };
 
 struct OUTPORT;
@@ -132,12 +132,14 @@ struct OUTPORT {
    uint32_t toip;
    uint32_t toport;
    pCALLS filtercalls;
+   char invertfilter;
    char echo;
    char rawwrite;
    char crlfwrite;
    char passnoUI;
    char axudp2;
    char satgate;
+   char decode;
    SET256 aprspass;
    pDIGIPARMS digiparm;
    struct BEACON beacon0;
@@ -184,6 +186,8 @@ struct MSGHASH {
    uint32_t wpos;
    struct _0 hash[16];
 };
+
+typedef uint16_t TELEMETRY[7];
 
 #define udpbox_MAXLEN 338
 
@@ -429,55 +433,83 @@ static char Usermsg(const char b[], uint32_t b_len,
    return 0;
 } /* end Usermsg() */
 
-static char udpbox_WILDH = 'T';
+
+static void MakeMonCall(const char rs[], uint32_t rs_len, int32_t p,
+                char mc[], uint32_t mc_len)
+{
+   int32_t j;
+   int32_t i;
+   j = 0L;
+   for (i = 0L; i<=5L; i++) {
+      mc[j] = (char)((uint32_t)(uint8_t)rs[p+i]>>1);
+      if ((uint8_t)mc[j]>' ') ++j;
+   } /* end for */
+   i = (int32_t)((uint32_t)(uint8_t)rs[p+6L]/2UL&15UL);
+   if (i>0L) {
+      mc[j] = '-';
+      ++j;
+      if (i>=10L) {
+         mc[j] = '1';
+         ++j;
+      }
+      mc[j] = (char)(i%10L+48L);
+      ++j;
+   }
+   if (j<=(int32_t)(mc_len-1)) mc[j] = 0;
+} /* end MakeMonCall() */
+
+
+static char cmp(pCALLS c, const char s[], uint32_t s_len,
+                int32_t p)
+{
+   int32_t j;
+   char b;
+   char ok0;
+   while (c) {
+      j = 0L;
+      for (;;) {
+         if (c->call[j]=='*') {
+            ok0 = 1; /* rest is wildcard */
+            break;
+         }
+         b = s[p+j];
+         if ((((p+j>=(int32_t)(s_len-1) || b=='*') || b==',') || b=='>')
+                || b==':') {
+            ok0 = c->call[j]==0; /* end of call */
+            break;
+         }
+         if (c->call[j]==0 || c->call[j]!='?' && b!=c->call[j]) {
+            ok0 = 0; /* end filter word */
+            break;
+         }
+         ++j;
+      }
+      if (ok0) return 1;
+      c = c->next;
+   }
+   return 0;
+} /* end cmp() */
 
 
 static char CallFilt(pCALLS calls, const char s[],
                 uint32_t s_len, int32_t len)
 {
-   int32_t j;
    int32_t i;
-   pCALLS c;
-   char b;
-   char ok0;
+   char mc[100];
    i = 0L;
    do {
-      c = calls;
-      while (c) {
-         j = 0L;
-         for (;;) {
-            if (c->call[j]!='T' && c->call[j]!=s[i+j]) break;
-            ++j;
-            if (j>=6L) {
-               if (c->call[j] && ((uint8_t)(uint8_t)c->call[j]&0x1EU)
-                !=((uint8_t)(uint8_t)s[i+j]&0x1EU)) break;
-               return 1;
-            }
-         }
-         c = c->next;
-      }
+      /* first look in ax25 frame */
+      MakeMonCall(s, s_len, i, mc, 100ul);
+      if (cmp(calls, mc, 100ul, 0L)) return 1;
       i += 7L;
    } while (!(i>=len || ((uint32_t)(uint8_t)s[i-1L]&1)));
    i += 2L;
    if (s[i]=='}') {
+      /* in text part of third party frame */
       ++i;
       for (;;) {
          if (i>=len) break;
-         c = calls;
-         while (c) {
-            j = 0L;
-            ok0 = 1;
-            for (;;) {
-               b = s[i+j];
-               if (((((i+j>=len || b=='*') || b==',') || b=='>') || b==':')
-                || b=='-') break;
-               if (j>=6L || c->call[j]!='T' && b!=(char)((uint32_t)
-                (uint8_t)c->call[j]>>1)) ok0 = 0;
-               ++j;
-            }
-            if (ok0 && (j>=6L || c->call[j]=='@')) return 1;
-            c = c->next;
-         }
+         if (cmp(calls, s, s_len, i)) return 1;
          while (((i<len && s[i]!=',') && s[i]!='>') && s[i]!=':') ++i;
          if (s[i]==':') {
             ++i;
@@ -546,7 +578,8 @@ static char Filter(const char b[], uint32_t b_len,
    /* not UI frame */
    /* is UI frame */
    if (Usermsg(b, b_len, len, i, fromsock, &selfmsg)) return 0;
-   if (parm->filtercalls && CallFilt(parm->filtercalls, b, b_len, len)) {
+   if (parm->filtercalls && CallFilt(parm->filtercalls, b, b_len,
+                len)!=parm->invertfilter) {
       if (show) osi_WrStrLn(" callfilter match", 18ul);
       return 0;
    }
@@ -1326,6 +1359,7 @@ static void parms(void)
 {
    char h[4096];
    char actpassui;
+   char actinvert;
    char actsat;
    char actecho;
    char err;
@@ -1359,6 +1393,7 @@ static void parms(void)
    actkm = 0.0f;
    actpassui = 0;
    actsat = 0;
+   actinvert = 0;
    for (;;) {
       osi_NextArg(h, 4096ul);
       if (h[0U]==0) break;
@@ -1510,18 +1545,22 @@ static void parms(void)
             }
          }
          else if (lasth=='e') actecho = 1;
-         else if (((lasth=='r' || lasth=='m') || lasth=='c') || lasth=='l') {
+         else if ((((lasth=='r' || lasth=='m') || lasth=='c') || lasth=='l')
+                || lasth=='D') {
             if (actsock0==0) {
-               Err("need input -M or -R before -r or -m or -c", 42ul);
+               Err("need input -M or -R before -r or -m or -c or -D", 48ul);
             }
-            osi_NextArg(h, 4096ul);
+            if (lasth!='D') osi_NextArg(h, 4096ul);
             osic_alloc((char * *) &outsock0, sizeof(struct OUTPORT));
-            if (outsock0==0) {
-               Err("out of memory", 14ul);
-            }
+            if (outsock0==0) Err("out of memory", 14ul);
             { /* with */
                struct OUTPORT * anonym2 = outsock0;
-               if (GetIp(h, 4096ul, &i, &anonym2->toip,
+               anonym2->decode = 0;
+               if (lasth=='D') {
+                  anonym2->toport = 0UL;
+                  anonym2->decode = 1;
+               }
+               else if (GetIp(h, 4096ul, &i, &anonym2->toip,
                 &anonym2->toport)<0L) Err("wrong udp:port", 15ul);
                memcpy(anonym2->aprspass,actpass,32u);
                anonym2->echo = actecho;
@@ -1535,6 +1574,7 @@ static void parms(void)
                anonym2->satgate = actsat;
                anonym2->next = 0;
                anonym2->filtercalls = actcall;
+               anonym2->invertfilter = actinvert;
                anonym2->mypos.lat = actpos.lat*1.7453292519444E-2f;
                anonym2->mypos.long0 = actpos.long0*1.7453292519444E-2f;
                anonym2->maxkm = (int32_t)(uint32_t)X2C_TRUNCC(actkm,0UL,
@@ -1568,6 +1608,8 @@ filename: insert file, \\\\[filename]", 79ul);
  by telemetry program", 71ul);
                osi_WrStrLn(" -c <ip>:<port> send text monitor udp frame with \
 cr lf", 55ul);
+               osi_WrStrLn(" -D             output decoded Data to stdout",
+                46ul);
                osi_WrStrLn(" -d <call>      digipeater enable (and dupe filte\
 r) call", 57ul);
                osi_WrStrLn(" -d -           dupe filter without data modifica\
@@ -1662,8 +1704,10 @@ ermessages to call store in file", 82ul);
 or different File", 67ul);
                osi_WrStrLn(" -v             show frames and analytics on stdo\
 ut", 52ul);
+               osi_WrStrLn(" -X             same as -x but pass only frames w\
+ith this calls", 64ul);
                osi_WrStrLn(" -x <call>{,<call>} delete frames with call in a \
-address field, -x TCPIP,UID***-*", 82ul);
+address field, -x TCPIP,N?CALL*", 81ul);
                osi_WrStrLn("udpbox -v -M 0.0.0.0:9200 -d MYCALL-10 -p 0,1,7 -\
 t 1800,28 -r 192.168.1.24:9400", 80ul);
                osic_WrLn();
@@ -1735,7 +1779,8 @@ t 1800,28 -r 192.168.1.24:9400", 80ul);
                msgusers = user;
             }
             else if (lasth=='v') show = 1;
-            else if (lasth=='x') {
+            else if (lasth=='x' || lasth=='X') {
+               actinvert = lasth=='X';
                osi_NextArg(h, 4096ul);
                if (actsock0==0) Err("need input -M or -R before -x", 30ul);
                i = 0UL;
@@ -1743,16 +1788,17 @@ t 1800,28 -r 192.168.1.24:9400", 80ul);
                   osic_alloc((char * *) &callnext,
                 sizeof(struct CALLS));
                   if (callnext==0) Err("out of memory", 14ul);
-                  MakeRawCall(callnext->call, h, 4096ul, i);
-                  callnext->next = actcall;
-                  actcall = callnext;
-                  while (h[i]!=',') {
-                     if (i>=4095UL || (uint8_t)h[i]<=' ') goto loop_exit;
+                  callnext->call[0] = 0;
+                  while ((h[i]!=',' && i<=4095UL) && (uint8_t)h[i]>' ') {
+                     aprsstr_Append(callnext->call, 9ul, (char *) &h[i],
+                1u/1u);
                      ++i;
                   }
+                  callnext->next = actcall;
+                  actcall = callnext;
+                  if (i>=4095UL || (uint8_t)h[i]<=' ') break;
                   ++i;
                }
-               loop_exit:;
             }
             else err = 1;
          }
@@ -1817,6 +1863,238 @@ BEGIN
   WrStrLn(h); 
 END showstr;
 */
+/*------------------ decode to stdout */
+
+static char r91(uint16_t * n, char c)
+{
+   if ((uint8_t)c<'!' || (uint8_t)c>'|') return 0;
+   *n = (uint16_t)((uint32_t)( *n*91U)+((uint32_t)(uint8_t)c-33UL));
+   return 1;
+} /* end r91() */
+
+
+static void GetTLM(TELEMETRY v, const char b[], uint32_t b_len)
+{
+   uint32_t ib;
+   uint32_t ia;
+   uint32_t j;
+   uint32_t i;
+   TELEMETRY t;
+   uint32_t tmp;
+   ia = 0UL;
+   ib = 0UL;
+   i = 0UL;
+   while (i<b_len-1 && b[i]) {
+      if (b[i]=='|') {
+         ib = ia;
+         ia = i+1UL;
+      }
+      ++i;
+   }
+   if (((ib>0UL && (ia-ib&1)) && ia-ib>=5UL) && ia-ib<=15UL) {
+      i = 0UL;
+      j = ib;
+      do {
+         t[i] = 0U;
+         if (!r91(&t[i], b[j]) || !r91(&t[i], b[j+1UL])) return;
+         ++i;
+         j += 2UL;
+      } while (j+1UL<ia);
+      tmp = i-1UL;
+      ia = 0UL;
+      if (ia<=tmp) for (;; ia++) {
+         v[ia] = t[ia]+1U;
+         if (ia==tmp) break;
+      } /* end for */
+   }
+/*    b[ib-1]:=0C; */
+/*    Delstr(b, ib-1, j-ib+2); */
+} /* end GetTLM() */
+
+
+static void GetClb(int32_t * clb, char com[], uint32_t com_len)
+{
+   int32_t i;
+   char sig;
+   *clb = 0L;
+   i = aprsstr_InStr(com, com_len, "Clb=", 5ul);
+   if (i>=0L) {
+      i += 4L;
+      sig = 0;
+      if (com[i]=='-') {
+         sig = 1;
+         ++i;
+      }
+      while (((i<=(int32_t)(com_len-1) && *clb<1000L) && (uint8_t)
+                com[i]>='0') && (uint8_t)com[i]<='9') {
+         *clb =  *clb*10L+(int32_t)((uint32_t)(uint8_t)com[i]-48UL);
+         ++i;
+      }
+      if (sig) *clb = -*clb;
+   }
+} /* end GetClb() */
+
+
+static void WrTelemetry(const TELEMETRY t, char s[], uint32_t s_len)
+{
+   uint32_t n;
+   uint32_t i;
+   char h[31];
+   char tmp;
+   aprsstr_Assign(s, s_len, " telemetry=", 12ul);
+   i = 0UL;
+   for (;;) {
+      if (t[i]) {
+         if (i!=6UL) {
+            aprsstr_IntToStr((int32_t)(t[i]-1U), 1UL, h, 31ul);
+            aprsstr_Append(s, s_len, h, 31ul);
+         }
+         else {
+            n = (uint32_t)(t[i]-1U);
+            if (n>=256UL) n = (n&8191UL)+8192UL;
+            else n = (n&255UL)+256UL;
+            while (n>1UL) {
+               aprsstr_Append(s, s_len,
+                (char *)(tmp = (char)((uint32_t)(char)(n&1)
+                +48UL),&tmp), 1u/1u);
+               n = n/2UL;
+            }
+         }
+      }
+      ++i;
+      if (i>6UL) break;
+      aprsstr_Append(s, s_len, ",", 2ul);
+   }
+} /* end WrTelemetry() */
+
+static aprsstr_GHOSTSET _cnst1 = {0x00000000UL,0x00000000UL,0x00000000UL,
+                0x00000000UL,0x00000000UL,0x00000000UL,0x00000000UL,
+                0x00000000UL,0x00000000UL};
+
+static void Showpos(char rawb[], uint32_t rawb_len, int32_t rawlen)
+{
+   int32_t j;
+   int32_t i;
+   int32_t clb;
+   int32_t altitude;
+   int32_t payload;
+   int32_t destcall;
+   uint32_t len;
+   uint32_t course;
+   uint32_t speed;
+   char symt;
+   char sym;
+   char b[501];
+   char ts[501];
+   char comment0[501];
+   char postyp;
+   struct aprsstr_POSITION pos;
+   TELEMETRY tel;
+   X2C_PCOPY((void **)&rawb,rawb_len);
+   aprsstr_raw2mon(rawb, rawb_len, b, 501ul, (uint32_t)(rawlen-2L), &len,
+                _cnst1);
+   if (len<=500UL) b[len] = 0;
+   for (;;) {
+      /* remove 3rd party head */
+      payload = aprsstr_InStr(b, 501ul, ":}", 3ul);
+      if (payload<=0L) break;
+      aprsstr_Delstr(b, 501ul, 0UL, (uint32_t)(payload+2L));
+   }
+   destcall = aprsstr_InStr(b, 501ul, ">", 2ul);
+   payload = aprsstr_InStr(b, 501ul, ":", 2ul);
+   if (destcall>0L && payload>destcall) {
+      speed = 0UL;
+      course = 1000UL;
+      altitude = -10000L;
+      aprspos_GetPos(&pos, &speed, &course, &altitude, &sym, &symt, b, 501ul,
+                 (uint32_t)(destcall+1L), (uint32_t)(payload+1L),
+                comment0, 501ul, &postyp);
+      if (aprspos_posvalid(pos)) {
+         osi_WrStr("lat=", 5ul);
+         osic_WrFixed(pos.lat*5.729577951472E+1f, 5L, 1UL);
+         osi_WrStr(" long=", 7ul);
+         osic_WrFixed(pos.long0*5.729577951472E+1f, 5L, 1UL);
+         if (altitude>-10000L) {
+            osi_WrStr(" alt=", 6ul);
+            osic_WrINT32((uint32_t)altitude, 1UL);
+         }
+         if (speed>0UL) {
+            if (symt=='/' && sym=='_') {
+               speed = (uint32_t)X2C_TRUNCC((float)speed*1.609f+0.5f,
+                0UL,X2C_max_longcard);
+            }
+            else {
+               speed = (uint32_t)X2C_TRUNCC((float)speed*1.852f+0.5f,
+                0UL,X2C_max_longcard);
+            }
+            osi_WrStr(" speed=", 8ul);
+            osic_WrINT32(speed, 1UL);
+            if (course<=360UL) {
+               osi_WrStr(" course=", 9ul);
+               osic_WrINT32(course%360UL, 1UL);
+            }
+         }
+         GetClb(&clb, comment0, 501ul);
+         if (clb) {
+            osi_WrStr(" clb=", 6ul);
+            osic_WrINT32((uint32_t)clb, 1UL);
+         }
+         tel[0U] = 0U;
+         GetTLM(tel, comment0, 501ul);
+         if (tel[0U]) {
+            WrTelemetry(tel, ts, 501ul);
+            osi_WrStr(ts, 501ul);
+         }
+         osi_WrStr(" call=", 7ul);
+         i = payload+1L;
+         if (b[i]==';') {
+            ++i; /* object */
+            j = i+9L;
+         }
+         else if (b[i]==')') {
+            /* item */
+            ++i;
+            j = i+3L;
+            while ((j<i+9L && b[j]!='_') && b[j]!='!') ++j;
+         }
+         else {
+            i = 0L;
+            j = destcall;
+         }
+         while ((i<j && (uint8_t)b[i]>=' ') && (uint8_t)b[i]<'\177') {
+            osi_WrStr((char *) &b[i], 1u/1u);
+            ++i;
+         }
+         osic_WrLn();
+      }
+   }
+   X2C_PFREE(rawb);
+} /* end Showpos() */
+
+/*------------------ decode to stdout */
+
+static void WrStrCrtl(char b[], uint32_t b_len)
+{
+   X2C_PCOPY((void **)&b,b_len);
+   aprsstr_CtrlHex(b, b_len);
+   osi_WrStrLn(b, b_len);
+   X2C_PFREE(b);
+} /* end WrStrCrtl() */
+
+
+static void hexdump(const char b[], uint32_t b_len, int32_t len)
+{
+   int32_t i;
+   int32_t tmp;
+   tmp = len-1L;
+   i = 0L;
+   if (i<=tmp) for (;; i++) {
+      osi_WrHex((uint32_t)(uint8_t)b[i], 3UL);
+      if (i==tmp) break;
+   } /* end for */
+   osic_WrLn();
+} /* end hexdump() */
+
 
 static void showhex(int32_t * n, int32_t e, char in[],
                 uint32_t in_len, int32_t * len, const char s[],
@@ -2252,9 +2530,6 @@ static char piggy;
 
 static RAWCALL hamup;
 
-static aprsstr_GHOSTSET _cnst1 = {0x00000000UL,0x00000000UL,0x00000000UL,
-                0x00000000UL,0x00000000UL,0x00000000UL,0x00000000UL,
-                0x00000000UL,0x00000000UL};
 
 X2C_STACK_LIMIT(100000l)
 extern int main(int argc, char **argv)
@@ -2264,6 +2539,7 @@ extern int main(int argc, char **argv)
    if (sizeof(RAWCALL)!=7) X2C_ASSERT(0);
    if (sizeof(MONCALL)!=9) X2C_ASSERT(0);
    if (sizeof(FILENAME)!=1024) X2C_ASSERT(0);
+   if (sizeof(TELEMETRY)!=14) X2C_ASSERT(0);
    aprsstr_BEGIN();
    aprspos_BEGIN();
    osi_BEGIN();
@@ -2336,14 +2612,16 @@ extern int main(int argc, char **argv)
                      osic_WrINT32((uint32_t)inlen, 1UL);
                      osi_WrStr(")", 2ul);
                      osi_WrStr(":", 2ul);
-                     if (monlen<=0UL) osi_WrStr("<raw to mon error>", 19ul);
-                     aprsstr_CtrlHex(mbuf, 512ul);
-                     osi_WrStrLn(mbuf, 512ul);
+                     if (monlen<=0UL) {
+                        osi_WrStr("<raw to mon error>", 19ul);
+                        hexdump(rawbuf, 338ul, inlen-2L);
+                     }
+                     WrStrCrtl(mbuf, 512ul);
                   }
                   outsock = actsock->outchain;
                   outlen = 0L;
                   while (outsock) {
-                     if (show && inlen>2L) {
+                     if ((show && inlen>2L) && outsock->toport) {
                         osi_WrStr(" tx: ", 6ul);
                         showpip(outsock->toip, outsock->toport);
                      }
@@ -2366,45 +2644,48 @@ extern int main(int argc, char **argv)
                         if (outlen>0L) {
                            outsock->beacon0.piggyback = 1;
                            piggy = 1;
-                           if (outsock->rawwrite) {
-                              if (outsock->axudp2) {
-                                 appudp2(mbuf, 512ul, &monlen, udp2, 64ul,
-                rawout, 338ul, outlen);
-                                 res = udpsend(actsock->fd, mbuf,
+                           if (outsock->decode) {
+                              Showpos(rawout, 338ul, outlen);
+                           }
+                           if (outsock->toport) {
+                              if (outsock->rawwrite) {
+                                 if (outsock->axudp2) {
+                                    appudp2(mbuf, 512ul, &monlen, udp2, 64ul,
+                 rawout, 338ul, outlen);
+                                    res = udpsend(actsock->fd, mbuf,
                 (int32_t)monlen, outsock->toport, outsock->toip);
+                                 }
+                                 else {
+                                    aprsstr_AppCRC(rawout, 338ul, outlen-2L);
+                                    res = udpsend(actsock->fd, rawout,
+                outlen, outsock->toport, outsock->toip);
+                                 }
+                                 if (show && outlen>2L) {
+                                    osi_WrStrLn(" raw", 5ul);
+                                 }
                               }
                               else {
-                                 aprsstr_AppCRC(rawout, 338ul, outlen-2L);
-                                 res = udpsend(actsock->fd, rawout, outlen,
-                outsock->toport, outsock->toip);
-                              }
-                              if (show && outlen>2L) {
-                                 osi_WrStrLn(" raw", 5ul);
-                              }
-                           }
-                           else {
-                              aprsstr_raw2mon(rawout, 338ul, mbuf, 512ul,
+                                 aprsstr_raw2mon(rawout, 338ul, mbuf, 512ul,
                 (uint32_t)(outlen-2L), &monlen, _cnst1);
-                              if (monlen>0UL) {
-                                 if (outsock->crlfwrite) {
+                                 if (monlen>0UL) {
+                                    if (outsock->crlfwrite) {
                                     mbuf[monlen-1UL] = '\015';
                                     mbuf[monlen] = '\012';
                                     ++monlen;
-                                 }
-                                 res = udpsend(actsock->fd, mbuf,
+                                    }
+                                    res = udpsend(actsock->fd, mbuf,
                 (int32_t)monlen, outsock->toport, outsock->toip);
-                                 if (show) {
+                                    if (show) {
                                     osi_WrStrLn(" mon", 5ul);
+                                    }
                                  }
-                              }
-                              else if (show) {
-                                 osi_WrStrLn(" monerr", 8ul);
+                                 else if (show) {
+                                    osi_WrStrLn(" monerr", 8ul);
+                                 }
                               }
                            }
                         }
-                        else if (show) {
-                           osi_WrStrLn(" no tx", 7ul);
-                        }
+                        else if (show) osi_WrStrLn(" no tx", 7ul);
                      }
                      else if (show && outlen>2L) {
                         osi_WrStrLn(" deleted", 9ul);
