@@ -23,6 +23,7 @@
 # - panorama		makes png Image + csv-file from landscape with poi markers
 #                               using srtm-datafiles
 # - cmslogin	l2cat task for bidirectional TCP connect and password login in CMS server
+# - srtmtag	modify srtm1 or srtm3 file with tags eg. wood/water
 # ---------------------- common section ---------------------------------------
 HOSTARCH := $(shell uname -m | \
 	sed -e s/i.86/x86/ \
@@ -205,6 +206,8 @@ OBJ_PANORAMA = $(OUT)panorama.o\
 	$(OUT)pngwrite.o \
 	$(OUT)pngread.o
 OBJ_CMSLOGIN = $(OUT)cmslogin.o
+OBJ_SRTMTAG = $(OUT)srtmtag.o \
+	$(OUT)pngread.o
 
 TARGETS += \
 	$(OUT)afskmodem \
@@ -224,6 +227,7 @@ TARGETS += \
 	$(OUT)radiorange \
 	$(OUT)panorama \
 	$(OUT)cmslogin \
+	$(OUT)srtmtag
 
 ifneq ($(HOSTOS), Darwin)
 	TARGETS += $(OUT)l2cat
@@ -249,6 +253,7 @@ OBJS = \
 	$(OBJ_RADIORANGE) \
 	$(OBJ_PANORAMA) \
 	$(OBJ_CMSLOGIN)	\
+	$(OBJ_SRTMTAG)
 
 # ------------------- target make rules -------------------
 #                     -----------------
@@ -373,6 +378,11 @@ $(OUT)panorama: $(OBJ_PANORAMA) $(OBJ_COMMON)
 
 $(OUT)cmslogin: $(OBJ_CMSLOGIN) $(OBJ_COMMON)
 	$(CC) $(LFLAGS) -o $@ $(OBJ_COMMON) $(OBJ_CMSLOGIN) -lm
+	$(STRIP) $@ $(STRIPFLAGS)
+
+$(OUT)srtmtag: $(OBJ_SRTMTAG) $(OBJ_COMMON)
+	$(CC) $(LFLAGS) -o $@ $(OBJ_COMMON) $(OBJ_SRTMTAG) \
+	$(XLIBS) -lm
 	$(STRIP) $@ $(STRIPFLAGS)
 
 %:
