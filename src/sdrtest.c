@@ -503,8 +503,7 @@ static void Parms(void)
             fix(s, 1001ul, &n, &fr, &ok0);
             fr = fr*1.E+6+0.5;
             if (!ok0 || fr>4.294967295E+9) Error(" -T <MHz>", 10ul);
-            tuneto = (uint32_t)X2C_TRUNCC(fr*1.E+6+0.5,0UL,
-                X2C_max_longcard);
+            tuneto = (uint32_t)X2C_TRUNCC(fr,0UL,X2C_max_longcard);
          }
          else if (s[1U]=='d') {
             /* sampelrate to output divide */

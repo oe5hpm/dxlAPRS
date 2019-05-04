@@ -51,6 +51,12 @@
 
 #define sdr_SSBDDSSIZE4 512
 
+#define sdr_AFCRSSICLAMP 0.7
+/* until rssi level below peak to do afc */
+
+#define sdr_AFCRSSISPEED 0.9985
+/* afc peak rssi fall speed */
+
 struct Complex;
 
 
@@ -796,16 +802,27 @@ static short getsamp(sdr_pRX rx, char notfirst)
                 ((uint32_t)(rx->bfophase+512UL)&0x7FFUL)])*25000.0f,
                 osic_sqrt(rx->rssi));
    }
-   else {
+   else if (rx->modulation=='S') {
       /* ssb */
       /* AM FM */
+      /* scan squelch */
+      lev = u.Re*u.Re+u.Im*u.Im;
+      if (notfirst) rx->sqsum = rx->sqsum+(float)fabs(rx->lastlev-lev);
+      else {
+         rx->sqsum = 0.0f;
+         rx->rssi = 0.0f;
+      }
+      rx->rssi = rx->rssi+lev; /* sum levels */
+      rx->lastlev = lev;
+      /* scan squelch */
+      af = osic_sqrt(lev)*0.01f;
+   }
+   else {
       /* rssi */
       lev = 1.0f+u.Re*u.Re+u.Im*u.Im;
       l = lev-rx->rssi;
       rx->rssi = rx->rssi+l*0.001f;
       /* rssi */
-      /*  IF rx^.modulation=mSCAN THEN af:=sqrt(lev)*0.01; */
-      /*  ELSE */
       /* complex to phase */
       abs0.Re = (float)fabs(u.Re);
       abs0.Im = (float)fabs(u.Im);
@@ -855,7 +872,6 @@ static short getsamp(sdr_pRX rx, char notfirst)
          af = af*7.9577471545948E+3f;
       }
    }
-   /*  END; */
    if (af>32000.0f) af = 32000.0f;
    else if (af<(-3.2E+4f)) af = (-3.2E+4f);
    return (short)X2C_TRUNCI(af,-32768,32767);
@@ -947,7 +963,7 @@ extern int32_t sdr_getsdr(uint32_t samps, sdr_pRX rx[],
                else iirvar(rx[r], as, bs, (float)ws*6.7934782608696E-7f);
                u = (int32_t)getsamp(rx[r], s>0UL);
                anonym->samples[s] = (short)u;
-               anonym->median = anonym->median+u; /* afc */
+               if (anonym->afcrun) anonym->median = anonym->median+u;
             }
             ++r;
          }
@@ -960,19 +976,30 @@ extern int32_t sdr_getsdr(uint32_t samps, sdr_pRX rx[],
       while (rx[r]) {
          { /* with */
             struct sdr_RX * anonym0 = rx[r];
+            anonym0->afcrun = 0;
             if (anonym0->modulation=='f' && anonym0->maxafc>0L) {
-               anonym0->median = anonym0->median-(anonym0->afckhz*(int32_t)
-                samps*1024L)/anonym0->maxafc; /* weak pull to middle */
-               if (anonym0->median>400000000L) {
-                  if (anonym0->afckhz<anonym0->maxafc) ++anonym0->afckhz;
-                  anonym0->median = 0L;
+               if (anonym0->afcrssi<anonym0->rssi) {
+                  anonym0->afcrssi = anonym0->rssi; /* peak level rssi */
                }
-               else if (anonym0->median<-400000000L) {
-                  if (anonym0->afckhz>-anonym0->maxafc) --anonym0->afckhz;
-                  anonym0->median = 0L;
+               else anonym0->afcrssi = anonym0->afcrssi*0.9985f;
+               if (anonym0->afcrssi*0.7f<anonym0->rssi) {
+                  /* near peak rssi so let afc work */
+                  anonym0->median = anonym0->median-(anonym0->afckhz*(int32_t)
+                samps*1024L)/anonym0->maxafc; /* weak pull to middle */
+                  if (anonym0->median>400000000L) {
+                     if (anonym0->afckhz<anonym0->maxafc) ++anonym0->afckhz;
+                     anonym0->median = 0L;
+                  }
+                  else if (anonym0->median<-400000000L) {
+                     if (anonym0->afckhz>-anonym0->maxafc) --anonym0->afckhz;
+                     anonym0->median = 0L;
+                  }
+                  anonym0->afcrun = 1;
                }
             }
          }
+         /* low rssi so freeze afc */
+         /*WrInt(ORD(afcrun),1); */
          ++r;
       }
       /*AFC */

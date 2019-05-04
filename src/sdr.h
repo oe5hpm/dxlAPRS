@@ -61,6 +61,7 @@ struct sdr_RX {
    uint32_t idx;
    int32_t maxafc;
    char squelch;
+   char afcrun;
    char modulation;
    sdr_pAUDIOSAMPLE samples;
    uint32_t phase;
@@ -73,6 +74,7 @@ struct sdr_RX {
    float w1;
    float lastlev;
    float rssi;
+   float afcrssi;
    float sqsum;
    float a1;
    uint32_t fracphase;
