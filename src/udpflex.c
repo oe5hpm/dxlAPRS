@@ -195,6 +195,8 @@ static char direwolf;
 
 static char direwolfserver;
 
+static uint32_t kissondelay;
+
 static uint32_t errtime;
 
 static int32_t tcplistenfd;
@@ -246,11 +248,9 @@ static void inittnc(void)
       strncpy(tbuf,"\015\033@K\015",701u);
       usleep(500000UL);
       osi_WrBin(tty, (char *)tbuf, 701u/1u, 5UL);
+      usleep(kissondelay*1000UL);
    }
-   if (inilen>0UL) {
-      usleep(500000UL);
-      osi_WrBin(tty, (char *)kbuf, 701u/1u, inilen);
-   }
+   if (inilen>0UL) osi_WrBin(tty, (char *)kbuf, 701u/1u, inilen);
    if (verb) osi_WrStrLn("send init to tnc", 17ul);
 } /* end inittnc() */
 
@@ -496,17 +496,21 @@ ode", 53ul);
 ch to KISS/FLEX/SMACK mode", 76ul);
                osi_WrStrLn("                                   (only with 1 P\
 ort)", 54ul);
+               osi_WrStrLn(" -d <ms>                           delay between \
+kiss-on and sending -p ...(2500)", 82ul);
                osi_WrStrLn(" -h                                this", 40ul);
                osi_WrStrLn(" -i <filename>                     send this file\
  to tty to switch on kiss", 75ul);
                osi_WrStrLn(" -k                                tnc2 tf switch\
  on kiss", 58ul);
                osi_WrStrLn(" -p <cmd>:<value>                  tnc2 parameter\
- 1=txd, 2=p", 61ul);
-               osi_WrStrLn("                                   3=slottime, 25\
-5:13 kiss exit", 64ul);
+ 1=txd, 2=p 3=slottime,", 73ul);
+               osi_WrStrLn("                                   128:0=set smac\
+k, 255:13 kiss exit", 69ul);
                osi_WrStrLn("                                   (add 16, 32 ..\
 . to cmd for next Port)", 73ul);
+               osi_WrStrLn("                                   repeat -p for \
+more parameters", 65ul);
                osi_WrStrLn(" -r                                use rmnc-crc",
                  48ul);
                osi_WrStrLn(" -s                                SMACK (crc) on\
@@ -535,6 +539,13 @@ messages", 58ul);
                X2C_ABORT();
             }
             if (h[1U]=='i') osi_NextArg(ifn, 701ul);
+            else if (h[1U]=='d') {
+               osi_NextArg(h, 1024ul);
+               i0 = 0UL;
+               if (!GetNum(h, 1024ul, 0, &i0, &kissondelay)) {
+                  Error("-d <ms>", 8ul);
+               }
+            }
             else err = 1;
          }
       }
@@ -995,6 +1006,7 @@ extern int main(int argc, char **argv)
    inilen = 0UL;
    tty = -1L;
    fend = 192UL;
+   kissondelay = 2500UL;
    Parms();
    Gencrctab();
    if (ttynamee[0U]) opentty();
@@ -1049,7 +1061,7 @@ extern int main(int argc, char **argv)
                 || (!direwolf && tty!=-1L) && issetr((uint32_t)tty)) {
             if (direwolf) {
                if (tcpfd<0L) {
-                  /* look for tnc inbound connect */
+                  /* look for tcp inbound connect */
                   if (tcplistenfd>=0L && issetr((uint32_t)tcplistenfd)) {
                      /* tcp listensocket has news */
                      res = 2048L;
