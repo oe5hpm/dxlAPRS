@@ -1396,7 +1396,7 @@ static void Sendudp(const FRAMEBUF s, uint32_t totx, char unlimit)
    struct UDPSOCK * anonym;
    /*        udpstat(us, 0, dport, ip); */
    us = porttosock(totx); /* send to which udp modem */
-   if (us && (unlimit || (systime-us->lasttxtime)
+   if (us && ((unlimit || us->maxbytes==65535UL) || (systime-us->lasttxtime)
                 *us->maxbytes>us->lasttxbytes)) {
       if (us->rawread) aprsstr_mon2raw(s, 512ul, raw, 512ul, &len);
       else {
@@ -2377,13 +2377,14 @@ static void Sendall(const FRAMEBUF buf, int32_t fromfd,
          }
          t = t->next;
       }
-      if ((fromfd>0L && aprspos_posvalid(home)) && aprspos_posvalid(posc.pos)
-                ) {
+      if (fromfd>0L && aprspos_posvalid(posc.pos)) {
          u = udpsocks;
          uport = 1UL;
          while (u) {
-            if (u->torfradius>0.0f && aprspos_distance(home,
-                posc.pos)<=u->torfradius) NetToRf(buf, 512ul, uport);
+            if (u->torfradius>0.0f && (u->torfradius>=20000.0f || aprspos_posvalid(home)
+                 && aprspos_distance(home, posc.pos)<=u->torfradius)) {
+               NetToRf(buf, 512ul, uport);
+            }
             ++uport;
             u = u->next;
          }
