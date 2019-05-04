@@ -882,7 +882,7 @@ static void Parms(void)
    debfd = -1L;
    chanset = 0;
    dfmnametyp = 0UL;
-   dfmidchg = 2UL; /* minutes no tx if dfm name change */
+   dfmidchg = 1UL; /* minutes no tx if dfm name change */
    rxlabel[0] = 0;
    for (channel = 0UL; channel<=63UL; channel++) {
       { /* with */
@@ -1107,6 +1107,7 @@ static void Parms(void)
             verb2 = 1;
          }
          else {
+            /*      ELSIF h[1]="M" THEN m10newID:=TRUE; */
             if (h[1U]=='h') {
                osi_WrStrLn("oss Mono/Stereo up to 64 Channel RS92, RS41, C34,\
  C50 Sonde Demodulator to raw Frames", 86ul);
@@ -1148,6 +1149,9 @@ elect 1 channel)", 66ul);
                osi_WrStrLn(" -l <num>       adcbuflen (256)", 32ul);
                osi_WrStrLn(" -L <name>      Label of device sent to sondemod,\
  max 4 char", 61ul);
+               /*        WrStrLn("
+                -M             make M10 object name out of all (known)
+                bits of serial number"); */
                osi_WrStrLn(" -N <num>       0..255 generate DFM-ID from seria\
 l no. in first frame (see -v)", 79ul);
                osi_WrStrLn("                enter first byte in decimal \"AC0\
@@ -1808,6 +1812,7 @@ static void decode41(uint32_t m)
    uint32_t nameok;
    uint32_t len;
    uint32_t p;
+   uint32_t j;
    uint32_t i;
    char ch;
    char typ;
@@ -1879,7 +1884,17 @@ static void decode41(uint32_t m)
                i = 0UL;
                if (i<=tmp) for (;; i++) {
                   osi_WrHex((uint32_t)(uint8_t)anonym->rxbuf[p+i], 3UL);
-                  if ((i&15UL)==15UL) osi_WrStrLn("", 1ul);
+                  if (i==len-1UL || (i&15UL)==15UL) {
+                     for (j = 0UL; j<=15UL; j++) {
+                        if ((uint8_t)anonym->rxbuf[((p+i)-16UL)
+                +j]>=' ' && (uint8_t)anonym->rxbuf[((p+i)-16UL)+j]<='~') {
+                           osi_WrStr((char *) &anonym->rxbuf[((p+i)-16UL)
+                +j], 1u/1u);
+                        }
+                        else osi_WrStr(".", 2ul);
+                     } /* end for */
+                     osi_WrStrLn("", 1ul);
+                  }
                   if (i==tmp) break;
                } /* end for */
                osi_WrStrLn("", 1ul);
@@ -1890,7 +1905,9 @@ static void decode41(uint32_t m)
             if (i<=tmp) for (;; i++) {
                /* update fixbyte statistics */
                if (anonym->fixbytes[i]==anonym->rxbuf[i]) {
-                  if (anonym->fixcnt[i]<255U) ++anonym->fixcnt[i];
+                  if (anonym->fixcnt[i]<255U) {
+                     ++anonym->fixcnt[i];
+                  }
                }
                else {
                   anonym->fixbytes[i] = anonym->rxbuf[i];
@@ -3559,9 +3576,11 @@ static float sondeudp_DEGMUL = 8.3819036711397E-8f;
 #define sondeudp_VMUL 0.005
 
 #define sondeudp_CRCPOS 99
+/*      HSET  =SET256{0..2,4..25,32,33,93..97,99,100}
+                ;                (* not hexlist known bytes *) */
 
-static SET256 sondeudp_HSET = {0x03FFFFF7UL,0x00000003UL,0xE0000000UL,
-                0x0000001BUL,0x00000000UL,0x00000000UL,0x00000000UL,
+static SET256 sondeudp_HSET = {0x03FFFFF7UL,0x00000003UL,0x00000000UL,
+                0x00000018UL,0x00000000UL,0x00000000UL,0x00000000UL,
                 0x00000000UL}; /* not hexlist known bytes */
 
 static SET256 sondeudp_VARSET = {0x03BBBBF0UL,0x80600000UL,0x06A001A0UL,
@@ -3572,7 +3591,7 @@ static float sondeudp_Rs[3] = {12100.0f,36500.0f,4.75E+5f};
 
 static float sondeudp_Rp[3] = {1.21E-16f,1.1060606E-1f,1.5833333E-1f};
 
-static SET256 _cnst4 = {0x03FFFFF7UL,0x00000003UL,0xE0000000UL,0x0000001BUL,
+static SET256 _cnst4 = {0x03FFFFF7UL,0x00000003UL,0x00000000UL,0x00000018UL,
                 0x00000000UL,0x00000000UL,0x00000000UL,0x00000000UL};
 static float _cnst3[3] = {12100.0f,36500.0f,4.75E+5f};
 static float _cnst2[3] = {1.21E-16f,1.1060606E-1f,1.5833333E-1f};
@@ -3581,6 +3600,7 @@ static SET256 _cnst1 = {0x03BBBBF0UL,0x80600000UL,0x06A001A0UL,0x0000001CUL,
 
 static void decodeframe10(uint32_t m)
 {
+   uint32_t gpstimecorr;
    uint32_t repl;
    uint32_t id;
    uint32_t flen;
@@ -3640,24 +3660,39 @@ static void decodeframe10(uint32_t m)
          } /* end for */
          /* update fixbyte statistics */
          /* get ID    */
-         id = (uint32_t)(((uint32_t)((uint32_t)(uint8_t)
-                anonym->rxbuf[97U]+256UL*(uint32_t)(uint8_t)
-                anonym->rxbuf[96U]+65536UL*(uint32_t)(uint8_t)
-                anonym->rxbuf[95U])^(uint32_t)((uint32_t)(uint8_t)
-                anonym->rxbuf[93U]/16UL+16UL*(uint32_t)(uint8_t)
-                anonym->rxbuf[94U]+4096UL*(uint32_t)(uint8_t)
-                anonym->rxbuf[95U]))&0xFFFFFUL);
-         i = 8UL;
-         ids[8U] = 0;
-         --i;
-         do {
-            ids[i] = (char)(id%10UL+48UL);
-            id = id/10UL;
-            --i;
-         } while (i!=1UL);
-         ids[i] = 'E';
-         --i;
-         ids[i] = 'M';
+         /* IF m10newID THEN */
+         ids[0U] = 'M';
+         ids[1U] = 'E';
+         ids[2U] = hex((uint32_t)(uint8_t)anonym->rxbuf[95U]/16UL);
+                /* should be 0..9 */
+         ids[3U] = hex((uint32_t)(uint8_t)anonym->rxbuf[95U]);
+         ids[4U] = hex((uint32_t)(uint8_t)anonym->rxbuf[93U]);
+         id = (uint32_t)(uint8_t)anonym->rxbuf[96U]+(uint32_t)
+                (uint8_t)anonym->rxbuf[97U]*256UL;
+         ids[5U] = hex(id/4096UL);
+         ids[6U] = hex(id/256UL);
+         ids[7U] = hex(id/16UL);
+         ids[8U] = hex(id);
+         ids[9U] = 0;
+         /* 
+            ELSE
+              id:=CAST(CARDINAL,
+                  (CAST(SET32, ORD(rxbuf[97]) + 100H*ORD(rxbuf[96]) + 10000H*ORD(rxbuf[95]))
+                 /CAST(SET32, ORD(rxbuf[93]) DIV 10H + 10H*ORD(rxbuf[94]) + 1000H*ORD(rxbuf[95])))
+                  *SET32{0..19});
+              i:=8;
+              ids[i]:=0C;
+              DEC(i);
+              REPEAT
+                ids[i]:=CHR(id MOD 10 + ORD("0"));
+                id:=id DIV 10;
+                DEC(i);
+              UNTIL i=1;
+              ids[i]:="E";
+              DEC(i);
+              ids[i]:="M";
+            END;
+         */
          /* get ID */
          if (anonym->alternativ) {
             if (verb) {
@@ -3674,7 +3709,9 @@ static void decodeframe10(uint32_t m)
          else {
             tow = m10card(anonym->rxbuf, 101ul, 10L, 4L);
             week = m10card(anonym->rxbuf, 101ul, 32L, 2L);
-            anonym->timefn = (tow/1000UL+week*604800UL+315964800UL)-18UL;
+            gpstimecorr = (uint32_t)(uint8_t)anonym->rxbuf[31U];
+            anonym->timefn = (tow/1000UL+week*604800UL+315964800UL)
+                -gpstimecorr;
             /*        IF verb2 THEN WrStr(" ");DateToStr(time, s); WrStr(s);
                 WrStr(" ") END; */
             lat = (double)m10card(anonym->rxbuf, 101ul, 14L,
@@ -3683,9 +3720,7 @@ static void decodeframe10(uint32_t m)
                 4L)*8.3819036711397E-8;
             alt = (double)m10card(anonym->rxbuf, 101ul, 22L, 4L)*0.001;
             ci = (int32_t)m10card(anonym->rxbuf, 101ul, 4L, 2L);
-            if (ci>32767L) {
-               ci -= 65536L;
-            }
+            if (ci>32767L) ci -= 65536L;
             ve = (double)ci*0.005;
             ci = (int32_t)m10card(anonym->rxbuf, 101ul, 6L, 2L);
             if (ci>32767L) ci -= 65536L;

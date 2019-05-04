@@ -213,7 +213,8 @@ static void wrcsv(uint32_t sattime, const char typstr[],
                 double temp, double ozon, double otemp,
                 double pumpmA, double pumpv,
                 const struct sondeaprs_SDRBLOCK sdr, double dist,
-                double azi, double ele)
+                double azi, double ele, const char fullid[],
+                uint32_t fullid_len)
 {
    int32_t fd;
    char h[1000];
@@ -224,7 +225,7 @@ static void wrcsv(uint32_t sattime, const char typstr[],
       fd = osi_OpenWrite(sondeaprs_csvfilename, 1025ul);
       strncpy(s,"Date,Time,Type,Name,lat,long,alt,speed,dir,clb,egmalt,og,mhz\
 ,sats,bk,uptime,hPa,hum,temp,ozon,ozont,pumpmA,pumpV,RxMHz,AFC,maxAFC,rssi,de\
-v,dist,azimuth,elevation\012",1000u);
+v,dist,azimuth,elevation,ser\012",1000u);
    }
    else s[0] = 0;
    if (fd<0L) {
@@ -374,6 +375,10 @@ v,dist,azimuth,elevation\012",1000u);
       aprsstr_FixToStr((float)ele, 3UL, h, 1000ul);
       aprsstr_Append(s, 1000ul, h, 1000ul);
    }
+   if (fullid[0UL]) {
+      aprsstr_Append(s, 1000ul, ",", 2ul);
+      aprsstr_Append(s, 1000ul, fullid, fullid_len);
+   }
    aprsstr_Append(s, 1000ul, "\012", 2ul);
    osi_WrBin(fd, (char *)s, 1000u/1u, aprsstr_Length(s, 1000ul));
    osic_Close(fd);
@@ -489,7 +494,7 @@ static void comment0(char buf[], uint32_t buf_len, uint32_t uptime,
             }
             else if (fb[bol+1L]=='v') {
                /* insert version */
-               aprsstr_Append(hb, 120ul, " sondemod 1.33", 15ul);
+               aprsstr_Append(hb, 120ul, " sondemod 1.34", 15ul);
             }
             else if (fb[bol+1L]=='s') {
                /* insert sat count */
@@ -1371,7 +1376,8 @@ extern void sondeaprs_senddata(double lat, double long0,
                 uint32_t goodsats, char usercall[],
                 uint32_t usercall_len, uint32_t calperc,
                 uint32_t burstKill, char force, char typstr[],
-                uint32_t typstr_len, struct sondeaprs_SDRBLOCK sdr)
+                uint32_t typstr_len, char fullid[],
+                uint32_t fullid_len, struct sondeaprs_SDRBLOCK sdr)
 {
    uint8_t e;
    pCONTEXT ct;
@@ -1439,7 +1445,7 @@ extern void sondeaprs_senddata(double lat, double long0,
       wrcsv(sattime, typstr, typstr_len, objname, objname_len, lat, long0,
                 alt, speed, dir, clb, egmalt, og, mhz, goodsats, burstKill,
                 uptime, hp, hyg, temp, ozon, otemp, pumpmA, pumpv, sdr,
-                mydist, myazi, myele);
+                mydist, myazi, myele, fullid, fullid_len);
    }
    if (aprsstr_Length(usercall, usercall_len)<3UL) {
       osi_WrStrLn("no tx without <mycall>", 23ul);
@@ -1611,6 +1617,10 @@ extern void sondeaprs_senddata(double lat, double long0,
                else aprsstr_Append(s, 251ul, "On", 3ul);
             }
             /* appended by SQ7BR */
+            if (fullid[0UL]) {
+               aprsstr_Append(s, 251ul, " ser=", 6ul);
+               aprsstr_Append(s, 251ul, fullid, fullid_len);
+            }
             if (force) aprsstr_Append(s, 251ul, " Unchecked-Data", 16ul);
             if (sondeaprs_expire>0UL && (systime>sattime+sondeaprs_expire || systime+sondeaprs_expire<sattime)
                 ) {

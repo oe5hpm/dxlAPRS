@@ -537,7 +537,7 @@ static void Parms(void)
          }
          else {
             if (h[1U]=='h') {
-               osi_WrStr("sondemod 1.33", 14ul);
+               osi_WrStr("sondemod 1.34", 14ul);
                osi_WrStrLn(" multichannel decoder RS92, RS41, SRS-C34/50, DFM\
 , M10 Radiosondes", 67ul);
                osi_WrStrLn(" -A <meter>     at lower altitude use -B beacon t\
@@ -1701,7 +1701,7 @@ static void decodeframe(uint8_t m, uint32_t ip, uint32_t fromport)
                 (double)anonym1->hrmsc, (double)anonym1->vrmsc,
                 gpstime-18UL, frameno, objname, 9ul, almanachage,
                 anonym1->goodsats, usercall, 11ul, calperc(anonym1->calibok),
-                 0UL, sondeaprs_nofilter, "RS92", 5ul, sdrblock);
+                 0UL, sondeaprs_nofilter, "RS92", 5ul, "", 1ul, sdrblock);
          /*               (timems DIV 1000 + (DAYSEC-GPSTIMECORR))
                 MOD DAYSEC,*/
          anonym1->framesent = 1;
@@ -2211,7 +2211,7 @@ static void decodec34(const char rxb[], uint32_t rxb_len,
                 ((systime-anonym2->tgpstime)+anonym2->gpstime)
                 %86400UL+anonym2->gpsdate, 0UL, anonym2->name, 9ul, 0UL, 0UL,
                  usercall, 11ul, 0UL, 0UL, sondeaprs_nofilter, tstr, 51ul,
-                sdrblock);
+                "", 1ul, sdrblock);
             anonym2->lastsent = systime;
          }
       }
@@ -2574,8 +2574,8 @@ static void decodedfm6(const char rxb[], uint32_t rxb_len,
                 anonym->dir, anonym->clmb, 0.0, 0.0,
                 (double)X2C_max_real, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                 0.0, anonym->actrt, 0UL, anonym->name, 9ul, 0UL, 0UL,
-                usercall, 11ul, 0UL, 0UL, sondeaprs_nofilter, "DFM06", 6ul,
-                sdrblock);
+                usercall, 11ul, 0UL, 0UL, sondeaprs_nofilter, "DFM06", 6ul, "\
+", 1ul, sdrblock);
                anonym->lastsent = systime;
             }
          }
@@ -3225,7 +3225,7 @@ static void decoders41(const char rxb[], uint32_t rxb_len,
                 pc->ozonBatVolt, (double)pc->mhz0, (-1.0), 0.0,
                 pc->gpssecond, frameno, pc->name, 9ul, 0UL, sats, usercall,
                 11ul, 0UL, pc->burstKill, sondeaprs_nofilter, "RS41", 5ul,
-                sdrblock);
+                "", 1ul, sdrblock);
       pc->framesent = 1;
    }
 /*  IF verb THEN WrStrLn("") END;   */
@@ -3291,6 +3291,15 @@ static uint32_t m10rcard(const char b[], uint32_t b_len,
    return n;
 } /* end m10rcard() */
 
+
+static char hex(uint32_t n)
+{
+   n = n&15UL;
+   if (n<10UL) return (char)(n+48UL);
+   else return (char)(n+55UL);
+   return 0;
+} /* end hex() */
+
 #define sondemod_FH 16
 /* size of header before payload */
 
@@ -3308,6 +3317,7 @@ static float _cnst2[3] = {1.21E-16f,1.1060606E-1f,1.5833333E-1f};
 static void decodem10(const char rxb[], uint32_t rxb_len,
                 uint32_t ip, uint32_t fromport)
 {
+   uint32_t gpstimecorr;
    uint32_t week;
    uint32_t tow;
    uint32_t cs;
@@ -3331,6 +3341,7 @@ static void decodem10(const char rxb[], uint32_t rxb_len,
    float rt;
    char nameok;
    char calok;
+   char fullid[12];
    pCONTEXTM10 pc0;
    pCONTEXTM10 pc1;
    pCONTEXTM10 pc;
@@ -3360,11 +3371,12 @@ static void decodem10(const char rxb[], uint32_t rxb_len,
    if (cs==m10card(rxb, rxb_len, 115L, 2L)) {
       /* crc ok */
       nameok = 1;
-      for (i = 0UL; i<=7UL; i++) {
+      for (i = 0UL; i<=8UL; i++) {
          nam[i] = rxb[7UL+i];
-         if ((uint8_t)nam[i]<=' ' || (uint8_t)nam[i]>'Z') nameok = 0;
+         if ((i<8UL || nam[i]) && ((uint8_t)nam[i]<=' ' || (uint8_t)
+                nam[i]>'Z')) nameok = 0;
       } /* end for */
-      nam[8U] = 0;
+      /*    IF 8<=HIGH(nam) THEN nam[8]:=0C END; */
       pc = pcontextm10;
       pc0 = 0;
       for (;;) {
@@ -3393,7 +3405,9 @@ static void decodem10(const char rxb[], uint32_t rxb_len,
       }
       tow = m10card(rxb, rxb_len, 26L, 4L);
       week = m10card(rxb, rxb_len, 48L, 2L);
-      time0 = tow/1000UL+week*604800UL+315878400UL+86382UL;
+      gpstimecorr = (uint32_t)(uint8_t)rxb[47UL];
+      time0 = tow/1000UL+week*604800UL+315878400UL+(86400UL-gpstimecorr)
+                %86400UL;
       frameno = time0;
       pc->gpssecond = time0;
       if (frameno>pc->framenum) {
@@ -3423,13 +3437,26 @@ static void decodem10(const char rxb[], uint32_t rxb_len,
       if (ci>32767L) ci -= 65536L;
       vn = (double)ci*0.005;
       ci = (int32_t)m10card(rxb, rxb_len, 24L, 2L);
-      if (ci>32767L) {
-         ci -= 65536L;
-      }
+      if (ci>32767L) ci -= 65536L;
       vv = (double)ci*0.005;
       v = (double)osic_sqrt((float)(ve*ve+vn*vn)); /* hor speed */
       dir = atan20(vn, ve)*5.7295779513082E+1;
       if (dir<0.0) dir = 360.0+dir;
+      /* full id */
+      fullid[0U] = (char)((uint32_t)(uint8_t)rxb[111UL]/16UL+48UL);
+      fullid[1U] = '0';
+      fullid[2U] = hex((uint32_t)(uint8_t)rxb[111UL]);
+      fullid[3U] = hex((uint32_t)(uint8_t)rxb[109UL]);
+      i = (uint32_t)(uint8_t)rxb[112UL]+(uint32_t)(uint8_t)
+                rxb[113UL]*256UL;
+      fullid[4U] = (char)((i/8192UL&7UL)+48UL);
+      fullid[5U] = '0';
+      i = i&8191UL;
+      fullid[6U] = (char)((i/1000UL)%10UL+48UL);
+      fullid[7U] = (char)((i/100UL)%10UL+48UL);
+      fullid[8U] = (char)((i/10UL)%10UL+48UL);
+      fullid[9U] = (char)(i%10UL+48UL);
+      fullid[10U] = 0;
       /*- m10 temp */
       sct = m10rcard(rxb, rxb_len, 78L, 1L);
       rt = (float)(m10rcard(rxb, rxb_len, 79L, 2L)&4095UL);
@@ -3469,6 +3496,8 @@ static void decodem10(const char rxb[], uint32_t rxb_len,
             osic_WrFixed(rt, 1L, 1UL);
             osi_WrStr("C", 2ul);
          }
+         osi_WrStr(" ser=", 6ul);
+         osi_WrStr(fullid, 12ul);
       }
    }
    else if (sondeaprs_verb) osi_WrStr("crc error", 10ul);
@@ -3481,7 +3510,7 @@ static void decodem10(const char rxb[], uint32_t rxb_len,
                  v, dir, vv, 0.0, 0.0, (double)rtok, 0.0, 0.0, 0.0,
                 0.0, 0.0, 0.0, 0.0, pc->gpssecond, 0UL, pc->name, 9ul, 0UL,
                 0UL, usercall, 11ul, 0UL, 0UL, sondeaprs_nofilter, "M10",
-                4ul, sdrblock);
+                4ul, fullid, 12ul, sdrblock);
       pc->framesent = 1;
    }
 } /* end decodem10() */
