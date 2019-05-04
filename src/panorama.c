@@ -118,6 +118,7 @@ struct POI {
    uint32_t ys;
    char poifn[1024];
    char iconfn[1024];
+   char iconhint[1024];
 };
 
 static imagetext_pIMAGE image;
@@ -150,6 +151,8 @@ static float yzoom;
 
 static char gammatab[1024];
 
+static uint32_t rastercsv;
+
 static uint32_t poisize;
 
 static uint32_t scalesize;
@@ -167,6 +170,24 @@ static char altOG;
 static float minpoialt;
 
 static int32_t csvfd;
+
+struct _0;
+
+struct _1;
+
+
+struct _1 {
+   struct aprsstr_POSITION p;
+   float a;
+};
+
+
+struct _0 {
+   uint32_t act;
+   struct _1 v[1000];
+};
+
+static struct _0 csvvec;
 
 
 static void Error(char text[], uint32_t text_len)
@@ -224,6 +245,14 @@ static char posvalid(const struct aprsstr_POSITION pos)
 {
    return pos.lat!=0.0f || pos.long0!=0.0f;
 } /* end posvalid() */
+
+
+static struct aprsstr_POSITION radtodeg(struct aprsstr_POSITION p)
+{
+   p.lat = p.lat*5.729577951472E+1f;
+   p.long0 = p.long0*5.729577951472E+1f;
+   return p;
+} /* end radtodeg() */
 
 
 static void wgs84s(float lat, float long0, float nn, float * x,
@@ -377,6 +406,7 @@ static void getpos(char h[1024], struct aprsstr_POSITION * p,
 static void Parms(void)
 {
    char err;
+   char iconhint[1024];
    char iconfn[1024];
    char h[1024];
    float dist;
@@ -387,6 +417,7 @@ static void Parms(void)
    err = 0;
    label = 0UL;
    iconfn[0] = 0;
+   iconhint[0] = 0;
    pan = 0.0f;
    dist = 0.0f;
    for (;;) {
@@ -428,6 +459,7 @@ static void Parms(void)
                Error("-P <POI filename>", 18ul);
             }
             aprsstr_Assign(ppoi->iconfn, 1024ul, iconfn, 1024ul);
+            aprsstr_Assign(ppoi->iconhint, 1024ul, iconhint, 1024ul);
             ppoi->next = poifiles;
             poifiles = ppoi;
          }
@@ -437,11 +469,25 @@ static void Parms(void)
                Error("-c <csv filename>", 18ul);
             }
          }
+         else if (h[1U]=='C') {
+            osi_NextArg(h, 1024ul);
+            if (!aprsstr_StrToInt(h, 1024ul, &col) || col<0L) {
+               Error("-C <number>", 12ul);
+            }
+            rastercsv = (uint32_t)col;
+         }
          else if (h[1U]=='I') {
             osi_NextArg(iconfn, 1024ul);
             if (iconfn[0U]==0 || iconfn[0U]=='-') {
                Error("-I <icon filename> (png)", 25ul);
             }
+         }
+         else if (h[1U]=='J') {
+            osi_NextArg(iconhint, 1024ul);
+            if (iconhint[0U]==0 || iconhint[0U]=='-') {
+               Error("-J <icon hint>", 15ul);
+            }
+            if (iconhint[0U]==',') iconhint[0U] = 0;
          }
          else if (h[1U]=='f') flatscreen = 1;
          else if (h[1U]=='v') verb = 1;
@@ -495,6 +541,7 @@ static void Parms(void)
                Error("-d <deg> <km>", 14ul);
             }
          }
+         else if (h[1U]=='q') libsrtm_bicubic = 1;
          else if (h[1U]=='o') {
             osi_NextArg(h, 1024ul);
             if ((!aprsstr_StrToFix(&minpoialt, h,
@@ -577,6 +624,8 @@ ound [m] (10)", 63ul);
 n lat long (degrees) or qth locator", 85ul);
                osi_WrStrLn(" -b <lat> <long> | [locator]       Pan to point l\
 at long (degrees) or qth locator", 82ul);
+               osi_WrStrLn(" -C <N>                            write CSV line\
+ for every N\'th column", 72ul);
                osi_WrStrLn(" -c <filename>                     CSV file name",
                  49ul);
                osi_WrStrLn(" -d <deg> <km>                     Relative to po\
@@ -602,6 +651,8 @@ se Curved projection area (needed at >=180deg sight)", 102ul);
 ile Name, set before -P", 73ul);
                osi_WrStrLn(" -i <filename>                     Image File Nam\
 e", 51ul);
+               osi_WrStrLn(" -J <poi-hint>                     text appended \
+to csv lines, set before -P, off with -J ,", 92ul);
                osi_WrStrLn(" -M <bytes>                        SRTM-Cache Lim\
 it (100000000)", 64ul);
                osi_WrStrLn(" -O                                POI File altit\
@@ -616,6 +667,8 @@ POI file and higher use this", 78ul);
 ore files", 59ul);
                osi_WrStrLn(" -p <pathname>                     folder with /s\
 rtm1 /srtm3 /srtm30", 69ul);
+               osi_WrStrLn(" -q                                bicubic srtm i\
+nterpolation instead of bilinear", 82ul);
                osi_WrStrLn(" -r <refraction>                   0.0(vacuum)..1\
 .0(earth is a disk) (0.13)", 76ul);
                osi_WrStrLn(" -s <size>                         POI symbol siz\
@@ -657,7 +710,112 @@ tal sight angle (degrees) (45.0)", 82ul);
    }
 } /* end Parms() */
 
-#define panorama_TESTDIST 30.0
+
+static void wrcsv(int32_t px, int32_t py,
+                const struct aprsstr_POSITION posdeg, float alti,
+                const char text[], uint32_t text_len,
+                const char iconhint[], uint32_t iconhint_len)
+{
+   char h[1001];
+   char s[1001];
+   if (csvfn[0U]) {
+      if (csvfd<0L) csvfd = osi_OpenWrite(csvfn, 1024ul);
+      if (csvfd<0L) Error("cannot write csv-file", 22ul);
+      aprsstr_IntToStr(px, 0UL, s, 1001ul);
+      aprsstr_Append(s, 1001ul, ",", 2ul);
+      aprsstr_IntToStr(py, 0UL, h, 1001ul);
+      aprsstr_Append(s, 1001ul, h, 1001ul);
+      aprsstr_Append(s, 1001ul, ",", 2ul);
+      aprsstr_FixToStr(posdeg.lat, 6UL, h, 1001ul);
+      aprsstr_Append(s, 1001ul, h, 1001ul);
+      aprsstr_Append(s, 1001ul, ",", 2ul);
+      aprsstr_FixToStr(posdeg.long0, 6UL, h, 1001ul);
+      aprsstr_Append(s, 1001ul, h, 1001ul);
+      aprsstr_Append(s, 1001ul, ",", 2ul);
+      if (alti>(-1000.0f) && alti<10000.0f) {
+         aprsstr_IntToStr((int32_t)X2C_TRUNCI(alti+0.5f,X2C_min_longint,
+                X2C_max_longint), 0UL, h, 1001ul);
+         aprsstr_Append(s, 1001ul, h, 1001ul);
+      }
+      if (text[0UL]) {
+         aprsstr_Append(s, 1001ul, ",", 2ul);
+         aprsstr_Append(s, 1001ul, text, text_len);
+      }
+      if (iconhint[0UL]) {
+         aprsstr_Append(s, 1001ul, ",", 2ul);
+         aprsstr_Append(s, 1001ul, iconhint, iconhint_len);
+      }
+      aprsstr_Append(s, 1001ul, "\012", 2ul);
+      osi_WrBin(csvfd, (char *)s, 1001u/1u, aprsstr_Length(s, 1001ul));
+   }
+/* WITH image^[px][py] DO INC(r, 200); INC(g, 200); END; */
+} /* end wrcsv() */
+
+#define panorama_DDEG 7.85398163375E-6
+
+#define panorama_DALT 10.0
+
+
+static void xycsv(uint32_t px, uint32_t py, struct aprsstr_POSITION pos,
+                char flush, char cont)
+{
+   float nf;
+   float ka;
+   float ky;
+   float kx;
+   float a0;
+   float y00;
+   float x0;
+   float dx;
+   float resol;
+   float alt;
+   uint32_t i;
+   uint32_t n;
+   char eov;
+   alt = libsrtm_getsrtm(pos, 0UL, &resol);
+   if (cont) {
+      n = csvvec.act+1UL;
+      if (n>2UL || n>0UL && flush) {
+         if (flush || n>=999UL) eov = 1;
+         else {
+            nf = (float)n;
+            x0 = csvvec.v[0U].p.long0;
+            y00 = csvvec.v[0U].p.lat;
+            a0 = csvvec.v[0U].a;
+            kx = X2C_DIVR(pos.long0-x0,nf);
+            ky = X2C_DIVR(pos.lat-y00,nf);
+            ka = X2C_DIVR(alt-a0,(float)n);
+            eov = 0;
+            dx = 7.85398163375E-6f*osic_cos(pos.lat);
+            i = n;
+            do {
+               --i;
+               nf = (float)i;
+               if (((i>=n || (float)fabs((x0+kx*nf)-csvvec.v[i].p.long0)
+                >dx) || (float)fabs((y00+ky*nf)-csvvec.v[i].p.lat)
+                >7.85398163375E-6f) || (float)fabs((a0+ka*nf)
+                -csvvec.v[i].a)>10.0f) eov = 1;
+            } while (!(i==0UL || eov));
+         }
+         if (eov) {
+            wrcsv((int32_t)px, (int32_t)(py-n), radtodeg(csvvec.v[0U].p),
+                 csvvec.v[0U].a, "", 1ul, "", 1ul);
+            if (n>1UL) {
+               wrcsv((int32_t)px, (int32_t)(py-1UL),
+                radtodeg(csvvec.v[n-1UL].p), csvvec.v[n-1UL].a, "", 1ul, "",
+                1ul);
+            }
+            n = 0UL;
+         }
+      }
+   }
+   else n = 0UL;
+   csvvec.act = n;
+   csvvec.v[n].a = alt;
+   csvvec.v[n].p = pos;
+} /* end xycsv() */
+
+#define panorama_TESTDIST 5.0
 
 #define panorama_ER 6.37E+6
 
@@ -705,15 +863,27 @@ static void raytrace(float minqual, float x0, float y00,
          }
          else {
             /* hit earth */
-            pos1.lat = pos->lat+4.71238898025E-6f;
+            pos1.lat = pos->lat+7.85398163375E-7f;
             pos1.long0 = pos->long0;
             h1 = libsrtm_getsrtm(pos1, 1UL, &resol);
-            pos1.long0 = pos->long0+X2C_DIVR(4.71238898025E-6f,
+            pos1.long0 = pos->long0+X2C_DIVR(7.85398163375E-7f,
                 osic_cos(pos->lat));
             pos1.lat = pos->lat;
             h2 = libsrtm_getsrtm(pos1, 1UL, &resol);
-            *lum = osic_cos(osic_arctan((h1-*h)*3.3333333333333E-2f))
-                *osic_cos(osic_arctan((h2-*h)*3.3333333333333E-2f));
+            *lum = osic_cos(osic_arctan((h1-*h)*0.2f))
+                *osic_cos(osic_arctan((h2-*h)*0.4f));
+            /*
+                    pos1.lat:=pos.lat - TESTDIST/2000000.0*PI;
+                    pos1.long:=pos.long;
+                    h1:=getsrtm(pos1, 1, resol);
+                    pos1.long:=pos.long - (TESTDIST/2000000.0*PI)
+                /cos(pos.lat);
+                    pos1.lat:=pos.lat;
+                    h2:=getsrtm(pos1, 1, resol);
+                    lum:=lum + cos(arctan((h1-h)*(0.1/TESTDIST)))
+                *cos(arctan((h2-h)*(0.1/TESTDIST)));
+                    lum:=lum*0.5;
+            */
             if (deltah!=0.0f) {
                *subpix = X2C_DIVR(minsp,deltah);
                if (*subpix>1.0f) *subpix = 1.0f;
@@ -748,18 +918,21 @@ static void rotvector(float * a, float * b, float cw, float sw)
 #define panorama_FULLUM 1000.0
 /* full bright in image */
 
+#define panorama_FOGLUM 300.0
+
 #define panorama_MAXHP 0.08
 /* vertical spatial luminance highpass */
 
 #define panorama_DDIST 50.0
 
 
-static void Panofind(char find, const struct PANOWIN panpar,
+static void Panofind(uint32_t csvstep, const struct PANOWIN panpar,
                 float * res, struct aprsstr_POSITION * pos)
 {
    uint32_t yi;
    uint32_t xi;
    int32_t nn;
+   float sloped;
    float refrac;
    float oob;
    float oog;
@@ -806,6 +979,7 @@ static void Panofind(char find, const struct PANOWIN panpar,
    float y00;
    float x0;
    float azi0;
+   char firsty;
    char heaven;
    struct imagetext_PIX * anonym;
    if ((!posvalid(panpar.eye) || !posvalid(panpar.horizon))
@@ -815,12 +989,10 @@ static void Panofind(char find, const struct PANOWIN panpar,
    maxdist = aprspos_distance(panpar.eye, panpar.horizon)*1000.0f;
    if (maxdist<100.0f) return;
    /* horizon too near */
-   if (!find) {
-      hr = (float)heavencol.r*0.01f;
-      hg = (float)heavencol.g*0.01f;
-      hb = (float)heavencol.b*0.01f;
-      lummul = X2C_DIVR(1000.0f,maxdist);
-   }
+   hr = (float)heavencol.r*0.01f;
+   hg = (float)heavencol.g*0.01f;
+   hb = (float)heavencol.b*0.01f;
+   lummul = X2C_DIVR(1000.0f,maxdist);
    nn = (int32_t)X2C_TRUNCI(libsrtm_getsrtm(panpar.eye, 0UL, &resoltx),
                 X2C_min_longint,X2C_max_longint);
                 /* altitude of tx and srtm resolution in m here */
@@ -828,6 +1000,7 @@ static void Panofind(char find, const struct PANOWIN panpar,
       libsrtm_closesrtmfile();
       Error("no altitude data at camera position", 36ul);
    }
+   /*  dustfade:=1.0-80.0/FLOAT(HIGH(panpar.image^[0])); */
    atx = (float)(nn+panpar.eyealt); /* ant1 over NN */
    wgs84s(panpar.eye.lat, panpar.eye.long0, atx*0.001f, &x0, &y00, &z0);
    azi = aprspos_azimuth(panpar.eye, panpar.horizon)*1.7453292519444E-2f;
@@ -851,115 +1024,161 @@ static void Panofind(char find, const struct PANOWIN panpar,
    slong = osic_sin(-panpar.eye.long0);
    clong = osic_cos(-panpar.eye.long0);
    xi = 0UL;
-   if (find) xi = (uint32_t)panpar.hx;
    refrac = panpar.refract*7.85E-8f;
    do {
       wx = azid*(float)xi-azi0;
       if (panpar.flatscreen0) wx = osic_arctan(wx);
       wx = wx+azi;
       yi = 0UL;
-      if (find) {
-         yi = (uint32_t)((int32_t)((panpar.image0->Len0-1)+1UL)
-                -panpar.hy);
-      }
       d = 0.0f;
       dlum = 0.0f;
       lastlum = 0.0f;
       heaven = 0;
+      firsty = 0;
       do {
-         if (!heaven) {
-            wy = ele0+eled*(float)yi;
-            if (panpar.flatscreen0) wy = osic_arctan(wy);
-            xn = -osic_sin(wy);
-            yn = osic_sin(wx)*osic_cos(wy);
-            zn = osic_cos(wx)*osic_cos(wy);
-            rotvector(&zn, &xn, clat, slat);
-            rotvector(&yn, &xn, clong, slong);
-            raytrace(5.0f, x0, y00, z0, xn*(-0.001f), yn*0.001f, zn*0.001f,
-                maxdist, &d, &light, &oldh, &lasth, &space, pos, refrac);
-            if (d>maxdist) heaven = 1;
-            if (find) {
-               if (heaven) posinval(pos);
-               return;
+         wy = ele0+eled*(float)yi;
+         if (wy>=(-1.5690509974981f) && wy<1.5690509974981f) {
+            if (!heaven) {
+               if (panpar.flatscreen0) wy = osic_arctan(wy);
+               xn = -osic_sin(wy);
+               yn = osic_sin(wx)*osic_cos(wy);
+               zn = osic_cos(wx)*osic_cos(wy);
+               rotvector(&zn, &xn, clat, slat);
+               rotvector(&yn, &xn, clong, slong);
+               raytrace(25.0f, x0, y00, z0, xn*(-0.001f), yn*0.001f,
+                zn*0.001f, maxdist, &d, &light, &oldh, &lasth, &space, pos,
+                refrac);
+               if (d>maxdist) heaven = 1;
+               if (csvstep && xi%csvstep==0UL) {
+                  xycsv(xi, yi, *pos, heaven, firsty);
+               }
             }
-         }
-         else light = 1.0f;
-         if (heaven) {
-            d = maxdist*4.0f*(1.25f-X2C_DIVR((float)yi,
+            else light = 1.0f;
+            if (heaven) {
+               d = maxdist*4.0f*(1.25f-X2C_DIVR((float)yi,
                 (float)(panpar.image0->Len0-1)));
-         }
-         lum = d*0.2f;
-         llum = (lum-lastlum)*20.0f;
-         if (llum>0.08f*maxdist) llum = 0.08f*maxdist;
-         if (llum>dlum) dlum = llum;
-         lastlum = lum;
-         if (!heaven) {
-            tree = 1600.0f-oldh;
-            if (tree<0.0f) tree = 0.0f;
-            else if (tree>600.0f) tree = 600.0f;
-            tree = tree*1.5833333333333E-3f*(1.0f-X2C_DIVR(d,maxdist));
-            /*      tree:=tree*(0.95/600.0); */
-            /*WrFixed(light, 5,2); WrStr(" "); */
-            light = light-0.65f;
-            if (light<0.0f) {
-               light = light*(-2.0f);
-               if (light>1.0f) light = 1.0f;
-               light = 1.0f+light; /**(1.0-d/maxdist)*/
-               light = light*(1.7f-tree);
-               lr = lum*light*1.4f+dlum;
-               lg = lum*light*1.1f+dlum;
-               lb = lum*light*0.8f+dlum;
+            }
+            lum = d*0.2f;
+            llum = (lum-lastlum)*20.0f;
+            if (llum>0.08f*maxdist) llum = 0.08f*maxdist;
+            if (llum>dlum) dlum = llum;
+            lastlum = lum; /* lum is distance */
+            if (!heaven) {
+               sloped = X2C_DIVR(panpar.angle0*d,9.E+5f);
+               if (sloped>1.0f) sloped = 1.0f;
+               tree = 1600.0f-oldh;
+               if (tree<0.0f) tree = 0.0f;
+               else if (tree>600.0f) tree = 600.0f;
+               /*        tree:=tree*(0.95/600.0)*(1.0-d/maxdist); */
+               tree = tree*1.5833333333333E-3f;
+               /*WrFixed(light, 5,2); WrStr(" "); */
+               light = light-0.65f; /* elevation of normalvector */
+               if (light<0.0f) {
+                  /* rock */
+                  light = light*(-2.5f);
+                  if (light>2.0f) light = 2.0f;
+                  /*            light:=0.05 + light  (**(1.0-d/maxdist)*);
+                        (* 1..2 from elevation *) */
+                  light = light*5.0f*(2.5f-tree)*sloped;
+               }
+               else if (light<9.5f) {
+                  /*
+                              lr:=light*800;
+                              lg:=light*520;
+                              lb:=light*220;
+                  */
+                  /*
+                              lr:=lum*light*1.4 + dlum;
+                              lg:=lum*light*1.1 + dlum;
+                              lb:=lum*light*0.8 + dlum;
+                  */
+                  /*
+                              light:=lum*light*(1.7-tree);
+                              lr:=light*1.4;
+                              lg:=light*1.1;
+                              lb:=light*0.8;
+                  */
+                  /* wood */
+                  /*            light:=light-0.2; */
+                  light = light*(-0.5f);
+                  if (light>1.0f) light = 1.0f;
+                  light = light*5.0f*(2.5f-tree)*sloped;
+               }
+               else light = 0.0f;
+               /*
+                           lr:=lum*(1.7-tree*1.3) + dlum;
+                           lg:=lum*(1.7-tree*0.8) + dlum;
+                           lb:=lum*(1.7-tree*1.7) + dlum;
+               */
+               /*
+               
+                           lr:=50-tree*30 + light*80;
+                           lg:=70-tree*50 + light*50;
+                           lb:=30-tree*20 + light*20;
+               */
+               lr = (40.0f-tree*30.0f)+light*80.0f;
+               lg = (50.0f-tree*40.0f)+light*50.0f;
+               lb = (20.0f-tree*20.0f)+light*20.0f;
+               lr = 300.0f-(1.0f-X2C_DIVR(d,maxdist))*(300.0f-lr);
+               lg = 300.0f-(1.0f-X2C_DIVR(d,maxdist))*(300.0f-lg);
+               lb = 300.0f-(1.0f-X2C_DIVR(d,maxdist))*(300.0f-lb);
+               lr = lr+X2C_DIVR(dlum,50.0f);
+               lg = lg+X2C_DIVR(dlum,50.0f);
+               lb = lb+X2C_DIVR(dlum,50.0f);
             }
             else {
-               lr = lum*(1.7f-tree*1.3f)+dlum;
-               lg = lum*(1.7f-tree*0.8f)+dlum;
-               lb = lum*(1.7f-tree*1.7f)+dlum;
+               /*
+                         IF lr>maxdist THEN lr:=maxdist END;
+                         IF lg>maxdist THEN lg:=maxdist END;
+                         IF lb>maxdist THEN lb:=maxdist END;
+                         lr:=lr*lummul;
+                         lg:=lg*lummul;
+                         lb:=lb*lummul;
+               */
+               lum = lum+dlum;
+               if (lum>maxdist) lum = maxdist;
+               lum = lum*lummul;
             }
-            if (lr>maxdist) lr = maxdist;
-            if (lg>maxdist) lg = maxdist;
-            if (lb>maxdist) lb = maxdist;
-            lr = lr*lummul;
-            lg = lg*lummul;
-            lb = lb*lummul;
-         }
-         lum = lum+dlum;
-         if (lum>maxdist) lum = maxdist;
-         lum = lum*lummul;
-         dlum = dlum*0.84f;
-         { /* with */
-            struct imagetext_PIX * anonym = &panpar.image0->Adr[(xi)
+            { /* with */
+               struct imagetext_PIX * anonym = &panpar.image0->Adr[(xi)
                 *panpar.image0->Len0+yi];
-            if (heaven) {
-               /* heaven */
-               /*          hc:=VAL(REAL, 2*yi)/VAL(REAL,
+               if (heaven) {
+                  /* heaven */
+                  /*          hc:=VAL(REAL, 2*yi)/VAL(REAL,
                 HIGH(panpar.image^[0]))-1.0; */
-               /*          hc:=(ele0 + eled*FLOAT(yi))*6.0; */
-               hc = X2C_DIVR(((float)
+                  /*          hc:=(ele0 + eled*FLOAT(yi))*6.0; */
+                  hc = X2C_DIVR(((float)
                 yi+X2C_DIVR(panpar.elevation*1.7453292519444E-2f,azid))*2.0f,
                 (float)(panpar.image0->Len0-1))-1.0f;
-               if (hc<0.0f) hc = 0.0f;
-               else if (hc>1.0f) hc = 1.0f;
-               hc1 = 1.0f-hc;
-               anonym->r = (uint16_t)truncc(lum*hc1+lum*hr*hc);
-               anonym->g = (uint16_t)truncc(lum*hc1+lum*hg*hc);
-               anonym->b = (uint16_t)truncc(lum*hc1+lum*hb*hc);
+                  if (hc<0.0f) hc = 0.0f;
+                  else if (hc>1.0f) hc = 1.0f;
+                  hc1 = 1.0f-hc;
+                  anonym->r = (uint16_t)truncc(lum*hc1+lum*hr*hc);
+                  anonym->g = (uint16_t)truncc(lum*hc1+lum*hg*hc);
+                  anonym->b = (uint16_t)truncc(lum*hc1+lum*hb*hc);
+               }
+               else {
+                  anonym->r = (uint16_t)truncc(lr);
+                  anonym->g = (uint16_t)truncc(lg);
+                  anonym->b = (uint16_t)truncc(lb);
+               }
+               or = (float)anonym->r;
+               og = (float)anonym->g;
+               ob = (float)anonym->b;
+               if (firsty) {
+                  /* antialiasing */
+                  anonym->r = (uint16_t)truncc(or*space+oor*(1.0f-space));
+                  anonym->g = (uint16_t)truncc(og*space+oog*(1.0f-space));
+                  anonym->b = (uint16_t)truncc(ob*space+oob*(1.0f-space));
+               }
+               firsty = 1;
+               oor = or;
+               oog = og;
+               oob = ob;
             }
-            else {
-               anonym->r = (uint16_t)truncc(lr);
-               anonym->g = (uint16_t)truncc(lg);
-               anonym->b = (uint16_t)truncc(lb);
-            }
-            or = (float)anonym->r;
-            og = (float)anonym->g;
-            ob = (float)anonym->b;
-            if (yi>1UL) {
-               anonym->r = (uint16_t)truncc(or*space+oor*(1.0f-space));
-               anonym->g = (uint16_t)truncc(og*space+oog*(1.0f-space));
-               anonym->b = (uint16_t)truncc(ob*space+oob*(1.0f-space));
-            }
-            oor = or;
-            oog = og;
-            oob = ob;
+            dlum = dlum*((1.0f-(X2C_DIVR(d,maxdist))*0.15f)-X2C_DIVR(80.0f,
+                (float)(panpar.image0->Len0-1)));
+                /* fade out distance highpass peak */
          }
          ++yi;
       } while (yi<=panpar.image0->Len0-1);
@@ -975,37 +1194,10 @@ static void Panorama1(const struct PANOWIN panpar)
 {
    float res;
    struct aprsstr_POSITION pos;
-   Panofind(0, panpar, &res, &pos);
+   Panofind(rastercsv, panpar, &res, &pos);
 } /* end Panorama1() */
 
 /* ------- poi resverse raytrace */
-
-static void wrcsv(int32_t px, int32_t py,
-                const struct aprsstr_POSITION posdeg, const char text[],
-                uint32_t text_len)
-{
-   char h[1001];
-   char s[1001];
-   if (csvfn[0U]) {
-      if (csvfd<0L) csvfd = osi_OpenWrite(csvfn, 1024ul);
-      if (csvfd<0L) Error("cannot write csv-file", 22ul);
-      aprsstr_IntToStr(px, 0UL, s, 1001ul);
-      aprsstr_Append(s, 1001ul, ",", 2ul);
-      aprsstr_IntToStr(py, 0UL, h, 1001ul);
-      aprsstr_Append(s, 1001ul, h, 1001ul);
-      aprsstr_Append(s, 1001ul, ",", 2ul);
-      aprsstr_FixToStr(posdeg.lat, 6UL, h, 1001ul);
-      aprsstr_Append(s, 1001ul, h, 1001ul);
-      aprsstr_Append(s, 1001ul, ",", 2ul);
-      aprsstr_FixToStr(posdeg.long0, 6UL, h, 1001ul);
-      aprsstr_Append(s, 1001ul, h, 1001ul);
-      aprsstr_Append(s, 1001ul, ",", 2ul);
-      aprsstr_Append(s, 1001ul, text, text_len);
-      aprsstr_Append(s, 1001ul, "\012", 2ul);
-      osi_WrBin(csvfd, (char *)s, 1001u/1u, aprsstr_Length(s, 1001ul));
-   }
-} /* end wrcsv() */
-
 
 static char drawpoiicon(float xi, float yi,
                 struct PANOWIN panpar, const SYMBOL sym, uint32_t xs,
@@ -1041,16 +1233,15 @@ static char drawpoiicon(float xi, float yi,
                { /* with */
                   struct imagetext_PIX * anonym = &panpar.image0->Adr[(x+ix)
                 *panpar.image0->Len0+(y+iy)];
-                  a = (uint32_t)sym[iyr][ix].alpha;
-                  a = (a*calpha)/256UL;
+                  a = ((uint32_t)sym[iyr][ix].alpha*calpha)/256UL;
                   ar = 255UL-a;
                   /*WrInt(sym[iyr][ix].alpha, 4); */
                   anonym->r = (uint16_t)(((a*(uint32_t)
-                sym[iyr][ix].r8*cr)/64UL+ar*(uint32_t)anonym->r)/256UL);
+                sym[iyr][ix].r8*cr)/64UL+ar*(uint32_t)anonym->r)/255UL);
                   anonym->g = (uint16_t)(((a*(uint32_t)
-                sym[iyr][ix].g8*cg)/64UL+ar*(uint32_t)anonym->g)/256UL);
+                sym[iyr][ix].g8*cg)/64UL+ar*(uint32_t)anonym->g)/255UL);
                   anonym->b = (uint16_t)(((a*(uint32_t)
-                sym[iyr][ix].b8*cb)/64UL+ar*(uint32_t)anonym->b)/256UL);
+                sym[iyr][ix].b8*cb)/64UL+ar*(uint32_t)anonym->b)/255UL);
                }
                if (ix==tmp0) break;
             } /* end for */
@@ -1260,6 +1451,8 @@ static void setpoi(const struct PANOWIN panpar,
                 const struct aprsstr_POSITION posdeg, float alti,
                 const char text[], uint32_t text_len, pPOI pp)
 {
+   float resol;
+   float alt;
    float d;
    float az;
    struct aprsstr_POSITION pos;
@@ -1291,7 +1484,11 @@ static void setpoi(const struct PANOWIN panpar,
       }
       osi_WrStrLn("", 1ul);
    }
-   if (px>=0L) wrcsv(px, py, posdeg, text, text_len);
+   if (px>=0L) {
+      alt = libsrtm_getsrtm(pos, 0UL, &resol);
+      if (alti>=10000.0f || alti<alt) alti = alt;
+      wrcsv(px, py, posdeg, alti, text, text_len, pp->iconhint, 1024ul);
+   }
 } /* end setpoi() */
 
 /* ------- poi resverse raytrace */
@@ -1372,7 +1569,7 @@ static void rdmountain(const struct PANOWIN panpar, char fn[],
                   if (r>0L) {
                      r = getword(&p, &len, fd, b, s, 1024ul);
                      if (r<0L || !aprsstr_StrToFix(&alt, s, 1024ul)) {
-                        alt = 0.0f;
+                        alt = (-3.E+4f);
                      }
                      while (r>0L) r = getword(&p, &len, fd, b, s, 1024ul);
                   }
@@ -1466,6 +1663,9 @@ static void scale(const struct PANOWIN panpar)
       }
    }
    a = a*b; /* 1 2 5 10 deg / step */
+   if (a>90UL) a = 180UL;
+   else if (a>60UL) a = 90UL;
+   else if (a>20UL) a = 60UL;
    /*WrInt(a, 10); WrStrLn(" deg/ step"); */
    azi = aprspos_azimuth(panpar.eye, panpar.horizon);
    wx = azi-panpar.angle0*0.5f;
@@ -1553,6 +1753,8 @@ extern int main(int argc, char **argv)
    fonttyp = 0UL;
    altOG = 0;
    verb = 0;
+   libsrtm_bicubic = 0;
+   rastercsv = 0UL;
    Parms();
    if (xsize<20L) Error("xsize too less", 15ul);
    if (ysize<20L) Error("ysize too less", 15ul);

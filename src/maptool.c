@@ -577,6 +577,18 @@ static void setsrtmcache(void)
 } /* end setsrtmcache() */
 
 
+static float treealt(float alt, float treesize)
+{
+   float w;
+   if (alt>=1000.0f) {
+      w = X2C_DIVR(treesize*(2000.0f-alt),1000.0f);
+      if (w<0.0f) return 0.0f;
+      return w;
+   }
+   return treesize;
+} /* end treealt() */
+
+
 static void ruler(maptool_pIMAGE image, float m, float x, float y,
                 char over, char right)
 /* write meter to largest heigth */
@@ -632,9 +644,8 @@ extern int32_t maptool_geoprofile(maptool_pIMAGE image,
 {
    int32_t fstep;
    int32_t fs;
-   int32_t nn2;
-   int32_t nn;
    float yproj;
+   /*, posf*/
    float xproj;
    float ysh;
    float xsh;
@@ -669,7 +680,6 @@ extern int32_t maptool_geoprofile(maptool_pIMAGE image,
    float z0;
    float y00;
    float x0;
-   struct aprsstr_POSITION posf;
    struct aprsstr_POSITION pos;
    uint16_t red;
    uint16_t green;
@@ -677,20 +687,25 @@ extern int32_t maptool_geoprofile(maptool_pIMAGE image,
    pHTAB phmax;
    pHTAB pht;
    pHTAB phtab;
+   uint8_t attr;
+   float trees;
+   float nn2;
+   float nn;
    int32_t tmp;
    setsrtmcache();
+   trees = useri_conf2real(useri_fREFRACT, 1UL, 0.0f, 100.0f, 0.0f);
    *dist = 0.0f;
-   if (ant1nn) nn = 0L;
+   if (ant1nn) nn = 0.0f;
    else {
-      nn = (int32_t)X2C_TRUNCI(libsrtm_getsrtm(pos0, 0UL, &resol),
-                X2C_min_longint,X2C_max_longint);
+      nn = libsrtm_getsrtmlong((double)pos0.lat,
+                (double)pos0.long0, 30UL, 0, &resol, &attr, 0);
    }
-   if (nn<30000L) *a1 = (float)(nn+ant1);
+   if (nn<30000.0f) *a1 = nn+(float)ant1;
    else *a1 = (float)ant1;
    aprspos_wgs84s(pos0.lat, pos0.long0,  *a1*0.001f, &x0, &y00, &z0);
-   nn2 = (int32_t)X2C_TRUNCI(libsrtm_getsrtm(pos1, 0UL, &resol),
-                X2C_min_longint,X2C_max_longint);
-   if (nn2<30000L) *a2 = (float)(nn2+ant2);
+   nn2 = libsrtm_getsrtmlong((double)pos1.lat,
+                (double)pos1.long0, 30UL, 0, &resol, &attr, 0);
+   if (nn2<30000.0f) *a2 = nn2+(float)ant2;
    else *a2 = (float)ant2;
    aprspos_wgs84s(pos1.lat, pos1.long0,  *a2*0.001f, &x1, &y1, &z1);
    elevation(x0, y00, z0, x1, y1, z1, ele1, ele2);
@@ -702,7 +717,7 @@ extern int32_t maptool_geoprofile(maptool_pIMAGE image,
       libsrtm_closesrtmfile();
       return -3L;
    }
-   if (nn>=30000L || nn2>=30000L) {
+   if (nn>=30000.0f || nn2>=30000.0f) {
       libsrtm_closesrtmfile();
       return -1L;
    }
@@ -738,13 +753,20 @@ extern int32_t maptool_geoprofile(maptool_pIMAGE image,
          fs = -fstep;
          if (fs<=tmp) for (;; fs++) {
             kf = (X2C_DIVR((float)fs*resol,2.E+7f))*3.1415926535898f;
-            posf.lat = pos.lat+kf*osic_sin(nv);
-            posf.long0 = pos.long0-kf*osic_cos(nv);
             dh = sqr(fres*0.5f)-sqr((float)fs*resol);
-            nn = (int32_t)X2C_TRUNCI(libsrtm_getsrtm(posf, 0UL,
-                &resol)+0.5f,X2C_min_longint,X2C_max_longint);
-            if (nn>=30000L) h = (-2.E+4f);
-            else h = (float)nn;
+            /*
+                    posf.lat:=pos.lat + kf*sin(nv);
+                    posf.long:=pos.long - kf*cos(nv);
+                    nn:=VAL(INTEGER, getsrtm(posf, 0, resol)+0.5);
+                    IF nn>=30000 THEN h:=HERR ELSE h:=VAL(REAL, nn) END;
+                (* m over ground *)
+            */
+            nn = libsrtm_getsrtmlong((double)(pos.lat+kf*osic_sin(nv)),
+                 (double)(pos.long0-kf*osic_cos(nv)), 30UL, 0, &resol,
+                &attr, 0);
+            if (attr==2U) nn = nn+treealt(nn, trees);
+            if (nn>=30000.0f) h = (-2.E+4f);
+            else h = nn;
             if (dh>0.0f) {
                dh = osic_sqrt(dh);
                h0 = hmid-dh;
@@ -781,8 +803,7 @@ extern int32_t maptool_geoprofile(maptool_pIMAGE image,
                   if (pht) {
                      pht->next = phtab;
                      phtab = pht;
-                     pht->alt = hmid-(float)nn;
-                /* meters over (or under) ground */
+                     pht->alt = hmid-nn; /* meters over (or under) ground */
                      pht->tx = x; /* pixel on screen */
                      pht->ty = y;
                   }
@@ -1178,7 +1199,7 @@ extern void maptool_Radiorange(maptool_pIMAGE image,
    uint32_t yp;
    uint32_t xp;
    int32_t void0;
-   int32_t nn;
+   float trees;
    float antdiff;
    float hgnd;
    float azi;
@@ -1212,6 +1233,7 @@ extern void maptool_Radiorange(maptool_pIMAGE image,
    float oodist;
    float yi;
    float xi;
+   float nn;
    float ytx;
    float xtx;
    float y;
@@ -1229,26 +1251,26 @@ extern void maptool_Radiorange(maptool_pIMAGE image,
    struct aprsstr_POSITION pos1;
    struct aprsstr_POSITION pos0;
    struct aprsstr_POSITION pos;
+   uint8_t attr;
    uint32_t startt;
    char ss[101];
    startt = osic_time();
-   nn = (int32_t)X2C_TRUNCI(libsrtm_getsrtm(txpos, 0UL, &resoltx),
-                X2C_min_longint,X2C_max_longint);
+   nn = libsrtm_getsrtm(txpos, 0UL, &resoltx);
                 /* altitude of tx an map resolution in m here */
-   if (nn>=30000L) {
+   if (nn>=30000.0f) {
       libsrtm_closesrtmfile();
       return;
    }
    memset((char *) &diagram,(char)0,sizeof(struct _2));
    antparm(colnr);
    setsrtmcache();
-   atx = (float)(nn+ant1); /* ant1 over NN */
+   atx = nn+(float)ant1; /* ant1 over NN */
    aprspos_wgs84s(txpos.lat, txpos.long0, atx*0.001f, &x0, &y00, &z0);
    arx = (float)ant2; /* ant2 over ground */
    antdiff = arx-atx;
    xi = 0.0f;
    yi = 0.0f;
-   nn = maptool_mapxy(txpos, &xtx, &ytx);
+   void0 = maptool_mapxy(txpos, &xtx, &ytx);
    frame = 0UL;
    mperpix = meterperpix(image); /* meter per pixel */
    if (mperpix<1.0f) {
@@ -1269,6 +1291,7 @@ extern void maptool_Radiorange(maptool_pIMAGE image,
       framestep = 1.0f;
       qual = (uint32_t)X2C_TRUNCC(mperpix*0.25f,0UL,X2C_max_longcard);
    }
+   trees = useri_conf2real(useri_fREFRACT, 1UL, 0.0f, 100.0f, 0.0f);
    if (smooth>0UL) osmooth = X2C_DIVR(1000.0f,(float)smooth);
    else osmooth = 1000.0f;
    refr = refrac*0.0785f;
@@ -1323,10 +1346,12 @@ extern void maptool_Radiorange(maptool_pIMAGE image,
                pos.lat = pos0.lat+dpos.lat*d;
                pos.long0 = pos0.long0+dpos.long0*d;
                alt = (alt0+dalt*d)-d*d*dm;
-               hgnd = libsrtm_getsrtm(pos, qual, &resol);
+               hgnd = libsrtm_getsrtmlong((double)pos.lat,
+                (double)pos.long0, qual, 0, &resol, &attr, 0);
                 /* ground over NN in m */
                if (hgnd<30000.0f) {
                   /* srtm valid */
+                  if (attr==2U) hgnd = hgnd+treealt(hgnd, trees);
                   h = hgnd-alt; /* m ground over searchpath */
                   hs = rais*d; /* h sight line m over searchpath */
                   sight = (h+arx)-hs;
@@ -1489,6 +1514,7 @@ extern char maptool_SimpleRelief(maptool_pIMAGE image)
    float jd;
    float jr;
    float hr;
+   float mperpix2;
    float mperpix;
    float resol;
    struct aprsstr_POSITION pos1;
@@ -1531,10 +1557,11 @@ extern char maptool_SimpleRelief(maptool_pIMAGE image)
          b:=xi; 
    */
    mperpix = meterperpix(image);
-   if (mperpix<1.0f) {
+   if (mperpix<0.5f) {
       libsrtm_closesrtmfile();
       return 0;
    }
+   mperpix2 = osic_sqrt(mperpix);
    qual = aprsdecode_trunc(mperpix*0.25f);
    jump = 1UL+aprsdecode_trunc(X2C_DIVR(6000.0f,mperpix));
    memset((char *)hist,(char)0,40000UL);
@@ -1605,7 +1632,7 @@ extern char maptool_SimpleRelief(maptool_pIMAGE image)
                 (* highpass level *) */
       /*    difmul:=trunc(50000000.0/(sqrt(mperpix)*FLOAT(h)));
                 (* highpass level *) */
-      jm = X2C_DIVR(2.0f*(float)bri,(float)h*osic_sqrt(mperpix));
+      jm = X2C_DIVR(2.0f*(float)bri,(float)h*mperpix2);
       tmp = image->Len0-1;
       yp = 0UL;
       if (yp<=tmp) for (;; yp++) {
@@ -1677,7 +1704,8 @@ static void raytrace(float minqual, float x0, float y00,
                 float z0, float dx, float dy, float dz,
                 float maxdist, float * dist, float * lum,
                 float * h, float * alt, float * subpix,
-                struct aprsstr_POSITION * pos, float refrac)
+                struct aprsstr_POSITION * pos, float refrac,
+                float trees)
 {
    float deltah;
    float minsp;
@@ -1685,9 +1713,10 @@ static void raytrace(float minqual, float x0, float y00,
    float lastsp;
    float h2;
    float h1;
+   float h0;
    float resol;
    float qual;
-   struct aprsstr_POSITION pos1;
+   uint8_t attr;
    *lum = 1.0f;
    qual = minqual;
    minsp = 0.0f;
@@ -1708,11 +1737,14 @@ static void raytrace(float minqual, float x0, float y00,
       IF mapxy(pos, xtt, ytt)>=-1 THEN
       waypoint(testimg, xtt,ytt,1.0, 255,255,100); END;
       */
-      *h = libsrtm_getsrtm(*pos, aprsdecode_trunc(qual), &resol);
-                /* ground over NN in m */
+      h0 = libsrtm_getsrtmlong((double)pos->lat,
+                (double)pos->long0, aprsdecode_trunc(qual), 0, &resol,
+                &attr, 0); /* ground over NN in m */
       /*WrFixed(dist, 1,15); WrFixed(alt, 1,15); WrFixed(h, 1,15);
                 WrStr(" =d alt h"); */
-      if (*h<30000.0f) {
+      if (h0<30000.0f) {
+         if (attr==2U) *h = h0+treealt(h0, trees);
+         else *h = h0;
          sp = *alt-*h;
          if (sp>0.0f) {
             qual = sp*0.25f;
@@ -1724,24 +1756,14 @@ static void raytrace(float minqual, float x0, float y00,
          }
          else {
             /* hit earth */
-            pos1.lat = pos->lat+4.7123889803847E-6f;
-            pos1.long0 = pos->long0;
-            h1 = libsrtm_getsrtm(pos1, 1UL, &resol);
-            pos1.long0 = pos->long0+X2C_DIVR(4.7123889803847E-6f,
-                osic_cos(pos->lat));
-            pos1.lat = pos->lat;
-            h2 = libsrtm_getsrtm(pos1, 1UL, &resol);
-            *lum = osic_cos(osic_arctan((h1-*h)*3.3333333333333E-2f))
-                *osic_cos(osic_arctan((h2-*h)*3.3333333333333E-2f));
-            /*        lum:=1.0-ABS(h-h1)*(2.0/TESTDIST); */
-            /*        IF lum>1.0 THEN lum:=1.0 END; */
-            /*
-                    pos.long:=pos.long + (TESTDIST/20000000.0*pi)
-                /cos(pos.lat);
-                    h2:=getsrtm(pos, trunc(qual), resol);
-                    lum:=cos(arctan(ABS(h1-h)*(1.0/TESTDIST)))
-                *cos(arctan(ABS(h2-h)*(1.0/TESTDIST)));
-            */
+            h1 = libsrtm_getsrtmlong((double)
+                (pos->lat+4.7123889803847E-6f), (double)pos->long0,
+                1UL, 0, &resol, &attr, 0);
+            h2 = libsrtm_getsrtmlong((double)pos->lat,
+                (double)(pos->long0+X2C_DIVR(4.7123889803847E-6f,
+                osic_cos(pos->lat))), 1UL, 0, &resol, &attr, 0);
+            *lum = osic_cos(osic_arctan((h1-h0)*3.3333333333333E-2f))
+                *osic_cos(osic_arctan((h2-h0)*3.3333333333333E-2f));
             if (deltah!=0.0f) {
                *subpix = X2C_DIVR(minsp,deltah);
                if (*subpix>1.0f) *subpix = 1.0f;
@@ -1785,6 +1807,7 @@ static void Panofind(char find, const struct maptool_PANOWIN panpar,
    uint32_t yi;
    uint32_t xi;
    int32_t nn;
+   float trees;
    float refrac;
    float oob;
    float oog;
@@ -1869,6 +1892,7 @@ static void Panofind(char find, const struct maptool_PANOWIN panpar,
       libsrtm_closesrtmfile();
       return;
    }
+   trees = useri_conf2real(useri_fREFRACT, 1UL, 0.0f, 100.0f, 0.0f);
    atx = (float)(nn+panpar.eyealt); /* ant1 over NN */
    aprspos_wgs84s(panpar.eye.lat, panpar.eye.long0, atx*0.001f, &x0, &y00,
                 &z0);
@@ -1910,7 +1934,9 @@ static void Panofind(char find, const struct maptool_PANOWIN panpar,
       do {
          if (!heaven) {
             wy = ele0+eled*(float)yi;
-            if (panpar.flatscreen) wy = osic_arctan(wy);
+            if (panpar.flatscreen) {
+               wy = osic_arctan(wy);
+            }
             /*IF xi=0 THEN WrFixed(wx/RAD, 2, 8); WrFixed(wy/RAD, 2, 8);
                 WrStr(" wx wy"); END; */
             zn = osic_cos(wx)*osic_cos(wy);
@@ -1924,7 +1950,8 @@ static void Panofind(char find, const struct maptool_PANOWIN panpar,
             /*IF (ABS(wy)>0.5) & (d>maxdist*0.1) THEN d:=d-maxdist*0.1 END;
                 (* jump back if sight from above *) */
             raytrace(5.0f, x0, y00, z0, xn*0.001f, yn*0.001f, zn*0.001f,
-                maxdist, &d, &light, &oldh, &lasth, &space, pos, refrac);
+                maxdist, &d, &light, &oldh, &lasth, &space, pos, refrac,
+                trees);
             if (d>maxdist) heaven = 1;
             if (find) {
                if (heaven) aprsstr_posinval(pos);
@@ -1985,7 +2012,9 @@ static void Panofind(char find, const struct maptool_PANOWIN panpar,
                hc = X2C_DIVR(((float)
                 yi+X2C_DIVR(panpar.elevation*1.7453292519444E-2f,azid))*2.0f,
                 (float)(panpar.image->Len0-1))-1.0f;
-               if (hc<0.0f) hc = 0.0f;
+               if (hc<0.0f) {
+                  hc = 0.0f;
+               }
                else if (hc>1.0f) hc = 1.0f;
                hc1 = 1.0f-hc;
                anonym->r = (uint16_t)aprsdecode_trunc(lum*hc1+lum*hr*hc);
@@ -2066,6 +2095,7 @@ extern void maptool_xytoloc(struct aprsstr_POSITION mpos, char s[],
    char h[101];
    int32_t nn;
    float resol;
+   uint8_t attr;
    /*  xytodeg(VAL(REAL,x), VAL(REAL,y), mpos); */
    aprstext_postostr(mpos, '3', s, s_len);
    aprsstr_Append(s, s_len, " \373", 3ul);
@@ -2082,13 +2112,17 @@ extern void maptool_xytoloc(struct aprsstr_POSITION mpos, char s[],
    aprsstr_postoloc(h, 101ul, mpos);
    aprsstr_Append(s, s_len, h, 101ul);
    aprsstr_Append(s, s_len, "\376", 2ul);
-   nn = (int32_t)X2C_TRUNCI(libsrtm_getsrtm(mpos, 0UL, &resol)+0.5f,
+   nn = (int32_t)X2C_TRUNCI(libsrtm_getsrtmlong((double)mpos.lat,
+                (double)mpos.long0, 30UL, 0, &resol, &attr, 0)+0.5f,
                 X2C_min_longint,X2C_max_longint);
    if (nn<30000L) {
       aprsstr_IntToStr(nn, 0UL, h, 101ul);
       aprsstr_Append(s, s_len, " ", 2ul);
       aprsstr_Append(s, s_len, h, 101ul);
       aprsstr_Append(s, s_len, "m", 2ul);
+      if (attr==3U) aprsstr_Append(s, s_len, "W", 2ul);
+      else if (attr==2U) aprsstr_Append(s, s_len, "T", 2ul);
+      else if (attr==1U) aprsstr_Append(s, s_len, "U", 2ul);
    }
    if (aprspos_posvalid(aprsdecode_click.markpos)) {
       /*(click.marktime=0) &*/

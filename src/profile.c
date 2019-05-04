@@ -661,19 +661,19 @@ ame (red green blue 0..1023)", 78ul);
 Fresnelzone (145)", 67ul);
                osi_WrStrLn(" -g <gamma>                        Image Gamma 0.\
 1..10 (2.2)", 61ul);
+               osi_WrStrLn(" -h                                this", 40ul);
                osi_WrStrLn(" -i <filename>                     Image File Nam\
 e", 51ul);
                osi_WrStrLn(" -k <factor>                       Kernel diamete\
 r of fresnel zone to full diameter (0.6)", 90ul);
-               osi_WrStrLn(" -h                                this", 40ul);
                osi_WrStrLn(" -L <text>                         Label, apply a\
 fter -a and -b", 64ul);
                osi_WrStrLn(" -p <pathname>                     folder with /s\
 rtm1 /srtm3 /srtm30", 69ul);
-               osi_WrStrLn(" -r <refraction>                   0.0(vacuum)..1\
-.0(earth is a disk) (0.25)", 76ul);
                osi_WrStrLn(" -R <refraction>                   same but earth\
  curvature added to Ground", 76ul);
+               osi_WrStrLn(" -r <refraction>                   0.0(vacuum)..1\
+.0(earth is a disk) (0.25)", 76ul);
                osi_WrStrLn(" -w <m>                            Wood higth (0)\
  (from 1000 to 2000NN reduced till 0", 86ul);
                osi_WrStrLn(" -x <size>                         Image size (60\
