@@ -355,18 +355,25 @@ static void Event(char * * atask, l2_pLINK link0, uint8_t event)
       ntask->crlfmode = convlfcr;
       ntask->detectdone = (uint32_t)autodet;
       l2_GetAdress0(link0, &ntask->l2addr);
-      memset((char *) &connect,(char)0,sizeof(struct l2_CONNECT));
-      connect.port = ntask->l2addr.port;
-      connect.baud = 1U;
-      connect.cpid = 240U;
-      connect.l2adr = (l2_pSTRING)ntask->l2addr.adress;
-      connect.typ = l2_cCONNAK;
-      ntask->link0 = l2_Connect0((char *)ntask, &connect);
-      ntask->next = tasks;
-      tasks = ntask;
-      if (verb) {
-         WerrCall(ntask);
-         osi_Werr(" connreq\012", 10ul);
+      if (ntask->l2addr.my>0U) {
+         /* not via digiall */
+         memset((char *) &connect,(char)0,sizeof(struct l2_CONNECT));
+         connect.port = ntask->l2addr.port;
+         connect.baud = 1U;
+         connect.cpid = 240U;
+         connect.l2adr = (l2_pSTRING)ntask->l2addr.adress;
+         connect.typ = l2_cCONNAK;
+         ntask->link0 = l2_Connect0((char *)ntask, &connect);
+         ntask->next = tasks;
+         tasks = ntask;
+         if (verb) {
+            WerrCall(ntask);
+            osi_Werr(" connreq\012", 10ul);
+         }
+      }
+      else {
+         osic_free((char * *) &ntask, sizeof(struct TASK));
+         if (verb) osi_Werr(" via\012", 6ul);
       }
    }
    else if (event==l2_eFLEXDATA) l2_GetAdress0(link0, &gadr);
@@ -780,7 +787,7 @@ late + ppp on first bytes", 75ul);
                osi_WrStrLn("                                     ppp + deflat\
 e:\"!p\",deflate;\"!d\"", 69ul);
                osi_WrStrLn("                                     LF to CR:\"!\
-l\", strip LF:\"!L\"", 66ul);
+l\", strip LF:\"!L\", transparent:\"!8\"", 84ul);
                osi_WrStrLn(" -C <destination>                  slave connect \
 destination -C \"OE0AAA-12 OE5XBL\"", 83ul);
                osi_WrStrLn("                                     if no \"-C\"\
@@ -1328,6 +1335,10 @@ static void detect(pTASK pt0)
                anonym->crlfmode = 2UL;
                i0 = 1L;
                if (verb) osi_Werr("task switched delete LF on\012", 28ul);
+            }
+            else if (anonym->inbuf[0U]=='8') {
+               i0 = 1L;
+               if (verb) osi_Werr("task switched transparent\012", 27ul);
             }
             anonym->detectdone = 0UL;
          }
