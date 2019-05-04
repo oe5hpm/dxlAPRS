@@ -22,6 +22,7 @@
 #                               using srtm-datafiles
 # - panorama		makes png Image + csv-file from landscape with poi markers
 #                               using srtm-datafiles
+# - cmslogin	l2cat task for bidirectional TCP connect and password login in CMS server
 # ---------------------- common section ---------------------------------------
 HOSTARCH := $(shell uname -m | \
 	sed -e s/i.86/x86/ \
@@ -203,6 +204,7 @@ OBJ_PANORAMA = $(OUT)panorama.o\
 	$(OUT)libsrtm.o \
 	$(OUT)pngwrite.o \
 	$(OUT)pngread.o
+OBJ_CMSLOGIN = $(OUT)cmslogin.o
 
 TARGETS += \
 	$(OUT)afskmodem \
@@ -220,7 +222,8 @@ TARGETS += \
 	$(OUT)adsb2aprs \
 	$(OUT)profile \
 	$(OUT)radiorange \
-	$(OUT)panorama
+	$(OUT)panorama \
+	$(OUT)cmslogin \
 
 ifneq ($(HOSTOS), Darwin)
 	TARGETS += $(OUT)l2cat
@@ -244,7 +247,8 @@ OBJS = \
 	$(OBJ_ADSB2APRS) \
 	$(OBJ_PROFILE) \
 	$(OBJ_RADIORANGE) \
-	$(OBJ_PANORAMA)
+	$(OBJ_PANORAMA) \
+	$(OBJ_CMSLOGIN)	\
 
 # ------------------- target make rules -------------------
 #                     -----------------
@@ -365,6 +369,10 @@ $(OUT)radiorange: $(OBJ_RADIORANGE) $(OBJ_COMMON)
 $(OUT)panorama: $(OBJ_PANORAMA) $(OBJ_COMMON)
 	$(CC) $(LFLAGS) -o $@ $(OBJ_PANORAMA) $(OBJ_COMMON) \
 	$(XLIBS) -lm
+	$(STRIP) $@ $(STRIPFLAGS)
+
+$(OUT)cmslogin: $(OBJ_CMSLOGIN) $(OBJ_COMMON)
+	$(CC) $(LFLAGS) -o $@ $(OBJ_COMMON) $(OBJ_CMSLOGIN) -lm
 	$(STRIP) $@ $(STRIPFLAGS)
 
 %:
