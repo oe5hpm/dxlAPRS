@@ -225,6 +225,7 @@ struct CHAN {
    char * hptt;
    char pttstate;
    char tnrzi;
+   char echoflags;
    uint8_t state;
    uint8_t duplex;
    float persist;
@@ -882,6 +883,7 @@ static void Parms(void)
          anonym->configpersist = 800UL;
          anonym->tscramb = 0x1UL; /* for bert */
          anonym->gmqtime = 0UL;
+         anonym->echoflags = 0;
       }
       if (c==afskmodem_RIGHT) break;
    } /* end for */
@@ -946,9 +948,7 @@ static void Parms(void)
             }
          }
          else if (h[1U]=='B') {
-            if (modem<0L && channel<0L) {
-               badsounddriver = 1;
-            }
+            if (modem<0L && channel<0L) badsounddriver = 1;
             else {
                osi_NextArg(h, 1024ul);
                if (!aprsstr_StrToInt(h, 1024ul, &inum)) err = 1;
@@ -1185,8 +1185,9 @@ static void Parms(void)
          else if (h[1U]=='x') {
             if (modem>=0L) {
                osi_NextArg(h, 1024ul);
-               if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
-               modpar[modem].configtxtail = cnum;
+               if (!aprsstr_StrToInt(h, 1024ul, &inum)) err = 1;
+               modpar[modem].configtxtail = (uint32_t)labs(inum);
+               chan[channel].echoflags = inum<0L;
             }
             else Error("need modem number -M before -x", 31ul);
          }
@@ -2489,7 +2490,8 @@ static void sendmodem(void)
       { /* with */
          struct CHAN * anonym = &chan[c];
          if (anonym->pttsoundbufs>0UL) --anonym->pttsoundbufs;
-         if (anonym->state==afskmodem_receiv) {
+         if (anonym->state==afskmodem_receiv || anonym->state==afskmodem_sendtxtail)
+                 {
             for (i = 0L; i<=7L; i++) {
                /* has any modem data? */
                /*
@@ -2646,8 +2648,17 @@ static void sendmodem(void)
                         }
                         else if (anonym0->tbytec>modpar[anonym0->actmodem]
                 .txtail) {
-                           anonym0->state = afskmodem_receiv;
+                           if (anonym0->echoflags) {
+                              ptt(anonym0->hptt,
+                (int32_t)(uint32_t)modpar[anonym0->actmodem].haddcdrand);
+                 /* echo flags if dcd */
+                              anonym0->tbytec = modpar[anonym0->actmodem]
+                .txtail; /* stay in this mode until new data send */
+                           }
+                           else {
+                              anonym0->state = afskmodem_receiv;
                 /* no data for this modem */
+                           }
                         }
                      }
                      if (anonym0->state==afskmodem_senddata) {
@@ -2683,7 +2694,9 @@ static void sendmodem(void)
                   else anonym0->txstuffc = 0L;
                   /*stuff*/
                   /* nrzi */
-                  if (!(anonym0->tbyte&1)) anonym0->tnrzi = !anonym0->tnrzi;
+                  if (!(anonym0->tbyte&1)) {
+                     anonym0->tnrzi = !anonym0->tnrzi;
+                  }
                   /*
                               IF modpar[actmodem].scramb THEN
                                 tscramb:=CAST(BITSET, CAST(CARDINAL,
