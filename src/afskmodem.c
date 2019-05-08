@@ -2490,7 +2490,7 @@ static void sendmodem(void)
       { /* with */
          struct CHAN * anonym = &chan[c];
          if (anonym->pttsoundbufs>0UL) --anonym->pttsoundbufs;
-         if (anonym->state==afskmodem_receiv || anonym->state==afskmodem_sendtxtail)
+         if (anonym->state==afskmodem_receiv || anonym->state==afskmodem_sendtxtail && anonym->tbytec>5UL)
                  {
             for (i = 0L; i<=7L; i++) {
                /* has any modem data? */
@@ -2626,9 +2626,7 @@ static void sendmodem(void)
                            ++anonym0->tbytec;
                         }
                         if (anonym0->tbytec>=modpar[anonym0->actmodem].txdel)
-                 {
-                           anonym0->tbyte = 126UL; /* 1 flag minimum */
-                        }
+                 anonym0->tbyte = 126UL;
                         if (anonym0->tbytec>modpar[anonym0->actmodem].txdel) {
                            anonym0->state = afskmodem_senddata;
                            anonym0->tbytec = 0UL;
