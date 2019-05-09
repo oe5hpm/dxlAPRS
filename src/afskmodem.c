@@ -2470,6 +2470,12 @@ static char frames2tx(int32_t modem)
    return tx;
 } /* end frames2tx() */
 
+#define afskmodem_MINENDFLAGS 3
+/* txtail between different modulation frames*/
+
+#define afskmodem_MINMIDDLFLAGS 6
+/* txtdel between different modulation frames*/
+
 
 static void sendmodem(void)
 {
@@ -2490,8 +2496,9 @@ static void sendmodem(void)
       { /* with */
          struct CHAN * anonym = &chan[c];
          if (anonym->pttsoundbufs>0UL) --anonym->pttsoundbufs;
-         if (anonym->state==afskmodem_receiv || anonym->state==afskmodem_sendtxtail && anonym->tbytec>5UL)
+         if (anonym->state==afskmodem_receiv || anonym->state==afskmodem_sendtxtail && anonym->tbytec>3UL)
                  {
+            /* minimum flags at end if baud change */
             for (i = 0L; i<=7L; i++) {
                /* has any modem data? */
                /*
@@ -2528,7 +2535,12 @@ static void sendmodem(void)
                /* more data, ptt is on*/
                anonym->state = afskmodem_sendtxdel;
                anonym->tbitc = 0L;
-               anonym->tbytec = 0UL;
+               /*          tbytec:=0; */
+               if (6UL>modpar[anonym->actmodem].txdel) anonym->tbytec = 6UL;
+               else {
+                  anonym->tbytec = modpar[anonym->actmodem].txdel-6UL;
+                /* start flags after modulation change */
+               }
                txmon(modpar[anonym->actmodem].txbufin);
             }
             else {
@@ -2692,9 +2704,7 @@ static void sendmodem(void)
                   else anonym0->txstuffc = 0L;
                   /*stuff*/
                   /* nrzi */
-                  if (!(anonym0->tbyte&1)) {
-                     anonym0->tnrzi = !anonym0->tnrzi;
-                  }
+                  if (!(anonym0->tbyte&1)) anonym0->tnrzi = !anonym0->tnrzi;
                   /*
                               IF modpar[actmodem].scramb THEN
                                 tscramb:=CAST(BITSET, CAST(CARDINAL,
