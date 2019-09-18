@@ -70,7 +70,8 @@ enum COLS {profile_cEARTH, profile_cHEAVEN, profile_cFRESIN,
                 profile_cFRESOUT, profile_cOPTALT, profile_cSCALERS,
                 profile_cMLINES, profile_cFRESLINE, 
    profile_cMEADOW, profile_cTEXT1, profile_cTEXT2, profile_cTEXT3,
-                profile_cTEXTSCALE, profile_cBRANCH, profile_cTRUNC};
+                profile_cTEXTSCALE, profile_cBRANCH, profile_cTRUNC,
+                profile_cWATER, profile_cWOOD, profile_cURBAN};
 
 
 struct POSITIONL;
@@ -99,6 +100,8 @@ struct PATH {
    double wood;
    double alt;
    float resol;
+   uint8_t attr;
+   char treepri;
 };
 
 
@@ -167,6 +170,8 @@ static char labela[100];
 
 static char labelb[100];
 
+static char realwood;
+
 static char opt;
 
 static char treedrawn;
@@ -180,7 +185,7 @@ struct _1 {
    uint32_t b;
 };
 
-static struct _1 colours[15];
+static struct _1 colours[18];
 
 
 static void Error(char text[], uint32_t text_len)
@@ -427,7 +432,7 @@ static void readcolours(char fn[], uint32_t fn_len)
             osi_Werr(h, 101ul);
             break;
          }
-         if (ci>=profile_cTRUNC) break;
+         if (ci>=profile_cURBAN) break;
          ++ci;
       }
       while ((int32_t)p<len && (uint8_t)s[p]>=' ') ++p;
@@ -445,7 +450,7 @@ static void Parms(void)
    struct aprsstr_POSITION posr;
    uint32_t label;
    /* default colours */
-   memset((char *)colours,(char)0,sizeof(struct _1 [15]));
+   memset((char *)colours,(char)0,sizeof(struct _1 [18]));
    colours[profile_cEARTH].r = 200UL;
    colours[profile_cEARTH].g = 120UL;
    colours[profile_cEARTH].b = 0UL;
@@ -491,6 +496,15 @@ static void Parms(void)
    colours[profile_cTRUNC].r = 300UL;
    colours[profile_cTRUNC].g = 200UL;
    colours[profile_cTRUNC].b = 0UL;
+   colours[profile_cWATER].r = 0UL;
+   colours[profile_cWATER].g = 200UL;
+   colours[profile_cWATER].b = 300UL;
+   colours[profile_cWOOD].r = 150UL;
+   colours[profile_cWOOD].g = 120UL;
+   colours[profile_cWOOD].b = 50UL;
+   colours[profile_cURBAN].r = 400UL;
+   colours[profile_cURBAN].g = 50UL;
+   colours[profile_cURBAN].b = 20UL;
    err = 0;
    label = 0UL;
    for (;;) {
@@ -770,7 +784,6 @@ static double fresnel(double a, double b,
 static void calcpath(void)
 {
    float res;
-   struct aprsstr_POSITION posr;
    double lambda;
    double a;
    double stepm;
@@ -792,17 +805,16 @@ static void calcpath(void)
    int32_t i;
    char errb[100];
    char erra[100];
+   uint8_t att;
    struct PATH * anonym;
    struct PATH * anonym0;
    int32_t tmp;
    int32_t tmp0;
-   posr.lat = (float)posa.lat;
-   posr.long0 = (float)posa.long0;
-   alta = (double)libsrtm_getsrtm(posr, 1UL, &res);
+   alta = (double)libsrtm_getsrtmlong(posa.lat, posa.long0, 1UL, 0,
+                &res, &att, 0);
    if (alta>=20000.0) errorimg("No Altitude Data at Antanna A", 30ul);
-   posr.lat = (float)posb.lat;
-   posr.long0 = (float)posb.long0;
-   altb = (double)libsrtm_getsrtm(posr, 1UL, &res);
+   altb = (double)libsrtm_getsrtmlong(posb.lat, posb.long0, 1UL, 0,
+                &res, &att, 0);
    if (altb>=20000.0) errorimg("No Altitude Data at Antanna B", 30ul);
    alta = alta+anta;
    altb = altb+antb;
@@ -864,11 +876,9 @@ static void calcpath(void)
             struct PATH * anonym = &path->Adr[i];
             wgs84r(x0+dx*k, y00+dy*k, z0+dz*k, &anonym->pos.lat,
                 &anonym->pos.long0, &anonym->optalt);
-            posr.lat = (float)anonym->pos.lat;
-            posr.long0 = (float)anonym->pos.long0;
-            a = (double)libsrtm_getsrtm(posr,
-                (uint32_t)X2C_TRUNCC(stepm,0UL,X2C_max_longcard),
-                &anonym->resol);
+            a = (double)libsrtm_getsrtmlong(anonym->pos.lat,
+                anonym->pos.long0, (uint32_t)X2C_TRUNCC(stepm,0UL,
+                X2C_max_longcard), 0, &anonym->resol, &anonym->attr, 0);
             if (a>anonym->alt) anonym->alt = a;
          }
          if (j==tmp0) break;
@@ -910,6 +920,11 @@ static void fresnelfree(double * airshadow, double * woodshadow)
    int32_t tmp;
    wd = (int32_t)X2C_TRUNCI(X2C_DIVL((double)(float)linksize,
                 dist),X2C_min_longint,X2C_max_longint); /* steps per km */
+   if (realwood) {
+      wd = (int32_t)X2C_TRUNCI((X2C_DIVL((double)(float)linksize,
+                dist))*0.03,X2C_min_longint,X2C_max_longint);
+                /* steps per 30m */
+   }
    *airshadow = 0.0;
    *woodshadow = 0.0;
    tmp = linksize-1L;
@@ -922,8 +937,8 @@ static void fresnelfree(double * airshadow, double * woodshadow)
          fs = anonym->fresm*2.0*kernel;
          if (fs<1.0) fs = 1.0;
          as = X2C_DIVL(gnd-fz,fs);
-         if (i>=wd && i<linksize-wd) {
-            /* wood only 1km from endpoints */
+         if ((path->Adr[i].attr==2U && i>=wd) && i<linksize-wd) {
+            /* wood only 1km/30m from endpoints */
             ws = X2C_DIVL((gnd+anonym->wood)-fz,fs);
             if (ws>*woodshadow) *woodshadow = ws;
          }
@@ -1021,11 +1036,12 @@ static void drawtree(int32_t x, double dalt, double treesize0)
    struct imagetext_PIX * anonym0;
    struct imagetext_PIX * anonym1;
    int32_t tmp;
+   if (treesize0<2.0) return;
    branchdense = 2L+(int32_t)X2C_TRUNCI(treesize0*0.05,X2C_min_longint,
                 X2C_max_longint);
    branches = (int32_t)X2C_TRUNCI(treesize0*0.5+sqrt(treesize0),
                 X2C_min_longint,X2C_max_longint);
-   treelum = X2C_DIVL(2.0,log(treesize0));
+   treelum = X2C_DIVL(1.5,log(treesize0));
    tmp = (int32_t)X2C_TRUNCI(treesize0,X2C_min_longint,X2C_max_longint)-1L;
                 
    y = 0L;
@@ -1100,50 +1116,56 @@ static void drawtree(int32_t x, double dalt, double treesize0)
 } /* end drawtree() */
 
 
-static void placetree(int32_t * x, double treesize0)
-{
-   int32_t mindist;
-   int32_t ff;
-   int32_t ix;
-   int32_t m;
-   double max0;
-   /*OR (ix=m+1)*/
-   struct PATH * anonym;
-   ix = *x+(int32_t)X2C_TRUNCI(treesize0*0.25,X2C_min_longint,
-                X2C_max_longint)+5L; /* min distance */
-   mindist = (int32_t)X2C_TRUNCI(treesize0*0.25,X2C_min_longint,
-                X2C_max_longint)+3L;
-   max0 = (-1.E+4);
-   m = 0L;
-   ff = 0L;
-   while (ix<linksize && (ff==0L || ix-ff<mindist)) {
-      { /* with */
-         struct PATH * anonym = &path->Adr[ix];
-         if ((((anonym->alt>=1.0 && anonym->alt<anonym->optalt+anonym->fresm*kernel)
-                 && anonym->alt+anonym->wood>anonym->optalt-anonym->fresm*kernel)
-                 && anonym->wood>anonym->fresm*kernel*0.5)
-                && anonym->alt-anonym->optalt>max0) {
-            /* tree is in fresnel zone and 1/4 as high */
-            m = ix;
-            max0 = anonym->alt-anonym->optalt;
-            if (ff==0L) ff = ix;
-         }
-      }
-      ++ix;
-   }
-   /*    IF (ff<>0) & (ix-ff>=mindist)
-                THEN x:=ff ELSIF m>0 THEN x:=m ELSE x:=ix END; */
-   if (ix==m+1L) *x = ff;
-   else if (m>0L) *x = m;
-   else *x = ix;
-} /* end placetree() */
-
-
 static double sc(double scale, double min0,
                 double y)
 {
    return (y-min0)*scale+(double)(float)frameyd;
 } /* end sc() */
+
+
+static double ai(double min0, double scale, int32_t x)
+{
+   return sc(scale, min0, path->Adr[x].alt);
+} /* end ai() */
+
+
+static void placetrees(double scale, double min0,
+                float scale0)
+{
+   int32_t i;
+   double h;
+   double lasta;
+   double d;
+   int32_t tmp;
+   d = 0.0;
+   lasta = 0.0;
+   tmp = linksize-2L;
+   i = 1L;
+   if (i<=tmp) for (;; i++) {
+      if (path->Adr[i].attr==2U && path->Adr[i].wood*(double)
+                scale0>4.0) {
+         /* mark wood with priority at begin and end */
+         h = ((2.0*ai(min0, scale, i)-ai(min0, scale, i-1L))-ai(min0, scale,
+                i+1L))*2.0; /* peak */
+         if (h<0.0) h = 0.0;
+         if (!path->Adr[i-1L].treepri && d<=(double)(10UL*(uint32_t)
+                (path->Adr[i+1L].attr!=2U))+h) {
+            path->Adr[i].treepri = 1;
+            h = path->Adr[i].wood*(double)scale0*0.15;
+                /*-ABS(lasta-ai(i))*/
+            if (h<0.0) h = 0.0;
+            d = d+1.0+h;
+            lasta = ai(min0, scale, i);
+         }
+         else d = d-1.0;
+      }
+      else {
+         d = 0.0;
+         lasta = 0.0;
+      }
+      if (i==tmp) break;
+   } /* end for */
+} /* end placetrees() */
 
 
 static void drawimage(void)
@@ -1176,9 +1198,9 @@ static void drawimage(void)
    char sss[100];
    char ss[100];
    char s[100];
+   uint8_t cc;
    struct imagetext_PIX * anonym;
    struct PATH * anonym0;
-   /* fill earth */
    struct imagetext_PIX * anonym1;
    struct imagetext_PIX * anonym2; /* fill fresnel area */
    /* vertical scale line left */
@@ -1217,7 +1239,7 @@ static void drawimage(void)
       }
       if (i==tmp) break;
    } /* end for */
-   /*** get scaleing ***/
+   /*** get scaling ***/
    min0 = path->Adr[0UL].alt;
    max0 = min0;
    maxw = min0;
@@ -1256,7 +1278,9 @@ static void drawimage(void)
    w = X2C_DIVL((double)(float)((ysize-1L)-frameyd),w);
    scale = X2C_DIVL((double)(float)(ysize-(frameyu+frameyd)),ah);
    if (w<scale) scale = w;
+   min0 = min0-X2C_DIVL(4.0,scale); /* space for waterblue */
    /*** draw graphs ***/
+   placetrees(scale, min0, (float)scale);
    lasttree = 0L;
    tmp = linksize-2L;
    i = 0L;
@@ -1265,40 +1289,57 @@ static void drawimage(void)
       a1 = path->Adr[i+1L].alt;
       if (a0<20000.0 && a1<20000.0) {
          ah = sc(scale, min0, a0);
+         if (path->Adr[i].attr==3U) cc = profile_cWATER;
+         else if (path->Adr[i].attr==2U) cc = profile_cWOOD;
+         else if (path->Adr[i].attr==1U) cc = profile_cURBAN;
+         else cc = profile_cMEADOW;
          drawcolon(i+framexl, ah, sc(scale, min0, a1),
-                (int32_t)colours[profile_cMEADOW].r,
-                (int32_t)colours[profile_cMEADOW].g,
-                (int32_t)colours[profile_cMEADOW].b);
-         tmp0 = (int32_t)X2C_TRUNCI(ah,X2C_min_longint,X2C_max_longint)-1L;
-                
+                (int32_t)colours[cc].r, (int32_t)colours[cc].g,
+                (int32_t)colours[cc].b);
+         tmp0 = (int32_t)X2C_TRUNCI(ah,X2C_min_longint,X2C_max_longint);
          y = frameyd+1L;
          if (y<=tmp0) for (;; y++) {
+            /* fill earth */
+            if (y+4L>(int32_t)X2C_TRUNCI(ah,X2C_min_longint,
+                X2C_max_longint) && path->Adr[i].attr==3U) {
+               cc = profile_cWATER;
+            }
+            else cc = profile_cEARTH;
             { /* with */
                struct imagetext_PIX * anonym1 = &image->Adr[(i+framexl)
                 *image->Len0+y];
-               anonym1->r += (uint16_t)colours[profile_cEARTH].r;
-               anonym1->g += (uint16_t)colours[profile_cEARTH].g;
-               anonym1->b += (uint16_t)colours[profile_cEARTH].b;
+               anonym1->r += (uint16_t)colours[cc].r;
+               anonym1->g += (uint16_t)colours[cc].g;
+               anonym1->b += (uint16_t)colours[cc].b;
             }
             if (y==tmp0) break;
          } /* end for */
-         if (((mhz>=30.0 && a0<path->Adr[i].optalt+path->Adr[i].fresm*kernel)
-                 && a0+path->Adr[i].wood>path->Adr[i].optalt-path->Adr[i]
-                .fresm*kernel) && path->Adr[i].wood>path->Adr[i].fresm*0.5*kernel)
-                 {
-            /* tree is in fresnel zone and 1/4 as high */
-            w = path->Adr[i].wood*scale; /* tree size in pixel */
-            if (w>4.0 && i>=lasttree) {
-               /* space between trees */
-               placetree(&lasttree, w);
-               if (lasttree<(int32_t)(path->Len0-1)) {
-                  drawtree(lasttree, sc(scale, min0,
-                path->Adr[lasttree].alt), path->Adr[lasttree].wood*scale);
-                  treedrawn = 1;
-               }
-            }
+         if (path->Adr[i].treepri) {
+            drawtree(i, sc(scale, min0, path->Adr[i].alt),
+                path->Adr[i].wood*scale);
+            treedrawn = 1;
          }
       }
+      /*      
+            IF (mhz>=30.0) & (a0<path^[i].optalt+path^[i].fresm*kernel)
+            & (a0+path^[i].wood>path^[i].optalt-path^[i].fresm*kernel)
+            & (path^[i].wood>path^[i].fresm*(0.5*kernel))
+                THEN       (* tree is in fresnel zone and 1/4 as high *)
+            
+              w:=path^[i].wood*scale;
+                (* tree size in pixel *)  
+              IF (w>4.0) & (i>=lasttree)
+                THEN                             (* space between trees *)
+                placetree(lasttree, w);
+                IF lasttree<VAL(INTEGER, HIGH(path^)) THEN
+                  drawtree(lasttree, sc(path^[lasttree].alt),
+                path^[lasttree].wood*scale);
+                  treedrawn:=TRUE;
+                END;
+              END;
+      
+            END;
+      */
       ao = path->Adr[i].optalt;
       drawcolon(i+framexl, sc(scale, min0, ao), sc(scale, min0,
                 path->Adr[i+1L].optalt),
@@ -1608,12 +1649,10 @@ static void drawimage(void)
 
 static void wralt(void)
 {
-   struct aprsstr_POSITION posr;
+   uint8_t att;
    float res;
    float a;
-   posr.lat = (float)posa.lat;
-   posr.long0 = (float)posa.long0;
-   a = libsrtm_getsrtm(posr, 1UL, &res);
+   a = libsrtm_getsrtmlong(posa.lat, posa.long0, 1UL, 0, &res, &att, 0);
    if (a>=20000.0f) Error("no altitude for this position", 30ul);
    osic_WrINT32((uint32_t)(int32_t)X2C_TRUNCI(a+0.5f,X2C_min_longint,
                 X2C_max_longint), 1UL);
@@ -1625,7 +1664,7 @@ extern int main(int argc, char **argv)
 {
    size_t tmp[1];
    size_t tmp0[2];
-   X2C_BEGIN(&argc,argv,1,4000000l,8000000l);
+   X2C_BEGIN(&argc,argv,1,4000000l,1500000000l);
    imagetext_BEGIN();
    aprsstr_BEGIN();
    aprspos_BEGIN();
@@ -1650,6 +1689,7 @@ extern int main(int argc, char **argv)
    labelb[0] = 0;
    maxdist = 600.0;
    kernel = 0.6;
+   realwood = 1;
    Parms();
    fontx = (int32_t)imagetext_fontsizex((uint32_t)fonttyp);
    fonty = (int32_t)imagetext_fontsizey((uint32_t)fonttyp);

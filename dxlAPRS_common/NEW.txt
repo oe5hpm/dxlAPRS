@@ -47,41 +47,6 @@ afskmodem
 
 
 
-udpbox
-------
-24.7.2013
-
- Im Digimodus (-d) werden Messages zu sich selbst (from=to) nicht mehr gesendet.
-
-
-12.1.2015
-
-+ Daten Input im Monitor-Format von stdin mit und ohne Programm terminieren nach 1 Zeile
-+ Frame Typ Filter -f auf Typ Telemetrie (-f -d84) Filtert auch Telemetrie Header
-  also Messages an sich selber.  (-S gibts daher nimmer)
-
-
-
-13.1.2015
-  -d digi: rest vom Pfad wieder aussenden:
-    -p 7 nach via digicall
-    -p 8 nach via RELAY/GATE/TRACE
-    -p 9 nach via WIDE
-
-
-2. 2. 2015
-
-  -l statt -r reicht AXUDP-Erweiterung durch (ohne DCD und TxPuffer-Leer Meldungen)
-  -l mit -s (alle PR frames) reicht auch die DCD und Txpuffer-Leer Meldungen durch
-
-
-
-
-
-
-
-
-
 
 
 
@@ -271,9 +236,9 @@ rf     qA?                                                            +
    -u/ wie ueblich zum wegfiltern.
  
 
+19.8.2019 (v 0.64)
 
-
-
+   mehr Serverfilter (a/ b/ d/ e/ m/ o/ p/ r/ t/ u/)
 
 
 
@@ -307,6 +272,13 @@ gps2aprs:
  zum GPS auf aprsmap zu kriegen
 
 
+30.4.2019
+
+ Logfile fuer gps-Zeilen
+
+
+
+
 
 
 
@@ -315,6 +287,20 @@ gps2aprs:
 
 udpbox
 ------
+12.1.2015
+
+ + Daten Input im Monitor-Format von stdin mit und ohne Programm terminieren nach 1 Zeile
+ + Frame Typ Filter -f auf Typ Telemetrie (-f -d84) Filtert auch Telemetrie Header
+  also Messages an sich selber.  (-S gibts daher nimmer)
+
+
+
+13.1.2015
+  -d digi: rest vom Pfad wieder aussenden:
+    -p 7 nach via digicall
+    -p 8 nach via RELAY/GATE/TRACE
+    -p 9 nach via WIDE
+
 21.1.2014
  \\rm als Macro in einer Bakenzeile loescht das Bakenfile,
                 der Inhalt wird also genau 1x gesendet.
@@ -330,6 +316,31 @@ udpbox
 
  -S   laesst die (default ausgefilterten) Msg an sich selbst durch. 
     
+
+ Im Digimodus (-d) werden Messages zu sich selbst (from=to) nicht mehr gesendet.
+
+
+
+2. 2. 2015
+
+  -l statt -r reicht AXUDP-Erweiterung durch (ohne DCD und TxPuffer-Leer Meldungen)
+  -l mit -s (alle PR frames) reicht auch die DCD und Txpuffer-Leer Meldungen durch
+
+
+30.4.2019
+
+ -M Baken Eingabe von stdin (einmal oder kontinuierlich)
+
+ -D Numerische Ausgabe auf stdout von dekodierten daten
+
+ -X -x positiv/negativ Callfilter mit wildcards
+
+
+
+
+
+
+
 
 
 
@@ -362,3 +373,82 @@ udphub
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+sondeudp
+--------
+
+12.9.2019
+
+ -n 0 sucht automatisch nach Bits die nach Seriennummer aussehen uer Namen generieren.
+      Kann bei zukuenftigen Sonden auch nimmer gehn und entweder nichts finden oder
+      Namen-Chaos erzeugen.
+
+ -N 0 das gleiche aber falls keine Seriennummer gefunden wird keine Sendung mit dem
+      alten Namen aus Zufallszahl aus der Startzeit.
+
+ -S <n> n mal muessen beide Teile der Seriennummer gleichbleiben damit daraus Name erzeugt wird.
+    default 2, bei Unstabilitaet erhoehen.
+
+  sobald ein Name erzeugt ist bleibt der bis lange nichts mehr empfangen wird auf der Frequenz.
+
+  Wird aus den Frames keine fertige Bake erzeugt, wurde ab und zu mit dem alten Namen auf neuer
+  Position gesendet. Hoffentlich behoben.
+
+  Beim Modifiziern der SDR-Frequenzliste und daraus resultierendem Audiokanal Wechsel, sollte
+  der alte Kontext auf dem neuen Kanal wiedergefunden werden und bei Sonden die viele Frames
+  brauchen, bis was sendbar wird, sofort weitersenden.
+
+  -M <ip:port> sendet in UDP neu empfangende Sonden und alte in etwa 10s Abstand.
+  Zweck: mitlesen (nc, netcat...) oder Scanner Programm informieren ob ein Signal Nutzdaten
+  oder QRM enthaelt. (Frame Aufbau kann sich noch aendern wenn so fuer Scanner suboptimal)
+
+
+
+
+
+
+  
+sondemod (v1.35)
+--------
+
+ M10 Seriennummer: angeblich ueberfluessige "0" entfernt 
+
+ DFM Seriennummer automatische Suche. (kann wechselnWechselt bei besserer Fundstelle)
+     einzelne falsche Frames (wegen der schwachen pruefsumme haeuffig) stoppen Seriennummer
+     Sendung bis wieder passender Frame empfangen wird. Ansonsten vermutlich andere Sonde
+     auf der gleichen Frequenz.
+     Frequenz.
+ -L <hex>=<typname>[,<hex>=<typname>]...> zB. -L AC=DFM09,70=DFM17 sendet Sondentyp
+     aus dem 1. Byte des Frames der Fundstelle der Seriennummer (falls der Zusammenhang
+     gegeben ist jetzt und in zukunft, sonst weglassen).
+
+ RS41 genauere Typ bezeichnung 
+
+
+
+
+
+
+sdrtst
+------
+
+  Frequenzliste Input (Syntax wie File) per UDP-Frame (Zweck: fernsteuern, remote-rx) oder Steuerung von 
+    lokalem oder entfernt laufendem Scanner oder visualisiernungs tool.
+
+  Scannenen (cpu: 1 rx oder Teil davon) und UDP Output "squelch offen" fuer Scanner Programm
+  und UDP Squelch/Level fuer Wasserfall.
+
+  Sound output per File/Pipe oder UDP
+ 
