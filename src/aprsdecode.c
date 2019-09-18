@@ -85,6 +85,7 @@ aprsdecode_SET256 aprsdecode_SYMTABLE = {0x00000000UL,0x03FF8000UL,
 uint32_t aprsdecode_systime;
 uint32_t aprsdecode_realtime;
 uint32_t aprsdecode_lastlooped;
+uint32_t aprsdecode_updateintervall;
 uint32_t aprsdecode_rxidle;
 char aprsdecode_quit;
 char aprsdecode_verb;
@@ -513,6 +514,8 @@ h a tx", 56ul);
                 44ul);
                osi_WrStrLn(" -R             same as -M but axudp format",
                 44ul);
+               osi_WrStrLn(" -u <seconds>   minimum seconds between screen up\
+dates", 55ul);
                osi_WrStrLn(" -v             show frames and analytics on stdo\
 ut", 52ul);
                osic_WrLn();
@@ -615,6 +618,14 @@ ut", 52ul);
                else Err("-o maplumen", 12ul);
             }
             else if (lasth=='v') aprsdecode_verb = 1;
+            else if (lasth=='u') {
+               osi_NextArg(h, 4096ul);
+               i = 0UL;
+               if (GetNum(h, 4096ul, &i, &n)>=0L) {
+                  aprsdecode_updateintervall = n;
+               }
+               else Err("-u updateintervall", 19ul);
+            }
             else err = 1;
          }
       }
@@ -3504,6 +3515,8 @@ extern void aprsdecode_acknumstr(char aa[], uint32_t aa_len,
    if (aa_len-1>=2UL) aa[2UL] = 0;
 } /* end acknumstr() */
 
+#define aprsdecode_RAWMESSAGE "RAW"
+
 
 static char sendtxmsg(uint32_t acknum, const aprsdecode_MONCALL to,
                 const char txt[], uint32_t txt_len, char port,
@@ -3511,13 +3524,16 @@ static char sendtxmsg(uint32_t acknum, const aprsdecode_MONCALL to,
                 uint32_t errm_len)
 {
    uint32_t i;
+   char raw;
    aprsdecode_FRAMEBUF s;
    aprsdecode_FRAMEBUF rfs;
    char am[51];
    char h1[51];
    char h[51];
    char tmp;
-   if (ackcnt==0UL) strncpy(am,"Ack ",51u);
+   raw = aprsstr_StrCmp(to, 9ul, "RAW", 4ul);
+   if (raw) strncpy(am,"Rawdata ",51u);
+   else if (ackcnt==0UL) strncpy(am,"Ack ",51u);
    else strncpy(am,"Msg ",51u);
    errm[0UL] = 0;
    if (to[0UL]==0) return 0;
@@ -3548,23 +3564,32 @@ static char sendtxmsg(uint32_t acknum, const aprsdecode_MONCALL to,
       }
    }
    aprsstr_Append(rfs, 512ul, ":", 2ul);
-   strncpy(s,":",512u);
-   aprsstr_Append(s, 512ul, to, 9ul);
-   for (i = aprsstr_Length(to, 9ul); i<=8UL; i++) {
-      aprsstr_Append(s, 512ul, " ", 2ul);
-   } /* end for */
-   aprsstr_Append(s, 512ul, ":", 2ul);
-   if (ackcnt==0UL) aprsstr_Append(s, 512ul, "ack", 4ul);
-   aprsstr_Append(s, 512ul, txt, txt_len);
-   if (acknum>0UL) {
-      aprsstr_Append(s, 512ul, "{", 2ul);
-      aprsdecode_acknumstr(h, 51ul, acknum);
-      aprsstr_Append(s, 512ul, h, 51ul);
-      aprsstr_Append(s, 512ul, "}", 2ul);
-      aprsdecode_getactack(to, h, 51ul);
-      if (h[0U]) aprsstr_Append(s, 512ul, h, 51ul);
+   if (raw) {
+      if (acknum>0UL) {
+         aprsstr_Assign(errm, errm_len, "Send Raw Data as QUERY", 23ul);
+         return 0;
+      }
+      aprsstr_Assign(s, 512ul, txt, txt_len);
    }
-   /*WrInt(ORD(rfonly), 10);WrStrLn(port); */
+   else {
+      /* send msg text as raw frame */
+      strncpy(s,":",512u);
+      aprsstr_Append(s, 512ul, to, 9ul);
+      for (i = aprsstr_Length(to, 9ul); i<=8UL; i++) {
+         aprsstr_Append(s, 512ul, " ", 2ul);
+      } /* end for */
+      aprsstr_Append(s, 512ul, ":", 2ul);
+      if (ackcnt==0UL) aprsstr_Append(s, 512ul, "ack", 4ul);
+      aprsstr_Append(s, 512ul, txt, txt_len);
+      if (acknum>0UL) {
+         aprsstr_Append(s, 512ul, "{", 2ul);
+         aprsdecode_acknumstr(h, 51ul, acknum);
+         aprsstr_Append(s, 512ul, h, 51ul);
+         aprsstr_Append(s, 512ul, "}", 2ul);
+         aprsdecode_getactack(to, h, 51ul);
+         if (h[0U]) aprsstr_Append(s, 512ul, h, 51ul);
+      }
+   }
    aprsstr_Append(rfs, 512ul, s, 512ul);
    for (i = 0UL; i<=3UL; i++) {
       /* try the rf ports */
@@ -3579,8 +3604,10 @@ static char sendtxmsg(uint32_t acknum, const aprsdecode_MONCALL to,
             aprsstr_Append(h, 51ul, h1, 51ul);
             aprsstr_Append(h, 51ul, ")", 2ul);
          }
-         aprsstr_Append(h, 51ul, " to ", 5ul);
-         aprsstr_Append(h, 51ul, to, 9ul);
+         if (!raw) {
+            aprsstr_Append(h, 51ul, " to ", 5ul);
+            aprsstr_Append(h, 51ul, to, 9ul);
+         }
          aprsstr_Append(h, 51ul, " on Port ", 10ul);
          aprsstr_Append(h, 51ul, (char *)(tmp = (char)(i+49UL),&tmp),
                  1u/1u);
@@ -6953,6 +6980,7 @@ extern void aprsdecode_initparms(void)
                 /* set a beacon scheduler start second in minute */
    beaconrandomstart = (beaconrandomstart/60UL)%60UL+(beaconrandomstart%60UL)
                 *60UL;
+   aprsdecode_updateintervall = 0UL;
 } /* end initparms() */
 
 

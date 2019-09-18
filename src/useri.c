@@ -1143,8 +1143,8 @@ f 22050 -C 0 -p /dev/ttyS0 0 -M 0 -t 250 -T 6 -L 127.0.0.1:9002:9001 -m 0",
                 0, 150UL);
    initc(useri_fDELAYGETMAP, "Delay Start Loadmap s", 22ul, useri_cLINE, "0",
                  2ul, 0, 172UL);
-   initc(useri_fCENTER, "Center Watch Object", 20ul, useri_cLINE, "40", 3ul,
-                0, 220UL);
+   initc(useri_fCENTER, "Center Watch Object", 20ul, useri_cLINE, "100", 4ul,
+                 0, 220UL);
    initc(useri_fALLOWEXP, "Allow Expand Tile", 18ul, useri_cBOOL, "", 1ul, 1,
                  230UL);
    initc(useri_fZOOMMISS, "Autozoom up to having Tiles", 28ul, useri_cBOOL, "\
@@ -1598,11 +1598,11 @@ extern void useri_loadconfig(char verb)
    useri_confstr(useri_fQUERYS, s, 1000ul);
    if (s[0U]==0) {
       useri_AddConfLine(useri_fQUERYS, 1U, "?APRST:PATH=\\\\p", 16ul);
-      useri_AddConfLine(useri_fQUERYS, 1U, "?PING:PATH=\\\\p", 15ul);
+      useri_AddConfLine(useri_fQUERYS, 1U, "?PING?:PATH=\\\\p", 16ul);
       useri_AddConfLine(useri_fQUERYS, 1U, "?APRSP:\\\\l", 11ul);
       useri_AddConfLine(useri_fQUERYS, 1U, "?VER:VERSION \\\\v", 17ul);
-      useri_AddConfLine(useri_fQUERYS, 1U, "?HELP:?APRST,?APRSP,?PING,?VER",
-                31ul);
+      useri_AddConfLine(useri_fQUERYS, 1U, "?HELP:?APRST,?APRSP,?PING?,?VER",
+                 32ul);
    }
    useri_confstr(useri_fMARKPOS, s, 1000ul);
    aprstext_deghtopos(s, 1000ul, &aprsdecode_click.markpos);

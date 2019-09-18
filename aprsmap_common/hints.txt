@@ -196,6 +196,7 @@ Modify Start time with "Time full Bright" Knob
 
 |515 Remove Marker 1 and 2, the Measure
 Line and QTH Locator Area
+shortcut ":"
 
 |517 toggle Geoprofile (radio link)
 calculation on/off (shortcut "r")
@@ -550,9 +551,11 @@ it is case sensitive and needs full word length.
 or lat/long ddmm.mm  dddmm.mm  "4806.09N 01318.67E"
 or lat/long ddmm.mmm dddmm.mmm "4806.091N 01318.676E"
 or lat/long (-)d.ddddd (-)d.ddddd "48.71 -13.967"
-In File "poi.txt" (in osm-directory) Repeat Find
-to step through matches "g?iss*".
-Cursor up/down steps thru 10 lines of History.
+In Poi's (in osm-directory) Repeat Find to step
+through all matches "p*dorf".
+Go back to map position before with "b", BACKSPACE
+or right click as after any other zoom/pan function.
+Cursor up/down rotates through 10 lines of History.
 
 |2100 No valid Symbol
 |2101 Police, Sheriff
@@ -838,6 +841,12 @@ copied to send Item as Message
 BLN1 to BLN9 for sending
 Bulletins (send as Query)
 
+"RAW" sent as Query sends msg-text
+not as Message but as raw beacon. 
+Use (if You know what You do) for
+general queries or not supported
+beacon formats ">Status Info"
+
 |6820 Send Message (if connected) to Net and
 first for tx enabled Rf Port. If You
 have more than 1 open Port, select the
@@ -970,6 +979,7 @@ Do not move delete or add characters.
 
 |7415 Net Beacon needs only the Comment like
 Name, QRV on 145.500Mhz
+Beacon Time in "Timers"
 
 \\h \\z \\v \\<file> for inserting time,
 program version or a file
@@ -1052,7 +1062,7 @@ tnc2/tf/smack:
 tmd710/th-d72/kiss/USB:
  udpflex.exe -U :9002:9001 -i kiss.txt -u -t com3:9600
 
-dire-wolf soundmodem:
+dire-wolf,UZ7HO soundmodem:
  udpflex.exe -U :9002:9001 -T :
 
 example (unix):
@@ -1146,9 +1156,9 @@ Marker 1 and if File "poi.txt" in osm-directory
 contains info to this position, it will be shown
 Toggle with "p"
 
-|7861 On Mouse-Over, from this Zoomlevel or higher,
+|7861 On Mouse-Over, on this Zoomlevel or higher,
 show Point-of-Interest Content from files
-poi.txt and mypoi.txt. On/off with "p".
+in "poi"-directory. On/off with "p".
 Hint: "Config > Reload Config" (re)reads
 this files after changes.
 Press "Save Config" before.
@@ -1405,7 +1415,7 @@ if you need finer resolution than 18m.
 |8154 Same as "Mic-e" but with DAO extention
 if you need finer resolution than 18m.
 
-|8160 Sent Beacon to AprsIs on TCPIP Net.
+|8160 Send Beacon to AprsIs on TCPIP Net.
 "Via Path" is not needed here.
 |8161 Send Beacon to Radio Port 1 as configured
 and enabled in "Config > Rf-Ports"
@@ -1571,7 +1581,7 @@ will be cut off at retransmission. This reduces
 own "noise" by shorter frames and a lot of
 network noise because the beacon is not further
 digipeated (Last digi in chain).
-This may be helful to bring things INTO a local area
+This may be helpful to bring things INTO a local area
 if no (eg) 70cm Port is avaliable to do this better.
 
 |8340 Edit this part with "Edit" Function and Restore.
@@ -1653,6 +1663,7 @@ luminosity. eg. "2400 -90 -60"
 0.00 in Vacuum
 1.00 Vacuum on Flat Earth or refraction equals earthradius
 0.25 Typical Value in Atmosphere
+For tagged srtm, second value is tree size in m "0.25 25"
 
 |8515 0 is hard shaped area. More realistic
 Image will make values around 5 to 10

@@ -19,6 +19,7 @@
 
 
 
+char aprsstr_showctrl;
 /* string lib by oe5dxl */
 /* needed by hpm-libs */
 #define aprsstr_pi 3.1415926535898
@@ -903,9 +904,13 @@ extern char aprsstr_Call2Str(char r[], uint32_t r_len,
    if (i<=tmp) for (;; i++) {
       c = (char)((uint32_t)(uint8_t)r[i]>>1);
       if ((uint8_t)c<=' ') {
-         t[*len] = 0;
-         *len = 0UL;
-         return 0;
+         /* ctrl char in call */
+         if (aprsstr_showctrl) c = '^';
+         else {
+            t[*len] = 0;
+            *len = 0UL;
+            return 0;
+         }
       }
       t[*len] = c;
       ++*len;
@@ -1260,6 +1265,7 @@ extern void aprsstr_BEGIN(void)
    if (sizeof(uint8_t)!=1) X2C_ASSERT(0);
    if (sizeof(aprsstr_GHOSTSET)!=36) X2C_ASSERT(0);
    osi_BEGIN();
+   aprsstr_showctrl = 0;
    Gencrctab();
 }
 

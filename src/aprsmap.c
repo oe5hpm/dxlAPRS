@@ -4084,7 +4084,7 @@ static uint32_t slowupdate(void)
    uint32_t t;
    t = makeimagetime;
    if (t>20UL) t = 20UL;
-   return t*2UL;
+   return t*2UL+aprsdecode_updateintervall;
 } /* end slowupdate() */
 
 

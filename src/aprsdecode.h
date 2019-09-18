@@ -477,6 +477,8 @@ extern uint32_t aprsdecode_realtime;
 
 extern uint32_t aprsdecode_lastlooped;
 
+extern uint32_t aprsdecode_updateintervall;
+
 extern uint32_t aprsdecode_rxidle;
 
 extern char aprsdecode_quit;

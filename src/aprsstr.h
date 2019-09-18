@@ -35,6 +35,8 @@ struct aprsstr_POSITION {
 
 #define aprsstr_HBIT 128
 
+extern char aprsstr_showctrl;
+
 extern void aprsstr_Assign(char [], uint32_t, char [], uint32_t);
 
 extern void aprsstr_Append(char [], uint32_t, char [], uint32_t);
