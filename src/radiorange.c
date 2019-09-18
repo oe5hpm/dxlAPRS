@@ -58,6 +58,8 @@
 
 #define radiorange_ROTATECHAR "v"
 
+#define radiorange_WOODSHADOW 255
+
 
 struct IMAGE {
    uint8_t * Adr;
@@ -87,7 +89,6 @@ static pIMAGE image;
 static pIMAGE image2;
 
 static pIMAGE tileimg;
-/*    tileimg:POINTER TO ARRAY OF CARD8; */
 
 static char imagefn[1024];
 
@@ -129,6 +130,8 @@ static int32_t lastpercent;
 
 static int32_t percenttyp;
 
+static int32_t woodshadowbri;
+
 static COLOUR colour1;
 
 static COLOUR colour2;
@@ -156,6 +159,8 @@ static float igamma;
 static float xs2;
 
 static float ys2;
+
+static float woodsize;
 
 static uint8_t gammatab[256];
 
@@ -731,6 +736,18 @@ sum dBm> <RGBTfilename>", 76ul);
                Error("-R <refraction> [0.0..1.0]", 27ul);
             }
          }
+         else if (h[1U]=='t') {
+            osi_NextArg(h, 1024ul);
+            if ((!aprsstr_StrToFix(&woodsize, h,
+                1024ul) || woodsize<0.0f) || woodsize>100.0f) {
+               Error("-t <treesize[0..100]> <brightness>", 35ul);
+            }
+            osi_NextArg(h, 1024ul);
+            if ((!aprsstr_StrToInt(h, 1024ul,
+                &woodshadowbri) || woodshadowbri<0L) || woodshadowbri>255L) {
+               Error("-t <treesize> <brightness[0..255]>", 35ul);
+            }
+         }
          else if (h[1U]=='g') {
             osi_NextArg(h, 1024ul);
             if ((!aprsstr_StrToFix(&igamma, h,
@@ -804,7 +821,7 @@ cho or Repeater Antenna over ground [m] (0)", 93ul);
                osi_WrStrLn(" -c <contrast>                     0 for hard 30 \
 for smooth area margin (3)", 76ul);
                osi_WrStrLn(" -d <depth>                        png palette bi\
-ts/pixel 1,2,4,8 (1)", 70ul);
+ts/pixel 1,2,4,8 (1) or (2) if 2 antennas", 91ul);
                osi_WrStrLn(" -g <gamma>                        image gamma 0.\
 1..10.0 (2.2)", 63ul);
                osi_WrStrLn(" -h                                this", 40ul);
@@ -850,6 +867,12 @@ tion off (on)", 63ul);
 (2)", 53ul);
                osi_WrStrLn(" -R <refraction>                   0.0(vacuum), 1\
 .0(earth is a disk) (0.25)", 76ul);
+               osi_WrStrLn(" -t <treesize> <brightness>        tree size (m),\
+ decreased to 0 from 1000-2000m NN (0)", 88ul);
+               osi_WrStrLn("                                   brightness/pat\
+tern wood shadow 0..255, 0 for full shadow", 92ul);
+               osi_WrStrLn("                                   pattern used i\
+f 2 tx or 1 bit png", 69ul);
                osi_WrStrLn(" -U <red> <green> <blue> <transp>  colour antenna\
  1", 52ul);
                osi_WrStrLn(" -V <red> <green> <blue> <transp>  colour antenna\
@@ -885,6 +908,8 @@ e empty tiles too", 67ul);
       osi_Werr("< use -h\012", 10ul);
       X2C_ABORT();
    }
+   /*  IF diagram.on THEN woodshadowbri:=0 END; */
+   if (woodsize==0.0f) woodshadowbri = 0L;
 } /* end Parms() */
 
 
@@ -907,156 +932,43 @@ static void makegammatab(void)
    } /* end for */
 } /* end makegammatab() */
 
-/*
-PROCEDURE wrpng;
 
-VAR pngimg:pngwrite.PNGPIXMAP;
-    x, y, ret:INTEGER;
-    c:CARD8;
-BEGIN
+static uint8_t joincolour(uint32_t y, uint32_t x, uint32_t scale)
+{
+   uint32_t z1;
+   uint32_t z0;
+   char pattern;
+   /*  IF y<HIGH(image^) THEN INC(y) END; */
+   if (x>=image->Len0-1) return 0U;
+   z0 = (uint32_t)image->Adr[(y)*image->Len0+x];
+   if (woodshadowbri>0L) {
+      pattern = (x/scale+(y/scale)*3UL)%(uint32_t)woodshadowbri!=0UL;
+      if ((x&1)) {
+         if (z0==255UL) {
+            if (pattern) z0 = 0UL;
+            else z0 = (uint32_t)image->Adr[(y)*image->Len0+(x-1UL)];
+         }
+      }
+      else if (pattern && image->Adr[(y)*image->Len0+(x+1UL)]==255U) {
+         z0 = 0UL;
+      }
+   }
+   if (image2==0) return clut[z0];
+   z1 = (uint32_t)image2->Adr[(y)*image2->Len0+x];
+   if (woodshadowbri>0L) {
+      if ((x&1)) {
+         if (z1==255UL) {
+            if (pattern) z1 = 0UL;
+            else z1 = (uint32_t)image2->Adr[(y)*image2->Len0+(x-1UL)];
+         }
+      }
+      else if (pattern && image2->Adr[(y)*image2->Len0+(x+1UL)]==255U) {
+         z1 = 0UL;
+      }
+   }
+   return clut[z0+z1*256UL];
+} /* end joincolour() */
 
-  ALLOCATE(pngimg.image, xsize*ysize*3);
-  IF pngimg.image<>NIL THEN
---    makegammatab;
-    FOR y:=0 TO ysize-3 DO
-      FOR x:=0 TO xsize-3 DO
-        c:=image^[x+1][ysize-y-3];
-        WITH pngimg.image^[x+y*(xsize-2)] DO red:=c; green:=c; blue:=c END;
-      END;
-    END;
-    pngimg.width:=xsize-2;
-    pngimg.height:=ysize-2;
-    ret:=pngwrite.writepng(imagefn, pngimg);
-    DEALLOCATE(pngimg.image, xsize*ysize*3);
-  ELSE Werr("png write out of memory"+LF) END;
-
-END wrpng;
-*/
-/*
-PROCEDURE wrpng;
-
-VAR pngimg:pngwritebw.PNGPIXMAP;
-    x, y, ret:INTEGER;
-BEGIN
-
-  ALLOCATE(pngimg.image, xsize*ysize);
-  IF pngimg.image<>NIL THEN
---    makegammatab;
-    FOR y:=0 TO ysize-3 DO
-      FOR x:=0 TO xsize-3 DO
-        pngimg.image^[x+y*(xsize-2)]:=gammatab[image^[x+1][ysize-y-3]];
-      END;
-    END;
-    pngimg.width:=xsize-2;
-    pngimg.height:=ysize-2;
-    ret:=pngwritebw.writepng(imagefn, pngimg);
-    DEALLOCATE(pngimg.image, xsize*ysize);
-  ELSE Werr("png write out of memory"+LF) END;
-
-END wrpng;
-*/
-/*
-PROCEDURE wrpng(imagefn-:ARRAY OF CHAR; depth:INTEGER;
-                x0, y0, xw, yw, scale:INTEGER):INTEGER;
-
-VAR pngimg:pngwritepalette.PNGPIXMAP;
-    x, y, i, xi, yi, is, ret, palettelen, d8:INTEGER;
-    c, cc:CARDINAL;
-    notempty:BOOLEAN;
-BEGIN
-  palettelen:=CAST(INTEGER,BITSET{depth});
-  pngimg.palette:=ADR(palette);
-  pngimg.palettelen:=palettelen;
-  pngimg.palettedepth:=depth;
-  pngimg.xbytes:=(xw*VAL(INTEGER, depth)+8) DIV 8;
-  pngimg.trns:=ADR(transpaency);
-  d8:=8 DIV depth;
-  ALLOCATE(pngimg.image, VAL(CARDINAL, yw)*pngimg.xbytes);
---  FILL(pngimg.image, 0C, VAL(CARDINAL, yw)*pngimg.xbytes);
-  notempty:=FALSE;
-  IF pngimg.image<>NIL THEN
-    FOR y:=0 TO yw-1 DO
-      yi:=VAL(INTEGER,HIGH(image^[0]))-(y+y0)*scale;
-      FOR x:=0 TO VAL(INTEGER,pngimg.xbytes)-1 DO
-        xi:=x*d8+x0;
-        FOR i:=xi TO xi+d8-1 DO
-          is:=i*scale;
-          cc:=0;
-          IF (yi>=0) & (yi<=VAL(INTEGER,HIGH(image^[0])))
-          & (is>=0) & (is<=VAL(INTEGER,
-                HIGH(image^))) THEN cc:=image^[is][yi] END;
-          c:=CAST(CARDINAL, SHIFT(CAST(BITSET,c), depth)) + cc;
-        END;
-        pngimg.image^[x+y*VAL(INTEGER, pngimg.xbytes)]:=c;
-        IF c<>0 THEN notempty:=TRUE END;
-      END;
-    END;
-    IF writeempty OR notempty THEN
-      pngimg.width:=xw;
-      pngimg.height:=yw;
-      ret:=pngwritepalette.writepng(imagefn, pngimg);
-      IF ret<0 THEN Werr("png write failed"+LF) END;
-    END;
-    DEALLOCATE(pngimg.image, VAL(CARDINAL,yw)*pngimg.xbytes);
-  ELSE Werr("png write out of memory"+LF) END;
-
-  RETURN 0
-END wrpng;
-*/
-/*
-PROCEDURE wrpng(imagefn-:ARRAY OF CHAR; depth:INTEGER;
-                x0, y0, xw, yw, scale:INTEGER):INTEGER;
-
-VAR pngimg:pngwritepalette.PNGPIXMAP;
-    x, y, i, xi, yi, is, ret, palettelen, d8, xbytes:INTEGER;
-    c, cc:CARDINAL;
-    notempty:BOOLEAN;
-himage:POINTER TO ARRAY[0..02FFFFFFFH] OF CARD8;
-
-BEGIN
-  palettelen:=CAST(INTEGER,BITSET{depth});
-  pngimg.palette:=ADR(palette);
-  pngimg.palettelen:=palettelen;
-  pngimg.palettedepth:=depth;
-  xbytes:=(xw*VAL(INTEGER, depth)+8) DIV 8;
-  pngimg.trns:=ADR(transpaency);
-  d8:=8 DIV depth;
-  ALLOCATE(himage, yw*xbytes); IF himage=NIL THEN Werr("png write out of memory"+LF) END;
-  ALLOCATE(pngimg.image, VAL(INTEGER,SIZE(pngwritepalette.pLINE))*yw);
-                IF pngimg.image=NIL THEN Werr("png write out of memory"+LF)
-                END; 
-
---  FILL(pngimg.image, 0C, VAL(CARDINAL, yw)*pngimg.xbytes);
-  notempty:=FALSE;
-  FOR y:=0 TO yw-1 DO
-    pngimg.image^[y]:=ADR(himage^[y*xbytes]);
-    yi:=VAL(INTEGER,HIGH(image^[0]))-(y+y0)*scale;
-    FOR x:=0 TO xbytes-1 DO
-      xi:=x*d8+x0;
-      FOR i:=xi TO xi+d8-1 DO
-        is:=i*scale;
-        cc:=0;
-        IF (yi>=0) & (yi<=VAL(INTEGER,HIGH(image^[0])))
-        & (is>=0) & (is<=VAL(INTEGER,
-                HIGH(image^))) THEN cc:=image^[is][yi] END;
-        c:=CAST(CARDINAL, SHIFT(CAST(BITSET,c), depth)) + cc;
-      END;
-      himage^[x+y*xbytes]:=c;
-      IF c<>0 THEN notempty:=TRUE END;
-    END;
-  END;
-  IF writeempty OR notempty THEN
-    pngimg.width:=xw;
-    pngimg.height:=yw;
-    ret:=pngwritepalette.writepng(imagefn, pngimg);
-    IF ret<0 THEN Werr("png write failed"+LF) END;
-  END;
-  DEALLOCATE(himage, yw*xbytes);
-  DEALLOCATE(pngimg.image, yw*xbytes);
-
-  RETURN 0
-END wrpng;
-*/
 
 static int32_t wrpng(const char imagefn0[], uint32_t imagefn_len,
                 int32_t depth, int32_t x0, int32_t y00, int32_t xw,
@@ -1116,7 +1028,13 @@ static int32_t wrpng(const char imagefn0[], uint32_t imagefn_len,
             cc = 0UL;
             if (((yi>=0L && yi<=(int32_t)(image->Len1-1)) && is>=0L)
                 && is<=(int32_t)(image->Len0-1)) {
-               cc = (uint32_t)image->Adr[(yi)*image->Len0+is];
+               if (tileimg==0) {
+                  cc = (uint32_t)image->Adr[(yi)*image->Len0+is];
+               }
+               else {
+                  cc = (uint32_t)joincolour((uint32_t)yi, (uint32_t)is,
+                 (uint32_t)scale);
+               }
             }
             c = (uint32_t)X2C_LSH((uint32_t)c,32,depth)+cc;
             if (i==tmp1) break;
@@ -1219,6 +1137,7 @@ static void postfilter(pIMAGE image0)
 {
    uint32_t y;
    uint32_t x;
+   uint16_t d;
    uint16_t c;
    uint32_t tmp;
    uint32_t tmp0;
@@ -1230,9 +1149,13 @@ static void postfilter(pIMAGE image0)
       if (x<=tmp0) for (;; x++) {
          if (image0->Adr[(y)*image0->Len0+x]==0U) {
             c = (uint16_t)image0->Adr[(y)*image0->Len0+(x+1UL)];
-            c += (uint16_t)image0->Adr[(y+1UL)*image0->Len0+x];
-            c += (uint16_t)image0->Adr[(y)*image0->Len0+(x-1UL)];
-            c += (uint16_t)image0->Adr[(y-1UL)*image0->Len0+x];
+            if (c==255U) c = 0U;
+            d = (uint16_t)image0->Adr[(y+1UL)*image0->Len0+x];
+            if (d<255U) c += d;
+            d = (uint16_t)image0->Adr[(y)*image0->Len0+(x-1UL)];
+            if (d<255U) c += d;
+            d = (uint16_t)image0->Adr[(y-1UL)*image0->Len0+x];
+            if (d<255U) c += d;
             image0->Adr[(y-1UL)*image0->Len0+x] = (uint8_t)(c/4U);
          }
          else {
@@ -1323,9 +1246,13 @@ static int32_t Radiorange(pIMAGE image0, struct aprsstr_POSITION txpos,
    uint32_t frame;
    uint32_t yp;
    uint32_t xp;
+   uint8_t attr;
    uint8_t bri;
    int32_t void0;
    int32_t nn;
+   float hsw;
+   float hwood;
+   float raisw;
    float antdiff;
    float azi;
    float hgnd;
@@ -1376,7 +1303,9 @@ static int32_t Radiorange(pIMAGE image0, struct aprsstr_POSITION txpos,
    struct aprsstr_POSITION pos1;
    struct aprsstr_POSITION pos0;
    struct aprsstr_POSITION pos;
-   nn = (int32_t)X2C_TRUNCI(libsrtm_getsrtm(txpos, 0UL, &resoltx),
+   char woodshadow;
+   nn = (int32_t)X2C_TRUNCI(libsrtm_getsrtmlong((double)txpos.lat,
+                (double)txpos.long0, 0UL, 0, &resoltx, &attr, 0),
                 X2C_min_longint,X2C_max_longint);
                 /* altitude of tx and map resolution in m here */
    if (nn>=10000L) {
@@ -1396,6 +1325,11 @@ static int32_t Radiorange(pIMAGE image0, struct aprsstr_POSITION txpos,
       libsrtm_closesrtmfile();
       return -2L;
    }
+   /*  IF woodshadowbri=0 THEN woodshadowlum:=0.0; */
+   /*  ELSIF TwoTx() OR (pngdepth=1)
+                THEN woodshadowlum:=64.0 ELSE woodshadowlum:=FLOAT(woodshadowbri)
+                 END; */
+   /*  ELSE woodshadowlum:=FLOAT(WOODSHADOW) END; */
    if (qualnum==0UL) {
       framestep = 2.2f; /* pixel step along corner of image */
       qual = (uint32_t)X2C_TRUNCC(mperpix*2.0f,0UL,X2C_max_longcard);
@@ -1442,6 +1376,7 @@ static int32_t Radiorange(pIMAGE image0, struct aprsstr_POSITION txpos,
             resol = resoltx;
             d = resol*oodist;
             rais = (-1.E+9f); /* initial sightline angle **/
+            raisw = (-1.E+9f); /* initial sightline angle **/
             dnext = 0.0f;
             dpnext = 0.0f;
             do {
@@ -1449,7 +1384,9 @@ static int32_t Radiorange(pIMAGE image0, struct aprsstr_POSITION txpos,
                if (d>=dnext) {
                   /* next fixpoint in interpolate sight line pos */
                   dnext = d+6000.0f*oodist;
-                  if (dnext>1.0f) dnext = 1.0f;
+                  if (dnext>1.0f) {
+                     dnext = 1.0f;
+                  }
                   dd = dnext-d;
                   if (dd!=0.0f) {
                      wgs84r(x0+dx*d, y00+dy*d, z0+dz*d, &pos1.lat,
@@ -1466,17 +1403,43 @@ static int32_t Radiorange(pIMAGE image0, struct aprsstr_POSITION txpos,
                      alt0 = alt1-dalt*d;
                   }
                }
-               pos.lat = pos0.lat+dpos.lat*d;
-               pos.long0 = pos0.long0+dpos.long0*d;
                alt = (alt0+dalt*d)-d*d*dm;
                 /* -dist(km)^2 * refrac * 0.0785 */
-               hgnd = libsrtm_getsrtm(pos,
+               hgnd = libsrtm_getsrtmlong((double)(pos0.lat+dpos.lat*d)
+                , (double)(pos0.long0+dpos.long0*d),
                 (uint32_t)X2C_TRUNCC((float)fabs(sight)+1.0f,0UL,
-                X2C_max_longcard)*qual, &resol); /* ground over NN in m */
+                X2C_max_longcard)*qual, 0, &resol, &attr, 0);
+                /* ground over NN in m */
                if (hgnd<10000.0f) {
                   /* srtm valid */
+                  /*>wood */
+                  woodshadow = 0;
+                  if (woodsize!=0.0f) {
+                     if (attr==2U) {
+                        /* we have wood */
+                        if (hgnd>=1000.0f) {
+                           hwood = woodsize*(2000.0f-hgnd)*0.001f;
+                           if (hwood<0.0f) hwood = 0.0f;
+                        }
+                        else hwood = woodsize;
+                        hwood = hwood+hgnd;
+                     }
+                     else hwood = hgnd;
+                     hwood = hwood-alt;
+                     hsw = raisw*d; /* h sight line m over wood searchpath */
+                     if (hwood>hsw) {
+                        raisw = X2C_DIVR(hwood,d);
+                /* this point has light on wood */
+                     }
+                     if ((hwood+arx)-hsw<0.0f) woodshadow = 1;
+                  }
+                  /*>wood */
                   h = hgnd-alt; /* m ground over searchpath */
                   hs = rais*d; /* h sight line m over searchpath */
+                  if (h>hs) {
+                     rais = X2C_DIVR(h,d);
+                /* this point has light on ground */
+                  }
                   sight = (h+arx)-hs;
                   if (sight>0.0f) {
                      /* rx antenna in sight */
@@ -1512,18 +1475,37 @@ static int32_t Radiorange(pIMAGE image0, struct aprsstr_POSITION txpos,
                            /* 1 pixel room for large low res pixel */
                            lum = sight*osmooth;
                 /* luma is equal to riseing higth */
-                           if (lum>255.0f) lum = 255.0f;
                            if (diagram.on) {
+                              if (lum>255.0f) lum = 255.0f;
                               lum = lum*antgain(azi, hgnd+antdiff, oodist,
                 &d);
-                              if (lum>255.0f) lum = 255.0f;
                            }
-                           /*                bri:=TRUNC(lum); */
-                           image0->Adr[(yp)*image0->Len0+xp] = (uint8_t)
-                (uint32_t)X2C_TRUNCC(lum,0UL,X2C_max_longcard);
-                           if (qualnum<=1UL) {
-                              bri = (uint8_t)(uint32_t)
-                X2C_TRUNCC(lum*0.8f,0UL,X2C_max_longcard);
+                           if (lum>254.99f) bri = 254U;
+                           else {
+                              bri = (uint8_t)(uint32_t)X2C_TRUNCC(lum,
+                0UL,X2C_max_longcard);
+                           }
+                           if ((woodshadow && woodsize!=0.0f) && bri>0U) {
+                              if (woodshadowbri>0L) {
+                                 /* prepare pixel pattern */
+                                 if ((xp&1)) {
+                                    /* mark as wood shadow,
+                set every 2nd pixel 255 */
+                                    image0->Adr[(yp)*image0->Len0+(xp-1UL)
+                ] = bri;
+                                    bri = 255U;
+                                 }
+                                 else if (xp<image0->Len0-1) {
+                                    image0->Adr[(yp)*image0->Len0+(xp+1UL)
+                ] = 255U;
+                                 }
+                              }
+                              else bri = 0U;
+                           }
+                           image0->Adr[(yp)*image0->Len0+xp] = bri;
+                           if (bri<255U && qualnum<=1UL) {
+                              /* fill possibly missing neighbours */
+                              bri = (uint8_t)(((uint32_t)bri*6UL)/8UL);
                               setcol(bri,
                 &image0->Adr[(yp)*image0->Len0+(xp+1UL)]);
                               setcol(bri,
@@ -1533,8 +1515,8 @@ static int32_t Radiorange(pIMAGE image0, struct aprsstr_POSITION txpos,
                               setcol(bri,
                 &image0->Adr[(yp-1UL)*image0->Len0+xp]);
                               if (qualnum==0UL) {
-                                 bri = (uint8_t)(uint32_t)
-                X2C_TRUNCC(lum*0.5f,0UL,X2C_max_longcard);
+                                 bri = (uint8_t)(((uint32_t)bri*6UL)/8UL)
+                ;
                                  setcol(bri,
                 &image0->Adr[(yp+1UL)*image0->Len0+(xp-1UL)]);
                                  setcol(bri,
@@ -1547,10 +1529,6 @@ static int32_t Radiorange(pIMAGE image0, struct aprsstr_POSITION txpos,
                            }
                         }
                      }
-                  }
-                  if (h>hs) {
-                     rais = X2C_DIVR(h,d);
-                /* this point has light on ground */
                   }
                   if (sight>-resol) {
                      if (pixstep==0.0f) d = d+resol*oodist;
@@ -1620,48 +1598,6 @@ static void wrtiles(struct aprsstr_POSITION mpos, int32_t zoom,
    char fn[256];
    char ok0;
    size_t tmp[2];
-   /*
-     scale:=1;
-     REPEAT
-       mercator(mpos.long, mpos.lat, zoom, tx0, ty, xr, yr);
-       x0:=VAL(INTEGER, xr+0.5);
-       y0:=(1-VAL(INTEGER, yr+0.5));
-   WrInt(tx0,10);WrInt(ty,10);WrInt(x0,10);WrInt(y0,10);
-                WrStrLn(" tx ty x y");
-       REPEAT
-         tx:=tx0;
-         x:=-x0;
-   
-         REPEAT
-           Assign(fn, osmdir);
-           Append(fn, DIRSEP);
-           IntToStr(zoom, 0, s); Append(fn, s);
-           IF lasttilezoom<>zoom THEN                    (* make dir once *)
-             ok:=CreateDir(fn, DIRPERM);
-             lasttilezoom:=zoom;
-           END;
-           Append(fn, DIRSEP);
-           IntToStr(tx, 0, s); Append(fn, s);
-           IF lasttiledir<>tx THEN                       (* make dir once *)
-             ok:=CreateDir(fn, DIRPERM);
-             lasttiledir:=tx;
-           END;
-           Append(fn, DIRSEP);
-           IntToStr(ty, 0, s); Append(fn, s); Append(fn, ".png");
-   WrStrLn(fn);
-           ret:=wrpng(fn, pngdepth, colour1, x, y0, TILESIZE, TILESIZE,
-                scale);
-           INC(tx);
-           INC(x, TILESIZE);
-         UNTIL x>xsize/scale;
-         INC(ty);
-         INC(y0, TILESIZE);
-       UNTIL y0>ysize/scale;
-   
-       DEC(zoom);
-       INC(scale, scale);
-     UNTIL zoom<tozoom;
-   */
    X2C_DYNALLOCATE((char **) &tileimg,1u,(tmp[0] = 256U,tmp[1] = 256U,
                 tmp),2u);
    scale = 1L;
@@ -1956,8 +1892,6 @@ static void genpalette(void)
                clut[i] = (uint8_t)(6UL+lim(i/256UL+25UL, 43UL, 5UL));
             }
             else clut[i] = (uint8_t)(12UL+(i/256UL+(i&255UL))/171UL);
-            /*      ELSE clut[i]:=10+(((i DIV 256)*(i MOD 256))+7224)
-                DIV 14450; */
             if (i<6UL) {
                palette[i].r = (uint8_t)(((int32_t)
                 gammatab[i*42UL]*colour2[0U])/256L);
@@ -2023,42 +1957,60 @@ static void genpalette(void)
    }
 } /* end genpalette() */
 
+/*
+PROCEDURE joincolours(image, image2:pIMAGE);
+VAR x,y,z0,z1,w:CARDINAL;
+    pattern:BOOLEAN;
+BEGIN
+  w:=woodshadowbri;
+  IF image2=NIL THEN
+    pattern:=(w>0) & (pngdepth=1);
+    FOR y:=0 TO HIGH(image^) DO
+      FOR x:=0 TO HIGH(image^[0]) DO
+        z0:=image^[y][x];
+        IF pattern & (z0<128) & ((x+y*3) MOD w<>0) THEN z0:=0 END;
+        image^[y][x]:=clut[z0];
+      END;
+    END;
+  ELSE
+    pattern:=w>0;
+    FOR y:=0 TO HIGH(image^) DO
+      FOR x:=0 TO HIGH(image^[0]) DO
+        z0:=image^[y][x];
+        z1:=image2^[y][x];
+        IF pattern & ((x+y*3) MOD w<>0) THEN
+          IF z0<128 THEN z0:=0 END;
+          IF z1<128 THEN z1:=0 END;
+        END;
+        image^[y][x]:=clut[z0+z1*256];
+      END;
+    END;
+  END;
+END joincolours;
+*/
 
-static void joincolours(pIMAGE image0, pIMAGE image20)
+static void joincolours(void)
 {
    uint32_t y;
    uint32_t x;
+   uint8_t b1;
+   uint8_t b0;
    uint32_t tmp;
    uint32_t tmp0;
-   if (image20==0) {
-      tmp = image0->Len1-1;
-      y = 0UL;
-      if (y<=tmp) for (;; y++) {
-         tmp0 = image0->Len0-1;
-         x = 0UL;
-         if (x<=tmp0) for (;; x++) {
-            image0->Adr[(y)*image0->Len0+x] = clut[image0->Adr[(y)
-                *image0->Len0+x]];
-            if (x==tmp0) break;
-         } /* end for */
-         if (y==tmp) break;
+   tmp = image->Len1-1;
+   y = 0UL;
+   if (y<=tmp) for (;; y++) {
+      b1 = 0U;
+      tmp0 = image->Len0-1;
+      x = 1UL;
+      if (x<=tmp0) for (;; x++) {
+         b0 = joincolour(y, x, 1UL);
+         image->Adr[(y)*image->Len0+(x-1UL)] = b1;
+         b1 = b0; /* so not overwrite woodshadow pixel pair */
+         if (x==tmp0) break;
       } /* end for */
-   }
-   else {
-      tmp = image0->Len1-1;
-      y = 0UL;
-      if (y<=tmp) for (;; y++) {
-         tmp0 = image0->Len0-1;
-         x = 0UL;
-         if (x<=tmp0) for (;; x++) {
-            image0->Adr[(y)*image0->Len0+x] = clut[(uint32_t)
-                image0->Adr[(y)*image0->Len0+x]+(uint32_t)image20->Adr[(y)
-                *image20->Len0+x]*256UL];
-            if (x==tmp0) break;
-         } /* end for */
-         if (y==tmp) break;
-      } /* end for */
-   }
+      if (y==tmp) break;
+   } /* end for */
 } /* end joincolours() */
 
 
@@ -2084,6 +2036,8 @@ extern int main(int argc, char **argv)
    antc = -1L;
    refraction = 0.25f;
    igamma = 2.2f;
+   woodsize = 0.0f;
+   woodshadowbri = 0L;
    libsrtm_srtmmaxmem = 200000000UL;
    initzoom = 13L;
    tozoom = 9L;
@@ -2120,6 +2074,7 @@ extern int main(int argc, char **argv)
    diagram.azimuth = (-1.0f);
    diagram.azimuth2 = (-1.0f);
    Parms();
+   if (TwoTx() && pngdepth<2L) pngdepth = 2L;
    lastpercent = 0L;
    percenttyp = 0L;
    genpalette();
@@ -2165,9 +2120,7 @@ extern int main(int argc, char **argv)
       X2C_DYNALLOCATE((char **) &image2,1u,(tmp[0] = (size_t)ysize,
                 tmp[1] = (size_t)xsize,tmp),2u);
       percenttyp = 2L;
-      if (image2==0) {
-         Error("out of memory", 14ul);
-      }
+      if (image2==0) Error("out of memory", 14ul);
       if (verb) osi_Werr("antenna 2\012", 11ul);
       if (diagram.on) {
          diagram.azimuth = diagram.azimuth2;
@@ -2187,11 +2140,11 @@ extern int main(int argc, char **argv)
       if (ret==-1L) Error("no altitude at antenne A", 25ul);
    }
    libsrtm_closesrtmfile(); /* free srtm cache */
-   joincolours(image, image2);
-   if (image2) X2C_DYNDEALLOCATE((char **) &image2);
    if (verb) osi_Werr("make png\012", 10ul);
    if (osmdir[0U]) wrtiles(mappos, initzoom, tozoom);
    if (imagefn[0U]) {
+      joincolours();
+      if (image2) X2C_DYNDEALLOCATE((char **) &image2);
       ret = wrpng(imagefn, 1024ul, pngdepth, 0L, 0L, xsize, ysize, 1L);
    }
    X2C_EXIT();
