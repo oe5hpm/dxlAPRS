@@ -226,6 +226,7 @@ struct CHAN {
    char pttstate;
    char tnrzi;
    char echoflags;
+   char sendecho;
    uint8_t state;
    uint8_t duplex;
    float persist;
@@ -242,6 +243,8 @@ static int32_t pipefd;
 static int32_t soundfd;
 
 static int32_t debfd;
+
+static int32_t soundfdout;
 
 static char esc;
 
@@ -294,6 +297,8 @@ static uint8_t CRCL[256];
 static uint8_t CRCH[256];
 
 static FILENAME soundfn;
+
+static FILENAME soundfnout;
 
 static char debb[81];
 
@@ -546,30 +551,40 @@ static void OpenSound(void)
 {
    int32_t s;
    int32_t i;
-   soundfd = osi_OpenRW(soundfn, 1024ul);
-   if (soundfd>=0L) {
-      i = samplesize(soundfd, 16UL); /* 8, 16 */
-      i = channels(soundfd, (uint32_t)maxchannels+1UL); /* 1, 2  */
-      i = setfragment(soundfd, fragmentsize); /* 2^bufsize * 65536*bufs*/
-      if (i) {
-         osi_WrStr("sound setfragment returns ", 27ul);
-         osic_WrINT32((uint32_t)i, 1UL);
-         osic_WrLn();
-      }
-      i = sampelrate(soundfd, adcrate); /* 8000..48000 */
-      s = (int32_t)getsampelrate(soundfd);
-      if (s!=(int32_t)adcrate) {
-         osi_WrStr("sound device returns ", 22ul);
-         osic_WrINT32((uint32_t)s, 1UL);
-         osi_WrStrLn("Hz!", 4ul);
-      }
+   if (soundfnout[0U]) {
+      /* use separate input/output pipe */
+      soundfd = osi_OpenRead(soundfn, 1024ul);
+      if (soundfd<0L) Error("open sound input file/pipe", 27ul);
+      soundfdout = osi_OpenWrite(soundfnout, 1024ul);
+      if (soundfdout<0L) Error("open sound output file/pipe", 28ul);
    }
-   else if (abortonsounderr) {
-      /*
-            IF s>=0 THEN Error("") END;
-      */
-      osi_WrStr(soundfn, 1024ul);
-      Error(" open", 6ul);
+   else {
+      soundfd = osi_OpenRW(soundfn, 1024ul);
+      if (soundfd>=0L) {
+         i = samplesize(soundfd, 16UL); /* 8, 16 */
+         i = channels(soundfd, (uint32_t)maxchannels+1UL); /* 1, 2  */
+         i = setfragment(soundfd, fragmentsize); /* 2^bufsize * 65536*bufs*/
+         if (i) {
+            osi_WrStr("sound setfragment returns ", 27ul);
+            osic_WrINT32((uint32_t)i, 1UL);
+            osic_WrLn();
+         }
+         i = sampelrate(soundfd, adcrate); /* 8000..48000 */
+         s = (int32_t)getsampelrate(soundfd);
+         if (s!=(int32_t)adcrate) {
+            osi_WrStr("sound device returns ", 22ul);
+            osic_WrINT32((uint32_t)s, 1UL);
+            osi_WrStrLn("Hz!", 4ul);
+         }
+      }
+      else if (abortonsounderr) {
+         /*
+               IF s>=0 THEN Error("") END;
+         */
+         osi_WrStr(soundfn, 1024ul);
+         Error(" open", 6ul);
+      }
+      soundfdout = soundfd;
    }
 } /* end OpenSound() */
 
@@ -922,6 +937,8 @@ static void Parms(void)
    modem = -1L;
    X2C_COPY("/dev/dsp",9ul,soundfn,1024u);
    pipefn[0U] = 0;
+   soundfnout[0] = 0;
+   soundfdout = -1L;
    X2C_COPY("/dev/mixer",11ul,mixfn,1024u);
    maxsoundbufs = 10UL;
    for (;;) {
@@ -1093,7 +1110,27 @@ static void Parms(void)
             if (modem>=0L) modpar[modem].confignyquist = cnum;
             else Error("need modem number -M before -n", 31ul);
          }
-         else if (h[1U]=='o') osi_NextArg(soundfn, 1024ul);
+         else if (h[1U]=='o') {
+            osi_NextArg(soundfn, 1024ul);
+            inum = 0L;
+            for (;;) {
+               if (inum>1023L) break;
+               if (soundfn[inum]==0) break;
+               if (soundfn[inum]==',') {
+                  soundfn[inum] = 0;
+                  cnum = 0UL;
+                  ++inum;
+                  while (inum<=1023L && soundfn[inum]) {
+                     soundfnout[cnum] = soundfn[inum];
+                     ++inum;
+                     ++cnum;
+                  }
+                  soundfnout[cnum] = 0;
+                  break;
+               }
+               ++inum;
+            }
+         }
          else if (h[1U]=='p') {
             if (modem>=0L) {
                osi_NextArg(h, 1024ul);
@@ -1160,7 +1197,9 @@ static void Parms(void)
          else if (h[1U]=='v') {
             if (modem>=0L) {
                osi_NextArg(h, 1024ul);
-               if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
+               if (!aprsstr_StrToCard(h, 1024ul, &cnum)) {
+                  err = 1;
+               }
                if (cnum>100UL) cnum = 100UL;
                modpar[modem].txvolum = (float)cnum*250.0f;
             }
@@ -1230,6 +1269,16 @@ r system load but slower reaction", 83ul);
 5) ossmixer (/dev/mixer)", 74ul);
                osi_WrStrLn(" -o <filename>  oss devicename (/dev/dsp)",
                 42ul);
+               osi_WrStrLn(" -o <infilename,outfilename>       /dev/stdin,out\
+pipe  (mknod outpipe p)", 73ul);
+               osi_WrStrLn("                 for play/rec with sox use -B as \
+sox/alsa can only continuous sound", 84ul);
+               osi_WrStrLn("                 play -r 16000 -t raw -e signed-i\
+nteger -c 1 -b 16 --buffer 1000 -q", 84ul);
+               osi_WrStrLn("                 rec -r 16000 -t raw -c 1 -b 16 -\
+q - | afskmodem -B -f 16000 -o /dev/stdin,outpipe ...", 103ul);
+               osi_WrStrLn("                 make PTT with VOX as io-bits are\
+ not synchrone to sound with variable delay", 93ul);
                osi_WrStrLn(" -s <num>       fragment size in 2^n (9)", 41ul);
                osic_WrLn();
                osi_WrStrLn("repeat for each channel -C ... :", 33ul);
@@ -2298,8 +2347,8 @@ static char CheckRandom(int32_t modem, uint8_t pttch)
 static void repairsound(void)
 {
    /*  pttok:=FALSE; */
-   ptt(chan[afskmodem_LEFT].hptt, -1L);
-   ptt(chan[afskmodem_RIGHT].hptt, -1L);
+   ptt(chan[afskmodem_LEFT].hptt, 0L);
+   ptt(chan[afskmodem_RIGHT].hptt, 0L);
    if (abortonsounderr) Error("Sounddevice Failure", 20ul);
    osic_Close(soundfd);
    usleep(100000UL);
@@ -2470,6 +2519,12 @@ static char frames2tx(int32_t modem)
    return tx;
 } /* end frames2tx() */
 
+
+static char isecho(int32_t modem)
+{
+   return modpar[modem].haddcdrand && chan[modpar[modem].ch].echoflags;
+} /* end isecho() */
+
 #define afskmodem_MINENDFLAGS 3
 /* txtail between different modulation frames*/
 
@@ -2496,39 +2551,33 @@ static void sendmodem(void)
       { /* with */
          struct CHAN * anonym = &chan[c];
          if (anonym->pttsoundbufs>0UL) --anonym->pttsoundbufs;
+         anonym->sendecho = 0;
          if (anonym->state==afskmodem_receiv || anonym->state==afskmodem_sendtxtail && anonym->tbytec>3UL)
                  {
             /* minimum flags at end if baud change */
-            for (i = 0L; i<=7L; i++) {
+            i = 0L;
+            for (;;) {
                /* has any modem data? */
-               /*
-                         IF modpar[i].txbufin<>NIL THEN
-                           IF c=modpar[i].ch THEN actmodem:=i END;  
-                         END;
-               */
-               if (frames2tx(i) && c==modpar[i].ch) anonym->actmodem = i;
-            } /* end for */
-            /*
-                    IF (actmodem<0) OR (modpar[actmodem].txbufin=NIL)
-                THEN     (* no data to send *)
-            */
-            if (anonym->actmodem<0L || !frames2tx(anonym->actmodem)) {
-               /* no data to send */
-               /*
-               IF soundctl.getoutfilled(soundfd)
-                <=0 THEN soundctl.pcmsync(soundfd) END;
-               IF soundctl.getoutfilled(soundfd)
-                >0 THEN IO.WrInt(soundctl.getoutfilled(soundfd),1); IO.WrLn;
-                END;
-               */
-               if (anonym->pttstate && anonym->pttsoundbufs==0UL) {
-                  anonym->pttstate = 0;
-                  ptt(anonym->hptt, 0L);
-                /* guess all sound buffers are sent*/
-                  if (modpar[anonym->actmodem].dcdmsgs) {
-                     sendaxudp2((uint32_t)anonym->actmodem, 0UL, 0, "",
-                1ul);
+               if (c==modpar[i].ch) {
+                  if (frames2tx(i)) anonym->actmodem = i;
+                  if (isecho(i)) {
+                     anonym->sendecho = 1;
+                     anonym->actmodem = i;
+                     break;
                   }
+               }
+               ++i;
+               if (i>7L) break;
+            }
+            if (anonym->sendecho) {
+               chan[c].pttstate = 1;
+               ptt(chan[c].hptt, 1L);
+            }
+            else if (anonym->actmodem<0L || !frames2tx(anonym->actmodem)) {
+               /* no data to send */
+               if (anonym->pttstate && anonym->pttsoundbufs==0UL) {
+                  anonym->pttstate = 0; /* guess all sound buffers are sent*/
+                  ptt(anonym->hptt, 0L);
                }
             }
             else if (anonym->pttstate) {
@@ -2566,13 +2615,8 @@ static void sendmodem(void)
                */
                if (frames2tx(anonym->actmodem)) {
                   txmon(modpar[anonym->actmodem].txbufin);
-                  chan[c].pttstate = 1; /*WrInt(ORD(c),1); WrStrLn(" ptton");
-                */
+                  chan[c].pttstate = 1;
                   ptt(chan[c].hptt, 1L);
-                  if (modpar[anonym->actmodem].dcdmsgs) {
-                     sendaxudp2((uint32_t)anonym->actmodem, 0UL, 0, "",
-                1ul);
-                  }
                   chan[c].gmcnt = chan[c].gmqtime;
                   anonym->pttsoundbufs = soundbufs+extraaudiodelay;
                   anonym->state = afskmodem_sendtxdel;
@@ -2597,7 +2641,7 @@ static void sendmodem(void)
          else c = afskmodem_LEFT;
          { /* with */
             struct CHAN * anonym0 = &chan[c];
-            if (anonym0->state>=afskmodem_sendtxdel) {
+            if (anonym0->state>=afskmodem_sendtxdel || anonym0->sendecho) {
                samp = TFIR[anonym0->txbaudgen/512UL][(uint32_t)
                 anonym0->tscramb&63UL];
                if (modpar[anonym0->actmodem].afsk) {
@@ -2627,66 +2671,66 @@ static void sendmodem(void)
                   /*send next bit */
                   if (anonym0->tbitc<=0L) {
                      anonym0->tbitc = 8L;
-                     if (anonym0->state==afskmodem_sendtxdel) {
-                        if (modpar[anonym0->actmodem].bert>0L) {
-                           anonym0->tbyte = 255UL;
-                           modpar[anonym0->actmodem].bert -= 8L;
-                        }
-                        else {
-                           anonym0->tbyte = modpar[anonym0->actmodem]
-                .txdelpattern;
-                           ++anonym0->tbytec;
-                        }
-                        if (anonym0->tbytec>=modpar[anonym0->actmodem].txdel)
-                 anonym0->tbyte = 126UL;
-                        if (anonym0->tbytec>modpar[anonym0->actmodem].txdel) {
-                           anonym0->state = afskmodem_senddata;
-                           anonym0->tbytec = 0UL;
-                           anonym0->txstuffc = 0L;
-                        }
-                     }
-                     if (anonym0->state==afskmodem_sendtxtail) {
+                     if (anonym0->sendecho) {
                         anonym0->tbyte = 126UL;
-                        ++anonym0->tbytec;
-                        /*next frame*/
-                        if (modpar[anonym0->actmodem].txbufin) {
-                           /* same modem */
-                           anonym0->tbytec = 0UL;
-                           anonym0->state = afskmodem_senddata;
-                           anonym0->txstuffc = 0L;
-                           txmon(modpar[anonym0->actmodem].txbufin);
-                        }
-                        else if (anonym0->tbytec>modpar[anonym0->actmodem]
-                .txtail) {
-                           if (anonym0->echoflags) {
-                              ptt(anonym0->hptt,
-                (int32_t)(uint32_t)modpar[anonym0->actmodem].haddcdrand);
-                 /* echo flags if dcd */
-                              anonym0->tbytec = modpar[anonym0->actmodem]
-                .txtail; /* stay in this mode until new data send */
+                        anonym0->txstuffc = 0L;
+                     }
+                     else {
+                        if (anonym0->state==afskmodem_sendtxdel) {
+                           if (modpar[anonym0->actmodem].bert>0L) {
+                              anonym0->tbyte = 255UL;
+                              modpar[anonym0->actmodem].bert -= 8L;
                            }
                            else {
+                              anonym0->tbyte = modpar[anonym0->actmodem]
+                .txdelpattern;
+                              ++anonym0->tbytec;
+                           }
+                           if (anonym0->tbytec>=modpar[anonym0->actmodem]
+                .txdel) {
+                              anonym0->tbyte = 126UL; /* 1 flag minimum */
+                           }
+                           if (anonym0->tbytec>modpar[anonym0->actmodem]
+                .txdel) {
+                              anonym0->state = afskmodem_senddata;
+                              anonym0->tbytec = 0UL;
+                              anonym0->txstuffc = 0L;
+                           }
+                        }
+                        if (anonym0->state==afskmodem_sendtxtail) {
+                           anonym0->tbyte = 126UL;
+                           ++anonym0->tbytec;
+                           /*next frame*/
+                           if (modpar[anonym0->actmodem].txbufin) {
+                              /* same modem */
+                              anonym0->tbytec = 0UL;
+                              anonym0->state = afskmodem_senddata;
+                              anonym0->txstuffc = 0L;
+                              txmon(modpar[anonym0->actmodem].txbufin);
+                           }
+                           else if (anonym0->tbytec>modpar[anonym0->actmodem]
+                .txtail) {
                               anonym0->state = afskmodem_receiv;
                 /* no data for this modem */
                            }
                         }
-                     }
-                     if (anonym0->state==afskmodem_senddata) {
-                        { /* with */
-                           struct MPAR * anonym1 = &modpar[anonym0->actmodem]
+                        if (anonym0->state==afskmodem_senddata) {
+                           { /* with */
+                              struct MPAR * anonym1 = &modpar[anonym0->actmodem]
                 ;
-                           if (anonym1->txbufin==0 || anonym0->tbytec>=anonym1->txbufin->len+2UL)
+                              if (anonym1->txbufin==0 || anonym0->tbytec>=anonym1->txbufin->len+2UL)
                  {
-                              /*frame sent*/
-                              Free(&anonym1->txbufin);
-                              anonym0->state = afskmodem_sendtxtail;
-                              anonym0->tbyte = 126UL;
-                              anonym0->tbytec = 0UL;
-                           }
-                           else {
-                              anonym0->tbyte = (uint32_t)(uint8_t)
+                                 /*frame sent*/
+                                 Free(&anonym1->txbufin);
+                                 anonym0->state = afskmodem_sendtxtail;
+                                 anonym0->tbyte = 126UL;
+                                 anonym0->tbytec = 0UL;
+                              }
+                              else {
+                                 anonym0->tbyte = (uint32_t)(uint8_t)
                 anonym1->txbufin->data[anonym0->tbytec];
-                              ++anonym0->tbytec;
+                                 ++anonym0->tbytec;
+                              }
                            }
                         }
                      }
@@ -2730,7 +2774,7 @@ static void sendmodem(void)
          if (i==tmp0) break;
       } /* end for */
       /*    WrBin(soundfd, buf, adcbuflen*adcbytes); */
-      i = write(soundfd, (char *)buf, adcbuflen*adcbytes);
+      i = write(soundfdout, (char *)buf, adcbuflen*adcbytes);
       for (c = afskmodem_LEFT;; c++) {
          { /* with */
             struct CHAN * anonym2 = &chan[c];
