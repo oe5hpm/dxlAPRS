@@ -4077,12 +4077,6 @@ static void setmarklockpoi(char marker2)
    else useri_say("Not Locked", 11ul, 4UL, 'r');
 } /* end setmarklockpoi() */
 
-/*
-PROCEDURE slowupdate():TIME;   (* add image update time on cpu intensiv options *)
-CONST ADDDELAY=55;
-BEGIN RETURN ORD((lums.wxcol="R") OR (lums.wxcol="W") OR click.withradio)
-                *ADDDELAY END slowupdate;
-*/
 
 static uint32_t slowupdate(void)
 /* add image update time on cpu intensiv options */

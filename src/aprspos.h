@@ -16,7 +16,6 @@
 #include "aprsstr.h"
 #endif
 
-/* get aprs position by OE5DXL */
 #define aprspos_PI 3.1415926535
 
 #define aprspos_PI2 6.283185307
@@ -26,13 +25,10 @@
 #define aprspos_FEET 0.3048
 
 #define aprspos_KNOTS 1.852
-/* nautic miles */
 
 #define aprspos_WKNOTS 1.609
-/* wx knots */
 
 #define aprspos_SKNOTS 1.609
-/* stormdata knots */
 
 #define aprspos_ENCODEGPS "g"
 
@@ -51,10 +47,8 @@
 #define aprspos_EARTH 6370.0
 
 #define aprspos_AREASYMT "\\"
-/* area object symbol table */
 
 #define aprspos_AREASYM "l"
-/* area object symbol */
 
 extern float aprspos_rad0(float);
 
@@ -72,15 +66,12 @@ extern void aprspos_GetPos(struct aprsstr_POSITION *, uint32_t *,
                  uint32_t, char *);
 
 extern void aprspos_GetSym(char [], uint32_t, char *, char *);
-/* symbol out of destination call */
 
 extern void aprspos_wgs84s(float, float, float, float *,
                 float *, float *);
-/* km */
 
 extern void aprspos_wgs84r(float, float, float, float *,
                 float *, float *);
-/* km */
 
 
 extern void aprspos_BEGIN(void);
