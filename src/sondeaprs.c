@@ -494,7 +494,7 @@ static void comment0(char buf[], uint32_t buf_len, uint32_t uptime,
             }
             else if (fb[bol+1L]=='v') {
                /* insert version */
-               aprsstr_Append(hb, 120ul, " sondemod 1.34", 15ul);
+               aprsstr_Append(hb, 120ul, " sondemod 1.35", 15ul);
             }
             else if (fb[bol+1L]=='s') {
                /* insert sat count */
@@ -1365,6 +1365,22 @@ static void elevation(double * el, double * c,
 } /* end elevation() */
 
 
+static char typisser(const char fullid[], uint32_t fullid_len,
+                const char typstr[], uint32_t typstr_len)
+/* serial nr starts with type name */
+{
+   uint32_t i;
+   i = 0UL;
+   for (;;) {
+      if (fullid[i]==0 || fullid[i]!=typstr[i]) return 0;
+      ++i;
+      if (i>typstr_len-1 || typstr[i]==0) return 1;
+      if (i>fullid_len-1) return 0;
+   }
+   return 0;
+} /* end typisser() */
+
+
 extern void sondeaprs_senddata(double lat, double long0,
                 double alt, double speed, double dir,
                 double clb, double hp, double hyg,
@@ -1599,7 +1615,10 @@ extern void sondeaprs_senddata(double lat, double long0,
             }
             if (typstr[0UL]) {
                aprsstr_Append(s, 251ul, " Type=", 7ul);
-               aprsstr_Append(s, 251ul, typstr, typstr_len);
+               if (typisser(fullid, fullid_len, typstr, typstr_len)) {
+                  aprsstr_Append(s, 251ul, fullid, fullid_len);
+               }
+               else aprsstr_Append(s, 251ul, typstr, typstr_len);
             }
             if (og>=0.0 && og<=(double)sondeaprs_lowalt) {
                aprsstr_Append(s, 251ul, " OG=", 5ul);
@@ -1608,16 +1627,8 @@ extern void sondeaprs_senddata(double lat, double long0,
                aprsstr_Append(s, 251ul, h, 251ul);
                aprsstr_Append(s, 251ul, "m", 2ul);
             }
-            /* appended by SQ7BR */
-            if (burstKill==1UL || burstKill==2UL) {
-               aprsstr_Append(s, 251ul, " BK=", 5ul);
-               if (burstKill==1UL) {
-                  aprsstr_Append(s, 251ul, "Off", 4ul);
-               }
-               else aprsstr_Append(s, 251ul, "On", 3ul);
-            }
-            /* appended by SQ7BR */
-            if (fullid[0UL]) {
+            if (fullid[0UL] && !typisser(fullid, fullid_len, typstr,
+                typstr_len)) {
                aprsstr_Append(s, 251ul, " ser=", 6ul);
                aprsstr_Append(s, 251ul, fullid, fullid_len);
             }

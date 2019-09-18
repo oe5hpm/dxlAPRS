@@ -35,7 +35,7 @@
 
 /* demodulate RS92 sonde (2400bit/s manchester)
    and SRS-C34 (2400Bd AFSK 2000/3800Hz
-   and DFM06 (2500bit/s manchester)
+   and DFM (2500bit/s manchester)
    and RS41 (4800Bd GFSK) and send as AXUDP by OE5DXL */
 /*FROM fcntl IMPORT creat, open; */
 /*FROM flush IMPORT Flush; */
@@ -44,9 +44,12 @@
 /* gcc  -o sondeudp Lib.o aprsstr.o filesize.o flush.o osi.o ptty.o rsc.o sondeudp.o soundctl.o symlink.o tcp.o timec.o udp.o init_rs_char.o decode_rs_char.o /usr/local/xds/lib/x86/libts.a /usr/local/xds/lib/x86/libxds.a  -lm */
 #define sondeudp_MAXCHAN 64
 
+#define sondeudp_MONTIME 10
+/* seconds till next monitor udp send per channel */
+
 #define sondeudp_DAYSEC 86400
 
-#define sondeudp_CONTEXTLIFE 3600
+#define sondeudp_CONTEXTLIFE 1800
 /* seconds till forget context after last heared */
 
 #define sondeudp_ADCBYTES 2
@@ -65,7 +68,16 @@
 #define sondeudp_FRAMELIFETIME 3
 /* max seconds from frame sync to sending frame */
 
-#define sondeudp_WATERLEN 4
+#define sondeudp_WATERLEN 5
+
+#define sondeudp_cFREQ "f"
+/* watermark type freq */
+
+#define sondeudp_cRAPPORT "r"
+/* watermark type dB */
+
+#define sondeudp_cAFC "a"
+/* watermark type afc */
 
 #define sondeudp_DFIRLEN 64
 
@@ -140,6 +152,15 @@ typedef float DFIRTAB[1024];
 
 typedef float DFIR[64];
 
+struct DFNAMES;
+
+
+struct DFNAMES {
+   uint8_t start;
+   uint16_t dat[2];
+   uint8_t cnt[2];
+};
+
 struct UDPTX;
 
 typedef struct UDPTX * pUDPTX;
@@ -211,7 +232,6 @@ struct DFM6;
 
 
 struct DFM6 {
-   char enabled;
    char frametimeok;
    CNAMESTR id;
    CNAMESTR idcheck;
@@ -234,6 +254,28 @@ struct DFM6 {
    float lastlat;
    float lastlong;
    /* check name */
+   /* new df serial */
+   uint32_t nameregok;
+   uint32_t nameregtop;
+   struct DFNAMES namereg[50];
+   /* new df serial */
+   char wasdate;
+   char txok;
+   char d9;
+   uint32_t synword;
+   char cb[56];
+   char ch[56];
+   char db1[104];
+   char db2[104];
+   char dh1[104];
+   char dh2[104];
+};
+
+struct DFM6A;
+
+
+struct DFM6A {
+   char enabled;
    int32_t pllshift;
    int32_t baudfine;
    int32_t manchestd;
@@ -245,19 +287,9 @@ struct DFM6 {
    char oldd;
    char plld;
    char lastmanch;
-   char wasdate;
-   char txok;
-   char d9;
    uint32_t rxp;
    char rxbuf[264];
    AFIRTAB afirtab;
-   uint32_t synword;
-   char cb[56];
-   char ch[56];
-   char db1[104];
-   char db2[104];
-   char dh1[104];
-   char dh2[104];
    uint32_t demodbaud;
    uint32_t configbaud;
 };
@@ -306,11 +338,19 @@ struct C34;
 
 
 struct C34 {
-   char enabled;
    struct SCID id34;
    struct SCID id50;
    uint32_t idtime;
    uint32_t idcnt;
+   uint32_t tused;
+   char c50;
+};
+
+struct C34A;
+
+
+struct C34A {
+   char enabled;
    int32_t pllshift;
    int32_t baudfine;
    int32_t leveldcd;
@@ -325,7 +365,6 @@ struct C34 {
    char cbit;
    char oldd;
    char plld;
-   char c50;
    uint32_t rxbyte;
    uint32_t rxbytec;
    uint32_t rxbitc;
@@ -343,7 +382,19 @@ struct C34 {
    uint32_t configbaud;
    uint32_t txbaud;
    float hipasscap;
-   uint32_t tused;
+};
+
+struct NONAMES;
+
+typedef struct NONAMES * pNONAMES;
+
+
+struct NONAMES {
+   pNONAMES next;
+   uint32_t lastvalid;
+   uint32_t chname;
+   struct DFM6 dfm6;
+   struct C34 c34;
 };
 
 struct CHAN;
@@ -370,15 +421,18 @@ struct CHAN {
    uint8_t waterbyte;
    uint32_t waterword;
    uint32_t waterbits;
-   struct _0 waterdata[4];
-   struct _0 watertemp[4];
+   struct _0 waterdata[5];
+   struct _0 watertemp[5];
    uint32_t watersend;
    char waterok;
+   uint32_t chlabel;
+   uint32_t lastmon;
    struct R92 r92;
    struct R41 r41;
-   struct DFM6 dfm6;
-   struct C34 c34;
    struct M10 m10;
+   struct C34A c34a;
+   struct DFM6A dfm6a;
+   pNONAMES nonames;
 };
 
 static int32_t soundfd;
@@ -395,7 +449,11 @@ static char verb;
 
 static char verb2;
 
-static uint32_t dfmidchg;
+static uint32_t dfmidoldthreshold;
+
+static uint32_t dfmidchgthreshold;
+
+static uint32_t dfmidthreshold;
 
 static uint32_t getst;
 
@@ -423,11 +481,15 @@ static uint32_t maxchannels;
 
 static uint32_t cfgchannels;
 
+static pUDPTX monitorudp;
+
 static short adcbuf[4096];
 
 static uint32_t dfmnametyp;
 
 static char rxlabel[5];
+
+static pNONAMES oldnonames;
 
 static uint16_t CRCTAB[256];
 
@@ -753,9 +815,9 @@ static void Config(void)
    uint32_t i;
    struct R92 * anonym;
    struct R41 * anonym0;
-   struct DFM6 * anonym1;
+   struct DFM6A * anonym1;
    struct M10 * anonym2;
-   struct C34 * anonym3;
+   struct C34A * anonym3;
    for (c = 0UL; c<=63UL; c++) {
       { /* with */
          struct R92 * anonym = &chan[c].r92;
@@ -792,7 +854,7 @@ static void Config(void)
          anonym0->synp = 0UL;
       }
       { /* with */
-         struct DFM6 * anonym1 = &chan[c].dfm6;
+         struct DFM6A * anonym1 = &chan[c].dfm6a;
          anonym1->configbaud = 2500UL;
          anonym1->demodbaud = (2UL*anonym1->configbaud*65536UL)/adcrate;
          initafir(anonym1->afirtab, 0UL, 1900UL,
@@ -804,8 +866,6 @@ static void Config(void)
          anonym1->rxp = 264UL; /* out of fram, wait for sync */
          anonym1->manchestd = 0L;
          anonym1->polarity = 0;
-         anonym1->numcnt = 0UL;
-         anonym1->txok = 0;
       }
       { /* with */
          struct M10 * anonym2 = &chan[c].m10;
@@ -822,7 +882,7 @@ static void Config(void)
          anonym2->txok = 0;
       }
       { /* with */
-         struct C34 * anonym3 = &chan[c].c34;
+         struct C34A * anonym3 = &chan[c].c34a;
          anonym3->txbaud = (anonym3->configbaud*65536UL)/adcrate;
          anonym3->demodbaud = anonym3->txbaud*2UL;
          anonym3->afskmidfreq = X2C_DIVR((float)
@@ -864,8 +924,8 @@ static void Parms(void)
    char mys;
    struct R92 * anonym;
    struct R41 * anonym0;
-   struct DFM6 * anonym1;
-   struct C34 * anonym2;
+   struct DFM6A * anonym1;
+   struct C34A * anonym2;
    struct M10 * anonym3;
    struct CHAN * anonym4;
    /* set only 1 chan */
@@ -882,7 +942,9 @@ static void Parms(void)
    debfd = -1L;
    chanset = 0;
    dfmnametyp = 0UL;
-   dfmidchg = 1UL; /* minutes no tx if dfm name change */
+   dfmidoldthreshold = 1UL;
+   dfmidchgthreshold = 3UL;
+   dfmidthreshold = 1UL;
    rxlabel[0] = 0;
    for (channel = 0UL; channel<=63UL; channel++) {
       { /* with */
@@ -896,14 +958,12 @@ static void Parms(void)
          anonym0->pllshift = 1024L;
       }
       { /* with */
-         struct DFM6 * anonym1 = &chan[channel].dfm6;
+         struct DFM6A * anonym1 = &chan[channel].dfm6a;
          anonym1->enabled = 1;
          anonym1->pllshift = 1024L;
-         anonym1->idcnt0 = 0UL;
-         anonym1->idcnt1 = 0UL;
       }
       { /* with */
-         struct C34 * anonym2 = &chan[channel].c34;
+         struct C34A * anonym2 = &chan[channel].c34a;
          anonym2->enabled = 1;
          anonym2->pllshift = 4096L;
          anonym2->confignyquist = 65UL;
@@ -911,14 +971,6 @@ static void Parms(void)
          anonym2->configbaud = 2400UL;
          anonym2->configafskshift = 1800UL;
          anonym2->configafskmid = 3800UL;
-         anonym2->id34.id[0] = 0;
-         anonym2->id34.idcheck[0] = 0;
-         anonym2->id34.idtime = 0UL;
-         anonym2->id34.idcnt = 0UL;
-         anonym2->id50.id[0] = 0;
-         anonym2->id50.idcheck[0] = 0;
-         anonym2->id50.idtime = 0UL;
-         anonym2->id50.idcnt = 0UL;
       }
       { /* with */
          struct M10 * anonym3 = &chan[channel].m10;
@@ -943,12 +995,12 @@ static void Parms(void)
          else if (h[1U]=='3') {
             if (chanset) {
                /* set only 1 chan */
-               chan[channel].c34.enabled = 0;
+               chan[channel].c34a.enabled = 0;
             }
             else {
                /* use before -C set both */
                for (ch = 0UL; ch<=63UL; ch++) {
-                  chan[ch].c34.enabled = 0;
+                  chan[ch].c34a.enabled = 0;
                } /* end for */
             }
          }
@@ -979,12 +1031,12 @@ static void Parms(void)
          else if (h[1U]=='6') {
             if (chanset) {
                /* set only 1 chan */
-               chan[channel].dfm6.enabled = 0;
+               chan[channel].dfm6a.enabled = 0;
             }
             else {
                /* use before -C set both */
                for (ch = 0UL; ch<=63UL; ch++) {
-                  chan[ch].dfm6.enabled = 0;
+                  chan[ch].dfm6a.enabled = 0;
                } /* end for */
             }
          }
@@ -1045,11 +1097,19 @@ static void Parms(void)
          else if (h[1U]=='F') {
             osi_NextArg(h, 1024ul);
             if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
-            chan[channel].c34.configafskmid = cnum;
+            chan[channel].c34a.configafskmid = cnum;
          }
          else if (h[1U]=='G') {
             osi_NextArg(h, 1024ul);
-            if (!aprsstr_StrToCard(h, 1024ul, &dfmidchg)) err = 1;
+            if (!aprsstr_StrToCard(h, 1024ul, &dfmidchgthreshold)) err = 1;
+         }
+         else if (h[1U]=='g') {
+            osi_NextArg(h, 1024ul);
+            if (!aprsstr_StrToCard(h, 1024ul, &dfmidoldthreshold)) err = 1;
+         }
+         else if (h[1U]=='S') {
+            osi_NextArg(h, 1024ul);
+            if (!aprsstr_StrToCard(h, 1024ul, &dfmidthreshold)) err = 1;
          }
          else if (h[1U]=='l') {
             osi_NextArg(h, 1024ul);
@@ -1100,6 +1160,15 @@ static void Parms(void)
                } /* end for */
             }
          }
+         else if (h[1U]=='M') {
+            osi_NextArg(h, 1024ul);
+            osic_alloc((char * *) &utx, sizeof(struct UDPTX));
+            if (utx==0) Error("udp socket out of memory", 25ul);
+            utx->udpfd = GetIp(h, 1024ul, &utx->ip, &utx->destport);
+            if (utx->udpfd<0L) Error("cannot open udp socket", 23ul);
+            utx->next = monitorudp;
+            monitorudp = utx;
+         }
          else if (h[1U]=='v') verb = 1;
          else if (h[1U]=='s') nosendsdr = 1;
          else if (h[1U]=='V') {
@@ -1107,7 +1176,6 @@ static void Parms(void)
             verb2 = 1;
          }
          else {
-            /*      ELSIF h[1]="M" THEN m10newID:=TRUE; */
             if (h[1U]=='h') {
                osi_WrStrLn("oss Mono/Stereo up to 64 Channel RS92, RS41, C34,\
  C50 Sonde Demodulator to raw Frames", 86ul);
@@ -1116,19 +1184,19 @@ lators may send to same decoder", 79ul);
                osi_WrStrLn("Stereo used for 2 Rx for 2 Sondes or 1 Sonde with\
  Antenna-Diversity", 68ul);
                osi_WrStrLn(" -1             disable M10 decoding (use -C befo\
-re to select 1 channel)", 73ul);
+re to select a channel)", 73ul);
                osi_WrStrLn(" -3             disable SRSC34/50 decoding (use -\
-C before to select 1 channel)", 79ul);
+C before to select a channel)", 79ul);
                osi_WrStrLn(" -4             disable RS41 decoding (use -C bef\
-ore to select 1 channel)", 74ul);
-               osi_WrStrLn(" -6             disable DFM06 decoding (use -C be\
-fore to select 1 channel)", 75ul);
+ore to select a channel)", 74ul);
+               osi_WrStrLn(" -6             disable DFM decoding (use -C befo\
+re to select a channel)", 73ul);
                osi_WrStrLn(" -9             disable RS92 decoding (use -C bef\
-ore to select 1 channel)", 74ul);
+ore to select a channel)", 74ul);
                osi_WrStrLn(" -a             abort on sounddevice error else r\
-etry to open (USB audio...)", 77ul);
+etry to open (USB audio, pipe)", 80ul);
                osi_WrStrLn(" -c <num>       maxchannels, 0 for automatic chan\
-nel number recognition", 72ul);
+nel number recognition from sdrtst", 84ul);
                osi_WrStrLn(" -C <num>       channel parameters follow (repeat\
  for each channel)", 68ul);
                osi_WrStrLn(" -D <filename>  write raw soundcard input data to\
@@ -1141,37 +1209,49 @@ ighpass (-999..999)", 69ul);
 ber", 53ul);
                osi_WrStrLn(" -f <num>       adcrate (22050) (8000..96000)",
                 46ul);
-               osi_WrStrLn(" -G <minutes>   no tx if DFMxx Name changes (2)",
-                 48ul);
+               osi_WrStrLn(" -g <minutes>   DFMxx (with no serial number) sub\
+stitute name stability check before tx (1)", 92ul);
+               osi_WrStrLn("                default set to 3 on automatic ser\
+ial number search \"-n 0\"", 74ul);
+               osi_WrStrLn(" -G <minutes>   no tx if DFMxx substitute Name ch\
+anges (3)", 59ul);
                osi_WrStrLn(" -h             help", 21ul);
                osi_WrStrLn(" -I <call>      mycall + ssid (use -C before to s\
-elect 1 channel)", 66ul);
-               osi_WrStrLn(" -l <num>       adcbuflen (256)", 32ul);
+elect 1 channel) else sondemod sets call", 90ul);
+               osi_WrStrLn(" -l <num>       sound buffer length (256)",
+                42ul);
                osi_WrStrLn(" -L <name>      Label of device sent to sondemod,\
  max 4 char", 61ul);
-               /*        WrStrLn("
-                -M             make M10 object name out of all (known)
-                bits of serial number"); */
-               osi_WrStrLn(" -N <num>       0..255 generate DFM-ID from seria\
-l no. in first frame (see -v)", 79ul);
-               osi_WrStrLn("                enter first byte in decimal \"AC0\
-0070\" -N 172", 61ul);
-               osi_WrStrLn(" -n <num>       same as -N but try old methode to\
-o", 51ul);
+               osi_WrStrLn(" -M <x.x.x.x:destport> Send (human readable) UDP \
+info about decoded data to Scanner", 84ul);
+               osi_WrStrLn("                  (or netcat) to weed out birdies\
+, maybe repeated for more destinations", 88ul);
+               osi_WrStrLn(" -N <num>       1..255 generate DFM-ID from seria\
+l no. (see -V) (off)", 70ul);
+               osi_WrStrLn("                num is start byte of frame with s\
+erial no. in decimal \"AC00070\" -N 172", 87ul);
+               osi_WrStrLn("                0 automatic search for serial num\
+ber, increase -S for more reliability", 87ul);
+               osi_WrStrLn(" -n <num>       same as -N but send substitute na\
+me if no serial number found in \"-g\" min", 90ul);
                osi_WrStrLn(" -o <filename>  oss devicename (/dev/dsp) or raw/\
 wav audio file or pipe /dev/stdin", 83ul);
                osi_WrStrLn(" -s             disable sending sdr-data (freq/af\
 c/rssi/label) to (old version) sondemod", 89ul);
+               osi_WrStrLn(" -S <retries>   check DFM serial number for stabi\
+lity before fixing name (1)", 77ul);
+               osi_WrStrLn("                on automatic search, minimum and \
+default is 2", 62ul);
                osi_WrStrLn(" -u <x.x.x.x:destport> send rx data in udp (to so\
 ndemod), -C <n> before sets", 77ul);
                osi_WrStrLn("                channel number, maybe repeated fo\
 r more destinations", 69ul);
                osi_WrStrLn(" -V             very verbous, with some hex dumps\
 ", 50ul);
-               osi_WrStrLn(" -v             verbous, (CRC-checked Sondename)",
-                 49ul);
+               osi_WrStrLn(" -v             verbous, (frames with Name looks \
+ok)", 53ul);
                osi_WrStrLn("example: sondeudp -f 16000 -o /dev/dsp -c 2 -C 0 \
--e 50 -u 127.0.0.1:4000", 73ul);
+-e 50 -u 127.0.0.1:4000 -v", 76ul);
                X2C_ABORT();
             }
             err = 1;
@@ -1189,6 +1269,9 @@ r more destinations", 69ul);
    if (adcbuflen*(maxchannels+1UL)>4096UL) {
       adcbuflen = 4096UL/(maxchannels+1UL);
    }
+   if (dfmnametyp==256UL && dfmidoldthreshold<2UL) dfmidoldthreshold = 2UL;
+   if ((dfmnametyp&255UL)==0UL && dfmidthreshold<2UL) dfmidthreshold = 2UL;
+   if (dfmidthreshold==0UL) dfmidthreshold = 1UL;
    Config();
    OpenSound();
 } /* end Parms() */
@@ -1204,6 +1287,18 @@ static void sendudp(char data[], uint32_t data_len, int32_t len,
 } /* end sendudp() */
 
 
+static void WrChName(uint32_t n)
+{
+   /*
+     WrStr(CHR(ASH(n,-24)));
+     WrStr(CHR(ASH(n,-16) MOD 256));
+     WrStr(CHR(ASH(n,-8) MOD 256));
+     WrStr(CHR(n MOD 256));
+   */
+   osic_WrINT32(n, 1UL);
+} /* end WrChName() */
+
+
 static void appendsdr(uint32_t c)
 {
    uint32_t i;
@@ -1212,7 +1307,7 @@ static void appendsdr(uint32_t c)
    struct _0 * anonym;
    if (chan[c].waterok) {
       i = 0UL;
-      while (i<=3UL && chan[c].waterdata[i].cmd) {
+      while (i<=4UL && chan[c].waterdata[i].cmd) {
          { /* with */
             struct _0 * anonym = &chan[c].waterdata[i];
             if (anonym->cmd=='f') {
@@ -1238,6 +1333,8 @@ static void appendsdr(uint32_t c)
                osi_WrStr("dB", 3ul);
             }
          }
+         /*      ELSIF cmd=cCHNAME THEN WrStr(" $"); WrChName(dat);
+                WrStr(" "); */
          ++i;
       }
       chan[c].waterok = 0;
@@ -1257,22 +1354,13 @@ static void sdrparm(char b[], uint32_t b_len, uint32_t * len,
    uint32_t p;
    uint32_t t;
    struct _0 * anonym;
-   /*
-   chan[ch].waterok:=TRUE;
-   chan[ch].waterdata[0].cmd:="f";
-   chan[ch].waterdata[0].dat:=40250000;
-   chan[ch].waterdata[1].cmd:="a";
-   chan[ch].waterdata[1].dat:=00007FFFEH;
-   chan[ch].waterdata[2].cmd:="r";
-   chan[ch].waterdata[2].dat:=670;
-   */
    if (!nosendsdr) {
       p = *len;
       t = osic_time();
       if ((chan[ch].watersend<=t && chan[ch].watersend+2UL>=t)
                 && b_len-1>*len+19UL) {
          i = 0UL;
-         while (i<=3UL && chan[ch].waterdata[i].cmd) {
+         while (i<=4UL && chan[ch].waterdata[i].cmd) {
             { /* with */
                struct _0 * anonym = &chan[ch].waterdata[i];
                if ((anonym->cmd=='f' || anonym->cmd=='a')
@@ -1424,6 +1512,36 @@ static void alludp(pUDPTX utx, uint32_t len, char buf[],
 } /* end alludp() */
 
 
+static void monitor(uint32_t ch, const char typ[], uint32_t typ_len,
+                const char id[], uint32_t id_len)
+{
+   pUDPTX u;
+   char h[201];
+   char s[201];
+   if (chan[ch].lastmon+10UL<chan[ch].framestarttime) {
+      chan[ch].lastmon = chan[ch].framestarttime;
+      strncpy(s,"RX c=",201u);
+      aprsstr_IntToStr((int32_t)ch, 1UL, h, 201ul);
+      aprsstr_Append(s, 201ul, h, 201ul);
+      aprsstr_Append(s, 201ul, " t=", 4ul);
+      aprsstr_Append(s, 201ul, typ, typ_len);
+      if (id[0UL]) {
+         aprsstr_Append(s, 201ul, " n=", 4ul);
+         aprsstr_Append(s, 201ul, id, id_len);
+      }
+      aprsstr_Append(s, 201ul, "\012", 2ul);
+      u = monitorudp;
+      while (u) {
+         if (u->udpfd>=0L) {
+            sendudp(s, 201ul, (int32_t)aprsstr_Length(s, 201ul), u->ip,
+                u->destport, u->udpfd);
+         }
+         u = u->next;
+      }
+   }
+} /* end monitor() */
+
+
 static int32_t reedsolomon92(char buf[], uint32_t buf_len)
 {
    uint32_t i;
@@ -1479,6 +1597,7 @@ static void decodeframe92(uint32_t m)
    uint32_t p;
    uint32_t j;
    int32_t corr;
+   char id[8];
    struct CHAN * anonym;
    corr = reedsolomon92(chan[m].r92.rxbuf, 301ul);
    { /* with */
@@ -1494,29 +1613,39 @@ static void decodeframe92(uint32_t m)
       sdrparm(chan[m].r92.rxbuf, 301ul, &flen, (int32_t)m);
       alludp(anonym->udptx, flen, chan[m].r92.rxbuf, 301ul);
    }
-   if (verb) {
-      p = 6UL;
-      if (chan[m].r92.rxbuf[6U]=='e') {
-         ++p;
-         len = (uint32_t)(uint8_t)chan[m].r92.rxbuf[7U]*2UL+2UL;
-                /* +crc */
-         ++p;
+   id[0U] = 0;
+   p = 6UL;
+   if (chan[m].r92.rxbuf[6U]=='e') {
+      ++p;
+      len = (uint32_t)(uint8_t)chan[m].r92.rxbuf[7U]*2UL+2UL; /* +crc */
+      ++p;
+      if (verb) {
          WrChan((int32_t)m);
          osi_WrStr("R92 ", 5ul);
-         if (8UL+len>240UL || !crcrs(chan[m].r92.rxbuf, 301ul, 8L,
-                (int32_t)(8UL+len))) osi_WrStr("----  crc err ", 15ul);
-         else {
-            j = 4UL;
-            while ((uint8_t)chan[m].r92.rxbuf[8UL+j]>=' ') {
-               osi_WrStr((char *) &chan[m].r92.rxbuf[8UL+j], 1u/1u);
-               ++j;
-            }
+      }
+      if (8UL+len>240UL || !crcrs(chan[m].r92.rxbuf, 301ul, 8L,
+                (int32_t)(8UL+len))) {
+         if (verb) osi_WrStr("----  crc err ", 15ul);
+      }
+      else {
+         j = 0UL;
+         while ((uint8_t)chan[m].r92.rxbuf[8UL+j+4UL]>=' ' && j<=7UL) {
+            id[j] = chan[m].r92.rxbuf[8UL+j+4UL];
+            ++j;
+         }
+         /*      j:=4; */
+         /*      WHILE chan[m].r92.rxbuf[p+j]>=" " DO WrStr(chan[m]
+                .r92.rxbuf[p+j]); INC(j); END; */
+         if (verb) {
+            osi_WrStr(id, 8ul);
             osi_WrStr(" ", 2ul);
             osic_WrINT32((uint32_t)(uint8_t)
                 chan[m].r92.rxbuf[8U]+(uint32_t)(uint8_t)
                 chan[m].r92.rxbuf[9U]*256UL, 4UL);
          }
-         /*      IF m>0 THEN WrStr("             ") END; */
+      }
+      /*      IF m>0 THEN WrStr("             ") END; */
+      if (verb) {
          WrdB(chan[m].admax-chan[m].admin);
          WrQ(chan[m].r92.bitlev, chan[m].r92.noise);
          if (corr<0L) osi_WrStr(" -R", 4ul);
@@ -1529,6 +1658,7 @@ static void decodeframe92(uint32_t m)
          appendsdr(m);
          osi_WrStrLn("", 1ul);
       }
+      monitor(m, "RS92", 5ul, id, 8ul);
    }
 } /* end decodeframe92() */
 
@@ -1812,7 +1942,6 @@ static void decode41(uint32_t m)
    uint32_t nameok;
    uint32_t len;
    uint32_t p;
-   uint32_t j;
    uint32_t i;
    char ch;
    char typ;
@@ -1821,6 +1950,8 @@ static void decode41(uint32_t m)
    int32_t repl;
    int32_t corr;
    char s[24];
+   char ha[16];
+   char id[8];
    struct R41 * anonym;
    uint32_t tmp;
    { /* with */
@@ -1883,21 +2014,16 @@ static void decode41(uint32_t m)
                tmp = len-1UL;
                i = 0UL;
                if (i<=tmp) for (;; i++) {
-                  osi_WrHex((uint32_t)(uint8_t)anonym->rxbuf[p+i], 3UL);
-                  if (i==len-1UL || (i&15UL)==15UL) {
-                     for (j = 0UL; j<=15UL; j++) {
-                        if ((uint8_t)anonym->rxbuf[((p+i)-16UL)
-                +j]>=' ' && (uint8_t)anonym->rxbuf[((p+i)-16UL)+j]<='~') {
-                           osi_WrStr((char *) &anonym->rxbuf[((p+i)-16UL)
-                +j], 1u/1u);
-                        }
-                        else osi_WrStr(".", 2ul);
-                     } /* end for */
-                     osi_WrStrLn("", 1ul);
+                  ch = anonym->rxbuf[p+i];
+                  osi_WrHex((uint32_t)(uint8_t)ch, 3UL);
+                  if ((uint8_t)ch>=' ' && (uint8_t)ch<='~') {
+                     ha[i&15UL] = ch;
                   }
+                  else ha[i&15UL] = '.';
+                  if ((i&15UL)!=15UL) ha[i+1UL&15UL] = 0;
+                  if (i==len-1UL || (i&15UL)==15UL) osi_WrStrLn(ha, 16ul);
                   if (i==tmp) break;
                } /* end for */
-               osi_WrStrLn("", 1ul);
                osi_WrStrLn("", 1ul);
             }
             tmp = (p+len)-1UL;
@@ -1905,9 +2031,7 @@ static void decode41(uint32_t m)
             if (i<=tmp) for (;; i++) {
                /* update fixbyte statistics */
                if (anonym->fixbytes[i]==anonym->rxbuf[i]) {
-                  if (anonym->fixcnt[i]<255U) {
-                     ++anonym->fixcnt[i];
-                  }
+                  if (anonym->fixcnt[i]<255U) ++anonym->fixcnt[i];
                }
                else {
                   anonym->fixbytes[i] = anonym->rxbuf[i];
@@ -1915,7 +2039,15 @@ static void decode41(uint32_t m)
                }
                if (i==tmp) break;
             } /* end for */
-            if (typ=='y') nameok = p;
+            if (typ=='y') {
+               nameok = p; /* ID with correct crc */
+               for (i = 0UL; i<=7UL; i++) {
+                  id[i] = anonym->rxbuf[nameok+2UL+i];
+                  if ((uint8_t)id[i]<=' ' || (uint8_t)id[i]>='\177') {
+                     id[i] = '.';
+                  }
+               } /* end for */
+            }
             else if (typ=='|') {
                /*        ELSIF typ=CHR(7AH) THEN */
                /*             WrStrLn("7A frame"); */
@@ -1947,12 +2079,13 @@ static void decode41(uint32_t m)
       if (verb && nameok>0UL) {
          WrChan((int32_t)m);
          osi_WrStr("R41 ", 5ul);
-         for (i = 0UL; i<=7UL; i++) {
-            ch = anonym->rxbuf[nameok+2UL+i];
-            if ((uint8_t)ch>' ' && (uint8_t)ch<'\177') {
-               osi_WrStr((char *) &ch, 1u/1u);
-            }
-         } /* end for */
+         /*
+               FOR i:=0 TO 7 DO 
+                 ch:=rxbuf[nameok+2+i];
+                 IF (ch>" ") & (ch<CHR(127)) THEN WrStr(ch) END;
+               END;
+         */
+         osi_WrStr(id, 8ul);
          osi_WrStr(" ", 2ul);
          osic_WrUINT32(getcard16(anonym->rxbuf, 560ul, nameok), 1UL);
          if (date>0UL) {
@@ -1991,7 +2124,10 @@ static void decode41(uint32_t m)
          osi_WrStrLn("", 1ul);
       }
    }
-   if (nameok>0UL) sendrs41(m);
+   if (nameok>0UL) {
+      sendrs41(m);
+      monitor(m, "RS41", 5ul, id, 8ul);
+   }
 } /* end decode41() */
 
 #define sondeudp_MAXHEADERR 4
@@ -2331,41 +2467,40 @@ static void wh(uint32_t x)
 } /* end wh() */
 
 
-static void killdfid(uint32_t m)
+static void killdfid(uint32_t m, char all)
 /* reset dfm06 name */
 {
    struct DFM6 * anonym;
    { /* with */
-      struct DFM6 * anonym = &chan[m].dfm6;
+      struct DFM6 * anonym = &chan[m].nonames->dfm6;
+      if (all) anonym->idcnt = 0UL;
       anonym->idcnt0 = 0UL;
       anonym->idcnt1 = 0UL;
       anonym->txok = 0;
       anonym->id[0U] = 0;
       anonym->idnew = 0UL;
       anonym->frametimeok = 0;
+      anonym->nameregtop = 0UL;
+      anonym->nameregok = 0UL;
    }
 } /* end killdfid() */
-
-
-static char dfidok(uint32_t m)
-{
-   return chan[m].dfm6.idcnt0>=dfmidchg && chan[m].dfm6.idcnt1>=dfmidchg;
-} /* end dfidok() */
 
 
 static void checkdfpos(float deg, float odeg, uint32_t m)
 /* reset dfm06 name on pos jump */
 {
    if ((float)fabs(deg-odeg)>0.25f) {
-      if (verb && dfidok(m)) osi_WrStr(" POS JUMP! TX STOP ", 20ul);
-      killdfid(m);
+      if (verb && chan[m].nonames->dfm6.id[0U]) {
+         osi_WrStr(" POSITION JUMP! TX STOP ", 25ul);
+      }
+      killdfid(m, 1);
    }
 } /* end checkdfpos() */
 
 
 static void checkdf69(float long0, uint32_t m)
 {
-   chan[m].dfm6.d9 = long0<30.0f;
+   chan[m].nonames->dfm6.d9 = long0<30.0f;
                 /* if long<30 it is df6 lat else is df9 long */
 } /* end checkdf69() */
 
@@ -2392,8 +2527,9 @@ static void decodesub(const char b[], uint32_t b_len, uint32_t m,
    uint32_t thour;
    uint32_t tmin;
    char numcntok;
-   /* check name, if changed may be checksum error or 2 sondes on same frequency */
    struct DFM6 * anonym;
+   struct DFM6 * anonym0;
+   struct DFM6 * anonym1;
    if (verb2) {
       if (subnum==0UL) osi_WrStr(" Dat", 5ul);
       else osi_WrStr(" dat", 5ul);
@@ -2410,68 +2546,50 @@ static void decodesub(const char b[], uint32_t b_len, uint32_t m,
          osi_WrStr(" num: ", 7ul);
          osic_WrINT32(v, 0UL);
       }
-      numcntok = 0;
-      if ((chan[m].dfm6.num+1UL&255UL)==v && chan[m].dfm6.wasdate) {
-         ++chan[m].dfm6.numcnt; /* date/num+1/date/num+1 sequence ok */
-      }
-      else chan[m].dfm6.numcnt = 0UL;
-      chan[m].dfm6.num = v;
-      chan[m].dfm6.wasdate = 0; /* we have number, next must be date */
-      if (chan[m].dfm6.lastdate+60UL==chan[m].dfm6.actdate) {
-         /* minute change */
-         if (chan[m].dfm6.numcnt>=3UL) {
-            chan[m].dfm6.timediff = chan[m].dfm6.actdate-osic_time();
+      { /* with */
+         struct DFM6 * anonym = &chan[m].nonames->dfm6;
+         numcntok = 0;
+         if ((anonym->num+1UL&255UL)==v && anonym->wasdate) {
+            ++anonym->numcnt; /* date/num+1/date/num+1 sequence ok */
+         }
+         else anonym->numcnt = 0UL;
+         anonym->num = v;
+         anonym->wasdate = 0; /* we have number, next must be date */
+         if (anonym->lastdate+60UL==anonym->actdate) {
+            /* minute change */
+            if (anonym->numcnt>=3UL) {
+               anonym->timediff = anonym->actdate-osic_time();
                 /* sonde realtime - systime */
-            chan[m].dfm6.numcnt = 0UL;
-            numcntok = 1;
-         }
-      }
-      if (dfmnametyp<512UL && ((dfmnametyp==0UL || chan[m].dfm6.idcnt0==0UL)
-                || chan[m].dfm6.idcnt1==0UL)) {
-         /* id with old methode */
-         /*
-                  IF ((chan[m].dfm6.num+1) MOD 256=v) & chan[m].dfm6.wasdate
-                  THEN INC(chan[m].dfm6.numcnt)
-                (* date/num+1/date/num+1 sequence ok *)
-                  ELSE chan[m].dfm6.numcnt:=0 END;
-                  chan[m].dfm6.num:=v;
-                  chan[m].dfm6.wasdate:=FALSE;
-                (* we have number, next must be date *)
-         */
-         u = (((v+256UL)-(chan[m].dfm6.idnum&255UL)&255UL)+256UL)
-                -(osic_time()+chan[m].dfm6.timediff&255UL)&255UL;
-         if (u>=128UL) u = 256UL-u;
-         chan[m].dfm6.txok = u<=1UL; /* max +-1s tolerance of num */
-         if (verb) {
-            osi_WrStr(" [", 3ul);
-            aprsstr_IntToStr((int32_t)u, 0UL, s, 101ul);
-            if (chan[m].dfm6.txok) aprsstr_Append(s, 101ul, "s seq]", 7ul);
-            else aprsstr_Append(s, 101ul, "s OUT OF seq - NO TX]", 22ul);
-            osi_WrStr(s, 101ul);
-         }
-         /*
-                  IF chan[m].dfm6.lastdate+60=chan[m]
-                .dfm6.actdate THEN              (* minute change *)
-                    IF chan[m].dfm6.numcnt>=3 THEN
-                      chan[m].dfm6.timediff:=chan[m].dfm6.actdate-time();
-                (* sonde realtime - systime *)
-         */
-         if (numcntok) {
-            v = (chan[m].dfm6.num+256UL)-(chan[m].dfm6.actdate&255UL)&255UL;
-            if (verb) {
-               osi_WrStr(" NEW ID", 8ul);
-               osic_WrINT32(v, 0UL);
+               anonym->numcnt = 0UL;
+               numcntok = 1;
             }
-            chan[m].dfm6.idnum = v;
-            if (chan[m].dfm6.d9) strncpy(s,"DFM9",101u);
-            else strncpy(s,"DFM6",101u);
-            s[4U] = (char)((v/100UL)%10UL+48UL);
-            s[5U] = (char)((v/10UL)%10UL+48UL);
-            s[6U] = (char)(v%10UL+48UL);
-            s[7U] = 0;
-            /*           IF verb THEN WrStr(" id: "); WrStr(s) END; */
-            { /* with */
-               struct DFM6 * anonym = &chan[m].dfm6;
+         }
+         if (dfmnametyp<512UL && ((dfmnametyp==0UL || anonym->idcnt0<dfmidthreshold)
+                 || anonym->idcnt1<dfmidthreshold)) {
+            /* id with old methode */
+            u = (((v+256UL)-(anonym->idnum&255UL)&255UL)+256UL)-(osic_time()
+                +anonym->timediff&255UL)&255UL;
+            if (u>=128UL) u = 256UL-u;
+            anonym->txok = u<=1UL; /* max +-1s tolerance of num */
+            if (verb) {
+               osi_WrStr(" [", 3ul);
+               aprsstr_IntToStr((int32_t)u, 0UL, s, 101ul);
+               if (anonym->txok) aprsstr_Append(s, 101ul, "s seq]", 7ul);
+               else aprsstr_Append(s, 101ul, "s OUT OF seq - NO TX]", 22ul);
+               osi_WrStr(s, 101ul);
+            }
+            if (numcntok) {
+               v = (anonym->num+256UL)-(anonym->actdate&255UL)&255UL;
+               if (verb) {
+                  osi_WrStr(" NEW ID", 8ul);
+                  osic_WrINT32(v, 0UL);
+               }
+               anonym->idnum = v;
+               strncpy(s,"DFM6",101u); /* build a name */
+               s[4U] = (char)((v/100UL)%10UL+48UL);
+               s[5U] = (char)((v/10UL)%10UL+48UL);
+               s[6U] = (char)(v%10UL+48UL);
+               s[7U] = 0;
                if (aprsstr_StrCmp(anonym->idcheck, 9ul, s, 101ul)) {
                   ++anonym->idcnt; /* got same name again */
                }
@@ -2480,18 +2598,20 @@ static void decodesub(const char b[], uint32_t b_len, uint32_t m,
                   aprsstr_Assign(anonym->idcheck, 9ul, s, 101ul);
                   anonym->idcnt = 1UL;
                }
-               if (anonym->idcnt>2UL || anonym->id[0U]==0) {
+               if (verb) {
+                  osi_WrStr(" MATCHES:", 10ul);
+                  osic_WrINT32(anonym->idcnt, 1UL);
+               }
+               if (anonym->idcnt>dfmidchgthreshold || anonym->id[0U]
+                ==0 && anonym->idcnt>dfmidoldthreshold) {
                   /* first name or safe new name */
                   memcpy(anonym->id,anonym->idcheck,9u);
                   anonym->idtime = osic_time();
                }
             }
          }
-         /*           END; */
-         /*           chan[m].dfm6.numcnt:=0; */
-         chan[m].dfm6.tused = osic_time();
       }
-      if (chan[m].dfm6.d9) {
+      if (chan[m].nonames->dfm6.d9) {
          /* dfm09 speed */
          v = bits2val(b, b_len, 32UL, 16UL);
          if (verb) {
@@ -2501,26 +2621,29 @@ static void decodesub(const char b[], uint32_t b_len, uint32_t m,
       }
       break;
    case 1UL:
-      if (chan[m].dfm6.d9) {
-         /* dfm09 lat, dir */
-         v = bits2val(b, b_len, 0UL, 32UL);
-         u = bits2val(b, b_len, 32UL, 16UL);
-         vr = (float)v*1.E-7f;
-         checkdfpos(vr, chan[m].dfm6.lastlat, m);
-         chan[m].dfm6.lastlat = vr;
-         if (verb) {
-            osi_WrStr(" lat: ", 7ul);
-            osic_WrFixed(vr, 5L, 0UL);
-            osi_WrStr(" ", 2ul);
-            osic_WrFixed((float)u*0.01f, 1L, 0UL);
-            osi_WrStr(" deg", 5ul);
+      { /* with */
+         struct DFM6 * anonym0 = &chan[m].nonames->dfm6;
+         if (anonym0->d9) {
+            /* dfm09 lat, dir */
+            v = bits2val(b, b_len, 0UL, 32UL);
+            u = bits2val(b, b_len, 32UL, 16UL);
+            vr = (float)v*1.E-7f;
+            checkdfpos(vr, anonym0->lastlat, m);
+            anonym0->lastlat = vr;
+            if (verb) {
+               osi_WrStr(" lat: ", 7ul);
+               osic_WrFixed(vr, 5L, 0UL);
+               osi_WrStr(" ", 2ul);
+               osic_WrFixed((float)u*0.01f, 1L, 0UL);
+               osi_WrStr(" deg", 5ul);
+            }
          }
-      }
-      else {
-         u = bits2val(b, b_len, 24UL, 16UL);
-         if (verb) {
-            osi_WrStr(" ms: ", 6ul);
-            osic_WrINT32(u, 0UL);
+         else {
+            u = bits2val(b, b_len, 24UL, 16UL);
+            if (verb) {
+               osi_WrStr(" ms: ", 6ul);
+               osic_WrINT32(u, 0UL);
+            }
          }
       }
       break;
@@ -2528,12 +2651,12 @@ static void decodesub(const char b[], uint32_t b_len, uint32_t m,
       v = bits2val(b, b_len, 0UL, 32UL);
       vr = (float)v*1.E-7f;
       checkdf69(vr, m); /* test if dfm6 or dfm9 */
-      if (chan[m].dfm6.d9) {
+      if (chan[m].nonames->dfm6.d9) {
          /* dfm09 long, clb */
          ui = (int32_t)bits2val(b, b_len, 32UL, 16UL);
          if (ui>=32768L) ui -= 65536L;
-         checkdfpos(vr, chan[m].dfm6.lastlong, m);
-         chan[m].dfm6.lastlong = vr;
+         checkdfpos(vr, chan[m].nonames->dfm6.lastlong, m);
+         chan[m].nonames->dfm6.lastlong = vr;
          if (verb) {
             osi_WrStr(" long:", 7ul);
             osic_WrFixed(vr, 5L, 0UL);
@@ -2544,8 +2667,8 @@ static void decodesub(const char b[], uint32_t b_len, uint32_t m,
       else {
          /* dfm06 lat, speed */
          u = bits2val(b, b_len, 32UL, 16UL);
-         checkdfpos(vr, chan[m].dfm6.lastlat, m);
-         chan[m].dfm6.lastlat = vr;
+         checkdfpos(vr, chan[m].nonames->dfm6.lastlat, m);
+         chan[m].nonames->dfm6.lastlat = vr;
          if (verb) {
             osi_WrStr(" lat: ", 7ul);
             osic_WrFixed(vr, 5L, 0UL);
@@ -2556,7 +2679,7 @@ static void decodesub(const char b[], uint32_t b_len, uint32_t m,
       }
       break;
    case 3UL: /* dfm09 alt */
-      if (chan[m].dfm6.d9) {
+      if (chan[m].nonames->dfm6.d9) {
          v = bits2val(b, b_len, 0UL, 32UL);
          if (verb) {
             osi_WrStr(" alti:", 7ul);
@@ -2569,8 +2692,8 @@ static void decodesub(const char b[], uint32_t b_len, uint32_t m,
          v = bits2val(b, b_len, 0UL, 32UL);
          u = bits2val(b, b_len, 32UL, 16UL);
          vr = (float)v*1.E-7f;
-         checkdfpos(vr, chan[m].dfm6.lastlong, m);
-         chan[m].dfm6.lastlong = vr;
+         checkdfpos(vr, chan[m].nonames->dfm6.lastlong, m);
+         chan[m].nonames->dfm6.lastlong = vr;
          if (verb) {
             osi_WrStr(" long:", 7ul);
             osic_WrFixed(vr, 5L, 0UL);
@@ -2581,7 +2704,7 @@ static void decodesub(const char b[], uint32_t b_len, uint32_t m,
       }
       break;
    case 4UL:
-      if (chan[m].dfm6.d9) {
+      if (chan[m].nonames->dfm6.d9) {
       }
       else {
          /* dfm06 alt, clb */
@@ -2627,41 +2750,43 @@ static void decodesub(const char b[], uint32_t b_len, uint32_t m,
          tt = ((tt+tday)-1UL)*86400UL+thour*3600UL+tmin*60UL;
       }
       else tt = 0UL;
-      /*DateToStr(tt, s); WrStr(s); WrStr("<date"); */
-      if (chan[m].dfm6.wasdate) chan[m].dfm6.numcnt = 0UL;
-      chan[m].dfm6.wasdate = 1;
-      chan[m].dfm6.lastdate = chan[m].dfm6.actdate;
-      chan[m].dfm6.actdate = tt;
-      th = osic_time();
-      if (chan[m].dfm6.lastdate+60UL==chan[m].dfm6.actdate) {
-         /* minute jump */
-         if (chan[m].dfm6.frametimeok) thh = 3UL;
-         else thh = 4UL;
-         if (chan[m].dfm6.lastdatesystime+thh>=th) {
-            /* in timespan */
-            chan[m].dfm6.frametime = chan[m].dfm6.actdate-th;
+      { /* with */
+         struct DFM6 * anonym1 = &chan[m].nonames->dfm6;
+         if (anonym1->wasdate) anonym1->numcnt = 0UL;
+         anonym1->wasdate = 1;
+         anonym1->lastdate = anonym1->actdate;
+         anonym1->actdate = tt;
+         th = osic_time();
+         if (anonym1->lastdate+60UL==anonym1->actdate) {
+            /* minute jump */
+            if (anonym1->frametimeok) thh = 3UL;
+            else thh = 4UL;
+            if (anonym1->lastdatesystime+thh>=th) {
+               /* in timespan */
+               anonym1->frametime = anonym1->actdate-th;
                 /* sonde realtime - systime */
-            chan[m].dfm6.frametimeok = 1;
-            if (verb) osi_WrStr(" got SECOND", 12ul);
+               anonym1->frametimeok = 1;
+               if (verb) osi_WrStr(" got SECOND", 12ul);
+            }
          }
-      }
-      chan[m].dfm6.lastdatesystime = th;
-      if (verb) {
-         osi_WrStr(" ", 2ul);
-         aprsstr_IntToStr((int32_t)tyear, 0UL, s, 101ul);
-         aprsstr_Append(s, 101ul, "-", 2ul);
-         osi_WrStr(s, 101ul);
-         aprsstr_IntToStr((int32_t)tmon, 0UL, s, 101ul);
-         aprsstr_Append(s, 101ul, "-", 2ul);
-         osi_WrStr(s, 101ul);
-         aprsstr_IntToStr((int32_t)tday, 0UL, s, 101ul);
-         aprsstr_Append(s, 101ul, " ", 2ul);
-         osi_WrStr(s, 101ul);
-         aprsstr_IntToStr((int32_t)thour, 0UL, s, 101ul);
-         aprsstr_Append(s, 101ul, ":", 2ul);
-         osi_WrStr(s, 101ul);
-         aprsstr_IntToStr((int32_t)tmin, 0UL, s, 101ul);
-         osi_WrStr(s, 101ul);
+         anonym1->lastdatesystime = th;
+         if (verb) {
+            osi_WrStr(" ", 2ul);
+            aprsstr_IntToStr((int32_t)tyear, 0UL, s, 101ul);
+            aprsstr_Append(s, 101ul, "-", 2ul);
+            osi_WrStr(s, 101ul);
+            aprsstr_IntToStr((int32_t)tmon, 0UL, s, 101ul);
+            aprsstr_Append(s, 101ul, "-", 2ul);
+            osi_WrStr(s, 101ul);
+            aprsstr_IntToStr((int32_t)tday, 0UL, s, 101ul);
+            aprsstr_Append(s, 101ul, " ", 2ul);
+            osi_WrStr(s, 101ul);
+            aprsstr_IntToStr((int32_t)thour, 0UL, s, 101ul);
+            aprsstr_Append(s, 101ul, ":", 2ul);
+            osi_WrStr(s, 101ul);
+            aprsstr_IntToStr((int32_t)tmin, 0UL, s, 101ul);
+            osi_WrStr(s, 101ul);
+         }
       }
       break;
    default:;
@@ -2686,100 +2811,215 @@ static void getdfname(const char b[], uint32_t b_len, uint32_t m,
    uint32_t u;
    uint32_t v;
    char s[101];
-   v = bits2val(b, b_len, 0UL, 8UL);
-   if (v==startbyte) {
-      u = bits2val(b, b_len, 24UL, 4UL);
-      v = bits2val(b, b_len, 8UL, 16UL);
-      if (u==1UL) {
-         /* id low 16 bit*/
-         n = chan[m].dfm6.idnew&65535UL;
-         if (n==0UL || n==v) {
-            ++chan[m].dfm6.idcnt0;
-            chan[m].dfm6.idtime = osic_time();
-            if (verb) osi_WrStr(" ID LOW ", 9ul);
+   struct DFM6 * anonym;
+   { /* with */
+      struct DFM6 * anonym = &chan[m].nonames->dfm6;
+      v = bits2val(b, b_len, 0UL, 8UL);
+      if (v==startbyte) {
+         u = bits2val(b, b_len, 24UL, 4UL);
+         v = bits2val(b, b_len, 8UL, 16UL);
+         if (u==1UL) {
+            /* id low 16 bit*/
+            n = anonym->idnew&65535UL;
+            if (n==0UL || n==v) {
+               ++anonym->idcnt0;
+               anonym->idtime = osic_time();
+               if (verb) {
+                  osi_WrStr(" ID LOW(", 9ul);
+                  osic_WrINT32(anonym->idcnt0, 1UL);
+                  osi_WrStr(")", 2ul);
+               }
+            }
+            else {
+               killdfid(m, 0);
+               if (verb) osi_WrStr(" NEW ID LOW", 12ul);
+            }
+            anonym->idnew = (uint32_t)((uint32_t)
+                anonym->idnew&0xFFFF0000UL)+v;
          }
-         else {
-            killdfid(m);
-            if (verb) osi_WrStr(" NEW ID LOW ", 13ul);
+         else if (u==0UL) {
+            /* id low 16 bit*/
+            n = anonym->idnew/65536UL;
+            if (n==0UL || n==v) {
+               ++anonym->idcnt1;
+               anonym->idtime = osic_time();
+               if (verb) {
+                  osi_WrStr(" ID HIGH(", 10ul);
+                  osic_WrINT32(anonym->idcnt1, 1UL);
+                  osi_WrStr(")", 2ul);
+               }
+            }
+            else {
+               killdfid(m, 0);
+               if (verb) osi_WrStr(" NEW ID HIGH ", 14ul);
+            }
+            anonym->idnew = (uint32_t)((uint32_t)anonym->idnew&0xFFFFUL)
+                +v*65536UL;
          }
-         chan[m].dfm6.idnew = (uint32_t)((uint32_t)
-                chan[m].dfm6.idnew&0xFFFF0000UL)+v;
-      }
-      else if (u==0UL) {
-         /* id low 16 bit*/
-         n = chan[m].dfm6.idnew/65536UL;
-         if (n==0UL || n==v) {
-            ++chan[m].dfm6.idcnt1;
-            chan[m].dfm6.idtime = osic_time();
-            if (verb) osi_WrStr(" ID HIGH ", 10ul);
-         }
-         else {
-            killdfid(m);
-            if (verb) osi_WrStr(" NEW ID HIGH ", 14ul);
-         }
-         chan[m].dfm6.idnew = (uint32_t)((uint32_t)
-                chan[m].dfm6.idnew&0xFFFFUL)+v*65536UL;
-      }
-      if (dfidok(m)) {
-         v = chan[m].dfm6.idnew;
-         if (chan[m].dfm6.d9) strncpy(s,"DF9",101u);
-         else strncpy(s,"DF6",101u);
-         s[3U] = hex(v/65536UL);
-         s[4U] = hex(v/4096UL);
-         s[5U] = hex(v/256UL);
-         s[6U] = hex(v/16UL);
-         s[7U] = hex(v);
-         s[8U] = 0;
-         aprsstr_Assign(chan[m].dfm6.id, 9ul, s, 101ul);
-         memcpy(chan[m].dfm6.idcheck,chan[m].dfm6.id,9u);
-         chan[m].dfm6.txok = 1;
-         chan[m].dfm6.tused = osic_time();
-         if (verb) {
-            osi_WrStr(" ID:", 5ul);
-            osi_WrStr(s, 101ul);
+         if (anonym->idcnt0>=dfmidthreshold && anonym->idcnt1>=dfmidthreshold)
+                 {
+            strncpy(s,"DF6",101u);
+            v = anonym->idnew;
+            s[3U] = hex(v/65536UL);
+            s[4U] = hex(v/4096UL);
+            s[5U] = hex(v/256UL);
+            s[6U] = hex(v/16UL);
+            s[7U] = hex(v);
+            s[8U] = 0;
+            aprsstr_Assign(anonym->id, 9ul, s, 101ul);
+            memcpy(anonym->idcheck,anonym->id,9u);
+            anonym->txok = 1;
+            if (verb) {
+               osi_WrStr(" ID:", 5ul);
+               osi_WrStr(s, 101ul);
+            }
          }
       }
    }
 } /* end getdfname() */
 
 
+static void finddfname(const char b[], uint32_t b_len,
+                uint32_t m)
+{
+   uint8_t st;
+   uint32_t v;
+   uint32_t i;
+   uint32_t ix;
+   uint16_t d;
+   char s[101];
+   struct DFM6 * anonym;
+   /* start byte found */
+   struct DFNAMES * anonym0;
+   /* make new entry */
+   struct DFNAMES * anonym1;
+   char tmp;
+   { /* with */
+      struct DFM6 * anonym = &chan[m].nonames->dfm6;
+      st = (uint8_t)bits2val(b, b_len, 0UL, 8UL); /* frame start byte */
+      ix = bits2val(b, b_len, 24UL, 4UL); /* hi/lo part of ser */
+      d = (uint16_t)bits2val(b, b_len, 8UL, 16UL); /* data bytes */
+      i = 0UL;
+      while (i<anonym->nameregtop && anonym->namereg[i].start!=st) ++i;
+      if (i<anonym->nameregtop) {
+         { /* with */
+            struct DFNAMES * anonym0 = &anonym->namereg[i];
+            if (ix<=1UL && (anonym0->cnt[ix]==0U || anonym0->dat[ix]==d)) {
+               anonym0->dat[ix] = d;
+               if (anonym0->cnt[ix]<255U) ++anonym0->cnt[ix];
+               if (verb2 || verb && anonym->idcnt0==0UL) {
+                  osi_WrStr(" AUTOID:", 9ul);
+                  osi_WrStr((char *)(tmp = hex((uint32_t)(st/16U)),
+                &tmp), 1u/1u);
+                  osi_WrStr((char *)(tmp = hex((uint32_t)st),&tmp),
+                1u/1u);
+                  osi_WrStr("[", 2ul);
+                  osic_WrINT32(ix, 1UL);
+                  osi_WrStr("] CNT:", 7ul);
+                  osic_WrINT32((uint32_t)anonym0->cnt[0U], 1UL);
+                  osi_WrStr(",", 2ul);
+                  osic_WrINT32((uint32_t)anonym0->cnt[1U], 1UL);
+               }
+               if ((uint32_t)anonym0->cnt[0U]>=dfmidthreshold && (uint32_t)
+                anonym0->cnt[1U]>=dfmidthreshold) {
+                  if (anonym->idcnt0==0UL) {
+                     anonym->idcnt0 = (uint32_t)anonym0->cnt[0U];
+                     anonym->idcnt1 = (uint32_t)anonym0->cnt[1U];
+                     anonym->nameregok = i;
+                     strncpy(s,"DF6",101u);
+                     v = (uint32_t)anonym0->dat[0U]*65536UL+(uint32_t)
+                anonym0->dat[1U];
+                     s[3U] = hex(v/65536UL);
+                     s[4U] = hex(v/4096UL);
+                     s[5U] = hex(v/256UL);
+                     s[6U] = hex(v/16UL);
+                     s[7U] = hex(v);
+                     s[8U] = 0;
+                     aprsstr_Assign(anonym->id, 9ul, s, 101ul);
+                     memcpy(anonym->idcheck,anonym->id,9u);
+                     anonym->txok = 1;
+                     if (verb) {
+                        osi_WrStr(" NEW AUTOID(", 13ul);
+                        osic_WrINT32(v, 1UL);
+                        osi_WrStr("):", 3ul);
+                        osi_WrStr(s, 101ul);
+                     }
+                  }
+                  if (anonym->nameregok==i) anonym->idtime = osic_time();
+               }
+            }
+            else {
+               /* data changed so not ser */
+               anonym0->cnt[0U] = 0U;
+               anonym0->cnt[1U] = 0U;
+               if (anonym->nameregok==i) {
+                  anonym->idcnt0 = 0UL; /* found id wrong */
+                  anonym->idcnt1 = 0UL;
+               }
+            }
+         }
+      }
+      else if (ix<=1UL) {
+         { /* with */
+            struct DFNAMES * anonym1 = &anonym->namereg[anonym->nameregtop];
+            anonym1->start = st;
+            anonym1->cnt[0U] = 0U;
+            anonym1->cnt[1U] = 0U;
+            anonym1->dat[ix] = d;
+            anonym1->cnt[ix] = 1U;
+         }
+         if (anonym->nameregtop<49UL) ++anonym->nameregtop;
+      }
+   }
+} /* end finddfname() */
+
+
 static void decodeframe6(uint32_t m)
 {
    uint32_t j;
    uint32_t i;
+   uint32_t tnow;
    uint32_t rt;
    char s[201];
    char tx;
    struct DFM6 * anonym;
-   /* build tx frame */
-   struct DFM6 * anonym0;
-   struct CHAN * anonym1; /* my call if set */
+   struct CHAN * anonym0; /* my call if set */
    { /* with */
-      struct DFM6 * anonym = &chan[m].dfm6;
-      deinterleave(anonym->rxbuf, 264ul, 0UL, 7UL, anonym->ch, 56ul);
-      deinterleave(anonym->rxbuf, 264ul, 56UL, 13UL, anonym->dh1, 104ul);
-      deinterleave(anonym->rxbuf, 264ul, 160UL, 13UL, anonym->dh2, 104ul);
-      if (anonym->tused+3600UL<osic_time()) anonym->id[0U] = 0;
+      struct DFM6 * anonym = &chan[m].nonames->dfm6;
+      deinterleave(chan[m].dfm6a.rxbuf, 264ul, 0UL, 7UL, anonym->ch, 56ul);
+      deinterleave(chan[m].dfm6a.rxbuf, 264ul, 56UL, 13UL, anonym->dh1,
+                104ul);
+      deinterleave(chan[m].dfm6a.rxbuf, 264ul, 160UL, 13UL, anonym->dh2,
+                104ul);
       if (hamming(anonym->dh1, 104ul, 13UL, anonym->db1,
                 104ul) && hamming(anonym->dh2, 104ul, 13UL, anonym->db2,
                 104ul)) {
+         tnow = osic_time();
+         if (anonym->tused+1800UL<tnow) {
+            anonym->id[0U] = 0; /* timed out context */
+            anonym->nameregtop = 0UL;
+         }
+         anonym->tused = tnow;
+         chan[m].nonames->lastvalid = tnow;
          if (verb) {
             WrChan((int32_t)m);
             if (anonym->id[0U]) osi_WrStr(anonym->id, 9ul);
-            else if (chan[m].dfm6.d9) osi_WrStr("DF9", 4ul);
             else osi_WrStr("DF6", 4ul);
             WrdB(chan[m].admax-chan[m].admin);
-            WrQ(anonym->bitlev, chan[m].dfm6.noise);
+            WrQ(chan[m].dfm6a.bitlev, chan[m].dfm6a.noise);
             Wrtune(chan[m].admax+chan[m].admin, chan[m].admax-chan[m].admin);
          }
          /*
                  WrStr(" ");
-                 IF frametimeok THEN wrdate(time()+chan[m].dfm6.frametime);
+                 IF frametimeok THEN wrdate(tnow()+chan[m].dfm6.frametime);
                  ELSE WrStr("[wait for GPS Time]") END;
          */
          if (hamming(anonym->ch, 56ul, 7UL, anonym->cb, 56ul)) {
             if (dfmnametyp>=256UL) {
-               getdfname(anonym->cb, 56ul, m, dfmnametyp&255UL);
+               if (dfmnametyp&255UL) {
+                  getdfname(anonym->cb, 56ul, m, dfmnametyp&255UL);
+               }
+               else finddfname(anonym->cb, 56ul, m);
             }
             if (verb) {
                osi_WrStr(" ", 2ul);
@@ -2789,67 +3029,70 @@ static void decodeframe6(uint32_t m)
             }
          }
          decodesub(anonym->db1, 104ul, m, 0UL);
-         /*      IF verb THEN WrStr(" /") END; */
          decodesub(anonym->db2, 104ul, m, 1UL);
+         /* build tx frame */
+         /*    WITH chan[m].nonames^.dfm6 DO */
+         tx = (anonym->id[0U] && aprsstr_StrCmp(anonym->idcheck, 9ul,
+                anonym->id, 9ul)) && anonym->idtime+900UL>tnow;
+         for (i = 0UL; i<=9UL; i++) {
+            s[i] = 0;
+         } /* end for */
+         if (tx && anonym->txok) {
+            /* else stop sending if ambigous id */
+            for (i = 0UL; i<=7UL; i++) {
+               s[i] = anonym->id[i]; /* sonde id or zero string for no tx */
+            } /* end for */
+         }
          { /* with */
-            struct DFM6 * anonym0 = &chan[m].dfm6;
-            tx = (anonym0->id[0U] && aprsstr_StrCmp(anonym0->idcheck, 9ul,
-                anonym0->id, 9ul)) && anonym0->idtime+900UL>osic_time();
-            for (i = 0UL; i<=9UL; i++) {
-               s[i] = 0;
-            } /* end for */
-            if (tx && anonym0->txok) {
-               /* else stop sending if ambigous id */
-               for (i = 0UL; i<=7UL; i++) {
-                  s[i] = anonym0->id[i];
-                /* sonde id or zero string for no tx */
-               } /* end for */
-            }
-            { /* with */
-               struct CHAN * anonym1 = &chan[m];
-               s[10U] = (char)(anonym1->mycallc/16777216UL);
-               s[11U] = (char)(anonym1->mycallc/65536UL&255UL);
-               s[12U] = (char)(anonym1->mycallc/256UL&255UL);
-               s[13U] = (char)(anonym1->mycallc&255UL);
-               if (anonym1->mycallc>0UL) s[14U] = anonym1->myssid;
-               else s[14U] = '\020';
-            }
-            if (anonym0->frametimeok) {
-               rt = osic_time()+chan[m].dfm6.frametime;
-                /* interpolated sonde realtime */
-            }
-            else rt = 0UL;
-            s[15U] = (char)(rt/16777216UL);
-            s[16U] = (char)(rt/65536UL&255UL);
-            s[17U] = (char)(rt/256UL&255UL);
-            s[18U] = (char)(rt&255UL);
-            j = 19UL;
-            for (i = 0UL; i<=3UL; i++) {
-               s[j] = (char)bits2val(anonym0->cb, 56ul, i*8UL, 8UL);
+            struct CHAN * anonym0 = &chan[m];
+            s[10U] = (char)(anonym0->mycallc/16777216UL);
+            s[11U] = (char)(anonym0->mycallc/65536UL&255UL);
+            s[12U] = (char)(anonym0->mycallc/256UL&255UL);
+            s[13U] = (char)(anonym0->mycallc&255UL);
+            if (anonym0->mycallc>0UL) s[14U] = anonym0->myssid;
+            else s[14U] = '\020';
+         }
+         if (anonym->frametimeok) rt = tnow+anonym->frametime;
+         else rt = 0UL;
+         s[15U] = (char)(rt/16777216UL);
+         s[16U] = (char)(rt/65536UL&255UL);
+         s[17U] = (char)(rt/256UL&255UL);
+         s[18U] = (char)(rt&255UL);
+         j = 19UL;
+         for (i = 0UL; i<=3UL; i++) {
+            s[j] = (char)bits2val(anonym->cb, 56ul, i*8UL, 8UL);
                 /* payload */
-               ++j;
-            } /* end for */
-            for (i = 0UL; i<=6UL; i++) {
-               s[j] = (char)bits2val(anonym0->db1, 104ul, i*8UL, 8UL);
+            ++j;
+         } /* end for */
+         for (i = 0UL; i<=6UL; i++) {
+            s[j] = (char)bits2val(anonym->db1, 104ul, i*8UL, 8UL);
                 /* payload */
-               ++j;
-            } /* end for */
-            for (i = 0UL; i<=6UL; i++) {
-               s[j] = (char)bits2val(anonym0->db2, 104ul, i*8UL, 8UL);
+            ++j;
+         } /* end for */
+         for (i = 0UL; i<=6UL; i++) {
+            s[j] = (char)bits2val(anonym->db2, 104ul, i*8UL, 8UL);
                 /* payload */
-               ++j;
-            } /* end for */
-            sdrparm(s, 201ul, &j, (int32_t)m);
-            alludp(chan[m].udptx, j, s, 201ul);
-            if ((verb && !tx) && anonym0->id[0U]) {
+            ++j;
+         } /* end for */
+         sdrparm(s, 201ul, &j, (int32_t)m);
+         alludp(chan[m].udptx, j, s, 201ul);
+         if ((verb && !tx) && anonym->id[0U]) {
+            if (anonym->id[0U] && !aprsstr_StrCmp(anonym->idcheck, 9ul,
+                anonym->id, 9ul)) {
                osi_WrStrLn("", 1ul);
-               osi_WrStr(" changing name ", 16ul);
-               osi_WrStr(anonym0->id, 9ul);
+               osi_WrStr(" changing id ", 14ul);
+               osi_WrStr(anonym->id, 9ul);
                osi_WrStr("<->", 4ul);
-               osi_WrStr(anonym0->idcheck, 9ul);
+               osi_WrStr(anonym->idcheck, 9ul);
+            }
+            else {
+               osi_WrStrLn("", 1ul);
+               osi_WrStr(" no tx, id timeout ", 20ul);
             }
          }
+         /*    END; */
          /*build tx frame */
+         monitor(m, "DFM", 4ul, anonym->id, 9ul);
          if (verb) {
             appendsdr(m);
             osi_WrStrLn("", 1ul);
@@ -2862,13 +3105,16 @@ static void decodeframe6(uint32_t m)
 static void demodbyte6(uint32_t m, char d)
 {
    /*  WrInt(ORD(d),1); */
-   struct DFM6 * anonym;
+   struct DFM6A * anonym;
    { /* with */
-      struct DFM6 * anonym = &chan[m].dfm6;
-      anonym->synword = anonym->synword*2UL+(uint32_t)d;
+      struct DFM6A * anonym = &chan[m].dfm6a;
+      chan[m].nonames->dfm6.synword = chan[m]
+                .nonames->dfm6.synword*2UL+(uint32_t)d;
       if (anonym->rxp>=264UL) {
-         if ((anonym->synword&65535UL)==17871UL) anonym->rxp = 0UL;
-         else if ((anonym->synword&65535UL)==47664UL) {
+         if ((chan[m].nonames->dfm6.synword&65535UL)==17871UL) {
+            anonym->rxp = 0UL;
+         }
+         else if ((chan[m].nonames->dfm6.synword&65535UL)==47664UL) {
             /* inverse start sequence found */
             anonym->polarity = !anonym->polarity;
             anonym->rxp = 0UL;
@@ -2890,11 +3136,11 @@ static void demodbit6(uint32_t m, float u, float u0)
 {
    char d;
    float ua;
-   struct DFM6 * anonym;
+   struct DFM6A * anonym;
    /*WrFixed(u,0,9); WrStr(" "); */
    d = u>=u0;
    { /* with */
-      struct DFM6 * anonym = &chan[m].dfm6;
+      struct DFM6A * anonym = &chan[m].dfm6a;
       if (anonym->lastmanch==u0<0.0f) {
          anonym->manchestd += (32767L-anonym->manchestd)/16L;
       }
@@ -2918,7 +3164,7 @@ static void demodbit6(uint32_t m, float u, float u0)
 static void demod6(float u, uint32_t m)
 {
    char d;
-   struct DFM6 * anonym;
+   struct DFM6A * anonym;
    /*
      IF debfd>=0 THEN
        ui:=VAL(INTEGER, u*0.002);
@@ -2926,7 +3172,7 @@ static void demod6(float u, uint32_t m)
      END;
    */
    { /* with */
-      struct DFM6 * anonym = &chan[m].dfm6;
+      struct DFM6A * anonym = &chan[m].dfm6a;
       d = u>=0.0f;
       if (anonym->cbit) {
          demodbit6(m, u, anonym->lastu);
@@ -2947,9 +3193,9 @@ static void Fsk6(uint32_t m)
 {
    float ff;
    int32_t lim;
-   struct DFM6 * anonym;
+   struct DFM6A * anonym;
    { /* with */
-      struct DFM6 * anonym = &chan[m].dfm6;
+      struct DFM6A * anonym = &chan[m].dfm6a;
       lim = (int32_t)anonym->demodbaud;
       for (;;) {
          if (anonym->baudfine>=65536L) {
@@ -2991,19 +3237,19 @@ static void demodframe34(uint32_t channel)
    struct CHAN * anonym0; /* call if set */
    char tmp;
    { /* with */
-      struct C34 * anonym = &chan[channel].c34;
+      struct C34 * anonym = &chan[channel].nonames->c34;
       sum1 = 0UL;
       sum2 = 65791UL;
       for (i = 2UL; i<=6UL; i++) {
-         sum1 += (uint32_t)(uint8_t)anonym->rxbuf[i];
-         sum2 -= (uint32_t)(uint8_t)anonym->rxbuf[i]*(7UL-i);
+         sum1 += (uint32_t)(uint8_t)chan[channel].c34a.rxbuf[i];
+         sum2 -= (uint32_t)(uint8_t)chan[channel].c34a.rxbuf[i]*(7UL-i);
       } /* end for */
       sum1 = sum1&255UL;
       sum2 = sum2&255UL;
       ok0 = sum1==(uint32_t)(uint8_t)
-                anonym->rxbuf[7U] && sum2==(uint32_t)(uint8_t)
-                anonym->rxbuf[8U];
-      if (anonym->tused+3600UL<osic_time()) {
+                chan[channel].c34a.rxbuf[7U] && sum2==(uint32_t)(uint8_t)
+                chan[channel].c34a.rxbuf[8U];
+      if (anonym->tused+1800UL<osic_time()) {
          anonym->id34.id[0U] = 0; /* timed out context */
          anonym->id50.id[0U] = 0;
       }
@@ -3021,27 +3267,30 @@ static void demodframe34(uint32_t channel)
             osi_WrStr(anonym->id34.id, 9ul);
          }
          WrdB(chan[channel].admax-chan[channel].admin);
-         WrQuali(noiselevel(anonym->bitlev, anonym->noise));
+         WrQuali(noiselevel(chan[channel].c34a.bitlev,
+                chan[channel].c34a.noise));
          Wrtune(chan[channel].admax+chan[channel].admin,
                 chan[channel].admax-chan[channel].admin);
          osi_WrStr(" [", 3ul);
-         osi_WrHex((uint32_t)(uint8_t)anonym->rxbuf[2U], 2UL);
+         osi_WrHex((uint32_t)(uint8_t)chan[channel].c34a.rxbuf[2U], 2UL);
          osi_WrStr(" ", 2ul);
-         osi_WrHex((uint32_t)(uint8_t)anonym->rxbuf[3U], 2UL);
-         osi_WrHex((uint32_t)(uint8_t)anonym->rxbuf[4U], 2UL);
-         osi_WrHex((uint32_t)(uint8_t)anonym->rxbuf[5U], 2UL);
-         osi_WrHex((uint32_t)(uint8_t)anonym->rxbuf[6U], 2UL);
+         osi_WrHex((uint32_t)(uint8_t)chan[channel].c34a.rxbuf[3U], 2UL);
+         osi_WrHex((uint32_t)(uint8_t)chan[channel].c34a.rxbuf[4U], 2UL);
+         osi_WrHex((uint32_t)(uint8_t)chan[channel].c34a.rxbuf[5U], 2UL);
+         osi_WrHex((uint32_t)(uint8_t)chan[channel].c34a.rxbuf[6U], 2UL);
          osi_WrStr(" ", 2ul);
-         osi_WrHex((uint32_t)(uint8_t)anonym->rxbuf[7U], 2UL);
-         osi_WrHex((uint32_t)(uint8_t)anonym->rxbuf[8U], 2UL);
+         osi_WrHex((uint32_t)(uint8_t)chan[channel].c34a.rxbuf[7U], 2UL);
+         osi_WrHex((uint32_t)(uint8_t)chan[channel].c34a.rxbuf[8U], 2UL);
          osi_WrStr("] ", 3ul);
       }
       if (ok0) {
          /* chksum ok */
-         val = (uint32_t)(uint8_t)anonym->rxbuf[6U]+(uint32_t)
-                (uint8_t)anonym->rxbuf[5U]*256UL+(uint32_t)(uint8_t)
-                anonym->rxbuf[4U]*65536UL+(uint32_t)(uint8_t)
-                anonym->rxbuf[3U]*16777216UL;
+         chan[channel].nonames->lastvalid = osic_time();
+         val = (uint32_t)(uint8_t)
+                chan[channel].c34a.rxbuf[6U]+(uint32_t)(uint8_t)
+                chan[channel].c34a.rxbuf[5U]*256UL+(uint32_t)(uint8_t)
+                chan[channel].c34a.rxbuf[4U]*65536UL+(uint32_t)(uint8_t)
+                chan[channel].c34a.rxbuf[3U]*16777216UL;
          hr = (double)SaveReal(val);
          /*WrFixed(hr, 10, 20); */
          if (anonym->c50) {
@@ -3051,7 +3300,7 @@ static void demodframe34(uint32_t channel)
                anonym->id50.idcnt = 0UL;
             }
             /* remove old id */
-            switch ((unsigned)anonym->rxbuf[2U]) {
+            switch ((unsigned)chan[channel].c34a.rxbuf[2U]) {
             case '\003':
                if (hr<99.9 && hr>(-99.9)) {
                   if (verb) {
@@ -3191,7 +3440,7 @@ static void demodframe34(uint32_t channel)
                anonym->id34.idcnt = 0UL;
             }
             /* remove old id */
-            switch ((unsigned)anonym->rxbuf[2U]) {
+            switch ((unsigned)chan[channel].c34a.rxbuf[2U]) {
             case '\003':
                if (hr<99.9 && hr>(-99.9)) {
                   if (verb) {
@@ -3346,7 +3595,7 @@ static void demodframe34(uint32_t channel)
                else s[14U] = '\020';
             }
             for (i = 0UL; i<=6UL; i++) {
-               s[i+15UL] = anonym->rxbuf[i+2UL]; /* payload */
+               s[i+15UL] = chan[channel].c34a.rxbuf[i+2UL]; /* payload */
             } /* end for */
             flen = 22UL;
             sdrparm(s, 101ul, &flen, (int32_t)channel);
@@ -3368,9 +3617,11 @@ static void demodframe34(uint32_t channel)
                osi_WrStr(anonym->id34.idcheck, 9ul);
             }
          }
+         /*build tx frame */
+         if (anonym->c50) monitor(channel, "C50", 4ul, anonym->id50.id, 9ul);
+         else monitor(channel, "C34", 4ul, anonym->id34.id, 9ul);
       }
       else if (verb2) {
-         /*build tx frame */
          osi_WrStr("---- chksum ", 13ul);
          osi_WrHex(sum1, 2UL);
          osi_WrHex(sum2, 2UL);
@@ -3386,26 +3637,26 @@ static void demodframe34(uint32_t channel)
 
 static void demodbit34(uint32_t channel, char d)
 {
-   struct C34 * anonym;
+   struct C34A * anonym;
    d = !d;
    { /* with */
-      struct C34 * anonym = &chan[channel].c34;
+      struct C34A * anonym = &chan[channel].c34a;
       anonym->rxbytec = anonym->rxbytec*2UL+(uint32_t)d;
       if ((anonym->rxbytec&268435455UL)==234942462UL) {
          /* c34 1110 0000 0000 1110 1111 1111 1110*/
-         anonym->c50 = 0;
+         chan[channel].nonames->c34.c50 = 0;
          anonym->rxp = 2UL;
          anonym->rxbitc = 0UL;
          chan[channel].framestarttime = osic_time();
       }
       else if ((anonym->rxbytec&2097151UL)==3070UL) {
          /* c50 0 0000 0000 1011 1111 1110 */
-         anonym->c50 = 1;
+         chan[channel].nonames->c34.c50 = 1;
          anonym->rxp = 2UL;
          anonym->rxbitc = 0UL;
          chan[channel].framestarttime = osic_time();
       }
-      if ((anonym->c50 || anonym->rxbitc) || !d) {
+      if ((chan[channel].nonames->c34.c50 || anonym->rxbitc) || !d) {
          if (anonym->rxbitc<=8UL) {
             /* databits */
             anonym->rxbyte = (anonym->rxbyte&255UL)/2UL;
@@ -3433,10 +3684,10 @@ static void demod34(float u, uint32_t channel)
 {
    char d;
    float ua;
-   struct C34 * anonym;
+   struct C34A * anonym;
    d = u>=0.0f;
    { /* with */
-      struct C34 * anonym = &chan[channel].c34;
+      struct C34A * anonym = &chan[channel].c34a;
       if (anonym->cbit) {
          demodbit34(channel, d);
          if (d!=anonym->oldd) {
@@ -3467,9 +3718,9 @@ static void Afsk(uint32_t channel)
    float d;
    float mid;
    float right;
-   struct C34 * anonym;
+   struct C34A * anonym;
    { /* with */
-      struct C34 * anonym = &chan[channel].c34;
+      struct C34A * anonym = &chan[channel].c34a;
       right = Fir(afin, 0UL, 16UL, chan[channel].afir, 32ul, anonym->afirtab,
                  512ul);
       if (anonym->left<0.0f!=right<0.0f) {
@@ -3676,6 +3927,7 @@ static void decodeframe10(uint32_t m)
          ids[9U] = 0;
          /* 
             ELSE
+         
               id:=CAST(CARDINAL,
                   (CAST(SET32, ORD(rxbuf[97]) + 100H*ORD(rxbuf[96]) + 10000H*ORD(rxbuf[95]))
                  /CAST(SET32, ORD(rxbuf[93]) DIV 10H + 10H*ORD(rxbuf[94]) + 1000H*ORD(rxbuf[95])))
@@ -3808,9 +4060,10 @@ static void decodeframe10(uint32_t m)
             sdrparm(s, 201ul, &flen, (int32_t)m);
             alludp(chan[m].udptx, flen, s, 201ul);
          }
+         /*build tx frame */
+         monitor(m, "M10", 4ul, ids, 201ul);
       }
       else if (verb) {
-         /*build tx frame */
          WrChan((int32_t)m);
          osi_WrStr("M10 crc error", 14ul);
       }
@@ -3928,15 +4181,9 @@ static void demodbit10(uint32_t m, float u, float u0)
    char d;
    float ua;
    struct M10 * anonym;
-   /*IF manchestd>20000 THEN  */
-   /*WrInt(VAL(INTEGER, u), 8); Flush; */
    d = u>=0.0f;
    { /* with */
       struct M10 * anonym = &chan[m].m10;
-      /*WrInt(manchestd DIV 256, 1); WrStr("("); WrInt(ORD(lastmanch),1);
-                WrInt(ORD(d),1);WrStr(")");  Flush(); */
-      /*WrInt(ORD(lastmanch<>d),1); Flush(); */
-      /*END; */
       if (anonym->lastmanch==d) {
          anonym->manchestd += (32767L-anonym->manchestd)/16L;
       }
@@ -4038,7 +4285,7 @@ static void DecWater(uint32_t c, char bit)
             /* byte + word ready */
             ww = anonym->waterbits/40UL-2UL;
             if (anonym->waterbyte==127U) {
-               /* crc is end if frame */
+               /* crc is end of frame */
                crc = X2C_max_longcard;
                i = 0UL;
                while (i<ww) {
@@ -4049,16 +4296,26 @@ static void DecWater(uint32_t c, char bit)
                   crc32(&crc, (uint8_t)(anonym->watertemp[i].dat/16777216UL));
                   ++i;
                }
-               if (ww<=3UL) anonym->watertemp[ww].cmd = 0;
+               if (ww<=4UL) anonym->watertemp[ww].cmd = 0;
                anonym->waterbits = 0UL;
                if (crc==anonym->waterword) {
                   memcpy(anonym->waterdata,anonym->watertemp,
-                sizeof(struct _0 [4]));
+                sizeof(struct _0 [5]));
                   anonym->waterok = 1;
                   anonym->watersend = osic_time();
+                  i = 0UL;
+                  for (;;) {
+                     if (i>4UL || anonym->waterdata[i].cmd==0) break;
+                     if (anonym->waterdata[i].cmd=='f') {
+                        anonym->chlabel = anonym->waterdata[i].dat;
+                /* use freq as channel name */
+                        break;
+                     }
+                     ++i;
+                  }
                }
             }
-            else if (ww<=3UL) {
+            else if (ww<=4UL) {
                /* store byte + word */
                anonym->watertemp[ww].cmd = anonym->waterbyte;
                anonym->watertemp[ww].dat = anonym->waterword;
@@ -4068,6 +4325,78 @@ static void DecWater(uint32_t c, char bit)
       }
    }
 } /* end DecWater() */
+
+
+static pNONAMES findcontext(uint32_t label)
+{
+   uint32_t i;
+   pNONAMES pn;
+   pNONAMES po;
+   pNONAMES pl;
+   uint32_t t;
+   char old;
+   t = osic_time();
+   i = 0UL;
+   pl = 0;
+   for (;;) {
+      /* look at all channels */
+      pl = chan[i].nonames;
+      if (pl && pl->chname==label) {
+         /* label is on another channel */
+         chan[i].nonames = 0; /* remove it */
+         if (verb) {
+            osi_WrStr("found context ", 15ul);
+            WrChName(label);
+            osi_WrStr(" on channel ", 13ul);
+            osic_WrINT32(i+1UL, 1UL);
+            osi_WrStrLn("", 1ul);
+         }
+         break;
+      }
+      ++i;
+      if (i>63UL) break;
+   }
+   if (pl==0) {
+      /* not found on channels */
+      pl = oldnonames; /* history of contexts */
+      po = 0;
+      for (;;) {
+         /* look in history and purge */
+         if (pl==0) break;
+         pn = pl->next;
+         old = pl->lastvalid && pl->lastvalid+1800UL<t;
+         if (old || pl->chname==label) {
+            /* remove from chain */
+            if (po==0) oldnonames = pn;
+            else po->next = pn;
+            if (old) {
+               osic_free((char * *) &pl, sizeof(struct NONAMES));
+               pl = 0;
+            }
+            else {
+               if (verb) {
+                  osi_WrStr("found context ", 15ul);
+                  WrChName(label);
+                  osi_WrStrLn(" on history", 12ul);
+               }
+               break;
+            }
+         }
+         else po = pl;
+         pl = pn;
+      }
+   }
+   if ((pl && pl->lastvalid) && pl->lastvalid+1800UL<t) {
+      osic_free((char * *) &pl, sizeof(struct NONAMES));
+      pl = 0;
+      if (verb) {
+         osi_WrStr("free timed out context ", 24ul);
+         WrChName(label);
+         osi_WrStrLn("", 1ul);
+      }
+   }
+   return pl;
+} /* end findcontext() */
 
 
 static void getadc(void)
@@ -4099,16 +4428,6 @@ static void getadc(void)
          if (debfd>=0L) {
             osi_WrBin(debfd, (char *)adcbuf, 8192u/1u, adcbufsamps*2UL);
          }
-         /*      FOR ch:=0 TO maxchannels DO */
-         /*        chan[ch].adcmax:=chan[ch].adcmax*15 DIV 16; */
-         /*        chan[ch].adcmax:=chan[ch].adcmax*15 DIV 16; */
-         /*        INC(chan[ch].adcdc,
-                ASH((admax[ch]+admin[ch]) DIV 2-chan[ch].adcdc, -4)); */
-         /*        INC(chan[ch].adcmax,
-                ASH(admax[ch]-admin[ch]-chan[ch].adcmax, -4)); */
-         /*        admax[ch]:=MIN(ADCWORD); */
-         /*        admin[ch]:=MAX(ADCWORD); */
-         /*      END; */
          adcbufsampx = X2C_max_longcard;
       }
       sl = (int32_t)adcbuf[adcbufrd];
@@ -4135,10 +4454,7 @@ static void getadc(void)
       sl = (int32_t)((uint32_t)sl&0xFFFFFFFEUL);
       if (sl==0L) ++chan[c].squelch;
       else chan[c].squelch = 0UL;
-      /*    DEC(sl, chan[c].adcdc); */
       ++adcbufrd;
-      /*    chan[c].afir[afin]:=VAL(REAL, sl-chan[c].adcdc); */
-      /*    chan[c].afir[afin]:=VAL(REAL, sl); */
       chan[c].afir[afin] = (float)(sl-(chan[c].admax+chan[c].admin)/2L);
       if (waterenabled) DecWater(c, (0x2UL & (uint32_t)sl)!=0);
       if (sl>chan[c].admax) chan[c].admax = sl;
@@ -4157,11 +4473,58 @@ static void getadc(void)
          if (anonym->squelch<64UL) {
             /* squelch open */
             if (anonym->r92.enabled || anonym->r41.enabled) Fsk(c);
-            if (anonym->c34.enabled) Afsk(c);
-            if (anonym->dfm6.enabled) Fsk6(c);
-            if (anonym->m10.enabled) {
-               Fsk10(c);
+            if (anonym->c34a.enabled || anonym->dfm6a.enabled) {
+               /* variable contexts */
+               if (anonym->chlabel) {
+                  /* got label from sdr */
+                  if (anonym->nonames && anonym->chlabel!=anonym->nonames->chname)
+                 {
+                     /* channel has a different label */
+                     if (anonym->nonames->chname) {
+                        /* channel has a label */
+                        if (verb) {
+                           osi_WrStr("save context ", 14ul);
+                           WrChName(anonym->nonames->chname);
+                           osi_WrStr(" from channel ", 15ul);
+                           osic_WrINT32(c+1UL, 1UL);
+                           osi_WrStrLn("", 1ul);
+                        }
+                        anonym->nonames->next = oldnonames;
+                /* move context to storage */
+                        oldnonames = anonym->nonames;
+                        anonym->nonames = 0;
+                     }
+                     else {
+                        osic_free((char * *) &anonym->nonames,
+                sizeof(struct NONAMES));
+                        anonym->nonames = 0;
+                     }
+                  }
+                  if (anonym->nonames==0) {
+                     anonym->nonames = findcontext(anonym->chlabel);
+                /* fitting context or nil */
+                  }
+               }
+               if (anonym->nonames==0) {
+                  osic_alloc((char * *) &anonym->nonames,
+                sizeof(struct NONAMES));
+                  if (anonym->nonames) {
+                     memset((char *)anonym->nonames,(char)0,
+                sizeof(struct NONAMES));
+                  }
+               }
+               if (anonym->nonames) {
+                  /* not out of memory */
+                  if (anonym->chlabel) {
+                     anonym->nonames->chname = anonym->chlabel;
+                /* give context a label */
+                     anonym->chlabel = 0UL;
+                  }
+                  if (anonym->c34a.enabled) Afsk(c);
+                  if (anonym->dfm6a.enabled) Fsk6(c);
+               }
             }
+            if (anonym->m10.enabled) Fsk10(c);
          }
       }
       if (c==tmp) break;
@@ -4197,6 +4560,7 @@ extern int main(int argc, char **argv)
    osi_BEGIN();
    Gencrctab();
    GenCRC32tab();
+   monitorudp = 0;
    memset((char *)chan,(char)0,sizeof(struct CHAN [64]));
    Parms();
    initrsc();
@@ -4208,6 +4572,7 @@ extern int main(int argc, char **argv)
    adcbufrd = 0UL;
    adcbufsamps = 0UL;
    adcbufsampx = X2C_max_longcard;
+   oldnonames = 0;
    for (;;) getadc();
    X2C_EXIT();
    return 0;

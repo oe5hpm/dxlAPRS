@@ -30,7 +30,7 @@ struct sondeaprs_SDRBLOCK {
    char valid;
 };
 
-#define sondeaprs_VERSION "sondemod 1.34"
+#define sondeaprs_VERSION "sondemod 1.35"
 
 #define sondeaprs_minusG "G"
 

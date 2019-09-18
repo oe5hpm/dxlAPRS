@@ -43,7 +43,7 @@
 #include "aprspos.h"
 #endif
 
-/* decode RS92, RS41, SRS-C34, DFM06, M10 Radiosonde by OE5DXL */
+/* decode RS92, RS41, SRS-C34, DFM, M10 Radiosonde by OE5DXL */
 #define sondemod_CONTEXTLIFE 3600
 /* seconds till forget context after last heared */
 
@@ -110,6 +110,16 @@ struct CHAN {
    uint32_t rxbitc;
    uint32_t rxp;
    char rxbuf[560];
+};
+
+struct DFNAMES;
+
+
+struct DFNAMES {
+   uint8_t start;
+   uint16_t dat[2];
+   uint8_t cnt[2];
+   uint8_t errcnt;
 };
 
 struct CONTEXTR9;
@@ -213,7 +223,11 @@ struct CONTEXTDFM6 {
    char d9;
    char posok;
    uint32_t poserr; /* count down after position jump */
+   /* new df serial */
+   uint32_t nameregtop;
+   struct DFNAMES namereg[50];
 };
+/* new df serial */
 
 struct CONTEXTR4;
 
@@ -261,6 +275,17 @@ struct CONTEXTM10 {
    uint32_t gpssecond;
    uint32_t framenum;
    uint32_t tused;
+};
+
+struct DFMTYPES;
+
+typedef struct DFMTYPES * pDFMTYPES;
+
+
+struct DFMTYPES {
+   pDFMTYPES next;
+   uint32_t n;
+   char t[9];
 };
 
 static FILENAME semfile;
@@ -315,6 +340,8 @@ static pCONTEXTM10 pcontextm10;
 
 static struct sondeaprs_SDRBLOCK sdrblock;
 
+static pDFMTYPES dftypes;
+
 
 static void Error(char text[], uint32_t text_len)
 {
@@ -324,6 +351,15 @@ static void Error(char text[], uint32_t text_len)
    X2C_ABORT();
    X2C_PFREE(text);
 } /* end Error() */
+
+
+static char hex(uint32_t n)
+{
+   n = n&15UL;
+   if (n<10UL) return (char)(n+48UL);
+   else return (char)(n+55UL);
+   return 0;
+} /* end hex() */
 
 
 static float pow0(float x, uint32_t y)
@@ -380,6 +416,32 @@ static char GetNum(const char h[], uint32_t h_len, char eot,
 } /* end GetNum() */
 
 
+static uint32_t getdfhex(const char h[], uint32_t h_len,
+                uint32_t * i)
+{
+   uint32_t n;
+   char ok0;
+   n = 0UL;
+   ok0 = 0;
+   for (;;) {
+      if (*i>h_len-1) break;
+      if ((uint8_t)h[*i]<'0') break;
+      if ((uint8_t)h[*i]<='9') {
+         n = (n*16UL+(uint32_t)(uint8_t)h[*i])-48UL;
+         ok0 = 1;
+      }
+      else {
+         if ((uint8_t)h[*i]<'A' || (uint8_t)h[*i]>'F') break;
+         n = (n*16UL+(uint32_t)(uint8_t)h[*i])-55UL;
+         ok0 = 1;
+      }
+      ++*i;
+   }
+   if (ok0) return n;
+   return 256UL;
+} /* end getdfhex() */
+
+
 static void Parms(void)
 {
    char err;
@@ -387,6 +449,7 @@ static void Parms(void)
    FILENAME h;
    uint32_t cnum;
    uint32_t i;
+   pDFMTYPES dftyp;
    mycall[0U] = 0;
    semfile[0] = 0;
    yumafile[0] = 0;
@@ -535,9 +598,34 @@ static void Parms(void)
             sondeaprs_verb = 1;
             sondeaprs_verb2 = 1;
          }
+         else if (h[1U]=='L') {
+            osi_NextArg(h, 1024ul);
+            i = 0UL;
+            for (;;) {
+               osic_alloc((char * *) &dftyp, sizeof(struct DFMTYPES));
+               if (dftyp==0) Error("out of memory", 14ul);
+               dftyp->n = getdfhex(h, 1024ul, &i);
+               if (dftyp->n>255UL || h[i]!='=') {
+                  Error("-L <hex>=<typname>", 19ul);
+               }
+               dftyp->t[0U] = 0;
+               for (;;) {
+                  ++i;
+                  if ((i>1023UL || h[i]==0) || h[i]==',') break;
+                  if ((uint8_t)h[i]<' ' || (uint8_t)h[i]>='~') {
+                     Error("-L <hex>=<typname>", 19ul);
+                  }
+                  aprsstr_Append(dftyp->t, 9ul, (char *) &h[i], 1u/1u);
+               }
+               dftyp->next = dftypes;
+               dftypes = dftyp;
+               if (h[i]!=',') break;
+               ++i;
+            }
+         }
          else {
             if (h[1U]=='h') {
-               osi_WrStr("sondemod 1.34", 14ul);
+               osi_WrStr("sondemod 1.35", 14ul);
                osi_WrStrLn(" multichannel decoder RS92, RS41, SRS-C34/50, DFM\
 , M10 Radiosondes", 67ul);
                osi_WrStrLn(" -A <meter>     at lower altitude use -B beacon t\
@@ -563,6 +651,12 @@ nde not more, 0=off (needs -P) (-G 15)", 88ul);
                osi_WrStrLn(" -h             help", 21ul);
                osi_WrStrLn(" -I <mycall>    Sender of Object Callsign -I OE0A\
 AA if not sent by \'sondeudp\'", 78ul);
+               osi_WrStrLn(" -L <hex>=<typname>[,<hex>=<typname>]...> eg. -L \
+AC=DFM09,70=DFM17", 67ul);
+               osi_WrStrLn("                 IF there is a dependency, assign\
+ DFM-Types to frame-id (in hex)", 81ul);
+               osi_WrStrLn("                 of the frame that looks most lik\
+e containing a serial number", 78ul);
                osi_WrStrLn(" -N <meter>     my altitude over NN for Distance/\
 Elevation to sonde output", 75ul);
                osi_WrStrLn(" -o <UDPport>   receive demodulated data via UDP \
@@ -1574,6 +1668,10 @@ static void decodeframe(uint8_t m, uint32_t ip, uint32_t fromport)
                contextr9.framesent = 0;
                calok = 1;
                contextr9.framenum = frameno;
+               if (sondeaprs_verb) {
+                  wrsdr();
+                  osi_WrStrLn("", 1ul);
+               }
             }
             else if (contextr9.framenum==frameno && !contextr9.framesent) {
                calok = 1;
@@ -1674,10 +1772,6 @@ static void decodeframe(uint8_t m, uint32_t ip, uint32_t fromport)
          if (sondeaprs_verb && !crdone) {
             osi_WrStrLn("", 1ul);
             crdone = 1;
-         }
-         if (sondeaprs_verb) {
-            wrsdr();
-            osi_WrStrLn("", 1ul);
          }
       }
    }
@@ -2222,7 +2316,7 @@ static void decodec34(const char rxb[], uint32_t rxb_len,
    }
 } /* end decodec34() */
 
-/*------------------------------ DFM06 */
+/*------------------------------ DFM */
 
 static uint32_t bits2val(const char b[], uint32_t b_len,
                 uint32_t from, uint32_t len)
@@ -2436,6 +2530,107 @@ static void decodesub(const char b[], uint32_t b_len,
 } /* end decodesub() */
 
 
+static void getdfserial(const char rxb[], uint32_t rxb_len,
+                uint32_t p, pCONTEXTDFM6 pc, char ser[],
+                uint32_t ser_len, char typstr[],
+                uint32_t typstr_len)
+{
+   uint8_t max0;
+   uint8_t min0;
+   uint8_t st;
+   uint32_t v;
+   uint32_t i;
+   uint32_t ix;
+   uint16_t d;
+   char s[101];
+   pDFMTYPES dftyp;
+   struct CONTEXTDFM6 * anonym;
+   /* start byte found */
+   struct DFNAMES * anonym0;
+   /* make new entry */
+   struct DFNAMES * anonym1;
+   /* find best lo/hi pair */
+   struct DFNAMES * anonym2;
+   ser[0UL] = 0;
+   aprsstr_Assign(typstr, typstr_len, "DFM", 4ul);
+   { /* with */
+      struct CONTEXTDFM6 * anonym = pc;
+      st = rxb[p]; /* frame start byte */
+      ix = (uint32_t)(uint8_t)rxb[p+3UL]/16UL; /* hi/lo part of ser */
+      d = (uint16_t)((uint32_t)(uint8_t)rxb[p+1UL]*256UL+(uint32_t)
+                (uint8_t)rxb[p+2UL]); /* data bytes */
+      i = 0UL;
+      while (i<anonym->nameregtop && anonym->namereg[i].start!=st) ++i;
+      if (i<anonym->nameregtop) {
+         { /* with */
+            struct DFNAMES * anonym0 = &anonym->namereg[i];
+            if (ix<=1UL && (anonym0->cnt[ix]==0U || anonym0->dat[ix]==d)) {
+               anonym0->dat[ix] = d;
+               if (anonym0->cnt[ix]<255U) ++anonym0->cnt[ix];
+               anonym0->errcnt = 0U;
+            }
+            else if ((anonym0->errcnt==0U && anonym0->cnt[0U]>10U)
+                && anonym0->cnt[1U]>10U) {
+               /* first chesum error on stable ser */
+               ++anonym0->errcnt; /* break transmitting ser */
+               if (sondeaprs_verb) osi_WrStr(" ser checksum ", 15ul);
+            }
+            else {
+               /* data changed second time kill ser */
+               anonym0->cnt[0U] = 0U;
+               anonym0->cnt[1U] = 0U;
+            }
+         }
+      }
+      else if (ix<=1UL) {
+         { /* with */
+            struct DFNAMES * anonym1 = &anonym->namereg[anonym->nameregtop];
+            anonym1->start = st;
+            anonym1->cnt[0U] = 0U;
+            anonym1->cnt[1U] = 0U;
+            anonym1->errcnt = 0U;
+            anonym1->dat[ix] = d;
+            anonym1->cnt[ix] = 1U;
+         }
+         if (anonym->nameregtop<49UL) ++anonym->nameregtop;
+      }
+      i = 0UL;
+      max0 = 0U;
+      while (i<anonym->nameregtop) {
+         { /* with */
+            struct DFNAMES * anonym2 = &anonym->namereg[i];
+            min0 = anonym2->cnt[0U];
+            if (min0>anonym2->cnt[1U]) min0 = anonym2->cnt[1U];
+            if (min0>max0) {
+               max0 = min0;
+               v = i;
+            }
+         }
+         ++i;
+      }
+      if (max0>2U && anonym->namereg[v].errcnt==0U) {
+         /* may be good enough */
+         aprsstr_Assign(ser, ser_len, "[  ]", 5ul);
+         ser[1UL] = hex((uint32_t)(anonym->namereg[v].start/16U));
+         ser[2UL] = hex((uint32_t)anonym->namereg[v].start);
+         aprsstr_CardToStr((uint32_t)
+                anonym->namereg[v].dat[0U]*65536UL+(uint32_t)
+                anonym->namereg[v].dat[1U], 1UL, s, 101ul);
+         aprsstr_Append(ser, ser_len, s, 101ul);
+         dftyp = dftypes;
+         for (;;) {
+            if (dftyp==0) break;
+            if ((uint32_t)anonym->namereg[v].start==dftyp->n) {
+               aprsstr_Assign(typstr, typstr_len, dftyp->t, 9ul);
+               break;
+            }
+            dftyp = dftyp->next;
+         }
+      }
+   }
+} /* end getdfserial() */
+
+
 static void decodedfm6(const char rxb[], uint32_t rxb_len,
                 uint32_t ip, uint32_t fromport)
 {
@@ -2447,6 +2642,8 @@ static void decodedfm6(const char rxb[], uint32_t rxb_len,
    OBJNAME nam;
    char cb[10];
    char s[1001];
+   char ser[16];
+   char typstr[9];
    CALLSSID usercall;
    uint32_t ib;
    uint32_t j;
@@ -2496,8 +2693,10 @@ static void decodedfm6(const char rxb[], uint32_t rxb_len,
          osi_WrStr(" ", 2ul);
       }
    }
-   osi_WrStr(nam, 9ul);
-   osi_WrStr(" ", 2ul);
+   if (sondeaprs_verb) {
+      osi_WrStr(nam, 9ul);
+      osi_WrStr(" ", 2ul);
+   }
    pc = pcontextdfm6;
    pc0 = 0;
    for (;;) {
@@ -2529,6 +2728,7 @@ static void decodedfm6(const char rxb[], uint32_t rxb_len,
       pc->tused = systime;
       pc->actrt = rt;
       pc->posok = 0;
+      getdfserial(rxb, rxb_len, i, pc, ser, 16ul, typstr, 9ul);
       i += 4UL;
       for (j = 0UL; j<=6UL; j++) {
          for (ib = 0UL; ib<=7UL; ib++) {
@@ -2574,8 +2774,8 @@ static void decodedfm6(const char rxb[], uint32_t rxb_len,
                 anonym->dir, anonym->clmb, 0.0, 0.0,
                 (double)X2C_max_real, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                 0.0, anonym->actrt, 0UL, anonym->name, 9ul, 0UL, 0UL,
-                usercall, 11ul, 0UL, 0UL, sondeaprs_nofilter, "DFM06", 6ul, "\
-", 1ul, sdrblock);
+                usercall, 11ul, 0UL, 0UL, sondeaprs_nofilter, typstr, 9ul,
+                ser, 16ul, sdrblock);
                anonym->lastsent = systime;
             }
          }
@@ -2864,15 +3064,14 @@ static void ptu41(pCONTEXTR4 pc, uint32_t pb, const char rxb[],
    float Rf2;
    float Rf1;
    uint32_t meas[12];
-   if (sondeaprs_verb) {
-      if (X2C_INL((int32_t)33,51,pc->calibok)) {
-         osi_WrStr(" [", 3ul);
-         for (i = 536UL; i<=543UL; i++) {
-            osi_WrStr((char *) &pc->calibdata[i], 1u/1u);
-         } /* end for */
-         osi_WrStr("]", 2ul);
-      }
-   }
+   /*
+     IF verb THEN
+       IF 33 IN pc^.calibok THEN
+         WrStr(" ["); FOR i:=536 TO 536+7 DO WrStr(pc^.calibdata[i]) END;
+                WrStr("]");
+       END;
+     END;
+   */
    for (i = 0UL; i<=11UL; i++) {
       meas[i] = getcard(rxb, rxb_len, pb+i*3UL, 3UL);
    } /* end for */
@@ -2931,6 +3130,7 @@ static void decoders41(const char rxb[], uint32_t rxb_len,
    int32_t res;
    char s[1001];
    CALLSSID usercall;
+   char fullid[12];
    uint32_t frameno;
    uint32_t len;
    uint32_t sats;
@@ -2957,6 +3157,7 @@ static void decoders41(const char rxb[], uint32_t rxb_len,
    calok = 0;
    nameok = 0;
    nam[0U] = 0;
+   fullid[0U] = 0;
    pc = 0;
    lat = 0.0;
    long0 = 0.0;
@@ -3088,6 +3289,17 @@ static void decoders41(const char rxb[], uint32_t rxb_len,
             osi_WrStr(pc->name, 9ul);
             osi_WrStr(" ", 2ul);
             osic_WrINT32(pc->framenum, 1UL);
+         }
+         if (X2C_INL((int32_t)33,51,pc->calibok)) {
+            for (i = 0UL; i<=7UL; i++) {
+               fullid[i] = pc->calibdata[i+536UL];
+            } /* end for */
+            fullid[8U] = 0;
+            if (sondeaprs_verb) {
+               osi_WrStr(" [", 3ul);
+               osi_WrStr(fullid, 12ul);
+               osi_WrStr("]", 2ul);
+            }
          }
       }
       else if (typ=='z') {
@@ -3225,7 +3437,7 @@ static void decoders41(const char rxb[], uint32_t rxb_len,
                 pc->ozonBatVolt, (double)pc->mhz0, (-1.0), 0.0,
                 pc->gpssecond, frameno, pc->name, 9ul, 0UL, sats, usercall,
                 11ul, 0UL, pc->burstKill, sondeaprs_nofilter, "RS41", 5ul,
-                "", 1ul, sdrblock);
+                fullid, 12ul, sdrblock);
       pc->framesent = 1;
    }
 /*  IF verb THEN WrStrLn("") END;   */
@@ -3290,15 +3502,6 @@ static uint32_t m10rcard(const char b[], uint32_t b_len,
    } /* end for */
    return n;
 } /* end m10rcard() */
-
-
-static char hex(uint32_t n)
-{
-   n = n&15UL;
-   if (n<10UL) return (char)(n+48UL);
-   else return (char)(n+55UL);
-   return 0;
-} /* end hex() */
 
 #define sondemod_FH 16
 /* size of header before payload */
@@ -3450,13 +3653,13 @@ static void decodem10(const char rxb[], uint32_t rxb_len,
       i = (uint32_t)(uint8_t)rxb[112UL]+(uint32_t)(uint8_t)
                 rxb[113UL]*256UL;
       fullid[4U] = (char)((i/8192UL&7UL)+48UL);
-      fullid[5U] = '0';
+      /*  fullid[5]:="0"; */
       i = i&8191UL;
-      fullid[6U] = (char)((i/1000UL)%10UL+48UL);
-      fullid[7U] = (char)((i/100UL)%10UL+48UL);
-      fullid[8U] = (char)((i/10UL)%10UL+48UL);
-      fullid[9U] = (char)(i%10UL+48UL);
-      fullid[10U] = 0;
+      fullid[5U] = (char)((i/1000UL)%10UL+48UL);
+      fullid[6U] = (char)((i/100UL)%10UL+48UL);
+      fullid[7U] = (char)((i/10UL)%10UL+48UL);
+      fullid[8U] = (char)(i%10UL+48UL);
+      fullid[9U] = 0;
       /*- m10 temp */
       sct = m10rcard(rxb, rxb_len, 78L, 1L);
       rt = (float)(m10rcard(rxb, rxb_len, 79L, 2L)&4095UL);
@@ -3652,6 +3855,7 @@ extern int main(int argc, char **argv)
    gpspos_BEGIN();
    aprsstr_BEGIN();
    osi_BEGIN();
+   dftypes = 0;
    Parms();
    /*  initrsc; */
    initcontext(&contextr9);
