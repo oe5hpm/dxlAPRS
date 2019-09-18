@@ -43,7 +43,7 @@ FROM stat IMPORT fstat, stat_t;
 
 #define udpgate4_HASHSIZE 65536
 
-#define udpgate4_VERS "udpgate(c) 0.64"
+#define udpgate4_VERS "udpgate 0.65"
 
 #define udpgate4_TOCALL "APNL51"
 
@@ -109,6 +109,10 @@ struct FILTERS {
    char notentry;
    MONCALL prefixes[8];
    char notprefix;
+   MONCALL bud[8];
+   char notbud;
+   MONCALL objects[8];
+   char notobject;
    MONCALL destcalls[8];
    char notdestcall;
    char typs[13];
@@ -602,6 +606,8 @@ static void FiltToStr(struct FILTERS f, char s[], uint32_t s_len)
       wrcalls(s, s_len, anonym->viacalls, 8ul, anonym->notvia, 'd');
       wrcalls(s, s_len, anonym->entrycalls, 8ul, anonym->notentry, 'e');
       wrcalls(s, s_len, anonym->prefixes, 8ul, anonym->notprefix, 'p');
+      wrcalls(s, s_len, anonym->bud, 8ul, anonym->notbud, 'b');
+      wrcalls(s, s_len, anonym->objects, 8ul, anonym->notobject, 'o');
       wrcalls(s, s_len, anonym->destcalls, 8ul, anonym->notdestcall, 'u');
       if (anonym->typs[0U]) {
          aprsstr_Append(s, s_len, " ", 2ul);
@@ -814,6 +820,7 @@ static void parms(void)
    memcpy(ghost,_cnst,36u);
    keeptime = 0UL; /*600*/ /* default keep connected to gateway time */
    allkey[0U] = 0;
+   aprsstr_showctrl = 1;
    for (;;) {
       osi_NextArg(h, 4096ul);
       if (h[0U]==0) break;
@@ -1026,6 +1033,7 @@ static void parms(void)
             else Err("-n netbeacon format is minutes:file", 36ul);
          }
          else if (lasth=='N') sendnetmsg = 0;
+         else if (lasth=='E') aprsstr_showctrl = 0;
          else if (lasth=='t') {
             osi_NextArg(h, 4096ul);
             aprsstr_Assign(tcpbindport, 6ul, h, 4096ul);
@@ -1124,6 +1132,8 @@ r/www/)", 57ul);
 below 27s! (default 60s)", 74ul);
                osi_WrStrLn(" -e <time>      wait before (re)connect to (next)\
  gateway in seconds, (30s)", 76ul);
+               osi_WrStrLn(" -E             Erase axudp frames with ctrl-char\
+s in calls else show \"^\" (off)", 80ul);
                osi_WrStrLn(" -F <lines>:<file> write direct heard file (call,\
 sym,port,s,cnt,km,data,path)", 78ul);
                osi_WrStrLn(" -f <filters>   backstream filter text sent to ou\
@@ -1323,7 +1333,9 @@ rt GHOST* in otherwise false", 78ul);
             else if (lasth=='o') {
                osi_NextArg(h, 4096ul);
                i0 = 0UL;
-               if (GetSec(h, 4096ul, &i0, &n)>=0L) maxpongtime = n;
+               if (GetSec(h, 4096ul, &i0, &n)>=0L) {
+                  maxpongtime = n;
+               }
                else Err("-o seconds", 11ul);
             }
             else if (lasth=='x') {
@@ -1424,7 +1436,6 @@ static char getudp(pUDPSOCK usock, FRAMEBUF buf,
    uint32_t fromport;
    uint32_t ipn;
    char crc2;
-   /*    len, i       : INTEGER; */
    char crc1;
    int32_t oldi;
    int32_t i0;
@@ -2010,23 +2021,30 @@ static char entrypoint(char dat[], uint32_t dat_len,
 } /* end entrypoint() */
 
 
-static char prefix(char dat[], uint32_t dat_len, pTCPSOCK to)
+static char prefix(char dat[], uint32_t dat_len,
+                const MONCALL pa[], uint32_t pa_len,
+                char fullmatch)
 {
    uint32_t j;
    uint32_t i0;
-   struct FILTERS * anonym;
-   if (to->filters.prefixes[0U][0U]==0) return 0;
+   char w;
+   char eos;
+   if (pa[0UL][0U]==0) return 0;
    j = 0UL;
-   { /* with */
-      struct FILTERS * anonym = &to->filters;
-      while (j<=7UL && anonym->prefixes[j][0U]) {
-         i0 = 0UL;
-         while (dat[i0]!='>' && anonym->prefixes[j][i0]==dat[i0]) {
-            ++i0;
-            if (i0>9UL || anonym->prefixes[j][i0]==0) return 1;
+   while (j<=pa_len-1 && pa[j][0U]) {
+      i0 = 0UL;
+      for (;;) {
+         w = pa[j][i0]=='*';
+         if (pa[j][i0]!=dat[i0] && !w) break;
+         ++i0;
+         eos = dat[i0]=='>';
+         if (i0>9UL || pa[j][i0]==0) {
+            if ((!eos && fullmatch) && !w) break;
+            else return 1;
          }
-         ++j;
+         if (eos) break;
       }
+      ++j;
    }
    return 0;
 } /* end prefix() */
@@ -2072,6 +2090,51 @@ static char destcallfilt(char dat[], uint32_t dat_len,
    }
    return 0;
 } /* end destcallfilt() */
+
+
+static char objectfilt(char dat[], uint32_t dat_len,
+                pTCPSOCK to)
+{
+   uint32_t k;
+   uint32_t j;
+   uint32_t i0;
+   char eos;
+   char w;
+   struct FILTERS * anonym;
+   if (to->filters.objects[0U][0U]==0) return 0;
+   i0 = 0UL;
+   while (dat[i0]!=':') {
+      /* begin data */
+      if (i0>=dat_len-1 || dat[i0]==0) return 0;
+      /* not normal data */
+      ++i0;
+   }
+   ++i0;
+   if (dat[i0]!=';') return 0;
+   /* not object */
+   ++i0; /* object name */
+   j = 0UL;
+   { /* with */
+      struct FILTERS * anonym = &to->filters;
+      while (j<=7UL && anonym->objects[j][0U]) {
+         k = 0UL;
+         for (;;) {
+            w = anonym->objects[j][k]=='*';
+            if (!w && anonym->objects[j][k]!=dat[i0+k]) break;
+            ++k;
+            if (i0+k>dat_len-1) break;
+            eos = (uint8_t)dat[i0+k]<=' ';
+            if (k>9UL || anonym->objects[j][k]==0) {
+               if (eos || w) return 1;
+               else break;
+            }
+            if (eos) break;
+         }
+         ++j;
+      }
+   }
+   return 0;
+} /* end objectfilt() */
 
 
 static char typ(struct POSCALL * posc, char dat[],
@@ -2183,8 +2246,16 @@ static char Filter(pTCPSOCK to, struct POSCALL posc,
       if (to->filters.notdestcall) return 0;
       pass = 1;
    }
-   if (prefix(dat, dat_len, to)) {
+   if (prefix(dat, dat_len, to->filters.bud, 8ul, 1)) {
+      if (to->filters.notbud) return 0;
+      pass = 1;
+   }
+   if (prefix(dat, dat_len, to->filters.prefixes, 8ul, 0)) {
       if (to->filters.notprefix) return 0;
+      pass = 1;
+   }
+   if (objectfilt(dat, dat_len, to)) {
+      if (to->filters.notobject) return 0;
       pass = 1;
    }
    if (typ(&posc, dat, dat_len, to, &posc.typ0)) {
@@ -2456,7 +2527,7 @@ static void beaconmacros(char s[], uint32_t s_len)
          }
          else if (s[i0]=='v') {
             /* insert version */
-            aprsstr_Append(ns, 256ul, "udpgate(c) 0.64", 16ul);
+            aprsstr_Append(ns, 256ul, "udpgate 0.65", 13ul);
          }
          else if (s[i0]==':') {
             /* insert file */
@@ -3775,13 +3846,12 @@ static void Query(MONCALL fromcall, char msg[], uint32_t msg_len,
                  1, path);
    }
    else if (cmd=='S') {
-      Stomsg(servercall, fromcall, *(MSGTEXT *)memcpy(&tmp1,"udpgate(c) 0.64 \
-Msg S&F Relay",30u), *(ACKTEXT *)memcpy(&tmp0,"",1u), 0, 0, 1, path);
+      Stomsg(servercall, fromcall, *(MSGTEXT *)memcpy(&tmp1,"udpgate 0.65 Msg\
+ S&F Relay",27u), *(ACKTEXT *)memcpy(&tmp0,"",1u), 0, 0, 1, path);
    }
    else if (cmd=='v') {
-      Stomsg(servercall, fromcall, *(MSGTEXT *)memcpy(&tmp1,
-                "udpgate(c) 0.64",16u), *(ACKTEXT *)memcpy(&tmp0,"",1u), 0,
-                0, 1, path);
+      Stomsg(servercall, fromcall, *(MSGTEXT *)memcpy(&tmp1,"udpgate 0.65",
+                13u), *(ACKTEXT *)memcpy(&tmp0,"",1u), 0, 0, 1, path);
    }
    else if (cmd=='h') {
       Stomsg(servercall, fromcall, *(MSGTEXT *)memcpy(&tmp1,"Cmd: ?APRS[D/H/M\
@@ -4172,7 +4242,8 @@ static int32_t callchk(uint32_t * qpos, uint8_t * unset,
       while (ungates[u][j]==buf[i0]) {
          ++i0;
          ++j;
-         if (ungates[u][j]==0) *unset |= (1U<<u);
+         if (ungates[u][j]=='*' || ungates[u][j]==0 && (buf[i0]
+                ==',' || buf[i0]==':')) *unset |= (1U<<u);
       }
       if (u==udpgate4_gQ) break;
    } /* end for */
@@ -4181,13 +4252,13 @@ static int32_t callchk(uint32_t * qpos, uint8_t * unset,
       num = 0UL;
       lit = 0UL;
       c = buf[*p];
-      if ((uint8_t)c>='A' && (uint8_t)c<='Z') ++lit;
+      if ((uint8_t)c>='A' && (uint8_t)c<='Z' || c=='^') ++lit;
       else if ((uint8_t)c<'0' || (uint8_t)c>'9') return -1L;
       ++*p;
       for (;;) {
          c = buf[*p];
          if ((uint8_t)c>='0' && (uint8_t)c<='9') ++num;
-         else if ((uint8_t)c>='A' && (uint8_t)c<='Z') ++lit;
+         else if ((uint8_t)c>='A' && (uint8_t)c<='Z' || c=='^') ++lit;
          else break;
          ++*p;
       }
@@ -4315,7 +4386,7 @@ static int32_t AprsIs(char buf[], uint32_t buf_len,
       if (callchk(&qpos, &unset, buf, buf_len, &p, &pssid, 0,
                 udpchan || callsrc)) return -3L;
       /* src call */
-      if (buf[p]!='>') return -4L;
+      if (buf[p]!='>') return -3L;
       i0 = 0UL;
       while (i0<9UL && i0<p) {
          poscall0->call[i0] = buf[i0];
@@ -4334,7 +4405,7 @@ static int32_t AprsIs(char buf[], uint32_t buf_len,
          }
       }
       /* via calls */
-      if (buf[p]!=':') return -4L;
+      if (buf[p]!=':') return -3L;
       if (pins==0UL) pins = p;
       ++p;
       if (buf[p]!='}') break;
@@ -4503,6 +4574,8 @@ static void GetFilters(struct FILTERS * filters, const char s[],
       memset((char *)filters->viacalls,(char)0,80UL);
       memset((char *)filters->entrycalls,(char)0,80UL);
       memset((char *)filters->prefixes,(char)0,80UL);
+      memset((char *)filters->bud,(char)0,80UL);
+      memset((char *)filters->objects,(char)0,80UL);
       memset((char *)filters->typs,(char)0,13UL);
       memset((char *)filters->destcalls,(char)0,80UL);
       if (s[p]==' ') {
@@ -4557,6 +4630,14 @@ static void GetFilters(struct FILTERS * filters, const char s[],
                getcalls(s, s_len, &p, filters->prefixes, 8ul);
                filters->notprefix = not;
             }
+            else if (s[p]=='b') {
+               getcalls(s, s_len, &p, filters->bud, 8ul);
+               filters->notbud = not;
+            }
+            else if (s[p]=='o') {
+               getcalls(s, s_len, &p, filters->objects, 8ul);
+               filters->notobject = not;
+            }
             else if (s[p]=='t') {
                gettyps(s, s_len, &p, filters->typs, 13ul);
                filters->nottyps = not;
@@ -4572,9 +4653,7 @@ static void GetFilters(struct FILTERS * filters, const char s[],
    else if (pongto && cmpfrom(s, s_len, p, "ping ", 6ul)) {
       aprsstr_Assign(pongstr, 512ul, s, s_len);
       pongstr[p+1UL] = 'o'; /* ping -> pong */
-      while (p<513UL && (uint8_t)pongstr[p]>=' ') {
-         ++p;
-      }
+      while (p<513UL && (uint8_t)pongstr[p]>=' ') ++p;
       pongstr[p] = '\015';
       pongstr[p+1UL] = '\012';
       pongstr[p+2UL] = 0;
@@ -5663,7 +5742,7 @@ enter\"><H3>\015\012", 131ul);
       Appwww(wsock, wbuf, viacall, 10ul);
    }
    apppos(wbuf, wsock, home, 1);
-   Appwww(wsock, wbuf, " [udpgate(c) 0.64] http#", 25ul);
+   Appwww(wsock, wbuf, " [udpgate 0.65] http#", 22ul);
    aprsstr_IntToStr((int32_t)*cnt, 1UL, h, 32ul);
    Appwww(wsock, wbuf, h, 32ul);
    Appwww(wsock, wbuf, " Uptime ", 9ul);
@@ -5753,7 +5832,7 @@ gn:center\"><H3>\015\012", 131ul);
          Appwww(&wsock, wbuf, "  Port ", 8ul);
          Appwww(&wsock, wbuf, tcpbindport, 6ul);
       }
-      Appwww(&wsock, wbuf, " [udpgate(c) 0.64] Maxusers ", 29ul);
+      Appwww(&wsock, wbuf, " [udpgate 0.65] Maxusers ", 26ul);
       aprsstr_IntToStr((int32_t)maxusers, 1UL, h1, 256ul);
       Appwww(&wsock, wbuf, h1, 256ul);
       Appwww(&wsock, wbuf, " http#", 7ul);
@@ -5903,7 +5982,9 @@ ign:center\" BGCOLOR=\"#D0C0C0\"><TD>out", 74ul);
                }
                Appwww(&wsock, wbuf, "</TD><TD>", 10ul);
                if (anonym2->connt>0UL) {
-                  if (anonym2->valid) Appwww(&wsock, wbuf, "v", 2ul);
+                  if (anonym2->valid) {
+                     Appwww(&wsock, wbuf, "v", 2ul);
+                  }
                   if (aprspos_posvalid(anonym2->user.pos)) {
                      Appwww(&wsock, wbuf, "p", 2ul);
                   }
@@ -6182,7 +6263,7 @@ static char tcpconn(pTCPSOCK * sockchain, int32_t f,
             aprsstr_Append(h, 512ul, passwd, 6ul);
          }
          aprsstr_Append(h, 512ul, " vers ", 7ul);
-         aprsstr_Append(h, 512ul, "udpgate(c) 0.64", 16ul);
+         aprsstr_Append(h, 512ul, "udpgate 0.65", 13ul);
          if (actfilter[0U]) {
             aprsstr_Append(h, 512ul, " filter ", 9ul);
             aprsstr_Append(h, 512ul, actfilter, 256ul);
@@ -6213,7 +6294,7 @@ static char tcpconn(pTCPSOCK * sockchain, int32_t f,
          aprsstr_Append(h1, 512ul, h2, 512ul);
          logline(1L, h1, 512ul);
       }
-      aprsstr_Assign(h, 512ul, "# udpgate(c) 0.64\015\012", 20ul);
+      aprsstr_Assign(h, 512ul, "# udpgate 0.65\015\012", 17ul);
       Sendtcp(cp, h);
    }
    return 1;
@@ -6448,11 +6529,11 @@ extern int main(int argc, char **argv)
    systime = 946728000UL; /* start of systime about 1.1.2000 */
    qmaxtime = 15L;
    ungates[udpgate4_gUNGATE][0] = 0;
-   strncpy(ungates[udpgate4_gRFONLY],"RFONLY",11u);
-   strncpy(ungates[udpgate4_gNOGATE],"NOGATE",11u);
-   strncpy(ungates[udpgate4_gTCPIP],"TCPIP",11u);
-   strncpy(ungates[udpgate4_gTCPXX],"TCPXX",11u);
-   strncpy(ungates[udpgate4_gQ],"q",11u);
+   strncpy(ungates[udpgate4_gRFONLY],"RFONLY*",11u);
+   strncpy(ungates[udpgate4_gNOGATE],"NOGATE*",11u);
+   strncpy(ungates[udpgate4_gTCPIP],"TCPIP*",11u);
+   strncpy(ungates[udpgate4_gTCPXX],"TCPXX*",11u);
+   strncpy(ungates[udpgate4_gQ],"q*",11u);
    dupetime = 60UL;
    lastdnstime = 0UL;
    netbeaconfn[0U] = 0;
