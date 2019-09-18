@@ -59,6 +59,8 @@
 
 #define sdrtest_cSCAN "S"
 
+#define sdrtest_cLABEL "%"
+
 #define sdrtest_SCANHEADER 12
 
 #define sdrtest_MAXSCANSLOTS 1400
@@ -113,9 +115,10 @@ struct SQUELCH {
    int32_t scanduty;
    char scandb[1412];
    char scansq[1412];
+   uint32_t channame;
    uint32_t waterp;
    uint32_t waterend;
-   uint8_t waterdat[35];
+   uint8_t waterdat[40];
 };
 
 struct UDPTX;
@@ -647,7 +650,7 @@ With UDP take care: double number of bytes with 16bit PCM", 107ul);
                osi_WrStrLn(" -c <configfilename> read channels config from fi\
 le (sdrcfg.txt)", 65ul);
                osi_WrStrLn(" -c <ip:port>        read channels config from UD\
-P, if ip=0.0.0.0 aaccept any ip", 81ul);
+P, if ip=0.0.0.0 accept any ip", 80ul);
                osi_WrStrLn(" -d <Hz>             downsample output to Hz",
                 45ul);
                osi_WrStrLn(" -e                  enable sending SDR Data hidd\
@@ -936,7 +939,7 @@ static void centerfreq(const struct FREQTAB freq[], uint32_t freq_len)
       }
       prx[i] = 0;
    }
-   if (midfreq<500000UL) osi_WerrLn("no valid frequency", 19ul);
+   if (midfreq<10000UL) osi_WerrLn("no valid frequency", 19ul);
    else if (midfreq!=lastmidfreq) {
       setstickparm(1UL, midfreq);
       /*WrStr("set ");WrInt(midfreq, 0); WrStrLn("kHz"); */
@@ -968,27 +971,6 @@ static void setconfig(const char b[], uint32_t b_len, int32_t len)
    char li[256];
    struct FREQTAB freq[64];
    char mo;
-   /*
-     IF cfgfd>=0 THEN                                                (* await cfg via udp *)
-       len:=udp.udpreceive(cfgfd, b, SIZE(b), ckport, ckip);
-       IF len<=0 THEN RETURN END; 
-   
-       IF (cfgip<>0) & (cfgip<>ckip)
-                THEN                            (* ip check on *)
-         IF verb THEN WrStrLn("got config udp from wrong ip") END;
-         RETURN
-   
-       END;
-       freqc:=0;
-     ELSE      
-       freqc:=0;
-       fd:=OpenRead(parmfn);
-       IF fd<0 THEN Error("config file not readable") END;
-   
-       len:=RdBin(fd, b, SIZE(b));
-       Close(fd);
-     END;
-   */
    freqc = 0UL;
    /*  IF (len>0) & (len<HIGH(b)) & (b[len-1]>=" ") THEN b[len-1]:=0C END; */
    p = 0UL;
@@ -1019,7 +1001,20 @@ static void setconfig(const char b[], uint32_t b_len, int32_t len)
             }
             i = 0UL;
          }
-         else if ((((mo=='F' || mo=='A') || mo=='U') || mo=='L') || mo=='S') {
+         else if (((((mo=='F' || mo=='A') || mo=='U') || mo=='L') || mo=='S')
+                 || mo=='%') {
+            if (mo=='%') {
+               /* channel label */
+               ++i;
+               squelchs[freqc].channame = 0UL;
+               while ((uint8_t)li[i]>' ') {
+                  squelchs[freqc].channame = (squelchs[freqc].channame<<8)
+                +(uint32_t)(uint8_t)li[i];
+                  ++i;
+               }
+               skip(li, 256ul, &i);
+               mo = X2C_CAP(li[i]);
+            }
             if (mo=='A') freq[freqc].modulation = 'a';
             else if (mo=='U') freq[freqc].modulation = 's';
             else if (mo=='L') freq[freqc].modulation = 's';
@@ -1210,13 +1205,13 @@ static void sendwater(void)
             struct SQUELCH * anonym = &squelchs[j];
             anonym->waterp = 0UL;
             anonym->waterdat[0U] = 0xA5U;
-            card32send(anonym->waterdat, 35ul, 1UL, 0x0CA55F047UL);
+            card32send(anonym->waterdat, 40ul, 1UL, 0x0CA55F047UL);
             p = 5UL;
             anonym->waterdat[5U] = *(uint8_t *)"f";
-            card32send(anonym->waterdat, 35ul, 6UL, squelchs[j].hz10);
+            card32send(anonym->waterdat, 40ul, 6UL, squelchs[j].hz10);
             p += 5UL;
             anonym->waterdat[10U] = *(uint8_t *)"a";
-            card32send(anonym->waterdat, 35ul, 11UL,
+            card32send(anonym->waterdat, 40ul, 11UL,
                 (uint32_t)(X2C_LSH((uint32_t)rxx[j].maxafc,32,
                 16)|(uint32_t)rxx[j].afckhz&0xFFFFUL));
             p += 5UL;
@@ -1228,13 +1223,18 @@ static void sendwater(void)
                 X2C_max_longint);
             anonym->peakrssi = 0.0f;
             if (v<0L) v = 0L;
-            card32send(anonym->waterdat, 35ul, 16UL, (uint32_t)v);
+            card32send(anonym->waterdat, 40ul, 16UL, (uint32_t)v);
             p += 5UL;
-            anonym->waterdat[20U] = 0x7FU;
-            card32send(anonym->waterdat, 35ul, 21UL, crc32(anonym->waterdat,
-                35ul, 5UL, 20UL));
+            if (anonym->channame) {
+               anonym->waterdat[20U] = *(uint8_t *)"c";
+               card32send(anonym->waterdat, 40ul, 21UL, anonym->channame);
+               p += 5UL;
+            }
+            anonym->waterdat[p] = 0x7FU;
+            card32send(anonym->waterdat, 40ul, p+1UL, crc32(anonym->waterdat,
+                 40ul, 5UL, p));
             p += 5UL;
-            anonym->waterend = 200UL;
+            anonym->waterend = p*8UL;
          }
       }
       ++i;
