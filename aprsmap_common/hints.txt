@@ -127,9 +127,9 @@ is write enabled. A given File Path is used
 for watch-call and manual saved Logs too.
 Append %d for daywise logfile. "logs/rawlog%d"
 
-|309 Days Keep (dayly) Rawdata Logfiles. Purge
+|309 Days Keep (daily) Rawdata Logfiles. Purge
 starts on Program start and Midnight.
-0 Days is forever. Make dayly files
+0 Days is forever. Make daily files
 with %d at end of Logfilename like
 "logs/rawlog%d"
 
@@ -780,7 +780,7 @@ Data is stored to memory and writelog and is
 displayed again on "Exit Logview"
 
 |6705 Find Call in Logfile, exact match,
-and import it. Works only with dayly Log
+and import it. Works only with daily Log
 
 |6710 Read data from this path/filename.
 The format is Timestamp "yyyymmdd:hhmmss " in utc
@@ -788,7 +788,7 @@ followed by AprsIs Line. The data is sorted at
 import by Time, indexed and all waypoints compared
 to each other for removing dupes and stored in
 compressed form in RAM. Append %d to filename
-for dayly logs, "logs/rawlog%d"
+for daily logs, "logs/rawlog%d"
 
 |6715 
 |6716 Reload Data from Writelog
