@@ -55,7 +55,8 @@ if [ -r $FILE.tgz ]; then
 	rm $FILE.tar
 	echo "Installation directory:" $DST
 	echo "Installing aprsmap-components..."
-	mv -f aprsmap_common/poi.txt $DSTMAP/osm/
+	cp -r aprsmap_common/osm $DSTMAP
+	rm -r aprsmap_common/osm
 	mv -f aprsmap_common/* $DSTMAP/
 	rm -r aprsmap_common
 	mv -f aprsmap* $DSTMAP/
