@@ -22,8 +22,10 @@
 #                               using srtm-datafiles
 # - panorama		makes png Image + csv-file from landscape with poi markers
 #                               using srtm-datafiles
-# - cmslogin	l2cat task for bidirectional TCP connect and password login in CMS server
-# - srtmtag	modify srtm1 or srtm3 file with tags eg. wood/water
+# - cmslogin   l2cat task for bidirectional TCP connect and password login in CMS server
+# - srtmtag    modify srtm1 or srtm3 file with tags eg. wood/water
+# - fmrepeater simple ctcss-squelch speach repeater audio processing + ptt + dtmf
+#              + ctcss generator, maybe combined with afskmodem for multimode relay
 # ---------------------- common section ---------------------------------------
 HOSTARCH := $(shell uname -m | \
 	sed -e s/i.86/x86/ \
@@ -227,7 +229,12 @@ TARGETS += \
 	$(OUT)radiorange \
 	$(OUT)panorama \
 	$(OUT)cmslogin \
-	$(OUT)srtmtag
+	$(OUT)srtmtag \
+	$(OUT)fmrepeater
+
+OBJ_FMREPEATER = \
+	$(OUT)fmrepeater.o \
+	$(OUT)afskmodemptt.o
 
 ifneq ($(HOSTOS), Darwin)
 	TARGETS += $(OUT)l2cat
@@ -383,6 +390,10 @@ $(OUT)cmslogin: $(OBJ_CMSLOGIN) $(OBJ_COMMON)
 $(OUT)srtmtag: $(OBJ_SRTMTAG) $(OBJ_COMMON)
 	$(CC) $(LFLAGS) -o $@ $(OBJ_COMMON) $(OBJ_SRTMTAG) \
 	$(XLIBS) -lm
+	$(STRIP) $@ $(STRIPFLAGS)
+
+$(OUT)fmrepeater: $(OBJ_FMREPEATER) $(OBJ_COMMON)
+	$(CC) $(LFLAGS) -o $@ $(OBJ_COMMON) $(OBJ_FMREPEATER) -lm
 	$(STRIP) $@ $(STRIPFLAGS)
 
 %:
