@@ -1467,6 +1467,18 @@
 
 
 
+2.1.2020
+
++ wetter grafik, gamma(Sievert) + PM10 PM2.5 PM1 PM0.1 (ug/m3) feinstaub
++ senden gamma + feinstaub aus csv-zeile mit baken-macro
+
+
+
+
+
+
+
+
 
 
 

@@ -1253,7 +1253,7 @@ static char getreal(float * x, const char s[],
       if (div0>=0.0f && s[i]=='-') div0 = -div0;
       else if ((uint8_t)s[i]>='0' && (uint8_t)s[i]<='9') {
          *x =  *x*10.0f+(float)((uint32_t)(uint8_t)s[i]-48UL);
-         if (*x>1.E+6f) {
+         if (*x>9.9E+10f) {
             val = 0;
             break;
          }
@@ -1270,13 +1270,14 @@ static char getreal(float * x, const char s[],
 } /* end getreal() */
 
 
-static void apd(char ws[], uint32_t ws_len, char c, float v,
-                uint32_t f)
+static void apd(char ws[], uint32_t ws_len, char c[],
+                uint32_t c_len, float v, uint32_t f)
 {
    int32_t d;
    int32_t n;
    char tmp;
-   if (c) aprsstr_Append(ws, ws_len, (char *) &c, 1u/1u);
+   X2C_PCOPY((void **)&c,c_len);
+   if (c[0UL]) aprsstr_Append(ws, ws_len, c, c_len);
    n = (int32_t)X2C_TRUNCI(v+0.5f,X2C_min_longint,X2C_max_longint);
    if (n<0L) {
       aprsstr_Append(ws, ws_len, "-", 2ul);
@@ -1293,7 +1294,26 @@ static void apd(char ws[], uint32_t ws_len, char c, float v,
                 &tmp), 1u/1u);
       d = d/10L;
    } while (d);
+   X2C_PFREE(c);
 } /* end apd() */
+
+
+static float logsievert(float s)
+{
+   uint32_t m;
+   uint32_t e;
+   e = 0UL;
+   while (s>=100.0f && e<9UL) {
+      ++e;
+      s = s*0.1f;
+   }
+   if (s<=100.0f) {
+      m = aprsdecode_trunc(s);
+      if (m>99UL) m = 99UL;
+      return (float)(m*10UL+e);
+   }
+   return 0.0f;
+} /* end logsievert() */
 
 
 static void wxmacro(char ws[], uint32_t ws_len, char wms[],
@@ -1354,6 +1374,11 @@ static void wxmacro(char ws[], uint32_t ws_len, char wms[],
          w.rain1 = 1.E+6f;
          w.rain24 = 1.E+6f;
          w.raintoday = 1.E+6f;
+         w.sievert = 1.E+6f;
+         w.dust10 = -1;
+         w.dust2 = -1;
+         w.dust1 = -1;
+         w.dust01 = -1;
          n = 1UL;
          while (csvget(cn, 21ul, wms, wms_len, n)) {
             c = cn[0U]; /* w3.6 */
@@ -1394,6 +1419,31 @@ static void wxmacro(char ws[], uint32_t ws_len, char wms[],
                   case 'p':
                      if (v>=0.0f && v<=500.0f) w.raintoday = v;
                      break;
+                  case 'S':
+                     if (v>=0.0f && v<=9.9E+10f) {
+                        w.sievert = v;
+                     }
+                     break;
+                  case 'A':
+                     if (v>=0.0f && v<=999.0f) {
+                        w.dust10 = (short)aprsdecode_trunc(v);
+                     }
+                     break;
+                  case 'B':
+                     if (v>=0.0f && v<=999.0f) {
+                        w.dust2 = (short)aprsdecode_trunc(v);
+                     }
+                     break;
+                  case 'C':
+                     if (v>=0.0f && v<=999.0f) {
+                        w.dust1 = (short)aprsdecode_trunc(v);
+                     }
+                     break;
+                  case 'D':
+                     if (v>=0.0f && v<=999.0f) {
+                        w.dust01 = (short)aprsdecode_trunc(v);
+                     }
+                     break;
                   } /* end switch */
                }
             }
@@ -1424,35 +1474,50 @@ static void wxmacro(char ws[], uint32_t ws_len, char wms[],
             }
          }
          if (d.postyp!='c') {
-            if (winddir!=1.E+6f) apd(ws, ws_len, 0, winddir+1.0f, 3UL);
+            if (winddir!=1.E+6f) apd(ws, ws_len, "", 1ul, winddir+1.0f, 3UL);
             else aprsstr_Append(ws, ws_len, "...", 4ul);
             if (wind!=1.E+6f) {
-               apd(ws, ws_len, '/', X2C_DIVR(wind,1.609f), 3UL);
+               apd(ws, ws_len, "/", 2ul, X2C_DIVR(wind,1.609f), 3UL);
             }
             else aprsstr_Append(ws, ws_len, "/...", 5ul);
          }
          if (w.gust!=1.E+6f) {
-            apd(ws, ws_len, 'g', X2C_DIVR(w.gust,1.609f), 3UL);
+            apd(ws, ws_len, "g", 2ul, X2C_DIVR(w.gust,1.609f), 3UL);
          }
          else aprsstr_Append(ws, ws_len, "g...", 5ul);
          if (w.temp!=1.E+6f) {
-            apd(ws, ws_len, 't', aprstext_CtoF(w.temp), 3UL);
+            apd(ws, ws_len, "t", 2ul, aprstext_CtoF(w.temp), 3UL);
          }
          else aprsstr_Append(ws, ws_len, "t...", 5ul);
          if (w.rain1!=1.E+6f) {
-            apd(ws, ws_len, 'r', w.rain1*3.9370078740157f, 3UL);
+            apd(ws, ws_len, "r", 2ul, w.rain1*3.9370078740157f, 3UL);
          }
          if (w.rain24!=1.E+6f) {
-            apd(ws, ws_len, 'P', w.rain24*3.9370078740157f, 3UL);
+            apd(ws, ws_len, "P", 2ul, w.rain24*3.9370078740157f, 3UL);
          }
          if (w.raintoday!=1.E+6f) {
-            apd(ws, ws_len, 'p', w.raintoday*3.9370078740157f, 3UL);
+            apd(ws, ws_len, "p", 2ul, w.raintoday*3.9370078740157f, 3UL);
          }
-         if (w.hygro!=1.E+6f) apd(ws, ws_len, 'h', w.hygro, 2UL);
-         if (w.baro!=1.E+6f) apd(ws, ws_len, 'b', w.baro*10.0f, 5UL);
+         if (w.hygro!=1.E+6f) {
+            apd(ws, ws_len, "h", 2ul, w.hygro, 2UL);
+         }
+         if (w.baro!=1.E+6f) apd(ws, ws_len, "b", 2ul, w.baro*10.0f, 5UL);
          if (w.lum!=1.E+6f) {
-            if (w.lum>=1000.0f) apd(ws, ws_len, 'l', w.lum-1000.0f, 3UL);
-            else apd(ws, ws_len, 'L', w.lum, 3UL);
+            if (w.lum>=1000.0f) {
+               apd(ws, ws_len, "l", 2ul, w.lum-1000.0f, 3UL);
+            }
+            else apd(ws, ws_len, "L", 2ul, w.lum, 3UL);
+         }
+         if (w.sievert!=1.E+6f) {
+            apd(ws, ws_len, "X", 2ul, logsievert(w.sievert), 3UL);
+         }
+         if (w.dust10>=0) {
+            apd(ws, ws_len, "m3", 3ul, (float)w.dust10, 3UL);
+         }
+         if (w.dust2>=0) apd(ws, ws_len, "m2", 3ul, (float)w.dust2, 3UL);
+         if (w.dust1>=0) apd(ws, ws_len, "m1", 3ul, (float)w.dust1, 3UL);
+         if (w.dust01>=0) {
+            apd(ws, ws_len, "m0", 3ul, (float)w.dust01, 3UL);
          }
       }
       else {
@@ -1592,7 +1657,7 @@ static void beaconmacros(char s[], uint32_t s_len,
                aprsstr_Append(ns, 256ul, "\\\\", 3ul);
             }
             else if (s[i]=='v') {
-               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.77", 17ul);
+               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.79", 17ul);
             }
             else if (s[i]=='l') {
                if (aprstext_getmypos(&pos)) {
@@ -1822,6 +1887,7 @@ extern int32_t aprsdecode_knottokmh(int32_t kn)
 
 static void NoWX(struct aprsdecode_WX * wx)
 {
+   memset((char *)wx,(char)0,sizeof(struct aprsdecode_WX));
    wx->gust = 1.E+6f;
    wx->temp = 1.E+6f;
    wx->rain1 = 1.E+6f;
@@ -1832,10 +1898,10 @@ static void NoWX(struct aprsdecode_WX * wx)
    wx->lum = 1.E+6f;
    wx->sievert = 1.E+6f;
    wx->storm = aprsdecode_WXNOWX;
-   wx->sustaind = 0.0f;
-   wx->radiushurr = 0.0f;
-   wx->radiusstorm = 0.0f;
-   wx->wholegale = 0.0f;
+   wx->dust10 = -1;
+   wx->dust2 = -1;
+   wx->dust1 = -1;
+   wx->dust01 = -1;
 } /* end NoWX() */
 
 
@@ -1924,9 +1990,13 @@ static void GetWX(struct aprsdecode_WX * wx, uint32_t * course,
                 uint32_t * speed, char buf[], uint32_t buf_len,
                 char storm)
 {
+   float dust;
    float wdir;
    float wwind;
+   uint32_t dustc;
+   uint32_t dustt;
    uint32_t p;
+   buf[buf_len-1] = 0;
    p = 0UL;
    NoWX(wx);
    wwind = 1.E+6f;
@@ -1999,6 +2069,16 @@ static void GetWX(struct aprsdecode_WX * wx, uint32_t * course,
             break;
          case 'X':
             wexp(buf, buf_len, &p, &wx->sievert, 1.E-9f);
+            break;
+         case 'm':
+            wpar(&p, buf, buf_len, &dust, 4L, 4L);
+            dustc = aprsdecode_trunc(dust);
+            dustt = dustc/1000UL;
+            dustc = dustc%1000UL;
+            if (dustt==0UL) wx->dust01 = (short)dustc;
+            else if (dustt==1UL) wx->dust1 = (short)dustc;
+            else if (dustt==2UL) wx->dust2 = (short)dustc;
+            else if (dustt==3UL) wx->dust10 = (short)dustc;
             break;
          default:;
             goto loop_exit;
@@ -5784,7 +5864,7 @@ static char tcpconn(aprsdecode_pTCPSOCK * sockchain, int32_t f)
          aprsstr_Append(h, 512ul, s, 100ul);
       }
       aprsstr_Append(h, 512ul, " vers ", 7ul);
-      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.77", 17ul);
+      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.79", 17ul);
       appfilter(h, 512ul, 0);
       /*    IF filter[0]<>0C THEN Append(h, " filter ");
                 Append(h, filter) END; */

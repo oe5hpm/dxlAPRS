@@ -988,6 +988,7 @@ program version or a file
  filename t=temp h=hygro b=baro g=gust(km/h)
  w=wind(km/h) d=winddir L=lum r=rain1h(mm)
  P=rain24h(mm) p=raintoday(mm)
+ S=nSv/h A=PM10 B=PM2.5 C=PM1 D=PM0.1
  use ,w3.6, multiplier if given in m/s
 
 
@@ -1313,6 +1314,7 @@ SHIFT-Click or press "x" to new position,
  filename t=temp h=hygro b=baro g=gust(km/h)
  w=wind(km/h) d=winddir L=lum r=rain1h(mm)
  P=rain24h(mm) p=raintoday(mm)
+ S=nSv/h A=PM10 B=PM2.5 C=PM1 D=PM0.1
  use ,w3.6, multiplier if given in m/s
 \\v insert program version
 \\l insert position 
@@ -1725,7 +1727,7 @@ If mouse is neer a POI a short info is shown if zoomlevel
 info of 3rd csv field go nearer to the position. To
 lock marker1 and 2 to a POI use "X" "Y" key. Drawing
 labels may take long time, "l" toggles Labels on/off.
-Config/Reload Config to re-scan avaliable poi-files
+Save Config/Reload Config to re-scan avaliable poi-files
 in "osm/poi/" Directory. Shortcut "C"
 
 |8605 Show Stations with last Beacon has Wx-Data

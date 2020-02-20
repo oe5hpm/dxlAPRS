@@ -30,9 +30,14 @@ struct aprstat_LASTVAL {
    float winddir;
    float gust;
    float rain;
+   float rain1;
    float rain24;
    float lumi;
    float siev;
+   uint16_t dust10;
+   uint16_t dust2;
+   uint16_t dust1;
+   uint16_t dust01;
 };
 
 extern void aprstat_kmhist(maptool_pIMAGE *, aprsdecode_pOPHIST,

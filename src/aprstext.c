@@ -324,6 +324,26 @@ static void objitem(char s[], uint32_t s_len,
 } /* end objitem() */
 
 
+static void appval(char s[], uint32_t s_len, char * nl,
+                float v, uint32_t dez, char m[], uint32_t m_len,
+                char d[], uint32_t d_len)
+{
+   char h[31];
+   X2C_PCOPY((void **)&m,m_len);
+   X2C_PCOPY((void **)&d,d_len);
+   if (*nl) {
+      aprsstr_Append(s, s_len, "\012 ", 3ul);
+      *nl = 0;
+   }
+   aprsstr_Append(s, s_len, m, m_len);
+   aprsstr_FixToStr(v, dez, h, 31ul);
+   aprsstr_Append(s, s_len, h, 31ul);
+   aprsstr_Append(s, s_len, d, d_len);
+   X2C_PFREE(m);
+   X2C_PFREE(d);
+} /* end appval() */
+
+
 extern void aprstext_decode(char s[], uint32_t s_len,
                 aprsdecode_pFRAMEHIST pf0, aprsdecode_pFRAMEHIST pf,
                 aprsdecode_pVARDAT oldvar, uint32_t odate,
@@ -449,78 +469,57 @@ extern void aprstext_decode(char s[], uint32_t s_len,
             aprsstr_Append(s, s_len, "km/h", 5ul);
          }
          if (dat->wx.temp!=1.E+6f) {
-            if (nl) {
-               aprsstr_Append(s, s_len, "\012 ", 3ul);
-               nl = 0;
-            }
-            aprsstr_Append(s, s_len, " Temp:", 7ul);
-            aprsstr_FixToStr(aprstext_FtoC(dat->wx.temp), 2UL, h, 512ul);
-            aprsstr_Append(s, s_len, h, 512ul);
-            aprsstr_Append(s, s_len, "C", 2ul);
+            appval(s, s_len, &nl, aprstext_FtoC(dat->wx.temp), 2UL, " Temp:",
+                 7ul, "C", 2ul);
          }
          if (dat->wx.hygro!=1.E+6f) {
-            if (nl) {
-               aprsstr_Append(s, s_len, "\012 ", 3ul);
-               nl = 0;
-            }
-            aprsstr_Append(s, s_len, " Hum:", 6ul);
-            aprsstr_IntToStr((int32_t)X2C_TRUNCI(dat->wx.hygro+0.5f,
-                X2C_min_longint,X2C_max_longint), 1UL, h, 512ul);
-            aprsstr_Append(s, s_len, h, 512ul);
-            aprsstr_Append(s, s_len, "%", 2ul);
+            appval(s, s_len, &nl, dat->wx.hygro+0.5f, 0UL, " Hum:", 6ul, "%",
+                 2ul);
          }
          if (dat->wx.baro!=1.E+6f) {
-            if (nl) {
-               aprsstr_Append(s, s_len, "\012 ", 3ul);
-               nl = 0;
-            }
-            aprsstr_Append(s, s_len, " Baro:", 7ul);
-            aprsstr_FixToStr(dat->wx.baro*0.1f+0.05f, 2UL, h, 512ul);
-            aprsstr_Append(s, s_len, h, 512ul);
-            aprsstr_Append(s, s_len, "hPa", 4ul);
+            appval(s, s_len, &nl, dat->wx.baro*0.1f+0.05f, 2UL, " Baro:",
+                7ul, "hPa", 4ul);
          }
          if (dat->wx.rain1!=1.E+6f) {
-            if (nl) {
-               aprsstr_Append(s, s_len, "\012 ", 3ul);
-               nl = 0;
-            }
-            aprsstr_Append(s, s_len, " Rain1h:", 9ul);
-            aprsstr_FixToStr(dat->wx.rain1*0.254f, 2UL, h, 512ul);
-            aprsstr_Append(s, s_len, h, 512ul);
-            aprsstr_Append(s, s_len, "mm", 3ul);
+            appval(s, s_len, &nl, dat->wx.rain1*0.254f, 2UL, " Rain1h:", 9ul,
+                 "mm", 3ul);
          }
          if (dat->wx.rain24!=1.E+6f) {
-            if (nl) {
-               aprsstr_Append(s, s_len, "\012 ", 3ul);
-               nl = 0;
-            }
-            aprsstr_Append(s, s_len, " Rain24h:", 10ul);
-            aprsstr_FixToStr(dat->wx.rain24*0.254f, 2UL, h, 512ul);
-            aprsstr_Append(s, s_len, h, 512ul);
-            aprsstr_Append(s, s_len, "mm", 3ul);
+            appval(s, s_len, &nl, dat->wx.rain24*0.254f, 2UL, " Rain24h:",
+                10ul, "mm", 3ul);
          }
          if (dat->wx.raintoday!=1.E+6f) {
+            appval(s, s_len, &nl, dat->wx.raintoday*0.254f, 2UL, " Rain24h:",
+                 10ul, "mm", 3ul);
+         }
+         if (dat->wx.lum!=1.E+6f) {
+            appval(s, s_len, &nl, dat->wx.lum+0.5f, 0UL, " Luminosity:",
+                13ul, "W", 2ul);
+         }
+         if (dat->wx.sievert!=1.E+6f) {
             if (nl) {
                aprsstr_Append(s, s_len, "\012 ", 3ul);
                nl = 0;
             }
-            aprsstr_Append(s, s_len, " Rain00:", 9ul);
-            aprsstr_FixToStr(dat->wx.raintoday*0.254f, 2UL, h, 512ul);
-            aprsstr_Append(s, s_len, h, 512ul);
-            aprsstr_Append(s, s_len, "mm", 3ul);
-         }
-         if (dat->wx.lum!=1.E+6f) {
-            if (nl) aprsstr_Append(s, s_len, "\012 ", 3ul);
-            aprsstr_Append(s, s_len, " Luminosity:", 13ul);
-            aprsstr_FixToStr(dat->wx.lum+0.5f, 0UL, h, 512ul);
-            aprsstr_Append(s, s_len, h, 512ul);
-            aprsstr_Append(s, s_len, "W", 2ul);
-         }
-         if (dat->wx.sievert!=1.E+6f) {
-            if (nl) aprsstr_Append(s, s_len, "\012 ", 3ul);
-            aprsstr_Append(s, s_len, " Radiation:", 12ul);
+            aprsstr_Append(s, s_len, " Gamma:", 8ul);
             aprstext_sievert2str(dat->wx.sievert, h, 512ul);
             aprsstr_Append(s, s_len, h, 512ul);
+         }
+         if (dat->wx.dust10>=0) {
+            appval(s, s_len, &nl, (float)dat->wx.dust10, 0UL, " PM10:",
+                7ul, "ug/m3", 6ul);
+         }
+         if (dat->wx.dust2>=0) {
+            appval(s, s_len, &nl, (float)dat->wx.dust2, 0UL, " PM2.5:",
+                8ul, "ug/m3", 6ul);
+         }
+         if (dat->wx.dust1>=0) {
+            appval(s, s_len, &nl, (float)dat->wx.dust1, 0UL, " PM1:", 6ul,
+                 "ug/m3", 6ul);
+         }
+         if (dat->wx.dust01>=0) {
+            appval(s, s_len, &nl, (float)dat->wx.dust01, 0UL, " PM0.1:",
+                8ul, "ug/m3", 6ul);
          }
       }
       else if (dat->wx.storm>aprsdecode_WXNORMAL) {

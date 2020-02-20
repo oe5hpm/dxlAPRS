@@ -64,11 +64,11 @@ extern aprsdecode_SET256 aprsdecode_SYMTABLE;
 
 #define aprsdecode_POIINFOSIZE 4096
 
-#define aprsdecode_VERSNUM "0.77"
+#define aprsdecode_VERSNUM "0.79"
 
 #define aprsdecode_DEFAULTPOISYMBOL "//"
 
-#define aprsdecode_VERS "aprsmap(cu) 0.77"
+#define aprsdecode_VERS "aprsmap(cu) 0.79"
 
 typedef char aprsdecode_MONCALL[9];
 
@@ -278,6 +278,10 @@ struct aprsdecode_WX {
    float raintoday;
    float lum;
    float sievert;
+   short dust10;
+   short dust2;
+   short dust1;
+   short dust01;
    uint8_t storm;
    float sustaind;
    float radiushurr;
@@ -369,8 +373,8 @@ struct aprsdecode_DAT {
 
 enum aprsdecode_WXSET {aprsdecode_wTEMP, aprsdecode_wBARO, aprsdecode_wHYG,
                 aprsdecode_wWIND, aprsdecode_wWINDDIR, aprsdecode_wRAIN,
-                aprsdecode_wLUMI, aprsdecode_wSHIST, aprsdecode_wBHIST,
-                aprsdecode_wAHIST, aprsdecode_wSIEV};
+                aprsdecode_wLUMI, aprsdecode_wSIEV, aprsdecode_wFINEDUST, 
+   aprsdecode_wSHIST, aprsdecode_wBHIST, aprsdecode_wAHIST};
 
 
 typedef uint16_t aprsdecode_sWXSET;

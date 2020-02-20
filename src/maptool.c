@@ -2346,7 +2346,7 @@ extern void maptool_Colset(struct aprsdecode_COLTYP * c, char w)
    }
    else if (w=='B') {
       c->r = 0UL;
-      c->g = 60UL;
+      c->g = 100UL;
    }
    else if (w=='O') {
       c->b = 0UL;

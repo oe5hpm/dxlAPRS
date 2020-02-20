@@ -44,6 +44,20 @@
 /* aprs statistc graphs by oe5dxl */
 #define aprstat_KMHTIME 600
 
+#define aprstat_colW "\327"
+
+#define aprstat_colR "\322"
+
+#define aprstat_colG "\307"
+
+#define aprstat_colB "\302"
+
+#define aprstat_colY "\331"
+
+#define aprstat_colV "\326"
+
+#define aprstat_SIEVMUL 1.E+9
+
 
 static void setpix(maptool_pIMAGE img, int32_t x, int32_t y,
                 int32_t rr, int32_t gg, int32_t bb)
@@ -69,12 +83,20 @@ static void str(maptool_pIMAGE img, uint32_t x, uint32_t y, char s[],
    l = aprsstr_Length(s, s_len);
    i = 0UL;
    maptool_Colset(&col, 'W');
-   while (i<l) {
+   for (;;) {
+      if (i>=l) break;
+      while ((uint8_t)s[i]>=(uint8_t)'\301') {
+         /* text colour switch */
+         maptool_Colset(&col, (char)((uint32_t)(uint8_t)s[i]-128UL));
+         ++i;
+         if (i>=l) goto loop_exit;
+      }
       maptool_drawchar(img, s[i], (float)x, (float)y, &inc, 700UL, 1UL,
                  col, 0);
       x += (uint32_t)inc;
       ++i;
    }
+   loop_exit:;
    X2C_PFREE(s);
 } /* end str() */
 
@@ -178,16 +200,32 @@ static void fillpix(maptool_pIMAGE img, uint32_t x, uint32_t yfrom,
    }
 } /* end fillpix() */
 
+/*
+PROCEDURE sfact(y:REAL):CARDINAL;
+VAR s, m:CARDINAL;
+    f:REAL;
+BEGIN
+  s:=1;
+  m:=2;
+  f:=200.0/FLOAT(lums.fontysize+2);
+  WHILE y/FLOAT(s)>f DO
+    s:=s*m;
+    IF m=2 THEN m:=5 ELSE m:=2 END;
+  END;
+  RETURN s
+END sfact;
+*/
 
-static uint32_t sfact(float y)
+static float sfact(float y)
 {
+   float f;
+   float s;
    uint32_t m;
-   uint32_t s;
-   s = 1UL;
+   s = 1.0f;
    m = 2UL;
-   while (X2C_DIVR(y,(float)s)>X2C_DIVR(200.0f,
-                (float)(aprsdecode_lums.fontysize+2UL))) {
-      s = s*m;
+   f = X2C_DIVR(200.0f,(float)(aprsdecode_lums.fontysize+2UL));
+   while (X2C_DIVR(y,s)>f) {
+      s = s*(float)m;
       if (m==2UL) m = 5UL;
       else m = 2UL;
    }
@@ -693,8 +731,9 @@ extern void aprstat_kmhist(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
 
 
 static void paper(maptool_pIMAGE * img, float yax0, float yax1,
-                uint32_t step, uint32_t margin, uint32_t maxx,
-                uint32_t maxy, char name[], uint32_t name_len)
+                float step, float mul, uint32_t margin,
+                uint32_t maxx, uint32_t maxy, char name[],
+                uint32_t name_len)
 {
    uint32_t y;
    uint32_t x;
@@ -705,14 +744,14 @@ static void paper(maptool_pIMAGE * img, float yax0, float yax1,
    uint32_t tmp;
    uint32_t tmp0;
    X2C_PCOPY((void **)&name,name_len);
-   so = osi_realint(aprsdecode_floor(X2C_DIVR(yax0,(float)step)));
+   so = osi_realint(aprsdecode_floor(X2C_DIVR(yax0,step)));
    tmp = maxy-1UL;
    y = 0UL;
    if (y<=tmp) for (;; y++) {
       setpix(*img, (int32_t)margin, (int32_t)(y+margin), 200L, 1000L,
                 200L);
       v = yax0+(yax1-yax0)*(float)y*(X2C_DIVR(1.0f,(float)maxy));
-      s = osi_realint(aprsdecode_floor(X2C_DIVR(v,(float)step)));
+      s = osi_realint(aprsdecode_floor(X2C_DIVR(v,step)));
       tmp0 = (maxx-1UL)+margin;
       x = margin+1UL;
       if (x<=tmp0) for (;; x++) {
@@ -736,7 +775,8 @@ static void paper(maptool_pIMAGE * img, float yax0, float yax1,
          } /* end for */
          num(*img, (int32_t)(margin+1UL),
                 (int32_t)(((y+margin)-aprsdecode_lums.fontysize/2UL)-2UL),
-                s*(int32_t)step, "", 1ul);
+                s*(int32_t)X2C_TRUNCI(step*mul+0.5f,X2C_min_longint,
+                X2C_max_longint), "", 1ul);
          so = s;
       }
       if (y==tmp) break;
@@ -946,12 +986,12 @@ extern void aprstat_althist(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
    float minalt;
    float ground[5760];
    float alt[5760];
+   float sc;
    float hdiv;
    float wdiv;
    uint32_t markx1;
    uint32_t markx;
    uint32_t xc;
-   uint32_t sc;
    uint32_t x;
    uint32_t Maxx;
    struct aprsdecode_DAT dat;
@@ -1003,7 +1043,6 @@ extern void aprstat_althist(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
    END;
     WrStrLn("");
    */
-   /*sc:=VAL(CARDINAL, maxalt-minalt) DIV sfact(FLOAT(maxalt-minalt)); */
    sc = sfact(maxalt-minalt);
    strncpy(s,"  ",256u);
    aprsstr_Append(s, 256ul, op->call, 9ul);
@@ -1022,7 +1061,7 @@ extern void aprstat_althist(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
       aprsstr_Append(s, 256ul, h, 256ul);
    }
    aprsstr_Append(s, 256ul, "m (NN)", 7ul);
-   paper(img, minalt, maxalt, sc, 8UL, Maxx, 120UL, s, 256ul);
+   paper(img, minalt, maxalt, sc, 1.0f, 8UL, Maxx, 120UL, s, 256ul);
    tmp0 = Maxx+8UL;
    x = 5UL;
    if (x<=tmp0) for (;; x++) {
@@ -1035,7 +1074,7 @@ extern void aprstat_althist(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
       strncpy(h,"m",256u);
    }
    sc = sfact(waysum);
-   hdiv = X2C_DIVR((float)sc*(float)Maxx,waysum);
+   hdiv = X2C_DIVR(sc*(float)Maxx,waysum);
    wdiv = 0.0f;
    xc = 0UL;
    do {
@@ -1048,7 +1087,7 @@ extern void aprstat_althist(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
                 (int32_t)xc, h, 256ul);
          h[0U] = 0;
       }
-      xc += sc;
+      xc += aprsdecode_trunc(sc);
       wdiv = wdiv+hdiv;
    } while (aprsdecode_trunc(wdiv)<=Maxx);
    if (markx>0UL) {
@@ -1109,6 +1148,10 @@ struct WX {
    float rain;
    float lumi;
    float siev;
+   uint16_t dust10;
+   uint16_t dust2;
+   uint16_t dust1;
+   uint16_t dust01;
 };
 
 #define aprstat_F 0.9
@@ -1116,7 +1159,7 @@ struct WX {
 
 static void scale(float v[], uint32_t v_len, float min0,
                 float max0, float ysize, float maxamp,
-                float * smin, float * smax, uint32_t * step)
+                float * smin, float * smax, float * step)
 {
    uint32_t i;
    float d;
@@ -1239,10 +1282,11 @@ extern void aprstat_wxgraph(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
                 struct aprstat_LASTVAL * lastval)
 {
    aprsdecode_pFRAMEHIST fr;
+   uint32_t vc;
    uint32_t Maxx;
-   uint32_t step;
    uint32_t xt;
    uint32_t xi;
+   float step;
    float XStep;
    float yax1;
    float yax0;
@@ -1263,6 +1307,11 @@ extern void aprstat_wxgraph(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
    float rain24[1440];
    float rain0[1440];
    float lumi[1440];
+   float siev[1440];
+   float dust01[1440];
+   float dust1[1440];
+   float dust2[1440];
+   float dust10[1440];
    uint16_t have;
    char dirvalid;
    struct WX * anonym;
@@ -1284,6 +1333,11 @@ extern void aprstat_wxgraph(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
       rain24[xi] = (-1.E+4f);
       rain0[xi] = (-1.E+4f);
       lumi[xi] = (-1.E+4f);
+      siev[xi] = (-1.E+4f);
+      dust10[xi] = (-1.E+4f);
+      dust2[xi] = (-1.E+4f);
+      dust1[xi] = (-1.E+4f);
+      dust01[xi] = (-1.E+4f);
    } /* end for */
    { /* with */
       struct WX * anonym = &max0;
@@ -1294,6 +1348,7 @@ extern void aprstat_wxgraph(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
       anonym->rain = (-1.E+4f);
       anonym->lumi = (-1.E+4f);
       anonym->siev = (-1.E+4f);
+      anonym->dust10 = 0U;
    }
    dirvalid = 0;
    min0.temp = X2C_max_real;
@@ -1336,22 +1391,18 @@ extern void aprstat_wxgraph(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
          if (vh>=0.0f && vh<300.0f) {
             rain0[xt] = vh;
             if (vh>max0.rain) max0.rain = vh;
+            lastval->rain = vh;
          }
          vh = dat.wx.rain1*0.254f;
          if (vh>=0.0f && vh<300.0f) {
             rain1[xt] = vh;
             if (vh>max0.rain) max0.rain = vh;
-            lastval->rain = vh;
+            lastval->rain1 = vh;
          }
          if (dat.wx.lum>=0.0f && dat.wx.lum<=2000.0f) {
             lumi[xt] = dat.wx.lum;
             if (dat.wx.lum>max0.lumi) max0.lumi = dat.wx.lum;
             lastval->lumi = dat.wx.lum;
-         }
-         if (dat.wx.sievert>=0.0f && dat.wx.sievert<1000.0f) {
-            /*        siev[xt]:=dat.wx.sievert; */
-            if (dat.wx.sievert>max0.siev) max0.siev = dat.wx.sievert;
-            lastval->siev = dat.wx.sievert;
          }
          if (dat.course>0UL && dat.course<=360UL) {
             lastval->winddir = (float)(dat.course%360UL);
@@ -1370,6 +1421,36 @@ extern void aprstat_wxgraph(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
             lastval->gust = vh;
             if (vh>max0.wind) max0.wind = vh;
          }
+         vh = dat.wx.sievert;
+         if (vh>=0.0f && vh<1000.0f) {
+            siev[xt] = vh*1.E+9f;
+            lastval->siev = vh;
+            if (vh>max0.siev) max0.siev = vh;
+         }
+         if (dat.wx.dust10>=0) {
+            vc = (uint32_t)(uint16_t)dat.wx.dust10;
+            dust10[xt] = (float)vc;
+            lastval->dust10 = (uint16_t)vc;
+            if (vc>(uint32_t)max0.dust10) max0.dust10 = (uint16_t)vc;
+         }
+         if (dat.wx.dust2>=0) {
+            vc = (uint32_t)(uint16_t)dat.wx.dust2;
+            dust2[xt] = (float)vc;
+            lastval->dust2 = (uint16_t)vc;
+            if (vc>(uint32_t)max0.dust10) max0.dust10 = (uint16_t)vc;
+         }
+         if (dat.wx.dust1>=0) {
+            vc = (uint32_t)(uint16_t)dat.wx.dust1;
+            dust1[xt] = (float)vc;
+            lastval->dust1 = (uint16_t)vc;
+            if (vc>(uint32_t)max0.dust10) max0.dust10 = (uint16_t)vc;
+         }
+         if (dat.wx.dust01>=0) {
+            vc = (uint32_t)(uint16_t)dat.wx.dust01;
+            dust01[xt] = (float)vc;
+            lastval->dust01 = (uint16_t)vc;
+            if (vc>(uint32_t)max0.dust10) max0.dust10 = (uint16_t)vc;
+         }
       }
       fr = fr->next;
    } while (fr);
@@ -1386,7 +1467,7 @@ extern void aprstat_wxgraph(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
          aprsstr_FixToStr(lastval->temp, 2UL, s, 256ul);
          aprsstr_Append(s, 256ul, "\177C ", 4ul);
          aprsstr_Append(s, 256ul, h, 256ul);
-         paper(img, yax0, yax1, step, 8UL, Maxx, 120UL, s, 256ul);
+         paper(img, yax0, yax1, step, 1.0f, 8UL, Maxx, 120UL, s, 256ul);
          timeline(stime, img, Maxx);
          dots(XStep, img, temp, 1440ul, 1, 200UL, 700UL, 40UL);
       }
@@ -1400,7 +1481,7 @@ extern void aprstat_wxgraph(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
          aprsstr_FixToStr(lastval->baro, 2UL, s, 256ul);
          aprsstr_Append(s, 256ul, "hPa ", 5ul);
          aprsstr_Append(s, 256ul, h, 256ul);
-         paper(img, yax0, yax1, step, 8UL, Maxx, 120UL, s, 256ul);
+         paper(img, yax0, yax1, step, 1.0f, 8UL, Maxx, 120UL, s, 256ul);
          timeline(stime, img, Maxx);
          dots(XStep, img, baro, 1440ul, 1, 500UL, 400UL, 500UL);
       }
@@ -1408,24 +1489,29 @@ extern void aprstat_wxgraph(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
    if (max0.wind!=(-1.E+4f) && max0.wind>0.0f) {
       have |= 0x8U;
       if ((0x8U & *what)) {
-         if (!newimg(Maxx, img)) return;
+         if (!newimg(Maxx, img)) {
+            return;
+         }
          scale(winds, 1440ul, (-1.E+4f), max0.wind, 120.0f, 20.0f, &yax0,
                 &yax1, &step);
          scale(gust, 1440ul, (-1.E+4f), max0.wind, 120.0f, 20.0f, &yax0,
                 &yax1, &step);
          s[0U] = 0;
          if (lastval->winds!=0.0f || lastval->gust==0.0f) {
+            aprsstr_Append(s, 256ul, "\302", 2ul);
             aprsstr_FixToStr(lastval->winds, 2UL, hh, 256ul);
-            aprsstr_Append(hh, 256ul, "km/h Wind  ", 12ul);
             aprsstr_Append(s, 256ul, hh, 256ul);
+            aprsstr_Append(s, 256ul, "km/h Wind  ", 12ul);
          }
          if (lastval->gust!=0.0f) {
+            aprsstr_Append(s, 256ul, "\322", 2ul);
             aprsstr_FixToStr(lastval->gust, 2UL, hh, 256ul);
-            aprsstr_Append(hh, 256ul, "km/h Gust  ", 12ul);
             aprsstr_Append(s, 256ul, hh, 256ul);
+            aprsstr_Append(s, 256ul, "km/h Gust  ", 12ul);
          }
+         aprsstr_Append(s, 256ul, "\327", 2ul);
          aprsstr_Append(s, 256ul, h, 256ul);
-         paper(img, yax0, yax1, step, 8UL, Maxx, 120UL, s, 256ul);
+         paper(img, yax0, yax1, step, 1.0f, 8UL, Maxx, 120UL, s, 256ul);
          timeline(stime, img, Maxx);
          dots(XStep, img, winds, 1440ul, 1, 100UL, 500UL, 700UL);
          dots(XStep, img, gust, 1440ul, 1, 600UL, 100UL, 0UL);
@@ -1439,7 +1525,7 @@ extern void aprstat_wxgraph(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
             aprsstr_FixToStr(lastval->winddir, 0UL, s, 256ul);
             aprsstr_Append(s, 256ul, "deg Wind Direction ", 20ul);
             aprsstr_Append(s, 256ul, h, 256ul);
-            paper(img, yax0, yax1, 90UL, 8UL, Maxx, 120UL, s, 256ul);
+            paper(img, yax0, yax1, 90.0f, 1.0f, 8UL, Maxx, 120UL, s, 256ul);
             timeline(stime, img, Maxx);
             dots(XStep, img, windd, 1440ul, 0, 200UL, 700UL, 700UL);
          }
@@ -1454,7 +1540,7 @@ extern void aprstat_wxgraph(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
          aprsstr_FixToStr(lastval->hyg, 0UL, s, 256ul);
          aprsstr_Append(s, 256ul, "% Humidity ", 12ul);
          aprsstr_Append(s, 256ul, h, 256ul);
-         paper(img, yax0, yax1, step, 8UL, Maxx, 120UL, s, 256ul);
+         paper(img, yax0, yax1, step, 1.0f, 8UL, Maxx, 120UL, s, 256ul);
          timeline(stime, img, Maxx);
          dots(XStep, img, hyg, 1440ul, 1, 0UL, 500UL, 700UL);
       }
@@ -1468,7 +1554,7 @@ extern void aprstat_wxgraph(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
          aprsstr_FixToStr(lastval->lumi, 0UL, s, 256ul);
          aprsstr_Append(s, 256ul, "W/m^2 Luminosity ", 18ul);
          aprsstr_Append(s, 256ul, h, 256ul);
-         paper(img, yax0, yax1, step, 8UL, Maxx, 120UL, s, 256ul);
+         paper(img, yax0, yax1, step, 1.0f, 8UL, Maxx, 120UL, s, 256ul);
          timeline(stime, img, Maxx);
          dots(XStep, img, lumi, 1440ul, 1, 600UL, 600UL, 0UL);
       }
@@ -1483,17 +1569,102 @@ extern void aprstat_wxgraph(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
                 &yax1, &step);
          scale(rain0, 1440ul, (-1.E+4f), max0.rain, 120.0f, 5.0f, &yax0,
                 &yax1, &step);
-         aprsstr_FixToStr(lastval->rain, 2UL, s, 256ul);
-         aprsstr_Append(s, 256ul, "mm Rain ", 9ul);
+         if (lastval->rain>=0.0f) {
+            aprsstr_FixToStr(lastval->rain, 2UL, hh, 256ul);
+            strncpy(s,"\302today:",256u);
+            aprsstr_Append(s, 256ul, hh, 256ul);
+         }
+         if (lastval->rain1>=0.0f) {
+            aprsstr_FixToStr(lastval->rain1, 2UL, hh, 256ul);
+            aprsstr_Append(s, 256ul, "\322 1h:", 6ul);
+            aprsstr_Append(s, 256ul, hh, 256ul);
+         }
+         if (lastval->rain24>=0.0f) {
+            aprsstr_FixToStr(lastval->rain24, 2UL, hh, 256ul);
+            aprsstr_Append(s, 256ul, "\307 24h:", 7ul);
+            aprsstr_Append(s, 256ul, hh, 256ul);
+         }
+         aprsstr_Append(s, 256ul, "\327mm Rain ", 10ul);
          aprsstr_Append(s, 256ul, h, 256ul);
-         paper(img, yax0, yax1, step, 8UL, Maxx, 120UL, s, 256ul);
+         paper(img, yax0, yax1, step, 1.0f, 8UL, Maxx, 120UL, s, 256ul);
          timeline(stime, img, Maxx);
          dots(XStep, img, rain1, 1440ul, 1, 500UL, 100UL, 0UL);
          dots(XStep, img, rain24, 1440ul, 1, 50UL, 600UL, 50UL);
          dots(XStep, img, rain0, 1440ul, 1, 100UL, 100UL, 700UL);
       }
    }
-   if (max0.siev>0.0f) have |= 0x400U;
+   if (max0.siev>0.0f) {
+      have |= 0x80U;
+      if ((0x80U & *what)) {
+         if (!newimg(Maxx, img)) return;
+         if (max0.siev<0.005f) {
+            vh = 1.0f;
+            strncpy(s,"nSv/h",256u);
+         }
+         else {
+            vh = 1.E-6f;
+            strncpy(s,"mSv/h",256u);
+         }
+         scale(siev, 1440ul, (-1.E+4f), max0.siev*1.E+9f, 120.0f, 1.0f,
+                &yax0, &yax1, &step);
+         aprstext_sievert2str(lastval->siev, hh, 256ul);
+         aprsstr_Append(s, 256ul, " Gamma: ", 9ul);
+         aprsstr_Append(s, 256ul, hh, 256ul);
+         aprstext_sievert2str(max0.siev, hh, 256ul);
+         aprsstr_Append(s, 256ul, "  max:", 7ul);
+         aprsstr_Append(s, 256ul, hh, 256ul);
+         aprsstr_Append(s, 256ul, " ", 2ul);
+         aprsstr_Append(s, 256ul, h, 256ul);
+         paper(img, yax0, yax1, step, vh, 8UL, Maxx, 120UL, s, 256ul);
+         timeline(stime, img, Maxx);
+         dots(XStep, img, siev, 1440ul, 1, 700UL, 700UL, 0UL);
+      }
+   }
+   if (max0.dust10>0U) {
+      have |= 0x100U;
+      if ((0x100U & *what)) {
+         if (!newimg(Maxx, img)) return;
+         scale(dust10, 1440ul, (-1.E+4f), (float)max0.dust10, 120.0f,
+                2.0f, &yax0, &yax1, &step);
+         scale(dust2, 1440ul, (-1.E+4f), (float)max0.dust10, 120.0f, 2.0f,
+                 &yax0, &yax1, &step);
+         scale(dust1, 1440ul, (-1.E+4f), (float)max0.dust10, 120.0f, 2.0f,
+                 &yax0, &yax1, &step);
+         scale(dust01, 1440ul, (-1.E+4f), (float)max0.dust10, 120.0f,
+                2.0f, &yax0, &yax1, &step);
+         if (lastval->dust10>0U) {
+            aprsstr_IntToStr((int32_t)lastval->dust10, 0UL, hh, 256ul);
+            strncpy(s,"\322 PM10: ",256u);
+            aprsstr_Append(s, 256ul, hh, 256ul);
+         }
+         if (lastval->dust2>0U) {
+            aprsstr_IntToStr((int32_t)lastval->dust2, 0UL, hh, 256ul);
+            aprsstr_Append(s, 256ul, "\331  PM2.5: ", 11ul);
+            aprsstr_Append(s, 256ul, hh, 256ul);
+         }
+         if (lastval->dust1>0U) {
+            aprsstr_IntToStr((int32_t)lastval->dust1, 0UL, hh, 256ul);
+            aprsstr_Append(s, 256ul, "\302  PM1: ", 9ul);
+            aprsstr_Append(s, 256ul, hh, 256ul);
+         }
+         if (lastval->dust01>0U) {
+            aprsstr_IntToStr((int32_t)lastval->dust01, 0UL, hh, 256ul);
+            aprsstr_Append(s, 256ul, "\326  PM0.1: ", 11ul);
+            aprsstr_Append(s, 256ul, hh, 256ul);
+         }
+         aprsstr_IntToStr((int32_t)max0.dust10, 0UL, hh, 256ul);
+         aprsstr_Append(s, 256ul, "\327  max: ", 9ul);
+         aprsstr_Append(s, 256ul, hh, 256ul);
+         aprsstr_Append(s, 256ul, "ug/m3 Finedust ", 16ul);
+         aprsstr_Append(s, 256ul, h, 256ul);
+         paper(img, yax0, yax1, step, 1.0f, 8UL, Maxx, 120UL, s, 256ul);
+         timeline(stime, img, Maxx);
+         dots(XStep, img, dust10, 1440ul, 1, 700UL, 50UL, 0UL);
+         dots(XStep, img, dust2, 1440ul, 1, 700UL, 700UL, 0UL);
+         dots(XStep, img, dust1, 1440ul, 1, 0UL, 200UL, 700UL);
+         dots(XStep, img, dust01, 1440ul, 1, 400UL, 0UL, 700UL);
+      }
+   }
    *what = have;
 /*
   IF img<>NIL THEN DISPOSE(img) END;
