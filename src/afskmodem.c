@@ -2809,6 +2809,7 @@ extern int main(int argc, char **argv)
    osi_BEGIN();
    signal(SIGTERM, afskmodemcleanup);
    signal(SIGINT, afskmodemcleanup);
+   signal(SIGPIPE, afskmodemcleanup);
    memset((char *)modpar,(char)0,sizeof(struct MPAR [8]));
    Parms();
    Gencrctab();
