@@ -454,14 +454,16 @@ P format :port for localhost", 78ul);
 AXUDP every 2s eg. to aprsmap", 79ul);
                osi_WrStrLn(" -n <s>                            Beacon Time in\
  Seconds to -N destination (2)", 80ul);
-               osi_WrStrLn(" -r <x.x.x.x:destport>             use AXUDP (to \
-Soundmodem)", 61ul);
+               osi_WrStrLn(" -r <x.x.x.x:destport>             send AXUDP (to\
+ kiss-TNC or TCPKISS via udpflex,", 83ul);
+               osi_WrStrLn("                                     to afskmodem\
+ or via aprsmap or udpgate to TCP)", 84ul);
                osi_WrStrLn(" -s                                GPS Checksum c\
 heck OFF", 58ul);
                osi_WrStrLn(" -t <tty>:<baud>                   (/dev/ttyS0:48\
 00)", 53ul);
-               osi_WrStrLn(" -u                                not retry unti\
-l open removable USB tty", 74ul);
+               osi_WrStrLn(" -u                                abort, not ret\
+ry until open removable USB tty", 81ul);
                osi_WrStrLn(" -v                                verbous",
                 43ul);
                osi_WrStrLn(" -w <viapath>                      via Path like \
