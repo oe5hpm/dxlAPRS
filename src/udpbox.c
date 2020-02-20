@@ -228,6 +228,10 @@ static uint32_t udpbox_POLYNOM = 0x8408UL;
 
 #define udpbox_cTELEMETRY "T"
 
+#define udpbox_THIRDPARTY "}"
+
+#define udpbox_HEADEREND ":"
+
 static char show;
 
 static pINSOCK insocks;
@@ -325,9 +329,16 @@ static void Stomsg(pMSGHASH user, const char from[], uint32_t from_len,
    }
 } /* end Stomsg() */
 
-#define udpbox_THIRDPARTY "}"
 
-#define udpbox_HEADEREND ":"
+static void skipthirdparty(const char b[], uint32_t b_len,
+                uint32_t len, uint32_t * p)
+/* remove third party header */
+{
+   while (b[*p]=='}') {
+      while (*p<len && b[*p]!=':') ++*p;
+      ++*p;
+   }
+} /* end skipthirdparty() */
 
 #define udpbox_FROMEND ">"
 
@@ -347,9 +358,8 @@ static char Usermsg(const char b[], uint32_t b_len,
    char msg[69];
    char ok0;
    *selfmsg = 0;
-   pf = 0L; /* from whom */
+   pf = 0L;
    while (b[p]=='}') {
-      /* remove third party header */
       pf = p+1L;
       while (p<len && b[p]!=':') ++p;
       ++p;
@@ -541,6 +551,7 @@ static int32_t DistFilt(struct aprsstr_POSITION mypos, char b[],
       if (i==0UL) break;
    } /* end for */
    b[len] = 0;
+   skipthirdparty(b, b_len, len, &payload); /* from whom */
    aprspos_GetPos(&pos, &speed, &course, &alt, &sym, &symt, b, b_len, 1UL,
                 payload, comment0, 501ul, &postyp);
    if (aprspos_posvalid(pos)) {
@@ -1689,7 +1700,7 @@ lier if sent anything now", 75ul);
 rom all (-R 0.0.0.0:2000)", 75ul);
                osi_WrStrLn(" -r <ip>:<port> send raw axudp frame", 37ul);
                osi_WrStrLn(" -S             Satgate, filter out uplink (has v\
-ia with no h-bit", 66ul);
+ia with no h-bit)", 67ul);
                osi_WrStrLn(" -s             pass not-UI-frames too (all PR-Fr\
 ames, SABM, RR..)", 67ul);
                osi_WrStrLn("                (raw axudp only) and axudp2 modem\
@@ -2064,6 +2075,15 @@ static void Showpos(char rawb[], uint32_t rawb_len, int32_t rawlen)
          while ((i<j && (uint8_t)b[i]>=' ') && (uint8_t)b[i]<'\177') {
             osi_WrStr((char *) &b[i], 1u/1u);
             ++i;
+         }
+         osi_WrStr(" comment=", 10ul);
+         j = 0L;
+         while (j<=500L && comment0[j]) {
+            if ((uint8_t)comment0[j]>=' ' && (uint8_t)
+                comment0[j]<='\177') {
+               osi_WrStr((char *) &comment0[j], 1u/1u);
+            }
+            ++j;
          }
          osic_WrLn();
       }
