@@ -660,7 +660,8 @@ en in audio channels (tune/afc/rssi..)", 88ul);
 or 2048000..2500000 (2048000)", 79ul);
                osi_WrStrLn("                       if >2048000, AM/FM-IF-widt\
 h will increase proportional", 78ul);
-               osi_WrStrLn(" -k                  keep connection", 37ul);
+               osi_WrStrLn(" -k                  keep connection, reconnect l\
+ost connection to rtl_tcp server", 82ul);
                osi_WrStrLn(" -L <x.x.x.x:destport> send Level table in UDP to\
  Waterfall Viewers (may be repeatet)", 86ul);
                osi_WrStrLn(" -m <audiochannels>  mix up/down all rx channels \
