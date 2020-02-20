@@ -242,10 +242,20 @@ rf     qA?                                                            +
 
 
 
+10.12.2019 (v 0.68)
 
 
+ + Junk-counter auf der MH-www Seite
+ + raw Frames aus der MH-Liste anschaun
+ + besseres Message resend-Timing  
 
-  
+
+2.1.2020 
+
+ raw frames nur mehr von dem Port der auf der MH-Liste angeklickt wurde
+ Speicherfreigabe von rausgefaulten MH-Eintraegen korrigiert
+
+
 
 
 
