@@ -7,7 +7,7 @@ fi
 
 VER=`git describe --always --dirty`
 
-BASE=src/
+BASE=out-$1/
 EXCL='arm-linux-armv7hf-gcc arm-linux-armv7hf-strip arm-linux-rpi-gcc arm-linux-rpi-strip'
 FLIST=`ls $BASE`
 PACKLIST=""

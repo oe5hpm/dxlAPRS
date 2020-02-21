@@ -1,6 +1,6 @@
 # Map Name	Order	Format	Tile Server URL					API Key						Comments
 # -------------	-------	-------	-----------------------------------------------	-----------------------------------------------	--------------------------------------------
-tiles		zxy	png	http://tile.openstreetmap.org									OSM Carto (Standard)
+tiles		zxy	png	https://tile.openstreetmap.org									OSM Carto (Standard)
 tiles2		zxy	png	http://tiles.wmflabs.org/osm									OSM Mapnik
 tiles_de	zxy	png	http://tile.openstreetmap.de/tiles/osmde      							OSM German style
 tiles_fr	zxy	png	http://a.tile.openstreetmap.fr/osmfr      							OSM French style
