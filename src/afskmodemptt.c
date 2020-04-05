@@ -179,6 +179,44 @@ static int ptt_gpioDestroy(struct ptt_t *pInst)
 	return -1;
 }
 
+static int ptt_gpio_create(int bit)
+{
+	char buf[63] = { };
+	int fd;
+	int cnt;
+	int rc;
+
+	fd = open("/sys/class/gpio/export", O_WRONLY);
+
+	if (fd <= 0)
+		return -1;
+
+	snprintf(buf, sizeof(buf), "%d", abs(bit)-1);
+	rc = write(fd, buf, strlen(buf));
+	close(fd);
+
+	snprintf(buf,
+		 sizeof(buf), "/sys/class/gpio/gpio%d/direction", abs(bit)-1);
+
+	cnt = 4;
+	fd = 0;
+
+	do {
+		usleep(125 * 1000);
+		fd = open(buf, O_WRONLY);
+	} while (fd <= 0 && cnt--);
+
+	if (fd <= 0)
+		return -1;
+
+	rc = write(fd, "out", 3);
+	close(fd);
+
+	(void)rc;
+
+	return 0;
+}
+
 static int ptt_tty(struct ptt_t *pInst, int value)
 {
 	int switchval = (pInst->bit > 0 ? 0 : 1) ^ value;
@@ -282,25 +320,9 @@ void *pttinit(char *devname, int bit)
 			pInst->switchfct = &ptt_tty;
 			pInst->destroyfct = &ptt_ttyDestroy;
 		} else if (strcmp(devname, "gpio") == 0) {
-			fd = open("/sys/class/gpio/export", O_WRONLY);
-			if (fd > 0) {
-				snprintf(buf, sizeof(buf),
-					 "%d", abs(pInst->bit)-1);
-				write(fd, buf, strlen(buf));
-				close(fd);
-			} else {
+			if (ptt_gpio_create(bit) != 0)
 				goto errorExit;
-			}
-			snprintf(buf, sizeof(buf),
-				 "/sys/class/gpio/gpio%d/direction",
-				 abs(pInst->bit)-1);
-			fd = open(buf, O_WRONLY);
-			if (fd > 0) {
-				write(fd, "out", 3);
-				close(fd);
-			} else {
-				goto errorExit;
-			}
+
 			pInst->switchfct = &ptt_gpio;
 			pInst->destroyfct = &ptt_gpioDestroy;
 		} else if (strstr(devname, "parport") != 0) {
