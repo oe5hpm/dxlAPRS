@@ -154,6 +154,7 @@ static int ptt_gpioDestroy(struct ptt_t *pInst)
 {
 	int fd;
 	char buf[64];
+	int rc;
 
 	/* turn ptt off *
 	 * may not be the ultimative trick, because we afterwards reset the
@@ -167,10 +168,14 @@ static int ptt_gpioDestroy(struct ptt_t *pInst)
 	if (fd > 0) {
 		snprintf(buf, sizeof(buf),
 				 "%d", abs(pInst->bit)-1);
-		write(fd, buf, strlen(buf));
+		rc = write(fd, buf, strlen(buf));
 		close(fd);
+
 		return 0;
 	}
+
+	(void)rc;
+
 	return -1;
 }
 
