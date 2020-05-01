@@ -6,8 +6,9 @@ ORIGFN="gettiles"
 # filename of default list of maps
 MAPFN="maplist"
 
-# 5 sec timeout, 1 retry
-WGETCMDBASE="wget -q -T 5 -t 1 "
+# blank user-agent, 5 sec timeout, 1 retry
+#WGETCMDBASE="wget -q -T 5 -t 1 "
+WGETCMDBASE="wget -U \"\" -q -T 5 -t 1 "
 
 #------------------------------------------------------------------------------
 
