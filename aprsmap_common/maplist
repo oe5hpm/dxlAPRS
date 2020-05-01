@@ -1,13 +1,14 @@
 # Map Name	Order	Format	Tile Server URL					API Key						Comments
 # -------------	-------	-------	-----------------------------------------------	-----------------------------------------------	--------------------------------------------
 tiles		zxy	png	https://tile.openstreetmap.org									OSM Carto (Standard)
-tiles2		zxy	png	http://tiles.wmflabs.org/osm									OSM Mapnik
-tiles_de	zxy	png	http://tile.openstreetmap.de/tiles/osmde      							OSM German style
-tiles_fr	zxy	png	http://a.tile.openstreetmap.fr/osmfr      							OSM French style
-tiles_topo	zxy	png	http://tile.opentopomap.org									OpenTopoMap
-tiles_hikebike	zxy	png	http://tiles.wmflabs.org/hikebike								OSM Hike & Bike Map
+tiles_de	zxy	png	https://tile.openstreetmap.de									OSM German style
+tiles_fr	zxy	png	http://a.tile.openstreetmap.fr/osmfr								OSM French style
 tiles_humanitarian zxy	png	http://a.tile.openstreetmap.fr/hot								OSM Humanitarian style
-tiles_esrisat	zyx	jpg	http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile		ArcGIS ESRI Satellite World Imagery
+tiles_topo	zxy	png	https://tile.opentopomap.org									OpenTopoMap
+tiles_mapnik	zxy	png	http://tiles.wmflabs.org/osm									OSM Mapnik
+tiles_hikebike	zxy	png	http://tiles.wmflabs.org/hikebike								OSM Hike & Bike Map
+tiles_esristr	zyx	jpg	https://services.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile		ArcGIS ESRI World Street Map
+tiles_esrisat	zyx	jpg	https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile		ArcGIS ESRI Satellite World Imagery
 tiles_transport	zxy	png	http://tile.thunderforest.com/transport		<insert_api_key_here>				Thunderforest Transport (requires API key)
 tiles_landscape	zxy	png	http://tile.thunderforest.com/landscape		<insert_api_key_here>				Thunderforest Landscape (requires API key)
 tiles_outdoors	zxy	png	http://tile.thunderforest.com/outdoors		<insert_api_key_here>				Thunderforest Outdoors (requires API key)
