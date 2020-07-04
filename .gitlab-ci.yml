@@ -111,7 +111,9 @@ deploy-github:
     - ssh-add <(echo "$GITHUB_PRIVATE_KEY")
   script:
     - git remote add github git@github.com:oe5hpm/dxlAPRS.git
-    - git push github master:master
+    - git branch
+    - git checkout master
+    - git push github HEAD:master
   environment:
     name: dxlaprs.hamspirit.at {production}
     url: https://github.com/oe5hpm/dxlAPRS
