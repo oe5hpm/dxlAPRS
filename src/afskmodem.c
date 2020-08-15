@@ -561,20 +561,28 @@ static void OpenSound(void)
    else {
       soundfd = osi_OpenRW(soundfn, 1024ul);
       if (soundfd>=0L) {
-         i = samplesize(soundfd, 16UL); /* 8, 16 */
-         i = channels(soundfd, (uint32_t)maxchannels+1UL); /* 1, 2  */
-         i = setfragment(soundfd, fragmentsize); /* 2^bufsize * 65536*bufs*/
-         if (i) {
-            osi_WrStr("sound setfragment returns ", 27ul);
-            osic_WrINT32((uint32_t)i, 1UL);
-            osic_WrLn();
+         if (samplesize(soundfd, 16UL)<0L) {
+            /* 8, 16 */
+            if (!osi_IsFifo(soundfd)) {
+               Error("sound must be pipe or oss", 26ul);
+            }
          }
-         i = sampelrate(soundfd, adcrate); /* 8000..48000 */
-         s = (int32_t)getsampelrate(soundfd);
-         if (s!=(int32_t)adcrate) {
-            osi_WrStr("sound device returns ", 22ul);
-            osic_WrINT32((uint32_t)s, 1UL);
-            osi_WrStrLn("Hz!", 4ul);
+         else {
+            i = channels(soundfd, (uint32_t)maxchannels+1UL); /* 1, 2  */
+            i = setfragment(soundfd, fragmentsize);
+                /* 2^bufsize * 65536*bufs*/
+            if (i) {
+               osi_WrStr("sound setfragment returns ", 27ul);
+               osic_WrINT32((uint32_t)i, 1UL);
+               osic_WrLn();
+            }
+            i = sampelrate(soundfd, adcrate); /* 8000..48000 */
+            s = (int32_t)getsampelrate(soundfd);
+            if (s!=(int32_t)adcrate) {
+               osi_WrStr("sound device returns ", 22ul);
+               osic_WrINT32((uint32_t)s, 1UL);
+               osi_WrStrLn("Hz!", 4ul);
+            }
          }
       }
       else if (abortonsounderr) {
