@@ -987,11 +987,17 @@ extern int32_t sdr_getsdr(uint32_t samps, sdr_pRX rx[],
                   anonym0->median = anonym0->median-(anonym0->afckhz*(int32_t)
                 samps*1024L)/anonym0->maxafc; /* weak pull to middle */
                   if (anonym0->median>400000000L) {
-                     if (anonym0->afckhz<anonym0->maxafc) ++anonym0->afckhz;
+                     ++anonym0->afckhz;
+                     if (anonym0->afckhz>anonym0->maxafc) {
+                        anonym0->afckhz = anonym0->maxafc;
+                     }
                      anonym0->median = 0L;
                   }
                   else if (anonym0->median<-400000000L) {
-                     if (anonym0->afckhz>-anonym0->maxafc) --anonym0->afckhz;
+                     --anonym0->afckhz;
+                     if (anonym0->afckhz<-anonym0->maxafc) {
+                        anonym0->afckhz = -anonym0->maxafc;
+                     }
                      anonym0->median = 0L;
                   }
                   anonym0->afcrun = 1;
