@@ -140,6 +140,7 @@ struct OUTPORT {
    char axudp2;
    char satgate;
    char decode;
+   char rawpayload;
    SET256 aprspass;
    pDIGIPARMS digiparm;
    struct BEACON beacon0;
@@ -469,32 +470,59 @@ static void MakeMonCall(const char rs[], uint32_t rs_len, int32_t p,
 } /* end MakeMonCall() */
 
 
-static char cmp(pCALLS c, const char s[], uint32_t s_len,
-                int32_t p)
+static uint32_t cmprest(const char a[], uint32_t a_len,
+                const char b[], uint32_t b_len, uint32_t * i,
+                uint32_t * j)
 {
-   int32_t j;
-   char b;
-   char ok0;
-   while (c) {
-      j = 0L;
-      for (;;) {
-         if (c->call[j]=='*') {
-            ok0 = 1; /* rest is wildcard */
-            break;
-         }
-         b = s[p+j];
-         if ((((p+j>=(int32_t)(s_len-1) || b=='*') || b==',') || b=='>')
-                || b==':') {
-            ok0 = c->call[j]==0; /* end of call */
-            break;
-         }
-         if (c->call[j]==0 || c->call[j]!='?' && b!=c->call[j]) {
-            ok0 = 0; /* end filter word */
-            break;
-         }
-         ++j;
+   for (;;) {
+      if (*j<=b_len-1 && b[*j]=='*') {
+         if (*j>=b_len-1 || b[*j+1UL]==0) return 1UL;
+         else return 3UL;
       }
-      if (ok0) return 1;
+      if (*i>a_len-1 || a[*i]==0) {
+         return (uint32_t)(*j>b_len-1 || b[*j]==0);
+      }
+      /* word 1 end */
+      if (*j>b_len-1 || b[*j]==0) return 0UL;
+      /* word 2 end */
+      if (b[*j]!='?' && a[*i]!=b[*j]) return 2UL;
+      ++*i;
+      ++*j;
+   }
+   return 0;
+} /* end cmprest() */
+
+
+static char cmp(pCALLS c, const char s[], uint32_t s_len)
+{
+   uint32_t res0;
+   uint32_t ii;
+   uint32_t jj;
+   uint32_t j;
+   uint32_t i;
+   char wild;
+   while (c) {
+      i = 0UL;
+      j = 0UL;
+      wild = 0;
+      for (;;) {
+         res0 = cmprest(s, s_len, c->call, 9ul, &i, &j);
+         if (res0==1UL) return 1;
+         if (res0==3UL) {
+            /* "*" */
+            jj = j+1UL;
+            j = jj;
+            wild = 1;
+            ii = i;
+         }
+         else if (wild) {
+            if (res0==0UL) break;
+            ++ii; /* no fit but no word at end */
+            i = ii; /* compare again shifted */
+            j = jj;
+         }
+         else break;
+      }
       c = c->next;
    }
    return 0;
@@ -504,13 +532,14 @@ static char cmp(pCALLS c, const char s[], uint32_t s_len,
 static char CallFilt(pCALLS calls, const char s[],
                 uint32_t s_len, int32_t len)
 {
+   int32_t j;
    int32_t i;
    char mc[100];
    i = 0L;
    do {
       /* first look in ax25 frame */
       MakeMonCall(s, s_len, i, mc, 100ul);
-      if (cmp(calls, mc, 100ul, 0L)) return 1;
+      if (cmp(calls, mc, 100ul)) return 1;
       i += 7L;
    } while (!(i>=len || ((uint32_t)(uint8_t)s[i-1L]&1)));
    i += 2L;
@@ -519,8 +548,14 @@ static char CallFilt(pCALLS calls, const char s[],
       ++i;
       for (;;) {
          if (i>=len) break;
-         if (cmp(calls, s, s_len, i)) return 1;
-         while (((i<len && s[i]!=',') && s[i]!='>') && s[i]!=':') ++i;
+         j = 0L;
+         while ((((i<len && s[i]!=',') && s[i]!='>') && s[i]!=':') && j<99L) {
+            mc[j] = s[i];
+            ++i;
+            ++j;
+         }
+         mc[j] = 0;
+         if (cmp(calls, mc, 100ul)) return 1;
          if (s[i]==':') {
             ++i;
             if (s[i]!='}') break;
@@ -565,6 +600,16 @@ static int32_t DistFilt(struct aprsstr_POSITION mypos, char b[],
 } /* end DistFilt() */
 
 
+static int32_t findpayload(const char b[], uint32_t b_len,
+                int32_t len)
+{
+   int32_t i;
+   i = 13L;
+   while (i<len && !((uint32_t)(uint8_t)b[i]&1)) i += 7L;
+   return i+3L;
+} /* end findpayload() */
+
+
 static char Filter(const char b[], uint32_t b_len,
                 int32_t len, pOUTPORT parm, pINSOCK fromsock)
 {
@@ -579,9 +624,7 @@ static char Filter(const char b[], uint32_t b_len,
       }
       else return 0;
    }
-   i = 13L;
-   while (i<len && !((uint32_t)(uint8_t)b[i]&1)) i += 7L;
-   i += 3L;
+   i = findpayload(b, b_len, len);
    if (i>len || ((uint8_t)(uint8_t)b[i-2L]&~0x10U)!=0x3U) {
       if (show) osi_WrStr(" not UI ", 9ul);
       return parm->passnoUI;
@@ -591,7 +634,7 @@ static char Filter(const char b[], uint32_t b_len,
    if (Usermsg(b, b_len, len, i, fromsock, &selfmsg)) return 0;
    if (parm->filtercalls && CallFilt(parm->filtercalls, b, b_len,
                 len)!=parm->invertfilter) {
-      if (show) osi_WrStrLn(" callfilter match", 18ul);
+      if (show) osi_WrStrLn(" callfilter deletes frame", 26ul);
       return 0;
    }
    if (!X2C_INL((uint8_t)b[i],256,
@@ -1556,12 +1599,14 @@ static void parms(void)
             }
          }
          else if (lasth=='e') actecho = 1;
-         else if ((((lasth=='r' || lasth=='m') || lasth=='c') || lasth=='l')
-                || lasth=='D') {
+         else if (((((lasth=='r' || lasth=='m') || lasth=='c') || lasth=='l')
+                 || lasth=='D') || lasth=='n') {
             if (actsock0==0) {
                Err("need input -M or -R before -r or -m or -c or -D", 48ul);
             }
-            if (lasth!='D') osi_NextArg(h, 4096ul);
+            if (lasth!='D') {
+               osi_NextArg(h, 4096ul);
+            }
             osic_alloc((char * *) &outsock0, sizeof(struct OUTPORT));
             if (outsock0==0) Err("out of memory", 14ul);
             { /* with */
@@ -1577,8 +1622,10 @@ static void parms(void)
                anonym2->echo = actecho;
                anonym2->digiparm = actdigi;
                anonym2->axudp2 = lasth=='l';
-               anonym2->rawwrite = lasth=='r' || anonym2->axudp2;
+               anonym2->rawwrite = (lasth=='r' || anonym2->axudp2)
+                || lasth=='n';
                anonym2->crlfwrite = lasth=='c';
+               anonym2->rawpayload = lasth=='n';
                anonym2->beacon0 = actbeacon;
                actbeacon.bintervall = 0UL;
                anonym2->passnoUI = actpassui;
@@ -1650,12 +1697,12 @@ nitor from stdin", 66ul);
 nitor from stdin and terminate", 80ul);
                osi_WrStrLn(" -m <ip>:<port> send text monitor udp frame 0 ter\
 minated", 57ul);
-               osi_WrStrLn(" -p <n>,<...>   -p 7,8 igate friendly digi relayi\
-ng all direct heared", 70ul);
-               osi_WrStrLn("                -p 5,6,7,8,9 first hop digi, -p 3\
-,4 (noisy) last hop digi", 74ul);
+               osi_WrStrLn(" -n <ip>:<port> send raw payload (no axudp header\
+ and crc) udp frame", 69ul);
+               osi_WrStrLn(" -p <n>,<...>   -p 0,1,5,6,7,8,9 first hop digi, \
+-p 3,4 (noisy) last hop digi", 78ul);
                osi_WrStrLn("                -p 0,1,3,4,5,6,7,8,9,14,16 origin\
-al, noisy, path loosing ...", 77ul);
+al, noisy, path loosing, do not use", 85ul);
                osi_WrStrLn("                0..2 limit ssid-routing to (bit0 \
 + 2*bit1 + 4*bit2)", 68ul);
                osi_WrStrLn("                dest-3: dest-2,digicall*, dest-3,\
@@ -1663,7 +1710,7 @@ call*: dest-2,call,digicall*", 78ul);
                osi_WrStrLn("                3 allow repeatet before (mostly w\
 ith wrong path trace)", 71ul);
                osi_WrStrLn("                4 no uplink check for \'looks lik\
-e direct heared\'", 65ul);
+e direct heard\'", 64ul);
                osi_WrStrLn("                  (noisy, wrong path trace possib\
 le)", 53ul);
                osi_WrStrLn("                5 resend TRACEn-(N-1), 6 resend W\
@@ -2491,6 +2538,21 @@ static void sendack(char buf[], uint32_t buf_len, int32_t * len,
 } /* end sendack() */
 
 
+static void stripheadcrc(char b[], uint32_t b_len, int32_t * len)
+{
+   int32_t j;
+   int32_t i;
+   i = findpayload(b, b_len, *len);
+   j = 0L;
+   while (i<*len) {
+      b[j] = b[i];
+      ++i;
+      ++j;
+   }
+   *len = j-2L; /* strip crc */
+} /* end stripheadcrc() */
+
+
 static void appudp2(char ob[], uint32_t ob_len, uint32_t * olen,
                 const char ud[], uint32_t ud_len, const char ib[],
                 uint32_t ib_len, int32_t len)
@@ -2676,9 +2738,16 @@ extern int main(int argc, char **argv)
                 (int32_t)monlen, outsock->toport, outsock->toip);
                                  }
                                  else {
+                                    if (outsock->rawpayload) {
+                                    stripheadcrc(rawout, 338ul, &outlen);
+                                    }
+                                    else {
                                     aprsstr_AppCRC(rawout, 338ul, outlen-2L);
+                                    }
+                                    if (outlen>0L) {
                                     res = udpsend(actsock->fd, rawout,
                 outlen, outsock->toport, outsock->toip);
+                                    }
                                  }
                                  if (show && outlen>2L) {
                                     osi_WrStrLn(" raw", 5ul);
