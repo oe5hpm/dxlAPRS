@@ -17,6 +17,9 @@
 #include "osi.h"
 #endif
 #include <osic.h>
+#ifndef mlib_H_
+#include "mlib.h"
+#endif
 #ifndef aprsstr_H_
 #include "aprsstr.h"
 #endif
@@ -88,6 +91,8 @@ static uint32_t tune;
 
 static struct STICKPARM stickparm[256];
 
+static struct termios saved;
+
 
 static void Usage(char text[], uint32_t text_len)
 {
@@ -97,6 +102,23 @@ static void Usage(char text[], uint32_t text_len)
    X2C_ABORT();
    X2C_PFREE(text);
 } /* end Usage() */
+
+
+static int32_t Kbd(void)
+{
+   struct termios term;
+   int32_t res;
+   struct termios * anonym;
+   /*    c_lflag:= c_lflag -ICANON; */
+   res = tcgetattr(0L, &saved);
+   res = tcgetattr(0L, &term);
+   { /* with */
+      struct termios * anonym = &term;
+      anonym->c_lflag = (uint32_t)((uint32_t)anonym->c_lflag&~0xAUL);
+   }
+   res = tcsetattr(0L, 2L, &term);
+   return osi_OpenNONBLOCK("/dev/stdin", 11ul);
+} /* end Kbd() */
 
 
 static void fix(const char s[], uint32_t s_len, uint32_t * p,
@@ -226,11 +248,13 @@ gain ... -p 5 <ppm>", 72ul);
             osi_WrStrLn(" -s <soundfilename>  16bit 48kHz signed 2 channel so\
 und stream/pipe", 68ul);
             osi_WrStrLn(" -t <url:port>  connect rtl:tcp server (127.0.0.1:12\
-34)", 56ul);
+34) or <iq-file:0>", 71ul);
             osi_WrStrLn(" -v             show rssi (dB) and afc (khz)",
                 45ul);
             osi_WrStrLn(" -w <khz>       IF-width, less cpu 3,6,12,24,48,96,1\
 92 (mono 96, stereo 192)", 77ul);
+            osi_WrStrLn(" Keys: +- (50kHz), m (toggle mono), r (toggle rds)",
+                 51ul);
             osi_WrStrLn("example: sdrradio -f 101.2 -s /dev/stdout -t 192.168\
 .1.1:1234 -p 5 72 -p 8 1 -r -v | aplay", 91ul);
             X2C_ABORT();
@@ -245,14 +269,17 @@ und stream/pipe", 68ul);
 static void showrssi(char s[], uint32_t s_len)
 {
    char ss[31];
-   if (isstereo) aprsstr_Append(s, s_len, "S", 2ul);
+   aprsstr_FixToStr((float)tune*1.E-6f+0.005f, 3UL, ss, 31ul);
+   aprsstr_Append(s, s_len, ss, 31ul);
+   aprsstr_IntToStr(rxx.afckhz, 1UL, ss, 31ul);
+   if (ss[0U]!='-') aprsstr_Append(s, s_len, "+", 2ul);
+   aprsstr_Append(s, s_len, ss, 31ul);
+   if (!mono && isstereo) aprsstr_Append(s, s_len, "S", 2ul);
    else aprsstr_Append(s, s_len, "M", 2ul);
    aprsstr_FixToStr(osic_ln((rxx.rssi+1.0f)*3.0517578125E-5f)*4.342944819f,
                 2UL, ss, 31ul);
    aprsstr_Append(s, s_len, ss, 31ul);
    aprsstr_Append(s, s_len, "dB", 3ul);
-   aprsstr_IntToStr(rxx.afckhz, 3UL, ss, 31ul);
-   aprsstr_Append(s, s_len, ss, 31ul);
 } /* end showrssi() */
 
 static float uc19;
@@ -749,6 +776,8 @@ static int32_t sp;
 
 static int32_t sn;
 
+static int32_t stdi;
+
 static uint32_t pc;
 
 static uint32_t downs;
@@ -770,6 +799,8 @@ static float deem1;
 static float deem2;
 
 static char vs[31];
+
+static char key;
 
 
 static void wwav(void)
@@ -812,6 +843,14 @@ static void wwav(void)
 } /* end wwav() */
 
 
+static uint32_t setbw(char mono0)
+{
+   if (mono0) return 96000UL;
+   else return 192000UL;
+   return 0;
+} /* end setbw() */
+
+
 X2C_STACK_LIMIT(100000l)
 extern int main(int argc, char **argv)
 {
@@ -831,11 +870,11 @@ extern int main(int argc, char **argv)
       anonym->df = 100UL;
       anonym->maxafc = (int32_t)afc;
       if (ifwidth) anonym->width = ifwidth*1000UL;
-      else if (mono) anonym->width = 96000UL;
-      else anonym->width = 192000UL;
+      else anonym->width = setbw(mono);
       anonym->modulation = 'f';
       anonym->samples = (sdr_pAUDIOSAMPLE)sampx;
    }
+   stdi = Kbd();
    if (sdr_startsdr(url, 1001ul, port, 1001ul, 2048000UL, 192000UL, 1)) {
       sdr_setparm(1UL, tune-100000UL);
       for (pc = 0UL; pc<=255UL; pc++) {
@@ -855,6 +894,21 @@ extern int main(int argc, char **argv)
       recon = 1;
       downs = 0UL;
       for (;;) {
+         if (osi_RdBin(stdi, (char *) &key, 1u/1u, 1UL)==1L) {
+            if (key=='+') {
+               tune += 50000UL;
+               sdr_setparm(1UL, tune-100000UL);
+            }
+            else if (key=='-') {
+               tune -= 50000UL;
+               sdr_setparm(1UL, tune-100000UL);
+            }
+            else if (key=='m') {
+               mono = !mono;
+               rxx.width = setbw(mono);
+            }
+            else if (key=='r') rds = !rds;
+         }
          sn = sdr_getsdr(64UL, prx, 17ul);
          if (sn<0L) {
             osi_WerrLn("connection lost", 16ul);
