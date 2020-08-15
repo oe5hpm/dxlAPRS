@@ -285,6 +285,13 @@ int osic_symblink(char *existing, char *newname)
 	return symlink(existing, newname);
 }
 
+int osic_isfifo(int fd)
+{
+	struct stat st;
+	fstat(fd, &st);
+	return ((st.st_mode & S_IFMT) == S_IFIFO) || ((st.st_mode & S_IFMT) == S_IFCHR);
+}
+
 char osic_mkdir(char path[], uint32_t fname_len, uint32_t perm)
 {
         if (mkdir(path, perm) != -1);

@@ -148,6 +148,8 @@ extern void osi_CloseDir(osi_DIRCONTEXT);
 
 extern char osi_CreateDir(char [], uint32_t, uint32_t);
 
+extern char osi_IsFifo(int32_t);
+
 extern void osi_NextArg(char [], uint32_t);
 
 extern void osi_WrStr(char [], uint32_t);

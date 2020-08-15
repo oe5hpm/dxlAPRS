@@ -223,6 +223,12 @@ extern char osi_CreateDir(char path[], uint32_t path_len,
 } /* end CreateDir() */
 
 
+extern char osi_IsFifo(int32_t fd)
+{
+   return osic_isfifo(fd);
+} /* end IsFifo() */
+
+
 extern void osi_BEGIN(void)
 {
    static int osi_init = 0;
