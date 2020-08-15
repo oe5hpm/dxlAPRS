@@ -29,6 +29,7 @@
 #ifndef aprspos_H_
 #include "aprspos.h"
 #endif
+#include <math.h>
 
 
 
@@ -131,6 +132,7 @@ struct CONTEXT {
    uint32_t lastused;
    uint32_t lastbeacon;
    uint32_t commentline;
+   uint32_t cyclevals;
 };
 
 /*CRCL, CRCH: ARRAY[0..255] OF SET8;*/
@@ -213,7 +215,8 @@ static void wrcsv(uint32_t sattime, const char typstr[],
                 double ozon, double otemp, double pumpmA,
                 double pumpv, const struct sondeaprs_SDRBLOCK sdr,
                 double dist, double azi, double ele,
-                const char fullid[], uint32_t fullid_len)
+                const char fullid[], uint32_t fullid_len,
+                uint32_t txpower, double vBatt, int32_t txtime)
 {
    int32_t fd;
    char h[1000];
@@ -223,8 +226,8 @@ static void wrcsv(uint32_t sattime, const char typstr[],
    if (fd<0L) {
       fd = osi_OpenWrite(sondeaprs_csvfilename, 1025ul);
       strncpy(s,"Date,Time,Type,Name,lat,long,alt,speed,dir,clb,egmalt,og,mhz\
-,sats,bk,uptime,hPa,hum,temp,ozon,ozont,pumpmA,pumpV,RxMHz,AFC,maxAFC,rssi,de\
-v,dist,azimuth,elevation,ser\012",1000u);
+,sats,uptime,hPa,hum,temp,ozon,ozont,pumpmA,pumpV,RxMHz,AFC,maxAFC,rssi,dev,d\
+ist,azimuth,elevation,ser,TXdBm,batt,TxOff\012",1000u);
    }
    else s[0] = 0;
    if (fd<0L) {
@@ -267,8 +270,10 @@ v,dist,azimuth,elevation,ser\012",1000u);
                 X2C_max_longint), 1UL, h, 1000ul);
    aprsstr_Append(s, 1000ul, h, 1000ul);
    aprsstr_Append(s, 1000ul, ",", 2ul);
-   aprsstr_FixToStr((float)clb, 2UL, h, 1000ul);
-   aprsstr_Append(s, 1000ul, h, 1000ul);
+   if (clb<1000.0) {
+      aprsstr_FixToStr((float)clb, 2UL, h, 1000ul);
+      aprsstr_Append(s, 1000ul, h, 1000ul);
+   }
    aprsstr_Append(s, 1000ul, ",", 2ul);
    if (egmalt>(-1.E+4) && egmalt<1.E+5) {
       aprsstr_IntToStr((int32_t)X2C_TRUNCI(egmalt,X2C_min_longint,
@@ -291,8 +296,6 @@ v,dist,azimuth,elevation,ser\012",1000u);
       aprsstr_IntToStr((int32_t)goodsats, 1UL, h, 1000ul);
       aprsstr_Append(s, 1000ul, h, 1000ul);
    }
-   aprsstr_Append(s, 1000ul, ",", 2ul);
-   /*IF burstKill>0 THEN IntToStr(burstKill-1, 1, h); Append(s, h) END;*/
    aprsstr_Append(s, 1000ul, ",", 2ul);
    if (uptime>0UL) {
       aprsstr_TimeToStr(uptime, h, 1000ul);
@@ -371,9 +374,25 @@ v,dist,azimuth,elevation,ser\012",1000u);
       aprsstr_FixToStr((float)ele, 3UL, h, 1000ul);
       aprsstr_Append(s, 1000ul, h, 1000ul);
    }
-   if (fullid[0UL]) {
-      aprsstr_Append(s, 1000ul, ",", 2ul);
-      aprsstr_Append(s, 1000ul, fullid, fullid_len);
+   aprsstr_Append(s, 1000ul, ",", 2ul);
+   if (fullid[0UL]) aprsstr_Append(s, 1000ul, fullid, fullid_len);
+   aprsstr_Append(s, 1000ul, ",", 2ul);
+   if (txpower>0UL) {
+      aprsstr_IntToStr((int32_t)txpower, 2UL, h, 1000ul);
+      aprsstr_Append(s, 1000ul, h, 1000ul);
+   }
+   aprsstr_Append(s, 1000ul, ",", 2ul);
+   if (vBatt>0.1) {
+      aprsstr_FixToStr((float)vBatt, 2UL, h, 1000ul);
+      aprsstr_Append(s, 1000ul, h, 1000ul);
+   }
+   aprsstr_Append(s, 1000ul, ",", 2ul);
+   if (txtime>=100000L) {
+      txtime -= 100000L;
+   }
+   if (txtime>0L) {
+      aprsstr_IntToStr(txtime, 1UL, h, 1000ul);
+      aprsstr_Append(s, 1000ul, h, 1000ul);
    }
    aprsstr_Append(s, 1000ul, "\012", 2ul);
    osi_WrBin(fd, (char *)s, 1000u/1u, aprsstr_Length(s, 1000ul));
@@ -420,10 +439,68 @@ static double getoverground(double lat, double long0,
 } /* end getoverground() */
 
 
+static void dig(char s[], uint32_t s_len, uint32_t * i, uint32_t d,
+                 uint32_t div0, char withzero)
+{
+   d = (d/div0)%10UL;
+   if ((d>0UL || *i>0UL) || withzero) {
+      s[*i] = (char)(d+48UL);
+      ++*i;
+   }
+} /* end dig() */
+
+
+static void hms(uint32_t t, char withsec, char s[],
+                uint32_t s_len)
+{
+   uint32_t i;
+   t = t%86400UL;
+   i = 0UL;
+   dig(s, s_len, &i, t, 36000UL, 0);
+   dig(s, s_len, &i, t, 3600UL, 0);
+   if (i>0UL) {
+      s[i] = 'h';
+      ++i;
+   }
+   t = t%3600UL;
+   dig(s, s_len, &i, t, 600UL, 0);
+   dig(s, s_len, &i, t, 60UL, !withsec);
+   if (i>0UL) {
+      s[i] = 'm';
+      ++i;
+   }
+   if (withsec) {
+      t = t%60UL;
+      dig(s, s_len, &i, t, 10UL, 0);
+      dig(s, s_len, &i, t, 1UL, 1);
+      s[i] = 's';
+      ++i;
+   }
+   s[i] = 0;
+} /* end hms() */
+
+
+static void apptxon(int32_t t, uint32_t cyc, char s[],
+                uint32_t s_len)
+{
+   char h[21];
+   char b;
+   b = t>=100000L;
+   if (b) t -= 100000L;
+   if (t>0L && cyc%((uint32_t)t/3600UL+1UL)==0UL) {
+      /* send often to end of time */
+      if (b) aprsstr_Append(s, s_len, " TxPastBurst=", 14ul);
+      else aprsstr_Append(s, s_len, " TxOff=", 8ul);
+      hms((uint32_t)t, t<3600L, h, 21ul);
+      aprsstr_Append(s, s_len, h, 21ul);
+   }
+} /* end apptxon() */
+
+
 static void comment0(char buf[], uint32_t buf_len, uint32_t uptime,
-                uint32_t sats, double hrms, uint32_t * linec,
-                const struct sondeaprs_SDRBLOCK sdr, double myazi,
-                double myele, double mydist)
+                uint32_t sats, uint32_t txpower, double hrms,
+                uint32_t * linec, const struct sondeaprs_SDRBLOCK sdr,
+                double myazi, double myele, double mydist)
 {
    int32_t len;
    int32_t lc;
@@ -432,8 +509,9 @@ static void comment0(char buf[], uint32_t buf_len, uint32_t uptime,
    int32_t i;
    int32_t f;
    char fb[32768];
-   char hb[120];
-   char h[120];
+   char hb[160];
+   char h[160];
+   char txtimedone;
    buf[0UL] = 0;
    len = 0L;
    if (sondeaprs_commentfn[0UL]) {
@@ -470,110 +548,132 @@ static void comment0(char buf[], uint32_t buf_len, uint32_t uptime,
                ++eol;
             }
          } while (lc);
+         txtimedone = 0;
          hb[0] = 0;
          while (eol+2L>=bol && fb[bol]=='%') {
             if (fb[bol+1L]=='u') {
                /* insert uptime */
                if (uptime>0UL) {
-                  aprsstr_Append(hb, 120ul, " powerup h:m:s ", 16ul);
-                  aprsstr_TimeToStr(uptime, h, 120ul);
-                  aprsstr_Append(hb, 120ul, h, 120ul);
+                  aprsstr_Append(hb, 160ul, " powerup=", 10ul);
+                  hms(uptime, 1, h, 160ul);
+                  aprsstr_Append(hb, 160ul, h, 160ul);
                }
             }
             else if (fb[bol+1L]=='n') {
                /* insert framenumber */
                if (uptime>0UL) {
-                  aprsstr_Append(hb, 120ul, " FN=", 5ul);
-                  aprsstr_IntToStr((int32_t)uptime, 1UL, h, 120ul);
-                  aprsstr_Append(hb, 120ul, h, 120ul);
+                  aprsstr_Append(hb, 160ul, " FN=", 5ul);
+                  aprsstr_IntToStr((int32_t)uptime, 1UL, h, 160ul);
+                  aprsstr_Append(hb, 160ul, h, 160ul);
                }
             }
             else if (fb[bol+1L]=='v') {
+               /*
+                       ELSIF fb[bol+1]
+                ="o"  THEN                                   (* remainint tx on time *)
+                         apptxon;
+                         txtimedone:=TRUE;
+               */
                /* insert version */
-               aprsstr_Append(hb, 120ul, " sondemod 1.36", 15ul);
+               aprsstr_Append(hb, 160ul, " sondemod 1.36e", 16ul);
             }
             else if (fb[bol+1L]=='s') {
                /* insert sat count */
                if (sats>0UL) {
-                  aprsstr_Append(hb, 120ul, " Sats=", 7ul);
-                  aprsstr_IntToStr((int32_t)sats, 1UL, h, 120ul);
-                  aprsstr_Append(hb, 120ul, h, 120ul);
+                  aprsstr_Append(hb, 160ul, " Sats=", 7ul);
+                  aprsstr_IntToStr((int32_t)sats, 1UL, h, 160ul);
+                  aprsstr_Append(hb, 160ul, h, 160ul);
+               }
+            }
+            else if (fb[bol+1L]=='t') {
+               /* insert sat count */
+               if (txpower>0UL) {
+                  aprsstr_Append(hb, 160ul, " tx=", 5ul);
+                  aprsstr_IntToStr((int32_t)txpower, 1UL, h, 160ul);
+                  aprsstr_Append(hb, 160ul, h, 160ul);
+                  aprsstr_Append(hb, 160ul, "dBm", 4ul);
                }
             }
             else if (fb[bol+1L]=='r') {
                /* hrms +3m from tropomodel */
-               if (sats>4UL && hrms>=0.0) {
-                  aprsstr_Append(hb, 120ul, " hdil=", 7ul);
-                  aprsstr_FixToStr((float)(hrms+3.0), 2UL, h, 120ul);
-                  aprsstr_Append(hb, 120ul, h, 120ul);
-                  aprsstr_Append(hb, 120ul, "m", 2ul);
+               if (sats>4UL && hrms>0.0) {
+                  aprsstr_Append(hb, 160ul, " hdil=", 7ul);
+                  aprsstr_FixToStr((float)(hrms+3.0), 2UL, h, 160ul);
+                  aprsstr_Append(hb, 160ul, h, 160ul);
+                  aprsstr_Append(hb, 160ul, "m", 2ul);
                }
-               else fb[0] = 0;
             }
             else if (X2C_CAP(fb[bol+1L])=='F') {
+               /*
+                       ELSIF fb[bol+1]="b"  THEN
+                         IF vBatt>0.0 THEN
+                           Append(hb, " batt="); FixToStr(vBatt, 2, h);
+                Append(hb, h); Append(hb, "V");
+                         END;
+               */
                /* sdr freq and afc */
                if ((sdr.valid && (!mhzfromsonde || fb[bol+1L]=='F'))
                 && sdr.freq) {
-                  aprsstr_Append(hb, 120ul, " rx=", 5ul);
+                  aprsstr_Append(hb, 160ul, " rx=", 5ul);
                   aprsstr_IntToStr((int32_t)(sdr.freq/100UL), 1UL, h,
-                120ul);
-                  aprsstr_Append(hb, 120ul, h, 120ul);
+                160ul);
+                  aprsstr_Append(hb, 160ul, h, 160ul);
                   if (sdr.maxafc) {
-                     aprsstr_Append(hb, 120ul, "(", 2ul);
-                     if (sdr.afc>=0L) aprsstr_Append(hb, 120ul, "+", 2ul);
-                     aprsstr_IntToStr(sdr.afc, 1UL, h, 120ul);
-                     aprsstr_Append(hb, 120ul, h, 120ul);
-                     aprsstr_Append(hb, 120ul, "/", 2ul);
-                     aprsstr_IntToStr((int32_t)sdr.maxafc, 1UL, h, 120ul);
-                     aprsstr_Append(hb, 120ul, h, 120ul);
-                     aprsstr_Append(hb, 120ul, ")", 2ul);
+                     aprsstr_Append(hb, 160ul, "(", 2ul);
+                     if (sdr.afc>=0L) aprsstr_Append(hb, 160ul, "+", 2ul);
+                     aprsstr_IntToStr(sdr.afc, 1UL, h, 160ul);
+                     aprsstr_Append(hb, 160ul, h, 160ul);
+                     aprsstr_Append(hb, 160ul, "/", 2ul);
+                     aprsstr_IntToStr((int32_t)sdr.maxafc, 1UL, h, 160ul);
+                     aprsstr_Append(hb, 160ul, h, 160ul);
+                     aprsstr_Append(hb, 160ul, ")", 2ul);
                   }
                }
             }
             else if (fb[bol+1L]=='d') {
                /* rssi */
                if (sdr.valid && sdr.db) {
-                  aprsstr_Append(hb, 120ul, " rssi=", 7ul);
-                  aprsstr_FixToStr((float)sdr.db*0.1f, 2UL, h, 120ul);
-                  aprsstr_Append(hb, 120ul, h, 120ul);
-                  aprsstr_Append(hb, 120ul, "dB", 3ul);
+                  aprsstr_Append(hb, 160ul, " rssi=", 7ul);
+                  aprsstr_FixToStr((float)sdr.db*0.1f, 2UL, h, 160ul);
+                  aprsstr_Append(hb, 160ul, h, 160ul);
+                  aprsstr_Append(hb, 160ul, "dB", 3ul);
                }
             }
             else if (fb[bol+1L]=='l') {
                /* label */
                if (sdr.valid && sdr.name[0UL]) {
-                  aprsstr_Append(hb, 120ul, " dev=", 6ul);
-                  aprsstr_Append(hb, 120ul, sdr.name, 4ul);
+                  aprsstr_Append(hb, 160ul, " dev=", 6ul);
+                  aprsstr_Append(hb, 160ul, sdr.name, 4ul);
                }
             }
             else if (fb[bol+1L]=='D') {
                /* distance */
                if (mydist>=0.0) {
-                  aprsstr_Append(hb, 120ul, " dist=", 7ul);
-                  aprsstr_FixToStr((float)mydist, 4UL, h, 120ul);
-                  aprsstr_Append(hb, 120ul, h, 120ul);
+                  aprsstr_Append(hb, 160ul, " dist=", 7ul);
+                  aprsstr_FixToStr((float)mydist, 4UL, h, 160ul);
+                  aprsstr_Append(hb, 160ul, h, 160ul);
                }
             }
             else if (fb[bol+1L]=='A') {
                /* azimuth */
                if (myazi>=0.0) {
-                  aprsstr_Append(hb, 120ul, " azimuth=", 10ul);
+                  aprsstr_Append(hb, 160ul, " azimuth=", 10ul);
                   aprsstr_IntToStr((int32_t)X2C_TRUNCI(myazi,
-                X2C_min_longint,X2C_max_longint), 1UL, h, 120ul);
-                  aprsstr_Append(hb, 120ul, h, 120ul);
+                X2C_min_longint,X2C_max_longint), 1UL, h, 160ul);
+                  aprsstr_Append(hb, 160ul, h, 160ul);
                }
             }
             else if (fb[bol+1L]=='E') {
                /* elevation */
-               if (myele>=0.0) {
-                  aprsstr_Append(hb, 120ul, " elevation=", 12ul);
-                  aprsstr_FixToStr((float)myele, 3UL, h, 120ul);
-                  aprsstr_Append(hb, 120ul, h, 120ul);
+               if (myele>(-90.0)) {
+                  aprsstr_Append(hb, 160ul, " elevation=", 12ul);
+                  aprsstr_FixToStr((float)myele, 3UL, h, 160ul);
+                  aprsstr_Append(hb, 160ul, h, 160ul);
                }
             }
             bol += 2L;
          }
-         aprsstr_Assign(buf, buf_len, hb, 120ul);
+         aprsstr_Assign(buf, buf_len, hb, 160ul);
          if (bol<eol && fb[bol]!=' ') aprsstr_Append(buf, buf_len, " ", 2ul);
          i = (int32_t)aprsstr_Length(buf, buf_len);
          while (bol<eol && i<(int32_t)(buf_len-1)) {
@@ -622,8 +722,8 @@ static uint32_t dao91(double x)
 {
    double a;
    a = fabs(x);
-   return ((truncc((a-(double)(float)truncc(a))*6.E+5)%100UL)
-                *20UL+11UL)/22UL;
+   return ((truncc((a-(double)truncc(a))*6.E+5)%100UL)*20UL+11UL)/22UL;
+                
 } /* end dao91() */
 
 
@@ -634,14 +734,15 @@ static void sendaprs(uint32_t comp0, uint32_t micessid, char dao,
                 char sym[], uint32_t sym_len, char obj[],
                 uint32_t obj_len, double lat, double long0,
                 double alt, double course, double speed,
-                uint32_t goodsats, double hrms, char comm[],
-                uint32_t comm_len, uint32_t * commentcnt,
-                const struct sondeaprs_SDRBLOCK sdr, double myazi,
-                double myele, double mydist)
+                uint32_t goodsats, uint32_t txpower, double vBatt,
+                double hrms, char comm[], uint32_t comm_len,
+                uint32_t * commentcnt, const struct sondeaprs_SDRBLOCK sdr,
+                 double myazi, double myele, double mydist,
+                 int32_t txtime)
 {
-   char ds[201];
-   char h[201];
-   char b[201];
+   char ds[255];
+   char h[255];
+   char b[255];
    char raw[361];
    int32_t rp;
    uint32_t micdest;
@@ -657,28 +758,28 @@ static void sendaprs(uint32_t comp0, uint32_t micessid, char dao,
    X2C_PCOPY((void **)&obj,obj_len);
    X2C_PCOPY((void **)&comm,comm_len);
    b[0] = 0;
-   aprsstr_Append(b, 201ul, mycall, mycall_len);
-   micdest = aprsstr_Length(b, 201ul)+1UL;
-   aprsstr_Append(b, 201ul, ">", 2ul);
-   aprsstr_Append(b, 201ul, destcall, destcall_len);
+   aprsstr_Append(b, 255ul, mycall, mycall_len);
+   micdest = aprsstr_Length(b, 255ul)+1UL;
+   aprsstr_Append(b, 255ul, ">", 2ul);
+   aprsstr_Append(b, 255ul, destcall, destcall_len);
    if (micessid>0UL) {
-      aprsstr_Append(b, 201ul, "-", 2ul);
-      aprsstr_Append(b, 201ul, (char *)(tmp = (char)(micessid+48UL),
+      aprsstr_Append(b, 255ul, "-", 2ul);
+      aprsstr_Append(b, 255ul, (char *)(tmp = (char)(micessid+48UL),
                 &tmp), 1u/1u);
    }
    if (via[0UL]) {
-      aprsstr_Append(b, 201ul, ",", 2ul);
-      aprsstr_Append(b, 201ul, via, via_len);
+      aprsstr_Append(b, 255ul, ",", 2ul);
+      aprsstr_Append(b, 255ul, via, via_len);
    }
    if (comp0==0UL) {
       /* uncompressed */
-      aprsstr_Append(b, 201ul, ":;", 3ul);
-      aprsstr_Assign(h, 201ul, obj, obj_len);
-      aprsstr_Append(h, 201ul, "         ", 10ul);
+      aprsstr_Append(b, 255ul, ":;", 3ul);
+      aprsstr_Assign(h, 255ul, obj, obj_len);
+      aprsstr_Append(h, 255ul, "         ", 10ul);
       h[9U] = 0;
-      aprsstr_Append(b, 201ul, h, 201ul);
-      aprsstr_Append(b, 201ul, "*", 2ul);
-      aprsstr_DateToStr(time0, ds, 201ul);
+      aprsstr_Append(b, 255ul, h, 255ul);
+      aprsstr_Append(b, 255ul, "*", 2ul);
+      aprsstr_DateToStr(time0, ds, 255ul);
       ds[0U] = ds[11U];
       ds[1U] = ds[12U];
       ds[2U] = ds[14U];
@@ -686,9 +787,9 @@ static void sendaprs(uint32_t comp0, uint32_t micessid, char dao,
       ds[4U] = ds[17U];
       ds[5U] = ds[18U];
       ds[6U] = 0;
-      aprsstr_Append(b, 201ul, ds, 201ul);
-      aprsstr_Append(b, 201ul, "h", 2ul);
-      i = aprsstr_Length(b, 201ul);
+      aprsstr_Append(b, 255ul, ds, 255ul);
+      aprsstr_Append(b, 255ul, "h", 2ul);
+      i = aprsstr_Length(b, 255ul);
       a = fabs(lat);
       n = osi_realcard((float)a);
       b[i] = num(n/10UL);
@@ -778,8 +879,8 @@ static void sendaprs(uint32_t comp0, uint32_t micessid, char dao,
    }
    else if (comp0==1UL) {
       /* compressed */
-      aprsstr_Append(b, 201ul, ":!", 3ul);
-      i = aprsstr_Length(b, 201ul);
+      aprsstr_Append(b, 255ul, ":!", 3ul);
+      i = aprsstr_Length(b, 255ul);
       b[i] = sym[0UL];
       ++i;
       if (lat<90.0) n = osi_realcard((float)((90.0-lat)*3.80926E+5));
@@ -862,7 +963,7 @@ static void sendaprs(uint32_t comp0, uint32_t micessid, char dao,
    }
    else if (comp0==2UL) {
       /* mic-e */
-      aprsstr_Append(b, 201ul, ":`", 3ul);
+      aprsstr_Append(b, 255ul, ":`", 3ul);
       i = micdest;
       nl = osi_realcard((float)fabs(long0));
       n = osi_realcard((float)fabs(lat));
@@ -880,7 +981,7 @@ static void sendaprs(uint32_t comp0, uint32_t micessid, char dao,
                 %10UL);
       ++i;
       b[i] = (char)(48UL+32UL*(uint32_t)(long0<0.0)+n%10UL);
-      i = aprsstr_Length(b, 201ul);
+      i = aprsstr_Length(b, 255ul);
       if (nl<10UL) b[i] = (char)(nl+118UL);
       else if (nl>=100UL) {
          if (nl<110UL) b[i] = (char)(nl+8UL);
@@ -934,19 +1035,19 @@ static void sendaprs(uint32_t comp0, uint32_t micessid, char dao,
       ++i;
    }
    b[i] = 0;
-   aprsstr_Append(b, 201ul, comm, comm_len);
-   comment0(h, 201ul, uptime, goodsats, hrms, commentcnt, sdr, myazi, myele,
-                mydist);
-   aprsstr_Append(b, 201ul, h, 201ul);
+   aprsstr_Append(b, 255ul, comm, comm_len);
+   comment0(h, 255ul, uptime, goodsats, txpower, hrms, commentcnt, sdr,
+                myazi, myele, mydist);
+   aprsstr_Append(b, 255ul, h, 255ul);
    /*  Append(b, CR+LF); */
    if (aprsstr_Length(mycall, mycall_len)>=3UL) {
       if (!sondeaprs_sendmon) {
-         aprsstr_mon2raw(b, 201ul, raw, 361ul, &rp);
+         aprsstr_mon2raw(b, 255ul, raw, 361ul, &rp);
          if (rp>0L) sendudp(raw, 361ul, rp);
       }
-      else sendudp(b, 201ul, (int32_t)(aprsstr_Length(b, 201ul)+1UL));
+      else sendudp(b, 255ul, (int32_t)(aprsstr_Length(b, 255ul)+1UL));
    }
-   if (sondeaprs_verb) osi_WrStrLn(b, 201ul);
+   if (sondeaprs_verb) osi_WrStrLn(b, 255ul);
    X2C_PFREE(mycall);
    X2C_PFREE(destcall);
    X2C_PFREE(via);
@@ -1075,14 +1176,18 @@ static void WrDeg(double la, double lo)
 static void show(struct DATLINE d)
 {
    char s[31];
-   osic_WrFixed((float)d.hpa, 1L, 6UL);
-   osi_WrStr("hPa ", 5ul);
+   if (d.hpa<1500.0) {
+      osic_WrFixed((float)d.hpa, 2L, 6UL);
+      osi_WrStr("hPa ", 5ul);
+   }
    if (d.temp<100.0) {
       osic_WrFixed((float)d.temp, 1L, 5UL);
       osi_WrStr("C ", 3ul);
    }
-   osic_WrINT32(osi_realcard((float)d.hyg), 2UL);
-   osi_WrStr("% ", 3ul);
+   if (d.hyg<=100.0) {
+      osic_WrINT32(osi_realcard((float)d.hyg), 2UL);
+      osi_WrStr("% ", 3ul);
+   }
    osic_WrINT32(osi_realcard((float)(d.speed*3.6)), 3UL);
    osi_WrStr("km/h ", 6ul);
    osic_WrINT32(osi_realcard((float)d.dir), 3UL);
@@ -1090,12 +1195,14 @@ static void show(struct DATLINE d)
    WrDeg(d.lat, d.long0);
    osi_WrStr(" ", 2ul);
    /*WrFixed(d.gpsalt, 1, 8); WrStr("m "); */
-   if (d.alt>=(-2.E+4) && d.alt>=1.E+5) {
+   if (d.alt>=(-2.E+4) && d.alt<=1.E+5) {
       osic_WrINT32((uint32_t)osi_realint((float)d.alt), 1UL);
       osi_WrStr("m ", 3ul);
    }
-   osic_WrFixed((float)d.clb, 1L, 5UL);
-   osi_WrStr("m/s ", 5ul);
+   if (d.clb<1000.0) {
+      osic_WrFixed((float)d.clb, 1L, 5UL);
+      osi_WrStr("m/s ", 5ul);
+   }
    aprsstr_TimeToStr(d.time0, s, 31ul);
    osi_WrStr(s, 31ul);
 } /* end show() */
@@ -1279,45 +1386,6 @@ static pCONTEXT findcontext(char n[], uint32_t n_len, uint32_t t)
    return findcontext_ret;
 } /* end findcontext() */
 
-/*
-PROCEDURE highresstr(hrstr:ARRAY OF CHAR; dat-:DATS; bt:TIME);
-CONST STEP=2;
-      DEGUNIT=PI2/360.0/100000.0;  (* 1/100000 deg = 1.1111m*)
-
-TYPE  VEC=ARRAY[0..LINESBUF-1] OF RECORD lat, long, alt:REAL; time:TIME END;
-
-VAR i,n:CARDINAL;
-    vec:VEC;
-    t:TIME;
-BEGIN
-  hrstr[0]:=0C;
-  t:=dat[0].time;
-  IF (bt<=STEP) OR (t<bt) THEN RETURN END;
-
-  i:=0;
-  n:=0;
-  LOOP
-    DEC(t, STEP);
-    IF (i>HIGH(dat)) OR (t+bt<dat[0].time) THEN EXIT END;
-    
-    IF t<=dat[i].time THEN
-      vec[n].lat :=dat[i].lat;
-      vec[n].long:=dat[i].long;
-      vec[n].alt :=dat[i].alt;
-      vec[n].time:=dat[i].time;
-      INC(n);
-    END;
-    INC(i);
-  END;
-  
-
-
-
-
-
-
-END highresstr;
-*/
 
 static void elevation(double * el, double * c,
                 struct aprsstr_POSITION home, double homealt,
@@ -1329,36 +1397,34 @@ static void elevation(double * el, double * c,
    float z0;
    float y00;
    float x0;
-   float sb;
-   float r;
-   float s;
-   float b;
-   float a;
+   double sb;
+   double r;
+   double s;
+   double b;
+   double a;
    *el = (-1000.0);
    aprspos_wgs84s(home.lat, home.long0, (float)(homealt*0.001), &x0, &y00,
                  &z0);
    aprspos_wgs84s(dist.lat, dist.long0, (float)(distalt*0.001), &x1, &y1,
                 &z1);
-   a = osic_sqrt(x0*x0+y00*y00+z0*z0);
-   b = osic_sqrt(x1*x1+y1*y1+z1*z1);
+   a = sqrt((double)(x0*x0+y00*y00+z0*z0));
+   b = sqrt((double)(x1*x1+y1*y1+z1*z1));
    x1 = x1-x0;
    y1 = y1-y00;
    z1 = z1-z0;
-   *c = (double)osic_sqrt(x1*x1+y1*y1+z1*z1);
+   *c = sqrt((double)(x1*x1+y1*y1+z1*z1));
    /* halbwinkelsatz */
-   s = (float)(((double)(a+b)+*c)*0.5);
-   if (s==0.0f) return;
-   r = (float)(X2C_DIVL((double)((s-a)*(s-b))*((double)s-*c),
-                (double)s));
-   if (r<=0.0f) return;
-   r = osic_sqrt(r);
+   s = (a+b+*c)*0.5;
+   if (s==0.0) return;
+   r = X2C_DIVL((s-a)*(s-b)*(s-*c),s);
+   if (r<=0.0) return;
+   r = sqrt(r);
    sb = s-b;
-   if (sb==0.0f) *el = 90.0;
-   else {
-      /*  el:=(360.0/PI)*arctan(r/(s-a))-90.0; */
-      *el = (double)(1.1459155902616E+2f*osic_arctan(X2C_DIVR(r,
-                sb))-90.0f);
+   if (sb!=0.0) {
+      *el = (double)(1.1459155902616E+2f*osic_arctan((float)
+                (X2C_DIVL(r,sb)))-90.0f);
    }
+   else *el = 90.0;
 } /* end elevation() */
 
 
@@ -1386,11 +1452,12 @@ extern void sondeaprs_senddata(double lat, double long0,
                 double hrms, double vrms, uint32_t sattime,
                 uint32_t uptime, char objname[],
                 uint32_t objname_len, uint32_t almanachage,
-                uint32_t goodsats, char usercall[],
-                uint32_t usercall_len, uint32_t calperc, double hp,
-                 char force, char typstr[], uint32_t typstr_len,
-                 char fullid[], uint32_t fullid_len,
-                struct sondeaprs_SDRBLOCK sdr)
+                uint32_t goodsats, uint32_t txpower, double vBatt,
+                char usercall[], uint32_t usercall_len,
+                uint32_t calperc, double hp, char force,
+                char altnoegm, int32_t txtime, char typstr[],
+                uint32_t typstr_len, char fullid[],
+                uint32_t fullid_len, struct sondeaprs_SDRBLOCK sdr)
 {
    uint8_t e;
    pCONTEXT ct;
@@ -1400,25 +1467,25 @@ extern void sondeaprs_senddata(double lat, double long0,
    uint32_t bt;
    double btalt;
    double og;
-   double egmalt;
+   double altNN;
    struct aprsstr_POSITION dpos;
    double mygrounddist;
    double mydist;
    double myele;
    double myazi;
    struct CONTEXT * anonym;
-   X2C_PCOPY((void **)&objname,objname_len);
    og = (-3.2E+4);
+   altNN = (-3.2E+4);
    btalt = alt;
    if (!egmoff) {
-      egmalt = egm96corr(lat, long0, alt);
-                /* make NN out of wgs84 altitude */
-      if (egmalt>(-1000.0)) {
-         og = getoverground(lat, long0, egmalt);
+      if (altnoegm) altNN = alt;
+      else altNN = egm96corr(lat, long0, alt);
+      if (altNN>(-1000.0)) {
+         og = getoverground(lat, long0, altNN);
          if (og>=0.0) btalt = og;
       }
-      else if (fabs(egmalt-alt)>250.0) {
-         osic_WrFixed((float)(egmalt-alt), 2L, 1UL);
+      else if (fabs(altNN-alt)>250.0) {
+         osic_WrFixed((float)(altNN-alt), 2L, 1UL);
          osi_WrStrLn("m egm96 correction?", 20ul);
       }
    }
@@ -1447,26 +1514,26 @@ extern void sondeaprs_senddata(double lat, double long0,
       myazi = (double)aprspos_azimuth(sondeaprs_mypos, dpos);
       mygrounddist = (double)aprspos_distance(sondeaprs_mypos, dpos);
       if (mygrounddist>2.E+7) mygrounddist = 2.E+7;
-      if ((egmalt>=(-2.E+4) && sondeaprs_myalt>=(-2.E+4f))
+      if ((altNN>=(-2.E+4) && sondeaprs_myalt>=(-2.E+4f))
                 && sondeaprs_myalt<=20000.0f) {
          elevation(&myele, &mydist, sondeaprs_mypos,
-                (double)sondeaprs_myalt, dpos, egmalt);
+                (double)sondeaprs_myalt, dpos, altNN);
       }
    }
    /*- azimuth elevation distance */
    if (sondeaprs_csvfilename[0UL]) {
       wrcsv(sattime, typstr, typstr_len, objname, objname_len, lat, long0,
-                alt, speed, dir, clb, egmalt, og, mhz, goodsats, uptime, hp,
+                alt, speed, dir, clb, altNN, og, mhz, goodsats, uptime, hp,
                 hyg, temp, ozon, otemp, pumpmA, pumpv, sdr, mydist, myazi,
-                myele, fullid, fullid_len);
+                myele, fullid, fullid_len, txpower, vBatt, txtime);
    }
    if (aprsstr_Length(usercall, usercall_len)<3UL) {
       osi_WrStrLn("no tx without <mycall>", 23ul);
-      goto label;
+      return;
    }
    if (aprsstr_Length(objname, objname_len)<3UL) {
       osi_WrStrLn("no tx witout <objectname>", 26ul);
-      goto label;
+      return;
    }
    systime = osic_time();
    mhzfromsonde = 0;
@@ -1544,10 +1611,14 @@ extern void sondeaprs_senddata(double lat, double long0,
          else bt = sondeaprs_beacontime;
          if ((bt>0UL && anonym->lastbeacon+bt<=systime)
                 && (sondeaprs_nofilter || (chk&0x3E0U)==0U)) {
-            strncpy(s,"Clb=",251u);
-            aprsstr_FixToStr((float)clb, 2UL, h, 251ul); /*dat[0].climb*/
-            aprsstr_Append(s, 251ul, h, 251ul);
-            aprsstr_Append(s, 251ul, "m/s", 4ul);
+            s[0] = 0;
+            if (clb<1000.0) {
+               aprsstr_Append(s, 251ul, "Clb=", 5ul);
+               aprsstr_FixToStr((float)clb, 2UL, h, 251ul);
+                /*dat[0].climb*/
+               aprsstr_Append(s, 251ul, h, 251ul);
+               aprsstr_Append(s, 251ul, "m/s", 4ul);
+            }
             if ((0x1U & chk)==0 && anonym->dat[0U].hpa>=1.0) {
                aprsstr_Append(s, 251ul, " p=", 4ul);
                aprsstr_FixToStr((float)anonym->dat[0U].hpa, 2UL, h,
@@ -1631,6 +1702,14 @@ extern void sondeaprs_senddata(double lat, double long0,
                }
                else aprsstr_Append(s, 251ul, typstr, typstr_len);
             }
+            apptxon(txtime, anonym->cyclevals, s, 251ul);
+                /* remaining tx time */
+            if (vBatt>0.0 && anonym->cyclevals%3UL==0UL) {
+               aprsstr_Append(s, 251ul, " batt=", 7ul);
+               aprsstr_FixToStr((float)vBatt, 2UL, h, 251ul);
+               aprsstr_Append(s, 251ul, h, 251ul);
+               aprsstr_Append(s, 251ul, "V", 2ul);
+            }
             if (og>=0.0 && og<=(double)sondeaprs_lowalt) {
                aprsstr_Append(s, 251ul, " OG=", 5ul);
                aprsstr_IntToStr((int32_t)X2C_TRUNCI(og,X2C_min_longint,
@@ -1644,6 +1723,7 @@ extern void sondeaprs_senddata(double lat, double long0,
                aprsstr_Append(s, 251ul, fullid, fullid_len);
             }
             if (force) aprsstr_Append(s, 251ul, " Unchecked-Data", 16ul);
+            /*        IF burstkill THEN Append(s, " BK=on") END; */
             if (sondeaprs_expire>0UL && (systime>sattime+sondeaprs_expire || systime+sondeaprs_expire<sattime)
                 ) {
                if (sondeaprs_verb) {
@@ -1674,8 +1754,10 @@ extern void sondeaprs_senddata(double lat, double long0,
                 objname_len, anonym->dat[0U].lat, anonym->dat[0U].long0,
                 anonym->dat[0U].alt,
                 (double)(float)(truncc(anonym->dat[0U].dir)%360UL),
-                anonym->dat[0U].speed*3.6, goodsats, hrms, s, 251ul,
-                &anonym->commentline, sdr, myazi, myele, mydist);
+                anonym->dat[0U].speed*3.6, goodsats, txpower, vBatt, hrms, s,
+                 251ul, &anonym->commentline, sdr, myazi, myele, mydist,
+                txtime);
+               ++anonym->cyclevals;
             }
             anonym->lastbeacon = systime;
             anonym->speedcnt = 0UL;
@@ -1683,8 +1765,6 @@ extern void sondeaprs_senddata(double lat, double long0,
          }
       }
    }
-   label:;
-   X2C_PFREE(objname);
 } /* end senddata() */
 
 
