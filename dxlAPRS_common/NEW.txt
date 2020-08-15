@@ -287,6 +287,9 @@ gps2aprs:
  Logfile fuer gps-Zeilen
 
 
+1.3.2020
+
+  Set System-Time from GPS-Time and terminate or not
 
 
 

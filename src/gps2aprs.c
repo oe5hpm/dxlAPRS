@@ -49,6 +49,9 @@
 #define gps2aprs_BTIMENAVI 2
 /* fast beacon to aprsmap as navi -N */
 
+#define gps2aprs_ALTLIFE 10
+/* seconds altitude valid */
+
 /*CRCL, CRCH: ARRAY[0..255] OF SET8;*/
 static char tbuf[1024];
 
@@ -60,11 +63,15 @@ static char mycall[100];
 
 static char via[100];
 
+static char viaakt[100];
+
 static char comment0[100];
 
 static char symt;
 
 static char symb;
+
+static uint32_t altok;
 
 static uint32_t toport;
 
@@ -75,6 +82,8 @@ static uint32_t baud;
 static uint32_t ipnum;
 
 static uint32_t ipnum2;
+
+static int32_t timecorr;
 
 static int32_t udpsock;
 
@@ -96,6 +105,8 @@ static char withdao;
 
 static char useaxudp;
 
+static char balloon;
+
 static uint32_t comptyp;
 
 static uint32_t micessid;
@@ -107,6 +118,14 @@ static uint32_t btimedrive;
 static uint32_t drivekm;
 
 static uint32_t comintval;
+
+static uint32_t daytime;
+
+static uint32_t year;
+
+static uint32_t month;
+
+static uint32_t day;
 
 static uint32_t comcnt;
 
@@ -130,11 +149,18 @@ static double alt;
 
 static char posok;
 
-static char altok;
+static char dateok;
+
+static char timesetdone;
+
+static char terminatetimeset;
 
 static int32_t tty;
 
 static struct termios saved;
+
+extern int32_t stime(uint32_t *);
+/* set system time, needs root */
 
 
 static void Error(char text[], uint32_t text_len)
@@ -161,8 +187,7 @@ static uint32_t truncc(double r)
 #define gps2aprs_PORTSEP ":"
 
 
-static int32_t GetIp(char h[], uint32_t h_len, uint32_t * p,
-                uint32_t * ip, uint32_t * port)
+static int32_t GetIp(char h[], uint32_t h_len, uint32_t * p, uint32_t * ip, uint32_t * port)
 {
    uint32_t n;
    uint32_t i;
@@ -279,8 +304,7 @@ static void testtty(int32_t len0, char * err)
 } /* end testtty() */
 
 
-static char GetNum(const char h[], uint32_t h_len, char eot,
-                 uint32_t * p, uint32_t * n)
+static char GetNum(const char h[], uint32_t h_len, char eot, uint32_t * p, uint32_t * n)
 {
    *n = 0UL;
    while ((uint8_t)h[*p]>='0' && (uint8_t)h[*p]<='9') {
@@ -313,24 +337,27 @@ static void Parms(void)
             useaxudp = 1;
             osi_NextArg(h, 1024ul);
             i = 0UL;
-            if (GetIp(h, 1024ul, &i, &ipnum2, &toport2)<0L) {
-               Error("-N ip:port", 11ul);
-            }
+            if (GetIp(h, 1024ul, &i, &ipnum2, &toport2)<0L) Error("-N ip:port", 11ul);
          }
          else if (h[1U]=='a') withalti = 0;
          else if (h[1U]=='u') usbrobust = 0;
          else if (h[1U]=='k') withspeed = 0;
          else if (h[1U]=='s') sumoff = 1;
          else if (h[1U]=='D') withdao = 1;
+         else if (h[1U]=='B') balloon = 1;
+         else if (X2C_CAP(h[1U])=='Z') {
+            timesetdone = 0;
+            if (h[1U]=='Z') terminatetimeset = 1;
+            osi_NextArg(h, 1024ul);
+            if (!aprsstr_StrToInt(h, 1024ul, &timecorr)) Error("-Z <seconds>", 13ul);
+         }
          else if (h[1U]=='I') {
             osi_NextArg(mycall, 100ul);
             if ((uint8_t)mycall[0U]<'0') Error("-I <mycall>", 12ul);
          }
          else if (h[1U]=='w') {
             osi_NextArg(via, 100ul);
-            if ((uint8_t)via[0U]<=' ') {
-               Error("-m vias like RELAY,WIDE1-1", 27ul);
-            }
+            if ((uint8_t)via[0U]<=' ') Error("-m vias like RELAY,WIDE1-1", 27ul);
          }
          else if (h[1U]=='c') {
             osi_NextArg(comment0, 100ul);
@@ -356,9 +383,7 @@ static void Parms(void)
             ttynamee[i] = 0;
             if (h[i]) {
                ++i;
-               if (!GetNum(h, 1024ul, 0, &i, &baud)) {
-                  Error("need ttydevice:baud", 20ul);
-               }
+               if (!GetNum(h, 1024ul, 0, &i, &baud)) Error("need ttydevice:baud", 20ul);
             }
          }
          else if (h[1U]=='L') osi_NextArg(logfilename, 1024ul);
@@ -387,9 +412,7 @@ static void Parms(void)
          else if (h[1U]=='l') {
             osi_NextArg(h, 1024ul);
             i = 0UL;
-            if (!GetNum(h, 1024ul, 0, &i, &comintval)) {
-               Error("-l <n>", 7ul);
-            }
+            if (!GetNum(h, 1024ul, 0, &i, &comintval)) Error("-l <n>", 7ul);
          }
          else if (h[1U]=='f') {
             osi_NextArg(h, 1024ul);
@@ -409,65 +432,41 @@ static void Parms(void)
          else {
             if (h[1U]=='h') {
                osic_WrLn();
-               osi_WrStrLn("Read serial GPS and make normal/compressed/mic-e \
-Beacon as AXUDP or monitor", 76ul);
-               osi_WrStrLn(" -0 <s>                            standing Beaco\
-n Time in Seconds (180)", 73ul);
-               osi_WrStrLn(" -a                                altitude OFF",
-                 48ul);
-               osi_WrStrLn(" -b <s>                            driving Beacon\
- Time in Seconds (15)", 71ul);
-               osi_WrStrLn(" -c <commentstring>                APRS Comment (\
-max 40 char)", 62ul);
-               osi_WrStrLn("                                     insert time \
-hhmmss: \\\\h", 61ul);
-               osi_WrStrLn("                                     insert time \
-ddhhmm: \\\\z", 61ul);
-               osi_WrStrLn("                                     insert file \
-      : \\\\:filename:", 70ul);
-               osi_WrStrLn("                                     insert \\\\ \
-        : \\\\\\", 61ul);
-               osi_WrStrLn("                                     double all \\
-\ to pass thru bash eg. \\\\\\\\h", 78ul);
-               osi_WrStrLn(" -d <x>                            Destination Ca\
-ll SSID 0..7", 62ul);
-               osi_WrStrLn(" -D                                DAO Extension \
-on for 20cm Resolution", 72ul);
-               osi_WrStrLn(" -f <x>                            format 0=norma\
-l 1=compressed 2=mic-e (0)", 76ul);
-               osi_WrStrLn(" -g <km/h>                         min. Speed for\
- driving Beacon Time (4)", 74ul);
+               osi_WrStrLn("Read serial GPS and make normal/compressed/mic-e Beacon as AXUDP or monitor", 76ul);
+               osi_WrStrLn(" -0 <s>                            standing Beacon Time in Seconds (180)", 73ul);
+               osi_WrStrLn(" -a                                altitude OFF", 48ul);
+               osi_WrStrLn(" -B                                Balloon mode: -g <m> is altitude(m)", 71ul);
+               osi_WrStrLn("                                     -b <s> for below -0 <s> for above", 71ul);
+               osi_WrStrLn("                                     -w <path> is switched on below", 68ul);
+               osi_WrStrLn(" -b <s>                            driving Beacon Time in Seconds (15)", 71ul);
+               osi_WrStrLn(" -c <commentstring>                APRS Comment (max 40 char)", 62ul);
+               osi_WrStrLn("                                     insert time hhmmss: \\\\h", 61ul);
+               osi_WrStrLn("                                     insert time ddhhmm: \\\\z", 61ul);
+               osi_WrStrLn("                                     insert file       : \\\\:filename:", 70ul);
+               osi_WrStrLn("                                     insert \\\\         : \\\\\\", 61ul);
+               osi_WrStrLn("                                     double all \\ to pass thru bash eg. \\\\\\\\h", 78ul);
+               osi_WrStrLn(" -d <x>                            Destination Call SSID 0..7", 62ul);
+               osi_WrStrLn(" -D                                DAO Extension on for 20cm Resolution", 72ul);
+               osi_WrStrLn(" -f <x>                            format 0=normal 1=compressed 2=mic-e (0)", 76ul);
+               osi_WrStrLn(" -g <km/h>                         min. Speed for driving Beacon Time (4)", 74ul);
                osi_WrStrLn(" -h                                this", 40ul);
-               osi_WrStrLn(" -I <mycall>                       Mycall with SS\
-ID like NOCALL-15", 67ul);
-               osi_WrStrLn(" -i <icon>                         2 Icon chars \\
-"/-\" (House), \"/>\" (Car)...(//)", 80ul);
-               osi_WrStrLn(" -k                                Speed/Course O\
-FF (not in mic-e)", 67ul);
-               osi_WrStrLn(" -l <n>                            every n Beacon\
-s send one with Comment", 73ul);
-               osi_WrStrLn(" -L <filename>                     Append raw GPS\
- text to this File", 68ul);
-               osi_WrStrLn(" -m <x.x.x.x:destport>             use Monitor UD\
-P format :port for localhost", 78ul);
-               osi_WrStrLn(" -N <x.x.x.x:destport>             send Position \
-AXUDP every 2s eg. to aprsmap", 79ul);
-               osi_WrStrLn(" -n <s>                            Beacon Time in\
- Seconds to -N destination (2)", 80ul);
-               osi_WrStrLn(" -r <x.x.x.x:destport>             send AXUDP (to\
- kiss-TNC or TCPKISS via udpflex,", 83ul);
-               osi_WrStrLn("                                     to afskmodem\
- or via aprsmap or udpgate to TCP)", 84ul);
-               osi_WrStrLn(" -s                                GPS Checksum c\
-heck OFF", 58ul);
-               osi_WrStrLn(" -t <tty>:<baud>                   (/dev/ttyS0:48\
-00)", 53ul);
-               osi_WrStrLn(" -u                                abort, not ret\
-ry until open removable USB tty", 81ul);
-               osi_WrStrLn(" -v                                verbous",
-                43ul);
-               osi_WrStrLn(" -w <viapath>                      via Path like \
-RELAY,WIDE1-1", 63ul);
+               osi_WrStrLn(" -I <mycall>                       Mycall with SSID like NOCALL-15", 67ul);
+               osi_WrStrLn(" -i <icon>                         2 Icon chars \"/-\" (House), \"/>\" (Car)...(//)", 80ul);
+               osi_WrStrLn(" -k                                Speed/Course OFF (not in mic-e)", 67ul);
+               osi_WrStrLn(" -l <n>                            every n Beacons send one with Comment", 73ul);
+               osi_WrStrLn(" -L <filename>                     Append raw GPS text to this File", 68ul);
+               osi_WrStrLn(" -m <x.x.x.x:destport>             use Monitor UDP format :port for localhost", 78ul);
+               osi_WrStrLn(" -N <x.x.x.x:destport>             send Position AXUDP every 2s eg. to aprsmap", 79ul);
+               osi_WrStrLn(" -n <s>                            Beacon Time in Seconds to -N destination (2)", 80ul);
+               osi_WrStrLn(" -r <x.x.x.x:destport>             send AXUDP (to kiss-TNC or TCPKISS via udpflex,", 83ul);
+               osi_WrStrLn("                                     to afskmodem or via aprsmap or udpgate to TCP)", 84ul);
+               osi_WrStrLn(" -s                                GPS Checksum check OFF", 58ul);
+               osi_WrStrLn(" -t <tty>:<baud>                   (/dev/ttyS0:4800)", 53ul);
+               osi_WrStrLn(" -u                                abort, not retry until open removable USB tty", 81ul);
+               osi_WrStrLn(" -v                                verbous", 43ul);
+               osi_WrStrLn(" -w <viapath>                      via Path like RELAY,WIDE1-1", 63ul);
+               osi_WrStrLn(" -Z <s>                            set system time to GPStime+<s> (will need root)", 83ul);
+               osi_WrStrLn(" -z <s>                            same but do not terminate after time set", 76ul);
                osic_WrLn();
                X2C_ABORT();
             }
@@ -482,9 +481,7 @@ RELAY,WIDE1-1", 63ul);
       }
       if (err) break;
    }
-   if (comptyp==1UL && withdao) {
-      Error("DAO Option not with compressed Format", 38ul);
-   }
+   if (comptyp==1UL && withdao) Error("DAO Option not with compressed Format", 38ul);
    if (err) {
       osi_WrStr(">", 2ul);
       osi_WrStr(h, 1024ul);
@@ -493,42 +490,33 @@ RELAY,WIDE1-1", 63ul);
    }
 } /* end Parms() */
 
-/*
-PROCEDURE Gencrctab;
-CONST POLINOM=08408H;
-VAR i,crc,c:CARDINAL;
-BEGIN
-  FOR c:=0 TO 255 DO
-    crc:=255-c;
-    FOR i:=0 TO 7 DO
-      IF ODD(crc) THEN crc:=CAST(CARDINAL, CAST(BITSET, ASH(crc,
-                -1))/CAST(BITSET,POLINOM))
-      ELSE crc:=ASH(crc, -1) END;
-    END;
-    CRCL[c]:=CAST(SET8, crc);
-    CRCH[c]:=CAST(SET8, 255 - ASH(crc, -8));
-  END;
-END Gencrctab;
+
+static void settime(void)
+{
+   char s[21];
+   uint32_t sec;
+   strncpy(s,"20  :  :  ",21u);
+   s[2U] = (char)(year/10UL+48UL);
+   s[3U] = (char)(year%10UL+48UL);
+   s[5U] = (char)(month/10UL+48UL);
+   s[6U] = (char)(month%10UL+48UL);
+   s[8U] = (char)(day/10UL+48UL);
+   s[9U] = (char)(day%10UL+48UL);
+   if (!aprsstr_StrToTime(s, 21ul, &sec)) return;
+   sec += daytime;
+   aprsstr_DateToStr(sec, s, 21ul);
+   if (verb) {
+      osi_WrStr("gpstime:", 9ul);
+      osi_WrStrLn(s, 21ul);
+   }
+   sec += (uint32_t)timecorr;
+   if (stime(&sec)>=0L) osi_WrStrLn("system time set", 16ul);
+   else osi_WrStrLn("--- error setting system time (will need root)", 47ul);
+   if (terminatetimeset) X2C_ABORT();
+} /* end settime() */
 
 
-PROCEDURE UDPCRC(frame-:ARRAY OF CHAR; size:INTEGER):CARDINAL;
-VAR l,h:SET8;
-    b:CARD8;
-    i:INTEGER;
-BEGIN
-  l:=SET8{};
-  h:=SET8{};
-  FOR i:=0 TO size-1 DO
-    b:=CAST(CARD8, CAST(SET8, frame[i]) / l);
-    l:=CRCL[b] / h;
-    h:=CRCH[b];
-  END;
-  RETURN ORD(CAST(CHAR, l))+256*ORD(CAST(CHAR, h))
-END UDPCRC;
-*/
-
-static void sendudp(char buf[], uint32_t buf_len, int32_t len0,
-                uint32_t ip, uint32_t port)
+static void sendudp(char buf[], uint32_t buf_len, int32_t len0, uint32_t ip, uint32_t port)
 {
    int32_t i;
    /*  crc:CARDINAL;  */
@@ -539,16 +527,14 @@ static void sendudp(char buf[], uint32_t buf_len, int32_t len0,
 } /* end sendudp() */
 
 
-static void skip(const char b[], uint32_t b_len, uint32_t * p,
-                uint32_t len0)
+static void skip(const char b[], uint32_t b_len, uint32_t * p, uint32_t len0)
 {
    while (*p<len0 && b[*p]!=',') ++*p;
    if (*p<len0) ++*p;
 } /* end skip() */
 
 
-static char getnum(const char b[], uint32_t b_len,
-                uint32_t * p, uint32_t len0, uint32_t * n)
+static char getnum(const char b[], uint32_t b_len, uint32_t * p, uint32_t len0, uint32_t * n)
 {
    /*WrStr(b[p]); */
    if ((*p<len0 && (uint8_t)b[*p]>='0') && (uint8_t)b[*p]<='9') {
@@ -622,8 +608,7 @@ static void beaconmacros(char s[], uint32_t s_len)
                }
             }
             else {
-               aprsstr_Assign(s, s_len, "beacon macro file not readable ",
-                32ul);
+               aprsstr_Assign(s, s_len, "beacon macro file not readable ", 32ul);
                aprsstr_Append(s, s_len, fn, 1024ul);
                if (verb) osi_WrStrLn(s, s_len);
                s[0UL] = 0;
@@ -647,8 +632,7 @@ static void beaconmacros(char s[], uint32_t s_len)
 } /* end beaconmacros() */
 
 
-static void decodeline(const char b[], uint32_t b_len,
-                uint32_t len0)
+static void decodeline(const char b[], uint32_t b_len, uint32_t len0)
 {
    uint32_t n;
    uint32_t i;
@@ -657,65 +641,49 @@ static void decodeline(const char b[], uint32_t b_len,
    if (b[0UL]=='$' && b[1UL]=='G') {
       /*& (b[2]="P")*/
       if ((b[3UL]=='R' && b[4UL]=='M') && b[5UL]=='C') {
-         /* $GPRMC,141333.593,A,9815.1000,N,01302.2000,E,0.00,00.00,140410,0,
-                ,A*7C */
-         /* $GPRMC,112430.00,A,4812.41130,N,01305.61995,E,0.039,,200513,,,
-                A*77 */
          i = 7UL;
+         if (getnum(b, b_len, &i, len0, &n)) daytime = n*36000UL;
+         else return;
+         if (getnum(b, b_len, &i, len0, &n)) daytime += n*3600UL;
+         else return;
+         if (getnum(b, b_len, &i, len0, &n)) daytime += n*600UL;
+         else return;
+         if (getnum(b, b_len, &i, len0, &n)) daytime += n*60UL;
+         else return;
+         if (getnum(b, b_len, &i, len0, &n)) daytime += n*10UL;
+         else return;
+         if (getnum(b, b_len, &i, len0, &n)) daytime += n;
+         else return;
          skip(b, b_len, &i, len0);
          if (b[i]!='A') return;
          skip(b, b_len, &i, len0);
-         if (getnum(b, b_len, &i, len0, &n)) {
-            lat = (double)(float)(n*10UL);
-         }
+         if (getnum(b, b_len, &i, len0, &n)) lat = (double)(float)(n*10UL);
          else return;
-         if (getnum(b, b_len, &i, len0, &n)) {
-            lat = lat+(double)(float)n;
-         }
+         if (getnum(b, b_len, &i, len0, &n)) lat = lat+(double)(float)n;
          else return;
-         if (getnum(b, b_len, &i, len0, &n)) {
-            lat = lat+(double)(X2C_DIVR((float)n,6.0f));
-         }
+         if (getnum(b, b_len, &i, len0, &n)) lat = lat+(double)(X2C_DIVR((float)n,6.0f));
          else return;
-         if (getnum(b, b_len, &i, len0, &n)) {
-            lat = lat+(double)(X2C_DIVR((float)n,60.0f));
-         }
+         if (getnum(b, b_len, &i, len0, &n)) lat = lat+(double)(X2C_DIVR((float)n,60.0f));
          else return;
          if (b[i]=='.') ++i;
          else return;
-         if (getnum(b, b_len, &i, len0, &n)) {
-            lat = lat+(double)(X2C_DIVR((float)n,600.0f));
-         }
+         if (getnum(b, b_len, &i, len0, &n)) lat = lat+(double)(X2C_DIVR((float)n,600.0f));
          else return;
-         if (getnum(b, b_len, &i, len0, &n)) {
-            lat = lat+(double)(X2C_DIVR((float)n,6000.0f));
-         }
+         if (getnum(b, b_len, &i, len0, &n)) lat = lat+(double)(X2C_DIVR((float)n,6000.0f));
          else return;
-         if (getnum(b, b_len, &i, len0, &n)) {
-            lat = lat+(double)(X2C_DIVR((float)n,60000.0f));
-         }
-         if (getnum(b, b_len, &i, len0, &n)) {
-            lat = lat+(double)(X2C_DIVR((float)n,6.E+5f));
-         }
+         if (getnum(b, b_len, &i, len0, &n)) lat = lat+(double)(X2C_DIVR((float)n,60000.0f));
+         if (getnum(b, b_len, &i, len0, &n)) lat = lat+(double)(X2C_DIVR((float)n,6.E+5f));
          skip(b, b_len, &i, len0);
          if (b[i]=='S') lat = -lat;
          else if (b[i]!='N') return;
          skip(b, b_len, &i, len0);
-         if (getnum(b, b_len, &i, len0, &n)) {
-            long0 = (double)(float)(n*100UL);
-         }
+         if (getnum(b, b_len, &i, len0, &n)) long0 = (double)(float)(n*100UL);
          else return;
-         if (getnum(b, b_len, &i, len0, &n)) {
-            long0 = long0+(double)(float)(n*10UL);
-         }
+         if (getnum(b, b_len, &i, len0, &n)) long0 = long0+(double)(float)(n*10UL);
          else return;
-         if (getnum(b, b_len, &i, len0, &n)) {
-            long0 = long0+(double)(float)n;
-         }
+         if (getnum(b, b_len, &i, len0, &n)) long0 = long0+(double)(float)n;
          else return;
-         if (getnum(b, b_len, &i, len0, &n)) {
-            long0 = long0+(double)(X2C_DIVR((float)n,6.0f));
-         }
+         if (getnum(b, b_len, &i, len0, &n)) long0 = long0+(double)(X2C_DIVR((float)n,6.0f));
          else return;
          if (getnum(b, b_len, &i, len0, &n)) {
             long0 = long0+(double)(X2C_DIVR((float)n,60.0f));
@@ -742,9 +710,7 @@ static void decodeline(const char b[], uint32_t b_len,
          else if (b[i]!='E') return;
          skip(b, b_len, &i, len0);
          speed = 0.0;
-         while (getnum(b, b_len, &i, len0, &n)) {
-            speed = speed*10.0+(double)(float)n;
-         }
+         while (getnum(b, b_len, &i, len0, &n)) speed = speed*10.0+(double)(float)n;
          if (b[i]=='.') {
             ++i;
             div0 = 0.1;
@@ -756,9 +722,7 @@ static void decodeline(const char b[], uint32_t b_len,
          speed = speed*1.851984; /* knots to km/h */
          skip(b, b_len, &i, len0);
          course = 0.0;
-         while (getnum(b, b_len, &i, len0, &n)) {
-            course = course*10.0+(double)(float)n;
-         }
+         while (getnum(b, b_len, &i, len0, &n)) course = course*10.0+(double)(float)n;
          if (b[i]=='.') {
             ++i;
             div0 = 0.1;
@@ -768,12 +732,24 @@ static void decodeline(const char b[], uint32_t b_len,
             }
          }
          posok = 1;
+         skip(b, b_len, &i, len0);
+         if (getnum(b, b_len, &i, len0, &n)) day = n*10UL;
+         else return;
+         if (getnum(b, b_len, &i, len0, &n)) day += n;
+         else return;
+         if (getnum(b, b_len, &i, len0, &n)) month = n*10UL;
+         else return;
+         if (getnum(b, b_len, &i, len0, &n)) month += n;
+         else return;
+         if (getnum(b, b_len, &i, len0, &n)) year = n*10UL;
+         else return;
+         if (getnum(b, b_len, &i, len0, &n)) year += n;
+         else return;
+         dateok = 1;
       }
       else if ((b[3UL]=='G' && b[4UL]=='G') && b[5UL]=='A') {
-         /* $GPGGA,152554,3938.5665,N,10346.2039,W,1,08,1.7,12382.7,M,-22.3,
-                M,,*7B */
-         /* $GPGGA,112435.00,4812.41112,N,01305.61998,E,1,08,1.04,398.3,M,
-                44.9,M,,*59 */
+         /* $GPGGA,152554,3938.5665,N,10346.2039,W,1,08,1.7,12382.7,M,-22.3,M,,*7B */
+         /* $GPGGA,112435.00,4812.41112,N,01305.61998,E,1,08,1.04,398.3,M,44.9,M,,*59 */
          i = 7UL;
          skip(b, b_len, &i, len0);
          skip(b, b_len, &i, len0);
@@ -790,7 +766,7 @@ static void decodeline(const char b[], uint32_t b_len,
          }
          else sign = 0;
          while (getnum(b, b_len, &i, len0, &n)) {
-            altok = 1;
+            altok = 10UL;
             alt = alt*10.0+(double)(float)n;
          }
          if (b[i]=='.') {
@@ -815,8 +791,7 @@ static char Hex(uint32_t d)
 } /* end Hex() */
 
 
-static char checksum(const char b[], uint32_t b_len,
-                uint32_t len0)
+static char checksum(const char b[], uint32_t b_len, uint32_t len0)
 {
    uint32_t i;
    uint8_t cs;
@@ -830,8 +805,7 @@ static char checksum(const char b[], uint32_t b_len,
    }
    if (i+2UL>=len0) ok0 = 0;
    if (ok0) {
-      if (b[i+1UL]!=Hex((uint32_t)cs/16UL) || b[i+2UL]!=Hex((uint32_t)
-                cs&15UL)) ok0 = 0;
+      if (b[i+1UL]!=Hex((uint32_t)cs/16UL) || b[i+2UL]!=Hex((uint32_t)cs&15UL)) ok0 = 0;
    }
    if (verb && !ok0) osi_WrStrLn("GPS Checksum Error", 19ul);
    return ok0;
@@ -861,17 +835,12 @@ static uint32_t dao91(double x)
 {
    double a;
    a = fabs(x);
-   return ((truncc((a-(double)(float)truncc(a))*6.E+5)%100UL)
-                *20UL+11UL)/22UL;
+   return ((truncc((a-(double)truncc(a))*6.E+5)%100UL)*20UL+11UL)/22UL;
 } /* end dao91() */
 
 
-static void sendaprs(double lat0, double long1,
-                double alt0, double course0, double speed0,
-                 uint32_t comp0, char withspd, char withalt,
-                char dao, char com, char comm[],
-                uint32_t comm_len, char local, uint32_t ip,
-                uint32_t port)
+static void sendaprs(double lat0, double long1, double alt0, double course0, double speed0, uint32_t comp0, char withspd, char withalt, char dao, char com, char comm[],
+                uint32_t comm_len, const char viapath[], uint32_t viapath_len, char local, uint32_t ip, uint32_t port)
 {
    char b[201];
    char raw[361];
@@ -892,12 +861,11 @@ static void sendaprs(double lat0, double long1,
       aprsstr_Append(b, 201ul, ">APLT01", 8ul);
       if (micessid>0UL) {
          aprsstr_Append(b, 201ul, "-", 2ul);
-         aprsstr_Append(b, 201ul,
-                (char *)(tmp = (char)(micessid+48UL),&tmp), 1u/1u);
+         aprsstr_Append(b, 201ul, (char *)(tmp = (char)(micessid+48UL),&tmp), 1u/1u);
       }
-      if (via[0U]) {
+      if (viapath[0UL]) {
          aprsstr_Append(b, 201ul, ",", 2ul);
-         aprsstr_Append(b, 201ul, via, 100ul);
+         aprsstr_Append(b, 201ul, viapath, viapath_len);
       }
    }
    if (comp0==0UL) {
@@ -910,7 +878,7 @@ static void sendaprs(double lat0, double long1,
       ++i;
       b[i] = num(n);
       ++i;
-      n = truncc((a-(double)(float)n)*6000.0);
+      n = truncc((a-(double)n)*6000.0);
       b[i] = num(n/1000UL);
       ++i;
       b[i] = num(n/100UL);
@@ -934,7 +902,7 @@ static void sendaprs(double lat0, double long1,
       ++i;
       b[i] = num(n);
       ++i;
-      n = truncc((a-(double)(float)n)*6000.0);
+      n = truncc((a-(double)n)*6000.0);
       b[i] = num(n/1000UL);
       ++i;
       b[i] = num(n/100UL);
@@ -1024,16 +992,14 @@ static void sendaprs(double lat0, double long1,
       if (withspd) {
          b[i] = (char)(33UL+truncc(course0)/4UL);
          ++i;
-         b[i] = (char)(33UL+truncc((double)(osic_ln((float)
-                (speed0*5.3996146834962E-1+1.0))*1.29935872129E+1f)));
+         b[i] = (char)(33UL+truncc((double)(osic_ln((float)(speed0*5.3996146834962E-1+1.0))*1.29935872129E+1f)));
          ++i;
          b[i] = '_';
          ++i;
       }
       else if (withalt) {
          if (alt0*3.2808398950131>1.0) {
-            n = truncc((double)(osic_ln((float)
-                (alt0*3.2808398950131))*500.5f));
+            n = truncc((double)(osic_ln((float)(alt0*3.2808398950131))*500.5f));
          }
          else n = 0UL;
          if (n>=8281UL) n = 8280UL;
@@ -1085,13 +1051,12 @@ static void sendaprs(double lat0, double long1,
       ++i;
       b[i] = (char)(80UL+n%10UL);
       ++i;
-      n = truncc((fabs(lat0)-(double)(float)n)*6000.0);
+      n = truncc((fabs(lat0)-(double)n)*6000.0);
       b[i] = (char)(80UL+n/1000UL);
       ++i;
       b[i] = (char)(48UL+32UL*(uint32_t)(lat0>=0.0)+(n/100UL)%10UL);
       ++i;
-      b[i] = (char)(48UL+32UL*(uint32_t)(nl<10UL || nl>=100UL)+(n/10UL)
-                %10UL);
+      b[i] = (char)(48UL+32UL*(uint32_t)(nl<10UL || nl>=100UL)+(n/10UL)%10UL);
       ++i;
       b[i] = (char)(48UL+32UL*(uint32_t)(long1<0.0)+n%10UL);
       i = aprsstr_Length(b, 201ul);
@@ -1102,8 +1067,7 @@ static void sendaprs(double lat0, double long1,
       }
       else b[i] = (char)(nl+28UL);
       ++i;
-      nl = truncc((fabs(long1)-(double)(float)nl)*6000.0);
-                /* long min*100 */
+      nl = truncc((fabs(long1)-(double)nl)*6000.0); /* long min*100 */
       n = nl/100UL;
       if (n<10UL) n += 60UL;
       b[i] = (char)(n+28UL);
@@ -1123,10 +1087,10 @@ static void sendaprs(double lat0, double long1,
       b[i] = symt;
       ++i;
       if (withalt) {
-         if (alt0>(-1.E+4)) {
-            n = truncc(alt0+10000.5);
+         if (alt0>(-1.E+4)) n = truncc(alt0+10000.5);
+         else {
+            n = 0UL;
          }
-         else n = 0UL;
          b[i] = (char)(33UL+(n/8281UL)%91UL);
          ++i;
          b[i] = (char)(33UL+(n/91UL)%91UL);
@@ -1160,10 +1124,7 @@ static void sendaprs(double lat0, double long1,
          aprsstr_mon2raw(b, 201ul, raw, 361ul, &rp0);
          if (rp0>0L) sendudp(raw, 361ul, rp0, ip, port);
       }
-      else {
-         sendudp(b, 201ul, (int32_t)(aprsstr_Length(b, 201ul)+1UL), ip,
-                port);
-      }
+      else sendudp(b, 201ul, (int32_t)(aprsstr_Length(b, 201ul)+1UL), ip, port);
    }
    if (verb) {
       osic_WrFixed((float)lat0, 6L, 10UL);
@@ -1187,6 +1148,8 @@ static int32_t rp;
 
 static uint32_t gpsp;
 
+static uint32_t balloonkm;
+
 static char gpsb[100];
 
 static int32_t logfd;
@@ -1203,9 +1166,10 @@ extern int main(int argc, char **argv)
    anyip = 1;
    junk = 1;
    posok = 0;
-   altok = 0;
+   altok = 0UL;
    verb = 0;
    usbrobust = 1;
+   balloon = 0;
    baud = 4800UL;
    strncpy(ttynamee,"/dev/ttyS0",1024u);
    logfilename[0] = 0;
@@ -1235,10 +1199,11 @@ extern int main(int argc, char **argv)
    ipnum2 = 0UL;
    btimenavi = 2UL;
    useaxudp = 1;
+   timesetdone = 1;
+   terminatetimeset = 0;
+   timecorr = 0L;
    Parms();
-   if (aprsstr_Length(mycall, 100ul)<3UL) {
-      osi_WrStrLn("no tx witout <mycall>", 22ul);
-   }
+   if (aprsstr_Length(mycall, 100ul)<3UL && !terminatetimeset) osi_WrStrLn("no tx without <mycall>", 23ul);
    /*Gencrctab; */
    opentty();
    udpsock = openudp();
@@ -1258,6 +1223,7 @@ extern int main(int argc, char **argv)
                   c = tbuf[rp];
                   if (c=='\015' || c=='\012') {
                      if (gpsp>0UL) {
+                        dateok = 0;
                         if (sumoff || checksum(gpsb, 100ul, gpsp)) {
                            decodeline(gpsb, 100ul, gpsp);
                            if (logfilename[0U]) {
@@ -1266,10 +1232,8 @@ extern int main(int argc, char **argv)
                                  logfd = osi_OpenWrite(logfilename, 1024ul);
                               }
                               if (osic_FdValid(logfd)) {
-                                 osi_WrBin(logfd, (char *)gpsb, 100u/1u,
-                gpsp);
-                                 osi_WrBin(logfd, (char *)"\012", 2u/1u,
-                1UL);
+                                 osi_WrBin(logfd, (char *)gpsb, 100u/1u, gpsp);
+                                 osi_WrBin(logfd, (char *)"\012", 2u/1u, 1UL);
                                  osic_Close(logfd);
                               }
                               else {
@@ -1279,25 +1243,36 @@ extern int main(int argc, char **argv)
                               }
                            }
                         }
-                        else {
-                           altok = 0;
-                           posok = 0;
-                        }
+                        else posok = 0;
                         if (verb) showline(gpsb, 100ul, gpsp);
                         if (posok) {
+                           memcpy(viaakt,via,100u);
                            ++btime;
-                           if (truncc(speed)>=drivekm) {
-                              if (btime>=btimedrive) {
-                                 btime = 0UL;
+                           if (balloon) {
+                              if (alt>0.0) {
+                                 balloonkm = truncc(alt);
+                              }
+                              else {
+                                 balloonkm = 0UL;
                               }
                            }
-                           else if (btime>btime0) {
-                              btime = 0UL;
+                           else balloonkm = truncc(speed);
+                           if (balloonkm>=drivekm!=balloon) {
+                              if (btime>=btimedrive) {
+                                 btime = 0UL; /* drive / low altitude beacon */
+                              }
+                           }
+                           else {
+                              /* no drive / high altitide */
+                              if (balloon) {
+                                 viaakt[0U] = 0; /* via path off */
+                              }
+                              if (btime>btime0) {
+                                 btime = 0UL; /* no drive / high altitide */
+                              }
                            }
                            if (btime==0UL) {
-                              sendaprs(lat, long0, alt, course, speed,
-                comptyp, withspeed, withalti && altok, withdao, comcnt==0UL,
-                comment0, 100ul, 0, ipnum, toport);
+                              sendaprs(lat, long0, alt, course, speed, comptyp, withspeed, withalti && altok>0UL, withdao, comcnt==0UL, comment0, 100ul, viaakt, 100ul, 0, ipnum, toport);
                               ++comcnt;
                               if (comcnt>=comintval) {
                                  comcnt = 0UL;
@@ -1307,13 +1282,16 @@ extern int main(int argc, char **argv)
                               /* second (fast) beacon to map */
                               ++btimeN;
                               if (btimeN>=btimenavi) {
-                                 sendaprs(lat, long0, alt, course, speed,
-                0UL, 1, altok, 1, 0, "", 1ul, 1, ipnum2, toport2);
+                                 sendaprs(lat, long0, alt, course, speed, 0UL, 1, altok>0UL, 1, 0, "", 1ul, "", 1ul, 1, ipnum2, toport2);
                                  btimeN = 0UL;
                               }
                            }
-                           altok = 0;
+                           if (altok>0UL) --altok;
                            posok = 0;
+                        }
+                        if (dateok && !timesetdone) {
+                           settime();
+                           timesetdone = 1;
                         }
                      }
                      gpsp = 0UL;
