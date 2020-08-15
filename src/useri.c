@@ -1837,9 +1837,9 @@ static void DelCharStr(char s[], uint32_t s_len, char c)
 
 
 static char IsInStr(const char s[], uint32_t s_len,
-                char ch)
+                const char ch[], uint32_t ch_len)
 {
-   return aprsstr_InStr(s, s_len, (char *) &ch, 1u/1u)>=0L;
+   return aprsstr_InStr(s, s_len, ch, ch_len)>=0L;
 } /* end IsInStr() */
 
 
@@ -1851,7 +1851,7 @@ static void toggcfg(uint8_t v, char c, const char del[],
    char on;
    char s[301];
    useri_confstr(v, s, 301ul);
-   on = IsInStr(s, 301ul, c);
+   on = IsInStr(s, 301ul, (char *) &c, 1u/1u);
    if (del[0UL]==0) s[0U] = 0;
    else {
       DelCharStr(s, 301ul, c);
@@ -3633,12 +3633,20 @@ static void getwxset(uint8_t set, char s[], uint32_t s_len,
 } /* end getwxset() */
 
 
-static void textinfo(uint32_t typ)
+static void textinfo(uint32_t typ, char withfind)
 {
+   char fs[1001];
    char s[1001];
    char col;
    struct aprsdecode_CLICKOBJECT * anonym;
-   aprstext_optext(typ, &aprsdecode_click.table[aprsdecode_click.selected],
+   if (withfind) {
+      useri_confstr(useri_fFIND, fs, 1001ul);
+      if (aprsstr_InStr(fs, 1001ul, "<>", 3ul)) fs[0] = 0;
+      else aprsstr_Delstr(fs, 1001ul, 0UL, 2UL);
+   }
+   else fs[0] = 0;
+   aprstext_optext(typ, fs, 1001ul,
+                &aprsdecode_click.table[aprsdecode_click.selected],
                 &aprsdecode_click.watchlast, s, 1001ul);
    { /* with */
       struct aprsdecode_CLICKOBJECT * anonym = &aprsdecode_click.table[aprsdecode_click.selected]
@@ -3670,7 +3678,7 @@ extern void useri_refrinfo(void)
       else if (t==aprsdecode_tSYMBOL || t==aprsdecode_tOBJECT) {
          useri_confstr(useri_fCLICKSYM, s, 100ul);
       }
-      if (IsInStr(s, 100ul, 'u')) textinfo(2UL);
+      if (IsInStr(s, 100ul, "u", 2ul)) textinfo(2UL, 0);
       images(aprsdecode_click.table[aprsdecode_click.selected].opf, 0,
                 aprsdecode_click.graphset);
    }
@@ -3691,8 +3699,8 @@ extern void useri_hoverinfo(struct aprsdecode_CLICKOBJECT obj)
       hoveropen = 1;
       /*  IF xmouse.x>20 THEN imagesx0:=xmouse.x-20 ELSE imagesx0:=0 END; */
       /*  imagesx1:=xmouse.x+20; */
-      if (IsInStr(hh, 51ul, 'u')) {
-         aprstext_optext(2UL, &obj, &void0, s, 1001ul);
+      if (IsInStr(hh, 51ul, "u", 2ul)) {
+         aprstext_optext(2UL, "", 1ul, &obj, &void0, s, 1001ul);
          col = 'm';
          if (s[0U]) useri_textautosize(-3L, 0L, 7UL, 0UL, 'm', s, 1001ul);
       }
@@ -3721,43 +3729,55 @@ static void oneclickinfo(void)
                 /* what wx images are enabled */
       wset = 0U;
       img = 0;
-      if (IsInStr(hh, 51ul, 'u')) raw = 1;
+      if (IsInStr(hh, 51ul, "u", 2ul)) raw = 1;
       aprstat_wxgraph(&img, aprsdecode_selop(), aprsdecode_systime, &wset,
                 &lastval); /* what do we have */
       if ((wset&aprsdecode_click.graphset)==0U) {
          /* no wx to show */
          useri_confstr(useri_fCLICKSYM, s, 100ul);
-         if (IsInStr(s, 100ul, 's')) aprsdecode_click.graphset |= 0x200U;
-         if (IsInStr(s, 100ul, 'b')) aprsdecode_click.graphset |= 0x400U;
-         if (IsInStr(s, 100ul, 'n')) aprsdecode_click.graphset |= 0x800U;
-         if (IsInStr(s, 100ul, 'u')) raw = 1;
+         if (IsInStr(s, 100ul, "s", 2ul)) {
+            aprsdecode_click.graphset |= 0x200U;
+         }
+         if (IsInStr(s, 100ul, "b", 2ul)) {
+            aprsdecode_click.graphset |= 0x400U;
+         }
+         if (IsInStr(s, 100ul, "n", 2ul)) {
+            aprsdecode_click.graphset |= 0x800U;
+         }
+         if (IsInStr(s, 100ul, "u", 2ul)) raw = 1;
          if (aprsdecode_click.graphset==0U) hh[0U] = s[0U];
       }
    }
    else if (ct==aprsdecode_tTEXT || ct==aprsdecode_tOBJECTTEXT) {
       /* text click */
       useri_confstr(useri_fCLICKTEXT, s, 100ul);
-      if (IsInStr(s, 100ul, 's')) aprsdecode_click.graphset |= 0x200U;
-      if (IsInStr(s, 100ul, 'b')) aprsdecode_click.graphset |= 0x400U;
-      if (IsInStr(s, 100ul, 'n')) aprsdecode_click.graphset |= 0x800U;
-      if (IsInStr(s, 100ul, 'u')) raw = 1;
+      if (IsInStr(s, 100ul, "s", 2ul)) aprsdecode_click.graphset |= 0x200U;
+      if (IsInStr(s, 100ul, "b", 2ul)) aprsdecode_click.graphset |= 0x400U;
+      if (IsInStr(s, 100ul, "n", 2ul)) aprsdecode_click.graphset |= 0x800U;
+      if (IsInStr(s, 100ul, "u", 2ul)) raw = 1;
    }
    else if (ct==aprsdecode_tTRACK) {
       /* track click */
       useri_confstr(useri_fCLICKTRACK, s, 100ul);
-      if (aprsdecode_click.mhop[0UL] || !IsInStr(s, 100ul, '.')) {
+      if (aprsdecode_click.mhop[0UL] || !IsInStr(s, 100ul, ".", 2ul)) {
          /* only if 1 user or not goto 1 user */
-         if (IsInStr(s, 100ul, 's')) aprsdecode_click.graphset |= 0x200U;
-         if (IsInStr(s, 100ul, 'b')) aprsdecode_click.graphset |= 0x400U;
-         if (IsInStr(s, 100ul, 'n')) aprsdecode_click.graphset |= 0x800U;
+         if (IsInStr(s, 100ul, "s", 2ul)) {
+            aprsdecode_click.graphset |= 0x200U;
+         }
+         if (IsInStr(s, 100ul, "b", 2ul)) {
+            aprsdecode_click.graphset |= 0x400U;
+         }
+         if (IsInStr(s, 100ul, "n", 2ul)) {
+            aprsdecode_click.graphset |= 0x800U;
+         }
       }
-      if (IsInStr(s, 100ul, 'u')) raw = 1;
+      if (IsInStr(s, 100ul, "u", 2ul)) raw = 1;
    }
    if (raw) {
       if (ct==aprsdecode_tTRACK) {
-         textinfo(3UL); /* click.cmd:=">";*/ /* refresh:=TRUE;*/
+         textinfo(3UL, 0); /* click.cmd:=">";*/ /* refresh:=TRUE;*/
       }
-      else textinfo(2UL);
+      else textinfo(2UL, 0);
       aprsdecode_click.cmd = ' ';
    }
    images(aprsdecode_click.table[aprsdecode_click.selected].opf, hh[0U],
@@ -4088,9 +4108,9 @@ static void listmenu(pMENU m)
       if (i==0UL) h[0U] = 'n';
       else h[0U] = (char)(i+48UL);
       h[1U] = 0;
-      if (IsInStr(s, 100ul, h[0U])) {
+      if (IsInStr(s, 100ul, (char *) &h[0U], 1u/1u)) {
          aprsstr_Append(h, 100ul, "+", 2ul);
-         if (IsInStr(s, 100ul, h[0U])) mo[i*4UL+1UL] = 'd';
+         if (IsInStr(s, 100ul, h, 100ul)) mo[i*4UL+1UL] = 'd';
          else mo[i*4UL+1UL] = 'r';
       }
    } /* end for */
@@ -4137,9 +4157,9 @@ static void monconfig(uint32_t sub)
       else h[0U] = (char)(i+48UL);
       h[1U] = 0;
       st = 0UL;
-      if (IsInStr(s, 100ul, h[0U])) {
+      if (IsInStr(s, 100ul, (char *) &h[0U], 1u/1u)) {
          aprsstr_Append(h, 100ul, "+", 2ul);
-         if (IsInStr(s, 100ul, h[0U])) st = 2UL;
+         if (IsInStr(s, 100ul, h, 100ul)) st = 2UL;
          else st = 1UL;
       }
       if (i==sub) st = (st+1UL)%3UL;
@@ -4414,7 +4434,7 @@ static void wxonoff(pMENU menu)
    *)*/
    addonoff(menu, "\365\365|Raw+Decoded", 15ul, "\232", 2ul, 1100UL,
                 (int32_t)(aprsdecode_lums.fontxsize+1UL), IsInStr(ch, 51ul,
-                 'u'));
+                 "u", 2ul));
    addonoff(menu, "\365\365|Finedust", 12ul, "\232", 2ul, 1101UL,
                 (int32_t)(aprsdecode_lums.fontxsize+1UL),
                 (0x100U & wset)!=0);
@@ -4466,7 +4486,7 @@ static void hoveronoff(pMENU menu)
    menu->oldknob = 0UL;
    addonoff(menu, "\365\365|Raw+Decoded", 15ul, "\327", 2ul, 1151UL,
                 (int32_t)(aprsdecode_lums.fontxsize+1UL), IsInStr(ch, 51ul,
-                 'u'));
+                 "u", 2ul));
    addonoff(menu, "\365\365|Finedust", 12ul, "\327", 2ul, 1152UL,
                 (int32_t)(aprsdecode_lums.fontxsize+1UL),
                 (0x100U & wset)!=0);
@@ -4517,28 +4537,28 @@ static void trackonoff(pMENU menu, char on, uint8_t v)
    menu->oldknob = 0UL;
    addonoff(menu, "\365\365|Del Waypoint", 16ul, (char *) &on, 1u/1u,
                 1208UL, (int32_t)(aprsdecode_lums.fontxsize+1UL),
-                IsInStr(w, 100ul, 'q'));
+                IsInStr(w, 100ul, "q", 2ul));
    addonoff(menu, "\365\365|Altitude", 12ul, (char *) &on, 1u/1u, 1207UL,
                  (int32_t)(aprsdecode_lums.fontxsize+1UL), IsInStr(w,
-                100ul, 'n'));
+                100ul, "n", 2ul));
    addonoff(menu, "\365\365|Speed Hist", 14ul, (char *) &on, 1u/1u,
                 1200UL, (int32_t)(aprsdecode_lums.fontxsize+1UL),
-                IsInStr(w, 100ul, 's'));
+                IsInStr(w, 100ul, "s", 2ul));
    addonoff(menu, "\365\365|Animate", 11ul, (char *) &on, 1u/1u, 1201UL,
                 (int32_t)(aprsdecode_lums.fontxsize+1UL), IsInStr(w, 100ul,
-                 'A'));
+                 "A", 2ul));
    addonoff(menu, "\365\365|Zoom To", 11ul, (char *) &on, 1u/1u, 1202UL,
                 (int32_t)(aprsdecode_lums.fontxsize+1UL), IsInStr(w, 100ul,
-                 '.'));
+                 ".", 2ul));
    addonoff(menu, "\365\365|Show Rf", 11ul, (char *) &on, 1u/1u, 1203UL,
                 (int32_t)(aprsdecode_lums.fontxsize+1UL), IsInStr(w, 100ul,
-                 '='));
+                 "=", 2ul));
    addonoff(menu, "\365\365|Beacon Hist", 15ul, (char *) &on, 1u/1u,
                 1204UL, (int32_t)(aprsdecode_lums.fontxsize+1UL),
-                IsInStr(w, 100ul, 'b'));
+                IsInStr(w, 100ul, "b", 2ul));
    addonoff(menu, "\365\365|Raw+Decoded", 15ul, (char *) &on, 1u/1u,
                 1205UL, (int32_t)(aprsdecode_lums.fontxsize+1UL),
-                IsInStr(w, 100ul, 'u'));
+                IsInStr(w, 100ul, "u", 2ul));
    addline(menu, "\365\365|Menu", 8ul, (char *) &on, 1u/1u, 1206UL);
    menu->ysize = menu->oldknob*menu->yknob;
    menu->oldknob = 0UL;
@@ -4562,37 +4582,37 @@ static void symbolonoff(pMENU menu, char on, uint8_t v)
    menu->oldknob = 0UL;
    addonoff(menu, "\365\365|Set Marker 2", 16ul, (char *) &on, 1u/1u,
                 1300UL, (int32_t)(aprsdecode_lums.fontxsize+1UL),
-                IsInStr(w, 31ul, 'Y'));
+                IsInStr(w, 31ul, "Y", 2ul));
    addonoff(menu, "\365\365|Set Marker 1", 16ul, (char *) &on, 1u/1u,
                 1301UL, (int32_t)(aprsdecode_lums.fontxsize+1UL),
-                IsInStr(w, 31ul, 'X'));
+                IsInStr(w, 31ul, "X", 2ul));
    addonoff(menu, "\365\365|Center", 10ul, (char *) &on, 1u/1u, 1302UL,
-                (int32_t)(aprsdecode_lums.fontxsize+1UL), IsInStr(w, 31ul,
-                'C'));
+                (int32_t)(aprsdecode_lums.fontxsize+1UL), IsInStr(w, 31ul, \
+"C", 2ul));
    addonoff(menu, "\365\365|Raw+Decoded", 15ul, (char *) &on, 1u/1u,
                 1303UL, (int32_t)(aprsdecode_lums.fontxsize+1UL),
-                IsInStr(w, 31ul, 'u'));
+                IsInStr(w, 31ul, "u", 2ul));
    addonoff(menu, "\365\365|Animate", 11ul, (char *) &on, 1u/1u, 1304UL,
-                (int32_t)(aprsdecode_lums.fontxsize+1UL), IsInStr(w, 31ul,
-                'A'));
+                (int32_t)(aprsdecode_lums.fontxsize+1UL), IsInStr(w, 31ul, \
+"A", 2ul));
    addonoff(menu, "\365\365|Zoom To", 11ul, (char *) &on, 1u/1u, 1305UL,
-                (int32_t)(aprsdecode_lums.fontxsize+1UL), IsInStr(w, 31ul,
-                '.'));
+                (int32_t)(aprsdecode_lums.fontxsize+1UL), IsInStr(w, 31ul, \
+".", 2ul));
    addonoff(menu, "\365\365|Show Rf", 11ul, (char *) &on, 1u/1u, 1306UL,
-                (int32_t)(aprsdecode_lums.fontxsize+1UL), IsInStr(w, 31ul,
-                '='));
+                (int32_t)(aprsdecode_lums.fontxsize+1UL), IsInStr(w, 31ul, \
+"=", 2ul));
    addonoff(menu, "\365\365|Heard", 9ul, (char *) &on, 1u/1u, 1307UL,
-                (int32_t)(aprsdecode_lums.fontxsize+1UL), IsInStr(w, 31ul,
-                'H'));
+                (int32_t)(aprsdecode_lums.fontxsize+1UL), IsInStr(w, 31ul, \
+"H", 2ul));
    addonoff(menu, "\365\365|Beacon Hist", 15ul, (char *) &on, 1u/1u,
                 1308UL, (int32_t)(aprsdecode_lums.fontxsize+1UL),
-                IsInStr(w, 31ul, 'b'));
+                IsInStr(w, 31ul, "b", 2ul));
    addonoff(menu, "\365\365|Speed Hist", 14ul, (char *) &on, 1u/1u,
                 1309UL, (int32_t)(aprsdecode_lums.fontxsize+1UL),
-                IsInStr(w, 31ul, 's'));
+                IsInStr(w, 31ul, "s", 2ul));
    addonoff(menu, "\365\365|Altitude", 12ul, (char *) &on, 1u/1u, 1310UL,
                  (int32_t)(aprsdecode_lums.fontxsize+1UL), IsInStr(w, 31ul,
-                 'n'));
+                 "n", 2ul));
    addline(menu, "\365\365|Menue", 9ul, (char *) &on, 1u/1u, 1311UL);
    menu->ysize = menu->oldknob*menu->yknob;
    menu->oldknob = 0UL;
@@ -5594,6 +5614,7 @@ static void sendmsg(void)
    char h[201];
    char s[201];
    char po;
+   uint32_t loct;
    uint32_t ohs;
    uint32_t hks;
    uint32_t oks;
@@ -5637,6 +5658,7 @@ static void sendmsg(void)
          }
       }
    }
+   loct = useri_localtime();
    addline(m, "       Send with Ack     |        Send/Query       |        Cl\
 ose", 66ul, "\255", 2ul, 6800UL);
    ++m->scroll;
@@ -5679,7 +5701,7 @@ ose", 66ul, "\255", 2ul, 6800UL);
                 || pm->acktime>0UL) aprsstr_Append(s, 201ul, "\356", 2ul);
          if (pm->txtime==X2C_max_longcard) strncpy(h,"  HOLD  ",201u);
          else if (pm->txtime>0UL) {
-            aprsstr_TimeToStr(pm->txtime%86400UL, h, 201ul);
+            aprsstr_TimeToStr((pm->txtime+loct)%86400UL, h, 201ul);
          }
          else strncpy(h,"--:--:--",201u);
          aprsstr_Append(s, 201ul, h, 201ul);
@@ -5689,7 +5711,7 @@ ose", 66ul, "\255", 2ul, 6800UL);
             strncpy(h,"        ",201u);
          }
          else if (pm->acktime>0UL) {
-            aprsstr_TimeToStr(pm->acktime%86400UL, h, 201ul);
+            aprsstr_TimeToStr((pm->acktime+loct)%86400UL, h, 201ul);
          }
          else {
             pmh = pm->next;
@@ -8373,7 +8395,7 @@ extern char useri_gpsalt(uint8_t a)
 {
    char h[100];
    useri_conf2str(a, 0UL, 1UL, 1, h, 100ul);
-   return IsInStr(h, 100ul, 'A') || IsInStr(h, 100ul, 'a');
+   return IsInStr(h, 100ul, "A", 2ul) || IsInStr(h, 100ul, "a", 2ul);
 } /* end gpsalt() */
 
 static void dogeoprofil(pMENU);
@@ -11168,7 +11190,7 @@ static void deletop(void)
                aprsdecode_delwaypoint(anonym->opf, &anonym->pff0);
                anonym->pff = anonym->pff0;
                if (anonym->pff0) {
-                  textinfo(3UL);
+                  textinfo(3UL, 0);
                   aprsstr_Append(s, 100ul, " waypoint", 10ul);
                }
                else {
@@ -11406,7 +11428,7 @@ static void listusermsg(void)
    op = aprsdecode_selop();
    if (op) {
       startlist("Messages", 9ul, op->call, 9ul);
-      aprstext_listtyps('M', 0, op->call, 9ul);
+      aprstext_listtyps('T', 0, op->call, 9ul); /* bulletins + messages */
    }
 } /* end listusermsg() */
 
@@ -11537,7 +11559,7 @@ static void mouseleft(int32_t mousx, int32_t mousy)
          if (subknob==1UL) {
             aprsdecode_lums.errorstep = !aprsdecode_lums.errorstep;
          }
-         else textinfo((uint32_t)(subknob>0UL));
+         else textinfo((uint32_t)(subknob>0UL), 0);
          aprsdecode_click.cmd = 'e';
          aprsdecode_click.dryrun = 0;
          updatemenus();
@@ -12181,14 +12203,14 @@ extern void useri_keychar(char ch, char ispasted,
       aprsdecode_click.cmd = '\314';
    }
    else if (ch=='Y') aprsdecode_click.cmd = '\315';
-   else if (!IsInStr("bcdfhmpsu", 10ul, ch)) {
+   else if (!IsInStr("bcdfhmpsu", 10ul, (char *) &ch, 1u/1u)) {
       aprsdecode_click.cmd = X2C_CAP(ch);
    }
    else aprsdecode_click.cmd = ch;
    if (aprsdecode_click.cmd=='>' || aprsdecode_click.cmd=='<') {
       if (aprsdecode_click.entries>0UL) {
          useri_killallmenus();
-         textinfo((uint32_t)(aprsdecode_click.cmd=='<'));
+         textinfo((uint32_t)(aprsdecode_click.cmd=='<'), 1);
          aprsdecode_click.dryrun = 0;
          images(aprsdecode_click.table[aprsdecode_click.selected].opf, 0,
                 aprsdecode_click.graphset&0xA00U);
@@ -12530,9 +12552,12 @@ static void showexitcode(char name[], uint32_t name_len, int32_t c)
    char h[100];
    char s[100];
    X2C_PCOPY((void **)&name,name_len);
+   c = c/256L;
    aprsstr_Assign(s, 100ul, name, name_len);
    aprsstr_IntToStr(c, 1UL, h, 100ul);
    aprsstr_Append(s, 100ul, h, 100ul);
+   /*  IF (c=255) OR (c=9) THEN Append(s, " (no executable file found)") END;
+                 */
    useri_say(s, 100ul, 6UL, 'e');
    X2C_PFREE(name);
 } /* end showexitcode() */
@@ -12554,6 +12579,8 @@ static void checkserial(struct xosi_PROCESSHANDLE * pid, uint8_t cfg)
 
 extern void useri_timerevent(void)
 {
+   char s[201];
+   char h[201];
    if (mouseshowcnt>0UL) {
       --mouseshowcnt;
       if (mouseshowcnt==0UL) {
@@ -12569,8 +12596,12 @@ extern void useri_timerevent(void)
       if (!aprsdecode_maploadpid.runs) {
          useri_refresh = 1;
          if (aprsdecode_maploadpid.exitcode) {
-            showexitcode("Maploader exits with ", 22ul,
-                aprsdecode_maploadpid.exitcode);
+            useri_confstr(useri_fGETMAPS, s, 201ul);
+                /* maploader program name */
+            strncpy(h,"Maploader (",201u);
+            aprsstr_Append(h, 201ul, s, 201ul);
+            aprsstr_Append(h, 201ul, ") exits with ", 14ul);
+            showexitcode(h, 201ul, aprsdecode_maploadpid.exitcode);
          }
       }
    }
