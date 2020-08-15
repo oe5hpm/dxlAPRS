@@ -489,6 +489,7 @@ extern int32_t maptool_mapxy(struct aprsstr_POSITION pos, float * x,
 extern void maptool_pullmap(int32_t x, int32_t y, char init)
 {
    struct aprsstr_POSITION top;
+   float step;
    uint32_t i;
    if (init) {
       maptool_xytodeg((float)x, (float)y, &aprsdecode_click.pullpos);
@@ -496,10 +497,14 @@ extern void maptool_pullmap(int32_t x, int32_t y, char init)
       xosi_pulling = 1;
    }
    else {
+      step = (float)aprsdecode_initzoom*0.1f;
+      if (step<0.1f) step = 0.1f;
+      else if (step>0.5f) step = 0.5f;
       for (i = 0UL; i<=9UL; i++) {
+         /* iterate mouse position to new position my moving map cornern */
          maptool_xytodeg((float)x, (float)y, &top);
          aprsdecode_mappos.lat = aprsdecode_mappos.lat-(top.lat-aprsdecode_click.pullpos.lat)
-                *0.5f;
+                *step;
          aprsdecode_mappos.long0 = aprsdecode_mappos.long0-(top.long0-aprsdecode_click.pullpos.long0)
                 ;
          maptool_limpos(&aprsdecode_mappos);
@@ -1564,6 +1569,7 @@ extern char maptool_SimpleRelief(maptool_pIMAGE image)
    mperpix2 = osic_sqrt(mperpix);
    qual = aprsdecode_trunc(mperpix*0.25f);
    jump = 1UL+aprsdecode_trunc(X2C_DIVR(6000.0f,mperpix));
+   if (jump>10UL) jump = 10UL;
    memset((char *)hist,(char)0,40000UL);
    yp = 0UL;
    ok0 = 0;
@@ -1592,6 +1598,7 @@ extern char maptool_SimpleRelief(maptool_pIMAGE image)
                   image->Adr[(xi)*image->Len0+yp].g = (uint16_t)
                 (((h*3L-(int32_t)image->Adr[(xi-1UL)*image->Len0+yp].r*2L)
                 -(int32_t)image->Adr[(xi)*image->Len0+(yp-1UL)].r)+10000L);
+                 /* shadow */
                }
                else image->Adr[(xi)*image->Len0+yp].g = 0U;
                if (h<=9999L) ++hist[h];
@@ -1623,9 +1630,7 @@ extern char maptool_SimpleRelief(maptool_pIMAGE image)
    }
    if (aprsdecode_click.withradio && max0>0L) {
       h = max0-min0;
-      if (h<10L) {
-         h = 10L;
-      }
+      if (h<10L) h = 10L;
       bri = useri_conf2int(useri_fGEOBRIGHTNESS, 0UL, 0L, 100L, 50L);
       mul = 1024000L/h;
       /*    difmul:=trunc(20000000.0/((FLOAT(h)*sqrt(mperpix))));
@@ -2140,6 +2145,17 @@ extern void maptool_xytoloc(struct aprsstr_POSITION mpos, char s[],
 
 #define maptool_MOUNTAINDIST 10.0
 
+#define maptool_RESOL 1.E-8
+
+struct _3;
+
+
+struct _3 {
+   uint32_t samepos;
+   float mindist;
+   aprsdecode_pMOUNTAIN samepostack[20];
+};
+
 
 extern void maptool_POIname(struct aprsstr_POSITION * mpos, char s[],
                 uint32_t s_len, char info[], uint32_t info_len)
@@ -2147,50 +2163,78 @@ extern void maptool_POIname(struct aprsstr_POSITION * mpos, char s[],
 {
    char h[101];
    float infodist;
-   float mindist;
    float d;
-   aprsdecode_pMOUNTAIN pmin;
+   float dd;
    aprsdecode_pMOUNTAIN pm;
-   struct aprsdecode_MOUNTAIN * anonym;
+   uint32_t sidx;
+   struct _3 stk[2];
+   struct _3 * anonym;
+   struct aprsdecode_MOUNTAIN * anonym0;
+   struct _3 * anonym1; /* poi with symbol */
+   struct _3 * anonym2; /* prefer poi with symbol in radius*/
+   struct aprsdecode_MOUNTAIN * anonym3;
    aprsstr_Assign(info, info_len, "", 1ul);
    pm = aprsdecode_mountains;
-   mindist = 2560.0f*osic_power(2.0f, -maptool_realzoom(aprsdecode_initzoom,
-                aprsdecode_finezoom));
-   if (mindist>10.0f) mindist = 10.0f;
-   infodist = mindist*0.25f; /* neerer to poi to show info */
-   /*WrFixed(mpos.lat, 4, 8);WrFixed(mpos.long, 4, 8); WrStrLn(""); */
-   pmin = 0;
+   { /* with */
+      struct _3 * anonym = &stk[0];
+      anonym->mindist = 2560.0f*osic_power(2.0f,
+                -maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom));
+      if (anonym->mindist>10.0f) anonym->mindist = 10.0f;
+      infodist = anonym->mindist*0.25f; /* neerer to poi to show info */
+      anonym->samepos = 0UL;
+   }
+   stk[1] = stk[0];
    while (pm) {
       { /* with */
-         struct aprsdecode_MOUNTAIN * anonym = pm;
-         if ((float)fabs(anonym->pos.lat-mpos->lat)
+         struct aprsdecode_MOUNTAIN * anonym0 = pm;
+         if ((float)fabs(anonym0->pos.lat-mpos->lat)
                 <1.5707963267949E-3f && (float)
-                fabs(anonym->pos.long0-mpos->long0)<1.5707963267949E-3f) {
-            d = aprspos_distance(anonym->pos, *mpos);
-            /*WrFixed(d, 1, 6); WrStrLn(""); */
-            if (d<mindist) {
-               mindist = d;
-               pmin = pm;
+                fabs(anonym0->pos.long0-mpos->long0)<1.5707963267949E-3f) {
+            { /* with */
+               struct _3 * anonym1 = &stk[aprsdecode_poifiles[pm->index].on];
+                
+               d = aprspos_distance(anonym0->pos, *mpos);
+               dd = d-anonym1->mindist;
+               if (dd<=1.E-8f) {
+                  if (dd>=(-1.E-8f)) {
+                     anonym1->samepos = 0UL;
+                     anonym1->mindist = d;
+                  }
+                  anonym1->samepostack[anonym1->samepos] = pm;
+                  if (anonym1->samepos<19UL) ++anonym1->samepos;
+               }
             }
          }
-         pm = anonym->next;
+         pm = anonym0->next;
       }
    }
-   if (pmin) {
-      aprsstr_Assign(s, s_len, pmin->name, 32ul);
-      if (pmin->alt>0) {
-         aprsstr_Append(s, s_len, " ", 2ul);
-         aprsstr_IntToStr((int32_t)pmin->alt, 0UL, h, 101ul);
-         aprsstr_Append(s, s_len, h, 101ul);
-         aprsstr_Append(s, s_len, "m", 2ul);
+   { /* with */
+      struct _3 * anonym2 = &stk[stk[1].samepos>0UL];
+      if (anonym2->samepos>0UL) {
+         /* more than 1 poi at same pos */
+         sidx = (anonym2->samepos*aprsdecode_trunc(aprspos_azimuth(*mpos,
+                anonym2->samepostack[0U]->pos)))/360UL;
+                /* choose poi out of angle to mouse */
+         if (sidx>=anonym2->samepos) sidx = anonym2->samepos-1UL;
+         { /* with */
+            struct aprsdecode_MOUNTAIN * anonym3 = anonym2->samepostack[sidx]
+                ;
+            aprsstr_Assign(s, s_len, anonym3->name, 32ul);
+            if (anonym3->alt>0) {
+               aprsstr_Append(s, s_len, " ", 2ul);
+               aprsstr_IntToStr((int32_t)anonym3->alt, 0UL, h, 101ul);
+               aprsstr_Append(s, s_len, h, 101ul);
+               aprsstr_Append(s, s_len, "m", 2ul);
+            }
+            if (anonym3->pinfo && anonym2->mindist<=infodist) {
+               aprsstr_Assign(info, info_len, anonym3->pinfo, 65536ul);
+            }
+            else aprsdecode_click.bubblinfo[0] = 0;
+            *mpos = anonym3->pos;
+         }
       }
-      if (pmin->pinfo && mindist<=infodist) {
-         aprsstr_Assign(info, info_len, pmin->pinfo, 65536ul);
-      }
-      else aprsdecode_click.bubblinfo[0] = 0;
-      *mpos = pmin->pos;
+      else s[0UL] = 0;
    }
-   else s[0UL] = 0;
 } /* end POIname() */
 
 
@@ -3377,10 +3421,10 @@ static void policolor(uint32_t c, uint32_t bri, uint32_t * r,
    *b = ( *b*bri)/64UL;
 } /* end policolor() */
 
-struct _3;
+struct _4;
 
 
-struct _3 {
+struct _4 {
    int32_t xi;
    int32_t yi;
 };
@@ -3403,13 +3447,13 @@ static void fillpoligon(maptool_pIMAGE image, struct aprsstr_POSITION pm,
    int32_t maxx;
    int32_t x;
    int32_t ret;
-   struct _3 vert[41];
+   struct _4 vert[41];
    int32_t cross[41];
    struct aprsstr_POSITION p;
    float yr;
    float xr;
    char done;
-   struct _3 * anonym;
+   struct _4 * anonym;
    struct maptool_PIX * anonym0;
    int32_t tmp;
    if ((uint8_t)md.filltyp<'2' || (uint8_t)md.filltyp>'9') return;
@@ -3435,7 +3479,7 @@ static void fillpoligon(maptool_pIMAGE image, struct aprsstr_POSITION pm,
       p.lat = pm.lat+md.vec[j].lat;
       p.long0 = pm.long0+md.vec[j].long0;
       { /* with */
-         struct _3 * anonym = &vert[i];
+         struct _4 * anonym = &vert[i];
          ret = maptool_mapxy(p, &xr, &yr);
          anonym->xi = (int32_t)X2C_TRUNCI(xr,X2C_min_longint,
                 X2C_max_longint);
