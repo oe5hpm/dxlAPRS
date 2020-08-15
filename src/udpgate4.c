@@ -32,18 +32,14 @@
 #ifndef aprsstr_H_
 #include "aprsstr.h"
 #endif
+#include <signal.h>
 
 /* axudp / tcpip  aprs-is gateway and message repeater by OE5DXL */
-/*FROM Storage IMPORT ALLOCATE, DEALLOCATE; */
-/*FROM TimeConv IMPORT time;  */
-/*
-FROM stat IMPORT fstat, stat_t;
-*/
 #define udpgate4_CALLLEN 7
 
 #define udpgate4_HASHSIZE 65536
 
-#define udpgate4_VERS "udpgate 0.68"
+#define udpgate4_VERS "udpgate 0.69"
 
 #define udpgate4_TOCALL "APNL51"
 
@@ -375,9 +371,11 @@ static char mhperport;
 /* mh line for same call but different port */
 static char datafilter;
 
+/* send no data to user with no filter set */
+static char sighup;
+
 static char verb;
 
-/* send no data to user with no filter set */
 static char callsrc;
 
 static pTCPSOCK tcpsocks;
@@ -740,6 +738,7 @@ static void readurlsfile(const char gatesfn0[], uint32_t gatesfn_len)
    int32_t len;
    int32_t fd;
    FILENAME h;
+   if (verb) osi_WrStrLn("read url-file", 14ul);
    memset((char *)gateways,(char)0,sizeof(struct _2 [21]));
    fd = osi_OpenRead(gatesfn0, gatesfn_len);
    if (fd<0L) {
@@ -1178,6 +1177,8 @@ ilter is used", 63ul);
 ]:14580#m/200", 63ul);
                osi_WrStrLn(" -g :<filename> read gateway urls from file url:p\
 ort#filter,filter,...", 71ul);
+               osi_WrStrLn("                send SIGHUP to reread file & reco\
+nnect (kill -SIGHUP <tasknumber>)", 83ul);
                osi_WrStrLn(" -H <time>      direct heard keep time minutes (M\
 in) (-H 1440)", 63ul);
                osi_WrStrLn(" -h             this", 21ul);
@@ -1344,7 +1345,9 @@ rt GHOST* in otherwise false", 78ul);
             else if (lasth=='V') {
                osi_NextArg(h, 4096ul);
                aprsstr_Assign(nettorfpath, 81ul, h, 4096ul);
-               if (h[0U]==0) Err("-V net to rf via path", 22ul);
+               if (h[0U]==0) {
+                  Err("-V net to rf via path", 22ul);
+               }
             }
             else if (lasth=='k') {
                osi_NextArg(h, 4096ul);
@@ -2577,7 +2580,7 @@ static void beaconmacros(char s[], uint32_t s_len)
          }
          else if (s[i0]=='v') {
             /* insert version */
-            aprsstr_Append(ns, 256ul, "udpgate 0.68", 13ul);
+            aprsstr_Append(ns, 256ul, "udpgate 0.69", 13ul);
          }
          else if (s[i0]==':') {
             /* insert file */
@@ -3953,11 +3956,11 @@ static void Query(MONCALL fromcall, char msg[], uint32_t msg_len,
                  1, path);
    }
    else if (cmd=='S') {
-      Stomsg(servercall, fromcall, *(MSGTEXT *)memcpy(&tmp1,"udpgate 0.68 Msg\
+      Stomsg(servercall, fromcall, *(MSGTEXT *)memcpy(&tmp1,"udpgate 0.69 Msg\
  S&F Relay",27u), *(ACKTEXT *)memcpy(&tmp0,"",1u), 0, 0, 1, path);
    }
    else if (cmd=='v') {
-      Stomsg(servercall, fromcall, *(MSGTEXT *)memcpy(&tmp1,"udpgate 0.68",
+      Stomsg(servercall, fromcall, *(MSGTEXT *)memcpy(&tmp1,"udpgate 0.69",
                 13u), *(ACKTEXT *)memcpy(&tmp0,"",1u), 0, 0, 1, path);
    }
    else if (cmd=='h') {
@@ -6122,7 +6125,7 @@ static void title(WWWB wbuf, pTCPSOCK * wsock, uint32_t * cnt,
          Appwww(wsock, wbuf, "  Port ", 8ul);
          Appwww(wsock, wbuf, tcpbindport, 6ul);
       }
-      Appwww(wsock, wbuf, " [udpgate 0.68] Maxusers ", 26ul);
+      Appwww(wsock, wbuf, " [udpgate 0.69] Maxusers ", 26ul);
       aprsstr_IntToStr((int32_t)maxusers, 1UL, h, 32ul);
       Appwww(wsock, wbuf, h, 32ul);
       Appwww(wsock, wbuf, " http#", 7ul);
@@ -6134,7 +6137,7 @@ static void title(WWWB wbuf, pTCPSOCK * wsock, uint32_t * cnt,
       }
       else Appwww(wsock, wbuf, servercall, 10ul);
       apppos(wbuf, wsock, home, 1);
-      Appwww(wsock, wbuf, " [udpgate 0.68] http#", 22ul);
+      Appwww(wsock, wbuf, " [udpgate 0.69] http#", 22ul);
    }
    aprsstr_IntToStr((int32_t)*cnt, 1UL, h, 32ul);
    Appwww(wsock, wbuf, h, 32ul);
@@ -6642,7 +6645,7 @@ static char tcpconn(pTCPSOCK * sockchain, int32_t f,
             aprsstr_Append(h, 512ul, passwd, 6ul);
          }
          aprsstr_Append(h, 512ul, " vers ", 7ul);
-         aprsstr_Append(h, 512ul, "udpgate 0.68", 13ul);
+         aprsstr_Append(h, 512ul, "udpgate 0.69", 13ul);
          if (actfilter[0U]) {
             aprsstr_Append(h, 512ul, " filter ", 9ul);
             aprsstr_Append(h, 512ul, actfilter, 256ul);
@@ -6673,7 +6676,7 @@ static char tcpconn(pTCPSOCK * sockchain, int32_t f,
          aprsstr_Append(h1, 512ul, h2, 512ul);
          logline(1L, h1, 512ul);
       }
-      aprsstr_Assign(h, 512ul, "# udpgate 0.68\015\012", 17ul);
+      aprsstr_Assign(h, 512ul, "# udpgate 0.69\015\012", 17ul);
       Sendtcp(cp, h);
    }
    return 1;
@@ -6683,7 +6686,7 @@ static char tcpconn(pTCPSOCK * sockchain, int32_t f,
 static void Gateconn(pTCPSOCK * cp)
 {
    int32_t fd;
-   pTCPSOCK kill;
+   pTCPSOCK kill0;
    pTCPSOCK try0;
    pTCPSOCK act;
    pTCPSOCK p;
@@ -6702,11 +6705,11 @@ static void Gateconn(pTCPSOCK * cp)
                /* we have 2 connects */
                if (act->gatepri>p->gatepri) {
                   /* stop second best */
-                  kill = act;
+                  kill0 = act;
                   act = p;
                }
-               else kill = p;
-               saybusy(&kill->fd, "# remove double connect\015\012", 26ul);
+               else kill0 = p;
+               saybusy(&kill0->fd, "# remove double connect\015\012", 26ul);
             }
             else act = p;
          }
@@ -6715,7 +6718,8 @@ static void Gateconn(pTCPSOCK * cp)
       p = p->next;
    }
    if (try0==0) {
-      if (gatesfn[0U]) readurlsfile(gatesfn, 1024ul);
+      if (gatesfn[0U] && act==0) readurlsfile(gatesfn, 1024ul);
+      /*  IF gatesfn[0]<>0C THEN readurlsfile(gatesfn) END; */
       if (act==0) max0 = 20UL;
       else max0 = act->gatepri;
       if ((trygate>=max0 || trygate>20UL) || gateways[trygate].url[0U]==0) {
@@ -6862,6 +6866,22 @@ static void addsock(int32_t fd, char wtoo)
    }
 } /* end addsock() */
 
+static void readigatefile(int32_t);
+
+
+static void readigatefile(int32_t signum)
+{
+   if (signum==SIGHUP) {
+      sighup = 1;
+      if (verb) osi_WrStrLn("got SIGHUP", 11ul);
+   }
+/*
+  ELSIF signum=SIGUSR1 THEN
+    reconnsig:=TRUE;
+    IF verb THEN WrStrLn("got SIGUSR1") END;
+*/
+} /* end readigatefile() */
+
 static CHSET _cnst1 = {0x30000000UL,0x20008092UL,0x80000001UL,0x00000001UL};
 
 X2C_STACK_LIMIT(100000l)
@@ -6931,12 +6951,15 @@ extern int main(int argc, char **argv)
    udpsocks = 0;
    callsrc = 0;
    mhperport = 0;
+   sighup = 0;
    qas = 0UL;
    qasc = 0UL;
    maxpongtime = 30UL;
    gatesfn[0U] = 0;
    rawlines = 20UL;
    msgretries = 12UL;
+   signal(SIGHUP, readigatefile);
+   /*  signal(SIGUSR1, readigatefile); */
    parms();
    if (aprsstr_StrCmp(viacall, 10ul, "-", 2ul)) viacall[0U] = 0;
    else if (viacall[0U]==0) memcpy(viacall,servercall,10u);
@@ -6997,7 +7020,11 @@ extern int main(int argc, char **argv)
                struct TCPSOCK * anonym = acttcp;
                if (anonym->beacont<systime) Timebeacon(acttcp);
                if (anonym->service=='G') {
-                  if (keeptime>0UL && keepconn<=systime) {
+                  if (sighup) {
+                     saybusy(&anonym->fd, "\015\012", 3ul);
+                     sighup = 0;
+                  }
+                  else if (keeptime>0UL && keepconn<=systime) {
                      saybusy(&anonym->fd, "# timeout\015\012", 12ul);
                   }
                   else if (qmaxtime>0L) WatchTXQ(acttcp);
@@ -7029,7 +7056,8 @@ extern int main(int argc, char **argv)
          acttcp = acttcp->next;
       }
       mbuf[0U] = 0;
-      res = selectrw(2UL, 0UL);
+      do {
+      } while (selectrw(2UL, 0UL)<0L);
       if (listensock>=0L && issetr((uint32_t)listensock)) {
          res = 512L;
          res = acceptconnect(listensock, mbuf, &res);
