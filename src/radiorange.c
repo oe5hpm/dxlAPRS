@@ -484,7 +484,7 @@ static void Parms(void)
          else if (h[1U]=='x') {
             osi_NextArg(h, 1024ul);
             if ((!aprsstr_StrToInt(h, 1024ul,
-                &xsize) || xsize<32L) || xsize>32000L) {
+                &xsize) || xsize<32L) || xsize>64000L) {
                Error("-x <size>", 10ul);
             }
          }
@@ -492,7 +492,7 @@ static void Parms(void)
             /*         INC(xsize,2); */
             osi_NextArg(h, 1024ul);
             if ((!aprsstr_StrToInt(h, 1024ul,
-                &ysize) || ysize<32L) || ysize>32000L) {
+                &ysize) || ysize<32L) || ysize>64000L) {
                Error("-y <size>", 10ul);
             }
          }
