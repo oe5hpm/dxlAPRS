@@ -865,6 +865,7 @@ static void ShowFrame(char f[], uint32_t f_len, uint32_t len0,
    uint32_t i0;
    char d;
    char v;
+   char h[21];
    osi_WrStr((char *) &port, 1u/1u);
    i0 = 0UL;
    while (!((uint32_t)(uint8_t)f[i0]&1)) {
@@ -907,6 +908,18 @@ static void ShowFrame(char f[], uint32_t f_len, uint32_t len0,
       osi_WrHex((uint32_t)(uint8_t)f[i0], 1UL);
    }
    ++i0;
+   aprsstr_DateToStr(osic_time(), h, 21ul); /* 2019.12.31 23:59:59 */
+   /* - 31.12.19 23:59:59 */
+   h[0U] = h[8U];
+   h[8U] = h[2U];
+   h[2U] = h[0U];
+   h[0U] = h[9U];
+   h[9U] = h[3U];
+   h[3U] = h[0U];
+   h[0U] = '-';
+   h[1U] = ' ';
+   osi_WrStr(" ", 2ul);
+   osi_WrStr(h, 21ul);
    osic_WrLn();
    /*  IF NOT noinfo THEN */
    d = 0;
