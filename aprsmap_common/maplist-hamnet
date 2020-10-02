@@ -1,17 +1,37 @@
-# Map Name	Order	Format	Tile Server URL					API Key						Comments
+# Map Names	Order	Format	Tile Server URL					API Key						Comments
 # -------------	-------	-------	-----------------------------------------------	-----------------------------------------------	--------------------------------------------
 tiles		zxy	png	http://osm.oe2xzr.ampr.at/osm/tiles								OSM tiles via Hamnet oe2xzr tile server
 tiles_topo	zxy	png	http://osm.oe2xzr.ampr.at/osm/tiles_topo							Topo tiles via Hamnet oe2xzr tile server
-tiles_sat	zxy	jpg	http://osm.oe2xzr.ampr.at/osm/tiles_sat								Satellite tiles via Hamnet oe2xzr tile server
 tiles_cyclemap	zxy	png	http://osm.oe2xzr.ampr.at/osm/tiles_cyclemap							CycleMap tiles via Hamnet oe2xzr tile server
+tiles_sat	zxy	jpg	http://osm.oe2xzr.ampr.at/osm/tiles_sat								Satellite tiles via Hamnet oe2xzr tile server
 
-# Map Name - this name matches the Map Name defined in aprsmap
+# Map Names - these names match "Map Names" entries defined in aprsmap.cfg
 # Order - map tile structure used by tile server MUST be one of the following:
 #     zxy = {z}/{x}/{y} - the order used by most tile servers
-#     zyx = {z}/{y}/{x} - seen used by ArcGIS tile server
+#     zyx = {z}/{y}/{x} - seen used by ArcGIS and BKG tile servers
 # Format - this is the format & file extension of the downloaded map tile
 # Tile Server URL - in most cases, all mirrors actually resolve to the same IP address or resolve to a closest geo server
 # API Key - this optional entry is used to define the access key required by some tile servers and MUST have the format:
 #     ?apikey=<your api key>
 #     ?access_token=<your access token>
 # Comments - optional
+
+##############################################################################
+
+# The following "Map Names" entries can be simply copied and pasted into
+# aprsmap.cfg replacing the existing default "Map Names" entries that were
+# initially created by aprsmap in the configuration file.
+#
+# The suggested gamma and brightness values below may also be modifed and
+# tested within aprsmap to suit your preference.
+#
+# You may rearrange the list of maps below in any order you desire in
+# the aprsmap.cfg configuration file. The first "Map Names" entry in the list
+# will be the default map initially displayed by aprsmap. Additionally,
+# the first three "Map Names" in the list below will be assigned to shortcut
+# keys <7>, <8>, and <9>.
+
+Map Names|1|tiles 0.25 25
+Map Names|1|tiles_topo 0.25 25
+Map Names|1|tiles_cyclemap 0.25 25
+Map Names|1|tiles_sat 0.45 100
