@@ -7,7 +7,7 @@ tiles_humanitarian zxy	png	https://a.tile.openstreetmap.fr/hot								OSM Humani
 tiles_topo	zxy	png	https://tile.opentopomap.org									OpenTopoMap
 tiles_mapnik	zxy	png	https://tiles.wmflabs.org/osm									OSM Mapnik
 tiles_hikebike	zxy	png	https://tiles.wmflabs.org/hikebike								OSM Hike & Bike Map
-tiles_topplus	zyx	png	https://sgx.geodatenzentrum.de/wmts_topplus_open/tile/1.0.0/web/default/WEBMERCATOR		BKG TopPlusOpen
+tiles_topplus	zyx	png	https://sgx.geodatenzentrum.de/wmts_topplus_open/tile/1.0.0/web/default/WEBMERCATOR		BKG TopPlusOpen (EMEA detailed)
 tiles_esristr	zyx	jpg	https://services.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile		ArcGIS ESRI World Street Map
 tiles_esrisat	zyx	jpg	https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile		ArcGIS ESRI Satellite World Imagery
 tiles_transport	zxy	png	https://tile.thunderforest.com/transport	<insert_api_key_here>				Thunderforest Transport (requires API key)
