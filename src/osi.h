@@ -66,6 +66,8 @@ typedef DIR * osi_DIRCONTEXT;
 
 #define osi_Seekcur osic_Seekcur
 
+#define osi_Seekend osic_Seekend
+
 #define osi_WrLn osic_WrLn
 
 #define osi_FdValid osic_FdValid
@@ -147,6 +149,8 @@ extern void osi_ReadDirLine(char [], uint32_t, osi_DIRCONTEXT);
 extern void osi_CloseDir(osi_DIRCONTEXT);
 
 extern char osi_CreateDir(char [], uint32_t, uint32_t);
+
+extern char osi_IsFifo(int32_t);
 
 extern void osi_NextArg(char [], uint32_t);
 

@@ -79,11 +79,15 @@ void osic_Seek(int32_t fd, uint32_t pos);
 
 void osic_Seekcur(int32_t fd, int32_t rel);
 
+void osic_Seekend(int32_t fd, int32_t rel);
+
 void osic_Remove(char fname[], uint32_t fname_len, char *done);
 
 char osic_Exists(char fname[], uint32_t fname_len);
 
 int osic_symblink(char *existing, char *newname);
+
+int osic_isfifo(int fd);
 
 char osic_mkdir(char fname[], uint32_t fname_len, uint32_t perm);
 
