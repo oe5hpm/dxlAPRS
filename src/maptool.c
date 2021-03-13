@@ -197,6 +197,8 @@ static uint32_t mapdelay; /* delay map load start on map moves */
 /* open srtm30 files */
 static uint32_t lastpoinum;
 
+static int32_t lastyzoom;
+
 struct _2;
 
 
@@ -486,17 +488,81 @@ extern int32_t maptool_mapxy(struct aprsstr_POSITION pos, float * x,
 } /* end mapxy() */
 
 
-extern void maptool_pullmap(int32_t x, int32_t y, char init)
+extern void maptool_zoominout(char in, char fine,
+                char allowrev, char mouseismiddle)
+{
+   float fz;
+   struct aprsstr_POSITION mid;
+   int32_t my;
+   int32_t mx;
+   int32_t maxz;
+   mx = maptool_xsize/2L;
+   my = maptool_ysize/2L;
+   if (mouseismiddle) {
+      mx = useri_xmouse.x;
+      my = maptool_ysize-useri_xmouse.y;
+   }
+   maptool_xytodeg((float)mx, (float)my, &mid);
+   mid.lat = mid.lat+(-6.E-7f); /* compensate position drift due to float precision */
+   if (fine) {
+      fz = useri_conf2real(useri_fZOOMSTEP, 0UL, (-1.0f), 1.0f, 0.1f);
+      if (!allowrev) fz = (float)fabs(fz);
+      if (in) aprsdecode_finezoom = aprsdecode_finezoom+fz;
+      else aprsdecode_finezoom = aprsdecode_finezoom-fz;
+      if (aprsdecode_finezoom<1.0f && aprsdecode_finezoom>1.0f-fz*0.5f) {
+         aprsdecode_finezoom = 1.0f;
+      }
+      if (aprsdecode_finezoom<1.0f) {
+         if (aprsdecode_initzoom>0L) {
+            --aprsdecode_initzoom;
+            aprsdecode_finezoom = 2.0f-fz;
+         }
+         else aprsdecode_finezoom = 1.0f;
+      }
+      else if (aprsdecode_finezoom>=2.0f-fz*0.5f) {
+         ++aprsdecode_initzoom;
+         aprsdecode_finezoom = 1.0f;
+      }
+   }
+   else {
+      if (in) {
+         ++aprsdecode_initzoom;
+         if (aprsdecode_finezoom>1.75f) ++aprsdecode_initzoom;
+      }
+      else if (aprsdecode_finezoom<1.25f) --aprsdecode_initzoom;
+      aprsdecode_finezoom = 1.0f;
+   }
+   maxz = useri_conf2int(useri_fMAXZOOM, 0UL, 1L, 18L, 18L);
+   if (aprsdecode_initzoom<1L) {
+      aprsdecode_initzoom = 1L;
+      aprsdecode_finezoom = 1.0f;
+   }
+   else if (aprsdecode_initzoom>=maxz) {
+      aprsdecode_initzoom = maxz;
+      aprsdecode_finezoom = 1.0f;
+   }
+   maptool_shiftmap(mx, my, maptool_ysize,
+                maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom),
+                &mid);
+   aprsdecode_mappos = mid;
+} /* end zoominout() */
+
+
+extern void maptool_pullmap(int32_t x, int32_t y, int32_t x0,
+                char init)
 {
    struct aprsstr_POSITION top;
    float step;
    uint32_t i;
+   y = maptool_ysize-y;
    if (init) {
       maptool_xytodeg((float)x, (float)y, &aprsdecode_click.pullpos);
       xosi_sethand(xosi_cPULL4);
       xosi_pulling = 1;
+      lastyzoom = y;
    }
-   else {
+   else if (maptool_xsize-x0>10L) {
+      /* not mouse move on right margin so move map */
       step = (float)aprsdecode_initzoom*0.1f;
       if (step<0.1f) step = 0.1f;
       else if (step>0.5f) step = 0.5f;
@@ -509,6 +575,11 @@ extern void maptool_pullmap(int32_t x, int32_t y, char init)
                 ;
          maptool_limpos(&aprsdecode_mappos);
       } /* end for */
+   }
+   else if (labs(y-lastyzoom)>4L) {
+      /* minimal vertical move for next zoom step */
+      maptool_zoominout(y>lastyzoom, 1, 1, 0);
+      lastyzoom = y;
    }
 } /* end pullmap() */
 
@@ -2143,100 +2214,6 @@ extern void maptool_xytoloc(struct aprsstr_POSITION mpos, char s[],
    }
 } /* end xytoloc() */
 
-#define maptool_MOUNTAINDIST 10.0
-
-#define maptool_RESOL 1.E-8
-
-struct _3;
-
-
-struct _3 {
-   uint32_t samepos;
-   float mindist;
-   aprsdecode_pMOUNTAIN samepostack[20];
-};
-
-
-extern void maptool_POIname(struct aprsstr_POSITION * mpos, char s[],
-                uint32_t s_len, char info[], uint32_t info_len)
-/* get name of nearest POI */
-{
-   char h[101];
-   float infodist;
-   float d;
-   float dd;
-   aprsdecode_pMOUNTAIN pm;
-   uint32_t sidx;
-   struct _3 stk[2];
-   struct _3 * anonym;
-   struct aprsdecode_MOUNTAIN * anonym0;
-   struct _3 * anonym1; /* poi with symbol */
-   struct _3 * anonym2; /* prefer poi with symbol in radius*/
-   struct aprsdecode_MOUNTAIN * anonym3;
-   aprsstr_Assign(info, info_len, "", 1ul);
-   pm = aprsdecode_mountains;
-   { /* with */
-      struct _3 * anonym = &stk[0];
-      anonym->mindist = 2560.0f*osic_power(2.0f,
-                -maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom));
-      if (anonym->mindist>10.0f) anonym->mindist = 10.0f;
-      infodist = anonym->mindist*0.25f; /* neerer to poi to show info */
-      anonym->samepos = 0UL;
-   }
-   stk[1] = stk[0];
-   while (pm) {
-      { /* with */
-         struct aprsdecode_MOUNTAIN * anonym0 = pm;
-         if ((float)fabs(anonym0->pos.lat-mpos->lat)
-                <1.5707963267949E-3f && (float)
-                fabs(anonym0->pos.long0-mpos->long0)<1.5707963267949E-3f) {
-            { /* with */
-               struct _3 * anonym1 = &stk[aprsdecode_poifiles[pm->index].on];
-                
-               d = aprspos_distance(anonym0->pos, *mpos);
-               dd = d-anonym1->mindist;
-               if (dd<=1.E-8f) {
-                  if (dd>=(-1.E-8f)) {
-                     anonym1->samepos = 0UL;
-                     anonym1->mindist = d;
-                  }
-                  anonym1->samepostack[anonym1->samepos] = pm;
-                  if (anonym1->samepos<19UL) ++anonym1->samepos;
-               }
-            }
-         }
-         pm = anonym0->next;
-      }
-   }
-   { /* with */
-      struct _3 * anonym2 = &stk[stk[1].samepos>0UL];
-      if (anonym2->samepos>0UL) {
-         /* more than 1 poi at same pos */
-         sidx = (anonym2->samepos*aprsdecode_trunc(aprspos_azimuth(*mpos,
-                anonym2->samepostack[0U]->pos)))/360UL;
-                /* choose poi out of angle to mouse */
-         if (sidx>=anonym2->samepos) sidx = anonym2->samepos-1UL;
-         { /* with */
-            struct aprsdecode_MOUNTAIN * anonym3 = anonym2->samepostack[sidx]
-                ;
-            aprsstr_Assign(s, s_len, anonym3->name, 32ul);
-            if (anonym3->alt>0) {
-               aprsstr_Append(s, s_len, " ", 2ul);
-               aprsstr_IntToStr((int32_t)anonym3->alt, 0UL, h, 101ul);
-               aprsstr_Append(s, s_len, h, 101ul);
-               aprsstr_Append(s, s_len, "m", 2ul);
-            }
-            if (anonym3->pinfo && anonym2->mindist<=infodist) {
-               aprsstr_Assign(info, info_len, anonym3->pinfo, 65536ul);
-            }
-            else aprsdecode_click.bubblinfo[0] = 0;
-            *mpos = anonym3->pos;
-         }
-      }
-      else s[0UL] = 0;
-   }
-} /* end POIname() */
-
 
 static uint32_t instr(uint32_t * i, uint32_t k, const char a[],
                 uint32_t a_len, const char b[], uint32_t b_len)
@@ -2315,6 +2292,103 @@ extern void maptool_cleanfind(char s[], uint32_t s_len)
       ++j;
    }
 } /* end cleanfind() */
+
+#define maptool_MOUNTAINDIST 10.0
+
+#define maptool_RESOL 1.E-8
+
+struct _3;
+
+
+struct _3 {
+   uint32_t samepos;
+   float mindist;
+   aprsdecode_pMOUNTAIN samepostack[20];
+};
+
+
+extern void maptool_POIname(struct aprsstr_POSITION * mpos, char s[],
+                uint32_t s_len, char info[], uint32_t info_len)
+/* get name of nearest POI */
+{
+   char h[101];
+   float infodist;
+   float d;
+   float dd;
+   aprsdecode_pMOUNTAIN pm;
+   uint32_t sidx;
+   struct _3 stk[2];
+   struct _3 * anonym;
+   struct aprsdecode_MOUNTAIN * anonym0;
+   /* prefiltering */
+   struct _3 * anonym1; /* poi with symbol */
+   struct _3 * anonym2; /* prefer poi with symbol in radius*/
+   struct aprsdecode_MOUNTAIN * anonym3;
+   aprsstr_Assign(info, info_len, "", 1ul);
+   pm = aprsdecode_mountains;
+   { /* with */
+      struct _3 * anonym = &stk[0];
+      anonym->mindist = 2560.0f*osic_power(2.0f,
+                -maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom));
+      if (anonym->mindist>10.0f) anonym->mindist = 10.0f;
+      infodist = anonym->mindist*0.25f; /* neerer to poi to show info */
+      anonym->samepos = 0UL;
+   }
+   stk[1] = stk[0];
+   while (pm) {
+      { /* with */
+         struct aprsdecode_MOUNTAIN * anonym0 = pm;
+         if ((float)fabs(anonym0->pos.lat-mpos->lat)
+                <1.5707963267949E-3f && (float)
+                fabs(anonym0->pos.long0-mpos->long0)<1.5707963267949E-3f) {
+            { /* with */
+               struct _3 * anonym1 = &stk[aprsdecode_poifiles[pm->index].on];
+                
+               d = aprspos_distance(anonym0->pos, *mpos);
+               dd = d-anonym1->mindist;
+               if (dd<=1.E-8f) {
+                  /* nearer as all before */
+                  if (dd<(-1.E-8f)) {
+                     anonym1->samepos = 0UL;
+                /* not same dist as the before */
+                     anonym1->mindist = d;
+                  }
+                  anonym1->samepostack[anonym1->samepos] = pm;
+                  if (anonym1->samepos<19UL) ++anonym1->samepos;
+               }
+            }
+         }
+         pm = anonym0->next;
+      }
+   }
+   { /* with */
+      struct _3 * anonym2 = &stk[stk[1].samepos>0UL];
+      if (anonym2->samepos>0UL) {
+         /* more than 1 poi at same pos */
+         sidx = (anonym2->samepos*aprsdecode_trunc(aprspos_azimuth(*mpos,
+                anonym2->samepostack[0U]->pos)))/360UL;
+                /* choose poi out of angle to mouse */
+         if (sidx>=anonym2->samepos) sidx = anonym2->samepos-1UL;
+         { /* with */
+            struct aprsdecode_MOUNTAIN * anonym3 = anonym2->samepostack[sidx]
+                ;
+            aprsstr_Assign(s, s_len, anonym3->name, 32ul);
+            if (anonym3->alt>0) {
+               aprsstr_Append(s, s_len, " ", 2ul);
+               aprsstr_IntToStr((int32_t)anonym3->alt, 0UL, h, 101ul);
+               aprsstr_Append(s, s_len, h, 101ul);
+               aprsstr_Append(s, s_len, "m", 2ul);
+            }
+            if (anonym3->pinfo && anonym2->mindist<=infodist) {
+               aprsstr_Assign(info, info_len, anonym3->pinfo, 65536ul);
+            }
+            else aprsdecode_click.bubblinfo[0] = 0;
+            *mpos = anonym3->pos;
+         }
+      }
+      else s[0UL] = 0;
+   }
+} /* end POIname() */
 
 
 static void POIfindfrom(struct aprsstr_POSITION * mpos, char all,
@@ -5810,6 +5884,7 @@ static void rdmountains(char fn[], uint32_t fn_len, char add,
                 uint32_t idx, uint32_t * cnt)
 /* import csv file with mountain name, pos, altitude */
 {
+   int32_t line;
    int32_t si;
    int32_t sl;
    int32_t r;
@@ -5826,6 +5901,8 @@ static void rdmountains(char fn[], uint32_t fn_len, char add,
    char long0[100];
    char lat[100];
    char com[100];
+   char errs;
+   char done;
    int32_t tmp;
    X2C_PCOPY((void **)&fn,fn_len);
    *cnt = 0UL;
@@ -5845,9 +5922,12 @@ static void rdmountains(char fn[], uint32_t fn_len, char add,
    }
    fd = osi_OpenRead(fn, fn_len);
    if (!osic_FdValid(fd)) goto label;
+   errs = 0;
+   line = 1L;
    p = 0L;
    len = 0L;
    for (;;) {
+      done = 0;
       r = getword(&p, &len, fd, b, com, 100ul);
       if (r>0L) {
          r = getword(&p, &len, fd, b, name, 100ul);
@@ -5857,6 +5937,7 @@ static void rdmountains(char fn[], uint32_t fn_len, char add,
                r = getword(&p, &len, fd, b, lat, 100ul);
                if (r>0L) {
                   r = getword(&p, &len, fd, b, long0, 100ul);
+                  if (r>=0L) done = 1;
                   if (r>0L) {
                      r = getword(&p, &len, fd, b, s, 1024ul);
                      if (r<0L || !aprsstr_StrToFix(&alt, s, 1024ul)) {
@@ -5870,42 +5951,57 @@ static void rdmountains(char fn[], uint32_t fn_len, char add,
          }
       }
       if (r<0L) break;
-      if ((((com[0U]!='#' && name[0U]) && aprsstr_StrToFix(&pos.lat, lat,
+      if (com[0U]!='#') {
+         if ((((done && name[0U]) && aprsstr_StrToFix(&pos.lat, lat,
                 100ul)) && aprsstr_StrToFix(&pos.long0, long0,
                 100ul)) && aprspos_posvalid(pos)) {
-         osic_alloc((char * *) &pm, sizeof(struct aprsdecode_MOUNTAIN));
-         if (pm==0) break;
-         useri_debugmem.poi += sizeof(struct aprsdecode_MOUNTAIN);
-         aprsstr_Assign(pm->name, 32ul, name, 100ul);
-         aprsstr_Assign(pm->category, 10ul, com, 100ul);
-         pm->pos.lat = pos.lat*1.7453292519444E-2f;
-         pm->pos.long0 = pos.long0*1.7453292519444E-2f;
-         if (alt<0.0f || alt>9999.0f) alt = 0.0f;
-         sl = (int32_t)aprsstr_Length(text, 4097ul);
-         if (sl>0L) {
-            if (sl>=4096L) sl = 4096L;
-            text[sl] = 0;
-            ++sl;
-            osic_alloc((char * *) &pm->pinfo, (uint32_t)sl);
-            if (pm->pinfo==0) break;
-            useri_debugmem.poi += (uint32_t)sl;
-            X2C_MOVE((char *)text,(char *)pm->pinfo,
+            osic_alloc((char * *) &pm,
+                sizeof(struct aprsdecode_MOUNTAIN));
+            if (pm==0) break;
+            useri_debugmem.poi += sizeof(struct aprsdecode_MOUNTAIN);
+            aprsstr_Assign(pm->name, 32ul, name, 100ul);
+            aprsstr_Assign(pm->category, 10ul, com, 100ul);
+            pm->pos.lat = pos.lat*1.7453292519444E-2f;
+            pm->pos.long0 = pos.long0*1.7453292519444E-2f;
+            if (alt<0.0f || alt>9999.0f) alt = 0.0f;
+            sl = (int32_t)aprsstr_Length(text, 4097ul);
+            if (sl>0L) {
+               if (sl>=4096L) sl = 4096L;
+               text[sl] = 0;
+               ++sl;
+               osic_alloc((char * *) &pm->pinfo, (uint32_t)sl);
+               if (pm->pinfo==0) break;
+               useri_debugmem.poi += (uint32_t)sl;
+               X2C_MOVE((char *)text,(char *)pm->pinfo,
                 (uint32_t)sl);
-            tmp = sl-1L;
-            si = 0L;
-            if (si<=tmp) for (;; si++) {
-               if (pm->pinfo[si]==',') pm->pinfo[si] = '\012';
-               if (si==tmp) break;
-            } /* end for */
+               tmp = sl-1L;
+               si = 0L;
+               if (si<=tmp) for (;; si++) {
+                  if (pm->pinfo[si]==',') pm->pinfo[si] = '\012';
+                  if (si==tmp) break;
+               } /* end for */
+            }
+            else pm->pinfo = 0;
+            pm->alt = (short)aprsdecode_trunc(alt);
+            pm->next = aprsdecode_mountains;
+            pm->index = (uint16_t)idx;
+            aprsdecode_mountains = pm;
+            ++*cnt;
          }
-         else pm->pinfo = 0;
-         pm->alt = (short)aprsdecode_trunc(alt);
-         pm->next = aprsdecode_mountains;
-         pm->index = (uint16_t)idx;
-         aprsdecode_mountains = pm;
-         ++*cnt;
+         else {
+            if (!errs) {
+               osi_WrStr("POI File lines incomplete <", 28ul);
+               osi_WrStr(fn, fn_len);
+               osi_WrStr(">", 2ul);
+               errs = 1;
+            }
+            osic_WrINT32((uint32_t)line, 1UL);
+            osi_WrStr(" ", 2ul);
+         }
       }
+      ++line;
    }
+   if (errs) osi_WrStrLn("", 1ul);
    osic_Close(fd);
    label:;
    X2C_PFREE(fn);

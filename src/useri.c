@@ -2309,7 +2309,6 @@ extern void useri_starthint(uint32_t num, char center)
    hintnum = num;
    if (num>0UL) {
       hinttime = aprsdecode_realtime;
-      /*    hintmouse:=xmouse; */
       if (center) {
          useri_xmouse.x = 0L;
          useri_xmouse.y = maptool_ysize;
@@ -12456,7 +12455,7 @@ static void startpull(int32_t x, int32_t y, char middlbutt)
    }
    /*  findpullmenu(x, y); */
    if (pm==0 || middlbutt && pullmenuwid==0L) {
-      maptool_pullmap(x, (int32_t)useri_mainys()-y, 1); /* start pulling */
+      maptool_pullmap(x, y, aprsdecode_click.x, 1); /* start pulling */
    }
    else if (pullmenuwid) {
       /*sethand(cPULL4);*/
@@ -12524,7 +12523,7 @@ extern void useri_mousemove(int32_t x, int32_t y)
          pullmenuy = y;
       }
       else {
-         maptool_pullmap(x, (int32_t)useri_mainys()-y, 0);
+         maptool_pullmap(x, y, aprsdecode_click.x, 0);
          aprsdecode_click.cmd = ' '; /* start makeimage */
       }
    }

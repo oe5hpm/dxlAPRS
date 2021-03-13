@@ -58,9 +58,6 @@
 
 #define aprsmap_VIDEOFN "map.y4m"
 
-#define aprsmap_FLOATERRCORR (-6.E-7)
-/* try to correct summed rounding errors by multiple zoom in */
-
 #define aprsmap_VIDEORATE 25
 
 #define aprsmap_MARKERTIME 10
@@ -3045,73 +3042,14 @@ static void midscreenpos(struct aprsstr_POSITION * pos)
 } /* end midscreenpos() */
 
 
-static void zoominout(char in, char fine, char allowrev,
-                 char mouseismiddle)
+static void zoominoutpush(char in, char fine,
+                char allowrev, char mouseismiddle)
 {
-   float fz;
    float z;
-   struct aprsstr_POSITION mid;
-   int32_t my;
-   int32_t mx;
-   int32_t maxz;
    z = maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom);
-   mx = maptool_xsize/2L;
-   my = maptool_ysize/2L;
-   /*
-     IF mouseismiddle THEN 
-       xytodeg(VAL(REAL,xmouse.x), VAL(REAL, VAL(INTEGER,mainys())-xmouse.y),
-                 mid);
-     ELSE midscreenpos(mid) END;
-   */
-   if (mouseismiddle) {
-      mx = useri_xmouse.x;
-      my = (int32_t)useri_mainys()-useri_xmouse.y;
-   }
-   maptool_xytodeg((float)mx, (float)my, &mid);
-   mid.lat = mid.lat+(-6.E-7f); /* compensate position drift due to float precision */
-   if (fine) {
-      fz = useri_conf2real(useri_fZOOMSTEP, 0UL, (-1.0f), 1.0f, 0.1f);
-      if (!allowrev) fz = (float)fabs(fz);
-      if (in) aprsdecode_finezoom = aprsdecode_finezoom+fz;
-      else aprsdecode_finezoom = aprsdecode_finezoom-fz;
-      if (aprsdecode_finezoom<1.0f && aprsdecode_finezoom>1.0f-fz*0.5f) {
-         aprsdecode_finezoom = 1.0f;
-      }
-      if (aprsdecode_finezoom<1.0f) {
-         if (aprsdecode_initzoom>0L) {
-            --aprsdecode_initzoom;
-            aprsdecode_finezoom = 2.0f-fz;
-         }
-         else aprsdecode_finezoom = 1.0f;
-      }
-      else if (aprsdecode_finezoom>=2.0f-fz*0.5f) {
-         ++aprsdecode_initzoom;
-         aprsdecode_finezoom = 1.0f;
-      }
-   }
-   else {
-      if (in) {
-         ++aprsdecode_initzoom;
-         if (aprsdecode_finezoom>1.75f) ++aprsdecode_initzoom;
-      }
-      else if (aprsdecode_finezoom<1.25f) --aprsdecode_initzoom;
-      aprsdecode_finezoom = 1.0f;
-   }
    if (z==(float)aprsdecode_trunc(z)) push(z, 0);
-   maxz = useri_conf2int(useri_fMAXZOOM, 0UL, 1L, 18L, 18L);
-   if (aprsdecode_initzoom<1L) {
-      aprsdecode_initzoom = 1L;
-      aprsdecode_finezoom = 1.0f;
-   }
-   else if (aprsdecode_initzoom>=maxz) {
-      aprsdecode_initzoom = maxz;
-      aprsdecode_finezoom = 1.0f;
-   }
-   z = maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom);
-   /*  shiftmap(xsize DIV 2, ysize DIV 2, ysize, z, mid); */
-   maptool_shiftmap(mx, my, maptool_ysize, z, &mid);
-   aprsdecode_mappos = mid;
-} /* end zoominout() */
+   maptool_zoominout(in, fine, allowrev, mouseismiddle);
+} /* end zoominoutpush() */
 
 
 static void find(char allpoi)
@@ -5000,13 +4938,13 @@ static void MainEvent(void)
          useri_resetimgparms();
       }
       else if (aprsdecode_click.cmd=='+') {
-         zoominout(1, xosi_Shift || xosi_Ctrl, 0, 0);
+         zoominoutpush(1, xosi_Shift || xosi_Ctrl, 0, 0);
       }
       else if (aprsdecode_click.cmd=='-') {
-         zoominout(0, xosi_Shift || xosi_Ctrl, 0, 0);
+         zoominoutpush(0, xosi_Shift || xosi_Ctrl, 0, 0);
       }
-      else if (aprsdecode_click.cmd=='\310') zoominout(1, 1, 1, 1);
-      else if (aprsdecode_click.cmd=='\311') zoominout(0, 1, 1, 1);
+      else if (aprsdecode_click.cmd=='\310') zoominoutpush(1, 1, 1, 1);
+      else if (aprsdecode_click.cmd=='\311') zoominoutpush(0, 1, 1, 1);
       else if (aprsdecode_click.cmd=='\237') MapPackage();
       else if (aprsdecode_click.cmd=='S') screenshot();
       else if (aprsdecode_click.cmd=='s') {
