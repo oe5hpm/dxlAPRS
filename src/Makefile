@@ -188,8 +188,11 @@ OBJ_APRSMAP	= \
 
 OBJ_SDRTST	= $(OUT)tcpb.o $(OUT)sdr.o $(OUT)sdrtest.o
 OBJ_SDRRADIO	= $(OUT)tcpb.o $(OUT)sdr.o $(OUT)radio.o
-OBJ_L2CAT	= $(OUT)l2.o \
-	$(OUT)frameio.o \
+OBJ_L2COMMON	= \
+	$(OUT)l2.o \
+	$(OUT)frameio.o
+OBJ_L2CAT	= \
+	$(OBJ_L2COMMON) \
 	$(OUT)deflate.o \
 	$(OUT)Execlogin.o \
 	$(OUT)cleanup.o \
@@ -221,6 +224,9 @@ OBJ_FMREPEATER = \
 	$(OUT)fmrepeater.o \
 	$(OUT)afskmodemptt.o
 
+OBJ_HOSTINT = \
+	$(OUT)hostint.o
+
 TARGETS += \
 	$(OUT)afskmodem \
 	$(OUT)gps2aprs \
@@ -241,7 +247,8 @@ TARGETS += \
 	$(OUT)cmslogin \
 	$(OUT)srtmtag \
 	$(OUT)fmrepeater \
-	$(OUT)waterfall
+	$(OUT)waterfall \
+	$(OUT)hostint
 
 ifneq ($(HOSTOS), Darwin)
 	TARGETS += $(OUT)l2cat
@@ -409,6 +416,9 @@ $(OUT)waterfall: $(OBJ_WATERFALL) $(OBJ_COMMON)
 	$(CC) $(LFLAGS) -o $@ $(OBJ_WATERFALL) $(OBJ_COMMON) -lm $(XLIBS)
 	$(STRIP) $@ $(STRIPFLAGS)
 
+$(OUT)hostint: $(OBJ_HOSTINT) $(OBJ_L2COMMON)  $(OBJ_COMMON)
+	$(CC) $(LFLAGS) -o $@ $(OBJ_HOSTINT) $(OBJ_L2COMMON) $(OBJ_COMMON)
+	$(STRIP) $@ $(STRIPFLAGS)
 
 %:
 	make prepare
