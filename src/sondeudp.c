@@ -35,15 +35,16 @@
 
 /* demodulate RS92 sonde (2400bit/s manchester)
    and SRS-C34-C50 (2400Bd AFSK 2000/3800Hz
-   and DFM (2500bit/s manchester)
-   and RS41 (4800Bd GFSK)
-   and iMET (1200Bd AFSK) and send as AXUDP by OE5DXL */
+   and DFM (1250bit/s manchester)
+   and RS41 (2400Bd GFSK)
+   and M10 M20 (4800 bit/s manchester )
+   and iMET (1200Bd AFSK 2200/1200Hz) and send as AXUDP by OE5DXL */
 /*FROM stat IMPORT fstat, stat_t; */
 /*FROM flush IMPORT Flush; */
 /*IMPORT reedsolomon; */
 /* link init_rs_char.o decode_rs_char.o */
 /* gcc  -o sondeudp Lib.o aprsstr.o filesize.o flush.o osi.o ptty.o rsc.o sondeudp.o soundctl.o symlink.o tcp.o timec.o udp.o init_rs_char.o decode_rs_char.o /usr/local/xds/lib/x86/libts.a /usr/local/xds/lib/x86/libxds.a  -lm */
-#define sondeudp_VERSION "1.36f"
+#define sondeudp_VERSION "1.36h"
 
 #define sondeudp_GPSTIMECORR 18
 /* leap seconds */
@@ -136,6 +137,9 @@ static char sondeudp_DATAFRAME = 'i';
 #define sondeudp_FLENIMET 106
 /* IMET frame length */
 
+#define sondeudp_FLENMP3 49
+/* MP3H frame length */
+
 #define sondeudp_M10SYN 0x649F20 
 /* M10 sync */
 
@@ -143,6 +147,8 @@ static char sondeudp_DATAFRAME = 'i';
 
 #define sondeudp_M20ASYN 0x452000 
 /* M20 sync */
+
+#define sondeudp_MP3COPIES 6
 
 /*11111000 01000101 00100000 0111xxxx syn m20 */
 /*11111000 01100100 01001001 0000xxxx -syn1-  */
@@ -472,6 +478,53 @@ struct C34A {
    float hipasscap;
 };
 
+typedef char MP3BUF[50];
+
+struct MP3FRAME;
+
+
+struct MP3FRAME {
+   MP3BUF dat;
+   uint32_t time0;
+};
+
+struct MP3H;
+
+
+struct MP3H {
+   uint8_t enabled;
+   int32_t savecnt;
+   int32_t pllshift;
+   int32_t baudfine;
+   int32_t manchestd;
+   float noise;
+   float bitlev;
+   float lastu;
+   char id1ok;
+   char id2ok;
+   char dateok;
+   char cbit;
+   char oldd;
+   char polarity;
+   char plld;
+   char lastmanch;
+   uint32_t gpsdate;
+   uint32_t timeatdate;
+   uint32_t gpstime;
+   uint32_t blocktime;
+   uint32_t id1;
+   uint32_t id2;
+   uint32_t blocknum;
+   uint32_t synword;
+   uint32_t copycnt;
+   uint32_t rxb;
+   uint32_t rxp;
+   struct MP3FRAME copybuf[6];
+   AFIRTAB afirtab;
+   uint32_t demodbaud;
+   uint32_t configbaud;
+};
+
 struct NONAMES;
 
 typedef struct NONAMES * pNONAMES;
@@ -522,6 +575,7 @@ struct CHAN {
    struct C34A c34a;
    struct DFM6A dfm6a;
    struct IMETA imeta;
+   struct MP3H mp3h;
    pNONAMES nonames;
 };
 
@@ -925,6 +979,7 @@ static void Config(void)
    struct M1020 * anonym2;
    struct C34A * anonym3;
    struct IMETA * anonym4;
+   struct MP3H * anonym5;
    for (c = 0UL; c<=63UL; c++) {
       { /* with */
          struct R92 * anonym = &chan[c].r92;
@@ -1032,6 +1087,21 @@ static void Config(void)
          anonym4->rxp = 0UL;
          anonym4->rxbitc = 0UL;
       }
+      { /* with */
+         struct MP3H * anonym5 = &chan[c].mp3h;
+         anonym5->configbaud = 2400UL;
+         anonym5->demodbaud = (2UL*anonym5->configbaud*65536UL)/adcrate;
+         initafir(anonym5->afirtab, 0UL, 1900UL,
+                X2C_DIVR((float)chan[c].configequalizer,100.0f));
+         anonym5->baudfine = 0L;
+         anonym5->noise = 0.0f;
+         anonym5->bitlev = 0.0f;
+         anonym5->cbit = 0;
+         anonym5->polarity = 0;
+         anonym5->copycnt = 0UL;
+         anonym5->rxp = 49UL; /* out of fram, wait for sync */
+         anonym5->manchestd = 0L;
+      }
    } /* end for */
 } /* end Config() */
 
@@ -1058,9 +1128,10 @@ static void Parms(void)
    struct C34A * anonym2;
    struct IMETA * anonym3;
    struct M1020 * anonym4;
-   struct CHAN * anonym5;
-   /* set only 1 chan */
+   struct MP3H * anonym5;
    struct CHAN * anonym6;
+   /* set only 1 chan */
+   struct CHAN * anonym7;
    err = 0;
    abortonsounderr = 0;
    nosendsdr = 0;
@@ -1122,10 +1193,15 @@ static void Parms(void)
          anonym4->pllshift = 4096L;
       }
       { /* with */
-         struct CHAN * anonym5 = &chan[channel];
-         anonym5->configequalizer = 0L;
-         anonym5->udptx = 0;
-         anonym5->mycallc = 0UL;
+         struct MP3H * anonym5 = &chan[channel].mp3h;
+         anonym5->enabled = sondeudp_SLEEP;
+         anonym5->pllshift = 1024L;
+      }
+      { /* with */
+         struct CHAN * anonym6 = &chan[channel];
+         anonym6->configequalizer = 0L;
+         anonym6->udptx = 0;
+         anonym6->mycallc = 0UL;
       }
    } /* end for */
    channel = 0UL;
@@ -1138,6 +1214,18 @@ static void Parms(void)
          if (h[0U]=='+') enab = sondeudp_ALWAYS;
          else enab = sondeudp_OFF;
          if (h[1U]=='a') abortonsounderr = 1;
+         else if (h[1U]=='2') {
+            if (chanset) {
+               /* set only 1 chan */
+               chan[channel].mp3h.enabled = enab;
+            }
+            else {
+               /* use before -C set both */
+               for (ch = 0UL; ch<=63UL; ch++) {
+                  chan[ch].mp3h.enabled = enab;
+               } /* end for */
+            }
+         }
          else if (h[1U]=='3') {
             if (chanset) {
                /* set only 1 chan */
@@ -1288,9 +1376,9 @@ static void Parms(void)
             }
             if (chanset) {
                { /* with */
-                  struct CHAN * anonym6 = &chan[channel];
-                  anonym6->mycallc = myc;
-                  anonym6->myssid = mys;
+                  struct CHAN * anonym7 = &chan[channel];
+                  anonym7->mycallc = myc;
+                  anonym7->myssid = mys;
                }
             }
             else {
@@ -1342,7 +1430,7 @@ static void Parms(void)
                osi_WrStrLn("Mono/Stereo up to 64 Channel RS92, RS41, C34, C50\
 , DFM, IMET, M10, M20 Sonde Demodulator", 89ul);
                osi_WrStrLn("to raw Frames sent via UDP to \'sondemod\' decode\
-r or watch with -v V:1.36f", 74ul);
+r or watch with -v V:1.36h", 74ul);
                osi_WrStrLn("more demodulators may send to same \'sondemod\'",
                  46ul);
                osi_WrStrLn("Stereo used for 2 Rx for 2 Sondes or 1 Sonde with\
@@ -1351,6 +1439,8 @@ r or watch with -v V:1.36f", 74ul);
                 44ul);
                osi_WrStrLn(" -1             disable M10,M20 decoding (use -C \
 before to select a channel)", 77ul);
+               osi_WrStrLn(" -2             disable MP3-H decoding (use -C be\
+fore to select a channel)", 75ul);
                osi_WrStrLn(" -3             disable SRSC34/50 decoding (use -\
 C before to select a channel)", 79ul);
                osi_WrStrLn(" -4             disable RS41 decoding (use -C bef\
@@ -1473,6 +1563,7 @@ static void WrChName(uint32_t n)
      WrStr(CHR(ASH(n,-8) MOD 256));
      WrStr(CHR(n MOD 256));
    */
+   osi_WrStr(" ..................... ", 24ul);
    osic_WrINT32(n, 1UL);
 } /* end WrChName() */
 
@@ -1676,34 +1767,169 @@ static void alludp(pUDPTX utx, uint32_t len, char buf[],
 } /* end alludp() */
 
 
+static uint32_t getfreq(uint32_t ch)
+/* in 10hz */
+{
+   uint32_t f;
+   uint32_t i;
+   struct _0 * anonym;
+   i = 0UL;
+   f = 0UL;
+   while (i<=4UL && chan[ch].waterdata[i].cmd) {
+      { /* with */
+         struct _0 * anonym = &chan[ch].waterdata[i];
+         if (anonym->cmd=='f') f += anonym->dat;
+         else if (anonym->cmd=='a') {
+            f += (uint32_t)((int32_t)(short)(anonym->dat&65535UL)
+                *100L);
+         }
+      }
+      ++i;
+   }
+   return f;
+} /* end getfreq() */
+
+
 static void monitor(uint32_t ch, const char typ[], uint32_t typ_len,
                 const char id[], uint32_t id_len)
 {
    pUDPTX u;
+   uint32_t t;
+   uint32_t hz10;
    char h[201];
    char s[201];
-   if (chan[ch].lastmon+10UL<chan[ch].framestarttime) {
-      chan[ch].lastmon = chan[ch].framestarttime;
-      strncpy(s,"RX c=",201u);
-      aprsstr_IntToStr((int32_t)ch, 1UL, h, 201ul);
-      aprsstr_Append(s, 201ul, h, 201ul);
-      aprsstr_Append(s, 201ul, " t=", 4ul);
-      aprsstr_Append(s, 201ul, typ, typ_len);
-      if (id[0UL]) {
-         aprsstr_Append(s, 201ul, " n=", 4ul);
-         aprsstr_Append(s, 201ul, id, id_len);
-      }
-      aprsstr_Append(s, 201ul, "\012", 2ul);
-      u = monitorudp;
-      while (u) {
-         if (u->udpfd>=0L) {
-            sendudp(s, 201ul, (int32_t)aprsstr_Length(s, 201ul), u->ip,
-                u->destport, u->udpfd);
+   if (monitorudp) {
+      hz10 = getfreq(ch);
+      if (hz10==0UL) hz10 = ch;
+      /*  IF hz10<>0 THEN */
+      t = osic_time();
+      if (chan[ch].lastmon+10UL<t) {
+         chan[ch].lastmon = t;
+         strncpy(s,"RX",201u);
+         aprsstr_CardToStr(hz10, 1UL, h, 201ul);
+         aprsstr_Append(s, 201ul, h, 201ul);
+         aprsstr_Append(s, 201ul, ",", 2ul);
+         aprsstr_Append(s, 201ul, typ, typ_len);
+         if (id[0UL]) {
+            aprsstr_Append(s, 201ul, ",", 2ul);
+            aprsstr_Append(s, 201ul, id, id_len);
          }
-         u = u->next;
+         aprsstr_Append(s, 201ul, "\012", 2ul);
+         u = monitorudp;
+         do {
+            if (u->udpfd>=0L) {
+               sendudp(s, 201ul, (int32_t)aprsstr_Length(s, 201ul), u->ip,
+                u->destport, u->udpfd);
+            }
+            u = u->next;
+         } while (u);
       }
    }
+/*  END; */
 } /* end monitor() */
+
+
+static uint32_t cardmsb(const char b[], uint32_t b_len,
+                uint32_t pos, uint32_t len)
+{
+   uint32_t n;
+   uint32_t i;
+   n = 0UL;
+   for (i = len-1UL;; i--) {
+      n = n*256UL+(uint32_t)(uint8_t)b[pos+i];
+      if (i==0UL) break;
+   } /* end for */
+   return n;
+} /* end cardmsb() */
+
+
+static double atang2(double x, double y)
+{
+   double w;
+   if (fabs(x)>fabs(y)) {
+      w = (double)osic_arctan((float)(X2C_DIVL(y,x)));
+      if (x<0.0) {
+         if (y>0.0) w = 3.1415926535898+w;
+         else w = w-3.1415926535898;
+      }
+   }
+   else if (y!=0.0) {
+      w = (double)(1.5707963267949f-osic_arctan((float)(X2C_DIVL(x,
+                y))));
+      if (y<0.0) w = w-3.1415926535898;
+   }
+   else w = 0.0;
+   return w;
+} /* end atang2() */
+
+#define sondeudp_EARTHA 6.378137E+6
+
+#define sondeudp_EARTHB 6.3567523142452E+6
+
+#define sondeudp_E2 6.6943799901413E-3
+
+#define sondeudp_EARTHAB 4.2841311513312E+4
+
+
+static void wgs84r(double x, double y, double z,
+                double * lat, double * long0,
+                double * heig)
+{
+   double sl;
+   double ct;
+   double st;
+   double t;
+   double rh;
+   double xh;
+   double h;
+   h = x*x+y*y;
+   if (h>0.0) {
+      rh = (double)osic_sqrt((float)h);
+      xh = x+rh;
+      *long0 = atang2(xh, y)*2.0;
+      if (*long0>3.1415926535898) *long0 = *long0-6.2831853071796;
+      t = (double)osic_arctan((float)(X2C_DIVL(z*1.003364089821,
+                rh)));
+      st = (double)osic_sin((float)t);
+      ct = (double)osic_cos((float)t);
+      *lat = (double)osic_arctan((float)
+                (X2C_DIVL(z+4.2841311513312E+4*st*st*st,
+                rh-4.269767270718E+4*ct*ct*ct)));
+      sl = (double)osic_sin((float)*lat);
+      *heig = X2C_DIVL(rh,(double)osic_cos((float)*lat))-(double)(X2C_DIVR(6.378137E+6f,
+                osic_sqrt((float)(1.0-6.6943799901413E-3*sl*sl))));
+   }
+   else {
+      *lat = 0.0;
+      *long0 = 0.0;
+      *heig = 0.0;
+   }
+/*  lat:=atan(z/(rh*(1.0 - E2))); */
+/*  heig:=sqrt(h + z*z) - EARTHA; */
+} /* end wgs84r() */
+
+
+static void speeddir(double lat, double long0, double vx,
+                double vy, double vz, double * kmh,
+                double * dir, double * clb)
+{
+   double coslong;
+   double sinlong;
+   double coslat;
+   double sinlat;
+   double ve;
+   double vn;
+   sinlat = (double)osic_sin((float)lat);
+   coslat = (double)osic_cos((float)lat);
+   sinlong = (double)osic_sin((float)long0);
+   coslong = (double)osic_cos((float)long0);
+   vn = (-(vx*sinlat*coslong)-vy*sinlat*sinlong)+vz*coslat;
+   ve = -(vx*sinlong)+vy*coslong;
+   *clb = vx*coslat*coslong+vy*coslat*sinlong+vz*sinlat;
+   *dir = X2C_DIVL(atang2(vn, ve),1.7453292519943E-2);
+   if (*dir<0.0) *dir = 360.0+*dir;
+   *kmh = (double)(osic_sqrt((float)(vn*vn+ve*ve))*3.6f);
+} /* end speeddir() */
 
 
 static void setactiv(int32_t * savecnt, int32_t t)
@@ -1882,72 +2108,6 @@ static void sendrs41(uint32_t m)
 } /* end sendrs41() */
 
 
-static double atang2(double x, double y)
-{
-   double w;
-   if (fabs(x)>fabs(y)) {
-      w = (double)osic_arctan((float)(X2C_DIVL(y,x)));
-      if (x<0.0) {
-         if (y>0.0) w = 3.1415926535898+w;
-         else w = w-3.1415926535898;
-      }
-   }
-   else if (y!=0.0) {
-      w = (double)(1.5707963267949f-osic_arctan((float)(X2C_DIVL(x,
-                y))));
-      if (y<0.0) w = w-3.1415926535898;
-   }
-   else w = 0.0;
-   return w;
-} /* end atang2() */
-
-#define sondeudp_EARTHA 6.378137E+6
-
-#define sondeudp_EARTHB 6.3567523142452E+6
-
-#define sondeudp_E2 6.6943799901413E-3
-
-#define sondeudp_EARTHAB 4.2841311513312E+4
-
-
-static void wgs84r(double x, double y, double z,
-                double * lat, double * long0,
-                double * heig)
-{
-   double sl;
-   double ct;
-   double st;
-   double t;
-   double rh;
-   double xh;
-   double h;
-   h = x*x+y*y;
-   if (h>0.0) {
-      rh = (double)osic_sqrt((float)h);
-      xh = x+rh;
-      *long0 = atang2(xh, y)*2.0;
-      if (*long0>3.1415926535898) *long0 = *long0-6.2831853071796;
-      t = (double)osic_arctan((float)(X2C_DIVL(z*1.003364089821,
-                rh)));
-      st = (double)osic_sin((float)t);
-      ct = (double)osic_cos((float)t);
-      *lat = (double)osic_arctan((float)
-                (X2C_DIVL(z+4.2841311513312E+4*st*st*st,
-                rh-4.269767270718E+4*ct*ct*ct)));
-      sl = (double)osic_sin((float)*lat);
-      *heig = X2C_DIVL(rh,(double)osic_cos((float)*lat))-(double)(X2C_DIVR(6.378137E+6f,
-                osic_sqrt((float)(1.0-6.6943799901413E-3*sl*sl))));
-   }
-   else {
-      *lat = 0.0;
-      *long0 = 0.0;
-      *heig = 0.0;
-   }
-/*  lat:=atan(z/(rh*(1.0 - E2))); */
-/*  heig:=sqrt(h + z*z) - EARTHA; */
-} /* end wgs84r() */
-
-
 static int32_t getint32(const char frame[], uint32_t frame_len,
                 uint32_t p)
 {
@@ -1984,9 +2144,8 @@ static int32_t getint16(const char frame[], uint32_t frame_len,
 static void posrs41(const char b[], uint32_t b_len, uint32_t p)
 {
    double dir;
-   double vu;
-   double ve;
-   double vn;
+   double clb;
+   double kmh;
    double vz;
    double vy;
    double vx;
@@ -2014,25 +2173,14 @@ static void posrs41(const char b[], uint32_t b_len, uint32_t p)
    vx = (double)getint16(b, b_len, p+12UL)*0.01;
    vy = (double)getint16(b, b_len, p+14UL)*0.01;
    vz = (double)getint16(b, b_len, p+16UL)*0.01;
-   vn = (-(vx*(double)osic_sin((float)lat)*(double)
-                osic_cos((float)long0))-vy*(double)
-                osic_sin((float)lat)*(double)osic_sin((float)
-                long0))+vz*(double)osic_cos((float)lat);
-   ve = -(vx*(double)osic_sin((float)long0))+vy*(double)
-                osic_cos((float)long0);
-   vu = vx*(double)osic_cos((float)lat)*(double)
-                osic_cos((float)long0)+vy*(double)
-                osic_cos((float)lat)*(double)osic_sin((float)
-                long0)+vz*(double)osic_sin((float)lat);
-   dir = X2C_DIVL(atang2(vn, ve),1.7453292519943E-2);
-   if (dir<0.0) dir = 360.0+dir;
+   speeddir(lat, long0, vx, vy, vz, &kmh, &dir, &clb);
    osi_WrStr(" ", 2ul);
-   osic_WrFixed(osic_sqrt((float)(vn*vn+ve*ve))*3.6f, 1L, 1UL);
+   osic_WrFixed((float)kmh, 1L, 1UL);
    osi_WrStr("km/h ", 6ul);
    osic_WrINT32((uint32_t)(int32_t)X2C_TRUNCI(dir,X2C_min_longint,
                 X2C_max_longint), 1UL);
    osi_WrStr("deg ", 5ul);
-   osic_WrFixed((float)vu, 1L, 1UL);
+   osic_WrFixed((float)clb, 1L, 1UL);
    osi_WrStr("m/s ", 5ul);
    osic_WrINT32((uint32_t)(uint8_t)b[p+18UL], 1UL);
    osi_WrStr("Sats ", 6ul);
@@ -2485,11 +2633,8 @@ static void demodbit92(uint32_t m, float u, float u0)
       }
       anonym->lastmanch = d;
       anonym->manchestd = -anonym->manchestd;
-      /*WrInt(manchestd,8); */
       if (anonym->manchestd<0L) {
          demodbyte92(m, d);
-         /*WrInt(VAL(INTEGER, u0*0.001), 4); WrStr("/");
-                WrInt(VAL(INTEGER, u*0.001), 0); */
          /*quality*/
          ua = (float)fabs(u-u0)-anonym->bitlev;
          anonym->bitlev = anonym->bitlev+ua*0.005f;
@@ -4830,7 +4975,7 @@ static void demodbyte10(uint32_t m, char d)
 } /* end demodbyte10() */
 
 
-static void demodbit10(uint32_t m, float u, float u0)
+static void demodbit10(uint32_t m, float u)
 {
    char bit;
    char d;
@@ -4872,13 +5017,12 @@ static void demod10(float u, uint32_t m)
       struct M1020 * anonym = &chan[m].m10;
       d = u>=0.0f;
       if (anonym->cbit) {
-         demodbit10(m, u, anonym->lastu);
+         demodbit10(m, u);
          if (d!=anonym->oldd) {
             if (d==anonym->plld) anonym->baudfine += anonym->pllshift;
             else anonym->baudfine -= anonym->pllshift;
             anonym->oldd = d;
          }
-         anonym->lastu = u;
       }
       else anonym->plld = d;
       anonym->cbit = !anonym->cbit;
@@ -4909,20 +5053,6 @@ static void Fsk10(uint32_t m)
 } /* end Fsk10() */
 
 /*---------------------- IMET */
-
-static uint32_t imetcard(const char b[], uint32_t b_len,
-                uint32_t pos, uint32_t len)
-{
-   uint32_t n;
-   uint32_t i;
-   n = 0UL;
-   for (i = len-1UL;; i--) {
-      n = n*256UL+(uint32_t)(uint8_t)b[pos+i];
-      if (i==0UL) break;
-   } /* end for */
-   return n;
-} /* end imetcard() */
-
 #define sondeudp_POLY0 0x1021 
 
 #define sondeudp_NAMECHECKS 3
@@ -5043,12 +5173,12 @@ static void decodeframeimet(uint32_t m)
                /*INC(test1); */
                if (typ=='\005') ii = 25UL;
                else ii = 13UL;
-               gpstime = imetcard(anonym->rxbuf, 106ul, p+ii,
-                1UL)*3600UL+imetcard(anonym->rxbuf, 106ul, p+ii+1UL,
-                1UL)*60UL+imetcard(anonym->rxbuf, 106ul, p+ii+2UL, 1UL);
+               gpstime = cardmsb(anonym->rxbuf, 106ul, p+ii,
+                1UL)*3600UL+cardmsb(anonym->rxbuf, 106ul, p+ii+1UL,
+                1UL)*60UL+cardmsb(anonym->rxbuf, 106ul, p+ii+2UL, 1UL);
                /* raw gps time not utc */
-               lat = SaveReal(imetcard(anonym->rxbuf, 106ul, p+2UL, 4UL));
-               long0 = SaveReal(imetcard(anonym->rxbuf, 106ul, p+6UL, 4UL));
+               lat = SaveReal(cardmsb(anonym->rxbuf, 106ul, p+2UL, 4UL));
+               long0 = SaveReal(cardmsb(anonym->rxbuf, 106ul, p+6UL, 4UL));
                posok = 1;
                /* check id */
                st = osic_time();
@@ -5080,16 +5210,16 @@ static void decodeframeimet(uint32_t m)
                   osi_WrStr(" ", 2ul);
                   osic_WrFixed(long0, 5L, 1UL);
                   osi_WrStr(" ", 2ul);
-                  osic_WrINT32((uint32_t)((int32_t)
-                imetcard(anonym->rxbuf, 106ul, p+10UL, 2UL)-5000L), 1UL);
+                  osic_WrINT32((uint32_t)((int32_t)cardmsb(anonym->rxbuf,
+                 106ul, p+10UL, 2UL)-5000L), 1UL);
                   osi_WrStr("m sats:", 8ul);
-                  osic_WrINT32(imetcard(anonym->rxbuf, 106ul, p+12UL, 1UL),
+                  osic_WrINT32(cardmsb(anonym->rxbuf, 106ul, p+12UL, 1UL),
                 1UL);
                   if (typ=='\005') {
                      /* gps with speeds */
-                     vx = SaveReal(imetcard(anonym->rxbuf, 106ul, p+13UL,
+                     vx = SaveReal(cardmsb(anonym->rxbuf, 106ul, p+13UL,
                 4UL));
-                     vy = SaveReal(imetcard(anonym->rxbuf, 106ul, p+17UL,
+                     vy = SaveReal(cardmsb(anonym->rxbuf, 106ul, p+17UL,
                 4UL));
                      dir = (float)(X2C_DIVL(atang2((double)vx,
                 (double)vy),1.7453292519943E-2));
@@ -5100,44 +5230,44 @@ static void decodeframeimet(uint32_t m)
                      osic_WrINT32((uint32_t)(int32_t)X2C_TRUNCI(dir,
                 X2C_min_longint,X2C_max_longint), 0UL);
                      osi_WrStr("deg clb:", 9ul);
-                     osic_WrFixed(SaveReal(imetcard(anonym->rxbuf, 106ul,
+                     osic_WrFixed(SaveReal(cardmsb(anonym->rxbuf, 106ul,
                 p+21UL, 4UL)), 2L, 1UL);
                      osi_WrStr("m/s ", 5ul);
                   }
                   osi_WrStr(" ", 2ul); /* gps time not utc */
-                  wrtime(gpstime-18UL);
+                  wrtime(((86400UL+gpstime)-18UL)%86400UL);
                }
             }
             else if (typ=='\001' || typ=='\004') {
                /* ptu */
                /*INC(test2); */
-               frnum = imetcard(anonym->rxbuf, 106ul, p+2UL, 2UL);
+               frnum = cardmsb(anonym->rxbuf, 106ul, p+2UL, 2UL);
                if (verb) {
                   osi_WrStr("fn:", 4ul);
                   osic_WrINT32(frnum, 1UL);
                   osi_WrStr(" ", 2ul);
-                  osic_WrFixed((float)imetcard(anonym->rxbuf, 106ul,
-                p+4UL, 3UL)*0.01f, 2L, 1UL);
+                  osic_WrFixed((float)cardmsb(anonym->rxbuf, 106ul, p+4UL,
+                 3UL)*0.01f, 2L, 1UL);
                   osi_WrStr("hPa ", 5ul);
-                  osic_WrFixed((float)(short)imetcard(anonym->rxbuf,
+                  osic_WrFixed((float)(short)cardmsb(anonym->rxbuf,
                 106ul, p+7UL, 2UL)*0.01f, 2L, 1UL);
                   osi_WrStr("C ", 3ul);
-                  osic_WrFixed((float)imetcard(anonym->rxbuf, 106ul,
-                p+9UL, 2UL)*0.01f, 2L, 1UL);
+                  osic_WrFixed((float)cardmsb(anonym->rxbuf, 106ul, p+9UL,
+                 2UL)*0.01f, 2L, 1UL);
                   osi_WrStr("% Vb:", 6ul);
-                  osic_WrFixed((float)imetcard(anonym->rxbuf, 106ul,
+                  osic_WrFixed((float)cardmsb(anonym->rxbuf, 106ul,
                 p+11UL, 1UL)*0.1f, 1L, 1UL);
                   if (typ=='\004') {
                      /* extended ptu */
                      osi_WrStr(" ti:", 5ul);
-                     osic_WrFixed((float)(short)
-                imetcard(anonym->rxbuf, 106ul, p+12UL, 2UL)*0.01f, 2L, 1UL);
+                     osic_WrFixed((float)(short)cardmsb(anonym->rxbuf,
+                 106ul, p+12UL, 2UL)*0.01f, 2L, 1UL);
                      osi_WrStr(" tp:", 5ul);
-                     osic_WrFixed((float)(short)
-                imetcard(anonym->rxbuf, 106ul, p+14UL, 2UL)*0.01f, 2L, 1UL);
+                     osic_WrFixed((float)(short)cardmsb(anonym->rxbuf,
+                 106ul, p+14UL, 2UL)*0.01f, 2L, 1UL);
                      osi_WrStr(" tu:", 5ul);
-                     osic_WrFixed((float)(short)
-                imetcard(anonym->rxbuf, 106ul, p+16UL, 2UL)*0.01f, 2L, 1UL);
+                     osic_WrFixed((float)(short)cardmsb(anonym->rxbuf,
+                 106ul, p+16UL, 2UL)*0.01f, 2L, 1UL);
                   }
                }
             }
@@ -5147,22 +5277,22 @@ static void decodeframeimet(uint32_t m)
                   /* may be ozone */
                   if (verb) {
                      osi_WrStr(" otyp:", 7ul);
-                     osic_WrINT32(imetcard(anonym->rxbuf, 106ul, p+3UL, 1UL),
-                 1UL);
+                     osic_WrINT32(cardmsb(anonym->rxbuf, 106ul, p+3UL, 1UL),
+                1UL);
                      osi_WrStr(" onum:", 7ul);
-                     osic_WrINT32(imetcard(anonym->rxbuf, 106ul, p+4UL, 1UL),
-                 1UL);
+                     osic_WrINT32(cardmsb(anonym->rxbuf, 106ul, p+4UL, 1UL),
+                1UL);
                      osi_WrStr(" oi:", 5ul);
-                     osic_WrFixed((float)imetcard(anonym->rxbuf, 106ul,
+                     osic_WrFixed((float)cardmsb(anonym->rxbuf, 106ul,
                 p+5UL, 2UL)*0.001f, 3L, 1UL);
                      osi_WrStr("uA to:", 7ul);
-                     osic_WrFixed((float)imetcard(anonym->rxbuf, 106ul,
+                     osic_WrFixed((float)cardmsb(anonym->rxbuf, 106ul,
                 p+7UL, 2UL)*0.01f, 2L, 1UL);
                      osi_WrStr("C Pump:", 8ul);
-                     osic_WrINT32(imetcard(anonym->rxbuf, 106ul, p+9UL, 1UL),
-                 1UL);
+                     osic_WrINT32(cardmsb(anonym->rxbuf, 106ul, p+9UL, 1UL),
+                1UL);
                      osi_WrStr("mA VP:", 7ul);
-                     osic_WrFixed((float)imetcard(anonym->rxbuf, 106ul,
+                     osic_WrFixed((float)cardmsb(anonym->rxbuf, 106ul,
                 p+10UL, 1UL)*0.1f, 1L, 1UL);
                      osi_WrStr("V ", 3ul);
                   }
@@ -5347,6 +5477,525 @@ static void Afsk202(uint32_t channel)
    }
 } /* end Afsk202() */
 
+/*---------------------- MP3-H1 */
+
+static int32_t cint16(int32_t v)
+{
+   if (v>32767L) v -= 65536L;
+   return v;
+} /* end cint16() */
+
+
+static void Whex(uint32_t n)
+{
+   char s[4];
+   s[0U] = hex(n/4096UL);
+   s[1U] = hex(n/256UL);
+   s[2U] = hex(n/16UL);
+   s[3U] = hex(n);
+   osi_WrStr(s, 4ul);
+} /* end Whex() */
+
+#define sondeudp_POLY1 0xA001 
+
+
+static char crcmp3(const char b[], uint32_t b_len,
+                uint32_t from, uint32_t to)
+{
+   uint32_t j;
+   uint32_t i;
+   uint16_t c;
+   uint32_t tmp;
+   c = 0xFFFFU;
+   tmp = to-1UL;
+   i = from;
+   if (i<=tmp) for (;; i++) {
+      c = c^(uint16_t)(uint32_t)(uint8_t)b[i];
+      for (j = 0UL; j<=7UL; j++) {
+         if ((0x1U & c)) c = X2C_LSH(c,16,-1)^0xA001U;
+         else c = X2C_LSH(c,16,-1);
+      } /* end for */
+      if (i==tmp) break;
+   } /* end for */
+   return c==(uint16_t)cardmsb(b, b_len, to, 2UL);
+} /* end crcmp3() */
+
+
+static void mp3id(uint32_t m, char ser, char id[],
+                uint32_t id_len)
+{
+   char s[21];
+   uint32_t n;
+   struct MP3H * anonym;
+   id[0UL] = 0;
+   { /* with */
+      struct MP3H * anonym = &chan[m].mp3h;
+      if (anonym->id1ok && anonym->id2ok) {
+         if (ser) {
+            /*serial */
+            aprsstr_Assign(id, id_len, "MRZ-", 5ul);
+            aprsstr_CardToStr(anonym->id1, 1UL, s, 21ul);
+            aprsstr_Append(id, id_len, s, 21ul);
+            aprsstr_Append(id, id_len, "-", 2ul);
+            aprsstr_CardToStr(anonym->id2, 1UL, s, 21ul);
+         }
+         else {
+            /*aprs */
+            aprsstr_Assign(id, id_len, "MRZ", 4ul);
+            n = anonym->id1*100000UL+anonym->id2;
+            s[0U] = hex(n/1048576UL);
+            s[1U] = hex(n/65536UL);
+            s[2U] = hex(n/4096UL);
+            s[3U] = hex(n/256UL);
+            s[4U] = hex(n/16UL);
+            s[5U] = hex(n);
+            s[6U] = 0;
+         }
+         aprsstr_Append(id, id_len, s, 21ul);
+      }
+   }
+} /* end mp3id() */
+
+
+static uint32_t mp3time(char b[], uint32_t b_len)
+{
+   uint32_t mp3time_ret;
+   X2C_PCOPY((void **)&b,b_len);
+   mp3time_ret = cardmsb(b, b_len, 1UL, 1UL)*3600UL+cardmsb(b, b_len, 2UL,
+                1UL)*60UL+cardmsb(b, b_len, 3UL, 1UL);
+   X2C_PFREE(b);
+   return mp3time_ret;
+} /* end mp3time() */
+
+
+static uint32_t mp3date(uint32_t d, uint32_t timedate, uint32_t t)
+{
+   char s[21];
+   uint32_t n;
+   strncpy(s,"....-..-.. 00:00:00",21u);
+   n = 2000UL+d%100UL;
+   s[0U] = (char)(n/1000UL+48UL);
+   s[1U] = (char)((n/100UL)%10UL+48UL);
+   s[2U] = (char)((n/10UL)%10UL+48UL);
+   s[3U] = (char)(n%10UL+48UL);
+   n = (d/100UL)%100UL;
+   s[5U] = (char)(n/10UL+48UL);
+   s[6U] = (char)(n%10UL+48UL);
+   n = (d/10000UL)%100UL;
+   s[8U] = (char)(n/10UL+48UL);
+   s[9U] = (char)(n%10UL+48UL);
+   if (aprsstr_StrToTime(s, 21ul, &n)) {
+      n += t; /* add daytime to date */
+      if (t<timedate) n += 86400UL;
+      t = (t+86382UL)%86400UL;
+   }
+   else n = 0UL;
+   return n;
+} /* end mp3date() */
+
+
+static void showmp3(uint32_t m, uint32_t state, uint32_t repaired,
+                const char rxbuf[], uint32_t rxbuf_len)
+{
+   uint32_t cnt;
+   uint32_t cfg;
+   uint32_t i;
+   double clb;
+   double dir;
+   double kmh;
+   double heig;
+   double long0;
+   double lat;
+   double vz;
+   double vy;
+   double vx;
+   double wz;
+   double wy;
+   double wx;
+   char done;
+   char s[21];
+   done = 0;
+   cnt = cardmsb(rxbuf, rxbuf_len, 0UL, 1UL)&15UL;
+   if (state==1UL) {
+      /* crc good */
+      WrChan((int32_t)m);
+      osi_WrStr("MRZ ", 5ul);
+      osic_WrINT32(cnt, 2UL);
+      osi_WrStr(" ", 2ul);
+      mp3id(m, 0, s, 21ul);
+      if (s[0U]) {
+         osi_WrStr(s, 21ul);
+         osi_WrStr(" ", 2ul);
+      }
+      if (chan[m].mp3h.gpstime>0UL) {
+         aprsstr_DateToStr(chan[m].mp3h.gpstime, s, 21ul);
+         osi_WrStr(s, 21ul);
+         osi_WrStr(" ", 2ul);
+      }
+      wx = (double)(int32_t)cardmsb(rxbuf, rxbuf_len, 5UL, 4UL)*0.01;
+      wy = (double)(int32_t)cardmsb(rxbuf, rxbuf_len, 9UL, 4UL)*0.01;
+      wz = (double)(int32_t)cardmsb(rxbuf, rxbuf_len, 13UL,
+                4UL)*0.01;
+      vx = (double)cint16((int32_t)cardmsb(rxbuf, rxbuf_len, 17UL,
+                2UL))*0.01;
+      vy = (double)cint16((int32_t)cardmsb(rxbuf, rxbuf_len, 19UL,
+                2UL))*0.01;
+      vz = (double)cint16((int32_t)cardmsb(rxbuf, rxbuf_len, 21UL,
+                2UL))*0.01;
+      wgs84r(wx, wy, wz, &lat, &long0, &heig);
+      osic_WrFixed((float)(X2C_DIVL(lat,1.7453292519943E-2)), 5L, 1UL);
+      osi_WrStr(" ", 2ul);
+      osic_WrFixed((float)(X2C_DIVL(long0,1.7453292519943E-2)), 5L, 1UL);
+      if (heig<1.E+5 && heig>(-1.E+5)) {
+         osi_WrStr(" ", 2ul);
+         osic_WrINT32((uint32_t)(int32_t)X2C_TRUNCI(heig,X2C_min_longint,
+                X2C_max_longint), 1UL);
+         osi_WrStr("m", 2ul);
+      }
+      speeddir(lat, long0, vx, vy, vz, &kmh, &dir, &clb);
+      osi_WrStr(" ", 2ul);
+      osic_WrFixed((float)kmh, 1L, 1UL);
+      osi_WrStr("km/h ", 6ul);
+      osic_WrINT32((uint32_t)(int32_t)X2C_TRUNCI(dir,X2C_min_longint,
+                X2C_max_longint), 1UL);
+      osi_WrStr("deg ", 5ul);
+      osic_WrFixed((float)clb, 1L, 1UL);
+      osi_WrStr("m/s", 4ul);
+      if (verb2) {
+         osi_WrStr(" c1=", 5ul);
+         osi_WrHex((uint32_t)(uint8_t)rxbuf[4UL], 2UL);
+         osi_WrStr(" c2=", 5ul);
+         osi_WrHex((uint32_t)(uint8_t)rxbuf[23UL], 2UL);
+         osi_WrHex((uint32_t)(uint8_t)rxbuf[24UL], 2UL);
+         osi_WrHex((uint32_t)(uint8_t)rxbuf[25UL], 2UL);
+         osi_WrStr(" a1=", 5ul);
+         osic_WrINT32(cardmsb(rxbuf, rxbuf_len, 26UL, 2UL), 1UL);
+         osi_WrStr(" a2=", 5ul);
+         osic_WrINT32(cardmsb(rxbuf, rxbuf_len, 28UL, 2UL), 1UL);
+         osi_WrStr(" a3=", 5ul);
+         osi_WrHex((uint32_t)(uint8_t)rxbuf[32UL], 2UL);
+         osi_WrHex((uint32_t)(uint8_t)rxbuf[33UL], 2UL);
+         osi_WrStr(" c3=", 5ul);
+         osi_WrHex((uint32_t)(uint8_t)rxbuf[34UL], 2UL);
+         osi_WrHex((uint32_t)(uint8_t)rxbuf[35UL], 2UL);
+         osi_WrStr(" a4=", 5ul);
+         osic_WrINT32(cardmsb(rxbuf, rxbuf_len, 36UL, 2UL), 1UL);
+         osi_WrStr(" c4=", 5ul);
+         osi_WrHex((uint32_t)(uint8_t)rxbuf[38UL], 2UL);
+         osi_WrHex((uint32_t)(uint8_t)rxbuf[39UL], 2UL);
+         osi_WrHex((uint32_t)(uint8_t)rxbuf[40UL], 2UL);
+      }
+      cfg = cardmsb(rxbuf, rxbuf_len, 41UL, 4UL);
+      if (cnt==15UL) {
+         osi_WrStr(" date=", 7ul);
+         osic_WrINT32(2000UL+cfg%100UL, 1UL);
+         osi_WrStr("-", 2ul);
+         osic_WrINT32((cfg/100UL)%100UL, 1UL);
+         osi_WrStr("-", 2ul);
+         osic_WrINT32((cfg/10000UL)%100UL, 1UL);
+      }
+      else if (verb2) {
+         osi_WrStr(" cfg=", 6ul);
+         Whex(cfg/65536UL);
+         Whex(cfg);
+      }
+      if (repaired>0UL) {
+         osi_WrStr(" rep=", 6ul);
+         osic_WrINT32(repaired, 1UL);
+      }
+      if (verb2) {
+         for (i = 0UL; i<=48UL; i++) {
+            if (i%25UL==0UL) osi_WrStrLn("", 1ul);
+            osi_WrHex((uint32_t)(uint8_t)rxbuf[i], 3UL);
+         } /* end for */
+      }
+      done = 1;
+   }
+   else if (repaired>1UL || verb2) {
+      /* do not show single noise frames as fills screen */
+      WrChan((int32_t)m);
+      osi_WrStr("MRZ ", 5ul);
+      osic_WrINT32(cnt, 2UL);
+      if (state==0UL) {
+         osi_WrStr(" crc error copies=", 19ul);
+         osic_WrINT32(repaired, 1UL);
+      }
+      else osi_WrStr(" dupe", 6ul);
+      done = 1;
+   }
+   if (done) {
+      WrdB(chan[m].admax-chan[m].admin);
+      WrQuali(noiselevel(chan[m].mp3h.bitlev, chan[m].mp3h.noise));
+      osi_WrStrLn("", 1ul);
+   }
+} /* end showmp3() */
+
+
+static void decodeframemp3(uint32_t m, const char buf[],
+                uint32_t buf_len)
+{
+   uint32_t cnt;
+   uint32_t cfg;
+   uint32_t flen;
+   uint32_t i;
+   char name[21];
+   char s[201];
+   struct MP3H * anonym;
+   struct CHAN * anonym0; /* call if set */
+   { /* with */
+      struct MP3H * anonym = &chan[m].mp3h;
+      cnt = cardmsb(buf, buf_len, 0UL, 1UL)&15UL;
+      cfg = cardmsb(buf, buf_len, 41UL, 4UL);
+      if (cnt==15UL) {
+         anonym->dateok = 1;
+         anonym->gpsdate = cfg;
+         anonym->timeatdate = mp3time(buf, buf_len); /* to check day wrap */
+      }
+      else if (cnt==13UL) {
+         anonym->id2 = cfg;
+         anonym->id2ok = 1;
+      }
+      else if (cnt==12UL) {
+         anonym->id1 = cfg;
+         anonym->id1ok = 1;
+      }
+      if (anonym->dateok) {
+         anonym->gpstime = mp3date(anonym->gpsdate, anonym->timeatdate,
+                mp3time(buf, buf_len));
+      }
+      setactiv(&anonym->savecnt, 30L);
+      mp3id(m, 0, name, 21ul);
+      if (anonym->gpstime>0UL && name[0U]) {
+         memset((char *)s,(char)0,201UL); /* end of block is 0 */
+         for (i = 0UL; i<=8UL; i++) {
+            s[i+7UL] = name[i];
+         } /* end for */
+         { /* with */
+            struct CHAN * anonym0 = &chan[m];
+            s[0U] = (char)(anonym0->mycallc/16777216UL);
+            s[1U] = (char)(anonym0->mycallc/65536UL&255UL);
+            s[2U] = (char)(anonym0->mycallc/256UL&255UL);
+            s[3U] = (char)(anonym0->mycallc&255UL);
+            if (anonym0->mycallc>0UL) s[4U] = anonym0->myssid;
+            else s[4U] = '\020';
+            s[5U] = 0;
+            s[6U] = 0;
+         }
+         s[16U] = (char)(anonym->gpstime/16777216UL);
+         s[17U] = (char)(anonym->gpstime/65536UL&255UL);
+         s[18U] = (char)(anonym->gpstime/256UL&255UL);
+         s[19U] = (char)(anonym->gpstime&255UL);
+         for (i = 0UL; i<=48UL; i++) {
+            s[i+20UL] = buf[i]; /* payload */
+         } /* end for */
+         flen = 69UL;
+         sdrparm(s, 201ul, &flen, (int32_t)m);
+         alludp(chan[m].udptx, flen, s, 201ul);
+      }
+      monitor(m, "MRZ", 4ul, name, 21ul);
+   }
+} /* end decodeframemp3() */
+
+
+static void repairmp3(uint32_t m)
+{
+   uint32_t rprcnt;
+   uint32_t done;
+   uint32_t cnt;
+   uint32_t max0;
+   uint32_t k;
+   uint32_t j;
+   uint32_t i;
+   uint32_t tlast;
+   uint32_t t;
+   char ch;
+   MP3BUF rxbuf;
+   struct MP3H * anonym;
+   uint32_t tmp;
+   uint32_t tmp0;
+   rprcnt = 0UL;
+   t = osic_time();
+   { /* with */
+      struct MP3H * anonym = &chan[m].mp3h;
+      done = 0UL;
+      memcpy(rxbuf,anonym->copybuf[anonym->copycnt].dat,50u);
+      tlast = anonym->copybuf[anonym->copycnt].time0;
+      for (;;) {
+         /*FOR i:=0 TO FLENMP3-1 DO WrHex(ORD(rxbuf[i]),3); END; WrStrLn("");
+                 */
+         if (crcmp3(rxbuf, 50ul, 0UL, 45UL)) done += 2UL;
+         if (done>0UL) break;
+         /*- got a crc error frame */
+         j = 0UL;
+         tmp = anonym->copycnt;
+         i = 0UL;
+         if (i<=tmp) for (;; i++) {
+            if (anonym->copybuf[i].time0+4UL>=t) {
+               anonym->copybuf[j] = anonym->copybuf[i];
+               ++j;
+            }
+            if (i==tmp) break;
+         } /* end for */
+         rprcnt = j;
+         anonym->copycnt = j;
+         if (anonym->copycnt>=3UL) {
+            /* enough noisy frames to find max count same bytes */
+            for (i = 0UL; i<=46UL; i++) {
+               /* find best byte */
+               max0 = 0UL;
+               tmp = anonym->copycnt-2UL;
+               j = 0UL;
+               if (j<=tmp) for (;; j++) {
+                  cnt = 0UL;
+                  ch = anonym->copybuf[j].dat[i];
+                  tmp0 = anonym->copycnt-1UL;
+                  k = j+1UL;
+                  if (k<=tmp0) for (;; k++) {
+                     if (ch==anonym->copybuf[k].dat[i]) ++cnt;
+                     if (k==tmp0) break;
+                  } /* end for */
+                  if (cnt>=max0) {
+                     max0 = cnt;
+                     rxbuf[i] = anonym->copybuf[j].dat[i];
+                  }
+                  if (j==tmp) break;
+               } /* end for */
+            } /* end for */
+            if (anonym->copycnt>5UL) {
+               anonym->copycnt = 5UL;
+               for (i = 1UL; i<=5UL; i++) {
+                  anonym->copybuf[i-1UL] = anonym->copybuf[i];
+               } /* end for */
+            }
+         }
+         done = 1UL;
+      }
+      if (done>=2UL) {
+         /* good or repaired frame */
+         if (tlast+4UL>=t && (anonym->blocknum!=((uint32_t)(uint8_t)
+                rxbuf[0U]&15UL) || anonym->blocktime+16UL<t)) {
+            /* new block */
+            anonym->blocknum = (uint32_t)(uint8_t)rxbuf[0U]&15UL;
+            anonym->blocktime = t;
+            decodeframemp3(m, rxbuf, 50ul);
+            if (verb) showmp3(m, 1UL, rprcnt, rxbuf, 50ul);
+         }
+         else if (verb) showmp3(m, 2UL, rprcnt, rxbuf, 50ul);
+         anonym->copycnt = 0UL;
+      }
+      if (verb && done==1UL) showmp3(m, 0UL, rprcnt, rxbuf, 50ul);
+   }
+} /* end repairmp3() */
+
+static uint32_t sondeudp_SYNWORD = 0xBF35UL;
+
+static uint32_t sondeudp_SYNWORDREV = 0x40CAUL;
+
+
+static void demodbytemp3(uint32_t m, char d)
+{
+   struct MP3H * anonym;
+   { /* with */
+      struct MP3H * anonym = &chan[m].mp3h;
+      anonym->synword = anonym->synword*2UL+(uint32_t)d;
+      if (anonym->rxp>=49UL) {
+         /* out of frame */
+         if (((uint32_t)anonym->synword&0xFFFFUL)==0xBF35UL) {
+            anonym->rxp = 0UL;
+            anonym->copybuf[anonym->copycnt].time0 = osic_time();
+         }
+         else if (((uint32_t)anonym->synword&0xFFFFUL)==0x40CAUL) {
+            anonym->polarity = !anonym->polarity;
+            anonym->rxp = 0UL;
+            anonym->copybuf[anonym->copycnt].time0 = osic_time();
+         }
+      }
+      else {
+         ++anonym->rxb;
+         if (anonym->rxb>=8UL) {
+            anonym->copybuf[anonym->copycnt].dat[anonym->rxp] = (char)
+                (anonym->synword&255UL);
+            anonym->rxb = 0UL;
+            ++anonym->rxp;
+            if (anonym->rxp==49UL) repairmp3(m);
+         }
+      }
+   }
+} /* end demodbytemp3() */
+
+
+static void demodbitmp3(uint32_t m, float u, float u0)
+{
+   char d;
+   float ua;
+   struct MP3H * anonym;
+   d = u>=u0;
+   { /* with */
+      struct MP3H * anonym = &chan[m].mp3h;
+      if (anonym->lastmanch==u0<0.0f) {
+         anonym->manchestd += (32767L-anonym->manchestd)/16L;
+      }
+      anonym->lastmanch = d;
+      anonym->manchestd = -anonym->manchestd;
+      /*WrInt(manchestd,8); */
+      if (anonym->manchestd<0L) {
+         /*=polarity*/
+         demodbytemp3(m, d==anonym->polarity);
+         /*quality*/
+         ua = (float)fabs(u-u0)-anonym->bitlev;
+         anonym->bitlev = anonym->bitlev+ua*0.005f;
+         anonym->noise = anonym->noise+((float)fabs(ua)-anonym->noise)
+                *0.02f;
+      }
+   }
+/*quality*/
+} /* end demodbitmp3() */
+
+
+static void demodmp3(float u, uint32_t m)
+{
+   char d;
+   struct MP3H * anonym;
+   { /* with */
+      struct MP3H * anonym = &chan[m].mp3h;
+      d = u>=0.0f;
+      if (anonym->cbit) {
+         demodbitmp3(m, u, anonym->lastu);
+         if (d!=anonym->oldd) {
+            if (d==anonym->plld) anonym->baudfine += anonym->pllshift;
+            else anonym->baudfine -= anonym->pllshift;
+            anonym->oldd = d;
+         }
+         anonym->lastu = u;
+      }
+      else anonym->plld = d;
+      anonym->cbit = !anonym->cbit;
+   }
+} /* end demodmp3() */
+
+
+static void Fskmp3(uint32_t m)
+{
+   float ff;
+   int32_t lim;
+   struct MP3H * anonym;
+   { /* with */
+      struct MP3H * anonym = &chan[m].mp3h;
+      lim = (int32_t)anonym->demodbaud;
+      for (;;) {
+         if (anonym->baudfine>=65536L) {
+            anonym->baudfine -= 65536L;
+            ff = Fir(afin, (uint32_t)((anonym->baudfine&65535L)/4096L),
+                16UL, chan[m].afir, 32ul, anonym->afirtab, 512ul);
+            demodmp3(ff, m);
+         }
+         anonym->baudfine += lim;
+         lim = 0L;
+         if (anonym->baudfine<131072L) break;
+      }
+   }
+} /* end Fskmp3() */
+
 /*---------------------- */
 #define sondeudp_CRCINIT 0x0FFFFFFFF
 
@@ -5513,6 +6162,7 @@ static void cpusave(int32_t savelev, uint32_t chans)
          sdec(savelev, anonym->dfm6a.enabled, &anonym->dfm6a.savecnt, 1L);
          sdec(savelev, anonym->imeta.enabled, &anonym->imeta.savecnt, 2L);
          sdec(savelev, anonym->m10.enabled, &anonym->m10.savecnt, 1L);
+         sdec(savelev, anonym->mp3h.enabled, &anonym->mp3h.savecnt, 1L);
       }
       if (c==tmp) break;
    } /* end for */
@@ -5654,13 +6304,14 @@ static void getadc(void)
                }
             }
             if (anonym->m10.savecnt>0L) Fsk10(c);
+            if (anonym->mp3h.savecnt>0L) Fskmp3(c);
          }
       }
       if (c==tmp) break;
    } /* end for */
 } /* end getadc() */
 
-static uint16_t sondeudp_POLY1 = 0x1021U;
+static uint16_t sondeudp_POLY2 = 0x1021U;
 
 
 static void Gencrctab(void)
@@ -5686,6 +6337,7 @@ extern int main(int argc, char **argv)
    if (sizeof(SET256)!=32) X2C_ASSERT(0);
    if (sizeof(FILENAME)!=1024) X2C_ASSERT(0);
    if (sizeof(CNAMESTR)!=9) X2C_ASSERT(0);
+   if (sizeof(MP3BUF)!=50) X2C_ASSERT(0);
    aprsstr_BEGIN();
    osi_BEGIN();
    Gencrctab();

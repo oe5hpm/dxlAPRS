@@ -761,7 +761,7 @@ static void comment0(char buf[], uint32_t buf_len, uint32_t uptime,
                          txtimedone:=TRUE;
                */
                /* insert version */
-               aprsstr_Append(hb, 160ul, " sondemod 1.36g", 16ul);
+               aprsstr_Append(hb, 160ul, " sondemod 1.36h", 16ul);
             }
             else if (fb[bol+1L]=='s') {
                /* insert sat count */
@@ -1362,7 +1362,7 @@ static void WrDeg(double la, double lo)
 static void show(struct DATLINE d)
 {
    char s[31];
-   if (d.hpa<1500.0) {
+   if (d.hpa>0.0 && d.hpa<1500.0) {
       osic_WrFixed((float)d.hpa, 2L, 6UL);
       osi_WrStr("hPa ", 5ul);
    }
