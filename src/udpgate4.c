@@ -384,6 +384,8 @@ static char datafilter;
 /* send no data to user with no filter set */
 static char sighup;
 
+static char rfcallchk;
+
 static char verb;
 
 static char callsrc;
@@ -919,11 +921,12 @@ static void parms(void)
             memcpy(ghost,_cnst,36u);
          }
          else if (lasth=='c') callsrc = 1;
-         else if (lasth=='s' || lasth=='S') {
+         else if (X2C_CAP(lasth)=='S') {
+            rfcallchk = lasth=='s';
             osi_NextArg(h, 4096ul);
             aprsstr_Assign(servercall, 10ul, h, 4096ul);
             if ((servercall[0U]==0 || servercall[0U]=='-')
-                || lasth=='s' && !callok(h, 4096ul)) {
+                || rfcallchk && !callok(h, 4096ul)) {
                Err("-s call-ssid", 13ul);
             }
          }
@@ -1233,7 +1236,7 @@ bled all msg to heard gatet", 77ul);
                osi_WrStrLn(" -M             same as -R but tnc text format",
                 47ul);
                osi_WrStrLn(" -m <maxconnects> max inbound connects -m 20 (def\
-ault 50)", 58ul);
+ault 200)", 59ul);
                osi_WrStrLn(" -N             send no stored messages to net ex\
 cept query answers", 68ul);
                osi_WrStrLn(" -n <min>:<file> netbeacon minutes:filename -n 10\
@@ -1303,7 +1306,7 @@ me counter in Heard list (20) (0 off)", 87ul);
                osi_WrStrLn(" -v             show frames and analytics on stdo\
 ut", 52ul);
                osi_WrStrLn(" -W <filesize>  limit www server file size in 102\
-4byte, (-W 1000)", 66ul);
+4byte, (-W 4000)", 66ul);
                osi_WrStrLn(" -w <port>      port of www server -w 14501",
                 44ul);
                osi_WrStrLn(" -x <call>      via <call> send messages to rf (-\
@@ -4574,7 +4577,7 @@ static int32_t AprsIs(char buf[], uint32_t buf_len,
       /* thirdparty loop */
       psum0 = p;
       if (callchk(&qpos, &unset, buf, buf_len, &p, &pssid, 0,
-                udpchan || callsrc)) return -3L;
+                rfcallchk && udpchan || callsrc)) return -3L;
       /* src call */
       if (buf[p]!='>') return -3L;
       i0 = 0UL;
@@ -7090,7 +7093,7 @@ extern int main(int argc, char **argv)
    dupetime = 60UL;
    lastdnstime = 0UL;
    netbeaconfn[0U] = 0;
-   maxusers = 50UL;
+   maxusers = 200UL;
    logframename[0U] = 0;
    rawlogname[0U] = 0;
    logframes = 6L;
@@ -7102,7 +7105,7 @@ extern int main(int argc, char **argv)
    rfhered = 0;
    wwwbindport[0] = 0;
    wwwdir[0U] = 0;
-   wwwsizelimit = 1048576L;
+   wwwsizelimit = 4194304L;
    udpsocks = 0;
    callsrc = 0;
    mhperport = 0;
@@ -7113,6 +7116,7 @@ extern int main(int argc, char **argv)
    gatesfn[0U] = 0;
    rawlines = 20UL;
    msgretries = 12UL;
+   rfcallchk = 1;
    signal(SIGHUP, readigatefile);
    /*  signal(SIGUSR1, readigatefile); */
    parms();
