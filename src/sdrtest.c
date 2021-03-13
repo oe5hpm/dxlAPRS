@@ -176,6 +176,8 @@ static uint32_t tuneoffset;
 
 static uint32_t tuneto;
 
+static uint32_t f32;
+
 static char url[1001];
 
 static char port[1001];
@@ -428,6 +430,53 @@ static pUDPTX openudptx(const char s[], uint32_t s_len,
 } /* end openudptx() */
 
 
+static void wwav(int32_t fd, pUDPTX pu, uint8_t codec, uint32_t ch,
+                uint32_t hz)
+{
+   char b[44];
+   uint32_t bytes;
+   bytes = ch;
+   if (codec==sdrtest_S16) bytes = bytes*2UL;
+   strncpy(b,"RIFF    WAVEfmt ",44u);
+   b[4U] = '\377'; /* len */
+   b[5U] = '\377';
+   b[6U] = '\377';
+   b[7U] = '\377';
+   b[16U] = '\020';
+   b[17U] = 0;
+   b[18U] = 0;
+   b[19U] = 0;
+   if (codec==sdrtest_ALAW) b[20U] = '\006';
+   else b[20U] = '\001';
+   b[21U] = 0;
+   b[22U] = (char)ch; /* channels */
+   b[23U] = 0;
+   b[24U] = (char)(hz&255UL); /* samp */
+   b[25U] = (char)(hz/256UL);
+   b[26U] = 0;
+   b[27U] = 0;
+   b[28U] = (char)(hz*bytes&255UL); /* byte/s */
+   b[29U] = (char)((hz*bytes)/256UL&255UL);
+   b[30U] = (char)((hz*bytes)/65536UL);
+   b[31U] = 0;
+   b[32U] = (char)bytes; /* block byte */
+   b[33U] = 0;
+   if (codec) b[34U] = '\010';
+   else b[34U] = '\020';
+   b[35U] = 0;
+   b[36U] = 'd';
+   b[37U] = 'a';
+   b[38U] = 't';
+   b[39U] = 'a';
+   b[40U] = '\377'; /* len */
+   b[41U] = '\377';
+   b[42U] = '\377';
+   b[43U] = '\377';
+   if (fd>=0L) osi_WrBin(fd, (char *)b, 44u/1u, 44UL);
+   if (pu) sendudp((char *)b, 44u/1u, 44L, pu);
+} /* end wwav() */
+
+
 static void Parms(void)
 {
    char s[1001];
@@ -578,13 +627,14 @@ static void Parms(void)
          else if (s[1U]=='i') {
             /* iq sampelrate */
             osi_NextArg(s, 1001ul);
-            if (!aprsstr_StrToCard(s, 1001ul,
-                &iqrate) || iqrate!=1024000UL && (iqrate<2048000UL || iqrate>2500000UL)
-                ) Error(" -i <Hz> 2048000 or 1024000", 28ul);
+            if (!aprsstr_StrToCard(s, 1001ul, &iqrate)) {
+               Error(" -i <Hz>", 9ul);
+            }
          }
          else if (s[1U]=='v') verb = 1;
          else if (s[1U]=='k') reconn = 1;
          else if (s[1U]=='e') watermark = 1;
+         else if (s[1U]=='f') f32 = 4UL;
          else if (s[1U]=='w') {
             /* maximum wake time */
             osi_NextArg(s, 1001ul);
@@ -613,6 +663,10 @@ static void Parms(void)
             osi_NextArg(s, 1001ul);
             utx = openudptx(s, 1001ul, &udpsendfd);
             if (utx==0) Error("-L ip:port", 11ul);
+            utx->next = udplev;
+            udplev = utx;
+         }
+         else if (s[1U]=='N') {
             /*
                     ALLOCATE(utx, SIZE(utx^));
                     IF utx=NIL THEN Error("udp socket out of memory") END;
@@ -623,10 +677,6 @@ static void Parms(void)
                 ) END;
                     ELSE Error("-L ip:port") END;
             */
-            utx->next = udplev;
-            udplev = utx;
-         }
-         else if (s[1U]=='N') {
             /* udp send scanners squelchs */
             osi_NextArg(s, 1001ul);
             utx = openudptx(s, 1001ul, &udpsendfd);
@@ -634,13 +684,19 @@ static void Parms(void)
             utx->next = udpsq;
             udpsq = utx;
          }
+         else if (s[1U]=='D') {
+            /* udp send scanners dBs */
+            osi_NextArg(s, 1001ul);
+            sdr_debfd = osi_OpenWrite(s, 1001ul);
+            if (sdr_debfd<0L) Error("-D debug file open", 19ul);
+         }
          else {
             if (s[1U]=='h') {
                osi_WrStrLn("", 1ul);
                osi_WrStrLn("AM/FM/SSB Multirx from rtl_tcp (8 bit IQ via tcpi\
 p or file) to audio channel(s) 8/16 bit PCM by oe5dxl", 103ul);
                osi_WrStrLn(" -A <soundfilename> or <ip:port> ALAW (G.711) n-c\
-hannel sound stream/pipe/UDP", 78ul);
+hannel sound stream pipe/UDP", 78ul);
                osi_WrStrLn(" -a <number>         maximum active rx to limit c\
 pu load, if number is reached,", 80ul);
                osi_WrStrLn("                       no more inactive rx will l\
@@ -651,10 +707,14 @@ With UDP take care: double number of bytes with 16bit PCM", 107ul);
 le (sdrcfg.txt)", 65ul);
                osi_WrStrLn(" -c <ip:port>        read channels config from UD\
 P, if ip=0.0.0.0 accept any ip", 80ul);
+               osi_WrStrLn(" -D <file>           write received tcp IQ Data t\
+o file", 56ul);
                osi_WrStrLn(" -d <Hz>             downsample output to Hz",
                 45ul);
                osi_WrStrLn(" -e                  enable sending SDR Data hidd\
 en in audio channels (tune/afc/rssi..)", 88ul);
+               osi_WrStrLn(" -f                  iq-data in float32, samplera\
+te 1..3MHz, slow float arithmetic", 83ul);
                osi_WrStrLn(" -h                  help", 26ul);
                osi_WrStrLn(" -i <Hz>             input sampelrate Hz 1024000 \
 or 2048000..2500000 (2048000)", 79ul);
@@ -668,6 +728,8 @@ ost connection to rtl_tcp server", 82ul);
 to 1 or 2 audiochannels (mono/stereo)", 87ul);
                osi_WrStrLn("                      for 2 channels the rx audio\
 s will be arranged from left to right", 87ul);
+               osi_WrStrLn("                      WAV-Header will be preceded\
+ (UDP with header may be lost)", 80ul);
                osi_WrStrLn(" -N <x.x.x.x:destport> send Noise (Squelch) table\
  in UDP to Scanner Scripts (may be repeatet)", 94ul);
                osi_WrStrLn(" -O <Hz>             moves center freq. away from\
@@ -701,15 +763,22 @@ udio quieting for sending", 75ul);
                osi_WrStrLn("                      to decoders and not human e\
 ars", 53ul);
                osi_WrStrLn("example: ./sdrtst -k -s /dev/stdout -t 127.0.0.1:\
-1234 -c up.txt -i 2048000 -r 16000 -m 2 -v | sox -t raw -r 16000 -c 2 -b 16 -\
-s - -t alsa", 138ul);
-               osi_WrStrLn("         will mix up/down any channels to stereo \
-and play on alsa", 66ul);
+1234 -c up.txt -i 2048000 -r 16000 -m 2 -v | aplay", 100ul);
+               osi_WrStrLn("           will mix up/down any channels to stere\
+o and play on alsa", 68ul);
                osi_WrStrLn("         ./sdrtst -k -s /dev/stdout -t 127.0.0.1:\
 1234 -c up.txt -i 2048000 -r 16000 -v | ./afskmodem -o /dev/stdin -s 16000 -c\
  2 -M 0 -c 0 -M 1 -c 1", 149ul);
-               osi_WrStrLn("         with 2 frequencies in up.txt will listen\
- to PR/APRS on 2 channels", 75ul);
+               osi_WrStrLn("           with 2 frequencies in up.txt will list\
+en to PR/APRS on 2 channels", 77ul);
+               osi_WrStrLn("         nc -l -u -p 7000 | sox -t wav - -t alsa",
+                 49ul);
+               osi_WrStrLn("         ./sdrtst -k -A 127.0.0.1:7000 -m 1 -d 80\
+00 -t 127.0.0.1:1234 -c 0.0.0.0:7001 -i 2048000 -r 16000 -v", 109ul);
+               osi_WrStrLn("         echo -e \"f 438.55 5 80 80\\nf 439.3 5 8\
+0 80\" | nc -u 127.0.0.1 7001", 76ul);
+               osi_WrStrLn("           for A-LAW compressed sound via UDP and\
+ remote control via UDP", 73ul);
                osi_WrStrLn("", 1ul);
                osi_WrStrLn("config file: (re-read every some seconds and may \
 be modified any time)", 71ul);
@@ -778,6 +847,14 @@ to avoid ADC-DC offset pseudo", 79ul);
    }
    powersave = (powersave*samphz)/32000UL;
    maxwake = (maxwake*samphz)/32000UL;
+   if (f32==4UL) {
+      if (iqrate<1000000UL || iqrate>3000000UL) {
+         Error(" -i <Hz> 1000000..3000000", 26ul);
+      }
+   }
+   else if (iqrate!=1024000UL && (iqrate<2048000UL || iqrate>2500000UL)) {
+      Error(" -i <Hz> 2048000 or 1024000", 28ul);
+   }
    if (downsamp==0UL) downsamp = samphz;
    if (downsamp>samphz) Error(" -d <hz> must be less than -r <hz>", 35ul);
 } /* end Parms() */
@@ -835,9 +912,9 @@ static void centerfreq(const struct FREQTAB freq[], uint32_t freq_len)
    uint32_t max0;
    uint32_t min0;
    uint32_t i;
+   int32_t rem;
    int32_t nomid;
    char ssb;
-   double rem;
    double fhzo;
    double fhz;
    double khz;
@@ -899,15 +976,23 @@ static void centerfreq(const struct FREQTAB freq[], uint32_t freq_len)
          rxx[i].squelch = squelchs[i].lev!=0.0f;
          rxx[i].modulation = freq[i].modulation;
          khz = 1.0;
-         if (iqrate>2048000UL) khz = X2C_DIVL(2.048E+6,(double)iqrate);
+         if (iqrate>=2048000UL) {
+            khz = X2C_DIVL(2.048E+6,(double)iqrate);
+         }
+         else khz = X2C_DIVL(1.024E+6,(double)iqrate);
          fhz = (double)((int32_t)freq[i].hz-(int32_t)midfreq)*khz;
          if (freq[i].modulation!='S') {
-            rxx[i].df = (uint32_t)((int32_t)X2C_TRUNCI(fhz,
-                X2C_min_longint,X2C_max_longint)/1000L);
-            rem = fhz-(double)(((int32_t)X2C_TRUNCI(fhz,
-                X2C_min_longint,X2C_max_longint)/1000L)*1000L);
-            rxx[i].dffrac = (uint32_t)X2C_TRUNCC(X2C_DIVL(rem,khz)+0.5,0UL,
-                X2C_max_longcard);
+            rem = (int32_t)X2C_TRUNCI(fhz,X2C_min_longint,X2C_max_longint);
+            if (rem<0L) {
+               rxx[i].df = (uint32_t)(-(int32_t)((uint32_t)
+                -rem/1000UL)-1L);
+            }
+            else rxx[i].df = (uint32_t)rem/1000UL;
+            rem = (int32_t)X2C_TRUNCI(fhz,X2C_min_longint,X2C_max_longint);
+            if (rem<0L) rem = (int32_t)(1000UL-(uint32_t) -rem%1000UL);
+            else rem = (int32_t)((uint32_t)rem%1000UL);
+            rxx[i].dffrac = (uint32_t)X2C_TRUNCC(X2C_DIVL((double)
+                rem,khz)+0.5,0UL,X2C_max_longcard);
             /*WrInt(nomid, 15);WrInt(midfreq, 15);WrInt(freq[i].hz, 15);
                 WrInt(rxx[i].df, 15); WrInt(rxx[i].dffrac, 15);
                 WrStrLn("n m h d fr"); */
@@ -1349,7 +1434,7 @@ static void userio(char all)
    }
    if (len>0L) {
       setconfig(b, 10001ul, len);
-      setparms(recon);
+      if (f32==1UL) setparms(recon);
    }
    if (all) {
       recon = 0;
@@ -1404,6 +1489,7 @@ extern int main(int argc, char **argv)
    tshow = 0UL;
    levdiv2 = 4096L;
    soundfd = -1L;
+   f32 = 1UL;
    cfgfd = -1L;
    soundbufsize = 512UL;
    memset((char *)rxx,(char)0,sizeof(struct sdr_RX [64]));
@@ -1420,11 +1506,13 @@ extern int main(int argc, char **argv)
       rxx[freqc].samples = (sdr_pAUDIOSAMPLE)sampx[freqc];
       rxx[freqc].idx = freqc;
    } /* end for */
-   if (sdr_startsdr(url, 1001ul, port, 1001ul, iqrate, samphz, reconn)) {
+   freqc = 0UL;
+   if (sdr_startsdr(url, 1001ul, port, 1001ul, iqrate, samphz, reconn, f32)) {
       /*    rdconfig; */
       tshow = 0UL;
       sndw = 0UL;
       if (soundfn[0U]) soundfd = osi_OpenWrite(soundfn, 1001ul);
+      if (mixto>0UL) wwav(soundfd, udpsounds, pcm8, mixto, downsamp);
       if (soundfd>=0L || udpsounds) {
          recon = 1;
          for (;;) {
