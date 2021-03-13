@@ -8,4 +8,6 @@
 #ifndef mlib_H_
 #define mlib_H_
 #endif
-#include "termios.h"
+#include <termios.h>
+#include <sys/ioctl.h>
+
