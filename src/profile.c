@@ -66,9 +66,9 @@
 #define profile_FRESPERC 0.6
 /* kernel diameter of fresnel zone */
 
-enum COLS {profile_cEARTH, profile_cHEAVEN, profile_cFRESIN,
-                profile_cFRESOUT, profile_cOPTALT, profile_cSCALERS,
-                profile_cMLINES, profile_cFRESLINE, 
+enum COLS {profile_cEARTH, profile_cHEAVENup, profile_cHEAVENdown,
+                profile_cFRESIN, profile_cFRESOUT, profile_cOPTALT,
+                profile_cSCALERS, profile_cMLINES, profile_cFRESLINE, 
    profile_cMEADOW, profile_cTEXT1, profile_cTEXT2, profile_cTEXT3,
                 profile_cTEXTSCALE, profile_cBRANCH, profile_cTRUNC,
                 profile_cWATER, profile_cWOOD, profile_cURBAN};
@@ -185,7 +185,7 @@ struct _1 {
    uint32_t b;
 };
 
-static struct _1 colours[18];
+static struct _1 colours[19];
 
 
 static void Error(char text[], uint32_t text_len)
@@ -331,6 +331,7 @@ static void wrpng(void)
 static void background(void)
 {
    /* 20:80:220 */
+   int32_t bb;
    int32_t gg;
    int32_t rr;
    int32_t y;
@@ -341,8 +342,12 @@ static void background(void)
    tmp = ysize-1L;
    y = 0L;
    if (y<=tmp) for (;; y++) {
-      rr = (int32_t)colours[profile_cHEAVEN].r+(40L*(ysize-y))/ysize;
-      gg = (int32_t)colours[profile_cHEAVEN].g+(70L*(ysize-y))/ysize;
+      rr = ((int32_t)colours[profile_cHEAVENup].r*y+(int32_t)
+                colours[profile_cHEAVENdown].r*(ysize-y))/ysize;
+      gg = ((int32_t)colours[profile_cHEAVENup].g*y+(int32_t)
+                colours[profile_cHEAVENdown].g*(ysize-y))/ysize;
+      bb = ((int32_t)colours[profile_cHEAVENup].b*y+(int32_t)
+                colours[profile_cHEAVENdown].b*(ysize-y))/ysize;
       tmp0 = xsize-1L;
       i = 0L;
       if (i<=tmp0) for (;; i++) {
@@ -350,7 +355,7 @@ static void background(void)
             struct imagetext_PIX * anonym = &image->Adr[(i)*image->Len0+y];
             anonym->r = (uint16_t)rr;
             anonym->g = (uint16_t)gg;
-            anonym->b = (uint16_t)colours[profile_cHEAVEN].b;
+            anonym->b = (uint16_t)bb;
          }
          if (i==tmp0) break;
       } /* end for */
@@ -373,7 +378,7 @@ static void errorimg(const char errmsg[], uint32_t errmsg_len)
    background();
    imagetext_writestr(image, (uint32_t)x,
                 (uint32_t)((ysize-(int32_t)imagetext_fontsizey(10UL))/2L)
-                , 10UL, 900UL, 100UL, 0UL, errmsg, errmsg_len);
+                , 10UL, 0UL, 0UL, 900L, 100L, 0L, errmsg, errmsg_len);
    wrpng();
    Error(errmsg, errmsg_len);
 } /* end errorimg() */
@@ -450,13 +455,16 @@ static void Parms(void)
    struct aprsstr_POSITION posr;
    uint32_t label;
    /* default colours */
-   memset((char *)colours,(char)0,sizeof(struct _1 [18]));
+   memset((char *)colours,(char)0,sizeof(struct _1 [19]));
    colours[profile_cEARTH].r = 200UL;
    colours[profile_cEARTH].g = 120UL;
    colours[profile_cEARTH].b = 0UL;
-   colours[profile_cHEAVEN].r = 20UL;
-   colours[profile_cHEAVEN].g = 40UL;
-   colours[profile_cHEAVEN].b = 180UL;
+   colours[profile_cHEAVENup].r = 20UL;
+   colours[profile_cHEAVENup].g = 40UL;
+   colours[profile_cHEAVENup].b = 180UL;
+   colours[profile_cHEAVENdown].r = 60UL;
+   colours[profile_cHEAVENdown].g = 110UL;
+   colours[profile_cHEAVENdown].b = 180UL;
    colours[profile_cFRESIN].r = 290UL;
    colours[profile_cFRESIN].g = 80UL;
    colours[profile_cFRESIN].b = 0UL;
@@ -1473,9 +1481,10 @@ static void drawimage(void)
          aprsstr_IntToStr(st*i+m, 4UL, s, 100ul);
          aprsstr_Append(s, 100ul, "m", 2ul);
          imagetext_writestr(image, 3UL, (uint32_t)(y-fonty/2L),
-                (uint32_t)fonttyp, colours[profile_cTEXTSCALE].r,
-                colours[profile_cTEXTSCALE].g, colours[profile_cTEXTSCALE].b,
-                 s, 100ul);
+                (uint32_t)fonttyp, 0UL, 0UL,
+                (int32_t)colours[profile_cTEXTSCALE].r,
+                (int32_t)colours[profile_cTEXTSCALE].g,
+                (int32_t)colours[profile_cTEXTSCALE].b, s, 100ul);
       }
       ++i;
    }
@@ -1517,9 +1526,10 @@ static void drawimage(void)
                 100ul))-2L;
       }
       imagetext_writestr(image, (uint32_t)dk,
-                (uint32_t)((frameyd-fonty)-3L), (uint32_t)fonttyp,
-                colours[profile_cTEXTSCALE].r, colours[profile_cTEXTSCALE].g,
-                 colours[profile_cTEXTSCALE].b, s, 100ul);
+                (uint32_t)((frameyd-fonty)-3L), (uint32_t)fonttyp, 0UL,
+                0UL, (int32_t)colours[profile_cTEXTSCALE].r,
+                (int32_t)colours[profile_cTEXTSCALE].g,
+                (int32_t)colours[profile_cTEXTSCALE].b, s, 100ul);
       if (i==tmp) break;
    } /* end for */
    if (labela[0]) {
@@ -1541,9 +1551,10 @@ static void drawimage(void)
    aprsstr_Append(s, 100ul, "\177", 2ul);
    aprsstr_Append(s, 100ul, "]", 2ul);
    imagetext_writestr(image, 3UL, (uint32_t)(ysize-(fonty*12L)/10L),
-                (uint32_t)fonttyp, colours[profile_cTEXT1].r,
-                colours[profile_cTEXT1].g, colours[profile_cTEXT1].b, s,
-                100ul);
+                (uint32_t)fonttyp, 0UL, 0UL,
+                (int32_t)colours[profile_cTEXT1].r,
+                (int32_t)colours[profile_cTEXT1].g,
+                (int32_t)colours[profile_cTEXT1].b, s, 100ul);
    strncpy(s,"[",100u);
    aprsstr_FixToStr((float)(X2C_DIVL(posa.lat,1.7453292519444E-2)), 6UL,
                 ss, 100ul);
@@ -1554,17 +1565,19 @@ static void drawimage(void)
    aprsstr_Append(s, 100ul, ss, 100ul);
    aprsstr_Append(s, 100ul, "]", 2ul);
    imagetext_writestr(image, 3UL, (uint32_t)(ysize-(fonty*24L)/10L),
-                (uint32_t)fonttyp, colours[profile_cTEXT2].r,
-                colours[profile_cTEXT2].g, colours[profile_cTEXT2].b, s,
-                100ul);
+                (uint32_t)fonttyp, 0UL, 0UL,
+                (int32_t)colours[profile_cTEXT2].r,
+                (int32_t)colours[profile_cTEXT2].g,
+                (int32_t)colours[profile_cTEXT2].b, s, 100ul);
    aprsstr_FixToStr((float)mhz, 2UL*(uint32_t)(mhz<30.0), s, 100ul);
    aprsstr_Append(s, 100ul, "MHz Refrac=", 12ul);
    aprsstr_FixToStr((float)refraction, 3UL, ss, 100ul);
    aprsstr_Append(s, 100ul, ss, 100ul);
    imagetext_writestr(image, 3UL, (uint32_t)(ysize-(fonty*36L)/10L),
-                (uint32_t)fonttyp, colours[profile_cTEXT3].r,
-                colours[profile_cTEXT3].g, colours[profile_cTEXT3].b, s,
-                100ul);
+                (uint32_t)fonttyp, 0UL, 0UL,
+                (int32_t)colours[profile_cTEXT3].r,
+                (int32_t)colours[profile_cTEXT3].g,
+                (int32_t)colours[profile_cTEXT3].b, s, 100ul);
    aprsstr_Assign(s, 100ul, "[", 2ul);
    aprsstr_IntToStr((int32_t)X2C_TRUNCI(altb-antb,X2C_min_longint,
                 X2C_max_longint), 0UL, ss, 100ul);
@@ -1585,8 +1598,9 @@ static void drawimage(void)
    }
    imagetext_writestr(image, (uint32_t)rightbound(s, 100ul),
                 (uint32_t)(ysize-(fonty*12L)/10L), (uint32_t)fonttyp,
-                colours[profile_cTEXT1].r, colours[profile_cTEXT1].g,
-                colours[profile_cTEXT1].b, s, 100ul);
+                0UL, 0UL, (int32_t)colours[profile_cTEXT1].r,
+                (int32_t)colours[profile_cTEXT1].g,
+                (int32_t)colours[profile_cTEXT1].b, s, 100ul);
    strncpy(s,"[",100u);
    aprsstr_FixToStr((float)(X2C_DIVL(posb.lat,1.7453292519444E-2)), 6UL,
                 ss, 100ul);
@@ -1598,8 +1612,9 @@ static void drawimage(void)
    aprsstr_Append(s, 100ul, "]", 2ul);
    imagetext_writestr(image, (uint32_t)rightbound(s, 100ul),
                 (uint32_t)(ysize-(fonty*24L)/10L), (uint32_t)fonttyp,
-                colours[profile_cTEXT2].r, colours[profile_cTEXT2].g,
-                colours[profile_cTEXT2].b, s, 100ul);
+                0UL, 0UL, (int32_t)colours[profile_cTEXT2].r,
+                (int32_t)colours[profile_cTEXT2].g,
+                (int32_t)colours[profile_cTEXT2].b, s, 100ul);
    /*  s:="fspl="; */
    aprsstr_FixToStr((float)(32.2+8.685889638065*log(dist*mhz)), 2UL, sss,
                 100ul);
@@ -1626,7 +1641,7 @@ static void drawimage(void)
    }
    imagetext_writestr(image, (uint32_t)rightbound(sss, 100ul),
                 (uint32_t)(ysize-(fonty*36L)/10L), (uint32_t)fonttyp,
-                (uint32_t)cr, (uint32_t)cg, (uint32_t)cb, sss, 100ul);
+                0UL, 0UL, cr, cg, cb, sss, 100ul);
    s[0] = 0;
    if (treedrawn) {
       strncpy(s,"Trees=",100u);
@@ -1641,8 +1656,9 @@ static void drawimage(void)
    aprsstr_Append(sss, 100ul, " ", 2ul);
    imagetext_writestr(image, (uint32_t)rightbound(sss, 100ul),
                 (uint32_t)(ysize-(fonty*36L)/10L), (uint32_t)fonttyp,
-                colours[profile_cTEXT3].r, colours[profile_cTEXT3].g,
-                colours[profile_cTEXT3].b, s, 100ul);
+                0UL, 0UL, (int32_t)colours[profile_cTEXT3].r,
+                (int32_t)colours[profile_cTEXT3].g,
+                (int32_t)colours[profile_cTEXT3].b, s, 100ul);
 /*WrFixed(airshadow,2, 9);WrFixed(woodshadow,2, 9);WrStrLn(" air wood"); */
 } /* end drawimage() */
 

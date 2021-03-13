@@ -39,6 +39,10 @@ extern uint32_t libsrtm_srtmmem;
 
 extern uint32_t libsrtm_srtmmaxmem;
 
+extern uint32_t libsrtm_accesses;
+
+extern uint32_t libsrtm_accessescached;
+
 extern char libsrtm_srtmdir[1024];
 
 extern char libsrtm_bicubic;
