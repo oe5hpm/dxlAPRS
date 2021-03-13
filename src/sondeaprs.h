@@ -30,7 +30,7 @@ struct sondeaprs_SDRBLOCK {
    char valid;
 };
 
-#define sondeaprs_VERSION "sondemod 1.36"
+#define sondeaprs_VERSION "sondemod 1.36g"
 
 #define sondeaprs_minusG "G"
 
@@ -38,15 +38,21 @@ struct sondeaprs_SDRBLOCK {
 
 #define sondeaprs_minusP "P"
 
+#define sondeaprs_minusa "a"
+
+#define sondeaprs_LASTSECONDS 3600
+
+#define sondeaprs_BEFOREBURST 100000
+
 extern void sondeaprs_senddata(double, double, double,
                 double, double, double, double,
                 double, double, double, double,
                 double, double, double, double,
                 double, uint32_t, uint32_t, char [],
-                uint32_t, uint32_t, uint32_t, char [], uint32_t,
-                uint32_t, double, char, char [],
-                uint32_t, char [], uint32_t,
-                struct sondeaprs_SDRBLOCK);
+                uint32_t, uint32_t, uint32_t, uint32_t, double,
+                 char [], uint32_t, uint32_t, double,
+                char, char, int32_t, char [], uint32_t,
+                 char [], uint32_t, struct sondeaprs_SDRBLOCK);
 
 extern int32_t sondeaprs_GetIp(char [], uint32_t, uint32_t *,
                 uint32_t *, uint32_t *);
@@ -63,12 +69,6 @@ extern char sondeaprs_csvfilename[1025];
 
 extern char sondeaprs_sym[2];
 
-extern uint32_t sondeaprs_beacontime;
-
-extern uint32_t sondeaprs_lowaltbeacontime;
-
-extern uint32_t sondeaprs_lowalt;
-
 extern uint32_t sondeaprs_toport;
 
 extern uint32_t sondeaprs_maxsenddistance;
@@ -83,6 +83,8 @@ extern char sondeaprs_verb2;
 
 extern char sondeaprs_nofilter;
 
+extern char sondeaprs_json;
+
 extern int32_t sondeaprs_comptyp;
 
 extern int32_t sondeaprs_udpsock;
@@ -96,6 +98,26 @@ extern char sondeaprs_dao;
 extern struct aprsstr_POSITION sondeaprs_mypos;
 
 extern float sondeaprs_myalt;
+
+struct sondeaprs__D0;
+
+
+struct sondeaprs__D0 {
+   uint32_t beacontime;
+   uint32_t below;
+};
+
+extern struct sondeaprs__D0 sondeaprs_beacontimes[20];
+
+struct sondeaprs__D1;
+
+
+struct sondeaprs__D1 {
+   struct aprsstr_POSITION leftdown;
+   struct aprsstr_POSITION rightup;
+};
+
+extern struct sondeaprs__D1 sondeaprs_rectfence;
 
 
 extern void sondeaprs_BEGIN(void);
