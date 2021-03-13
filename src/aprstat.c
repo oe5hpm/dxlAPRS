@@ -1516,19 +1516,19 @@ extern void aprstat_wxgraph(maptool_pIMAGE * img, aprsdecode_pOPHIST op,
          dots(XStep, img, winds, 1440ul, 1, 100UL, 500UL, 700UL);
          dots(XStep, img, gust, 1440ul, 1, 600UL, 100UL, 0UL);
       }
-      if (dirvalid) {
-         have |= 0x10U;
-         if ((0x10U & *what)) {
-            if (!newimg(Maxx, img)) return;
-            scale(windd, 1440ul, (-1.E+4f), 360.0f, 120.0f, 365.0f, &yax0,
+   }
+   if (dirvalid) {
+      have |= 0x10U;
+      if ((0x10U & *what)) {
+         if (!newimg(Maxx, img)) return;
+         scale(windd, 1440ul, (-1.E+4f), 360.0f, 120.0f, 365.0f, &yax0,
                 &yax1, &step);
-            aprsstr_FixToStr(lastval->winddir, 0UL, s, 256ul);
-            aprsstr_Append(s, 256ul, "deg Wind Direction ", 20ul);
-            aprsstr_Append(s, 256ul, h, 256ul);
-            paper(img, yax0, yax1, 90.0f, 1.0f, 8UL, Maxx, 120UL, s, 256ul);
-            timeline(stime, img, Maxx);
-            dots(XStep, img, windd, 1440ul, 0, 200UL, 700UL, 700UL);
-         }
+         aprsstr_FixToStr(lastval->winddir, 0UL, s, 256ul);
+         aprsstr_Append(s, 256ul, "deg Wind Direction ", 20ul);
+         aprsstr_Append(s, 256ul, h, 256ul);
+         paper(img, yax0, yax1, 90.0f, 1.0f, 8UL, Maxx, 120UL, s, 256ul);
+         timeline(stime, img, Maxx);
+         dots(XStep, img, windd, 1440ul, 0, 200UL, 700UL, 700UL);
       }
    }
    if (max0.hyg!=(-1.E+4f)) {

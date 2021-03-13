@@ -2001,7 +2001,8 @@ static void GetWX(struct aprsdecode_WX * wx, uint32_t * course,
    NoWX(wx);
    wwind = 1.E+6f;
    wdir = 1.E+6f;
-   /*  IF buf[p]="_" THEN INC(p, 9) END;     (* positionless wx *) */
+   /*  IF (buf[p]="_") & (p+9<HIGH(buf)) THEN INC(p, 9) END;
+                (* positionless wx *) */
    if (storm) {
       /* storm data */
       /*4903.50N\07202.75W@088/036/HC/150^200/0980>090&030%040 */
@@ -3244,10 +3245,9 @@ extern int32_t aprsdecode_Decode(char buf[], uint32_t buf_len,
       }
    }
    if (X2C_IN((int32_t)dat->type,12,0xCCU)) {
-      if (dat->sym=='_' || dat->type==aprsdecode_PWETH) {
-         if (dat->type==aprsdecode_PWETH) {
-            aprsstr_Delstr(dat->comment0, 256ul, 0UL, 8UL);
-         }
+      if (dat->sym=='_') {
+         /*      IF dat.type=PWETH THEN Delstr(dat.comment, 0, 8) END;
+                   (* positionless time *) */
          GetWX(&dat->wx, &dat->course, &dat->speed, dat->comment0, 256ul, 0);
       }
       else if (dat->sym=='@') {
@@ -3262,6 +3262,10 @@ extern int32_t aprsdecode_Decode(char buf[], uint32_t buf_len,
             END;
       */
       if (dat->course<1UL || dat->course>360UL) dat->course = 0UL;
+   }
+   else if (dat->type==aprsdecode_PWETH) {
+      aprsstr_Delstr(dat->comment0, 256ul, 0UL, 8UL); /* positionless time */
+      GetWX(&dat->wx, &dat->course, &dat->speed, dat->comment0, 256ul, 0);
    }
    return 0L;
 } /* end Decode() */
@@ -4223,7 +4227,8 @@ static void setmsgheard(const aprsdecode_MONCALL us)
 
 extern aprsdecode_pOPHIST aprsdecode_selop(void)
 {
-   if (aprsdecode_click.entries>0UL) {
+   if (aprsdecode_click.entries>0UL && aprsdecode_click.entries>aprsdecode_click.selected)
+                 {
       return aprsdecode_click.table[aprsdecode_click.selected].opf;
    }
    else return 0;
@@ -5671,16 +5676,16 @@ extern void aprsdecode_tcpconnstat(char s[], uint32_t s_len)
                aprsstr_Append(s, s_len, h, 100ul);
             }
             aprsstr_Append(s, s_len, "\012  Rx Frames:", 14ul);
-            aprsstr_IntToStr((int32_t)anonym->rxframes, 1UL, h, 100ul);
+            aprsstr_CardToStr(anonym->rxframes, 1UL, h, 100ul);
             aprsstr_Append(s, s_len, h, 100ul);
             aprsstr_Append(s, s_len, "\012  Rx Bytes:", 13ul);
-            aprsstr_IntToStr((int32_t)anonym->rxbytes, 1UL, h, 100ul);
+            aprsstr_CardToStr(anonym->rxbytes, 1UL, h, 100ul);
             aprsstr_Append(s, s_len, h, 100ul);
             aprsstr_Append(s, s_len, "\012  Tx Frames:", 14ul);
-            aprsstr_IntToStr((int32_t)anonym->txframes, 1UL, h, 100ul);
+            aprsstr_CardToStr(anonym->txframes, 1UL, h, 100ul);
             aprsstr_Append(s, s_len, h, 100ul);
             aprsstr_Append(s, s_len, "\012  Tx Bytes:", 13ul);
-            aprsstr_IntToStr((int32_t)anonym->txbytes, 1UL, h, 100ul);
+            aprsstr_CardToStr(anonym->txbytes, 1UL, h, 100ul);
             aprsstr_Append(s, s_len, h, 100ul);
          }
          tcp0 = anonym->next;

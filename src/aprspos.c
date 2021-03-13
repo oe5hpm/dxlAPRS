@@ -384,7 +384,8 @@ extern void aprspos_GetPos(struct aprsstr_POSITION * pos, uint32_t * speed,
    else if (c=='$' && payload+30UL<buf_len-1) {
       /* gps 4806.9409,N,01134.6219,E */
       ok0 = 0;
-      if (buf[payload+1UL]=='G' && buf[payload+2UL]=='P') {
+      if (buf[payload+1UL]=='G') {
+         /*& (buf[payload+2]="P")*/
          i = payload+7UL;
          gpst = buf[payload+5UL];
          if ((buf[payload+3UL]=='G' && buf[payload+4UL]=='G') && gpst=='A') {
@@ -635,14 +636,12 @@ extern void aprspos_GetPos(struct aprsstr_POSITION * pos, uint32_t * speed,
                   n = (uint32_t)(uint8_t)buf[i+2UL]; /* speed course */
                   if (n>=33UL && n<=127UL) {
                      n -= 33UL;
-                     if (n<=89UL) {
-                        *course = n*4UL;
-                        n = (uint32_t)(uint8_t)buf[i+3UL];
-                        if (n>=33UL && n<=127UL) {
-                           *speed = (uint32_t)X2C_TRUNCC(osic_power(1.08f,
-                (float)(n-33UL)),0UL,X2C_max_longcard);
-                        }
-                     }
+                     if (n<=89UL) *course = n*4UL;
+                  }
+                  n = (uint32_t)(uint8_t)buf[i+3UL];
+                  if (n>=33UL && n<=127UL) {
+                     *speed = (uint32_t)X2C_TRUNCC(osic_power(1.08f,
+                (float)(n-33UL))-1.0f,0UL,X2C_max_longcard);
                   }
                }
                compos = i+5UL;

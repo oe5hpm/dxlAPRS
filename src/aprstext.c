@@ -37,7 +37,7 @@
 #endif
 
 /* aprs tracks on osm map by oe5dxl */
-/*FROM osi IMPORT WrInt, WrStrLn; */
+/*FROM osi IMPORT WrStr, WrStrLn, WrInt; */
 #define aprstext_PI 3.1415926535898
 
 
@@ -704,9 +704,9 @@ extern void aprstext_setmarkalti(aprsdecode_pFRAMEHIST pf,
 } /* end setmarkalti() */
 
 
-extern void aprstext_optext(uint32_t typ,
-                struct aprsdecode_CLICKOBJECT * obj, char * last,
-                char s[], uint32_t s_len)
+extern void aprstext_optext(uint32_t typ, char findword[],
+                uint32_t findword_len, struct aprsdecode_CLICKOBJECT * obj,
+                 char * last, char s[], uint32_t s_len)
 {
    aprsdecode_pOPHIST op;
    aprsdecode_pFRAMEHIST pfe;
@@ -738,9 +738,9 @@ extern void aprstext_optext(uint32_t typ,
          do {
             if (pf->next==0) pf = op->frames;
             else pf = pf->next;
-         } while (!((!aprsdecode_lums.errorstep || pf1==pf) || (pf->nodraw&~0x40U)!=0U));
-         /*      IF pf^.next<>NIL THEN pf:=pf^.next ELSE pf:=op^.frames END;
-                */
+         } while (!(pf1==pf || (!aprsdecode_lums.errorstep || (pf->nodraw&~0x40U)!=0U) && (findword[0UL]==0 || aprsstr_InStr(pf->vardat->raw, 500ul, findword, findword_len)>=0L)));
+         /*      UNTIL NOT lums.errorstep OR (pf1=pf)
+                OR (pf^.nodraw-ERRSET{eNOPOS}<>ERRSET{}); */
          if (pf) {
             obj->pff0 = pf;
             obj->pff = pf;
@@ -752,9 +752,9 @@ extern void aprstext_optext(uint32_t typ,
          pf1 = pf;
          pfe = pf;
          do {
-            if (!aprsdecode_lums.errorstep || (pfe->nodraw&~0x40U)!=0U) {
-               pf = pfe;
-            }
+            if ((!aprsdecode_lums.errorstep || (pfe->nodraw&~0x40U)!=0U)
+                && (findword[0UL]==0 || aprsstr_InStr(pfe->vardat->raw,
+                500ul, findword, findword_len)>=0L)) pf = pfe;
             if (pfe->next==0) pfe = op->frames;
             else pfe = pfe->next;
          } while (pfe!=pf1);
@@ -762,11 +762,15 @@ extern void aprstext_optext(uint32_t typ,
          obj->pff = pf;
          obj->typf = aprsdecode_tTRACK; /* set "track found" */
       }
-      /*    IF ((typ=1) OR (typ=0)) & lums.errorstep & (pf=pf1)
-                THEN Assign(s, "no more errors found"); */
       if ((aprsdecode_lums.errorstep && pf) && (pf->nodraw&~0x40U)==0U) {
          aprsstr_Assign(s, s_len, "Show errors mode: no (more) errors found",
                  41ul);
+      }
+      else if ((findword[0UL] && pf) && aprsstr_InStr(pf->vardat->raw, 500ul,
+                 findword, findword_len)<0L) {
+         aprsstr_Assign(s, s_len, "no frames with <", 17ul);
+         aprsstr_Append(s, s_len, findword, findword_len);
+         aprsstr_Append(s, s_len, "> found", 8ul);
       }
       else if (pf) {
          cn = 0UL;
@@ -947,17 +951,19 @@ extern void aprstext_listtyps(char typ, char decod,
             }
          }
       }
-      else if (typ=='M' || typ=='B' && (oneop[0UL]==0 || X2C_STRCMP(oneop,
-                oneop_len,op->call,9u)==0)) {
+      else if ((typ=='M' || typ=='T')
+                || typ=='B' && (oneop[0UL]==0 || X2C_STRCMP(oneop,oneop_len,
+                op->call,9u)==0)) {
          /* bulletins messages */
          lastto[0U] = 0;
          lasttext[0U] = 0;
          while (pf) {
-            if (((((((pf->vardat->lastref==pf && aprsdecode_Decode(pf->vardat->raw,
-                 500ul, &dat)>=0L) && (typ=='M' || typ=='B')) && dat.type==aprsdecode_MSG) && X2C_STRCMP(dat.symcall,
-                9u,dat.msgto,9u)) && dat.msgtext[0UL]) && (typ=='B')==IsBulletin(dat)) && ((oneop[0UL]==0 || X2C_STRCMP(oneop,
+            if ((((((pf->vardat->lastref==pf && aprsdecode_Decode(pf->vardat->raw,
+                 500ul, &dat)>=0L) && dat.type==aprsdecode_MSG) && X2C_STRCMP(dat.symcall,
+                9u,dat.msgto,9u)) && dat.msgtext[0UL]) && (typ=='T' || (typ=='B')==IsBulletin(dat))) && ((oneop[0UL]==0 || X2C_STRCMP(oneop,
                 oneop_len,op->call,9u)==0) || X2C_STRCMP(oneop,oneop_len,
                 dat.msgto,9u)==0)) {
+               /*        & ((typ="M") OR (typ="B")) & (dat.type=MSG) */
                if (!(aprsstr_StrCmp(lastto, 101ul, dat.msgto,
                 9ul) && aprsstr_StrCmp(lasttext, 101ul, dat.msgtext, 67ul))) {
                   aprstext_DateLocToStr(pf->time0, s, 1000ul);
@@ -984,46 +990,6 @@ extern void aprstext_listtyps(char typ, char decod,
          }
       }
       else if (typ=='O') {
-         /*
-             ELSIF ((typ="M") OR (typ="B")) & ((oneop[0]=0C)
-                OR (oneop=op^.call)) THEN (* bulletins messages *)
-               lastto[0]:=0C;
-               lasttext[0]:=0C;
-         
-               WHILE pf<>NIL DO
-                 IF (pf^.vardat^.lastref=pf) & (Decode(pf^.vardat^.raw,
-                dat)>=0) THEN
-                   IF (typ="M") OR (typ="B") THEN
-                     IF (dat.type=MSG) & (dat.symcall<>dat.msgto)
-                & (dat.msgtext[0]<>0C) THEN
-                       IF (typ="B")=IsBulletin(dat) THEN 
-                         IF NOT (StrCmp(lastto, dat.msgto) & StrCmp(lasttext,
-                 dat.msgtext)) THEN 
-                           DateLocToStr(pf^.time, s); Append(s, " ");
-                           Append(s, dat.symcall); Append(s, ">");
-                           Append(s, dat.msgto); Append(s, ":[");
-                           Apphex(s, dat.msgtext); Append(s, "]");
-                           IF dat.acktext[0]<>0C THEN 
-                             Apphex(s, " Ack[");Append(s, dat.acktext);
-                Append(s, "]");
-                           END;
-                           Append(s, LF);
-                           wrstrlist(s, dat.symcall, pf^.vardat^.pos,
-                pf^.time);
-         
-         <* IF WITHSTDOUT THEN *>
-                           WrStr(s);
-         <* END *>
-                           Assign(lastto, dat.msgto);
-                           Assign(lasttext, dat.msgtext);
-                         END;
-                       END;
-                     END;
-                   END;  
-                 END;
-                 pf:=pf^.next;
-               END;
-         */
          if (pf) {
             while (pf->next) pf = pf->next;
             aprstext_decode(s, 1000ul, 0, pf, 0, 0UL, decod, &dat);

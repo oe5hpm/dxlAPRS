@@ -127,9 +127,9 @@ is write enabled. A given File Path is used
 for watch-call and manual saved Logs too.
 Append %d for daywise logfile. "logs/rawlog%d"
 
-|309 Days Keep (daily) Rawdata Logfiles. Purge
+|309 Days Keep (dayly) Rawdata Logfiles. Purge
 starts on Program start and Midnight.
-0 Days is forever. Make daily files
+0 Days is forever. Make dayly files
 with %d at end of Logfilename like
 "logs/rawlog%d"
 
@@ -553,9 +553,11 @@ or lat/long ddmm.mmm dddmm.mmm "4806.091N 01318.676E"
 or lat/long (-)d.ddddd (-)d.ddddd "48.71 -13.967"
 In Poi's (in osm-directory) Repeat Find to step
 through all matches "p*dorf".
-Go back to map position before with "b", BACKSPACE
+Go back to last map position with "b", BACKSPACE
 or right click as after any other zoom/pan function.
 Cursor up/down rotates through 10 lines of History.
+"<>" before keyword for step thru waypoints with
+word in raw frame with ">" "<"-key
 
 |2100 No valid Symbol
 |2101 Police, Sheriff
@@ -780,7 +782,7 @@ Data is stored to memory and writelog and is
 displayed again on "Exit Logview"
 
 |6705 Find Call in Logfile, exact match,
-and import it. Works only with daily Log
+and import it. Works only with dayly Log
 
 |6710 Read data from this path/filename.
 The format is Timestamp "yyyymmdd:hhmmss " in utc
@@ -788,7 +790,7 @@ followed by AprsIs Line. The data is sorted at
 import by Time, indexed and all waypoints compared
 to each other for removing dupes and stored in
 compressed form in RAM. Append %d to filename
-for daily logs, "logs/rawlog%d"
+for dayly logs, "logs/rawlog%d"
 
 |6715 
 |6716 Reload Data from Writelog
@@ -907,7 +909,7 @@ Program Quit
 |7001 Save Config now 
 
 |7005 Import aprsmap.cfg (Loosing all Entries not Saved before)
-empty srtm-cache and reimport poi.txt and mypoi.txt Data
+empty srtm-cache and reimport poi directory
 
 |7010 Enter Calls You want to be told if
 they are active. If new Data arrive
