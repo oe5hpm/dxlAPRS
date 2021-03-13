@@ -110,6 +110,8 @@ struct SQUELCH {
    uint32_t nexttick;
    double scanlo;
    double scanstep;
+   double scanstepc;
+   uint32_t scanstartkhz;
    uint32_t scanslot;
    uint32_t scanslots;
    int32_t scanduty;
@@ -137,6 +139,8 @@ static int32_t soundfd;
 static uint32_t sndw;
 
 static uint32_t freqc;
+
+static uint32_t freqcau;
 
 static uint32_t midfreq;
 
@@ -806,8 +810,8 @@ E CPU-load (12000 default)", 76ul);
                osi_WrStrLn("  example:", 11ul);
                osi_WrStrLn("    p 5 50", 11ul);
                osi_WrStrLn("    p 8 1", 10ul);
-               osi_WrStrLn("    f 438.825   5   75 70         (afc, quelch, a\
-udio lowpass, 12khz IF)", 73ul);
+               osi_WrStrLn("    f 438.825   5   75 70         (afc, squelch, \
+audio lowpass, 12khz IF)", 74ul);
                osi_WrStrLn("    f 439.275   0   0  80 20000   (20khz IF, uses\
  more CPU)", 60ul);
                osi_WrStrLn("    u 439.5001 -700 0  0  600     (USB with 600Hz\
@@ -918,6 +922,7 @@ static void centerfreq(const struct FREQTAB freq[], uint32_t freq_len)
    double fhzo;
    double fhz;
    double khz;
+   struct SQUELCH * anonym;
    midfreq = 0UL;
    i = 0UL;
    max0 = 0UL;
@@ -967,6 +972,7 @@ static void centerfreq(const struct FREQTAB freq[], uint32_t freq_len)
          else midfreq = (midfreq/1000UL)*1000UL;
       }
       i = 0UL;
+      freqcau = 0UL;
       while (i<freqc) {
          /*    FILL(ADR(rxx[i]), 0C, SIZE(rxx[0])); */
          squelchs[i].hz10 = (uint32_t)((int32_t)(freq[i].hz/10UL)
@@ -998,27 +1004,34 @@ static void centerfreq(const struct FREQTAB freq[], uint32_t freq_len)
                 WrStrLn("n m h d fr"); */
             rxx[i].maxafc = (int32_t)freq[i].afc;
             rxx[i].agc = freq[i].agc;
+            ++freqcau; /* channels without scanners */
          }
          else {
             /*scanner */
-            fhzo = (double)((int32_t)freq[i].afc-(int32_t)midfreq)
-                *khz;
-            squelchs[i].scanlo = fhz; /* scan from */
-            rxx[i].dffrac = 0UL;
-            squelchs[i].scanslot = 0UL;
-            squelchs[i].scanslots = (uint32_t)X2C_TRUNCC(X2C_DIVL(fhzo-fhz,
-                squelchs[i].scanstep),0UL,X2C_max_longcard);
-            if (squelchs[i].scanslots>1400UL) squelchs[i].scanslots = 1400UL;
-            card32str(squelchs[i].scandb, 1412ul, 4UL, freq[i].hz/1000UL);
-            card32str(squelchs[i].scandb, 1412ul, 8UL,
-                (uint32_t)X2C_TRUNCC(squelchs[i].scanstep,0UL,
-                X2C_max_longcard));
-            strncpy(squelchs[i].scandb,"SDR",1412u);
-            X2C_MOVE((char *)squelchs[i].scandb,
-                (char *)squelchs[i].scansq,12UL);
-            squelchs[i].scandb[3U] = 'L';
-            squelchs[i].scansq[3U] = 'N';
+            { /* with */
+               struct SQUELCH * anonym = &squelchs[i];
+               fhzo = (double)((int32_t)freq[i].afc-(int32_t)
+                midfreq)*khz;
+               anonym->scanlo = fhz; /* scan from */
+               rxx[i].dffrac = 0UL;
+               anonym->scanstepc = anonym->scanstep*khz;
+               anonym->scanslots = (uint32_t)X2C_TRUNCC(X2C_DIVL(fhzo-fhz,
+                anonym->scanstepc),0UL,X2C_max_longcard);
+               anonym->scanstartkhz = freq[i].hz/1000UL;
+               anonym->scanstartkhz -= (uint32_t)(int32_t)
+                X2C_TRUNCI(offset*1000.0,X2C_min_longint,X2C_max_longint);
+               if (anonym->scanslots>1400UL) anonym->scanslots = 1400UL;
+            }
          }
+         /*          IF scanslot>=scanslots THEN scanslot:=0 END; */
+         /*
+                   card32str(scandb, 4, freq[i].hz DIV 1000);
+                   card32str(scandb, 8, VAL(CARDINAL, scanstep));
+                   scandb:="SDR";
+                   MOVE(ADR(scandb), ADR(scansq), SCANHEADER);
+                   scandb[3]:="L";
+                   scansq[3]:="N";
+         */
          /*scanner */
          rxx[i].width = freq[i].width;
          ++i;
@@ -1243,6 +1256,28 @@ static void showrssi(void)
    osic_flush();
 } /* end showrssi() */
 
+
+static void sendscan(uint32_t ix0)
+{
+   char s[12];
+   struct SQUELCH * anonym;
+   { /* with */
+      struct SQUELCH * anonym = &squelchs[ix0];
+      strncpy(s,"SDR",12u);
+      card32str(s, 12ul, 4UL, anonym->scanstartkhz);
+      card32str(s, 12ul, 8UL, (uint32_t)X2C_TRUNCC(anonym->scanstep,0UL,
+                X2C_max_longcard));
+      X2C_MOVE((char *)s,(char *)anonym->scandb,12UL);
+      X2C_MOVE((char *)s,(char *)anonym->scansq,12UL);
+      anonym->scandb[3U] = 'L';
+      anonym->scansq[3U] = 'N';
+      sendudp((char *)anonym->scandb, 1412u/1u,
+                (int32_t)(12UL+anonym->scanslots), udplev);
+      sendudp((char *)anonym->scansq, 1412u/1u,
+                (int32_t)(12UL+anonym->scanslots), udpsq);
+   }
+} /* end sendscan() */
+
 /*------ watermark data */
 #define sdrtest_CRCINIT 0x0FFFFFFFF
 
@@ -1294,7 +1329,7 @@ static void sendwater(void)
             card32send(anonym->waterdat, 40ul, 1UL, 0x0CA55F047UL);
             p = 5UL;
             anonym->waterdat[5U] = *(uint8_t *)"f";
-            card32send(anonym->waterdat, 40ul, 6UL, squelchs[j].hz10);
+            card32send(anonym->waterdat, 40ul, 6UL, anonym->hz10);
             p += 5UL;
             anonym->waterdat[10U] = *(uint8_t *)"a";
             card32send(anonym->waterdat, 40ul, 11UL,
@@ -1328,36 +1363,9 @@ static void sendwater(void)
 } /* end sendwater() */
 
 /*------ watermark data */
-static int32_t sp;
 
-static int32_t sn;
-
-static uint32_t rp;
-
-static uint32_t actch;
-
-static uint32_t ticker;
-
-static uint32_t ix;
-
-static float ri;
-
-static uint32_t tshow;
-
-static uint32_t dsamp;
-
-static char recon;
-
-static int32_t pcm;
-
-static int32_t mixleft;
-
-static int32_t mixright;
-
-static int32_t levdiv2;
-
-
-static void sendaudio(int32_t pcm0, uint8_t codec, uint32_t ch)
+static void sendaudio(int32_t pcm0, uint8_t codec, uint32_t ch,
+                uint32_t chaudio)
 {
    /* with start pattern and crc32 in dynamic count of 8+32bit type+value word units */
    struct SQUELCH * anonym;
@@ -1384,7 +1392,7 @@ static void sendaudio(int32_t pcm0, uint8_t codec, uint32_t ch)
          }
          else pcm0 = (int32_t)((uint32_t)pcm0&0xFFFCUL);
       }
-      if (ch==0UL) ++pcm0;
+      if (chaudio==0UL) ++pcm0;
       /* code data as watermark */
       sndbuf[sndw] = (short)pcm0;
    }
@@ -1405,6 +1413,10 @@ static void sendaudio(int32_t pcm0, uint8_t codec, uint32_t ch)
       sndw = 0UL;
    }
 } /* end sendaudio() */
+
+static uint32_t ticker;
+
+static char recon;
 
 
 static void userio(char all)
@@ -1474,6 +1486,32 @@ static void schedule(void)
    }
    prx[i] = 0;
 } /* end schedule() */
+
+static int32_t sp;
+
+static int32_t sn;
+
+static uint32_t rp;
+
+static uint32_t actch;
+
+static uint32_t ix;
+
+static uint32_t chnum;
+
+static float ri;
+
+static uint32_t tshow;
+
+static uint32_t dsamp;
+
+static int32_t pcm;
+
+static int32_t mixleft;
+
+static int32_t mixright;
+
+static int32_t levdiv2;
 
 
 X2C_STACK_LIMIT(100000l)
@@ -1554,18 +1592,21 @@ extern int main(int argc, char **argv)
                         WrInt(ORD(sqbyte(rxx[ix].rssi, rxx[ix].sqsum)),4);
                         WrInt(ORD(dBbyte(rxx[ix].rssi)),4);WrStrLn("");
                         END;
+                        WrInt(ORD(dBbyte(rxx[ix].rssi)),3);
+                IF scanslot=0 THEN WrStrLn("-------------") END;
                         */
                         rxx[ix].df = (uint32_t)(int32_t)
                 X2C_TRUNCI((anonym->scanlo+(double)
-                anonym->scanslot*anonym->scanstep)*0.001,X2C_min_longint,
+                anonym->scanslot*anonym->scanstepc)*0.001,X2C_min_longint,
                 X2C_max_longint);
+                        /*WrInt(rxx[ix].df, 5); */
                         ++anonym->scanslot;
                         if (anonym->scanslot>=anonym->scanslots) {
+                           /*scanslot:=0;
+                REPEAT WrInt(ORD(scandb[scanslot]), 4);
+                INC(scanslot) UNTIL scanslot>=scanslots; WrStrLn(""); */
                            anonym->scanslot = 0UL;
-                           sendudp((char *)anonym->scandb, 1412u/1u,
-                (int32_t)(12UL+anonym->scanslots), udplev);
-                           sendudp((char *)anonym->scansq, 1412u/1u,
-                (int32_t)(12UL+anonym->scanslots), udpsq);
+                           sendscan(ix);
                         }
                      }
                      else if (anonym->lev==0.0f || prx[rp]->modulation=='s') {
@@ -1655,6 +1696,7 @@ extern int main(int argc, char **argv)
                   dsamp += downsamp;
                   if (dsamp>=samphz) {
                      rp = 0UL;
+                     chnum = 0UL;
                      while (rp<freqc) {
                         if (rxx[rp].modulation!='S') {
                            pcm = squelchs[rp].pcmc;
@@ -1672,26 +1714,27 @@ extern int main(int argc, char **argv)
                            /* channel mixer */
                            if (mixto==1UL) mixleft += pcm;
                            else if (mixto==2UL) {
-                              if (freqc<=1UL) {
-                                 mixleft = pcm;
+                              if (freqcau<=1UL) {
+                                 mixleft = pcm; /* 1 rx to stereo */
                                  mixright = pcm;
                               }
                               else {
-                                 mixleft += pcm*(int32_t)rp;
-                                 mixright += pcm*(int32_t)((freqc-rp)-1UL);
+                                 mixleft += pcm*(int32_t)chnum;
+                                 mixright += pcm*(int32_t)((freqcau-chnum)
+                -1UL);
                               }
                            }
                            /* channel mixer */
-                           if (mixto==0UL || rp==0UL) {
-                              if (mixto==0UL || freqc==0UL) {
-                                 sendaudio(pcm, pcm8, rp);
+                           if (mixto==0UL || chnum==0UL) {
+                              if (mixto==0UL || freqcau==0UL) {
+                                 sendaudio(pcm, pcm8, rp, chnum);
                               }
                               else {
                                  mixleft = mixleft*levdiv2>>12;
-                                 sendaudio(mixleft, pcm8, rp);
+                                 sendaudio(mixleft, pcm8, rp, chnum);
                                  if (mixto==2UL) {
                                     mixright = mixright*levdiv2>>12;
-                                    sendaudio(mixright, pcm8, rp);
+                                    sendaudio(mixright, pcm8, rp, chnum);
                                  }
                                  if (labs(mixleft)>30000L || labs(mixright)
                 >30000L) {
@@ -1707,6 +1750,7 @@ extern int main(int argc, char **argv)
                                  mixright = 0L;
                               }
                            }
+                           ++chnum;
                         }
                         ++rp;
                      }
