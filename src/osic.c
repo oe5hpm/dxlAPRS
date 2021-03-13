@@ -245,6 +245,15 @@ int osic_Size(int fd)
 	return st.st_size;
 }
 
+int osic_LSeek(int fd, long lo, int whence)
+{
+	off64_t rc;
+
+	rc = lseek64(fd, lo, whence);
+
+	return (rc < 0 ? -1 : 0);
+}
+
 void osic_Seek(int32_t fd, uint32_t pos)
 {
 	lseek(fd, (off_t)pos, SEEK_SET);

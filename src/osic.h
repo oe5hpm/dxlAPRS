@@ -75,6 +75,8 @@ void osic_Rename(char fname[], uint32_t fname_len,
 
 int osic_Size(int fd);
 
+int osic_LSeek(int fd, long lo, int whence);
+
 void osic_Seek(int32_t fd, uint32_t pos);
 
 void osic_Seekcur(int32_t fd, int32_t rel);
@@ -151,5 +153,6 @@ void X2C_DYNALLOCATE(char **a, size_t size, size_t lens[], size_t dims);
 void X2C_DYNDEALLOCATE(char **a);
 
 void *osic_chkptr(void *p);
+
 
 #endif /* __OSIC_H__ */
