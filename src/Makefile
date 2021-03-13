@@ -211,6 +211,16 @@ OBJ_CMSLOGIN = $(OUT)cmslogin.o
 OBJ_SRTMTAG = $(OUT)srtmtag.o \
 	$(OUT)pngread.o
 
+OBJ_WATERFALL = \
+	$(OUT)waterfall.o \
+	$(OUT)pngwritepalette.o \
+	$(OUT)fft.o \
+	$(OUT)complex.o
+
+OBJ_FMREPEATER = \
+	$(OUT)fmrepeater.o \
+	$(OUT)afskmodemptt.o
+
 TARGETS += \
 	$(OUT)afskmodem \
 	$(OUT)gps2aprs \
@@ -230,11 +240,8 @@ TARGETS += \
 	$(OUT)panorama \
 	$(OUT)cmslogin \
 	$(OUT)srtmtag \
-	$(OUT)fmrepeater
-
-OBJ_FMREPEATER = \
-	$(OUT)fmrepeater.o \
-	$(OUT)afskmodemptt.o
+	$(OUT)fmrepeater \
+	$(OUT)waterfall
 
 ifneq ($(HOSTOS), Darwin)
 	TARGETS += $(OUT)l2cat
@@ -260,7 +267,9 @@ OBJS = \
 	$(OBJ_RADIORANGE) \
 	$(OBJ_PANORAMA) \
 	$(OBJ_CMSLOGIN)	\
-	$(OBJ_SRTMTAG)
+	$(OBJ_SRTMTAG) \
+	$(OBJ_FMREPEATER) \
+	$(OBJ_WATERFALL)
 
 # ------------------- target make rules -------------------
 #                     -----------------
@@ -395,6 +404,11 @@ $(OUT)srtmtag: $(OBJ_SRTMTAG) $(OBJ_COMMON)
 $(OUT)fmrepeater: $(OBJ_FMREPEATER) $(OBJ_COMMON)
 	$(CC) $(LFLAGS) -o $@ $(OBJ_COMMON) $(OBJ_FMREPEATER) -lm
 	$(STRIP) $@ $(STRIPFLAGS)
+
+$(OUT)waterfall: $(OBJ_WATERFALL) $(OBJ_COMMON)
+	$(CC) $(LFLAGS) -o $@ $(OBJ_WATERFALL) $(OBJ_COMMON) -lm $(XLIBS)
+	$(STRIP) $@ $(STRIPFLAGS)
+
 
 %:
 	make prepare
