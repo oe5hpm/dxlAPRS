@@ -4607,6 +4607,7 @@ static void decodemp3(const char rxb[], uint32_t rxb_len,
    CALLSSID usercall;
    uint32_t cfg;
    uint32_t cnt;
+   uint32_t sats;
    char nameok;
    char calok;
    pCONTEXTMP3 pc0;
@@ -4616,6 +4617,7 @@ static void decodemp3(const char rxb[], uint32_t rxb_len,
    pc = 0;
    lat = 0.0;
    long0 = 0.0;
+   sats = 0UL;
    getcall(rxb, rxb_len, usercall, 11ul);
    if (usercall[0U]==0) aprsstr_Assign(usercall, 11ul, mycall, 100ul);
    if (sondeaprs_verb && fromport>0UL) {
@@ -4680,9 +4682,9 @@ static void decodemp3(const char rxb[], uint32_t rxb_len,
          pc->id1ok = 1;
       }
       if (pc->id2ok && pc->id1ok) {
-         strncpy(pc->ser,"MRZ-",21u);
-         aprsstr_CardToStr(pc->id1, 1UL, s, 101ul);
-         aprsstr_Append(pc->ser, 21ul, s, 101ul);
+         /*      pc^.ser:="MRZ-"; */
+         aprsstr_CardToStr(pc->id1, 1UL, pc->ser, 21ul);
+         /*      Append(pc^.ser,s); */
          aprsstr_Append(pc->ser, 21ul, "-", 2ul);
          aprsstr_CardToStr(pc->id2, 1UL, s, 101ul);
          aprsstr_Append(pc->ser, 21ul, s, 101ul);
@@ -4706,6 +4708,7 @@ static void decodemp3(const char rxb[], uint32_t rxb_len,
                 2UL))*0.01;
       wgs84r(wx, wy, wz, &lat, &long0, &alt);
       speeddir(lat, long0, vx, vy, vz, &kmh, &dir, &clb);
+      sats = (uint32_t)(uint8_t)rxb[43UL];
    }
    else if (sondeaprs_verb) {
       /*
@@ -4744,7 +4747,7 @@ static void decodemp3(const char rxb[], uint32_t rxb_len,
                 0.0, (double)X2C_max_real, (double)X2C_max_real,
                 0.0, 0.0, 0.0, 0.0,
                 (double) -(float)(uint32_t)sendmhzfromsdr, 0.0,
-                0.0, pc->gpstime, 0UL, pc->name, 9ul, 0UL, 0UL, 0UL, 0.0,
+                0.0, pc->gpstime, 0UL, pc->name, 9ul, 0UL, sats, 0UL, 0.0,
                 usercall, 11ul, 0UL, (double)X2C_max_real,
                 sondeaprs_nofilter, 1, 0L, "MRZ", 4ul, pc->ser, 21ul,
                 sdrblock);

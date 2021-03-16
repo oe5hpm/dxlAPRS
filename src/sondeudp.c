@@ -1563,7 +1563,6 @@ static void WrChName(uint32_t n)
      WrStr(CHR(ASH(n,-8) MOD 256));
      WrStr(CHR(n MOD 256));
    */
-   osi_WrStr(" ..................... ", 24ul);
    osic_WrINT32(n, 1UL);
 } /* end WrChName() */
 
@@ -5660,30 +5659,35 @@ static void showmp3(uint32_t m, uint32_t state, uint32_t repaired,
                 X2C_max_longint), 1UL);
       osi_WrStr("deg ", 5ul);
       osic_WrFixed((float)clb, 1L, 1UL);
-      osi_WrStr("m/s", 4ul);
+      osi_WrStr("m/s ", 5ul);
+      osic_WrINT32((uint32_t)(uint8_t)rxbuf[23UL], 1UL);
+      osi_WrStr("sat", 4ul);
       if (verb2) {
          osi_WrStr(" c1=", 5ul);
          osi_WrHex((uint32_t)(uint8_t)rxbuf[4UL], 2UL);
-         osi_WrStr(" c2=", 5ul);
-         osi_WrHex((uint32_t)(uint8_t)rxbuf[23UL], 2UL);
+         osi_WrStr(" a1=", 5ul);
          osi_WrHex((uint32_t)(uint8_t)rxbuf[24UL], 2UL);
          osi_WrHex((uint32_t)(uint8_t)rxbuf[25UL], 2UL);
-         osi_WrStr(" a1=", 5ul);
-         osic_WrINT32(cardmsb(rxbuf, rxbuf_len, 26UL, 2UL), 1UL);
          osi_WrStr(" a2=", 5ul);
-         osic_WrINT32(cardmsb(rxbuf, rxbuf_len, 28UL, 2UL), 1UL);
+         osic_WrINT32(cardmsb(rxbuf, rxbuf_len, 26UL, 2UL), 1UL);
          osi_WrStr(" a3=", 5ul);
+         osic_WrINT32(cardmsb(rxbuf, rxbuf_len, 28UL, 2UL), 1UL);
+         osi_WrStr(" c2=", 5ul);
+         osi_WrHex((uint32_t)(uint8_t)rxbuf[30UL], 2UL);
+         osi_WrHex((uint32_t)(uint8_t)rxbuf[31UL], 2UL);
+         osi_WrStr(" a4=", 5ul);
          osi_WrHex((uint32_t)(uint8_t)rxbuf[32UL], 2UL);
          osi_WrHex((uint32_t)(uint8_t)rxbuf[33UL], 2UL);
-         osi_WrStr(" c3=", 5ul);
+         osi_WrStr(" a5=", 5ul);
          osi_WrHex((uint32_t)(uint8_t)rxbuf[34UL], 2UL);
          osi_WrHex((uint32_t)(uint8_t)rxbuf[35UL], 2UL);
-         osi_WrStr(" a4=", 5ul);
+         osi_WrStr(" a6=", 5ul);
          osic_WrINT32(cardmsb(rxbuf, rxbuf_len, 36UL, 2UL), 1UL);
-         osi_WrStr(" c4=", 5ul);
+         osi_WrStr(" c3=", 5ul);
          osi_WrHex((uint32_t)(uint8_t)rxbuf[38UL], 2UL);
          osi_WrHex((uint32_t)(uint8_t)rxbuf[39UL], 2UL);
-         osi_WrHex((uint32_t)(uint8_t)rxbuf[40UL], 2UL);
+         osi_WrStr(" n=", 4ul);
+         osic_WrINT32((uint32_t)(uint8_t)rxbuf[40UL], 1UL);
       }
       cfg = cardmsb(rxbuf, rxbuf_len, 41UL, 4UL);
       if (cnt==15UL) {
