@@ -154,5 +154,7 @@ void X2C_DYNDEALLOCATE(char **a);
 
 void *osic_chkptr(void *p);
 
+int32_t osic_setsystime(uint32_t * time0);
+
 
 #endif /* __OSIC_H__ */

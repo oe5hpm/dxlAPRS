@@ -86,6 +86,16 @@ static uint8_t gps2aprs_SETNMEA[22] = {6U,0U,1U,0U,0U,0U,208U,8U,0U,0U,0U,0U,0U,
 static uint8_t gps2aprs_INITBAUD[22] = {6U,0U,1U,0U,0U,0U,208U,8U,0U,0U,0U,0U,0U,0U,1U,0U,1U,0U,0U,0U,0U,0U};
 /*                                 port      com mode    baud     in   outproto */
 
+struct CONF;
+
+typedef struct CONF * pCONF;
+
+
+struct CONF {
+   pCONF next;
+   char str[251];
+};
+
 /*CRCL, CRCH: ARRAY[0..255] OF SET8;*/
 static char tbuf[1024];
 
@@ -187,9 +197,11 @@ static struct POS pos;
 
 static uint32_t gpsp;
 
-static char gpsb[100];
+static char gpsb[251];
 
 static char Logl[251];
+
+static pCONF pconfig;
 
 static int32_t tty;
 
@@ -374,6 +386,8 @@ static void Parms(void)
    char err;
    char h[1024];
    uint32_t i;
+   pCONF pch;
+   pCONF pc;
    err = 0;
    for (;;) {
       osi_NextArg(h, 1024ul);
@@ -420,6 +434,20 @@ static void Parms(void)
                Error("-c <comment>  (max 60 byte)", 28ul);
             }
          }
+         else if (h[1U]=='C') {
+            osi_NextArg(h, 1024ul);
+            if (h[0U]=='-') Error("-C <configstring>", 18ul);
+            osic_alloc((char * *) &pc, sizeof(struct CONF));
+            if (pc==0) Error("-C out of memory>", 18ul);
+            pc->next = 0;
+            aprsstr_Assign(pc->str, 251ul, h, 1024ul);
+            if (pconfig) {
+               pch = pconfig;
+               while (pch->next) pch = pch->next;
+               pch->next = pc;
+            }
+            else pconfig = pc;
+         }
          else if (h[1U]=='i') {
             osi_NextArg(h, 1024ul);
             if ((uint8_t)h[0U]>' ' && (uint8_t)h[1U]>' ') {
@@ -445,7 +473,9 @@ static void Parms(void)
          else if (h[1U]=='b') {
             osi_NextArg(h, 1024ul);
             i = 0UL;
-            if (!GetNum(h, 1024ul, 0, &i, &btimedrive)) Error("-b <s>", 7ul);
+            if (!GetNum(h, 1024ul, 0, &i, &btimedrive)) {
+               Error("-b <s>", 7ul);
+            }
          }
          else if (h[1U]=='n') {
             osi_NextArg(h, 1024ul);
@@ -460,9 +490,7 @@ static void Parms(void)
          else if (h[1U]=='g') {
             osi_NextArg(h, 1024ul);
             i = 0UL;
-            if (!GetNum(h, 1024ul, 0, &i, &drivekm)) {
-               Error("-g <km/h>", 10ul);
-            }
+            if (!GetNum(h, 1024ul, 0, &i, &drivekm)) Error("-g <km/h>", 10ul);
          }
          else if (h[1U]=='A') {
             osi_NextArg(h, 1024ul);
@@ -528,6 +556,8 @@ static void Parms(void)
                osi_WrStrLn("                                     insert framecounter : \\\\n", 63ul);
                osi_WrStrLn("                                     insert \\\\           : \\\\\\", 63ul);
                osi_WrStrLn("                                     double all \\ to pass thru bash eg. \\\\\\\\h", 78ul);
+               osi_WrStrLn(" -C <configstring>                 Send Cfg to GPS, / for $, // for /", 70ul);
+               osi_WrStrLn("                                     /PUBX,41,1,0007,0003,19200,0", 66ul);
                osi_WrStrLn(" -d <x>                            Destination Call SSID 0..7", 62ul);
                osi_WrStrLn(" -D                                DAO Extension on for 20cm Resolution", 72ul);
                osi_WrStrLn(" -f <x>                            format 0=normal 1=compressed 2=mic-e (0)", 76ul);
@@ -550,6 +580,7 @@ static void Parms(void)
                osi_WrStrLn(" -T <us> <us>                      Raw-Mode, Timepulse <[-]periode> <duration> (us)", 84ul);
                osi_WrStrLn(" -t <tty>:<baud>                   (/dev/ttyS0:4800)", 53ul);
                osi_WrStrLn(" -U                                switch Ublox>=M6 sV>=7 to Ublox-Raw (get vertical speed)", 92ul);
+               osi_WrStrLn("                                     needs bidirectional connection", 68ul);
                osi_WrStrLn(" -u                                abort, not retry until open removable USB tty", 81ul);
                osi_WrStrLn(" -v                                verbous", 43ul);
                osi_WrStrLn(" -w <viapath>                      via Path like RELAY,WIDE1-1", 63ul);
@@ -794,166 +825,213 @@ static void decodeline(const char b[], uint32_t b_len, uint32_t len0, struct POS
    uint32_t i;
    double div0;
    char sign;
-   if (b[0UL]=='$' && b[1UL]=='G') {
-      if ((b[3UL]=='R' && b[4UL]=='M') && b[5UL]=='C') {
-         i = 7UL;
-         if (getnum(b, b_len, &i, len0, &n)) p->daytime = n*36000UL;
-         else return;
-         if (getnum(b, b_len, &i, len0, &n)) p->daytime += n*3600UL;
-         else return;
-         if (getnum(b, b_len, &i, len0, &n)) p->daytime += n*600UL;
-         else return;
-         if (getnum(b, b_len, &i, len0, &n)) p->daytime += n*60UL;
-         else return;
-         if (getnum(b, b_len, &i, len0, &n)) p->daytime += n*10UL;
-         else return;
-         if (getnum(b, b_len, &i, len0, &n)) p->daytime += n;
-         else return;
-         skip(b, b_len, &i, len0);
-         if (b[i]!='A') return;
-         skip(b, b_len, &i, len0);
-         if (getnum(b, b_len, &i, len0, &n)) p->lat = (double)(float)(n*10UL);
-         else return;
-         if (getnum(b, b_len, &i, len0, &n)) p->lat = p->lat+(double)(float)n;
-         else return;
-         if (getnum(b, b_len, &i, len0, &n)) {
-            p->lat = p->lat+(double)(X2C_DIVR((float)n,6.0f));
-         }
-         else return;
-         if (getnum(b, b_len, &i, len0, &n)) {
-            p->lat = p->lat+(double)(X2C_DIVR((float)n,60.0f));
-         }
-         else return;
-         if (b[i]=='.') ++i;
-         else return;
-         if (getnum(b, b_len, &i, len0, &n)) {
-            p->lat = p->lat+(double)(X2C_DIVR((float)n,600.0f));
-         }
-         else return;
-         if (getnum(b, b_len, &i, len0, &n)) {
-            p->lat = p->lat+(double)(X2C_DIVR((float)n,6000.0f));
-         }
-         else return;
-         if (getnum(b, b_len, &i, len0, &n)) {
-            p->lat = p->lat+(double)(X2C_DIVR((float)n,60000.0f));
-         }
-         if (getnum(b, b_len, &i, len0, &n)) {
-            p->lat = p->lat+(double)(X2C_DIVR((float)n,6.E+5f));
-         }
-         skip(b, b_len, &i, len0);
-         if (b[i]=='S') p->lat = -p->lat;
-         else if (b[i]!='N') return;
-         skip(b, b_len, &i, len0);
-         if (getnum(b, b_len, &i, len0, &n)) p->long0 = (double)(float)(n*100UL);
-         else return;
-         if (getnum(b, b_len, &i, len0, &n)) p->long0 = p->long0+(double)(float)(n*10UL);
-         else return;
-         if (getnum(b, b_len, &i, len0, &n)) p->long0 = p->long0+(double)(float)n;
-         else return;
-         if (getnum(b, b_len, &i, len0, &n)) {
-            p->long0 = p->long0+(double)(X2C_DIVR((float)n,6.0f));
-         }
-         else return;
-         if (getnum(b, b_len, &i, len0, &n)) {
-            p->long0 = p->long0+(double)(X2C_DIVR((float)n,60.0f));
-         }
-         else return;
-         if (b[i]=='.') ++i;
-         else return;
-         if (getnum(b, b_len, &i, len0, &n)) {
-            p->long0 = p->long0+(double)(X2C_DIVR((float)n,600.0f));
-         }
-         else return;
-         if (getnum(b, b_len, &i, len0, &n)) {
-            p->long0 = p->long0+(double)(X2C_DIVR((float)n,6000.0f));
-         }
-         else {
-            return;
-         }
-         if (getnum(b, b_len, &i, len0, &n)) {
-            p->long0 = p->long0+(double)(X2C_DIVR((float)n,60000.0f));
-         }
-         if (getnum(b, b_len, &i, len0, &n)) {
-            p->long0 = p->long0+(double)(X2C_DIVR((float)n,6.E+5f));
-         }
-         skip(b, b_len, &i, len0);
-         if (b[i]=='W') p->long0 = -p->long0;
-         else if (b[i]!='E') return;
-         skip(b, b_len, &i, len0);
-         p->speed = 0.0;
-         while (getnum(b, b_len, &i, len0, &n)) p->speed = p->speed*10.0+(double)(float)n;
-         if (b[i]=='.') {
-            ++i;
-            div0 = 0.1;
-            while (getnum(b, b_len, &i, len0, &n)) {
-               p->speed = p->speed+(double)(float)n*div0;
-               div0 = div0*0.1;
+   if (b[0UL]=='$') {
+      if (b[1UL]=='G') {
+         if ((b[3UL]=='R' && b[4UL]=='M') && b[5UL]=='C') {
+            i = 7UL;
+            if (getnum(b, b_len, &i, len0, &n)) p->daytime = n*36000UL;
+            else return;
+            if (getnum(b, b_len, &i, len0, &n)) p->daytime += n*3600UL;
+            else return;
+            if (getnum(b, b_len, &i, len0, &n)) p->daytime += n*600UL;
+            else return;
+            if (getnum(b, b_len, &i, len0, &n)) p->daytime += n*60UL;
+            else return;
+            if (getnum(b, b_len, &i, len0, &n)) p->daytime += n*10UL;
+            else return;
+            if (getnum(b, b_len, &i, len0, &n)) p->daytime += n;
+            else return;
+            skip(b, b_len, &i, len0);
+            if (b[i]!='A') return;
+            skip(b, b_len, &i, len0);
+            if (getnum(b, b_len, &i, len0, &n)) p->lat = (double)(float)(n*10UL);
+            else return;
+            if (getnum(b, b_len, &i, len0, &n)) p->lat = p->lat+(double)(float)n;
+            else return;
+            if (getnum(b, b_len, &i, len0, &n)) {
+               p->lat = p->lat+(double)(X2C_DIVR((float)n,6.0f));
             }
-         }
-         p->speed = p->speed*1.851984; /* knots to km/h */
-         skip(b, b_len, &i, len0);
-         p->course = 0.0;
-         while (getnum(b, b_len, &i, len0, &n)) p->course = p->course*10.0+(double)(float)n;
-         if (b[i]=='.') {
-            ++i;
-            div0 = 0.1;
-            while (getnum(b, b_len, &i, len0, &n)) {
-               p->course = p->course+(double)(float)n*div0;
-               div0 = div0*0.1;
+            else return;
+            if (getnum(b, b_len, &i, len0, &n)) {
+               p->lat = p->lat+(double)(X2C_DIVR((float)n,60.0f));
             }
+            else return;
+            if (b[i]=='.') ++i;
+            else return;
+            if (getnum(b, b_len, &i, len0, &n)) {
+               p->lat = p->lat+(double)(X2C_DIVR((float)n,600.0f));
+            }
+            else return;
+            if (getnum(b, b_len, &i, len0, &n)) {
+               p->lat = p->lat+(double)(X2C_DIVR((float)n,6000.0f));
+            }
+            else return;
+            if (getnum(b, b_len, &i, len0, &n)) {
+               p->lat = p->lat+(double)(X2C_DIVR((float)n,60000.0f));
+            }
+            if (getnum(b, b_len, &i, len0, &n)) {
+               p->lat = p->lat+(double)(X2C_DIVR((float)n,6.E+5f));
+            }
+            skip(b, b_len, &i, len0);
+            if (b[i]=='S') p->lat = -p->lat;
+            else if (b[i]!='N') return;
+            skip(b, b_len, &i, len0);
+            if (getnum(b, b_len, &i, len0, &n)) p->long0 = (double)(float)(n*100UL);
+            else return;
+            if (getnum(b, b_len, &i, len0, &n)) {
+               p->long0 = p->long0+(double)(float)(n*10UL);
+            }
+            else return;
+            if (getnum(b, b_len, &i, len0, &n)) p->long0 = p->long0+(double)(float)n;
+            else return;
+            if (getnum(b, b_len, &i, len0, &n)) {
+               p->long0 = p->long0+(double)(X2C_DIVR((float)n,6.0f));
+            }
+            else return;
+            if (getnum(b, b_len, &i, len0, &n)) {
+               p->long0 = p->long0+(double)(X2C_DIVR((float)n,60.0f));
+            }
+            else return;
+            if (b[i]=='.') ++i;
+            else return;
+            if (getnum(b, b_len, &i, len0, &n)) {
+               p->long0 = p->long0+(double)(X2C_DIVR((float)n,600.0f));
+            }
+            else return;
+            if (getnum(b, b_len, &i, len0, &n)) {
+               p->long0 = p->long0+(double)(X2C_DIVR((float)n,6000.0f));
+            }
+            else return;
+            if (getnum(b, b_len, &i, len0, &n)) {
+               p->long0 = p->long0+(double)(X2C_DIVR((float)n,60000.0f));
+            }
+            if (getnum(b, b_len, &i, len0, &n)) {
+               p->long0 = p->long0+(double)(X2C_DIVR((float)n,6.E+5f));
+            }
+            skip(b, b_len, &i, len0);
+            if (b[i]=='W') p->long0 = -p->long0;
+            else if (b[i]!='E') return;
+            skip(b, b_len, &i, len0);
+            p->speed = 0.0;
+            while (getnum(b, b_len, &i, len0, &n)) {
+               p->speed = p->speed*10.0+(double)(float)n;
+            }
+            if (b[i]=='.') {
+               ++i;
+               div0 = 0.1;
+               while (getnum(b, b_len, &i, len0, &n)) {
+                  p->speed = p->speed+(double)(float)n*div0;
+                  div0 = div0*0.1;
+               }
+            }
+            p->speed = p->speed*1.851984; /* knots to km/h */
+            skip(b, b_len, &i, len0);
+            p->course = 0.0;
+            while (getnum(b, b_len, &i, len0, &n)) {
+               p->course = p->course*10.0+(double)(float)n;
+            }
+            if (b[i]=='.') {
+               ++i;
+               div0 = 0.1;
+               while (getnum(b, b_len, &i, len0, &n)) {
+                  p->course = p->course+(double)(float)n*div0;
+                  div0 = div0*0.1;
+               }
+            }
+            p->posok = 1;
+            skip(b, b_len, &i, len0);
+            if (getnum(b, b_len, &i, len0, &n)) p->day = n*10UL;
+            else return;
+            if (getnum(b, b_len, &i, len0, &n)) p->day += n;
+            else return;
+            if (getnum(b, b_len, &i, len0, &n)) p->month = n*10UL;
+            else return;
+            if (getnum(b, b_len, &i, len0, &n)) p->month += n;
+            else return;
+            if (getnum(b, b_len, &i, len0, &n)) p->year = n*10UL;
+            else return;
+            if (getnum(b, b_len, &i, len0, &n)) p->year += n;
+            else return;
+            p->date = gpstimetosystime(*p);
+            p->dateok = p->date>0UL;
          }
-         p->posok = 1;
-         skip(b, b_len, &i, len0);
-         if (getnum(b, b_len, &i, len0, &n)) p->day = n*10UL;
-         else return;
-         if (getnum(b, b_len, &i, len0, &n)) p->day += n;
-         else return;
-         if (getnum(b, b_len, &i, len0, &n)) p->month = n*10UL;
-         else return;
-         if (getnum(b, b_len, &i, len0, &n)) p->month += n;
-         else return;
-         if (getnum(b, b_len, &i, len0, &n)) p->year = n*10UL;
-         else return;
-         if (getnum(b, b_len, &i, len0, &n)) p->year += n;
-         else return;
-         p->date = gpstimetosystime(*p);
-         p->dateok = p->date>0UL;
+         else if ((b[3UL]=='G' && b[4UL]=='G') && b[5UL]=='A') {
+            /* $GPGGA,152554,3938.5665,N,10346.2039,W,1,08,1.7,12382.7,M,-22.3,M,,*7B */
+            /* $GPGGA,112435.00,4812.41112,N,01305.61998,E,1,08,1.04,398.3,M,44.9,M,,*59 */
+            i = 7UL;
+            skip(b, b_len, &i, len0);
+            skip(b, b_len, &i, len0);
+            skip(b, b_len, &i, len0);
+            skip(b, b_len, &i, len0);
+            skip(b, b_len, &i, len0);
+            if (getnum(b, b_len, &i, len0, &n)) p->fix = n;
+            else return;
+            skip(b, b_len, &i, len0);
+            p->sats = 0UL;
+            while (getnum(b, b_len, &i, len0, &n)) p->sats = p->sats*10UL+n;
+            skip(b, b_len, &i, len0);
+            skip(b, b_len, &i, len0);
+            p->alt = 0.0;
+            if (b[i]=='-') {
+               sign = 1;
+               ++i;
+            }
+            else sign = 0;
+            while (getnum(b, b_len, &i, len0, &n)) {
+               p->altok = 10UL;
+               p->alt = p->alt*10.0+(double)(float)n;
+            }
+            if (b[i]=='.') {
+               ++i;
+               div0 = 0.1;
+               while (getnum(b, b_len, &i, len0, &n)) {
+                  p->alt = p->alt+(double)(float)n*div0;
+                  div0 = div0*0.1;
+               }
+            }
+            if (sign) p->alt = -p->alt;
+         }
       }
-      else if ((b[3UL]=='G' && b[4UL]=='G') && b[5UL]=='A') {
-         /* $GPGGA,152554,3938.5665,N,10346.2039,W,1,08,1.7,12382.7,M,-22.3,M,,*7B */
-         /* $GPGGA,112435.00,4812.41112,N,01305.61998,E,1,08,1.04,398.3,M,44.9,M,,*59 */
-         i = 7UL;
+      else if (((b[1UL]=='P' && b[2UL]=='U') && b[3UL]=='B') && b[4UL]=='X') {
+         /* ublox propietary for versical speed */
+         /* $PUBX,00,230327.00,7825.08527,N,01202.28188,E,425.646,G3,3.4,7.8,0.050,331.58,-0.026,,1.11,1.95,1.33,7,0,0*49 */
+         /*                                                                               -climb */
+         i = 5UL;
          skip(b, b_len, &i, len0);
-         skip(b, b_len, &i, len0);
-         skip(b, b_len, &i, len0);
-         skip(b, b_len, &i, len0);
-         skip(b, b_len, &i, len0);
-         if (getnum(b, b_len, &i, len0, &n)) p->fix = n;
-         else return;
-         skip(b, b_len, &i, len0);
-         p->sats = 0UL;
-         while (getnum(b, b_len, &i, len0, &n)) p->sats = p->sats*10UL+n;
-         skip(b, b_len, &i, len0);
-         skip(b, b_len, &i, len0);
-         p->alt = 0.0;
-         if (b[i]=='-') {
-            sign = 1;
-            ++i;
-         }
-         else sign = 0;
-         while (getnum(b, b_len, &i, len0, &n)) {
-            p->altok = 10UL;
-            p->alt = p->alt*10.0+(double)(float)n;
-         }
-         if (b[i]=='.') {
-            ++i;
-            div0 = 0.1;
-            while (getnum(b, b_len, &i, len0, &n)) {
-               p->alt = p->alt+(double)(float)n*div0;
-               div0 = div0*0.1;
+         if (b[i]=='0' && b[i+1UL]=='0') {
+            /* frametype 00 */
+            i += 2UL;
+            skip(b, b_len, &i, len0);
+            skip(b, b_len, &i, len0);
+            skip(b, b_len, &i, len0);
+            skip(b, b_len, &i, len0);
+            skip(b, b_len, &i, len0);
+            skip(b, b_len, &i, len0);
+            skip(b, b_len, &i, len0);
+            skip(b, b_len, &i, len0);
+            skip(b, b_len, &i, len0);
+            skip(b, b_len, &i, len0);
+            skip(b, b_len, &i, len0);
+            skip(b, b_len, &i, len0);
+            p->climb = 0.0;
+            if (b[i]=='-') {
+               sign = 1;
+               ++i;
             }
+            else sign = 0;
+            while (getnum(b, b_len, &i, len0, &n)) {
+               p->climb = p->climb*10.0+(double)(float)n;
+            }
+            if (b[i]=='.') {
+               ++i;
+               div0 = 0.1;
+               while (getnum(b, b_len, &i, len0, &n)) {
+                  p->climb = p->climb+(double)(float)n*div0;
+                  div0 = div0*0.1;
+               }
+            }
+            if (!sign) p->climb = -p->climb;
          }
-         if (sign) p->alt = -p->alt;
       }
    }
 } /* end decodeline() */
@@ -981,7 +1059,7 @@ static char checksum(const char b[], uint32_t b_len, uint32_t len0)
    }
    if (i+2UL>=len0) ok0 = 0;
    if (ok0) {
-      if (b[i+1UL]!=Hex((uint32_t)cs/16UL) || b[i+2UL]!=Hex((uint32_t)cs&15UL)) ok0 = 0;
+      if (b[i+1UL]!=Hex((uint32_t)cs/16UL) || b[i+2UL]!=Hex((uint32_t)cs)) ok0 = 0;
    }
    if (verb && !ok0) osi_WrStrLn("GPS Checksum Error", 19ul);
    return ok0;
@@ -998,6 +1076,43 @@ static void showline(const char b[], uint32_t b_len, uint32_t len0)
    }
    osic_WrLn();
 } /* end showline() */
+
+
+static void uploadcfg(char s[], uint32_t s_len)
+{
+   uint32_t i;
+   uint8_t cs;
+   char b[4001];
+   char tmp;
+   X2C_PCOPY((void **)&s,s_len);
+   i = 0UL;
+   b[0] = 0;
+   while (i<s_len-1 && s[i]) {
+      if (s[i]=='/') {
+         ++i;
+         if (s[i]!='/') aprsstr_Append(b, 4001ul, "$", 2ul);
+      }
+      aprsstr_Append(b, 4001ul, (char *) &s[i], 1u/1u);
+      ++i;
+   }
+   i = 1UL;
+   cs = 0U;
+   while (i<4000UL && b[i]) {
+      cs = cs^(uint8_t)(uint8_t)b[i];
+      ++i;
+   }
+   aprsstr_Append(b, 4001ul, "*", 2ul);
+   aprsstr_Append(b, 4001ul, (char *)(tmp = Hex((uint32_t)cs/16UL),&tmp), 1u/1u);
+   aprsstr_Append(b, 4001ul, (char *)(tmp = Hex((uint32_t)cs),&tmp), 1u/1u);
+   aprsstr_Append(b, 4001ul, "\015", 2ul);
+   aprsstr_Append(b, 4001ul, "\012", 2ul);
+   osi_WrBin(tty, (char *)b, 4001u/1u, aprsstr_Length(b, 4001ul));
+   if (verb) {
+      osi_WrStr("uploaded:", 10ul);
+      osi_WrStrLn(b, 4001ul);
+   }
+   X2C_PFREE(s);
+} /* end uploadcfg() */
 
 
 static char num(uint32_t n)
@@ -1627,7 +1742,7 @@ static void rawbyte(char c)
    }
    else {
       ++gpsp;
-      if (gpsp>99UL) gpsp = 0UL;
+      if (gpsp>250UL) gpsp = 0UL;
       else if (gpsp>=5UL) {
          if (gpsp>(uint32_t)(uint8_t)gpsb[4U]+(uint32_t)(uint8_t)gpsb[5U]*256UL+7UL) {
             sum1 = (uint8_t)((uint32_t)(uint8_t)gpsb[2U]+(uint32_t)(uint8_t)gpsb[3U]);
@@ -1642,35 +1757,35 @@ static void rawbyte(char c)
                /* checksum ok */
                if (((uint32_t)(uint8_t)gpsb[2U]==1UL && (uint32_t)(uint8_t)gpsb[3U]==6UL) && gpsp==60UL) {
                   /* ecef frame */
-                  tow = (uint32_t)btow(gpsb, 100ul, 6UL, 4UL);
-                  week = (uint32_t)btow(gpsb, 100ul, 14UL, 2UL);
-                  pos.fix = (uint32_t)btow(gpsb, 100ul, 16UL, 1UL); /* 0 no fix, 2 2d, 3 3d, 5 time only */
+                  tow = (uint32_t)btow(gpsb, 251ul, 6UL, 4UL);
+                  week = (uint32_t)btow(gpsb, 251ul, 14UL, 2UL);
+                  pos.fix = (uint32_t)btow(gpsb, 251ul, 16UL, 1UL); /* 0 no fix, 2 2d, 3 3d, 5 time only */
                   pos.date = week*604800UL+tow/1000UL+(uint32_t)(315964800L-pos.leapseconds);
                   pos.dateok = pos.fix>0UL && pos.timeflags==7U;
-                  pos.vx = (double)btow(gpsb, 100ul, 34UL, 4UL)*0.01;
-                  pos.vy = (double)btow(gpsb, 100ul, 38UL, 4UL)*0.01;
-                  pos.vz = (double)btow(gpsb, 100ul, 42UL, 4UL)*0.01;
-                  pos.sats = (uint32_t)btow(gpsb, 100ul, 53UL, 1UL);
+                  pos.vx = (double)btow(gpsb, 251ul, 34UL, 4UL)*0.01;
+                  pos.vy = (double)btow(gpsb, 251ul, 38UL, 4UL)*0.01;
+                  pos.vz = (double)btow(gpsb, 251ul, 42UL, 4UL)*0.01;
+                  pos.sats = (uint32_t)btow(gpsb, 251ul, 53UL, 1UL);
                   pos.speedok = 1;
                }
                else if (((uint32_t)(uint8_t)gpsb[2U]==1UL && (uint32_t)(uint8_t)gpsb[3U]==2UL) && gpsp==36UL) {
                   /* navPOSLLH frame */
-                  pos.long0 = (double)btow(gpsb, 100ul, 10UL, 4UL)*1.E-7;
-                  pos.lat = (double)btow(gpsb, 100ul, 14UL, 4UL)*1.E-7;
-                  pos.alt = (double)btow(gpsb, 100ul, 22UL, 4UL)*0.001;
+                  pos.long0 = (double)btow(gpsb, 251ul, 10UL, 4UL)*1.E-7;
+                  pos.lat = (double)btow(gpsb, 251ul, 14UL, 4UL)*1.E-7;
+                  pos.alt = (double)btow(gpsb, 251ul, 22UL, 4UL)*0.001;
                   pos.posok = 1;
                   if (pos.fix==3UL) pos.altok = 10UL;
                }
                else if (((uint32_t)(uint8_t)gpsb[2U]==1UL && (uint32_t)(uint8_t)gpsb[3U]==32UL) && gpsp==24UL) {
                   /* navTIMEGPS frame */
-                  pos.leapseconds = btow(gpsb, 100ul, 16UL, 1UL);
+                  pos.leapseconds = btow(gpsb, 251ul, 16UL, 1UL);
                   if (pos.leapseconds>=128L) pos.leapseconds -= 256L;
                   /*          WrInt(btow(gpsb,6,4) DIV 1000, 10);                        (* ms in week *) */
-                  pos.timeflags = (uint8_t)btow(gpsb, 100ul, 17UL, 1UL); /* 1:tow ok 2:week ok 4:leapsecond ok */
+                  pos.timeflags = (uint8_t)btow(gpsb, 251ul, 17UL, 1UL); /* 1:tow ok 2:week ok 4:leapsecond ok */
                }
                else if (verb) {
                   /* other frame types */
-                  showh(gpsb, 100ul, (int32_t)gpsp);
+                  showh(gpsb, 251ul, (int32_t)gpsp);
                }
                if (pos.posok && pos.speedok) {
                   if (pos.fix>1UL && pos.fix<5UL) {
@@ -1736,7 +1851,7 @@ static void rawbyte(char c)
             else {
                ++sumerrcnt;
                if (verb) {
-                  osic_WrINT32(sumerrcnt, 1UL);
+                  osic_WrUINT32(sumerrcnt, 1UL);
                   osi_WrStrLn(" raw-checksum err", 18ul);
                }
             }
@@ -1795,17 +1910,17 @@ static void gpsbyte(char c)
    if (c=='\015' || c=='\012') {
       if (gpsp>0UL) {
          pos.dateok = 0;
-         if (sumoff || checksum(gpsb, 100ul, gpsp)) {
-            decodeline(gpsb, 100ul, gpsp, &pos);
-            WrLog(gpsb, 100ul, gpsp);
+         if (sumoff || checksum(gpsb, 251ul, gpsp)) {
+            decodeline(gpsb, 251ul, gpsp, &pos);
+            WrLog(gpsb, 251ul, gpsp);
          }
          else pos.posok = 0;
-         if (verb) showline(gpsb, 100ul, gpsp);
+         if (verb) showline(gpsb, 251ul, gpsp);
          newpos();
       }
       gpsp = 0UL;
    }
-   else if ((uint8_t)c>' ' && gpsp<99UL) {
+   else if ((uint8_t)c>' ' && gpsp<250UL) {
       gpsb[gpsp] = c;
       ++gpsp;
    }
@@ -1881,12 +1996,17 @@ extern int main(int argc, char **argv)
    fixmode = 3UL;
    sumerrcnt = 0UL;
    timepuls = 0L;
+   pconfig = 0;
    Parms();
    if (aprsstr_Length(mycall, 100ul)<3UL && !terminatetimeset) osi_WrStrLn("no tx without <mycall>", 23ul);
    /*Gencrctab; */
    opentty();
    udpsock = openudp();
    if (udpsock<0L) Error("cannot open udp socket", 23ul);
+   while (pconfig) {
+      uploadcfg(pconfig->str, 251ul);
+      pconfig = pconfig->next;
+   }
    if (ubloxraw) ubloxon(1, baud);
    for (;;) {
       fdclr();

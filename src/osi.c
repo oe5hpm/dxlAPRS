@@ -229,6 +229,13 @@ extern char osi_IsFifo(int32_t fd)
 } /* end IsFifo() */
 
 
+extern int32_t osi_settime(uint32_t * time0)
+/* set system time, needs root */
+{
+   return osic_setsystime(time0);
+} /* end settime() */
+
+
 extern void osi_BEGIN(void)
 {
    static int osi_init = 0;

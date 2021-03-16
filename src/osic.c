@@ -593,3 +593,9 @@ void *osic_chkptr(void *p)
 	assert(p);
 	return p;
 }
+
+int32_t osic_setsystime(uint32_t * time0)
+{
+	return stime(time0);
+}
+
