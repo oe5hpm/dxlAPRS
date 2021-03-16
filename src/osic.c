@@ -312,7 +312,7 @@ int osic_isfifo(int fd)
 
 char osic_mkdir(char path[], uint32_t fname_len, uint32_t perm)
 {
-        if (mkdir(path, perm) != -1);
+        if (mkdir(path, perm) != -1)
                 return 1;
         return 0;
 }
