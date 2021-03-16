@@ -5,7 +5,7 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
-/* "@(#)hostint.c Mar 13  1:09:25 2021" */
+/* "@(#)hostint.c Mar 14 15:35:58 2021" */
 
 
 #define X2C_int32
@@ -37,8 +37,6 @@
 #include "frameio.h"
 #endif
 
-/*IMPORT ptty; */
-/*FROM XBIO IMPORT L1Parm; */
 #define hostint_HANDLES 30
 
 struct HANDLE;
@@ -486,20 +484,6 @@ static void MonHead(uint16_t mn, l2_pLINK l)
    rxpos = 0U;
 } /* end MonHead() */
 
-/*
-PROCEDURE Cry;
-VAR h:ARRAY[0..9] OF CHAR;
-BEGIN
-  rxbuf:="  fm ERRORS to ";
-  CardToStr(lostmsgs,0,h);
-  Append(rxbuf,h);
-  rxcount:=Length(rxbuf)+1;
-  rxbuf[0]:=0C;
-  rxbuf[1]:=CHR(4);
-  rxpos:=0;
-  INC(lostmsgs,10);
-END Cry;
-*/
 
 static void GetCall(const char from[], uint32_t from_len,
                 uint32_t * p, uint32_t len0, l2_pSTRING to)
@@ -613,6 +597,8 @@ static void SetMy(uint16_t port)
          if (m==tmp) break;
       } /* end for */
    }
+   /*    IF verb THEN WrStr("mycall:"); WrInt(port,1); WrStr(" ");
+                WrStrLn(handles[m].mycall); END; */
    tmp = n;
    i0 = 1U;
    if (i0<=tmp) for (;; i0++) {
@@ -625,8 +611,6 @@ static void SetMy(uint16_t port)
    parms.port = parmsport;
    parms.str = (l2_pSTRING)h;
    l2_Parm(&parms);
-/*WrStr("h1:"); */
-/*WrStr("l2my:"); WrStr(h); WrStrLn(":"); */
 } /* end SetMy() */
 
 
@@ -940,7 +924,6 @@ static void TxCMD(void)
    uint32_t n;
    char ch;
    struct HANDLE * anonym;
-   /*IF NOT interrupts THEN StartInt; interrupts:=TRUE END;*/
    /*
    WrStr("ch :"); WrInt(ORD(txbuf[0]), 2);
    WrStr(" cmd:"); WrInt(ORD(txbuf[1]), 2);
@@ -1027,8 +1010,12 @@ static void TxCMD(void)
             /*WrStr("<<");WrStrhex(txbuf, txpos);WrStrLn(">>"); */
             GetCall(txbuf, 260ul, &n, (uint32_t)txpos,
                 (l2_pSTRING)handles[port].mycall);
-            /*WrStr("setI port="); WrInt(port,1); WrStr(":");
-                WrStrLn(handles[port].mycall); */
+            if (verb) {
+               osi_WrStr("mycall port=", 13ul);
+               osic_WrINT32((uint32_t)port, 1UL);
+               osi_WrStr(":", 2ul);
+               osi_WrStrLn(handles[port].mycall, 7ul);
+            }
             if (port==0U) {
                /* set UI mycall */
                X2C_MOVE((char *)handles[port].mycall,
@@ -1181,22 +1168,31 @@ static int32_t Opentty(char linkname[], uint32_t linkname_len)
    fd = osi_OpenNONBLOCK("/dev/ptmx", 10ul);
    if (fd<0L) Error("/dev/ptmx open", 15ul);
    if (osi_getptsname(fd, (char *)ptsname, 4096UL)) {
-      Error("no ttyname", 11ul);
+      Error("get no ptty", 12ul);
    }
-   /*
-     IO.WrStr(ptsname); IO.WrLn;
-   */
+   if (verb) {
+      osi_WrStr("ptty:", 6ul);
+      osi_WrStrLn(ptsname, 4096ul);
+   }
    if (osic_grantpts(fd)) Error("ptty grant", 11ul);
    if (osic_unlockpts(fd)) Error("ptty unlock", 12ul);
+   if (verb) {
+      osi_WrStr("unlock ", 8ul);
+      osi_WrStrLn(ptsname, 4096ul);
+   }
    ttypar(ptsname, 4096ul);
    /*make link*/
    osi_Erase(linkname, linkname_len, &ok0);
    if (osi_symblink((char *)ptsname, (char *)linkname)) {
       osi_WrStr("cannot create link <", 21ul);
       osi_WrStr(linkname, linkname_len);
-      osi_WrStrLn(">, starting without kiss interface", 35ul);
+      osi_WrStrLn(">, starting without hostmode interface", 39ul);
       osic_Close(fd);
       fd = -1L;
+   }
+   else if (verb) {
+      osi_WrStr("make link to ", 14ul);
+      osi_WrStrLn(linkname, linkname_len);
    }
    Opentty_ret = fd;
    X2C_PFREE(linkname);
@@ -1244,6 +1240,7 @@ static int32_t Openrealtty(char fn[], uint32_t fn_len,
    /*  fd:=open(fn,  oRDWR+oNONBLOCK); */
    if (fd<0L) Error("/dev/tty open", 14ul);
    SetComMode(fd, baud0);
+   if (verb) osi_WrStrLn("set baudrate", 13ul);
    Openrealtty_ret = fd;
    X2C_PFREE(fn);
    return Openrealtty_ret;
@@ -1334,7 +1331,7 @@ more ports", 60ul);
          }
       }
       else err = 1;
-      if (err) break;
+      if (err) Error(" use -h", 8ul);
    }
 } /* end Parms() */
 
