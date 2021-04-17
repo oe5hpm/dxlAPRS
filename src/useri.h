@@ -399,6 +399,8 @@ extern void useri_Tilegamma0(float);
 
 extern void useri_mapbritocfg(void);
 
+extern void useri_findopl(uint32_t);
+
 
 extern void useri_BEGIN(void);
 

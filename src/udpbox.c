@@ -140,6 +140,7 @@ struct OUTPORT {
    char axudp2;
    char satgate;
    char decode;
+   char rawpayload;
    SET256 aprspass;
    pDIGIPARMS digiparm;
    struct BEACON beacon0;
@@ -469,32 +470,59 @@ static void MakeMonCall(const char rs[], uint32_t rs_len, int32_t p,
 } /* end MakeMonCall() */
 
 
-static char cmp(pCALLS c, const char s[], uint32_t s_len,
-                int32_t p)
+static uint32_t cmprest(const char a[], uint32_t a_len,
+                const char b[], uint32_t b_len, uint32_t * i,
+                uint32_t * j)
 {
-   int32_t j;
-   char b;
-   char ok0;
-   while (c) {
-      j = 0L;
-      for (;;) {
-         if (c->call[j]=='*') {
-            ok0 = 1; /* rest is wildcard */
-            break;
-         }
-         b = s[p+j];
-         if ((((p+j>=(int32_t)(s_len-1) || b=='*') || b==',') || b=='>')
-                || b==':') {
-            ok0 = c->call[j]==0; /* end of call */
-            break;
-         }
-         if (c->call[j]==0 || c->call[j]!='?' && b!=c->call[j]) {
-            ok0 = 0; /* end filter word */
-            break;
-         }
-         ++j;
+   for (;;) {
+      if (*j<=b_len-1 && b[*j]=='*') {
+         if (*j>=b_len-1 || b[*j+1UL]==0) return 1UL;
+         else return 3UL;
       }
-      if (ok0) return 1;
+      if (*i>a_len-1 || a[*i]==0) {
+         return (uint32_t)(*j>b_len-1 || b[*j]==0);
+      }
+      /* word 1 end */
+      if (*j>b_len-1 || b[*j]==0) return 0UL;
+      /* word 2 end */
+      if (b[*j]!='?' && a[*i]!=b[*j]) return 2UL;
+      ++*i;
+      ++*j;
+   }
+   return 0;
+} /* end cmprest() */
+
+
+static char cmp(pCALLS c, const char s[], uint32_t s_len)
+{
+   uint32_t res0;
+   uint32_t ii;
+   uint32_t jj;
+   uint32_t j;
+   uint32_t i;
+   char wild;
+   while (c) {
+      i = 0UL;
+      j = 0UL;
+      wild = 0;
+      for (;;) {
+         res0 = cmprest(s, s_len, c->call, 9ul, &i, &j);
+         if (res0==1UL) return 1;
+         if (res0==3UL) {
+            /* "*" */
+            jj = j+1UL;
+            j = jj;
+            wild = 1;
+            ii = i;
+         }
+         else if (wild) {
+            if (res0==0UL) break;
+            ++ii; /* no fit but no word at end */
+            i = ii; /* compare again shifted */
+            j = jj;
+         }
+         else break;
+      }
       c = c->next;
    }
    return 0;
@@ -504,13 +532,14 @@ static char cmp(pCALLS c, const char s[], uint32_t s_len,
 static char CallFilt(pCALLS calls, const char s[],
                 uint32_t s_len, int32_t len)
 {
+   int32_t j;
    int32_t i;
    char mc[100];
    i = 0L;
    do {
       /* first look in ax25 frame */
       MakeMonCall(s, s_len, i, mc, 100ul);
-      if (cmp(calls, mc, 100ul, 0L)) return 1;
+      if (cmp(calls, mc, 100ul)) return 1;
       i += 7L;
    } while (!(i>=len || ((uint32_t)(uint8_t)s[i-1L]&1)));
    i += 2L;
@@ -519,8 +548,14 @@ static char CallFilt(pCALLS calls, const char s[],
       ++i;
       for (;;) {
          if (i>=len) break;
-         if (cmp(calls, s, s_len, i)) return 1;
-         while (((i<len && s[i]!=',') && s[i]!='>') && s[i]!=':') ++i;
+         j = 0L;
+         while ((((i<len && s[i]!=',') && s[i]!='>') && s[i]!=':') && j<99L) {
+            mc[j] = s[i];
+            ++i;
+            ++j;
+         }
+         mc[j] = 0;
+         if (cmp(calls, mc, 100ul)) return 1;
          if (s[i]==':') {
             ++i;
             if (s[i]!='}') break;
@@ -565,6 +600,16 @@ static int32_t DistFilt(struct aprsstr_POSITION mypos, char b[],
 } /* end DistFilt() */
 
 
+static int32_t findpayload(const char b[], uint32_t b_len,
+                int32_t len)
+{
+   int32_t i;
+   i = 13L;
+   while (i<len && !((uint32_t)(uint8_t)b[i]&1)) i += 7L;
+   return i+3L;
+} /* end findpayload() */
+
+
 static char Filter(const char b[], uint32_t b_len,
                 int32_t len, pOUTPORT parm, pINSOCK fromsock)
 {
@@ -579,9 +624,7 @@ static char Filter(const char b[], uint32_t b_len,
       }
       else return 0;
    }
-   i = 13L;
-   while (i<len && !((uint32_t)(uint8_t)b[i]&1)) i += 7L;
-   i += 3L;
+   i = findpayload(b, b_len, len);
    if (i>len || ((uint8_t)(uint8_t)b[i-2L]&~0x10U)!=0x3U) {
       if (show) osi_WrStr(" not UI ", 9ul);
       return parm->passnoUI;
@@ -591,20 +634,20 @@ static char Filter(const char b[], uint32_t b_len,
    if (Usermsg(b, b_len, len, i, fromsock, &selfmsg)) return 0;
    if (parm->filtercalls && CallFilt(parm->filtercalls, b, b_len,
                 len)!=parm->invertfilter) {
-      if (show) osi_WrStrLn(" callfilter match", 18ul);
+      if (show) osi_WrStr(" callfilter deletes frame", 26ul);
       return 0;
    }
    if (!X2C_INL((uint8_t)b[i],256,
                 parm->aprspass) || selfmsg && !X2C_INL((int32_t)84,256,
                 parm->aprspass)) {
-      if (show) osi_WrStrLn(" message type filter", 21ul);
+      if (show) osi_WrStr(" message type filter", 21ul);
       return 0;
    }
    if (parm->maxkm>0L && (b[i]!=':' || b[i+10L]!=':')) {
       /* dist filter on and no user message */
       km = DistFilt(parm->mypos, b, b_len, (uint32_t)i, (uint32_t)len);
       if (km<0L) {
-         if (show) osi_WrStrLn(" no pos", 8ul);
+         if (show) osi_WrStr(" no pos", 8ul);
          return 0;
       }
       if (show) {
@@ -613,14 +656,14 @@ static char Filter(const char b[], uint32_t b_len,
          osi_WrStr("km", 3ul);
       }
       if (km>=parm->maxkm) {
-         if (show) osi_WrStrLn(" too far", 9ul);
+         if (show) osi_WrStr(" too far", 9ul);
          return 0;
       }
    }
    if ((parm->satgate && !((uint32_t)(uint8_t)b[13UL]&1)) && (uint8_t)
                 b[20UL]<(uint8_t)'\200') {
       /* has >=1 vias and first via no h-bit */
-      if (show) osi_WrStrLn(" sat gate and direct heard", 27ul);
+      if (show) osi_WrStr(" sat gate and direct heard", 27ul);
       return 0;
    }
    return 1;
@@ -1040,95 +1083,106 @@ static void Digi(char raw[], uint32_t raw_len, char send[],
             ssidroute = 0UL;
             if (goodpath<=14L) goodpath = 0L;
             if ((0x10UL & parm->pathcheck)) goodpath = actdigi;
-            ok0 = pathlen>actdigi && (uint8_t)raw[actdigi+6L]<(uint8_t)
-                '\200'; /* there are via calls & is not digipeated */
+            ok0 = pathlen>actdigi; /* there are via calls */
             if (ok0) {
-               ssid = getSSID(raw[actdigi+6L]);
-               if ((0x400UL & parm->pathcheck)) ok0 = 0;
-               else {
-                  for (i = 0L; i<=5L; i++) {
-                     if (raw[i+actdigi]!=parm->digicall[i]) {
-                        ok0 = 0;
-                     }
-                  } /* end for */
-                  if (ssid!=getSSID(parm->digicall[6U])) ok0 = 0;
-               }
+               ok0 = (uint8_t)raw[actdigi+6L]<(uint8_t)'\200';
+                /* no H-bit is not digipeated */
                if (ok0) {
-                  if ((0x80UL & parm->pathcheck)) downpath = pathlen;
-                  if (show) osi_WrStr(" via digicall ", 15ul);
-               }
-               else if ((0x800UL & parm->pathcheck)==0) {
-                  ok0 = Cmp(raw, raw_len, (uint32_t)actdigi, "RELAY ",
-                7ul);
-                  if (!ok0 && (0x80000UL & parm->pathcheck)) {
-                     ok0 = Cmp(raw, raw_len, (uint32_t)actdigi, "ECHO  ",
-                7ul);
+                  ssid = getSSID(raw[actdigi+6L]);
+                  if ((0x400UL & parm->pathcheck)) ok0 = 0;
+                  else {
+                     for (i = 0L; i<=5L; i++) {
+                        if (raw[i+actdigi]!=parm->digicall[i]) ok0 = 0;
+                     } /* end for */
+                     if (ssid!=getSSID(parm->digicall[6U])) ok0 = 0;
                   }
                   if (ok0) {
-                     if ((0x100UL & parm->pathcheck)) downpath = pathlen;
-                     if (show) osi_WrStr(" via RELAY ", 12ul);
+                     if ((0x80UL & parm->pathcheck)) downpath = pathlen;
+                     if (show) osi_WrStr(" via digicall ", 15ul);
                   }
-               }
-               if (!ok0) {
-                  if ((0x40000UL & parm->pathcheck)) {
-                     ok0 = Cmp(raw, raw_len, (uint32_t)actdigi, "GATE  ",
+                  else if ((0x800UL & parm->pathcheck)==0) {
+                     ok0 = Cmp(raw, raw_len, (uint32_t)actdigi, "RELAY ",
                 7ul);
+                     if (!ok0 && (0x80000UL & parm->pathcheck)) {
+                        ok0 = Cmp(raw, raw_len, (uint32_t)actdigi,
+                "ECHO  ", 7ul);
+                     }
                      if (ok0) {
                         if ((0x100UL & parm->pathcheck)) {
                            downpath = pathlen;
                         }
-                        if (show) osi_WrStr(" via GATE ", 11ul);
+                        if (show) osi_WrStr(" via RELAY ", 12ul);
                      }
                   }
-               }
-               if (!ok0) {
-                  if ((((0x1000UL & parm->pathcheck)==0 && Cmp(raw, raw_len,
-                (uint32_t)actdigi, "TRACE", 6ul)) && ChkNN(ssid,
+                  if (!ok0) {
+                     if ((0x40000UL & parm->pathcheck)) {
+                        ok0 = Cmp(raw, raw_len, (uint32_t)actdigi,
+                "GATE  ", 7ul);
+                        if (ok0) {
+                           if ((0x100UL & parm->pathcheck)) {
+                              downpath = pathlen;
+                           }
+                           if (show) {
+                              osi_WrStr(" via GATE ", 11ul);
+                           }
+                        }
+                     }
+                  }
+                  if (!ok0) {
+                     if ((((0x1000UL & parm->pathcheck)==0 && Cmp(raw,
+                raw_len, (uint32_t)actdigi, "TRACE", 6ul)) && ChkNN(ssid,
                 raw[actdigi+5L])) && (goodpath==actdigi || NeqN(ssid,
                 raw[actdigi+5L], actdigi))) {
-                     ok0 = 1;
-                     if (ssid>(uint32_t)((0x10000UL & parm->pathcheck)==0)
-                && (0x20UL & parm->pathcheck)) {
-                        setSSID(&raw[actdigi+6L], ssid-1UL);
+                        ok0 = 1;
+                        if (ssid>(uint32_t)((0x10000UL & parm->pathcheck)
+                ==0) && (0x20UL & parm->pathcheck)) {
+                           setSSID(&raw[actdigi+6L], ssid-1UL);
                 /* dec(N) of WIDEn-N */
-                        startpath = actdigi;
+                           startpath = actdigi;
+                        }
+                        if ((0x100UL & parm->pathcheck)==0) {
+                           downpath = actdigi+7L;
+                        }
                      }
-                     if ((0x100UL & parm->pathcheck)==0) {
-                        downpath = actdigi+7L;
-                     }
+                     if (show && ok0) osi_WrStr(" via TRACEn-n ", 15ul);
                   }
-                  if (show && ok0) osi_WrStr(" via TRACEn-n ", 15ul);
-               }
-               if (!ok0) {
-                  if (((((0x2000UL & parm->pathcheck)==0 && Cmp(raw, raw_len,
-                 (uint32_t)actdigi, "WIDE",
+                  if (!ok0) {
+                     if (((((0x2000UL & parm->pathcheck)==0 && Cmp(raw,
+                raw_len, (uint32_t)actdigi, "WIDE",
                 5ul)) && raw[actdigi+5L]=='@') && ChkNN(ssid,
                 raw[actdigi+4L])) && (goodpath==actdigi || NeqN(ssid,
                 raw[actdigi+4L], actdigi))) {
-                     ok0 = 1;
-                     if (raw[actdigi+4L]!='@' && (0x40UL & parm->pathcheck)) {
-                        if ((0x4000UL & parm->pathcheck)
+                        ok0 = 1;
+                        if (raw[actdigi+4L]
+                !='@' && (0x40UL & parm->pathcheck)) {
+                           if ((0x4000UL & parm->pathcheck)
                 || goodpath!=actdigi && !NeqN(ssid, raw[actdigi+4L],
-                actdigi)) nodigicall = 1;
-                        if (ssid>(uint32_t)((0x10000UL & parm->pathcheck)
-                ==0)) {
-                           setSSID(&raw[actdigi+6L], ssid-1UL);
-                           startpath = actdigi;
+                actdigi)) {
+                              nodigicall = 1; /* maybe repeatet before */
+                           }
+                           if (ssid>(uint32_t)
+                ((0x10000UL & parm->pathcheck)==0)) {
+                              setSSID(&raw[actdigi+6L], ssid-1UL);
+                              startpath = actdigi;
+                           }
+                           else if (nodigicall) {
+                              raw[actdigi+6L] = '\340'; /* WIDE* */
+                           }
+                           if (nodigicall) startpath = actdigi;
                         }
-                        else if (nodigicall) {
-                           raw[actdigi+6L] = '\340'; /* WIDE* */
+                        if ((0x200UL & parm->pathcheck)==0) {
+                           downpath = actdigi+7L;
                         }
-                        if (nodigicall) startpath = actdigi;
                      }
-                     if ((0x200UL & parm->pathcheck)==0) {
-                        downpath = actdigi+7L;
-                     }
+                     if (show && ok0) osi_WrStr(" via WIDEn-n ", 14ul);
                   }
-                  if (show && ok0) osi_WrStr(" via WIDEn-n ", 14ul);
+                  if (show && !ok0) osi_WrStr(" no source path ", 17ul);
                }
-               if (show && !ok0) osi_WrStr(" no source path ", 17ul);
+               else if (show) {
+                  osi_WrStr(" H-bit set, already digipeated ", 32ul);
+               }
             }
-            else if (show) osi_WrStr(" already digipeated ", 21ul);
+            else if (show) osi_WrStr(" no (more) digipeat flags ", 27ul);
          }
       }
       else if (show) osi_WrStr(" we have already digipeated ", 29ul);
@@ -1556,12 +1610,14 @@ static void parms(void)
             }
          }
          else if (lasth=='e') actecho = 1;
-         else if ((((lasth=='r' || lasth=='m') || lasth=='c') || lasth=='l')
-                || lasth=='D') {
+         else if (((((lasth=='r' || lasth=='m') || lasth=='c') || lasth=='l')
+                 || lasth=='D') || lasth=='n') {
             if (actsock0==0) {
                Err("need input -M or -R before -r or -m or -c or -D", 48ul);
             }
-            if (lasth!='D') osi_NextArg(h, 4096ul);
+            if (lasth!='D') {
+               osi_NextArg(h, 4096ul);
+            }
             osic_alloc((char * *) &outsock0, sizeof(struct OUTPORT));
             if (outsock0==0) Err("out of memory", 14ul);
             { /* with */
@@ -1577,8 +1633,10 @@ static void parms(void)
                anonym2->echo = actecho;
                anonym2->digiparm = actdigi;
                anonym2->axudp2 = lasth=='l';
-               anonym2->rawwrite = lasth=='r' || anonym2->axudp2;
+               anonym2->rawwrite = (lasth=='r' || anonym2->axudp2)
+                || lasth=='n';
                anonym2->crlfwrite = lasth=='c';
+               anonym2->rawpayload = lasth=='n';
                anonym2->beacon0 = actbeacon;
                actbeacon.bintervall = 0UL;
                anonym2->passnoUI = actpassui;
@@ -1593,6 +1651,7 @@ static void parms(void)
             }
             actdigi = 0;
             actpassui = 0;
+            actecho = 0;
             onext = actsock0->outchain;
             if (onext==0) actsock0->outchain = outsock0;
             else {
@@ -1650,12 +1709,12 @@ nitor from stdin", 66ul);
 nitor from stdin and terminate", 80ul);
                osi_WrStrLn(" -m <ip>:<port> send text monitor udp frame 0 ter\
 minated", 57ul);
-               osi_WrStrLn(" -p <n>,<...>   -p 7,8 igate friendly digi relayi\
-ng all direct heared", 70ul);
-               osi_WrStrLn("                -p 5,6,7,8,9 first hop digi, -p 3\
-,4 (noisy) last hop digi", 74ul);
+               osi_WrStrLn(" -n <ip>:<port> send raw payload (no axudp header\
+ and crc) udp frame", 69ul);
+               osi_WrStrLn(" -p <n>,<...>   -p 0,1,5,6,7,8,9 first hop digi, \
+-p 3,4 (noisy) last hop digi", 78ul);
                osi_WrStrLn("                -p 0,1,3,4,5,6,7,8,9,14,16 origin\
-al, noisy, path loosing ...", 77ul);
+al, noisy, path loosing, do not use", 85ul);
                osi_WrStrLn("                0..2 limit ssid-routing to (bit0 \
 + 2*bit1 + 4*bit2)", 68ul);
                osi_WrStrLn("                dest-3: dest-2,digicall*, dest-3,\
@@ -1663,7 +1722,7 @@ call*: dest-2,call,digicall*", 78ul);
                osi_WrStrLn("                3 allow repeatet before (mostly w\
 ith wrong path trace)", 71ul);
                osi_WrStrLn("                4 no uplink check for \'looks lik\
-e direct heared\'", 65ul);
+e direct heard\'", 64ul);
                osi_WrStrLn("                  (noisy, wrong path trace possib\
 le)", 53ul);
                osi_WrStrLn("                5 resend TRACEn-(N-1), 6 resend W\
@@ -2285,7 +2344,7 @@ static void beaconmacros(char s[], uint32_t s_len, char * del)
                /* skip whole beacon line */
                if (show) {
                   osic_WrLn();
-                  osi_WrStrLn("beacon macro file not readable ", 32ul);
+                  osi_WrStr("beacon macro file not readable ", 32ul);
                }
                s[0UL] = 0;
                return;
@@ -2302,7 +2361,7 @@ static void beaconmacros(char s[], uint32_t s_len, char * del)
             else {
                if (show) {
                   osic_WrLn();
-                  osi_WrStrLn("bad beacon macro ", 18ul);
+                  osi_WrStr("bad beacon macro ", 18ul);
                }
                s[0UL] = 0;
                return;
@@ -2491,6 +2550,21 @@ static void sendack(char buf[], uint32_t buf_len, int32_t * len,
 } /* end sendack() */
 
 
+static void stripheadcrc(char b[], uint32_t b_len, int32_t * len)
+{
+   int32_t j;
+   int32_t i;
+   i = findpayload(b, b_len, *len);
+   j = 0L;
+   while (i<*len) {
+      b[j] = b[i];
+      ++i;
+      ++j;
+   }
+   *len = j-2L; /* strip crc */
+} /* end stripheadcrc() */
+
+
 static void appudp2(char ob[], uint32_t ob_len, uint32_t * olen,
                 const char ud[], uint32_t ud_len, const char ib[],
                 uint32_t ib_len, int32_t len)
@@ -2533,6 +2607,8 @@ static char mbuf[512];
 static int32_t inlen;
 
 static int32_t outlen;
+
+static int32_t worklen;
 
 static int32_t res;
 
@@ -2633,32 +2709,35 @@ extern int main(int argc, char **argv)
                      osi_WrStr(")", 2ul);
                      osi_WrStr(":", 2ul);
                      if (monlen<=0UL) {
-                        osi_WrStr("<raw to mon error>", 19ul);
+                        osi_WrStr("<rawframe decode error>", 24ul);
                         hexdump(rawbuf, 338ul, inlen-2L);
                      }
                      WrStrCrtl(mbuf, 512ul);
                   }
                   outsock = actsock->outchain;
-                  outlen = 0L;
+                  outlen = inlen;
+                  memcpy(rawout,rawbuf,338u);
                   while (outsock) {
                      if ((show && inlen>2L) && outsock->toport) {
                         osi_WrStr(" tx: ", 6ul);
                         showpip(outsock->toip, outsock->toport);
                      }
-                     memcpy(workraw,rawbuf,338u);
-                     if (((isbeacon==0 || isbeacon==outsock)
-                || outsock->echo) && Filter(workraw, 338ul, inlen, outsock,
-                actsock)) {
-                        if (outsock->digiparm) {
-                           Digi(workraw, 338ul, rawout, 338ul, inlen,
-                &outlen, hamup, outsock->digiparm, !nobeacon);
+                     if ((isbeacon==0 || isbeacon==outsock) || outsock->echo)
+                 {
+                        if (!outsock->echo) {
+                           outlen = inlen;
+                           memcpy(rawout,rawbuf,338u);
+                        }
+                        if (outlen>0L && !Filter(rawout, 338ul, outlen,
+                outsock, actsock)) outlen = 0L;
+                        if (outlen>0L && outsock->digiparm) {
+                           Digi(rawout, 338ul, workraw, 338ul, outlen,
+                &worklen, hamup, outsock->digiparm, !nobeacon);
+                           outlen = worklen;
+                           memcpy(rawout,workraw,338u);
                            if (show && outlen>2L) {
                               osi_WrStr(" digi", 6ul);
                            }
-                        }
-                        else if (!outsock->echo) {
-                           memcpy(rawout,workraw,338u);
-                           outlen = inlen;
                         }
                         /* else use last filtert */
                         if (outlen>0L) {
@@ -2676,9 +2755,16 @@ extern int main(int argc, char **argv)
                 (int32_t)monlen, outsock->toport, outsock->toip);
                                  }
                                  else {
+                                    if (outsock->rawpayload) {
+                                    stripheadcrc(rawout, 338ul, &outlen);
+                                    }
+                                    else {
                                     aprsstr_AppCRC(rawout, 338ul, outlen-2L);
+                                    }
+                                    if (outlen>0L) {
                                     res = udpsend(actsock->fd, rawout,
                 outlen, outsock->toport, outsock->toip);
+                                    }
                                  }
                                  if (show && outlen>2L) {
                                     osi_WrStrLn(" raw", 5ul);
@@ -2708,7 +2794,7 @@ extern int main(int argc, char **argv)
                         else if (show) osi_WrStrLn(" no tx", 7ul);
                      }
                      else if (show && outlen>2L) {
-                        osi_WrStrLn(" deleted", 9ul);
+                        osi_WrStrLn(" no input data", 15ul);
                      }
                      outsock = outsock->next;
                   }

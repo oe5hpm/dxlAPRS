@@ -1474,6 +1474,13 @@
 
 
 
+4.4.2021
+
++ Zoomen durch auf und ab ziehen am rechten Bildrand
++ POIs mit eingeschaltetem Symbol ("C"-Menue) bevorzugen Einrasten und
+  Mouse-over-Infos gegenueber den unsichtbaren. 
++ durch kreisen der Maus um Punkte mit mehreren POIs am selben standort zeigen
+  Infos aller der Reihe nach.
 
 
 

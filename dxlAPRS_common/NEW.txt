@@ -257,6 +257,14 @@ rf     qA?                                                            +
 
 
 
+19.8.2020
+
+ Filter (m/100 ...) moeglichts nahe an aprs-is Stand gebracht. Es fehlen die
+ "Friend"-Filter da die Position eines Calls fehlen kann.
+  Es kommen normal nicht Daten aus der ganzen Welt und empfangene Daten 
+  waeren ohne Permanentspeicher nur zeitlich begrenzt vom "MH" verfuegbar.
+
+
 
 
 
@@ -287,6 +295,9 @@ gps2aprs:
  Logfile fuer gps-Zeilen
 
 
+1.3.2020
+
+  Set System-Time from GPS-Time and terminate or not
 
 
 

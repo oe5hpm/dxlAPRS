@@ -33,6 +33,9 @@
 #define maptool_MAXCHAR 129
 /* highest font chars */
 
+#define maptool_FLOATERRCORR (-6.E-7)
+/* try to correct summed rounding errors by multiple zoom in */
+
 struct maptool_PIX;
 
 
@@ -212,7 +215,7 @@ extern void maptool_loadfont(void);
 
 extern void maptool_startmapdelay(void);
 
-extern void maptool_pullmap(int32_t, int32_t, char);
+extern void maptool_pullmap(int32_t, int32_t, int32_t, char);
 
 extern int32_t maptool_geoprofile(maptool_pIMAGE, struct aprsstr_POSITION,
                 struct aprsstr_POSITION, float, char, int32_t,
@@ -252,6 +255,14 @@ extern char maptool_findmultiline(struct aprsstr_POSITION,
 extern void maptool_readpoifiles(void);
 
 extern char maptool_poisactiv(void);
+
+extern char maptool_cmpwild(char [], uint32_t, char [],
+                uint32_t);
+
+extern void maptool_cleanfind(char [], uint32_t);
+
+extern void maptool_zoominout(char, char, char,
+                char);
 
 
 extern void maptool_BEGIN(void);

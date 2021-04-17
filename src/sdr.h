@@ -88,12 +88,14 @@ struct sdr_RX {
 
 typedef struct sdr_RX * sdr_pRX;
 
+extern int32_t sdr_debfd;
+
 extern int32_t sdr_getsdr(uint32_t, sdr_pRX [], uint32_t);
 
 extern void sdr_setparm(uint32_t, uint32_t);
 
 extern char sdr_startsdr(char [], uint32_t, char [],
-                uint32_t, uint32_t, uint32_t, char);
+                uint32_t, uint32_t, uint32_t, char, uint32_t);
 
 
 extern void sdr_BEGIN(void);

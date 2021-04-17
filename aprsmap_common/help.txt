@@ -771,8 +771,8 @@ dran * als Wildcard |de-1:zoomt: zum gefundenen
 Objekt oder liefert ein Auswahlmenue wenn es mehrere
 gibt die zum Suchbegriff passen. Davon kann dann
 eins ausgewaehlt werden.
-Ist ein "poi.txt" und/oder "mypoi.txt" File vorhanden
-kann auch nach |de-poi:Points of Interest: gesucht werden.
+Sind im osm/poi/ POI-Files vorhanden, kann auch nach
+|de-poi:Points of Interest: gesucht werden.
 Gibts mehrere zum Suchbegriff passende Namen kann
 durch Klick auf die Such-Eingabe der jeweils naechste
 Punkt angesteuert werden.
@@ -782,15 +782,14 @@ D.DDD Format gesucht werden. zB. "4812.34N 1243.21E"
 
 
 |de-poi
-Ist ein "poi.txt" und/oder "mypoi.txt" File im Karten
-Verzeichnis vorhanden, kann nach "Points of Interest"
-|de-qth:gesucht: werden oder bei eingeschaltener "Show Location
-of Mouse" ("p"-Taste) und ab dem dort einzugebenden 
-Zoom Faktor werden die POIs beim Bewegen der Maus 
-in deren Naehe angezeigt. Setzt man die Maus dann
-nahe zum angezeigten Punkt, kann mit "c" auf den Punkt
-Zentriert, und sodann mit "+" gezoomt werden. 
-Derzeit in den Files, Bergnamen der Alpen und SOTA-Punkte.
+Sind im osm/poi/ POI-Files vorhanden, kann nach
+"Points of Interest" |de-qth:gesucht: werden oder bei
+eingeschaltener "Show Location of Mouse" ("p"-Taste)
+und ab dem dort einzugebenden Zoom Faktor werden die
+POIs beim Bewegen der Maus in deren Naehe angezeigt.
+Setzt man die Maus dann nahe zum angezeigten Punkt,
+kann mit "c" auf den Punkt Zentriert, und sodann mit
+"+" gezoomt werden.
 
 
 
@@ -1023,7 +1022,7 @@ W grafische Regenkarte rot: letzte Stunde, blau: 24h
 / Zoom auf das von Marker 1-2 aufgespannte Rechteck 
 \ Shortcut Liste
 ~ Aendere Track Farbe
-+ hineinzoomen  - herauszoomen
++ hineinzoomen  - herauszoomen (mit ALT kleine Schritte)
 . zoomen auf angeklickte Station
 = wie . aber mit Funkstrecken
 0 Zeige alle Stationen

@@ -88,7 +88,7 @@ void osic_WerrStrLn(char s[], uint32_t s_len)
 
 	len = strnlen(s, s_len);
 	fprintf(stderr, "%.*s", len, s);
-	osic_WrLn();
+	osic_WerrLn();
 }
 
 void osic_WrUINT32(uint32_t x, uint32_t witdh)
@@ -245,22 +245,37 @@ int osic_Size(int fd)
 	return st.st_size;
 }
 
+int osic_LSeek(int fd, long lo, int whence)
+{
+	off64_t rc;
+
+	rc = lseek64(fd, lo, whence);
+
+	return (rc < 0 ? -1 : 0);
+}
+
 void osic_Seek(int32_t fd, uint32_t pos)
 {
-	lseek(fd, (int32_t)pos, SEEK_SET);
+	lseek(fd, (off_t)pos, SEEK_SET);
 }
 
 void osic_Seekcur(int32_t fd, int32_t rel)
 {
 #ifndef MACOS
-	if (lseek64(fd, rel, (uint32_t)SEEK_CUR) < 0)
+	if (lseek64(fd, (off_t)rel, SEEK_CUR) < 0)
 		lseek(fd, 0, SEEK_SET);
 #else
-	/* MacOS has no lseek64 */
-	if (lseek(fd, rel, (uint32_t)SEEK_CUR) < 0)
-		lseek(fd, 0, SEEK_SET);
+        /* MacOS has no lseek64 */
+        if (lseek(fd, rel, SEEK_CUR) < 0)
+                lseek(fd, 0, SEEK_SET);
 #endif
 }
+
+void osic_Seekend(int32_t fd, int32_t pos)
+{
+        lseek(fd, (off_t)pos, SEEK_END);
+}
+
 
 void osic_Remove(char fname[], uint32_t fname_len, char *done)
 {
@@ -285,9 +300,19 @@ int osic_symblink(char *existing, char *newname)
 	return symlink(existing, newname);
 }
 
+int osic_isfifo(int fd)
+{
+	struct stat st;
+
+	fstat(fd, &st);
+
+	return ((st.st_mode & S_IFMT) == S_IFIFO) ||
+	       ((st.st_mode & S_IFMT) == S_IFCHR);
+}
+
 char osic_mkdir(char path[], uint32_t fname_len, uint32_t perm)
 {
-        if (mkdir(path, perm) != -1);
+        if (mkdir(path, perm) != -1)
                 return 1;
         return 0;
 }
@@ -568,3 +593,9 @@ void *osic_chkptr(void *p)
 	assert(p);
 	return p;
 }
+
+int32_t osic_setsystime(uint32_t * time0)
+{
+	return stime(time0);
+}
+

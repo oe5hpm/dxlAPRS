@@ -75,15 +75,21 @@ void osic_Rename(char fname[], uint32_t fname_len,
 
 int osic_Size(int fd);
 
+int osic_LSeek(int fd, long lo, int whence);
+
 void osic_Seek(int32_t fd, uint32_t pos);
 
 void osic_Seekcur(int32_t fd, int32_t rel);
+
+void osic_Seekend(int32_t fd, int32_t rel);
 
 void osic_Remove(char fname[], uint32_t fname_len, char *done);
 
 char osic_Exists(char fname[], uint32_t fname_len);
 
 int osic_symblink(char *existing, char *newname);
+
+int osic_isfifo(int fd);
 
 char osic_mkdir(char fname[], uint32_t fname_len, uint32_t perm);
 
@@ -147,5 +153,8 @@ void X2C_DYNALLOCATE(char **a, size_t size, size_t lens[], size_t dims);
 void X2C_DYNDEALLOCATE(char **a);
 
 void *osic_chkptr(void *p);
+
+int32_t osic_setsystime(uint32_t * time0);
+
 
 #endif /* __OSIC_H__ */

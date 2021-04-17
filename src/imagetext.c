@@ -2151,9 +2151,9 @@ extern uint32_t imagetext_fontsizey(uint32_t fontsize)
 
 
 extern void imagetext_writestr(imagetext_pIMAGE image, uint32_t x,
-                uint32_t y, uint32_t fontsize, uint32_t br,
-                uint32_t bg, uint32_t bb, char s[],
-                uint32_t s_len)
+                uint32_t y, uint32_t fontsize, uint32_t dir,
+                uint32_t contrast, int32_t br, int32_t bg,
+                int32_t bb, char s[], uint32_t s_len)
 {
    uint32_t charxy;
    uint32_t chary;
@@ -2161,51 +2161,107 @@ extern void imagetext_writestr(imagetext_pIMAGE image, uint32_t x,
    uint32_t cy;
    uint32_t cx;
    uint32_t icx;
-   uint32_t p;
    uint32_t iy;
    uint32_t ix;
    uint32_t c;
    uint32_t i;
+   char go;
+   char darken;
+   int32_t mc;
+   int32_t mb;
+   int32_t mg;
+   int32_t mr;
+   int32_t p;
+   int32_t ci;
+   int32_t lum;
    uint8_t * cg;
    struct imagetext_PIX * anonym;
    uint32_t tmp;
-   uint32_t tmp0;
    if (x>image->Len1-1 || y>image->Len0-1) return;
    charx = imagetext_fontsizex(fontsize);
    chary = imagetext_fontsizey(fontsize);
-   charxy = charx*chary;
+   charxy = charx*chary*96UL;
    if (charx==6UL) cg = (uint8_t *)imagetext_CHARGEN6;
    else if (charx==8UL) cg = (uint8_t *)imagetext_CHARGEN8;
    else cg = (uint8_t *)imagetext_CHARGEN10;
    i = 0UL;
+   lum = 3L*br+5L*bg+2L*bb;
+   go = contrast==0UL;
+   mr = 0L;
+   mg = 0L;
+   mb = 0L;
+   mc = 0L;
+   darken = 1;
    while (i<=s_len-1 && s[i]) {
       c = (uint32_t)(uint8_t)s[i];
       if (c>=32UL && c<128UL) {
-         c = (c-32UL)*charx+96UL*charxy;
-         icx = x+i*charx;
-         tmp = chary-1UL;
-         iy = 0UL;
-         if (iy<=tmp) for (;; iy++) {
-            c -= 96UL*charx;
-            tmp0 = charx-1UL;
-            ix = 0UL;
-            if (ix<=tmp0) for (;; ix++) {
-               cx = icx+ix;
-               cy = y+iy;
+         c = (c-32UL)*charx;
+         if (dir==0UL) icx = x+i*charx;
+         else icx = y+i*charx;
+         ix = 0UL;
+         do {
+            if (ix==0UL && contrast) {
+               darken = mr*3L+mg*5L+mb*2L>(labs(lum)*(5L-(int32_t)
+                (uint32_t)darken))/4L; /* invert hysteresis */
+            }
+            tmp = chary-1UL;
+            iy = 0UL;
+            if (iy<=tmp) for (;; iy++) {
+               if (dir==0UL) {
+                  cx = icx+ix;
+                  cy = y+iy;
+               }
+               else {
+                  cy = icx+ix;
+                  cx = (x+chary)-iy;
+               }
                if (cx<=image->Len1-1 && cy<=image->Len0-1) {
                   { /* with */
                      struct imagetext_PIX * anonym = &image->Adr[(cx)
                 *image->Len0+cy];
-                     p = (uint32_t)cg[c+ix];
-                     anonym->r += (uint16_t)((br*p)/256UL);
-                     anonym->g += (uint16_t)((bg*p)/256UL);
-                     anonym->b += (uint16_t)((bb*p)/256UL);
+                     if (go) {
+                        p = (int32_t)cg[((c+charxy)-96UL*charx*(iy+1UL))
+                +ix];
+                        if (contrast) {
+                           /* background dependent white/black text */
+                           mr += ((int32_t)anonym->r-mr)/16L;
+                           mg += ((int32_t)anonym->g-mg)/16L;
+                           mb += ((int32_t)anonym->b-mb)/16L;
+                           if (darken) p = -p;
+                           ci = mr+(br*p)/256L;
+                           if (ci<0L) ci = 0L;
+                           anonym->r = (uint16_t)ci;
+                           ci = mg+(bg*p)/256L;
+                           if (ci<0L) ci = 0L;
+                           anonym->g = (uint16_t)ci;
+                           ci = mb+(br*p)/256L;
+                           if (ci<0L) ci = 0L;
+                           anonym->b = (uint16_t)ci;
+                        }
+                        else {
+                           anonym->r += (uint16_t)((br*p)/256L);
+                           anonym->g += (uint16_t)((bg*p)/256L);
+                           anonym->b += (uint16_t)((bb*p)/256L);
+                        }
+                     }
+                     else {
+                        mr += (int32_t)anonym->r;
+                        mg += (int32_t)anonym->g;
+                        mb += (int32_t)anonym->b;
+                        ++mc;
+                     }
                   }
                }
-               if (ix==tmp0) break;
+               if (iy==tmp) break;
             } /* end for */
-            if (iy==tmp) break;
-         } /* end for */
+            if (go) ++ix;
+            else if (mc>0L) {
+               mr = mr/mc;
+               mg = mg/mc;
+               mb = mb/mc;
+            }
+            go = 1;
+         } while (ix<charx);
       }
       ++i;
    }

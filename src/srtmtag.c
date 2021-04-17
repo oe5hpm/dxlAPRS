@@ -149,9 +149,9 @@ static uint8_t coltran(const char c[], uint32_t c_len, uint32_t p)
    g = (uint32_t)(uint8_t)c[p+1UL];
    b = (uint32_t)(uint8_t)c[p+2UL];
    s = (r+g+b)/3UL;
-   if (b>=2UL*s) return 3U;
+   if (b*3UL>=4UL*s) return 3U;
    /* blue */
-   if (g>=2UL*s) return 2U;
+   if (g*3UL>=4UL*s) return 2U;
    /* green */
    /*  IF r>=2*s THEN WrStr("r") END;   (* red *) */
    if ((s<70UL && labs((int32_t)(s-b))<10L) && labs((int32_t)(s-g))<10L) {

@@ -257,8 +257,8 @@ static void Parms(void)
 t into APRS-beacon", 68ul);
                osi_WrStrLn(" -a                                altitude on",
                 47ul);
-               osi_WrStrLn(" -f <filename>                     writes <fn.lat\
-> <fn.long> and <filename.alt>", 80ul);
+               osi_WrStrLn(" -f <file>                         writes <file.l\
+at> <file.long> and <file.alt>", 80ul);
                osi_WrStrLn(" -h                                this", 40ul);
                /*        WrStrLn('
                 -i <icon>                         2 Icon chars "/-" (House),
@@ -273,8 +273,8 @@ tyS0:9600", 59ul);
 l open removable USB tty", 74ul);
                osi_WrStrLn(" -v                                verbous",
                 43ul);
-               osi_WrStrLn(" example:  -t /dev/ttyS0:9600 -u -f test -i \"/-\\
-" -a -m 30 -v", 61ul);
+               osi_WrStrLn(" example:  -t /dev/ttyS0:9600 -u -f test -a -m 30\
+ -v", 53ul);
                osic_WrLn();
                X2C_ABORT();
             }
@@ -326,7 +326,8 @@ static void decodeline(const char b[], uint32_t b_len,
    uint32_t i;
    double div0;
    char sign;
-   if ((b[0UL]=='$' && b[1UL]=='G') && b[2UL]=='P') {
+   if (b[0UL]=='$' && b[1UL]=='G') {
+      /* & (b[2]="P")*/
       if ((b[3UL]=='R' && b[4UL]=='M') && b[5UL]=='C') {
          /* $GPRMC,141333.593,A,8915.1000,N,01300.2000,E,0.00,00.00,140410,0,
                 ,A*7C */

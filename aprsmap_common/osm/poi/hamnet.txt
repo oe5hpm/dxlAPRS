@@ -11,31 +11,31 @@ HAMNET-DB,db0tvm,"db0tvm,Radioparam: 2327MHz 2392MHz 5705MHz 5715MHz 5725MHz,Mai
 HAMNET-DB,f1zkh,"f1zkh,Maintainer : f6cnb f4fsd,Comment:,Receiver of 29MHz/10m relay",49.32716,2.06145,0.00000
 HAMNET-DB,db0ebe,"db0ebe,Radioparam: 2397MHz 5MHz vertikal (derzeit off air),Maintainer : dg1mhm,Comment:,Site configuration: https://www.dropbox.com/s/k2wddvdq4j86d9r/DB0EBE.gif",48.09010,11.96127,618.00000
 HAMNET-DB,db0mbg,"db0mbg,Maintainer : dl3mbg,Comment:,Site configuration: https://www.dropbox.com/s/hs1nxz8vb46o8bm/DB0MBG.gif",47.97540,12.78050,494.00000
-HAMNET-DB,db0hob,"db0hob,Radioparam: 5695MHz 5MHz vertikal / 2397MHz 5MHz vertikal,Maintainer : dl8mew,Comment:,Site configuration: https://www.dropbox.com/s/c3ms6hgopqd12oh/DB0HOB.gif",47.74805,12.25000,1520.00000
-HAMNET-DB,db0wai,"db0wai,Maintainer : dl6mfy dh8mo dh0mbs,Comment:,http://db0wai.ampr.org Site configuration:,https://www.dropbox.com/s/mw5upsbxhq7qr1z/DB0WAI.gif Am Standort befindet sich,auch das C4FM Relais DB0PV QRG 438.525",48.11388,11.55555,521.00000
-HAMNET-DB,db0vox,"db0vox,Radioparam: 2387MHz Nord,Maintainer : dg8ngn,Comment:,Site configuration: https://www.dropbox.com/s/u1xszxkc2zn7z88/DB0VOX.gif",49.42597,11.03913,318.00000
+HAMNET-DB,db0hob,"db0hob,Radioparam: 5695MHz 5MHz vertikal / 2397MHz 5MHz vertikal (Currently not active),Maintainer : dl8mew dl6fz,Comment:,Site configuration: https://www.dropbox.com/s/kqlzfbp74ybipk0/DB0HOB.gif",47.74805,12.25000,1520.00000
+HAMNET-DB,db0wai,"db0wai,Maintainer : dl6mfy dh8mo dh0mbs,Comment:,http://db0wai.ampr.org Site configuration:,https://www.dropbox.com/s/mw5upsbxhq7qr1z/DB0WAI.gif Am Standort befindet sich,auch das C4FM Relais DB0PV QRG 438.525",48.11458,11.55621,521.00000
+HAMNET-DB,db0vox,"db0vox,Radioparam: 2387MHz Nord 2392MHz Sued,Maintainer : dg8ngn,Comment:,Site configuration: https://www.dropbox.com/s/u1xszxkc2zn7z88/DB0VOX.gif",49.42597,11.03913,318.00000
 HAMNET-DB,db0aat,"db0aat,Maintainer : dl8mcg,Comment:,Site Configuration: https://www.dropbox.com/s/z2ssh7ovn07gfx0/DB0AAT.gif",47.84116,12.65477,765.00000
-HAMNET-DB,db0pm,"db0pm,Radioparam: 2397MHz 5MHz vertikal,Maintainer : dl6fz dd5ki,Comment:,Site Configuration: https://www.dropbox.com/s/z67x3g76swdgxh4/DB0PM.gif?dl=0,Site Information: http://box.db0pm.ampr.org/",47.75469,11.85278,895.00000
+HAMNET-DB,db0pm,"db0pm,Radioparam: 2397MHz 5MHz vertikal,Maintainer : dl6fz dd5ki,Comment:,Site Configuration: https://www.dropbox.com/s/z67x3g76swdgxh4/DB0PM.gif?dl=0,Site Information: http://box.db0pm.ampr.org/ and http://www.db0pm.de",47.75469,11.85278,895.00000
 HAMNET-DB,ir3uhe,"ir3uhe,Maintainer : in3zmb iw3amq in3fqq,Comment:,Site configuration: https://www.dropbox.com/s/jk563l14lzbixmi/IR3UHE.gif",46.66233,11.12792,775.00000
 HAMNET-DB,db0fue,"db0fue,Maintainer : dk5ras,Comment:,Repeater 438.625 -7.6 MHz 88.5 Hz Repeater 145.6375 -0.6 MHz 88.5 Hz Site,configuration: https://www.dropbox.com/s/4ay1hy1a7jhu8dy/DB0FUE.gif",49.48072,10.95704,320.00000
 HAMNET-DB,db0dah,"db0dah,Radioparam: 2397MHz 5MHz 180v,Maintainer : dl7tom,Comment:,Site configuration: https://tomemig.de/data/hamnet/DB0DAH.svg",48.42402,11.26834,553.00000
-HAMNET-DB,db0pme,"db0pme,Maintainer : dl6fz dd5ki,Comment:,Site configuration: https://www.dropbox.com/s/mzi6e3yhdgdz433/DB0PME.gif",47.75313,11.77916,862.00000
-HAMNET-DB,oe2xzr,"oe2xzr,Radioparam: 2417MHz 15dBi 60 Sektor nach S 2427MHz 11dBi 180 Sektor nach NNW ,Maintainer : oe2wao oe2lsp,Comment:,Am Standort ist auch - 2m FM Relais OE2XZR 145.6875 CTCSS 88 5Hz EL:304806 - 2m,APRS OE2XZR 144 800 - 70cm DSTAR-Relais OE2XZR 439.000 - 70cm Packet Radio,OE2XZR 438.125 -7 6",47.80395,13.10984,1273.00000
-HAMNET-DB,oe7xgr,"oe7xgr,Radioparam: 2437MHz 5MHz,Maintainer : oe7fmi oe7bkh,Comment:,Infos: http://wiki.oevsv.at/index.php/Arbeitsgruppe_OE7 Topologie:,http://wiki.oevsv.at/images/2/27/TOPOOE7.jpg",47.06359,11.67964,3224.00000
-HAMNET-DB,oe8xdr,"oe8xdr,Radioparam: 5830/5MHz,Maintainer : oe8urq oe8aeq oe8pkr,Comment:,AS 4223280010 HamNet Netzknoten und Repeaterstandort der FIRAC Ortstelle Villach",46.60316,13.67193,2138.00000
+HAMNET-DB,db0pme,"db0pme,Maintainer : dl6fz dd5ki,Comment:,Site configuration: https://www.dropbox.com/s/mzi6e3yhdgdz433/DB0PME.gif Site,Information: http://www.db0pme.de",47.75313,11.77916,862.00000
+HAMNET-DB,oe2xzr,"oe2xzr,Radioparam: 2417MHz 15dBi 60 Sektor nach S 2427MHz 11dBi 180 Sektor nach NNW ,Maintainer : oe2wao oe2lsp,Comment:,Am Standort ist auch - 2m FM Relais OE2XZR 145.6875 CTCSS 88 5Hz EL:304806 - 2m,APRS OE2XZR 144 800 - 70cm DMR-Relais OE2XZR 438.550 - 70cm DSTAR-Relais OE2XZR,439.000 - 70cm Packet Radio OE2XZR 438.125 -7 6 - 70cm APRS OE2XZR 438.125 -7 6, - 70cm WinLink Gateway OE2XZR-11 438.125 -7 6 - 70cm SAMNET OE2XZR-12 438.125,-7 6",47.80395,13.10984,1273.00000
+HAMNET-DB,oe7xgr,"oe7xgr,Radioparam: 2437MHz 5MHz,Maintainer : oe7fmi oe7bkh,Comment:,Infos: http://wiki.oevsv.at/index.php/Arbeitsgruppe_OE7 Topologie:,http://wiki.oevsv.at/images/2/27/TOPOOE7.jpg Am Standort ist auch - 2m APRS,OE7XGR 144 800 - 70cm FM Relais OE7XGR 438.925 - 70cm Packet Radio OE7XGR,438.000 -7 6",47.06359,11.67964,3224.00000
+HAMNET-DB,oe8xdr,"oe8xdr,Radioparam: 5830/5MHz,Maintainer : oe8urq,Comment:,AS 4223280010 HamNet Netzknoten und Repeaterstandort der FIRAC Ortstelle Villach",46.60316,13.67193,2138.00000
 HAMNET-DB,ir3ube,"ir3ube,Maintainer : iw3brc iw3abg,Comment:,Site configuration: https://www.dropbox.com/s/g9gxcikzmjeqs95/IR3UBE.gif",46.65533,10.59544,1048.00000
 HAMNET-DB,db0dba,"db0dba,Radioparam: 5695MHz 10MHz 315 5715MHz 10MHz 45 (geplant),Maintainer : dg8ngn,Comment:,Site configuration: https://www.dropbox.com/s/r2i6d6wu30jujly/DB0DBA.gif",48.08266,11.50320,565.00000
-HAMNET-DB,db0fhr,"db0fhr,Maintainer : dl8mew,Comment:,Site configuration: https://www.dropbox.com/s/j6rlnol08n6q3cv/DB0FHR.gif Link,wird an neuen Standort ",47.87046,12.11200,450.00000
+HAMNET-DB,db0fhr,"db0fhr,Maintainer : dl8mew dl6fz,Comment:,Site configuration: https://www.dropbox.com/s/j6rlnol08n6q3cv/DB0FHR.gif Link,wird an neuen Standort ",47.87046,12.11200,450.00000
 HAMNET-DB,dl0ros,"dl0ros,Maintainer : dl8mew,Comment:,Site configuration: https://www.dropbox.com/s/x73fzdny8awfz9k/DL0ROS.gif",47.86866,12.09666,451.00000
 HAMNET-DB,db0puc,"db0puc,Radioparam: 2397MHz 5MHz vertikal,Maintainer : do2te dk5rta dl8rds,Comment:,Site configuration: https://www.dropbox.com/s/f7pez0etl9gmk54/DB0PUC.gif Link,steht Userzugang auch Viel Spass. Mailbox zugang via Telnet fr Oms auf Port,2323 fhrt euch in die Sychronet Box von DB0PUC. Viel Spass beim Probieren. ",48.16962,11.35172,521.00000
 HAMNET-DB,db0kit,"db0kit,Maintainer : dm8bs",49.01232,8.41307,118.00000
 HAMNET-DB,db0for,"db0for,Radioparam: 2397MHz Nord,Maintainer : dg2nbn,Comment:,Site configuration: https://www.dropbox.com/s/ep7bx1yywnh9kl9/DB0FOR.gif",49.61861,11.02967,378.00000
 HAMNET-DB,df0ann,"df0ann,Maintainer : dg8ngn,Comment:,Site configuration: https://www.dropbox.com/s/j38lvirnavxstec/DF0ANN.gif",49.46719,11.31157,612.00000
-HAMNET-DB,db0hbg,"db0hbg,Maintainer : dg5mpq,Comment:,Am Standort sind noch ATV DB0HTG RX: 10 440MHz A 2343MHz A TX: 1291MHz D 2435MHz,A 10240MHz A Echolink: 144 975MHz simplex Fonie: 439 0875MHz 7 6MHz Site,configuration: https://www.dropbox.com/s/kp2053eri00bk20/DB0HBG.gif",49.06600,10.53611,654.00000
+HAMNET-DB,db0hbg,"db0hbg,Maintainer : dg5mpq,Comment:,Am Standort sind noch ATV DB0HTG RX: 10 440MHz A 2343MHz A TX: 1291MHz D 2435MHz,A 10240MHz A Echolink: 145 2875MHz simplex Fonie: 439 0875MHz 7 6MHz Site,configuration: https://www.dropbox.com/s/kp2053eri00bk20/DB0HBG.gif",49.06600,10.53611,654.00000
 HAMNET-DB,db0mpq,"db0mpq,Maintainer : dg5mpq,Comment:,Site configuration: https://www.dropbox.com/s/gl3rvz3ls3yqcyp/DB0MPQ.gif?dl=0",48.81727,10.51957,468.00000
 HAMNET-DB,db0noe,"db0noe,Maintainer : dg5mpq,Comment:,Packet Radio Knoten DB0NOE-8 144 900 MHz Simplex 1k2 430 650 MHz Simplex 9k6,1270 500 MHz +28MHz 19k2 FunkrufServer DB0NOE-5",48.81487,10.51579,0.00000
-HAMNET-DB,db0bl,"db0bl,Maintainer : dg1nfs,Comment:,http://www.datenfunk.org/db0bl/",48.87561,10.38435,600.00000
-HAMNET-DB,db0ab,"db0ab,Maintainer : dg1nfs,Comment:,http://www.datenfunk.org/db0ab/",49.13748,10.60838,521.00000
+HAMNET-DB,db0bl,"db0bl,Maintainer : do2shb do2bma dg0sma dg1nfs,Comment:,http://www.datenfunk.org/db0bl/",48.87561,10.38435,600.00000
+HAMNET-DB,db0ab,"db0ab,Maintainer : do2bma dh1nhs dg1nfs,Comment:,http://www.datenfunk.org/db0ab/",49.13786,10.61610,521.00000
 HAMNET-DB,db0feu,"db0feu,Maintainer : dc9nyc",49.15813,10.32723,457.00000
 HAMNET-DB,db0faa,"db0faa,Radioparam: 2397MHz 5MHz vertikal nd 20dBm,Maintainer : dl8sfg,Comment:,Homepage: http://www.qslnet.de/member/dl0faa/?Relaisfunkstellen_DB0FAA Site,configuration: https://www.dropbox.com/s/wl5ffvykrk6w6ls/DB0FAA.gif",48.86086,10.13738,731.00000
 HAMNET-DB,db0uhf,"db0uhf,Maintainer : dl2sew",48.93145,9.63642,573.00000
@@ -44,9 +44,9 @@ HAMNET-DB,db0std,"db0std,Maintainer : dl8rds dl6rbt",49.21906,12.03939,371.00000
 HAMNET-DB,db0mhb,"db0mhb,Radioparam: 2397MHz 5MHz vertikal,Maintainer : dl8rds,Comment:,Site configuration: https://www.dropbox.com/s/9urehdnvjzwhhsd/DB0MHB.gif",49.24391,12.07171,500.00000
 HAMNET-DB,db0hsr,"db0hsr,Radioparam: 2392MHz 5MHz vertikal 180 20dBm 200h 15v 11dBi,Maintainer : dl8rds dg2ram,Comment:,Site configuration: https://www.dropbox.com/s/cg5bbfkqm6g8ofr/DB0HSR.gif",48.99881,12.09309,376.00000
 HAMNET-DB,db0kn,"db0kn,Radioparam: 2397MHz 5MHz vertikal,Maintainer : dl8rds,Comment:,Site configuration: https://www.dropbox.com/s/yjku3nwn92l3kdq/DB0KN.gif",48.94892,12.85022,842.00000
-HAMNET-DB,db0dos,"db0dos,Maintainer : dj2qw do6np,Comment:,Site configuration: https://www.dropbox.com/s/23vl8bftvdb6eh6/DB0DOS.gif,http://www.amateurfunk-osnabrueck.de/ DB0DOS + DB0TEU Hamnet- and Repeater-site, http://z36.vfdb.org/",52.18119,8.03689,316.00000
+HAMNET-DB,db0dos,"db0dos,Maintainer : dj2qw do6np,Comment:,Site configuration: https://www.dropbox.com/s/23vl8bftvdb6eh6/DB0DOS.gif,http://www.amateurfunk-osnabrueck.de/ http://z36.vfdb.org/",52.18119,8.03689,316.00000
 HAMNET-DB,db0osn,"db0osn,Maintainer : do6np,Comment:,Site configuration: https://www.dropbox.com/s/kujt6gjud4tfc0x/DB0OSN.gif",52.28381,8.02527,78.00000
-HAMNET-DB,db0teu,"db0teu,Maintainer : dl2mb dj2qw,Comment:,DB0TEU + DB0DOS Hamnet- and Repeater-site",52.18119,8.03689,74.00000
+HAMNET-DB,db0teu,"db0teu,Maintainer : dl2mb dj2qw",52.18119,8.03689,74.00000
 HAMNET-DB,db0ed,"db0ed,Maintainer : dl3ncu",48.28597,12.03326,0.00000
 HAMNET-DB,db0dam,"db0dam,Maintainer : do6np,Comment:,Site configuration: https://www.dropbox.com/s/v1f248walv6i65e/DB0DAM.gif",52.55851,8.21051,124.00000
 HAMNET-DB,db0pdf,"db0pdf,Maintainer : df3dt,Comment:,Site configuration:https://www.dropbox.com/s/r7uzn2gfqizrlou/DB0PDF.gif",52.93548,8.22933,47.00000
@@ -55,11 +55,11 @@ HAMNET-DB,db0hfd,"db0hfd,Maintainer : dg9yib,Comment:,Site configuration: https:
 HAMNET-DB,db0nos,"db0nos,Radioparam: 2397MHz Omni-Directional 5695MHz North + South,Maintainer : dg8ygz,Comment:,Site configuration: https://www.dropbox.com/s/j56qjdb4qmor4yp/DB0NOS.gif",51.92444,8.66277,156.00000
 HAMNET-DB,db0els,"db0els,Radioparam: 5695/10MHz & 2392/5MHz (Testaufbau),Maintainer : dg5yim dl9bl dj1ade,Comment:,Site configuration: https://www.dropbox.com/s/z8s6hvezhqdgfvb/DB0ELS.gif?dl=0",53.24193,8.46652,2.00000
 HAMNET-DB,db0shg,"db0shg,Radioparam: 2362MHz / 5MHz / WDS / AirMAX / SSID: HAMNET / Sued-Ost 438.350MHz (-7 6MHz) 9k6,Maintainer : dl4ag do4bz dl1ne,Comment:,PacketRadio 438.3500 MHz (-7.6 MHz) 9k6 (offline)",52.17138,9.38333,440.00000
-HAMNET-DB,dd1rk,"dd1rk",48.44704,13.32238,0.00000
+HAMNET-DB,dd1rk,"dd1rk",48.44703,13.32244,0.00000
 HAMNET-DB,db0xq,"db0xq,Maintainer : dj2ot,Comment:,70cm-Repeater 438 875MHz",48.89973,8.62814,0.00000
 HAMNET-DB,dk0mav,"dk0mav,Radioparam: 5745MHz Sd 5705MHz West 5775MHz Nord-West 5705MHz Nord-Ost 5725MHz Ost ,Maintainer : dh8ghh",52.31087,10.21267,65.00000
 HAMNET-DB,db0ptb,"db0ptb,Radioparam: 5795MHz Sd,Maintainer : db2tk dh8ghh",52.29647,10.46416,79.00000
-HAMNET-DB,db0fc,"db0fc,Radioparam: 5695MHz Omni 3455MHz NO 5795MHz SO,Maintainer : df2au dh8ghh",52.27627,10.54066,80.00000
+HAMNET-DB,db0fc,"db0fc,Radioparam: 5695MHz Omni 3455MHz NO 5795MHz SO 5475MHz W,Maintainer : df2au dh8ghh",52.27627,10.54066,80.00000
 HAMNET-DB,db0hvf,"db0hvf,Radioparam: 5695MHz NordOst,Maintainer : dg5acx dh8ghh",52.40866,10.71800,91.00000
 HAMNET-DB,db0abz,"db0abz,Radioparam: 5695 Sd 5795 West 5795 Ost,Maintainer : dj1bb",52.16097,10.43127,153.00000
 HAMNET-DB,db0fox,"db0fox,Radioparam: 2397MHz 5MHz 0v 25dBm 90h,Maintainer : dg8ngn,Comment:,Site configuration: https://www.dropbox.com/s/4zhge5hkuljfqxw/DB0FOX.gif",48.29740,10.89492,511.00000
@@ -69,7 +69,7 @@ HAMNET-DB,db0ess,"db0ess,Maintainer : db7mj,Comment:,Site configuration: https:/
 HAMNET-DB,dm0gap,"dm0gap,Maintainer : dk6px",47.50910,11.14297,1752.00000
 HAMNET-DB,db0nes,"db0nes,Maintainer : dl1nlg,Comment:,Site configuration: https://www.dropbox.com/s/8d02tyec4txbd3w/DB0NES.gif",50.27639,10.23499,379.00000
 HAMNET-DB,db0taw,"db0taw,Maintainer : dl1nlg,Comment:,Site configuration: https://www.dropbox.com/s/nrzvcyd8azb1yov/DB0TAW.gif",50.55815,10.08074,664.00000
-HAMNET-DB,db0wgs,"db0wgs,Radioparam: 2397/5MHz,Maintainer : db3rh oe5hpm",48.60166,13.77924,758.00000
+HAMNET-DB,db0wgs,"db0wgs,Radioparam: 2397/5MHz,Maintainer : oe5hpm,Comment:,site is temporary down! relaunch is planned to june 2019 ",48.60166,13.77924,758.00000
 HAMNET-DB,db0cha,"db0cha,Maintainer : dl4rbv dg7rz dk9cl,Comment:,Site configuration: https://www.dropbox.com/s/hhmm1dhm8cyo2ky/DB0CHA.gif DB0CHA,Geigant",49.30680,12.71148,731.00000
 HAMNET-DB,db0ntv,"db0ntv,Radioparam: 2362MHz 5MHz vertikal,Maintainer : dk2xd,Comment:,Site configuration: https://www.dropbox.com/s/qu7wbugdmcz2iyy/DB0NTV.gif",48.82963,11.73650,406.00000
 HAMNET-DB,db0and,"db0and,Maintainer : dc9nyc",49.30799,10.58131,455.00000
@@ -81,12 +81,12 @@ HAMNET-DB,db0wa,"db0wa,Radioparam: 5825/ 10MHz,Maintainer : df5kt dh3wr db6ac",5
 HAMNET-DB,db0gos,"db0gos,Radioparam: 2362/2397/5695MHz Sektorantennen,Maintainer : dd9qp dl8dav,Comment:,HAMNET-Standort AS64654 16-Bit-AS-Nummer: 64654 (aktiv) BGP-Confederation-AS:,65510 32-Bit-AS-Nummer: 4226265410 DB0GOS: HAMNET-Digi PR-Digi Mailbox,Linkknoten DB0WE: 2m C4FM 70cm C4FM 70cm DMR-Brandmeister 70cm DStar DB0QR:,23cm FM (z. Zt. nicht in Betrieb) Standort: Essen-Bredeney Ruschenstr. ",51.40930,6.99000,167.00000
 HAMNET-DB,db0sys,"db0sys,Maintainer : dd3ji dg1kwa dk2crn,Comment:,AS 64634 OSPF aktiv Border-Router und Route-Reflector AS64634",51.11574,6.79373,44.00000
 HAMNET-DB,db0koe,"db0koe,Maintainer : dg1kwa,Comment:,AS 64634 OSPF aktiv",50.93420,6.95350,57.00000
-HAMNET-DB,db0ovn,"db0ovn,Maintainer : dl1gnl dk2crn",51.16339,6.73950,42.00000
-HAMNET-DB,db0dsp,"db0dsp,Radioparam: 2397MHz 5MHz dual-linear polarisiert omni 2 downtilt MIMO 2x2,Maintainer : dk2crn,Comment:,Site configuration: https://www.dropbox.com/s/emtqpns5as3p1yz/DB0DSP-DK2CRN.gif",51.21301,6.76298,43.00000
+HAMNET-DB,db0ovn,"db0ovn,Maintainer : dl1gnl dk2crn,Comment:,HAMNET-Standort AS64632 32-bit-AS-Nummer: 4226263230 (aktiv) ",51.16339,6.73950,42.00000
+HAMNET-DB,db0dsp,"db0dsp,Radioparam: 2397MHz 5MHz dual-linear polarisiert omni 2 downtilt MIMO 2x2 --- 5695MHz 10MHz ,Maintainer : dk2crn,Comment:,HAMNET-Standort AS64632 32-bit-AS-Nummer: 4226263231 (aktiv) 70cm DMR-Repeater,438 300 MHz -7 6 MHz Site configuration:,https://www.dropbox.com/s/emtqpns5as3p1yz/DB0DSP-DK2CRN.gif",51.21301,6.76298,43.00000
 HAMNET-DB,f6eib,"f6eib,Maintainer : f6cnb,Comment:,F6EIB Jean-Jacques",44.89550,6.63384,0.00000
 HAMNET-DB,db0end,"db0end,Radioparam: 5695MHz 10MHz,Maintainer : dg8dch,Comment:,Website: http://db0end.ampr.org - ISM-Betrieb (temporr)",51.30770,7.31570,316.00000
 HAMNET-DB,dl1mfk,"dl1mfk",48.18999,11.84000,0.00000
-HAMNET-DB,db0wo,"db0wo,Maintainer : dl2bv dh6bb,Comment:,http://z31.vfdb.org Site configuration:,https://www.dropbox.com/s/ij0xg82r8odqvjs/DB0WO.gif",53.23681,7.46717,6.00000
+HAMNET-DB,db0wo,"db0wo,Maintainer : dl2bv dh6bb,Comment:,http://z31.vfdb.org Site configuration:,https://www.dropbox.com/s/ij0xg82r8odqvjs/DB0WO.gif",53.23680,7.46729,6.00000
 HAMNET-DB,db0lj,"db0lj,Maintainer : dl5di,Comment:,http://www.prgm.org",50.38819,7.34100,149.00000
 HAMNET-DB,db0myk,"db0myk,Radioparam: 1297.225MHz 130kHz DStar-DD vertikal,Maintainer : dl5di,Comment:,http://www.prgm.org",50.39683,7.20499,571.00000
 HAMNET-DB,db0ax,"db0ax,Maintainer : dg1yfe,Comment:,Site configuration: https://www.dropbox.com/s/8kl4c29qnqr97fe/DB0AX.gif",51.56588,8.76933,387.00000
@@ -108,7 +108,7 @@ HAMNET-DB,db0wbd,"db0wbd,Maintainer : dj9zk",47.82466,8.34200,890.00000
 HAMNET-DB,db0wv,"db0wv,Radioparam: 5695MHz H+V OMNI 10MHz SSID: HAMNET-DB0WV-USER,Maintainer : do2gm dl4gp,Comment:,Siehe auch: http://www.db0wv.de",47.82277,9.40138,890.00000
 HAMNET-DB,db0db,"db0db,Maintainer : dh0gde",47.77684,7.70100,1149.00000
 HAMNET-DB,db0ajw,"db0ajw,Maintainer : dh7vk",52.50855,13.27494,58.00000
-HAMNET-DB,db0avh,"db0avh,Radioparam: User-Einstiege: HamNet alle auf 2397MHz 5MHz Bandbreite 70cm: 438 450MHz -7 6MHz,Maintainer : dh7ahk",52.54033,13.19847,34.00000
+HAMNET-DB,db0avh,"db0avh,Radioparam: HAMNET: 2397MHz / 5MHz BW; 5715MHz / 10MHz BW. Packet-Radio: 70cm: 438 450MHz -7,Maintainer : dh7ahk",52.54033,13.19847,34.00000
 HAMNET-DB,db0fuz,"db0fuz,Radioparam: 2397MHz / 5MHz vert. 15dBi OMNI,Maintainer : dl7uaz",52.43560,13.58666,34.00000
 HAMNET-DB,db0los,"db0los,Radioparam: 2397MHz / 5MHz vert. 15dBi OMNI,Maintainer : dg6ibt,Comment:,Link zu DB0FUZ und DB0SPN",52.32136,14.03769,151.00000
 HAMNET-DB,db0luc,"db0luc,Radioparam: 5695MHz Sektor-Antenne,Maintainer : dl8uef,Comment:,Hamnet im Aufbau Link zu DB0SPN DB0GLZ und DB0SAX",51.78911,13.63894,116.00000
@@ -142,7 +142,7 @@ HAMNET-DB,db0mir,"db0mir,Maintainer : dl1zap",48.08163,11.17070,615.00000
 HAMNET-DB,db0zu,"db0zu,Maintainer : dj3yb,Comment:,FM-Relais 2m/70cm/23cm",47.42084,10.98470,2962.00000
 HAMNET-DB,db0ir,"db0ir,Maintainer : dj2ir,Comment:,D-Star Hot Spot",54.73382,9.34016,0.00000
 HAMNET-DB,db0eic,"db0eic,Maintainer : dl1pan",48.90848,11.19708,546.00000
-HAMNET-DB,db0wb,"db0wb,Maintainer : dj2ud,Comment:,FM-Relais - OV C15 Waldkraiburg",48.17785,12.31919,575.00000
+HAMNET-DB,db0wb,"db0wb,Maintainer : dj2ud,Comment:,FM-Relais - OV C15 Waldkraiburg",48.18505,12.31840,575.00000
 HAMNET-DB,db0bgh,"db0bgh,Maintainer : dl4mgr",48.17851,12.84092,488.00000
 HAMNET-DB,db0kwe,"db0kwe,Radioparam: Nord: 5715 /10; Sd: 5795 / 10; West: 5685 / 10; Ost: 5675 / 10,Maintainer : dl9kar dh3wr",50.83782,6.32400,0.00000
 HAMNET-DB,db0zfm,"db0zfm,Maintainer : dl1udm",51.96186,7.64547,62.00000
@@ -168,7 +168,7 @@ HAMNET-DB,db0iuz,"db0iuz,Radioparam: 2362MHz/5MHz hor+vert 5695MHz/10MHz hor+ver
 HAMNET-DB,db0kv,"db0kv,Radioparam: 2362MHz 5MHz vertikal,Maintainer : dl1ebw dl2ecy dd9qp dk3el,Comment:,Digipeater Kleve Packet-Radio: 430.600 MHz 9k6",51.78868,6.11535,0.00000
 HAMNET-DB,db0eeo,"db0eeo,Radioparam: 2397MHz 5MHz vertikal / 5695MHz 10MHz vertikal,Maintainer : dd4jy dd9qp,Comment:,Digipeater Emmerich",51.84935,6.25673,0.00000
 HAMNET-DB,db0tva,"db0tva,Maintainer : dj5ox dd9qp",51.84905,6.24143,0.00000
-HAMNET-DB,db0ee,"db0ee,Maintainer : dl1egf dd9qp,Comment:,2m/70cm Echolink",51.86404,6.17186,0.00000
+HAMNET-DB,db0ee,"db0ee,Maintainer : dl1egf dd9qp,Comment:,32-bit AS: 4126262702 2m/70cm Echolink",51.86404,6.17186,0.00000
 HAMNET-DB,db0wes,"db0wes,Radioparam: 2362MHz 5MHz vertikal omni MikroTik R2SHPn; 5695MHz 10MHz vertikal omni MikroTik,Maintainer : dl1mh dl1caf dl1ue,Comment:,HAMNET-Standort AS64646 16-Bit-AS-Nummer: 64646 BGP-Confederation-AS: 64600,32-Bit-AS-Nummer: 4226264600aktiv) 70cm Fonie Echolink APRS Funkruf (geplant),http://www.db0wes.de/ db0wes(at)z63.vfdb.org",51.65842,6.62272,0.00000
 HAMNET-DB,lx0ist,"lx0ist,Maintainer : lx1tb lx1ju",49.60250,6.12937,0.00000
 HAMNET-DB,db0agm,"db0agm,Radioparam: mail to dc2hc (at) darc,Maintainer : dc2hc",53.25353,10.50822,0.00000
@@ -187,17 +187,19 @@ HAMNET-DB,db0uka,"db0uka,Maintainer : dm8bs,Comment:,beantragt und im Aufbau",49
 HAMNET-DB,db0hg,"db0hg,Maintainer : dm8bs,Comment:,beantragt und im Aufbau",48.61362,8.20334,0.00000
 HAMNET-DB,dm0b,"dm0b,Maintainer : dk9ip",48.85623,8.17200,0.00000
 HAMNET-DB,oe5xbl,"oe5xbl,Radioparam: 2404MHz,Maintainer : oe5hpm",48.10147,13.31122,0.00000
-HAMNET-DB,db0wal,"db0wal,Maintainer : df6vb dd9qp do5fs,Comment:,Funkturm ehem. Zeche Waltrop HAMNET-Standort AS64654 16-Bit-AS-Nummer: 64654,BGP-Confederation-AS: 65522 32-Bit-AS-Nummer: 4226265422 (aktiv) alte,Anmerkungen: AS changed from 64633 to 64654 (BGP-loop) BGP Conf. Peer changed,from 65533 to 65522 networks and administration from AS64633 (09.12.2015 dd9qp)",51.61770,7.41636,0.00000
+HAMNET-DB,db0wal,"db0wal,Maintainer : df6vb dd9qp do5fs,Comment:,Funkturm ehem. Zeche Waltrop HAMNET-Standort AS64654 16-Bit-AS-Nummer: 64654,32-Bit-AS-Nummer: 4226265422 (aktiv) alte Anmerkungen: AS changed from 64633 to,64654 (BGP-loop) networks and administration from AS64633 (09.12.2015 dd9qp)",51.61770,7.41636,0.00000
 HAMNET-DB,sq9iwe,"sq9iwe,Radioparam: 2.3 / 5.7 GHz,Maintainer : sp2ong,Comment:,HamNET Sosnowiec",50.28547,19.12108,0.00000
 HAMNET-DB,sq7psu,"sq7psu,Radioparam: 2.3 / 5.7 GHz,Maintainer : sp2ong",50.65625,21.62023,0.00000
-HAMNET-DB,db0hat,"db0hat,Radioparam: 2397/5MHz vertikal,Maintainer : dj8tm,Comment:,21.05.2016 - erfolgreicher Linktest zu DK0MU mit 65MBit/s in 802.11n/10MHz,(dd9qp) 20.05.2016 - Aufbau des Spiegels fr Hf-Link DB0HAT-DK0MU [DB0MU] (dj8tm, df4dr dd9qp) 08.04.2016 - Vorbereitung neuer Link DB0HAT-DK0MU [DB0MU] (dd9qp,dj8tm df4dr) 09.12.2015 - AS changed from 64633 to 64648 [BGP-loop] (dd9qp,dg8ygz) 09.12.2015 - BGP Conf. Peer: changed from 65523 to 65525 (dd9qp dg8ygz), 09.12.2015 - Networks and administration remains at AS64633 (dd9qp)",51.67929,7.78299,0.00000
+HAMNET-DB,db0hat,"db0hat,Radioparam: 2397/5MHz vertikal,Maintainer : dj8tm df4dr dd9qp",51.67929,7.78299,0.00000
+HAMNET-DB,df2et,"df2et,Maintainer : df2et,Comment:,For Linktests only",51.49399,7.24046,0.00000
+HAMNET-DB,df0rn,"df0rn,Maintainer : dd9qp,Comment:,Clubstation L19",51.77143,6.45073,0.00000
 HAMNET-DB,db0oi,"db0oi,Maintainer : dj1ps dh8ghh,Comment:,Relais DB0OI",52.27291,10.52512,0.00000
-HAMNET-DB,db0hw,"db0hw,Maintainer : dl1sth dd2mic dh1alf",51.80153,10.53228,0.00000
+HAMNET-DB,db0hw,"db0hw,Maintainer : dl1sth dd2mic dh1alf,Comment:,Ein Link zum Bocksberg ist nach vielen Tests mit Gewissheit erwiesen unmglich!,Die Schalke ist zu hoch und dort eine Zwischenstation bauen ist auch nicht,mglich. Wir haben alles versucht. Es geht wirklich nicht! Andere Links sind auf,Grund formaler Einschrnkungen auch nicht mglich!",51.80153,10.53228,0.00000
 HAMNET-DB,db0dds,"db0dds,Maintainer : df1vb",51.46213,7.54367,0.00000
 HAMNET-DB,db0vr,"db0vr,Maintainer : dl1ybl,Comment:,BGP Conf. Peer: 65535",51.14999,7.75000,0.00000
 HAMNET-DB,db0wet,"db0wet,Radioparam: 2397MHz 5MHz,Maintainer : dg6dap,Comment:,Website: http://db0wet.ampr.org - ISM-Betrieb (temporr)",51.35988,7.36267,0.00000
 HAMNET-DB,db0rdh,"db0rdh,Maintainer : dl2rdh dl9rar,Comment:,D-Star",48.94866,12.85161,0.00000
-HAMNET-DB,oe5xul,"oe5xul,Radioparam: 2407MHz,Maintainer : oe5fhm oe5rnl oe2wao",48.20026,13.58141,0.00000
+HAMNET-DB,oe5xul,"oe5xul,Radioparam: 2407MHz,Maintainer : oe5fhm oe5rnl oe2wao,Comment:,Am Standort ist auch - 2m FM Relais OE5XUL 145.775 - 2m APRS OE5XUL 144 800 -,70cm Packet Radio OE5XUL 438.200 - 70cm APRS OE5XUL 438.200 - 70cm WinLink,Gateway OE5XUL-11 438.200 ",48.20026,13.58141,0.00000
 HAMNET-DB,oe5xll,"oe5xll,Radioparam: 2412 2422 2432 2437MHz,Maintainer : oe5rnl",48.38515,14.25444,0.00000
 HAMNET-DB,db0oal,"db0oal,Radioparam: 2397V Omni 5MHz SSID: HAMNET,Maintainer : db7mj do1gjf dg5mpq,Comment:,DARC Distrikt Schwaben (T) Relaisstandort Site configuration:,https://www.dropbox.com/s/uuver47fx5lv7lc/DB0OAL.gif?dl=0",47.55965,10.77914,0.00000
 HAMNET-DB,db0rtn,"db0rtn,Maintainer : dl2bdx dg4bcl db1hdn,Comment:,Site configuration: https://www.dropbox.com/s/82yemtvefvk08nz/DB0RTN.gif",53.10867,9.39652,0.00000
@@ -236,14 +238,13 @@ HAMNET-DB,db0hrh,"db0hrh,Maintainer : dl2gka",47.60207,8.35396,0.00000
 HAMNET-DB,hb9am-30,"hb9am-30,Radioparam: SSID=HAMNET-HB9AM32 QRG=5775MHz,Maintainer : admin: hb9bwn radio: hb9dvi ip: hb9xar",47.48198,8.39839,0.00000
 HAMNET-DB,oe9xpr,"oe9xpr,Radioparam: 5705MHz V Sektor 10MHz SSID: HAMNET,Maintainer : oe9hlh oe9wlj",47.50601,9.77919,0.00000
 HAMNET-DB,oe7xli,"oe7xli,Maintainer : oe7jtk oe7ngi,Comment:,Eigenes AS 64575 => AS4223275001",46.82141,12.70016,0.00000
-HAMNET-DB,dl0rw,"dl0rw,Maintainer : do1rdh",49.54045,12.40328,0.00000
 HAMNET-DB,hb9am-20,"hb9am-20,Maintainer : admin: hb9bwn radio: hb9dvi ip: hb9xar",47.42604,8.18880,0.00000
 HAMNET-DB,db0her,"db0her,Radioparam: 2392MHz + 5795MHz Mikrotik SSID: HAMNET-DB0HER-USER,Maintainer : dl8scu",48.57550,8.75420,0.00000
 HAMNET-DB,db0sau,"db0sau,Maintainer : dg3sdk",48.75350,9.33812,0.00000
-HAMNET-DB,db0hm,"db0hm,Maintainer : dl5dan dl8td do1pps,Comment:,Analog Relaisfunkstelle DB0HM -- 439 375MHz ( -7 6MHz ) derzeit abgeschaltet.,DMR Brandmeister Relais DB0HM 439 950MHz ( -9 4MHz ) Link nach Kalmit DB0AAI,installiert & genehmigt Userzugang 2397MHz 9dBi Omni ( genehmigt )",48.87858,8.71852,0.00000
+HAMNET-DB,db0hm,"db0hm,Maintainer : dl5dan dl8td do1pps,Comment:,Analog Relaisfunkstelle DB0HM -- 439 375MHz ( -7 6MHz ) derzeit abgeschaltet.,DMR Brandmeister Relais DB0HM 439 950MHz ( -9 4MHz ) Link nach Kalmit DB0AAI,installiert & genehmigt Link nach DL5IN/DB0UW (genehmigt) Userzugang 2397MHz,9dBi Omni ( genehmigt )",48.87858,8.71852,0.00000
 HAMNET-DB,oe5xxx,"oe5xxx,Comment:,in Planung",48.20231,14.29303,0.00000
 HAMNET-DB,db0lel,"db0lel,Maintainer : dl3ses",48.69371,9.11765,0.00000
-HAMNET-DB,db0reu,"db0reu,Radioparam: Userzugang 2397MHz Ubiquiti Bullet M2 SSID: HAMNET-DB0REU-USER,Maintainer : dl2gkm,Comment:,FM Relais / D-Star in Reutlingen FM-Relais DB0TI: 438.950 MHz -7 6 MHz FM-Relais,DB0REU: 1298 375 MHz -28MHz D-Star Relais DB0REU :439 575 MHz -7 6 MHz,(angebunden per 5 7GHZ Link zu DL0RT Clubstation/Packet Reutlingen) Blitzortung,TOA-Station 856 Hamnetanbindung via DB0HER-DB0RT,----------------------------------------------------- HamNet Knoten. Antenne,User-Zugang DB0REU installiert. Zuteilung DB0REU: Userzugang 2397 MHz (BNA),erteilt. Dienste im Hamnet unter http://db0rt.ampr.org ! HAMNET-Link nach,DB0ROB geplant",48.50563,9.19699,0.00000
+HAMNET-DB,db0reu,"db0reu,Radioparam: Userzugang 2397MHz Ubiquiti Bullet M2 SSID: HAMNET-DB0REU-USER,Maintainer : dl2gkm,Comment:,FM Relais / D-Star in Reutlingen FM-Relais DB0TI: 438.950 MHz -7 6 MHz FM-Relais,DB0REU: 1298 375 MHz -28MHz D-Star Relais DB0REU :439 575 MHz -7 6 MHz,(angebunden per 5 7GHZ Link zu DL0RT Clubstation/Packet Reutlingen) Blitzortung,TOA-Station 856 Hamnetanbindung via DB0HER-DB0RT,----------------------------------------------------- HamNet Knoten. Antenne,User-Zugang DB0REU installiert. Zuteilung DB0REU: Userzugang 2397 MHz (BNA),erteilt. Dienste im Hamnet unter http://db0rt.ampr.org !",48.50563,9.19699,0.00000
 HAMNET-DB,db0ofi,"db0ofi,Maintainer : dg3sdk",48.70978,9.30801,0.00000
 HAMNET-DB,db0sac,"db0sac,Maintainer : dl1gfa",47.58242,7.96041,0.00000
 HAMNET-DB,db0bac,"db0bac,Maintainer : dl2sew dk4ok",49.03473,9.55990,0.00000
@@ -269,17 +270,15 @@ HAMNET-DB,db0wtv,"db0wtv,Comment:,ex DB0RW",53.51580,8.14513,0.00000
 HAMNET-DB,db0ge,"db0ge,Maintainer : dg9vh,Comment:,PR Digipeater",49.34066,7.01574,0.00000
 HAMNET-DB,db0vi,"db0vi,Maintainer : do7vlr",49.45520,7.08854,0.00000
 HAMNET-DB,db0vkl,"db0vkl,Radioparam: 438.450MHz,Maintainer : dg9vh,Comment:,9k6 PR Digipeater",49.26592,6.85261,0.00000
-HAMNET-DB,oe2xgr,"oe2xgr,Radioparam: 2407MHz 14dBi Omni,Maintainer : oe2wao oe2wio oe2lsp,Comment:,Am Standort ist auch - 2m FM Relais OE2XJL 145.7625 - 2m APRS OE2XGR 144 800 -,70cm DSTAR-Relais OE2XGR 438.525 - 70cm Packet Radio OE2XGR 438.325 -7 6",47.30898,13.23281,0.00000
-HAMNET-DB,oe2xkr,"oe2xkr,Maintainer : oe2wao",47.28141,12.28777,0.00000
+HAMNET-DB,oe2xgr,"oe2xgr,Radioparam: 2407MHz 14dBi Omni,Maintainer : oe2wao oe2wio oe2lsp,Comment:,Am Standort ist auch - 2m FM Relais OE2XJL 145.7625 - 2m APRS OE2XGR 144 800 -,70cm DSTAR-Relais OE2XGR 438.525 - 70cm Packet Radio OE2XGR 438.325 -7 6 - 70cm,APRS OE2XGR 438.325 -7 6 - 70cm WinLink Gateway OE2XGR-11 438.325 -7 6 ",47.30898,13.23281,0.00000
 HAMNET-DB,hb9rf-20,"hb9rf-20,Radioparam: 5775V20 ; SSID=HAMNET-HB9RF ; DHCP,Maintainer : hb9wad hb9bmc hb9tlx",47.18049,8.42833,0.00000
 HAMNET-DB,hb9rf-30,"hb9rf-30,Radioparam: 5735V20 ; SSID=HAMNET-HB9RF ; DHCP,Maintainer : hb9wad hb9bmc hb9tlx",47.02746,8.52216,0.00000
-HAMNET-DB,hb9rf-40,"hb9rf-40",47.17825,8.51368,0.00000
 HAMNET-DB,hb9lu-20,"hb9lu-20,Radioparam: 5735V20 ; SSID=HAMNET-HB9LU ; DHCP,Maintainer : hb9tlx hb9wad",47.04426,8.27339,0.00000
 HAMNET-DB,hb9lu-30,"hb9lu-30,Radioparam: 5775V20 ; SSID=HAMNET-HB9LU ; DHCP,Maintainer : hb9pae hb9wad hb9tlx,Comment:,Im Museum 'Verkehrshaus der Schweiz VHS' drin ist die Station HB9O. Die,Hamnet-Installation luft unter dem Rufzeichen HB9LU der USKA Sektion Luzern.",47.05217,8.33610,0.00000
 HAMNET-DB,db0ual,"db0ual,Maintainer : dc7wol",47.94972,10.44277,0.00000
 HAMNET-DB,db0yq,"db0yq,Maintainer : dg9rak",49.67941,12.23541,0.00000
 HAMNET-DB,db0tnc,"db0tnc,Maintainer : dg9bhd",53.57864,7.76388,0.00000
-HAMNET-DB,db0xw,"db0xw",53.56687,7.72204,0.00000
+HAMNET-DB,db0xw,"db0xw,Comment:,HAMNET in Beantragung",53.56687,7.72204,0.00000
 HAMNET-DB,db0et,"db0et,Maintainer : df5kx dh6bb,Comment:,Site configuration: https://www.dropbox.com/s/e5ooumo0k2qn34z/DB0ET.gif ",53.40575,7.01558,0.00000
 HAMNET-DB,db0ems,"db0ems,Maintainer : dj4sh dh0sk,Comment:,Website: http://www.i57.de Site-Configuration:,https://www.dropbox.com/s/au7eaqgldkvquil/DB0EMS.gif",52.85139,7.52215,0.00000
 HAMNET-DB,f6kbs,"f6kbs,Radioparam: 2362MHz/5MHz,Maintainer : f6cnb,Comment:,Radio Club du CEA Saclay 91",48.72631,2.16538,0.00000
@@ -297,15 +296,15 @@ HAMNET-DB,db0gis,"db0gis,Maintainer : dl6fbs,Comment:,http://www.df0sg.de/index.
 HAMNET-DB,dg1fdv,"dg1fdv,Maintainer : dg1fdv",50.22494,8.05908,0.00000
 HAMNET-DB,db0hft,"db0hft,Maintainer : dk5hh,Comment:,Site configuration: https://www.dropbox.com/s/bc3e1xyf2db0gpn/DB0HFT.gif",53.07239,8.79340,0.00000
 HAMNET-DB,db0fho,"db0fho,Maintainer : dh6bb",53.36771,7.18229,0.00000
-HAMNET-DB,db0rec,"db0rec,Maintainer : df2et",51.62649,7.19517,0.00000
+HAMNET-DB,db0rec,"db0rec,Radioparam: 2397/5MHz SO,Maintainer : df2et dd9qp dl1ydd,Comment:,16-bit AS: 64666 32-bit AS: 4226266604 (aktiv)",51.62649,7.19517,0.00000
 HAMNET-DB,db0bs,"db0bs,Maintainer : dg4ez,Comment:,Excenterhaus Bochum",51.47319,7.22583,0.00000
-HAMNET-DB,db0hrw,"db0hrw,Maintainer : dk2no dd4fl,Comment:,Genehmigung bis 28.02.2019 Link nach DB0BOS 5825 MHz BW 10 MHz Sysop = DF1ZX ",49.65777,9.06861,0.00000
+HAMNET-DB,db0hrw,"db0hrw,Maintainer : dk2no dd4fl,Comment:,BNetzA bis 31.05.2022 Link nach DB0BOS 5825 MHz BW 10 MHz Sysop = DF1ZX DD4FL",49.65777,9.06861,0.00000
 HAMNET-DB,db0del,"db0del,Maintainer : dl9bq",53.04822,8.62309,0.00000
 HAMNET-DB,f5kpo,"f5kpo,Maintainer : f4gkn",44.00374,4.95893,0.00000
 HAMNET-DB,db0nn,"db0nn,Maintainer : db2xx do6np,Comment:,HAMNET im Aufbau",52.98250,9.28555,0.00000
 HAMNET-DB,db0odw,"db0odw,Maintainer : dk2no,Comment:,Planungsstatus: Link nach DB0BOS oder DB0HRW Bakenstandort APRS-Standort Sysop =,DK2NO",49.57583,8.98305,0.00000
 HAMNET-DB,db0rom,"db0rom,Radioparam: 2397MHz,Maintainer : dg2nbj dg9nes",50.10247,11.03263,0.00000
-HAMNET-DB,db0bmi,"db0bmi,Maintainer : dk2no dd4fl,Comment:,Genehmigung bis 28.02.2019 Link zu DB0BOS 5745 MHz BW 10 MHz Userzugang 13 cm,2397 MHz BW 5 MHz APRS RX IGate 144.800 MHz",49.66283,9.00844,0.00000
+HAMNET-DB,db0bmi,"db0bmi,Maintainer : dk2no dd4fl,Comment:,BNetzA 31.05.2022 Link zu DB0BOS 5745 MHz BW 10 MHz Userzugang 13 cm 2397 MHz BW,5 MHz APRS RX IGate 144.800 MHz",49.66283,9.00844,0.00000
 HAMNET-DB,db0bwl,"db0bwl,Radioparam: wird berarbeitet,Maintainer : dk5er dh8ghh",52.52340,10.77099,0.00000
 HAMNET-DB,hg1rua,"hg1rua",46.80999,16.80999,0.00000
 HAMNET-DB,dm0za,"dm0za,Comment:,2m/Echolink Relais bei dk1dd",51.46889,7.48500,0.00000
@@ -321,9 +320,9 @@ HAMNET-DB,db0gv,"db0gv,Maintainer : df5ff,Comment:,http://www.qsl.net/db0gv/",50
 HAMNET-DB,db0kt,"db0kt,Radioparam: 2397MHz/5MHz vert. OMNI,Maintainer : df5ff dk3cw,Comment:,17.06.2017: Link zu DB0GV erfolgreich getestet (genehmigt) DB0BOS erfolglos,(genehmigt) Link zu DB0BOS und DB0HRF in Vorbereitung (genehmigt) Usereinstieg,geplant Mglicher Link zu DP6T http://www.qsl.net/db0kt/",50.48648,9.27466,0.00000
 HAMNET-DB,f6kft,"f6kft,Maintainer : f1ulq",49.12739,6.83165,0.00000
 HAMNET-DB,db0cgw,"db0cgw,Maintainer : dl1khd dk3cw dg3fbl,Comment:,Planungsstandort mglicher Linkpartner fr DB0KT und DB0TAN sowie Usereinstieg,Contestgruppe Wittgenborn e.V. http://www.dp6t.de/ DB0CGW 439 125 MHz",50.28837,9.26701,0.00000
-HAMNET-DB,oe2xbb,"oe2xbb",47.77654,13.43361,0.00000
 HAMNET-DB,db0cws,"db0cws,Maintainer : dg8fac dg3fcp,Comment:,Planungsstandort mglicher Linkpartner/User http://srg-radio.de/uebersicht.htm",50.31249,9.45833,0.00000
-HAMNET-DB,db0hr,"db0hr,Maintainer : dk5ya dk9fec dg8las dh9fax,Comment:,Klubstation HR DF0HR: http://www.df0hr.de/ 01.02.2018 Der User Access auf 2397,MHz steht aktuell nicht zur Verfgung.",50.13476,8.67732,0.00000
+HAMNET-DB,db0hr,"db0hr,Maintainer : dh9fax dg8las dk9fec",50.13476,8.67732,0.00000
+HAMNET-DB,sp2jp,"sp2jp,Radioparam: 6cm,Maintainer : sq2frb sq2rby,Comment:,HamNET Node http://bydgoszcz.ampr.org or http://hamnet.sp2put.pl Catalog of,services HamNET in SP -> http://sp.ampr.org",53.11689,17.98749,0.00000
 HAMNET-DB,dl8new-101,"dl8new-101,Maintainer : dl8new dg2nbj",50.16227,11.06923,0.00000
 HAMNET-DB,pe1bey,"pe1bey,Radioparam: rocket5 to pi2ehv pa0erc pa0gri and in line with link to Den Bosch,Maintainer : pa0gri,Comment:,SSID hamnet_best_west",51.50592,5.39149,0.00000
 HAMNET-DB,db0hrm,"db0hrm,Maintainer : dk9zc,Comment:,http://www.qrz.com/db/DB0HRM Moeglicherweise zukuenftig unterstuetzt durch,dk9fec und dh9fax",51.20780,9.84664,0.00000
@@ -342,27 +341,26 @@ HAMNET-DB,lx0rl,"lx0rl,Maintainer : lx1tb lx1ju",49.69315,6.19066,0.00000
 HAMNET-DB,db0mrt,"db0mrt,Maintainer : dl8zg,Comment:,DIGI Mittelrheintal http://www.db0mrt.de/",50.15883,7.60183,0.00000
 HAMNET-DB,db0hq,"db0hq,Maintainer : dh5ffl",51.26689,9.42676,0.00000
 HAMNET-DB,ea1rkp,"ea1rkp,Maintainer : eb1ajp eb1eey,Comment:,Experimental",42.40182,-7.87372,0.00000
-HAMNET-DB,db0wz,"db0wz,Comment:,Standort in Arbeit/Aufbau mglicher Linkpartner/User",49.78181,9.90687,0.00000
+HAMNET-DB,db0wz,"db0wz,Maintainer : dg7nfo,Comment:,Standort in Arbeit/Aufbau mglicher Linkpartner/User",49.78181,9.90687,0.00000
 HAMNET-DB,db0hrb,"db0hrb,Maintainer : df4dm dk9fec dh9fax,Comment:,http://www.df0hr.de/technik.html FM Repeater des Hessischen Rundfunk. Mglicher,Standort.",50.95135,8.53219,0.00000
 HAMNET-DB,db0tan,"db0tan,Radioparam: 2397MHz West 2362MHz Nord 5695MHz West,Maintainer : db8zp,Comment:,Site configuration: https://www.dropbox.com/s/wzsudz6ln7uw5ou/DB0TAN.gif,http://www.fox06.de/relais/relais.htm",50.49855,9.93771,0.00000
 HAMNET-DB,db0mw,"db0mw,Maintainer : dl2mi,Comment:,http://www.darc.de/f69/",50.83833,9.76722,0.00000
 HAMNET-DB,dl0bq,"dl0bq,Maintainer : dd4fl,Comment:,DL0BQ Planungssstandort",49.63843,8.59854,0.00000
 HAMNET-DB,dc2ve,"dc2ve,Maintainer : dc2ve,Comment:,Neues DB0GE Setup",49.25431,6.91004,0.00000
-HAMNET-DB,oe2xwr,"oe2xwr,Radioparam: 2432MHz 15dBi 120 Sektor nach N,Maintainer : oe2wao oe2fkm oe2lsp,Comment:,Am Standort ist auch - 2m FM Relais OE2XHL 145.650 CTCSS 88 5 Hz - 2m APRS,OE2XWR 144 800 - 70cm DSTAR-Relais OE2XWR 438.950 - 70cm Packet Radio OE2XWR,438.025 -7 6",47.18913,12.68524,0.00000
+HAMNET-DB,oe2xwr,"oe2xwr,Radioparam: 2432MHz 15dBi 120 Sektor nach N,Maintainer : oe2wao oe2fkm oe2lsp,Comment:,Am Standort ist auch - 2m FM Relais OE2XHL 145.650 CTCSS 88 5 Hz - 2m APRS,OE2XWR 144 800 - 70cm DSTAR-Relais OE2XWR 438.975 - 70cm Packet Radio OE2XWR,438.025 -7 6 - 70cm APRS OE2XWR 438.025 -7 6 - 70cm WinLink Gateway OE2XWR-11,438.025 -7 6 ",47.18913,12.68524,0.00000
 HAMNET-DB,oe1xar,"oe1xar,Radioparam: 5745/5785/5MHz,Maintainer : oe1kbc,Comment:,siehe 'more information' HAMNET Userzugnge: - Klosterneuburg 5785/5MHz,horizontal Sektor 120 - Gerasdorf 5745/5MHz horizontal Sektor 90 Weitere,Services am Standort: - DMR Relais OE1XAR 438.500 -7.6 MHz - C4FM Relais OE1XAR,438.425 -7.6 MHz - APRS 2m 144.800 MHz - Packet Radio 433.675 MHz 1200 R8m,Winlink Gateway",48.31066,16.38250,0.00000
 HAMNET-DB,oe1xca,"oe1xca,Radioparam: 5745/20MHz,Maintainer : oe1kbc,Comment:,Planar horizontall +/- 10",48.16802,16.34539,0.00000
 HAMNET-DB,oe1xds,"oe1xds,Radioparam: 5785/5745/5MHz,Maintainer : oe1sgw,Comment:,Sektor vertikal 90 Richtung NO Sektor vertikal 60 Richtung SO Sektor vertikal 90,Richtung SW AS 4223210210",48.22016,16.34646,0.00000
 HAMNET-DB,oe1xfw,"oe1xfw,Radioparam: 5785/5MHz,Maintainer : oe1kbc,Comment:,Rundstrahler 16dBi",48.16254,16.38861,0.00000
 HAMNET-DB,oe1xiu,"oe1xiu,Radioparam: 5685/10MHz,Maintainer : oe1sgw,Comment:,AS 4223210220",48.17423,16.36401,0.00000
 HAMNET-DB,oe3xkh,"oe3xkh,Radioparam: 5745/10MHz,Maintainer : oe3ukw",48.40483,16.71580,0.00000
-HAMNET-DB,oe3xar,"oe3xar,Radioparam: 2427MHz,Maintainer : oe3cts oe3cjb",48.05960,15.53967,0.00000
+HAMNET-DB,oe3xar,"oe3xar,Radioparam: 2427MHz,Maintainer : oe3cts oe3cjb,Comment:,Am Standort ist auch - 2m FM Relais OE3XAR 145.650 CTCSS 88 5Hz - 70cm FM Relais,OE3XAR 438.700 - 2m APRS OE3XAR 144 800 - 70cm Packet Radio OE3XAR 438.550",48.05960,15.53967,0.00000
 HAMNET-DB,oe3xdb,"oe3xdb,Radioparam: 5745/5MHz,Maintainer : oe3gru;oe1kbc,Comment:,Sektor horizontal 120 -> Baden",47.97440,16.19721,0.00000
 HAMNET-DB,oe3xer,"oe3xer",48.79339,15.34880,0.00000
 HAMNET-DB,oe3xfr,"oe3xfr,Radioparam: Vertical Bandwidth 10MHz (Richtung Mariazell),Maintainer : oe3cts oe3cjb oe3gmw",47.81152,15.24839,0.00000
 HAMNET-DB,oe3xwj,"oe3xwj,Radioparam: 2412/5MHz/17db Planar East,Maintainer : oe1kbc",48.33452,15.33764,0.00000
 HAMNET-DB,oe3xhr,"oe3xhr,Radioparam: 2422/5MHz,Maintainer : oe3djb;oe1kbc,Comment:,Rundstrahler vertikal",48.86608,15.11416,0.00000
-HAMNET-DB,oe3xhs,"oe3xhs,Maintainer : oe1kbc",47.46418,16.22117,0.00000
-HAMNET-DB,oe3xia,"oe3xia,Radioparam: 5785/10MHz,Maintainer : oe1kbc,Comment:,Sektor horizontal 90 -> Troppberg",48.24874,16.24427,0.00000
+HAMNET-DB,oe3xia,"oe3xia,Radioparam: 5785/10MHz,Maintainer : oe1kbc,Comment:,Sektor horizontal 90 -> Troppberg",48.24874,16.23427,0.00000
 HAMNET-DB,oe3xnr,"oe3xnr,Maintainer : oe3djb;oe1kbc",48.67299,14.77828,0.00000
 HAMNET-DB,oe3xzr,"oe3xzr,Maintainer : oe3djb;oe1kbc,Comment:,nicht in Betrieb",48.61649,15.15280,0.00000
 HAMNET-DB,oe4xlc,"oe4xlc,Radioparam: 2 4/BW5 http://wiki.oevsv.at/index.php?title=Userzugang-HAMNET#OE4,Maintainer : oe4rlc oe6rke",47.29257,16.11094,0.00000
@@ -401,7 +399,7 @@ HAMNET-DB,do0jna,"do0jna,Maintainer : lutz dd7ld,Comment:,http://www.darc.de/dis
 HAMNET-DB,db0erf,"db0erf,Maintainer : dl3ami,Comment:,http://www.db0erf.de/",50.96000,11.06000,0.00000
 HAMNET-DB,db0spn,"db0spn,Radioparam: 2397MHz / 5MHz vert. 15dBi OMNI,Maintainer : dm6mh,Comment:,Hamnet im Aufbau Link zu DB0LOS und DB0LUC",51.71998,14.34158,0.00000
 HAMNET-DB,db0tfl,"db0tfl,Maintainer : dl1rtl dl7ais",52.04371,13.49436,0.00000
-HAMNET-DB,hb9ebs,"hb9ebs,Maintainer : hb9dio hb9nbi",47.44944,7.57750,0.00000
+HAMNET-DB,hb9ebs,"hb9ebs,Maintainer : hb9dio hb9nbi",47.51728,7.60245,0.00000
 HAMNET-DB,db0xr,"db0xr,Maintainer : dl1gzw dk9go",47.65959,7.95570,0.00000
 HAMNET-DB,db0dtr,"db0dtr,Maintainer : dj2qw,Comment:,http://z36.vfdb.org",49.82246,6.78671,0.00000
 HAMNET-DB,db0amb,"db0amb,Comment:,620212",49.04508,11.08766,0.00000
@@ -430,7 +428,7 @@ HAMNET-DB,db0dre,"db0dre,Comment:,073078 ",51.61563,7.22565,0.00000
 HAMNET-DB,db0ovm,"db0ovm,Comment:,590011 ",51.95040,7.66604,0.00000
 HAMNET-DB,db0htv,"db0htv,Maintainer : dh9fac dg8las dh9fax,Comment:,http://de.wikipedia.org/wiki/Europaturm 13.06.2015 HAMNET Link DB0NDF - DB0HTV,im Regelbetrieb. 11.12.2015 HAMNET Link DB0HTV - DB0HR im Testbetrieb.",50.13540,8.65460,0.00000
 HAMNET-DB,db0hk,"db0hk,Comment:,230598 ",50.51113,9.22737,0.00000
-HAMNET-DB,db0gel,"db0gel,Radioparam: 2362MHz 5MHz Vert. N ,Maintainer : dg7zv dg8las dk3cw,Comment:,13.06.2015 HAMNET Link DB0NDF - DB0GEL im Regelbetrieb.",50.20923,9.21035,0.00000
+HAMNET-DB,db0gel,"db0gel,Maintainer : dg7zv dg8las dk3cw,Comment:,An diesem Standort liegt derzeit eine Strung vor. Die Servive- und User-Netze,stehen nicht zur Verfgung ! 13.06.2015 HAMNET Link DB0NDF - DB0GEL im,Regelbetrieb.",50.20923,9.21035,0.00000
 HAMNET-DB,f5ned,"f5ned,Maintainer : f6cnb,Comment:,For simulation and Testing",48.77416,2.05305,0.00000
 HAMNET-DB,db0ids,"db0ids,Comment:,190002 ",50.22027,8.24823,0.00000
 HAMNET-DB,db0ue,"db0ue,Comment:,230104 ",50.60413,9.67748,0.00000
@@ -449,7 +447,7 @@ HAMNET-DB,dm0pr,"dm0pr,Maintainer : dk6ll,Comment:,420213 ",54.33255,8.78903,0.0
 HAMNET-DB,db0tb,"db0tb,Comment:,790047 ",52.01468,8.47356,0.00000
 HAMNET-DB,db0min,"db0min,Comment:,790057 ",52.24183,8.93651,0.00000
 HAMNET-DB,db0kb,"db0kb,Comment:,790011 ",51.85536,9.32523,0.00000
-HAMNET-DB,dl3ncu,"dl3ncu",48.30118,11.91441,0.00000
+HAMNET-DB,db0dn,"db0dn",48.26293,12.21687,0.00000
 HAMNET-DB,db0fus,"db0fus,Comment:,330418 ",52.39395,9.80216,0.00000
 HAMNET-DB,db0yi,"db0yi,Comment:,330544 ",52.06193,9.96089,0.00000
 HAMNET-DB,db0rh,"db0rh,Maintainer : dd2mic,Comment:,330502 / HAMNET in Planning ",52.85221,9.90776,0.00000
@@ -492,7 +490,7 @@ HAMNET-DB,do0sre,"do0sre,Comment:,For Linktests only",51.61977,7.17520,0.00000
 HAMNET-DB,dd5ki,"dd5ki",47.87508,11.70306,0.00000
 HAMNET-DB,f1tzv,"f1tzv,Maintainer : f1tzv,Comment:,Strasbourg",48.62330,7.69862,0.00000
 HAMNET-DB,db0aas,"db0aas,Maintainer : df9wb,Comment:,Ubiquiti Power Station 2 PS2 -17D (2.4 Ghz) Internet vorhanden",50.25281,6.78226,0.00000
-HAMNET-DB,yo2loj,"yo2loj,Maintainer : yo2loj,Comment:,HAMNET Gateway for YO",45.72563,21.24538,0.00000
+HAMNET-DB,yo2loj,"yo2loj,Radioparam: 5GHz Sectors + WDS 2.4G,Maintainer : yo2loj,Comment:,HAMNET Gateway",45.72563,21.24538,0.00000
 HAMNET-DB,dc1rd,"dc1rd",48.70256,12.96960,0.00000
 HAMNET-DB,db0kpg,"db0kpg,Radioparam: Nord 5675 West 5695 Sd 5715 Ost 5785 ,Maintainer : dl6kl dj5kp,Comment:,Homepage: http://db0kpg.ddnss.de",50.87290,7.09770,0.00000
 HAMNET-DB,db0nor,"db0nor,Radioparam: Omni 5745,Maintainer : df7kf",50.80972,6.65444,0.00000
@@ -513,17 +511,18 @@ HAMNET-DB,f6hmp,"f6hmp,Maintainer : f6cnb,Comment:,Patrick QTH Paris 7eme",48.85
 HAMNET-DB,on0lge,"on0lge,Maintainer : on4sax",50.62670,5.70338,0.00000
 HAMNET-DB,dg3rap,"dg3rap",49.03899,12.15510,0.00000
 HAMNET-DB,f4dur,"f4dur,Maintainer : f6cnb,Comment:,Christophe",45.64891,4.40466,0.00000
-HAMNET-DB,hb9ak-1,"hb9ak-1,Maintainer : hb9pae hb9czf,Comment:,Renamed HB9AK to HB9AK-1",47.37089,8.94148,0.00000
+HAMNET-DB,hb9ak-1,"hb9ak-1,Maintainer : hb9pae hb9flo,Comment:,Renamed HB9AK to HB9AK-1",47.37089,8.94148,0.00000
 HAMNET-DB,db0rtv,"db0rtv,Radioparam: 2397MHz 5MHz-Bandbreite,Maintainer : dl9ycc,Comment:,Planungsstandort HAMNET wird zur Zeit geplant",52.26984,7.41384,0.00000
 HAMNET-DB,db0wx,"db0wx",48.09151,8.25388,0.00000
 HAMNET-DB,db0rz,"db0rz,Radioparam: 2397MHz Omni V,Maintainer : db8tg do2gm",48.16156,9.55456,0.00000
 HAMNET-DB,pi3zvl,"pi3zvl,Comment:,VHF Repeater PI3ZVL 145.6000 MHz -0.6 MHz 88.5Hz",51.22348,3.86012,0.00000
 HAMNET-DB,db0shn,"db0shn,Maintainer : dk3sr db4sp,Comment:,ATV-Repeater",49.09525,9.20171,0.00000
 HAMNET-DB,f6kfg,"f6kfg,Maintainer : f1ulq",48.39012,7.26994,0.00000
+HAMNET-DB,f6cmb,"f6cmb,Maintainer : f6cmb,Comment:,Strasbourg",48.58336,7.70446,0.00000
 HAMNET-DB,f5rvx,"f5rvx,Comment:,29900 Concarneau",47.86418,-3.88782,0.00000
 HAMNET-DB,f6ipg,"f6ipg,Comment:,18330 Vouzeron",47.27360,2.22083,0.00000
 HAMNET-DB,f6kqv,"f6kqv,Comment:,Radio-club Strasbourg",48.57263,7.71143,0.00000
-HAMNET-DB,f5zsm,"f5zsm,Comment:,strasbourg relais phonie144.750 439.750 ATV relais 2308 digital out 1270 digital,in 2373 analog in",48.58442,7.74392,0.00000
+HAMNET-DB,f5zsm,"f5zsm,Maintainer : f1tzv f4avi,Comment:,strasbourg relais phonie144.750 439.750 ATV relais 2308 digital out 1270 digital,in 2373 analog in",48.58382,7.74383,0.00000
 HAMNET-DB,f5zcq,"f5zcq,Comment:,Wissembourg phonie relais Frquence VHF : 145.725 (Shift -0.6Mhz)",49.02808,7.90388,0.00000
 HAMNET-DB,f1zdg,"f1zdg,Comment:,petit ballon relais VHF F1ZDG Rx: 145.625 MHz Tx: 145.025 MHz UHF F1ZDA Rx:,430.075 MHz Tx: 431.675 MHz",47.98073,7.12564,0.00000
 HAMNET-DB,hb9gt,"hb9gt,Maintainer : hb9tyu hb9pae",47.29806,9.02048,0.00000
@@ -548,7 +547,6 @@ HAMNET-DB,db0eif,"db0eif,Radioparam: 5695 / 10MHz,Maintainer : dl8ue",50.27111,6
 HAMNET-DB,db0mg,"db0mg,Maintainer : do1ktm",51.19937,6.42534,0.00000
 HAMNET-DB,dl0ef,"dl0ef",50.56943,6.72210,0.00000
 HAMNET-DB,db0nlh,"db0nlh,Maintainer : dg8ygz dk4dj dk6ba,Comment:,Contestgruppe Hollandskopf",52.11519,8.28131,0.00000
-HAMNET-DB,db0zo,"db0zo,Maintainer : dl3gs,Comment:,deleted assigned networks of as64635 after 1 year inactivity 01/15 dg8ygz",52.17785,8.04421,0.00000
 HAMNET-DB,ir3ugd,"ir3ugd,Maintainer : in3zmb iw3amq iw3brh in3fqq,Comment:,Site configuration: https://www.dropbox.com/s/wmr3f5kxu7fu95t/IR3UGD.gif",46.84093,11.30160,0.00000
 HAMNET-DB,ir3ugc,"ir3ugc,Maintainer : iw3amq iw3brh in3fqq,Comment:,hamnet transfer link sdtirol uhf rpt",46.96845,11.50994,0.00000
 HAMNET-DB,on0rbo,"on0rbo,Maintainer : on4sax",50.65319,6.16846,0.00000
@@ -578,10 +576,10 @@ HAMNET-DB,db0adb,"db0adb,Radioparam: 2392MHz,Maintainer : db2fb dk2et,Comment:,S
 HAMNET-DB,db0brh,"db0brh,Maintainer : dg7fbs,Comment:,70cm Relais Heidelstein/Rhn 925 .NN http://www.trg-radio.de/db0brh-70cm-fm",50.46040,10.00649,0.00000
 HAMNET-DB,oe2xhm,"oe2xhm",47.42055,13.06236,0.00000
 HAMNET-DB,oe2xmr,"oe2xmr,Maintainer : oe2wao",47.12880,13.62444,0.00000
-HAMNET-DB,db0nu,"db0nu,Radioparam: QRG 2397MHz H/V 5MHz SSID: HAMNET DB0NU SEKTOR Nanostation M2 135,Maintainer : dl1nux dk5trb,Comment:,FM-Relais D-STAR APRS HAMNET Standort in Altenstein (JO50IE) 442m NN,http://www.bravo37.de Site configuration:,https://www.dropbox.com/s/l6r5lxtwx47slva/DB0NU.gif?dl=0",50.17546,10.73990,0.00000
+HAMNET-DB,db0nu,"db0nu,Radioparam: QRG 2397MHz H/V 5MHz SSID: HAMNET DB0NU SEKTOR Nanostation M2 135,Maintainer : dl1nux dk5trb,Comment:,FM D-STAR DMR APRS POCSAG HAMNET Standort in Altenstein (JO50IE) 442m NN,http://www.bravo37.de Site configuration:,https://www.dropbox.com/s/l6r5lxtwx47slva/DB0NU.gif?dl=0",50.17546,10.73990,0.00000
 HAMNET-DB,db0son,"db0son,Radioparam: 2392MHz H/V Sektorantenne 90 Nanostation M2,Maintainer : dh2asb dk4na,Comment:,FM Repeater APRS-Digi Sonneberg Site configuration:,https://www.dropbox.com/s/uwoiw1h9n5lx4nl/DB0SON.GIF?dl=0",50.38233,11.18100,0.00000
 HAMNET-DB,db0has,"db0has,Comment:,APRS Hassfurt",50.01366,10.59100,0.00000
-HAMNET-DB,db0dux,"db0dux,Radioparam: User access is planned for near future. Awaiting licence.,Maintainer : dc4ab",51.20630,6.79050,0.00000
+HAMNET-DB,db0dux,"db0dux,Radioparam: User access is planned for near future. Awaiting licence.,Maintainer : dc4ab,Comment:,HAMNET-Standort AS64632 32-bit-AS-Nummer: 4226263234 (aktiv) ",51.20630,6.79050,0.00000
 HAMNET-DB,db0mr,"db0mr,Maintainer : dl5di",50.33566,7.56949,0.00000
 HAMNET-DB,f6cnb,"f6cnb,Radioparam: HAMNET 5685MHz BW=5MHz,Maintainer : f6cnb,Comment:,Servers gateway and user access. http://www.f6cnb.ampr.org http://hamnet-idf.fr",48.69226,2.14614,0.00000
 HAMNET-DB,db0se,"db0se,Maintainer : dm4kcs,Comment:,FM-Relais DB0SE 438.950MHz ISM-WLAN-Link nach DB0SLE ",50.47800,6.52297,0.00000
@@ -601,15 +599,15 @@ HAMNET-DB,f6gal,"f6gal,Radioparam: None,Maintainer : f6cnb,Comment:,f6gal Irene 
 HAMNET-DB,pi4tue,"pi4tue",51.44891,5.48749,0.00000
 HAMNET-DB,db0aca,"db0aca,Maintainer : do2gm db8tg,Comment:,Link nach DB0WV 5745 MHz Linktest nach DB0ALB geplant Linktest nach Norden zu,DB0ROB Rossberg-Reutlingen erfolgreich",48.21027,9.40388,0.00000
 HAMNET-DB,f5ktr,"f5ktr,Radioparam: 2362MHz/5MHz,Maintainer : f6cnb,Comment:,Radio club du Groupe des Radio Amateurs Cheminots Paris France",48.88006,2.36191,0.00000
-HAMNET-DB,db0ftc,"db0ftc,Maintainer : dd1wt dg9ubf dc1paa do7pa sk,Comment:,Site configuration: https://www.dropbox.com/s/90nvblv3w9cacfi/DB0FTC.gif,Verantwortlich (Lizenzinhaber): Thomas Clos DD1WT e-mail: dd1wt@darc.de Link1:,Fachhochschule Mannheim (DB0CPU) Entfernung: 28km QRG: 5675MHz BW: 10 MHz - HW,DB0FTC: Ubiquiti NanoBridge M5 25 dBi - HW DB0CPU: Ubiquiti NanoBridge M5 25,dBi Link2: TU Darmstadt (DB0FLX) Entfernung: 48 km QRG: 5815 MHz BW: 10 MHz -,HW DB0FTC: Ubiquiti NanoBridge M5 25 dBi - HW DB0FLX: Ubiquiti NanoBridge M5 25,dBi Link3: Giekanne zu DB0ALU DB0FLH DB0FTH QRG: 5695 MHz BW: 10 MHz - HW,DB0FTC: Ubiquiti Rocket M5 90ffnungswinkel Richtung Ost - DB0ALU Entfernung:,12km HW Ubiquiti NanoBridge M5 25 dBi - DB0FLH Entfernung: 13km HW Ubiquiti,NanoBridge M5 25 dBi - DB0FTH Entfernung: 18km HW Ubiquiti NanoBridge M5 25 dBi, Link4: Lampertheim 3GHz (DB0RAM) Entfernung: 24 km QRG: 3415 MHz Link5:,Lampertheim 5GHz (DB0RAM) Entfernung: 24 km QRG: 5745 MHz Site configuration:,https://www.dropbox.com/s/cwna1heoiummfsu/DB0FTC.gif",49.59451,8.15197,0.00000
+HAMNET-DB,db0ftc,"db0ftc,Maintainer : dd1wt dg9ubf,Comment:,Site configuration: https://www.dropbox.com/s/90nvblv3w9cacfi/DB0FTC.gif,Verantwortlich (Lizenzinhaber): Thomas Clos DD1WT e-mail: dd1wt@darc.de Link1:,Fachhochschule Mannheim (DB0CPU) Entfernung: 28km QRG: 5675MHz BW: 10 MHz - HW,DB0FTC: Ubiquiti NanoBridge M5-400 ISO 25 dBi - HW DB0CPU: Ubiquiti NanoBridge,M5 25 dBi Link2: TU Darmstadt (DB0FLX) Entfernung: 48 km QRG: 5815 MHz BW: 10,MHz - HW DB0FTC: Ubiquiti NanoBridge M5-600 ISO 25 dBi - HW DB0FLX: Ubiquiti,NanoBridge M5 25 dBi Link3: DB0ALU Entfernung: 12km QRG: 5695 MHz BW: 10 MHz -,HW DB0FTC: Ubiquiti NanoBridge M5 25 dBi - HW DB0ALU: Ubiquiti NanoBridge M5 25,dBi Link4: DB0FTH Entfernung: 18km QRG: 5715 MHz BW: 10 MHz - HW DB0FTC:,Ubiquiti NanoBridge M5-400 ISO 25 dBi - HW DB0FTH: Ubiquiti NanoBridge M5 25,dBi Link5: Lampertheim 3GHz (DB0RAM) Entfernung: 24 km QRG: 3415 MHz BW: 10 MHz, - HW DB0FTC: Ubiquiti Rocket M3 mit Spiegel 600 ISO - HW DB0RAM: Link6:,Lampertheim 5GHz (DB0RAM) Entfernung: 24 km QRG: 5745 MHz BW: 10 MHz - HW,DB0FTC: Ubiquiti NanoBridge M5-400 ISO 25 dBi - HW DB0RAM: Ubiquiti NanoBridge,M5-400 ISO 25 dBi USER-Zugang: SSID: HAMNET QRG:2397 MHz 10 MHz Site,configuration: https://www.dropbox.com/s/cwna1heoiummfsu/DB0FTC.gif",49.59451,8.15197,0.00000
 HAMNET-DB,db0flh,"db0flh,Maintainer : dd1wt do7pa sk,Comment:,Site configuration: https://www.dropbox.com/s/e4b4t7j9up8pzw2/DB0FLH.gif",49.54177,8.31378,0.00000
 HAMNET-DB,dl0rsf,"dl0rsf,Maintainer : dd1wt dj4ip,Comment:,Schulstation mglicher HAMNET-USER",49.54143,8.36948,0.00000
-HAMNET-DB,f1zdd,"f1zdd",48.55616,7.45703,0.00000
+HAMNET-DB,f1zdd,"f1zdd,Maintainer : f1tzv f4avi",48.55616,7.45703,0.00000
 HAMNET-DB,oe5drp,"oe5drp,Maintainer : oe5drp df4dr,Comment:,test site ",48.63333,13.93233,0.00000
 HAMNET-DB,db0lar,"db0lar,Maintainer : dh4lar,Comment:,D-Star Repeater",54.91146,8.32306,0.00000
 HAMNET-DB,oe2xap,"oe2xap,Radioparam: 2417MHz 14dBi Omni,Maintainer : oe5ptl oe2wao",47.97362,13.18859,0.00000
 HAMNET-DB,db0gap,"db0gap,Maintainer : dg1mia",47.58600,11.10330,0.00000
-HAMNET-DB,db0ts,"db0ts,Maintainer : dm3ts,Comment:,www.eisberg-dx-club.de",49.54177,12.40097,0.00000
+HAMNET-DB,db0ts,"db0ts,Maintainer : dm3ts,Comment:,www.eisberg-dx-club.de",49.54046,12.40322,0.00000
 HAMNET-DB,db0alb,"db0alb,Maintainer : dd0gp,Comment:,70cm-Repeater 438 8125 MHz ATV-Repeater Betriebsart: F3F Sende-QRG: 5726 MHz,Empangs-QRG: 5786 MHz Hamnet Linktest nach DB0ACA Upflamoer geplant",48.30540,8.99211,0.00000
 HAMNET-DB,db0blw,"db0blw,Maintainer : dd0gp",48.24194,8.86055,0.00000
 HAMNET-DB,db0tgm,"db0tgm",52.54124,11.96861,0.00000
@@ -617,10 +615,11 @@ HAMNET-DB,db0ffl,"db0ffl,Maintainer : dd0rj dc1rd dl8rds dl4ste",48.58691,12.343
 HAMNET-DB,db0hbz,"db0hbz,Maintainer : dl8rds,Comment:,Site configuration: https://www.dropbox.com/s/riegm8xqx29o1ag/DB0HBZ.gif",49.21282,12.02797,0.00000
 HAMNET-DB,db0sn,"db0sn,Maintainer : dk7at",51.47386,9.76587,0.00000
 HAMNET-DB,db0oha,"db0oha,Radioparam: 5695MHz 10MHz Sektor S,Maintainer : dl9am dh8ghh,Comment:,http://www.db0oha.de",51.66616,10.34333,0.00000
-HAMNET-DB,db0ndf,"db0ndf,Maintainer : dg8las dh9fax,Comment:,Betrieb seit 12.06.2014 17:00 Infos unter: http://db0ndf.dg8las.de 16.08.2018,Der Link zu DB0VE wird erneuert und steht in krze wieder zru Verfgung. Eine,Anbindung zu DB0GEL ist derzeit nicht mglich weil am Standort DB0GEL keine,Komponente aktiv ist. 14.04.2018 Ein User Zugang wird derzeit nicht angeboten.,Bei Bedarf kann ein 5GHz 2x2 MIMO Zugang eingerichtet werden. Bitte bei DG8LAS,melden. Public Services: NTP Server: ntp.db0ndf.ampr.org:123",50.19539,8.79618,0.00000
+HAMNET-DB,db0ndf,"db0ndf,Maintainer : dg8las dh9fax,Comment:,Betrieb seit 12.06.2014 17:00 Infos unter: http://db0ndf.dg8las.de Public,Services: NTP Server: ntp.db0ndf.ampr.org:123",50.19539,8.79618,0.00000
+HAMNET-DB,pe1rtt,"pe1rtt,Maintainer : pe1rtt",51.98041,4.34159,0.00000
 HAMNET-DB,db0hwr,"db0hwr",49.56261,6.78398,0.00000
 HAMNET-DB,db0zav,"db0zav,Radioparam: 2397MHz 5MHz - Sektor 90 - Richtung 250 - vertikal,Maintainer : dl1zav,Comment:,Services Abdeckung Bilder etc.:,http://www.amateurfunk-wiki.de/index.php?title=DB0ZAV bzw. im HAMNET:,http://amateurfunk-wiki.de.ampr.org/index.php?title=DB0ZAV Notfunktauglich !",50.21302,8.78831,0.00000
-HAMNET-DB,db0ov,"db0ov,Maintainer : dl5bca,Comment:,Site configuration: https://www.dropbox.com/s/95f6qand2i5qya0/DB0OV.gif?dl=0",53.47695,8.47093,0.00000
+HAMNET-DB,db0ov,"db0ov,Maintainer : dl5bca dg5yim,Comment:,Site configuration: https://www.dropbox.com/s/95f6qand2i5qya0/DB0OV.gif?dl=0",53.47695,8.47093,0.00000
 HAMNET-DB,pe1pts,"pe1pts",51.50296,3.89835,0.00000
 HAMNET-DB,f1lqd,"f1lqd,Radioparam: Local WiFi,Maintainer : f6cnb,Comment:,Beynes 78",48.85521,1.90006,0.00000
 HAMNET-DB,db0vvs,"db0vvs,Radioparam: SW 5675 NO 5775 Nord 5805,Maintainer : dl6kl dj5kp",50.68196,7.24857,0.00000
@@ -628,7 +627,6 @@ HAMNET-DB,hb9tg,"hb9tg,Maintainer : hb9pae",47.53886,9.00243,0.00000
 HAMNET-DB,dl4ste,"dl4ste",48.60961,12.27690,0.00000
 HAMNET-DB,db0ve,"db0ve,Radioparam: 2397MHz 5MHz - Omni,Maintainer : dl1fk dg8las dh9fax,Comment:,Betrieb seit 03.10.2014 12:30 DB0VE im Amateurfunk-Wiki (Abdeckung Bilder etc.):,http://www.amateurfunk-wiki.de/index.php/DB0VE",50.18808,8.86414,0.00000
 HAMNET-DB,db0sif,"db0sif,Radioparam: 2397MHz 5MHz Vertikal,Maintainer : dl6fbs",50.58471,8.67673,0.00000
-HAMNET-DB,dl0ru,"dl0ru,Maintainer : l15 (dl0ru) und dh3je (db0mhr),Comment:,Planungsstandort fr AS64654 - Clubstation L15 - ATV-Relais DB0MHR - Fonierelais,DB0MHR - per LAN-Bridge mit Motorola Canopy bereits mit DF0MHR verbunden",51.42175,6.84075,0.00000
 HAMNET-DB,on0tb,"on0tb,Maintainer : on4sax",50.50209,6.09283,0.00000
 HAMNET-DB,dm0hat,"dm0hat,Maintainer : dl6hat dl5la,Comment:,evtl. HAMNET Link DB0MAR?",54.15513,10.95084,0.00000
 HAMNET-DB,hb9eas-7,"hb9eas-7,Maintainer : dk2go",47.52805,7.58155,0.00000
@@ -665,7 +663,8 @@ HAMNET-DB,db0qx,"db0qx,Maintainer : dh8ghh do7ad,Comment:,Repeater Ramberg Harz 
 HAMNET-DB,db0gsh,"db0gsh,Maintainer : dh8ghh,Comment:,www.steinbergrelais.de",51.90716,10.40616,0.00000
 HAMNET-DB,db0swr,"db0swr,Comment:,Planungseintrag mglicher Linkpartner FM- und DStar-.Repeater",49.68732,9.46936,0.00000
 HAMNET-DB,db0fhn,"db0fhn,Maintainer : dg8ngn,Comment:,Site configuration: https://www.dropbox.com/s/p5jiuseblx4be3t/DB0FHN.gif",49.45275,11.09435,0.00000
-HAMNET-DB,db0xy,"db0xy,Maintainer : df4ol dd2mic dh1alf dh8ghh do4bz dl1ne,Comment:,Aktuell laufen bei DB0XY die FM Relais und die Baken im Dauerbetrieb. Ein HAMNET,Link zu DB0SHG ist aufgebaut und funktioniert den Umstnden entsprechend gut.,Ein HAMNET Link zu DB0HEX wurde probiert aber ist erwiesenermaen nicht mglich.,Ein HAMNET Link zu DB0HW wurde probiert aber ist erwiesenermaen nicht mglich.",51.85656,10.35769,0.00000
+HAMNET-DB,db0xy,"db0xy,Maintainer : df4ol dd2mic dh1alf do4bz dl1ne,Comment:,Aktuell laufen bei DB0XY die FM Relais und die Baken im Dauerbetrieb. Ein Link,zum Torfhaus oder Brocken ist nach vielen Tests mit Gewissheit erwiesen,unmglich! Die Schalke ist zu hoch und dort eine Zwischenstation bauen ist auch,nicht mglich. Wir haben alles versucht. Es geht wirklich nicht!",51.85656,10.35769,0.00000
+HAMNET-DB,hb9ar,"hb9ar,Comment:,IAPC + repeaters HB9AR uhf + HB9G uhf",46.19042,6.11881,0.00000
 HAMNET-DB,db0abb,"db0abb,Radioparam: 5695MHz 10MHz Sektor S 5795MHz 10MHz Sektor O,Maintainer : dg7abb,Comment:,http://www.db0abb.de",51.60731,9.73621,0.00000
 HAMNET-DB,db0ae,"db0ae,Maintainer : dh8ghh",51.81949,9.86100,0.00000
 HAMNET-DB,db0bpy,"db0bpy,Maintainer : dh8ghh",51.95888,9.32389,0.00000
@@ -691,7 +690,7 @@ HAMNET-DB,db0wms,"db0wms,Radioparam: 2397MHz 5MHz-Bandbreite 5695MHz 10MHz-Bandb
 HAMNET-DB,db0ais,"db0ais,Radioparam: 2397MHz BW 5MHz Rundstrahler vertikal,Maintainer : dg3fbl dh9fax dg8las,Comment:,Genehmigung bis 30.06.2018 Link nach DB0HR 5815 MHz BW 10 MHz Link nach DB0BOS,5725 MHz BW 10 MHz Link nach DM0GG ISM FM/C4FM Relais 438 3875 MHz APRS,Digi/Gateway 144 800 MHz http://db0ais.de",49.98820,8.59179,0.00000
 HAMNET-DB,db1an,"db1an,Maintainer : db1an,Comment:,Planungsstandort fr AS64627",51.64334,6.31560,0.00000
 HAMNET-DB,oe1xuu,"oe1xuu,Radioparam: 5785MHz Richtung 194 Grad und 5805MHz Richtung 101 Grad. ,Maintainer : oe3gmw,Comment:,Access Points 20 MHz Bandbreite Modes: a/n/AC",48.27645,16.33335,0.00000
-HAMNET-DB,db0il,"db0il,Radioparam: 5805MHz BW 10MHz OMNI vert.,Maintainer : dl4lby dg8las,Comment:,C4FM DMR HAMNet 14.05.2015 User-Einstieg auf 5805MHz gestartet. Informationen,unter http://44.225.100.66 ",54.30949,10.16988,0.00000
+HAMNET-DB,db0il,"db0il,Radioparam: 5805MHz BW 10MHz OMNI vert.,Maintainer : dl4lby dg8las,Comment:,C4FM DMR HAMNet 14.05.2015 User-Einstieg auf 5805MHz gestartet. Informationen,unter http://44.225.100.66 ",54.30951,10.17000,0.00000
 HAMNET-DB,db0ghh,"db0ghh,Maintainer : dc1ko dj5kp",50.75443,7.04391,0.00000
 HAMNET-DB,f5sfu,"f5sfu,Radioparam: Rasp+tplink 2392MHz BW=5MHz OLSR Hamnet06,Maintainer : f5sfu",43.73972,7.15177,0.00000
 HAMNET-DB,db0kib,"db0kib,Maintainer : dg8las,Comment:,Erster HAMNET User-Zugang in Schleswig-Holstein. Betrieb seit 16.07.2014 15:30,Weitere Infos unter: http://db0kib.dg8las.de 13.11.2018 Der HAMNET User Zugang,wurde deaktiviert. Sofern Interesse besteht bitte bei DG8LAS melden.",54.32875,10.13906,0.00000
@@ -700,9 +699,8 @@ HAMNET-DB,db0arh,"db0arh,Radioparam: 2397MHz Mikrotik SSID: HAMNET-DB0ARH-USER,M
 HAMNET-DB,db0rng,"db0rng,Maintainer : dg4bcl dg2baz db1hdn,Comment:,Site configuration: https://www.dropbox.com/s/d0yr2uz61usn50m/DB0RNG.gif",53.01528,9.67020,0.00000
 HAMNET-DB,db0ttb,"db0ttb,Maintainer : dl4ttb dk6px,Comment:,Site configuration: https://www.dropbox.com/s/pgthodll9wppm7j/DB0TTB.gif?dl=0",47.80084,11.01456,0.00000
 HAMNET-DB,db0rmm,"db0rmm,Radioparam: 2397MHz vertical 5MHz bandwidth AP Bridge AirMax (currently testing),Maintainer : dl1rmm",48.11240,11.32517,0.00000
-HAMNET-DB,db0za,"db0za,Maintainer : dc5bt db5nu dj3le do5fl,Comment:,FM",54.41708,9.69151,0.00000
 HAMNET-DB,db0len,"db0len,Maintainer : dc1dmr dg2dbt,Comment:,Internet access available",51.10666,8.06999,0.00000
-HAMNET-DB,dl1mab,"dl1mab,Comment:,Planning",48.66631,13.07813,0.00000
+HAMNET-DB,dl1mab,"dl1mab,Comment:,Planning",48.63344,13.02654,0.00000
 HAMNET-DB,db0ngu,"db0ngu,Maintainer : df3bm",52.49030,6.86510,0.00000
 HAMNET-DB,db0fbg,"db0fbg,Radioparam: (1) AX.25: 438.325MHz -7 6MHz Duplex 1k2 9k6 439.700MHz -4 8MHz 76k8 (2) FM/Echo,Maintainer : dl1jad,Comment:,Interesse an Hamnet Antennenposition vorbereitet ",50.92916,13.34850,0.00000
 HAMNET-DB,f5zig,"f5zig,Radioparam: mesh network on 2392MHz / BW=5MHz - link M5 to Mont Leuze 5680MHz H,Maintainer : f5sfu f4exb f4hkw f4hbg,Comment:,Rasp pi - tplink - sextuple quad - hamtube",43.74932,7.14901,0.00000
@@ -734,7 +732,7 @@ HAMNET-DB,db0wrn,"db0wrn,Maintainer : dh0iav",53.51049,12.69180,0.00000
 HAMNET-DB,sr1ndi,"sr1ndi,Maintainer : sq1gyg",53.90999,14.25500,0.00000
 HAMNET-DB,db0ats,"db0ats,Radioparam: 5695MHz / 10MHz / WDS / AirMAX / SSID: HAMNET / NordNordWest 5795MHz / 10MHz / W,Maintainer : dg4oae do4bz dl1ne,Comment:,DMR 439.9750 MHz (-9.4 MHz)",52.32712,9.80613,0.00000
 HAMNET-DB,f6ini,"f6ini,Radioparam: Local WiFi,Maintainer : f6cnb,Comment:,f6ini Jacques 92 Meudon",48.80761,2.24207,0.00000
-HAMNET-DB,db0lc,"db0lc,Maintainer : dg6mdg,Comment:,Am Standort von DB0LC wird ein Hamnet Zugang realisiert. Dienste: DB0LC,FM-Echolink-DMR Repeater DB0LC-2 APRS I-Gate Digi DB0LC-10 Winlink RMS-Packet,1k2 Im Ausbau Link zu DB0ESS in Planung Link zu DB0RV DB0WV je nach Mglichkeit.",47.57321,9.83760,0.00000
+HAMNET-DB,db0lc,"db0lc,Maintainer : dg6mdg,Comment:,Dienste: DB0LC FM-Echolink-DMR Repeater DB0LC-2 APRS I-Gate Digi DB0LC-10,Winlink RMS-Packet 1k2 Link zu DB0ESS in Planung Link zu DB0RV DB0WV je nach,Mglichkeit.",47.57321,9.83760,0.00000
 HAMNET-DB,db0ze,"db0ze,Radioparam: 5825MHz,Maintainer : db3an dc4hu dd3xk dl1jm,Comment:,Hamnet DMR-Brandmeister http://www.afundr.de/",53.51919,10.10280,0.00000
 HAMNET-DB,db0dy,"db0dy,Maintainer : dh6ybb,Comment:,Planungsstandort HAMNET wird zur Zeit geplant",52.16797,7.90372,0.00000
 HAMNET-DB,dl0dpm,"dl0dpm,Comment:,2 4 GHz Link to DB0HRF tested with omnidirectional vertical. Museum fr,Kommunikation Frankfurt http://www.qsl.net/dl0fm/info/dl0dpm.htm",50.10422,8.67607,0.00000
@@ -751,7 +749,7 @@ HAMNET-DB,dm5hr,"dm5hr,Comment:,OM User Site used OE5XBL",48.25416,12.85605,0.00
 HAMNET-DB,dm0max,"dm0max,Maintainer : do7sk dg8ygz,Comment:,Standort Relais DM0MAX",52.29054,8.70188,0.00000
 HAMNET-DB,lx0dmx,"lx0dmx,Maintainer : lx1duc lx2cs lx3x lx1ge",49.52265,5.91470,0.00000
 HAMNET-DB,dk0fri,"dk0fri",53.53784,7.92534,0.00000
-HAMNET-DB,db0fks,"db0fks,Radioparam: 2397MHz BW:5MHz,Maintainer : dl2ocb dk9fec dk7fu,Comment:,Standort: Burg Frankenstein bei Mhltal nhe Darmstadt. Einstieg: 2397 MHz,Bandbreite 5MHz - HW: Ubiquiti Bullet M2 HP - ANT: Sektorantenne IT ELITE,SECTOR24015H Gewinn 15dBi ffnungswinkel 90 Grad - Polarisation: Horizontal,Link1: Groer Feldberg im Taunus (DB0HRF) Entfernung:51 km QRG:5695 BW:10MHz -,HW DB0FKS: Ubiquiti NanoBridge M5 - ANT DB0FKS: Integriert in NanoBridge M5,Gewinn 25dBi - HW DB0HRF: Ubiquiti RocketM5 - ANT DB0HRF: Ubiquiti RocketDish,5G-30 Gewinn 30dBi Link2: Kleinniedesheim (DB0ALU) Entfernung:33 8 km QRG:5825,BW:10MHz - HW DB0FKS: Ubiquiti NanoBeam M5 - ANT DB0FKS: Integriert in NanoBeam,M5 Gewinn 27dBi Durchm.: 40cm - HW DB0ALU: Ubiquiti NanoBeam M5 - ANT DB0ALU:,Integriert in NanoBeam M5 Gewinn 27dBi Durchm.: 40cm WebCAM Blick Richtung SSO:, Webcam ist eingerichtet und erreichbar unter folgender URL aus dem Hamnet:,JPEG Snapshots gehen unter: http://44.225.161.68/snapshot.cgi?chan=0 in voller,Auflsung und http://44.225.161.68/snapshot.cgi?chan=1 in halber Auflsung. Per,RTSP kann man den Videostream schauen unter:,rtsp://44.225.161.68:554/live/ch00_0 - Full resolution,rtsp://44.225.161.68:554/live/ch01_0 - Half resolution,rtsp://44.225.161.68:554/live/ch02_0 - Quarter resolution,rtsp://44.225.161.68:554/live/ch03_0 - Small preview Und aus dem Internet ber:,Fr volle Auflsung: http://dl2ocb.de/db0fks_snap_full.jpg Fr kleinere halbe,Auflsung: http://dl2ocb.de/db0fks_snap_half.jpg TESTBETRIEB: - Webserver,(Raspberry PI) <-- Testbetrieb (44.225.161.66) - APRS RX <-- Testbetrieb,(44.225.161.66) Planung Services: - Zwei Webcams ins Tal mit Sichtweite von ca.,130 Grad Blickrichtung ca. 270 Grad. Auflsung der Einzel-Cams ist 2048 1536,Pixel (3 MegaPixel). Die zwei Bilder werden per Scripting zu einem Panorama,zusammengefgt. - 144MHz RX (SDR) - Wetterstation <-- beschafft und im Test.",49.79395,8.66816,0.00000
+HAMNET-DB,db0fks,"db0fks,Radioparam: 2397MHz BW:5MHz,Maintainer : dl2ocb dk9fec dk7fu,Comment:,Standort: Burg Frankenstein bei Mhltal nhe Darmstadt. Einstieg: 2397 MHz,Bandbreite 5MHz - HW: Ubiquiti Bullet M2 HP - ANT: Sektorantenne IT ELITE,SECTOR24015H Gewinn 15dBi ffnungswinkel 90 Grad - Polarisation: Horizontal - IP,wird per DHCP vergeben. - Als DNS Server bitte 44.225.161.81 verwenden. Link1:,Groer Feldberg im Taunus (DB0HRF) Entfernung:51 km QRG:5695 BW:10MHz - HW,DB0FKS: Ubiquiti NanoBridge M5 - ANT DB0FKS: Integriert in NanoBridge M5 Gewinn,25dBi - HW DB0HRF: Ubiquiti RocketM5 - ANT DB0HRF: Ubiquiti RocketDish 5G-30,Gewinn 30dBi Link2: Kleinniedesheim (DB0ALU) Entfernung:33 8 km QRG:5825,BW:10MHz - HW DB0FKS: Ubiquiti NanoBeam M5 - ANT DB0FKS: Integriert in NanoBeam,M5 Gewinn 27dBi Durchm.: 40cm - HW DB0ALU: Ubiquiti NanoBeam M5 - ANT DB0ALU:,Integriert in NanoBeam M5 Gewinn 27dBi Durchm.: 40cm WebCAM Blick Richtung SSO:, Webcam ist eingerichtet und erreichbar unter folgender URL aus dem Hamnet:,JPEG Snapshots gehen unter: http://44.225.161.68/snapshot.cgi?chan=0 in voller,Auflsung und http://44.225.161.68/snapshot.cgi?chan=1 in halber Auflsung. Per,RTSP kann man den Videostream schauen unter:,rtsp://44.225.161.68:554/live/ch00_0 - Full resolution,rtsp://44.225.161.68:554/live/ch01_0 - Half resolution,rtsp://44.225.161.68:554/live/ch02_0 - Quarter resolution,rtsp://44.225.161.68:554/live/ch03_0 - Small preview Und aus dem Internet ber:,Fr volle Auflsung: http://dl2ocb.de/db0fks_snap_full.jpg Fr kleinere halbe,Auflsung: http://dl2ocb.de/db0fks_snap_half.jpg TESTBETRIEB: - Webserver,(Raspberry PI) <-- Testbetrieb (44.225.161.66) - APRS RX <-- Testbetrieb,(44.225.161.66) Planung Services: - Zwei Webcams ins Tal mit Sichtweite von ca.,130 Grad Blickrichtung ca. 270 Grad. Auflsung der Einzel-Cams ist 2048 1536,Pixel (3 MegaPixel). Die zwei Bilder werden per Scripting zu einem Panorama,zusammengefgt. - 144MHz RX (SDR) - Wetterstation <-- beschafft und im Test.",49.79395,8.66816,0.00000
 HAMNET-DB,db0sle,"db0sle,Radioparam: 2362MHz vertikal - omni / BW 5MHz,Maintainer : dm4kcs,Comment:,Web-Page : http://db0sle.ampr.org",50.47852,6.52441,0.00000
 HAMNET-DB,ir3udz,"ir3udz,Maintainer : dg8ngn,Comment:,Site configuration: https://www.dropbox.com/s/qg9fdh1macd4dqk/IR3UDZ.gif",46.05616,12.28199,0.00000
 HAMNET-DB,db0ku,"db0ku,Maintainer : df3dcb dc1dmr dl6dba,Comment:,internet access available with static IP",51.20116,8.10800,0.00000
@@ -764,8 +762,8 @@ HAMNET-DB,dl0dg,"dl0dg,Comment:,Clubheim DARC OV Duisburg L02",51.46200,6.79066,
 HAMNET-DB,oe7xkh,"oe7xkh,Maintainer : oe7erj,Comment:,Tiroler Oberland/Landeck",47.14624,10.62666,0.00000
 HAMNET-DB,dk0pa,"dk0pa,Comment:,Clubheim VFDB OV Moers - Kreis Wesel Z63",51.45004,6.63060,0.00000
 HAMNET-DB,oe1xqu,"oe1xqu,Maintainer : oe1kbc",48.16883,16.38399,0.00000
-HAMNET-DB,db0obs,"db0obs,Radioparam: ISM 2437MHz / 20MHz Bandwidth SSID: HAMNET-ism2.4 and 2397MHz / 5MHz Bandwidth S,Maintainer : df3ei/oe1agf,Comment:,The HAMNET node D B0OBS is operated by the Arbeitsgemeinschaft,Amateurfunkfernsehen (AGAF) e.V.. It is based at the headquarters of the AGAF,at Stuttgarter Platz 15 in 14057 Berlin-Charlottenburg a once notorious,red-light district hence the callsign... http://db0obs.ampr.org",52.50543,13.30152,0.00000
-HAMNET-DB,db0kk,"db0kk,Maintainer : df3ei/oe1agf,Comment:,Local AS: 4226262905 Operated by DARC OV D24 Berliner Interessengemeinschaft ATV,(BIG-ATV) STATUS: - 2018-03-02 Down due to router and server failure! -,2018-05-06 Installed and configured DMR-repeater and RadioBox. All up and,running. - 2018-12-06 Configured LDF5 for Link KK-BF.",52.52750,13.48013,0.00000
+HAMNET-DB,db0obs,"db0obs,Radioparam: ISM 2437MHz / 20MHz Bandwidth SSID: HAMNET-ism2.4 and 2397MHz / 5MHz Bandwidth S,Maintainer : df3ei/oe1agf,Comment:,The HAMNET node DB0OBS is operated by the Arbeitsgemeinschaft,Amateurfunkfernsehen (AGAF) e.V.. It is based at the headquarters of the AGAF,at Stuttgarter Platz 15 in 14057 Berlin-Charlottenburg a once notorious,red-light district hence the callsign... http://db0obs.ampr.org",52.50543,13.30152,0.00000
+HAMNET-DB,db0kk,"db0kk,Maintainer : df3ei/oe1agf,Comment:,Local AS: 4226262905 Operated by DARC OV D24 Berliner Interessengemeinschaft ATV,(BIG-ATV) STATUS: - 2019-04-21 Moved former DB0BC IP-Range to DB0KK. -,2018-03-02 Down due to router and server failure! - 2018-05-06 Installed and,configured DMR-repeater and RadioBox. All up and running. - 2018-12-06,Configured LDF5 for Link KK-BF.",52.52750,13.48013,0.00000
 HAMNET-DB,db0fda,"db0fda,Maintainer : dl1fx,Comment:,DB0FHD FH-Darmstadt Hochhaus",49.86732,8.63847,0.00000
 HAMNET-DB,db0rdt,"db0rdt,Comment:,FM Repeater DB0RDT",48.83249,11.29282,0.00000
 HAMNET-DB,dl0eb,"dl0eb,Maintainer : dl2grc,Comment:,Freizeitgruppe Amateurfunk Bosch in Feuerbach",48.81966,9.16183,0.00000
@@ -773,12 +771,12 @@ HAMNET-DB,f6bvp,"f6bvp,Radioparam: Local WiFi ch= 11 SSID= F6BVP contact Bernard
 HAMNET-DB,ir3uda,"ir3uda,Maintainer : iw3rmr oe6rke oe8wur",46.23876,13.25972,0.00000
 HAMNET-DB,oe5xpm,"oe5xpm,Maintainer : oe5hel oe5rln oe5rnl",48.27906,13.40363,0.00000
 HAMNET-DB,db0fhf,"db0fhf,Radioparam: 5695MHz BW10MHz Omni; 2937MHz BW5MHz Omni;,Maintainer : dl5la dc1ld,Comment:,User Access 5695 MHz 'on air' seit 09.04.2016 FH Flensburg - neuer AS64662 2397,MHz User Access in Vorbereitung. 21.03.2015 User Zugnge genehmigt POCSAG-TX,APRS-Digi Winlink-Digi in Vorbereitung",54.77517,9.45138,0.00000
-HAMNET-DB,f1zkt,"f1zkt",48.54106,7.62096,0.00000
-HAMNET-DB,f5zav,"f5zav",48.47981,7.47410,0.00000
+HAMNET-DB,f1zkt,"f1zkt,Maintainer : f1tzv f4avi",48.54106,7.62096,0.00000
+HAMNET-DB,f5zav,"f5zav,Maintainer : f1tzv f4avi",48.48032,7.47406,0.00000
 HAMNET-DB,oe1xor,"oe1xor,Maintainer : oe3gmw",48.17690,16.29166,0.00000
 HAMNET-DB,oe6xag,"oe6xag,Radioparam: 5/BW5;5/BW10,Maintainer : oe6djg oe6rke,Comment:,http://wiki.oevsv.at/index.php?title=Userzugang-HAMNET#OE6",47.19884,15.46694,0.00000
 HAMNET-DB,oe6xzg,"oe6xzg,Maintainer : oe6pwe oe6rke",47.19834,15.46576,0.00000
-HAMNET-DB,db0nhm,"db0nhm,Radioparam: 5795MHz MIMO,Maintainer : dh8ghh db1ofh dl1mx",51.69305,10.01472,0.00000
+HAMNET-DB,db0nhm,"db0nhm,Radioparam: 5795MHz MIMO,Maintainer : dh8ghh db1ofh dl1mx,Comment:,ESSID User Ost: HAMNET ESSID User West: hamnet",51.69305,10.01472,0.00000
 HAMNET-DB,pi1snk,"pi1snk,Maintainer : pd0sdo pa4den pa3bic",53.02651,5.64730,0.00000
 HAMNET-DB,pi2non-8,"pi2non-8",52.23006,6.91613,0.00000
 HAMNET-DB,dh8mo,"dh8mo,Maintainer : dh8mo",48.17633,11.50619,0.00000
@@ -789,7 +787,7 @@ HAMNET-DB,s56g,"s56g,Maintainer : s56g oe6rke,Comment:,gate to wlan-si.net",45.9
 HAMNET-DB,db0cra,"db0cra,Radioparam: 2362MHz 5MHz,Maintainer : dg2sdw,Comment:,User access: SSID HAMNET-DB0CRA-USER 2362MHz 5MHz Antenne Omni 9dBi Antenne Link,nach Aalen-Braunenberg DB0FAA 5745MHz Hamnet Userzugang auf 2 3 GHz aktiv seit,05.04.2015. Die WLAN MAC Adresse muss an dem User-Einstieg vom Sysop manuell,eingetragen werden. Bitte Mail mit Rufzeichen verwendete Hardware und WLAN-MAC,Adresse an dg2sdw [at] gmail.com senden. Im Gertenamen der eigenen Hardware,muss das eigene Rufzeichen eingetragen werden. Ein leerer Eintrag oder kein,Rufzeichen funktioniert nicht und wird abgewiesen. Der Sysop DG2SDW ist in der,Regel auf dem 70cm-Relais Burgberg 438.800MHz oder DB0CRA DMR lokal erreichbar,und hilft gerne bei der Installation weiter. Infos zu Hamnet unter,http://www.amateurfunk-wiki.de/index.php/Kategorie:HAMNET Site configuration:,https://www.dropbox.com/s/xfwc76zsadvycnm/DB0CRA.gif?dl=0",49.12065,9.97558,0.00000
 HAMNET-DB,db0lx,"db0lx,Radioparam: 5785MHz V/H Userzugang,Maintainer : dl4sbk dl3sfb,Comment:,Userzugang Rundstrahlantenne AMO 5G10 H/V mit Rocket M5 auf 5785 MHz Link nach,DB0BAC Hohe Brach auf 5725 MHz aktiv Drahtlink zu DB0YY aktiv",48.89854,9.17908,0.00000
 HAMNET-DB,db0gkn,"db0gkn,Maintainer : dl9sdw,Comment:,2m-Repeater 145.6375 MHz 70cm-Repeater 439.250 MHz Notstromversorgung ueber,Dieselaggregat des Kraftwerks",49.17561,9.20733,0.00000
-HAMNET-DB,db0stb-2,"db0stb-2,Radioparam: 2392MHz/5705MHz Antenne Omni V SSID HAMNET-DB0STB-2-USER-OMNI + 2392MHz/MHz Ante,Maintainer : dc7tu dl9sk dl8scu dc1shm funkgruppe stocksberg,Comment:,Die Funkgruppe Stocksberg ist auf dem db0wtl.ampr.org Teamspeakserver,ts3server://db0wtl.ampr.org?port=9987 erreichbar.,----------------------------------------------------------------------------------------------------, Aktuell: 70cm-Relaisfunkstelle 438.900 Mhz -7.6 Mhz Neu ist die automatische,Antennenumschaltung -SW-Sektorantenne Montag-Freitag (Stuttgarter Groraum) -,Rundstrahler Samstag-Sonntag - eine Eingabe auf 50.700 Mhz ist zum Testen,eingeschaltet,----------------------------------------------------------------------------------------------------, Solar-2m-Relaisfunkstelle 145.6125 Mhz -600 khz TX 1 W Antenne NW,70cm-Multimode 439.525 Mhz -7 6 Mhz tbd Die WLAN MAC Adresse muss an den,User-Einstiegen von den Sysops manuell eingetragen werden. Ein Anspruch auf,Eintragung besteht nicht und kann jederzeit widerrufen werden. Bitte Mail mit,Rufzeichen verwendete Hardware Frequenzband und WLAN-MAC Adresse an,db0stb@gmx.de senden. Im Geraetenamen der eigenen Hardware muss das eigene,Rufzeichen eingetragen werden. Ein leerer Eintrag oder kein Rufzeichen,funktioniert nicht und wird abgewiesen. Die Funkgruppe Stocksberg ist in der,Regel auf dem 70cm-Relais Stocksberg 438.900MHz erreichbar und hilft bei,speziellen Fragen weiter. Bitte beachtet dass wir keine Grundlagenberatungen,durchfuehren und von den Nutzern erwarten dass sie sich mit der HAMNET-Technik,Netzwerkfunktionen und Arbeitsweise vertraut gemacht haben bevor sie uns,kontaktieren. Im Netz gibt es dazu sehr viel zu finden. Insbesondere die,Vortragsskripte von Holger DL8SCU sind zu empfehlen. Wir betreiben unsere,Standorte eigenfinanziert und freiwillig. Es steht auch kein zahlungskraefter,DARC/VFDB-OV uns zur Seite. Von daher bitten wir von Forderungen und,Erwartungshaltungen deutlich Abstand zu nehmen. Das koennt ihr gegenueber einem,Internet-Provider durchsetzen aber nicht bei uns. Amateurfunk ist ein,experimentaler Funkdienst. Die Funkgruppe Stocksberg uebernimmt keine Haftung,bzgl. den Angaben in der HAMNET-Datenbank. Wir uebernehmen keinerlei Gewaehr,auf die Aktualitaet Korrektheit Vollstaendigkeit oder Qualitaet der Daten.,Insbesondere besteht kein Anspruch auf technische Verfuegbarkeit. Die,Streckenberechnung in der Hamnet-Datenbank ist die erste Huerde. Ist die,Strecke nicht frei geht es definitiv nicht. Ist sie dort als frei erkennbar,koennen trotzdem Haeuser Baeume und Buesche im Weg sein. Die HAMNET-Antennen,auf den Standorten sind auch nicht ideal und werden durch andere Installationen,mit Sicherheit bzgl. des Abstrahldiagramms beeinflusst. Infos zu Hamnet unter,http://www.amateurfunk-wiki.de/index.php/Kategorie:HAMNET ",49.06652,9.40342,0.00000
+HAMNET-DB,db0stb-2,"db0stb-2,Radioparam: 2392MHz/5705MHz Antenne Omni V SSID HAMNET-DB0STB-2-USER-OMNI + 2392MHz/MHz Ante,Maintainer : dc7tu dl9sk dl8scu dc1shm funkgruppe stocksberg,Comment:,Die Funkgruppe Stocksberg ist auf dem db0wtl.ampr.org Teamspeakserver,ts3server://db0wtl.ampr.org?port=9987 erreichbar.,----------------------------------------------------------------------------------------------------, Aktuell:,----------------------------------------------------------------------------------------------------, 10m-Relaisfunkstelle Empfngerstandort 29.590 Mhz. Der TX 29.690 am QTH DB0WTL,ist wieder QRV. Bitte testen.............,----------------------------------------------------------------------------------------------------, 70cm-Relaisfunkstelle 438.900 Mhz -7.6 Mhz Eingabe 50.700 Mhz aktiv Bitte die,die automatische Antennenumschaltung beachten -SW-Sektorantenne Montag-Freitag,(Stuttgarter Groraum) - Rundstrahler Samstag-Sonntag,----------------------------------------------------------------------------------------------------, Solar-2m-Relaisfunkstelle 145.6125 Mhz -600 khz TX 1 W Antenne NW,70cm-Multimode 439.525 Mhz -7 6 Mhz tbd Die WLAN MAC Adresse muss an den,User-Einstiegen von den Sysops manuell eingetragen werden. Ein Anspruch auf,Eintragung besteht nicht und kann jederzeit widerrufen werden. Bitte Mail mit,Rufzeichen verwendete Hardware Frequenzband und WLAN-MAC Adresse an,db0stb@gmx.de senden. Im Geraetenamen der eigenen Hardware muss das eigene,Rufzeichen eingetragen werden. Ein leerer Eintrag oder kein Rufzeichen,funktioniert nicht und wird abgewiesen. Die Funkgruppe Stocksberg ist in der,Regel auf dem 70cm-Relais Stocksberg 438.900MHz erreichbar und hilft bei,speziellen Fragen weiter. Bitte beachtet dass wir keine Grundlagenberatungen,durchfuehren und von den Nutzern erwarten dass sie sich mit der HAMNET-Technik,Netzwerkfunktionen und Arbeitsweise vertraut gemacht haben bevor sie uns,kontaktieren. Im Netz gibt es dazu sehr viel zu finden. Insbesondere die,Vortragsskripte von Holger DL8SCU sind zu empfehlen. Wir betreiben unsere,Standorte eigenfinanziert und freiwillig. Es steht auch kein zahlungskraefter,DARC/VFDB-OV uns zur Seite. Von daher bitten wir von Forderungen und,Erwartungshaltungen deutlich Abstand zu nehmen. Das koennt ihr gegenueber einem,Internet-Provider durchsetzen aber nicht bei uns. Amateurfunk ist ein,experimentaler Funkdienst. Die Funkgruppe Stocksberg uebernimmt keine Haftung,bzgl. den Angaben in der HAMNET-Datenbank. Wir uebernehmen keinerlei Gewaehr,auf die Aktualitaet Korrektheit Vollstaendigkeit oder Qualitaet der Daten.,Insbesondere besteht kein Anspruch auf technische Verfuegbarkeit. Die,Streckenberechnung in der Hamnet-Datenbank ist die erste Huerde. Ist die,Strecke nicht frei geht es definitiv nicht. Ist sie dort als frei erkennbar,koennen trotzdem Haeuser Baeume und Buesche im Weg sein. Die HAMNET-Antennen,auf den Standorten sind auch nicht ideal und werden durch andere Installationen,mit Sicherheit bzgl. des Abstrahldiagramms beeinflusst. Infos zu Hamnet unter,http://www.amateurfunk-wiki.de/index.php/Kategorie:HAMNET ",49.06652,9.40342,0.00000
 HAMNET-DB,f6kli,"f6kli,Maintainer : f6cnb,Comment:,RC DU LIBOURNAIS Libourne 33",44.89816,-0.24253,0.00000
 HAMNET-DB,f6dph,"f6dph,Radioparam: 2362/5MHz,Maintainer : f6cnb,Comment:,F6DPH Philippe",45.18115,-0.11545,0.00000
 HAMNET-DB,f6knb,"f6knb,Maintainer : f6cnb,Comment:,RC RADIOAMPT 33",44.79991,-0.31196,0.00000
@@ -812,11 +810,10 @@ HAMNET-DB,db0hew,"db0hew,Comment:,FM Svx-Link",53.40968,10.40897,0.00000
 HAMNET-DB,f1zoi,"f1zoi,Radioparam: Local WiFi,Maintainer : f6cnb f1shs,Comment:,DMR Repeater La Defense 92",48.88956,2.23628,0.00000
 HAMNET-DB,db0bbg,"db0bbg,Maintainer : dd8ne db2ny,Comment:,DB0UB 2m-FM-Relais DB0BBG Packet-Radio Digipeater Site Configuration:,https://www.dropbox.com/s/0nyvbhd7xvn1agd/DB0BBG.gif?dl=0",49.85009,11.06330,0.00000
 HAMNET-DB,db0rp,"db0rp,Maintainer : dl5rdw dl8rds",48.98812,12.09170,0.00000
-HAMNET-DB,db0wtl,"db0wtl,Radioparam: SSID HAMNET-DB0WTL-USER 2397MHz 9dBi V Omni + 5695MHz Spiegel W 20 V/H 22dBi 251,Maintainer : dc7tu dl9sk dl7kc dl5sfi dl8scu dc1shm funkgruppe stocksberg,Comment:,Die Funkgruppe Stocksberg ist auf dem db0wtl.ampr.org Teamspeakserver,ts3server://db0wtl.ampr.org?port=9987 erreichbar. 10m-Relaisfunkstelle,Senderstandort 29.690 Mhz. z Z nicht qrv wegen Umbauarbeiten,23cm-Relaisfunkstelle 1298.700 Mhz -28 Mhz 70cm-DMR-Relaisfunkstelle 439 2125,Mhz -7 6 Mhz Ausleuchtung S-W-N,https://brandmeister.network/?page=repeater&id=262715 Die WLAN MAC Adresse muss,an den beiden User-Einstiegen von den Sysops manuell eingetragen werden. Ein,Anspruch auf Eintragung besteht nicht und kann jederzeit widerrufen werden.,Bitte Mail mit Rufzeichen verwendete Hardware Frequenzband (2 3G/5G) und,WLAN-MAC Adresse an db0stb@gmx.de senden. Im Geraetenamen der eigenen Hardware,muss das eigene Rufzeichen eingetragen werden. Ein leerer Eintrag oder kein,Rufzeichen funktioniert nicht und wird abgewiesen. Die Funkgruppe Stocksberg,ist in der Regel auf dem 70cm-Relais Stocksberg 438.900MHz erreichbar und hilft,bei speziellen Fragen weiter. Bitte beachtet dass wir keine,Grundlagenberatungen durchfuehren und von den Nutzern erwarten dass sie sich,mit der HAMNET-Technik Netzwerkfunktionen und Arbeitsweise vertraut gemacht,haben bevor sie uns kontaktieren. Im Netz gibt es dazu sehr viel zu finden.,Insbesondere die Vortragsskripte von Holger DL8SCU sind zu empfehlen. Wir,betreiben unsere Standorte eigenfinanziert und freiwillig. Es steht auch kein,zahlungskraefter DARC/VFDB-OV uns zur Seite. Von daher bitten wir von,Forderungen und Erwartungshaltungen deutlich Abstand zu nehmen. Das koennt ihr,gegenueber einem Internet-Provider durchsetzen aber nicht bei uns. Amateurfunk,ist ein experimentaler Funkdienst. Die Funkgruppe Stocksberg uebernimmt keine,Haftung bzgl. den Angaben in der HAMNET-Datenbank. Wir uebernehmen keinerlei,Gewaehr auf die Aktualitaet Korrektheit Vollstaendigkeit oder Qualitaet der,Daten. Insbesondere besteht kein Anspruch auf technische Verfuegbarkeit. Die,Streckenberechnung in der Hamnet-Datenbank ist die erste Huerde. Ist die,Strecke nicht frei geht es definitiv nicht. Ist sie dort als frei erkennbar,koennen trotzdem Haeuser Baeume und Buesche im Weg sein. Die HAMNET-Antennen,auf den Standorten sind auch nicht ideal und werden durch andere Installationen,mit Sicherheit bzgl. des Abstrahldiagramms beeinflusst. Infos zu Hamnet unter,http://www.amateurfunk-wiki.de/index.php/Kategorie:HAMNET ",49.09022,9.40659,0.00000
+HAMNET-DB,db0wtl,"db0wtl,Radioparam: SSID HAMNET-DB0WTL-USER 2397MHz 9dBi V Omni + 5695MHz Spiegel W 20 V/H 22dBi 251,Maintainer : dc7tu dl9sk dl7kc dl5sfi dl8scu dc1shm funkgruppe stocksberg,Comment:,Die Funkgruppe Stocksberg ist auf dem db0wtl.ampr.org Teamspeakserver,ts3server://db0wtl.ampr.org?port=9987 erreichbar. Aktuell:,----------------------------------------------------------------------------------------------------, 10m-Relaisfunkstelle Senderstandort 29.690 Mhz. TX ist wieder QRV. Bitte,testen.............,----------------------------------------------------------------------------------------------------, 23cm-Relaisfunkstelle 1298.700 Mhz -28 Mhz 70cm-DMR-Relaisfunkstelle 439 2125,Mhz -7 6 Mhz Ausleuchtung S-W-N,https://brandmeister.network/?page=repeater&id=262715 Die WLAN MAC Adresse muss,an den beiden User-Einstiegen von den Sysops manuell eingetragen werden. Ein,Anspruch auf Eintragung besteht nicht und kann jederzeit widerrufen werden.,Bitte Mail mit Rufzeichen verwendete Hardware Frequenzband (2 3G/5G) und,WLAN-MAC Adresse an db0stb@gmx.de senden. Im Geraetenamen der eigenen Hardware,muss das eigene Rufzeichen eingetragen werden. Ein leerer Eintrag oder kein,Rufzeichen funktioniert nicht und wird abgewiesen. Die Funkgruppe Stocksberg,ist in der Regel auf dem 70cm-Relais Stocksberg 438.900MHz erreichbar und hilft,bei speziellen Fragen weiter. Bitte beachtet dass wir keine,Grundlagenberatungen durchfuehren und von den Nutzern erwarten dass sie sich,mit der HAMNET-Technik Netzwerkfunktionen und Arbeitsweise vertraut gemacht,haben bevor sie uns kontaktieren. Im Netz gibt es dazu sehr viel zu finden.,Insbesondere die Vortragsskripte von Holger DL8SCU sind zu empfehlen. Wir,betreiben unsere Standorte eigenfinanziert und freiwillig. Es steht auch kein,zahlungskraefter DARC/VFDB-OV uns zur Seite. Von daher bitten wir von,Forderungen und Erwartungshaltungen deutlich Abstand zu nehmen. Das koennt ihr,gegenueber einem Internet-Provider durchsetzen aber nicht bei uns. Amateurfunk,ist ein experimentaler Funkdienst. Die Funkgruppe Stocksberg uebernimmt keine,Haftung bzgl. den Angaben in der HAMNET-Datenbank. Wir uebernehmen keinerlei,Gewaehr auf die Aktualitaet Korrektheit Vollstaendigkeit oder Qualitaet der,Daten. Insbesondere besteht kein Anspruch auf technische Verfuegbarkeit. Die,Streckenberechnung in der Hamnet-Datenbank ist die erste Huerde. Ist die,Strecke nicht frei geht es definitiv nicht. Ist sie dort als frei erkennbar,koennen trotzdem Haeuser Baeume und Buesche im Weg sein. Die HAMNET-Antennen,auf den Standorten sind auch nicht ideal und werden durch andere Installationen,mit Sicherheit bzgl. des Abstrahldiagramms beeinflusst. Infos zu Hamnet unter,http://www.amateurfunk-wiki.de/index.php/Kategorie:HAMNET ",49.09022,9.40659,0.00000
 HAMNET-DB,f1izl,"f1izl,Maintainer : f6cnb,Comment:,Jean Yves",43.10950,1.64923,0.00000
 HAMNET-DB,df3sy,"df3sy,Comment:,just for planning",48.88609,9.21080,0.00000
-HAMNET-DB,hb9dr-13,"hb9dr-13",47.20016,8.53846,0.00000
-HAMNET-DB,hb9dr-14,"hb9dr-14",47.16046,8.44034,0.00000
+HAMNET-DB,dl3ncu-4,"dl3ncu-4",48.43687,11.86112,0.00000
 HAMNET-DB,f5ggy,"f5ggy,Maintainer : f6cnb,Comment:,Georges",44.85962,-0.33211,0.00000
 HAMNET-DB,f6eqx,"f6eqx,Maintainer : f6cnb,Comment:,Jean Jacques PBE-M5-400 to F6DBP",44.85094,-0.21822,0.00000
 HAMNET-DB,dm0ffl,"dm0ffl",48.56822,12.10758,0.00000
@@ -866,6 +863,7 @@ HAMNET-DB,9a3px,"9a3px,Maintainer : 9a3px 9a6nvi",45.77365,15.98451,0.00000
 HAMNET-DB,9a4mn,"9a4mn,Maintainer : 9a4mn",46.02102,16.55247,0.00000
 HAMNET-DB,9a4v,"9a4v,Maintainer : 9a5r 9a4ew",45.30347,18.73489,0.00000
 HAMNET-DB,f4gkr,"f4gkr,Maintainer : f6cnb",48.58612,1.81049,0.00000
+HAMNET-DB,oe7xfi,"oe7xfi",47.35699,11.75500,0.00000
 HAMNET-DB,db0kra,"db0kra,Maintainer : dg1elv,Comment:,Planungsstandort AS64627",51.77080,6.04169,0.00000
 HAMNET-DB,hb9azt-1,"hb9azt-1,Maintainer : hb9pae,Comment:,Betriebsgebude",47.41293,9.58307,0.00000
 HAMNET-DB,db0px,"db0px,Radioparam: 5735MHz (Omni 2x2 airMAX AC),Maintainer : dl7fai dg8las,Comment:,22.08.2018 Die DB0PX Live Webcam ist erreichbar unter,rtsp://44.225.161.100:554/s1 13.06.2018 Dieser Standort ist betriebsbereit. Der,User-Zugang ist mit einem 'UBNT Rocket 5AC' und einer 'Omni 2x2 Antenne (UBNT,AMO-5G13)' verfgbar mit dem Wireless Mode 'PtMP airMAX AC'.",50.14151,8.56252,0.00000
@@ -882,10 +880,9 @@ HAMNET-DB,db0wn,"db0wn,Maintainer : dj2go,Comment:,2m-Repeater 145 650 MHz",48.5
 HAMNET-DB,db0rig,"db0rig,Maintainer : dg0sq,Comment:,2m-Repeater 145.775MHz",48.69036,9.83108,0.00000
 HAMNET-DB,f5zeq,"f5zeq,Radioparam: 5685/10MHz,Maintainer : f6cnb,Comment:,Mesnil le roi 78 (Chateau d'eau site du repeteur de F5KCK)",48.94039,2.12135,0.00000
 HAMNET-DB,dl0xd,"dl0xd",51.15661,6.70640,0.00000
-HAMNET-DB,db0nzz,"db0nzz,Maintainer : dc1gb dl2gkm,Comment:,FM Relais DB0NZZ in Tbingen-Pfrondorf QRG; 439 100 MHz -7 6 MHz.,------------------------------------------------------ Auf der Suche nach einem,Standort.",48.53977,9.08891,0.00000
+HAMNET-DB,db0nzz,"db0nzz,Maintainer : dc1gb dl2gkm,Comment:,FM & DMR Relais DB0NZZ in Tbingen QRG; 439 100 MHz -7 6 MHz.,------------------------------------------------------ Neuer Standort,Tbingen-Wanne QRV in DMR-Brandmeister Frequency 438.400 MHz Offset -7.600 MHz,DMR-ID: 262773 Link nach DB0REU oder DB0RT & DB0GKM geplant. ",48.54096,9.05334,0.00000
 HAMNET-DB,dl1afu,"dl1afu,Maintainer : dl1afu",50.71169,7.05047,0.00000
 HAMNET-DB,f6iqf,"f6iqf,Radioparam: None,Maintainer : f6cnb,Comment:,Rambouillet Christian",48.62675,1.83263,0.00000
-HAMNET-DB,oe1xlr,"oe1xlr,Maintainer : oe1sgw oe1kbc,Comment:,VSV LV1 Eisvogelgasse AS:4223210701",48.18996,16.34044,0.00000
 HAMNET-DB,dg6rch,"dg6rch",48.65335,12.61023,0.00000
 HAMNET-DB,db0bnv,"db0bnv",53.17289,8.61750,0.00000
 HAMNET-DB,oe3xrb,"oe3xrb,Radioparam: 2437/5MHz,Maintainer : oe1kbc,Comment:,Horizontal Omni",47.99654,14.76447,0.00000
@@ -942,7 +939,7 @@ HAMNET-DB,dl3ah,"dl3ah,Maintainer : dg5mpq,Comment:,Home of DL3AH",50.92239,9.23
 HAMNET-DB,dm0et,"dm0et,Radioparam: 5795MHz (Link),Maintainer : dk2et,Comment:,APRS-Ebrachtal (WX3in1) WX-Frensdorf (APRS4R) HamServer-Pi FM EchoLink [8602],D-Star DMR Site configuration:,https://www.dropbox.com/preview/HAMNET/DM0ET.gif?role=personal",49.81673,10.87222,0.00000
 HAMNET-DB,db0sm,"db0sm,Maintainer : df3bv,Comment:,Site-Configuration: https://www.dropbox.com/s/hn04254v37s5413/DB0SM.gif",52.74722,7.38083,0.00000
 HAMNET-DB,db0rvb,"db0rvb,Maintainer : dl8aap,Comment:,Relaisstationsprojekt fr Aus- und Weiterbildung und experimentelle Entwicklung,im Amateurfunk https://www.db0rvb.de",51.62133,10.52682,0.00000
-HAMNET-DB,db0poc,"db0poc,Maintainer : dl1ydd",51.62649,7.19516,0.00000
+HAMNET-DB,db0he,"db0he,Maintainer : df2et",51.60717,7.11796,0.00000
 HAMNET-DB,dl7jp,"dl7jp,Maintainer : dl7jp dl9rdz dc7ds,Comment:,Joachim QTH ",48.58450,13.45909,0.00000
 HAMNET-DB,db0ant,"db0ant,Maintainer : dc2os dd2mic dh1alf,Comment:,70cm Relais / HAMNET im Aufbau",52.17761,10.56417,0.00000
 HAMNET-DB,f5znx,"f5znx,Maintainer : f6cnb,Comment:,Coming soon.... Maybe.....",48.48831,1.32957,0.00000
@@ -970,7 +967,7 @@ HAMNET-DB,pa1okz,"pa1okz,Maintainer : pa1okz",52.20721,5.08659,0.00000
 HAMNET-DB,ed8zab,"ed8zab,Maintainer : ea8ee",27.94900,-15.51399,0.00000
 HAMNET-DB,pi1apd,"pi1apd,Maintainer : pe1rjv,Comment:,Site hosts: - DMR repeater PI1APD 438.3875 MHz -7.6 - D-Star repeater PI1APD,438.0875 MHz -7.6 - Diversity receiver for PI2NOS 431.7125 MHz",52.22517,5.90583,0.00000
 HAMNET-DB,pi1zld,"pi1zld,Maintainer : pd2nlx,Comment:,5680MHz BW=10MHz pd2nlx@amsat.....",51.64733,3.93166,0.00000
-HAMNET-DB,pi1dft,"pi1dft,Maintainer : pd4dft pd1dbl pd1acf,Comment:,Site hosts: - DMR repeater PI1DFT 438.375 MHz -7.6 - FM repeater PI1DFT,430.087.5 MHz + 1.6 (no ctcss required) - APRS digipeater PI1DFT 432.500 MHz -,APRS IGate PD4DFT-10 144.800 MHz ",51.99517,4.33583,0.00000
+HAMNET-DB,pi1dft,"pi1dft,Maintainer : pd4dft pd1dbl pd1acf,Comment:,Site hosts: - DMR repeater PI1DFT 438.375 MHz -7.6 - FM repeater PI1DFT,430.087.5 MHz + 1.6 (no ctcss required) - APRS digipeater PI1DFT 432.500 MHz -,APRS IGate PD4DFT-10 144.800 MHz - WebSDR 144 - 146 MHz ",51.99517,4.33583,0.00000
 HAMNET-DB,dg2maj,"dg2maj,Maintainer : dg5mpq dg6may,Comment:,Ichenhausen Wiblishauser Hof WEB-SDR Endpunkt ",48.36544,10.28800,0.00000
 HAMNET-DB,db0gzl,"db0gzl,Maintainer : dg5mpq dg6may,Comment:,QTH Club Station T02 in Leipheim (Fliegerhorstmuseum) Link zu DB0GZO (dort ist,bei DG2MAJ das WebSDR) Site configuration:,http://www.myway.de/dg6may/gzl/DB0GZL.gif Homepage:,http://www.myway.de/dg6may/gzl_index.html",48.44504,10.24339,0.00000
 HAMNET-DB,pi6ats,"pi6ats",52.17777,5.29791,0.00000
@@ -1009,7 +1006,7 @@ HAMNET-DB,dh4hav,"dh4hav",53.64702,10.03626,0.00000
 HAMNET-DB,dl0fhh,"dl0fhh",53.54510,10.00172,0.00000
 HAMNET-DB,db0pc,"db0pc,Maintainer : db5nu dj3le do5fl dl1jm,Comment:,DMR-BM C4FM FM ",54.21728,10.71878,0.00000
 HAMNET-DB,db0hpa,"db0hpa,Maintainer : dl9hpa",53.88665,9.56897,0.00000
-HAMNET-DB,db0hho,"db0hho,Maintainer : dl5kua,Comment:,HAMNET planning / geplant",53.64785,10.27589,0.00000
+HAMNET-DB,db0hho,"db0hho,Maintainer : dl5kua,Comment:,HAMNET & AREDNMESH planning site",53.64785,10.27589,0.00000
 HAMNET-DB,db0ldk,"db0ldk,Maintainer : dd8aka",50.53819,8.52945,0.00000
 HAMNET-DB,db0lm,"db0lm,Maintainer : dl1mnu",50.34373,8.09066,0.00000
 HAMNET-DB,db0kvk,"db0kvk,Maintainer : df2zr,Comment:,Planungsstandort mglicher Linkpartn.. ",51.31693,9.48856,0.00000
@@ -1043,7 +1040,6 @@ HAMNET-DB,cs5nra,"cs5nra,Maintainer : ct1drb",38.66332,-9.15528,0.00000
 HAMNET-DB,pi4z,"pi4z,Maintainer : pe1pts pe1rmn pe9ghz,Comment:,Radio club PI4Z Wilhelminadorp",51.53396,3.87560,0.00000
 HAMNET-DB,pi1vli,"pi1vli,Maintainer : pe1plm",51.44794,3.56925,0.00000
 HAMNET-DB,cq0pax,"cq0pax,Maintainer : ct1drb",38.74161,-9.13836,0.00000
-HAMNET-DB,dj8aw,"dj8aw,Maintainer : dj8aw dd2mic",52.32777,10.54765,0.00000
 HAMNET-DB,db0rhb,"db0rhb,Maintainer : db6kh",50.57716,6.94666,0.00000
 HAMNET-DB,dm0sz,"dm0sz,Comment:,438 7875 MHz FM Am Standort ist kein HamNet mglich",52.12150,10.28824,0.00000
 HAMNET-DB,db0dlr,"db0dlr,Maintainer : dh1alf dd2mic,Comment:,439 4875 MHz DSTAR ",52.31554,10.56400,0.00000
@@ -1075,7 +1071,7 @@ HAMNET-DB,ea4gmz,"ea4gmz,Maintainer : ea4gmz,Comment:,Planned Hamnet station not
 HAMNET-DB,db0war,"db0war,Maintainer : dm2pg",51.47983,9.15098,0.00000
 HAMNET-DB,fr4li,"fr4li,Radioparam: WiFi et PA,Maintainer : fr4li f6cnb,Comment:,Basse Terre Saint Pierre La Reunion France",-21.32805,55.47945,0.00000
 HAMNET-DB,oe8xmk,"oe8xmk,Maintainer : oe8hjk oe8kbc,Comment:,AS 64583",46.72809,14.42918,0.00000
-HAMNET-DB,f4hfg-4,"f4hfg-4,Maintainer : f6cnb",47.08253,5.47299,0.00000
+HAMNET-DB,yo2loj-1,"yo2loj-1,Comment:,VPS hosting location",44.42593,26.09253,0.00000
 HAMNET-DB,db0sdo,"db0sdo,Maintainer : dg4sdo,Comment:,Standort DMR-Relais 439.300MHz ",48.80918,9.57657,0.00000
 HAMNET-DB,db0gh,"db0gh,Maintainer : dl8ma,Comment:,WINLink RMS-Server",48.82069,9.38191,0.00000
 HAMNET-DB,db0gb,"db0gb,Maintainer : dl8ma,Comment:,APRS-/Packetradio-Digi",48.83331,9.38320,0.00000
@@ -1116,7 +1112,7 @@ HAMNET-DB,hg2pvv,"hg2pvv,Maintainer : hg2ebh",47.42170,17.82743,0.00000
 HAMNET-DB,hg2ppa,"hg2ppa,Maintainer : hg2ebh",47.31753,17.48229,0.00000
 HAMNET-DB,oe8xvr,"oe8xvr,Radioparam: 2472/5MHz,Maintainer : oe8wur,Comment:,Notfunkstandort LKH",46.61590,13.85758,0.00000
 HAMNET-DB,db0zs,"db0zs,Radioparam: 2397MHz / 5MHz vert. 15dBi OMNI and 5745MHz / 10MHz vert. 15dBi OMNI,Maintainer : df3ei/oe1agf,Comment:,Operated by DARC OV D24 Berliner Interessengemeinschaft ATV (BIG-ATV) Local AS:,4226265808 STATUS: 2017-07-30: Link Komponenten Richtung DB0BF und DB0KK,installiert und in Betrieb genommen. Router RB750UP installiert und verkabelt.,Neuen Antennenmast fr HAMNET und ATV-23cm errichtet. 2017-08-18: Link DB0KK up,and running. 2017-12-24: Link DB0BF rejustiert nach DB0DAB (selber OV anderer,Standort) 2017-12-30: Link rejustiert. Router RB2011UiAS aus DARC Membership,Pro installiert. 2018-12-04: ATV-Links 6cm und 10GHz abgebaut. 6cm Linkantenne,HAMNET aufgebaut.",52.21813,13.46822,0.00000
-HAMNET-DB,db0bc,"db0bc,Radioparam: 2397MHz / 5MHz BW,Maintainer : df3ei/oe1agf",52.51025,13.29202,0.00000
+HAMNET-DB,f4gzr,"f4gzr,Maintainer : f6cnb,Comment:,judicael festin",48.09979,-0.51850,0.00000
 HAMNET-DB,hg2ebh-4,"hg2ebh-4,Maintainer : hg2ebh",47.68413,17.64562,0.00000
 HAMNET-DB,hg2ebh-5,"hg2ebh-5,Maintainer : hg2ebh",47.54175,17.58349,0.00000
 HAMNET-DB,hg8pka-11,"hg8pka-11,Maintainer : hg2ebh",46.53906,18.99479,0.00000
@@ -1311,7 +1307,7 @@ HAMNET-DB,db0dhh,"db0dhh,Maintainer : dg7yex dl5la,Comment:,evtl. HAMNET-Planung
 HAMNET-DB,db0huv,"db0huv,Radioparam: 5695MHz BW10MHz Omni;,Maintainer : dl5la dc1ld,Comment:,HAMNET User Access 5 6 GHz APRS SVX",54.49332,9.07926,0.00000
 HAMNET-DB,9a0xbk,"9a0xbk",43.98239,15.30576,0.00000
 HAMNET-DB,db0wlg,"db0wlg,Maintainer : dl4nwd",54.05563,13.75710,0.00000
-HAMNET-DB,do1pps,"do1pps,Maintainer : do1pps,Comment:,Teststandort",48.88579,8.54229,0.00000
+HAMNET-DB,do0dap,"do0dap,Maintainer : do1pps,Comment:,Standort DO0DAP",48.88579,8.54229,0.00000
 HAMNET-DB,ea3dkp,"ea3dkp,Maintainer : ea3dkp",42.27274,3.16483,0.00000
 HAMNET-DB,dl0nd,"dl0nd,Maintainer : do6np,Comment:,Mglicher Standort fr ISM-Backup-Link Status: - 18.10.16 Site eingetragen (do6np)",52.28594,8.01685,0.00000
 HAMNET-DB,db0lr,"db0lr",51.17941,8.48905,0.00000
@@ -1365,12 +1361,12 @@ HAMNET-DB,db0atv,"db0atv,Radioparam: 5695MHz,Maintainer : dl9ld,Comment:,Clubhei
 HAMNET-DB,pi1dft2,"pi1dft2,Maintainer : pd2nlx pd4dft pd1dbl pd1acf",51.99881,4.37355,0.00000
 HAMNET-DB,dg7pm,"dg7pm",47.77801,12.11176,0.00000
 HAMNET-DB,do8ra,"do8ra",47.79209,12.10295,0.00000
-HAMNET-DB,db0ln,"db0ln,Radioparam: 2397MHz 5MHz-Bandbreite / 5695MHz 10MHz-Bandbreite,Maintainer : dc2cb dd9qp do5fs,Comment:,Standort im AS64663 (Denkmalschutz: Unterdachantenne!),http://www.darc.de/distrikte/n/29/unsere-clubrufzeichen/ iBGP-Confederation-AS:,65517 32-bit-AS-Nummer: 4226266317",51.77149,7.43969,0.00000
+HAMNET-DB,db0ln,"db0ln,Radioparam: 2397MHz 5MHz-Bandbreite / 5695MHz 10MHz-Bandbreite,Maintainer : dc2cb dd9qp do5fs,Comment:,Standort im AS64663 (Denkmalschutz: Unterdachantenne!),http://www.darc.de/distrikte/n/29/unsere-clubrufzeichen/ 32-bit-AS-Nummer:,4226266317",51.77149,7.43969,0.00000
 HAMNET-DB,db0ler,"db0ler,Maintainer : dh6bb dl2bv,Comment:,http://z31.vfdb.org",53.22150,7.44913,0.00000
 HAMNET-DB,pi6ehv,"pi6ehv,Maintainer : pe1rdp,Comment:,ATV repeater Eindhoven",51.46597,5.47189,0.00000
 HAMNET-DB,f1zhl,"f1zhl,Maintainer : f4fwh,Comment:,3*Ubiquiti NanoStation 5GHz 1 Ubiquiti Nanostation 2.4GHz 1 Mikrotik RB750UP as,PoE injector",49.51567,0.17331,0.00000
 HAMNET-DB,f1zhm,"f1zhm,Maintainer : f4fwh,Comment:,2 Nanostation 5.7GHz",49.50581,0.18188,0.00000
-HAMNET-DB,db0ebz,"db0ebz,Maintainer : dc9nyc dg1nfs",49.06839,10.52830,0.00000
+HAMNET-DB,db0ebz,"db0ebz,Maintainer : do2bma do2shb dg1nfs,Comment:,http://www.datenfunk.org/db0ebz",49.06839,10.52830,0.00000
 HAMNET-DB,f4fwh,"f4fwh,Maintainer : f4fwh",49.48606,0.13227,0.00000
 HAMNET-DB,yo6osc,"yo6osc,Maintainer : yo2loj",46.54896,24.51729,0.00000
 HAMNET-DB,oe5xol,"oe5xol,Maintainer : oe5pon",48.41529,14.27418,0.00000
@@ -1397,7 +1393,7 @@ HAMNET-DB,dg8las,"dg8las,Maintainer : dg8las",50.16061,8.55160,0.00000
 HAMNET-DB,f6kfw,"f6kfw,Maintainer : f6cnb,Comment:,RC d'Equeurdreville Manche Latitude : 139.47' W ",49.64166,-1.65783,0.00000
 HAMNET-DB,pi2non-1,"pi2non-1,Radioparam: Accesspoint 5G,Maintainer : pd0sdo pa4den pa3bic",52.95545,5.91896,0.00000
 HAMNET-DB,pi1dra,"pi1dra,Radioparam: UBNT Airmax,Maintainer : pd0sdo pa4den pa3bic",53.10702,6.12651,0.00000
-HAMNET-DB,pi2non-2,"pi2non-2,Maintainer : pd0sdo pa4den",52.58331,6.19410,0.00000
+HAMNET-DB,pi2non-2,"pi2non-2,Maintainer : pd0sdo pa4den",52.58335,6.19430,0.00000
 HAMNET-DB,f1shs,"f1shs,Radioparam: Local WiFi,Maintainer : f6cnb f1shs,Comment:,WebSite https://f1shs.fr/",48.86019,2.34798,0.00000
 HAMNET-DB,9a0xgk,"9a0xgk",45.30566,15.02857,0.00000
 HAMNET-DB,db0mgh,"db0mgh,Radioparam: 2362MHz/5805MHz,Maintainer : dg1sgj dl4sdr dk4sdr (hamnet: dl4aas),Comment:,2m-Repeater 145.575MHz DMR 70cm-Repeater 439.8125MHz DMR 70cm-Repeater 438.6875,FM siehe auch http://www.db0mgh.de HAMNET: Link zu DB0WTH auf 5775MHz (in,Betrieb) Userzugang auf 2362MHz (genehmigt) Userzugang auf 5805MHz (genehmigt),15.10.2017: Umstellung auf neue IP-Adressen und DHCP fr die Services -,problemlos! ",49.51087,9.79199,0.00000
@@ -1458,13 +1454,13 @@ HAMNET-DB,dl0rus,"dl0rus",48.12791,11.61346,0.00000
 HAMNET-DB,pi1nlb,"pi1nlb",51.68133,5.97172,0.00000
 HAMNET-DB,pb8w,"pb8w",53.00352,6.55341,0.00000
 HAMNET-DB,dc3xl,"dc3xl,Maintainer : dc3xl,Comment:,Planungsstandort DC3XL OVV E24",53.94026,10.65361,0.00000
-HAMNET-DB,db0bt,"db0bt,Radioparam: 2397MHz Nord,Maintainer : dg2nbn",49.88799,11.55768,0.00000
+HAMNET-DB,db0bt,"db0bt,Radioparam: 2427MHz Nord ISM,Maintainer : dg2nbn dl4vox",49.88799,11.55768,0.00000
 HAMNET-DB,9a0xlb,"9a0xlb",43.57786,16.21530,0.00000
 HAMNET-DB,dm0vk,"dm0vk,Radioparam: User-Einstieg via ISM. Client-IP Adressen werden per DHCP verteilt. WPA2-Key bit,Maintainer : dl8mfu",48.36267,11.46210,0.00000
 HAMNET-DB,df1gt,"df1gt,Maintainer : df1gt,Comment:,Fielddayplatz A14/A18",48.04161,8.16979,0.00000
 HAMNET-DB,db0thf,"db0thf,Maintainer : dk4mx,Comment:,Sichtkontakt Schneekopf 32km Fichtelberg 130km Brocken 150km Inselsberg 60km",50.50434,11.13836,0.00000
 HAMNET-DB,db0vp,"db0vp,Maintainer : dl5iah,Comment:,Planungsstandort Erlenstrae 7 66955 Pirmasens Erlenbrunn Rathaus 433.60m . NN",49.17035,7.61405,0.00000
-HAMNET-DB,db0sre,"db0sre,Radioparam: 5695/5705MHz 10MHz Bandbreite Sektoren,Maintainer : db6ye dl9sp,Comment:,Planungsstandort AS64666 32-bit-AS-Nummer: 4226266603 11.02.2017 - Beginn,IP-Netz- und Linkplanung (DD9QP)",51.62461,7.16985,0.00000
+HAMNET-DB,db0sre,"db0sre,Maintainer : db6ye dl9sp,Comment:,Planungsstandort AS64666 32-bit-AS-Nummer: 4226266603 16.04.2019 - weitere,HAMNET-Planung eingestellt (kein Feedback mehr von den Betreibern) 11.02.2017 -,Beginn IP-Netz- und Linkplanung (DD9QP)",51.62461,7.16985,0.00000
 HAMNET-DB,f5kia,"f5kia,Radioparam: Local WiFi,Maintainer : f6cnb f4hkp,Comment:,RC UAICF de Montargis (local RC) http://f5kia.fr/ ",48.00885,2.74336,0.00000
 HAMNET-DB,lx0e,"lx0e,Radioparam: 2.4GHz band vertical,Maintainer : lx1duc",49.77716,6.09531,0.00000
 HAMNET-DB,db0egb,"db0egb,Maintainer : dl5la dc1ld,Comment:,HAMNET Aufbau in Planung",54.61300,9.34925,0.00000
@@ -1476,7 +1472,7 @@ HAMNET-DB,db0han,"db0han,Radioparam: 12dBi Ommni 2392MHz / 5MHz,Maintainer : dg1
 HAMNET-DB,sr1bsz,"sr1bsz,Maintainer : sp2ong hf1l,Comment:,AMPRNet gateway city Szczecin JNOS 2.0i and NOSaprs 2.0g",53.45534,14.53946,0.00000
 HAMNET-DB,sr6dwc,"sr6dwc,Radioparam: 2.3 GHz,Maintainer : sp2ong sq6rr sq6elq,Comment:,HamNET Wabrzych Poland",50.77610,16.24930,0.00000
 HAMNET-DB,pa0sip,"pa0sip",53.11451,6.10845,0.00000
-HAMNET-DB,db0ukd,"db0ukd,Maintainer : dd3ji dk2crn dg1kwa",51.19538,6.79134,0.00000
+HAMNET-DB,db0ukd,"db0ukd,Maintainer : dd3ji dk2crn dg1kwa,Comment:,HAMNET-Standort AS64632 32-bit-AS-Nummer: 4226263232 (geplant) ",51.19499,6.79153,0.00000
 HAMNET-DB,dm0ww,"dm0ww,Maintainer : dl1cmg",47.64472,11.05500,0.00000
 HAMNET-DB,hg8lxl,"hg8lxl,Maintainer : hg8lxl",46.71222,20.12447,0.00000
 HAMNET-DB,pj2a,"pj2a",12.13341,-68.90616,0.00000
@@ -1493,25 +1489,26 @@ HAMNET-DB,pi4am,"pi4am,Radioparam: 5690MHz BW 10MHz,Maintainer : pd0sdo pa4den p
 HAMNET-DB,pi4am-1,"pi4am-1,Radioparam: 5700MHz / 10MHz,Maintainer : pd0sdo pa4den pa3bic,Comment:,info pa3bic@amsat....",53.44974,5.77504,0.00000
 HAMNET-DB,pi2non-5,"pi2non-5,Maintainer : pd0sdo pa4den",52.46070,6.50227,0.00000
 HAMNET-DB,oe7xar,"oe7xar,Maintainer : oe7mbt,Comment:,ADL707 Kufstein - in Planung",47.57402,12.19639,0.00000
-HAMNET-DB,oe3xvv,"oe3xvv,Maintainer : oe3rtb oe1kbc oe1vqs oe3fta,Comment:,In Betrieb",48.67108,16.15641,0.00000
+HAMNET-DB,oe3xvv,"oe3xvv,Maintainer : oe3rtb oe1kbc oe1vqs oe3fta,Comment:,In Betrieb",48.67199,16.15539,0.00000
 HAMNET-DB,db0rch,"db0rch",52.67765,9.62344,0.00000
 HAMNET-DB,pe1ago2,"pe1ago2",38.53427,-0.10190,0.00000
 HAMNET-DB,pi2non-6,"pi2non-6,Radioparam: Accespoint 5G,Maintainer : pd0sdo pa4den",52.99875,6.54858,0.00000
 HAMNET-DB,dm0fox,"dm0fox,Maintainer : dh6mbt dd0yr,Comment:,Repeater for DMR and (D)ATV -> www.dm0fox.de",48.65153,11.45078,0.00000
+HAMNET-DB,hb9iap-1,"hb9iap-1,Comment:,Plan les Ouate public interco",46.16766,6.10453,0.00000
 HAMNET-DB,db0wm,"db0wm,Maintainer : dl3ybe",51.96289,7.62861,0.00000
 HAMNET-DB,f5kmb,"f5kmb,Radioparam: Local WiFi,Maintainer : f6cnb,Comment:,Saint Just en Chausse 60",49.50540,2.43368,0.00000
 HAMNET-DB,db0ahi,"db0ahi,Radioparam: 5695MHz / 10MHz / WDS / AirMAX / SSID: HAMNET / Sued-Ost,Maintainer : do4bz dg4oae dk2fw dl1ne",52.11676,9.89678,0.00000
 HAMNET-DB,db0wol,"db0wol,Maintainer : dg6ibt dl9sau,Comment:,70cm Repeater 439 150 shift -7 6 MHz; DMR-Repeater 439 550 shift -7 6 MHz; APRS",52.74136,13.96182,0.00000
 HAMNET-DB,pi1dra-1,"pi1dra-1,Maintainer : pd0sdo pa4den pa3bic",53.10249,6.10219,0.00000
 HAMNET-DB,db0zt,"db0zt,Maintainer : dj2pp dl3zw",49.32106,7.40919,0.00000
-HAMNET-DB,db0kua,"db0kua,Maintainer : dl5kua,Comment:,planning site",53.63519,10.38668,0.00000
+HAMNET-DB,db0kua,"db0kua,Maintainer : dl5kua,Comment:,HAMNET & AREDNMESH planning site",53.63519,10.38668,0.00000
 HAMNET-DB,db0mdw,"db0mdw,Maintainer : dl5kua,Comment:,D-Star Hotspot 70cm",53.80204,10.43789,0.00000
 HAMNET-DB,lx0ber,"lx0ber,Maintainer : lx1duc lx2cs lx3x lx1ge",49.94626,5.97219,0.00000
 HAMNET-DB,lx0fsk,"lx0fsk,Maintainer : lx1duc lx2cs lx3x lx1ge",49.69540,5.91806,0.00000
 HAMNET-DB,lx0dmr,"lx0dmr,Maintainer : lx1duc lx2cs lx3x lx1ge",49.63398,6.16332,0.00000
 HAMNET-DB,db0ws,"db0ws,Radioparam: 2392MHz,Maintainer : dh1uz,Comment:,OV Waiblingen P37 APRS-IS Server 44.225.98.250:14580 Anbindung an,Ludwigsburg-Wuestenrothochhaus DB0LBX 5825MHz Userzugang Omni 2392MHz",48.80130,9.41984,0.00000
 HAMNET-DB,f5oci,"f5oci,Radioparam: Local WiFi,Maintainer : f6cnb,Comment:,F5OCI Alain Clamart 92",48.80076,2.26339,0.00000
-HAMNET-DB,db0bio,"db0bio,Maintainer : dl1mx db1ofh,Comment:,' Wir haben im Solling einen neuen Hamnet-Only Standort erschlossen. Antrge,BNetzA sind bereits gestellt Rufzeichen habe ich besttigt bekommen.'",51.76464,9.58074,0.00000
+HAMNET-DB,db0bio,"db0bio,Maintainer : dl1mx db1ofh,Comment:,Messturm Torfhaus Solling",51.76464,9.58074,0.00000
 HAMNET-DB,db0wl,"db0wl,Radioparam: 438 4875 in DMR. Ablage: -7 6MHz.,Maintainer : dl7tj dl7mat,Comment:,HAMNET planning / geplant http://www.amateurfunk-winsen.de/index.php,http://amateurfunk-winsen.de/index.php/ueber-uns/unsere-relaisstationen-menue/db0wl-menue, ",53.36935,10.19427,0.00000
 HAMNET-DB,db0dab,"db0dab,Maintainer : dl7ais,Comment:,Local AS: 4226265805 Operated by DARC OV Y34 STATUS: - 2018-10-23,uninterruptible power supply installed",52.25599,13.42174,0.00000
 HAMNET-DB,f1jke,"f1jke,Maintainer : f1jke",43.58700,6.96899,0.00000
@@ -1614,7 +1611,7 @@ HAMNET-DB,ok1pcb,"ok1pcb",49.03613,14.04230,0.00000
 HAMNET-DB,ok1pjv,"ok1pjv",49.39583,13.29166,0.00000
 HAMNET-DB,ok1zjv,"ok1zjv",48.72352,14.09043,0.00000
 HAMNET-DB,dl0ats,"dl0ats",52.41355,9.45555,0.00000
-HAMNET-DB,db0slk,"db0slk,Comment:,Hhe geschtzt",51.97127,11.66447,0.00000
+HAMNET-DB,db0slk,"db0slk,Maintainer : dh1cad",51.97819,11.63568,0.00000
 HAMNET-DB,db0wbg,"db0wbg,Comment:,Hhe geschtzt",51.88054,12.58100,0.00000
 HAMNET-DB,do0fwh,"do0fwh,Comment:,Hhe geschtzt",52.25694,12.01782,0.00000
 HAMNET-DB,db0amk,"db0amk,Comment:,Hhe geschtzt",52.56050,11.97916,0.00000
@@ -1639,10 +1636,9 @@ HAMNET-DB,db0loe,"db0loe,Radioparam: FM-Relais Digi-Standort APRS,Maintainer : d
 HAMNET-DB,db0lau,"db0lau,Radioparam: FM-Relais APRS,Maintainer : dl2drg,Comment:,Planungsstandort",50.84903,14.64674,0.00000
 HAMNET-DB,db0spb,"db0spb,Radioparam: FM-Relais APRS,Maintainer : dh5uw ,Comment:,evtl. Planungsstandort",50.96054,14.69074,0.00000
 HAMNET-DB,sr1wxz,"sr1wxz,Radioparam: 2 3GHz,Maintainer : hf1l janusz poland amprnet co-ordinator 44.165.0.0/16,Comment:,Weather Station Ultimate 2K; http://www.sr1wxz.ampr.org",53.45610,14.54100,0.00000
-HAMNET-DB,lx0prk,"lx0prk,Maintainer : lx1tb lx1ju",49.61832,6.14391,0.00000
+HAMNET-DB,lx0prk,"lx0prk,Radioparam: South:2392MHz 5MHz V West:2362MHz 5MHz V,Maintainer : lx1tb lx1ju lx3gr",49.61832,6.14391,0.00000
 HAMNET-DB,ir3uan,"ir3uan,Radioparam: Link Sdtirol (Svxlink) 431.3625MHz 136.5 Hz Ctcss; Hamnet => Kronplatz; Hamnet U,Maintainer : iw3amq in3fqq iw3brh,Comment:,future hamnet AS64600 and UHF repeater link south tyrol",46.71493,12.38716,0.00000
 HAMNET-DB,dm0tmh,"dm0tmh,Maintainer : df1ax,Comment:,Repeater UHF - derzeit keine GHZ Mglichkeit",49.35988,11.56307,0.00000
-HAMNET-DB,db0ros,"db0ros,Radioparam: hament-linktets dl8mew,Comment:,link test",47.80221,12.22910,0.00000
 HAMNET-DB,dh3pb,"dh3pb,Maintainer : dh3pb,Comment:,Planungsstandort Arzheim/Landau",49.19198,8.06636,0.00000
 HAMNET-DB,db0cm,"db0cm,Maintainer : df5fj,Comment:,Mglicher Standort fr HAMNET http://www.qsl.net/dk0ra/index.html",50.04639,8.97443,0.00000
 HAMNET-DB,ea3hsp,"ea3hsp,Maintainer : ea3hsp",41.37489,1.81563,0.00000
@@ -1659,7 +1655,6 @@ HAMNET-DB,db6jg-1,"db6jg-1,Comment:,planung Stanort ",54.24225,12.75067,0.00000
 HAMNET-DB,f4hof,"f4hof,Maintainer : f4hof,Comment:,QRA FH vers F1ZCK",45.41199,4.39466,0.00000
 HAMNET-DB,db0dde,"db0dde,Maintainer : dl6eo dd9qp,Comment:,HAMNET-Standort AS64654 16-Bit-AS-Nummer: 65654 (aktiv) BGP-Confederation-AS:,65516 (aktiv) 32-Bit-AS-Nummer: 4226265416 DB0DDE: 70cm D-Star-Repeater,Essen-Nord APCO25 Repeater Essen-Nord DB0NA: 70cm Fonie-Repeater Essen-Nord,Betriebsort: Feuerwehrhauptwache Eiserne Hand 45 45193 Essen,http://db0dde.de/page1.php ",51.46150,7.02699,0.00000
 HAMNET-DB,hg6hna,"hg6hna,Radioparam: 2362MHz 5MHz BW Vertical SSID: hamnet-hg6hna,Maintainer : hg5ojg ha7pty",47.91613,19.91653,0.00000
-HAMNET-DB,pe1rff,"pe1rff",51.49074,5.67073,0.00000
 HAMNET-DB,db0ftn,"db0ftn,Maintainer : dg5yim ,Comment:,C4FM-Repeater 439.8875 MHz /-9.4 MHz ",53.53828,8.58036,0.00000
 HAMNET-DB,db0eu,"db0eu,Maintainer : df7kf,Comment:,Location name tbc",50.65746,6.39410,0.00000
 HAMNET-DB,f5zvb,"f5zvb,Maintainer : f6cnb f4hkp,Comment:,RC UAICF de Montargis (Pylone de F5ZVB repeteur VHF) http://f5kia.fr ",48.01256,2.74072,0.00000
@@ -1674,7 +1669,7 @@ HAMNET-DB,db0www,"db0www,Maintainer : dl8scu",48.57939,8.87674,0.00000
 HAMNET-DB,db0gkm,"db0gkm,Maintainer : dl2gkm,Comment:,APRS Digi & APRX-IGate in Gnningen-Reutlingen",48.42480,9.15086,0.00000
 HAMNET-DB,f4fsd-1,"f4fsd-1,Maintainer : f4fsd f6cnb,Comment:,Laurent QTH Villiers sous St Leu 60",49.20989,2.39196,0.00000
 HAMNET-DB,f4fsd,"f4fsd,Maintainer : f4fsd f6cnb,Comment:,Laurent QTH Montataire 60",49.25653,2.42683,0.00000
-HAMNET-DB,db0tu,"db0tu,Maintainer : dg1tal",52.51221,13.32739,0.00000
+HAMNET-DB,db0tu,"db0tu,Radioparam: 2397MHz / 5MHz BW 5695MHz 10MHz BW,Maintainer : dg1tal",52.51221,13.32739,0.00000
 HAMNET-DB,dl1rhs,"dl1rhs",47.85406,12.18250,0.00000
 HAMNET-DB,f4hof-101,"f4hof-101,Maintainer : f4hof,Comment:,PoP terminaison VPNs ",52.33319,4.91966,0.00000
 HAMNET-DB,f4hgi,"f4hgi,Maintainer : f4hgi",49.65354,-1.65467,0.00000
@@ -1693,10 +1688,11 @@ HAMNET-DB,ed1zaj,"ed1zaj,Radioparam: ISM 5520,Maintainer : eb1ajp",42.03816,-7.3
 HAMNET-DB,cq0dch,"cq0dch,Maintainer : ct1dqv ct1ept eb1ajp",41.73236,-7.64773,0.00000
 HAMNET-DB,db0erz,"db0erz,Maintainer : do8gt",50.45616,12.64700,0.00000
 HAMNET-DB,cq0dpd,"cq0dpd,Maintainer : ct1dqv ct1ept eb1ajp",41.56142,-7.51709,0.00000
+HAMNET-DB,dl7pz,"dl7pz,Maintainer : dl7pz",52.40773,13.49918,0.00000
 HAMNET-DB,db0sel,"db0sel,Maintainer : dl5dan dl8td do1pps,Comment:,Packet Radio Digipeater Userzugang 438 400MHz ",48.88151,8.72690,0.00000
 HAMNET-DB,pa1er,"pa1er",51.80133,4.68280,0.00000
 HAMNET-DB,dl1nux,"dl1nux,Maintainer : dl1nux,Comment:,Site configuration: https://www.dropbox.com/s/rlax6skqkzkmjvi/dl1nux.gif?dl=0",50.23436,10.98371,0.00000
-HAMNET-DB,oe1xdt,"oe1xdt,Radioparam: 5705/5,Maintainer : oe1cmw oe1kbc,Comment:,AS64519",48.24021,16.41005,0.00000
+HAMNET-DB,oe1xdt,"oe1xdt,Radioparam: 5705/10,Maintainer : oe1cmw oe1kbc,Comment:,AS64519",48.24021,16.41005,0.00000
 HAMNET-DB,f1zcy,"f1zcy,Maintainer : f6cnb",49.37631,1.95130,0.00000
 HAMNET-DB,dl9lbg,"dl9lbg,Maintainer : dl9lbg dl5la,Comment:,evtl. HAMNET Planung",54.29614,10.59483,0.00000
 HAMNET-DB,f4fgi,"f4fgi,Maintainer : f6cnb,Comment:,Samuel QTH",49.28446,2.48524,0.00000
@@ -1710,8 +1706,8 @@ HAMNET-DB,dm0uhf,"dm0uhf,Maintainer : dg2kcb,Comment:,G38 ",51.09999,6.23899,0.0
 HAMNET-DB,f4bit,"f4bit,Maintainer : f6cnb,Comment:,Stephane home near Nancy 54 France",48.61133,6.10199,0.00000
 HAMNET-DB,db0ohl,"db0ohl,Radioparam: 2362/2397/5695MHz,Maintainer : dd9qp db9if dl4bbu,Comment:,HAMNET/Mikrowellenstandort OV N38 AS64666 DMR Repeater: 439 9375/430 5375MHz,32-bit-AS-Nummer: 4226266601 Internet: https://db0ohl.de Hamnet:,http://db0ohl.ampr.org",51.60416,7.01457,0.00000
 HAMNET-DB,db0rb,"db0rb,Maintainer : dl9ul dl5in",49.10129,8.58858,0.00000
-HAMNET-DB,db0rud,"db0rud,Radioparam: 2397MHz Omni 5695MHz Omni,Maintainer : df3ei dl7vd,Comment:,Local AS: 4226262915 AP for Rudow and surrounding areas.",52.42058,13.47928,0.00000
-HAMNET-DB,f0edr,"f0edr,Radioparam: Local WiFi,Maintainer : f6cnb,Comment:,Jean-Michel QRA",43.39249,6.29666,0.00000
+HAMNET-DB,db0rud,"db0rud,Radioparam: 2397MHz Omni; 5695MHz Omni,Maintainer : df3ei dl7vd,Comment:,Local AS: 4226262915 AP for Rudow and surrounding areas.",52.42058,13.47928,0.00000
+HAMNET-DB,f4edr,"f4edr,Radioparam: Local WiFi,Maintainer : f6cnb,Comment:,Jean-Michel QRA",43.39249,6.29666,0.00000
 HAMNET-DB,pa3eiv,"pa3eiv,Maintainer : pa3eiv",51.52741,3.89867,0.00000
 HAMNET-DB,pd2nlx,"pd2nlx",51.64802,3.91605,0.00000
 HAMNET-DB,f1tzo,"f1tzo,Maintainer : f6cnb",48.62782,2.28295,0.00000
@@ -1723,14 +1719,13 @@ HAMNET-DB,db0ste,"db0ste,Maintainer : df7qn,Comment:,C4FM-Repeater",53.69921,9.1
 HAMNET-DB,dl5daa,"dl5daa,Comment:,Sysop DB0IUZ",51.43461,7.18378,0.00000
 HAMNET-DB,dm0wl,"dm0wl,Maintainer : dd9hk dl7tj,Comment:,http://www.amateurfunk-winsen.de/index.php,http://www.amateurfunk-winsen.de/index.php/ueber-uns/unsere-relaisstationen-menue/dm0wl-menue",53.35591,10.20784,0.00000
 HAMNET-DB,pa3fym,"pa3fym",52.21195,5.16203,0.00000
-HAMNET-DB,sp2l,"sp2l,Maintainer : sp2l,Comment:,AMPRNet Gdynia",54.54122,18.46927,0.00000
 HAMNET-DB,db0xf,"db0xf,Maintainer : wolfgang dg7mgk",48.51849,11.65083,0.00000
 HAMNET-DB,sq6oxf,"sq6oxf,Radioparam: 2.3 / 5.8 GHz,Comment:,HamNET Wrocaw i okolice",51.20979,17.27926,0.00000
 HAMNET-DB,dm0zhs,"dm0zhs,Maintainer : dk8lrf,Comment:,Echolink",48.20543,12.05148,0.00000
 HAMNET-DB,dk0ee,"dk0ee,Comment:,C26 Clubstation",48.29295,11.62035,0.00000
-HAMNET-DB,oe3xia-2,"oe3xia-2,Maintainer : oe1xaw",48.24875,16.24409,0.00000
+HAMNET-DB,oe3xia-2,"oe3xia-2,Maintainer : oe1xaw",48.24875,16.24427,0.00000
 HAMNET-DB,db0eml,"db0eml,Maintainer : db5sb,Comment:,link to db0ins APRS Digi",50.89163,10.69266,0.00000
-HAMNET-DB,sq4bjo,"sq4bjo,Radioparam: 2.3/5.8 GHz",53.84371,22.98220,0.00000
+HAMNET-DB,sq4bjo,"sq4bjo,Radioparam: 2.3/5.8 GHz,Maintainer : sq4bjo",53.84371,22.98220,0.00000
 HAMNET-DB,pa1pas,"pa1pas",51.96862,5.89240,0.00000
 HAMNET-DB,pi4anh,"pi4anh",51.98542,5.88387,0.00000
 HAMNET-DB,pi1anh,"pi1anh",51.99946,5.90872,0.00000
@@ -1749,7 +1744,7 @@ HAMNET-DB,pd2lt,"pd2lt",51.55866,3.80258,0.00000
 HAMNET-DB,oe3xfh,"oe3xfh,Maintainer : oe3dus",47.83916,16.24819,0.00000
 HAMNET-DB,oe3xwu,"oe3xwu,Maintainer : oe3dus",47.52992,15.91403,0.00000
 HAMNET-DB,dm0gg,"dm0gg,Maintainer : dd2zm dg3fbl dg8las",49.90893,8.48488,0.00000
-HAMNET-DB,db0dor,"db0dor,Maintainer : dd3ji,Comment:,Userzugang HAMNET Equi:Nanostation M2 Antenne ca.11dB TXP:28dBm",51.09277,6.84007,0.00000
+HAMNET-DB,db0dor,"db0dor,Maintainer : dd3ji,Comment:,Userzugang HAMNET Equi:Nanostation M2 Antenne ca.11dB TXP:28dBm",51.12262,6.85122,0.00000
 HAMNET-DB,db0gor,"db0gor,Maintainer : dd3ji,Comment:,User-Gohr planing",51.08399,6.71835,0.00000
 HAMNET-DB,pi2non,"pi2non,Maintainer : pa4den,Comment:,HAMNET-NL Landgoed Montferland repeater site",51.89583,6.24177,0.00000
 HAMNET-DB,db0sbn,"db0sbn,Maintainer : dl2ajb,Comment:,DV Hotspot",50.99282,10.59016,0.00000
@@ -1766,7 +1761,7 @@ HAMNET-DB,pa3l,"pa3l,Maintainer : pa3l,Comment:,VPN for the moment: 44.137.33.80
 HAMNET-DB,hb9rf-92,"hb9rf-92",47.06796,8.46810,0.00000
 HAMNET-DB,pd1aem,"pd1aem,Maintainer : pd1aem,Comment:,IPsec tunnel. But planned ethernet link when main uplink is available.",51.79970,4.73480,0.00000
 HAMNET-DB,pe1plm,"pe1plm",51.45003,4.00615,0.00000
-HAMNET-DB,pi4asd,"pi4asd,Maintainer : ph0bos pd1dbl,Comment:,Site hosts: - FM repeater PI2ASD 430.200 MHz +1.6 (no ctcss required) - FM,repeater PI1ASD 438.500 MHz -7.0 (ctcss tone 110.9Hz) - FM repeater PI1ASD,145.787.5 MHz -0.6 (ctcss tone 110.9Hz) - FM baken/repeater PI6ASD 1296.637.5,MHz (in 432.537.5 MHz no ctcss required) - Diversity receiver for PI6TEN 29.590,MHz",52.35507,4.84143,0.00000
+HAMNET-DB,pi4asd,"pi4asd,Maintainer : ph0bos pd1dbl,Comment:,PI4ASD site is exited.",52.35507,4.84143,0.00000
 HAMNET-DB,pi2non-9,"pi2non-9",52.68259,5.96121,0.00000
 HAMNET-DB,hb9pjt,"hb9pjt",47.27991,8.45989,0.00000
 HAMNET-DB,hb9ehp,"hb9ehp",47.28020,8.45380,0.00000
@@ -1776,6 +1771,7 @@ HAMNET-DB,pa2jf,"pa2jf,Maintainer : pa2jf",52.29799,5.14982,0.00000
 HAMNET-DB,db0iuk,"db0iuk,Maintainer : db2fq dm7zq dh5iao,Comment:,DMR-Relais DAPNET APRS-Gateway ",49.64715,8.62721,0.00000
 HAMNET-DB,db0ika,"db0ika,Maintainer : dd3ji",51.31082,7.25344,0.00000
 HAMNET-DB,dm0hrm,"dm0hrm,Maintainer : dh4faj dg8las dg3fbl,Comment:,Link zu DB0HRF 5745 31.10.2019 Link zu DM0GG 5705 31.10.2019 Link zu DM0MK 5825,31.10.2019 AP 2397 31.10.2019",49.98549,8.42368,0.00000
+HAMNET-DB,dl1tg,"dl1tg,Maintainer : dl1tg dg8las dh4faj,Comment:,Callsign in allocation",50.04640,8.97443,0.00000
 HAMNET-DB,dg5mex,"dg5mex,Radioparam: Link Text DB0MPQ,Maintainer : dg5mpq dg5mex",48.90256,10.65297,0.00000
 HAMNET-DB,db0vq,"db0vq",52.30216,7.16684,0.00000
 HAMNET-DB,pi2amf,"pi2amf,Maintainer : pd1edl pd0auq pa3gxp pe1rqf,Comment:,PI2AMF PI3AMF PI6AMF",52.14365,5.36428,0.00000
@@ -1788,6 +1784,7 @@ HAMNET-DB,db1mz,"db1mz,Maintainer : db1mz",48.41369,11.62222,0.00000
 HAMNET-DB,dl5bca,"dl5bca,Maintainer : dg5yim dl5bca",53.33198,8.45996,0.00000
 HAMNET-DB,pe1ago,"pe1ago,Maintainer : pe1ago,Comment:,OpenVPN-Client",51.84243,4.69509,0.00000
 HAMNET-DB,db0wk,"db0wk,Maintainer : db8zp,Comment:,Planning Project Designated Hamnet-site",50.49771,9.93586,0.00000
+HAMNET-DB,dl3ncu-2,"dl3ncu-2",48.18944,12.00310,0.00000
 HAMNET-DB,f0gby,"f0gby,Maintainer : f6cnb",48.97509,1.91002,0.00000
 HAMNET-DB,dl0ii,"dl0ii,Maintainer : dg4ix",51.25316,6.97483,0.00000
 HAMNET-DB,oe7xwt,"oe7xwt,Radioparam: 2447MHz,Maintainer : oe7mpi oe7mbt,Comment:,ADL707 Kufstein",47.57772,12.20957,0.00000
@@ -1800,20 +1797,21 @@ HAMNET-DB,dm0izh,"dm0izh,Maintainer : dg4jc dl1bak dl5la,Comment:,evtl. HAMENT",
 HAMNET-DB,db0sbh,"db0sbh,Maintainer : db1ofh db5sb,Comment:,HamNet-Standort im Aufbau Antragsvorbereitung Kontakt: Peter DB1OFH und,Sebastian DB5SB ",51.32819,10.36783,0.00000
 HAMNET-DB,pe1rwl,"pe1rwl",53.11676,6.10172,0.00000
 HAMNET-DB,dm0sl,"dm0sl,Maintainer : db5nu dj3le do5fl dl1jm,Comment:,DMR-BM C4FM TETRA FM POCSAG ",54.52782,9.52906,0.00000
-HAMNET-DB,db0afu,"db0afu,Radioparam: 5GHz Usereinstieg im Low Power Testbetrieb 0dBm,Maintainer : dj3le do5fl dl1jm,Comment:,DMR-BM C4FM YSF DStar MMDVM Multimode Duplex Repeater: 439 925MHz/430 525MHz -9,4MHz Shift VPN zu DB0HUS /TSBW Husum https://www.afu-nord.de -,Amateurfunkgruppe Nord http://dj3le.spdns.de:8901 - 5 Band KW-WebSDR: ",54.54903,9.33667,0.00000
+HAMNET-DB,db0afu,"db0afu,Radioparam: 5GHz Usereinstieg geplant - Versorgung fr Urlauber am Treene Camp Horn,Maintainer : dj3le do5fl dl1jm,Comment:,DMR-BM C4FM YSF MMDVM Multimode Duplex Repeater: 439 925MHz/430 525MHz -9 4MHz,Shift HAMNET: https://db0afu.ampr.org - Amateurfunkgruppe Nord,http://db0afu.ampr.org:8901 - 5 Band KW-WebSDR: INTERNET:,https://www.afu-nord.de - Amateurfunkgruppe Nord http://dj3le.spdns.de:8901 - 5,Band KW-WebSDR: ",54.54903,9.33667,0.00000
 HAMNET-DB,db0drb,"db0drb",49.96527,6.36580,0.00000
 HAMNET-DB,ea7jrs,"ea7jrs,Maintainer : eb5jeq ea7jrs",36.53826,-6.17657,0.00000
 HAMNET-DB,pi8hgl,"pi8hgl,Maintainer : pd1acf pe1mvx pd1dbl,Comment:,5500 MHz is a dummy frequency only indicating the frequency band for the Access,Point More information about pi8hgl: http://qsl.net/pi8hgl/ We have Airmax,enabled on access1.pi8hgl access point",52.09482,4.36961,0.00000
 HAMNET-DB,f4hfg,"f4hfg,Maintainer : f6cnb,Comment:,Dole Jura",47.10293,5.50036,0.00000
-HAMNET-DB,f4hfg-1,"f4hfg-1,Maintainer : f6cnb,Comment:,APRR Tower north of Dole",47.15580,5.49725,0.00000
+HAMNET-DB,yo8rxt,"yo8rxt,Maintainer : yo2loj",47.15026,27.58907,0.00000
+HAMNET-DB,yo8sct,"yo8sct,Maintainer : yo2loj",47.16371,27.60568,0.00000
 HAMNET-DB,f5gip,"f5gip,Maintainer : f6cnb,Comment:,Audelange Jura",47.13569,5.58711,0.00000
-HAMNET-DB,f4dtz,"f4dtz,Maintainer : f6cnb,Comment:,Saint Baraing Jura",46.98017,5.44022,0.00000
-HAMNET-DB,f4hfg-2,"f4hfg-2,Maintainer : f6cnb,Comment:,APRR Tower south of Dole Jura",47.00686,5.49561,0.00000
+HAMNET-DB,db0wot,"db0wot,Radioparam: 5695MHz 10MHz BB V rundstrahlend,Maintainer : dg5yim dg4baq db1bmk",53.74211,9.07607,0.00000
+HAMNET-DB,yo6pvo-1,"yo6pvo-1,Radioparam: ISM link,Maintainer : yo2loj",45.64561,23.94538,0.00000
 HAMNET-DB,pe1dgw,"pe1dgw,Maintainer : pe1rdp",51.46942,5.48635,0.00000
 HAMNET-DB,f6krk,"f6krk,Radioparam: Local WiFi,Maintainer : f6cnb f4hvq,Comment:,Radio Club de Saint Quentin en Yvelines",48.77845,2.02251,0.00000
 HAMNET-DB,pa3gjx,"pa3gjx",52.56336,5.94268,0.00000
 HAMNET-DB,f5znn,"f5znn,Comment:,Pour simulatin",48.82172,3.24622,0.00000
-HAMNET-DB,f4hfg-3,"f4hfg-3,Radioparam: 5695 5715 5735MHz bande 10MHz SSID=HAMNET-PISCINE,Maintainer : f6cnb,Comment:,link to f4hfg 5675MHz/10MHz",47.08847,5.49052,0.00000
+HAMNET-DB,yo6pvo,"yo6pvo,Maintainer : yo2loj",45.78548,24.16579,0.00000
 HAMNET-DB,dm0ea,"dm0ea,Maintainer : dl7aqi",51.00916,10.30666,0.00000
 HAMNET-DB,dk1up,"dk1up,Maintainer : dg5mpq",48.75582,10.33240,0.00000
 HAMNET-DB,do0bab,"do0bab",53.55594,10.76049,0.00000
@@ -1828,21 +1826,20 @@ HAMNET-DB,9a1zge,"9a1zge,Maintainer : 9a5dat",45.88977,15.93465,0.00000
 HAMNET-DB,9a1cah,"9a1cah,Maintainer : 9a5dat",45.59663,16.07498,0.00000
 HAMNET-DB,9a1ayz,"9a1ayz,Maintainer : 9a5dat",45.74207,15.60529,0.00000
 HAMNET-DB,dp9a,"dp9a,Maintainer : dk1kc dl8rds",51.79051,12.94492,0.00000
-HAMNET-DB,dk1kc-3,"dk1kc-3,Maintainer : dk1kc dl8rds",51.79870,12.92968,0.00000
 HAMNET-DB,ea2cq,"ea2cq,Maintainer : ea2cq eb5jeq",42.84442,-2.66968,0.00000
 HAMNET-DB,f5sn,"f5sn",47.07362,5.49448,0.00000
-HAMNET-DB,f1zdz,"f1zdz,Maintainer : f4gdl,Comment:,MULTIMODE REPEATER DMR/DSTAR/C4FM/P25",48.82199,7.80330,0.00000
+HAMNET-DB,f1zdz,"f1zdz,Maintainer : f4gdl,Comment:,REPEATER DSTAR/C4FM",48.82199,7.80330,0.00000
 HAMNET-DB,f1pry,"f1pry,Maintainer : f6cnb",49.31777,1.97141,0.00000
 HAMNET-DB,yo2lqm,"yo2lqm,Maintainer : yo2loj",45.69232,21.30832,0.00000
 HAMNET-DB,hg1dfl,"hg1dfl,Maintainer : hg1dfl",47.66136,17.65398,0.00000
 HAMNET-DB,db0lsb,"db0lsb,Maintainer : dg0cbp",51.73250,11.66069,0.00000
 HAMNET-DB,dl1mei-101,"dl1mei-101",48.12653,11.59618,0.00000
 HAMNET-DB,pa0son,"pa0son",51.47814,5.51625,0.00000
-HAMNET-DB,dl0len,"dl0len,Comment:,Fichten-Fieldday 2017",51.14316,7.83833,0.00000
 HAMNET-DB,dl3xaq,"dl3xaq,Comment:,qth",53.40351,10.19762,0.00000
 HAMNET-DB,hb9na-30,"hb9na-30,Comment:,Planungsstandort fr HB9NA",47.42620,8.18841,0.00000
 HAMNET-DB,db0wxr,"db0wxr,Maintainer : dl2yed,Comment:,HAMNET- Wetterstation Planungsstandort AS64666 Anbindung ber Userzugang von,DB0SRE",51.64712,7.19913,0.00000
 HAMNET-DB,db0te3,"db0te3,Maintainer : dm6mh,Comment:,test-qth3 for linkcheck Brandenburg-Sued",52.11077,14.63014,0.00000
+HAMNET-DB,hb9iap,"hb9iap,Comment:,IAPC data center Onex",46.18883,6.09911,0.00000
 HAMNET-DB,db0glz,"db0glz,Maintainer : projected,Comment:,Planungsstandort Link Golszen - DB0LUC",51.97030,13.59908,0.00000
 HAMNET-DB,f4hpi,"f4hpi,Radioparam: Local WiFi,Maintainer : f6cnb,Comment:,Nano Cubesat receiving station",48.82777,2.38022,0.00000
 HAMNET-DB,f4hda,"f4hda,Maintainer : f6cnb,Comment:,Nano Cubesat receiving station ",48.89510,2.18662,0.00000
@@ -1855,7 +1852,7 @@ HAMNET-DB,dj0mel,"dj0mel,Maintainer : dj0mel",48.90091,11.89033,0.00000
 HAMNET-DB,db0bla,"db0bla",51.08480,12.71082,0.00000
 HAMNET-DB,db0wbe,"db0wbe,Radioparam: FM-Relais,Maintainer : dk8iof,Comment:,Planungsstandort",51.47463,13.50694,0.00000
 HAMNET-DB,f4fhm,"f4fhm,Radioparam: Local WiFi,Maintainer : f6cnb,Comment:,Aulnoye-Aymeries 59",50.20083,3.83833,0.00000
-HAMNET-DB,dm0rug,"dm0rug,Maintainer : dg0kf do7rk",54.55358,13.59366,0.00000
+HAMNET-DB,dm0rug,"dm0rug,Radioparam: 2392MHz BW 5MHz 802.11s Mesh_id: Hamnet ,Maintainer : dg0kf do7rk",54.55358,13.59366,0.00000
 HAMNET-DB,hb9sg-1,"hb9sg-1",47.44144,9.45160,0.00000
 HAMNET-DB,db0zyx,"db0zyx,Maintainer : dd3ji,Comment:,testing",51.29216,7.19522,0.00000
 HAMNET-DB,hg1ma-1,"hg1ma-1,Maintainer : ha2non",47.48117,19.06799,0.00000
@@ -1863,7 +1860,7 @@ HAMNET-DB,hg8hna,"hg8hna,Maintainer : hg5ojg ha7pty ha2non",46.27094,20.14528,0.
 HAMNET-DB,dc7ry,"dc7ry,Maintainer : dc7ry",50.26789,10.96545,0.00000
 HAMNET-DB,oe7xwi-99,"oe7xwi-99,Maintainer : oe7bkh,Comment:,HAMNET Big Day 2017",47.29598,11.90765,0.00000
 HAMNET-DB,oe7xzt,"oe7xzt,Maintainer : oe7bkh",47.13716,11.86928,0.00000
-HAMNET-DB,db0ldh,"db0ldh,Maintainer : dl5ml dg8las",50.34701,8.89965,0.00000
+HAMNET-DB,db0ldh,"db0ldh,Maintainer : dl5ml dg8las,Comment:,User access: 2362MHz/5MHz vert. OMNI Project website: http://web.db0ldh.ampr.org",50.34701,8.89965,0.00000
 HAMNET-DB,sk3jr,"sk3jr",63.11525,14.59808,0.00000
 HAMNET-DB,sk3jr-2,"sk3jr-2",63.17760,14.65239,0.00000
 HAMNET-DB,oe7xki,"oe7xki,Maintainer : oe7hri",47.46496,12.20420,0.00000
@@ -1873,7 +1870,8 @@ HAMNET-DB,ea5iop,"ea5iop",37.99267,-1.12549,0.00000
 HAMNET-DB,lx0prm,"lx0prm,Maintainer : lx1tb lx1ju",49.65416,6.42127,0.00000
 HAMNET-DB,db0hnk,"db0hnk,Maintainer : dk4ei",51.34902,9.44773,0.00000
 HAMNET-DB,f5gkw,"f5gkw,Maintainer : f4bqn f1igy,Comment:,F5GKW - ST MARTIN",45.84237,0.94637,0.00000
-HAMNET-DB,db0wus,"db0wus,Maintainer : dk3pt dg2sdw,Comment:,08.09.19 Im Aufbau Link zu DB0LBX 5735 BW 10 MHz V/H Link zu DB0YY 3425MHz BW,10MHz V/H ",49.02896,9.27808,0.00000
+HAMNET-DB,db0wus,"db0wus,Maintainer : dk3pt dg2sdw,Comment:,Link zu DB0LBX 5735 BW 10 MHz V/H Link zu DB0YY 3425MHz BW 10MHz V/H ",49.02896,9.27808,0.00000
+HAMNET-DB,db0wat,"db0wat,Maintainer : df2et,Comment:,Clubstation O33 testing HamNet access",51.45380,7.14343,0.00000
 HAMNET-DB,si9am,"si9am",62.95540,16.67535,0.00000
 HAMNET-DB,sk3bg,"sk3bg",62.37800,17.28759,0.00000
 HAMNET-DB,sk3rfg,"sk3rfg",62.37826,17.20355,0.00000
@@ -1885,6 +1883,7 @@ HAMNET-DB,db0gth,"db0gth,Maintainer : dj1rk",50.95306,10.68854,0.00000
 HAMNET-DB,db0sj,"db0sj,Maintainer : dc4ab,Comment:,FM repeater 438.800 MHz (-7.6 MHz)",51.21797,6.77783,0.00000
 HAMNET-DB,sk2au,"sk2au",64.76786,20.97143,0.00000
 HAMNET-DB,dm0ulr,"dm0ulr,Maintainer : dj2lr dl4ttb",47.70383,12.01283,0.00000
+HAMNET-DB,db0drh,"db0drh,Maintainer : dl9nbj dl1nux",50.33557,10.94396,0.00000
 HAMNET-DB,ea5ijj,"ea5ijj,Maintainer : ea5ijj",38.98741,-1.85676,0.00000
 HAMNET-DB,s55yza,"s55yza,Maintainer : s56ct oe6rke,Comment:,planing S5 Hamnet",46.18737,15.10739,0.00000
 HAMNET-DB,db0kat,"db0kat,Maintainer : dk4fb",50.54273,9.63743,0.00000
@@ -1907,7 +1906,6 @@ HAMNET-DB,oe7xkt,"oe7xkt",47.29529,11.87463,0.00000
 HAMNET-DB,f5zty,"f5zty",48.68796,5.87882,0.00000
 HAMNET-DB,pa3bic,"pa3bic,Maintainer : pa3bic",53.44700,5.77137,0.00000
 HAMNET-DB,f1znr,"f1znr,Maintainer : f1ngp",49.13479,6.21507,0.00000
-HAMNET-DB,f1zzd,"f1zzd",49.11870,6.20015,0.00000
 HAMNET-DB,f6kat,"f6kat",49.13324,6.19069,0.00000
 HAMNET-DB,f1zjs,"f1zjs,Maintainer : f1ngp",49.25529,6.58732,0.00000
 HAMNET-DB,f8kgy,"f8kgy",49.35242,6.17224,0.00000
@@ -1918,6 +1916,7 @@ HAMNET-DB,f5zfl,"f5zfl,Maintainer : f1ngp,Comment:,Relais de Sarreguemines 430.1
 HAMNET-DB,hg6ptz,"hg6ptz,Maintainer : hg6ptz",47.77035,19.46490,0.00000
 HAMNET-DB,oe7xjh,"oe7xjh,Maintainer : oe7jtk,Comment:,in preparation AS4223275002 ",46.73849,12.45609,0.00000
 HAMNET-DB,do0rm,"do0rm,Maintainer : do6dad",53.38776,12.61336,0.00000
+HAMNET-DB,dl1drk,"dl1drk,Maintainer : dl1drk do1pps,Comment:,Teststandort",48.93196,8.75360,0.00000
 HAMNET-DB,df0esa,"df0esa",50.98786,10.33474,0.00000
 HAMNET-DB,pe1pqf,"pe1pqf,Maintainer : pe1pqf",51.70111,5.26339,0.00000
 HAMNET-DB,lx0prn,"lx0prn,Maintainer : lx1tb lx1ju lx1cu lx1iq",49.94420,5.96761,0.00000
@@ -1957,7 +1956,7 @@ HAMNET-DB,hs9xxx,"hs9xxx,Maintainer : dd3ji dg1kwa (hs0znj),Comment:,2m Repeater
 HAMNET-DB,f4bqn,"f4bqn,Maintainer : f4bqn f1igy,Comment:,F4BQN - LIMOGES",45.89281,1.32084,0.00000
 HAMNET-DB,f1igy,"f1igy,Maintainer : f4bqn f1igy,Comment:,F1IGY - LIMOGES",45.84201,1.27710,0.00000
 HAMNET-DB,f4bqn-1,"f4bqn-1,Maintainer : f4bqn f1igy,Comment:,F4BQN - BRIVE",45.16519,1.51770,0.00000
-HAMNET-DB,dl1mtk,"dl1mtk,Maintainer : dg8las dh9fax,Comment:,Mglicher neuer Hamnet-Standort in Planung",50.01297,8.35647,0.00000
+HAMNET-DB,dm0mtk,"dm0mtk,Maintainer : dg8las dh9fax dl1mtk,Comment:,Mglicher neuer Hamnet-Standort in Planung von DL1MTK",50.01297,8.35647,0.00000
 HAMNET-DB,hs4am,"hs4am,Maintainer : dd3ji dg1kwa (hs0znj),Comment:,2m Repeater ",16.03665,103.12319,0.00000
 HAMNET-DB,hs6ap,"hs6ap,Maintainer : dd3ji dg1kwa (hs0znj),Comment:,2m Repeater",16.75922,100.48085,0.00000
 HAMNET-DB,hs4ad,"hs4ad,Maintainer : dd3ji dg1kwa (hs0znj),Comment:,2m Repeater",16.56185,104.53977,0.00000
@@ -2007,17 +2006,17 @@ HAMNET-DB,hamcloud-dc1,"hamcloud-dc1,Maintainer : dg8ngn dl9sau",49.45275,11.094
 HAMNET-DB,hamcloud-dc2,"hamcloud-dc2,Maintainer : dg8ngn dl9sau",51.42919,6.78459,0.00000
 HAMNET-DB,hamcloud-dc3,"hamcloud-dc3,Maintainer : dg8ngn dl9sau",50.77622,6.06936,0.00000
 HAMNET-DB,pi4frg-1,"pi4frg-1",53.19721,5.79044,0.00000
-HAMNET-DB,db0wsm,"db0wsm,Maintainer : dg5yim dl5bca,Comment:,DB0WSM FM-Relais Wesermarsch 439 0875 (Ablage -7 6 MHz)",53.33617,8.46078,0.00000
-HAMNET-DB,sp2put,"sp2put,Radioparam: 6cm 13cm,Maintainer : sq2frb,Comment:,SP2PUT-K Node http://sp2put.ampr.org http://sp2put.pl Radio Club SP2PUT",53.14249,18.13450,0.00000
+HAMNET-DB,db0wsm,"db0wsm,Maintainer : dg5yim dl5bca,Comment:,DB0WSM FM-Relais Wesermarsch 439 0875 (Ablage -7 6 MHz) Site configuration:,https://www.dropbox.com/s/bku14q1z3edwf47/DB0WSM.gif?dl=0",53.33617,8.46078,0.00000
+HAMNET-DB,sp2put,"sp2put,Radioparam: 6cm,Maintainer : sq2frb sq2rby,Comment:,SP2PUT-K Node http://bydgoszcz.ampr.org or http://hamnet.sp2put.pl Catalog of,services HamNET in SP -> http://sp.ampr.org",53.14249,18.13450,0.00000
 HAMNET-DB,pd2awd,"pd2awd",53.09989,6.10571,0.00000
 HAMNET-DB,pd1dbl,"pd1dbl,Maintainer : pd1dbl",52.01800,4.31942,0.00000
 HAMNET-DB,db0lgh,"db0lgh,Maintainer : dl6os do4bz dg4oae,Comment:,C4FM 438.9375 MHz (-7.6 MHz) ",52.43256,9.73109,0.00000
-HAMNET-DB,sp2put-1,"sp2put-1,Maintainer : sq2frb,Comment:,SP2PUT-S Node http://sp2put.ampr.org http://sp2put.pl Radio Club SP2PUT,(Planning User Radio)",53.12209,17.98240,0.00000
-HAMNET-DB,sq2frb,"sq2frb,Radioparam: 6cm,Maintainer : sq2frb,Comment:,http://sq2frb.ampr.org http://sq2frb.ddns.net HamNET Node",53.15039,18.17799,0.00000
-HAMNET-DB,sq2rby,"sq2rby,Radioparam: 6cm,Maintainer : sq2frb,Comment:,HamNET Node",53.15229,18.17774,0.00000
-HAMNET-DB,sp2gps,"sp2gps,Radioparam: 6cm,Maintainer : sq2frb,Comment:,HamNET Node",53.15759,18.15909,0.00000
-HAMNET-DB,sr2wxc,"sr2wxc,Maintainer : sq2frb,Comment:,http://sr2wxc.ampr.org WX - Voice Automatic Weather Station / APRS RX-only Igate, Radio Club SP2KFQ",53.70130,17.57320,0.00000
-HAMNET-DB,sp2put-2,"sp2put-2,Maintainer : sq2frb,Comment:,SP2PUT-M Node http://sp2put.ampr.org http://sp2put.pl Radio Club SP2PUT,(Planning User Radio)",53.13347,17.99904,0.00000
+HAMNET-DB,sp2put-1,"sp2put-1,Radioparam: 6cm,Maintainer : sq2frb sq2rby,Comment:,SP2PUT-S Node http://bydgoszcz.ampr.org or http://hamnet.sp2put.pl Catalog of,services HamNET in SP -> http://sp.ampr.org",53.12209,17.98240,0.00000
+HAMNET-DB,sq2frb,"sq2frb,Radioparam: 6cm,Maintainer : sq2frb sq2rby,Comment:,http://sq2frb.ampr.org HamNET Node http://bydgoszcz.ampr.org or,http://hamnet.sp2put.pl Catalog of services HamNET in SP -> http://sp.ampr.org ",53.15039,18.17799,0.00000
+HAMNET-DB,sq2rby,"sq2rby,Radioparam: 6cm,Maintainer : sq2frb sq2rby,Comment:,http://sq2rby.ampr.org HamNET Node http://bydgoszcz.ampr.org or,http://hamnet.sp2put.pl Catalog of services HamNET in SP -> http://sp.ampr.org",53.15229,18.17774,0.00000
+HAMNET-DB,sp2gps,"sp2gps,Radioparam: 6cm,Maintainer : sq2frb sq2rby,Comment:,http://sp2gps.ampr.org HamNET Node http://bydgoszcz.ampr.org or,http://hamnet.sp2put.pl Catalog of services HamNET in SP -> http://sp.ampr.org ",53.15759,18.15909,0.00000
+HAMNET-DB,sr2wxc,"sr2wxc,Maintainer : sq2frb sq2rby,Comment:,http://sr2wxc.ampr.org WX - Voice Automatic Weather Station / APRS RX-only Igate, Radio Club SP2KFQ Catalog of services HamNET in SP -> http://sp.ampr.org ",53.70130,17.57320,0.00000
+HAMNET-DB,sp2put-2,"sp2put-2,Maintainer : sq2frb sq2rby,Comment:,SP2PUT-M Node http://bydgoszcz.ampr.org or http://hamnet.sp2put.pl Catalog of,services HamNET in SP -> http://sp.ampr.org (Planning User Radio)",53.13347,17.99904,0.00000
 HAMNET-DB,dm0qn,"dm0qn,Comment:,Standort der Clubstation C01",48.10903,11.77934,0.00000
 HAMNET-DB,f4ebq,"f4ebq,Comment:,Sebastien QTH",45.46389,4.51522,0.00000
 HAMNET-DB,oe5xem,"oe5xem",48.25130,14.27999,0.00000
@@ -2029,21 +2028,24 @@ HAMNET-DB,oe5xmr,"oe5xmr,Maintainer : oe5hpm",48.21601,13.10966,0.00000
 HAMNET-DB,pa3fwz,"pa3fwz",53.18983,5.82672,0.00000
 HAMNET-DB,f8bmb,"f8bmb,Maintainer : f6cnb,Comment:,Jean-Paul QRA",47.65101,1.07745,0.00000
 HAMNET-DB,db0ns,"db0ns,Maintainer : dl8ue,Comment:,coming soon",50.23696,7.04031,0.00000
+HAMNET-DB,f6hmp-1,"f6hmp-1,Maintainer : f6cnb",50.18766,1.62922,0.00000
+HAMNET-DB,f1zjz,"f1zjz,Maintainer : f6cnb,Comment:,DMR Repeater",48.00652,-0.78202,0.00000
 HAMNET-DB,di0han,"di0han,Maintainer : do4bz dl1ne dg4oae,Comment:,H-Cloud Native HAMNET Cloud fr den Distrikt Niedersachsen",52.37849,9.72432,0.00000
 HAMNET-DB,db0oll,"db0oll,Maintainer : dl1dsw",51.09119,14.69250,0.00000
 HAMNET-DB,oe3xkq,"oe3xkq,Radioparam: 5785MHz/10MHz Sector,Maintainer : oe3muc",48.42335,15.57903,0.00000
 HAMNET-DB,f4bwt,"f4bwt,Maintainer : f6cnb,Comment:,Laurent QTH",49.00579,2.31642,0.00000
 HAMNET-DB,ir3dq,"ir3dq,Comment:,DRC Clublokal Meran",46.66593,11.16463,0.00000
-HAMNET-DB,sp2st,"sp2st,Maintainer : sq2frb,Comment:,HamNET Node",53.16394,17.91451,0.00000
+HAMNET-DB,sp2st,"sp2st,Maintainer : sq2frb sq2rby,Comment:,HamNET Node http://bydgoszcz.ampr.org or http://hamnet.sp2put.pl Catalog of,services HamNET in SP -> http://sp.ampr.org",53.16394,17.91451,0.00000
 HAMNET-DB,f1gqm,"f1gqm,Maintainer : f6cnb,Comment:,Olivier QTH",48.84476,2.30803,0.00000
 HAMNET-DB,db0pdm,"db0pdm,Maintainer : dl3rob dl2rsi,Comment:,For informational purposes only (path calculation).",52.36157,13.06655,0.00000
 HAMNET-DB,f6foh,"f6foh",46.18824,-1.19166,0.00000
 HAMNET-DB,f4huy,"f4huy,Maintainer : f6cnb f4huy",48.94380,2.12983,0.00000
 HAMNET-DB,eb5tt,"eb5tt,Comment:,portable rack station",38.53715,-0.12197,0.00000
-HAMNET-DB,db0rob,"db0rob,Maintainer : dh9an dg2sdw dl2gkm dl8scu,Comment:,2 Meter Repeater 145.5875 - 0.6 MHz analog FM im Verbund der Amateur Relais,Interessengemeinschaft Mittlerer Neckar e.V. weitere Info unter,http://www.arig-mn.org Im Aufbau: DMRplus und Brandmeister Frequency (MHz):,439.06250 Offset (MHz): -7.600 DMR-ID: 262747 Link nach DB0LBG 3445 MHz / BW 10,MHz in Betrieb Link nach DB0LBG 5725 MHz / BW 10 MHz in Betrieb Link nach,DB0ACA Sd und DB0WWW in Betrieb ",48.41783,9.14280,0.00000
+HAMNET-DB,db0rob,"db0rob,Maintainer : dh9an dg2sdw dl2gkm dl8scu,Comment:,2 Meter Repeater 145.5875 - 0.6 MHz analog FM im Verbund der Amateur Relais,Interessengemeinschaft Mittlerer Neckar e.V. weitere Info unter,http://www.arig-mn.org Im Aufbau: DMRplus und Brandmeister Frequency (MHz):,438.225 Offset (MHz): -7.600 DMR-ID: 262747 Link nach DB0LBG 3445 MHz / BW 10,MHz in Betrieb Link nach DB0LBG 5725 MHz / BW 10 MHz in Betrieb Link nach,DB0ACA Sd und DB0WWW in Betrieb ",48.41783,9.14280,0.00000
 HAMNET-DB,oe3xor,"oe3xor,Maintainer : oe1tkw",48.01946,15.75374,0.00000
 HAMNET-DB,oe1xrs,"oe1xrs,Maintainer : oe1rsa oe3gmw",48.21757,16.32539,0.00000
-HAMNET-DB,db0abg,"db0abg,Maintainer : dl5kua,Comment:,HAMNET planning / geplant",53.67375,10.23580,0.00000
+HAMNET-DB,db0ta,"db0ta,Maintainer : dl7ta",52.63863,13.61011,0.00000
+HAMNET-DB,db0abg,"db0abg,Maintainer : dl5kua,Comment:,HAMNET & AREDNMESH planning site",53.67375,10.23580,0.00000
 HAMNET-DB,dh1alf,"dh1alf,Maintainer : dd2mic dh1alf,Comment:,nur zur Berechnung und Simulation. Hamnetzugang ber Usersegment von DB0FC",52.26568,10.55015,0.00000
 HAMNET-DB,dm0hza,"dm0hza",49.58001,10.88062,0.00000
 HAMNET-DB,sm4fbd,"sm4fbd,Maintainer : sm4fbd,Comment:,Maintainer SE",59.11103,14.16586,0.00000
@@ -2054,12 +2056,13 @@ HAMNET-DB,do1epm,"do1epm,Comment:,df3dcb: Gibt hier einen OM der am Privat-QTH n
 HAMNET-DB,db0blo,"db0blo,Maintainer : dl8ro,Comment:,DB0BLO (Maintainer: dl8ro) DB0BRL (Maintainer: dh7vk) am selben Standort DB0DF,(Maintainer: dl1bff) am selben Standort ",52.53486,13.48572,0.00000
 HAMNET-DB,f6bvp-1,"f6bvp-1,Radioparam: Local WiFi,Maintainer : f6cnb,Comment:,Second QRA F6BVP Bernard",43.25948,6.65919,0.00000
 HAMNET-DB,db0uk,"db0uk",49.00442,8.37958,0.00000
-HAMNET-DB,dl5in,"dl5in,Maintainer : dl5in",48.87796,8.51095,0.00000
+HAMNET-DB,db0uw,"db0uw,Maintainer : dl5in",48.87796,8.51095,0.00000
 HAMNET-DB,db0dj,"db0dj,Maintainer : dj2ot dl1ut",48.87701,8.50800,0.00000
 HAMNET-DB,db0uz,"db0uz,Maintainer : dl5in",48.89199,8.46325,0.00000
 HAMNET-DB,db0uy,"db0uy,Maintainer : dl5in",48.97121,8.46683,0.00000
 HAMNET-DB,pa0erc,"pa0erc",51.49697,5.38574,0.00000
 HAMNET-DB,pe1mix,"pe1mix",51.50111,5.37524,0.00000
+HAMNET-DB,pa2md,"pa2md,Maintainer : pd1dbl pa2md pd4dft,Comment:,Event location for radioamateurs Delft. The location is housed at a former,football club called 'Delfi' ",51.99280,4.33510,0.00000
 HAMNET-DB,pa0gri,"pa0gri,Maintainer : pa0gri",51.49609,5.39947,0.00000
 HAMNET-DB,db0hbs,"db0hbs,Radioparam: ISM",51.89508,11.05000,0.00000
 HAMNET-DB,sr6dba,"sr6dba,Maintainer : ok1mrm,Comment:,PR-node",50.97156,14.94089,0.00000
@@ -2077,7 +2080,6 @@ HAMNET-DB,f4fpr,"f4fpr,Maintainer : f6cnb,Comment:,QTH Benjamin F4FPR/AG5HQ",49.
 HAMNET-DB,dm0fg,"dm0fg,Maintainer : dl5iaf db1fg,Comment:,HAMNET Standort des OV Wiesloch-Walldorf A39",49.30873,8.70670,0.00000
 HAMNET-DB,dm0nr,"dm0nr,Maintainer : dl5di,Comment:,Clubheim K08",50.43566,7.50483,0.00000
 HAMNET-DB,ol4a,"ol4a",50.56901,13.43384,0.00000
-HAMNET-DB,eb1ajp-1,"eb1ajp-1,Maintainer : eb1ajp,Comment:,EB1AJP portable QTH",42.33817,-7.86865,0.00000
 HAMNET-DB,hb9sg-2,"hb9sg-2,Maintainer : hb9pae hb9swr",47.28391,9.48503,0.00000
 HAMNET-DB,hb9sg-3,"hb9sg-3,Maintainer : hb9pae hb9swr",47.38635,9.18300,0.00000
 HAMNET-DB,db0cw,"db0cw,Maintainer : dd3ji",51.03936,7.45784,0.00000
@@ -2091,7 +2093,8 @@ HAMNET-DB,f4ass,"f4ass,Maintainer : f4hof f4ass",45.34703,4.64690,0.00000
 HAMNET-DB,f5ltp,"f5ltp,Maintainer : f4hof f5ltp",45.41109,4.39534,0.00000
 HAMNET-DB,do0yf,"do0yf,Maintainer : do1vf",49.26336,7.24561,0.00000
 HAMNET-DB,hb9dr-12,"hb9dr-12,Comment:,RZ3 Cham / Steinhausen ",47.18736,8.47925,0.00000
-HAMNET-DB,db0fz,"db0fz,Radioparam: 2397MHz 5MHz vertikal,Maintainer : dl6fz,Comment:,Site Configuration: https://www.dropbox.com/s/9mo23uy5hdjpt5q/DB0FZ.gif?dl=0,Site Information: Site in planning!!",47.88164,11.70075,0.00000
+HAMNET-DB,db0fz,"db0fz,Radioparam: 2397MHz 5MHz vertikal,Maintainer : dl6fz,Comment:,Site Configuration: https://www.dropbox.com/s/9mo23uy5hdjpt5q/DB0FZ.gif?dl=0,Site Information: http://www.db0fz.de",47.88164,11.70075,0.00000
+HAMNET-DB,hb9iap-2,"hb9iap-2,Comment:,Confignon IAPC CFG data center + local lan",46.17473,6.08334,0.00000
 HAMNET-DB,ea7jrs-1,"ea7jrs-1,Comment:,VPS hamcloud EA experimental site",36.52820,-6.20429,0.00000
 HAMNET-DB,db0deq,"db0deq,Maintainer : dg0cbp",52.82916,11.68916,0.00000
 HAMNET-DB,db0ns2,"db0ns2,Maintainer : dl8ue,Comment:,ISM connected QTH",50.23707,7.03827,0.00000
@@ -2119,6 +2122,7 @@ HAMNET-DB,db0mod,"db0mod,Maintainer : dl1mms db7mj,Comment:,planed HAMnet Digi A
 HAMNET-DB,dk0wue,"dk0wue,Maintainer : dh1nbc,Comment:,Not- und Katastrophenfunk",49.78880,9.93419,0.00000
 HAMNET-DB,ea5ln,"ea5ln,Radioparam: UBIQUITY BULLET + 9dBi vertical antenna,Maintainer : ea5ln",39.59365,-0.60468,0.00000
 HAMNET-DB,db0ml,"db0ml,Maintainer : dd3ji dg2ebn,Comment:,DAPNET ",51.26931,6.53908,0.00000
+HAMNET-DB,dl3ncu-1,"dl3ncu-1",48.30616,11.91860,0.00000
 HAMNET-DB,db0pbg,"db0pbg",53.08275,7.40315,0.00000
 HAMNET-DB,ct2gpi-1,"ct2gpi-1,Radioparam: For local access,Maintainer : ct2gpi",38.95447,-8.98977,0.00000
 HAMNET-DB,do3et,"do3et,Maintainer : do3et dl5la,Comment:,evtl Hamnet",54.21101,9.37934,0.00000
@@ -2128,14 +2132,73 @@ HAMNET-DB,oe3xec,"oe3xec,Maintainer : oe3fqu oe1kbc",48.09113,14.89111,0.00000
 HAMNET-DB,cs5cc,"cs5cc,Maintainer : ct2ixq ct1drb",38.63219,-9.19843,0.00000
 HAMNET-DB,f5odp,"f5odp,Maintainer : f6cnb f5odp,Comment:,Xavier QTH",45.76293,4.83524,0.00000
 HAMNET-DB,f4grl,"f4grl,Maintainer : f6cnb,Comment:,Yves",43.42214,1.20122,0.00000
-HAMNET-DB,db0hof,"db0hof",50.30374,11.89840,0.00000
+HAMNET-DB,db0hof,"db0hof,Maintainer : dl3ncu",50.30374,11.89840,0.00000
 HAMNET-DB,f4mzi,"f4mzi,Maintainer : f6cnb,Comment:,QTH Pierre-Philippe",50.43711,3.44790,0.00000
-HAMNET-DB,f4ied,"f4ied,Maintainer : f6cnb",48.69609,2.06970,0.00000
+HAMNET-DB,n5fxh,"n5fxh,Radioparam: Local WiFi,Maintainer : f6cnb,Comment:,Francois Xavier ",48.64400,2.23099,0.00000
+HAMNET-DB,f4ied,"f4ied,Maintainer : f6cnb",48.63964,2.06988,0.00000
 HAMNET-DB,db0glz-2,"db0glz-2,Comment:,DG2RON: ick will nur schauen ob es von dort besser gehen knnte.",51.98040,13.58056,0.00000
 HAMNET-DB,dl1sp,"dl1sp,Maintainer : dl1sp,Comment:,Testing ",49.62500,9.74252,0.00000
 HAMNET-DB,oe3xas,"oe3xas",48.35776,15.88129,0.00000
 HAMNET-DB,f4eks,"f4eks,Maintainer : f6cnb,Comment:,Jerome QRA",48.78631,2.45981,0.00000
+HAMNET-DB,pi1kph,"pi1kph,Maintainer : pd0sdo pa4den",52.58430,6.19162,0.00000
 HAMNET-DB,hg5hnc,"hg5hnc,Maintainer : hg5ojg ha7pty ha7eo ha2non",47.55544,18.99761,0.00000
 HAMNET-DB,ir3ufm,"ir3ufm,Maintainer : in3fqq iw3amq",46.79582,10.49378,0.00000
 HAMNET-DB,db0tek,"db0tek,Maintainer : dh9an dg2sdw,Comment:,Im Aufbau",48.58846,9.46979,0.00000
 HAMNET-DB,oe3dna,"oe3dna,Maintainer : oe3dna,Comment:,Linkstrecke im Aufbau",48.12060,14.85506,0.00000
+HAMNET-DB,oe5xgr,"oe5xgr,Maintainer : oe5hpm,Comment:,AS: 4223250205",48.12715,12.94442,0.00000
+HAMNET-DB,db0jui,"db0jui,Maintainer : df6bt dd1wt,Comment:,mglicher Linkpartner DB0OX",53.68007,7.00168,0.00000
+HAMNET-DB,dg0tm-1,"dg0tm-1,Maintainer : dg0tm",54.07239,12.12051,0.00000
+HAMNET-DB,ea3hvf,"ea3hvf,Maintainer : ea3hvf eb5jeq,Comment:,Site in project",41.38166,2.04305,0.00000
+HAMNET-DB,oe1xur,"oe1xur,Maintainer : oe1tkw oe1sgw oe1kbc,Comment:,APRS Packet Radio SAMNET 438.125mc -7.6mc shift TCE multibaud",48.15501,16.39578,0.00000
+HAMNET-DB,oe3xcr,"oe3xcr,Maintainer : oe1kbc",47.46418,16.22117,0.00000
+HAMNET-DB,db0dus,"db0dus,Radioparam: 2392MHz 5MHz dual-linear polarisiert omni 2 downtilt MIMO 2x2 --- ,Maintainer : dg2ebn dk2crn,Comment:,HAMNET-Standort AS64632 32-bit-AS-Nummer: 4226263233 ",51.28398,6.77615,0.00000
+HAMNET-DB,oe1xlr,"oe1xlr,Maintainer : oe1sgw oe1kbc,Comment:,AS: 4223210701",48.18996,16.34044,0.00000
+HAMNET-DB,ea2bb,"ea2bb,Maintainer : ea2bb eb5jeq",41.63918,-0.90678,0.00000
+HAMNET-DB,f1tke,"f1tke,Maintainer : f1tke",48.90266,7.74718,0.00000
+HAMNET-DB,f5kav,"f5kav,Maintainer : f4gdl,Comment:,R.A.C.C.W - Radio Amateur Club des Cigognes de Walbourg - http://www.f5kav.org/",48.88621,7.79264,0.00000
+HAMNET-DB,dg7nbr,"dg7nbr,Maintainer : dg5mpq dg7nbr,Comment:,Planung fr neuen Standort",49.17459,10.89035,0.00000
+HAMNET-DB,sp2put-3,"sp2put-3,Radioparam: 13cm,Maintainer : sq2frb sq2rby,Comment:,SP2PUT-U Node http://bydgoszcz.ampr.org or http://hamnet.sp2put.pl Catalog of,services HamNET in SP -> http://sp.ampr.org",53.14349,18.13010,0.00000
+HAMNET-DB,do0bn,"do0bn,Maintainer : dl5kua do2bn,Comment:,HAMNET & AREDNMESH planning site",53.66715,10.41985,0.00000
+HAMNET-DB,dl0as,"dl0as,Maintainer : dl5kua,Comment:,HAMNET & AREDNMESH planning site",53.65026,10.28831,0.00000
+HAMNET-DB,dd2hz,"dd2hz,Maintainer : dl5kua dd2hz,Comment:,HAMNET & AREDNMESH planning site",53.64690,10.36046,0.00000
+HAMNET-DB,dj7rk,"dj7rk,Maintainer : dl5kua dj7rk,Comment:,HAMNET & AREDNMESH planning site",53.60995,10.34188,0.00000
+HAMNET-DB,hb9g,"hb9g,Comment:,Geneva USKA HB9G club",46.18846,6.11931,0.00000
+HAMNET-DB,hb9mm,"hb9mm,Comment:,USKA RAV HB9MM Club",46.65958,6.63968,0.00000
+HAMNET-DB,hb9tv-3,"hb9tv-3,Comment:,IAPC bbone + ATV relay",46.82993,6.55935,0.00000
+HAMNET-DB,hb9tv-2,"hb9tv-2,Comment:,IAPC bbone + ATV relay",46.60546,6.67932,0.00000
+HAMNET-DB,hb9mm-1,"hb9mm-1,Comment:,IAPC bbone + HB9MM uhf relay",46.66639,6.42479,0.00000
+HAMNET-DB,hb9iac-1,"hb9iac-1,Comment:,IEssertines APC bbone",46.48300,6.31263,0.00000
+HAMNET-DB,hb9em,"hb9em,Comment:,IAPC bbone + HB9EM club",46.54109,6.33623,0.00000
+HAMNET-DB,hb9iac,"hb9iac,Comment:,La Barillette IAPC bbone + HB9IAC dstar + HB9IAP dmr + HB9IAC c4fm + HB9TV-1",46.42930,6.12566,0.00000
+HAMNET-DB,hb9pc,"hb9pc",46.40675,6.25127,0.00000
+HAMNET-DB,hb9iac-2,"hb9iac-2,Comment:,Preverenges gateway to public",46.51868,6.51724,0.00000
+HAMNET-DB,f6kbf,"f6kbf,Radioparam: PowerBeam M5 400 5.685Ghz 217,Maintainer : f4huy f6cnb",48.95291,2.13563,0.00000
+HAMNET-DB,f6ekg,"f6ekg",47.31365,5.02401,0.00000
+HAMNET-DB,f5zmg,"f5zmg",47.12385,5.47615,0.00000
+HAMNET-DB,f1cxx,"f1cxx,Maintainer : f6cnb,Comment:,For simulation and testing",49.70692,2.10979,0.00000
+HAMNET-DB,dl0nm,"dl0nm,Radioparam: Planung ,Maintainer : dg5mpq do1npf",49.27296,11.48639,0.00000
+HAMNET-DB,db0slb,"db0slb,Comment:,Looking Form Hamnet Link partners",49.56100,7.59299,0.00000
+HAMNET-DB,dh1nhs,"dh1nhs,Maintainer : dg1nfs",49.13383,10.61627,0.00000
+HAMNET-DB,f4avi,"f4avi,Maintainer : f1tzv f4avi",48.52173,7.56131,0.00000
+HAMNET-DB,f5kbb,"f5kbb",48.53231,7.46766,0.00000
+HAMNET-DB,dm5hr-1,"dm5hr-1,Comment:,Portable TestSite",48.13929,12.66863,0.00000
+HAMNET-DB,dl3ncu-3,"dl3ncu-3",48.24610,12.05111,0.00000
+HAMNET-DB,dl3ncu-5,"dl3ncu-5",48.18846,11.86316,0.00000
+HAMNET-DB,dl3ncu-6,"dl3ncu-6",48.27923,12.14838,0.00000
+HAMNET-DB,db0on,"db0on",48.23641,11.86853,0.00000
+HAMNET-DB,db0th,"db0th",48.35643,12.07576,0.00000
+HAMNET-DB,db0zdg,"db0zdg",48.08568,11.83150,0.00000
+HAMNET-DB,db0rin,"db0rin",52.17049,9.06936,0.00000
+HAMNET-DB,db0za,"db0za,Maintainer : dg8ngn dj3le db5nu do5fl",54.41695,9.69082,0.00000
+HAMNET-DB,f5zow,"f5zow,Maintainer : f1tzv f4avi",48.57872,7.71262,0.00000
+HAMNET-DB,db0nmb,"db0nmb,Maintainer : dl1hrc dm3al,Comment:,in Genehmigungsphase 70cm-Frequenz bereits vorgeschlagen und beantragt",51.13159,11.83732,0.00000
+HAMNET-DB,dm0rlb,"dm0rlb,Maintainer : db6kt",51.02605,12.77257,0.00000
+HAMNET-DB,dm0hr,"dm0hr",51.00083,10.35722,0.00000
+HAMNET-DB,do2mp,"do2mp,Maintainer : dd3ji",51.12678,6.84238,0.00000
+HAMNET-DB,f1zpr,"f1zpr,Comment:,Chateau d'eau les Fichets",48.75798,0.66849,0.00000
+HAMNET-DB,eb1ajp-1,"eb1ajp-1,Maintainer : eb1ajp,Comment:,Experimental",42.33835,-7.86861,0.00000
+HAMNET-DB,db0esa,"db0esa",50.99750,10.29638,0.00000
+HAMNET-DB,dl1ydd,"dl1ydd,Maintainer : df2et,Comment:,For Linktests only",51.60857,7.21806,0.00000
+HAMNET-DB,dl5bq,"dl5bq,Maintainer : df2et,Comment:,For Linktests only",51.59626,7.14719,0.00000
+HAMNET-DB,dl8ybq,"dl8ybq,Maintainer : df2et,Comment:,For Linktests only",51.60516,7.14478,0.00000
+HAMNET-DB,f6cnb-1,"f6cnb-1,Maintainer : f6cnb,Comment:,Test",48.84395,2.27918,0.00000

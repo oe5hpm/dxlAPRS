@@ -58,9 +58,6 @@
 
 #define aprsmap_VIDEOFN "map.y4m"
 
-#define aprsmap_FLOATERRCORR (-6.E-7)
-/* try to correct summed rounding errors by multiple zoom in */
-
 #define aprsmap_VIDEORATE 25
 
 #define aprsmap_MARKERTIME 10
@@ -2113,49 +2110,78 @@ static void markvisable(const aprsdecode_MONCALL singlecall)
    aprsdecode_tracenew.winpos1 = rightdown;
 } /* end markvisable() */
 
+/*
+PROCEDURE findop(call-:ARRAY OF CHAR; totable:BOOLEAN):pOPHIST;
+VAR op, opfound:pOPHIST;
+    mc, Mc:MONCALL;
+    i:CARDINAL;
+    c:CHAR;
+BEGIN
+  c:=0C;
+  FOR i:=0 TO HIGH(mc) DO
+    IF i<=HIGH(call) THEN 
+      mc[i]:=call[i];
+      IF c<>"*" THEN c:=CAP(call[i]) END; 
+      IF c="*" THEN Mc[i]:="?" ELSE Mc[i]:=c END;
+    ELSE mc[i]:=0C; Mc[i]:=0C; END;
+  END;
+  IF totable THEN click.entries:=0; click.selected:=0 END;
+  op:=ophist;
+  WHILE op<>NIL DO
+    opfound:=NIL;
+    IF op^.call=mc THEN opfound:=op;
+                (* full match *)
+    ELSE
+      i:=0;
+      LOOP
+        IF (Mc[i]<>"?") & (Mc[i]<>op^.call[i]) THEN EXIT END;
+
+        INC(i);
+        IF i>HIGH(mc) THEN opfound:=op; EXIT END;
+
+      END;
+    END;
+    IF (opfound<>NIL) & vistime(opfound^.lasttime) THEN
+      IF NOT totable THEN RETURN opfound END; 
+
+      IF click.entries>HIGH(click.table) THEN RETURN click.table[0].opf END;
+
+      click.table[click.entries].opf:=opfound;
+      click.table[click.entries].pff:=NIL;
+      click.table[click.entries].pff0:=NIL;
+      click.table[click.entries].typf:=tSYMBOL;
+
+      click.selected:=0;
+      INC(click.entries);
+    END;
+    op:=op^.next;
+  END;
+  IF click.entries>0 THEN RETURN click.table[0].opf ELSE RETURN NIL END;
+END findop;
+*/
 
 static aprsdecode_pOPHIST findop(const char call[], uint32_t call_len,
                 char totable)
 {
    aprsdecode_pOPHIST opfound;
    aprsdecode_pOPHIST op;
-   aprsdecode_MONCALL Mc;
-   aprsdecode_MONCALL mc0;
-   uint32_t i;
-   char c;
-   c = 0;
-   for (i = 0UL; i<=8UL; i++) {
-      if (i<=call_len-1) {
-         mc0[i] = call[i];
-         if (c!='*') c = X2C_CAP(call[i]);
-         if (c=='*') Mc[i] = '?';
-         else Mc[i] = c;
-      }
-      else {
-         mc0[i] = 0;
-         Mc[i] = 0;
-      }
-   } /* end for */
+   aprsdecode_MONCALL mc;
+   aprsstr_Assign(mc, 9ul, call, call_len);
    if (totable) {
+      /* manual search with wildcards */
       aprsdecode_click.entries = 0UL;
       aprsdecode_click.selected = 0UL;
+      maptool_cleanfind(mc, 9ul);
    }
    op = aprsdecode_ophist0;
    while (op) {
       opfound = 0;
-      if (X2C_STRCMP(op->call,9u,mc0,9u)==0) opfound = op;
-      else {
-         i = 0UL;
-         for (;;) {
-            if (Mc[i]!='?' && Mc[i]!=op->call[i]) break;
-            ++i;
-            if (i>8UL) {
-               opfound = op;
-               break;
-            }
-         }
+      if (totable) {
+         if (maptool_cmpwild(op->call, 9ul, mc, 9ul)) opfound = op;
       }
-      if (opfound && maptool_vistime(opfound->lasttime)) {
+      else if (X2C_STRCMP(op->call,9u,mc,9u)==0) opfound = op;
+      if ((opfound && maptool_vistime(opfound->lasttime)) && (uint8_t)
+                opfound->sym.tab>=' ') {
          if (!totable) return opfound;
          if (aprsdecode_click.entries>9UL) {
             return aprsdecode_click.table[0UL].opf;
@@ -3016,79 +3042,21 @@ static void midscreenpos(struct aprsstr_POSITION * pos)
 } /* end midscreenpos() */
 
 
-static void zoominout(char in, char fine, char allowrev,
-                 char mouseismiddle)
+static void zoominoutpush(char in, char fine,
+                char allowrev, char mouseismiddle)
 {
-   float fz;
    float z;
-   struct aprsstr_POSITION mid;
-   int32_t my;
-   int32_t mx;
-   int32_t maxz;
    z = maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom);
-   mx = maptool_xsize/2L;
-   my = maptool_ysize/2L;
-   /*
-     IF mouseismiddle THEN 
-       xytodeg(VAL(REAL,xmouse.x), VAL(REAL, VAL(INTEGER,mainys())-xmouse.y),
-                 mid);
-     ELSE midscreenpos(mid) END;
-   */
-   if (mouseismiddle) {
-      mx = useri_xmouse.x;
-      my = (int32_t)useri_mainys()-useri_xmouse.y;
-   }
-   maptool_xytodeg((float)mx, (float)my, &mid);
-   mid.lat = mid.lat+(-6.E-7f); /* compensate position drift due to float precision */
-   if (fine) {
-      fz = useri_conf2real(useri_fZOOMSTEP, 0UL, (-1.0f), 1.0f, 0.1f);
-      if (!allowrev) fz = (float)fabs(fz);
-      if (in) aprsdecode_finezoom = aprsdecode_finezoom+fz;
-      else aprsdecode_finezoom = aprsdecode_finezoom-fz;
-      if (aprsdecode_finezoom<1.0f && aprsdecode_finezoom>1.0f-fz*0.5f) {
-         aprsdecode_finezoom = 1.0f;
-      }
-      if (aprsdecode_finezoom<1.0f) {
-         if (aprsdecode_initzoom>0L) {
-            --aprsdecode_initzoom;
-            aprsdecode_finezoom = 2.0f-fz;
-         }
-         else aprsdecode_finezoom = 1.0f;
-      }
-      else if (aprsdecode_finezoom>=2.0f-fz*0.5f) {
-         ++aprsdecode_initzoom;
-         aprsdecode_finezoom = 1.0f;
-      }
-   }
-   else {
-      if (in) {
-         ++aprsdecode_initzoom;
-         if (aprsdecode_finezoom>1.75f) ++aprsdecode_initzoom;
-      }
-      else if (aprsdecode_finezoom<1.25f) --aprsdecode_initzoom;
-      aprsdecode_finezoom = 1.0f;
-   }
    if (z==(float)aprsdecode_trunc(z)) push(z, 0);
-   maxz = useri_conf2int(useri_fMAXZOOM, 0UL, 1L, 18L, 18L);
-   if (aprsdecode_initzoom<1L) {
-      aprsdecode_initzoom = 1L;
-      aprsdecode_finezoom = 1.0f;
-   }
-   else if (aprsdecode_initzoom>=maxz) {
-      aprsdecode_initzoom = maxz;
-      aprsdecode_finezoom = 1.0f;
-   }
-   z = maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom);
-   /*  shiftmap(xsize DIV 2, ysize DIV 2, ysize, z, mid); */
-   maptool_shiftmap(mx, my, maptool_ysize, z, &mid);
-   aprsdecode_mappos = mid;
-} /* end zoominout() */
+   maptool_zoominout(in, fine, allowrev, mouseismiddle);
+} /* end zoominoutpush() */
 
 
 static void find(char allpoi)
 {
    char h[201];
    aprsdecode_MONCALL hm;
+   char poiok;
    char err;
    aprsdecode_pOPHIST op;
    struct aprsstr_POSITION pos1;
@@ -3098,12 +3066,14 @@ static void find(char allpoi)
    if (!qth(h, 201ul)) {
       /* not a locator */
       aprstext_deganytopos(h, 201ul, &pos);
+      poiok = 0;
       if (!aprspos_posvalid(pos)) {
+         /* get position of POI name */
          maptool_POIfind(&pos, allpoi, h, 201ul);
-                /* get position of POI name */
+         poiok = aprspos_posvalid(pos);
       }
       if (aprspos_posvalid(pos)) {
-         /* lat / long */
+         /* poi or lat / long */
          if (allpoi) {
             aprsdecode_click.mhop[0UL] = 0;
             aprsdecode_click.onesymbol.tab = 0;
@@ -3116,46 +3086,49 @@ static void find(char allpoi)
          pandone = 0;
          useri_textautosize(-3L, 0L, 3UL, 4UL, 'b', "marker set", 11ul);
       }
-      else if (allpoi) {
-         /* object name */
+      if (allpoi && (poiok || !aprspos_posvalid(pos))) {
+         /* search in aprs names */
          op = findop(h, 201ul, 1);
+         useri_mainpop();
+         useri_findopl(1UL);
          if (op) {
             aprsdecode_click.mhop[0UL] = 0;
             aprsdecode_click.onesymbol.tab = 0;
-            useri_mainpop();
-            push(maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom),
-                1);
-            if (aprsdecode_click.entries>0UL && aprsdecode_click.table[0UL]
-                .opf) {
-               op = aprstext_oppo(aprsdecode_click.table[0UL].opf->call);
-               if (op) memcpy(aprsdecode_click.mhop,op->call,9u);
-            }
             mhtx = aprsmap_OPSENT;
-            pandone = 0;
-            aprsdecode_lums.rf = 0L;
-            if (op) {
-               err = 0;
-               aprsstr_Assign(h, 201ul, op->call, 9ul);
-               if (!aprspos_posvalid(op->lastpos)) {
-                  err = 1;
-                  aprsstr_Append(h, 201ul, " No valid Position!", 20ul);
+            if (!poiok) {
+               /* else let focus on poi */
+               push(maptool_realzoom(aprsdecode_initzoom,
+                aprsdecode_finezoom), 1);
+               if (aprsdecode_click.entries>0UL && aprsdecode_click.table[0UL]
+                .opf) {
+                  op = aprstext_oppo(aprsdecode_click.table[0UL].opf->call);
+                  if (op) memcpy(aprsdecode_click.mhop,op->call,9u);
                }
-               if ((uint8_t)op->sym.tab<' ') {
-                  err = 1;
-                  aprsstr_Append(h, 201ul, " No valid Symbol!", 18ul);
-                  if (aprspos_posvalid(op->lastpos)) {
-                     /* set marker instead of missing symbol */
-                     aprstext_setmark1(op->lastpos, 0, X2C_max_longint,
+               pandone = 0;
+               aprsdecode_lums.rf = 0L;
+               if (op) {
+                  err = 0;
+                  aprsstr_Assign(h, 201ul, op->call, 9ul);
+                  if (!aprspos_posvalid(op->lastpos)) {
+                     err = 1;
+                     aprsstr_Append(h, 201ul, " No valid Position!", 20ul);
+                  }
+                  if ((uint8_t)op->sym.tab<' ') {
+                     err = 1;
+                     aprsstr_Append(h, 201ul, " No valid Symbol!", 18ul);
+                     if (aprspos_posvalid(op->lastpos)) {
+                        /* set marker instead of missing symbol */
+                        aprstext_setmark1(op->lastpos, 0, X2C_max_longint,
                 aprsdecode_realtime);
+                     }
+                  }
+                  if (err) {
+                     useri_textautosize(0L, 0L, 3UL, 0UL, 'b', h, 201ul);
                   }
                }
-               /*              click.markpos:=op^.lastpos; */
-               /*              click.marktime:=realtime; */
-               /*              click.markalti:=MAX(INTEGER); */
-               if (err) useri_textautosize(0L, 0L, 3UL, 0UL, 'b', h, 201ul);
             }
          }
-         else {
+         else if (!poiok) {
             aprsstr_Assign(hm, 9ul, h, 201ul);
             findsize(&pos, &pos1, hm, 'O');
             if (aprspos_posvalid(pos)) {
@@ -4965,13 +4938,13 @@ static void MainEvent(void)
          useri_resetimgparms();
       }
       else if (aprsdecode_click.cmd=='+') {
-         zoominout(1, xosi_Shift || xosi_Ctrl, 0, 0);
+         zoominoutpush(1, xosi_Shift || xosi_Ctrl, 0, 0);
       }
       else if (aprsdecode_click.cmd=='-') {
-         zoominout(0, xosi_Shift || xosi_Ctrl, 0, 0);
+         zoominoutpush(0, xosi_Shift || xosi_Ctrl, 0, 0);
       }
-      else if (aprsdecode_click.cmd=='\310') zoominout(1, 1, 1, 1);
-      else if (aprsdecode_click.cmd=='\311') zoominout(0, 1, 1, 1);
+      else if (aprsdecode_click.cmd=='\310') zoominoutpush(1, 1, 1, 1);
+      else if (aprsdecode_click.cmd=='\311') zoominoutpush(0, 1, 1, 1);
       else if (aprsdecode_click.cmd=='\237') MapPackage();
       else if (aprsdecode_click.cmd=='S') screenshot();
       else if (aprsdecode_click.cmd=='s') {

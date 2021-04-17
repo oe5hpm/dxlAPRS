@@ -29,6 +29,7 @@
 #ifndef aprsstr_H_
 #include "aprsstr.h"
 #endif
+#include <unistd.h>
 
 
 
@@ -36,6 +37,7 @@
 
 
 
+int32_t sdr_debfd;
 /* rtl_tcp iq fm demodulator by OE5DXL */
 #define sdr_IQBUF 65536
 
@@ -73,9 +75,19 @@ static uint32_t audiohz;
 
 static uint32_t rtlhz;
 
+static uint32_t bytespersamp;
+
 static char reconnect;
 
-static uint8_t iqbuf[65536];
+union _0;
+
+
+union _0 {
+   uint8_t u8[65536];
+   float f32[65536];
+};
+
+static union _0 iqbuf;
 
 static short DDS[2048];
 
@@ -96,6 +108,8 @@ static uint32_t ddslen;
 static uint32_t ddslen4;
 
 static float SSBDDS[2048];
+
+static float varbwk;
 
 
 static void initdds(uint32_t size)
@@ -170,9 +184,9 @@ static void iir512(sdr_pRX rx, uint32_t a, uint32_t b)
    dfc = rx->df+(uint32_t)rx->afckhz;
    i = a;
    do {
-      xr = (int32_t)iqbuf[i]-127L;
+      xr = (int32_t)iqbuf.u8[i]-127L;
       ++i;
-      xi = (int32_t)iqbuf[i]-127L;
+      xi = (int32_t)iqbuf.u8[i]-127L;
       ++i;
       ddsr = (int32_t)DDS[ph]; /* mix osz sin */
       ddsi = (int32_t)DDS[(uint32_t)((uint32_t)(ph+ddslen4)&ddslen)];
@@ -240,9 +254,9 @@ static void iir256(sdr_pRX rx, uint32_t a, uint32_t b)
    dfc = rx->df+(uint32_t)rx->afckhz;
    i = a;
    do {
-      xr = (int32_t)iqbuf[i]-127L;
+      xr = (int32_t)iqbuf.u8[i]-127L;
       ++i;
-      xi = (int32_t)iqbuf[i]-127L;
+      xi = (int32_t)iqbuf.u8[i]-127L;
       ++i;
       ddsr = (int32_t)DDS[ph]; /* mix osz sin */
       ddsi = (int32_t)DDS[(uint32_t)((uint32_t)(ph+ddslen4)&ddslen)];
@@ -310,9 +324,9 @@ static void iir128(sdr_pRX rx, uint32_t a, uint32_t b)
    dfc = rx->df+(uint32_t)rx->afckhz;
    i = a;
    do {
-      xr = (int32_t)iqbuf[i]-127L;
+      xr = (int32_t)iqbuf.u8[i]-127L;
       ++i;
-      xi = (int32_t)iqbuf[i]-127L;
+      xi = (int32_t)iqbuf.u8[i]-127L;
       ++i;
       ddsr = (int32_t)DDS[ph]; /* mix osz sin */
       ddsi = (int32_t)DDS[(uint32_t)((uint32_t)(ph+ddslen4)&ddslen)];
@@ -380,9 +394,9 @@ static void iir64(sdr_pRX rx, uint32_t a, uint32_t b)
    dfc = rx->df+(uint32_t)rx->afckhz;
    i = a;
    do {
-      xr = (int32_t)iqbuf[i]-127L;
+      xr = (int32_t)iqbuf.u8[i]-127L;
       ++i;
-      xi = (int32_t)iqbuf[i]-127L;
+      xi = (int32_t)iqbuf.u8[i]-127L;
       ++i;
       ddsr = (int32_t)DDS[ph]; /* mix osz sin */
       ddsi = (int32_t)DDS[(uint32_t)((uint32_t)(ph+ddslen4)&ddslen)];
@@ -450,9 +464,9 @@ static void iir32(sdr_pRX rx, uint32_t a, uint32_t b)
    dfc = rx->df+(uint32_t)rx->afckhz;
    i = a;
    do {
-      xr = (int32_t)iqbuf[i]-127L;
+      xr = (int32_t)iqbuf.u8[i]-127L;
       ++i;
-      xi = (int32_t)iqbuf[i]-127L;
+      xi = (int32_t)iqbuf.u8[i]-127L;
       ++i;
       ddsr = (int32_t)DDS[ph]; /* mix osz sin */
       ddsi = (int32_t)DDS[(uint32_t)((uint32_t)(ph+ddslen4)&ddslen)];
@@ -520,9 +534,9 @@ static void iir16(sdr_pRX rx, uint32_t a, uint32_t b)
    dfc = rx->df+(uint32_t)rx->afckhz;
    i = a;
    do {
-      xr = (int32_t)iqbuf[i]-127L;
+      xr = (int32_t)iqbuf.u8[i]-127L;
       ++i;
-      xi = (int32_t)iqbuf[i]-127L;
+      xi = (int32_t)iqbuf.u8[i]-127L;
       ++i;
       ddsr = (int32_t)DDS[ph]; /* mix osz sin */
       ddsi = (int32_t)DDS[(uint32_t)((uint32_t)(ph+ddslen4)&ddslen)];
@@ -590,9 +604,9 @@ static void iir8(sdr_pRX rx, uint32_t a, uint32_t b)
    dfc = (uint32_t)((uint32_t)(rx->df+(uint32_t)rx->afckhz)&ddslen);
    i = a;
    do {
-      xr = (int32_t)iqbuf[i]-127L;
+      xr = (int32_t)iqbuf.u8[i]-127L;
       ++i;
-      xi = (int32_t)iqbuf[i]-127L;
+      xi = (int32_t)iqbuf.u8[i]-127L;
       ++i;
       ddsr = (int32_t)DDS[ph]; /* mix osz sin */
       ddsi = (int32_t)DDS[(uint32_t)((uint32_t)(ph+ddslen4)&ddslen)];
@@ -664,9 +678,9 @@ static void iirvar(sdr_pRX rx, uint32_t a, uint32_t b, float bw)
    i = a;
    bw2 = bw*2.0f;
    do {
-      xr = (float)iqbuf[i]-127.5f;
+      xr = (float)iqbuf.u8[i]-127.5f;
       ++i;
-      xi = (float)iqbuf[i]-127.5f;
+      xi = (float)iqbuf.u8[i]-127.5f;
       ++i;
       ddsr = DDSR[ph]; /* mix osz sin */
       ddsi = DDSR[(uint32_t)((uint32_t)(ph+ddslen4)&ddslen)];
@@ -695,6 +709,79 @@ static void iirvar(sdr_pRX rx, uint32_t a, uint32_t b, float bw)
    }
    rx->phase = ph;
 } /* end iirvar() */
+
+#define sdr_FG7 128
+
+
+static void iirvarf4(sdr_pRX rx, uint32_t a, uint32_t b, float bw)
+/* variable bandwidth */
+{
+   uint32_t dfc;
+   uint32_t ph;
+   uint32_t i;
+   float ddsi;
+   float ddsr;
+   float bw2;
+   float i3;
+   float i2;
+   float i1;
+   float r3;
+   float r2;
+   float r1;
+   float xi;
+   float xr;
+   struct sdr_TAP * anonym;
+   struct sdr_TAP * anonym0;
+   struct sdr_TAP * anonym1;
+   struct sdr_TAP * anonym2;
+   { /* with */
+      struct sdr_TAP * anonym = &rx->tapre;
+      r1 = anonym->ucr1;
+      r2 = anonym->ucr2;
+      r3 = anonym->ilr;
+   }
+   { /* with */
+      struct sdr_TAP * anonym0 = &rx->tapim;
+      i1 = anonym0->ucr1;
+      i2 = anonym0->ucr2;
+      i3 = anonym0->ilr;
+   }
+   ph = rx->phase;
+   dfc = rx->df+(uint32_t)rx->afckhz;
+   i = a;
+   bw2 = bw*2.0f;
+   do {
+      xr = iqbuf.f32[i];
+      ++i;
+      xi = iqbuf.f32[i];
+      ++i;
+      ddsr = DDSR[ph]; /* mix osz sin */
+      ddsi = DDSR[(uint32_t)((uint32_t)(ph+ddslen4)&ddslen)];
+                /* mix osz cos */
+      ph = (uint32_t)((uint32_t)(ph+dfc)&ddslen); /* drive mix osz */
+      r1 = r1+(((xr*ddsr-xi*ddsi)-r1)-r3)*bw; /* mixer + lowpass i */
+      r2 = r2+(r3-r2)*bw;
+      r3 = r3+(r1-r2)*bw2;
+      i1 = i1+(((xr*ddsi+xi*ddsr)-i1)-i3)*bw; /* mixer + lowpass q */
+      i2 = i2+(i3-i2)*bw;
+      i3 = i3+(i1-i2)*bw2;
+   } while (i<=b);
+   { /* with */
+      struct sdr_TAP * anonym1 = &rx->tapre;
+      anonym1->ucr1 = r1;
+      anonym1->ucr2 = r2;
+      anonym1->ilr = r3;
+      anonym1->ucr2 = r2;
+   }
+   { /* with */
+      struct sdr_TAP * anonym2 = &rx->tapim;
+      anonym2->ucr1 = i1;
+      anonym2->ucr2 = i2;
+      anonym2->ilr = i3;
+      anonym2->ucr2 = i2;
+   }
+   rx->phase = ph;
+} /* end iirvarf4() */
 
 /*
 PROCEDURE genfirtab(VAR t:ARRAY OF REAL; fg:REAL);
@@ -883,6 +970,8 @@ static short getsamp(sdr_pRX rx, char notfirst)
 extern int32_t sdr_getsdr(uint32_t samps, sdr_pRX rx[],
                 uint32_t rx_len)
 {
+   uint32_t rpos;
+   uint32_t rlen;
    uint32_t wssb;
    uint32_t ws;
    uint32_t bs;
@@ -891,6 +980,7 @@ extern int32_t sdr_getsdr(uint32_t samps, sdr_pRX rx[],
    uint32_t a;
    uint32_t r;
    uint32_t s;
+   int32_t res;
    int32_t u;
    struct sdr_RX * anonym;
    struct sdr_RX * anonym0;
@@ -903,20 +993,27 @@ extern int32_t sdr_getsdr(uint32_t samps, sdr_pRX rx[],
    if (fd>=0L) {
       sampsum = sampsum&1023UL; /* partial sample reminder of last block */
       if (samps*(sampsize+1UL)>32768UL) samps = 32768UL/(sampsize+1UL);
+      rlen = ((samps*reduce+sampsum)/1024UL)*bytespersamp;
       if (isfile) {
-         if (osi_RdBin(fd, (char *)iqbuf, 65536u/1u,
-                ((samps*reduce+sampsum)/1024UL)*2UL)<=0L) {
-            osic_Close(fd);
-            fd = -1L;
-            return -1L;
-         }
+         rpos = 0UL;
+         do {
+            res = read(fd, (char *) &iqbuf.u8[rpos], rlen-rpos);
+            if (res<=0L) {
+               osic_Close(fd);
+               fd = -1L;
+               return -1L;
+            }
+            rpos += (uint32_t)res;
+         } while (rpos<rlen);
       }
-      else if (readsockb(fd, (char *)iqbuf,
-                (int32_t)(((samps*reduce+sampsum)/1024UL)*2UL))<0L) {
+      else if (readsockb(fd, (char *) &iqbuf, (int32_t)rlen)<0L) {
          /* connect lost */
          osic_Close(fd);
          fd = -1L;
          return -1L;
+      }
+      if (sdr_debfd>=0L) {
+         osi_WrBin(sdr_debfd, (char *) &iqbuf, sizeof(union _0)/1u, rlen);
       }
       a = sampsum; /* continue from last partial step */
       tmp = samps-1UL;
@@ -952,15 +1049,22 @@ extern int32_t sdr_getsdr(uint32_t samps, sdr_pRX rx[],
                   anonym->fine = 0UL;
                   anonym->agcspeed = 0.001f;
                }
-               if (rtlhz<2048000UL) ws = ws*2UL;
-               if (ws==3000UL) iir512(rx[r], as, bs);
-               else if (ws==6000UL) iir256(rx[r], as, bs);
-               else if (ws==12000UL) iir128(rx[r], as, bs);
-               else if (ws==24000UL) iir64(rx[r], as, bs);
-               else if (ws==48000UL) iir32(rx[r], as, bs);
-               else if (ws==96000UL) iir16(rx[r], as, bs);
-               else if (ws==192000UL) iir8(rx[r], as, bs);
-               else iirvar(rx[r], as, bs, (float)ws*6.7934782608696E-7f);
+               if (bytespersamp==8UL) {
+                  iirvarf4(rx[r], as, bs, (float)anonym->width*varbwk);
+               }
+               else {
+                  if (rtlhz<2048000UL) ws = ws*2UL;
+                  if (ws==3000UL) iir512(rx[r], as, bs);
+                  else if (ws==6000UL) iir256(rx[r], as, bs);
+                  else if (ws==12000UL) iir128(rx[r], as, bs);
+                  else if (ws==24000UL) iir64(rx[r], as, bs);
+                  else if (ws==48000UL) iir32(rx[r], as, bs);
+                  else if (ws==96000UL) iir16(rx[r], as, bs);
+                  else if (ws==192000UL) iir8(rx[r], as, bs);
+                  else {
+                     iirvar(rx[r], as, bs, (float)ws*6.7934782608696E-7f);
+                  }
+               }
                u = (int32_t)getsamp(rx[r], s>0UL);
                anonym->samples[s] = (short)u;
                if (anonym->afcrun) anonym->median = anonym->median+u;
@@ -987,11 +1091,17 @@ extern int32_t sdr_getsdr(uint32_t samps, sdr_pRX rx[],
                   anonym0->median = anonym0->median-(anonym0->afckhz*(int32_t)
                 samps*1024L)/anonym0->maxafc; /* weak pull to middle */
                   if (anonym0->median>400000000L) {
-                     if (anonym0->afckhz<anonym0->maxafc) ++anonym0->afckhz;
+                     ++anonym0->afckhz;
+                     if (anonym0->afckhz>anonym0->maxafc) {
+                        anonym0->afckhz = anonym0->maxafc;
+                     }
                      anonym0->median = 0L;
                   }
                   else if (anonym0->median<-400000000L) {
-                     if (anonym0->afckhz>-anonym0->maxafc) --anonym0->afckhz;
+                     --anonym0->afckhz;
+                     if (anonym0->afckhz<-anonym0->maxafc) {
+                        anonym0->afckhz = -anonym0->maxafc;
+                     }
                      anonym0->median = 0L;
                   }
                   anonym0->afcrun = 1;
@@ -1025,13 +1135,21 @@ extern void sdr_setparm(uint32_t num, uint32_t value)
 
 extern char sdr_startsdr(char ip[], uint32_t ip_len,
                 char tport[], uint32_t tport_len, uint32_t inhz,
-                uint32_t outhz, char reconn)
+                uint32_t outhz, char reconn, uint32_t format)
 {
    aprsstr_Assign(url, 1001ul, ip, ip_len);
    aprsstr_Assign(port, 11ul, tport, tport_len);
    reconnect = reconn;
+   bytespersamp = 2UL;
    if (inhz>0UL) rtlhz = inhz;
-   if (rtlhz!=1024000UL && (rtlhz<2048000UL || rtlhz>2500000UL)) return 0;
+   if (format==4UL) {
+      if (rtlhz<1000000UL || rtlhz>3000000UL) return 0;
+      bytespersamp = 8UL;
+      varbwk = X2C_DIVR(1.3913043478261f,(float)rtlhz);
+   }
+   else if (rtlhz!=1024000UL && (rtlhz<2048000UL || rtlhz>2500000UL)) {
+      return 0;
+   }
    if (outhz>0UL) audiohz = outhz;
    reduce = (1024UL*rtlhz+audiohz/2UL)/audiohz; /* sample reduction * 1024 */
    sampsize = reduce/1024UL; /* input samples per output sample, trunc */
@@ -1041,7 +1159,7 @@ extern char sdr_startsdr(char ip[], uint32_t ip_len,
       else fd = connecttob(url, port);
    }
    if (fd>=0L) {
-      if (!isfile) sdr_setparm(2UL, rtlhz);
+      if (!isfile && format==1UL) sdr_setparm(2UL, rtlhz);
       if (inhz>=2048000UL) initdds(2048UL);
       else initdds(1024UL);
       initssbdds(SSBDDS, 2048ul);
@@ -1059,6 +1177,7 @@ extern void sdr_BEGIN(void)
    aprsstr_BEGIN();
    osi_BEGIN();
    fd = -1L;
+   sdr_debfd = -1L;
    reconnect = 0;
    rtlhz = 2048000UL;
    audiohz = 16000UL;

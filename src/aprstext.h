@@ -43,8 +43,9 @@ extern void aprstext_decode(char [], uint32_t, aprsdecode_pFRAMEHIST,
 extern void aprstext_strcp(char [], uint32_t, uint32_t, uint32_t,
                 char [], uint32_t);
 
-extern void aprstext_optext(uint32_t, struct aprsdecode_CLICKOBJECT *,
-                char *, char [], uint32_t);
+extern void aprstext_optext(uint32_t, char [], uint32_t,
+                struct aprsdecode_CLICKOBJECT *, char *, char [],
+                uint32_t);
 
 extern void aprstext_measure(struct aprsstr_POSITION,
                 struct aprsstr_POSITION, char [], uint32_t,

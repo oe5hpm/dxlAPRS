@@ -28,6 +28,8 @@
 
 uint32_t libsrtm_srtmmem;
 uint32_t libsrtm_srtmmaxmem;
+uint32_t libsrtm_accesses;
+uint32_t libsrtm_accessescached;
 char libsrtm_srtmdir[1024];
 char libsrtm_bicubic;
 /* get altitude out of srtm files directory tree by oe5dxl */
@@ -271,7 +273,7 @@ static void purgesrtm(char all)
 
 
 static int32_t getsrtm1(uint32_t ilat, uint32_t ilong,
-                uint32_t * div0)
+                uint32_t * div1)
 /* 1 pixel altitude */
 {
    uint32_t rdsize;
@@ -290,7 +292,7 @@ static int32_t getsrtm1(uint32_t ilat, uint32_t ilong,
    struct SRTMTILE * anonym;
    struct SRTMTILE * anonym0;
    uint32_t tmp;
-   *div0 = 1UL;
+   *div1 = 1UL;
    ydeg = ilat/3600UL;
    xdeg = ilong/3600UL;
    if (xdeg>359UL || ydeg>179UL) return 32767L;
@@ -337,7 +339,7 @@ static int32_t getsrtm1(uint32_t ilat, uint32_t ilong,
    }
    { /* with */
       struct SRTMTILE * anonym0 = pt;
-      *div0 = (uint32_t)anonym0->typ;
+      *div1 = (uint32_t)anonym0->typ;
       if (anonym0->typ==1U) {
          y = ilat%3600UL;
          x = ilong%3600UL;
@@ -465,13 +467,57 @@ static float am(uint32_t ilat, uint32_t ilong)
 } /* end am() */
 
 
-static float int4(float a0, float a1, float a2, float a3,
+static float int4(float a01, float a10, float a20, float a30,
                 float vx, float vy)
 {
-   return (a1*vx+a0*(1.0f-vx))*(1.0f-vy)+(a3*vx+a2*(1.0f-vx))*vy;
+   return (a10*vx+a01*(1.0f-vx))*(1.0f-vy)+(a30*vx+a20*(1.0f-vx))*vy;
 } /* end int4() */
 /*BEGIN RETURN (a0*(1.0-vx) + a1*vx)*(1.0-vy) + (a2*(1.0-vx) + a3*vx)
                 *vy END int4; */
+
+static float a00;
+
+static float a0;
+
+static float a1;
+
+static float a2;
+
+static float a3;
+
+static float a4;
+
+static float a5;
+
+static float a6;
+
+static float a7;
+
+static float a8;
+
+static uint8_t at0;
+
+static uint8_t at1;
+
+static uint8_t at2;
+
+static uint8_t at3;
+
+static uint32_t lastilat;
+
+static uint32_t lastilong;
+
+static uint32_t lastilat1;
+
+static uint32_t lastilong1;
+
+static uint32_t lastilat2;
+
+static uint32_t lastilong2;
+
+static uint32_t div0;
+
+static uint8_t lastatt0;
 
 
 extern float libsrtm_getsrtmlong(double lat, double long0,
@@ -481,22 +527,13 @@ extern float libsrtm_getsrtmlong(double lat, double long0,
 {
    uint32_t d;
    uint32_t div2;
-   uint32_t div0;
    uint32_t ilong;
    uint32_t ilat;
    uint32_t ilongdd;
+   /*    a0, a1, a2, a3, a4, a5, a6, a7, a8:REAL; */
    uint32_t ilongd;
    uint32_t ilatdd;
    uint32_t ilatd;
-   float a8;
-   float a7;
-   float a6;
-   float a5;
-   float a4;
-   float a3;
-   float a2;
-   float a1;
-   float a0;
    int32_t i3;
    int32_t i2;
    int32_t i1;
@@ -505,44 +542,51 @@ extern float libsrtm_getsrtmlong(double lat, double long0,
    float vx5;
    float vy;
    float vx;
+   float an1;
    float dx2;
    float dx1;
    float dx0;
-   uint8_t att;
    /* want attibute interpolation */
    struct libsrtm_METAINFO * anonym;
+   ++libsrtm_accesses;
    if (libsrtm_srtmmaxmem>0UL && libsrtm_srtmmem>libsrtm_srtmmaxmem) {
       purgesrtm(0);
    }
-   lat = 3.24E+5+lat*2.0626480625299E+5;
-   long0 = 6.48E+5+long0*2.0626480625299E+5;
+   lat = 3.239995E+5+lat*2.0626480625299E+5;
+   long0 = 6.480005E+5+long0*2.0626480625299E+5;
    if (lat>=0.0) ilat = (uint32_t)X2C_TRUNCC(lat,0UL,X2C_max_longcard);
    else ilat = 0UL;
    if (long0>=0.0) {
       ilong = (uint32_t)X2C_TRUNCC(long0,0UL,X2C_max_longcard);
    }
    else ilong = 0UL;
-   i0 = getsrtm1(ilat, ilong, &div0);
-   *att0 = (uint8_t)chkmeta(&i0);
-   /*
-     IF pmeta<>NIL THEN
-       pmeta^.slantx:=0.0;
-       pmeta^.slanty:=0.0;
-       FILL(ADR(pmeta^.attrweights[0]), 0C, SIZE(pmeta^.attrweights));
-     END;
-   */
-   if (i0>=32767L) return 32767.0f;
-   a0 = resmeta(i0);
+   if (ilat!=lastilat || ilong!=lastilong) {
+      i0 = getsrtm1(ilat, ilong, &div0);
+      lastatt0 = (uint8_t)chkmeta(&i0);
+      /*
+        IF pmeta<>NIL THEN
+          pmeta^.slantx:=0.0;
+          pmeta^.slanty:=0.0;
+          FILL(ADR(pmeta^.attrweights[0]), 0C, SIZE(pmeta^.attrweights));
+        END;
+      */
+      if (i0>=32767L) return 32767.0f;
+      a00 = resmeta(i0);
+      lastilat = ilat;
+      lastilong = ilong;
+   }
+   else ++libsrtm_accessescached;
+   *att0 = lastatt0;
    if (pmeta) quality = 0UL;
    if (div0==1UL) {
       *resolution = 30.0f;
-      if (quality>29UL) return a0;
+      if (quality>29UL) return a00;
       vx = (float)(long0-(double)ilong);
       vy = (float)(lat-(double)ilat);
    }
    else if (div0==3UL) {
       *resolution = 90.0f;
-      if (quality>60UL) return a0;
+      if (quality>60UL) return a00;
       vx = (float)((long0-(double)((ilong/3UL)*3UL))
                 *3.3333333333333E-1);
       vy = (float)((lat-(double)((ilat/3UL)*3UL))
@@ -550,7 +594,7 @@ extern float libsrtm_getsrtmlong(double lat, double long0,
    }
    else {
       *resolution = 900.0f;
-      if (quality>300UL) return a0;
+      if (quality>300UL) return a00;
       vx = (float)((long0-(double)((ilong/30UL)*30UL))
                 *3.3333333333333E-2);
       vy = (float)((lat-(double)((ilat/30UL)*30UL))
@@ -566,31 +610,37 @@ extern float libsrtm_getsrtmlong(double lat, double long0,
    vy5 = vy+0.5f;
    ilatd = ilat+div0;
    ilongd = ilong+div0;
-   i0 = getsrtm1(ilat, ilong, &d);
-   i1 = getsrtm1(ilat, ilongd, &d);
-   i2 = getsrtm1(ilatd, ilong, &d);
-   i3 = getsrtm1(ilatd, ilongd, &d);
-   if (((i0>=32767L || i1>=32767L) || i2>=32767L) || i3>=32767L) return a0;
+   if (ilat!=lastilat1 || ilong!=lastilong1) {
+      i0 = getsrtm1(ilat, ilong, &d);
+      i1 = getsrtm1(ilat, ilongd, &d);
+      i2 = getsrtm1(ilatd, ilong, &d);
+      i3 = getsrtm1(ilatd, ilongd, &d);
+      if (((i0>=32767L || i1>=32767L) || i2>=32767L) || i3>=32767L) {
+         return a00;
+      }
+      a0 = resmeta(i0);
+      a1 = resmeta(i1);
+      a2 = resmeta(i2);
+      a3 = resmeta(i3);
+      at0 = (uint8_t)chkmeta(&i0);
+      at1 = (uint8_t)chkmeta(&i1);
+      at2 = (uint8_t)chkmeta(&i2);
+      at3 = (uint8_t)chkmeta(&i3);
+      lastilat1 = ilat;
+      lastilong1 = ilong;
+   }
    if (pmeta && pmeta->aliasattr) {
       { /* with */
          struct libsrtm_METAINFO * anonym = pmeta;
          memset((char *) &anonym->attrweights[0U],(char)0,
                 sizeof(float [8]));
-         att = (uint8_t)chkmeta(&i0);
-         anonym->attrweights[att] = anonym->attrweights[att]+(1.0f-vx5)
+         anonym->attrweights[at0] = anonym->attrweights[at0]+(1.0f-vx5)
                 *(1.0f-vy5);
-         att = (uint8_t)chkmeta(&i1);
-         anonym->attrweights[att] = anonym->attrweights[att]+vx5*(1.0f-vy5);
-         att = (uint8_t)chkmeta(&i2);
-         anonym->attrweights[att] = anonym->attrweights[att]+(1.0f-vx5)*vy5;
-         att = (uint8_t)chkmeta(&i3);
-         anonym->attrweights[att] = anonym->attrweights[att]+vx5*vy5;
+         anonym->attrweights[at1] = anonym->attrweights[at1]+vx5*(1.0f-vy5);
+         anonym->attrweights[at2] = anonym->attrweights[at2]+(1.0f-vx5)*vy5;
+         anonym->attrweights[at3] = anonym->attrweights[at3]+vx5*vy5;
       }
    }
-   a0 = resmeta(i0);
-   a1 = resmeta(i1);
-   a2 = resmeta(i2);
-   a3 = resmeta(i3);
    /*interpolate 4 dots */
    if (!bicubic) {
       /* bilinear */
@@ -615,11 +665,15 @@ extern float libsrtm_getsrtmlong(double lat, double long0,
       errflag = 0;
       if (pmeta && pmeta->withslant) {
          /* cubic interpolate and slants */
-         a4 = am(ilat, ilongdd);
-         a5 = am(ilatd, ilongdd);
-         a6 = am(ilatdd, ilong);
-         a7 = am(ilatdd, ilongd);
-         a8 = am(ilatdd, ilongdd);
+         if (ilat!=lastilat2 || ilong!=lastilong2) {
+            a4 = am(ilat, ilongdd);
+            a5 = am(ilatd, ilongdd);
+            a6 = am(ilatdd, ilong);
+            a7 = am(ilatdd, ilongd);
+            a8 = am(ilatdd, ilongdd);
+            lastilat2 = ilat;
+            lastilong2 = ilong;
+         }
          dx0 = qint(a0, a1, a4, vx);
          dx1 = qint(a2, a3, a5, vx);
          dx2 = qint(a6, a7, a8, vx);
@@ -628,16 +682,16 @@ extern float libsrtm_getsrtmlong(double lat, double long0,
          dx1 = qint(a1, a3, a7, vy);
          dx2 = qint(a4, a5, a8, vy);
          pmeta->slantx = X2C_DIVR(qintd(dx0, dx1, dx2, vx),*resolution);
-         a1 = qint(dx0, dx1, dx2, vx);
-         if (errflag) return a0;
-         else return a1;
+         an1 = qint(dx0, dx1, dx2, vx);
+         if (errflag) return a00;
+         else return an1;
       }
       else {
-         a1 = qint(qint(a0, a1, am(ilat, ilongdd), vx), qint(a2, a3,
+         an1 = qint(qint(a0, a1, am(ilat, ilongdd), vx), qint(a2, a3,
                 am(ilatd, ilongdd), vx), qint(am(ilatdd, ilong), am(ilatdd,
                 ilongd), am(ilatdd, ilongdd), vx), vy);
-         if (errflag) return a0;
-         else return a1;
+         if (errflag) return a00;
+         else return an1;
       }
    }
    return 0;
@@ -721,7 +775,7 @@ static float rdgeoid(int32_t fd, int32_t lat, int32_t long0,
    int32_t n;
    osic_Seek(fd, (uint32_t)((lat*1440L+long0)*2L));
    if (osi_RdBin(fd, (char *)b, 2u/1u, 2UL)!=2L) {
-      n = 0L; /* no data in file */
+      /* no data in file */
       n = 0L;
       *ok0 = 0;
    }
@@ -794,5 +848,13 @@ extern void libsrtm_BEGIN(void)
    libsrtm_srtmmaxmem = 0UL; /* 0 no auto purge */
    libsrtm_srtmdir[0] = 0;
    libsrtm_bicubic = 0;
+   lastilat = X2C_max_longcard;
+   lastilong = X2C_max_longcard;
+   lastilat1 = X2C_max_longcard;
+   lastilong1 = X2C_max_longcard;
+   lastilat2 = X2C_max_longcard;
+   lastilong2 = X2C_max_longcard;
+   libsrtm_accessescached = 0UL;
+   libsrtm_accesses = 0UL;
 }
 

@@ -32,18 +32,14 @@
 #ifndef aprsstr_H_
 #include "aprsstr.h"
 #endif
+#include <signal.h>
 
 /* axudp / tcpip  aprs-is gateway and message repeater by OE5DXL */
-/*FROM Storage IMPORT ALLOCATE, DEALLOCATE; */
-/*FROM TimeConv IMPORT time;  */
-/*
-FROM stat IMPORT fstat, stat_t;
-*/
 #define udpgate4_CALLLEN 7
 
 #define udpgate4_HASHSIZE 65536
 
-#define udpgate4_VERS "udpgate 0.68"
+#define udpgate4_VERS "udpgate 0.71"
 
 #define udpgate4_TOCALL "APNL51"
 
@@ -97,6 +93,8 @@ struct POSCALL {
    struct aprsstr_POSITION pos;
 };
 
+typedef MONCALL FILTERCALLS[9];
+
 struct FILTERS;
 
 
@@ -105,18 +103,24 @@ struct FILTERS {
    struct aprsstr_POSITION base;
    struct aprsstr_POSITION edge;
    float radius;
-   MONCALL viacalls[8];
+   FILTERCALLS viacalls;
    char notvia;
-   MONCALL entrycalls[8];
+   FILTERCALLS entrycalls;
    char notentry;
-   MONCALL prefixes[8];
+   FILTERCALLS prefixes;
    char notprefix;
-   MONCALL bud[8];
+   FILTERCALLS bud;
    char notbud;
-   MONCALL objects[8];
+   FILTERCALLS objects;
    char notobject;
-   MONCALL destcalls[8];
+   FILTERCALLS destcalls;
    char notdestcall;
+   FILTERCALLS msgs;
+   char notmsgs;
+   FILTERCALLS q;
+   char notq;
+   FILTERCALLS symbols;
+   char notsymbols;
    char typs[13];
    char nottyps;
 };
@@ -286,6 +290,7 @@ struct MESSAGE {
    uint32_t ack2rf;
    uint32_t ack2net;
    uint32_t retryc;
+   uint32_t spamcnt;
    uint8_t acksrc;
    uint8_t src;
    char reject;
@@ -342,7 +347,8 @@ struct HEARD {
    char ungate; /* flag set by user to not igate this direct heard */
    uint16_t txd;
    uint8_t quali;
-   signed char level;
+   short level;
+   signed char snr;
    pRAWTEXT rawtext[2]; /* normal / junk raw frame storage */
 };
 
@@ -375,9 +381,13 @@ static char mhperport;
 /* mh line for same call but different port */
 static char datafilter;
 
+/* send no data to user with no filter set */
+static char sighup;
+
+static char rfcallchk;
+
 static char verb;
 
-/* send no data to user with no filter set */
 static char callsrc;
 
 static pTCPSOCK tcpsocks;
@@ -403,6 +413,8 @@ static uint32_t maxpongtime;
 static uint32_t dupetime;
 
 static uint32_t uptime;
+
+static uint32_t readurlfiletime;
 
 static FILENAME rawlogname;
 
@@ -501,6 +513,10 @@ static uint32_t rawlines;
 
 static uint32_t msgretries;
 
+static uint32_t spammincnt;
+
+static uint32_t spamminlen;
+
 static uint32_t purgeunack;
 
 static uint32_t purgemsg;
@@ -593,7 +609,9 @@ static void wrcalls(char s[], uint32_t s_len, const MONCALL tab[],
       j = 0UL;
       while (tab[j][0U]) {
          aprsstr_Append(s, s_len, "/", 2ul);
-         aprsstr_Append(s, s_len, tab[j], 10ul);
+         if ((uint8_t)tab[j][0U]>' ') {
+            aprsstr_Append(s, s_len, tab[j], 10ul);
+         }
          ++j;
       }
    }
@@ -623,12 +641,15 @@ static void FiltToStr(struct FILTERS f, char s[], uint32_t s_len)
          aprsstr_Assign(s, s_len, "m", 2ul);
          app(s, s_len, anonym->radius, 0);
       }
-      wrcalls(s, s_len, anonym->viacalls, 8ul, anonym->notvia, 'd');
-      wrcalls(s, s_len, anonym->entrycalls, 8ul, anonym->notentry, 'e');
-      wrcalls(s, s_len, anonym->prefixes, 8ul, anonym->notprefix, 'p');
-      wrcalls(s, s_len, anonym->bud, 8ul, anonym->notbud, 'b');
-      wrcalls(s, s_len, anonym->objects, 8ul, anonym->notobject, 'o');
-      wrcalls(s, s_len, anonym->destcalls, 8ul, anonym->notdestcall, 'u');
+      wrcalls(s, s_len, anonym->viacalls, 9ul, anonym->notvia, 'd');
+      wrcalls(s, s_len, anonym->entrycalls, 9ul, anonym->notentry, 'e');
+      wrcalls(s, s_len, anonym->prefixes, 9ul, anonym->notprefix, 'p');
+      wrcalls(s, s_len, anonym->bud, 9ul, anonym->notbud, 'b');
+      wrcalls(s, s_len, anonym->objects, 9ul, anonym->notobject, 'o');
+      wrcalls(s, s_len, anonym->destcalls, 9ul, anonym->notdestcall, 'u');
+      wrcalls(s, s_len, anonym->msgs, 9ul, anonym->notmsgs, 'g');
+      wrcalls(s, s_len, anonym->q, 9ul, anonym->notq, 'q');
+      wrcalls(s, s_len, anonym->symbols, 9ul, anonym->notsymbols, 's');
       if (anonym->typs[0U]) {
          aprsstr_Append(s, s_len, " ", 2ul);
          if (anonym->nottyps) aprsstr_Append(s, s_len, "-", 2ul);
@@ -740,6 +761,7 @@ static void readurlsfile(const char gatesfn0[], uint32_t gatesfn_len)
    int32_t len;
    int32_t fd;
    FILENAME h;
+   if (verb) osi_WrStrLn("read url-file", 14ul);
    memset((char *)gateways,(char)0,sizeof(struct _2 [21]));
    fd = osi_OpenRead(gatesfn0, gatesfn_len);
    if (fd<0L) {
@@ -841,6 +863,7 @@ static void parms(void)
    keeptime = 0UL; /*600*/ /* default keep connected to gateway time */
    allkey[0U] = 0;
    aprsstr_showctrl = 1;
+   spamminlen = 65UL; /* percent of line same text is message spam */
    for (;;) {
       osi_NextArg(h, 4096ul);
       if (h[0U]==0) break;
@@ -898,11 +921,12 @@ static void parms(void)
             memcpy(ghost,_cnst,36u);
          }
          else if (lasth=='c') callsrc = 1;
-         else if (lasth=='s' || lasth=='S') {
+         else if (X2C_CAP(lasth)=='S') {
+            rfcallchk = lasth=='s';
             osi_NextArg(h, 4096ul);
             aprsstr_Assign(servercall, 10ul, h, 4096ul);
             if ((servercall[0U]==0 || servercall[0U]=='-')
-                || lasth=='s' && !callok(h, 4096ul)) {
+                || rfcallchk && !callok(h, 4096ul)) {
                Err("-s call-ssid", 13ul);
             }
          }
@@ -981,12 +1005,13 @@ static void parms(void)
             if (GetSec(h, 4096ul, &i0, &n)>=0L) heardtimevia = n*60UL;
             else Err("-I minutes", 11ul);
          }
-         else if (lasth=='i') {
-            osi_NextArg(h, 4096ul);
-            if (h[0U]=='-') h[0U] = 0;
-            aprsstr_Assign(allkey, 10ul, h, 4096ul);
-         }
          else if (lasth=='L') {
+            /*
+                  ELSIF lasth="i" THEN
+                    NextArg(h);
+                    IF h[0]="-" THEN h[0]:=0C END;
+                    Assign(allkey, h);
+            */
             osi_NextArg(h, 4096ul);
             i0 = 0UL;
             if (GetSec(h, 4096ul, &i0, &n)>=0L) maxmsg = n;
@@ -1178,13 +1203,20 @@ ilter is used", 63ul);
 ]:14580#m/200", 63ul);
                osi_WrStrLn(" -g :<filename> read gateway urls from file url:p\
 ort#filter,filter,...", 71ul);
+               osi_WrStrLn("                send SIGHUP to reread file & reco\
+nnect (kill -SIGHUP <tasknumber>)", 83ul);
                osi_WrStrLn(" -H <time>      direct heard keep time minutes (M\
 in) (-H 1440)", 63ul);
                osi_WrStrLn(" -h             this", 21ul);
                osi_WrStrLn(" -I <time>      indirect heard keep time minutes \
 (Min) (-I 30)", 63ul);
-               osi_WrStrLn(" -i <word>      keyword in rf-frame-comment to en\
-able multipath, * for all frames", 82ul);
+               /*        WrStrLn("
+                -i <word>      keyword in rf-frame-comment to enable multipath,
+                 * for all frames"); */
+               osi_WrStrLn(" -J <count>[:<fit%>] enable message spam filter o\
+n count % same text from or to", 80ul);
+               osi_WrStrLn("                  same call (-J 10:65), messages \
+are deleted at -U time", 72ul);
                osi_WrStrLn(" -j <time>[:<count>]   maximum time/count to (re)\
 send messages (s) (-j 21600:12)", 81ul);
                osi_WrStrLn("                count=0: message passed thru to d\
@@ -1204,7 +1236,7 @@ bled all msg to heard gatet", 77ul);
                osi_WrStrLn(" -M             same as -R but tnc text format",
                 47ul);
                osi_WrStrLn(" -m <maxconnects> max inbound connects -m 20 (def\
-ault 50)", 58ul);
+ault 200)", 59ul);
                osi_WrStrLn(" -N             send no stored messages to net ex\
 cept query answers", 68ul);
                osi_WrStrLn(" -n <min>:<file> netbeacon minutes:filename -n 10\
@@ -1266,7 +1298,7 @@ lt 15s, off 0, max 60)", 72ul);
                osi_WrStrLn(" -t <localport> local igate tcp port for in conne\
 cts -t 14580", 62ul);
                osi_WrStrLn(" -U <time[:time]> purge unsent(:sent) unack messa\
-ges after seconds (-P 600:60)", 79ul);
+ges after seconds (-U 600:60)", 79ul);
                osi_WrStrLn(" -u <maxlines>  raw frame listing by click to fra\
 me counter in Heard list (20) (0 off)", 87ul);
                osi_WrStrLn(" -V <path>      Via Path for net to rf frames, \"\
@@ -1274,15 +1306,18 @@ me counter in Heard list (20) (0 off)", 87ul);
                osi_WrStrLn(" -v             show frames and analytics on stdo\
 ut", 52ul);
                osi_WrStrLn(" -W <filesize>  limit www server file size in 102\
-4byte, (-W 1000)", 66ul);
+4byte, (-W 4000)", 66ul);
                osi_WrStrLn(" -w <port>      port of www server -w 14501",
                 44ul);
                osi_WrStrLn(" -x <call>      via <call> send messages to rf (-\
 x OE0AAA-10) tx off: -x -", 75ul);
                osi_WrStrLn("                default is server call", 39ul);
-               osi_WrStrLn(" -Y [num][,num]... bad digis fingerprints to inse\
-rt GHOST* in otherwise false", 78ul);
-               osi_WrStrLn("                direct heard path", 34ul);
+               /*
+                       WrStrLn(" -Y [num][,
+                num]... bad digis fingerprints to insert GHOST* in otherwise false")
+                ;
+                       WrStrLn("                direct heard path");
+               */
                osi_WrStrLn("udpgate -v -R 127.0.0.1:9200:9201 -s MYCALL-10 -l\
  7:aprs.log -n 10:beacon.txt -t 14580 -g www.server.org:14580#m/30 -p 12345",
                  125ul);
@@ -1304,6 +1339,17 @@ rt GHOST* in otherwise false", 78ul);
                   ++i0;
                   if (GetSec(h, 4096ul, &i0, &n)>=0L) msgretries = n;
                   else Err("-j seconds[:retries]", 21ul);
+               }
+            }
+            else if (lasth=='J') {
+               osi_NextArg(h, 4096ul);
+               i0 = 0UL;
+               if (GetSec(h, 4096ul, &i0, &n)>=0L) spammincnt = n;
+               else Err("-J mincount[:cmplen%]", 22ul);
+               if (h[i0]==':') {
+                  ++i0;
+                  if (GetSec(h, 4096ul, &i0, &n)>=0L) spamminlen = n;
+                  else Err("-J mincount[:cmplen%]", 22ul);
                }
             }
             else if (lasth=='P') {
@@ -1942,68 +1988,73 @@ static void showlogout(pTCPSOCK sp)
 } /* end showlogout() */
 
 
-static char vias(char dat[], uint32_t dat_len, pTCPSOCK to)
+static char callscmp(uint32_t i0, uint32_t len,
+                char ignorlonger, const char dat[],
+                uint32_t dat_len, const FILTERCALLS calls)
 {
+   uint32_t k;
    uint32_t j;
-   uint32_t i0;
-   uint32_t b;
-   uint32_t a;
-   struct FILTERS * anonym;
-   if (to->filters.viacalls[0U][0U]==0 || dat[0UL]==0) return 0;
-   b = 0UL;
-   do {
-      a = b+1UL;
-      do {
-         ++b;
-         if (b>dat_len-1 || dat[b]==0) return 0;
-      } while (!(dat[b]==',' || dat[b]==':'));
-      /* not normal data */
-      if (a>1UL) {
-         j = 0UL;
-         { /* with */
-            struct FILTERS * anonym = &to->filters;
-            while (j<=7UL && anonym->viacalls[j][0U]) {
-               i0 = 0UL;
-               for (;;) {
-                  if (a+i0>=b || dat[a+i0]=='*') {
-                     /* end of word 1 ignore h-bit "*" */
-                     if ((i0>9UL || anonym->viacalls[j][i0]==0)
-                || anonym->viacalls[j][i0]
-                =='*' && (i0+1UL>9UL || anonym->viacalls[j][i0+1UL]==0)) {
-                        return 1;
-                     }
-                     else break;
-                  }
-                  if (i0>9UL || anonym->viacalls[j][i0]==0) {
-                     break; /* end of word 2 */
-                  }
-                  if (anonym->viacalls[j][i0]
-                =='*' && (i0+1UL>9UL || anonym->viacalls[j][i0+1UL]==0)) {
-                     return 1;
-                  }
-                  /* word 2 "*" at end */
-                  if (anonym->viacalls[j][i0]!='*' && anonym->viacalls[j][i0]
-                !=dat[a+i0]) break;
-                  ++i0;
-               }
-               ++j; /* next call in table */
-            }
+   char eos;
+   char w;
+   j = 0UL;
+   while (j<=8UL && calls[j][0U]) {
+      k = 0UL;
+      for (;;) {
+         w = calls[j][k]=='*';
+         if (!w && calls[j][k]!=dat[i0+k]) break;
+         ++k;
+         if (i0+k>dat_len-1) break;
+         eos = k>=len || (uint8_t)dat[i0+k]<=' ';
+         if (k>9UL || calls[j][k]==0) {
+            if ((eos || w) || ignorlonger) return 1;
+            else break;
+         }
+         if (eos) {
+            do {
+               if (calls[j][k]!='*') goto loop_exit;
+               ++k;
+            } while (!(k>9UL || calls[j][k]==0));
+            return 1;
          }
       }
-   } while (dat[b]!=':');
+      loop_exit:;
+      ++j;
+   }
+   return 0;
+} /* end callscmp() */
+
+
+static char vias(char dat[], uint32_t dat_len,
+                const FILTERCALLS calls)
+{
+   uint32_t b;
+   uint32_t a;
+   if (calls[0U][0U]==0 || dat[0UL]==0) return 0;
+   a = 5UL;
+   while (dat[a]!='*') {
+      /* find last H-bit */
+      if ((a>=dat_len-1 || dat[a]==0) || dat[a]==':') return 0;
+      ++a;
+   }
+   for (;;) {
+      b = a;
+      do {
+         --a;
+         if (a<3UL) return 0;
+      } while (dat[a-1UL]!=',');
+      if (callscmp(a, b-a, 0, dat, dat_len, calls)) return 1;
+   }
    return 0;
 } /* end vias() */
 
 
 static char entrypoint(char dat[], uint32_t dat_len,
-                pTCPSOCK to)
+                const FILTERCALLS calls)
 {
-   uint32_t j;
    uint32_t i0;
    uint32_t b;
    uint32_t a;
-   struct FILTERS * anonym;
-   if (to->filters.entrycalls[0U][0U]==0) return 0;
+   if (calls[0U][0U]==0) return 0;
    i0 = 0UL;
    for (;;) {
       if ((i0>(dat_len-1)-5UL || dat[i0]==0) || dat[i0]==':') return 0;
@@ -2018,84 +2069,27 @@ static char entrypoint(char dat[], uint32_t dat_len,
       }
       ++i0;
    }
-   j = 0UL;
-   { /* with */
-      struct FILTERS * anonym = &to->filters;
-      while (j<=7UL && anonym->entrycalls[j][0U]) {
-         i0 = 0UL;
-         for (;;) {
-            if (a+i0>=b) {
-               /* end of word 1 */
-               if ((i0>9UL || anonym->entrycalls[j][i0]==0)
-                || anonym->entrycalls[j][i0]
-                =='*' && (i0+1UL>9UL || anonym->entrycalls[j][i0+1UL]==0)) {
-                  return 1;
-               }
-               else break;
-            }
-            if (i0>9UL || anonym->entrycalls[j][i0]==0) break;
-            if (anonym->entrycalls[j][i0]
-                =='*' && (i0+1UL>9UL || anonym->entrycalls[j][i0+1UL]==0)) {
-               return 1;
-            }
-            /* word 2 "*" at end */
-            if (anonym->entrycalls[j][i0]!='*' && anonym->entrycalls[j][i0]
-                !=dat[a+i0]) break;
-            ++i0;
-         }
-         /*
-                 WHILE (a+i<b) & ((entrycalls[j][i]="*")
-                OR (entrycalls[j][i]=dat[a+i])) DO
-                   INC(i);
-                   IF (a+i>=b) & ((i>HIGH(entrycalls[0]))
-                OR (entrycalls[j][i]=0C)) THEN RETURN TRUE END;
-         
-         */
-         ++j;
-      }
-   }
-   return 0;
+   return callscmp(a, b-a, 0, dat, dat_len, calls);
 } /* end entrypoint() */
 
 
 static char prefix(char dat[], uint32_t dat_len,
-                const MONCALL pa[], uint32_t pa_len,
-                char fullmatch)
+                const FILTERCALLS calls, char fullmatch)
 {
-   uint32_t j;
    uint32_t i0;
-   char w;
-   char eos;
-   if (pa[0UL][0U]==0) return 0;
-   j = 0UL;
-   while (j<=pa_len-1 && pa[j][0U]) {
-      i0 = 0UL;
-      for (;;) {
-         w = pa[j][i0]=='*';
-         if (pa[j][i0]!=dat[i0] && !w) break;
-         ++i0;
-         eos = dat[i0]=='>';
-         if (i0>9UL || pa[j][i0]==0) {
-            if ((!eos && fullmatch) && !w) break;
-            else return 1;
-         }
-         if (eos) break;
-      }
-      ++j;
-   }
-   return 0;
+   if (calls[0U][0U]==0) return 0;
+   i0 = 0UL;
+   while ((i0<=dat_len-1 && dat[i0]) && dat[i0]!='>') ++i0;
+   return callscmp(0UL, i0, fullmatch, dat, dat_len, calls);
 } /* end prefix() */
 
 
 static char destcallfilt(char dat[], uint32_t dat_len,
-                pTCPSOCK to)
+                const FILTERCALLS calls)
 {
    uint32_t b;
    uint32_t a;
-   uint32_t j;
-   uint32_t i0;
-   struct FILTERS * anonym;
-   if (to->filters.destcalls[0U][0U]==0) return 0;
+   if (calls[0U][0U]==0) return 0;
    a = 0UL;
    while (dat[a]!='>') {
       /* begin of dest call ">" */
@@ -2111,34 +2105,16 @@ static char destcallfilt(char dat[], uint32_t dat_len,
       if (dat[b]==',' || dat[b]==':') break;
       ++b;
    }
-   b -= a; /* len of dest call */
-   j = 0UL;
-   { /* with */
-      struct FILTERS * anonym = &to->filters;
-      while (j<=7UL && anonym->destcalls[j][0U]) {
-         i0 = 0UL;
-         while (i0<b && (anonym->destcalls[j][i0]
-                =='*' || anonym->destcalls[j][i0]==dat[i0+a])) {
-            ++i0;
-            if (i0>9UL || anonym->destcalls[j][i0]==0) return 1;
-         }
-         ++j;
-      }
-   }
-   return 0;
+   return callscmp(a, b-a, 0, dat, dat_len, calls);
 } /* end destcallfilt() */
 
 
 static char objectfilt(char dat[], uint32_t dat_len,
-                pTCPSOCK to)
+                const FILTERCALLS calls)
 {
-   uint32_t k;
-   uint32_t j;
+   uint32_t len;
    uint32_t i0;
-   char eos;
-   char w;
-   struct FILTERS * anonym;
-   if (to->filters.objects[0U][0U]==0) return 0;
+   if (calls[0U][0U]==0) return 0;
    i0 = 0UL;
    while (dat[i0]!=':') {
       /* begin data */
@@ -2147,30 +2123,18 @@ static char objectfilt(char dat[], uint32_t dat_len,
       ++i0;
    }
    ++i0;
-   if (dat[i0]!=';') return 0;
-   /* not object */
-   ++i0; /* object name */
-   j = 0UL;
-   { /* with */
-      struct FILTERS * anonym = &to->filters;
-      while (j<=7UL && anonym->objects[j][0U]) {
-         k = 0UL;
-         for (;;) {
-            w = anonym->objects[j][k]=='*';
-            if (!w && anonym->objects[j][k]!=dat[i0+k]) break;
-            ++k;
-            if (i0+k>dat_len-1) break;
-            eos = (uint8_t)dat[i0+k]<=' ';
-            if (k>9UL || anonym->objects[j][k]==0) {
-               if (eos || w) return 1;
-               else break;
-            }
-            if (eos) break;
-         }
-         ++j;
+   if (dat[i0]!=';') len = 9UL;
+   else if (dat[i0]!=')') {
+      /* item */
+      len = 3UL; /* min item len */
+      while ((len<9UL && dat[i0+len+1UL]!='!') && dat[i0+len+1UL]!='_') {
+         ++len; /* find item len */
       }
    }
-   return 0;
+   else return 0;
+   /* not object or item */
+   ++i0; /* object name */
+   return callscmp(i0, len, 0, dat, dat_len, calls);
 } /* end objectfilt() */
 
 
@@ -2266,33 +2230,156 @@ p", 2ul)>=0L) return 1;
 } /* end typ() */
 
 
+static char msgfilt(char dat[], uint32_t dat_len,
+                const FILTERCALLS calls)
+{
+   uint32_t j;
+   uint32_t i0;
+   if (calls[0U][0U]==0) return 0;
+   i0 = 0UL;
+   while (dat[i0]!=':') {
+      /* begin data */
+      if (i0+11UL>=dat_len-1 || dat[i0]==0) return 0;
+      /* not normal data */
+      ++i0;
+   }
+   ++i0;
+   if (dat[i0]!=':' || dat[i0+10UL]!=':') return 0;
+   /* not message */
+   ++i0; /* receiver call of msg */
+   j = 0UL;
+   for (;;) {
+      if (j>=9UL || dat[j]=='>') return 0;
+      /* is telemetry */
+      if (dat[i0+j]!=dat[j]) break;
+      ++j;
+   }
+   return callscmp(i0, 9UL, 0, dat, dat_len, calls);
+} /* end msgfilt() */
+
+
+static char qfilt(char dat[], uint32_t dat_len,
+                const char s[], uint32_t s_len)
+{
+   uint32_t i0;
+   char c;
+   if (s[0UL]==0) return 0;
+   i0 = 0UL;
+   while ((dat[i0]!=',' || dat[i0+1UL]!='q') || dat[i0+2UL]!='A') {
+      if ((i0+3UL>=dat_len-1 || dat[i0]==0) || dat[i0]==':') return 0;
+      ++i0;
+   }
+   c = dat[i0+3UL];
+   i0 = 0UL;
+   while (i0<=s_len-1 && s[i0]) {
+      if (s[i0]==c) return 1;
+      ++i0;
+   }
+   return 0;
+} /* end qfilt() */
+
+
+static char symfilt(char dat[], uint32_t dat_len,
+                const FILTERCALLS syms)
+{
+   uint32_t course;
+   uint32_t speed;
+   uint32_t i0;
+   uint32_t payload;
+   uint32_t micedest;
+   char ok0;
+   struct aprsstr_POSITION pos;
+   int32_t alt;
+   char postyp;
+   char symt;
+   char sym;
+   char com[501];
+   if (syms[0U][0U]==0) return 0;
+   micedest = 0UL;
+   for (;;) {
+      if (micedest>=dat_len-1 || dat[micedest]==0) return 0;
+      if (dat[micedest]=='>') break;
+      ++micedest;
+   }
+   ++micedest;
+   payload = micedest;
+   for (;;) {
+      if (payload>=dat_len-1 || dat[payload]==0) return 0;
+      if (dat[payload]==':') break;
+      ++payload;
+   }
+   ++payload;
+   aprspos_GetPos(&pos, &speed, &course, &alt, &sym, &symt, dat, dat_len,
+                micedest, payload, com, 501ul, &postyp);
+   if (symt=='/') {
+      i0 = 0UL;
+      while (i0<=9UL && (uint8_t)syms[0U][i0]>' ') {
+         if (syms[0U][i0]==sym) return 1;
+         ++i0;
+      }
+   }
+   else {
+      if ((uint8_t)syms[1U][0U]>' ') {
+         ok0 = 0;
+         i0 = 0UL;
+         do {
+            if (syms[1U][i0]==sym) ok0 = 1;
+            ++i0;
+         } while (!(i0>9UL || (uint8_t)syms[1U][i0]<=' '));
+      }
+      else ok0 = 1;
+      if (ok0) {
+         if ((uint8_t)syms[2U][0U]<=' ') return 1;
+         i0 = 0UL;
+         do {
+            if (syms[2U][i0]==symt) return 1;
+            ++i0;
+         } while (!(i0>9UL || (uint8_t)syms[2U][i0]<=' '));
+      }
+   }
+   return 0;
+} /* end symfilt() */
+
+
 static char Filter(pTCPSOCK to, struct POSCALL posc,
                 const char dat[], uint32_t dat_len)
 {
    char pass;
    pass = 0;
-   if (vias(dat, dat_len, to)) {
+   if (vias(dat, dat_len, to->filters.viacalls)) {
       if (to->filters.notvia) return 0;
       pass = 1; /* exclusion overloads */
    }
-   if (entrypoint(dat, dat_len, to)) {
+   if (entrypoint(dat, dat_len, to->filters.entrycalls)) {
       if (to->filters.notentry) return 0;
       pass = 1;
    }
-   if (destcallfilt(dat, dat_len, to)) {
+   if (destcallfilt(dat, dat_len, to->filters.destcalls)) {
       if (to->filters.notdestcall) return 0;
       pass = 1;
    }
-   if (prefix(dat, dat_len, to->filters.bud, 8ul, 1)) {
+   if (prefix(dat, dat_len, to->filters.bud, 0)) {
       if (to->filters.notbud) return 0;
       pass = 1;
    }
-   if (prefix(dat, dat_len, to->filters.prefixes, 8ul, 0)) {
+   if (prefix(dat, dat_len, to->filters.prefixes, 1)) {
       if (to->filters.notprefix) return 0;
       pass = 1;
    }
-   if (objectfilt(dat, dat_len, to)) {
+   if (objectfilt(dat, dat_len, to->filters.objects)) {
       if (to->filters.notobject) return 0;
+      pass = 1;
+   }
+   if (msgfilt(dat, dat_len, to->filters.msgs)) {
+      if (to->filters.notmsgs) return 0;
+      pass = 1;
+   }
+   if (qfilt(dat, dat_len, to->filters.q[0U], 10ul)) {
+      if (to->filters.notq) return 0;
+      pass = 1;
+   }
+   if (symfilt(dat, dat_len, to->filters.symbols)) {
+      if (to->filters.notsymbols) return 0;
       pass = 1;
    }
    if (typ(&posc, dat, dat_len, to, &posc.typ0)) {
@@ -2577,7 +2664,7 @@ static void beaconmacros(char s[], uint32_t s_len)
          }
          else if (s[i0]=='v') {
             /* insert version */
-            aprsstr_Append(ns, 256ul, "udpgate 0.68", 13ul);
+            aprsstr_Append(ns, 256ul, "udpgate 0.71", 13ul);
          }
          else if (s[i0]==':') {
             /* insert file */
@@ -3214,23 +3301,36 @@ static void AddHeard(pHEARD * table, uint32_t maxtime, const MONCALL from,
          else {
             /* axudp2 */
             anonym->txd = 0U;
-            anonym->level = 0;
+            anonym->level = -32768;
             anonym->quali = 0U;
+            anonym->snr = -128;
             if (udp2[0U] && udp2[1U]) {
                i0 = 2UL;
                while (i0<99UL && udp2[i0]) {
                   switch ((unsigned)udp2[i0]) {
                   case 'T':
                      getval(udp2, 100ul, &i0, &res0);
-                     anonym->txd = (uint16_t)res0;
+                     if (res0>0L && res0<=65535L) {
+                        anonym->txd = (uint16_t)res0;
+                     }
                      break;
                   case 'V':
                      getval(udp2, 100ul, &i0, &res0);
-                     anonym->level = (signed char)res0;
+                     if (res0>-32768L && res0<=32767L) {
+                        anonym->level = (short)res0;
+                     }
                      break;
                   case 'Q':
                      getval(udp2, 100ul, &i0, &res0);
-                     anonym->quali = (uint8_t)res0;
+                     if (res0>0L && res0<=255L) {
+                        anonym->quali = (uint8_t)res0;
+                     }
+                     break;
+                  case 'S':
+                     getval(udp2, 100ul, &i0, &res0);
+                     if (res0>-128L && res0<=127L) {
+                        anonym->snr = (signed char)res0;
+                     }
                      break;
                   default:;
                      getval(udp2, 100ul, &i0, &res0);
@@ -3244,9 +3344,7 @@ static void AddHeard(pHEARD * table, uint32_t maxtime, const MONCALL from,
                 &anonym->symt, &anonym->datatyp, &anonym->data);
             IncHeard(ph, 1, anonym->datatyp=='J', maxtime);
             i0 = 0UL;
-            while ((i0<buf_len-1 && buf[i0]!='>') && buf[i0]) {
-               ++i0;
-            }
+            while ((i0<buf_len-1 && buf[i0]!='>') && buf[i0]) ++i0;
             ++i0;
             j = 0UL;
             while ((((j<40UL && i0<buf_len-1) && buf[i0]!=':') && buf[i0])
@@ -3417,28 +3515,12 @@ static void RfTimer(void)
          if (try0) {
             if (SendMsg(mp, totx)) ++maxi;
          }
-         /*
-                   mo:=messages;
-                   WHILE mo<>NIL DO
-                     IF StrCmp(mo^.to,
-                to) & NOT acked THEN mo^.chkt:=systime END;
-                (* 1 msg to 1 call *)
-                     mo:=mo^.next;
-                   END;
-         */
-         /*
-                 IF (ack[0]=0C) & (retryc>=UNACKRET)
-                OR acked & (msg2rf+msg2net+ack2rf+ack2net=0) 
-                 THEN ht:=purgeunack ELSE ht:=purgemsg END;
-                (* fast if unack & retried out or acked & never sent *)
-         */
          if (anonym->ack[0U]==0) {
-            if (anonym->retryc>=1UL) {
-               ht = purgeunacksent;
-            }
+            if (anonym->retryc>=1UL) ht = purgeunacksent;
             else ht = purgeunack;
          }
          else if (anonym->acked) ht = purgeacked;
+         else if (mp->spamcnt==1UL) ht = purgeunack;
          else ht = purgemsg;
          if (anonym->gentime+ht<systime) delmsg(mp);
       }
@@ -3480,6 +3562,60 @@ static void SendNet(void)
       netmhout = (netmhout+1UL)%100UL;
    }
 } /* end SendNet() */
+
+
+static void FindSpam(pMESSAGE messages0, pMESSAGE actm)
+{
+   pMESSAGE mp;
+   uint32_t pass;
+   uint32_t i0;
+   uint32_t minl;
+   uint32_t la;
+   uint32_t cnt;
+   struct MESSAGE * anonym;
+   la = aprsstr_Length(actm->text, 68ul);
+   minl = (la*spamminlen)/100UL;
+   pass = 0UL;
+   cnt = 0UL;
+   do {
+      mp = messages0;
+      while (mp!=actm) {
+         { /* with */
+            struct MESSAGE * anonym = mp;
+            if (aprsstr_StrCmp(actm->from, 10ul, anonym->from,
+                10ul) || aprsstr_StrCmp(actm->to, 10ul, anonym->to, 10ul)) {
+               /* same from or to */
+               i0 = 0UL;
+               while ((i0<la && anonym->text[i0])
+                && anonym->text[i0]==actm->text[i0]) ++i0;
+               if (i0>minl) {
+                  /* text matches major length */
+                  if (pass==0UL) {
+                     if (anonym->spamcnt==0UL) ++cnt;
+                     else if (anonym->spamcnt>1UL) {
+                        cnt += anonym->spamcnt; /* 1 is summed up already */
+                     }
+                  }
+                  else anonym->spamcnt = 1UL;
+               }
+            }
+            mp = anonym->next;
+         }
+      }
+      ++pass;
+   } while (!(cnt<spammincnt || pass>=2UL));
+   if (pass==2UL) actm->spamcnt = cnt+1UL;
+   else {
+      /* test if it looks like text */
+      i0 = 0UL;
+      cnt = 0UL;
+      while (i0<la) {
+         if ((uint8_t)actm->text[i0]>=(uint8_t)'\200') ++cnt;
+         ++i0;
+      }
+      if (cnt>la/4UL) actm->spamcnt = 1UL;
+   }
+} /* end FindSpam() */
 
 
 static void Stoack(pMESSAGE mp, char rej, uint8_t path)
@@ -3666,6 +3802,7 @@ static void Stomsg(const MONCALL fromcall, const MONCALL tocall, MSGTEXT msg,
             anonym0->acksrc = path;
             anonym0->queryrep = query;
          }
+         if (spamminlen>10UL && spammincnt>1UL) FindSpam(messages, mp);
       }
       if (verb) {
          if (path==udpgate4_DIR) osi_WrStr("new direct", 11ul);
@@ -3677,38 +3814,7 @@ static void Stomsg(const MONCALL fromcall, const MONCALL tocall, MSGTEXT msg,
          Showmsg(mp);
       }
    }
-/*
-  IF mp<>NIL THEN Ackback(mp) END;
-                (* all before is thru and ack is at home so mark as done *)
-*/
 } /* end Stomsg() */
-
-
-static void postoloc(char loc[], uint32_t loc_len,
-                struct aprsstr_POSITION pos)
-{
-   uint32_t bc;
-   uint32_t lc;
-   float br;
-   float lr;
-   lr = (pos.long0*5.7295779513082E+1f+180.0f)*2880.0f;
-   if (lr<=0.0f) lr = 0.0f;
-   lc = (uint32_t)X2C_TRUNCC(lr,0UL,X2C_max_longcard);
-   br = (pos.lat*5.7295779513082E+1f+90.0f)*5760.0f;
-   if (br<=0.0f) br = 0.0f;
-   bc = (uint32_t)X2C_TRUNCC(br,0UL,X2C_max_longcard);
-   loc[0UL] = (char)(65UL+lc/57600UL);
-   loc[1UL] = (char)(65UL+bc/57600UL);
-   loc[2UL] = (char)(48UL+(lc/5760UL)%10UL);
-   loc[3UL] = (char)(48UL+(bc/5760UL)%10UL);
-   loc[4UL] = (char)(65UL+(lc/240UL)%24UL);
-   loc[5UL] = (char)(65UL+(bc/240UL)%24UL);
-   loc[6UL] = (char)(48UL+(lc/24UL)%10UL);
-   loc[7UL] = (char)(48UL+(bc/24UL)%10UL);
-   loc[8UL] = (char)(65UL+lc%24UL);
-   loc[9UL] = (char)(65UL+bc%24UL);
-   loc[10UL] = 0;
-} /* end postoloc() */
 
 
 static void degtostr(char s[], uint32_t s_len, float d,
@@ -3953,11 +4059,11 @@ static void Query(MONCALL fromcall, char msg[], uint32_t msg_len,
                  1, path);
    }
    else if (cmd=='S') {
-      Stomsg(servercall, fromcall, *(MSGTEXT *)memcpy(&tmp1,"udpgate 0.68 Msg\
+      Stomsg(servercall, fromcall, *(MSGTEXT *)memcpy(&tmp1,"udpgate 0.71 Msg\
  S&F Relay",27u), *(ACKTEXT *)memcpy(&tmp0,"",1u), 0, 0, 1, path);
    }
    else if (cmd=='v') {
-      Stomsg(servercall, fromcall, *(MSGTEXT *)memcpy(&tmp1,"udpgate 0.68",
+      Stomsg(servercall, fromcall, *(MSGTEXT *)memcpy(&tmp1,"udpgate 0.71",
                 13u), *(ACKTEXT *)memcpy(&tmp0,"",1u), 0, 0, 1, path);
    }
    else if (cmd=='h') {
@@ -4430,7 +4536,7 @@ OE0AAA-9>T8SV40,WIDE1-1,qAR,DB0WGS:test
 
 
 static int32_t AprsIs(char buf[], uint32_t buf_len,
-                uint8_t datafilt, uint8_t msgfilt,
+                uint8_t datafilt, uint8_t msgfilt0,
                 const char logcall[], uint32_t logcall_len,
                 uint32_t udpchan, char valid,
                 struct POSCALL * poscall0)
@@ -4471,7 +4577,7 @@ static int32_t AprsIs(char buf[], uint32_t buf_len,
       /* thirdparty loop */
       psum0 = p;
       if (callchk(&qpos, &unset, buf, buf_len, &p, &pssid, 0,
-                udpchan || callsrc)) return -3L;
+                rfcallchk && udpchan || callsrc)) return -3L;
       /* src call */
       if (buf[p]!='>') return -3L;
       i0 = 0UL;
@@ -4529,7 +4635,7 @@ static int32_t AprsIs(char buf[], uint32_t buf_len,
    poscall0->typ0 = buf[p];
    if (buf[p]=='?') return -5L;
    if (udpchan || valid) {
-      Getmsg(buf, buf_len, udpchan, (unset&msgfilt)==0U, &ungat);
+      Getmsg(buf, buf_len, udpchan, (unset&msgfilt0)==0U, &ungat);
       if (ungat) return -6L;
    }
    if ((unset&datafilt)!=0U) return -3L;
@@ -4612,10 +4718,14 @@ static void getcalls(char s[], uint32_t s_len, uint32_t * p,
       ++*p;
       i0 = 0UL;
       while ((*p<=s_len-1 && (uint8_t)s[*p]>' ') && s[*p]!='/') {
-         if (j<=table_len-1 && i0<=9UL) table[j][i0] = s[*p];
+         if (j<=table_len-1 && i0<=9UL) {
+            table[j][i0] = s[*p];
+            if (table[j][i0]=='|') table[j][i0] = '/';
+         }
          ++*p;
          ++i0;
       }
+      if (i0<9UL) table[j][i0] = 0;
       ++j;
    }
 } /* end getcalls() */
@@ -4653,18 +4763,22 @@ static void GetFilters(struct FILTERS * filters, const char s[],
 {
    char not;
    FRAMEBUF pongstr;
+   struct FILTERS * anonym;
    skipblank(s, s_len, &p);
    if (cmpfrom(s, s_len, p, "filter", 7ul)) {
       p += 6UL;
       not = 0;
       filters->typ0 = 0; /* re-init if new filter comes */
-      memset((char *)filters->viacalls,(char)0,80UL);
-      memset((char *)filters->entrycalls,(char)0,80UL);
-      memset((char *)filters->prefixes,(char)0,80UL);
-      memset((char *)filters->bud,(char)0,80UL);
-      memset((char *)filters->objects,(char)0,80UL);
+      memset((char *)filters->viacalls,(char)0,90UL);
+      memset((char *)filters->entrycalls,(char)0,90UL);
+      memset((char *)filters->prefixes,(char)0,90UL);
+      memset((char *)filters->bud,(char)0,90UL);
+      memset((char *)filters->objects,(char)0,90UL);
       memset((char *)filters->typs,(char)0,13UL);
-      memset((char *)filters->destcalls,(char)0,80UL);
+      memset((char *)filters->destcalls,(char)0,90UL);
+      memset((char *)filters->msgs,(char)0,90UL);
+      memset((char *)filters->q,(char)0,90UL);
+      memset((char *)filters->symbols,(char)0,90UL);
       if (s[p]==' ') {
          skipblank(s, s_len, &p);
          while ((uint8_t)s[p]>=' ') {
@@ -4702,28 +4816,50 @@ static void GetFilters(struct FILTERS * filters, const char s[],
                filters->typ0 = 'a';
             }
             else if (s[p]=='d') {
-               getcalls(s, s_len, &p, filters->viacalls, 8ul);
+               getcalls(s, s_len, &p, filters->viacalls, 9ul);
                filters->notvia = not;
             }
             else if (s[p]=='e') {
-               getcalls(s, s_len, &p, filters->entrycalls, 8ul);
+               getcalls(s, s_len, &p, filters->entrycalls, 9ul);
                filters->notentry = not;
             }
             else if (s[p]=='u') {
-               getcalls(s, s_len, &p, filters->destcalls, 8ul);
+               getcalls(s, s_len, &p, filters->destcalls, 9ul);
                filters->notdestcall = not;
             }
             else if (s[p]=='p') {
-               getcalls(s, s_len, &p, filters->prefixes, 8ul);
+               getcalls(s, s_len, &p, filters->prefixes, 9ul);
                filters->notprefix = not;
             }
             else if (s[p]=='b') {
-               getcalls(s, s_len, &p, filters->bud, 8ul);
+               getcalls(s, s_len, &p, filters->bud, 9ul);
                filters->notbud = not;
             }
             else if (s[p]=='o') {
-               getcalls(s, s_len, &p, filters->objects, 8ul);
+               getcalls(s, s_len, &p, filters->objects, 9ul);
                filters->notobject = not;
+            }
+            else if (s[p]=='g') {
+               getcalls(s, s_len, &p, filters->msgs, 9ul);
+               filters->notmsgs = not;
+            }
+            else if (s[p]=='q') {
+               getcalls(s, s_len, &p, filters->q, 9ul);
+               filters->notq = not;
+               filters->q[1U][0] = 0; /* only 1 word */
+            }
+            else if (s[p]=='s') {
+               { /* with */
+                  struct FILTERS * anonym = filters;
+                  getcalls(s, s_len, &p, anonym->symbols, 9ul);
+                  anonym->notsymbols = not;
+                  if (anonym->symbols[0U][0U]==0 && (anonym->symbols[1U][0U]
+                || anonym->symbols[2U][0U])) anonym->symbols[0U][0U] = ' ';
+                  if (anonym->symbols[1U][0U]==0 && anonym->symbols[2U][0U]) {
+                     anonym->symbols[1U][0U] = ' ';
+                  }
+                  anonym->symbols[3U][0] = 0; /* only 3 words */
+               }
             }
             else if (s[p]=='t') {
                gettyps(s, s_len, &p, filters->typs, 13ul);
@@ -5495,7 +5631,9 @@ static void sortindex(pHEARD ph, uint32_t maxtime, const char sortby[],
       } /* end switch */
       if (sortby[1UL]=='d') ph->sortval = -xs;
       else ph->sortval = xs;
-      if ((ph->txd || ph->level) || ph->quali) *withqual = 1;
+      if (((ph->txd || ph->level>-128) || ph->quali) || ph->snr>-128) {
+         *withqual = 1; /* modem infos */
+      }
       ph = ph->next;
    }
 } /* end sortindex() */
@@ -5532,7 +5670,7 @@ static void apppos(WWWB wbuf, pTCPSOCK * wsock, struct aprsstr_POSITION pos,
       Appwww(wsock, wbuf, "/", 2ul);
       Appwww(wsock, wbuf, h, 32ul);
       if (withloc) {
-         postoloc(h, 32ul, pos);
+         aprsstr_postoloc(h, 32ul, pos);
          Appwww(wsock, wbuf, " ", 2ul);
          Appwww(wsock, wbuf, h, 32ul);
       }
@@ -5604,7 +5742,7 @@ static void showmh(WWWB wbuf, pTCPSOCK * wsock, char h1[256], pHEARD ph0,
 CELLSPACING=1 BGCOLOR=#FFFFFF><tr class=tab-mh-titel BGCOLOR=#A9EEFF><th cols\
 pan=", 135ul);
    aprsstr_IntToStr((int32_t)(7UL+(uint32_t)withicon+(uint32_t)
-                withport+(uint32_t)(dir && withqual)*3UL+(uint32_t)net),
+                withport+(uint32_t)(dir && withqual)*4UL+(uint32_t)net),
                 1UL, h1, 256ul);
    Appwww(wsock, wbuf, h1, 256ul);
    Appwww(wsock, wbuf, ">", 2ul);
@@ -5636,7 +5774,8 @@ pan=", 135ul);
    Appwww(wsock, wbuf, "<th>", 5ul);
    klick(wbuf, wsock, "mh", 3ul, "Last Heard", 11ul, 't');
    if (dir && withqual) {
-      Appwww(wsock, wbuf, "</th><th>Txd</th><th>Lev</th><th>q&#37;", 40ul);
+      Appwww(wsock, wbuf, "</th><th>Txd</th><th>Lev</th><th>q&#37;<th>SNR</th\
+>", 52ul);
    }
    if (net) Appwww(wsock, wbuf, "</th><th>Position", 18ul);
    Appwww(wsock, wbuf, "</th><th>", 10ul);
@@ -5704,8 +5843,8 @@ n:right\">", 56ul);
             /* level */
             Appwww(wsock, wbuf, "<td style=\"background-color:#", 30ul);
             strncpy(h1,"80FF80",256u);
-            if (ph->level) {
-               redgreen(((int32_t)Min((uint32_t)(uint8_t)
+            if (ph->level>-128) {
+               redgreen(((int32_t)Min((uint32_t)(uint16_t)
                 abs(ph->level+15), 15UL)-5L)*10L, h1, 256ul);
             }
             Appwww(wsock, wbuf, h1, 256ul);
@@ -5719,6 +5858,13 @@ n:right\">", 56ul);
             Appwww(wsock, wbuf, "<td>", 5ul);
             if (ph->quali) {
                aprsstr_IntToStr((int32_t)ph->quali, 1UL, h1, 256ul);
+               Appwww(wsock, wbuf, h1, 256ul);
+            }
+            Appwww(wsock, wbuf, "</td>", 6ul);
+            /*SNR */
+            Appwww(wsock, wbuf, "<td>", 5ul);
+            if (ph->snr>-128) {
+               aprsstr_IntToStr((int32_t)ph->snr, 1UL, h1, 256ul);
                Appwww(wsock, wbuf, h1, 256ul);
             }
             Appwww(wsock, wbuf, "</td>", 6ul);
@@ -6122,7 +6268,7 @@ static void title(WWWB wbuf, pTCPSOCK * wsock, uint32_t * cnt,
          Appwww(wsock, wbuf, "  Port ", 8ul);
          Appwww(wsock, wbuf, tcpbindport, 6ul);
       }
-      Appwww(wsock, wbuf, " [udpgate 0.68] Maxusers ", 26ul);
+      Appwww(wsock, wbuf, " [udpgate 0.71] Maxusers ", 26ul);
       aprsstr_IntToStr((int32_t)maxusers, 1UL, h, 32ul);
       Appwww(wsock, wbuf, h, 32ul);
       Appwww(wsock, wbuf, " http#", 7ul);
@@ -6134,7 +6280,7 @@ static void title(WWWB wbuf, pTCPSOCK * wsock, uint32_t * cnt,
       }
       else Appwww(wsock, wbuf, servercall, 10ul);
       apppos(wbuf, wsock, home, 1);
-      Appwww(wsock, wbuf, " [udpgate 0.68] http#", 22ul);
+      Appwww(wsock, wbuf, " [udpgate 0.71] http#", 22ul);
    }
    aprsstr_IntToStr((int32_t)*cnt, 1UL, h, 32ul);
    Appwww(wsock, wbuf, h, 32ul);
@@ -6491,7 +6637,20 @@ etr</th><th>m>r</th><th>m>n</th><th>a>r</th><th>a>n</th><th>A</th><th>Ack</th\
                aprsstr_Assign(h1, 256ul, mp->ack, 5ul);
                aprsstr_Append(h1, 256ul, mp->replyack, 2ul);
                AppTxt(wbuf, &wsock, "<td>", 5ul, h1, 256ul);
-               AppTxt(wbuf, &wsock, "<td>", 5ul, mp->text, 68ul);
+               if (mp->spamcnt==0UL) {
+                  AppTxt(wbuf, &wsock, "<td>", 5ul, mp->text, 68ul);
+               }
+               else {
+                  Appwww(&wsock, wbuf, "<td><span class=\"junk-spam\">[SPAM",
+                 34ul);
+                  if (mp->spamcnt>1UL) {
+                     Appwww(&wsock, wbuf, "x", 2ul);
+                     aprsstr_IntToStr((int32_t)mp->spamcnt, 1UL, h1,
+                256ul);
+                     Appwww(&wsock, wbuf, h1, 256ul);
+                  }
+                  AppTxt(wbuf, &wsock, "]</span>", 9ul, mp->text, 68ul);
+               }
                Appwww(&wsock, wbuf, "</tr>\015\012", 8ul);
             }
             mp = mp->next;
@@ -6642,7 +6801,7 @@ static char tcpconn(pTCPSOCK * sockchain, int32_t f,
             aprsstr_Append(h, 512ul, passwd, 6ul);
          }
          aprsstr_Append(h, 512ul, " vers ", 7ul);
-         aprsstr_Append(h, 512ul, "udpgate 0.68", 13ul);
+         aprsstr_Append(h, 512ul, "udpgate 0.71", 13ul);
          if (actfilter[0U]) {
             aprsstr_Append(h, 512ul, " filter ", 9ul);
             aprsstr_Append(h, 512ul, actfilter, 256ul);
@@ -6673,7 +6832,7 @@ static char tcpconn(pTCPSOCK * sockchain, int32_t f,
          aprsstr_Append(h1, 512ul, h2, 512ul);
          logline(1L, h1, 512ul);
       }
-      aprsstr_Assign(h, 512ul, "# udpgate 0.68\015\012", 17ul);
+      aprsstr_Assign(h, 512ul, "# udpgate 0.71\015\012", 17ul);
       Sendtcp(cp, h);
    }
    return 1;
@@ -6683,7 +6842,7 @@ static char tcpconn(pTCPSOCK * sockchain, int32_t f,
 static void Gateconn(pTCPSOCK * cp)
 {
    int32_t fd;
-   pTCPSOCK kill;
+   pTCPSOCK kill0;
    pTCPSOCK try0;
    pTCPSOCK act;
    pTCPSOCK p;
@@ -6702,11 +6861,11 @@ static void Gateconn(pTCPSOCK * cp)
                /* we have 2 connects */
                if (act->gatepri>p->gatepri) {
                   /* stop second best */
-                  kill = act;
+                  kill0 = act;
                   act = p;
                }
-               else kill = p;
-               saybusy(&kill->fd, "# remove double connect\015\012", 26ul);
+               else kill0 = p;
+               saybusy(&kill0->fd, "# remove double connect\015\012", 26ul);
             }
             else act = p;
          }
@@ -6715,7 +6874,9 @@ static void Gateconn(pTCPSOCK * cp)
       p = p->next;
    }
    if (try0==0) {
-      if (gatesfn[0U]) readurlsfile(gatesfn, 1024ul);
+      if ((gatesfn[0U] && act==0) && Watchclock(&readurlfiletime,
+                gateconndelay)) readurlsfile(gatesfn, 1024ul);
+      /*  IF gatesfn[0]<>0C THEN readurlsfile(gatesfn) END; */
       if (act==0) max0 = 20UL;
       else max0 = act->gatepri;
       if ((trygate>=max0 || trygate>20UL) || gateways[trygate].url[0U]==0) {
@@ -6862,6 +7023,22 @@ static void addsock(int32_t fd, char wtoo)
    }
 } /* end addsock() */
 
+static void readigatefile(int32_t);
+
+
+static void readigatefile(int32_t signum)
+{
+   if (signum==SIGHUP) {
+      sighup = 1;
+      if (verb) osi_WrStrLn("got SIGHUP", 11ul);
+   }
+/*
+  ELSIF signum=SIGUSR1 THEN
+    reconnsig:=TRUE;
+    IF verb THEN WrStrLn("got SIGUSR1") END;
+*/
+} /* end readigatefile() */
+
 static CHSET _cnst1 = {0x30000000UL,0x20008092UL,0x80000001UL,0x00000001UL};
 
 X2C_STACK_LIMIT(100000l)
@@ -6872,6 +7049,7 @@ extern int main(int argc, char **argv)
    if (sizeof(FILENAME)!=1024) X2C_ASSERT(0);
    if (sizeof(FRAMEBUF)!=512) X2C_ASSERT(0);
    if (sizeof(FILTERST)!=256) X2C_ASSERT(0);
+   if (sizeof(FILTERCALLS)!=90) X2C_ASSERT(0);
    if (sizeof(WWWB)!=1401) X2C_ASSERT(0);
    if (sizeof(MSGTEXT)!=68) X2C_ASSERT(0);
    if (sizeof(ACKTEXT)!=5) X2C_ASSERT(0);
@@ -6915,7 +7093,7 @@ extern int main(int argc, char **argv)
    dupetime = 60UL;
    lastdnstime = 0UL;
    netbeaconfn[0U] = 0;
-   maxusers = 50UL;
+   maxusers = 200UL;
    logframename[0U] = 0;
    rawlogname[0U] = 0;
    logframes = 6L;
@@ -6927,16 +7105,20 @@ extern int main(int argc, char **argv)
    rfhered = 0;
    wwwbindport[0] = 0;
    wwwdir[0U] = 0;
-   wwwsizelimit = 1048576L;
+   wwwsizelimit = 4194304L;
    udpsocks = 0;
    callsrc = 0;
    mhperport = 0;
+   sighup = 0;
    qas = 0UL;
    qasc = 0UL;
    maxpongtime = 30UL;
    gatesfn[0U] = 0;
    rawlines = 20UL;
    msgretries = 12UL;
+   rfcallchk = 1;
+   signal(SIGHUP, readigatefile);
+   /*  signal(SIGUSR1, readigatefile); */
    parms();
    if (aprsstr_StrCmp(viacall, 10ul, "-", 2ul)) viacall[0U] = 0;
    else if (viacall[0U]==0) memcpy(viacall,servercall,10u);
@@ -6997,7 +7179,11 @@ extern int main(int argc, char **argv)
                struct TCPSOCK * anonym = acttcp;
                if (anonym->beacont<systime) Timebeacon(acttcp);
                if (anonym->service=='G') {
-                  if (keeptime>0UL && keepconn<=systime) {
+                  if (sighup) {
+                     saybusy(&anonym->fd, "\015\012", 3ul);
+                     sighup = 0;
+                  }
+                  else if (keeptime>0UL && keepconn<=systime) {
                      saybusy(&anonym->fd, "# timeout\015\012", 12ul);
                   }
                   else if (qmaxtime>0L) WatchTXQ(acttcp);
@@ -7029,7 +7215,8 @@ extern int main(int argc, char **argv)
          acttcp = acttcp->next;
       }
       mbuf[0U] = 0;
-      res = selectrw(2UL, 0UL);
+      do {
+      } while (selectrw(2UL, 0UL)<0L);
       if (listensock>=0L && issetr((uint32_t)listensock)) {
          res = 512L;
          res = acceptconnect(listensock, mbuf, &res);
