@@ -1,6 +1,6 @@
 #!/bin/sh
 # this script unpacks and installs remote or local installation archive images created
-# by the packCurrent.sh script.
+# by aprsmap build system or the packCurrent.sh script.
 
 if [ -z $1 ]; then
 	echo "updateDXLaprs: missing architecture or local image file"
@@ -13,17 +13,28 @@ if [ -z $1 ]; then
 	exit 1
 fi
 
+# url and the template basename (no file extension) of installation archive
 SOURCE=http://dxlaprs.hamspirit.at
 FILE=dxlAPRS_$1-current
 
+# assumes HOME has been set appropriately by shell
 DST=$HOME/dxlAPRS
 DSTMAP=$DST/aprsmap
 DSTAPRS=$DST/aprs
 
-# set up the destination directory structure
+# these values match the default paths created in the initial aprsmap.cfg
+MAPDIR=osm
+LOGDIR=logs
+
+# sample commands for remote retrieval showing wget and curl usage
+GETCMDBASE="wget"
+#GETCMDBASE="wget2"
+#GETCMDBASE="curl -O"
+
+# set up the default destination directory structure
 [ -d $DSTMAP ] || mkdir -p $DSTMAP
-[ -d $DSTMAP/osm ] || mkdir -p $DSTMAP/osm
-[ -d $DSTMAP/logs ] || mkdir -p $DSTMAP/logs
+[ -d $DSTMAP/$MAPDIR ] || mkdir -p $DSTMAP/$MAPDIR
+[ -d $DSTMAP/$LOGDIR ] || mkdir -p $DSTMAP/$LOGDIR
 [ -d $DSTAPRS ] || mkdir -p $DSTAPRS
 
 # retrieve the image
@@ -40,7 +51,7 @@ if [ -f $1 ]; then
 	cd $TMPDIR
 else
 	cd $TMPDIR
-	wget $SOURCE/$FILE.tgz
+	$GETCMDBASE $SOURCE/$FILE.tgz
 	if [ $? -ne 0 ]; then
 		echo "Unable to download image:" $SOURCE/$FILE.tgz
 		rm -r $TMPDIR
@@ -54,13 +65,13 @@ if [ -r $FILE.tgz ]; then
 	tar -xf $FILE.tar
 	rm $FILE.tar
 	echo "Installation directory:" $DST
-	echo "Installing aprsmap-components..."
-	cp -r aprsmap_common/osm $DSTMAP
-	rm -r aprsmap_common/osm
+	echo "Installing aprsmap directory components..."
+	cp -r aprsmap_common/$MAPDIR $DSTMAP
+	rm -r aprsmap_common/$MAPDIR
 	mv -f aprsmap_common/* $DSTMAP/
 	rm -r aprsmap_common
 	mv -f aprsmap* $DSTMAP/
-	echo "Installing aprs-components..."
+	echo "Installing aprs directory components..."
 	cp -r dxlAPRS_common/* $DSTAPRS/
 	rm -r dxlAPRS_common
 	cp -r scripts $DSTAPRS/
@@ -76,7 +87,7 @@ if [ -r $FILE.tgz ]; then
 	sudo chmod +s afskmodem
 	rm -r $TMPDIR
 else
-# either cp or wget failed above somehow to get an image into TMPDIR
+# either cp or remote retrieval failed somehow to get an image into TMPDIR
 	echo "Unable to locate temporary copy of image:" $FILE.tgz
 	rm -r $TMPDIR
 	exit 1
