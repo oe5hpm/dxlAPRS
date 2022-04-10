@@ -88,6 +88,7 @@ uint32_t aprsdecode_lastlooped;
 uint32_t aprsdecode_updateintervall;
 uint32_t aprsdecode_rxidle;
 char aprsdecode_quit;
+char aprsdecode_WITHX11;
 char aprsdecode_verb;
 char aprsdecode_logdone;
 
@@ -178,6 +179,12 @@ struct xosi_PROCESSHANDLE aprsdecode_maploadpid;
 #define aprsdecode_DIRJUNC "#"
 
 #define aprsdecode_cMSGACK "{"
+
+#define aprsdecode_KEEPALIVE_IDLE 180
+
+#define aprsdecode_KEEPALIVE_INTERVALL 30
+
+#define aprsdecode_KEEPALIVE_COUNT 3
 
 typedef uint32_t CHSET[4];
 
@@ -514,6 +521,8 @@ h a tx", 56ul);
                 44ul);
                osi_WrStrLn(" -R             same as -M but axudp format",
                 44ul);
+               osi_WrStrLn(" -S             start without graphic interface, \
+write screenshot on SIGPIPE", 77ul);
                osi_WrStrLn(" -u <seconds>   minimum seconds between screen up\
 dates", 55ul);
                osi_WrStrLn(" -v             show frames and analytics on stdo\
@@ -535,7 +544,9 @@ ut", 52ul);
                if (GetNum(h, 4096ul, &i, &n)>=0L && n<=1024UL) {
                   aprsdecode_lums.sym = (int32_t)n;
                }
-               else Err("-X symbollumen", 15ul);
+               else {
+                  Err("-X symbollumen", 15ul);
+               }
             }
             else if (lasth=='O') {
                osi_NextArg(h, 4096ul);
@@ -617,7 +628,10 @@ ut", 52ul);
                }
                else Err("-o maplumen", 12ul);
             }
-            else if (lasth=='v') aprsdecode_verb = 1;
+            else if (lasth=='v') {
+               aprsdecode_verb = 1;
+            }
+            else if (lasth=='S') aprsdecode_WITHX11 = 0;
             else if (lasth=='u') {
                osi_NextArg(h, 4096ul);
                i = 0UL;
@@ -1905,8 +1919,9 @@ static void NoWX(struct aprsdecode_WX * wx)
 } /* end NoWX() */
 
 
-static void wpar(uint32_t * p, char buf[], uint32_t buf_len,
-                float * v, int32_t mindig, int32_t maxdig)
+static void wpar(uint32_t * oldp, uint32_t * p, char buf[],
+                uint32_t buf_len, float * v, int32_t mindig,
+                int32_t maxdig)
 {
    char empty;
    char dot;
@@ -1944,6 +1959,8 @@ static void wpar(uint32_t * p, char buf[], uint32_t buf_len,
       }
       else if (empty) {
          if (c!=' ' && c!='.') break;
+         --mindig;
+         --maxdig;
       }
       else if (c=='.') {
          if (dot) break;
@@ -1953,6 +1970,7 @@ static void wpar(uint32_t * p, char buf[], uint32_t buf_len,
       sn = 0;
    }
    if (!empty && mindig<=0L) *v = x*div0;
+   if (mindig<=0L) *oldp = 0UL;
 } /* end wpar() */
 
 
@@ -1993,6 +2011,7 @@ static void GetWX(struct aprsdecode_WX * wx, uint32_t * course,
    float dust;
    float wdir;
    float wwind;
+   uint32_t oldp;
    uint32_t dustc;
    uint32_t dustt;
    uint32_t p;
@@ -2001,6 +2020,7 @@ static void GetWX(struct aprsdecode_WX * wx, uint32_t * course,
    NoWX(wx);
    wwind = 1.E+6f;
    wdir = 1.E+6f;
+   oldp = 0UL;
    /*  IF (buf[p]="_") & (p+9<HIGH(buf)) THEN INC(p, 9) END;
                 (* positionless wx *) */
    if (storm) {
@@ -2018,72 +2038,83 @@ static void GetWX(struct aprsdecode_WX * wx, uint32_t * course,
          }
          if (wx->storm) {
             p += 2UL;
-            wpar(&p, buf, buf_len, &wx->sustaind, 3L, 3L);
-            wpar(&p, buf, buf_len, &wx->gust, 3L, 3L);
-            wpar(&p, buf, buf_len, &wx->baro, 4L, 4L);
-            if (buf[p]=='>') wpar(&p, buf, buf_len, &wx->radiushurr, 3L, 3L);
-            if (buf[p]=='&') {
-               wpar(&p, buf, buf_len, &wx->radiusstorm, 3L, 3L);
+            wpar(&oldp, &p, buf, buf_len, &wx->sustaind, 3L, 3L);
+            wpar(&oldp, &p, buf, buf_len, &wx->gust, 3L, 3L);
+            wpar(&oldp, &p, buf, buf_len, &wx->baro, 4L, 4L);
+            if (buf[p]=='>') {
+               wpar(&oldp, &p, buf, buf_len, &wx->radiushurr, 3L, 3L);
             }
-            if (buf[p]=='%') wpar(&p, buf, buf_len, &wx->wholegale, 3L, 3L);
+            if (buf[p]=='&') {
+               wpar(&oldp, &p, buf, buf_len, &wx->radiusstorm, 3L, 3L);
+            }
+            if (buf[p]=='%') {
+               wpar(&oldp, &p, buf, buf_len, &wx->wholegale, 3L, 3L);
+            }
          }
       }
    }
    else {
       /* normal wx */
       for (;;) {
+         oldp = p;
          switch ((unsigned)buf[p]) {
          case 'g':
-            wpar(&p, buf, buf_len, &wx->gust, 3L, 3L);
+            wpar(&oldp, &p, buf, buf_len, &wx->gust, 3L, 3L);
             break;
          case 't':
-            wpar(&p, buf, buf_len, &wx->temp, 3L, 3L);
+            wpar(&oldp, &p, buf, buf_len, &wx->temp, 3L, 3L);
             break;
          case 'r':
-            wpar(&p, buf, buf_len, &wx->rain1, 3L, 3L);
+            wpar(&oldp, &p, buf, buf_len, &wx->rain1, 3L, 3L);
             break;
          case 'p':
-            wpar(&p, buf, buf_len, &wx->rain24, 3L, 3L);
+            wpar(&oldp, &p, buf, buf_len, &wx->rain24, 3L, 3L);
             break;
          case 'P':
-            wpar(&p, buf, buf_len, &wx->raintoday, 3L, 3L);
+            wpar(&oldp, &p, buf, buf_len, &wx->raintoday, 3L, 3L);
             break;
          case 'h':
-            wpar(&p, buf, buf_len, &wx->hygro, 2L, 3L);
+            wpar(&oldp, &p, buf, buf_len, &wx->hygro, 2L, 3L);
             if (wx->hygro==0.0f) wx->hygro = 100.0f;
             break;
          case 'b':
-            wpar(&p, buf, buf_len, &wx->baro, 5L, 5L);
+            wpar(&oldp, &p, buf, buf_len, &wx->baro, 5L, 5L);
             break;
          case 'L':
-            wpar(&p, buf, buf_len, &wx->lum, 3L, 3L);
+            wpar(&oldp, &p, buf, buf_len, &wx->lum, 3L, 3L);
             break;
          case 'l':
-            wpar(&p, buf, buf_len, &wx->lum, 3L, 3L);
+            wpar(&oldp, &p, buf, buf_len, &wx->lum, 3L, 3L);
             wx->lum = wx->lum+1000.0f;
             break;
          case 'c':
-            wpar(&p, buf, buf_len, &wdir, 3L, 3L);
+            wpar(&oldp, &p, buf, buf_len, &wdir, 3L, 3L);
             break;
          case 's':
-            wpar(&p, buf, buf_len, &wwind, 3L, 3L);
+            wpar(&oldp, &p, buf, buf_len, &wwind, 3L, 3L);
             break;
          case 'X':
             wexp(buf, buf_len, &p, &wx->sievert, 1.E-9f);
             break;
          case 'm':
-            wpar(&p, buf, buf_len, &dust, 4L, 4L);
+            wpar(&oldp, &p, buf, buf_len, &dust, 4L, 4L);
             dustc = aprsdecode_trunc(dust);
             dustt = dustc/1000UL;
             dustc = dustc%1000UL;
             if (dustt==0UL) wx->dust01 = (short)dustc;
             else if (dustt==1UL) wx->dust1 = (short)dustc;
-            else if (dustt==2UL) wx->dust2 = (short)dustc;
+            else if (dustt==2UL) {
+               wx->dust2 = (short)dustc;
+            }
             else if (dustt==3UL) wx->dust10 = (short)dustc;
             break;
          default:;
             goto loop_exit;
          } /* end switch */
+         if (oldp>0UL) {
+            p = oldp; /* bad value so put char to comment */
+            break;
+         }
       }
       loop_exit:;
       wx->storm = aprsdecode_WXNORMAL;
@@ -5945,6 +5976,7 @@ static void Gateconn(aprsdecode_pTCPSOCK * cp)
    char port[1000];
    char ip[1000];
    char s[1000];
+   int32_t res;
    /*WrInt(cycleservers, 5); WrStrLn(" gateconn"); */
    if (*cp) {
       if ((int32_t)(*cp)->fd>=0L && !useri_configon(useri_fCONNECT)) {
@@ -5966,6 +5998,7 @@ static void Gateconn(aprsdecode_pTCPSOCK * cp)
                 WrStr(port);WrStrLn(">"); */
          fd = connectto(ip, port);
          if ((int32_t)fd>=0L) {
+            res = osi_keepalive(fd, 1, 180L, 30L, 3L);
             if (tcpconn(cp, fd)) {
                aprsstr_Assign((*cp)->ipnum, 64ul, ip, 1000ul);
                aprsstr_Assign((*cp)->port, 6ul, port, 1000ul);
@@ -7040,6 +7073,7 @@ extern void aprsdecode_initparms(void)
    aprsdecode_lastanyudprx = 0UL;
    aprsdecode_lasttcprx = 0UL;
    strncpy(aprsdecode_mapdir,"osm",1025u);
+   aprsdecode_WITHX11 = 1;
    parms();
    aprsdecode_ophist0 = 0;
    aprsdecode_ophist2 = 0;

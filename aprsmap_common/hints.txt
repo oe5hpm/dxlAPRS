@@ -1181,6 +1181,9 @@ if Map Download is requested. The Program
 reads "gettiles" file, loads maps and if
 done, deletes "gettiles" file.
 
+|7857 Toggle show Time since last beacon
+shortcut "T"
+
 |7845 Show a Scaler on the map. A small
 Zoomlevel would distort distances
 so Scaler will not be shown.

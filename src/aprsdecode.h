@@ -487,6 +487,8 @@ extern uint32_t aprsdecode_rxidle;
 
 extern char aprsdecode_quit;
 
+extern char aprsdecode_WITHX11;
+
 extern char aprsdecode_verb;
 
 extern char aprsdecode_logdone;

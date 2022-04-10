@@ -375,7 +375,10 @@ static float expzoom(int32_t z)
 
 static float latproj(float l)
 {
-   return osic_ln(X2C_DIVR(osic_sin(l)+1.0f,osic_cos(l)));
+   float c;
+   c = osic_cos(l);
+   if (c<=0.00001f) c = 0.00001f;
+   return osic_ln(X2C_DIVR(osic_sin(l)+1.0f,c));
 } /* end latproj() */
 
 
