@@ -254,6 +254,8 @@ static char badsounddriver;
 
 static char deb01;
 
+static char debrzi;
+
 static uint32_t debp;
 
 static uint32_t getst;
@@ -887,6 +889,7 @@ static void Parms(void)
    extraaudiodelay = 1UL;
    debfd = -1L;
    deb01 = 0;
+   debrzi = 0;
    debp = 0UL;
    badsounddriver = 0;
    for (cnum = 0UL; cnum<=32767UL; cnum++) {
@@ -968,7 +971,9 @@ static void Parms(void)
                modpar[modem].configbaud = cnum;
             }
             else {
-               if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
+               if (!aprsstr_StrToCard(h, 1024ul, &cnum)) {
+                  err = 1;
+               }
                maxsoundbufs = cnum;
             }
          }
@@ -1006,8 +1011,11 @@ static void Parms(void)
             debfd = creat(h1, 420L);
             inum = 0L;
             while (inum<1023L && h1[inum]) ++inum;
-            deb01 = (((inum>=4L && h1[inum-4L]=='.') && h1[inum-3L]=='t')
-                && h1[inum-2L]=='x') && h1[inum-1L]=='t';
+            if (inum>=4L && h1[inum-4L]=='.') {
+               deb01 = (X2C_CAP(h1[inum-3L])=='T' && X2C_CAP(h1[inum-2L])
+                =='X') && X2C_CAP(h1[inum-1L])=='T';
+               debrzi = h1[inum-3L]=='T';
+            }
          }
          else if (h[1U]=='d') {
             osi_NextArg(h, 1024ul);
@@ -1047,7 +1055,9 @@ static void Parms(void)
             }
          }
          else if (h[1U]=='g') {
-            if (modem>=0L) modpar[modem].scramb = 1;
+            if (modem>=0L) {
+               modpar[modem].scramb = 1;
+            }
             else if (channel>=0L) {
                osi_NextArg(h, 1024ul);
                if (!aprsstr_StrToCard(h, 1024ul, &cnum) || cnum>999UL) {
@@ -1197,7 +1207,9 @@ static void Parms(void)
                   struct MPAR * anonym1 = &modpar[modem];
                   if (GetIp(h, 1024ul, &anonym1->udpip, &anonym1->udpport,
                 &anonym1->udpbind, &anonym1->udpsocket,
-                &anonym1->checkip)<0L) Error("cannot open udp socket", 23ul);
+                &anonym1->checkip)<0L) {
+                     Error("cannot open udp socket", 23ul);
+                  }
                }
             }
             else Error("need modem number -M before -U", 31ul);
@@ -1205,9 +1217,7 @@ static void Parms(void)
          else if (h[1U]=='v') {
             if (modem>=0L) {
                osi_NextArg(h, 1024ul);
-               if (!aprsstr_StrToCard(h, 1024ul, &cnum)) {
-                  err = 1;
-               }
+               if (!aprsstr_StrToCard(h, 1024ul, &cnum)) err = 1;
                if (cnum>100UL) cnum = 100UL;
                modpar[modem].txvolum = (float)cnum*250.0f;
             }
@@ -2007,7 +2017,8 @@ static void demodbit(int32_t m, char d)
       d = d==anonym->data1;
       anonym->data1 = xor;
       if (deb01) {
-         debb[debp] = (char)(48UL+(uint32_t)d);
+         if (debrzi) debb[debp] = (char)(48UL+(uint32_t)xor);
+         else debb[debp] = (char)(48UL+(uint32_t)d);
          ++debp;
          if (debp>=80UL) {
             debb[80U] = '\012';
