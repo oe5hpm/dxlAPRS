@@ -32,6 +32,22 @@
 #endif
 
 /* read serial gps and make axudp aprs frames */
+/*
+FROM mlib IMPORT termios, tcgetattr, tcsetattr,
+                 CS8, CLOCAL, CREAD, TCSAFLUSH,
+                 B1200, B2400, B4800, B9600, B19200, B38400,
+                 B57600, B115200, B230400, B460800;
+*/
+struct SAT;
+
+
+struct SAT {
+   uint32_t id;
+   uint32_t az;
+   uint32_t el;
+   uint32_t db;
+};
+
 struct POS;
 
 
@@ -58,6 +74,9 @@ struct POS {
    char dateok;
    int32_t leapseconds;
    uint8_t timeflags;
+   uint32_t satcnt;
+   uint32_t lastsat;
+   struct SAT satpos[12];
 };
 
 #define gps2aprs_DEFTTY "/dev/ttyS0"
@@ -133,6 +152,8 @@ static int32_t udpsock;
 
 static char verb;
 
+static char verb2;
+
 static char anyip;
 
 static char usbrobust;
@@ -204,12 +225,14 @@ static char Logl[251];
 static pCONF pconfig;
 
 static int32_t tty;
+/*  saved: termios; */
 
-static struct termios saved;
-
-extern int32_t stime(uint32_t *);
-/* set system time, needs root */
-
+/*
+<* IF TARGET_FAMILY="WIN32" THEN *>
+<* ELSE *>
+PROCEDURE ["C"] / stime(VAR time:CARDINAL):INTEGER;   (* set system time, needs root *)
+<* END *>
+*/
 
 static void Error(char text[], uint32_t text_len)
 {
@@ -294,35 +317,38 @@ static int32_t GetIp(char h[], uint32_t h_len, uint32_t * p, uint32_t * ip, uint
    return GetIp_ret;
 } /* end GetIp() */
 
+/*  term : termios; */
+/*  bd   : INTEGER; */
 
 static void SetComMode(int32_t fd, uint32_t baud0)
 {
-   struct termios term;
-   int32_t res;
-   int32_t bd;
-   struct termios * anonym;
-   if (baud0==1200UL) bd = 9L;
-   else if (baud0==2400UL) bd = 11L;
-   else if (baud0==4800UL) bd = 12L;
-   else if (baud0==9600UL) bd = 13L;
-   else if (baud0==19200UL) bd = 14L;
-   else if (baud0==38400UL) bd = 15L;
-   else if (baud0==57600UL) bd = 4097L;
-   else if (baud0==115200UL) bd = 4098L;
-   else if (baud0==230400UL) bd = 4099L;
-   else if (baud0==460800UL) bd = 4100L;
-   else Error("unknown baudrate", 17ul);
-   res = tcgetattr(fd, &saved);
-   res = tcgetattr(fd, &term);
-   { /* with */
-      struct termios * anonym = &term;
-      anonym->c_lflag = 0UL;
-      anonym->c_oflag = 0UL;
-      anonym->c_iflag = 0UL;
-      /*  cfmakeraw(&termios);*/
-      anonym->c_cflag = (uint32_t)(2224L+bd); /*+CRTSCTS*/ /*0800018B2H*/
+   if (osi_setttybaudraw(fd, baud0)<0L) {
+      if (verb) osi_WrStrLn("cannot config tty", 18ul);
    }
-   res = tcsetattr(fd, 2L, &term);
+/*
+  IF baud=1200 THEN bd:=B1200;
+  ELSIF baud=2400 THEN bd:=B2400;
+  ELSIF baud=4800 THEN bd:=B4800;
+  ELSIF baud=9600 THEN bd:=B9600;
+  ELSIF baud=19200 THEN bd:=B19200;
+  ELSIF baud=38400 THEN bd:=B38400;
+  ELSIF baud=57600 THEN bd:=B57600;
+  ELSIF baud=115200 THEN bd:=B115200;
+  ELSIF baud=230400 THEN bd:=B230400;
+  ELSIF baud=460800 THEN bd:=B460800;
+  ELSE Error("unknown baudrate") END;
+
+  res:=tcgetattr(fd, saved);
+  res:=tcgetattr (fd, term);
+  WITH term DO
+    c_lflag :=0;
+    c_oflag :=0;
+    c_iflag :=0;
+(*  cfmakeraw(&termios);*)
+    c_cflag :=CS8+CLOCAL+CREAD(*+CRTSCTS*)+bd;  (*0800018B2H*)
+  END;
+  res:=tcsetattr (fd, TCSAFLUSH, term);
+*/
 } /* end SetComMode() */
 
 
@@ -533,6 +559,10 @@ static void Parms(void)
             }
          }
          else if (h[1U]=='v') verb = 1;
+         else if (h[1U]=='V') {
+            verb = 1;
+            verb2 = 1;
+         }
          else {
             if (h[1U]=='h') {
                osic_WrLn();
@@ -582,6 +612,7 @@ static void Parms(void)
                osi_WrStrLn(" -U                                switch Ublox>=M6 sV>=7 to Ublox-Raw (get vertical speed)", 92ul);
                osi_WrStrLn("                                     needs bidirectional connection", 68ul);
                osi_WrStrLn(" -u                                abort, not retry until open removable USB tty", 81ul);
+               osi_WrStrLn(" -V                                verbous, show sats (GSV-frames)", 67ul);
                osi_WrStrLn(" -v                                verbous", 43ul);
                osi_WrStrLn(" -w <viapath>                      via Path like RELAY,WIDE1-1", 63ul);
                osi_WrStrLn(" -Z <s>                            set system time to GPStime+<s> (will need root)", 83ul);
@@ -628,7 +659,7 @@ static uint32_t gpstimetosystime(const struct POS p)
 } /* end gpstimetosystime() */
 
 
-static void settime(const struct POS p)
+static void setstime(const struct POS p)
 {
    char s[21];
    uint32_t sec;
@@ -640,12 +671,12 @@ static void settime(const struct POS p)
          osi_WrStr("time to sys:", 13ul);
          osi_WrStrLn(s, 21ul);
       }
-      if (stime(&sec)>=0L) osi_WrStrLn("system time set", 16ul);
+      if (osi_settime(&sec)>=0L) osi_WrStrLn("system time set", 16ul);
       else osi_WrStrLn("--- error setting system time (will need root)", 47ul);
       if (terminatetimeset) X2C_ABORT();
       timesetdone = 1;
    }
-} /* end settime() */
+} /* end setstime() */
 
 
 static void sendudp(char buf[], uint32_t buf_len, int32_t len0, uint32_t ip, uint32_t port)
@@ -821,10 +852,14 @@ static void beaconmacros(char s[], uint32_t s_len)
 
 static void decodeline(const char b[], uint32_t b_len, uint32_t len0, struct POS * p)
 {
+   uint32_t msg;
+   uint32_t msgs;
+   uint32_t j;
    uint32_t n;
    uint32_t i;
    double div0;
    char sign;
+   struct SAT * anonym;
    if (b[0UL]=='$') {
       if (b[1UL]=='G') {
          if ((b[3UL]=='R' && b[4UL]=='M') && b[5UL]=='C') {
@@ -991,6 +1026,49 @@ static void decodeline(const char b[], uint32_t b_len, uint32_t len0, struct POS
             }
             if (sign) p->alt = -p->alt;
          }
+         else if ((b[3UL]=='G' && b[4UL]=='S') && b[5UL]=='V') {
+            /* sat num/az/el/dB */
+            /*
+            $GPGSV,3,1,11,22,78,048,19,01,75,130,32,03,74,289,,21,53,136,40*76
+            $GPGSV,3,2,11,17,41,291,16,04,31,195,37,19,24,315,,31,21,089,35*76
+            $GPGSV,3,3,11,32,13,043,,08,01,176,,09,,210,*4E
+            */
+            i = 7UL;
+            if (!getnum(b, b_len, &i, len0, &msgs)) return;
+            skip(b, b_len, &i, len0);
+            if ((!getnum(b, b_len, &i, len0, &msg) || msg==0UL) || msg>3UL) return;
+            skip(b, b_len, &i, len0);
+            if (!getnum(b, b_len, &i, len0, &n)) return;
+            if (!getnum(b, b_len, &i, len0, &p->satcnt)) return;
+            p->satcnt += n*10UL;
+            skip(b, b_len, &i, len0);
+            msg = (msg-1UL)*4UL;
+            j = 0UL;
+            for (;;) {
+               if (msg+j>=p->satcnt) break;
+               { /* with */
+                  struct SAT * anonym = &p->satpos[msg+j];
+                  getnum(b, b_len, &i, len0, &n);
+                  if (getnum(b, b_len, &i, len0, &anonym->id)) anonym->id += n*10UL;
+                  skip(b, b_len, &i, len0);
+                  getnum(b, b_len, &i, len0, &n);
+                  if (getnum(b, b_len, &i, len0, &anonym->el)) anonym->el += n*10UL;
+                  skip(b, b_len, &i, len0);
+                  getnum(b, b_len, &i, len0, &n);
+                  if (getnum(b, b_len, &i, len0, &anonym->az)) anonym->az += n*10UL;
+                  if (getnum(b, b_len, &i, len0, &n)) {
+                     anonym->az = anonym->az*10UL+n;
+                  }
+                  skip(b, b_len, &i, len0);
+                  getnum(b, b_len, &i, len0, &n);
+                  if (getnum(b, b_len, &i, len0, &anonym->db)) anonym->db += n*10UL;
+                  skip(b, b_len, &i, len0);
+               }
+               ++j;
+               p->lastsat = msg+j;
+               if (j>3UL) break;
+            }
+         }
       }
       else if (((b[1UL]=='P' && b[2UL]=='U') && b[3UL]=='B') && b[4UL]=='X') {
          /* ublox propietary for versical speed */
@@ -1076,6 +1154,92 @@ static void showline(const char b[], uint32_t b_len, uint32_t len0)
    }
    osic_WrLn();
 } /* end showline() */
+
+#define gps2aprs_DB 4.342944819
+
+
+static void showsats(uint32_t cnt, struct SAT sats[], uint32_t sats_len)
+{
+   uint32_t minn;
+   uint32_t min0;
+   uint32_t dh;
+   uint32_t p;
+   uint32_t medc;
+   uint32_t med;
+   uint32_t i;
+   float pow0;
+   char hh[201];
+   char h[201];
+   struct SAT * anonym;
+   struct SAT * anonym0;
+   uint32_t tmp;
+   med = 0UL;
+   medc = 0UL;
+   pow0 = 0.0f;
+   min0 = X2C_max_longcard;
+   if (cnt>0UL && cnt<=(sats_len-1)+1UL) {
+      tmp = cnt-1UL;
+      i = 0UL;
+      if (i<=tmp) for (;; i++) {
+         { /* with */
+            struct SAT * anonym = &sats[i];
+            if ((anonym->id>0UL && anonym->db>0UL) && anonym->db<100UL) {
+               med += anonym->db;
+               ++medc;
+               pow0 = pow0+osic_exp((float)anonym->db*2.3025850930113E-1f);
+               if (anonym->az<min0) min0 = anonym->az;
+            }
+         }
+         if (i==tmp) break;
+      } /* end for */
+      strncpy(h,"id azi el dB Sats:",201u);
+      aprsstr_IntToStr((int32_t)cnt, 1UL, hh, 201ul);
+      aprsstr_Append(h, 201ul, hh, 201ul);
+      aprsstr_Append(h, 201ul, " median:", 9ul);
+      aprsstr_FixToStr(X2C_DIVR((float)med,(float)medc), 2UL, hh, 201ul);
+      aprsstr_Append(h, 201ul, hh, 201ul);
+      aprsstr_Append(h, 201ul, "dB", 3ul);
+      if (pow0>0.1f) {
+         aprsstr_Append(h, 201ul, " sum:", 6ul);
+         aprsstr_FixToStr(osic_ln(pow0)*4.342944819f, 2UL, hh, 201ul);
+         aprsstr_Append(h, 201ul, hh, 201ul);
+         aprsstr_Append(h, 201ul, "dB", 3ul);
+      }
+      osi_WrStrLn(h, 201ul);
+      do {
+         /* sort up by atimuth */
+         minn = X2C_max_longcard;
+         tmp = cnt-1UL;
+         i = 0UL;
+         if (i<=tmp) for (;; i++) {
+            { /* with */
+               struct SAT * anonym0 = &sats[i];
+               if (anonym0->id>0UL) {
+                  if (anonym0->az==min0) {
+                     aprsstr_IntToStr((int32_t)anonym0->id, 2UL, h, 201ul);
+                     aprsstr_IntToStr((int32_t)anonym0->az, 4UL, hh, 201ul);
+                     aprsstr_Append(h, 201ul, hh, 201ul);
+                     aprsstr_IntToStr((int32_t)anonym0->el, 3UL, hh, 201ul);
+                     aprsstr_Append(h, 201ul, hh, 201ul);
+                     aprsstr_IntToStr((int32_t)anonym0->db, 3UL, hh, 201ul);
+                     aprsstr_Append(h, 201ul, hh, 201ul);
+                     p = aprsstr_Length(h, 201ul);
+                     aprsstr_Append(h, 201ul, " **************************************************", 52ul);
+                     dh = anonym0->db/2UL;
+                     if (dh>49UL) dh = 49UL;
+                     h[p+dh+1UL] = 0;
+                     if ((anonym0->db&1)) aprsstr_Append(h, 201ul, "-", 2ul);
+                     osi_WrStrLn(h, 201ul);
+                  }
+                  else if (anonym0->az>min0 && anonym0->az<minn) minn = anonym0->az;
+               }
+            }
+            if (i==tmp) break;
+         } /* end for */
+         min0 = minn;
+      } while (minn!=X2C_max_longcard);
+   }
+} /* end showsats() */
 
 
 static void uploadcfg(char s[], uint32_t s_len)
@@ -1467,7 +1631,7 @@ static void newpos(void)
       if (pos.altok>0UL) --pos.altok;
       pos.posok = 0;
    }
-   if (pos.dateok && !timesetdone) settime(pos);
+   if (pos.dateok && !timesetdone) setstime(pos);
 } /* end newpos() */
 
 
@@ -1916,6 +2080,11 @@ static void gpsbyte(char c)
          }
          else pos.posok = 0;
          if (verb) showline(gpsb, 251ul, gpsp);
+         if ((verb2 && pos.lastsat>0UL) && pos.satcnt==pos.lastsat) {
+            showsats(pos.satcnt, pos.satpos, 12ul);
+            memset((char *)pos.satpos,(char)0,sizeof(struct SAT [12]));
+            pos.lastsat = 0UL;
+         }
          newpos();
       }
       gpsp = 0UL;
@@ -1952,9 +2121,9 @@ extern int main(int argc, char **argv)
    sumoff = 0;
    anyip = 1;
    junk = 1;
-   pos.posok = 0;
-   pos.altok = 0UL;
+   memset((char *) &pos,(char)0,sizeof(struct POS));
    verb = 0;
+   verb2 = 0;
    usbrobust = 1;
    balloon = 0;
    baud = 4800UL;
