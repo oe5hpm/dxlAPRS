@@ -35,6 +35,10 @@
 #include <math.h>
 
 /* make panorama image with srtm data by oe5dxl */
+#define panorama_TESTX 2
+
+#define panorama_TESTY 359
+
 #define panorama_PI 3.1415926535
 
 #define panorama_PI2 6.283185307
@@ -64,17 +68,16 @@
 #define panorama_FULLTREEALT 1200
 
 #define panorama_TREERASTERSIZE 8.0
-/* m full treesize */
+/* default m full treesize */
 
-#define panorama_TREESIZE 25.0
-
-#define panorama_STAMTHICKNESS 0.01
+#define panorama_STAMTHICKNESS 0.015
 
 #define panorama_TREEFORM 0.9
+/* 0.9 */
 
-#define panorama_STAMLEN 0.25
+#define panorama_STAMLEN 0.35
 
-#define panorama_MINTREESIZE 2
+#define panorama_MINTREESIZE 3
 
 #define panorama_NOISESIZE 1024
 
@@ -96,8 +99,12 @@
 #define panorama_WATERMIRRORGAP 0.2
 /* m over water start ray path */
 
-#define panorama_TREENOTCH (-0.3)
-/* random tree kill on altitude and slant */
+#define panorama_WATERSURFACEDUST 0.6
+
+#define panorama_WAVLEN 5.E+6
+
+#define panorama_TREENOTCH 0.3
+/* random tree kill */
 
 #define panorama_cFOGLUMr 900.0
 /* low elevation heaven light */
@@ -123,17 +130,24 @@
 
 #define panorama_cFARCHROMb 1.0
 
-#define panorama_cMEADOWr 310.0
+#define panorama_cMEADOWr 248.0
 
-#define panorama_cMEADOWg 430.0
+#define panorama_cMEADOWg 344.0
 
-#define panorama_cMEADOWb 235.0
+#define panorama_cMEADOWb 172.0
+/* 235 */
 
-#define panorama_cMEADOWVIODr 458.0
+#define panorama_cMEADOWVOIDr 412.2
 
-#define panorama_cMEADOWVIODg 458.0
+#define panorama_cMEADOWVOIDg 412.2
 
-#define panorama_cMEADOWVIODb 429.0
+#define panorama_cMEADOWVOIDb 386.1
+
+#define panorama_cCOASTSANDr 380.0
+
+#define panorama_cCOASTSANDg 450.0
+
+#define panorama_cCOASTSANDb 450.0
 
 #define panorama_cSNOWr 840.0
 /*940 930 920 */
@@ -149,23 +163,23 @@
 
 #define panorama_cSNOWSHADOWb 220.0
 
-#define panorama_cSTAMr 140.0
+#define panorama_cSTAMr 98.0
 /* 292 271 249 */
 
-#define panorama_cSTAMg 130.0
+#define panorama_cSTAMg 91.0
 
-#define panorama_cSTAMb 120.0
+#define panorama_cSTAMb 84.0
 
-#define panorama_cSTAMVAR 20.0
+#define panorama_cSTAMVAR 15.0
 
-#define panorama_cTREEr 210.0
-/* 300 354 223 */
+#define panorama_cTREEr 151.2
+/* 200 245 190  *0.85 */
 
-#define panorama_cTREEg 290.0
+#define panorama_cTREEg 194.4
 
-#define panorama_cTREEb 200.0
+#define panorama_cTREEb 162.0
 
-#define panorama_cCITYCOL 500.0
+#define panorama_cCITYCOL 400.0
 
 #define panorama_cCITYMEADOWr 258.0
 
@@ -179,25 +193,31 @@
 
 #define panorama_cCITYSTREETb 282.0
 
+#define panorama_cCITYDUSTr 0.18
+
+#define panorama_cCITYDUSTg 0.15
+
+#define panorama_cCITYDUSTb 0.1
+
 #define panorama_cROCKr 418
 
 #define panorama_cROCKg 458
 
 #define panorama_cROCKb 448
 
-#define panorama_cUNDERWATERr 260.0
-/* 360 360 330 */
+#define panorama_cUNDERWATERr 180.0
+/* 360 360 330 * 0.6 */
 
-#define panorama_cUNDERWATERg 210.0
+#define panorama_cUNDERWATERg 160.0
 
-#define panorama_cUNDERWATERb 180.0
+#define panorama_cUNDERWATERb 150.0
 
-#define panorama_cWATERALIASr 110.0
-/* watercolour 110 271 330 */
+#define panorama_cWATERALIASr 13.2
+/* basic watercolour 33 81 99 *0.9 */
 
-#define panorama_cWATERALIASg 271.0
+#define panorama_cWATERALIASg 32.4
 
-#define panorama_cWATERALIASb 330.0
+#define panorama_cWATERALIASb 36.0
 
 #define panorama_cHEAVENr 150.0
 
@@ -241,6 +261,9 @@ struct CCOL {
    uint32_t b;
 };
 
+enum SCREENTYPE {panorama_eCURVED, panorama_eFLAT, panorama_eCAMERA};
+
+
 struct POSITIONL;
 
 
@@ -253,10 +276,11 @@ struct PANOWIN;
 
 
 struct PANOWIN {
-   char flatscreen0;
+   uint8_t flatscreen0;
    struct POSITIONL eye;
    struct POSITIONL horizon;
    float eyealt;
+   float eyeog;
    float angle0;
    float elevation;
    float yzoom0;
@@ -269,8 +293,7 @@ struct PANOWIN {
    uint32_t maxlum;
    float sunazi;
    float sunele;
-   float ang; /* poi fast preselect circular segment */
-   float hseg;
+   float hseg; /* poi fast preselect circular segment */
    float dist;
    imagetext_pIMAGE image0;
 };
@@ -303,10 +326,52 @@ struct POI {
    uint32_t xs;
    uint32_t ys;
    char altIsOG;
+   char withwoodicon;
+   uint8_t prio;
    char poifn[1024];
    char iconfn[1024];
    char iconwoodfn[1024];
    char iconhint[1024];
+};
+
+struct POISTORE;
+
+typedef struct POISTORE * pPOISTORE;
+
+
+struct POISTORE {
+   pPOISTORE next;
+   pPOI pp;
+   float x;
+   float y;
+   uint32_t prio;
+   float dist;
+   char thrutree;
+   int32_t textposx;
+   char text[51];
+};
+
+
+struct POIMAP {
+   uint32_t * Adr;
+   size_t Len0;
+};
+
+typedef struct POIMAP * pPOIMAP; /* store image columns with poi text */
+
+struct TRACK;
+
+typedef struct TRACK * pTRACK;
+
+
+struct TRACK {
+   pTRACK next;
+   uint32_t r;
+   uint32_t g;
+   uint32_t b;
+   uint32_t alpha;
+   uint32_t width;
+   char fn[1024];
 };
 
 struct NORMVEC;
@@ -367,6 +432,7 @@ struct TREEHINT {
    float stamtoeye;
    float og;
    float passdist;
+   float aliasm;
    float missspace;
    int32_t nx;
    int32_t ny;
@@ -391,7 +457,7 @@ struct ALTCOLTAB;
 
 struct ALTCOLTAB {
    struct CCOL c[1024];
-   struct CCOL tag[5];
+   struct CCOL tag[6];
    uint32_t len;
 };
 
@@ -418,6 +484,8 @@ struct DDSTACK {
 static imagetext_pIMAGE image;
 
 static pPOI poifiles;
+
+static pTRACK trackfiles;
 
 static char dateh[1024];
 
@@ -455,6 +523,8 @@ static float waterslant;
 
 static char gammatab[16384];
 
+static uint32_t millisec;
+
 static uint32_t altcolstep;
 
 static uint32_t rastercsv;
@@ -467,7 +537,13 @@ static uint32_t whitelim;
 
 static uint32_t blacklim;
 
+static uint32_t poilabel;
+
+static uint32_t fonttypfoot;
+
 static uint32_t fonttyp;
+
+static struct COL watercol;
 
 static struct COL heavencol;
 
@@ -479,13 +555,11 @@ static char alticolour;
 
 static char defaultocean;
 
-static char flatscreen;
-
 static char verb;
 
-static char poilabel;
-
 static char flatwater;
+
+static uint8_t flatscreen;
 
 static double treeraster;
 
@@ -503,6 +577,12 @@ static double maxmountain;
 
 static double rndseed;
 
+static float surfacedust;
+
+static float waterglance;
+
+static float watertransparency;
+
 static float treerastersize;
 
 static float abscolmin;
@@ -519,7 +599,9 @@ static float fulltreealt;
 
 static float treeshrink;
 
-static float alta;
+static float camog;
+
+static float camalt;
 
 static float sunaz;
 
@@ -575,6 +657,10 @@ struct _0 {
 
 static struct _0 csvvec;
 
+static struct aprsstr_POSITION poirect0;
+
+static struct aprsstr_POSITION poirect1; /* poi fast preselect rectangle */
+
 static uint8_t CRCL[256];
 
 static uint8_t CRCH[256];
@@ -590,6 +676,14 @@ static struct ALTCOLTAB altcoltab;
 static pDROPSHADOW freeshadow;
 
 static pDROPSHADOW newshadow;
+
+static pPOISTORE poistore;
+
+static pPOIMAP poimap;
+
+static int32_t debugxi;
+
+static int32_t debugyi;
 
 static float debugx;
 
@@ -714,6 +808,13 @@ static float min0(float a, float b)
 } /* end min() */
 
 
+static float max0(float a, float b)
+{
+   if (a>b) return a;
+   return b;
+} /* end max() */
+
+
 static int32_t imin(int32_t a, int32_t b)
 {
    if (a<b) return a;
@@ -766,6 +867,25 @@ static float atang2(float x, float y)
    else w = 0.0f;
    return w;
 } /* end atang2() */
+
+
+static double atang2l(double x, double y)
+{
+   double w;
+   if (fabs(x)>fabs(y)) {
+      w = atan(X2C_DIVL(y,x));
+      if (x<0.0) {
+         if (y>0.0) w = 3.1415926535+w;
+         else w = w-3.1415926535;
+      }
+   }
+   else if (y!=0.0) {
+      w = 1.57079632675-atan(X2C_DIVL(x,y));
+      if (y<0.0) w = w-3.1415926535;
+   }
+   else w = 0.0;
+   return w;
+} /* end atang2l() */
 
 
 static char posvalidl(const struct POSITIONL pos)
@@ -993,20 +1113,20 @@ static void readsymbol(SYMBOL img, uint32_t * x, uint32_t * y,
 } /* end readsymbol() */
 
 
-static void makegammatab(uint32_t min1, uint32_t max0)
+static void makegammatab(uint32_t min1, uint32_t max1)
 {
    uint32_t span;
    uint32_t c;
    float g;
-   if (max0<=min1) {
+   if (max1<=min1) {
       min1 = 0UL;
-      max0 = 16383UL;
+      max1 = 16383UL;
    }
-   span = max0-min1;
+   span = max1-min1;
    g = X2C_DIVR(1.0f,igamma);
    for (c = 0UL; c<=16383UL; c++) {
       if (c>min1) {
-         if (c<=max0) {
+         if (c<=max1) {
             gammatab[c] = (char)(uint32_t)
                 X2C_TRUNCC(exp(log((double)(X2C_DIVR((float)(c-min1)
                 ,(float)span)))*(double)g)*255.5,0UL,
@@ -1020,7 +1140,7 @@ static void makegammatab(uint32_t min1, uint32_t max0)
 
 
 static void histogram(imagetext_pIMAGE img, char nosat,
-                uint32_t * min1, uint32_t * max0)
+                uint32_t * min1, uint32_t * max1)
 {
    uint32_t maxe;
    uint32_t ib;
@@ -1042,6 +1162,8 @@ static void histogram(imagetext_pIMAGE img, char nosat,
    /*    hr:ARRAY[0..MAXLUM] OF REAL; */
    uint32_t h[16384];
    struct imagetext_PIX * anonym;
+   /*        pc:=(VAL(CARDINAL, r)*3 + VAL(CARDINAL, g)*5 + VAL(CARDINAL,
+                b)*2) DIV 10; (* PAL luma *) */
    struct imagetext_PIX * anonym0;
    uint32_t tmp;
    uint32_t tmp0;
@@ -1056,7 +1178,8 @@ static void histogram(imagetext_pIMAGE img, char nosat,
          { /* with */
             struct imagetext_PIX * anonym = &img->Adr[(x)*img->Len0+y];
             pc = ((uint32_t)anonym->r*3UL+(uint32_t)
-                anonym->g*5UL+(uint32_t)anonym->b*2UL)/10UL;
+                anonym->g*5UL+(uint32_t)anonym->b*1UL)/9UL;
+                /* snow shadow blue, dust blue dimms */
             if (nosat) {
                if ((uint32_t)anonym->r>pc) {
                   pc = (uint32_t)anonym->r; /* saturated single colours */
@@ -1073,19 +1196,17 @@ static void histogram(imagetext_pIMAGE img, char nosat,
       if (y==tmp) break;
    } /* end for */
    pixc = ((img->Len1-1)+1UL)*((img->Len0-1)+1UL);
-   ib = (uint32_t)X2C_TRUNCC((float)pixc*ignorblack*0.01f,0UL,
-                X2C_max_longcard);
-   iw = (uint32_t)X2C_TRUNCC((float)pixc*ignorwhite*0.01f,0UL,
-                X2C_max_longcard);
+   ib = truncc((float)pixc*(float)fabs(ignorblack)*0.01f);
    *min1 = 1UL; /* dont use unfilled black stripes */
    while (ib>=h[*min1] && *min1<16383UL) {
       ib -= h[*min1];
       ++*min1;
    }
-   *max0 = 16383UL;
-   while (iw>=hh[*max0] && *max0>0UL) {
-      iw -= hh[*max0];
-      --*max0;
+   iw = truncc((float)pixc*ignorwhite*0.01f);
+   *max1 = 16383UL;
+   while (iw>=hh[*max1] && *max1>0UL) {
+      iw -= hh[*max1];
+      --*max1;
    }
    iw = (uint32_t)X2C_TRUNCC((float)pixc*ignorwhite*0.01f,0UL,
                 X2C_max_longcard);
@@ -1096,27 +1217,31 @@ static void histogram(imagetext_pIMAGE img, char nosat,
    }
    maxe = (uint32_t)imax((int32_t)maxe, (int32_t)whitelim);
    *min1 = (uint32_t)imin((int32_t)*min1, (int32_t)blacklim);
-   *max0 = (uint32_t)imax((int32_t)*max0, (int32_t)whitelim);
+   *max1 = (uint32_t)imax((int32_t)*max1, (int32_t)whitelim);
                 /* with heaven */
    /*- check contrast for auto filmlinearity */
    llog = logfilm;
    if (logfilm<0.0f) {
       /* contrast auto */
       llog = 2.E+5f;
-      while (llog>100.0f && llog*osic_ln(1.0f+X2C_DIVR((float)*max0,
+      while (llog>100.0f && llog*osic_ln(1.0f+X2C_DIVR((float)*max1,
                 llog))>(float)maxe) llog = llog*0.95f;
    }
    if (llog>0.0f) {
       ilog = X2C_DIVR(1.0f,llog);
-      *max0 = (uint32_t)X2C_TRUNCC(llog*osic_ln(1.0f+(float)*max0*ilog),
+      *max1 = (uint32_t)X2C_TRUNCC(llog*osic_ln(1.0f+(float)*max1*ilog),
                 0UL,X2C_max_longcard);
    }
+   if (ignorblack<0.0f) {
+      *min1 = truncc((float)*max1*(float)fabs(ignorblack));
+   }
+   if (*min1>=*max1) *max1 = *min1+1UL;
    fmin = (float)*min1;
-   mul = X2C_DIVR(16383.0f,(float)*max0-fmin);
+   mul = X2C_DIVR(16383.0f,(float)*max1-fmin);
    if (verb) {
       osi_WrStr("min..allmax, earthmax, log: ", 29ul);
       osic_WrINT32(*min1, 6UL);
-      osic_WrINT32(*max0, 6UL);
+      osic_WrINT32(*max1, 6UL);
       osic_WrINT32(maxe, 6UL);
       osic_WrFixed(llog, 1L, 10UL);
       osi_WrStrLn("", 1ul);
@@ -1167,7 +1292,7 @@ static void histogram(imagetext_pIMAGE img, char nosat,
            IF b>MAXLUM THEN b:=MAXLUM END;
    */
    *min1 = 0UL;
-   *max0 = 16383UL;
+   *max1 = 16383UL;
 } /* end histogram() */
 
 
@@ -1516,6 +1641,7 @@ static float arcsin(float x)
                 (* ueber 15° - einfachere Formel *)
     ELSIF hoehe>-1.0*RAD THEN r:=RAD*p*(0.1594+0.0196*hoehe+0.00002*hoehe*hoehe)
                 /((273.0+t)*(1+0.505*hoehe+0.0845*hoehe*hoehe)) END;
+WrFixed(r/RAD,5,10); WrStrLn("=refrac");
     RETURN r          (* Refraktion in Radians *)
   END Refraktion;
 */
@@ -1592,6 +1718,15 @@ static void sunpos(uint32_t tt, float lat, float long0,
 } /* end sunpos() */
 
 
+static float Refraction(float el)
+/* in rad */
+{
+   return (X2C_DIVR((1.57079632675f-el)-arcsin((float)
+                (9.9811853245532E-1*cos((double)el))),
+                1.7453292519444E-2f))*0.15f;
+} /* end Refraction() */
+
+
 static char time2sun(char date[], uint32_t date_len,
                 char time0[], uint32_t time_len,
                 struct POSITIONL mypos, float * sunaz0,
@@ -1616,8 +1751,10 @@ static char time2sun(char date[], uint32_t date_len,
           AzimutHoehe(mypos.lat, day,
                 FLOAT(t MOD 86400)/3600.0 + mypos.long/(RAD*15.0)
                 - 12.0+zeitgleichung(day), sunaz, sunel);
-          sunel:=sunel + Refraktion(sunel);
       */
+      /*WrFixed(sunel,5,10);WrFixed(Refraction(sunel*RAD),5,10);
+                WrStrLn("=sunrefrac"); */
+      *sunel0 = *sunel0+Refraction( *sunel0*1.7453292519444E-2f);
       wrsun(*sunaz0, *sunel0);
       /*    time2moon(t+day*86400, mypos, moonazim, moonelev); */
       time2sun_ret = 1;
@@ -1639,7 +1776,7 @@ static void autosun(float * az, float * el, struct POSITIONL pos,
    *az = pan+*az;
    if (*az<0.0f) *az = *az+360.0f;
    else if (*az>360.0f) *az = *az-360.0f;
-   *el = (float)(10.0+0.65*(90.0-X2C_DIVL(fabs(pos.lat),
+   *el = (float)(15.0+0.58*(90.0-X2C_DIVL(fabs(pos.lat),
                 1.7453292519444E-2))*fabs(cos((double)
                 ( *az*1.7453292519444E-2f))));
 /*WrFixed(ABS(pos.lat)/RAD, 3, 9); WrStrLn("=r"); */
@@ -1684,8 +1821,11 @@ static void Parms(void)
    float rn;
    float dist;
    float pan;
+   uint32_t pri;
    uint32_t label;
+   int32_t p;
    pPOI ppoi;
+   pTRACK ptrk;
    int32_t col;
    err = 0;
    label = 0UL;
@@ -1697,6 +1837,8 @@ static void Parms(void)
    dateh[0] = 0;
    timeh[0] = 0;
    altOG = 0;
+   millisec = 0UL;
+   pri = 0UL;
    for (;;) {
       osi_NextArg(h, 1024ul);
       if (h[0U]==0) break;
@@ -1715,6 +1857,9 @@ static void Parms(void)
             ppoi->b = 255UL;
             ppoi->alpha = 255UL;
             osi_NextArg(h, 1024ul);
+            ppoi->prio = (uint8_t)pri;
+                /* prefer first pois if no place for text */
+            ++pri;
             if (aprsstr_StrToInt(h, 1024ul, &col)) {
                ppoi->r = (uint32_t)col;
                osi_NextArg(h, 1024ul);
@@ -1743,6 +1888,41 @@ static void Parms(void)
             ppoi->next = poifiles;
             poifiles = ppoi;
          }
+         else if (h[1U]=='E') {
+            osic_alloc((char * *) &ptrk, sizeof(struct TRACK));
+            if (ptrk==0) Error("trackfile, out of memory", 25ul);
+            ptrk->r = 255UL;
+            ptrk->g = 255UL;
+            ptrk->b = 255UL;
+            ptrk->alpha = 128UL;
+            osi_NextArg(h, 1024ul);
+            if (aprsstr_StrToInt(h, 1024ul, &col)) {
+               ptrk->r = (uint32_t)col;
+               osi_NextArg(h, 1024ul);
+               if (aprsstr_StrToInt(h, 1024ul, &col)) {
+                  ptrk->g = (uint32_t)col;
+                  osi_NextArg(h, 1024ul);
+                  if (aprsstr_StrToInt(h, 1024ul, &col)) {
+                     ptrk->b = (uint32_t)col;
+                     osi_NextArg(h, 1024ul);
+                     if (aprsstr_StrToInt(h, 1024ul, &col)) {
+                        ptrk->alpha = (uint32_t)col;
+                        osi_NextArg(h, 1024ul);
+                        if (aprsstr_StrToInt(h, 1024ul, &col)) {
+                           ptrk->width = (uint32_t)col;
+                           osi_NextArg(h, 1024ul);
+                        }
+                     }
+                  }
+               }
+            }
+            aprsstr_Assign(ptrk->fn, 1024ul, h, 1024ul);
+            if (ptrk->fn[0U]==0 || ptrk->fn[0U]=='-') {
+               Error("-E <trackfilename>", 19ul);
+            }
+            ptrk->next = trackfiles;
+            trackfiles = ptrk;
+         }
          else if (h[1U]=='c') {
             osi_NextArg(csvfn, 1024ul);
             if (csvfn[0U]==0 || csvfn[0U]=='-') {
@@ -1763,7 +1943,7 @@ static void Parms(void)
                 49ul);
             }
             osi_NextArg(iconwoodfn, 1024ul);
-            if (iconwoodfn[0U]==0 || iconwoodfn[0U]=='-') {
+            if (iconwoodfn[0U]=='-') {
                Error("-I <icon filename> <icon no wood filename> (png)",
                 49ul);
             }
@@ -1775,9 +1955,7 @@ static void Parms(void)
             }
             if (iconhint[0U]==',') iconhint[0U] = 0;
          }
-         else if (h[1U]=='f') flatscreen = 1;
          else if (h[1U]=='v') verb = 1;
-         else if (h[1U]=='V') poilabel = 1;
          else if (h[1U]=='O') altOG = 1;
          else if (h[1U]=='Z') defaultocean = 1;
          else if (h[1U]=='j') dropshadows = 1;
@@ -1786,6 +1964,12 @@ static void Parms(void)
             if (!aprsstr_StrToFix(&urbanoff, h, 1024ul)) {
                Error("-u <pixel per meter>", 21ul);
             }
+         }
+         else if (h[1U]=='f') {
+            osi_NextArg(h, 1024ul);
+            if (h[0U]=='0') flatscreen = panorama_eFLAT;
+            else if (h[0U]=='1') flatscreen = panorama_eCAMERA;
+            else Error("-f <n>", 7ul);
          }
          else if (h[1U]=='x') {
             osi_NextArg(h, 1024ul);
@@ -1821,9 +2005,9 @@ static void Parms(void)
          }
          else if (h[1U]=='A') {
             osi_NextArg(h, 1024ul);
-            if ((!aprsstr_StrToFix(&alta, h,
-                1024ul) || alta<0.0f) || alta>50000.0f) {
-               Error("-A <meter> (0..50000)", 22ul);
+            if ((!aprsstr_StrToFix(&camog, h,
+                1024ul) || camog<0.0f) || camog>5.E+5f) {
+               Error("-A <meter> (0..500000)", 23ul);
             }
          }
          else if (h[1U]=='d') {
@@ -1839,6 +2023,13 @@ static void Parms(void)
          else if (h[1U]=='S') {
             osi_NextArg(dateh, 1024ul);
             osi_NextArg(timeh, 1024ul);
+         }
+         else if (h[1U]=='V') {
+            osi_NextArg(h, 1024ul);
+            if (!aprsstr_StrToCard(h, 1024ul, &poilabel)) {
+               Error("-V <n>", 7ul);
+            }
+            ++poilabel;
          }
          else if (h[1U]=='W') {
             flatwater = 1;
@@ -2047,12 +2238,49 @@ static void Parms(void)
             heavencol.g = heavencol.g*16.0f;
             heavencol.b = heavencol.b*16.0f;
          }
+         else if (h[1U]=='R') {
+            osi_NextArg(h, 1024ul);
+            if (!aprsstr_StrToFix(&watercol.r, h,
+                1024ul) || watercol.r>=1024.0f) {
+               Error("-R <r> <g> <b> <glance> <transp> <surface>", 43ul);
+            }
+            osi_NextArg(h, 1024ul);
+            if (!aprsstr_StrToFix(&watercol.g, h,
+                1024ul) || watercol.g>=1024.0f) {
+               Error("-R <r> <g> <b> <glance> <transp> <surface>", 43ul);
+            }
+            osi_NextArg(h, 1024ul);
+            if (!aprsstr_StrToFix(&watercol.b, h,
+                1024ul) || watercol.b>=1024.0f) {
+               Error("-R <r> <g> <b> <glance> <transp> <surface>", 43ul);
+            }
+            osi_NextArg(h, 1024ul);
+            if (!aprsstr_StrToFix(&waterglance, h, 1024ul)) {
+               Error("-R <r> <g> <b> <glance> <transp> <surface>>", 44ul);
+            }
+            osi_NextArg(h, 1024ul);
+            if (!aprsstr_StrToFix(&watertransparency, h, 1024ul)) {
+               Error("-R <r> <g> <b> <glance> <transp> <surface>", 43ul);
+            }
+            osi_NextArg(h, 1024ul);
+            if (!aprsstr_StrToFix(&surfacedust, h, 1024ul)) {
+               Error("-R <r> <g> <b> <glance> <transp> <surface>", 43ul);
+            }
+         }
          else if (h[1U]=='F') {
             osi_NextArg(h, 1024ul);
             if (h[0U]=='1') fonttyp = 6UL;
             else if (h[0U]=='2') fonttyp = 8UL;
             else if (h[0U]=='3') fonttyp = 10UL;
-            else Error("-F <font> (1:6x10 2:10x20)", 27ul);
+            else Error("-F <font>[,<font>] (1:6x10 2:8x14 3:10x20)", 43ul);
+            if (h[1U]==',') {
+               if (h[2U]=='1') fonttypfoot = 6UL;
+               else if (h[2U]=='2') fonttypfoot = 8UL;
+               else if (h[2U]=='3') fonttypfoot = 10UL;
+               else {
+                  Error("-F <font>[,<font>] (1:6x10 2:8x14 3:10x20)", 43ul);
+               }
+            }
          }
          else {
             if (h[1U]=='h') {
@@ -2080,29 +2308,35 @@ on (degrees) (0.0)", 68ul);
 zer, surface contrast and dust calculation", 92ul);
                osi_WrStrLn("                                     are able to \
 handle only small elevations!", 79ul);
-               osi_WrStrLn(" -F <font>                         Font Size (1) \
-1: 6x10, 2: 8x14, 3: 10x20", 76ul);
-               osi_WrStrLn(" -f                                Flat screen el\
-se Curved projection area (needed at >=180deg sight)", 102ul);
+               osi_WrStrLn(" -F <font>[,<font>]                Font Size POI,\
+footline (1) 1: 6x10, 2: 8x14, 3: 10x20", 89ul);
+               osi_WrStrLn(" -f <n>                            0 Flat screen \
+perpendicular, 1 screen normal to sight (no latitude scale)", 109ul);
+               osi_WrStrLn("                                     default cour\
+ved projection area (needed at >=180deg sight)", 96ul);
                osi_WrStrLn(" -G <meter> <meter>                Glazier/Snow a\
-ltitude and fade out (3000 500)", 81ul);
+ltitude and fade out (5000 500)", 81ul);
                osi_WrStrLn(" -g <gamma>                        Image Gamma 0.\
 1..10 (1.0)", 61ul);
                osi_WrStrLn(" -H <r> <g> <b>                    Heaven colour \
 (50 70 300)", 61ul);
                osi_WrStrLn(" -h                                this", 40ul);
-               osi_WrStrLn(" -I <filename> <filename>          Symbol Image F\
-ile Name with, w/o wood, set before -P", 88ul);
+               osi_WrStrLn(" -I <filename> <filename> | \"\"     Symbol Image\
+ File Name with, w/o wood, set before -P", 88ul);
                osi_WrStrLn(" -i <filename>                     Image File Nam\
 e", 51ul);
+               osi_WrStrLn(" -j                                dropshadows on\
+ (test implementation, very slow)", 83ul);
                osi_WrStrLn(" -J <poi-hint>                     text appended \
 to csv lines, set before -P, off with -J ,", 92ul);
                osi_WrStrLn(" -K <filmcharacteristic>           compress sunli\
 ght/dust to fit in image brightness (4000) 0=linear else auto", 111ul);
                osi_WrStrLn(" -l <%> <%>                        fit image cont\
-rast to saturate % of all black/white pixels (0.1 0.5)", 104ul);
+rast to saturate % of all black/white pixels (-0.1 1.0)", 105ul);
+               osi_WrStrLn("                                   negative black\
+ level use -level of while", 76ul);
                osi_WrStrLn(" -L <n> <n>                        limit contrast\
- expansion black white (100 1000)", 83ul);
+ expansion black white (400 1000)", 83ul);
                osi_WrStrLn(" -M <bytes>                        SRTM-Cache Lim\
 it (100000000)", 64ul);
                osi_WrStrLn(" -m <meter>                        limit searchin\
@@ -2129,24 +2363,30 @@ rtm1 /srtm3 /srtm30", 69ul);
 r raw latitude for squarish tree raster (defaul camera lat)", 109ul);
                osi_WrStrLn("                                     camera altit\
 ude now over NN", 65ul);
+               osi_WrStrLn(" -R <r> <g> <b> <glance> <transparency> Water Col\
+our mirroring sight  (350 300 200 1 1)", 88ul);
                osi_WrStrLn(" -r <refraction>                   0.0(vacuum)..1\
 .0(earth is a disk) (0.13)", 76ul);
-               osi_WrStrLn(" -S <deg> <deg> | <date> <time>    Sun azimuth an\
-d elevation or utc: 20191231 115959", 85ul);
+               osi_WrStrLn(" -S <deg> <deg>[+<ms>] | <date> <time>[+<ms>]  Su\
+n azimuth and elevation or utc: 20191231 115959", 97ul);
+               osi_WrStrLn("                                   + append milli\
+seconds relative time for waves in video 20191231 115959+8000", 111ul);
                osi_WrStrLn(" -s <size>                         internal gener\
 ated POI symbol size (5)", 74ul);
                osi_WrStrLn(" -T <no-tree-alt> <full-tree-alt>  2500 1200 m al\
 titude shrink trees from full size to <2m", 91ul);
-               osi_WrStrLn(" -t <meter> <steep> <dist>         Tree size (25)\
- lowered linear as given in -T, 0=wood off", 92ul);
+               osi_WrStrLn(" -t <meter> <steep> <dist>         Enable vegetat\
+ion, Tree size (m) lowered linear as given in -T, 0=wood off", 110ul);
                osi_WrStrLn("                                     steep=0 all \
-rock, steep=5 rock if steeper (8)", 83ul);
+rock, steep=5 rock if steeper", 79ul);
                osi_WrStrLn("                                     median tree \
 distance in wood (8)", 70ul);
                osi_WrStrLn(" -u <meter>                        Urban area fad\
 e-in at pixel per meter, 0 urban off", 86ul);
-               osi_WrStrLn(" -V                                Write POI-Name\
- over Icon", 60ul);
+               osi_WrStrLn(" -V <n>                            Write POI-Name\
+ over Icon, 0 all, 1 as place for text", 88ul);
+               osi_WrStrLn("                                     sortet prior\
+ on lefter -P and than neerer objects", 87ul);
                osi_WrStrLn(" -v                                Say something",
                  49ul);
                osi_WrStrLn(" -W <wavehigth> <wavelength> <flatness>  draw Wat\
@@ -2179,9 +2419,21 @@ alid) srtm data or srtm30 with 0m", 83ul);
       osi_Werr("< use -h\012", 10ul);
       X2C_ABORT();
    }
+   /*  IF (csvfn[0]<>0C) & (flatscreen=eCAMERA)
+                THEN Werr("no map csv on not vertical canvas"+NL) END; */
    if ((altOG && poifiles) && poifiles->next==0) {
       poifiles->altIsOG = altOG; /* exact 1 poi file so altOG switch may be anywhere */
    }
+   p = aprsstr_InStr(timeh, 1024ul, "+", 2ul);
+   if (p>0L) {
+      timeh[p] = 0;
+      ++p;
+      while (p<=1023L && timeh[p]) {
+         millisec = millisec*10UL+((uint32_t)(uint8_t)timeh[p]-48UL);
+         ++p;
+      }
+   }
+   /*WrInt(millisec, 10); WrStrLn(""); */
    if (time2sun(dateh, 1024ul, timeh, 1024ul, posa, &sunazim, &sunelev)) {
       /*    dateh:=""; timeh:=""; */
       sunaz = sunazim;
@@ -2217,7 +2469,10 @@ alid) srtm data or srtm30 with 0m", 83ul);
       wrsun(sunaz, sunel);
    }
    treeshrink = X2C_DIVR(1.0f,zerotreealt-fulltreealt);
-   if (alticolour && logfilm<0.0f) logfilm = 0.0f;
+   if (alticolour) {
+      treesize = 0.0f;
+      if (logfilm<0.0f) logfilm = 0.0f;
+   }
 } /* end Parms() */
 
 
@@ -2297,7 +2552,8 @@ static void readcolourfile(struct ALTCOLTAB * col, const char fn[],
 static void wrcsv(int32_t px, int32_t py,
                 const struct aprsstr_POSITION posdeg, float alti,
                 const char text[], uint32_t text_len,
-                const char iconhint[], uint32_t iconhint_len)
+                const char iconhint[], uint32_t iconhint_len,
+                const char ext[], uint32_t ext_len)
 {
    char h[1001];
    char s[1001];
@@ -2320,15 +2576,13 @@ static void wrcsv(int32_t px, int32_t py,
                 X2C_max_longint), 0UL, h, 1001ul);
          aprsstr_Append(s, 1001ul, h, 1001ul);
       }
-      if (text[0UL]) {
-         aprsstr_Append(s, 1001ul, ",", 2ul);
-         aprsstr_Append(s, 1001ul, text, text_len);
-      }
-      if (iconhint[0UL]) {
-         aprsstr_Append(s, 1001ul, ",", 2ul);
-         aprsstr_Append(s, 1001ul, iconhint, iconhint_len);
-      }
-      aprsstr_Append(s, 1001ul, "\012", 2ul);
+      aprsstr_Append(s, 1001ul, ",\"", 3ul);
+      aprsstr_Append(s, 1001ul, text, text_len);
+      aprsstr_Append(s, 1001ul, "\",", 3ul);
+      aprsstr_Append(s, 1001ul, iconhint, iconhint_len);
+      aprsstr_Append(s, 1001ul, ",\"", 3ul);
+      aprsstr_Append(s, 1001ul, ext, ext_len);
+      aprsstr_Append(s, 1001ul, "\"\012", 3ul);
       osi_WrBin(csvfd, (char *)s, 1001u/1u, aprsstr_Length(s, 1001ul));
    }
 /* WITH image^[px][py] DO INC(r, 200); INC(g, 200); END; */
@@ -2386,11 +2640,11 @@ static void xycsv(uint32_t px, uint32_t py, struct POSITIONL posl,
          }
          if (eov) {
             wrcsv((int32_t)px, (int32_t)(py-n), radtodeg(csvvec.v[0U].p),
-                 csvvec.v[0U].a, "", 1ul, "", 1ul);
+                 csvvec.v[0U].a, "", 1ul, "", 1ul, "", 1ul);
             if (n>1UL) {
                wrcsv((int32_t)px, (int32_t)(py-1UL),
                 radtodeg(csvvec.v[n-1UL].p), csvvec.v[n-1UL].a, "", 1ul, "",
-                1ul);
+                1ul, "", 1ul);
             }
             n = 0UL;
          }
@@ -2450,7 +2704,7 @@ static void normvec(const struct POSITIONL pos, libsrtm_pMETAINFO pmeta,
    }
    *water = (uint8_t)(uint32_t)X2C_TRUNCC(pmeta->attrweights[3U]*100.0f,
                 0UL,X2C_max_longcard);
-   if (treesize>0.0f) {
+   if (treesize>0.0f || alticolour) {
       *wood = (uint8_t)(uint32_t)
                 X2C_TRUNCC(pmeta->attrweights[2U]*100.0f,0UL,
                 X2C_max_longcard);
@@ -2518,6 +2772,7 @@ static void shadowcolour(float shadowval, const struct COL suncol,
 {
    if (shadowval<0.0f) shadowval = 0.0f;
    else if (shadowval>1.0f) shadowval = 1.0f;
+   /*  IF tree THEN shadowval:=shadowval*0.4+0.3 END; */
    shadwocol->r = suncol.r*1.0f*shadowval;
    shadwocol->g = suncol.g*0.9f*shadowval;
    shadwocol->b = suncol.b*0.6f*shadowval;
@@ -2670,11 +2925,6 @@ static void treepos(struct POSITIONL pos, char odd,
       }
       if (anonym->nx!=onx || anonym->ny!=ony) {
          /* another tree */
-         /*
-         IF (nx=285097) & (ny=712409) THEN
-         WrFixed(shla, 3, 9); WrFixed(shlo, 3, 9); WrStrLn("shlalo");
-         END;
-         */
          anonym->nx = onx;
          anonym->ny = ony;
          stampos.lat = X2C_DIVL((double)anonym->ny*0.5-sh,
@@ -2689,6 +2939,9 @@ static void treepos(struct POSITIONL pos, char odd,
          normvec(stampos, &anonym->meta, &anonym->tslant, &anonym->rooth,
                 &anonym->nvec, &anonym->water, &anonym->wood,
                 &anonym->urban);
+         /*IF debugxi=TESTX THEN WrFixed(stampos.lat/RAD, 6, 15);
+                WrFixed(stampos.long/RAD, 6, 15); WrFixed(rooth, 2, 9);
+                WrStrLn(" rooth ") END;  */
          anonym->stamtoeye = distnear(teye, stampos);
       }
    }
@@ -2703,13 +2956,14 @@ static float treesizealt(float alt)
 
 /*BEGIN RETURN (* one(FLOAT(attw)*0.02-1.0)* *) min(one((2100.0-alt)*0.0025),
                 one((slant-0.4)*botanicslant)) END wooddensity; */
+/*BEGIN RETURN min(sqr(one(treesizealt(alt)*0.033)),
+                one((slant-0.4)*botanicslant)) END wooddensity; */
 
 static float wooddensity(uint8_t attw, float alt, float slant)
 /*BEGIN RETURN FLOAT(attw)*0.01*one((2100.0-alt)*0.0025)*one((slant-0.4)
                 *botanicslant) END wooddensity; */
 {
-   return min0(sqr(one(treesizealt(alt)*0.033f)),
-                one((slant-0.4f)*botanicslant));
+   return one((slant-0.4f)*botanicslant);
 } /* end wooddensity() */
 
 
@@ -2722,17 +2976,20 @@ static uint8_t treeform(struct POSITIONL pos, float eyeh,
    uint32_t inois;
    char stam;
    struct TREEHINT * anonym;
-   /*IF (nx<>285097) OR (ny<>712409) THEN (*debugg:=500.0;*) RETURN 0 END; */
+   /*IF (nx<>294325) OR (ny<>1519253) THEN (*debugg:=500.0;*) RETURN 0 END;
+                */
    treepos(pos, odd, th);
    { /* with */
       struct TREEHINT * anonym = th;
-      /*WrInt(nx, 10); WrInt(ny, 10); WrStrLn("nxny"); */
       if (anonym->stamtoeye<20.0f) return 0U;
       inois = (uint32_t)CRC[(anonym->ny&255L)+(anonym->nx&255L)*256L];
       noise = (float)inois*1.52587890625E-5f;
-      if (anonym->wood<50U || wooddensity(anonym->wood, anonym->rooth,
-                anonym->tslant)-(-0.3f)<noise) return 0U;
+      /*WrInt(wood,3); WrStrLn(""); */
+      if ((uint16_t)anonym->wood<50U+CRC[anonym->nx*11L+anonym->ny*4L&65535L]/2048U || wooddensity(anonym->wood,
+                 anonym->rooth, anonym->tslant)-0.3f<noise) return 0U;
       /* remove random trees */
+      /*    IF (wood<50) THEN RETURN 0 END;  (* remove random trees *) */
+      /*WrInt(nx, 10); WrInt(ny, 10); WrStrLn("nxny"); */
       anonym->regionpeak = treesizealt(anonym->rooth)
                 *one(0.1f+plus(anonym->tslant-0.4f)*botanicslant);
                 /* treesize on altitude and slant */
@@ -2741,7 +2998,7 @@ static uint8_t treeform(struct POSITIONL pos, float eyeh,
       noise = (float)CRC[anonym->nx*17L+anonym->ny*3L&65535L];
       anonym->peakh = anonym->areapeak*(1.0f-noise*6.103515625E-6f);
                 /* random tree size */
-      if (anonym->peakh<2.0f) return 0U;
+      if (anonym->peakh<3.0f) return 0U;
       /*    thickness:=1.0 (*sqr(20.0/peakh)*); */
       /*    thickness:=regionpeak/peakh; */
       /*    hitx:=(pos.long-stampos.long)*treerasterlat*2; */
@@ -2757,12 +3014,12 @@ static uint8_t treeform(struct POSITIONL pos, float eyeh,
       }
       else anonym->hith = 0.0f;
       anonym->og = eyeh-anonym->rooth;
-      /*    IF og<0.0 THEN og:=0.0 END; */
-      stam = anonym->og<anonym->peakh*(noise+32000.0f)*3.814697265625E-6f;
-      anonym->isstam = (anonym->stamtoeye<showstamdist && stam)
-                && thickness<=0.01f; /*& (og>0.0)*/
+      stam = anonym->og<thickness*treerastersize*0.6f+anonym->peakh*(noise+20000.0f)
+                *4.0918443696221E-6f;
+      anonym->isstam = stam && thickness<=0.015f;
+      if (anonym->isstam && anonym->og<0.0f) return 0U;
       if ((!anonym->isstam && anonym->stamtoeye<showstamdist) && stam) {
-         /* & (og>0.0)*/
+         /* under tree but not stam */
          *stacked = 1;
          return 1U;
       }
@@ -2790,11 +3047,13 @@ END treevec;
 static void raytrace(double x0, double y00, double z0,
                 double dx, double dy, double dz,
                 float maxdist, float altrise, float refrac,
-                double mirrordist, double * dist,
-                float * subpix, struct POSITIONL * pos,
+                float treesize0, char mirrord, double * dist,
+                 float * subpix, struct POSITIONL * pos,
                 TREEHINTS treehints, struct DDSTACK * ddstack,
                 char * istree, char * odd, char shad)
 {
+   float hmm;
+   float hm;
    float tolw;
    float tol;
    float ypixalt;
@@ -2827,13 +3086,13 @@ static void raytrace(double x0, double y00, double z0,
    else lastsp = X2C_max_real;
    alt = (double)X2C_max_real;
    *subpix = 0.0f;
-   /*  ypixalt:=0.0; */
    spo = 0.0f;
    /*WrStrLn("---+ "); */
    /*WrFixed(dist, 1,5); WrStr("=dist "); */
-   meta.withslant = 0;
+   meta.withslant = shad;
    meta.aliasattr = 1; /* watch for wood */
    iter = 5UL;
+   /*  oldh:=MAX(REAL); */
    dist0 = *dist;
    dist1 = *dist;
    wgs84rl(x0+dx*dist1, y00+dy*dist1, z0+dz*dist1, &lat1, &long1, &alt1);
@@ -2853,16 +3112,16 @@ static void raytrace(double x0, double y00, double z0,
          wgs84rl(x0+dx*dist1, y00+dy*dist1, z0+dz*dist1, &lat1, &long1,
                 &alt1);
          alt1 = alt1-dist1*dist1*(double)refrac;
-         dalt = X2C_DIVL(alt1-alt0,4000.0);
-         dlong = X2C_DIVL(long1-long0,4000.0);
-         dlat = X2C_DIVL(lat1-lat0,4000.0);
+         dalt = (alt1-alt0)*0.00025;
+         dlong = (long1-long0)*0.00025;
+         dlat = (lat1-lat0)*0.00025;
       }
       ddist = *dist-dist0; /* go ahead linearized */
       pos->lat = lat0+dlat*ddist;
       pos->long0 = long0+dlong*ddist;
       alt = alt0+dalt*ddist;
       ypixalt = (float)((double)(float)fabs(altrise)* *dist);
-                /*+mirrordist*/ /* pixel size */
+                /* pixel size */
       tol = ypixalt*0.25f;
       if (tol<0.1f) tol = 0.1f;
       h = (double)libsrtm_getsrtmlong(pos->lat, pos->long0,
@@ -2875,15 +3134,17 @@ static void raytrace(double x0, double y00, double z0,
          sp = (float)(alt-h);
          /*IF altrise<0.0 THEN WrFixed(h, 1,7); WrFixed(pos.lat/RAD, 6,12);
                 WrFixed(pos.long/RAD, 6,12); END; */
+         /*IF shad & (debugxi=10) THEN WrFixed(alt, 2, 8); WrStr(",");
+                WrFixed(h, 2, 0); END; */
          *odd = 0;
          *istree = 0;
-         if (((treesize>0.0f && sp<=treesize) && !alticolour)
+         if (((treesize0>0.0f && sp<=treesize0) && !alticolour)
                 && meta.attrweights[2U]>0.0f) {
             /*& (dist>SHOWTREEDIST)*/
             if (treehints[0].treepass) {
                /* use constant wood higth for poi */
                if (((meta.attrweights[2U]>0.5f && sp<treesizealt((float)h)
-                ) && sp<treehints[0].hith) && mirrordist==0.0) {
+                ) && sp<treehints[0].hith) && !mirrord) {
                   treehints[0].hith = sp;
                   treehints[0].passdist = (float)*dist;
                }
@@ -2891,64 +3152,91 @@ static void raytrace(double x0, double y00, double z0,
             else {
                stk = 0;
                *odd = 0;
-               /*          treehints[FALSE].peakh:=0.0;
-                treehints[TRUE].peakh:=0.0; */
                od = treeform(*pos, (float)alt, 0, &stk, &treehints[0]);
-               /*          IF od=0 THEN treehints[odd]
-                .peakh:=0.0 ELSIF treehints[odd].hith<sp THEN od:=0 END; */
                if (od==2U && (double)
-                (treehints[0].hith+treehints[0].rooth)<alt) {
-                  od = 0U;
-               }
+                (treehints[0].hith+treehints[0].rooth)<alt) od = 0U;
                if (od<2U) {
-                  /*            odd:=TRUE; */
                   od = treeform(*pos, (float)alt, 1, &stk, &treehints[1]);
-                  /*            IF od=0 THEN treehints[odd]
-                .peakh:=0.0 ELSIF treehints[odd].hith<sp THEN od:=0 END; */
                   if (od==2U && (double)
                 (treehints[1].hith+treehints[1].rooth)<alt) od = 0U;
                   if (od>0U) *odd = 1;
                }
-               if ((stk && mirrordist==0.0) && ddstack->startdist==0.0f) {
+               if ((stk && !mirrord) && ddstack->startdist==0.0f) {
                   ddstack->startdist = (float)*dist;
                   ddstack->stoppalt = treehints[*odd].peakh+treehints[*odd]
                 .rooth;
                }
                if (od==2U && treehints[*odd].hith>0.0f) {
-                  /*& (treehints[odd].rooth+treehints[odd].hith>h)*/
                   *istree = 1;
-                  /*            sp:=sp-treehints[odd].hith;
-                          (* add treeform to srtm *) */
                   sp = (float)(alt-(double)
                 (treehints[*odd].rooth+treehints[*odd].hith));
+                /* add treeform to srtm */
                }
             }
             tolw = tol*0.25f;
          }
          else tolw = tol;
-         if ((double)sp<(double)
-                treehints[0].missspace* *dist && *dist!=0.0) {
-            /* store lowest pass over earth/tree */
-            treehints[0].missspace = (float)(X2C_DIVL((double)sp,
-                *dist));
+         if (shad) {
+            /*IF (debugxi=10) THEN WrFixed(sp, 2, 8) END; */
+            if (*dist>0.0) {
+               hmm = 1.0f+(float)fabs(meta.slantx)+(float)
+                fabs(meta.slanty);
+                /* aproximativ distance correction to slants */
+               if (*istree && hmm<10.0f) hmm = 10.0f;
+               hm = hmm*treehints[0].aliasm; /* pixl size on shadow point */
+               sp = sp+hm*0.5f;
+               if (*istree && hm<5.0f) hm = 5.0f;
+               hmm = (float)( *dist*9.5993108856944E-3);
+               if (hmm>hm) hm = hmm;
+               if (hm<2.0f) {
+                  sp = sp+0.1f*irand(pos->lat*3.E+6,
+                pos->long0*coslat*3.E+6);
+               }
+               hmm = X2C_DIVR(sp,hm);
+               if (hmm<treehints[0].missspace) {
+                  /* store lowest pass angle over obstakle */
+                  treehints[0].missspace = hmm;
+               }
+               sp = sp+hm;
+               if (sp<0.0f) break;
+            }
+            if (sp>0.0f) {
+               step = sp*0.3f+0.1f;
+               if (((step>1.0f && treesize0>0.0f) && sp<=treesize0)
+                && (meta.attrweights[2U]>0.0f || *dist<80.0)) step = 1.0f;
+            }
+            else step = 0.2f;
          }
-         /*      IF shad THEN AddShadow(dist, h+sp) END; */
-         if (sp>tolw) {
+         else if (sp>tolw) {
+            /*      IF shad THEN AddShadow(dist, h+sp) END; */
             /* over ground */
-            if (((sp<=treesize && !alticolour) && meta.attrweights[2U]>0.0f)
-                && *dist+mirrordist<(double)showstamdist) step = 0.2f;
-            else step = sp*0.25f;
+            /*        IF (treesize>0.0) & (sp<=treesize*1.2)
+                & (meta.attrweights[ATTRWOOD]>0.0) */
+            /*        THEN step:=ypixalt+0.2 ELSE step:=sp*0.3 END; */
+            /*        step:=sp*0.3; */
+            step = sp*0.5f;
+            if (spo>0.0f) {
+               step = X2C_DIVR(step*sp,spo);
+                /* shorter step on fast dropdown */
+            }
+            if (treesize0>0.0f && sp<=treesize0*1.2f) {
+               if (meta.attrweights[2U]>0.0f && step>ypixalt+0.2f) {
+                  step = ypixalt+0.2f;
+               }
+            }
+            /*        IF step>treerastersize*0.5 THEN step:=treerastersize*0.5 END;
+                 */
             if (*subpix==0.0f) {
                if (sp<lastsp) lastsp = sp;
                else if (ypixalt!=0.0f) *subpix = X2C_DIVR(lastsp,ypixalt);
             }
          }
          else {
-            /*WrFixed(sp, 1,6); WrFixed(lastsp, 1,6); WrFixed(minsp, 1,6);
-                WrFixed(step, 1,6); WrStrLn(" go "); */
-            if (sp>-tolw) break;
+            if (sp>-tolw) {
+               break; /* hit earth */
+            }
             /* under ground */
-            if (mirrordist>0.0) break;
+            if (mirrord) break;
             if (spo<=0.0f) {
                /* again under ground */
                step = sp*0.5f;
@@ -2967,6 +3255,7 @@ static void raytrace(double x0, double y00, double z0,
       else if ((float)fabs(step)<tolw) {
          /*WrFixed(step, 1,6); WrFixed(spo-sp, 1,7); WrInt(iter, 3);
                 WrStrLn(" newton "); */
+         /*      oldh:=h;  */
          /* jump over hole in erth */
          --iter;
          if (iter==0UL) break;
@@ -3001,9 +3290,11 @@ static void angtoxyz(double wx, double wy, double slat,
                 double clat, double slong, double clong,
                 double * x, double * y, double * z)
 {
+   double cwy;
+   cwy = cos(wy);
    *x = -sin(wy);
-   *y = sin(wx)*cos(wy);
-   *z = cos(wx)*cos(wy);
+   *y = sin(wx)*cwy;
+   *z = cos(wx)*cwy;
    rotvector(z, x, clat, slat);
    rotvector(y, x, clong, slong);
    *x = -*x;
@@ -3019,9 +3310,20 @@ static void posdirtoxyz(const struct POSITIONL pos, double az,
 } /* end posdirtoxyz() */
 
 
+static void rotateview(double * wx, double * wy,
+                double xim, double yim, double incl)
+{
+   double z;
+   z = 1.0;
+   rotvector(&yim, &z, cos(incl), sin(incl));
+   *wx = atang2l(z, xim);
+   *wy = atang2l(sqrt(xim*xim+z*z), yim);
+} /* end rotateview() */
+
+
 static float seesun(const struct POSITIONL frompos, double alt,
                 float sunaz0, float sunele, float maxdist,
-                float refrac)
+                float refrac, float pixperm)
 {
    double z0;
    double y00;
@@ -3031,8 +3333,8 @@ static float seesun(const struct POSITIONL frompos, double alt,
    double xn;
    double dd;
    struct POSITIONL pos;
-   float space;
    TREEHINTS th;
+   float space;
    char odd;
    char istree;
    struct DDSTACK ddstack;
@@ -3041,17 +3343,15 @@ static float seesun(const struct POSITIONL frompos, double alt,
    wgs84sl(frompos.lat, frompos.long0, alt, &x0, &y00, &z0);
    memset((char *)th,(char)0,sizeof(TREEHINTS));
    odd = 0;
-   dd = 1.0;
+   dd = 0.0;
    th[0].missspace = X2C_max_real;
+   th[0].aliasm = X2C_DIVR(1.0f,pixperm);
    ddstack.startdist = 0.0f;
-   raytrace(x0, y00, z0, xn, yn, zn, maxdist, 0.0f, refrac, 0.001, &dd,
-                &space, &pos, th, &ddstack, &istree, &odd, 0);
-   space = 0.0f;
-   if (dd>(double)maxdist) {
-      space = th[0].missspace*1.0417414457222E+2f;
-      if (space>1.0f) space = 1.0f;
-   }
-   return space;
+   raytrace(x0, y00, z0, xn, yn, zn, maxdist, 0.0f, refrac, treesize, 1, &dd,
+                 &space, &pos, th, &ddstack, &istree, &odd, 1);
+   if (dd>(double)maxdist) return one(th[0].missspace+0.5f);
+   /* sight to sun */
+   return 0.0f;
 } /* end seesun() */
 
 
@@ -3062,24 +3362,24 @@ static float inv(float x)
    return X2C_DIVR(1.0f,x);
 } /* end inv() */
 
-#define panorama_MAXSUNDUST 4000.0
-/* 6000 */
+#define panorama_MAXSUNDUST 3600.0
+/* 4000 */
 
 #define panorama_LENSEFFECT 40.0
 
-#define panorama_HEAVENDUST 2.0
+#define panorama_HEAVENDUST 1.0
+/* 2 */
 
 #define panorama_RAD90 6.3661977238578E-1
 
 
 static void sundisk(float x, float wy, float sunazi,
                 float sunele, float dist, float sunarea,
-                float maxdist, uint8_t lenseffect,
-                const struct COL suncol, const struct POSITIONL pos,
-                float alt, float refrac, float dropsun,
-                struct COL * c)
+                float maxdist, char lenseffect,
+                const struct COL suncol, float refrac, struct COL * c)
 /* dust and all else in heaven */
 {
+   float bl;
    float lens;
    float ed;
    float s;
@@ -3087,26 +3387,23 @@ static void sundisk(float x, float wy, float sunazi,
    float y;
    struct COL nh;
    struct COL hc;
-   /* dist =0 heaven, >0 earth */
    y = radmod(wy-sunele);
    sd = x*x+y*y;
-   if (dist==0.0f) {
-      /* heaven */
-      hc.r = 1.0f;
-      hc.g = 1.0f;
-      hc.b = 1.0f;
-      colblend((float)fabs(x)*0.3f, suncol, hc, &hc);
+   bl = maxdist;
+   if (dist!=0.0f) bl = dist;
+   bl = bl*4.2441318159052E-5f; /* lesser blue sky on shorter sight */
+   if (bl>6.3661977238578E-1f) bl = 6.3661977238578E-1f;
+   nh.r = 1.0f;
+   nh.g = 1.0f;
+   nh.b = 1.0f;
+   hc.r = 0.7f;
+   hc.g = 1.0f;
+   hc.b = 1.5f;
+   colblend(bl, hc, nh, &hc); /* near water dust to distant oxygene blue */
+   colblend((float)fabs(x)*0.3f, suncol, hc, &hc);
                 /* azimuth sun colour in dust */
-   }
-   else {
+   if (dist!=0.0f) {
       /* earth */
-      hc.r = suncol.r*0.25f;
-      hc.g = suncol.g*0.4f;
-      hc.b = suncol.b*1.1f;
-      s = hc.r*0.15f+hc.g*0.25f+hc.b*0.1f;
-      hc.r = hc.r*0.5f+s;
-      hc.g = hc.g*0.5f+s;
-      hc.b = hc.b*0.5f+s;
       colblend((float)((0.5-sqrt((double)sd)*3.0)*(double)
                 sunarea), hc, suncol, &hc);
                 /* sun angle dust colour on earth */
@@ -3122,20 +3419,9 @@ static void sundisk(float x, float wy, float sunazi,
    hc.b = s*hc.b;
    if (dist==0.0f) {
       /* heaven */
-      /*
-          IF d<=SUNSIZE*SUNSIZE THEN                          (* view into sun *)
-            c.r:=suncol.r*SUNLUM;
-            c.g:=suncol.g*SUNLUM;
-            c.b:=suncol.b*SUNLUM;
-       
-          ELSE                                                (* heaven not in sun *)
-                 
-      */
-      s = maxdist*4.2441318159052E-5f; /* lesser blue sky on shorter sight */
-      if (s>6.3661977238578E-1f) s = 6.3661977238578E-1f;
       if (wy<0.0f) wy = 0.0f;
-      ed = 1.0f-wy*s;
-      s = 2.0f+x*x+(float)fabs(sunele);
+      ed = 1.0f-wy*bl;
+      s = 1.0f+x*x+(float)fabs(sunele);
       if (s>6.0f) s = 6.0f;
       if (ed<=0.0f) ed = 0.0f;
       else ed = (float)pow((double)ed, (double)s);
@@ -3151,11 +3437,14 @@ static void sundisk(float x, float wy, float sunazi,
       colblend(ed, nh, hc, c); /* blue sky down to dust */
    }
    else {
-      /*  END; */
       /* earth */
+      s = 1.0f-dist;
+      c->r = c->r*s;
+      c->g = c->g*s;
+      c->b = c->b*s;
       colblend(dist, *c, hc, c);
    }
-   if (lenseffect==1U) {
+   if (lenseffect) {
       /* direct sun */
       if (sd<=2.3036692370053E-5f) {
          /* view into sun */
@@ -3172,30 +3461,40 @@ static void sundisk(float x, float wy, float sunazi,
       c->g = c->g+suncol.g*lens;
       c->b = c->b+suncol.b*lens;
    }
-   else if (lenseffect==2U) {
-      /* sun in water */
-      /*    lens:=3.0/(d+0.005)*irand(pos.lat*300000.0,
-                pos.long*coslat*300000.0); */
-      /*    lens:=0.4/(d+0.002)*(0.2+sqr(qrand(pos.lat*20000000.0,
-                pos.long*coslat*20000000.0))); */
-      lens = (X2C_DIVR((2.0f-sunele)*0.12f,
-                x*x+y*y*sunele*3.1830988619289E-1f+0.0005f))
-                *(1.0f+sqr(qrand((double)((x+1.0f)*3000.0f),
-                (double)((y+1.0f)*3000.0f))));
-      if (lens>0.1f) {
-         if (!dropshadows) {
-            dropsun = seesun(pos, (double)(alt+0.2f), sunazi,
-                sunele+4.7996554428472E-3f, maxdist, refrac);
-         }
-         if (dropsun>0.0f) {
-            lens = lens*dropsun;
-            c->r = c->r+suncol.r*lens;
-            c->g = c->g+suncol.g*lens;
-            c->b = c->b+suncol.b*lens;
-         }
+} /* end sundisk() */
+
+#define panorama_ZOOM 4000.0
+
+
+static void waterglitter(double x, double wy,
+                double sunazi, double sunele, float pixsize,
+                float maxdist, const struct COL suncol,
+                const struct POSITIONL pos, float refrac, float alt,
+                float dropsun, struct COL * c)
+/* small waves mirrors sun on water */
+{
+   double lens;
+   double y;
+   y = (double)radmod((float)(wy-sunele));
+   lens = (X2C_DIVL((2.0-sunele)*0.12,
+                x*x+y*y*sunele*3.1830988619289E-1+0.0005))*(double)
+                (1.0f+sqr(qrand((x+1.0)*4000.0+(double)((float)
+                millisec*0.0003f),
+                (y+1.0)*4000.0)*(1.0f-one(pixsize*0.2f))));
+   if (lens>0.1) {
+      if (!dropshadows) {
+         dropsun = seesun(pos, (double)(alt+0.2f), (float)sunazi,
+                (float)(sunele+4.7996554428472E-3), maxdist, refrac,
+                1.0f);
+      }
+      if (dropsun>0.0f) {
+         lens = lens*(double)dropsun*(double)waterglance;
+         c->r = (float)((double)c->r+(double)suncol.r*lens);
+         c->g = (float)((double)c->g+(double)suncol.g*lens);
+         c->b = (float)((double)c->b+(double)suncol.b*lens);
       }
    }
-} /* end sundisk() */
+} /* end waterglitter() */
 
 #define panorama_STEPS 8
 
@@ -3230,8 +3529,8 @@ static float sunvisability(double sunaz0, double sunel0,
       angtoxyz(wx, wy, slat, clat, slong, clong, &xn, &yn, &zn);
       dd = 0.0;
       ddstack.startdist = 0.0f;
-      raytrace(x0, y00, z0, xn, yn, zn, maxdist, 0.0f, refrac, 0.0, &dd,
-                &space, &pos, th, &ddstack, &istree, &odd, 0);
+      raytrace(x0, y00, z0, xn, yn, zn, maxdist, 0.0f, refrac, treesize, 0,
+                &dd, &space, &pos, th, &ddstack, &istree, &odd, 0);
       /*WrFixed(sum, 2, 7); */
       if (dd>(double)maxdist) sum = sum+0.125f;
       r = r+7.85398163375E-1f;
@@ -3261,7 +3560,7 @@ static void snowcol(struct COL * c, const struct COL sun, float xsun,
 
 
 static void botaniccol(struct COL * c, const struct COL suncol,
-                float suncos, float directsun, float diffuslum)
+                float suncos, float diffuslum)
 {
    float x;
    /*  x:=(xsun+2.5)*(sun.r+sun.g+sun.b)*0.33333333; */
@@ -3271,7 +3570,6 @@ static void botaniccol(struct COL * c, const struct COL suncol,
    c->g = 0.055f*x;
    c->b = 0.09f*x;
    if (suncos>0.0f) {
-      suncos = suncos*directsun;
       c->r = c->r+suncos*suncol.r;
       c->g = c->g+suncos*suncol.g;
       c->b = c->b+suncos*suncol.b;
@@ -3282,12 +3580,12 @@ static void botaniccol(struct COL * c, const struct COL suncol,
 static void treecol(struct POSITIONL pos, const struct TREEHINT th,
                 const struct ROTVEC sunv, float pixsize,
                 float diffuslum, float dense, float snowdense,
-                float eyesunaz, float xsun, uint8_t hitwood,
-                const struct COL suncol, struct COL * c)
+                float eyesunaz, float xsun, float eyeang,
+                uint8_t hitwood, const struct COL suncol, struct COL * c)
 {
+   float pixsun;
    float pixshh;
    float pixst;
-   float dens;
    float pixs;
    float geosun;
    float ang;
@@ -3301,8 +3599,11 @@ static void treecol(struct POSITIONL pos, const struct TREEHINT th,
    float gi;
    float ri;
    struct COL s;
-   pixst = one(pixsize*0.3f);
+   pixst = pixsize*0.5f; /* structure amplitude */
+   if (pixst>1.0f) pixst = 1.0f;
    pixs = one(pixsize*0.5f);
+   pixsun = pixsize*1.5f;
+   if (pixsun>1.0f) pixsun = 1.0f;
    pixshh = one(pixsize*2.0f);
    if (dropshadows) geosun = diffuslum;
    else geosun = one(diffuslum*20.0f);
@@ -3310,12 +3611,9 @@ static void treecol(struct POSITIONL pos, const struct TREEHINT th,
                 (pos.lat*treescramblat))*th.hity,
                 th.hity-3.0f*dlrand((float)(pos.long0*treescramblong))
                 *th.hitx);
-   rnd = irand((double)((float)(th.nx*7L+th.ny*6L&511L)+ang*6.0f),
-                (double)((th.og+30.0f)*8.0f)); /* tree structure */
-   /*  h:=th.peakh/th.areapeak; */
-   /*  IF xsun>0.0 THEN h:=h*(1.0-xsun) + xsun END;
-                (* small trees in flat sun *) */
-   trestruc = (float)fabs(rnd)*pixst+(1.0f-pixst);
+   rnd = irand((double)((float)(th.nx*7L+th.ny*6L&511L)+ang*5.0f),
+                (double)((th.og+30.0f)*6.0f)); /* tree structure */
+   trestruc = (1.0f+rnd*0.5f)*pixst+(1.0f-pixst);
                 /* flatten struct on distance */
    if (th.hitradius<1.0f) {
       v.x = -th.hitx;
@@ -3324,227 +3622,140 @@ static void treecol(struct POSITIONL pos, const struct TREEHINT th,
       rotveclight(&sun, v, sunv); /* sun angle effekt */
    }
    else sun = (-1.0f);
-   sun = sun+rnd*(1.2f-(float)fabs(sun))*0.1f;
-                /* random rotate sun angle */
-   if (sun<(-1.0f)) sun = (-1.0f);
-   else if (sun>1.0f) sun = 1.0f;
    if (xsun>0.0f) {
-      xsun = xsun*((1.0f-xsun)*((float)fabs(eyesunaz)
-                *1.5915494309644E-1f+0.5f)+xsun);
-                /* cos median wood brightness */
+      xsun = xsun*(0.75f+(float)fabs(eyesunaz)*1.5915494309644E-1f);
+                /* distant in suncos median wood brightness */
    }
-   sun = pixs*sun+(1.0f-pixs)*xsun; /* lower individual sun angle on dist */
-   /*  sun:=pixs*treesun + (1.0-pixs)*mainsun;
-                (* lower individual sun angle on dist *) */
-   dens = dense*one((float)hitwood*0.02f-1.0f);
-   /*green */
+   sun = pixsun*sun+(1.0f-pixsun)*xsun;
+                /* lower individual sun angle on dist */
    if (dropshadows) sh = 1.0f;
    else sh = sun*0.15f+0.85f;
    if (th.isstam) {
       /* stam */
-      /*    snowdense:=4.0*(snowdense-0.75); */
-      /*    sh:=sh*(1.0-FLOAT(th.wood)*0.005);
-                (* stam darker deep in wood *) */
-      /*    snowcol(rs,gs,bs, sunr,sung,sunb, sh); */
       snowdense = 0.0f;
       h = irand((double)(float)(th.nx*7L+th.ny*5L),
-                (double)(float)(th.nx*4L+th.ny*9L))*20.0f;
+                (double)(float)(th.nx*4L+th.ny*3L))*15.0f;
       sh = sh*trestruc;
-      ri = sh*140.0f;
-      gi = sh*(130.0f+h);
-      bi = sh*(120.0f+h);
+      ri = sh*98.0f;
+      gi = sh*(91.0f+h);
+      bi = sh*(84.0f+h);
    }
    else {
-      /*    snowdense:=one(snowdense*2.0-pixsh*(2.0-ABS(qrand(FLOAT((th.nx*13+th.ny*6)
-                 MOD 512)+ang*3.0, th.og*4.0)))); */
-      /*    snowdense:=snowdense*pixsh + snowdense*qrand(FLOAT(th.nx),
-                FLOAT(th.ny))*(0.1-pixsh)
-                *pixshh + snowdense*(0.35-pixshh*0.35); */
-      snowdense = one(snowdense*1.6f-pixs*(2.0f-(float)
+      snowdense = one(snowdense*1.6f-pixs*(float)fabs(2.0f-(float)
                 fabs(qrand((double)((float)(th.nx*13L+th.ny*6L&511L)
-                +ang*3.0f), (double)(th.og*4.0f)))));
+                +ang*2.0f), (double)(th.og*4.0f)))));
       snowdense = snowdense*pixs+snowdense*qrand((double)(float)
                 th.nx, (double)(float)th.ny)*(0.1f-pixs)*pixshh+snowdense*(0.35f-pixshh*0.35f);
-      if (dropshadows) h = trestruc;
+      if (dropshadows) {
+         h = X2C_DIVR(th.og,th.peakh); /* more light on higth */
+         if (h<0.3f) h = 0.3f;
+         h = h+0.2f;
+      }
       else {
          h = sh*(1.0f-one((0.8f-X2C_DIVR(th.hith,
-                th.areapeak))*2.5f)*1.2f*dens*pixs);
-                /* use relative hight dark in wood */
+                th.areapeak))*2.5f)*1.2f*one((float)hitwood*0.02f-1.0f)
+                *pixs); /* use relative hight dark in wood */
          h = h+pixs*one((X2C_DIVR(th.hith,th.regionpeak)-0.8f)*4.0f)*0.6f;
                 /* illuminate high peaks */
-         h = h*trestruc;
       }
-      if (h<0.08f) h = 0.08f;
-      ri = 210.0f*(h+0.1f);
-      gi = 290.0f*h;
-      bi = 200.0f*(h+0.1f);
+      /*    h:=(1.0+rnd*(1.0/4.0))*pixst*h (* + ((1.0-eyeang*0.4)-pixst) *);
+                */
+      h = h*trestruc;
+      if (h<0.1f) h = 0.1f;
+      ri = 151.2f*h;
+      gi = 194.4f*h;
+      bi = 162.0f*h;
    }
-   ri = ri*(1.0f+irand((double)(float)(th.nx*9L+th.ny*12L),
-                (double)(float)(th.nx*3L+th.ny))*0.025f);
+   ri = ri*(1.0f+irand((double)((float)th.nx*0.2f),
+                (double)((float)th.ny*0.2f))*0.04f);
                 /* colour variance of trees */
-   gi = gi*(1.0f+irand((double)(float)(th.nx*7L+th.ny*5L),
-                (double)(float)(th.nx*4L+th.ny*5L))*0.08f);
-   botaniccol(c, suncol, sun, geosun, diffuslum);
-   /* c:COL; suncol-:COL; suncos, directsun, diffuslum:REAL */
+   gi = gi*(1.0f+irand((double)((float)th.ny*0.2f),
+                (double)((float)th.nx*0.2f))*0.08f);
+   botaniccol(c, suncol, sun, diffuslum);
    c->r = c->r*ri;
    c->g = c->g*gi;
    c->b = c->b*bi;
-   /*snowdense:=1.0; */
-   if (snowdense!=0.0f) {
-      /*    snowcol(s,  sunlight, (sun*pixs + mainsun*0.5)*(1.0-pixs*0.5),
-                sunlum); */
+   if (snowdense>0.0f) {
       snowcol(&s, suncol, sun, geosun);
       colblend(snowdense, *c, s, c); /* mix green with snow */
    }
 } /* end treecol() */
 
-/*
-PROCEDURE treecol(pos:POSITIONL; th-:TREEHINT; sunv-:ROTVEC;
-                  pixsize, diffuslum, dense, snowdense, eyesunaz, xsun:REAL;
-                hitwood:CARD8;
-                  suncol-:COL; VAR c:COL);
-
-VAR h,sh,sun, rnd, trestruc, ang, geosun, pixs, dens, pixsh, pixshh, hxx,
-                hxy:REAL;
-    v:NORMVEC;
-    ri, gi, bi:REAL;
-    s, ss:COL;
-BEGIN
-  pixsize:=plus((pixsize-0.1)*1.2);
-
-  pixs:=one(pixsize*0.4);
-  pixsh :=one(pixsize*0.8);
-  pixshh:=one(pixsize*2.0);
-  IF dropshadows THEN geosun:=diffuslum ELSE geosun:=one(diffuslum*20.0) END;
-
-  ang:=PI*1.5+atang2(th.hitx - TREERAND*dlrand(pos.lat *treescramblat)
-                *th.hity,
-                 th.hity - TREERAND*dlrand(pos.long*treescramblong)*th.hitx);
-  rnd:=irand(FLOAT((th.nx*7+th.ny*6) MOD 512)+ang*6.0, (th.og+30.0)*8.0);
-                (* tree structure *)
-  trestruc:=ABS(rnd)*pixs + plus(0.75-pixs);
-
-
-  IF pixs>0.0 THEN                                            (* else save cpu *)
-    IF th.hitradius<1.0 THEN
-      v.x:=-th.hitx; v.y:=-th.hity;
-                v.z:=1.0-osi.sqrt(th.hitradius)*treesize/th.peakh;
-      rotveclight(sun, v, sunv);                               (* sun angle effekt *)
-    ELSE sun:=-1.0 END;
-
-    sun:=sun+rnd*(1.2-ABS(sun))*0.1;
-    IF sun<-1.0 THEN sun:=-1.0 ELSIF sun>1.0 THEN sun:=1.0 END;  
-
-
-    sun:=pixs*sun + (1.0-pixs)*diffuslum;
-                (* lower individual sun angle on dist *)
-  ELSE sun:=diffuslum END;
-  dens:=dense*one(FLOAT(hitwood)*0.02-1.0);
-
---green
-  IF dropshadows THEN sh:=1.0 ELSE sh:=(sun*0.15+0.85) END;
-                                      (* sun angle effekt *)
-
-  IF th.isstam THEN                                           (* stam *)
-    snowdense:=0.0;
-    h:=irand(FLOAT(th.nx*7+th.ny*5), FLOAT(th.nx*4+th.ny*9))*cSTAMVAR; 
-    sh:=sh*trestruc;
-    ri:=sh*cSTAMr;
-    gi:=sh*(cSTAMg+h);
-    bi:=sh*(cSTAMb+h);
-  ELSE
-    snowdense:=one(snowdense*1.6-pixsh*(2.0-ABS(qrand(FLOAT((th.nx*13+th.ny*6)
-                 MOD 512)+ang*3.0, th.og*4.0))));
-    snowdense:=snowdense*pixsh + snowdense*qrand(FLOAT(th.nx),
-                FLOAT(th.ny))*(0.1-pixsh)
-                *pixshh + snowdense*(0.35-pixshh*0.35);
-
-    IF dropshadows THEN h:=trestruc ELSE
-      h:=sh*(1.0-one((0.8-th.hith/th.areapeak)*2.5)*1.2*dens*pixsh);
-                (* use relative hight dark in wood *) 
-      h:=h+pixsh*one((th.hith/th.regionpeak-0.8)*4.0)*0.6;
-                (* illuminate high peaks *) 
-      h:=h*trestruc;
-    END;
-    IF h<0.08 THEN h:=0.08 END;
-    ri:=cTREEr*(h+0.1);
-    gi:=cTREEg*h;
-    bi:=cTREEb*(h+0.1);
-  END;
-
-  ri:=ri*(1.0+irand(FLOAT(th.nx*9+th.ny*12), FLOAT(th.nx*3+th.ny))*0.025);
-                (* colour variance of trees *)
-  gi:=gi*(1.0+irand(FLOAT(th.nx*7+th.ny*5), FLOAT(th.nx*4+th.ny*5))*0.08);
-  botaniccol(c, suncol, sun, geosun, diffuslum);
-
--- c:COL; suncol-:COL; suncos, directsun, diffuslum:REAL
-
-  c.r:=c.r*ri;
-  c.g:=c.g*gi;
-  c.b:=c.b*bi;
---snowdense:=1.0;
-  IF snowdense<>0.0 THEN
-    snowcol(s,  suncol, sun, geosun);
-    colblend(snowdense, c, s, c);             (* mix green with snow *)
-  END;
-
-END treecol;
-*/
 #define panorama_PARCEL 2.1E+5
 
 
 static void citycol(uint8_t attu, const struct POSITIONL pos,
-                float pixs, struct COL * c, struct COL * lamp)
+                float pixs, float viewang, struct COL * c,
+                struct COL * lamp)
 {
+   float str;
+   float med;
    float sh;
    float vis;
    float l;
+   float ly;
+   float lx;
    float ay;
    float ax;
    float gravel;
+   float gw;
+   float gr;
    float hw;
    float hr;
    float street;
    int32_t rx;
    int32_t ry;
+   struct COL hh;
    struct COL hc;
    uint32_t i;
+   /*  viewang:=(ABS(viewang)+0.5)*pixs*10.0; */
+   viewang = 15.0f*pixs;
    lamp->r = 0.0f;
    lamp->g = 0.0f;
    lamp->b = 0.0f;
    if (attu>0U && urbanoff!=0.0f) {
-      ax = fracint(pos.lat*2.1E+5, &rx);
-      ay = fracint(pos.long0*coslat*2.1E+5, &ry);
+      lx = fracint(pos.lat*2.1E+5, &rx);
+      ly = fracint(pos.long0*coslat*2.1E+5, &ry);
+      ax = lx;
+      ay = ly;
+      if (ax>0.5f) ax = 1.0f-ax;
+      if (ay>0.5f) ay = 1.0f-ay;
       street = min0(ax, ay);
       hw = 10.0f*irand((double)rx, (double)ry);
-      hr = 0.25f*frac((double)hw);
+      hr = 0.125f*frac((double)hw);
       vis = (float)attu*0.01f*one(4.0f-(X2C_DIVR(pixs,urbanoff))*4.0f);
-      if (street<0.07f) {
-         hc.r = 258.0f; /* meadow */
-         hc.g = 366.0f;
-         hc.b = 292.0f;
-      }
-      else if (street<0.23f+hr) {
-         hc.r = 249.0f; /* street */
-         hc.g = 282.0f;
-         hc.b = 282.0f;
-      }
-      else if (street<0.3f+hr) {
-         hc.r = 258.0f; /* meadow */
-         hc.g = 366.0f;
-         hc.b = 292.0f;
-      }
-      else {
-         /* house */
-         gravel = irand(pos.lat*3.E+7, pos.long0*coslat*3.E+7);
-         hr = one(hw-8.0f);
-         hw = one(hw+3.0f);
-         gravel = 1.0f-(1.0f-one((float)sqrt((double)(float)
-                fabs(gravel))))*0.8f*(hw-hr)*one(pixs*0.1f);
-         hc.r = 500.0f*(0.8f+hw)*gravel;
-         hc.g = 500.0f*((1.0f+hw)-hr)*gravel;
-         hc.b = 500.0f*((1.0f+hw)-hr)*gravel;
-      }
+      str = one((0.05f-street)*viewang+0.5f);
+      med = 1.0f-str;
+      hc.r = 258.0f*med+249.0f*str;
+      hc.g = 366.0f*med+282.0f*str;
+      hc.b = 292.0f*med+282.0f*str;
+      gravel = irand(pos.lat*3.E+7, pos.long0*coslat*3.E+7);
+      gr = one(hw-8.0f);
+      gw = one(hw+3.0f);
+      gravel = 1.0f-(1.0f-one((float)sqrt((double)(float)
+                fabs(gravel))))*0.8f*(gw-gr)*one(pixs*0.1f);
+      hh.r = 400.0f*(0.8f+gw)*gravel;
+      hh.g = 400.0f*((1.0f+gw)-gr)*gravel;
+      hh.b = 400.0f*((1.0f+gw)-gr)*gravel;
+      colblend((street-(0.15f+hr))*viewang+0.5f, hc, hh, &hc);
+      /* 
+          IF street<0.07 THEN hc.r:=cCITYMEADOWr; hc.g:=cCITYMEADOWg;
+                hc.b:=cCITYMEADOWb;         (* meadow *)
+          ELSIF street<0.23+hr THEN hc.r:=cCITYSTREETr; hc.g:=cCITYSTREETg;
+                hc.b:=cCITYSTREETb;   (* street *)
+          ELSIF street<0.3+hr  THEN hc.r:=cCITYMEADOWr; hc.g:=cCITYMEADOWg;
+                hc.b:=cCITYMEADOWb;   (* meadow *)
+          ELSE                                                   (* house *) 
+            gravel:=irand(pos.lat*30000000.0, pos.long*coslat*30000000.0);
+            hr:=one(hw-8.0);
+            hw:=one(hw+3.0);
+            gravel:=1.0-(1.0-one(sqrt(ABS(gravel))))*0.8*(hw-hr)
+                *one(pixs*0.1);
+            hc.r:=cCITYCOL*(0.8+hw)*gravel;
+            hc.g:=cCITYCOL*(1.0+hw-hr)*gravel;
+            hc.b:=cCITYCOL*(1.0+hw-hr)*gravel;
+          END;
+      */
       /*lights */
       i = (uint32_t)CRC[((uint32_t)ry&255UL)+((uint32_t)rx&255UL)
                 *256UL];
@@ -3580,7 +3791,7 @@ static void citycol(uint8_t attu, const struct POSITIONL pos,
          lamp->b = 0.3f;
          break;
       } /* end switch */
-      l = X2C_DIVR(vis*sh,sqr(ax-0.5f)+sqr(ay-0.5f)+0.002f*sh);
+      l = X2C_DIVR(vis*sh,sqr(lx-(float)((i/1007UL&3UL)+1UL)*0.2f)+sqr(ly-(float)((i/771UL&3UL)+1UL)*0.2f)+0.002f*sh);
       lamp->r = lamp->r*l;
       lamp->g = lamp->g*l;
       lamp->b = lamp->b*l;
@@ -3588,6 +3799,17 @@ static void citycol(uint8_t attu, const struct POSITIONL pos,
       colblend(vis, *c, hc, c);
    }
 } /* end citycol() */
+
+
+static void citylight(struct COL * c, struct COL col, struct COL boc,
+                struct COL citylamp, uint8_t attu)
+{
+   float dust;
+   dust = (float)attu;
+   c->r = col.r*boc.r+citylamp.r+dust*0.18f;
+   c->g = col.g*boc.g+citylamp.g+dust*0.15f;
+   c->b = col.b*boc.b+citylamp.b+dust*0.1f;
+} /* end citylight() */
 
 
 static float snownoise(const struct POSITIONL pos, float sunang,
@@ -3614,68 +3836,78 @@ static float snownoise(const struct POSITIONL pos, float sunang,
    return h;
 } /* end snownoise() */
 
+#define panorama_D 2.0
+/* find best distance feeling */
+
 
 static void meadowcol(struct POSITIONL pos, float slant, float alt,
                 float pixs, float sunang, float * sunvec,
-                struct COL * c)
+                struct COL * c, float coast)
 {
+   float wet;
    float sv;
+   float n;
    float m;
    float f;
    float d;
    float k;
    float brown;
-   float q;
    float s;
-   float h;
+   float hh;
    struct COL hc;
-   /*  ops:=one(pixs*0.5); */
    pos.long0 = pos.long0*coslat;
-   f = qrand(pos.long0*3.E+7, pos.lat*3.E+7);
-   h = qrand(pos.long0*9.E+6, pos.lat*9.E+6);
-   s = qrand(pos.long0*8.E+6, pos.lat*8.E+6);
-   m = qrand(pos.long0*2.2E+6, pos.lat*2.2E+6);
-   k = qrand(pos.long0*5.5E+5, pos.lat*5.5E+5);
-   s = s+one(pixs*0.2f)*f;
-   sv = 1.0f-0.25f*f*one(pixs*0.15f);
-   /*  flower:=plus(1.0-ABS(f*f-0.05)*3.0)*one(pixs*0.15)*one(1.0-pixs*0.05)
-                *one((s-0.95)*4.0); */
+   f = one(pixs*0.2f)*qrand(pos.long0*6.E+7, pos.lat*6.E+7);
+   s = qrand(pos.long0*1.6E+7, pos.lat*1.6E+7);
+   m = one(pixs*2.0f)*qrand(pos.long0*4.4E+6, pos.lat*4.4E+6);
+   k = qrand(pos.long0*8.E+5, pos.lat*1.1E+6);
+   n = qrand(pos.long0*1.4E+5, pos.lat*1.4E+5);
+   s = s+f;
+   sv = 1.0f-0.25f*f;
    /*  brown:=one(s*4.0-1.0)*(1.0-ops) + one(m*4.0)*ops;
                 (* high altitude green/yellow noise *) */
    brown = one((1.0f-slant*slant)+one((float)((double)
                 alt*(0.00025+fabs(pos.lat*0.0003))+(double)
                 (((alt+1000.0f)-snowalt)*0.001f)))+one(X2C_DIVR((alt-snowalt)
-                +slowaltslant*2.0f,slowaltslant))*0.6f);
-                /*(brown+2.0)*/ /* slant brown */
-   /*                       + one((alt+1000.0-snowalt)*0.0008)
-                (* altitude brown *) */
+                +slowaltslant*2.0f,slowaltslant))*0.6f); /* slant brown */
    /* altitude brown */
    /* snow disturb */
-   q = h*h;
-   q = q*q;
-   d = (k+m)*0.04f*(1.7f-one(pixs*2.0f)); /* far variance */
-   *sunvec = s*one(pixs*3.0f)*0.6f;
+   /*  q:=h*h; */
+   /*  q:=q*q; */
+   d = ((float)fabs(k)-(float)fabs(m))*0.08f*(1.7f-one(pixs*2.0f));
+                /* far variance */
+   *sunvec = s*one(pixs*2.0f)*0.8f;
    /*
      c.r:=cMEADOWr*sv*plus(1.0 + brown*0.2 - d - (h+q)*0.05*ops);
      c.g:=cMEADOWg*sv*plus(1.0 - brown*0.12 + d + (s*s*s*0.01 + s*0.015)*ops)
                 ;
      c.b:=cMEADOWb*sv*plus(1.0 + brown*0.15 - q*0.05*ops);
    */
-   c->r = 310.0f*sv*plus((1.0f+brown*0.2f)-d);
-   c->g = 430.0f*sv*plus((1.0f-brown*0.12f)+d);
-   c->b = 235.0f*sv*plus(1.0f+brown*0.15f);
-   hc.r = 458.0f;
-   hc.g = 458.0f;
-   hc.b = 429.0f;
-   colblend(one(k*k*20.0f)+(float)fabs(s)*one(0.25f+pixs), hc, *c, c);
-                /* meadow voids */
-/*
-  IF flower>0.0 THEN                                          (* else save time *)
-    c.r:=c.r+flower*one(h*4.0)*160.0;
-    c.g:=c.g+flower*one((h+m-1.0)*3.0)*100.0;
-    c.b:=c.b+flower*one(m*5.0)*170.0;
-  END;
-*/
+   wet = (coast+50.0f)*0.02f; /* near water green */
+   /*wet:=0.0; */
+   if (wet>1.0f) wet = 1.0f;
+   c->r = 248.0f*sv*plus(((1.0f+brown*0.2f)-d)-wet*0.2f);
+   c->g = 344.0f*sv*plus((1.0f-brown*0.12f)+d+n*(1.0f-brown)*0.1f+wet*0.15f);
+   c->b = 172.0f*sv*plus(1.0f+brown*0.15f);
+   hc.r = 412.2f;
+   hc.g = 412.2f;
+   hc.b = 386.1f;
+   /*  colblend(one(k*k*10.0)+ABS(s)  (* *one(0.25+pixs*0.25)*), hc, c, c);
+                             (* meadow voids *) */
+   /*  colblend(one(k*k*(1.0+20.0*ABS(m)))+ABS(s)  (* *one(0.25+pixs*0.25)*),
+                 hc, c, c);               (* meadow voids *) */
+   /*  colblend(one(ABS(k)*2.0)+ABS(s), hc, c, c);
+                (* meadow voids *) */
+   colblend(one(k*k*10.0f+m)+(float)fabs(s)+one(0.75f-pixs*0.1f), hc, *c,
+                c); /* meadow voids */
+   /*  IF attwater>0 THEN                                          (* near water sand *)
+                 */
+   hh = one(1.9f-wet);
+   hh = hh*hh*(0.5f+sv*0.5f);
+   hc.r = 380.0f*hh;
+   hc.g = 450.0f*hh;
+   hc.b = 450.0f*hh;
+   colblend(((wet-0.85f)+s*0.06f)*25.0f, *c, hc, c);
+/*  END; */
 } /* end meadowcol() */
 
 
@@ -3777,67 +4009,208 @@ static float snowdensity(struct POSITIONL pos, float slant,
 
 
 static void darkundertree(uint8_t attw, float wooddens,
-                float snowdense, const struct TREEHINT th,
-                struct COL * c)
+                float snowdense, float pixsize,
+                const struct TREEHINT th, struct COL * c)
 /* dark under tree */
 {
+   float p;
    float a;
    struct COL hh;
    struct COL hc;
+   /*
+     IF (treesize>0.0) & (attw>0)
+                THEN                                  (* tree enabled and tree area *)
+       a:=1.3-one(FLOAT(attw)*one(wooddens)*treesize*0.0005);
+       IF th.peakh>0.0 THEN a:=min(a, 0.3+0.7*sqrt(th.hitradius)) END;
+                (* dark disk under tree *)
+       hc.r:=c.r*0.15;
+       hc.g:=c.g*0.20;
+       hc.b:=c.b*0.12;
+       hh.r:=c.r*0.4;
+       hh.g:=c.g*0.4;
+       hh.b:=c.b*0.4;
+       colblend(snowdense, hc, hh, hc); (* snow or not under trees *)
+       colblend(a, hc, c, c);
+     END;
+   */
    if (treesize>0.0f && attw>0U) {
       /* tree enabled and tree area */
-      a = one(1.3f-(float)attw*one(wooddens)*treesize*0.0005f);
+      /*    a:=one(1.3-one(FLOAT(attw)*wooddens*treesize*0.0005));
+                (* diffuse light reduction near trees *) */
+      a = (float)attw*0.01f; /* diffuse light reduction near trees */
       if (th.peakh>0.0f) {
-         a = min0(a, (float)(0.3+0.7*sqrt((double)th.hitradius)));
-                /* dark disk under tree */
+         /* dark disk under tree */
+         a = max0(a, (float)(1.0-sqrt((double)th.hitradius)));
+         c->g = c->g*(0.8f+th.hitradius*0.2f); /* browner near stam */
+         c->b = c->b*(0.6f+th.hitradius*0.4f); /* browner near stam */
       }
-      hc.r = c->r*0.15f;
-      hc.g = c->g*0.2f;
-      hc.b = c->b*0.12f;
+      /*    IF th.peakh>0.0 THEN a:=max(a, 1.0-th.hitradius) END;
+                (* dark disk under tree *) */
+      a = a*wooddens;
+      p = 3.0f*pixsize;
+      if (p>1.0f) p = 1.0f;
+      a = a*p;
+      hc.r = c->r*0.2f; /* far wood colour */
+      hc.g = c->g*0.22f;
+      hc.b = c->b*0.16f;
       hh.r = c->r*0.4f;
       hh.g = c->g*0.4f;
       hh.b = c->b*0.4f;
       colblend(snowdense, hc, hh, &hc); /* snow or not under trees */
-      colblend(a, hc, *c, c);
+      colblend(a, *c, hc, c);
    }
+/*IF debugxi=TESTX THEN WrFixed(wooddens, 2, 6) END; */
 } /* end darkundertree() */
 
 
-static void underwatercol(struct POSITIONL pos, float wy, float pixs,
-                float sunlum, uint8_t attw, struct COL * c)
+static float fogsun(float sun, float sight, float sunel0,
+                float alt)
+/* sun thru fog */
+{
+   alt = 0.7f+alt*0.0002f;
+   if (alt>1.0f) alt = 1.0f;
+   return sun*one(((float)fabs(sunel0)+0.3f)*sight*alt*0.0001f);
+} /* end fogsun() */
+
+
+static void underwatercol(struct POSITIONL pos, float pixs, float wsh,
+                float snow, float wy, float wavx, float wavy,
+                const struct COL sun, struct COL * c)
 {
    float h;
    struct COL hc;
-   h = one(pixs)*qrand(pos.long0*8.E+6, pos.lat*8.E+6);
-   h = h+one(pixs*0.2f)*qrand(pos.long0*2.5E+7, pos.lat*2.5E+7);
-   h = one(h*h);
-   hc.r = 260.0f*(1.0f+h*0.4f)*sunlum;
-   hc.g = 210.0f*(1.0f+h*0.5f)*sunlum;
-   hc.b = 180.0f*sunlum;
-   colblend(((one(2.0f+wy*12.0f)+1.0f)-one(pixs))+(float)attw, hc, *c, c);
-                 /* underwater/coast colour*/
+   if (snow>2500.0f) snow = 2500.0f;
+   if (watercol.r<0.0f) {
+      /* automatic water colour */
+      c->r = 13.2f+snow*0.007f;
+      c->g = 32.4f+snow*0.04f; /* guess temperature and botanic activity */
+      c->b = 36.0f;
+   }
+   else *c = watercol;
+   /*  h:=1.0-ABS(wy)*0.8;                               (* less mirror on high view see deeper in darker *) */
+   h = (float)(0.8-sin((double)wy)*0.4);
+                /* less mirror on high view see deeper in darker */
+   /*  IF h<0.3 THEN h:=0.3 END; */
+   c->r = c->r*h;
+   c->g = c->g*h;
+   c->b = c->b*h;
+   if (wsh<1.0f) {
+      /* see ground */
+      if (millisec>0UL) {
+         /* else save time */
+         h = plus(wsh-0.45f)*0.00001f;
+         pos.long0 = pos.long0+(double)(wavx*h);
+                /* water ground move with waves */
+         pos.lat = pos.lat+(double)(wavy*h);
+      }
+      h = one(pixs)*qrand(pos.long0*8.E+6, pos.lat*8.E+6);
+      h = h+one(pixs*0.2f)*qrand(pos.long0*2.5E+7, pos.lat*2.5E+7);
+      h = one(h*h);
+      hc.r = 180.0f*(1.0f+h*0.4f);
+      hc.g = 160.0f*(1.0f+h*0.5f);
+      hc.b = 150.0f;
+      h = plus(1.0f+wavx*10.0f); /* wave lens for light on ground */
+      hc.r = hc.r*h;
+      hc.g = hc.g*h;
+      hc.b = hc.b*h;
+      colblend((1.0f-wsh)*2.0f*(0.1f+(float)fabs(wy))*watertransparency,
+                *c, hc, c); /* remove ground colour on deep water */
+   }
+   /*
+     h:=0.1+ABS(wy)*2.5;                                (* see into water *)
+     IF h>1.0 THEN h:=1.0 END;
+     c.r:=c.r*h;
+     c.g:=c.g*h;
+     c.b:=c.b*h;
+   */
+   if (surfacedust>0.0f) {
+      /* add white on flat view from dust on surface */
+      h = 0.3f+snow*0.0003f;
+      if (h>1.0f) h = 1.0f;
+      h = (float)((1.0-pow((double)(float)fabs(wy),
+                0.05))*(double)h*(double)surfacedust);
+      if (h<0.0f) h = 0.0f;
+      c->r = c->r+h;
+      c->g = c->g+h;
+      c->b = c->b+h;
+   }
+   c->r = c->r*sun.r;
+   c->g = c->g*sun.g;
+   c->b = c->b*sun.b;
 } /* end underwatercol() */
 
-#define panorama_WATERSURFACEDUST 0.07
 
-
-static void wateralias(float wy, float snow, float wsh,
-                float shad, float sunel0, float sunlum,
-                const struct COL wg, struct COL * c)
+static void waveang(struct POSITIONL pos, float waveamp0,
+                float wavelenx, float waveleny, float pixs,
+                float * wavx, float * wavy)
 {
-   struct COL h;
-   float lum;
-   if (sunel0<0.0f) sunel0 = 0.0f;
-   lum = (0.07f+shad*sunel0)*sunlum; /* sun into water */
-   h.r = (110.0f+snow*0.006f)*lum;
-   h.g = (271.0f+snowalt*0.012f)*lum;
-                /* guess temperature and botanic activity */
-   h.b = 330.0f*lum;
-   /*  colblend(one(ABS(wy*2.5))*0.90, c, h, c); */
-   colblend((float)sqrt((double)((float)fabs(wy)*0.6f+0.03f)),
-                *c, h, c);
-   colblend(wsh, wg, *c, c); /* water end aliasing */
+   double v;
+   double u;
+   double r;
+   double t;
+   float y;
+   float x;
+   float a;
+   uint32_t i;
+   pos.long0 = pos.long0*(double)waveleny;
+   pos.lat = pos.lat*(double)wavelenx;
+   if (millisec>0UL) {
+      /* save time if not movie */
+      t = X2C_DIVL((double)millisec,
+                (double)((waveamp0+1.0f)*500.0f))+pos.long0*0.2;
+                /* speed depending on amplitude */
+      i = (uint32_t)X2C_TRUNCC(t,0UL,X2C_max_longcard);
+      u = (double)i;
+      r = t-u;
+      if ((i&1)) r = 1.0-r;
+      u = (double)(i/2UL)*10.0;
+      v = (double)((i+1001UL)/2UL)*10.0;
+      x = (float)((double)qrand(pos.long0+v,
+                pos.lat)*(1.0-r)+(double)qrand(pos.long0,
+                pos.lat+u)*r);
+      y = (float)((double)qrand(pos.lat+v,
+                pos.long0)*(1.0-r)+(double)qrand(pos.lat,
+                pos.long0+u)*r);
+   }
+   else {
+      x = qrand(pos.long0, pos.lat);
+      y = qrand(pos.lat, pos.long0);
+   }
+   a = waveamp0*one(X2C_DIVR(pixs*2.5E+6f,wavelenx));
+   *wavx = a*x;
+   *wavy = a*y;
+} /* end waveang() */
+
+
+static void wateralias(float wy, const struct COL wg, struct COL * c)
+/* add mirrord image to water colour */
+{
+   float m;
+   m = 0.7f-wy*0.5f;
+   if (m<0.1f) m = 0.1f;
+   m = m*waterglance;
+   c->r = c->r*m+wg.r;
+   c->g = c->g*m+wg.g;
+   c->b = c->b*m+wg.b;
 } /* end wateralias() */
+
+
+static void checkwater(uint8_t * atwa, float slant)
+/* water if flat enough */
+{
+   float ws;
+   float h;
+   uint8_t w;
+   ws = (float)fabs(waterslant);
+                /* >0 check attribute for flatness else generate water */
+   if (ws<1.0f) {
+      h = slant-ws; /* <0 is not flat enough */
+      w = (uint8_t)(uint32_t)X2C_TRUNCC(one(X2C_DIVR(slant-ws,
+                1.0f-ws))*100.0f,0UL,X2C_max_longcard);
+      if (waterslant<0.0f) *atwa = w;
+      else if (*atwa>w) *atwa = w;
+   }
+} /* end checkwater() */
 
 
 static void storepix(imagetext_pIMAGE image0, uint32_t x, uint32_t y,
@@ -3847,10 +4220,7 @@ static void storepix(imagetext_pIMAGE image0, uint32_t x, uint32_t y,
    struct imagetext_PIX * anonym;
    struct imagetext_PIX * anonym0;
    /*IF heaven THEN INC(debugyi) ELSE INC(debugxi) END; */
-   if (alticolour) {
-      if (heaven) c.b = 6.0f;
-   }
-   else {
+   if (!alticolour) {
       c.r = c.r*8.0f;
       c.g = c.g*8.0f;
       c.b = c.b*8.0f;
@@ -3882,6 +4252,28 @@ static void storepix(imagetext_pIMAGE image0, uint32_t x, uint32_t y,
    }
 } /* end storepix() */
 
+
+static void updatepoirect(const struct POSITIONL pos, struct POSITIONL eye)
+/* build rectangular around image positions to preselect pois */
+{
+   struct aprsstr_POSITION p;
+   p.lat = (float)(pos.lat-eye.lat);
+   p.long0 = (float)(pos.long0-eye.long0);
+   if (p.lat<poirect0.lat) poirect0.lat = p.lat;
+   if (p.long0<poirect0.long0) poirect0.long0 = p.long0;
+   if (p.lat>poirect1.lat) poirect1.lat = p.lat;
+   if (p.long0>poirect1.long0) poirect1.long0 = p.long0;
+} /* end updatepoirect() */
+
+/*
+PROCEDURE wrxyz(x,y,z:LONGREAL);
+VAR lat, long, alt:LONGREAL;
+BEGIN
+  wgs84rl(x, y, z, lat, long, alt);
+  WrStr("[");WrFixed(lat/RAD, 6, 1);WrFixed(long/RAD, 6, 12);
+                WrFixed(alt, 1, 8); WrStr("] ");
+END wrxyz;
+*/
 #define panorama_FULLUM 1000.0
 /* full bright in image */
 
@@ -3895,8 +4287,6 @@ static void storepix(imagetext_pIMAGE image0, uint32_t x, uint32_t y,
 
 #define panorama_SELFSHADOW 0.6
 /* dark/light of surface 90/180 deg to sun */
-
-#define panorama_WAVLEN 5.E+6
 
 /*    camvec:LVEC; */
 
@@ -3930,39 +4320,41 @@ static void Panofind(uint32_t csvstep, const struct PANOWIN panpar,
    double eled;
    double azid;
    double maxdist;
-   double azi0;
-   float aliassum;
-   float pixsizewater;
+   float coastline;
+   float wavy;
+   float wavx;
    float sunlum;
    float xsunm;
    float wooddens;
+   float waterdropsun;
+   float pixsizewater;
+   float waterh;
    float dropsun;
    float sunarea;
    float xsun;
    float watershape;
    float space1;
    float oldh;
-   float waterh;
+   float waterdist;
    float wavelengthy;
    float wavelengthx;
-   float wxx;
-   float foga;
    float slant;
    float space;
-   float llum;
    float lum;
    float lastlum;
    float dlum;
    float pixsize;
    float snowdense;
    struct POSITIONL waterpos;
+   char dryrun;
+   char hitwater;
    char heavenc;
    char mirrord;
    char firsty;
    char heaven;
    uint8_t attu;
-   uint8_t attw;
-   uint8_t attr;
+   uint8_t atwo;
+   uint8_t atwa;
    struct ROTVEC sunrotvec;
    struct NORMVEC nvec;
    struct COL citylamp;
@@ -4001,14 +4393,19 @@ static void Panofind(uint32_t csvstep, const struct PANOWIN panpar,
                 &x0, &y00, &z0);
    azi = (double)(azimuthl(panpar.eye,
                 panpar.horizon)*1.7453292519444E-2f);
-   azi0 = (double)(panpar.angle0*0.5f*1.7453292519444E-2f);
    /*WrFixed(panpar.eye.lat*180.0/PI, 1, 7);WrStrLn(" lat"); */
    azid = (double)(X2C_DIVR(panpar.angle0*1.7453292519444E-2f,
                 (float)((panpar.image0->Len1-1)+1UL)));
                 /* h rad per pixel */
+   if (panpar.flatscreen0) {
+      azid = X2C_DIVL(azid*tan((double)
+                (panpar.angle0*8.7266462597222E-3f)),
+                (double)(panpar.angle0*8.7266462597222E-3f));
+                /* make same hor. sight angle as on courved film */
+   }
    /*WrFixed(azid*180.0/PI, 2, 7);WrStrLn(" deg/pixel"); */
    eled = X2C_DIVL(azid,(double)panpar.yzoom0);
-   ele0 = (double)((panpar.elevation-X2C_DIVR((X2C_DIVR(panpar.angle0*0.5f,
+   ele0 = (double)((X2C_DIVR((X2C_DIVR(panpar.angle0*0.5f,
                 panpar.yzoom0))*(float)((panpar.image0->Len0-1)+1UL),
                 (float)((panpar.image0->Len1-1)+1UL)))
                 *1.7453292519444E-2f);
@@ -4022,7 +4419,7 @@ static void Panofind(uint32_t csvstep, const struct PANOWIN panpar,
                 (double)panpar.sunele, slat, clat, slong, clong, x0,
                 y00, z0, (float)maxdist, (float)refrac);
    if (verb) {
-      osic_WrFixed((float)(X2C_DIVL(azi*180.0,3.1415926535)), 1L, 1UL);
+      osic_WrFixed((float)(X2C_DIVL(azi,1.7453292519444E-2)), 1L, 1UL);
       osi_WrStr(", ", 3ul);
       osic_WrFixed(panpar.eyealt, 1L, 1UL);
       osi_WrStrLn(" cam azimuth, alt", 18ul);
@@ -4034,11 +4431,10 @@ static void Panofind(uint32_t csvstep, const struct PANOWIN panpar,
    showstamdist = (X2C_DIVR((float)(panpar.image0->Len1-1),
                 panpar.angle0))*60.0f;
    suncolour(panpar.sunele, &suncol, &sunlum);
+   /*WrFixed(suncol.r, 2, 8);WrFixed(suncol.g, 2, 8);WrFixed(suncol.b, 2, 8);
+                 WrStrLn("sc"); */
    do {
       if (dropshadows) Shadowmask((int32_t)xi);
-      wx = azid*(double)xi-azi0;
-      if (panpar.flatscreen0) wx = atan(wx);
-      wxx = (float)(wx+azi);
       yi = 0UL;
       dd = 0.0;
       dlum = 0.0f;
@@ -4047,24 +4443,49 @@ static void Panofind(uint32_t csvstep, const struct PANOWIN panpar,
       firsty = 0;
       mirrord = 0;
       ddstack.startdist = 0.0f;
-      /*WrStrLn(" colum="); WrInt(xi,1); */
       do {
-         wx = (double)wxx;
-         wy = ele0+eled*(double)yi;
-         if (mirrord) {
-            /* double beam deviation in sight direction */
-            wy = -wy+(double)waveamp*sin(pos->lat*(double)
-                wavelengthx)+(double)(waveamp*0.5f)
-                *sin(pos->lat*(double)wavelengthx*3.7)+(double)
-                (waveamp*0.6f)*sin(pos->long0*(double)wavelengthy);
-            wx = wx+0.5*((double)waveamp*sin(pos->long0*(double)
-                wavelengthx)+(double)(0.4f*waveamp)
-                *sin(pos->long0*(double)wavelengthx*2.9)+(double)
-                (waveamp*0.6f)*sin(pos->lat*(double)wavelengthy));
+         debugxi = (int32_t)xi;
+         debugyi = (int32_t)yi;
+         dryrun = 0;
+         /*---pixel of image to view angles */
+         if (panpar.flatscreen0==panorama_eCAMERA) {
+            rotateview(&wx, &wy, azid*((double)xi-(double)((panpar.image0->Len1-1)+1UL)*0.5),
+                 azid*((double)yi-(double)
+                ((panpar.image0->Len0-1)+1UL)*0.5),
+                (double)(panpar.elevation*1.7453292519444E-2f));
          }
-         if (panpar.flatscreen0) wy = atan(wy);
-         if (wy>=(-1.5690509974981) && wy<1.5690509974981) {
-            /*WrFixed(wy, 3, 10); WrStrLn("=wy"); */
+         else {
+            wx = azid*((double)xi-(double)
+                ((panpar.image0->Len1-1)+1UL)*0.5);
+            wy = eled*((double)yi-(double)
+                ((panpar.image0->Len0-1)+1UL)*0.5);
+            if (panpar.flatscreen0) {
+               wx = atan(wx);
+               wy = atan(wy);
+            }
+            wy = wy+(double)(panpar.elevation*1.7453292519444E-2f);
+            if (fabs(wy)>1.5533430342306) dryrun = 1;
+         }
+         wx = wx+azi;
+         /*---pixel of image to view angles */
+         if (mirrord) {
+            /* hit water surface */
+            /*        wy:=-wy+waveamp*sin(pos.lat*wavelengthx)
+                +waveamp*0.5*sin(pos.lat*wavelengthx*3.7)
+                +waveamp*0.6*sin(pos.long*wavelengthy); */
+            /*        wx:= wx+0.5*(waveamp*sin(pos.long*wavelengthx)
+                +0.4*waveamp*sin(pos.long*wavelengthx*2.9)
+                +waveamp*0.6*sin(pos.lat*wavelengthy)); */
+            /*        wy:=-wy+waveamp*qrand(pos.long*wavelengthy,
+                pos.lat*wavelengthx); */
+            /*        wx:= wx+sin(wy)*waveamp*qrand(pos.lat*wavelengthx,
+                pos.long*wavelengthy); */
+            wx = wx+sin(wy)*(double)wavy;
+            wy = -wy+(double)wavx;
+         }
+         /*      IF mirrord OR NOT dryrun & ((panpar.flatscreen=eCAMERA)
+                OR (wy>=-89.9999*RAD) & (wy<89.9999*RAD)) THEN */
+         if (!dryrun) {
             if (!heaven) {
                /*WrFixed(wx/RAD, 3, 10);WrFixed(wy/RAD, 3, 10);
                 WrStrLn("=wxwy"); */
@@ -4074,8 +4495,8 @@ static void Panofind(uint32_t csvstep, const struct PANOWIN panpar,
                   /*          raytrace(x0m,y0m,z0m, camvec.x,camvec.y,
                 camvec.z, maxdist-dd, -eled, refrac, dm, space1, pos); */
                   raytrace(x0m, y0m, z0m, xn, yn, zn, (float)(maxdist-dd),
-                 (float) -eled, (float)refrac, dd, &dm, &space1, pos,
-                treehints, &ddstack, &istree, &odd, 0);
+                 (float) -eled, (float)refrac, treesize, 1, &dm,
+                &space1, pos, treehints, &ddstack, &istree, &odd, 0);
                   /*WrFixed(dm, 1,8); wrxyz(x0m,y0m,z0m);
                 wrxyz(x0m+xn,y0m+yn,z0m+zn);WrFixed(pos.lat/RAD, 6,12);
                 WrFixed(pos.long/RAD, 6,12);WrStrLn(""); */
@@ -4086,53 +4507,54 @@ static void Panofind(uint32_t csvstep, const struct PANOWIN panpar,
                   /*          raytrace(x0,y0,z0, camvec.x,camvec.y,camvec.z,
                 maxdist, eled, refrac, dd, space, pos); */
                   raytrace(x0, y00, z0, xn, yn, zn, (float)maxdist,
-                (float)eled, (float)refrac, 0.0, &dd, &space, pos,
-                treehints, &ddstack, &istree, &odd, dropshadows);
+                (float)eled, (float)refrac, treesize, 0, &dd, &space,
+                pos, treehints, &ddstack, &istree, &odd, 0);
                   ddm = dd;
                   if (dd>maxdist) heaven = 1;
-                  if (csvstep && xi%csvstep==0UL) {
+                  if ((csvstep && xi%csvstep==0UL)
+                && panpar.flatscreen0!=panorama_eCAMERA) {
                      xycsv(xi, yi, *pos, heaven, firsty);
                   }
                }
                if (ddm<1.0) return;
             }
             /* under ground */
-            /*          IF mirrord THEN ddm:=maxdist*4.0*(0.25+FLOAT(yi)
-                /FLOAT(HIGH(panpar.image^[0])));  */
-            /*          ELSE ddm:=maxdist*4.0*(1.25-FLOAT(yi)
-                /FLOAT(HIGH(panpar.image^[0]))); END; */
             lum = (float)(ddm*0.2);
             suneyeaz = (double)radmod((float)(wx-(double)
                 panpar.sunazi));
-            if (!mirrord) {
-               llum = (lum-lastlum)*20.0f;
-               if ((double)llum>0.05*maxdist) {
-                  llum = (float)(0.05*maxdist);
-               }
-               if (llum>dlum) dlum = llum;
-               lastlum = lum; /* lum is distance */
-            }
+            /*
+                    IF NOT mirrord THEN
+                      llum:=(lum-lastlum)*20.0;
+                      IF llum>MAXHP*maxdist THEN llum:=MAXHP*maxdist END;
+                      IF llum>dlum THEN dlum:=llum END;
+                 (* dlum is highpass peak *) 
+                      lastlum:=lum;
+                 (* lum is distance *)
+                    END; 
+            */
             heavenc = heaven;
             if (!heaven) {
-               normvec(*pos, pmeta, &slant, &oldh, &nvec, &attr, &attw,
+               normvec(*pos, pmeta, &slant, &oldh, &nvec, &atwa, &atwo,
                 &attu);
                rotveclight(&xsun, nvec, sunrotvec);
                 /* cos sunangle on ground */
+               pixsize = (float)((X2C_DIVL((double)(float)
+                (panpar.image0->Len1-1),
+                ddm*(double)panpar.angle0))*5.729577951472E+1);
+                /* pixel/m */
                if (istree) {
                   /*            normvectree(treehints[odd]); */
                   /*            rotveclight(xsuntree, treehints[odd].nvec,
                 sunrotvec);(* cos sunangle on tree *) */
                   oldh = treehints[odd].rooth+treehints[odd].hith;
                }
-               /*          ELSE xsuntree:=0.0 END; */
+               /*            treeignor:=treesize*one(1.0-pixsize*1.5); */
                if (dropshadows && !alticolour) {
-                  /*            IF (xsun>0.0) OR (xsuntree>0.0)
-                THEN                        (* not selfshadow *) */
-                  if (xsun>0.0f) {
+                  if (xsun>(-0.01f)) {
                      /* not selfshadow */
                      dropsun = seesun(*pos, (double)(oldh+0.2f),
                 panpar.sunazi, panpar.sunele+4.7996554428472E-3f,
-                (float)maxdist, (float)refrac);
+                (float)maxdist, (float)refrac, pixsize);
                   }
                   else dropsun = 0.0f;
                }
@@ -4143,125 +4565,161 @@ static void Panofind(uint32_t csvstep, const struct PANOWIN panpar,
                shadowcolour(dropsun, suncol, &suncolair);
                /*        shadowcolour(1.0+panpar.sunele*15.0, suncol,
                 suncolair); */
+               dropsun = fogsun(dropsun, (float)maxdist,
+                panpar.sunele*1.7453292519444E-2f, oldh);
                if (alticolour) {
                   /* only colorized altitude */
                   hc.r = (xsun+1.0f)*500.0f;
                   hc.g = oldh;
                   hc.b = 0.0f;
-                  if (attr>50U) hc.b = 1.0f;
-                  else if (attw>50U) hc.b = 2.0f;
-                  else if (attu>50U) hc.b = 3.0f;
+                  if (atwa>50U) hc.b = 2.0f;
+                  else if (atwo>50U) hc.b = 4.0f;
+                  else if (attu>50U) hc.b = 6.0f;
                   if (oldh<alticolmin) alticolmin = oldh;
-                  if (oldh>alticolmax) alticolmax = oldh;
+                  if (oldh>alticolmax) {
+                     alticolmax = oldh;
+                  }
                }
                else {
-                  pixsize = (float)((X2C_DIVL((double)(float)
-                (panpar.image0->Len1-1),
-                ddm*(double)panpar.angle0))*5.729577951472E+1);
-                /* pixel/m */
-                  wooddens = wooddensity(attw, oldh, slant);
-                  if (istree) {
-                     treecol(*pos, treehints[odd], sunrotvec, pixsize,
-                sunlum, wooddens, one(1.0f-X2C_DIVR(snowalt-oldh,
-                slowaltslant)), (float)suneyeaz, xsun, attw, suncolair,
-                &hc);
+                  wooddens = wooddensity(atwo, oldh, slant);
+                  /* lake ? */
+                  if ((!mirrord && !istree) && flatwater) {
+                     checkwater(&atwa, slant);
                   }
-                  else {
-                     meadowcol(*pos, slant, oldh, pixsize, xsun, &xsunm,
-                &col); /* meadow with snow destruction */
-                     rockcol(*pos, slant, oldh, pixsize, xsun, attw, istree,
-                &xsunm, &col); /*glance,*/ /* green/rock */
-                     citycol(attu, *pos, pixsize, &col, &citylamp);
-                /* city */
-                     botaniccol(&boc, suncolair, xsunm, 1.0f, sunlum);
-                /* apply sun */
-                     snowdense = snowdensity(*pos, slant, oldh, pixsize,
-                treehints[odd], attw);
-                     /*              snowcol(snowc, suncolair,  xsun-0.05,
-                sunlum); */
-                     snowcol(&snowc, suncolair, snownoise(*pos, xsun,
-                pixsize), sunlum);
-                     hc.r = col.r*boc.r+citylamp.r;
-                     hc.g = col.g*boc.g+citylamp.g;
-                     hc.b = col.b*boc.b+citylamp.b;
-                     colblend(snowdense, hc, snowc, &hc); /* add snow */
-                     darkundertree(attw, wooddens, snowdense, treehints[odd],
-                 &hc); /* dark under tree */
-                  }
-                  /* lake */
-                  if ((((!mirrord && !istree) && flatwater)
-                && (attr>0U || waterslant<0.0f)) && slant>(float)
-                fabs(waterslant)) {
+                  else atwa = 0U;
+                  if (atwa>0U) {
                      pixsizewater = (float)((double)
                 pixsize*fabs(sin(wy)));
                      if (pixsizewater<0.03333f) {
                         pixsizewater = 0.03333f;
                 /* size of srtm is limit for aliasing */
                      }
-                     aliassum = one(0.5f+((float)attr-50.0f)
-                *0.3f*pixsizewater);
+                     waveang(*pos, waveamp, wavelengthx, wavelengthy,
+                pixsize, &wavx, &wavy); /* add water waves */
+                     coastline = ((0.5f+(float)atwa)-50.0f)
+                +qrand(pos->long0*3.E+6, pos->lat*3.E+6)*2.0f;
                   }
-                  /*IF aliassum>0.0 THEN aliascol:=hc END; */
-                  /*   
-                              IF NOT mirrord & NOT istree & NOT treepass & flatwater
-                              & ((attr>0) & (aliassum>0.0)
-                              OR (waterslant<0.0)) & (slant>ABS(waterslant))
-                THEN
-                  */
-                  if (!mirrord && aliassum>0.0f) {
+                  else {
+                     coastline = (-50.0f);
+                     wavx = 0.0f;
+                     wavy = 0.0f;
+                  }
+                  hitwater = coastline>(wavx+wavy)*50.0f;
+                  if (istree) {
+                     treecol(*pos, treehints[odd], sunrotvec, pixsize,
+                sunlum, wooddens, one(1.0f-X2C_DIVR(snowalt-oldh,
+                slowaltslant)), (float)suneyeaz, xsun, (float)wy, atwo,
+                 suncolair, &hc);
+                  }
+                  else if (!hitwater) {
+                     meadowcol(*pos, slant, oldh, pixsize, xsun, &xsunm,
+                &col, coastline); /* meadow with snow destruction */
+                     rockcol(*pos, slant, oldh, pixsize, xsun, atwo, istree,
+                &xsunm, &col); /*glance,*/ /* green/rock */
+                     citycol(attu, *pos, pixsize, (float)wy, &col,
+                &citylamp); /* city */
+                     snowdense = snowdensity(*pos, slant, oldh, pixsize,
+                treehints[odd], atwo);
+                     /*                snowcol(snowc, suncolair,  xsun-0.05,
+                sunlum); */
+                     snowcol(&snowc, suncolair, snownoise(*pos, xsun,
+                pixsize), sunlum);
+                     botaniccol(&boc, suncolair, xsunm, sunlum);
+                /* apply sun */
+                     citylight(&hc, col, boc, citylamp, attu);
+                     colblend(snowdense, hc, snowc, &hc); /* add snow */
+                     darkundertree(atwo, wooddens, snowdense, pixsize,
+                treehints[odd], &hc); /* dark under tree */
+                  }
+                  else {
                      waterpos = *pos;
                      waterh = oldh+0.2f;
+                     waterdropsun = dropsun;
+                     waterdist = one((float)(X2C_DIVL(ddm,
+                maxdist)))+0.01f;
                      wgs84sl(pos->lat, pos->long0, (double)waterh,
                 &x0m, &y0m, &z0m);
                      dm = 0.0;
-                     mirrord = 1;
-                     if (waterslant<0.0f) watershape = 1.0f;
-                     else watershape = (float)attr*0.01f;
-                     watergroundcol = hc;
-                     underwatercol(*pos, (float)wy, pixsize, sunlum, attw,
-                 &watergroundcol);
+                     mirrord = waterglance>0.0f;
+                     if (waterslant<0.0f) {
+                        watershape = 1.0f;
+                     }
+                     else watershape = (float)atwa*0.01f;
+                     botaniccol(&boc, suncolair, (float)sunrotvec.sy,
+                sunlum); /* apply sun */
+                     underwatercol(*pos, pixsize, watershape, snowalt-oldh,
+                (float)wy, wavx, wavy, boc, &watergroundcol);
+                     hc = watergroundcol; /* if mirror off */
                   }
-                  else if (mirrord) {
-                     wateralias((float)wy, snowalt-oldh, watershape, 1.0f,
-                 panpar.sunele, sunlum, watergroundcol, &hc);
-                     mirrord = 0;
+                  if (!hitwater) {
+                     if (mirrord) {
+                        sundisk((float)suneyeaz, (float)wy,
+                panpar.sunazi, panpar.sunele, one((float)(X2C_DIVL(ddm,
+                maxdist)))+0.01f, sunarea, (float)maxdist, 0, suncol,
+                (float)refrac, &hc);
+                        wateralias((float)wy, watergroundcol, &hc);
+                        waterglitter(suneyeaz, wy,
+                (double)panpar.sunazi, (double)panpar.sunele,
+                pixsize, (float)maxdist, suncol, waterpos,
+                (float)refrac, waterh, waterdropsun, &hc);
+                        mirrord = 0;
+                     }
+                     else {
+                        waterdist = one((float)(X2C_DIVL(ddm,
+                maxdist)))+0.01f;
+                     }
+                     sundisk((float)suneyeaz, (float)wy, panpar.sunazi,
+                 panpar.sunele, waterdist, sunarea, (float)maxdist, 0,
+                suncol, (float)refrac, &hc);
                   }
-                  sundisk((float)suneyeaz, 0.0f, panpar.sunazi,
-                panpar.sunele, one((float)(X2C_DIVL(ddm,
-                maxdist)-0.02))+0.01f, sunarea, (float)maxdist, 0U,
-                suncol, waterpos, waterh, (float)refrac, dropsun, &hc);
-                  /*egde fog */
-                  foga = (float)((double)dlum*(1.0-X2C_DIVL(ddm,
-                maxdist))*(double)dusthighpass*cos(wy));
-                  hc.r = hc.r+foga*suncol.r;
-                  hc.g = hc.g+foga*suncol.g;
-                  hc.b = hc.b+foga*suncol.b;
                }
             }
             else {
+               /*
+               --egde fog
+                             foga:=dlum*(1.0-ddm/maxdist)
+                *dusthighpass*cos(wy);
+                             hc.r:=hc.r + foga*suncol.r;
+                             hc.g:=hc.g + foga*suncol.g;
+                             hc.b:=hc.b + foga*suncol.b;
+               */
                /* heaven */
                if (mirrord) {
-                  wateralias((float)wy, snowalt-oldh, watershape, 1.0f,
-                panpar.sunele, sunlum, watergroundcol, &hc);
+                  sundisk((float)suneyeaz, (float)wy, panpar.sunazi,
+                panpar.sunele, 0.0f, sunarea, (float)maxdist, 0, suncol,
+                (float)refrac, &hc);
+                  wateralias((float)wy, watergroundcol, &hc);
+                  waterglitter(suneyeaz, wy, (double)panpar.sunazi,
+                (double)panpar.sunele, pixsize, (float)maxdist,
+                suncol, waterpos, (float)refrac, waterh, waterdropsun,
+                &hc);
                   dlum = 0.0f;
+                  /*WrStrLn("5>"); */
                   heaven = 0;
                }
+               else waterdist = 0.0f;
                sundisk((float)suneyeaz, (float)wy, panpar.sunazi,
-                panpar.sunele, 0.0f, sunarea, (float)maxdist,
-                (uint8_t)((uint32_t)mirrord+1UL), suncol, waterpos,
-                waterh, (float)refrac, 1.0f, &hc);
+                panpar.sunele, waterdist, sunarea, (float)maxdist,
+                !mirrord, suncol, (float)refrac, &hc);
                mirrord = 0;
             }
-            if (mirrord && aliassum>0.0f) aliascol = hc;
+            /*          heaven:=FALSE; */
+            if (mirrord && hitwater) aliascol = hc;
             if (!mirrord) {
-               if (!alticolour && aliassum>0.0f) {
-                  colblend(aliassum, aliascol, hc, &hc);
-                  aliassum = 0.0f;
-               }
-               /*hc.r:=hc.r*aliassum; */
-               /*hc.g:=hc.g*aliassum; */
-               /*hc.b:=hc.b*aliassum; */
+               /*
+               IF NOT alticolour & (aliassum>0.0) THEN
+               --colblend(aliassum, aliascol, hc, hc);
+               aliassum:=0.0;
+               --hc.r:=hc.r*aliassum;
+               --hc.g:=hc.g*aliassum;
+               --hc.b:=hc.b*aliassum;
+               END;
+               */
+               hitwater = 0;
                storepix(panpar.image0, xi, yi, hc, space, heavenc);
+               if (panpar.flatscreen0==panorama_eCAMERA && poifiles) {
+                  updatepoirect(*pos, panpar.eye);
+               }
                dlum = (float)((double)dlum*((1.0-(X2C_DIVL(ddm,
                 maxdist))*0.2)-X2C_DIVL(120.0,
                 (double)(panpar.image0->Len0-1))));
@@ -4284,8 +4742,6 @@ static void Panofind(uint32_t csvstep, const struct PANOWIN panpar,
          osi_WrStr((char *)(tmp = '\015',&tmp), 1u/1u);
          osic_flush();
       }
-      /* WrFixed(pos.lat*180.0/pi, 4,8); WrFixed(pos.long*180.0/pi, 4,8);
-                WrStrLn(" xi lat long az"); */
       ++xi;
    } while (xi<=panpar.image0->Len1-1);
 } /* end Panofind() */
@@ -4305,6 +4761,7 @@ static char drawpoiicon(float xi, float yi,
                 uint32_t ys, uint32_t cr, uint32_t cg, uint32_t cb,
                 uint32_t calpha)
 {
+   uint32_t lum;
    uint32_t ar;
    uint32_t a;
    uint32_t iyr;
@@ -4318,9 +4775,10 @@ static char drawpoiicon(float xi, float yi,
    uint32_t tmp0;
    ok0 = 0;
    if (xi<=0.0f || yi<=0.0f) return 0;
-   cr = (cr*panpar.maxlum)/256UL;
-   cg = (cg*panpar.maxlum)/256UL;
-   cb = (cb*panpar.maxlum)/256UL;
+   lum = panpar.maxlum/256UL;
+   cr = cr*lum;
+   cg = cg*lum;
+   cb = cb*lum;
    x = (uint32_t)X2C_TRUNCC(xi+0.5f,0UL,X2C_max_longcard);
    if (x>=xs && x+xs<=panpar.image0->Len1-1) {
       x = (uint32_t)X2C_TRUNCC((xi+0.5f)-(float)xs*0.5f,0UL,
@@ -4339,7 +4797,6 @@ static char drawpoiicon(float xi, float yi,
                 *panpar.image0->Len0+(y+iy)];
                   a = ((uint32_t)sym[iyr][ix].alpha*calpha)/256UL;
                   ar = 255UL-a;
-                  /*WrInt(sym[iyr][ix].alpha, 4); */
                   anonym->r = (uint16_t)(((a*(uint32_t)
                 sym[iyr][ix].r8*cr)/256UL+ar*(uint32_t)anonym->r)/255UL);
                   anonym->g = (uint16_t)(((a*(uint32_t)
@@ -4349,10 +4806,10 @@ static char drawpoiicon(float xi, float yi,
                }
                if (ix==tmp0) break;
             } /* end for */
+            ok0 = 1;
          }
          if (iy==tmp) break;
       } /* end for */
-      ok0 = 1;
    }
    return ok0;
 } /* end drawpoiicon() */
@@ -4364,6 +4821,7 @@ static char drawpoi(float xi, float yi, struct PANOWIN panpar,
                 uint32_t size, int32_t cr, int32_t cg, int32_t cb,
                 int32_t calpha)
 {
+   uint32_t lum;
    uint32_t ix;
    uint32_t iy;
    uint32_t y;
@@ -4378,9 +4836,10 @@ static char drawpoi(float xi, float yi, struct PANOWIN panpar,
    uint32_t tmp0;
    ok0 = 0;
    if (xi<=0.0f || yi<=0.0f) return 0;
-   cr = (int32_t)(((uint32_t)cr*panpar.maxlum)/1024UL);
-   cg = (int32_t)(((uint32_t)cg*panpar.maxlum)/1024UL);
-   cb = (int32_t)(((uint32_t)cb*panpar.maxlum)/1024UL);
+   lum = panpar.maxlum/1024UL;
+   cr = (int32_t)((uint32_t)cr*lum);
+   cg = (int32_t)((uint32_t)cg*lum);
+   cb = (int32_t)((uint32_t)cb*lum);
    x = (uint32_t)X2C_TRUNCC(xi+0.5f,0UL,X2C_max_longcard);
    y = (uint32_t)X2C_TRUNCC(yi+0.5f,0UL,X2C_max_longcard);
    if (x>=size && x+size<=panpar.image0->Len1-1) {
@@ -4438,6 +4897,189 @@ static char drawpoi(float xi, float yi, struct PANOWIN panpar,
 } /* end drawpoi() */
 
 
+static void drawvispois(const struct PANOWIN panpar)
+/* draw stored pois if free place */
+{
+   pPOISTORE p;
+   uint32_t lum;
+   uint32_t poiy;
+   char ok0;
+   struct POI * anonym;
+   p = poistore;
+   lum = panpar.maxlum/2UL;
+   while (p) {
+      { /* with */
+         struct POI * anonym = p->pp;
+         if (p->textposx>=0L) {
+            poiy = anonym->ys;
+            ok0 = 0;
+            if (anonym->xs==0UL) {
+               ok0 = drawpoi(p->x, p->y, panpar, poisize,
+                (int32_t)anonym->r, (int32_t)anonym->g,
+                (int32_t)anonym->b, (int32_t)anonym->alpha);
+                /* internal icon */
+               poiy = poisize*2UL;
+            }
+            else if (p->thrutree) {
+               if (anonym->withwoodicon) {
+                  ok0 = drawpoiicon(p->x, p->y, panpar, anonym->woodsymbol,
+                anonym->xs, anonym->ys, anonym->r, anonym->g, anonym->b,
+                anonym->alpha); /* behind wood icon */
+               }
+            }
+            else {
+               ok0 = drawpoiicon(p->x, p->y, panpar, anonym->symbol,
+                anonym->xs, anonym->ys, anonym->r, anonym->g, anonym->b,
+                anonym->alpha); /* icon from image */
+            }
+            /*- vertical text to icon */
+            if (ok0 && poilabel>0UL) {
+               imagetext_writestr(panpar.image0, (uint32_t)p->textposx,
+                truncc(p->y)+poiy+2UL, fonttyp, 1UL, 5UL, (int32_t)lum,
+                (int32_t)lum, (int32_t)lum, p->text, 51ul);
+            }
+         }
+      }
+      /*- vertical text to icon */
+      p = p->next;
+   }
+} /* end drawvispois() */
+
+
+static void drawsortpois(const struct PANOWIN panpar)
+/* draw stored pois if free place */
+{
+   pPOISTORE pn;
+   pPOISTORE p;
+   uint32_t poiy;
+   char rn;
+   char ln;
+   char ok0;
+   int32_t i;
+   int32_t right;
+   int32_t left;
+   int32_t tx;
+   uint32_t yo;
+   uint32_t yu;
+   uint32_t textx;
+   uint32_t fonty;
+   uint32_t m;
+   struct POI * anonym;
+   int32_t tmp;
+   p = poistore;
+   poistore = 0;
+   fonty = imagetext_fontsizey(fonttyp);
+   while (p) {
+      { /* with */
+         struct POI * anonym = p->pp;
+         tx = (int32_t)X2C_TRUNCI(p->x,X2C_min_longint,
+                X2C_max_longint)-(int32_t)(fonty/2UL);
+         if (tx>=0L) {
+            textx = imagetext_strsize(fonttyp, p->text, 51ul);
+            poiy = anonym->ys;
+            if (anonym->xs==0UL) poiy = poisize*2UL;
+            yu = ((truncc(p->y)+poiy)*32UL)/((panpar.image0->Len0-1)+1UL);
+            yo = ((truncc(p->y)+poiy+2UL+textx)*32UL+1UL)
+                /((panpar.image0->Len0-1)+1UL);
+            if (yu>31UL) yu = 31UL;
+            if (yo>31UL) yo = 31UL;
+            m = 0UL;
+            tmp = (int32_t)yo;
+            i = (int32_t)yu;
+            if (i<=tmp) for (;; i++) {
+               m |= (1UL<<i);
+               if (i==tmp) break;
+            } /* end for */
+            /*      m:=SET32{yo..yu}; */
+            if (tx>(int32_t)(poimap->Len0-1)) {
+               tx = (int32_t)(poimap->Len0-1);
+            }
+            left = tx-(int32_t)(fonty/3UL);
+                /* less activity in lowest pixel rows */
+            if (left<0L) left = 0L;
+            right = tx+(int32_t)(fonty+fonty/2UL);
+            if (right>(int32_t)(poimap->Len0-1)) {
+               right = (int32_t)(poimap->Len0-1);
+            }
+            ok0 = 0;
+            rn = 0;
+            ln = 0;
+            i = left;
+            for (;;) {
+               if ((poimap->Adr[i]&m)!=0UL) {
+                  /* not full free image column */
+                  if (ok0) {
+                     right = i-1L;
+                     rn = 1;
+                     break;
+                  }
+                  left = i+1L;
+                  ln = 1;
+               }
+               else ok0 = 1;
+               ++i;
+               if (i>=right) break;
+            }
+            if (ln) tx = left;
+            else if (rn) {
+               tx = imax(tx-(int32_t)(fonty/2UL), right-(int32_t)fonty);
+            }
+            if (tx>=0L && (poilabel<=1UL || right-left>=(int32_t)fonty)) {
+               /* text fits in empty place */
+               right = (tx+(int32_t)fonty)-1L;
+               if (right>(int32_t)(poimap->Len0-1)) {
+                  right = (int32_t)(poimap->Len0-1);
+               }
+               tmp = right;
+               i = tx;
+               if (i<=tmp) for (;; i++) {
+                  poimap->Adr[i] = poimap->Adr[i]|m;
+                /* mark where is text on image */
+                  if (i==tmp) break;
+               } /* end for */
+            }
+            else tx = -1L;
+            p->textposx = tx;
+         }
+      }
+      pn = p->next;
+      p->next = poistore; /* revert direction to overdraw farer icons with neerer */
+      poistore = p;
+      p = pn;
+   }
+} /* end drawsortpois() */
+
+
+static void storepoi(float x, float y, float z,
+                char thrutree, const char text[],
+                uint32_t text_len, pPOI pp)
+/* sort in pois on priority and distance */
+{
+   pPOISTORE pn;
+   pPOISTORE po;
+   pPOISTORE p;
+   p = poistore;
+   po = 0;
+   while ((p && (uint32_t)pp->prio>=p->prio) && ((uint32_t)
+                pp->prio>p->prio || z>p->dist)) {
+      po = p;
+      p = p->next;
+   }
+   osic_alloc((char * *) &pn, sizeof(struct POISTORE));
+   if (pn==0) osi_Werr("png write out of memory\012", 25ul);
+   pn->pp = pp;
+   pn->x = x;
+   pn->y = y;
+   pn->dist = z;
+   pn->prio = (uint32_t)pp->prio;
+   pn->thrutree = thrutree;
+   aprsstr_Assign(pn->text, 51ul, text, text_len);
+   pn->next = p;
+   if (po) po->next = pn;
+   else poistore = pn;
+} /* end storepoi() */
+
+
 static void poipixel(struct POSITIONL ppos, float palt,
                 const struct PANOWIN panpar, int32_t * px, int32_t * py,
                 pPOI pp, TREEHINTS treehints, const char text[],
@@ -4452,9 +5094,7 @@ static void poipixel(struct POSITIONL ppos, float palt,
    float nne;
    float subpix;
    float eled;
-   float ele0;
    float azi;
-   float azi0;
    float azid;
    float resoltx;
    double zn;
@@ -4467,23 +5107,19 @@ static void poipixel(struct POSITIONL ppos, float palt,
    double y00;
    double x0;
    double rd;
-   uint8_t attr;
+   uint8_t atwa;
    struct POSITIONL rpos;
-   char ok0;
    char odd;
    char istree;
-   uint32_t poiy;
-   int32_t xt;
    struct DDSTACK ddstack;
-   struct POI * anonym;
    *px = -1L;
    *py = -1L;
    if (!posvalidl(ppos)) return;
    refrac = panpar.refract*7.85E-8f;
    nne = libsrtm_getsrtmlong(panpar.eye.lat, panpar.eye.long0, 0UL, 1,
-                &resoltx, &attr, 0);
+                &resoltx, &atwa, 0);
    if (defaultocean && nne>20000.0f) nne = 0.0f;
-   nnp = libsrtm_getsrtmlong(ppos.lat, ppos.long0, 0UL, 1, &resoltx, &attr,
+   nnp = libsrtm_getsrtmlong(ppos.lat, ppos.long0, 0UL, 1, &resoltx, &atwa,
                 0);
    if (defaultocean && nnp>20000.0f) nnp = 0.0f;
    if (pp->altIsOG) {
@@ -4501,81 +5137,83 @@ static void poipixel(struct POSITIONL ppos, float palt,
    d2 = (float)sqrt((double)(sqr((float)(x1-x0))+sqr((float)
                 (y1-y00))+sqr((float)(z1-z0))));
    wgs84sl(ppos.lat, ppos.long0, (double)(nnp+refrac*d2*d2), &x1, &y1,
-                &z1);
+                &z1); /* apply refraction */
    d2 = (float)sqrt((double)(sqr((float)(x1-x0))+sqr((float)
                 (y1-y00))+sqr((float)(z1-z0))));
-   xn = X2C_DIVL(x1-x0,(double)d2);
+   xn = X2C_DIVL(x1-x0,(double)d2); /* normvector */
    yn = X2C_DIVL(y1-y00,(double)d2);
    zn = X2C_DIVL(z1-z0,(double)d2);
    rd = 0.0;
    treehints[0].treepass = 1;
    treehints[0].hith = treesize;
    ddstack.startdist = 0.0f;
-   raytrace(x0, y00, z0, xn, yn, zn, d2, 0.0f, refrac, 0.0, &rd, &subpix,
-                &rpos, treehints, &ddstack, &istree, &odd, 0);
-   /*WrFixed(d2, 1, 8); WrFixed(rd, 1, 8); WrStrLn("=d,rd"); */
+   raytrace(x0, y00, z0, xn, yn, zn, d2, 0.0f, refrac, treesize, 0, &rd,
+                &subpix, &rpos, treehints, &ddstack, &istree, &odd, 0);
    if (rd+30.0>=(double)d2) {
       /* poi visable */
       xn = -xn;
-      /*WrFixed(xn,2,6);WrFixed(yn,2,6);WrFixed(zn,2,6); WrStrLn(" xyz1"); */
       rotvector(&yn, &xn, cos(panpar.eye.long0), sin(panpar.eye.long0));
       rotvector(&zn, &xn, cos(panpar.eye.lat), sin(panpar.eye.lat));
-      /*WrFixed(xn,2,6);WrFixed(yn,2,6);WrFixed(zn,2,6); WrStrLn(" xyz2"); */
       azi = azimuthl(panpar.eye, panpar.horizon)*1.7453292519444E-2f;
-      azi0 = panpar.angle0*0.5f*1.7453292519444E-2f;
+      rotvector(&zn, &yn, cos((double)azi), sin((double)azi));
+      if (panpar.flatscreen0==panorama_eCAMERA) {
+         rotvector(&xn, &zn, cos((double)(panpar.elevation*1.7453292519444E-2f)),
+                 sin((double)(panpar.elevation*1.7453292519444E-2f)));
+      }
       azid = X2C_DIVR(panpar.angle0*1.7453292519444E-2f,
                 (float)((panpar.image0->Len1-1)+1UL));
                 /* h rad per pixel */
-      xi = atang2((float)zn, (float)yn)-azi;
-      /*WrFixed(xi*180.0/PI,2,8); WrStr("=xi "); */
+      if (panpar.flatscreen0) {
+         azid = (float)(X2C_DIVL((double)azid*tan((double)
+                (panpar.angle0*8.7266462597222E-3f)),
+                (double)(panpar.angle0*8.7266462597222E-3f)));
+      }
+      eled = X2C_DIVR(azid,panpar.yzoom0); /* v rad per pixel */
+      xi = atang2((float)zn, (float)yn); /* - azi*/
       if (xi<(-3.1415926535f)) xi = xi+6.283185307f;
       else if (xi>3.1415926535f) xi = xi-6.283185307f;
-      if (panpar.flatscreen0) xi = osic_tan(xi);
-      /*WrFixed(xi*180.0/PI,2,8); WrStr("=axi "); */
-      xi = X2C_DIVR(xi+azi0,azid);
+      if (panpar.flatscreen0) xi = (float)tan((double)xi);
+      xi = X2C_DIVR(xi,azid)+(float)((panpar.image0->Len1-1)+1UL)*0.5f;
       /*WrFixed(xi,1,8); */
-      eled = X2C_DIVR(azid,panpar.yzoom0); /* v deg per pixel */
-      ele0 = (panpar.elevation-X2C_DIVR((X2C_DIVR(panpar.angle0*0.5f,
-                panpar.yzoom0))*(float)((panpar.image0->Len0-1)+1UL),
-                (float)((panpar.image0->Len1-1)+1UL)))
-                *1.7453292519444E-2f;
-      yi = atang2((float)sqrt(zn*zn+yn*yn), (float) -xn);
-      if (panpar.flatscreen0) yi = (float)tan((double)yi);
-      yi = X2C_DIVR(yi-ele0,eled);
-      /*WrFixed(yi,1,8); WrStrLn(""); */
-      { /* with */
-         struct POI * anonym = pp;
-         poiy = anonym->ys;
-         if (anonym->xs==0UL) {
-            ok0 = drawpoi(xi, yi, panpar, poisize, (int32_t)anonym->r,
-                (int32_t)anonym->g, (int32_t)anonym->b,
-                (int32_t)anonym->alpha);
-            poiy = poisize*2UL;
-         }
-         else if (treehints[0].hith<treesize) {
-            ok0 = drawpoiicon(xi, yi, panpar, anonym->woodsymbol, anonym->xs,
-                 anonym->ys, anonym->r, anonym->g, anonym->b, anonym->alpha);
-         }
-         else {
-            ok0 = drawpoiicon(xi, yi, panpar, anonym->symbol, anonym->xs,
-                anonym->ys, anonym->r, anonym->g, anonym->b, anonym->alpha);
-         }
-         /*- vertical text to icon */
-         if (poilabel) {
-            xt = (int32_t)X2C_TRUNCI(xi,X2C_min_longint,
-                X2C_max_longint)-(int32_t)(imagetext_fontsizey(fonttyp)
-                /2UL);
-            if (xt>=0L) {
-               imagetext_writestr(panpar.image0, (uint32_t)xt,
-                truncc(yi)+poiy+2UL, fonttyp, 1UL, 5UL,
-                (int32_t)(panpar.maxlum/4UL),
-                (int32_t)(panpar.maxlum/4UL),
-                (int32_t)(panpar.maxlum/4UL), text, text_len);
-            }
-         }
+      if (panpar.flatscreen0!=panorama_eCAMERA) {
+         yi = atang2((float)sqrt(zn*zn+yn*yn),
+                (float) -xn)-panpar.elevation*1.7453292519444E-2f;
       }
-      /*- vertical text to icon */
-      if (ok0) {
+      else yi = atang2((float)zn, (float) -xn);
+      if (panpar.flatscreen0) yi = (float)tan((double)yi);
+      yi = X2C_DIVR(yi,eled)+(float)((panpar.image0->Len0-1)+1UL)*0.5f;
+      if (((xi>=0.0f && xi<=(float)(panpar.image0->Len1-1)) && yi>=0.0f)
+                && yi<=(float)(panpar.image0->Len0-1)) {
+         storepoi(xi, yi, (float)rd, treehints[0].hith<treesize, text,
+                text_len, pp);
+         /*
+             WITH pp^ DO 
+               poiy:=ys;
+               IF xs=0 THEN 
+                 ok:=drawpoi(xi, yi, panpar, poisize, r,g,b,alpha);
+                          (* internal icon *)
+                 poiy:=poisize*2;
+               ELSIF treehints[FALSE].hith<treesize THEN
+                 ok:=drawpoiicon(xi, yi, panpar, woodsymbol, xs, ys, r,g,b,
+                alpha);     (* behind wood icon *)
+               ELSE ok:=drawpoiicon(xi, yi, panpar, symbol, xs, ys, r,g,b,
+                alpha) END;  (* icon from image *)
+         
+         --- vertical text to icon
+               IF ok & poilabel THEN
+                 xt:=VAL(INTEGER, xi)-VAL(INTEGER, fontsizey(fonttyp) DIV 2);
+                 IF xt>=0 THEN
+                 writestr(panpar.image, xt, truncc(yi)+poiy+2, fonttyp, 1, 5,
+                          panpar.maxlum DIV 4, panpar.maxlum DIV 4,
+                panpar.maxlum DIV 4, text);
+                 END;
+               END;
+         --- vertical text to icon
+         
+             END;
+         
+             IF ok THEN
+         */
          *px = (int32_t)X2C_TRUNCI(xi+0.5f,X2C_min_longint,
                 X2C_max_longint);
          *py = (int32_t)X2C_TRUNCI(yi+0.5f,X2C_min_longint,
@@ -4587,14 +5225,15 @@ static void poipixel(struct POSITIONL ppos, float palt,
 
 static void setpoi(const struct PANOWIN panpar,
                 const struct aprsstr_POSITION posdeg, float alti,
-                const char text[], uint32_t text_len, pPOI pp)
+                const char text[], uint32_t text_len,
+                const char ext[], uint32_t ext_len, pPOI pp)
 {
    float resol;
    float alt;
    float d;
    float az;
    struct POSITIONL pos;
-   uint8_t attr;
+   uint8_t atwa;
    int32_t py;
    int32_t px;
    TREEHINTS treehints;
@@ -4602,12 +5241,23 @@ static void setpoi(const struct PANOWIN panpar,
    pos.long0 = (double)(posdeg.long0*1.7453292519444E-2f);
    /*WrFixed(posdeg.lat,2,9); WrStr(" "); */
    /*WrFixed(posdeg.long,2,9); WrStr(" "); */
-   d = distancel(panpar.eye, pos);
-   if (d>panpar.dist || d<0.05f) return;
-   az = panpar.ang-azimuthl(panpar.eye, pos)*1.7453292519444E-2f;
-   if (az<(-3.1415926535f)) az = az+6.283185307f;
-   else if (az>3.1415926535f) az = az-6.283185307f;
-   if ((float)fabs(az)>panpar.hseg) return;
+   if (panpar.flatscreen0==panorama_eCAMERA) {
+      /* in rectangular */
+      d = (float)(pos.lat-panpar.eye.lat);
+      if (d<poirect0.lat || d>poirect1.lat) return;
+      d = (float)(pos.long0-panpar.eye.long0);
+      if (d<poirect0.long0 || d>poirect1.long0) return;
+   }
+   else {
+      /* in circle segment */
+      d = distancel(panpar.eye, pos);
+      if (d>panpar.dist || d<0.05f) return;
+      az = (azimuthl(panpar.eye, panpar.horizon)-azimuthl(panpar.eye,
+                pos))*1.7453292519444E-2f;
+      if (az<(-3.1415926535f)) az = az+6.283185307f;
+      else if (az>3.1415926535f) az = az-6.283185307f;
+      if ((float)fabs(az)>panpar.hseg) return;
+   }
    poipixel(pos, alti, panpar, &px, &py, pp, treehints, text, text_len);
    if (verb) {
       osic_WrFixed(distancel(panpar.eye, pos), 3L, 9UL);
@@ -4632,11 +5282,12 @@ static void setpoi(const struct PANOWIN panpar,
       osi_WrStrLn("", 1ul);
    }
    if (px>=0L) {
-      alt = libsrtm_getsrtmlong(pos.lat, pos.long0, 0UL, 1, &resol, &attr,
+      alt = libsrtm_getsrtmlong(pos.lat, pos.long0, 0UL, 1, &resol, &atwa,
                 0);
       if (defaultocean && alt>20000.0f) alt = 0.0f;
       if (alti>=10000.0f || alti<alt) alti = alt;
-      wrcsv(px, py, posdeg, alti, text, text_len, pp->iconhint, 1024ul);
+      wrcsv(px, py, posdeg, alti, text, text_len, pp->iconhint, 1024ul, ext,
+                ext_len);
    }
 } /* end setpoi() */
 
@@ -4696,42 +5347,55 @@ static void rdmountain(const struct PANOWIN panpar, char fn[],
    char b[4096];
    char s[1024];
    char text[4097];
-   char name[100];
-   char long0[100];
-   char lat[100];
-   char com[100];
+   char ext[257];
+   char alti[257];
+   char name[257];
+   char long0[257];
+   char lat[257];
+   char com[257];
    X2C_PCOPY((void **)&fn,fn_len);
    fd = osi_OpenRead(fn, fn_len);
    if (!osic_FdValid(fd)) Error("poi-file not found", 19ul);
    p = 0L;
    len = 0L;
    for (;;) {
-      r = getword(&p, &len, fd, b, com, 100ul);
+      com[0U] = 0;
+      name[0U] = 0;
+      text[0U] = 0;
+      lat[0U] = 0;
+      long0[0U] = 0;
+      alti[0U] = 0;
+      ext[0U] = 0;
+      r = getword(&p, &len, fd, b, com, 257ul);
       if (r>0L) {
-         r = getword(&p, &len, fd, b, name, 100ul);
+         r = getword(&p, &len, fd, b, name, 257ul);
          if (r>0L) {
             r = getword(&p, &len, fd, b, text, 4097ul);
             if (r>0L) {
-               r = getword(&p, &len, fd, b, lat, 100ul);
+               r = getword(&p, &len, fd, b, lat, 257ul);
                if (r>0L) {
-                  r = getword(&p, &len, fd, b, long0, 100ul);
+                  r = getword(&p, &len, fd, b, long0, 257ul);
                   if (r>0L) {
-                     r = getword(&p, &len, fd, b, s, 1024ul);
-                     if (r<0L || !aprsstr_StrToFix(&alt, s, 1024ul)) {
-                        alt = (-3.E+4f);
+                     r = getword(&p, &len, fd, b, alti, 257ul);
+                     if (r>0L) {
+                        r = getword(&p, &len, fd, b, ext, 257ul);
+                        while (r>0L) {
+                           r = getword(&p, &len, fd, b, s, 1024ul);
+                        }
                      }
-                     while (r>0L) r = getword(&p, &len, fd, b, s, 1024ul);
                   }
-                  else alt = 0.0f;
                }
             }
          }
       }
       if (r<0L) break;
+      if (alti[0U]==0 || !aprsstr_StrToFix(&alt, alti, 257ul)) {
+         alt = (-3.E+4f);
+      }
       if ((((com[0U]!='#' && name[0U]) && aprsstr_StrToFix(&pos.lat, lat,
-                100ul)) && aprsstr_StrToFix(&pos.long0, long0,
-                100ul)) && posvalid(pos)) {
-         setpoi(panpar, pos, alt, name, 100ul, pp);
+                257ul)) && aprsstr_StrToFix(&pos.long0, long0,
+                257ul)) && posvalid(pos)) {
+         setpoi(panpar, pos, alt, name, 257ul, ext, 257ul, pp);
       }
    }
    osic_Close(fd);
@@ -4742,6 +5406,19 @@ static void rdmountain(const struct PANOWIN panpar, char fn[],
 static void rdmountains(const struct PANOWIN panpar)
 {
    pPOI pp;
+   uint32_t i;
+   size_t tmp[1];
+   uint32_t tmp0;
+   poistore = 0;
+   X2C_DYNALLOCATE((char **) &poimap,4u,
+                (tmp[0] = (panpar.image0->Len1-1)+1UL,tmp),1u);
+   if (poimap==0) Error("poimap, out of memory", 22ul);
+   tmp0 = poimap->Len0-1;
+   i = 0UL;
+   if (i<=tmp0) for (;; i++) {
+      poimap->Adr[i] = 0UL;
+      if (i==tmp0) break;
+   } /* end for */
    pp = poifiles;
    while (pp) {
       pp->xs = 0UL;
@@ -4752,10 +5429,14 @@ static void rdmountains(const struct PANOWIN panpar)
       if (pp->iconwoodfn[0U]) {
          readsymbol(pp->woodsymbol, &pp->xs, &pp->ys, pp->iconwoodfn,
                 1024ul);
+         pp->withwoodicon = 1;
       }
+      else pp->withwoodicon = 0;
       rdmountain(panpar, pp->poifn, 1024ul, pp);
       pp = pp->next;
    }
+   drawsortpois(panpar);
+   drawvispois(panpar);
 } /* end rdmountains() */
 
 #define panorama_DEGSYM "\177"
@@ -4767,7 +5448,6 @@ static void WrLatLong(const struct PANOWIN panpar)
    uint32_t y;
    char h[201];
    char s[201];
-   y = imagetext_fontsizey(fonttyp);
    aprsstr_FixToStr((float)(X2C_DIVL(panpar.eye.lat,1.7453292519444E-2)),
                 6UL, s, 201ul);
    aprsstr_Append(s, 201ul, "/", 2ul);
@@ -4777,13 +5457,27 @@ static void WrLatLong(const struct PANOWIN panpar)
    aprsstr_Append(s, 201ul, " A=", 4ul);
    aprsstr_FixToStr(panpar.eyealt, 2UL, h, 201ul);
    aprsstr_Append(s, 201ul, h, 201ul);
+   aprsstr_Append(s, 201ul, " OG=", 5ul);
+   aprsstr_FixToStr(panpar.eyeog, 2UL, h, 201ul);
+   aprsstr_Append(s, 201ul, h, 201ul);
    aprsstr_Append(s, 201ul, " d=", 4ul);
    aprsstr_FixToStr(panpar.dist, 2UL, h, 201ul);
    aprsstr_Append(s, 201ul, h, 201ul);
    aprsstr_Append(s, 201ul, " e=", 4ul);
    aprsstr_FixToStr(panpar.elevation, 2UL, h, 201ul);
    aprsstr_Append(s, 201ul, h, 201ul);
-   aprsstr_Append(s, 201ul, "\177 sun=", 7ul);
+   aprsstr_Append(s, 201ul, "\177", 2ul);
+   if (panpar.flatscreen0==panorama_eCAMERA) {
+      aprsstr_Append(s, 201ul, " center=", 9ul);
+      aprsstr_FixToStr(azimuthl(panpar.eye, panpar.horizon), 2UL, h, 201ul);
+      aprsstr_Append(s, 201ul, h, 201ul);
+      aprsstr_Append(s, 201ul, "\177", 2ul);
+      aprsstr_Append(s, 201ul, " angle=", 8ul);
+      aprsstr_FixToStr(panpar.angle0, 2UL, h, 201ul);
+      aprsstr_Append(s, 201ul, h, 201ul);
+      aprsstr_Append(s, 201ul, "\177", 2ul);
+   }
+   aprsstr_Append(s, 201ul, " sun=", 6ul);
    aprsstr_FixToStr(X2C_DIVR(panpar.sunazi,1.7453292519444E-2f), 2UL, h,
                 201ul);
    aprsstr_Append(s, 201ul, h, 201ul);
@@ -4829,6 +5523,9 @@ static void WrLatLong(const struct PANOWIN panpar)
       aprsstr_FixToStr(botanicslant, 0UL, h, 201ul);
       aprsstr_Append(s, 201ul, h, 201ul);
       aprsstr_Append(s, 201ul, "/", 2ul);
+      aprsstr_FixToStr(treerastersize, 1UL, h, 201ul);
+      aprsstr_Append(s, 201ul, h, 201ul);
+      aprsstr_Append(s, 201ul, "/", 2ul);
       aprsstr_FixToStr(zerotreealt, 0UL, h, 201ul);
       aprsstr_Append(s, 201ul, h, 201ul);
       aprsstr_Append(s, 201ul, "/", 2ul);
@@ -4843,7 +5540,11 @@ static void WrLatLong(const struct PANOWIN panpar)
       aprsstr_Append(s, 201ul, timeh, 1024ul);
    }
    lum = panpar.maxlum/6UL;
-   imagetext_writestr(panpar.image0, 5UL, y, fonttyp, 0UL, 10UL,
+   y = 1UL;
+   if (panpar.flatscreen0!=panorama_eCAMERA) {
+      y = imagetext_fontsizey(fonttypfoot);
+   }
+   imagetext_writestr(panpar.image0, 5UL, y, fonttypfoot, 0UL, 10UL,
                 (int32_t)lum, (int32_t)lum, (int32_t)lum, s, 201ul);
 } /* end WrLatLong() */
 
@@ -4871,12 +5572,11 @@ static void drawscale(const struct PANOWIN panpar, uint32_t px,
       } /* end for */
       if (px<=panpar.image0->Len1-1) {
          if (deg==0UL) strncpy(s,"N",101u);
-         else if (deg==90UL) strncpy(s,"E",101u);
-         else if (deg==180UL) strncpy(s,"S",101u);
          else if (deg==270UL) strncpy(s,"W",101u);
          else aprsstr_IntToStr((int32_t)deg, 0UL, s, 101ul);
-         imagetext_writestr(panpar.image0, px+2UL, 0UL, fonttyp, 0UL, 5UL,
-                (int32_t)lum, (int32_t)lum, (int32_t)lum, s, 101ul);
+         imagetext_writestr(panpar.image0, px+2UL, 0UL, fonttypfoot, 0UL,
+                5UL, (int32_t)lum, (int32_t)lum, (int32_t)lum, s,
+                101ul);
       }
    }
 } /* end drawscale() */
@@ -4941,7 +5641,7 @@ static void scale(const struct PANOWIN panpar)
 
 #define panorama_SHADOWLUM 0
 
-#define panorama_TAGS 5
+#define panorama_TAGS 6
 
 #define panorama_MAXLUT 1024
 
@@ -4985,7 +5685,7 @@ static void colourize(imagetext_pIMAGE img, float amin, float amax,
    int32_t hs;
    int32_t h;
    struct _2 lut[1024];
-   struct _3 tlut[5];
+   struct _3 tlut[6];
    struct _2 * anonym;
    struct imagetext_PIX * anonym0;
    /* tagged & tag color set */
@@ -5011,19 +5711,25 @@ static void colourize(imagetext_pIMAGE img, float amin, float amax,
                anonym->bb = (float)(((c-320UL)*900UL)/320UL)*K;
             }
             else anonym->bb = 900.0f*K;
+            a = anonym->rr*0.3f+anonym->gg*0.5f+anonym->bb*0.2f;
+                /* luminance */
+            a = a+0.5f*((float)fabs(anonym->rr-a)+(float)
+                fabs(anonym->gg-a)+(float)fabs(anonym->bb-a));
+                /* lower luminance on saturated colours */
+            a = X2C_DIVR(6.0f,a);
+            anonym->rr = anonym->rr*a;
+            anonym->gg = anonym->gg*a;
+            anonym->bb = anonym->bb*a;
+            if (anonym->rr>6.0f) anonym->rr = 6.0f;
+            if (anonym->gg>6.0f) anonym->gg = 6.0f;
+            if (anonym->bb>6.0f) anonym->bb = 6.0f;
          }
       } /* end for */
    }
    else {
-      /*
-              a:=LUM*0.5/(rr*0.3 + gg*0.5 + bb*0.2);
-              rr:=rr*a;
-              gg:=gg*a;
-              bb:=bb*a; 
-      */
       /* interpolate table */
       memset((char *)lut,(char)0,sizeof(struct _2 [1024]));
-      memset((char *)tlut,(char)0,sizeof(struct _3 [5]));
+      memset((char *)tlut,(char)0,sizeof(struct _3 [6]));
       a = X2C_DIVR((float)(atab.len-1UL),1024.0f);
       for (x = 0UL; x<=1023UL; x++) {
          f = a*(float)x;
@@ -5035,7 +5741,7 @@ static void colourize(imagetext_pIMAGE img, float amin, float amax,
          lut[x].gg = intpol(atab.c[y].g, atab.c[y+1UL].g, f);
          lut[x].bb = intpol(atab.c[y].b, atab.c[y+1UL].b, f);
       } /* end for */
-      for (x = 0UL; x<=4UL; x++) {
+      for (x = 0UL; x<=5UL; x++) {
          c = 0UL;
          c += atab.tag[x].r;
          tlut[x].rr = 2.3529411764706E-2f*(float)atab.tag[x].r;
@@ -5058,12 +5764,12 @@ static void colourize(imagetext_pIMAGE img, float amin, float amax,
       if (x<=tmp0) for (;; x++) {
          { /* with */
             struct imagetext_PIX * anonym0 = &img->Adr[(x)*img->Len0+y];
-            if (anonym0->b<=5U) {
+            if (!(anonym0->b&1)) {
                /* not heaven */
                a = (float)(anonym0->r+0U); /* luminance */
-               if (anonym0->b>0U && tlut[anonym0->b-1U].on) {
+               if (anonym0->b>0U && tlut[anonym0->b/2U-1U].on) {
                   { /* with */
-                     struct _3 * anonym1 = &tlut[anonym0->b-1U];
+                     struct _3 * anonym1 = &tlut[anonym0->b/2U-1U];
                      anonym0->r = (uint16_t)(int32_t)
                 X2C_TRUNCI(anonym1->rr*a,X2C_min_longint,X2C_max_longint);
                      anonym0->g = (uint16_t)(int32_t)
@@ -5113,7 +5819,7 @@ static void colourize(imagetext_pIMAGE img, float amin, float amax,
 
 
 static void testimage(imagetext_pIMAGE img, uint32_t * min1,
-                uint32_t * max0)
+                uint32_t * max1)
 {
    uint32_t y;
    uint32_t x;
@@ -5127,7 +5833,7 @@ static void testimage(imagetext_pIMAGE img, uint32_t * min1,
          { /* with */
             struct imagetext_PIX * anonym = &img->Adr[(x)*img->Len0+(y+20UL)
                 ];
-            anonym->r = (uint16_t)(*min1+((*max0-*min1)*(y/9UL))/16UL);
+            anonym->r = (uint16_t)(*min1+((*max1-*min1)*(y/9UL))/16UL);
             anonym->g = anonym->r;
             anonym->b = anonym->r;
          }
@@ -5148,12 +5854,17 @@ static void drawimage(void)
    panowin.horizon = posb;
    panowin.angle0 = angle;
    panowin.elevation = elev;
-   panowin.eyealt = alta;
+   panowin.eyealt = camalt;
+   panowin.eyeog = camog;
    panowin.yzoom0 = yzoom;
    panowin.refract = refraction;
    panowin.sunazi = sunaz*1.7453292519444E-2f;
    panowin.sunele = sunel*1.7453292519444E-2f;
-   panowin.ang = azimuthl(panowin.eye, panowin.horizon)*1.7453292519444E-2f;
+   poirect0.lat = 3.1415926535f;
+   poirect0.lat = 3.1415926535f;
+   poirect1.long0 = (-3.1415926535f);
+   poirect1.long0 = (-3.1415926535f);
+   /*  panowin.azim:=azimuthl(panowin.eye, panowin.horizon)*RAD; */
    panowin.hseg = angle*1.7453292519444E-2f*0.5f;
    panowin.dist = distancel(panowin.eye, panowin.horizon);
    panowin.maxlum = 2000UL;
@@ -5165,36 +5876,45 @@ static void drawimage(void)
    }
    histogram(panowin.image0, alticolour, &panowin.minlum, &panowin.maxlum);
    makegammatab(panowin.minlum, panowin.maxlum);
-   testimage(panowin.image0, &panowin.minlum, &panowin.maxlum);
-   if (fonttyp>0UL) scale(panowin);
+   if (fonttypfoot>0UL) {
+      testimage(panowin.image0, &panowin.minlum, &panowin.maxlum);
+      if (panowin.flatscreen0!=panorama_eCAMERA) scale(panowin);
+      WrLatLong(panowin);
+   }
    if (poifiles) rdmountains(panowin);
 } /* end drawimage() */
 
 
-static void camalt(struct POSITIONL posa0, struct POSITIONL posb0,
-                char fromnn, float * alta0)
+static float camaltitude(struct POSITIONL posa0, struct POSITIONL posb0,
+                char fromnn, float * alta)
 {
+   float cam;
    float resoltx;
    float nn;
-   uint8_t attr;
-   if (!posvalidl(posa0)) Error("neer camera position", 21ul);
-   nn = libsrtm_getsrtmlong(posa0.lat, posa0.long0, 0UL, 1, &resoltx, &attr,
+   uint8_t atwa;
+   if (!posvalidl(posa0)) Error("need camera position", 21ul);
+   nn = libsrtm_getsrtmlong(posa0.lat, posa0.long0, 0UL, 1, &resoltx, &atwa,
                 0);
    if (defaultocean && nn>20000.0f) nn = 0.0f;
    if (nn>=20000.0f) {
       libsrtm_closesrtmfile();
       Error("no altitude data at camera position", 36ul);
    }
-   if (!fromnn) *alta0 = *alta0+nn;
-   if (*alta0<nn) Error("altitude of camera below ground", 32ul);
-   nn = libsrtm_getsrtmlong(posb0.lat, posb0.long0, 0UL, 1, &resoltx, &attr,
+   if (!fromnn) cam = *alta+nn;
+   else {
+      cam = *alta;
+      *alta = *alta-nn;
+   }
+   if (cam<nn) Error("altitude of camera below ground", 32ul);
+   nn = libsrtm_getsrtmlong(posb0.lat, posb0.long0, 0UL, 1, &resoltx, &atwa,
                 0);
    if (defaultocean && nn>20000.0f) nn = 0.0f;
    if (nn>=20000.0f) {
       libsrtm_closesrtmfile();
       Error("no altitude data at view point", 31ul);
    }
-} /* end camalt() */
+   return cam;
+} /* end camaltitude() */
 
 
 X2C_STACK_LIMIT(100000l)
@@ -5208,6 +5928,7 @@ extern int main(int argc, char **argv)
    osi_BEGIN();
    imagefn[0] = 0;
    poifiles = 0;
+   trackfiles = 0;
    csvfn[0] = 0;
    csvfd = -1L;
    image = 0;
@@ -5215,27 +5936,34 @@ extern int main(int argc, char **argv)
    ysize = 400L;
    posinval(&posa);
    posinval(&posb);
-   alta = 10.0f;
+   camog = 10.0f;
    refraction = 0.13f;
    igamma = 1.0f;
    libsrtm_srtmmaxmem = 100000000UL;
    heavencol.r = 150.0f;
    heavencol.g = 300.0f;
    heavencol.b = 3500.0f;
+   watercol.r = (-1.0f);
+   watercol.g = 0.0f;
+   watercol.b = 0.0f;
+   waterglance = 0.5f;
+   watertransparency = 1.0f;
+   surfacedust = 700.0f;
    elev = 0.0f;
    angle = 45.0f;
    yzoom = 1.0f;
-   flatscreen = 0;
+   flatscreen = panorama_eCURVED;
    poisize = 5UL;
    minpoialt = 1.0f;
    fonttyp = 0UL;
+   fonttypfoot = 0UL;
    verb = 0;
-   poilabel = 0;
+   poilabel = 0UL;
    /*  bicubic:=FALSE; */
    rastercsv = 0UL;
    sunaz = 0.0f;
    sunel = (-100.0f);
-   snowalt = 3000.0f;
+   snowalt = 5000.0f;
    slowaltslant = 500.0f;
    flatwater = 0;
    waveamp = 0.006f;
@@ -5243,13 +5971,13 @@ extern int main(int argc, char **argv)
    maxmountain = 8900.0;
    wavelength = 1.0f;
    waterslant = 0.0f;
-   treesize = 25.0f;
+   treesize = 0.0f;
    urbanoff = 1.0f;
-   botanicslant = 8.0f;
-   ignorblack = 0.1f;
-   ignorwhite = 0.5f;
-   whitelim = 1000UL;
-   blacklim = 100UL;
+   botanicslant = 0.0f;
+   ignorblack = (-0.125f);
+   ignorwhite = 1.0f;
+   whitelim = 500UL;
+   blacklim = 500UL;
    desertcol.r = (-1.0f);
    videolat = 1000.0f;
    logfilm = (-1.0f);
@@ -5259,8 +5987,8 @@ extern int main(int argc, char **argv)
    fulltreealt = 1200.0f;
    defaultocean = 0;
    alticolour = 0;
-   alticolmin = X2C_max_real;
-   alticolmax = -X2C_max_real;
+   alticolmin = 10000.0f;
+   alticolmax = (-1.E+4f);
    abscolmin = 0.0f;
    abscolmax = 0.0f;
    altcolstep = 0UL;
@@ -5283,7 +6011,7 @@ extern int main(int argc, char **argv)
       Error("sight > 180 deggrees needs courved screen on", 45ul);
    }
    readcolourfile(&altcoltab, colfn, 1024ul);
-   camalt(posa, posb, videolat<90.0f, &alta);
+   camalt = camaltitude(posa, posb, videolat<90.0f, &camog);
    Gencrctab();
    makenoise();
    /*  IF imagefn[0]=0C THEN Error("need inage filename") END; */
