@@ -1010,6 +1010,7 @@ one is working.
 
 |7430 Enter a filter for receive data from AprsIs Network
 m/200 or center/radius or a lot of call filters are possible
+m/200 -t/ts p/OE5/OE7/HB o/ER-*
 
 |7435 Enable or Disable Connection to AprsIs Network
 
@@ -1155,8 +1156,8 @@ Map moving way.
 
 |7860 If enabled show Lat/Long and QTH-Locator of
 Mouse Position, Distance and Direction to
-Marker 1 and if File "poi.txt" in osm-directory
-contains info to this position, it will be shown
+Marker 1. If a POI from a file in osm/poi/
+is near, position and info will be shown
 Toggle with "p"
 
 |7861 On Mouse-Over, on this Zoomlevel or higher,
@@ -1168,6 +1169,7 @@ Press "Save Config" before.
 
 |7855 Enable Trackfilter to remove possibly wrong waypoints
 of tracks. This does not affect stored data.
+shortcut "f"
 
 |7850 If enabled, missing map-parts are tried to be
 downloaded by writing "gettiles" file. A task
