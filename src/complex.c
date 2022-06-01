@@ -95,16 +95,21 @@ extern void complex_cdiv(struct complex_Complex * Result,
 {
    float Nenner;
    Nenner = B.Re*B.Re+B.Im*B.Im;
-   Result->Re = X2C_DIVR(A.Re*B.Re+A.Im*B.Im,Nenner);
-   Result->Im = X2C_DIVR(A.Im*B.Re-A.Re*B.Im,Nenner);
+   if (Nenner!=0.0f) {
+      Result->Re = X2C_DIVR(A.Re*B.Re+A.Im*B.Im,Nenner);
+      Result->Im = X2C_DIVR(A.Im*B.Re-A.Re*B.Im,Nenner);
+   }
+   else {
+      Result->Re = 0.0f;
+      Result->Im = 0.0f;
+   }
 } /* end cdiv() */
 
 
 extern void complex_csqrt(struct complex_Complex * Result,
                 struct complex_Complex X)
 {
-   complex_cmplx(Result, osic_sqrt(complex_cabs(X)), X2C_DIVR(complex_arc(X),
-                2.0f));
+   complex_cmplx(Result, osic_sqrt(complex_cabs(X)), complex_arc(X)*0.5f);
 } /* end csqrt() */
 
 
@@ -113,8 +118,8 @@ extern void complex_csin(struct complex_Complex * Result,
 {
    float e;
    e = osic_exp(X.Im);
-   Result->Re = X2C_DIVR(osic_sin(X.Re)*(e+X2C_DIVR(1.0f,e)),2.0f);
-   Result->Im = X2C_DIVR(osic_cos(X.Re)*(e-X2C_DIVR(1.0f,e)),2.0f);
+   Result->Re = osic_sin(X.Re)*(e+X2C_DIVR(1.0f,e))*0.5f;
+   Result->Im = osic_cos(X.Re)*(e-X2C_DIVR(1.0f,e))*0.5f;
 } /* end csin() */
 
 
@@ -123,8 +128,8 @@ extern void complex_ccos(struct complex_Complex * Result,
 {
    float e;
    e = osic_exp(X.Im);
-   Result->Re = X2C_DIVR(osic_cos(X.Re)*(e+X2C_DIVR(1.0f,e)),2.0f);
-   Result->Im = -(X2C_DIVR(osic_sin(X.Re)*(e-X2C_DIVR(1.0f,e)),2.0f));
+   Result->Re = osic_cos(X.Re)*(e+X2C_DIVR(1.0f,e))*0.5f;
+   Result->Im = -(osic_sin(X.Re)*(e-X2C_DIVR(1.0f,e))*0.5f);
 } /* end ccos() */
 
 
