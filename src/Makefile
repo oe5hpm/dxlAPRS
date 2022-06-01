@@ -247,11 +247,14 @@ OBJ_WATERFALL3 = \
 
 OBJ_DOWNSAMPLE	= $(OUT)downsample.o
 OBJ_SDRTX	= $(OUT)sdrtx.o
+OBJ_RA02	= $(OUT)ra02.o
 OBJ_LORATX	= $(OUT)loratx.o
 OBJ_LORARX	= \
 	$(OUT)lorarx.o \
 	$(OUT)fft.o \
 	$(OUT)complex.o
+
+
 TARGETS += \
 	$(OUT)afskmodem \
 	$(OUT)gps2aprs \
@@ -276,8 +279,10 @@ TARGETS += \
 	$(OUT)hostint \
 	$(OUT)downsample \
 	$(OUT)sdrtx \
+	$(OUT)ra02 \
 	$(OUT)loratx \
 	$(OUT)lorarx
+
 
 ifneq ($(HOSTOS), Darwin)
 	TARGETS += $(OUT)l2cat
@@ -308,8 +313,9 @@ OBJS = \
 	$(OBJ_WATERFALL) \
 	$(OBJ_DOWNSAMPLE) \
 	$(OBJ_SDRTX) \
-    $(OBJ_LORATX) \
-    $(OBJ_LORARX)
+	$(OBJ_RA02) \
+        $(OBJ_LORATX) \
+        $(OBJ_LORARX)
 
 # ------------------- target make rules -------------------
 #                     -----------------
@@ -466,6 +472,11 @@ $(OUT)downsample: $(OBJ_DOWNSAMPLE) $(OBJ_COMMON)
 $(OUT)sdrtx:  $(OBJ_SDRTX) $(OBJ_COMMON)
 	@echo [ linking ] $@
 	@$(CC) $(LFLAGS) -o $@ $(OBJ_SDRTX) $(OBJ_COMMON) $(OBJ_LIB) -lm
+	@$(STRIP) $@ $(STRIPFLAGS)
+
+$(OUT)ra02: $(OBJ_RA02) $(OBJ_COMMON)
+	@echo [ linking ] $@
+	@$(CC) $(LFLAGS) -o $@ $(OBJ_RA02) $(OBJ_COMMON) $(OBJ_LIB) -lm
 	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)loratx: $(OBJ_LORATX) $(OBJ_COMMON)
