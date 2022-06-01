@@ -245,6 +245,7 @@ OBJ_WATERFALL3 = \
 	$(OUT)pngwritepalette.o \
 	$(OUT)fftw.o
 
+OBJ_DOWNSAMPLE	= $(OUT)downsample.o
 OBJ_SDRTX	= $(OUT)sdrtx.o
 OBJ_LORATX	= $(OUT)loratx.o
 OBJ_LORARX	= \
@@ -273,6 +274,7 @@ TARGETS += \
 	$(OUT)fmrepeater \
 	$(OUT)waterfall \
 	$(OUT)hostint \
+	$(OUT)downsample \
 	$(OUT)sdrtx \
 	$(OUT)loratx \
 	$(OUT)lorarx
@@ -302,8 +304,9 @@ OBJS = \
 	$(OBJ_PANORAMA) \
 	$(OBJ_CMSLOGIN)	\
 	$(OBJ_SRTMTAG) \
-	$(OBJ_FMREPEATER) \
+        $(OBJ_FMREPEATER) \
 	$(OBJ_WATERFALL) \
+	$(OBJ_DOWNSAMPLE) \
 	$(OBJ_SDRTX) \
     $(OBJ_LORATX) \
     $(OBJ_LORARX)
@@ -453,6 +456,11 @@ $(OUT)hostint: $(OBJ_HOSTINT) $(OBJ_L2COMMON)  $(OBJ_COMMON)
 $(OUT)waterfall3: $(OBJ_WATERFALL3) $(OBJ_COMMON)
 	@echo [ linking ] $@
 	@$(CC) $(LFLAGS) -o $@  $(OBJ_WATERFALL3) $(OBJ_COMMON) -L$(EXTLIB) $(PICLIBS) $(EXTLIB)libfftw3f.a -lfftw3f  -lm
+	@$(STRIP) $@ $(STRIPFLAGS)
+
+$(OUT)downsample: $(OBJ_DOWNSAMPLE) $(OBJ_COMMON)
+	@echo [ linking ] $@
+	@$(CC) $(LFLAGS) -o $@ $(OBJ_DOWNSAMPLE) $(OBJ_COMMON) $(OBJ_LIB) -lm
 	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)sdrtx:  $(OBJ_SDRTX) $(OBJ_COMMON)
