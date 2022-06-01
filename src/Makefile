@@ -64,6 +64,9 @@ CDEFS		= -Wall \
 		  -Wno-unused-variable -Wno-parentheses -Wno-pointer-sign \
 		  -Wno-format -Wno-return-type -Wno-char-subscripts \
 		  -Wno-uninitialized \
+		  -Wno-unused-but-set-variable \
+		  -Wno-discarded-qualifiers \
+		  -Wno-unused-result \
 		  -Werror=implicit-function-declaration
 else
 CDEFS		= -w
@@ -80,9 +83,10 @@ endif
 ifeq ($(PLATFORM), armv6tce)
 OUT		:= $(if $(OUT),$(OUT),../out-armv6tce/)
 EXTLIB  	= lib_armv6/
-XLIBS		= $(EXTLIB)libpng15/libpng.a \
+PICLIBS		:= $(EXTLIB)libpng15/libpng.a \
 		  $(EXTLIB)libz.a \
-		  $(EXTLIB)libjpeg.a \
+		  $(EXTLIB)libjpeg.a
+XLIBS		= $(PICLIBS) \
 		  $(EXTLIB)libxcb.so.1 $(EXTLIB)libXdmcp.so.6 $(EXTLIB)libXau.so.6 \
 		  -L$(EXTLIB) -lXext -lX11
 CFLAGS		+= -march=armv6zk -mfpu=vfp -mfloat-abi=hard -mcpu=arm1176jzf-s
@@ -91,9 +95,10 @@ LFLAGS		+=
 else ifeq ($(PLATFORM), armv6)
 OUT		:= $(if $(OUT),$(OUT),../out-armv6/)
 EXTLIB  	= lib_armv6/
-XLIBS		= $(EXTLIB)libpng16/libpng.a \
+PICLIBS		:= $(EXTLIB)libpng16/libpng.a \
 		  $(EXTLIB)libz.a \
-		  $(EXTLIB)libjpeg.a \
+		  $(EXTLIB)libjpeg.a
+XLIBS		= $(PICLIBS) \
 		  $(EXTLIB)libxcb.so.1 $(EXTLIB)libXdmcp.so.6 $(EXTLIB)libXau.so.6 \
 		  -L$(EXTLIB) -lXext -lX11
 CFLAGS		+= -march=armv6zk -mfpu=vfp -mfloat-abi=hard -mcpu=arm1176jzf-s
@@ -103,9 +108,10 @@ LFLAGS		+=
 else ifeq ($(PLATFORM), armv7hf)
 OUT		:= $(if $(OUT),$(OUT),../out-armv7hf/)
 EXTLIB		= lib_armv7hf/
-XLIBS		= $(EXTLIB)libpng.a \
+PICLIBS		:= $(EXTLIB)/libpng.a \
 		  $(EXTLIB)libz.a \
-		  $(EXTLIB)libjpeg.a \
+		  $(EXTLIB)libjpeg.a
+XLIBS		= $(PICLIBS) \
 		  $(EXTLIB)libxcb.so $(EXTLIB)libXdmcp.so $(EXTLIB)libXau.so \
 		  -L$(EXTLIB) -lXext -lX11
 CFLAGS		+= -march=armv7-a -mfpu=neon -mfloat-abi=hard
@@ -113,24 +119,30 @@ CFLAGS		+= -I$(EXTLIB)
 LFLAGS		+=
 # -------------------------- x86_64 specific -----------------------------------
 else ifeq ($(HOSTARCH), x86_64)
-XLIBS		= -lpng -ljpeg -lXext -lX11
+PICLIBS		:= -lpng -ljpeg
+XLIBS		= $(PICLIBS) -lXext -lX11
+EXTLIB		= lib_x86_64/
+CFLAGS		+= -I$(EXTLIB)
 ifeq ($(PLATFORM), x86_32)
-	OUT	:= $(if $(OUT),$(OUT),../out-x86_32/)
-	CFLAGS	+= -m32
+	OUT		:= $(if $(OUT),$(OUT),../out-x86_32/)
+	EXTLIB	= lib_x86_32/
+	CFLAGS	+= -m32 -I$(EXTLIB)
 	LFLAGS	+= -m32
 	TARGETS	+= $(OUT)aprsmap-x86_32
 else ifneq ($(HOSTOS),Darwin)
 TARGETS		+= $(OUT)aprsmap-x86_64
 endif
-OUT		:= $(if $(OUT),$(OUT),../out-x86_64/)
+OUT			:= $(if $(OUT),$(OUT),../out-x86_64/)
 # -------------------------- x86_32 (default) specific ------------------------
 else ifeq ($(HOSTARCH), x86)
 OUT		:= $(if $(OUT),$(OUT),../out-x86_32/)
 TARGETS		+= $(OUT)aprsmap-x86_32
-XLIBS		= -lpng -ljpeg -lXext -lX11
+PICLIBS		:= -lpng -ljpeg
+XLIBS		= $(PICLIBS) -lXext -lX11
 else
 OUT		:= $(if $(OUT),$(OUT),../out/)
-XLIBS		+= -lpng -ljpeg -lXext -lX11
+PICLIBS		:= -lpng -ljpeg
+XLIBS		+= $(PICLIBS) -lXext -lX11
 endif
 # ------------------ objects enumeration ------------------
 OBJ_COMMON = \
@@ -168,7 +180,8 @@ OBJ_SONDEUDP	= $(OUT)sondeudp.o \
 	$(OUT)rsc_decode.o
 
 OBJ_UDPBOX	= $(OUT)udpbox.o
-OBJ_UDPGATE4	= $(OUT)udpgate4.o
+OBJ_UDPGATE4	= $(OUT)udpgate4.o \
+	$(OUT)libsrtm.o
 OBJ_UDPFLEX	= $(OUT)udpflex.o
 OBJ_UDPHUB	= $(OUT)udphub.o
 OBJ_APRSMAP	= \
@@ -227,6 +240,11 @@ OBJ_FMREPEATER = \
 OBJ_HOSTINT = \
 	$(OUT)hostint.o
 
+OBJ_WATERFALL3 = \
+	$(OUT)waterfall3.o \
+	$(OUT)pngwritepalette.o \
+	$(OUT)fftw.o
+
 TARGETS += \
 	$(OUT)afskmodem \
 	$(OUT)gps2aprs \
@@ -248,6 +266,7 @@ TARGETS += \
 	$(OUT)srtmtag \
 	$(OUT)fmrepeater \
 	$(OUT)waterfall \
+	$(OUT)waterfall3 \
 	$(OUT)hostint
 
 ifneq ($(HOSTOS), Darwin)
@@ -413,12 +432,17 @@ $(OUT)fmrepeater: $(OBJ_FMREPEATER) $(OBJ_COMMON)
 	$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)waterfall: $(OBJ_WATERFALL) $(OBJ_COMMON)
-	$(CC) $(LFLAGS) -o $@ $(OBJ_WATERFALL) $(OBJ_COMMON) -lm $(XLIBS)
+	$(CC) $(LFLAGS) -o $@ $(OBJ_WATERFALL) $(OBJ_COMMON) -lm $(PICLIBS)
 	$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)hostint: $(OBJ_HOSTINT) $(OBJ_L2COMMON)  $(OBJ_COMMON)
 	$(CC) $(LFLAGS) -o $@ $(OBJ_HOSTINT) $(OBJ_L2COMMON) $(OBJ_COMMON)
 	$(STRIP) $@ $(STRIPFLAGS)
+
+$(OUT)waterfall3: $(OBJ_WATERFALL3) $(OBJ_COMMON)
+	@echo [ linking ] $@
+	@$(CC) $(LFLAGS) -o $@  $(OBJ_WATERFALL3) $(OBJ_COMMON) -L$(EXTLIB) $(PICLIBS) $(EXTLIB)libfftw3f.a -lfftw3f  -lm
+	@$(STRIP) $@ $(STRIPFLAGS)
 
 %:
 	make prepare
@@ -428,4 +452,7 @@ diag:
 	@echo "Hostarch    : $(HOSTARCH)"
 	@echo "BuildOutput : $(OUT)"
 	@echo "Platform    : $(PLATFORM)"
+	@echo "PIC-libaries: $(PICLIBS)"
+	@echo "external Lib: $(EXTLIB)"
+	@echo "C-Flags     : $(CFLAGS)"
 # end of makefile

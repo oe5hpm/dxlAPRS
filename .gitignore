@@ -33,3 +33,5 @@ src/arm-linux-*
 buildAll.sh
 intel-debug.tgz
 out-*/
+_libbuild/*
+

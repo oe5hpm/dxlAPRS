@@ -54,4 +54,5 @@ rsc.h
 mlib.h
 pastewrapper.h
 pastewrapper.c
-
+fftw.h
+fftw3.h

@@ -1,0 +1,6 @@
+#/bin/sh
+CC=/opt/rpi-tools/arm-bcm2708/arm-bcm2708hardfp-linux-gnueabi/bin/arm-bcm2708hardfp-linux-gnueabi-gcc CFLAGS="-march=armv6zk -mfpu=vfp -mfloat-abi=hard -mcpu=arm1176jzf-s" ./configure --prefix=/tmp --host=arm-none-linux-gnueabi --enable-float
+CC=/opt/rpi-tools/arm-bcm2708/arm-bcm2708hardfp-linux-gnueabi/bin/arm-bcm2708hardfp-linux-gnueabi-gcc CFLAGS="-march=armv6zk -mfpu=vfp -mfloat-abi=hard -mcpu=arm1176jzf-s" make
+CC=/opt/rpi-tools/arm-bcm2708/arm-bcm2708hardfp-linux-gnueabi/bin/arm-bcm2708hardfp-linux-gnueabi-gcc CFLAGS="-march=armv6zk -mfpu=vfp -mfloat-abi=hard -mcpu=arm1176jzf-s" make install
+cp /tmp/lib/libfftw3f.a ../../src/lib_armv6/
+cp /tmp/include/fftw3.h ../../src/lib_armv6/
