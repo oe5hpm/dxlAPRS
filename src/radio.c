@@ -32,7 +32,7 @@ struct STICKPARM;
 
 
 struct STICKPARM {
-   uint32_t val;
+   unsigned long val;
    char ok0;
 };
 
@@ -55,21 +55,25 @@ struct LOWPASSCONTEXT {
 
 #define radio_AUDIOSAMP 48000
 
+#define radio_RTLSAMP 2112000
+
 #define radio_LP14 0.14
 
-static int32_t fd;
+static long fd;
 
-static uint32_t sndw;
+static unsigned long sndw;
 
-static uint32_t ifwidth;
+static unsigned long ifwidth;
+
+static unsigned long firl;
 
 static short sndbuf[1024];
 
 static struct sdr_RX rxx;
 
-static sdr_pRX prx[17];
+static sdr_pRX prx[2];
 
-static short sampx[64];
+static short sampx[128];
 
 static char url[1001];
 
@@ -85,16 +89,18 @@ static char isstereo;
 
 static char rds;
 
-static uint32_t afc;
+static unsigned long afc;
 
-static uint32_t tune;
+static unsigned long tune;
+
+static float firw;
 
 static struct STICKPARM stickparm[256];
 
 static struct termios saved;
 
 
-static void Usage(char text[], uint32_t text_len)
+static void Usage(char text[], unsigned long text_len)
 {
    X2C_PCOPY((void **)&text,text_len);
    osi_Werr(" usage: ", 9ul);
@@ -104,17 +110,17 @@ static void Usage(char text[], uint32_t text_len)
 } /* end Usage() */
 
 
-static int32_t Kbd(void)
+static long Kbd(void)
 {
    struct termios term;
-   int32_t res;
+   long res;
    struct termios * anonym;
    /*    c_lflag:= c_lflag -ICANON; */
    res = tcgetattr(0L, &saved);
    res = tcgetattr(0L, &term);
    { /* with */
       struct termios * anonym = &term;
-      anonym->c_lflag = (uint32_t)(uint16_t)((uint16_t)
+      anonym->c_lflag = (unsigned long)(unsigned short)((unsigned short)
                 anonym->c_lflag&~0xAU);
    }
    res = tcsetattr(0L, 2L, &term);
@@ -122,20 +128,21 @@ static int32_t Kbd(void)
 } /* end Kbd() */
 
 
-static void fix(const char s[], uint32_t s_len, uint32_t * p,
+static void fix(const char s[], unsigned long s_len, unsigned long * p,
                 float * x, char * ok0)
 {
    float m;
    m = 1.0f;
    *ok0 = 0;
    *x = 0.0f;
-   while ((uint8_t)s[*p]>='0' && (uint8_t)s[*p]<='9' || s[*p]=='.') {
+   while ((unsigned char)s[*p]>='0' && (unsigned char)
+                s[*p]<='9' || s[*p]=='.') {
       if (s[*p]=='.') m = 0.1f;
       else if (m==1.0f) {
-         *x =  *x*10.0f+(float)((uint32_t)(uint8_t)s[*p]-48UL);
+         *x =  *x*10.0f+(float)((unsigned long)(unsigned char)s[*p]-48UL);
       }
       else {
-         *x = *x+(float)((uint32_t)(uint8_t)s[*p]-48UL)*m;
+         *x = *x+(float)((unsigned long)(unsigned char)s[*p]-48UL)*m;
          m = m*0.1f;
       }
       *ok0 = 1;
@@ -148,9 +155,9 @@ static void Parms(void)
 {
    char s[1001];
    float fr;
-   uint32_t n;
-   uint32_t m;
-   int32_t ni;
+   unsigned long n;
+   unsigned long m;
+   long ni;
    char ok0;
    mono = 0;
    rds = 0;
@@ -161,6 +168,8 @@ static void Parms(void)
    soundfn[0] = 0;
    tune = 100000000UL;
    ifwidth = 0UL;
+   firw = 0.0f;
+   firl = 16UL;
    for (;;) {
       osi_NextArg(s, 1001ul);
       if (s[0U]==0) break;
@@ -196,11 +205,11 @@ static void Parms(void)
             fix(s, 1001ul, &n, &fr, &ok0);
             if (ok0) {
                if (fr>2000.0f && fr<=4.294967295E+9f) {
-                  tune = (uint32_t)X2C_TRUNCC(fr+0.5f,0UL,
+                  tune = (unsigned long)X2C_TRUNCC(fr+0.5f,0UL,
                 X2C_max_longcard);
                }
                else if (fr>1.0f && fr<=4294.0f) {
-                  tune = (uint32_t)X2C_TRUNCC(fr*1.E+6f+0.5f,0UL,
+                  tune = (unsigned long)X2C_TRUNCC(fr*1.E+6f+0.5f,0UL,
                 X2C_max_longcard);
                }
                else Usage(" -f <mhz> or -f <hz>", 21ul);
@@ -212,7 +221,7 @@ static void Parms(void)
             if (aprsstr_StrToCard(s, 1001ul, &m) && m<256UL) {
                osi_NextArg(s, 1001ul);
                if (aprsstr_StrToInt(s, 1001ul, &ni)) {
-                  stickparm[m].val = (uint32_t)ni; /* stick parameter */
+                  stickparm[m].val = (unsigned long)ni; /* stick parameter */
                   stickparm[m].ok0 = 1;
                }
                else Usage(" -p <cmd> <value>", 18ul);
@@ -234,14 +243,32 @@ static void Parms(void)
                Usage(" -w <khz> (3..192)", 19ul);
             }
          }
+         else if (s[1U]=='L') {
+            /* fir len */
+            osi_NextArg(s, 1001ul);
+            if ((!aprsstr_StrToCard(s, 1001ul,
+                &firl) || firl>1024UL) || firl<4UL) {
+               Usage(" -L <n> (4..1024)", 18ul);
+            }
+         }
+         else if (s[1U]=='F') {
+            /* fir width */
+            osi_NextArg(s, 1001ul);
+            n = 0UL;
+            fix(s, 1001ul, &n, &firw, &ok0);
+            if (!ok0) Usage("-W <Hz>", 8ul);
+         }
          else if (s[1U]=='v') verb = 1;
          else if (s[1U]=='h') {
             osi_WrStrLn("Stereo UKW Radio from rtl_tcp (8 bit IQ via tcpip to\
  2 channel 16 bit pcm file/pipe ", 85ul);
             osi_WrStrLn(" -a <khz>       max afc <kHz> (50) or 0 for off",
                 48ul);
+            osi_WrStrLn(" -F <Hz>        additional FIR if-filter bandwidth H\
+z (0)", 58ul);
             osi_WrStrLn(" -f <freq>      tune to MHz or Hz", 34ul);
             osi_WrStrLn(" -h             help", 21ul);
+            osi_WrStrLn(" -L <n>         FIR len 4..1024 (16)", 37ul);
             osi_WrStrLn(" -m             force mono", 27ul);
             osi_WrStrLn(" -p <cmd> <value> send rtl_tcp parameter, ppm, tuner\
 gain ... -p 5 <ppm>", 72ul);
@@ -267,7 +294,7 @@ und stream/pipe with WAV-header", 84ul);
 } /* end Parms() */
 
 
-static void showrssi(char s[], uint32_t s_len)
+static void showrssi(char s[], unsigned long s_len)
 {
    char ss[31];
    aprsstr_FixToStr((float)tune*1.E-6f+0.005f, 3UL, ss, 31ul);
@@ -341,17 +368,17 @@ static float sint;
 
 static char nrzi;
 
-static uint32_t bitc;
+static unsigned long bitc;
 
-static uint32_t samec;
+static unsigned long samec;
 
-static uint32_t synoffset;
+static unsigned long synoffset;
 
-static uint32_t countrycode;
+static unsigned long countrycode;
 
-static uint32_t textAB;
+static unsigned long textAB;
 
-static uint32_t maxlen;
+static unsigned long maxlen;
 
 static char bitb[104];
 
@@ -364,7 +391,7 @@ static MSG radiotext;
 static char progname[8];
 
 
-static void progtyp(uint32_t n, char s[], uint32_t s_len)
+static void progtyp(unsigned long n, char s[], unsigned long s_len)
 {
    char h[32];
    switch (n) {
@@ -469,13 +496,13 @@ static void progtyp(uint32_t n, char s[], uint32_t s_len)
 } /* end progtyp() */
 
 
-static uint32_t getbits(const char b[], uint32_t b_len,
-                uint32_t offset, uint32_t len)
+static unsigned long getbits(const char b[], unsigned long b_len,
+                unsigned long offset, unsigned long len)
 {
-   uint32_t v;
+   unsigned long v;
    v = 0UL;
    while (len>0UL) {
-      v += v+(uint32_t)b[offset%((b_len-1)+1UL)];
+      v += v+(unsigned long)b[offset%((b_len-1)+1UL)];
       ++offset;
       --len;
    }
@@ -483,7 +510,7 @@ static uint32_t getbits(const char b[], uint32_t b_len,
 } /* end getbits() */
 
 
-static char chkchr(uint32_t n)
+static char chkchr(unsigned long n)
 /* Ouml 215, auml 145 */
 /* VAR h:ARRAY[0..10] OF CHAR; */
 {
@@ -530,14 +557,14 @@ BEGIN
   Werr(" ");
 END wrblk;
 */
-static uint32_t radio_POLY = 0x5B9UL;
+static unsigned long radio_POLY = 0x5B9UL;
 
 
-static char crc(const char b[], uint32_t b_len,
-                uint32_t offset, uint32_t xor)
+static char crc(const char b[], unsigned long b_len, unsigned long offset,
+                unsigned long xor)
 {
-   uint32_t c;
-   uint32_t i;
+   unsigned long c;
+   unsigned long i;
    c = 0UL;
    for (i = 0UL; i<=25UL; i++) {
       c = X2C_LSH(c,32,1);
@@ -552,26 +579,26 @@ static char crc(const char b[], uint32_t b_len,
 } /* end crc() */
 
 
-static void trailblanks(char s[], uint32_t s_len)
+static void trailblanks(char s[], unsigned long s_len)
 {
-   uint32_t i;
+   unsigned long i;
    i = s_len-1;
-   while (i>0UL && (uint8_t)s[i]<=' ') {
+   while (i>0UL && (unsigned char)s[i]<=' ') {
       s[i] = 0;
       --i;
    }
 } /* end trailblanks() */
 
-static uint32_t radio_OFFSETXOR[5] = {252UL,408UL,360UL,436UL,848UL};
+static unsigned long radio_OFFSETXOR[5] = {252UL,408UL,360UL,436UL,848UL};
 
 
 static void frame(void)
 {
-   uint32_t ab;
-   uint32_t dectyp;
-   uint32_t textadr;
-   uint32_t a;
-   uint32_t n;
+   unsigned long ab;
+   unsigned long dectyp;
+   unsigned long textadr;
+   unsigned long a;
+   unsigned long n;
    MSG msg;
    char good[4];
    char pr[256];
@@ -648,8 +675,8 @@ static void frame(void)
    aprsstr_Append(pr, 256ul, ":", 2ul);
    aprsstr_Append(pr, 256ul, progname, 8ul);
    aprsstr_Append(pr, 256ul, " ", 2ul);
-   aprsstr_Append(pr, 256ul, (char *)(tmp = (char)(66UL-textAB),
-                &tmp), 1u/1u);
+   aprsstr_Append(pr, 256ul, (char *)(tmp = (char)(66UL-textAB),&tmp),
+                1u/1u);
    aprsstr_Append(pr, 256ul, ":", 2ul);
    aprsstr_Append(pr, 256ul, radiotext, 64ul);
    aprsstr_Append(pr, 256ul, "\015", 2ul);
@@ -676,7 +703,7 @@ static void frame(void)
 
 static void stobit(char b)
 {
-   bitm[bitc] = bitm[bitc]+((float)(uint32_t)(b==bitb[bitc])-bitm[bitc])
+   bitm[bitc] = bitm[bitc]+((float)(unsigned long)(b==bitb[bitc])-bitm[bitc])
                 *0.1f;
    bitb[bitc] = b;
    if (bitm[bitc]>0.8f) {
@@ -698,7 +725,7 @@ static void decoderds(float v)
 {
    float uq;
    float ui;
-   int32_t m;
+   long m;
    char d;
    ui = lowpass(v*osic_sin((float)rdsclk), 0.0252f, &lpi);
                 /* not phaselinear not good for data */
@@ -773,21 +800,21 @@ static short lim(float v)
    return 0;
 } /* end lim() */
 
-static int32_t sp;
+static long sp;
 
-static int32_t sn;
+static long sn;
 
-static int32_t stdi;
+static long stdi;
 
-static uint32_t pc;
+static unsigned long pc;
 
-static uint32_t downs;
+static unsigned long downs;
 
 static float left;
 
 static float right;
 
-static uint32_t tshow;
+static unsigned long tshow;
 
 static char recon;
 
@@ -844,7 +871,7 @@ static void wwav(void)
 } /* end wwav() */
 
 
-static uint32_t setbw(char mono0)
+static unsigned long setbw(char mono0)
 {
    if (mono0) return 96000UL;
    else return 192000UL;
@@ -855,7 +882,7 @@ static uint32_t setbw(char mono0)
 X2C_STACK_LIMIT(100000l)
 extern int main(int argc, char **argv)
 {
-   int32_t tmp;
+   long tmp;
    X2C_BEGIN(&argc,argv,1,4000000l,8000000l);
    if (sizeof(MSG)!=64) X2C_ASSERT(0);
    sdr_BEGIN();
@@ -869,14 +896,14 @@ extern int main(int argc, char **argv)
    { /* with */
       struct sdr_RX * anonym = &rxx;
       anonym->df = 100UL;
-      anonym->maxafc = (int32_t)afc;
+      anonym->maxafc = (long)afc;
       if (ifwidth) anonym->width = ifwidth*1000UL;
       else anonym->width = setbw(mono);
       anonym->modulation = 'f';
       anonym->samples = (sdr_pAUDIOSAMPLE)sampx;
    }
    stdi = Kbd();
-   if (sdr_startsdr(url, 1001ul, port, 1001ul, 2048000UL, 192000UL, 1, 1UL)) {
+   if (sdr_startsdr(url, 1001ul, port, 1001ul, 2112000UL, 192000UL, 1, 1UL)) {
       sdr_setparm(1UL, tune-100000UL);
       for (pc = 0UL; pc<=255UL; pc++) {
          if (stickparm[pc].ok0) sdr_setparm(pc, stickparm[pc].val);
@@ -894,6 +921,7 @@ extern int main(int argc, char **argv)
       else osi_WerrLn("no sound output", 16ul);
       recon = 1;
       downs = 0UL;
+      sdr_genfir(X2C_DIVR(firw,1.92E+5f), 1.0f, firl, &rxx.fir);
       for (;;) {
          if (osi_RdBin(stdi, (char *) &key, 1u/1u, 1UL)==1L) {
             if (key=='+') {
@@ -910,7 +938,7 @@ extern int main(int argc, char **argv)
             }
             else if (key=='r') rds = !rds;
          }
-         sn = sdr_getsdr(64UL, prx, 17ul);
+         sn = sdr_getsdr(128UL, prx, 2ul);
          if (sn<0L) {
             osi_WerrLn("connection lost", 16ul);
             recon = 1;
