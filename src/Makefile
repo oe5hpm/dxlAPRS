@@ -91,7 +91,7 @@ XLIBS		= $(PICLIBS) \
 		  -L$(EXTLIB) -lXext -lX11
 CFLAGS		+= -march=armv6zk -mfpu=vfp -mfloat-abi=hard -mcpu=arm1176jzf-s
 CFLAGS		+= -Ilib_armv6/libpng15/ -I$(EXTLIB) -I.
-LFLAGS		+=
+LFLAGS		+= -lrt
 else ifeq ($(PLATFORM), armv6)
 OUT		:= $(if $(OUT),$(OUT),../out-armv6/)
 EXTLIB  	= lib_armv6/
@@ -103,7 +103,7 @@ XLIBS		= $(PICLIBS) \
 		  -L$(EXTLIB) -lXext -lX11
 CFLAGS		+= -march=armv6zk -mfpu=vfp -mfloat-abi=hard -mcpu=arm1176jzf-s
 CFLAGS		+= -Ilib_armv6/libpng16/ -I$(EXTLIB) -I.
-LFLAGS		+=
+LFLAGS		+= -lrt
 # ---------------------- armv7hf (bur am335x pp) specific ---------------------
 else ifeq ($(PLATFORM), armv7hf)
 OUT		:= $(if $(OUT),$(OUT),../out-armv7hf/)
