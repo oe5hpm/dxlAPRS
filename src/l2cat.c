@@ -344,7 +344,19 @@ static void Event(char * * atask, l2_pLINK link0, uint8_t event)
    pTASK ntask;
    struct l2_CONNECT connect;
    pTASK ptask;
+   char h[256];
    if (event==l2_eCONNREQ) {
+      if (connectto0[0U]) {
+         /* we are in outgoing connect */
+         if (verb) {
+            l2_GetAdress0(link0, &gadr);
+            CallStr(gadr.adress, 72ul, 0UL, 1, h, 256ul);
+            osi_Werr(" connreq ", 10ul);
+            osi_Werr(h, 256ul);
+            osi_Werr("\012", 2ul);
+         }
+         return;
+      }
       osic_alloc((char * *) &ntask, sizeof(struct TASK));
       if (ntask==0) return;
       memset((char *)ntask,(char)0,sizeof(struct TASK));
