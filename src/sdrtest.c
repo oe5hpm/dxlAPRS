@@ -61,11 +61,15 @@
 
 #define sdrtest_cLABEL "%"
 
+#define sdrtest_cIQ "Q"
+
 #define sdrtest_SCANHEADER 12
 
 #define sdrtest_MAXSCANSLOTS 1400
 
 #define sdrtest_SOUNDBUF 1024
+
+#define sdrtest_DEFAULTFIRLEN 32
 
 enum CODEC {sdrtest_S16, sdrtest_U8, sdrtest_ALAW};
 
@@ -78,7 +82,10 @@ struct FREQTAB {
    uint32_t width;
    uint32_t afc;
    uint32_t agc;
+   uint32_t firwid;
+   uint32_t firlen;
    char modulation;
+   sdr_pFIR fir;
 };
 
 struct STICKPARM;
@@ -197,6 +204,8 @@ static char reconn;
 static char nosquelch;
 
 static char watermark;
+
+static char isfile;
 
 static uint8_t pcm8;
 
@@ -456,9 +465,9 @@ static void wwav(int32_t fd, pUDPTX pu, uint8_t codec, uint32_t ch,
    b[22U] = (char)ch; /* channels */
    b[23U] = 0;
    b[24U] = (char)(hz&255UL); /* samp */
-   b[25U] = (char)(hz/256UL);
-   b[26U] = 0;
-   b[27U] = 0;
+   b[25U] = (char)(hz/256UL&255UL);
+   b[26U] = (char)(hz/65536UL&255UL);
+   b[27U] = (char)(hz/16777216UL);
    b[28U] = (char)(hz*bytes&255UL); /* byte/s */
    b[29U] = (char)((hz*bytes)/256UL&255UL);
    b[30U] = (char)((hz*bytes)/65536UL);
@@ -616,7 +625,7 @@ static void Parms(void)
          else if (s[1U]=='r') {
             /* sampelrate */
             osi_NextArg(s, 1001ul);
-            if (!aprsstr_StrToCard(s, 1001ul, &samphz) || samphz>192000UL) {
+            if (!aprsstr_StrToCard(s, 1001ul, &samphz) || samphz>256000UL) {
                Error(" -r <Hz>", 9ul);
             }
          }
@@ -638,7 +647,13 @@ static void Parms(void)
          else if (s[1U]=='v') verb = 1;
          else if (s[1U]=='k') reconn = 1;
          else if (s[1U]=='e') watermark = 1;
-         else if (s[1U]=='f') f32 = 4UL;
+         else if (s[1U]=='f') {
+            osi_NextArg(s, 1001ul);
+            if ((s[0U]=='i' && s[1U]=='1') && s[2U]=='6') f32 = 2UL;
+            else if ((s[0U]=='f' && s[1U]=='3') && s[2U]=='2') f32 = 4UL;
+            else if (s[0U]=='u' && s[1U]=='8') f32 = 1UL;
+            else Error("-f u8|i16|f32", 14ul);
+         }
          else if (s[1U]=='w') {
             /* maximum wake time */
             osi_NextArg(s, 1001ul);
@@ -713,12 +728,12 @@ le (sdrcfg.txt)", 65ul);
 P, if ip=0.0.0.0 accept any ip", 80ul);
                osi_WrStrLn(" -D <file>           write received tcp IQ Data t\
 o file", 56ul);
-               osi_WrStrLn(" -d <Hz>             downsample output to Hz",
-                45ul);
+               osi_WrStrLn(" -d <Hz>             downsample if to output Hz b\
+y linear interpolation", 72ul);
                osi_WrStrLn(" -e                  enable sending SDR Data hidd\
 en in audio channels (tune/afc/rssi..)", 88ul);
-               osi_WrStrLn(" -f                  iq-data in float32, samplera\
-te 1..3MHz, slow float arithmetic", 83ul);
+               osi_WrStrLn(" -f u8|i16|f32       iq-data format, f32 samplera\
+te 1..3MHz, slow float arithmetic (u8)", 88ul);
                osi_WrStrLn(" -h                  help", 26ul);
                osi_WrStrLn(" -i <Hz>             input sampelrate Hz 1024000 \
 or 2048000..2500000 (2048000)", 79ul);
@@ -742,8 +757,8 @@ s will be arranged from left to right", 87ul);
 es if Converters are used", 75ul);
                osi_WrStrLn(" -p <cmd> <value>    send rtl_tcp parameter, ppm,\
  tunergain ...", 64ul);
-               osi_WrStrLn(" -r <Hz>             output sampelrate Hz for all\
- channels 8000..192000 (16000)", 80ul);
+               osi_WrStrLn(" -r <Hz>             if and default output sampel\
+rate Hz for all channels 8000..256000 (16000)", 95ul);
                osi_WrStrLn("                       for FM min. 25% more than \
 rx IF-width", 61ul);
                osi_WrStrLn(" -s <soundfilename> or <ip:port> 16bit signed n-c\
@@ -789,12 +804,12 @@ be modified any time)", 71ul);
                osi_WrStrLn("  # comment", 12ul);
                osi_WrStrLn("  p <cmd> <value>  rtl_tcp parameter like \'p 5 5\
 0\' ppm, \'p 8 1\' autogain on", 76ul);
-               osi_WrStrLn("  f <mhz> <AFC-range> <squelch%> <lowpass%>  <IF-\
-width>  FM Demodulator", 72ul);
-               osi_WrStrLn("  a <mhz>  0          <squelch%> <lowpass%>  <IF-\
-width>  AM Demodulator", 72ul);
-               osi_WrStrLn("  u <mhz> <IF-shift>   0         <agc speed> <IF-\
-width>  USB Demodulator", 73ul);
+               osi_WrStrLn("  f <mhz> <AFC-range> <squelch%>  <lowpass%>  <IF\
+-width>  FM Demodulator", 73ul);
+               osi_WrStrLn("  a <mhz>  0          <squelch%>  <lowpass%>  <IF\
+-width>  AM Demodulator", 73ul);
+               osi_WrStrLn("  u <mhz> <IF-shift>  <agc limit> <agc speed> <IF\
+-width>  USB Demodulator", 74ul);
                osi_WrStrLn("  l same for LSB", 17ul);
                osi_WrStrLn("    AFC-range in +-kHz, Squelch 0 off, 100 open, \
 70 may do", 59ul);
@@ -806,6 +821,14 @@ ampelrate, 0 is off", 69ul);
 der IIR)", 58ul);
                osi_WrStrLn("    (SSB 8th order IF-IIR), OTHER values with MOR\
 E CPU-load (12000 default)", 76ul);
+               osi_WrStrLn("  q <mhz> <0> <0> <lowpass%> <IF-width> bandwidth\
+ filterd iq output with if rate", 81ul);
+               osi_WrStrLn("  s <from-MHz> <to-MHz> <step-Hz> <sleepsteps> <I\
+F-width> low cpu usage scanner", 80ul);
+               osi_WrStrLn("  improof fast IIR-if-filter with a FIR by <IF-wi\
+dth>+<FIR-width>[,<FIR-lenght>] default length=32, max=2048", 109ul);
+               osi_WrStrLn("    works on AM,FM,IQ-demod  f 145.800 0 80 90 12\
+000+10000,64", 62ul);
                osi_WrStrLn("", 1ul);
                osi_WrStrLn("  example:", 11ul);
                osi_WrStrLn("    p 5 50", 11ul);
@@ -814,8 +837,8 @@ E CPU-load (12000 default)", 76ul);
 audio lowpass, 12khz IF)", 74ul);
                osi_WrStrLn("    f 439.275   0   0  80 20000   (20khz IF, uses\
  more CPU)", 60ul);
-               osi_WrStrLn("    u 439.5001 -700 0  0  600     (USB with 600Hz\
- CW-Filter at 800Hz", 69ul);
+               osi_WrStrLn("    u 432.4825 -700 0  2500 600   (USB with 600Hz\
+ CW-Filter at 800Hz slow agc", 78ul);
                osi_WrStrLn("", 1ul);
                osi_WrStrLn("  will generate 3 channel 16bit PCM stream (up to\
  64 channels with -z or -Z)", 77ul);
@@ -981,6 +1004,8 @@ static void centerfreq(const struct FREQTAB freq[], uint32_t freq_len)
          prx[i] = &rxx[i];
          rxx[i].squelch = squelchs[i].lev!=0.0f;
          rxx[i].modulation = freq[i].modulation;
+         sdr_genfir(X2C_DIVR((float)freq[i].firwid,(float)samphz),
+                1.0f, freq[i].firlen, &rxx[i].fir);
          khz = 1.0;
          if (iqrate>=2048000UL) {
             khz = X2C_DIVL(2.048E+6,(double)iqrate);
@@ -1071,6 +1096,7 @@ static void setconfig(const char b[], uint32_t b_len, int32_t len)
    struct FREQTAB freq[64];
    char mo;
    freqc = 0UL;
+   memset((char *)freq,(char)0,sizeof(struct FREQTAB [64]));
    /*  IF (len>0) & (len<HIGH(b)) & (b[len-1]>=" ") THEN b[len-1]:=0C END; */
    p = 0UL;
    lino = 1UL;
@@ -1100,8 +1126,8 @@ static void setconfig(const char b[], uint32_t b_len, int32_t len)
             }
             i = 0UL;
          }
-         else if (((((mo=='F' || mo=='A') || mo=='U') || mo=='L') || mo=='S')
-                 || mo=='%') {
+         else if ((((((mo=='F' || mo=='A') || mo=='U') || mo=='L')
+                || mo=='S') || mo=='Q') || mo=='%') {
             if (mo=='%') {
                /* channel label */
                ++i;
@@ -1121,10 +1147,11 @@ static void setconfig(const char b[], uint32_t b_len, int32_t len)
                /*scanner */
                freq[freqc].modulation = 'S';
             }
-            else {
+            else if (mo=='Q') {
                /*scanner */
-               freq[freqc].modulation = 'f';
+               freq[freqc].modulation = 'i';
             }
+            else freq[freqc].modulation = 'f';
             ++i;
             skip(li, 256ul, &i);
             fix(li, 256ul, &i, &x, &ok0);
@@ -1156,7 +1183,7 @@ static void setconfig(const char b[], uint32_t b_len, int32_t len)
             skip(li, 256ul, &i);
             card(li, 256ul, &i, &sq, &ok0); /* or scan step hz */
             if (!ok0) sq = 0UL;
-            if (mo!='S' && sq>200UL) sq = 200UL;
+            if (((mo!='S' && mo!='L') && mo!='U') && sq>200UL) sq = 200UL;
             skip(li, 256ul, &i);
             card(li, 256ul, &i, &lpp, &ok0); /* or scan duty */
             if (!ok0) lpp = 0UL;
@@ -1169,6 +1196,27 @@ static void setconfig(const char b[], uint32_t b_len, int32_t len)
                else wid = 12000UL;
             }
             if (wid>1000000UL) wid = 1000000UL;
+            /*fir */
+            if (li[i]=='+') {
+               freq[freqc].firwid = wid; /* "+" makes iir=fir */
+               ++i;
+               if (X2C_CAP(li[i])=='H') {
+                  /* halfband fir */
+                  n = samphz/2UL;
+                  ok0 = 1;
+               }
+               else card(li, 256ul, &i, &n, &ok0);
+               freq[freqc].firlen = 32UL; /* default firlen 32 */
+               if (ok0) {
+                  freq[freqc].firwid = n;
+                  if (li[i]==',') {
+                     ++i;
+                     card(li, 256ul, &i, &n, &ok0);
+                     if (ok0) freq[freqc].firlen = n;
+                  }
+               }
+            }
+            /*fir  */
             if (freqc>63UL) osi_WerrLn("freq table full", 16ul);
             else {
                x = x+offset;
@@ -1196,7 +1244,15 @@ static void setconfig(const char b[], uint32_t b_len, int32_t len)
                else {
                   /*scanner */
                   freq[freqc].afc = (uint32_t)m;
-                  squelchs[freqc].lev = X2C_DIVR((float)sq*32.0f,200.0f);
+                  if (freq[freqc].modulation=='s') {
+                     if (sq>200UL) sq = 200UL;
+                     squelchs[freqc].lev = osic_exp((float)
+                sq*2.30258509E-1f);
+                  }
+                  else {
+                     squelchs[freqc].lev = X2C_DIVR((float)sq*32.0f,
+                200.0f);
+                  }
                   if (freq[freqc].modulation=='s') squelchs[freqc].lp = 0.0f;
                   else {
                      lpp = (lpp*downsamp)/samphz;
@@ -1209,7 +1265,9 @@ static void setconfig(const char b[], uint32_t b_len, int32_t len)
             }
             i = 0UL;
          }
-         else if (mo=='#' || (uint8_t)mo<=' ') i = 0UL;
+         else if (mo=='#' || (uint8_t)mo<=' ') {
+            i = 0UL;
+         }
          else osi_WerrLn("unkown command", 15ul);
          ++lino;
       }
@@ -1419,7 +1477,7 @@ static uint32_t ticker;
 static char recon;
 
 
-static void userio(char all)
+static void userio(char all, char stick)
 {
    int32_t len;
    int32_t fd;
@@ -1446,7 +1504,7 @@ static void userio(char all)
    }
    if (len>0L) {
       setconfig(b, 10001ul, len);
-      if (f32==1UL) setparms(recon);
+      if (stick) setparms(recon);
    }
    if (all) {
       recon = 0;
@@ -1536,12 +1594,16 @@ extern int main(int argc, char **argv)
    G711TAB();
    Parms();
    GenCRC32tab();
+   isfile = port[0U]=='0' && port[1U]==0;
    actch = 0UL;
    ticker = 0UL;
    prx[0U] = 0;
    dsamp = 0UL;
    for (freqc = 0UL; freqc<=63UL; freqc++) {
       rxx[freqc].samples = (sdr_pAUDIOSAMPLE)sampx[freqc];
+      /*    rxx[freqc].qsamples:=ADR(qsampx[freqc]);
+                (* q part of iq "demodulator" *) */
+      rxx[freqc].qsamples = 0;
       rxx[freqc].idx = freqc;
    } /* end for */
    freqc = 0UL;
@@ -1554,7 +1616,7 @@ extern int main(int argc, char **argv)
       if (soundfd>=0L || udpsounds) {
          recon = 1;
          for (;;) {
-            if ((tshow&15UL)==0UL) userio(tshow==0UL);
+            if ((tshow&15UL)==0UL) userio(tshow==0UL, !isfile);
             if (tshow==0UL) tshow = samphz/32UL;
             else --tshow;
             schedule();
@@ -1564,7 +1626,7 @@ extern int main(int argc, char **argv)
                   if (sn==-2L) {
                      osi_WerrLn("impossible sampelrate conversion", 33ul);
                   }
-                  else osi_WerrLn("connection lost", 16ul);
+                  else if (!isfile) osi_WerrLn("connection lost", 16ul);
                }
                recon = 1;
                if (!reconn) break;
@@ -1584,36 +1646,25 @@ extern int main(int argc, char **argv)
                 = dBbyte(rxx[ix].rssi);
                         anonym->scansq[12UL+anonym->scanslot]
                 = sqbyte(rxx[ix].rssi, rxx[ix].sqsum);
-                        /*WrInt(rxx[ix].df, 1); WrStr(" "); */
-                        /*WrFixed(ln((rxx[ix].rssi+1.0)*(1.0/32768.0/32.0))
-                *(8.685889638*0.5), 1,0);WrStr("!"); */
-                        /*
-                        IF rxx[ix].df=50 THEN
-                        WrInt(ORD(sqbyte(rxx[ix].rssi, rxx[ix].sqsum)),4);
-                        WrInt(ORD(dBbyte(rxx[ix].rssi)),4);WrStrLn("");
-                        END;
-                        WrInt(ORD(dBbyte(rxx[ix].rssi)),3);
-                IF scanslot=0 THEN WrStrLn("-------------") END;
-                        */
                         rxx[ix].df = (uint32_t)(int32_t)
                 X2C_TRUNCI((anonym->scanlo+(double)
                 anonym->scanslot*anonym->scanstepc)*0.001,X2C_min_longint,
                 X2C_max_longint);
-                        /*WrInt(rxx[ix].df, 5); */
                         ++anonym->scanslot;
                         if (anonym->scanslot>=anonym->scanslots) {
-                           /*scanslot:=0;
-                REPEAT WrInt(ORD(scandb[scanslot]), 4);
-                INC(scanslot) UNTIL scanslot>=scanslots; WrStrLn(""); */
                            anonym->scanslot = 0UL;
                            sendscan(ix);
                         }
                      }
                      else if (anonym->lev==0.0f || prx[rp]->modulation=='s') {
                         /*- scanner */
-                        squelchs[ix].mutlev = 1.0f;
+                        anonym->mutlev = 1.0f;
+                        if (anonym->lev>rxx[ix].rssi) {
+                           rxx[ix].rssi = anonym->lev;
+                /* ssb manual agc gain limit */
+                        }
                      }
-                     else {
+                     else if (prx[rp]->modulation!='i') {
                         if (anonym->lev<rxx[ix].sqsum) {
                            /* noise */
                            if (anonym->sqsave>0L) {
@@ -1766,7 +1817,7 @@ extern int main(int argc, char **argv)
          osi_Werr(soundfn, 1001ul);
          osi_WerrLn(" sound file open error", 23ul);
       }
-      if (verb) osi_WerrLn("connection lost", 16ul);
+      if (verb && !isfile) osi_WerrLn("connection lost", 16ul);
    }
    else osi_WerrLn("not connected", 14ul);
    X2C_EXIT();

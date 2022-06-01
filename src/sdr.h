@@ -13,8 +13,6 @@
 #include "X2C.h"
 #endif
 
-#define sdr_ZFIRSIZE 256
-
 #define sdr_mSSB "s"
 
 #define sdr_mFM "f"
@@ -22,6 +20,10 @@
 #define sdr_mAM "a"
 
 #define sdr_mSCAN "S"
+
+#define sdr_mIQ "i"
+
+#define sdr_MAXFIR 2048
 
 typedef short sdr_AUDIOSAMPLE[65536];
 
@@ -50,6 +52,22 @@ struct sdr_SSBTAP {
    float il2;
 };
 
+struct sdr_FIR;
+
+
+struct sdr_FIR {
+   float tab[2048];
+   float re[2048];
+   float im[2048];
+   uint32_t halfband;
+   uint32_t wp;
+   uint32_t lastlen;
+   uint32_t len;
+   float fg;
+};
+
+typedef struct sdr_FIR * sdr_pFIR;
+
 struct sdr_RX;
 
 
@@ -64,6 +82,7 @@ struct sdr_RX {
    char afcrun;
    char modulation;
    sdr_pAUDIOSAMPLE samples;
+   sdr_pAUDIOSAMPLE qsamples;
    uint32_t phase;
    uint32_t bfo;
    uint32_t fine;
@@ -84,6 +103,7 @@ struct sdr_RX {
    float ssbfgq;
    float ssbfg;
    float agcspeed;
+   sdr_pFIR fir;
 };
 
 typedef struct sdr_RX * sdr_pRX;
@@ -96,6 +116,8 @@ extern void sdr_setparm(uint32_t, uint32_t);
 
 extern char sdr_startsdr(char [], uint32_t, char [],
                 uint32_t, uint32_t, uint32_t, char, uint32_t);
+
+extern void sdr_genfir(float, float, uint32_t, sdr_pFIR *);
 
 
 extern void sdr_BEGIN(void);
