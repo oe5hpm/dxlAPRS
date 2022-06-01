@@ -246,6 +246,11 @@ OBJ_WATERFALL3 = \
 	$(OUT)fftw.o
 
 OBJ_SDRTX	= $(OUT)sdrtx.o
+OBJ_LORATX	= $(OUT)loratx.o
+OBJ_LORARX	= \
+	$(OUT)lorarx.o \
+	$(OUT)fft.o \
+	$(OUT)complex.o
 TARGETS += \
 	$(OUT)afskmodem \
 	$(OUT)gps2aprs \
@@ -267,9 +272,10 @@ TARGETS += \
 	$(OUT)srtmtag \
 	$(OUT)fmrepeater \
 	$(OUT)waterfall \
+	$(OUT)hostint \
 	$(OUT)sdrtx \
-	$(OUT)waterfall3 \
-	$(OUT)hostint
+	$(OUT)loratx \
+	$(OUT)lorarx
 
 ifneq ($(HOSTOS), Darwin)
 	TARGETS += $(OUT)l2cat
@@ -298,7 +304,9 @@ OBJS = \
 	$(OBJ_SRTMTAG) \
 	$(OBJ_FMREPEATER) \
 	$(OBJ_WATERFALL) \
-	$(OBJ_SDRTX)
+	$(OBJ_SDRTX) \
+    $(OBJ_LORATX) \
+    $(OBJ_LORARX)
 
 # ------------------- target make rules -------------------
 #                     -----------------
@@ -451,6 +459,17 @@ $(OUT)sdrtx:  $(OBJ_SDRTX) $(OBJ_COMMON)
 	@echo [ linking ] $@
 	@$(CC) $(LFLAGS) -o $@ $(OBJ_SDRTX) $(OBJ_COMMON) $(OBJ_LIB) -lm
 	@$(STRIP) $@ $(STRIPFLAGS)
+
+$(OUT)loratx: $(OBJ_LORATX) $(OBJ_COMMON)
+	@echo [ linking ] $@
+	@$(CC) $(LFLAGS) -o $@ $(OBJ_LORATX) $(OBJ_COMMON) $(OBJ_LIB) -lm
+	@$(STRIP) $@ $(STRIPFLAGS)
+
+$(OUT)lorarx: $(OBJ_LORARX) $(OBJ_COMMON)
+	@echo [ linking ] $@
+	@$(CC) $(LFLAGS) -o $@ $(OBJ_LORARX) $(OBJ_COMMON) $(OBJ_LIB) -lm
+	@$(STRIP) $@ $(STRIPFLAGS)
+
 
 %:
 	make prepare
