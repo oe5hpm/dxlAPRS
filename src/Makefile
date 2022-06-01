@@ -245,6 +245,7 @@ OBJ_WATERFALL3 = \
 	$(OUT)pngwritepalette.o \
 	$(OUT)fftw.o
 
+OBJ_SDRTX	= $(OUT)sdrtx.o
 TARGETS += \
 	$(OUT)afskmodem \
 	$(OUT)gps2aprs \
@@ -266,6 +267,7 @@ TARGETS += \
 	$(OUT)srtmtag \
 	$(OUT)fmrepeater \
 	$(OUT)waterfall \
+	$(OUT)sdrtx \
 	$(OUT)waterfall3 \
 	$(OUT)hostint
 
@@ -295,7 +297,8 @@ OBJS = \
 	$(OBJ_CMSLOGIN)	\
 	$(OBJ_SRTMTAG) \
 	$(OBJ_FMREPEATER) \
-	$(OBJ_WATERFALL)
+	$(OBJ_WATERFALL) \
+	$(OBJ_SDRTX)
 
 # ------------------- target make rules -------------------
 #                     -----------------
@@ -442,6 +445,11 @@ $(OUT)hostint: $(OBJ_HOSTINT) $(OBJ_L2COMMON)  $(OBJ_COMMON)
 $(OUT)waterfall3: $(OBJ_WATERFALL3) $(OBJ_COMMON)
 	@echo [ linking ] $@
 	@$(CC) $(LFLAGS) -o $@  $(OBJ_WATERFALL3) $(OBJ_COMMON) -L$(EXTLIB) $(PICLIBS) $(EXTLIB)libfftw3f.a -lfftw3f  -lm
+	@$(STRIP) $@ $(STRIPFLAGS)
+
+$(OUT)sdrtx:  $(OBJ_SDRTX) $(OBJ_COMMON)
+	@echo [ linking ] $@
+	@$(CC) $(LFLAGS) -o $@ $(OBJ_SDRTX) $(OBJ_COMMON) $(OBJ_LIB) -lm
 	@$(STRIP) $@ $(STRIPFLAGS)
 
 %:
