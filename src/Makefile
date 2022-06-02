@@ -117,6 +117,13 @@ XLIBS		= $(PICLIBS) \
 CFLAGS		+= -march=armv7-a -mfpu=neon -mfloat-abi=hard
 CFLAGS		+= -I$(EXTLIB)
 LFLAGS		+=
+# ---------------------- aarch64 (bur am335x pp) specific ---------------------
+else ifeq ($(PLATFORM), aarch64)
+EXTLIB          = lib_aarch64/
+XLIBS           = $(EXTLIB)libpng15.a \
+                  $(EXTLIB)libz.a \
+                  $(EXTLIB)libjpeg.a \
+                  -L$(EXTLIB) -lXext -lX11
 # -------------------------- x86_64 specific -----------------------------------
 else ifeq ($(HOSTARCH), x86_64)
 PICLIBS		:= -lpng -ljpeg
