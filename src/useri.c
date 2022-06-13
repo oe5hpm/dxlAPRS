@@ -109,7 +109,10 @@ maptool_pIMAGE useri_panoimage;
 #define useri_MAPMOVLINE 6
 /* menu line */
 
-#define useri_TOGGMOUSESHOW 11
+#define useri_TIMESTAMP 11
+/* menu line */
+
+#define useri_TOGGMOUSESHOW 12
 /* menu line */
 
 #define useri_TEXTINFOWINID 2
@@ -615,7 +618,7 @@ static uint32_t hintnum;
 
 static char helpscroll[11][41];
 
-static struct CONFIG configs[156];
+static struct CONFIG configs[157];
 
 static char pullmenuwhat;
 
@@ -915,7 +918,7 @@ extern void useri_int2cfg(uint8_t cfg, int32_t v)
 
 extern void useri_clrconfig(void)
 {
-   memset((char *)configs,(char)0,sizeof(struct CONFIG [156]));
+   memset((char *)configs,(char)0,sizeof(struct CONFIG [157]));
 } /* end clrconfig() */
 
 
@@ -978,6 +981,8 @@ static void initconfig1(void)
                 275UL);
    initc(useri_fWINDSYM, "Show Wind Vane", 15ul, useri_cBOOL, "", 1ul, 1,
                 280UL);
+   initc(useri_fTIMESTAMP, "Symbol Timestamp", 17ul, useri_cBOOL, "", 1ul, 0,
+                 282UL);
    initc(useri_fALTMIN, "Altitude Show min m", 20ul, useri_cBLINE, "-10000",
                 7ul, 0, 285UL);
    initc(useri_fMOVESTEP, "Map Move Stepwidth", 19ul, useri_cLINE, "10", 3ul,
@@ -1309,7 +1314,7 @@ static void configdelman(uint8_t cfg, uint32_t num, uint32_t n)
    pCONFLINE po;
    pCONFLINE pl;
    pl = 0;
-   if ((uint32_t)cfg<=155UL) pl = configs[cfg].lines;
+   if ((uint32_t)cfg<=156UL) pl = configs[cfg].lines;
    po = 0;
    while (n>1UL && pl) {
       po = pl;
@@ -8374,7 +8379,7 @@ static void knobcol(maptool_pIMAGE img, int32_t x0, int32_t y00,
 typedef uint32_t sCONFSET[5];
 
 static sCONFSET _cnst2 = {0x00000000UL,0x00000000UL,0x0402FA00UL,
-                0x3C000000UL,0x01E00000UL};
+                0x3C000000UL,0x09E00000UL};
 
 static void configman(uint32_t button, char * keycmd)
 {
@@ -8398,7 +8403,7 @@ static void configman(uint32_t button, char * keycmd)
                 fKMHTIME,fTEMP,fWINDSYM,fRULER,fALTMIN,fCOLMAPTEXT,
                 fCOLOBJTEXT, fCOLMENUTEXT, fCOLMENUBACK, fCOLMARK1,
                 fCOLMARK2} */
-      if (X2C_INL((int32_t)configedit,156,_cnst2)) *keycmd = ' ';
+      if (X2C_INL((int32_t)configedit,157,_cnst2)) *keycmd = ' ';
       if (configs[configedit].typ<useri_cLIST) configedit = 0UL;
    }
    useri_killmenuid(229UL);
@@ -9200,6 +9205,9 @@ static void mapcfg(pMENU m)
    addonoff(m, "    Trackfilter", 16ul, "\274", 2ul, 7855UL,
                 (int32_t)(aprsdecode_lums.fontxsize+2UL),
                 useri_configon(useri_fTRACKFILT));
+   addonoff(m, "    Timestamp", 14ul, "\274", 2ul, 7857UL,
+                (int32_t)(aprsdecode_lums.fontxsize+2UL),
+                useri_configon(useri_fTIMESTAMP));
    addonoff(m, "   |Show Loc of Mouse", 22ul, "\274", 2ul, 7860UL,
                 (int32_t)(aprsdecode_lums.fontxsize+2UL),
                 useri_configon(useri_fMOUSELOC));
@@ -9257,7 +9265,8 @@ static void domap(uint32_t knob, uint32_t sub)
    else if (knob==8UL) configtogg(useri_fARROW);
    else if (knob==9UL) configtogg(useri_fRULER);
    else if (knob==10UL) configtogg(useri_fTRACKFILT);
-   else if (knob==11UL) {
+   else if (knob==11UL) configtogg(useri_fTIMESTAMP);
+   else if (knob==12UL) {
       if (sub==0UL) {
          configtogg(useri_fMOUSELOC);
          if (!useri_configon(useri_fMOUSELOC)) {
@@ -9629,7 +9638,7 @@ static void configeditor(void)
    uint32_t oks;
    cnt = 0UL;
    pl = 0;
-   if (configedit<=155UL) pl = configs[configedit].lines;
+   if (configedit<=156UL) pl = configs[configedit].lines;
    ph = pl;
    while (ph) {
       ++cnt;
@@ -9660,7 +9669,7 @@ static void configeditor(void)
    /*    addline(m, 0C, " ", MINH*72); */
    addline(m, "", 1ul, "\320", 2ul, 7200UL);
    X2C_INCL(m->clampkb,2U,61);
-   m->confidx[2U] = 155U;
+   m->confidx[2U] = 156U;
    keybknob(m, 2UL, 0, 0UL);
    m->oldknob = 2UL;
    more = configs[configedit].typ>=useri_cLIST;
@@ -11094,7 +11103,7 @@ static void kbtomenu(char * ch)
    while ((uint8_t)uml[0U]>0) {
       *ch = uml[0U];
       idx = (uint32_t)pm->confidx[pm->oldknob];
-      if (idx<=155UL) {
+      if (idx<=156UL) {
          { /* with */
             struct CONFIG * anonym = &configs[idx];
             if (anonym->lines==0) icfg((uint8_t)idx, " ", 2ul);
@@ -12298,7 +12307,10 @@ extern void useri_keychar(char ch, char ispasted,
       else startpano();
    }
    else if (aprsdecode_click.cmd=='d') maploadtogg();
-   else if (aprsdecode_click.cmd=='p') domap(11UL, 0UL);
+   else if (aprsdecode_click.cmd=='p') domap(12UL, 0UL);
+   else if (aprsdecode_click.cmd=='T') {
+      domap(11UL, 0UL); /* toggle timestamp */
+   }
 } /* end keychar() */
 
 

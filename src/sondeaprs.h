@@ -30,7 +30,7 @@ struct sondeaprs_SDRBLOCK {
    char valid;
 };
 
-#define sondeaprs_VERSION "sondemod 1.36h"
+#define sondeaprs_VERSION "sondemod 1.37"
 
 #define sondeaprs_minusG "G"
 
@@ -44,6 +44,18 @@ struct sondeaprs_SDRBLOCK {
 
 #define sondeaprs_BEFOREBURST 100000
 
+struct sondeaprs__D0;
+
+
+struct sondeaprs__D0 {
+   uint32_t num;
+   uint32_t level;
+};
+
+typedef struct sondeaprs__D0 sondeaprs_SATSIG[12];
+
+typedef struct sondeaprs__D0 * sondeaprs_pSATSIG;
+
 extern void sondeaprs_senddata(double, double, double,
                 double, double, double, double,
                 double, double, double, double,
@@ -52,7 +64,8 @@ extern void sondeaprs_senddata(double, double, double,
                 uint32_t, uint32_t, uint32_t, uint32_t, double,
                  char [], uint32_t, uint32_t, double,
                 char, char, int32_t, char [], uint32_t,
-                 char [], uint32_t, struct sondeaprs_SDRBLOCK);
+                 char [], uint32_t, sondeaprs_pSATSIG,
+                struct sondeaprs_SDRBLOCK);
 
 extern int32_t sondeaprs_GetIp(char [], uint32_t, uint32_t *,
                 uint32_t *, uint32_t *);
@@ -99,25 +112,25 @@ extern struct aprsstr_POSITION sondeaprs_mypos;
 
 extern float sondeaprs_myalt;
 
-struct sondeaprs__D0;
-
-
-struct sondeaprs__D0 {
-   uint32_t beacontime;
-   uint32_t below;
-};
-
-extern struct sondeaprs__D0 sondeaprs_beacontimes[20];
-
 struct sondeaprs__D1;
 
 
 struct sondeaprs__D1 {
+   uint32_t beacontime;
+   uint32_t below;
+};
+
+extern struct sondeaprs__D1 sondeaprs_beacontimes[20];
+
+struct sondeaprs__D2;
+
+
+struct sondeaprs__D2 {
    struct aprsstr_POSITION leftdown;
    struct aprsstr_POSITION rightup;
 };
 
-extern struct sondeaprs__D1 sondeaprs_rectfence;
+extern struct sondeaprs__D2 sondeaprs_rectfence;
 
 
 extern void sondeaprs_BEGIN(void);

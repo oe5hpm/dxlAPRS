@@ -137,8 +137,8 @@ extern void fft_Transform(struct complex_Complex feld[], uint32_t feld_len,
       if (i==tmp) break;
    } /* end for */
    /*bitrev*/
-   M = (uint32_t)X2C_TRUNCC(0.5f+X2C_DIVR(osic_ln((float)N),
-                osic_ln(2.0f)),0UL,X2C_max_longcard);
+   M = (uint32_t)X2C_TRUNCC(0.5f+osic_ln((float)N)*1.44269504f,0UL,
+                X2C_max_longcard);
    wk = 3.1415926536f;
    idd2 = 1UL;
    if (INVERS) {
@@ -156,11 +156,11 @@ extern void fft_Transform(struct complex_Complex feld[], uint32_t feld_len,
    z = 1UL;
    if (z<=tmp) for (;; z++) {
       id = 2UL*idd2;
-      ck = osic_sin(X2C_DIVR(wk,2.0f));
+      ck = osic_sin(wk*0.5f);
       ck = 2.0f*ck*ck;
       r = -(2.0f*ck);
       sk = osic_sin(wk);
-      wk = X2C_DIVR(wk,2.0f);
+      wk = wk*0.5f;
       cs = 1.0f;
       sn = 0.0f;
       i = 0UL;

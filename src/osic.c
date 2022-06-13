@@ -19,6 +19,9 @@
 #include <assert.h>
 #include <time.h>
 #include <errno.h>
+#include <termios.h>
+#include <netinet/tcp.h>
+#include <sys/socket.h>
 
 #include "osic.h"
 
@@ -317,6 +320,107 @@ char osic_mkdir(char path[], uint32_t fname_len, uint32_t perm)
         return 0;
 }
 
+int osic_setttybaudraw(int32_t fd, uint32_t baud)
+{
+	struct termios options;
+	int rc;
+	unsigned int bd;
+
+	switch (baud) {
+		case 300:
+			bd = B300;
+			break;
+		case 600:
+			bd = B600;
+			break;
+		case 1200:
+			bd = B1200;
+			break;
+		case 2400:
+			bd = B2400;
+			break;
+		case 9600:
+			bd = B9600;
+			break;
+		case 19200:
+			bd = B19200;
+			break;
+		case 38400:
+			bd = B38400;
+			break;
+		case 57600:
+			bd = B57600;
+			break;
+		case 115200:
+			bd = B115200;
+			break;
+		case 230400:
+			bd = B230400;
+			break;
+		case 460800:
+			bd = B460800;
+			break;
+		default:
+			return -1;
+	}
+
+	rc = tcgetattr(fd, &options);
+	if (rc < 0)
+		return rc;
+
+	rc = cfsetispeed(&options, bd);
+	if (rc < 0)
+		return rc;
+
+	rc = cfsetospeed(&options, bd);
+	if (rc < 0)
+		return rc;
+
+	cfmakeraw(&options);
+	options.c_cflag |= (CS8 | CLOCAL | CREAD);
+
+	return tcsetattr(fd, TCSANOW, &options);
+}
+
+int osic_keepalive(int32_t fd, char on, int32_t idle, int32_t intervall, int32_t count)
+{
+	int ion;
+	int rc;
+
+	ion = (int)on;
+	rc = setsockopt(fd,
+			SOL_SOCKET, SO_KEEPALIVE,
+			&ion, sizeof(int));
+	if (rc < 0)
+		return rc;
+
+	if (idle >= 0) {
+		rc = setsockopt(fd,
+				SOL_TCP, TCP_KEEPIDLE,
+				&idle, sizeof(int));
+		if (rc < 0)
+			return rc;
+	}
+
+	if (intervall >= 0) {
+		rc = setsockopt(fd,
+				SOL_TCP, TCP_KEEPINTVL,
+				&intervall, sizeof(int));
+		if (rc < 0)
+			return rc;
+	}
+
+	if (count >= 0) {
+		rc = setsockopt(fd,
+				SOL_TCP, TCP_KEEPCNT,
+				&count, sizeof(int));
+		if (rc < 0)
+			return rc;
+	}
+
+	return 0;
+}
+
 void osic_NextArg(char s[], uint32_t s_len)
 {
 	if (argc_delivered >= osic_argc-1) {
@@ -594,8 +698,27 @@ void *osic_chkptr(void *p)
 	return p;
 }
 
-int32_t osic_setsystime(uint32_t * time0)
+int32_t osic_setsystime(uint32_t *time0)
 {
-	return stime(time0);
+	struct timespec stime;
+
+	stime.tv_nsec = 0;
+	stime.tv_sec = *time0;
+	/*
+	return clock_settime(CLOCK_REALTIME, &stime);
+	*/
+}
+
+void osic_timens(char monotonic, uint32_t *s, uint32_t *ns)
+{
+	struct timespec t;
+
+	if (monotonic)
+		clock_gettime(CLOCK_MONOTONIC, &t);
+	else
+		clock_gettime(CLOCK_REALTIME, &t);
+
+	*s=t.tv_sec;
+	*ns=t.tv_nsec;
 }
 

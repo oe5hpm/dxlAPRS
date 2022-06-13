@@ -33,6 +33,8 @@
 
 
 
+
+
 char sondeaprs_via[100];
 char sondeaprs_destcall[100];
 char sondeaprs_objname[100];
@@ -56,10 +58,10 @@ struct aprsstr_POSITION sondeaprs_mypos;
 float sondeaprs_myalt;
 
 
-struct sondeaprs__D0 sondeaprs_beacontimes[20];
+struct sondeaprs__D1 sondeaprs_beacontimes[20];
 
 
-struct sondeaprs__D1 sondeaprs_rectfence;
+struct sondeaprs__D2 sondeaprs_rectfence;
 /* encode demodulated sonde to aprs axudp by OE5DXL */
 #define sondeaprs_CR "\015"
 
@@ -223,11 +225,15 @@ static void wrcsv(uint32_t sattime, const char typstr[],
                 double dist, double azi, double ele,
                 const char fullid[], uint32_t fullid_len,
                 uint32_t txpower, double vBatt, int32_t txtime,
-                const char user[], uint32_t user_len)
+                sondeaprs_pSATSIG psatsig, const char user[],
+                uint32_t user_len)
 {
    int32_t fd;
+   uint32_t i;
+   char com;
    char h[1000];
    char s[1000];
+   struct sondeaprs__D0 * anonym;
    X2C_PCOPY((void **)&objname,objname_len);
    if (sondeaprs_json) {
       strncpy(s,"{",1000u);
@@ -392,6 +398,27 @@ static void wrcsv(uint32_t sattime, const char typstr[],
       aprsstr_Append(s, 1000ul, ",\"uid\":\"", 9ul);
       aprsstr_Append(s, 1000ul, user, user_len);
       aprsstr_Append(s, 1000ul, "\"", 2ul);
+      if (psatsig) {
+         com = 0;
+         aprsstr_Append(s, 1000ul, ",\"satq\":{", 10ul);
+         for (i = 0UL; i<=11UL; i++) {
+            { /* with */
+               struct sondeaprs__D0 * anonym = &psatsig[i];
+               if (anonym->num>=1UL && anonym->num<=32UL) {
+                  if (com) aprsstr_Append(s, 1000ul, ",", 2ul);
+                  com = 1;
+                  aprsstr_Append(s, 1000ul, "\"n\":", 5ul);
+                  aprsstr_IntToStr((int32_t)anonym->num, 1UL, h, 1000ul);
+                  aprsstr_Append(s, 1000ul, h, 1000ul);
+                  aprsstr_Append(s, 1000ul, ",\"q\":", 6ul);
+                  aprsstr_FixToStr((float)anonym->level*0.2f, 2UL, h,
+                1000ul);
+                  aprsstr_Append(s, 1000ul, h, 1000ul);
+               }
+            }
+         } /* end for */
+         aprsstr_Append(s, 1000ul, "}", 2ul);
+      }
       aprsstr_Append(s, 1000ul, "}\012", 3ul);
       if (jsonfd<0L) {
          jsonfd = osi_OpenNONBLOCK(sondeaprs_csvfilename, 1025ul);
@@ -761,7 +788,7 @@ static void comment0(char buf[], uint32_t buf_len, uint32_t uptime,
                          txtimedone:=TRUE;
                */
                /* insert version */
-               aprsstr_Append(hb, 160ul, " sondemod 1.36h", 16ul);
+               aprsstr_Append(hb, 160ul, " sondemod 1.37", 15ul);
             }
             else if (fb[bol+1L]=='s') {
                /* insert sat count */
@@ -930,6 +957,7 @@ static void sendaprs(uint32_t comp0, uint32_t micessid, char dao,
    char h[255];
    char b[255];
    char raw[361];
+   char monbuf[361];
    int32_t rp;
    uint32_t micdest;
    uint32_t nl;
@@ -943,23 +971,25 @@ static void sendaprs(uint32_t comp0, uint32_t micessid, char dao,
    X2C_PCOPY((void **)&sym,sym_len);
    X2C_PCOPY((void **)&obj,obj_len);
    X2C_PCOPY((void **)&comm,comm_len);
-   b[0] = 0;
-   aprsstr_Append(b, 255ul, mycall, mycall_len);
-   micdest = aprsstr_Length(b, 255ul)+1UL;
-   aprsstr_Append(b, 255ul, ">", 2ul);
-   aprsstr_Append(b, 255ul, destcall, destcall_len);
+   monbuf[0] = 0;
+   aprsstr_Append(monbuf, 361ul, mycall, mycall_len);
+   micdest = aprsstr_Length(monbuf, 361ul)+1UL;
+   aprsstr_Append(monbuf, 361ul, ">", 2ul);
+   aprsstr_Append(monbuf, 361ul, destcall, destcall_len);
    if (micessid>0UL) {
-      aprsstr_Append(b, 255ul, "-", 2ul);
-      aprsstr_Append(b, 255ul, (char *)(tmp = (char)(micessid+48UL),
-                &tmp), 1u/1u);
+      aprsstr_Append(monbuf, 361ul, "-", 2ul);
+      aprsstr_Append(monbuf, 361ul,
+                (char *)(tmp = (char)(micessid+48UL),&tmp), 1u/1u);
    }
    if (via[0UL]) {
-      aprsstr_Append(b, 255ul, ",", 2ul);
-      aprsstr_Append(b, 255ul, via, via_len);
+      aprsstr_Append(monbuf, 361ul, ",", 2ul);
+      aprsstr_Append(monbuf, 361ul, via, via_len);
    }
+   aprsstr_Append(monbuf, 361ul, ":", 2ul);
+   b[0] = 0;
    if (comp0==0UL) {
       /* uncompressed */
-      aprsstr_Append(b, 255ul, ":;", 3ul);
+      aprsstr_Append(b, 255ul, ";", 2ul);
       aprsstr_Assign(h, 255ul, obj, obj_len);
       aprsstr_Append(h, 255ul, "         ", 10ul);
       h[9U] = 0;
@@ -1048,7 +1078,9 @@ static void sendaprs(uint32_t comp0, uint32_t micessid, char dao,
          b[i] = '=';
          ++i;
          n = osi_realcard((float)fabs(alt*3.2808398950131+0.5));
-         if (alt>=0.0) b[i] = num(n/100000UL);
+         if (alt>=0.0) {
+            b[i] = num(n/100000UL);
+         }
          else b[i] = '-';
          ++i;
          b[i] = num(n/10000UL);
@@ -1065,7 +1097,7 @@ static void sendaprs(uint32_t comp0, uint32_t micessid, char dao,
    }
    else if (comp0==1UL) {
       /* compressed */
-      aprsstr_Append(b, 255ul, ":!", 3ul);
+      aprsstr_Append(b, 255ul, "!", 2ul);
       i = aprsstr_Length(b, 255ul);
       b[i] = sym[0UL];
       ++i;
@@ -1149,7 +1181,7 @@ static void sendaprs(uint32_t comp0, uint32_t micessid, char dao,
    }
    else if (comp0==2UL) {
       /* mic-e */
-      aprsstr_Append(b, 255ul, ":`", 3ul);
+      aprsstr_Append(b, 255ul, "`", 2ul);
       i = micdest;
       nl = osi_realcard((float)fabs(long0));
       n = osi_realcard((float)fabs(lat));
@@ -1221,19 +1253,23 @@ static void sendaprs(uint32_t comp0, uint32_t micessid, char dao,
       ++i;
    }
    b[i] = 0;
-   aprsstr_Append(b, 255ul, comm, comm_len);
+   aprsstr_Append(b, 255ul, comm, comm_len); /* position + measurements */
    comment0(h, 255ul, uptime, goodsats, txpower, hrms, commentcnt, sdr,
                 myazi, myele, mydist);
    aprsstr_Append(b, 255ul, h, 255ul);
+                /* position + measurements + usercomments */
+   /* limit to fit in pr */
+   aprsstr_Append(monbuf, 361ul, b, 255ul);
+                /* pr-calls + position + measurements + usercomments */
    /*  Append(b, CR+LF); */
    if (aprsstr_Length(mycall, mycall_len)>=3UL) {
       if (!sondeaprs_sendmon) {
-         aprsstr_mon2raw(b, 255ul, raw, 361ul, &rp);
+         aprsstr_mon2raw(monbuf, 361ul, raw, 361ul, &rp);
          if (rp>0L) sendudp(raw, 361ul, rp);
       }
       else sendudp(b, 255ul, (int32_t)(aprsstr_Length(b, 255ul)+1UL));
    }
-   if (sondeaprs_verb) osi_WrStrLn(b, 255ul);
+   if (sondeaprs_verb) osi_WrStrLn(monbuf, 361ul);
    X2C_PFREE(mycall);
    X2C_PFREE(destcall);
    X2C_PFREE(via);
@@ -1606,10 +1642,7 @@ static void elevation(double * el, double * c,
    if (r<=0.0) return;
    r = sqrt(r);
    sb = s-b;
-   if (sb!=0.0) {
-      *el = (double)(1.1459155902616E+2f*osic_arctan((float)
-                (X2C_DIVL(r,sb)))-90.0f);
-   }
+   if (sb!=0.0) *el = 1.1459155902616E+2*atan(X2C_DIVL(r,sb))-90.0;
    else *el = 90.0;
 } /* end elevation() */
 
@@ -1635,9 +1668,9 @@ static char infence(double lat, double long0)
 {
    char u;
    char d;
-   struct sondeaprs__D1 * anonym;
+   struct sondeaprs__D2 * anonym;
    { /* with */
-      struct sondeaprs__D1 * anonym = &sondeaprs_rectfence;
+      struct sondeaprs__D2 * anonym = &sondeaprs_rectfence;
       d = lat>(double)anonym->leftdown.lat;
       u = lat<(double)anonym->rightup.lat;
       if (anonym->leftdown.lat<anonym->rightup.lat) d = d && u;
@@ -1665,7 +1698,8 @@ extern void sondeaprs_senddata(double lat, double long0,
                 uint32_t calperc, double hp, char force,
                 char altnoegm, int32_t txtime, char typstr[],
                 uint32_t typstr_len, char fullid[],
-                uint32_t fullid_len, struct sondeaprs_SDRBLOCK sdr)
+                uint32_t fullid_len, sondeaprs_pSATSIG psatsig,
+                struct sondeaprs_SDRBLOCK sdr)
 {
    uint8_t e;
    uint32_t nt;
@@ -1734,8 +1768,8 @@ extern void sondeaprs_senddata(double lat, double long0,
       wrcsv(sattime, typstr, typstr_len, objname, objname_len, lat, long0,
                 alt, speed, dir, clb, altNN, og, mhz, goodsats, uptime, hp,
                 hyg, temp, ozon, otemp, pumpmA, pumpv, sdr, mydist, myazi,
-                myele, fullid, fullid_len, txpower, vBatt, txtime, usercall,
-                usercall_len);
+                myele, fullid, fullid_len, txpower, vBatt, txtime, psatsig,
+                usercall, usercall_len);
    }
    if (aprsstr_Length(usercall, usercall_len)<3UL) {
       osi_WrStrLn("no tx without <mycall>", 23ul);

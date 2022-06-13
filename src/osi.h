@@ -172,6 +172,10 @@ extern int32_t osi_realint(float);
 
 extern uint32_t osi_realcard(float);
 
+extern int32_t osi_setttybaudraw(int32_t, uint32_t);
+
+extern int32_t osi_keepalive(int32_t, char, int32_t, int32_t, int32_t);
+
 
 extern void osi_BEGIN(void);
 

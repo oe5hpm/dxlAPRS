@@ -236,6 +236,18 @@ extern int32_t osi_settime(uint32_t * time0)
 } /* end settime() */
 
 
+extern int32_t osi_keepalive(int32_t fd, char on, int32_t idle, int32_t intervall, int32_t count)
+{
+   return osic_keepalive(fd, on, idle, intervall, count);
+} /* end keepalive() */
+
+
+extern int32_t osi_setttybaudraw(int32_t fd, uint32_t baud)
+{
+   return osic_setttybaudraw(fd, baud);
+} /* end setttybaudraw() */
+
+
 extern void osi_BEGIN(void)
 {
    static int osi_init = 0;

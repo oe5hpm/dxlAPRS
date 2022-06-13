@@ -535,6 +535,8 @@ static char line(uint32_t y1, struct complex_Complex c[],
    float r;
    float min0;
    uint8_t col;
+   int32_t res0;
+   int32_t le;
    int32_t hi;
    uint32_t hist[256];
    /* iq file to complex float */
@@ -547,11 +549,27 @@ static char line(uint32_t y1, struct complex_Complex c[],
    size_t tmp0[1];
    hsize = ((c_len-1)+1UL)/2UL;
    if (i16) {
-      if (osi_RdBin(iqfd, (char *)inbw->Adr, (inbw->Len0*2u)/1u,
-                inbw->Len0*2u)!=(int32_t)(inbw->Len0*2u)) return 0;
+      le = (int32_t)(inbw->Len0*2u);
+      do {
+         res0 = osi_RdBin(iqfd, (char *)inbw->Adr, (inbw->Len0*2u)/1u,
+                (uint32_t)le);
+         if (res0<=0L) return 0;
+         le -= res0;
+      } while (le>0L);
    }
-   else if (osi_RdBin(iqfd, (char *)inb->Adr, (inb->Len0*1u)/1u,
-                inb->Len0*1u)!=(int32_t)(inb->Len0*1u)) return 0;
+   else {
+      /*IF RdBin(iqfd, inbw^, SIZE(inbw^))<>VAL(INTEGER,
+                SIZE(inbw^)) THEN RETURN FALSE END; */
+      le = (int32_t)(inb->Len0*1u);
+      do {
+         res0 = osi_RdBin(iqfd, (char *)inb->Adr, (inb->Len0*1u)/1u,
+                (uint32_t)le);
+         if (res0<=0L) return 0;
+         le -= res0;
+      } while (le>0L);
+   }
+   /*IF RdBin(iqfd, inb^, SIZE(inb^))<>VAL(INTEGER,
+                SIZE(inb^)) THEN RETURN FALSE END; */
    j = 0UL;
    dcre = 0.0f;
    dcim = 0.0f;
@@ -561,11 +579,11 @@ static char line(uint32_t y1, struct complex_Complex c[],
       { /* with */
          struct complex_Complex * anonym = &c[i];
          w = win->Adr[i];
-         if (i16) anonym->Re = (float)(int32_t)inbw->Adr[j];
+         if (i16) anonym->Re = (float)(int32_t)inbw->Adr[j]*3.90625E-3f;
          else anonym->Re = (float)(int32_t)inb->Adr[j];
          dcre = dcre+anonym->Re;
          ++j;
-         if (i16) anonym->Im = (float)(int32_t)inbw->Adr[j];
+         if (i16) anonym->Im = (float)(int32_t)inbw->Adr[j]*3.90625E-3f;
          else anonym->Im = (float)(int32_t)inb->Adr[j];
          dcim = dcim+anonym->Im;
          ++j;

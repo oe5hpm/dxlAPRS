@@ -209,6 +209,7 @@ enum useri_CONFSET {useri_fFIND, useri_fLOGWFN, useri_fLOGDAYS, useri_fLOGFN,
    useri_fMENUSIZEMON, 
    useri_fCOLMAPTEXT, useri_fCOLOBJTEXT, useri_fCOLMENUTEXT,
                 useri_fCOLMENUBACK, useri_fCOLMARK1, useri_fCOLMARK2, 
+   useri_fTIMESTAMP, 
    useri_fEDITLINE};
 
 

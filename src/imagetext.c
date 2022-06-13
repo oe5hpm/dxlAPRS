@@ -2150,6 +2150,14 @@ extern uint32_t imagetext_fontsizey(uint32_t fontsize)
 } /* end fontsizey() */
 
 
+static int32_t lim(int32_t x, int32_t lim0)
+{
+   if (x>lim0) return lim0;
+   if (x<-lim0) return -lim0;
+   return x/16L;
+} /* end lim() */
+
+
 extern void imagetext_writestr(imagetext_pIMAGE image, uint32_t x,
                 uint32_t y, uint32_t fontsize, uint32_t dir,
                 uint32_t contrast, int32_t br, int32_t bg,
@@ -2173,6 +2181,7 @@ extern void imagetext_writestr(imagetext_pIMAGE image, uint32_t x,
    int32_t mr;
    int32_t p;
    int32_t ci;
+   int32_t limlum;
    int32_t lum;
    uint8_t * cg;
    struct imagetext_PIX * anonym;
@@ -2186,6 +2195,7 @@ extern void imagetext_writestr(imagetext_pIMAGE image, uint32_t x,
    else cg = (uint8_t *)imagetext_CHARGEN10;
    i = 0UL;
    lum = 3L*br+5L*bg+2L*bb;
+   limlum = lum/1024L;
    go = contrast==0UL;
    mr = 0L;
    mg = 0L;
@@ -2224,9 +2234,9 @@ extern void imagetext_writestr(imagetext_pIMAGE image, uint32_t x,
                 +ix];
                         if (contrast) {
                            /* background dependent white/black text */
-                           mr += ((int32_t)anonym->r-mr)/16L;
-                           mg += ((int32_t)anonym->g-mg)/16L;
-                           mb += ((int32_t)anonym->b-mb)/16L;
+                           mr += lim((int32_t)anonym->r-mr, limlum);
+                           mg += lim((int32_t)anonym->g-mg, limlum);
+                           mb += lim((int32_t)anonym->b-mb, limlum);
                            if (darken) p = -p;
                            ci = mr+(br*p)/256L;
                            if (ci<0L) ci = 0L;
@@ -2254,16 +2264,19 @@ extern void imagetext_writestr(imagetext_pIMAGE image, uint32_t x,
                }
                if (iy==tmp) break;
             } /* end for */
-            if (go) ++ix;
-            else if (mc>0L) {
-               mr = mr/mc;
-               mg = mg/mc;
-               mb = mb/mc;
-            }
-            go = 1;
+            ++ix;
          } while (ix<charx);
       }
-      ++i;
+      if (go) {
+         ++i;
+      }
+      else if (mc>0L) {
+         /* median background of first char field */
+         mr = mr/mc;
+         mg = mg/mc;
+         mb = mb/mc;
+      }
+      go = 1;
    }
 } /* end writestr() */
 

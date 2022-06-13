@@ -37,6 +37,8 @@
 
 
 
+
+
 int32_t sdr_debfd;
 /* rtl_tcp iq fm demodulator by OE5DXL */
 #define sdr_IQBUF 65536
@@ -59,12 +61,43 @@ int32_t sdr_debfd;
 #define sdr_AFCRSSISPEED 0.9985
 /* afc peak rssi fall speed */
 
+#define sdr_PI 3.1415926535
+
+#define sdr_PI2 6.283185307
+
+#define sdr_IQLEVEL 1.5625E-2
+/* correct iq level on input format */
+
 struct Complex;
 
 
 struct Complex {
    float Re;
    float Im;
+};
+
+struct Complexu8;
+
+
+struct Complexu8 {
+   uint8_t Re;
+   uint8_t Im;
+};
+
+struct Complexi16;
+
+
+struct Complexi16 {
+   short Re;
+   short Im;
+};
+
+struct COMPI;
+
+
+struct COMPI {
+   int32_t r;
+   int32_t i;
 };
 
 static int32_t fd;
@@ -83,8 +116,11 @@ union _0;
 
 
 union _0 {
-   uint8_t u8[65536];
-   float f32[65536];
+   char b[65536];
+   struct Complexu8 u8[32768];
+   struct Complexi16 i16[32768];
+   struct COMPI i32[32768];
+   struct Complex f32[32768];
 };
 
 static union _0 iqbuf;
@@ -97,17 +133,17 @@ static char url[1001];
 
 static char port[11];
 
-static uint32_t sampsum;
-
-static uint32_t sampsize;
-
-static uint32_t reduce;
-
 static uint32_t ddslen;
 
 static uint32_t ddslen4;
 
 static float SSBDDS[2048];
+
+static float onesamp;
+
+static float sampfrac;
+
+static float iqlevel;
 
 static float varbwk;
 
@@ -162,8 +198,7 @@ static void iir512(sdr_pRX rx, uint32_t a, uint32_t b)
    int32_t r1;
    int32_t ddsi;
    int32_t ddsr;
-   int32_t xi;
-   int32_t xr;
+   struct COMPI x;
    struct sdr_TAP * anonym;
    struct sdr_TAP * anonym0;
    struct sdr_TAP * anonym1;
@@ -184,21 +219,19 @@ static void iir512(sdr_pRX rx, uint32_t a, uint32_t b)
    dfc = rx->df+(uint32_t)rx->afckhz;
    i = a;
    do {
-      xr = (int32_t)iqbuf.u8[i]-127L;
-      ++i;
-      xi = (int32_t)iqbuf.u8[i]-127L;
+      x = iqbuf.i32[i];
       ++i;
       ddsr = (int32_t)DDS[ph]; /* mix osz sin */
       ddsi = (int32_t)DDS[(uint32_t)((uint32_t)(ph+ddslen4)&ddslen)];
                 /* mix osz cos */
       ph = (uint32_t)((uint32_t)(ph+dfc)&ddslen); /* drive mix osz */
-      r1 += ((xr*ddsr-xi*ddsi)-r1)-r3>>9; /* mixer + lowpass i */
+      r1 += ((x.r*ddsr-x.i*ddsi)-r1)-r3>>9; /* mixer + lowpass i */
       r2 += r3-r2>>9;
       r3 += r1-r2>>8;
-      i1 += ((xr*ddsi+xi*ddsr)-i1)-i3>>9; /* mixer + lowpass q */
+      i1 += ((x.r*ddsi+x.i*ddsr)-i1)-i3>>9; /* mixer + lowpass q */
       i2 += i3-i2>>9;
       i3 += i1-i2>>8;
-   } while (i<=b);
+   } while (i<b);
    { /* with */
       struct sdr_TAP * anonym1 = &rx->tapre;
       anonym1->uc1 = r1;
@@ -232,8 +265,7 @@ static void iir256(sdr_pRX rx, uint32_t a, uint32_t b)
    int32_t r1;
    int32_t ddsi;
    int32_t ddsr;
-   int32_t xi;
-   int32_t xr;
+   struct COMPI x;
    struct sdr_TAP * anonym;
    struct sdr_TAP * anonym0;
    struct sdr_TAP * anonym1;
@@ -254,21 +286,19 @@ static void iir256(sdr_pRX rx, uint32_t a, uint32_t b)
    dfc = rx->df+(uint32_t)rx->afckhz;
    i = a;
    do {
-      xr = (int32_t)iqbuf.u8[i]-127L;
-      ++i;
-      xi = (int32_t)iqbuf.u8[i]-127L;
+      x = iqbuf.i32[i];
       ++i;
       ddsr = (int32_t)DDS[ph]; /* mix osz sin */
       ddsi = (int32_t)DDS[(uint32_t)((uint32_t)(ph+ddslen4)&ddslen)];
                 /* mix osz cos */
       ph = (uint32_t)((uint32_t)(ph+dfc)&ddslen); /* drive mix osz */
-      r1 += ((xr*ddsr-xi*ddsi)-r1)-r3>>8; /* mixer + lowpass i */
+      r1 += ((x.r*ddsr-x.i*ddsi)-r1)-r3>>8; /* mixer + lowpass i */
       r2 += r3-r2>>8;
       r3 += r1-r2>>7;
-      i1 += ((xr*ddsi+xi*ddsr)-i1)-i3>>8; /* mixer + lowpass q */
+      i1 += ((x.r*ddsi+x.i*ddsr)-i1)-i3>>8; /* mixer + lowpass q */
       i2 += i3-i2>>8;
       i3 += i1-i2>>7;
-   } while (i<=b);
+   } while (i<b);
    { /* with */
       struct sdr_TAP * anonym1 = &rx->tapre;
       anonym1->uc1 = r1;
@@ -302,8 +332,7 @@ static void iir128(sdr_pRX rx, uint32_t a, uint32_t b)
    int32_t r1;
    int32_t ddsi;
    int32_t ddsr;
-   int32_t xi;
-   int32_t xr;
+   struct COMPI x;
    struct sdr_TAP * anonym;
    struct sdr_TAP * anonym0;
    struct sdr_TAP * anonym1;
@@ -324,21 +353,19 @@ static void iir128(sdr_pRX rx, uint32_t a, uint32_t b)
    dfc = rx->df+(uint32_t)rx->afckhz;
    i = a;
    do {
-      xr = (int32_t)iqbuf.u8[i]-127L;
-      ++i;
-      xi = (int32_t)iqbuf.u8[i]-127L;
+      x = iqbuf.i32[i];
       ++i;
       ddsr = (int32_t)DDS[ph]; /* mix osz sin */
       ddsi = (int32_t)DDS[(uint32_t)((uint32_t)(ph+ddslen4)&ddslen)];
                 /* mix osz cos */
       ph = (uint32_t)((uint32_t)(ph+dfc)&ddslen); /* drive mix osz */
-      r1 += ((xr*ddsr-xi*ddsi)-r1)-r3>>7; /* mixer + lowpass i */
+      r1 += ((x.r*ddsr-x.i*ddsi)-r1)-r3>>7; /* mixer + lowpass i */
       r2 += r3-r2>>7;
       r3 += r1-r2>>6;
-      i1 += ((xr*ddsi+xi*ddsr)-i1)-i3>>7; /* mixer + lowpass q */
+      i1 += ((x.r*ddsi+x.i*ddsr)-i1)-i3>>7; /* mixer + lowpass q */
       i2 += i3-i2>>7;
       i3 += i1-i2>>6;
-   } while (i<=b);
+   } while (i<b);
    { /* with */
       struct sdr_TAP * anonym1 = &rx->tapre;
       anonym1->uc1 = r1;
@@ -372,8 +399,7 @@ static void iir64(sdr_pRX rx, uint32_t a, uint32_t b)
    int32_t r1;
    int32_t ddsi;
    int32_t ddsr;
-   int32_t xi;
-   int32_t xr;
+   struct COMPI x;
    struct sdr_TAP * anonym;
    struct sdr_TAP * anonym0;
    struct sdr_TAP * anonym1;
@@ -394,21 +420,19 @@ static void iir64(sdr_pRX rx, uint32_t a, uint32_t b)
    dfc = rx->df+(uint32_t)rx->afckhz;
    i = a;
    do {
-      xr = (int32_t)iqbuf.u8[i]-127L;
-      ++i;
-      xi = (int32_t)iqbuf.u8[i]-127L;
+      x = iqbuf.i32[i];
       ++i;
       ddsr = (int32_t)DDS[ph]; /* mix osz sin */
       ddsi = (int32_t)DDS[(uint32_t)((uint32_t)(ph+ddslen4)&ddslen)];
                 /* mix osz cos */
       ph = (uint32_t)((uint32_t)(ph+dfc)&ddslen); /* drive mix osz */
-      r1 += ((xr*ddsr-xi*ddsi)-r1)-r3>>6; /* mixer + lowpass i */
+      r1 += ((x.r*ddsr-x.i*ddsi)-r1)-r3>>6; /* mixer + lowpass i */
       r2 += r3-r2>>6;
       r3 += r1-r2>>5;
-      i1 += ((xr*ddsi+xi*ddsr)-i1)-i3>>6; /* mixer + lowpass q */
+      i1 += ((x.r*ddsi+x.i*ddsr)-i1)-i3>>6; /* mixer + lowpass q */
       i2 += i3-i2>>6;
       i3 += i1-i2>>5;
-   } while (i<=b);
+   } while (i<b);
    { /* with */
       struct sdr_TAP * anonym1 = &rx->tapre;
       anonym1->uc1 = r1;
@@ -442,8 +466,7 @@ static void iir32(sdr_pRX rx, uint32_t a, uint32_t b)
    int32_t r1;
    int32_t ddsi;
    int32_t ddsr;
-   int32_t xi;
-   int32_t xr;
+   struct COMPI x;
    struct sdr_TAP * anonym;
    struct sdr_TAP * anonym0;
    struct sdr_TAP * anonym1;
@@ -464,21 +487,19 @@ static void iir32(sdr_pRX rx, uint32_t a, uint32_t b)
    dfc = rx->df+(uint32_t)rx->afckhz;
    i = a;
    do {
-      xr = (int32_t)iqbuf.u8[i]-127L;
-      ++i;
-      xi = (int32_t)iqbuf.u8[i]-127L;
+      x = iqbuf.i32[i];
       ++i;
       ddsr = (int32_t)DDS[ph]; /* mix osz sin */
       ddsi = (int32_t)DDS[(uint32_t)((uint32_t)(ph+ddslen4)&ddslen)];
                 /* mix osz cos */
       ph = (uint32_t)((uint32_t)(ph+dfc)&ddslen); /* drive mix osz */
-      r1 += ((xr*ddsr-xi*ddsi)-r1)-r3>>5; /* mixer + lowpass i */
+      r1 += ((x.r*ddsr-x.i*ddsi)-r1)-r3>>5; /* mixer + lowpass i */
       r2 += r3-r2>>5;
       r3 += r1-r2>>4;
-      i1 += ((xr*ddsi+xi*ddsr)-i1)-i3>>5; /* mixer + lowpass q */
+      i1 += ((x.r*ddsi+x.i*ddsr)-i1)-i3>>5; /* mixer + lowpass q */
       i2 += i3-i2>>5;
       i3 += i1-i2>>4;
-   } while (i<=b);
+   } while (i<b);
    { /* with */
       struct sdr_TAP * anonym1 = &rx->tapre;
       anonym1->uc1 = r1;
@@ -512,8 +533,7 @@ static void iir16(sdr_pRX rx, uint32_t a, uint32_t b)
    int32_t r1;
    int32_t ddsi;
    int32_t ddsr;
-   int32_t xi;
-   int32_t xr;
+   struct COMPI x;
    struct sdr_TAP * anonym;
    struct sdr_TAP * anonym0;
    struct sdr_TAP * anonym1;
@@ -534,21 +554,19 @@ static void iir16(sdr_pRX rx, uint32_t a, uint32_t b)
    dfc = rx->df+(uint32_t)rx->afckhz;
    i = a;
    do {
-      xr = (int32_t)iqbuf.u8[i]-127L;
-      ++i;
-      xi = (int32_t)iqbuf.u8[i]-127L;
+      x = iqbuf.i32[i];
       ++i;
       ddsr = (int32_t)DDS[ph]; /* mix osz sin */
       ddsi = (int32_t)DDS[(uint32_t)((uint32_t)(ph+ddslen4)&ddslen)];
                 /* mix osz cos */
       ph = (uint32_t)((uint32_t)(ph+dfc)&ddslen); /* drive mix osz */
-      r1 += ((xr*ddsr-xi*ddsi)-r1)-r3>>4; /* mixer + lowpass i */
+      r1 += ((x.r*ddsr-x.i*ddsi)-r1)-r3>>4; /* mixer + lowpass i */
       r2 += r3-r2>>4;
       r3 += r1-r2>>3;
-      i1 += ((xr*ddsi+xi*ddsr)-i1)-i3>>4; /* mixer + lowpass q */
+      i1 += ((x.r*ddsi+x.i*ddsr)-i1)-i3>>4; /* mixer + lowpass q */
       i2 += i3-i2>>4;
       i3 += i1-i2>>3;
-   } while (i<=b);
+   } while (i<b);
    { /* with */
       struct sdr_TAP * anonym1 = &rx->tapre;
       anonym1->uc1 = r1;
@@ -582,8 +600,7 @@ static void iir8(sdr_pRX rx, uint32_t a, uint32_t b)
    int32_t r1;
    int32_t ddsi;
    int32_t ddsr;
-   int32_t xi;
-   int32_t xr;
+   struct COMPI x;
    struct sdr_TAP * anonym;
    struct sdr_TAP * anonym0;
    struct sdr_TAP * anonym1;
@@ -604,21 +621,19 @@ static void iir8(sdr_pRX rx, uint32_t a, uint32_t b)
    dfc = (uint32_t)((uint32_t)(rx->df+(uint32_t)rx->afckhz)&ddslen);
    i = a;
    do {
-      xr = (int32_t)iqbuf.u8[i]-127L;
-      ++i;
-      xi = (int32_t)iqbuf.u8[i]-127L;
+      x = iqbuf.i32[i];
       ++i;
       ddsr = (int32_t)DDS[ph]; /* mix osz sin */
       ddsi = (int32_t)DDS[(uint32_t)((uint32_t)(ph+ddslen4)&ddslen)];
                 /* mix osz cos */
       ph = (uint32_t)((uint32_t)(ph+dfc)&ddslen); /* drive mix osz */
-      r1 += ((xr*ddsr-xi*ddsi)-r1)-r3>>3; /* mixer + lowpass i */
+      r1 += ((x.r*ddsr-x.i*ddsi)-r1)-r3>>3; /* mixer + lowpass i */
       r2 += r3-r2>>3;
       r3 += r1-r2>>2;
-      i1 += ((xr*ddsi+xi*ddsr)-i1)-i3>>3; /* mixer + lowpass q */
+      i1 += ((x.r*ddsi+x.i*ddsr)-i1)-i3>>3; /* mixer + lowpass q */
       i2 += i3-i2>>3;
       i3 += i1-i2>>2;
-   } while (i<=b);
+   } while (i<b);
    { /* with */
       struct sdr_TAP * anonym1 = &rx->tapre;
       anonym1->uc1 = r1;
@@ -656,7 +671,6 @@ static void iirvar(sdr_pRX rx, uint32_t a, uint32_t b, float bw)
    float r1;
    float xi;
    float xr;
-   /*WrFixed(bw, 5,1);WrStrLn(""); */
    struct sdr_TAP * anonym;
    struct sdr_TAP * anonym0;
    struct sdr_TAP * anonym1;
@@ -678,9 +692,8 @@ static void iirvar(sdr_pRX rx, uint32_t a, uint32_t b, float bw)
    i = a;
    bw2 = bw*2.0f;
    do {
-      xr = (float)iqbuf.u8[i]-127.5f;
-      ++i;
-      xi = (float)iqbuf.u8[i]-127.5f;
+      xr = (float)iqbuf.i32[i].r;
+      xi = (float)iqbuf.i32[i].i;
       ++i;
       ddsr = DDSR[ph]; /* mix osz sin */
       ddsi = DDSR[(uint32_t)((uint32_t)(ph+ddslen4)&ddslen)];
@@ -692,7 +705,7 @@ static void iirvar(sdr_pRX rx, uint32_t a, uint32_t b, float bw)
       i1 = i1+(((xr*ddsi+xi*ddsr)-i1)-i3)*bw; /* mixer + lowpass q */
       i2 = i2+(i3-i2)*bw;
       i3 = i3+(i1-i2)*bw2;
-   } while (i<=b);
+   } while (i<b);
    { /* with */
       struct sdr_TAP * anonym1 = &rx->tapre;
       anonym1->ucr1 = r1;
@@ -728,8 +741,7 @@ static void iirvarf4(sdr_pRX rx, uint32_t a, uint32_t b, float bw)
    float r3;
    float r2;
    float r1;
-   float xi;
-   float xr;
+   struct Complex x;
    struct sdr_TAP * anonym;
    struct sdr_TAP * anonym0;
    struct sdr_TAP * anonym1;
@@ -751,21 +763,19 @@ static void iirvarf4(sdr_pRX rx, uint32_t a, uint32_t b, float bw)
    i = a;
    bw2 = bw*2.0f;
    do {
-      xr = iqbuf.f32[i];
-      ++i;
-      xi = iqbuf.f32[i];
+      x = iqbuf.f32[i];
       ++i;
       ddsr = DDSR[ph]; /* mix osz sin */
       ddsi = DDSR[(uint32_t)((uint32_t)(ph+ddslen4)&ddslen)];
                 /* mix osz cos */
       ph = (uint32_t)((uint32_t)(ph+dfc)&ddslen); /* drive mix osz */
-      r1 = r1+(((xr*ddsr-xi*ddsi)-r1)-r3)*bw; /* mixer + lowpass i */
+      r1 = r1+(((x.Re*ddsr-x.Im*ddsi)-r1)-r3)*bw; /* mixer + lowpass i */
       r2 = r2+(r3-r2)*bw;
       r3 = r3+(r1-r2)*bw2;
-      i1 = i1+(((xr*ddsi+xi*ddsr)-i1)-i3)*bw; /* mixer + lowpass q */
+      i1 = i1+(((x.Re*ddsi+x.Im*ddsr)-i1)-i3)*bw; /* mixer + lowpass q */
       i2 = i2+(i3-i2)*bw;
       i3 = i3+(i1-i2)*bw2;
-   } while (i<=b);
+   } while (i<b);
    { /* with */
       struct sdr_TAP * anonym1 = &rx->tapre;
       anonym1->ucr1 = r1;
@@ -783,47 +793,153 @@ static void iirvarf4(sdr_pRX rx, uint32_t a, uint32_t b, float bw)
    rx->phase = ph;
 } /* end iirvarf4() */
 
+
+static void mkfir(float fg, float gain, uint32_t flen,
+                float fir[], uint32_t fir_len)
+{
+   uint32_t m;
+   uint32_t i;
+   float l;
+   float w;
+   float u;
+   uint32_t tmp;
+   w = 6.283185307f*fg;
+   m = flen/2UL;
+   fir[m] = 1.0f;
+   tmp = flen/2UL;
+   i = 1UL;
+   if (i<=tmp) for (;; i++) {
+      u = (float)i*w;
+      u = X2C_DIVR(osic_sin(u),u);
+      if (m+i<flen) fir[m+i] = u;
+      fir[m-i] = u;
+      if (i==tmp) break;
+   } /* end for */
+   u = X2C_DIVR(2.0f,(float)(flen-1UL));
+   l = 0.0f;
+   tmp = flen-1UL;
+   i = 0UL;
+   if (i<=tmp) for (;; i++) {
+      /* hamming */
+      fir[i] = fir[i]*(0.54f+0.46f*osic_cos(3.1415926535f*((float)
+                i*u-1.0f)));
+      l = l+fir[i];
+      if (i==tmp) break;
+   } /* end for */
+   l = X2C_DIVR(gain,l);
+   tmp = flen-1UL;
+   i = 0UL;
+   if (i<=tmp) for (;; i++) {
+      fir[i] = fir[i]*l; /* gain correction */
+      if (i==tmp) break;
+   } /* end for */
+/*FOR i:=0 TO flen-1 DO WrFixed(fir[i], 4,1); WrStr(" ") END; */
+/*WrStrLn("");WrFixed(fg, 4,1);WrStrLn(""); */
+} /* end mkfir() */
+
+#define sdr_MINTAB 4
+
+#define sdr_MINF 0.001
+
+
+extern void sdr_genfir(float fg, float gain, uint32_t tablen,
+                sdr_pFIR * f)
+{
+   uint32_t i;
+   char on;
+   on = tablen>=4UL && fg>0.001f;
+   if (*f==0) {
+      if (on) osic_alloc((char * *)f, sizeof(struct sdr_FIR));
+   }
+   else if (!on) {
+      osic_free((char * *)f, sizeof(struct sdr_FIR));
+                /* remove filter */
+      *f = 0;
+   }
+   if (*f && ((*f)->lastlen!=tablen || (*f)->fg!=fg)) {
+      /* parameters changed */
+      (*f)->fg = fg;
+      (*f)->lastlen = tablen;
+      i = 2048UL;
+      if (tablen>2048UL) tablen = 2048UL;
+      tablen = ((tablen+3UL)/4UL)*4UL-1UL;
+      (*f)->len = tablen;
+      (*f)->halfband = 0UL;
+      if ((float)fabs(fg-0.5f)<0.001f) {
+         fg = 0.5f;
+         (*f)->halfband = tablen/2UL;
+      }
+      (*f)->wp = 0UL;
+      mkfir(fg*0.5f, gain, tablen, (*f)->tab, 2048ul);
+   }
 /*
-PROCEDURE genfirtab(VAR t:ARRAY OF REAL; fg:REAL);
-VAR i,f,h:CARDINAL;
-    f1, e:REAL;
-BEGIN
-  h:=(HIGH(t)+1) DIV 2; 
-  FOR i:=0 TO h-1 DO t[h+i]:=0.5 END;
-
-  f1:=fg*FLOAT(h);
-  FOR f:=1 TO TRUNC(f1)+1 DO
-    e:=1.0;
-    IF f=TRUNC(f1)+1 THEN e:=f1-FLOAT(TRUNC(f1)) END;
-    FOR i:=0 TO h-1 DO t[i+h]:=t[i+h]+e*cos(pi*FLOAT(i*f)/FLOAT(h)) END;
-  END;
-  FOR i:=0 TO h-1 DO
-    e:=0.54+0.46*cos(pi*(FLOAT(i)/FLOAT(h)));
-    t[i+h]:=t[i+h]*e END;                                         (* hamming window *)
-  FOR i:=0 TO h-1 DO t[h-i-1]:=t[i+h] END;
---FOR i:=0 TO HIGH(t) DO WrFixed(t[i], 2,0); WrStr(" ") END; WrStrLn(""); 
-END genfirtab;
-
-
-
-PROCEDURE fir(rx:pRX; VAR u:Complex);
-VAR i,j:CARDINAL;
-BEGIN
-  WITH rx^ DO
-    i:=ifp;
-    ifre[i]:=u.Re;
-    ifim[i]:=u.Im;
-    u.Re:=0.0;
-    u.Im:=0.0;
-    FOR j:=0 TO HIGH(iftab) DO
-      i:=(i+1) MOD (HIGH(iftab)+1);
-      u.Re:=u.Re + ifre[i]*iftab[j];
-      u.Im:=u.Im + ifim[i]*iftab[j];
-    END;
-    ifp:=(i+1) MOD (HIGH(iftab)+1);
-  END;
-END fir;
+FOR i:=0 TO tablen-1 DO WrFixed(f^.tab[i], 4,1); WrStr(" ") END;
+WrStrLn("");WrFixed(f^.tab[f^.halfband], 4,1); WrStrLn("");
+                WrInt(f^.halfband,1);WrStrLn("=half");
 */
+} /* end genfir() */
+
+
+static void dofir(struct Complex * u, sdr_pFIR fir, char flt)
+{
+   uint32_t j;
+   uint32_t i;
+   float t;
+   struct sdr_FIR * anonym;
+   { /* with */
+      struct sdr_FIR * anonym = fir;
+      anonym->re[anonym->wp] = u->Re;
+      anonym->im[anonym->wp] = u->Im;
+      ++anonym->wp;
+      if (flt) {
+         j = 0UL;
+         if (anonym->halfband>0UL) {
+            i = (anonym->wp+anonym->halfband)%anonym->len;
+            t = anonym->tab[anonym->halfband];
+            u->Re = anonym->re[i]*t;
+            u->Im = anonym->im[i]*t;
+            i = anonym->wp;
+            while (i<anonym->len) {
+               t = anonym->tab[j];
+               u->Re = u->Re+anonym->re[i]*t;
+               u->Im = u->Im+anonym->im[i]*t;
+               j += 2UL;
+               i += 2UL;
+            }
+            i = i%anonym->len;
+            while (i<anonym->wp) {
+               t = anonym->tab[j];
+               u->Re = u->Re+anonym->re[i]*t;
+               u->Im = u->Im+anonym->im[i]*t;
+               j += 2UL;
+               i += 2UL;
+            }
+         }
+         else {
+            u->Re = 0.0f;
+            u->Im = 0.0f;
+            i = anonym->wp;
+            while (i<anonym->len) {
+               t = anonym->tab[j];
+               u->Re = u->Re+anonym->re[i]*t;
+               u->Im = u->Im+anonym->im[i]*t;
+               ++j;
+               ++i;
+            }
+            i = 0UL;
+            while (i<anonym->wp) {
+               t = anonym->tab[j];
+               u->Re = u->Re+anonym->re[i]*t;
+               u->Im = u->Im+anonym->im[i]*t;
+               ++j;
+               ++i;
+            }
+         }
+      }
+      anonym->wp = anonym->wp%anonym->len;
+   }
+} /* end dofir() */
+
 
 static void ssbiir(struct sdr_SSBTAP * tap, float fg, float fgq,
                 float * u)
@@ -905,6 +1021,7 @@ static short getsamp(sdr_pRX rx, char notfirst)
       af = osic_sqrt(lev)*0.01f;
    }
    else {
+      if (rx->fir) dofir(&u, rx->fir, 1);
       /* rssi */
       lev = 1.0f+u.Re*u.Re+u.Im*u.Im;
       l = lev-rx->rssi;
@@ -964,65 +1081,103 @@ static short getsamp(sdr_pRX rx, char notfirst)
    return (short)X2C_TRUNCI(af,-32768,32767);
 } /* end getsamp() */
 
+#define sdr_M 32767.0
+
+
+static void getiq(sdr_pRX rx, short * i, short * q,
+                char dofilt)
+{
+   struct Complex u;
+   u.Re = rx->tapre.ucr2*iqlevel;
+   u.Im = rx->tapim.ucr2*iqlevel;
+   if (rx->fir) dofir(&u, rx->fir, dofilt);
+   if (dofilt) {
+      if (u.Re>32767.0f) u.Re = 32767.0f;
+      else if (u.Re<(-3.2767E+4f)) u.Re = (-3.2767E+4f);
+      if (u.Im>32767.0f) u.Im = 32767.0f;
+      else if (u.Im<(-3.2767E+4f)) u.Im = (-3.2767E+4f);
+      *i = (short)X2C_TRUNCI(u.Re,-32768,32767);
+      *q = (short)X2C_TRUNCI(u.Im,-32768,32767);
+   }
+} /* end getiq() */
+
 #define sdr_FINESTEP 1024
 
 
 extern int32_t sdr_getsdr(uint32_t samps, sdr_pRX rx[],
                 uint32_t rx_len)
 {
-   uint32_t rpos;
-   uint32_t rlen;
+   uint32_t inbytes;
+   uint32_t insamps;
+   uint32_t inwords;
    uint32_t wssb;
    uint32_t ws;
-   uint32_t bs;
-   uint32_t as;
    uint32_t b;
    uint32_t a;
    uint32_t r;
    uint32_t s;
    int32_t res;
    int32_t u;
+   float allsamp;
    struct sdr_RX * anonym;
    struct sdr_RX * anonym0;
    uint32_t tmp;
    if (reconnect && fd<0L) {
-      usleep(1000000UL);
       if (isfile) fd = osi_OpenRead(url, 1001ul);
-      else fd = connecttob(url, port);
+      else {
+         usleep(1000000UL);
+         fd = connecttob(url, port);
+      }
    }
    if (fd>=0L) {
-      sampsum = sampsum&1023UL; /* partial sample reminder of last block */
-      if (samps*(sampsize+1UL)>32768UL) samps = 32768UL/(sampsize+1UL);
-      rlen = ((samps*reduce+sampsum)/1024UL)*bytespersamp;
+      if (samps>32767UL) samps = 32767UL;
+      allsamp = sampfrac+onesamp*(float)samps;
+      insamps = (uint32_t)X2C_TRUNCC(allsamp,0UL,X2C_max_longcard);
+      inwords = insamps*2UL;
+      inbytes = insamps*bytespersamp;
       if (isfile) {
-         rpos = 0UL;
+         a = 0UL;
          do {
-            res = read(fd, (char *) &iqbuf.u8[rpos], rlen-rpos);
+            res = read(fd, (char *) &iqbuf.b[a], inbytes-a);
             if (res<=0L) {
                osic_Close(fd);
                fd = -1L;
                return -1L;
             }
-            rpos += (uint32_t)res;
-         } while (rpos<rlen);
+            a += (uint32_t)res;
+         } while (a<inbytes);
       }
-      else if (readsockb(fd, (char *) &iqbuf, (int32_t)rlen)<0L) {
+      else if (readsockb(fd, (char *) &iqbuf, (int32_t)inbytes)<0L) {
          /* connect lost */
          osic_Close(fd);
          fd = -1L;
          return -1L;
       }
       if (sdr_debfd>=0L) {
-         osi_WrBin(sdr_debfd, (char *) &iqbuf, sizeof(union _0)/1u, rlen);
+         osi_WrBin(sdr_debfd, (char *) &iqbuf, sizeof(union _0)/1u,
+                inbytes);
       }
-      a = sampsum; /* continue from last partial step */
+      if (bytespersamp==2UL) {
+         for (a = insamps-1UL;; a--) {
+            iqbuf.i32[a].r = (int32_t)iqbuf.u8[a].Re-127L;
+            iqbuf.i32[a].i = (int32_t)iqbuf.u8[a].Im-127L;
+            if (a==0UL) break;
+         } /* end for */
+      }
+      else if (bytespersamp==4UL) {
+         for (a = insamps-1UL;; a--) {
+            iqbuf.i32[a].r = (int32_t)iqbuf.i16[a].Re;
+            iqbuf.i32[a].i = (int32_t)iqbuf.i16[a].Im;
+            if (a==0UL) break;
+         } /* end for */
+      }
+      a = 0UL;
       tmp = samps-1UL;
       s = 0UL;
       if (s<=tmp) for (;; s++) {
          r = 0UL;
-         b = a+reduce;
-         as = (a/1024UL)*2UL;
-         bs = (b/1024UL)*2UL-2UL;
+         b = (uint32_t)X2C_TRUNCC(sampfrac+onesamp*(float)(s+1UL),0UL,
+                X2C_max_longcard);
          while (rx[r]) {
             { /* with */
                struct sdr_RX * anonym = rx[r];
@@ -1050,31 +1205,43 @@ extern int32_t sdr_getsdr(uint32_t samps, sdr_pRX rx[],
                   anonym->agcspeed = 0.001f;
                }
                if (bytespersamp==8UL) {
-                  iirvarf4(rx[r], as, bs, (float)anonym->width*varbwk);
+                  iirvarf4(rx[r], a, b, (float)anonym->width*varbwk);
                }
                else {
-                  if (rtlhz<2048000UL) ws = ws*2UL;
-                  if (ws==3000UL) iir512(rx[r], as, bs);
-                  else if (ws==6000UL) iir256(rx[r], as, bs);
-                  else if (ws==12000UL) iir128(rx[r], as, bs);
-                  else if (ws==24000UL) iir64(rx[r], as, bs);
-                  else if (ws==48000UL) iir32(rx[r], as, bs);
-                  else if (ws==96000UL) iir16(rx[r], as, bs);
-                  else if (ws==192000UL) iir8(rx[r], as, bs);
+                  if (rtlhz<2048000UL) {
+                     ws = ws*2UL;
+                  }
+                  if (ws==3000UL) iir512(rx[r], a, b);
+                  else if (ws==6000UL) iir256(rx[r], a, b);
+                  else if (ws==12000UL) iir128(rx[r], a, b);
+                  else if (ws==24000UL) iir64(rx[r], a, b);
+                  else if (ws==48000UL) iir32(rx[r], a, b);
+                  else if (ws==96000UL) iir16(rx[r], a, b);
+                  else if (ws==192000UL) iir8(rx[r], a, b);
+                  else iirvar(rx[r], a, b, (float)ws*6.7934782608696E-7f);
+               }
+               if (anonym->modulation=='i') {
+                  if (anonym->qsamples) {
+                     getiq(rx[r], &anonym->samples[s], &anonym->qsamples[s],
+                1); /* full rate iq */
+                  }
                   else {
-                     iirvar(rx[r], as, bs, (float)ws*6.7934782608696E-7f);
+                     getiq(rx[r], &anonym->samples[s],
+                &anonym->samples[s+1UL], !(s&1)); /* half rate iq */
                   }
                }
-               u = (int32_t)getsamp(rx[r], s>0UL);
-               anonym->samples[s] = (short)u;
-               if (anonym->afcrun) anonym->median = anonym->median+u;
+               else {
+                  u = (int32_t)getsamp(rx[r], s>0UL);
+                  anonym->samples[s] = (short)u;
+                  if (anonym->afcrun) anonym->median = anonym->median+u;
+               }
             }
             ++r;
          }
          a = b;
          if (s==tmp) break;
       } /* end for */
-      sampsum = a;
+      sampfrac = allsamp-(float)insamps;
       /*AFC */
       r = 0UL;
       while (rx[r]) {
@@ -1141,18 +1308,25 @@ extern char sdr_startsdr(char ip[], uint32_t ip_len,
    aprsstr_Assign(port, 11ul, tport, tport_len);
    reconnect = reconn;
    bytespersamp = 2UL;
+   iqlevel = 1.5625E-2f;
+   if (format==2UL) {
+      bytespersamp = 4UL;
+      iqlevel = 6.103515625E-5f;
+   }
    if (inhz>0UL) rtlhz = inhz;
    if (format==4UL) {
       if (rtlhz<1000000UL || rtlhz>3000000UL) return 0;
       bytespersamp = 8UL;
+      iqlevel = 2.0f;
       varbwk = X2C_DIVR(1.3913043478261f,(float)rtlhz);
    }
    else if (rtlhz!=1024000UL && (rtlhz<2048000UL || rtlhz>2500000UL)) {
       return 0;
    }
    if (outhz>0UL) audiohz = outhz;
-   reduce = (1024UL*rtlhz+audiohz/2UL)/audiohz; /* sample reduction * 1024 */
-   sampsize = reduce/1024UL; /* input samples per output sample, trunc */
+   onesamp = X2C_DIVR((float)rtlhz,(float)audiohz);
+                /* sample reduction */
+   sampfrac = 0.0f;
    isfile = port[0U]=='0' && port[1U]==0;
    if (fd<0L) {
       if (isfile) fd = osi_OpenRead(url, 1001ul);

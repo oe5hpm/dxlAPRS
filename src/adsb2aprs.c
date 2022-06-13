@@ -65,6 +65,7 @@ struct FLY {
    float alt;
    float speed;
    float dir;
+   float clb;
    uint32_t speedtime;
    uint32_t postime;
    uint32_t lasttime;
@@ -91,6 +92,8 @@ static uint32_t btime;
 static char mycall[10];
 
 static char symbol[2];
+
+static char comment0[201];
 
 static int32_t udpsock;
 
@@ -206,6 +209,7 @@ static void Parms(void)
    btime = 20UL;
    strncpy(symbol,"/^",2u);
    altcorr = 0.0f;
+   comment0[0] = 0;
    for (;;) {
       osi_NextArg(s, 1001ul);
       if (s[0U]==0) break;
@@ -254,6 +258,7 @@ static void Parms(void)
                Error("-s <symbol>", 12ul);
             }
          }
+         else if (s[1U]=='c') osi_NextArg(comment0, 201ul);
          else if (s[1U]=='u') {
             osi_NextArg(s, 1001ul);
             n = 0UL;
@@ -277,6 +282,7 @@ t beacon", 61ul);
                 48ul);
             osi_WrStrLn(" -b <seconds>        aprs minimum send intervall -b \
 10 (20)", 60ul);
+            osi_WrStrLn(" -c <comment>        append text to beacon", 43ul);
             osi_WrStrLn(" -h                  help", 26ul);
             osi_WrStrLn(" -I <mycall>         Sender of Object Callsign -I OE\
 0AAA", 57ul);
@@ -288,7 +294,7 @@ t beacon", 61ul);
 e udpgate4 or aprsmap as receiver", 86ul);
             osi_WrStrLn(" -v                  verbous", 29ul);
             osi_WrStrLn("example: -t 127.0.0.1:30003 -I YOURCALL-11 -u 127.0.\
-0.1:9002 -k -v", 67ul);
+0.1:9002 -k -v -c 1090MHz", 78ul);
             osi_WrStrLn("before this start \"dump1090 --net\"", 35ul);
             osi_WrStrLn("", 1ul);
             X2C_ABORT();
@@ -348,7 +354,7 @@ static void sendaprs(char dao, uint32_t time0, char mycall0[],
                 char sym[], uint32_t sym_len, char obj[],
                 uint32_t obj_len, double lat, double long0,
                 double alt, double course, double speed,
-                char comm[], uint32_t comm_len)
+                float clb, char comm[], uint32_t comm_len)
 {
    char ds[201];
    char h[201];
@@ -488,7 +494,24 @@ static void sendaprs(char dao, uint32_t time0, char mycall0[],
       ++i;
    }
    b[i] = 0;
-   aprsstr_Append(b, 201ul, comm, comm_len);
+   /*  IF clb<>0.0 THEN */
+   b[i] = 'C';
+   ++i;
+   b[i] = 'l';
+   ++i;
+   b[i] = 'b';
+   ++i;
+   b[i] = '=';
+   ++i;
+   b[i] = 0;
+   aprsstr_FixToStr(clb*4.7625E-3f, 2UL, h, 201ul);
+                /* looks like feet/s * 64 */
+   aprsstr_Append(b, 201ul, h, 201ul);
+   /*  END; */
+   if (comm[0UL]) {
+      aprsstr_Append(b, 201ul, " ", 2ul);
+      aprsstr_Append(b, 201ul, comm, comm_len);
+   }
    if (verb) osi_WrStrLn(b, 201ul);
    aprsstr_mon2raw(b, 201ul, raw, 361ul, &rp);
    rp = udpsend(udpsock, raw, rp, toport, ipnum);
@@ -510,7 +533,7 @@ static void aprs(const struct FLY f)
    sendaprs(1, f.postime, mycall, 10ul, "APLFR1", 7ul, "", 1ul, "/^", 3ul, h,
                  31ul, (double)f.lat, (double)f.long0,
                 (double)f.alt, (double)f.dir,
-                (double)(f.speed*1.852f), "", 1ul);
+                (double)(f.speed*1.852f), f.clb, comment0, 201ul);
 } /* end aprs() */
 
 
@@ -571,8 +594,9 @@ static void store(const CSV csv0)
          aprsstr_Assign(f->name, 21ul, csv0[10U], 21ul);
       }
       else if (msg==4UL) {
-         if (((aprsstr_StrToFix(&f->speed, csv0[12U],
+         if ((((aprsstr_StrToFix(&f->speed, csv0[12U],
                 21ul) && aprsstr_StrToFix(&f->dir, csv0[13U],
+                21ul)) && aprsstr_StrToFix(&f->clb, csv0[16U],
                 21ul)) && f->dir>=0.0f) && f->dir<=360.0f) f->speedtime = t;
       }
       else if (msg==3UL || msg==2UL) {

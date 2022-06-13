@@ -33,13 +33,28 @@
 #include "aprsstr.h"
 #endif
 #include <signal.h>
+#ifndef libsrtm_H_
+#include "libsrtm.h"
+#endif
 
 /* axudp / tcpip  aprs-is gateway and message repeater by OE5DXL */
 #define udpgate4_CALLLEN 7
 
 #define udpgate4_HASHSIZE 65536
 
-#define udpgate4_VERS "udpgate 0.71"
+#define udpgate4_VERS "udpgate 0.74"
+
+#define udpgate4_KEEPALIVE_IDLE_USER 300
+
+#define udpgate4_KEEPALIVE_INTERVALL_U 60
+
+#define udpgate4_KEEPALIVE_COUNT_USER 3
+
+#define udpgate4_KEEPALIVE_IDLE_IS 180
+
+#define udpgate4_KEEPALIVE_INTERVALL_I 30
+
+#define udpgate4_KEEPALIVE_COUNT_IS 2
 
 #define udpgate4_TOCALL "APNL51"
 
@@ -64,6 +79,14 @@
 
 #define udpgate4_OLDMSGRETRY 4
 
+#define udpgate4_DAYSEC 86400
+
+#define udpgate4_PI 3.1415926535898
+
+#define udpgate4_DEGSYM "\260"
+
+#define udpgate4_MAXAFC 1000000
+
 typedef char MONCALL[10];
 
 typedef char FILENAME[1024];
@@ -72,9 +95,19 @@ typedef char FRAMEBUF[512];
 
 typedef char FILTERST[256];
 
+enum RES {udpgate4_resOK, udpgate4_resDUP, udpgate4_resMSG,
+                udpgate4_resQUERY, udpgate4_resUNGATE, udpgate4_resBADPATH,
+                udpgate4_resNOPASS, udpgate4_resLEN, udpgate4_resSRCCAL,
+                udpgate4_resDESTCAL, 
+   udpgate4_resVIACAL, udpgate4_resNCAL, udpgate4_resQAZ, udpgate4_resDELAY,
+                udpgate4_resFILT, udpgate4_resLOG};
+
+
+typedef char SORTBY[4][2];
 /*
       FRAMEBUF=ARRAY[0..256+3+11*10] OF CHAR;
 */
+
 typedef uint32_t CHSET[4];
 
 
@@ -161,7 +194,7 @@ struct TCPSOCK {
    uint32_t connt;
    uint32_t pongtime;
    char slowlink;
-   char valid;
+   char passvalid;
    char pingout; /* ping timeout state */
    char service;
    uint32_t gatepri;
@@ -171,7 +204,7 @@ struct TCPSOCK {
    char vers[21];
    uint32_t wwwst;
    uint32_t reload;
-   char sortby[2];
+   SORTBY sortby;
    struct QWatch qwatch;
    uint32_t txframes;
    uint32_t txbytes;
@@ -248,6 +281,9 @@ enum GATEFILT {udpgate4_gUNGATE, udpgate4_gRFONLY, udpgate4_gNOGATE,
 
 #define udpgate4_SERVERLINKFN "serverlink.txt"
 /* build an URL for a klicked server ip */
+
+#define udpgate4_OBJECTLINKFN "objectlink.txt"
+/* build an URL for a klicked mh object */
 
 #define udpgate4_MHSTEPS 48
 
@@ -337,18 +373,25 @@ struct HEARD {
    MONCALL call;
    uint32_t cntt;
    struct aprsstr_POSITION position;
+   uint32_t dir;
+   int32_t objtimediff;
+   int32_t altitude;
    char sym;
    char symt;
    struct _1 cnt[49];
    char head[41];
    char datatyp;
+   float mhz;
+   float clb;
    float data;
    double sortval; /* sort value inserted depending on sort by */
+   char altfromsrtm;
    char ungate; /* flag set by user to not igate this direct heard */
    uint16_t txd;
    uint8_t quali;
    short level;
    signed char snr;
+   int32_t afc;
    pRAWTEXT rawtext[2]; /* normal / junk raw frame storage */
 };
 
@@ -376,6 +419,14 @@ static uint32_t udpgate4_CRCRESULT = 0x9F0BUL;
 /*      STYLE='<html><head><link href="style.css" rel="stylesheet" type="
                 text/css"'; */
 
+#define udpgate4_TABDIR 0
+
+#define udpgate4_TABVIA 1
+
+#define udpgate4_TABNET 2
+
+#define udpgate4_TABOBJ 3
+
 static char mhperport;
 
 /* mh line for same call but different port */
@@ -385,6 +436,12 @@ static char datafilter;
 static char sighup;
 
 static char rfcallchk;
+
+static char objmhfromtcp;
+
+static char nogatebadvia;
+
+static char altifromsrtm;
 
 static char verb;
 
@@ -400,9 +457,29 @@ static uint32_t systime;
 
 static uint32_t keeptime;
 
+static uint8_t CRCL[256];
+
+static uint8_t CRCH[256];
+
+static uint8_t hashl;
+
+static uint8_t hashh;
+
+static uint8_t hash2;
+
+static uint8_t hash3;
+
 static char ungates[6][11];
 
-static uint32_t timehash[65536];
+struct _2;
+
+
+struct _2 {
+   uint32_t htime;
+   uint16_t hsum;
+};
+
+static struct _2 timehash[65536];
 
 static uint32_t realtime;
 
@@ -456,6 +533,8 @@ static MONCALL servercall;
 
 static struct aprsstr_POSITION home; /* own position */
 
+static float homealt;
+
 static char passwd[6];
 
 static char serverrangefilter[256];
@@ -478,10 +557,10 @@ static int32_t qmaxtime;
 
 static FILENAME gatesfn; /* filename with gateway table */
 
-struct _2;
+struct _3;
 
 
-struct _2 {
+struct _3 {
    char url[256];
    char port[6];
    uint32_t resolvtime;
@@ -489,7 +568,7 @@ struct _2 {
    FILTERST filterst;
 };
 
-static struct _2 gateways[21];
+static struct _3 gateways[21];
 
 static MONCALL rfdestcall;
 
@@ -527,18 +606,21 @@ static uint32_t purgeunacksent;
 
 static uint32_t rfquiet;
 
+static uint32_t heardtimetcp;
+
 static uint32_t heardtimevia;
 
-/*  heardtime, */
-static uint32_t heardtimetcp;
+static uint32_t heardtimeobj;
 
 static uint32_t heardtimew;
 
 static pMESSAGE messages;
 
-static pHEARD heardvia;
+static pHEARD heardobj;
 
 static pHEARD hearddir;
+
+static pHEARD heardvia;
 
 static pHEARD heardtcp;
 
@@ -551,6 +633,8 @@ static uint32_t mhfilelines;
 static FILENAME mhfilename;
 
 static char udp2[100];
+
+static char SORTURL[4][7];
 
 
 static void spintime(void)
@@ -580,6 +664,61 @@ static uint32_t Min(uint32_t a, uint32_t b)
    else return b;
    return 0;
 } /* end Min() */
+
+#define udpgate4_POLINOM 0x8408 
+
+
+static void Gencrctab(void)
+{
+   uint32_t c;
+   uint32_t crc;
+   uint32_t i0;
+   for (c = 0UL; c<=255UL; c++) {
+      crc = 255UL-c;
+      for (i0 = 0UL; i0<=7UL; i0++) {
+         if ((crc&1)) crc = (uint32_t)((uint32_t)(crc>>1)^0x8408UL);
+         else crc = crc>>1;
+      } /* end for */
+      CRCL[c] = (uint8_t)crc;
+      CRCH[c] = (uint8_t)(255UL-(crc>>8));
+   } /* end for */
+} /* end Gencrctab() */
+
+
+static void elevation(float * el, float * c,
+                struct aprsstr_POSITION home0, float homealt0,
+                struct aprsstr_POSITION dist, float distalt)
+{
+   float sb;
+   float r;
+   float s;
+   float b;
+   float a;
+   float z1;
+   float y1;
+   float x1;
+   float z0;
+   float y00;
+   float x0;
+   *el = (-1000.0f);
+   aprspos_wgs84s(home0.lat, home0.long0, homealt0*0.001f, &x0, &y00, &z0);
+   aprspos_wgs84s(dist.lat, dist.long0, distalt*0.001f, &x1, &y1, &z1);
+   a = osic_sqrt(x0*x0+y00*y00+z0*z0);
+   b = osic_sqrt(x1*x1+y1*y1+z1*z1);
+   x1 = x1-x0;
+   y1 = y1-y00;
+   z1 = z1-z0;
+   *c = osic_sqrt(x1*x1+y1*y1+z1*z1);
+   /* halbwinkelsatz */
+   s = (a+b+*c)*0.5f;
+   if (s==0.0f) return;
+   r = X2C_DIVR((s-a)*(s-b)*(s-*c),s);
+   if (r<=0.0f) return;
+   r = osic_sqrt(r);
+   sb = s-b;
+   if (sb!=0.0f) *el = 1.1459155902616E+2f*osic_arctan(X2C_DIVR(r,sb))-90.0f;
+   else *el = 90.0f;
+} /* end elevation() */
 
 
 static void skipblank(const char s[], uint32_t s_len, uint32_t * p)
@@ -711,9 +850,6 @@ static int32_t GetSec(char h[], uint32_t h_len, uint32_t * p,
       GetSec_ret = -1L;
       goto label;
    }
-   /*
-   IO.WrCard(n,10); IO.WrLn;
-   */
    GetSec_ret = 0L;
    label:;
    X2C_PFREE(h);
@@ -762,7 +898,7 @@ static void readurlsfile(const char gatesfn0[], uint32_t gatesfn_len)
    int32_t fd;
    FILENAME h;
    if (verb) osi_WrStrLn("read url-file", 14ul);
-   memset((char *)gateways,(char)0,sizeof(struct _2 [21]));
+   memset((char *)gateways,(char)0,sizeof(struct _3 [21]));
    fd = osi_OpenRead(gatesfn0, gatesfn_len);
    if (fd<0L) {
       strncpy(h,"-g :file <",1024u);
@@ -833,6 +969,14 @@ static void readurlsfile(const char gatesfn0[], uint32_t gatesfn_len)
    } while (!(len<=0L || n>20UL));
    osic_Close(fd);
 } /* end readurlsfile() */
+
+
+static void corrpath(char s[], uint32_t s_len)
+{
+   uint32_t i0;
+   i0 = aprsstr_Length(s, s_len);
+   if (i0>0UL && s[i0-1UL]!='/') aprsstr_Append(s, s_len, "/", 2ul);
+} /* end corrpath() */
 
 static aprsstr_GHOSTSET _cnst = {0x00000000UL,0x00000000UL,0x00000000UL,
                 0x00000000UL,0x00000000UL,0x00000000UL,0x00000000UL,
@@ -920,7 +1064,25 @@ static void parms(void)
             }
             memcpy(ghost,_cnst,36u);
          }
-         else if (lasth=='c') callsrc = 1;
+         else if (lasth=='a') {
+            osi_NextArg(h, 4096ul);
+            if (!aprsstr_StrToFix(&homealt, h, 4096ul)) {
+               Err("-a altitude in m", 17ul);
+            }
+         }
+         else if (lasth=='B') {
+            osi_NextArg(h, 4096ul);
+            if (h[0U]=='+') {
+               aprsstr_Delstr(h, 4096ul, 0UL, 1UL);
+               objmhfromtcp = 1;
+            }
+            i0 = 0UL;
+            if (GetSec(h, 4096ul, &i0, &n)>=0L) heardtimeobj = n*60UL;
+            else Err("-B minutes", 11ul);
+         }
+         else if (lasth=='c') {
+            callsrc = 1;
+         }
          else if (X2C_CAP(lasth)=='S') {
             rfcallchk = lasth=='s';
             osi_NextArg(h, 4096ul);
@@ -960,14 +1122,17 @@ static void parms(void)
             if (GetSec(h, 4096ul, &i0, &n)>=0L) maxusers = n;
             else Err("-m number", 10ul);
          }
+         else if (lasth=='A') {
+            osi_NextArg(h, 4096ul);
+            if (h[0U]==0 || h[0U]=='-') Err("-A directory", 13ul);
+            aprsstr_Assign(libsrtm_srtmdir, 1024ul, h, 4096ul);
+            corrpath(libsrtm_srtmdir, 1024ul);
+         }
          else if (lasth=='D') {
             osi_NextArg(h, 4096ul);
-            aprsstr_Assign(wwwdir, 1024ul, h, 4096ul);
             if (h[0U]==0 || h[0U]=='-') Err("-D directory", 13ul);
-            i0 = aprsstr_Length(wwwdir, 1024ul);
-            if (i0>0UL && wwwdir[i0-1UL]!='/') {
-               aprsstr_Append(wwwdir, 1024ul, "/", 2ul);
-            }
+            aprsstr_Assign(wwwdir, 1024ul, h, 4096ul);
+            corrpath(wwwdir, 1024ul);
          }
          else if (lasth=='d') {
             osi_NextArg(h, 4096ul);
@@ -1087,7 +1252,9 @@ static void parms(void)
          else if (lasth=='w') {
             osi_NextArg(h, 4096ul);
             aprsstr_Assign(wwwbindport, 6ul, h, 4096ul);
-            if (h[0U]==0 || h[0U]=='-') Err("-w port", 8ul);
+            if (h[0U]==0 || h[0U]=='-') {
+               Err("-w port", 8ul);
+            }
          }
          else if (lasth=='f') {
             osi_NextArg(h, 4096ul);
@@ -1165,8 +1332,17 @@ static void parms(void)
          }
          else {
             if (lasth=='h') {
+               osi_WrStrLn("                udpgate 0.74", 29ul);
                osi_WrStrLn(" -0             send no Data (only Messages and a\
 ck) to User with no Filter", 76ul);
+               osi_WrStrLn(" -A <path>      srtm directory path to enable ove\
+rground calculation (-A /usr/srtm/)", 85ul);
+               osi_WrStrLn("                for objects with \"Clb=\" file WW\
+15MGH.DAC will be needed on this path", 85ul);
+               osi_WrStrLn(" -a <meter>     Altitude of Igate for elevation c\
+alulation (overrides value from srtm)", 87ul);
+               osi_WrStrLn(" -B [+]<time>   Minutes show heard Items/Objects,\
+ with \"+\" from AprsIs too (-B +60)", 84ul);
                osi_WrStrLn(" -C <time>      connected (tcp) remember position\
  minutes (Min) (-C 1440)", 74ul);
                osi_WrStrLn(" -c             delete frames with no valid sourc\
@@ -1221,6 +1397,8 @@ are deleted at -U time", 72ul);
 send messages (s) (-j 21600:12)", 81ul);
                osi_WrStrLn("                count=0: message passed thru to d\
 irect heard as ports tx limits allow)", 87ul);
+               osi_WrStrLn(" -K             not Gate frame rf to net if sende\
+r of frame has no call", 72ul);
                osi_WrStrLn(" -k <time>      0 always connect to gateway else \
 connect on demand and hold (0)", 80ul);
                osi_WrStrLn("                (seconds) after last User gone or\
@@ -1231,8 +1409,8 @@ ldest (-L 1000)", 65ul);
 bled all msg to heard gatet", 77ul);
                osi_WrStrLn(" -l <level>:<file> logfile -l 6:/tmp/log.txt",
                 45ul);
-               osi_WrStrLn("                level: 1 logins, 2 +sent frames, \
-6 +fitered frames, 7 +dups", 76ul);
+               osi_WrStrLn("                level: 0 all, 1 dupes, >1 error, \
+status...", 59ul);
                osi_WrStrLn(" -M             same as -R but tnc text format",
                 47ul);
                osi_WrStrLn(" -m <maxconnects> max inbound connects -m 20 (def\
@@ -1312,12 +1490,8 @@ ut", 52ul);
                osi_WrStrLn(" -x <call>      via <call> send messages to rf (-\
 x OE0AAA-10) tx off: -x -", 75ul);
                osi_WrStrLn("                default is server call", 39ul);
-               /*
-                       WrStrLn(" -Y [num][,
-                num]... bad digis fingerprints to insert GHOST* in otherwise false")
-                ;
-                       WrStrLn("                direct heard path");
-               */
+               osi_WrStrLn(" -Y             get missing altitude in MH from S\
+RTM", 53ul);
                osi_WrStrLn("udpgate -v -R 127.0.0.1:9200:9201 -s MYCALL-10 -l\
  7:aprs.log -n 10:beacon.txt -t 14580 -g www.server.org:14580#m/30 -p 12345",
                  125ul);
@@ -1333,7 +1507,9 @@ x OE0AAA-10) tx off: -x -", 75ul);
             else if (lasth=='j') {
                osi_NextArg(h, 4096ul);
                i0 = 0UL;
-               if (GetSec(h, 4096ul, &i0, &n)>=0L) msgsendtime = n;
+               if (GetSec(h, 4096ul, &i0, &n)>=0L) {
+                  msgsendtime = n;
+               }
                else Err("-j seconds[:retries]", 21ul);
                if (h[i0]==':') {
                   ++i0;
@@ -1398,6 +1574,7 @@ x OE0AAA-10) tx off: -x -", 75ul);
                if (GetSec(h, 4096ul, &i0, &n)>=0L) keeptime = n;
                else Err("-k seconds", 11ul);
             }
+            else if (lasth=='K') nogatebadvia = 1;
             else if (lasth=='T') {
                osi_NextArg(h, 4096ul);
                i0 = 0UL;
@@ -1424,15 +1601,7 @@ x OE0AAA-10) tx off: -x -", 75ul);
                }
                else Err("-W kbytes", 10ul);
             }
-            else if (lasth=='Y') {
-               osi_NextArg(h, 4096ul);
-               i0 = 0UL;
-               while (i0<4095UL && h[i0]) {
-                  if (GetSec(h, 4096ul, &i0, &n)>=0L) X2C_INCL(ghost,n,257);
-                  else Err("-Y <num>", 9ul);
-                  if (h[i0]==',') ++i0;
-               }
-            }
+            else if (lasth=='Y') altifromsrtm = 1;
             else if (lasth=='0') datafilter = 1;
             else err = 1;
          }
@@ -1713,13 +1882,13 @@ static void showpip(uint32_t ip, uint32_t port, char s[],
 } /* end showpip() */
 
 
-static void logline(int32_t r, char s[], uint32_t s_len)
+static void logline(uint8_t r, char s[], uint32_t s_len)
 {
    char h[512];
    int32_t fd;
    uint32_t i0;
    X2C_PCOPY((void **)&s,s_len);
-   if (logframename[0U] && logframes+r>1L) {
+   if (logframename[0U] && logframes<=(int32_t)(uint32_t)r) {
       fd = osi_OpenAppend(logframename, 1024ul);
       if (fd<0L) fd = osi_OpenWrite(logframename, 1024ul);
       if (fd>=0L) {
@@ -1795,7 +1964,7 @@ static void writerawlog(const FRAMEBUF b)
 } /* end writerawlog() */
 
 
-static void showframe(int32_t r, pTCPSOCK sp, pUDPSOCK su,
+static void showframe(uint8_t r, pTCPSOCK sp, pUDPSOCK su,
                 const char buf[], uint32_t buf_len,
                 struct aprsstr_POSITION pos)
 {
@@ -1834,8 +2003,8 @@ static void showframe(int32_t r, pTCPSOCK sp, pUDPSOCK su,
    /*
    IO.WrFixed(distance(home,pos), 1, 10); IO.WrStr("km"); IO.WrLn;
    */
-   switch (r) {
-   case 0L:
+   switch ((unsigned)r) {
+   case udpgate4_resOK:
       if (!aprspos_posvalid(pos) || !aprspos_posvalid(home)) {
          strncpy(h,"--->",512u);
       }
@@ -1846,23 +2015,47 @@ static void showframe(int32_t r, pTCPSOCK sp, pUDPSOCK su,
          aprsstr_Append(h, 512ul, ">", 2ul);
       }
       break;
-   case -1L:
-      strncpy(h,"syn:",512u);
+   case udpgate4_resBADPATH:
+      strncpy(h,"pat:",512u);
       break;
-   case -2L:
+   case udpgate4_resNOPASS:
+      strncpy(h,"pas:",512u);
+      break;
+   case udpgate4_resLEN:
       strncpy(h,"len:",512u);
       break;
-   case -3L:
-      strncpy(h,"cal:",512u);
+   case udpgate4_resSRCCAL:
+      strncpy(h,"src:",512u);
       break;
-   case -4L:
+   case udpgate4_resDESTCAL:
+      strncpy(h,"dst:",512u);
+      break;
+   case udpgate4_resVIACAL:
+      strncpy(h,"via:",512u);
+      break;
+   case udpgate4_resNCAL:
+      strncpy(h,"num:",512u);
+      break;
+   case udpgate4_resMSG:
       strncpy(h,"msg:",512u);
       break;
-   case -5L:
+   case udpgate4_resDUP:
       strncpy(h,"dup:",512u);
       break;
-   case -6L:
+   case udpgate4_resUNGATE:
       strncpy(h,"ung:",512u);
+      break;
+   case udpgate4_resDELAY:
+      strncpy(h,"del:",512u);
+      break;
+   case udpgate4_resQAZ:
+      strncpy(h,"qaz:",512u);
+      break;
+   case udpgate4_resFILT:
+      strncpy(h,"flt:",512u);
+      break;
+   case udpgate4_resLOG:
+      strncpy(h,"log:",512u);
       break;
    default:;
       strncpy(h,"   :",512u);
@@ -1984,7 +2177,7 @@ static void showlogout(pTCPSOCK sp)
       }
       aprsstr_Append(h, 256ul, "\012", 2ul);
    }
-   logline(1L, h, 256ul);
+   logline(udpgate4_resLOG, h, 256ul);
 } /* end showlogout() */
 
 
@@ -2287,6 +2480,7 @@ static char symfilt(char dat[], uint32_t dat_len,
    uint32_t i0;
    uint32_t payload;
    uint32_t micedest;
+   char ov;
    char ok0;
    struct aprsstr_POSITION pos;
    int32_t alt;
@@ -2312,6 +2506,7 @@ static char symfilt(char dat[], uint32_t dat_len,
    aprspos_GetPos(&pos, &speed, &course, &alt, &sym, &symt, dat, dat_len,
                 micedest, payload, com, 501ul, &postyp);
    if (symt=='/') {
+      /* primary table */
       i0 = 0UL;
       while (i0<=9UL && (uint8_t)syms[0U][i0]>' ') {
          if (syms[0U][i0]==sym) return 1;
@@ -2319,17 +2514,21 @@ static char symfilt(char dat[], uint32_t dat_len,
       }
    }
    else {
+      /* secondary table */
+      ov = (uint8_t)syms[2U][0U]>' '; /* overlay given */
       if ((uint8_t)syms[1U][0U]>' ') {
+         /* symbol must fit */
          ok0 = 0;
          i0 = 0UL;
          do {
             if (syms[1U][i0]==sym) ok0 = 1;
             ++i0;
-         } while (!(i0>9UL || (uint8_t)syms[1U][i0]<=' '));
+         } while (!((ok0 || i0>9UL) || (uint8_t)syms[1U][i0]<=' '));
+         if (ok0 && !ov) return 1;
       }
       else ok0 = 1;
-      if (ok0) {
-         if ((uint8_t)syms[2U][0U]<=' ') return 1;
+      if (ok0 && ov) {
+         /* check overlay */
          i0 = 0UL;
          do {
             if (syms[2U][i0]==symt) return 1;
@@ -2664,7 +2863,7 @@ static void beaconmacros(char s[], uint32_t s_len)
          }
          else if (s[i0]=='v') {
             /* insert version */
-            aprsstr_Append(ns, 256ul, "udpgate 0.71", 13ul);
+            aprsstr_Append(ns, 256ul, "udpgate 0.74", 13ul);
          }
          else if (s[i0]==':') {
             /* insert file */
@@ -2720,6 +2919,13 @@ static void AppQ(char h[], uint32_t h_len, const char q[],
 } /* end AppQ() */
 
 
+static void GetMyAlt(const struct aprsstr_POSITION pos, float * alt)
+{
+   float res0;
+   *alt = libsrtm_getsrtm(pos, 1UL, &res0);
+} /* end GetMyAlt() */
+
+
 static void Netbeacon(char h[], uint32_t h_len, char qai,
                 char withpath)
 {
@@ -2767,6 +2973,15 @@ static void Netbeacon(char h[], uint32_t h_len, char qai,
          aprspos_GetPos(&home, &vspeed0, &vcourse0, &valt0, &vsym0, &vsymt0,
                 h, h_len, 0UL, j+1UL, h1, 4096ul, &postyp);
                 /* find server position */
+         if (aprspos_posvalid(home) && homealt<=(-1000.0f)) {
+            GetMyAlt(home, &homealt);
+            if ((float)fabs(homealt)>10000.0f) homealt = (-1.E+4f);
+         }
+         if (verb && homealt>(-1000.0f)) {
+            osi_WrStr("get igate altitude from srtm as ", 33ul);
+            osic_WrFixed(homealt, 1L, 1UL);
+            osi_WrStrLn("m", 2ul);
+         }
          if (verb && !aprspos_posvalid(home)) {
             osi_WrStrLn("netbeacon has no valid position", 32ul);
          }
@@ -2932,7 +3147,7 @@ static char SendMsg(pMESSAGE mp, uint32_t torf)
    mp->txport = torf;
    if (verb || logframes>1L) {
       uds = porttosock(torf);
-      showframe(-4L, 0, uds, s, 512ul, poscall0.pos);
+      showframe(udpgate4_resMSG, 0, uds, s, 512ul, poscall0.pos);
    }
    if (mp->acked) {
       if (torf) ++mp->ack2rf;
@@ -3064,14 +3279,49 @@ static void IncHeard(pHEARD ph, char pk, char jnk,
 } /* end IncHeard() */
 
 
+static uint32_t skipobj(const char b[], uint32_t b_len,
+                uint32_t i0, char * del)
+{
+   uint32_t len;
+   len = 0UL;
+   if (b[i0]==';' && (b[i0+10UL]=='*' || b[i0+10UL]=='_')) {
+      /* object */
+      len = 9UL;
+      if (b[i0+10UL]=='_') *del = 1;
+   }
+   else if (b[i0]==')') {
+      /* item */
+      len = 3UL; /* min item len */
+      while ((len<9UL && b[i0+len+1UL]!='!') && b[i0+len+1UL]!='_') ++len;
+      if (b[i0+len+1UL]=='_') *del = 1;
+   }
+   /* not object or item */
+   return len;
+} /* end skipobj() */
+
+
+static uint32_t decb(char c, char * ok0)
+{
+   uint32_t d;
+   d = (uint32_t)(uint8_t)c-48UL;
+   if (d>9UL) *ok0 = 0;
+   return d;
+} /* end decb() */
+
+
 static void Wx(float * data, char * typ0, char b[],
                 uint32_t b_len, uint32_t p)
 {
    int32_t t;
    char sig;
-   if (((b[p]!='/' && b[p]!='@') && b[p]!='!') && b[p]!='=') return;
-   if (b[p]=='/' || b[p]=='@') p += 7UL;
-   ++p;
+   uint32_t o;
+   o = skipobj(b, b_len, p, &sig);
+   if (o==0UL) {
+      if (((b[p]!='/' && b[p]!='@') && b[p]!='!') && b[p]!='=') return;
+      if (b[p]=='/' || b[p]=='@') p += 7UL;
+      ++p;
+   }
+   else p += o+9UL;
    if ((uint8_t)b[p]>='0' && (uint8_t)b[p]<='9') p += 30UL;
    else if ((uint8_t)b[p]>='/') p += 17UL;
    if (b[p]!='t') return;
@@ -3098,11 +3348,14 @@ static void Wx(float * data, char * typ0, char b[],
 
 static void DirectPos(const char b[], uint32_t b_len,
                 struct aprsstr_POSITION * pos, char * sym,
-                char * symt, char * typ0, float * data)
+                char * symt, char * typ0, float * data,
+                float * clb, float * mhz, int32_t * alt,
+                uint32_t * dir, char objpos, uint32_t * objtime)
 {
    uint32_t my;
    uint32_t m;
    uint32_t p;
+   uint32_t vdir;
    struct aprsstr_POSITION posn;
    char ch;
    char symt1;
@@ -3110,10 +3363,18 @@ static void DirectPos(const char b[], uint32_t b_len,
    char postyp;
    MONCALL dc;
    FRAMEBUF com;
+   float sg;
+   float v;
+   int32_t ii;
+   char ok0;
    /* OE0AAA>ABCDEF-2,....:...*/
    /*        ^mice         ^payload*/
+   *clb = 0.0f;
+   *alt = -10000L;
+   *dir = 0UL;
    *typ0 = 'U';
    p = 0UL;
+   *objtime = X2C_max_longcard;
    while (p<b_len-1 && b[p]!='>') ++p;
    m = p+1UL;
    while (p<b_len-1 && b[p]!=':') ++p;
@@ -3124,11 +3385,13 @@ static void DirectPos(const char b[], uint32_t b_len,
       while ((p<=b_len-1 && b[p]) && b[p]!=':') ++p;
       ++p;
    }
-   if (p<b_len-1 && b[p]!=';') {
-      /* objects say wrong pos */
+   if (p<b_len-1 && (objpos || b[p]!=';' && b[p]!=')')) {
+      /* items, objects */
       vspeed = X2C_max_longcard;
-      aprspos_GetPos(&posn, &vspeed, &vcourse, &valt, &sym1, &symt1, b,
-                b_len, m, p, com, 512ul, &postyp);
+      valt = -10000L;
+      vdir = 0UL;
+      aprspos_GetPos(&posn, &vspeed, &vdir, &valt, &sym1, &symt1, b, b_len,
+                m, p, com, 512ul, &postyp);
       dc[0U] = b[m];
       dc[1U] = b[m+1UL];
       dc[2U] = b[m+2UL];
@@ -3137,19 +3400,89 @@ static void DirectPos(const char b[], uint32_t b_len,
       dc[5U] = b[m+5UL];
       dc[6U] = 0;
       aprspos_GetSym(dc, 10ul, &sym1, &symt1);
+      /*-object time */
+      if (b[p]==';' && b[p+17UL]=='h') {
+         /* object has time an is in HMS */
+         ok0 = 1;
+         *objtime = decb(b[p+11UL], &ok0)*36000UL+decb(b[p+12UL],
+                &ok0)*3600UL+decb(b[p+13UL], &ok0)*600UL+decb(b[p+14UL],
+                &ok0)*60UL+decb(b[p+15UL], &ok0)*10UL+decb(b[p+16UL], &ok0);
+         if (!ok0) *objtime = X2C_max_longcard;
+      }
+      /*-object time */
       if (aprspos_posvalid(posn)) {
          *typ0 = 0;
          *pos = posn;
          *sym = sym1;
          *symt = symt1;
+         *alt = valt;
+         if (vspeed<X2C_max_longcard && vspeed>0UL) *dir = vdir;
          if (*sym=='_') Wx(data, typ0, b, b_len, p);
          else if (vspeed<X2C_max_longcard) {
             *typ0 = 'S';
             *data = (float)vspeed*1.852f;
          }
+         if (valt>-1000L) {
+            com[511U] = 0;
+            /*clb */
+            ii = aprsstr_InStr(com, 512ul, "Clb=", 5ul);
+            if (ii>=0L) {
+               ii += 4L;
+               if (com[ii]=='-') {
+                  sg = (-1.0f);
+                  ++ii;
+               }
+               else sg = 1.0f;
+               while ((uint8_t)com[ii]>='0' && (uint8_t)com[ii]<='9') {
+                  *clb =  *clb*10.0f+(float)((uint32_t)(uint8_t)
+                com[ii]-48UL);
+                  ++ii;
+               }
+               *clb =  *clb*sg;
+               if (com[ii]=='.') {
+                  for (;;) {
+                     ++ii;
+                     sg = sg*0.1f;
+                     if ((uint8_t)com[ii]>='0' && (uint8_t)com[ii]<='9') {
+                        *clb = *clb+(float)((uint32_t)(uint8_t)
+                com[ii]-48UL)*sg;
+                     }
+                     else break;
+                  }
+               }
+               if (*clb==0.0f) *clb = 0.0001f;
+            }
+         }
+         /*clb */
+         /*mhz */
+         ii = aprsstr_InStr(com, 512ul, "MHz", 4ul);
+         if (ii>0L) {
+            v = 0.0f;
+            --ii;
+            while ((ii>=0L && (uint8_t)com[ii]>='0') && (uint8_t)
+                com[ii]<='9') {
+               v = (v+(float)((uint32_t)(uint8_t)com[ii]-48UL))*0.1f;
+               --ii;
+            }
+            sg = 1.0f;
+            if (ii>0L && com[ii]=='.') {
+               for (;;) {
+                  --ii;
+                  if ((ii>=0L && (uint8_t)com[ii]>='0') && (uint8_t)
+                com[ii]<='9') {
+                     v = v+(float)((uint32_t)(uint8_t)com[ii]-48UL)
+                *sg;
+                  }
+                  else break;
+                  sg = sg*10.0f;
+               }
+            }
+            if (v>0.0f) *mhz = v;
+         }
       }
       else if (b[p]==':') {
-         /*    ELSIF NOT (b[p] IN CHSET{":","?"}
+         /*mhz */
+         /*  ELSIF NOT (b[p] IN CHSET{":","?"}
                 ) THEN typ:=tJUNK END;
                 (* message bulletin query have no pos but is ok *)  */
          /* msg bulletin query or telemetry */
@@ -3213,7 +3546,8 @@ static void getval(const char s[], uint32_t s_len, uint32_t * i0,
 static void AddHeard(pHEARD * table, uint32_t maxtime, const MONCALL from,
                 uint32_t fromport, const char buf[],
                 uint32_t buf_len, char * ungat,
-                char setungat)
+                char setungat, char withobjpos,
+                char del)
 {
    uint32_t ji;
    uint32_t si;
@@ -3224,6 +3558,7 @@ static void AddHeard(pHEARD * table, uint32_t maxtime, const MONCALL from,
    pHEARD ph;
    pRAWTEXT prh;
    pRAWTEXT pr;
+   uint32_t objtime;
    struct HEARD * anonym;
    po = 0;
    ph = *table;
@@ -3291,7 +3626,8 @@ static void AddHeard(pHEARD * table, uint32_t maxtime, const MONCALL from,
       }
       { /* with */
          struct HEARD * anonym = ph;
-         anonym->mhtime = systime;
+         if (del) anonym->mhtime = 0UL;
+         else anonym->mhtime = systime;
          if (setungat) {
             anonym->ungate = *ungat;
             if (!*ungat && MHcount(ph, maxtime, &j)==0UL) {
@@ -3304,6 +3640,7 @@ static void AddHeard(pHEARD * table, uint32_t maxtime, const MONCALL from,
             anonym->level = -32768;
             anonym->quali = 0U;
             anonym->snr = -128;
+            anonym->afc = X2C_min_longint;
             if (udp2[0U] && udp2[1U]) {
                i0 = 2UL;
                while (i0<99UL && udp2[i0]) {
@@ -3332,6 +3669,10 @@ static void AddHeard(pHEARD * table, uint32_t maxtime, const MONCALL from,
                         anonym->snr = (signed char)res0;
                      }
                      break;
+                  case 'A':
+                     getval(udp2, 100ul, &i0, &res0);
+                     if (labs(res0)<1000000L) anonym->afc = res0;
+                     break;
                   default:;
                      getval(udp2, 100ul, &i0, &res0);
                      break;
@@ -3341,11 +3682,26 @@ static void AddHeard(pHEARD * table, uint32_t maxtime, const MONCALL from,
             /* axudp2 */
             *ungat = ph->ungate;
             DirectPos(buf, buf_len, &anonym->position, &anonym->sym,
-                &anonym->symt, &anonym->datatyp, &anonym->data);
+                &anonym->symt, &anonym->datatyp, &anonym->data, &anonym->clb,
+                 &anonym->mhz, &anonym->altitude, &anonym->dir, withobjpos,
+                &objtime);
+            if (objtime<86400UL) {
+               /* make time diff objet time - system time */
+               anonym->objtimediff = (int32_t)(objtime-realtime%86400UL);
+               if (anonym->objtimediff<-43200L) {
+                  anonym->objtimediff += 86400L;
+               }
+               else if (anonym->objtimediff>43200L) {
+                  anonym->objtimediff -= 86400L;
+               }
+            }
+            else anonym->objtimediff = X2C_max_longint;
             IncHeard(ph, 1, anonym->datatyp=='J', maxtime);
             i0 = 0UL;
-            while ((i0<buf_len-1 && buf[i0]!='>') && buf[i0]) ++i0;
-            ++i0;
+            if (!withobjpos) {
+               while ((i0<buf_len-1 && buf[i0]!='>') && buf[i0]) ++i0;
+               ++i0;
+            }
             j = 0UL;
             while ((((j<40UL && i0<buf_len-1) && buf[i0]!=':') && buf[i0])
                 && !(buf[i0]==',' && buf[i0+1UL]=='q')) {
@@ -3398,6 +3754,43 @@ static void AddHeard(pHEARD * table, uint32_t maxtime, const MONCALL from,
    }
    else *ungat = 0;
 } /* end AddHeard() */
+
+
+static void AddObject(const char buf[], uint32_t buf_len,
+                uint32_t port)
+{
+   uint32_t len;
+   uint32_t j;
+   uint32_t i0;
+   char del;
+   char un;
+   MONCALL ob;
+   if (objmhfromtcp || port>0UL) {
+      i0 = 0UL;
+      del = 0;
+      while (buf[i0]!=':') {
+         /* begin data */
+         if (i0>=buf_len-1 || buf[i0]==0) return;
+         /* not normal data */
+         ++i0;
+      }
+      ++i0;
+      len = skipobj(buf, buf_len, i0, &del);
+      if (len>0UL) {
+         ++i0; /* object name */
+         j = 0UL;
+         do {
+            ob[j] = buf[i0];
+            ++j;
+            ++i0;
+         } while (j<len);
+         while (j>0UL && (uint8_t)ob[j-1UL]<=' ') --j;
+         if (j<=9UL) ob[j] = 0;
+         AddHeard(&heardobj, heardtimeobj, ob, port, buf, buf_len, &un, 0, 1,
+                 del);
+      }
+   }
+} /* end AddObject() */
 
 
 static void delmsg(pMESSAGE md)
@@ -3885,7 +4278,7 @@ static void Ungate(const MONCALL mycall, const char msg[],
          aprsstr_Append(h, 10ul, (char *)(tmp = (char)(n%10UL+48UL),
                 &tmp), 1u/1u);
       }
-      AddHeard(&hearddir, heardtimew, h, 0UL, "", 1ul, &un, 1);
+      AddHeard(&hearddir, heardtimew, h, 0UL, "", 1ul, &un, 1, 0, 0);
    }
    else {
       n = aprsstr_Length(msg, msg_len);
@@ -4059,11 +4452,11 @@ static void Query(MONCALL fromcall, char msg[], uint32_t msg_len,
                  1, path);
    }
    else if (cmd=='S') {
-      Stomsg(servercall, fromcall, *(MSGTEXT *)memcpy(&tmp1,"udpgate 0.71 Msg\
+      Stomsg(servercall, fromcall, *(MSGTEXT *)memcpy(&tmp1,"udpgate 0.74 Msg\
  S&F Relay",27u), *(ACKTEXT *)memcpy(&tmp0,"",1u), 0, 0, 1, path);
    }
    else if (cmd=='v') {
-      Stomsg(servercall, fromcall, *(MSGTEXT *)memcpy(&tmp1,"udpgate 0.71",
+      Stomsg(servercall, fromcall, *(MSGTEXT *)memcpy(&tmp1,"udpgate 0.74",
                 13u), *(ACKTEXT *)memcpy(&tmp0,"",1u), 0, 0, 1, path);
    }
    else if (cmd=='h') {
@@ -4149,11 +4542,11 @@ static void Getmsg(const char b[], uint32_t b_len, uint32_t rxport,
       if (rxport) {
          if ((heardtimew>48UL && dir) && trust) {
             AddHeard(&hearddir, heardtimew, hfrom, rxport, b, b_len, ungate,
-                0);
+                0, 0, 0);
          }
          else if (heardtimevia>48UL) {
             AddHeard(&heardvia, heardtimevia, hfrom, rxport, b, b_len,
-                ungate, 0);
+                ungate, 0, 0, 0);
          }
       }
    }
@@ -4257,7 +4650,7 @@ static void getportname(uint32_t n, char s[], uint32_t s_len)
 {
    pUDPSOCK u;
    uint32_t i0;
-   if (n==0UL) aprsstr_Assign(s, s_len, "TCPIP", 6ul);
+   if (n==0UL) aprsstr_Assign(s, s_len, "TCP", 4ul);
    else {
       u = udpsocks;
       i0 = 1UL;
@@ -4376,46 +4769,117 @@ static void MHtoFile(void)
    osi_Rename(fn, 1024ul, mhfilename, 1024ul);
 } /* end MHtoFile() */
 
-/*
-PROCEDURE finddupe(s-:DUPESTRING):BOOLEAN;
-VAR i, sum:CARDINAL;
-    t:TIME;  
-BEGIN
-  i:=0;
-  sum:=0;  
-  WHILE (i<=HIGH(s)) & (s[i]<>0C) DO INC(sum, ORD(s[i]); INC(i) END;
-                (* make simple hash *)
 
-  sum:=sum MOD (HIGH(dupehashs)+1);
-  t:=dupehashs[sum].time;
-  IF systime>=t+dupetime THEN
-    WITH dupestrings[dupewrite] DO
-      str:=s;
-      time:=systime;
-      next:=dupewrite;
-    END;
-    dupehashs[sum].hash:=dupewrite;
-    dupehashs[sum].time:=systime;
-    dupewrite:=(dupewrite+1) MOD (HIGH(dupestrings)+1);
-  ELSE
-    DEC(i);
-    LOOP
-      IF dupestrings[i]=s THEN RETURN TRUE END;
+static char pathchk(const char s[], uint32_t s_len)
+/* check if transmitter of frame sends its call*/
+{
+   uint32_t lit;
+   uint32_t num;
+   uint32_t ssid;
+   uint32_t calls;
+   uint32_t ps;
+   uint32_t p;
+   char star;
+   char ok0;
+   char c;
+   p = 0UL;
+   while (s[p]!=',') {
+      if (s[p]==':') return 1;
+      ++p;
+      if (p>s_len-1) return 1;
+   }
+   ++p;
+   star = 0;
+   calls = 0UL;
+   for (;;) {
+      num = 0UL;
+      lit = 0UL;
+      ok0 = 1;
+      for (;;) {
+         if (p>s_len-1) return 1;
+         c = s[p];
+         if ((uint8_t)c>='0' && (uint8_t)c<='9') {
+            ++num;
+            ok0 = 0;
+         }
+         else if ((uint8_t)c>='A' && (uint8_t)c<='Z') {
+            ++lit;
+            ok0 = 1;
+         }
+         else break;
+         ++p;
+      }
+      ps = p;
+      ssid = 16UL;
+      if (s[p]=='-') {
+         ++p;
+         if (p>s_len-1) return 1;
+         c = s[p];
+         if ((uint8_t)c>='0' && (uint8_t)c<='9') {
+            ssid = (uint32_t)(uint8_t)c-48UL;
+            ++p;
+            if (p>s_len-1) return 1;
+            c = s[p];
+            if ((uint8_t)c>='0' && (uint8_t)c<='9') {
+               ssid = (ssid*10UL+(uint32_t)(uint8_t)c)-48UL;
+               ++p;
+            }
+         }
+      }
+      else ssid = 0UL;
+      ok0 = ((((ok0 && ssid<16UL) && num>0UL) && num<=2UL) && lit>=2UL)
+                && num+lit<=6UL;
+      if (!ok0) {
+         /* not a call + ssid */
+         if (!star) {
+            while (p<=s_len-1 && s[p]!=':') {
+               if (s[p]=='*') return 0;
+               /* star after not call */
+               ++p;
+            }
+            calls = 0UL;
+         }
+         else if (calls==0UL) return 0;
+         /* star but no calls */
+         if ((((((ps>=5UL && s[ps-5UL]=='R') && s[ps-4UL]=='E')
+                && s[ps-3UL]=='L') && s[ps-2UL]=='A')
+                && s[ps-1UL]=='Y' || ((s[ps-4UL]=='E' && s[ps-3UL]=='C')
+                && s[ps-2UL]=='H') && s[ps-1UL]=='O')
+                || ((s[ps-4UL]=='G' && s[ps-3UL]=='A') && s[ps-2UL]=='T')
+                && s[ps-1UL]=='E') return 1;
+         /* RELAY */
+         c = s[ps-1UL];
+         return ((uint8_t)c>='0' && (uint8_t)c<='9')
+                && ssid+calls>=(uint32_t)(uint8_t)c-48UL;
+      }
+      /* N-n possible or not */
+      ++calls;
+      if (p<=s_len-1 && s[p]=='*') {
+         star = 1;
+         ++p;
+      }
+      if (p>s_len-1) return 1;
+      if (s[p]==',') ++p;
+      else return s[p]==':';
+   }
+   return 0;
+} /* end pathchk() */
 
 
+static void HashCh(char c)
+{
+   uint8_t b;
+   if (c!=' ') {
+      /*crc16 */
+      b = (uint8_t)((uint8_t)(uint8_t)c^hashl);
+      hashl = CRCL[b]^hashh;
+      hashh = CRCH[b];
+      /*fletcher */
+      hash2 += c;
+      hash3 += hash2;
+   }
+} /* end HashCh() */
 
-
-
-
-
-
-
-
-
-
-END finddupe;
-
-*/
 
 static int32_t callchk(uint32_t * qpos, uint8_t * unset,
                 char buf[], uint32_t buf_len, uint32_t * p,
@@ -4535,10 +4999,10 @@ OE0AAA-9>T8SV40,WIDE1-1,qAR,DB0WGS:test
 } /* end Iconstruct() */
 
 
-static int32_t AprsIs(char buf[], uint32_t buf_len,
+static uint8_t AprsIs(char buf[], uint32_t buf_len,
                 uint8_t datafilt, uint8_t msgfilt0,
                 const char logcall[], uint32_t logcall_len,
-                uint32_t udpchan, char valid,
+                uint32_t udpchan, char passvalid,
                 struct POSCALL * poscall0)
 {
    uint32_t qpos;
@@ -4553,16 +5017,21 @@ static int32_t AprsIs(char buf[], uint32_t buf_len,
    uint32_t len;
    uint32_t p;
    uint32_t i0;
-   uint8_t hashh;
-   uint8_t hashl;
+   uint8_t hashh0;
+   uint8_t hashl0;
+   uint16_t hf;
    char qtext[32];
    char ungat;
    char postyp;
    uint8_t unset;
    FRAMEBUF com;
+   /* 2nd hash is fletcher sum */
+   struct _2 * anonym;
    uint32_t tmp;
-   hashl = 0U;
-   hashh = 0U;
+   hashl0 = 0U;
+   hashh0 = 0U;
+   hash2 = 0U;
+   hash3 = 0U;
    p = 0UL;
    pins = 0UL;
    pssid = 0UL; /* for savety */
@@ -4570,16 +5039,16 @@ static int32_t AprsIs(char buf[], uint32_t buf_len,
    poscall0->pos.lat = 0.0f;
    poscall0->pos.long0 = 0.0f;
    while ((len<buf_len-1 && buf[len]) && buf[len]!='\015') ++len;
-   if (len==0UL || len+35UL>buf_len-1) return -2L;
+   if (len==0UL || len+35UL>buf_len-1) return udpgate4_resLEN;
    unset = 0U;
    qpos = 0UL;
    for (;;) {
       /* thirdparty loop */
       psum0 = p;
       if (callchk(&qpos, &unset, buf, buf_len, &p, &pssid, 0,
-                rfcallchk && udpchan || callsrc)) return -3L;
+                rfcallchk && udpchan || callsrc)) return udpgate4_resSRCCAL;
       /* src call */
-      if (buf[p]!='>') return -3L;
+      if (buf[p]!='>') return udpgate4_resSRCCAL;
       i0 = 0UL;
       while (i0<9UL && i0<p) {
          poscall0->call[i0] = buf[i0];
@@ -4588,27 +5057,29 @@ static int32_t AprsIs(char buf[], uint32_t buf_len,
       poscall0->call[i0] = 0;
       ++p;
       micedest = p;
-      if (callchk(&qpos, &unset, buf, buf_len, &p, &pssid, 0, 0)) return -3L;
+      if (callchk(&qpos, &unset, buf, buf_len, &p, &pssid, 0, 0)) {
+         return udpgate4_resDESTCAL;
+      }
       /* dest call */
       psum1 = pssid;
       while (buf[p]==',') {
          ++p;
          if (callchk(&qpos, &unset, buf, buf_len, &p, &pssid, 1, 0)) {
-            return -3L;
+            return udpgate4_resVIACAL;
          }
       }
       /* via calls */
-      if (buf[p]!=':') return -3L;
+      if (buf[p]!=':') return udpgate4_resVIACAL;
       if (pins==0UL) pins = p;
       ++p;
       if (buf[p]!='}') break;
       ++p;
    }
-   if (p>=len) return -2L;
+   if (p>=len) return udpgate4_resLEN;
    qtext[0U] = 0;
    if (qpos>0UL) {
       /* qA */
-      if (X2C_CAP(buf[qpos])=='Z') return -5L;
+      if (X2C_CAP(buf[qpos])=='X') return udpgate4_resQAZ;
       /* qAZ */
       if (X2C_CAP(buf[qpos])=='I') {
          aprsstr_Append(qtext, 32ul, ",", 2ul); /* qAI */
@@ -4633,30 +5104,45 @@ static int32_t AprsIs(char buf[], uint32_t buf_len,
    */
    payload = p;
    poscall0->typ0 = buf[p];
-   if (buf[p]=='?') return -5L;
-   if (udpchan || valid) {
+   if (buf[p]=='?') return udpgate4_resQUERY;
+   if (udpchan || passvalid) {
       Getmsg(buf, buf_len, udpchan, (unset&msgfilt0)==0U, &ungat);
-      if (ungat) return -6L;
+      if (ungat) return udpgate4_resUNGATE;
    }
-   if ((unset&datafilt)!=0U) return -3L;
+   if (heardtimeobj>0UL) AddObject(buf, buf_len, udpchan);
+   if ((unset&datafilt)!=0U) return udpgate4_resUNGATE;
+   if ((nogatebadvia && udpchan) && !pathchk(buf, buf_len)) {
+      return udpgate4_resBADPATH;
+   }
+   /* make 2 hash values of dupe relevant bytes */
    tmp = psum1-1UL;
    i0 = psum0;
    if (i0<=tmp) for (;; i0++) {
-      aprsstr_HashCh(buf[i0], &hashl, &hashh);
+      HashCh(buf[i0]);
       if (i0==tmp) break;
    } /* end for */
    while ((p<len && buf[p]!='\015') && buf[p]!='\012') {
-      aprsstr_HashCh(buf[p], &hashl, &hashh);
+      HashCh(buf[p]);
       ++p;
    }
-   ha = (uint32_t)(uint8_t)(char)hashl+(uint32_t)(uint8_t)
-                (char)hashh*256UL&65535UL;
-   if (timehash[ha]+dupetime>systime) return -5L;
-   /* a duplicate */
-   if (udpchan || valid) timehash[ha] = systime;
+   ha = (uint32_t)(uint8_t)(char)0U+(uint32_t)(uint8_t)(char)
+                0U*256UL&65535UL;
+   hf = (uint16_t)hash2+(uint16_t)hash3*256U;
+   { /* with */
+      struct _2 * anonym = &timehash[ha];
+      if (anonym->htime+dupetime>systime) {
+         if (anonym->hsum==hf) return udpgate4_resDUP;
+      }
+      /* a duplicate, else a hash collision */
+      if (udpchan || passvalid) {
+         /* a unvalid frame will not dupe a valid */
+         anonym->htime = systime;
+         anonym->hsum = hf;
+      }
+   }
    aprspos_GetPos(&poscall0->pos, &vspeed, &vcourse, &valt, &vsym, &vsymt,
                 buf, buf_len, micedest, payload, com, 512ul, &postyp);
-   if (udpchan==0UL && !valid) return -1L;
+   if (udpchan==0UL && !passvalid) return udpgate4_resNOPASS;
    buf[p] = '\015';
    ++p;
    buf[p] = '\012';
@@ -4676,7 +5162,7 @@ static int32_t AprsIs(char buf[], uint32_t buf_len,
          ++i0;
       }
    }
-   return 0L;
+   return udpgate4_resOK;
 } /* end AprsIs() */
 
 
@@ -4855,9 +5341,8 @@ static void GetFilters(struct FILTERS * filters, const char s[],
                   anonym->notsymbols = not;
                   if (anonym->symbols[0U][0U]==0 && (anonym->symbols[1U][0U]
                 || anonym->symbols[2U][0U])) anonym->symbols[0U][0U] = ' ';
-                  if (anonym->symbols[1U][0U]==0 && anonym->symbols[2U][0U]) {
-                     anonym->symbols[1U][0U] = ' ';
-                  }
+                  /*            IF (symbols[1][0]=0C) & (symbols[2][0]<>0C)
+                THEN symbols[1][0]:=" " END; */
                   anonym->symbols[3U][0] = 0; /* only 3 words */
                }
             }
@@ -4942,7 +5427,7 @@ static char Auth(const char mbuf0[], uint32_t mbuf_len,
                j = (j*10UL+(uint32_t)(uint8_t)mbuf0[i0])-48UL;
                ++i0;
             }
-            anonym->valid = aprsstr_Length(anonym->user.call,
+            anonym->passvalid = aprsstr_Length(anonym->user.call,
                 10ul)>=3UL && j==call2pass(anonym->user.call, 10ul);
             skipblank(mbuf0, mbuf_len, &i0);
          }
@@ -4969,7 +5454,7 @@ static char Auth(const char mbuf0[], uint32_t mbuf_len,
          }
          aprsstr_Assign(h, 512ul, "# logresp ", 11ul);
          aprsstr_Append(h, 512ul, anonym->user.call, 10ul);
-         if (anonym->valid) aprsstr_Append(h, 512ul, " verified,", 11ul);
+         if (anonym->passvalid) aprsstr_Append(h, 512ul, " verified,", 11ul);
          aprsstr_Append(h, 512ul, " server ", 9ul);
          aprsstr_Append(h, 512ul, servercall, 10ul);
          FiltToStr(anonym->filters, h1, 512ul);
@@ -4982,7 +5467,7 @@ static char Auth(const char mbuf0[], uint32_t mbuf_len,
             aprsstr_Append(h1, 512ul, " vers: ", 8ul);
             aprsstr_Append(h1, 512ul, anonym->vers, 21ul);
          }
-         logline(1L, h1, 512ul);
+         logline(udpgate4_resLOG, h1, 512ul);
          aprsstr_Append(h, 512ul, "\015\012", 3ul);
          Sendtcp(pu, h);
       }
@@ -5036,8 +5521,6 @@ static void sendwww(pTCPSOCK * w, WWWB b, int32_t len, char push)
 
 #define udpgate4_RELURL "?reload="
 
-#define udpgate4_SORTURL "?sort="
-
 #define udpgate4_sortTIME "t"
 
 #define udpgate4_sortCALL "c"
@@ -5046,11 +5529,132 @@ static void sendwww(pTCPSOCK * w, WWWB b, int32_t len, char push)
 
 #define udpgate4_sortHEARD "h"
 
+#define udpgate4_sortJUNK "j"
+
 #define udpgate4_sortDIST "d"
+
+#define udpgate4_sortALT "a"
+
+#define udpgate4_sortMHZ "m"
 
 #define udpgate4_sortUP "u"
 
 #define udpgate4_sortDOWN "d"
+
+#define udpgate4_sortTABLE "dvno"
+
+
+static int32_t egmalt(int32_t a, const struct aprsstr_POSITION pos,
+                char needegm)
+{
+   int32_t ae;
+   char ok0;
+   ok0 = 1;
+   ae = 0L;
+   if (needegm) {
+      ae = (int32_t)X2C_TRUNCI(libsrtm_egm96(pos, &ok0),X2C_min_longint,
+                X2C_max_longint);
+   }
+   if (ok0) return a-ae;
+   else return -10000L;
+   return 0;
+} /* end egmalt() */
+
+
+static void og(int32_t a, const struct aprsstr_POSITION pos, char s[],
+                uint32_t s_len)
+{
+   float as;
+   float resolution;
+   s[0UL] = 0;
+   as = libsrtm_getsrtm(pos, 1UL, &resolution);
+   if (as<10000.0f && as>(-1000.0f)) {
+      aprsstr_IntToStr(a-(int32_t)X2C_TRUNCI(as,X2C_min_longint,
+                X2C_max_longint), 1UL, s, s_len);
+   }
+} /* end og() */
+
+
+static char hex(uint32_t n)
+{
+   n = n&15UL;
+   if (n>9UL) n += 7UL;
+   return (char)(n+48UL);
+} /* end hex() */
+
+
+static void escape(const char s[], uint32_t s_len, char b[],
+                uint32_t b_len)
+{
+   uint32_t i0;
+   char c;
+   char tmp;
+   i0 = 0UL;
+   b[0UL] = 0;
+   while (i0<=s_len-1 && s[i0]) {
+      c = s[i0];
+      if (((uint8_t)X2C_CAP(c)>='A' && (uint8_t)X2C_CAP(c)
+                <='Z' || (uint8_t)c>='0' && (uint8_t)c<='9') || c=='-') {
+         aprsstr_Append(b, b_len, (char *) &c, 1u/1u);
+      }
+      else {
+         aprsstr_Append(b, b_len, "%", 2ul);
+         aprsstr_Append(b, b_len,
+                (char *)(tmp = hex((uint32_t)(uint8_t)c/16UL),&tmp),
+                1u/1u);
+         aprsstr_Append(b, b_len,
+                (char *)(tmp = hex((uint32_t)(uint8_t)c),&tmp),
+                1u/1u);
+      }
+      ++i0;
+   }
+} /* end escape() */
+
+
+static int32_t unhex(char c)
+{
+   c = X2C_CAP(c);
+   if ((uint8_t)c>='0' && (uint8_t)c<='9') {
+      return (int32_t)((uint32_t)(uint8_t)c-48UL);
+   }
+   else if ((uint8_t)c>='A' && (uint8_t)c<='F') {
+      return (int32_t)((uint32_t)(uint8_t)c-55UL);
+   }
+   else return -1L;
+   return 0;
+} /* end unhex() */
+
+
+static void deesc(const char s[], uint32_t s_len, char b[],
+                uint32_t b_len)
+{
+   uint32_t e;
+   uint32_t i0;
+   char c;
+   int32_t w;
+   int32_t v;
+   i0 = 0UL;
+   e = 0UL;
+   b[0UL] = 0;
+   while (i0<=s_len-1 && s[i0]) {
+      c = s[i0];
+      if (e==0UL) {
+         if (c=='%') e = 1UL;
+      }
+      else if (e==1UL) {
+         v = unhex(c);
+         if (v>=0L) e = 2UL;
+         else e = 0UL;
+      }
+      else if (e==2UL) {
+         w = unhex(c);
+         if (w>=0L) c = (char)(v*16L+w);
+         e = 0UL;
+      }
+      if (e==0UL) aprsstr_Append(b, b_len, (char *) &c, 1u/1u);
+      ++i0;
+   }
+} /* end deesc() */
 
 
 static void Appwww(pTCPSOCK * wsock, WWWB wbuf, const char s[],
@@ -5059,14 +5663,6 @@ static void Appwww(pTCPSOCK * wsock, WWWB wbuf, const char s[],
    uint32_t i0;
    uint32_t slen;
    uint32_t wlen;
-   /*
-       len:=Length(wbuf);
-       IF len+Length(s)>=HIGH(wbuf) THEN
-         sendwww(wsock, wbuf, len, FALSE);
-         wbuf[0]:=0C;
-       END;
-       Append(wbuf, s);
-   */
    wlen = aprsstr_Length(wbuf, 1401ul);
    slen = aprsstr_Length(s, s_len);
    i0 = 0UL;
@@ -5088,10 +5684,12 @@ static void AppCall(WWWB wbuf, pTCPSOCK * wsock, char c[],
                 const char link[], uint32_t link_len)
 {
    char b[4096];
+   char ce[101];
    uint32_t k;
    uint32_t j;
    uint32_t i0;
    X2C_PCOPY((void **)&c,c_len);
+   escape(c, c_len, ce, 101ul);
    Appwww(wsock, wbuf, "<TD style=text-align:", 22ul);
    if (center) Appwww(wsock, wbuf, "center>", 8ul);
    else Appwww(wsock, wbuf, "left>", 6ul);
@@ -5102,8 +5700,8 @@ static void AppCall(WWWB wbuf, pTCPSOCK * wsock, char c[],
          ++i0;
          if (link[i0]=='c') {
             k = 0UL;
-            while ((k<=c_len-1 && c[k]) && j<4095UL) {
-               b[j] = c[k];
+            while ((k<=100UL && ce[k]) && j<4095UL) {
+               b[j] = ce[k];
                ++j;
                ++k;
             }
@@ -5317,13 +5915,6 @@ static void AppTxt(WWWB wbuf, pTCPSOCK * wsock, const char style[],
 } /* end AppTxt() */
 
 
-static char hex(uint32_t n)
-{
-   if (n>9UL) n += 7UL;
-   return (char)(n+48UL);
-} /* end hex() */
-
-
 static void setcol(uint32_t c, uint32_t n, char h1[],
                 uint32_t h1_len)
 {
@@ -5453,17 +6044,28 @@ static char openfile(char fn[], uint32_t fn_len, int32_t * fd,
 } /* end openfile() */
 
 
-static void appsorturl(WWWB wbuf, pTCPSOCK * wsock, const char sortby[],
-                uint32_t sortby_len)
+static void appsorturl(WWWB wbuf, pTCPSOCK * wsock, uint32_t table,
+                const char s[], uint32_t s_len)
 {
-   char h[3];
-   if (sortby[0UL]) {
-      Appwww(wsock, wbuf, "?sort=", 7ul);
-      h[0U] = sortby[0UL];
-      h[1U] = sortby[1UL];
-      h[2U] = 0;
-      Appwww(wsock, wbuf, h, 3ul);
-   }
+   char h[2];
+   uint32_t tab;
+   for (tab = 0UL; tab<=3UL; tab++) {
+      h[0U] = 0;
+      if (s[0UL] && tab==table) {
+         h[0U] = s[0UL]; /* modified sort */
+         h[1U] = s[1UL];
+      }
+      else if ((*wsock)->sortby[tab][0U]) {
+         /* resend unmodified */
+         h[0U] = (*wsock)->sortby[tab][0U];
+         h[1U] = (*wsock)->sortby[tab][1U];
+      }
+      if (h[0U]) {
+         /* append only active sort switches */
+         Appwww(wsock, wbuf, SORTURL[tab], 7ul);
+         Appwww(wsock, wbuf, h, 2ul);
+      }
+   } /* end for */
 } /* end appsorturl() */
 
 
@@ -5480,13 +6082,14 @@ static void appreloadurl(WWWB wbuf, pTCPSOCK * wsock, uint32_t t)
 
 static void klick(WWWB wbuf, pTCPSOCK * wsock, char path[],
                 uint32_t path_len, char text[], uint32_t text_len,
-                char sort)
+                uint32_t table, char sort, char th)
 {
    char s[2];
    X2C_PCOPY((void **)&path,path_len);
    X2C_PCOPY((void **)&text,text_len);
-   aprsstr_Assign(s, 2ul, (*wsock)->sortby, 2ul);
+   s[0U] = 0;
    if (sort) {
+      aprsstr_Assign(s, 2ul, (*wsock)->sortby[table], 2ul);
       if (s[0U]==sort) {
          if (s[1U]!='u') s[1U] = 'u';
          else if (s[1U]!='d') s[1U] = 'd';
@@ -5496,13 +6099,15 @@ static void klick(WWWB wbuf, pTCPSOCK * wsock, char path[],
          s[1U] = 'u';
       }
    }
+   if (th) Appwww(wsock, wbuf, "<th>", 5ul);
    Appwww(wsock, wbuf, "<a href=\"", 10ul);
    Appwww(wsock, wbuf, path, path_len);
-   appsorturl(wbuf, wsock, s, 2ul);
+   appsorturl(wbuf, wsock, table, s, 2ul);
    appreloadurl(wbuf, wsock, (*wsock)->reload);
    Appwww(wsock, wbuf, "\">", 3ul);
    Appwww(wsock, wbuf, text, text_len);
    Appwww(wsock, wbuf, "</a> ", 6ul);
+   if (th) Appwww(wsock, wbuf, "</th>", 6ul);
    X2C_PFREE(path);
    X2C_PFREE(text);
 } /* end klick() */
@@ -5590,17 +6195,20 @@ static char iconf(char sym, char symt, char fn[],
 } /* end iconf() */
 
 
-static void sortindex(pHEARD ph, uint32_t maxtime, const char sortby[],
-                 uint32_t sortby_len, char * withqual)
+static uint32_t sortindex(pHEARD ph, uint32_t maxtime,
+                const char sortby[], uint32_t sortby_len,
+                uint32_t * withqual)
 /* make LONGREAL of sort key */
 {
    char homevalid;
+   uint32_t cnt;
    uint32_t cj;
    uint32_t i0;
    char c;
    char s;
    double xs;
-   *withqual = 0;
+   cnt = 0UL;
+   *withqual = 0UL;
    xs = 0.0;
    homevalid = aprspos_posvalid(home);
    s = sortby[0UL];
@@ -5619,8 +6227,12 @@ static void sortindex(pHEARD ph, uint32_t maxtime, const char sortby[],
       case 'p': /* sort by port */
          xs = (double)ph->fromrx;
          break;
-      case 'h': /* sort by count */
+      case 'h': /* sort by junk count */
          xs = (double)MHcount(ph, maxtime, &cj);
+         break;
+      case 'j': /* sort by count */
+         i0 = MHcount(ph, maxtime, &cj);
+         xs = (double)cj;
          break;
       case 'd': /* sort by km */
          if (homevalid && aprspos_posvalid(ph->position)) {
@@ -5628,14 +6240,24 @@ static void sortindex(pHEARD ph, uint32_t maxtime, const char sortby[],
          }
          else xs = 0.0;
          break;
+      case 'a': /* sort by altitude */
+         xs = (double)ph->altitude;
+         break;
+      case 'm': /* sort by freq */
+         xs = (double)ph->mhz;
+         break;
       } /* end switch */
       if (sortby[1UL]=='d') ph->sortval = -xs;
       else ph->sortval = xs;
-      if (((ph->txd || ph->level>-128) || ph->quali) || ph->snr>-128) {
-         *withqual = 1; /* modem infos */
+      if (*withqual==0UL && ((ph->txd || ph->level>-128) || ph->quali)) {
+         *withqual = 3UL; /* modem infos */
       }
+      if (ph->snr>-128) *withqual = 4UL;
+      if (labs(ph->afc)<1000000L) *withqual = 5UL;
+      if (ph->mhtime+maxtime>systime) ++cnt;
       ph = ph->next;
    }
+   return cnt;
 } /* end sortindex() */
 
 
@@ -5679,11 +6301,18 @@ static void apppos(WWWB wbuf, pTCPSOCK * wsock, struct aprsstr_POSITION pos,
 } /* end apppos() */
 
 
+static char altok(int32_t a)
+{
+   return a>-10000L && a<1000000L;
+} /* end altok() */
+
+
 static void appmhcnt(WWWB wbuf, pTCPSOCK * wsock, uint32_t n,
                 uint32_t maxtime, char dir, char net,
-                char jnk, char drive, char call[],
-                uint32_t call_len, uint32_t port)
+                char obj, char jnk, char drive,
+                char call[], uint32_t call_len, uint32_t port)
 {
+   char hc[32];
    char h3[32];
    char h2[32];
    char h1[32];
@@ -5702,13 +6331,15 @@ static void appmhcnt(WWWB wbuf, pTCPSOCK * wsock, uint32_t n,
       strncpy(h2,"raw?",32u);
       if (dir) aprsstr_Append(h2, 32ul, "d", 2ul);
       else if (net) aprsstr_Append(h2, 32ul, "n", 2ul);
+      else if (obj) aprsstr_Append(h2, 32ul, "o", 2ul);
       else aprsstr_Append(h2, 32ul, "v", 2ul);
       if (jnk) aprsstr_Append(h2, 32ul, "j", 2ul);
       else aprsstr_Append(h2, 32ul, "c", 2ul);
       aprsstr_IntToStr((int32_t)port, 1UL, h3, 32ul);
       aprsstr_Append(h2, 32ul, h3, 32ul);
       aprsstr_Append(h2, 32ul, "=", 2ul);
-      aprsstr_Append(h2, 32ul, call, call_len);
+      escape(call, call_len, hc, 32ul);
+      aprsstr_Append(h2, 32ul, hc, 32ul);
       klickraw(wbuf, wsock, h2, 32ul, h1, 32ul);
    }
    Appwww(wsock, wbuf, "</td>", 6ul);
@@ -5719,21 +6350,32 @@ static void appmhcnt(WWWB wbuf, pTCPSOCK * wsock, uint32_t n,
 static void showmh(WWWB wbuf, pTCPSOCK * wsock, char h1[256], pHEARD ph0,
                  char dir, char net, uint32_t maxtime,
                 char title0[], uint32_t title_len,
-                const char sortby[], uint32_t sortby_len)
+                const SORTBY sortby)
 {
-   char withqual;
    char withicon;
    char withport;
+   uint32_t cnt;
    uint32_t cj;
    uint32_t ci;
+   uint32_t withqual;
+   uint32_t table;
    char hch;
    pHEARD phs;
    pHEARD ph;
    double xs;
+   float dist3;
+   float ele;
+   float resolution;
+   float as;
+   char hele[21];
+   char haz[21];
    char callink[1024];
    X2C_PCOPY((void **)&title0,title_len);
    getlinkfile(callink, 1024ul, "calllink.txt", 13ul);
-   sortindex(ph0, maxtime, sortby, sortby_len, &withqual);
+   table = 1UL;
+   if (net) table = 2UL;
+   else if (dir) table = 0UL;
+   cnt = sortindex(ph0, maxtime, sortby[table], 2ul, &withqual);
    withport = udpsocks && udpsocks->next;
    aprsstr_Assign(h1, 256ul, wwwdir, 1024ul);
    aprsstr_Append(h1, 256ul, "icon", 5ul);
@@ -5741,11 +6383,15 @@ static void showmh(WWWB wbuf, pTCPSOCK * wsock, char h1[256], pHEARD ph0,
    Appwww(wsock, wbuf, "<table id=mheard border=0 align=center CELLPADDING=3 \
 CELLSPACING=1 BGCOLOR=#FFFFFF><tr class=tab-mh-titel BGCOLOR=#A9EEFF><th cols\
 pan=", 135ul);
-   aprsstr_IntToStr((int32_t)(7UL+(uint32_t)withicon+(uint32_t)
-                withport+(uint32_t)(dir && withqual)*4UL+(uint32_t)net),
-                1UL, h1, 256ul);
+   aprsstr_IntToStr((int32_t)(8UL+(uint32_t)withicon+(uint32_t)
+                withport+(uint32_t)dir*withqual+(uint32_t)
+                net+(uint32_t)(libsrtm_srtmdir[0U]!=0)+(uint32_t)
+                dir+(uint32_t)(dir && homealt>(-1000.0f))), 1UL, h1,
+                256ul);
    Appwww(wsock, wbuf, h1, 256ul);
    Appwww(wsock, wbuf, ">", 2ul);
+   aprsstr_CardToStr(cnt, 1UL, h1, 256ul);
+   Appwww(wsock, wbuf, h1, 256ul);
    Appwww(wsock, wbuf, title0, title_len);
    if (maxtime%3600UL==0UL) {
       aprsstr_IntToStr((int32_t)(maxtime/3600UL), 1UL, h1, 256ul);
@@ -5758,31 +6404,32 @@ pan=", 135ul);
    Appwww(wsock, wbuf, h1, 256ul);
    /*    Appwww('</th></tr><tr class=tab-mh-head BGCOLOR=#E0C080><th>Call</th>'
                 ); */
-   Appwww(wsock, wbuf, "</th></tr><tr class=tab-mh-head BGCOLOR=#E0C080><th>",
-                 53ul);
-   klick(wbuf, wsock, "mh", 3ul, "Call", 5ul, 'c');
-   Appwww(wsock, wbuf, "</th>", 6ul);
+   Appwww(wsock, wbuf, "</th></tr><tr class=tab-mh-head BGCOLOR=#E0C080>",
+                49ul);
+   klick(wbuf, wsock, "mh", 3ul, "Call", 5ul, table, 'c', 1);
    if (withicon) Appwww(wsock, wbuf, "<th>Icon</th>", 14ul);
    /*    IF withport THEN Appwww('<th>Port</th>') END; */
-   if (withport) {
-      Appwww(wsock, wbuf, "<th>", 5ul);
-      klick(wbuf, wsock, "mh", 3ul, "Port", 5ul, 'p');
-      Appwww(wsock, wbuf, "</th>", 6ul);
+   if (withport) klick(wbuf, wsock, "mh", 3ul, "Port", 5ul, table, 'p', 1);
+   klick(wbuf, wsock, "mh", 3ul, "Ago", 4ul, table, 't', 1);
+   if (dir) {
+      if (withqual>0UL) {
+         Appwww(wsock, wbuf, "<th>Txd</th><th>q&#37;</th><th>Lev</th>",
+                40ul);
+      }
+      if (withqual>=4UL) Appwww(wsock, wbuf, "<th>SNR</th>", 13ul);
+      if (withqual==5UL) Appwww(wsock, wbuf, "<th>AFC</th>", 13ul);
    }
-   /*    Appwww('<th>Last Heard</th><th>Pack</th><th>QRB km</th><th>Data</th><th>Path</th></tr>'
-                ); */
-   Appwww(wsock, wbuf, "<th>", 5ul);
-   klick(wbuf, wsock, "mh", 3ul, "Last Heard", 11ul, 't');
-   if (dir && withqual) {
-      Appwww(wsock, wbuf, "</th><th>Txd</th><th>Lev</th><th>q&#37;<th>SNR</th\
->", 52ul);
-   }
-   if (net) Appwww(wsock, wbuf, "</th><th>Position", 18ul);
-   Appwww(wsock, wbuf, "</th><th>", 10ul);
-   klick(wbuf, wsock, "mh", 3ul, "Pack", 5ul, 'h');
-   Appwww(wsock, wbuf, "</th><th>Junk</th><th>", 23ul);
-   klick(wbuf, wsock, "mh", 3ul, "QRB km", 7ul, 'd');
-   Appwww(wsock, wbuf, "</th><th>Data</th><th>Path</th></tr>", 37ul);
+   if (net) Appwww(wsock, wbuf, "<th>Position</th>", 18ul);
+   klick(wbuf, wsock, "mh", 3ul, "Pack", 5ul, table, 'h', 1);
+   klick(wbuf, wsock, "mh", 3ul, "Junk", 5ul, table, 'j', 1);
+   /*    Appwww('</th><th>Junk</th><th>'); */
+   klick(wbuf, wsock, "mh", 3ul, "QRB km", 7ul, table, 'd', 1);
+   if (dir) Appwww(wsock, wbuf, "<th>Az</th>", 12ul);
+   if (dir && homealt>(-1000.0f)) Appwww(wsock, wbuf, "<th>Ele</th>", 13ul);
+   klick(wbuf, wsock, "mh", 3ul, "Alt", 4ul, table, 'a', 1);
+   /*    Appwww('</th><th>Alt</th>'); */
+   if (libsrtm_srtmdir[0U]) Appwww(wsock, wbuf, "<th>OG</th>", 12ul);
+   Appwww(wsock, wbuf, "<th>Data</th><th>Path</th></tr>", 32ul);
    for (;;) {
       phs = ph0;
       xs = X2C_max_longreal;
@@ -5794,7 +6441,9 @@ pan=", 135ul);
          }
          phs = phs->next;
       }
-      if (ph==0) break;
+      if (ph==0) {
+         break;
+      }
       ph->sortval = X2C_max_longreal;
       if (ph->mhtime+maxtime>systime) {
          ci = MHcount(ph, maxtime, &cj);
@@ -5828,7 +6477,7 @@ n:right\">", 56ul);
          Appwww(wsock, wbuf, "<td>", 5ul);
          AppMinSec(wbuf, wsock, ph->mhtime);
          Appwww(wsock, wbuf, "</td>", 6ul);
-         if (dir && withqual) {
+         if (dir && withqual>0UL) {
             /* txdel */
             Appwww(wsock, wbuf, "<td style=\"background-color:#", 30ul);
             strncpy(h1,"80FF80",256u);
@@ -5839,9 +6488,14 @@ n:right\">", 56ul);
                aprsstr_IntToStr((int32_t)ph->txd, 1UL, h1, 256ul);
                Appwww(wsock, wbuf, h1, 256ul);
             }
-            Appwww(wsock, wbuf, "</td>", 6ul);
+            Appwww(wsock, wbuf, "</td><td>", 10ul);
+            /*quality */
+            if (ph->quali) {
+               aprsstr_IntToStr((int32_t)ph->quali, 1UL, h1, 256ul);
+               Appwww(wsock, wbuf, h1, 256ul);
+            }
             /* level */
-            Appwww(wsock, wbuf, "<td style=\"background-color:#", 30ul);
+            Appwww(wsock, wbuf, "</td><td style=\"background-color:#", 35ul);
             strncpy(h1,"80FF80",256u);
             if (ph->level>-128) {
                redgreen(((int32_t)Min((uint32_t)(uint16_t)
@@ -5849,23 +6503,25 @@ n:right\">", 56ul);
             }
             Appwww(wsock, wbuf, h1, 256ul);
             Appwww(wsock, wbuf, "\">", 3ul);
-            if (ph->level) {
+            if (ph->level>-32768) {
                aprsstr_IntToStr((int32_t)ph->level, 1UL, h1, 256ul);
                Appwww(wsock, wbuf, h1, 256ul);
             }
-            Appwww(wsock, wbuf, "</td>", 6ul);
-            /*quality */
-            Appwww(wsock, wbuf, "<td>", 5ul);
-            if (ph->quali) {
-               aprsstr_IntToStr((int32_t)ph->quali, 1UL, h1, 256ul);
-               Appwww(wsock, wbuf, h1, 256ul);
-            }
-            Appwww(wsock, wbuf, "</td>", 6ul);
-            /*SNR */
-            Appwww(wsock, wbuf, "<td>", 5ul);
-            if (ph->snr>-128) {
-               aprsstr_IntToStr((int32_t)ph->snr, 1UL, h1, 256ul);
-               Appwww(wsock, wbuf, h1, 256ul);
+            if (withqual>=4UL) {
+               /*SNR */
+               Appwww(wsock, wbuf, "</td><td>", 10ul);
+               if (ph->snr>-128) {
+                  aprsstr_IntToStr((int32_t)ph->snr, 1UL, h1, 256ul);
+                  Appwww(wsock, wbuf, h1, 256ul);
+               }
+               /*AFC */
+               if (withqual==5UL) {
+                  Appwww(wsock, wbuf, "</td><td>", 10ul);
+                  if (labs(ph->afc)<1000000L) {
+                     aprsstr_IntToStr(ph->afc, 1UL, h1, 256ul);
+                     Appwww(wsock, wbuf, h1, 256ul);
+                  }
+               }
             }
             Appwww(wsock, wbuf, "</td>", 6ul);
          }
@@ -5875,21 +6531,72 @@ n:right\">", 56ul);
             Appwww(wsock, wbuf, "</td>", 6ul);
          }
          /*pack count */
-         appmhcnt(wbuf, wsock, ci-cj, maxtime, dir, net, 0, ph->datatyp=='S',
-                 ph->call, 10ul, ph->fromrx);
+         appmhcnt(wbuf, wsock, ci-cj, maxtime, dir, net, 0, 0,
+                ph->datatyp=='S', ph->call, 10ul, ph->fromrx);
          /*Junk count */
-         appmhcnt(wbuf, wsock, cj, maxtime, dir, net, 1, 0, ph->call, 10ul,
-                ph->fromrx);
+         appmhcnt(wbuf, wsock, cj, maxtime, dir, net, 0, 1, 0, ph->call,
+                10ul, ph->fromrx);
          /*dist */
          h1[0U] = 0;
-         if (aprspos_posvalid(ph->position) && aprspos_posvalid(home)) {
-            aprsstr_FixToStr(aprspos_distance(home, ph->position)+0.05f, 2UL,
-                 h1, 256ul);
+         haz[0U] = 0;
+         hele[0U] = 0;
+         if (aprspos_posvalid(ph->position)) {
+            if (aprspos_posvalid(home)) {
+               aprsstr_FixToStr(aprspos_distance(home, ph->position)+0.05f,
+                2UL, h1, 256ul);
+               /*az */
+               aprsstr_IntToStr((int32_t)X2C_TRUNCI(aprspos_azimuth(home,
+                ph->position)+0.5f,X2C_min_longint,X2C_max_longint), 1UL,
+                haz, 21ul);
+               aprsstr_Append(haz, 21ul, "\260", 2ul);
+               if ((altifromsrtm && !altok(ph->altitude))
+                && libsrtm_srtmdir[0U]) {
+                  as = libsrtm_getsrtm(ph->position, 1UL, &resolution);
+                  if (as<10000.0f && as>(-1000.0f)) {
+                     ph->altitude = (int32_t)(uint32_t)
+                X2C_TRUNCC(as+0.5f,0UL,X2C_max_longcard);
+                     ph->altfromsrtm = 1;
+                  }
+               }
+               /*ele */
+               if (homealt>(-1000.0f) && altok(ph->altitude)) {
+                  /* elevation */
+                  ele = (-100.0f);
+                  elevation(&ele, &dist3, home, homealt, ph->position,
+                (float)ph->altitude);
+                  if ((float)fabs(ele)<=90.0f) {
+                     aprsstr_FixToStr(ele, 3UL, hele, 21ul);
+                     aprsstr_Append(hele, 21ul, "\260", 2ul);
+                  }
+               }
+            }
          }
          Appwww(wsock, wbuf, "<td>", 5ul);
          Appwww(wsock, wbuf, h1, 256ul);
-         Appwww(wsock, wbuf, "</td>", 6ul);
-         Appwww(wsock, wbuf, "<td>", 5ul);
+         Appwww(wsock, wbuf, "</td><td>", 10ul);
+         if (dir) {
+            Appwww(wsock, wbuf, haz, 21ul);
+            Appwww(wsock, wbuf, "</td><td>", 10ul);
+            if (homealt>(-1000.0f)) {
+               Appwww(wsock, wbuf, hele, 21ul);
+               Appwww(wsock, wbuf, "</td><td>", 10ul);
+            }
+         }
+         if (altok(ph->altitude)) {
+            aprsstr_IntToStr(ph->altitude, 1UL, h1, 256ul);
+            Appwww(wsock, wbuf, h1, 256ul);
+         }
+         Appwww(wsock, wbuf, "</td><td>", 10ul);
+         if (libsrtm_srtmdir[0U]) {
+            if (altok(ph->altitude)) {
+               if (ph->altfromsrtm) Appwww(wsock, wbuf, "srtm", 5ul);
+               else {
+                  og(ph->altitude, ph->position, h1, 256ul);
+                  Appwww(wsock, wbuf, h1, 256ul);
+               }
+            }
+            Appwww(wsock, wbuf, "</td><td>", 10ul);
+         }
          if (ph->datatyp=='C') {
             aprsstr_FixToStr(ph->data, 2UL, h1, 256ul);
             aprsstr_Append(h1, 256ul, "\260C", 3ul);
@@ -5909,6 +6616,254 @@ n:right\">", 56ul);
    Appwww(wsock, wbuf, "</table>&nbsp;", 15ul);
    X2C_PFREE(title0);
 } /* end showmh() */
+
+
+static void showobj(WWWB wbuf, pTCPSOCK * wsock, char h1[256],
+                uint32_t maxtime, const SORTBY sortby)
+{
+   pHEARD ph0;
+   char withicon;
+   char withport;
+   uint32_t cnt;
+   uint32_t cj;
+   uint32_t ci;
+   uint32_t withqual;
+   char hch;
+   pHEARD phs;
+   pHEARD ph;
+   double xs;
+   float dist3;
+   float ele;
+   int32_t truealt;
+   char hele[21];
+   char haz[21];
+   char htd[21];
+   char hog[21];
+   char ha[21];
+   char hmhz[21];
+   char hdir[21];
+   char hclb[21];
+   char halt[21];
+   char hlong[21];
+   char hlat[21];
+   char callink[1024];
+   getlinkfile(callink, 1024ul, "objectlink.txt", 15ul);
+   ph0 = heardobj;
+   cnt = sortindex(ph0, maxtime, sortby[3U], 2ul, &withqual);
+   withport = udpsocks!=0;
+   aprsstr_Assign(h1, 256ul, wwwdir, 1024ul);
+   aprsstr_Append(h1, 256ul, "icon", 5ul);
+   withicon = osi_Exists(h1, 256ul);
+   Appwww(wsock, wbuf, "<table id=mheard border=0 align=center CELLPADDING=3 \
+CELLSPACING=1 BGCOLOR=#FFFFFF><tr class=tab-mh-titel BGCOLOR=#A9EEFF><th cols\
+pan=", 135ul);
+   aprsstr_IntToStr((int32_t)(14UL+(uint32_t)withicon+(uint32_t)
+                withport+(uint32_t)(libsrtm_srtmdir[0U]!=0)+(uint32_t)
+                (homealt>(-1000.0f))), 1UL, h1, 256ul);
+   Appwww(wsock, wbuf, h1, 256ul);
+   Appwww(wsock, wbuf, ">", 2ul);
+   aprsstr_CardToStr(cnt, 1UL, h1, 256ul);
+   Appwww(wsock, wbuf, h1, 256ul);
+   Appwww(wsock, wbuf, " Heard Objects Since Last ", 27ul);
+   if (maxtime%3600UL==0UL) {
+      aprsstr_IntToStr((int32_t)(maxtime/3600UL), 1UL, h1, 256ul);
+      aprsstr_Append(h1, 256ul, "h", 2ul);
+   }
+   else {
+      aprsstr_IntToStr((int32_t)(maxtime/60UL), 1UL, h1, 256ul);
+      aprsstr_Append(h1, 256ul, "min", 4ul);
+   }
+   Appwww(wsock, wbuf, h1, 256ul);
+   Appwww(wsock, wbuf, "</th></tr><tr class=tab-mh-head BGCOLOR=#E0C080>",
+                49ul);
+   klick(wbuf, wsock, "mh", 3ul, "Object", 7ul, 3UL, 'c', 1);
+   if (withicon) Appwww(wsock, wbuf, "<th>Icon</th>", 14ul);
+   if (withport) klick(wbuf, wsock, "mh", 3ul, "Port", 5ul, 3UL, 'p', 1);
+   klick(wbuf, wsock, "mh", 3ul, "Ago", 4ul, 3UL, 't', 1);
+   klick(wbuf, wsock, "mh", 3ul, "Pack", 5ul, 3UL, 'h', 1);
+   klick(wbuf, wsock, "mh", 3ul, "QRB km", 7ul, 3UL, 'd', 1);
+   Appwww(wsock, wbuf, "<th>Az</th>", 12ul);
+   if (homealt>(-1000.0f)) Appwww(wsock, wbuf, "<th>Ele</th>", 13ul);
+   Appwww(wsock, wbuf, "<th>Lat</th><th>Long</th>", 26ul);
+   klick(wbuf, wsock, "mh", 3ul, "Alt", 4ul, 3UL, 'a', 1);
+   if (libsrtm_srtmdir[0U]) Appwww(wsock, wbuf, "<th>OG</th>", 12ul);
+   Appwww(wsock, wbuf, "<th>Clb</th><th>Dir</th>", 25ul);
+   klick(wbuf, wsock, "mh", 3ul, "MHz", 4ul, 3UL, 'm', 1);
+   Appwww(wsock, wbuf, "<th>dt</th><th>Data</th><th>Path</th></tr>", 43ul);
+   for (;;) {
+      phs = ph0;
+      xs = X2C_max_longreal;
+      ph = 0;
+      while (phs) {
+         if (phs->sortval<xs) {
+            xs = phs->sortval;
+            ph = phs;
+         }
+         phs = phs->next;
+      }
+      if (ph==0) break;
+      ph->sortval = X2C_max_longreal;
+      if (ph->mhtime+maxtime>systime) {
+         ci = MHcount(ph, maxtime, &cj);
+         if (cj>ci) cj = ci;
+         Appwww(wsock, wbuf, "<tr style=\"background-color:#90FF90; text-alig\
+n:right\">", 56ul);
+         if (ph->clb!=0.0f) {
+            AppCall(wbuf, wsock, ph->call, 10ul, ph->ungate, 0, callink,
+                1024ul); /* sonde/adsb */
+         }
+         else {
+            Appwww(wsock, wbuf, "<td>", 5ul); /* other object */
+            Appwww(wsock, wbuf, ph->call, 10ul);
+            Appwww(wsock, wbuf, "</td>", 6ul);
+         }
+         if (withicon) {
+            Appwww(wsock, wbuf, "<td", 4ul);
+            if (iconf(ph->sym, ph->symt, h1, 256ul, &hch)) {
+               Appwww(wsock, wbuf, " style=\"background-image:url(", 30ul);
+               Appwww(wsock, wbuf, h1, 256ul);
+               Appwww(wsock, wbuf, "); background-repeat:no-repeat;background\
+-position:center center;", 66ul);
+               if (hch) {
+                  Appwww(wsock, wbuf, "text-align:center\">", 20ul);
+                  Appwww(wsock, wbuf, (char *) &hch, 1u/1u);
+               }
+               else Appwww(wsock, wbuf, "\">", 3ul);
+            }
+            else Appwww(wsock, wbuf, ">", 2ul);
+            Appwww(wsock, wbuf, "</td>", 6ul);
+         }
+         if (withport) {
+            Appwww(wsock, wbuf, "<td>", 5ul);
+            getportname(ph->fromrx, h1, 256ul);
+            Appwww(wsock, wbuf, h1, 256ul);
+            Appwww(wsock, wbuf, "</td>", 6ul);
+         }
+         Appwww(wsock, wbuf, "<td>", 5ul);
+         AppMinSec(wbuf, wsock, ph->mhtime);
+         Appwww(wsock, wbuf, "</td>", 6ul);
+         /*pack count */
+         appmhcnt(wbuf, wsock, ci-cj, maxtime, 0, 0, 1, 0, ph->datatyp=='S',
+                ph->call, 10ul, ph->fromrx);
+         hlat[0U] = 0;
+         hlong[0U] = 0;
+         halt[0U] = 0;
+         hclb[0U] = 0;
+         hdir[0U] = 0;
+         hmhz[0U] = 0;
+         hog[0U] = 0;
+         htd[0U] = 0;
+         h1[0U] = 0;
+         haz[0U] = 0;
+         hele[0U] = 0;
+         if (aprspos_posvalid(ph->position) && aprspos_posvalid(home)) {
+            aprsstr_FixToStr(aprspos_distance(home, ph->position)+0.05f, 2UL,
+                 h1, 256ul);
+            truealt = -10000L;
+            if (altok(ph->altitude)) {
+               truealt = egmalt(ph->altitude, ph->position, ph->clb!=0.0f);
+            }
+            ele = (-100.0f);
+            if (homealt>(-1000.0f) && altok(truealt)) {
+               /* elevation */
+               elevation(&ele, &dist3, home, homealt, ph->position,
+                (float)truealt);
+               aprsstr_FixToStr(dist3+0.005f, 3UL, h1, 256ul);
+            }
+            else {
+               aprsstr_FixToStr(aprspos_distance(home, ph->position)+0.05f,
+                2UL, h1, 256ul);
+            }
+            aprsstr_IntToStr((int32_t)X2C_TRUNCI(aprspos_azimuth(home,
+                ph->position)+0.5f,X2C_min_longint,X2C_max_longint), 1UL,
+                haz, 21ul);
+            aprsstr_Append(haz, 21ul, "\260", 2ul);
+            if ((float)fabs(ele)<=90.0f) {
+               aprsstr_FixToStr(ele, 3UL, hele, 21ul);
+               aprsstr_Append(hele, 21ul, "\260", 2ul);
+            }
+            aprsstr_FixToStr(ph->position.lat*5.729577951472E+1f, 6UL, hlat,
+                21ul);
+            aprsstr_FixToStr(ph->position.long0*5.729577951472E+1f, 6UL,
+                hlong, 21ul);
+            if (altok(truealt)) {
+               aprsstr_IntToStr(truealt, 1UL, halt, 21ul);
+               aprsstr_Append(halt, 21ul, "m", 2ul);
+               if (libsrtm_srtmdir[0U]) og(truealt, ph->position, hog, 21ul);
+            }
+            if (ph->clb!=0.0f) {
+               aprsstr_FixToStr(ph->clb, 2UL, ha, 21ul);
+               if (ha[0U]!='-') {
+                  strncpy(hclb,"+",21u);
+               }
+               aprsstr_Append(hclb, 21ul, ha, 21ul);
+            }
+            if (ph->dir>0UL) {
+               aprsstr_IntToStr((int32_t)ph->dir, 1UL, hdir, 21ul);
+            }
+            if (ph->objtimediff<86400L) {
+               if (labs(ph->objtimediff)<1000L) {
+                  aprsstr_IntToStr(ph->objtimediff, 1UL, htd, 21ul);
+                  aprsstr_Append(htd, 21ul, "s", 2ul);
+               }
+               else {
+                  aprsstr_IntToStr(ph->objtimediff/60L, 1UL, htd, 21ul);
+                  aprsstr_Append(htd, 21ul, "m", 2ul);
+               }
+            }
+         }
+         if (ph->mhz>0.0f) {
+            aprsstr_FixToStr(ph->mhz+0.0005f, 4UL, hmhz, 21ul);
+         }
+         Appwww(wsock, wbuf, "<td>", 5ul);
+         Appwww(wsock, wbuf, h1, 256ul);
+         Appwww(wsock, wbuf, "</td><td>", 10ul);
+         Appwww(wsock, wbuf, haz, 21ul);
+         if (homealt>(-1000.0f)) {
+            Appwww(wsock, wbuf, "</td><td>", 10ul);
+            Appwww(wsock, wbuf, hele, 21ul);
+         }
+         Appwww(wsock, wbuf, "</td><td>", 10ul);
+         Appwww(wsock, wbuf, hlat, 21ul);
+         Appwww(wsock, wbuf, "</td><td>", 10ul);
+         Appwww(wsock, wbuf, hlong, 21ul);
+         Appwww(wsock, wbuf, "</td><td>", 10ul);
+         Appwww(wsock, wbuf, halt, 21ul);
+         if (libsrtm_srtmdir[0U]) {
+            Appwww(wsock, wbuf, "</td><td>", 10ul);
+            Appwww(wsock, wbuf, hog, 21ul);
+         }
+         Appwww(wsock, wbuf, "</td><td style=\"background-color:#", 35ul);
+         strncpy(h1,"80FF80",256u);
+         redgreen(50L-5L*(int32_t)X2C_TRUNCI(ph->clb,X2C_min_longint,
+                X2C_max_longint), h1, 256ul);
+         Appwww(wsock, wbuf, h1, 256ul);
+         Appwww(wsock, wbuf, "\">", 3ul);
+         Appwww(wsock, wbuf, hclb, 21ul);
+         Appwww(wsock, wbuf, "</td><td>", 10ul);
+         Appwww(wsock, wbuf, hdir, 21ul);
+         Appwww(wsock, wbuf, "</td><td>", 10ul);
+         Appwww(wsock, wbuf, hmhz, 21ul);
+         Appwww(wsock, wbuf, "</td><td>", 10ul);
+         Appwww(wsock, wbuf, htd, 21ul);
+         Appwww(wsock, wbuf, "</td><td>", 10ul);
+         if (ph->datatyp=='C') {
+            aprsstr_FixToStr(ph->data, 2UL, h1, 256ul);
+            aprsstr_Append(h1, 256ul, "\260C", 3ul);
+         }
+         else if (ph->datatyp=='S') {
+            aprsstr_FixToStr(ph->data, 0UL, h1, 256ul);
+            aprsstr_Append(h1, 256ul, "kmh", 4ul);
+         }
+         else h1[0] = 0;
+         Appwww(wsock, wbuf, h1, 256ul);
+         AppTxt(wbuf, wsock, "</td><td style=text-align:left>", 32ul,
+                ph->head, 41ul);
+         Appwww(wsock, wbuf, "</tr>\015\012", 8ul);
+      }
+   }
+   Appwww(wsock, wbuf, "</table>&nbsp;", 15ul);
+} /* end showobj() */
 
 
 static void ap(uint32_t * j, char h[4096], char s[],
@@ -5935,17 +6890,24 @@ static void listraw(WWWB wbuf, pTCPSOCK * wsock, const char s[],
    uint32_t port;
    uint32_t j;
    uint32_t i0;
-   MONCALL call;
+   MONCALL rawcall;
    char ch;
+   char via;
    char dir;
    char h[4096];
+   char call[4096];
    dir = 0;
+   via = 0;
    if (aprsstr_InStr(s, s_len, "?d", 3ul)==3L) {
       ph = hearddir;
       dir = 1;
    }
-   else if (aprsstr_InStr(s, s_len, "?v", 3ul)==3L) ph = heardvia;
+   else if (aprsstr_InStr(s, s_len, "?v", 3ul)==3L) {
+      ph = heardvia;
+      via = 1;
+   }
    else if (aprsstr_InStr(s, s_len, "?n", 3ul)==3L) ph = heardtcp;
+   else if (aprsstr_InStr(s, s_len, "?o", 3ul)==3L) ph = heardobj;
    else ph = 0;
    ju = (uint32_t)(s[5UL]=='j');
    i0 = 6UL;
@@ -5957,20 +6919,22 @@ static void listraw(WWWB wbuf, pTCPSOCK * wsock, const char s[],
    call[0] = 0;
    if (s[i0]=='=') {
       ++i0;
-      while ((i0<=s_len-1 && ((uint8_t)s[i0]>='0' && (uint8_t)
-                s[i0]<='9' || (uint8_t)s[i0]>='A' && (uint8_t)s[i0]<='Z')
-                 || s[i0]=='^') || s[i0]=='-') {
-         aprsstr_Append(call, 10ul, (char *) &s[i0], 1u/1u);
+      while (((i0<=s_len-1 && ((uint8_t)s[i0]>='0' && (uint8_t)
+                s[i0]<='9' || (uint8_t)X2C_CAP(s[i0])>='A' && (uint8_t)
+                X2C_CAP(s[i0])<='Z') || s[i0]=='^') || s[i0]=='-')
+                || ph==heardobj && (uint8_t)s[i0]>=' ') {
+         aprsstr_Append(call, 4096ul, (char *) &s[i0], 1u/1u);
          ++i0;
       }
    }
    Appwww(wsock, wbuf, "<title>", 8ul);
-   Appwww(wsock, wbuf, call, 10ul);
+   Appwww(wsock, wbuf, call, 4096ul);
    Appwww(wsock, wbuf, "</title></head><body><div id=\"wrapper-junk\">\015\01\
 2", 47ul);
+   deesc(call, 4096ul, rawcall, 10ul);
    while (ph) {
-      if (ph->fromrx==port && (call[0U]==0 || aprsstr_StrCmp(call, 10ul,
-                ph->call, 10ul))) {
+      if (ph->fromrx==port && (rawcall[0U]==0 || aprsstr_StrCmp(rawcall,
+                10ul, ph->call, 10ul))) {
          pr = ph->rawtext[ju];
          while (pr) {
             Appwww(wsock, wbuf, "<div class=\"junk-mh\">", 22ul);
@@ -6113,6 +7077,11 @@ static void listraw(WWWB wbuf, pTCPSOCK * wsock, const char s[],
                Appwww(wsock, wbuf, "no or invalid position", 23ul);
                Appwww(wsock, wbuf, "&gt;</span>", 12ul);
             }
+            else if (via && !pathchk(pr->text, 1024ul)) {
+               Appwww(wsock, wbuf, "<span class=\"junk-reason\">&lt;", 31ul);
+               Appwww(wsock, wbuf, "unknown call of transmitter", 28ul);
+               Appwww(wsock, wbuf, "&gt;</span>", 12ul);
+            }
             if (dir && pr->txd>0UL) {
                Appwww(wsock, wbuf, "<span class=\"junk-txd\"> (txd=", 30ul);
                aprsstr_IntToStr((int32_t)pr->txd, 0UL, h, 4096ul);
@@ -6155,29 +7124,32 @@ static void getreload(char s[], uint32_t s_len, uint32_t * r)
 } /* end getreload() */
 
 
-static void getmh(char s[], uint32_t s_len, char sortby[],
-                uint32_t sortby_len)
+static void getmh(char s[], uint32_t s_len, SORTBY sortby)
 {
+   int32_t t;
    int32_t len;
    int32_t j;
    int32_t i0;
-   sortby[0UL] = 0;
-   sortby[1UL] = 0;
-   i0 = aprsstr_InStr(s, s_len, "?sort=", 7ul);
-   if (i0>=0L) {
-      len = (int32_t)aprsstr_Length(s, s_len);
-      j = i0;
-      i0 += (int32_t)aprsstr_Length("?sort=", 7ul);
-      sortby[0UL] = s[i0];
-      ++i0;
-      sortby[1UL] = s[i0];
-      ++i0;
-      while (i0<=len) {
-         s[j] = s[i0];
+   for (t = 0L; t<=3L; t++) {
+      sortby[t][0U] = 0;
+      sortby[t][1U] = 0;
+      i0 = aprsstr_InStr(s, s_len, SORTURL[t], 7ul);
+      if (i0>=0L) {
+         len = (int32_t)aprsstr_Length(s, s_len);
+         j = i0;
+         i0 += (int32_t)aprsstr_Length(SORTURL[t], 7ul);
+         sortby[t][0U] = s[i0];
          ++i0;
-         ++j;
+         sortby[t][1U] = s[i0];
+         ++i0;
+         while (i0<=len) {
+            s[j] = s[i0];
+            ++i0;
+            ++j;
+         }
       }
-   }
+   } /* end for */
+/*WrStr(" <<<");WrStr(sortby[t]);WrStrLn(">>> "); */
 } /* end getmh() */
 
 
@@ -6214,10 +7186,12 @@ static void klicks(WWWB wbuf, pTCPSOCK * wsock)
    */
    Appwww(wsock, wbuf, "<div style=\"text-align:center\" class=\"nav\"><form \
 method=\"get\">", 63ul);
-   klick(wbuf, wsock, "/", 2ul, "CONNECTS", 9ul, 0);
-   klick(wbuf, wsock, "mh", 3ul, "HEARD", 6ul, 0);
-   if (maxmsg>0UL) klick(wbuf, wsock, "msg", 4ul, "MSGRELAY", 9ul, 0);
-   klick(wbuf, wsock, "info.html", 10ul, "INFO", 5ul, 0);
+   klick(wbuf, wsock, "/", 2ul, "CONNECTS", 9ul, 0UL, 0, 0);
+   klick(wbuf, wsock, "mh", 3ul, "HEARD", 6ul, 0UL, 0, 0);
+   if (maxmsg>0UL) {
+      klick(wbuf, wsock, "msg", 4ul, "MSGRELAY", 9ul, 0UL, 0, 0);
+   }
+   klick(wbuf, wsock, "info.html", 10ul, "INFO", 5ul, 0UL, 0, 0);
    reloadklick(wbuf, wsock);
    Appwww(wsock, wbuf, "</div>", 7ul);
 } /* end klicks() */
@@ -6268,7 +7242,7 @@ static void title(WWWB wbuf, pTCPSOCK * wsock, uint32_t * cnt,
          Appwww(wsock, wbuf, "  Port ", 8ul);
          Appwww(wsock, wbuf, tcpbindport, 6ul);
       }
-      Appwww(wsock, wbuf, " [udpgate 0.71] Maxusers ", 26ul);
+      Appwww(wsock, wbuf, " [udpgate 0.74] Maxusers ", 26ul);
       aprsstr_IntToStr((int32_t)maxusers, 1UL, h, 32ul);
       Appwww(wsock, wbuf, h, 32ul);
       Appwww(wsock, wbuf, " http#", 7ul);
@@ -6280,12 +7254,23 @@ static void title(WWWB wbuf, pTCPSOCK * wsock, uint32_t * cnt,
       }
       else Appwww(wsock, wbuf, servercall, 10ul);
       apppos(wbuf, wsock, home, 1);
-      Appwww(wsock, wbuf, " [udpgate 0.71] http#", 22ul);
+      if (homealt>(-1.E+4f)) {
+         aprsstr_IntToStr((int32_t)X2C_TRUNCI(homealt,X2C_min_longint,
+                X2C_max_longint), 1UL, h, 32ul);
+         Appwww(wsock, wbuf, " ", 2ul);
+         aprsstr_Append(h, 32ul, "m(NN)", 6ul);
+         Appwww(wsock, wbuf, h, 32ul);
+      }
+      Appwww(wsock, wbuf, " [udpgate 0.74] http#", 22ul);
    }
    aprsstr_IntToStr((int32_t)*cnt, 1UL, h, 32ul);
    Appwww(wsock, wbuf, h, 32ul);
    Appwww(wsock, wbuf, " Uptime ", 9ul);
    AppTime(wbuf, wsock, uptime, 0);
+   if (nogatebadvia && maintit) {
+      Appwww(wsock, wbuf, "<BR>(only Frames with a Callsign of the sender in \
+it will be gated)", 68ul);
+   }
    Appwww(wsock, wbuf, "</h3></div>\015\012", 14ul);
 } /* end title() */
 
@@ -6353,7 +7338,7 @@ static void Www(pTCPSOCK wsock)
       }
       anonym0->get[i0-5UL] = 0;
       getreload(anonym0->get, 256ul, &anonym0->reload);
-      getmh(anonym0->get, 256ul, anonym0->sortby, 2ul);
+      getmh(anonym0->get, 256ul, anonym0->sortby);
    }
    if (wsock->get[0U]==0) {
       /*    INC(httpcount); */
@@ -6501,7 +7486,7 @@ ign:center\" BGCOLOR=\"#D0C0C0\"><TD>out", 74ul);
                }
                Appwww(&wsock, wbuf, "</TD><TD>", 10ul);
                if (anonym2->connt>0UL) {
-                  if (anonym2->valid) Appwww(&wsock, wbuf, "v", 2ul);
+                  if (anonym2->passvalid) Appwww(&wsock, wbuf, "v", 2ul);
                   if (aprspos_posvalid(anonym2->user.pos)) {
                      Appwww(&wsock, wbuf, "p", 2ul);
                   }
@@ -6548,16 +7533,19 @@ ign:center\" BGCOLOR=\"#D0C0C0\"><TD>out", 74ul);
       title(wbuf, &wsock, &mhhttpcount, 0, " MHeard", 8ul, "", 1ul);
       klicks(wbuf, &wsock);
       if (heardtimew>0UL) {
-         showmh(wbuf, &wsock, h1, hearddir, 1, 0, heardtimew, "Heard Stations\
- Since Last ", 27ul, wsock->sortby, 2ul);
+         showmh(wbuf, &wsock, h1, hearddir, 1, 0, heardtimew, " Heard Station\
+s Since Last ", 28ul, wsock->sortby);
       }
-      if (heardtimevia>0UL) {
-         showmh(wbuf, &wsock, h1, heardvia, 0, 0, heardtimevia, "Via RF Heard\
- Stations Since Last ", 34ul, wsock->sortby, 2ul);
+      if (heardtimevia>0UL && heardvia) {
+         showmh(wbuf, &wsock, h1, heardvia, 0, 0, heardtimevia, " Via RF Hear\
+d Stations Since Last ", 35ul, wsock->sortby);
       }
-      if (heardtimetcp>0UL) {
-         showmh(wbuf, &wsock, h1, heardtcp, 0, 1, heardtimetcp, "Via TCP Conn\
-ected Stations Since Last ", 39ul, wsock->sortby, 2ul);
+      if (heardtimetcp>0UL && heardtcp) {
+         showmh(wbuf, &wsock, h1, heardtcp, 0, 1, heardtimetcp, " Via TCP Con\
+nected Stations Since Last ", 40ul, wsock->sortby);
+      }
+      if (heardtimeobj>0UL) {
+         showobj(wbuf, &wsock, h1, heardtimeobj, wsock->sortby);
       }
       Appwww(&wsock, wbuf, "</body></html>\015\012", 17ul);
    }
@@ -6752,7 +7740,7 @@ static void KillDoubleUser(pTCPSOCK u)
    while (v) {
       if ((v->service=='S' && v->user.call[0U])
                 && aprsstr_StrCmp(u->user.call, 10ul, v->user.call, 10ul)) {
-         if (v->valid && !u->valid) {
+         if (v->passvalid && !u->passvalid) {
             saybusy(&u->fd, "# unvalidated double login\015\012", 29ul);
          }
          else {
@@ -6785,7 +7773,7 @@ static char tcpconn(pTCPSOCK * sockchain, int32_t f,
    { /* with */
       struct TCPSOCK * anonym = cp;
       anonym->fd = f;
-      anonym->valid = cservice=='G';
+      anonym->passvalid = cservice=='G';
       anonym->service = cservice;
       res0 = socknonblock(f);
       anonym->txbuf = 0;
@@ -6793,6 +7781,7 @@ static char tcpconn(pTCPSOCK * sockchain, int32_t f,
    cp->next = *sockchain;
    *sockchain = cp;
    if (cservice=='G') {
+      res0 = osi_keepalive(f, 1, 180L, 30L, 2L);
       if (servercall[0U]) {
          aprsstr_Assign(h, 512ul, "user ", 6ul);
          aprsstr_Append(h, 512ul, servercall, 10ul);
@@ -6801,7 +7790,7 @@ static char tcpconn(pTCPSOCK * sockchain, int32_t f,
             aprsstr_Append(h, 512ul, passwd, 6ul);
          }
          aprsstr_Append(h, 512ul, " vers ", 7ul);
-         aprsstr_Append(h, 512ul, "udpgate 0.71", 13ul);
+         aprsstr_Append(h, 512ul, "udpgate 0.74", 13ul);
          if (actfilter[0U]) {
             aprsstr_Append(h, 512ul, " filter ", 9ul);
             aprsstr_Append(h, 512ul, actfilter, 256ul);
@@ -6817,6 +7806,7 @@ static char tcpconn(pTCPSOCK * sockchain, int32_t f,
       cp^.rxbytes:=4294965296;
       cp^.rxbytesh:=0;
       */
+      res0 = osi_keepalive(f, 1, 300L, 60L, 3L);
       res0 = 512L;
       res0 = getpeeripnum(f, h1, &res0);
       if (res0>=0L) {
@@ -6830,9 +7820,9 @@ static char tcpconn(pTCPSOCK * sockchain, int32_t f,
          aprsstr_Append(h1, 512ul, h, 512ul);
          aprsstr_Append(h1, 512ul, " ", 2ul);
          aprsstr_Append(h1, 512ul, h2, 512ul);
-         logline(1L, h1, 512ul);
+         logline(udpgate4_resLOG, h1, 512ul);
       }
-      aprsstr_Assign(h, 512ul, "# udpgate 0.71\015\012", 17ul);
+      aprsstr_Assign(h, 512ul, "# udpgate 0.74\015\012", 17ul);
       Sendtcp(cp, h);
    }
    return 1;
@@ -6849,7 +7839,7 @@ static void Gateconn(pTCPSOCK * cp)
    FRAMEBUF h;
    char hh[21];
    uint32_t max0;
-   struct _2 * anonym;
+   struct _3 * anonym;
    act = 0;
    try0 = 0;
    p = *cp;
@@ -6887,7 +7877,7 @@ static void Gateconn(pTCPSOCK * cp)
                 gateconndelay)) && lastdnstime+gateways[trygate].resolvtime*5UL<=systime)
                  {
          { /* with */
-            struct _2 * anonym = &gateways[trygate];
+            struct _3 * anonym = &gateways[trygate];
             if (anonym->url[0U]) {
                /*check dns time  */
                spintime();
@@ -6902,7 +7892,7 @@ static void Gateconn(pTCPSOCK * cp)
                 21ul);
                   aprsstr_Append(h, 512ul, hh, 21ul);
                   aprsstr_Append(h, 512ul, "s", 2ul);
-                  logline(1L, h, 512ul);
+                  logline(udpgate4_resDELAY, h, 512ul);
                   if (anonym->resolvtime>300UL) anonym->resolvtime = 120UL;
                }
                /*check dns time */
@@ -6925,7 +7915,7 @@ static void Gateconn(pTCPSOCK * cp)
                      aprsstr_Append(h, 512ul, anonym->url, 256ul);
                      aprsstr_Append(h, 512ul, " ", 2ul);
                      aprsstr_Append(h, 512ul, anonym->port, 6ul);
-                     logline(1L, h, 512ul);
+                     logline(udpgate4_resLOG, h, 512ul);
                   }
                }
             }
@@ -6993,6 +7983,8 @@ static int32_t res;
 
 static int32_t i;
 
+static uint8_t ires;
+
 static pTCPSOCK acttcp;
 
 static pTCPSOCK acttmp;
@@ -7049,11 +8041,13 @@ extern int main(int argc, char **argv)
    if (sizeof(FILENAME)!=1024) X2C_ASSERT(0);
    if (sizeof(FRAMEBUF)!=512) X2C_ASSERT(0);
    if (sizeof(FILTERST)!=256) X2C_ASSERT(0);
+   if (sizeof(SORTBY)!=8) X2C_ASSERT(0);
    if (sizeof(FILTERCALLS)!=90) X2C_ASSERT(0);
    if (sizeof(WWWB)!=1401) X2C_ASSERT(0);
    if (sizeof(MSGTEXT)!=68) X2C_ASSERT(0);
    if (sizeof(ACKTEXT)!=5) X2C_ASSERT(0);
    if (sizeof(REPLYACK)!=2) X2C_ASSERT(0);
+   libsrtm_BEGIN();
    aprsstr_BEGIN();
    aprspos_BEGIN();
    osi_BEGIN();
@@ -7065,12 +8059,17 @@ extern int main(int argc, char **argv)
    heardtimew = 86400UL;
    heardtimevia = 1800UL;
    heardtimetcp = 86400UL;
+   heardtimeobj = 0UL;
    purgemsg = 86400UL;
    purgeacked = 86400UL;
    purgeunack = 600UL;
    purgeunacksent = 30UL;
    gateconndelay = 30UL;
    msgsendtime = 21600UL;
+   objmhfromtcp = 0;
+   home.lat = 0.0f;
+   home.long0 = 0.0f;
+   homealt = (-1.E+4f);
    rfquiet = 10UL;
    maxatonce = 2UL;
    maxmsg = 1000UL;
@@ -7078,9 +8077,11 @@ extern int main(int argc, char **argv)
    hearddir = 0;
    heardvia = 0;
    heardtcp = 0;
-   sendnetmsg = 1;
+   heardobj = 0;
    mhfilelines = 0UL;
-   memset((char *)gateways,(char)0,sizeof(struct _2 [21]));
+   libsrtm_srtmmaxmem = 500000UL;
+   Gencrctab();
+   memset((char *)gateways,(char)0,sizeof(struct _3 [21]));
    realtime = 0UL;
    systime = 946728000UL; /* start of systime about 1.1.2000 */
    qmaxtime = 15L;
@@ -7105,11 +8106,13 @@ extern int main(int argc, char **argv)
    rfhered = 0;
    wwwbindport[0] = 0;
    wwwdir[0U] = 0;
+   libsrtm_srtmdir[0U] = 0;
    wwwsizelimit = 4194304L;
    udpsocks = 0;
    callsrc = 0;
    mhperport = 0;
    sighup = 0;
+   nogatebadvia = 0;
    qas = 0UL;
    qasc = 0UL;
    maxpongtime = 30UL;
@@ -7117,6 +8120,11 @@ extern int main(int argc, char **argv)
    rawlines = 20UL;
    msgretries = 12UL;
    rfcallchk = 1;
+   altifromsrtm = 0;
+   strncpy(SORTURL[0U],"?sort=",7u);
+   strncpy(SORTURL[1U],"?sortv=",7u);
+   strncpy(SORTURL[2U],"?sortn=",7u);
+   strncpy(SORTURL[3U],"?sorto=",7u);
    signal(SIGHUP, readigatefile);
    /*  signal(SIGUSR1, readigatefile); */
    parms();
@@ -7243,9 +8251,9 @@ extern int main(int argc, char **argv)
             while (getudp(actudp, mbuf, actudp->ghosts)) {
                if (systime<udpdonetime+5UL) {
                   /* last time all data read is no too long */
-                  res = AprsIs(mbuf, 512ul, 0x3FU, 0x3FU, "", 1ul,
+                  ires = AprsIs(mbuf, 512ul, 0x3FU, 0x3FU, "", 1ul,
                 (uint32_t)i, 0, &poscall);
-                  if (res>=0L) {
+                  if (ires<=udpgate4_resOK) {
                      Sendall(mbuf, 0L, poscall);
                      keepconn = systime+keeptime; /* connect to gateway */
                   }
@@ -7256,11 +8264,12 @@ extern int main(int argc, char **argv)
                      osi_WrStrLn("AXUDP-frames thrown away - too long program\
  delay", 50ul);
                   }
-                  logline(1L, "Frame discarded - too long program delay",
-                41ul);
+                  logline(udpgate4_resDELAY, "Frame discarded - too long prog\
+ram delay", 41ul);
+                  ires = udpgate4_resDELAY;
                }
                if (verb || logframes>1L) {
-                  showframe(res, 0, actudp, mbuf, 512ul, poscall.pos);
+                  showframe(ires, 0, actudp, mbuf, 512ul, poscall.pos);
                }
             }
          }
@@ -7306,32 +8315,34 @@ extern int main(int argc, char **argv)
                         ++acttcp->lostrxframes;
                      }
                   }
-                  if ((acttcp->valid || acttcp->service=='G') || !Auth(mbuf,
-                512ul, acttcp)) {
+                  if ((acttcp->passvalid || acttcp->service=='G')
+                || !Auth(mbuf, 512ul, acttcp)) {
                      if (mbuf[0U]=='#') {
                         GetFilters(&acttcp->filters, mbuf, 512ul, 1UL,
                 acttcp);
-                        res = -7L;
+                        ires = udpgate4_resFILT;
                      }
                      else {
-                        res = AprsIs(mbuf, 512ul, 0x3U, 0x17U,
-                acttcp->user.call, 10ul, 0UL, acttcp->valid, &poscall);
+                        ires = AprsIs(mbuf, 512ul, 0x3U, 0x17U,
+                acttcp->user.call, 10ul, 0UL, acttcp->passvalid, &poscall);
                      }
-                     if (((res>=-1L && aprspos_posvalid(poscall.pos))
-                && aprsstr_StrCmp(poscall.call, 10ul, acttcp->user.call,
+                     if (((ires<=udpgate4_resNOPASS && aprspos_posvalid(poscall.pos)
+                ) && aprsstr_StrCmp(poscall.call, 10ul, acttcp->user.call,
                 10ul)) && X2C_INL((int32_t)(uint8_t)poscall.typ0,128,
                 _cnst1)) {
                         acttcp->user.pos = poscall.pos;
                         if (heardtimetcp>48UL) {
                            AddHeard(&heardtcp, heardtimetcp, poscall.call,
-                0UL, mbuf, 512ul, &voidungate, 0);
+                0UL, mbuf, 512ul, &voidungate, 0, 0, 0);
                 /* store pos in mh to remember pos at next connect */
                         }
                      }
-                     if (acttcp->valid && !acttcp->pingout) {
-                        if (res>=0L) Sendall(mbuf, acttcp->fd, poscall);
+                     if (acttcp->passvalid && !acttcp->pingout) {
+                        if (ires<=udpgate4_resOK) {
+                           Sendall(mbuf, acttcp->fd, poscall);
+                        }
                         if (verb || logframes>1L) {
-                           showframe(res, acttcp, 0, mbuf, 512ul,
+                           showframe(ires, acttcp, 0, mbuf, 512ul,
                 poscall.pos);
                         }
                      }
