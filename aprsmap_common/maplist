@@ -1,34 +1,63 @@
-# Map Name	Order	Format	Tile Server URL					API Key						Comments
+# Map Names	Order	Format	Tile Server URL					API Key						Comments
 # -------------	-------	-------	-----------------------------------------------	-----------------------------------------------	--------------------------------------------
 tiles		zxy	png	https://tile.openstreetmap.org									OSM Carto (Standard)
 tiles_de	zxy	png	https://tile.openstreetmap.de									OSM German style
-tiles_fr	zxy	png	http://a.tile.openstreetmap.fr/osmfr								OSM French style
-tiles_humanitarian zxy	png	http://a.tile.openstreetmap.fr/hot								OSM Humanitarian style
+tiles_fr	zxy	png	https://a.tile.openstreetmap.fr/osmfr								OSM French style
+tiles_humanitarian zxy	png	https://a.tile.openstreetmap.fr/hot								OSM Humanitarian style
 tiles_topo	zxy	png	https://tile.opentopomap.org									OpenTopoMap
-tiles_mapnik	zxy	png	http://tiles.wmflabs.org/osm									OSM Mapnik
-tiles_hikebike	zxy	png	http://tiles.wmflabs.org/hikebike								OSM Hike & Bike Map
+tiles_mapnik	zxy	png	https://tiles.wmflabs.org/osm									OSM Mapnik
+tiles_hikebike	zxy	png	https://tiles.wmflabs.org/hikebike								OSM Hike & Bike Map
+tiles_topplus	zyx	png	https://sgx.geodatenzentrum.de/wmts_topplus_open/tile/1.0.0/web/default/WEBMERCATOR		BKG TopPlusOpen (EMEA detailed)
 tiles_esristr	zyx	jpg	https://services.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile		ArcGIS ESRI World Street Map
 tiles_esrisat	zyx	jpg	https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile		ArcGIS ESRI Satellite World Imagery
-tiles_transport	zxy	png	http://tile.thunderforest.com/transport		<insert_api_key_here>				Thunderforest Transport (requires API key)
-tiles_landscape	zxy	png	http://tile.thunderforest.com/landscape		<insert_api_key_here>				Thunderforest Landscape (requires API key)
-tiles_outdoors	zxy	png	http://tile.thunderforest.com/outdoors		<insert_api_key_here>				Thunderforest Outdoors (requires API key)
-tiles_cycle	zxy	png	http://tile.thunderforest.com/cycle		<insert_api_key_here>				Thunderforest OpenCycleMap (requires API key)
-tiles_mapboxstr zxy	png	https://api.mapbox.com/v4/mapbox.streets	<insert_access_token_here>			Mapbox Streets (requires access token)
+tiles_transport	zxy	png	https://tile.thunderforest.com/transport	<insert_api_key_here>				Thunderforest Transport (requires API key)
+tiles_landscape	zxy	png	https://tile.thunderforest.com/landscape	<insert_api_key_here>				Thunderforest Landscape (requires API key)
+tiles_outdoors	zxy	png	https://tile.thunderforest.com/outdoors		<insert_api_key_here>				Thunderforest Outdoors (requires API key)
+tiles_cycle	zxy	png	https://tile.thunderforest.com/cycle		<insert_api_key_here>				Thunderforest OpenCycleMap (requires API key)
 tiles_mapboxsat zxy	jpg	https://api.mapbox.com/v4/mapbox.satellite	<insert_access_token_here>			Mapbox Satellite (requires access token)
-tiles_mapboxstrsat zxy	jpg	https://api.mapbox.com/v4/mapbox.streets-satellite <insert_access_token_here>			Mapbox Streets-Satellite (requires access token)
-tiles_mapboxrbh zxy	png	https://api.mapbox.com/v4/mapbox.run-bike-hike	<insert_access_token_here>			Mapbox Run-Bike-Hike (requires access token)
 xzr_tiles	zxy	png	http://osm.oe2xzr.ampr.at/osm/tiles								OSM tiles via Hamnet oe2xzr tile server
 xzr_tiles_topo	zxy	png	http://osm.oe2xzr.ampr.at/osm/tiles_topo							Topo tiles via Hamnet oe2xzr tile server
-xzr_tiles_sat	zxy	jpg	http://osm.oe2xzr.ampr.at/osm/tiles_sat								Satellite tiles via Hamnet oe2xzr tile server
 xzr_tiles_cyclemap zxy	png	http://osm.oe2xzr.ampr.at/osm/tiles_cyclemap							CycleMap tiles via Hamnet oe2xzr tile server
+xzr_tiles_sat	zxy	jpg	http://osm.oe2xzr.ampr.at/osm/tiles_sat								Satellite tiles via Hamnet oe2xzr tile server
 
-# Map Name - this name matches the Map Name defined in aprsmap
+# Map Names - these names match "Map Names" entries defined in aprsmap.cfg
 # Order - map tile structure used by tile server MUST be one of the following:
 #     zxy = {z}/{x}/{y} - the order used by most tile servers
-#     zyx = {z}/{y}/{x} - seen used by ArcGIS tile server
+#     zyx = {z}/{y}/{x} - seen used by ArcGIS and BKG tile servers
 # Format - this is the format & file extension of the downloaded map tile
 # Tile Server URL - in most cases, all mirrors actually resolve to the same IP address or resolve to a closest geo server
 # API Key - this optional entry is used to define the access key required by some tile servers and MUST have the format:
 #     ?apikey=<your api key>
 #     ?access_token=<your access token>
 # Comments - optional
+
+##############################################################################
+
+# The following "Map Names" entries can be simply copied and pasted into
+# aprsmap.cfg replacing the existing default "Map Names" entries that were
+# initially created by aprsmap in the configuration file.
+#
+# The suggested gamma and brightness values below may also be modifed and
+# tested within aprsmap to suit your preference.
+#
+# You may rearrange the list of maps below in any order you desire in
+# the aprsmap.cfg configuration file. The first "Map Names" entry in the list
+# will be the default map initially displayed by aprsmap. Additionally,
+# the first three "Map Names" in the list below will be assigned to shortcut
+# keys <7>, <8>, and <9>.
+
+Map Names|1|tiles 0.25 25
+Map Names|1|tiles_de 0.25 25
+Map Names|1|tiles_fr 0.25 25
+Map Names|1|tiles_humanitarian 0.25 25
+Map Names|1|tiles_topo 0.25 25
+Map Names|1|tiles_mapnik 0.25 25
+Map Names|1|tiles_hikebike 0.25 25
+Map Names|1|tiles_topplus 0.25 25
+Map Names|1|tiles_esristr 0.25 25
+Map Names|1|tiles_esrisat 0.50 50
+Map Names|1|tiles_transport 0.25 25
+Map Names|1|tiles_landscape 0.25 25
+Map Names|1|tiles_outdoors 0.25 25
+Map Names|1|tiles_cycle 0.25 25
+Map Names|1|tiles_mapboxsat 0.50 50

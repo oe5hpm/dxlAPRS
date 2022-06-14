@@ -10,23 +10,23 @@ simply click again on the same Position
 and the Calls will rotate to the
 preselected top position
 
-|104 Show additional Infos of the selected User
+|104 Show additional Info for the selected User
 
 |106 Zoom the Map to fit this User with Track
 into the Window (shortcut .)
 
 |107 Zoom the Map to fit this User with Track
-and the Igates which heared it to the Window.
+and the Igates which heard it to the Window.
 
 |108 Move Map to hold selected moving Object
 as near to Center of Screen as configured in
 Config > Map Moving > Center Watchcall    
 
 |109 Zoom the Map to fit this User with Track
-and the Igates which heared it to the Window.
+and the Igates which heard it to the Window.
 
 |110 If Call is Igate, Zoom Map to fit the
-Stations and Tracks heared to the Window.
+Stations and Tracks heard to the Window.
 The thicker the white Lines, the more Beacons
 took this way
 
@@ -34,7 +34,7 @@ took this way
 or a Query to a Machine
 
 |112 Move Map to hold selected Object in View.
-In Config > Map Moveing > Center Watchcall
+In Config > Map Moving > Center Watchcall
 you define how near to Center of Window.
 
 |113 Go to normal Mode and Show all Users
@@ -102,10 +102,10 @@ view 1 is used at start
 |301 Generate a Video file/stream in YUV4MPEG2 format
 in File/Pipe map.y4m. Adjust all parameters before
 with the "Animate" function. The File/Stream may
-be viewed with VLC, Mplayer or packt by x264
+be viewed with VLC, MPlayer or encoded using x264
 eg. x264 -o film.mp4 --muxer mp4 --crf 22 map.y4m
 
-|302 Save screen Image (without menues) to File
+|302 Save screen Image (without menus) to File
 format .png so use filename with .png 
 win: use .bmp
 %t insert date-time in filename
@@ -120,12 +120,12 @@ win: use .bmp
 
 |308 Click and enter a Filename for received
 and sent Data. On next program start Data
-will be read to RAM and have same state as
+will be loaded into memory and have same state as
 at program termination. The logfile may be
 deleted, renamed, changed any time even if it
 is write enabled. A given File Path is used
 for watch-call and manual saved Logs too.
-Append %d for daywise logfile. "logs/rawlog%d"
+Append %d for daily logfile. "logs/rawlog%d"
 
 |309 Days Keep (dayly) Rawdata Logfiles. Purge
 starts on Program start and Midnight.
@@ -147,10 +147,10 @@ enter word in Tools / Find
 entries may be sorted by Call or Time
 click on a Line shows position on map
 
-|410 List Moveing Beacons
+|410 List Moving Beacons
 for highlighting keyword
 enter word in Tools / Find
-|411 List Moveing Beacons decoded
+|411 List Moving Beacons decoded
 entries may be sorted by Call or Time
 click on a Line shows position on map
 
@@ -171,7 +171,7 @@ If a line contains a position, a click on
 the line shows position on map. 
 For highlighting keyword, enter word in
 Tools / Find or "F".
-Srolling stops if text is not on top or
+Scrolling stops if text is not on top or
 bottom.
 "u" key for quick toggle window on/off.
 Clr clears content.
@@ -179,7 +179,7 @@ Use cursor keys and copy/paste(out)
 
 |430 List Messages
 |435 List Bulletins
-|440 Show program internal infos
+|440 Show program internal info
 
 
 |500 Find Object/Call and Zoom to or Enter
@@ -265,9 +265,9 @@ Level 13 for outside Town Streets
 15 inside Town, 16 Houses, Oneways....
 
 |701 Reload the Map-part You see.
-Do if newer maps may be avaliable
+Do if newer maps become avaliable
 or something is wrong.
-If download failes, the
+If download fails, the
 old Maps will come back
 
 |710 Shortcut "7" "8" "9" are last 3 Lines
@@ -323,7 +323,7 @@ Disables click to Symbols, Text and Tracks
 
 |1025 Enable click to Symbols, Text and Tracks
 
-|1026 On click to (empty) map clear menues
+|1026 On click to (empty) map clear menus
 (shortcut Esc)
 Enable click to Symbols, Text and Tracks
 
@@ -354,8 +354,8 @@ on Mouse Over Wx Symbol
 
 |1303 Center Symbol to middle of screen
 
-|1304 Show Info of last Beacon. Step thru Beacons
-with < > Key or More Infos/< > Button
+|1304 Show Info for last Beacon. Step thru Beacons
+with < > Key or More Info/< > Button
 
 |1306 Zoom Map so Track fits on it. Maximum
 as in Config/Map Moving/Default Zoom
@@ -364,7 +364,7 @@ as in Config/Map Moving/Default Zoom
 
 |1308 Show Stations the Igate Heard
 
-|1309 Show Beacon Timer Intervall Histogram
+|1309 Show Beacon Timer Interval Histogram
 
 |1310 Show driving speed over time as data
 avaliable, out of sense values are not shown
@@ -373,12 +373,12 @@ avaliable, out of sense values are not shown
 
 |1312 Pop up a Menu for actions with this Object
 
-|1400 Show info to Waypoint or Beacon and go back in time
+|1400 Show info on Waypoint or Beacon and go back in time
 
 |1401 Toggle step through All or waypoints
 with Error flags. Shortcut "e"
 
-|1402 Show info to Waypoint or Beacon and go forward in time
+|1402 Show info on Waypoint or Beacon and go forward in time
 
 |1405 List raw Data of this User
 on the Monitor text Window 
@@ -390,23 +390,23 @@ on the Monitor text Window
 |1408 Set Marker 2 with Objects last Position
 
 
-|1410 If info avaliable show a Speed over Time Diagramm
+|1410 If info avaliable show a Speed over Time Diagram
 Trackfilter on/off may repair wrong values
 or manual delete wrong waypoints before.
 The Cursor line shows a marked waypoint.
 
 |1415 Sum driven Distance and if info avaliable,
-show an Altitude over Distance Diagramm. 
+show an Altitude over Distance Diagram. 
 Trackfilter on/off may repair wrong values
 or manual delete wrong waypoints before.
 The Cursor line shows a marked waypoint.
 If Altitude Data avaliable, the Ground
 Level is shown too in brown.
 
-|1420 Count Beacons and view it in a Histogramm
+|1420 Count Beacons and view it in a Histogram
 
 |1425 Write (or Append if exists) Track and
-all Info to this Call to a file with
+all Info for this Call to a file with
 name of the Call and so may be viewed 
 later by Importing the logfile.
 
@@ -454,7 +454,7 @@ in Tools/Add Maptypes [mapname gamma brightness]
 normal value is 2.2, this does not
 affect Screenshot or Video function
 
-|1506 Text at Symbols on map not in menues
+|1506 Text at Symbols on map not in menus
 Item/Object Text may be dimmed additional
 Toggle on/off with "L" shortcut
 
@@ -551,7 +551,7 @@ it is case sensitive and needs full word length.
 or lat/long ddmm.mm  dddmm.mm  "4806.09N 01318.67E"
 or lat/long ddmm.mmm dddmm.mmm "4806.091N 01318.676E"
 or lat/long (-)d.ddddd (-)d.ddddd "48.71 -13.967"
-In Poi's (in osm-directory) Repeat Find to step
+in POIs (in osm-directory). Repeat Find to step
 through all matches "p*dorf".
 Go back to last map position with "b", BACKSPACE
 or right click as after any other zoom/pan function.
@@ -752,7 +752,7 @@ later
 of map parts to be downloaded for a complete map with
 all zoomlevels for the visable area. Start with lower
 levels until testing of having map parts takes a while.
-If value fits, press download button by moveing mouse
+If value fits, press download button by moving mouse
 not over other menus. To stop download press this button
 again, download may be continued any time later.
 
@@ -776,7 +776,7 @@ does not work with Wildcards
 
 |5806 Remove this Call from Watchlist
 
-|6700 Importing a "Time Fullbright"-Intervall Logfile
+|6700 Importing a "Time Fullbright"-Interval Logfile
 beginning with this Date/Time. Received actual
 Data is stored to memory and writelog and is
 displayed again on "Exit Logview"
@@ -799,7 +799,7 @@ for dayly logs, "logs/rawlog%d"
 
 |6730 Go to Start of Logfile
 |6731 Go "Time Fullbright" back in Logfile
-|6732 Load beginning from Start Date a "Time Fullbright" Intervall 
+|6732 Load beginning from Start Date a "Time Fullbright" Interval 
 |6733 Go "Time Fullbright" forward in Logfile
 |6734 Go to End of Logfile
 
@@ -814,7 +814,7 @@ take care of efficient resending to
 mobile destinations.
 
 |6801 Send Message with no Acknowledge.
-Used for Querys like "?APRSH" "?HELP"
+Used for Queries like "?APRSH" "?HELP"
 sent to Igates. The Msg is sent one time
 and may be resent manual with "Kick" Button
 "BLN1" to "BLN9" as [To Call] for sending
@@ -932,7 +932,7 @@ are at each Beacon entry
 |7035 Configure Radio Ports
 
 |7040 Things we need to get Online 
-and some are usefull for Rf
+and some are useful for Rf
 Beacons too
 
 |7043 Menus fore/background, Font Size and Colour
@@ -947,7 +947,7 @@ used as sender software identifier
 anywhere in the raw frame
 
 |7305 Filter out data with keyword in Comment
-from polluteing the Map. Data is stored
+from polluting the Map. Data is stored
 in logfile for reimport with filter off
 
 |7310 Filter out Objects from source
@@ -960,7 +960,7 @@ in logfile for reimport with filter off
 |7400 Enter Your Callsign, it is not necessary
 to receive data from servers but would
 be nice to show the makers of servers
-who is online. If You run more active
+that are online. If You run more active
 Aprs tools, each should have a different
 SSID at Your Call like -1 -2 ...
  
@@ -968,7 +968,7 @@ SSID at Your Call like -1 -2 ...
 |7405 Choose a Symbol, avoid storm, fire and
 other alarm symbols as static beacon.
 For Overlay Symbol an additional
-Character or Number may be choosed
+Character or Number may be choosen
 
 |7406 choose a Symbol on the
 Table and click to enter
@@ -1032,7 +1032,7 @@ a hole in wall problem". This would draw disrupted-
 and ghost-tracks on Maps.
 
 |7446 Choose Rf-Ports to be gated to
-Internet if gateing is Enabled
+Internet if gating is Enabled
 e.g. 124 for Port 1 2 and 4
 
 |7500 Enable/Disable Rf Port 1
@@ -1079,10 +1079,10 @@ try the line before in a dos-terminal with -h or -v option
 example (win) Your GPS to Map: (see more options gps2aprs -h)
  gps2aprs.exe -t com1:4800 -I OE0AAA -D -0 30 -b 2 -r 127.0.0.1:9002 
 
-|7530 If enabled, all frames with not a valid
+|7530 If enabled, all frames without a valid
 "callsign" as sender will be discarded
 Also used as not-call-Beacon Send warning.
-|7531 If enabled, all frames with not a valid
+|7531 If enabled, all frames without a valid
 "callsign" as sender will be discarded
 Also used as not-call-Beacon Send warning.
 
@@ -1103,7 +1103,7 @@ if RAM is small, use 0 or option off.
 |7545 If two Beacons (especially with same Text) are
 sent in that Time Igate delete dupes (57s), You
 will never see the Beacon in AprsIs Network
-even if sent on different Frequecys.
+even if sent on different Frequecies.
 To avoid this, the Shift Time is used
 to spread Transmissions over the Time.
 
@@ -1162,7 +1162,7 @@ Toggle with "p"
 
 |7861 On Mouse-Over, on this Zoomlevel or higher,
 show Point-of-Interest Content from files
-in "poi"-directory. On/off with "p".
+in "POI"-directory. On/off with "p".
 Hint: "Config > Reload Config" (re)reads
 this files after changes.
 Press "Save Config" before.
@@ -1220,7 +1220,7 @@ negative value inverts mouse-wheel or multitouch zoom
 |7940 Map move step width
 
 |7935 Limit Zoom Level to avoid download
-of maps with no more infos on 
+of empty maps
 
 |7930 Limit zoomlevel for autozoom to
 small objects to avoid download
@@ -1306,7 +1306,7 @@ be a Callsign.
 |8120 Position for Items and Objects in DDMM.MMM
 or D.DDDDD or :File containing Position or
 simply hold SHIFT Key and click on the Map.
-To quick reposit Objects: "B" to open Beacon
+To quickly reposition Objects: "B" to open Beacon
 Editor, Click to Symbol on Map, "DEL" to remove,
 SHIFT-Click or press "x" to new position,
 "Draw" or "Send"
@@ -1393,23 +1393,23 @@ a view times on Rf Ports.
 Viewer should delete Items too.
  
 |8150 Send normal DDMM.MM format, long, only
-18m resolution but man-readable. May
+18m resolution but human-readable. May
 be extendet with DAO to 20cm resolution
 with "Lat/Long+" and 5 bytes more.
 
 |8151 Send Mic-e format, this is compressed to
 minimal size with 18m resolution and no
 extra bytes for speed and course. May
-contain not-printable characters so be
-carefull by copy/edit raw data. May be
+contain non-printable characters so be
+careful by copy/edit raw data. May be
 extendet with DAO to 20cm resolution
 with "Mic-e+" and 5 Bytes more.
 
 For Objects and Items enable Multiline Editing
 Shift + Leftclick or "x" on Map to Add Lines.
 When first Line is entered a "fine configure"
-Submenue will Open. Switch to "Lat/Long" to
-reposit whole Object with Shift Click or "x"
+Submenu will Open. Switch to "Lat/Long" to
+reposition whole Object with Shift Click or "x"
 
 
 |8152 Send "Compressed" format, this is fixed size
@@ -1506,11 +1506,11 @@ clicked "Edit" before (dimmed Line).
 digipeated if in source/destination
 or via-Field like "NOCALL". <mycall>"
 in the "done" via path is always
-filtert out because it was repeated
+filtered out because it was repeated
 by You just before.
 "i" excludes <mycall> from digipeating
 in the active path.
-"-" switches off the powerfull SSID
+"-" switches off the powerful SSID
 -Routing. This should only be done in
 a crossband Digi from SW to VHF because
 on SW the "NOGATE" and "RFONLY"
@@ -1552,7 +1552,7 @@ is the Distance of the Beacon-sending
 -station to You. A 0 disables this, a
 "30000" means the whole earth but makes
 sense because all non-position junk will
-be filtert out except of messages,
+be filtered out except of messages,
 they will always be digipeated.
 
 |8330 This is a Powerful trafic-reduction mechanism.
@@ -1678,7 +1678,7 @@ For tagged srtm, second value is tree size in m "0.25 25"
 Image will make values around 5 to 10
 (meters) for soft fading away sight.
 Values from 20 to more hundred meters
-(in high mountain areas) are usefull
+(in high mountain areas) are useful
 for calculating relief-Maps as overlay
 to OSM Maps or with zero-brigthness Map.
 Set Marker 1 (and optional 2) as "light
@@ -1728,13 +1728,13 @@ yet, switch off "Config>Mapmoving>Zoom as have Maps"
 |8600 Switch off all Selections and show all
 (Shortcut "0" or ESC)
 
-|8603 Switch on/off drawing POI-File on Map and choose a Symbol.
+|8603 Switch on/off drawing POI-file on Map and choose a Symbol.
 If mouse is neer a POI a short info is shown if zoomlevel
 >=Config/Map Parameter/Show Loc of Mouse. To show full
 info of 3rd csv field go nearer to the position. To
 lock marker1 and 2 to a POI use "X" "Y" key. Drawing
 labels may take long time, "l" toggles Labels on/off.
-Save Config/Reload Config to re-scan avaliable poi-files
+Save Config/Reload Config to re-scan avaliable POI-files
 in "osm/poi/" Directory. Shortcut "C"
 
 |8605 Show Stations with last Beacon has Wx-Data
@@ -1761,11 +1761,11 @@ with "s"-Key. Use TAB-Key to toggle between
 |8626 Select one or more Symbols, toggle on/off
 
 |8680 Switch on/off drawing this
-POI-File on Map and choose
+POI-file on Map and choose
 a Symbol. Value in [] is sum
 of POIs in file. Shortcut "C"
 
-|8681 Show only poi Symbols with matching
+|8681 Show only POI Symbols with matching
 (case insensitive) Text in Name or
 Info. "?" is any Character "*" any
 String eg. "*oe3*99.9*"
