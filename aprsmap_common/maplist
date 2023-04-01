@@ -5,8 +5,6 @@ tiles_de	zxy	png	https://tile.openstreetmap.de									OSM German style
 tiles_fr	zxy	png	https://a.tile.openstreetmap.fr/osmfr								OSM French style
 tiles_humanitarian zxy	png	https://a.tile.openstreetmap.fr/hot								OSM Humanitarian style
 tiles_topo	zxy	png	https://tile.opentopomap.org									OpenTopoMap
-tiles_mapnik	zxy	png	https://tiles.wmflabs.org/osm									OSM Mapnik
-tiles_hikebike	zxy	png	https://tiles.wmflabs.org/hikebike								OSM Hike & Bike Map
 tiles_topplus	zyx	png	https://sgx.geodatenzentrum.de/wmts_topplus_open/tile/1.0.0/web/default/WEBMERCATOR		BKG TopPlusOpen (EMEA detailed)
 tiles_esristr	zyx	jpg	https://services.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile		ArcGIS ESRI World Street Map
 tiles_esrisat	zyx	jpg	https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile		ArcGIS ESRI Satellite World Imagery
@@ -51,8 +49,6 @@ Map Names|1|tiles_de 0.25 25
 Map Names|1|tiles_fr 0.25 25
 Map Names|1|tiles_humanitarian 0.25 25
 Map Names|1|tiles_topo 0.25 25
-Map Names|1|tiles_mapnik 0.25 25
-Map Names|1|tiles_hikebike 0.25 25
 Map Names|1|tiles_topplus 0.25 25
 Map Names|1|tiles_esristr 0.25 25
 Map Names|1|tiles_esrisat 0.50 50
