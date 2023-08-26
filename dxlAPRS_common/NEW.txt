@@ -257,6 +257,30 @@ rf     qA?                                                            +
 
 
 
+19.8.2020
+
+ Filter (m/100 ...) moeglichts nahe an aprs-is Stand gebracht. Es fehlen die
+ "Friend"-Filter da die Position eines Calls fehlen kann.
+  Es kommen normal nicht Daten aus der ganzen Welt und empfangene Daten 
+  waeren ohne Permanentspeicher nur zeitlich begrenzt vom "MH" verfuegbar.
+
+
+11.4.2021
+
+ crc16 hash function for clearing dupes extended by a fletcher-checksum so
+ hash-collisions on heavy load throughput (rises with square of frames/s) will
+ not accidential delete not-dupes.
+ 
+ object table (with/without frames from tcpip) on www mh-page with additional
+ (not part of aprs protocol) values and geo-data. more data if applied
+ srtm-files and weathersonde data.
+
+ some colums in tables faded out if no data in it.
+
+
+
+
+
 
 
 
@@ -465,3 +489,4 @@ sdrtst
 
   Sound output per File/Pipe oder UDP
  
+  USB/LSB AGC limit to pass thru rf-gain to audio-gain for igate dB-meter on SW FSK
