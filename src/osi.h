@@ -66,6 +66,8 @@ typedef DIR * osi_DIRCONTEXT;
 
 #define osi_Seekcur osic_Seekcur
 
+#define osi_Seekend osic_Seekend
+
 #define osi_WrLn osic_WrLn
 
 #define osi_FdValid osic_FdValid
@@ -150,6 +152,8 @@ extern char osi_CreateDir(char [], uint32_t, uint32_t);
 
 extern char osi_IsFifo(int32_t);
 
+extern int32_t osi_settime(uint32_t *);
+
 extern void osi_NextArg(char [], uint32_t);
 
 extern void osi_WrStr(char [], uint32_t);
@@ -167,6 +171,10 @@ extern void osi_WrStrLn(char [], uint32_t);
 extern int32_t osi_realint(float);
 
 extern uint32_t osi_realcard(float);
+
+extern int32_t osi_setttybaudraw(int32_t, uint32_t);
+
+extern int32_t osi_keepalive(int32_t, char, int32_t, int32_t, int32_t);
 
 
 extern void osi_BEGIN(void);
