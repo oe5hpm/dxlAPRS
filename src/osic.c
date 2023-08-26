@@ -88,7 +88,7 @@ void osic_WerrStrLn(char s[], uint32_t s_len)
 
 	len = strnlen(s, s_len);
 	fprintf(stderr, "%.*s", len, s);
-	osic_WrLn();
+	osic_WerrLn();
 }
 
 void osic_WrUINT32(uint32_t x, uint32_t witdh)
@@ -294,9 +294,10 @@ int osic_isfifo(int fd)
 
 char osic_mkdir(char path[], uint32_t fname_len, uint32_t perm)
 {
-        if (mkdir(path, perm) != -1);
-                return 1;
-        return 0;
+		if (mkdir(path, perm) != -1)
+				return 1;
+		return 0;
+}
 }
 
 void osic_NextArg(char s[], uint32_t s_len)
