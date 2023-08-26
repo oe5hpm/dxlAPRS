@@ -64,11 +64,17 @@ extern aprsdecode_SET256 aprsdecode_SYMTABLE;
 
 #define aprsdecode_POIINFOSIZE 4096
 
-#define aprsdecode_VERSNUM "0.79"
+#define aprsdecode_VERSNUM "0.81"
 
 #define aprsdecode_DEFAULTPOISYMBOL "//"
 
-#define aprsdecode_VERS "aprsmap(cu) 0.79"
+#define aprsdecode_MAXPOIFILES 30
+
+#define aprsdecode_FOLLOWX 0
+
+#define aprsdecode_FOLLOWWATCH 1
+
+#define aprsdecode_VERS "aprsmap(cu) 0.81"
 
 typedef char aprsdecode_MONCALL[9];
 
@@ -420,6 +426,7 @@ struct aprsdecode_MSGFIFO {
    aprsdecode_ACKTEXT ack;
    char query;
    char deleteitem;
+   char isaa;
    struct aprsstr_POSITION itempos;
 };
 
@@ -475,6 +482,17 @@ typedef uint32_t aprsdecode_SYMBOLSET[6];
 
 typedef uint32_t aprsdecode_MAPGAMMATAB[257];
 
+struct aprsdecode_POIFILELINE;
+
+
+struct aprsdecode_POIFILELINE {
+   uint32_t count;
+   char on;
+   char symbol[2];
+   char name[10];
+   char fullname[4096];
+};
+
 extern uint32_t aprsdecode_systime;
 
 extern uint32_t aprsdecode_realtime;
@@ -486,6 +504,8 @@ extern uint32_t aprsdecode_updateintervall;
 extern uint32_t aprsdecode_rxidle;
 
 extern char aprsdecode_quit;
+
+extern char aprsdecode_WITHX11;
 
 extern char aprsdecode_verb;
 
@@ -566,22 +586,14 @@ extern char aprsdecode_mapdir[1025];
 
 extern aprsdecode_pMOUNTAIN aprsdecode_mountains;
 
+extern struct aprsdecode_POIFILELINE aprsdecode_poifiles[31];
+
+extern uint32_t aprsdecode_autoshots; /* every s make screenshot */
+
 struct aprsdecode__D1;
 
 
 struct aprsdecode__D1 {
-   uint32_t count;
-   char on;
-   char symbol[2];
-   char name[10];
-};
-
-extern struct aprsdecode__D1 aprsdecode_poifiles[30];
-
-struct aprsdecode__D2;
-
-
-struct aprsdecode__D2 {
    char moving;
    char moded;
    char errorstep;
@@ -619,14 +631,15 @@ struct aprsdecode__D2 {
    char menutransp;
    struct aprsdecode_COLTYP menubackcol;
    struct aprsdecode_COLTYP menucol;
+   uint32_t followwhat;
 };
 
-extern struct aprsdecode__D2 aprsdecode_lums;
+extern struct aprsdecode__D1 aprsdecode_lums;
 
-struct aprsdecode__D3;
+struct aprsdecode__D2;
 
 
-struct aprsdecode__D3 {
+struct aprsdecode__D2 {
    struct aprsstr_POSITION winpos0;
    struct aprsstr_POSITION winpos1;
    aprsdecode_MONCALL call;
@@ -635,7 +648,7 @@ struct aprsdecode__D3 {
    char beep;
 };
 
-extern struct aprsdecode__D3 aprsdecode_tracenew;
+extern struct aprsdecode__D2 aprsdecode_tracenew;
 
 extern aprsdecode_pTXMESSAGE aprsdecode_txmessages;
 
@@ -649,10 +662,10 @@ extern aprsdecode_pOPHIST aprsdecode_ophist2;
 
 extern aprsdecode_pOPHIST aprsdecode_ophist0;
 
-struct aprsdecode__D4;
+struct aprsdecode__D3;
 
 
-struct aprsdecode__D4 {
+struct aprsdecode__D3 {
    char url[256];
    char port[6];
    char filterst[256];
@@ -661,7 +674,7 @@ struct aprsdecode__D4 {
     servercall            : MONCALL;
 */
 
-extern struct aprsdecode__D4 aprsdecode_gateways[10];
+extern struct aprsdecode__D3 aprsdecode_gateways[10];
 
 extern aprsdecode_pTCPSOCK aprsdecode_tcpsocks;
 
@@ -773,6 +786,8 @@ extern char aprsdecode_ismultiline(char);
 extern void aprsdecode_modmultiline(uint32_t);
 
 extern void aprsdecode_Stopticker(void);
+
+extern char aprsdecode_Watchclock(uint32_t *, uint32_t);
 
 
 extern void aprsdecode_BEGIN(void);

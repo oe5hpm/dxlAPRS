@@ -1016,6 +1016,7 @@ H Farbdarstellung der Hoehendaten (sofern vorhanden)
 M Message Schreiben
 R Funkreichweiten Karte ein/aus
 S Bildschirmfoto bpm (win), png (linux)
+T Zeitstempel ein/aus
 W grafische Regenkarte rot: letzte Stunde, blau: 24h
 < > Liste gespeicherte Baken/Wegpunkte der angeklickten Station
 ( ) Helligkeit der Landkarte +- 5%
@@ -1066,6 +1067,7 @@ H Altitude Colour Map (if srtm-Data avaliable)
 M Compose Message
 R toggle Radiorange Map on/off
 S Screenshot bpm (win), png (linux)
+T toggle Timestamp 
 W Rain map (use topo or dark map)
 < > Step along Beacons/Waypoints of a selected User
 ( ) Map Brightness +- 5%

@@ -1474,10 +1474,20 @@
 
 
 
+4.4.2021
+
++ Zoomen durch auf und ab ziehen am rechten Bildrand
++ POIs mit eingeschaltetem Symbol ("C"-Menue) bevorzugen Einrasten und
+  Mouse-over-Infos gegenueber den unsichtbaren. 
++ durch kreisen der Maus um Punkte mit mehreren POIs am selben standort zeigen
+  Infos aller der Reihe nach.
 
 
+20.2.2023
 
-
++ Autoanswer with (enabled) line like "*:AA:OP away" in
+  Config > Rf-Ports > Config Rx-Messages > Query Keywords
++ Filter with wildcards in List Windows like "BLN?WX"
 
 
 
