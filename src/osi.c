@@ -15,9 +15,6 @@
 #define osi_C_
 #include <dirent.h>
 #include <osic.h>
-#ifndef mlib_H_
-#include "mlib.h"
-#endif
 #ifndef tcp_H_
 #include "tcp.h"
 #endif

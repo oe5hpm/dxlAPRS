@@ -31,9 +31,6 @@
 #include "osi.h"
 #endif
 #include <osic.h>
-#ifndef mlib_H_
-#include "mlib.h"
-#endif
 #ifndef udp_H_
 #include "udp.h"
 #endif

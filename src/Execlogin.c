@@ -19,16 +19,13 @@
 #include "osi.h"
 #endif
 #include <osic.h>
-#ifndef mlib_H_
-#include "mlib.h"
-#endif
 #include <stdlib.h>
 #ifndef aprsstr_H_
 #include "aprsstr.h"
 #endif
 #include <signal.h>
-
-
+#include <termios.h>
+#include <sys/ioctl.h>
 
 /*FROM stat IMPORT stat, stat_t;*/
 /*, execv*/

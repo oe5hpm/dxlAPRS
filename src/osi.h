@@ -18,9 +18,6 @@
 #ifndef udp_H_
 #include "udp.h"
 #endif
-#ifndef mlib_H_
-#include "mlib.h"
-#endif
 #include <dirent.h>
 #include <osic.h>
 
