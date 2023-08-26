@@ -511,7 +511,7 @@ $(OUT)sdrtx: $(OBJ_SDRTX) $(OBJ_COMMON)
 
 $(OUT)ra02: $(OBJ_RA02) $(OBJ_COMMON)
 	@echo [ linking ] $@
-	@$(CC) $(LFLAGS) -o $@ $(OBJ_RA02) $(OBJ_COMMON)
+	@$(CC) $(LFLAGS) -o $@ $(OBJ_RA02) $(OBJ_COMMON) -lrt
 	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)loratx: $(OBJ_LORATX) $(OBJ_COMMON)
