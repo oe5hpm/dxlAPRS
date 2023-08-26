@@ -1,7 +1,7 @@
 #!/bin/sh
-SSH_PORT="10022"
-SSH_HOST="aprsbuild@hamspirit.at"
-SSH_PATH="/home/aprsbuild/public_html"
+SSH_PORT="22"
+SSH_HOST="dxlaprs@hamspirit.at"
+SSH_PATH="/home/dxlaprs/public_html"
 
 VER=`echo $CI_BUILD_REF | cut -b -7`
 ARCHLIST=`ls | grep out-`
