@@ -371,7 +371,7 @@ extern void aprstext_decode(char s[], uint32_t s_len,
       og = X2C_max_longint;
       if (!aprspos_posvalid(dat->pos)) dat->pos = pf->vardat->pos;
       if (aprspos_posvalid(dat->pos)) {
-         aprstext_postostr(dat->pos, '3', h, 512ul);
+         aprstext_postostr(dat->pos, '4', h, 512ul);
          aprsstr_Append(s, s_len, " \367", 3ul);
          aprsstr_Append(s, s_len, h, 512ul);
          aprsstr_Append(s, s_len, "\376 (", 4ul);
@@ -489,8 +489,8 @@ extern void aprstext_decode(char s[], uint32_t s_len,
                 10ul, "mm", 3ul);
          }
          if (dat->wx.raintoday!=1.E+6f) {
-            appval(s, s_len, &nl, dat->wx.raintoday*0.254f, 2UL, " Rain24h:",
-                 10ul, "mm", 3ul);
+            appval(s, s_len, &nl, dat->wx.raintoday*0.254f, 2UL, " Today:",
+                8ul, "mm", 3ul);
          }
          if (dat->wx.lum!=1.E+6f) {
             appval(s, s_len, &nl, dat->wx.lum+0.5f, 0UL, " Luminosity:",
@@ -1026,83 +1026,88 @@ static void degtostr(float d, char lat, char form,
       s[0UL] = 0;
       return;
    }
-   if (form=='2') i = 7UL;
-   else if (form=='3') i = 8UL;
-   else i = 9UL;
-   if (d<0.0f) {
-      d = -d;
-      if (lat) s[i] = 'S';
-      else s[i+1UL] = 'W';
-   }
-   else if (lat) s[i] = 'N';
-   else s[i+1UL] = 'E';
-   i = (uint32_t)!lat;
-   if (form=='2') {
-      /* DDMM.MMNDDMM.MME */
-      /*    n:=trunc(d*(6000*180/PI)+0.5); */
-      n = aprsdecode_trunc(d*3.4377467707849E+5f);
-      s[0UL] = (char)((n/600000UL)%10UL+48UL);
-      s[i] = (char)((n/60000UL)%10UL+48UL);
-      ++i;
-      s[i] = (char)((n/6000UL)%10UL+48UL);
-      ++i;
-      s[i] = (char)((n/1000UL)%6UL+48UL);
-      ++i;
-      s[i] = (char)((n/100UL)%10UL+48UL);
-      ++i;
-      s[i] = '.';
-      ++i;
-      s[i] = (char)((n/10UL)%10UL+48UL);
-      ++i;
-      s[i] = (char)(n%10UL+48UL);
-      ++i;
-   }
-   else if (form=='3') {
-      /* DDMM.MMMNDDMM.MMME */
-      n = aprsdecode_trunc(d*3.4377467707849E+6f+0.5f);
-      s[0UL] = (char)((n/6000000UL)%10UL+48UL);
-      s[i] = (char)((n/600000UL)%10UL+48UL);
-      ++i;
-      s[i] = (char)((n/60000UL)%10UL+48UL);
-      ++i;
-      s[i] = (char)((n/10000UL)%6UL+48UL);
-      ++i;
-      s[i] = (char)((n/1000UL)%10UL+48UL);
-      ++i;
-      s[i] = '.';
-      ++i;
-      s[i] = (char)((n/100UL)%10UL+48UL);
-      ++i;
-      s[i] = (char)((n/10UL)%10UL+48UL);
-      ++i;
-      s[i] = (char)(n%10UL+48UL);
-      ++i;
+   if (form=='4') {
+      /* D.DDDDD*/
+      aprsstr_FixToStr(X2C_DIVR(d*180.0f,3.1415926535898f), 6UL, s, s_len);
    }
    else {
-      /* DDMMSS */
-      n = aprsdecode_trunc(d*2.062648062471E+5f+0.5f);
-      s[0UL] = (char)((n/360000UL)%10UL+48UL);
-      s[i] = (char)((n/36000UL)%10UL+48UL);
+      if (form=='2') i = 7UL;
+      else if (form=='3') i = 8UL;
+      else i = 9UL;
+      if (d<0.0f) {
+         d = -d;
+         if (lat) s[i] = 'S';
+         else s[i+1UL] = 'W';
+      }
+      else if (lat) s[i] = 'N';
+      else s[i+1UL] = 'E';
+      i = (uint32_t)!lat;
+      if (form=='2') {
+         /* DDMM.MMNDDDMM.MME */
+         /*    n:=trunc(d*(6000*180/PI)+0.5); */
+         n = aprsdecode_trunc(d*3.4377467707849E+5f);
+         s[0UL] = (char)((n/600000UL)%10UL+48UL);
+         s[i] = (char)((n/60000UL)%10UL+48UL);
+         ++i;
+         s[i] = (char)((n/6000UL)%10UL+48UL);
+         ++i;
+         s[i] = (char)((n/1000UL)%6UL+48UL);
+         ++i;
+         s[i] = (char)((n/100UL)%10UL+48UL);
+         ++i;
+         s[i] = '.';
+         ++i;
+         s[i] = (char)((n/10UL)%10UL+48UL);
+         ++i;
+         s[i] = (char)(n%10UL+48UL);
+         ++i;
+      }
+      else if (form=='3') {
+         /* DDMM.MMMNDDDMM.MMME */
+         n = aprsdecode_trunc(d*3.4377467707849E+6f+0.5f);
+         s[0UL] = (char)((n/6000000UL)%10UL+48UL);
+         s[i] = (char)((n/600000UL)%10UL+48UL);
+         ++i;
+         s[i] = (char)((n/60000UL)%10UL+48UL);
+         ++i;
+         s[i] = (char)((n/10000UL)%6UL+48UL);
+         ++i;
+         s[i] = (char)((n/1000UL)%10UL+48UL);
+         ++i;
+         s[i] = '.';
+         ++i;
+         s[i] = (char)((n/100UL)%10UL+48UL);
+         ++i;
+         s[i] = (char)((n/10UL)%10UL+48UL);
+         ++i;
+         s[i] = (char)(n%10UL+48UL);
+         ++i;
+      }
+      else {
+         n = aprsdecode_trunc(d*2.062648062471E+5f+0.5f);
+         s[0UL] = (char)((n/360000UL)%10UL+48UL);
+         s[i] = (char)((n/36000UL)%10UL+48UL);
+         ++i;
+         s[i] = (char)((n/3600UL)%10UL+48UL);
+         ++i;
+         s[i] = '\177';
+         ++i;
+         s[i] = (char)((n/600UL)%6UL+48UL);
+         ++i;
+         s[i] = (char)((n/60UL)%10UL+48UL);
+         ++i;
+         s[i] = '\'';
+         ++i;
+         s[i] = (char)((n/10UL)%6UL+48UL);
+         ++i;
+         s[i] = (char)(n%10UL+48UL);
+         ++i;
+         s[i] = '\"';
+         ++i;
+      }
       ++i;
-      s[i] = (char)((n/3600UL)%10UL+48UL);
-      ++i;
-      s[i] = '\177';
-      ++i;
-      s[i] = (char)((n/600UL)%6UL+48UL);
-      ++i;
-      s[i] = (char)((n/60UL)%10UL+48UL);
-      ++i;
-      s[i] = '\'';
-      ++i;
-      s[i] = (char)((n/10UL)%6UL+48UL);
-      ++i;
-      s[i] = (char)(n%10UL+48UL);
-      ++i;
-      s[i] = '\"';
-      ++i;
+      s[i] = 0;
    }
-   ++i;
-   s[i] = 0;
 } /* end degtostr() */
 
 
@@ -1111,7 +1116,8 @@ extern void aprstext_postostr(struct aprsstr_POSITION pos, char form,
 {
    char h[32];
    degtostr(pos.lat, 1, form, s, s_len);
-   aprsstr_Append(s, s_len, "/", 2ul);
+   if (form=='4') aprsstr_Append(s, s_len, ",", 2ul);
+   else aprsstr_Append(s, s_len, "/", 2ul);
    degtostr(pos.long0, 0, form, h, 32ul);
    aprsstr_Append(s, s_len, h, 32ul);
 } /* end postostr() */

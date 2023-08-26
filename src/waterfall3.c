@@ -17,9 +17,6 @@
 #include "osi.h"
 #endif
 #include <osic.h>
-#ifndef mlib_H_
-#include "mlib.h"
-#endif
 #ifndef aprsstr_H_
 #include "aprsstr.h"
 #endif
@@ -64,6 +61,14 @@ static char iqfn[1024];
 
 static pLINE blackline;
 
+static uint32_t wintyp;
+
+static uint32_t roll;
+
+static uint32_t fifosetback;
+
+static uint32_t iqsize;
+
 static uint32_t mediancount;
 
 static uint32_t oversample;
@@ -78,6 +83,8 @@ static uint32_t ysize;
 
 static int32_t iqfd;
 
+static char checkfloat;
+
 static char withmedian;
 
 static char medianpeak;
@@ -86,9 +93,9 @@ static char dcoffset;
 
 static char transp;
 
-static char roll;
-/*    lut:ARRAY[0..255] OF RECORD r,g,b:CARD8 END; */
+static float cleanoverdrives;
 
+/*    lut:ARRAY[0..255] OF RECORD r,g,b:CARD8 END; */
 static pINOUT cp;
 
 
@@ -113,15 +120,23 @@ struct _2 {
    size_t Len0;
 };
 
-static struct _2 * win;
+static struct _2 * inbf;
 
-static struct _2 * median;
 
-static struct _2 * peak;
+struct _3 {
+   float * Adr;
+   size_t Len0;
+};
+
+static struct _3 * win;
+
+static struct _3 * median;
+
+static struct _3 * peak;
 
 static char mirrory;
 
-static char i16;
+static float peaklev;
 
 static float brightness;
 
@@ -177,19 +192,19 @@ static void makelut(void)
 
 
 static void card(const char s[], uint32_t s_len, uint32_t * p,
-                uint8_t * res0, uint32_t len, char * ok1)
+                uint8_t * res, uint32_t len, char * ok0)
 {
    uint32_t n;
-   *ok1 = 0;
+   *ok0 = 0;
    n = 0UL;
    while (*p<len && s[*p]==' ') ++*p;
    while ((*p<len && (uint8_t)s[*p]>='0') && (uint8_t)s[*p]<='9') {
       n = (n*10UL+(uint32_t)(uint8_t)s[*p])-48UL;
-      *ok1 = 1;
+      *ok0 = 1;
       ++*p;
    }
-   if (n>1023UL) *ok1 = 0;
-   if (*ok1) *res0 = (uint8_t)n;
+   if (n>1023UL) *ok0 = 0;
+   if (*ok0) *res = (uint8_t)n;
 } /* end card() */
 
 
@@ -206,7 +221,7 @@ static void readlut(const char fn[], uint32_t fn_len)
    int32_t fd;
    char s[20001];
    char h[201];
-   char ok1;
+   char ok0;
    float k;
    fd = osi_OpenRead(fn, fn_len);
    if (fd>=0L) {
@@ -220,21 +235,21 @@ static void readlut(const char fn[], uint32_t fn_len)
       for (;;) {
          while ((int32_t)p<len && (uint8_t)s[p]<' ') ++p;
          if ((int32_t)p<len && s[p]!='#') {
-            card(s, 20001ul, &p, &idx, (uint32_t)len, &ok1);
+            card(s, 20001ul, &p, &idx, (uint32_t)len, &ok0);
             if (idx>255U) {
                osi_Werr("colour index > 255\012", 20ul);
                break;
             }
-            if (ok1) {
-               card(s, 20001ul, &p, &palette[idx].r, (uint32_t)len, &ok1);
+            if (ok0) {
+               card(s, 20001ul, &p, &palette[idx].r, (uint32_t)len, &ok0);
             }
-            if (ok1) {
-               card(s, 20001ul, &p, &palette[idx].g, (uint32_t)len, &ok1);
+            if (ok0) {
+               card(s, 20001ul, &p, &palette[idx].g, (uint32_t)len, &ok0);
             }
-            if (ok1) {
-               card(s, 20001ul, &p, &palette[idx].b, (uint32_t)len, &ok1);
+            if (ok0) {
+               card(s, 20001ul, &p, &palette[idx].b, (uint32_t)len, &ok0);
             }
-            if (!ok1) {
+            if (!ok0) {
                aprsstr_CardToStr(lc, 1UL, h, 201ul);
                aprsstr_Append(h, 201ul, ": colour file syntax error\012",
                 28ul);
@@ -301,6 +316,7 @@ static void wrpng(uint32_t fromy, uint32_t xsize0, uint32_t ysize0,
    pRNS trns;
    struct IMAGELINE * anonym;
    uint32_t tmp;
+   /*WrStrLn("png"); */
    if (ysize0==0UL) {
       while (ysize0<=image->Len0-1 && image->Adr[ysize0]) ++ysize0;
    }
@@ -374,16 +390,23 @@ static void Parms(void)
          }
          else if (h[1U]=='f') {
             osi_NextArg(h, 1024ul);
-            if ((h[0U]=='i' && h[1U]=='1') && h[2U]=='6') i16 = 1;
-            else if (h[0U]=='u' && h[1U]=='8') {
-            }
-            else Error("-f u8|i16", 10ul);
+            if ((h[0U]=='i' && h[1U]=='1') && h[2U]=='6') iqsize = 4UL;
+            else if (h[0U]=='u' && h[1U]=='8') iqsize = 2UL;
+            else if ((h[0U]=='f' && h[1U]=='3') && h[2U]=='2') iqsize = 8UL;
+            else Error("-f u8|i16|f32", 14ul);
          }
          else if (h[1U]=='b') {
             osi_NextArg(h, 1024ul);
             if (!aprsstr_StrToFix(&brightness, h, 1024ul)) {
                Error("-b <brightness>", 16ul);
             }
+         }
+         else if (h[1U]=='O') {
+            osi_NextArg(h, 1024ul);
+            if (!aprsstr_StrToFix(&cleanoverdrives, h, 1024ul)) {
+               Error("-O <overdrivensamples>", 23ul);
+            }
+            cleanoverdrives = cleanoverdrives*0.01f;
          }
          else if (h[1U]=='z') {
             osi_NextArg(h, 1024ul);
@@ -403,15 +426,25 @@ static void Parms(void)
             medianpeak = 1;
             withmedian = 1;
          }
-         else if (h[1U]=='r') roll = 1;
+         else if (h[1U]=='r') {
+            osi_NextArg(h, 1024ul);
+            if (!aprsstr_StrToCard(h, 1024ul, &roll)) {
+               Error("-r <lines>", 11ul);
+            }
+         }
          else if (h[1U]=='t') transp = 1;
          else if (h[1U]=='d') dcoffset = 1;
+         else if (h[1U]=='T') checkfloat = 1;
          else if (h[1U]=='o') {
             osi_NextArg(h, 1024ul);
             if (!aprsstr_StrToCard(h, 1024ul,
                 &oversample) || oversample<1UL) {
                Error("-o <oversample>", 16ul);
             }
+         }
+         else if (h[1U]=='W') {
+            osi_NextArg(h, 1024ul);
+            if (!aprsstr_StrToCard(h, 1024ul, &wintyp)) Error("-W <n>", 7ul);
          }
          else if (h[1U]=='q') {
             osi_NextArg(h, 1024ul);
@@ -435,37 +468,34 @@ r> <g> <b>\" (0..255) gaps interpolated", 87ul);
  without -i", 61ul);
                osi_WrStrLn(" -d                 ADC DC-offset filter on",
                 44ul);
+               osi_WrStrLn(" -f u8|i16|f32      IQ data format (invalid float\
+ numbers will rise crash!", 75ul);
                osi_WrStrLn(" -h                 this", 25ul);
-               osi_WrStrLn(" -f u8|i16          IQ data format", 35ul);
-               osi_WrStrLn(" -i <file>          IQ-filename", 32ul);
+               osi_WrStrLn(" -i <file>          IQ-filename or pipe", 40ul);
                osi_WrStrLn(" -j <samples>       jump to next position in IQ-f\
 ile in samples (default read all samples)", 91ul);
                osi_WrStrLn("                      to see samples attenuated b\
-y window function too, set to less than \"-x\"", 94ul);
-               osi_WrStrLn(" -j <ms>            in roll-mode (-r) wait ms til\
-l next subsample taken from near eof", 86ul);
-               osi_WrStrLn("                      next image written in this \
-time*oversample at system clock second change", 95ul);
-               osi_WrStrLn("                      on system clock jump max. 6\
-0s will be filled or left out", 79ul);
+y window functions, set to less than \"-x\"", 91ul);
                osi_WrStrLn(" -M                 make median of \"-o\" lines b\
 efore draw it, default peak-hold", 80ul);
                osi_WrStrLn(" -m                 mirror image vertical",
                 42ul);
+               osi_WrStrLn(" -O <%>             on <%> overdriven levels per \
+image line switch on artefact filter (0.0)", 92ul);
                osi_WrStrLn(" -o <n>             oversample <n> times with pea\
 k-hold before draw it (1)", 75ul);
-               osi_WrStrLn("                      if -r and IQ-file is a pipe\
-: -o seconds/line -j samples/line", 83ul);
                osi_WrStrLn(" -q <n>             ignore (dark) margin in auto \
 blacklevel calculation (0)", 76ul);
-               osi_WrStrLn(" -r                 roll-mode with image line fro\
-m last position of (growing) IQ-file", 86ul);
-               osi_WrStrLn("                      IQ-file may be removed/rewr\
-itten any time", 64ul);
+               osi_WrStrLn(" -r <n>             roll-mode, write image every \
+<n> new image lines (0=off)", 77ul);
+               osi_WrStrLn(" -T                 test float input for \'nan\' \
+or > 2^31 values an set to zero", 79ul);
                osi_WrStrLn(" -t                 unfilled part of image is tra\
 nsparent", 58ul);
-               osi_WrStrLn(" -w <file>          waterfall image png in roll m\
-ode written every new line", 76ul);
+               osi_WrStrLn(" -W <n>             Window type: 0(default)=Black\
+man, 1=Blackman-Harris, 2=Flat-Top", 84ul);
+               osi_WrStrLn("                      3=Hamming, 4=Hann", 40ul);
+               osi_WrStrLn(" -w <file>          waterfall image png", 40ul);
                osi_WrStrLn(" -x <pixel>         image x-size, prefer 2^n for \
 no pixel interpolation", 72ul);
                osi_WrStrLn(" -y <pixel>         image y-size, if not -r defau\
@@ -491,21 +521,129 @@ lt as filesize", 64ul);
    }
 } /* end Parms() */
 
+/*--------- window functions */
 
-static void makewin(float w[], uint32_t w_len)
+static void blackman(float w[], uint32_t w_len, float lev)
 {
    uint32_t i;
    float N;
    uint32_t tmp;
+   lev = X2C_DIVR(1.0f,lev);
    N = X2C_DIVR(6.283185307f,(float)((w_len-1)+1UL));
    tmp = w_len-1;
    i = 0UL;
    if (i<=tmp) for (;; i++) {
-      w[i] = (0.42f-0.5f*osic_cos(N*(float)i))
-                +0.08f*osic_cos(N*2.0f*(float)i); /* Blackmann */
+      w[i] = lev*((0.42f-0.5f*osic_cos(N*(float)i))
+                +0.08f*osic_cos(N*2.0f*(float)i)); /* Blackmann */
       if (i==tmp) break;
    } /* end for */
+} /* end blackman() */
+
+
+static void blackmanharris(float w[], uint32_t w_len, float lev)
+{
+   uint32_t i;
+   float N;
+   uint32_t tmp;
+   lev = X2C_DIVR(1.0f,lev);
+   N = X2C_DIVR(6.283185307f,(float)((w_len-1)+1UL));
+   tmp = w_len-1;
+   i = 0UL;
+   if (i<=tmp) for (;; i++) {
+      w[i] = lev*(((0.35875f-0.48829f*osic_cos(N*(float)i))
+                +0.14128f*osic_cos(N*2.0f*(float)i))
+                -0.01168f*osic_cos(N*3.0f*(float)i));
+                /* Blackmann-Harris */
+      if (i==tmp) break;
+   } /* end for */
+} /* end blackmanharris() */
+
+
+static void flattop(float w[], uint32_t w_len, float lev)
+{
+   uint32_t i;
+   float N;
+   uint32_t tmp;
+   lev = X2C_DIVR(1.0f,lev);
+   N = X2C_DIVR(6.283185307f,(float)((w_len-1)+1UL));
+   tmp = w_len-1;
+   i = 0UL;
+   if (i<=tmp) for (;; i++) {
+      w[i] = lev*((((1.0f-1.93f*osic_cos(N*(float)i))
+                +1.29f*osic_cos(N*2.0f*(float)i))
+                -0.388f*osic_cos(N*3.0f*(float)i))
+                +0.028f*osic_cos(N*4.0f*(float)i)); /* Flat-Top */
+      if (i==tmp) break;
+   } /* end for */
+} /* end flattop() */
+
+
+static void hamming(float w[], uint32_t w_len, float lev)
+{
+   uint32_t i;
+   float N;
+   uint32_t tmp;
+   lev = X2C_DIVR(1.0f,lev);
+   N = X2C_DIVR(6.283185307f,(float)((w_len-1)+1UL));
+   tmp = w_len-1;
+   i = 0UL;
+   if (i<=tmp) for (;; i++) {
+      w[i] = lev*(0.54f-0.46f*osic_cos(N*(float)i)); /* hamming */
+      if (i==tmp) break;
+   } /* end for */
+} /* end hamming() */
+
+
+static void hann(float w[], uint32_t w_len, float lev)
+{
+   uint32_t i;
+   float N;
+   uint32_t tmp;
+   lev = X2C_DIVR(1.0f,lev);
+   N = X2C_DIVR(6.283185307f,(float)((w_len-1)+1UL));
+   tmp = w_len-1;
+   i = 0UL;
+   if (i<=tmp) for (;; i++) {
+      w[i] = lev*0.5f*(1.0f-osic_cos(N*(float)i)); /* hann */
+      if (i==tmp) break;
+   } /* end for */
+} /* end hann() */
+
+
+static void makewin(float w[], uint32_t w_len, float lev)
+{
+   if (wintyp==0UL) blackman(w, w_len, lev);
+   else if (wintyp==1UL) blackmanharris(w, w_len, lev);
+   else if (wintyp==2UL) flattop(w, w_len, lev);
+   else if (wintyp==3UL) hamming(w, w_len, lev);
+   else if (wintyp==4UL) hann(w, w_len, lev);
+   else Error("-W <window-type>", 17ul);
 } /* end makewin() */
+
+/*------- window functions */
+
+static void findoverdrives(pINOUT c, uint32_t len, float peak0,
+                uint32_t * oc)
+{
+   uint32_t i;
+   struct Complex * anonym;
+   uint32_t tmp;
+   *oc = 0UL;
+   if (cleanoverdrives!=0.0f) {
+      peak0 = peak0*0.98f; /* threshold */
+      tmp = len-1UL;
+      i = 0UL;
+      if (i<=tmp) for (;; i++) {
+         { /* with */
+            struct Complex * anonym = &c[i];
+            if ((float)fabs(anonym->Re)>=peak0 || (float)
+                fabs(anonym->Im)>=peak0) ++*oc;
+         }
+         if (i==tmp) break;
+      } /* end for */
+      if (X2C_DIVR((float)*oc,(float)len)<cleanoverdrives) *oc = 0UL;
+   }
+} /* end findoverdrives() */
 
 
 static void clrline(uint32_t y1)
@@ -530,94 +668,191 @@ static void clrb(float p[], uint32_t p_len)
 } /* end clrb() */
 
 
-static char line(pINOUT c, uint32_t len)
+static char rdpipe(char b[], uint32_t b_len, int32_t fd,
+                uint32_t len, uint32_t setback)
 {
+   uint32_t rpos;
+   int32_t res;
+   char * p;
+   if (setback>len) setback = len;
+   rpos = 0UL;
+   if (setback>0UL) {
+      /* else read full len */
+      rpos = len-setback;
+      if (rpos>0UL) X2C_MOVE((char *) &b[setback],(char *)b,rpos);
+   }
+   do {
+      p = (char *) &b[rpos];
+      res = osi_RdBin(fd, p, 65536ul, len-rpos);
+      if (res<=0L) return 0;
+      /* eof */
+      rpos += (uint32_t)res;
+   } while (rpos<len);
+   return 1;
+} /* end rdpipe() */
+
+
+static char dummyread(int32_t fd, uint32_t len)
+/* jump in pipe */
+{
+   uint32_t i;
+   int32_t res;
+   char b[65536];
+   while (len>0UL) {
+      i = len;
+      if (i>65536UL) i = 65536UL;
+      res = osi_RdBin(fd, (char *)b, 65536u/1u, i);
+      if (res<=0L) return 0;
+      /* eof */
+      len -= (uint32_t)res;
+   }
+   return 1;
+} /* end dummyread() */
+
+
+static void chkfloat(float * f)
+{
+   uint32_t c;
+   X2C_MOVE((char *)f,(char *) &c,4UL);
+   if ((c&0x7F000000UL)==0x7F000000UL) *f = 0.0f;
+   else if (*f>=2.147483648E+9f) *f = 2.147483648E+9f;
+   else if (*f<=(-2.147483648E+9f)) *f = (-2.147483648E+9f);
+} /* end chkfloat() */
+
+
+static char line(pINOUT c, uint32_t len, uint32_t jumpback)
+{
+   uint32_t odc;
    uint32_t mar;
    uint32_t hsize;
    uint32_t j;
    uint32_t i;
+   float max0;
    float dcim;
    float dcre;
    float w;
    float r;
    float min0;
-   int32_t res0;
-   int32_t le;
    int32_t hi;
    uint32_t hist[256];
-   /* iq file to complex float */
+   /* iq u8 file to complex float */
    struct Complex * anonym;
+   /* iq i16 file to complex float */
    struct Complex * anonym0;
-   /* absolute log level */
+   /* iq f32 file to complex float */
    struct Complex * anonym1;
+   struct Complex * anonym2;
+   struct Complex * anonym3;
+   /* absolute log level */
+   struct Complex * anonym4;
    uint32_t tmp;
-   if (i16) {
-      le = (int32_t)(inbw->Len0*2u);
-      do {
-         res0 = osi_RdBin(iqfd, (char *)inbw->Adr, (inbw->Len0*2u)/1u,
-                (uint32_t)le);
-         if (res0<=0L) return 0;
-         le -= res0;
-      } while (le>0L);
+   if (iqsize==2UL) {
+      if (!rdpipe((char *)inb->Adr, (inb->Len0*1u)/1u, iqfd, inb->Len0*1u,
+                 jumpback*iqsize)) return 0;
    }
-   else {
-      /*IF RdBin(iqfd, inbw^, SIZE(inbw^))<>VAL(INTEGER,
-                SIZE(inbw^)) THEN RETURN FALSE END; */
-      le = (int32_t)(inb->Len0*1u);
-      do {
-         res0 = osi_RdBin(iqfd, (char *)inb->Adr, (inb->Len0*1u)/1u,
-                (uint32_t)le);
-         if (res0<=0L) return 0;
-         le -= res0;
-      } while (le>0L);
+   else if (iqsize==4UL) {
+      if (!rdpipe((char *)inbw->Adr, (inbw->Len0*2u)/1u, iqfd,
+                inbw->Len0*2u, jumpback*iqsize)) return 0;
    }
-   /*IF RdBin(iqfd, inb^, SIZE(inb^))<>VAL(INTEGER,
-                SIZE(inb^)) THEN RETURN FALSE END; */
+   else if (!rdpipe((char *)inbf->Adr, (inbf->Len0*sizeof(float))/1u,
+                iqfd, inbf->Len0*sizeof(float), jumpback*iqsize)) {
+      return 0;
+   }
    j = 0UL;
    dcre = 0.0f;
    dcim = 0.0f;
-   tmp = len-1UL;
-   i = 0UL;
-   if (i<=tmp) for (;; i++) {
-      { /* with */
-         struct Complex * anonym = &c[i];
-         if (i16) anonym->Re = (float)(int32_t)inbw->Adr[j]*3.90625E-3f;
-         else anonym->Re = (float)((int32_t)inb->Adr[j]-127L);
-         dcre = dcre+anonym->Re;
-         ++j;
-         if (i16) anonym->Im = (float)(int32_t)inbw->Adr[j]*3.90625E-3f;
-         else anonym->Im = (float)((int32_t)inb->Adr[j]-127L);
-         dcim = dcim+anonym->Im;
-         ++j;
-      }
-      if (i==tmp) break;
-   } /* end for */
-   if (dcoffset) r = X2C_DIVR(1.0f,(float)len);
-   else r = 0.0f;
-   dcre = dcre*r;
-   dcim = dcim*r;
-   tmp = len-1UL;
-   i = 0UL;
-   if (i<=tmp) for (;; i++) {
-      { /* with */
-         struct Complex * anonym0 = &c[i];
-         w = win->Adr[i]; /* window */
-         anonym0->Re = (anonym0->Re-dcre)*w;
-         anonym0->Im = (anonym0->Im-dcim)*w;
-      }
-      if (i==tmp) break;
-   } /* end for */
+   if (iqsize==2UL) {
+      tmp = len-1UL;
+      i = 0UL;
+      if (i<=tmp) for (;; i++) {
+         { /* with */
+            struct Complex * anonym = &c[i];
+            anonym->Re = (float)(int32_t)inb->Adr[j]-127.5f;
+            anonym->Im = (float)(int32_t)inb->Adr[j+1UL]-127.5f;
+            dcre = dcre+anonym->Re;
+            dcim = dcim+anonym->Im;
+         }
+         j += 2UL;
+         if (i==tmp) break;
+      } /* end for */
+   }
+   else if (iqsize==4UL) {
+      tmp = len-1UL;
+      i = 0UL;
+      if (i<=tmp) for (;; i++) {
+         { /* with */
+            struct Complex * anonym0 = &c[i];
+            anonym0->Re = (float)(int32_t)inbw->Adr[j];
+            anonym0->Im = (float)(int32_t)inbw->Adr[j+1UL];
+            dcre = dcre+anonym0->Re;
+            dcim = dcim+anonym0->Im;
+         }
+         j += 2UL;
+         if (i==tmp) break;
+      } /* end for */
+   }
+   else {
+      tmp = len-1UL;
+      i = 0UL;
+      if (i<=tmp) for (;; i++) {
+         { /* with */
+            struct Complex * anonym1 = &c[i];
+            anonym1->Re = inbf->Adr[j];
+            anonym1->Im = inbf->Adr[j+1UL];
+            if (checkfloat) {
+               chkfloat(&anonym1->Re);
+               chkfloat(&anonym1->Im);
+            }
+            dcre = dcre+anonym1->Re;
+            dcim = dcim+anonym1->Im;
+         }
+         j += 2UL;
+         if (i==tmp) break;
+      } /* end for */
+   }
+   findoverdrives(c, len, peaklev, &odc);
+   if (dcoffset) {
+      r = X2C_DIVR(1.0f,(float)len);
+      dcre = dcre*r;
+      dcim = dcim*r;
+      tmp = len-1UL;
+      i = 0UL;
+      if (i<=tmp) for (;; i++) {
+         { /* with */
+            struct Complex * anonym2 = &c[i];
+            w = win->Adr[i]; /* window */
+            anonym2->Re = (anonym2->Re-dcre)*w;
+            anonym2->Im = (anonym2->Im-dcim)*w;
+         }
+         if (i==tmp) break;
+      } /* end for */
+   }
+   else {
+      tmp = len-1UL;
+      i = 0UL;
+      if (i<=tmp) for (;; i++) {
+         { /* with */
+            struct Complex * anonym3 = &c[i];
+            w = win->Adr[i]; /* window */
+            anonym3->Re = anonym3->Re*w;
+            anonym3->Im = anonym3->Im*w;
+         }
+         if (i==tmp) break;
+      } /* end for */
+   }
    fft3();
-   min0 = X2C_max_real;
+   min0 = 2.147483647E+9f;
    tmp = len-1UL;
    i = 0UL;
    if (i<=tmp) for (;; i++) {
       { /* with */
-         struct Complex * anonym1 = &c[i];
-         r = brightness*osic_ln(anonym1->Re*anonym1->Re+anonym1->Im*anonym1->Im+0.001f)
+         struct Complex * anonym4 = &c[i];
+         r = brightness*osic_ln(anonym4->Re*anonym4->Re+anonym4->Im*anonym4->Im+0.0001f)
                 ;
-         if (r<min0) min0 = r;
-         anonym1->Re = r;
+         if (r<min0) {
+            min0 = r;
+         }
+         anonym4->Re = r;
       }
       if (i==tmp) break;
    } /* end for */
@@ -631,8 +866,29 @@ static char line(pINOUT c, uint32_t len)
       c[i].Im = c[j].Re;
       if (i==tmp) break;
    } /* end for */
-   c[hsize-1UL].Im = (c[hsize].Im+c[hsize-2UL].Im)*0.5f;
-                /* fill dc notch hole */
+   if (dcoffset) c[hsize-1UL].Im = (c[hsize].Im+c[hsize-2UL].Im)*0.5f;
+   if (odc>0UL) {
+      /* overdrive so make 1 max level to the one and only */
+      odc = len;
+      max0 = 0.0f;
+      tmp = len-1UL;
+      i = 0UL;
+      if (i<=tmp) for (;; i++) {
+         if (c[i].Im>max0) {
+            max0 = c[i].Im;
+            odc = i;
+         }
+         if (i==tmp) break;
+      } /* end for */
+      tmp = len-1UL;
+      i = 0UL;
+      if (i<=tmp) for (;; i++) {
+         c[i].Im = X2C_DIVR(c[i].Im,
+                1.0f+0.5f*(float)fabs((float)i-(float)odc));
+         if (i==tmp) break;
+      } /* end for */
+   }
+   /*    IF ABS(VAL(INTEGER,i)-VAL(INTEGER,odc))>2 THEN c^[i].Im:=0.0 END; */
    if (zerolev!=0.0f) min0 = zerolev;
    else {
       memset((char *)hist,(char)0,1024UL);
@@ -792,25 +1048,15 @@ static uint32_t os;
 
 static uint32_t fp;
 
-static uint32_t nextsec;
-
-static uint32_t rt;
-
 static uint32_t fpo;
 
 static uint32_t bufsize;
 
-static uint32_t iqsize;
-
-static int32_t res;
-
-static int32_t skip;
-
-static int32_t sk;
-
-static char ok0;
+static uint32_t rollcnt;
 
 static char fifo;
+
+static char notfirstline;
 
 
 X2C_STACK_LIMIT(100000l)
@@ -825,7 +1071,8 @@ extern int main(int argc, char **argv)
    iqfn[0] = 0;
    xsize = 1024UL;
    ysize = 0UL;
-   roll = 0;
+   wintyp = 0UL;
+   roll = 0UL;
    mirrory = 0;
    brightness = 15.0f;
    zerolev = 0.0f;
@@ -835,17 +1082,21 @@ extern int main(int argc, char **argv)
    withmedian = 0;
    medianpeak = 0;
    blackpercent = 10.0f;
-   i16 = 0;
+   iqsize = 2UL;
    margin = 0UL;
+   rollcnt = 0UL;
    makelut();
    dcoffset = 0;
+   notfirstline = 0;
+   cleanoverdrives = 0.0f;
+   checkfloat = 0;
    Parms();
-   if ((roll || iqfn[0]==0) && ysize==0UL) Error("need -y <size>", 15ul);
+   if (roll && ysize==0UL) Error("need -y <size>", 15ul);
    blocksize = 1UL;
    while (blocksize<xsize) blocksize += blocksize;
    if (filejump==0UL) filejump = blocksize;
    if (imagefn[0]==0) Error("no output image?", 17ul);
-   if (iqfn[0]==0) osi_Werr("no iq file? writing test image\012", 32ul);
+   if (iqfn[0]==0) osi_Werr("no iq file? writing only test image\012", 37ul);
    y = ysize;
    if (y==0UL) y = 32000UL;
    X2C_DYNALLOCATE((char **) &image,sizeof(struct IMAGELINE *),
@@ -867,20 +1118,28 @@ extern int main(int argc, char **argv)
    } /* end for */
    cp = plan(blocksize);
    if (cp==0) Error("out of memory", 14ul);
-   if (i16) {
-      X2C_DYNALLOCATE((char **) &inbw,2u,(tmp[0] = blocksize*2UL,tmp),
-                1u);
-      if (inbw==0) Error("out of memory", 14ul);
-   }
-   else {
+   if (iqsize==2UL) {
       X2C_DYNALLOCATE((char **) &inb,1u,(tmp[0] = blocksize*2UL,tmp),
                 1u);
       if (inb==0) Error("out of memory", 14ul);
+      peaklev = 127.0f;
+   }
+   else if (iqsize==4UL) {
+      X2C_DYNALLOCATE((char **) &inbw,2u,(tmp[0] = blocksize*2UL,tmp),
+                1u);
+      if (inbw==0) Error("out of memory", 14ul);
+      peaklev = 32767.0f;
+   }
+   else {
+      X2C_DYNALLOCATE((char **) &inbf,sizeof(float),
+                (tmp[0] = blocksize*2UL,tmp),1u);
+      if (inbf==0) Error("out of memory", 14ul);
+      peaklev = 1.0f;
    }
    X2C_DYNALLOCATE((char **) &win,sizeof(float),(tmp[0] = blocksize,
                 tmp),1u);
    if (win==0) Error("out of memory", 14ul);
-   makewin(win->Adr, win->Len0); /* window function table */
+   makewin(win->Adr, win->Len0, peaklev); /* window function table */
    X2C_DYNALLOCATE((char **) &median,sizeof(float),
                 (tmp[0] = blocksize,tmp),1u);
    if (median==0) Error("out of memory", 14ul);
@@ -890,81 +1149,39 @@ extern int main(int argc, char **argv)
                 tmp),1u);
    if (peak==0) Error("out of memory", 14ul);
    clrb(peak->Adr, peak->Len0);
-   if (i16) {
-      iqsize = 4UL;
-      bufsize = inbw->Len0*2u;
-   }
-   else {
-      iqsize = 2UL;
-      bufsize = inb->Len0*1u;
-   }
+   if (iqsize==2UL) bufsize = inb->Len0*1u;
+   else if (iqsize==4UL) bufsize = inbw->Len0*2u;
+   else bufsize = inbf->Len0*sizeof(float);
    if (iqfn[0]==0) testimage();
    else {
-      if (roll) {
-         iqfd = osi_OpenRead(iqfn, 1024ul);
-         fifo = 0;
-         if (iqfd>=0L) {
-            fifo = osi_IsFifo(iqfd);
-            if (!fifo) osic_Close(iqfd);
-         }
-         memcpy(tmpfn,imagefn,1024u);
-         aprsstr_Append(tmpfn, 1024ul, "~", 2ul);
-         y = 0UL;
-         nextsec = osic_time();
-         for (;;) {
-            if (fifo) ok0 = line(cp, blocksize);
-            else {
-               iqfd = osi_OpenRead(iqfn, 1024ul);
-               if (iqfd>=0L) {
-                  osic_Seekend(iqfd, -(int32_t)(blocksize*iqsize));
-                /* seek from eof */
-                  ok0 = line(cp, blocksize);
-                  osic_Close(iqfd);
-               }
-               else osi_Werr("iq-file open error\012", 20ul);
-            }
-            rt = osic_time();
-            if (nextsec<rt) {
-               if (nextsec+60UL<rt || nextsec>rt+60UL) {
-                  nextsec = rt; /* do not write nothing or amok on clock jump */
-               }
-               if (fifo) nextsec += oversample;
-               else nextsec += (filejump*oversample)/1000UL;
-               imageline(y, peak->Adr, peak->Len0, median->Adr, median->Len0,
-                 &mediancount);
-               y = (y+1UL)%ysize;
-               wrpng(y, xsize, ysize, tmpfn, 1024ul);
-               osi_Rename(tmpfn, 1024ul, imagefn, 1024ul);
-               clrline(y);
-            }
-            if (fifo) {
-               skip = (int32_t)filejump;
-               for (;;) {
-                  skip -= (int32_t)bufsize;
-                  if (skip<=0L) break;
-                  sk = skip;
-                  if (sk>(int32_t)bufsize) sk = (int32_t)bufsize;
-                  if (i16) {
-                     res = osi_RdBin(iqfd, (char *)inbw->Adr,
-                (inbw->Len0*2u)/1u, (uint32_t)sk);
-                  }
-                  else {
-                     res = osi_RdBin(iqfd, (char *)inb->Adr,
-                (inb->Len0*1u)/1u, (uint32_t)sk);
-                  }
-               }
-            }
-            else usleep(filejump*1000UL);
-         }
-      }
       iqfd = osi_OpenRead(iqfn, 1024ul);
-      if (iqfd>=0L) {
-         fp = 0UL;
-         y = 0UL;
-         for (;;) {
-            tmp0 = oversample;
-            os = 1UL;
-            if (os<=tmp0) for (;; os++) {
+      if (iqfd<0L) Error("iq file open", 13ul);
+      fifo = osi_IsFifo(iqfd);
+      if (roll && !fifo) {
+         osi_Werr("warning: not iq pipe but roll mode (-r) ?", 42ul);
+      }
+      memcpy(tmpfn,imagefn,1024u);
+      aprsstr_Append(tmpfn, 1024ul, "~", 2ul);
+      y = 0UL;
+      fp = 0UL;
+      for (;;) {
+         tmp0 = oversample;
+         os = 1UL;
+         if (os<=tmp0) for (;; os++) {
+            fifosetback = 0UL;
+            if (fifo) {
+               if (filejump>blocksize) {
+                  /* ingnore bytes in fifo */
+                  if (!dummyread(iqfd, (filejump-blocksize)*iqsize)) {
+                     goto loop_exit;
+                  }
+               }
+               else if (notfirstline) {
+                  fifosetback = filejump; /* reuse samples from fifo */
+               }
+               notfirstline = 1;
+            }
+            else {
                osic_Seek(iqfd, fp);
                fpo = fp;
                fp += filejump*iqsize;
@@ -972,19 +1189,38 @@ extern int main(int argc, char **argv)
                   osi_Werr("iq-file 4GB limit\012", 19ul);
                   goto loop_exit;
                }
-               if (!line(cp, blocksize)) goto loop_exit;
-               if (os==tmp0) break;
-            } /* end for */
-            imageline(y, peak->Adr, peak->Len0, median->Adr, median->Len0,
+            }
+            if (!line(cp, blocksize, fifosetback)) goto loop_exit;
+            if (os==tmp0) break;
+         } /* end for */
+         /*WrInt(y,10); WrStrLn("=y"); */
+         imageline(y, peak->Adr, peak->Len0, median->Adr, median->Len0,
                 &mediancount);
+         if (roll) {
+            y = (y+1UL)%ysize;
+            ++rollcnt;
+            if (rollcnt>=roll) {
+               wrpng(y, xsize, ysize, tmpfn, 1024ul);
+               osi_Rename(tmpfn, 1024ul, imagefn, 1024ul);
+               rollcnt = 0UL;
+            }
+            clrline(y);
+         }
+         else {
             ++y;
             if (y>image->Len0-1 || ysize && y>=ysize) break;
          }
-         loop_exit:;
-         osic_Close(iqfd);
-         wrpng(0UL, xsize, ysize, imagefn, 1024ul);
       }
-      else osi_Werr("iq-file open error\012", 20ul);
+      loop_exit:;
+      if (roll) {
+         if (rollcnt>0UL) {
+            /* flush image in roll mode*/
+            wrpng(y, xsize, ysize, tmpfn, 1024ul);
+            osi_Rename(tmpfn, 1024ul, imagefn, 1024ul);
+         }
+      }
+      else wrpng(0UL, xsize, ysize, imagefn, 1024ul);
+      osic_Close(iqfd);
    }
    X2C_EXIT();
    return 0;

@@ -577,6 +577,14 @@ static void Parms(void)
                Error(" -d <outputsampelrate>", 23ul);
             }
          }
+         else if (s[1U]=='F') {
+            /* afc speed */
+            osi_NextArg(s, 1001ul);
+            if (!aprsstr_StrToCard(s, 1001ul, &n)) {
+               Error(" -F <afcspeed>", 15ul);
+            }
+            sdr_afcspeed = (int32_t)(2147483647UL/(n+1UL));
+         }
          else if (s[1U]=='m') {
             /* downmix to */
             osi_NextArg(s, 1001ul);
@@ -732,6 +740,8 @@ o file", 56ul);
 y linear interpolation", 72ul);
                osi_WrStrLn(" -e                  enable sending SDR Data hidd\
 en in audio channels (tune/afc/rssi..)", 88ul);
+               osi_WrStrLn(" -F <afcspeed>       AFC-Speed 0..1000, default s\
+low, (if fast, the 1khz steps may make some noise) (5)", 104ul);
                osi_WrStrLn(" -f u8|i16|f32       iq-data format, f32 samplera\
 te 1..3MHz, slow float arithmetic (u8)", 88ul);
                osi_WrStrLn(" -h                  help", 26ul);
@@ -879,8 +889,8 @@ to avoid ADC-DC offset pseudo", 79ul);
          Error(" -i <Hz> 1000000..3000000", 26ul);
       }
    }
-   else if (iqrate!=1024000UL && (iqrate<2048000UL || iqrate>2500000UL)) {
-      Error(" -i <Hz> 2048000 or 1024000", 28ul);
+   else if (iqrate!=1024000UL && (iqrate<2000000UL || iqrate>2500000UL)) {
+      Error(" -i <Hz> 1024000 or >=2000000", 30ul);
    }
    if (downsamp==0UL) downsamp = samphz;
    if (downsamp>samphz) Error(" -d <hz> must be less than -r <hz>", 35ul);
@@ -1007,7 +1017,7 @@ static void centerfreq(const struct FREQTAB freq[], uint32_t freq_len)
          sdr_genfir(X2C_DIVR((float)freq[i].firwid,(float)samphz),
                 1.0f, freq[i].firlen, &rxx[i].fir);
          khz = 1.0;
-         if (iqrate>=2048000UL) {
+         if (iqrate>=2000000UL) {
             khz = X2C_DIVL(2.048E+6,(double)iqrate);
          }
          else khz = X2C_DIVL(1.024E+6,(double)iqrate);
@@ -1559,6 +1569,10 @@ static uint32_t chnum;
 
 static float ri;
 
+static float levdiv;
+
+static float gl;
+
 static uint32_t tshow;
 
 static uint32_t dsamp;
@@ -1568,8 +1582,6 @@ static int32_t pcm;
 static int32_t mixleft;
 
 static int32_t mixright;
-
-static int32_t levdiv2;
 
 
 X2C_STACK_LIMIT(100000l)
@@ -1583,7 +1595,7 @@ extern int main(int argc, char **argv)
    midfreq = 0UL;
    lastmidfreq = 0UL;
    tshow = 0UL;
-   levdiv2 = 4096L;
+   /*  levdiv2:=4096; */
    soundfd = -1L;
    f32 = 1UL;
    cfgfd = -1L;
@@ -1781,22 +1793,40 @@ extern int main(int argc, char **argv)
                                  sendaudio(pcm, pcm8, rp, chnum);
                               }
                               else {
-                                 mixleft = mixleft*levdiv2>>12;
-                                 sendaudio(mixleft, pcm8, rp, chnum);
-                                 if (mixto==2UL) {
-                                    mixright = mixright*levdiv2>>12;
-                                    sendaudio(mixright, pcm8, rp, chnum);
-                                 }
-                                 if (labs(mixleft)>30000L || labs(mixright)
-                >30000L) {
-                                    /* mix channel peak level limiter */
-                                    if (levdiv2>300L) {
-                                    levdiv2 -= 64L; /* agc down fast */
+                                 if (labs(mixleft)>30000L) {
+                                    gl = X2C_DIVR(30000.0f,
+                (float)labs(mixleft));
+                                    if (gl<levdiv) {
+                                    levdiv = gl;
                                     }
                                  }
-                                 else if (levdiv2<4096L) {
-                                    ++levdiv2; /* agc up */
+                                 sendaudio((int32_t)X2C_TRUNCI((float)
+                mixleft*levdiv,X2C_min_longint,X2C_max_longint), pcm8, rp,
+                chnum);
+                                 if (mixto==2UL) {
+                                    if (labs(mixright)>30000L) {
+                                    gl = X2C_DIVR(30000.0f,
+                (float)labs(mixright));
+                                    if (gl<levdiv) {
+                                    levdiv = gl;
+                                    }
+                                    }
+                                    sendaudio((int32_t)
+                X2C_TRUNCI((float)mixright*levdiv,X2C_min_longint,
+                X2C_max_longint), pcm8, rp, chnum);
                                  }
+                                 if (levdiv<1.0f) {
+                                    levdiv = levdiv+0.00001f;
+                                 }
+                                 /*
+                                                       IF (ABS(mixleft)
+                >30000) OR (ABS(mixright)>30000)
+                THEN  (* mix channel peak level limiter *)
+                                                         IF levdiv2>300 THEN DEC(levdiv2,
+                 64) END;       (* agc down fast *)
+                                                       ELSIF levdiv2<4095 THEN INC(levdiv2)
+                 END;         (* agc up *) 
+                                 */
                                  mixleft = 0L;
                                  mixright = 0L;
                               }

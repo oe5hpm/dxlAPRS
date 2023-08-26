@@ -17,9 +17,6 @@
 #include "osi.h"
 #endif
 #include <osic.h>
-#ifndef mlib_H_
-#include "mlib.h"
-#endif
 #ifndef tcp_H_
 #include "tcp.h"
 #endif
@@ -31,6 +28,13 @@
 #endif
 #ifndef tcpb_H_
 #include "tcpb.h"
+#endif
+#ifndef aprspos_H_
+#include "aprspos.h"
+#endif
+#include <math.h>
+#ifndef libsrtm_H_
+#include "libsrtm.h"
 #endif
 
 /* dump1090 tcp output to aprs beacon by OE5DXL */
@@ -49,6 +53,12 @@
 
 #define adsb2aprs_FEET 0.3048
 
+#define adsb2aprs_PI 3.1415926535898
+
+#define adsb2aprs_RAD 1.7453292519943E-2
+
+#define adsb2aprs_LF "\012"
+
 typedef char CSV[100][21];
 
 struct FLY;
@@ -60,6 +70,7 @@ struct FLY {
    pFLY next;
    char hex[6];
    char name[21];
+   char squawk[4];
    float lat;
    float long0;
    float alt;
@@ -91,7 +102,7 @@ static uint32_t btime;
 
 static char mycall[10];
 
-static char symbol[2];
+static char symbol[3];
 
 static char comment0[201];
 
@@ -102,6 +113,16 @@ static uint32_t ipnum;
 static uint32_t toport;
 
 static float altcorr;
+
+static struct aprsstr_POSITION homepos;
+
+static float homealt;
+
+static float homealtwgs;
+
+static char titles[41][41];
+
+static char csvfn[1024];
 
 
 static void Error(char text[], uint32_t text_len)
@@ -200,6 +221,7 @@ static void Parms(void)
    char s[1001];
    uint32_t n;
    uint32_t m;
+   char titlesset;
    reconn = 0;
    verb = 0;
    verb2 = 0;
@@ -207,9 +229,15 @@ static void Parms(void)
    strncpy(port,"30003",1001u);
    mycall[0] = 0;
    btime = 20UL;
-   strncpy(symbol,"/^",2u);
+   strncpy(symbol,"/^",3u);
    altcorr = 0.0f;
    comment0[0] = 0;
+   homealt = (-1.E+4f);
+   homepos.lat = 0.0f;
+   homepos.long0 = 0.0f;
+   titlesset = 0;
+   libsrtm_srtmdir[0] = 0;
+   memset((char *)titles,(char)0,1681UL);
    for (;;) {
       osi_NextArg(s, 1001ul);
       if (s[0U]==0) break;
@@ -242,6 +270,12 @@ static void Parms(void)
                Error("-a <meter>", 11ul);
             }
          }
+         else if (s[1U]=='A') {
+            osi_NextArg(s, 1001ul);
+            if (!aprsstr_StrToFix(&homealt, s, 1001ul)) {
+               Error("-A <meter>", 11ul);
+            }
+         }
          else if (s[1U]=='b') {
             osi_NextArg(s, 1001ul);
             n = 0UL;
@@ -253,8 +287,8 @@ static void Parms(void)
                 10ul)>9UL) Error("-I <callsign>", 14ul);
          }
          else if (s[1U]=='s') {
-            osi_NextArg(symbol, 2ul);
-            if (aprsstr_Length(symbol, 2ul)!=2UL || symbol[0U]=='-') {
+            osi_NextArg(symbol, 3ul);
+            if (aprsstr_Length(symbol, 3ul)!=2UL || symbol[0U]=='-') {
                Error("-s <symbol>", 12ul);
             }
          }
@@ -273,25 +307,84 @@ static void Parms(void)
             verb = 1;
             verb2 = 1;
          }
+         else if (s[1U]=='P') {
+            osi_NextArg(s, 1001ul);
+            aprsstr_loctopos(&homepos, s, 1001ul);
+            if (!aprspos_posvalid(homepos)) {
+               if (!aprsstr_StrToFix(&homepos.lat, s,
+                1001ul) || (float)fabs(homepos.lat)>=90.0f) {
+                  Error("-P <lat> <long> or <locator>", 29ul);
+               }
+               osi_NextArg(s, 1001ul);
+               if (!aprsstr_StrToFix(&homepos.long0, s,
+                1001ul) || (float)fabs(homepos.long0)>180.0f) {
+                  Error("-P <lat> <long> or <locator>", 29ul);
+               }
+               homepos.lat = homepos.lat*1.7453292519943E-2f;
+               homepos.long0 = homepos.long0*1.7453292519943E-2f;
+            }
+         }
+         else if (s[1U]=='S') osi_NextArg(libsrtm_srtmdir, 1024ul);
+         else if (s[1U]=='f') {
+            osi_NextArg(s, 1001ul);
+            m = 1UL;
+            n = 0UL;
+            titlesset = 1;
+            s[1000U] = 0;
+            while (m<=40UL && s[n]) {
+               if (s[n]==',') ++m;
+               else {
+                  aprsstr_Append(titles[m], 41ul, (char *) &s[n], 1u/1u);
+               }
+               ++n;
+            }
+         }
+         else if (s[1U]=='D') osi_NextArg(csvfn, 1024ul);
          else if (s[1U]=='h') {
             osi_WrStrLn("", 1ul);
             osi_WrStrLn("dump1090 basestation format tcp output to aprs objec\
 t beacon", 61ul);
             osi_WrStrLn("", 1ul);
-            osi_WrStrLn(" -a <meter>          correct altitude -a 50 (0)",
-                48ul);
+            osi_WrStrLn(" -A <meter>          my altitude for elevation else \
+(if avaliable) from srtm data (egm)", 88ul);
+            osi_WrStrLn(" -a <meter>          correct altitude -a 50 (0) bett\
+er use WW15MGH.DAC file in -S", 82ul);
             osi_WrStrLn(" -b <seconds>        aprs minimum send intervall -b \
 10 (20)", 60ul);
-            osi_WrStrLn(" -c <comment>        append text to beacon", 43ul);
+            osi_WrStrLn(" -c <comment>        append text to beacon and enabl\
+e \"Clb=\"", 61ul);
+            osi_WrStrLn(" -D <databasefile>   append text to beacon out of ai\
+rcraft-database.csv (index is ICAO number)", 95ul);
+            osi_WrStrLn(" -f <title>,<title>,... set titles according to csv \
+database fields (index is first field ICAO)", 96ul);
+            osi_WrStrLn("                        empty fields are skipped \"R\
+eg,,,Model,,Serial\"", 71ul);
             osi_WrStrLn(" -h                  help", 26ul);
             osi_WrStrLn(" -I <mycall>         Sender of Object Callsign -I OE\
 0AAA", 57ul);
             osi_WrStrLn(" -k                  keep tcp connection", 41ul);
+            osi_WrStrLn(" -P <lat> <long> or <locator>  my Position for Dista\
+nce/Azimuth/Elevation", 74ul);
+            osi_WrStrLn("                       eg. -P JQ50AB12CD or -P 70.05\
+06 10.0092", 63ul);
+            osi_WrStrLn(" -S <pathname>       directory with SRTM(1/3/30) Dat\
+a and WW15MGH.DAC file (egm96-Geoid)", 89ul);
+            osi_WrStrLn("                       for Overground Calculation",
+                50ul);
+            osi_WrStrLn("                       example with: -S /home/pi",
+                49ul);
+            osi_WrStrLn("                       /home/pi/WW15MGH.DAC        (\
+2076480Byte, covers whole World)", 85ul);
+            osi_WrStrLn("                       /home/pi/srtm1/N48E014.hgt  (\
+25934402Byte)", 66ul);
+            osi_WrStrLn("                       /home/pi/srtm1/N48E015.hgt",
+                50ul);
             osi_WrStrLn(" -s <symbol>         aprs symbol (/^)", 38ul);
             osi_WrStrLn(" -t <url:port>       connect dump1090 tcp server (12\
-7.0.0.1:30003)", 67ul);
+7.0.0.1:30003) \"dump1090 --net\"", 84ul);
             osi_WrStrLn(" -u <ip>:<port>      send AXUDP -u 127.0.0.1:9001 us\
 e udpgate4 or aprsmap as receiver", 86ul);
+            osi_WrStrLn(" -V                  very verbous", 34ul);
             osi_WrStrLn(" -v                  verbous", 29ul);
             osi_WrStrLn("example: -t 127.0.0.1:30003 -I YOURCALL-11 -u 127.0.\
 0.1:9002 -k -v -c 1090MHz", 78ul);
@@ -299,9 +392,32 @@ e udpgate4 or aprsmap as receiver", 86ul);
             osi_WrStrLn("", 1ul);
             X2C_ABORT();
          }
-         else Error("-h", 3ul);
+         else {
+            osi_Werr(">", 2ul);
+            osi_Werr(s, 1001ul);
+            Error("< ? use -h", 11ul);
+         }
       }
       else Error("-h", 3ul);
+   }
+   if (!titlesset) {
+      strncpy(titles[1U],"Reg",41u);
+      strncpy(titles[2U],"ManICAO",41u);
+      strncpy(titles[3U],"ManName",41u);
+      strncpy(titles[4U],"Model",41u);
+      strncpy(titles[5U],"Type",41u);
+      strncpy(titles[6U],"Ser",41u);
+      strncpy(titles[7U],"Linenum",41u);
+      /*  titles[8 ]:="icaotype"; */
+      strncpy(titles[9U],"op",41u);
+      strncpy(titles[10U],"opcall",41u);
+      /*  titles[11]:="opicao"; */
+      /*  titles[12]:="opiata"; */
+      strncpy(titles[13U],"owner",41u);
+      strncpy(titles[15U],"reg",41u);
+      strncpy(titles[16U],"till",41u);
+      strncpy(titles[18U],"built",41u);
+      strncpy(titles[19U],"fitst",41u);
    }
 } /* end Parms() */
 
@@ -356,9 +472,9 @@ static void sendaprs(char dao, uint32_t time0, char mycall0[],
                 double alt, double course, double speed,
                 float clb, char comm[], uint32_t comm_len)
 {
-   char ds[201];
-   char h[201];
-   char b[201];
+   char ds[501];
+   char h[501];
+   char b[501];
    char raw[361];
    int32_t rp;
    uint32_t n;
@@ -371,20 +487,20 @@ static void sendaprs(char dao, uint32_t time0, char mycall0[],
    X2C_PCOPY((void **)&obj,obj_len);
    X2C_PCOPY((void **)&comm,comm_len);
    b[0] = 0;
-   aprsstr_Append(b, 201ul, mycall0, mycall_len);
-   aprsstr_Append(b, 201ul, ">", 2ul);
-   aprsstr_Append(b, 201ul, destcall, destcall_len);
+   aprsstr_Append(b, 501ul, mycall0, mycall_len);
+   aprsstr_Append(b, 501ul, ">", 2ul);
+   aprsstr_Append(b, 501ul, destcall, destcall_len);
    if (via[0UL]) {
-      aprsstr_Append(b, 201ul, ",", 2ul);
-      aprsstr_Append(b, 201ul, via, via_len);
+      aprsstr_Append(b, 501ul, ",", 2ul);
+      aprsstr_Append(b, 501ul, via, via_len);
    }
-   aprsstr_Append(b, 201ul, ":;", 3ul);
-   aprsstr_Assign(h, 201ul, obj, obj_len);
-   aprsstr_Append(h, 201ul, "         ", 10ul);
+   aprsstr_Append(b, 501ul, ":;", 3ul);
+   aprsstr_Assign(h, 501ul, obj, obj_len);
+   aprsstr_Append(h, 501ul, "         ", 10ul);
    h[9U] = 0;
-   aprsstr_Append(b, 201ul, h, 201ul);
-   aprsstr_Append(b, 201ul, "*", 2ul);
-   aprsstr_DateToStr(time0, ds, 201ul);
+   aprsstr_Append(b, 501ul, h, 501ul);
+   aprsstr_Append(b, 501ul, "*", 2ul);
+   aprsstr_DateToStr(time0, ds, 501ul);
    ds[0U] = ds[11U];
    ds[1U] = ds[12U];
    ds[2U] = ds[14U];
@@ -392,9 +508,9 @@ static void sendaprs(char dao, uint32_t time0, char mycall0[],
    ds[4U] = ds[17U];
    ds[5U] = ds[18U];
    ds[6U] = 0;
-   aprsstr_Append(b, 201ul, ds, 201ul);
-   aprsstr_Append(b, 201ul, "h", 2ul);
-   i = aprsstr_Length(b, 201ul);
+   aprsstr_Append(b, 501ul, ds, 501ul);
+   aprsstr_Append(b, 501ul, "h", 2ul);
+   i = aprsstr_Length(b, 501ul);
    a = (float)fabs(lat);
    n = truncr(a);
    b[i] = num(n/10UL);
@@ -504,16 +620,20 @@ static void sendaprs(char dao, uint32_t time0, char mycall0[],
    b[i] = '=';
    ++i;
    b[i] = 0;
-   aprsstr_FixToStr(clb*4.7625E-3f, 2UL, h, 201ul);
+   aprsstr_FixToStr(clb*4.7625E-3f, 2UL, h, 501ul);
                 /* looks like feet/s * 64 */
-   aprsstr_Append(b, 201ul, h, 201ul);
+   aprsstr_Append(b, 501ul, h, 501ul);
    /*  END; */
    if (comm[0UL]) {
-      aprsstr_Append(b, 201ul, " ", 2ul);
-      aprsstr_Append(b, 201ul, comm, comm_len);
+      aprsstr_Append(b, 501ul, " ", 2ul);
+      aprsstr_Append(b, 501ul, comm, comm_len);
    }
-   if (verb) osi_WrStrLn(b, 201ul);
-   aprsstr_mon2raw(b, 201ul, raw, 361ul, &rp);
+   if (verb) osi_WrStrLn(b, 501ul);
+   b[254U] = 0; /* limit len for aprs */
+   aprsstr_mon2raw(b, 501ul, raw, 361ul, &rp);
+   if (rp==0L) {
+      osi_WerrLn("axudp encode error (possibly call not encodable", 48ul);
+   }
    rp = udpsend(udpsock, raw, rp, toport, ipnum);
    X2C_PFREE(mycall0);
    X2C_PFREE(destcall);
@@ -523,17 +643,355 @@ static void sendaprs(char dao, uint32_t time0, char mycall0[],
    X2C_PFREE(comm);
 } /* end sendaprs() */
 
+#define adsb2aprs_SEP "\""
+
+struct DB;
+
+typedef struct DB * pDB;
+
+
+struct DB {
+   pDB next;
+   uint8_t icaomsb;
+   char str[65556];
+};
+
+static pDB dbidx[65536];
+
+
+static uint32_t ghex(const char s[], uint32_t s_len)
+{
+   uint32_t n;
+   uint32_t i;
+   char c;
+   n = 0UL;
+   i = 0UL;
+   for (;;) {
+      c = X2C_CAP(s[i]);
+      if ((uint8_t)c>='0' && (uint8_t)c<='9') {
+         n = (n*16UL+(uint32_t)(uint8_t)c)-48UL;
+      }
+      else if ((uint8_t)c>='A' && (uint8_t)c<='F') {
+         n = (n*16UL+(uint32_t)(uint8_t)c)-55UL;
+      }
+      else break;
+      ++i;
+      if (i>s_len-1) break;
+   }
+   return n;
+} /* end ghex() */
+
+
+static char getch(char b[4096], int32_t fd0, int32_t * len,
+                int32_t * p)
+{
+   if (*p>=*len) {
+      *len = osi_RdBin(fd0, (char *)b, 4096u/1u, 4096UL);
+      if (*len<=0L) return 0;
+      *p = 0L;
+   }
+   ++*p;
+   return b[*p-1L];
+} /* end getch() */
+
+
+static int32_t getword(int32_t * p, int32_t * len, int32_t fd0,
+                char b[4096], char s[], uint32_t s_len)
+{
+   uint32_t i;
+   char inqu;
+   i = 0UL;
+   inqu = 0;
+   for (;;) {
+      s[i] = getch(b, fd0, len, p);
+      if (s[i]==0) return -1L;
+      if (s[i]=='\012') {
+         s[i] = 0;
+         return 0L;
+      }
+      if (!inqu && s[i]==',') {
+         s[i] = 0;
+         return 1L;
+      }
+      if (s[i]=='\"') inqu = !inqu;
+      else if ((i<s_len-1 && (uint8_t)s[i]>=' ') && (uint8_t)
+                s[i]<(uint8_t)'\200') ++i;
+   }
+   return 0;
+} /* end getword() */
+
+
+static void rdcsv(char fn[], uint32_t fn_len)
+{
+   int32_t r;
+   int32_t len;
+   int32_t p;
+   uint32_t cnt;
+   uint32_t line0;
+   uint32_t i;
+   int32_t fd0;
+   /*    pm:pDB; */
+   char b[4096];
+   char h[1024];
+   char s[1024];
+   char f[50][100];
+   pDB pd;
+   uint32_t dupes;
+   uint32_t msb;
+   uint32_t wc;
+   uint32_t icao;
+   X2C_PCOPY((void **)&fn,fn_len);
+   memset((char *)dbidx,(char)0,sizeof(pDB [65536]));
+   cnt = 0UL;
+   fd0 = osi_OpenRead(fn, fn_len);
+   if (fd0<0L) Error("database file not readable", 27ul);
+   if (verb) osi_WerrLn("importing aircraft database", 28ul);
+   line0 = 0UL;
+   dupes = 0UL;
+   p = 0L;
+   len = 0L;
+   for (;;) {
+      wc = 0UL;
+      for (;;) {
+         r = getword(&p, &len, fd0, b, f[wc], 100ul);
+         if (r<=0L) break;
+         if (wc<49UL) ++wc;
+      }
+      if (r>=0L) {
+         icao = ghex(f[0U], 100ul);
+         msb = icao/65536UL;
+         icao = icao&65535UL;
+         pd = dbidx[icao];
+         while (pd && (uint32_t)pd->icaomsb!=msb) pd = pd->next;
+         if (pd==0) {
+            h[0] = 0;
+            i = 1UL;
+            while (i<wc) {
+               if (i<=40UL) {
+                  aprsstr_Append(h, 1024ul, "\"", 2ul);
+                  aprsstr_Append(h, 1024ul, f[i], 100ul);
+               }
+               ++i;
+            }
+            osic_alloc((char * *) &pd,
+                (sizeof(struct DB)-65535UL)+aprsstr_Length(h, 1024ul));
+            if (pd==0) {
+               aprsstr_IntToStr((int32_t)line0, 1UL, s, 1024ul);
+               osi_Werr("in line:", 9ul);
+               osi_Werr(s, 1024ul);
+               Error(" out of memory", 15ul);
+            }
+            pd->icaomsb = (uint8_t)msb;
+            aprsstr_Assign(pd->str, 65556ul, h, 1024ul);
+            pd->next = dbidx[icao];
+            dbidx[icao] = pd;
+            ++line0;
+         }
+         else ++dupes;
+      }
+      else {
+         if (verb) {
+            aprsstr_IntToStr((int32_t)line0, 1UL, s, 1024ul);
+            osi_Werr(s, 1024ul);
+            osi_WerrLn(" Lines imported", 16ul);
+            if (dupes) {
+               aprsstr_IntToStr((int32_t)dupes, 1UL, s, 1024ul);
+               osi_Werr(s, 1024ul);
+               osi_WerrLn(" duplicates removed", 20ul);
+            }
+         }
+         break;
+      }
+   }
+   osic_Close(fd0);
+   X2C_PFREE(fn);
+} /* end rdcsv() */
+
+
+static void appenddb(const char icao[], uint32_t icao_len,
+                char s[], uint32_t s_len)
+{
+   uint32_t i;
+   uint32_t col;
+   uint32_t ic;
+   uint8_t icm;
+   pDB p;
+   ic = ghex(icao, icao_len);
+   p = dbidx[ic&65535UL];
+   icm = (uint8_t)(ic/65536UL);
+   while (p && p->icaomsb!=icm) p = p->next;
+   if (p) {
+      /*WrStr("<<<");WrStr(p^.str); WrStrLn(">>>"); */
+      col = 0UL;
+      i = 0UL;
+      while (p->str[i] && col<=40UL) {
+         if (p->str[i]=='\"') {
+            ++col;
+            if ((p->str[i+1UL]!='\"' && (uint8_t)p->str[i+1UL]>' ')
+                && titles[col][0U]) {
+               aprsstr_Append(s, s_len, " ", 2ul);
+               aprsstr_Append(s, s_len, titles[col], 41ul);
+               aprsstr_Append(s, s_len, ":", 2ul);
+            }
+         }
+         else if (titles[col][0U]) {
+            aprsstr_Append(s, s_len, (char *) &p->str[i], 1u/1u);
+         }
+         ++i;
+      }
+   }
+} /* end appenddb() */
+
+
+static void elevation(double * el, double * c,
+                struct aprsstr_POSITION home, double homealt0,
+                struct aprsstr_POSITION dist, double distalt)
+{
+   float z1;
+   float y1;
+   float x1;
+   float z0;
+   float y00;
+   float x0;
+   double sb;
+   double r;
+   double s;
+   double b;
+   double a;
+   *el = (-1000.0);
+   aprspos_wgs84s(home.lat, home.long0, (float)(homealt0*0.001), &x0,
+                &y00, &z0);
+   aprspos_wgs84s(dist.lat, dist.long0, (float)(distalt*0.001), &x1, &y1,
+                &z1);
+   a = sqrt((double)(x0*x0+y00*y00+z0*z0));
+   b = sqrt((double)(x1*x1+y1*y1+z1*z1));
+   x1 = x1-x0;
+   y1 = y1-y00;
+   z1 = z1-z0;
+   *c = sqrt((double)(x1*x1+y1*y1+z1*z1));
+   /* halbwinkelsatz */
+   s = (a+b+*c)*0.5;
+   if (s==0.0) return;
+   r = X2C_DIVL((s-a)*(s-b)*(s-*c),s);
+   if (r<=0.0) return;
+   r = sqrt(r);
+   sb = s-b;
+   if (sb!=0.0) *el = 1.1459155902616E+2*atan(X2C_DIVL(r,sb))-90.0;
+   else *el = 90.0;
+} /* end elevation() */
+
+
+static float getoverground(float lat, float long0, float alt)
+{
+   struct aprsstr_POSITION pos;
+   float resolution;
+   float srtm;
+   libsrtm_srtmmaxmem = 1000000UL;
+   pos.lat = lat;
+   pos.long0 = long0;
+   srtm = libsrtm_getsrtm(pos, 1UL, &resolution);
+   if (srtm<10000.0f && srtm>(-1000.0f)) {
+      if (alt<=(-3.E+4f)) return srtm;
+      /* srtm request */
+      return alt-srtm;
+   }
+   return (-1.E+5f);
+} /* end getoverground() */
+
+
+static float egmcorr(const struct aprsstr_POSITION pos,
+                char invers, float a)
+/* correct altitude wgs84/egm */
+{
+   float e;
+   char ok0;
+   if (libsrtm_srtmdir[0U]) {
+      ok0 = 1;
+      e = libsrtm_egm96(pos, &ok0);
+      if (ok0) {
+         if (invers) e = -e;
+         a = a-e;
+      }
+   }
+   return a;
+} /* end egmcorr() */
+
 
 static void aprs(const struct FLY f)
 {
    char h[31];
-   aprsstr_Assign(h, 31ul, f.name, 21ul);
-   h[9U] = 0;
-   while (aprsstr_Length(h, 31ul)<9UL) aprsstr_Append(h, 31ul, " ", 2ul);
-   sendaprs(1, f.postime, mycall, 10ul, "APLFR1", 7ul, "", 1ul, "/^", 3ul, h,
-                 31ul, (double)f.lat, (double)f.long0,
-                (double)f.alt, (double)f.dir,
-                (double)(f.speed*1.852f), f.clb, comment0, 201ul);
+   char obj[31];
+   char ct[501];
+   double dist;
+   double ele;
+   float azi;
+   float altegm;
+   float altwgs;
+   float og;
+   struct aprsstr_POSITION pos;
+   aprsstr_Assign(obj, 31ul, f.name, 21ul);
+   obj[9U] = 0;
+   while (aprsstr_Length(obj, 31ul)<9UL) aprsstr_Append(obj, 31ul, " ", 2ul);
+   strncpy(ct,"ICAO:",501u);
+   aprsstr_Append(ct, 501ul, f.hex, 6ul);
+   aprsstr_Append(ct, 501ul, " ", 2ul);
+   altwgs = f.alt;
+   pos.lat = f.lat*1.7453292519943E-2f;
+   pos.long0 = f.long0*1.7453292519943E-2f;
+   if (altcorr!=0.0f) altegm = altwgs+altcorr;
+   else if (libsrtm_srtmdir[0U]) altegm = egmcorr(pos, 0, altwgs);
+   if (aprspos_posvalid(homepos)) {
+      azi = aprspos_azimuth(homepos, pos);
+      aprsstr_FixToStr(azi, 0UL, h, 31ul);
+      aprsstr_Append(ct, 501ul, "az=", 4ul);
+      aprsstr_Append(ct, 501ul, h, 31ul);
+      if (homealtwgs>(-1000.0f)) {
+         /* elevation */
+         ele = (-100.0);
+         elevation(&ele, &dist, homepos, (double)homealtwgs, pos,
+                (double)altwgs);
+         aprsstr_FixToStr((float)dist, 4UL, h, 31ul);
+         aprsstr_Append(ct, 501ul, " d=", 4ul);
+         aprsstr_Append(ct, 501ul, h, 31ul);
+         aprsstr_Append(ct, 501ul, "km", 3ul);
+         if (fabs(ele)<=90.0) {
+            aprsstr_FixToStr((float)ele, 3UL, h, 31ul);
+            aprsstr_Append(ct, 501ul, " el=", 5ul);
+            aprsstr_Append(ct, 501ul, h, 31ul);
+         }
+         if (libsrtm_srtmdir[0U]) {
+            og = getoverground(pos.lat, pos.long0, altegm);
+            if (og>(-1000.0f)) {
+               aprsstr_FixToStr(og, 0UL, h, 31ul);
+               aprsstr_Append(ct, 501ul, " og=", 5ul);
+               aprsstr_Append(ct, 501ul, h, 31ul);
+               aprsstr_Append(ct, 501ul, "m", 2ul);
+            }
+         }
+      }
+   }
+   if (f.squawk[0U]) {
+      aprsstr_Append(ct, 501ul, " Sq=", 5ul);
+      aprsstr_Append(ct, 501ul, f.squawk, 4ul);
+      if (aprsstr_StrCmp(f.squawk, 4ul, "7700", 5ul)) {
+         aprsstr_Append(ct, 501ul, "[EMERGENCY]", 12ul);
+      }
+      else if (aprsstr_StrCmp(f.squawk, 4ul, "7600", 5ul)) {
+         aprsstr_Append(ct, 501ul, "[RADIO FAILURE]", 16ul);
+      }
+      else if (aprsstr_StrCmp(f.squawk, 4ul, "7500", 5ul)) {
+         aprsstr_Append(ct, 501ul, "[HIJACKING]", 12ul);
+      }
+   }
+   appenddb(f.hex, 6ul, ct, 501ul);
+   if (comment0[0U]) {
+      aprsstr_Append(ct, 501ul, " ", 2ul);
+      aprsstr_Append(ct, 501ul, comment0, 201ul);
+   }
+   sendaprs(1, f.postime, mycall, 10ul, "APLFR1", 7ul, "", 1ul, symbol, 3ul,
+                obj, 31ul, (double)f.lat, (double)f.long0,
+                (double)altegm, (double)f.dir,
+                (double)(f.speed*1.852f), f.clb, ct, 501ul);
 } /* end aprs() */
 
 
@@ -550,8 +1008,8 @@ static void store(const CSV csv0)
    t = osic_time();
    if ((((csv0[0U][0U]=='M' && csv0[0U][1U]=='S') && csv0[0U][2U]=='G')
                 && aprsstr_StrToCard(csv0[1U], 21ul,
-                &msg)) && (((msg==1UL || msg==2UL) || msg==3UL) || msg==4UL))
-                 {
+                &msg)) && ((((msg==1UL || msg==2UL) || msg==3UL) || msg==4UL)
+                 || msg==6UL)) {
       f = dbase;
       f0 = 0;
       while (f && !aprsstr_StrCmp(f->hex, 6ul, csv0[4U], 21ul)) {
@@ -616,6 +1074,9 @@ static void store(const CSV csv0)
             if (msg==2UL) f->speedtime = t;
          }
       }
+      else if (msg==6UL) aprsstr_Assign(f->squawk, 4ul, csv0[17U], 21ul);
+      /*IF verb & (csv[17][0]<>0C) THEN WrStr("Squawk:"); WrStrLn(csv[17]);
+                END; (* 7700 luftnotfall up/down, 7600 funkausfall, 7500 hijacking *) */
       if (f->lastbeacon>t) f->lastbeacon = t;
       if (((((((f->newpos && f->name[0U]) && f->postime+20UL>=t)
                 && f->speedtime+20UL>=t) && f->speed>=0.0f) && f->lat!=0.0f)
@@ -643,9 +1104,29 @@ extern int main(int argc, char **argv)
 {
    X2C_BEGIN(&argc,argv,1,4000000l,8000000l);
    if (sizeof(CSV)!=2100) X2C_ASSERT(0);
+   libsrtm_BEGIN();
+   aprspos_BEGIN();
    aprsstr_BEGIN();
    osi_BEGIN();
    Parms();
+   if (csvfn[0U]) rdcsv(csvfn, 1024ul);
+   homealtwgs = homealt;
+   if ((aprspos_posvalid(homepos) && libsrtm_srtmdir[0U])
+                && homealt<=(-1000.0f)) {
+      homealt = -getoverground(homepos.lat, homepos.long0, 0.0f);
+      if (verb) osi_WrStrLn("get home altitude from srtm", 28ul);
+      homealtwgs = egmcorr(homepos, 1, homealt); /* altitude to wgs84 */
+   }
+   if (verb && homealt>(-1000.0f)) {
+      osi_WrStr("home altitude (egm):", 21ul);
+      osic_WrFixed(homealt, 1L, 1UL);
+      osi_WrStrLn("m", 2ul);
+      if (homealt!=homealtwgs) {
+         osi_WrStr("home altitude (wgs84):", 23ul);
+         osic_WrFixed(homealtwgs, 1L, 1UL);
+         osi_WrStrLn("m", 2ul);
+      }
+   }
    fd = -1L;
    dbase = 0;
    fd = connecttob(url, port);
@@ -661,10 +1142,12 @@ extern int main(int argc, char **argv)
             for (ip = 0UL; ip<=200UL; ip++) {
                if ((uint8_t)ibuf[ip]<' ') {
                   if (lp<200UL) line[lp] = 0;
-                  if (verb) osi_WrStrLn(line, 201ul);
-                  decodeline(line, 201ul, csv);
-                  store(csv);
-                  lp = 0UL;
+                  if (aprsstr_Length(line, 201ul)>2UL) {
+                     if (verb2) osi_WrStrLn(line, 201ul);
+                     decodeline(line, 201ul, csv);
+                     store(csv);
+                     lp = 0UL;
+                  }
                }
                else if (lp<200UL) {
                   line[lp] = ibuf[ip];
@@ -673,12 +1156,14 @@ extern int main(int argc, char **argv)
             } /* end for */
          }
       }
-      else if (reconn) {
+      else {
          osi_WerrLn("connection lost", 16ul);
-         usleep(1000000UL);
-         fd = connecttob(url, port);
+         if (reconn) {
+            usleep(1000000UL);
+            fd = connecttob(url, port);
+         }
+         else break;
       }
-      else break;
    }
    X2C_EXIT();
    return 0;

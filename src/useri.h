@@ -48,9 +48,13 @@
 #define useri_CURSINS '\017'
 
 #define useri_CURSPASTE '\026'
+
+#define useri_CURSCLRLINE '\013'
 /*    CURSF11=CHR(11);*/
 
 #define useri_CMDRDLOG "\216"
+
+#define useri_CMDFOLLOW "L"
 
 #define useri_CMDDOWNLOAD "\237"
 
@@ -103,6 +107,14 @@
 #define useri_CFGHEARD "H"
 
 #define useri_CFGRAWDECODED "u"
+
+#define useri_SCREENSHOT "S"
+/*
+      SCREENSHOT=020C;
+*/
+
+#define useri_DIRECTCONF "!"
+/* enter config line */
 
 #define useri_DEFAULTLUMOBJ "90"
 
@@ -158,7 +170,7 @@ struct useri_MOUSEPOS {
 
 enum useri_CONFSET {useri_fFIND, useri_fLOGWFN, useri_fLOGDAYS, useri_fLOGFN,
                  useri_fLOGDATE, useri_fLOGFIND, useri_fFOTOFN,
-                useri_fXYSIZE, 
+                useri_fDIRECTCONF, useri_fXYSIZE, 
    useri_fMYCALL, useri_fMYPOS, useri_fPOIFILTER, useri_fPOISMBOLS, 
    useri_fNBTEXT, useri_fMYSYM, useri_fNETBTIME, useri_fRFBTSHIFT, 
    useri_fRBTEXT, useri_fRBTYP, useri_fRBNAME, useri_fRBSYMB, useri_fRBPOS,
@@ -210,6 +222,7 @@ enum useri_CONFSET {useri_fFIND, useri_fLOGWFN, useri_fLOGDAYS, useri_fLOGFN,
    useri_fCOLMAPTEXT, useri_fCOLOBJTEXT, useri_fCOLMENUTEXT,
                 useri_fCOLMENUBACK, useri_fCOLMARK1, useri_fCOLMARK2, 
    useri_fTIMESTAMP, 
+   useri_fFOLLOW, 
    useri_fEDITLINE};
 
 
@@ -336,7 +349,8 @@ extern char useri_configon(uint8_t);
 
 extern void useri_AddConfLine(uint8_t, uint8_t, char [], uint32_t);
 
-extern void useri_setview(int32_t, char [], uint32_t);
+extern void useri_setcfg(uint8_t, int32_t, char [], uint32_t,
+                uint8_t);
 
 extern void useri_clrconfig(void);
 
@@ -401,6 +415,10 @@ extern void useri_Tilegamma0(float);
 extern void useri_mapbritocfg(void);
 
 extern void useri_findopl(uint32_t);
+
+extern char useri_anywatchfollow(void);
+
+extern void useri_DoDirectConf(void);
 
 
 extern void useri_BEGIN(void);

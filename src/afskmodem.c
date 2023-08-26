@@ -24,9 +24,6 @@
 #include "osi.h"
 #endif
 #include <osic.h>
-#ifndef mlib_H_
-#include "mlib.h"
-#endif
 #ifndef aprsstr_H_
 #include "aprsstr.h"
 #endif
@@ -35,6 +32,7 @@
 #include "afskmodemptt.h"
 #endif
 #include <signal.h>
+#include <termios.h>
 
 /* (a)fsk -  kiss/axudp stereo soundcard afsk/fsk multimodem by OE5DXL */
 /*FROM setsighandler IMPORT SIGTERM, SIGINT, setsignalproc, SIGPROC; */

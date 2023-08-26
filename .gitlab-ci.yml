@@ -108,7 +108,7 @@ deploy-github:
     - mkdir -p ~/.ssh
     - eval $(ssh-agent -s)
     - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
-    - ssh-add <(echo "$GITHUB_PRIVATE_KEY")
+    - ssh-add <(echo "$STAGING_PRIVATE_KEY")
   script:
     - git remote add github git@github.com:oe5hpm/dxlAPRS.git
     - git branch

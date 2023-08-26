@@ -1483,8 +1483,11 @@
   Infos aller der Reihe nach.
 
 
+20.2.2023
 
-
++ Autoanswer with (enabled) line like "*:AA:OP away" in
+  Config > Rf-Ports > Config Rx-Messages > Query Keywords
++ Filter with wildcards in List Windows like "BLN?WX"
 
 
 

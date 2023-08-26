@@ -315,54 +315,42 @@ int osic_isfifo(int fd)
 
 char osic_mkdir(char path[], uint32_t fname_len, uint32_t perm)
 {
-        if (mkdir(path, perm) != -1)
-                return 1;
-        return 0;
+		if (mkdir(path, perm) != -1)
+				return 1;
+		return 0;
 }
-
 int osic_setttybaudraw(int32_t fd, uint32_t baud)
 {
 	struct termios options;
 	int rc;
 	unsigned int bd;
 
-	switch (baud) {
-		case 300:
-			bd = B300;
-			break;
-		case 600:
-			bd = B600;
-			break;
-		case 1200:
-			bd = B1200;
-			break;
-		case 2400:
-			bd = B2400;
-			break;
-		case 9600:
-			bd = B9600;
-			break;
-		case 19200:
-			bd = B19200;
-			break;
-		case 38400:
-			bd = B38400;
-			break;
-		case 57600:
-			bd = B57600;
-			break;
-		case 115200:
-			bd = B115200;
-			break;
-		case 230400:
-			bd = B230400;
-			break;
-		case 460800:
-			bd = B460800;
-			break;
-		default:
-			return -1;
-	}
+	if (baud == 300)
+		bd = B300;
+	else if (baud == 600)
+		bd = B600;
+	else if (baud == 1200)
+		bd = B1200;
+	else if (baud == 2400)
+		bd = B2400;
+	else if (baud == 4800)
+		bd = B4800;
+	else if (baud == 9600)
+		bd = B9600;
+	else if (baud == 19200)
+		bd = B19200;
+	else if (baud == 38400)
+		bd = B38400;
+	else if (baud == 57600)
+		bd = B57600;
+	else if (baud == 115200)
+		bd = B115200;
+	else if (baud == 230400)
+		bd = B230400;
+	else if (baud == 460800)
+		bd = B460800;
+	else
+		return -1;
 
 	rc = tcgetattr(fd, &options);
 	if (rc < 0)
@@ -381,39 +369,32 @@ int osic_setttybaudraw(int32_t fd, uint32_t baud)
 
 	return tcsetattr(fd, TCSANOW, &options);
 }
-
 int osic_keepalive(int32_t fd, char on, int32_t idle, int32_t intervall, int32_t count)
 {
 	int ion;
 	int rc;
 
-	ion = (int)on;
-	rc = setsockopt(fd,
-			SOL_SOCKET, SO_KEEPALIVE,
-			&ion, sizeof(int));
+	ion= (int)on;
+	rc = setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &ion, sizeof(int));
 	if (rc < 0)
 		return rc;
 
 	if (idle >= 0) {
-		rc = setsockopt(fd,
-				SOL_TCP, TCP_KEEPIDLE,
-				&idle, sizeof(int));
+		rc = setsockopt(fd, SOL_TCP, TCP_KEEPIDLE, &idle, sizeof(int));
 		if (rc < 0)
 			return rc;
 	}
 
-	if (intervall >= 0) {
+	if (intervall>=0) {
 		rc = setsockopt(fd,
 				SOL_TCP, TCP_KEEPINTVL,
 				&intervall, sizeof(int));
 		if (rc < 0)
 			return rc;
-	}
+	};
 
 	if (count >= 0) {
-		rc = setsockopt(fd,
-				SOL_TCP, TCP_KEEPCNT,
-				&count, sizeof(int));
+		rc = setsockopt(fd, SOL_TCP, TCP_KEEPCNT, &count, sizeof(int));
 		if (rc < 0)
 			return rc;
 	}
@@ -700,13 +681,17 @@ void *osic_chkptr(void *p)
 
 int32_t osic_setsystime(uint32_t *time0)
 {
+#if 0
 	struct timespec stime;
 
 	stime.tv_nsec = 0;
 	stime.tv_sec = *time0;
-	/*
+
+
 	return clock_settime(CLOCK_REALTIME, &stime);
-	*/
+#else
+	return 0;
+#endif
 }
 
 void osic_timens(char monotonic, uint32_t *s, uint32_t *ns)
@@ -718,7 +703,8 @@ void osic_timens(char monotonic, uint32_t *s, uint32_t *ns)
 	else
 		clock_gettime(CLOCK_REALTIME, &t);
 
-	*s=t.tv_sec;
-	*ns=t.tv_nsec;
+	*s = t.tv_sec;
+	*ns = t.tv_nsec;
 }
+
 

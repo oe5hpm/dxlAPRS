@@ -26,6 +26,12 @@
 # - srtmtag    modify srtm1 or srtm3 file with tags eg. wood/water
 # - fmrepeater simple ctcss-squelch speach repeater audio processing + ptt + dtmf
 #              + ctcss generator, maybe combined with afskmodem for multimode relay
+# - downsample and shift frequecy in iq-file
+# - waterfall iq file to png image with waterfall, waterfall3 same faster but with libfftw3
+# - sdrtx modulate audio signal to iq file ssb/am/fm/stereo with audio processing
+# - ra02  radio modul ra02 to axudp interface
+# - loratx text line to lora IQ file with test features
+# - lorarx IQ file with lora to axudp
 # ---------------------- common section ---------------------------------------
 HOSTARCH := $(shell uname -m | \
 	sed -e s/i.86/x86/ \
@@ -64,9 +70,6 @@ CDEFS		= -Wall \
 		  -Wno-unused-variable -Wno-parentheses -Wno-pointer-sign \
 		  -Wno-format -Wno-return-type -Wno-char-subscripts \
 		  -Wno-uninitialized \
-		  -Wno-unused-but-set-variable \
-		  -Wno-discarded-qualifiers \
-		  -Wno-unused-result \
 		  -Werror=implicit-function-declaration
 else
 CDEFS		= -w
@@ -83,73 +86,57 @@ endif
 ifeq ($(PLATFORM), armv6tce)
 OUT		:= $(if $(OUT),$(OUT),../out-armv6tce/)
 EXTLIB  	= lib_armv6/
-PICLIBS		:= $(EXTLIB)libpng15/libpng.a \
+XLIBS		= $(EXTLIB)libpng15/libpng.a \
 		  $(EXTLIB)libz.a \
-		  $(EXTLIB)libjpeg.a
-XLIBS		= $(PICLIBS) \
+		  $(EXTLIB)libjpeg.a \
 		  $(EXTLIB)libxcb.so.1 $(EXTLIB)libXdmcp.so.6 $(EXTLIB)libXau.so.6 \
 		  -L$(EXTLIB) -lXext -lX11
 CFLAGS		+= -march=armv6zk -mfpu=vfp -mfloat-abi=hard -mcpu=arm1176jzf-s
 CFLAGS		+= -Ilib_armv6/libpng15/ -I$(EXTLIB) -I.
-LFLAGS		+= -lrt
+LFLAGS		+=
 else ifeq ($(PLATFORM), armv6)
 OUT		:= $(if $(OUT),$(OUT),../out-armv6/)
 EXTLIB  	= lib_armv6/
-PICLIBS		:= $(EXTLIB)libpng16/libpng.a \
+XLIBS		= $(EXTLIB)libpng16/libpng.a \
 		  $(EXTLIB)libz.a \
-		  $(EXTLIB)libjpeg.a
-XLIBS		= $(PICLIBS) \
+		  $(EXTLIB)libjpeg.a \
 		  $(EXTLIB)libxcb.so.1 $(EXTLIB)libXdmcp.so.6 $(EXTLIB)libXau.so.6 \
 		  -L$(EXTLIB) -lXext -lX11
 CFLAGS		+= -march=armv6zk -mfpu=vfp -mfloat-abi=hard -mcpu=arm1176jzf-s
 CFLAGS		+= -Ilib_armv6/libpng16/ -I$(EXTLIB) -I.
-LFLAGS		+= -lrt
+LFLAGS		+=
 # ---------------------- armv7hf (bur am335x pp) specific ---------------------
 else ifeq ($(PLATFORM), armv7hf)
 OUT		:= $(if $(OUT),$(OUT),../out-armv7hf/)
 EXTLIB		= lib_armv7hf/
-PICLIBS		:= $(EXTLIB)/libpng.a \
+XLIBS		= $(EXTLIB)libpng.a \
 		  $(EXTLIB)libz.a \
-		  $(EXTLIB)libjpeg.a
-XLIBS		= $(PICLIBS) \
+		  $(EXTLIB)libjpeg.a \
 		  $(EXTLIB)libxcb.so $(EXTLIB)libXdmcp.so $(EXTLIB)libXau.so \
 		  -L$(EXTLIB) -lXext -lX11
 CFLAGS		+= -march=armv7-a -mfpu=neon -mfloat-abi=hard
 CFLAGS		+= -I$(EXTLIB)
 LFLAGS		+=
-# ---------------------- aarch64 (bur am335x pp) specific ---------------------
-else ifeq ($(PLATFORM), aarch64)
-EXTLIB          = lib_aarch64/
-XLIBS           = $(EXTLIB)libpng15.a \
-                  $(EXTLIB)libz.a \
-                  $(EXTLIB)libjpeg.a \
-                  -L$(EXTLIB) -lXext -lX11
 # -------------------------- x86_64 specific -----------------------------------
 else ifeq ($(HOSTARCH), x86_64)
-PICLIBS		:= -lpng -ljpeg
-XLIBS		= $(PICLIBS) -lXext -lX11
-EXTLIB		= lib_x86_64/
-CFLAGS		+= -I$(EXTLIB)
+XLIBS		= -lpng -ljpeg -lXext -lX11
 ifeq ($(PLATFORM), x86_32)
-	OUT		:= $(if $(OUT),$(OUT),../out-x86_32/)
-	EXTLIB	= lib_x86_32/
-	CFLAGS	+= -m32 -I$(EXTLIB)
+	OUT	:= $(if $(OUT),$(OUT),../out-x86_32/)
+	CFLAGS	+= -m32
 	LFLAGS	+= -m32
 	TARGETS	+= $(OUT)aprsmap-x86_32
 else ifneq ($(HOSTOS),Darwin)
 TARGETS		+= $(OUT)aprsmap-x86_64
 endif
-OUT			:= $(if $(OUT),$(OUT),../out-x86_64/)
+OUT		:= $(if $(OUT),$(OUT),../out-x86_64/)
 # -------------------------- x86_32 (default) specific ------------------------
 else ifeq ($(HOSTARCH), x86)
 OUT		:= $(if $(OUT),$(OUT),../out-x86_32/)
 TARGETS		+= $(OUT)aprsmap-x86_32
-PICLIBS		:= -lpng -ljpeg
-XLIBS		= $(PICLIBS) -lXext -lX11
+XLIBS		= -lpng -ljpeg -lXext -lX11
 else
 OUT		:= $(if $(OUT),$(OUT),../out/)
-PICLIBS		:= -lpng -ljpeg
-XLIBS		+= $(PICLIBS) -lXext -lX11
+XLIBS		+= -lpng -ljpeg -lXext -lX11
 endif
 # ------------------ objects enumeration ------------------
 OBJ_COMMON = \
@@ -166,8 +153,10 @@ OBJ_AFSKMODEM = \
 	$(OUT)afskmodem.o \
 	$(OUT)afskmodemptt.o
 
-OBJ_GPS2APRS	= $(OUT)gps2aprs.o
-OBJ_GPS2DIGIPOS	= $(OUT)gps2digipos.o
+OBJ_GPS2APRS	= \
+	$(OUT)gps2aprs.o
+OBJ_GPS2DIGIPOS	= \
+	$(OUT)gps2digipos.o
 
 OBJ_SONDEMOD	= \
 	$(OUT)geodesy.o \
@@ -182,15 +171,24 @@ OBJ_SONDEMOD	= \
 	$(OUT)sondemod.o \
 	$(OUT)libsrtm.o
 
-OBJ_SONDEUDP	= $(OUT)sondeudp.o \
+OBJ_SONDEUDP	= \
+	$(OUT)sondeudp.o \
 	$(OUT)rsc.o \
 	$(OUT)rsc_decode.o
 
-OBJ_UDPBOX	= $(OUT)udpbox.o
-OBJ_UDPGATE4	= $(OUT)udpgate4.o \
+OBJ_UDPBOX	= \
+	$(OUT)udpbox.o
+	
+OBJ_UDPGATE4	= \
+	$(OUT)udpgate4.o \
 	$(OUT)libsrtm.o
-OBJ_UDPFLEX	= $(OUT)udpflex.o
-OBJ_UDPHUB	= $(OUT)udphub.o
+	
+OBJ_UDPFLEX	= \
+	$(OUT)udpflex.o
+
+OBJ_UDPHUB	= \
+	$(OUT)udphub.o
+
 OBJ_APRSMAP	= \
 	$(OUT)aprsdecode.o \
 	$(OUT)aprsmap.o \
@@ -206,33 +204,57 @@ OBJ_APRSMAP	= \
 	$(OUT)libsrtm.o \
 	$(OUT)pastewrapper.o
 
-OBJ_SDRTST	= $(OUT)tcpb.o $(OUT)sdr.o $(OUT)sdrtest.o
-OBJ_SDRRADIO	= $(OUT)tcpb.o $(OUT)sdr.o $(OUT)radio.o
-OBJ_L2COMMON	= \
-	$(OUT)l2.o \
-	$(OUT)frameio.o
+OBJ_SDRTST	= \
+	$(OUT)tcpb.o \
+	$(OUT)sdr.o \
+	$(OUT)sdrtest.o
+
+OBJ_SDRRADIO	= \
+	$(OUT)tcpb.o \
+	$(OUT)sdr.o \
+	$(OUT)radio.o
+
 OBJ_L2CAT	= \
-	$(OBJ_L2COMMON) \
+	$(OUT)l2.o \
+	$(OUT)frameio.o \
 	$(OUT)deflate.o \
 	$(OUT)Execlogin.o \
 	$(OUT)cleanup.o \
 	$(OUT)l2cat.o
-OBJ_ADSB2APRS	= $(OUT)adsb2aprs.o $(OUT)tcpb.o
-OBJ_PROFILE	= $(OUT)profile.o \
+
+OBJ_ADSB2APRS	= \
+	$(OUT)adsb2aprs.o \
+	$(OUT)tcpb.o \
+	$(OUT)libsrtm.o
+
+OBJ_PROFILE	= \
+	$(OUT)profile.o \
 	$(OUT)imagetext.o \
 	$(OUT)libsrtm.o \
 	$(OUT)pngwrite.o
-OBJ_RADIORANGE	= $(OUT)radiorange.o \
+
+OBJ_RADIORANGE	= \
+	$(OUT)radiorange.o \
 	$(OUT)pngwritepalette.o \
 	$(OUT)libsrtm.o
-OBJ_PANORAMA = $(OUT)panorama.o\
+
+OBJ_PANORAMA = \
+	$(OUT)panorama.o\
 	$(OUT)imagetext.o \
 	$(OUT)libsrtm.o \
 	$(OUT)pngwrite.o \
 	$(OUT)pngread.o
-OBJ_CMSLOGIN = $(OUT)cmslogin.o
-OBJ_SRTMTAG = $(OUT)srtmtag.o \
+
+OBJ_CMSLOGIN = \
+	$(OUT)cmslogin.o
+
+OBJ_SRTMTAG = \
+	$(OUT)srtmtag.o \
 	$(OUT)pngread.o
+
+OBJ_FMREPEATER = \
+	$(OUT)fmrepeater.o \
+	$(OUT)afskmodemptt.o
 
 OBJ_WATERFALL = \
 	$(OUT)waterfall.o \
@@ -240,27 +262,30 @@ OBJ_WATERFALL = \
 	$(OUT)fft.o \
 	$(OUT)complex.o
 
-OBJ_FMREPEATER = \
-	$(OUT)fmrepeater.o \
-	$(OUT)afskmodemptt.o
-
-OBJ_HOSTINT = \
-	$(OUT)hostint.o
-
 OBJ_WATERFALL3 = \
 	$(OUT)waterfall3.o \
 	$(OUT)pngwritepalette.o \
 	$(OUT)fftw.o
 
-OBJ_DOWNSAMPLE	= $(OUT)downsample.o
-OBJ_SDRTX	= $(OUT)sdrtx.o
-OBJ_RA02	= $(OUT)ra02.o
-OBJ_LORATX	= $(OUT)loratx.o
-OBJ_LORARX	= \
+OBJ_DOWNSAMPLE = \
+	$(OUT)downsample.o
+
+OBJ_SDRTX = \
+	$(OUT)sdrtx.o
+
+OBJ_RA02 = \
+	$(OUT)ra02.o
+
+OBJ_LORATX	= \
+	$(OUT)loratx.o
+
+OBJ_LORARX = \
 	$(OUT)lorarx.o \
 	$(OUT)fft.o \
 	$(OUT)complex.o
 
+OBJ_HOSTINT = \
+	$(OUT)hostint.o
 
 TARGETS += \
 	$(OUT)afskmodem \
@@ -283,13 +308,13 @@ TARGETS += \
 	$(OUT)srtmtag \
 	$(OUT)fmrepeater \
 	$(OUT)waterfall \
-	$(OUT)hostint \
+	$(OUT)waterfall3 \
 	$(OUT)downsample \
 	$(OUT)sdrtx \
 	$(OUT)ra02 \
 	$(OUT)loratx \
-	$(OUT)lorarx
-
+	$(OUT)lorarx \
+	$(OUT)hostint
 
 ifneq ($(HOSTOS), Darwin)
 	TARGETS += $(OUT)l2cat
@@ -314,15 +339,15 @@ OBJS = \
 	$(OBJ_PROFILE) \
 	$(OBJ_RADIORANGE) \
 	$(OBJ_PANORAMA) \
-	$(OBJ_CMSLOGIN)	\
+	$(OBJ_CMSLOGIN) \
 	$(OBJ_SRTMTAG) \
-        $(OBJ_FMREPEATER) \
+	$(OBJ_FMREPEATER) \
 	$(OBJ_WATERFALL) \
 	$(OBJ_DOWNSAMPLE) \
 	$(OBJ_SDRTX) \
 	$(OBJ_RA02) \
-        $(OBJ_LORATX) \
-        $(OBJ_LORARX)
+	$(OBJ_LORATX) \
+	$(OBJ_LORARX)
 
 # ------------------- target make rules -------------------
 #                     -----------------
@@ -344,47 +369,47 @@ prepare:
 $(OUT)afskmodem: $(OBJ_AFSKMODEM) $(OBJ_COMMON)
 	@echo [ linking ] $@
 	@$(CC) $(LFLAGS) -o $(OUT)afskmodem $(OBJ_COMMON) $(OBJ_AFSKMODEM) -lm
-	@$(STRIP) $(OUT)afskmodem $(STRIPFLAGS)
+	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)gps2aprs: $(OBJ_GPS2APRS) $(OBJ_COMMON)
 	@echo [ linking ] $@
 	@$(CC) $(LFLAGS) -o $(OUT)gps2aprs $(OBJ_COMMON) $(OBJ_GPS2APRS) -lm
-	@$(STRIP) $(OUT)gps2aprs $(STRIPFLAGS)
+	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)gps2digipos: $(OBJ_GPS2DIGIPOS) $(OBJ_COMMON)
 	@echo [ linking ] $@
 	@$(CC) $(LFLAGS) -o $(OUT)gps2digipos $(OBJ_COMMON) $(OBJ_GPS2DIGIPOS) -lm
-	@$(STRIP) $(OUT)gps2digipos $(STRIPFLAGS)
+	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)sondemod: $(OBJ_SONDEMOD) $(OBJ_COMMON)
 	@echo [ linking ] $@
 	@$(CC) $(LFLAGS) -o $(OUT)sondemod $(OBJ_COMMON) $(OBJ_SONDEMOD) -lm
-	@$(STRIP) $(OUT)sondemod $(STRIPFLAGS)
+	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)sondeudp: $(OBJ_SONDEUDP) $(OBJ_COMMON)
 	@echo [ linking ] $@
 	@$(CC) $(LFLAGS) -o $(OUT)sondeudp $(OBJ_COMMON) $(OBJ_SONDEUDP) -lm
-	@$(STRIP) $(OUT)sondeudp $(STRIPFLAGS)
+	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)udpbox: $(OBJ_UDPBOX) $(OBJ_COMMON)
 	@echo [ linking ] $@
 	@$(CC) $(LFLAGS) -o $(OUT)udpbox $(OBJ_COMMON) $(OBJ_UDPBOX) -lm
-	@$(STRIP) $(OUT)udpbox $(STRIPFLAGS)
+	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)udpgate4: $(OBJ_UDPGATE4) $(OBJ_COMMON)
 	@echo [ linking ] $@
 	@$(CC) $(LFLAGS) -o $(OUT)udpgate4 $(OBJ_COMMON) $(OBJ_UDPGATE4) -lm
-	@$(STRIP) $(OUT)udpgate4 $(STRIPFLAGS)
+	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)udpflex: $(OBJ_UDPFLEX) $(OBJ_COMMON)
 	@echo [ linking ] $@
 	@$(CC) $(LFLAGS) -o $(OUT)udpflex $(OBJ_COMMON) $(OBJ_UDPFLEX) -lm
-	@$(STRIP) $(OUT)udpflex $(STRIPFLAGS)
+	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)udphub: $(OBJ_UDPHUB) $(OBJ_COMMON)
 	@echo [ linking ] $@
 	@$(CC) $(LFLAGS) -o $(OUT)udphub $(OBJ_COMMON) $(OBJ_UDPHUB) -lm
-	@$(STRIP) $(OUT)udphub $(STRIPFLAGS)
+	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)aprsmap-x86_32: $(OBJ_APRSMAP) $(OBJ_COMMON)
 	@echo [ linking ] $@
@@ -392,7 +417,7 @@ $(OUT)aprsmap-x86_32: $(OBJ_APRSMAP) $(OBJ_COMMON)
 	$(OBJ_COMMON) $(XLIBS) \
 	-lpthread -lxcb -lXau -lXdmcp -lm -lpthread -ldl -lz \
 	-static
-	@$(STRIP) $(OUT)aprsmap-x86_32 $(STRIPFLAGS)
+	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)aprsmap-x86_64: $(OBJ_APRSMAP) $(OBJ_COMMON)
 	@echo [ linking ] $@
@@ -400,102 +425,107 @@ $(OUT)aprsmap-x86_64: $(OBJ_APRSMAP) $(OBJ_COMMON)
 	$(OBJ_COMMON) $(XLIBS) \
 	-lpthread -lxcb -lXau -lXdmcp -lm -lpthread -ldl -lz \
 	-static
-	@$(STRIP) $(OUT)aprsmap-x86_64 $(STRIPFLAGS)
+	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)aprsmap : $(OBJ_APRSMAP) $(OBJ_COMMON)
 	@echo [ linking ] $@
 	@$(CC) $(LFLAGS) -o $(OUT)aprsmap $(OBJ_APRSMAP) \
 	$(OBJ_COMMON) $(XLIBS) -lm
-	@$(STRIP) $(OUT)aprsmap $(STRIPFLAGS)
+	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)sdrtst : $(OBJ_SDRTST) $(OBJ_COMMON)
 	@echo [ linking ] $@
 	@$(CC) $(LFLAGS) -o $(OUT)sdrtst $(OBJ_SDRTST) $(OBJ_COMMON) -lm
-	@$(STRIP) $(OUT)sdrtst $(STRIPFLAGS)
+	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)sdrradio : $(OBJ_SDRRADIO) $(OBJ_COMMON)
 	@echo [ linking ] $@
 	@$(CC) $(LFLAGS) -o $(OUT)sdrradio $(OBJ_SDRRADIO) $(OBJ_COMMON) -lm
-	@$(STRIP) $(OUT)sdrradio $(STRIPFLAGS)
+	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)l2cat : $(OBJ_L2CAT) $(OBJ_COMMON)
 	@echo [ linking ] $@
 	@$(CC) $(LFLAGS) -o $(OUT)l2cat $(OBJ_L2CAT) $(OBJ_COMMON) -lm
-	@$(STRIP) $(OUT)l2cat $(STRIPFLAGS)
+	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)adsb2aprs: $(OBJ_ADSB2APRS) $(OBJ_COMMON)
 	@echo [ linking ] $@
 	@$(CC) $(LFLAGS) -o $(OUT)adsb2aprs $(OBJ_ADSB2APRS) $(OBJ_COMMON) -lm
-	@$(STRIP) $(OUT)adsb2aprs $(STRIPFLAGS)
+	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)profile : $(OBJ_PROFILE) $(OBJ_COMMON)
 	@echo [ linking ] $@
 	@$(CC) $(LFLAGS) -o $(OUT)profile $(OBJ_PROFILE) \
 	$(OBJ_COMMON) $(XLIBS) -lm
-	@$(STRIP) $(OUT)profile $(STRIPFLAGS)
+	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)radiorange: $(OBJ_RADIORANGE) $(OBJ_COMMON)
 	@echo [ linking ] $@
 	@$(CC) $(LFLAGS) -o $(OUT)radiorange $(OBJ_RADIORANGE) $(OBJ_COMMON) \
 	$(XLIBS) -lm
-	@$(STRIP) $(OUT)radiorange $(STRIPFLAGS)
+	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)panorama: $(OBJ_PANORAMA) $(OBJ_COMMON)
-	$(CC) $(LFLAGS) -o $@ $(OBJ_PANORAMA) $(OBJ_COMMON) \
+	@echo [ linking ] $@
+	@$(CC) $(LFLAGS) -o $@ $(OBJ_PANORAMA) $(OBJ_COMMON) \
 	$(XLIBS) -lm
-	$(STRIP) $@ $(STRIPFLAGS)
+	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)cmslogin: $(OBJ_CMSLOGIN) $(OBJ_COMMON)
-	$(CC) $(LFLAGS) -o $@ $(OBJ_COMMON) $(OBJ_CMSLOGIN) -lm
-	$(STRIP) $@ $(STRIPFLAGS)
+	@echo [ linking ] $@
+	@$(CC) $(LFLAGS) -o $@ $(OBJ_COMMON) $(OBJ_CMSLOGIN) -lm
+	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)srtmtag: $(OBJ_SRTMTAG) $(OBJ_COMMON)
-	$(CC) $(LFLAGS) -o $@ $(OBJ_COMMON) $(OBJ_SRTMTAG) \
+	@echo [ linking ] $@
+	@$(CC) $(LFLAGS) -o $@ $(OBJ_COMMON) $(OBJ_SRTMTAG) \
 	$(XLIBS) -lm
-	$(STRIP) $@ $(STRIPFLAGS)
+	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)fmrepeater: $(OBJ_FMREPEATER) $(OBJ_COMMON)
-	$(CC) $(LFLAGS) -o $@ $(OBJ_COMMON) $(OBJ_FMREPEATER) -lm
-	$(STRIP) $@ $(STRIPFLAGS)
+	@echo [ linking ] $@
+	@$(CC) $(LFLAGS) -o $@ $(OBJ_COMMON) $(OBJ_FMREPEATER) -lm
+	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)waterfall: $(OBJ_WATERFALL) $(OBJ_COMMON)
-	$(CC) $(LFLAGS) -o $@ $(OBJ_WATERFALL) $(OBJ_COMMON) -lm $(PICLIBS)
-	$(STRIP) $@ $(STRIPFLAGS)
-
-$(OUT)hostint: $(OBJ_HOSTINT) $(OBJ_L2COMMON)  $(OBJ_COMMON)
-	$(CC) $(LFLAGS) -o $@ $(OBJ_HOSTINT) $(OBJ_L2COMMON) $(OBJ_COMMON)
-	$(STRIP) $@ $(STRIPFLAGS)
+	@echo [ linking ] $@
+	@$(CC) $(LFLAGS) -o $@  $(OBJ_WATERFALL) $(OBJ_COMMON) $(XLIBS) -lm
+	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)waterfall3: $(OBJ_WATERFALL3) $(OBJ_COMMON)
 	@echo [ linking ] $@
-	@$(CC) $(LFLAGS) -o $@  $(OBJ_WATERFALL3) $(OBJ_COMMON) -L$(EXTLIB) $(PICLIBS) $(EXTLIB)libfftw3f.a -lfftw3f  -lm
+	@$(CC) $(LFLAGS) -o $@ $(OBJ_WATERFALL3) -lfftw3  $(OBJ_COMMON) $(XLIBS) -lm
 	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)downsample: $(OBJ_DOWNSAMPLE) $(OBJ_COMMON)
 	@echo [ linking ] $@
-	@$(CC) $(LFLAGS) -o $@ $(OBJ_DOWNSAMPLE) $(OBJ_COMMON) $(OBJ_LIB) -lm
+	@$(CC) $(LFLAGS) -o $@ $(OBJ_DOWNSAMPLE) $(OBJ_COMMON) -lm
 	@$(STRIP) $@ $(STRIPFLAGS)
 
-$(OUT)sdrtx:  $(OBJ_SDRTX) $(OBJ_COMMON)
+$(OUT)sdrtx: $(OBJ_SDRTX) $(OBJ_COMMON)
 	@echo [ linking ] $@
-	@$(CC) $(LFLAGS) -o $@ $(OBJ_SDRTX) $(OBJ_COMMON) $(OBJ_LIB) -lm
+	@$(CC) $(LFLAGS) -o $@ $(OBJ_SDRTX) $(OBJ_COMMON) -lm
 	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)ra02: $(OBJ_RA02) $(OBJ_COMMON)
 	@echo [ linking ] $@
-	@$(CC) $(LFLAGS) -o $@ $(OBJ_RA02) $(OBJ_COMMON) $(OBJ_LIB) -lm
+	@$(CC) $(LFLAGS) -o $@ $(OBJ_RA02) $(OBJ_COMMON)
 	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)loratx: $(OBJ_LORATX) $(OBJ_COMMON)
 	@echo [ linking ] $@
-	@$(CC) $(LFLAGS) -o $@ $(OBJ_LORATX) $(OBJ_COMMON) $(OBJ_LIB) -lm
+	@$(CC) $(LFLAGS) -o $@ $(OBJ_LORATX) $(OBJ_COMMON) -lm
 	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)lorarx: $(OBJ_LORARX) $(OBJ_COMMON)
 	@echo [ linking ] $@
-	@$(CC) $(LFLAGS) -o $@ $(OBJ_LORARX) $(OBJ_COMMON) $(OBJ_LIB) -lm
+	@$(CC) $(LFLAGS) -o $@ $(OBJ_LORARX) $(OBJ_COMMON) -lm
 	@$(STRIP) $@ $(STRIPFLAGS)
 
+$(OUT)hostint: $(OBJ_HOSTINT) $(OBJ_COMMON)
+	@echo [ linking ] $@
+	@$(CC) $(LFLAGS) -o $@ $(OBJ_LORARX) $(OBJ_COMMON) -lm
+	@$(STRIP) $@ $(STRIPFLAGS)
 
 %:
 	make prepare
@@ -505,7 +535,4 @@ diag:
 	@echo "Hostarch    : $(HOSTARCH)"
 	@echo "BuildOutput : $(OUT)"
 	@echo "Platform    : $(PLATFORM)"
-	@echo "PIC-libaries: $(PICLIBS)"
-	@echo "external Lib: $(EXTLIB)"
-	@echo "C-Flags     : $(CFLAGS)"
 # end of makefile

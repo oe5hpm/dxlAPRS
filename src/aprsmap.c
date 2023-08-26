@@ -188,6 +188,14 @@ static struct _0 radio;
 
 static struct aprsstr_POSITION clickwatchpos;
 
+static uint32_t autoshottime;
+
+static uint32_t batchp;
+
+static uint32_t batchlen;
+
+static char batchbuf[10000];
+
 
 static void Error(char text0[], uint32_t text_len)
 {
@@ -2402,36 +2410,6 @@ WrLn;
 } /* end findsize() */
 
 
-static void pantoop(aprsdecode_pOPHIST op)
-{
-   struct aprsstr_POSITION p;
-   struct aprsstr_POSITION rightdown;
-   float cf;
-   float m;
-   if (op && aprspos_posvalid(op->lastpos)) {
-      maptool_xytodeg((float)maptool_xsize, 0.0f, &rightdown);
-      p = op->lastpos;
-      cf = (float)aprsdecode_lums.centering*0.005f;
-                /* hold obj in percent of image to center */
-      m = (rightdown.long0-aprsdecode_mappos.long0)*cf;
-      if (p.long0-m<aprsdecode_mappos.long0) {
-         aprsdecode_mappos.long0 = p.long0-m;
-      }
-      else if (p.long0+m>rightdown.long0) {
-         aprsdecode_mappos.long0 = (aprsdecode_mappos.long0+p.long0+m)
-                -rightdown.long0;
-      }
-      m = (aprsdecode_mappos.lat-rightdown.lat)*cf;
-      if (p.lat+m>aprsdecode_mappos.lat) aprsdecode_mappos.lat = p.lat+m;
-      else if (p.lat-m<rightdown.lat) {
-         aprsdecode_mappos.lat = ((aprsdecode_mappos.lat+p.lat)-m)
-                -rightdown.lat;
-      }
-      maptool_limpos(&aprsdecode_mappos);
-   }
-} /* end pantoop() */
-
-
 static void push(float newzoom, char onlyonce)
 {
    uint32_t i;
@@ -2480,6 +2458,186 @@ static void push(float newzoom, char onlyonce)
       }
    }
 } /* end push() */
+
+
+static void centerpos(struct aprsstr_POSITION centpos,
+                struct aprsstr_POSITION * newpos)
+{
+   maptool_center(maptool_xsize, maptool_ysize,
+                maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom),
+                centpos, newpos);
+} /* end centerpos() */
+
+
+static char distvisable(struct aprsstr_POSITION p0,
+                struct aprsstr_POSITION p1)
+/* mark0 an mark1 distinguishable */
+{
+   float y1;
+   float x1;
+   float y00;
+   float x0;
+   if (maptool_mapxy(p0, &x0, &y00)>=0L && maptool_mapxy(p1, &x1, &y1)>=0L) {
+      x0 = x0-x1;
+      y00 = y00-y1;
+      return x0*x0+y00*y00>=200.0f;
+   }
+   return 1;
+} /* end distvisable() */
+
+#define aprsmap_MARGIN 0.1
+
+#define aprsmap_YMARGIN 0.1
+
+
+static void mapzoom(struct aprsstr_POSITION pos0,
+                struct aprsstr_POSITION pos1, uint32_t maxz,
+                char withmargin, char zoomtonomap)
+{
+   float wmax;
+   float wy;
+   float wx;
+   float fo;
+   struct aprsstr_POSITION testpos;
+   struct aprsstr_POSITION pos2;
+   struct aprsstr_POSITION mid;
+   struct aprsstr_POSITION mo;
+   char blown;
+   char nofit;
+   char done;
+   int32_t testty;
+   int32_t testtx;
+   float steps;
+   float testshy;
+   float testshx;
+   if (!aprspos_posvalid(pos0) || !aprspos_posvalid(pos1)) return;
+   push(maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom), 0);
+   wx = pos1.long0-pos0.long0;
+   wy = pos0.lat-pos1.lat;
+   pos0.lat = pos0.lat+X2C_DIVR(wy*(float)aprsdecode_lums.fontysize,
+                (float)maptool_ysize);
+   pos1.lat = pos1.lat-X2C_DIVR(wy*(float)aprsdecode_lums.fontysize*0.25f,
+                (float)maptool_ysize);
+   wy = pos0.lat-pos1.lat;
+   wmax = wx;
+   if (wmax<wy) wmax = wy;
+   if (!withmargin) wmax = 0.0f;
+   mid.long0 = (pos1.long0+pos0.long0+wmax*0.1f)*0.5f;
+   mid.lat = (pos1.lat+pos0.lat+wmax*0.1f)*0.5f;
+   aprsdecode_mappos.long0 = pos0.long0-wmax*0.1f;
+   aprsdecode_mappos.lat = pos0.lat+wmax*0.1f;
+   pos2.long0 = pos1.long0+wmax*0.1f;
+   pos2.lat = pos1.lat-wmax*0.1f;
+   /* zoom to fit in integer zoom*/
+   aprsdecode_initzoom = (int32_t)maxz;
+   aprsdecode_finezoom = 1.0f;
+   nofit = 0;
+   for (;;) {
+      maptool_mercator(aprsdecode_mappos.long0, aprsdecode_mappos.lat,
+                aprsdecode_initzoom, &aprsdecode_inittilex,
+                &aprsdecode_inittiley, &maptool_shiftx, &maptool_shifty);
+      if (aprsdecode_initzoom<=1L) break;
+      /* test if map is complete */
+      if ((useri_configon(useri_fZOOMMISS) && aprsdecode_lums.map>0L)
+                && (!zoomtonomap || distvisable(pos0, pos1))) {
+         centerpos(mid, &testpos);
+         maptool_mercator(testpos.long0, testpos.lat, aprsdecode_initzoom,
+                &testtx, &testty, &testshx, &testshy);
+         maptool_loadmap(image, testtx, testty, aprsdecode_initzoom,
+                aprsdecode_finezoom, testshx, testshy, &done, &blown,
+                useri_configon(useri_fALLOWEXP), 1);
+      }
+      else done = 1;
+      /* test if map is complete */
+      if (maptool_mapxy(pos2, &wx, &wy)<0L) nofit = 1;
+      else {
+         if (done) break;
+         nofit = 0;
+      }
+      /*  IF (mapxy(pos2, wx, wy)>=0) OR (initzoom<=MINZOOM) THEN EXIT END;
+                */
+      --aprsdecode_initzoom;
+   }
+   if (aprsdecode_initzoom!=(int32_t)maxz) tooltips('b');
+   /* fine zoom */
+   aprsdecode_finezoom = 1.0f;
+   /*IF initzoom<MAXZOOMOBJ THEN */
+   if (nofit) {
+      steps = useri_conf2real(useri_fZOOMSTEP, 0UL, 0.05f, 1.0f, 0.05f);
+      for (;;) {
+         fo = aprsdecode_finezoom;
+         aprsdecode_finezoom = aprsdecode_finezoom+steps;
+         maptool_mercator(aprsdecode_mappos.long0, aprsdecode_mappos.lat,
+                aprsdecode_initzoom, &aprsdecode_inittilex,
+                &aprsdecode_inittiley, &maptool_shiftx, &maptool_shifty);
+         if (aprsdecode_finezoom>1.95f || maptool_mapxy(pos2, &wx, &wy)<0L) {
+            break;
+         }
+      }
+      aprsdecode_finezoom = fo;
+   }
+   mo = aprsdecode_mappos;
+   centerpos(mid, &aprsdecode_mappos);
+   if (aprsdecode_mappos.lat<mo.lat) aprsdecode_mappos.lat = mo.lat;
+} /* end mapzoom() */
+
+
+static void zoomtomarks(struct aprsstr_POSITION mpos,
+                struct aprsstr_POSITION clickpos)
+{
+   float h;
+   if (aprspos_posvalid(mpos)) {
+      if (!aprspos_posvalid(clickpos)) clickpos = mpos;
+      if (mpos.lat<clickpos.lat) {
+         h = mpos.lat;
+         mpos.lat = clickpos.lat;
+         clickpos.lat = h;
+      }
+      if (mpos.long0>clickpos.long0) {
+         h = mpos.long0;
+         mpos.long0 = clickpos.long0;
+         clickpos.long0 = h;
+      }
+      mapzoom(mpos, clickpos, (uint32_t)useri_conf2int(useri_fMAXZOOM, 0UL,
+                 1L, 18L, 18L), 1, 1);
+   }
+} /* end zoomtomarks() */
+
+
+static void pantoop(aprsdecode_pOPHIST op)
+{
+   struct aprsstr_POSITION p;
+   struct aprsstr_POSITION rightdown;
+   float cf;
+   float m;
+   if (op && aprspos_posvalid(op->lastpos)) {
+      maptool_xytodeg((float)maptool_xsize, 0.0f, &rightdown);
+      p = op->lastpos;
+      cf = (float)aprsdecode_lums.centering*0.005f;
+                /* hold obj in percent of image to center */
+      m = (rightdown.long0-aprsdecode_mappos.long0)*cf;
+      if (p.long0-m<aprsdecode_mappos.long0) {
+         aprsdecode_mappos.long0 = p.long0-m;
+      }
+      else if (p.long0+m>rightdown.long0) {
+         aprsdecode_mappos.long0 = (aprsdecode_mappos.long0+p.long0+m)
+                -rightdown.long0;
+      }
+      m = (aprsdecode_mappos.lat-rightdown.lat)*cf;
+      if (p.lat+m>aprsdecode_mappos.lat) aprsdecode_mappos.lat = p.lat+m;
+      else if (p.lat-m<rightdown.lat) {
+         aprsdecode_mappos.lat = ((aprsdecode_mappos.lat+p.lat)-m)
+                -rightdown.lat;
+      }
+      maptool_limpos(&aprsdecode_mappos);
+      if (aprsdecode_lums.followwhat==0x3UL && aprspos_posvalid(aprsdecode_click.markpos)
+                ) {
+         aprsdecode_click.measurepos = p;
+         zoomtomarks(aprsdecode_click.markpos, aprsdecode_click.measurepos);
+      }
+   }
+/*    pandone:=TRUE; */
+} /* end pantoop() */
 
 
 static void pop(void)
@@ -2849,110 +3007,6 @@ END testlist;
 } /* end copypastepos() */
 
 
-static void centerpos(struct aprsstr_POSITION centpos,
-                struct aprsstr_POSITION * newpos)
-{
-   maptool_center(maptool_xsize, maptool_ysize,
-                maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom),
-                centpos, newpos);
-} /* end centerpos() */
-
-#define aprsmap_MARGIN 0.07
-
-#define aprsmap_YMARGIN 0.025
-
-
-static void mapzoom(struct aprsstr_POSITION pos0,
-                struct aprsstr_POSITION pos1, uint32_t maxz,
-                char withmargin)
-{
-   float wmax;
-   float wy;
-   float wx;
-   float fo;
-   struct aprsstr_POSITION testpos;
-   struct aprsstr_POSITION pos2;
-   struct aprsstr_POSITION mid;
-   struct aprsstr_POSITION mo;
-   char blown;
-   char nofit;
-   char done;
-   int32_t testty;
-   int32_t testtx;
-   float steps;
-   float testshy;
-   float testshx;
-   if (!aprspos_posvalid(pos0) || !aprspos_posvalid(pos1)) return;
-   push(maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom), 0);
-   wx = pos1.long0-pos0.long0;
-   wy = pos0.lat-pos1.lat;
-   pos0.lat = pos0.lat+X2C_DIVR(wy*(float)aprsdecode_lums.fontysize,
-                (float)maptool_ysize);
-   pos1.lat = pos1.lat-X2C_DIVR(wy*(float)aprsdecode_lums.fontysize*0.25f,
-                (float)maptool_ysize);
-   wy = pos0.lat-pos1.lat;
-   wmax = wx;
-   if (wmax<wy) wmax = wy;
-   if (!withmargin) wmax = 0.0f;
-   mid.long0 = (pos1.long0+pos0.long0+wmax*0.07f)*0.5f;
-   mid.lat = (pos1.lat+pos0.lat+wmax*0.025f)*0.5f;
-   aprsdecode_mappos.long0 = pos0.long0-wmax*0.07f;
-   aprsdecode_mappos.lat = pos0.lat+wmax*0.025f;
-   pos2.long0 = pos1.long0+wmax*0.07f;
-   pos2.lat = pos1.lat-wmax*0.025f;
-   /* zoom to fit in integer zoom*/
-   aprsdecode_initzoom = (int32_t)maxz;
-   aprsdecode_finezoom = 1.0f;
-   nofit = 0;
-   for (;;) {
-      maptool_mercator(aprsdecode_mappos.long0, aprsdecode_mappos.lat,
-                aprsdecode_initzoom, &aprsdecode_inittilex,
-                &aprsdecode_inittiley, &maptool_shiftx, &maptool_shifty);
-      if (aprsdecode_initzoom<=1L) break;
-      /* test if map is complete */
-      if (useri_configon(useri_fZOOMMISS) && aprsdecode_lums.map>0L) {
-         centerpos(mid, &testpos);
-         maptool_mercator(testpos.long0, testpos.lat, aprsdecode_initzoom,
-                &testtx, &testty, &testshx, &testshy);
-         maptool_loadmap(image, testtx, testty, aprsdecode_initzoom,
-                aprsdecode_finezoom, testshx, testshy, &done, &blown,
-                useri_configon(useri_fALLOWEXP), 1);
-      }
-      else done = 1;
-      /* test if map is complete */
-      if (maptool_mapxy(pos2, &wx, &wy)<0L) nofit = 1;
-      else {
-         if (done) break;
-         nofit = 0;
-      }
-      /*  IF (mapxy(pos2, wx, wy)>=0) OR (initzoom<=MINZOOM) THEN EXIT END;
-                */
-      --aprsdecode_initzoom;
-   }
-   if (aprsdecode_initzoom!=(int32_t)maxz) tooltips('b');
-   /* fine zoom */
-   aprsdecode_finezoom = 1.0f;
-   /*IF initzoom<MAXZOOMOBJ THEN */
-   if (nofit) {
-      steps = useri_conf2real(useri_fZOOMSTEP, 0UL, 0.05f, 1.0f, 0.05f);
-      for (;;) {
-         fo = aprsdecode_finezoom;
-         aprsdecode_finezoom = aprsdecode_finezoom+steps;
-         maptool_mercator(aprsdecode_mappos.long0, aprsdecode_mappos.lat,
-                aprsdecode_initzoom, &aprsdecode_inittilex,
-                &aprsdecode_inittiley, &maptool_shiftx, &maptool_shifty);
-         if (aprsdecode_finezoom>1.95f || maptool_mapxy(pos2, &wx, &wy)<0L) {
-            break;
-         }
-      }
-      aprsdecode_finezoom = fo;
-   }
-   mo = aprsdecode_mappos;
-   centerpos(mid, &aprsdecode_mappos);
-   if (aprsdecode_mappos.lat<mo.lat) aprsdecode_mappos.lat = mo.lat;
-} /* end mapzoom() */
-
-
 static void drawsquer(maptool_pIMAGE img, const struct aprsstr_POSITION p0,
                 const struct aprsstr_POSITION p1, int32_t r, int32_t g,
                 int32_t b)
@@ -3295,9 +3349,9 @@ static void View(uint32_t n)
       aprsstr_FixToStr(z+0.05f, 2UL, s, 101ul);
       midscreenpos(&mid);
       aprsstr_Append(s, 101ul, " ", 2ul);
-      aprstext_postostr(mid, '2', h, 101ul);
+      aprstext_postostr(mid, '4', h, 101ul);
       aprsstr_Append(s, 101ul, h, 101ul);
-      useri_setview((int32_t)n, s, 101ul);
+      useri_setcfg(useri_fVIEW, (int32_t)n, s, 101ul, 1U);
       useri_killallmenus();
       useri_say("View stored!", 13ul, 4UL, 'r');
    }
@@ -3349,7 +3403,13 @@ static void follow(void)
       }
       clickwatchpos = op->lastpos;
       useri_popwatchcall(aprsdecode_tracenew.call, 9ul);
-      if (aprsdecode_tracenew.follow) aprsdecode_click.markpos = op->lastpos;
+      if (aprsdecode_tracenew.follow) {
+         /*    IF lums.centering<100 THEN */
+         /*      click.markpos:=op^.lastpos */
+         /*    ELSE */
+         aprsdecode_click.clickpos = op->lastpos;
+      }
+      /*    END; */
       maptrys = 30UL;
    }
    aprsdecode_tracenew.call[0UL] = 0;
@@ -3400,28 +3460,6 @@ ownload", 23ul, "\242", 2ul);
    }
    else useri_textautosize(-3L, 0L, 16UL, 0UL, 'b', s, 1000ul);
 } /* end MapPackage() */
-
-
-static void zoomtomarks(struct aprsstr_POSITION mpos,
-                struct aprsstr_POSITION clickpos)
-{
-   float h;
-   if (aprspos_posvalid(mpos)) {
-      if (!aprspos_posvalid(clickpos)) clickpos = mpos;
-      if (mpos.lat<clickpos.lat) {
-         h = mpos.lat;
-         mpos.lat = clickpos.lat;
-         clickpos.lat = h;
-      }
-      if (mpos.long0>clickpos.long0) {
-         h = mpos.long0;
-         mpos.long0 = clickpos.long0;
-         clickpos.long0 = h;
-      }
-      mapzoom(mpos, clickpos, (uint32_t)useri_conf2int(useri_fMAXZOOM, 0UL,
-                 1L, 18L, 18L), 1);
-   }
-} /* end zoomtomarks() */
 
 #define aprsmap_TOSMALL 5
 
@@ -3497,11 +3535,11 @@ static void screenshot(void)
       if (useri_panoimage) {
          ok0 = maptool_saveppm(s, 1000ul, useri_panoimage,
                 (int32_t)((useri_panoimage->Len1-1)+1UL),
-                (int32_t)((useri_panoimage->Len0-1)+1UL));
+                (int32_t)((useri_panoimage->Len0-1)+1UL), 0);
       }
       else {
          ok0 = maptool_saveppm(s, 1000ul, image, maptool_xsize,
-                maptool_ysize);
+                maptool_ysize, aprsdecode_autoshots!=0UL);
       }
       if (ok0<0L) {
          aprsstr_Append(s, 1000ul, " write error", 13ul);
@@ -4171,7 +4209,7 @@ static void animate(const aprsdecode_MONCALL singlecall, uint32_t step,
    if (!pandone) {
       findsize(&newpos0, &newpos1, aprsdecode_click.mhop, 'T');
       mapzoom(newpos0, newpos1, (uint32_t)useri_conf2int(useri_fDEFZOOM,
-                0UL, 1L, 18L, 14L), 1);
+                0UL, 1L, 18L, 14L), 1, 0);
       pandone = 1;
       maptool_mercator(aprsdecode_mappos.long0, aprsdecode_mappos.lat,
                 aprsdecode_initzoom, &aprsdecode_inittilex,
@@ -4532,7 +4570,7 @@ static void makeimage(char dryrun)
    else findsize(&newpos0, &newpos1, aprsdecode_click.mhop, 'T');
    if (!pandone) {
       mapzoom(newpos0, newpos1, (uint32_t)useri_conf2int(useri_fDEFZOOM,
-                0UL, 1L, 18L, 14L), 1);
+                0UL, 1L, 18L, 14L), 1, 1);
       pandone = 1;
       aprsdecode_lums.moving = 0;
    }
@@ -4671,70 +4709,44 @@ static void MainEvent(void)
    if (!aprsdecode_lums.logmode) aprsdecode_systime = aprsdecode_realtime;
    if (aprsdecode_realtime<lastxupdate) lastxupdate = aprsdecode_realtime;
    if (aprsdecode_realtime<laststatref) laststatref = aprsdecode_realtime;
-   if (aprsdecode_WITHX11) {
-      if (aprsdecode_click.dryrun) {
-         makeimage(1);
-         if (aprsdecode_click.entries>1UL && aprsdecode_click.entries<9UL) {
-            /* rotate find order */
-            cycleorder = (cycleorder+1UL)%aprsdecode_click.entries;
-            aprsdecode_click.table[9UL] = aprsdecode_click.table[0UL];
-            aprsdecode_click.table[0UL] = aprsdecode_click.table[cycleorder];
-            aprsdecode_click.table[cycleorder] = aprsdecode_click.table[9UL];
-         }
-         mestxt[0U] = 0;
-         maptool_xytodeg((float)aprsdecode_click.x,
+   if (aprsdecode_WITHX11 && aprsdecode_click.dryrun) {
+      makeimage(1);
+      if (aprsdecode_click.entries>1UL && aprsdecode_click.entries<9UL) {
+         /* rotate find order */
+         cycleorder = (cycleorder+1UL)%aprsdecode_click.entries;
+         aprsdecode_click.table[9UL] = aprsdecode_click.table[0UL];
+         aprsdecode_click.table[0UL] = aprsdecode_click.table[cycleorder];
+         aprsdecode_click.table[cycleorder] = aprsdecode_click.table[9UL];
+      }
+      mestxt[0U] = 0;
+      maptool_xytodeg((float)aprsdecode_click.x,
                 (float)aprsdecode_click.y, &aprsdecode_click.clickpos);
-         if (aprsdecode_click.entries>=1UL) aprsdecode_lums.errorstep = 0;
-         aprsdecode_click.cmd = 0;
-         if (xosi_Shift) aprsdecode_click.cmd = 'X';
-         else if (aprsdecode_click.entries==1UL) {
-            if (aprsdecode_click.table[0UL]
+      if (aprsdecode_click.entries>=1UL) aprsdecode_lums.errorstep = 0;
+      aprsdecode_click.cmd = 0;
+      if (xosi_Shift) aprsdecode_click.cmd = 'X';
+      else if (aprsdecode_click.entries==1UL) {
+         if (aprsdecode_click.table[0UL]
                 .typf==aprsdecode_tSYMBOL || aprsdecode_click.table[0UL]
                 .typf==aprsdecode_tOBJECT) {
-               if (aprsdecode_click.table[0UL].opf->lastinftyp>=100U) {
-                  /* wx symbol */
-                  useri_confstr(useri_fCLICKWXSYM, cfgs, 21ul);
-                  if (aprsstr_InStr(cfgs, 21ul, ".", 2ul)>=0L) {
-                     aprsdecode_click.cmd = '.';
-                  }
-                  else if (aprsstr_InStr(cfgs, 21ul, "=", 2ul)>=0L) {
-                     aprsdecode_click.cmd = '=';
-                  }
-                  else if (aprsstr_InStr(cfgs, 21ul, "H", 2ul)>=0L) {
-                     aprsdecode_click.cmd = 'h';
-                  }
-                  else if (aprsstr_InStr(cfgs, 21ul, "C", 2ul)>=0L) {
-                     aprsdecode_click.cmd = 'c';
-                  }
+            if (aprsdecode_click.table[0UL].opf->lastinftyp>=100U) {
+               /* wx symbol */
+               useri_confstr(useri_fCLICKWXSYM, cfgs, 21ul);
+               if (aprsstr_InStr(cfgs, 21ul, ".", 2ul)>=0L) {
+                  aprsdecode_click.cmd = '.';
                }
-               else {
-                  /* not wx symbol */
-                  useri_confstr(useri_fCLICKSYM, cfgs, 21ul);
-                  if (aprsstr_InStr(cfgs, 21ul, ".", 2ul)>=0L) {
-                     aprsdecode_click.cmd = '.';
-                  }
-                  else if (aprsstr_InStr(cfgs, 21ul, "=", 2ul)>=0L) {
-                     aprsdecode_click.cmd = '=';
-                  }
-                  else if (aprsstr_InStr(cfgs, 21ul, "H", 2ul)>=0L) {
-                     aprsdecode_click.cmd = 'h';
-                  }
-                  else if (aprsstr_InStr(cfgs, 21ul, "C", 2ul)>=0L) {
-                     aprsdecode_click.cmd = 'c';
-                  }
-                  else if (aprsstr_InStr(cfgs, 21ul, "A", 2ul)>=0L) {
-                     aprsdecode_click.cmd = 'a';
-                  }
-                  else if (aprsstr_InStr(cfgs, 21ul, "X", 2ul)>=0L) {
-                     aprsdecode_click.cmd = 'x';
-                  }
-                  else if (aprsstr_InStr(cfgs, 21ul, "Y", 2ul)>=0L) {
-                     aprsdecode_click.cmd = 'y';
-                  }
+               else if (aprsstr_InStr(cfgs, 21ul, "=", 2ul)>=0L) {
+                  aprsdecode_click.cmd = '=';
+               }
+               else if (aprsstr_InStr(cfgs, 21ul, "H", 2ul)>=0L) {
+                  aprsdecode_click.cmd = 'h';
+               }
+               else if (aprsstr_InStr(cfgs, 21ul, "C", 2ul)>=0L) {
+                  aprsdecode_click.cmd = 'c';
                }
             }
-            else if (aprsdecode_click.table[0UL].typf==aprsdecode_tTEXT) {
-               useri_confstr(useri_fCLICKTEXT, cfgs, 21ul);
+            else {
+               /* not wx symbol */
+               useri_confstr(useri_fCLICKSYM, cfgs, 21ul);
                if (aprsstr_InStr(cfgs, 21ul, ".", 2ul)>=0L) {
                   aprsdecode_click.cmd = '.';
                }
@@ -4757,524 +4769,563 @@ static void MainEvent(void)
                   aprsdecode_click.cmd = 'y';
                }
             }
-            else if (aprsdecode_click.table[0UL].typf==aprsdecode_tTRACK) {
-               useri_confstr(useri_fCLICKTRACK, cfgs, 21ul);
-               if (aprsdecode_click.mhop[0UL]
+         }
+         else if (aprsdecode_click.table[0UL].typf==aprsdecode_tTEXT) {
+            useri_confstr(useri_fCLICKTEXT, cfgs, 21ul);
+            if (aprsstr_InStr(cfgs, 21ul, ".", 2ul)>=0L) {
+               aprsdecode_click.cmd = '.';
+            }
+            else if (aprsstr_InStr(cfgs, 21ul, "=", 2ul)>=0L) {
+               aprsdecode_click.cmd = '=';
+            }
+            else if (aprsstr_InStr(cfgs, 21ul, "H", 2ul)>=0L) {
+               aprsdecode_click.cmd = 'h';
+            }
+            else if (aprsstr_InStr(cfgs, 21ul, "C", 2ul)>=0L) {
+               aprsdecode_click.cmd = 'c';
+            }
+            else if (aprsstr_InStr(cfgs, 21ul, "A", 2ul)>=0L) {
+               aprsdecode_click.cmd = 'a';
+            }
+            else if (aprsstr_InStr(cfgs, 21ul, "X", 2ul)>=0L) {
+               aprsdecode_click.cmd = 'x';
+            }
+            else if (aprsstr_InStr(cfgs, 21ul, "Y", 2ul)>=0L) {
+               aprsdecode_click.cmd = 'y';
+            }
+         }
+         else if (aprsdecode_click.table[0UL].typf==aprsdecode_tTRACK) {
+            useri_confstr(useri_fCLICKTRACK, cfgs, 21ul);
+            if (aprsdecode_click.mhop[0UL]
                 && X2C_STRCMP(aprsdecode_click.mhop,9u,
                 aprsdecode_click.table[0UL].opf->call,9u)==0) {
-                  /* in single user mode and click same track */
-                  if (aprsstr_InStr(cfgs, 21ul, "q", 2ul)>=0L) {
-                     aprsdecode_click.cmd = 'q';
-                  }
-                  else if (aprsstr_InStr(cfgs, 21ul, "A", 2ul)>=0L) {
-                     aprsdecode_click.cmd = 'a';
-                  }
-               }
-               else if (aprsstr_InStr(cfgs, 21ul, ".", 2ul)>=0L) {
-                  aprsdecode_click.cmd = '.';
-               }
-               else if (aprsstr_InStr(cfgs, 21ul, "=", 2ul)>=0L) {
-                  aprsdecode_click.cmd = '=';
+               /* in single user mode and click same track */
+               if (aprsstr_InStr(cfgs, 21ul, "q", 2ul)>=0L) {
+                  aprsdecode_click.cmd = 'q';
                }
                else if (aprsstr_InStr(cfgs, 21ul, "A", 2ul)>=0L) {
                   aprsdecode_click.cmd = 'a';
                }
-               else if (aprsstr_InStr(cfgs, 21ul, "q", 2ul)>=0L) {
-                  aprsdecode_click.cmd = 'q';
-               }
-               nearwaypoint(); /* set marker on click to track */
-               aprstext_setmarkalti(aprsdecode_click.table[aprsdecode_click.selected]
+            }
+            else if (aprsstr_InStr(cfgs, 21ul, ".", 2ul)>=0L) {
+               aprsdecode_click.cmd = '.';
+            }
+            else if (aprsstr_InStr(cfgs, 21ul, "=", 2ul)>=0L) {
+               aprsdecode_click.cmd = '=';
+            }
+            else if (aprsstr_InStr(cfgs, 21ul, "A", 2ul)>=0L) {
+               aprsdecode_click.cmd = 'a';
+            }
+            else if (aprsstr_InStr(cfgs, 21ul, "q", 2ul)>=0L) {
+               aprsdecode_click.cmd = 'q';
+            }
+            nearwaypoint(); /* set marker on click to track */
+            aprstext_setmarkalti(aprsdecode_click.table[aprsdecode_click.selected]
                 .pff0, aprsdecode_click.table[0UL].opf, 1);
-               aprsdecode_click.marktime = aprsdecode_realtime;
-            }
-            if (aprsstr_InStr(cfgs, 21ul, "u", 2ul)>=0L) {
-               raw = 1;
-               menu = 1;
-            }
-            if (aprsdecode_click.cmd==0) menu = 1;
-            if (aprsdecode_click.marktime==0UL) {
-               /* hard marker */
-               aprstext_measure(aprsdecode_click.markpos,
-                aprsdecode_click.clickpos, mestxt, 201ul, 0);
-            }
-            else {
-               aprstext_measure(aprsdecode_click.markpos,
-                aprsdecode_click.measurepos, mestxt, 201ul, 0);
-            }
+            aprsdecode_click.marktime = aprsdecode_realtime;
          }
-         else {
-            /*            importbeacon(click.table[click.selected].opf);
-                   (* copy to beacon editor *) */
-            /* clicked empty map */
-            if (aprsdecode_click.marktime==0UL || aprsdecode_click.marktime+10UL>=aprsdecode_realtime)
-                 {
-               aprstext_measure(aprsdecode_click.markpos,
-                aprsdecode_click.clickpos, mestxt, 201ul, 1);
-            }
+         if (aprsstr_InStr(cfgs, 21ul, "u", 2ul)>=0L) {
+            raw = 1;
             menu = 1;
          }
-         useri_confstr(useri_fCLICKMAP, (char *) &ch, 1u/1u);
-         if (!xosi_Shift && ch=='2') {
-            if (aprspos_posvalid(aprsdecode_click.markpos)) ch = 'Y';
-            else ch = 'X';
-         }
-         if (ch=='c') aprsdecode_click.cmd = 'c';
-         else if (!xosi_Shift && ch=='X' || xosi_Shift && ch=='Y') {
-            aprsdecode_click.cmd = 'X';
-         }
-         else if (!xosi_Shift && ch=='Y' || xosi_Shift && ch=='X') {
-            aprsdecode_click.cmd = 'Y';
+         if (aprsdecode_click.cmd==0) menu = 1;
+         if (aprsdecode_click.marktime==0UL) {
+            /* hard marker */
             aprstext_measure(aprsdecode_click.markpos,
                 aprsdecode_click.clickpos, mestxt, 201ul, 0);
          }
-         if ((aprsdecode_click.entries>0UL && aprsdecode_click.table[aprsdecode_click.selected]
+         else {
+            aprstext_measure(aprsdecode_click.markpos,
+                aprsdecode_click.measurepos, mestxt, 201ul, 0);
+         }
+      }
+      else {
+         /*            importbeacon(click.table[click.selected].opf);
+                (* copy to beacon editor *) */
+         /* clicked empty map */
+         if (aprsdecode_click.marktime==0UL || aprsdecode_click.marktime+10UL>=aprsdecode_realtime)
+                 {
+            aprstext_measure(aprsdecode_click.markpos,
+                aprsdecode_click.clickpos, mestxt, 201ul, 1);
+         }
+         menu = 1;
+      }
+      useri_confstr(useri_fCLICKMAP, (char *) &ch, 1u/1u);
+      if (!xosi_Shift && ch=='2') {
+         if (aprspos_posvalid(aprsdecode_click.markpos)) ch = 'Y';
+         else ch = 'X';
+      }
+      if (ch=='c') aprsdecode_click.cmd = 'c';
+      else if (!xosi_Shift && ch=='X' || xosi_Shift && ch=='Y') {
+         aprsdecode_click.cmd = 'X';
+      }
+      else if (!xosi_Shift && ch=='Y' || xosi_Shift && ch=='X') {
+         aprsdecode_click.cmd = 'Y';
+         aprstext_measure(aprsdecode_click.markpos,
+                aprsdecode_click.clickpos, mestxt, 201ul, 0);
+      }
+      if ((aprsdecode_click.entries>0UL && aprsdecode_click.table[aprsdecode_click.selected]
                 .typf==aprsdecode_tTEXT)
                 && aprsdecode_click.table[aprsdecode_click.selected].opf) {
-            useri_copypaste(aprsdecode_click.table[aprsdecode_click.selected]
+         useri_copypaste(aprsdecode_click.table[aprsdecode_click.selected]
                 .opf->call, 9ul);
-         }
-         if (!xosi_Shift) {
-            /* not close menus on shift click to map */
-            if (useri_beaconediting && useri_beaconed) {
-               if (maptool_findmultiline(aprsdecode_click.clickpos,
+      }
+      if (!xosi_Shift) {
+         /* not close menus on shift click to map */
+         if (useri_beaconediting && useri_beaconed) {
+            if (maptool_findmultiline(aprsdecode_click.clickpos,
                 &aprsdecode_click.markpos)) {
-                  aprsdecode_click.marktime = 0UL;
-                  aprsdecode_click.cmd = ' ';
-               }
+               aprsdecode_click.marktime = 0UL;
+               aprsdecode_click.cmd = ' ';
             }
-            if (!aprsdecode_lums.headmenuy && ((aprsdecode_click.entries==0UL || menu)
+         }
+         if (!aprsdecode_lums.headmenuy && ((aprsdecode_click.entries==0UL || menu)
                  || aprsdecode_click.mhop[0UL])
                 || (aprsdecode_lums.headmenuy && aprsdecode_click.entries>0UL)
                  && (menu || aprsdecode_click.mhop[0UL])) {
-               ch = aprsdecode_click.cmd;
-               useri_mainpop();
-               aprsdecode_click.cmd = ch;
-            }
-            else useri_killallmenus();
+            ch = aprsdecode_click.cmd;
+            useri_mainpop();
+            aprsdecode_click.cmd = ch;
          }
-         /*          THEN mainpop; click.cmd:=" "; ELSE killallmenus END; */
-         if (mestxt[0U]) {
-            useri_textautosize(-3L, 0L, 6UL, 10UL, 'b', mestxt, 201ul);
+         else useri_killallmenus();
+      }
+      /*          THEN mainpop; click.cmd:=" "; ELSE killallmenus END; */
+      if (mestxt[0U]) {
+         useri_textautosize(-3L, 0L, 6UL, 10UL, 'b', mestxt, 201ul);
+      }
+   }
+   if (raw || aprsdecode_click.cmd) {
+      /*WrInt(ORD(click.cmd), 1); WrStrLn(click.cmd); */
+      maptool_startmapdelay();
+      if (aprsdecode_click.cmd=='\030') {
+         aprsdecode_mappos.lat = aprsdecode_mappos.lat-movest((uint32_t)
+                maptool_ysize)*shiftfine();
+         maptool_limpos(&aprsdecode_mappos);
+      }
+      else if (aprsdecode_click.cmd=='\005') {
+         aprsdecode_mappos.lat = aprsdecode_mappos.lat+movest((uint32_t)
+                maptool_ysize)*shiftfine();
+         maptool_limpos(&aprsdecode_mappos);
+      }
+      else if (aprsdecode_click.cmd=='\023') {
+         aprsdecode_mappos.long0 = aprsdecode_mappos.long0-movest((uint32_t)
+                maptool_xsize)*shiftfine();
+         maptool_limpos(&aprsdecode_mappos);
+      }
+      else if (aprsdecode_click.cmd=='\004') {
+         aprsdecode_mappos.long0 = aprsdecode_mappos.long0+movest((uint32_t)
+                maptool_xsize)*shiftfine();
+         maptool_limpos(&aprsdecode_mappos);
+      }
+      else if (aprsdecode_click.cmd=='T') {
+         if (aprspos_posvalid(newpos0) && aprspos_posvalid(newpos1)) {
+            mapzoom(newpos0, newpos1,
+                (uint32_t)useri_conf2int(useri_fDEFZOOM, 0UL, 1L, 18L,
+                14L), 1, 0);
          }
       }
-      if (raw || aprsdecode_click.cmd) {
-         /*WrStrLn(click.cmd); */
-         /*WrInt(ORD(click.cmd), 1); WrStrLn(click.cmd); */
-         maptool_startmapdelay();
-         if (aprsdecode_click.cmd=='\030') {
-            aprsdecode_mappos.lat = aprsdecode_mappos.lat-movest((uint32_t)
-                maptool_ysize)*shiftfine();
-            maptool_limpos(&aprsdecode_mappos);
-         }
-         else if (aprsdecode_click.cmd=='\005') {
-            aprsdecode_mappos.lat = aprsdecode_mappos.lat+movest((uint32_t)
-                maptool_ysize)*shiftfine();
-            maptool_limpos(&aprsdecode_mappos);
-         }
-         else if (aprsdecode_click.cmd=='\023') {
-            aprsdecode_mappos.long0 = aprsdecode_mappos.long0-movest((uint32_t)
-                maptool_xsize)*shiftfine();
-            maptool_limpos(&aprsdecode_mappos);
-         }
-         else if (aprsdecode_click.cmd=='\004') {
-            aprsdecode_mappos.long0 = aprsdecode_mappos.long0+movest((uint32_t)
-                maptool_xsize)*shiftfine();
-            maptool_limpos(&aprsdecode_mappos);
-         }
-         else if (aprsdecode_click.cmd=='T') {
-            if (aprspos_posvalid(newpos0) && aprspos_posvalid(newpos1)) {
-               mapzoom(newpos0, newpos1,
-                (uint32_t)useri_conf2int(useri_fDEFZOOM, 0UL, 1L, 18L,
-                14L), 1);
-            }
-         }
-         else if (aprsdecode_click.cmd=='o') {
-            aprsdecode_click.dryrun = 0;
+      else if (aprsdecode_click.cmd=='o') {
+         aprsdecode_click.dryrun = 0;
+         push(maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom), 0);
+         aprsdecode_objsender(aprsdecode_click.table[aprsdecode_click.selected]
+                .opf, aprsdecode_click.mhop, 9ul);
+         mhtx = aprsmap_OPOBJ;
+         aprsdecode_lums.obj = 10L*useri_conf2int(useri_fLOBJ, 0UL, 0L, 100L,
+                 100L); /* switch on objects */
+         pandone = 0;
+      }
+      else if (aprsdecode_click.cmd=='h') {
+         aprsdecode_click.dryrun = 0;
+         if (aprsdecode_click.entries>0UL) {
             push(maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom),
                 0);
-            aprsdecode_objsender(aprsdecode_click.table[aprsdecode_click.selected]
-                .opf, aprsdecode_click.mhop, 9ul);
-            mhtx = aprsmap_OPOBJ;
-            aprsdecode_lums.obj = 10L*useri_conf2int(useri_fLOBJ, 0UL, 0L,
-                100L, 100L); /* switch on objects */
+            if (aprsdecode_click.table[aprsdecode_click.selected].opf) {
+               memcpy(aprsdecode_click.mhop,
+                aprsdecode_click.table[aprsdecode_click.selected].opf->call,
+                9u);
+            }
+            mhtx = aprsmap_OPHEARD;
             pandone = 0;
          }
-         else if (aprsdecode_click.cmd=='h') {
-            aprsdecode_click.dryrun = 0;
-            if (aprsdecode_click.entries>0UL) {
-               push(maptool_realzoom(aprsdecode_initzoom,
-                aprsdecode_finezoom), 0);
-               if (aprsdecode_click.table[aprsdecode_click.selected].opf) {
-                  memcpy(aprsdecode_click.mhop,
-                aprsdecode_click.table[aprsdecode_click.selected].opf->call,
-                9u);
-               }
-               mhtx = aprsmap_OPHEARD;
-               pandone = 0;
-            }
-         }
-         else if (aprsdecode_click.cmd=='.' || aprsdecode_click.cmd=='=') {
-            /*
-                        tracenew.call:=click.mhop;
+      }
+      else if (aprsdecode_click.cmd=='.' || aprsdecode_click.cmd=='=') {
+         /*
+                     tracenew.call:=click.mhop;
                 (* watch call for incoming data *) 
-            */
-            aprsdecode_click.dryrun = 0;
-            if (aprsdecode_click.entries>0UL) {
-               push(maptool_realzoom(aprsdecode_initzoom,
-                aprsdecode_finezoom), 0);
-               if (aprsdecode_click.table[aprsdecode_click.selected].opf) {
-                  memcpy(aprsdecode_click.mhop,
+         */
+         aprsdecode_click.dryrun = 0;
+         if (aprsdecode_click.entries>0UL) {
+            push(maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom),
+                0);
+            if (aprsdecode_click.table[aprsdecode_click.selected].opf) {
+               memcpy(aprsdecode_click.mhop,
                 aprsdecode_click.table[aprsdecode_click.selected].opf->call,
                 9u);
-               }
-               /*           IF beaconediting()
+            }
+            /*           IF beaconediting()
                 THEN importbeacon(click.table[click.selected].opf) END;
                 (* copy to beacon editor *) */
-               mhtx = aprsmap_OPSENT;
-               pandone = 0;
-               aprsdecode_lums.errorstep = 0;
-               if (aprsdecode_click.cmd=='=') {
-                  aprsdecode_lums.rf = useri_conf2int(useri_fLRF, 0UL, 0L,
-                100L, 30L)*10L;
-               }
-               else aprsdecode_lums.rf = 0L;
+            mhtx = aprsmap_OPSENT;
+            pandone = 0;
+            aprsdecode_lums.errorstep = 0;
+            if (aprsdecode_click.cmd=='=') {
+               aprsdecode_lums.rf = useri_conf2int(useri_fLRF, 0UL, 0L, 100L,
+                 30L)*10L;
             }
-         }
-         else if (aprsdecode_click.cmd=='a') {
-            if (aprsdecode_click.entries>0UL) {
-               push(maptool_realzoom(aprsdecode_initzoom,
-                aprsdecode_finezoom), 0);
-               if (aprsdecode_click.table[aprsdecode_click.selected].opf) {
-                  memcpy(aprsdecode_click.mhop,
-                aprsdecode_click.table[aprsdecode_click.selected].opf->call,
-                9u);
-               }
-               pandone = 0;
-            }
-            animate(aprsdecode_click.mhop, (uint32_t)aprsdecode_lums.fps, "\
-", 1ul);
-         }
-         else if (aprsdecode_click.cmd=='0') setshowall();
-         else if (aprsdecode_click.cmd=='1' || aprsdecode_click.cmd=='\001') {
-            View(0UL);
-         }
-         else if (aprsdecode_click.cmd=='2') View(1UL);
-         else if (aprsdecode_click.cmd=='3') View(2UL);
-         else if (aprsdecode_click.cmd=='4') View(3UL);
-         else if (aprsdecode_click.cmd=='b' || aprsdecode_click.cmd=='\010') {
-            pop();
-         }
-         else if (aprsdecode_click.cmd=='\014') {
-            /*          mercator(mappos.long, mappos.lat, initzoom,
-                inittilex, inittiley, shiftx, shifty); */
-            push(maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom),
-                0);
-            useri_resetimgparms();
-         }
-         else if (aprsdecode_click.cmd=='+') {
-            zoominoutpush(1, xosi_Shift || xosi_Ctrl, 0, 0);
-         }
-         else if (aprsdecode_click.cmd=='-') {
-            zoominoutpush(0, xosi_Shift || xosi_Ctrl, 0, 0);
-         }
-         else if (aprsdecode_click.cmd=='\310') zoominoutpush(1, 1, 1, 1);
-         else if (aprsdecode_click.cmd=='\311') zoominoutpush(0, 1, 1, 1);
-         else if (aprsdecode_click.cmd=='\237') MapPackage();
-         else if (aprsdecode_click.cmd=='S') screenshot();
-         else if (aprsdecode_click.cmd=='s') {
-            useri_rdonesymb(aprsdecode_click.onesymbol.tab==0, 1);
-                /* toggle onesymbol */
-         }
-         else if (aprsdecode_click.cmd=='E') {
-            aprsdecode_lums.errorstep = !aprsdecode_lums.errorstep;
-            useri_sayonoff("Show errors", 12ul, aprsdecode_lums.errorstep);
-         }
-         else if (aprsdecode_click.cmd=='f') {
-            useri_configbool(useri_fTRACKFILT,
-                !useri_configon(useri_fTRACKFILT));
-            useri_sayonoff("Trackfilter", 12ul,
-                useri_configon(useri_fTRACKFILT));
-         }
-         else if (aprsdecode_click.cmd=='m') {
-            aprsdecode_lums.moving = !aprsdecode_lums.moving;
-            useri_sayonoff("Dimm not Moving", 16ul, aprsdecode_lums.moving);
-         }
-         else if (aprsdecode_click.cmd=='R') {
-            if (aprsdecode_lums.rf==0L) aprsdecode_lums.rf = 300L;
             else aprsdecode_lums.rf = 0L;
          }
-         else if (aprsdecode_click.cmd=='\022') {
-            if (aprsdecode_click.withradio && !aprsdecode_click.altimap) {
-               closeradio();
-            }
-            else {
-               aprsdecode_click.withradio = 1;
-               aprsdecode_click.altimap = 0;
-            }
-            aprsdecode_lums.wxcol = 0;
-            if (aprsdecode_click.withradio && !(aprspos_posvalid(aprsdecode_click.markpos)
-                 || aprspos_posvalid(aprsdecode_click.measurepos))) {
-               useri_say("Radiorange Map On, Set 1 oder 2 Markers", 40ul,
-                4UL, 'b');
-            }
-            else {
-               useri_sayonoff("Radiorange Map", 15ul,
-                aprsdecode_click.withradio);
-            }
-         }
-         else if (aprsdecode_click.cmd=='H') {
-            if (aprsdecode_click.withradio && aprsdecode_click.altimap) {
-               closeradio();
-            }
-            else {
-               aprsdecode_click.withradio = 1;
-               aprsdecode_click.altimap = 1;
-            }
-            aprsdecode_lums.wxcol = 0;
-            useri_sayonoff("Altitude Map", 13ul, aprsdecode_click.withradio);
-         }
-         else if (aprsdecode_click.cmd=='O') {
-            /*
-                    ELSIF click.cmd="P" THEN
-                      IF click.withradio THEN closeradio ELSE click.withradio:=TRUE;
-                 click.panorama:=TRUE END;
-                      lums.wxcol:=0C;
-                      sayonoff("Panorama", click.withradio);
-            */
-            if (aprsdecode_lums.obj==0L) {
-               aprsdecode_lums.obj = 10L*useri_conf2int(useri_fLOBJ, 0UL, 0L,
-                 100L, 100L);
-               if (aprsdecode_lums.obj<30L) {
-                  /* switch on objects but are too dark */
-                  useri_AddConfLine(useri_fLOBJ, 0U, "90", 3ul);
-                /* set to default brightness */
-                  aprsdecode_lums.obj = 10L*useri_conf2int(useri_fLOBJ, 0UL,
-                0L, 100L, 100L);
-               }
-            }
-            else aprsdecode_lums.obj = 0L;
-            useri_sayonoff("Show Items/Objects", 19ul,
-                aprsdecode_lums.obj!=0L);
-         }
-         else if (aprsdecode_click.cmd=='L') {
-            if (aprsdecode_lums.text==0L) {
-               aprsdecode_lums.text = 10L*useri_conf2int(useri_fLTEXT, 0UL,
-                0L, 100L, 100L);
-            }
-            else aprsdecode_lums.text = 0L;
-            useri_sayonoff("Labels", 7ul, aprsdecode_lums.text!=0L);
-         }
-         else if (X2C_CAP(aprsdecode_click.cmd)=='W') {
-            if (xosi_Shift && aprsdecode_click.cmd=='W') {
-               aprsdecode_click.cmd = 'w';
-            }
-            /*
-                      IF click.cmd="W" THEN
-                        IF lums.wxcol<>"W" THEN lums.wxcol:="W"
-                ELSE lums.wxcol:=0C END;
-                      ELSIF lums.wxcol<>"R" THEN lums.wxcol:="R"
-                ELSE lums.wxcol:=0C END;
-                      sayonoff("Wx Colormap", lums.wxcol<>0C);
-            */
-            if (aprsdecode_click.cmd=='W') {
-               if (aprsdecode_lums.wxcol=='W') aprsdecode_lums.wxcol = 0;
-               else if (aprsdecode_lums.wxcol=='w') {
-                  aprsdecode_lums.wxcol = 'W';
-               }
-               else aprsdecode_lums.wxcol = 'w';
-            }
-            else if (aprsdecode_lums.wxcol!='R') {
-               aprsdecode_lums.wxcol = 'R';
-            }
-            else aprsdecode_lums.wxcol = 0;
-            aprsdecode_click.mhop[0UL] = 0;
-            aprsdecode_click.onesymbol.tab = 0;
-            closeradio();
-         }
-         else if (aprsdecode_click.cmd=='\313') centermouse(0);
-         else if (aprsdecode_click.cmd=='c') centermouse(1);
-         else if (aprsdecode_click.cmd=='t'
-                && aprspos_posvalid(aprsdecode_click.markpos)) {
-            /* click to listwin line */
-            push(maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom),
-                1);
-            centerpos(aprsdecode_click.markpos, &aprsdecode_mappos);
-            aprsdecode_click.marktime = aprsdecode_realtime;
-            if (aprsdecode_click.mhop[0UL]) setshowall();
-         }
-         else if (aprsdecode_click.cmd=='\322'
-                && aprspos_posvalid(clickwatchpos)) {
-            /* click to watchcall popup */
-            aprsdecode_click.markpos = clickwatchpos;
+      }
+      else if (aprsdecode_click.cmd=='a') {
+         if (aprsdecode_click.entries>0UL) {
             push(maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom),
                 0);
-            centerpos(aprsdecode_click.markpos, &aprsdecode_mappos);
-            aprsdecode_click.marktime = aprsdecode_realtime;
-            if (aprsdecode_click.mhop[0UL]) setshowall();
-         }
-         else if (aprsdecode_click.cmd=='X') xytomark();
-         else if (aprsdecode_click.cmd=='x') {
-            /* set marker 1 to object lastpos */
-            clicktomark();
-            useri_mainpop();
-         }
-         else if (aprsdecode_click.cmd=='\314') setmarklockpoi(0);
-         else if (aprsdecode_click.cmd=='y') {
-            /* set marker 2 to object lastpos */
-            if ((aprsdecode_click.entries>0UL && aprsdecode_click.table[aprsdecode_click.selected]
-                .opf) && aprspos_posvalid(aprsdecode_click.table[aprsdecode_click.selected].opf->lastpos)
-                ) {
-               aprsdecode_click.measurepos = aprsdecode_click.table[aprsdecode_click.selected]
-                .opf->lastpos;
+            if (aprsdecode_click.table[aprsdecode_click.selected].opf) {
+               memcpy(aprsdecode_click.mhop,
+                aprsdecode_click.table[aprsdecode_click.selected].opf->call,
+                9u);
             }
-            else aprsdecode_click.measurepos = aprsdecode_click.clickpos;
+            pandone = 0;
          }
-         else if (aprsdecode_click.cmd=='Y') xytomark2();
-         else if (aprsdecode_click.cmd=='\315') setmarklockpoi(1);
-         else if (aprsdecode_click.cmd=='q') clickdelwaypoint();
-         else if (aprsdecode_click.cmd=='/') {
-            zoomtomarks(aprsdecode_click.markpos,
-                aprsdecode_click.measurepos);
+         animate(aprsdecode_click.mhop, (uint32_t)aprsdecode_lums.fps, "",
+                1ul);
+      }
+      else if (aprsdecode_click.cmd=='0') setshowall();
+      else if (aprsdecode_click.cmd=='1' || aprsdecode_click.cmd=='\001') {
+         View(0UL);
+      }
+      else if (aprsdecode_click.cmd=='2') {
+         View(1UL);
+      }
+      else if (aprsdecode_click.cmd=='3') View(2UL);
+      else if (aprsdecode_click.cmd=='4') View(3UL);
+      else if (aprsdecode_click.cmd=='b' || aprsdecode_click.cmd=='\010') {
+         pop();
+      }
+      else if (aprsdecode_click.cmd=='\014') {
+         /*          mercator(mappos.long, mappos.lat, initzoom, inittilex,
+                inittiley, shiftx, shifty); */
+         push(maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom), 0);
+         useri_resetimgparms();
+      }
+      else if (aprsdecode_click.cmd=='+') {
+         zoominoutpush(1, xosi_Shift || xosi_Ctrl, 0, 0);
+      }
+      else if (aprsdecode_click.cmd=='-') {
+         zoominoutpush(0, xosi_Shift || xosi_Ctrl, 0, 0);
+      }
+      else if (aprsdecode_click.cmd=='\310') zoominoutpush(1, 1, 1, 1);
+      else if (aprsdecode_click.cmd=='\311') zoominoutpush(0, 1, 1, 1);
+      else if (aprsdecode_click.cmd=='\237') MapPackage();
+      else if (aprsdecode_click.cmd=='S') {
+         if (!aprsdecode_WITHX11) makeimage(0);
+         screenshot();
+      }
+      else if (aprsdecode_click.cmd=='s') {
+         useri_rdonesymb(aprsdecode_click.onesymbol.tab==0, 1);
+                /* toggle onesymbol */
+      }
+      else if (aprsdecode_click.cmd=='E') {
+         aprsdecode_lums.errorstep = !aprsdecode_lums.errorstep;
+         useri_sayonoff("Show errors", 12ul, aprsdecode_lums.errorstep);
+      }
+      else if (aprsdecode_click.cmd=='f') {
+         useri_configbool(useri_fTRACKFILT,
+                !useri_configon(useri_fTRACKFILT));
+         useri_sayonoff("Trackfilter", 12ul,
+                useri_configon(useri_fTRACKFILT));
+      }
+      else if (aprsdecode_click.cmd=='m') {
+         aprsdecode_lums.moving = !aprsdecode_lums.moving;
+         useri_sayonoff("Dimm not Moving", 16ul, aprsdecode_lums.moving);
+      }
+      else if (aprsdecode_click.cmd=='R') {
+         if (aprsdecode_lums.rf==0L) aprsdecode_lums.rf = 300L;
+         else aprsdecode_lums.rf = 0L;
+      }
+      else if (aprsdecode_click.cmd=='\022') {
+         if (aprsdecode_click.withradio && !aprsdecode_click.altimap) {
+            closeradio();
          }
-         else if (aprsdecode_click.cmd=='\307') zoomtosquare();
-         else if (aprsdecode_click.cmd==':') {
-            aprsstr_posinval(&aprsdecode_click.markpos);
-            aprsstr_posinval(&aprsdecode_click.measurepos);
-            aprsdecode_click.waysum = 0.0f;
-            aprsstr_posinval(&aprsdecode_click.squerpos0);
-            aprsstr_posinval(&aprsdecode_click.squerspos0);
-            useri_killallmenus();
-            useri_sayonoff("Markers", 8ul, 0);
+         else {
+            aprsdecode_click.withradio = 1;
+            aprsdecode_click.altimap = 0;
          }
-         else if (aprsdecode_click.cmd=='@') {
-            useri_AddConfLine(useri_fCLICKMAP, 0U, "", 1ul);
-            useri_AddConfLine(useri_fCLICKSYM, 0U, "", 1ul);
-            useri_AddConfLine(useri_fCLICKTRACK, 0U, "", 1ul);
-            useri_AddConfLine(useri_fCLICKTEXT, 0U, "", 1ul);
-            useri_AddConfLine(useri_fCLICKWXSYM, 0U, "", 1ul);
-            useri_killallmenus();
-            useri_say("\'ON Next Click\' Reset to Defaults", 34ul, 10UL,
+         aprsdecode_lums.wxcol = 0;
+         if (aprsdecode_click.withradio && !(aprspos_posvalid(aprsdecode_click.markpos)
+                 || aprspos_posvalid(aprsdecode_click.measurepos))) {
+            useri_say("Radiorange Map On, Set 1 oder 2 Markers", 40ul, 4UL,
                 'b');
          }
-         else if (aprsdecode_click.cmd=='~') {
-            changecolor(aprsdecode_click.table[aprsdecode_click.selected]
-                .opf);
+         else {
+            useri_sayonoff("Radiorange Map", 15ul,
+                aprsdecode_click.withradio);
          }
-         else if (aprsdecode_click.cmd=='A') {
-            animate(aprsdecode_click.mhop, (uint32_t)aprsdecode_lums.fps, "\
-", 1ul);
-         }
-         else if (aprsdecode_click.cmd=='\312') {
-            useri_say("Saving map.y4m", 15ul, 0UL, 'b');
-            animate(aprsdecode_click.mhop,
-                (uint32_t)aprsdecode_lums.actfps, "map.y4m", 8ul);
-         }
-         else if (aprsdecode_click.cmd=='I') internstat();
-         else if (aprsdecode_click.cmd=='\245') {
-            aprsdecode_click.dryrun = 0;
-            find(1);
-         }
-         else if (aprsdecode_click.cmd=='\335') {
-            aprsdecode_click.dryrun = 0;
-            find(0);
-         }
-         else if (aprsdecode_click.cmd=='\\') {
-            useri_helptext(0UL, 0UL, 0UL, 0UL, "en-shortcuts", 13ul);
-         }
-         else if (aprsdecode_click.cmd=='7') useri_Setmap(0UL);
-         else if (aprsdecode_click.cmd=='8') useri_Setmap(1UL);
-         else if (aprsdecode_click.cmd=='9') useri_Setmap(2UL);
-         else if (aprsdecode_click.cmd=='6') useri_Setmap(2147483647UL);
-         else if (aprsdecode_click.cmd=='Q') aprsdecode_quit = 1;
-         else if (aprsdecode_click.cmd=='e') aprsdecode_click.dryrun = 0;
-         else if (aprsdecode_click.cmd=='\216' && aprsdecode_click.cmdatt) {
-            importlog(aprsdecode_click.cmdatt);
-            aprsdecode_click.cmdatt = 0;
-         }
-         else if (aprsdecode_click.cmd=='\011') toggview();
-         else if (aprsdecode_click.cmd=='(') mapbri(-5L);
-         else if (aprsdecode_click.cmd==')') mapbri(5L);
-         else if (aprsdecode_click.cmd=='[') fullbritime(1);
-         else if (aprsdecode_click.cmd==']') fullbritime(0);
-         makeimage(0);
-         aprsdecode_click.cmd = 0;
-         if ((useri_beaconediting && useri_beaconed)
-                && aprsdecode_ismultiline(1)) useri_poligonmenu();
       }
-      else if ((aprsdecode_tracenew.call[0UL] && lastxupdate+slowupdate()
+      else if (aprsdecode_click.cmd=='H') {
+         if (aprsdecode_click.withradio && aprsdecode_click.altimap) {
+            closeradio();
+         }
+         else {
+            aprsdecode_click.withradio = 1;
+            aprsdecode_click.altimap = 1;
+         }
+         aprsdecode_lums.wxcol = 0;
+         useri_sayonoff("Altitude Map", 13ul, aprsdecode_click.withradio);
+      }
+      else if (aprsdecode_click.cmd=='O') {
+         /*
+                 ELSIF click.cmd="P" THEN
+                   IF click.withradio THEN closeradio ELSE click.withradio:=TRUE;
+                 click.panorama:=TRUE END;
+                   lums.wxcol:=0C;
+                   sayonoff("Panorama", click.withradio);
+         */
+         if (aprsdecode_lums.obj==0L) {
+            aprsdecode_lums.obj = 10L*useri_conf2int(useri_fLOBJ, 0UL, 0L,
+                100L, 100L);
+            if (aprsdecode_lums.obj<30L) {
+               /* switch on objects but are too dark */
+               useri_AddConfLine(useri_fLOBJ, 0U, "90", 3ul);
+                /* set to default brightness */
+               aprsdecode_lums.obj = 10L*useri_conf2int(useri_fLOBJ, 0UL, 0L,
+                 100L, 100L);
+            }
+         }
+         else aprsdecode_lums.obj = 0L;
+         useri_sayonoff("Show Items/Objects", 19ul, aprsdecode_lums.obj!=0L);
+      }
+      else if (aprsdecode_click.cmd=='l') {
+         if (aprsdecode_lums.text==0L) {
+            aprsdecode_lums.text = 10L*useri_conf2int(useri_fLTEXT, 0UL, 0L,
+                100L, 100L);
+         }
+         else aprsdecode_lums.text = 0L;
+         useri_sayonoff("Labels", 7ul, aprsdecode_lums.text!=0L);
+      }
+      else if (aprsdecode_click.cmd=='L') {
+         aprsdecode_lums.followwhat = (uint32_t)((uint32_t)
+                aprsdecode_lums.followwhat+1UL);
+         aprsdecode_lums.followwhat = aprsdecode_lums.followwhat&0x3UL;
+         if (!useri_anywatchfollow()) {
+            aprsdecode_lums.followwhat = aprsdecode_lums.followwhat&0x1UL;
+         }
+         useri_int2cfg(useri_fFOLLOW,
+                (int32_t)(uint32_t)aprsdecode_lums.followwhat);
+         if (aprsdecode_lums.followwhat==0UL) {
+            useri_say("Map Follow off", 15ul, 4UL, 'b');
+         }
+         else if (aprsdecode_lums.followwhat==0x2UL) {
+            useri_say("Map Follows Watchcall(s)", 25ul, 4UL, 'b');
+         }
+         else if (aprsdecode_lums.followwhat==0x1UL) {
+            useri_say("Map Follows Clicked Symbol", 27ul, 4UL, 'b');
+         }
+         else {
+            useri_say("Map Follows Watchcall and Clicked Symbol", 41ul, 4UL,
+                'b');
+         }
+      }
+      else if (X2C_CAP(aprsdecode_click.cmd)=='W') {
+         if (xosi_Shift && aprsdecode_click.cmd=='W') {
+            aprsdecode_click.cmd = 'w';
+         }
+         /*
+                   IF click.cmd="W" THEN
+                     IF lums.wxcol<>"W" THEN lums.wxcol:="W"
+                ELSE lums.wxcol:=0C END;
+                   ELSIF lums.wxcol<>"R" THEN lums.wxcol:="R"
+                ELSE lums.wxcol:=0C END;
+                   sayonoff("Wx Colormap", lums.wxcol<>0C);
+         */
+         if (aprsdecode_click.cmd=='W') {
+            if (aprsdecode_lums.wxcol=='W') aprsdecode_lums.wxcol = 0;
+            else if (aprsdecode_lums.wxcol=='w') aprsdecode_lums.wxcol = 'W';
+            else aprsdecode_lums.wxcol = 'w';
+         }
+         else if (aprsdecode_lums.wxcol!='R') {
+            aprsdecode_lums.wxcol = 'R';
+         }
+         else aprsdecode_lums.wxcol = 0;
+         aprsdecode_click.mhop[0UL] = 0;
+         aprsdecode_click.onesymbol.tab = 0;
+         closeradio();
+      }
+      else if (aprsdecode_click.cmd=='\313') centermouse(0);
+      else if (aprsdecode_click.cmd=='c') centermouse(1);
+      else if (aprsdecode_click.cmd=='t'
+                && aprspos_posvalid(aprsdecode_click.markpos)) {
+         /* click to listwin line */
+         push(maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom), 1);
+         centerpos(aprsdecode_click.markpos, &aprsdecode_mappos);
+         aprsdecode_click.marktime = aprsdecode_realtime;
+         if (aprsdecode_click.mhop[0UL]) setshowall();
+      }
+      else if (aprsdecode_click.cmd=='\322'
+                && aprspos_posvalid(clickwatchpos)) {
+         /* click to watchcall popup */
+         aprsdecode_click.markpos = clickwatchpos;
+         push(maptool_realzoom(aprsdecode_initzoom, aprsdecode_finezoom), 0);
+         centerpos(aprsdecode_click.markpos, &aprsdecode_mappos);
+         aprsdecode_click.marktime = aprsdecode_realtime;
+         if (aprsdecode_click.mhop[0UL]) setshowall();
+      }
+      else if (aprsdecode_click.cmd=='X') xytomark();
+      else if (aprsdecode_click.cmd=='x') {
+         /* set marker 1 to object lastpos */
+         clicktomark();
+         useri_mainpop();
+      }
+      else if (aprsdecode_click.cmd=='\314') setmarklockpoi(0);
+      else if (aprsdecode_click.cmd=='y') {
+         /* set marker 2 to object lastpos */
+         if ((aprsdecode_click.entries>0UL && aprsdecode_click.table[aprsdecode_click.selected]
+                .opf) && aprspos_posvalid(aprsdecode_click.table[aprsdecode_click.selected].opf->lastpos)
+                ) {
+            aprsdecode_click.measurepos = aprsdecode_click.table[aprsdecode_click.selected]
+                .opf->lastpos;
+         }
+         else aprsdecode_click.measurepos = aprsdecode_click.clickpos;
+      }
+      else if (aprsdecode_click.cmd=='Y') xytomark2();
+      else if (aprsdecode_click.cmd=='\315') setmarklockpoi(1);
+      else if (aprsdecode_click.cmd=='q') clickdelwaypoint();
+      else if (aprsdecode_click.cmd=='/') {
+         zoomtomarks(aprsdecode_click.markpos, aprsdecode_click.measurepos);
+      }
+      else if (aprsdecode_click.cmd=='\307') zoomtosquare();
+      else if (aprsdecode_click.cmd==':') {
+         aprsstr_posinval(&aprsdecode_click.markpos);
+         aprsstr_posinval(&aprsdecode_click.measurepos);
+         aprsdecode_click.waysum = 0.0f;
+         aprsstr_posinval(&aprsdecode_click.squerpos0);
+         aprsstr_posinval(&aprsdecode_click.squerspos0);
+         useri_killallmenus();
+         useri_sayonoff("Markers", 8ul, 0);
+      }
+      else if (aprsdecode_click.cmd=='@') {
+         useri_AddConfLine(useri_fCLICKMAP, 0U, "", 1ul);
+         useri_AddConfLine(useri_fCLICKSYM, 0U, "", 1ul);
+         useri_AddConfLine(useri_fCLICKTRACK, 0U, "", 1ul);
+         useri_AddConfLine(useri_fCLICKTEXT, 0U, "", 1ul);
+         useri_AddConfLine(useri_fCLICKWXSYM, 0U, "", 1ul);
+         useri_killallmenus();
+         useri_say("\'ON Next Click\' Reset to Defaults", 34ul, 10UL, 'b');
+      }
+      else if (aprsdecode_click.cmd=='~') {
+         changecolor(aprsdecode_click.table[aprsdecode_click.selected].opf);
+      }
+      else if (aprsdecode_click.cmd=='A') {
+         animate(aprsdecode_click.mhop, (uint32_t)aprsdecode_lums.fps, "",
+                1ul);
+      }
+      else if (aprsdecode_click.cmd=='\312') {
+         useri_say("Saving map.y4m", 15ul, 0UL, 'b');
+         animate(aprsdecode_click.mhop, (uint32_t)aprsdecode_lums.actfps, "\
+map.y4m", 8ul);
+      }
+      else if (aprsdecode_click.cmd=='I') internstat();
+      else if (aprsdecode_click.cmd=='\245') {
+         aprsdecode_click.dryrun = 0;
+         find(1);
+      }
+      else if (aprsdecode_click.cmd=='\335') {
+         aprsdecode_click.dryrun = 0;
+         find(0);
+      }
+      else if (aprsdecode_click.cmd=='\\') {
+         useri_helptext(0UL, 0UL, 0UL, 0UL, "en-shortcuts", 13ul);
+      }
+      else if (aprsdecode_click.cmd=='7') useri_Setmap(0UL);
+      else if (aprsdecode_click.cmd=='8') useri_Setmap(1UL);
+      else if (aprsdecode_click.cmd=='9') useri_Setmap(2UL);
+      else if (aprsdecode_click.cmd=='6') useri_Setmap(2147483647UL);
+      else if (aprsdecode_click.cmd=='Q') aprsdecode_quit = 1;
+      else if (aprsdecode_click.cmd=='e') aprsdecode_click.dryrun = 0;
+      else if (aprsdecode_click.cmd=='\216' && aprsdecode_click.cmdatt) {
+         importlog(aprsdecode_click.cmdatt);
+         aprsdecode_click.cmdatt = 0;
+      }
+      else if (aprsdecode_click.cmd=='\011') toggview();
+      else if (aprsdecode_click.cmd=='(') mapbri(-5L);
+      else if (aprsdecode_click.cmd==')') mapbri(5L);
+      else if (aprsdecode_click.cmd=='[') fullbritime(1);
+      else if (aprsdecode_click.cmd==']') fullbritime(0);
+      if (aprsdecode_WITHX11) makeimage(0);
+      aprsdecode_click.cmd = 0;
+      if ((useri_beaconediting && useri_beaconed)
+                && aprsdecode_ismultiline(1)) useri_poligonmenu();
+   }
+   else if ((aprsdecode_tracenew.call[0UL] && lastxupdate+slowupdate()
                 <=aprsdecode_realtime)
                 && !(aprsdecode_click.withradio && (aprspos_posvalid(aprsdecode_click.markpos)
                  || aprspos_posvalid(aprsdecode_click.measurepos)))) {
-         follow();
-         if (maptrys>0UL) {
-            if (aprsdecode_click.watchlast) useri_refrinfo();
-            makeimage(0);
-         }
-      }
-      else if (aprsdecode_tracenew.winevent>1000UL || (aprsdecode_tracenew.winevent>0UL || maptool_poisactiv()
-                ) && lastxupdate+2UL+slowupdate()<=aprsdecode_realtime) {
-         aprsdecode_tracenew.winevent = 0UL;
-         if (aprsdecode_click.watchlast) {
-            useri_refrinfo();
-         }
-         if (!(aprsdecode_click.withradio || aprspos_posvalid(aprsdecode_click.markpos)
-                 && aprspos_posvalid(aprsdecode_click.measurepos))) {
-            libsrtm_closesrtmfile();
-         }
+      follow();
+      if (aprsdecode_WITHX11 && maptrys>0UL) {
+         if (aprsdecode_click.watchlast) useri_refrinfo();
          makeimage(0);
-      }
-      else if (useri_newxsize>0UL) {
-         /* window resize request */
-         if ((useri_newxsize&1)) --useri_newxsize;
-         if ((useri_newysize&1)) --useri_newysize;
-         xosi_allocxbuf(useri_newxsize, useri_newysize);
-         useri_allocimage(&image, (int32_t)useri_newxsize,
-                (int32_t)useri_newysize, 0);
-         useri_allocimage(&rfimg, (int32_t)useri_newxsize,
-                (int32_t)useri_newysize, 0);
-         maptool_xsize = (int32_t)useri_newxsize;
-         maptool_ysize = (int32_t)useri_newysize;
-         if (!useri_maximized) {
-            useri_saveXYtocfg(useri_fXYSIZE, maptool_xsize, maptool_ysize);
-         }
-         useri_newxsize = 0UL;
-         useri_newysize = 0UL;
-         radio.wasradio = 0;
-         aprsstr_posinval(&radio.mappos);
-         makeimage(0);
-      }
-      else if ((aprsdecode_lasttcprx+60UL>aprsdecode_realtime || aprsdecode_lastanyudprx+60UL>aprsdecode_realtime)
-                 && laststatref+5UL<aprsdecode_realtime) {
-         if (aprsdecode_lasttcprx+50UL<aprsdecode_realtime) tooltips('n');
-         useri_refresh = 1;
-         laststatref = aprsdecode_realtime;
-      }
-      tooltips(' ');
-      if (maptrys>0UL && maptime!=aprsdecode_realtime) {
-         maptime = aprsdecode_realtime;
-         --maptrys;
-         if (maptool_IsMapLoaded()) makeimage(0);
-         else if (maptrys==20UL) tooltips('m');
-      }
-      if (aprsdecode_click.bubblstr[0UL] && !xosi_pulling) {
-         useri_textbubble(aprsdecode_click.bubblpos,
-                aprsdecode_click.bubblstr, 50ul, aprsdecode_click.lastpoi);
-         if (aprsdecode_click.bubblinfo[0]) {
-            useri_textautosize(-3L, 0L, 190UL,
-                10UL+aprsstr_Length(aprsdecode_click.bubblinfo, 4096ul)/20UL,
-                 'w', aprsdecode_click.bubblinfo, 4096ul);
-         }
-         else useri_killmenuid(190UL);
-         aprsdecode_click.bubblstr[0UL] = 0;
-         aprsdecode_click.bubblinfo[0UL] = 0;
-      }
-      if (useri_refresh) useri_redraw(image);
-      if (!aprsdecode_logdone) {
-         bootreadlog();
-         ++aprsdecode_tracenew.winevent;
       }
    }
-   else if (shottrigg) {
+   else if (aprsdecode_tracenew.winevent>1000UL || (aprsdecode_tracenew.winevent>0UL || maptool_poisactiv()
+                ) && lastxupdate+2UL+slowupdate()<=aprsdecode_realtime) {
+      aprsdecode_tracenew.winevent = 0UL;
+      if (aprsdecode_click.watchlast) useri_refrinfo();
+      if (!(aprsdecode_click.withradio || aprspos_posvalid(aprsdecode_click.markpos)
+                 && aprspos_posvalid(aprsdecode_click.measurepos))) {
+         libsrtm_closesrtmfile();
+      }
+      if (aprsdecode_WITHX11) makeimage(0);
+   }
+   else if (useri_newxsize>0UL) {
+      /* window resize request */
+      if ((useri_newxsize&1)) --useri_newxsize;
+      if ((useri_newysize&1)) --useri_newysize;
+      xosi_allocxbuf(useri_newxsize, useri_newysize);
+      useri_allocimage(&image, (int32_t)useri_newxsize,
+                (int32_t)useri_newysize, 0);
+      useri_allocimage(&rfimg, (int32_t)useri_newxsize,
+                (int32_t)useri_newysize, 0);
+      maptool_xsize = (int32_t)useri_newxsize;
+      maptool_ysize = (int32_t)useri_newysize;
+      if (!useri_maximized) {
+         useri_saveXYtocfg(useri_fXYSIZE, maptool_xsize, maptool_ysize);
+      }
+      useri_newxsize = 0UL;
+      useri_newysize = 0UL;
+      radio.wasradio = 0;
+      aprsstr_posinval(&radio.mappos);
+      makeimage(0);
+   }
+   else if ((aprsdecode_lasttcprx+60UL>aprsdecode_realtime || aprsdecode_lastanyudprx+60UL>aprsdecode_realtime)
+                 && laststatref+5UL<aprsdecode_realtime) {
+      if (aprsdecode_lasttcprx+50UL<aprsdecode_realtime) tooltips('n');
+      useri_refresh = 1;
+      laststatref = aprsdecode_realtime;
+   }
+   tooltips(' ');
+   if (maptrys>0UL && maptime!=aprsdecode_realtime) {
+      maptime = aprsdecode_realtime;
+      --maptrys;
+      if (aprsdecode_WITHX11 && maptool_IsMapLoaded()) makeimage(0);
+      else if (maptrys==20UL) tooltips('m');
+   }
+   if (aprsdecode_click.bubblstr[0UL] && !xosi_pulling) {
+      useri_textbubble(aprsdecode_click.bubblpos, aprsdecode_click.bubblstr,
+                50ul, aprsdecode_click.lastpoi);
+      if (aprsdecode_click.bubblinfo[0]) {
+         useri_textautosize(-3L, 0L, 190UL,
+                10UL+aprsstr_Length(aprsdecode_click.bubblinfo, 4096ul)/20UL,
+                 'w', aprsdecode_click.bubblinfo, 4096ul);
+      }
+      else useri_killmenuid(190UL);
+      aprsdecode_click.bubblstr[0UL] = 0;
+      aprsdecode_click.bubblinfo[0UL] = 0;
+   }
+   if (useri_refresh) useri_redraw(image);
+   if (!aprsdecode_logdone) {
+      bootreadlog();
+      ++aprsdecode_tracenew.winevent;
+   }
+   if (!aprsdecode_WITHX11 && shottrigg) {
       shottrigg = 0;
       makeimage(0);
       screenshot();
@@ -5306,6 +5357,58 @@ static void getinitview(void)
    else if (aprsdecode_initzoom>18L) aprsdecode_initzoom = 18L;
 } /* end getinitview() */
 
+
+static void batch(void)
+{
+   /* get key comands from file */
+   char c;
+   char ctl;
+   char j;
+   ctl = 0;
+   j = 0;
+   do {
+      for (;;) {
+         if (batchp>=batchlen) return;
+         c = batchbuf[batchp];
+         ++batchp;
+         if (c=='#') j = 1;
+         else if ((uint8_t)c<' ') j = 0;
+         else if (!j) break;
+      }
+      if (!ctl && c=='^') ctl = 1;
+      else {
+         if (ctl) {
+            if ((uint8_t)c>='`') {
+               c = (char)((uint32_t)(uint8_t)c-96UL);
+                /* ^x for ctrl char */
+            }
+            else if ((uint8_t)c>='@') {
+               c = (char)((uint32_t)(uint8_t)c-64UL);
+            }
+            ctl = 0;
+         }
+         useri_keychar(c, 0, 0);
+      }
+   } while (ctl);
+} /* end batch() */
+
+
+static void dobatch(void)
+{
+   int32_t f;
+   int32_t ret;
+   f = osi_OpenRead("batch.txt", 10ul);
+   if (osic_FdValid(f)) {
+      ret = osi_RdBin(f, (char *)batchbuf, 10000u/1u, 10000UL);
+      if (ret>0L) {
+         batchlen = (uint32_t)ret;
+         batchp = 0UL;
+      }
+      osic_Close(f);
+   }
+   else shottrigg = 1;
+} /* end dobatch() */
+
 static void killsave(int32_t);
 
 
@@ -5325,7 +5428,7 @@ static void makeshot(int32_t);
 
 static void makeshot(int32_t signum)
 {
-   shottrigg = 1;
+   dobatch();
 } /* end makeshot() */
 
 
@@ -5384,7 +5487,7 @@ extern int main(int argc, char **argv)
    aprsstr_posinval(&aprsdecode_click.squerspos0);
    aprsstr_posinval(&aprsdecode_click.measurepos);
    memset((char *) &aprsdecode_tracenew,(char)0,
-                sizeof(struct aprsdecode__D3));
+                sizeof(struct aprsdecode__D2));
    pandone = 1;
    useri_newxsize = 0UL;
    useri_newysize = 0UL;
@@ -5393,6 +5496,7 @@ extern int main(int argc, char **argv)
    onetipp = 0;
    aprsdecode_logdone = 0;
    uptime = osic_time();
+   autoshottime = 0UL;
    withx = xosi_InitX("Aprsmap", 8ul, "Aprsmap", 8ul,
                 (uint32_t)maptool_xsize, (uint32_t)maptool_ysize)>=0L;
    if (!withx) {
@@ -5416,11 +5520,12 @@ extern int main(int argc, char **argv)
       aprsdecode_lastlooped = aprsdecode_realtime;
       while (!aprsdecode_quit) {
          MainEvent();
-         xosi_Eventloop(250000UL);
+         if (aprsdecode_autoshots>0UL && aprsdecode_Watchclock(&autoshottime,
+                 aprsdecode_autoshots)) dobatch();
+         if (batchp<batchlen) batch();
+         else xosi_Eventloop(250000UL);
       }
-      if (useri_configon(useri_fAUTOSAVE)) {
-         useri_saveconfig();
-      }
+      if (useri_configon(useri_fAUTOSAVE)) useri_saveconfig();
       xosi_StopProg(&aprsdecode_maploadpid);
       xosi_StopProg(&aprsdecode_serialpid);
       xosi_StopProg(&aprsdecode_serialpid2);

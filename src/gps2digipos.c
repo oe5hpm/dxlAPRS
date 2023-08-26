@@ -17,12 +17,12 @@
 #include "osi.h"
 #endif
 #include <osic.h>
-#ifndef mlib_H_
-#include "mlib.h"
-#endif
 #ifndef aprsstr_H_
 #include "aprsstr.h"
 #endif
+
+#include <termios.h>
+#include <sys/ioctl.h>
 
 /* read serial gps and make "3704.04N/00805.14W" string to file */
 #define gps2digipos_CR "\015"

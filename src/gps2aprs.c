@@ -20,9 +20,6 @@
 #include "osi.h"
 #endif
 #include <osic.h>
-#ifndef mlib_H_
-#include "mlib.h"
-#endif
 #ifndef Select_H_
 #include "Select.h"
 #endif
@@ -76,7 +73,7 @@ struct POS {
    uint8_t timeflags;
    uint32_t satcnt;
    uint32_t lastsat;
-   struct SAT satpos[12];
+   struct SAT satpos[16];
 };
 
 #define gps2aprs_DEFTTY "/dev/ttyS0"
@@ -1036,7 +1033,7 @@ static void decodeline(const char b[], uint32_t b_len, uint32_t len0, struct POS
             i = 7UL;
             if (!getnum(b, b_len, &i, len0, &msgs)) return;
             skip(b, b_len, &i, len0);
-            if ((!getnum(b, b_len, &i, len0, &msg) || msg==0UL) || msg>3UL) return;
+            if ((!getnum(b, b_len, &i, len0, &msg) || msg==0UL) || msg>4UL) return;
             skip(b, b_len, &i, len0);
             if (!getnum(b, b_len, &i, len0, &n)) return;
             if (!getnum(b, b_len, &i, len0, &p->satcnt)) return;
@@ -1195,11 +1192,13 @@ static void showsats(uint32_t cnt, struct SAT sats[], uint32_t sats_len)
       strncpy(h,"id azi el dB Sats:",201u);
       aprsstr_IntToStr((int32_t)cnt, 1UL, hh, 201ul);
       aprsstr_Append(h, 201ul, hh, 201ul);
-      aprsstr_Append(h, 201ul, " median:", 9ul);
-      aprsstr_FixToStr(X2C_DIVR((float)med,(float)medc), 2UL, hh, 201ul);
-      aprsstr_Append(h, 201ul, hh, 201ul);
-      aprsstr_Append(h, 201ul, "dB", 3ul);
-      if (pow0>0.1f) {
+      if (medc>0UL) {
+         aprsstr_Append(h, 201ul, " median:", 9ul);
+         aprsstr_FixToStr(X2C_DIVR((float)med,(float)medc), 2UL, hh, 201ul);
+         aprsstr_Append(h, 201ul, hh, 201ul);
+         aprsstr_Append(h, 201ul, "dB", 3ul);
+      }
+      else if (pow0>0.1f) {
          aprsstr_Append(h, 201ul, " sum:", 6ul);
          aprsstr_FixToStr(osic_ln(pow0)*4.342944819f, 2UL, hh, 201ul);
          aprsstr_Append(h, 201ul, hh, 201ul);
@@ -2081,8 +2080,8 @@ static void gpsbyte(char c)
          else pos.posok = 0;
          if (verb) showline(gpsb, 251ul, gpsp);
          if ((verb2 && pos.lastsat>0UL) && pos.satcnt==pos.lastsat) {
-            showsats(pos.satcnt, pos.satpos, 12ul);
-            memset((char *)pos.satpos,(char)0,sizeof(struct SAT [12]));
+            showsats(pos.satcnt, pos.satpos, 16ul);
+            memset((char *)pos.satpos,(char)0,sizeof(struct SAT [16]));
             pos.lastsat = 0UL;
          }
          newpos();

@@ -2232,7 +2232,7 @@ static uint32_t instr(uint32_t * i, uint32_t k, const char a[],
          if (b[j]=='*') return j;
          else return 0UL;
       }
-      if (b[j]!='?' && X2C_CAP(a[*i])!=b[j]) {
+      if (b[j]!='?' && X2C_CAP(a[*i])!=X2C_CAP(b[j])) {
          if (k==0UL) return 0UL;
          /* no * so search from begin */
          ++i0;
@@ -3976,8 +3976,8 @@ extern char maptool_poisactiv(void)
 {
    uint32_t i;
    i = 0UL;
-   while (i<=29UL && !aprsdecode_poifiles[i].on) ++i;
-   return i<=29UL;
+   while (i<=30UL && !aprsdecode_poifiles[i].on) ++i;
+   return i<=30UL;
 } /* end poisactiv() */
 
 
@@ -5690,7 +5690,8 @@ static uint8_t pngc(uint16_t c)
 
 
 extern int32_t maptool_saveppm(char fn[], uint32_t fn_len,
-                maptool_pIMAGE image, int32_t xsize, int32_t ysize)
+                maptool_pIMAGE image, int32_t xsize, int32_t ysize,
+                char tmp)
 {
    int32_t fd;
    char h[256];
@@ -5700,24 +5701,28 @@ extern int32_t maptool_saveppm(char fn[], uint32_t fn_len,
    uint32_t len;
    struct PNGPIXMAP pngimg;
    int32_t ret;
+   char ofn[4096];
    struct maptool_PIX * anonym;
    struct maptool_PIX * anonym0;
    struct PNGPIXEL * anonym1;
    struct maptool_PIX * anonym2;
-   int32_t tmp;
    int32_t tmp0;
+   int32_t tmp1;
    int32_t maptool_saveppm_ret;
    X2C_PCOPY((void **)&fn,fn_len);
    aprsstr_cleanfilename(fn, fn_len);
+   aprsstr_Assign(ofn, 4096ul, fn, fn_len);
+   if (tmp) aprsstr_Append(fn, fn_len, "~", 2ul);
    fd = osi_OpenWrite(fn, fn_len);
    if (!osic_FdValid(fd)) {
       /*    WrStr(fn); WrStrLn(" not writeable"); */
       maptool_saveppm_ret = -1L;
       goto label;
    }
-   len = aprsstr_Length(fn, fn_len); /* check fn if ppm or bmp */
-   if ((((len>=4UL && fn[len-4UL]=='.') && X2C_CAP(fn[len-3UL])=='B')
-                && X2C_CAP(fn[len-2UL])=='M') && X2C_CAP(fn[len-1UL])=='P') {
+   len = aprsstr_Length(ofn, 4096ul); /* check fn if ppm or bmp */
+   if ((((len>=4UL && ofn[len-4UL]=='.') && X2C_CAP(ofn[len-3UL])=='B')
+                && X2C_CAP(ofn[len-2UL])=='M') && X2C_CAP(ofn[len-1UL])=='P')
+                 {
       /* make BMP */
       memset((char *)h,(char)0,256UL);
       h[0U] = 'B';
@@ -5733,41 +5738,42 @@ extern int32_t maptool_saveppm(char fn[], uint32_t fn_len,
       numh(h, 0UL, 30UL, 4UL); /* DWORD   biCompression */
       osi_WrBin(fd, (char *)h, 256u/1u, 54UL);
       len = 0UL;
-      tmp = ysize-1L;
+      tmp0 = ysize-1L;
       y = 0L;
-      if (y<=tmp) for (;; y++) {
-         tmp0 = xsize-1L;
+      if (y<=tmp0) for (;; y++) {
+         tmp1 = xsize-1L;
          x = 0L;
-         if (x<=tmp0) for (;; x++) {
+         if (x<=tmp1) for (;; x++) {
             { /* with */
                struct maptool_PIX * anonym = &image->Adr[(x)*image->Len0+y];
                wr(fd, &len, b, anonym->b);
                wr(fd, &len, b, anonym->g);
                wr(fd, &len, b, anonym->r);
             }
-            if (x==tmp0) break;
+            if (x==tmp1) break;
          } /* end for */
          while (len&3UL) wr(fd, &len, b, 0U);
-         if (y==tmp) break;
+         if (y==tmp0) break;
       } /* end for */
       if (len>0UL) osi_WrBin(fd, (char *)b, 32768u/1u, len);
       osic_Close(fd);
       ret = 0L;
    }
-   else if ((((len>=4UL && fn[len-4UL]=='.') && X2C_CAP(fn[len-3UL])=='P')
-                && X2C_CAP(fn[len-2UL])=='N') && X2C_CAP(fn[len-1UL])=='G') {
+   else if ((((len>=4UL && ofn[len-4UL]=='.') && X2C_CAP(ofn[len-3UL])=='P')
+                && X2C_CAP(ofn[len-2UL])=='N') && X2C_CAP(ofn[len-1UL])=='G')
+                 {
       /* make PNG */
       ret = -1L;
       osic_Close(fd);
       osic_alloc((char * *) &pngimg.image,
                 (uint32_t)(xsize*ysize*3L));
       if (pngimg.image) {
-         tmp = ysize-1L;
+         tmp0 = ysize-1L;
          y = 0L;
-         if (y<=tmp) for (;; y++) {
-            tmp0 = xsize-1L;
+         if (y<=tmp0) for (;; y++) {
+            tmp1 = xsize-1L;
             x = 0L;
-            if (x<=tmp0) for (;; x++) {
+            if (x<=tmp1) for (;; x++) {
                { /* with */
                   struct maptool_PIX * anonym0 = &image->Adr[(x)
                 *image->Len0+((ysize-1L)-y)];
@@ -5778,9 +5784,9 @@ extern int32_t maptool_saveppm(char fn[], uint32_t fn_len,
                      anonym1->blue = pngc(anonym0->b);
                   }
                }
-               if (x==tmp0) break;
+               if (x==tmp1) break;
             } /* end for */
-            if (y==tmp) break;
+            if (y==tmp0) break;
          } /* end for */
          pngimg.width = (uint32_t)xsize;
          pngimg.height = (uint32_t)ysize;
@@ -5804,9 +5810,9 @@ extern int32_t maptool_saveppm(char fn[], uint32_t fn_len,
       osi_WrBin(fd, (char *)h, 256u/1u, aprsstr_Length(h, 256ul));
       len = 0UL;
       for (y = ysize-1L; y>=0L; y--) {
-         tmp = xsize-1L;
+         tmp0 = xsize-1L;
          x = 0L;
-         if (x<=tmp) for (;; x++) {
+         if (x<=tmp0) for (;; x++) {
             { /* with */
                struct maptool_PIX * anonym2 = &image->Adr[(x)*image->Len0+y];
                 
@@ -5814,13 +5820,14 @@ extern int32_t maptool_saveppm(char fn[], uint32_t fn_len,
                wr(fd, &len, b, anonym2->g);
                wr(fd, &len, b, anonym2->b);
             }
-            if (x==tmp) break;
+            if (x==tmp0) break;
          } /* end for */
       } /* end for */
       if (len>0UL) osi_WrBin(fd, (char *)b, 32768u/1u, len);
       osic_Close(fd);
       ret = 0L;
    }
+   if (tmp) osi_Rename(fn, fn_len, ofn, 4096ul);
    maptool_saveppm_ret = ret;
    label:;
    X2C_PFREE(fn);
@@ -5966,7 +5973,7 @@ static void rdmountains(char fn[], uint32_t fn_len, char add,
             aprsstr_Assign(pm->category, 10ul, com, 100ul);
             pm->pos.lat = pos.lat*1.7453292519444E-2f;
             pm->pos.long0 = pos.long0*1.7453292519444E-2f;
-            if (alt<0.0f || alt>9999.0f) alt = 0.0f;
+            if (alt<(-1000.0f) || alt>9999.0f) alt = 0.0f;
             sl = (int32_t)aprsstr_Length(text, 4097ul);
             if (sl>0L) {
                if (sl>=4096L) sl = 4096L;
@@ -5995,7 +6002,7 @@ static void rdmountains(char fn[], uint32_t fn_len, char add,
             if (!errs) {
                osi_WrStr("POI File lines incomplete <", 28ul);
                osi_WrStr(fn, fn_len);
-               osi_WrStr(">", 2ul);
+               osi_WrStr("> ", 3ul);
                errs = 1;
             }
             osic_WrINT32((uint32_t)line, 1UL);
@@ -6033,54 +6040,100 @@ static void getpoisym(char sym[], uint32_t sym_len,
 } /* end getpoisym() */
 
 
+static char strgt(const char a[], uint32_t a_len,
+                const char b[], uint32_t b_len)
+{
+   uint32_t i;
+   i = 0UL;
+   do {
+      if ((uint8_t)a[i]>(uint8_t)b[i]) return 0;
+      if ((uint8_t)a[i]<(uint8_t)b[i]) return 1;
+      ++i;
+   } while (!(((i>a_len-1 || i>b_len-1) || a[i]==0) || b[i]==0));
+   return 0;
+} /* end strgt() */
+
+struct DIRENT;
+
+
+struct DIRENT {
+   char fullname[4096];
+   char name[256];
+};
+
+
 extern void maptool_readpoifiles(void)
 {
    osi_DIRCONTEXT pdir;
-   char fullname[4096];
    char path[4096];
    char fn[4096];
+   char done;
    char add;
+   uint32_t cnt;
+   uint32_t dn;
    uint32_t filenum;
    int32_t i;
+   struct DIRENT pl;
+   struct DIRENT fullnames[31];
+   int32_t tmp;
    memset((char *)aprsdecode_poifiles,(char)0,
-                sizeof(struct aprsdecode__D1 [30]));
+                sizeof(struct aprsdecode_POIFILELINE [31]));
    useri_confstr(useri_fOSMDIR, path, 4096ul);
    aprsstr_Append(path, 4096ul, "/poi", 5ul);
    if (osi_OpenDir(path, 4096ul, &pdir)>=0L) {
-      filenum = 0UL;
-      add = 0;
       aprsstr_Append(path, 4096ul, "/", 2ul);
+      dn = 0UL;
       for (;;) {
          osi_ReadDirLine(fn, 4096ul, pdir);
-         if (fn[0U]==0 || filenum>29UL) break;
-         /*WrStrLn(fn); */
+         if (fn[0U]==0 || dn>30UL) break;
          if (fn[0U]!='.') {
             /* not "." ".." files */
-            aprsstr_Assign(fullname, 4096ul, path, 4096ul);
-            aprsstr_Append(fullname, 4096ul, fn, 4096ul);
-            rdmountains(fullname, 4096ul, add, filenum,
-                &aprsdecode_poifiles[filenum].count);
-            add = 1;
-            if (aprsdecode_poifiles[filenum].count>0UL) {
-               /* only files with content */
-               aprsstr_Assign(aprsdecode_poifiles[filenum].name, 10ul, fn,
-                4096ul);
-               i = aprsstr_InStr(aprsdecode_poifiles[filenum].name, 10ul,
-                ".", 2ul);
-               if (i>=0L) {
-                  aprsdecode_poifiles[filenum].name[i] = 0;
-                /* name without extention */
-               }
-               strncpy(aprsdecode_poifiles[filenum].symbol,"//",2u);
-                /* default poi symbol */
-               getpoisym(aprsdecode_poifiles[filenum].symbol, 2ul,
-                aprsdecode_poifiles[filenum].name, 10ul);
-               /*WrStrLn(poifiles[filenum].name); */
-               ++filenum;
-            }
+            aprsstr_Assign(fullnames[dn].fullname, 4096ul, path, 4096ul);
+            aprsstr_Append(fullnames[dn].fullname, 4096ul, fn, 4096ul);
+            i = aprsstr_InStr(fn, 4096ul, ".", 2ul);
+            if (i>=0L) fn[i] = 0;
+            aprsstr_Assign(fullnames[dn].name, 256ul, fn, 4096ul);
+            ++dn;
          }
       }
       osi_CloseDir(pdir);
+      /*sort poi file on name */
+      do {
+         /* bubble sort */
+         i = 1L;
+         done = 1;
+         while (i<(int32_t)dn) {
+            if (strgt(fullnames[i-1L].name, 256ul, fullnames[i].name,
+                256ul)) {
+               pl = fullnames[i-1L];
+               fullnames[i-1L] = fullnames[i];
+               fullnames[i] = pl;
+               done = 0;
+            }
+            ++i;
+         }
+      } while (!done);
+      filenum = 0UL;
+      add = 0;
+      tmp = (int32_t)dn-1L;
+      i = 0L;
+      if (i<=tmp) for (;; i++) {
+         /*WrStrLn(fullnames[i].fullname); */
+         rdmountains(fullnames[i].fullname, 4096ul, add, filenum, &cnt);
+         if (cnt>0UL) {
+            /* only files with content */
+            add = 1;
+            aprsdecode_poifiles[filenum].count = cnt;
+            aprsstr_Assign(aprsdecode_poifiles[filenum].name, 10ul,
+                fullnames[i].name, 256ul);
+            strncpy(aprsdecode_poifiles[filenum].symbol,"//",2u);
+                /* default poi symbol */
+            getpoisym(aprsdecode_poifiles[filenum].symbol, 2ul,
+                aprsdecode_poifiles[filenum].name, 10ul);
+            ++filenum;
+         }
+         if (i==tmp) break;
+      } /* end for */
    }
 } /* end readpoifiles() */
 

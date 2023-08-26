@@ -35,6 +35,12 @@
 
 
 
+
+
+
+
+
+
 char sondeaprs_via[100];
 char sondeaprs_destcall[100];
 char sondeaprs_objname[100];
@@ -58,10 +64,12 @@ struct aprsstr_POSITION sondeaprs_mypos;
 float sondeaprs_myalt;
 
 
-struct sondeaprs__D1 sondeaprs_beacontimes[20];
+struct sondeaprs__D2 sondeaprs_beacontimes[20];
 
 
-struct sondeaprs__D2 sondeaprs_rectfence;
+struct sondeaprs__D3 sondeaprs_rectfence;
+sondeaprs_pUDPDESTS sondeaprs_axudpdests;
+sondeaprs_pUDPDESTS sondeaprs_jsondests;
 /* encode demodulated sonde to aprs axudp by OE5DXL */
 #define sondeaprs_CR "\015"
 
@@ -226,14 +234,18 @@ static void wrcsv(uint32_t sattime, const char typstr[],
                 const char fullid[], uint32_t fullid_len,
                 uint32_t txpower, double vBatt, int32_t txtime,
                 sondeaprs_pSATSIG psatsig, const char user[],
-                uint32_t user_len)
+                uint32_t user_len, int32_t leapsecs,
+                const struct sondeaprs_XDATA xdatas, const char ogstr[],
+                uint32_t ogstr_len)
 {
    int32_t fd;
+   uint32_t j;
    uint32_t i;
-   char com;
    char h[1000];
    char s[1000];
-   struct sondeaprs__D0 * anonym;
+   int32_t void0;
+   sondeaprs_pUDPDESTS jdest;
+   int32_t satdb[33];
    X2C_PCOPY((void **)&objname,objname_len);
    if (sondeaprs_json) {
       strncpy(s,"{",1000u);
@@ -262,11 +274,12 @@ static void wrcsv(uint32_t sattime, const char typstr[],
       aprsstr_TimeToStr(sattime%86400UL, h, 1000ul);
       aprsstr_Append(s, 1000ul, h, 1000ul);
       aprsstr_Append(s, 1000ul, "\"", 2ul);
+      /*  IF uptime>0 THEN Append(s, ',"up":'); TimeToStr(uptime, 1 ,h);
+                Append(s, h) END; */
       if (uptime>0UL) {
-         aprsstr_Append(s, 1000ul, ",\"up\":\"", 8ul);
+         aprsstr_Append(s, 1000ul, ",\"up\":", 7ul);
          aprsstr_IntToStr((int32_t)uptime, 1UL, h, 1000ul);
          aprsstr_Append(s, 1000ul, h, 1000ul);
-         aprsstr_Append(s, 1000ul, "\"", 2ul);
       }
       if (txtime>100000L) {
          aprsstr_Append(s, 1000ul, ",\"bursttx\":", 12ul);
@@ -279,37 +292,38 @@ static void wrcsv(uint32_t sattime, const char typstr[],
          aprsstr_Append(s, 1000ul, h, 1000ul);
       }
       aprsstr_Append(s, 1000ul, ",\"lat\":", 8ul);
-      aprsstr_FixToStr((float)(lat*5.7295779513082E+1), 6UL, h, 1000ul);
+      aprsstr_FixToStr((float)(lat*5.7295779513082E+1), 7UL, h, 1000ul);
       aprsstr_Append(s, 1000ul, h, 1000ul);
       aprsstr_Append(s, 1000ul, ",\"long\":", 9ul);
-      aprsstr_FixToStr((float)(long0*5.7295779513082E+1), 6UL, h, 1000ul);
+      aprsstr_FixToStr((float)(long0*5.7295779513082E+1), 7UL, h, 1000ul);
       aprsstr_Append(s, 1000ul, h, 1000ul);
       aprsstr_Append(s, 1000ul, ",\"alt\":", 8ul);
-      aprsstr_IntToStr((int32_t)X2C_TRUNCI(alt,X2C_min_longint,
-                X2C_max_longint), 1UL, h, 1000ul);
+      aprsstr_FixToStr((float)alt, 2UL, h, 1000ul);
       aprsstr_Append(s, 1000ul, h, 1000ul);
       if (egmalt>(-1.E+4) && egmalt<1.E+5) {
          aprsstr_Append(s, 1000ul, ",\"egmalt\":", 11ul);
-         aprsstr_IntToStr((int32_t)X2C_TRUNCI(egmalt,X2C_min_longint,
-                X2C_max_longint), 1UL, h, 1000ul);
+         aprsstr_FixToStr((float)egmalt, 2UL, h, 1000ul);
          aprsstr_Append(s, 1000ul, h, 1000ul);
       }
       if (og>(-1.E+4) && og<1.E+5) {
          aprsstr_Append(s, 1000ul, ",\"og\":", 7ul);
-         aprsstr_IntToStr((int32_t)X2C_TRUNCI(og,X2C_min_longint,
-                X2C_max_longint), 1UL, h, 1000ul);
+         aprsstr_FixToStr((float)og, 2UL, h, 1000ul);
          aprsstr_Append(s, 1000ul, h, 1000ul);
+         if (ogstr[0UL]) {
+            aprsstr_Append(s, 1000ul, ",\"ogtext\":\"", 12ul);
+            aprsstr_Append(s, 1000ul, ogstr, ogstr_len);
+            aprsstr_Append(s, 1000ul, "\"", 2ul);
+         }
       }
       aprsstr_Append(s, 1000ul, ",\"spd\":", 8ul);
       aprsstr_FixToStr((float)(speed*3.6), 2UL, h, 1000ul);
       aprsstr_Append(s, 1000ul, h, 1000ul);
       aprsstr_Append(s, 1000ul, ",\"dir\":", 8ul);
-      aprsstr_IntToStr((int32_t)X2C_TRUNCI(dir,X2C_min_longint,
-                X2C_max_longint), 1UL, h, 1000ul);
+      aprsstr_FixToStr((float)dir, 2UL, h, 1000ul);
       aprsstr_Append(s, 1000ul, h, 1000ul);
       if (clb<1000.0) {
          aprsstr_Append(s, 1000ul, ",\"clb\":", 8ul);
-         aprsstr_FixToStr((float)clb, 2UL, h, 1000ul);
+         aprsstr_FixToStr((float)clb, 3UL, h, 1000ul);
          aprsstr_Append(s, 1000ul, h, 1000ul);
       }
       if (goodsats>0UL) {
@@ -319,7 +333,7 @@ static void wrcsv(uint32_t sattime, const char typstr[],
       }
       if (vBatt>0.1) {
          aprsstr_Append(s, 1000ul, ",\"ub\":", 7ul);
-         aprsstr_FixToStr((float)vBatt, 2UL, h, 1000ul);
+         aprsstr_FixToStr((float)vBatt, 3UL, h, 1000ul);
          aprsstr_Append(s, 1000ul, h, 1000ul);
       }
       if (txpower>0UL) {
@@ -329,11 +343,11 @@ static void wrcsv(uint32_t sattime, const char typstr[],
       }
       if (temp>(-1000.0) && temp<1000.0) {
          aprsstr_Append(s, 1000ul, ",\"ptu\":{\"t\":", 13ul);
-         aprsstr_FixToStr((float)temp, 2UL, h, 1000ul);
+         aprsstr_FixToStr((float)temp, 3UL, h, 1000ul);
          aprsstr_Append(s, 1000ul, h, 1000ul);
          if (hp>0.1 && hp<2000.0) {
             aprsstr_Append(s, 1000ul, ",\"p\":", 6ul);
-            aprsstr_FixToStr((float)hp, 2UL, h, 1000ul);
+            aprsstr_FixToStr((float)hp, 3UL, h, 1000ul);
             aprsstr_Append(s, 1000ul, h, 1000ul);
          }
          if (hyg>0.1 && hyg<=100.0) {
@@ -345,7 +359,7 @@ static void wrcsv(uint32_t sattime, const char typstr[],
       }
       if (ozon>0.01) {
          aprsstr_Append(s, 1000ul, ",\"aux\":{\"o3\":", 14ul);
-         aprsstr_FixToStr((float)ozon, 2UL, h, 1000ul);
+         aprsstr_FixToStr((float)ozon, 3UL, h, 1000ul);
          aprsstr_Append(s, 1000ul, h, 1000ul);
          aprsstr_Append(s, 1000ul, ",\"o3tmp\":", 10ul);
          aprsstr_FixToStr((float)otemp, 2UL, h, 1000ul);
@@ -399,40 +413,71 @@ static void wrcsv(uint32_t sattime, const char typstr[],
       aprsstr_Append(s, 1000ul, user, user_len);
       aprsstr_Append(s, 1000ul, "\"", 2ul);
       if (psatsig) {
-         com = 0;
-         aprsstr_Append(s, 1000ul, ",\"satq\":{", 10ul);
+         for (i = 1UL; i<=32UL; i++) {
+            satdb[i] = -1L;
+         } /* end for */
          for (i = 0UL; i<=11UL; i++) {
-            { /* with */
-               struct sondeaprs__D0 * anonym = &psatsig[i];
-               if (anonym->num>=1UL && anonym->num<=32UL) {
-                  if (com) aprsstr_Append(s, 1000ul, ",", 2ul);
-                  com = 1;
-                  aprsstr_Append(s, 1000ul, "\"n\":", 5ul);
-                  aprsstr_IntToStr((int32_t)anonym->num, 1UL, h, 1000ul);
-                  aprsstr_Append(s, 1000ul, h, 1000ul);
-                  aprsstr_Append(s, 1000ul, ",\"q\":", 6ul);
-                  aprsstr_FixToStr((float)anonym->level*0.2f, 2UL, h,
-                1000ul);
-                  aprsstr_Append(s, 1000ul, h, 1000ul);
-               }
+            if (psatsig[i].num<=32UL) {
+               satdb[psatsig[i].num] = (int32_t)psatsig[i].level;
             }
          } /* end for */
-         aprsstr_Append(s, 1000ul, "}", 2ul);
+         aprsstr_Append(s, 1000ul, ",\"satdb\":[", 11ul);
+         for (i = 1UL; i<=32UL; i++) {
+            if (i>1UL) aprsstr_Append(s, 1000ul, ",", 2ul);
+            if (satdb[i]<0L) aprsstr_Append(s, 1000ul, "-1", 3ul);
+            else if (satdb[i]==0L) aprsstr_Append(s, 1000ul, "0", 2ul);
+            else {
+               aprsstr_FixToStr((float)((double)satdb[i]*0.2), 2UL,
+                h, 1000ul);
+               aprsstr_Append(s, 1000ul, h, 1000ul);
+            }
+         } /* end for */
+         aprsstr_Append(s, 1000ul, "]", 2ul);
+      }
+      aprsstr_Append(s, 1000ul, ",\"leaps\":", 10ul);
+      aprsstr_IntToStr(leapsecs, 1UL, h, 1000ul);
+      aprsstr_Append(s, 1000ul, h, 1000ul);
+      j = 0UL;
+      while (j<xdatas.cnt) {
+         aprsstr_Append(s, 1000ul, ",\"xdata", 8ul);
+         if (j>0UL) {
+            aprsstr_IntToStr((int32_t)j, 1UL, h, 1000ul);
+            aprsstr_Append(s, 1000ul, h, 1000ul);
+         }
+         aprsstr_Append(s, 1000ul, "\":[", 4ul);
+         i = 0UL;
+         while (i<xdatas.xdata[j].len) {
+            if (i>0UL) aprsstr_Append(s, 1000ul, ",", 2ul);
+            aprsstr_IntToStr((int32_t)(uint32_t)(uint8_t)
+                xdatas.xdata[j].frame[i], 1UL, h, 1000ul);
+            aprsstr_Append(s, 1000ul, h, 1000ul);
+            ++i;
+         }
+         aprsstr_Append(s, 1000ul, "]", 2ul);
+         ++j;
       }
       aprsstr_Append(s, 1000ul, "}\012", 3ul);
-      if (jsonfd<0L) {
-         jsonfd = osi_OpenNONBLOCK(sondeaprs_csvfilename, 1025ul);
+      if (sondeaprs_csvfilename[0UL]) {
          if (jsonfd<0L) {
-            jsonfd = osi_OpenWrite(sondeaprs_csvfilename, 1025ul);
+            jsonfd = osi_OpenNONBLOCK(sondeaprs_csvfilename, 1025ul);
+            if (jsonfd<0L) {
+               jsonfd = osi_OpenWrite(sondeaprs_csvfilename, 1025ul);
                 /* no file and no pipe */
+            }
+            else osic_Seekend(jsonfd, 0L);
          }
-         else osic_Seekend(jsonfd, 0L);
-      }
-      if (jsonfd>=0L) {
-         osi_WrBin(jsonfd, (char *)s, 1000u/1u, aprsstr_Length(s,
+         if (jsonfd>=0L) {
+            osi_WrBin(jsonfd, (char *)s, 1000u/1u, aprsstr_Length(s,
                 1000ul));
+         }
+         else osi_WrStrLn("cannot write json-file", 23ul);
       }
-      else osi_WrStrLn("cannot write json-file", 23ul);
+      jdest = sondeaprs_jsondests;
+      while (jdest) {
+         void0 = udpsend(sondeaprs_udpsock, s, (int32_t)aprsstr_Length(s,
+                1000ul), jdest->port, jdest->ipnum);
+         jdest = jdest->next;
+      }
    }
    else {
       fd = osi_OpenAppend(sondeaprs_csvfilename, 1025ul);
@@ -633,15 +678,16 @@ static double egm96corr(double lat, double long0,
 
 
 static double getoverground(double lat, double long0,
-                double alt)
+                double alt, uint8_t * att)
 {
    struct aprsstr_POSITION pos;
-   float resolution;
    double srtm;
+   float res;
    libsrtm_srtmmaxmem = 1000000UL;
    pos.lat = (float)lat;
    pos.long0 = (float)long0;
-   srtm = (double)libsrtm_getsrtm(pos, 1UL, &resolution);
+   srtm = (double)libsrtm_getsrtmlong((double)pos.lat,
+                (double)pos.long0, 1UL, 0, &res, att, 0);
    if (srtm<10000.0 && srtm>(-1000.0)) {
       if (alt<=(-3.E+4)) return srtm;
       /* srtm request */
@@ -651,6 +697,27 @@ static double getoverground(double lat, double long0,
    return (-1.E+5);
 } /* end getoverground() */
 
+/*
+PROCEDURE getoverground(lat, long, alt:REAL):REAL;
+VAR pos:aprsstr.POSITION;
+    resolution:SHORTREAL;
+    srtm:REAL;
+BEGIN
+  srtmmaxmem:=1000000;
+  pos.lat:=lat;
+  pos.long:=long;
+  srtm:=getsrtm(pos, 1, resolution);
+  IF (srtm<10000.0) & (srtm>-1000.0) THEN
+    IF alt<=-30000.0 THEN RETURN srtm END;
+                (* srtm request *)
+
+    RETURN alt - srtm;
+--  ELSIF verb THEN WrStrLn("---no SRTM data");
+  END;
+
+  RETURN -100000.0;
+END getoverground;
+*/
 
 static void dig(char s[], uint32_t s_len, uint32_t * i, uint32_t d,
                  uint32_t div0, char withzero)
@@ -788,7 +855,7 @@ static void comment0(char buf[], uint32_t buf_len, uint32_t uptime,
                          txtimedone:=TRUE;
                */
                /* insert version */
-               aprsstr_Append(hb, 160ul, " sondemod 1.37", 15ul);
+               aprsstr_Append(hb, 160ul, " sondemod 1.37b", 16ul);
             }
             else if (fb[bol+1L]=='s') {
                /* insert sat count */
@@ -900,11 +967,12 @@ static void comment0(char buf[], uint32_t buf_len, uint32_t uptime,
    }
 } /* end comment() */
 
+/*  crc:CARDINAL;  */
 
 static void sendudp(char buf[], uint32_t buf_len, int32_t len)
 {
-   int32_t i;
-   /*  crc:CARDINAL;  */
+   int32_t void0;
+   sondeaprs_pUDPDESTS dest;
    X2C_PCOPY((void **)&buf,buf_len);
    /*
      IF withcrc THEN
@@ -915,12 +983,12 @@ static void sendudp(char buf[], uint32_t buf_len, int32_t len)
      END;
      AppCRC(buf, len);
    */
-   i = udpsend(sondeaprs_udpsock, buf, len, sondeaprs_toport,
-                sondeaprs_ipnum);
+   dest = sondeaprs_axudpdests;
+   while (dest) {
+      void0 = udpsend(sondeaprs_udpsock, buf, len, dest->port, dest->ipnum);
+      dest = dest->next;
+   }
    X2C_PFREE(buf);
-/*
-FOR i:=0 TO upos-2 DO IO.WrHex(ORD(buf[i]), 3) END; IO.WrLn;
-*/
 } /* end sendudp() */
 
 
@@ -1668,9 +1736,9 @@ static char infence(double lat, double long0)
 {
    char u;
    char d;
-   struct sondeaprs__D2 * anonym;
+   struct sondeaprs__D3 * anonym;
    { /* with */
-      struct sondeaprs__D2 * anonym = &sondeaprs_rectfence;
+      struct sondeaprs__D3 * anonym = &sondeaprs_rectfence;
       d = lat>(double)anonym->leftdown.lat;
       u = lat<(double)anonym->rightup.lat;
       if (anonym->leftdown.lat<anonym->rightup.lat) d = d && u;
@@ -1699,11 +1767,13 @@ extern void sondeaprs_senddata(double lat, double long0,
                 char altnoegm, int32_t txtime, char typstr[],
                 uint32_t typstr_len, char fullid[],
                 uint32_t fullid_len, sondeaprs_pSATSIG psatsig,
-                struct sondeaprs_SDRBLOCK sdr)
+                struct sondeaprs_SDRBLOCK sdr, int32_t leapsecs,
+                struct sondeaprs_XDATA xdata)
 {
    uint8_t e;
    uint32_t nt;
    pCONTEXT ct;
+   char ogwhat[251];
    char h[251];
    char s[251];
    uint32_t systime;
@@ -1716,20 +1786,25 @@ extern void sondeaprs_senddata(double lat, double long0,
    double mydist;
    double myele;
    double myazi;
+   uint8_t attr;
    struct CONTEXT * anonym;
    og = (-3.2E+4);
    altNN = (-3.2E+4);
    btalt = alt;
+   ogwhat[0] = 0;
    if (!egmoff) {
       if (altnoegm) altNN = alt;
       else altNN = egm96corr(lat, long0, alt);
       if (altNN>(-1000.0)) {
-         og = getoverground(lat, long0, altNN);
+         og = getoverground(lat, long0, altNN, &attr);
          if (og>=0.0) btalt = og;
+         if (attr==3U) strncpy(ogwhat,"Water",251u);
+         else if (attr==2U) strncpy(ogwhat,"Wood",251u);
+         else if (attr==1U) strncpy(ogwhat,"Urban",251u);
       }
       else if (fabs(altNN-alt)>250.0) {
          osic_WrFixed((float)(altNN-alt), 2L, 1UL);
-         osi_WrStrLn("m egm96 correction?", 20ul);
+         osi_WrStrLn("m egm96 correction? check file WW15MGH.DAC", 43ul);
       }
    }
    /*- azimuth elevation distance */
@@ -1744,7 +1819,7 @@ extern void sondeaprs_senddata(double lat, double long0,
          /* try to get own alt from srtm */
          sondeaprs_myalt = (float)getoverground((double)
                 sondeaprs_mypos.lat, (double)sondeaprs_mypos.long0,
-                (-1.E+5));
+                (-1.E+5), &attr);
          if ((sondeaprs_verb && sondeaprs_myalt>(-2.E+4f))
                 && sondeaprs_myalt<20000.0f) {
             osi_WrStrLn("", 1ul);
@@ -1764,12 +1839,12 @@ extern void sondeaprs_senddata(double lat, double long0,
       }
    }
    /*- azimuth elevation distance */
-   if (sondeaprs_csvfilename[0UL]) {
+   if (sondeaprs_csvfilename[0UL] || sondeaprs_json) {
       wrcsv(sattime, typstr, typstr_len, objname, objname_len, lat, long0,
                 alt, speed, dir, clb, altNN, og, mhz, goodsats, uptime, hp,
                 hyg, temp, ozon, otemp, pumpmA, pumpv, sdr, mydist, myazi,
                 myele, fullid, fullid_len, txpower, vBatt, txtime, psatsig,
-                usercall, usercall_len);
+                usercall, usercall_len, leapsecs, xdata, ogwhat, 251ul);
    }
    if (aprsstr_Length(usercall, usercall_len)<3UL) {
       osi_WrStrLn("no tx without <mycall>", 23ul);
@@ -1968,6 +2043,11 @@ extern void sondeaprs_senddata(double lat, double long0,
                 X2C_max_longint), 1UL, h, 251ul);
                aprsstr_Append(s, 251ul, h, 251ul);
                aprsstr_Append(s, 251ul, "m", 2ul);
+               if (og<=200.0 && ogwhat[0U]) {
+                  aprsstr_Append(s, 251ul, "(", 2ul);
+                  aprsstr_Append(s, 251ul, ogwhat, 251ul);
+                  aprsstr_Append(s, 251ul, ")", 2ul);
+               }
             }
             if (fullid[0UL] && !typisser(fullid, fullid_len, typstr,
                 typstr_len)) {

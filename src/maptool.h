@@ -167,7 +167,7 @@ extern int32_t maptool_mapxy(struct aprsstr_POSITION, float *,
 extern void maptool_xytodeg(float, float, struct aprsstr_POSITION *);
 
 extern int32_t maptool_saveppm(char [], uint32_t, maptool_pIMAGE,
-                int32_t, int32_t);
+                int32_t, int32_t, char);
 
 extern void maptool_area(maptool_pIMAGE, int32_t, int32_t, int32_t,
                 int32_t, struct aprsdecode_COLTYP, char);

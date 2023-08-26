@@ -23,9 +23,6 @@
 #include "osi.h"
 #endif
 #include <osic.h>
-#ifndef mlib_H_
-#include "mlib.h"
-#endif
 #ifndef aprsstr_H_
 #include "aprsstr.h"
 #endif
@@ -40,12 +37,13 @@
 
 
 int32_t sdr_debfd;
+int32_t sdr_afcspeed;
 /* rtl_tcp iq fm demodulator by OE5DXL */
 #define sdr_IQBUF 65536
 
 #define sdr_DDSMAXLEN 2048
 
-#define sdr_AFCSPEED 400000000
+#define sdr_AFCSPEED0 400000000
 /* slower afc reaction */
 
 #define sdr_AFCRECENTER 1024
@@ -1257,14 +1255,14 @@ extern int32_t sdr_getsdr(uint32_t samps, sdr_pRX rx[],
                   /* near peak rssi so let afc work */
                   anonym0->median = anonym0->median-(anonym0->afckhz*(int32_t)
                 samps*1024L)/anonym0->maxafc; /* weak pull to middle */
-                  if (anonym0->median>400000000L) {
+                  if (anonym0->median>sdr_afcspeed) {
                      ++anonym0->afckhz;
                      if (anonym0->afckhz>anonym0->maxafc) {
                         anonym0->afckhz = anonym0->maxafc;
                      }
                      anonym0->median = 0L;
                   }
-                  else if (anonym0->median<-400000000L) {
+                  else if (anonym0->median<-sdr_afcspeed) {
                      --anonym0->afckhz;
                      if (anonym0->afckhz<-anonym0->maxafc) {
                         anonym0->afckhz = -anonym0->maxafc;
@@ -1355,5 +1353,6 @@ extern void sdr_BEGIN(void)
    reconnect = 0;
    rtlhz = 2048000UL;
    audiohz = 16000UL;
+   sdr_afcspeed = 400000000L;
 }
 

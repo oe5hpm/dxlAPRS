@@ -110,6 +110,8 @@ typedef struct sdr_RX * sdr_pRX;
 
 extern int32_t sdr_debfd;
 
+extern int32_t sdr_afcspeed;
+
 extern int32_t sdr_getsdr(uint32_t, sdr_pRX [], uint32_t);
 
 extern void sdr_setparm(uint32_t, uint32_t);

@@ -31,9 +31,6 @@
 #include "osi.h"
 #endif
 #include <osic.h>
-#ifndef mlib_H_
-#include "mlib.h"
-#endif
 #ifndef udp_H_
 #include "udp.h"
 #endif
@@ -873,6 +870,12 @@ dp frames last n frames or n*10ms", 83ul);
       }
       else err = 1;
       if (err) break;
+   }
+   if (err) {
+      osi_Werr(">", 2ul);
+      osi_Werr(h, 1024ul);
+      osi_Werr("< use -h\012", 10ul);
+      X2C_ABORT();
    }
    if (connectto0[0U]) {
       /* insert mycall as it is valid after whole cmd line */

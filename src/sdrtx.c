@@ -43,6 +43,12 @@
 
 #define sdrtx_INTPOLS 64
 
+#define sdrtx_REOPEN 1
+
+#define sdrtx_EXITPRG 0
+
+#define sdrtx_SENDNULL 2
+
 struct LPCONTEXT24;
 
 
@@ -94,11 +100,11 @@ static int32_t si;
 
 static int32_t sq;
 
-static int32_t wshift;
-
 static int32_t shift;
 
 static int32_t of;
+
+static uint32_t wshift;
 
 static uint32_t is;
 
@@ -152,6 +158,8 @@ static float sampcnt;
 
 static float fmdeviation;
 
+static float wtone;
+
 static float devi;
 
 static float miclowpass;
@@ -163,6 +171,16 @@ static float bassfilter;
 static float limlim;
 
 static float sample;
+
+static float outlev;
+
+static float floatlev;
+
+static float sinlev;
+
+static float subtonhz;
+
+static float subtonlev;
 
 static double limmul;
 
@@ -176,7 +194,13 @@ static struct LPCONTEXT24 ssblpi;
 
 static struct LPCONTEXT24 ssblpq;
 
+static struct LPCONTEXT24 ssblpic;
+
+static struct LPCONTEXT24 ssblpqc;
+
 static char exit0;
+
+static char exitpipe;
 
 static short abuf[1024];
 
@@ -233,6 +257,12 @@ static void Parms(void)
             osi_NextArg(ofn, 1024ul);
             if (ofn[0U]==0 || ofn[0U]=='-') Error("-o <iq-filename>", 17ul);
          }
+         else if (h[1U]=='O') {
+            osi_NextArg(h, 1024ul);
+            if (!aprsstr_StrToFix(&outlev, h, 1024ul)) {
+               Error("-O <flot output level>", 23ul);
+            }
+         }
          else if (h[1U]=='i') {
             osi_NextArg(ifn, 1024ul);
             if (ifn[0U]==0 || ifn[0U]=='-') {
@@ -257,6 +287,7 @@ static void Parms(void)
                Error("-g <gainfactor>", 16ul);
             }
          }
+         else if (h[1U]=='e') exitpipe = 1;
          else if (h[1U]=='c') {
             osi_NextArg(h, 1024ul);
             if (!aprsstr_StrToFix(&clipplev, h, 1024ul)) {
@@ -297,12 +328,20 @@ static void Parms(void)
                Error("-b <bassfilter>", 16ul);
             }
          }
+         else if (h[1U]=='T') {
+            osi_NextArg(h, 1024ul);
+            if (!aprsstr_StrToFix(&subtonhz, h, 1024ul)) {
+               Error("-T <subtone-Hz> <level>", 24ul);
+            }
+            osi_NextArg(h, 1024ul);
+            if (!aprsstr_StrToFix(&subtonlev, h, 1024ul)) {
+               Error("-T <subtone-Hz> <level>", 24ul);
+            }
+         }
          else if (h[1U]=='f') {
             osi_NextArg(h, 1024ul);
             if ((h[0U]=='i' && h[1U]=='1') && h[2U]=='6') oform = 2UL;
-            else if ((h[0U]=='f' && h[1U]=='3') && h[2U]=='2') {
-               oform = 4UL;
-            }
+            else if ((h[0U]=='f' && h[1U]=='3') && h[2U]=='2') oform = 4UL;
             else if (h[0U]=='u' && h[1U]=='8') oform = 1UL;
             else Error("-f u8|i16|f32", 14ul);
          }
@@ -321,25 +360,32 @@ ot stereo) (0.05)", 67ul);
 LC 1=off (1.0)", 64ul);
                osi_WrStrLn(" -d <Hz>             fm deviation (3000) (stereo \
 40000)", 56ul);
+               osi_WrStrLn(" -e                  not exit on broken pipe",
+                45ul);
                osi_WrStrLn(" -f <output format>  u8 i16 f32 (u8)", 37ul);
                osi_WrStrLn(" -g <v>              input loudness (not stereo) \
 more for more ALC (50.0)", 74ul);
                osi_WrStrLn(" -h                  this", 26ul);
                osi_WrStrLn(" -i <filename>       input file/pipe/oss-device (\
-stereo 2 channel 48kHz) (/dev/dsp)", 84ul);
+stereo 2 channel) (/dev/dsp)", 78ul);
+               osi_WrStrLn("                       all frequency parameters b\
+ased on 48kHz input rate", 74ul);
                osi_WrStrLn(" -l <Hz>             modulation lowpass (not ster\
 eo) 0=off (3000)", 66ul);
                osi_WrStrLn(" -m <modulation>     u(sb) l(sb) a(m) f(m) s(ster\
 eo) (f)", 57ul);
+               osi_WrStrLn(" -O <level>          output level (1.0)", 40ul);
                osi_WrStrLn(" -o <filename>       output iq file/pipe", 41ul);
                osi_WrStrLn(" -p <0..1>           preemphase of modulation (no\
 t stereo) 0=off (0.8)", 71ul);
                osi_WrStrLn(" -r <n>              output/input samplerate (21.\
 33333)", 56ul);
                osi_WrStrLn(" -s <Hz>             shift signal from iq band ce\
-nter (0)", 58ul);
-               osi_WrStrLn(" -u <Hz>             upsampler aliasing filter (6\
-000) (stereo 22000)", 69ul);
+nter (ssb:center of band!) (0)", 80ul);
+               osi_WrStrLn(" -T <Hz> <Lev>       (sub)Tone <Hz> <level> eg. 1\
+00.0 0.15", 59ul);
+               osi_WrStrLn(" -u <Hz>             upsampler aliasing filter (f\
+m deviation+modlowpass, ssb 1500, stereo 110000)", 98ul);
                osi_WrStrLn(" all <Hz>-values based on 48kHz input samplerate \
 and stereo pilot tone", 71ul);
                osi_WrStrLn(" filters 4th order IIR, stereo preemphase+17kHz l\
@@ -376,14 +422,22 @@ static void OpenSound(uint32_t adcrate0, const char fn[],
 } /* end OpenSound() */
 
 
+static void reopensound(void)
+{
+   osic_Close(adc);
+   OpenSound(48000UL, ifn, 1024ul);
+} /* end reopensound() */
+
+
 static float audiosamp(void)
 {
    int32_t i0;
    if (pabuf>=abuflen) {
       i0 = osi_RdBin(adc, (char *)abuf, 2048u/1u, 2048UL);
       if (i0<=0L) {
-         exit0 = 1;
-         return 0.0f;
+         i0 = 0L;
+         if (exitpipe) reopensound();
+         else exit0 = 1;
       }
       abuflen = (uint32_t)(i0/2L);
       pabuf = 0UL;
@@ -529,30 +583,34 @@ static float audioproc(float in)
       if (limmul>1.0) limmul = 1.0;
    }
    else limmul = limmul*9.99995E-1;
-   /*
-     o:=o+LEVEL*0.1*sin(wtone);
-     wtone:=wtone+100.0*(2.0*pi/FLOAT(OSSSAMP));
-     IF wtone>2.0*pi THEN wtone:=wtone-2.0*pi END;
-   */
+   if (subtonlev!=0.0f) {
+      o = o+subtonlev*osic_sin(wtone);
+      wtone = wtone+subtonhz;
+      if (wtone>6.2831853071796f) wtone = wtone-6.2831853071796f;
+   }
    if (o>2.925625E+4f) o = 2.925625E+4f;
    else if (o<(-2.925625E+4f)) o = (-2.925625E+4f);
    return o;
 } /* end audioproc() */
 
+#define sdrtx_L 58512.5
+
 
 static void ssbtx(float u, float * i0, float * q)
 {
    float v;
-   u = u*4.0f; /* lp has 6db loss, mixer 50% for each sideband */
+   u = u*8.0f; /* lp's have 6db loss, mixer 50% for each sideband */
    *i0 = lp(u*osic_sin(wsub), &ssblpi);
    *q = lp(u*osic_cos(wsub), &ssblpq);
    v =  *i0* *i0+ *q* *q;
-   if (v>8.559281640625E+8f) {
+   if (v>3.42371265625E+9f) {
       /* rf clipper */
-      v = X2C_DIVR(2.925625E+4f,osic_sqrt(v));
+      v = X2C_DIVR(58512.5f,osic_sqrt(v));
       *i0 =  *i0*v;
       *q =  *q*v;
    }
+   *i0 = lp(*i0, &ssblpic);
+   *q = lp(*q, &ssblpqc);
    wsub = wsub+ssbwinc;
    if (wsub>6.2831853071796f) wsub = wsub-6.2831853071796f;
 } /* end ssbtx() */
@@ -593,6 +651,7 @@ static void makelp12(float fg, float samp, struct LPCONTEXT12 * c)
       struct LPCONTEXT12 * anonym = c;
       anonym->K1 = osic_power((X2C_DIVR(fg,samp))*5.2f,
                 2.0f)-osic_power((X2C_DIVR(fg,samp))*5.2f, 3.0f)*0.5f;
+      if (anonym->K1<=0.0f) Error("modulation bandwith > samplerate", 33ul);
       anonym->K2 = 1.0f-osic_power(anonym->K1*1.0f, 0.48f);
                 /* 0.85 10% ripple, 1.0 11% overshoot */
    }
@@ -630,7 +689,7 @@ static void SendSamps(short buf0[], uint32_t buf_len, uint32_t * p0)
       tmp = *p0-1UL;
       i0 = 0UL;
       if (i0<=tmp) for (;; i0++) {
-         f[i0] = (float)buf0[i0]*3.0517578125E-5f;
+         f[i0] = ((float)buf0[i0]+0.5f)*floatlev;
          if (i0==tmp) break;
       } /* end for */
       osi_WrBin(of, (char *)f, sizeof(float [4096])/1u,
@@ -639,35 +698,44 @@ static void SendSamps(short buf0[], uint32_t buf_len, uint32_t * p0)
    *p0 = 0UL;
 } /* end SendSamps() */
 
+
+static void sat(int32_t * u)
+{
+   if (*u>32767L) *u = 32767L;
+   else if (*u<-32767L) *u = -32767L;
+} /* end sat() */
+
 static void exitprog(int32_t);
 
 
 static void exitprog(int32_t signum)
 {
-   osi_WrStr("exit ", 6ul);
+   osi_WrStr("got signum ", 12ul);
    osic_WrINT32((uint32_t)signum, 0UL);
    osi_WrStrLn("!", 2ul);
-   exit0 = 1;
+   if (exitpipe) reopensound();
+   else exit0 = 1;
 } /* end exitprog() */
 
 
 X2C_STACK_LIMIT(100000l)
-int main(int argc, char **argv)
+extern int main(int argc, char **argv)
 {
    uint32_t tmp;
    X2C_BEGIN(&argc,argv,1,4000000l,8000000l);
    aprsstr_BEGIN();
    osi_BEGIN();
-   signal(SIGTERM, exitprog);
-   signal(SIGINT, exitprog);
-   signal(SIGPIPE, exitprog);
+   /*
+     signal(SIGTERM, exitprog);
+     signal(SIGINT, exitprog);
+   */
    of = -1L;
    adcrate = 48000UL;
    sampmul = 2.1333333333333E+1f;
    mod = sdrtx_mFM;
    strncpy(ifn,"/dev/dsp",1024u);
    ofn[0] = 0;
-   wshift = 0L;
+   wshift = 0UL;
    offset = 0.0f;
    devi = 0.0f;
    levmul = 50.0f;
@@ -678,7 +746,16 @@ int main(int argc, char **argv)
    upsamplef = 0.0f;
    limlim = 0.0f;
    oform = 1UL;
+   outlev = 1.0f;
+   subtonlev = 0.0f;
+   subtonhz = 0.0f;
+   wtone = 0.0f;
+   exitpipe = 0;
    Parms();
+   if (exitpipe) signal(SIGPIPE, exitprog);
+   subtonhz = subtonhz*1.3089969389957E-4f;
+   subtonlev = subtonlev*2.925625E+4f;
+   floatlev = X2C_DIVR(outlev,32768.0f);
    /*  ALLOCATE(buf, SIZE(buf^)); */
    /*  IF buf=NIL THEN Werr("out of memory") END; */
    if (devi==0.0f) {
@@ -686,8 +763,10 @@ int main(int argc, char **argv)
       else devi = 3000.0f;
    }
    if (upsamplef==0.0f) {
-      if (mod==sdrtx_mSTEREO) upsamplef = 22000.0f;
-      else upsamplef = 6000.0f;
+      if (mod==sdrtx_mSTEREO) upsamplef = 1.1E+5f;
+      else if (mod==sdrtx_mUSB || mod==sdrtx_mLSB) upsamplef = 1600.0f;
+      else if (mod==sdrtx_mAM) upsamplef = 4500.0f;
+      else upsamplef = devi+miclowpass;
    }
    sample = (float)adcrate*sampmul;
    if (ofn[0U]==0) osi_Werr("output file?", 13ul);
@@ -699,15 +778,19 @@ int main(int argc, char **argv)
    if (miclowpass!=0.0f) makelp24(miclowpass, (float)adcrate, &miclp);
    makelp24(1200.0f, (float)adcrate, &ssblpi);
    ssblpq = ssblpi;
+   makelp24(1200.0f, (float)adcrate, &ssblpic);
+   ssblpqc = ssblpi;
    if (mod==sdrtx_mSTEREO) {
       for (i = 0L; i<=63L; i++) {
          mkfir(0.1f, X2C_DIVR((float)i+0.5f,64.0f), 64UL,
                 radiofirtab[63L-i], 64ul);
       } /* end for */
    }
+   sinlev = 32766.0f;
+   if (outlev<=1.0f && oform!=4UL) sinlev = sinlev*outlev;
    for (i = 0L; i<=32767L; i++) {
-      sintab[i] = (short)X2C_TRUNCI(32767.0f*osic_sin(X2C_DIVR((float)
-                i*3.1415926535898f*2.0f,32768.0f)),-32768,32767);
+      sintab[i] = (short)X2C_TRUNCI(sinlev*osic_sin((float)
+                i*1.9174759848571E-4f),-32768,32767);
    } /* end for */
    ssbwinc = X2C_DIVR(9.4247779607694E+3f,(float)adcrate);
    fmdeviation = X2C_DIVR(X2C_DIVR(devi*4.294967295E+9f,sample),
@@ -715,7 +798,8 @@ int main(int argc, char **argv)
    pilot = X2C_DIVR(1.1938052083641E+5f,sample);
    pilotu = (uint32_t)X2C_TRUNCC(X2C_DIVL(8.1604378624E+13,
                 (double)sample),0UL,X2C_max_longcard);
-   limlev = 2.6330625E+4f;
+   limlev = 2.6330625E+4f-subtonlev;
+   if (limlev<=0.0f) osi_Werr("subtone level too high\012", 24ul);
    shift = (int32_t)X2C_TRUNCI(-(X2C_DIVR(offset*4.294967295E+9f,sample)),
                 X2C_min_longint,X2C_max_longint);
    pabuf = 2147483647UL;
@@ -753,13 +837,12 @@ int main(int argc, char **argv)
             buf[p] = sintab[(uint32_t)X2C_LSH((uint32_t)wshift,32,-17)];
             ++p;
             buf[p] = sintab[(uint32_t)X2C_LSH((uint32_t)
-                (wshift+1073741824L),32,-17)];
+                (wshift+1073741824UL),32,-17)];
             ++p;
-            wshift = wshift+shift+(int32_t)X2C_TRUNCI(upsamplelpi.uc,
-                X2C_min_longint,X2C_max_longint);
+            wshift += (uint32_t)(shift+(int32_t)
+                X2C_TRUNCI(upsamplelpi.uc,X2C_min_longint,X2C_max_longint));
          }
          else if (mod==sdrtx_mAM) {
-            /*WrFixed(bbi, 3, 1); WrStr(" "); */
             upsample(bbi, &upsamplelpi);
             si = (int32_t)X2C_TRUNCI(upsamplelpi.uc,X2C_min_longint,
                 X2C_max_longint)+32768L>>1;
@@ -769,9 +852,9 @@ int main(int argc, char **argv)
                 X2C_LSH((uint32_t)wshift,32,-17)]>>15);
             ++p;
             buf[p] = (short)(si*(int32_t)sintab[(uint32_t)
-                X2C_LSH((uint32_t)(wshift+1073741824L),32,-17)]>>15);
+                X2C_LSH((uint32_t)(wshift+1073741824UL),32,-17)]>>15);
             ++p;
-            wshift += shift;
+            wshift += (uint32_t)shift;
          }
          else if (mod==sdrtx_mSTEREO) {
             /*        IF is+is=TRUNC(sampmul)
@@ -784,7 +867,6 @@ int main(int argc, char **argv)
             /*        END; */
             if (fs>=firsteps) {
                fh = (is*64UL)/loops;
-               /*WrInt(fh,1); WrStr(" "); */
                bbi = dofiri(radiofirl, 64ul, radiofirtab[fh], 64ul, 64UL);
                bbq = dofiri(radiofirr, 64ul, radiofirtab[fh], 64ul, 64UL);
                fs = 0UL;
@@ -795,11 +877,11 @@ int main(int argc, char **argv)
             buf[p] = sintab[(uint32_t)X2C_LSH((uint32_t)wshift,32,-17)];
             ++p;
             buf[p] = sintab[(uint32_t)X2C_LSH((uint32_t)
-                (wshift+1073741824L),32,-17)];
+                (wshift+1073741824UL),32,-17)];
             ++p;
-            wshift = wshift+shift+(int32_t)
+            wshift += (uint32_t)(shift+(int32_t)
                 X2C_TRUNCI(fmdeviation*encstereo(upsamplelpi.uc,
-                upsamplelpq.uc, &cstereo),X2C_min_longint,X2C_max_longint);
+                upsamplelpq.uc, &cstereo),X2C_min_longint,X2C_max_longint));
          }
          else {
             /* iq baseband upsample */
@@ -808,22 +890,22 @@ int main(int argc, char **argv)
             si = (int32_t)sintab[(uint32_t)X2C_LSH((uint32_t)wshift,32,
                 -17)];
             sq = (int32_t)sintab[(uint32_t)X2C_LSH((uint32_t)
-                (wshift+1073741824L),32,-17)];
+                (wshift+1073741824UL),32,-17)];
             bi = (int32_t)X2C_TRUNCI(upsamplelpi.uc,X2C_min_longint,
                 X2C_max_longint);
             bq = (int32_t)X2C_TRUNCI(upsamplelpq.uc,X2C_min_longint,
                 X2C_max_longint);
             tmpi = bi*si-bq*sq>>15;
-            if (tmpi>32767L) tmpi = 32767L;
-            else if (tmpi<-32767L) tmpi = -32767L;
+            /*IF ABS(tmpi)>vu THEN vu:=ABS(tmpi) END; */
+            if (labs(tmpi)>32767L) sat(&tmpi);
             buf[p] = (short)tmpi;
             ++p;
             tmpi = bi*sq+bq*si>>15;
-            if (tmpi>32767L) tmpi = 32767L;
-            else if (tmpi<-32767L) tmpi = -32767L;
+            /*IF ABS(tmpi)>vu THEN vu:=ABS(tmpi) END; */
+            if (labs(tmpi)>32767L) sat(&tmpi);
             buf[p] = (short)tmpi;
             ++p;
-            wshift += shift;
+            wshift += (uint32_t)shift;
          }
          if (p>4095UL) SendSamps(buf, 4096ul, &p);
          if (is==tmp) break;
@@ -832,6 +914,7 @@ int main(int argc, char **argv)
    } while (!exit0);
    if (p>0UL) SendSamps(buf, 4096ul, &p);
    osic_Close(of);
+/*WrInt(vu, 1); WrStrLn("vu"); */
    X2C_EXIT();
    return 0;
 }

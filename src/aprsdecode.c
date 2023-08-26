@@ -82,6 +82,8 @@ aprsdecode_SET256 aprsdecode_SYMTABLE = {0x00000000UL,0x03FF8000UL,
 
 
 
+
+
 uint32_t aprsdecode_systime;
 uint32_t aprsdecode_realtime;
 uint32_t aprsdecode_lastlooped;
@@ -105,15 +107,14 @@ float aprsdecode_finezoom;
 float aprsdecode_parmfinezoom;
 char aprsdecode_mapdir[1025];
 aprsdecode_pMOUNTAIN aprsdecode_mountains;
+struct aprsdecode_POIFILELINE aprsdecode_poifiles[31];
+uint32_t aprsdecode_autoshots;
 
 
-struct aprsdecode__D1 aprsdecode_poifiles[30];
+struct aprsdecode__D1 aprsdecode_lums;
 
 
-struct aprsdecode__D2 aprsdecode_lums;
-
-
-struct aprsdecode__D3 aprsdecode_tracenew;
+struct aprsdecode__D2 aprsdecode_tracenew;
 aprsdecode_pTXMESSAGE aprsdecode_txmessages;
 aprsdecode_pMSGFIFO aprsdecode_msgfifo0;
 float aprsdecode_spikesens;
@@ -122,7 +123,7 @@ aprsdecode_pOPHIST aprsdecode_ophist2;
 aprsdecode_pOPHIST aprsdecode_ophist0;
 
 
-struct aprsdecode__D4 aprsdecode_gateways[10];
+struct aprsdecode__D3 aprsdecode_gateways[10];
 aprsdecode_pTCPSOCK aprsdecode_tcpsocks;
 struct aprsdecode_UDPSOCK aprsdecode_udpsocks0[4];
 uint32_t aprsdecode_lasttcptx;
@@ -290,7 +291,8 @@ static float sqr(float x)
 } /* end sqr() */
 
 
-static char Watchclock(uint32_t * t, uint32_t intervall)
+extern char aprsdecode_Watchclock(uint32_t * t,
+                uint32_t intervall)
 {
    uint32_t tn;
    if (intervall>0UL || *t==0UL) {
@@ -523,6 +525,10 @@ h a tx", 56ul);
                 44ul);
                osi_WrStrLn(" -S             start without graphic interface, \
 write screenshot on SIGPIPE", 77ul);
+               osi_WrStrLn("                  if file \"batch.txt\" exists, d\
+o commands from file", 68ul);
+               osi_WrStrLn(" -s <seconds>   make screenshot every <s> or do c\
+ommands from \"batch.txt\"", 74ul);
                osi_WrStrLn(" -u <seconds>   minimum seconds between screen up\
 dates", 55ul);
                osi_WrStrLn(" -v             show frames and analytics on stdo\
@@ -544,9 +550,7 @@ ut", 52ul);
                if (GetNum(h, 4096ul, &i, &n)>=0L && n<=1024UL) {
                   aprsdecode_lums.sym = (int32_t)n;
                }
-               else {
-                  Err("-X symbollumen", 15ul);
-               }
+               else Err("-X symbollumen", 15ul);
             }
             else if (lasth=='O') {
                osi_NextArg(h, 4096ul);
@@ -628,9 +632,7 @@ ut", 52ul);
                }
                else Err("-o maplumen", 12ul);
             }
-            else if (lasth=='v') {
-               aprsdecode_verb = 1;
-            }
+            else if (lasth=='v') aprsdecode_verb = 1;
             else if (lasth=='S') aprsdecode_WITHX11 = 0;
             else if (lasth=='u') {
                osi_NextArg(h, 4096ul);
@@ -639,6 +641,12 @@ ut", 52ul);
                   aprsdecode_updateintervall = n;
                }
                else Err("-u updateintervall", 19ul);
+            }
+            else if (lasth=='s') {
+               osi_NextArg(h, 4096ul);
+               i = 0UL;
+               if (GetNum(h, 4096ul, &i, &n)>=0L) aprsdecode_autoshots = n;
+               else Err("-s screenshot or batch intervall", 33ul);
             }
             else err = 1;
          }
@@ -1149,6 +1157,7 @@ static int32_t Sendudp(const char s[], uint32_t s_len,
    int32_t len;
    aprsdecode_FRAMEBUF raw;
    struct UDPSET modeminfo;
+   char hs[301];
    struct aprsdecode_UDPSOCK * anonym;
    len = -1L;
    if ((uport<=3UL && (int32_t)aprsdecode_udpsocks0[uport].fd>=0L)
@@ -1175,8 +1184,14 @@ static int32_t Sendudp(const char s[], uint32_t s_len,
                }
             }
          }
-         else if (aprsdecode_verb) {
-            osi_WrStrLn("wrong rf monitor format", 24ul);
+         else {
+            aprsstr_Assign(hs, 301ul, "Radio port: Frame not AX.25 encodable:\
+", 39ul);
+            aprsstr_Append(hs, 301ul, s, s_len);
+            useri_xerrmsg(hs, 301ul);
+            if (aprsdecode_verb) {
+               osi_WrStrLn("wrong rf monitor format", 24ul);
+            }
          }
       }
       else len = 0L;
@@ -1671,7 +1686,7 @@ static void beaconmacros(char s[], uint32_t s_len,
                aprsstr_Append(ns, 256ul, "\\\\", 3ul);
             }
             else if (s[i]=='v') {
-               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.79", 17ul);
+               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.81", 17ul);
             }
             else if (s[i]=='l') {
                if (aprstext_getmypos(&pos)) {
@@ -1871,7 +1886,8 @@ static void Timebeacon(aprsdecode_pTCPSOCK cp)
    if (useri_configon(useri_fALLOWNETTX) && useri_configon(useri_fCONNECT)) {
       bt = (uint32_t)useri_conf2int(useri_fNETBTIME, 0UL, 0L,
                 X2C_max_longint, 0L);
-      if ((bt>=1UL || cp->beacont==0UL) && Watchclock(&cp->beacont, bt)) {
+      if ((bt>=1UL || cp->beacont==0UL)
+                && aprsdecode_Watchclock(&cp->beacont, bt)) {
          if ((bt<60UL && bt>0UL) && cp->connt>0UL) {
             useri_xerrmsg("Netbeacon: too fast", 20ul);
          }
@@ -3523,7 +3539,7 @@ static void popupmessage(const char from[], uint32_t from_len,
                 const char to[], uint32_t to_len, const char txt[],
                  uint32_t txt_len, const char ack[],
                 uint32_t ack_len, uint32_t time0, char port,
-                char isquery0, char kill,
+                uint32_t isquery, char kill,
                 struct aprsstr_POSITION pos, const char item[],
                 uint32_t item_len)
 {
@@ -3562,7 +3578,8 @@ static void popupmessage(const char from[], uint32_t from_len,
    pm->itempos = pos;
    pm->time0 = time0;
    pm->port = port;
-   pm->query = isquery0;
+   pm->query = isquery>0UL;
+   pm->isaa = isquery==2UL;
    pm->next = 0;
    pm->deleteitem = kill;
    cnt = 1L;
@@ -3708,7 +3725,7 @@ static char sendtxmsg(uint32_t acknum, const aprsdecode_MONCALL to,
    aprsstr_Append(rfs, 512ul, s, 512ul);
    for (i = 0UL; i<=3UL; i++) {
       /* try the rf ports */
-      if ((useri_configon((uint8_t)(38UL+i))
+      if ((useri_configon((uint8_t)(39UL+i))
                 && (port=='A' || port==(char)(i+49UL))) && Sendudp(rfs,
                 512ul, i, 0UL)>0L) {
          memcpy(h,am,51u);
@@ -3832,7 +3849,7 @@ static void showmsg(const char from[], uint32_t from_len,
                 const char to[], uint32_t to_len, const char txt[],
                  uint32_t txt_len, const char ack[],
                 uint32_t ack_len, uint8_t rej, char my,
-                char query, char port)
+                uint32_t querytyp, char port)
 {
    aprsdecode_pOPHIST op;
    aprsdecode_pFRAMEHIST opf;
@@ -3876,7 +3893,8 @@ static void showmsg(const char from[], uint32_t from_len,
       if (my || useri_configon(useri_fMSGALLSSID) && (!aprsstr_StrCmp(from,
                 from_len, to, to_len) || useri_configon(useri_fPASSSELFMSG))) {
          if (!useri_configon(useri_fPOPUPMSG)) {
-            if (query) strncpy(s,"Query from ",501u);
+            if (querytyp==2UL) strncpy(s,"Autoanswered from ",501u);
+            else if (querytyp==1UL) strncpy(s,"Query from ",501u);
             else strncpy(s,"Message from ",501u);
             aprsstr_Append(s, 501ul, from, from_len);
             aprsstr_Append(s, 501ul, " to ", 5ul);
@@ -3887,7 +3905,7 @@ static void showmsg(const char from[], uint32_t from_len,
          iteminmsg(from, from_len, to, to_len, txt, txt_len, &itempos,
                 itemname, 9ul, &delitem);
          popupmessage(from, from_len, to, to_len, txt, txt_len, ack, ack_len,
-                 aprsdecode_realtime, port, query, delitem, itempos,
+                 aprsdecode_realtime, port, querytyp, delitem, itempos,
                 itemname, 9ul);
          ++aprsdecode_tracenew.winevent;
          beepmsg(0);
@@ -3908,16 +3926,20 @@ static void showmsg(const char from[], uint32_t from_len,
    }
 } /* end showmsg() */
 
+#define aprsdecode_AAKEYWORD "*"
 
-static char isquery(const struct aprsdecode_DAT dat, char port)
+
+static void isaquery(const struct aprsdecode_DAT dat, char port,
+                uint32_t * queryaa)
 {
    uint32_t j;
    uint32_t i;
+   char aatext[201];
    char err[201];
    char wdata[201];
    char key[201];
    char path[201];
-   char s[201];
+   char answ[201];
    /*  IF dat.msgtext[0]<>"?" THEN RETURN FALSE END; */
    aprsstr_Assign(path, 201ul, dat.symcall, 9ul);
    aprsstr_Append(path, 201ul, ">", 2ul);
@@ -3929,36 +3951,50 @@ static char isquery(const struct aprsdecode_DAT dat, char port)
       if (i+2UL==dat.hbitp) aprsstr_Append(path, 201ul, "*", 2ul);
       ++i;
    }
+   aatext[0] = 0;
    i = 0UL;
    for (;;) {
-      useri_confstrings(useri_fQUERYS, i, 0, s, 201ul);
-      if (s[0U]==0) break;
-      j = (uint32_t)aprsstr_InStr(s, 201ul, ":", 2ul);
+      useri_confstrings(useri_fQUERYS, i, 0, answ, 201ul);
+      if (answ[0U]==0) break;
+      j = (uint32_t)aprsstr_InStr(answ, 201ul, ":", 2ul);
       if (j>0UL) {
-         aprsstr_Assign(key, 201ul, s, 201ul);
+         aprsstr_Assign(key, 201ul, answ, 201ul);
          key[j] = 0;
-         aprsstr_Delstr(s, 201ul, 0UL, j+1UL);
+         aprsstr_Delstr(answ, 201ul, 0UL, j+1UL);
          if (aprsstr_InStr(dat.msgtext, 67ul, key, 201ul)==0L) {
-            aprsstr_Assign(wdata, 201ul, dat.msgtext, 67ul);
-            aprsstr_Delstr(wdata, 201ul, 0UL, aprsstr_Length(key, 201ul));
-            beaconmacros(s, 201ul, path, 201ul, wdata, 201ul, 1);
-            if (s[0U]==0) return 1;
-            if (!sendtxmsg(0UL, dat.symcall, s, 201ul, port, port!='N', 1UL,
-                err, 201ul)) {
-               useri_xerrmsg(err, 201ul);
-               return 0;
-            }
-            else {
-               useri_xerrmsg(err, 201ul);
-               return 1;
-            }
+            /* query keyword found */
+            if (answ[0U]==0) strncpy(answ,"Query not configured",201u);
+            break;
+         }
+         if (aprsstr_StrCmp(key, 201ul, "*", 2ul)) {
+            /* auto answer enabled */
+            aprsstr_Assign(aatext, 201ul, answ, 201ul);
+            if (answ[0U]==0) strncpy(answ,"AA-text not configured",201u);
          }
       }
       ++i;
    }
-   /*WrStrLn(port);WrStrLn(dat.symcall);WrStrLn(dat.msgtext); */
-   return 0;
-} /* end isquery() */
+   if (answ[0U]==0) {
+      /* no query found so try aa text */
+      aprsstr_Assign(answ, 201ul, aatext, 201ul);
+      *queryaa = 2UL;
+   }
+   else *queryaa = 1UL;
+   if (answ[0U]) {
+      aprsstr_Assign(wdata, 201ul, dat.msgtext, 67ul);
+      aprsstr_Delstr(wdata, 201ul, 0UL, aprsstr_Length(key, 201ul));
+      beaconmacros(answ, 201ul, path, 201ul, wdata, 201ul, 1);
+      if (answ[0U]) {
+         if (!sendtxmsg(0UL, dat.symcall, answ, 201ul, port, port!='N', 1UL,
+                err, 201ul)) {
+            useri_xerrmsg(err, 201ul);
+            *queryaa = 0UL;
+         }
+         else useri_xerrmsg(err, 201ul);
+      }
+   }
+   else *queryaa = 0UL;
+} /* end isaquery() */
 
 
 static void getmessage(aprsdecode_pTCPSOCK cp, uint32_t up,
@@ -3967,13 +4003,12 @@ static void getmessage(aprsdecode_pTCPSOCK cp, uint32_t up,
 {
    uint32_t i;
    char void0;
-   char query;
    char fit;
    char my[100];
    char h[100];
    char port;
-   /*    my:MONCALL; */
    char ch0;
+   uint32_t querytyp;
    useri_confstr(useri_fMYCALL, my, 100ul);
    if (aprstext_callwrong(my, 100ul)) return;
    aprsstr_Assign(h, 100ul, dat.msgto, 9ul);
@@ -3993,10 +4028,11 @@ static void getmessage(aprsdecode_pTCPSOCK cp, uint32_t up,
       if (dat.ackrej==aprsdecode_MSGMSG) {
          /*FOR i:=0 TO HIGH(dat.acktext) DO WrInt(ORD(dat.acktext[i]), 4);
                 END; WrStrLn("=ack"); */
-         query = isquery(dat, port);
+         isaquery(dat, port, &querytyp);
          showmsg(dat.symcall, 9ul, dat.msgto, 9ul, dat.msgtext, 67ul,
-                dat.acktext, 5ul, dat.ackrej, 1, query, port);
-         if (!query && dat.acktext[0UL]) {
+                dat.acktext, 5ul, dat.ackrej, 1, querytyp, port);
+         if (dat.acktext[0UL]) {
+            /*querytyp=0 &*/
             void0 = sendtxmsg(0UL, dat.symcall, dat.acktext, 5ul, port,
                 port!='N', 0UL, h, 100ul);
             useri_xerrmsg(h, 100ul);
@@ -4009,7 +4045,7 @@ static void getmessage(aprsdecode_pTCPSOCK cp, uint32_t up,
    else if (fit && dat.ackrej==aprsdecode_MSGMSG) {
       /*  WrStr("other ssid message "); */
       showmsg(dat.symcall, 9ul, dat.msgto, 9ul, dat.msgtext, 67ul,
-                dat.acktext, 5ul, dat.ackrej, 0, 0, port);
+                dat.acktext, 5ul, dat.ackrej, 0, 0UL, port);
    }
 } /* end getmessage() */
 
@@ -4471,6 +4507,7 @@ static void inwindow(aprsdecode_pOPHIST op, const char rawbuf[],
    uint32_t i;
    char in;
    aprsdecode_pFRAMEHIST pf;
+   char my[100];
    char wc[100];
    aprsdecode_FILENAME fn;
    aprsdecode_pVARDAT pv;
@@ -4497,41 +4534,72 @@ static void inwindow(aprsdecode_pOPHIST op, const char rawbuf[],
       }
       if (in) ++aprsdecode_tracenew.winevent;
       /*find user in watchlist */
-      /*  IF posvalid(op^.lastpos) THEN */
-      j = 0UL;
-      matchlen = 0UL;
-      for (;;) {
-         useri_confstrings(useri_fWATCH, j, 1, wc, 100ul);
-         if (wc[0U]==0) break;
-         i = 0UL;
-         ii = 0UL;
+      if ((0x2UL & aprsdecode_lums.followwhat)) {
+         j = 0UL;
+         matchlen = 0UL;
          for (;;) {
-            if (((i>99UL || ii>8UL) || wc[i]==0) || op->call[ii]==0) {
-               if ((ii>8UL || op->call[ii]==0) && (wc[i]==0 || wc[i]=='*')) {
-                  if (i>=matchlen) {
-                     memcpy(aprsdecode_tracenew.call,op->call,9u);
-                     doset = useri_confflags(useri_fWATCH, j);
-                     matchlen = i;
+            useri_confstrings(useri_fWATCH, j, 1, wc, 100ul);
+            if (wc[0U]==0) break;
+            i = 0UL;
+            ii = 0UL;
+            for (;;) {
+               if (((i>99UL || ii>8UL) || wc[i]==0) || op->call[ii]==0) {
+                  if ((ii>8UL || op->call[ii]==0) && (wc[i]==0 || wc[i]=='*')
+                ) {
+                     if (i>=matchlen) {
+                        memcpy(aprsdecode_tracenew.call,op->call,9u);
+                        doset = useri_confflags(useri_fWATCH, j);
+                        matchlen = i;
+                     }
                   }
+                  break;
                }
-               break;
+               if (wc[i]=='*') {
+                  if (wc[i+1UL]) ++i;
+               }
+               else {
+                  if (X2C_CAP(wc[i])!=X2C_CAP(op->call[ii])) break;
+                  ++i;
+               }
+               ++ii;
             }
-            if (wc[i]=='*') {
-               if (wc[i+1UL]) ++i;
-            }
-            else {
-               if (X2C_CAP(wc[i])!=X2C_CAP(op->call[ii])) break;
-               ++i;
-            }
-            ++ii;
+            ++j;
          }
-         ++j;
       }
-      /*  END; */
+      /*
+      WrStr(":::");
+      WrInt(ORD(lums.followwhat={FOLLOWX}),2);
+      IF click.entries>0 THEN
+      WrInt(ORD(click.entries>0),2);
+      WrInt(ORD(click.table[click.selected].opf<>NIL),2);
+      WrInt(ORD(StrCmp(op^.call, click.table[click.selected].opf^.call)),2);
+      END;
+      */
+      if ((((aprsdecode_lums.followwhat==0x1UL && aprsdecode_click.entries>0UL)
+                 && aprsdecode_click.table[aprsdecode_click.selected].opf)
+                && aprsstr_StrCmp(op->call, 9ul,
+                aprsdecode_click.table[aprsdecode_click.selected].opf->call,
+                9ul)) && aprspos_posvalid(aprsdecode_click.table[aprsdecode_click.selected].opf->lastpos)
+                ) {
+         /*WrStr(click.table[click.selected].opf^.call);  */
+         memcpy(aprsdecode_tracenew.call,op->call,9u);
+         doset = 2U;
+      }
+      /*WrStrLn(""); */
       aprsdecode_tracenew.beep = (char)(doset&1);
       aprsdecode_tracenew.follow = (char)(doset/2U&1);
-      if ((!aprsdecode_tracenew.follow && aprsdecode_click.watchmhop)
-                && X2C_STRCMP(op->call,9u,aprsdecode_click.mhop,9u)==0) {
+      if (aprsdecode_tracenew.follow) {
+         useri_confstr(useri_fMYCALL, my, 100ul);
+         if (aprsstr_StrCmp(op->call, 9ul, my, 100ul)) {
+            /* follow mycall so set main position */
+            aprstext_postostr(op->lastpos, '3', my, 100ul);
+            if (aprspos_posvalid(op->lastpos)) {
+               useri_AddConfLine(useri_fMYPOS, 0U, my, 100ul);
+            }
+         }
+      }
+      else if (aprsdecode_click.watchmhop && X2C_STRCMP(op->call,9u,
+                aprsdecode_click.mhop,9u)==0) {
          aprsdecode_tracenew.follow = 1;
          memcpy(aprsdecode_tracenew.call,op->call,9u);
       }
@@ -4542,12 +4610,6 @@ static void inwindow(aprsdecode_pOPHIST op, const char rawbuf[],
          /* append to watchcall file */
          aprsstr_Assign(fn, 1024ul, op->call, 9ul);
          alfanum(fn, 1024ul); /* remove bad chars */
-         /*
-               confstr(fLOGWFN, fn);
-               filepath(fn);
-               IF fn[0]<>0C THEN Append(fn, DIRSEP) END;
-               Append(fn, wc);
-         */
          aprsdecode_makelogfn(fn, 1024ul);
          if (!wrlog(rawbuf, rawbuf_len, aprsdecode_realtime, fn, 1024ul,
                 0L)) poplogerr(op->call, 9ul);
@@ -5745,7 +5807,7 @@ extern void aprsdecode_udpconnstat(uint32_t port, char s[],
             aprsstr_Append(s, s_len, ":", 2ul);
             i = 1UL;
             for (;;) {
-               useri_conf2str((uint8_t)(38UL+port), 0UL, i, 1, h, 51ul);
+               useri_conf2str((uint8_t)(39UL+port), 0UL, i, 1, h, 51ul);
                if (h[0U]==0) break;
                if (i>1UL) aprsstr_Append(s, s_len, " ", 2ul);
                aprsstr_Append(s, s_len, h, 51ul);
@@ -5900,7 +5962,7 @@ static char tcpconn(aprsdecode_pTCPSOCK * sockchain, int32_t f)
          aprsstr_Append(h, 512ul, s, 100ul);
       }
       aprsstr_Append(h, 512ul, " vers ", 7ul);
-      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.79", 17ul);
+      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.81", 17ul);
       appfilter(h, 512ul, 0);
       /*    IF filter[0]<>0C THEN Append(h, " filter ");
                 Append(h, filter) END; */
@@ -5983,8 +6045,8 @@ static void Gateconn(aprsdecode_pTCPSOCK * cp)
          saybusy(&(*cp)->fd, "", 1ul);
       }
    }
-   else if (useri_configon(useri_fCONNECT) && Watchclock(&connecttime,
-                30UL)) {
+   else if (useri_configon(useri_fCONNECT)
+                && aprsdecode_Watchclock(&connecttime, 30UL)) {
       for (;;) {
          useri_confstrings(useri_fSERVERURL, cycleservers, 0, s, 1000ul);
          if (s[0U] || cycleservers==0UL) break;
@@ -6092,7 +6154,7 @@ static void rfbeacons(void)
                   else if ((uint8_t)port>='1') {
                      if (s[0UL]) {
                         i = (uint32_t)(uint8_t)port-49UL;
-                        if (i<4UL && useri_configon((uint8_t)(38UL+i))) {
+                        if (i<4UL && useri_configon((uint8_t)(39UL+i))) {
                            if (Sendudp(s, 512ul, i, 1UL)<0L) {
                               strncpy(says,"beacon: Rfport ",101u);
                               aprsstr_Append(says, 101ul,
@@ -6184,11 +6246,11 @@ extern void aprsdecode_tcpjobs(void)
    for (i = 0L; i<=3L; i++) {
       { /* with */
          struct aprsdecode_UDPSOCK * anonym0 = &aprsdecode_udpsocks0[i];
-         if (useri_configon((uint8_t)(38UL+(uint32_t)i))
-                && !useri_isupdated((uint8_t)(38UL+(uint32_t)i))) {
+         if (useri_configon((uint8_t)(39UL+(uint32_t)i))
+                && !useri_isupdated((uint8_t)(39UL+(uint32_t)i))) {
             if ((int32_t)anonym0->fd<0L) {
                ok0 = 0;
-               useri_confstr((uint8_t)(38UL+(uint32_t)i), s, 1000ul);
+               useri_confstr((uint8_t)(39UL+(uint32_t)i), s, 1000ul);
                if (s[0U]) {
                   memset((char *) &aprsdecode_udpsocks0[i],(char)0,
                 sizeof(struct aprsdecode_UDPSOCK));
@@ -6231,7 +6293,7 @@ Rx)Port or in Use", 44ul);
                   useri_xerrmsg(s, 1000ul);
                }
                if (!ok0) {
-                  useri_configbool((uint8_t)(38UL+(uint32_t)i), 0);
+                  useri_configbool((uint8_t)(39UL+(uint32_t)i), 0);
                }
             }
          }
@@ -7015,10 +7077,11 @@ extern void aprsdecode_tcpin(aprsdecode_pTCPSOCK acttcp)
 extern void aprsdecode_initparms(void)
 {
    uint32_t i;
-   struct aprsdecode__D2 * anonym;
+   struct aprsdecode__D1 * anonym;
+   aprsdecode_autoshots = 0UL;
    initcrc12();
    memset((char *)aprsdecode_gateways,(char)0,
-                sizeof(struct aprsdecode__D4 [10]));
+                sizeof(struct aprsdecode__D3 [10]));
    memset((char *)aprsdecode_udpsocks0,(char)0,
                 sizeof(struct aprsdecode_UDPSOCK [4]));
    for (i = 0UL; i<=3UL; i++) {
@@ -7045,7 +7108,7 @@ extern void aprsdecode_initparms(void)
    maxspeed = 1000.0f;
    nextbeep = 0UL;
    { /* with */
-      struct aprsdecode__D2 * anonym = &aprsdecode_lums;
+      struct aprsdecode__D1 * anonym = &aprsdecode_lums;
       anonym->map = 350L;
       anonym->rfbri = 350L;
       anonym->track = 1000L;

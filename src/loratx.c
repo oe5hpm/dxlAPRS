@@ -46,7 +46,9 @@
 
 #define loratx_OPTIMIZE 2
 
-#define loratx_BASEGAIN 127.9
+#define loratx_BASEGAIN 127.0
+
+#define loratx_LIMLEV 127.4
 
 static uint8_t loratx_WHITEN[255] = {255U,254U,252U,248U,240U,225U,194U,133U,11U,23U,47U,94U,188U,120U,241U,227U,198U,
                 141U,26U,52U,104U,208U,160U,64U,128U,1U,2U,4U,8U,17U,35U,71U,142U,28U,56U,113U,226U,196U,137U,18U,37U,
@@ -93,7 +95,15 @@ static struct _0 tests[256];
 
 static uint8_t nib[12];
 
-static uint32_t sb[1000];
+static uint32_t sb[10000];
+
+
+struct _1 {
+   float * Adr;
+   size_t Len0;
+};
+
+static struct _1 * echofifo;
 
 static int32_t cfgopt;
 
@@ -110,6 +120,10 @@ static char withcrc;
 static char implicitheader;
 
 static char addjunk;
+
+static char swapiq;
+
+static char overdriven;
 
 static float sample;
 
@@ -143,6 +157,16 @@ static float pow0;
 
 static float pows;
 
+static float echodelay;
+
+static float echo0;
+
+static float echo1;
+
+static float headzeros;
+
+static float headzerosfrac;
+
 static double w;
 
 static double fr;
@@ -150,6 +174,10 @@ static double fr;
 static double shift;
 
 static double rnd;
+
+static uint32_t echop;
+
+static uint32_t echosize;
 
 static uint32_t i;
 
@@ -238,6 +266,21 @@ static float Noise12(void)
 static void WrSamp(float s)
 {
    int32_t n;
+   float es;
+   if (echofifo) {
+      es = echofifo->Adr[echop];
+      echofifo->Adr[echop] = s;
+      s = s*echo0+es*echo1;
+      echop = (echop+1UL)%((echofifo->Len0-1)+1UL);
+   }
+   if (s<(-127.4f)) {
+      s = (-127.4f);
+      overdriven = 1;
+   }
+   else if (s>127.4f) {
+      s = 127.4f;
+      overdriven = 1;
+   }
    if (outform==0UL) {
       ob[wp] = (uint8_t)(uint32_t)X2C_TRUNCC(s+127.5f,0UL,X2C_max_longcard);
       ++wp;
@@ -251,7 +294,7 @@ static void WrSamp(float s)
       ++wp;
    }
    else {
-      s = s*7.8186082877248E-3f; /* float is -1 to 1 */
+      s = s*7.8740157480315E-3f; /* float is -1 to 1 */
       n = (int32_t)*X2C_CAST(&s,float,uint32_t,uint32_t *);
       ob[wp] = (uint8_t)n;
       ++wp;
@@ -406,11 +449,13 @@ static uint32_t _cnst[10] = {64UL,48UL,32UL,24UL,16UL,12UL,8UL,4UL,2UL,1UL};
 X2C_STACK_LIMIT(100000l)
 extern int main(int argc, char **argv)
 {
-   uint32_t tmp;
+   size_t tmp[1];
+   uint32_t tmp0;
    X2C_BEGIN(&argc,argv,1,4000000l,8000000l);
    aprsstr_BEGIN();
    osi_BEGIN();
    verb = 0;
+   overdriven = 0;
    outform = 0UL;
    outgain = 1.0f;
    sf = 12UL;
@@ -420,7 +465,7 @@ extern int main(int argc, char **argv)
    sample = 1.25E+5f;
    /*  sample:=2048000.0; */
    /*  sample:=2600000.0; */
-   withcrc = 1;
+   withcrc = 0;
    preamb = 8UL;
    cfgopt = -1L;
    fno[0] = 0;
@@ -431,7 +476,12 @@ extern int main(int argc, char **argv)
    testc = 0UL;
    noisegain = 0.0f;
    addzeros = 0UL;
+   headzeros = 0.0f;
    addjunk = 0;
+   swapiq = 0;
+   echofifo = 0;
+   echo1 = 0.0f;
+   echop = 0UL;
    for (;;) {
       osi_NextArg(as, 4096ul);
       if (as[0U]==0) break;
@@ -443,6 +493,7 @@ extern int main(int argc, char **argv)
             else if (as[1U]=='I') implicitheader = 1;
             else if (as[1U]=='v') verb = 1;
             else if (as[1U]=='j') addjunk = 1;
+            else if (as[1U]=='q') swapiq = 1;
             else if (as[1U]=='O') {
                osi_NextArg(as, 4096ul);
                if (!aprsstr_StrToInt(as, 4096ul, &cfgopt)) {
@@ -473,10 +524,25 @@ extern int main(int argc, char **argv)
                   Err("-g <gainfactor 0.0..1.0>", 25ul);
                }
             }
+            else if (as[1U]=='R') {
+               osi_NextArg(as, 4096ul);
+               if (!aprsstr_StrToFix(&val, as, 4096ul)) Err("-R <seed>", 10ul);
+               rnd = (double)val;
+            }
+            else if (as[1U]=='E') {
+               osi_NextArg(as, 4096ul);
+               if (!aprsstr_StrToFix(&echodelay, as, 4096ul)) {
+                  Err("-E <delay> <gain>", 18ul);
+               }
+               osi_NextArg(as, 4096ul);
+               if (!aprsstr_StrToFix(&echo1, as, 4096ul)) Err("-E <delay> <gain>", 18ul);
+            }
             else if (as[1U]=='f') {
                osi_NextArg(as, 4096ul);
                if (as[0U]=='u' && as[1U]=='8') outform = 0UL;
-               else if ((as[0U]=='i' && as[1U]=='1') && as[2U]=='6') outform = 1UL;
+               else if ((as[0U]=='i' && as[1U]=='1') && as[2U]=='6') {
+                  outform = 1UL;
+               }
                else if ((as[0U]=='f' && as[1U]=='3') && as[2U]=='2') outform = 2UL;
                else Err("-f output formats u8 i16 f32", 29ul);
             }
@@ -489,13 +555,17 @@ extern int main(int argc, char **argv)
             }
             else if (as[1U]=='s') {
                osi_NextArg(as, 4096ul);
-               if ((!aprsstr_StrToCard(as, 4096ul, &sf) || sf<6UL) || sf>12UL) {
-                  Err("-s <sf> 6..12", 14ul);
+               if ((!aprsstr_StrToCard(as, 4096ul, &sf) || sf<5UL) || sf>12UL) {
+                  Err("-s <sf> 5..12", 14ul);
                }
             }
             else if (as[1U]=='z') {
                osi_NextArg(as, 4096ul);
                if (!aprsstr_StrToCard(as, 4096ul, &addzeros)) Err("-z <n>", 7ul);
+            }
+            else if (as[1U]=='Z') {
+               osi_NextArg(as, 4096ul);
+               if (!aprsstr_StrToFix(&headzeros, as, 4096ul)) Err("-Z <n>", 7ul);
             }
             else if (as[1U]=='N') {
                osi_NextArg(as, 4096ul);
@@ -530,6 +600,7 @@ extern int main(int argc, char **argv)
 (7)", 96ul);
                osi_WrStrLn(" -C                  send CRC", 30ul);
                osi_WrStrLn(" -c <codingrate>     4..8 (5)", 30ul);
+               osi_WrStrLn(" -E <delay(s)> <gain> add radiopath echo with delay (s) and gain e.g. 0.0005 0.5", 81ul);
                osi_WrStrLn(" -f <output-format>  u8 i16 f32 (u8)", 37ul);
                osi_WrStrLn(" -g <gainfactor>     output level 0.0..1.0, with -f f32 more (1.0)", 67ul);
                osi_WrStrLn(" -h                  this...", 29ul);
@@ -539,16 +610,19 @@ extern int main(int argc, char **argv)
                osi_WrStrLn(" -N <hh>             Sync symbols, network-id in hex (12)", 58ul);
                osi_WrStrLn(" -O <0..1>           optimize on off else automatic (-1)", 57ul);
                osi_WrStrLn(" -o <outfile>        iq file name", 34ul);
-               osi_WrStrLn(" -p <chirps>         preample length (8)", 41ul);
+               osi_WrStrLn(" -p <chirps>         preamble length (8)", 41ul);
+               osi_WrStrLn(" -q                  invert IQ", 31ul);
+               osi_WrStrLn(" -R <x>              random seed for noise (0.0)", 49ul);
                osi_WrStrLn(" -r <samplerate>     iq sampelrate Hz (125000.0)", 49ul);
                osi_WrStrLn(" -S <shift>          shift signal frequency inside iq-band (Hz) (0)", 68ul);
+               osi_WrStrLn(" -s <sf>             spread factor (5..12) (12)", 48ul);
                osi_WrStrLn(" -T <n> <pattern>    for FEC tests set n\'th chirp to zero level (pattern=0)", 76ul);
                osi_WrStrLn("                       or xor with <pattern> (decimal), may be repeatet", 72ul);
-               osi_WrStrLn(" -s <sf>             spread factor (6..12) (12)", 48ul);
                osi_WrStrLn(" -v                  verbous", 29ul);
                osi_WrStrLn(" -w <level>          add white noise", 37ul);
+               osi_WrStrLn(" -Z <n>              zero or noise chirps before data (0.0)", 60ul);
                osi_WrStrLn(" -z <n>              add zero or noise chirps at end (0)", 57ul);
-               osi_WrStrLn("loratx -i beacon.txt -j -f i16 -r 2600000 -C -o /tmp/lora.iq -s 12 -c 5 -b 7", 77ul);
+               osi_WrStrLn("loratx -i beacon.txt -j -f i16 -r 2600000 -C -o /tmp/lora.iq -z 10 -s 12 -c 5 -b 7", 83ul);
                X2C_ABORT();
             }
             else Err(as, 4096ul);
@@ -556,6 +630,19 @@ extern int main(int argc, char **argv)
          else Err("use -h", 7ul);
       }
       else Err("use -h", 7ul);
+   }
+   if (echo1!=0.0f) {
+      /* aplay echo */
+      echo0 = X2C_DIVR(1.0f,1.0f+(float)fabs(echo1));
+      echo1 = 1.0f-echo0;
+      if (echo1<0.0f) echo1 = -echo1;
+      if (echodelay<=0.0f) Err("echo delay >0.0", 16ul);
+      echodelay = echodelay*sample;
+      if (echodelay>1.E+8f) Err("echo delay too high", 20ul);
+      echosize = ((uint32_t)X2C_TRUNCC(echodelay,0UL,X2C_max_longcard)/2UL)*2UL;
+      if (echosize>0UL) {
+         X2C_DYNALLOCATE((char **) &echofifo,sizeof(float),(tmp[0] = echosize,tmp),1u);
+      }
    }
    if (!implicitheader && sf==6UL) Err("sf=6 needs implicit header", 27ul);
    if (fabs(shift)*2.0+(double)bw>(double)(sample*1.001f)) {
@@ -574,14 +661,16 @@ extern int main(int argc, char **argv)
       osic_WrFixed(bw, 3L, 1UL);
       osi_WrStrLn("", 1ul);
       osi_WrStr("chirptime s:", 13ul);
-      osic_WrFixed(X2C_DIVR((float)(uint32_t)X2C_LSH(0x1UL,32,(int32_t)sf),bw), 6L, 1UL);
+      osic_WrFixed(X2C_DIVR((float)(uint32_t)(1UL<<sf),bw), 6L, 1UL);
       osi_WrStrLn("", 1ul);
       osi_WrStr("sync/netid:", 12ul);
       osi_WrHex(netid, 1UL);
       osi_WrStrLn("", 1ul);
    }
    fi = osi_OpenRead(fni, 4096ul);
-   if (fi<0L) Err("input file open", 16ul);
+   if (fi<0L) {
+      Err("input file open", 16ul);
+   }
    ret = osi_RdBin(fi, (char *)text, 301u/1u, 301UL);
    osic_Close(fi);
    if (ret<0L) Err("input file read", 16ul);
@@ -627,11 +716,11 @@ extern int main(int argc, char **argv)
    for (i = paylen; i<=300UL; i++) {
       text[i] = 0;
    } /* end for */
-   tmp = txtlen-1UL;
+   tmp0 = txtlen-1UL;
    i = 0UL;
-   if (i<=tmp) for (;; i++) {
+   if (i<=tmp0) for (;; i++) {
       text[i] = (char)((uint8_t)(uint8_t)text[i]^(uint8_t)_cnst0[i]); /* whiten */
-      if (i==tmp) break;
+      if (i==tmp0) break;
    } /* end for */
    if (!implicitheader) {
       nib[0U] = (uint8_t)(txtlen/16UL);
@@ -639,19 +728,19 @@ extern int main(int argc, char **argv)
       nib[2U] = (uint8_t)((uint32_t)withcrc+(cr-4UL)*2UL);
       setheadcrc(nib, 12ul);
       wp = 0UL;
-      tmp = (sf-2UL)-1UL;
+      tmp0 = (sf-2UL)-1UL;
       i = 5UL;
-      if (i<=tmp) for (;; i++) {
-         /* fill rest of header withpayload */
+      if (i<=tmp0) for (;; i++) {
+         /* fill rest of header with payload */
          nib[i] = nibble(wp, text, 301ul);
          ++wp;
-         if (i==tmp) break;
+         if (i==tmp0) break;
       } /* end for */
-      tmp = (sf-2UL)-1UL;
+      tmp0 = (sf-2UL)-1UL;
       i = 0UL;
-      if (i<=tmp) for (;; i++) {
+      if (i<=tmp0) for (;; i++) {
          sethamm(4UL, &nib[i]); /* apply 4 bit hamming */
-         if (i==tmp) break;
+         if (i==tmp0) break;
       } /* end for */
    }
    /*
@@ -661,14 +750,25 @@ extern int main(int argc, char **argv)
    END;
    WrStrLn("");
    */
-   memset((char *)sb,(char)0,4000UL);
+   memset((char *)sb,(char)0,40000UL);
    sp = 0UL;
-   tmp = preamb;
+   headzerosfrac = 0.0f;
+   if (headzeros>0.0f) {
+      i = (uint32_t)X2C_TRUNCC(headzeros,0UL,X2C_max_longcard);
+      headzerosfrac = headzeros-(float)i;
+      if (headzerosfrac!=0.0f) ++i;
+      while (i>0UL) {
+         sb[sp] = 0x10000000UL;
+         if (sp<9997UL) ++sp;
+         --i;
+      }
+   }
+   tmp0 = preamb;
    i = 1UL;
-   if (i<=tmp) for (;; i++) {
+   if (i<=tmp0) for (;; i++) {
       sb[sp] = 0UL;
       ++sp;
-      if (i==tmp) break;
+      if (i==tmp0) break;
    } /* end for */
    sb[sp] = (uint32_t)((netid/16UL)*8UL);
    ++sp;
@@ -678,9 +778,9 @@ extern int main(int argc, char **argv)
    ++sp;
    sb[sp] = 0x80000000UL; /* reverse chirp */
    ++sp;
-   sb[sp] = 0xC0000000UL; /* quarter up chirp */
+   sb[sp] = 0xC0000000UL; /* quarter reverse chirp */
    ++sp;
-   if (!implicitheader) interleav(sf-2UL, 8UL, 2UL, &sp, sb, 1000ul, nib, 12ul);
+   if (!implicitheader) interleav(sf-2UL, 8UL, 2UL, &sp, sb, 10000ul, nib, 12ul);
    /*
    FOR j:=0 TO 9 DO   (* show interleaved header *)
      FOR i:=0 TO 7 DO WrInt(ORD((11-j) IN CAST(SET32,sb[sp+i-8])),1); END;
@@ -689,19 +789,19 @@ extern int main(int argc, char **argv)
    WrStrLn("");
    */
    while (wp/2UL<paylen) {
-      tmp = (sf-optimize)-1UL;
+      tmp0 = (sf-optimize)-1UL;
       i = 0UL;
-      if (i<=tmp) for (;; i++) {
+      if (i<=tmp0) for (;; i++) {
          nib[i] = nibble(wp, text, 301ul);
          sethamm(cr-4UL, &nib[i]);
          ++wp;
-         if (i==tmp) break;
+         if (i==tmp0) break;
       } /* end for */
-      interleav(sf-optimize, cr, optimize, &sp, sb, 1000ul, nib, 12ul);
+      interleav(sf-optimize, cr, optimize, &sp, sb, 10000ul, nib, 12ul);
    }
    while (addzeros>0UL) {
       sb[sp] = 0x10000000UL;
-      if (sp<997UL) ++sp;
+      if (sp<9997UL) ++sp;
       --addzeros;
    }
    if (noisegain!=0.0f) {
@@ -727,7 +827,7 @@ extern int main(int argc, char **argv)
    i = 0UL;
    while (i<testc) {
       /* modify chirps for tests */
-      if (tests[i].nsym<=999UL) {
+      if (tests[i].nsym<=9999UL) {
          if (tests[i].xor==0UL) sb[tests[i].nsym] |= 0x10000000UL;
          else {
             sb[tests[i].nsym] = sb[tests[i].nsym]^(uint32_t)tests[i].xor; /* xor with pattern */
@@ -737,47 +837,50 @@ extern int main(int argc, char **argv)
       ++i;
    }
    if (verb) {
-      tmp = sp-1UL;
+      tmp0 = sp-1UL;
       i = 1UL;
-      if (i<=tmp) for (;; i++) {
+      if (i<=tmp0) for (;; i++) {
          osic_WrINT32(i, 2UL);
          osi_WrStr(":", 2ul);
          for (j = 11UL;; j--) {
             osic_WrINT32((uint32_t)X2C_IN(j,32,sb[i]), 1UL);
             if (j==0UL) break;
          } /* end for */
-         if ((0x10000000UL & sb[i])) {
-            osi_WrStr(" -zero-level", 13ul);
-         }
+         if ((0x10000000UL & sb[i])) osi_WrStr(" -zero-level", 13ul);
          else if ((0x20000000UL & sb[i])) osi_WrStr(" -xord", 7ul);
          else if ((0x40000000UL & sb[i])) osi_WrStr(" -quarter", 10ul);
          else if ((0x80000000UL & sb[i])) osi_WrStr(" -reverse", 10ul);
          osi_WrStrLn("", 1ul);
-         if (i==tmp) break;
+         if (i==tmp0) break;
       } /* end for */
    }
    /*FOR i:=1 TO TRUNC(sample) DIV 2 DO WrSamp(0.0); WrSamp(0.0) END; */
-   noisegain = noisegain*127.9f*2.0f;
+   noisegain = noisegain*127.0f*2.0f;
    pow0 = 0.0f;
    pows = 0.0f;
    powc = 0UL;
    bws = (X2C_DIVR(bw,sample))*6.283185307f;
+   if (headzerosfrac!=0.0f) {
+      samp = (uint32_t)X2C_TRUNCC(X2C_DIVR(1.0f-headzerosfrac,sampbaud),0UL,X2C_max_longcard);
+   }
    do {
       symf = (float)samp*sampbaud;
       sym = (uint32_t)X2C_TRUNCC(symf,0UL,X2C_max_longcard);
       frac = ((symf-(float)sym)-0.5f)+(float)(uint32_t)(sb[sym]&0xFFFUL)*bind;
       if ((0x40000000UL & sb[sym])==0 || frac<(-0.25f)) {
          while (frac>0.5f) frac = frac-1.0f;
-         while (frac<(-0.5f)) frac = frac+1.0f;
+         while (frac<(-0.5f)) {
+            frac = frac+1.0f;
+         }
          fr = (double)(frac*bws);
-         if ((0x80000000UL & sb[sym])) fr = -fr;
+         if (((0x80000000UL & sb[sym])!=0)!=swapiq) fr = -fr;
          /*      fff:=fff+(fr-fff)*lpf;                         (* baseband lowpass does not work well *)   */
          /*      ff:=ff+(fff-ff)*lpf;                           (* baseband lowpass does not work well *)   */
          w = w+fr+shift;
          if (w>3.1415926535) w = w-6.283185307;
          else if (w<(-3.1415926535)) w = w+6.283185307;
-         amp = (0.5f-(float)fabs(frac))*12790.0f; /* lower amplitude at freq jump works */
-         if (amp>127.9f) amp = 127.9f;
+         amp = (0.5f-(float)fabs(frac))*12700.0f; /* lower amplitude at freq jump works */
+         if (amp>127.0f) amp = 127.0f;
          amp = amp*outgain;
          if ((0x10000000UL & sb[sym])) amp = 0.0f;
          if (noisegain!=0.0f) {
@@ -799,13 +902,14 @@ extern int main(int argc, char **argv)
       ++samp;
    } while (sym<sp);
    if (wp>0UL) osi_WrBin(fo, (char *)ob, 32768u/1u, wp);
+   if (overdriven) osi_WrStrLn("WARNING: output level hard limited!", 36ul);
    if (verb && noisegain!=0.0f) {
       osi_WrStr("sig:", 5ul);
       osic_WrFixed(osic_ln(outgain)*8.685889638f, 2L, 0UL);
       osi_WrStr("dB", 3ul);
       if (pow0!=0.0f && powc) {
-         pow0 = X2C_DIVR(pow0,(float)powc*127.9f*127.9f);
-         pows = X2C_DIVR(pows,(float)powc*127.9f*127.9f);
+         pow0 = X2C_DIVR(pow0,(float)powc*127.0f*127.0f);
+         pows = X2C_DIVR(pows,(float)powc*127.0f*127.0f);
          osi_WrStr(" noise:", 8ul);
          osic_WrFixed(osic_ln(pow0)*8.685889638f*0.5f, 2L, 0UL);
          osi_WrStr("dB", 3ul);

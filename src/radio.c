@@ -17,15 +17,13 @@
 #include "osi.h"
 #endif
 #include <osic.h>
-#ifndef mlib_H_
-#include "mlib.h"
-#endif
 #ifndef aprsstr_H_
 #include "aprsstr.h"
 #endif
 #ifndef sdr_H_
 #include "sdr.h"
 #endif
+#include <termios.h>
 
 /* fm stereo radio with rtl_tcp iq by OE5DXL */
 struct STICKPARM;

@@ -3,6 +3,13 @@
  *
  * Copyright (C) Christian Rabler <oe5dxl@oevsv.at>
  *
+ * SPDX-License-Identifier:	GPL-2.0+
+ */
+/*
+ * dxlAPRS toolchain
+ *
+ * Copyright (C) Christian Rabler <oe5dxl@oevsv.at>
+ *
  * SPDX-License-Identifier:     GPL-2.0+
  */
 #ifndef fttw_H_

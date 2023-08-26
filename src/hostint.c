@@ -5,8 +5,6 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
-/* "@(#)hostint.c Mar 14 15:35:58 2021" */
-
 
 #define X2C_int32
 #define X2C_index32
@@ -24,9 +22,6 @@
 #include "osi.h"
 #endif
 #include <osic.h>
-#ifndef mlib_H_
-#include "mlib.h"
-#endif
 #ifndef udp_H_
 #include "udp.h"
 #endif
@@ -36,6 +31,7 @@
 #ifndef frameio_H_
 #include "frameio.h"
 #endif
+#include <termios.h>
 
 #define hostint_HANDLES 30
 
@@ -104,7 +100,7 @@ static char verb;
 
 static char ttynamee[1024];
 
-static uint32_t baud;
+static int32_t baud;
 
 
 static void Error(char text[], uint32_t text_len)
@@ -158,17 +154,21 @@ static void Event(char * * atask, l2_pLINK link, uint8_t event)
    if (event==l2_eCONNECTED) {
       if (*atask==0) {
          l2_GetAdress0(link, &gadr);
-         /*WrInt(gadr.my, 3); WrStrLn(":my "); */
+         if (verb) {
+            osic_WrINT32((uint32_t)gadr.my, 3UL);
+            osi_WrStrLn(":my ", 5ul);
+         }
          i0 = 1U;
          for (;;) {
             if (i0>=maxlinks) {
                *atask = 0;
+               if (verb) osi_WrStrLn("busy", 5ul);
                break;
             }
             /*say BUSY*/
             if (handles[i0].mynum==(uint8_t)
                 gadr.my && (0x40U & handles[i0].events)) {
-               /*WrStrLn(" listen "); */
+               if (verb) osi_WrStrLn(" listen ", 9ul);
                *atask = (char *) &handles[i0];
                handles[i0].events = 0x1U;
                handles[i0].plink = link;
@@ -184,6 +184,10 @@ static void Event(char * * atask, l2_pLINK link, uint8_t event)
    }
    else if (event==l2_eCONNREQ) {
       l2_GetAdress0(link, &gadr);
+      if (verb) {
+         osi_WrStr(gadr.adress, 72ul);
+         osi_WrStrLn(":connreq", 9ul);
+      }
       /*WrStr(gadr.adress); */
       /*WrStrLn(" flexconn");   */
       memset((char *) &connect,(char)0,sizeof(struct l2_CONNECT));
@@ -198,9 +202,16 @@ static void Event(char * * atask, l2_pLINK link, uint8_t event)
             *atask = 0;
             connect.typ = l2_cFLEXbusy;
             pl = l2_Connect0((char *) &handles[i0], &connect);
+            if (verb) osi_WrStrLn(" busy(maxlinks) ", 17ul);
             break;
          }
          /*say BUSY*/
+         osic_WrINT32((uint32_t)i0, 10UL);
+         osi_WrStr(":", 2ul);
+         osic_WrINT32((uint32_t)((0x40U & handles[i0].events)!=0), 1UL);
+         osic_WrINT32((uint32_t)gadr.my, 1UL);
+         osic_WrINT32((uint32_t)handles[i0].mynum, 1UL);
+         osi_WrStrLn("", 1ul);
          if ((0x40U & handles[i0].events)
                 && (gadr.my==0U || handles[i0].mynum==(uint8_t)gadr.my)) {
             *atask = (char *) &handles[i0];
@@ -553,21 +564,20 @@ static void CallStr(char c[], uint32_t c_len, char s[],
 } /* end CallStr() */
 
 
-static void SetMy(uint16_t port)
+static void SetMy(void)
 {
-   uint16_t n;
    uint16_t i0;
    uint16_t m;
    char h[113];
    l2_CALLTYP hc[16];
    uint16_t tmp;
    memset((char *)hc,(char)0,112UL);
-   memcpy(hc[0U],handles[0U].mycall,7u); /* via digi call */
-   n = 1U;
-   tmp = maxlinks;
-   m = 1U;
+   memset((char *)h,(char)0,113UL);
+   memcpy(hc[0U],handles[0U].mycall,7u); /* UI call */
+   tmp = maxlinks-1U;
+   m = 0U;
    if (m<=tmp) for (;; m++) {
-      handles[m-1U].mynum = 0U;
+      handles[m].mynum = 0U;
       if (m==tmp) break;
    } /* end for */
    if (maxlinks>1U) {
@@ -577,35 +587,39 @@ static void SetMy(uint16_t port)
          if (handles[m].mycall[0U]) {
             i0 = 1U;
             for (;;) {
-               if (i0>=n) {
-                  /* append call to L2 mycalls */
-                  if (n<=15U) {
-                     memcpy(hc[n],handles[m].mycall,7u);
-                     handles[m].mynum = (uint8_t)n;
-                     ++n;
-                  }
+               if (hc[i0][0U]==0) {
+                  /*IF verb THEN WrStr("setcall:"); WrStr(handles[m].mycall);
+                 WrStrLn(""); END; */
+                  memcpy(hc[i0],handles[m].mycall,7u);
+                  handles[m].mynum = (uint8_t)i0;
                   break;
                }
                if (aprsstr_StrCmp(handles[m].mycall, 7ul, hc[i0], 7ul)) {
-                  handles[m].mynum = (uint8_t)n;
-                /* call is in L2 mycalls */
+                  handles[m].mynum = (uint8_t)i0;
                   break;
                }
                ++i0;
+               if (i0>15U) break;
             }
          }
          if (m==tmp) break;
       } /* end for */
    }
-   /*    IF verb THEN WrStr("mycall:"); WrInt(port,1); WrStr(" ");
+   /*IF verb THEN WrStr("mycall:"); WrInt(port,1); WrStr(" ");
                 WrStrLn(handles[m].mycall); END; */
-   tmp = n;
-   i0 = 1U;
-   if (i0<=tmp) for (;; i0++) {
-      X2C_MOVE((char *)hc[i0-1U],(char *) &h[(i0-1U)*7U],7UL);
-      if (i0==tmp) break;
-   } /* end for */
-   h[n*7U] = 0;
+   /* call0=unproto, call1..9 port 1..9 */
+   m = 0U;
+   while (hc[m][0U]) {
+      for (i0 = 0U; i0<=6U; i0++) {
+         h[m*7U+i0] = hc[m][i0];
+      } /* end for */
+      ++m;
+   }
+   if (verb) {
+      osi_WrStr("mycall:", 8ul);
+      osi_WrStr(h, 113ul);
+      osi_WrStrLn("", 1ul);
+   }
    parms.test = 0;
    parms.parm = 0U;
    parms.port = parmsport;
@@ -1023,7 +1037,7 @@ static void TxCMD(void)
                uipath[0U][13U] = (char)((uint32_t)(uint8_t)
                 uipath[0U][13U]+128UL);
             }
-            SetMy(port);
+            SetMy();
             Nothing(port);
          }
          else {
@@ -1032,13 +1046,14 @@ static void TxCMD(void)
                CallStr("NOCALL0", 8ul, rxbuf, 260ul);
             }
             else CallStr(handles[port].mycall, 7ul, rxbuf, 260ul);
-            /*WrStr("getI port=");WrInt(port,1); WrStr(":");
-                WrStrLn(handles[port].mycall); */
+            /*IF verb THEN WrStr("get I port=");WrInt(port,1); WrStr(":");
+                WrStrLn(handles[port].mycall) END; */
             Msg(port, 1U, (uint16_t)(aprsstr_Length(rxbuf, 260ul)+1UL));
          }
          break;
       case 'J':
          Nothing(port);
+         if (verb) osi_WrStrLn("hostmode off", 13ul);
          break;
       case 'K':
          if (GetNumm((l2_pSTRING) &txbuf[4U], &n) && n<=2UL) {
@@ -1094,6 +1109,11 @@ static void TxCMD(void)
             if (n<=29UL) maxlinks = (uint16_t)n;
             else maxlinks = 30U;
             Nothing(port);
+            if (verb) {
+               osi_WrStr("channels=", 10ul);
+               osic_WrINT32(n, 1UL);
+               osi_WrStrLn("", 1ul);
+            }
          }
          else RetNum(port, maxlinks);
          break;
@@ -1263,10 +1283,12 @@ static void Parms(void)
 {
    char err;
    char h[1024];
+   uint32_t ih;
    uint32_t i0;
    struct frameio_UDPSOCK * anonym;
    err = 0;
    sockc = 0UL;
+   baud = 0L; /* ptty */
    for (;;) {
       osi_NextArg(h, 1024ul);
       if (h[0U]==0) break;
@@ -1288,9 +1310,11 @@ static void Parms(void)
             ttynamee[i0] = 0;
             if (h[i0]) {
                ++i0;
-               if (!GetNum(h, 1024ul, 0, &i0, &baud)) {
+               if (!GetNum(h, 1024ul, 0, &i0, &ih)) {
                   Error("need ttydevice:baud", 20ul);
                }
+               baud = (int32_t)ih;
+               if (baud==0L) baud = -1L;
             }
          }
          else if (h[1U]=='U') {
@@ -1315,15 +1339,23 @@ static void Parms(void)
             if (h[1U]=='h') {
                osic_WrLn();
                osi_WrStrLn(" -h                                this", 40ul);
-               osi_WrStrLn(" -i <mycall>", 13ul);
-               osi_WrStrLn(" -t <tty:baud>                     baud=0 is pseu\
-do tty ", 57ul);
+               osi_WrStrLn(" -i <mycall>                       set call to al\
+l ports", 57ul);
+               osi_WrStrLn(" -t <tty>                          wa8ded hostmod\
+e port on pseudo tty", 70ul);
+               osi_WrStrLn(" -t <tty:0>                        normal pipe",
+                47ul);
+               osi_WrStrLn(" -t <tty:baud>                     real tty e.g. \
+/dev/ttyUSB0", 62ul);
                osi_WrStrLn(" -U <x.x.x.x:destport:listenport>  axudp  /listen\
 port not check ip", 67ul);
                osi_WrStrLn("                                   repeat -U for \
 more ports", 60ul);
                osi_WrStrLn(" -v                                verbous",
                 43ul);
+               osi_WrStrLn(" wa8ded hostmode: tnc monitor 0=off, 1=protocol n\
+o info, 2=with info, 3=crc off", 80ul);
+               osi_WrStrLn(" time values in 100ms units", 28ul);
                osic_WrLn();
                X2C_ABORT();
             }
@@ -1373,7 +1405,6 @@ extern int main(int argc, char **argv)
                 sizeof(struct frameio_UDPSOCK [15]));
    ttynamee[0] = 0;
    strncpy(maincall,"      0",7u);
-   baud = 0UL;
    Parms();
    /*WrStr(":");WrStr(maincall);WrStrLn(":"); */
    for (i = 0U; i<=29U; i++) {
@@ -1408,12 +1439,11 @@ extern int main(int argc, char **argv)
       if (i==tmp) break;
    } /* end for */
    l2_L2Init(1000U, sockset, eventproc);
-   for (i = 0U; i<=29U; i++) {
-      SetMy(i);
-   } /* end for */
-   if (baud==0UL) ttyfd = Opentty(ttynamee, 1024ul);
-   else ttyfd = Openrealtty(ttynamee, 1024ul, baud);
-   if (ttyfd<0L) Error("tty pipe open error", 20ul);
+   SetMy();
+   if (baud<0L) ttyfd = osi_OpenNONBLOCK(ttynamee, 1024ul);
+   else if (baud==0L) ttyfd = Opentty(ttynamee, 1024ul);
+   else ttyfd = Openrealtty(ttynamee, 1024ul, (uint32_t)baud);
+   if (ttyfd<0L) Error("tty or ptty or pipe open", 25ul);
    bufp = 0L;
    len = 0L;
    timesum = 0UL;

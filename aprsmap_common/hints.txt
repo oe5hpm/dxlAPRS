@@ -517,7 +517,13 @@ Idle: red
 Configure in Config, Rf-Ports
 Raw Data in Tools, List, Monitor
 
-|1705 (End) Viewing data from logfile
+|1705 See [L] when Viewing data from Logfile
+Click or press "L" to go back to Realtime
+See [f] if any Watchcall has follow (Focus) enabled
+Click or press "L" to toggle [X] = Follow Clicked Symbol
+[W] to Follow Watchcall(s) or [*] to follow both
+and zooms to Fit on Screen. If have srtm press "r"
+for Radio propagation calculation.
 
 |1706 (View) stored Messages
 Shift-Leftclick or "M" to Compose Message
@@ -1466,7 +1472,8 @@ too much Tx, 3600s for static Beacons
 TALK:\\>filename<Message Sayd    writes a File 
 ?WX:\\<filename> Time \\h        sends a File and Time
 ?HELP:?VER,?APRST,?APRSP,TALK,?WX
-
+*:Operator sleeps                any Message makes Reply
+ 
 |8205 if stay on Rf use "RFONLY" or "NOGATE" else the
 software-ID "APLM01" or some other valid string.
 On Net always software-ID is used.

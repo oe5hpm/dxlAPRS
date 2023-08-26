@@ -12,7 +12,7 @@
 #ifndef X2C_H_
 #include "X2C.h"
 #endif
-#define ra02a_C_
+#define ra02_C_
 #ifndef udp_H_
 #include "udp.h"
 #endif
@@ -20,173 +20,172 @@
 #include "osi.h"
 #endif
 #include <osic.h>
-#ifndef mlib_H_
-#include "mlib.h"
-#endif
 #ifndef aprsstr_H_
 #include "aprsstr.h"
 #endif
 #include <signal.h>
 
 /* gpio or lpt to scp ra02 radio module + afsk tx */
-#define ra02a_LF "\012"
+#define ra02_LF "\012"
 
-#define ra02a_STOUT 2
+#define ra02_STOUT 2
 
-#define ra02a_STIN 1
+#define ra02_STIN 1
 
-#define ra02a_STATLEN 1
+#define ra02_STATLEN 1
 /* 30 */
 
-#define ra02a_CALINTERVAL 180
+#define ra02_CALINTERVAL 180
 /* loops until next check temperature calibration */
 
-#define ra02a_CALMASK 0
+#define ra02_CALMASK 0
 
-#define ra02a_NETID 0x12 
+#define ra02_NETID 0x12 
 
-#define ra02a_XTAL 3.2E+7
+#define ra02_XTAL 3.2E+7
 
-#define ra02a_FSTEP 6.103515625E+1
+#define ra02_FSTEP 6.103515625E+1
 
-static int32_t ra02a_MINBAUD = 490L;
+static int32_t ra02_MINBAUD = 490L;
 
-static float ra02a_BWTAB[10] = {7.8f,10.4f,15.6f,20.8f,31.25f,41.7f,62.5f,125.0f,250.0f,500.0f};
+static float ra02_BWTAB[10] = {7.8f,10.4f,15.6f,20.8f,31.25f,41.7f,62.5f,125.0f,250.0f,500.0f};
 
-#define ra02a_RegSyncWord 0x39 
+#define ra02_RegSyncWord 0x39 
 
-#define ra02a_RegFeiMsb 0x28 
+#define ra02_RegFeiMsb 0x28 
 
-#define ra02a_RegFeiMid 0x29 
+#define ra02_RegFeiMid 0x29 
 
-#define ra02a_RegFeiLsb 0x2A 
+#define ra02_RegFeiLsb 0x2A 
 
-#define ra02a_RegPacketRssi 0x1A 
+#define ra02_RegPacketRssi 0x1A 
 
-#define ra02a_RegPaRamp 0xA 
+#define ra02_RegPaRamp 0xA 
 
-#define ra02a_RegPaDac 0x4D 
+#define ra02_RegPaDac 0x4D 
 
-#define ra02a_RegOcp 0xB 
+#define ra02_RegOcp 0xB 
 
-#define ra02a_RegPktSnrValue 0x19 
+#define ra02_RegPktSnrValue 0x19 
 
-#define ra02a_RegFifoRxCurrentAddr 0x10 
+#define ra02_RegFifoRxCurrentAddr 0x10 
 
-#define ra02a_RegOpMode 0x1 
+#define ra02_RegOpMode 0x1 
 
-#define ra02a_RegModemStat 0x18 
+#define ra02_RegModemStat 0x18 
 
-#define ra02a_RegIrqFlagsMask 0x11 
+#define ra02_RegIrqFlagsMask 0x11 
 
-#define ra02a_RegIrqFlags 0x12 
+#define ra02_RegIrqFlags 0x12 
 
-#define ra02a_RegRxNbBytes 0x13 
+#define ra02_RegRxNbBytes 0x13 
 
-#define ra02a_RegFifoAddrPtr 0xD 
+#define ra02_RegFifoAddrPtr 0xD 
 
-#define ra02a_RegHopChannel 0x1C 
+#define ra02_RegHopChannel 0x1C 
 
-#define ra02a_RegRssiValue 0x1B 
+#define ra02_RegRssiValue 0x1B 
 
-#define ra02a_RegRxPacketCntValueLsb 0x17 
+#define ra02_RegRxPacketCntValueLsb 0x17 
 
-#define ra02a_RegFifo 0x0 
+#define ra02_RegFifo 0x0 
 
-#define ra02a_RegFifoTxBaseAddr 0xE 
+#define ra02_RegFifoTxBaseAddr 0xE 
 
-#define ra02a_RegFrMsb 0x6 
+#define ra02_RegFrMsb 0x6 
 
-#define ra02a_RegFrMid 0x7 
+#define ra02_RegFrMid 0x7 
 
-#define ra02a_RegFrLsb 0x8 
+#define ra02_RegFrLsb 0x8 
 
-#define ra02a_RegDetectOptimice 0x31 
+#define ra02_RegDetectOptimice 0x31 
 
-#define ra02a_RegDetectionThreshold 0x37 
+#define ra02_RegDetectionThreshold 0x37 
 
-#define ra02a_RegLna 0xC 
+#define ra02_RegLna 0xC 
 
-#define ra02a_RegModemConfig3 0x26 
+#define ra02_RegModemConfig3 0x26 
 
-#define ra02a_RegModemConfig2 0x1E 
+#define ra02_RegModemConfig2 0x1E 
 
-#define ra02a_RegModemConfig1 0x1D 
+#define ra02_RegModemConfig1 0x1D 
 
-#define ra02a_RegPaConfig 0x9 
+#define ra02_RegPaConfig 0x9 
 
-#define ra02a_RegPayloadLength 0x22 
+#define ra02_RegPayloadLength 0x22 
 
-#define ra02a_RegPreambleMsb 0x20 
+#define ra02_RegPreambleMsb 0x20 
 
-#define ra02a_RegPreambleLsb 0x21 
+#define ra02_RegPreambleLsb 0x21 
 
-#define ra02a_RegImageCal 0x3B 
+#define ra02_RegInvertIQ 0x33 
 
-#define ra02a_RegTemp 0x3C 
+#define ra02_RegImageCal 0x3B 
+
+#define ra02_RegTemp 0x3C 
 /*fsk */
 
-#define ra02a_RegBitrateMsb 0x2 
+#define ra02_RegBitrateMsb 0x2 
 
-#define ra02a_RegBitrateLsb 0x3 
+#define ra02_RegBitrateLsb 0x3 
 
-#define ra02a_RegFdevMsb 0x4 
+#define ra02_RegFdevMsb 0x4 
 
-#define ra02a_RegFdevLsb 0x5 
+#define ra02_RegFdevLsb 0x5 
 
-#define ra02a_RegPreampleMsb 0x25 
+#define ra02_RegPreampleMsb 0x25 
 
-#define ra02a_RegPreampleLsb 0x26 
+#define ra02_RegPreampleLsb 0x26 
 
-#define ra02a_RegSyncConfig 0x27 
+#define ra02_RegSyncConfig 0x27 
 
-#define ra02a_RegPacketConfig1 0x30 
+#define ra02_RegPacketConfig1 0x30 
 
-#define ra02a_RegPacketConfig2 0x31 
+#define ra02_RegPacketConfig2 0x31 
 
-#define ra02a_RegPayloadLengthFsk 0x32 
+#define ra02_RegPayloadLengthFsk 0x32 
 
-#define ra02a_RegFifoThresh 0x35 
+#define ra02_RegFifoThresh 0x35 
 
-#define ra02a_RegSeqConfig1 0x36 
+#define ra02_RegSeqConfig1 0x36 
 
-#define ra02a_RegSeqConfig2 0x37 
+#define ra02_RegSeqConfig2 0x37 
 
-#define ra02a_RegIrqFlags1 0x3E 
+#define ra02_RegIrqFlags1 0x3E 
 
-#define ra02a_RegIrqFlags2 0x3F 
+#define ra02_RegIrqFlags2 0x3F 
 
-#define ra02a_RegBitrateFrac 0x5D 
+#define ra02_RegBitrateFrac 0x5D 
 
-#define ra02a_RegRxConfig 0xD 
+#define ra02_RegRxConfig 0xD 
 
-#define ra02a_RegPllHf 0x70 
+#define ra02_RegPllHf 0x70 
 
-#define ra02a_FIFOFILL 8
+#define ra02_FIFOFILL 8
 
-#define ra02a_OVERSAMP 11
+#define ra02_OVERSAMP 11
 
-#define ra02a_AFSKBAUD 13200
+#define ra02_AFSKBAUD 13200
 
-#define ra02a_GPIOFN "/sys/class/gpio"
+#define ra02_GPIOFN "/sys/class/gpio"
 
-#define ra02a_GPIOEXPORT "/sys/class/gpio/export"
+#define ra02_GPIOEXPORT "/sys/class/gpio/export"
 
-#define ra02a_GPIOUNEXPORT "/sys/class/gpio/unexport"
+#define ra02_GPIOUNEXPORT "/sys/class/gpio/unexport"
 
-#define ra02a_GPIOX "/sys/class/gpio/gpio"
+#define ra02_GPIOX "/sys/class/gpio/gpio"
 
-#define ra02a_GPIODIRECTION "/direction"
+#define ra02_GPIODIRECTION "/direction"
 
-#define ra02a_GPIOIN "in"
+#define ra02_GPIOIN "in"
 
-#define ra02a_GPIOOUT "out"
+#define ra02_GPIOOUT "out"
 
-#define ra02a_GPIODATA "/value"
+#define ra02_GPIODATA "/value"
 
-#define ra02a_GPIOS 256
+#define ra02_GPIOS 256
 
-enum STATE {ra02a_stSLEEP, ra02a_stRX, ra02a_stWAITDCD, ra02a_stTX};
+enum STATE {ra02_stSLEEP, ra02_stRX, ra02_stWAITDCD, ra02_stTX};
 
 
 struct TXCONTEXT;
@@ -212,6 +211,7 @@ struct TXCONTEXT {
    int32_t baud;
    int32_t fskp;
    int32_t cfgramp;
+   char swapiq;
    char usedcd;
    char rawfsk;
    char sendfsk;
@@ -251,6 +251,7 @@ struct CHIP {
    uint8_t state;
    pTXCONTEXT atx;
    pTXCONTEXT ptx;
+   char swapiq;
    char implicit;
    char optimize;
    char rxon;
@@ -496,6 +497,7 @@ static pCHIP newchip(void)
    chp->rxcr = 5UL;
    chp->netid = 18UL;
    chp->cfgoptimize = -1L;
+   chp->swapiq = 0;
    return chp;
 } /* end newchip() */
 
@@ -547,6 +549,7 @@ static pTXCONTEXT newtx(void)
    tx->baud = 0L;
    tx->sendfsk = 0;
    tx->rawfsk = 0;
+   tx->swapiq = 0;
    return tx;
 } /* end newtx() */
 
@@ -639,7 +642,7 @@ static void Parms(void)
             }
             osi_NextArg(h0, 4096ul);
             if (!aprsstr_StrToCard(h0, 4096ul, &loopdelayfast)) {
-               Error("-u <poll-intervall us>", 23ul);
+               Error("-u <poll-sleep us> <poll-sleep-tx us>", 38ul);
             }
          }
          else if (h0[1U]=='C') {
@@ -741,11 +744,13 @@ static void Parms(void)
          else if (h0[1U]=='i') chip0->implicit = 1;
          else if (h0[1U]=='A') tx->sendfsk = 1;
          else if (h0[1U]=='d') tx->usedcd = 1;
+         else if (h0[1U]=='Q') tx->swapiq = 1;
+         else if (h0[1U]=='q') {
+            chip0->swapiq = 1;
+         }
          else if (h0[1U]=='G') {
             osi_NextArg(h0, 4096ul);
-            if (!aprsstr_StrToInt(h0, 4096ul, &tx->baud)) {
-               Error("-G [-]<baud>", 13ul);
-            }
+            if (!aprsstr_StrToInt(h0, 4096ul, &tx->baud)) Error("-G [-]<baud>", 13ul);
             if (labs(tx->baud)<490L) {
                if (tx->baud<0L) tx->baud = -490L;
                else tx->baud = 490L;
@@ -760,17 +765,17 @@ static void Parms(void)
             osi_NextArg(h0, 4096ul);
             if (!aprsstr_StrToInt(h0, 4096ul, &chip0->rssicorr)) Error("-r <n>", 7ul);
          }
-         else if (h0[1U]=='I') {
+         else if (h0[1U]=='J') {
             osi_NextArg(h0, 4096ul);
-            if (!aprsstr_StrToInt(h0, 4096ul, &chip0->cfgocp)) Error("-I <n>", 7ul);
+            if (!aprsstr_StrToInt(h0, 4096ul, &chip0->cfgocp)) Error("-J <n>", 7ul);
          }
          else if (h0[1U]=='O') {
             osi_NextArg(h0, 4096ul);
-            if (!aprsstr_StrToInt(h0, 4096ul, &tx->cfgoptimize)) Error("-o <-1..1", 10ul);
+            if (!aprsstr_StrToInt(h0, 4096ul, &tx->cfgoptimize)) Error("-O <-1..1", 10ul);
          }
          else if (h0[1U]=='o') {
             osi_NextArg(h0, 4096ul);
-            if (!aprsstr_StrToInt(h0, 4096ul, &chip0->cfgoptimize)) Error("-O <-1..1", 10ul);
+            if (!aprsstr_StrToInt(h0, 4096ul, &chip0->cfgoptimize)) Error("-o <-1..1", 10ul);
          }
          else if (h0[1U]=='P') {
             osi_NextArg(h0, 4096ul);
@@ -811,13 +816,14 @@ static void Parms(void)
             osi_WrStrLn(" -h                 this", 25ul);
             osi_WrStrLn(" -I                 tx implicit header on", 42ul);
             osi_WrStrLn(" -i                 rx implicit header on", 42ul);
+            osi_WrStrLn(" -J <n>             set overcurrent protection, use with care, see chip manual", 79ul);
             osi_WrStrLn(" -L ip:sendport:listenport AXUDPv2 data, apply before all othere parameters for this channel",
                 93ul);
             osi_WrStrLn("                      repeat for more tx contexts with different listen ports", 78ul);
             osi_WrStrLn("                      same rx data are sent to all non zero sendports", 70ul);
             osi_WrStrLn(" -l <n>             lna boost 0..3, more for better ip3 by more supply current (3)", 83ul);
-            osi_WrStrLn(" -n <netid>         network id (sync word) (not use 34=lorawan) (12)", 69ul);
-            osi_WrStrLn(" -I <n>             set overcurrent protection, use with care, see chip manual", 79ul);
+            osi_WrStrLn(" -N <netid>         network id tx (sync word) (not use 34=lorawan) (12)", 72ul);
+            osi_WrStrLn(" -n <netid>         network id rx (sync word)) (12)", 52ul);
             osi_WrStrLn(" -O <offon>         tx low datarate optimize 0=off 1=on else automatic (-1)", 76ul);
             osi_WrStrLn(" -o <offon>         rx low datarate optimize 0=off 1=on else automatic (-1)", 76ul);
             osi_WrStrLn(" -P <ppm>           x-tal correction +-128 (0.0)", 49ul);
@@ -825,14 +831,16 @@ static void Parms(void)
             osi_WrStrLn("                      repeat for more chips (8 10 9 11)", 56ul);
             osi_WrStrLn("                      with different <nss> pins. Sharing <miso> needs <nss> high", 81ul);
             osi_WrStrLn("                      on not configed chips by pullup or setting <nss> manual", 78ul);
+            osi_WrStrLn(" -Q                 tx invert IQ", 33ul);
+            osi_WrStrLn(" -q                 rx invert IQ", 33ul);
             osi_WrStrLn(" -S <sf>            tx spread factor 6..12 (12)", 48ul);
             osi_WrStrLn(" -s <sf>            rx spread factor 6..12 (12)", 48ul);
             osi_WrStrLn(" -R <n>             PaRamp how fast tx goes to power, see chip manual (9)", 74ul);
             osi_WrStrLn(" -r <n>             add to rssi value to compensate internal and external preamps (0)", 86ul);
             osi_WrStrLn(" -T <n>             (A)FSK txdel in byte (4), not used for raw mode -E", 71ul);
             osi_WrStrLn(" -U ip:sendport:receiveport AXUDP data, same as -L but standard AXUDP (no metadata)", 84ul);
-            osi_WrStrLn(" -u <us> <us>       sleep time betrween divice polls rx/(a)fsk tx, more:faster response, more c\
-pu (50000 20000)", 112ul);
+            osi_WrStrLn(" -u <us> <us>       sleep time between divice polls rx/(a)fsk tx, more:faster response, more cp\
+u (50000 20000)", 111ul);
             osi_WrStrLn("                      afsk needs 20000 or less to avoid underruns", 66ul);
             osi_WrStrLn(" -V                 show more infos on stdout", 46ul);
             osi_WrStrLn(" -v                 show some infos on stdout", 46ul);
@@ -900,6 +908,7 @@ ip2> -L ... <parameters chip2 tx1/rx> -L ... -v", 143ul);
             osi_WrHex(anonym->netid, 0UL);
             osi_WrStr(" lnaboost=", 11ul);
             osic_WrUINT32(anonym->lnaboost, 1UL);
+            if (anonym->swapiq) osi_WrStr(" invertIQ", 10ul);
             osi_WrStr(" symt=", 7ul);
             osic_WrFixed(anonym->symboltime, 3L, 1UL);
             osi_WrStr("ms", 3ul);
@@ -933,6 +942,7 @@ ip2> -L ... <parameters chip2 tx1/rx> -L ... -v", 143ul);
                      osi_WrStr(" preamb=", 9ul);
                      osic_WrFixed(tx->symboltime*(float)tx->preamb, 2L, 1UL);
                      osi_WrStr("ms", 3ul);
+                     if (tx->swapiq) osi_WrStr(" invertIQ", 10ul);
                   }
                   else {
                      if (!tx->rawfsk) {
@@ -1507,6 +1517,10 @@ static void startrx(pCHIP chp, char dcdonly)
       scpo(anonym->gpio, 49UL, 3UL+2UL*(uint32_t)(sf==6UL)); /* rxoptimize 3, on sf=6 5 */
       scpo(anonym->gpio, 55UL, 10UL+2UL*(uint32_t)(sf==6UL));
       scpo(anonym->gpio, 57UL, id); /* syncword */
+      if (anonym->swapiq) {
+         scpo(anonym->gpio, 51UL, (uint32_t)((uint32_t)scpi(anonym->gpio, 51UL)|0x40UL));
+      }
+      else scpo(anonym->gpio, 51UL, (uint32_t)((uint32_t)scpi(anonym->gpio, 51UL)&0xBFUL));
       setsynth(chp, anonym->rxmhz);
       Setmode(chp, 133UL+2UL*(uint32_t)dcdonly, 0, 0); /* continous rx or dcd detect */
    }
@@ -1538,6 +1552,10 @@ static void send(pCHIP chp)
    scpo(chp->gpio, 32UL, chp->atx->preamb/256UL); /* preamble length */
    scpo(chp->gpio, 33UL, chp->atx->preamb&255UL); /* preamble length */
    scpo(chp->gpio, 57UL, chp->atx->netid); /* syncword */
+   if (chp->atx->swapiq) scpo(chp->gpio, 51UL, (uint32_t)((uint32_t)scpi(chp->gpio, 51UL)&0xFEUL));
+   else scpo(chp->gpio, 51UL, (uint32_t)((uint32_t)scpi(chp->gpio, 51UL)|0x1UL));
+   /*scpo(chp^.gpio, RegInvertIQ, 27H); */
+   /*WrHex(scpi(chp^.gpio, RegInvertIQ), 5); WrStrLn("=inv"); */
    b[0U] = '<'; /* for whatever */
    b[1U] = '\377'; /* for whatever */
    b[2U] = '\001'; /* for whatever */
@@ -1655,6 +1673,7 @@ static void rx(pCHIP chip0)
    int32_t level;
    int32_t snr;
    int32_t ferr;
+   char s[31];
    uint32_t tmp;
    rximplicit = (char)(scpi(chip0->gpio, 29UL)&1);
    hascrc = (0x40U & (uint8_t)scpi(chip0->gpio, 28UL))!=0;
@@ -1673,6 +1692,8 @@ static void rx(pCHIP chip0)
       scpo(chip0->gpio, 13UL, scpi(chip0->gpio, 16UL));
       len = scpi(chip0->gpio, 19UL);
       if (verb) {
+         aprsstr_TimeToStr(osic_time()%86400UL, s, 31ul);
+         osi_WrStr(s, 31ul);
          Wrchipnum(chip0, 0);
          if (hascrc) {
             if (crcvalid) osi_WrStr(" crc:ok", 8ul);
@@ -1796,7 +1817,7 @@ extern int main(int argc, char **argv)
    while (chip) {
       /* set gpios */
       dcd = scp(chip->gpio, 0, 1, 0, 0); /* NSS off */
-      chip->state = ra02a_stSLEEP;
+      chip->state = ra02_stSLEEP;
       chip = chip->next;
    }
    chip = chips;
@@ -1845,19 +1866,19 @@ extern int main(int argc, char **argv)
                osi_WrStrLn(" reseted", 9ul);
             }
          }
-         if (chip->state!=ra02a_stWAITDCD) {
-            if (chip->state==ra02a_stTX) chip->atx = 0;
-            chip->state = ra02a_stSLEEP;
+         if (chip->state!=ra02_stWAITDCD) {
+            if (chip->state==ra02_stTX) chip->atx = 0;
+            chip->state = ra02_stSLEEP;
          }
       }
-      if (chip->state==ra02a_stSLEEP) {
+      if (chip->state==ra02_stSLEEP) {
          if (chip->rxon) {
             startrx(chip, 0);
-            chip->state = ra02a_stRX;
+            chip->state = ra02_stRX;
          }
       }
       /*      ELSE Setmode(chip, 80H, TRUE, FALSE) END;                        (* sleep *) */
-      if (chip->rxon && chip->state==ra02a_stRX) {
+      if (chip->rxon && chip->state==ra02_stRX) {
          flags = scpi(chip->gpio, 18UL);
          chip->stato = chip->statu;
          chip->statu = scpi(chip->gpio, 24UL);
@@ -1871,27 +1892,27 @@ extern int main(int argc, char **argv)
          }
          if ((0x40U & (uint8_t)flags)) rx(chip);
       }
-      if (chip->state==ra02a_stWAITDCD) {
+      if (chip->state==ra02_stWAITDCD) {
          dcd = 0;
          if ((chip->atx==0 || !chip->atx->usedcd) || dcddone(chip, &dcd)) {
             if (dcd) startdcdcheck(chip);
             else {
                send(chip);
-               chip->state = ra02a_stTX;
+               chip->state = ra02_stTX;
             }
          }
       }
-      else if ((chip->atx && chip->state!=ra02a_stTX) && !X2C_IN(chip->band,8,banddcd|banddcdall)) {
+      else if ((chip->atx && chip->state!=ra02_stTX) && !X2C_IN(chip->band,8,banddcd|banddcdall)) {
          if (chip->atx->sendfsk) {
             startfsk(chip);
-            chip->state = ra02a_stTX;
+            chip->state = ra02_stTX;
          }
          else {
             if (chip->atx->usedcd) startdcdcheck(chip);
-            chip->state = ra02a_stWAITDCD;
+            chip->state = ra02_stWAITDCD;
          }
       }
-      if (chip->state==ra02a_stTX && chip->atx) {
+      if (chip->state==ra02_stTX && chip->atx) {
          if (chip->atx->sendfsk) txfill(chip);
          else if ((0x8U & (uint8_t)scpi(chip->gpio, 18UL))) {
             /* tx done */

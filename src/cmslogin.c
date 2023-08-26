@@ -19,15 +19,13 @@
 #ifndef osi_H_
 #include "osi.h"
 #endif
-#ifndef mlib_H_
-#include "mlib.h"
-#endif
 #ifndef tcp_H_
 #include "tcp.h"
 #endif
 #ifndef Select_H_
 #include "Select.h"
 #endif
+#include <termios.h>
 
 /* start tcp connection and make user/passwd dialog */
 #define cmslogin_CR "\015"
