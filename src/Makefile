@@ -372,52 +372,52 @@ prepare:
 
 $(OUT)afskmodem: $(OBJ_AFSKMODEM) $(OBJ_COMMON)
 	@echo [ linking ] $@
-	@$(CC) $(LFLAGS) -o $(OUT)afskmodem $(OBJ_COMMON) $(OBJ_AFSKMODEM) -lm
+	@$(CC) $(LFLAGS) -o $@ $(OBJ_COMMON) $(OBJ_AFSKMODEM) -lm
 	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)gps2aprs: $(OBJ_GPS2APRS) $(OBJ_COMMON)
 	@echo [ linking ] $@
-	@$(CC) $(LFLAGS) -o $(OUT)gps2aprs $(OBJ_COMMON) $(OBJ_GPS2APRS) -lm
+	@$(CC) $(LFLAGS) -o $@ $(OBJ_COMMON) $(OBJ_GPS2APRS) -lm
 	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)gps2digipos: $(OBJ_GPS2DIGIPOS) $(OBJ_COMMON)
 	@echo [ linking ] $@
-	@$(CC) $(LFLAGS) -o $(OUT)gps2digipos $(OBJ_COMMON) $(OBJ_GPS2DIGIPOS) -lm
+	@$(CC) $(LFLAGS) -o $@ $(OBJ_COMMON) $(OBJ_GPS2DIGIPOS) -lm
 	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)sondemod: $(OBJ_SONDEMOD) $(OBJ_COMMON)
 	@echo [ linking ] $@
-	@$(CC) $(LFLAGS) -o $(OUT)sondemod $(OBJ_COMMON) $(OBJ_SONDEMOD) -lm
+	@$(CC) $(LFLAGS) -o $@ $(OBJ_COMMON) $(OBJ_SONDEMOD) -lm
 	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)sondeudp: $(OBJ_SONDEUDP) $(OBJ_COMMON)
 	@echo [ linking ] $@
-	@$(CC) $(LFLAGS) -o $(OUT)sondeudp $(OBJ_COMMON) $(OBJ_SONDEUDP) -lm
+	@$(CC) $(LFLAGS) -o $@ $(OBJ_COMMON) $(OBJ_SONDEUDP) -lm
 	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)udpbox: $(OBJ_UDPBOX) $(OBJ_COMMON)
 	@echo [ linking ] $@
-	@$(CC) $(LFLAGS) -o $(OUT)udpbox $(OBJ_COMMON) $(OBJ_UDPBOX) -lm
+	@$(CC) $(LFLAGS) -o $@ $(OBJ_COMMON) $(OBJ_UDPBOX) -lm
 	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)udpgate4: $(OBJ_UDPGATE4) $(OBJ_COMMON)
 	@echo [ linking ] $@
-	@$(CC) $(LFLAGS) -o $(OUT)udpgate4 $(OBJ_COMMON) $(OBJ_UDPGATE4) -lm
+	@$(CC) $(LFLAGS) -o $@ $(OBJ_COMMON) $(OBJ_UDPGATE4) -lm
 	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)udpflex: $(OBJ_UDPFLEX) $(OBJ_COMMON)
 	@echo [ linking ] $@
-	@$(CC) $(LFLAGS) -o $(OUT)udpflex $(OBJ_COMMON) $(OBJ_UDPFLEX) -lm
+	@$(CC) $(LFLAGS) -o $@ $(OBJ_COMMON) $(OBJ_UDPFLEX) -lm
 	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)udphub: $(OBJ_UDPHUB) $(OBJ_COMMON)
 	@echo [ linking ] $@
-	@$(CC) $(LFLAGS) -o $(OUT)udphub $(OBJ_COMMON) $(OBJ_UDPHUB) -lm
+	@$(CC) $(LFLAGS) -o $@ $(OBJ_COMMON) $(OBJ_UDPHUB) -lm
 	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)aprsmap-x86_32: $(OBJ_APRSMAP) $(OBJ_COMMON)
 	@echo [ linking ] $@
-	@$(CC) $(LFLAGS) -o $(OUT)aprsmap-x86_32 $(OBJ_APRSMAP) \
+	@$(CC) $(LFLAGS) -o $@ $(OBJ_APRSMAP) \
 	$(OBJ_COMMON) $(XLIBS) \
 	-lpthread -lxcb -lXau -lXdmcp -lm -lpthread -ldl -lz \
 	-static
@@ -425,7 +425,7 @@ $(OUT)aprsmap-x86_32: $(OBJ_APRSMAP) $(OBJ_COMMON)
 
 $(OUT)aprsmap-x86_64: $(OBJ_APRSMAP) $(OBJ_COMMON)
 	@echo [ linking ] $@
-	@$(CC) $(LFLAGS) -o $(OUT)aprsmap-x86_64 $(OBJ_APRSMAP) \
+	@$(CC) $(LFLAGS) -o $@ $(OBJ_APRSMAP) \
 	$(OBJ_COMMON) $(XLIBS) \
 	-lpthread -lxcb -lXau -lXdmcp -lm -lpthread -ldl -lz \
 	-static
@@ -433,39 +433,39 @@ $(OUT)aprsmap-x86_64: $(OBJ_APRSMAP) $(OBJ_COMMON)
 
 $(OUT)aprsmap : $(OBJ_APRSMAP) $(OBJ_COMMON)
 	@echo [ linking ] $@
-	@$(CC) $(LFLAGS) -o $(OUT)aprsmap $(OBJ_APRSMAP) \
+	@$(CC) $(LFLAGS) -o $@ $(OBJ_APRSMAP) \
 	$(OBJ_COMMON) $(XLIBS) -lm
 	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)sdrtst : $(OBJ_SDRTST) $(OBJ_COMMON)
 	@echo [ linking ] $@
-	@$(CC) $(LFLAGS) -o $(OUT)sdrtst $(OBJ_SDRTST) $(OBJ_COMMON) -lm
+	@$(CC) $(LFLAGS) -o $@ $(OBJ_SDRTST) $(OBJ_COMMON) -lm
 	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)sdrradio : $(OBJ_SDRRADIO) $(OBJ_COMMON)
 	@echo [ linking ] $@
-	@$(CC) $(LFLAGS) -o $(OUT)sdrradio $(OBJ_SDRRADIO) $(OBJ_COMMON) -lm
+	@$(CC) $(LFLAGS) -o $@ $(OBJ_SDRRADIO) $(OBJ_COMMON) -lm
 	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)l2cat : $(OBJ_L2CAT) $(OBJ_COMMON)
 	@echo [ linking ] $@
-	@$(CC) $(LFLAGS) -o $(OUT)l2cat $(OBJ_L2CAT) $(OBJ_COMMON) -lm
+	@$(CC) $(LFLAGS) -o $@ $(OBJ_L2CAT) $(OBJ_COMMON) -lm
 	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)adsb2aprs: $(OBJ_ADSB2APRS) $(OBJ_COMMON)
 	@echo [ linking ] $@
-	@$(CC) $(LFLAGS) -o $(OUT)adsb2aprs $(OBJ_ADSB2APRS) $(OBJ_COMMON) -lm
+	@$(CC) $(LFLAGS) -o $@ $(OBJ_ADSB2APRS) $(OBJ_COMMON) -lm
 	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)profile : $(OBJ_PROFILE) $(OBJ_COMMON)
 	@echo [ linking ] $@
-	@$(CC) $(LFLAGS) -o $(OUT)profile $(OBJ_PROFILE) \
+	@$(CC) $(LFLAGS) -o $@ $(OBJ_PROFILE) \
 	$(OBJ_COMMON) $(XLIBS) -lm
 	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)radiorange: $(OBJ_RADIORANGE) $(OBJ_COMMON)
 	@echo [ linking ] $@
-	@$(CC) $(LFLAGS) -o $(OUT)radiorange $(OBJ_RADIORANGE) $(OBJ_COMMON) \
+	@$(CC) $(LFLAGS) -o $@ $(OBJ_RADIORANGE) $(OBJ_COMMON) \
 	$(XLIBS) -lm
 	@$(STRIP) $@ $(STRIPFLAGS)
 
