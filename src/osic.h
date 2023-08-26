@@ -87,6 +87,8 @@ int osic_symblink(char *existing, char *newname);
 
 int osic_isfifo(int fd);
 
+int32_t osic_setttybaudraw(int32_t fd, uint32_t baud);
+
 char osic_mkdir(char fname[], uint32_t fname_len, uint32_t perm);
 
 void osic_NextArg(char s[], uint32_t s_len);

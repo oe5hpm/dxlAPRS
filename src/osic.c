@@ -19,6 +19,9 @@
 #include <assert.h>
 #include <time.h>
 #include <errno.h>
+#include <termios.h>
+#include <netinet/tcp.h>
+#include <sys/socket.h>
 
 #include "osic.h"
 
@@ -245,6 +248,15 @@ int osic_Size(int fd)
 	return st.st_size;
 }
 
+int osic_LSeek(int fd, long lo, int whence)
+{
+	off64_t rc;
+
+	rc = lseek64(fd, lo, whence);
+
+	return (rc < 0 ? -1 : 0);
+}
+
 void osic_Seek(int32_t fd, uint32_t pos)
 {
 	lseek(fd, (off_t)pos, SEEK_SET);
@@ -261,6 +273,12 @@ void osic_Seekcur(int32_t fd, int32_t rel)
                 lseek(fd, 0, SEEK_SET);
 #endif
 }
+
+void osic_Seekend(int32_t fd, int32_t pos)
+{
+        lseek(fd, (off_t)pos, SEEK_END);
+}
+
 
 void osic_Remove(char fname[], uint32_t fname_len, char *done)
 {
@@ -288,8 +306,11 @@ int osic_symblink(char *existing, char *newname)
 int osic_isfifo(int fd)
 {
 	struct stat st;
+
 	fstat(fd, &st);
-	return ((st.st_mode & S_IFMT) == S_IFIFO) || ((st.st_mode & S_IFMT) == S_IFCHR);
+
+	return ((st.st_mode & S_IFMT) == S_IFIFO) ||
+	       ((st.st_mode & S_IFMT) == S_IFCHR);
 }
 
 char osic_mkdir(char path[], uint32_t fname_len, uint32_t perm)
@@ -298,6 +319,87 @@ char osic_mkdir(char path[], uint32_t fname_len, uint32_t perm)
 				return 1;
 		return 0;
 }
+int osic_setttybaudraw(int32_t fd, uint32_t baud)
+{
+	struct termios options;
+	int rc;
+	unsigned int bd;
+
+	if (baud == 300)
+		bd = B300;
+	else if (baud == 600)
+		bd = B600;
+	else if (baud == 1200)
+		bd = B1200;
+	else if (baud == 2400)
+		bd = B2400;
+	else if (baud == 4800)
+		bd = B4800;
+	else if (baud == 9600)
+		bd = B9600;
+	else if (baud == 19200)
+		bd = B19200;
+	else if (baud == 38400)
+		bd = B38400;
+	else if (baud == 57600)
+		bd = B57600;
+	else if (baud == 115200)
+		bd = B115200;
+	else if (baud == 230400)
+		bd = B230400;
+	else if (baud == 460800)
+		bd = B460800;
+	else
+		return -1;
+
+	rc = tcgetattr(fd, &options);
+	if (rc < 0)
+		return rc;
+
+	rc = cfsetispeed(&options, bd);
+	if (rc < 0)
+		return rc;
+
+	rc = cfsetospeed(&options, bd);
+	if (rc < 0)
+		return rc;
+
+	cfmakeraw(&options);
+	options.c_cflag |= (CS8 | CLOCAL | CREAD);
+
+	return tcsetattr(fd, TCSANOW, &options);
+}
+int osic_keepalive(int32_t fd, char on, int32_t idle, int32_t intervall, int32_t count)
+{
+	int ion;
+	int rc;
+
+	ion= (int)on;
+	rc = setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &ion, sizeof(int));
+	if (rc < 0)
+		return rc;
+
+	if (idle >= 0) {
+		rc = setsockopt(fd, SOL_TCP, TCP_KEEPIDLE, &idle, sizeof(int));
+		if (rc < 0)
+			return rc;
+	}
+
+	if (intervall>=0) {
+		rc = setsockopt(fd,
+				SOL_TCP, TCP_KEEPINTVL,
+				&intervall, sizeof(int));
+		if (rc < 0)
+			return rc;
+	};
+
+	if (count >= 0) {
+		rc = setsockopt(fd, SOL_TCP, TCP_KEEPCNT, &count, sizeof(int));
+		if (rc < 0)
+			return rc;
+	}
+
+	return 0;
 }
 
 void osic_NextArg(char s[], uint32_t s_len)
@@ -576,3 +678,33 @@ void *osic_chkptr(void *p)
 	assert(p);
 	return p;
 }
+
+int32_t osic_setsystime(uint32_t *time0)
+{
+#if 0
+	struct timespec stime;
+
+	stime.tv_nsec = 0;
+	stime.tv_sec = *time0;
+
+
+	return clock_settime(CLOCK_REALTIME, &stime);
+#else
+	return 0;
+#endif
+}
+
+void osic_timens(char monotonic, uint32_t *s, uint32_t *ns)
+{
+	struct timespec t;
+
+	if (monotonic)
+		clock_gettime(CLOCK_MONOTONIC, &t);
+	else
+		clock_gettime(CLOCK_REALTIME, &t);
+
+	*s = t.tv_sec;
+	*ns = t.tv_nsec;
+}
+
+
