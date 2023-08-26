@@ -120,6 +120,7 @@ LFLAGS		+=
 # -------------------------- x86_64 specific -----------------------------------
 else ifeq ($(HOSTARCH), x86_64)
 XLIBS		= -lpng -ljpeg -lXext -lX11
+EXTLIB		= lib_x86_64/
 ifeq ($(PLATFORM), x86_32)
 	OUT	:= $(if $(OUT),$(OUT),../out-x86_32/)
 	CFLAGS	+= -m32
@@ -494,7 +495,7 @@ $(OUT)waterfall: $(OBJ_WATERFALL) $(OBJ_COMMON)
 
 $(OUT)waterfall3: $(OBJ_WATERFALL3) $(OBJ_COMMON)
 	@echo [ linking ] $@
-	@$(CC) $(LFLAGS) -o $@ $(OBJ_WATERFALL3) -lfftw3  $(OBJ_COMMON) $(XLIBS) -lm
+	$(CC) $(LFLAGS) -o $@ $(OBJ_WATERFALL3) $(OBJ_COMMON) $(XLIBS) $(EXTLIB)libfftw3.a -lm
 	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)downsample: $(OBJ_DOWNSAMPLE) $(OBJ_COMMON)

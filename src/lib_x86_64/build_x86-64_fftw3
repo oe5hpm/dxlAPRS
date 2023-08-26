@@ -1,0 +1,16 @@
+#!/bin/bash
+SRC_TARBALL=../../fftw-3.3.10.tar.gz
+BUILDDIR=`mktemp -d`
+
+cp $SRC_TARBALL $BUILDDIR
+pushd $BUILDDIR
+tar -xf fftw-3.3.10.tar.gz
+cd fftw-3.3.10
+./configure --prefix=$BUILDDIR #--enable-float
+make -j16
+make install
+popd
+cp $BUILDDIR/lib/libfftw*.a .
+cp $BUILDDIR/include/fftw3.h .
+rm -r -f $BUILDDIR
+
