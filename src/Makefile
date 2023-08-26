@@ -120,6 +120,7 @@ LFLAGS		+=
 # -------------------------- x86_64 specific -----------------------------------
 else ifeq ($(HOSTARCH), x86_64)
 XLIBS		= -lpng -ljpeg -lXext -lX11
+CFLAGS		+= -I$(EXTLIB)
 EXTLIB		= lib_x86_64/
 ifeq ($(PLATFORM), x86_32)
 	OUT	:= $(if $(OUT),$(OUT),../out-x86_32/)
