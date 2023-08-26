@@ -34,6 +34,12 @@
 #endif
 
 /* interface rmnc-flex-kiss <> axudp by oe5dxl */
+/*
+FROM mlib IMPORT termios, tcgetattr, tcsetattr,
+                 CS8, CLOCAL, CREAD, TCSAFLUSH,
+                 B1200, B2400, B4800, B9600, B19200, B38400,
+                 B57600, B115200, B230400, B460800;
+*/
 #define udpflex_DEFTTY "/dev/ttyS0"
 
 #define udpflex_SLEEPWINLOOP 20
@@ -41,6 +47,12 @@
 
 #define udpflex_SLEEPCONNTCP 2000
 /* wait before new tcp network kiss connect ms */
+
+#define udpflex_KEEPALIVE_IDLE 180
+
+#define udpflex_KEEPALIVE_INTERVALL 30
+
+#define udpflex_KEEPALIVE_COUNT 2
 
 enum MODE {udpflex_KISS, udpflex_FLEXKISS, udpflex_SMACK};
 
@@ -110,6 +122,38 @@ static uint16_t udpflex_SMACKCRC[256] = {0U,49345U,49537U,320U,49921U,960U,
                 34369U,33281U,17088U,17280U,33601U,16640U,33217U,32897U,
                 16448U};
 
+static uint16_t udpflex_AXUDPCRC[256] = {61560U,57841U,54122U,49891U,
+                46684U,42965U,38222U,33991U,31792U,28089U,24354U,20139U,
+                14868U,11165U,6406U,2191U,57593U,61808U,50155U,53858U,42717U,
+                46932U,34255U,37958U,27825U,32056U,20387U,24106U,10901U,
+                15132U,2439U,6158U,53626U,49395U,62056U,58337U,38750U,34519U,
+                46156U,42437U,23858U,19643U,32288U,28585U,6934U,2719U,14340U,
+                10637U,49659U,53362U,58089U,62304U,34783U,38486U,42189U,
+                46404U,19891U,23610U,28321U,32552U,2967U,6686U,10373U,14604U,
+                45692U,41973U,37230U,32999U,62552U,58833U,55114U,50883U,
+                15924U,12221U,7462U,3247U,30736U,27033U,23298U,19083U,41725U,
+                45940U,33263U,36966U,58585U,62800U,51147U,54850U,11957U,
+                16188U,3495U,7214U,26769U,31000U,19331U,23050U,37758U,33527U,
+                45164U,41445U,54618U,50387U,63048U,59329U,7990U,3775U,15396U,
+                11693U,22802U,18587U,31232U,27529U,33791U,37494U,41197U,
+                45412U,50651U,54354U,59081U,63296U,4023U,7742U,11429U,15660U,
+                18835U,22554U,27265U,31496U,29808U,26105U,22370U,18155U,
+                12884U,9181U,4422U,207U,63544U,59825U,56106U,51875U,48668U,
+                44949U,40206U,35975U,25841U,30072U,18403U,22122U,8917U,
+                13148U,455U,4174U,59577U,63792U,52139U,55842U,44701U,48916U,
+                36239U,39942U,21874U,17659U,30304U,26601U,4950U,735U,12356U,
+                8653U,55610U,51379U,64040U,60321U,40734U,36503U,48140U,
+                44421U,17907U,21626U,26337U,30568U,983U,4702U,8389U,12620U,
+                51643U,55346U,60073U,64288U,36767U,40470U,44173U,48388U,
+                13940U,10237U,5478U,1263U,28752U,25049U,21314U,17099U,47676U,
+                43957U,39214U,34983U,64536U,60817U,57098U,52867U,9973U,
+                14204U,1511U,5230U,24785U,29016U,17347U,21066U,43709U,47924U,
+                35247U,38950U,60569U,64784U,53131U,56834U,6006U,1791U,13412U,
+                9709U,20818U,16603U,29248U,25545U,39742U,35511U,47148U,
+                43429U,56602U,52371U,65032U,61313U,2039U,5758U,9445U,13676U,
+                16851U,20570U,25281U,29512U,35775U,39478U,43181U,47396U,
+                52635U,56338U,61065U,65280U};
+
 #define udpflex_FEND 192
 
 #define udpflex_FESC 219
@@ -127,10 +171,6 @@ static char udpflex_SMACKBYTE = '\200';
 #define udpflex_CR "\015"
 
 #define udpflex_DEFAULTPORT "8001"
-
-static uint8_t CRCL[256];
-
-static uint8_t CRCH[256];
 
 static char ifn[701];
 
@@ -167,7 +207,11 @@ static struct _0 udpsocks[8];
 
 static int32_t tty;
 
-static struct termios saved;
+static uint32_t keepaliveidle;
+
+static uint32_t keepaliveintervall;
+
+static uint32_t keepalivecount;
 
 static int32_t len;
 
@@ -257,32 +301,9 @@ static void inittnc(void)
 
 static void SetComMode(int32_t fd, uint32_t baud0)
 {
-   struct termios term;
-   int32_t res0;
-   uint32_t bd;
-   struct termios * anonym;
-   if (baud0==1200UL) bd = 9UL;
-   else if (baud0==2400UL) bd = 11UL;
-   else if (baud0==4800UL) bd = 12UL;
-   else if (baud0==9600UL) bd = 13UL;
-   else if (baud0==19200UL) bd = 14UL;
-   else if (baud0==38400UL) bd = 15UL;
-   else if (baud0==57600UL) bd = 4097UL;
-   else if (baud0==115200UL) bd = 4098UL;
-   else if (baud0==230400UL) bd = 4099UL;
-   else if (baud0==460800UL) bd = 4100UL;
-   else Error("unknown baudrate", 17ul);
-   res0 = tcgetattr(fd, &saved);
-   res0 = tcgetattr(fd, &term);
-   { /* with */
-      struct termios * anonym = &term;
-      anonym->c_lflag = 0UL;
-      anonym->c_oflag = 0UL;
-      anonym->c_iflag = 0UL;
-      /*  cfmakeraw(&termios);*/
-      anonym->c_cflag = 2224UL+bd; /*+CRTSCTS*/ /*0800018B2H*/
+   if (osi_setttybaudraw(fd, baud0)<0L) {
+      if (verb) osi_WrStrLn("cannot config tty", 18ul);
    }
-   res0 = tcsetattr(fd, 2L, &term);
 } /* end SetComMode() */
 
 
@@ -421,6 +442,21 @@ static void Parms(void)
             if (sockc>1UL) Error("-A only with 1 UDP socket, ", 28ul);
          }
          else if (h[1U]=='k') kisson = 1;
+         else if (h[1U]=='K') {
+            osi_NextArg(h, 1024ul);
+            i0 = 0UL;
+            if (!GetNum(h, 1024ul, ':', &i0, &keepaliveidle)) {
+               Error("-K idle:intervall:count", 24ul);
+            }
+            ++i0;
+            if (!GetNum(h, 1024ul, ':', &i0, &keepaliveintervall)) {
+               Error("-K idle:intervall:count", 24ul);
+            }
+            ++i0;
+            if (!GetNum(h, 1024ul, 0, &i0, &keepalivecount)) {
+               Error("-K idle:intervall:count", 24ul);
+            }
+         }
          else if (h[1U]=='p') {
             osi_NextArg(h, 1024ul);
             i0 = 0UL;
@@ -501,6 +537,8 @@ kiss-on and sending -p ...(2500)", 82ul);
                osi_WrStrLn(" -h                                this", 40ul);
                osi_WrStrLn(" -i <filename>                     send this file\
  to tty to switch on kiss", 75ul);
+               osi_WrStrLn(" -K <idle>:<intervall>:<count>     tcp-keepalive \
+idle:intervall:count seconds (180:30:2)", 89ul);
                osi_WrStrLn(" -k                                tnc2 tf switch\
  on kiss", 58ul);
                osi_WrStrLn(" -p <cmd>:<value>                  tnc2 parameter\
@@ -568,49 +606,88 @@ messages", 58ul);
    }
 } /* end Parms() */
 
-#define udpflex_POLINOM 0x8408 
-
-
-static void Gencrctab(void)
-{
-   uint32_t c0;
-   uint32_t crc0;
-   uint32_t i0;
-   for (c0 = 0UL; c0<=255UL; c0++) {
-      crc0 = 255UL-c0;
-      for (i0 = 0UL; i0<=7UL; i0++) {
-         if ((crc0&1)) crc0 = (uint32_t)((uint32_t)(crc0>>1)^0x8408UL);
-         else crc0 = crc0>>1;
-      } /* end for */
-      CRCL[c0] = (uint8_t)crc0;
-      CRCH[c0] = (uint8_t)(255UL-(crc0>>8));
-   } /* end for */
-} /* end Gencrctab() */
-
+/*
+PROCEDURE Gencrctab;
+CONST POLINOM=08408H;
+VAR i,crc,c:CARDINAL;
+BEGIN
+  FOR c:=0 TO 255 DO
+    crc:=255-c;
+    FOR i:=0 TO 7 DO
+      IF ODD(crc) THEN crc:=CAST(CARDINAL, CAST(BITSET, ASH(crc,
+                -1))/CAST(BITSET,POLINOM))
+      ELSE crc:=ASH(crc, -1) END;
+    END;
+    CRCL[c]:=CAST(SET8, crc);
+    CRCH[c]:=CAST(SET8, 255 - ASH(crc, -8));
+  END;
+END Gencrctab;
+*/
+/*
+PROCEDURE UDPCRC(frame-:ARRAY OF CHAR; size:INTEGER):CARDINAL;
+VAR l,h:SET8;
+    b:CARD8;
+    i:INTEGER;
+BEGIN
+  l:=SET8{};
+  h:=SET8{};
+  FOR i:=0 TO size-1 DO
+    b:=CAST(CARD8, CAST(SET8, frame[i]) / l);
+    l:=CRCL[b] / h;
+    h:=CRCH[b];
+  END;
+  RETURN ORD(CAST(CHAR, l))+256*ORD(CAST(CHAR, h))
+END UDPCRC;
+*/
+static uint16_t _cnst[256] = {61560U,57841U,54122U,49891U,46684U,42965U,
+                38222U,33991U,31792U,28089U,24354U,20139U,14868U,11165U,
+                6406U,2191U,57593U,61808U,50155U,53858U,42717U,46932U,34255U,
+                37958U,27825U,32056U,20387U,24106U,10901U,15132U,2439U,6158U,
+                53626U,49395U,62056U,58337U,38750U,34519U,46156U,42437U,
+                23858U,19643U,32288U,28585U,6934U,2719U,14340U,10637U,49659U,
+                53362U,58089U,62304U,34783U,38486U,42189U,46404U,19891U,
+                23610U,28321U,32552U,2967U,6686U,10373U,14604U,45692U,41973U,
+                37230U,32999U,62552U,58833U,55114U,50883U,15924U,12221U,
+                7462U,3247U,30736U,27033U,23298U,19083U,41725U,45940U,33263U,
+                36966U,58585U,62800U,51147U,54850U,11957U,16188U,3495U,7214U,
+                26769U,31000U,19331U,23050U,37758U,33527U,45164U,41445U,
+                54618U,50387U,63048U,59329U,7990U,3775U,15396U,11693U,22802U,
+                18587U,31232U,27529U,33791U,37494U,41197U,45412U,50651U,
+                54354U,59081U,63296U,4023U,7742U,11429U,15660U,18835U,22554U,
+                27265U,31496U,29808U,26105U,22370U,18155U,12884U,9181U,4422U,
+                207U,63544U,59825U,56106U,51875U,48668U,44949U,40206U,35975U,
+                25841U,30072U,18403U,22122U,8917U,13148U,455U,4174U,59577U,
+                63792U,52139U,55842U,44701U,48916U,36239U,39942U,21874U,
+                17659U,30304U,26601U,4950U,735U,12356U,8653U,55610U,51379U,
+                64040U,60321U,40734U,36503U,48140U,44421U,17907U,21626U,
+                26337U,30568U,983U,4702U,8389U,12620U,51643U,55346U,60073U,
+                64288U,36767U,40470U,44173U,48388U,13940U,10237U,5478U,1263U,
+                28752U,25049U,21314U,17099U,47676U,43957U,39214U,34983U,
+                64536U,60817U,57098U,52867U,9973U,14204U,1511U,5230U,24785U,
+                29016U,17347U,21066U,43709U,47924U,35247U,38950U,60569U,
+                64784U,53131U,56834U,6006U,1791U,13412U,9709U,20818U,16603U,
+                29248U,25545U,39742U,35511U,47148U,43429U,56602U,52371U,
+                65032U,61313U,2039U,5758U,9445U,13676U,16851U,20570U,25281U,
+                29512U,35775U,39478U,43181U,47396U,52635U,56338U,61065U,
+                65280U};
 
 static uint32_t UDPCRC(const char frame[], uint32_t frame_len,
                 int32_t size)
 {
-   uint8_t h;
-   uint8_t l;
-   uint8_t b;
+   uint16_t c0;
    int32_t i0;
    int32_t tmp;
-   l = 0U;
-   h = 0U;
+   c0 = 0U;
    tmp = size-1L;
    i0 = 0L;
    if (i0<=tmp) for (;; i0++) {
-      b = (uint8_t)((uint8_t)(uint8_t)frame[i0]^l);
-      l = CRCL[b]^h;
-      h = CRCH[b];
+      c0 = X2C_LSH(c0,16,-8)^(uint16_t)_cnst[(uint16_t)(((uint16_t)(uint32_t)(uint8_t)frame[i0]^c0)&0xFFU)];
       if (i0==tmp) break;
    } /* end for */
-   return (uint32_t)(uint8_t)(char)l+256UL*(uint32_t)(uint8_t)
-                (char)h;
+   return (uint32_t)(uint16_t)c0;
 } /* end UDPCRC() */
 
-static uint16_t _cnst[256] = {3975U,7694U,11413U,15644U,18851U,22570U,
+static uint16_t _cnst0[256] = {3975U,7694U,11413U,15644U,18851U,22570U,
                 27313U,31544U,33743U,37446U,41181U,45396U,50667U,54370U,
                 59129U,63344U,7942U,3727U,15380U,11677U,22818U,18603U,31280U,
                 27577U,37710U,33479U,45148U,41429U,54634U,50403U,63096U,
@@ -648,14 +725,14 @@ static uint32_t flexcrc(const char buf[], uint32_t buf_len,
    uint16_t crc0;
    crc0 = 0xFFFFU;
    while (a<=b) {
-      crc0 = X2C_LSH(crc0,16,8)^(uint16_t)_cnst[(uint32_t)(X2C_LSH(crc0,
+      crc0 = X2C_LSH(crc0,16,8)^(uint16_t)_cnst0[(uint32_t)(X2C_LSH(crc0,
                 16,-8)^(uint16_t)(uint32_t)(uint8_t)buf[a])];
       ++a;
    }
    return (uint32_t)crc0;
 } /* end flexcrc() */
 
-static uint16_t _cnst0[256] = {0U,49345U,49537U,320U,49921U,960U,640U,
+static uint16_t _cnst1[256] = {0U,49345U,49537U,320U,49921U,960U,640U,
                 49729U,50689U,1728U,1920U,51009U,1280U,50625U,50305U,1088U,
                 52225U,3264U,3456U,52545U,3840U,53185U,52865U,3648U,2560U,
                 51905U,52097U,2880U,51457U,2496U,2176U,51265U,55297U,6336U,
@@ -695,7 +772,7 @@ static uint32_t smackcrc(const char buf[], uint32_t buf_len,
    crc0 = 0U;
    while (a<=b) {
       /*  crc = ((crc >> 8) & 0xff) ^ crc_table[(crc ^ *buf++) & 0xff]; */
-      crc0 = X2C_LSH(crc0,16,-8)^(uint16_t)_cnst0[(uint32_t)((crc0^(uint16_t)(uint32_t)(uint8_t)buf[a])&0xFFU)];
+      crc0 = X2C_LSH(crc0,16,-8)^(uint16_t)_cnst1[(uint32_t)((crc0^(uint16_t)(uint32_t)(uint8_t)buf[a])&0xFFU)];
       ++a;
    }
    /*WrHex(CAST(CARDINAL, crc) DIV 256, 3);
@@ -871,13 +948,13 @@ static void ShowFrame(char f[], uint32_t f_len, uint32_t len0,
    while (!((uint32_t)(uint8_t)f[i0]&1)) {
       ++i0;
       if (i0>len0) {
-         osi_WrStrLn(" no axudp (no address end mark)", 32ul);
+         osi_WrStrLn(" no ax.25 (no address end mark)", 32ul);
          return;
       }
    }
    /* no address end mark found */
    if (i0%7UL!=6UL) {
-      osi_WrStrLn(" no axudp (address field size not modulo 7)", 44ul);
+      osi_WrStrLn(" no ax.25 (address field size not multiples of 7)", 50ul);
       return;
    }
    /* address end not modulo 7 error */
@@ -988,7 +1065,7 @@ static uint32_t wake;
 static int32_t res;
 
 /*testloop:CARDINAL; */
-static aprsstr_GHOSTSET _cnst1 = {0x00000000UL,0x00000000UL,0x00000000UL,
+static aprsstr_GHOSTSET _cnst2 = {0x00000000UL,0x00000000UL,0x00000000UL,
                 0x00000000UL,0x00000000UL,0x00000000UL,0x00000000UL,
                 0x00000000UL,0x00000000UL};
 
@@ -1020,11 +1097,12 @@ extern int main(int argc, char **argv)
    tty = -1L;
    fend = 192UL;
    kissondelay = 2500UL;
+   keepaliveidle = 180UL;
+   keepaliveintervall = 30UL;
+   keepalivecount = 2UL;
    Parms();
-   Gencrctab();
+   /*Gencrctab; */
    if (ttynamee[0U]) opentty();
-   /*IF udpsock<0 THEN Error("udpport open") END; */
-   /*WrInt(udpsock, 10); WrStrLn(" sock"); */
    errtime = 0UL;
    upos = 0L;
    kissm = 0UL;
@@ -1053,6 +1131,8 @@ extern int main(int argc, char **argv)
                osi_WrStrLn(direwolfport, 11ul);
             }
             conntcp(&tcpfd, direwolfurl, 2048ul, direwolfport, 11ul);
+            res = osi_keepalive(tcpfd, 1, (int32_t)keepaliveidle,
+                (int32_t)keepaliveintervall, (int32_t)keepalivecount);
          }
       }
       fdclr();
@@ -1081,6 +1161,9 @@ extern int main(int argc, char **argv)
                      tcpfd = acceptconnect(tcplistenfd, direwolfurl, &res);
                      if (tcpfd>=0L) {
                         /* a new www connect */
+                        res = osi_keepalive(tcpfd, 1,
+                (int32_t)keepaliveidle, (int32_t)keepaliveintervall,
+                (int32_t)keepalivecount);
                         /*                res:=socknonblock(tcpfd); */
                         if (verb) wripnum(tcpfd);
                      }
@@ -1234,9 +1317,7 @@ extern int main(int argc, char **argv)
                         for (i = len; i>=1L; i--) {
                            ubuf[i] = ubuf[i-1L];
                         } /* end for */
-                        if (flexmod==udpflex_FLEXKISS) {
-                           ubuf[0U] = ' ';
-                        }
+                        if (flexmod==udpflex_FLEXKISS) ubuf[0U] = ' ';
                         else if (flexmod==udpflex_SMACK) {
                            ubuf[0U] = (char)(128UL+16UL*tncport);
                         }
@@ -1279,7 +1360,7 @@ extern int main(int argc, char **argv)
                      }
                      else if (len>2L) {
                         aprsstr_raw2mon(ubuf, 701ul, kbuf, 701ul,
-                (uint32_t)(len-2L), &crc, _cnst1);
+                (uint32_t)(len-2L), &crc, _cnst2);
                         tpos = (int32_t)aprsstr_Length(kbuf, 701ul);
                         if (tpos>0L) kbuf[tpos] = '\015';
                      }
