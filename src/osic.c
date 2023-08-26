@@ -247,18 +247,18 @@ int osic_Size(int fd)
 
 void osic_Seek(int32_t fd, uint32_t pos)
 {
-	lseek(fd, (int32_t)pos, SEEK_SET);
+	lseek(fd, (off_t)pos, SEEK_SET);
 }
 
 void osic_Seekcur(int32_t fd, int32_t rel)
 {
 #ifndef MACOS
-	if (lseek64(fd, rel, (uint32_t)SEEK_CUR) < 0)
+	if (lseek64(fd, (off_t)rel, SEEK_CUR) < 0)
 		lseek(fd, 0, SEEK_SET);
 #else
-	/* MacOS has no lseek64 */
-	if (lseek(fd, rel, (uint32_t)SEEK_CUR) < 0)
-		lseek(fd, 0, SEEK_SET);
+        /* MacOS has no lseek64 */
+        if (lseek(fd, rel, SEEK_CUR) < 0)
+                lseek(fd, 0, SEEK_SET);
 #endif
 }
 
