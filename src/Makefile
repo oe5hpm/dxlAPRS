@@ -121,8 +121,10 @@ LFLAGS		+=
 else ifeq ($(HOSTARCH), x86_64)
 XLIBS		= -lpng -ljpeg -lXext -lX11
 CFLAGS		+= -I$(EXTLIB)
+
 EXTLIB		= lib_x86_64/
 ifeq ($(PLATFORM), x86_32)
+	EXTLIB	= lib_x86_32/
 	OUT	:= $(if $(OUT),$(OUT),../out-x86_32/)
 	CFLAGS	+= -m32
 	LFLAGS	+= -m32
