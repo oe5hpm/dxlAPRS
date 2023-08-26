@@ -850,6 +850,10 @@ extern void libsrtm_BEGIN(void)
    libsrtm_bicubic = 0;
    lastilat = X2C_max_longcard;
    lastilong = X2C_max_longcard;
+   lastilat1 = X2C_max_longcard;
+   lastilong1 = X2C_max_longcard;
+   lastilat2 = X2C_max_longcard;
+   lastilong2 = X2C_max_longcard;
    libsrtm_accessescached = 0UL;
    libsrtm_accesses = 0UL;
 }
