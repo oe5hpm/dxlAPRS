@@ -1,0 +1,1 @@
+"https://www.openstreetmap.org/?mlat=$B&mlon=$L#map=14/$B/$L" target="_blank"
