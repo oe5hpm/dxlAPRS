@@ -87,10 +87,10 @@ ifeq ($(PLATFORM), armv6tce)
 OUT		:= $(if $(OUT),$(OUT),../out-armv6tce/)
 EXTLIB  	= lib_armv6/
 XLIBS		= $(EXTLIB)libpng15/libpng.a \
-		  $(EXTLIB)libz.a \
-		  $(EXTLIB)libjpeg.a \
-		  $(EXTLIB)libxcb.so.1 $(EXTLIB)libXdmcp.so.6 $(EXTLIB)libXau.so.6 \
-		  -L$(EXTLIB) -lXext -lX11
+			  $(EXTLIB)libz.a \
+			  $(EXTLIB)libjpeg.a \
+			  $(EXTLIB)libxcb.so.1 $(EXTLIB)libXdmcp.so.6 $(EXTLIB)libXau.so.6 \
+			  -L$(EXTLIB) -lXext -lX11
 CFLAGS		+= -march=armv6zk -mfpu=vfp -mfloat-abi=hard -mcpu=arm1176jzf-s
 CFLAGS		+= -Ilib_armv6/libpng15/ -I$(EXTLIB) -I.
 LFLAGS		+=
@@ -98,10 +98,10 @@ else ifeq ($(PLATFORM), armv6)
 OUT		:= $(if $(OUT),$(OUT),../out-armv6/)
 EXTLIB  	= lib_armv6/
 XLIBS		= $(EXTLIB)libpng16/libpng.a \
-		  $(EXTLIB)libz.a \
-		  $(EXTLIB)libjpeg.a \
-		  $(EXTLIB)libxcb.so.1 $(EXTLIB)libXdmcp.so.6 $(EXTLIB)libXau.so.6 \
-		  -L$(EXTLIB) -lXext -lX11
+			  $(EXTLIB)libz.a \
+			  $(EXTLIB)libjpeg.a \
+			  $(EXTLIB)libxcb.so.1 $(EXTLIB)libXdmcp.so.6 $(EXTLIB)libXau.so.6 \
+			  -L$(EXTLIB) -lXext -lX11
 CFLAGS		+= -march=armv6zk -mfpu=vfp -mfloat-abi=hard -mcpu=arm1176jzf-s
 CFLAGS		+= -Ilib_armv6/libpng16/ -I$(EXTLIB) -I.
 LFLAGS		+=
@@ -110,10 +110,10 @@ else ifeq ($(PLATFORM), armv7hf)
 OUT		:= $(if $(OUT),$(OUT),../out-armv7hf/)
 EXTLIB		= lib_armv7hf/
 XLIBS		= $(EXTLIB)libpng.a \
-		  $(EXTLIB)libz.a \
-		  $(EXTLIB)libjpeg.a \
-		  $(EXTLIB)libxcb.so $(EXTLIB)libXdmcp.so $(EXTLIB)libXau.so \
-		  -L$(EXTLIB) -lXext -lX11
+			  $(EXTLIB)libz.a \
+			  $(EXTLIB)libjpeg.a \
+			  $(EXTLIB)libxcb.so $(EXTLIB)libXdmcp.so $(EXTLIB)libXau.so \
+			  -L$(EXTLIB) -lXext -lX11
 CFLAGS		+= -march=armv7-a -mfpu=neon -mfloat-abi=hard
 CFLAGS		+= -I$(EXTLIB)
 LFLAGS		+=
@@ -121,7 +121,6 @@ LFLAGS		+=
 else ifeq ($(HOSTARCH), x86_64)
 XLIBS		= -lpng -ljpeg -lXext -lX11
 CFLAGS		+= -I$(EXTLIB)
-
 EXTLIB		= lib_x86_64/
 ifeq ($(PLATFORM), x86_32)
 	EXTLIB	= lib_x86_32/
@@ -465,14 +464,12 @@ $(OUT)profile : $(OBJ_PROFILE) $(OBJ_COMMON)
 
 $(OUT)radiorange: $(OBJ_RADIORANGE) $(OBJ_COMMON)
 	@echo [ linking ] $@
-	@$(CC) $(LFLAGS) -o $@ $(OBJ_RADIORANGE) $(OBJ_COMMON) \
-	$(XLIBS) -lm
+	@$(CC) $(LFLAGS) -o $@ $(OBJ_RADIORANGE) $(OBJ_COMMON) $(XLIBS) -lm
 	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)panorama: $(OBJ_PANORAMA) $(OBJ_COMMON)
 	@echo [ linking ] $@
-	@$(CC) $(LFLAGS) -o $@ $(OBJ_PANORAMA) $(OBJ_COMMON) \
-	$(XLIBS) -lm
+	@$(CC) $(LFLAGS) -o $@ $(OBJ_PANORAMA) $(OBJ_COMMON) $(XLIBS) -lm
 	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)cmslogin: $(OBJ_CMSLOGIN) $(OBJ_COMMON)
