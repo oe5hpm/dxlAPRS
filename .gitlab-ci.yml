@@ -14,7 +14,7 @@ linux_x86-32_build:
     - apt-get -y install libx11-dev libxext-dev zlib1g-dev libjpeg-dev libpng-dev
     script:
     - cd src
-    - PLATFORM=x86_32 make
+    - PLATFORM=x86_32 make -j16
     artifacts:
       paths:
       - out-x86_32/*
@@ -30,7 +30,7 @@ linux_x86-64_build:
     - apt-get -y install libx11-dev libxext-dev zlib1g-dev libjpeg-dev libpng-dev
     script:
     - cd src
-    - make
+    - make -j16
     artifacts:
       paths:
       - out-x86_64/*
@@ -43,10 +43,23 @@ linux_armv7_build:
     - linux
     script:
     - cd src
-    - CROSS_COMPILE=/opt/gcc-linaro-7.2.1-2017.11-x86_64_arm-linux-gnueabihf/bin/arm-linux-gnueabihf- PLATFORM=armv7hf make
+    - CROSS_COMPILE=/opt/gcc-linaro-7.5.0-2019.12-x86_64_arm-linux-gnueabihf/bin/arm-linux-gnueabihf- PLATFORM=armv7hf make -j16
     artifacts:
       paths:
       - out-armv7hf/*
+      expire_in: 2 week
+
+linux_aarch64_build:
+    stage: build
+    image: hpm/ubuntu:xenial-16.04-64
+    tags:
+    - linux
+    script:
+    - cd src
+    - CROSS_COMPILE=/opt/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu- PLATFORM=aarch64 make -j16
+    artifacts:
+      paths:
+      - out-aarch64/*
       expire_in: 2 week
 
 linux_armv6_build:
@@ -69,7 +82,7 @@ linux_armv6tce_build:
     - linux
     script:
     - cd src
-    - CROSS_COMPILE=/opt/rpi-tools/arm-bcm2708/arm-bcm2708hardfp-linux-gnueabi/bin/arm-bcm2708hardfp-linux-gnueabi- PLATFORM=armv6tce make
+    - CROSS_COMPILE=/opt/rpi-tools/arm-bcm2708/arm-bcm2708hardfp-linux-gnueabi/bin/arm-bcm2708hardfp-linux-gnueabi- PLATFORM=armv6tce make -j16
     artifacts:
       paths:
       - out-armv6tce/*

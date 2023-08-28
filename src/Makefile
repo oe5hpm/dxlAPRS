@@ -86,42 +86,58 @@ endif
 ifeq ($(PLATFORM), armv6tce)
 OUT		:= $(if $(OUT),$(OUT),../out-armv6tce/)
 EXTLIB  	= lib_armv6/
-XLIBS		= $(EXTLIB)libpng15/libpng.a \
+GFXLIBS		= $(EXTLIB)libpng15/libpng.a \
 			  $(EXTLIB)libz.a \
-			  $(EXTLIB)libjpeg.a \
-			  $(EXTLIB)libxcb.so.1 $(EXTLIB)libXdmcp.so.6 $(EXTLIB)libXau.so.6 \
+			  $(EXTLIB)libjpeg.a
+XLIBS		= $(EXTLIB)libxcb.so.1 $(EXTLIB)libXdmcp.so.6 $(EXTLIB)libXau.so.6 \
 			  -L$(EXTLIB) -lXext -lX11
 CFLAGS		+= -march=armv6zk -mfpu=vfp -mfloat-abi=hard -mcpu=arm1176jzf-s
 CFLAGS		+= -Ilib_armv6/libpng15/ -I$(EXTLIB) -I.
 LFLAGS		+=
+TARGETS		+=	$(OUT)aprsmap
 else ifeq ($(PLATFORM), armv6)
 OUT		:= $(if $(OUT),$(OUT),../out-armv6/)
 EXTLIB  	= lib_armv6/
-XLIBS		= $(EXTLIB)libpng16/libpng.a \
+GFXLIBS		= $(EXTLIB)libpng16/libpng.a \
 			  $(EXTLIB)libz.a \
-			  $(EXTLIB)libjpeg.a \
-			  $(EXTLIB)libxcb.so.1 $(EXTLIB)libXdmcp.so.6 $(EXTLIB)libXau.so.6 \
-			  -L$(EXTLIB) -lXext -lX11
+			  $(EXTLIB)libjpeg.a
+XLIBS		= $(EXTLIB)libxcb.so.1 $(EXTLIB)libXdmcp.so.6 $(EXTLIB)libXau.so.6 \
+			 -L$(EXTLIB) -lXext -lX11
 CFLAGS		+= -march=armv6zk -mfpu=vfp -mfloat-abi=hard -mcpu=arm1176jzf-s
 CFLAGS		+= -Ilib_armv6/libpng16/ -I$(EXTLIB) -I.
 LFLAGS		+=
+TARGETS		+=	$(OUT)aprsmap
 # ---------------------- armv7hf (bur am335x pp) specific ---------------------
 else ifeq ($(PLATFORM), armv7hf)
 OUT		:= $(if $(OUT),$(OUT),../out-armv7hf/)
 EXTLIB		= lib_armv7hf/
-XLIBS		= $(EXTLIB)libpng.a \
+GFXLIBS		= $(EXTLIB)libpng.a \
 			  $(EXTLIB)libz.a \
-			  $(EXTLIB)libjpeg.a \
-			  $(EXTLIB)libxcb.so $(EXTLIB)libXdmcp.so $(EXTLIB)libXau.so \
-			  -L$(EXTLIB) -lXext -lX11
+			  $(EXTLIB)libjpeg.a
+XLIBS		= $(EXTLIB)libxcb.so $(EXTLIB)libXdmcp.so $(EXTLIB)libXau.so \
+			 -L$(EXTLIB) -lXext -lX11
 CFLAGS		+= -march=armv7-a -mfpu=neon -mfloat-abi=hard
+CFLAGS		+= -I$(EXTLIB)
+LFLAGS		+=
+TARGETS		+=	$(OUT)aprsmap
+# ---------------------- aarcg64 (rpi 4) specific -----------------------------
+else ifeq ($(PLATFORM), aarch64)
+OUT		:= $(if $(OUT),$(OUT),../out-aarch64/)
+EXTLIB		= lib_aarch64/
+GFXLIBS		=  $(EXTLIB)libpng.a \
+			  $(EXTLIB)libz.a \
+			  $(EXTLIB)libjpeg.a
+XLIBS		= $(EXTLIB)libxcb.so $(EXTLIB)libXdmcp.so $(EXTLIB)libXau.so \
+			 -L$(EXTLIB) -lXext -lX11
 CFLAGS		+= -I$(EXTLIB)
 LFLAGS		+=
 # -------------------------- x86_64 specific -----------------------------------
 else ifeq ($(HOSTARCH), x86_64)
-XLIBS		= -lpng -ljpeg -lXext -lX11
+GFXLIBS		= -lpng -ljpeg
+XLIBS		= -lXext -lX11
 CFLAGS		+= -I$(EXTLIB)
 EXTLIB		= lib_x86_64/
+TARGETS		+=	$(OUT)aprsmap
 ifeq ($(PLATFORM), x86_32)
 	EXTLIB	= lib_x86_32/
 	OUT	:= $(if $(OUT),$(OUT),../out-x86_32/)
@@ -136,10 +152,13 @@ OUT		:= $(if $(OUT),$(OUT),../out-x86_64/)
 else ifeq ($(HOSTARCH), x86)
 OUT		:= $(if $(OUT),$(OUT),../out-x86_32/)
 TARGETS		+= $(OUT)aprsmap-x86_32
-XLIBS		= -lpng -ljpeg -lXext -lX11
+GFXLIBS		=-lpng -ljpeg
+XLIBS		= -lXext -lX11
 else
 OUT		:= $(if $(OUT),$(OUT),../out/)
-XLIBS		+= -lpng -ljpeg -lXext -lX11
+GFXLIBS		+= -lpng -ljpeg
+XLIBS		+=-lXext -lX11
+TARGETS		+=	$(OUT)aprsmap
 endif
 # ------------------ objects enumeration ------------------
 OBJ_COMMON = \
@@ -288,7 +307,9 @@ OBJ_LORARX = \
 	$(OUT)complex.o
 
 OBJ_HOSTINT = \
-	$(OUT)hostint.o
+	$(OUT)hostint.o \
+	$(OUT)frameio.o \
+	$(OUT)l2.o
 
 TARGETS += \
 	$(OUT)afskmodem \
@@ -300,7 +321,6 @@ TARGETS += \
 	$(OUT)udphub \
 	$(OUT)sondemod \
 	$(OUT)sondeudp \
-	$(OUT)aprsmap \
 	$(OUT)sdrtst \
 	$(OUT)sdrradio \
 	$(OUT)adsb2aprs \
@@ -417,7 +437,7 @@ $(OUT)udphub: $(OBJ_UDPHUB) $(OBJ_COMMON)
 $(OUT)aprsmap-x86_32: $(OBJ_APRSMAP) $(OBJ_COMMON)
 	@echo [ linking ] $@
 	@$(CC) $(LFLAGS) -o $@ $(OBJ_APRSMAP) \
-	$(OBJ_COMMON) $(XLIBS) \
+	$(OBJ_COMMON) $(GFXLIBS) $(XLIBS) \
 	-lpthread -lxcb -lXau -lXdmcp -lm -lpthread -ldl -lz \
 	-static
 	@$(STRIP) $@ $(STRIPFLAGS)
@@ -425,7 +445,7 @@ $(OUT)aprsmap-x86_32: $(OBJ_APRSMAP) $(OBJ_COMMON)
 $(OUT)aprsmap-x86_64: $(OBJ_APRSMAP) $(OBJ_COMMON)
 	@echo [ linking ] $@
 	@$(CC) $(LFLAGS) -o $@ $(OBJ_APRSMAP) \
-	$(OBJ_COMMON) $(XLIBS) \
+	$(OBJ_COMMON) $(GFXLIBS) $(XLIBS) \
 	-lpthread -lxcb -lXau -lXdmcp -lm -lpthread -ldl -lz \
 	-static
 	@$(STRIP) $@ $(STRIPFLAGS)
@@ -433,7 +453,7 @@ $(OUT)aprsmap-x86_64: $(OBJ_APRSMAP) $(OBJ_COMMON)
 $(OUT)aprsmap : $(OBJ_APRSMAP) $(OBJ_COMMON)
 	@echo [ linking ] $@
 	@$(CC) $(LFLAGS) -o $@ $(OBJ_APRSMAP) \
-	$(OBJ_COMMON) $(XLIBS) -lm
+	$(OBJ_COMMON) $(GFXLIBS) $(XLIBS) -lm
 	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)sdrtst : $(OBJ_SDRTST) $(OBJ_COMMON)
@@ -459,17 +479,17 @@ $(OUT)adsb2aprs: $(OBJ_ADSB2APRS) $(OBJ_COMMON)
 $(OUT)profile : $(OBJ_PROFILE) $(OBJ_COMMON)
 	@echo [ linking ] $@
 	@$(CC) $(LFLAGS) -o $@ $(OBJ_PROFILE) \
-	$(OBJ_COMMON) $(XLIBS) -lm
+	$(OBJ_COMMON) $(GFXLIBS) -lm
 	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)radiorange: $(OBJ_RADIORANGE) $(OBJ_COMMON)
 	@echo [ linking ] $@
-	@$(CC) $(LFLAGS) -o $@ $(OBJ_RADIORANGE) $(OBJ_COMMON) $(XLIBS) -lm
+	@$(CC) $(LFLAGS) -o $@ $(OBJ_RADIORANGE) $(OBJ_COMMON) $(GFXLIBS) -lm
 	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)panorama: $(OBJ_PANORAMA) $(OBJ_COMMON)
 	@echo [ linking ] $@
-	@$(CC) $(LFLAGS) -o $@ $(OBJ_PANORAMA) $(OBJ_COMMON) $(XLIBS) -lm
+	@$(CC) $(LFLAGS) -o $@ $(OBJ_PANORAMA) $(OBJ_COMMON) $(GFXLIBS) -lm
 	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)cmslogin: $(OBJ_CMSLOGIN) $(OBJ_COMMON)
@@ -479,8 +499,7 @@ $(OUT)cmslogin: $(OBJ_CMSLOGIN) $(OBJ_COMMON)
 
 $(OUT)srtmtag: $(OBJ_SRTMTAG) $(OBJ_COMMON)
 	@echo [ linking ] $@
-	@$(CC) $(LFLAGS) -o $@ $(OBJ_COMMON) $(OBJ_SRTMTAG) \
-	$(XLIBS) -lm
+	@$(CC) $(LFLAGS) -o $@ $(OBJ_COMMON) $(OBJ_SRTMTAG) $(GFXLIBS) -lm
 	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)fmrepeater: $(OBJ_FMREPEATER) $(OBJ_COMMON)
@@ -490,12 +509,12 @@ $(OUT)fmrepeater: $(OBJ_FMREPEATER) $(OBJ_COMMON)
 
 $(OUT)waterfall: $(OBJ_WATERFALL) $(OBJ_COMMON)
 	@echo [ linking ] $@
-	@$(CC) $(LFLAGS) -o $@  $(OBJ_WATERFALL) $(OBJ_COMMON) $(XLIBS) -lm
+	@$(CC) $(LFLAGS) -o $@  $(OBJ_WATERFALL) $(OBJ_COMMON) $(GFXLIBS) -lm
 	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)waterfall3: $(OBJ_WATERFALL3) $(OBJ_COMMON)
 	@echo [ linking ] $@
-	$(CC) $(LFLAGS) -o $@ $(OBJ_WATERFALL3) $(OBJ_COMMON) $(XLIBS) $(EXTLIB)libfftw3.a -lm
+	$(CC) $(LFLAGS) -o $@ $(OBJ_WATERFALL3) $(OBJ_COMMON) $(GFXLIBS) $(EXTLIB)libfftw3.a -lm
 	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)downsample: $(OBJ_DOWNSAMPLE) $(OBJ_COMMON)
@@ -525,7 +544,7 @@ $(OUT)lorarx: $(OBJ_LORARX) $(OBJ_COMMON)
 
 $(OUT)hostint: $(OBJ_HOSTINT) $(OBJ_COMMON)
 	@echo [ linking ] $@
-	@$(CC) $(LFLAGS) -o $@ $(OBJ_LORARX) $(OBJ_COMMON) -lm
+	@$(CC) $(LFLAGS) -o $@ $(OBJ_HOSTINT) $(OBJ_COMMON) -lm
 	@$(STRIP) $@ $(STRIPFLAGS)
 
 %:

@@ -1,0 +1,18 @@
+#!/bin/bash
+SRC_TARBALL=../../fftw-3.3.10.tar.gz
+BUILDDIR=`mktemp -d`
+export CC=/opt/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu-gcc
+export CFLAGS=""
+
+cp $SRC_TARBALL $BUILDDIR
+pushd $BUILDDIR
+tar -xf fftw-3.3.10.tar.gz
+cd fftw-3.3.10
+./configure --prefix=$BUILDDIR --host=arm-none-linux-gnueabi
+make -j16
+make install
+popd
+cp $BUILDDIR/lib/libfftw3*.a .
+cp $BUILDDIR/include/fftw3.h .
+rm -r -f $BUILDDIR
+

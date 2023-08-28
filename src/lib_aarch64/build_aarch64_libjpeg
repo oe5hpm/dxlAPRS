@@ -1,0 +1,18 @@
+#!/bin/bash
+SRC_TARBALL=../../jpegsrc.v9.tar.gz
+BUILDDIR=`mktemp -d`
+export CC=/opt/gcc-linaro-7.5.0-2019.12-x86_64_arm-linux-gnueabihf/bin/arm-linux-gnueabihf-gcc
+export CFLAGS="-march=armv7-a -mfpu=neon -mfloat-abi=hard -mcpu=cortex-a8"
+
+cp $SRC_TARBALL $BUILDDIR
+pushd $BUILDDIR
+tar -xf jpegsrc.v9.tar.gz
+cd jpeg-9
+./configure --prefix=$BUILDDIR --host=arm-none-linux-gnueabi
+make -j16
+make install
+popd
+cp $BUILDDIR/lib/*.a .
+cp $BUILDDIR/include/*.h .
+rm -r -f $BUILDDIR
+

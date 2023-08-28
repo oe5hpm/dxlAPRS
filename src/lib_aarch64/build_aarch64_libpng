@@ -1,0 +1,20 @@
+#!/bin/bash
+SRC_TARBALL=../../libpng-1.6.3.tgz
+BUILDDIR=`mktemp -d`
+DESTPATH=`pwd`
+
+export CC=/opt/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu-gcc
+
+cp $SRC_TARBALL $BUILDDIR
+pushd $BUILDDIR
+tar -xf libpng-1.6.3.tgz
+cd libpng-1.6.3
+./configure --prefix=$BUILDDIR --host=arm-none-linux-gnueabi --with-zlib-prefix=$DESTPATH
+make -j16
+make install
+popd
+cp $BUILDDIR/lib/*.a .
+cp $BUILDDIR/include/*.h .
+echo $CFLAGS
+rm -r -f $BUILDDIR
+

@@ -1,0 +1,18 @@
+#!/bin/bash
+SRC_TARBALL=../../zlib-1.2.8.tar.gz
+BUILDDIR=`mktemp -d`
+export CC=/opt/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu-gcc
+export CFLAGS=""
+
+cp $SRC_TARBALL $BUILDDIR
+pushd $BUILDDIR
+tar -xf zlib-1.2.8.tar.gz
+cd zlib-1.2.8
+./configure --prefix=$BUILDDIR
+make -j16
+make install
+popd
+cp $BUILDDIR/lib/*.a .
+cp $BUILDDIR/include/*.h .
+rm -r -f $BUILDDIR
+
