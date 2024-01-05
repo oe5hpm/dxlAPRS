@@ -25,7 +25,8 @@
 #endif
 #include <signal.h>
 
-/* gpio or lpt to scp ra02 radio module + afsk tx */
+/* gpio or lpt to scp ra02 radio module(s)  fsk, afsk lora tx, lora rx */
+/*FROM Select IMPORT monotonicms; */
 #define ra02_LF "\012"
 
 #define ra02_STOUT 2
@@ -120,9 +121,13 @@ static float ra02_BWTAB[10] = {7.8f,10.4f,15.6f,20.8f,31.25f,41.7f,62.5f,125.0f,
 
 #define ra02_RegInvertIQ 0x33 
 
-#define ra02_RegImageCal 0x3B 
+#define ra02_RegInvertIQ2 0x3B 
 
 #define ra02_RegTemp 0x3C 
+
+#define ra02_RegHighBwOptimize1 0x36 
+
+#define ra02_RegHighBwOptimize2 0x3A 
 /*fsk */
 
 #define ra02_RegBitrateMsb 0x2 
@@ -205,6 +210,7 @@ struct TXCONTEXT {
    uint32_t power;
    uint32_t txdel;
    uint32_t deviation;
+   uint32_t splitlen;
    uint32_t netid;
    uint32_t scrambler;
    int32_t cfgoptimize;
@@ -215,8 +221,10 @@ struct TXCONTEXT {
    char usedcd;
    char rawfsk;
    char sendfsk;
+   char rawlora;
    char checkip;
    char optimize;
+   char verbpart2;
    char implicit;
    uint32_t udpip;
    uint32_t udpbind;
@@ -265,10 +273,11 @@ struct CHIP {
    uint32_t rxsf;
    uint32_t rxbw;
    uint32_t band;
-   uint32_t uso;
+   uint32_t mso;
    uint32_t stato;
    uint32_t statu;
    uint32_t netid;
+   uint32_t preamblelimit;
    uint32_t calcnt;
    int32_t cfgoptimize;
    int32_t cfgramp;
@@ -276,7 +285,10 @@ struct CHIP {
    int32_t cfgocp;
    float symboltime;
    float rxmhz;
+   float datarate;
    float ppm;
+   char splitb[351];
+   char issplit;
 };
 
 typedef uint32_t GPIOSET[8];
@@ -291,32 +303,26 @@ static char verb;
 
 static char verb2;
 
-static char h[501];
-
 static pCHIP chips;
 
 static GPIOSET gpostate;
 
 static int32_t gpiofds[256];
-/*
-PROCEDURE ["C"] / clock_gettime(typ:CARDINAL; VAR tv:TIMEHR):INTEGER;
-PROCEDURE usec():CARDINAL;
-VAR t:TIMEHR;
-    res:INTEGER;
-BEGIN
-  res:=clock_gettime(1,t);
-  RETURN t.nsec DIV 1000 MOD 1000000 + t.sec*1000000
-END usec;
-*/
+
+static int32_t judpsock;
+
+static uint32_t jipnum;
+
+static uint32_t judpport;
 
 
-static uint32_t usec(void)
+static uint32_t monotonicms(void)
 {
    uint32_t ns;
    uint32_t s;
    osic_timens(1, &s, &ns);
-   return (ns/1000UL)%1000000UL+s*1000000UL;
-} /* end usec() */
+   return ns/1000000UL+s*1000UL;
+} /* end monotonicms() */
 
 
 static void Error(const char text[], uint32_t text_len)
@@ -325,6 +331,221 @@ static void Error(const char text[], uint32_t text_len)
    osi_Werr(" error abort\012", 14ul);
    X2C_ABORT();
 } /* end Error() */
+
+
+static char hex(uint32_t n)
+{
+   n = n&15UL;
+   if (n<=9UL) return (char)(n+48UL);
+   return (char)(n+55UL);
+} /* end hex() */
+
+
+static void WrHex(uint32_t x, uint32_t digits, uint32_t len)
+{
+   uint32_t i;
+   char s[256];
+   if (digits>255UL) digits = 255UL;
+   i = digits;
+   while (i<len && i<255UL) {
+      s[i] = ' ';
+      ++i;
+   }
+   s[i] = 0;
+   while (digits>0UL) {
+      --digits;
+      s[digits] = hex(x);
+      x = x/16UL;
+   }
+   osi_WrStr(s, 256ul);
+} /* end WrHex() */
+
+
+static void WrChHex(char c)
+{
+   char s[11];
+   if ((uint8_t)c>='\177' || (uint8_t)c<' ') {
+      s[0U] = '[';
+      s[1U] = hex((uint32_t)(uint8_t)c/16UL);
+      s[2U] = hex((uint32_t)(uint8_t)c);
+      s[3U] = ']';
+      s[4U] = 0;
+   }
+   else {
+      s[0U] = c;
+      s[1U] = 0;
+   }
+   osi_WrStr(s, 11ul);
+} /* end WrChHex() */
+
+
+static void WCh(char c)
+{
+   if (c!='\015') {
+      if ((uint8_t)c<' ' || (uint8_t)c>='\177') osi_WrStr(".", 2ul);
+      else osi_WrStr((char *) &c, 1u/1u);
+   }
+} /* end WCh() */
+
+
+static void ShowCall(char f[], uint32_t f_len, uint32_t pos)
+{
+   uint32_t e;
+   uint32_t i;
+   uint32_t tmp;
+   char tmp0;
+   e = pos;
+   tmp = pos+5UL;
+   i = pos;
+   if (i<=tmp) for (;; i++) {
+      if (f[i]!='@') e = i;
+      if (i==tmp) break;
+   } /* end for */
+   tmp = e;
+   i = pos;
+   if (i<=tmp) for (;; i++) {
+      WCh((char)((uint32_t)(uint8_t)f[i]>>1));
+      if (i==tmp) break;
+   } /* end for */
+   i = (uint32_t)(uint8_t)f[pos+6UL]>>1&15UL;
+   if (i) {
+      osi_WrStr("-", 2ul);
+      if (i>=10UL) osi_WrStr((char *)(tmp0 = (char)(i/10UL+48UL),&tmp0), 1u/1u);
+      osi_WrStr((char *)(tmp0 = (char)(i%10UL+48UL),&tmp0), 1u/1u);
+   }
+} /* end ShowCall() */
+
+static uint32_t ra02_UA = 0x63UL;
+
+static uint32_t ra02_DM = 0xFUL;
+
+static uint32_t ra02_SABM = 0x2FUL;
+
+static uint32_t ra02_DISC = 0x43UL;
+
+static uint32_t ra02_FRMR = 0x87UL;
+
+static uint32_t ra02_UI = 0x3UL;
+
+static uint32_t ra02_RR = 0x1UL;
+
+static uint32_t ra02_REJ = 0x9UL;
+
+static uint32_t ra02_RNR = 0x5UL;
+
+
+static void Showctl(uint32_t com, uint32_t cmd)
+{
+   uint32_t cm;
+   char PF[4];
+   char tmp;
+   osi_WrStr(" ctl ", 6ul);
+   cm = (uint32_t)cmd&~0x10UL;
+   if ((cm&0xFUL)==0x1UL) {
+      osi_WrStr("RR", 3ul);
+      osi_WrStr((char *)(tmp = (char)(48UL+(cmd>>5)),&tmp), 1u/1u);
+   }
+   else if ((cm&0xFUL)==0x5UL) {
+      osi_WrStr("RNR", 4ul);
+      osi_WrStr((char *)(tmp = (char)(48UL+(cmd>>5)),&tmp), 1u/1u);
+   }
+   else if ((cm&0xFUL)==0x9UL) {
+      osi_WrStr("REJ", 4ul);
+      osi_WrStr((char *)(tmp = (char)(48UL+(cmd>>5)),&tmp), 1u/1u);
+   }
+   else if ((cm&0x1UL)==0UL) {
+      osi_WrStr("I", 2ul);
+      osi_WrStr((char *)(tmp = (char)(48UL+(cmd>>5)),&tmp), 1u/1u);
+      osi_WrStr((char *)(tmp = (char)(48UL+(cmd>>1&7UL)),&tmp), 1u/1u);
+   }
+   else if (cm==0x3UL) osi_WrStr("UI", 3ul);
+   else if (cm==0xFUL) osi_WrStr("DM", 3ul);
+   else if (cm==0x2FUL) osi_WrStr("SABM", 5ul);
+   else if (cm==0x43UL) osi_WrStr("DISC", 5ul);
+   else if (cm==0x63UL) osi_WrStr("UA", 3ul);
+   else if (cm==0x87UL) osi_WrStr("FRMR", 5ul);
+   else WrHex(cmd, 2UL, 0UL);
+   strncpy(PF,"v^-+",4u);
+   if (com==0UL || com==3UL) osi_WrStr("v1", 3ul);
+   else osi_WrStr((char *) &PF[(com&1UL)+2UL*(uint32_t)((0x10UL & (uint32_t)cmd)!=0)], 1u/1u);
+} /* end Showctl() */
+
+
+static void ShowFrame(char f[], uint32_t f_len, uint32_t len, char port)
+{
+   uint32_t i;
+   char d;
+   char v;
+   char h[21];
+   osi_WrStr((char *) &port, 1u/1u);
+   i = 0UL;
+   while (!((uint32_t)(uint8_t)f[i]&1)) {
+      ++i;
+      if (i>len) {
+         /*      WrStrLn(" no ax.25 (no address end mark)");       */
+         return;
+      }
+   }
+   /* no address end mark found */
+   if (i%7UL!=6UL) {
+      /*    WrStrLn(" no ax.25 (address field size not multiples of 7)"); */
+      return;
+   }
+   /* address end not modulo 7 error */
+   osi_WrStr(":fm ", 5ul);
+   ShowCall(f, f_len, 7UL);
+   osi_WrStr(" to ", 5ul);
+   ShowCall(f, f_len, 0UL);
+   i = 14UL;
+   v = 1;
+   while (i+6UL<len && !((uint32_t)(uint8_t)f[i-1UL]&1)) {
+      if (v) {
+         osi_WrStr(" via", 5ul);
+         v = 0;
+      }
+      osi_WrStr(" ", 2ul);
+      ShowCall(f, f_len, i);
+      if ((uint32_t)(uint8_t)f[i+6UL]>=128UL && (((uint32_t)(uint8_t)f[i+6UL]&1) || (uint32_t)(uint8_t)
+                f[i+13UL]<128UL)) osi_WrStr("*", 2ul);
+      i += 7UL;
+   }
+   Showctl((uint32_t)((0x80U & (uint8_t)(uint8_t)f[6UL])!=0)+2UL*(uint32_t)((0x80U & (uint8_t)(uint8_t)
+                f[13UL])!=0), (uint32_t)(uint8_t)f[i]);
+   ++i;
+   if (i<len) {
+      osi_WrStr(" pid ", 6ul);
+      WrHex((uint32_t)(uint8_t)f[i], 2UL, 0UL);
+   }
+   ++i;
+   aprsstr_DateToStr(osic_time(), h, 21ul); /* 2019.12.31 23:59:59 */
+   /* - 31.12.19 23:59:59 */
+   h[0U] = h[8U];
+   h[8U] = h[2U];
+   h[2U] = h[0U];
+   h[0U] = h[9U];
+   h[9U] = h[3U];
+   h[3U] = h[0U];
+   h[0U] = '-';
+   h[1U] = ' ';
+   osi_WrStr(" ", 2ul);
+   osi_WrStr(h, 21ul);
+   osi_WrStrLn("", 1ul);
+   /*  IF NOT noinfo THEN */
+   d = 0;
+   while (i<len) {
+      if (f[i]!='\015') {
+         WCh(f[i]);
+         d = 1;
+      }
+      else if (d) {
+         osi_WrStrLn("", 1ul);
+         d = 0;
+      }
+      ++i;
+   }
+   if (d) osi_WrStrLn("", 1ul);
+/*  END; */
+} /* end ShowFrame() */
 
 
 static char StrToHex(const char s[], uint32_t s_len, uint32_t * n)
@@ -345,10 +566,10 @@ static char StrToHex(const char s[], uint32_t s_len, uint32_t * n)
 } /* end StrToHex() */
 
 
-static int32_t GetIp(const char h0[], uint32_t h_len, uint32_t * ip, uint32_t * dp, uint32_t * lp,
+static int32_t GetIp(const char h[], uint32_t h_len, uint32_t * ip, uint32_t * dp, uint32_t * lp,
                 int32_t * fd, char * check)
 {
-   if (aprsstr_GetIp2(h0, h_len, ip, dp, lp, check)<0L) return -1L;
+   if (aprsstr_GetIp2(h, h_len, ip, dp, lp, check)<0L) return -1L;
    *fd = openudp();
    if (*fd<0L || bindudp(*fd, *lp)<0L) {
       /*OR (udp.udpnonblock(fd)<0)*/
@@ -362,12 +583,12 @@ static int32_t opengpio(uint32_t n, char out, char fnr[], uint32_t fnr_len)
 {
    char hp[100];
    char hh[100];
-   char h0[100];
+   char h[100];
    int32_t fd;
    uint32_t tr;
-   aprsstr_CardToStr(n, 1UL, h0, 100ul);
+   aprsstr_CardToStr(n, 1UL, h, 100ul);
    strncpy(hp,"/sys/class/gpio/gpio",100u); /* /sys/class/gpio/gpio */
-   aprsstr_Append(hp, 100ul, h0, 100ul); /* /sys/class/gpio/gpio<n> */
+   aprsstr_Append(hp, 100ul, h, 100ul); /* /sys/class/gpio/gpio<n> */
    memcpy(hh,hp,100u);
    aprsstr_Append(hp, 100ul, "/value", 7ul); /* /sys/class/gpio/gpio<n>/value */
    if (!out) aprsstr_Assign(fnr, fnr_len, hp, 100ul);
@@ -382,11 +603,11 @@ static int32_t opengpio(uint32_t n, char out, char fnr[], uint32_t fnr_len)
          ++tr;
          if (tr>4UL) break;
       }
-      osi_WrBin(fd, (char *)h0, 100u/1u, aprsstr_Length(h0, 100ul));
+      osi_WrBin(fd, (char *)h, 100u/1u, aprsstr_Length(h, 100ul));
       osic_Close(fd);
       fd = osi_OpenWrite("/sys/class/gpio/export", 23ul); /* /sys/class/gpio/export */
       if (fd<0L) Error("cannot open gpio export", 24ul);
-      osi_WrBin(fd, (char *)h0, 100u/1u, aprsstr_Length(h0, 100ul));
+      osi_WrBin(fd, (char *)h, 100u/1u, aprsstr_Length(h, 100ul));
       osic_Close(fd);
       aprsstr_Append(hh, 100ul, "/direction", 11ul);
       tr = 0UL;
@@ -398,9 +619,9 @@ static int32_t opengpio(uint32_t n, char out, char fnr[], uint32_t fnr_len)
          if (tr>4UL) break;
       }
       if (fd<0L) Error("cannot open gpio direction", 27ul);
-      if (out) strncpy(h0,"out",100u);
-      else strncpy(h0,"in",100u);
-      osi_WrBin(fd, (char *)h0, 100u/1u, aprsstr_Length(h0, 100ul)); /* in / out */
+      if (out) strncpy(h,"out",100u);
+      else strncpy(h,"in",100u);
+      osi_WrBin(fd, (char *)h, 100u/1u, aprsstr_Length(h, 100ul)); /* in / out */
       osic_Close(fd);
       if (out) {
          fd = osi_OpenRW(hp, 100ul);
@@ -422,6 +643,71 @@ static void Wrchipnum(pCHIP chip0, char nl)
    }
 } /* end Wrchipnum() */
 
+#define ra02_DEFAULTIP 0x7F000001 
+
+#define ra02_PORTSEP ":"
+
+
+static int32_t GetIp1(char h[], uint32_t h_len, uint32_t * ip, uint32_t * port)
+{
+   uint32_t p;
+   uint32_t n;
+   uint32_t i;
+   char ok0;
+   int32_t GetIp1_ret;
+   X2C_PCOPY((void **)&h,h_len);
+   p = 0UL;
+   h[h_len-1] = 0;
+   *ip = 0UL;
+   for (i = 0UL; i<=4UL; i++) {
+      if (i>=3UL || h[0UL]!=':') {
+         n = 0UL;
+         ok0 = 0;
+         while ((uint8_t)h[p]>='0' && (uint8_t)h[p]<='9') {
+            ok0 = 1;
+            n = (n*10UL+(uint32_t)(uint8_t)h[p])-48UL;
+            ++p;
+         }
+         if (!ok0) {
+            GetIp1_ret = -1L;
+            goto label;
+         }
+      }
+      if (i<3UL) {
+         if (h[0UL]!=':') {
+            if (h[p]!='.' || n>255UL) {
+               GetIp1_ret = -1L;
+               goto label;
+            }
+            *ip =  *ip*256UL+n;
+         }
+      }
+      else if (i==3UL) {
+         if (h[0UL]!=':') {
+            *ip =  *ip*256UL+n;
+            if (h[p]!=':' || n>255UL) {
+               GetIp1_ret = -1L;
+               goto label;
+            }
+         }
+         else {
+            p = 0UL;
+            *ip = 2130706433UL;
+         }
+      }
+      else if (n>65535UL) {
+         GetIp1_ret = -1L;
+         goto label;
+      }
+      *port = n;
+      ++p;
+   } /* end for */
+   GetIp1_ret = 0L;
+   label:;
+   X2C_PFREE(h);
+   return GetIp1_ret;
+} /* end GetIp1() */
+
 static GPIOSET _cnst0 = {0x00000000UL,0x00000000UL,0x00000000UL,0x00000000UL,0x00000000UL,0x00000000UL,0x00000000UL,
                 0x00000000UL};
 
@@ -438,7 +724,8 @@ static void chkports(void)
       X2C_INCL(outs,chip0->gpio.mosiN,256);
       X2C_INCL(outs,chip0->gpio.sckN,256);
       if (X2C_INL(chip0->gpio.misoN,256,ins)) {
-         osi_Werr("warning, shared inputs needs ce-pullup for not used chip\012", 58ul);
+         osi_Werr("hint, shared inputs need nss-pullup if driver is started for not all connected chips (floating nss pi\
+n)\012", 105ul);
       }
       X2C_INCL(ins,chip0->gpio.misoN,256);
       chip0 = chip0->next;
@@ -487,6 +774,7 @@ static pCHIP newchip(void)
    chp->lnagain = 1UL;
    chp->rxon = 0;
    chp->ppm = 0.0f;
+   chp->datarate = 0.0f;
    chp->rssicorr = 0L;
    chp->cfgocp = -1L;
    chp->cfgramp = -1L;
@@ -498,6 +786,7 @@ static pCHIP newchip(void)
    chp->netid = 18UL;
    chp->cfgoptimize = -1L;
    chp->swapiq = 0;
+   chp->preamblelimit = 250UL;
    return chp;
 } /* end newchip() */
 
@@ -550,6 +839,7 @@ static pTXCONTEXT newtx(void)
    tx->sendfsk = 0;
    tx->rawfsk = 0;
    tx->swapiq = 0;
+   tx->rawlora = 0;
    return tx;
 } /* end newtx() */
 
@@ -568,7 +858,7 @@ static void Parms(void)
 {
    char err;
    char hh[4096];
-   char h0[4096];
+   char h[4096];
    uint32_t lptnum;
    uint32_t txcnt;
    uint32_t pcnt;
@@ -596,15 +886,17 @@ static void Parms(void)
    chip0 = 0;
    tx = newtx();
    txcnt = 0UL;
+   judpsock = -1L;
+   judpport = 0UL;
    for (;;) {
       if (chip0==0) {
          chip0 = newchip();
          txcnt = 0UL;
       }
-      osi_NextArg(h0, 4096ul);
-      if (h0[0U]==0) break;
-      if (h0[0U]=='-' && h0[1U]) {
-         if (h0[1U]=='p') {
+      osi_NextArg(h, 4096ul);
+      if (h[0U]==0) break;
+      if (h[0U]=='-' && h[1U]) {
+         if (h[1U]=='p') {
             if (pcnt>0UL) {
                storetx(chip0, tx);
                storechip(pcnt, &res, &sck0, &miso0, &mosi0, &ce0, &chip0);
@@ -612,190 +904,217 @@ static void Parms(void)
                txcnt = 0UL;
             }
             ++pcnt;
-            osi_NextArg(h0, 4096ul);
-            if (!aprsstr_StrToCard(h0, 4096ul, &ce0) || ce0>=256UL) {
+            osi_NextArg(h, 4096ul);
+            if (!aprsstr_StrToCard(h, 4096ul, &ce0) || ce0>=256UL) {
                Error("-p <ce0> <mosi0> <miso0> <sck0>", 32ul);
             }
-            osi_NextArg(h0, 4096ul);
-            if (!aprsstr_StrToCard(h0, 4096ul, &mosi0) || mosi0>=256UL) {
+            osi_NextArg(h, 4096ul);
+            if (!aprsstr_StrToCard(h, 4096ul, &mosi0) || mosi0>=256UL) {
                Error("-p <ce0> <mosi0> <miso0> <sck0>", 32ul);
             }
-            osi_NextArg(h0, 4096ul);
-            if (!aprsstr_StrToCard(h0, 4096ul, &miso0) || miso0>=256UL) {
+            osi_NextArg(h, 4096ul);
+            if (!aprsstr_StrToCard(h, 4096ul, &miso0) || miso0>=256UL) {
                Error("-p <ce0> <mosi0> <miso0> <sck0>", 32ul);
             }
-            osi_NextArg(h0, 4096ul);
-            if (!aprsstr_StrToCard(h0, 4096ul, &sck0) || sck0>=256UL) {
+            osi_NextArg(h, 4096ul);
+            if (!aprsstr_StrToCard(h, 4096ul, &sck0) || sck0>=256UL) {
                Error("-p <ce0> <mosi0> <miso0> <sck0>", 32ul);
             }
          }
-         else if (h0[1U]=='l') {
-            osi_NextArg(h0, 4096ul);
-            if (!aprsstr_StrToCard(h0, 4096ul, &chip0->lnaboost) || chip0->lnaboost>3UL) {
+         else if (h[1U]=='l') {
+            osi_NextArg(h, 4096ul);
+            if (!aprsstr_StrToCard(h, 4096ul, &chip0->lnaboost) || chip0->lnaboost>3UL) {
                Error("-l <lnaboost 0..3>", 19ul);
             }
          }
-         else if (h0[1U]=='u') {
-            osi_NextArg(h0, 4096ul);
-            if (!aprsstr_StrToCard(h0, 4096ul, &loopdelay)) {
+         else if (h[1U]=='u') {
+            osi_NextArg(h, 4096ul);
+            if (!aprsstr_StrToCard(h, 4096ul, &loopdelay)) {
                Error("-u <poll-sleep us> <poll-sleep-tx us>", 38ul);
             }
-            osi_NextArg(h0, 4096ul);
-            if (!aprsstr_StrToCard(h0, 4096ul, &loopdelayfast)) {
+            osi_NextArg(h, 4096ul);
+            if (!aprsstr_StrToCard(h, 4096ul, &loopdelayfast)) {
                Error("-u <poll-sleep us> <poll-sleep-tx us>", 38ul);
             }
          }
-         else if (h0[1U]=='C') {
-            osi_NextArg(h0, 4096ul);
-            if ((!aprsstr_StrToCard(h0, 4096ul, &tx->cr) || tx->cr<5UL) || tx->cr>8UL) {
+         else if (h[1U]=='C') {
+            osi_NextArg(h, 4096ul);
+            if ((!aprsstr_StrToCard(h, 4096ul, &tx->cr) || tx->cr<5UL) || tx->cr>8UL) {
                Error("-C <cr 5..8>", 13ul);
             }
          }
-         else if (h0[1U]=='c') {
-            osi_NextArg(h0, 4096ul);
-            if ((!aprsstr_StrToCard(h0, 4096ul, &chip0->rxcr) || chip0->rxcr<5UL) || chip0->rxcr>8UL) {
+         else if (h[1U]=='c') {
+            osi_NextArg(h, 4096ul);
+            if ((!aprsstr_StrToCard(h, 4096ul, &chip0->rxcr) || chip0->rxcr<5UL) || chip0->rxcr>8UL) {
                Error("-c <cr 5..8>", 13ul);
             }
          }
-         else if (h0[1U]=='D') {
-            osi_NextArg(h0, 4096ul);
-            if (!aprsstr_StrToCard(h0, 4096ul, &tx->deviation) || tx->deviation>20000UL) {
+         else if (h[1U]=='D') {
+            osi_NextArg(h, 4096ul);
+            if (!aprsstr_StrToCard(h, 4096ul, &tx->deviation) || tx->deviation>20000UL) {
                Error("-D <deviation 0..200008 (3000)>", 32ul);
             }
          }
-         else if (h0[1U]=='s') {
-            osi_NextArg(h0, 4096ul);
-            if ((!aprsstr_StrToCard(h0, 4096ul, &chip0->rxsf) || chip0->rxsf<6UL) || chip0->rxsf>12UL) {
-               Error("-S <sf 6..12>", 14ul);
+         else if (h[1U]=='s') {
+            osi_NextArg(h, 4096ul);
+            if ((!aprsstr_StrToInt(h, 4096ul, &res) || labs(res)<6L) || labs(res)>12L) {
+               Error("-s <sf [-]6..[-]12>", 20ul);
             }
+            chip0->rxsf = (uint32_t)labs(res);
+            if (res<0L) chip0->swapiq = 1;
          }
-         else if (h0[1U]=='S') {
-            osi_NextArg(h0, 4096ul);
-            if ((!aprsstr_StrToCard(h0, 4096ul, &tx->sf) || tx->sf<6UL) || tx->sf>12UL) {
-               Error("-S <sf 6..12>", 14ul);
+         else if (h[1U]=='S') {
+            osi_NextArg(h, 4096ul);
+            if ((!aprsstr_StrToInt(h, 4096ul, &res) || labs(res)<6L) || labs(res)>12L) {
+               Error("-S <sf [-]6..[-]12>", 20ul);
             }
+            tx->sf = (uint32_t)labs(res);
+            if (res<0L) tx->swapiq = 1;
          }
-         else if (h0[1U]=='n') {
-            osi_NextArg(h0, 4096ul);
-            if (!StrToHex(h0, 4096ul, &chip0->netid)) Error("-n <netid>", 11ul);
+         else if (h[1U]=='n') {
+            osi_NextArg(h, 4096ul);
+            if (!StrToHex(h, 4096ul, &chip0->netid)) Error("-n <netid>", 11ul);
          }
-         else if (h0[1U]=='N') {
-            osi_NextArg(h0, 4096ul);
-            if (!StrToHex(h0, 4096ul, &tx->netid)) Error("-N <netid>", 11ul);
+         else if (h[1U]=='N') {
+            osi_NextArg(h, 4096ul);
+            if (!StrToHex(h, 4096ul, &tx->netid)) Error("-N <netid>", 11ul);
          }
-         else if (h0[1U]=='g') {
-            osi_NextArg(h0, 4096ul);
-            if ((!aprsstr_StrToCard(h0, 4096ul, &chip0->lnagain) || chip0->lnagain>6UL) || chip0->lnagain<1UL) {
+         else if (h[1U]=='g') {
+            osi_NextArg(h, 4096ul);
+            if ((!aprsstr_StrToCard(h, 4096ul, &chip0->lnagain) || chip0->lnagain>6UL) || chip0->lnagain<1UL) {
                Error("-g <lnagain 1..6>", 18ul);
             }
          }
-         else if (h0[1U]=='T') {
-            osi_NextArg(h0, 4096ul);
-            if (!aprsstr_StrToCard(h0, 4096ul, &tx->txdel) || tx->txdel>100UL) {
+         else if (h[1U]=='T') {
+            osi_NextArg(h, 4096ul);
+            if (!aprsstr_StrToCard(h, 4096ul, &tx->txdel) || tx->txdel>100UL) {
                Error("-T <txdel bytes> (0..100)", 26ul);
             }
          }
-         else if (h0[1U]=='H') {
-            osi_NextArg(h0, 4096ul);
-            if (!aprsstr_StrToCard(h0, 4096ul, &tx->preamb)) Error("-H <preamble", 13ul);
+         else if (h[1U]=='H') {
+            osi_NextArg(h, 4096ul);
+            if (!aprsstr_StrToCard(h, 4096ul, &tx->preamb)) Error("-H <preamble", 13ul);
          }
-         else if (h0[1U]=='b') {
-            osi_NextArg(h0, 4096ul);
-            if (!aprsstr_StrToCard(h0, 4096ul, &chip0->rxbw) || chip0->rxbw>9UL) {
+         else if (h[1U]=='b') {
+            osi_NextArg(h, 4096ul);
+            if (!aprsstr_StrToCard(h, 4096ul, &chip0->rxbw) || chip0->rxbw>9UL) {
                Error("-b <bandwidth 0..9", 19ul);
             }
          }
-         else if (h0[1U]=='B') {
-            osi_NextArg(h0, 4096ul);
-            if (!aprsstr_StrToCard(h0, 4096ul, &tx->bw) || tx->bw>9UL) {
+         else if (h[1U]=='B') {
+            osi_NextArg(h, 4096ul);
+            if (!aprsstr_StrToCard(h, 4096ul, &tx->bw) || tx->bw>9UL) {
                Error("-B <bandwidth 0..9", 19ul);
             }
          }
-         else if (h0[1U]=='w') {
-            osi_NextArg(h0, 4096ul);
-            if (!aprsstr_StrToCard(h0, 4096ul, &tx->power) || tx->power>17UL) {
+         else if (h[1U]=='w') {
+            osi_NextArg(h, 4096ul);
+            if (!aprsstr_StrToCard(h, 4096ul, &tx->power) || tx->power>17UL) {
                Error("-w <power 0..17", 16ul);
             }
          }
-         else if (h0[1U]=='U' || h0[1U]=='L') {
+         else if (h[1U]=='U' || h[1U]=='L') {
             if (txcnt>0UL) {
                storetx(chip0, tx);
                tx = newtx();
             }
             ++txcnt;
-            tx->udp2 = h0[1U]!='U'; /* switch on axudp2 */
-            osi_NextArg(h0, 4096ul);
-            if (GetIp(h0, 4096ul, &tx->udpip, &tx->udpport, &tx->udpbind, &tx->udpsocket, &tx->checkip)<0L) {
-               strncpy(h0,"cannot open udp socket port ",4096u);
+            tx->udp2 = h[1U]!='U'; /* switch on axudp2 */
+            osi_NextArg(h, 4096ul);
+            if (GetIp(h, 4096ul, &tx->udpip, &tx->udpport, &tx->udpbind, &tx->udpsocket, &tx->checkip)<0L) {
+               strncpy(h,"cannot open udp socket port ",4096u);
                aprsstr_CardToStr(tx->udpbind, 1UL, hh, 4096ul);
-               aprsstr_Append(h0, 4096ul, hh, 4096ul);
-               Error(h0, 4096ul);
+               aprsstr_Append(h, 4096ul, hh, 4096ul);
+               Error(h, 4096ul);
             }
             if (tx->udpport) chip0->rxon = 1;
          }
-         else if (h0[1U]=='v') verb = 1;
-         else if (h0[1U]=='V') {
+         else if (h[1U]=='v') verb = 1;
+         else if (h[1U]=='V') {
             verb = 1;
             verb2 = 1;
          }
-         else if (h0[1U]=='a') chip0->agc = 1;
-         else if (h0[1U]=='E') tx->rawfsk = 1;
-         else if (h0[1U]=='I') tx->implicit = 1;
-         else if (h0[1U]=='i') chip0->implicit = 1;
-         else if (h0[1U]=='A') tx->sendfsk = 1;
-         else if (h0[1U]=='d') tx->usedcd = 1;
-         else if (h0[1U]=='Q') tx->swapiq = 1;
-         else if (h0[1U]=='q') {
-            chip0->swapiq = 1;
+         else if (h[1U]=='a') chip0->agc = 1;
+         else if (h[1U]=='E') tx->rawfsk = 1;
+         else if (h[1U]=='I') tx->implicit = 1;
+         else if (h[1U]=='i') chip0->implicit = 1;
+         else if (h[1U]=='A') {
+            tx->sendfsk = 1;
          }
-         else if (h0[1U]=='G') {
-            osi_NextArg(h0, 4096ul);
-            if (!aprsstr_StrToInt(h0, 4096ul, &tx->baud)) Error("-G [-]<baud>", 13ul);
+         else if (h[1U]=='d') tx->usedcd = 1;
+         else if (h[1U]=='Q') tx->swapiq = 1;
+         else if (h[1U]=='q') chip0->swapiq = 1;
+         else if (h[1U]=='K') tx->rawlora = 1;
+         else if (h[1U]=='G') {
+            osi_NextArg(h, 4096ul);
+            if (!aprsstr_StrToInt(h, 4096ul, &tx->baud)) Error("-G [-]<baud>", 13ul);
             if (labs(tx->baud)<490L) {
                if (tx->baud<0L) tx->baud = -490L;
                else tx->baud = 490L;
             }
             tx->sendfsk = 1;
          }
-         else if (h0[1U]=='R') {
-            osi_NextArg(h0, 4096ul);
-            if (!aprsstr_StrToInt(h0, 4096ul, &chip0->cfgramp)) Error("-R <n> 0..15", 13ul);
+         else if (h[1U]=='R') {
+            osi_NextArg(h, 4096ul);
+            if (!aprsstr_StrToInt(h, 4096ul, &chip0->cfgramp)) Error("-R <n> 0..15", 13ul);
          }
-         else if (h0[1U]=='r') {
-            osi_NextArg(h0, 4096ul);
-            if (!aprsstr_StrToInt(h0, 4096ul, &chip0->rssicorr)) Error("-r <n>", 7ul);
+         else if (h[1U]=='r') {
+            osi_NextArg(h, 4096ul);
+            if (!aprsstr_StrToInt(h, 4096ul, &chip0->rssicorr)) Error("-r <n>", 7ul);
          }
-         else if (h0[1U]=='J') {
-            osi_NextArg(h0, 4096ul);
-            if (!aprsstr_StrToInt(h0, 4096ul, &chip0->cfgocp)) Error("-J <n>", 7ul);
+         else if (h[1U]=='Z') {
+            osi_NextArg(h, 4096ul);
+            if (!aprsstr_StrToInt(h, 4096ul, &chip0->cfgocp)) Error("-Z <n>", 7ul);
          }
-         else if (h0[1U]=='O') {
-            osi_NextArg(h0, 4096ul);
-            if (!aprsstr_StrToInt(h0, 4096ul, &tx->cfgoptimize)) Error("-O <-1..1", 10ul);
+         else if (h[1U]=='O') {
+            osi_NextArg(h, 4096ul);
+            if (!aprsstr_StrToInt(h, 4096ul, &tx->cfgoptimize)) Error("-O <-1..1", 10ul);
          }
-         else if (h0[1U]=='o') {
-            osi_NextArg(h0, 4096ul);
-            if (!aprsstr_StrToInt(h0, 4096ul, &chip0->cfgoptimize)) Error("-o <-1..1", 10ul);
+         else if (h[1U]=='o') {
+            osi_NextArg(h, 4096ul);
+            if (!aprsstr_StrToInt(h, 4096ul, &chip0->cfgoptimize)) Error("-o <-1..1", 10ul);
          }
-         else if (h0[1U]=='P') {
-            osi_NextArg(h0, 4096ul);
-            if ((!aprsstr_StrToFix(&chip0->ppm, h0, 4096ul) || chip0->ppm<(-128.0f)) || chip0->ppm>128.0f) {
+         else if (h[1U]=='P') {
+            osi_NextArg(h, 4096ul);
+            if ((!aprsstr_StrToFix(&chip0->ppm, h, 4096ul) || chip0->ppm<(-133.0f)) || chip0->ppm>133.0f) {
                Error("-P <ppm>", 9ul);
             }
          }
-         else if (h0[1U]=='F') {
-            osi_NextArg(h0, 4096ul);
-            if ((!aprsstr_StrToFix(&tx->mhz, h0, 4096ul) || tx->mhz<137.0f) || tx->mhz>1020.0f) {
+         else if (h[1U]=='X') {
+            osi_NextArg(h, 4096ul);
+            if ((!aprsstr_StrToFix(&chip0->datarate, h,
+                4096ul) || chip0->datarate<(-133.0f)) || chip0->datarate>133.0f) {
+               Error("-X <ppm>", 9ul);
+            }
+         }
+         else if (h[1U]=='F') {
+            osi_NextArg(h, 4096ul);
+            if ((!aprsstr_StrToFix(&tx->mhz, h, 4096ul) || tx->mhz<137.0f) || tx->mhz>1020.0f) {
                Error("-F <MHz>", 9ul);
             }
          }
-         else if (h0[1U]=='f') {
-            osi_NextArg(h0, 4096ul);
-            if ((!aprsstr_StrToFix(&chip0->rxmhz, h0, 4096ul) || chip0->rxmhz<137.0f) || chip0->rxmhz>1020.0f) {
+         else if (h[1U]=='f') {
+            osi_NextArg(h, 4096ul);
+            if ((!aprsstr_StrToFix(&chip0->rxmhz, h, 4096ul) || chip0->rxmhz<137.0f) || chip0->rxmhz>1020.0f) {
                Error("-f <MHz>", 9ul);
             }
          }
-         else if (h0[1U]=='h') {
+         else if (h[1U]=='J') {
+            osi_NextArg(h, 4096ul);
+            if (GetIp1(h, 4096ul, &jipnum, &judpport)<0L) Error("-J ip:port number", 18ul);
+            if (judpport) {
+               if (judpsock<0L) judpsock = openudp();
+               if (judpsock<0L) Error("cannot open udp socket", 23ul);
+               chip0->rxon = 1;
+            }
+         }
+         else if (h[1U]=='W') {
+            osi_NextArg(h, 4096ul);
+            if (!aprsstr_StrToCard(h, 4096ul, &chip0->preamblelimit)) {
+               Error("-W <preamblelimit>", 19ul);
+            }
+         }
+         else if (h[1U]=='h') {
             osi_WrStrLn(" ra-02 (sx127x) via LPT or multiple chips via GPIO to axudp by oe5dxl", 70ul);
             osi_WrStrLn(" -A                 tx AFSK 1200 Baud", 38ul);
             osi_WrStrLn(" -a                 AGC on", 27ul);
@@ -812,11 +1131,12 @@ static void Parms(void)
             osi_WrStrLn(" -f <MHz>           rx MHz (433.775)", 37ul);
             osi_WrStrLn(" -G [-]<baud>       Send GFSK <baud> -baud same but g3ruh scrambler off (490..250000)", 86ul);
             osi_WrStrLn(" -g <n>             lna gain 6..1, 1 is maximum gain! see chip manual(1)", 73ul);
-            osi_WrStrLn(" -H <n>             Preample length (8) sx seems to need minimum 4", 67ul);
+            osi_WrStrLn(" -H <n>             Preample length (8) sx seems to need minimum 4 (8)", 71ul);
             osi_WrStrLn(" -h                 this", 25ul);
             osi_WrStrLn(" -I                 tx implicit header on", 42ul);
             osi_WrStrLn(" -i                 rx implicit header on", 42ul);
-            osi_WrStrLn(" -J <n>             set overcurrent protection, use with care, see chip manual", 79ul);
+            osi_WrStrLn(" -J <x.x.x.x:destport>  send demodulated data(base64) with metadata in json", 76ul);
+            osi_WrStrLn(" -K                 tx unmodified axudp and split if too long, rx autodetect", 77ul);
             osi_WrStrLn(" -L ip:sendport:listenport AXUDPv2 data, apply before all othere parameters for this channel",
                 93ul);
             osi_WrStrLn("                      repeat for more tx contexts with different listen ports", 78ul);
@@ -824,27 +1144,32 @@ static void Parms(void)
             osi_WrStrLn(" -l <n>             lna boost 0..3, more for better ip3 by more supply current (3)", 83ul);
             osi_WrStrLn(" -N <netid>         network id tx (sync word) (not use 34=lorawan) (12)", 72ul);
             osi_WrStrLn(" -n <netid>         network id rx (sync word)) (12)", 52ul);
-            osi_WrStrLn(" -O <offon>         tx low datarate optimize 0=off 1=on else automatic (-1)", 76ul);
-            osi_WrStrLn(" -o <offon>         rx low datarate optimize 0=off 1=on else automatic (-1)", 76ul);
-            osi_WrStrLn(" -P <ppm>           x-tal correction +-128 (0.0)", 49ul);
+            osi_WrStrLn(" -O 0 | 1           tx low datarate optimize 0=off 1=on else automatic (-1)", 76ul);
+            osi_WrStrLn(" -o 0 | 1           rx low datarate optimize 0=off 1=on else automatic (-1)", 76ul);
+            osi_WrStrLn(" -P <ppm>           x-tal correction +-128 (0.0), datarate correction may be overwritten by -X",
+                 95ul);
             osi_WrStrLn(" -p <nss> <mosi> <miso> <sck>  GPIO numbers, apply before all parameter to this chip", 85ul);
             osi_WrStrLn("                      repeat for more chips (8 10 9 11)", 56ul);
             osi_WrStrLn("                      with different <nss> pins. Sharing <miso> needs <nss> high", 81ul);
-            osi_WrStrLn("                      on not configed chips by pullup or setting <nss> manual", 78ul);
-            osi_WrStrLn(" -Q                 tx invert IQ", 33ul);
-            osi_WrStrLn(" -q                 rx invert IQ", 33ul);
-            osi_WrStrLn(" -S <sf>            tx spread factor 6..12 (12)", 48ul);
-            osi_WrStrLn(" -s <sf>            rx spread factor 6..12 (12)", 48ul);
+            osi_WrStrLn("                      on not configed chips by pullup or setting nss-gpio high with other tools\
+", 96ul);
+            osi_WrStrLn(" -Q                 tx invert IQ (or give negative -S)", 55ul);
+            osi_WrStrLn(" -q                 rx invert IQ (or give negative -s)", 55ul);
             osi_WrStrLn(" -R <n>             PaRamp how fast tx goes to power, see chip manual (9)", 74ul);
             osi_WrStrLn(" -r <n>             add to rssi value to compensate internal and external preamps (0)", 86ul);
+            osi_WrStrLn(" -S <sf>            tx spread factor 6..12 (12) -6..-12 for invers chirps same as -Q", 85ul);
+            osi_WrStrLn(" -s <sf>            rx spread factor 6..12 (12) -6..-12 for invers chirps same as -q", 85ul);
             osi_WrStrLn(" -T <n>             (A)FSK txdel in byte (4), not used for raw mode -E", 71ul);
             osi_WrStrLn(" -U ip:sendport:receiveport AXUDP data, same as -L but standard AXUDP (no metadata)", 84ul);
-            osi_WrStrLn(" -u <us> <us>       sleep time between divice polls rx/(a)fsk tx, more:faster response, more cp\
+            osi_WrStrLn(" -u <us> <us>       sleep time between device polls rx/(a)fsk tx, more:faster response, more cp\
 u (50000 20000)", 111ul);
             osi_WrStrLn("                      afsk needs 20000 or less to avoid underruns", 66ul);
             osi_WrStrLn(" -V                 show more infos on stdout", 46ul);
             osi_WrStrLn(" -v                 show some infos on stdout", 46ul);
+            osi_WrStrLn(" -W <symbols>       limit rx preamble symbols against spoofing (250)", 69ul);
             osi_WrStrLn(" -w <dBm>           tx power 0..17 (10)", 40ul);
+            osi_WrStrLn(" -X <ppm>           data rate correction (0)", 45ul);
+            osi_WrStrLn(" -Z <n>             set overcurrent protection, use with care, see chip manual", 79ul);
             osi_WrStrLn("", 1ul);
             osi_WrStrLn("ra02 -L 127.0.0.1:9000:9001 -d -r -10 -f 433.775 -w 17 -v", 58ul);
             osi_WrStrLn("ra02 -p 8 10 9 11 -L 127.0.0.1:2400:2401 -P -2 -d -S 9 -B 6 -F 434.1 -f 433.775 -s 12 -b 7 -L 1\
@@ -855,16 +1180,16 @@ ip2> -L ... <parameters chip2 tx1/rx> -L ... -v", 143ul);
             X2C_ABORT();
          }
          else {
-            h0[2U] = 0;
-            aprsstr_Append(h0, 4096ul, "? use -h", 9ul);
-            Error(h0, 4096ul);
+            h[2U] = 0;
+            aprsstr_Append(h, 4096ul, "? use -h", 9ul);
+            Error(h, 4096ul);
          }
-         h0[0U] = 0;
+         h[0U] = 0;
       }
       else {
-         h0[1U] = 0;
-         aprsstr_Append(h0, 4096ul, "? use -h", 9ul);
-         Error(h0, 4096ul);
+         h[1U] = 0;
+         aprsstr_Append(h, 4096ul, "? use -h", 9ul);
+         Error(h, 4096ul);
       }
    }
    if (chips==0 || pcnt>0UL) {
@@ -905,7 +1230,7 @@ ip2> -L ... <parameters chip2 tx1/rx> -L ... -v", 143ul);
             osic_WrFixed(_cnst[anonym->rxbw], 1L, 1UL);
             osi_WrStr("kHz", 4ul);
             osi_WrStr(" id=", 5ul);
-            osi_WrHex(anonym->netid, 0UL);
+            WrHex(anonym->netid, 2UL, 0UL);
             osi_WrStr(" lnaboost=", 11ul);
             osic_WrUINT32(anonym->lnaboost, 1UL);
             if (anonym->swapiq) osi_WrStr(" invertIQ", 10ul);
@@ -938,11 +1263,12 @@ ip2> -L ... <parameters chip2 tx1/rx> -L ... -v", 143ul);
                      osic_WrFixed(_cnst[tx->bw], 1L, 1UL);
                      osi_WrStr("kHz", 4ul);
                      osi_WrStr(" id=", 5ul);
-                     osi_WrHex(tx->netid, 0UL);
+                     WrHex(tx->netid, 2UL, 0UL);
                      osi_WrStr(" preamb=", 9ul);
                      osic_WrFixed(tx->symboltime*(float)tx->preamb, 2L, 1UL);
                      osi_WrStr("ms", 3ul);
                      if (tx->swapiq) osi_WrStr(" invertIQ", 10ul);
+                     if (tx->rawlora) osi_WrStr(" rawdata", 9ul);
                   }
                   else {
                      if (!tx->rawfsk) {
@@ -988,43 +1314,43 @@ static void delay(void)
 
 static char scp(const struct GPIO gpio, char rd, char nss, char sck, char mosi)
 {
-   char h0[2];
+   char h[2];
    char res;
    int32_t fd;
    int32_t r;
    if (rd) {
       fd = osi_OpenRead(gpio.misoFN, 100ul);
       if (fd>=0L) {
-         r = osi_RdBin(fd, (char *)h0, 2u/1u, 1UL);
+         r = osi_RdBin(fd, (char *)h, 2u/1u, 1UL);
          osic_Close(fd);
-         res = h0[0U]!='0';
+         res = h[0U]!='0';
       }
       else res = 0;
    }
    else res = 0;
-   h0[0U] = (char)(48UL+(uint32_t)sck);
-   osi_WrBin(gpio.sckFD, (char *)h0, 2u/1u, 1UL);
+   h[0U] = (char)(48UL+(uint32_t)sck);
+   osi_WrBin(gpio.sckFD, (char *)h, 2u/1u, 1UL);
    if (nss!=X2C_INL(gpio.ceN,256,gpostate)) {
       if (nss) {
-         h0[0U] = '1';
+         h[0U] = '1';
          X2C_INCL(gpostate,gpio.ceN,256);
       }
       else {
-         h0[0U] = '0';
+         h[0U] = '0';
          X2C_EXCL(gpostate,gpio.ceN,256);
       }
-      osi_WrBin(gpio.ceFD, (char *)h0, 2u/1u, 1UL);
+      osi_WrBin(gpio.ceFD, (char *)h, 2u/1u, 1UL);
    }
    if (mosi!=X2C_INL(gpio.mosiN,256,gpostate)) {
       if (mosi) {
-         h0[0U] = '1';
+         h[0U] = '1';
          X2C_INCL(gpostate,gpio.mosiN,256);
       }
       else {
-         h0[0U] = '0';
+         h[0U] = '0';
          X2C_EXCL(gpostate,gpio.mosiN,256);
       }
-      osi_WrBin(gpio.mosiFD, (char *)h0, 2u/1u, 1UL);
+      osi_WrBin(gpio.mosiFD, (char *)h, 2u/1u, 1UL);
    }
    return res;
 } /* end scp() */
@@ -1081,7 +1407,7 @@ static void WrByte(char c)
    if ((uint8_t)c>=' ' && (uint8_t)c<'\177') osi_WrStr((char *) &c, 1u/1u);
    else {
       osi_WrStr("[", 2ul);
-      osi_WrHex((uint32_t)(uint8_t)c, 1UL);
+      WrHex((uint32_t)(uint8_t)c, 2UL, 0UL);
       osi_WrStr("]", 2ul);
    }
 } /* end WrByte() */
@@ -1104,9 +1430,9 @@ static void Showregs(pCHIP chp)
 {
    uint32_t i;
    for (i = 0UL; i<=100UL; i++) {
-      osi_WrHex(i, 1UL);
+      WrHex(i, 2UL, 0UL);
       osi_WrStr(":", 2ul);
-      osi_WrHex(scpi(chp->gpio, i), 0UL);
+      WrHex(scpi(chp->gpio, i), 2UL, 0UL);
       osi_WrStr(" ", 2ul);
       if ((i&15UL)==15UL) osi_WrStrLn("", 1ul);
    } /* end for */
@@ -1131,8 +1457,8 @@ static void app(uint32_t * i, uint32_t * p, char b[501], char c, int32_t v)
 } /* end app() */
 
 
-static void sendaxudp2(pCHIP chp, char mon[], uint32_t mon_len, int32_t txd, int32_t lev, int32_t snr,
-                int32_t afc)
+static void sendaxudp2(pCHIP chp, char mon[], uint32_t mon_len, uint32_t len, int32_t txd, int32_t lev,
+                int32_t snr, int32_t afc)
 {
    char data[501];
    char b[501];
@@ -1143,30 +1469,44 @@ static void sendaxudp2(pCHIP chp, char mon[], uint32_t mon_len, int32_t txd, int
    pTXCONTEXT tx;
    X2C_PCOPY((void **)&mon,mon_len);
    if (chp->rxon) {
-      aprsstr_mon2raw(mon, mon_len, data, 501ul, &datalen);
-      if (datalen>2L) {
-         datalen -= 2L; /* remove crc */
-         b[0U] = '\001';
-         b[1U] = '0';
-         p = 2UL;
-         app(&i, &p, b, 'T', txd);
-         app(&i, &p, b, 'V', lev);
-         app(&i, &p, b, 'S', snr);
-         app(&i, &p, b, 'A', afc);
-         b[p] = 0; /* end of axudp2 header */
-         ++p;
-         i = 0UL;
-         do {
-            b[p] = data[i];
+      if (len==0UL) {
+         /* aprs */
+         aprsstr_mon2raw(mon, mon_len, data, 501ul, &datalen);
+         if (datalen>2L) {
+            datalen -= 2L; /* remove crc */
+            b[0U] = '\001';
+            b[1U] = '0';
+            p = 2UL;
+            app(&i, &p, b, 'T', txd);
+            app(&i, &p, b, 'V', lev);
+            app(&i, &p, b, 'S', snr);
+            app(&i, &p, b, 'A', afc);
+            b[p] = 0; /* end of axudp2 header */
             ++p;
-            ++i;
-         } while ((int32_t)i<datalen);
-         aprsstr_AppCRC(b, 501ul, (int32_t)p);
+            i = 0UL;
+            do {
+               b[p] = data[i];
+               ++p;
+               ++i;
+            } while ((int32_t)i<datalen);
+            aprsstr_AppCRC(b, 501ul, (int32_t)p);
+            tx = chp->ptx;
+            while (tx) {
+               /* send rx data to all tx contexts */
+               if (tx->udpport) {
+                  ret = udpsend(tx->udpsocket, b, (int32_t)(p+2UL), tx->udpport, tx->udpip);
+               }
+               tx = tx->next; /* prx next points to ptx table */
+            }
+         }
+      }
+      else {
+         /* pr */
          tx = chp->ptx;
          while (tx) {
             /* send rx data to all tx contexts */
             if (tx->udpport) {
-               ret = udpsend(tx->udpsocket, b, (int32_t)(p+2UL), tx->udpport, tx->udpip);
+               ret = udpsend(tx->udpsocket, mon, (int32_t)len, tx->udpport, tx->udpip);
             }
             tx = tx->next; /* prx next points to ptx table */
          }
@@ -1176,7 +1516,115 @@ static void sendaxudp2(pCHIP chp, char mon[], uint32_t mon_len, int32_t txd, int
 } /* end sendaxudp2() */
 
 
-static void hdlc(char b[], uint32_t b_len, int32_t len, int32_t txdel, char h0[], uint32_t h_len,
+static char b64(uint32_t c)
+{
+   c = c&63UL;
+   if (c<26UL) return (char)(c+65UL);
+   else if (c<52UL) return (char)(c+71UL);
+   else if (c<62UL) return (char)((int32_t)c+(-4L));
+   else if (c==62UL) return '+';
+   else return '/';
+   return 0;
+} /* end b64() */
+
+
+static void enc64(uint32_t b, uint32_t n, char s[], uint32_t s_len)
+{
+   uint32_t i;
+   for (i = n; i<=2UL; i++) {
+      b = b*256UL;
+   } /* end for */
+   s[2UL] = '=';
+   s[3UL] = '=';
+   s[4UL] = 0;
+   s[0UL] = b64(b/262144UL);
+   s[1UL] = b64(b/4096UL);
+   if (n>=2UL) s[2UL] = b64(b/64UL);
+   if (n==3UL) s[3UL] = b64(b);
+} /* end enc64() */
+
+
+static void sendjson(uint32_t jipnum0, uint32_t judpport0, uint32_t id, const char text[],
+                uint32_t text_len, uint32_t dlen, char hascrc, char crc, char invert,
+                uint32_t sf, uint32_t cr, uint32_t txd, uint32_t bwnum, int32_t level, float snr,
+                float jmhz, int32_t df)
+{
+   char h[1000];
+   char s[1000];
+   int32_t ret;
+   uint32_t b;
+   uint32_t i;
+   strncpy(s,"{",1000u);
+   aprsstr_Append(s, 1000ul, "\"net\":", 7ul);
+   aprsstr_IntToStr((int32_t)id, 1UL, h, 1000ul);
+   aprsstr_Append(s, 1000ul, h, 1000ul);
+   aprsstr_Append(s, 1000ul, ",\"crc\":", 8ul);
+   aprsstr_IntToStr((int32_t)((uint32_t)hascrc+(uint32_t)crc)-1L, 1UL, h, 1000ul);
+   aprsstr_Append(s, 1000ul, h, 1000ul);
+   aprsstr_Append(s, 1000ul, ",\"invers\":", 11ul);
+   aprsstr_IntToStr((int32_t)(uint32_t)invert, 1UL, h, 1000ul);
+   aprsstr_Append(s, 1000ul, h, 1000ul);
+   aprsstr_Append(s, 1000ul, ",\"bw\":", 7ul);
+   aprsstr_FixToStr(_cnst[bwnum]*1000.0f, 2UL, h, 1000ul);
+   aprsstr_Append(s, 1000ul, h, 1000ul);
+   aprsstr_Append(s, 1000ul, ",\"sf\":", 7ul);
+   aprsstr_IntToStr((int32_t)sf, 1UL, h, 1000ul);
+   aprsstr_Append(s, 1000ul, h, 1000ul);
+   aprsstr_Append(s, 1000ul, ",\"cr\":", 7ul);
+   aprsstr_IntToStr((int32_t)cr, 1UL, h, 1000ul);
+   aprsstr_Append(s, 1000ul, h, 1000ul);
+   aprsstr_Append(s, 1000ul, ",\"preamb\":", 11ul);
+   aprsstr_IntToStr((int32_t)txd, 1UL, h, 1000ul);
+   aprsstr_Append(s, 1000ul, h, 1000ul);
+   /*  Append(s, ',"duration":'); IntToStr(frametime, 1, h); Append(s, h); */
+   aprsstr_Append(s, 1000ul, ",\"level\":", 10ul);
+   aprsstr_IntToStr(level, 1UL, h, 1000ul);
+   aprsstr_Append(s, 1000ul, h, 1000ul);
+   aprsstr_Append(s, 1000ul, ",\"afc\":", 8ul);
+   aprsstr_IntToStr(df, 1UL, h, 1000ul);
+   aprsstr_Append(s, 1000ul, h, 1000ul);
+   /*  Append(s, ',"nfloor":'); FixToStr(n, 2, h); Append(s, h); */
+   aprsstr_Append(s, 1000ul, ",\"snr\":", 8ul);
+   aprsstr_FixToStr(snr, 2UL, h, 1000ul);
+   aprsstr_Append(s, 1000ul, h, 1000ul);
+   if (jmhz!=0.0f) {
+      aprsstr_Append(s, 1000ul, ",\"rxmhz\":", 10ul);
+      aprsstr_FixToStr(jmhz+0.0005f, 4UL, h, 1000ul);
+      aprsstr_Append(s, 1000ul, h, 1000ul);
+   }
+   aprsstr_Append(s, 1000ul, ",\"ver\":\"sx\"", 12ul);
+   aprsstr_Append(s, 1000ul, ",\"payload\":\"", 13ul);
+   b = 0UL;
+   i = 0UL;
+   while (i<dlen) {
+      /* base64 encode */
+      b = b*256UL+(uint32_t)(uint8_t)text[i];
+      if (i%3UL==2UL) {
+         enc64(b, 3UL, h, 1000ul);
+         aprsstr_Append(s, 1000ul, h, 1000ul);
+         b = 0UL;
+      }
+      ++i;
+   }
+   if (i%3UL) {
+      enc64(b, i%3UL, h, 1000ul);
+      aprsstr_Append(s, 1000ul, h, 1000ul);
+   }
+   aprsstr_Append(s, 1000ul, "\"}\012", 4ul);
+   /*
+     IF jpipename[0]<>0C THEN
+       IF jsonfd<0 THEN
+         jsonfd:=OpenNONBLOCK(jpipename);
+         IF jsonfd<0 THEN jsonfd:=OpenWrite(jpipename) ELSE Seekend(jsonfd, 0) END;  (* no file and no pipe *)
+       END;
+       IF jsonfd>=0 THEN WrBin(jsonfd, s, Length(s)) ELSE WrStrLn("cannot write json-file") END;
+     END;
+   */
+   if (judpport0) ret = udpsend(judpsock, s, (int32_t)aprsstr_Length(s, 1000ul), judpport0, jipnum0);
+} /* end sendjson() */
+
+
+static void hdlc(char b[], uint32_t b_len, int32_t len, int32_t txdel, char h[], uint32_t h_len,
                 uint32_t * hlen, char fsk, char scramb, char notxd, uint32_t * scrambler)
 {
    uint32_t dds;
@@ -1234,7 +1682,7 @@ static void hdlc(char b[], uint32_t b_len, int32_t len, int32_t txdel, char h0[]
                }
             }
             else if (nrzi) *scrambler |= 0x1UL;
-            h0[*hlen] = (char)((uint32_t)(uint8_t)h0[*hlen]*2UL+(uint32_t)((0x1UL & *scrambler)!=0));
+            h[*hlen] = (char)((uint32_t)(uint8_t)h[*hlen]*2UL+(uint32_t)((0x1UL & *scrambler)!=0));
             ++obc;
             if (obc>7UL) {
                obc = 0UL;
@@ -1247,7 +1695,7 @@ static void hdlc(char b[], uint32_t b_len, int32_t len, int32_t txdel, char h0[]
             if (*hlen<(h_len-1)-8UL) {
                if (nrzi) dds += 715784192UL;
                else dds += 390397952UL;
-               h0[*hlen] = (char)((uint32_t)(uint8_t)h0[*hlen]*2UL+(uint32_t)(dds>=0x080000000UL));
+               h[*hlen] = (char)((uint32_t)(uint8_t)h[*hlen]*2UL+(uint32_t)(dds>=0x080000000UL));
                ++obc;
                if (obc>7UL) {
                   obc = 0UL;
@@ -1260,7 +1708,7 @@ static void hdlc(char b[], uint32_t b_len, int32_t len, int32_t txdel, char h0[]
 /* store nrzi bit */
 /*+2*VAL(INTEGER,ORD(scramb))*/
 /* trailing flags */
-/*WrStrLn(""); FOR p:=0 TO VAL(INTEGER,hlen) DO WrHex(ORD(h[p]),3) END; WrStrLn(""); */
+/*WrStrLn(""); FOR p:=0 TO VAL(INTEGER,hlen) DO WrHex(ORD(h[p]),2,0) END; WrStrLn(""); */
 } /* end hdlc() */
 
 
@@ -1280,6 +1728,118 @@ static void showbits(const char b[], uint32_t b_len, int32_t len)
    } /* end for */
 } /* end showbits() */
 
+
+static char cmp(uint32_t a, uint32_t b, const char h[], uint32_t h_len, const char w[],
+                uint32_t w_len)
+{
+   uint32_t i;
+   i = 0UL;
+   for (;;) {
+      if (i>w_len-1 || w[i]==0) return a>=b;
+      if (a>=b || w[i]!=h[a]) return 0;
+      ++i;
+      ++a;
+   }
+   return 0;
+} /* end cmp() */
+
+
+static uint32_t d64(char c)
+{
+   if (c=='=') return 64UL;
+   if (c=='+') return 62UL;
+   if (c=='/') return 63UL;
+   if ((uint8_t)c>='0' && (uint8_t)c<='9') return ((uint32_t)(uint8_t)c+52UL)-48UL;
+   if ((uint8_t)c>='A' && (uint8_t)c<='Z') return (uint32_t)(uint8_t)c-65UL;
+   if ((uint8_t)c>='a' && (uint8_t)c<='z') return ((uint32_t)(uint8_t)c+26UL)-97UL;
+   return 255UL;
+} /* end d64() */
+
+
+static void decodejson(char b[], uint32_t b_len, int32_t * bl)
+/* {"payload":"base64..."} */
+{
+   uint32_t len;
+   uint32_t a;
+   uint32_t p;
+   uint32_t wh;
+   uint32_t wp;
+   uint32_t w;
+   uint32_t c;
+   len = (uint32_t)*bl;
+   if (len>=2UL && b[0UL]=='{') {
+      p = 1UL;
+      while (b[p]==' ') {
+         ++p;
+         if (p>len) return;
+      }
+      if (b[p]=='\"') {
+         ++p;
+         if (p>len) return;
+         a = p;
+         while ((uint8_t)b[p]>=' ' && b[p]!='\"') {
+            ++p;
+            if (p>len) return;
+         }
+         if (b[p]!='\"') return;
+         if (cmp(a, p, b, b_len, "payload", 8ul)) {
+            *bl = 0L;
+            ++p;
+            if (p>len) return;
+            while (b[p]==' ') {
+               ++p;
+               if (p>len) return;
+            }
+            if (b[p]!=':') return;
+            ++p;
+            if (p>len) return;
+            while (b[p]==' ') {
+               ++p;
+               if (p>len) return;
+            }
+            if (b[p]!='\"') return;
+            ++p;
+            if (p>len) return;
+            a = 0UL;
+            wp = 0UL;
+            while (b[p]!='\"') {
+               c = d64(b[p]);
+               if (c==255UL) return;
+               if (c<64UL) {
+                  w = w*64UL+c;
+                  ++a;
+               }
+               if (c==64UL || a>=4UL) {
+                  if (a==2UL) w = w/16UL;
+                  else if (a==3UL) w = w/4UL;
+                  if (a>=2UL) {
+                     --a;
+                     wp += a;
+                     wh = wp-1UL;
+                     do {
+                        b[wh] = (char)(w&255UL);
+                        w = w/256UL;
+                        --wh;
+                        --a;
+                     } while (a);
+                     a = 0UL;
+                  }
+               }
+               ++p;
+               if (p>len) return;
+            }
+            ++p;
+            if (p>len) return;
+            while (b[p]==' ') {
+               ++p;
+               if (p>len) return;
+            }
+            if (b[p]=='}') *bl = (int32_t)wp;
+         }
+      }
+   }
+} /* end decodejson() */
+
 static aprsstr_GHOSTSET _cnst1 = {0x00000000UL,0x00000000UL,0x00000000UL,0x00000000UL,0x00000000UL,0x00000000UL,
                 0x00000000UL,0x00000000UL,0x00000000UL};
 
@@ -1296,6 +1856,7 @@ static void getaxudp2(pCHIP chp)
    char udp2[64]; /* axudp2 header */
    char cont;
    char ok0;
+   uint32_t i;
    struct CHIP * anonym;
    /* axudp2 */
    struct TXCONTEXT * anonym0;
@@ -1305,8 +1866,22 @@ static void getaxudp2(pCHIP chp)
    for (;;) {
       if (chp->atx==0) return;
       if (chp->atx->udpbind) {
-         len = udpreceive(chp->atx->udpsocket, rb, 1501L, &fromport, &ip);
-         if (len>0L) break;
+         /*
+               IF chp^.atx^.splitlen>0 THEN                     (* rawlora frame splitted, send part 2 *)
+                 len:=0;
+                 FOR i:=255 TO chp^.atx^.splitlen-1 DO
+                   rb[len]:=chp^.atx^.ftext[i];
+                   INC(len);
+                 END;
+                 chp^.atx^.splitlen:=0;
+                 split:=TRUE;
+               ELSIF chp^.atx^.ftextlen=0 THEN
+         */
+         if (chp->atx->ftextlen==0UL) {
+            /* buffer is sent complete */
+            len = udpreceive(chp->atx->udpsocket, rb, 1501L, &fromport, &ip);
+            if (len>0L) break;
+         }
       }
       if (cont) {
          chp->atx = 0;
@@ -1318,23 +1893,45 @@ static void getaxudp2(pCHIP chp)
       struct CHIP * anonym = chp;
       ok0 = 0;
       anonym->atx->ftextlen = 0UL;
-      if ((len>14L && len<1501L) && ((!anonym->atx->checkip || anonym->atx->udpip==0UL) || anonym->atx->udpip==ip)) {
+      decodejson(rb, 1501ul, &len);
+      if ((len>=2L && len<1501L) && ((!anonym->atx->checkip || anonym->atx->udpip==0UL) || anonym->atx->udpip==ip)) {
+         if (verb2) {
+            osi_WrStr("got frame len=", 15ul);
+            osic_WrINT32((uint32_t)len, 1UL);
+            osi_WrStrLn("B", 2ul);
+         }
          crc1 = rb[len-2L];
          crc2 = rb[len-1L];
-         if (!anonym->atx->rawfsk) aprsstr_AppCRC(rb, 1501ul, len-2L);
+         if (!anonym->atx->rawfsk && !anonym->atx->rawlora) aprsstr_AppCRC(rb, 1501ul, len-2L);
          udp2[0U] = 0;
-         if (anonym->atx->rawfsk || crc1==rb[len-2L] && crc2==rb[len-1L]) {
-            if (!anonym->atx->rawfsk && rb[0U]=='\001') {
+         if ((anonym->atx->rawfsk || anonym->atx->rawlora) || crc1==rb[len-2L] && crc2==rb[len-1L]) {
+            if (!(anonym->atx->rawfsk || anonym->atx->rawlora) && rb[0U]=='\001') {
                aprsstr_extrudp2(rb, 1501ul, udp2, 64ul, &len);
             }
             { /* with */
                struct TXCONTEXT * anonym0 = anonym->atx;
                slen = 0UL;
-               if (anonym0->rawfsk) {
+               if (anonym0->rawfsk || anonym0->rawlora) {
                   anonym0->ftextlen = 0UL;
                   while (anonym0->ftextlen<=3850UL && anonym0->ftextlen<(uint32_t)len) {
                      anonym0->ftext[anonym0->ftextlen] = rb[anonym0->ftextlen];
                      ++anonym0->ftextlen;
+                  }
+                  if (verb && anonym0->ftextlen>2UL) {
+                     osi_WrStr("UDP:", 5ul);
+                     ShowFrame(anonym0->ftext, 3851ul, anonym0->ftextlen-2UL, (char)(chp->num+48UL));
+                  }
+                  if ((anonym0->rawlora && anonym0->ftextlen>=255UL) && anonym0->ftextlen+2UL<3850UL) {
+                     /* split frame */
+                     for (i = anonym0->ftextlen-1UL; i>=253UL; i--) {
+                        /* place for chaining crc */
+                        anonym0->ftext[i+2UL] = anonym0->ftext[i];
+                        rb[i-253UL] = anonym0->ftext[i];
+                     } /* end for */
+                     aprsstr_AppCRC(rb, 1501ul, (int32_t)(anonym0->ftextlen-253UL));
+                     anonym0->ftext[253U] = rb[anonym0->ftextlen-253UL]; /* append crc rest frame as join hash */
+                     anonym0->ftext[254U] = rb[anonym0->ftextlen-252UL];
+                     anonym0->ftextlen += 2UL;
                   }
                   ok0 = 1;
                }
@@ -1416,9 +2013,9 @@ static void Setmode(pCHIP chp, uint32_t m, char check, char tx)
       if ((n&255UL)==0UL) {
          Wrchipnum(chp, 0);
          osi_WrStr(" try set mode:", 15ul);
-         osi_WrHex(m, 1UL);
+         WrHex(m, 2UL, 0UL);
          osi_WrStr(" chip has:", 11ul);
-         osi_WrHex(scpi(chp->gpio, 1UL), 1UL);
+         WrHex(scpi(chp->gpio, 1UL), 2UL, 0UL);
          osi_WrStrLn("", 1ul);
       }
    }
@@ -1486,8 +2083,10 @@ static void startfsk(pCHIP chp)
 
 static void setppm(pCHIP chp)
 {
-   scpo(chp->gpio, 39UL, (uint32_t)(uint8_t)(signed char)X2C_TRUNCI(chp->ppm*0.95f+0.5f,-128,127));
-                /* datarate correction */
+   float p;
+   p = chp->ppm;
+   if (chp->datarate!=0.0f) p = chp->datarate;
+   scpo(chp->gpio, 39UL, (uint32_t)(uint8_t)(signed char)X2C_TRUNCI(p*0.95f+0.5f,-128,127)); /* datarate correction */
 } /* end setppm() */
 
 
@@ -1517,10 +2116,28 @@ static void startrx(pCHIP chp, char dcdonly)
       scpo(anonym->gpio, 49UL, 3UL+2UL*(uint32_t)(sf==6UL)); /* rxoptimize 3, on sf=6 5 */
       scpo(anonym->gpio, 55UL, 10UL+2UL*(uint32_t)(sf==6UL));
       scpo(anonym->gpio, 57UL, id); /* syncword */
+      scpo(chp->gpio, 32UL, chp->preamblelimit/256UL); /* rx preamble limir */
+      scpo(chp->gpio, 33UL, chp->preamblelimit&255UL); /* rx preamble limit */
       if (anonym->swapiq) {
          scpo(anonym->gpio, 51UL, (uint32_t)((uint32_t)scpi(anonym->gpio, 51UL)|0x40UL));
+         scpo(anonym->gpio, 59UL, 25UL);
       }
-      else scpo(anonym->gpio, 51UL, (uint32_t)((uint32_t)scpi(anonym->gpio, 51UL)&0xBFUL));
+      else {
+         scpo(anonym->gpio, 51UL, (uint32_t)((uint32_t)scpi(anonym->gpio, 51UL)&0xBFUL));
+         scpo(anonym->gpio, 59UL, 29UL);
+      }
+      if (chp->rxbw==9UL) {
+         /* 500khz optimize */
+         if (chp->rxmhz<=779.0f) {
+            scpo(anonym->gpio, 54UL, 2UL);
+            scpo(anonym->gpio, 58UL, 127UL);
+         }
+         else {
+            scpo(anonym->gpio, 54UL, 2UL);
+            scpo(anonym->gpio, 58UL, 100UL);
+         }
+      }
+      else scpo(anonym->gpio, 54UL, 3UL);
       setsynth(chp, anonym->rxmhz);
       Setmode(chp, 133UL+2UL*(uint32_t)dcdonly, 0, 0); /* continous rx or dcd detect */
    }
@@ -1531,8 +2148,10 @@ static void send(pCHIP chp)
 {
    uint32_t pow0;
    uint32_t len;
+   uint32_t j;
    uint32_t i;
    char b[501];
+   uint32_t tmp;
    Setmode(chp, 129UL, 1, 0);
    if (chp->cfgocp>=0L) scpo(chp->gpio, 11UL, (uint32_t)(chp->cfgocp&31L));
    setsynth(chp, chp->atx->mhz);
@@ -1556,21 +2175,46 @@ static void send(pCHIP chp)
    else scpo(chp->gpio, 51UL, (uint32_t)((uint32_t)scpi(chp->gpio, 51UL)|0x1UL));
    /*scpo(chp^.gpio, RegInvertIQ, 27H); */
    /*WrHex(scpi(chp^.gpio, RegInvertIQ), 5); WrStrLn("=inv"); */
-   b[0U] = '<'; /* for whatever */
-   b[1U] = '\377'; /* for whatever */
-   b[2U] = '\001'; /* for whatever */
-   len = 3UL;
-   i = 0UL;
-   if (chp->atx->ftextlen>255UL) {
-      chp->atx->ftextlen = 255UL;
-      if (verb) osi_WrStrLn("---packet length stripped to 255", 33ul);
+   len = 0UL;
+   if (!chp->atx->rawlora) {
+      b[0U] = '<'; /* for whatever */
+      b[1U] = '\377'; /* for whatever */
+      b[2U] = '\001'; /* for whatever */
+      len = 3UL;
    }
-   while (i<chp->atx->ftextlen && len<500UL) {
+   i = 0UL;
+   j = chp->atx->ftextlen;
+   if (j>255UL) {
+      j = 255UL;
+      if (!chp->atx->rawlora && verb) osi_WrStrLn("---packet length stripped to 255", 33ul);
+   }
+   while (i<j && len<500UL) {
       b[len] = chp->atx->ftext[i];
       ++len;
       ++i;
    }
-   /*  IF verb THEN WrStr(" [");WrBytes(b, len); WrStrLn("]") END; */
+   if (chp->atx->verbpart2) {
+      osi_WrStr("send split frame part 2 len=", 29ul);
+      osic_WrINT32(chp->atx->ftextlen, 1UL);
+      osi_WrStrLn("", 1ul);
+   }
+   chp->atx->verbpart2 = 0;
+   if (chp->atx->rawlora && chp->atx->ftextlen>255UL) {
+      /*second part of split frame */
+      if (verb) {
+         osi_WrStrLn("send split frame part 1", 24ul);
+         chp->atx->verbpart2 = 1; /* for verb only */
+      }
+      tmp = chp->atx->ftextlen-1UL;
+      i = 255UL;
+      if (i<=tmp) for (;; i++) {
+         chp->atx->ftext[i-255UL] = chp->atx->ftext[i];
+         if (i==tmp) break;
+      } /* end for */
+      chp->atx->ftextlen -= 255UL;
+   }
+   else chp->atx->ftextlen = 0UL;
+   /*IF verb THEN WrStr(" [");WrBytes(b, len); WrStrLn("]") END; */
    scpo(chp->gpio, 34UL, len); /* payload length */
    scpo(chp->gpio, 13UL, scpi(chp->gpio, 14UL)); /* write pointer */
    scpio(chp->gpio, 1, 0UL, len, b, 501ul);
@@ -1595,6 +2239,7 @@ static void txfill(pCHIP chp)
          for (;;) {
             r = (int32_t)chp->atx->ftextlen-chp->atx->fskp;
             if (r>0L) break;
+            chp->atx->ftextlen = 0UL;
             getaxudp2(chp); /* more data as tx is on */
             if (chp->atx==0) break;
          }
@@ -1643,25 +2288,148 @@ static void showv2(pCHIP chip0, uint8_t bandmap)
 {
    Wrchipnum(chip0, 0);
    osi_WrStr(" st:", 5ul);
-   osi_WrHex(scpi(chip0->gpio, 1UL), 0UL);
+   WrHex(scpi(chip0->gpio, 1UL), 2UL, 0UL);
    osi_WrStr(" cnt:", 6ul);
    osic_WrINT32(scpi(chip0->gpio, 23UL), 1UL);
    osi_WrStr(" rssi:", 7ul);
    osic_WrINT32(scpi(chip0->gpio, 27UL), 1UL);
    osi_WrStr(" stat:", 7ul);
-   osi_WrHex(scpi(chip0->gpio, 24UL), 1UL);
+   WrHex(scpi(chip0->gpio, 24UL), 2UL, 0UL);
    osi_WrStr(" flags:", 8ul);
-   osi_WrHex(scpi(chip0->gpio, 18UL), 1UL);
+   WrHex(scpi(chip0->gpio, 18UL), 2UL, 0UL);
    osi_WrStr(" state:", 8ul);
    osic_WrUINT32((uint32_t)chip0->state, 1UL);
    osi_WrStr(" dcd:", 6ul);
    osic_WrUINT32((uint32_t)(uint8_t)bandmap, 1UL);
+   if (chip0->atx) {
+      osi_WrStr(" atx ", 6ul);
+      osic_WrINT32(chip0->atx->ftextlen, 1UL);
+      osi_WrStr("Bytes ", 7ul);
+   }
    osi_WrStrLn("", 1ul);
 } /* end showv2() */
 
 
+static char chkpr(char raw[], uint32_t raw_len, uint32_t rawlen, char pr[], uint32_t pr_len,
+                uint32_t * prlen, char * part2)
+/* try to find out if pr frame or lora */
+{
+   uint32_t i;
+   uint32_t tmp;
+   char chkpr_ret;
+   X2C_PCOPY((void **)&raw,raw_len);
+   if (*part2) {
+      /* second part */
+      *part2 = 0;
+      aprsstr_AppCRC(raw, raw_len, (int32_t)rawlen);
+      if (pr[253UL]==raw[rawlen] && pr[254UL]==raw[rawlen+1UL]) {
+         /* join crc fits */
+         tmp = rawlen-1UL;
+         i = 0UL;
+         if (i<=tmp) for (;; i++) {
+            pr[i+253UL] = raw[i]; /* append second part */
+            if (i==tmp) break;
+         } /* end for */
+         *prlen = rawlen+253UL;
+         /*IF verb THEN WrStr("pr part 2 join ok len="); WrInt(prlen,1); WrStrLn(""); END; */
+         chkpr_ret = 1;
+         goto label;
+      }
+   }
+   /* so tread this frame as part 1 */
+   /*IF verb THEN WrStrLn("pr part 2 join hash missmatch") END; */
+   i = 0UL;
+   while (i<rawlen && !((uint32_t)(uint8_t)raw[i]&1)) ++i;
+   if ((i%7UL==6UL && i>=13UL) && i<=69UL) {
+      /* is pr,  not 2 to 10 shift up calls */
+      /*IF verb THEN WrStr("pr part 1 len="); WrInt(rawlen,1); WrStrLn("") END; */
+      *prlen = rawlen;
+      for (i = 0UL; i<=254UL; i++) {
+         pr[i] = raw[i];
+      } /* end for */
+      if (rawlen<255UL) {
+         chkpr_ret = 1;
+         goto label;
+      }
+      /* pr ready */
+      /* split pr part 1 */
+      *part2 = 1; /* next frame may be second part */
+      *prlen = 0UL; /* not complete now */
+      chkpr_ret = 1;
+      goto label;
+   }
+   /* not 2 to 10 shift up calls so not pr frame */
+   *part2 = 0;
+   *prlen = 0UL;
+   chkpr_ret = 0;
+   label:;
+   X2C_PFREE(raw);
+   return chkpr_ret;
+} /* end chkpr() */
+
+
+static char decodemeshcom4(const char text[], uint32_t text_len, uint32_t textlen)
+/* MESHCOM4 */
+{
+   uint32_t te;
+   uint32_t i;
+   uint32_t tmp;
+   if (verb) {
+      /*-fcs */
+      i = 0UL;
+      te = 0UL;
+      while (te+2UL<textlen && (te<6UL || text[te])) {
+         i += (uint32_t)(uint8_t)text[te];
+         ++te;
+      }
+      i += (uint32_t)(uint8_t)text[te+1UL];
+      i += (uint32_t)(uint8_t)text[te+2UL];
+      /*-fcs */
+      /*
+          WrStr("Meshcom4: FCS:");
+          IF i=ORD(text[te+3])*256 + ORD(text[te+4]) THEN WrStr("Ok") ELSE WrStr("ERROR") END;
+      */
+      if (i==(uint32_t)(uint8_t)text[te+3UL]*256UL+(uint32_t)(uint8_t)text[te+4UL]) {
+         /* FCS ok */
+         osi_WrStr("Meshcom4: FCS:Ok MID=", 22ul);
+         WrHex((uint32_t)(uint8_t)text[1UL]+(uint32_t)(uint8_t)text[2UL]*256UL+(uint32_t)(uint8_t)
+                text[3UL]*65536UL+(uint32_t)(uint8_t)text[4UL]*16777216UL, 8UL, 0UL);
+         osi_WrStr(" MAX-HOP=", 10ul);
+         osic_WrUINT32((uint32_t)(uint8_t)text[5UL]&7UL, 1UL);
+         if ((0x80U & (uint8_t)(uint8_t)text[5UL])) osi_WrStr(" viaMQTT", 9ul);
+         if ((0x40U & (uint8_t)(uint8_t)text[5UL])) osi_WrStr(" +Traceroute", 13ul);
+         if (te+2UL<=textlen) {
+            osi_WrStr(" HW-ID=", 8ul);
+            osic_WrUINT32((uint32_t)(uint8_t)text[te+1UL], 1UL);
+            osi_WrStr(" MOD=", 6ul);
+            osic_WrUINT32((uint32_t)(uint8_t)text[te+2UL], 1UL);
+         }
+         if (te+6UL<textlen) {
+            osi_WrStr(" FW=", 5ul);
+            osic_WrUINT32((uint32_t)(uint8_t)text[te+6UL], 1UL);
+            osi_WrStr(".", 2ul);
+            osic_WrUINT32((uint32_t)(uint8_t)text[te+5UL], 1UL);
+         }
+         osi_WrStrLn("", 1ul);
+         osi_WrStr("[", 2ul);
+         tmp = te-1UL;
+         i = 6UL;
+         if (i<=tmp) for (;; i++) {
+            WrChHex(text[i]);
+            if (i==tmp) break;
+         } /* end for */
+         osi_WrStrLn("]", 2ul);
+         return 1;
+      }
+   }
+   return 0;
+} /* end decodemeshcom4() */
+
+
 static void rx(pCHIP chip0)
 {
+   uint32_t prlen;
+   uint32_t cr;
    uint32_t len;
    uint32_t syncw;
    uint32_t flags0;
@@ -1674,6 +2442,8 @@ static void rx(pCHIP chip0)
    int32_t snr;
    int32_t ferr;
    char s[31];
+   char hx[501];
+   char h[501];
    uint32_t tmp;
    rximplicit = (char)(scpi(chip0->gpio, 29UL)&1);
    hascrc = (0x40U & (uint8_t)scpi(chip0->gpio, 28UL))!=0;
@@ -1691,9 +2461,11 @@ static void rx(pCHIP chip0)
       level += chip0->rssicorr;
       scpo(chip0->gpio, 13UL, scpi(chip0->gpio, 16UL));
       len = scpi(chip0->gpio, 19UL);
+      cr = scpi(chip0->gpio, 24UL)/32UL+4UL;
       if (verb) {
          aprsstr_TimeToStr(osic_time()%86400UL, s, 31ul);
          osi_WrStr(s, 31ul);
+         osi_WrStr(" ", 2ul);
          Wrchipnum(chip0, 0);
          if (hascrc) {
             if (crcvalid) osi_WrStr(" crc:ok", 8ul);
@@ -1705,7 +2477,7 @@ static void rx(pCHIP chip0)
          osi_WrStr(" df:", 5ul);
          osic_WrINT32((uint32_t)afchz, 1UL);
          osi_WrStr(" net: ", 7ul);
-         osi_WrHex(syncw, 0UL);
+         WrHex(syncw, 2UL, 0UL);
          osi_WrStr(" ih/crc:", 9ul);
          osic_WrINT32((uint32_t)rximplicit, 1UL);
          osic_WrINT32((uint32_t)hascrc, 1UL);
@@ -1714,37 +2486,69 @@ static void rx(pCHIP chip0)
          osi_WrStr(" snr:", 6ul);
          osic_WrINT32((uint32_t)snr, 1UL);
          osi_WrStr(" cr:", 5ul);
-         osic_WrINT32(scpi(chip0->gpio, 24UL)/32UL+4UL, 1UL);
+         osic_WrINT32(cr, 1UL);
          osi_WrStr(" len:", 6ul);
          osic_WrINT32(len, 1UL);
          osi_WrStrLn("", 1ul);
       }
-      if (len>5UL && len<500UL) {
+      if (len>0UL && len<500UL) {
          scpio(chip0->gpio, 0, 0UL, len, h, 501ul);
-         tmp = len-1UL;
-         i = 0UL;
-         if (i<=tmp) for (;; i++) {
-            if (i>=3UL && i<len) h[i-3UL] = h[i];
-            if (verb) WrByte(h[i]);
-            if (i==tmp) break;
-         } /* end for */
-         h[len-3UL] = 0;
-         if ((uint8_t)h[len-4UL]<'\034') h[len-4UL] = 0;
-         if (hascrc && crcvalid) {
-            if (chip0->netid>255UL || chip0->netid==syncw) {
-               sendaxudp2(chip0, h, 501ul, (int32_t)chip0->rxtxdel, level, snr, afchz);
+         /*    IF hascrc & crcvalid THEN */
+         if (chip0->netid>255UL || chip0->netid==syncw) {
+            if (chkpr(h, 501ul, len, chip0->splitb, 351ul, &prlen, &chip0->issplit)) {
+               /* look if is pr and reassemble split frames */
+               if (hascrc && crcvalid) {
+                  sendaxudp2(chip0, chip0->splitb, 351ul, prlen, (int32_t)chip0->rxtxdel, level, snr, afchz);
+                /* pr frame ready */
+               }
+               if (verb && prlen>2UL) {
+                  osi_WrStr("LORA:", 6ul);
+                  ShowFrame(chip0->splitb, 351ul, prlen-2UL, (char)(chip0->num+48UL));
+               }
             }
-            else if (verb) {
-               osi_WrStrLn("", 1ul);
-               osi_WrStr("packet filtert as wrong sync word received=", 44ul);
-               osi_WrHex(syncw, 1UL);
-               osi_WrStr(" filter=", 9ul);
-               osi_WrHex(chip0->netid, 1UL);
+            else if (((hascrc && crcvalid) && h[0U]=='!') && decodemeshcom4(h, 501ul, len)) {
+            }
+            else {
+               /*& (chip^.netid=2BH)*/
+               /* meshcom4 */
+               /* aprs */
+               tmp = len-1UL;
+               i = 0UL;
+               if (i<=tmp) for (;; i++) {
+                  if (i>=3UL && i<len) {
+                     hx[i-3UL] = h[i];
+                  }
+                  if (verb) WrByte(h[i]);
+                  if (i==tmp) break;
+               } /* end for */
+               if (verb) osi_WrStrLn("", 1ul);
+               if (len>3UL) {
+                  hx[len-3UL] = 0;
+                  if ((uint8_t)hx[len-4UL]<'\034') {
+                     hx[len-4UL] = 0; /* remove trailing LF */
+                  }
+               }
+               else hx[0U] = 0;
+               if (hascrc && crcvalid) {
+                  sendaxudp2(chip0, hx, 501ul, 0UL, (int32_t)chip0->rxtxdel, level, snr, afchz); /* aprs */
+               }
+            }
+            if (judpport) {
+               sendjson(jipnum, judpport, syncw, h, 501ul, len, hascrc, crcvalid, chip0->swapiq, chip0->rxsf, cr,
+                chip0->rxtxdel, chip0->rxbw, level, (float)snr, chip0->rxmhz, afchz);
             }
          }
+         else if (verb) {
+            osi_WrStrLn("", 1ul);
+            osi_WrStr("packet filtert, wrong sync word received=", 42ul);
+            WrHex(syncw, 2UL, 0UL);
+            osi_WrStr(" filter=", 9ul);
+            WrHex(chip0->netid, 2UL, 0UL);
+         }
+         /*    END; */
          if (verb) osi_WrStrLn("", 1ul);
       }
-      else if (verb) osi_WrStrLn("zereo len data", 15ul);
+      else if (verb) osi_WrStrLn("zero len data", 14ul);
       scpo(chip0->gpio, 18UL, 255UL);
       Setmode(chip0, 133UL, 0, 0); /* rx continous */
    }
@@ -1752,31 +2556,53 @@ static void rx(pCHIP chip0)
       Wrchipnum(chip0, 0);
       osi_WrStrLn(" implicit header", 17ul);
    }
+/*
+PROCEDURE calibrate(chp:pCHIP);
+VAR r:SET32;
+    cur:CARDINAL;
+BEGIN
+  cur:=scpi(chp^.gpio, RegOpMode);
+  scpo(chp^.gpio, RegOpMode, 80H);        (* sleep *)
+  scpo(chp^.gpio, RegOpMode, 00H);        (* fsk sleep *)
+  scpo(chp^.gpio, RegOpMode, 4H);         (* FSR *)
+  usleep(500);
+--  scpo(chp^.gpio, RegImageCal, CALMASK+1);
+--  usleep(500);
+--  IF verb THEN WrStr("temp:"); WrInt(20-CAST(INT8, scpi(chp^.gpio, RegTemp)),1); WrStrLn("deg"); END;
+  scpo(chp^.gpio, RegImageCal, CALMASK);
+  r:=CAST(SET32, scpi(chp^.gpio, RegImageCal));
+  IF 3 IN r THEN                                  (* temperature change occured *)
+    scpo(chp^.gpio, RegOpMode, 1);              (* fsk standby *)
+    IF verb THEN WrStr("calibration ") END;
+    INCL(r, 6);                                   (* trigger calibration *)
+    scpo(chp^.gpio, RegImageCal, CAST(CARDINAL,r)); 
+    REPEAT                                        (* wait until done *) 
+      usleep(1000);
+      IF verb THEN WrStr(".") END;
+    UNTIL NOT (5 IN CAST(SET32, scpi(chp^.gpio, RegImageCal)));
+    IF verb THEN WrStrLn(" done") END;
+  END;
+  scpo(chp^.gpio, RegOpMode, 80H);        (* sleep *)
+  scpo(chp^.gpio, RegOpMode, 84H);        (* sleep *)
+  scpo(chp^.gpio, RegOpMode, cur);
+END calibrate;
+*/
 } /* end rx() */
 
-/* sleep */
-/* fsk sleep */
-/* FSR */
-/* temperature change occured */
-/* fsk standby */
-/* trigger calibration */
-/* wait until done */
-/* sleep */
-/* sleep */
 static void freegpio(int32_t);
 
 
 static void freegpio(int32_t signum)
 {
    uint32_t i;
-   char h0[2];
+   char h[2];
    int32_t fd;
    for (i = 0UL; i<=255UL; i++) {
       if (gpiofds[i]!=-2L) {
-         aprsstr_CardToStr(i, 1UL, h0, 2ul);
+         aprsstr_CardToStr(i, 1UL, h, 2ul);
          fd = osi_OpenWrite("/sys/class/gpio/unexport", 25ul); /* /sys/class/gpio/unexport */
          if (fd>=0L) {
-            osi_WrBin(fd, (char *)h0, 2u/1u, 1UL);
+            osi_WrBin(fd, (char *)h, 2u/1u, 1UL);
             osic_Close(fd);
          }
       }
@@ -1854,7 +2680,7 @@ extern int main(int argc, char **argv)
       if (chip->atx && chip->atx->sendfsk) txfast = 1;
       ++chip->calcnt;
       st = scpi(chip->gpio, 1UL);
-      if (((uint8_t)st&0x6U)==0U) {
+      if (((uint8_t)st&0x6U)==0U && chip->state==ra02_stTX) {
          /* sleep or standby */
          /*WrHex(scpi(chip^.gpio, RegOpMode),1); WrStr(" "); WrHex(scpi(chip^.gpio, RegIrqFlags),1);
                 WrStrLn("=sleep/stby"); */
@@ -1867,7 +2693,9 @@ extern int main(int argc, char **argv)
             }
          }
          if (chip->state!=ra02_stWAITDCD) {
-            if (chip->state==ra02_stTX) chip->atx = 0;
+            if ((chip->state==ra02_stTX && chip->atx) && chip->atx->ftextlen==0UL) {
+               chip->atx = 0;
+            }
             chip->state = ra02_stSLEEP;
          }
       }
@@ -1885,24 +2713,29 @@ extern int main(int argc, char **argv)
          if ((chip->statu&1)) {
             /* dcd */
             banddcd |= (1U<<chip->band); /* set dcd for this band */
-            if (!(chip->stato&1)) chip->uso = usec();
-            else if ((0x8U & (uint8_t)chip->statu) && chip->rxtxdel==0UL) {
-               chip->rxtxdel = (usec()-chip->uso)/1000UL; /* header ok */
+            if (!(chip->stato&1)) chip->mso = monotonicms();
+            else if ((0x8U & (uint8_t)chip->statu) && chip->mso) {
+               /* header ok */
+               chip->rxtxdel = monotonicms()-chip->mso;
+               chip->mso = 0UL;
             }
          }
          if ((0x40U & (uint8_t)flags)) rx(chip);
       }
       if (chip->state==ra02_stWAITDCD) {
          dcd = 0;
-         if ((chip->atx==0 || !chip->atx->usedcd) || dcddone(chip, &dcd)) {
-            if (dcd) startdcdcheck(chip);
+         if (chip->atx && !chip->atx->usedcd || dcddone(chip, &dcd)) {
+            if (dcd) {
+               startdcdcheck(chip);
+            }
             else {
                send(chip);
                chip->state = ra02_stTX;
             }
          }
       }
-      else if ((chip->atx && chip->state!=ra02_stTX) && !X2C_IN(chip->band,8,banddcd|banddcdall)) {
+      else if (((chip->atx && chip->atx->ftextlen>0UL) && chip->state!=ra02_stTX) && !X2C_IN(chip->band,8,
+                banddcd|banddcdall)) {
          if (chip->atx->sendfsk) {
             startfsk(chip);
             chip->state = ra02_stTX;
@@ -1912,16 +2745,27 @@ extern int main(int argc, char **argv)
             chip->state = ra02_stWAITDCD;
          }
       }
-      if (chip->state==ra02_stTX && chip->atx) {
-         if (chip->atx->sendfsk) txfill(chip);
+      if (chip->state==ra02_stTX) {
+         if ((chip->atx && chip->atx->ftextlen>0UL) && chip->atx->sendfsk) txfill(chip);
          else if ((0x8U & (uint8_t)scpi(chip->gpio, 18UL))) {
             /* tx done */
-            chip->atx = 0;
-            Setmode(chip, 129UL, 1, 0);
+            if (chip->atx==0 || chip->atx->ftextlen==0UL) {
+               /* for continous send */
+               chip->atx = 0;
+               getaxudp2(chip);
+            }
+            if (chip->atx && chip->atx->ftextlen>0UL) {
+               /*Setmode(chip, 81H, TRUE, FALSE);                        (* stop tx *) */
+               send(chip);
+            }
+            else Setmode(chip, 129UL, 1, 0);
          }
       }
+      if ((chip->atx && chip->atx->ftextlen==0UL) && !chip->atx->sendfsk) chip->atx = 0;
       if (verb2 && (tcnt&7UL)==0UL) showv2(chip, banddcdall|banddcd);
-      if (chip->atx==0) getaxudp2(chip);
+      /*    IF (chip^.state<>stTX) & (chip^.atx=NIL) THEN getaxudp2(chip) END; */
+      if (chip->state!=ra02_stTX && (chip->atx==0 || chip->atx->ftextlen==0UL)) getaxudp2(chip);
+      /*IF chip^.atx<>NIL THEN WrInt(chip^.atx^.ftextlen,5); WrStrLn("=atx") ELSE WrStrLn(" no atx") END; */
       chip = chip->next;
    }
    X2C_EXIT();

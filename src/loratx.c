@@ -73,6 +73,18 @@ struct Complex {
    float Re;
 };
 
+struct BIRDY;
+
+typedef struct BIRDY * pBIRDY;
+
+
+struct BIRDY {
+   pBIRDY next;
+   float w0;
+   float level;
+   float hz;
+};
+
 static char as[4096];
 
 static char fni[4096];
@@ -125,25 +137,9 @@ static char swapiq;
 
 static char overdriven;
 
-static float sample;
-
-static float bw;
-
-static float bws;
-
-static float baud;
-
-static float bind;
-
-static float sampbaud;
-
-static float frac;
-
 static float noisegain;
 
 static float amp;
-
-static float symf;
 
 static float val;
 
@@ -173,7 +169,25 @@ static double fr;
 
 static double shift;
 
+static double symf;
+
+static double baud;
+
+static double sample;
+
+static double bw;
+
+static double bind;
+
+static double frac;
+
+static double bws;
+
 static double rnd;
+
+static double upsamp;
+
+static double fro;
 
 static uint32_t echop;
 
@@ -216,7 +230,13 @@ static uint32_t preamb;
 static uint32_t testc;
 
 static uint32_t addzeros;
+
+static uint32_t fcnt;
 /*    DDS:ARRAY[0..DDSSIZE-1] OF RECORD si,co:REAL END; */
+
+static pBIRDY birdies;
+
+static pBIRDY bird;
 
 
 static void Err(const char text0[], uint32_t text_len)
@@ -282,7 +302,7 @@ static void WrSamp(float s)
       overdriven = 1;
    }
    if (outform==0UL) {
-      ob[wp] = (uint8_t)(uint32_t)X2C_TRUNCC(s+127.5f,0UL,X2C_max_longcard);
+      ob[wp] = (uint8_t)(uint32_t)X2C_TRUNCC(s+128.0f,0UL,X2C_max_longcard);
       ++wp;
    }
    else if (outform==1UL) {
@@ -461,10 +481,8 @@ extern int main(int argc, char **argv)
    sf = 12UL;
    cr = 5UL;
    optimize = 0UL;
-   bw = 1.25E+5f;
-   sample = 1.25E+5f;
-   /*  sample:=2048000.0; */
-   /*  sample:=2600000.0; */
+   bw = 1.25E+5;
+   sample = 0.0;
    withcrc = 0;
    preamb = 8UL;
    cfgopt = -1L;
@@ -482,6 +500,7 @@ extern int main(int argc, char **argv)
    echofifo = 0;
    echo1 = 0.0f;
    echop = 0UL;
+   birdies = 0;
    for (;;) {
       osi_NextArg(as, 4096ul);
       if (as[0U]==0) break;
@@ -504,7 +523,7 @@ extern int main(int argc, char **argv)
                osi_NextArg(as, 4096ul);
                if (!aprsstr_StrToFix(&val, as, 4096ul)) Err("-r <iq-samplerate>", 19ul);
                if (val<=0.0f) Err("iq-samplerate range Hz", 23ul);
-               sample = val;
+               sample = (double)val;
             }
             else if (as[1U]=='S') {
                osi_NextArg(as, 4096ul);
@@ -540,18 +559,19 @@ extern int main(int argc, char **argv)
             else if (as[1U]=='f') {
                osi_NextArg(as, 4096ul);
                if (as[0U]=='u' && as[1U]=='8') outform = 0UL;
-               else if ((as[0U]=='i' && as[1U]=='1') && as[2U]=='6') {
-                  outform = 1UL;
+               else if ((as[0U]=='i' && as[1U]=='1') && as[2U]=='6') outform = 1UL;
+               else if ((as[0U]=='f' && as[1U]=='3') && as[2U]=='2') {
+                  outform = 2UL;
                }
-               else if ((as[0U]=='f' && as[1U]=='3') && as[2U]=='2') outform = 2UL;
                else Err("-f output formats u8 i16 f32", 29ul);
             }
             else if (as[1U]=='b') {
                osi_NextArg(as, 4096ul);
-               if (!aprsstr_StrToCard(as, 4096ul, &i) || i>9UL) {
-                  Err("-b <num> 0..9", 14ul);
+               if (aprsstr_StrToCard(as, 4096ul, &i)) {
+                  if (i>9UL) bw = (double)i;
+                  else bw = X2C_DIVL(5.E+5,(double)_cnst[i]);
                }
-               bw = X2C_DIVR(5.E+5f,(float)_cnst[i]);
+               else Err("-b <tablenum> 0..9 or -b <Hz>", 30ul);
             }
             else if (as[1U]=='s') {
                osi_NextArg(as, 4096ul);
@@ -592,12 +612,25 @@ extern int main(int argc, char **argv)
                osi_NextArg(as, 4096ul);
                if (!aprsstr_StrToCard(as, 4096ul, &preamb)) Err("-p <cr> 5..8", 13ul);
             }
+            else if (as[1U]=='B') {
+               osi_NextArg(as, 4096ul);
+               osic_alloc((char * *) &bird, sizeof(struct BIRDY));
+               if (bird==0) Err("-B out of memory", 17ul);
+               if (!aprsstr_StrToFix(&bird->hz, as, 4096ul)) Err("-B <hz> <level>", 16ul);
+               osi_NextArg(as, 4096ul);
+               if (!aprsstr_StrToFix(&bird->level, as, 4096ul)) {
+                  Err("-B <hz> <level>", 16ul);
+               }
+               bird->next = birdies;
+               birdies = bird;
+            }
             else if (as[1U]=='h') {
                osi_WrStrLn("Make iq file with lora encoded text and apply noise, dropouts and wrong bits for tests",
                 87ul);
                osi_WrStrLn("", 1ul);
-               osi_WrStrLn(" -b <bandwidth>      kHz 0:7.8 1:10.4 2:15.6 3:20.8 4:31.25 5:41.7 6:62.5 7:125 8:250 9:500 \
-(7)", 96ul);
+               osi_WrStrLn(" -B <hz> <level>     add a tone +-hz with gain <level> -B may be repeatet", 74ul);
+               osi_WrStrLn(" -b <bandwidth>      <Hz> or index kHz 0:7.8 1:10.4 2:15.6 3:20.8 4:31.25 5:41.7 6:62.5 7:12\
+5 8:250 9:500 (7)", 110ul);
                osi_WrStrLn(" -C                  send CRC", 30ul);
                osi_WrStrLn(" -c <codingrate>     4..8 (5)", 30ul);
                osi_WrStrLn(" -E <delay(s)> <gain> add radiopath echo with delay (s) and gain e.g. 0.0005 0.5", 81ul);
@@ -613,7 +646,7 @@ extern int main(int argc, char **argv)
                osi_WrStrLn(" -p <chirps>         preamble length (8)", 41ul);
                osi_WrStrLn(" -q                  invert IQ", 31ul);
                osi_WrStrLn(" -R <x>              random seed for noise (0.0)", 49ul);
-               osi_WrStrLn(" -r <samplerate>     iq sampelrate Hz (125000.0)", 49ul);
+               osi_WrStrLn(" -r <samplerate>     iq sampelrate Hz >=bandwidth (125000.0)", 61ul);
                osi_WrStrLn(" -S <shift>          shift signal frequency inside iq-band (Hz) (0)", 68ul);
                osi_WrStrLn(" -s <sf>             spread factor (5..12) (12)", 48ul);
                osi_WrStrLn(" -T <n> <pattern>    for FEC tests set n\'th chirp to zero level (pattern=0)", 76ul);
@@ -631,26 +664,32 @@ extern int main(int argc, char **argv)
       }
       else Err("use -h", 7ul);
    }
+   if (sample==0.0) sample = bw;
+   bird = birdies;
+   while (bird) {
+      bird->hz = (float)((X2C_DIVL((double)bird->hz,sample))*6.283185307);
+      bird->level = bird->level*127.0f;
+      bird = bird->next;
+   }
    if (echo1!=0.0f) {
       /* aplay echo */
       echo0 = X2C_DIVR(1.0f,1.0f+(float)fabs(echo1));
       echo1 = 1.0f-echo0;
       if (echo1<0.0f) echo1 = -echo1;
       if (echodelay<=0.0f) Err("echo delay >0.0", 16ul);
-      echodelay = echodelay*sample;
+      echodelay = (float)((double)echodelay*sample);
       if (echodelay>1.E+8f) Err("echo delay too high", 20ul);
       echosize = ((uint32_t)X2C_TRUNCC(echodelay,0UL,X2C_max_longcard)/2UL)*2UL;
       if (echosize>0UL) {
          X2C_DYNALLOCATE((char **) &echofifo,sizeof(float),(tmp[0] = echosize,tmp),1u);
       }
    }
-   if (!implicitheader && sf==6UL) Err("sf=6 needs implicit header", 27ul);
-   if (fabs(shift)*2.0+(double)bw>(double)(sample*1.001f)) {
-      Err("signal does not fit in iq-bandwidth", 36ul);
-   }
-   shift = (X2C_DIVL(shift,(double)sample))*6.283185307;
+   if (!implicitheader && sf<=6UL) Err("sf<=6 needs implicit header", 28ul);
+   if (fabs(shift)*2.0+bw>sample*1.001) osi_WrStrLn("WARNING: signal does not fit in iq-bandwidth", 45ul);
+   /*  shift:=shift/bw*PI2; */
+   shift = (X2C_DIVL(shift,sample))*6.283185307;
    if (cfgopt==0L) optimize = 0UL;
-   else if (cfgopt==1L || X2C_DIVR((float)(uint32_t)X2C_LSH(0x1UL,32,(int32_t)sf),bw)>0.016f) {
+   else if (cfgopt==1L || X2C_DIVL((double)(float)(uint32_t)X2C_LSH(0x1UL,32,(int32_t)sf),bw)>0.016) {
       optimize = 2UL;
    }
    if (verb) {
@@ -658,19 +697,17 @@ extern int main(int argc, char **argv)
       osic_WrUINT32(optimize, 1UL);
       osi_WrStrLn("", 1ul);
       osi_WrStr("bandwidth Hz:", 14ul);
-      osic_WrFixed(bw, 3L, 1UL);
+      osic_WrFixed((float)bw, 3L, 1UL);
       osi_WrStrLn("", 1ul);
       osi_WrStr("chirptime s:", 13ul);
-      osic_WrFixed(X2C_DIVR((float)(uint32_t)(1UL<<sf),bw), 6L, 1UL);
+      osic_WrFixed((float)(X2C_DIVL((double)(float)(uint32_t)(1UL<<sf),bw)), 6L, 1UL);
       osi_WrStrLn("", 1ul);
       osi_WrStr("sync/netid:", 12ul);
       osi_WrHex(netid, 1UL);
       osi_WrStrLn("", 1ul);
    }
    fi = osi_OpenRead(fni, 4096ul);
-   if (fi<0L) {
-      Err("input file open", 16ul);
-   }
+   if (fi<0L) Err("input file open", 16ul);
    ret = osi_RdBin(fi, (char *)text, 301u/1u, 301UL);
    osic_Close(fi);
    if (ret<0L) Err("input file read", 16ul);
@@ -788,6 +825,7 @@ extern int main(int argc, char **argv)
    END;
    WrStrLn("");
    */
+   j = sp;
    while (wp/2UL<paylen) {
       tmp0 = (sf-optimize)-1UL;
       i = 0UL;
@@ -799,6 +837,8 @@ extern int main(int argc, char **argv)
       } /* end for */
       interleav(sf-optimize, cr, optimize, &sp, sb, 10000ul, nib, 12ul);
    }
+   /*FOR i:=j TO sp-1 DO sb[i]:=VAL(SET32, (i-j)*30 MOD 1000) END; */
+   /*FOR i:=j TO sp-1 DO sb[i]:=VAL(SET32, 0) END; */
    while (addzeros>0UL) {
       sb[sp] = 0x10000000UL;
       if (sp<9997UL) ++sp;
@@ -817,13 +857,9 @@ extern int main(int argc, char **argv)
    wp = 0UL;
    samp = 0UL;
    bins = (uint32_t)(1UL<<sf);
-   bind = X2C_DIVR(1.0f,(float)bins);
+   bind = X2C_DIVL(X2C_DIVL(bw,sample),(double)bins);
    baud = bw*bind;
-   sampbaud = X2C_DIVR(baud,sample);
-   /*  lpf:=sampbaud*1000.0; */
-   /*  IF lpf>1.0 THEN lpf:=1.0 END; */
    w = 0.0;
-   /*  ff:=0.0; */
    i = 0UL;
    while (i<testc) {
       /* modify chirps for tests */
@@ -846,7 +882,9 @@ extern int main(int argc, char **argv)
             osic_WrINT32((uint32_t)X2C_IN(j,32,sb[i]), 1UL);
             if (j==0UL) break;
          } /* end for */
-         if ((0x10000000UL & sb[i])) osi_WrStr(" -zero-level", 13ul);
+         if ((0x10000000UL & sb[i])) {
+            osi_WrStr(" -zero-level", 13ul);
+         }
          else if ((0x20000000UL & sb[i])) osi_WrStr(" -xord", 7ul);
          else if ((0x40000000UL & sb[i])) osi_WrStr(" -quarter", 10ul);
          else if ((0x80000000UL & sb[i])) osi_WrStr(" -reverse", 10ul);
@@ -854,35 +892,32 @@ extern int main(int argc, char **argv)
          if (i==tmp0) break;
       } /* end for */
    }
-   /*FOR i:=1 TO TRUNC(sample) DIV 2 DO WrSamp(0.0); WrSamp(0.0) END; */
    noisegain = noisegain*127.0f*2.0f;
    pow0 = 0.0f;
    pows = 0.0f;
    powc = 0UL;
-   bws = (X2C_DIVR(bw,sample))*6.283185307f;
+   bws = (X2C_DIVL(bw,sample))*6.283185307;
    if (headzerosfrac!=0.0f) {
-      samp = (uint32_t)X2C_TRUNCC(X2C_DIVR(1.0f-headzerosfrac,sampbaud),0UL,X2C_max_longcard);
+      samp = (uint32_t)X2C_TRUNCC(X2C_DIVL((double)(1.0f-headzerosfrac),bind),0UL,X2C_max_longcard);
    }
+   /*upstep:=bw/sample; */
+   /*WrFixed(1.0/bind,3, 8); WrStrLn("bbb"); */
+   upsamp = 0.0;
    do {
-      symf = (float)samp*sampbaud;
+      symf = (double)samp*bind;
       sym = (uint32_t)X2C_TRUNCC(symf,0UL,X2C_max_longcard);
-      frac = ((symf-(float)sym)-0.5f)+(float)(uint32_t)(sb[sym]&0xFFFUL)*bind;
-      if ((0x40000000UL & sb[sym])==0 || frac<(-0.25f)) {
-         while (frac>0.5f) frac = frac-1.0f;
-         while (frac<(-0.5f)) {
-            frac = frac+1.0f;
-         }
-         fr = (double)(frac*bws);
+      frac = ((symf-(double)sym)-0.5)+X2C_DIVL((double)(uint32_t)(sb[sym]&0xFFFUL),(double)bins);
+      if (frac>0.5) frac = frac-1.0;
+      if ((0x40000000UL & sb[sym])==0 || frac<(-0.25)) {
+         fr = frac*bws;
          if (((0x80000000UL & sb[sym])!=0)!=swapiq) fr = -fr;
-         /*      fff:=fff+(fr-fff)*lpf;                         (* baseband lowpass does not work well *)   */
-         /*      ff:=ff+(fff-ff)*lpf;                           (* baseband lowpass does not work well *)   */
-         w = w+fr+shift;
-         if (w>3.1415926535) w = w-6.283185307;
-         else if (w<(-3.1415926535)) w = w+6.283185307;
-         amp = (0.5f-(float)fabs(frac))*12700.0f; /* lower amplitude at freq jump works */
+         amp = (float)((0.5-fabs(frac))*12700.0); /* lower amplitude at freq jump works */
          if (amp>127.0f) amp = 127.0f;
          amp = amp*outgain;
          if ((0x10000000UL & sb[sym])) amp = 0.0f;
+         w = w+fr+shift;
+         if (w>3.1415926535) w = w-6.283185307;
+         else if (w<(-3.1415926535)) w = w+6.283185307;
          if (noisegain!=0.0f) {
             oi = Noise12()*noisegain;
             oq = Noise12()*noisegain;
@@ -891,13 +926,25 @@ extern int main(int argc, char **argv)
             oq = oq+osic_sin((float)w)*amp;
             pows = pows+oi*oi+oq*oq;
             ++powc;
-            WrSamp(oi);
-            WrSamp(oq);
          }
          else {
-            WrSamp(osic_cos((float)w)*amp);
-            WrSamp(osic_sin((float)w)*amp);
+            oi = osic_cos((float)w)*amp;
+            oq = osic_sin((float)w)*amp;
          }
+         /*- add birdies */
+         bird = birdies;
+         while (bird) {
+            oi = oi+osic_cos(bird->w0)*bird->level;
+            oq = oq+osic_sin(bird->w0)*bird->level;
+            bird->w0 = bird->w0+bird->hz;
+            if (bird->w0>6.283185307f) bird->w0 = bird->w0-6.283185307f;
+            else if (bird->w0<(-6.283185307f)) bird->w0 = bird->w0+6.283185307f;
+            bird = bird->next;
+         }
+         WrSamp(oi);
+         WrSamp(oq);
+         fro = fro+fr;
+         ++fcnt;
       }
       ++samp;
    } while (sym<sp);
