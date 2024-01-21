@@ -79,7 +79,7 @@ same as mobile fading
 #define lorarx_TIMEOUT 3
 /* chips with no dcd is end of unkown lenght data */
 
-#define lorarx_MAXBINS 4
+#define lorarx_MAXBINS 3
 /* look at weaker bins for fitting parity */
 
 #define lorarx_FRAMELEN 256
@@ -168,9 +168,15 @@ struct BINS;
 
 
 struct BINS {
-   struct BIN b[5];
+   struct BIN b[4];
+   float noise;
    float splt;
+   uint32_t halfnoisc;
 };
+
+typedef uint8_t NIBBBLOCK[12];
+
+typedef uint8_t NIBBS[523];
 
 enum STATES {lorarx_sSLEEP, lorarx_sHUNT, lorarx_sSYNRAW, lorarx_sID, lorarx_sREV1, lorarx_sREV2, lorarx_sDATA};
 
@@ -180,8 +186,9 @@ struct FFRAME;
 
 struct FFRAME {
    struct BINS bintab[8];
-   uint8_t nibbs[523];
+   NIBBS nibbs;
    char fecinfo[96];
+   NIBBBLOCK oneerr;
    uint32_t chirpc;
    uint32_t nibbc;
    uint32_t crfromhead;
@@ -199,13 +206,17 @@ struct FFRAME {
    uint32_t label;
    uint32_t fp;
    uint32_t fasecorrs;
+   uint32_t oneerrs;
    float fc;
    float fci;
    float fcstart;
    float fcfix;
    float sigsum;
+   float sigmin;
+   float sigmax;
    float noissum;
-   float peaknois;
+   float noismax;
+   float noismin;
    float eye;
    float lastbin;
    float lastsq;
@@ -278,6 +289,8 @@ static char verb2;
 static char nomultipath;
 
 static char allwaysascii;
+
+static char nocrcfec;
 
 static char nofec;
 
@@ -679,65 +692,6 @@ static void makefir(float fg, pFIRTAB pfir0, pFREQMASK pfix, pFREQMASK pbird, ui
       pfir0->Adr[i0].Im = l*pfir0->Adr[i0].Im;
       if (i0==tmp) break;
    } /* end for */
-/*
-PROCEDURE notchfir(fg, gain:REAL; subsamp, firlen:CARDINAL; VAR fir:pFIRTAB);
-
-VAR i,j, m, flen, logfl:CARDINAL;
-    u:Complex;
-    w, l:REAL;
-    ftmp   :POINTER TO ARRAY OF Complex;
-BEGIN
-  fg:=0.5/fg;
-  flen:=firlen*subsamp;
-  NEW(ftmp, flen);
-  IF ftmp=NIL THEN Error(" out of memory") END;
-
-  m:=VAL(CARDINAL, fg*FLOAT(flen)/FLOAT(subsamp));
-
-  FOR i:=0 TO flen-1 DO
-    ftmp^[i].Im:=0.0;
-    ftmp^[i].Re:=0.0;
-  END;
-  ftmp^[0].Im:=1.0;
-  FOR i:=0 TO flen-1 DO
-    IF i<=m THEN 
---      ftmp^[i+1].Im:=1.0;  
-      ftmp^[i].Im:=1.0;  
-      ftmp^[HIGH(ftmp^)-i].Im:=1.0;
-      IF manualnotch(i) THEN ftmp^[i].Im:=0.0 END;
-      IF manualnotch(-VAL(INTEGER,i)) THEN ftmp^[HIGH(ftmp^)-i].Im:=0.0 END;
-    END;
-  END;
-
-  logfl:=1;
-  REPEAT INC(logfl) UNTIL flen<=CAST(CARDINAL,BITSET{logfl});
-  Transform(ftmp^, logfl, TRUE);
-
-  m:=flen DIV 2;
-  FOR i:=0 TO m-1 DO u:=ftmp^[i]; ftmp^[i]:=ftmp^[i+m]; ftmp^[i+m]:=u END;
---  hamming(ftmp^, 1.0);
-
-  NEW(fir, flen);
-  IF fir=NIL THEN Error(" out of memory") END;
- 
-  FOR i:=0 TO flen-1 DO fir^[i]:=ftmp^[i MOD firlen*subsamp + subsamp-1-i DIV firlen]; END;
-                (* rearange table for better memory cashing *)
-
-  l:=0.00001;
-  FOR i:=0 TO flen-1 DO IF CABS(fir^[i])>l THEN l:=CABS(fir^[i]) END END;
---  FOR i:=0 TO flen-1 DO l:=l+fir^[i] END;
---  l:=gain/l*FLOAT(subsamp);                                                (* gain compensation *) 
-  l:=gain/l;
-  FOR i:=0 TO flen-1 DO fir^[i].Re:=l*fir^[i].Re; fir^[i].Im:=l*fir^[i].Im END;
-(*
-WrStrLn("");
-WrFixed(l,4,10);
-WrInt(flen, 10);
-FOR i:=0 TO flen-1 DO WrFixed(fir^[i].Re*20.0,2,10);WrStr("/");WrFixed(fir^[i].Im*20.0,2,1);  END;
-*)
-  DISPOSE(ftmp);
-END motchfir;
-*/
 } /* end makefir() */
 
 
@@ -904,6 +858,7 @@ static void Parms(void)
    nomultipath = 0;
    cfglevel = 0.0f;
    nofec = 0;
+   nocrcfec = 0;
    hasudp = 0;
    udpsock = -1L;
    bwnum = 7UL;
@@ -977,9 +932,7 @@ static void Parms(void)
          }
          else if (h[1U]=='g') {
             osi_NextArg(h, 1024ul);
-            if (!aprsstr_StrToFix(&cfglevel, h, 1024ul)) {
-               Error("-g <dB>", 8ul);
-            }
+            if (!aprsstr_StrToFix(&cfglevel, h, 1024ul)) Error("-g <dB>", 8ul);
          }
          else if (h[1U]=='r') {
             osi_NextArg(h, 1024ul);
@@ -1052,10 +1005,11 @@ static void Parms(void)
          }
          else if (h[1U]=='R') nomultipath = 1;
          else if (h[1U]=='d') dems->coldet = 0UL;
-         else if (h[1U]=='F') nofec = 1;
-         else if (h[1U]=='C') {
-            dems->frames[0U].implicitcrc = 1;
+         else if (h[1U]=='E') nocrcfec = 1;
+         else if (h[1U]=='F') {
+            nofec = 1;
          }
+         else if (h[1U]=='C') dems->frames[0U].implicitcrc = 1;
          else if (h[1U]=='D') dems->frames[0U].nodcdlost = 1;
          else if (h[1U]=='v') verb = 1;
          else if (h[1U]=='Q') {
@@ -1126,6 +1080,8 @@ static void Parms(void)
  or monitoring)", 108ul);
                osi_WrStrLn(" -d                 (*)swith off collision detection (less cpu but loose stronger frames sta\
 rting in weaker", 108ul);
+               osi_WrStrLn(" -E                 switch off useing crc to repair 1 chirp (crc checks 4 variants) (on)",
+                89ul);
                osi_WrStrLn(" -F                 max. block energy FEC off (hamming code fec remains on) (on)", 81ul);
                osi_WrStrLn(" -f u8|i16|f32      IQ data format", 35ul);
                osi_WrStrLn(" -g <dB>            add this to measured signal level (0.0)", 60ul);
@@ -1159,7 +1115,7 @@ able) pipe", 103ul);
                osi_WrStrLn(" -u <x.x.x.x:destport>  (*)send raw frame bytes in udp frame", 61ul);
                osi_WrStrLn(" -V                 very verbous", 33ul);
                osi_WrStrLn(" -v                 verbous +:no hamming or ok, -:error, h:corrected, ~:weakest chirp replac\
-ed", 95ul);
+ed, c:try until crc ok", 115ul);
                osi_WrStrLn("                      ^:bins with maximum power sum used until fitting hamming", 79ul);
                osi_WrStrLn(" -w <len>           downsample fir length else automatic (8..4096) (0)", 71ul);
                osi_WrStrLn(" -X <netid>         (*)filter network-id (sync pattern), 1xx stops decode on wrong id, 0=off\
@@ -1215,9 +1171,7 @@ her pramaeters", 107ul);
          firlen = 64UL;
          if (downsample>4.0f) {
             firlen = 128UL;
-            if (downsample>8.0f) {
-               firlen = 256UL;
-            }
+            if (downsample>8.0f) firlen = 256UL;
          }
       }
    }
@@ -1297,9 +1251,7 @@ her pramaeters", 107ul);
          osi_WrStr("bw=", 4ul);
          osic_WrFixed(X2C_DIVR(5.E+5f,(float)_cnst[bwnum]), 1L, 1UL);
          osi_WrStr(" cr=", 5ul);
-         if (pd0->frames[0U].cfgcr==0UL) {
-            osi_WrStr("from header", 12ul);
-         }
+         if (pd0->frames[0U].cfgcr==0UL) osi_WrStr("from header", 12ul);
          else osic_WrINT32(pd0->frames[0U].cfgcr, 1UL);
          osi_WrStr(" sf=", 5ul);
          osic_WrINT32(pd0->frames[0U].cfgsf, 1UL);
@@ -1372,15 +1324,23 @@ static void app(uint32_t * i0, uint32_t * p, char b[501], char c, int32_t v)
 
 
 static void sendaxudp2(uint32_t ipnum, uint32_t udpport, char udp2, char mon[], uint32_t mon_len,
-                uint32_t dlen, int32_t txd, int32_t lev, int32_t snr, int32_t afc, int32_t qual)
+                uint32_t dlen, int32_t txd, float level, float snrr, int32_t afc, int32_t qual)
 {
    char data[501];
    char b[501];
+   int32_t lev;
+   int32_t snr;
    int32_t datalen;
    int32_t ret;
    uint32_t i0;
    uint32_t p;
    X2C_PCOPY((void **)&mon,mon_len);
+   snr = (int32_t)X2C_TRUNCI(snrr+0.5f,X2C_min_longint,X2C_max_longint);
+   if (snr>127L) snr = 127L;
+   else if (snr<-127L) snr = -127L;
+   lev = (int32_t)X2C_TRUNCI(level+0.5f,X2C_min_longint,X2C_max_longint);
+   if (lev>127L) lev = 127L;
+   else if (lev<-255L) lev = -255L;
    cleantext(mon, mon_len, dlen);
    aprsstr_mon2raw(mon, mon_len, data, 501ul, &datalen);
    if (datalen>2L) {
@@ -1441,7 +1401,7 @@ static void enc64(uint32_t b, uint32_t n, char s[], uint32_t s_len)
 
 static void sendjson(uint32_t jipnum0, uint32_t judpport0, uint32_t id, const char text[],
                 uint32_t text_len, uint32_t dlen, char hascrc, char crc0, char invert,
-                uint32_t sf, uint32_t cr, uint32_t txd, uint32_t frametime, int32_t level, float n,
+                uint32_t sf, uint32_t cr, uint32_t txd, uint32_t frametime, float level, float n,
                 float peakn, float snr, float dre, int32_t df, int32_t qual)
 {
    char h[1000];
@@ -1475,7 +1435,7 @@ static void sendjson(uint32_t jipnum0, uint32_t judpport0, uint32_t id, const ch
    aprsstr_IntToStr((int32_t)frametime, 1UL, h, 1000ul);
    aprsstr_Append(s, 1000ul, h, 1000ul);
    aprsstr_Append(s, 1000ul, ",\"level\":", 10ul);
-   aprsstr_IntToStr(level, 1UL, h, 1000ul);
+   aprsstr_FixToStr(level, 2UL, h, 1000ul);
    aprsstr_Append(s, 1000ul, h, 1000ul);
    aprsstr_Append(s, 1000ul, ",\"afc\":", 8ul);
    aprsstr_IntToStr(df, 1UL, h, 1000ul);
@@ -1885,39 +1845,36 @@ static void decodemeshcom4(const char text[], uint32_t text_len, uint32_t textle
       i0 += (uint32_t)(uint8_t)text[te+1UL];
       i0 += (uint32_t)(uint8_t)text[te+2UL];
       /*-fcs */
-      osi_WrStr("Meshcom4: FCS:", 15ul);
       if (te+4UL<textlen && i0==(uint32_t)(uint8_t)text[te+3UL]*256UL+(uint32_t)(uint8_t)text[te+4UL]) {
-         osi_WrStr("Ok", 3ul);
-      }
-      else osi_WrStr("ERROR", 6ul);
-      osi_WrStr(" MID=", 6ul);
-      WrHex((uint32_t)(uint8_t)text[1UL]+(uint32_t)(uint8_t)text[2UL]*256UL+(uint32_t)(uint8_t)
+         osi_WrStr("Meshcom4: FCS:Ok MID:", 22ul);
+         WrHex((uint32_t)(uint8_t)text[1UL]+(uint32_t)(uint8_t)text[2UL]*256UL+(uint32_t)(uint8_t)
                 text[3UL]*65536UL+(uint32_t)(uint8_t)text[4UL]*16777216UL, 8UL, 0UL);
-      osi_WrStr(" MAX-HOP=", 10ul);
-      osic_WrUINT32((uint32_t)(uint8_t)text[5UL]&7UL, 1UL);
-      if ((0x80U & (uint8_t)(uint8_t)text[5UL])) osi_WrStr(" viaMQTT", 9ul);
-      if ((0x40U & (uint8_t)(uint8_t)text[5UL])) osi_WrStr(" +Traceroute", 13ul);
-      if (te+2UL<=textlen) {
-         osi_WrStr(" HW-ID=", 8ul);
-         osic_WrUINT32((uint32_t)(uint8_t)text[te+1UL], 1UL);
-         osi_WrStr(" MOD=", 6ul);
-         osic_WrUINT32((uint32_t)(uint8_t)text[te+2UL], 1UL);
+         osi_WrStr(" MAX-HOP=", 10ul);
+         osic_WrUINT32((uint32_t)(uint8_t)text[5UL]&7UL, 1UL);
+         if ((0x80U & (uint8_t)(uint8_t)text[5UL])) osi_WrStr(" viaMQTT", 9ul);
+         if ((0x40U & (uint8_t)(uint8_t)text[5UL])) osi_WrStr(" +Traceroute", 13ul);
+         if (te+2UL<=textlen) {
+            osi_WrStr(" HW-ID=", 8ul);
+            osic_WrUINT32((uint32_t)(uint8_t)text[te+1UL], 1UL);
+            osi_WrStr(" MOD=", 6ul);
+            osic_WrUINT32((uint32_t)(uint8_t)text[te+2UL], 1UL);
+         }
+         if (te+6UL<textlen) {
+            osi_WrStr(" FW=", 5ul);
+            osic_WrUINT32((uint32_t)(uint8_t)text[te+6UL], 1UL);
+            osi_WrStr(".", 2ul);
+            osic_WrUINT32((uint32_t)(uint8_t)text[te+5UL], 1UL);
+         }
+         osi_WrStrLn("", 1ul);
+         osi_WrStr("[", 2ul);
+         tmp = te-1UL;
+         i0 = 6UL;
+         if (i0<=tmp) for (;; i0++) {
+            WrChHex(text[i0]);
+            if (i0==tmp) break;
+         } /* end for */
+         osi_WrStrLn("]", 2ul);
       }
-      if (te+6UL<textlen) {
-         osi_WrStr(" FW=", 5ul);
-         osic_WrUINT32((uint32_t)(uint8_t)text[te+6UL], 1UL);
-         osi_WrStr(".", 2ul);
-         osic_WrUINT32((uint32_t)(uint8_t)text[te+5UL], 1UL);
-      }
-      osi_WrStrLn("", 1ul);
-      osi_WrStr("[", 2ul);
-      tmp = te-1UL;
-      i0 = 6UL;
-      if (i0<=tmp) for (;; i0++) {
-         WrChHex(text[i0]);
-         if (i0==tmp) break;
-      } /* end for */
-      osi_WrStrLn("]", 2ul);
    }
 } /* end decodemeshcom4() */
 
@@ -1960,45 +1917,46 @@ static void frameout(struct FFRAME * frame, const char finf[], uint32_t finf_len
    int32_t qual;
    int32_t frametime;
    int32_t txd;
-   int32_t snr;
-   int32_t level;
+   float minlev;
+   float maxlev;
+   float cor;
    float drift;
-   float peakn;
+   float minn;
+   float maxn;
    float n;
    float snrr;
+   float level;
    char s[512];
    uint32_t tmp;
    X2C_PCOPY((void **)&text,text_len);
    if (frame->dlen>0UL && frame->dlen<text_len-1) {
       blocksize = (uint32_t)(1UL<<frame->cfgsf);
       snrr = 0.0f;
-      peakn = 0.0f;
+      maxn = 0.0f;
+      minn = 0.0f;
+      maxlev = 0.0f;
+      minlev = 0.0f;
       n = 0.0f;
       if (frame->noissum!=0.0f) {
-         /*      snrr:=ln0((frame.sigsum*2.1/frame.noissum-6.0)/FLOAT(blocksize))*(8.685889638*0.5); */
          snrr = db(X2C_DIVR(X2C_DIVR(frame->sigsum,frame->noissum)-1.0f,(float)blocksize));
       }
-      snr = (int32_t)X2C_TRUNCI(snrr,X2C_min_longint,X2C_max_longint);
-      if (snr>127L) snr = 127L;
-      else if (snr<-127L) snr = -127L;
       qual = 100L;
-      level = 0L;
+      level = 0.0f;
+      cor = 0.0f;
+      if (isize==1UL) cor = (-42.0f);
+      else if (isize==2UL) cor = (-90.0f);
+      cor = cor-(float)frame->cfgsf*6.0206f;
+      cor = cfglevel+cor;
       if (frame->cnt) {
-         level = (int32_t)X2C_TRUNCI(db(X2C_DIVR(frame->sigsum,(float)frame->cnt))+0.5f+cfglevel,X2C_min_longint,
-                X2C_max_longint);
-         n = db(X2C_DIVR(frame->noissum,(float)frame->cnt))+cfglevel;
-         peakn = db(frame->peaknois)+cfglevel;
+         level = db(X2C_DIVR(frame->sigsum,(float)frame->cnt))+cor;
+         maxlev = db(frame->sigmax)+cor;
+         minlev = db(frame->sigmin)+cor;
+         n = db(X2C_DIVR(frame->noissum,(float)frame->cnt))+cor;
+         maxn = db(frame->noismax)+cor;
+         minn = db(frame->noismin)+cor;
          qual -= (int32_t)X2C_TRUNCI((X2C_DIVR(frame->eye,(float)frame->cnt))*200.0f,X2C_min_longint,
                 X2C_max_longint);
       }
-      i0 = 1UL;
-      if (isize==1UL) i0 = 48UL;
-      else if (isize==2UL) i0 = 96UL;
-      level -= (int32_t)i0;
-      n = n-(float)i0;
-      peakn = peakn-(float)i0;
-      if (level>127L) level = 127L;
-      else if (level<-255L) level = -255L;
       if (qual<0L) qual = 0L;
       if (frame->cfgcr) td = 2UL;
       else td = 2UL+56UL/frame->cfgsf;
@@ -2036,13 +1994,19 @@ static void frameout(struct FFRAME * frame, const char finf[], uint32_t finf_len
          }
          else osi_WrStr("no", 3ul);
          osi_WrStr(" lev:", 6ul);
-         osic_WrINT32((uint32_t)level, 1UL);
-         osi_WrStr("dB snr:", 8ul);
+         osic_WrFixed(level, 1L, 1UL);
+         osi_WrStr("(", 2ul);
+         osic_WrFixed(minlev, 1L, 1UL);
+         osi_WrStr("/", 2ul);
+         osic_WrFixed(maxlev, 1L, 1UL);
+         osi_WrStr(")dB snr:", 9ul);
          osic_WrFixed(snrr, 1L, 1UL);
          osi_WrStr("dB nf:", 7ul);
          osic_WrFixed(n, 1L, 1UL);
          osi_WrStr("(", 2ul);
-         osic_WrFixed(peakn, 1L, 1UL);
+         osic_WrFixed(minn, 1L, 1UL);
+         osi_WrStr("/", 2ul);
+         osic_WrFixed(maxn, 1L, 1UL);
          osi_WrStr(")dB txd:", 9ul);
          osic_WrINT32((uint32_t)txd, 1UL);
          osi_WrStr(" t:", 4ul);
@@ -2079,12 +2043,12 @@ static void frameout(struct FFRAME * frame, const char finf[], uint32_t finf_len
             ret = udpsend(udpsock, text, (int32_t)frame->dlen, frame->udprawport, frame->ipnumraw);
          }
          if (((frame->udpport && hascrc) && crc0) && !dcdlost) {
-            sendaxudp2(frame->ipnum, frame->udpport, frame->udp2, text, text_len, frame->dlen, txd, level, snr, truedf,
-                qual);
+            sendaxudp2(frame->ipnum, frame->udpport, frame->udp2, text, text_len, frame->dlen, txd, level, snrr, truedf,
+                 qual);
          }
          if (judpport || jpipename[0U]) {
             sendjson(jipnum, judpport, frame->idfound, text, text_len, frame->dlen, hascrc, crc0, frame->invertiq,
-                frame->cfgsf, cr, (uint32_t)txd, (uint32_t)frametime, level, n, peakn, snrr, drift, truedf, qual);
+                frame->cfgsf, cr, (uint32_t)txd, (uint32_t)frametime, level, n, maxn, snrr, drift, truedf, qual);
          }
       }
       else if (verb && (!quietcrc || hascrc && crc0)) {
@@ -2100,7 +2064,7 @@ static void frameout(struct FFRAME * frame, const char finf[], uint32_t finf_len
                ret = udpsend(udpsock, s, (int32_t)axlen, frame->udprawport, frame->ipnumraw);
             }
          }
-         if (text[0UL]=='!') {
+         if (text[0UL]=='!' || text[0UL]==':') {
             /* & (text[frame.dlen-8]=0C) */
             decodemeshcom4(text, text_len, frame->dlen); /* MESHCOM4 */
          }
@@ -2167,18 +2131,25 @@ static char headcrc(const uint8_t b[], uint32_t b_len)
                 1))&0x2U|(b[0UL]^b[2UL]^X2C_LSH(b[1UL]^b[2UL],8,-1)^X2C_LSH(b[2UL],8,-3)^X2C_LSH(b[2UL],8,-2))&0x1U);
 } /* end headcrc() */
 
-static uint8_t _cnst3[255] = {255U,254U,252U,248U,240U,225U,194U,133U,11U,23U,47U,94U,188U,120U,241U,227U,198U,141U,
-                26U,52U,104U,208U,160U,64U,128U,1U,2U,4U,8U,17U,35U,71U,142U,28U,56U,113U,226U,196U,137U,18U,37U,75U,
-                151U,46U,92U,184U,112U,224U,192U,129U,3U,6U,12U,25U,50U,100U,201U,146U,36U,73U,147U,38U,77U,155U,55U,
-                110U,220U,185U,114U,228U,200U,144U,32U,65U,130U,5U,10U,21U,43U,86U,173U,91U,182U,109U,218U,181U,107U,
-                214U,172U,89U,178U,101U,203U,150U,44U,88U,176U,97U,195U,135U,15U,31U,62U,125U,251U,246U,237U,219U,183U,
-                111U,222U,189U,122U,245U,235U,215U,174U,93U,186U,116U,232U,209U,162U,68U,136U,16U,33U,67U,134U,13U,27U,
-                54U,108U,216U,177U,99U,199U,143U,30U,60U,121U,243U,231U,206U,156U,57U,115U,230U,204U,152U,49U,98U,197U,
-                139U,22U,45U,90U,180U,105U,210U,164U,72U,145U,34U,69U,138U,20U,41U,82U,165U,74U,149U,42U,84U,169U,83U,
-                167U,78U,157U,59U,119U,238U,221U,187U,118U,236U,217U,179U,103U,207U,158U,61U,123U,247U,239U,223U,191U,
-                126U,253U,250U,244U,233U,211U,166U,76U,153U,51U,102U,205U,154U,53U,106U,212U,168U,81U,163U,70U,140U,24U,
-                48U,96U,193U,131U,7U,14U,29U,58U,117U,234U,213U,170U,85U,171U,87U,175U,95U,190U,124U,249U,242U,229U,
-                202U,148U,40U,80U,161U,66U,132U,9U,19U,39U,79U,159U,63U,127U};
+
+static void trycrc(NIBBS nibbs, const uint8_t e[], uint32_t e_len, uint32_t * ec, uint32_t * try0,
+                uint32_t sf)
+/* if only 1 block has false parity, modify 1 of 4 chirps to parity ok until good crc */
+{
+   uint32_t i0;
+   uint32_t tmp;
+   tmp = sf-1UL;
+   i0 = 0UL;
+   if (i0<=tmp) for (;; i0++) {
+      nibbs[*ec+i0] = e[i0]&0xFU;
+      if ((0x80U & e[i0])==0) nibbs[*ec+i0] = nibbs[*ec+i0]^(1U<<*try0);
+      if (i0==tmp) break;
+   } /* end for */
+   /*IF 7 IN e[i] THEN WrStr(".") ELSE WrStr("x") END; */
+   ++*try0;
+/*WrStr("try:"); WrInt(try,1); WrStrLn("");  */
+} /* end trycrc() */
+
 static uint8_t _cnst2[256] = {128U,192U,192U,3U,192U,5U,6U,135U,192U,9U,10U,139U,12U,141U,142U,15U,128U,1U,2U,199U,4U,
                 199U,199U,135U,8U,137U,138U,11U,140U,13U,14U,199U,128U,1U,2U,131U,4U,133U,206U,7U,8U,137U,206U,11U,206U,
                 13U,142U,206U,0U,201U,130U,3U,132U,5U,6U,135U,201U,137U,10U,201U,12U,201U,142U,15U,128U,1U,2U,203U,4U,
@@ -2201,9 +2172,57 @@ static uint8_t _cnst0[64] = {128U,1U,2U,3U,4U,5U,134U,7U,8U,9U,10U,139U,12U,141U
                 8U,9U,138U,11U,140U,13U,14U,15U,0U,1U,2U,131U,4U,133U,6U,7U,136U,9U,10U,11U,12U,13U,142U,15U,0U,1U,130U,
                 3U,132U,5U,6U,7U,8U,137U,10U,11U,12U,13U,14U,143U};
 
+static void chkhamm(NIBBBLOCK hn, uint32_t cr, uint32_t sf, char * hamok, char * hamcorr)
+{
+   uint8_t s;
+   uint8_t b;
+   uint32_t i0;
+   uint32_t tmp;
+   *hamok = 1;
+   *hamcorr = 0;
+   if (cr>=5UL) {
+      tmp = sf-1UL;
+      i0 = 0UL;
+      if (i0<=tmp) for (;; i0++) {
+         /* repair bits */
+         s = hn[i0];
+         if (cr==5UL) {
+            if ((0x1U & (s^X2C_LSH(s,8,-1)^X2C_LSH(s,8,-2)^X2C_LSH(s,8,-3)^X2C_LSH(s,8,-4)))==0) {
+               hn[i0] |= 0x80U;
+            }
+         }
+         else {
+            b = (uint8_t)s;
+            if (cr==6UL) b = _cnst0[b];
+            else if (cr==7UL) b = _cnst1[b];
+            else b = _cnst2[b];
+            hn[i0] = (uint8_t)b;
+            if ((0x40U & hn[i0])) *hamcorr = 1;
+         }
+         if ((0x80U & hn[i0])==0) *hamok = 0;
+         if (i0==tmp) break;
+      } /* end for */
+   }
+} /* end chkhamm() */
+
+static uint8_t _cnst3[255] = {255U,254U,252U,248U,240U,225U,194U,133U,11U,23U,47U,94U,188U,120U,241U,227U,198U,141U,
+                26U,52U,104U,208U,160U,64U,128U,1U,2U,4U,8U,17U,35U,71U,142U,28U,56U,113U,226U,196U,137U,18U,37U,75U,
+                151U,46U,92U,184U,112U,224U,192U,129U,3U,6U,12U,25U,50U,100U,201U,146U,36U,73U,147U,38U,77U,155U,55U,
+                110U,220U,185U,114U,228U,200U,144U,32U,65U,130U,5U,10U,21U,43U,86U,173U,91U,182U,109U,218U,181U,107U,
+                214U,172U,89U,178U,101U,203U,150U,44U,88U,176U,97U,195U,135U,15U,31U,62U,125U,251U,246U,237U,219U,183U,
+                111U,222U,189U,122U,245U,235U,215U,174U,93U,186U,116U,232U,209U,162U,68U,136U,16U,33U,67U,134U,13U,27U,
+                54U,108U,216U,177U,99U,199U,143U,30U,60U,121U,243U,231U,206U,156U,57U,115U,230U,204U,152U,49U,98U,197U,
+                139U,22U,45U,90U,180U,105U,210U,164U,72U,145U,34U,69U,138U,20U,41U,82U,165U,74U,149U,42U,84U,169U,83U,
+                167U,78U,157U,59U,119U,238U,221U,187U,118U,236U,217U,179U,103U,207U,158U,61U,123U,247U,239U,223U,191U,
+                126U,253U,250U,244U,233U,211U,166U,76U,153U,51U,102U,205U,154U,53U,106U,212U,168U,81U,163U,70U,140U,24U,
+                48U,96U,193U,131U,7U,14U,29U,58U,117U,234U,213U,170U,85U,171U,87U,175U,95U,190U,124U,249U,242U,229U,
+                202U,148U,40U,80U,161U,66U,132U,9U,19U,39U,79U,159U,63U,127U};
+
 static char decodechirp(struct FFRAME * frame, const struct BINS bins, char opti)
 {
    int32_t o;
+   uint32_t burst;
+   uint32_t crctry;
    uint32_t datalen;
    uint32_t cr;
    uint32_t sf;
@@ -2212,6 +2231,7 @@ static char decodechirp(struct FFRAME * frame, const struct BINS bins, char opti
    uint32_t fulllen;
    uint32_t j1;
    uint32_t i0;
+   int32_t bursttry;
    int32_t mintry;
    int32_t maxtry;
    float lv;
@@ -2221,14 +2241,15 @@ static char decodechirp(struct FFRAME * frame, const struct BINS bins, char opti
    char bt;
    uint16_t c;
    uint8_t s;
-   uint8_t b;
+   /*    b:CARD8;  */
    char dcd;
    char explicit;
    char crcok;
+   char burstcorr;
    char hamcorr;
    char hamok;
    char ishead;
-   uint8_t hn[12];
+   NIBBBLOCK hn;
    char text[261];
    uint16_t chirps[8];
    char br[2];
@@ -2250,6 +2271,7 @@ static char decodechirp(struct FFRAME * frame, const struct BINS bins, char opti
       else anonym->crfromhead = cr;
       if (cr<4UL) cr = 4UL;
       else if (cr>8UL) cr = 8UL;
+      burstcorr = 0;
       if (anonym->cnt==0UL) {
          /* start new frame */
          anonym->chirpc = 0UL;
@@ -2257,6 +2279,7 @@ static char decodechirp(struct FFRAME * frame, const struct BINS bins, char opti
          anonym->dlen = datalen; /* for implicit header */
          anonym->withcrc = anonym->implicitcrc;
          anonym->fecinfo[0] = 0;
+         anonym->oneerrs = 0UL;
       }
       anonym->bintab[anonym->chirpc] = bins;
       ++anonym->chirpc;
@@ -2270,6 +2293,8 @@ static char decodechirp(struct FFRAME * frame, const struct BINS bins, char opti
          maxtry = -1L;
          minsnr = X2C_max_real;
          mintry = -1L;
+         bursttry = -1L;
+         burst = 0UL;
          st = 0UL;
          for (;;) {
             lv = 0.0f;
@@ -2281,7 +2306,7 @@ static char decodechirp(struct FFRAME * frame, const struct BINS bins, char opti
                c = (uint16_t)(uint32_t)X2C_TRUNCC(anonym->bintab[i0].b[j1].freq,0UL,X2C_max_longcard);
                chirps[i0] = c^X2C_LSH(c,16,-1); /* grey */
                if (try0==0UL) {
-                  v = anonym->bintab[i0].b[4U].lev; /* noise */
+                  v = anonym->bintab[i0].noise; /* noise */
                   if (v!=0.0f) {
                      v = X2C_DIVR(anonym->bintab[i0].b[0U].lev,v); /* snr of best bin */
                   }
@@ -2289,40 +2314,34 @@ static char decodechirp(struct FFRAME * frame, const struct BINS bins, char opti
                      minsnr = v; /* weakest chirp */
                      mintry = (int32_t)i0;
                   }
+                  if (burst<anonym->bintab[i0].halfnoisc) {
+                     burst = anonym->bintab[i0].halfnoisc;
+                     bursttry = (int32_t)i0;
+                  }
                }
                else lv = anonym->bintab[i0].b[j1].lev;
                if (i0==tmp) break;
             } /* end for */
-            deint(sf, cr, chirps, 8ul, hn, 12ul); /* deint block */
-            hamok = 1;
-            hamcorr = 0;
-            if (cr>=5UL) {
-               tmp = sf-1UL;
-               i0 = 0UL;
-               if (i0<=tmp) for (;; i0++) {
-                  /* repair bits */
-                  s = hn[i0];
-                  if (cr==5UL) {
-                     if ((0x1U & (s^X2C_LSH(s,8,-1)^X2C_LSH(s,8,-2)^X2C_LSH(s,8,-3)^X2C_LSH(s,8,-4)))==0) {
-                        hn[i0] |= 0x80U;
-                     }
-                  }
-                  else {
-                     b = (uint8_t)s;
-                     if (cr==6UL) b = _cnst0[b];
-                     else if (cr==7UL) b = _cnst1[b];
-                     else b = _cnst2[b];
-                     hn[i0] = (uint8_t)b;
-                     if ((0x40U & hn[i0])) hamcorr = 1;
-                  }
-                  if ((0x80U & hn[i0])==0) hamok = 0;
-                  if (i0==tmp) break;
-               } /* end for */
+            if (burst>=8UL) {
+               mintry = bursttry;
+               burstcorr = 1;
             }
+            deint(sf, cr, chirps, 8ul, hn, 12ul); /* deint block */
+            chkhamm(hn, cr, sf, &hamok, &hamcorr);
             if (st>0UL) {
                /* final try */
                if (st==2UL) {
                   /* repair weekest chirp */
+                  if (!nocrcfec) {
+                     if (anonym->oneerrs==0UL) {
+                        /* save block for later tries to fit crc */
+                        memcpy(anonym->oneerr,hn,12u);
+                        anonym->oneerrs = anonym->nibbc;
+                     }
+                     else {
+                        anonym->oneerrs = 1UL; /* do it only for 1 block */
+                     }
+                  }
                   tmp = sf-1UL;
                   i0 = 0UL;
                   if (i0<=tmp) for (;; i0++) {
@@ -2352,14 +2371,17 @@ static char decodechirp(struct FFRAME * frame, const struct BINS bins, char opti
                if (maxtry<0L) {
                   /* no valid checkbits found */
                   if (mintry>=0L) {
-                     try0 = 0UL; /* so modify weekest snr to fitting check */
+                     try0 = 0UL;
                      st = 2UL;
                   }
                }
                else try0 = (uint32_t)maxtry;
             }
          }
-         if (st==2UL) aprsstr_Append(anonym->fecinfo, 96ul, "~", 2ul);
+         if (st==2UL) {
+            if (burstcorr) aprsstr_Append(anonym->fecinfo, 96ul, "b", 2ul);
+            else aprsstr_Append(anonym->fecinfo, 96ul, "~", 2ul);
+         }
          else if (hamok) {
             if (st==1UL) aprsstr_Append(anonym->fecinfo, 96ul, "^", 2ul);
             else if (hamcorr) aprsstr_Append(anonym->fecinfo, 96ul, "h", 2ul);
@@ -2378,15 +2400,15 @@ static char decodechirp(struct FFRAME * frame, const struct BINS bins, char opti
             /*WrInt(debugc,1);WrStr(" "); */
             if (isize==1UL) v = 8.0f;
             else if (isize==2UL) v = 0.03125f;
-            else v = 1000.0f;
+            else v = 4.0f;
             tmp = cr-1UL;
             i0 = 0UL;
             if (i0<=tmp) for (;; i0++) {
-               for (j1 = 0UL; j1<=4UL; j1++) {
+               for (j1 = 0UL; j1<=3UL; j1++) {
                   strncpy(br,"()",2u);
                   if (st==1UL) {
                      /* best bin sum */
-                     if (try0/4UL!=i0 && j1==0UL || try0/4UL==i0 && (try0&3UL)==j1) {
+                     if (try0/3UL!=i0 && j1==0UL || try0/3UL==i0 && try0%3UL==j1) {
                         strncpy(br,"[]",2u);
                      }
                   }
@@ -2403,13 +2425,15 @@ static char decodechirp(struct FFRAME * frame, const struct BINS bins, char opti
                   else {
                      osic_WrFixed(osic_sqrt(anonym->bintab[i0].b[j1].lev)*v, 1L, 5UL);
                   }
-                  if (j1<4UL) {
-                     osi_WrStr((char *) &br[0U], 1u/1u);
-                     osic_WrFixed(anonym->bintab[i0].b[j1].freq, 2L, 7UL);
-                     osi_WrStr((char *) &br[1U], 1u/1u);
-                  }
+                  osi_WrStr((char *) &br[0U], 1u/1u);
+                  osic_WrFixed(anonym->bintab[i0].b[j1].freq, 2L, 7UL);
+                  osi_WrStr((char *) &br[1U], 1u/1u);
                } /* end for */
                /*   IF j<HIGH(bins)-1 THEN WrStr(",") ELSIF j<HIGH(bins) THEN WrStr("/") END;  */
+               osic_WrFixed(osic_sqrt(anonym->bintab[i0].noise)*v, 1L, 5UL);
+               osi_WrStr("%", 2ul);
+               osic_WrFixed((X2C_DIVR((float)anonym->bintab[i0].halfnoisc,
+                (float)(uint32_t)(1UL<<anonym->cfgsf)))*100.0f, 1L, 0UL);
                osi_WrStrLn("", 1ul);
                if (i0==tmp) break;
             } /* end for */
@@ -2475,19 +2499,21 @@ static char decodechirp(struct FFRAME * frame, const struct BINS bins, char opti
          if (!dcd || anonym->nibbc>=fulllen*2UL) {
             /* frame complete or implicit variable len dcd out */
             if (anonym->nibbc>1UL) {
-               tmp = anonym->nibbc/2UL-1UL;
-               i0 = 0UL;
-               if (i0<=tmp) for (;; i0++) {
-                  s = anonym->nibbs[i0*2UL]&0xFU|X2C_LSH(anonym->nibbs[i0*2UL+1UL],8,4)&0xF0U;
-                  if (i0<anonym->dlen) s = s^(uint8_t)_cnst3[i0];
-                  text[i0] = (char)s;
-                  if (i0==tmp) break;
-               } /* end for */
-               if (anonym->dlen>anonym->nibbc/2UL) {
-                  anonym->dlen = anonym->nibbc/2UL; /* remove dcd lost junk */
-               }
-               crcok = 0;
-               if (anonym->withcrc) {
+               crctry = 0UL;
+               for (;;) {
+                  tmp = anonym->nibbc/2UL-1UL;
+                  i0 = 0UL;
+                  if (i0<=tmp) for (;; i0++) {
+                     s = anonym->nibbs[i0*2UL]&0xFU|X2C_LSH(anonym->nibbs[i0*2UL+1UL],8,4)&0xF0U;
+                     if (i0<anonym->dlen) s = s^(uint8_t)_cnst3[i0];
+                     text[i0] = (char)s;
+                     if (i0==tmp) break;
+                  } /* end for */
+                  if (anonym->dlen>anonym->nibbc/2UL) {
+                     anonym->dlen = anonym->nibbc/2UL; /* remove dcd lost junk */
+                  }
+                  crcok = 0;
+                  if (!anonym->withcrc) break;
                   i0 = 0UL;
                   if (anonym->dlen>2UL) {
                      i0 = crc(text, 261ul, 0UL, anonym->dlen-2UL, 0UL);
@@ -2500,6 +2526,23 @@ static char decodechirp(struct FFRAME * frame, const struct BINS bins, char opti
                      i0 = (uint32_t)((uint16_t)i0^(uint16_t)(uint32_t)(uint8_t)text[anonym->dlen-1UL]);
                   }
                   crcok = (char)(i0&255UL)==text[anonym->dlen] && (char)(i0/256UL)==text[anonym->dlen+1UL];
+                  if ((crcok || anonym->oneerrs<=1UL) || crctry>=4UL) break;
+                  trycrc(anonym->nibbs, anonym->oneerr, 12ul, &anonym->oneerrs, &crctry, sf);
+               }
+               if (anonym->oneerrs>1UL && crctry>0UL) {
+                  i0 = 0UL;
+                  for (;;) {
+                     if (anonym->fecinfo[i0]==0) break;
+                     if (anonym->fecinfo[i0]=='~') {
+                        anonym->fecinfo[i0] = 'c';
+                        break;
+                     }
+                     if (anonym->fecinfo[i0]=='b') {
+                        anonym->fecinfo[i0] = 'C';
+                        break;
+                     }
+                     ++i0;
+                  }
                }
                frameout(frame, anonym->fecinfo, 96ul, anonym->withcrc, crcok, !dcd, opti, cr, text, 261ul);
             }
@@ -2693,12 +2736,14 @@ static void getbin(struct Complex c[], uint32_t c_len, struct BINS * bins, uint3
    uint32_t i0;
    uint16_t wgi;
    int32_t ii;
+   float mnois;
    float vv;
    float v;
    float nois;
    float co;
    float si;
    float max0;
+   struct BIN hb;
    float vf[3];
    float amp[4096];
    struct Complex tmp[4096];
@@ -2763,9 +2808,7 @@ static void getbin(struct Complex c[], uint32_t c_len, struct BINS * bins, uint3
    } /* end for */
    /*- find fase jump */
    if (!nomultipath) {
-      /*  i:=bufsize DIV 16; */
-      /*  IF (imax>i) & (imax+i<bufsize) THEN         (* no advantage with small wrap around part *) */
-      if (imax>25UL && imax+25UL<bufsize) {
+      if (imax>20UL && imax+20UL<bufsize) {
          /* no advantage with small wrap around part */
          v = 0.0f;
          j1 = 1UL;
@@ -2774,7 +2817,6 @@ static void getbin(struct Complex c[], uint32_t c_len, struct BINS * bins, uint3
             jj = imax+i0;
             if (invers) jj = ((bufsize-imax)+i0)-1UL;
             vv = fasejumps(tmp, 4096ul, jj, bufsize-imax, bufsize); /* split samples in before and after wrap around */
-            /*WrFixed(sqrt(vv),0,1);WrStr(" "); */
             if (vv>v) {
                v = vv; /* winner has max. level sum */
                j1 = i0;
@@ -2798,21 +2840,20 @@ static void getbin(struct Complex c[], uint32_t c_len, struct BINS * bins, uint3
       nois = nois-amp[(((imax+bufsize)-1UL)+i0)%bufsize]; /* subtract data bins from noise sum */
    } /* end for */
    if (nois<0.0f) nois = 0.0f;
+   nois = X2C_DIVR(nois,(float)bufsize);
    if (sort) {
+      mnois = max0*0.8f;
       max0 = 0.0f;
-      /*    IF nois<>0.0 THEN rnois:=1.0/nois ELSE rnois:=0.0 END; */
+      bins->halfnoisc = 0UL;
       tmp0 = bufsize-1UL;
       i0 = 0UL;
       if (i0<=tmp0) for (;; i0++) {
          vv = amp[i0];
-         /*      vn:=vv*rnois-0.5;                                   (* sn *) */
-         /*      IF vn<0.0 THEN vn:=0.0 ELSIF vn>0.5 THEN vn:=0.5 END; */
-         /*      vv:=vv*(1.0-vn) + (amp[(i+1) MOD bufsize] + amp[(i+bufsize-1) MOD bufsize])*vn*0.5;
-                (* wider window on good sn *) */
          if (vv>max0) {
             max0 = vv;
             imax = i0;
          }
+         if (vv>mnois) ++bins->halfnoisc;
          if (max0>bins->b[lastbin].lev && (!opt || (i0&3UL)==1UL)) {
             bins->b[lastbin].lev = max0;
             bins->b[lastbin].bn = imax;
@@ -2834,16 +2875,16 @@ static void getbin(struct Complex c[], uint32_t c_len, struct BINS * bins, uint3
       } /* end for */
       if (j1>0UL) {
          /* swap best to front */
-         bins->b[4U] = bins->b[0U];
+         hb = bins->b[0U];
          bins->b[0U] = bins->b[j1];
-         bins->b[j1] = bins->b[4U];
+         bins->b[j1] = hb;
       }
    }
    else {
       bins->b[0U].lev = max0;
       bins->b[0U].bn = imax;
    }
-   bins->b[4U].lev = X2C_DIVR(nois,(float)bufsize); /* last bin is for noisefloor */
+   bins->noise = nois;
    for (i0 = 0UL; i0<=2UL; i0++) {
       v = amp[(((bins->b[0U].bn+bufsize)-1UL)+i0)%bufsize];
       vf[i0] = v;
@@ -3079,9 +3120,9 @@ static char getsamps(struct Complex c[], uint32_t c_len, uint32_t * iqread, uint
 } /* end getsamps() */
 
 
-static float squelch(const struct BIN bins[], uint32_t bins_len)
+static float squelch(const struct BINS bins)
 {
-   return X2C_DIVR(bins[0UL].lev,bins[bins_len-1].lev+0.01f);
+   return X2C_DIVR(bins.b[0U].lev,bins.noise+1.E-9f);
 } /* end squelch() */
 
 
@@ -3123,7 +3164,8 @@ static char nextchirp(struct FFRAME * frame)
       if (frame->cnt==1UL && (float)fabs(freqmod(frame->lastbin-bins.b[0U].freq,
                 (int32_t)blocksize))<=(float)(1UL+(uint32_t)frame->optimize*3UL)) {
          /* 2 good peamble chirps */
-         frame->jp = blocksize-(uint32_t)X2C_TRUNCC(bins.b[0U].freq+0.5f,0UL,X2C_max_longcard);
+         /*      frame.jp:=blocksize - TRUNC(bins.b[0].freq+0.5); */
+         frame->jp = blocksize-(uint32_t)X2C_TRUNCC(bins.b[0U].freq,0UL,X2C_max_longcard);
          frame->state = lorarx_sSYNRAW;
          frame->synmed = 0.0f;
          frame->cnt = 0UL;
@@ -3219,7 +3261,7 @@ static char nextchirp(struct FFRAME * frame)
       }
       frame->state = lorarx_sREV2;
       frame->lastrev = freqmod(bins.b[0U].freq, (int32_t)blocksize);
-      frame->lastsq = squelch(bins.b, 5ul);
+      frame->lastsq = squelch(bins);
    }
    else if (frame->state==lorarx_sREV2) {
       if (verb2) {
@@ -3228,7 +3270,7 @@ static char nextchirp(struct FFRAME * frame)
          osic_WrFixed(bins.b[0U].freq, 2L, 1UL);
          osi_WrStrLn(" state=REVERS2", 15ul);
       }
-      if (frame->lastsq+squelch(bins.b, 5ul)>frame->datasquelch*2.0f) {
+      if (frame->lastsq+squelch(bins)>frame->datasquelch*2.0f) {
          /* 2 usable reverse chirps */
          fi = (frame->lastrev+freqmod(bins.b[0U].freq, (int32_t)blocksize))*0.25f;
          frame->df = (int32_t)X2C_TRUNCI(fi*baud(frame->cfgsf, bwnum),X2C_min_longint,X2C_max_longint);
@@ -3239,8 +3281,11 @@ static char nextchirp(struct FFRAME * frame)
          frame->fcstart = frame->fc; /* store for show drift */
          frame->state = lorarx_sDATA;
          frame->sigsum = 0.0f;
+         frame->sigmin = X2C_max_real;
+         frame->sigmax = 0.0f;
          frame->noissum = 0.0f;
-         frame->peaknois = 0.0f;
+         frame->noismax = 0.0f;
+         frame->noismin = X2C_max_real;
          frame->txdel = frame->cnt; /* store for show preamble time */
          frame->cnt = 0UL;
          frame->eye = 0.0f;
@@ -3264,7 +3309,7 @@ static char nextchirp(struct FFRAME * frame)
          osic_WrINT32(frame->cnt, 1UL);
          osi_WrStrLn(" state=DATA", 12ul);
       }
-      sq = squelch(bins.b, 5ul);
+      sq = squelch(bins);
       /*WrFixed(sq, 2, 10); */
       if (!frame->nodcdlost && sq<=frame->datasquelch) {
          ++frame->timeout;
@@ -3297,8 +3342,11 @@ static char nextchirp(struct FFRAME * frame)
       /*      END; */
       /*    END; */
       frame->sigsum = frame->sigsum+bins.b[0U].lev;
-      frame->noissum = frame->noissum+bins.b[4U].lev;
-      if (bins.b[4U].lev>frame->peaknois) frame->peaknois = bins.b[4U].lev;
+      if (bins.b[0U].lev>frame->sigmax) frame->sigmax = bins.b[0U].lev;
+      if (bins.b[0U].lev<frame->sigmin) frame->sigmin = bins.b[0U].lev;
+      frame->noissum = frame->noissum+bins.noise;
+      if (bins.noise>frame->noismax) frame->noismax = bins.noise;
+      if (bins.noise<frame->noismin) frame->noismin = bins.noise;
       if (decodechirp(frame, bins, opt)) frame->state = lorarx_sSLEEP;
       ++frame->cnt;
    }
@@ -3335,6 +3383,8 @@ extern int main(int argc, char **argv)
    size_t tmp[1];
    uint32_t tmp0;
    X2C_BEGIN(&argc,argv,1,4000000l,8000000l);
+   if (sizeof(NIBBBLOCK)!=12) X2C_ASSERT(0);
+   if (sizeof(NIBBS)!=523) X2C_ASSERT(0);
    aprsstr_BEGIN();
    osi_BEGIN();
    Parms();
