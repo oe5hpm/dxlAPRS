@@ -32,6 +32,7 @@
 # - ra02  radio modul ra02 to axudp interface
 # - loratx text line to lora IQ file with test features
 # - lorarx IQ file with lora to axudp
+# - ttytee read serial port and send to unbreakable pipe(s)
 # ---------------------- common section ---------------------------------------
 HOSTARCH := $(shell uname -m | \
 	sed -e s/i.86/x86/ \
@@ -311,6 +312,9 @@ OBJ_HOSTINT = \
 	$(OUT)frameio.o \
 	$(OUT)l2.o
 
+OBJ_TTYTEE = \
+	$(OUT)ttytee.o
+
 TARGETS += \
 	$(OUT)afskmodem \
 	$(OUT)gps2aprs \
@@ -337,7 +341,8 @@ TARGETS += \
 	$(OUT)ra02 \
 	$(OUT)loratx \
 	$(OUT)lorarx \
-	$(OUT)hostint
+	$(OUT)hostint \
+	$(OUT)ttytee
 
 ifneq ($(HOSTOS), Darwin)
 	TARGETS += $(OUT)l2cat
@@ -545,6 +550,11 @@ $(OUT)lorarx: $(OBJ_LORARX) $(OBJ_COMMON)
 $(OUT)hostint: $(OBJ_HOSTINT) $(OBJ_COMMON)
 	@echo [ linking ] $@
 	@$(CC) $(LFLAGS) -o $@ $(OBJ_HOSTINT) $(OBJ_COMMON) -lm
+	@$(STRIP) $@ $(STRIPFLAGS)
+
+$(OUT)ttytee: $(OBJ_TTYTEE) $(OBJ_COMMON)
+	@echo [ linking ] $@
+	@$(CC) $(LFLAGS) -o $@ $(OBJ_TTYTEE) $(OBJ_COMMON)
 	@$(STRIP) $@ $(STRIPFLAGS)
 
 %:
