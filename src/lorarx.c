@@ -155,6 +155,14 @@ struct CB {
 
 typedef struct CB * pCB;
 
+
+struct AMPS {
+   float * Adr;
+   size_t Len0;
+};
+
+typedef struct AMPS * pAMPS;
+
 struct BIN;
 
 
@@ -276,6 +284,8 @@ static uint32_t bwnum;
 
 static uint32_t iqwrite;
 
+static uint32_t binsview;
+
 static uint32_t isize;
 
 static char quietcrc;
@@ -300,6 +310,8 @@ static struct Complex iqbuf[8192];
 
 static pCB fftbufs[13];
 
+static pAMPS revamps[13];
+
 static float DDS[65536];
 
 static float cfglevel;
@@ -321,8 +333,6 @@ static float SINTAB[25];
 #define lorarx_SUBSAMPBITS 4
 
 #define lorarx_SUBSAMP 16
-
-#define lorarx_ISBIRD 20
 
 
 struct _0 {
@@ -353,7 +363,7 @@ struct NOTCH {
 
 
 struct _2 {
-   uint8_t * Adr;
+   float * Adr;
    size_t Len0;
 };
 
@@ -363,11 +373,13 @@ static pFIR pfir;
 
 static pNOTCH pnotches;
 
+static float notchthres;
+
 static float downsample;
 
-static uint32_t autonotch;
-
 static uint32_t notchcnt;
+
+static uint32_t autonotch;
 
 static uint32_t samprate;
 
@@ -383,8 +395,6 @@ static uint32_t phasereg;
 
 static char complexfir;
 
-static pFREQMASK pfixmask;
-
 static pFREQMASK pbirdhist;
 
 static pFIRTAB ptmpfir;
@@ -396,8 +406,6 @@ static pFIRTAB pfirtab;
 static int32_t outdechirped;
 
 static int32_t outfiltered;
-
-static int32_t outbins;
 
 
 static void Error(char text[], uint32_t text_len)
@@ -462,6 +470,13 @@ static float lim(float x, float max0)
    if (x<-max0) return -max0;
    return x;
 } /* end lim() */
+
+
+static float flmin(float x, float min0)
+{
+   if (x<min0) return x;
+   return min0;
+} /* end flmin() */
 
 
 static float CABS(struct Complex X)
@@ -611,10 +626,9 @@ static char manualnotch(int32_t f)
 #define lorarx_DECNOTCH 10
 
 
-static void makefir(float fg, pFIRTAB pfir0, pFREQMASK pfix, pFREQMASK pbird, uint32_t * notchcnt0)
+static void makefir(float fg, pFIRTAB pfir0, pFREQMASK pbird, float thres)
 {
    uint32_t subsamp;
-   uint32_t firlen0;
    uint32_t flen;
    uint32_t logfl;
    uint32_t m;
@@ -623,20 +637,19 @@ static void makefir(float fg, pFIRTAB pfir0, pFREQMASK pfix, pFREQMASK pbird, ui
    struct Complex u;
    float l;
    float w0;
+   char fix[4096];
    uint32_t tmp;
-   *notchcnt0 = 0UL;
    flen = (pfir0->Len0-1)+1UL;
-   firlen0 = (pfix->Len0-1)+1UL;
-   subsamp = flen/firlen0;
-   if (pbird==0) {
-      tmp = firlen0/2UL-1UL;
-      i0 = 0UL;
-      if (i0<=tmp) for (;; i0++) {
-         pfix->Adr[firlen0/2UL+i0] = !manualnotch((int32_t)i0);
-         pfix->Adr[(firlen0/2UL-i0)-1UL] = !manualnotch(-(int32_t)(i0+1UL));
-         if (i0==tmp) break;
-      } /* end for */
-   }
+   subsamp = flen/firlen;
+   /*IF pbird=NIL THEN */
+   tmp = firlen/2UL-1UL;
+   i0 = 0UL;
+   if (i0<=tmp) for (;; i0++) {
+      fix[firlen/2UL+i0] = !manualnotch((int32_t)i0);
+      fix[(firlen/2UL-i0)-1UL] = !manualnotch(-(int32_t)(i0+1UL));
+      if (i0==tmp) break;
+   } /* end for */
+   /*END; */
    tmp = ptmpfir->Len0-1;
    i0 = 0UL;
    if (i0<=tmp) for (;; i0++) {
@@ -644,22 +657,17 @@ static void makefir(float fg, pFIRTAB pfir0, pFREQMASK pfix, pFREQMASK pbird, ui
       ptmpfir->Adr[i0].Im = 0.0f;
       if (i0==tmp) break;
    } /* end for */
-   m = (uint32_t)X2C_TRUNCC(X2C_DIVR((float)firlen0,fg),0UL,X2C_max_longcard)/2UL;
-   if (m>=firlen0/2UL) m = firlen0/2UL-1UL;
+   m = (uint32_t)X2C_TRUNCC(X2C_DIVR((float)firlen,fg),0UL,X2C_max_longcard)/2UL;
+   if (m>=firlen/2UL) m = firlen/2UL-1UL;
    tmp = m;
    i0 = 0UL;
    if (i0<=tmp) for (;; i0++) {
-      j1 = (firlen0/2UL-i0)-1UL;
-      if (pfix->Adr[j1]>0U && (pbird==0 || pbird->Adr[j1]<20U)) {
-         ptmpfir->Adr[(ptmpfir->Len0-1)-i0].Im = 1.0f;
-      }
-      else ++*notchcnt0;
-      j1 = firlen0/2UL+i0;
-      if (pfix->Adr[j1]>0U && (pbird==0 || pbird->Adr[j1]<20U)) ptmpfir->Adr[i0].Im = 1.0f;
-      else ++*notchcnt0;
+      j1 = (firlen/2UL-i0)-1UL;
+      if (fix[j1] && (pbird==0 || pbird->Adr[j1]<thres)) ptmpfir->Adr[(ptmpfir->Len0-1)-i0].Im = 1.0f;
+      j1 = firlen/2UL+i0;
+      if (fix[j1] && (pbird==0 || pbird->Adr[j1]<thres)) ptmpfir->Adr[i0].Im = 1.0f;
       if (i0==tmp) break;
    } /* end for */
-   /*FOR i:=0 TO HIGH(ptmpfir^) DO WrInt(ORD(ptmpfir^[i].Re+ptmpfir^[i].Im<>0.0),1) END; WrStrLn("=pfir"); */
    logfl = 1UL;
    do {
       ++logfl;
@@ -678,7 +686,7 @@ static void makefir(float fg, pFIRTAB pfir0, pFREQMASK pfix, pFREQMASK pbird, ui
    tmp = flen-1UL;
    i0 = 0UL;
    if (i0<=tmp) for (;; i0++) {
-      u = ptmpfir->Adr[(((i0%firlen0)*subsamp+subsamp)-1UL)-i0/firlen0]; /* rearange table for better memory cashing */
+      u = ptmpfir->Adr[(((i0%firlen)*subsamp+subsamp)-1UL)-i0/firlen]; /* rearange table for better memory cashing */
       pfir0->Adr[i0] = u;
       w0 = CABS(u);
       if (w0>l) l = w0;
@@ -844,8 +852,8 @@ static void Parms(void)
    autonotch = 0UL;
    outdechirped = -1L;
    outfiltered = -1L;
-   outbins = -1L;
    allwaysascii = 0;
+   binsview = 0UL;
    firlen = 0UL;
    jmhz = 0.0f;
    iqfn[0] = 0;
@@ -1051,17 +1059,18 @@ static void Parms(void)
             if (h[0U]=='d') {
                osi_NextArg(h, 1024ul);
                outdechirped = osi_OpenWrite(h, 1024ul);
-               if (outdechirped<0L) Error("-Y d|f|b iq-filename create", 28ul);
+               if (outdechirped<0L) Error("-Y d|f iq-filename create", 26ul);
             }
             else if (h[0U]=='f') {
                osi_NextArg(h, 1024ul);
                outfiltered = osi_OpenWrite(h, 1024ul);
-               if (outfiltered<0L) Error("-Y d|f|b iq-filename create", 28ul);
+               if (outfiltered<0L) Error("-Y d|f iq-filename create", 26ul);
             }
             else if (h[0U]=='b') {
                osi_NextArg(h, 1024ul);
-               outbins = osi_OpenWrite(h, 1024ul);
-               if (outbins<0L) Error("-Y d|f|b iq-filename create", 28ul);
+               if (!aprsstr_StrToCard(h, 1024ul, &binsview)) {
+                  Error("-Y b <number-of-bins>", 22ul);
+               }
             }
             else Error("-Y d|f|b iq-filename", 21ul);
          }
@@ -1120,7 +1129,7 @@ ed, c:try until crc ok", 115ul);
                osi_WrStrLn(" -w <len>           downsample fir length else automatic (8..4096) (0)", 71ul);
                osi_WrStrLn(" -X <netid>         (*)filter network-id (sync pattern), 1xx stops decode on wrong id, 0=off\
  (12)", 98ul);
-               osi_WrStrLn(" -Y d|f|b <filename>  iq debug output in float32 decirped, filtered, bins", 74ul);
+               osi_WrStrLn(" -Y d|f|b <filename>  iq debug output in float32-iq dechirped or filtered", 74ul);
                osi_WrStrLn("(*) may be repeated for more demodulators, to start next demodulator apply -s <sf> before ot\
 her pramaeters", 107ul);
                osi_WrStrLn("", 1ul);
@@ -1186,6 +1195,7 @@ her pramaeters", 107ul);
    }
    samprate = (uint32_t)X2C_TRUNCC(1.6777216E+7f*downsample,0UL,X2C_max_longcard);
    pnotch = pnotches;
+   if (outfiltered>=0L && firlen==0UL) Error("no FIR (-w) set so no filtert output", 37ul);
    /*- offset */
    if (configoffsethz!=0.0f && insamplerate!=0.0f) {
       shiftstep = (uint32_t)(int32_t)X2C_TRUNCI((X2C_DIVR(configoffsethz,insamplerate))*65536.0f*65536.0f,
@@ -1889,7 +1899,7 @@ static void shownotches(void)
       tmp = pbirdhist->Len0-1;
       i0 = 0UL;
       if (i0<=tmp) for (;; i0++) {
-         if (pbirdhist->Adr[i0]>=20U) ++nc;
+         if (pbirdhist->Adr[i0]>notchthres) ++nc;
          if (i0==tmp) break;
       } /* end for */
       osi_WrStr(" notches:", 10ul);
@@ -2554,32 +2564,16 @@ static char decodechirp(struct FFRAME * frame, const struct BINS bins, char opti
    return 0;
 } /* end decodechirp() */
 
-#define lorarx_W 60
+#define lorarx_BIRDSPEED 0.01
+/* floating median speed */
 
-
-static void binsgraph(const float a[], uint32_t a_len, uint32_t sf, uint32_t best)
-/* debug output */
-{
-   uint32_t e;
-   uint32_t i0;
-   int32_t f;
-   char h[100];
-   i0 = ((best+sf)-30UL)%sf;
-   e = (best+30UL)%sf;
-   do {
-      if ((float)fabs(a[i0])>=2.147483647E+9f) strncpy(h,"0",100u);
-      else aprsstr_IntToStr((int32_t)X2C_TRUNCI(a[i0],X2C_min_longint,X2C_max_longint), 1UL, h, 100ul);
-      aprsstr_Append(h, 100ul, " ", 2ul);
-      osi_WrBin(outbins, (char *)h, 100u/1u, aprsstr_Length(h, 100ul));
-      i0 = (i0+1UL)%sf;
-   } while (i0!=e);
-   strncpy(h,"\012",100u);
-   osi_WrBin(f, (char *)h, 100u/1u, 1UL);
-} /* end binsgraph() */
+#define lorarx_MINBIRDYLEV 0.7
+/* minimal sqr level of a birdy */
 
 
 static void findbirdies(uint32_t from, uint32_t to, const struct Complex fir[], uint32_t fir_len)
 {
+   uint32_t optbirds;
    uint32_t nc;
    uint32_t len;
    uint32_t f1;
@@ -2588,6 +2582,8 @@ static void findbirdies(uint32_t from, uint32_t to, const struct Complex fir[], 
    uint32_t j1;
    uint32_t i0;
    int32_t n;
+   float iv;
+   float v;
    float med;
    struct Complex * anonym;
    uint32_t tmp;
@@ -2625,7 +2621,6 @@ static void findbirdies(uint32_t from, uint32_t to, const struct Complex fir[], 
             /* reorder freq */
             if (i0<=hsize) j1 = hsize-i0;
             else j1 = hsize*3UL-i0;
-            /*        IF i<hsize-1 THEN j:=hsize+i+1 ELSE j:=i-hsize+1 END; */
             pbirdbuf->Adr[i0].Im = pbirdbuf->Adr[j1].Re;
             if (i0==tmp) break;
          } /* end for */
@@ -2642,38 +2637,48 @@ static void findbirdies(uint32_t from, uint32_t to, const struct Complex fir[], 
             med = med+pbirdbuf->Adr[i0].Im; /* noise level */
             if (i0==tmp) break;
          } /* end for */
-         med = X2C_DIVR((float)((f1-f0)+1UL),med);
-         /*WrStrLn("birdies"); */
+         med = X2C_DIVR(med,(float)((f1-f0)+1UL));
+         iv = X2C_DIVR(1.0f,med);
+         /*WrStrLn("--------"); */
          tmp = f1;
          i0 = f0;
          if (i0<=tmp) for (;; i0++) {
-            n = (int32_t)X2C_TRUNCI(pbirdbuf->Adr[i0].Im*med,X2C_min_longint,X2C_max_longint);
-            j1 = (uint32_t)pbirdhist->Adr[i0];
-            if (n>=3L) {
-               /* peak */
-               /*WrStr("+");  */
-               if (n>30L) n = 30L;
-               j1 += (uint32_t)(n*2L);
-               if (j1>250UL) j1 = 250UL;
+            v = pbirdhist->Adr[i0];
+            pbirdhist->Adr[i0] = v+((pbirdbuf->Adr[i0].Im-med)*iv-v)*0.01f;
+            if (i0==tmp) break;
+         } /* end for */
+         /*FOR i:=0 TO len-1 DO WrFixed(pbirdhist^[i], 1, 1); WrStr(" "); END; WrStrLn(""); */
+         /*- find notch start level */
+         optbirds = ((f1-f0)+5UL)/5UL; /* limit notches */
+         n = 0L;
+         for (;;) {
+            if (notchthres<0.7f) {
+               notchthres = 0.7f;
+               break;
             }
-            else if (n==0L && j1>0UL) --j1;
-            /*WrStr("-"); */
-            /*ELSE WrStr("."); */
-            pbirdhist->Adr[i0] = (uint8_t)j1;
-            if (i0==tmp) break;
-         } /* end for */
-         /*WrInt(pbirdhist^[i],3); */
-         /*WrStrLn(""); */
-         /*FOR i:=0 TO HIGH(pbirdhist^) DO WrInt(pbirdhist^[i], 4) END; WrStrLn("=bh"); */
-         makefir(downsample, pfirtab, pfixmask, pbirdhist, &nc);
-         /*- reduce not important notches if too many */
-         nc = (nc*10UL)/firlen;
-         tmp = pbirdhist->Len0-1;
-         i0 = 0UL;
-         if (i0<=tmp) for (;; i0++) {
-            pbirdhist->Adr[i0] -= (uint8_t)(((uint32_t)pbirdhist->Adr[i0]*nc)/16UL);
-            if (i0==tmp) break;
-         } /* end for */
+            nc = 0UL;
+            tmp = f1;
+            i0 = f0;
+            if (i0<=tmp) for (;; i0++) {
+               if (pbirdhist->Adr[i0]>notchthres) ++nc;
+               if (i0==tmp) break;
+            } /* end for */
+            /*WrStr("(");WrInt(nc,1);WrStr(")"); */
+            if (nc>optbirds) {
+               if (n<0L) break;
+               notchthres = notchthres+0.05f;
+               /*WrFixed(notchthres, 2,10); */
+               n = 1L;
+            }
+            else {
+               if (n>0L) break;
+               notchthres = notchthres-0.05f;
+               /*WrFixed(notchthres, 2,10); */
+               n = -1L;
+            }
+         }
+         /*WrFixed(notchthres, 2,12); WrStrLn("=tres");         */
+         makefir(downsample, pfirtab, pbirdhist, notchthres);
       }
    }
 } /* end findbirdies() */
@@ -2725,8 +2730,9 @@ struct _3 {
 };
 
 
-static void getbin(struct Complex c[], uint32_t c_len, struct BINS * bins, uint32_t sf, float offset,
-                char rev, char opt, char sort, char invers, uint32_t * corrcnt)
+static void getbin(struct Complex c[], uint32_t c_len, struct BINS * bins, float ampsums[], uint32_t ampsums_len,
+                 uint32_t sf, float offset, char rev, char opt, char sort, char invers,
+                 uint32_t median, uint32_t * corrcnt)
 {
    uint32_t bufsize;
    uint32_t imax;
@@ -2750,6 +2756,7 @@ static void getbin(struct Complex c[], uint32_t c_len, struct BINS * bins, uint3
    struct Complex * anonym;
    struct Complex * anonym0;
    uint32_t tmp0;
+   /*IF median>0 THEN WrInt(median,10);WrStr("=median "); END; */
    bufsize = (uint32_t)(1UL<<sf);
    ii = (int32_t)(65536UL/bufsize);
    if (rev!=invers) ii = -ii;
@@ -2777,15 +2784,14 @@ static void getbin(struct Complex c[], uint32_t c_len, struct BINS * bins, uint3
    }
    X2C_MOVE((char *)c,(char *)tmp,c_len*sizeof(struct Complex));
    Transform(c, c_len, sf, 0);
-   /*  c[0].Re:=c[0].Re*2.0;                                    (* dc part *) */
+   /*  c[0].Re:=c[0].Re*2.0;                                      (* dc part *) */
    /*  c[0].Im:=c[0].Im*2.0; */
    lastbin = 0UL;
    memset((char *)bins,(char)0,sizeof(struct BINS));
-   max0 = 0.0f;
+   max0 = (-1.0f);
    nois = 0.0f;
    j1 = 0UL;
    ii = 1L;
-   imax = 0UL;
    if (invers) {
       j1 = bufsize-1UL;
       ii = -1L;
@@ -2797,6 +2803,13 @@ static void getbin(struct Complex c[], uint32_t c_len, struct BINS * bins, uint3
          struct Complex * anonym0 = &c[i0];
          v = anonym0->Re*anonym0->Re+anonym0->Im*anonym0->Im;
       }
+      if (median>0UL) {
+         if (median==1UL) ampsums[i0] = v;
+         else {
+            ampsums[i0] = ampsums[i0]+v; /* continue median */
+            if (rev) v = X2C_DIVR(ampsums[i0],(float)median);
+         }
+      }
       amp[j1] = v;
       nois = nois+v;
       if (v>max0) {
@@ -2806,6 +2819,30 @@ static void getbin(struct Complex c[], uint32_t c_len, struct BINS * bins, uint3
       j1 += (uint32_t)ii;
       if (i0==tmp0) break;
    } /* end for */
+   if (!opt) {
+      /* limit afc runaway in echo distorted signal */
+      i0 = ((bufsize+imax)-1UL)%bufsize;
+      v = amp[imax]*0.25f;
+      amp[i0] = flmin(amp[i0], v);
+      i0 = (imax+1UL)%bufsize;
+      amp[i0] = flmin(amp[i0], v);
+   }
+   if (binsview>0UL) {
+      /* show bins around best */
+      osic_WrINT32(imax, 4UL);
+      if (rev) osi_WrStr("- ", 3ul);
+      else if (sort) osi_WrStr("> ", 3ul);
+      else osi_WrStr(": ", 3ul);
+      v = X2C_DIVR(1.0f,amp[imax]+1.E-6f);
+      tmp0 = binsview;
+      i0 = 0UL;
+      if (i0<=tmp0) for (;; i0++) {
+         osic_WrFixed(osic_sqrt(amp[((bufsize+i0+imax)-binsview/2UL)%bufsize]*v), 2L, 4UL);
+         osi_WrStr(" ", 2ul);
+         if (i0==tmp0) break;
+      } /* end for */
+      osi_WrStrLn("", 1ul);
+   }
    /*- find fase jump */
    if (!nomultipath) {
       if (imax>20UL && imax+20UL<bufsize) {
@@ -2815,7 +2852,9 @@ static void getbin(struct Complex c[], uint32_t c_len, struct BINS * bins, uint3
          for (i0 = 0UL; i0<=2UL; i0++) {
             /* test freq below and above peak freq */
             jj = imax+i0;
-            if (invers) jj = ((bufsize-imax)+i0)-1UL;
+            if (invers) {
+               jj = ((bufsize-imax)+i0)-1UL;
+            }
             vv = fasejumps(tmp, 4096ul, jj, bufsize-imax, bufsize); /* split samples in before and after wrap around */
             if (vv>v) {
                v = vv; /* winner has max. level sum */
@@ -2837,9 +2876,9 @@ static void getbin(struct Complex c[], uint32_t c_len, struct BINS * bins, uint3
       }
    }
    for (i0 = 0UL; i0<=2UL; i0++) {
-      nois = nois-amp[(((imax+bufsize)-1UL)+i0)%bufsize]; /* subtract data bins from noise sum */
+      v = amp[(((imax+bufsize)-1UL)+i0)%bufsize]; /* subtract data bins from noise sum */
+      if (nois>v) nois = nois-v;
    } /* end for */
-   if (nois<0.0f) nois = 0.0f;
    nois = X2C_DIVR(nois,(float)bufsize);
    if (sort) {
       mnois = max0*0.8f;
@@ -2899,7 +2938,6 @@ static void getbin(struct Complex c[], uint32_t c_len, struct BINS * bins, uint3
       bins->b[i0].freq = v;
       v = 0.0f;
    } /* end for */
-   if (outbins>=0L) binsgraph(amp, 4096ul, bufsize, bins->b[0U].bn);
 } /* end getbin() */
 
 union _4;
@@ -3136,6 +3174,7 @@ static char nextchirp(struct FFRAME * frame)
    char opt;
    pCB anonym;
    pCB anonym0;
+   pAMPS anonym1;
    blocksize = (uint32_t)(1UL<<frame->cfgsf);
    /*  LOOP */
    if (frame->state==lorarx_sSLEEP) {
@@ -3153,9 +3192,10 @@ static char nextchirp(struct FFRAME * frame)
    frame->jp = blocksize;
    opt = frame->state==lorarx_sDATA && (frame->optimize || frame->cfgcr==0UL && frame->cnt<8UL);
    anonym0 = fftbufs[frame->cfgsf];
-   getbin(anonym0->Adr, anonym0->Len0, &bins, frame->cfgsf, frame->fc+frame->fcfix,
+   anonym1 = revamps[frame->cfgsf];
+   getbin(anonym0->Adr, anonym0->Len0, &bins, anonym1->Adr, anonym1->Len0, frame->cfgsf, frame->fc+frame->fcfix,
                 frame->state==lorarx_sREV1 || frame->state==lorarx_sREV2, opt, frame->state==lorarx_sDATA,
-                frame->invertiq, &frame->fasecorrs);
+                frame->invertiq, frame->cnt*(uint32_t)(frame->state!=lorarx_sDATA), &frame->fasecorrs);
    /*WrFixed(frame.fc, 2,5); WrStrLn("=fc"); */
    frame->fcfix = frame->fcfix+frame->dataratecorr; /* correct known samplerate error */
    if (frame->state==lorarx_sHUNT) {
@@ -3230,13 +3270,13 @@ static char nextchirp(struct FFRAME * frame)
          osic_WrFixed(bins.b[0U].freq, 2L, 1UL);
          osi_WrStrLn(" state=NETID", 13ul);
       }
-      frame->state = lorarx_sREV1;
       i0 = (uint32_t)X2C_TRUNCC((4.0f+bins.b[0U].freq)*0.125f,0UL,X2C_max_longcard);
       if (i0==0UL) {
          frame->state = lorarx_sSYNRAW; /* syn sequence with 1 exception */
          frame->idfound = 0UL;
       }
       else {
+         frame->state = lorarx_sREV1;
          fi = (float)(i0*8UL); /* use sync pattern for median zero freq */
          frame->idfound = frame->idfound*16UL+i0;
          if (i0>255UL || frame->synfilter>255UL && frame->idfound!=(frame->synfilter&255UL)) {
@@ -3248,31 +3288,32 @@ static char nextchirp(struct FFRAME * frame)
             }
          }
          frame->synmed = (frame->synmed+freqmod(bins.b[0U].freq, (int32_t)blocksize))-fi;
-         ++frame->cnt;
          frame->synmed = X2C_DIVR(frame->synmed,(float)frame->cnt);
+         frame->cnt = 1UL;
       }
    }
    else if (frame->state==lorarx_sREV1) {
       if (verb2) {
          osic_WrINT32(frame->label, 1UL);
-         osi_WrStr(" ", 2ul);
-         osic_WrFixed(bins.b[0U].freq, 2L, 1UL);
          osi_WrStrLn(" state=REVERS1", 15ul);
       }
       frame->state = lorarx_sREV2;
-      frame->lastrev = freqmod(bins.b[0U].freq, (int32_t)blocksize);
-      frame->lastsq = squelch(bins);
+      frame->cnt = 2UL;
    }
    else if (frame->state==lorarx_sREV2) {
+      /*
+            frame.lastrev:=freqmod(bins.b[0].freq, blocksize);
+            frame.lastsq:=squelch(bins);
+      */
       if (verb2) {
          osic_WrINT32(frame->label, 1UL);
          osi_WrStr(" ", 2ul);
          osic_WrFixed(bins.b[0U].freq, 2L, 1UL);
          osi_WrStrLn(" state=REVERS2", 15ul);
       }
-      if (frame->lastsq+squelch(bins)>frame->datasquelch*2.0f) {
-         /* 2 usable reverse chirps */
-         fi = (frame->lastrev+freqmod(bins.b[0U].freq, (int32_t)blocksize))*0.25f;
+      if (squelch(bins)>frame->datasquelch) {
+         /* usable reverse chirps */
+         fi = freqmod(bins.b[0U].freq, (int32_t)blocksize)*0.5f;
          frame->df = (int32_t)X2C_TRUNCI(fi*baud(frame->cfgsf, bwnum),X2C_min_longint,X2C_max_longint);
          frame->jp = (uint32_t)(int32_t)(blocksize+(blocksize>>2));
          frame->fc = (-0.5f)-frame->synmed; /* new zero freq after sample jump */
@@ -3395,6 +3436,7 @@ extern int main(int argc, char **argv)
       w = w*0.5f;
    } /* end for */
    pbirdbuf = 0;
+   notchthres = 0.0f;
    pbirdhist = 0;
    if (firlen) {
       sampc = 0UL;
@@ -3405,27 +3447,27 @@ extern int main(int argc, char **argv)
       if (autonotch) {
          X2C_DYNALLOCATE((char **) &pbirdbuf,sizeof(struct Complex),(tmp[0] = firlen,tmp),1u);
          if (pbirdbuf==0) Error(" out of memory", 15ul);
-         X2C_DYNALLOCATE((char **) &pbirdhist,1u,(tmp[0] = firlen,tmp),1u);
+         X2C_DYNALLOCATE((char **) &pbirdhist,sizeof(float),(tmp[0] = firlen,tmp),1u);
          if (pbirdhist==0) Error(" out of memory", 15ul);
          tmp0 = pbirdhist->Len0-1;
          i = 0UL;
          if (i<=tmp0) for (;; i++) {
-            pbirdhist->Adr[i] = 0U;
+            pbirdhist->Adr[i] = 0.0f;
             if (i==tmp0) break;
          } /* end for */
       }
-      X2C_DYNALLOCATE((char **) &pfixmask,1u,(tmp[0] = firlen,tmp),1u);
-      if (pfixmask==0) Error(" out of memory", 15ul);
       X2C_DYNALLOCATE((char **) &pfirtab,sizeof(struct Complex),(tmp[0] = firlen*16UL,tmp),1u);
       if (pfirtab==0) Error(" out of memory", 15ul);
       X2C_DYNALLOCATE((char **) &ptmpfir,sizeof(struct Complex),(tmp[0] = firlen*16UL,tmp),1u);
       if (ptmpfir==0) Error(" out of memory", 15ul);
-      makefir(downsample, pfirtab, pfixmask, 0, &i);
+      makefir(downsample, pfirtab, 0, 0.0f);
    }
    MakeDDS();
    for (i = 5UL; i<=12UL; i++) {
       X2C_DYNALLOCATE((char **) &fftbufs[i],sizeof(struct Complex),(tmp[0] = (uint32_t)(1UL<<i),tmp),1u);
       if (fftbufs[i]==0) Error("out of memory", 14ul);
+      X2C_DYNALLOCATE((char **) &revamps[i],sizeof(float),(tmp[0] = (uint32_t)(1UL<<i),tmp),1u);
+      if (revamps[i]==0) Error("out of memory", 14ul);
    } /* end for */
    iqfd = osi_OpenRead(iqfn, 1024ul);
    if (iqfd<0L) Error("open iq file", 13ul);

@@ -50,6 +50,8 @@
 
 #define loratx_LIMLEV 127.4
 
+#define loratx_DB 4.342944819
+
 static uint8_t loratx_WHITEN[255] = {255U,254U,252U,248U,240U,225U,194U,133U,11U,23U,47U,94U,188U,120U,241U,227U,198U,
                 141U,26U,52U,104U,208U,160U,64U,128U,1U,2U,4U,8U,17U,35U,71U,142U,28U,56U,113U,226U,196U,137U,18U,37U,
                 75U,151U,46U,92U,184U,112U,224U,192U,129U,3U,6U,12U,25U,50U,100U,201U,146U,36U,73U,147U,38U,77U,155U,
@@ -66,6 +68,8 @@ static uint8_t loratx_WHITEN[255] = {255U,254U,252U,248U,240U,225U,194U,133U,11U
 #define loratx_MAXBW 5.E+5
 
 static uint32_t loratx_BWTAB[10] = {64UL,48UL,32UL,24UL,16UL,12UL,8UL,4UL,2UL,1UL};
+
+struct Complex;
 
 
 struct Complex {
@@ -111,7 +115,7 @@ static uint32_t sb[10000];
 
 
 struct _1 {
-   float * Adr;
+   struct Complex * Adr;
    size_t Len0;
 };
 
@@ -283,16 +287,49 @@ static float Noise12(void)
 } /* end Noise12() */
 
 
+static void applyecho(float * si, float * sq)
+{
+   struct Complex es;
+   es = echofifo->Adr[echop];
+   echofifo->Adr[echop].Re = *si;
+   echofifo->Adr[echop].Im = *sq;
+   *si =  *si*echo0+es.Re*echo1;
+   *sq =  *sq*echo0+es.Im*echo1;
+   echop = (echop+1UL)%((echofifo->Len0-1)+1UL);
+} /* end applyecho() */
+
+
+static void applynoise(float * si, float * sq)
+{
+   float nq;
+   float ni;
+   ni = Noise12()*noisegain;
+   nq = Noise12()*noisegain;
+   pow0 = pow0+ni*ni+nq*nq;
+   *si = *si+ni;
+   *sq = *sq+nq;
+   pows = pows+ *si* *si+ *sq* *sq;
+   ++powc;
+} /* end applynoise() */
+
+
+static void WrSN(float pow1, float pows0, float sig)
+{
+   osi_WrStr(" noise:", 8ul);
+   osic_WrFixed(osic_ln(pow1)*4.342944819f, 2L, 0UL);
+   osi_WrStr("dB", 3ul);
+   osi_WrStr(" s/n:", 6ul);
+   osic_WrFixed(osic_ln(X2C_DIVR(sig*sig,pow1))*4.342944819f, 2L, 0UL);
+   osi_WrStr("dB", 3ul);
+   osi_WrStr(" (s+n)/n:", 10ul);
+   osic_WrFixed(osic_ln(X2C_DIVR(sig*sig+pow1,pow1))*4.342944819f, 2L, 0UL);
+   osi_WrStr("dB", 3ul);
+} /* end WrSN() */
+
+
 static void WrSamp(float s)
 {
    int32_t n;
-   float es;
-   if (echofifo) {
-      es = echofifo->Adr[echop];
-      echofifo->Adr[echop] = s;
-      s = s*echo0+es*echo1;
-      echop = (echop+1UL)%((echofifo->Len0-1)+1UL);
-   }
    if (s<(-127.4f)) {
       s = (-127.4f);
       overdriven = 1;
@@ -634,6 +671,7 @@ extern int main(int argc, char **argv)
                osi_WrStrLn(" -C                  send CRC", 30ul);
                osi_WrStrLn(" -c <codingrate>     4..8 (5)", 30ul);
                osi_WrStrLn(" -E <delay(s)> <gain> add radiopath echo with delay (s) and gain e.g. 0.0005 0.5", 81ul);
+               osi_WrStrLn("                       only whole sample delay steps so use oversampling", 73ul);
                osi_WrStrLn(" -f <output-format>  u8 i16 f32 (u8)", 37ul);
                osi_WrStrLn(" -g <gainfactor>     output level 0.0..1.0, with -f f32 more (1.0)", 67ul);
                osi_WrStrLn(" -h                  this...", 29ul);
@@ -679,9 +717,9 @@ extern int main(int argc, char **argv)
       if (echodelay<=0.0f) Err("echo delay >0.0", 16ul);
       echodelay = (float)((double)echodelay*sample);
       if (echodelay>1.E+8f) Err("echo delay too high", 20ul);
-      echosize = ((uint32_t)X2C_TRUNCC(echodelay,0UL,X2C_max_longcard)/2UL)*2UL;
+      echosize = (uint32_t)X2C_TRUNCC(echodelay+0.5f,0UL,X2C_max_longcard);
       if (echosize>0UL) {
-         X2C_DYNALLOCATE((char **) &echofifo,sizeof(float),(tmp[0] = echosize,tmp),1u);
+         X2C_DYNALLOCATE((char **) &echofifo,sizeof(struct Complex),(tmp[0] = echosize,tmp),1u);
       }
    }
    if (!implicitheader && sf<=6UL) Err("sf<=6 needs implicit header", 28ul);
@@ -704,6 +742,9 @@ extern int main(int argc, char **argv)
       osi_WrStrLn("", 1ul);
       osi_WrStr("sync/netid:", 12ul);
       osi_WrHex(netid, 1UL);
+      osi_WrStrLn("", 1ul);
+      osi_WrStr("echo delay samples:", 20ul);
+      osic_WrINT32(echosize, 1UL);
       osi_WrStrLn("", 1ul);
    }
    fi = osi_OpenRead(fni, 4096ul);
@@ -882,9 +923,7 @@ extern int main(int argc, char **argv)
             osic_WrINT32((uint32_t)X2C_IN(j,32,sb[i]), 1UL);
             if (j==0UL) break;
          } /* end for */
-         if ((0x10000000UL & sb[i])) {
-            osi_WrStr(" -zero-level", 13ul);
-         }
+         if ((0x10000000UL & sb[i])) osi_WrStr(" -zero-level", 13ul);
          else if ((0x20000000UL & sb[i])) osi_WrStr(" -xord", 7ul);
          else if ((0x40000000UL & sb[i])) osi_WrStr(" -quarter", 10ul);
          else if ((0x80000000UL & sb[i])) osi_WrStr(" -reverse", 10ul);
@@ -918,19 +957,10 @@ extern int main(int argc, char **argv)
          w = w+fr+shift;
          if (w>3.1415926535) w = w-6.283185307;
          else if (w<(-3.1415926535)) w = w+6.283185307;
-         if (noisegain!=0.0f) {
-            oi = Noise12()*noisegain;
-            oq = Noise12()*noisegain;
-            pow0 = pow0+oi*oi+oq*oq;
-            oi = oi+osic_cos((float)w)*amp;
-            oq = oq+osic_sin((float)w)*amp;
-            pows = pows+oi*oi+oq*oq;
-            ++powc;
-         }
-         else {
-            oi = osic_cos((float)w)*amp;
-            oq = osic_sin((float)w)*amp;
-         }
+         oi = osic_cos((float)w)*amp;
+         oq = osic_sin((float)w)*amp;
+         if (echofifo) applyecho(&oi, &oq);
+         if (noisegain!=0.0f) applynoise(&oi, &oq);
          /*- add birdies */
          bird = birdies;
          while (bird) {
@@ -957,18 +987,13 @@ extern int main(int argc, char **argv)
       if (pow0!=0.0f && powc) {
          pow0 = X2C_DIVR(pow0,(float)powc*127.0f*127.0f);
          pows = X2C_DIVR(pows,(float)powc*127.0f*127.0f);
-         osi_WrStr(" noise:", 8ul);
-         osic_WrFixed(osic_ln(pow0)*8.685889638f*0.5f, 2L, 0UL);
-         osi_WrStr("dB", 3ul);
-         osi_WrStr(" (s+n)/n:", 10ul);
-         osic_WrFixed(osic_ln(X2C_DIVR(pows,pow0))*8.685889638f*0.5f, 2L, 0UL);
-         osi_WrStr("dB", 3ul);
-         osi_WrStr(" s/n:", 6ul);
-         osic_WrFixed(osic_ln(X2C_DIVR(outgain*outgain,pow0))*8.685889638f*0.5f, 2L, 0UL);
-         osi_WrStr("dB", 3ul);
-         osi_WrStr(" (s+n)/n:", 10ul);
-         osic_WrFixed(osic_ln(X2C_DIVR(outgain*outgain+pow0,pow0))*8.685889638f*0.5f, 2L, 0UL);
-         osi_WrStr("dB", 3ul);
+         WrSN(pow0, pows, outgain);
+         if (sample!=bw) {
+            osi_WrStrLn("", 1ul);
+            osi_WrStr("noise in signal band:", 22ul);
+            WrSN((float)(X2C_DIVL((double)pow0*bw,sample)), (float)(X2C_DIVL((double)pows*bw,sample)),
+                 outgain);
+         }
       }
       osi_WrStrLn("", 1ul);
    }
