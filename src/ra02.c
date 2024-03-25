@@ -36,9 +36,6 @@
 #define ra02_STATLEN 1
 /* 30 */
 
-#define ra02_CALINTERVAL 180
-/* loops until next check temperature calibration */
-
 #define ra02_CALMASK 0
 
 #define ra02_NETID 0x12 
@@ -774,7 +771,7 @@ static pCHIP newchip(void)
    chp->lnagain = 1UL;
    chp->rxon = 0;
    chp->ppm = 0.0f;
-   chp->datarate = 0.0f;
+   chp->datarate = 1000.0f;
    chp->rssicorr = 0L;
    chp->cfgocp = -1L;
    chp->cfgramp = -1L;
@@ -1137,8 +1134,8 @@ static void Parms(void)
             osi_WrStrLn(" -i                 rx implicit header on", 42ul);
             osi_WrStrLn(" -J <x.x.x.x:destport>  send demodulated data(base64) with metadata in json", 76ul);
             osi_WrStrLn(" -K                 tx unmodified axudp and split if too long, rx autodetect", 77ul);
-            osi_WrStrLn(" -L ip:sendport:listenport AXUDPv2 data, apply before all othere parameters for this channel",
-                93ul);
+            osi_WrStrLn(" -L ip:sendport:listenport AXUDPv2 data, apply before all other parameters for this channel",
+                92ul);
             osi_WrStrLn("                      repeat for more tx contexts with different listen ports", 78ul);
             osi_WrStrLn("                      same rx data are sent to all non zero sendports", 70ul);
             osi_WrStrLn(" -l <n>             lna boost 0..3, more for better ip3 by more supply current (3)", 83ul);
@@ -1234,9 +1231,15 @@ ip2> -L ... <parameters chip2 tx1/rx> -L ... -v", 143ul);
             osi_WrStr(" lnaboost=", 11ul);
             osic_WrUINT32(anonym->lnaboost, 1UL);
             if (anonym->swapiq) osi_WrStr(" invertIQ", 10ul);
+            if ((float)fabs(anonym->datarate)>133.0f) anonym->datarate = anonym->ppm;
             osi_WrStr(" symt=", 7ul);
             osic_WrFixed(anonym->symboltime, 3L, 1UL);
             osi_WrStr("ms", 3ul);
+            osi_WrStr(" ppm=", 6ul);
+            osic_WrFixed(anonym->ppm, 1L, 1UL);
+            osi_WrStr(" dr=", 5ul);
+            osic_WrFixed(anonym->datarate, 1L, 1UL);
+            osi_WrStr("ppm", 4ul);
             osi_WrStrLn("", 1ul);
             tx = anonym->ptx;
             while (tx) {
@@ -1267,7 +1270,9 @@ ip2> -L ... <parameters chip2 tx1/rx> -L ... -v", 143ul);
                      osi_WrStr(" preamb=", 9ul);
                      osic_WrFixed(tx->symboltime*(float)tx->preamb, 2L, 1UL);
                      osi_WrStr("ms", 3ul);
-                     if (tx->swapiq) osi_WrStr(" invertIQ", 10ul);
+                     if (tx->swapiq) {
+                        osi_WrStr(" invertIQ", 10ul);
+                     }
                      if (tx->rawlora) osi_WrStr(" rawdata", 9ul);
                   }
                   else {
@@ -2086,6 +2091,7 @@ static void setppm(pCHIP chp)
    float p;
    p = chp->ppm;
    if (chp->datarate!=0.0f) p = chp->datarate;
+   /*WrInt(VAL(INT8, p*0.95+0.5), 1); WrStrLn(" = datarate"); */
    scpo(chp->gpio, 39UL, (uint32_t)(uint8_t)(signed char)X2C_TRUNCI(p*0.95f+0.5f,-128,127)); /* datarate correction */
 } /* end setppm() */
 
@@ -2664,6 +2670,7 @@ extern int main(int argc, char **argv)
       Setmode(chip, 1UL, 1, 0);
       Setmode(chip, 4UL, 1, 0); /* clear fifo */
       Setmode(chip, 0UL, 1, 0);
+      setppm(chip);
       chip = chip->next;
    }
    txfast = 0;
@@ -2701,6 +2708,7 @@ extern int main(int argc, char **argv)
       }
       if (chip->state==ra02_stSLEEP) {
          if (chip->rxon) {
+            setppm(chip);
             startrx(chip, 0);
             chip->state = ra02_stRX;
          }
@@ -2725,10 +2733,9 @@ extern int main(int argc, char **argv)
       if (chip->state==ra02_stWAITDCD) {
          dcd = 0;
          if (chip->atx && !chip->atx->usedcd || dcddone(chip, &dcd)) {
-            if (dcd) {
-               startdcdcheck(chip);
-            }
+            if (dcd) startdcdcheck(chip);
             else {
+               setppm(chip);
                send(chip);
                chip->state = ra02_stTX;
             }

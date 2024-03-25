@@ -25,7 +25,8 @@
 #endif
 #include <signal.h>
 
-/* iq lora demodulator */
+/* iq downsample, shift, (auto)notch lora demodulator with axudp, json out and packet radio, aprs, lorawan,
+                fanet viewer */
 /*--------------------------------------------------------------------------------
 
 Synchronisation simple:
@@ -155,18 +156,11 @@ struct CB {
 
 typedef struct CB * pCB;
 
-
-struct AMPS {
-   float * Adr;
-   size_t Len0;
-};
-
-typedef struct AMPS * pAMPS;
-
 struct BIN;
 
 
 struct BIN {
+   float sharpness;
    float lev;
    float freq;
    uint32_t bn;
@@ -189,11 +183,13 @@ typedef uint8_t NIBBS[523];
 enum STATES {lorarx_sSLEEP, lorarx_sHUNT, lorarx_sSYNRAW, lorarx_sID, lorarx_sREV1, lorarx_sREV2, lorarx_sDATA};
 
 
+typedef struct BINS BINTAB[8];
+
 struct FFRAME;
 
 
 struct FFRAME {
-   struct BINS bintab[8];
+   BINTAB bintab;
    NIBBS nibbs;
    char fecinfo[96];
    NIBBBLOCK oneerr;
@@ -203,6 +199,7 @@ struct FFRAME {
    uint32_t dlen;
    uint32_t idfound;
    uint32_t cnt;
+   uint32_t dcnt;
    uint32_t txdel;
    uint32_t jp;
    uint32_t cfgsf;
@@ -228,8 +225,6 @@ struct FFRAME {
    float eye;
    float lastbin;
    float lastsq;
-   float synmed;
-   float lastrev;
    float afcspeed;
    float datasquelch;
    float dataratecorr;
@@ -310,8 +305,6 @@ static struct Complex iqbuf[8192];
 
 static pCB fftbufs[13];
 
-static pAMPS revamps[13];
-
 static float DDS[65536];
 
 static float cfglevel;
@@ -357,8 +350,8 @@ typedef struct NOTCH * pNOTCH;
 
 struct NOTCH {
    pNOTCH next;
-   int32_t f1;
-   int32_t f2;
+   float f1;
+   float f2;
 };
 
 
@@ -369,9 +362,25 @@ struct _2 {
 
 typedef struct _2 * pFREQMASK;
 
+
+struct FIXFIR {
+   float * Adr;
+   size_t Len0;
+};
+
+typedef struct FIXFIR * pFIXFIR;
+
 static pFIR pfir;
 
+static pFIXFIR pfixfir;
+
 static pNOTCH pnotches;
+
+static float pknoisemed;
+
+static float pknoiseup;
+
+static float pknoisedown;
 
 static float notchthres;
 
@@ -392,6 +401,8 @@ static uint32_t shiftstep;
 static uint32_t birdpos;
 
 static uint32_t phasereg;
+
+static char noisblanker;
 
 static char complexfir;
 
@@ -477,6 +488,13 @@ static float flmin(float x, float min0)
    if (x<min0) return x;
    return min0;
 } /* end flmin() */
+
+
+static float flmax(float x, float max0)
+{
+   if (x<max0) return max0;
+   return x;
+} /* end flmax() */
 
 
 static float CABS(struct Complex X)
@@ -612,18 +630,99 @@ static void Transform(struct Complex feld[], uint32_t feld_len, uint32_t logsize
 } /* end Transform() */
 
 
-static char manualnotch(int32_t f)
+static float smoothnotch(pFREQMASK p, uint32_t i0, float thres)
+{
+   float v2;
+   float v1;
+   float v;
+   if (p==0) return (-2.0f);
+   v = p->Adr[i0];
+   if (v<thres) return (-2.0f);
+   v1 = 0.0f;
+   v2 = 0.0f;
+   ++i0;
+   if (i0<firlen) v2 = p->Adr[i0];
+   if (i0>=2UL) v1 = p->Adr[i0-2UL];
+   return lim(X2C_DIVR(v2-v1,v), 1.0f);
+} /* end smoothnotch() */
+
+
+static void shownotches(void)
+{
+   uint32_t m;
+   uint32_t nc;
+   int32_t ii;
+   int32_t tmp;
+   if (pbirdhist) {
+      if (verb2) osi_WrStr(" notch at:", 11ul);
+      else osi_WrStr(" notches:", 10ul);
+      nc = 0UL;
+      m = (uint32_t)X2C_TRUNCC((X2C_DIVR((float)firlen,downsample))*0.5f+0.5f,0UL,X2C_max_longcard);
+      if (m>=firlen/2UL) m = firlen/2UL-1UL;
+      tmp = (int32_t)m;
+      ii = -(int32_t)m;
+      if (ii<=tmp) for (;; ii++) {
+         if (smoothnotch(pbirdhist, (uint32_t)((int32_t)(firlen/2UL)+ii), notchthres)>=(-1.0f)) {
+            if (verb2) {
+               if (nc) osi_WrStr(",", 2ul);
+               osic_WrINT32((uint32_t)ii, 1UL);
+            }
+            ++nc;
+         }
+         if (ii==tmp) break;
+      } /* end for */
+      if (!verb2) osic_WrINT32(nc, 1UL);
+   }
+} /* end shownotches() */
+
+
+static float manualnotch(int32_t fi)
 {
    pNOTCH p;
+   float v;
+   float f;
+   f = (float)fi;
    p = pnotches;
+   v = 1.0f;
    while (p) {
-      if (p->f1<f && p->f2>f) return 1;
+      if (p->f1>=f) v = flmin(v, (p->f1-f)*0.5f);
+      else if (p->f2<f) v = flmin(v, (f-p->f2)*0.5f);
+      else v = 0.0f;
       p = p->next;
    }
-   return 0;
+   return flmax(0.0f, (v*v-0.25f)*1.33333333f);
 } /* end manualnotch() */
 
+
+static void joinfirs(int32_t i0, float w0)
+{
+   uint32_t j1;
+   /*WrFixed(w,3,1); WrStrLn("=w"); */
+   if ((float)fabs(w0)<=1.0f) {
+      if (i0<0L) j1 = (uint32_t)((int32_t)(ptmpfir->Len0-1)+1L+i0);
+      else j1 = (uint32_t)i0;
+      ptmpfir->Adr[j1].Im = 0.0f;
+      --i0;
+      if (i0<0L) j1 = (uint32_t)((int32_t)(ptmpfir->Len0-1)+1L+i0);
+      else j1 = (uint32_t)i0;
+      ptmpfir->Adr[j1].Im = ptmpfir->Adr[j1].Im*(w0*0.25f+0.25f);
+      i0 += 2L;
+      if (i0<0L) j1 = (uint32_t)((int32_t)(ptmpfir->Len0-1)+1L+i0);
+      else j1 = (uint32_t)i0;
+      ptmpfir->Adr[j1].Im = ptmpfir->Adr[j1].Im*(0.25f-w0*0.25f);
+   }
+} /* end joinfirs() */
+
 #define lorarx_DECNOTCH 10
+
+
+static void wrnotch(uint32_t * j1, int32_t f)
+{
+   if (*j1>0UL) osi_WrStr(",", 2ul);
+   else osi_WrStr("manual notches at:", 19ul);
+   osic_WrINT32((uint32_t)f, 1UL);
+   ++*j1;
+} /* end wrnotch() */
 
 
 static void makefir(float fg, pFIRTAB pfir0, pFREQMASK pbird, float thres)
@@ -634,22 +733,36 @@ static void makefir(float fg, pFIRTAB pfir0, pFREQMASK pbird, float thres)
    uint32_t m;
    uint32_t j1;
    uint32_t i0;
+   int32_t ii;
    struct Complex u;
    float l;
    float w0;
-   char fix[4096];
    uint32_t tmp;
+   int32_t tmp0;
    flen = (pfir0->Len0-1)+1UL;
    subsamp = flen/firlen;
-   /*IF pbird=NIL THEN */
-   tmp = firlen/2UL-1UL;
-   i0 = 0UL;
-   if (i0<=tmp) for (;; i0++) {
-      fix[firlen/2UL+i0] = !manualnotch((int32_t)i0);
-      fix[(firlen/2UL-i0)-1UL] = !manualnotch(-(int32_t)(i0+1UL));
-      if (i0==tmp) break;
-   } /* end for */
-   /*END; */
+   if (pbird==0) {
+      tmp = firlen/2UL-1UL;
+      i0 = 0UL;
+      if (i0<=tmp) for (;; i0++) {
+         pfixfir->Adr[firlen/2UL+i0] = manualnotch((int32_t)i0);
+         pfixfir->Adr[(firlen/2UL-i0)-1UL] = manualnotch(-(int32_t)(i0+1UL));
+         if (i0==tmp) break;
+      } /* end for */
+      if (verb) {
+         j1 = 0UL;
+         for (i0 = firlen/2UL-1UL; i0>=1UL; i0--) {
+            if (pfixfir->Adr[(firlen/2UL-i0)-1UL]<0.5f) wrnotch(&j1, -(int32_t)i0);
+         } /* end for */
+         tmp = firlen/2UL-1UL;
+         i0 = 0UL;
+         if (i0<=tmp) for (;; i0++) {
+            if (pfixfir->Adr[firlen/2UL+i0]<0.5f) wrnotch(&j1, (int32_t)i0);
+            if (i0==tmp) break;
+         } /* end for */
+         if (j1>0UL) osi_WrStrLn("", 1ul);
+      }
+   }
    tmp = ptmpfir->Len0-1;
    i0 = 0UL;
    if (i0<=tmp) for (;; i0++) {
@@ -657,17 +770,34 @@ static void makefir(float fg, pFIRTAB pfir0, pFREQMASK pbird, float thres)
       ptmpfir->Adr[i0].Im = 0.0f;
       if (i0==tmp) break;
    } /* end for */
-   m = (uint32_t)X2C_TRUNCC(X2C_DIVR((float)firlen,fg),0UL,X2C_max_longcard)/2UL;
+   w0 = (X2C_DIVR((float)firlen,fg))*0.5f+0.5f; /* downsample bandfilter */
+   m = (uint32_t)X2C_TRUNCC(w0,0UL,X2C_max_longcard);
+   w0 = w0-(float)m;
    if (m>=firlen/2UL) m = firlen/2UL-1UL;
-   tmp = m;
-   i0 = 0UL;
-   if (i0<=tmp) for (;; i0++) {
-      j1 = (firlen/2UL-i0)-1UL;
-      if (fix[j1] && (pbird==0 || pbird->Adr[j1]<thres)) ptmpfir->Adr[(ptmpfir->Len0-1)-i0].Im = 1.0f;
-      j1 = firlen/2UL+i0;
-      if (fix[j1] && (pbird==0 || pbird->Adr[j1]<thres)) ptmpfir->Adr[i0].Im = 1.0f;
-      if (i0==tmp) break;
+   tmp0 = (int32_t)m;
+   ii = -(int32_t)m;
+   if (ii<=tmp0) for (;; ii++) {
+      /* manual notches */
+      if (ii<0L) j1 = (uint32_t)((int32_t)(ptmpfir->Len0-1)+1L+ii);
+      else j1 = (uint32_t)ii;
+      ptmpfir->Adr[j1].Im = pfixfir->Adr[(int32_t)(firlen/2UL)+ii];
+      if (ii==tmp0) break;
    } /* end for */
+   ptmpfir->Adr[m].Im = w0;
+   ptmpfir->Adr[(ptmpfir->Len0-1)-m].Im = w0;
+   if (pbird) {
+      /* adative notches */
+      tmp0 = (int32_t)m;
+      ii = -(int32_t)m;
+      if (ii<=tmp0) for (;; ii++) {
+         joinfirs(ii, smoothnotch(pbird, (uint32_t)((int32_t)(firlen/2UL)+ii), thres));
+         if (ii==tmp0) break;
+      } /* end for */
+   }
+   /*
+   FOR i:=0 TO firlen-1 DO WrFixed(ptmpfir^[i].Im,2,5) END; WrStrLn("");
+   FOR i:=0 TO firlen-1 DO WrFixed(ptmpfir^[HIGH(ptmpfir^)-i].Im,2,5) END; WrStrLn("");
+   */
    logfl = 1UL;
    do {
       ++logfl;
@@ -700,6 +830,7 @@ static void makefir(float fg, pFIRTAB pfir0, pFREQMASK pbird, float thres)
       pfir0->Adr[i0].Im = l*pfir0->Adr[i0].Im;
       if (i0==tmp) break;
    } /* end for */
+/*shownotches; */
 } /* end makefir() */
 
 
@@ -830,11 +961,11 @@ static void newdem(void)
 static void Parms(void)
 {
    char hassf;
-   char hasjson;
    char hasbw;
    char hasudp;
    char err;
    float afcspd;
+   float rh;
    float insamplerate;
    int32_t ih;
    uint32_t globcr;
@@ -844,12 +975,15 @@ static void Parms(void)
    pDEM pd0;
    pNOTCH pnotch;
    float configoffsethz;
+   float offs;
    struct NOTCH * anonym;
    pnotch = 0;
    complexfir = 0;
    shiftstep = 0UL;
    configoffsethz = 0.0f;
    autonotch = 0UL;
+   noisblanker = 0;
+   pknoisemed = 0.0f;
    outdechirped = -1L;
    outfiltered = -1L;
    allwaysascii = 0;
@@ -870,12 +1004,11 @@ static void Parms(void)
    hasudp = 0;
    udpsock = -1L;
    bwnum = 7UL;
-   globfilt = 18UL;
+   globfilt = 0UL;
    globsf = 12UL;
    globcr = 0UL;
    afcspd = (-1.0f);
    hasbw = 0;
-   hasjson = 0;
    hassf = 0;
    jpipename[0] = 0;
    judpport = 0UL;
@@ -913,7 +1046,7 @@ static void Parms(void)
          else if (h[1U]=='a') {
             osi_NextArg(h, 1024ul);
             if (!aprsstr_StrToFix(&dems->frames[0U].afcspeed, h, 1024ul)) {
-               Error("-a <afcspeed> 0.0..1.0 (0.5)", 29ul);
+               Error("-a <afcspeed> (0.5)", 20ul);
             }
             if (!hasudp) afcspd = dems->frames[0U].afcspeed;
          }
@@ -956,6 +1089,17 @@ static void Parms(void)
             osi_NextArg(h, 1024ul);
             if (!aprsstr_StrToFix(&configoffsethz, h, 1024ul)) Error("-o <offset-Hz>", 15ul);
          }
+         else if (h[1U]=='Z') {
+            osi_NextArg(h, 1024ul);
+            if (!aprsstr_StrToFix(&pknoiseup, h, 1024ul)) {
+               Error("-Z <upspeed> <downspeed> (0.01 0.9999)", 39ul);
+            }
+            osi_NextArg(h, 1024ul);
+            if (!aprsstr_StrToFix(&pknoisedown, h, 1024ul)) {
+               Error("-Z <upspeed> <downspeed> (0.01 0.9999)", 39ul);
+            }
+            noisblanker = 1;
+         }
          else if (h[1U]=='S') {
             /* synsquelch sf10 31 sf7 33 sf12 34 */
             osi_NextArg(h, 1024ul);
@@ -991,13 +1135,13 @@ static void Parms(void)
             { /* with */
                struct NOTCH * anonym = pnotch;
                osi_NextArg(h, 1024ul);
-               if (!aprsstr_StrToInt(h, 1024ul, &anonym->f1)) Error("-n <Hz> <Hz>", 13ul);
+               if (!aprsstr_StrToFix(&anonym->f1, h, 1024ul)) Error("-n <Hz> <Hz>", 13ul);
                osi_NextArg(h, 1024ul);
-               if (!aprsstr_StrToInt(h, 1024ul, &anonym->f2)) Error("-n <Hz> <Hz>", 13ul);
+               if (!aprsstr_StrToFix(&anonym->f2, h, 1024ul)) Error("-n <Hz> <Hz>", 13ul);
                if (anonym->f1>anonym->f2) {
-                  ih = anonym->f1;
+                  rh = anonym->f1;
                   anonym->f1 = anonym->f2;
-                  anonym->f2 = ih;
+                  anonym->f2 = rh;
                }
             }
             pnotch->next = pnotches;
@@ -1014,9 +1158,7 @@ static void Parms(void)
          else if (h[1U]=='R') nomultipath = 1;
          else if (h[1U]=='d') dems->coldet = 0UL;
          else if (h[1U]=='E') nocrcfec = 1;
-         else if (h[1U]=='F') {
-            nofec = 1;
-         }
+         else if (h[1U]=='F') nofec = 1;
          else if (h[1U]=='C') dems->frames[0U].implicitcrc = 1;
          else if (h[1U]=='D') dems->frames[0U].nodcdlost = 1;
          else if (h[1U]=='v') verb = 1;
@@ -1050,7 +1192,6 @@ static void Parms(void)
          }
          else if (h[1U]=='J') {
             hasudp = 1;
-            hasjson = 1;
             osi_NextArg(h, 1024ul);
             if (GetIp(h, 1024ul, &jipnum, &judpport)<0L) Error("-J ip:port number", 18ul);
          }
@@ -1076,7 +1217,8 @@ static void Parms(void)
          }
          else {
             if (h[1U]=='h') {
-               osi_WrStrLn(" Decode lora out of IQ-File/Pipe (samplerate must be exact (+/-0.00001) bandwidth)", 83ul);
+               osi_WrStrLn(" Decode lora out of IQ-File/Pipe (samplerate must be exact +/-0.00001)", 71ul);
+               osi_WrStrLn(" output data in udp, axudp or json, view aprs, pr, lorawan, fanet", 66ul);
                osi_WrStrLn("", 1ul);
                osi_WrStrLn(" -A                 (*) enable frame chaining for ax25 longframes", 66ul);
                osi_WrStrLn(" -a <afc-speed>     (*)follow frequency drift, 0 off (0.5), on sf<9 (0)", 72ul);
@@ -1109,7 +1251,8 @@ able) pipe", 103ul);
                osi_WrStrLn(" -n <[-]Hz> <[-]Hz> notchfilter baseband from-to Hz (may be repeatet)", 70ul);
                osi_WrStrLn(" -O <0..1>          (*)optimize on off else automatic on sf/bw (-1)", 68ul);
                osi_WrStrLn(" -o <Hz>            shift input iq band +-Hz", 45ul);
-               osi_WrStrLn(" -P <+/-ppm>        (*)tune datarate (chirp sampelrate) in ppm (0)", 67ul);
+               osi_WrStrLn(" -P <+/-ppm>        (*)tune datarate (chirp sampelrate) or preset for auto (-a) in ppm (0)",
+                 91ul);
                osi_WrStrLn(" -Q                 verbous only for frames with crc and crc ok", 64ul);
                osi_WrStrLn(" -q                 (*)invers chirps or swapped I/Q (prefer negative spread factor)", 84ul);
                osi_WrStrLn(" -R                 switch off repairing multipath or if-filter fase distortion", 80ul);
@@ -1126,21 +1269,28 @@ able) pipe", 103ul);
                osi_WrStrLn(" -v                 verbous +:no hamming or ok, -:error, h:corrected, ~:weakest chirp replac\
 ed, c:try until crc ok", 115ul);
                osi_WrStrLn("                      ^:bins with maximum power sum used until fitting hamming", 79ul);
+               osi_WrStrLn(" -W <n>             every n*firlen samples update notch filter 0=off, ok:50  (0)", 81ul);
                osi_WrStrLn(" -w <len>           downsample fir length else automatic (8..4096) (0)", 71ul);
-               osi_WrStrLn(" -X <netid>         (*)filter network-id (sync pattern), 1xx stops decode on wrong id, 0=off\
- (12)", 98ul);
+               osi_WrStrLn(" -X <netid>         (*)filter network-id (sync), 1xx stops decode on wrong id so fast ready \
+for new frame if set -d", 116ul);
+               osi_WrStrLn("                      0 is wildcard, 20 will pass 2*, 03 for *3, 00 pass all (00)", 82ul);
                osi_WrStrLn(" -Y d|f|b <filename>  iq debug output in float32-iq dechirped or filtered", 74ul);
+               osi_WrStrLn(" -Z <upspeed> <downspeed>  add pulse noise filter (noise blanker) (0.05 0.999)", 79ul);
                osi_WrStrLn("(*) may be repeated for more demodulators, to start next demodulator apply -s <sf> before ot\
 her pramaeters", 107ul);
                osi_WrStrLn("", 1ul);
-               osi_WrStrLn("example1: rtl_sdr -f 433.775m -s 1000000 - | ./lorarx -i /dev/stdin -f u8 -v -N -X 0 -b 7 -s\
- 12 -w 64 -r 1000000", 113ul);
-               osi_WrStrLn("example2: sdrtst IQ output with FIR 125kHz in sdrcfg.txt: q 433.775 0 0 0 192000+125000,32",
+               osi_WrStrLn("example1: aprs with autonotch for birdies: rtl_sdr -f 433.775m -s 1000000 - | ./lorarx -i /d\
+ev/stdin -f u8 -v -N -b 7 -s 12 -w 64 -r 1000000 -W 50", 147ul);
+               osi_WrStrLn("example2: lorawan all modulations: rtl_sdr -f 869.525m -s 1000000 - | ./lorarx -i /dev/stdin\
+ -f u8 -v -N -b 7 -s 12 -s 11 -s 10 -s 9 -s 8 -s 7 -s -12 -s -11 -s -10 -s -9 -s -8 -s -7 -Q -w 64 -r 1000000", 202ul);
+               osi_WrStrLn("example3: fanet: rtl_sdr -f 868.215m -s 1000000 - | ./lorarx -i /dev/stdin -f u8 -v -N -b 8 \
+-s 7 -Q -w 128 -r 1000000", 118ul);
+               osi_WrStrLn("example4: sdrtst IQ output with FIR 125kHz in sdrcfg.txt: q 433.775 0 0 0 192000+125000,32",
                  91ul);
                osi_WrStrLn("          sdrtst -t 127.0.0.1:1234 -c sdrcfg.txt -r 250000 -s /dev/stdout -k | ", 80ul);
                osi_WrStrLn("          lorarx -i /dev/stdin -f i16 -b 7 -v -s 12 -L 127.0.0.1:2300 -s 10 -L 127.0.0.1:230\
 1", 94ul);
-               osi_WrStrLn("example: decode payload in json with python3: -J 127.0.0.1:5100 -X 0", 69ul);
+               osi_WrStrLn("example: decode payload in json with python3: -J 127.0.0.1:5100", 64ul);
                osi_WrStrLn("import json, base64, socket", 28ul);
                osi_WrStrLn("IP=(\"0.0.0.0\",5100)", 20ul);
                osi_WrStrLn("sock=socket.socket(socket.AF_INET,socket.SOCK_DGRAM)", 53ul);
@@ -1194,12 +1344,13 @@ her pramaeters", 107ul);
       firlen = (uint32_t)(1UL<<i0);
    }
    samprate = (uint32_t)X2C_TRUNCC(1.6777216E+7f*downsample,0UL,X2C_max_longcard);
-   pnotch = pnotches;
    if (outfiltered>=0L && firlen==0UL) Error("no FIR (-w) set so no filtert output", 37ul);
    /*- offset */
    if (configoffsethz!=0.0f && insamplerate!=0.0f) {
-      shiftstep = (uint32_t)(int32_t)X2C_TRUNCI((X2C_DIVR(configoffsethz,insamplerate))*65536.0f*65536.0f,
-                X2C_min_longint,X2C_max_longint);
+      offs = (X2C_DIVR(configoffsethz,insamplerate))*65536.0f*65536.0f;
+      if (offs<0.0f) offs = offs+4.294967295E+9f;
+      if (offs<0.0f || offs>=4.294967295E+9f) Error("-o shift outside iq band", 25ul);
+      shiftstep = (uint32_t)X2C_TRUNCC(offs,0UL,X2C_max_longcard);
    }
    /*- offset */
    if (verb) {
@@ -1218,9 +1369,9 @@ her pramaeters", 107ul);
             pnotch = pnotches;
             while (pnotch) {
                osi_WrStr(" ", 2ul);
-               osic_WrINT32((uint32_t)pnotch->f1, 1UL);
+               osic_WrFixed(pnotch->f1, 0L, 1UL);
                osi_WrStr("..", 3ul);
-               osic_WrINT32((uint32_t)pnotch->f2, 1UL);
+               osic_WrFixed(pnotch->f2, 0L, 1UL);
                pnotch = pnotch->next;
             }
          }
@@ -1230,10 +1381,8 @@ her pramaeters", 107ul);
    if (insamplerate!=0.0f) {
       pnotch = pnotches;
       while (pnotch) {
-         pnotch->f1 = (int32_t)X2C_TRUNCI(X2C_DIVR((float)pnotch->f1*(float)firlen,insamplerate),
-                X2C_min_longint,X2C_max_longint)-1L;
-         pnotch->f2 = (int32_t)X2C_TRUNCI(X2C_DIVR((float)pnotch->f2*(float)firlen,insamplerate),
-                X2C_min_longint,X2C_max_longint)+1L;
+         pnotch->f1 = X2C_DIVR(pnotch->f1*(float)firlen,insamplerate);
+         pnotch->f2 = X2C_DIVR(pnotch->f2*(float)firlen,insamplerate);
          pnotch = pnotch->next;
       }
    }
@@ -1247,7 +1396,7 @@ her pramaeters", 107ul);
             if (pd0->frames[0U].cfgsf<=10UL) afcspd = 0.3f;
             else afcspd = 0.5f;
          }
-         if (pd0->frames[0U].cfgsf>=9UL) pd0->frames[0U].afcspeed = afcspd;
+         if (pd0->frames[0U].cfgsf>=7UL) pd0->frames[0U].afcspeed = afcspd;
          else pd0->frames[0U].afcspeed = 0.0f;
       }
       if (dems->frames[0U].cfgsf==0UL) dems->frames[0U].cfgsf = globsf;
@@ -1513,26 +1662,26 @@ static void WCh(char c)
 } /* end WCh() */
 
 
-static void ShowCall(char f[], uint32_t f_len, uint32_t pos)
+static void ShowCall(char f[], uint32_t f_len, uint32_t pos0)
 {
    uint32_t e;
    uint32_t i0;
    uint32_t tmp;
    char tmp0;
-   e = pos;
-   tmp = pos+5UL;
-   i0 = pos;
+   e = pos0;
+   tmp = pos0+5UL;
+   i0 = pos0;
    if (i0<=tmp) for (;; i0++) {
       if (f[i0]!='@') e = i0;
       if (i0==tmp) break;
    } /* end for */
    tmp = e;
-   i0 = pos;
+   i0 = pos0;
    if (i0<=tmp) for (;; i0++) {
       WCh((char)((uint32_t)(uint8_t)f[i0]>>1));
       if (i0==tmp) break;
    } /* end for */
-   i0 = (uint32_t)(uint8_t)f[pos+6UL]>>1&15UL;
+   i0 = (uint32_t)(uint8_t)f[pos0+6UL]>>1&15UL;
    if (i0) {
       osi_WrStr("-", 2ul);
       if (i0>=10UL) osi_WrStr((char *)(tmp0 = (char)(i0/10UL+48UL),&tmp0), 1u/1u);
@@ -1889,23 +2038,361 @@ static void decodemeshcom4(const char text[], uint32_t text_len, uint32_t textle
 } /* end decodemeshcom4() */
 
 
-static void shownotches(void)
+static void wcsv(uint32_t n, const char s[], uint32_t s_len)
 {
-   uint32_t nc;
    uint32_t i0;
-   uint32_t tmp;
-   if (pbirdhist) {
-      nc = 0UL;
-      tmp = pbirdhist->Len0-1;
-      i0 = 0UL;
-      if (i0<=tmp) for (;; i0++) {
-         if (pbirdhist->Adr[i0]>notchthres) ++nc;
-         if (i0==tmp) break;
-      } /* end for */
-      osi_WrStr(" notches:", 10ul);
-      osic_WrINT32(nc, 1UL);
+   i0 = 0UL;
+   while (n>0UL) {
+      if (i0>=s_len-1) return;
+      if (s[i0]==',') --n;
+      ++i0;
    }
-} /* end shownotches() */
+   while (i0<=s_len-1 && s[i0]!=',') {
+      osi_WrStr((char *) &s[i0], 1u/1u);
+      ++i0;
+   }
+} /* end wcsv() */
+
+
+static void spd(uint32_t i0, float scale)
+{
+   if (i0>=128UL) i0 = (i0&127UL)*5UL;
+   osic_WrFixed((float)i0*scale, 1L, 1UL); /* speed */
+   osi_WrStr("km/h ", 6ul);
+} /* end spd() */
+
+
+static void clb(char text[], uint32_t text_len, uint32_t p)
+{
+   uint32_t i0;
+   int32_t ii;
+   i0 = (uint32_t)(uint8_t)text[p];
+   ii = (int32_t)(i0&127UL);
+   if (ii>=64L) ii = 64L-ii;
+   if (i0>=128UL) ii = ii*5L;
+   osic_WrFixed((float)ii*0.1f, 1L, 1UL); /* climb */
+   osi_WrStr("m/s ", 5ul);
+} /* end clb() */
+
+
+static void latlong(char text[], uint32_t text_len, uint32_t p, float scale)
+{
+   int32_t ii;
+   ii = (int32_t)((uint32_t)(uint8_t)text[p+2UL]*65536UL+(uint32_t)(uint8_t)text[p+1UL]*256UL+(uint32_t)
+                (uint8_t)text[p]);
+   if (ii>=8388608L) ii = 8388608L-ii;
+   osic_WrFixed((float)ii*scale, 5L, 1UL);
+} /* end latlong() */
+
+
+static void pos(char text[], uint32_t text_len, uint32_t * p)
+{
+   latlong(text, text_len, *p, 1.0728923030706E-5f); /* lat */
+   *p += 3UL;
+   osi_WrStr(",", 2ul);
+   latlong(text, text_len, *p, 2.1457846061412E-5f); /* long */
+   *p += 3UL;
+   osi_WrStr(" ", 2ul);
+} /* end pos() */
+
+
+static void manufact(uint32_t b)
+{
+   char s[100];
+   s[0] = 0;
+   if (b==1UL) strncpy(s,"Skytraxx",100u);
+   else if (b==3UL) strncpy(s,"BitBroker.eu",100u);
+   else if (b==4UL) strncpy(s,"AirWhere",100u);
+   else if (b==5UL) strncpy(s,"Windline",100u);
+   else if (b==6UL) strncpy(s,"Burnair.ch",100u);
+   else if (b==7UL) strncpy(s,"SoftRF",100u);
+   else if (b==8UL) strncpy(s,"GXAircom",100u);
+   else if (b==9UL) strncpy(s,"Airtribune",100u);
+   else if (b==16UL) strncpy(s,"alfapilot",100u);
+   else if (b==17UL) strncpy(s,"FANET+ (incl FLARM. Currently Skytraxx, Naviter, and Skybean)",100u);
+   else if (b==10UL) strncpy(s,"FLARM",100u);
+   else if (b==32UL) strncpy(s,"XC Tracer",100u);
+   else if (b==224UL) strncpy(s,"OGN Tracker",100u);
+   else if (b==228UL) strncpy(s,"4aviation",100u);
+   else if (b==250UL) strncpy(s,"Various",100u);
+   else if (b==251UL) strncpy(s,"Espressif based base stations, address is last 2bytes of MAC",100u);
+   else if (b==252UL) strncpy(s,"Unregistered Devices",100u);
+   else if (b==253UL) strncpy(s,"Unregistered Devices",100u);
+   else if (b==254UL) strncpy(s,"[Multicast]",100u);
+   osi_WrStr(s, 100ul);
+} /* end manufact() */
+
+
+static void srcdest(char text[], uint32_t text_len, uint32_t b)
+{
+   osi_WrStr("FNT", 4ul);
+   WrHex((uint32_t)(uint8_t)text[b]*65536UL+(uint32_t)(uint8_t)text[b+1UL]+(uint32_t)(uint8_t)
+                text[b+2UL]*256UL, 6UL, 7UL);
+   manufact(b);
+   osi_WrStr(" ", 2ul);
+} /* end srcdest() */
+
+
+static void alt25(char text[], uint32_t text_len, uint32_t p)
+{
+   int32_t ii;
+   ii = (int32_t)(uint32_t)(uint8_t)text[p];
+   if (ii>=128L) ii = 128L-ii;
+   ii = (ii+109L)*125L;
+   osi_WrStr("alt:", 5ul);
+   osic_WrINT32((uint32_t)ii, 1UL);
+   osi_WrStr("m ", 3ul);
+} /* end alt25() */
+
+#define lorarx_ATY "Other,Paraglider,Hangglider,Balloon,Glider,Powered Aircraft,Helicopter,UAV"
+
+#define lorarx_GNDVEHICLES "Other,Walking,Vehicle,Bike,Boot,Need a ride,Landed well,Need technical support,Need medical \
+help,Distress call,Distress call automatically"
+
+#define lorarx_LANDM "Text,Line,Arrow,Area,Area Filled,Circle,Circle Filled,3D Line,3D Area,3D Cylinder"
+
+#define lorarx_LANDLAYER "Info,Warning,Keep out,Touch down,No airspace warn zone"
+
+
+static void decodefanet(const char text[], uint32_t text_len, uint32_t textlen)
+/* FANET */
+{
+   uint32_t i0;
+   uint32_t p;
+   int32_t ii;
+   uint32_t ss;
+   uint8_t s;
+   uint8_t typ;
+   char unicast;
+   char signature;
+   char exth;
+   osi_WrStr("Fanet:", 7ul);
+   typ = (uint8_t)(uint8_t)text[0UL];
+   exth = (0x80U & typ)!=0;
+   if (exth) osi_WrStr("Ext Header ", 12ul);
+   if ((0x40U & typ)) osi_WrStr("Forward ", 9ul);
+   srcdest(text, text_len, 1UL);
+   p = 4UL;
+   if (exth) {
+      s = (uint8_t)(uint8_t)text[p];
+      osi_WrStr("ACK ", 5ul);
+      if ((s&0xC0U)==0U) osi_WrStr("none ", 6ul);
+      else if ((s&0xC0U)==0x40U) osi_WrStr("requested ", 11ul);
+      else if ((s&0xC0U)==0x80U) osi_WrStr("requested via forward ", 23ul);
+      else osi_WrStr("unknown ", 9ul);
+      unicast = (0x20U & s)!=0;
+      if (unicast) osi_WrStr("unicast ", 9ul);
+      else osi_WrStr("broadcast ", 11ul);
+      signature = (0x10U & s)!=0;
+      if ((0x8U & s)) osi_WrStr("geobased fwd ", 14ul);
+      ++p;
+      if (unicast) {
+         osi_WrStr("Dst:", 5ul);
+         srcdest(text, text_len, p);
+         p += 3UL;
+      }
+      if (signature) {
+         osi_WrStr("Signature:", 11ul);
+         WrHex((uint32_t)(uint8_t)text[p+3UL]*16777216UL+(uint32_t)(uint8_t)text[p+2UL]*65536UL+(uint32_t)
+                (uint8_t)text[p+1UL]*256UL+(uint32_t)(uint8_t)text[p], 8UL, 9UL);
+         p += 4UL;
+      }
+   }
+   typ = typ&0x3FU;
+   if (typ==0U) osi_WrStr("no payload ", 12ul);
+   else if (typ==0x1U) {
+      /* tracking */
+      osi_WrStr("tracking:", 10ul);
+      pos(text, text_len, &p);
+      ss = (uint32_t)((uint32_t)(uint8_t)text[p+1UL]*256UL+(uint32_t)(uint8_t)text[p]);
+      p += 2UL;
+      if ((0x8000UL & ss)) osi_WrStr("Online Tracking ", 17ul);
+      wcsv((uint32_t)(X2C_LSH(ss,32,-12)&0x7UL), "Other,Paraglider,Hangglider,Balloon,Glider,Powered Aircraft,Helicopt\
+er,UAV", 75ul);
+      osi_WrStr(" ", 2ul);
+      i0 = (uint32_t)(ss&0x7FFUL);
+      if ((0x800UL & ss)) i0 = i0*4UL;
+      osic_WrINT32(i0, 1UL); /* alt */
+      osi_WrStr("m ", 3ul);
+      spd((uint32_t)(uint8_t)text[p], 0.5f); /* speed */
+      ++p;
+      clb(text, text_len, p);
+      ++p;
+      osic_WrINT32(((uint32_t)(uint8_t)text[p]*360UL)/256UL, 1UL); /* heading */
+      osi_WrStr("deg ", 5ul);
+      ++p;
+      if (p<textlen) {
+         i0 = (uint32_t)(uint8_t)text[p];
+         ++p;
+         ii = (int32_t)(i0&127UL);
+         if (ii>=64L) ii = -ii;
+         if (i0>=128UL) ii = ii*4L;
+         osic_WrFixed((float)ii*0.25f, 1L, 1UL); /* turn rate */
+         osi_WrStr("deg/s ", 7ul);
+      }
+      if (p<textlen) {
+         i0 = (uint32_t)(uint8_t)text[p];
+         ++p;
+         ii = (int32_t)(i0&127UL);
+         if (ii>=64L) ii = -ii;
+         if (i0>=128UL) ii = ii*4L;
+         osi_WrStr("QNE:", 5ul); /* QNE */
+         osic_WrFixed((float)ii, 1L, 1UL);
+         osi_WrStr(" ", 2ul);
+      }
+   }
+   else if (typ==0x2U) {
+      /* text */
+      osi_WrStr("Message:", 9ul);
+      while (p<textlen) {
+         WrChHex(text[p]);
+         ++p;
+      }
+   }
+   else if (typ==0x3U) {
+      /* subheader text */
+      osi_WrStr("Message subheader:", 19ul);
+      WrHex((uint32_t)(uint8_t)text[p], 2UL, 3UL);
+      ++p;
+      while (p<textlen) {
+         WrChHex(text[p]);
+         ++p;
+      }
+   }
+   else if (typ==0x4U) {
+      /* Service */
+      s = (uint8_t)(uint8_t)text[p];
+      ++p;
+      pos(text, text_len, &p);
+      osi_WrStr("Service:", 9ul);
+      if ((0x80U & s)) osi_WrStr("Internet Gateway ", 18ul);
+      if ((0x40U & s)) {
+         osi_WrStr("Temperature:", 13ul);
+         i0 = (uint32_t)(uint8_t)text[p];
+         ++p;
+         ii = (int32_t)(i0&127UL);
+         if (i0>=128UL) ii = -ii;
+         osic_WrFixed((float)ii*0.5f, 1L, 1UL);
+         osi_WrStr("C ", 3ul);
+      }
+      if ((0x20U & s)) {
+         /* wind */
+         osi_WrStr("Wind:", 6ul);
+         osic_WrINT32(((uint32_t)(uint8_t)text[p]*360UL)/256UL, 1UL); /* heading */
+         osi_WrStr("deg ", 5ul);
+         ++p;
+         spd((uint32_t)(uint8_t)text[p], 0.2f); /* speed */
+         ++p;
+         osi_WrStr("Gusts:", 7ul);
+         spd((uint32_t)(uint8_t)text[p], 0.2f); /* gust */
+         ++p;
+      }
+      if ((0x10U & s)) {
+         osi_WrStr("Humidity:", 10ul);
+         osic_WrFixed((float)(uint32_t)(uint8_t)text[p]*0.4f, 1L, 1UL);
+         osi_WrStr("% ", 3ul);
+         ++p;
+      }
+      if ((0x8U & s)) {
+         osi_WrStr("Barometric pressure normailized ", 33ul);
+         osic_WrFixed((float)((uint32_t)(uint8_t)text[p+1UL]*256UL+(uint32_t)(uint8_t)text[p])*0.1f+430.0f,
+                1L, 1UL);
+         osi_WrStr("hPa ", 5ul);
+         p += 2UL;
+      }
+      if ((0x4U & s)) osi_WrStr("Support for Remote Configuration ", 34ul);
+      if ((0x2U & s)) osi_WrStr("State of Charge ", 17ul);
+      if ((0x1U & s)) osi_WrStr("Extended Header ", 17ul);
+   }
+   else if (typ==0x9U) {
+      /* Thermal */
+      osi_WrStr("Thermal:", 9ul);
+      pos(text, text_len, &p);
+      ss = (uint32_t)((uint32_t)(uint8_t)text[p+1UL]*256UL+(uint32_t)(uint8_t)text[p]);
+      p += 2UL;
+      i0 = (uint32_t)(ss&0x7FFUL);
+      if ((0x800UL & ss)) i0 = i0*4UL;
+      osic_WrINT32((uint32_t)(ss&0x7FFUL), 1UL); /* alt */
+      osi_WrStr("m ", 3ul);
+      clb(text, text_len, p);
+      ++p;
+      spd((uint32_t)(uint8_t)text[p], 0.5f); /* speed */
+      ++p;
+      osic_WrINT32(((uint32_t)(uint8_t)text[p]*360UL)/256UL, 1UL); /* heading */
+      osi_WrStr("deg ", 5ul);
+      ++p;
+      i0 = (uint32_t)(X2C_LSH(ss,32,-12)&0x7UL);
+      osi_WrStr("qual:", 6ul); /* quality */
+      osic_WrINT32(i0*14UL+i0/3UL, 1UL);
+      osi_WrStr("% ", 3ul);
+   }
+   else if (typ==0xAU) {
+      /* hw-info */
+      osi_WrStr("HW-Info ", 9ul);
+   }
+   else if (typ==0x7U) {
+      /* */
+      /* ground track */
+      osi_WrStr("Ground Track:", 14ul);
+      pos(text, text_len, &p);
+      s = (uint8_t)(uint32_t)(uint8_t)text[p];
+      ++p;
+      if ((0x1U & s)) osi_WrStr("online ", 8ul);
+      wcsv((uint32_t)(X2C_LSH(s,8,-4)&0xFU), "Other,Walking,Vehicle,Bike,Boot,Need a ride,Landed well,Need technical s\
+upport,Need medical help,Distress call,Distress call automatically", 139ul);
+   }
+   else if (typ==0x6U) {
+      /* remote config */
+      osi_WrStr("Remote configuration:", 22ul);
+      i0 = (uint32_t)(uint8_t)text[p];
+      ++p;
+      if (i0==0UL) {
+         osi_WrStr("Acknowledge configuration ", 27ul);
+         WrHex((uint32_t)(uint8_t)text[p], 2UL, 3UL);
+         ++p;
+      }
+      else if (i0==1UL) {
+         osi_WrStr("Request ", 9ul);
+         WrHex((uint32_t)(uint8_t)text[p], 2UL, 3UL);
+         ++p;
+      }
+      else if (i0==2UL) {
+         pos(text, text_len, &p);
+         alt25(text, text_len, p);
+         ++p;
+         osic_WrINT32(((uint32_t)(uint8_t)text[p]*360UL)/256UL, 1UL); /* heading */
+         osi_WrStr("deg ", 5ul);
+         ++p;
+      }
+      else if (i0>=4UL && i0<=8UL) {
+         osi_WrStr("Geofence ", 10ul);
+         alt25(text, text_len, p);
+         ++p;
+      }
+      else if (i0>=9UL && i0<=33UL) {
+         /*- */
+         osi_WrStr("Broadcast Reply ", 17ul);
+      }
+   }
+   else if (typ==0x5U) {
+      /*- */
+      /* remote config */
+      osi_WrStr("Landmarks ", 11ul);
+      s = (uint8_t)(uint32_t)(uint8_t)text[p];
+      ++p;
+      wcsv((uint32_t)(s&0xFU), "Text,Line,Arrow,Area,Area Filled,Circle,Circle Filled,3D Line,3D Area,3D Cylinder",
+                82ul);
+      osi_WrStr(" ", 2ul);
+      s = (uint8_t)(uint32_t)(uint8_t)text[p];
+      ++p;
+      wcsv((uint32_t)(s&0xFU), "Info,Warning,Keep out,Touch down,No airspace warn zone", 55ul);
+      osi_WrStr(" ", 2ul);
+      if ((0x10U & s)) ++p;
+   }
+   /*- */
+   /*- */
+   osi_WrStrLn("", 1ul);
+} /* end decodefanet() */
 
 
 static float db(float r)
@@ -1954,30 +2441,28 @@ static void frameout(struct FFRAME * frame, const char finf[], uint32_t finf_len
       level = 0.0f;
       cor = 0.0f;
       if (isize==1UL) cor = (-42.0f);
-      else if (isize==2UL) cor = (-90.0f);
-      cor = cor-(float)frame->cfgsf*6.0206f;
-      cor = cfglevel+cor;
-      if (frame->cnt) {
-         level = db(X2C_DIVR(frame->sigsum,(float)frame->cnt))+cor;
+      else if (isize==2UL) cor = (-90.3f);
+      cor = (cfglevel+cor)-(float)frame->cfgsf*6.0206f; /* repair level from simplified fft */
+      if (frame->cnt>1UL && frame->dcnt>1UL) {
+         level = db(X2C_DIVR(frame->sigsum,(float)(frame->dcnt+1UL)))+cor;
          maxlev = db(frame->sigmax)+cor;
          minlev = db(frame->sigmin)+cor;
-         n = db(X2C_DIVR(frame->noissum,(float)frame->cnt))+cor;
+         n = db(X2C_DIVR(frame->noissum,(float)(frame->dcnt+1UL)))+cor;
          maxn = db(frame->noismax)+cor;
          minn = db(frame->noismin)+cor;
          qual -= (int32_t)X2C_TRUNCI((X2C_DIVR(frame->eye,(float)frame->cnt))*200.0f,X2C_min_longint,
                 X2C_max_longint);
       }
       if (qual<0L) qual = 0L;
-      if (frame->cfgcr) td = 2UL;
-      else td = 2UL+56UL/frame->cfgsf;
+      if (frame->cfgcr) td = 0UL;
+      else td = 56UL/frame->cfgsf;
       txd = (int32_t)X2C_TRUNCI(X2C_DIVR((float)(frame->txdel+td)*1000.0f,baud(frame->cfgsf, bwnum)),
                 X2C_min_longint,X2C_max_longint);
-      frametime = (int32_t)X2C_TRUNCI(X2C_DIVR((float)(frame->cnt+frame->txdel)*1000.0f,baud(frame->cfgsf, bwnum)),
+      frametime = (int32_t)X2C_TRUNCI(X2C_DIVR((float)frame->cnt*1000.0f,baud(frame->cfgsf, bwnum)),
                 X2C_min_longint,X2C_max_longint);
       drift = 0.0f;
       if (frame->cnt>3UL) {
-         drift = (X2C_DIVR(frame->fc-frame->fcstart,
-                (float)frame->cnt*(float)(uint32_t)(1UL<<frame->cfgsf)))*1.E+6f;
+         drift = (X2C_DIVR(frame->fc,(float)frame->cnt*(float)(uint32_t)(1UL<<frame->cfgsf)))*1.E+6f;
       }
       if (frame->invertiq) truedf = frame->df;
       else truedf = -frame->df;
@@ -2048,7 +2533,8 @@ static void frameout(struct FFRAME * frame, const char finf[], uint32_t finf_len
          } /* end for */
          osi_WrStrLn("", 1ul);
       }
-      if (frame->synfilter==0UL || frame->idfound==(frame->synfilter&255UL)) {
+      if (((frame->synfilter&255UL)/16UL==0UL || frame->idfound/16UL==(frame->synfilter&255UL)/16UL)
+                && ((frame->synfilter&15UL)==0UL || (frame->idfound&15UL)==(frame->synfilter&15UL))) {
          if ((!frame->ax25long && frame->udprawport) && (!frame->udpcrcok || (hascrc && crc0) && !dcdlost)) {
             ret = udpsend(udpsock, text, (int32_t)frame->dlen, frame->udprawport, frame->ipnumraw);
          }
@@ -2074,15 +2560,17 @@ static void frameout(struct FFRAME * frame, const char finf[], uint32_t finf_len
                ret = udpsend(udpsock, s, (int32_t)axlen, frame->udprawport, frame->ipnumraw);
             }
          }
+         if (frame->idfound==241UL) decodefanet(text, text_len, frame->dlen);
          if (text[0UL]=='!' || text[0UL]==':') {
             /* & (text[frame.dlen-8]=0C) */
             decodemeshcom4(text, text_len, frame->dlen); /* MESHCOM4 */
          }
       }
-      if ((newline && verb) && (!quietcrc || hascrc && crc0)) osi_WrStrLn("", 1ul);
+      if ((newline && verb) && (!quietcrc || hascrc && crc0)) {
+         osi_WrStrLn("", 1ul);
+      }
    }
    X2C_PFREE(text);
-/*  IF verb THEN WrStrLn("") END; */
 } /* end frameout() */
 
 
@@ -2100,7 +2588,7 @@ static void deint(uint32_t sf, uint32_t cr, const uint16_t rb[], uint32_t rb_len
       tmp0 = cr-1UL;
       i0 = 0UL;
       if (i0<=tmp0) for (;; i0++) {
-         if (X2C_IN((sf-1UL)-j1,16,rb[i0])) hb[(((sf-1UL)-j1)+i0)%sf] |= (1U<<i0);
+         if (X2C_IN(j1,16,rb[i0])) hb[(j1+i0)%sf] |= (1U<<i0);
          if (i0==tmp0) break;
       } /* end for */
       if (j1==tmp) break;
@@ -2155,9 +2643,7 @@ static void trycrc(NIBBS nibbs, const uint8_t e[], uint32_t e_len, uint32_t * ec
       if ((0x80U & e[i0])==0) nibbs[*ec+i0] = nibbs[*ec+i0]^(1U<<*try0);
       if (i0==tmp) break;
    } /* end for */
-   /*IF 7 IN e[i] THEN WrStr(".") ELSE WrStr("x") END; */
    ++*try0;
-/*WrStr("try:"); WrInt(try,1); WrStrLn("");  */
 } /* end trycrc() */
 
 static uint8_t _cnst2[256] = {128U,192U,192U,3U,192U,5U,6U,135U,192U,9U,10U,139U,12U,141U,142U,15U,128U,1U,2U,199U,4U,
@@ -2215,6 +2701,230 @@ static void chkhamm(NIBBBLOCK hn, uint32_t cr, uint32_t sf, char * hamok, char *
    }
 } /* end chkhamm() */
 
+
+static uint16_t gray(uint16_t x)
+{
+   return x^X2C_LSH(x,16,-1);
+} /* end gray() */
+
+/*
+PROCEDURE fecneighbour(VAR bintab:BINTAB; cr,sf:CARDINAL);
+VAR i,j, j1, j2, m, fi, n1, n2:CARDINAL;
+    c,c1,c2:SET16;
+    f:REAL;
+    d0,d1,d2:ARRAY[0..7] OF SET16;
+    hn0,hn1,hn2,hnh:NIBBBLOCK;
+    dir:ARRAY[0..7] OF INTEGER;
+    hamok, hamcorr:BOOLEAN;
+    binh:BINTAB;
+BEGIN
+  binh:=bintab;
+  m:=CAST(CARDINAL,BITSET{sf});
+  FOR i:=0 TO cr-1 DO
+    f:=bintab[i].b[0].freq;
+    fi:=TRUNC(f);
+    bintab[i].b[0].bn:=fi;
+    c1:=CAST(SET16,(fi+1) MOD m);
+    c2:=CAST(SET16,(fi+m-1) MOD m);
+    dir[i]:=1;
+    IF f-FLOAT(fi)<0.5 THEN c:=c1; c1:=c2; c2:=c; dir[i]:=-1 END;
+    c:=CAST(SET16, fi);
+    d0[i]:=gray(c);  
+    d1[i]:=gray(c)/gray(c1);
+    d2[i]:=gray(c)/gray(c2);
+
+WrInt(CAST(CARDINAL,c),4); WrStr(" ");
+FOR j:=0 TO sf-1 DO WrInt(ORD(j IN d0[i]),1) END; WrStr(" ");
+FOR j:=0 TO sf-1 DO WrInt(ORD(j IN d1[i]),1) END; WrStr(" ");
+FOR j:=0 TO sf-1 DO WrInt(ORD(j IN d2[i]),1) END; WrStr(" ");
+WrStrLn("");
+
+  END; 
+  deint(sf, cr, d0, hn0);
+  deint(sf, cr, d1, hn1);
+  deint(sf, cr, d2, hn2);
+
+FOR i:=0 TO sf-1 DO
+ FOR j:=0 TO cr-1 DO
+   WrInt(ORD(j IN hn1[i]),1);
+ END;
+ WrStr("-");
+END;
+WrStrLn("");
+FOR i:=0 TO sf-1 DO
+ FOR j:=0 TO cr-1 DO
+   WrInt(ORD(j IN hn2[i]),1);
+ END;
+ WrStr("+");
+END;
+WrStrLn("");
+
+  hnh:=hn0;
+  chkhamm(hnh, cr, sf, hamok, hamcorr);
+
+FOR i:=0 TO sf-1 DO WrInt(ORD(7 IN hnh[i]),1) END; WrStrLn("=errs");
+WrInt(ORD(hamok),1); WrStrLn("=ok1 ");
+  FOR i:=0 TO sf-1 DO
+    n1:=0;
+    n2:=0;
+    IF NOT (7 IN hnh[i]) THEN
+      FOR j:=0 TO cr-1 DO
+        IF j IN hn1[i] THEN INC(n1); j1:=j END;
+        IF j IN hn2[i] THEN INC(n2); j2:=j END;
+      END;
+--      IF (n1=1) & (n2<=1) THEN 
+      IF ((n1=1) OR (n1=2)) & (n2<=1) THEN 
+        bintab[j1].b[0].bn:=VAL(CARDINAL, VAL(INTEGER, bintab[j1].b[0].bn+m)+dir[j1]) MOD m;
+        bintab[j1].b[0].freq:=FLOAT(bintab[j1].b[0].bn)+0.5;
+        hn0[i]:=hn0[i]/SET8{j1};
+WrInt(i,3); WrInt(dir[j1],3);WrInt(j1,3);WrStr("b1 ");
+--      ELSIF (n1=0) & (n2=1) THEN
+      ELSIF (n1=0) & ((n2=1) OR (n2=1)) THEN
+        bintab[j2].b[0].bn:=VAL(CARDINAL, VAL(INTEGER, bintab[j2].b[0].bn+m)+dir[j2]) MOD m;
+        bintab[j2].b[0].freq:=FLOAT(bintab[j2].b[0].bn)+0.5;
+        hn0[i]:=hn0[i]/SET8{j2};
+WrInt(i,3); WrInt(dir[j2],3);WrInt(j2,3);WrStr("b2 ");
+      END;
+    END;
+  END; 
+  chkhamm(hn0, cr, sf, hamok, hamcorr);
+  IF NOT hamok THEN bintab:=binh END;
+WrInt(ORD(hamok),1); WrStrLn("=ok2 --------------------");
+
+END fecneighbour;
+*/
+
+static void fecneighbour(BINTAB bintab, uint32_t cr, uint32_t sf)
+{
+   uint32_t n2;
+   uint32_t n1;
+   uint32_t fi;
+   uint32_t m;
+   uint32_t j2;
+   uint32_t j1;
+   uint32_t j3;
+   uint32_t i0;
+   uint16_t c2;
+   uint16_t c1;
+   uint16_t c;
+   float f;
+   uint16_t d2[8];
+   uint16_t d1[8];
+   uint16_t d0[8];
+   NIBBBLOCK hnh;
+   NIBBBLOCK hn2;
+   NIBBBLOCK hn1;
+   NIBBBLOCK hn0;
+   char hamcorr;
+   char hamok;
+   BINTAB binh;
+   uint32_t tmp;
+   uint32_t tmp0;
+   memcpy(binh,bintab,sizeof(BINTAB));
+   m = (uint32_t)(1UL<<sf);
+   tmp = cr-1UL;
+   i0 = 0UL;
+   if (i0<=tmp) for (;; i0++) {
+      f = bintab[i0].b[0U].freq;
+      fi = (uint32_t)X2C_TRUNCC(f,0UL,X2C_max_longcard);
+      bintab[i0].b[0U].bn = fi;
+      c1 = (uint16_t)((fi+1UL)%m);
+      c2 = (uint16_t)(((fi+m)-1UL)%m);
+      c = (uint16_t)fi;
+      d0[i0] = gray(c);
+      d1[i0] = gray(c)^gray(c1);
+      d2[i0] = gray(c)^gray(c2);
+      if (i0==tmp) break;
+   } /* end for */
+   /*
+   WrInt(CAST(CARDINAL,c),4); WrStr(" ");
+   FOR j:=0 TO sf-1 DO WrInt(ORD(j IN d0[i]),1) END; WrStr(" ");
+   FOR j:=0 TO sf-1 DO WrInt(ORD(j IN d1[i]),1) END; WrStr(" ");
+   FOR j:=0 TO sf-1 DO WrInt(ORD(j IN d2[i]),1) END; WrStr(" ");
+   WrStrLn("");
+   */
+   deint(sf, cr, d0, 8ul, hn0, 12ul);
+   deint(sf, cr, d1, 8ul, hn1, 12ul);
+   deint(sf, cr, d2, 8ul, hn2, 12ul);
+   /*
+   FOR i:=0 TO sf-1 DO
+    FOR j:=0 TO cr-1 DO
+      WrInt(ORD(j IN hn0[i]),1);
+    END;
+    WrStr(".");
+   END;
+   WrStrLn("");
+   FOR i:=0 TO sf-1 DO
+    FOR j:=0 TO cr-1 DO
+      WrInt(ORD(j IN hn1[i]),1);
+    END;
+    WrStr("-");
+   END;
+   WrStrLn("");
+   FOR i:=0 TO sf-1 DO
+    FOR j:=0 TO cr-1 DO
+      WrInt(ORD(j IN hn2[i]),1);
+    END;
+    WrStr("+");
+   END;
+   WrStrLn("");
+   */
+   memcpy(hnh,hn0,12u);
+   chkhamm(hnh, cr, sf, &hamok, &hamcorr);
+   /*
+   FOR i:=0 TO sf-1 DO WrInt(ORD(7 IN hnh[i]),1) END; WrStrLn("=errs");
+   WrInt(ORD(hamok),1); WrStrLn("=ok1 ");
+   */
+   tmp = sf-1UL;
+   i0 = 0UL;
+   if (i0<=tmp) for (;; i0++) {
+      n1 = 0UL;
+      n2 = 0UL;
+      if ((0x80U & hnh[i0])==0) {
+         /* wrong hamm column */
+         tmp0 = cr-1UL;
+         j3 = 0UL;
+         if (j3<=tmp0) for (;; j3++) {
+            if (X2C_IN(j3,8,hn1[i0])) {
+               ++n1;
+               j1 = j3;
+            }
+            if (X2C_IN(j3,8,hn2[i0])) {
+               ++n2;
+               j2 = j3;
+            }
+            if (j3==tmp0) break;
+         } /* end for */
+         if (n1==1UL) {
+            bintab[j1].b[0U].bn = (uint32_t)((int32_t)(bintab[j1].b[0U].bn+m)+1L)%m;
+            bintab[j1].b[0U].freq = (float)bintab[j1].b[0U].bn+0.5f;
+            hn0[i0] = hn0[i0]^(1U<<j1);
+         }
+         else if (n2==1UL) {
+            /*WrInt(i,3); WrInt(j1,3);WrStr("b1 "); */
+            /*      ELSIF (n1=0) & (n2=1) THEN */
+            bintab[j2].b[0U].bn = (uint32_t)((int32_t)(bintab[j2].b[0U].bn+m)-1L)%m;
+            bintab[j2].b[0U].freq = (float)bintab[j2].b[0U].bn+0.5f;
+            hn0[i0] = hn0[i0]^(1U<<j2);
+         }
+      }
+      if (i0==tmp) break;
+   } /* end for */
+   /*WrInt(i,3); WrInt(j2,3);WrStr("b2 "); */
+   /*
+   FOR i:=0 TO sf-1 DO
+    FOR j:=0 TO cr-1 DO
+      WrInt(ORD(j IN hn0[i]),1);
+    END;
+    WrStr(":");
+   END;
+   WrStrLn("");
+   */
+   chkhamm(hn0, cr, sf, &hamok, &hamcorr);
+   if (!hamok) memcpy(bintab,binh,sizeof(BINTAB));
+/*WrInt(ORD(hamok),1); WrStrLn("=ok2 --------------------"); */
+} /* end fecneighbour() */
+
 static uint8_t _cnst3[255] = {255U,254U,252U,248U,240U,225U,194U,133U,11U,23U,47U,94U,188U,120U,241U,227U,198U,141U,
                 26U,52U,104U,208U,160U,64U,128U,1U,2U,4U,8U,17U,35U,71U,142U,28U,56U,113U,226U,196U,137U,18U,37U,75U,
                 151U,46U,92U,184U,112U,224U,192U,129U,3U,6U,12U,25U,50U,100U,201U,146U,36U,73U,147U,38U,77U,155U,55U,
@@ -2249,7 +2959,7 @@ static char decodechirp(struct FFRAME * frame, const struct BINS bins, char opti
    float minsnr;
    float maxlev;
    char bt;
-   uint16_t c;
+   /*    c:SET16; */
    uint8_t s;
    /*    b:CARD8;  */
    char dcd;
@@ -2271,7 +2981,7 @@ static char decodechirp(struct FFRAME * frame, const struct BINS bins, char opti
       cr = anonym->cfgcr;
       datalen = anonym->cfgdatalen;
       explicit = cr==0UL;
-      ishead = explicit && anonym->cnt<8UL; /* we are in header */
+      ishead = explicit && anonym->dcnt<8UL; /* we are in header */
       opti = opti || ishead; /* header is always optimized */
       o = 0L;
       if (opti) o = 2L;
@@ -2282,7 +2992,7 @@ static char decodechirp(struct FFRAME * frame, const struct BINS bins, char opti
       if (cr<4UL) cr = 4UL;
       else if (cr>8UL) cr = 8UL;
       burstcorr = 0;
-      if (anonym->cnt==0UL) {
+      if (anonym->dcnt==0UL) {
          /* start new frame */
          anonym->chirpc = 0UL;
          anonym->nibbc = 0UL;
@@ -2298,6 +3008,7 @@ static char decodechirp(struct FFRAME * frame, const struct BINS bins, char opti
          dcd = anonym->timeout<cr;
          anonym->chirpc = 0UL;
          /*-fec */
+         fecneighbour(anonym->bintab, cr, sf);
          try0 = 0UL;
          maxlev = 0.0f;
          maxtry = -1L;
@@ -2313,8 +3024,8 @@ static char decodechirp(struct FFRAME * frame, const struct BINS bins, char opti
             if (i0<=tmp) for (;; i0++) {
                if (try0/4UL==i0) j1 = try0&3UL;
                else j1 = 0UL;
-               c = (uint16_t)(uint32_t)X2C_TRUNCC(anonym->bintab[i0].b[j1].freq,0UL,X2C_max_longcard);
-               chirps[i0] = c^X2C_LSH(c,16,-1); /* grey */
+               chirps[i0] = gray((uint16_t)(uint32_t)X2C_TRUNCC(anonym->bintab[i0].b[j1].freq,0UL,
+                X2C_max_longcard));
                if (try0==0UL) {
                   v = anonym->bintab[i0].noise; /* noise */
                   if (v!=0.0f) {
@@ -2400,14 +3111,6 @@ static char decodechirp(struct FFRAME * frame, const struct BINS bins, char opti
          else aprsstr_Append(anonym->fecinfo, 96ul, "-", 2ul);
          /*-fec */
          if (verb2) {
-            /*
-              FOR j:=0 TO 7 DO
-                FOR i:=0 TO sf-1 DO WrInt(ORD((7-j) IN hn[i]),1); END;
-                WrStrLn("");
-              END;
-              WrStrLn("");
-            */
-            /*WrInt(debugc,1);WrStr(" "); */
             if (isize==1UL) v = 8.0f;
             else if (isize==2UL) v = 0.03125f;
             else v = 4.0f;
@@ -2436,10 +3139,9 @@ static char decodechirp(struct FFRAME * frame, const struct BINS bins, char opti
                      osic_WrFixed(osic_sqrt(anonym->bintab[i0].b[j1].lev)*v, 1L, 5UL);
                   }
                   osi_WrStr((char *) &br[0U], 1u/1u);
-                  osic_WrFixed(anonym->bintab[i0].b[j1].freq, 2L, 7UL);
+                  osic_WrFixed(anonym->bintab[i0].b[j1].freq, (int32_t)(2UL*(uint32_t)(j1==0UL)), 5UL);
                   osi_WrStr((char *) &br[1U], 1u/1u);
                } /* end for */
-               /*   IF j<HIGH(bins)-1 THEN WrStr(",") ELSIF j<HIGH(bins) THEN WrStr("/") END;  */
                osic_WrFixed(osic_sqrt(anonym->bintab[i0].noise)*v, 1L, 5UL);
                osi_WrStr("%", 2ul);
                osic_WrFixed((X2C_DIVR((float)anonym->bintab[i0].halfnoisc,
@@ -2466,8 +3168,6 @@ static char decodechirp(struct FFRAME * frame, const struct BINS bins, char opti
                } /* end for */
             }
             else {
-               /*IF verb THEN WrStr(" dlen="); WrInt(dlen, 1); WrStr(" cr="); WrInt(crfromhead, 1); WrStr(" crc=");
-                WrInt(ORD(withcrc), 1); WrStrLn(""); END; */
                if (verb2) osi_WrStrLn("head crc error", 15ul);
                anonym->dlen = 0UL; /* show metadata and stop frame soon */
                anonym->withcrc = 0;
@@ -2515,7 +3215,9 @@ static char decodechirp(struct FFRAME * frame, const struct BINS bins, char opti
                   i0 = 0UL;
                   if (i0<=tmp) for (;; i0++) {
                      s = anonym->nibbs[i0*2UL]&0xFU|X2C_LSH(anonym->nibbs[i0*2UL+1UL],8,4)&0xF0U;
-                     if (i0<anonym->dlen) s = s^(uint8_t)_cnst3[i0];
+                     if (i0<anonym->dlen) {
+                        s = s^(uint8_t)_cnst3[i0];
+                     }
                      text[i0] = (char)s;
                      if (i0==tmp) break;
                   } /* end for */
@@ -2556,7 +3258,6 @@ static char decodechirp(struct FFRAME * frame, const struct BINS bins, char opti
                }
                frameout(frame, anonym->fecinfo, 96ul, anonym->withcrc, crcok, !dcd, opti, cr, text, 261ul);
             }
-            /*WrInt(fp, 1); WrStrLn(""); */
             return 1;
          }
       }
@@ -2639,7 +3340,6 @@ static void findbirdies(uint32_t from, uint32_t to, const struct Complex fir[], 
          } /* end for */
          med = X2C_DIVR(med,(float)((f1-f0)+1UL));
          iv = X2C_DIVR(1.0f,med);
-         /*WrStrLn("--------"); */
          tmp = f1;
          i0 = f0;
          if (i0<=tmp) for (;; i0++) {
@@ -2647,7 +3347,6 @@ static void findbirdies(uint32_t from, uint32_t to, const struct Complex fir[], 
             pbirdhist->Adr[i0] = v+((pbirdbuf->Adr[i0].Im-med)*iv-v)*0.01f;
             if (i0==tmp) break;
          } /* end for */
-         /*FOR i:=0 TO len-1 DO WrFixed(pbirdhist^[i], 1, 1); WrStr(" "); END; WrStrLn(""); */
          /*- find notch start level */
          optbirds = ((f1-f0)+5UL)/5UL; /* limit notches */
          n = 0L;
@@ -2730,9 +3429,8 @@ struct _3 {
 };
 
 
-static void getbin(struct Complex c[], uint32_t c_len, struct BINS * bins, float ampsums[], uint32_t ampsums_len,
-                 uint32_t sf, float offset, char rev, char opt, char sort, char invers,
-                 uint32_t median, uint32_t * corrcnt)
+static void getbin(struct Complex c[], uint32_t c_len, struct BINS * bins, uint32_t sf, float offset,
+                char rev, char opt, char sort, char invers, uint32_t * corrcnt)
 {
    uint32_t bufsize;
    uint32_t imax;
@@ -2756,7 +3454,6 @@ static void getbin(struct Complex c[], uint32_t c_len, struct BINS * bins, float
    struct Complex * anonym;
    struct Complex * anonym0;
    uint32_t tmp0;
-   /*IF median>0 THEN WrInt(median,10);WrStr("=median "); END; */
    bufsize = (uint32_t)(1UL<<sf);
    ii = (int32_t)(65536UL/bufsize);
    if (rev!=invers) ii = -ii;
@@ -2803,13 +3500,6 @@ static void getbin(struct Complex c[], uint32_t c_len, struct BINS * bins, float
          struct Complex * anonym0 = &c[i0];
          v = anonym0->Re*anonym0->Re+anonym0->Im*anonym0->Im;
       }
-      if (median>0UL) {
-         if (median==1UL) ampsums[i0] = v;
-         else {
-            ampsums[i0] = ampsums[i0]+v; /* continue median */
-            if (rev) v = X2C_DIVR(ampsums[i0],(float)median);
-         }
-      }
       amp[j1] = v;
       nois = nois+v;
       if (v>max0) {
@@ -2819,14 +3509,15 @@ static void getbin(struct Complex c[], uint32_t c_len, struct BINS * bins, float
       j1 += (uint32_t)ii;
       if (i0==tmp0) break;
    } /* end for */
-   if (!opt) {
-      /* limit afc runaway in echo distorted signal */
-      i0 = ((bufsize+imax)-1UL)%bufsize;
-      v = amp[imax]*0.25f;
-      amp[i0] = flmin(amp[i0], v);
-      i0 = (imax+1UL)%bufsize;
-      amp[i0] = flmin(amp[i0], v);
-   }
+   /*
+     IF NOT opt THEN                               (* limit afc runaway in echo distorted signal *)
+       i:=(bufsize+imax-1) MOD bufsize;
+       v:=amp[imax]*0.25;
+       amp[i]:=flmin(amp[i], v);
+       i:=(imax+1) MOD bufsize;
+       amp[i]:=flmin(amp[i], v);
+     END;
+   */
    if (binsview>0UL) {
       /* show bins around best */
       osic_WrINT32(imax, 4UL);
@@ -2844,7 +3535,7 @@ static void getbin(struct Complex c[], uint32_t c_len, struct BINS * bins, float
       osi_WrStrLn("", 1ul);
    }
    /*- find fase jump */
-   if (!nomultipath) {
+   if (!nomultipath && sort) {
       if (imax>20UL && imax+20UL<bufsize) {
          /* no advantage with small wrap around part */
          v = 0.0f;
@@ -2852,9 +3543,7 @@ static void getbin(struct Complex c[], uint32_t c_len, struct BINS * bins, float
          for (i0 = 0UL; i0<=2UL; i0++) {
             /* test freq below and above peak freq */
             jj = imax+i0;
-            if (invers) {
-               jj = ((bufsize-imax)+i0)-1UL;
-            }
+            if (invers) jj = ((bufsize-imax)+i0)-1UL;
             vv = fasejumps(tmp, 4096ul, jj, bufsize-imax, bufsize); /* split samples in before and after wrap around */
             if (vv>v) {
                v = vv; /* winner has max. level sum */
@@ -2925,11 +3614,15 @@ static void getbin(struct Complex c[], uint32_t c_len, struct BINS * bins, float
    }
    bins->noise = nois;
    for (i0 = 0UL; i0<=2UL; i0++) {
-      v = amp[(((bins->b[0U].bn+bufsize)-1UL)+i0)%bufsize];
-      vf[i0] = v;
+      vf[i0] = amp[(((bins->b[0U].bn+bufsize)-1UL)+i0)%bufsize];
    } /* end for */
    v = 0.0f;
-   if (vf[1U]!=0.0f) v = X2C_DIVR((vf[2U]-vf[0U])*0.5f,vf[1U]);
+   bins->b[0U].sharpness = 0.0f;
+   if (vf[1U]!=0.0f) {
+      v = X2C_DIVR((vf[2U]-vf[0U])*0.5f,vf[1U]);
+      bins->b[0U].sharpness = X2C_DIVR(flmax(0.0f, vf[1U]-(vf[2U]+vf[0U])*0.5f),vf[1U]);
+   }
+   /*  IF vf[1]<>0.0 THEN v:=(sqrt(vf[2])-sqrt(vf[0]))*0.5/sqrt(vf[1]) END; */
    if (v>0.49f) v = 0.49f;
    else if (v<(-0.49f)) v = (-0.49f);
    for (i0 = 0UL; i0<=3UL; i0++) {
@@ -3069,6 +3762,16 @@ static char readsampsfir(void)
                if (i0==tmp) break;
             } /* end for */
          }
+         if (noisblanker) {
+            f = sum.Re*sum.Re+sum.Im*sum.Im;
+            pknoisemed = pknoisemed*pknoisedown+(f-pknoisemed)*pknoiseup;
+            if (f>pknoisemed*2.0f) {
+               /* limit to median level */
+               f = X2C_DIVR(pknoisemed*2.0f,f); /* raw sqrt */
+               sum.Re = sum.Re*f;
+               sum.Im = sum.Im*f;
+            }
+         }
          iqbuf[iqwrite] = sum;
          iqwrite = iqwrite+1UL&8191UL;
          sampc += samprate;
@@ -3174,42 +3877,59 @@ static char nextchirp(struct FFRAME * frame)
    char opt;
    pCB anonym;
    pCB anonym0;
-   pAMPS anonym1;
    blocksize = (uint32_t)(1UL<<frame->cfgsf);
    /*  LOOP */
    if (frame->state==lorarx_sSLEEP) {
       frame->jp = blocksize;
       frame->cnt = 0UL;
+      frame->dcnt = 0UL;
       frame->iqread = iqwrite; /* start decode not from old data */
       frame->state = lorarx_sHUNT;
-      frame->lastsq = 0.0f;
       frame->fcfix = 0.0f;
-      frame->fc = 0.0f;
-      frame->fci = 0.0f;
    }
    if (frame->jp==0UL) frame->jp = blocksize;
    if (!(anonym = fftbufs[frame->cfgsf],getsamps(anonym->Adr, anonym->Len0, &frame->iqread, frame->jp))) return 1;
    frame->jp = blocksize;
-   opt = frame->state==lorarx_sDATA && (frame->optimize || frame->cfgcr==0UL && frame->cnt<8UL);
+   opt = frame->state==lorarx_sDATA && (frame->optimize || frame->cfgcr==0UL && frame->dcnt<8UL);
    anonym0 = fftbufs[frame->cfgsf];
-   anonym1 = revamps[frame->cfgsf];
-   getbin(anonym0->Adr, anonym0->Len0, &bins, anonym1->Adr, anonym1->Len0, frame->cfgsf, frame->fc+frame->fcfix,
+   getbin(anonym0->Adr, anonym0->Len0, &bins, frame->cfgsf, frame->fci+frame->fc+frame->fcfix,
                 frame->state==lorarx_sREV1 || frame->state==lorarx_sREV2, opt, frame->state==lorarx_sDATA,
-                frame->invertiq, frame->cnt*(uint32_t)(frame->state!=lorarx_sDATA), &frame->fasecorrs);
-   /*WrFixed(frame.fc, 2,5); WrStrLn("=fc"); */
+                frame->invertiq, &frame->fasecorrs);
    frame->fcfix = frame->fcfix+frame->dataratecorr; /* correct known samplerate error */
+   /*- afc */
+   if (frame->state>=lorarx_sSYNRAW) {
+      fi = (bins.b[0U].freq-(float)(int32_t)X2C_TRUNCI(bins.b[0U].freq,X2C_min_longint,X2C_max_longint))-0.5f;
+      frame->eye = frame->eye+(float)fabs(fi); /* for statistics */
+      i0 = blocksize;
+      if (opt) i0 = i0/4UL;
+      fi = fi*(float)fabs(X2C_DIVR(bins.b[0U].freq,(float)i0)-0.5f)*2.0f; /* prefer not middle splitted sybols */
+      /*    fi:=fi*ABS(fi);  */
+      /*IF fi<0.0 THEN fi:=-sqrt(-fi) ELSE fi:=sqrt(fi) END; */
+      if (opt) fi = fi*4.0f;
+      /*      fi:=lim(fi*flmin(squelch(bins), 50.0)/50.0, 0.5); */
+      fi = lim(X2C_DIVR(fi*flmin(squelch(bins), 100.0f),100.0f), X2C_DIVR(2.0f,(float)(frame->cnt+25UL)));
+      fi = fi*bins.b[0U].sharpness*bins.b[0U].sharpness;
+      fi = fi*frame->afcspeed;
+      /*      fi:=fi*(0.1+0.2/FLOAT(frame.cnt+8)); */
+      frame->fc = (frame->fc-frame->fci)-fi*12.0f; /* datarate lead-lag loop filter */
+      /*      frame.fci:=frame.fci+fi*(0.1+0.2/FLOAT(frame.cnt+8)); */
+      frame->fci = frame->fci+fi;
+   }
+   /*WrFixed(frame.fc, 3,1); WrStr(" "); WrFixed(frame.fci, 4,1); WrStr(" "); WrFixed(fi, 4,1); WrStr(" ");
+                WrFixed(bins.b[0].sharpness, 2,1); WrStrLn("=fc, fci, f, sharp");  */
+   /*- afc */
    if (frame->state==lorarx_sHUNT) {
       /*IF verb2 THEN WrInt(frame.cnt,1); WrStr(" "); WrFixed(freqmod(frame.lastbin-bins.b[0].freq, blocksize),2,1);
                 WrStrLn(" hunt") END; */
       if (frame->cnt==1UL && (float)fabs(freqmod(frame->lastbin-bins.b[0U].freq,
                 (int32_t)blocksize))<=(float)(1UL+(uint32_t)frame->optimize*3UL)) {
          /* 2 good peamble chirps */
-         /*      frame.jp:=blocksize - TRUNC(bins.b[0].freq+0.5); */
          frame->jp = blocksize-(uint32_t)X2C_TRUNCC(bins.b[0U].freq,0UL,X2C_max_longcard);
          frame->state = lorarx_sSYNRAW;
-         frame->synmed = 0.0f;
-         frame->cnt = 0UL;
          frame->idfound = 0UL;
+         frame->eye = 0.0f;
+         frame->fc = 0.0f;
+         frame->fci = 0.0f;
          if (verb2) {
             osic_WrINT32(frame->label, 1UL);
             osi_WrStr(" ", 2ul);
@@ -3217,20 +3937,15 @@ static char nextchirp(struct FFRAME * frame)
             osi_WrStrLn("=jump", 6ul);
          }
       }
-      frame->cnt = 1UL;
+      frame->cnt = 0UL;
       frame->lastbin = bins.b[0U].freq;
    }
    else if (frame->state==lorarx_sSYNRAW) {
       fi = freqmod(bins.b[0U].freq, (int32_t)blocksize);
-      if (verb2) {
-         osic_WrINT32(frame->label, 1UL);
-         osi_WrStr(" ", 2ul);
-         osic_WrFixed(fi, 2L, 1UL);
-         osi_WrStrLn(" state=SYN", 11ul);
-      }
       if ((float)fabs(fi)>=4.0f) {
-         i0 = (uint32_t)X2C_TRUNCC((4.0f+bins.b[0U].freq)*0.125f,0UL,X2C_max_longcard);
-         if (i0>15UL || frame->synfilter>=256UL && i0!=(frame->synfilter/16UL&15UL)) {
+         i0 = (uint32_t)X2C_TRUNCC((bins.b[0U].freq+3.5f)*0.125f,0UL,X2C_max_longcard);
+         if (i0>15UL || (frame->synfilter>=256UL && (frame->synfilter&255UL)>=16UL) && i0!=(frame->synfilter&255UL)
+                /16UL) {
             if (verb2) {
                osic_WrINT32(frame->label, 1UL);
                osi_WrStr(" ", 2ul);
@@ -3240,11 +3955,10 @@ static char nextchirp(struct FFRAME * frame)
             frame->idfound = 1UL; /* set is not first sync exception */
          }
          else {
-            /*        fi:=0.0; */
             if (verb2) {
                osic_WrINT32(frame->label, 1UL);
                osi_WrStr(" ", 2ul);
-               osic_WrFixed(fi, 2L, 1UL);
+               osic_WrFixed(fi-0.5f, 2L, 1UL);
                osi_WrStrLn(" state=SYN 1 OK", 16ul);
             }
             frame->idfound = i0;
@@ -3252,14 +3966,14 @@ static char nextchirp(struct FFRAME * frame)
          }
       }
       else {
-         /*        fi:=VAL(REAL, frame.idfound*8);               (* use sync pattern for median zero freq *) */
-         /*      fi:=0.0; */
          /* good syn frame */
          frame->idfound = 0UL;
-         if ((float)fabs(fi)<1.0f) {
-            /* very good syn frame */
-            frame->synmed = frame->synmed+fi;
-            ++frame->cnt;
+         if (frame->cnt==2UL) frame->fcfix = (frame->fcfix-fi)+0.5f;
+         if (verb2) {
+            osic_WrINT32(frame->label, 1UL);
+            osi_WrStr(" ", 2ul);
+            osic_WrFixed(fi-0.5f, 2L, 1UL);
+            osi_WrStrLn(" state=SYN", 11ul);
          }
       }
    }
@@ -3267,10 +3981,10 @@ static char nextchirp(struct FFRAME * frame)
       if (verb2) {
          osic_WrINT32(frame->label, 1UL);
          osi_WrStr(" ", 2ul);
-         osic_WrFixed(bins.b[0U].freq, 2L, 1UL);
+         osic_WrFixed(bins.b[0U].freq-0.5f, 2L, 1UL);
          osi_WrStrLn(" state=NETID", 13ul);
       }
-      i0 = (uint32_t)X2C_TRUNCC((4.0f+bins.b[0U].freq)*0.125f,0UL,X2C_max_longcard);
+      i0 = (uint32_t)X2C_TRUNCC((bins.b[0U].freq+3.5f)*0.125f,0UL,X2C_max_longcard);
       if (i0==0UL) {
          frame->state = lorarx_sSYNRAW; /* syn sequence with 1 exception */
          frame->idfound = 0UL;
@@ -3279,7 +3993,7 @@ static char nextchirp(struct FFRAME * frame)
          frame->state = lorarx_sREV1;
          fi = (float)(i0*8UL); /* use sync pattern for median zero freq */
          frame->idfound = frame->idfound*16UL+i0;
-         if (i0>255UL || frame->synfilter>255UL && frame->idfound!=(frame->synfilter&255UL)) {
+         if (i0>15UL || (frame->synfilter>=256UL && (frame->synfilter&15UL)>0UL) && i0!=(frame->synfilter&15UL)) {
             frame->state = lorarx_sHUNT;
             if (verb2) {
                osic_WrINT32(frame->label, 1UL);
@@ -3287,9 +4001,6 @@ static char nextchirp(struct FFRAME * frame)
                osi_WrStrLn(" wrong second syn nibble", 25ul);
             }
          }
-         frame->synmed = (frame->synmed+freqmod(bins.b[0U].freq, (int32_t)blocksize))-fi;
-         frame->synmed = X2C_DIVR(frame->synmed,(float)frame->cnt);
-         frame->cnt = 1UL;
       }
    }
    else if (frame->state==lorarx_sREV1) {
@@ -3297,47 +4008,54 @@ static char nextchirp(struct FFRAME * frame)
          osic_WrINT32(frame->label, 1UL);
          osi_WrStrLn(" state=REVERS1", 15ul);
       }
+      frame->lastbin = freqmod(bins.b[0U].freq, (int32_t)blocksize)-0.5f;
+      frame->lastsq = squelch(bins);
       frame->state = lorarx_sREV2;
-      frame->cnt = 2UL;
    }
    else if (frame->state==lorarx_sREV2) {
-      /*
-            frame.lastrev:=freqmod(bins.b[0].freq, blocksize);
-            frame.lastsq:=squelch(bins);
-      */
       if (verb2) {
          osic_WrINT32(frame->label, 1UL);
          osi_WrStr(" ", 2ul);
-         osic_WrFixed(bins.b[0U].freq, 2L, 1UL);
+         osic_WrFixed(bins.b[0U].freq-0.5f, 2L, 1UL);
          osi_WrStrLn(" state=REVERS2", 15ul);
       }
-      if (squelch(bins)>frame->datasquelch) {
-         /* usable reverse chirps */
-         fi = freqmod(bins.b[0U].freq, (int32_t)blocksize)*0.5f;
+      fi = freqmod(bins.b[0U].freq, (int32_t)blocksize)-0.5f;
+      sq = squelch(bins);
+      if ((float)fabs(freqmod(frame->lastbin-fi, (int32_t)blocksize))>1.0f) {
+         /* 2 good rev frames */
+         if (frame->lastsq>squelch(bins)) {
+            /* else use best of the 2 */
+            fi = frame->lastbin;
+            sq = frame->lastsq;
+         }
+      }
+      if (sq>frame->datasquelch) {
+         /* usable reverse chirp */
+         fi = fi*0.5f; /* real freq halfway between forward & rev frames */
          frame->df = (int32_t)X2C_TRUNCI(fi*baud(frame->cfgsf, bwnum),X2C_min_longint,X2C_max_longint);
-         frame->jp = (uint32_t)(int32_t)(blocksize+(blocksize>>2));
-         frame->fc = (-0.5f)-frame->synmed; /* new zero freq after sample jump */
-         /*IF verb2 THEN WrInt(frame.jp,1); WrStrLn("=jump") END; */
-         frame->fci = 0.0f;
-         frame->fcstart = frame->fc; /* store for show drift */
+         frame->jp = (uint32_t)((int32_t)(blocksize+(blocksize>>2))+(int32_t)X2C_TRUNCI(fi,X2C_min_longint,
+                X2C_max_longint));
+         if (verb2) {
+            osic_WrINT32(frame->label, 1UL);
+            osi_WrStr(" ", 2ul);
+            osic_WrINT32(frame->jp, 1UL);
+            osi_WrStrLn("=jump", 6ul);
+         }
+         frame->fcfix = (frame->fcfix-(float)(int32_t)X2C_TRUNCI(fi,X2C_min_longint,X2C_max_longint))-1.0f;
          frame->state = lorarx_sDATA;
+         frame->dcnt = 0UL;
+         frame->txdel = frame->cnt; /* store for show preamble time */
+         frame->timeout = 0UL;
+         frame->fp = frame->iqread;
+         frame->fasecorrs = 0UL;
          frame->sigsum = 0.0f;
          frame->sigmin = X2C_max_real;
          frame->sigmax = 0.0f;
          frame->noissum = 0.0f;
          frame->noismax = 0.0f;
          frame->noismin = X2C_max_real;
-         frame->txdel = frame->cnt; /* store for show preamble time */
-         frame->cnt = 0UL;
-         frame->eye = 0.0f;
-         frame->timeout = 0UL;
-         frame->fp = frame->iqread;
-         frame->fasecorrs = 0UL;
       }
       else {
-         /*frame.fc:=0.0; */
-         /*WrStr(" fc, fci:"); WrFixed(frame.synmed, 3,1); WrStr(" "); WrFixed(frame.fc, 3,1); WrStr(" ");
-                WrFixed(frame.fci, 3,1); WrStrLn(""); */
          frame->state = lorarx_sHUNT;
          if (verb2) osi_WrStrLn("rev chirp timeout", 18ul);
       }
@@ -3351,7 +4069,6 @@ static char nextchirp(struct FFRAME * frame)
          osi_WrStrLn(" state=DATA", 12ul);
       }
       sq = squelch(bins);
-      /*WrFixed(sq, 2, 10); */
       if (!frame->nodcdlost && sq<=frame->datasquelch) {
          ++frame->timeout;
          if (verb2) {
@@ -3363,25 +4080,7 @@ static char nextchirp(struct FFRAME * frame)
          }
       }
       else frame->timeout = 0UL;
-      fi = (bins.b[0U].freq-(float)(int32_t)X2C_TRUNCI(bins.b[0U].freq,X2C_min_longint,X2C_max_longint))-0.5f;
-      frame->eye = frame->eye+(float)fabs(fi); /* for statistics */
-      if (sq>100.0f) sq = 100.0f;
-      fi = lim(X2C_DIVR(fi*sq,100.0f), 0.25f);
-      frame->fc = (frame->fc+frame->fci)-fi*frame->afcspeed; /* datarate lead-lag loop filter */
-      frame->fci = frame->fci-X2C_DIVR(fi*frame->afcspeed,(float)(frame->cnt+5UL));
-      /*WrStr(" fc, fci, fi:");WrFixed(frame.fc,2,1); WrStr(" "); WrFixed(frame.fci,2,1); WrStr(" "); WrFixed(fi,2,1);
-                WrStrLn(""); */
       frame->lastbin = bins.b[0U].freq;
-      /*    ELSE */
-      /*IF verb2 THEN WrStrLn("no dcd") END; */
-      /*      INC(frame.timeout); */
-      /*      IF frame.timeout>ORD((frame.cfgdatalen<>0) OR (frame.cfgcr=0))
-                *2+TIMEOUT THEN  (* skip over more chirps if datalen known *) */
-      /*         frame.state:=sSLEEP; */
-      /*        frame.fc:=0.0; frame.fci:=0.0; */
-      /*IF verb2 THEN WrStrLn("data timeout") END; */
-      /*      END; */
-      /*    END; */
       frame->sigsum = frame->sigsum+bins.b[0U].lev;
       if (bins.b[0U].lev>frame->sigmax) frame->sigmax = bins.b[0U].lev;
       if (bins.b[0U].lev<frame->sigmin) frame->sigmin = bins.b[0U].lev;
@@ -3389,9 +4088,9 @@ static char nextchirp(struct FFRAME * frame)
       if (bins.noise>frame->noismax) frame->noismax = bins.noise;
       if (bins.noise<frame->noismin) frame->noismin = bins.noise;
       if (decodechirp(frame, bins, opt)) frame->state = lorarx_sSLEEP;
-      ++frame->cnt;
+      ++frame->dcnt;
    }
-   /*  END; */
+   ++frame->cnt;
    return 0;
 } /* end nextchirp() */
 
@@ -3460,14 +4159,14 @@ extern int main(int argc, char **argv)
       if (pfirtab==0) Error(" out of memory", 15ul);
       X2C_DYNALLOCATE((char **) &ptmpfir,sizeof(struct Complex),(tmp[0] = firlen*16UL,tmp),1u);
       if (ptmpfir==0) Error(" out of memory", 15ul);
+      X2C_DYNALLOCATE((char **) &pfixfir,sizeof(float),(tmp[0] = firlen,tmp),1u);
+      if (pfixfir==0) Error(" out of memory", 15ul);
       makefir(downsample, pfirtab, 0, 0.0f);
    }
    MakeDDS();
    for (i = 5UL; i<=12UL; i++) {
       X2C_DYNALLOCATE((char **) &fftbufs[i],sizeof(struct Complex),(tmp[0] = (uint32_t)(1UL<<i),tmp),1u);
       if (fftbufs[i]==0) Error("out of memory", 14ul);
-      X2C_DYNALLOCATE((char **) &revamps[i],sizeof(float),(tmp[0] = (uint32_t)(1UL<<i),tmp),1u);
-      if (revamps[i]==0) Error("out of memory", 14ul);
    } /* end for */
    iqfd = osi_OpenRead(iqfn, 1024ul);
    if (iqfd<0L) Error("open iq file", 13ul);

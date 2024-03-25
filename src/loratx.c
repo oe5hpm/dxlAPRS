@@ -95,6 +95,10 @@ static char fni[4096];
 
 static char fno[4096];
 
+static char hh[4096];
+
+static char hb[2];
+
 static char text[301];
 
 static uint8_t ob[32768];
@@ -131,6 +135,8 @@ static int32_t fo;
 
 static char verb;
 
+static char verb2;
+
 static char withcrc;
 
 static char implicitheader;
@@ -140,6 +146,8 @@ static char addjunk;
 static char swapiq;
 
 static char overdriven;
+
+static char infilehex;
 
 static float noisegain;
 
@@ -166,6 +174,10 @@ static float echo1;
 static float headzeros;
 
 static float headzerosfrac;
+
+static float radardense;
+
+static float radarlevel;
 
 static double w;
 
@@ -198,6 +210,8 @@ static uint32_t echop;
 static uint32_t echosize;
 
 static uint32_t i;
+
+static uint32_t ii;
 
 static uint32_t j;
 
@@ -236,7 +250,12 @@ static uint32_t testc;
 static uint32_t addzeros;
 
 static uint32_t fcnt;
-/*    DDS:ARRAY[0..DDSSIZE-1] OF RECORD si,co:REAL END; */
+
+static uint32_t radarduration;
+
+static uint32_t radarn;
+
+static uint32_t radarc;
 
 static pBIRDY birdies;
 
@@ -245,10 +264,38 @@ static pBIRDY bird;
 
 static void Err(const char text0[], uint32_t text_len)
 {
-   osi_WrStr(text0, text_len);
-   osi_WrStrLn(" error abort", 13ul);
+   osi_Werr(text0, text_len);
+   osi_WerrLn(" error abort", 13ul);
    X2C_ABORT();
 } /* end Err() */
+
+
+static char hex(uint32_t n)
+{
+   n = n&15UL;
+   if (n<=9UL) return (char)(n+48UL);
+   return (char)(n+55UL);
+} /* end hex() */
+
+
+static void WrHex(uint32_t x, uint32_t digits, uint32_t len)
+{
+   uint32_t i0;
+   char s[256];
+   if (digits>255UL) digits = 255UL;
+   i0 = digits;
+   while (i0<len && i0<255UL) {
+      s[i0] = ' ';
+      ++i0;
+   }
+   s[i0] = 0;
+   while (digits>0UL) {
+      --digits;
+      s[digits] = hex(x);
+      x = x/16UL;
+   }
+   osi_Werr(s, 256ul);
+} /* end WrHex() */
 
 /*
 PROCEDURE mkdds;
@@ -313,17 +360,35 @@ static void applynoise(float * si, float * sq)
 } /* end applynoise() */
 
 
+static void applyradar(float * si, float * sq)
+{
+   if (radarn==0UL) {
+      if (Noise12()+radardense*0.5f>0.5f) radarn = radarduration;
+   }
+   else {
+      *si = *si+radarlevel;
+      *sq = *sq+radarlevel;
+      ++radarc;
+      --radarn;
+   }
+} /* end applyradar() */
+
+
 static void WrSN(float pow1, float pows0, float sig)
 {
-   osi_WrStr(" noise:", 8ul);
-   osic_WrFixed(osic_ln(pow1)*4.342944819f, 2L, 0UL);
-   osi_WrStr("dB", 3ul);
-   osi_WrStr(" s/n:", 6ul);
-   osic_WrFixed(osic_ln(X2C_DIVR(sig*sig,pow1))*4.342944819f, 2L, 0UL);
-   osi_WrStr("dB", 3ul);
-   osi_WrStr(" (s+n)/n:", 10ul);
-   osic_WrFixed(osic_ln(X2C_DIVR(sig*sig+pow1,pow1))*4.342944819f, 2L, 0UL);
-   osi_WrStr("dB", 3ul);
+   char h[100];
+   osi_Werr(" noise:", 8ul);
+   aprsstr_FixToStr(osic_ln(pow1)*4.342944819f, 2UL, h, 100ul);
+   osi_Werr(h, 100ul);
+   osi_Werr("dB", 3ul);
+   osi_Werr(" s/n:", 6ul);
+   aprsstr_FixToStr(osic_ln(X2C_DIVR(sig*sig,pow1))*4.342944819f, 2UL, h, 100ul);
+   osi_Werr(h, 100ul);
+   osi_Werr("dB", 3ul);
+   osi_Werr(" (s+n)/n:", 10ul);
+   aprsstr_FixToStr(osic_ln(X2C_DIVR(sig*sig+pow1,pow1))*4.342944819f, 2UL, h, 100ul);
+   osi_Werr(h, 100ul);
+   osi_Werr("dB", 3ul);
 } /* end WrSN() */
 
 
@@ -422,7 +487,7 @@ static void sethamm(uint32_t bits, uint8_t * b)
 
 
 static void interleav(uint32_t sf0, uint32_t cr0, uint32_t lsb, uint32_t * start, uint32_t rb[],
-                uint32_t rb_len, const uint8_t hb[], uint32_t hb_len)
+                uint32_t rb_len, const uint8_t hb0[], uint32_t hb_len)
 {
    uint32_t j1;
    uint32_t i0;
@@ -437,7 +502,7 @@ static void interleav(uint32_t sf0, uint32_t cr0, uint32_t lsb, uint32_t * start
       tmp0 = cr0-1UL;
       i0 = 0UL;
       if (i0<=tmp0) for (;; i0++) {
-         if (X2C_IN(i0,8,(uint8_t)hb[(((sf0-1UL)-j1)+i0)%sf0])) {
+         if (X2C_IN(i0,8,(uint8_t)hb0[(((sf0-1UL)-j1)+i0)%sf0])) {
             rb[*start+i0] |= (1UL<<(sf0-1UL)-j1);
          }
          if (i0==tmp0) break;
@@ -512,7 +577,9 @@ extern int main(int argc, char **argv)
    aprsstr_BEGIN();
    osi_BEGIN();
    verb = 0;
+   verb2 = 0;
    overdriven = 0;
+   infilehex = 0;
    outform = 0UL;
    outgain = 1.0f;
    sf = 12UL;
@@ -538,6 +605,9 @@ extern int main(int argc, char **argv)
    echo1 = 0.0f;
    echop = 0UL;
    birdies = 0;
+   radarduration = 0UL;
+   radarn = 0UL;
+   radarc = 0UL;
    for (;;) {
       osi_NextArg(as, 4096ul);
       if (as[0U]==0) break;
@@ -548,8 +618,13 @@ extern int main(int argc, char **argv)
             else if (as[1U]=='C') withcrc = 1;
             else if (as[1U]=='I') implicitheader = 1;
             else if (as[1U]=='v') verb = 1;
+            else if (as[1U]=='V') {
+               verb = 1;
+               verb2 = 1;
+            }
             else if (as[1U]=='j') addjunk = 1;
             else if (as[1U]=='q') swapiq = 1;
+            else if (as[1U]=='H') infilehex = 1;
             else if (as[1U]=='O') {
                osi_NextArg(as, 4096ul);
                if (!aprsstr_StrToInt(as, 4096ul, &cfgopt)) {
@@ -591,15 +666,15 @@ extern int main(int argc, char **argv)
                   Err("-E <delay> <gain>", 18ul);
                }
                osi_NextArg(as, 4096ul);
-               if (!aprsstr_StrToFix(&echo1, as, 4096ul)) Err("-E <delay> <gain>", 18ul);
+               if (!aprsstr_StrToFix(&echo1, as, 4096ul)) {
+                  Err("-E <delay> <gain>", 18ul);
+               }
             }
             else if (as[1U]=='f') {
                osi_NextArg(as, 4096ul);
                if (as[0U]=='u' && as[1U]=='8') outform = 0UL;
                else if ((as[0U]=='i' && as[1U]=='1') && as[2U]=='6') outform = 1UL;
-               else if ((as[0U]=='f' && as[1U]=='3') && as[2U]=='2') {
-                  outform = 2UL;
-               }
+               else if ((as[0U]=='f' && as[1U]=='3') && as[2U]=='2') outform = 2UL;
                else Err("-f output formats u8 i16 f32", 29ul);
             }
             else if (as[1U]=='b') {
@@ -661,6 +736,20 @@ extern int main(int argc, char **argv)
                bird->next = birdies;
                birdies = bird;
             }
+            else if (as[1U]=='P') {
+               osi_NextArg(as, 4096ul);
+               if (!aprsstr_StrToCard(as, 4096ul, &radarduration)) {
+                  Err("-P <duration> <density> <level>", 32ul);
+               }
+               osi_NextArg(as, 4096ul);
+               if (!aprsstr_StrToFix(&radardense, as, 4096ul)) {
+                  Err("-P <duration> <density> <level>", 32ul);
+               }
+               osi_NextArg(as, 4096ul);
+               if (!aprsstr_StrToFix(&radarlevel, as, 4096ul)) {
+                  Err("-P <duration> <density> <level>", 32ul);
+               }
+            }
             else if (as[1U]=='h') {
                osi_WrStrLn("Make iq file with lora encoded text and apply noise, dropouts and wrong bits for tests",
                 87ul);
@@ -674,6 +763,7 @@ extern int main(int argc, char **argv)
                osi_WrStrLn("                       only whole sample delay steps so use oversampling", 73ul);
                osi_WrStrLn(" -f <output-format>  u8 i16 f32 (u8)", 37ul);
                osi_WrStrLn(" -g <gainfactor>     output level 0.0..1.0, with -f f32 more (1.0)", 67ul);
+               osi_WrStrLn(" -H                  input file is in HEX", 42ul);
                osi_WrStrLn(" -h                  this...", 29ul);
                osi_WrStrLn(" -I                  implicit header on", 40ul);
                osi_WrStrLn(" -i <infile>         text to send filename", 43ul);
@@ -681,6 +771,7 @@ extern int main(int argc, char **argv)
                osi_WrStrLn(" -N <hh>             Sync symbols, network-id in hex (12)", 58ul);
                osi_WrStrLn(" -O <0..1>           optimize on off else automatic (-1)", 57ul);
                osi_WrStrLn(" -o <outfile>        iq file name", 34ul);
+               osi_WrStrLn(" -P <duration-samples> <random-density> <level>  add delta pulse noise (4 0.5 0.9)", 83ul);
                osi_WrStrLn(" -p <chirps>         preamble length (8)", 41ul);
                osi_WrStrLn(" -q                  invert IQ", 31ul);
                osi_WrStrLn(" -R <x>              random seed for noise (0.0)", 49ul);
@@ -689,6 +780,7 @@ extern int main(int argc, char **argv)
                osi_WrStrLn(" -s <sf>             spread factor (5..12) (12)", 48ul);
                osi_WrStrLn(" -T <n> <pattern>    for FEC tests set n\'th chirp to zero level (pattern=0)", 76ul);
                osi_WrStrLn("                       or xor with <pattern> (decimal), may be repeatet", 72ul);
+               osi_WrStrLn(" -V                  more verbous", 34ul);
                osi_WrStrLn(" -v                  verbous", 29ul);
                osi_WrStrLn(" -w <level>          add white noise", 37ul);
                osi_WrStrLn(" -Z <n>              zero or noise chirps before data (0.0)", 60ul);
@@ -723,7 +815,7 @@ extern int main(int argc, char **argv)
       }
    }
    if (!implicitheader && sf<=6UL) Err("sf<=6 needs implicit header", 28ul);
-   if (fabs(shift)*2.0+bw>sample*1.001) osi_WrStrLn("WARNING: signal does not fit in iq-bandwidth", 45ul);
+   if (fabs(shift)*2.0+bw>sample*1.001) osi_WerrLn("WARNING: signal does not fit in iq-bandwidth", 45ul);
    /*  shift:=shift/bw*PI2; */
    shift = (X2C_DIVL(shift,sample))*6.283185307;
    if (cfgopt==0L) optimize = 0UL;
@@ -731,21 +823,23 @@ extern int main(int argc, char **argv)
       optimize = 2UL;
    }
    if (verb) {
-      osi_WrStr("opt:", 5ul);
-      osic_WrUINT32(optimize, 1UL);
-      osi_WrStrLn("", 1ul);
-      osi_WrStr("bandwidth Hz:", 14ul);
-      osic_WrFixed((float)bw, 3L, 1UL);
-      osi_WrStrLn("", 1ul);
-      osi_WrStr("chirptime s:", 13ul);
-      osic_WrFixed((float)(X2C_DIVL((double)(float)(uint32_t)(1UL<<sf),bw)), 6L, 1UL);
-      osi_WrStrLn("", 1ul);
-      osi_WrStr("sync/netid:", 12ul);
-      osi_WrHex(netid, 1UL);
-      osi_WrStrLn("", 1ul);
-      osi_WrStr("echo delay samples:", 20ul);
-      osic_WrINT32(echosize, 1UL);
-      osi_WrStrLn("", 1ul);
+      osi_Werr("opt:", 5ul);
+      aprsstr_CardToStr(optimize, 1UL, hh, 4096ul);
+      osi_WerrLn(hh, 4096ul);
+      osi_Werr("bandwidth Hz:", 14ul);
+      aprsstr_FixToStr((float)bw, 3UL, hh, 4096ul);
+      osi_WerrLn(hh, 4096ul);
+      osi_Werr("chirptime s:", 13ul);
+      aprsstr_FixToStr((float)(X2C_DIVL((double)(float)(uint32_t)(1UL<<sf),bw)), 6UL, hh, 4096ul);
+      osi_WerrLn(hh, 4096ul);
+      osi_Werr("sync/netid:", 12ul);
+      WrHex(netid, 2UL, 0UL);
+      osi_WerrLn("", 1ul);
+      if (echosize>0UL) {
+         osi_Werr("echo delay samples:", 20ul);
+         aprsstr_CardToStr(echosize, 1UL, hh, 4096ul);
+         osi_WerrLn(hh, 4096ul);
+      }
    }
    fi = osi_OpenRead(fni, 4096ul);
    if (fi<0L) Err("input file open", 16ul);
@@ -753,6 +847,20 @@ extern int main(int argc, char **argv)
    osic_Close(fi);
    if (ret<0L) Err("input file read", 16ul);
    txtlen = (uint32_t)ret;
+   if (infilehex) {
+      txtlen = txtlen/2UL;
+      i = 0UL;
+      for (;;) {
+         if (i>=txtlen) break;
+         hb[0U] = text[i*2UL];
+         hb[1U] = text[i*2UL+1UL];
+         if ((uint8_t)hb[0U]<'0' || (uint8_t)hb[1U]<'0') break;
+         if (!StrToHex(hb, 2ul, &ii)) Err("input file illegan hex char", 28ul);
+         text[i] = (char)ii;
+         ++i;
+      }
+      txtlen = i;
+   }
    if (addjunk) {
       if (ret>0L) {
          for (i = (uint32_t)(ret-1L);; i--) {
@@ -767,9 +875,9 @@ extern int main(int argc, char **argv)
    }
    if (txtlen>255UL) txtlen = 255UL;
    if (verb) {
-      osi_WrStr("len:", 5ul);
-      osic_WrINT32(txtlen, 1UL);
-      osi_WrStrLn("", 1ul);
+      osi_Werr("len:", 5ul);
+      aprsstr_CardToStr(txtlen, 1UL, hh, 4096ul);
+      osi_WerrLn(hh, 4096ul);
    }
    fo = osi_OpenWrite(fno, 4096ul);
    if (fo<0L) Err("iq file write", 14ul);
@@ -866,7 +974,6 @@ extern int main(int argc, char **argv)
    END;
    WrStrLn("");
    */
-   j = sp;
    while (wp/2UL<paylen) {
       tmp0 = (sf-optimize)-1UL;
       i = 0UL;
@@ -913,21 +1020,23 @@ extern int main(int argc, char **argv)
       }
       ++i;
    }
-   if (verb) {
+   if (verb2) {
       tmp0 = sp-1UL;
       i = 1UL;
       if (i<=tmp0) for (;; i++) {
-         osic_WrINT32(i, 2UL);
-         osi_WrStr(":", 2ul);
+         aprsstr_CardToStr(i, 2UL, hh, 4096ul);
+         osi_Werr(hh, 4096ul);
+         osi_Werr(":", 2ul);
          for (j = 11UL;; j--) {
-            osic_WrINT32((uint32_t)X2C_IN(j,32,sb[i]), 1UL);
+            aprsstr_CardToStr((uint32_t)X2C_IN(j,32,sb[i]), 1UL, hh, 4096ul);
+            osi_Werr(hh, 4096ul);
             if (j==0UL) break;
          } /* end for */
-         if ((0x10000000UL & sb[i])) osi_WrStr(" -zero-level", 13ul);
-         else if ((0x20000000UL & sb[i])) osi_WrStr(" -xord", 7ul);
-         else if ((0x40000000UL & sb[i])) osi_WrStr(" -quarter", 10ul);
-         else if ((0x80000000UL & sb[i])) osi_WrStr(" -reverse", 10ul);
-         osi_WrStrLn("", 1ul);
+         if ((0x10000000UL & sb[i])) osi_Werr(" -zero-level", 13ul);
+         else if ((0x20000000UL & sb[i])) osi_Werr(" -xord", 7ul);
+         else if ((0x40000000UL & sb[i])) osi_Werr(" -quarter", 10ul);
+         else if ((0x80000000UL & sb[i])) osi_Werr(" -reverse", 10ul);
+         osi_WerrLn("", 1ul);
          if (i==tmp0) break;
       } /* end for */
    }
@@ -939,8 +1048,6 @@ extern int main(int argc, char **argv)
    if (headzerosfrac!=0.0f) {
       samp = (uint32_t)X2C_TRUNCC(X2C_DIVL((double)(1.0f-headzerosfrac),bind),0UL,X2C_max_longcard);
    }
-   /*upstep:=bw/sample; */
-   /*WrFixed(1.0/bind,3, 8); WrStrLn("bbb"); */
    upsamp = 0.0;
    do {
       symf = (double)samp*bind;
@@ -961,6 +1068,7 @@ extern int main(int argc, char **argv)
          oq = osic_sin((float)w)*amp;
          if (echofifo) applyecho(&oi, &oq);
          if (noisegain!=0.0f) applynoise(&oi, &oq);
+         if (radarduration>0UL) applyradar(&oi, &oq);
          /*- add birdies */
          bird = birdies;
          while (bird) {
@@ -979,23 +1087,30 @@ extern int main(int argc, char **argv)
       ++samp;
    } while (sym<sp);
    if (wp>0UL) osi_WrBin(fo, (char *)ob, 32768u/1u, wp);
-   if (overdriven) osi_WrStrLn("WARNING: output level hard limited!", 36ul);
+   if (overdriven) osi_WerrLn("WARNING: output level hard limited!", 36ul);
    if (verb && noisegain!=0.0f) {
-      osi_WrStr("sig:", 5ul);
-      osic_WrFixed(osic_ln(outgain)*8.685889638f, 2L, 0UL);
-      osi_WrStr("dB", 3ul);
+      osi_Werr("sig:", 5ul);
+      aprsstr_FixToStr(osic_ln(outgain)*8.685889638f, 2UL, hh, 4096ul);
+      osi_Werr(hh, 4096ul);
+      osi_Werr("dB", 3ul);
       if (pow0!=0.0f && powc) {
          pow0 = X2C_DIVR(pow0,(float)powc*127.0f*127.0f);
          pows = X2C_DIVR(pows,(float)powc*127.0f*127.0f);
          WrSN(pow0, pows, outgain);
          if (sample!=bw) {
-            osi_WrStrLn("", 1ul);
-            osi_WrStr("noise in signal band:", 22ul);
+            osi_WerrLn("", 1ul);
+            osi_Werr("in signal band ", 16ul);
             WrSN((float)(X2C_DIVL((double)pow0*bw,sample)), (float)(X2C_DIVL((double)pows*bw,sample)),
                  outgain);
          }
       }
-      osi_WrStrLn("", 1ul);
+      osi_WerrLn("", 1ul);
+   }
+   if (verb && radarc>0UL) {
+      osi_Werr("added pulses:", 14ul);
+      aprsstr_CardToStr(radarc, 1UL, hh, 4096ul);
+      osi_Werr(hh, 4096ul);
+      osi_WerrLn("", 1ul);
    }
    osic_Close(fo);
 /*  
