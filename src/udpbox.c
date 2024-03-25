@@ -2693,7 +2693,7 @@ extern int main(int argc, char **argv)
                   }
                   isbeacon = 0;
                }
-               else {
+               else if (inlen>=0L) {
                   nobeacon = 0;
                   beacon(actsock, rawbuf, 338ul, &inlen, &isbeacon);
                   if (isbeacon==0) sendack(rawbuf, 338ul, &inlen, actsock);
@@ -2798,10 +2798,10 @@ extern int main(int argc, char **argv)
                      }
                      outsock = outsock->next;
                   }
-                  if ((insocks && insocks->fromip==X2C_max_longcard)
-                && insocks->bindport==1UL) {
-                     goto loop_exit; /* single stdin line mode */
-                  }
+               }
+               if ((insocks && insocks->fromip==X2C_max_longcard)
+                && (insocks->bindport==1UL || inlen<0L)) {
+                  goto loop_exit; /* single stdin line mode or eof */
                }
             } while (piggy);
             actsock = actsock->next;

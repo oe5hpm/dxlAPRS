@@ -6134,13 +6134,18 @@ static void rfbeacons(void)
                      aprsstr_Append(h, 101ul, s, 512ul);
                      useri_xerrmsg(h, 101ul);
                   }
-                  if (X2C_CAP(port)=='N') {
+                  if (X2C_CAP(port)=='M') {
+                     /* beacon to map */
+                     aprstext_encbeacon(s, 512ul, &i);
+                     aprsdecode_drawbeacon(s, 512ul);
+                  }
+                  else if (X2C_CAP(port)=='N') {
                      /* beacon to net */
                      if (dat.type!=aprsdecode_MICE) {
                         j = aprsstr_InStr(s, 512ul, ":", 2ul);
                         if (j>=0L) {
                            aprsstr_Delstr(s, 512ul, 0UL, (uint32_t)(j+1L));
-                 /* remove rf adress */
+                 /* remove rf address */
                            SendNet(aprsdecode_tcpsocks, dat.srcall, 9ul, s,
                 512ul, 1, h, 101ul);
                            if (h[0U]) {
@@ -6149,7 +6154,10 @@ static void rfbeacons(void)
                            }
                         }
                      }
-                     else strncpy(says,"beacon: not sent mic-e to Net",101u);
+                     else {
+                        strncpy(says,"beacon: do not sent mic-e to Net",
+                101u);
+                     }
                   }
                   else if ((uint8_t)port>='1') {
                      if (s[0UL]) {

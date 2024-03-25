@@ -42,7 +42,7 @@
 
 #define udpgate4_HASHSIZE 65536
 
-#define udpgate4_VERS "udpgate 0.77"
+#define udpgate4_VERS "udpgate 0.78"
 
 #define udpgate4_CPUTEMPFN "/sys/class/thermal/thermal_zone0/temp"
 
@@ -477,6 +477,8 @@ static uint32_t keeptime;
 static uint8_t CRCL[256];
 
 static uint8_t CRCH[256];
+
+static char qau[3];
 
 static uint8_t hashl;
 
@@ -1273,6 +1275,14 @@ static void parms(void)
                Err("-w port", 8ul);
             }
          }
+         else if (lasth=='X') {
+            osi_NextArg(h, 4096ul);
+            aprsstr_Assign(qau, 3ul, h, 4096ul);
+            if (h[0U]==0 || h[0U]=='-') Err("-X q-construct", 15ul);
+            if (qau[0U]!='q') {
+               Err("-X q-construct needs \"q\" at begin", 34ul);
+            }
+         }
          else if (lasth=='f') {
             osi_NextArg(h, 4096ul);
             aprsstr_Assign(serverrangefilter, 256ul, h, 4096ul);
@@ -1349,7 +1359,7 @@ static void parms(void)
          }
          else {
             if (lasth=='h') {
-               osi_WrStrLn("                udpgate 0.77", 29ul);
+               osi_WrStrLn("                udpgate 0.78", 29ul);
                osi_WrStrLn(" -0             send no Data (only Messages and a\
 ck) to User with no Filter", 76ul);
                osi_WrStrLn(" -A <path>      srtm directory path to enable ove\
@@ -1504,6 +1514,8 @@ ut", 52ul);
 4byte, (-W 4000)", 66ul);
                osi_WrStrLn(" -w <port>      port of www server -w 14501",
                 44ul);
+               osi_WrStrLn(" -X <qXX>       change \"qAR\" for gate rf to apr\
+s-is on ports with tx (dport not 0) (-X qAR)", 92ul);
                osi_WrStrLn(" -x <call>      via <call> send messages to rf (-\
 x OE0AAA-10) tx off: -x -", 75ul);
                osi_WrStrLn("                default is server call", 39ul);
@@ -1601,9 +1613,7 @@ hz", 50ul);
             else if (lasth=='T') {
                osi_NextArg(h, 4096ul);
                i0 = 0UL;
-               if (GetSec(h, 4096ul, &i0, &n)>=0L) {
-                  qmaxtime = (int32_t)n;
-               }
+               if (GetSec(h, 4096ul, &i0, &n)>=0L) qmaxtime = (int32_t)n;
                else Err("-T seconds", 11ul);
                if (qmaxtime>59L) qmaxtime = 59L;
             }
@@ -2909,7 +2919,7 @@ static void beaconmacros(char s[], uint32_t s_len)
          }
          else if (s[i0]=='v') {
             /* insert version */
-            aprsstr_Append(ns, 256ul, "udpgate 0.77", 13ul);
+            aprsstr_Append(ns, 256ul, "udpgate 0.78", 13ul);
          }
          else if (s[i0]==':') {
             /* insert file */
@@ -4520,11 +4530,11 @@ static void Query(MONCALL fromcall, char msg[], uint32_t msg_len,
                  1, path);
    }
    else if (cmd=='S') {
-      Stomsg(servercall, fromcall, *(MSGTEXT *)memcpy(&tmp1,"udpgate 0.77 Msg\
+      Stomsg(servercall, fromcall, *(MSGTEXT *)memcpy(&tmp1,"udpgate 0.78 Msg\
  S&F Relay",27u), *(ACKTEXT *)memcpy(&tmp0,"",1u), 0, 0, 1, path);
    }
    else if (cmd=='v') {
-      Stomsg(servercall, fromcall, *(MSGTEXT *)memcpy(&tmp1,"udpgate 0.77",
+      Stomsg(servercall, fromcall, *(MSGTEXT *)memcpy(&tmp1,"udpgate 0.78",
                 13u), *(ACKTEXT *)memcpy(&tmp0,"",1u), 0, 0, 1, path);
    }
    else if (cmd=='h') {
@@ -5070,8 +5080,8 @@ OE0AAA-9>T8SV40,WIDE1-1,qAR,DB0WGS:test
 static uint8_t AprsIs(char buf[], uint32_t buf_len,
                 uint8_t datafilt, uint8_t msgfilt0,
                 const char logcall[], uint32_t logcall_len,
-                uint32_t udpchan, char passvalid,
-                struct POSCALL * poscall0)
+                uint32_t udpchan, char txenabled,
+                char passvalid, struct POSCALL * poscall0)
 {
    uint32_t qpos;
    uint32_t micedest;
@@ -5155,7 +5165,10 @@ static uint8_t AprsIs(char buf[], uint32_t buf_len,
       }
    }
    else if (udpchan) {
-      aprsstr_Append(qtext, 32ul, ",qAU,", 6ul);
+      aprsstr_Append(qtext, 32ul, ",", 2ul);
+      if (txenabled) aprsstr_Append(qtext, 32ul, qau, 3ul);
+      else aprsstr_Append(qtext, 32ul, "qAO", 4ul);
+      aprsstr_Append(qtext, 32ul, ",", 2ul);
       aprsstr_Append(qtext, 32ul, servercall, 10ul);
    }
    else if (logcall[0UL]) {
@@ -7437,7 +7450,7 @@ static void title(WWWB wbuf, pTCPSOCK * wsock, uint32_t * cnt,
          Appwww(wsock, wbuf, "  Port ", 8ul);
          Appwww(wsock, wbuf, tcpbindport, 6ul);
       }
-      Appwww(wsock, wbuf, " [udpgate 0.77] Maxusers ", 26ul);
+      Appwww(wsock, wbuf, " [udpgate 0.78] Maxusers ", 26ul);
       aprsstr_IntToStr((int32_t)maxusers, 1UL, h, 32ul);
       Appwww(wsock, wbuf, h, 32ul);
       Appwww(wsock, wbuf, " http#", 7ul);
@@ -7456,7 +7469,7 @@ static void title(WWWB wbuf, pTCPSOCK * wsock, uint32_t * cnt,
          aprsstr_Append(h, 32ul, "m(NN)", 6ul);
          Appwww(wsock, wbuf, h, 32ul);
       }
-      Appwww(wsock, wbuf, " [udpgate 0.77] http#", 22ul);
+      Appwww(wsock, wbuf, " [udpgate 0.78] http#", 22ul);
    }
    aprsstr_IntToStr((int32_t)*cnt, 1UL, h, 32ul);
    Appwww(wsock, wbuf, h, 32ul);
@@ -7995,7 +8008,7 @@ static char tcpconn(pTCPSOCK * sockchain, int32_t f,
             aprsstr_Append(h, 512ul, passwd, 6ul);
          }
          aprsstr_Append(h, 512ul, " vers ", 7ul);
-         aprsstr_Append(h, 512ul, "udpgate 0.77", 13ul);
+         aprsstr_Append(h, 512ul, "udpgate 0.78", 13ul);
          if (actfilter[0U]) {
             aprsstr_Append(h, 512ul, " filter ", 9ul);
             aprsstr_Append(h, 512ul, actfilter, 256ul);
@@ -8027,7 +8040,7 @@ static char tcpconn(pTCPSOCK * sockchain, int32_t f,
          aprsstr_Append(h1, 512ul, h2, 512ul);
          logline(udpgate4_resLOG, h1, 512ul);
       }
-      aprsstr_Assign(h, 512ul, "# udpgate 0.77\015\012", 17ul);
+      aprsstr_Assign(h, 512ul, "# udpgate 0.78\015\012", 17ul);
       Sendtcp(cp, h);
    }
    return 1;
@@ -8332,6 +8345,7 @@ extern int main(int argc, char **argv)
    strncpy(SORTURL[3U],"?sorto=",7u);
    signal(SIGHUP, readigatefile);
    /*  signal(SIGUSR1, readigatefile); */
+   strncpy(qau,"qAR",3u);
    parms();
    if (aprsstr_StrCmp(viacall, 10ul, "-", 2ul)) viacall[0U] = 0;
    else if (viacall[0U]==0) memcpy(viacall,servercall,10u);
@@ -8458,7 +8472,7 @@ extern int main(int argc, char **argv)
                if (systime<udpdonetime+5UL) {
                   /* last time all data read is no too long */
                   ires = AprsIs(mbuf, 512ul, 0x3FU, 0x3FU, "", 1ul,
-                (uint32_t)i, 0, &poscall);
+                (uint32_t)i, actudp->dport!=0UL, 0, &poscall);
                   if (ires<=udpgate4_resOK) {
                      Sendall(mbuf, 0L, poscall);
                      keepconn = systime+keeptime; /* connect to gateway */
@@ -8530,7 +8544,8 @@ ram delay", 41ul);
                      }
                      else {
                         ires = AprsIs(mbuf, 512ul, 0x3U, 0x17U,
-                acttcp->user.call, 10ul, 0UL, acttcp->passvalid, &poscall);
+                acttcp->user.call, 10ul, 0UL, 1, acttcp->passvalid,
+                &poscall);
                      }
                      if (((ires<=udpgate4_resNOPASS && aprspos_posvalid(poscall.pos)
                 ) && aprsstr_StrCmp(poscall.call, 10ul, acttcp->user.call,
