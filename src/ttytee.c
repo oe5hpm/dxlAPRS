@@ -20,9 +20,6 @@
 #include "osi.h"
 #endif
 #include <osic.h>
-#ifndef mlib_H_
-#include "mlib.h"
-#endif
 #include <signal.h>
 #ifndef aprsstr_H_
 #include "aprsstr.h"
