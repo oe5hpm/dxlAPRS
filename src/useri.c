@@ -5988,36 +5988,7 @@ static void beaconeditor(void)
          useri_textautosize(0L, 0L, 6UL, 2UL, 'r', "\012Area Symbol!\012",
                 15ul);
       }
-      /*
-            h:=" Choose Symbol  [";
-            confstr(fRBSYMB, s);
-            Append(h, s); Append(h, "]");
-      
-            IF (s[0]=AREASYMT) & (s[1]=AREASYM) THEN Append(h,
-                " Area Symbol!") END;
-      */
-      /*
-            addline(m, h, CMDADDBEACON+">", MINH*81+38);
-            INC(m^.scroll);
-      */
       AddEditLine(m, "\223>", 3ul, "", 1ul, useri_fRBSYMB, 8138UL);
-      /*
-            confstr(fRBSYMB, s);
-            drawsymsquare(m^.image, s[0], s[1],
-                m^.xsize-lums.symsize-lums.fontxsize-8,
-                         (m^.oldknob-1)*m^.yknob+m^.yknob DIV 2);
-            IF (s[0]=AREASYMT) & (s[1]=AREASYM) THEN textautosize(0, 0, 6, 2,
-                 "r", LF+"Area Symbol!"+LF) END;
-      */
-      strncpy(s,"\355",201u);
-      AppBlueButton(s, 201ul, " Beacon |", 10ul, bkn);
-      AppBlueButton(s, 201ul, "Object/d|", 10ul, typ=='O');
-      AppBlueButton(s, 201ul, "Object/h|", 10ul, typ=='H');
-      AppBlueButton(s, 201ul, "   Item |", 10ul, typ=='I');
-      AppBlueButton(s, 201ul, "  -Item |", 10ul, typ=='J');
-      AppBlueButton(s, 201ul, " -Object", 9ul, typ=='P');
-      addline(m, s, 201ul, "\223", 2ul, 8140UL);
-      ++m->scroll;
       strncpy(s,"\355",201u);
       AppBlueButton(s, 201ul, " Lat/Long |", 12ul,
                 postyp=='g' || postyp=='A');
@@ -6030,12 +6001,22 @@ static void beaconeditor(void)
       else AppBlueButton(s, 201ul, "          |", 12ul, 0);
       addline(m, s, 201ul, "\223", 2ul, 8150UL);
       ++m->scroll;
+      strncpy(s,"\355",201u);
+      AppBlueButton(s, 201ul, " Beacon |", 10ul, bkn);
+      AppBlueButton(s, 201ul, "Object/d|", 10ul, typ=='O');
+      AppBlueButton(s, 201ul, "Object/h|", 10ul, typ=='H');
+      AppBlueButton(s, 201ul, "   Item |", 10ul, typ=='I');
+      AppBlueButton(s, 201ul, "  -Item |", 10ul, typ=='J');
+      AppBlueButton(s, 201ul, " -Object", 9ul, typ=='P');
+      addline(m, s, 201ul, "\223", 2ul, 8140UL);
+      ++m->scroll;
       useri_confstr(useri_fRBPORT, s, 201ul);
       port = X2C_CAP(s[0U]);
       strncpy(s,"\355",201u);
-      AppBlueButton(s, 201ul, "   Tx Net |", 12ul, port=='N');
+      AppBlueButton(s, 201ul, " Tx Net|", 9ul, port=='N');
+      AppBlueButton(s, 201ul, " To Map|", 9ul, port=='M');
       for (i = 1UL; i<=4UL; i++) {
-         strncpy(h,"  TxPort ",201u);
+         strncpy(h," TxPort ",201u);
          aprsstr_Append(h, 201ul, (char *)(tmp = (char)(i+48UL),
                 &tmp), 1u/1u);
          if (i!=4UL) aprsstr_Append(h, 201ul, "|", 2ul);
@@ -6067,7 +6048,9 @@ static void beaconeditor(void)
          strncpy(s,"\346\356  ",201u);
       }
       else if (isdel) strncpy(s,"\346\352\347  ",201u);
-      else strncpy(s,"\346  ",201u);
+      else {
+         strncpy(s,"\346  ",201u);
+      }
       tmp0 = aprsdecode_lums.symsize/aprsdecode_lums.fontxsize;
       i = 0UL;
       if (i<=tmp0) for (;; i++) {
@@ -6227,25 +6210,6 @@ static void managebeacon(uint32_t scroll, uint32_t knob,
       if (folded) symchoose('\244');
    }
    else if (knob==12UL) {
-      if (subknob==1UL) ch = 'O';
-      else if (subknob==2UL) ch = 'H';
-      else if (subknob==3UL) ch = 'I';
-      else if (subknob==4UL) ch = 'J';
-      else if (subknob==5UL) ch = 'P';
-      else ch = 'B';
-      useri_AddConfLine(useri_fRBTYP, 1U, (char *) &ch, 1u/1u);
-      if (ch!='B') {
-         useri_confstr(useri_fRBPOSTYP, (char *) &ch, 1u/1u);
-         ch = X2C_CAP(ch);
-         if (ch=='m' || ch=='M') {
-            /* no mice for items/objects */
-            ch = 'c'; /* set to compressed */
-            useri_AddConfLine(useri_fRBPOSTYP, 1U, (char *) &ch, 1u/1u);
-            useri_say("encoding changed to \'Compressed\'", 33ul, 4UL, 'r');
-         }
-      }
-   }
-   else if (knob==13UL) {
       useri_confstr(useri_fRBTYP, (char *) &typ, 1u/1u);
       if (subknob==1UL) {
          if (isbkn(typ)) ch = 'm';
@@ -6268,9 +6232,29 @@ static void managebeacon(uint32_t scroll, uint32_t knob,
       }
       useri_AddConfLine(useri_fRBPOSTYP, 1U, (char *) &ch, 1u/1u);
    }
+   else if (knob==13UL) {
+      if (subknob==1UL) ch = 'O';
+      else if (subknob==2UL) ch = 'H';
+      else if (subknob==3UL) ch = 'I';
+      else if (subknob==4UL) ch = 'J';
+      else if (subknob==5UL) ch = 'P';
+      else ch = 'B';
+      useri_AddConfLine(useri_fRBTYP, 1U, (char *) &ch, 1u/1u);
+      if (ch!='B') {
+         useri_confstr(useri_fRBPOSTYP, (char *) &ch, 1u/1u);
+         ch = X2C_CAP(ch);
+         if (ch=='m' || ch=='M') {
+            /* no mice for items/objects */
+            ch = 'c'; /* set to compressed */
+            useri_AddConfLine(useri_fRBPOSTYP, 1U, (char *) &ch, 1u/1u);
+            useri_say("encoding changed to \'Compressed\'", 33ul, 4UL, 'r');
+         }
+      }
+   }
    else if (knob==14UL) {
       if (subknob==0UL) ch = 'N';
-      else ch = (char)(subknob+48UL);
+      else if (subknob==1UL) ch = 'M';
+      else ch = (char)((subknob-1UL)+48UL);
       useri_AddConfLine(useri_fRBPORT, 1U, (char *) &ch, 1u/1u);
    }
    useri_refresh = 1;
