@@ -1432,13 +1432,14 @@ if you need finer resolution than 18m.
 
 |8160 Send Beacon to AprsIs on TCPIP Net.
 "Via Path" is not needed here.
-|8161 Send Beacon to Radio Port 1 as configured
+|8161 Send Beacon to your Map only
+|8162 Send Beacon to Radio Port 1 as configured
 and enabled in "Config > Rf-Ports"
-|8162 Send Beacon to Radio Port 2 as configured
+|8163 Send Beacon to Radio Port 2 as configured
 and enabled in "Config > Rf-Ports"
-|8163 Send Beacon to Radio Port 3 as configured
+|8164 Send Beacon to Radio Port 3 as configured
 and enabled in "Config > Rf-Ports"
-|8164 Send Beacon to Radio Port 4 as configured
+|8165 Send Beacon to Radio Port 4 as configured
 and enabled in "Config > Rf-Ports"
  
 
