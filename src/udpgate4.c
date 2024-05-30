@@ -42,7 +42,7 @@
 
 #define udpgate4_HASHSIZE 65536
 
-#define udpgate4_VERS "udpgate 0.78"
+#define udpgate4_VERS "udpgate 0.79"
 
 #define udpgate4_CPUTEMPFN "/sys/class/thermal/thermal_zone0/temp"
 
@@ -273,6 +273,18 @@ struct UDPSOCK {
 enum GATEFILT {udpgate4_gUNGATE, udpgate4_gRFONLY, udpgate4_gNOGATE,
                 udpgate4_gTCPIP, udpgate4_gTCPXX, udpgate4_gQ};
 
+
+struct UDPSET;
+
+
+struct UDPSET {
+   int32_t txd;
+   int32_t level;
+   int32_t quali;
+   int32_t afc;
+   int32_t snr;
+   char longcalls;
+};
 
 #define udpgate4_MAXHEARD 500
 
@@ -589,6 +601,8 @@ struct _3 {
 
 static struct _3 gateways[21];
 
+static struct UDPSET modeminfo;
+
 static MONCALL rfdestcall;
 
 static MONCALL netdestcall;
@@ -651,8 +665,6 @@ static uint32_t mhfilelines;
 
 static FILENAME mhfilename;
 
-static char udp2[100];
-
 static char SORTURL[4][7];
 
 
@@ -670,7 +682,7 @@ static void spintime(void)
 
 static void Err(const char text[], uint32_t text_len)
 {
-   osi_WrStr("udpgate: ", 10ul);
+   osi_WrStr("udpgate4: ", 11ul);
    osi_WrStr(text, text_len);
    osi_WrStrLn(" error abort", 13ul);
    X2C_ABORT();
@@ -942,7 +954,7 @@ static void readurlsfile(const char gatesfn0[], uint32_t gatesfn_len)
             ii = 1L;
             while (h[ii] && h[ii]!=']') ++ii;
             if (h[ii]!=']' || h[ii+1L]!=':') {
-               osi_WrStrLn("urlfile: [url]:port", 20ul);
+               osi_WrStrLn("udpgate: urlfile: [url]:port", 29ul);
             }
             h[ii] = 0;
             i0 = 1UL;
@@ -1004,6 +1016,7 @@ static aprsstr_GHOSTSET _cnst = {0x00000000UL,0x00000000UL,0x00000000UL,
 static void parms(void)
 {
    char h[4096];
+   char hh[100];
    aprsstr_GHOSTSET ghost;
    char err;
    char lasth;
@@ -1047,7 +1060,10 @@ static void parms(void)
                anonym->rawread = lasth=='R';
                if (anonym->fd<0L || bindudp(anonym->fd,
                 anonym->bindport)<0L) {
-                  Err("-R or -M cannot bind udpport", 29ul);
+                  strncpy(h,"-R or -M cannot bind udpport ",4096u);
+                  aprsstr_CardToStr(anonym->bindport, 1UL, hh, 100ul);
+                  aprsstr_Append(h, 4096ul, hh, 100ul);
+                  Err(h, 4096ul);
                }
                len = socknonblock(anonym->fd);
                ii = aprsstr_InStr(h, 4096ul, "+", 2ul);
@@ -1099,9 +1115,7 @@ static void parms(void)
             if (GetSec(h, 4096ul, &i0, &n)>=0L) heardtimeobj = n*60UL;
             else Err("-B minutes", 11ul);
          }
-         else if (lasth=='c') {
-            callsrc = 1;
-         }
+         else if (lasth=='c') callsrc = 1;
          else if (X2C_CAP(lasth)=='S') {
             rfcallchk = lasth=='s';
             osi_NextArg(h, 4096ul);
@@ -1180,7 +1194,9 @@ static void parms(void)
          else if (lasth=='H') {
             osi_NextArg(h, 4096ul);
             i0 = 0UL;
-            if (GetSec(h, 4096ul, &i0, &n)>=0L) heardtimew = n*60UL;
+            if (GetSec(h, 4096ul, &i0, &n)>=0L) {
+               heardtimew = n*60UL;
+            }
             else Err("-H minutes", 11ul);
          }
          else if (lasth=='I') {
@@ -1266,14 +1282,14 @@ static void parms(void)
          else if (lasth=='t') {
             osi_NextArg(h, 4096ul);
             aprsstr_Assign(tcpbindport, 6ul, h, 4096ul);
-            if (h[0U]==0 || h[0U]=='-') Err("-t port", 8ul);
+            if (h[0U]==0 || h[0U]=='-') {
+               Err("-t port", 8ul);
+            }
          }
          else if (lasth=='w') {
             osi_NextArg(h, 4096ul);
             aprsstr_Assign(wwwbindport, 6ul, h, 4096ul);
-            if (h[0U]==0 || h[0U]=='-') {
-               Err("-w port", 8ul);
-            }
+            if (h[0U]==0 || h[0U]=='-') Err("-w port", 8ul);
          }
          else if (lasth=='X') {
             osi_NextArg(h, 4096ul);
@@ -1359,7 +1375,7 @@ static void parms(void)
          }
          else {
             if (lasth=='h') {
-               osi_WrStrLn("                udpgate 0.78", 29ul);
+               osi_WrStrLn("                udpgate 0.79", 29ul);
                osi_WrStrLn(" -0             send no Data (only Messages and a\
 ck) to User with no Filter", 76ul);
                osi_WrStrLn(" -A <path>      srtm directory path to enable ove\
@@ -1493,7 +1509,7 @@ h a tx or different portname", 78ul);
                osi_WrStrLn(" -r <filename>  write a dated 1 day logfile with \
 date+time+data lines", 70ul);
                osi_WrStrLn(" -S <call>      server call of this server -s MYC\
-ALL-10, no check if valid call", 80ul);
+ALL-10, no check for (gateing) valid calls", 92ul);
                osi_WrStrLn(" -s <call>      server call of this server -s MYC\
 ALL-10", 56ul);
                osi_WrStrLn(" -T <seconds>   kill link to server if unack tcp \
@@ -1529,9 +1545,9 @@ hz", 50ul);
                osi_WrStrLn("Insert Macros: \\\\h time hhmmss,  \\\\z ddhhmm, \\
 \\\v program version, \\\\:filename:, \\\\t cpu temp, \\\\\\ \\", 100ul);
                osi_WrStrLn("", 1ul);
-               osi_WrStrLn("udpgate -v -R 127.0.0.1:9200:9201 -s MYCALL-10 -l\
- 7:aprs.log -n 10:beacon.txt -t 14580 -g www.server.org:14580#m/30 -p 12345",
-                 125ul);
+               osi_WrStrLn("udpgate4 -v -R 127.0.0.1:9200:9201 -s MYCALL-10 -\
+l 7:aprs.log -n 10:beacon.txt -t 14580 -g www.server.org:14580#m/30 -p 12345",
+                 126ul);
                X2C_ABORT();
             }
             if (lasth=='u') {
@@ -1653,12 +1669,12 @@ hz", 50ul);
    }
    if (servercall[0U]==0) {
       osic_WrLn();
-      osi_WrStrLn("udpgate: NO SERVERCALL ?", 25ul);
+      osi_WrStrLn("udpgate4: NO SERVERCALL ?", 26ul);
       osic_WrLn();
    }
    if (wwwbindport[0U] && wwwdir[0]==0) {
       osic_WrLn();
-      osi_WrStrLn("udpgate: -w www-port but no -D icon-dir-path ?", 47ul);
+      osi_WrStrLn("udpgate4: -w www-port but no -D icon-dir-path ?", 48ul);
       osic_WrLn();
    }
 } /* end parms() */
@@ -1712,6 +1728,76 @@ static char Sendudp(const FRAMEBUF s, uint32_t totx,
 } /* end Sendudp() */
 
 
+static void getval(const char s[], uint32_t s_len, uint32_t * i0,
+                int32_t * v)
+{
+   char m;
+   ++*i0;
+   *v = 0L;
+   m = s[*i0]=='-';
+   if (m) ++*i0;
+   while ((*i0<s_len-1 && (uint8_t)s[*i0]>='0') && (uint8_t)s[*i0]<='9') {
+      *v =  *v*10L+(int32_t)((uint32_t)(uint8_t)s[*i0]-48UL);
+      ++*i0;
+   }
+   while (*i0<s_len-1 && (uint8_t)s[*i0]>' ') ++*i0;
+   while (*i0<s_len-1 && s[*i0]==' ') ++*i0;
+   if (m) *v = -*v;
+} /* end getval() */
+
+
+static void decodeudp2(const char ub[], uint32_t ub_len,
+                struct UDPSET * modeminfo0)
+{
+   uint32_t i0;
+   int32_t res0;
+   struct UDPSET * anonym;
+   { /* with */
+      struct UDPSET * anonym = modeminfo0;
+      anonym->txd = 0L;
+      anonym->level = -32768L;
+      anonym->quali = 0L;
+      anonym->snr = -128L;
+      anonym->afc = 1000000L;
+      anonym->longcalls = 0;
+      if (ub[0UL] && ub[1UL]) {
+         i0 = 2UL;
+         while (i0<ub_len-1 && ub[i0]) {
+            switch ((unsigned)ub[i0]) {
+            case 'T':
+               getval(ub, ub_len, &i0, &res0);
+               anonym->txd = res0;
+               break;
+            case 'V':
+               getval(ub, ub_len, &i0, &res0);
+               anonym->level = res0;
+               break;
+            case 'Q':
+               getval(ub, ub_len, &i0, &res0);
+               anonym->quali = res0;
+               break;
+            case 'S':
+               getval(ub, ub_len, &i0, &res0);
+               if (res0>-128L && res0<=127L) anonym->snr = res0;
+               break;
+            case 'A':
+               getval(ub, ub_len, &i0, &res0);
+               if (labs(res0)<1000000L) anonym->afc = res0;
+               break;
+            case 'X':
+               getval(ub, ub_len, &i0, &res0);
+               if (res0==2L) anonym->longcalls = 1;
+               break;
+            default:;
+               getval(ub, ub_len, &i0, &res0);
+               break;
+            } /* end switch */
+         }
+      }
+   }
+} /* end decodeudp2() */
+
+
 static char getudp(pUDPSOCK usock, FRAMEBUF buf,
                 aprsstr_GHOSTSET ghost)
 {
@@ -1725,6 +1811,7 @@ static char getudp(pUDPSOCK usock, FRAMEBUF buf,
    uint32_t mlen;
    FRAMEBUF mbuf0;
    uint32_t oldt;
+   char udp2[100];
    struct _0 * anonym;
    aprsstr_GHOSTSET tmp;
    int32_t tmp0;
@@ -1736,7 +1823,8 @@ static char getudp(pUDPSOCK usock, FRAMEBUF buf,
          return 0;
       }
       buf[len] = 0;
-      udp2[0U] = 0;
+      decodeudp2("", 1ul, &modeminfo);
+      memset((char *) &modeminfo,(char)0,sizeof(struct UDPSET));
       if (usock->rawread) {
          crc1 = buf[len-2L];
          crc2 = buf[len-1L];
@@ -1746,40 +1834,46 @@ static char getudp(pUDPSOCK usock, FRAMEBUF buf,
             buf[0U] = 0;
          }
          else {
+            len -= 2L;
             if (buf[0U]=='\001') {
-               aprsstr_extrudp2(buf, 512ul, udp2, 100ul, &len); /* axudp2 */
+               aprsstr_extrudp2(buf, 512ul, udp2, 100ul, &len);
+               decodeudp2(udp2, 100ul, &modeminfo);
             }
             if (len>2L) {
-               aprsstr_raw2mon(buf, 512ul, mbuf0, 512ul,
-                (uint32_t)(len-2L), &mlen, ghost);
-               if (mbuf0[0U]==0 && verb) {
-                  osi_WrStrLn(" axudp frame decode error", 26ul);
-                  tmp0 = len-3L;
-                  i0 = 0L;
-                  if (i0<=tmp0) for (;; i0++) {
-                     osi_WrHex((uint32_t)(uint8_t)buf[i0], 3UL);
-                     if (i0==tmp0) break;
-                  } /* end for */
-                  osic_WrLn();
-                  i0 = 0L;
-                  for (;;) {
-                     if (i0>=len-3L) break;
-                     if ((uint32_t)(uint8_t)buf[i0]/2UL<32UL) {
-                        osi_WrStr("<", 2ul);
-                        osi_WrHex((uint32_t)(uint8_t)buf[i0]/2UL, 1UL);
-                        osi_WrStr(">", 2ul);
+               if (modeminfo.longcalls) buf[len] = 0;
+               else {
+                  aprsstr_raw2mon(buf, 512ul, mbuf0, 512ul, (uint32_t)len,
+                &mlen, ghost);
+                  if (mbuf0[0U]==0 && verb) {
+                     osi_WrStrLn(" axudp frame decode error", 26ul);
+                     tmp0 = len-3L;
+                     i0 = 0L;
+                     if (i0<=tmp0) for (;; i0++) {
+                        osi_WrHex((uint32_t)(uint8_t)buf[i0], 3UL);
+                        if (i0==tmp0) break;
+                     } /* end for */
+                     osic_WrLn();
+                     i0 = 0L;
+                     for (;;) {
+                        if (i0>=len-3L) break;
+                        if ((uint32_t)(uint8_t)buf[i0]/2UL<32UL) {
+                           osi_WrStr("<", 2ul);
+                           osi_WrHex((uint32_t)(uint8_t)buf[i0]/2UL,
+                1UL);
+                           osi_WrStr(">", 2ul);
+                        }
+                        else {
+                           osi_WrStr((char *)(tmp1 = (char)
+                ((uint32_t)(uint8_t)buf[i0]/2UL),&tmp1), 1u/1u);
+                        }
+                        if (((uint32_t)(uint8_t)buf[i0]&1)) break;
+                        if (i0%7L==6L) osi_WrStr(",", 2ul);
+                        ++i0;
                      }
-                     else {
-                        osi_WrStr((char *)(tmp1 = (char)((uint32_t)
-                (uint8_t)buf[i0]/2UL),&tmp1), 1u/1u);
-                     }
-                     if (((uint32_t)(uint8_t)buf[i0]&1)) break;
-                     if (i0%7L==6L) osi_WrStr(",", 2ul);
-                     ++i0;
+                     osic_WrLn();
                   }
-                  osic_WrLn();
+                  memcpy(buf,mbuf0,512u);
                }
-               memcpy(buf,mbuf0,512u);
             }
             else buf[0U] = 0;
             len = (int32_t)aprsstr_Length(buf, 512ul); /* for statistic */
@@ -2919,7 +3013,7 @@ static void beaconmacros(char s[], uint32_t s_len)
          }
          else if (s[i0]=='v') {
             /* insert version */
-            aprsstr_Append(ns, 256ul, "udpgate 0.78", 13ul);
+            aprsstr_Append(ns, 256ul, "udpgate 0.79", 13ul);
          }
          else if (s[i0]==':') {
             /* insert file */
@@ -3599,24 +3693,6 @@ static uint32_t MHcount(pHEARD ph, uint32_t maxtime, uint32_t * cj)
 } /* end MHcount() */
 
 
-static void getval(const char s[], uint32_t s_len, uint32_t * i0,
-                int32_t * v)
-{
-   char m;
-   ++*i0;
-   *v = 0L;
-   m = s[*i0]=='-';
-   if (m) ++*i0;
-   while ((*i0<s_len-1 && (uint8_t)s[*i0]>='0') && (uint8_t)s[*i0]<='9') {
-      *v =  *v*10L+(int32_t)((uint32_t)(uint8_t)s[*i0]-48UL);
-      ++*i0;
-   }
-   while (*i0<s_len-1 && (uint8_t)s[*i0]>' ') ++*i0;
-   while (*i0<s_len-1 && s[*i0]==' ') ++*i0;
-   if (m) *v = -*v;
-} /* end getval() */
-
-
 static void AddHeard(pHEARD * table, uint32_t maxtime, const MONCALL from,
                 uint32_t fromport, const char buf[],
                 uint32_t buf_len, char * ungat,
@@ -3627,7 +3703,6 @@ static void AddHeard(pHEARD * table, uint32_t maxtime, const MONCALL from,
    uint32_t si;
    uint32_t j;
    uint32_t i0;
-   int32_t res0;
    pHEARD po;
    pHEARD ph;
    pRAWTEXT prh;
@@ -3710,49 +3785,30 @@ static void AddHeard(pHEARD * table, uint32_t maxtime, const MONCALL from,
          }
          else {
             /* axudp2 */
-            anonym->txd = 0U;
-            anonym->level = -32768;
-            anonym->quali = 0U;
-            anonym->snr = -128;
-            anonym->afc = 1000000L;
-            if (udp2[0U] && udp2[1U]) {
-               i0 = 2UL;
-               while (i0<99UL && udp2[i0]) {
-                  switch ((unsigned)udp2[i0]) {
-                  case 'T':
-                     getval(udp2, 100ul, &i0, &res0);
-                     if (res0>0L && res0<=65535L) {
-                        anonym->txd = (uint16_t)res0;
-                     }
-                     break;
-                  case 'V':
-                     getval(udp2, 100ul, &i0, &res0);
-                     if (res0>-32768L && res0<=32767L) {
-                        anonym->level = (short)res0;
-                     }
-                     break;
-                  case 'Q':
-                     getval(udp2, 100ul, &i0, &res0);
-                     if (res0>0L && res0<=255L) {
-                        anonym->quali = (uint8_t)res0;
-                     }
-                     break;
-                  case 'S':
-                     getval(udp2, 100ul, &i0, &res0);
-                     if (res0>-128L && res0<=127L) {
-                        anonym->snr = (signed char)res0;
-                     }
-                     break;
-                  case 'A':
-                     getval(udp2, 100ul, &i0, &res0);
-                     if (labs(res0)<1000000L) anonym->afc = res0;
-                     break;
-                  default:;
-                     getval(udp2, 100ul, &i0, &res0);
-                     break;
-                  } /* end switch */
-               }
-            }
+            anonym->txd = (uint16_t)modeminfo.txd;
+            anonym->level = (short)modeminfo.level;
+            anonym->quali = (uint8_t)modeminfo.quali;
+            anonym->snr = (signed char)modeminfo.snr;
+            anonym->afc = modeminfo.afc;
+            /*
+                    IF (udp2[0]<>0C) & (udp2[1]<>0C) THEN
+                      i:=2;
+                      WHILE (i<HIGH(udp2)) & (udp2[i]<>0C) DO
+                        CASE udp2[i] OF
+                          "T":getval(udp2, i, res);
+                IF (res>0        ) & (res<=MAX(CARD16)) THEN txd:=res END;
+                         |"V":getval(udp2, i, res);
+                IF (res>MINLEVEL ) & (res<=MAX(INT16)) THEN level:=res END; 
+                         |"Q":getval(udp2, i, res);
+                IF (res>0        ) & (res<=MAX(CARD8)) THEN quali:=res END;
+                         |"S":getval(udp2, i, res);
+                IF (res>MIN(INT8)) & (res<=MAX(INT8)) THEN snr:=res END;
+                         |"A":getval(udp2, i, res);
+                IF ABS(res)<1000000 THEN afc:=res END;
+                        ELSE getval(udp2, i, res) END;
+                      END; 
+                    END;
+            */
             /* axudp2 */
             *ungat = ph->ungate;
             DirectPos(buf, buf_len, &anonym->position, &anonym->sym,
@@ -3824,7 +3880,9 @@ static void AddHeard(pHEARD * table, uint32_t maxtime, const MONCALL from,
                         osic_free((char * *) &prh, prh->len);
                      }
                   }
-                  else anonym->rawtext[ji] = pr;
+                  else {
+                     anonym->rawtext[ji] = pr; /* first line */
+                  }
                }
             }
          }
@@ -4530,11 +4588,11 @@ static void Query(MONCALL fromcall, char msg[], uint32_t msg_len,
                  1, path);
    }
    else if (cmd=='S') {
-      Stomsg(servercall, fromcall, *(MSGTEXT *)memcpy(&tmp1,"udpgate 0.78 Msg\
+      Stomsg(servercall, fromcall, *(MSGTEXT *)memcpy(&tmp1,"udpgate 0.79 Msg\
  S&F Relay",27u), *(ACKTEXT *)memcpy(&tmp0,"",1u), 0, 0, 1, path);
    }
    else if (cmd=='v') {
-      Stomsg(servercall, fromcall, *(MSGTEXT *)memcpy(&tmp1,"udpgate 0.78",
+      Stomsg(servercall, fromcall, *(MSGTEXT *)memcpy(&tmp1,"udpgate 0.79",
                 13u), *(ACKTEXT *)memcpy(&tmp0,"",1u), 0, 0, 1, path);
    }
    else if (cmd=='h') {
@@ -4613,8 +4671,8 @@ static void Getmsg(const char b[], uint32_t b_len, uint32_t rxport,
    char isack;
    uint8_t path;
    *ungate = 0;
-   if ((b[0UL]==0 || rxport && !iscall(b, b_len, 0UL)) || aprsstr_InStr(b,
-                b_len, "!x!", 4ul)>=0L) return;
+   if ((b[0UL]==0 || (rfcallchk && rxport) && !iscall(b, b_len,
+                0UL)) || aprsstr_InStr(b, b_len, "!x!", 4ul)>=0L) return;
    dir = Heard(b, b_len, hfrom, &trust);
    if (hfrom[0U]) {
       if (rxport) {
@@ -7062,10 +7120,11 @@ static void listraw(WWWB wbuf, pTCPSOCK * wsock, const char s[],
    call[0] = 0;
    if (s[i0]=='=') {
       ++i0;
-      while (((i0<=s_len-1 && ((uint8_t)s[i0]>='0' && (uint8_t)
-                s[i0]<='9' || (uint8_t)X2C_CAP(s[i0])>='A' && (uint8_t)
+      while ((i0<=s_len-1 && (uint8_t)s[i0]>=' ')
+                && (((((!rfcallchk || (uint8_t)s[i0]>='0' && (uint8_t)
+                s[i0]<='9') || (uint8_t)X2C_CAP(s[i0])>='A' && (uint8_t)
                 X2C_CAP(s[i0])<='Z') || s[i0]=='^') || s[i0]=='-')
-                || ph==heardobj && (uint8_t)s[i0]>=' ') {
+                || ph==heardobj)) {
          aprsstr_Append(call, 4096ul, (char *) &s[i0], 1u/1u);
          ++i0;
       }
@@ -7384,7 +7443,7 @@ type=\"submit\" value=\"set reload time\"/></form>", 93ul);
 } /* end reloadklick() */
 
 
-static void klicks(WWWB wbuf, pTCPSOCK * wsock, char noindex)
+static void klicks(WWWB wbuf, pTCPSOCK * wsock, char withindex)
 {
    /*
        Appwww('<div style="text-align:center" class="nav">');
@@ -7396,10 +7455,10 @@ method=\"get\">", 63ul);
    if (maxmsg>0UL) {
       klick(wbuf, wsock, "msg", 4ul, "MSGRELAY", 9ul, 0UL, 0, 0);
    }
-   if (noindex) {
-      klick(wbuf, wsock, "info.html", 10ul, "INFO", 5ul, 0UL, 0, 0);
+   if (withindex) {
+      klick(wbuf, wsock, "index.html", 11ul, "INDEX", 6ul, 0UL, 0, 0);
    }
-   else klick(wbuf, wsock, "index.html", 11ul, "INDEX", 6ul, 0UL, 0, 0);
+   else klick(wbuf, wsock, "info.html", 10ul, "INFO", 5ul, 0UL, 0, 0);
    reloadklick(wbuf, wsock);
    Appwww(wsock, wbuf, "</div>", 7ul);
 } /* end klicks() */
@@ -7450,7 +7509,7 @@ static void title(WWWB wbuf, pTCPSOCK * wsock, uint32_t * cnt,
          Appwww(wsock, wbuf, "  Port ", 8ul);
          Appwww(wsock, wbuf, tcpbindport, 6ul);
       }
-      Appwww(wsock, wbuf, " [udpgate 0.78] Maxusers ", 26ul);
+      Appwww(wsock, wbuf, " [udpgate 0.79] Maxusers ", 26ul);
       aprsstr_IntToStr((int32_t)maxusers, 1UL, h, 32ul);
       Appwww(wsock, wbuf, h, 32ul);
       Appwww(wsock, wbuf, " http#", 7ul);
@@ -7469,12 +7528,14 @@ static void title(WWWB wbuf, pTCPSOCK * wsock, uint32_t * cnt,
          aprsstr_Append(h, 32ul, "m(NN)", 6ul);
          Appwww(wsock, wbuf, h, 32ul);
       }
-      Appwww(wsock, wbuf, " [udpgate 0.78] http#", 22ul);
+      Appwww(wsock, wbuf, " [udpgate 0.79] http#", 22ul);
    }
    aprsstr_IntToStr((int32_t)*cnt, 1UL, h, 32ul);
    Appwww(wsock, wbuf, h, 32ul);
    Appwww(wsock, wbuf, " Uptime ", 9ul);
    AppTime(wbuf, wsock, uptime, 0);
+   if (rfcallchk) Appwww(wsock, wbuf, " CallCheck On ", 15ul);
+   else Appwww(wsock, wbuf, " CallCheck Off ", 16ul);
    if (nogatebadvia && maintit) {
       Appwww(wsock, wbuf, "<BR>(only Frames with a Callsign of the sender in \
 it will be gated)", 68ul);
@@ -7499,7 +7560,7 @@ static void Www(pTCPSOCK wsock)
    pMESSAGE mp;
    uint8_t tp;
    char hok;
-   char noindex;
+   char withindex;
    struct TCPSOCK * anonym;
    struct TCPSOCK * anonym0;
    struct _0 * anonym1;
@@ -7551,9 +7612,9 @@ static void Www(pTCPSOCK wsock)
    }
    aprsstr_Assign(h1, 256ul, wwwdir, 1024ul);
    aprsstr_Append(h1, 256ul, "index.html", 11ul);
-   noindex = !osi_Exists(h1, 256ul);
-   if (wsock->get[0U]==0 && !noindex) {
-      aprsstr_Assign(wsock->get, 256ul, h1, 256ul);
+   withindex = osi_Exists(h1, 256ul);
+   if (withindex && wsock->get[0U]==0) {
+      aprsstr_Assign(wsock->get, 256ul, "index.html", 11ul);
    }
    if (wsock->get[0U]==0 || aprsstr_StrCmp(wsock->get, 256ul, "connects",
                 9ul)) {
@@ -7566,7 +7627,7 @@ static void Www(pTCPSOCK wsock)
             IntToStr(QWatch.qsize, 1, h1); Appwww(h1); Appwww("s");
           END;
       */
-      klicks(wbuf, &wsock, noindex);
+      klicks(wbuf, &wsock, withindex);
       /* udp ports*/
       Appwww(&wsock, wbuf, "<table id=connections BORDER=\"0\" CELLPADDING=3 \
 CELLSPACING=1 BGCOLOR=#000000 align=center SUMMARY=\"Connection Table\">\015\01\
@@ -7749,7 +7810,7 @@ ign:center\" BGCOLOR=\"#D0C0C0\"><TD>out", 74ul);
    else if (aprsstr_StrCmp(wsock->get, 256ul, "mh", 3ul)) {
       conthead(&wsock, wbuf, -1L);
       title(wbuf, &wsock, &mhhttpcount, 0, " MHeard", 8ul, "", 1ul);
-      klicks(wbuf, &wsock, noindex);
+      klicks(wbuf, &wsock, withindex);
       if (heardtimew>0UL) {
          showmh(wbuf, &wsock, h1, hearddir, 1, 0, heardtimew, " Heard Station\
 s Since Last ", 28ul, wsock->sortby);
@@ -7771,7 +7832,7 @@ nected Stations Since Last ", 40ul, wsock->sortby);
       conthead(&wsock, wbuf, -1L);
       title(wbuf, &wsock, &msghttpcount, 0, " Message Relay", 15ul, viacall,
                 10ul);
-      klicks(wbuf, &wsock, noindex);
+      klicks(wbuf, &wsock, withindex);
       for (tp = udpgate4_DIR; tp>=udpgate4_NET; tp--) {
          Appwww(&wsock, wbuf, "<table id=msg border=0 align=center CELLPADDIN\
 G=3 CELLSPACING=1 BGCOLOR=\"#FFFFFF\">", 83ul);
@@ -8008,7 +8069,7 @@ static char tcpconn(pTCPSOCK * sockchain, int32_t f,
             aprsstr_Append(h, 512ul, passwd, 6ul);
          }
          aprsstr_Append(h, 512ul, " vers ", 7ul);
-         aprsstr_Append(h, 512ul, "udpgate 0.78", 13ul);
+         aprsstr_Append(h, 512ul, "udpgate 0.79", 13ul);
          if (actfilter[0U]) {
             aprsstr_Append(h, 512ul, " filter ", 9ul);
             aprsstr_Append(h, 512ul, actfilter, 256ul);
@@ -8040,7 +8101,7 @@ static char tcpconn(pTCPSOCK * sockchain, int32_t f,
          aprsstr_Append(h1, 512ul, h2, 512ul);
          logline(udpgate4_resLOG, h1, 512ul);
       }
-      aprsstr_Assign(h, 512ul, "# udpgate 0.78\015\012", 17ul);
+      aprsstr_Assign(h, 512ul, "# udpgate 0.79\015\012", 17ul);
       Sendtcp(cp, h);
    }
    return 1;
