@@ -52,6 +52,8 @@
 
 #define loratx_DB 4.342944819
 
+#define loratx_MAXSYMS 9999
+
 static uint8_t loratx_WHITEN[255] = {255U,254U,252U,248U,240U,225U,194U,133U,11U,23U,47U,94U,188U,120U,241U,227U,198U,
                 141U,26U,52U,104U,208U,160U,64U,128U,1U,2U,4U,8U,17U,35U,71U,142U,28U,56U,113U,226U,196U,137U,18U,37U,
                 75U,151U,46U,92U,184U,112U,224U,192U,129U,3U,6U,12U,25U,50U,100U,201U,146U,36U,73U,147U,38U,77U,155U,
@@ -108,7 +110,7 @@ struct _0;
 
 struct _0 {
    uint32_t nsym;
-   uint32_t xor;
+   float add;
 };
 
 static struct _0 tests[256];
@@ -116,6 +118,8 @@ static struct _0 tests[256];
 static uint8_t nib[12];
 
 static uint32_t sb[10000];
+
+static double finetest[10000];
 
 
 struct _1 {
@@ -478,7 +482,7 @@ static void sethamm(uint32_t bits, uint8_t * b)
                 8,3))&0x40U|(X2C_LSH(*b,8,7)^X2C_LSH(*b,8,5)^X2C_LSH(*b,8,4))&0x80U;
    }
    else if (bits>0UL) {
-      /* b4=0/1/2 b5=2/3/4 */
+      /* b4=0/1/2 b5=1/2/3 */
       /* b6=0/1/3 */
       /* b7=0/2/3 */
       *b = *b|(X2C_LSH(*b,8,4)^X2C_LSH(*b,8,3)^X2C_LSH(*b,8,2)^X2C_LSH(*b,8,1))&0x10U;
@@ -687,9 +691,11 @@ extern int main(int argc, char **argv)
             }
             else if (as[1U]=='s') {
                osi_NextArg(as, 4096ul);
-               if ((!aprsstr_StrToCard(as, 4096ul, &sf) || sf<5UL) || sf>12UL) {
-                  Err("-s <sf> 5..12", 14ul);
+               if ((!aprsstr_StrToInt(as, 4096ul, &ret) || labs(ret)<5L) || labs(ret)>12L) {
+                  Err("-s <sf> [-]5..[-]12", 20ul);
                }
+               sf = (uint32_t)labs(ret);
+               if (ret<0L) swapiq = 1;
             }
             else if (as[1U]=='z') {
                osi_NextArg(as, 4096ul);
@@ -712,11 +718,11 @@ extern int main(int argc, char **argv)
             else if (as[1U]=='T') {
                osi_NextArg(as, 4096ul);
                if (!aprsstr_StrToCard(as, 4096ul, &tests[testc].nsym)) {
-                  Err("-T <n> <pattern>", 17ul);
+                  Err("-T <n> [-]<shift>", 18ul);
                }
                osi_NextArg(as, 4096ul);
-               if (!aprsstr_StrToCard(as, 4096ul, &tests[testc].xor)) {
-                  Err("-T <n> <pattern>", 17ul);
+               if (!aprsstr_StrToFix(&tests[testc].add, as, 4096ul)) {
+                  Err("-T <n> [-]<shift>", 18ul);
                }
                if (testc<255UL) ++testc;
             }
@@ -778,8 +784,8 @@ extern int main(int argc, char **argv)
                osi_WrStrLn(" -r <samplerate>     iq sampelrate Hz >=bandwidth (125000.0)", 61ul);
                osi_WrStrLn(" -S <shift>          shift signal frequency inside iq-band (Hz) (0)", 68ul);
                osi_WrStrLn(" -s <sf>             spread factor (5..12) (12)", 48ul);
-               osi_WrStrLn(" -T <n> <pattern>    for FEC tests set n\'th chirp to zero level (pattern=0)", 76ul);
-               osi_WrStrLn("                       or xor with <pattern> (decimal), may be repeatet", 72ul);
+               osi_WrStrLn(" -T <n> <pattern>    for FEC tests set n\'th chirp to zero level (shift=0)", 74ul);
+               osi_WrStrLn("                       or shift chirp, may be repeatet", 55ul);
                osi_WrStrLn(" -V                  more verbous", 34ul);
                osi_WrStrLn(" -v                  verbous", 29ul);
                osi_WrStrLn(" -w <level>          add white noise", 37ul);
@@ -875,7 +881,7 @@ extern int main(int argc, char **argv)
    }
    if (txtlen>255UL) txtlen = 255UL;
    if (verb) {
-      osi_Werr("len:", 5ul);
+      osi_Werr("payloadlen:", 12ul);
       aprsstr_CardToStr(txtlen, 1UL, hh, 4096ul);
       osi_WerrLn(hh, 4096ul);
    }
@@ -1009,12 +1015,17 @@ extern int main(int argc, char **argv)
    baud = bw*bind;
    w = 0.0;
    i = 0UL;
+   memset((char *)finetest,(char)0,sizeof(double [10000]));
    while (i<testc) {
       /* modify chirps for tests */
       if (tests[i].nsym<=9999UL) {
-         if (tests[i].xor==0UL) sb[tests[i].nsym] |= 0x10000000UL;
+         if (tests[i].add==0.0f) sb[tests[i].nsym] |= 0x10000000UL;
          else {
-            sb[tests[i].nsym] = sb[tests[i].nsym]^(uint32_t)tests[i].xor; /* xor with pattern */
+            sb[tests[i].nsym] = (uint32_t)((uint32_t)((int32_t)sb[tests[i].nsym]+(int32_t)
+                X2C_TRUNCI(tests[i].add,X2C_min_longint,X2C_max_longint))%(uint32_t)(1UL<<sf));
+                /* add failure pattern */
+            finetest[tests[i].nsym] = (double)(tests[i].add-(float)(int32_t)X2C_TRUNCI(tests[i].add,
+                X2C_min_longint,X2C_max_longint));
             sb[tests[i].nsym] |= 0x20000000UL;
          }
       }
@@ -1033,7 +1044,7 @@ extern int main(int argc, char **argv)
             if (j==0UL) break;
          } /* end for */
          if ((0x10000000UL & sb[i])) osi_Werr(" -zero-level", 13ul);
-         else if ((0x20000000UL & sb[i])) osi_Werr(" -xord", 7ul);
+         else if ((0x20000000UL & sb[i])) osi_Werr(" -add-test", 11ul);
          else if ((0x40000000UL & sb[i])) osi_Werr(" -quarter", 10ul);
          else if ((0x80000000UL & sb[i])) osi_Werr(" -reverse", 10ul);
          osi_WerrLn("", 1ul);
@@ -1052,7 +1063,8 @@ extern int main(int argc, char **argv)
    do {
       symf = (double)samp*bind;
       sym = (uint32_t)X2C_TRUNCC(symf,0UL,X2C_max_longcard);
-      frac = ((symf-(double)sym)-0.5)+X2C_DIVL((double)(uint32_t)(sb[sym]&0xFFFUL),(double)bins);
+      frac = ((symf-(double)sym)-0.5)+X2C_DIVL((double)(uint32_t)(sb[sym]&0xFFFUL)+finetest[sym],
+                (double)bins);
       if (frac>0.5) frac = frac-1.0;
       if ((0x40000000UL & sb[sym])==0 || frac<(-0.25)) {
          fr = frac*bws;

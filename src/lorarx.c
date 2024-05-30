@@ -23,6 +23,7 @@
 #ifndef aprsstr_H_
 #include "aprsstr.h"
 #endif
+#include <math.h>
 #include <signal.h>
 
 /* iq downsample, shift, (auto)notch lora demodulator with axudp, json out and packet radio, aprs, lorawan,
@@ -54,16 +55,6 @@ Now we are 1 sample exact on sampletime and (as exact as the median of the
 preamble) on frequency and can decode data. Further drifts in frequency and time
 (samplerate error) may be corrected with AFC. Sampletime needs no further correction.
 
-----------------
-
-Demodulation-test rtl-stick/sx127x (sf12,cr5,125khz)
-stable signals not much multipath: till same s/n
-colliding transmissions, stronger signal later: sx: zero frames, rtl 100% if +1.5dB
-                                         first: sx: if +3dB, rtl +1.5dB
-fading with massive multipath: sx better, rtl still in work 
-
-----------------
-
 frequency stability (short/longterm) of rtl is ok
 rtl's fast AGC up/down on pulsing outband signals modulates carrier and spreads fft-bin
 same as mobile fading
@@ -85,9 +76,9 @@ same as mobile fading
 
 #define lorarx_FRAMELEN 256
 
-#define lorarx_DATASQUELCH 15.0
+#define lorarx_DATASQUELCH 11.0
 
-#define lorarx_DATASQUELCHFACT (-1.1)
+#define lorarx_DATASQUELCHFACT (-0.79)
 /* adapt squelch to sf */
 
 #define lorarx_MAXNEST 4
@@ -163,7 +154,6 @@ struct BIN {
    float sharpness;
    float lev;
    float freq;
-   uint32_t bn;
 };
 
 struct BINS;
@@ -174,6 +164,7 @@ struct BINS {
    float noise;
    float splt;
    uint32_t halfnoisc;
+   int32_t fecnbr;
 };
 
 typedef uint8_t NIBBBLOCK[12];
@@ -422,6 +413,7 @@ static int32_t outfiltered;
 static void Error(char text[], uint32_t text_len)
 {
    X2C_PCOPY((void **)&text,text_len);
+   osi_Werr("lorarx:", 8ul);
    osi_Werr(text, text_len);
    osi_Werr(" error abort\012", 14ul);
    X2C_ABORT();
@@ -429,48 +421,69 @@ static void Error(char text[], uint32_t text_len)
 } /* end Error() */
 
 
-static char hex(uint32_t n)
+static char hex(uint32_t n, char cap)
 {
    n = n&15UL;
    if (n<=9UL) return (char)(n+48UL);
-   return (char)(n+55UL);
+   if (cap) return (char)(n+55UL);
+   return (char)(n+87UL);
 } /* end hex() */
 
 
-static void WrHex(uint32_t x, uint32_t digits, uint32_t len)
+static void HexStr(uint32_t x, uint32_t digits, uint32_t len, char cap, char s[], uint32_t s_len)
 {
    uint32_t i0;
-   char s[256];
-   if (digits>255UL) digits = 255UL;
+   if (digits>s_len-1) digits = s_len-1;
    i0 = digits;
-   while (i0<len && i0<255UL) {
+   while (i0<len && i0<s_len-1) {
       s[i0] = ' ';
       ++i0;
    }
    s[i0] = 0;
    while (digits>0UL) {
       --digits;
-      s[digits] = hex(x);
+      s[digits] = hex(x, cap);
       x = x/16UL;
    }
+} /* end HexStr() */
+
+
+static void WrHex(uint32_t x, uint32_t digits, uint32_t len)
+{
+   char s[256];
+   HexStr(x, digits, len, 0, s, 256ul);
    osi_WrStr(s, 256ul);
 } /* end WrHex() */
+
+
+static void WrHexCap(uint32_t x, uint32_t digits, uint32_t len)
+{
+   char s[256];
+   HexStr(x, digits, len, 1, s, 256ul);
+   osi_WrStr(s, 256ul);
+} /* end WrHexCap() */
+
+
+static void ChHex(char c, char s[], uint32_t s_len)
+{
+   if ((uint8_t)c>='\177' || (uint8_t)c<' ') {
+      s[0UL] = '[';
+      s[1UL] = hex((uint32_t)(uint8_t)c/16UL, 0);
+      s[2UL] = hex((uint32_t)(uint8_t)c, 0);
+      s[3UL] = ']';
+      s[4UL] = 0;
+   }
+   else {
+      s[0UL] = c;
+      s[1UL] = 0;
+   }
+} /* end ChHex() */
 
 
 static void WrChHex(char c)
 {
    char s[11];
-   if ((uint8_t)c>='\177' || (uint8_t)c<' ') {
-      s[0U] = '[';
-      s[1U] = hex((uint32_t)(uint8_t)c/16UL);
-      s[2U] = hex((uint32_t)(uint8_t)c);
-      s[3U] = ']';
-      s[4U] = 0;
-   }
-   else {
-      s[0U] = c;
-      s[1U] = 0;
-   }
+   ChHex(c, s, 11ul);
    osi_WrStr(s, 11ul);
 } /* end WrChHex() */
 
@@ -481,6 +494,20 @@ static float lim(float x, float max0)
    if (x<-max0) return -max0;
    return x;
 } /* end lim() */
+
+
+static float ftrunc(float x)
+{
+   if (x<0.0f) return (-1.0f)-(float)(uint32_t)X2C_TRUNCC(-x,0UL,X2C_max_longcard);
+   return (float)(uint32_t)X2C_TRUNCC(x,0UL,X2C_max_longcard);
+} /* end ftrunc() */
+
+
+static float fsign(float x)
+{
+   if (x<0.0f) return (-1.0f);
+   return 1.0f;
+} /* end fsign() */
 
 
 static float flmin(float x, float min0)
@@ -499,14 +526,14 @@ static float flmax(float x, float max0)
 
 static float CABS(struct Complex X)
 {
-   return osic_sqrt(X.Re*X.Re+X.Im*X.Im);
+   return (float)sqrt((double)(X.Re*X.Re+X.Im*X.Im));
 } /* end CABS() */
 
 
 static float ln0(float x)
 {
    if (x<=0.0f) return 0.0f;
-   return osic_ln(x);
+   return (float)log((double)x);
 } /* end ln0() */
 
 
@@ -812,11 +839,23 @@ static void makefir(float fg, pFIRTAB pfir0, pFREQMASK pbird, float thres)
       ptmpfir->Adr[i0+m] = u;
       if (i0==tmp) break;
    } /* end for */
+   l = X2C_DIVR(2.0f,(float)flen);
+   tmp = flen-1UL;
+   i0 = 0UL;
+   if (i0<=tmp) for (;; i0++) {
+      /* hamming */
+      w0 = (float)(0.54+0.46*cos((double)(3.1415926535f*((float)i0*l-1.0f))));
+      ptmpfir->Adr[i0].Re = ptmpfir->Adr[i0].Re*w0;
+      ptmpfir->Adr[i0].Im = ptmpfir->Adr[i0].Im*w0;
+      if (i0==tmp) break;
+   } /* end for */
    l = 0.00001f;
    tmp = flen-1UL;
    i0 = 0UL;
    if (i0<=tmp) for (;; i0++) {
       u = ptmpfir->Adr[(((i0%firlen)*subsamp+subsamp)-1UL)-i0/firlen]; /* rearange table for better memory cashing */
+      /*    u:=ptmpfir^[(firlen-1-i MOD firlen)*subsamp + i DIV firlen];
+                (* rearange table for better memory cashing *) */
       pfir0->Adr[i0] = u;
       w0 = CABS(u);
       if (w0>l) l = w0;
@@ -840,7 +879,7 @@ static void MakeDDS(void)
    float r;
    r = 9.5873799240112E-5f;
    for (i0 = 0UL; i0<=65535UL; i0++) {
-      DDS[i0] = osic_sin((float)i0*r);
+      DDS[i0] = (float)sin((double)((float)i0*r));
    } /* end for */
 } /* end MakeDDS() */
 
@@ -1046,7 +1085,7 @@ static void Parms(void)
          else if (h[1U]=='a') {
             osi_NextArg(h, 1024ul);
             if (!aprsstr_StrToFix(&dems->frames[0U].afcspeed, h, 1024ul)) {
-               Error("-a <afcspeed> (0.5)", 20ul);
+               Error("-a <afcspeed> (0.02)", 21ul);
             }
             if (!hasudp) afcspd = dems->frames[0U].afcspeed;
          }
@@ -1077,7 +1116,7 @@ static void Parms(void)
          }
          else if (h[1U]=='r') {
             osi_NextArg(h, 1024ul);
-            if (!aprsstr_StrToFix(&insamplerate, h, 1024ul)) Error("-r <sampelrate-Hz>", 19ul);
+            if (!aprsstr_StrToFix(&insamplerate, h, 1024ul)) Error("-r <samplerate-Hz>", 19ul);
          }
          else if (h[1U]=='w') {
             osi_NextArg(h, 1024ul);
@@ -1221,7 +1260,7 @@ static void Parms(void)
                osi_WrStrLn(" output data in udp, axudp or json, view aprs, pr, lorawan, fanet", 66ul);
                osi_WrStrLn("", 1ul);
                osi_WrStrLn(" -A                 (*) enable frame chaining for ax25 longframes", 66ul);
-               osi_WrStrLn(" -a <afc-speed>     (*)follow frequency drift, 0 off (0.5), on sf<9 (0)", 72ul);
+               osi_WrStrLn(" -a <afc-speed>     (*)follow frequency drift, 0 off (0.02), on sf<7 (0)", 73ul);
                osi_WrStrLn(" -b <bandwidth>     kHz 0:7.8 1:10.4 2:15.6 3:20.8 4:31.25 5:41.7 6:62.5 7:125 8:250 9:500 (\
 7)", 95ul);
                osi_WrStrLn(" -C                 (*)use crc on implicit header", 50ul);
@@ -1251,12 +1290,12 @@ able) pipe", 103ul);
                osi_WrStrLn(" -n <[-]Hz> <[-]Hz> notchfilter baseband from-to Hz (may be repeatet)", 70ul);
                osi_WrStrLn(" -O <0..1>          (*)optimize on off else automatic on sf/bw (-1)", 68ul);
                osi_WrStrLn(" -o <Hz>            shift input iq band +-Hz", 45ul);
-               osi_WrStrLn(" -P <+/-ppm>        (*)tune datarate (chirp sampelrate) or preset for auto (-a) in ppm (0)",
+               osi_WrStrLn(" -P <+/-ppm>        (*)tune datarate (chirp samplerate) or preset for auto (-a) in ppm (0)",
                  91ul);
                osi_WrStrLn(" -Q                 verbous only for frames with crc and crc ok", 64ul);
                osi_WrStrLn(" -q                 (*)invers chirps or swapped I/Q (prefer negative spread factor)", 84ul);
-               osi_WrStrLn(" -R                 switch off repairing multipath or if-filter fase distortion", 80ul);
-               osi_WrStrLn(" -r <Hz>            downsample input, give exact input sampelrate in Hz (off)", 78ul);
+               osi_WrStrLn(" -R                 switch off repairing multipath or if-filter phase distortion", 81ul);
+               osi_WrStrLn(" -r <Hz>            downsample input, give exact input samplerate in Hz (off)", 78ul);
                osi_WrStrLn(" -S <level>         (*)modifiy squelch level critical for implicit header frame length guess\
  (automatic)", 105ul);
                osi_WrStrLn(" -s [-]<sf>         (*)spread factor (5..12) (12) and start a new demodulator", 78ul);
@@ -1283,8 +1322,8 @@ her pramaeters", 107ul);
 ev/stdin -f u8 -v -N -b 7 -s 12 -w 64 -r 1000000 -W 50", 147ul);
                osi_WrStrLn("example2: lorawan all modulations: rtl_sdr -f 869.525m -s 1000000 - | ./lorarx -i /dev/stdin\
  -f u8 -v -N -b 7 -s 12 -s 11 -s 10 -s 9 -s 8 -s 7 -s -12 -s -11 -s -10 -s -9 -s -8 -s -7 -Q -w 64 -r 1000000", 202ul);
-               osi_WrStrLn("example3: fanet: rtl_sdr -f 868.215m -s 1000000 - | ./lorarx -i /dev/stdin -f u8 -v -N -b 8 \
--s 7 -Q -w 128 -r 1000000", 118ul);
+               osi_WrStrLn("example3: fanet: rtl_sdr -f 868.2m -s 1000000 - | ./lorarx -i /dev/stdin -f u8 -v -N -b 8 -s\
+ 7 -Q -w 128 -r 1000000", 116ul);
                osi_WrStrLn("example4: sdrtst IQ output with FIR 125kHz in sdrcfg.txt: q 433.775 0 0 0 192000+125000,32",
                  91ul);
                osi_WrStrLn("          sdrtst -t 127.0.0.1:1234 -c sdrcfg.txt -r 250000 -s /dev/stdout -k | ", 80ul);
@@ -1392,17 +1431,13 @@ ev/stdin -f u8 -v -N -b 7 -s 12 -w 64 -r 1000000 -W 50", 147ul);
       else if (pd0->cfgopt==1L || baud(pd0->frames[0U].cfgsf, bwnum)<62.5f) pd0->frames[0U].optimize = 1;
       if (pd0->frames[0U].afcspeed<0.0f) {
          /* automatic afc on */
-         if (afcspd<0.0f) {
-            if (pd0->frames[0U].cfgsf<=10UL) afcspd = 0.3f;
-            else afcspd = 0.5f;
-         }
-         if (pd0->frames[0U].cfgsf>=7UL) pd0->frames[0U].afcspeed = afcspd;
-         else pd0->frames[0U].afcspeed = 0.0f;
+         if (afcspd<0.0f) afcspd = 0.02f;
+         pd0->frames[0U].afcspeed = afcspd;
       }
-      if (dems->frames[0U].cfgsf==0UL) dems->frames[0U].cfgsf = globsf;
-      if (dems->frames[0U].cfgcr==0UL) dems->frames[0U].cfgcr = globcr;
+      if (pd0->frames[0U].cfgsf==0UL) pd0->frames[0U].cfgsf = globsf;
+      if (pd0->frames[0U].cfgcr==0UL) pd0->frames[0U].cfgcr = globcr;
       if (pd0->frames[0U].datasquelch<0.0f) {
-         pd0->frames[0U].datasquelch = 15.0f+(float)pd0->frames[0U].cfgsf*(-1.1f);
+         pd0->frames[0U].datasquelch = 11.0f+(float)pd0->frames[0U].cfgsf*(-0.79f);
       }
       pd0->frames[0U].dataratecorr = pd0->frames[0U].dataratecorr*1.E-6f*(float)(uint32_t)
                 (1UL<<pd0->frames[0U].cfgsf);
@@ -1416,11 +1451,11 @@ ev/stdin -f u8 -v -N -b 7 -s 12 -w 64 -r 1000000 -W 50", 147ul);
          osic_WrINT32(pd0->frames[0U].cfgsf, 1UL);
          osi_WrStr(" id=", 5ul);
          if (pd0->frames[0U].synfilter==0UL) osi_WrStr("Off", 4ul);
-         else WrHex(pd0->frames[0U].synfilter, 2UL, 0UL);
+         else WrHexCap(pd0->frames[0U].synfilter, 2UL, 0UL);
          osi_WrStr(" optimize=", 11ul);
          osic_WrINT32((uint32_t)pd0->frames[0U].optimize, 1UL);
          osi_WrStr(" drpll=", 8ul);
-         osic_WrFixed(pd0->frames[0U].afcspeed, 2L, 1UL);
+         osic_WrFixed(pd0->frames[0U].afcspeed, 3L, 1UL);
          osi_WrStr(" drc=", 6ul);
          osic_WrFixed(X2C_DIVR(pd0->frames[0U].dataratecorr*1.E+6f,(float)(uint32_t)(1UL<<pd0->frames[0U].cfgsf)),
                 2L, 1UL);
@@ -1435,6 +1470,12 @@ ev/stdin -f u8 -v -N -b 7 -s 12 -w 64 -r 1000000 -W 50", 147ul);
             osi_WrStrLn("warning: sf<7 needs implizit header", 36ul);
          }
       }
+      /*    pd^.frames[0].afcspeed:=pd^.frames[0].afcspeed*0.00025*FLOAT(CAST(CARDINAL, SET32{pd^.frames[0].cfgsf})); */
+      /*    i:=pd^.frames[0].cfgsf; */
+      /*    IF i<9 THEN i:=9 END; */
+      /*    pd^.frames[0].afcspeed:=pd^.frames[0].afcspeed*4096.0/FLOAT(CAST(CARDINAL, SET32{i})); */
+      if (pd0->frames[0U].cfgsf<=8UL) pd0->frames[0U].afcspeed = pd0->frames[0U].afcspeed*0.5f;
+      if (pd0->frames[0U].cfgsf<=7UL) pd0->frames[0U].afcspeed = 0.0f;
       for (i0 = 1UL; i0<=3UL; i0++) {
          pd0->frames[i0] = pd0->frames[0U]; /* copy parameters to all demodulators */
          pd0->frames[i0].label = i0;
@@ -1445,6 +1486,7 @@ ev/stdin -f u8 -v -N -b 7 -s 12 -w 64 -r 1000000 -W 50", 147ul);
 
 
 static void cleantext(char text[], uint32_t text_len, uint32_t len)
+/* remove heading junk */
 {
    uint32_t j1;
    uint32_t i0;
@@ -1483,7 +1525,8 @@ static void app(uint32_t * i0, uint32_t * p, char b[501], char c, int32_t v)
 
 
 static void sendaxudp2(uint32_t ipnum, uint32_t udpport, char udp2, char mon[], uint32_t mon_len,
-                uint32_t dlen, int32_t txd, float level, float snrr, int32_t afc, int32_t qual)
+                uint32_t dlen, int32_t txd, float level, float snrr, int32_t afc, int32_t qual,
+                char longcall)
 {
    char data[501];
    char b[501];
@@ -1500,11 +1543,22 @@ static void sendaxudp2(uint32_t ipnum, uint32_t udpport, char udp2, char mon[], 
    lev = (int32_t)X2C_TRUNCI(level+0.5f,X2C_min_longint,X2C_max_longint);
    if (lev>127L) lev = 127L;
    else if (lev<-255L) lev = -255L;
-   cleantext(mon, mon_len, dlen);
-   aprsstr_mon2raw(mon, mon_len, data, 501ul, &datalen);
+   if (longcall) {
+      datalen = (int32_t)aprsstr_Length(mon, mon_len);
+      i0 = 0UL;
+      do {
+         data[i0] = mon[i0];
+         ++i0;
+      } while (!(i0>500UL || (int32_t)i0>=datalen));
+   }
+   else {
+      cleantext(mon, mon_len, dlen);
+      aprsstr_mon2raw(mon, mon_len, data, 501ul, &datalen);
+   }
    if (datalen>2L) {
+      p = 0UL;
       if (udp2) {
-         datalen -= 2L; /* remove crc */
+         if (!longcall) datalen -= 2L;
          b[0U] = '\001';
          b[1U] = '0';
          p = 2UL;
@@ -1513,17 +1567,21 @@ static void sendaxudp2(uint32_t ipnum, uint32_t udpport, char udp2, char mon[], 
          app(&i0, &p, b, 'S', snr);
          app(&i0, &p, b, 'A', afc);
          app(&i0, &p, b, 'Q', qual);
+         if (longcall) app(&i0, &p, b, 'X', 2L);
          b[p] = 0; /* end of axudp2 header */
          ++p;
-         i0 = 0UL;
-         do {
-            b[p] = data[i0];
-            ++p;
-            ++i0;
-         } while ((int32_t)i0<datalen);
-         aprsstr_AppCRC(b, 501ul, (int32_t)p);
       }
-      if (udpport) ret = udpsend(udpsock, b, (int32_t)(p+2UL), udpport, ipnum);
+      i0 = 0UL;
+      do {
+         b[p] = data[i0];
+         ++p;
+         ++i0;
+      } while ((int32_t)i0<datalen);
+      if (udp2) {
+         aprsstr_AppCRC(b, 501ul, (int32_t)p);
+         p += 2UL;
+      }
+      if (udpport) ret = udpsend(udpsock, b, (int32_t)p, udpport, ipnum);
    }
    else if (verb) osi_WrStrLn("beacon encode error", 20ul);
    X2C_PFREE(mon);
@@ -1619,7 +1677,7 @@ static void sendjson(uint32_t jipnum0, uint32_t judpport0, uint32_t id, const ch
       aprsstr_FixToStr(jmhz+0.0005f, 4UL, h, 1000ul);
       aprsstr_Append(s, 1000ul, h, 1000ul);
    }
-   aprsstr_Append(s, 1000ul, ",\"ver\":\"sdr-lorarx\"", 20ul);
+   aprsstr_Append(s, 1000ul, ",\"ver\":\"lorarx\"", 16ul);
    aprsstr_Append(s, 1000ul, ",\"payload\":\"", 13ul);
    b = 0UL;
    i0 = 0UL;
@@ -1738,7 +1796,7 @@ static void Showctl(uint32_t com, uint32_t cmd)
    else if (cm==0x43UL) osi_WrStr("DISC", 5ul);
    else if (cm==0x63UL) osi_WrStr("UA", 3ul);
    else if (cm==0x87UL) osi_WrStr("FRMR", 5ul);
-   else WrHex(cmd, 2UL, 0UL);
+   else WrHexCap(cmd, 2UL, 0UL);
    strncpy(PF,"v^-+",4u);
    if (com==0UL || com==3UL) osi_WrStr("v1", 3ul);
    else osi_WrStr((char *) &PF[(com&1UL)+2UL*(uint32_t)((0x10UL & (uint32_t)cmd)!=0)], 1u/1u);
@@ -1788,7 +1846,7 @@ static void ShowFrame(char f[], uint32_t f_len, uint32_t len, char port)
    ++i0;
    if (i0<len) {
       osi_WrStr(" pid ", 6ul);
-      WrHex((uint32_t)(uint8_t)f[i0], 2UL, 0UL);
+      WrHexCap((uint32_t)(uint8_t)f[i0], 2UL, 0UL);
    }
    ++i0;
    /*
@@ -1904,7 +1962,7 @@ static void decodelorawan(const char text[], uint32_t text_len, uint32_t textlen
    uint32_t p;
    uint32_t fctl;
    uint32_t mtype;
-   if (textlen>0UL) {
+   if (verb && textlen>0UL) {
       mtype = (uint32_t)(uint8_t)text[0UL]/32UL; /* MHDR */
       switch (mtype) {
       case 0UL:
@@ -1997,22 +2055,23 @@ static void decodemeshcom4(const char text[], uint32_t text_len, uint32_t textle
       /*-fcs */
       i0 = 0UL;
       te = 0UL;
-      while (te+2UL<textlen && (te<6UL || text[te])) {
+      while (te+3UL<textlen && (te<6UL || text[te])) {
          i0 += (uint32_t)(uint8_t)text[te];
          ++te;
       }
       i0 += (uint32_t)(uint8_t)text[te+1UL];
       i0 += (uint32_t)(uint8_t)text[te+2UL];
       /*-fcs */
-      if (te+4UL<textlen && i0==(uint32_t)(uint8_t)text[te+3UL]*256UL+(uint32_t)(uint8_t)text[te+4UL]) {
+      if ((te>0UL && te+4UL<textlen) && i0==(uint32_t)(uint8_t)text[te+3UL]*256UL+(uint32_t)(uint8_t)
+                text[te+4UL]) {
          osi_WrStr("Meshcom4: FCS:Ok MID:", 22ul);
-         WrHex((uint32_t)(uint8_t)text[1UL]+(uint32_t)(uint8_t)text[2UL]*256UL+(uint32_t)(uint8_t)
+         WrHexCap((uint32_t)(uint8_t)text[1UL]+(uint32_t)(uint8_t)text[2UL]*256UL+(uint32_t)(uint8_t)
                 text[3UL]*65536UL+(uint32_t)(uint8_t)text[4UL]*16777216UL, 8UL, 0UL);
          osi_WrStr(" MAX-HOP=", 10ul);
          osic_WrUINT32((uint32_t)(uint8_t)text[5UL]&7UL, 1UL);
          if ((0x80U & (uint8_t)(uint8_t)text[5UL])) osi_WrStr(" viaMQTT", 9ul);
          if ((0x40U & (uint8_t)(uint8_t)text[5UL])) osi_WrStr(" +Traceroute", 13ul);
-         if (te+2UL<=textlen) {
+         if (te+3UL<=textlen) {
             osi_WrStr(" HW-ID=", 8ul);
             osic_WrUINT32((uint32_t)(uint8_t)text[te+1UL], 1UL);
             osi_WrStr(" MOD=", 6ul);
@@ -2037,8 +2096,228 @@ static void decodemeshcom4(const char text[], uint32_t text_len, uint32_t textle
    }
 } /* end decodemeshcom4() */
 
+#define lorarx_KNOTS 1.851984
 
-static void wcsv(uint32_t n, const char s[], uint32_t s_len)
+#define lorarx_FEET 3.2808398950131
+
+#define lorarx_WKNOTS 1.609
+/* wx knots */
+
+
+static char num(uint32_t n)
+{
+   return (char)(n%10UL+48UL);
+} /* end num() */
+
+
+static uint32_t dao91(double x)
+/* radix91(xx/1.1) of dddmm.mmxx */
+{
+   double a;
+   a = fabs(x);
+   return (((uint32_t)X2C_TRUNCC((a-(double)(uint32_t)X2C_TRUNCC(a,0UL,X2C_max_longcard))*6.E+5,0UL,
+                X2C_max_longcard)%100UL)*20UL+11UL)/22UL;
+} /* end dao91() */
+
+
+static void encodeaprs(int32_t qual, int32_t afc, float snrr, float level, int32_t txd,
+                const struct FFRAME frame, const char mycall[], uint32_t mycall_len, const char comment0[],
+                uint32_t comment_len, const char sym[], uint32_t sym_len, const double lat,
+                const double long0, float speed, float course, float alt, float clb0, float gust,
+                float temp, float hum, float baro)
+{
+   char h[501];
+   char b[501];
+   uint32_t n;
+   uint32_t i0;
+   double a;
+   float v;
+   char sig;
+   b[0] = 0;
+   aprsstr_Append(b, 501ul, mycall, mycall_len);
+   aprsstr_Append(b, 501ul, ">", 2ul);
+   aprsstr_Append(b, 501ul, "FANET", 6ul);
+   aprsstr_Append(b, 501ul, ":!", 3ul);
+   i0 = aprsstr_Length(b, 501ul);
+   a = fabs(lat);
+   n = osi_realcard((float)a);
+   b[i0] = num(n/10UL);
+   ++i0;
+   b[i0] = num(n);
+   ++i0;
+   n = osi_realcard((float)((a-(double)n)*6000.0));
+   b[i0] = num(n/1000UL);
+   ++i0;
+   b[i0] = num(n/100UL);
+   ++i0;
+   b[i0] = '.';
+   ++i0;
+   b[i0] = num(n/10UL);
+   ++i0;
+   b[i0] = num(n);
+   ++i0;
+   if (lat>=0.0) b[i0] = 'N';
+   else b[i0] = 'S';
+   ++i0;
+   b[i0] = sym[0UL];
+   ++i0;
+   a = fabs(long0);
+   n = osi_realcard((float)a);
+   b[i0] = num(n/100UL);
+   ++i0;
+   b[i0] = num(n/10UL);
+   ++i0;
+   b[i0] = num(n);
+   ++i0;
+   n = osi_realcard((float)((a-(double)n)*6000.0));
+   b[i0] = num(n/1000UL);
+   ++i0;
+   b[i0] = num(n/100UL);
+   ++i0;
+   b[i0] = '.';
+   ++i0;
+   b[i0] = num(n/10UL);
+   ++i0;
+   b[i0] = num(n);
+   ++i0;
+   if (long0>=0.0) b[i0] = 'E';
+   else b[i0] = 'W';
+   ++i0;
+   b[i0] = sym[1UL];
+   ++i0;
+   if (speed>0.0f || gust<1000.0f) {
+      n = osi_realcard(course+1.5f);
+      b[i0] = num(n/100UL);
+      ++i0;
+      b[i0] = num(n/10UL);
+      ++i0;
+      b[i0] = num(n);
+      ++i0;
+      b[i0] = '/';
+      ++i0;
+      if (sym[0UL]=='/' && sym[1UL]=='_') n = osi_realcard(speed*6.2150403977626E-1f+0.5f);
+      else n = osi_realcard(speed*5.3996146834962E-1f+0.5f);
+      b[i0] = num(n/100UL);
+      ++i0;
+      b[i0] = num(n/10UL);
+      ++i0;
+      b[i0] = num(n);
+      ++i0;
+      if (gust<1000.0f) {
+         n = osi_realcard(gust*6.2150403977626E-1f+0.5f);
+         b[i0] = 'g';
+         ++i0;
+         b[i0] = num(n/100UL);
+         ++i0;
+         b[i0] = num(n/10UL);
+         ++i0;
+         b[i0] = num(n);
+         ++i0;
+      }
+   }
+   if ((float)fabs(temp)<1000.0f) {
+      v = temp*1.8f+32.0f;
+      sig = v<0.0f;
+      n = osi_realcard((float)fabs(v)+0.5f);
+      b[i0] = 't';
+      ++i0;
+      if (sig) b[i0] = '-';
+      else b[i0] = num(n/100UL);
+      ++i0;
+      b[i0] = num(n/10UL);
+      ++i0;
+      b[i0] = num(n);
+      ++i0;
+   }
+   if (hum<=100.0f) {
+      b[i0] = 'h';
+      ++i0;
+      n = osi_realcard(hum+0.5f);
+      if (n==100UL) n = 0UL;
+      b[i0] = num(n/10UL);
+      ++i0;
+      b[i0] = num(n);
+      ++i0;
+   }
+   if (baro<10000.0f) {
+      b[i0] = 'b';
+      ++i0;
+      n = osi_realcard(baro*10.0f+0.5f);
+      b[i0] = num(n/10000UL);
+      ++i0;
+      b[i0] = num(n/1000UL);
+      ++i0;
+      b[i0] = num(n/100UL);
+      ++i0;
+      b[i0] = num(n/10UL);
+      ++i0;
+      b[i0] = num(n);
+      ++i0;
+   }
+   if (alt>0.5f) {
+      b[i0] = '/';
+      ++i0;
+      b[i0] = 'A';
+      ++i0;
+      b[i0] = '=';
+      ++i0;
+      n = osi_realcard((float)fabs(alt*3.2808398950131f+0.5f));
+      if (alt>=0.0f) b[i0] = num(n/100000UL);
+      else b[i0] = '-';
+      ++i0;
+      b[i0] = num(n/10000UL);
+      ++i0;
+      b[i0] = num(n/1000UL);
+      ++i0;
+      b[i0] = num(n/100UL);
+      ++i0;
+      b[i0] = num(n/10UL);
+      ++i0;
+      b[i0] = num(n);
+      ++i0;
+   }
+   b[i0] = '!'; /* DAO */
+   ++i0;
+   b[i0] = 'w';
+   ++i0;
+   b[i0] = (char)(33UL+dao91(lat));
+   ++i0;
+   b[i0] = (char)(33UL+dao91(long0));
+   ++i0;
+   b[i0] = '!';
+   ++i0;
+   b[i0] = 0;
+   if ((float)fabs(clb0)<1000.0f) {
+      aprsstr_Append(b, 501ul, "Clb=", 5ul);
+      aprsstr_FixToStr(clb0, 2UL, h, 501ul);
+      aprsstr_Append(b, 501ul, h, 501ul);
+      aprsstr_Append(b, 501ul, "m/s ", 5ul);
+   }
+   aprsstr_Append(b, 501ul, comment0, comment_len);
+   sendaxudp2(frame.ipnum, frame.udpport, frame.udp2, b, 501ul, aprsstr_Length(b, 501ul), txd, level, snrr, afc, qual,
+                1);
+} /* end encodeaprs() */
+
+struct FANETPR;
+
+
+struct FANETPR {
+   float lat;
+   float long0;
+   float speed;
+   float clb0;
+   float gust;
+   float temp;
+   float hum;
+   float baro;
+   uint32_t alt;
+   uint32_t dir;
+   char scall[9];
+   char s[251];
+};
+
+
+static void wcsv(struct FANETPR * fp, uint32_t n, const char s[], uint32_t s_len)
 {
    uint32_t i0;
    i0 = 0UL;
@@ -2048,21 +2327,20 @@ static void wcsv(uint32_t n, const char s[], uint32_t s_len)
       ++i0;
    }
    while (i0<=s_len-1 && s[i0]!=',') {
-      osi_WrStr((char *) &s[i0], 1u/1u);
+      aprsstr_Append(fp->s, 251ul, (char *) &s[i0], 1u/1u);
       ++i0;
    }
 } /* end wcsv() */
 
 
-static void spd(uint32_t i0, float scale)
+static void spd(uint32_t i0, float scale, float * v)
 {
    if (i0>=128UL) i0 = (i0&127UL)*5UL;
-   osic_WrFixed((float)i0*scale, 1L, 1UL); /* speed */
-   osi_WrStr("km/h ", 6ul);
+   *v = (float)i0*scale;
 } /* end spd() */
 
 
-static void clb(char text[], uint32_t text_len, uint32_t p)
+static void clb(char text[], uint32_t text_len, uint32_t p, float * v)
 {
    uint32_t i0;
    int32_t ii;
@@ -2070,33 +2348,44 @@ static void clb(char text[], uint32_t text_len, uint32_t p)
    ii = (int32_t)(i0&127UL);
    if (ii>=64L) ii = 64L-ii;
    if (i0>=128UL) ii = ii*5L;
-   osic_WrFixed((float)ii*0.1f, 1L, 1UL); /* climb */
-   osi_WrStr("m/s ", 5ul);
+   *v = (float)ii*0.1f;
 } /* end clb() */
 
 
-static void latlong(char text[], uint32_t text_len, uint32_t p, float scale)
+static void latlong(char text[], uint32_t text_len, uint32_t p, float scale, float * d)
 {
    int32_t ii;
    ii = (int32_t)((uint32_t)(uint8_t)text[p+2UL]*65536UL+(uint32_t)(uint8_t)text[p+1UL]*256UL+(uint32_t)
                 (uint8_t)text[p]);
    if (ii>=8388608L) ii = 8388608L-ii;
-   osic_WrFixed((float)ii*scale, 5L, 1UL);
+   *d = (float)ii*scale;
 } /* end latlong() */
 
 
-static void pos(char text[], uint32_t text_len, uint32_t * p)
+static void pos(char text[], uint32_t text_len, uint32_t * p, float * lat, float * long0)
 {
-   latlong(text, text_len, *p, 1.0728923030706E-5f); /* lat */
+   latlong(text, text_len, *p, 1.0728923030706E-5f, lat); /* lat */
    *p += 3UL;
-   osi_WrStr(",", 2ul);
-   latlong(text, text_len, *p, 2.1457846061412E-5f); /* long */
+   latlong(text, text_len, *p, 2.1457846061412E-5f, long0); /* long */
    *p += 3UL;
-   osi_WrStr(" ", 2ul);
 } /* end pos() */
 
 
-static void manufact(uint32_t b)
+static void apppos(float lat, float long0, char s[], uint32_t s_len)
+{
+   char h[100];
+   if (lat!=0.0f && long0!=0.0f) {
+      aprsstr_FixToStr(lat, 6UL, h, 100ul);
+      aprsstr_Append(s, s_len, h, 100ul);
+      aprsstr_Append(s, s_len, ",", 2ul);
+      aprsstr_FixToStr(long0, 6UL, h, 100ul);
+      aprsstr_Append(s, s_len, h, 100ul);
+      aprsstr_Append(s, s_len, " ", 2ul);
+   }
+} /* end apppos() */
+
+
+static void manufact(struct FANETPR * fp, uint32_t b)
 {
    char s[100];
    s[0] = 0;
@@ -2119,29 +2408,32 @@ static void manufact(uint32_t b)
    else if (b==252UL) strncpy(s,"Unregistered Devices",100u);
    else if (b==253UL) strncpy(s,"Unregistered Devices",100u);
    else if (b==254UL) strncpy(s,"[Multicast]",100u);
-   osi_WrStr(s, 100ul);
+   aprsstr_Append(fp->s, 251ul, s, 100ul);
 } /* end manufact() */
 
 
-static void srcdest(char text[], uint32_t text_len, uint32_t b)
+static void srcdest(char text[], uint32_t text_len, uint32_t b, char s[], uint32_t s_len)
 {
-   osi_WrStr("FNT", 4ul);
-   WrHex((uint32_t)(uint8_t)text[b]*65536UL+(uint32_t)(uint8_t)text[b+1UL]+(uint32_t)(uint8_t)
-                text[b+2UL]*256UL, 6UL, 7UL);
-   manufact(b);
-   osi_WrStr(" ", 2ul);
+   char h[10];
+   s[0UL] = 0;
+   aprsstr_Append(s, s_len, "FNT", 4ul);
+   HexStr((uint32_t)(uint8_t)text[b]*65536UL+(uint32_t)(uint8_t)text[b+1UL]+(uint32_t)(uint8_t)
+                text[b+2UL]*256UL, 6UL, 7UL, 1, h, 10ul);
+   aprsstr_Append(s, s_len, h, 10ul);
 } /* end srcdest() */
 
 
-static void alt25(char text[], uint32_t text_len, uint32_t p)
+static void alt25(struct FANETPR * fp, char text[], uint32_t text_len, uint32_t p)
 {
    int32_t ii;
+   char h[10];
    ii = (int32_t)(uint32_t)(uint8_t)text[p];
    if (ii>=128L) ii = 128L-ii;
    ii = (ii+109L)*125L;
-   osi_WrStr("alt:", 5ul);
-   osic_WrINT32((uint32_t)ii, 1UL);
-   osi_WrStr("m ", 3ul);
+   aprsstr_Append(fp->s, 251ul, "alt:", 5ul);
+   aprsstr_IntToStr(ii, 1UL, h, 10ul);
+   aprsstr_Append(fp->s, 251ul, h, 10ul);
+   aprsstr_Append(fp->s, 251ul, "m ", 3ul);
 } /* end alt25() */
 
 #define lorarx_ATY "Other,Paraglider,Hangglider,Balloon,Glider,Powered Aircraft,Helicopter,UAV"
@@ -2153,10 +2445,15 @@ help,Distress call,Distress call automatically"
 
 #define lorarx_LANDLAYER "Info,Warning,Keep out,Touch down,No airspace warn zone"
 
+#define lorarx_prATY "///g/g/O/g/\'/X/n"
 
-static void decodefanet(const char text[], uint32_t text_len, uint32_t textlen)
-/* FANET */
+#define lorarx_prGNDVEHICLES "///[/>/b/s/e\\o/\'/a\\!\\!"
+
+
+static void decodefanet(const char text[], uint32_t text_len, uint32_t textlen, const struct FFRAME frame,
+                int32_t txd, float level, float snrr, int32_t afc, int32_t qual)
 {
+   struct FANETPR fp;
    uint32_t i0;
    uint32_t p;
    int32_t ii;
@@ -2166,69 +2463,91 @@ static void decodefanet(const char text[], uint32_t text_len, uint32_t textlen)
    char unicast;
    char signature;
    char exth;
-   osi_WrStr("Fanet:", 7ul);
+   char h[100];
+   float long0;
+   float lat;
+   char sym[2];
+   strncpy(sym,"//",2u);
+   memset((char *) &fp,(char)0,sizeof(struct FANETPR));
+   fp.gust = 10000.0f;
+   fp.clb0 = 10000.0f;
+   fp.dir = 10000UL;
+   fp.temp = 10000.0f;
+   fp.hum = 10000.0f;
+   fp.baro = 1.E+5f;
    typ = (uint8_t)(uint8_t)text[0UL];
    exth = (0x80U & typ)!=0;
-   if (exth) osi_WrStr("Ext Header ", 12ul);
-   if ((0x40U & typ)) osi_WrStr("Forward ", 9ul);
-   srcdest(text, text_len, 1UL);
+   if (exth) aprsstr_Append(fp.s, 251ul, "Ext Header ", 12ul);
+   if ((0x40U & typ)) aprsstr_Append(fp.s, 251ul, "Forward ", 9ul);
+   srcdest(text, text_len, 1UL, fp.scall, 9ul);
+   manufact(&fp, 1UL);
+   aprsstr_Append(fp.s, 251ul, " ", 2ul);
    p = 4UL;
    if (exth) {
       s = (uint8_t)(uint8_t)text[p];
-      osi_WrStr("ACK ", 5ul);
-      if ((s&0xC0U)==0U) osi_WrStr("none ", 6ul);
-      else if ((s&0xC0U)==0x40U) osi_WrStr("requested ", 11ul);
-      else if ((s&0xC0U)==0x80U) osi_WrStr("requested via forward ", 23ul);
-      else osi_WrStr("unknown ", 9ul);
+      aprsstr_Append(fp.s, 251ul, "ACK ", 5ul);
+      if ((s&0xC0U)==0U) aprsstr_Append(fp.s, 251ul, "none ", 6ul);
+      else if ((s&0xC0U)==0x40U) aprsstr_Append(fp.s, 251ul, "requested ", 11ul);
+      else if ((s&0xC0U)==0x80U) aprsstr_Append(fp.s, 251ul, "requested via forward ", 23ul);
+      else aprsstr_Append(fp.s, 251ul, "unknown ", 9ul);
       unicast = (0x20U & s)!=0;
-      if (unicast) osi_WrStr("unicast ", 9ul);
-      else osi_WrStr("broadcast ", 11ul);
+      if (unicast) aprsstr_Append(fp.s, 251ul, "unicast ", 9ul);
+      else aprsstr_Append(fp.s, 251ul, "broadcast ", 11ul);
       signature = (0x10U & s)!=0;
-      if ((0x8U & s)) osi_WrStr("geobased fwd ", 14ul);
+      if ((0x8U & s)) aprsstr_Append(fp.s, 251ul, "geobased fwd ", 14ul);
       ++p;
       if (unicast) {
-         osi_WrStr("Dst:", 5ul);
-         srcdest(text, text_len, p);
+         aprsstr_Append(fp.s, 251ul, "Dst:", 5ul);
+         srcdest(text, text_len, p, h, 100ul);
+         aprsstr_Append(fp.s, 251ul, h, 100ul);
+         manufact(&fp, p);
+         aprsstr_Append(fp.s, 251ul, " ", 2ul);
          p += 3UL;
       }
       if (signature) {
-         osi_WrStr("Signature:", 11ul);
-         WrHex((uint32_t)(uint8_t)text[p+3UL]*16777216UL+(uint32_t)(uint8_t)text[p+2UL]*65536UL+(uint32_t)
-                (uint8_t)text[p+1UL]*256UL+(uint32_t)(uint8_t)text[p], 8UL, 9UL);
+         aprsstr_Append(fp.s, 251ul, "Signature:", 11ul);
+         HexStr((uint32_t)(uint8_t)text[p+3UL]*16777216UL+(uint32_t)(uint8_t)text[p+2UL]*65536UL+(uint32_t)
+                (uint8_t)text[p+1UL]*256UL+(uint32_t)(uint8_t)text[p], 8UL, 9UL, 0, h, 100ul);
+         aprsstr_Append(fp.s, 251ul, h, 100ul);
          p += 4UL;
       }
    }
    typ = typ&0x3FU;
-   if (typ==0U) osi_WrStr("no payload ", 12ul);
+   if (typ==0U) aprsstr_Append(fp.s, 251ul, "no payload ", 12ul);
    else if (typ==0x1U) {
       /* tracking */
-      osi_WrStr("tracking:", 10ul);
-      pos(text, text_len, &p);
+      aprsstr_Append(fp.s, 251ul, "tracking:", 10ul);
+      pos(text, text_len, &p, &fp.lat, &fp.long0);
       ss = (uint32_t)((uint32_t)(uint8_t)text[p+1UL]*256UL+(uint32_t)(uint8_t)text[p]);
       p += 2UL;
-      if ((0x8000UL & ss)) osi_WrStr("Online Tracking ", 17ul);
-      wcsv((uint32_t)(X2C_LSH(ss,32,-12)&0x7UL), "Other,Paraglider,Hangglider,Balloon,Glider,Powered Aircraft,Helicopt\
-er,UAV", 75ul);
-      osi_WrStr(" ", 2ul);
+      if ((0x8000UL & ss)) aprsstr_Append(fp.s, 251ul, "Online Tracking ", 17ul);
+      i0 = (uint32_t)(X2C_LSH(ss,32,-12)&0x7UL);
+      wcsv(&fp, i0, "Other,Paraglider,Hangglider,Balloon,Glider,Powered Aircraft,Helicopter,UAV", 75ul);
+      if (i0*2UL>=0UL) {
+         sym[0U] = "///g/g/O/g/\'/X/n"[i0*2UL];
+         sym[1U] = "///g/g/O/g/\'/X/n"[i0*2UL+1UL];
+      }
+      aprsstr_Append(fp.s, 251ul, " ", 2ul);
       i0 = (uint32_t)(ss&0x7FFUL);
       if ((0x800UL & ss)) i0 = i0*4UL;
-      osic_WrINT32(i0, 1UL); /* alt */
-      osi_WrStr("m ", 3ul);
-      spd((uint32_t)(uint8_t)text[p], 0.5f); /* speed */
+      fp.alt = i0;
+      spd((uint32_t)(uint8_t)text[p], 0.5f, &fp.speed); /* speed */
       ++p;
-      clb(text, text_len, p);
+      clb(text, text_len, p, &fp.clb0);
       ++p;
-      osic_WrINT32(((uint32_t)(uint8_t)text[p]*360UL)/256UL, 1UL); /* heading */
-      osi_WrStr("deg ", 5ul);
+      fp.dir = ((uint32_t)(uint8_t)text[p]*360UL)/256UL;
       ++p;
       if (p<textlen) {
          i0 = (uint32_t)(uint8_t)text[p];
          ++p;
          ii = (int32_t)(i0&127UL);
-         if (ii>=64L) ii = -ii;
+         if (ii>=64L) {
+            ii = -ii;
+         }
          if (i0>=128UL) ii = ii*4L;
-         osic_WrFixed((float)ii*0.25f, 1L, 1UL); /* turn rate */
-         osi_WrStr("deg/s ", 7ul);
+         aprsstr_FixToStr((float)ii*0.25f, 2UL, h, 100ul); /* turn rate */
+         aprsstr_Append(fp.s, 251ul, h, 100ul);
+         aprsstr_Append(fp.s, 251ul, "deg/s ", 7ul);
       }
       if (p<textlen) {
          i0 = (uint32_t)(uint8_t)text[p];
@@ -2236,26 +2555,30 @@ er,UAV", 75ul);
          ii = (int32_t)(i0&127UL);
          if (ii>=64L) ii = -ii;
          if (i0>=128UL) ii = ii*4L;
-         osi_WrStr("QNE:", 5ul); /* QNE */
-         osic_WrFixed((float)ii, 1L, 1UL);
-         osi_WrStr(" ", 2ul);
+         aprsstr_Append(fp.s, 251ul, "QNE:", 5ul);
+         aprsstr_FixToStr((float)ii, 2UL, h, 100ul); /* QNE */
+         aprsstr_Append(fp.s, 251ul, h, 100ul);
+         aprsstr_Append(fp.s, 251ul, " ", 2ul);
       }
    }
    else if (typ==0x2U) {
       /* text */
-      osi_WrStr("Message:", 9ul);
+      aprsstr_Append(fp.s, 251ul, "Message:", 9ul);
       while (p<textlen) {
-         WrChHex(text[p]);
+         ChHex(text[p], h, 100ul);
+         aprsstr_Append(fp.s, 251ul, h, 100ul);
          ++p;
       }
    }
    else if (typ==0x3U) {
       /* subheader text */
-      osi_WrStr("Message subheader:", 19ul);
-      WrHex((uint32_t)(uint8_t)text[p], 2UL, 3UL);
+      aprsstr_Append(fp.s, 251ul, "Message subheader:", 19ul);
+      HexStr((uint32_t)(uint8_t)text[p], 2UL, 3UL, 0, h, 100ul);
+      aprsstr_Append(fp.s, 251ul, h, 100ul);
       ++p;
       while (p<textlen) {
-         WrChHex(text[p]);
+         ChHex(text[p], h, 100ul);
+         aprsstr_Append(fp.s, 251ul, h, 100ul);
          ++p;
       }
    }
@@ -2263,135 +2586,204 @@ er,UAV", 75ul);
       /* Service */
       s = (uint8_t)(uint8_t)text[p];
       ++p;
-      pos(text, text_len, &p);
-      osi_WrStr("Service:", 9ul);
-      if ((0x80U & s)) osi_WrStr("Internet Gateway ", 18ul);
+      pos(text, text_len, &p, &fp.lat, &fp.long0);
+      aprsstr_Append(fp.s, 251ul, "Service:", 9ul);
+      if ((0x80U & s)) aprsstr_Append(fp.s, 251ul, "Internet Gateway ", 18ul);
       if ((0x40U & s)) {
-         osi_WrStr("Temperature:", 13ul);
+         strncpy(sym,"/_",2u);
+         aprsstr_Append(fp.s, 251ul, "Temperature:", 13ul);
          i0 = (uint32_t)(uint8_t)text[p];
          ++p;
          ii = (int32_t)(i0&127UL);
          if (i0>=128UL) ii = -ii;
-         osic_WrFixed((float)ii*0.5f, 1L, 1UL);
-         osi_WrStr("C ", 3ul);
+         fp.temp = (float)ii*0.5f;
+         aprsstr_FixToStr(fp.temp, 2UL, h, 100ul);
+         aprsstr_Append(fp.s, 251ul, h, 100ul);
+         aprsstr_Append(fp.s, 251ul, "C ", 3ul);
       }
       if ((0x20U & s)) {
          /* wind */
-         osi_WrStr("Wind:", 6ul);
-         osic_WrINT32(((uint32_t)(uint8_t)text[p]*360UL)/256UL, 1UL); /* heading */
-         osi_WrStr("deg ", 5ul);
+         strncpy(sym,"/_",2u);
+         aprsstr_Append(fp.s, 251ul, "Wind:", 6ul);
+         fp.dir = ((uint32_t)(uint8_t)text[p]*360UL)/256UL;
+         aprsstr_IntToStr((int32_t)fp.dir, 1UL, h, 100ul);
+         aprsstr_Append(fp.s, 251ul, h, 100ul);
+         aprsstr_Append(fp.s, 251ul, "deg ", 5ul);
          ++p;
-         spd((uint32_t)(uint8_t)text[p], 0.2f); /* speed */
+         spd((uint32_t)(uint8_t)text[p], 0.2f, &fp.speed); /* speed */
+         aprsstr_FixToStr(fp.speed, 2UL, h, 100ul);
+         aprsstr_Append(fp.s, 251ul, h, 100ul);
          ++p;
-         osi_WrStr("Gusts:", 7ul);
-         spd((uint32_t)(uint8_t)text[p], 0.2f); /* gust */
+         aprsstr_Append(fp.s, 251ul, "km/h Gusts:", 12ul);
+         spd((uint32_t)(uint8_t)text[p], 0.2f, &fp.gust); /* gust */
+         aprsstr_FixToStr(fp.gust, 2UL, h, 100ul);
+         aprsstr_Append(fp.s, 251ul, h, 100ul);
+         aprsstr_Append(fp.s, 251ul, "km/h", 5ul);
          ++p;
       }
       if ((0x10U & s)) {
-         osi_WrStr("Humidity:", 10ul);
-         osic_WrFixed((float)(uint32_t)(uint8_t)text[p]*0.4f, 1L, 1UL);
-         osi_WrStr("% ", 3ul);
+         strncpy(sym,"/_",2u);
+         aprsstr_Append(fp.s, 251ul, "Humidity:", 10ul);
+         fp.hum = (float)(uint32_t)(uint8_t)text[p]*0.4f;
+         aprsstr_FixToStr(fp.hum, 1UL, h, 100ul);
+         aprsstr_Append(fp.s, 251ul, h, 100ul);
+         aprsstr_Append(fp.s, 251ul, "% ", 3ul);
          ++p;
       }
       if ((0x8U & s)) {
-         osi_WrStr("Barometric pressure normailized ", 33ul);
-         osic_WrFixed((float)((uint32_t)(uint8_t)text[p+1UL]*256UL+(uint32_t)(uint8_t)text[p])*0.1f+430.0f,
-                1L, 1UL);
-         osi_WrStr("hPa ", 5ul);
+         strncpy(sym,"/_",2u);
+         aprsstr_Append(fp.s, 251ul, "Barometric pressure normailized ", 33ul);
+         fp.baro = (float)((uint32_t)(uint8_t)text[p+1UL]*256UL+(uint32_t)(uint8_t)text[p])*0.1f+430.0f;
+         aprsstr_FixToStr(fp.baro, 2UL, h, 100ul);
+         aprsstr_Append(fp.s, 251ul, h, 100ul);
+         aprsstr_Append(fp.s, 251ul, "hPa ", 5ul);
          p += 2UL;
       }
-      if ((0x4U & s)) osi_WrStr("Support for Remote Configuration ", 34ul);
-      if ((0x2U & s)) osi_WrStr("State of Charge ", 17ul);
-      if ((0x1U & s)) osi_WrStr("Extended Header ", 17ul);
+      if ((0x4U & s)) aprsstr_Append(fp.s, 251ul, "Support for Remote Configuration ", 34ul);
+      if ((0x2U & s)) aprsstr_Append(fp.s, 251ul, "State of Charge ", 17ul);
+      if ((0x1U & s)) aprsstr_Append(fp.s, 251ul, "Extended Header ", 17ul);
    }
    else if (typ==0x9U) {
       /* Thermal */
-      osi_WrStr("Thermal:", 9ul);
-      pos(text, text_len, &p);
+      aprsstr_Append(fp.s, 251ul, "Thermal:", 9ul);
+      pos(text, text_len, &p, &fp.lat, &fp.long0);
+      strncpy(sym,"\\Q",2u);
       ss = (uint32_t)((uint32_t)(uint8_t)text[p+1UL]*256UL+(uint32_t)(uint8_t)text[p]);
       p += 2UL;
       i0 = (uint32_t)(ss&0x7FFUL);
       if ((0x800UL & ss)) i0 = i0*4UL;
-      osic_WrINT32((uint32_t)(ss&0x7FFUL), 1UL); /* alt */
-      osi_WrStr("m ", 3ul);
-      clb(text, text_len, p);
+      fp.alt = (uint32_t)(ss&0x7FFUL); /* alt */
+      aprsstr_IntToStr((int32_t)fp.alt, 1UL, h, 100ul); /* alt */
+      aprsstr_Append(fp.s, 251ul, h, 100ul);
+      aprsstr_Append(fp.s, 251ul, "m ", 3ul);
+      clb(text, text_len, p, &fp.clb0);
+      aprsstr_FixToStr(fp.clb0, 2UL, h, 100ul);
+      aprsstr_Append(fp.s, 251ul, h, 100ul);
+      aprsstr_Append(fp.s, 251ul, "m/s ", 5ul);
       ++p;
-      spd((uint32_t)(uint8_t)text[p], 0.5f); /* speed */
+      spd((uint32_t)(uint8_t)text[p], 0.5f, &fp.speed); /* speed */
+      aprsstr_FixToStr(fp.speed, 2UL, h, 100ul);
+      aprsstr_Append(fp.s, 251ul, h, 100ul);
+      aprsstr_Append(fp.s, 251ul, "km/h ", 6ul);
       ++p;
-      osic_WrINT32(((uint32_t)(uint8_t)text[p]*360UL)/256UL, 1UL); /* heading */
-      osi_WrStr("deg ", 5ul);
+      fp.dir = ((uint32_t)(uint8_t)text[p]*360UL)/256UL;
+      aprsstr_IntToStr((int32_t)fp.dir, 1UL, h, 100ul); /* heading */
+      aprsstr_Append(fp.s, 251ul, h, 100ul);
+      aprsstr_Append(fp.s, 251ul, "deg ", 5ul);
       ++p;
       i0 = (uint32_t)(X2C_LSH(ss,32,-12)&0x7UL);
-      osi_WrStr("qual:", 6ul); /* quality */
-      osic_WrINT32(i0*14UL+i0/3UL, 1UL);
-      osi_WrStr("% ", 3ul);
+      aprsstr_Append(fp.s, 251ul, "qual:", 6ul); /* quality */
+      aprsstr_IntToStr((int32_t)(i0*14UL+i0/3UL), 1UL, h, 100ul);
+      aprsstr_Append(fp.s, 251ul, h, 100ul);
+      aprsstr_Append(fp.s, 251ul, "% ", 3ul);
    }
    else if (typ==0xAU) {
       /* hw-info */
-      osi_WrStr("HW-Info ", 9ul);
+      aprsstr_Append(fp.s, 251ul, "HW-Info ", 9ul);
    }
    else if (typ==0x7U) {
       /* */
       /* ground track */
-      osi_WrStr("Ground Track:", 14ul);
-      pos(text, text_len, &p);
+      aprsstr_Append(fp.s, 251ul, "Ground Track:", 14ul);
+      pos(text, text_len, &p, &fp.lat, &fp.long0);
       s = (uint8_t)(uint32_t)(uint8_t)text[p];
       ++p;
-      if ((0x1U & s)) osi_WrStr("online ", 8ul);
-      wcsv((uint32_t)(X2C_LSH(s,8,-4)&0xFU), "Other,Walking,Vehicle,Bike,Boot,Need a ride,Landed well,Need technical s\
-upport,Need medical help,Distress call,Distress call automatically", 139ul);
+      if ((0x1U & s)) aprsstr_Append(fp.s, 251ul, "online ", 8ul);
+      i0 = (uint32_t)(X2C_LSH(s,8,-4)&0xFU);
+      wcsv(&fp, i0, "Other,Walking,Vehicle,Bike,Boot,Need a ride,Landed well,Need technical support,Need medical help,Di\
+stress call,Distress call automatically", 139ul);
+      if (i0*2UL>=0UL) {
+         sym[0U] = "///[/>/b/s/e\\o/\'/a\\!\\!"[i0*2UL];
+         sym[1U] = "///[/>/b/s/e\\o/\'/a\\!\\!"[i0*2UL+1UL];
+      }
    }
    else if (typ==0x6U) {
       /* remote config */
-      osi_WrStr("Remote configuration:", 22ul);
+      aprsstr_Append(fp.s, 251ul, "Remote configuration:", 22ul);
       i0 = (uint32_t)(uint8_t)text[p];
       ++p;
       if (i0==0UL) {
-         osi_WrStr("Acknowledge configuration ", 27ul);
-         WrHex((uint32_t)(uint8_t)text[p], 2UL, 3UL);
+         aprsstr_Append(fp.s, 251ul, "Acknowledge configuration ", 27ul);
+         HexStr((uint32_t)(uint8_t)text[p], 2UL, 3UL, 0, h, 100ul);
+         aprsstr_Append(fp.s, 251ul, h, 100ul);
          ++p;
       }
       else if (i0==1UL) {
-         osi_WrStr("Request ", 9ul);
-         WrHex((uint32_t)(uint8_t)text[p], 2UL, 3UL);
+         aprsstr_Append(fp.s, 251ul, "Request ", 9ul);
+         HexStr((uint32_t)(uint8_t)text[p], 2UL, 3UL, 0, h, 100ul);
+         aprsstr_Append(fp.s, 251ul, h, 100ul);
          ++p;
       }
       else if (i0==2UL) {
-         pos(text, text_len, &p);
-         alt25(text, text_len, p);
+         pos(text, text_len, &p, &lat, &long0);
+         alt25(&fp, text, text_len, p);
          ++p;
-         osic_WrINT32(((uint32_t)(uint8_t)text[p]*360UL)/256UL, 1UL); /* heading */
-         osi_WrStr("deg ", 5ul);
+         aprsstr_IntToStr((int32_t)(((uint32_t)(uint8_t)text[p]*360UL)/256UL), 1UL, h, 100ul); /* heading */
+         aprsstr_Append(fp.s, 251ul, h, 100ul);
+         aprsstr_Append(fp.s, 251ul, "deg ", 5ul);
          ++p;
       }
       else if (i0>=4UL && i0<=8UL) {
-         osi_WrStr("Geofence ", 10ul);
-         alt25(text, text_len, p);
+         aprsstr_Append(fp.s, 251ul, "Geofence ", 10ul);
+         alt25(&fp, text, text_len, p);
          ++p;
       }
       else if (i0>=9UL && i0<=33UL) {
          /*- */
-         osi_WrStr("Broadcast Reply ", 17ul);
+         aprsstr_Append(fp.s, 251ul, "Broadcast Reply ", 17ul);
       }
    }
    else if (typ==0x5U) {
       /*- */
       /* remote config */
-      osi_WrStr("Landmarks ", 11ul);
+      aprsstr_Append(fp.s, 251ul, "Landmarks ", 11ul);
       s = (uint8_t)(uint32_t)(uint8_t)text[p];
       ++p;
-      wcsv((uint32_t)(s&0xFU), "Text,Line,Arrow,Area,Area Filled,Circle,Circle Filled,3D Line,3D Area,3D Cylinder",
-                82ul);
-      osi_WrStr(" ", 2ul);
+      wcsv(&fp, (uint32_t)(s&0xFU), "Text,Line,Arrow,Area,Area Filled,Circle,Circle Filled,3D Line,3D Area,3D Cylinder\
+", 82ul);
+      aprsstr_Append(fp.s, 251ul, " ", 2ul);
       s = (uint8_t)(uint32_t)(uint8_t)text[p];
       ++p;
-      wcsv((uint32_t)(s&0xFU), "Info,Warning,Keep out,Touch down,No airspace warn zone", 55ul);
-      osi_WrStr(" ", 2ul);
+      wcsv(&fp, (uint32_t)(s&0xFU), "Info,Warning,Keep out,Touch down,No airspace warn zone", 55ul);
+      aprsstr_Append(fp.s, 251ul, " ", 2ul);
       if ((0x10U & s)) ++p;
    }
    /*- */
    /*- */
-   osi_WrStrLn("", 1ul);
+   i0 = aprsstr_Length(fp.s, 251ul);
+   while (i0>0UL && fp.s[i0-1UL]==' ') --i0;
+   if (i0<=250UL) fp.s[i0] = 0;
+   if ((fp.lat!=0.0f || fp.long0!=0.0f) && frame.udpport) {
+      encodeaprs(qual, afc, snrr, level, txd, frame, fp.scall, 9ul, fp.s, 251ul, sym, 2ul, (double)fp.lat,
+                (double)fp.long0, fp.speed, (float)fp.dir, (float)fp.alt, fp.clb0, fp.gust, fp.temp, fp.hum,
+                 fp.baro);
+   }
+   if (verb) {
+      osi_WrStr("Fanet:", 7ul);
+      osi_WrStr(fp.scall, 9ul);
+      osi_WrStr(" ", 2ul);
+      h[0] = 0;
+      apppos(fp.lat, fp.long0, h, 100ul);
+      osi_WrStr(h, 100ul);
+      if (fp.alt) {
+         osic_WrINT32(fp.alt, 1UL);
+         osi_WrStr("m ", 3ul);
+      }
+      if (fp.speed!=0.0f) {
+         osic_WrFixed(fp.speed, 1L, 1UL);
+         osi_WrStr("km/h ", 6ul);
+      }
+      if (fp.dir<=360UL) {
+         osic_WrINT32(fp.dir, 1UL);
+         osi_WrStr("deg ", 5ul);
+      }
+      if ((float)fabs(fp.clb0)<1000.0f) {
+         osi_WrStr("Clb:", 5ul);
+         osic_WrFixed(fp.clb0, 1L, 1UL);
+         osi_WrStr("m/s ", 5ul);
+      }
+      osi_WrStrLn(fp.s, 251ul);
+   }
 } /* end decodefanet() */
 
 
@@ -2476,7 +2868,7 @@ static void frameout(struct FFRAME * frame, const char finf[], uint32_t finf_len
          osic_WrINT32(frame->label, 1UL);
          osi_WrStr(":", 2ul);
          osi_WrStr("id:", 4ul);
-         WrHex(frame->idfound, 2UL, 0UL);
+         WrHexCap(frame->idfound, 2UL, 0UL);
          osi_WrStr(" cr:", 5ul);
          osic_WrINT32(cr, 1UL);
          osi_WrStr(" len:", 6ul);
@@ -2527,7 +2919,7 @@ static void frameout(struct FFRAME * frame, const char finf[], uint32_t finf_len
          tmp = frame->dlen-1UL;
          i0 = 0UL;
          if (i0<=tmp) for (;; i0++) {
-            if (allwaysascii || frame->idfound==18UL) WrChHex(text[i0]);
+            if (allwaysascii) WrChHex(text[i0]);
             else WrHex((uint32_t)(uint8_t)text[i0], 2UL, 0UL);
             if (i0==tmp) break;
          } /* end for */
@@ -2538,30 +2930,32 @@ static void frameout(struct FFRAME * frame, const char finf[], uint32_t finf_len
          if ((!frame->ax25long && frame->udprawport) && (!frame->udpcrcok || (hascrc && crc0) && !dcdlost)) {
             ret = udpsend(udpsock, text, (int32_t)frame->dlen, frame->udprawport, frame->ipnumraw);
          }
-         if (((frame->udpport && hascrc) && crc0) && !dcdlost) {
-            sendaxudp2(frame->ipnum, frame->udpport, frame->udp2, text, text_len, frame->dlen, txd, level, snrr, truedf,
-                 qual);
-         }
-         if (judpport || jpipename[0U]) {
-            sendjson(jipnum, judpport, frame->idfound, text, text_len, frame->dlen, hascrc, crc0, frame->invertiq,
-                frame->cfgsf, cr, (uint32_t)txd, (uint32_t)frametime, level, n, maxn, snrr, drift, truedf, qual);
-         }
       }
       else if (verb && (!quietcrc || hascrc && crc0)) {
          osi_WrStr("frame deleted, wrong sync word ", 32ul);
-         WrHex(frame->idfound, 2UL, 0UL);
+         WrHexCap(frame->idfound, 2UL, 0UL);
          osi_WrStrLn("", 1ul);
+      }
+      if (judpport || jpipename[0U]) {
+         sendjson(jipnum, judpport, frame->idfound, text, text_len, frame->dlen, hascrc, crc0, frame->invertiq,
+                frame->cfgsf, cr, (uint32_t)txd, (uint32_t)frametime, level, n, maxn, snrr, drift, truedf, qual);
       }
       if (hascrc && crc0) {
          if (frame->idfound==52UL) decodelorawan(text, text_len, frame->dlen);
          if (frame->idfound==18UL) {
             decodepr(text, text_len, frame->dlen, '0', &frame->axjoin, frame->axpart, 255ul, s, 512ul, &axlen); /* PR */
-            if (frame->ax25long && axlen>0UL) {
+            if ((frame->ax25long && axlen>0UL) && frame->udprawport) {
                ret = udpsend(udpsock, s, (int32_t)axlen, frame->udprawport, frame->ipnumraw);
             }
+            else if (frame->udpport && !dcdlost) {
+               sendaxudp2(frame->ipnum, frame->udpport, frame->udp2, text, text_len, frame->dlen, txd, level, snrr,
+                truedf, qual, 0);
+            }
          }
-         if (frame->idfound==241UL) decodefanet(text, text_len, frame->dlen);
-         if (text[0UL]=='!' || text[0UL]==':') {
+         if (frame->idfound==241UL) {
+            decodefanet(text, text_len, frame->dlen, *frame, txd, level, snrr, truedf, qual); /* FANET */
+         }
+         if (frame->idfound/16UL==2UL && text[0UL]=='!' || text[0UL]==':') {
             /* & (text[frame.dlen-8]=0C) */
             decodemeshcom4(text, text_len, frame->dlen); /* MESHCOM4 */
          }
@@ -2827,7 +3221,6 @@ static void fecneighbour(BINTAB bintab, uint32_t cr, uint32_t sf)
    if (i0<=tmp) for (;; i0++) {
       f = bintab[i0].b[0U].freq;
       fi = (uint32_t)X2C_TRUNCC(f,0UL,X2C_max_longcard);
-      bintab[i0].b[0U].bn = fi;
       c1 = (uint16_t)((fi+1UL)%m);
       c2 = (uint16_t)(((fi+m)-1UL)%m);
       c = (uint16_t)fi;
@@ -2896,16 +3289,16 @@ static void fecneighbour(BINTAB bintab, uint32_t cr, uint32_t sf)
             if (j3==tmp0) break;
          } /* end for */
          if (n1==1UL) {
-            bintab[j1].b[0U].bn = (uint32_t)((int32_t)(bintab[j1].b[0U].bn+m)+1L)%m;
-            bintab[j1].b[0U].freq = (float)bintab[j1].b[0U].bn+0.5f;
+            bintab[j1].b[0U].freq = (float)((uint32_t)((int32_t)((uint32_t)X2C_TRUNCC(bintab[j1].b[0U].freq,
+                0UL,X2C_max_longcard)+m)+1L)%m)+0.5f;
             hn0[i0] = hn0[i0]^(1U<<j1);
+            bintab[j1].fecnbr = 1L;
          }
          else if (n2==1UL) {
-            /*WrInt(i,3); WrInt(j1,3);WrStr("b1 "); */
-            /*      ELSIF (n1=0) & (n2=1) THEN */
-            bintab[j2].b[0U].bn = (uint32_t)((int32_t)(bintab[j2].b[0U].bn+m)-1L)%m;
-            bintab[j2].b[0U].freq = (float)bintab[j2].b[0U].bn+0.5f;
+            bintab[j2].b[0U].freq = (float)((uint32_t)((int32_t)((uint32_t)X2C_TRUNCC(bintab[j2].b[0U].freq,
+                0UL,X2C_max_longcard)+m)-1L)%m)+0.5f;
             hn0[i0] = hn0[i0]^(1U<<j2);
+            bintab[j2].fecnbr = -1L;
          }
       }
       if (i0==tmp) break;
@@ -2925,6 +3318,141 @@ static void fecneighbour(BINTAB bintab, uint32_t cr, uint32_t sf)
 /*WrInt(ORD(hamok),1); WrStrLn("=ok2 --------------------"); */
 } /* end fecneighbour() */
 
+/*
+PROCEDURE fecneighbour(VAR bintab:BINTAB; cr,sf:CARDINAL);
+
+
+  PROCEDURE bitnum(b:SET16):CARDINAL;
+  VAR i:CARDINAL;
+  BEGIN
+    i:=0;
+    WHILE NOT (i IN b) DO INC(i) END;
+    RETURN i
+  END bitnum;
+
+  PROCEDURE ffrac(x:REAL):REAL;
+  BEGIN RETURN x-FLOAT(TRUNC(x))-0.5 END ffrac;
+
+
+VAR i,j, n, fi, m:CARDINAL;
+    bi:INTEGER;
+    s:SET16;
+    f:REAL;
+    d:ARRAY[0..7] OF SET16;
+    hn,hnh:NIBBBLOCK;
+    hamok, hamcorr, done:BOOLEAN;
+    le, ri:ARRAY[0..7] OF INTEGER;
+    df:ARRAY[0..1] OF REAL;
+    sy:ARRAY[0..1] OF CARDINAL;
+BEGIN
+  m:=CAST(CARDINAL,BITSET{sf});
+  FOR i:=0 TO cr-1 DO
+    d[i]:=gray(CAST(SET16, TRUNC(bintab[i].b[0].freq)));
+    f:=bintab[i].b[0].freq;
+    fi:=TRUNC(f);
+    s:=gray(CAST(SET16,fi));
+    le[i]:=(bitnum(s/gray(CAST(SET16,(fi+m-1) MOD m)))+i) MOD sf;
+    ri[i]:=(bitnum(s/gray(CAST(SET16,(fi+1) MOD m)))+i) MOD sf;     (* and deint *)
+  END;
+  deint(sf, cr, d, hn);
+  hnh:=hn;
+  chkhamm(hnh, cr, sf, hamok, hamcorr);
+
+  IF NOT hamok THEN    (* check for 1 parity bit for 1 left/right error *)
+    REPEAT
+      done:=TRUE; 
+      FOR i:=0 TO cr-1 DO
+        bi:=le[i];
+        IF bi>=0 THEN
+          n:=0;
+          FOR j:=0 TO cr-1 DO
+            IF bi=le[j] THEN INC(n) END;
+            IF bi=ri[j] THEN INC(n) END;
+          END;
+          IF n=1 THEN
+            IF 7 IN hnh[bi] THEN le[i]:=-1 ELSE 
+              IF ri[i]>=0 THEN ri[i]:=-1 END;
+              hn[bi]:=hn[bi]/SET8{i};
+              le[i]:=-2;
+              done:=FALSE;
+            END;
+          END; 
+        END;
+        bi:=ri[i]; 
+        IF bi>=0 THEN
+          n:=0;
+          FOR j:=0 TO cr-1 DO
+            IF bi=ri[j] THEN INC(n) END;
+            IF bi=le[j] THEN INC(n) END;
+          END;
+          IF n=1 THEN
+            IF 7 IN hnh[bi] THEN ri[i]:=-1 ELSE
+              IF le[i]>=0 THEN le[i]:=-1 END;
+              hn[bi]:=hn[bi]/SET8{i};
+              ri[i]:=-2;
+              done:=FALSE;
+            END;
+          END;
+        END;
+      END;
+WrStr(".");
+    UNTIL done;
+    chkhamm(hn, cr, sf, hamok, hamcorr);
+
+    IF NOT hamok THEN (* check double false chirps if one of it is best for swap *)
+WrStr(" nothamok ");
+
+      FOR i:=0 TO sf-1 DO
+        IF NOT (7 IN hn[i]) THEN 
+
+WrStr(" hamerr=");WrInt(i,3); WrStrLn("");
+          n:=0; 
+          FOR j:=0 TO cr-1 DO
+            IF (le[j]=VAL(INTEGER,i)) & (n<=1) THEN
+              df[n]:=ffrac(bintab[j].b[0].freq);
+              sy[n]:=j;
+              INC(n);
+WrStr(" le=");WrInt(j,3);
+            END;
+            IF (ri[j]=VAL(INTEGER,i)) & (n<=1) THEN
+              df[n]:=-ffrac(bintab[j].b[0].freq);
+              sy[n]:=j;
+              INC(n);
+WrStr(" ri=");WrInt(j,3);
+            END;
+          END;
+
+IF n=2 THEN WrStr(" twosym "); WrInt(i,3); WrInt(sy[0],2); WrInt(sy[1],2); 
+WrStr("  "); WrFixed(df[0],3,1); WrStr("  "); WrFixed(df[1],3,1);  WrStrLn(""); END;
+
+          IF (n=2) & (ABS(df[0]-df[1])>=0.25) THEN
+            hn[i]:=hn[i]/SET8{sy[ORD(df[0]>df[1])]};
+WrStr(" best fit "); WrInt(sy[ORD(df[0]>df[1])],1); WrStrLn("");
+          END;            
+        END; 
+      END;
+    END;
+
+
+WrStr("biterr:");
+FOR i:=0 TO cr-1 DO WrInt(le[i],5); WrInt(ri[i],4) END;
+WrStrLn("");
+FOR i:=0 TO 7 DO
+  FOR j:=0 TO sf-1 DO WrInt(ORD(i IN hn[j]),1) END;    
+  WrStrLn("");
+END;
+WrStrLn("");
+      done:=TRUE;
+
+
+(*
+      bintab[i].b[0].bn:=(bintab[i].b[0].bn+m-1) MOD m;
+      bintab[i].b[0].freq:=FLOAT(bintab[i].b[0].bn)+0.5;
+*)
+
+  END;
+END fecneighbour;
+*/
 static uint8_t _cnst3[255] = {255U,254U,252U,248U,240U,225U,194U,133U,11U,23U,47U,94U,188U,120U,241U,227U,198U,141U,
                 26U,52U,104U,208U,160U,64U,128U,1U,2U,4U,8U,17U,35U,71U,142U,28U,56U,113U,226U,196U,137U,18U,37U,75U,
                 151U,46U,92U,184U,112U,224U,192U,129U,3U,6U,12U,25U,50U,100U,201U,146U,36U,73U,147U,38U,77U,155U,55U,
@@ -3008,7 +3536,7 @@ static char decodechirp(struct FFRAME * frame, const struct BINS bins, char opti
          dcd = anonym->timeout<cr;
          anonym->chirpc = 0UL;
          /*-fec */
-         fecneighbour(anonym->bintab, cr, sf);
+         if (!opti) fecneighbour(anonym->bintab, cr, sf);
          try0 = 0UL;
          maxlev = 0.0f;
          maxtry = -1L;
@@ -3133,20 +3661,25 @@ static char decodechirp(struct FFRAME * frame, const struct BINS bins, char opti
                   }
                   else if (j1==0UL) strncpy(br,"[]",2u);
                   if (j1==0UL && anonym->bintab[i0].splt<0.0f) {
-                     osic_WrFixed(-(osic_sqrt((float)fabs(anonym->bintab[i0].splt))*v), 1L, 5UL);
+                     osic_WrFixed((float) -(sqrt((double)(float)fabs(anonym->bintab[i0].splt))
+                *(double)v), 1L, 5UL);
                   }
                   else {
-                     osic_WrFixed(osic_sqrt(anonym->bintab[i0].b[j1].lev)*v, 1L, 5UL);
+                     osic_WrFixed((float)(sqrt((double)anonym->bintab[i0].b[j1].lev)*(double)v), 1L,
+                5UL);
                   }
                   osi_WrStr((char *) &br[0U], 1u/1u);
-                  osic_WrFixed(anonym->bintab[i0].b[j1].freq, (int32_t)(2UL*(uint32_t)(j1==0UL)), 5UL);
+                  osic_WrFixed(anonym->bintab[i0].b[j1].freq, 2L, 5UL);
                   osi_WrStr((char *) &br[1U], 1u/1u);
                } /* end for */
-               osic_WrFixed(osic_sqrt(anonym->bintab[i0].noise)*v, 1L, 5UL);
-               osi_WrStr("%", 2ul);
+               osi_WrStr(" n=", 4ul);
+               osic_WrFixed((float)(sqrt((double)anonym->bintab[i0].noise)*(double)v), 1L, 1UL);
+               if (anonym->bintab[i0].fecnbr==1L) osi_WrStr(" f+1", 5ul);
+               else if (anonym->bintab[i0].fecnbr==-1L) osi_WrStr(" f-1", 5ul);
+               osi_WrStr(" ", 2ul);
                osic_WrFixed((X2C_DIVR((float)anonym->bintab[i0].halfnoisc,
-                (float)(uint32_t)(1UL<<anonym->cfgsf)))*100.0f, 1L, 0UL);
-               osi_WrStrLn("", 1ul);
+                (float)(uint32_t)(1UL<<anonym->cfgsf)))*100.0f, 1L, 1UL);
+               osi_WrStrLn("%", 2ul);
                if (i0==tmp) break;
             } /* end for */
          }
@@ -3215,9 +3748,7 @@ static char decodechirp(struct FFRAME * frame, const struct BINS bins, char opti
                   i0 = 0UL;
                   if (i0<=tmp) for (;; i0++) {
                      s = anonym->nibbs[i0*2UL]&0xFU|X2C_LSH(anonym->nibbs[i0*2UL+1UL],8,4)&0xF0U;
-                     if (i0<anonym->dlen) {
-                        s = s^(uint8_t)_cnst3[i0];
-                     }
+                     if (i0<anonym->dlen) s = s^(uint8_t)_cnst3[i0];
                      text[i0] = (char)s;
                      if (i0==tmp) break;
                   } /* end for */
@@ -3382,6 +3913,35 @@ static void findbirdies(uint32_t from, uint32_t to, const struct Complex fir[], 
    }
 } /* end findbirdies() */
 
+/*
+PROCEDURE qatan2(u-:Complex):REAL;
+VAR re, im, w:REAL;
+BEGIN
+  re:=ABS(u.Re);
+  im:=ABS(u.Im);
+  IF im>re THEN
+    IF im<>0.0 THEN w:=re/im ELSE w:=0.0 END;
+    w:=PI/2.0 - (w*1.055 - w*w*0.267);                    (* fast arctan *)
+  ELSE
+    IF re<>0.0 THEN w:=im/re ELSE w:=0.0 END;
+    w:=w*1.055 - w*w*0.267;
+  END;
+  IF u.Re<0.0 THEN w:=PI-w END;
+  IF u.Im<0.0 THEN w:=-w END;
+  RETURN w
+END qatan2;
+
+PROCEDURE fmdemod(u-:Complex; VAR wo:REAL):REAL;
+VAR re, im, w, af:REAL;
+BEGIN
+  w:=qatan2(u);
+  af:=w-wo;
+  wo:=w;
+  IF af>PI THEN af:=af - PI*2.0 END;
+  IF af<-PI THEN af:=af + PI*2.0 END;
+  RETURN af
+END fmdemod;
+*/
 
 /* split samples in left from peak and right and transform separate and add gains */
 static float fasejumps(struct Complex b[], uint32_t b_len, uint32_t guess, uint32_t mid, uint32_t sf)
@@ -3396,7 +3956,7 @@ static float fasejumps(struct Complex b[], uint32_t b_len, uint32_t guess, uint3
    uint16_t wgi;
    struct Complex * anonym;
    uint32_t tmp;
-   jj = (sf+1UL)-guess%sf;
+   jj = sf-guess%sf;
    j1 = (jj*65536UL)/sf;
    f.Re = 0.0f;
    f.Im = 0.0f;
@@ -3423,12 +3983,6 @@ static float fasejumps(struct Complex b[], uint32_t b_len, uint32_t guess, uint3
 } /* end fasejumps() */
 
 
-struct _3 {
-   float lev;
-   uint32_t bn;
-};
-
-
 static void getbin(struct Complex c[], uint32_t c_len, struct BINS * bins, uint32_t sf, float offset,
                 char rev, char opt, char sort, char invers, uint32_t * corrcnt)
 {
@@ -3440,6 +3994,9 @@ static void getbin(struct Complex c[], uint32_t c_len, struct BINS * bins, uint3
    uint32_t i0;
    uint16_t wgi;
    int32_t ii;
+   float vvvv;
+   float vvv;
+   float vf;
    float mnois;
    float vv;
    float v;
@@ -3447,8 +4004,6 @@ static void getbin(struct Complex c[], uint32_t c_len, struct BINS * bins, uint3
    float co;
    float si;
    float max0;
-   struct BIN hb;
-   float vf[3];
    float amp[4096];
    struct Complex tmp[4096];
    struct Complex * anonym;
@@ -3481,8 +4036,6 @@ static void getbin(struct Complex c[], uint32_t c_len, struct BINS * bins, uint3
    }
    X2C_MOVE((char *)c,(char *)tmp,c_len*sizeof(struct Complex));
    Transform(c, c_len, sf, 0);
-   /*  c[0].Re:=c[0].Re*2.0;                                      (* dc part *) */
-   /*  c[0].Im:=c[0].Im*2.0; */
    lastbin = 0UL;
    memset((char *)bins,(char)0,sizeof(struct BINS));
    max0 = (-1.0f);
@@ -3493,6 +4046,7 @@ static void getbin(struct Complex c[], uint32_t c_len, struct BINS * bins, uint3
       j1 = bufsize-1UL;
       ii = -1L;
    }
+   max0 = (-1.0f);
    tmp0 = bufsize-1UL;
    i0 = 0UL;
    if (i0<=tmp0) for (;; i0++) {
@@ -3503,21 +4057,33 @@ static void getbin(struct Complex c[], uint32_t c_len, struct BINS * bins, uint3
       amp[j1] = v;
       nois = nois+v;
       if (v>max0) {
-         max0 = v;
+         max0 = v; /* find strongest bin */
          imax = j1;
       }
       j1 += (uint32_t)ii;
       if (i0==tmp0) break;
    } /* end for */
+   mnois = max0*0.8f;
    /*
-     IF NOT opt THEN                               (* limit afc runaway in echo distorted signal *)
-       i:=(bufsize+imax-1) MOD bufsize;
-       v:=amp[imax]*0.25;
-       amp[i]:=flmin(amp[i], v);
-       i:=(imax+1) MOD bufsize;
-       amp[i]:=flmin(amp[i], v);
+     IF invers THEN
+       imax:=modbs-1-imax;
+       FOR i:=0 TO modbs DIV 2-1 DO v:=amp[i]; amp[i]:=amp[modbs-1-i]; amp[modbs-1-i]:=v END;
      END;
    */
+   /*
+   IF verb2 THEN
+   WrInt(imax,1);WrStr("::");
+   FOR i:=0 TO 4 DO
+     WrFixed(amp[(imax+bufsize-2+i) MOD bufsize]*0.000001,0,1); WrStr(" ");
+   END;
+   END;
+   */
+   vv = X2C_DIVR(nois,(float)bufsize);
+   for (i0 = 0UL; i0<=4UL; i0++) {
+      v = amp[(((imax+bufsize)-2UL)+i0)%bufsize]-vv; /* subtract data bins from noise sum */
+      if (v>0.0f && nois>v) nois = nois-v;
+   } /* end for */
+   nois = X2C_DIVR(nois,(float)bufsize);
    if (binsview>0UL) {
       /* show bins around best */
       osic_WrINT32(imax, 4UL);
@@ -3528,7 +4094,7 @@ static void getbin(struct Complex c[], uint32_t c_len, struct BINS * bins, uint3
       tmp0 = binsview;
       i0 = 0UL;
       if (i0<=tmp0) for (;; i0++) {
-         osic_WrFixed(osic_sqrt(amp[((bufsize+i0+imax)-binsview/2UL)%bufsize]*v), 2L, 4UL);
+         osic_WrFixed((float)sqrt((double)(amp[((bufsize+i0+imax)-binsview/2UL)%bufsize]*v)), 2L, 4UL);
          osi_WrStr(" ", 2ul);
          if (i0==tmp0) break;
       } /* end for */
@@ -3536,107 +4102,67 @@ static void getbin(struct Complex c[], uint32_t c_len, struct BINS * bins, uint3
    }
    /*- find fase jump */
    if (!nomultipath && sort) {
-      if (imax>20UL && imax+20UL<bufsize) {
+      if (imax*4UL>bufsize && imax*4UL<bufsize*3UL) {
          /* no advantage with small wrap around part */
-         v = 0.0f;
-         j1 = 1UL;
-         for (i0 = 0UL; i0<=2UL; i0++) {
-            /* test freq below and above peak freq */
-            jj = imax+i0;
-            if (invers) jj = ((bufsize-imax)+i0)-1UL;
-            vv = fasejumps(tmp, 4096ul, jj, bufsize-imax, bufsize); /* split samples in before and after wrap around */
-            if (vv>v) {
-               v = vv; /* winner has max. level sum */
-               j1 = i0;
-            }
-         } /* end for */
-         if (invers) j1 = (((bufsize+imax)-j1)+1UL)%bufsize;
-         else j1 = ((imax+bufsize+j1)-1UL)%bufsize;
-         if (j1!=imax) {
-            /* swap best level with found real best */
+         jj = imax;
+         if (invers) jj = (bufsize-imax)-1UL;
+         v = fasejumps(tmp, 4096ul, jj, bufsize-imax, bufsize);
+         ii = 0L;
+         if (fasejumps(tmp, 4096ul, jj+1UL, bufsize-imax, bufsize)>v) ii = 1L;
+         else if (fasejumps(tmp, 4096ul, jj-1UL, bufsize-imax, bufsize)>v) ii = -1L;
+         if (ii) {
+            if (invers) ii = -ii;
             v = amp[imax];
-            amp[imax] = v*0.51f; /* make original max bin to second best */
-            amp[((bufsize+j1+j1)-imax)%bufsize] = v*0.49f; /* make 0.51/1/0.49 peak as not known freq offset */
-            amp[j1] = v;
+            amp[imax] = amp[(int32_t)imax+ii];
+            imax += (uint32_t)ii;
+            amp[imax] = v;
             bins->splt = -v; /* for -V view only */
-            imax = j1;
             ++*corrcnt; /* for monitoring only */
          }
       }
    }
-   for (i0 = 0UL; i0<=2UL; i0++) {
-      v = amp[(((imax+bufsize)-1UL)+i0)%bufsize]; /* subtract data bins from noise sum */
-      if (nois>v) nois = nois-v;
-   } /* end for */
-   nois = X2C_DIVR(nois,(float)bufsize);
-   if (sort) {
-      mnois = max0*0.8f;
-      max0 = 0.0f;
-      bins->halfnoisc = 0UL;
+   bins->noise = nois;
+   bins->halfnoisc = 0UL;
+   jj = 0UL;
+   for (;;) {
+      bins->b[jj].lev = max0;
+      vf = amp[((imax+bufsize)-1UL)%bufsize];
+      v = amp[(imax+1UL)%bufsize];
+      bins->b[jj].sharpness = 0.0f;
+      vvv = max0-flmin(v, vf);
+      if (vvv>0.0f) {
+         vvvv = X2C_DIVR(v-vf,vvv);
+         bins->b[jj].sharpness = X2C_DIVR(v+vf,vvv);
+      }
+      if (vvvv>0.99f) vvvv = 0.999f;
+      else if (vvvv<(-0.999f)) vvvv = (-0.999f);
+      vv = (float)(sqrt((double)(float)fabs(vvvv))*(double)fsign(vvvv));
+      vv = vv*0.5f+0.5f+(float)imax;
+      if (opt) vv = vv*0.25f+0.375f;
+      bins->b[jj].freq = vv;
+      if (!sort || jj>=3UL) break;
+      ++jj;
+      vv = max0;
+      max0 = (-1.0f);
       tmp0 = bufsize-1UL;
       i0 = 0UL;
       if (i0<=tmp0) for (;; i0++) {
-         vv = amp[i0];
-         if (vv>max0) {
-            max0 = vv;
+         v = amp[i0];
+         if (v>max0 && v<vv) {
+            /* find next lesser bin */
+            max0 = v;
             imax = i0;
          }
-         if (vv>mnois) ++bins->halfnoisc;
-         if (max0>bins->b[lastbin].lev && (!opt || (i0&3UL)==1UL)) {
-            bins->b[lastbin].lev = max0;
-            bins->b[lastbin].bn = imax;
-            v = X2C_max_real;
-            for (j1 = 0UL; j1<=3UL; j1++) {
-               /* find new weekest bin */
-               if (bins->b[j1].lev<v) {
-                  v = bins->b[j1].lev;
-                  lastbin = j1;
-               }
-            } /* end for */
-            max0 = bins->b[lastbin].lev;
-         }
+         if (v>mnois) ++bins->halfnoisc;
          if (i0==tmp0) break;
       } /* end for */
-      j1 = 0UL;
-      for (i0 = 1UL; i0<=3UL; i0++) {
-         if (bins->b[i0].lev>bins->b[j1].lev) j1 = i0;
-      } /* end for */
-      if (j1>0UL) {
-         /* swap best to front */
-         hb = bins->b[0U];
-         bins->b[0U] = bins->b[j1];
-         bins->b[j1] = hb;
-      }
    }
-   else {
-      bins->b[0U].lev = max0;
-      bins->b[0U].bn = imax;
-   }
-   bins->noise = nois;
-   for (i0 = 0UL; i0<=2UL; i0++) {
-      vf[i0] = amp[(((bins->b[0U].bn+bufsize)-1UL)+i0)%bufsize];
-   } /* end for */
-   v = 0.0f;
-   bins->b[0U].sharpness = 0.0f;
-   if (vf[1U]!=0.0f) {
-      v = X2C_DIVR((vf[2U]-vf[0U])*0.5f,vf[1U]);
-      bins->b[0U].sharpness = X2C_DIVR(flmax(0.0f, vf[1U]-(vf[2U]+vf[0U])*0.5f),vf[1U]);
-   }
-   /*  IF vf[1]<>0.0 THEN v:=(sqrt(vf[2])-sqrt(vf[0]))*0.5/sqrt(vf[1]) END; */
-   if (v>0.49f) v = 0.49f;
-   else if (v<(-0.49f)) v = (-0.49f);
-   for (i0 = 0UL; i0<=3UL; i0++) {
-      v = v+0.5f+(float)bins->b[i0].bn;
-      if (opt) v = v*0.25f+0.375f;
-      bins->b[i0].freq = v;
-      v = 0.0f;
-   } /* end for */
 } /* end getbin() */
 
-union _4;
+union _3;
 
 
-union _4 {
+union _3 {
    struct Complex c[2048];
    short i0[8192];
    uint8_t b[16384];
@@ -3649,7 +4175,7 @@ static char inreform(struct Complex b[], uint32_t b_len, uint32_t * wp)
    uint32_t bs;
    uint32_t i0;
    int32_t res;
-   union _4 ib;
+   union _3 ib;
    char * p;
    uint32_t tmp;
    bs = isize*4096UL;
@@ -3738,6 +4264,7 @@ static char readsampsfir(void)
       do {
          sum.Re = 0.0f;
          sum.Im = 0.0f;
+         /*      fp:=(SUBSAMP-1-ASH(sampc,SUBSAMPBITS-24) MOD SUBSAMP) * firlen;    (* interpolate *) */
          fp = (sampc>>20&15UL)*firlen; /* interpolate */
          if (complexfir) {
             tmp = (frd+firlen)-1UL;
@@ -3885,6 +4412,8 @@ static char nextchirp(struct FFRAME * frame)
       frame->dcnt = 0UL;
       frame->iqread = iqwrite; /* start decode not from old data */
       frame->state = lorarx_sHUNT;
+      frame->fc = 0.0f;
+      frame->fci = 0.0f;
       frame->fcfix = 0.0f;
    }
    if (frame->jp==0UL) frame->jp = blocksize;
@@ -3898,50 +4427,79 @@ static char nextchirp(struct FFRAME * frame)
    frame->fcfix = frame->fcfix+frame->dataratecorr; /* correct known samplerate error */
    /*- afc */
    if (frame->state>=lorarx_sSYNRAW) {
-      fi = (bins.b[0U].freq-(float)(int32_t)X2C_TRUNCI(bins.b[0U].freq,X2C_min_longint,X2C_max_longint))-0.5f;
-      frame->eye = frame->eye+(float)fabs(fi); /* for statistics */
-      i0 = blocksize;
-      if (opt) i0 = i0/4UL;
-      fi = fi*(float)fabs(X2C_DIVR(bins.b[0U].freq,(float)i0)-0.5f)*2.0f; /* prefer not middle splitted sybols */
-      /*    fi:=fi*ABS(fi);  */
-      /*IF fi<0.0 THEN fi:=-sqrt(-fi) ELSE fi:=sqrt(fi) END; */
-      if (opt) fi = fi*4.0f;
-      /*      fi:=lim(fi*flmin(squelch(bins), 50.0)/50.0, 0.5); */
-      fi = lim(X2C_DIVR(fi*flmin(squelch(bins), 100.0f),100.0f), X2C_DIVR(2.0f,(float)(frame->cnt+25UL)));
-      fi = fi*bins.b[0U].sharpness*bins.b[0U].sharpness;
+      fi = bins.b[0U].freq-0.5f;
+      if (frame->state==lorarx_sSYNRAW || frame->state==lorarx_sID) {
+         if ((float)(uint32_t)(1UL<<frame->cfgsf)-fi<=4.0f) {
+            fi = fi-(float)(uint32_t)(1UL<<frame->cfgsf);
+         }
+         else {
+            fi = fi-fsign(fi)*(float)(uint32_t)X2C_TRUNCC(((float)fabs(fi)+4.0f)*0.125f,0UL,
+                X2C_max_longcard)*8.0f;
+         }
+         if (frame->state==lorarx_sID && (float)fabs(fi)>1.0f) fi = 0.0f;
+      }
+      else if (opt) fi = (fi-ftrunc(fi+0.5f))*4.0f;
+      else fi = fi-ftrunc(fi+0.5f);
+      if (fi>1.0f) fi = 1.0f;
+      else if (fi<(-1.0f)) fi = (-1.0f);
+      /*IF verb2 THEN WrStr("f,fc,fci="); WrFixed(bins.b[0].freq, 2,1); WrStr(" "); WrFixed(frame.fc, 2,1); WrStr(" ");
+                WrFixed(frame.fci, 2,1); WrStr(" "); END; */
+      if (frame->state>=lorarx_sDATA) {
+         frame->eye = frame->eye+(float)fabs(X2C_DIVR(fi,(float)(1UL+3UL*(uint32_t)opt))); /* for statistics */
+      }
       fi = fi*frame->afcspeed;
-      /*      fi:=fi*(0.1+0.2/FLOAT(frame.cnt+8)); */
-      frame->fc = (frame->fc-frame->fci)-fi*12.0f; /* datarate lead-lag loop filter */
-      /*      frame.fci:=frame.fci+fi*(0.1+0.2/FLOAT(frame.cnt+8)); */
+      if (frame->state==lorarx_sREV1 || frame->state==lorarx_sREV2) fi = 0.0f;
+      /*      fi:=fi*(0.2+6.0/FLOAT(frame.cnt+4));                   (* lower pll loop gain after lock *) */
+      fi = fi*(0.4f+X2C_DIVR(6.0f,(float)(frame->cnt+4UL))); /* lower pll loop gain after lock */
+      /*      IF (frame.cfgsf<=8) & (frame.state>sSYNRAW) THEN fi:=0.0 END; */
+      if (frame->state>=lorarx_sDATA && !opt) {
+         if (frame->cnt>16UL) {
+            fi = fi*flmax(0.0f, 1.0f-bins.b[0U].sharpness*2.0f); /* exclude noisy or echo distorted bins */
+         }
+      }
+      /*
+            IF ((frame.state<>sSYNRAW) OR (ABS(fi)>4.0)) & NOT opt & (frame.cnt>16)
+                THEN (* afc only with min 4 step bins *)
+              fi:=fi*flmax(0.0, 1.0-bins.b[0].sharpness*3.0);      (* exclude noisy or echo distorted bins *)
+            END;
+      */
+      /*WrFixed(bins.b[0].sharpness,2,1);WrStr("=sh "); */
+      /*      frame.fc:=frame.fc-frame.fci-fi*(8.0+50.0/FLOAT(frame.cnt+10));
+                (* datarate lead-lag loop filter stability*) */
+      frame->fc = (frame->fc-frame->fci)-fi*10.0f; /* datarate lead-lag loop filter stability*/
       frame->fci = frame->fci+fi;
    }
    /*WrFixed(frame.fc, 3,1); WrStr(" "); WrFixed(frame.fci, 4,1); WrStr(" "); WrFixed(fi, 4,1); WrStr(" ");
                 WrFixed(bins.b[0].sharpness, 2,1); WrStrLn("=fc, fci, f, sharp");  */
+   /*WrStr("/"); WrFixed(frame.fci, 4,1); WrStr(" "); WrFixed(fi, 4,1); WrStr(" "); WrFixed(bins.b[0].sharpness, 2,1);
+                WrStrLn("=fci, fi, sharp");  */
    /*- afc */
    if (frame->state==lorarx_sHUNT) {
-      /*IF verb2 THEN WrInt(frame.cnt,1); WrStr(" "); WrFixed(freqmod(frame.lastbin-bins.b[0].freq, blocksize),2,1);
-                WrStrLn(" hunt") END; */
-      if (frame->cnt==1UL && (float)fabs(freqmod(frame->lastbin-bins.b[0U].freq,
-                (int32_t)blocksize))<=(float)(1UL+(uint32_t)frame->optimize*3UL)) {
+      if (frame->cnt==1UL && (float)fabs(freqmod(frame->lastbin-bins.b[0U].freq, (int32_t)blocksize))<=1.0f) {
+         /*      & (ABS(freqmod(frame.lastbin-bins.b[0].freq,
+                blocksize))<=FLOAT(1+ORD(frame.optimize)*3)) THEN     (* 2 good peamble chirps *) */
          /* 2 good peamble chirps */
          frame->jp = blocksize-(uint32_t)X2C_TRUNCC(bins.b[0U].freq,0UL,X2C_max_longcard);
          frame->state = lorarx_sSYNRAW;
          frame->idfound = 0UL;
          frame->eye = 0.0f;
+         /*        frame.fcfix:=-(bins.b[0].freq-VAL(REAL, TRUNC(bins.b[0].freq))); */
          frame->fc = 0.0f;
          frame->fci = 0.0f;
          if (verb2) {
             osic_WrINT32(frame->label, 1UL);
-            osi_WrStr(" ", 2ul);
+            osi_WrStr(" jump:", 7ul);
             osic_WrINT32(frame->jp, 1UL);
-            osi_WrStrLn("=jump", 6ul);
+            osi_WrStrLn("", 1ul);
          }
       }
       frame->cnt = 0UL;
       frame->lastbin = bins.b[0U].freq;
    }
    else if (frame->state==lorarx_sSYNRAW) {
-      fi = freqmod(bins.b[0U].freq, (int32_t)blocksize);
+      /*IF frame.cnt=10 THEN frame.fcfix:=frame.fcfix-0.47 END;  (* stress test datarate pll *) */
+      fi = bins.b[0U].freq;
+      if ((float)blocksize-fi<=4.0f) fi = fi-(float)blocksize;
       if ((float)fabs(fi)>=4.0f) {
          i0 = (uint32_t)X2C_TRUNCC((bins.b[0U].freq+3.5f)*0.125f,0UL,X2C_max_longcard);
          if (i0>15UL || (frame->synfilter>=256UL && (frame->synfilter&255UL)>=16UL) && i0!=(frame->synfilter&255UL)
@@ -3951,7 +4509,10 @@ static char nextchirp(struct FFRAME * frame)
                osi_WrStr(" ", 2ul);
                osi_WrStrLn("wrong first syn nibble", 23ul);
             }
-            if (frame->idfound) frame->state = lorarx_sHUNT;
+            if (frame->idfound) {
+               /* second wrong id */
+               frame->state = lorarx_sHUNT;
+            }
             frame->idfound = 1UL; /* set is not first sync exception */
          }
          else {
@@ -3968,7 +4529,7 @@ static char nextchirp(struct FFRAME * frame)
       else {
          /* good syn frame */
          frame->idfound = 0UL;
-         if (frame->cnt==2UL) frame->fcfix = (frame->fcfix-fi)+0.5f;
+         /*IF frame.cnt=2 THEN frame.fcfix:=frame.fcfix-fi+0.5 END; */
          if (verb2) {
             osic_WrINT32(frame->label, 1UL);
             osi_WrStr(" ", 2ul);
@@ -3997,7 +4558,6 @@ static char nextchirp(struct FFRAME * frame)
             frame->state = lorarx_sHUNT;
             if (verb2) {
                osic_WrINT32(frame->label, 1UL);
-               osi_WrStr(" ", 2ul);
                osi_WrStrLn(" wrong second syn nibble", 25ul);
             }
          }
@@ -4029,6 +4589,7 @@ static char nextchirp(struct FFRAME * frame)
             sq = frame->lastsq;
          }
       }
+      else fi = freqmod(fi+frame->lastbin, (int32_t)blocksize)*0.5f;
       if (sq>frame->datasquelch) {
          /* usable reverse chirp */
          fi = fi*0.5f; /* real freq halfway between forward & rev frames */
@@ -4037,9 +4598,9 @@ static char nextchirp(struct FFRAME * frame)
                 X2C_max_longint));
          if (verb2) {
             osic_WrINT32(frame->label, 1UL);
-            osi_WrStr(" ", 2ul);
+            osi_WrStr(" jump/4:", 9ul);
             osic_WrINT32(frame->jp, 1UL);
-            osi_WrStrLn("=jump", 6ul);
+            osi_WrStrLn("", 1ul);
          }
          frame->fcfix = (frame->fcfix-(float)(int32_t)X2C_TRUNCI(fi,X2C_min_longint,X2C_max_longint))-1.0f;
          frame->state = lorarx_sDATA;
@@ -4131,7 +4692,7 @@ extern int main(int argc, char **argv)
    if (judpport>0UL) signal(SIGPIPE, jsonpipebroken);
    w = 3.1415926535f;
    for (i = 0UL; i<=24UL; i++) {
-      SINTAB[i] = osic_sin(w);
+      SINTAB[i] = (float)sin((double)w);
       w = w*0.5f;
    } /* end for */
    pbirdbuf = 0;

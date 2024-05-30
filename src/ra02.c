@@ -476,16 +476,22 @@ static void ShowFrame(char f[], uint32_t f_len, uint32_t len, char port)
    char h[21];
    osi_WrStr((char *) &port, 1u/1u);
    i = 0UL;
-   while (!((uint32_t)(uint8_t)f[i]&1)) {
+   for (;;) {
+      if (((uint32_t)(uint8_t)f[i]&1)) break;
       ++i;
       if (i>len) {
-         /*      WrStrLn(" no ax.25 (no address end mark)");       */
-         return;
+         i = 0UL;
+         break; /* no address end mark found */
       }
    }
-   /* no address end mark found */
    if (i%7UL!=6UL) {
-      /*    WrStrLn(" no ax.25 (address field size not multiples of 7)"); */
+      /*  WrStrLn(" no ax.25 (address field size not multiples of 7)"); */
+      i = 0UL;
+      while (i<len+2UL && i<=f_len-1) {
+         WrChHex(f[i]);
+         ++i;
+      }
+      osi_WrStrLn("", 1ul);
       return;
    }
    /* address end not modulo 7 error */
@@ -1087,13 +1093,13 @@ static void Parms(void)
          else if (h[1U]=='F') {
             osi_NextArg(h, 4096ul);
             if ((!aprsstr_StrToFix(&tx->mhz, h, 4096ul) || tx->mhz<137.0f) || tx->mhz>1020.0f) {
-               Error("-F <MHz>", 9ul);
+               Error("-F <MHz> (137..1020)", 21ul);
             }
          }
          else if (h[1U]=='f') {
             osi_NextArg(h, 4096ul);
             if ((!aprsstr_StrToFix(&chip0->rxmhz, h, 4096ul) || chip0->rxmhz<137.0f) || chip0->rxmhz>1020.0f) {
-               Error("-f <MHz>", 9ul);
+               Error("-f <MHz> (137..1020)", 21ul);
             }
          }
          else if (h[1U]=='J') {
@@ -1112,7 +1118,7 @@ static void Parms(void)
             }
          }
          else if (h[1U]=='h') {
-            osi_WrStrLn(" ra-02 (sx127x) via LPT or multiple chips via GPIO to axudp by oe5dxl", 70ul);
+            osi_WrStrLn(" ra-02 (sx127x) via LPT or multiple chips via GPIO to axudp or json by oe5dxl", 78ul);
             osi_WrStrLn(" -A                 tx AFSK 1200 Baud", 38ul);
             osi_WrStrLn(" -a                 AGC on", 27ul);
             osi_WrStrLn(" -B <n>             tx bandwidth kHz 0:7.8 1:10.4 2:15.6 3:20.8 4:31.25 5:41.7 6:62.5 7:125 8:2\
@@ -1124,11 +1130,11 @@ static void Parms(void)
             osi_WrStrLn(" -d                 do not send while DCD on this band or if dcd on tx sf/bw)", 78ul);
             osi_WrStrLn("                      timebase is detection duration, some ms see chip manual", 78ul);
             osi_WrStrLn(" -E                 Send UDP frame unmodified in FSK up to 1500Byte eg. for POCSAG", 83ul);
-            osi_WrStrLn(" -F <MHz>           tx MHz (433.775)", 37ul);
-            osi_WrStrLn(" -f <MHz>           rx MHz (433.775)", 37ul);
+            osi_WrStrLn(" -F <MHz>           tx MHz (433.775) (137..1020)", 49ul);
+            osi_WrStrLn(" -f <MHz>           rx MHz (433.775) (137..1020)", 49ul);
             osi_WrStrLn(" -G [-]<baud>       Send GFSK <baud> -baud same but g3ruh scrambler off (490..250000)", 86ul);
             osi_WrStrLn(" -g <n>             lna gain 6..1, 1 is maximum gain! see chip manual(1)", 73ul);
-            osi_WrStrLn(" -H <n>             Preample length (8) sx seems to need minimum 4 (8)", 71ul);
+            osi_WrStrLn(" -H <n>             Preamble length (8) sx seems to need minimum 4 (8)", 71ul);
             osi_WrStrLn(" -h                 this", 25ul);
             osi_WrStrLn(" -I                 tx implicit header on", 42ul);
             osi_WrStrLn(" -i                 rx implicit header on", 42ul);
@@ -1194,11 +1200,12 @@ ip2> -L ... <parameters chip2 tx1/rx> -L ... -v", 143ul);
       storechip(pcnt, &res, &sck0, &miso0, &mosi0, &ce0, &chip0);
    }
    chkports();
-   if (verb) {
-      chip0 = chips;
-      while (chip0) {
-         { /* with */
-            struct CHIP * anonym = chip0;
+   chip0 = chips;
+   while (chip0) {
+      { /* with */
+         struct CHIP * anonym = chip0;
+         if ((float)fabs(anonym->datarate)>133.0f) anonym->datarate = anonym->ppm;
+         if (verb) {
             Wrchipnum(chip0, 1);
             osi_WrStr("RX:", 4ul);
             tx = anonym->ptx;
@@ -1231,7 +1238,6 @@ ip2> -L ... <parameters chip2 tx1/rx> -L ... -v", 143ul);
             osi_WrStr(" lnaboost=", 11ul);
             osic_WrUINT32(anonym->lnaboost, 1UL);
             if (anonym->swapiq) osi_WrStr(" invertIQ", 10ul);
-            if ((float)fabs(anonym->datarate)>133.0f) anonym->datarate = anonym->ppm;
             osi_WrStr(" symt=", 7ul);
             osic_WrFixed(anonym->symboltime, 3L, 1UL);
             osi_WrStr("ms", 3ul);
@@ -1304,8 +1310,8 @@ ip2> -L ... <parameters chip2 tx1/rx> -L ... -v", 143ul);
                }
                tx = tx->next;
             }
-            chip0 = anonym->next;
          }
+         chip0 = anonym->next;
       }
    }
 } /* end Parms() */
