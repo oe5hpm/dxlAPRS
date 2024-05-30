@@ -64,7 +64,7 @@ extern aprsdecode_SET256 aprsdecode_SYMTABLE;
 
 #define aprsdecode_POIINFOSIZE 4096
 
-#define aprsdecode_VERSNUM "0.81"
+#define aprsdecode_VERSNUM "0.82"
 
 #define aprsdecode_DEFAULTPOISYMBOL "//"
 
@@ -74,7 +74,7 @@ extern aprsdecode_SET256 aprsdecode_SYMTABLE;
 
 #define aprsdecode_FOLLOWWATCH 1
 
-#define aprsdecode_VERS "aprsmap(cu) 0.81"
+#define aprsdecode_VERS "aprsmap(cu) 0.82"
 
 typedef char aprsdecode_MONCALL[9];
 

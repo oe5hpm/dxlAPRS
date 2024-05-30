@@ -205,6 +205,7 @@ struct UDPSET {
    int32_t txd;
    int32_t level;
    int32_t quali;
+   char longcalls;
 };
 
 static char sentemptymsg;
@@ -703,6 +704,10 @@ static void decodeudp2(const char ub[], uint32_t ub_len,
             getval(ub, ub_len, &i, &res);
             modeminfo->quali = res;
             break;
+         case 'X':
+            getval(ub, ub_len, &i, &res);
+            if (res==2L) modeminfo->longcalls = 1;
+            break;
          default:;
             getval(ub, ub_len, &i, &res);
             break;
@@ -750,9 +755,12 @@ static char getudp(uint32_t usock, aprsdecode_FRAMEBUF buf,
             }
             /*WrInt(modeminfo.txd, 5); WrInt(modeminfo.level, 5);
                 WrInt(modeminfo.quali, 5); WrStrLn(" modem"); */
-            aprsstr_raw2mon(buf, 512ul, mbuf, 512ul, (uint32_t)len, &mlen,
-                ghostset);
-            memcpy(buf,mbuf,512u);
+            if (modeminfo->longcalls) buf[len] = 0;
+            else {
+               aprsstr_raw2mon(buf, 512ul, mbuf, 512ul, (uint32_t)len,
+                &mlen, ghostset);
+               memcpy(buf,mbuf,512u);
+            }
          }
       }
    }
@@ -1686,7 +1694,7 @@ static void beaconmacros(char s[], uint32_t s_len,
                aprsstr_Append(ns, 256ul, "\\\\", 3ul);
             }
             else if (s[i]=='v') {
-               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.81", 17ul);
+               aprsstr_Append(ns, 256ul, "aprsmap(cu) 0.82", 17ul);
             }
             else if (s[i]=='l') {
                if (aprstext_getmypos(&pos)) {
@@ -5670,7 +5678,10 @@ static int32_t AprsIs(char buf[], uint32_t buf_len,
       }
    }
    else if (udpchan) {
-      aprsstr_Append(qtext, 32ul, ",qAU,", 6ul);
+      if (udpchan-1UL<=3UL && aprsdecode_udpsocks0[udpchan-1UL].dport) {
+         aprsstr_Append(qtext, 32ul, ",qAU,", 6ul);
+      }
+      else aprsstr_Append(qtext, 32ul, ",qAO,", 6ul);
       useri_confappend(useri_fMYCALL, qtext, 32ul);
    }
    else if (logcall[0UL]) {
@@ -5962,7 +5973,7 @@ static char tcpconn(aprsdecode_pTCPSOCK * sockchain, int32_t f)
          aprsstr_Append(h, 512ul, s, 100ul);
       }
       aprsstr_Append(h, 512ul, " vers ", 7ul);
-      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.81", 17ul);
+      aprsstr_Append(h, 512ul, "aprsmap(cu) 0.82", 17ul);
       appfilter(h, 512ul, 0);
       /*    IF filter[0]<>0C THEN Append(h, " filter ");
                 Append(h, filter) END; */
@@ -6866,7 +6877,7 @@ static void storedata(aprsdecode_FRAMEBUF mb, aprsdecode_pTCPSOCK cp,
                 );
                   }
                   useri_xerrmsg("Ping-Timeout, Rf to AprsIs transfer stopped \
-temporarily", 56ul);
+temporary", 54ul);
                }
                else ok0 = Sendtcp(tp, mb);
                tp = tp->next;
@@ -6878,7 +6889,7 @@ temporarily", 56ul);
       /* delayed */
       res = 0L;
       if (aprsdecode_verb) {
-         osi_WrStrLn("---discarded delayed digpeat-frame", 35ul);
+         osi_WrStrLn("---discarded delayed digipeat-frame", 36ul);
       }
    }
    otime = 0UL;

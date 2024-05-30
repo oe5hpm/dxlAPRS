@@ -693,7 +693,7 @@ static void startcheckvers(void)
       s[0] = 0;
       i = 0L;
       while (i<=1023L && h[i]) {
-         if (h[i]=='$') aprsstr_Append(s, 1024ul, "0.81", 5ul);
+         if (h[i]=='$') aprsstr_Append(s, 1024ul, "0.82", 5ul);
          else aprsstr_Append(s, 1024ul, (char *) &h[i], 1u/1u);
          ++i;
       }
@@ -4387,7 +4387,7 @@ static void helpmenu(void)
    /*  addline(menu, "Shortcuts", CMDSHORTCUTLIST, MINH*6); */
    addline(menu, "Check Version", 14ul, "\305", 2ul, 607UL);
    addline(menu, "Helptext", 9ul, "\305", 2ul, 610UL);
-   addline(menu, "aprsmap(cu) 0.81 by OE5DXL ", 28ul, " ", 2ul, 605UL);
+   addline(menu, "aprsmap(cu) 0.82 by OE5DXL ", 28ul, " ", 2ul, 605UL);
    setunderbar(menu, 37L);
    menu->ysize = menu->oldknob*menu->yknob;
    menu->oldknob = 0UL;
@@ -6992,6 +6992,34 @@ BEGIN
 END InstrList;
 */
 
+static void filtlist(struct LISTBUFFER b, pLISTLINE * blf,
+                uint32_t * cntsum, uint32_t * cntf)
+{
+   pLISTLINE bl;
+   pLISTLINE blh;
+   char s[1001];
+   *blf = 0;
+   bl = b.listlines;
+   *cntsum = 0UL;
+   *cntf = 0UL;
+   strncpy(s,"*",1001u);
+   aprsstr_Append(s, 1001ul, listfilt.str, 31ul);
+   aprsstr_Append(s, 1001ul, "*", 2ul);
+   while (bl) {
+      /* filter content */
+      if (maptool_cmpwild(bl->text, 501ul, s, 1001ul)) {
+         if (*blf==0) *blf = bl;
+         else blh->fnext = bl;
+         blh = bl;
+         ++*cntf;
+      }
+      ++*cntsum;
+      bl = bl->next;
+   }
+   if (*blf) blh->fnext = 0;
+} /* end filtlist() */
+
+
 static void makelistwin(struct LISTBUFFER * b)
 {
    pMENU m;
@@ -7060,25 +7088,24 @@ static void makelistwin(struct LISTBUFFER * b)
    maptool_pIMAGE anonym32;
    uint32_t tmp;
    uint32_t tmp0;
-   blf = 0;
-   bl = b->listlines;
-   cntsum = 0UL;
-   cntf = 0UL;
-   strncpy(s,"*",1001u);
-   aprsstr_Append(s, 1001ul, listfilt.str, 31ul);
-   aprsstr_Append(s, 1001ul, "*", 2ul);
-   while (bl) {
-      /* filter content */
-      if (maptool_cmpwild(bl->text, 501ul, s, 1001ul)) {
-         if (blf==0) blf = bl;
-         else blh->fnext = bl;
-         blh = bl;
-         ++cntf;
-      }
-      ++cntsum;
-      bl = bl->next;
-   }
-   if (blf) blh->fnext = 0;
+   /*
+     blf:=NIL;
+     bl:=b.listlines;
+     cntsum:=0;
+     cntf:=0;
+     s:="*"; Append(s, listfilt.str);  Append(s,"*");
+     WHILE bl<>NIL DO                                    (* filter content *)
+       IF cmpwild(bl^.text, s) THEN
+         IF blf=NIL THEN blf:=bl ELSE blh^.fnext:=bl END;
+         blh:=bl;
+         INC(cntf);
+       END;
+       INC(cntsum);
+       bl:=bl^.next;
+     END; 
+     IF blf<>NIL THEN blh^.fnext:=NIL END;  
+   */
+   filtlist(*b, &blf, &cntsum, &cntf);
    cnt = cntf;
    if (cnt==1UL) cnt = 2UL;
    linehi = aprsdecode_lums.fontysize;
@@ -7155,7 +7182,9 @@ static void makelistwin(struct LISTBUFFER * b)
       if (yp==tmp) break;
    } /* end for */
    if (ys>linehi*4UL) {
-      if (m->scry>0L) m->scry += (int32_t)(b->newlines*linehi*256UL);
+      if (m->scry>0L) {
+         m->scry += (int32_t)(b->newlines*linehi*256UL);
+      }
       b->newlines = 0UL;
       m->scrysize = cntf*linehi;
       yp = (uint32_t)(limscrbar(m->scry, (int32_t)(ys-linehi*4UL),
@@ -7452,10 +7481,11 @@ static void makelistwin(struct LISTBUFFER * b)
          if (listbuffer.sortby) strncpy(s,"0-24",1001u);
          else strncpy(s,"A..Z",1001u);
       }
+      if (listfilt.str[0U]) aprsstr_Append(s, 1001ul, "\370", 2ul);
       aprsstr_Append(s, 1001ul, "  FILTER:[", 11ul);
       i = listfilt.pos+aprsstr_Length(s, 1001ul);
       aprsstr_Append(s, 1001ul, listfilt.str, 31ul);
-      aprsstr_Append(s, 1001ul, "]", 2ul);
+      aprsstr_Append(s, 1001ul, "]\376", 3ul);
       wrcolor(m->image, s, 1001ul, linehi, 700UL, 0, &yi);
       s[i] = '_'; /* overwrite line with underline as cursor */
       s[i+1UL] = 0;
@@ -7490,12 +7520,12 @@ static void makelistwin(struct LISTBUFFER * b)
    m->oldknob = oks;
    m->wid = 225UL;
    m->pullyknob = 2147483647UL;
-   if (xw<(uint32_t)maptool_xsize) xp = ((uint32_t)maptool_xsize-xw)/2UL;
+   if (xw<(uint32_t)maptool_xsize) {
+      xp = ((uint32_t)maptool_xsize-xw)/2UL;
+   }
    else xp = 0UL;
    if (aprsdecode_lums.headmenuy) yp = aprsdecode_lums.fontysize;
-   else {
-      yp = 0UL;
-   }
+   else yp = 0UL;
    setmenupos(m, xp, yp);
    m->oldsub = ohs;
    if (m->hiknob>0UL && m->hiknob<=i) {
@@ -7584,19 +7614,18 @@ static void findtextpos(pMENU m, uint32_t xcl, uint32_t ycl,
 /* find line/col of x/y pixel */
 {
    int32_t n;
+   uint32_t n2;
+   uint32_t n1;
    n = (int32_t)(((m->ysize-aprsdecode_lums.fontysize)-ycl)+m->scroll);
    if (n<0L) n = 0L;
    n = (int32_t)((uint32_t)n/aprsdecode_lums.fontysize);
    if (useri_listwin=='L') *bl = listbuffer.listlines;
-   else if (useri_listwin=='M') {
-      *bl = monbuffer.listlines;
-      n += (int32_t)monbuffer.newlines;
-   }
+   else if (useri_listwin=='M') filtlist(monbuffer, bl, &n1, &n2);
    else *bl = 0;
    *bb = *bl;
    while (n>0L && *bl) {
       --n;
-      *bl = (*bl)->next;
+      *bl = (*bl)->fnext;
    }
    n = (int32_t)(xcl+(uint32_t)limscrbar(m->scrx,
                 (int32_t)(m->xsize-aprsdecode_lums.fontysize*3UL),
@@ -8213,7 +8242,8 @@ static void listcursmove(pMENU m, char * ch)
       listfilt.pos = aprsstr_Length(listfilt.str, 31ul);
    }
    if (listfilt.pos>30UL) listfilt.pos = 30UL;
-   if ((uint8_t)cc>=' ' && (uint8_t)cc<'\177') {
+   if (((uint8_t)cc>=' ' && (uint8_t)cc<'\177')
+                && ypos<=aprsdecode_lums.fontysize+2UL) {
       if (listfilt.pos>=aprsstr_Length(listfilt.str, 31ul)) {
          aprsstr_Append(listfilt.str, 31ul, (char *) &cc, 1u/1u);
       }
@@ -8460,9 +8490,8 @@ static void dopano(pMENU m, uint32_t xcl, uint32_t ycl)
       else {
          if (xdiv==1UL) isicon = 'M';
          else if (xdiv==2UL) isicon = 'I';
-         else {
-            xcl<=aprsdecode_lums.fontysize+aprsdecode_lums.fontxsize*4UL && xcl>aprsdecode_lums.fontysize;
-         }
+         /*    ELSIF (xcl<=lums.fontysize+lums.fontxsize*4)
+                & (xcl>lums.fontysize) THEN */
          if ((uint32_t)m->minnormmax>0UL) {
             icfg(m->minnormmax, (char *) &isicon, 1u/1u);
          }
