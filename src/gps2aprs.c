@@ -76,11 +76,25 @@ struct POS {
    struct SAT satpos[16];
 };
 
+struct UDPDESTS;
+
+typedef struct UDPDESTS * pUDPDESTS;
+
+
+struct UDPDESTS {
+   pUDPDESTS next;
+   uint32_t ipnum;
+   uint32_t toport;
+   char useaxudp;
+};
+
 #define gps2aprs_DEFTTY "/dev/ttyS0"
 
 #define gps2aprs_CR "\015"
 
 #define gps2aprs_LF "\012"
+
+#define gps2aprs_PI 3.1415926535
 
 #define gps2aprs_KNOTS 1.851984
 
@@ -131,15 +145,7 @@ static char symt;
 
 static char symb;
 
-static uint32_t toport;
-
-static uint32_t toport2;
-
 static uint32_t baud;
-
-static uint32_t ipnum;
-
-static uint32_t ipnum2;
 
 static int32_t timecorr;
 
@@ -164,8 +170,6 @@ static char withalti;
 static char withspeed;
 
 static char withdao;
-
-static char useaxudp;
 
 static char balloon;
 
@@ -207,6 +211,8 @@ static uint32_t rawframeerr;
 
 static uint32_t duration;
 
+static uint32_t meshcom4hops;
+
 static char timesetdone;
 
 static char terminatetimeset;
@@ -220,6 +226,12 @@ static char gpsb[251];
 static char Logl[251];
 
 static pCONF pconfig;
+
+static pUDPDESTS udpdests2;
+
+static pUDPDESTS udpdests;
+
+static double rndseed;
 
 static int32_t tty;
 /*  saved: termios; */
@@ -249,6 +261,63 @@ static uint32_t truncc(double r)
    else return (uint32_t)X2C_TRUNCC(r,0UL,X2C_max_longcard);
    return 0;
 } /* end truncc() */
+
+/*
+PROCEDURE rnd():CARDINAL;
+VAR fd:INTEGER;
+    n:CARDINAL;
+BEGIN
+  fd:=OpenRead("/dev/random");
+  n:=0;
+  IF fd>=0 THEN 
+    RdBin(fd, n, 4);
+    Close(fd);
+  END;
+END rnd;
+*/
+
+static char hex(uint32_t n, char cap)
+{
+   n = n&15UL;
+   if (n<=9UL) return (char)(n+48UL);
+   if (cap) return (char)(n+55UL);
+   return (char)(n+87UL);
+} /* end hex() */
+
+
+static void ChHex(char c, char s[], uint32_t s_len)
+{
+   if ((uint8_t)c>='\177' || (uint8_t)c<' ') {
+      s[0UL] = '[';
+      s[1UL] = hex((uint32_t)(uint8_t)c/16UL, 0);
+      s[2UL] = hex((uint32_t)(uint8_t)c, 0);
+      s[3UL] = ']';
+      s[4UL] = 0;
+   }
+   else {
+      s[0UL] = c;
+      s[1UL] = 0;
+   }
+} /* end ChHex() */
+
+
+static void WrChHex(char c)
+{
+   char s[11];
+   ChHex(c, s, 11ul);
+   osi_WrStr(s, 11ul);
+} /* end WrChHex() */
+
+
+static uint32_t Random(void)
+{
+   rndseed = rndseed+3.1415926535;
+   rndseed = rndseed*rndseed;
+   rndseed = rndseed*rndseed;
+   rndseed = rndseed*rndseed;
+   rndseed = rndseed-(double)(uint32_t)X2C_TRUNCC(rndseed,0UL,X2C_max_longcard);
+   return (uint32_t)X2C_TRUNCC(rndseed*4.294967295E+9,0UL,X2C_max_longcard);
+} /* end Random() */
 
 #define gps2aprs_DEFAULTIP0 0x7F000001 
 
@@ -411,24 +480,43 @@ static void Parms(void)
    uint32_t i;
    pCONF pch;
    pCONF pc;
+   pUDPDESTS udest;
    err = 0;
    for (;;) {
       osi_NextArg(h, 1024ul);
       if (h[0U]==0) break;
       if ((h[0U]=='-' && h[1U]) && h[2U]==0) {
          if (h[1U]=='m' || h[1U]=='r') {
-            useaxudp = h[1U]=='r';
+            osic_alloc((char * *) &udest, sizeof(struct UDPDESTS));
+            if (udest==0) Error("out of memory", 14ul);
+            udest->useaxudp = h[1U]=='r';
+            udest->next = udpdests;
+            udpdests = udest;
             osi_NextArg(h, 1024ul);
             i = 0UL;
-            if (GetIp(h, 1024ul, &i, &ipnum, &toport)<0L) {
+            if (GetIp(h, 1024ul, &i, &udest->ipnum, &udest->toport)<0L) {
                Error("-m or -r ip:port number", 24ul);
+            }
+            if (udpsock<0L) {
+               udpsock = openudp();
+               if (udpsock<0L) Error("cannot open udp socket", 23ul);
             }
          }
          else if (h[1U]=='N') {
-            useaxudp = 1;
+            osic_alloc((char * *) &udest, sizeof(struct UDPDESTS));
+            if (udest==0) Error("out of memory", 14ul);
+            udest->useaxudp = 1;
+            udest->next = udpdests2;
+            udpdests2 = udest;
             osi_NextArg(h, 1024ul);
             i = 0UL;
-            if (GetIp(h, 1024ul, &i, &ipnum2, &toport2)<0L) Error("-N ip:port", 11ul);
+            if (GetIp(h, 1024ul, &i, &udest->ipnum, &udest->toport)<0L) {
+               Error("-N ip:port", 11ul);
+            }
+            if (udpsock<0L) {
+               udpsock = openudp();
+               if (udpsock<0L) Error("cannot open udp socket", 23ul);
+            }
          }
          else if (h[1U]=='a') withalti = 0;
          else if (h[1U]=='u') usbrobust = 0;
@@ -496,9 +584,7 @@ static void Parms(void)
          else if (h[1U]=='b') {
             osi_NextArg(h, 1024ul);
             i = 0UL;
-            if (!GetNum(h, 1024ul, 0, &i, &btimedrive)) {
-               Error("-b <s>", 7ul);
-            }
+            if (!GetNum(h, 1024ul, 0, &i, &btimedrive)) Error("-b <s>", 7ul);
          }
          else if (h[1U]=='n') {
             osi_NextArg(h, 1024ul);
@@ -555,6 +641,13 @@ static void Parms(void)
                Error("-d <ssid> 0..7", 15ul);
             }
          }
+         else if (h[1U]=='4') {
+            osi_NextArg(h, 1024ul);
+            i = 0UL;
+            if (!GetNum(h, 1024ul, 0, &i, &meshcom4hops) || meshcom4hops>7UL) {
+               Error("-4 <meshcom4-maxhops> 0..7", 27ul);
+            }
+         }
          else if (h[1U]=='v') verb = 1;
          else if (h[1U]=='V') {
             verb = 1;
@@ -565,6 +658,8 @@ static void Parms(void)
                osic_WrLn();
                osi_WrStrLn("Read serial GPS and make normal/compressed/mic-e Beacon as AXUDP or monitor", 76ul);
                osi_WrStrLn(" -0 <s>                            standing Beacon Time in Seconds (180)", 73ul);
+               osi_WrStrLn(" -4 <n>                            enable meshcom4 encoding and set maxhops (4)", 80ul);
+               osi_WrStrLn("                                     raw udp frame, send with ra02 -B 8 -S 11 -C 6 -N 2B -K", 92ul);
                osi_WrStrLn(" -A <cm> <fixmode>                 in Raw-Mode set fixed 2d altitude in cm NN", 78ul);
                osi_WrStrLn("                                     <fixmode> 1 2D, 2 3D, 4 auto-2D/3D", 72ul);
                osi_WrStrLn(" -a                                altitude OFF", 48ul);
@@ -599,10 +694,12 @@ static void Parms(void)
                osi_WrStrLn("                                     0 portabel, 2 stationary, 3 pedestrian, 4 car,", 84ul);
                osi_WrStrLn("                                     5 sea, 6 air 1g, 7 air 2g, air 4g", 71ul);
                osi_WrStrLn(" -m <x.x.x.x:destport>             use Monitor UDP format :port for localhost", 78ul);
-               osi_WrStrLn(" -N <x.x.x.x:destport>             send Position AXUDP every 2s eg. to aprsmap", 79ul);
+               osi_WrStrLn(" -N <x.x.x.x:destport>             send Position AXUDP every -n <s> (default 2) eg. to aprsmap", 95ul);
+               osi_WrStrLn("                                     may be repeated for more destinations", 75ul);
                osi_WrStrLn(" -n <s>                            Beacon Time in Seconds to -N destination (2)", 80ul);
                osi_WrStrLn(" -r <x.x.x.x:destport>             send AXUDP (to kiss-TNC or TCPKISS via udpflex,", 83ul);
                osi_WrStrLn("                                     to afskmodem or via aprsmap or udpgate to TCP)", 84ul);
+               osi_WrStrLn("                                     may be repeated for more destinations", 75ul);
                osi_WrStrLn(" -s                                GPS Checksum check OFF", 58ul);
                osi_WrStrLn(" -T <us> <us>                      Raw-Mode, Timepulse <[-]periode> <duration> (us)", 84ul);
                osi_WrStrLn(" -t <tty>:<baud>                   (/dev/ttyS0:4800)", 53ul);
@@ -1294,7 +1391,7 @@ static uint32_t dao91(double x)
 
 
 static void sendaprs(double lat, double long0, double alt, double course, double speed, uint32_t comp0, char withspd, char withalt, char dao, char com, char comm[],
-                uint32_t comm_len, const char viapath[], uint32_t viapath_len, char local, uint32_t ip, uint32_t port)
+                uint32_t comm_len, const char viapath[], uint32_t viapath_len, char local, pUDPDESTS udp0, char symt0, char symb0, uint32_t meshcom4)
 {
    char b[251];
    char raw[361];
@@ -1305,26 +1402,33 @@ static void sendaprs(double lat, double long0, double alt, double course, double
    uint32_t i;
    double a;
    char tmp;
+   uint32_t tmp0;
    X2C_PCOPY((void **)&comm,comm_len);
    /* OE0AAA-9>APERXQ,RELAY,WIDE2-2:!4805.44N/01333.64E>325/016/A=001824 */
+   /* !mmmmbOE0AAA-99>*!8307.32N/01803.71E#/A=000082[00][04][03][0C][F0][18][09] */
    b[0] = 0;
+   if (meshcom4>0UL) strncpy(b,"!mmmmb",251u);
    aprsstr_Append(b, 251ul, mycall, 100ul);
    micdest = aprsstr_Length(b, 251ul)+1UL;
-   if (local) aprsstr_Append(b, 251ul, ">NOGATE", 8ul);
-   else {
-      aprsstr_Append(b, 251ul, ">APLT01", 8ul);
-      if (micessid>0UL) {
-         aprsstr_Append(b, 251ul, "-", 2ul);
-         aprsstr_Append(b, 251ul, (char *)(tmp = (char)(micessid+48UL),&tmp), 1u/1u);
+   if (meshcom4==0UL) {
+      if (local) aprsstr_Append(b, 251ul, ">NOGATE", 8ul);
+      else {
+         aprsstr_Append(b, 251ul, ">APLT01", 8ul);
+         if (micessid>0UL) {
+            aprsstr_Append(b, 251ul, "-", 2ul);
+            aprsstr_Append(b, 251ul, (char *)(tmp = (char)(micessid+48UL),&tmp), 1u/1u);
+         }
+         if (viapath[0UL]) {
+            aprsstr_Append(b, 251ul, ",", 2ul);
+            aprsstr_Append(b, 251ul, viapath, viapath_len);
+         }
       }
-      if (viapath[0UL]) {
-         aprsstr_Append(b, 251ul, ",", 2ul);
-         aprsstr_Append(b, 251ul, viapath, viapath_len);
-      }
+      aprsstr_Append(b, 251ul, ":", 2ul);
    }
+   else aprsstr_Append(b, 251ul, ">*", 3ul);
    if (comp0==0UL) {
       /* uncompressed */
-      aprsstr_Append(b, 251ul, ":!", 3ul);
+      aprsstr_Append(b, 251ul, "!", 2ul);
       i = aprsstr_Length(b, 251ul);
       a = fabs(lat);
       n = truncc(a);
@@ -1346,7 +1450,7 @@ static void sendaprs(double lat, double long0, double alt, double course, double
       if (lat>=0.0) b[i] = 'N';
       else b[i] = 'S';
       ++i;
-      b[i] = symt;
+      b[i] = symt0;
       ++i;
       a = fabs(long0);
       n = truncc(a);
@@ -1370,7 +1474,7 @@ static void sendaprs(double lat, double long0, double alt, double course, double
       if (long0>=0.0) b[i] = 'E';
       else b[i] = 'W';
       ++i;
-      b[i] = symb;
+      b[i] = symb0;
       ++i;
       if (withspd) {
          n = truncc(course+1.5);
@@ -1415,22 +1519,12 @@ static void sendaprs(double lat, double long0, double alt, double course, double
    }
    else if (comp0==1UL) {
       /* compressed */
-      aprsstr_Append(b, 251ul, ":!", 3ul);
+      aprsstr_Append(b, 251ul, "!", 2ul);
       i = aprsstr_Length(b, 251ul);
-      b[i] = symt;
+      b[i] = symt0;
       ++i;
-      if (lat<90.0) n = truncc((90.0-lat)*3.80926E+5);
-      else n = 0UL;
-      b[i] = (char)(33UL+n/753571UL);
-      ++i;
-      b[i] = (char)(33UL+(n/8281UL)%91UL);
-      ++i;
-      b[i] = (char)(33UL+(n/91UL)%91UL);
-      ++i;
-      b[i] = (char)(33UL+n%91UL);
-      ++i;
-      if (long0>(-180.0)) {
-         n = truncc((180.0+long0)*1.90463E+5);
+      if (lat<90.0) {
+         n = truncc((90.0-lat)*3.80926E+5);
       }
       else n = 0UL;
       b[i] = (char)(33UL+n/753571UL);
@@ -1441,7 +1535,17 @@ static void sendaprs(double lat, double long0, double alt, double course, double
       ++i;
       b[i] = (char)(33UL+n%91UL);
       ++i;
-      b[i] = symb;
+      if (long0>(-180.0)) n = truncc((180.0+long0)*1.90463E+5);
+      else n = 0UL;
+      b[i] = (char)(33UL+n/753571UL);
+      ++i;
+      b[i] = (char)(33UL+(n/8281UL)%91UL);
+      ++i;
+      b[i] = (char)(33UL+(n/91UL)%91UL);
+      ++i;
+      b[i] = (char)(33UL+n%91UL);
+      ++i;
+      b[i] = symb0;
       ++i;
       if (withspd) {
          b[i] = (char)(33UL+truncc(course)/4UL);
@@ -1497,7 +1601,7 @@ static void sendaprs(double lat, double long0, double alt, double course, double
    }
    else if (comp0==2UL) {
       /* mic-e */
-      aprsstr_Append(b, 251ul, ":`", 3ul);
+      aprsstr_Append(b, 251ul, "`", 2ul);
       i = micdest;
       nl = truncc(fabs(long0));
       n = truncc(fabs(lat));
@@ -1536,9 +1640,9 @@ static void sendaprs(double lat, double long0, double alt, double course, double
       ++i;
       b[i] = (char)(28UL+nl%100UL);
       ++i;
-      b[i] = symb;
+      b[i] = symb0;
       ++i;
-      b[i] = symt;
+      b[i] = symt0;
       ++i;
       if (withalt) {
          if (alt>(-1.E+4)) n = truncc(alt+10000.5);
@@ -1570,13 +1674,54 @@ static void sendaprs(double lat, double long0, double alt, double course, double
       beaconmacros(comm, comm_len);
       aprsstr_Append(b, 251ul, comm, comm_len);
    }
+   if (meshcom4>0UL) {
+      nl = aprsstr_Length(b, 251ul);
+      b[0U] = '!';
+      n = Random(); /* MID */
+      b[1U] = (char)(n&255UL);
+      b[2U] = (char)(n>>8&255UL);
+      b[3U] = (char)(n>>16&255UL);
+      b[4U] = (char)(n>>24&255UL);
+      b[5U] = (char)(meshcom4&7UL); /* maxhops, traceroute=bit6, via mqtt=bit7*/
+      if (nl+6UL<250UL) {
+         b[nl+1UL] = '\001'; /* HW-ID */
+         b[nl+2UL] = '\003'; /* modulation */
+         n = 0UL;
+         tmp0 = nl+2UL;
+         i = 0UL;
+         if (i<=tmp0) for (;; i++) {
+            n += (uint32_t)(uint8_t)b[i]; /* FCS */
+            if (i==tmp0) break;
+         } /* end for */
+         b[nl+3UL] = (char)(n>>8&255UL);
+         b[nl+4UL] = (char)(n&255UL);
+         b[nl+5UL] = 0; /* software version frac ? */
+         b[nl+6UL] = '\001'; /* software version trunc ? */
+      }
+      rp0 = (int32_t)(nl+7UL);
+      tmp0 = (uint32_t)(rp0-1L);
+      i = 0UL;
+      if (i<=tmp0) for (;; i++) {
+         raw[i] = b[i];
+         if (i==tmp0) break;
+      } /* end for */
+   }
+   else rp0 = (int32_t)aprsstr_Length(b, 251ul);
    /*  Append(b, CR+LF); */
    if (aprsstr_Length(mycall, 100ul)>=3UL) {
-      if (useaxudp) {
-         aprsstr_mon2raw(b, 251ul, raw, 361ul, &rp0);
-         if (rp0>0L) sendudp(raw, 361ul, rp0, ip, port);
+      while (udp0) {
+         if (meshcom4==0UL) {
+            if (udp0->useaxudp) aprsstr_mon2raw(b, 251ul, raw, 361ul, &rp0);
+            else {
+               rp0 = (int32_t)aprsstr_Length(b, 251ul);
+               aprsstr_Assign(raw, 361ul, b, 251ul);
+            }
+         }
+         if (rp0>2L) {
+            sendudp(raw, 361ul, rp0, udp0->ipnum, udp0->toport);
+            udp0 = udp0->next;
+         }
       }
-      else sendudp(b, 251ul, (int32_t)(aprsstr_Length(b, 251ul)+1UL), ip, port);
    }
    if (verb) {
       osic_WrFixed((float)lat, 6L, 1UL);
@@ -1589,7 +1734,15 @@ static void sendaprs(double lat, double long0, double alt, double course, double
       osi_WrStr("deg ", 5ul);
       osic_WrFixed((float)alt, 2L, 1UL);
       osi_WrStrLn("m", 2ul);
-      osi_WrStrLn(b, 251ul);
+      if (rp0>0L) {
+         tmp0 = (uint32_t)(rp0-1L);
+         i = 0UL;
+         if (i<=tmp0) for (;; i++) {
+            WrChHex(b[i]);
+            if (i==tmp0) break;
+         } /* end for */
+         osi_WrStrLn("", 1ul);
+      }
    }
    X2C_PFREE(comm);
 } /* end sendaprs() */
@@ -1615,15 +1768,15 @@ static void newpos(void)
          if (btime>btime0) btime = 0UL;
       }
       if (btime==0UL) {
-         sendaprs(pos.lat, pos.long0, pos.alt, pos.course, pos.speed, comptyp, withspeed, withalti && pos.altok>0UL, withdao, comcnt==0UL, comment0, 100ul, viaakt, 100ul, 0, ipnum, toport);
+         sendaprs(pos.lat, pos.long0, pos.alt, pos.course, pos.speed, comptyp, withspeed, withalti && pos.altok>0UL, withdao, comcnt==0UL, comment0, 100ul, viaakt, 100ul, 0, udpdests, symt, symb, meshcom4hops);
          ++comcnt;
          if (comcnt>=comintval) comcnt = 0UL;
       }
-      if (toport2>0UL) {
+      if (udpdests2) {
          /* second (fast) beacon to map */
          ++btimeN;
          if (btimeN>=btimenavi) {
-            sendaprs(pos.lat, pos.long0, pos.alt, pos.course, pos.speed, 0UL, 1, pos.altok>0UL, 1, 0, "", 1ul, "", 1ul, 1, ipnum2, toport2);
+            sendaprs(pos.lat, pos.long0, pos.alt, pos.course, pos.speed, 0UL, 1, pos.altok>0UL, 1, 0, "", 1ul, "", 1ul, 1, udpdests2, symt, symb, 0UL);
             btimeN = 0UL;
          }
       }
@@ -2148,12 +2301,7 @@ extern int main(int argc, char **argv)
    comcnt = 0UL;
    btime = 0UL;
    msgtyp = 6UL;
-   toport = 9002UL;
-   ipnum = 2130706433UL;
-   toport2 = 0UL;
-   ipnum2 = 0UL;
    btimenavi = 2UL;
-   useaxudp = 1;
    timesetdone = 1;
    terminatetimeset = 0;
    timecorr = 0L;
@@ -2165,12 +2313,16 @@ extern int main(int argc, char **argv)
    sumerrcnt = 0UL;
    timepuls = 0L;
    pconfig = 0;
+   udpdests = 0;
+   udpdests2 = 0;
+   udpsock = -1L;
+   meshcom4hops = 0UL;
    Parms();
    if (aprsstr_Length(mycall, 100ul)<3UL && !terminatetimeset) osi_WrStrLn("no tx without <mycall>", 23ul);
+   if (meshcom4hops && comptyp>1UL) Error("meshcom4 will not work with mic-e", 34ul);
    /*Gencrctab; */
    opentty();
-   udpsock = openudp();
-   if (udpsock<0L) Error("cannot open udp socket", 23ul);
+   rndseed = X2C_DIVL((double)osic_time(),4.294967295E+9);
    while (pconfig) {
       uploadcfg(pconfig->str, 251ul);
       pconfig = pconfig->next;
