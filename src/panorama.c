@@ -359,7 +359,7 @@ struct _0;
 
 
 struct _0 {
-   struct aprsstr_POSITION pos;
+   struct POSITIONL pos;
    float alt;
 };
 
@@ -5423,10 +5423,8 @@ static char interpolway(float w, pWAYPOINTS wp, uint32_t cnt,
       a = (double)wp->wps[wi].alt;
       noalt = a<(-1000.0);
       if (noalt) a = 0.0;
-      wgs84sl((double)(wp->wps[wi].pos.lat*1.7453292519444E-2f),
-                (double)(wp->wps[wi].pos.long0*1.7453292519444E-2f), a,
-                 &x0, &y00, &z0);
-                /* interpolate in wgs84 space for long radio link segments */
+      wgs84sl(wp->wps[wi].pos.lat, wp->wps[wi].pos.long0, a, &x0, &y00, &z0);
+                 /* interpolate in wgs84 space for long radio link segments */
       ++wi;
       while (wp && wi>63UL) {
          wi -= 64UL;
@@ -5444,9 +5442,8 @@ static char interpolway(float w, pWAYPOINTS wp, uint32_t cnt,
          a = (double)wp->wps[wi].alt;
          noalt = noalt || a<(-1000.0);
          if (noalt) a = 0.0;
-         wgs84sl((double)(wp->wps[wi].pos.lat*1.7453292519444E-2f),
-                (double)(wp->wps[wi].pos.long0*1.7453292519444E-2f), a,
-                 &x1, &y1, &z1);
+         wgs84sl(wp->wps[wi].pos.lat, wp->wps[wi].pos.long0, a, &x1, &y1,
+                &z1);
          wgs84rl(x0*(1.0-v)+x1*v, y00*(1.0-v)+y1*v, z0*(1.0-v)+z1*v,
                 &pos->lat, &pos->long0, alt);
          if (noalt) *alt = (-3.E+4);
@@ -5461,18 +5458,24 @@ static void wppixel(uint32_t x, uint32_t y, uint32_t rr, uint32_t gg,
                  uint32_t bb, float alpha, const struct PANOWIN panpar)
 {
    uint32_t a;
+   uint32_t d;
+   uint32_t c;
    struct imagetext_PIX * anonym;
    { /* with */
       struct imagetext_PIX * anonym = &panpar.image0->Adr[(x)
                 *panpar.image0->Len0+y];
-      a = truncc(alpha*64.0f);
-      if (a>64UL) a = 64UL;
-      rr = rr*a;
-      gg = gg*a;
-      bb = bb*a;
-      if ((uint32_t)anonym->r+rr<30000UL) anonym->r += (uint16_t)rr;
-      if ((uint32_t)anonym->g+gg<30000UL) anonym->g += (uint16_t)gg;
-      if ((uint32_t)anonym->b+bb<30000UL) anonym->b += (uint16_t)bb;
+      a = truncc(alpha*16384.0f);
+      if (a>16384UL) a = 16384UL;
+      d = truncc(256.0f-alpha*64.0f); /* darken original */
+      c = (uint32_t)anonym->r*d+rr*a>>8;
+      if (c>32000UL) c = 32000UL;
+      anonym->r = (uint16_t)c;
+      c = (uint32_t)anonym->g*d+gg*a>>8;
+      if (c>32000UL) c = 32000UL;
+      anonym->g = (uint16_t)c;
+      c = (uint32_t)anonym->b*d+bb*a>>8;
+      if (c>32000UL) c = 32000UL;
+      anonym->b = (uint16_t)c;
    }
 } /* end wppixel() */
 
@@ -5550,28 +5553,19 @@ static void drawtrack(pWAYPOINTS waypoints, pTRACK tf,
    last = 0UL;
    oldd = 0.0f;
    for (;;) {
-      /*WrInt(tf^.cnt,4); WrStr("=cnt "); WrFixed(wi,6,1);WrStr(" "); */
-      /*WrStrLn("----"); */
-      /*WrFixed(wi,6,1);WrStr("/"); */
       if (wi<9.99999E-1f) last = 0UL;
       if (last<10UL && wi>=1.0f) {
          wi = 9.999999E-1f;
          ++last;
       }
       if (!interpolway(wi, waypoints, tf->cnt, &pos, &alt)) break;
-      /*WrStr("+"); */
       altm = tf->altmode;
       if (altm==3UL) altm = 2UL;
       backtrackpixel(pos, (float)alt, panpar, &px, &py, treehints, altm,
                 &vis);
-      /*WrFixed(pos.lat/RAD,5,1);WrStr(" "); */
-      /*WrFixed(pos.long/RAD,5,1);WrStr(" "); */
-      /*WrFixed(d,6,1);WrStr(" "); */
-      /*WrFixed(vis,1,1);WrStrLn(" =lat long d vis "); */
       pixsize = (float)tf->width*min0(2.0f, 0.5f+(X2C_DIVR(panpar.dist,
                 max0((float)vis, 1.0f)))*50.0f);
       limw = min0(3.0f, max0(1.0f, pixsize-1.0f));
-      /*WrFixed(pixsize,3,1); WrStr("/"); */
       os = max0(-px, 0.0f);
       os = max0(os, -py);
       os = max0(os, px-(float)((panpar.image0->Len1-1)-1UL));
@@ -5591,8 +5585,6 @@ static void drawtrack(pWAYPOINTS waypoints, pTRACK tf,
                d = d*1.2f;
             }
             else if (dp>1.3f*limw) {
-               /*WrStr("+"); */
-               /*WrStr("-"); */
                ++nok;
                d = d*0.9f;
                if (dp>5.0f*limw) {
@@ -5602,22 +5594,12 @@ static void drawtrack(pWAYPOINTS waypoints, pTRACK tf,
                   xo = oldx;
                   yo = oldy;
                }
-               /*WrStr("-gap-"); */
                oldd = 0.0f;
             }
             else {
-               /*WrStr(" ok "); */
                nok = 0UL;
                oldd = 0.0f;
             }
-            /*
-            WrFixed(wi,7,1);WrStr(" ");
-            WrFixed(d,6,1);WrStr(" ");
-            WrFixed(dp,1,1);WrStr(" ");
-            WrFixed(px,1,1);WrStr(" ");
-            WrFixed(py,1,1);WrStr(" ");
-            WrStrLn("");
-            */
             if (nok) {
                /* retry different step from old start */
                wi = wo;
@@ -5719,9 +5701,12 @@ static void rdtracks(const struct PANOWIN panpar)
    int32_t rr;
    int32_t r;
    char bl;
+   float dst;
    float resoltx;
+   float newalt;
    float nnp;
    uint8_t atwa;
+   struct POSITIONL newpos;
    tf = trackfiles;
    p = 0UL;
    len = 0UL;
@@ -5734,15 +5719,6 @@ static void rdtracks(const struct PANOWIN panpar)
       bl = 0;
       cnt = 0UL;
       for (;;) {
-         if (wp>63UL) {
-            osic_alloc((char **) &pt, sizeof(struct WAYPOINTS));
-            if (pt==0) Error("tracks, out of memory", 22ul);
-            wp = 0UL;
-            if (pto==0) waypoints = pt;
-            else pto->next = pt;
-            pto = pt;
-            pt->next = 0;
-         }
          lat[0U] = 0;
          long0[0U] = 0;
          alti[0U] = 0;
@@ -5760,23 +5736,40 @@ static void rdtracks(const struct PANOWIN panpar)
          }
          if (r<0L) break;
          ++cnt;
-         if ((alti[0U]==0 || !aprsstr_StrToFix(&pt->wps[wp].alt, alti,
-                257ul)) || pt->wps[wp].alt<(-1000.0f)) {
-            pt->wps[wp].alt = (-3.E+4f);
-         }
          if (lat[0U]!='#') {
-            if ((((aprsstr_StrToFix(&pt->wps[wp].pos.lat, lat,
-                257ul) && aprsstr_StrToFix(&pt->wps[wp].pos.long0, long0,
-                257ul)) && posvalid(pt->wps[wp].pos)) && (float)
-                fabs(pt->wps[wp].pos.lat)<90.0f) && (float)
-                fabs(pt->wps[wp].pos.long0)<=180.0f) {
-               if (pt->wps[wp].alt>=(-1000.0f) && tf->altmode==3UL) {
-                  /* make over ground */
-                  nnp = libsrtm_getsrtmlong((double)
-                (pt->wps[wp].pos.lat*1.7453292519444E-2f),
-                (double)(pt->wps[wp].pos.long0*1.7453292519444E-2f),
-                0UL, 1, &resoltx, &atwa, 0);
-                  pt->wps[wp].alt = nnp+max0(pt->wps[wp].alt, minpoialt);
+            if ((((StrToFixL(&newpos.lat, lat,
+                257ul) && StrToFixL(&newpos.long0, long0,
+                257ul)) && posvalidl(newpos)) && fabs(newpos.lat)<90.0)
+                && fabs(newpos.long0)<=180.0) {
+               newpos.lat = newpos.lat*1.7453292519444E-2;
+               newpos.long0 = newpos.long0*1.7453292519444E-2;
+               dst = distancel(panpar.eye, newpos);
+               if (dst<panpar.dist) {
+                  if ((alti[0U]==0 || !aprsstr_StrToFix(&newalt, alti,
+                257ul)) || newalt<(-1000.0f)) newalt = (-3.E+4f);
+                  if (newalt>=(-1000.0f) && tf->altmode==3UL) {
+                     /* make over ground */
+                     nnp = libsrtm_getsrtmlong(newpos.lat, newpos.long0, 0UL,
+                 1, &resoltx, &atwa, 0);
+                     newalt = nnp+max0(newalt, minpoialt);
+                  }
+                  if (wp>63UL) {
+                     osic_alloc((char **) &pt,
+                sizeof(struct WAYPOINTS));
+                     if (pt==0) Error("tracks, out of memory", 22ul);
+                     wp = 0UL;
+                     if (pto==0) waypoints = pt;
+                     else pto->next = pt;
+                     pto = pt;
+                     pt->next = 0;
+                  }
+                  pt->wps[wp].pos = newpos;
+                  pt->wps[wp].alt = newalt;
+                  ++wp;
+                  ++tf->cnt;
+               }
+               else if (verb) {
+                  osi_WrStr("#", 2ul);
                }
                if (verb) {
                   osi_WrStr(tf->fn, 100ul);
@@ -5785,15 +5778,18 @@ static void rdtracks(const struct PANOWIN panpar)
                      osic_WrINT32(subtr, 1UL);
                      osi_WrStr(")", 2ul);
                   }
-                  osic_WrFixed(pt->wps[wp].pos.lat, 5L, 10UL);
-                  osic_WrFixed(pt->wps[wp].pos.long0, 5L, 11UL);
-                  if (pt->wps[wp].alt>(-1000.0f)) {
-                     osic_WrFixed(pt->wps[wp].alt, 1L, 8UL);
+                  osic_WrFixed((float)(newpos.lat*5.729577951472E+1), 5L,
+                10UL);
+                  osic_WrFixed((float)(newpos.long0*5.729577951472E+1),
+                5L, 11UL);
+                  if (newalt>(-1000.0f)) {
+                     osic_WrFixed(newalt, 1L, 8UL);
+                     osi_WrStr("m", 2ul);
                   }
-                  osi_WrStrLn("", 1ul);
+                  osi_WrStr(" ", 2ul);
+                  osic_WrFixed(dst, 1L, 1UL);
+                  osi_WrStrLn("km", 3ul);
                }
-               ++wp;
-               ++tf->cnt;
             }
             else if (verb) {
                osi_WrStr("---csv error line:", 19ul);
