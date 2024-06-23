@@ -2911,6 +2911,11 @@ static void frameout(struct FFRAME * frame, const char finf[], uint32_t finf_len
          osi_WrStr(" dre:", 6ul);
          osic_WrFixed(drift, 1L, 1UL);
          osi_WrStr("ppm", 4ul);
+         if (jmhz!=0.0f) {
+            osi_WrStr(" ", 2ul);
+            osic_WrFixed(jmhz+0.0005f, 3L, 1UL);
+            osi_WrStr("MHz", 4ul);
+         }
          shownotches();
          osi_WrStrLn("", 1ul);
          osi_WrStr("[", 2ul);
@@ -2960,9 +2965,7 @@ static void frameout(struct FFRAME * frame, const char finf[], uint32_t finf_len
             decodemeshcom4(text, text_len, frame->dlen); /* MESHCOM4 */
          }
       }
-      if ((newline && verb) && (!quietcrc || hascrc && crc0)) {
-         osi_WrStrLn("", 1ul);
-      }
+      if ((newline && verb) && (!quietcrc || hascrc && crc0)) osi_WrStrLn("", 1ul);
    }
    X2C_PFREE(text);
 } /* end frameout() */
