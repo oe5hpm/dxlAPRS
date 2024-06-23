@@ -949,7 +949,7 @@ HAMNET-DB,db0dan,"db0dan,Comment:,2.330.0000 MHz ATV",53.06600,10.89550,0.00000
 HAMNET-DB,db0eid,"db0eid,Radioparam: 438.575MHz (Ablage -7.6MHz),Comment:,DB0EID / Hamnet in Planung / Subnetze zugewiesen",51.52011,10.31656,0.00000
 HAMNET-DB,db0ein,"db0ein,Maintainer : dg7aa,Comment:,438 650 MHz -7 6",51.84111,9.82250,0.00000
 HAMNET-DB,db0fhh,"db0fhh,Radioparam: 439.2625MHz FM CTCSS 85 4 Hz IRLP#5203",52.35602,9.76866,0.00000
-HAMNET-DB,db0hem,"db0hem,Radioparam: 1.298.3500MHz FM",52.24040,11.00938,0.00000
+HAMNET-DB,db0hem,"db0hem,Radioparam: 1.298.3500MHz FM",52.2299,11.01248,10.00000
 HAMNET-DB,db0hhg,"db0hhg,Radioparam: 439.2500MHz FM,Comment:,EL 391088",51.52883,9.85550,0.00000
 HAMNET-DB,db0obz,"db0obz,Radioparam: 432 8500MHz FM,Comment:,EL 505553 simplex",53.01799,9.87192,0.00000
 HAMNET-DB,db0vw,"db0vw,Radioparam: 439.0500MHz FM",52.39069,10.74794,0.00000
