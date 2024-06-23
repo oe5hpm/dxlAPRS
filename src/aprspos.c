@@ -504,7 +504,8 @@ extern void aprspos_GetPos(struct aprsstr_POSITION * pos, uint32_t * speed,
       else if ((buf[payload]=='/' || buf[payload]=='@')
                 && ((buf[payload+7UL]=='z' || buf[payload+7UL]=='h')
                 || buf[payload+7UL]=='/')) i = payload+8UL;
-      else if (buf[payload]==';') i = payload+18UL;
+      else if (buf[payload]==';' && (buf[payload+10UL]
+                =='*' || buf[payload+10UL]=='_')) i = payload+18UL;
       else if (buf[payload]==')') {
          /* skip item */
          i = payload+4UL;
@@ -531,13 +532,13 @@ extern void aprspos_GetPos(struct aprsstr_POSITION * pos, uint32_t * speed,
                if (!dig(&pos->lat, buf[i], 2.9088820865741E-6f)) ok0 = 0;
                ++i;
                if (X2C_CAP(buf[i])=='S') pos->lat = -pos->lat;
-               else if (X2C_CAP(buf[i])!='N') ok0 = 0;
+               else if (X2C_CAP(buf[i])!='N') {
+                  ok0 = 0;
+               }
                ++i;
                *symbt = buf[i];
                ++i;
-               if (!dig(&pos->long0, buf[i], 1.7453292519444f)) {
-                  ok0 = 0;
-               }
+               if (!dig(&pos->long0, buf[i], 1.7453292519444f)) ok0 = 0;
                ++i;
                if (!dig(&pos->long0, buf[i], 1.7453292519444E-1f)) ok0 = 0;
                ++i;
@@ -611,15 +612,20 @@ extern void aprspos_GetPos(struct aprsstr_POSITION * pos, uint32_t * speed,
             ++i;
             if (!r91(&pos->long0, buf[i], 8281.0f)) ok0 = 0;
             ++i;
-            if (!r91(&pos->long0, buf[i], 91.0f)) ok0 = 0;
+            if (!r91(&pos->long0, buf[i], 91.0f)) {
+               ok0 = 0;
+            }
             ++i;
             if (!r91(&pos->long0, buf[i], 1.0f)) ok0 = 0;
             pos->long0 = pos->long0*9.1636131529192E-8f-3.1415926535f;
             *symb = buf[i+1UL];
             if (ok0) {
-               if (buf[i+2UL]=='}') {
+               if (buf[i+2UL]==' ') {
+               }
+               else if (buf[i+2UL]=='}') {
                }
                else if (((uint32_t)(uint8_t)buf[i+4UL]/8UL&3UL)==2UL) {
+                  /* no cs data*/
                   /* radio range */
                   /* T byte says GGA so we have altitude */
                   na = (uint32_t)(uint8_t)buf[i+2UL];
