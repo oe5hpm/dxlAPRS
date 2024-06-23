@@ -181,6 +181,8 @@ static uint32_t micessid;
 
 static uint32_t btime0;
 
+static uint32_t nodrivecnt;
+
 static uint32_t btimedrive;
 
 static uint32_t drivekm;
@@ -216,6 +218,10 @@ static uint32_t meshcom4hops;
 static char timesetdone;
 
 static char terminatetimeset;
+
+static char doubledrivetime;
+
+static char noclb;
 
 static struct POS pos;
 
@@ -525,6 +531,13 @@ static void Parms(void)
          else if (h[1U]=='D') withdao = 1;
          else if (h[1U]=='B') balloon = 1;
          else if (h[1U]=='U') ubloxraw = 1;
+         else if (h[1U]=='p') doubledrivetime = 1;
+         else if (h[1U]=='v') verb = 1;
+         else if (h[1U]=='V') {
+            verb = 1;
+            verb2 = 1;
+         }
+         else if (h[1U]=='e') noclb = 1;
          else if (X2C_CAP(h[1U])=='Z') {
             timesetdone = 0;
             if (h[1U]=='Z') terminatetimeset = 1;
@@ -648,16 +661,11 @@ static void Parms(void)
                Error("-4 <meshcom4-maxhops> 0..7", 27ul);
             }
          }
-         else if (h[1U]=='v') verb = 1;
-         else if (h[1U]=='V') {
-            verb = 1;
-            verb2 = 1;
-         }
          else {
             if (h[1U]=='h') {
                osic_WrLn();
                osi_WrStrLn("Read serial GPS and make normal/compressed/mic-e Beacon as AXUDP or monitor", 76ul);
-               osi_WrStrLn(" -0 <s>                            standing Beacon Time in Seconds (180)", 73ul);
+               osi_WrStrLn(" -0 <s>                            standing Beacon Time in Seconds (600)", 73ul);
                osi_WrStrLn(" -4 <n>                            enable meshcom4 encoding and set maxhops (4)", 80ul);
                osi_WrStrLn("                                     raw udp frame, send with ra02 -B 8 -S 11 -C 6 -N 2B -K", 92ul);
                osi_WrStrLn(" -A <cm> <fixmode>                 in Raw-Mode set fixed 2d altitude in cm NN", 78ul);
@@ -666,7 +674,7 @@ static void Parms(void)
                osi_WrStrLn(" -B                                Balloon mode: -g <m> is altitude(m)", 71ul);
                osi_WrStrLn("                                     -b <s> for below -0 <s> for above", 71ul);
                osi_WrStrLn("                                     -w <path> is switched on below", 68ul);
-               osi_WrStrLn(" -b <s>                            driving Beacon Time in Seconds (15)", 71ul);
+               osi_WrStrLn(" -b <s>                            driving Beacon Time in Seconds (20)", 71ul);
                osi_WrStrLn(" -c <commentstring>                APRS Comment (max 60 char)", 62ul);
                osi_WrStrLn("                                     insert time hhmmss  : \\\\h", 63ul);
                osi_WrStrLn("                                     insert time ddhhmm  : \\\\z", 63ul);
@@ -680,16 +688,17 @@ static void Parms(void)
                osi_WrStrLn("                                     double all \\ to pass thru bash eg. \\\\\\\\h", 78ul);
                osi_WrStrLn(" -C <configstring>                 Send Cfg to GPS, / for $, // for /", 70ul);
                osi_WrStrLn("                                     /PUBX,41,1,0007,0003,19200,0", 66ul);
-               osi_WrStrLn(" -d <x>                            Destination Call SSID 0..7", 62ul);
+               osi_WrStrLn(" -d <x>                            Destination Call SSID 0..7 for efficient digipeating", 88ul);
                osi_WrStrLn(" -D                                DAO Extension on for 20cm Resolution", 72ul);
+               osi_WrStrLn(" -e                                switch off \"Clb=..\" in ublox-raw mode", 73ul);
                osi_WrStrLn(" -f <x>                            format 0=normal 1=compressed 2=mic-e (0)", 76ul);
                osi_WrStrLn(" -g <km/h>                         min. Speed for driving Beacon Time (4)", 74ul);
                osi_WrStrLn(" -h                                this", 40ul);
                osi_WrStrLn(" -I <mycall>                       Mycall with SSID like NOCALL-15", 67ul);
                osi_WrStrLn(" -i <icon>                         2 Icon chars \"/-\" (House), \"/>\" (Car)...(//)", 80ul);
                osi_WrStrLn(" -k                                Speed/Course OFF (not in mic-e)", 67ul);
-               osi_WrStrLn(" -l <n>                            every n Beacons send one with Comment (5)", 77ul);
                osi_WrStrLn(" -L <filename>                     Append raw GPS text to this File", 68ul);
+               osi_WrStrLn(" -l <n>                            every n Beacons send one with Comment (5)", 77ul);
                osi_WrStrLn(" -M <n>                            in Raw-Mode set dynamic model (balloon 1g)", 78ul);
                osi_WrStrLn("                                     0 portabel, 2 stationary, 3 pedestrian, 4 car,", 84ul);
                osi_WrStrLn("                                     5 sea, 6 air 1g, 7 air 2g, air 4g", 71ul);
@@ -697,6 +706,8 @@ static void Parms(void)
                osi_WrStrLn(" -N <x.x.x.x:destport>             send Position AXUDP every -n <s> (default 2) eg. to aprsmap", 95ul);
                osi_WrStrLn("                                     may be repeated for more destinations", 75ul);
                osi_WrStrLn(" -n <s>                            Beacon Time in Seconds to -N destination (2)", 80ul);
+               osi_WrStrLn(" -p                                if not drive, double driving time beacon time every beacon", 94ul);
+               osi_WrStrLn("                                     until nodrive time else use nodrive time immediately", 90ul);
                osi_WrStrLn(" -r <x.x.x.x:destport>             send AXUDP (to kiss-TNC or TCPKISS via udpflex,", 83ul);
                osi_WrStrLn("                                     to afskmodem or via aprsmap or udpgate to TCP)", 84ul);
                osi_WrStrLn("                                     may be repeated for more destinations", 75ul);
@@ -803,6 +814,38 @@ static char getnum(const char b[], uint32_t b_len, uint32_t * p, uint32_t len0, 
    return 0;
 } /* end getnum() */
 
+
+static void Clb(float v, char s[], uint32_t s_len)
+{
+   uint32_t n;
+   uint32_t i;
+   aprsstr_Assign(s, s_len, "Clb=", 5ul);
+   i = 4UL;
+   if (v<0.0f) {
+      s[4UL] = '-';
+      ++i;
+   }
+   n = (uint32_t)X2C_TRUNCC((float)fabs(v)*10.0f+0.5f,0UL,X2C_max_longcard);
+   if (n>9999UL) n = 9999UL;
+   if (n>=1000UL) {
+      s[i] = (char)(n/1000UL+48UL);
+      ++i;
+   }
+   n = n%1000UL;
+   if (n>=100UL) {
+      s[i] = (char)(n/100UL+48UL);
+      ++i;
+   }
+   n = n%100UL;
+   s[i] = (char)(n/10UL+48UL);
+   ++i;
+   s[i] = '.';
+   ++i;
+   s[i] = (char)(n%10UL+48UL);
+   ++i;
+   s[i] = 0;
+} /* end Clb() */
+
 #define gps2aprs_MSYM "\\"
 
 #define gps2aprs_FILESYM ":"
@@ -811,8 +854,6 @@ static char getnum(const char b[], uint32_t b_len, uint32_t * p, uint32_t len0, 
 static void beaconmacros(char s[], uint32_t s_len)
 {
    uint32_t tt;
-   uint32_t ic;
-   uint32_t n;
    uint32_t i;
    int32_t j;
    int32_t len0;
@@ -896,31 +937,7 @@ static void beaconmacros(char s[], uint32_t s_len)
             aprsstr_Append(ns, 256ul, ds, 256ul);
          }
          else if (s[i]=='c') {
-            strncpy(ds,"Clb=",256u);
-            ic = 4UL;
-            if (pos.climb<0.0) {
-               ds[4U] = '-';
-               ++ic;
-            }
-            n = (uint32_t)X2C_TRUNCC(fabs(pos.climb)*10.0+0.5,0UL,X2C_max_longcard);
-            if (n>9999UL) n = 9999UL;
-            if (n>=1000UL) {
-               ds[ic] = (char)(n/1000UL+48UL);
-               ++ic;
-            }
-            n = n%1000UL;
-            if (n>=100UL) {
-               ds[ic] = (char)(n/100UL+48UL);
-               ++ic;
-            }
-            n = n%100UL;
-            ds[ic] = (char)(n/10UL+48UL);
-            ++ic;
-            ds[ic] = '.';
-            ++ic;
-            ds[ic] = (char)(n%10UL+48UL);
-            ++ic;
-            ds[ic] = 0;
+            Clb((float)pos.climb, ds, 256ul);
             aprsstr_Append(ns, 256ul, ds, 256ul);
          }
          else if (s[i]=='n') {
@@ -1165,7 +1182,7 @@ static void decodeline(const char b[], uint32_t b_len, uint32_t len0, struct POS
          }
       }
       else if (((b[1UL]=='P' && b[2UL]=='U') && b[3UL]=='B') && b[4UL]=='X') {
-         /* ublox propietary for versical speed */
+         /* ublox propietary for vertical speed */
          /* $PUBX,00,230327.00,7825.08527,N,01202.28188,E,425.646,G3,3.4,7.8,0.050,331.58,-0.026,,1.11,1.95,1.33,7,0,0*49 */
          /*                                                                               -climb */
          i = 5UL;
@@ -1670,6 +1687,11 @@ static void sendaprs(double lat, double long0, double alt, double course, double
       ++i;
    }
    b[i] = 0;
+   if (ubloxraw && !noclb) {
+      Clb((float)pos.climb, raw, 361ul);
+      aprsstr_Append(raw, 361ul, " ", 2ul);
+      aprsstr_Append(b, 251ul, raw, 361ul);
+   }
    if (com) {
       beaconmacros(comm, comm_len);
       aprsstr_Append(b, 251ul, comm, comm_len);
@@ -1743,6 +1765,7 @@ static void sendaprs(double lat, double long0, double alt, double course, double
          } /* end for */
          osi_WrStrLn("", 1ul);
       }
+      osi_WrStrLn("", 1ul);
    }
    X2C_PFREE(comm);
 } /* end sendaprs() */
@@ -1751,6 +1774,9 @@ static void sendaprs(double lat, double long0, double alt, double course, double
 static void newpos(void)
 {
    uint32_t balloonkm;
+   uint32_t i;
+   uint32_t t;
+   uint32_t tmp;
    if (pos.posok) {
       memcpy(viaakt,via,100u);
       ++btime;
@@ -1761,11 +1787,29 @@ static void newpos(void)
       else balloonkm = truncc(pos.speed);
       if (balloonkm>=drivekm!=balloon) {
          if (btime>=btimedrive) btime = 0UL;
+         nodrivecnt = 0UL;
       }
       else {
          /* no drive / high altitide */
          if (balloon) viaakt[0U] = 0;
-         if (btime>btime0) btime = 0UL;
+         t = btimedrive;
+         if (doubledrivetime) {
+            /* double drive time each nodrive beacon until nodrive time */
+            tmp = nodrivecnt;
+            i = 1UL;
+            if (i<=tmp) for (;; i++) {
+               t += t;
+               if (i==tmp) break;
+            } /* end for */
+         }
+         else if (nodrivecnt) t = btime0;
+         if (btime0>0UL && t>btime0) t = btime0;
+         if (btime>=t) {
+            /* no drive / high altitide */
+            btime = 0UL;
+            ++nodrivecnt;
+            if (nodrivecnt>30UL) nodrivecnt = 30UL;
+         }
       }
       if (btime==0UL) {
          sendaprs(pos.lat, pos.long0, pos.alt, pos.course, pos.speed, comptyp, withspeed, withalti && pos.altok>0UL, withdao, comcnt==0UL, comment0, 100ul, viaakt, 100ul, 0, udpdests, symt, symb, meshcom4hops);
@@ -2252,14 +2296,20 @@ static void resetgps(int32_t);
 
 static void resetgps(int32_t signum)
 {
-   if (ubloxraw) ubloxon(0, baud);
+   if (ubloxraw) {
+      osi_WrStrLn("Set GPS to NMEA-Mode ", 22ul);
+      ubloxon(0, baud);
+   }
    osi_WrStr("exit ", 6ul);
    osic_WrINT32((uint32_t)signum, 0UL);
    osi_WrStrLn("!", 2ul);
    X2C_HALT((uint32_t)signum);
+/*
+PROCEDURE ["C"] test(signum:INTEGER);
+BEGIN (* Power(5000,10000) *) GetAlm END test;
+*/
 } /* end resetgps() */
 
-/* Power(5000,10000) */
 
 X2C_STACK_LIMIT(100000l)
 extern int main(int argc, char **argv)
@@ -2293,8 +2343,8 @@ extern int main(int argc, char **argv)
    withspeed = 1;
    withdao = 0;
    micessid = 0UL;
-   btime0 = 180UL;
-   btimedrive = 15UL;
+   btime0 = 600UL;
+   btimedrive = 20UL;
    drivekm = 4UL;
    btimeN = 0UL;
    comintval = 5UL;
@@ -2317,6 +2367,9 @@ extern int main(int argc, char **argv)
    udpdests2 = 0;
    udpsock = -1L;
    meshcom4hops = 0UL;
+   nodrivecnt = 0UL;
+   doubledrivetime = 0;
+   noclb = 0;
    Parms();
    if (aprsstr_Length(mycall, 100ul)<3UL && !terminatetimeset) osi_WrStrLn("no tx without <mycall>", 23ul);
    if (meshcom4hops && comptyp>1UL) Error("meshcom4 will not work with mic-e", 34ul);
