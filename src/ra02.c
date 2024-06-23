@@ -241,6 +241,7 @@ struct GPIO {
    uint32_t sckN;
    int32_t ceFD;
    int32_t mosiFD;
+   int32_t misoFD;
    int32_t sckFD;
    char misoFN[100];
 };
@@ -582,7 +583,7 @@ static int32_t GetIp(const char h[], uint32_t h_len, uint32_t * ip, uint32_t * d
 } /* end GetIp() */
 
 
-static int32_t opengpio(uint32_t n, char out, char fnr[], uint32_t fnr_len)
+static int32_t opengpio(uint32_t n, char out)
 {
    char hp[100];
    char hh[100];
@@ -594,7 +595,6 @@ static int32_t opengpio(uint32_t n, char out, char fnr[], uint32_t fnr_len)
    aprsstr_Append(hp, 100ul, h, 100ul); /* /sys/class/gpio/gpio<n> */
    memcpy(hh,hp,100u);
    aprsstr_Append(hp, 100ul, "/value", 7ul); /* /sys/class/gpio/gpio<n>/value */
-   if (!out) aprsstr_Assign(fnr, fnr_len, hp, 100ul);
    fd = gpiofds[n];
    if (fd==-2L) {
       /* port is not open jet */
@@ -626,11 +626,9 @@ static int32_t opengpio(uint32_t n, char out, char fnr[], uint32_t fnr_len)
       else strncpy(h,"in",100u);
       osi_WrBin(fd, (char *)h, 100u/1u, aprsstr_Length(h, 100ul)); /* in / out */
       osic_Close(fd);
-      if (out) {
-         fd = osi_OpenRW(hp, 100ul);
-         if (fd<0L) Error("cannot open gpio value", 23ul);
-      }
-      else fd = -1L;
+      if (out) fd = osi_OpenRW(hp, 100ul);
+      else fd = osi_OpenRead(hp, 100ul);
+      if (fd<0L) Error("cannot open gpio value", 23ul);
       gpiofds[n] = fd;
    }
    return fd;
@@ -794,10 +792,9 @@ static pCHIP newchip(void)
 } /* end newchip() */
 
 
-static void storechip(uint32_t pcnt, int32_t * res, uint32_t * sck0, uint32_t * miso0, uint32_t * mosi0,
-                uint32_t * ce0, pCHIP * chip0)
+static void storechip(uint32_t pcnt, uint32_t * sck0, uint32_t * miso0, uint32_t * mosi0, uint32_t * ce0,
+                pCHIP * chip0)
 {
-   char fn[100];
    struct GPIO * anonym;
    { /* with */
       struct GPIO * anonym = &(*chip0)->gpio;
@@ -805,10 +802,10 @@ static void storechip(uint32_t pcnt, int32_t * res, uint32_t * sck0, uint32_t * 
       anonym->mosiN = *mosi0;
       anonym->misoN = *miso0;
       anonym->sckN = *sck0;
-      anonym->ceFD = opengpio(anonym->ceN, 1, fn, 100ul);
-      anonym->mosiFD = opengpio(anonym->mosiN, 1, fn, 100ul);
-      *res = opengpio(anonym->misoN, 0, anonym->misoFN, 100ul);
-      anonym->sckFD = opengpio(anonym->sckN, 1, fn, 100ul);
+      anonym->ceFD = opengpio(anonym->ceN, 1);
+      anonym->mosiFD = opengpio(anonym->mosiN, 1);
+      anonym->misoFD = opengpio(anonym->misoN, 0);
+      anonym->sckFD = opengpio(anonym->sckN, 1);
    }
    (*chip0)->num = pcnt;
    if ((*chip0)->rxmhz<400.0f) (*chip0)->band = 1UL;
@@ -884,8 +881,8 @@ static void Parms(void)
    mosi0 = 10UL;
    miso0 = 9UL;
    sck0 = 11UL;
-   loopdelay = 50000UL;
-   loopdelayfast = 20000UL;
+   loopdelay = 30000UL;
+   loopdelayfast = 10000UL;
    chip0 = 0;
    tx = newtx();
    txcnt = 0UL;
@@ -902,7 +899,7 @@ static void Parms(void)
          if (h[1U]=='p') {
             if (pcnt>0UL) {
                storetx(chip0, tx);
-               storechip(pcnt, &res, &sck0, &miso0, &mosi0, &ce0, &chip0);
+               storechip(pcnt, &sck0, &miso0, &mosi0, &ce0, &chip0);
                tx = newtx();
                txcnt = 0UL;
             }
@@ -1165,7 +1162,7 @@ static void Parms(void)
             osi_WrStrLn(" -T <n>             (A)FSK txdel in byte (4), not used for raw mode -E", 71ul);
             osi_WrStrLn(" -U ip:sendport:receiveport AXUDP data, same as -L but standard AXUDP (no metadata)", 84ul);
             osi_WrStrLn(" -u <us> <us>       sleep time between device polls rx/(a)fsk tx, more:faster response, more cp\
-u (50000 20000)", 111ul);
+u (30000 10000)", 111ul);
             osi_WrStrLn("                      afsk needs 20000 or less to avoid underruns", 66ul);
             osi_WrStrLn(" -V                 show more infos on stdout", 46ul);
             osi_WrStrLn(" -v                 show some infos on stdout", 46ul);
@@ -1197,7 +1194,7 @@ ip2> -L ... <parameters chip2 tx1/rx> -L ... -v", 143ul);
    }
    if (chips==0 || pcnt>0UL) {
       storetx(chip0, tx);
-      storechip(pcnt, &res, &sck0, &miso0, &mosi0, &ce0, &chip0);
+      storechip(pcnt, &sck0, &miso0, &mosi0, &ce0, &chip0);
    }
    chkports();
    chip0 = chips;
@@ -1327,16 +1324,11 @@ static char scp(const struct GPIO gpio, char rd, char nss, char sck, char mosi)
 {
    char h[2];
    char res;
-   int32_t fd;
    int32_t r;
    if (rd) {
-      fd = osi_OpenRead(gpio.misoFN, 100ul);
-      if (fd>=0L) {
-         r = osi_RdBin(fd, (char *)h, 2u/1u, 1UL);
-         osic_Close(fd);
-         res = h[0U]!='0';
-      }
-      else res = 0;
+      osic_Seek(gpio.misoFD, 0UL);
+      r = osi_RdBin(gpio.misoFD, (char *)h, 2u/1u, 1UL);
+      res = h[0U]!='0';
    }
    else res = 0;
    h[0U] = (char)(48UL+(uint32_t)sck);
