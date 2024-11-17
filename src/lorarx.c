@@ -203,6 +203,7 @@ struct FFRAME {
    uint32_t fp;
    uint32_t fasecorrs;
    uint32_t oneerrs;
+   uint32_t fecbits;
    float fc;
    float fci;
    float fcstart;
@@ -1543,6 +1544,11 @@ static void sendaxudp2(uint32_t ipnum, uint32_t udpport, char udp2, char mon[], 
    lev = (int32_t)X2C_TRUNCI(level+0.5f,X2C_min_longint,X2C_max_longint);
    if (lev>127L) lev = 127L;
    else if (lev<-255L) lev = -255L;
+   if (!longcall) {
+      cleantext(mon, mon_len, dlen);
+      aprsstr_mon2raw(mon, mon_len, data, 501ul, &datalen);
+      if (datalen==0L) longcall = 1;
+   }
    if (longcall) {
       datalen = (int32_t)aprsstr_Length(mon, mon_len);
       i0 = 0UL;
@@ -1550,10 +1556,6 @@ static void sendaxudp2(uint32_t ipnum, uint32_t udpport, char udp2, char mon[], 
          data[i0] = mon[i0];
          ++i0;
       } while (!(i0>500UL || (int32_t)i0>=datalen));
-   }
-   else {
-      cleantext(mon, mon_len, dlen);
-      aprsstr_mon2raw(mon, mon_len, data, 501ul, &datalen);
    }
    if (datalen>2L) {
       p = 0UL;
@@ -1619,7 +1621,7 @@ static void enc64(uint32_t b, uint32_t n, char s[], uint32_t s_len)
 static void sendjson(uint32_t jipnum0, uint32_t judpport0, uint32_t id, const char text[],
                 uint32_t text_len, uint32_t dlen, char hascrc, char crc0, char invert,
                 uint32_t sf, uint32_t cr, uint32_t txd, uint32_t frametime, float level, float n,
-                float peakn, float snr, float dre, int32_t df, int32_t qual)
+                float peakn, float snr, float dre, int32_t df, int32_t qual, int32_t fecc)
 {
    char h[1000];
    char s[1000];
@@ -1672,9 +1674,12 @@ static void sendjson(uint32_t jipnum0, uint32_t judpport0, uint32_t id, const ch
    aprsstr_Append(s, 1000ul, ",\"snr\":", 8ul);
    aprsstr_FixToStr(snr, 2UL, h, 1000ul);
    aprsstr_Append(s, 1000ul, h, 1000ul);
+   aprsstr_Append(s, 1000ul, ",\"fec\":", 8ul);
+   aprsstr_IntToStr(fecc, 1UL, h, 1000ul);
+   aprsstr_Append(s, 1000ul, h, 1000ul);
    if (jmhz!=0.0f) {
       aprsstr_Append(s, 1000ul, ",\"rxmhz\":", 10ul);
-      aprsstr_FixToStr(jmhz+0.0005f, 4UL, h, 1000ul);
+      aprsstr_FixToStr(jmhz, 4UL, h, 1000ul);
       aprsstr_Append(s, 1000ul, h, 1000ul);
    }
    aprsstr_Append(s, 1000ul, ",\"ver\":\"lorarx\"", 16ul);
@@ -1699,9 +1704,7 @@ static void sendjson(uint32_t jipnum0, uint32_t judpport0, uint32_t id, const ch
    if (jpipename[0U]) {
       if (jsonfd<0L) {
          jsonfd = osi_OpenNONBLOCK(jpipename, 1024ul);
-         if (jsonfd<0L) {
-            jsonfd = osi_OpenWrite(jpipename, 1024ul); /* no file and no pipe */
-         }
+         if (jsonfd<0L) jsonfd = osi_OpenWrite(jpipename, 1024ul);
          else osic_Seekend(jsonfd, 0L);
       }
       if (jsonfd>=0L) osi_WrBin(jsonfd, (char *)s, 1000u/1u, aprsstr_Length(s, 1000ul));
@@ -2120,11 +2123,11 @@ static uint32_t dao91(double x)
 } /* end dao91() */
 
 
-static void encodeaprs(int32_t qual, int32_t afc, float snrr, float level, int32_t txd,
-                const struct FFRAME frame, const char mycall[], uint32_t mycall_len, const char comment0[],
-                uint32_t comment_len, const char sym[], uint32_t sym_len, const double lat,
-                const double long0, float speed, float course, float alt, float clb0, float gust,
-                float temp, float hum, float baro)
+static void encodeaprs(int32_t qual, int32_t afc, float level, int32_t txd, const struct FFRAME frame,
+                const char mycall[], uint32_t mycall_len, const char comment0[], uint32_t comment_len,
+                const char sym[], uint32_t sym_len, const double lat, const double long0,
+                float speed, float course, float alt, float clb0, float snrr, float gust,
+                float temp, float hum, float baro, int32_t fecc)
 {
    char h[501];
    char b[501];
@@ -2398,17 +2401,25 @@ static void manufact(struct FANETPR * fp, uint32_t b)
    else if (b==8UL) strncpy(s,"GXAircom",100u);
    else if (b==9UL) strncpy(s,"Airtribune",100u);
    else if (b==16UL) strncpy(s,"alfapilot",100u);
-   else if (b==17UL) strncpy(s,"FANET+ (incl FLARM. Currently Skytraxx, Naviter, and Skybean)",100u);
+   else if (b==17UL) {
+      /*ELSIF b=011H THEN s:="FANET+ (incl FLARM. Currently Skytraxx, Naviter, and Skybean)"; */
+      strncpy(s,"FANET+",100u);
+   }
    else if (b==10UL) strncpy(s,"FLARM",100u);
    else if (b==32UL) strncpy(s,"XC Tracer",100u);
    else if (b==224UL) strncpy(s,"OGN Tracker",100u);
    else if (b==228UL) strncpy(s,"4aviation",100u);
    else if (b==250UL) strncpy(s,"Various",100u);
-   else if (b==251UL) strncpy(s,"Espressif based base stations, address is last 2bytes of MAC",100u);
+   else if (b==251UL) {
+      /*ELSIF b=0FBH THEN s:="Espressif based base stations, address is last 2bytes of MAC"; */
+      strncpy(s,"Espressif based base station",100u);
+   }
    else if (b==252UL) strncpy(s,"Unregistered Devices",100u);
    else if (b==253UL) strncpy(s,"Unregistered Devices",100u);
    else if (b==254UL) strncpy(s,"[Multicast]",100u);
+   aprsstr_Append(fp->s, 251ul, "fw:[", 5ul);
    aprsstr_Append(fp->s, 251ul, s, 100ul);
+   aprsstr_Append(fp->s, 251ul, "] ", 3ul);
 } /* end manufact() */
 
 
@@ -2451,7 +2462,8 @@ help,Distress call,Distress call automatically"
 
 
 static void decodefanet(const char text[], uint32_t text_len, uint32_t textlen, const struct FFRAME frame,
-                int32_t txd, float level, float snrr, int32_t afc, int32_t qual)
+                int32_t txd, float level, float snrr, int32_t afc, int32_t qual, int32_t fecc,
+                int32_t cr)
 {
    struct FANETPR fp;
    uint32_t i0;
@@ -2469,6 +2481,25 @@ static void decodefanet(const char text[], uint32_t text_len, uint32_t textlen, 
    char sym[2];
    strncpy(sym,"//",2u);
    memset((char *) &fp,(char)0,sizeof(struct FANETPR));
+   aprsstr_FixToStr(snrr, 2UL, h, 100ul);
+   aprsstr_Append(fp.s, 251ul, "snr:", 5ul);
+   aprsstr_Append(fp.s, 251ul, h, 100ul);
+   aprsstr_Append(fp.s, 251ul, "dB ", 4ul);
+   if (fecc>0L) {
+      aprsstr_IntToStr(fecc, 1UL, h, 100ul);
+      aprsstr_Append(fp.s, 251ul, "fec:", 5ul);
+      aprsstr_Append(fp.s, 251ul, h, 100ul);
+      aprsstr_Append(fp.s, 251ul, " ", 2ul);
+   }
+   aprsstr_IntToStr(cr, 1UL, h, 100ul);
+   aprsstr_Append(fp.s, 251ul, "cr:", 4ul);
+   aprsstr_Append(fp.s, 251ul, h, 100ul);
+   aprsstr_Append(fp.s, 251ul, " ", 2ul);
+   if (jmhz!=0.0f) {
+      aprsstr_FixToStr(jmhz, 4UL, h, 100ul);
+      aprsstr_Append(fp.s, 251ul, h, 100ul);
+      aprsstr_Append(fp.s, 251ul, "MHz ", 5ul);
+   }
    fp.gust = 10000.0f;
    fp.clb0 = 10000.0f;
    fp.dir = 10000UL;
@@ -2480,8 +2511,7 @@ static void decodefanet(const char text[], uint32_t text_len, uint32_t textlen, 
    if (exth) aprsstr_Append(fp.s, 251ul, "Ext Header ", 12ul);
    if ((0x40U & typ)) aprsstr_Append(fp.s, 251ul, "Forward ", 9ul);
    srcdest(text, text_len, 1UL, fp.scall, 9ul);
-   manufact(&fp, 1UL);
-   aprsstr_Append(fp.s, 251ul, " ", 2ul);
+   manufact(&fp, (uint32_t)(uint8_t)text[1UL]);
    p = 4UL;
    if (exth) {
       s = (uint8_t)(uint8_t)text[p];
@@ -2501,7 +2531,6 @@ static void decodefanet(const char text[], uint32_t text_len, uint32_t textlen, 
          srcdest(text, text_len, p, h, 100ul);
          aprsstr_Append(fp.s, 251ul, h, 100ul);
          manufact(&fp, p);
-         aprsstr_Append(fp.s, 251ul, " ", 2ul);
          p += 3UL;
       }
       if (signature) {
@@ -2541,9 +2570,7 @@ static void decodefanet(const char text[], uint32_t text_len, uint32_t textlen, 
          i0 = (uint32_t)(uint8_t)text[p];
          ++p;
          ii = (int32_t)(i0&127UL);
-         if (ii>=64L) {
-            ii = -ii;
-         }
+         if (ii>=64L) ii = -ii;
          if (i0>=128UL) ii = ii*4L;
          aprsstr_FixToStr((float)ii*0.25f, 2UL, h, 100ul); /* turn rate */
          aprsstr_Append(fp.s, 251ul, h, 100ul);
@@ -2594,9 +2621,7 @@ static void decodefanet(const char text[], uint32_t text_len, uint32_t textlen, 
          aprsstr_Append(fp.s, 251ul, "Temperature:", 13ul);
          i0 = (uint32_t)(uint8_t)text[p];
          ++p;
-         ii = (int32_t)(i0&127UL);
-         if (i0>=128UL) ii = -ii;
-         fp.temp = (float)ii*0.5f;
+         fp.temp = (float)(signed char)i0*0.5f;
          aprsstr_FixToStr(fp.temp, 2UL, h, 100ul);
          aprsstr_Append(fp.s, 251ul, h, 100ul);
          aprsstr_Append(fp.s, 251ul, "C ", 3ul);
@@ -2618,7 +2643,7 @@ static void decodefanet(const char text[], uint32_t text_len, uint32_t textlen, 
          spd((uint32_t)(uint8_t)text[p], 0.2f, &fp.gust); /* gust */
          aprsstr_FixToStr(fp.gust, 2UL, h, 100ul);
          aprsstr_Append(fp.s, 251ul, h, 100ul);
-         aprsstr_Append(fp.s, 251ul, "km/h", 5ul);
+         aprsstr_Append(fp.s, 251ul, "km/h ", 6ul);
          ++p;
       }
       if ((0x10U & s)) {
@@ -2754,9 +2779,9 @@ stress call,Distress call automatically", 139ul);
    while (i0>0UL && fp.s[i0-1UL]==' ') --i0;
    if (i0<=250UL) fp.s[i0] = 0;
    if ((fp.lat!=0.0f || fp.long0!=0.0f) && frame.udpport) {
-      encodeaprs(qual, afc, snrr, level, txd, frame, fp.scall, 9ul, fp.s, 251ul, sym, 2ul, (double)fp.lat,
-                (double)fp.long0, fp.speed, (float)fp.dir, (float)fp.alt, fp.clb0, fp.gust, fp.temp, fp.hum,
-                 fp.baro);
+      encodeaprs(qual, afc, level, txd, frame, fp.scall, 9ul, fp.s, 251ul, sym, 2ul, (double)fp.lat,
+                (double)fp.long0, fp.speed, (float)fp.dir, (float)fp.alt, fp.clb0, snrr, fp.gust, fp.temp,
+                fp.hum, fp.baro, fecc);
    }
    if (verb) {
       osi_WrStr("Fanet:", 7ul);
@@ -2905,6 +2930,10 @@ static void frameout(struct FFRAME * frame, const char finf[], uint32_t finf_len
             osi_WrStr(" fc:", 5ul);
             osic_WrINT32(frame->fasecorrs, 1UL);
          }
+         if (frame->fecbits>0UL) {
+            osi_WrStr(" fec:", 6ul);
+            osic_WrINT32(frame->fecbits, 1UL);
+         }
          osi_WrStr(" afc:", 6ul);
          osic_WrINT32((uint32_t)truedf, 1UL);
          osi_WrStr("Hz", 3ul);
@@ -2913,7 +2942,7 @@ static void frameout(struct FFRAME * frame, const char finf[], uint32_t finf_len
          osi_WrStr("ppm", 4ul);
          if (jmhz!=0.0f) {
             osi_WrStr(" ", 2ul);
-            osic_WrFixed(jmhz+0.0005f, 3L, 1UL);
+            osic_WrFixed(jmhz, 3L, 1UL);
             osi_WrStr("MHz", 4ul);
          }
          shownotches();
@@ -2943,7 +2972,8 @@ static void frameout(struct FFRAME * frame, const char finf[], uint32_t finf_len
       }
       if (judpport || jpipename[0U]) {
          sendjson(jipnum, judpport, frame->idfound, text, text_len, frame->dlen, hascrc, crc0, frame->invertiq,
-                frame->cfgsf, cr, (uint32_t)txd, (uint32_t)frametime, level, n, maxn, snrr, drift, truedf, qual);
+                frame->cfgsf, cr, (uint32_t)txd, (uint32_t)frametime, level, n, maxn, snrr, drift, truedf, qual,
+                (int32_t)frame->fecbits);
       }
       if (hascrc && crc0) {
          if (frame->idfound==52UL) decodelorawan(text, text_len, frame->dlen);
@@ -2958,7 +2988,8 @@ static void frameout(struct FFRAME * frame, const char finf[], uint32_t finf_len
             }
          }
          if (frame->idfound==241UL) {
-            decodefanet(text, text_len, frame->dlen, *frame, txd, level, snrr, truedf, qual); /* FANET */
+            decodefanet(text, text_len, frame->dlen, *frame, txd, level, snrr, truedf, qual, (int32_t)frame->fecbits,
+                (int32_t)cr); /* FANET */
          }
          if (frame->idfound/16UL==2UL && text[0UL]=='!' || text[0UL]==':') {
             /* & (text[frame.dlen-8]=0C) */
@@ -3500,6 +3531,7 @@ static char decodechirp(struct FFRAME * frame, const struct BINS bins, char opti
    char hamcorr;
    char hamok;
    char ishead;
+   NIBBBLOCK hnofec;
    NIBBBLOCK hn;
    char text[261];
    uint16_t chirps[8];
@@ -3531,6 +3563,7 @@ static char decodechirp(struct FFRAME * frame, const struct BINS bins, char opti
          anonym->withcrc = anonym->implicitcrc;
          anonym->fecinfo[0] = 0;
          anonym->oneerrs = 0UL;
+         anonym->fecbits = 0UL;
       }
       anonym->bintab[anonym->chirpc] = bins;
       ++anonym->chirpc;
@@ -3539,6 +3572,13 @@ static char decodechirp(struct FFRAME * frame, const struct BINS bins, char opti
          dcd = anonym->timeout<cr;
          anonym->chirpc = 0UL;
          /*-fec */
+         tmp = cr-1UL;
+         i0 = 0UL;
+         if (i0<=tmp) for (;; i0++) {
+            chirps[i0] = gray((uint16_t)(uint32_t)X2C_TRUNCC(anonym->bintab[i0].b[0U].freq,0UL,X2C_max_longcard));
+                /* only for corr bit count */
+            if (i0==tmp) break;
+         } /* end for */
          if (!opti) fecneighbour(anonym->bintab, cr, sf);
          try0 = 0UL;
          maxlev = 0.0f;
@@ -3548,6 +3588,7 @@ static char decodechirp(struct FFRAME * frame, const struct BINS bins, char opti
          bursttry = -1L;
          burst = 0UL;
          st = 0UL;
+         deint(sf, cr, chirps, 8ul, hnofec, 12ul); /* deint block for corrected bits count */
          for (;;) {
             lv = 0.0f;
             tmp = cr-1UL;
@@ -3590,9 +3631,7 @@ static char decodechirp(struct FFRAME * frame, const struct BINS bins, char opti
                         memcpy(anonym->oneerr,hn,12u);
                         anonym->oneerrs = anonym->nibbc;
                      }
-                     else {
-                        anonym->oneerrs = 1UL; /* do it only for 1 block */
-                     }
+                     else anonym->oneerrs = 1UL;
                   }
                   tmp = sf-1UL;
                   i0 = 0UL;
@@ -3640,6 +3679,15 @@ static char decodechirp(struct FFRAME * frame, const struct BINS bins, char opti
             else aprsstr_Append(anonym->fecinfo, 96ul, "+", 2ul);
          }
          else aprsstr_Append(anonym->fecinfo, 96ul, "-", 2ul);
+         tmp = sf-1UL;
+         i0 = 0UL;
+         if (i0<=tmp) for (;; i0++) {
+            /* count changed bits */
+            for (j1 = 0UL; j1<=3UL; j1++) {
+               if (X2C_IN(j1,8,hn[i0]^hnofec[i0])) ++anonym->fecbits;
+            } /* end for */
+            if (i0==tmp) break;
+         } /* end for */
          /*-fec */
          if (verb2) {
             if (isize==1UL) v = 8.0f;
@@ -3726,7 +3774,9 @@ static char decodechirp(struct FFRAME * frame, const struct BINS bins, char opti
             /* len from header */
             if (datalen && anonym->dlen>datalen) anonym->dlen = datalen;
             fulllen = anonym->dlen;
-            if (anonym->withcrc) fulllen += 2UL;
+            if (anonym->withcrc) {
+               fulllen += 2UL;
+            }
          }
          else if (datalen==0UL) {
             /* len from dcd */
@@ -3775,6 +3825,7 @@ static char decodechirp(struct FFRAME * frame, const struct BINS bins, char opti
                   if ((crcok || anonym->oneerrs<=1UL) || crctry>=4UL) break;
                   trycrc(anonym->nibbs, anonym->oneerr, 12ul, &anonym->oneerrs, &crctry, sf);
                }
+               if (crctry>0UL) ++anonym->fecbits;
                if (anonym->oneerrs>1UL && crctry>0UL) {
                   i0 = 0UL;
                   for (;;) {
@@ -3991,7 +4042,6 @@ static void getbin(struct Complex c[], uint32_t c_len, struct BINS * bins, uint3
 {
    uint32_t bufsize;
    uint32_t imax;
-   uint32_t lastbin;
    uint32_t jj;
    uint32_t j1;
    uint32_t i0;
@@ -4039,7 +4089,6 @@ static void getbin(struct Complex c[], uint32_t c_len, struct BINS * bins, uint3
    }
    X2C_MOVE((char *)c,(char *)tmp,c_len*sizeof(struct Complex));
    Transform(c, c_len, sf, 0);
-   lastbin = 0UL;
    memset((char *)bins,(char)0,sizeof(struct BINS));
    max0 = (-1.0f);
    nois = 0.0f;
@@ -4111,7 +4160,9 @@ static void getbin(struct Complex c[], uint32_t c_len, struct BINS * bins, uint3
          if (invers) jj = (bufsize-imax)-1UL;
          v = fasejumps(tmp, 4096ul, jj, bufsize-imax, bufsize);
          ii = 0L;
-         if (fasejumps(tmp, 4096ul, jj+1UL, bufsize-imax, bufsize)>v) ii = 1L;
+         if (fasejumps(tmp, 4096ul, jj+1UL, bufsize-imax, bufsize)>v) {
+            ii = 1L;
+         }
          else if (fasejumps(tmp, 4096ul, jj-1UL, bufsize-imax, bufsize)>v) ii = -1L;
          if (ii) {
             if (invers) ii = -ii;
