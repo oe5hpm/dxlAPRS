@@ -24,8 +24,9 @@
 #include "aprsstr.h"
 #endif
 #include <signal.h>
+#include <math.h>
 
-/* gpio or lpt to scp ra02 radio module(s)  fsk, afsk lora tx, lora rx */
+/* gpio or lpt to scp ra02 radio module(s)  fsk, afsk lora tx, fsk, lora rx */
 /*FROM Select IMPORT monotonicms; */
 #define ra02_LF "\012"
 
@@ -56,7 +57,7 @@ static float ra02_BWTAB[10] = {7.8f,10.4f,15.6f,20.8f,31.25f,41.7f,62.5f,125.0f,
 
 #define ra02_RegFeiLsb 0x2A 
 
-#define ra02_RegPacketRssi 0x1A 
+#define ra02_RegPacketRssiLora 0x1A 
 
 #define ra02_RegPaRamp 0xA 
 
@@ -82,7 +83,7 @@ static float ra02_BWTAB[10] = {7.8f,10.4f,15.6f,20.8f,31.25f,41.7f,62.5f,125.0f,
 
 #define ra02_RegHopChannel 0x1C 
 
-#define ra02_RegRssiValue 0x1B 
+#define ra02_RegRssiValueLora 0x1B 
 
 #define ra02_RegRxPacketCntValueLsb 0x17 
 
@@ -110,7 +111,7 @@ static float ra02_BWTAB[10] = {7.8f,10.4f,15.6f,20.8f,31.25f,41.7f,62.5f,125.0f,
 
 #define ra02_RegPaConfig 0x9 
 
-#define ra02_RegPayloadLength 0x22 
+#define ra02_RegPayloadLengthLora 0x22 
 
 #define ra02_RegPreambleMsb 0x20 
 
@@ -119,8 +120,6 @@ static float ra02_BWTAB[10] = {7.8f,10.4f,15.6f,20.8f,31.25f,41.7f,62.5f,125.0f,
 #define ra02_RegInvertIQ 0x33 
 
 #define ra02_RegInvertIQ2 0x3B 
-
-#define ra02_RegTemp 0x3C 
 
 #define ra02_RegHighBwOptimize1 0x36 
 
@@ -163,11 +162,45 @@ static float ra02_BWTAB[10] = {7.8f,10.4f,15.6f,20.8f,31.25f,41.7f,62.5f,125.0f,
 
 #define ra02_RegPllHf 0x70 
 
+#define ra02_RegPllHop 0x44 
+
+#define ra02_RegRssiConfig 0xE 
+
+#define ra02_RegRssiValueFsk 0x11 
+
+#define ra02_RegRxBw 0x12 
+
+#define ra02_RegAfcBw 0x13 
+
+#define ra02_RegAfcFei 0x1A 
+
+#define ra02_RegAfcMsbFsk 0x1B 
+
+#define ra02_RegAfcLsbFsk 0x1C 
+
+#define ra02_RegFeiMsbFsk 0x1D 
+
+#define ra02_RegFeiLsbFsk 0x1E 
+
+#define ra02_RegPreambleDetect 0x1F 
+
+#define ra02_RegFifoRxBaseAddr 0xF 
+
+#define ra02_RegSyncValue1 0x28 
+
+#define ra02_RegOokPeak 0x14 
+
+#define ra02_RegImageCal 0x3B 
+
+#define ra02_RegTemp 0x3C 
+
 #define ra02_FIFOFILL 8
 
 #define ra02_OVERSAMP 11
 
 #define ra02_AFSKBAUD 13200
+
+#define ra02_AFSKRXSAMP 19200
 
 #define ra02_GPIOFN "/sys/class/gpio"
 
@@ -185,10 +218,40 @@ static float ra02_BWTAB[10] = {7.8f,10.4f,15.6f,20.8f,31.25f,41.7f,62.5f,125.0f,
 
 #define ra02_GPIODATA "/value"
 
-#define ra02_GPIOS 256
+#define ra02_GPIOS 1024
 
-enum STATE {ra02_stSLEEP, ra02_stRX, ra02_stWAITDCD, ra02_stTX};
+#define ra02_THRESH 15
 
+enum STATE {ra02_stSLEEP, ra02_stRX, ra02_stFSKRX, ra02_stWAITDCD, ra02_stTX, ra02_stTXFSK};
+
+
+
+struct LPCONTEXT24 {
+   float uc1;
+   float uc2;
+   float il;
+   float LPR;
+   float OLPR;
+   float LPL;
+};
+
+struct AX25;
+
+
+struct AX25 {
+   char oldd;
+   char dcd0;
+   char rxafsk;
+   uint32_t osc;
+   uint32_t txc;
+   uint32_t txd;
+   uint32_t bitcnt;
+   uint32_t zerocnt;
+   uint32_t scrambler;
+   int32_t baud;
+   int32_t rssi;
+   int32_t level;
+};
 
 struct TXCONTEXT;
 
@@ -204,8 +267,8 @@ struct TXCONTEXT {
    uint32_t cr;
    uint32_t ftextlen;
    uint32_t preamb;
-   uint32_t power;
    uint32_t txdel;
+   uint32_t power;
    uint32_t deviation;
    uint32_t splitlen;
    uint32_t netid;
@@ -287,9 +350,10 @@ struct CHIP {
    float ppm;
    char splitb[351];
    char issplit;
+   struct AX25 ax25;
 };
 
-typedef uint32_t GPIOSET[8];
+typedef uint32_t GPIOSET[32];
 
 static uint32_t tcnt;
 
@@ -305,7 +369,7 @@ static pCHIP chips;
 
 static GPIOSET gpostate;
 
-static int32_t gpiofds[256];
+static int32_t gpiofds[1024];
 
 static int32_t judpsock;
 
@@ -710,6 +774,9 @@ static int32_t GetIp1(char h[], uint32_t h_len, uint32_t * ip, uint32_t * port)
 } /* end GetIp1() */
 
 static GPIOSET _cnst0 = {0x00000000UL,0x00000000UL,0x00000000UL,0x00000000UL,0x00000000UL,0x00000000UL,0x00000000UL,
+                0x00000000UL,0x00000000UL,0x00000000UL,0x00000000UL,0x00000000UL,0x00000000UL,0x00000000UL,0x00000000UL,
+                0x00000000UL,0x00000000UL,0x00000000UL,0x00000000UL,0x00000000UL,0x00000000UL,0x00000000UL,0x00000000UL,
+                0x00000000UL,0x00000000UL,0x00000000UL,0x00000000UL,0x00000000UL,0x00000000UL,0x00000000UL,0x00000000UL,
                 0x00000000UL};
 
 static void chkports(void)
@@ -718,29 +785,29 @@ static void chkports(void)
    GPIOSET outs;
    GPIOSET ins;
    uint32_t i;
-   memcpy(ins,_cnst0,32u);
-   memcpy(outs,_cnst0,32u);
+   memcpy(ins,_cnst0,128u);
+   memcpy(outs,_cnst0,128u);
    chip0 = chips;
    while (chip0) {
-      X2C_INCL(outs,chip0->gpio.mosiN,256);
-      X2C_INCL(outs,chip0->gpio.sckN,256);
-      if (X2C_INL(chip0->gpio.misoN,256,ins)) {
+      X2C_INCL(outs,chip0->gpio.mosiN,1024);
+      X2C_INCL(outs,chip0->gpio.sckN,1024);
+      if (X2C_INL(chip0->gpio.misoN,1024,ins)) {
          osi_Werr("hint, shared inputs need nss-pullup if driver is started for not all connected chips (floating nss pi\
 n)\012", 105ul);
       }
-      X2C_INCL(ins,chip0->gpio.misoN,256);
+      X2C_INCL(ins,chip0->gpio.misoN,1024);
       chip0 = chip0->next;
    }
-   for (i = 0UL; i<=255UL; i++) {
-      if (X2C_INL(i,256,ins) && X2C_INL(i,256,outs)) Error("input<->output port conflict", 29ul);
+   for (i = 0UL; i<=1023UL; i++) {
+      if (X2C_INL(i,1024,ins) && X2C_INL(i,1024,outs)) Error("input<->output port conflict", 29ul);
    } /* end for */
-   for (i = 0UL; i<=255UL; i++) {
-      if (X2C_INL(i,256,ins)) X2C_INCL(outs,i,256);
+   for (i = 0UL; i<=1023UL; i++) {
+      if (X2C_INL(i,1024,ins)) X2C_INCL(outs,i,1024);
    } /* end for */
    chip0 = chips;
    while (chip0) {
-      if (X2C_INL(chip0->gpio.ceN,256,outs)) Error("ce must not be shared", 22ul);
-      X2C_INCL(outs,chip0->gpio.ceN,256);
+      if (X2C_INL(chip0->gpio.ceN,1024,outs)) Error("ce must not be shared", 22ul);
+      X2C_INCL(outs,chip0->gpio.ceN,1024);
       chip0 = chip0->next;
    }
 } /* end chkports() */
@@ -833,7 +900,7 @@ static pTXCONTEXT newtx(void)
    tx->netid = 18UL;
    tx->power = 10UL;
    tx->preamb = 8UL;
-   tx->txdel = 4UL;
+   tx->txdel = 6UL;
    tx->deviation = 3000UL;
    tx->baud = 0L;
    tx->sendfsk = 0;
@@ -870,7 +937,7 @@ static void Parms(void)
    pTXCONTEXT tx;
    pCHIP chip0;
    struct CHIP * anonym;
-   for (pcnt = 0UL; pcnt<=255UL; pcnt++) {
+   for (pcnt = 0UL; pcnt<=1023UL; pcnt++) {
       gpiofds[pcnt] = -2L;
    } /* end for */
    lptnum = 0UL;
@@ -881,8 +948,8 @@ static void Parms(void)
    mosi0 = 10UL;
    miso0 = 9UL;
    sck0 = 11UL;
-   loopdelay = 30000UL;
-   loopdelayfast = 10000UL;
+   loopdelay = 20000UL;
+   loopdelayfast = 2000UL;
    chip0 = 0;
    tx = newtx();
    txcnt = 0UL;
@@ -905,19 +972,19 @@ static void Parms(void)
             }
             ++pcnt;
             osi_NextArg(h, 4096ul);
-            if (!aprsstr_StrToCard(h, 4096ul, &ce0) || ce0>=256UL) {
+            if (!aprsstr_StrToCard(h, 4096ul, &ce0) || ce0>=1024UL) {
                Error("-p <ce0> <mosi0> <miso0> <sck0>", 32ul);
             }
             osi_NextArg(h, 4096ul);
-            if (!aprsstr_StrToCard(h, 4096ul, &mosi0) || mosi0>=256UL) {
+            if (!aprsstr_StrToCard(h, 4096ul, &mosi0) || mosi0>=1024UL) {
                Error("-p <ce0> <mosi0> <miso0> <sck0>", 32ul);
             }
             osi_NextArg(h, 4096ul);
-            if (!aprsstr_StrToCard(h, 4096ul, &miso0) || miso0>=256UL) {
+            if (!aprsstr_StrToCard(h, 4096ul, &miso0) || miso0>=1024UL) {
                Error("-p <ce0> <mosi0> <miso0> <sck0>", 32ul);
             }
             osi_NextArg(h, 4096ul);
-            if (!aprsstr_StrToCard(h, 4096ul, &sck0) || sck0>=256UL) {
+            if (!aprsstr_StrToCard(h, 4096ul, &sck0) || sck0>=1024UL) {
                Error("-p <ce0> <mosi0> <miso0> <sck0>", 32ul);
             }
          }
@@ -979,16 +1046,16 @@ static void Parms(void)
             osi_NextArg(h, 4096ul);
             if (!StrToHex(h, 4096ul, &tx->netid)) Error("-N <netid>", 11ul);
          }
-         else if (h[1U]=='g') {
+         else if (h[1U]=='e') {
             osi_NextArg(h, 4096ul);
             if ((!aprsstr_StrToCard(h, 4096ul, &chip0->lnagain) || chip0->lnagain>6UL) || chip0->lnagain<1UL) {
-               Error("-g <lnagain 1..6>", 18ul);
+               Error("-e <lnagain 1..6>", 18ul);
             }
          }
          else if (h[1U]=='T') {
             osi_NextArg(h, 4096ul);
-            if (!aprsstr_StrToCard(h, 4096ul, &tx->txdel) || tx->txdel>100UL) {
-               Error("-T <txdel bytes> (0..100)", 26ul);
+            if (!aprsstr_StrToCard(h, 4096ul, &tx->txdel) || tx->txdel>250UL) {
+               Error("-T <txdel bytes> (0..250)", 26ul);
             }
          }
          else if (h[1U]=='H') {
@@ -1010,7 +1077,7 @@ static void Parms(void)
          else if (h[1U]=='w') {
             osi_NextArg(h, 4096ul);
             if (!aprsstr_StrToCard(h, 4096ul, &tx->power) || tx->power>17UL) {
-               Error("-w <power 0..17", 16ul);
+               Error("-w <power> 2..17dBm, 0 tx off", 30ul);
             }
          }
          else if (h[1U]=='U' || h[1U]=='L') {
@@ -1037,10 +1104,10 @@ static void Parms(void)
          else if (h[1U]=='a') chip0->agc = 1;
          else if (h[1U]=='E') tx->rawfsk = 1;
          else if (h[1U]=='I') tx->implicit = 1;
-         else if (h[1U]=='i') chip0->implicit = 1;
-         else if (h[1U]=='A') {
-            tx->sendfsk = 1;
+         else if (h[1U]=='i') {
+            chip0->implicit = 1;
          }
+         else if (h[1U]=='A') tx->sendfsk = 1;
          else if (h[1U]=='d') tx->usedcd = 1;
          else if (h[1U]=='Q') tx->swapiq = 1;
          else if (h[1U]=='q') chip0->swapiq = 1;
@@ -1048,11 +1115,14 @@ static void Parms(void)
          else if (h[1U]=='G') {
             osi_NextArg(h, 4096ul);
             if (!aprsstr_StrToInt(h, 4096ul, &tx->baud)) Error("-G [-]<baud>", 13ul);
-            if (labs(tx->baud)<490L) {
-               if (tx->baud<0L) tx->baud = -490L;
-               else tx->baud = 490L;
-            }
+            if (labs(tx->baud)<490L) Error("-G baudrate too low", 20ul);
             tx->sendfsk = 1;
+         }
+         else if (h[1U]=='g') {
+            osi_NextArg(h, 4096ul);
+            if (!aprsstr_StrToInt(h, 4096ul, &chip0->ax25.baud)) Error("-g [-]<baud>", 13ul);
+            if (labs(chip0->ax25.baud)<490L) Error("-g baudrate too low", 20ul);
+            chip0->ax25.rxafsk = 0;
          }
          else if (h[1U]=='R') {
             osi_NextArg(h, 4096ul);
@@ -1115,7 +1185,8 @@ static void Parms(void)
             }
          }
          else if (h[1U]=='h') {
-            osi_WrStrLn(" ra-02 (sx127x) via LPT or multiple chips via GPIO to axudp or json by oe5dxl", 78ul);
+            osi_WrStrLn(" ra-02 (sx127x) via LPT or multiple chips via GPIO lora + fsk + afsk tx, axudp or json by oe5dx\
+l", 97ul);
             osi_WrStrLn(" -A                 tx AFSK 1200 Baud", 38ul);
             osi_WrStrLn(" -a                 AGC on", 27ul);
             osi_WrStrLn(" -B <n>             tx bandwidth kHz 0:7.8 1:10.4 2:15.6 3:20.8 4:31.25 5:41.7 6:62.5 7:125 8:2\
@@ -1127,10 +1198,11 @@ static void Parms(void)
             osi_WrStrLn(" -d                 do not send while DCD on this band or if dcd on tx sf/bw)", 78ul);
             osi_WrStrLn("                      timebase is detection duration, some ms see chip manual", 78ul);
             osi_WrStrLn(" -E                 Send UDP frame unmodified in FSK up to 1500Byte eg. for POCSAG", 83ul);
+            osi_WrStrLn(" -e <n>             lna gain 6..1, 1 is maximum gain! see chip manual(1)", 73ul);
             osi_WrStrLn(" -F <MHz>           tx MHz (433.775) (137..1020)", 49ul);
             osi_WrStrLn(" -f <MHz>           rx MHz (433.775) (137..1020)", 49ul);
             osi_WrStrLn(" -G [-]<baud>       Send GFSK <baud> -baud same but g3ruh scrambler off (490..250000)", 86ul);
-            osi_WrStrLn(" -g <n>             lna gain 6..1, 1 is maximum gain! see chip manual(1)", 73ul);
+            osi_WrStrLn(" -g [-]<baud>       Rx GFSK <baud> -baud same but g3ruh scrambler off (490..250000)", 84ul);
             osi_WrStrLn(" -H <n>             Preamble length (8) sx seems to need minimum 4 (8)", 71ul);
             osi_WrStrLn(" -h                 this", 25ul);
             osi_WrStrLn(" -I                 tx implicit header on", 42ul);
@@ -1159,15 +1231,16 @@ static void Parms(void)
             osi_WrStrLn(" -r <n>             add to rssi value to compensate internal and external preamps (0)", 86ul);
             osi_WrStrLn(" -S <sf>            tx spread factor 6..12 (12) -6..-12 for invers chirps same as -Q", 85ul);
             osi_WrStrLn(" -s <sf>            rx spread factor 6..12 (12) -6..-12 for invers chirps same as -q", 85ul);
-            osi_WrStrLn(" -T <n>             (A)FSK txdel in byte (4), not used for raw mode -E", 71ul);
+            osi_WrStrLn(" -T <n>             (A)FSK txdel in byte (6), not used for raw mode -E", 71ul);
             osi_WrStrLn(" -U ip:sendport:receiveport AXUDP data, same as -L but standard AXUDP (no metadata)", 84ul);
             osi_WrStrLn(" -u <us> <us>       sleep time between device polls rx/(a)fsk tx, more:faster response, more cp\
 u (30000 10000)", 111ul);
             osi_WrStrLn("                      afsk needs 20000 or less to avoid underruns", 66ul);
             osi_WrStrLn(" -V                 show more infos on stdout", 46ul);
             osi_WrStrLn(" -v                 show some infos on stdout", 46ul);
-            osi_WrStrLn(" -W <symbols>       limit rx preamble symbols against spoofing (250)", 69ul);
-            osi_WrStrLn(" -w <dBm>           tx power 0..17 (10)", 40ul);
+            osi_WrStrLn(" -W <symbols>       maximal rx preamble chirps before restart rx, against spoofing (250)",
+                89ul);
+            osi_WrStrLn(" -w <dBm>           tx power 2..17 (10), 0 tx off", 50ul);
             osi_WrStrLn(" -X <ppm>           data rate correction (0)", 45ul);
             osi_WrStrLn(" -Z <n>             set overcurrent protection, use with care, see chip manual", 79ul);
             osi_WrStrLn("", 1ul);
@@ -1201,6 +1274,11 @@ ip2> -L ... <parameters chip2 tx1/rx> -L ... -v", 143ul);
    while (chip0) {
       { /* with */
          struct CHIP * anonym = chip0;
+         if (labs(anonym->ax25.baud)) {
+            res = 102400000L/labs(anonym->ax25.baud); /* max usleep for not overrun fsk rx buffer */
+            if ((uint32_t)res<loopdelay) loopdelay = (uint32_t)res;
+            if ((uint32_t)res<loopdelayfast) loopdelayfast = (uint32_t)res;
+         }
          if ((float)fabs(anonym->datarate)>133.0f) anonym->datarate = anonym->ppm;
          if (verb) {
             Wrchipnum(chip0, 1);
@@ -1218,35 +1296,51 @@ ip2> -L ... <parameters chip2 tx1/rx> -L ... -v", 143ul);
             }
             osi_WrStr(" on=", 5ul);
             osic_WrUINT32((uint32_t)anonym->rxon, 1UL);
-            osi_WrStr(" opt=", 6ul);
-            osic_WrUINT32((uint32_t)anonym->optimize, 1UL);
+            if (anonym->ax25.baud==0L) {
+               osi_WrStr(" opt=", 6ul);
+               osic_WrUINT32((uint32_t)anonym->optimize, 1UL);
+            }
             osi_WrStr(" agc=", 6ul);
             osic_WrUINT32((uint32_t)anonym->agc, 1UL);
             osi_WrStr(" f=", 4ul);
             osic_WrFixed(anonym->rxmhz, 4L, 1UL);
             osi_WrStr("MHz", 4ul);
-            osi_WrStr(" sf=", 5ul);
-            osic_WrUINT32(anonym->rxsf, 1UL);
-            osi_WrStr(" bw=", 5ul);
-            osic_WrFixed(_cnst[anonym->rxbw], 1L, 1UL);
-            osi_WrStr("kHz", 4ul);
-            osi_WrStr(" id=", 5ul);
-            WrHex(anonym->netid, 2UL, 0UL);
+            if (anonym->ax25.baud==0L) {
+               osi_WrStr(" sf=", 5ul);
+               osic_WrUINT32(anonym->rxsf, 1UL);
+               osi_WrStr(" bw=", 5ul);
+               osic_WrFixed(_cnst[anonym->rxbw], 1L, 1UL);
+               osi_WrStr("kHz", 4ul);
+               osi_WrStr(" id=", 5ul);
+               WrHex(anonym->netid, 2UL, 0UL);
+            }
             osi_WrStr(" lnaboost=", 11ul);
             osic_WrUINT32(anonym->lnaboost, 1UL);
-            if (anonym->swapiq) osi_WrStr(" invertIQ", 10ul);
-            osi_WrStr(" symt=", 7ul);
-            osic_WrFixed(anonym->symboltime, 3L, 1UL);
-            osi_WrStr("ms", 3ul);
-            osi_WrStr(" ppm=", 6ul);
-            osic_WrFixed(anonym->ppm, 1L, 1UL);
-            osi_WrStr(" dr=", 5ul);
-            osic_WrFixed(anonym->datarate, 1L, 1UL);
-            osi_WrStr("ppm", 4ul);
+            if (anonym->ax25.baud==0L) {
+               if (anonym->swapiq) osi_WrStr(" invertIQ", 10ul);
+               osi_WrStr(" symt=", 7ul);
+               osic_WrFixed(anonym->symboltime, 3L, 1UL);
+               osi_WrStr("ms", 3ul);
+               osi_WrStr(" ppm=", 6ul);
+               osic_WrFixed(anonym->ppm, 1L, 1UL);
+               osi_WrStr(" dr=", 5ul);
+               osic_WrFixed(anonym->datarate, 1L, 1UL);
+               osi_WrStr("ppm", 4ul);
+            }
+            else {
+               osi_WrStr(" FSKbaud=", 10ul);
+               osic_WrUINT32((uint32_t)labs(anonym->ax25.baud), 1UL);
+               osi_WrStr(" scramble=", 11ul);
+               if (anonym->ax25.baud>0L) osi_WrStr("on", 3ul);
+               else osi_WrStr("off", 4ul);
+            }
             osi_WrStrLn("", 1ul);
             tx = anonym->ptx;
             while (tx) {
                if (tx->udpbind) {
+                  if (tx->power==0UL) {
+                     Error("set udp listenport to 0 as tx power=0", 38ul);
+                  }
                   osi_WrStr("TX:", 4ul);
                   osi_WrStr(" port=", 7ul);
                   osic_WrUINT32(tx->udpbind, 1UL);
@@ -1273,9 +1367,7 @@ ip2> -L ... <parameters chip2 tx1/rx> -L ... -v", 143ul);
                      osi_WrStr(" preamb=", 9ul);
                      osic_WrFixed(tx->symboltime*(float)tx->preamb, 2L, 1UL);
                      osi_WrStr("ms", 3ul);
-                     if (tx->swapiq) {
-                        osi_WrStr(" invertIQ", 10ul);
-                     }
+                     if (tx->swapiq) osi_WrStr(" invertIQ", 10ul);
                      if (tx->rawlora) osi_WrStr(" rawdata", 9ul);
                   }
                   else {
@@ -1287,12 +1379,12 @@ ip2> -L ... <parameters chip2 tx1/rx> -L ... -v", 143ul);
                            osi_WrStr(" baud=1200 AFSK", 16ul);
                         }
                         else {
-                           osi_WrStr("baud=", 6ul);
+                           osi_WrStr(" baud=", 7ul);
                            osic_WrUINT32((uint32_t)labs(tx->baud), 1UL);
                            if (tx->baud<0L) {
                               osi_WrStr(" FSK", 5ul);
                            }
-                           else osi_WrStr(" g3ruh", 7ul);
+                           else osi_WrStr(" FSK+scrambler", 15ul);
                         }
                      }
                      else {
@@ -1333,25 +1425,25 @@ static char scp(const struct GPIO gpio, char rd, char nss, char sck, char mosi)
    else res = 0;
    h[0U] = (char)(48UL+(uint32_t)sck);
    osi_WrBin(gpio.sckFD, (char *)h, 2u/1u, 1UL);
-   if (nss!=X2C_INL(gpio.ceN,256,gpostate)) {
+   if (nss!=X2C_INL(gpio.ceN,1024,gpostate)) {
       if (nss) {
          h[0U] = '1';
-         X2C_INCL(gpostate,gpio.ceN,256);
+         X2C_INCL(gpostate,gpio.ceN,1024);
       }
       else {
          h[0U] = '0';
-         X2C_EXCL(gpostate,gpio.ceN,256);
+         X2C_EXCL(gpostate,gpio.ceN,1024);
       }
       osi_WrBin(gpio.ceFD, (char *)h, 2u/1u, 1UL);
    }
-   if (mosi!=X2C_INL(gpio.mosiN,256,gpostate)) {
+   if (mosi!=X2C_INL(gpio.mosiN,1024,gpostate)) {
       if (mosi) {
          h[0U] = '1';
-         X2C_INCL(gpostate,gpio.mosiN,256);
+         X2C_INCL(gpostate,gpio.mosiN,1024);
       }
       else {
          h[0U] = '0';
-         X2C_EXCL(gpostate,gpio.mosiN,256);
+         X2C_EXCL(gpostate,gpio.mosiN,1024);
       }
       osi_WrBin(gpio.mosiFD, (char *)h, 2u/1u, 1UL);
    }
@@ -1416,19 +1508,6 @@ static void WrByte(char c)
 } /* end WrByte() */
 
 
-static void WrBytes(const char s[], uint32_t s_len, int32_t len)
-{
-   int32_t i;
-   int32_t tmp;
-   tmp = len-1L;
-   i = 0L;
-   if (i<=tmp) for (;; i++) {
-      WrByte(s[i]);
-      if (i==tmp) break;
-   } /* end for */
-} /* end WrBytes() */
-
-
 static void Showregs(pCHIP chp)
 {
    uint32_t i;
@@ -1470,13 +1549,24 @@ static void sendaxudp2(pCHIP chp, char mon[], uint32_t mon_len, uint32_t len, in
    uint32_t i;
    uint32_t p;
    pTXCONTEXT tx;
+   char longcall;
    X2C_PCOPY((void **)&mon,mon_len);
    if (chp->rxon) {
+      longcall = 0;
       if (len==0UL) {
          /* aprs */
          aprsstr_mon2raw(mon, mon_len, data, 501ul, &datalen);
+         if (datalen==0L) longcall = 1;
+         if (longcall) {
+            datalen = (int32_t)aprsstr_Length(mon, mon_len);
+            i = 0UL;
+            do {
+               data[i] = mon[i];
+               ++i;
+            } while (!(i>500UL || (int32_t)i>=datalen));
+         }
          if (datalen>2L) {
-            datalen -= 2L; /* remove crc */
+            if (!longcall) datalen -= 2L;
             b[0U] = '\001';
             b[1U] = '0';
             p = 2UL;
@@ -1484,6 +1574,7 @@ static void sendaxudp2(pCHIP chp, char mon[], uint32_t mon_len, uint32_t len, in
             app(&i, &p, b, 'V', lev);
             app(&i, &p, b, 'S', snr);
             app(&i, &p, b, 'A', afc);
+            if (longcall) app(&i, &p, b, 'X', 2L);
             b[p] = 0; /* end of axudp2 header */
             ++p;
             i = 0UL;
@@ -1626,6 +1717,8 @@ static void sendjson(uint32_t jipnum0, uint32_t judpport0, uint32_t id, const ch
    if (judpport0) ret = udpsend(judpsock, s, (int32_t)aprsstr_Length(s, 1000ul), judpport0, jipnum0);
 } /* end sendjson() */
 
+#define ra02_ASKSYNPATTERN 0x7E 
+
 
 static void hdlc(char b[], uint32_t b_len, int32_t len, int32_t txdel, char h[], uint32_t h_len,
                 uint32_t * hlen, char fsk, char scramb, char notxd, uint32_t * scrambler)
@@ -1659,7 +1752,7 @@ static void hdlc(char b[], uint32_t b_len, int32_t len, int32_t txdel, char h[],
             if (dostuff) c = (uint16_t)(uint8_t)b[p];
             else {
                c = 126U;
-               if (p<-1L) c = 0U;
+               if (p<-1L) c = 126U;
                stuff = 0UL;
             }
             ++p;
@@ -1788,21 +1881,21 @@ static void decodejson(char b[], uint32_t b_len, int32_t * bl)
          if (cmp(a, p, b, b_len, "payload", 8ul)) {
             *bl = 0L;
             ++p;
-            if (p>len) return;
+            if (p>=len) return;
             while (b[p]==' ') {
                ++p;
-               if (p>len) return;
+               if (p>=len) return;
             }
             if (b[p]!=':') return;
             ++p;
-            if (p>len) return;
+            if (p>=len) return;
             while (b[p]==' ') {
                ++p;
-               if (p>len) return;
+               if (p>=len) return;
             }
             if (b[p]!='\"') return;
             ++p;
-            if (p>len) return;
+            if (p>=len) return;
             a = 0UL;
             wp = 0UL;
             while (b[p]!='\"') {
@@ -1829,13 +1922,13 @@ static void decodejson(char b[], uint32_t b_len, int32_t * bl)
                   }
                }
                ++p;
-               if (p>len) return;
+               if (p>=len) return;
             }
             ++p;
-            if (p>len) return;
+            if (p>=len) return;
             while (b[p]==' ') {
                ++p;
-               if (p>len) return;
+               if (p>=len) return;
             }
             if (b[p]=='}') *bl = (int32_t)wp;
          }
@@ -1854,7 +1947,6 @@ static void getaxudp2(pCHIP chp)
    char crc1;
    int32_t len;
    uint32_t slen;
-   char showtext[1501];
    char rb[1501];
    char udp2[64]; /* axudp2 header */
    char cont;
@@ -1867,7 +1959,8 @@ static void getaxudp2(pCHIP chp)
    if (!cont) chp->atx = chp->ptx;
    len = 0L;
    for (;;) {
-      if (chp->atx==0) return;
+      if (chp->atx==0 || chp->atx->power==0UL) return;
+      /* no tx context or flight mode */
       if (chp->atx->udpbind) {
          /*
                IF chp^.atx^.splitlen>0 THEN                     (* rawlora frame splitted, send part 2 *)
@@ -1941,10 +2034,7 @@ static void getaxudp2(pCHIP chp)
                else {
                   aprsstr_raw2mon(rb, 1501ul, anonym0->ftext, 3851ul, (uint32_t)(len-2L), &anonym0->ftextlen, _cnst1);
                   if (anonym0->ftextlen>0UL) --anonym0->ftextlen;
-                  while (slen<=1500UL && slen<anonym0->ftextlen) {
-                     showtext[slen] = anonym0->ftext[slen];
-                     ++slen;
-                  }
+                  slen = (uint32_t)(len-2L);
                   if (anonym0->sendfsk) {
                      hdlc(rb, 1501ul, len, (int32_t)anonym0->txdel, anonym0->ftext, 3851ul, &anonym0->ftextlen,
                 anonym->atx->baud!=0L, anonym->atx->baud>0L, cont, &anonym0->scrambler);
@@ -1961,7 +2051,7 @@ static void getaxudp2(pCHIP chp)
                            osi_WrStr("...] ", 6ul);
                         }
                         else if (anonym->atx->baud>0L) {
-                           osi_WrStr(" tx g3ruh:", 11ul);
+                           osi_WrStr(" tx scrambled:", 15ul);
                         }
                         else osi_WrStr(" tx hdlc fsk:", 14ul);
                         osic_WrUINT32((uint32_t)labs(anonym->atx->baud), 1UL);
@@ -1975,9 +2065,8 @@ static void getaxudp2(pCHIP chp)
                   osi_WrStr(" f:", 4ul);
                   osic_WrFixed(anonym->atx->mhz, 4L, 1UL);
                   if (slen>2UL) {
-                     osi_WrStr(" [", 3ul);
-                     WrBytes(showtext, 1501ul, (int32_t)slen);
-                     osi_WrStrLn("]", 2ul);
+                     osi_WrStr(" ", 2ul);
+                     ShowFrame(rb, 1501ul, slen, (char)(chp->num+48UL));
                   }
                   else osi_WrStrLn("", 1ul);
                }
@@ -2012,6 +2101,17 @@ static void Setmode(pCHIP chp, uint32_t m, char check, char tx)
       scpo(chp->gpio, 1UL, m);
       if (!check || scpi(chp->gpio, 1UL)==m) break;
       usleep(1000UL);
+      if (scpi(chp->gpio, 1UL)/128UL!=m/128UL) {
+         /*    scpo(chp^.gpio, RegOpMode,m); */
+         scpo(chp->gpio, 1UL, 0UL);
+         scpo(chp->gpio, 54UL, 64UL); /* stop sequencer */
+         scpo(chp->gpio, 54UL, 0UL); /* 83H why ever */
+         scpo(chp->gpio, 1UL, 0UL);
+         scpo(chp->gpio, 1UL, 1UL);
+         scpo(chp->gpio, 1UL, 4UL);
+         scpo(chp->gpio, 1UL, 0UL);
+         scpo(chp->gpio, 1UL, (m/128UL)*128UL);
+      }
       ++n;
       if ((n&255UL)==0UL) {
          Wrchipnum(chp, 0);
@@ -2029,6 +2129,8 @@ static void startfsk(pCHIP chp)
 {
    uint32_t pow0;
    uint32_t bd;
+   if (chp->atx->power==0UL) return;
+   /* should no happen */
    /*
      IF verb THEN
        Wrchipnum(chp, FALSE);
@@ -2045,15 +2147,14 @@ static void startfsk(pCHIP chp)
    Setmode(chp, 4UL, 1, 1); /* rx to clear fifo */
    Setmode(chp, 0UL, 1, 1); /* sleep */
    pow0 = chp->atx->power;
-   if (chp->boost) {
-      /*  IF pow=20 THEN scpo(chp^.gpio, RegPaDac,7) END;                    (* 20dBm switch send time too long*) */
-      if (pow0>17UL) pow0 = 17UL;
-      else if (pow0<2UL) pow0 = 2UL;
-      pow0 -= 2UL;
-   }
-   else if (pow0>15UL) pow0 = 15UL;
-   scpo(chp->gpio, 9UL, 240UL+pow0); /* tx power */
-   scpo(chp->gpio, 10UL, 41UL+64UL*(uint32_t)(chp->atx->baud==0L)); /* baseband lowpass 0.3B on afsk, pa ramp */
+   if (pow0>17UL) pow0 = 17UL;
+   else if (pow0<2UL) pow0 = 2UL;
+   /*IF chp^.boost THEN */
+   /*  IF pow=20 THEN scpo(chp^.gpio, RegPaDac,7) END;                    (* 20dBm switch send time too long*) */
+   /*END; */
+   scpo(chp->gpio, 9UL, (240UL+pow0)-2UL); /* tx power */
+   scpo(chp->gpio, 10UL, 41UL+64UL*(uint32_t)(chp->atx->baud==0L));
+                /* baseband lowpass 0.3B on afsk, 1.0 for fsk, pa ramp */
    /*  scpo(chp^.gpio, RegPllHf, CAST(CARDINAL, CAST(SET32, scpi(chp^.gpio, RegPllHf))*SET32{0..5}
                 )); (* 75khz pll bandwidth *)  */
    if (chp->atx->baud) bd = 512000000UL/(uint32_t)labs(chp->atx->baud);
@@ -2092,6 +2193,45 @@ static void setppm(pCHIP chp)
    /*WrInt(VAL(INT8, p*0.95+0.5), 1); WrStrLn(" = datarate"); */
    scpo(chp->gpio, 39UL, (uint32_t)(uint8_t)(signed char)X2C_TRUNCI(p*0.95f+0.5f,-128,127)); /* datarate correction */
 } /* end setppm() */
+
+
+static void startrxfsk(pCHIP chp, char dcdonly)
+{
+   uint32_t bd;
+   struct CHIP * anonym;
+   { /* with */
+      struct CHIP * anonym = chp;
+      Setmode(chp, 0UL, 1, 0);
+      Setmode(chp, 4UL, 1, 0);
+      Setmode(chp, 0UL, 1, 0);
+      Setmode(chp, 1UL, 1, 0);
+      bd = 512000000UL/(uint32_t)labs(anonym->ax25.baud);
+      scpo(chp->gpio, 2UL, bd/4096UL);
+      scpo(chp->gpio, 3UL, bd/16UL&255UL);
+      scpo(chp->gpio, 93UL, bd&15UL);
+      scpo(anonym->gpio, 13UL, 16UL+8UL*(uint32_t)anonym->agc); /* afc, agc, freq changed */
+      scpo(anonym->gpio, 26UL, 2UL);
+      scpo(anonym->gpio, 12UL, 32UL*(chp->lnagain&7UL)+8UL*(anonym->lnaboost&3UL)); /* lna gain, current */
+      scpo(anonym->gpio, 14UL, 7UL+8UL*((uint32_t)anonym->rssicorr&31UL)); /*  rssi correction and smoothing */
+      scpo(anonym->gpio, 18UL, 13UL); /* rx bw 32000000/(m*2^x)) */
+      scpo(anonym->gpio, 19UL, 13UL); /* afc width 32000000/(m*2^x)) */
+      /*    scpo(gpio, RegPreambleDetect,31+64+128); */
+      scpo(anonym->gpio, 31UL, 0UL);
+      scpo(anonym->gpio, 39UL, 16UL); /* 10H */
+      scpo(anonym->gpio, 40UL, 255UL);
+      scpo(anonym->gpio, 48UL, 0UL);
+      scpo(anonym->gpio, 49UL, 64UL);
+      scpo(anonym->gpio, 50UL, 0UL);
+      scpo(anonym->gpio, 53UL, 15UL);
+      scpo(anonym->gpio, 20UL, 32UL);
+      scpo(anonym->gpio, 68UL, 45UL);
+      setsynth(chp, anonym->rxmhz);
+      scpo(anonym->gpio, 13UL, 8UL);
+      Setmode(chp, 4UL, 1, 0);
+      Setmode(chp, 5UL, 1, 0);
+   }
+/*WrHex(scpi(chp^.gpio, RegOpMode),2,3);  WrStr("=setmod "); */
+} /* end startrxfsk() */
 
 
 static void startrx(pCHIP chp, char dcdonly)
@@ -2156,18 +2296,19 @@ static void send(pCHIP chp)
    uint32_t i;
    char b[501];
    uint32_t tmp;
+   if (chp->atx->power==0UL) return;
+   /* should no happen */
+   Setmode(chp, 128UL, 1, 0);
    Setmode(chp, 129UL, 1, 0);
    if (chp->cfgocp>=0L) scpo(chp->gpio, 11UL, (uint32_t)(chp->cfgocp&31L));
    setsynth(chp, chp->atx->mhz);
    pow0 = chp->atx->power;
-   if (chp->boost) {
-      /*  IF pow=20 THEN scpo(chp^.gpio, RegPaDac,7) END;                    (* 20dBm switch send time too long*) */
-      if (pow0>17UL) pow0 = 17UL;
-      else if (pow0<2UL) pow0 = 2UL;
-      pow0 -= 2UL;
-   }
-   else if (pow0>15UL) pow0 = 15UL;
-   scpo(chp->gpio, 9UL, 240UL+pow0); /* tx power */
+   if (pow0>17UL) pow0 = 17UL;
+   else if (pow0<2UL) pow0 = 2UL;
+   /*  IF chp^.boost THEN */
+   /*  IF pow=20 THEN scpo(chp^.gpio, RegPaDac,7) END;                    (* 20dBm switch send time too long*) */
+   /*  END; */
+   scpo(chp->gpio, 9UL, (240UL+pow0)-2UL); /* tx power */
    if (chp->cfgramp>=0L) scpo(chp->gpio, 10UL, (uint32_t)(chp->cfgramp&15L));
    scpo(chp->gpio, 29UL, 16UL*chp->atx->bw+2UL*(chp->atx->cr-4UL)+(uint32_t)chp->atx->implicit); /* bw cr explizit */
    scpo(chp->gpio, 30UL, chp->atx->sf*16UL+4UL); /* spread factor + crc on */
@@ -2265,18 +2406,21 @@ static void txfill(pCHIP chp)
 
 static void startdcdcheck(pCHIP chip0)
 {
-   scpo(chip0->gpio, 18UL, 255UL);
-   startrx(chip0, 1); /* start dcd detect on tx mhz/mod */
-   if (verb2) {
-      osi_WrStr("start cad ", 11ul);
-      osic_WrFixed(chip0->atx->mhz, 3L, 1UL);
-      osi_WrStrLn("", 1ul);
+   if (chip0->ax25.baud) {
+      scpo(chip0->gpio, 18UL, 255UL);
+      startrx(chip0, 1); /* start dcd detect on tx mhz/mod */
+      if (verb2) {
+         osi_WrStr("start cad ", 11ul);
+         osic_WrFixed(chip0->atx->mhz, 3L, 1UL);
+         osi_WrStrLn("", 1ul);
+      }
    }
 } /* end startdcdcheck() */
 
 
 static char dcddone(pCHIP chip0, char * dcd0)
 {
+   if (chip0->ax25.baud) return chip0->ax25.dcd0;
    if ((0x4U & (uint8_t)scpi(chip0->gpio, 18UL))==0) return 0;
    /* cad not done */
    *dcd0 = (0x1U & (uint8_t)scpi(chip0->gpio, 18UL))!=0;
@@ -2290,17 +2434,32 @@ static char dcddone(pCHIP chip0, char * dcd0)
 
 static void showv2(pCHIP chip0, uint8_t bandmap)
 {
+   uint32_t st0;
    Wrchipnum(chip0, 0);
+   st0 = scpi(chip0->gpio, 1UL);
    osi_WrStr(" st:", 5ul);
-   WrHex(scpi(chip0->gpio, 1UL), 2UL, 0UL);
-   osi_WrStr(" cnt:", 6ul);
-   osic_WrINT32(scpi(chip0->gpio, 23UL), 1UL);
-   osi_WrStr(" rssi:", 7ul);
-   osic_WrINT32(scpi(chip0->gpio, 27UL), 1UL);
+   WrHex(st0, 2UL, 0UL);
+   if ((st0&7UL)/2UL!=1UL) {
+      /* not sending */
+      if (chip0->ax25.baud) {
+         osi_WrStr(" cnt:", 6ul);
+         osic_WrINT32(scpi(chip0->gpio, 23UL), 1UL);
+      }
+      osi_WrStr(" rssi:", 7ul);
+      if (chip0->ax25.baud) {
+         osic_WrFixed((float)scpi(chip0->gpio, 17UL)*(-0.5f), 1L, 1UL);
+         osi_WrStr("dBm", 4ul);
+      }
+      else osic_WrINT32(scpi(chip0->gpio, 27UL), 1UL);
+   }
    osi_WrStr(" stat:", 7ul);
    WrHex(scpi(chip0->gpio, 24UL), 2UL, 0UL);
    osi_WrStr(" flags:", 8ul);
-   WrHex(scpi(chip0->gpio, 18UL), 2UL, 0UL);
+   if (chip0->ax25.baud) WrHex(scpi(chip0->gpio, 62UL)+256UL*scpi(chip0->gpio, 63UL), 4UL, 0UL);
+   else {
+      osi_WrStr(" flags:", 8ul);
+      WrHex(scpi(chip0->gpio, 18UL), 2UL, 0UL);
+   }
    osi_WrStr(" state:", 8ul);
    osic_WrUINT32((uint32_t)chip0->state, 1UL);
    osi_WrStr(" dcd:", 6ul);
@@ -2560,38 +2719,115 @@ static void rx(pCHIP chip0)
       Wrchipnum(chip0, 0);
       osi_WrStrLn(" implicit header", 17ul);
    }
-/*
-PROCEDURE calibrate(chp:pCHIP);
-VAR r:SET32;
-    cur:CARDINAL;
-BEGIN
-  cur:=scpi(chp^.gpio, RegOpMode);
-  scpo(chp^.gpio, RegOpMode, 80H);        (* sleep *)
-  scpo(chp^.gpio, RegOpMode, 00H);        (* fsk sleep *)
-  scpo(chp^.gpio, RegOpMode, 4H);         (* FSR *)
-  usleep(500);
---  scpo(chp^.gpio, RegImageCal, CALMASK+1);
---  usleep(500);
---  IF verb THEN WrStr("temp:"); WrInt(20-CAST(INT8, scpi(chp^.gpio, RegTemp)),1); WrStrLn("deg"); END;
-  scpo(chp^.gpio, RegImageCal, CALMASK);
-  r:=CAST(SET32, scpi(chp^.gpio, RegImageCal));
-  IF 3 IN r THEN                                  (* temperature change occured *)
-    scpo(chp^.gpio, RegOpMode, 1);              (* fsk standby *)
-    IF verb THEN WrStr("calibration ") END;
-    INCL(r, 6);                                   (* trigger calibration *)
-    scpo(chp^.gpio, RegImageCal, CAST(CARDINAL,r)); 
-    REPEAT                                        (* wait until done *) 
-      usleep(1000);
-      IF verb THEN WrStr(".") END;
-    UNTIL NOT (5 IN CAST(SET32, scpi(chp^.gpio, RegImageCal)));
-    IF verb THEN WrStrLn(" done") END;
-  END;
-  scpo(chp^.gpio, RegOpMode, 80H);        (* sleep *)
-  scpo(chp^.gpio, RegOpMode, 84H);        (* sleep *)
-  scpo(chp^.gpio, RegOpMode, cur);
-END calibrate;
-*/
 } /* end rx() */
+
+
+static void rxaxframe(pCHIP chip0)
+{
+   uint32_t dlen;
+   uint32_t i;
+   char cl;
+   char ch;
+   int32_t txd;
+   char crcok;
+   if (chip0->ax25.bitcnt>140UL && (chip0->ax25.bitcnt&7UL)==6UL) {
+      /* min len and modulo 8 bits */
+      dlen = (chip0->ax25.bitcnt-6UL)/8UL;
+      i = 0UL;
+      while (i<dlen && !((uint32_t)(uint8_t)chip0->splitb[i]&1)) ++i;
+      if (i%7UL==6UL && i<70UL) {
+         /* has correct ax.25 address field len */
+         cl = chip0->splitb[dlen-2UL];
+         ch = chip0->splitb[dlen-1UL];
+         aprsstr_AppCRC(chip0->splitb, 351ul, (int32_t)(dlen-2UL));
+         crcok = cl==chip0->splitb[dlen-2UL] && ch==chip0->splitb[dlen-1UL];
+         txd = (int32_t)((chip0->ax25.txd*1000UL)/(uint32_t)labs(chip0->ax25.baud));
+         /*      level:=dB(m.level/FLOAT(m.cnt)*(1.0/PI)); */
+         if (crcok) {
+            sendaxudp2(chip0, chip0->splitb, 351ul, dlen, txd, chip0->ax25.level, 0L, 0L); /* pr frame ready */
+         }
+         if (verb) {
+            osi_WrStr("crc=", 5ul);
+            osic_WrINT32((uint32_t)crcok, 1UL);
+            osi_WrStr(" ", 2ul);
+            osic_WrFixed((float)chip0->ax25.rssi*(-0.5f), 1L, 1UL);
+            osi_WrStr("dBm ", 5ul);
+            osi_WrStr("txd=", 5ul);
+            osic_WrINT32((uint32_t)txd, 1UL);
+            osi_WrStr(" FSK:", 6ul);
+            ShowFrame(chip0->splitb, 351ul, dlen-2UL, (char)(chip0->num+48UL));
+         }
+      }
+   }
+} /* end rxaxframe() */
+
+
+static void fskbit(char b, pCHIP chip0)
+{
+   char d;
+   /*descramble */
+   if (chip0->ax25.baud>0L) {
+      chip0->ax25.scrambler = X2C_LSH(chip0->ax25.scrambler,32,1);
+      if (b) chip0->ax25.scrambler |= 0x1UL;
+      b = ((0x1UL & chip0->ax25.scrambler)!=0)==(((0x1000UL & chip0->ax25.scrambler)!=0)
+                ==((0x20000UL & chip0->ax25.scrambler)!=0)); /* result is xor bit 0 12 17 */
+   }
+   /*WrInt(ORD(b),1); */
+   /*nrzi */
+   d = b==chip0->ax25.oldd; /* nrzi */
+   chip0->ax25.oldd = b;
+   /*WrInt(ORD(d),1); */
+   /*stuffing */
+   if (chip0->ax25.zerocnt<5UL && chip0->ax25.bitcnt/8UL<=350UL) {
+      chip0->splitb[chip0->ax25.bitcnt/8UL] = (char)((uint32_t)(uint8_t)
+                chip0->splitb[chip0->ax25.bitcnt/8UL]/2UL+128UL*(uint32_t)d);
+      if ((d && chip0->ax25.bitcnt<104UL) && (chip0->ax25.bitcnt&7UL)==0UL) {
+         chip0->ax25.dcd0 = 0; /* dcd off if no valid ax25 address field */
+      }
+      ++chip0->ax25.bitcnt;
+      if (chip0->ax25.bitcnt==50UL) chip0->ax25.rssi = (int32_t)scpi(chip0->gpio, 17UL);
+   }
+   ++chip0->ax25.txc;
+   if (d) {
+      ++chip0->ax25.zerocnt;
+      if (chip0->ax25.zerocnt>=6UL) {
+         /* flag, frame ready */
+         rxaxframe(chip0);
+         chip0->ax25.bitcnt = 0UL;
+         chip0->ax25.txd = chip0->ax25.txc;
+         if (chip0->ax25.zerocnt==6UL) chip0->ax25.dcd0 = 1;
+         else if (chip0->ax25.zerocnt>6UL) chip0->ax25.dcd0 = 0;
+      }
+   }
+   else {
+      if (chip0->ax25.zerocnt>0UL && chip0->ax25.zerocnt<6UL) {
+         chip0->ax25.txc = 0UL; /* looks like no txd pattern */
+      }
+      chip0->ax25.zerocnt = 0UL;
+   }
+/*IF chip^.ax25.zerocnt>=7 THEN WrInt(testc,1); WrStr(" "); testc:=0 END; */
+/*INC(testc); */
+} /* end fskbit() */
+
+
+static void rxfsk(pCHIP chip0)
+{
+   uint32_t j;
+   uint32_t i;
+   uint8_t c;
+   if ((0x20U & (uint8_t)scpi(chip0->gpio, 63UL))) {
+      /* fifo read threshold */
+      for (i = 0UL; i<=15UL; i++) {
+         c = (uint8_t)scpi(chip0->gpio, 0UL);
+         for (j = 7UL;; j--) {
+            fskbit(X2C_IN(j,8,(uint8_t)c), chip0);
+            if (j==0UL) break;
+         } /* end for */
+      } /* end for */
+   }
+/*     scpo(chip^.gpio, RegOokPeak, 0H);                       (* try all wappons in war against bitsyncer *)  */
+/*     scpo(chip^.gpio, RegOokPeak, 20H); */
+} /* end rxfsk() */
 
 static void freegpio(int32_t);
 
@@ -2601,7 +2837,7 @@ static void freegpio(int32_t signum)
    uint32_t i;
    char h[2];
    int32_t fd;
-   for (i = 0UL; i<=255UL; i++) {
+   for (i = 0UL; i<=1023UL; i++) {
       if (gpiofds[i]!=-2L) {
          aprsstr_CardToStr(i, 1UL, h, 2ul);
          fd = osi_OpenWrite("/sys/class/gpio/unexport", 25ul); /* /sys/class/gpio/unexport */
@@ -2636,7 +2872,7 @@ X2C_STACK_LIMIT(100000l)
 extern int main(int argc, char **argv)
 {
    X2C_BEGIN(&argc,argv,1,4000000l,8000000l);
-   if (sizeof(GPIOSET)!=32) X2C_ASSERT(0);
+   if (sizeof(GPIOSET)!=128) X2C_ASSERT(0);
    aprsstr_BEGIN();
    osi_BEGIN();
    signal(SIGTERM, freegpio);
@@ -2654,6 +2890,8 @@ extern int main(int argc, char **argv)
    usleep(10000UL);
    while (chip) {
       usleep(1000UL);
+      scpo(chip->gpio, 54UL, 64UL); /* stop sequencer */
+      scpo(chip->gpio, 54UL, 0UL); /* 83H why ever */
       if (verb2) {
          Setmode(chip, 0UL, 1, 0);
          Showregs(chip);
@@ -2663,10 +2901,27 @@ extern int main(int argc, char **argv)
       Setmode(chip, 0UL, 1, 0);
       scpo(chip->gpio, 54UL, 64UL); /* stop sequencer */
       scpo(chip->gpio, 54UL, 0UL); /* 83H why ever */
-      /*scpo(chip^.gpio, RegFifoThresh, 1); */
       Setmode(chip, 0UL, 1, 0);
       Setmode(chip, 1UL, 1, 0);
-      Setmode(chip, 4UL, 1, 0); /* clear fifo */
+      if (verb) {
+         osi_WrStr("T=", 3ul);
+         osic_WrINT32((uint32_t)(uint8_t) -(signed char)scpi(chip->gpio, 60UL), 1UL);
+         osi_WrStrLn("C", 2ul);
+      }
+      setsynth(chip, chip->rxmhz);
+      scpo(chip->gpio, 1UL, 4UL); /* FSR */
+      usleep(500UL);
+      scpo(chip->gpio, 1UL, 1UL);
+      scpo(chip->gpio, 59UL, 64UL); /* start calibration */
+      if (verb) {
+         osic_WrFixed(chip->rxmhz, 3L, 1UL);
+         osi_WrStr("MHz Calibration:", 17ul);
+      }
+      while ((0x20U & (uint8_t)scpi(chip->gpio, 59UL))) {
+         usleep(1000UL);
+         if (verb) osi_WrStr(".", 2ul);
+      }
+      if (verb) osi_WrStrLn("done", 5ul);
       Setmode(chip, 0UL, 1, 0);
       setppm(chip);
       chip = chip->next;
@@ -2685,10 +2940,8 @@ extern int main(int argc, char **argv)
       if (chip->atx && chip->atx->sendfsk) txfast = 1;
       ++chip->calcnt;
       st = scpi(chip->gpio, 1UL);
-      if (((uint8_t)st&0x6U)==0U && chip->state==ra02_stTX) {
+      if (((uint8_t)st&0x6U)==0U && (chip->state==ra02_stTX || chip->state==ra02_stTXFSK)) {
          /* sleep or standby */
-         /*WrHex(scpi(chip^.gpio, RegOpMode),1); WrStr(" "); WrHex(scpi(chip^.gpio, RegIrqFlags),1);
-                WrStrLn("=sleep/stby"); */
          if (st==0UL) {
             Setmode(chip, 128UL, 1, 0);
             setppm(chip);
@@ -2698,7 +2951,7 @@ extern int main(int argc, char **argv)
             }
          }
          if (chip->state!=ra02_stWAITDCD) {
-            if ((chip->state==ra02_stTX && chip->atx) && chip->atx->ftextlen==0UL) {
+            if (((chip->state==ra02_stTX || chip->state==ra02_stTXFSK) && chip->atx) && chip->atx->ftextlen==0UL) {
                chip->atx = 0;
             }
             chip->state = ra02_stSLEEP;
@@ -2707,11 +2960,22 @@ extern int main(int argc, char **argv)
       if (chip->state==ra02_stSLEEP) {
          if (chip->rxon) {
             setppm(chip);
-            startrx(chip, 0);
-            chip->state = ra02_stRX;
+            if (chip->ax25.baud) {
+               startrxfsk(chip, 0);
+               chip->state = ra02_stFSKRX;
+            }
+            else {
+               startrx(chip, 0);
+               chip->state = ra02_stRX;
+            }
          }
       }
-      /*      ELSE Setmode(chip, 80H, TRUE, FALSE) END;                        (* sleep *) */
+      if (chip->state==ra02_stFSKRX) {
+         rxfsk(chip);
+         if (chip->ax25.dcd0) {
+            banddcd |= (1U<<chip->band); /* set dcd for this band */
+         }
+      }
       if (chip->rxon && chip->state==ra02_stRX) {
          flags = scpi(chip->gpio, 18UL);
          chip->stato = chip->statu;
@@ -2739,11 +3003,11 @@ extern int main(int argc, char **argv)
             }
          }
       }
-      else if (((chip->atx && chip->atx->ftextlen>0UL) && chip->state!=ra02_stTX) && !X2C_IN(chip->band,8,
-                banddcd|banddcdall)) {
+      else if ((((chip->atx && chip->atx->ftextlen>0UL) && chip->state!=ra02_stTX) && chip->state!=ra02_stTXFSK)
+                && !X2C_IN(chip->band,8,banddcd|banddcdall)) {
          if (chip->atx->sendfsk) {
             startfsk(chip);
-            chip->state = ra02_stTX;
+            chip->state = ra02_stTXFSK;
          }
          else {
             if (chip->atx->usedcd) startdcdcheck(chip);
@@ -2751,26 +3015,28 @@ extern int main(int argc, char **argv)
          }
       }
       if (chip->state==ra02_stTX) {
-         if ((chip->atx && chip->atx->ftextlen>0UL) && chip->atx->sendfsk) txfill(chip);
-         else if ((0x8U & (uint8_t)scpi(chip->gpio, 18UL))) {
-            /* tx done */
+         if ((0x8U & (uint8_t)scpi(chip->gpio, 18UL))) {
+            /* lora tx done */
             if (chip->atx==0 || chip->atx->ftextlen==0UL) {
                /* for continous send */
                chip->atx = 0;
                getaxudp2(chip);
             }
-            if (chip->atx && chip->atx->ftextlen>0UL) {
-               /*Setmode(chip, 81H, TRUE, FALSE);                        (* stop tx *) */
-               send(chip);
-            }
-            else Setmode(chip, 129UL, 1, 0);
+            if (chip->atx==0 || chip->atx->ftextlen==0UL) Setmode(chip, 129UL, 1, 0);
+         }
+      }
+      else if (chip->state==ra02_stTXFSK) {
+         if (chip->atx && chip->atx->ftextlen>0UL) txfill(chip);
+         else if ((0x8U & (uint8_t)scpi(chip->gpio, 62UL))) {
+            /* fsk tx done */
+            Setmode(chip, 1UL, 1, 0);
          }
       }
       if ((chip->atx && chip->atx->ftextlen==0UL) && !chip->atx->sendfsk) chip->atx = 0;
       if (verb2 && (tcnt&7UL)==0UL) showv2(chip, banddcdall|banddcd);
-      /*    IF (chip^.state<>stTX) & (chip^.atx=NIL) THEN getaxudp2(chip) END; */
-      if (chip->state!=ra02_stTX && (chip->atx==0 || chip->atx->ftextlen==0UL)) getaxudp2(chip);
-      /*IF chip^.atx<>NIL THEN WrInt(chip^.atx^.ftextlen,5); WrStrLn("=atx") ELSE WrStrLn(" no atx") END; */
+      if ((chip->state!=ra02_stTX && chip->state!=ra02_stTXFSK) && (chip->atx==0 || chip->atx->ftextlen==0UL)) {
+         getaxudp2(chip);
+      }
       chip = chip->next;
    }
    X2C_EXIT();
