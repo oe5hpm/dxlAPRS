@@ -315,6 +315,13 @@ OBJ_HOSTINT = \
 OBJ_TTYTEE = \
 	$(OUT)ttytee.o
 
+OBJ_FSK4RX = \
+    $(OUT)fsk4rx.o
+
+OBJ_RA02WATERFALL = \
+    $(OUT)ra02waterfall.o \
+    $(OUT)pngwritepalette.o
+
 TARGETS += \
 	$(OUT)afskmodem \
 	$(OUT)gps2aprs \
@@ -342,7 +349,9 @@ TARGETS += \
 	$(OUT)loratx \
 	$(OUT)lorarx \
 	$(OUT)hostint \
-	$(OUT)ttytee
+	$(OUT)ttytee \
+	$(OUT)ra02waterfall \
+	$(OUT)fsk4rx
 
 ifneq ($(HOSTOS), Darwin)
 	TARGETS += $(OUT)l2cat
@@ -555,6 +564,16 @@ $(OUT)hostint: $(OBJ_HOSTINT) $(OBJ_COMMON)
 $(OUT)ttytee: $(OBJ_TTYTEE) $(OBJ_COMMON)
 	@echo [ linking ] $@
 	@$(CC) $(LFLAGS) -o $@ $(OBJ_TTYTEE) $(OBJ_COMMON)
+	@$(STRIP) $@ $(STRIPFLAGS)
+
+$(OUT)fsk4rx: $(OBJ_FSK4RX) $(OBJ_COMMON)
+	@echo [ linking ] $@
+	@$(CC) $(LFLAGS) -o $@ $(OBJ_FSK4RX) $(OBJ_COMMON) -lm
+	@$(STRIP) $@ $(STRIPFLAGS)
+
+$(OUT)ra02waterfall: $(OBJ_RA02WATERFALL) $(OBJ_COMMON)
+	@echo [ linking ] $@
+	@$(CC) $(LFLAGS) -o $@ $(OBJ_RA02WATERFALL) $(OBJ_COMMON) $(GFXLIBS) -lm
 	@$(STRIP) $@ $(STRIPFLAGS)
 
 %:
