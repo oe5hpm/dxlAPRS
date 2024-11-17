@@ -1342,7 +1342,7 @@ static void Parms(void)
                osi_WrStrLn(" -i <mycall>                       set call to al\
 l ports", 57ul);
                osi_WrStrLn(" -t <tty>                          wa8ded hostmod\
-e port on pseudo tty", 70ul);
+e port on pseudo tty eg. /tmp/hostmode", 88ul);
                osi_WrStrLn(" -t <tty:0>                        normal pipe",
                 47ul);
                osi_WrStrLn(" -t <tty:baud>                     real tty e.g. \
@@ -1356,13 +1356,19 @@ more ports", 60ul);
                osi_WrStrLn(" wa8ded hostmode: tnc monitor 0=off, 1=protocol n\
 o info, 2=with info, 3=crc off", 80ul);
                osi_WrStrLn(" time values in 100ms units", 28ul);
+               osi_WrStrLn(" ./hostint -I MYCALL -t /tmp/hostmode -U 44.143.4\
+0.90:10094:10094 -v", 69ul);
+               osi_WrStrLn(" tnt.ini: soft_tnc 0", 21ul);
+               osi_WrStrLn("          device /tmp/hostmode", 31ul);
                osic_WrLn();
                X2C_ABORT();
             }
             err = 1;
          }
       }
-      else err = 1;
+      else {
+         err = 1;
+      }
       if (err) Error(" use -h", 8ul);
    }
 } /* end Parms() */
