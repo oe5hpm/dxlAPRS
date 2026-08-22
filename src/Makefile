@@ -115,7 +115,7 @@ CFLAGS		+= -march=armv6zk -mfpu=vfp -mfloat-abi=hard -mcpu=arm1176jzf-s
 CFLAGS		+= -Ilib_armv6/libpng16/ -I$(EXTLIB) -I.
 LFLAGS		+=
 TARGETS		+=	$(OUT)aprsmap
-# ---------------------- armv7hf (bur am335x pp) specific ---------------------
+# ---------------------- armv7hf ( ARMv7 ) specific ---------------------------
 else ifeq ($(PLATFORM), armv7hf)
 OUT		:= $(if $(OUT),$(OUT),../out-armv7hf/)
 EXTLIB		= lib_armv7hf/
@@ -128,27 +128,24 @@ CFLAGS		+= -march=armv7-a -mfpu=neon -mfloat-abi=hard
 CFLAGS		+= -I$(EXTLIB)
 LFLAGS		+=
 TARGETS		+=	$(OUT)aprsmap
-# ---------------------- aarch64 (>= rpi 4) specific --------------------------
+# ---------------------- aarch64 ( >= ARMv8 ) specific ------------------------
 else ifeq ($(PLATFORM), aarch64)
 OUT		:= $(if $(OUT),$(OUT),../out-aarch64/)
 EXTLIB		= lib_aarch64/
+GFXLIBS		=  $(EXTLIB)libpng.a \
+			  $(EXTLIB)libz.a \
+			  $(EXTLIB)libjpeg.a
 # if we are building on the host for the host and not cross-compiling
 ifeq ($(HOSTARCH), $(PLATFORM))
-GFXLIBS		=  $(EXTLIB)libpng.a \
-			  $(EXTLIB)libz.a \
-			  $(EXTLIB)libjpeg.a
 XLIBS		= -L$(EXTLIB) -lXext -lX11
-TARGETS		+=	$(OUT)aprsmap
 else
-GFXLIBS		=  $(EXTLIB)libpng.a \
-			  $(EXTLIB)libz.a \
-			  $(EXTLIB)libjpeg.a
 XLIBS		= $(EXTLIB)libxcb.so $(EXTLIB)libXdmcp.so $(EXTLIB)libXau.so \
 			 -L$(EXTLIB) -lXext -lX11
 endif
 CFLAGS		+= -I$(EXTLIB)
 LFLAGS		+=
-# -------------------------- x86_64 specific -----------------------------------
+TARGETS		+=	$(OUT)aprsmap
+# -------------------------- x86_64 specific ----------------------------------
 else ifeq ($(HOSTARCH), x86_64)
 GFXLIBS		= -lpng -ljpeg
 XLIBS		= -lXext -lX11
