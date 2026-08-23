@@ -50,13 +50,13 @@ export HOSTOS
 
 ifeq ($(HOSTOS),Darwin)
 # Using gcc as symlink to Mac's clan
-GCCVERSION_GE4 := true
+GCCVERSION_GE14 := true
 STRIPFLAGS =
 else
 GCCVERSION := $(shell $(CROSS_COMPILE)gcc --version | \
 	grep gcc | sed 's/.*gcc (.*) //g' | cut -d '.' -f 1)
 
-GCCVERSION_GE4 := $(shell [ $(GCCVERSION) -ge 4 ] && echo true)
+GCCVERSION_GE14 := $(shell [ $(GCCVERSION) -ge 14 ] && echo true)
 STRIPFLAGS = -s
 endif
 
@@ -66,7 +66,7 @@ endif
 CC		= $(CROSS_COMPILE)gcc
 STRIP		= $(CROSS_COMPILE)strip
 INCL		= .
-ifeq ($(GCCVERSION_GE4),true)
+ifeq ($(GCCVERSION_GE14),true)
 CDEFS		= -Wall \
 		  -Wno-unused-variable -Wno-parentheses -Wno-pointer-sign \
 		  -Wno-format -Wno-return-type -Wno-char-subscripts \
@@ -75,6 +75,13 @@ CDEFS		= -Wall \
 else
 CDEFS		= -w
 endif
+
+# FIXME: using no-error on incompatible-pointer-types
+# to allow source to compile with gcc 14+
+ifeq ($(GCCVERSION_GE14),true)
+CDEFS		+= -Wno-error=incompatible-pointer-types
+endif
+# ENDFIXME
 
 ifeq ($(HOSTOS),Darwin)
 CFLAGS		= -I$(INCL) -c -O2 -fdata-sections -ffunction-sections -I/usr/X11/include -DMACOS
@@ -108,7 +115,7 @@ CFLAGS		+= -march=armv6zk -mfpu=vfp -mfloat-abi=hard -mcpu=arm1176jzf-s
 CFLAGS		+= -Ilib_armv6/libpng16/ -I$(EXTLIB) -I.
 LFLAGS		+=
 TARGETS		+=	$(OUT)aprsmap
-# ---------------------- armv7hf (bur am335x pp) specific ---------------------
+# ---------------------- armv7hf ( ARMv7 ) specific ---------------------------
 else ifeq ($(PLATFORM), armv7hf)
 OUT		:= $(if $(OUT),$(OUT),../out-armv7hf/)
 EXTLIB		= lib_armv7hf/
@@ -121,18 +128,24 @@ CFLAGS		+= -march=armv7-a -mfpu=neon -mfloat-abi=hard
 CFLAGS		+= -I$(EXTLIB)
 LFLAGS		+=
 TARGETS		+=	$(OUT)aprsmap
-# ---------------------- aarcg64 (rpi 4) specific -----------------------------
+# ---------------------- aarch64 ( >= ARMv8 ) specific ------------------------
 else ifeq ($(PLATFORM), aarch64)
 OUT		:= $(if $(OUT),$(OUT),../out-aarch64/)
 EXTLIB		= lib_aarch64/
 GFXLIBS		=  $(EXTLIB)libpng.a \
 			  $(EXTLIB)libz.a \
 			  $(EXTLIB)libjpeg.a
+# if we are building on the host for the host and not cross-compiling
+ifeq ($(HOSTARCH), $(PLATFORM))
+XLIBS		= -L$(EXTLIB) -lXext -lX11
+else
 XLIBS		= $(EXTLIB)libxcb.so $(EXTLIB)libXdmcp.so $(EXTLIB)libXau.so \
 			 -L$(EXTLIB) -lXext -lX11
+endif
 CFLAGS		+= -I$(EXTLIB)
 LFLAGS		+=
-# -------------------------- x86_64 specific -----------------------------------
+TARGETS		+=	$(OUT)aprsmap
+# -------------------------- x86_64 specific ----------------------------------
 else ifeq ($(HOSTARCH), x86_64)
 GFXLIBS		= -lpng -ljpeg
 XLIBS		= -lXext -lX11
@@ -201,11 +214,11 @@ OBJ_SONDEUDP	= \
 
 OBJ_UDPBOX	= \
 	$(OUT)udpbox.o
-	
+
 OBJ_UDPGATE4	= \
 	$(OUT)udpgate4.o \
 	$(OUT)libsrtm.o
-	
+
 OBJ_UDPFLEX	= \
 	$(OUT)udpflex.o
 
@@ -403,6 +416,16 @@ clean:
 prepare:
 	@test -d $(OUT) || mkdir -p $(OUT)
 
+# FIXME: compile with c17 until the name of function bool() is changed
+# in the original l2.m2 modula-2 source code. when changed, delete this
+# to use normal make rule for .o above.
+ifeq ($(GCCVERSION_GE14),true)
+$(OUT)l2.o: l2.c
+	@echo [FIXME: compiling using std=c17] $@
+	@$(CC) $(CDEFS) $(CFLAGS) -std=c17 -o $@ $<
+endif
+# ENDFIXME
+
 $(OUT)afskmodem: $(OBJ_AFSKMODEM) $(OBJ_COMMON)
 	@echo [ linking ] $@
 	@$(CC) $(LFLAGS) -o $@ $(OBJ_COMMON) $(OBJ_AFSKMODEM) -lm
@@ -528,7 +551,7 @@ $(OUT)waterfall: $(OBJ_WATERFALL) $(OBJ_COMMON)
 
 $(OUT)waterfall3: $(OBJ_WATERFALL3) $(OBJ_COMMON)
 	@echo [ linking ] $@
-	$(CC) $(LFLAGS) -o $@ $(OBJ_WATERFALL3) $(OBJ_COMMON) $(GFXLIBS) $(EXTLIB)libfftw3.a -lm
+	@$(CC) $(LFLAGS) -o $@ $(OBJ_WATERFALL3) $(OBJ_COMMON) $(GFXLIBS) $(EXTLIB)libfftw3.a -lm
 	@$(STRIP) $@ $(STRIPFLAGS)
 
 $(OUT)downsample: $(OBJ_DOWNSAMPLE) $(OBJ_COMMON)
@@ -581,7 +604,22 @@ $(OUT)ra02waterfall: $(OBJ_RA02WATERFALL) $(OBJ_COMMON)
 	make $(OUT)$@
 
 diag:
-	@echo "Hostarch    : $(HOSTARCH)"
-	@echo "BuildOutput : $(OUT)"
-	@echo "Platform    : $(PLATFORM)"
+	@echo "CROSS_COMPILE   : $(CROSS_COMPILE)"
+	@echo "GCCVERSION      : $(GCCVERSION)"
+	@echo "GCCVERSION_GE14 : $(GCCVERSION_GE14)"
+	@echo "HOSTOS          : $(HOSTOS)"
+	@echo "HOSTARCH        : $(HOSTARCH)"
+	@echo "PLATFORM        : $(PLATFORM)"
+	@echo "OUT             : $(OUT)"
+	@echo "CC              : $(CC)"
+	@echo "INCL            : $(INCL)"
+	@echo "CFLAGS          : $(CFLAGS)"
+	@echo "CDEFS           : $(CDEFS)"
+	@echo "LFLAGS          : $(LFLAGS)"
+	@echo "EXTLIB          : $(EXTLIB)"
+	@echo "GFXLIBS         : $(GFXLIBS)"
+	@echo "XLIBS           : $(XLIBS)"
+	@echo "STRIP           : $(STRIP)"
+	@echo "STRIPFLAGS      : $(STRIPFLAGS)"
+	@echo "TARGETS         : $(TARGETS)"
 # end of makefile

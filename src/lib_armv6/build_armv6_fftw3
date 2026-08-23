@@ -1,7 +1,24 @@
 #!/bin/bash
 SRC_TARBALL=../../fftw-3.3.10.tar.gz
 BUILDDIR=`mktemp -d`
+
+HOSTARCH=$(uname -m | \
+	sed -e s/i.86/x86/ \
+	    -e s/sun4u/sparc64/ \
+	    -e s/arm.*/arm/ \
+	    -e s/sa110/arm/ \
+	    -e s/ppc64/powerpc/ \
+	    -e s/ppc/powerpc/ \
+	    -e s/macppc/powerpc/\
+	    -e s/sh.*/sh/)
+
+# if we are building on the host for the host and not cross-compiling
+if [ "armv6" = $HOSTARCH ] ; then
+export CC=gcc
+else
 export CC=/opt/rpi-tools/arm-bcm2708/arm-bcm2708hardfp-linux-gnueabi/bin/arm-bcm2708hardfp-linux-gnueabi-gcc
+fi
+
 export CFLAGS="-march=armv6zk -mfpu=vfp -mfloat-abi=hard -mcpu=arm1176jzf-s"
 
 cp $SRC_TARBALL $BUILDDIR
@@ -15,4 +32,3 @@ popd
 cp $BUILDDIR/lib/libfftw*.a .
 cp $BUILDDIR/include/fftw3.h .
 rm -r -f $BUILDDIR
-

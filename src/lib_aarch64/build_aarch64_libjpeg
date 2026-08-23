@@ -1,8 +1,25 @@
 #!/bin/bash
 SRC_TARBALL=../../jpegsrc.v9.tar.gz
 BUILDDIR=`mktemp -d`
+
+HOSTARCH=$(uname -m | \
+	sed -e s/i.86/x86/ \
+	    -e s/sun4u/sparc64/ \
+	    -e s/arm.*/arm/ \
+	    -e s/sa110/arm/ \
+	    -e s/ppc64/powerpc/ \
+	    -e s/ppc/powerpc/ \
+	    -e s/macppc/powerpc/\
+	    -e s/sh.*/sh/)
+
+# if we are building on the host for the host and not cross-compiling
+if [ "aarch64" = $HOSTARCH ] ; then
+export CC=gcc
+export CFLAGS=""
+else
 export CC=/opt/gcc-linaro-7.5.0-2019.12-x86_64_arm-linux-gnueabihf/bin/arm-linux-gnueabihf-gcc
 export CFLAGS="-march=armv7-a -mfpu=neon -mfloat-abi=hard -mcpu=cortex-a8"
+fi
 
 cp $SRC_TARBALL $BUILDDIR
 pushd $BUILDDIR

@@ -20,17 +20,26 @@
 
 #------------------------------------------------------------------------------
 
+# name of application + name of this script, version and source of this script
+NAME="aprsmap+gm.sh"
+VERSION="1.0"
+SOURCE="http://github.com/oe5hpm/dxlAPRS"
+
 # file created by aprsmap of a list of map tiles to fetch
 ORIGFN="gettiles"
 
 # default filename for list of available maps
 MAPFN="maplist"
 
+# User-Agent is now required by OSM policy
+USER_AGENT="$NAME/$VERSION $SOURCE"
+
 # sample commands to retrieve map tiles showing wget and curl usage
-# blank user-agent, quiet mode, 5 sec timeout, 1 retry, output file follows
-GETCMDBASE="wget -U \"\" -q -T 5 -t 1 -O"
-#GETCMDBASE="wget2 -U \"\" -q -T 5 -t 1 -O"
-#GETCMDBASE="curl -A \"\" -s -S -m 5 -o"
+# user-agent, quiet mode, 5 sec timeout, 1 retry, output file follows
+
+GETCMDBASE="wget -U \"$USER_AGENT\" -q -T 5 -t 1 -O"
+#GETCMDBASE="wget2 -U \"$USER_AGENT\" -q -T 5 -t 1 -O"
+#GETCMDBASE="curl -A \"$USER_AGENT\" -s -S -m 5 -o"
 
 #------------------------------------------------------------------------------
 

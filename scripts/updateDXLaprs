@@ -4,13 +4,28 @@
 
 if [ -z $1 ]; then
 	echo "updateDXLaprs: missing architecture or local image file"
-	echo "Usage: updateDXLaprs ARCH | file"
+	echo "Usage: updateDXLaprs ARCH | file [executables]"
 	echo "    Where ARCH may be: armv6, armv6tce, armv7hf, x86_32, x86_64, ..."
 	echo ""
 	echo "    If a local file is specified instead of one of the architectures above,"
 	echo "    then this file will be used for performing the installation. The local"
 	echo "    file must be a file that was created by the packCurrent.sh script."
+	echo ""
+	echo "    If \"executables\" option is specified, then only executable files and"
+	echo "    scripts will be updated. All other files in the destination directories"
+	echo "    remain untouched."
 	exit 1
+fi
+
+if [ $2 ]; then
+	if [ "executables" != $2 ]; then
+		echo "2nd argument must be either blank or \"executables\""
+		exit
+	else
+		EXECS=$2
+	fi
+else
+	EXECS="install"
 fi
 
 # url and the template basename (no file extension) of installation archive
@@ -33,8 +48,10 @@ GETCMDBASE="wget"
 
 # set up the default destination directory structure
 [ -d $DSTMAP ] || mkdir -p $DSTMAP
-[ -d $DSTMAP/$MAPDIR ] || mkdir -p $DSTMAP/$MAPDIR
-[ -d $DSTMAP/$LOGDIR ] || mkdir -p $DSTMAP/$LOGDIR
+if [ "executables" != $EXECS ]; then
+	[ -d $DSTMAP/$MAPDIR ] || mkdir -p $DSTMAP/$MAPDIR
+	[ -d $DSTMAP/$LOGDIR ] || mkdir -p $DSTMAP/$LOGDIR
+fi
 [ -d $DSTAPRS ] || mkdir -p $DSTAPRS
 
 # retrieve the image
@@ -65,6 +82,21 @@ if [ -r $FILE.tgz ]; then
 	tar -xf $FILE.tar
 	rm $FILE.tar
 	echo "Installation directory:" $DST
+#if only installing executable binaries and executable scripts
+if [ "executables" = $EXECS ]; then
+	echo "Updating aprs executables..."
+	for f in $(ls); do
+		test -f $f && test -x $f && mv -f $f $DSTAPRS/
+	done
+	cp -r scripts $DSTAPRS/
+	rm -r scripts
+	echo "Updating aprsmap executables..."
+	mv -f $DSTAPRS/aprsmap* $DSTMAP/
+	for f in $(ls aprsmap_common); do
+		test -f aprsmap_common/$f && test -x aprsmap_common/$f && mv -f aprsmap_common/$f $DSTMAP/
+	done
+else
+# full installation
 	echo "Installing aprsmap directory components..."
 	cp -r aprsmap_common/$MAPDIR $DSTMAP
 	rm -r aprsmap_common/$MAPDIR
@@ -77,6 +109,7 @@ if [ -r $FILE.tgz ]; then
 	cp -r scripts $DSTAPRS/
 	rm -r scripts
 	mv -f * $DSTAPRS/
+fi
 
 # fixup file permissions and owners
 	cd $DSTAPRS
