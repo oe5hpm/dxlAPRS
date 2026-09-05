@@ -34,22 +34,28 @@
 # - lorarx IQ file with lora to axudp
 # - ttytee read serial port and send to unbreakable pipe(s)
 # ---------------------- common section ---------------------------------------
-HOSTARCH := $(shell uname -m | \
-	sed -e s/i.86/x86/ \
-	    -e s/sun4u/sparc64/ \
-	    -e s/arm.*/arm/ \
-	    -e s/sa110/arm/ \
-	    -e s/ppc64/powerpc/ \
-	    -e s/ppc/powerpc/ \
-	    -e s/macppc/powerpc/\
-	    -e s/sh.*/sh/)
+# try to normalize the host architecture for the default build case so that the
+# correct lib_$(HOSTARCH) directory will be used to find e.g. fftw3 components
+MACHINE = $(shell uname -m)
+ifeq ($(MACHINE), arm)
+HOSTARCH := armv6
+else
+HOSTARCH := $(shell echo $(MACHINE) | \
+	sed -e s/i.86/x86_32/ \
+	    -e s/x86-64/x86_64/ \
+	    -e s/amd64/x86_64/ \
+	    -e s/armv6.*/armv6/ \
+	    -e s/armv7.*/armv7hf/ \
+	    -e s/armv8.*/aarch64/ \
+	    -e s/armv9.*/aarch64/)
+endif
 export HOSTARCH
 
 HOSTOS := $(shell uname -s)
 export HOSTOS
 
 ifeq ($(HOSTOS),Darwin)
-# Using gcc as symlink to Mac's clan
+# Using gcc as symlink to Mac's clang
 GCCVERSION_GE14 := true
 STRIPFLAGS =
 else
@@ -66,7 +72,12 @@ endif
 CC		= $(CROSS_COMPILE)gcc
 STRIP		= $(CROSS_COMPILE)strip
 INCL		= .
-ifeq ($(GCCVERSION_GE14),true)
+# turn warnings on only when debugging. because the c code here is mainly a
+# machine-translation of the original modula-2 sources into c, we are at the
+# mercy of the translator from the upstream source. "make DEBUG=true" will
+# turn compiler warnings back on if necessary. otherwise, simply suppress
+# warnings for the average user.
+ifeq ($(DEBUG),true)
 CDEFS		= -Wall \
 		  -Wno-unused-variable -Wno-parentheses -Wno-pointer-sign \
 		  -Wno-format -Wno-return-type -Wno-char-subscripts \
@@ -77,7 +88,7 @@ CDEFS		= -w
 endif
 
 # FIXME: using no-error on incompatible-pointer-types
-# to allow source to compile with gcc 14+
+# to allow source to compile with gcc 14+ and hope it all works.
 ifeq ($(GCCVERSION_GE14),true)
 CDEFS		+= -Wno-error=incompatible-pointer-types
 endif
@@ -90,6 +101,9 @@ else
 CFLAGS		= -I$(INCL) -c -O2 -fdata-sections -ffunction-sections
 LFLAGS		= -Wl,--gc-sections
 endif
+
+TARGETS		= $(OUT)aprsmap
+
 # ---------------------- armv6 (raspberry pi 1) specific -----------------------
 ifeq ($(PLATFORM), armv6tce)
 OUT		:= $(if $(OUT),$(OUT),../out-armv6tce/)
@@ -102,7 +116,6 @@ XLIBS		= $(EXTLIB)libxcb.so.1 $(EXTLIB)libXdmcp.so.6 $(EXTLIB)libXau.so.6 \
 CFLAGS		+= -march=armv6zk -mfpu=vfp -mfloat-abi=hard -mcpu=arm1176jzf-s
 CFLAGS		+= -Ilib_armv6/libpng15/ -I$(EXTLIB) -I.
 LFLAGS		+=
-TARGETS		+=	$(OUT)aprsmap
 else ifeq ($(PLATFORM), armv6)
 OUT		:= $(if $(OUT),$(OUT),../out-armv6/)
 EXTLIB  	= lib_armv6/
@@ -114,7 +127,6 @@ XLIBS		= $(EXTLIB)libxcb.so.1 $(EXTLIB)libXdmcp.so.6 $(EXTLIB)libXau.so.6 \
 CFLAGS		+= -march=armv6zk -mfpu=vfp -mfloat-abi=hard -mcpu=arm1176jzf-s
 CFLAGS		+= -Ilib_armv6/libpng16/ -I$(EXTLIB) -I.
 LFLAGS		+=
-TARGETS		+=	$(OUT)aprsmap
 # ---------------------- armv7hf ( ARMv7 ) specific ---------------------------
 else ifeq ($(PLATFORM), armv7hf)
 OUT		:= $(if $(OUT),$(OUT),../out-armv7hf/)
@@ -127,7 +139,6 @@ XLIBS		= $(EXTLIB)libxcb.so $(EXTLIB)libXdmcp.so $(EXTLIB)libXau.so \
 CFLAGS		+= -march=armv7-a -mfpu=neon -mfloat-abi=hard
 CFLAGS		+= -I$(EXTLIB)
 LFLAGS		+=
-TARGETS		+=	$(OUT)aprsmap
 # ---------------------- aarch64 ( >= ARMv8 ) specific ------------------------
 else ifeq ($(PLATFORM), aarch64)
 OUT		:= $(if $(OUT),$(OUT),../out-aarch64/)
@@ -144,17 +155,17 @@ XLIBS		= $(EXTLIB)libxcb.so $(EXTLIB)libXdmcp.so $(EXTLIB)libXau.so \
 endif
 CFLAGS		+= -I$(EXTLIB)
 LFLAGS		+=
-TARGETS		+=	$(OUT)aprsmap
 # -------------------------- x86_64 specific ----------------------------------
 else ifeq ($(HOSTARCH), x86_64)
-GFXLIBS		= -lpng -ljpeg
-XLIBS		= -lXext -lX11
-CFLAGS		+= -I$(EXTLIB)
 EXTLIB		= lib_x86_64/
-TARGETS		+=	$(OUT)aprsmap
+GFXLIBS		= -lpng -ljpeg
+XLIBS		= -L$(EXTLIB) -lXext -lX11
+CFLAGS		+= -I$(EXTLIB)
+# if cross-compiling for x86_32 on x86_64 host
 ifeq ($(PLATFORM), x86_32)
-	EXTLIB	= lib_x86_32/
 	OUT	:= $(if $(OUT),$(OUT),../out-x86_32/)
+	EXTLIB	= lib_x86_32/
+	XLIBS	= -L$(EXTLIB) -lXext -lX11
 	CFLAGS	+= -m32
 	LFLAGS	+= -m32
 	TARGETS	+= $(OUT)aprsmap-x86_32
@@ -162,17 +173,25 @@ else ifneq ($(HOSTOS),Darwin)
 TARGETS		+= $(OUT)aprsmap-x86_64
 endif
 OUT		:= $(if $(OUT),$(OUT),../out-x86_64/)
-# -------------------------- x86_32 (default) specific ------------------------
+# -------------------------- x86_32 specific ----------------------------------
 else ifeq ($(HOSTARCH), x86)
 OUT		:= $(if $(OUT),$(OUT),../out-x86_32/)
+EXTLIB		= lib_x86_32/
+GFXLIBS		= -lpng -ljpeg
+XLIBS		= -L$(EXTLIB) -lXext -lX11
+CFLAGS		+= -I$(EXTLIB)
 TARGETS		+= $(OUT)aprsmap-x86_32
-GFXLIBS		=-lpng -ljpeg
-XLIBS		= -lXext -lX11
+# ---- (default) PLATFORM none of the above and not on a x86-based host -------
+# you must first manually remove all .h, .a and .so files down in
+# lib_$(HOSTARCH) then run only the fftw3 builder prior to make. the host's
+# own installed png, jpeg, x11 libs as well as shared objects will then be
+# used for build and execution.
 else
-OUT		:= $(if $(OUT),$(OUT),../out/)
-GFXLIBS		+= -lpng -ljpeg
-XLIBS		+=-lXext -lX11
-TARGETS		+=	$(OUT)aprsmap
+OUT		:= $(if $(OUT),$(OUT),../out-$(HOSTARCH)/)
+EXTLIB		= lib_$(HOSTARCH)/
+GFXLIBS		= -lpng -ljpeg
+XLIBS		= -L$(EXTLIB) -lXext -lX11
+CFLAGS		+= -I$(EXTLIB)
 endif
 # ------------------ objects enumeration ------------------
 OBJ_COMMON = \
@@ -417,7 +436,7 @@ prepare:
 	@test -d $(OUT) || mkdir -p $(OUT)
 
 # FIXME: compile with c17 until the name of function bool() is changed
-# in the original l2.m2 modula-2 source code. when changed, delete this
+# in the original l2.mod modula-2 source code. when changed, delete this
 # to use normal make rule for .o above.
 ifeq ($(GCCVERSION_GE14),true)
 $(OUT)l2.o: l2.c
@@ -604,10 +623,12 @@ $(OUT)ra02waterfall: $(OBJ_RA02WATERFALL) $(OBJ_COMMON)
 	make $(OUT)$@
 
 diag:
+	@echo "DEBUG           : $(DEBUG)"
 	@echo "CROSS_COMPILE   : $(CROSS_COMPILE)"
 	@echo "GCCVERSION      : $(GCCVERSION)"
 	@echo "GCCVERSION_GE14 : $(GCCVERSION_GE14)"
 	@echo "HOSTOS          : $(HOSTOS)"
+	@echo "MACHINE         : $(MACHINE)"
 	@echo "HOSTARCH        : $(HOSTARCH)"
 	@echo "PLATFORM        : $(PLATFORM)"
 	@echo "OUT             : $(OUT)"

@@ -1,5 +1,7 @@
 #!/bin/bash
-SRC_TARBALL=../../fftw-3.3.10.tar.gz
+LIB=fftw-3.3.10.tar.gz
+
+SRC_TARBALL=../../$LIB
 BUILDDIR=`mktemp -d`
 
 HOSTARCH=$(uname -m | \
@@ -13,7 +15,7 @@ HOSTARCH=$(uname -m | \
 	    -e s/sh.*/sh/)
 
 # if we are building on the host for the host and not cross-compiling
-if [ "armv6" = $HOSTARCH ] ; then
+if [ "arm" = $HOSTARCH ] ; then
 export CC=gcc
 else
 export CC=/opt/rpi-tools/arm-bcm2708/arm-bcm2708hardfp-linux-gnueabi/bin/arm-bcm2708hardfp-linux-gnueabi-gcc
@@ -23,12 +25,11 @@ export CFLAGS="-march=armv6zk -mfpu=vfp -mfloat-abi=hard -mcpu=arm1176jzf-s"
 
 cp $SRC_TARBALL $BUILDDIR
 pushd $BUILDDIR
-tar -xf fftw-3.3.10.tar.gz
-cd fftw-3.3.10
+tar -xf $LIB --strip-components=1
 ./configure --prefix=$BUILDDIR --host=arm-none-linux-gnueabi
 make -j16
 make install
 popd
-cp $BUILDDIR/lib/libfftw*.a .
-cp $BUILDDIR/include/fftw3.h .
+cp $BUILDDIR/lib/*.a .
+cp $BUILDDIR/include/*.h .
 rm -r -f $BUILDDIR
