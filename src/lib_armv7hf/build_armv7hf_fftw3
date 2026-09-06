@@ -1,5 +1,7 @@
 #!/bin/bash
-SRC_TARBALL=../../fftw-3.3.10.tar.gz
+LIB=fftw-3.3.10.tar.gz
+
+SRC_TARBALL=../../$LIB
 BUILDDIR=`mktemp -d`
 
 HOSTARCH=$(uname -m | \
@@ -13,22 +15,22 @@ HOSTARCH=$(uname -m | \
 	    -e s/sh.*/sh/)
 
 # if we are building on the host for the host and not cross-compiling
-if [ "armv7hf" = $HOSTARCH ] ; then
+if [ "arm" = $HOSTARCH ] ; then
 export CC=gcc
 else
 export CC=/opt/gcc-linaro-7.5.0-2019.12-x86_64_arm-linux-gnueabihf/bin/arm-linux-gnueabihf-gcc
 fi
 
-export CFLAGS="-march=armv7-a -mfpu=neon -mfloat-abi=hard -mcpu=cortex-a8"
+#export CFLAGS="-march=armv7-a -mfpu=neon -mfloat-abi=hard -mcpu=cortex-a8"
+export CFLAGS="-march=armv7-a -mfpu=neon -mfloat-abi=hard"
 
 cp $SRC_TARBALL $BUILDDIR
 pushd $BUILDDIR
-tar -xf fftw-3.3.10.tar.gz
-cd fftw-3.3.10
+tar -xf $LIB --strip-components=1
 ./configure --prefix=$BUILDDIR --host=arm-none-linux-gnueabi
 make -j16
 make install
 popd
-cp $BUILDDIR/lib/libfftw3*.a .
-cp $BUILDDIR/include/fftw3.h .
+cp $BUILDDIR/lib/*.a .
+cp $BUILDDIR/include/*.h .
 rm -r -f $BUILDDIR

@@ -1,17 +1,14 @@
 #!/bin/bash
-SRC_TARBALL=../../libpng-1.6.3.tgz
+LIB=libpng-1.6.3.tgz
+
+SRC_TARBALL=../../$LIB
 BUILDDIR=`mktemp -d`
 DESTPATH=`pwd`
 
 HOSTARCH=$(uname -m | \
-	sed -e s/i.86/x86/ \
-	    -e s/sun4u/sparc64/ \
-	    -e s/arm.*/arm/ \
-	    -e s/sa110/arm/ \
-	    -e s/ppc64/powerpc/ \
-	    -e s/ppc/powerpc/ \
-	    -e s/macppc/powerpc/\
-	    -e s/sh.*/sh/)
+	sed -e s/arm64/aarch64/ \
+	    -e s/armv8.*/aarch64/ \
+	    -e s/armv9.*/aarch64/)
 
 # if we are building on the host for the host and not cross-compiling
 if [ "aarch64" = $HOSTARCH ] ; then
@@ -22,8 +19,7 @@ fi
 
 cp $SRC_TARBALL $BUILDDIR
 pushd $BUILDDIR
-tar -xf libpng-1.6.3.tgz
-cd libpng-1.6.3
+tar -xf $LIB --strip-components=1
 ./configure --prefix=$BUILDDIR --host=arm-none-linux-gnueabi --with-zlib-prefix=$DESTPATH
 make -j16
 make install
@@ -32,4 +28,3 @@ cp $BUILDDIR/lib/*.a .
 cp $BUILDDIR/include/*.h .
 echo $CFLAGS
 rm -r -f $BUILDDIR
-

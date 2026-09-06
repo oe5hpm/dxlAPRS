@@ -1,4 +1,33 @@
-compiling hints for C-Sources by OE5HPM@OE5XBL.#OE5.AUT.EU
+compiling hints for C-Sources by OE5HPM@OE5XBL.#OE5.AUT.EU and
+DL5MGZ/KN6EI (https://github.com/t52ta6ek)
+
+for all builds intended to run on your host platform it is highly recommended
+you remove any .h, .a, and shared objects that may pre-exist when you cloned
+the repository prior to running the "make".
+
+if you plan to use the png, jpeg, x11 libraries you installed onto your host
+system (e.g. as described below) the step above is especially important. the
+build process will then use your own system's libraries.
+
+In most cases, you may then only need to regenerate the fftw3 .h and .a files
+by simply executing the fftw3 build script present in the src/lib_<hostarch>
+directory.
+
+these src/lib_<hostarch>/build files in most cases will now attempt to
+determine if you are trying to build on your host for your host vs cross-
+compiling. if not cross-compiling, your host's compiler will be used for
+the "configure" process. else the cross-toolchain will be used.
+
+however, for a PLATFORM build, those .h, .a and any shared objects in
+addition to the fftw3 components will need to be present. build these as
+necessary.
+
+to asist debugging the build, you may do either
+make PLATFORM=<hostarch> diag
+or
+make diag
+
+where <hostarch> may be currently: armv6tce, armv6, armv7hf, x86_32, x86_64
 
 build for X86 with i386 (32-bit) host system
 or
