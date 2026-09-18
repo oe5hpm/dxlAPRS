@@ -174,7 +174,7 @@ TARGETS		+= $(OUT)aprsmap-x86_64
 endif
 OUT		:= $(if $(OUT),$(OUT),../out-x86_64/)
 # -------------------------- x86_32 specific ----------------------------------
-else ifeq ($(HOSTARCH), x86)
+else ifeq ($(HOSTARCH), x86_32)
 OUT		:= $(if $(OUT),$(OUT),../out-x86_32/)
 EXTLIB		= lib_x86_32/
 GFXLIBS		= -lpng -ljpeg

@@ -1,0 +1,27 @@
+packCurrent.sh <hostarch>
+    This script packs the content of the out-<hostarch> directory into a .tgz
+    file that can be subsequently processed using the updateDXLaprs script.
+    The contents of the .tgz archive is in the same form as the pre-built
+    images for Linux that can be found at:
+        http://dxlaprs.hamspirit.at
+
+    Execute this script at the dxlAPRS/ directory level using the command line:
+        ./scripts/packCurrent.sh <hostarch>
+
+    The output will be a file called:
+        dxlAPRS_<hostarch>-*.tgz
+
+updateDXLaprs <hostarch> | file [executables]
+    If <hostarch> is specified, then dxlAPRS will be installed from a pre-built
+    Linux image found on-line at the URL above.
+
+    If a local file is specified instead <hostarch> then this file will be
+    used for performing the installation. The local file must be a file that
+    was created by the packCurrent.sh script.
+
+    If the "executables" option is specified, then only executable files and
+    executable scripts will be updated. All other files in the destination
+    directories remain untouched.
+
+Currently, <hostarch> may be:
+    armv6tce, armv6, armv7hf, aarch64, x86_32, x86_64
