@@ -4280,6 +4280,7 @@ static char inreform(struct Complex b[], uint32_t b_len, uint32_t * wp)
 static char readsampsfir(void)
 {
    uint32_t frd;
+   uint32_t shiftstart;
    uint32_t fp;
    uint32_t w0;
    uint32_t i0;
@@ -4292,11 +4293,13 @@ static char readsampsfir(void)
    struct Complex * anonym;
    uint32_t tmp;
    if (firlen==0UL) return inreform(iqbuf, 8192ul, &iqwrite);
+   /* Retained FIR overlap is already shifted; mix every newly read sample. */
+   shiftstart = firwp;
    if (!inreform(pfir->Adr, pfir->Len0, &firwp)) return 0;
    if (firwp>firlen) {
       if (shiftstep) {
          tmp = firwp-1UL;
-         i0 = firlen;
+         i0 = shiftstart;
          if (i0<=tmp) for (;; i0++) {
             { /* with */
                struct Complex * anonym = &pfir->Adr[i0];
